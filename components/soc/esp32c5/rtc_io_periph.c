@@ -14,7 +14,7 @@ const int rtc_io_num_map[SOC_GPIO_PIN_COUNT] = {
     RTCIO_GPIO4_CHANNEL,    //GPIO4
     RTCIO_GPIO5_CHANNEL,    //GPIO5
     RTCIO_GPIO6_CHANNEL,    //GPIO6
-    RTCIO_GPIO7_CHANNEL,    //GPIO7
+    -1,//GPIO7
     -1,//GPIO8
     -1,//GPIO9
     -1,//GPIO10

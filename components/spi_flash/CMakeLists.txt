@@ -16,7 +16,7 @@ if(non_os_build OR CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
 else()
     set(srcs "flash_brownout_hook.c")
 
-    if(CONFIG_SOC_SPI_MEM_SUPPORT_OPI_MODE)
+    if(CONFIG_SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE)
         list(APPEND srcs "${target}/spi_flash_oct_flash_init.c")
     endif()
 

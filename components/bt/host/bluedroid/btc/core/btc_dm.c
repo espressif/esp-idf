@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -334,6 +334,7 @@ static void btc_dm_link_up_evt(tBTA_DM_LINK_UP *p_link_up)
     }
 }
 
+#if (SMP_INCLUDED == TRUE)
 static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 {
     /* Save link key, if not temporary */
@@ -493,6 +494,7 @@ static void btc_dm_pin_req_evt(tBTA_DM_PIN_REQ *p_pin_req)
     }
 #endif /// BTC_GAP_BT_INCLUDED == TRUE
 }
+#endif // #if (SMP_INCLUDED == TRUE)
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 static void btc_dm_sp_cfm_req_evt(tBTA_DM_SP_CFM_REQ *p_cfm_req)
@@ -716,10 +718,9 @@ bt_status_t btc_dm_disable_service(tBTA_SERVICE_ID service_id)
 
     return BT_STATUS_SUCCESS;
 }
-
+#if (BTC_GAP_BT_INCLUDED == TRUE)
 static void btc_dm_acl_link_stat(tBTA_DM_ACL_LINK_STAT *p_acl_link_stat)
 {
-#if (BTC_GAP_BT_INCLUDED == TRUE)
     esp_bt_gap_cb_param_t param;
     esp_bt_gap_cb_event_t event = ESP_BT_GAP_EVT_MAX;
     bt_bdaddr_t bt_addr;
@@ -761,8 +762,8 @@ static void btc_dm_acl_link_stat(tBTA_DM_ACL_LINK_STAT *p_acl_link_stat)
     if (cb) {
         cb(event, &param);
     }
-#endif
 }
+#endif
 
 void btc_dm_sec_cb_handler(btc_msg_t *msg)
 {
@@ -814,6 +815,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         btc_disable_bluetooth_evt();
         break;
     }
+#if (SMP_INCLUDED == TRUE)
     case BTA_DM_PIN_REQ_EVT:
         BTC_TRACE_DEBUG("BTA_DM_PIN_REQ_EVT");
         btc_dm_pin_req_evt(&p_data->pin_req);
@@ -827,6 +829,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_BOND_CANCEL_CMPL_EVT:
         BTC_TRACE_DEBUG("BTA_DM_BOND_CANCEL_CMPL_EVT");
         break;
+#endif // #if (SMP_INCLUDED == TRUE)
 #if (CLASSIC_BT_INCLUDED == TRUE)
     case BTA_DM_SP_CFM_REQ_EVT:
         btc_dm_sp_cfm_req_evt(&p_data->cfm_req);
@@ -847,7 +850,10 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         break;
 #endif /* BTM_OOB_INCLUDED == TRUE */
     case BTA_DM_ACL_LINK_STAT_EVT: {
+#if (BTC_GAP_BT_INCLUDED == TRUE)
+        btc_gap_bt_acl_link_num_update(&p_data->acl_link_stat);
         btc_dm_acl_link_stat(&p_data->acl_link_stat);
+#endif
         break;
     }
     case BTA_DM_DEV_UNPAIRED_EVT: {

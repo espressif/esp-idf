@@ -476,6 +476,7 @@ Application Examples
 ------------------------
 
     - :example:`peripherals/touch_sensor/touch_sens_basic` demonstrates how to register touch channels and read the data, including hardware requirements and project configuration instructions.
+    - :example:`peripherals/touch_sensor/touch_sens_sleep` demonstrates how to wake up the chip from the light or deep sleep by the touch sensor.
 
 Application Notes
 -----------------

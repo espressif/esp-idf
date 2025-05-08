@@ -3,6 +3,7 @@
 # !/usr/bin/env python3
 import copy
 import os.path
+import random
 import re
 import secrets
 import subprocess
@@ -18,7 +19,8 @@ from pytest_embedded_idf.dut import IdfDut
 # This file contains the test scripts for Thread:
 
 # Case 1: Thread network formation and attaching
-#         A Thread Border Router forms a Thread network, Thread devices attach to it, then test ping connection between them.
+#         A Thread Border Router forms a Thread network, Thread devices attach to it, then test ping
+#         connection between them.
 
 # Case 2: Bidirectional IPv6 connectivity
 #         Test IPv6 ping connection between Thread device and Linux Host (via Thread Border Router).
@@ -51,16 +53,25 @@ from pytest_embedded_idf.dut import IdfDut
 #         Test the basic startup and network formation of a Thread device.
 
 # Case 12: Curl a website via DNS and NAT64
-#         A border router joins a Wi-Fi network and forms a Thread network, a Thread devices attached to it and curl a website.
+#         A border router joins a Wi-Fi network and forms a Thread network, a Thread devices attached to it and curl
+#         a website.
 
 # Case 13: Meshcop discovery of Border Router
-#         A border router joins a Wi-Fi network, forms a Thread network and publish a meshcop service. Linux Host device discover the mescop service.
+#         A border router joins a Wi-Fi network, forms a Thread network and publish a meshcop service. Linux Host device
+#         discover the mescop service.
 
 # Case 14: Curl a website over HTTPS via DNS and NAT64
-#         A border router joins a Wi-Fi network and forms a Thread network, a Thread devices attached to it and curl a https website.
+#         A border router joins a Wi-Fi network and forms a Thread network, a Thread devices attached to it and curl
+#         a https website.
 
 # Case 15: Thread network formation and attaching with TREL
 #         A TREL device forms a Thread network, other TREL devices attach to it, then test ping connection between them.
+
+# Case 16: Thread network BR lib check
+#         Check BR library compatibility
+
+# Case 17: Synchronized sleepy end device (SSED) test
+#         Start a Thread ssed device, wait it join the Thread network and check related flags.
 
 
 @pytest.fixture(scope='module', name='Init_avahi')
@@ -88,15 +99,10 @@ ESPPORT1 = os.getenv('ESPPORT1')
 ESPPORT2 = os.getenv('ESPPORT2')
 ESPPORT3 = os.getenv('ESPPORT3')
 
-PORT_MAPPING = {
-    'ESPPORT1': 'esp32h2',
-    'ESPPORT2': 'esp32s3',
-    'ESPPORT3': 'esp32c6'
-}
+PORT_MAPPING = {'ESPPORT1': 'esp32h2', 'ESPPORT2': 'esp32s3', 'ESPPORT3': 'esp32c6'}
 
 
 # Case 1: Thread network formation and attaching
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -110,7 +116,7 @@ PORT_MAPPING = {
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
         pytest.param(
             'rcp_spi|cli|br_spi',
@@ -120,12 +126,12 @@ PORT_MAPPING = {
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32h2|esp32c6|esp32s3',
             f'{ESPPORT1}|{ESPPORT3}|{ESPPORT2}',
-            id='h2-c6-s3'
+            id='h2-c6-s3',
         ),
     ],
     indirect=True,
 )
-def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_thread_connect(dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
     cli_h2 = dut[1]
     dut[0].serial.stop_redirect_thread()
@@ -148,9 +154,9 @@ def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
         for cli in cli_list:
             cli_mleid_addr = ocf.get_mleid_addr(cli)
             br_mleid_addr = ocf.get_mleid_addr(br)
-            rx_nums = ocf.ot_ping(cli, br_mleid_addr, 5)[1]
+            rx_nums = ocf.ot_ping(cli, br_mleid_addr, count=5)[1]
             assert rx_nums == 5
-            rx_nums = ocf.ot_ping(br, cli_mleid_addr, 5)[1]
+            rx_nums = ocf.ot_ping(br, cli_mleid_addr, count=5)[1]
             assert rx_nums == 5
     finally:
         ocf.execute_command(br, 'factoryreset')
@@ -165,7 +171,7 @@ def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
 #         /  \
 #        /    \
 # Wi-FI_Host   Thread_End_Device
-def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
+def formBasicWiFiThreadNetwork(br: IdfDut, cli: IdfDut) -> None:
     ocf.init_thread(br)
     ocf.init_thread(cli)
     otbr_wifi_para = copy.copy(default_br_wifi_para)
@@ -176,11 +182,10 @@ def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
     otcli_thread_para.dataset = ocf.getDataset(br)
     otcli_thread_para.exaddr = '7766554433221101'
     ocf.joinThreadNetwork(cli, otcli_thread_para)
-    ocf.wait(cli,10)
+    ocf.wait(cli, 10)
 
 
 # Case 2: Bidirectional IPv6 connectivity
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -194,14 +199,14 @@ def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
-def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_Bidirectional_IPv6_connectivity(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -223,7 +228,7 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
         host_global_unicast_addr = re.findall(r'\W+(%s(?:\w+:){3}\w+)\W+' % onlinkprefix, str(out_str))
         rx_nums = 0
         for ip_addr in host_global_unicast_addr:
-            txrx_nums = ocf.ot_ping(cli, str(ip_addr), 5)
+            txrx_nums = ocf.ot_ping(cli, str(ip_addr), count=5)
             rx_nums = rx_nums + int(txrx_nums[1])
         assert rx_nums != 0
     finally:
@@ -233,7 +238,6 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
 
 
 # Case 3: Multicast forwarding from Wi-Fi to Thread network
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -247,14 +251,14 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
-def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_multicast_forwarding_A(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -287,7 +291,6 @@ def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
 
 
 # Case 4: Multicast forwarding from Thread to Wi-Fi network
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -301,14 +304,14 @@ def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
-def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_multicast_forwarding_B(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -321,7 +324,7 @@ def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
         cli.expect('Done', timeout=5)
         ocf.wait(cli, 3)
         myudp = ocf.udp_parameter('INET6', '::', 5090, 'ff04::125', False, 15.0, b'')
-        udp_mission = threading.Thread(target=ocf.create_host_udp_server, args=(myudp, ))
+        udp_mission = threading.Thread(target=ocf.create_host_udp_server, args=(myudp,))
         udp_mission.start()
         start_time = time.time()
         while not myudp.init_flag:
@@ -342,7 +345,6 @@ def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
 
 
 # Case 5: discover dervice published by Thread device
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -356,14 +358,16 @@ def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
-def test_service_discovery_of_Thread_device(Init_interface:bool, Init_avahi:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_service_discovery_of_Thread_device(
+    Init_interface: bool, Init_avahi: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]
+) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     assert Init_avahi
     dut[0].serial.stop_redirect_thread()
@@ -402,7 +406,6 @@ def test_service_discovery_of_Thread_device(Init_interface:bool, Init_avahi:bool
 
 
 # Case 6: discover dervice published by Wi-Fi device
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -416,14 +419,16 @@ def test_service_discovery_of_Thread_device(Init_interface:bool, Init_avahi:bool
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
-def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_service_discovery_of_WiFi_device(
+    Init_interface: bool, Init_avahi: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]
+) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     assert Init_avahi
     dut[0].serial.stop_redirect_thread()
@@ -445,7 +450,7 @@ def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, 
         cli.expect('Done', timeout=10)
 
         command = 'dns browse _testxxx._udp.default.service.arpa'
-        tmp = ocf.get_ouput_string(cli, command, 5)
+        tmp = ocf.get_ouput_string(cli, command, 10)
         assert 'Port:12347' not in str(tmp)
         ocf.restart_avahi()
         command = 'avahi-publish-service testxxx _testxxx._udp 12347 test=1235 dn="for_ci_br_test"'
@@ -454,12 +459,12 @@ def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, 
         ocf.wait(cli, 5)
 
         command = 'dns browse _testxxx._udp.default.service.arpa'
-        tmp = ocf.get_ouput_string(cli, command, 5)
+        tmp = ocf.get_ouput_string(cli, command, 10)
         assert 'response for _testxxx' in str(tmp)
         assert 'Port:12347' in str(tmp)
 
         command = 'dns service testxxx _testxxx._udp.default.service.arpa.'
-        tmp = ocf.get_ouput_string(cli, command, 5)
+        tmp = ocf.get_ouput_string(cli, command, 10)
         assert 'response for testxxx' in str(tmp)
         assert 'Port:12347' in str(tmp)
     finally:
@@ -471,7 +476,6 @@ def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, 
 
 
 # Case 7: ICMP communication via NAT64
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -485,14 +489,14 @@ def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, 
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
-def test_ICMP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_ICMP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -501,7 +505,7 @@ def test_ICMP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
         assert ocf.is_joined_wifi_network(br)
         host_ipv4_address = ocf.get_host_ipv4_address()
         print('host_ipv4_address: ', host_ipv4_address)
-        rx_nums = ocf.ot_ping(cli, str(host_ipv4_address), 5)[1]
+        rx_nums = ocf.ot_ping(cli, str(host_ipv4_address), count=5)[1]
         assert rx_nums != 0
     finally:
         ocf.execute_command(br, 'factoryreset')
@@ -510,7 +514,6 @@ def test_ICMP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
 
 
 # Case 8: UDP communication via NAT64
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -524,14 +527,14 @@ def test_ICMP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
-def test_UDP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_UDP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -546,7 +549,7 @@ def test_UDP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
         host_ipv4_address = ocf.get_host_ipv4_address()
         print('host_ipv4_address: ', host_ipv4_address)
         myudp = ocf.udp_parameter('INET4', host_ipv4_address, 5090, '', False, 15.0, b'')
-        udp_mission = threading.Thread(target=ocf.create_host_udp_server, args=(myudp, ))
+        udp_mission = threading.Thread(target=ocf.create_host_udp_server, args=(myudp,))
         udp_mission.start()
         start_time = time.time()
         while not myudp.init_flag:
@@ -567,7 +570,6 @@ def test_UDP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
 
 
 # Case 9: TCP communication via NAT64
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -581,14 +583,14 @@ def test_UDP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
-def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_TCP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -604,7 +606,7 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
         connect_address = ocf.get_ipv6_from_ipv4(host_ipv4_address, br)
         print('connect_address is: ', connect_address)
         mytcp = ocf.tcp_parameter('INET4', host_ipv4_address, 12345, False, False, 15.0, b'')
-        tcp_mission = threading.Thread(target=ocf.create_host_tcp_server, args=(mytcp, ))
+        tcp_mission = threading.Thread(target=ocf.create_host_tcp_server, args=(mytcp,))
         tcp_mission.start()
         start_time = time.time()
         while not mytcp.listen_flag:
@@ -630,8 +632,6 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
 
 
 # Case 10: Sleepy device test
-@pytest.mark.esp32h2
-@pytest.mark.esp32c6
 @pytest.mark.openthread_sleep
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
@@ -643,7 +643,7 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
             f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
             'esp32h2|esp32c6',
             f'{ESPPORT1}|{ESPPORT3}',
-            id='h2-c6'
+            id='h2-c6',
         ),
         pytest.param(
             'cli|sleepy',
@@ -652,7 +652,7 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
             f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
             'esp32c6|esp32h2',
             f'{ESPPORT3}|{ESPPORT1}',
-            id='c6-h2'
+            id='c6-h2',
         ),
     ],
     indirect=True,
@@ -690,7 +690,6 @@ def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 11: Basic startup Test of BR
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -699,11 +698,10 @@ def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
         pytest.param(
             'rcp_uart|br',
             2,
-            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
-            f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32s3',
             f'{ESPPORT3}|{ESPPORT2}',
-            id='c6-s3'
+            id='c6-s3',
         ),
     ],
     indirect=True,
@@ -732,7 +730,6 @@ def test_basic_startup(dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 12: Curl a website via DNS and NAT64
-@pytest.mark.supported_targets
 @pytest.mark.openthread_bbr
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -746,14 +743,14 @@ def test_basic_startup(dut: Tuple[IdfDut, IdfDut]) -> None:
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
-def test_NAT64_DNS(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_NAT64_DNS(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -774,7 +771,6 @@ def test_NAT64_DNS(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
 
 
 # Case 13: Meshcop discovery of Border Router
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -783,16 +779,15 @@ def test_NAT64_DNS(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
         pytest.param(
             'rcp_uart|br',
             2,
-            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
-            f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32s3',
             f'{ESPPORT3}|{ESPPORT2}',
-            id='c6-s3'
+            id='c6-s3',
         ),
     ],
     indirect=True,
 )
-def test_br_meshcop(Init_interface:bool, Init_avahi:bool, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_br_meshcop(Init_interface: bool, Init_avahi: bool, dut: Tuple[IdfDut, IdfDut]) -> None:
     br = dut[1]
     assert Init_interface
     assert Init_avahi
@@ -836,7 +831,6 @@ def test_br_meshcop(Init_interface:bool, Init_avahi:bool, dut: Tuple[IdfDut, Idf
 
 
 # Case 14: Curl a website over HTTPS via DNS and NAT64
-@pytest.mark.supported_targets
 @pytest.mark.openthread_bbr
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -850,14 +844,14 @@ def test_br_meshcop(Init_interface:bool, Init_avahi:bool, dut: Tuple[IdfDut, Idf
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
-def test_https_NAT64_DNS(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_https_NAT64_DNS(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -876,7 +870,6 @@ def test_https_NAT64_DNS(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]
 
 
 # Case 15: Thread network formation and attaching with TREL
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
@@ -889,7 +882,7 @@ def test_https_NAT64_DNS(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]
             f'|{os.path.join(os.path.dirname(__file__), "ot_trel")}',
             'esp32c6|esp32s3',
             f'{ESPPORT3}|{ESPPORT2}',
-            id='c6-s3'
+            id='c6-s3',
         ),
     ],
     indirect=True,
@@ -919,12 +912,113 @@ def test_trel_connect(dut: Tuple[IdfDut, IdfDut]) -> None:
         for trel in trel_list:
             trel_mleid_addr = ocf.get_mleid_addr(trel)
             trel_s3_mleid_addr = ocf.get_mleid_addr(trel_s3)
-            rx_nums = ocf.ot_ping(trel, trel_s3_mleid_addr, 5)[1]
-            assert rx_nums == 5
-            rx_nums = ocf.ot_ping(trel_s3, trel_mleid_addr, 5)[1]
-            assert rx_nums == 5
+            rx_nums = ocf.ot_ping(trel, trel_s3_mleid_addr, count=10)[1]
+            assert rx_nums > 5
+            rx_nums = ocf.ot_ping(trel_s3, trel_mleid_addr, count=10)[1]
+            assert rx_nums > 5
     finally:
         ocf.execute_command(trel_s3, 'factoryreset')
         for trel in trel_list:
             ocf.execute_command(trel, 'factoryreset')
+        time.sleep(3)
+
+
+# Case 16: Thread network BR lib check
+@pytest.mark.openthread_br
+@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.parametrize(
+    'config, count, app_path, target, port',
+    [
+        pytest.param(
+            'rcp_uart|br_libcheck',
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+            'esp32c6|esp32s3',
+            f'{ESPPORT3}|{ESPPORT2}',
+            id='c6-s3',
+        ),
+    ],
+    indirect=True,
+)
+def test_br_lib_check(dut: Tuple[IdfDut, IdfDut]) -> None:
+    br = dut[1]
+    dut[0].serial.stop_redirect_thread()
+    try:
+        time.sleep(3)
+        ocf.execute_command(br, 'brlibcheck')
+        br.expect('The br library compatibility checking passed', timeout=10)
+    finally:
+        ocf.execute_command(br, 'factoryreset')
+        time.sleep(3)
+
+
+# Case 17: SSED test
+@pytest.mark.openthread_sleep
+@pytest.mark.parametrize(
+    'config, count, app_path, target, port',
+    [
+        pytest.param(
+            'cli|ssed',
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
+            'esp32h2|esp32c6',
+            f'{ESPPORT1}|{ESPPORT3}',
+            id='h2-c6',
+        ),
+        pytest.param(
+            'cli|ssed',
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
+            'esp32c6|esp32h2',
+            f'{ESPPORT3}|{ESPPORT1}',
+            id='c6-h2',
+        ),
+    ],
+    indirect=True,
+)
+def test_ot_ssed_device(dut: Tuple[IdfDut, IdfDut]) -> None:
+    leader = dut[0]
+    ssed_device = dut[1]
+    try:
+        # CI device must have external XTAL to run SSED case, we will check this here first
+        ssed_device.expect('32k XTAL in use', timeout=10)
+        ocf.init_thread(leader)
+        time.sleep(3)
+        leader_para = ocf.thread_parameter('leader', '', '12', '7766554433221100', False)
+        ocf.joinThreadNetwork(leader, leader_para)
+        ocf.wait(leader, 5)
+        ocf.execute_command(leader, 'networkkey')
+        dataset = ocf.getDataset(leader)
+        ocf.execute_command(ssed_device, 'dataset set active ' + dataset)
+        ssed_device.expect('Done', timeout=5)
+        ocf.execute_command(ssed_device, 'mode -')
+        ssed_device.expect('Done', timeout=5)
+        ocf.execute_command(ssed_device, 'csl period 3000000')
+        ssed_device.expect('Done', timeout=5)
+        ocf.execute_command(ssed_device, 'csl channel 12')
+        ssed_device.expect('Done', timeout=5)
+        ocf.execute_command(ssed_device, 'ifconfig up')
+        ssed_device.expect('Done', timeout=5)
+        ocf.execute_command(ssed_device, 'thread start')
+        ssed_device.expect(r'(.+)detached -> child', timeout=20)
+        # add a sleep to wait ssed ready
+        time.sleep(3)
+        ssed_device.expect('PMU_SLEEP_PD_TOP: True', timeout=5)
+        ssed_device.expect('PMU_SLEEP_PD_MODEM: True', timeout=5)
+
+        ocf.execute_command(leader, 'child table')
+        pattern = r'\|\s+\d+\s+\|\s+(0x\w{4})\s+\|.*\|\s+(\w{16})\s+\|'
+        result = leader.expect(pattern)
+
+        rloc16_decode_from_leader = result[1].decode()[2:]
+        cli_rloc_addr = ':'.join(ocf.get_rloc_addr(leader).split(':')[:-1])
+        ssed_address = f'{cli_rloc_addr}:{rloc16_decode_from_leader}'
+
+        ocf.ping_and_check(dut=leader, target=ssed_address, tx_total=10, timeout=6)
+        time.sleep(random.randint(5, 20))
+        ocf.ping_and_check(dut=leader, target=ssed_address, tx_total=10, timeout=6)
+    finally:
+        ocf.execute_command(leader, 'factoryreset')
         time.sleep(3)

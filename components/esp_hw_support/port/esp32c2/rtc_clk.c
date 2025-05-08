@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,12 @@ void rtc_clk_32k_enable_external(void)
     // EXT_OSC_SLOW_GPIO_NUM == GPIO_NUM_0
     PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG);
     REG_SET_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(EXT_OSC_SLOW_GPIO_NUM));
+}
+
+void rtc_clk_32k_disable_external(void)
+{
+    PIN_INPUT_DISABLE(IO_MUX_GPIO0_REG);
+    REG_CLR_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(EXT_OSC_SLOW_GPIO_NUM));
 }
 
 void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en)
@@ -288,6 +294,11 @@ void rtc_clk_cpu_set_to_default_config(void)
     int freq_mhz = (int)rtc_clk_xtal_freq_get();
 
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
+}
+
+void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
+{
+    rtc_clk_cpu_freq_set_xtal();
 }
 
 /**

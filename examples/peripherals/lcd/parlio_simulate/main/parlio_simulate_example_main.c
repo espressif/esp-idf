@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
 
 #include <stdio.h>
 #include <sys/lock.h>
+#include <sys/param.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -50,7 +51,7 @@ static const char *TAG = "example";
 
 #define EXAMPLE_LVGL_TICK_PERIOD_MS    2
 #define EXAMPLE_LVGL_TASK_MAX_DELAY_MS 500
-#define EXAMPLE_LVGL_TASK_MIN_DELAY_MS 1
+#define EXAMPLE_LVGL_TASK_MIN_DELAY_MS 1000 / CONFIG_FREERTOS_HZ
 #define EXAMPLE_LVGL_TASK_STACK_SIZE   (4 * 1024)
 #define EXAMPLE_LVGL_TASK_PRIORITY     2
 #define EXAMPLE_LVGL_DRAW_BUF_LINES    100
@@ -97,11 +98,10 @@ static void example_lvgl_port_task(void *arg)
         _lock_acquire(&lvgl_api_lock);
         time_till_next_ms = lv_timer_handler();
         _lock_release(&lvgl_api_lock);
-        if (time_till_next_ms > EXAMPLE_LVGL_TASK_MAX_DELAY_MS) {
-            time_till_next_ms = EXAMPLE_LVGL_TASK_MAX_DELAY_MS;
-        } else if (time_till_next_ms < EXAMPLE_LVGL_TASK_MIN_DELAY_MS) {
-            time_till_next_ms = EXAMPLE_LVGL_TASK_MIN_DELAY_MS;
-        }
+        // in case of triggering a task watch dog time out
+        time_till_next_ms = MAX(time_till_next_ms, EXAMPLE_LVGL_TASK_MIN_DELAY_MS);
+        // in case of lvgl display not ready yet
+        time_till_next_ms = MIN(time_till_next_ms, EXAMPLE_LVGL_TASK_MAX_DELAY_MS);
         vTaskDelay(pdMS_TO_TICKS(time_till_next_ms));
     }
 }

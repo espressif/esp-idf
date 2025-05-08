@@ -135,7 +135,7 @@ esp_err_t gptimer_get_captured_count(gptimer_handle_t timer, uint64_t *value);
 /**
  * @brief Group of supported GPTimer callbacks
  * @note The callbacks are all running under ISR environment
- * @note When CONFIG_GPTIMER_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_GPTIMER_ISR_CACHE_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  */
 typedef struct {
     gptimer_alarm_cb_t on_alarm; /*!< Timer alarm callback */

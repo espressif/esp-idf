@@ -3,6 +3,7 @@ set(srcs "test_app_main.c"
           "test_fp.c"
           "test_dport_xt_highint5.S"
           "test_random.c"
+          "test_intr_alloc.c"
            )
 
 if(CONFIG_SOC_GP_LDO_SUPPORTED)
@@ -19,10 +20,6 @@ endif()
 
 if(CONFIG_SOC_ETM_SUPPORTED)
     list(APPEND srcs "test_etm_core.c")
-endif()
-
-if(CONFIG_SOC_GPTIMER_SUPPORTED)
-    list(APPEND srcs "test_intr_alloc.c")
 endif()
 
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,

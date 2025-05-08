@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -152,7 +152,7 @@ WEAK_UNLESS_TIMEFUNC_IMPL int adjtime(const struct timeval *delta, struct timeva
 #endif
 }
 
-clock_t IRAM_ATTR _times_r(struct _reent *r, struct tms *ptms)
+clock_t _times_r(struct _reent *r, struct tms *ptms)
 {
     clock_t t = xTaskGetTickCount() * (portTICK_PERIOD_MS * CLK_TCK / 1000);
     ptms->tms_cstime = 0;
@@ -164,7 +164,7 @@ clock_t IRAM_ATTR _times_r(struct _reent *r, struct tms *ptms)
     return (clock_t) tv.tv_sec;
 }
 
-WEAK_UNLESS_TIMEFUNC_IMPL int IRAM_ATTR _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
+WEAK_UNLESS_TIMEFUNC_IMPL int _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
 {
     (void) tz;
 
@@ -207,10 +207,25 @@ int usleep(useconds_t us)
     if (us < us_per_tick) {
         esp_rom_delay_us((uint32_t) us);
     } else {
-        /* since vTaskDelay(1) blocks for anywhere between 0 and portTICK_PERIOD_MS,
-         * round up to compensate.
-         */
-        vTaskDelay((us + us_per_tick - 1) / us_per_tick);
+        /* vTaskDelay may return up to (n-1) tick periods due to the tick ISR
+           being asynchronous to the call. We must sleep at least the specified
+           time, or longer. Checking the monotonic clock allows making an
+           additional call to vTaskDelay when needed to ensure minimal time is
+           actually slept. Adding `us_per_tick - 1` prevents ever passing 0 to
+           vTaskDelay().
+        */
+        uint64_t now_us = esp_time_impl_get_time();
+        uint64_t target_us = now_us + us;
+        do {
+            vTaskDelay((((target_us - now_us) + us_per_tick - 1) / us_per_tick));
+            now_us = esp_time_impl_get_time();
+            /* If the time left until the target is less than 1 tick, then we use ROM delay to fill the gap */
+            uint64_t time_left = target_us - now_us;
+            if (time_left != 0 && time_left < us_per_tick) {
+                esp_rom_delay_us(time_left);
+                break;
+            }
+        } while (now_us < target_us);
     }
     return 0;
 }

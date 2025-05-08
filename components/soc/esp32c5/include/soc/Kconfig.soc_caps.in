@@ -19,6 +19,10 @@ config SOC_UART_SUPPORTED
     bool
     default y
 
+config SOC_UHCI_SUPPORTED
+    bool
+    default y
+
 config SOC_GDMA_SUPPORTED
     bool
     default y
@@ -36,6 +40,10 @@ config SOC_PCNT_SUPPORTED
     default y
 
 config SOC_MCPWM_SUPPORTED
+    bool
+    default y
+
+config SOC_TWAI_SUPPORTED
     bool
     default y
 
@@ -116,6 +124,10 @@ config SOC_I2C_SUPPORTED
     default y
 
 config SOC_SYSTIMER_SUPPORTED
+    bool
+    default y
+
+config SOC_SUPPORT_COEXISTENCE
     bool
     default y
 
@@ -211,6 +223,10 @@ config SOC_WDT_SUPPORTED
     bool
     default y
 
+config SOC_SDIO_SLAVE_SUPPORTED
+    bool
+    default y
+
 config SOC_SPI_FLASH_SUPPORTED
     bool
     default y
@@ -260,6 +276,10 @@ config SOC_XTAL_SUPPORT_40M
     default y
 
 config SOC_XTAL_SUPPORT_48M
+    bool
+    default y
+
+config SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN
     bool
     default y
 
@@ -549,11 +569,11 @@ config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
 
 config SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT
     int
-    default 8
+    default 7
 
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
-    default 0x0000000001FFFF00
+    default 0x0000000001FFFF80
 
 config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
@@ -573,7 +593,7 @@ config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
 
 config SOC_RTCIO_PIN_COUNT
     int
-    default 8
+    default 7
 
 config SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
     bool
@@ -720,14 +740,6 @@ config SOC_I2S_SUPPORTS_PCM2PDM
     default y
 
 config SOC_I2S_SUPPORTS_PDM_RX
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PDM2PCM
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
     bool
     default y
 
@@ -995,7 +1007,7 @@ config SOC_PARLIO_TRANS_BIT_ALIGN
     bool
     default y
 
-config SOC_PARLIO_TX_SIZE_BY_DMA
+config SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
     bool
     default y
 
@@ -1004,6 +1016,10 @@ config SOC_PARLIO_SUPPORT_SLEEP_RETENTION
     default y
 
 config SOC_PARLIO_SUPPORT_SPI_LCD
+    bool
+    default y
+
+config SOC_PARLIO_SUPPORT_I80_LCD
     bool
     default y
 
@@ -1052,6 +1068,14 @@ config SOC_ECC_CONSTANT_TIME_POINT_MUL
     default y
 
 config SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
     bool
     default y
 
@@ -1431,6 +1455,10 @@ config SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
     bool
     default y
 
+config SOC_UHCI_NUM
+    int
+    default 1
+
 config SOC_COEX_HW_PTI
     bool
     default y
@@ -1515,6 +1543,10 @@ config SOC_PM_SUPPORT_PMU_MODEM_STATE
     bool
     default y
 
+config SOC_PM_SUPPORT_PMU_CLK_ICG
+    bool
+    default y
+
 config SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     bool
     default y
@@ -1543,7 +1575,7 @@ config SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC
     int
     default 4
 
-config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
+config SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED
     bool
     default y
 
@@ -1639,11 +1671,11 @@ config SOC_WIFI_MAC_VERSION_NUM
     int
     default 3
 
-config SOC_BLE_SUPPORTED
+config SOC_WIFI_NAN_SUPPORT
     bool
     default y
 
-config SOC_BLE_MESH_SUPPORTED
+config SOC_BLE_SUPPORTED
     bool
     default y
 

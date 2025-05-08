@@ -3,7 +3,8 @@ I2S
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_I2S_NUM:default="1", esp32="2", esp32s3="2"}
+{IDF_TARGET_I2S_NUM:default="1", esp32="2", esp32s3="2", esp32p4="3"}
+{IDF_TARGET_I2S_STD_TDM:default="标准和 TDM", esp32="标准", esp32s2="标准"}
 
 简介
 ----
@@ -18,7 +19,7 @@ I2S（Inter-IC Sound，集成电路内置音频总线）是一种同步串行通
 
 {IDF_TARGET_NAME} 包含 {IDF_TARGET_I2S_NUM} 个 I2S 外设。通过配置这些外设，可以借助 I2S 驱动来输入和输出采样数据。
 
-标准或 TDM 通信模式下的 I2S 总线包含以下几条线路：
+{IDF_TARGET_I2S_STD_TDM} 模式下的 I2S 总线包含以下几条线路：
 
 - **MCLK**：主时钟线。该信号线可选，具体取决于从机，主要用于向 I2S 从机提供参考时钟。
 - **BCLK**：位时钟线。用于数据线的位时钟。
@@ -57,10 +58,12 @@ I2S 文件结构
 
 **需要包含在 I2S 应用中的公共头文件如下所示：**
 
-- ``i2s.h``：提供原有 I2S API（用于使用原有驱动的应用）。
-- ``i2s_std.h``：提供标准通信模式的 API（用于使用标准模式的新驱动程序的应用）。
-- ``i2s_pdm.h``：提供 PDM 通信模式的 API（用于使用 PDM 模式的新驱动程序的应用）。
-- ``i2s_tdm.h``：提供 TDM 通信模式的 API（用于使用 TDM 模式的新驱动的应用）。
+.. list::
+
+    - ``i2s.h``：提供原有 I2S API（用于使用原有驱动的应用）。
+    - ``i2s_std.h``：提供标准通信模式的 API（用于使用标准模式的新驱动程序的应用）。
+    :SOC_I2S_SUPPORTS_PDM: - ``i2s_pdm.h``：提供 PDM 通信模式的 API（用于使用 PDM 模式的新驱动程序的应用）。
+    :SOC_I2S_SUPPORTS_TDM: - ``i2s_tdm.h``：提供 TDM 通信模式的 API（用于使用 TDM 模式的新驱动的应用）。
 
 .. note::
 
@@ -78,27 +81,14 @@ I2S 时钟
 时钟源
 ^^^^^^
 
-- :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_DEFAULT`：默认 PLL 时钟。
+.. list::
 
-.. only:: SOC_I2S_SUPPORTS_PLL_F160M
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_160M`：160 MHz PLL 时钟。
-
-.. only:: SOC_I2S_SUPPORTS_PLL_F120M
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_120M`：120 MHz PLL 时钟。
-
-.. only:: SOC_I2S_SUPPORTS_PLL_F96M
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`：96 MHz PLL 时钟。
-
-.. only:: SOC_I2S_SUPPORTS_PLL_F240M
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_240M`：240 MHz PLL 时钟。
-
-.. only:: SOC_I2S_SUPPORTS_APLL
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`：音频 PLL 时钟，在高采样率应用中比 ``I2S_CLK_SRC_PLL_160M`` 更精确。其频率可根据采样率进行配置，但如果 APLL 已经被 EMAC 或其他通道占用，则无法更改 APLL 频率，驱动程序将尝试在原有 APLL 频率下工作。如果原有 APLL 频率无法满足 I2S 的需求，时钟配置将失败。
+    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_DEFAULT`：默认 PLL 时钟。
+    :SOC_I2S_SUPPORTS_PLL_F160M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_160M`：160 MHz PLL 时钟。
+    :SOC_I2S_SUPPORTS_PLL_F120M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_120M`：120 MHz PLL 时钟。
+    :SOC_I2S_SUPPORTS_PLL_F96M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`：96 MHz PLL 时钟。
+    :SOC_I2S_SUPPORTS_PLL_F240M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_240M`：240 MHz PLL 时钟。
+    :SOC_I2S_SUPPORTS_APLL: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`：音频 PLL 时钟，在高采样率应用中比 ``I2S_CLK_SRC_PLL_160M`` 更精确。其频率可根据采样率进行配置，但如果 APLL 已经被 EMAC 或其他通道占用，则无法更改 APLL 频率，驱动程序将尝试在原有 APLL 频率下工作。如果原有 APLL 频率无法满足 I2S 的需求，时钟配置将失败。
 
 时钟术语
 ^^^^^^^^
@@ -131,8 +121,8 @@ ESP32-C6    I2S 0      I2S 0        无          I2S 0        I2S 0       无   
 ESP32-S3   I2S 0/1     I2S 0       I2S 0       I2S 0/1      I2S 0/1      无         无
 ESP32-H2    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
 ESP32-P4   I2S 0~2     I2S 0       I2S 0       I2S 0~2      I2S 0~2      无         无
-ESP32-C5    I2S 0      I2S 0       I2S 0        I2S 0        I2S 0       无         无
-ESP32-C61   I2S 0      I2S 0       I2S 0        I2S 0        I2S 0       无         无
+ESP32-C5    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
+ESP32-C61   I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
 =========  ========  ==========  ==========  ===========  ==========  ========  ===========
 
 .. note::
@@ -155,7 +145,6 @@ ESP32-C61   I2S 0      I2S 0       I2S 0        I2S 0        I2S 0       无    
 - **PCM 帧同步**：数据有一个位的位移，同时 WS 信号变成脉冲，持续一个 BCLK 周期。
 
 .. wavedrom:: /../_static/diagrams/i2s/std_pcm.json
-
 
 
 .. only:: SOC_I2S_SUPPORTS_PDM
@@ -330,6 +319,14 @@ I2S 的数据传输（包括数据发送和接收）由 DMA 实现。在传输�
 ^^^^
 
 用户可以通过调用相应函数（即 :func:`i2s_channel_init_std_mode`、 :func:`i2s_channel_init_pdm_rx_mode`、 :func:`i2s_channel_init_pdm_tx_mode` 或 :func:`i2s_channel_init_tdm_mode`）将通道初始化为特定模式。如果初始化后需要更新配置，必须先调用 :cpp:func:`i2s_channel_disable` 以确保通道已经停止运行，然后再调用相应的 'reconfig' 函数，例如 :cpp:func:`i2s_channel_reconfig_std_slot`、 :cpp:func:`i2s_channel_reconfig_std_clock` 和 :cpp:func:`i2s_channel_reconfig_std_gpio`。
+
+进阶 API
+^^^^^^^^^^^^^^
+
+为满足高质量音频需求，驱动提供了以下进阶 API：
+
+- :cpp:func:`i2s_channel_preload_data`: 用于预加载音频数据到 I2S 内部缓存，使得 TX 通道使能后能够立即发送数据，以此降低音频初始输出延迟。
+- :cpp:func:`i2s_channel_tune_rate`: 用于在运行时动态微调音频速率，以匹配音频数据生产者和消费者的速度，从而防止因速率不匹配导致的中间缓存数据累积或不足。
 
 IRAM 安全
 ^^^^^^^^^
@@ -905,7 +902,7 @@ STD RX 模式
 全双工
 ^^^^^^
 
-全双工模式可以在 I2S 端口中同时注册 TX 和 RX 通道，同时通道共享 BCLK 和 WS 信号。目前，STD 和 TDM 通信模式支持以下方式的全双工通信，但不支持 PDM 全双工模式，因为 PDM 模式下 TX 和 RX 通道的时钟不同。
+全双工模式可以在 I2S 端口中同时注册 TX 和 RX 通道，同时通道共享 BCLK 和 WS 信号。目前，{IDF_TARGET_I2S_STD_TDM} 通信模式支持以下方式的全双工通信，但不支持 PDM 全双工模式，因为 PDM 模式下 TX 和 RX 通道的时钟不同。
 
 请注意，一个句柄只能代表一个通道，因此仍然需要对 TX 和 RX 通道逐个进行声道和时钟配置。
 

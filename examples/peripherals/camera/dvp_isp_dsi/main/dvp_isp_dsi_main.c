@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,11 @@
 #include "driver/ledc.h"
 
 static const char *TAG = "dvp_isp_dsi";
+
+typedef struct {
+    esp_lcd_panel_handle_t panel_hdl;
+    void *cam_buf;
+} display_update_param_t;
 
 static bool s_camera_get_new_vb(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data);
 static bool s_camera_get_finished_trans(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data);
@@ -54,6 +59,13 @@ static void s_ledc_generate_dvp_xclk(void)
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
 }
 
+static bool example_display_update_ready(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx)
+{
+    display_update_param_t *param = (display_update_param_t *)user_ctx;
+    esp_lcd_panel_draw_bitmap(param->panel_hdl, 0, 0, CONFIG_EXAMPLE_CAM_HRES, CONFIG_EXAMPLE_CAM_VRES, param->cam_buf);
+    return false;
+}
+
 void app_main(void)
 {
     esp_err_t ret = ESP_FAIL;
@@ -80,15 +92,21 @@ void app_main(void)
     example_dsi_resource_alloc(&mipi_dsi_bus, &mipi_dbi_io, &mipi_dpi_panel, &frame_buffer);
 
     //---------------Necessary variable config------------------//
-    frame_buffer_size = CONFIG_EXAMPLE_CAM_HRES * CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES * EXAMPLE_RGB565_BITS_PER_PIXEL / 8;
+    frame_buffer_size = CONFIG_EXAMPLE_MIPI_DSI_DISP_HRES * CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES * EXAMPLE_RGB565_BITS_PER_PIXEL / 8;
 
-    ESP_LOGD(TAG, "CONFIG_EXAMPLE_CAM_HRES: %d, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES: %d, bits per pixel: %d", CONFIG_EXAMPLE_CAM_HRES, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES, EXAMPLE_RGB565_BITS_PER_PIXEL);
+    ESP_LOGD(TAG, "CONFIG_EXAMPLE_MIPI_DSI_DISP_HRES: %d, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES: %d, bits per pixel: %d", CONFIG_EXAMPLE_MIPI_DSI_DISP_HRES, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES, EXAMPLE_RGB565_BITS_PER_PIXEL);
     ESP_LOGD(TAG, "frame_buffer_size: %zu", frame_buffer_size);
     ESP_LOGD(TAG, "frame_buffer: %p", frame_buffer);
 
+    size_t cam_buffer_size = CONFIG_EXAMPLE_CAM_HRES * CONFIG_EXAMPLE_CAM_VRES * EXAMPLE_RGB565_BITS_PER_PIXEL / 8;
+    void *cam_buffer = heap_caps_calloc(1, cam_buffer_size, MALLOC_CAP_DMA | MALLOC_CAP_SPIRAM);
+    if (!cam_buffer) {
+        ESP_LOGE(TAG, "no mem for cam_buffer");
+        return;
+    }
     esp_cam_ctlr_trans_t cam_trans = {
-        .buffer = frame_buffer,
-        .buflen = frame_buffer_size,
+        .buffer = cam_buffer,
+        .buflen = cam_buffer_size,
     };
 
     //--------Camera Sensor and SCCB Init-----------//
@@ -101,8 +119,11 @@ void app_main(void)
         .port = ESP_CAM_SENSOR_DVP,
         .format_name = EXAMPLE_CAM_FORMAT,
     };
-    i2c_master_bus_handle_t i2c_bus_handle = NULL;
-    example_sensor_init(&cam_sensor_config, &i2c_bus_handle);
+    example_sensor_handle_t sensor_handle = {
+        .sccb_handle = NULL,
+        .i2c_bus_handle = NULL,
+    };
+    example_sensor_init(&cam_sensor_config, &sensor_handle);
 
     //---------------ISP Init------------------//
     isp_proc_handle_t isp_proc = NULL;
@@ -137,7 +158,7 @@ void app_main(void)
         .hsync_io = EXAMPLE_ISP_DVP_CAM_HSYNC_IO,
         .vsync_io = EXAMPLE_ISP_DVP_CAM_VSYNC_IO,
         .de_io = EXAMPLE_ISP_DVP_CAM_DE_IO,
-        .io_flags.vsync_invert = 1,
+        .io_flags.vsync_invert = 1, // active high
         .queue_items = 10,
     };
     ret = esp_cam_new_isp_dvp_ctlr(isp_proc, &dvp_config, &cam_handle);
@@ -170,6 +191,17 @@ void app_main(void)
         ESP_LOGE(TAG, "Driver start fail");
         return;
     }
+
+    // Register DPI panel event callback for display update ready notification
+    display_update_param_t display_update_param = {
+        .panel_hdl = mipi_dpi_panel,
+        .cam_buf = cam_buffer,
+    };
+    esp_lcd_dpi_panel_event_callbacks_t dpi_cbs = {
+        .on_color_trans_done = example_display_update_ready,
+    };
+    ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_event_callbacks(mipi_dpi_panel, &dpi_cbs, &display_update_param));
+    esp_lcd_panel_draw_bitmap(mipi_dpi_panel, 0, 0, CONFIG_EXAMPLE_CAM_HRES, CONFIG_EXAMPLE_CAM_VRES, cam_buffer);
 
     while (1) {
         ESP_ERROR_CHECK(esp_cam_ctlr_receive(cam_handle, &cam_trans, ESP_CAM_CTLR_MAX_DELAY));

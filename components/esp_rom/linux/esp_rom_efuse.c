@@ -41,12 +41,12 @@ uint32_t esp_rom_efuse_get_flash_wp_gpio(void)
     return 0;
 }
 
-#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
 uint32_t esp_rom_efuse_get_opiconfig(void)
 {
     return 0;
 }
-#endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
+#endif // SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
 
 bool esp_rom_efuse_is_secure_boot_enabled(void)
 {

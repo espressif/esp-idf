@@ -65,10 +65,10 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
     struct ble_gap_ext_disc_desc *disc;
 
     switch (event->type) {
-    case BLE_GAP_EVENT_LINK_ESTAB:
-        if (event->link_estab.status == 0) {
-        ESP_LOGI(TAG, "Connection established, conn_handle = 0x%0x, sync handle= 0x%02x, status = 0x%0x\n",event->link_estab.conn_handle, event->link_estab.sync_handle, event->link_estab.status);
-        rc = ble_gap_conn_find(event->link_estab.conn_handle, &desc);
+    case BLE_GAP_EVENT_CONNECT:
+        if (event->connect.status == 0) {
+        ESP_LOGI(TAG, "Connection established, conn_handle = 0x%0x, sync handle= 0x%02x, status = 0x%0x\n",event->connect.conn_handle, event->connect.sync_handle, event->connect.status);
+        rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
         if (rc == 0) {
             print_conn_desc(&desc);
         }
@@ -76,7 +76,7 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             ESP_LOGE(TAG,"Failed to find Conn Information");
         }
         } else{
-            ESP_LOGW(TAG, "[Connection Failed], conn_handle = 0x%02x, sync handle = 0x%0x, status = 0x%0x\n",event->link_estab.conn_handle, event->link_estab.sync_handle, event->link_estab.status);
+            ESP_LOGW(TAG, "[Connection Failed], conn_handle = 0x%02x, sync handle = 0x%0x, status = 0x%0x\n",event->connect.conn_handle, event->connect.sync_handle, event->connect.status);
         }
         return 0;
 

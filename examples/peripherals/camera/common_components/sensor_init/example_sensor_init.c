@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@
 
 static const char *TAG = "sensor_init";
 
-void example_sensor_init(example_sensor_config_t *sensor_config, i2c_master_bus_handle_t *out_i2c_bus_handle)
+void example_sensor_init(example_sensor_config_t *sensor_config, example_sensor_handle_t *out_sensor_handle)
 {
     esp_err_t ret = ESP_FAIL;
 
@@ -81,6 +81,10 @@ void example_sensor_init(example_sensor_config_t *sensor_config, i2c_master_bus_
             cam_cur_fmt = (esp_cam_sensor_format_t *) & (parray[i]);
         }
     }
+    if (!cam_cur_fmt) {
+        ESP_LOGE(TAG, "Unsupported format");
+        ESP_ERROR_CHECK(ESP_ERR_INVALID_ARG);
+    }
 
     ret = esp_cam_sensor_set_format(cam, (const esp_cam_sensor_format_t *) cam_cur_fmt);
     if (ret != ESP_OK) {
@@ -95,6 +99,12 @@ void example_sensor_init(example_sensor_config_t *sensor_config, i2c_master_bus_
         ESP_LOGE(TAG, "Start stream fail");
     }
     ESP_ERROR_CHECK(ret);
+    out_sensor_handle->i2c_bus_handle = i2c_bus_handle;
+    out_sensor_handle->sccb_handle = cam_config.sccb_handle;
+}
 
-    *out_i2c_bus_handle = i2c_bus_handle;
+void example_sensor_deinit(example_sensor_handle_t sensor_handle)
+{
+    ESP_ERROR_CHECK(esp_sccb_del_i2c_io(sensor_handle.sccb_handle));
+    ESP_ERROR_CHECK(i2c_del_master_bus(sensor_handle.i2c_bus_handle));
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,11 +20,11 @@
 #include "esp_tee.h"
 #include "esp_tee_apm_intr.h"
 #include "esp_tee_rv_utils.h"
+
 #include "panic_helper.h"
+#include "sdkconfig.h"
 
 #define RV_FUNC_STK_SZ    (32)
-
-#define tee_panic_print(format, ...) esp_rom_printf(DRAM_STR(format), ##__VA_ARGS__)
 
 static void tee_panic_end(void)
 {
@@ -67,26 +67,27 @@ void abort(void)
     ESP_INFINITE_LOOP();
 }
 
-static void panic_handler(void *frame, bool pseudo_exccause)
+static void panic_print_info(const void *frame, int core)
 {
-    int fault_core = esp_cpu_get_core_id();
-
-    tee_panic_print("\n=================================================\n");
-    tee_panic_print("Secure exception occurred on Core %d\n", fault_core);
-    if (pseudo_exccause) {
-        panic_print_isrcause((const void *)frame, fault_core);
-    } else {
-        panic_print_exccause((const void *)frame, fault_core);
-    }
-    tee_panic_print("=================================================\n");
-
-    panic_print_registers((const void *)frame, fault_core);
+    panic_print_registers((const void *)frame, core);
     tee_panic_print("\n");
     panic_print_backtrace((const void *)frame, 100);
     tee_panic_print("\n");
     tee_panic_print("Rebooting...\r\n\n");
 
     tee_panic_end();
+}
+
+static void panic_handler(void *frame, bool pseudo_exccause)
+{
+    int fault_core = esp_cpu_get_core_id();
+    if (pseudo_exccause) {
+        panic_print_isrcause((const void *)frame, fault_core);
+    } else {
+        panic_print_exccause((const void *)frame, fault_core);
+    }
+
+    panic_print_info((const void *)frame, fault_core);
     ESP_INFINITE_LOOP();
 }
 
@@ -105,34 +106,24 @@ void tee_apm_violation_isr(void *arg)
     intptr_t exc_sp = RV_READ_CSR(mscratch);
     RvExcFrame *frame = (RvExcFrame *)exc_sp;
 
-    apm_ctrl_path_t *apm_excp_type = NULL;
-    apm_ctrl_exception_info_t excp_info;
+    apm_ctrl_path_t *apm_excp_type = (apm_ctrl_path_t *)arg;
+    apm_ctrl_exception_info_t excp_info = {
+        .apm_path = {
+            .apm_ctrl = apm_excp_type->apm_ctrl,
+            .apm_m_path = apm_excp_type->apm_m_path,
+        }
+    };
 
-    apm_excp_type = (apm_ctrl_path_t *)arg;
-
-    excp_info.apm_path.apm_ctrl = apm_excp_type->apm_ctrl;
-    excp_info.apm_path.apm_m_path = apm_excp_type->apm_m_path;
     apm_hal_apm_ctrl_get_exception_info(&excp_info);
-
-    /* Clear APM M path interrupt. */
     apm_hal_apm_ctrl_exception_clear(apm_excp_type);
 
     int fault_core = esp_cpu_get_core_id();
+    panic_print_rsn((const void *)frame, fault_core, esp_tee_apm_excp_type_to_str(excp_info.excp_type));
 
-    tee_panic_print("\n=================================================\n");
-    tee_panic_print("APM permission violation occurred on Core %d\n", fault_core);
-    tee_panic_print("Guru Meditation Error: Core %d panic'ed (%s). ", fault_core, esp_tee_apm_excp_type_to_str(excp_info.excp_type));
-    tee_panic_print("Exception was unhandled.\n");
-    tee_panic_print("Fault addr: 0x%x | Mode: %s\n", excp_info.excp_addr, esp_tee_apm_excp_mode_to_str(excp_info.excp_mode));
-    tee_panic_print("Module: %s | Path: 0x%02x\n", esp_tee_apm_excp_ctrl_to_str(excp_info.apm_path.apm_ctrl), excp_info.apm_path.apm_m_path);
-    tee_panic_print("Master: %s | Region: 0x%02x\n", esp_tee_apm_excp_mid_to_str(excp_info.excp_id), excp_info.excp_regn);
-    tee_panic_print("=================================================\n");
-    panic_print_registers((const void *)frame, fault_core);
-    tee_panic_print("\n");
-    panic_print_backtrace((const void *)frame, 100);
-    tee_panic_print("\n");
-    tee_panic_print("Rebooting...\r\n\n");
+    tee_panic_print("Access addr: 0x%x | Mode: %s\n", excp_info.excp_addr, esp_tee_apm_excp_mode_to_str(excp_info.excp_mode));
+    tee_panic_print("Module: %s | Path: %d\n", esp_tee_apm_excp_ctrl_to_str(excp_info.apm_path.apm_ctrl), excp_info.apm_path.apm_m_path);
+    tee_panic_print("Master: %s | Region: %d\n", esp_tee_apm_excp_mid_to_str(excp_info.excp_id), (excp_info.excp_regn == 0) ? 0 : (__builtin_ffs(excp_info.excp_regn) - 1));
 
-    tee_panic_end();
+    panic_print_info((const void *)frame, fault_core);
     ESP_INFINITE_LOOP();
 }

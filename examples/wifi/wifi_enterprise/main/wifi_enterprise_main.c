@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2006-2016 ARM Limited
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,7 @@
 #define EXAMPLE_EAP_ID CONFIG_EXAMPLE_EAP_ID
 #define EXAMPLE_EAP_USERNAME CONFIG_EXAMPLE_EAP_USERNAME
 #define EXAMPLE_EAP_PASSWORD CONFIG_EXAMPLE_EAP_PASSWORD
+#define EXAMPLE_SERVER_CERT_DOMAIN CONFIG_EXAMPLE_SERVER_CERT_DOMAIN
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;
@@ -155,6 +156,9 @@ static void initialise_wifi(void)
 #endif
 #ifdef CONFIG_EXAMPLE_USE_DEFAULT_CERT_BUNDLE
     ESP_ERROR_CHECK(esp_eap_client_use_default_cert_bundle(true));
+#endif
+#ifdef CONFIG_EXAMPLE_VALIDATE_SERVER_CERT_DOMAIN
+    ESP_ERROR_CHECK(esp_eap_client_set_domain_name(EXAMPLE_SERVER_CERT_DOMAIN));
 #endif
     ESP_ERROR_CHECK(esp_wifi_sta_enterprise_enable());
     ESP_ERROR_CHECK(esp_wifi_start());

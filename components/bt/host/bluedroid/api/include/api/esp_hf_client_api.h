@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "esp_err.h"
 #include "esp_bt_defs.h"
 #include "esp_hf_defs.h"
+#include "esp_hf_client_legacy_api.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,6 +42,15 @@ typedef enum {
     ESP_HF_CLIENT_IN_BAND_RINGTONE_NOT_PROVIDED = 0,
     ESP_HF_CLIENT_IN_BAND_RINGTONE_PROVIDED,
 } esp_hf_client_in_band_ring_state_t;
+
+/**
+ * @brief HF client profile status parameters
+ */
+typedef struct {
+    bool hf_client_inited;                             /*!< hf client initialization */
+    uint8_t slc_conn_num;                              /*!< Number of Service Level Connections */
+    uint8_t sync_conn_num;                             /*!< Number of (e)SCO Connections */
+} esp_hf_client_profile_status_t;
 
 /* features masks of AG */
 #define ESP_HF_CLIENT_PEER_FEAT_3WAY       0x01        /* Three-way calling */
@@ -118,7 +128,8 @@ typedef union {
     struct hf_client_audio_stat_param {
         esp_hf_client_audio_state_t state;       /*!< audio connection state */
         esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
-        uint16_t  sync_conn_handle;              /*!< (e)SCO connection handle */
+        esp_hf_sync_conn_hdl_t  sync_conn_handle;  /*!< (e)SCO connection handle */
+        uint16_t preferred_frame_size;           /*!< valid only when Voice Over HCI is enabled, recommended frame size to send */
     } audio_stat;                                /*!< HF callback param of ESP_HF_CLIENT_AUDIO_STATE_EVT */
 
     /**
@@ -277,32 +288,18 @@ typedef union {
 } esp_hf_client_cb_param_t;                      /*!< HFP client callback parameters */
 
 /**
- * @brief           HFP client incoming data callback function, the callback is useful in case of
- *                  Voice Over HCI.
- * @param[in]       buf : pointer to incoming data(payload of HCI synchronous data packet), the
- *                  buffer is allocated inside bluetooth protocol stack and will be released after
- *                  invoke of the callback is finished.
- * @param[in]       len : size(in bytes) in buf
- */
-typedef void (* esp_hf_client_incoming_data_cb_t)(const uint8_t *buf, uint32_t len);
-
-/**
- * @brief           HFP client outgoing data callback function, the callback is useful in case of
- *                  Voice Over HCI. Once audio connection is set up and the application layer has
- *                  prepared data to send, the lower layer will call this function to read data
- *                  and then send. This callback is supposed to be implemented as non-blocking,
- *                  and if data is not enough, return value 0 is supposed.
+ * @brief           HFP client incoming audio data callback function, user should copy audio_buf struct
+ *                  to other place before return. This callback is used in case of Voice Over HCI.
  *
- * @param[in]       buf : pointer to incoming data(payload of HCI synchronous data packet), the
- *                  buffer is allocated inside bluetooth protocol stack and will be released after
- *                  invoke of the callback is finished.
+ * @param[in]       sync_conn_hdl: (e)SCO connection handle
  *
- * @param[in]       len : size(in bytes) in buf
+ * @param[in]       audio_buf: pointer to incoming data(payload of HCI synchronous data packet), user
+ *                  should free audio buffer by calling esp_hf_client_audio_buff_free
  *
- * @return          length of data successfully read
+ * @param[in]       is_bad_frame: whether this packet is marked as bad frame by baseband
  *
  */
-typedef uint32_t (* esp_hf_client_outgoing_data_cb_t)(uint8_t *buf, uint32_t len);
+typedef void (* esp_hf_client_audio_data_cb_t)(esp_hf_sync_conn_hdl_t sync_conn_hdl, esp_hf_audio_buff_t *audio_buf, bool is_bad_frame);
 
 /**
  * @brief           HFP client callback function type
@@ -662,24 +659,6 @@ esp_err_t esp_hf_client_request_last_voice_tag_number(void);
  */
 esp_err_t esp_hf_client_send_nrec(void);
 
-
-/**
- * @brief           Register HFP client data output function; the callback is only used in
- *                  the case that Voice Over HCI is enabled.
- *
- * @param[in]       recv: HFP client incoming data callback function
- *
- * @param[in]       send: HFP client outgoing data callback function
- *
- * @return
- *                  - ESP_OK: success
- *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_FAIL: if callback is a NULL function pointer
- *
- */
-esp_err_t esp_hf_client_register_data_callback(esp_hf_client_incoming_data_cb_t recv,
-                                               esp_hf_client_outgoing_data_cb_t send);
-
 /**
  *
  * @brief           Get the number of packets received and sent
@@ -697,15 +676,57 @@ esp_err_t esp_hf_client_register_data_callback(esp_hf_client_incoming_data_cb_t 
 esp_err_t esp_hf_client_pkt_stat_nums_get(uint16_t sync_conn_handle);
 
 /**
- * @brief           Trigger the lower-layer to fetch and send audio data.
- *                  This function is only only used in the case that Voice Over HCI is enabled. After this
- *                  function is called, lower layer will invoke esp_hf_client_outgoing_data_cb_t to fetch data.
+ * @brief           Register HFP client audio data output function; the callback is only used in
+ *                  the case that Voice Over HCI is enabled.
  *
- *                  As a precondition to use this API, Service Level Connection shall exist with AG.
+ * @param[in]       callback: HFP client incoming audio data callback function
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
  *
  */
-void esp_hf_client_outgoing_data_ready(void);
+esp_err_t esp_hf_client_register_audio_data_callback(esp_hf_client_audio_data_cb_t callback);
 
+/**
+ * @brief           Allocate a audio buffer to store and send audio data. This function is only
+ *                  used in the case that Voice Over HCI is enabled.
+ *
+ * @param[in]       size: buffer size to allocate
+ *
+ * @return          allocated audio buffer, if Bluedroid is not enabled, no memory, or size is
+ *                  zeros, will return NULL
+ *
+ */
+esp_hf_audio_buff_t *esp_hf_client_audio_buff_alloc(uint16_t size);
+
+/**
+ * @brief           Free a audio buffer allocated by esp_hf_client_audio_buff_alloc. This function
+ *                  is only used in the case that Voice Over HCI is enabled.
+ *
+ * @param[in]       audio_buf: audio buffer to free
+ *
+ */
+void esp_hf_client_audio_buff_free(esp_hf_audio_buff_t *audio_buf);
+
+/**
+ * @brief           Send audio data, the audio buffer should by allocated by esp_hf_client_audio_buff_alloc.
+ *                  If the length of the audio data is equal to preferred_frame_size indicated by
+ *                  ESP_HF_CLIENT_AUDIO_STATE_EVT, then we can reduce one memory copy inside the Bluedroid stack.
+ *                  This function is only used in the case that Voice Over HCI is enabled.
+ *
+ * @param[in]       sync_conn_hdl: (e)SCO connection handle
+ *
+ * @param[in]       audio_buf: audio buffer that audio data stored
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: invalid parameter
+ *
+ */
+esp_err_t esp_hf_client_audio_data_send(esp_hf_sync_conn_hdl_t sync_conn_hdl, esp_hf_audio_buff_t *audio_buf);
 
 /**
  * @brief           Initialize the down sampling converter. This is a utility function that can
@@ -737,6 +758,17 @@ void esp_hf_client_pcm_resample_deinit(void);
  * @return          number of samples converted
  */
 int32_t esp_hf_client_pcm_resample(void *src, uint32_t in_bytes, void *dst);
+
+/**
+ * @brief       This function is used to get the status of hf client
+ *
+ * @param[out]  profile_status - hf client status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_hf_client_get_profile_status(esp_hf_client_profile_status_t *profile_status);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -332,8 +332,8 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     GPTIMER_CLOCK_SRC_ATOMIC() {
         // although `clk_src` is of `timer_src_clk_t` type, but it's binary compatible with `gptimer_clock_source_t`,
         // as the underlying enum entries come from the same `soc_module_clk_t`
-        timer_ll_set_clock_source(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, (gptimer_clock_source_t)clk_src);
-        timer_ll_enable_clock(hal->dev, timer_num, true);
+        timer_ll_set_clock_source(group_num, timer_num, (gptimer_clock_source_t)clk_src);
+        timer_ll_enable_clock(group_num, timer_num, true);
     }
     timer_ll_set_clock_prescale(hal->dev, timer_num, config->divider);
     timer_ll_set_count_direction(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, config->counter_dir);
@@ -362,7 +362,7 @@ esp_err_t timer_deinit(timer_group_t group_num, timer_idx_t timer_num)
 
     // disable the source clock
     GPTIMER_CLOCK_SRC_ATOMIC() {
-        timer_ll_enable_clock(hal->dev, hal->timer_id, false);
+        timer_ll_enable_clock(group_num, hal->timer_id, false);
     }
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
     timer_ll_enable_intr(hal->dev, TIMER_LL_EVENT_ALARM(timer_num), false);

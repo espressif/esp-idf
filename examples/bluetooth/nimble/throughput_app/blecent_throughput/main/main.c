@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,7 +55,6 @@
 #define LL_PACKET_LENGTH                   251
 static const char *tag = "blecent_throughput";
 static int blecent_gap_event(struct ble_gap_event *event, void *arg);
-static uint8_t peer_addr[6];
 static SemaphoreHandle_t xSemaphore;
 static int mbuf_len_total;
 static int failure_count;
@@ -417,6 +416,10 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
     struct ble_hs_adv_fields fields;
     int rc;
     int i;
+    uint8_t test_addr[6];
+    uint32_t peer_addr[6];
+
+    memset(peer_addr, 0x0, sizeof peer_addr);
 
     rc = ble_hs_adv_parse_fields(&fields, disc->data, disc->length_data);
     if (rc != 0) {
@@ -426,10 +429,16 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
-        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
                &peer_addr[5], &peer_addr[4], &peer_addr[3],
                &peer_addr[2], &peer_addr[1], &peer_addr[0]);
-        if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+
+        /* Conversion */
+        for (int i=0; i<6; i++) {
+            test_addr[i] = (uint8_t )peer_addr[i];
+        }
+
+        if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
     }
@@ -538,13 +547,13 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         blecent_connect_if_interesting(&event->disc);
         return 0;
 
-    case BLE_GAP_EVENT_LINK_ESTAB:
+    case BLE_GAP_EVENT_CONNECT:
         /* A new connection was established or a connection attempt failed. */
-        if (event->link_estab.status == 0) {
+        if (event->connect.status == 0) {
             /* Connection successfully established. */
             /* XXX Set packet length in controller for better throughput */
             ESP_LOGI(tag, "Connection established ");
-            rc = ble_hs_hci_util_set_data_len(event->link_estab.conn_handle,
+            rc = ble_hs_hci_util_set_data_len(event->connect.conn_handle,
                                               LL_PACKET_LENGTH, LL_PACKET_TIME);
             if (rc != 0) {
                 ESP_LOGE(tag, "Set packet length failed; rc = %d", rc);
@@ -555,29 +564,29 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 ESP_LOGE(tag, "Failed to set preferred MTU; rc = %d", rc);
             }
 
-            rc = ble_gattc_exchange_mtu(event->link_estab.conn_handle, NULL, NULL);
+            rc = ble_gattc_exchange_mtu(event->connect.conn_handle, NULL, NULL);
             if (rc != 0) {
                 ESP_LOGE(tag, "Failed to negotiate MTU; rc = %d", rc);
             }
 
-            rc = ble_gap_conn_find(event->link_estab.conn_handle, &desc);
+            rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             print_conn_desc(&desc);
 
-            rc = ble_gap_update_params(event->link_estab.conn_handle, &conn_params);
+            rc = ble_gap_update_params(event->connect.conn_handle, &conn_params);
             if (rc != 0) {
                 ESP_LOGE(tag, "Failed to update params; rc = %d", rc);
             }
 
             /* Remember peer. */
-            rc = peer_add(event->link_estab.conn_handle);
+            rc = peer_add(event->connect.conn_handle);
             if (rc != 0) {
                 ESP_LOGE(tag, "Failed to add peer; rc = %d", rc);
                 return 0;
             }
 
             /* Perform service discovery. */
-            rc = peer_disc_all(event->link_estab.conn_handle,
+            rc = peer_disc_all(event->connect.conn_handle,
                                blecent_on_disc_complete, NULL);
             if (rc != 0) {
                 ESP_LOGE(tag, "Failed to discover services; rc = %d", rc);
@@ -586,7 +595,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         } else {
             /* Connection attempt failed; resume scanning. */
             ESP_LOGE(tag, "Error: Connection failed; status = %d",
-                     event->link_estab.status);
+                     event->connect.status);
             blecent_scan();
         }
 

@@ -48,6 +48,11 @@ Call :cpp:func:`spi_slave_hd_init` to initialize the SPI bus as well as the peri
 
 The :cpp:type:`spi_bus_config_t` specifies how the bus should be initialized, while :cpp:type:`spi_slave_hd_slot_config_t` specifies how the SPI Slave driver should work.
 
+Enable/Disable Driver (Optional)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Slave driver supports disabling / enabling driver after it is initialized by calling to :cpp:func:`spi_slave_hd_disable` / :cpp:func:`spi_slave_hd_enable`, to be able to change clock or power config or sleep to save power. By default, the driver state is `enabled` after initialized.
+
 Deinitialization (Optional)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

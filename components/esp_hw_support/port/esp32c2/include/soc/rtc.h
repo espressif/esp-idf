@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -258,6 +258,11 @@ void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq);
 void rtc_clk_32k_enable_external(void);
 
 /**
+ * @brief Disable 32KHz external oscillator
+ */
+void rtc_clk_32k_disable_external(void);
+
+/**
  * @brief Enable or disable 8 MHz internal oscillator
  *
  * Output from 8 MHz internal oscillator is passed into a configurable
@@ -504,6 +509,14 @@ bool rtc_dig_8m_enabled(void);
 uint32_t rtc_clk_freq_cal(uint32_t cal_val);
 
 /**
+ * @brief Calculate the slow clock period value by slow clock frequency
+ *
+ * @param freq_hz Frequency of the slow clock in Hz
+ * @return Fixed point value of slow clock period in microseconds
+ */
+uint32_t rtc_clk_freq_to_period(uint32_t freq_hz);
+
+/**
  * @brief Power down flags for rtc_sleep_pd function
  */
 typedef struct {
@@ -598,8 +611,9 @@ void rtc_sleep_init(rtc_sleep_config_t cfg);
  * used in lightsleep mode.
  *
  * @param slowclk_period re-calibrated slow clock period
+ * @param dslp true if initialize for deepsleep request
  */
-void rtc_sleep_low_init(uint32_t slowclk_period);
+void rtc_sleep_low_init(uint32_t slowclk_period, bool dslp);
 
 #define RTC_GPIO_TRIG_EN            BIT(2)  //!< GPIO wakeup
 #define RTC_TIMER_TRIG_EN           BIT(3)  //!< Timer wakeup

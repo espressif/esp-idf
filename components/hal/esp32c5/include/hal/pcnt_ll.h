@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,7 @@ extern "C" {
 #define PCNT_LL_GET_HW(num)      (((num) == 0) ? (&PCNT) : NULL)
 #define PCNT_LL_MAX_GLITCH_WIDTH 1023
 #define PCNT_LL_MAX_LIM          SHRT_MAX
-#define PCNT_LL_MIN_LIN          SHRT_MIN
+#define PCNT_LL_MIN_LIM          SHRT_MIN
 
 typedef enum {
     PCNT_LL_WATCH_EVENT_INVALID = -1,
@@ -34,11 +34,10 @@ typedef enum {
 } pcnt_ll_watch_event_id_t;
 
 typedef enum {
-    PCNT_LL_STEP_EVENT_REACH_LIMIT = PCNT_LL_WATCH_EVENT_MAX,
-    PCNT_LL_STEP_EVENT_REACH_INTERVAL
+    PCNT_LL_STEP_EVENT_REACH_INTERVAL_FORWARD = PCNT_LL_WATCH_EVENT_MAX,
+    PCNT_LL_STEP_EVENT_REACH_INTERVAL_BACKWARD,
 } pcnt_ll_step_event_id_t;
 
-#define PCNT_LL_STEP_NOTIFY_DIR_LIMIT     1
 #define PCNT_LL_WATCH_EVENT_MASK          ((1 << PCNT_LL_WATCH_EVENT_MAX) - 1)
 #define PCNT_LL_UNIT_WATCH_EVENT(unit_id) (1 << (unit_id))
 
@@ -157,23 +156,16 @@ static inline void pcnt_ll_enable_step_notify(pcnt_dev_t *hw, uint32_t unit, boo
  *
  * @param hw Peripheral PCNT hardware instance address.
  * @param unit PCNT unit number
+ * @param direction PCNT step direction
  * @param value PCNT step value
  */
-static inline void pcnt_ll_set_step_value(pcnt_dev_t *hw, uint32_t unit, int value)
+static inline void pcnt_ll_set_step_value(pcnt_dev_t *hw, uint32_t unit, pcnt_step_direction_t direction, uint16_t value)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->change_conf_unit[3 - unit], cnt_step, value);
-}
-
-/**
- * @brief Set PCNT step limit value
- *
- * @param hw Peripheral PCNT hardware instance address.
- * @param unit PCNT unit number
- * @param value PCNT step limit value
- */
-static inline void pcnt_ll_set_step_limit_value(pcnt_dev_t *hw, uint32_t unit, int value)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->change_conf_unit[3 - unit], cnt_step_lim, value);
+    if (direction == PCNT_STEP_FORWARD) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf_unit[unit].conf3, cnt_h_step_un, value);
+    } else {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf_unit[unit].conf3, cnt_l_step_un, value);
+    }
 }
 
 /**

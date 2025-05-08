@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_STATIC_MEANS_HEAP:default="Wi-Fi 库和蓝牙控制器", esp32s2="Wi-Fi 库", esp32c6="Wi-Fi 库、蓝牙控制器和 IEEE 802.15.4 库", esp32h2="蓝牙控制器，IEEE 802.15.4 库"}
+{IDF_TARGET_STATIC_MEANS_HEAP:default="Wi-Fi 库和蓝牙控制器", esp32s2="Wi-Fi 库", esp32c6="Wi-Fi 库、蓝牙控制器和 IEEE 802.15.4 库", esp32c61="Wi-Fi 库和蓝牙控制器", esp32h2="蓝牙控制器和 IEEE 802.15.4 库", esp32h21="蓝牙控制器和 IEEE 802.15.4 库", esp32h4="蓝牙控制器和 IEEE 802.15.4 库"}
 
 固件应用程序的可用 RAM 在某些情况下可能处于低水平，甚至完全耗尽。为此，应调整这些情况下固件应用程序的内存使用情况。
 
@@ -193,6 +193,7 @@ IRAM 优化
     - 要禁用不需要的 flash 驱动程序，节省 IRAM 空间，请参阅 sdkconfig 菜单中的 ``Auto-detect Flash chips`` 选项。
     :SOC_GPSPI_SUPPORTED: - 启用 :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`。只要未启用 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 选项，且没有从 ISR 中错误地调用堆函数，就可以在所有配置中安全启用此选项。
     :esp32c2: - 启用 :ref:`CONFIG_BT_RELEASE_IRAM`。 蓝牙所使用的 data，bss 和 text 段已经被分配在连续的RAM区间。当调用 ``esp_bt_mem_release`` 时，这些段都会被添加到 Heap 中。 这将节省约 22 KB 的 RAM。但要再次使用蓝牙功能，需要重启程序。
+    - 禁用 :ref:`CONFIG_LIBC_LOCKS_PLACE_IN_IRAM`。若在缓存禁用的情况下，运行中的中断服务程序（即 IRAM ISR）没有使用 libc 锁 API，那么禁用该配置可以节省 IRAM 空间。
 
 .. only:: esp32
 
@@ -216,7 +217,7 @@ IRAM 优化
    任何最终未用于静态 IRAM 的内存都将添加到堆内存中。
 
 
-.. only:: esp32c3
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
     flash 暂停特性
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -231,6 +232,8 @@ IRAM 优化
     在中断上下文中使用用户 ISR 回调及其相关变量时，也必须将其放置在内部 RAM 中。
 
     将额外代码放置到 IRAM 中，将增加 IRAM 使用量，ESP-IDF 提供了 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 选项，可以缓解 IRAM 的使用。通过启用此功能，使用 SPI flash API 和基于 SPI flash API 的 API 时，不会导致缓存禁用，因此 flash 中的代码和数据仍可正常执行或访问，但会有些延迟。有关此功能的详细信息，请参阅 :ref:`auto-suspend`。
+
+    启用 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 后，可以减少 flash 驱动的 IRAM 使用。更多详细信息请参阅 :ref:`internal_memory_saving_for_flash_driver`。
 
     有关 flash 暂停特性的使用及其相应的响应时间延迟，请参阅 :example:`system/flash_suspend`。
 

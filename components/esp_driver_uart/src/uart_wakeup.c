@@ -13,6 +13,10 @@
 
 #include "driver/uart_wakeup.h"
 #include "hal/uart_hal.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_log.h"
+
+const __attribute__((unused)) static char *TAG = "uart_wakeup";
 
 #if SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
 static esp_err_t uart_char_seq_wk_configure(uart_dev_t *hw, const char* phrase)
@@ -59,6 +63,26 @@ esp_err_t uart_wakeup_setup(uart_port_t uart_num, const uart_wakeup_cfg_t *cfg)
     // This should be mocked at ll level if the selection of the UART wakeup mode is not supported by this SOC.
     uart_ll_set_wakeup_mode(hw, cfg->wakeup_mode);
 
+#if SOC_PM_SUPPORT_PMU_CLK_ICG
+    // When hp uarts are utilized, the main XTAL need to be PU and UARTx & IOMX ICG need to be ungate
+    bool __attribute__((unused)) is_hp_uart = (uart_num < SOC_UART_HP_NUM);
+    uart_hal_context_t hal = {
+        .dev = hw,
+    };
+    soc_module_clk_t src_clk;
+    uart_hal_get_sclk(&hal, &src_clk);
+
+    if (is_hp_uart && cfg->wakeup_mode != UART_WK_MODE_ACTIVE_THRESH) {
+        if (src_clk != SOC_MOD_CLK_XTAL) {
+            ESP_LOGE(TAG, "Failed to setup uart wakeup due to the clock source is not XTAL!");
+            return ESP_ERR_NOT_SUPPORTED;
+        }
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
+        esp_sleep_clock_config(UART_LL_SLEEP_CLOCK(uart_num), ESP_SLEEP_CLOCK_OPTION_UNGATE);
+        esp_sleep_clock_config(ESP_SLEEP_CLOCK_IOMUX, ESP_SLEEP_CLOCK_OPTION_UNGATE);
+    }
+#endif
+
     switch (cfg->wakeup_mode) {
 #if SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
     case UART_WK_MODE_ACTIVE_THRESH:
@@ -88,4 +112,19 @@ esp_err_t uart_wakeup_setup(uart_port_t uart_num, const uart_wakeup_cfg_t *cfg)
     }
 
     return ESP_ERR_INVALID_ARG;
+}
+
+void uart_wakeup_clear(uart_port_t uart_num, uart_wakeup_mode_t wakeup_mode)
+{
+#if SOC_PM_SUPPORT_PMU_CLK_ICG
+    // When hp uarts are utilized, the main XTAL need to be PU and UARTx & IOMX ICG need to be ungate
+    bool __attribute__((unused)) is_hp_uart = (uart_num < SOC_UART_HP_NUM);
+
+    if (is_hp_uart && wakeup_mode != UART_WK_MODE_ACTIVE_THRESH) {
+        esp_sleep_clock_config(UART_LL_SLEEP_CLOCK(uart_num), ESP_SLEEP_CLOCK_OPTION_GATE);
+        esp_sleep_clock_config(ESP_SLEEP_CLOCK_IOMUX, ESP_SLEEP_CLOCK_OPTION_GATE);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF);
+    }
+#endif
+
 }

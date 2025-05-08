@@ -73,6 +73,8 @@ typedef struct {
     spi_ll_clock_val_t clock_reg;       ///< Register value used by the LL layer
     spi_clock_source_t clock_source;    ///< Clock source of each device used by LL layer
     uint32_t source_pre_div;            ///< Pre divider before enter SPI peripheral
+    uint32_t source_real_freq;          ///< source freq after pre-divider, this will enter peripheral
+    int expect_freq;                    ///< User expected desired freq config
     int real_freq;                      ///< Output of the actual frequency
     int timing_dummy;                   ///< Extra dummy needed to compensate the timing
     int timing_miso_delay;              ///< Extra miso delay clocks to compensate the timing

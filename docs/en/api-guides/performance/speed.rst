@@ -4,7 +4,7 @@ Speed Optimization
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_CONTROLLER_CORE_CONFIG:default="CONFIG_BT_CTRL_PINNED_TO_CORE", esp32="CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE", esp32s3="CONFIG_BT_CTRL_PINNED_TO_CORE_CHOICE"}
-{IDF_TARGET_RF_TYPE:default="Wi-Fi/Bluetooth", esp32s2="Wi-Fi", esp32c6="Wi-Fi/Bluetooth/802.15.4", esp32h2="Bluetooth/802.15.4, esp32c5="Wi-Fi/Bluetooth/802.15.4"}
+{IDF_TARGET_RF_TYPE:default="Wi-Fi/Bluetooth", esp32s2="Wi-Fi", esp32c6="Wi-Fi/Bluetooth/802.15.4", esp32c61="Wi-Fi/Bluetooth", esp32h2="Bluetooth/802.15.4", esp32h21="Bluetooth/802.15.4", esp32h4="Bluetooth/802.15.4", esp32c5="Wi-Fi/Bluetooth/802.15.4"}
 
 Overview
 --------
@@ -87,6 +87,7 @@ The following optimizations improve the execution of nearly all code, including 
     :SOC_CPU_HAS_FPU: - Avoid using floating point arithmetic ``float``. Even though {IDF_TARGET_NAME} has a single precision hardware floating point unit, floating point calculations are always slower than integer calculations. If possible then use fixed point representations, a different method of integer representation, or convert part of the calculation to be integer only before switching to floating point.
     :not SOC_CPU_HAS_FPU: - Avoid using floating point arithmetic ``float``. On {IDF_TARGET_NAME} these calculations are emulated in software and are very slow. If possible, use fixed point representations, a different method of integer representation, or convert part of the calculation to be integer only before switching to floating point.
     - Avoid using double precision floating point arithmetic ``double``. These calculations are emulated in software and are very slow. If possible then use an integer-based representation, or single-precision floating point.
+    :CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY: - Avoid misaligned 4-byte memory accesses in performance-critical code sections. For potential performance improvements, consider enabling :ref:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS`. Note that properly aligned memory operations will always execute at full speed without performance penalties. Requires additional ~190 bytes of IRAM and ~870 bytes of flash memory.
 
 
 .. only:: esp32s2 or esp32s3 or esp32p4
@@ -174,7 +175,7 @@ The example project :example:`system/startup_time` is pre-configured to optimize
 Task Priorities
 ---------------
 
-As ESP-IDF FreeRTOS is a real-time operating system, it is necessary to ensure that high-throughput or low-slatency tasks are granted a high priority in order to run immediately. Priority is set when calling :cpp:func:`xTaskCreate` or :cpp:func:`xTaskCreatePinnedToCore` and can be changed at runtime by calling :cpp:func:`vTaskPrioritySet`.
+As ESP-IDF FreeRTOS is a real-time operating system, it is necessary to ensure that high-throughput or low-latency tasks are granted a high priority in order to run immediately. Priority is set when calling :cpp:func:`xTaskCreate` or :cpp:func:`xTaskCreatePinnedToCore` and can be changed at runtime by calling :cpp:func:`vTaskPrioritySet`.
 
 It is also necessary to ensure that tasks yield CPU (by calling :cpp:func:`vTaskDelay`, ``sleep()``, or by blocking on semaphores, queues, task notifications, etc) in order to not starve lower-priority tasks and cause problems for the overall system. The :ref:`task-watchdog-timer` provides a mechanism to automatically detect if task starvation happens. However, note that a TWDT timeout does not always indicate a problem, because sometimes the correct operation of the firmware requires some long-running computation. In these cases, tweaking the TWDT timeout or even disabling the TWDT may be necessary.
 

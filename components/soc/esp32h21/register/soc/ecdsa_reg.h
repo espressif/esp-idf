@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -54,6 +54,13 @@ extern "C" {
 #define ECDSA_DETERMINISTIC_K_M  (ECDSA_DETERMINISTIC_K_V << ECDSA_DETERMINISTIC_K_S)
 #define ECDSA_DETERMINISTIC_K_V  0x00000001U
 #define ECDSA_DETERMINISTIC_K_S  5
+/** ECDSA_DETERMINISTIC_LOOP : R/W; bitpos: [21:6]; default: 0;
+ *  The (loop number - 1) value in the deterministic derivation algorithm to derive k.
+ */
+#define ECDSA_DETERMINISTIC_LOOP    0x0000FFFFU
+#define ECDSA_DETERMINISTIC_LOOP_M  (ECDSA_DETERMINISTIC_LOOP_V << ECDSA_DETERMINISTIC_LOOP_S)
+#define ECDSA_DETERMINISTIC_LOOP_V  0x0000FFFFU
+#define ECDSA_DETERMINISTIC_LOOP_S  6
 
 /** ECDSA_CLK_REG register
  *  ECDSA clock gate register
@@ -253,6 +260,14 @@ extern "C" {
 #define ECDSA_OPERATION_RESULT_M  (ECDSA_OPERATION_RESULT_V << ECDSA_OPERATION_RESULT_S)
 #define ECDSA_OPERATION_RESULT_V  0x00000001U
 #define ECDSA_OPERATION_RESULT_S  0
+/** ECDSA_K_VALUE_WARNING : RO/SS; bitpos: [1]; default: 0;
+ *  The k value warning bit of ECDSA Accelerator, valid when k value is bigger than the
+ *  curve order, then actually taken k = k mod n.
+ */
+#define ECDSA_K_VALUE_WARNING    (BIT(1))
+#define ECDSA_K_VALUE_WARNING_M  (ECDSA_K_VALUE_WARNING_V << ECDSA_K_VALUE_WARNING_S)
+#define ECDSA_K_VALUE_WARNING_V  0x00000001U
+#define ECDSA_K_VALUE_WARNING_S  1
 
 /** ECDSA_DATE_REG register
  *  Version control register

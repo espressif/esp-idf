@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -511,7 +511,10 @@ void esp_blufi_disconnect(void)
     ble_gap_terminate(blufi_env.conn_id, BLE_ERR_REM_USER_CONN_TERM);
 }
 
-void esp_blufi_adv_stop(void) {}
+void esp_blufi_adv_stop(void)
+{
+    ble_gap_adv_stop();
+}
 
 void esp_blufi_send_encap(void *arg)
 {

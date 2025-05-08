@@ -15,7 +15,7 @@
 #include "esp_types.h"
 #include "esp_bit_defs.h"
 #include "esp_log.h"
-#include "../esp_psram_impl.h"
+#include "esp_private/esp_psram_impl.h"
 #include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/opi_flash.h"
 #include "rom/efuse.h"

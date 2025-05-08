@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -144,6 +144,16 @@ typedef enum {
     ESP_HIDD_NEED_DEREG,    /*!< HIDD module shall deregister first */
     ESP_HIDD_NO_CONNECTION, /*!< connection may have been closed */
 } esp_hidd_status_t;
+
+/**
+ * @brief HID device profile status parameters
+ */
+typedef struct {
+    bool hidd_inited;                      /*!< HID device initialization */
+    uint8_t conn_num;                      /*!< Number of connections */
+    uint8_t plug_vc_dev_num;               /*!< Number of plugged virtual cable devices */
+    uint8_t reg_app_num;                   /*!< Number of HID device application registrations */
+} esp_hidd_profile_status_t;
 
 /**
  * @brief HID device callback parameters union
@@ -405,6 +415,17 @@ esp_err_t esp_bt_hid_device_report_error(esp_hidd_handshake_error_t error);
  *                  - other: failed
  */
 esp_err_t esp_bt_hid_device_virtual_cable_unplug(void);
+
+/**
+ * @brief       This function is used to get the status of hid device
+ *
+ * @param[out]  profile_status - HID device status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_bt_hid_device_get_profile_status(esp_hidd_profile_status_t *profile_status);
 
 #ifdef __cplusplus
 }

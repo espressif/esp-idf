@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -201,9 +201,13 @@ esp_err_t mcpwm_new_gpio_sync_src(const mcpwm_gpio_sync_src_config_t *config, mc
 
     if (config->flags.pull_down) {
         gpio_pulldown_en(config->gpio_num);
+    } else {
+        gpio_pulldown_dis(config->gpio_num);
     }
     if (config->flags.pull_up) {
         gpio_pullup_en(config->gpio_num);
+    } else {
+        gpio_pullup_dis(config->gpio_num);
     }
 
     // deprecated, to be removed in in esp-idf v6.0

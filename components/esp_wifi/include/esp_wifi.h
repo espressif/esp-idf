@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -278,6 +278,12 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define WIFI_TX_HETB_QUEUE_NUM 1
 #endif
 
+#if CONFIG_ESP_WIFI_BSS_MAX_IDLE_SUPPORT
+#define WIFI_ENABLE_BSS_MAX_IDLE (1<<8)
+#else
+#define WIFI_ENABLE_BSS_MAX_IDLE 0
+#endif
+
 #define CONFIG_FEATURE_WPA3_SAE_BIT     (1<<0)
 #define CONFIG_FEATURE_CACHE_TX_BUF_BIT (1<<1)
 #define CONFIG_FEATURE_FTM_INITIATOR_BIT (1<<2)
@@ -286,6 +292,7 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define CONFIG_FEATURE_GMAC_BIT (1<<5)
 #define CONFIG_FEATURE_11R_BIT (1<<6)
 #define CONFIG_FEATURE_WIFI_ENT_BIT (1<<7)
+#define CONFIG_FEATURE_BSS_MAX_IDLE_BIT (1<<8)
 
 /* Set additional WiFi features and capabilities */
 #define WIFI_FEATURE_CAPS (WIFI_ENABLE_WPA3_SAE | \
@@ -295,7 +302,8 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
                            WIFI_ENABLE_GCMP | \
                            WIFI_ENABLE_GMAC | \
                            WIFI_ENABLE_11R  | \
-                           WIFI_ENABLE_ENTERPRISE)
+                           WIFI_ENABLE_ENTERPRISE | \
+                           WIFI_ENABLE_BSS_MAX_IDLE)
 
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .osi_funcs = &g_wifi_osi_funcs, \
@@ -583,7 +591,7 @@ esp_err_t esp_wifi_scan_stop(void);
 esp_err_t esp_wifi_scan_get_ap_num(uint16_t *number);
 
 /**
-  * @brief     Get AP list found in last scan.
+  * @brief     Retrieve the list of APs found during the last scan. The returned AP list is sorted in descending order based on RSSI.
   *
   * @attention  This API will free all memory occupied by scanned AP list.
   *
@@ -605,7 +613,7 @@ esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_re
  *
  * @attention  Different from esp_wifi_scan_get_ap_records(), this API only gets one AP record
  *             from the scanned AP list each time. This API will free the memory of one AP record,
- *             if the user doesn't get all records in the scannned AP list, then needs to call esp_wifi_clear_ap_list()
+ *             if the user doesn't get all records in the scanned AP list, then needs to call esp_wifi_clear_ap_list()
  *             to free the remaining memory.
  *
  * @param[out] ap_record  pointer to one AP record
@@ -766,6 +774,8 @@ esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
   * @attention 4. When device is in STA+softAP mode, this API should not be called when in the scenarios described above
   * @attention 5. The channel info set by this API will not be stored in NVS. So If you want to remember the channel used before WiFi stop,
   *               you need to call this API again after WiFi start, or you can call `esp_wifi_set_config()` to store the channel info in NVS.
+  * @attention 6. When operating in 5 GHz band, the second channel is automatically determined by the primary channel according to the 802.11 standard.
+  *               Any manually configured second channel will be ignored.
   *
   * @param     primary  for HT20, primary is the channel number, for HT40, primary is the primary channel
   * @param     second   for HT20, second is ignored, for HT40, second is the second channel
@@ -1189,6 +1199,27 @@ esp_err_t esp_wifi_get_event_mask(uint32_t *mask);
   */
 
 esp_err_t esp_wifi_80211_tx(wifi_interface_t ifx, const void *buffer, int len, bool en_sys_seq);
+
+/**
+  * @brief Callback function of 80211 tx data
+  *
+  * @param tx_info TX information of 80211 tx. The information can only be used in the callback context.
+  */
+typedef void (*esp_wifi_80211_tx_done_cb_t)(const esp_80211_tx_info_t *tx_info);
+
+/**
+  * @brief Register the TX callback function of 80211 tx data.
+  *
+  * @attention This callback will be executed in WiFi task, so avoid doing any time consuming activity in the callback.
+  *            Doing heavy work here can affect the WiFi performance.
+  *
+  * @param cb callback function. If the cb is NULL, then unregister the tx cb.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  */
+esp_err_t esp_wifi_register_80211_tx_cb(esp_wifi_80211_tx_done_cb_t cb);
 
 /**
   * @brief The RX callback function of Channel State Information(CSI)  data.
@@ -1647,6 +1678,7 @@ esp_err_t esp_wifi_sta_get_rssi(int *rssi);
     * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
 esp_err_t esp_wifi_set_band(wifi_band_t band);
@@ -1786,6 +1818,44 @@ esp_err_t esp_wifi_set_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t* bw);
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
 esp_err_t esp_wifi_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw);
+
+/**
+  * @brief      Send action frame on target channel
+  *
+  * @param    req   action tx request structure containing relevant fields
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_NO_MEM: failed to allocate memory
+  *    - ESP_FAIL: failed to send frame
+  */
+esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
+
+/**
+  * @brief      Remain on the target channel for required duration
+  *
+  * @param    req  roc request structure containing relevant fields
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_NO_MEM: failed to allocate memory
+  *    - ESP_FAIL: failed to perform roc operation
+  */
+esp_err_t esp_wifi_remain_on_channel(wifi_roc_req_t * req);
+
+#if CONFIG_ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+/**
+  * @brief      Sample numbers of beacons to calculate beacon parameters
+  *
+  * @attention  This API should be called after station connected to AP.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  */
+esp_err_t esp_wifi_beacon_offset_sample_beacon(void);
+#endif
 
 #ifdef __cplusplus
 }

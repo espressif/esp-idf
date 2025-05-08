@@ -128,10 +128,13 @@ struct httpd_ssl_config {
      *  The callback is only applicable when CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK is enabled in menuconfig */
     esp_https_server_cert_select_cb cert_select_cb;
 
-    /** Application protocols the server supports in order of prefernece.
+    /** Application protocols the server supports in order of preference.
      *  Used for negotiating during the TLS handshake, first one the client supports is selected.
      *  The data structure must live as long as the https server itself */
     const char** alpn_protos;
+
+    /** TLS handshake timeout in milliseconds, default timeout is 10 seconds if not set */
+    uint32_t tls_handshake_timeout_ms;
 };
 
 typedef struct httpd_ssl_config httpd_ssl_config_t;
@@ -150,6 +153,8 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
         .stack_size         = 10240,              \
         .core_id            = tskNO_AFFINITY,     \
         .task_caps          = (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),       \
+        .max_req_hdr_len    = CONFIG_HTTPD_MAX_REQ_HDR_LEN,    \
+        .max_uri_len        = CONFIG_HTTPD_MAX_URI_LEN,        \
         .server_port        = 0,                  \
         .ctrl_port   = ESP_HTTPD_DEF_CTRL_PORT+1, \
         .max_open_sockets   = 4,                  \
@@ -190,6 +195,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .ssl_userdata = NULL,                         \
     .cert_select_cb = NULL,                       \
     .alpn_protos = NULL,                          \
+    .tls_handshake_timeout_ms = 0                 \
 }
 
 /**

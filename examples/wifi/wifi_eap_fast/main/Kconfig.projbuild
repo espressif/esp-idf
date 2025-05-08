@@ -25,6 +25,7 @@ menu "Example Configuration"
 
     if !EXAMPLE_WPA2_ENTERPRISE
         config EXAMPLE_VALIDATE_SERVER_CERT
+            bool
             default y
     endif
 

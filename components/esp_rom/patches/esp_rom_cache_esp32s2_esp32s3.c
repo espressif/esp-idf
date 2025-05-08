@@ -21,14 +21,13 @@
 extern uint32_t rom_Cache_Count_Flash_Pages(uint32_t bus, uint32_t * page0_mapped);
 uint32_t Cache_Count_Flash_Pages(uint32_t bus, uint32_t * page0_mapped)
 {
-    uint32_t page0_before_count = *page0_mapped;
     uint32_t flash_pages = 0;
     flash_pages = rom_Cache_Count_Flash_Pages(bus, page0_mapped);
 
-/* No page mapped to page0, in this condition, the rom api will return
+/* No page mapped to page0 yet, in this condition, the rom api will return
  * unexpected value + 1.
  */
-    if (page0_before_count == *page0_mapped) {
+    if (*page0_mapped == 0) {
         flash_pages--;
     }
     return flash_pages;

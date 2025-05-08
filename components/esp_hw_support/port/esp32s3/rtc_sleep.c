@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -256,12 +256,12 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_XTAL_GLOBAL_FORCE_NOGATING, cfg.xtal_fpu);
 }
 
-void rtc_sleep_low_init(uint32_t slowclk_period)
+void rtc_sleep_low_init(uint32_t slowclk_period, bool dslp)
 {
     // set 5 PWC state machine times to fit in main state machine time
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES);
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_XTL_BUF_WAIT, rtc_time_us_to_slowclk(RTC_CNTL_XTL_BUF_WAIT_SLP_US, slowclk_period));
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_SLP_CYCLES);
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, dslp ? RTC_CNTL_PLL_BUF_WAIT_DEFAULT : RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES);
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_XTL_BUF_WAIT, dslp ? RTC_CNTL_XTL_BUF_WAIT_DEFAULT : rtc_time_us_to_slowclk(RTC_CNTL_XTL_BUF_WAIT_SLP_US, slowclk_period));
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, dslp ? RTC_CNTL_CK8M_WAIT_DEFAULT : RTC_CNTL_CK8M_WAIT_SLP_CYCLES);
 }
 
 static uint32_t rtc_sleep_finish(uint32_t lslp_mem_inf_fpu);
@@ -284,7 +284,7 @@ __attribute__((weak)) uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t rej
     return rtc_sleep_finish(lslp_mem_inf_fpu);
 }
 
-static uint32_t rtc_sleep_finish(uint32_t lslp_mem_inf_fpu)
+static IRAM_ATTR uint32_t rtc_sleep_finish(uint32_t lslp_mem_inf_fpu)
 {
     /* In deep sleep mode, we never get here */
     uint32_t reject = REG_GET_FIELD(RTC_CNTL_INT_RAW_REG, RTC_CNTL_SLP_REJECT_INT_RAW);

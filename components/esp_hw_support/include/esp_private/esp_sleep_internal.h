@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -83,6 +83,46 @@ int32_t* esp_sleep_sub_mode_dump_config(FILE *stream);
 void esp_sleep_isolate_digital_gpio(void);
 #endif
 
+#if SOC_PM_SUPPORT_PMU_CLK_ICG
+/**
+ * @brief Clock ICG cells which can be gated in sleep mode
+ */
+typedef enum {
+    ESP_SLEEP_CLOCK_IOMUX,  //!< The clock ICG cell mapping of IOMUX
+    ESP_SLEEP_CLOCK_LEDC,   //!< The clock ICG cell mapping of LEDC
+    ESP_SLEEP_CLOCK_UART0,   //!< The clock ICG cell mapping of UART0
+    ESP_SLEEP_CLOCK_UART1,   //!< The clock ICG cell mapping of UART1
+#if SOC_UART_HP_NUM > 2
+    ESP_SLEEP_CLOCK_UART2,   //!< The clock ICG cell mapping of UART2
+#endif
+#if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
+    ESP_SLEEP_CLOCK_BT_USE_WIFI_PWR_CLK,  //!< The clock ICG cell remapping of RETENTION
+#endif
+    ESP_SLEEP_CLOCK_MAX     //!< Number of ICG cells
+} esp_sleep_clock_t;
+
+/**
+ * @brief Clock ICG options
+ */
+typedef enum {
+    ESP_SLEEP_CLOCK_OPTION_GATE,    //!< Gate the clock in sleep mode
+    ESP_SLEEP_CLOCK_OPTION_UNGATE   //!< Ungate the clock in sleep mode
+} esp_sleep_clock_option_t;
+
+/**
+ * @brief Gate or Ungate the specified clock in sleep mode
+ *
+ * If not set set using this API, all clock default to ESP_SLEEP_CLOCK_OPTION_GATE.
+ *
+ * @param clock   the specified clock to configure
+ * @param option  clock gate option (ESP_SLEEP_CLOCK_OPTION_GATE or ESP_SLEEP_CLOCK_OPTION_UNGATE)
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
+ */
+esp_err_t esp_sleep_clock_config(esp_sleep_clock_t clock, esp_sleep_clock_option_t option);
+#endif
+
 #if CONFIG_ESP_PHY_ENABLED
 /**
   * Register a callback to be called from the deep sleep prepare for maintain the PHY state
@@ -123,6 +163,15 @@ void esp_sleep_mmu_retention(bool backup_or_restore);
  */
 bool mmu_domain_pd_allowed(void);
 #endif
+
+/**
+ * @brief Notify the sleep process that `sleep_time_overhead_out` needs to be remeasured, which must be called
+ *        in the following scenarios:
+ *        1. When the CPU frequency changes to below the crystal oscillator frequency.
+ *        2. When a new callback function is registered in the sleep process.
+ *        3. Other events occur that affect the execution time of the CPU sleep process.
+ */
+void esp_sleep_overhead_out_time_refresh(void);
 
 #ifdef __cplusplus
 }

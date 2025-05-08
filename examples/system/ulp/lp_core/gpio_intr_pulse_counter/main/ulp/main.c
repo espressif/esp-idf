@@ -44,7 +44,7 @@ int main (void)
 {
     lp_core_printf("LP Core pulse counter started\n");
     ulp_lp_core_intr_enable();
-    ulp_lp_core_gpio_intr_enable(CONFIG_EXAMPLE_PULSE_COUNT_PIN, LP_IO_INTR_POSEDGE);
+    ulp_lp_core_gpio_intr_enable(CONFIG_EXAMPLE_PULSE_COUNT_PIN, GPIO_INTR_POSEDGE);
 
     while(1) {
 

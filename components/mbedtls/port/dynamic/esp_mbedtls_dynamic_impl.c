@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -352,6 +352,8 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
             ESP_LOGD(TAG, "mbedtls_ssl_fetch_input reads data times out");
         } else if (ret == MBEDTLS_ERR_SSL_WANT_READ) {
             ESP_LOGD(TAG, "mbedtls_ssl_fetch_input wants to read more data");
+        } else if (ret == MBEDTLS_ERR_SSL_CONN_EOF) {
+            ESP_LOGD(TAG, "mbedtls_ssl_fetch_input connection EOF");
         } else {
             ESP_LOGE(TAG, "mbedtls_ssl_fetch_input error=%d", -ret);
         }

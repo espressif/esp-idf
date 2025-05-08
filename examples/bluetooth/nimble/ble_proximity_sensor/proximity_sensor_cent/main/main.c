@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,6 @@
 #include "ble_prox_cent.h"
 
 static const char *tag = "NimBLE_PROX_CENT";
-static uint8_t peer_addr[6];
 static uint8_t link_supervision_timeout;
 static int8_t tx_pwr_lvl;
 static struct ble_prox_cent_conn_peer conn_peer[MYNEWT_VAL(BLE_MAX_CONNECTIONS) + 1];
@@ -228,6 +227,10 @@ ext_ble_prox_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 {
     int offset = 0;
     int ad_struct_len = 0;
+    uint8_t test_addr[6];
+    uint32_t peer_addr[6];
+
+    memset(peer_addr, 0x0, sizeof peer_addr);
 
     if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
             disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
@@ -236,10 +239,16 @@ ext_ble_prox_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen    ("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
-        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
                &peer_addr[5], &peer_addr[4], &peer_addr[3],
                &peer_addr[2], &peer_addr[1], &peer_addr[0]);
-        if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+
+	/* Conversion */
+        for (int i=0; i<6; i++) {
+            test_addr[i] = (uint8_t )peer_addr[i];
+        }
+
+        if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
     }
@@ -275,6 +284,10 @@ ble_prox_cent_should_connect(const struct ble_gap_disc_desc *disc)
     struct ble_hs_adv_fields fields;
     int rc;
     int i;
+    uint8_t test_addr[6];
+    uint32_t peer_addr[6];
+
+    memset(peer_addr, 0x0, sizeof peer_addr);
 
     /* The device has to be advertising connectability. */
     if (disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
@@ -291,10 +304,16 @@ ble_prox_cent_should_connect(const struct ble_gap_disc_desc *disc)
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
-        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
                &peer_addr[5], &peer_addr[4], &peer_addr[3],
                &peer_addr[2], &peer_addr[1], &peer_addr[0]);
-        if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+
+	/* Conversion */
+        for (int i=0; i<6; i++) {
+            test_addr[i] = (uint8_t )peer_addr[i];
+        }
+
+        if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
     }
@@ -405,13 +424,13 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
         ble_prox_cent_connect_if_interesting(&event->disc);
         return 0;
 
-    case BLE_GAP_EVENT_LINK_ESTAB:
+    case BLE_GAP_EVENT_CONNECT:
         /* A new connection was established or a connection attempt failed. */
-        if (event->link_estab.status == 0) {
+        if (event->connect.status == 0) {
             /* Connection successfully established. */
             MODLOG_DFLT(INFO, "Connection established ");
 
-            rc = ble_gap_conn_find(event->link_estab.conn_handle, &desc);
+            rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "\n");
@@ -419,7 +438,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
             link_supervision_timeout = 8 * desc.conn_itvl;
 
             /* Remember peer. */
-            rc = peer_add(event->link_estab.conn_handle);
+            rc = peer_add(event->connect.conn_handle);
             if (rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to add peer; rc=%d\n", rc);
                 return 0;
@@ -445,17 +464,17 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
              * Encryption (Enable encryption)
              * Will invoke event BLE_GAP_EVENT_ENC_CHANGE
              **/
-            rc = ble_gap_security_initiate(event->link_estab.conn_handle);
+            rc = ble_gap_security_initiate(event->connect.conn_handle);
             if (rc != 0) {
                 MODLOG_DFLT(INFO, "Security could not be initiated, rc = %d\n", rc);
-                return ble_gap_terminate(event->link_estab.conn_handle,
+                return ble_gap_terminate(event->connect.conn_handle,
                                          BLE_ERR_REM_USER_CONN_TERM);
             } else {
                 MODLOG_DFLT(INFO, "Connection secured\n");
             }
 #else
             /* Perform service discovery */
-            rc = peer_disc_all(event->link_estab.conn_handle,
+            rc = peer_disc_all(event->connect.conn_handle,
                                ble_prox_cent_on_disc_complete, NULL);
             if (rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
@@ -465,7 +484,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
         } else {
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
-                        event->link_estab.status);
+                        event->connect.status);
         }
         ble_prox_cent_scan();
         return 0;
@@ -514,7 +533,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
         print_conn_desc(&desc);
 #if CONFIG_EXAMPLE_ENCRYPTION
         /*** Go for service discovery after encryption has been successfully enabled ***/
-        rc = peer_disc_all(event->link_estab.conn_handle,
+        rc = peer_disc_all(event->connect.conn_handle,
                            ble_prox_cent_on_disc_complete, NULL);
         if (rc != 0) {
             MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);

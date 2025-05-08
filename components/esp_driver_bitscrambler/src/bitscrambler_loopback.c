@@ -132,6 +132,7 @@ esp_err_t bitscrambler_loopback_create(bitscrambler_handle_t *handle, int attach
     gdma_strategy_config_t gdma_strategy_conf = {
         .auto_update_desc = true,
         .owner_check = false,
+        .eof_till_data_popped = true,
     };
     gdma_apply_strategy(bs->rx_channel, &gdma_strategy_conf);
     gdma_apply_strategy(bs->tx_channel, &gdma_strategy_conf);

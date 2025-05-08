@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -145,6 +145,7 @@ struct wpa_funcs {
     uint8_t *(*owe_build_dhie)(uint16_t group);
     int (*owe_process_assoc_resp)(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_ie, size_t dh_len);
     void (*wpa_sta_clear_curr_pmksa)(void);
+    void (*wpa_config_reload)(void);
 };
 
 struct wpa2_funcs {
@@ -222,7 +223,7 @@ uint8_t esp_wifi_ap_get_prof_authmode_internal(void);
 uint8_t esp_wifi_sta_get_prof_authmode_internal(void);
 uint8_t *esp_wifi_ap_get_prof_password_internal(void);
 struct wifi_ssid *esp_wifi_sta_get_prof_ssid_internal(void);
-uint8_t esp_wifi_sta_get_reset_param_internal(void);
+uint8_t esp_wifi_sta_get_reset_nvs_pmk_internal(void);
 uint8_t esp_wifi_sta_get_pairwise_cipher_internal(void);
 uint8_t esp_wifi_sta_get_group_cipher_internal(void);
 bool esp_wifi_sta_prof_is_wpa_internal(void);
@@ -242,7 +243,7 @@ int esp_wifi_set_sta_key_internal(int alg, u8 *addr, int key_idx, int set_tx,
 int  esp_wifi_get_sta_key_internal(uint8_t *ifx, int *alg, u8 *addr, int *key_idx,
                                    u8 *key, size_t key_len, enum key_flag key_flag);
 bool esp_wifi_wpa_ptk_init_done_internal(uint8_t *mac);
-uint8_t esp_wifi_sta_set_reset_param_internal(uint8_t reset_flag);
+uint8_t esp_wifi_sta_set_reset_nvs_pmk_internal(uint8_t reset_flag);
 uint8_t esp_wifi_get_sta_gtk_index_internal(void);
 int esp_wifi_register_tx_cb_internal(wifi_tx_cb_t fn, u8 id);
 int esp_wifi_register_eapol_txdonecb_internal(eapol_txcb_t fn);
@@ -283,10 +284,7 @@ bool esp_wifi_is_btm_enabled_internal(uint8_t if_index);
 esp_err_t esp_wifi_register_mgmt_frame_internal(uint32_t type, uint32_t subtype);
 esp_err_t esp_wifi_send_mgmt_frm_internal(const wifi_mgmt_frm_req_t *req);
 uint8_t esp_wifi_ap_get_prof_pairwise_cipher_internal(void);
-esp_err_t esp_wifi_action_tx_req(uint8_t type, uint8_t channel,
-                                 uint32_t wait_time_ms, const wifi_action_tx_req_t *req);
-esp_err_t esp_wifi_remain_on_channel(uint8_t ifx, uint8_t type, uint8_t channel,
-                                     uint32_t wait_time_ms, wifi_action_rx_cb_t rx_cb);
+uint8_t esp_wifi_ap_get_sae_ext_config_internal(void);
 bool esp_wifi_is_mbo_enabled_internal(uint8_t if_index);
 void esp_wifi_get_pmf_config_internal(wifi_pmf_config_t *pmf_cfg, uint8_t ifx);
 bool esp_wifi_is_ft_enabled_internal(uint8_t if_index);

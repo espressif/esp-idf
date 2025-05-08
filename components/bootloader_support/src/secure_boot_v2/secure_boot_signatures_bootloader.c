@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,6 +65,18 @@ static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *blo
         ESP_LOGE(TAG, "%s signing scheme selected but signature block generated for %s scheme", esp_secure_boot_get_scheme_name(ESP_SECURE_BOOT_SCHEME), esp_secure_boot_get_scheme_name(block->version));
         return ESP_FAIL;
     }
+
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED && CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+    if (block->ecdsa.key.curve_id == ECDSA_CURVE_P192) {
+        // Enabling ECDSA-192 Curve mode
+        esp_err_t err = esp_efuse_enable_ecdsa_p192_curve_mode();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to enable ECDSA-192 curve mode: %d", err);
+            return err;
+        }
+    }
+#endif
+
     return ESP_OK;
 }
 
@@ -154,13 +166,12 @@ esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_sign
     ets_secure_boot_key_digests_t trusted_key_digests = {0};
     bool valid_sig_blk = false;
     for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+        trusted_key_digests.key_digests[i] = &trusted.key_digests[i];
         if (sig_block->block[i].version != ESP_SECURE_BOOT_SCHEME) {
             ESP_LOGD(TAG, "%s signing scheme selected but signature block %d generated for %s scheme", esp_secure_boot_get_scheme_name(ESP_SECURE_BOOT_SCHEME), i, esp_secure_boot_get_scheme_name(sig_block->block[i].version));
-            continue;
         } else {
             valid_sig_blk = true;
         }
-        trusted_key_digests.key_digests[i] = &trusted.key_digests[i];
     }
     if (valid_sig_blk != true) {
         ESP_LOGE(TAG, "No signature block generated for valid scheme");

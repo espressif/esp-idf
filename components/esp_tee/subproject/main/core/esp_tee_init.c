@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,15 +24,15 @@
 /* TEE symbols */
 extern uint32_t _tee_stack;
 extern uint32_t _tee_intr_stack_bottom;
-extern uint32_t _tee_heap_start;
-extern uint32_t _tee_heap_end;
 extern uint32_t _tee_bss_start;
 extern uint32_t _tee_bss_end;
 
 extern uint32_t _sec_world_entry;
 extern uint32_t _tee_s_intr_handler;
 
-#define TEE_HEAP_SIZE (((uint32_t)&_tee_heap_end - (uint32_t)&_tee_heap_start))
+extern uint8_t _tee_heap_start[];
+extern uint8_t _tee_heap_end[];
+#define TEE_HEAP_SIZE ((size_t)(_tee_heap_end - _tee_heap_start))
 
 static const char *TAG = "esp_tee_init";
 
@@ -59,7 +59,6 @@ static void tee_init_app_config(void)
     esp_tee_app_config.api_minor_version = ESP_TEE_API_MINOR_VER;
 
     /* Set the TEE-related fields (from the TEE binary) that the REE will use to interface with TEE */
-    esp_tee_app_config.s_entry_addr = &_sec_world_entry;
     esp_tee_app_config.s_int_handler = &_tee_s_intr_handler;
 }
 
@@ -132,8 +131,12 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
     /* TEE compatibility check and App config data initialization. */
     tee_init_app_config();
 
-    /* TEE Secure World heap initialization. */
-    assert(tee_heap_register(((void *)&_tee_heap_start), TEE_HEAP_SIZE) == 0);
+    /* TEE heap initialization. */
+    esp_err_t err = esp_tee_heap_init((void *)_tee_heap_start, TEE_HEAP_SIZE);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to setup the TEE heap!");
+        abort();
+    }
 
     /* SoC specific secure initialization. */
     esp_tee_soc_secure_sys_init();
@@ -149,7 +152,7 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
              ((void *)&_tee_heap_start), TEE_HEAP_SIZE, TEE_HEAP_SIZE / 1024, "RAM");
 
     /* Setting up the permissible flash operation address range */
-    esp_err_t err = esp_tee_flash_setup_prot_ctx(tee_boot_part);
+    err = esp_tee_flash_setup_prot_ctx(tee_boot_part);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to setup the TEE flash memory protection!");
         abort();
@@ -157,7 +160,11 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
     ESP_FAULT_ASSERT(err == ESP_OK);
 
     /* Setting up the running non-secure app partition as per the address provided by the bootloader */
-    assert(esp_tee_flash_set_running_ree_partition(ree_drom_addr) == ESP_OK);
+    err = esp_tee_flash_set_running_ree_partition(ree_drom_addr);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to setup the active REE partition!");
+        abort();
+    }
 
     tee_print_app_info();
 

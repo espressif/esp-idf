@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,12 +60,12 @@ extern portMUX_TYPE s_time_update_lock;
 /* Alarm values to generate interrupt on match */
 extern uint64_t timestamp_id[2];
 
-uint64_t IRAM_ATTR esp_timer_impl_get_counter_reg(void)
+uint64_t ESP_TIMER_IRAM_ATTR esp_timer_impl_get_counter_reg(void)
 {
     return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_ESPTIMER);
 }
 
-int64_t IRAM_ATTR esp_timer_impl_get_time(void)
+int64_t ESP_TIMER_IRAM_ATTR esp_timer_impl_get_time(void)
 {
     // we hope the execution time of this function won't > 1us
     // thus, to save one function call, we didn't use the existing `systimer_hal_get_time`
@@ -74,7 +74,7 @@ int64_t IRAM_ATTR esp_timer_impl_get_time(void)
 
 int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")));
 
-void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id)
+void ESP_TIMER_IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id)
 {
     assert(alarm_id < sizeof(timestamp_id) / sizeof(timestamp_id[0]));
     portENTER_CRITICAL_SAFE(&s_time_update_lock);
@@ -84,7 +84,7 @@ void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id
     portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 }
 
-static void IRAM_ATTR timer_alarm_isr(void *arg)
+static void ESP_TIMER_IRAM_ATTR timer_alarm_isr(void *arg)
 {
 #if ISR_HANDLERS == 1
     // clear the interrupt
@@ -129,7 +129,7 @@ static void IRAM_ATTR timer_alarm_isr(void *arg)
 #endif // ISR_HANDLERS != 1
 }
 
-void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
+void ESP_TIMER_IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
 {
 #if !SOC_SYSTIMER_FIXED_DIVIDER
     systimer_hal_on_apb_freq_update(&systimer_hal, apb_ticks_per_us);
@@ -200,7 +200,10 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 #if !SOC_SYSTIMER_INT_LEVEL
                     | ESP_INTR_FLAG_EDGE
 #endif
-                    | ESP_INTR_FLAG_IRAM;
+#if CONFIG_ESP_TIMER_IN_IRAM
+                    | ESP_INTR_FLAG_IRAM
+#endif
+                    ;
 
     esp_err_t err = esp_intr_alloc(ETS_SYSTIMER_TARGET2_INTR_SOURCE, isr_flags,
                                    &timer_alarm_isr, NULL,

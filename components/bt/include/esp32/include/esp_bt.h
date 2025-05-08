@@ -55,7 +55,7 @@ extern "C" {
 *
 * @note Please do not modify this value
 */
-#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20241024
+#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20250318
 
 /**
  * @brief Bluetooth Controller mode
@@ -205,6 +205,16 @@ the advertising packet will be discarded until the memory is restored. */
 #define BTDM_BLE_CHAN_ASS_EN (0)
 #endif
 
+#if CONFIG_BTDM_CTRL_CONTROLLER_DEBUG_MODE_1
+#define BTDM_CTRL_CONTROLLER_DEBUG_MODE_1  (1 << 1)
+#else
+#define BTDM_CTRL_CONTROLLER_DEBUG_MODE_1  0
+#endif
+
+#ifndef BTDM_CTRL_CONTROLLER_DEBUG_FLAG
+#define BTDM_CTRL_CONTROLLER_DEBUG_FLAG    (BTDM_CTRL_CONTROLLER_DEBUG_MODE_1 | CONTROLLER_ADV_LOST_DEBUG_BIT)
+#endif
+
 #if defined(CONFIG_BTDM_BLE_PING_EN)
 #define BTDM_BLE_PING_EN (CONFIG_BTDM_BLE_PING_EN)
 #else
@@ -224,7 +234,7 @@ the advertising packet will be discarded until the memory is restored. */
     .normal_adv_size = NORMAL_SCAN_DUPLICATE_CACHE_SIZE,                   \
     .mesh_adv_size = MESH_DUPLICATE_SCAN_CACHE_SIZE,                       \
     .send_adv_reserved_size = SCAN_SEND_ADV_RESERVED_SIZE,                 \
-    .controller_debug_flag = CONTROLLER_ADV_LOST_DEBUG_BIT,                \
+    .controller_debug_flag = BTDM_CTRL_CONTROLLER_DEBUG_FLAG,              \
     .mode = BTDM_CONTROLLER_MODE_EFF,                                      \
     .ble_max_conn = CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF,                     \
     .bt_max_acl_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF,           \
@@ -237,6 +247,7 @@ the advertising packet will be discarded until the memory is restored. */
     .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
     .pcm_fsyncshp = CONFIG_BTDM_CTRL_PCM_FSYNCSHP_EFF,                     \
     .hli = BTDM_CTRL_HLI,                                                  \
+    .enc_key_sz_min = CONFIG_BTDM_CTRL_BR_EDR_MIN_ENC_KEY_SZ_DFT_EFF,      \
     .dup_list_refresh_period = SCAN_DUPL_CACHE_REFRESH_PERIOD,             \
     .ble_scan_backoff = BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,              \
     .ble_llcp_disc_flag = BTDM_BLE_LLCP_DISC_FLAG,                         \
@@ -316,6 +327,9 @@ typedef struct {
                                                 - 1 - Mono Mode 1
                                                 - 2 - Mono Mode 2 */
     bool hli;                               /*!< True if using high-level (level 4) interrupt (default); false otherwise. Configurable in menuconfig */
+    uint8_t enc_key_sz_min;                 /*!< Minimum size of the encryption key
+                                                - Range: 7 - 16
+                                                - Default: 7 */
     uint16_t dup_list_refresh_period;       /*!< Scan duplicate filtering list refresh period in seconds. Configurable in menuconfig
                                                 - Range: 0 - 100 seconds
                                                 - Default: 0 second */

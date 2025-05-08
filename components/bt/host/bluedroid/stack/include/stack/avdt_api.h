@@ -519,6 +519,18 @@ extern UINT16 AVDT_CreateStream(UINT8 *p_handle, tAVDT_CS *p_cs);
 
 /*******************************************************************************
 **
+** Function         AVDT_UpdateCodecInfo
+**
+** Description      Update codec capability for a stream endpoint.
+**
+**
+** Returns          AVDT_SUCCESS if successful, otherwise error.
+**
+*******************************************************************************/
+extern UINT16 AVDT_UpdateCodecInfo(UINT8 handle, UINT8 num_codec, UINT8 *codec_info, UINT16 codec_info_len);
+
+/*******************************************************************************
+**
 ** Function         AVDT_RemoveStream
 **
 ** Description      Remove a stream endpoint.  This function is called when

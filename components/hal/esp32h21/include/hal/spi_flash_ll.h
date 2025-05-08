@@ -1,42 +1,38 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /*******************************************************************************
  * NOTICE
+ * The Lowlevel layer for SPI Flash
  * The ll is not public api, don't use in application code.
- * See readme.md in soc/include/hal/readme.md
  ******************************************************************************/
-
-// The Lowlevel layer for SPI Flash
-
 #pragma once
 
 #include "spimem_flash_ll.h"
-
-//TODO: [ESP32H21] IDF-11609, inherit from h2, need to add gpspi functions
+#include "gpspi_flash_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define spi_flash_ll_calculate_clock_reg(host_id, clock_div) (((host_id)<=SPI1_HOST) ? spimem_flash_ll_calculate_clock_reg(clock_div) \
-                                            : 0)
+                                            : gpspi_flash_ll_calculate_clock_reg(clock_div))
 
-#define spi_flash_ll_get_source_clock_freq_mhz(host_id)  (((host_id)<=SPI1_HOST) ? spimem_flash_ll_get_source_freq_mhz() : 0)
+#define spi_flash_ll_get_source_clock_freq_mhz(host_id)  (((host_id)<=SPI1_HOST) ? spimem_flash_ll_get_source_freq_mhz() : GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ)
 
 #define spi_flash_ll_get_hw(host_id)  (((host_id)<=SPI1_HOST ? (spi_dev_t*) spimem_flash_ll_get_hw(host_id) \
-                                      : 0))
+                                      : gpspi_flash_ll_get_hw(host_id)))
 
 #define spi_flash_ll_hw_get_id(dev) ({int dev_id = spimem_flash_ll_hw_get_id(dev); \
                                      if (dev_id < 0) {\
-                                        dev_id = 0;\
+                                        dev_id = gpspi_flash_ll_hw_get_id(dev);\
                                      }\
                                      dev_id; \
                                     })
-// Since ESP32-H2, WB_mode is available, we extend 8 bits to occupy `Continuous Read Mode` bits.
+// WB_mode is available, we extend 8 bits to occupy `Continuous Read Mode` bits.
 #define SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS  (8)
 
 typedef union  {

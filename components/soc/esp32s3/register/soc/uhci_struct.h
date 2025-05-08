@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,8 +12,8 @@
 extern "C" {
 #endif
 
-typedef volatile struct uhci_dev_s {
-    union {
+typedef struct uhci_dev_t {
+    volatile union {
         struct {
             uint32_t tx_rst                        :    1;
             uint32_t rx_rst                        :    1;
@@ -32,7 +32,7 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } conf0;
-    union {
+    volatile union {
         struct {
             uint32_t rx_start                      :    1;
             uint32_t tx_start                      :    1;
@@ -47,7 +47,7 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } int_raw;
-    union {
+    volatile union {
         struct {
             uint32_t rx_start                      :    1;
             uint32_t tx_start                      :    1;
@@ -62,7 +62,7 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } int_st;
-    union {
+    volatile union {
         struct {
             uint32_t rx_start                      :    1;
             uint32_t tx_start                      :    1;
@@ -77,7 +77,7 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } int_ena;
-    union {
+    volatile union {
         struct {
             uint32_t rx_start                      :    1;
             uint32_t tx_start                      :    1;
@@ -92,7 +92,7 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } int_clr;
-    union {
+    volatile union {
         struct {
             uint32_t app_ctrl0_int_set             :    1;
             uint32_t app_ctrl1_int_set             :    1;
@@ -100,7 +100,7 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } app_int_set;
-    union {
+    volatile union {
         struct {
             uint32_t check_sum_en                  :    1;
             uint32_t check_seq_en                  :    1;
@@ -116,7 +116,7 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } conf1;
-    union {
+    volatile union {
         struct {
             uint32_t rx_err_cause                  :    3;
             uint32_t decode_state                  :    3;
@@ -124,14 +124,14 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } state0;
-    union {
+    volatile union {
         struct {
             uint32_t encode_state                  :    3;
             uint32_t reserved3                     :    29;
         };
         uint32_t val;
     } state1;
-    union {
+    volatile union {
         struct {
             uint32_t tx_c0_esc_en                  :    1;
             uint32_t tx_db_esc_en                  :    1;
@@ -145,7 +145,7 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } escape_conf;
-    union {
+    volatile union {
         struct {
             uint32_t txfifo_timeout                :    8;
             uint32_t txfifo_timeout_shift          :    3;
@@ -157,7 +157,7 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } hung_conf;
-    union {
+    volatile union {
         struct {
             uint32_t ack_num                       :    3;
             uint32_t ack_num_load                  :    1;
@@ -166,7 +166,7 @@ typedef volatile struct uhci_dev_s {
         uint32_t val;
     } ack_num;
     uint32_t rx_head;
-    union {
+    volatile union {
         struct {
             uint32_t single_send_num               :    3;
             uint32_t single_send_en                :    1;
@@ -176,10 +176,10 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } quick_sent;
-    struct {
+    volatile struct {
         uint32_t word[2];
     } q_data[7];
-    union {
+    volatile union {
         struct {
             uint32_t seper_char                    :    8;
             uint32_t seper_esc_char0               :    8;
@@ -188,7 +188,7 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } esc_conf0;
-    union {
+    volatile union {
         struct {
             uint32_t seq0                          :    8;
             uint32_t seq0_char0                    :    8;
@@ -197,7 +197,7 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } esc_conf1;
-    union {
+    volatile union {
         struct {
             uint32_t seq1                          :    8;
             uint32_t seq1_char0                    :    8;
@@ -206,7 +206,7 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } esc_conf2;
-    union {
+    volatile union {
         struct {
             uint32_t seq2                          :    8;
             uint32_t seq2_char0                    :    8;
@@ -215,14 +215,14 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } esc_conf3;
-    union {
+    volatile union {
         struct {
             uint32_t thrs                          :    13;
             uint32_t reserved13                    :    19;
         };
         uint32_t val;
     } pkt_thres;
-    uint32_t date;
+    volatile uint32_t date;
 } uhci_dev_t;
 extern uhci_dev_t UHCI0;
 #ifdef __cplusplus

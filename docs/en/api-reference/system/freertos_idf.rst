@@ -47,7 +47,7 @@ Although an SMP system allows threads to switch cores, there are scenarios where
 SMP on an ESP Target
 ^^^^^^^^^^^^^^^^^^^^
 
-ESP targets such as ESP32, ESP32-S3, and ESP32-P4 are dual-core SMP SoCs. These targets have the following hardware features that make them SMP-capable:
+ESP targets such as ESP32, ESP32-S3, ESP32-P4 and ESP32-H4 are dual-core SMP SoCs. These targets have the following hardware features that make them SMP-capable:
 
 - Two identical cores are known as Core 0 and Core 1. This means that the execution of a piece of code is identical regardless of which core it runs on.
 - Symmetric memory (with some small exceptions).

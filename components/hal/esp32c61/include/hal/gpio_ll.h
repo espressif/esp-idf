@@ -38,6 +38,8 @@ extern "C" {
 #define GPIO_LL_PRO_CPU_INTR_ENA      (BIT(0))
 #define GPIO_LL_PRO_CPU_NMI_INTR_ENA  (BIT(1))
 
+#define GPIO_LL_INTR_SOURCE0   ETS_GPIO_INTR_SOURCE
+
 /**
  * @brief Get the configuration for an IO
  *
@@ -51,6 +53,8 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num, gpio
     io_config->pd = IO_MUX.gpion[gpio_num].gpion_fun_wpd;
     io_config->ie = IO_MUX.gpion[gpio_num].gpion_fun_ie;
     io_config->oe = (hw->enable.val & (1 << gpio_num)) >> gpio_num;
+    io_config->oe_ctrl_by_periph = !(hw->funcn_out_sel_cfg[gpio_num].funcn_oe_sel);
+    io_config->oe_inv = hw->funcn_out_sel_cfg[gpio_num].funcn_oe_inv_sel;
     io_config->od = hw->pinn[gpio_num].pinn_pad_driver;
     io_config->drv = (gpio_drive_cap_t)IO_MUX.gpion[gpio_num].gpion_fun_drv;
     io_config->fun_sel = IO_MUX.gpion[gpio_num].gpion_mcu_sel;
@@ -483,23 +487,8 @@ static inline void gpio_ll_set_input_signal_from(gpio_dev_t *hw, uint32_t signal
   */
 static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
 {
-    hw->funcn_out_sel_cfg[gpio_num].funcn_oe_inv_sel = oen_inv;
+    hw->funcn_out_sel_cfg[gpio_num].funcn_oe_inv_sel = oen_inv;       // control valid only when using gpio matrix to route signal to the IO
     hw->funcn_out_sel_cfg[gpio_num].funcn_oe_sel = !ctrl_by_periph;
-}
-
-/**
- * @brief  Select a function for the pin in the IOMUX
- *
- * @param  pin_name Pin name to configure
- * @param  func Function to assign to the pin
- */
-static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
-{
-    // Disable USB Serial JTAG if pins 12 or pins 13 needs to select an IOMUX function
-    if (pin_name == IO_MUX_GPIO12_REG || pin_name == IO_MUX_GPIO13_REG) {
-        USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
-    }
-    PIN_FUNC_SELECT(pin_name, func);
 }
 
 /**

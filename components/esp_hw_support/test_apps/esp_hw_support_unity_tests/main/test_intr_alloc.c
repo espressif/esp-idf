@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,11 +19,16 @@
 #include "esp_intr_alloc.h"
 #include "driver/gptimer.h"
 #include "soc/soc_caps.h"
+#include "soc/system_intr.h"
+#if SOC_GPSPI_SUPPORTED
 #include "soc/spi_periph.h"
 #include "hal/spi_ll.h"
+#endif
+#include "hal/gpio_ll.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/gptimer.h"
 
+#if SOC_GPTIMER_SUPPORTED
 static bool on_timer_alarm(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
     volatile int *count = (volatile int *)user_ctx;
@@ -116,6 +121,7 @@ TEST_CASE("Intr_alloc test, shared ints", "[intr_alloc]")
 {
     timer_test(ESP_INTR_FLAG_SHARED);
 }
+#endif //SOC_GPTIMER_SUPPORTED
 
 void static test_isr(void*arg)
 {
@@ -130,13 +136,13 @@ TEST_CASE("Intr_alloc test, shared interrupts don't affect level", "[intr_alloc]
     intr_handle_t handle_lvl_2;
 
     /* Allocate an interrupt of level 1 that will be shared with another source */
-    esp_err_t err = esp_intr_alloc(ETS_FROM_CPU_INTR2_SOURCE,
+    esp_err_t err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_2_SOURCE,
                                    ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED,
                                    test_isr, NULL, &handle_lvl_1);
     TEST_ESP_OK(err);
 
     /* Allocate a shared interrupt of a different level */
-    err = esp_intr_alloc(ETS_FROM_CPU_INTR3_SOURCE,
+    err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_3_SOURCE,
                          ESP_INTR_FLAG_LEVEL2  | ESP_INTR_FLAG_SHARED,
                          test_isr, NULL, &handle_lvl_2);
     TEST_ESP_OK(err);
@@ -163,7 +169,7 @@ TEST_CASE("Intr_alloc test, shared interrupts custom level cleared", "[intr_allo
 {
     intr_handle_t handle;
 
-    esp_err_t err = esp_intr_alloc(ETS_FROM_CPU_INTR2_SOURCE,
+    esp_err_t err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_2_SOURCE,
                                    ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED,
                                    test_isr, NULL, &handle);
     TEST_ESP_OK(err);
@@ -174,7 +180,7 @@ TEST_CASE("Intr_alloc test, shared interrupts custom level cleared", "[intr_allo
     /* Free the shared interrupt and try to reallocate it with another level */
     TEST_ESP_OK(esp_intr_free(handle));
 
-    err = esp_intr_alloc(ETS_FROM_CPU_INTR3_SOURCE,
+    err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_3_SOURCE,
                          ESP_INTR_FLAG_LEVEL2  | ESP_INTR_FLAG_SHARED,
                          test_isr, NULL, &handle);
     TEST_ESP_OK(err);
@@ -199,13 +205,13 @@ TEST_CASE("Intr_alloc test, shared interrupt line for two sources", "[intr_alloc
     intr_handle_t handle_1;
     intr_handle_t handle_2;
 
-    esp_err_t err = esp_intr_alloc(ETS_FROM_CPU_INTR2_SOURCE,
+    esp_err_t err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_2_SOURCE,
                                    ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED,
                                    test_isr, NULL, &handle_1);
     TEST_ESP_OK(err);
 
     /* Map another source to the exact same interrupt line */
-    err = esp_intr_alloc_bind(ETS_FROM_CPU_INTR3_SOURCE,
+    err = esp_intr_alloc_bind(SYS_CPU_INTR_FROM_CPU_3_SOURCE,
                               ESP_INTR_FLAG_LEVEL1  | ESP_INTR_FLAG_SHARED,
                               test_isr, NULL, handle_1, &handle_2);
     TEST_ESP_OK(err);
@@ -214,7 +220,7 @@ TEST_CASE("Intr_alloc test, shared interrupt line for two sources", "[intr_alloc
 
     /* Reallocate the second interrupt source with a higher level, it must fail */
     TEST_ESP_OK(esp_intr_free(handle_2));
-    err = esp_intr_alloc_bind(ETS_FROM_CPU_INTR3_SOURCE,
+    err = esp_intr_alloc_bind(SYS_CPU_INTR_FROM_CPU_3_SOURCE,
                               ESP_INTR_FLAG_LEVEL2  | ESP_INTR_FLAG_SHARED,
                               test_isr, NULL, handle_1, &handle_2);
     TEST_ASSERT(err != ESP_OK);
@@ -227,11 +233,7 @@ TEST_CASE("Intr_alloc test, shared interrupt line for two sources", "[intr_alloc
 TEST_CASE("Allocate previously freed interrupt, with different flags", "[intr_alloc]")
 {
     intr_handle_t intr;
-#if CONFIG_IDF_TARGET_ESP32P4
-    int test_intr_source = ETS_GPIO_INTR0_SOURCE;
-#else
-    int test_intr_source = ETS_GPIO_INTR_SOURCE;
-#endif
+    int test_intr_source = GPIO_LL_INTR_SOURCE0;
     int isr_flags = ESP_INTR_FLAG_LEVEL2;
 
     TEST_ESP_OK(esp_intr_alloc(test_intr_source, isr_flags, test_isr, NULL, &intr));
@@ -242,6 +244,7 @@ TEST_CASE("Allocate previously freed interrupt, with different flags", "[intr_al
     TEST_ESP_OK(esp_intr_free(intr));
 }
 
+#if SOC_GPSPI_SUPPORTED
 typedef struct {
     bool flag1;
     bool flag2;
@@ -418,7 +421,8 @@ TEST_CASE("alloc and free isr handle on different core when isr_free_task is NO_
 {
     isr_alloc_free_test(true);
 }
-#endif
+#endif //CONFIG_FREERTOS_UNICORE
+#endif //SOC_GPSPI_SUPPORTED
 
 #if __XTENSA__
 static volatile int int_timer_ctr;

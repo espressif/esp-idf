@@ -215,7 +215,19 @@ Wi-Fi 配网
      - http://<mdns-hostname>.local/proto-ver
      - 用于获取版本信息的端点
 
-连接后，客户端应用程序可以立即从 ``proto-ver`` 端点获取版本或属性信息。所有与此端点的通信均未加密，因此在建立安全会话前，可以检索相关必要信息，确保会话兼容。响应结果以 JSON 格式返回，格式类似于 ``prov: { ver:  v1.1, cap:  [no_pop] }, my_app: { ver:  1.345, cap:  [cloud, local_ctrl] },....``。其中 ``prov`` 标签提供了配网服务的版本 ``ver`` 和属性 ``cap``。目前仅支持 ``no_pop`` 属性，表示该服务不需要验证所有权证明。任何与应用程序相关的版本或属性将由其他标签给出，如本示例中的 ``my_app``。使用 :cpp:func:`wifi_prov_mgr_set_app_info()` 可以设置这些附加字段。
+连接后，客户端应用程序可以立即从 ``proto-ver`` 端点获取版本或功能信息。所有与此端点的通信均未加密，因此在建立安全会话之前，可以检索相关必要信息，确保会话兼容。响应数据采用 JSON 格式，示例如下：``prov: { ver:  v1.1, sec_ver: 1, sec_patch_ver: 0, cap:  [no_pop] }, my_app: { ver:  1.345, cap:  [cloud, local_ctrl] },....``。
+
+其中，``prov`` 标签提供以下信息：
+
+    - 配网服务的版本 ``ver``
+    - 安全版本 ``sec_ver``
+    - 安全补丁版本 ``sec_patch_ver`` （默认为 0）
+    - 功能 ``cap``
+
+目前仅支持 ``no_pop`` 功能，该功能表示服务无需用户提供所有权证明即可进行身份验证。任何与应用程序相关的版本或功能将由其他标签提供，如上述示例中的 ``my_app``。使用 :cpp:func:`wifi_prov_mgr_set_app_info()` 可以设置这些附加字段。
+
+.. important::
+   建立会话时，客户端应依据 ``sec_ver`` 和 ``sec_patch_ver`` 字段来确定使用何种安全方案。
 
 用户端应用程序需要根据所配置的安全方案实现签名握手，以建立和认证 protocomm 安全会话。当管理器配置为使用 protocomm security 0 时，则不需要实现签名握手。
 

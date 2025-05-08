@@ -1,27 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/lock.h>
-#include "sdkconfig.h"
-#if CONFIG_PARLIO_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "esp_log.h"
-#include "esp_check.h"
 #include "clk_ctrl_os.h"
-#include "soc/rtc.h"
-#include "soc/parlio_periph.h"
-#include "hal/parlio_ll.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/sleep_retention.h"
-#include "parlio_private.h"
-
-static const char *TAG = "parlio";
+#include "parlio_priv.h"
 
 typedef struct parlio_platform_t {
     _lock_t mutex;                             // platform level mutex lock
@@ -204,3 +190,11 @@ void parlio_create_retention_module(parlio_group_t *group)
     _lock_release(&s_platform.mutex);
 }
 #endif // PARLIO_USE_RETENTION_LINK
+
+#if CONFIG_PARLIO_ENABLE_DEBUG_LOG
+__attribute__((constructor))
+static void parlio_override_default_log_level(void)
+{
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+}
+#endif

@@ -44,6 +44,8 @@ extern "C" {
 #define GPIO_LL_INTR2_ENA      (BIT(3))
 #define GPIO_LL_INTR3_ENA      (BIT(4))
 
+#define GPIO_LL_INTR_SOURCE0   ETS_GPIO_INTR0_SOURCE
+
 /**
  * @brief Get the configuration for an IO
  *
@@ -59,6 +61,8 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num, gpio
     io_config->pd = IO_MUX.gpio[gpio_num].fun_wpd;
     io_config->ie = IO_MUX.gpio[gpio_num].fun_ie;
     io_config->oe = (((gpio_num < 32) ? hw->enable.val : hw->enable1.val) & bit_mask) >> bit_shift;
+    io_config->oe_ctrl_by_periph = !(hw->func_out_sel_cfg[gpio_num].oen_sel);
+    io_config->oe_inv = hw->func_out_sel_cfg[gpio_num].oen_inv_sel;
     io_config->od = hw->pin[gpio_num].pad_driver;
     io_config->drv = (gpio_drive_cap_t)IO_MUX.gpio[gpio_num].fun_drv;
     io_config->fun_sel = IO_MUX.gpio[gpio_num].mcu_sel;
@@ -586,27 +590,8 @@ static inline void gpio_ll_set_input_signal_from(gpio_dev_t *hw, uint32_t signal
   */
 static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
 {
-    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
+    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;       // control valid only when using gpio matrix to route signal to the IO
     hw->func_out_sel_cfg[gpio_num].oen_sel = !ctrl_by_periph;
-}
-
-/**
- * @brief  Select a function for the pin in the IOMUX
- *
- * @param  pin_name Pin name to configure
- * @param  func Function to assign to the pin
- */
-static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
-{
-    // Disable USB PHY configuration if pins (24, 25) (26, 27) needs to select an IOMUX function
-    // P4 has two internal PHYs connecting to USJ and USB_WRAP(OTG1.1) separately.
-    // We only consider the default connection here: PHY0 -> USJ, PHY1 -> USB_OTG
-    if (pin_name == IO_MUX_GPIO24_REG || pin_name == IO_MUX_GPIO25_REG) {
-        USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
-    } else if (pin_name == IO_MUX_GPIO26_REG || pin_name == IO_MUX_GPIO27_REG) {
-        USB_WRAP.otg_conf.usb_pad_enable = 0;
-    }
-    PIN_FUNC_SELECT(pin_name, func);
 }
 
 /**

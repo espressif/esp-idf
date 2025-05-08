@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,8 @@
 #include "soc/soc_caps.h"
 
 #ifdef SOC_DIG_SIGN_SUPPORTED
+
+#include "rom/digital_signature.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +40,15 @@ extern "C" {
         + ESP_DS_SIGNATURE_L_BIT_LEN   \
         + ESP_DS_SIGNATURE_PADDING_BIT_LEN) / 8))
 
-typedef struct esp_ds_context esp_ds_context_t;
+/**
+ * @brief Context object used for non-blocking digital signature operations
+ *
+ * This object is allocated by \c esp_ds_start_sign() and must be passed to
+ * \c esp_ds_finish_sign() to complete the digital signature operation.
+ */
+typedef struct esp_ds_context {
+    const ets_ds_data_t *data;  /*!< Pointer to the encrypted private key data */
+} esp_ds_context_t;
 
 typedef enum {
     ESP_DS_RSA_1024 = (1024 / 32) - 1,

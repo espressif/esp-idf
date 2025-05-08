@@ -7,7 +7,7 @@
 # See https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html
 # for explanation of partition table structure and uses.
 #
-# SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import binascii
@@ -31,7 +31,7 @@ SECURE_NONE = None
 SECURE_V1 = 'v1'
 SECURE_V2 = 'v2'
 
-__version__ = '1.4'
+__version__ = '1.5'
 
 APP_TYPE = 0x00
 DATA_TYPE = 0x01
@@ -44,6 +44,8 @@ TYPES = {
     'app': APP_TYPE,
     'data': DATA_TYPE,
 }
+
+NVS_RW_MIN_PARTITION_SIZE = 0x3000
 
 
 def get_ptype_as_int(ptype):
@@ -532,6 +534,11 @@ class PartitionDefinition(object):
         if self.type == TYPES['data'] and self.subtype in always_rw_data_subtypes and self.readonly is True:
             raise ValidationError(self, "'%s' partition of type %s and subtype %s is always read-write and cannot be read-only" %
                                   (self.name, self.type, self.subtype))
+
+        if self.type == TYPES['data'] and self.subtype == SUBTYPES[DATA_TYPE]['nvs']:
+            if self.size < NVS_RW_MIN_PARTITION_SIZE and self.readonly is False:
+                raise ValidationError(self, """'%s' partition of type %s and subtype %s of this size (0x%x) must be flagged as 'readonly' \
+(the size of read/write NVS has to be at least 0x%x)""" % (self.name, self.type, self.subtype, self.size, NVS_RW_MIN_PARTITION_SIZE))
 
     STRUCT_FORMAT = b'<2sBBLL16sL'
 

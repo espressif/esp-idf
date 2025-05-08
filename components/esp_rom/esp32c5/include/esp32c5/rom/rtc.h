@@ -46,7 +46,7 @@ extern "C" {
   *     LP_AON_STORE1_REG       RTC_SLOW_CLK calibration value
   *     LP_AON_STORE2_REG       Boot time, low word
   *     LP_AON_STORE3_REG       Boot time, high word
-  *     LP_AON_STORE4_REG       External XTAL frequency
+  *     LP_AON_STORE4_REG       Status of whether to disable LOG from ROM at bit[0]
   *     LP_AON_STORE5_REG       FAST_RTC_MEMORY_LENGTH
   *     LP_AON_STORE6_REG       FAST_RTC_MEMORY_ENTRY
   *     LP_AON_STORE7_REG       FAST_RTC_MEMORY_CRC
@@ -58,7 +58,6 @@ extern "C" {
 #define RTC_SLOW_CLK_CAL_REG                LP_AON_STORE1_REG
 #define RTC_BOOT_TIME_LOW_REG               LP_AON_STORE2_REG
 #define RTC_BOOT_TIME_HIGH_REG              LP_AON_STORE3_REG
-#define RTC_XTAL_FREQ_REG                   LP_AON_STORE4_REG
 #define RTC_ENTRY_LENGTH_REG                LP_AON_STORE5_REG
 #define RTC_ENTRY_ADDR_REG                  LP_AON_STORE6_REG
 #define RTC_RESET_CAUSE_REG                 LP_AON_STORE6_REG

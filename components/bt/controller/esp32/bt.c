@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,10 @@
 
 #include "esp_rom_sys.h"
 #include "hli_api.h"
+
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#include "ble_log/ble_log_spi_out.h"
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 
 #if CONFIG_BT_ENABLED
 
@@ -248,7 +252,16 @@ extern uint32_t _bt_controller_data_end;
 extern void config_bt_funcs_reset(void);
 extern void config_ble_funcs_reset(void);
 extern void config_btdm_funcs_reset(void);
-extern void config_ble_vs_qa_funcs_reset(void);
+
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+extern void bt_stack_enableSecCtrlVsCmd(bool en);
+#endif // CONFIG_BT_BLUEDROID_ENABLED
+#if defined(CONFIG_BT_NIMBLE_ENABLED) || defined(CONFIG_BT_BLUEDROID_ENABLED)
+extern void bt_stack_enableCoexVsCmd(bool en);
+extern void scan_stack_enableAdvFlowCtrlVsCmd(bool en);
+extern void adv_stack_enableClearLegacyAdvVsCmd(bool en);
+extern void advFilter_stack_enableDupExcListVsCmd(bool en);
+#endif // (CONFIG_BT_NIMBLE_ENABLED) || (CONFIG_BT_BLUEDROID_ENABLED)
 
 /* Local Function Declare
  *********************************************************************
@@ -1047,9 +1060,8 @@ static bool async_wakeup_request(int event)
 
     switch (event) {
         case BTDM_ASYNC_WAKEUP_REQ_HCI:
-            btdm_in_wakeup_requesting_set(true);
-            // NO break
         case BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA:
+            btdm_in_wakeup_requesting_set(true);
             if (!btdm_power_state_active()) {
                 do_wakeup_request = true;
 
@@ -1082,10 +1094,10 @@ static void async_wakeup_request_end(int event)
     bool request_lock = false;
     switch (event) {
         case BTDM_ASYNC_WAKEUP_REQ_HCI:
+        case BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA:
             request_lock = true;
             break;
         case BTDM_ASYNC_WAKEUP_REQ_COEX:
-        case BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA:
             request_lock = false;
             break;
         default:
@@ -1686,6 +1698,13 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     coex_init();
 #endif
 
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+    if (ble_log_spi_out_init() != 0) {
+        ESP_LOGE(BTDM_LOG_TAG, "BLE Log SPI output init failed");
+        goto error;
+    }
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+
     btdm_cfg_mask = btdm_config_mask_load();
 
     err = btdm_controller_init(btdm_cfg_mask, cfg);
@@ -1696,11 +1715,25 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto error;
     }
 
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+    bt_stack_enableSecCtrlVsCmd(true);
+#endif // CONFIG_BT_BLUEDROID_ENABLED
+#if defined(CONFIG_BT_NIMBLE_ENABLED) || defined(CONFIG_BT_BLUEDROID_ENABLED)
+    bt_stack_enableCoexVsCmd(true);
+    scan_stack_enableAdvFlowCtrlVsCmd(true);
+    adv_stack_enableClearLegacyAdvVsCmd(true);
+    advFilter_stack_enableDupExcListVsCmd(true);
+#endif // (CONFIG_BT_NIMBLE_ENABLED) || (CONFIG_BT_BLUEDROID_ENABLED)
+
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
     return ESP_OK;
 
 error:
+
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+    ble_log_spi_out_deinit();
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 
     bt_controller_deinit_internal();
 
@@ -1713,9 +1746,23 @@ esp_err_t esp_bt_controller_deinit(void)
         return ESP_ERR_INVALID_STATE;
     }
 
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+    ble_log_spi_out_deinit();
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+
     btdm_controller_deinit();
 
     bt_controller_deinit_internal();
+
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+    bt_stack_enableSecCtrlVsCmd(false);
+#endif // CONFIG_BT_BLUEDROID_ENABLED
+#if defined(CONFIG_BT_NIMBLE_ENABLED) || defined(CONFIG_BT_BLUEDROID_ENABLED)
+    bt_stack_enableCoexVsCmd(false);
+    scan_stack_enableAdvFlowCtrlVsCmd(false);
+    adv_stack_enableClearLegacyAdvVsCmd(false);
+    advFilter_stack_enableDupExcListVsCmd(false);
+#endif // (CONFIG_BT_NIMBLE_ENABLED) || (CONFIG_BT_BLUEDROID_ENABLED)
 
     return ESP_OK;
 }
@@ -1801,10 +1848,6 @@ static void patch_apply(void)
 #ifndef CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY
     config_ble_funcs_reset();
 #endif
-
-#ifdef CONFIG_BTDM_BLE_VS_QA_SUPPORT
-    config_ble_vs_qa_funcs_reset();
-#endif
 }
 
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
@@ -1879,6 +1922,7 @@ esp_err_t esp_bt_controller_disable(void)
         while (!btdm_power_state_active()) {
             esp_rom_delay_us(1000);
         }
+        async_wakeup_request_end(BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA);
     }
 
     btdm_controller_disable();

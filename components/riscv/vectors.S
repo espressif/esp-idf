@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,6 @@
 #include "sdkconfig.h"
 #include "esp_private/vectors_const.h"
 #include "esp_private/panic_reason.h"
-
 
     .equ SAVE_REGS, 32
     .equ CONTEXT_SIZE, (SAVE_REGS * 4)
@@ -193,6 +192,16 @@
     .global rtos_int_exit
     .global rtos_save_fpu_coproc
     .global _global_interrupt_handler
+
+/* TODO: IDF-12727 */
+#if SOC_CPU_HAS_FPU
+    .weak rtos_save_fpu_coproc
+    .type rtos_save_fpu_coproc, @function
+
+rtos_save_fpu_coproc:
+    ret
+#endif
+
 #ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
     .global gdbstub_handle_debug_int
 #endif
@@ -236,12 +245,25 @@ _panic_handler:
     la    ra, _return_from_exception
     /* EXT_ILL CSR should contain the reason for the Illegal Instruction */
     csrrw a0, EXT_ILL_CSR, zero
-    /* Hardware loop cannot be treated lazily, so we should never end here if a HWLP instruction is used */
+
 #if SOC_CPU_HAS_PIE
     /* Check if the PIE bit is set. */
     andi a1, a0, EXT_ILL_RSN_PIE
     bnez a1, rtos_save_pie_coproc
 #endif /* SOC_CPU_HAS_PIE */
+
+    /* We cannot check the HWLP bit in a0 since a hardware bug may set this bit even though no HWLP
+     * instruction was executed in the program at all, so check mtval (`t0`) */
+#if SOC_CPU_HAS_HWLOOP
+    /* HWLP instructions  all have an opcode of 0b0101011 */
+    andi  a1, t0, 0b1111111
+    addi  a1, a1, -0b0101011
+    bnez a1, hwlp_not_used
+    /* HWLP used in an ISR, abort */
+    mv   a0, sp
+    j    vPortCoprocUsedInISR
+hwlp_not_used:
+#endif /* SOC_CPU_HAS_HWLOOP */
 
 #if SOC_CPU_HAS_FPU
     /* Check if the FPU bit is set. When targets have the FPU reason bug (SOC_CPU_HAS_FPU_EXT_ILL_BUG),

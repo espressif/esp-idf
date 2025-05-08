@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,104 +35,63 @@ typedef enum {
  */
 #define ADC_WIDTH_BIT_DEFAULT    (ADC_WIDTH_MAX-1)
 
-#if CONFIG_IDF_TARGET_ESP32
 typedef enum {
-    ADC1_CHANNEL_0 = 0, /*!< ADC1 channel 0 is GPIO36 */
-    ADC1_CHANNEL_1,     /*!< ADC1 channel 1 is GPIO37 */
-    ADC1_CHANNEL_2,     /*!< ADC1 channel 2 is GPIO38 */
-    ADC1_CHANNEL_3,     /*!< ADC1 channel 3 is GPIO39 */
-    ADC1_CHANNEL_4,     /*!< ADC1 channel 4 is GPIO32 */
-    ADC1_CHANNEL_5,     /*!< ADC1 channel 5 is GPIO33 */
-    ADC1_CHANNEL_6,     /*!< ADC1 channel 6 is GPIO34 */
-    ADC1_CHANNEL_7,     /*!< ADC1 channel 7 is GPIO35 */
-    ADC1_CHANNEL_MAX,
+    ADC1_CHANNEL_0 = 0,
+    ADC1_CHANNEL_1,
+    ADC1_CHANNEL_2,
+    ADC1_CHANNEL_3,
+#if SOC_ADC_CHANNEL_NUM(0) > 4
+    ADC1_CHANNEL_4,
+#endif
+#if SOC_ADC_CHANNEL_NUM(0) > 5
+    ADC1_CHANNEL_5,
+#endif
+#if SOC_ADC_CHANNEL_NUM(0) > 6
+    ADC1_CHANNEL_6,
+#endif
+#if SOC_ADC_CHANNEL_NUM(0) > 7
+    ADC1_CHANNEL_7,
+#endif
+#if SOC_ADC_CHANNEL_NUM(0) > 8
+    ADC1_CHANNEL_8,
+#endif
+#if SOC_ADC_CHANNEL_NUM(0) > 9
+    ADC1_CHANNEL_9,
+#endif
+    ADC1_CHANNEL_MAX = SOC_ADC_CHANNEL_NUM(0),
 } adc1_channel_t;
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-typedef enum {
-    ADC1_CHANNEL_0 = 0, /*!< ADC1 channel 0 is GPIO1  */
-    ADC1_CHANNEL_1,     /*!< ADC1 channel 1 is GPIO2  */
-    ADC1_CHANNEL_2,     /*!< ADC1 channel 2 is GPIO3  */
-    ADC1_CHANNEL_3,     /*!< ADC1 channel 3 is GPIO4  */
-    ADC1_CHANNEL_4,     /*!< ADC1 channel 4 is GPIO5  */
-    ADC1_CHANNEL_5,     /*!< ADC1 channel 5 is GPIO6  */
-    ADC1_CHANNEL_6,     /*!< ADC1 channel 6 is GPIO7  */
-    ADC1_CHANNEL_7,     /*!< ADC1 channel 7 is GPIO8  */
-    ADC1_CHANNEL_8,     /*!< ADC1 channel 8 is GPIO9  */
-    ADC1_CHANNEL_9,     /*!< ADC1 channel 9 is GPIO10 */
-    ADC1_CHANNEL_MAX,
-} adc1_channel_t;
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
-typedef enum {
-    ADC1_CHANNEL_0 = 0, /*!< ADC1 channel 0 is GPIO0 */
-    ADC1_CHANNEL_1,     /*!< ADC1 channel 1 is GPIO1 */
-    ADC1_CHANNEL_2,     /*!< ADC1 channel 2 is GPIO2 */
-    ADC1_CHANNEL_3,     /*!< ADC1 channel 3 is GPIO3 */
-    ADC1_CHANNEL_4,     /*!< ADC1 channel 4 is GPIO4 */
-    ADC1_CHANNEL_MAX,
-} adc1_channel_t;
-#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32H21
-typedef enum {
-    ADC1_CHANNEL_0 = 0, /*!< ADC1 channel 0 is GPIO0 */
-    ADC1_CHANNEL_1,     /*!< ADC1 channel 1 is GPIO1 */
-    ADC1_CHANNEL_2,     /*!< ADC1 channel 2 is GPIO2 */
-    ADC1_CHANNEL_3,     /*!< ADC1 channel 3 is GPIO3 */
-    ADC1_CHANNEL_4,     /*!< ADC1 channel 4 is GPIO4 */
-    ADC1_CHANNEL_5,     /*!< ADC1 channel 5 is GPIO5 */
-    ADC1_CHANNEL_6,     /*!< ADC1 channel 6 is GPIO6 */
-    ADC1_CHANNEL_MAX,
-} adc1_channel_t;
-#elif CONFIG_IDF_TARGET_ESP32P4
-typedef enum {
-    ADC1_CHANNEL_0 = 0, /*!< ADC1 channel 0 is GPIO16 */
-    ADC1_CHANNEL_1,     /*!< ADC1 channel 1 is GPIO17 */
-    ADC1_CHANNEL_2,     /*!< ADC1 channel 2 is GPIO18 */
-    ADC1_CHANNEL_3,     /*!< ADC1 channel 3 is GPIO19 */
-    ADC1_CHANNEL_4,     /*!< ADC1 channel 4 is GPIO20 */
-    ADC1_CHANNEL_5,     /*!< ADC1 channel 5 is GPIO21 */
-    ADC1_CHANNEL_6,     /*!< ADC1 channel 6 is GPIO22 */
-    ADC1_CHANNEL_7,     /*!< ADC1 channel 7 is GPIO23 */
-    ADC1_CHANNEL_MAX,
-} adc1_channel_t;
-#elif CONFIG_IDF_TARGET_ESP32C61
-typedef enum {
-    ADC1_CHANNEL_0 = 0, /*!< ADC1 channel 0 is GPIO1 */
-    ADC1_CHANNEL_1,     /*!< ADC1 channel 1 is GPIO3 */
-    ADC1_CHANNEL_2,     /*!< ADC1 channel 2 is GPIO4 */
-    ADC1_CHANNEL_3,     /*!< ADC1 channel 3 is GPIO5 */
-    ADC1_CHANNEL_MAX,
-} adc1_channel_t;
-#endif // CONFIG_IDF_TARGET_*
 
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if SOC_ADC_PERIPH_NUM > 1
 typedef enum {
-    ADC2_CHANNEL_0 = 0, /*!< ADC2 channel 0 is GPIO4  (ESP32), GPIO11 (ESP32-S2) */
-    ADC2_CHANNEL_1,     /*!< ADC2 channel 1 is GPIO0  (ESP32), GPIO12 (ESP32-S2) */
-    ADC2_CHANNEL_2,     /*!< ADC2 channel 2 is GPIO2  (ESP32), GPIO13 (ESP32-S2) */
-    ADC2_CHANNEL_3,     /*!< ADC2 channel 3 is GPIO15 (ESP32), GPIO14 (ESP32-S2) */
-    ADC2_CHANNEL_4,     /*!< ADC2 channel 4 is GPIO13 (ESP32), GPIO15 (ESP32-S2) */
-    ADC2_CHANNEL_5,     /*!< ADC2 channel 5 is GPIO12 (ESP32), GPIO16 (ESP32-S2) */
-    ADC2_CHANNEL_6,     /*!< ADC2 channel 6 is GPIO14 (ESP32), GPIO17 (ESP32-S2) */
-    ADC2_CHANNEL_7,     /*!< ADC2 channel 7 is GPIO27 (ESP32), GPIO18 (ESP32-S2) */
-    ADC2_CHANNEL_8,     /*!< ADC2 channel 8 is GPIO25 (ESP32), GPIO19 (ESP32-S2) */
-    ADC2_CHANNEL_9,     /*!< ADC2 channel 9 is GPIO26 (ESP32), GPIO20 (ESP32-S2) */
-    ADC2_CHANNEL_MAX,
-} adc2_channel_t;
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
-// ESP32C6 has no ADC2
-typedef enum {
-    ADC2_CHANNEL_0 = 0, /*!< ADC2 channel 0 is GPIO5 */
-    ADC2_CHANNEL_MAX,
-} adc2_channel_t;
-
-#elif CONFIG_IDF_TARGET_ESP32P4
-typedef enum {
-    ADC2_CHANNEL_0 = 0, /*!< ADC2 channel 0 is GPIO49 */
-    ADC2_CHANNEL_1,     /*!< ADC2 channel 1 is GPIO50 */
-    ADC2_CHANNEL_2,     /*!< ADC2 channel 2 is GPIO51 */
-    ADC2_CHANNEL_3,     /*!< ADC2 channel 3 is GPIO52 */
-    ADC2_CHANNEL_4,     /*!< ADC2 channel 4 is GPIO53 */
-    ADC2_CHANNEL_5,     /*!< ADC2 channel 5 is GPIO54 */
-    ADC2_CHANNEL_MAX,
+    ADC2_CHANNEL_0 = 0,
+#if SOC_ADC_CHANNEL_NUM(1) > 1
+    ADC2_CHANNEL_1,
+#endif
+#if SOC_ADC_CHANNEL_NUM(1) > 2
+    ADC2_CHANNEL_2,
+#endif
+#if SOC_ADC_CHANNEL_NUM(1) > 3
+    ADC2_CHANNEL_3,
+#endif
+#if SOC_ADC_CHANNEL_NUM(1) > 4
+    ADC2_CHANNEL_4,
+#endif
+#if SOC_ADC_CHANNEL_NUM(1) > 5
+    ADC2_CHANNEL_5,
+#endif
+#if SOC_ADC_CHANNEL_NUM(1) > 6
+    ADC2_CHANNEL_6,
+#endif
+#if SOC_ADC_CHANNEL_NUM(1) > 7
+    ADC2_CHANNEL_7,
+#endif
+#if SOC_ADC_CHANNEL_NUM(1) > 8
+    ADC2_CHANNEL_8,
+#endif
+#if SOC_ADC_CHANNEL_NUM(1) > 9
+    ADC2_CHANNEL_9,
+#endif
+    ADC2_CHANNEL_MAX = SOC_ADC_CHANNEL_NUM(1),
 } adc2_channel_t;
 #endif
 

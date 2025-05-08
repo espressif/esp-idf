@@ -266,6 +266,88 @@ If the MSC ``CONFIG_TINYUSB_MSC_ENABLED`` option is enabled in Menuconfig, the E
     };
     tinyusb_msc_storage_init_sdmmc(&config_sdmmc);
 
+MSC Performance Optimization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Single-Buffer Approach**
+
+The single-buffer approach improves performance by using a dedicated buffer to temporarily store incoming write data instead of processing it immediately in the callback.
+
+- **Configurable buffer size**: The buffer size is set via ``CONFIG_TINYUSB_MSC_BUFSIZE``, allowing users to balance performance and memory usage.
+
+This approach ensures that USB transactions remain fast while avoiding potential delays caused by storage operations.
+
+**USB MSC Drive Performance**
+
+.. only:: esp32s3
+
+    .. list-table::
+        :header-rows: 1
+        :widths: 20 20 20
+
+        * - FIFO Size
+          - Read Speed
+          - Write Speed
+
+        * - 512 B
+          - 0.566 MB/s
+          - 0.236 MB/s
+
+        * - 8192 B
+          - 0.925 MB/s
+          - 0.928 MB/s
+
+.. only:: esp32p4
+
+    .. list-table::
+        :header-rows: 1
+        :widths: 20 20 20
+
+        * - FIFO Size
+          - Read Speed
+          - Write Speed
+
+        * - 512 B
+          - 1.174 MB/s
+          - 0.238 MB/s
+
+        * - 8192 B
+          - 4.744 MB/s
+          - 2.157 MB/s
+
+        * - 32768 B
+          - 5.998 MB/s
+          - 4.485 MB/s
+
+.. only:: esp32s2
+
+    .. note::
+
+        SD card support is not available for ESP32-S2 in MSC device mode.
+
+    **SPI Flash Performance:**
+
+    .. list-table::
+        :header-rows: 1
+        :widths: 20 20
+
+        * - FIFO Size
+          - Write Speed
+
+        * - 512 B
+          - 5.59 KB/s
+
+        * - 8192 B
+          - 21.54 KB/s
+
+Performance Limitations:
+
+- **Internal SPI Flash performance** is constrained by architectural limitations where program execution and storage access share the same flash chip. This results in program execution being **suspended during flash writes**, significantly impacting performance.
+- **Internal SPI Flash usage is intended primarily for demonstration purposes.** For practical use cases requiring higher performance, it is recommended to use **external storage such as an SD card or an external SPI flash chip, where supported.**
+
+.. only:: esp32s3 or esp32p4
+
+    SD cards are not affected by this constraint, explaining their higher performance gains.
 
 Application Examples
 --------------------

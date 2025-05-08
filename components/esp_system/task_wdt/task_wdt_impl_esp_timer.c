@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,12 @@
 #include "esp_debug_helpers.h"
 #include "esp_timer.h"
 #include "esp_private/esp_task_wdt_impl.h"
+
+#if CONFIG_PM_SLP_IRAM_OPT
+# define TASK_WDT_FN_ATTR   IRAM_ATTR
+#else
+# define TASK_WDT_FN_ATTR
+#endif
 
 /**
  * Context for the software implementation of the Task WatchDog Timer.
@@ -50,7 +56,7 @@ esp_err_t esp_task_wdt_impl_timer_allocate(const esp_task_wdt_config_t *config,
     esp_err_t ret = esp_timer_create(&timer_args, &ctx->sw_timer);
     ESP_GOTO_ON_FALSE((ret == ESP_OK), ret, reterr, TAG, "could not start periodic timer");
 
-    /* Configure it as a periodic timer, so that we check the Tasks everytime it is triggered.
+    /* Configure it as a periodic timer, so that we check the Tasks every time it is triggered.
      * No need to start the timer here, it will be started later with `esp_task_wdt_impl_timer_restart` */
     ctx->period_ms = config->timeout_ms;
 
@@ -89,7 +95,7 @@ void esp_task_wdt_impl_timer_free(twdt_ctx_t obj)
     }
 }
 
-esp_err_t esp_task_wdt_impl_timer_feed(twdt_ctx_t obj)
+esp_err_t TASK_WDT_FN_ATTR esp_task_wdt_impl_timer_feed(twdt_ctx_t obj)
 {
     esp_err_t ret = ESP_OK;
     const twdt_ctx_soft_t* ctx = (twdt_ctx_soft_t*) obj;

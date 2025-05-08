@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,10 @@
 #include "soc/soc_caps.h"
 #include "bt_common.h"
 #include "hci_log/bt_hci_log.h"
+
+#if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#include "ble_log/ble_log_spi_out.h"
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
 
 #define NIMBLE_VHCI_TIMEOUT_MS  2000
 #define BLE_HCI_EVENT_HDR_LEN               (2)
@@ -68,6 +72,9 @@ void esp_vhci_host_send_packet_wrapper(uint8_t *data, uint16_t len)
 #if (BT_HCI_LOG_INCLUDED == TRUE)
     bt_hci_log_record_hci_data(data[0], &data[1], len - 1);
 #endif
+#if (CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
+    ble_log_spi_out_write_with_ts(BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM, data, len);
+#endif // (CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
     esp_vhci_host_send_packet(data, len);
 }
 
@@ -202,7 +209,12 @@ void bt_record_hci_data(uint8_t *data, uint16_t len)
         || (data[3] == BLE_HCI_LE_SUBEV_EXT_ADV_RPT) || (data[3] == BLE_HCI_LE_SUBEV_PERIODIC_ADV_RPT))) {
         bt_hci_log_record_hci_adv(HCI_LOG_DATA_TYPE_ADV, &data[2], len - 2);
     } else {
-        uint8_t data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
+        uint8_t data_type;
+        if (data[0] == HCI_LOG_DATA_TYPE_ISO_DATA) {
+            data_type = HCI_LOG_DATA_TYPE_ISO_DATA;
+        } else {
+            data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
+        }
         bt_hci_log_record_hci_data(data_type, &data[1], len - 1);
     }
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)
@@ -219,6 +231,10 @@ static int dummy_host_rcv_pkt(uint8_t *data, uint16_t len)
  */
 static int host_rcv_pkt(uint8_t *data, uint16_t len)
 {
+#if (CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
+    ble_log_spi_out_write_with_ts(BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM, data, len);
+#endif // (CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
+
     bt_record_hci_data(data, len);
 
     if(!ble_hs_enabled_state) {

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -835,56 +835,6 @@ extern "C" {
 #define I2S_TX_IIR_HP_MULT12_0_M  (I2S_TX_IIR_HP_MULT12_0_V << I2S_TX_IIR_HP_MULT12_0_S)
 #define I2S_TX_IIR_HP_MULT12_0_V  0x00000007U
 #define I2S_TX_IIR_HP_MULT12_0_S  23
-
-/** I2S_RX_PDM2PCM_CONF_REG register
- *  I2S RX configure register
- */
-#define I2S_RX_PDM2PCM_CONF_REG(i) (REG_I2S_BASE(i) + 0x4c)
-/** I2S_RX_PDM2PCM_EN : R/W; bitpos: [19]; default: 0;
- *  1: Enable PDM2PCM RX mode. 0: DIsable.
- */
-#define I2S_RX_PDM2PCM_EN    (BIT(19))
-#define I2S_RX_PDM2PCM_EN_M  (I2S_RX_PDM2PCM_EN_V << I2S_RX_PDM2PCM_EN_S)
-#define I2S_RX_PDM2PCM_EN_V  0x00000001U
-#define I2S_RX_PDM2PCM_EN_S  19
-/** I2S_RX_PDM_SINC_DSR_16_EN : R/W; bitpos: [20]; default: 0;
- *  Configure the down sampling rate of PDM RX filter group1 module. 1: The  down
- *  sampling rate is 128. 0: down sampling rate is 64.
- */
-#define I2S_RX_PDM_SINC_DSR_16_EN    (BIT(20))
-#define I2S_RX_PDM_SINC_DSR_16_EN_M  (I2S_RX_PDM_SINC_DSR_16_EN_V << I2S_RX_PDM_SINC_DSR_16_EN_S)
-#define I2S_RX_PDM_SINC_DSR_16_EN_V  0x00000001U
-#define I2S_RX_PDM_SINC_DSR_16_EN_S  20
-/** I2S_RX_PDM2PCM_AMPLIFY_NUM : R/W; bitpos: [24:21]; default: 1;
- *  Configure PDM RX amplify number.
- */
-#define I2S_RX_PDM2PCM_AMPLIFY_NUM    0x0000000FU
-#define I2S_RX_PDM2PCM_AMPLIFY_NUM_M  (I2S_RX_PDM2PCM_AMPLIFY_NUM_V << I2S_RX_PDM2PCM_AMPLIFY_NUM_S)
-#define I2S_RX_PDM2PCM_AMPLIFY_NUM_V  0x0000000FU
-#define I2S_RX_PDM2PCM_AMPLIFY_NUM_S  21
-/** I2S_RX_PDM_HP_BYPASS : R/W; bitpos: [25]; default: 0;
- *  I2S PDM RX bypass hp filter or not.
- */
-#define I2S_RX_PDM_HP_BYPASS    (BIT(25))
-#define I2S_RX_PDM_HP_BYPASS_M  (I2S_RX_PDM_HP_BYPASS_V << I2S_RX_PDM_HP_BYPASS_S)
-#define I2S_RX_PDM_HP_BYPASS_V  0x00000001U
-#define I2S_RX_PDM_HP_BYPASS_S  25
-/** I2S_RX_IIR_HP_MULT12_5 : R/W; bitpos: [28:26]; default: 6;
- *  The fourth parameter of PDM RX IIR_HP filter stage 2 is (504 +
- *  LP_I2S_RX_IIR_HP_MULT12_5[2:0])
- */
-#define I2S_RX_IIR_HP_MULT12_5    0x00000007U
-#define I2S_RX_IIR_HP_MULT12_5_M  (I2S_RX_IIR_HP_MULT12_5_V << I2S_RX_IIR_HP_MULT12_5_S)
-#define I2S_RX_IIR_HP_MULT12_5_V  0x00000007U
-#define I2S_RX_IIR_HP_MULT12_5_S  26
-/** I2S_RX_IIR_HP_MULT12_0 : R/W; bitpos: [31:29]; default: 7;
- *  The fourth parameter of PDM RX IIR_HP filter stage 1 is (504 +
- *  LP_I2S_RX_IIR_HP_MULT12_0[2:0])
- */
-#define I2S_RX_IIR_HP_MULT12_0    0x00000007U
-#define I2S_RX_IIR_HP_MULT12_0_M  (I2S_RX_IIR_HP_MULT12_0_V << I2S_RX_IIR_HP_MULT12_0_S)
-#define I2S_RX_IIR_HP_MULT12_0_V  0x00000007U
-#define I2S_RX_IIR_HP_MULT12_0_S  29
 
 /** I2S_RX_TDM_CTRL_REG register
  *  I2S TX TDM mode control register

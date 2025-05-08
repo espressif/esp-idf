@@ -6,11 +6,9 @@
 
 /*******************************************************************************
  * NOTICE
+ * The Lowlevel layer for SPI Flash
  * The ll is not public api, don't use in application code.
- * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
-
-// The Lowlevel layer for SPI Flash
 
 #pragma once
 

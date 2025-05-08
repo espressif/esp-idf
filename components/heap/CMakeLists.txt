@@ -22,7 +22,8 @@ set(includes "include"
 # inside the heap component and are therefore added
 # to the list of the private includes from the heap
 # component perspective
-set(priv_includes "tlsf/include")
+set(priv_includes "private_include"
+                  "tlsf/include")
 
 if(NOT CONFIG_HEAP_TLSF_USE_ROM_IMPL)
     list(APPEND srcs "tlsf/tlsf.c")
@@ -49,7 +50,6 @@ if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "port/memory_layout_utils.c")
     list(APPEND srcs "port/${target}/memory_layout.c")
 endif()
-
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${includes}

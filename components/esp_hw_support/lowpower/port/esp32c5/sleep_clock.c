@@ -5,6 +5,7 @@
  */
 
 #include "esp_private/sleep_clock.h"
+#include "soc/lp_analog_peri_reg.h"
 #include "soc/pcr_reg.h"
 #include "soc/pmu_reg.h"
 #include "soc/rtc.h"
@@ -31,11 +32,13 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
         [4] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(4),    I2C_ANA_MST_ANA_CONF0_REG,  0,                              I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
         [5] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(5),    I2C_ANA_MST_ANA_CONF0_REG,  I2C_MST_BBPLL_STOP_FORCE_HIGH,  I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
         /* Clock configuration retention */
-        [6] = { .config = REGDMA_LINK_WAIT_INIT (REGDMA_PCR_LINK(6),    PMU_CLK_STATE0_REG,         PMU_STABLE_XPD_BBPLL_STATE,     PMU_STABLE_XPD_BBPLL_STATE_M,   1, 0),  .owner = ENTRY(0)},             /* Wait PMU_WAIT_XTL_STABLE done */
-        [7] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(7),    PCR_AHB_FREQ_CONF_REG,      0,                              PCR_AHB_DIV_NUM,                1, 0),  .owner = ENTRY(0) | ENTRY(1) }, /* Set AHB bus frequency to XTAL frequency */
-        [8] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(8),    PCR_BUS_CLK_UPDATE_REG,     1,                              PCR_BUS_CLOCK_UPDATE,           1, 0),  .owner = ENTRY(0) | ENTRY(1) },
+        [6] = { .config = REGDMA_LINK_WAIT_INIT (REGDMA_PCR_LINK(6),    PMU_CLK_STATE0_REG,         PMU_STABLE_XPD_BBPLL_STATE,     PMU_STABLE_XPD_BBPLL_STATE_M,   1, 0), .owner = ENTRY(0) },            /* Wait PMU_WAIT_XTL_STABLE done */
+        [7] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(7),    PCR_AHB_FREQ_CONF_REG,      0,                              PCR_AHB_DIV_NUM,                1, 0), .owner = ENTRY(0) | ENTRY(1) }, /* Set AHB bus frequency to XTAL frequency */
+        [8] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(8),    PCR_BUS_CLK_UPDATE_REG,     1,                              PCR_BUS_CLOCK_UPDATE,           1, 0), .owner = ENTRY(0) | ENTRY(1) },
+        [9] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(10), LP_ANA_POWER_GLITCH_CNTL_REG, 0,                              LP_ANA_PWR_GLITCH_RESET_ENA_M,  0, 1), .owner = ENTRY(0) | ENTRY(1) }, /* Disable power glitch detector on sleep backup */
+        [10] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(11), LP_ANA_POWER_GLITCH_CNTL_REG, 0xF,                            LP_ANA_PWR_GLITCH_RESET_ENA_M,  1, 0), .owner = ENTRY(0) | ENTRY(1) }, /* Enable power glitch detector on wakeup restore */
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-        [9] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(9), DR_REG_PCR_BASE,            DR_REG_PCR_BASE,    75, 0, 0,   0xffffffff, 0xffffffff, 0x200007f7, 0x0), .owner = ENTRY(0) | ENTRY(1) },
+        [11] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(9), DR_REG_PCR_BASE,        DR_REG_PCR_BASE,    75, 0, 0,   0xffffffff, 0xffffffff, 0x200007f7, 0x0), .owner = ENTRY(0) | ENTRY(1) },
 #endif
     };
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
@@ -115,7 +118,9 @@ bool clock_domain_pd_allowed(void)
      * necessary to check the state of CLOCK_MODEM to determine MODEM domain on
      * or off. The clock and reset of digital peripherals are managed through
      * PCR, with TOP domain similar to MODEM domain. */
+#if SOC_WIFI_SUPPORTED || SOC_BLE_SUPPORTED || SOC_IEEE802154_SUPPORTED
     sleep_retention_module_bitmap_t modem_clk_dep_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
+#endif
 #if SOC_WIFI_SUPPORTED
     modem_clk_dep_modules.bitmap[SLEEP_RETENTION_MODULE_WIFI_MAC >> 5] |= BIT(SLEEP_RETENTION_MODULE_WIFI_MAC % 32);
     modem_clk_dep_modules.bitmap[SLEEP_RETENTION_MODULE_WIFI_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_WIFI_BB % 32);

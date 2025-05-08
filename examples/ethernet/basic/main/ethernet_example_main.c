@@ -106,13 +106,13 @@ void app_main(void)
             esp_netif_config.if_desc = if_desc_str;
             esp_netif_config.route_prio -= i*5;
             eth_netifs[i] = esp_netif_new(&cfg_spi);
-            eth_netif_glues[i] = esp_eth_new_netif_glue(eth_handles[0]);
+            eth_netif_glues[i] = esp_eth_new_netif_glue(eth_handles[i]);
             // Attach Ethernet driver to TCP/IP stack
             ESP_ERROR_CHECK(esp_netif_attach(eth_netifs[i], eth_netif_glues[i]));
         }
     }
 
-    // Register user defined event handers
+    // Register user defined event handlers
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL));
 

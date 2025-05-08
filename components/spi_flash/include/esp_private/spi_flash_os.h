@@ -32,13 +32,13 @@ typedef enum {
     ESP_MSPI_IO_CS0, /* cs for spi flash */
     ESP_MSPI_IO_HD,
     ESP_MSPI_IO_WP,
-#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     ESP_MSPI_IO_DQS,
     ESP_MSPI_IO_D4,
     ESP_MSPI_IO_D5,
     ESP_MSPI_IO_D6,
     ESP_MSPI_IO_D7,
-#endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
+#endif // SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
 #if CONFIG_SPIRAM
     ESP_MSPI_IO_CS1, /* cs for spi ram */
 #endif

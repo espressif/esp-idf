@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include "esp_log.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/mspi_timing_tuning.h"
-#include "../esp_psram_impl.h"
+#include "esp_private/esp_psram_impl.h"
 #include "hal/psram_ctrlr_ll.h"
 #include "hal/mspi_ll.h"
 #include "clk_ctrl_os.h"
@@ -54,7 +54,11 @@
 #define AP_HEX_PSRAM_CS_ECC_HOLD_TIME      4
 #define AP_HEX_PSRAM_CS_HOLD_DELAY         3
 
+#if CONFIG_SPIRAM_SPEED_80M
+#define AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ 320
+#else
 #define AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ 400
+#endif
 
 typedef struct {
     union {
@@ -369,7 +373,9 @@ esp_err_t esp_psram_impl_enable(void)
 {
 #if SOC_CLK_MPLL_SUPPORTED
     periph_rtc_mpll_acquire();
-    periph_rtc_mpll_freq_set(AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ * 1000000, NULL);
+    uint32_t real_mpll_freq = 0;
+    periph_rtc_mpll_freq_set(AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ * 1000000, &real_mpll_freq);
+    ESP_EARLY_LOGD(TAG, "real_mpll_freq: %d", real_mpll_freq);
 #endif
 
     PSRAM_RCC_ATOMIC() {

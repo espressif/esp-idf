@@ -293,7 +293,12 @@ static inline void touch_ll_set_charge_voltage_low_limit(touch_volt_lim_l_t low_
  */
 static inline void touch_ll_set_init_charge_voltage(uint32_t touch_num, touch_init_charge_volt_t init_charge_volt)
 {
-    RTCIO.touch_pad[touch_num].tie_opt = init_charge_volt;
+    if (init_charge_volt == TOUCH_INIT_CHARGE_VOLT_FLOAT) {
+        RTCIO.touch_pad[touch_num].xpd = 0;
+    } else {
+        RTCIO.touch_pad[touch_num].xpd = 1;
+        RTCIO.touch_pad[touch_num].tie_opt = init_charge_volt;
+    }
 }
 
 /**
@@ -949,7 +954,12 @@ static inline void touch_ll_get_slope(touch_pad_t touch_num, touch_cnt_slope_t *
  */
 static inline void touch_ll_set_tie_option(touch_pad_t touch_num, touch_tie_opt_t opt)
 {
-    RTCIO.touch_pad[touch_num].tie_opt = opt;
+    if (opt == TOUCH_PAD_TIE_OPT_FLOAT) {
+        RTCIO.touch_pad[touch_num].xpd = 0;
+    } else {
+        RTCIO.touch_pad[touch_num].xpd = 1;
+        RTCIO.touch_pad[touch_num].tie_opt = opt;
+    }
 }
 
 /**
@@ -960,7 +970,11 @@ static inline void touch_ll_set_tie_option(touch_pad_t touch_num, touch_tie_opt_
  */
 static inline void touch_ll_get_tie_option(touch_pad_t touch_num, touch_tie_opt_t *opt)
 {
-    *opt = (touch_tie_opt_t)RTCIO.touch_pad[touch_num].tie_opt;
+    if (RTCIO.touch_pad[touch_num].xpd) {
+        *opt = (touch_tie_opt_t)RTCIO.touch_pad[touch_num].tie_opt;
+    } else {
+        *opt = TOUCH_PAD_TIE_OPT_FLOAT;
+    }
 }
 
 /**
@@ -1390,7 +1404,7 @@ static inline void IRAM_ATTR touch_ll_read_benchmark(touch_pad_t touch_num, uint
  *
  * @note If call this API, make sure enable clock gate(`touch_ll_clkgate`) first.
  * @param touch_num touch pad index
- *                  - TOUCH_PAD_MAX Reset basaline of all channels.
+ *                  - TOUCH_PAD_MAX Reset baseline of all channels.
  */
 static inline void touch_ll_reset_benchmark(touch_pad_t touch_num)
 {
@@ -1680,6 +1694,29 @@ static inline void touch_ll_sleep_read_data(uint32_t *raw_data)
     uint32_t touch_num = RTCCNTL.touch_slp_thres.touch_slp_pad;
     SENS.sar_touch_conf.touch_data_sel = TOUCH_LL_READ_RAW;
     *raw_data = SENS.sar_touch_status[touch_num - 1].touch_pad_data;
+}
+
+/**
+ * Get the data of the touch channel according to the types
+ *
+ * @param sample_cfg_id The sample configuration index
+ * @param type  data type
+ *              0/1: TOUCH_LL_READ_RAW, the raw data of the touch channel
+ *              2:   TOUCH_LL_READ_BENCHMARK, benchmark value of touch channel,
+ *                   the benchmark value is the maximum during the first measurement period
+ *              3:   TOUCH_LL_READ_SMOOTH, the smoothed data that obtained by filtering the raw data.
+ * @param smooth_data pointer to smoothed data
+ */
+__attribute__((always_inline))
+static inline void touch_ll_sleep_read_chan_data(uint8_t type, uint32_t *data)
+{
+    SENS.sar_touch_conf.touch_data_sel = type;
+    if (type == TOUCH_LL_READ_RAW) {
+        uint32_t touch_num = RTCCNTL.touch_slp_thres.touch_slp_pad;
+        *data = SENS.sar_touch_status[touch_num - 1].touch_pad_data;
+    } else {
+        *data = SENS.sar_touch_slp_status.touch_slp_data;
+    }
 }
 
 /**

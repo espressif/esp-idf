@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include <sys/fcntl.h>
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
+#include "esp_system_console.h"
 
 static int syscall_not_implemented(struct _reent *r, ...)
 {
@@ -34,9 +35,9 @@ ssize_t _write_r_console(struct _reent *r, int fd, const void * data, size_t siz
     if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
         for (size_t i = 0; i < size; ++i) {
             if (cdata[i] == '\n') {
-                esp_rom_output_tx_one_char('\r');
+                esp_system_console_put_char('\r');
             }
-            esp_rom_output_tx_one_char(cdata[i]);
+            esp_system_console_put_char(cdata[i]);
         }
         return size;
     }

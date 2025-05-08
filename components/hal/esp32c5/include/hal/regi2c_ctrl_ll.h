@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "modem/modem_lpcon_struct.h"
 #include "modem/modem_syscon_struct.h"
 #include "soc/i2c_ana_mst_reg.h"
+#include "soc/pmu_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,19 +97,24 @@ static inline __attribute__((always_inline)) bool regi2c_ctrl_ll_bbpll_calibrati
 }
 
 /**
- * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC and TSENS registers
  */
-static inline void regi2c_ctrl_ll_i2c_saradc_enable(void)
+static inline void regi2c_ctrl_ll_i2c_sar_periph_enable(void)
 {
-    // TODO: IDF-8727
+    //Enter regi2c reset mode
+    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
+    //Enable REGI2C for SAR_ADC and TSENS
+    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
+    //Release regi2c reset mode, enter work mode
+    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
 }
 
 /**
  * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
  */
-static inline void regi2c_ctrl_ll_i2c_saradc_disable(void)
+static inline void regi2c_ctrl_ll_i2c_sar_periph_disable(void)
 {
-    // TODO: IDF-8727
+    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
 }
 
 #ifdef __cplusplus

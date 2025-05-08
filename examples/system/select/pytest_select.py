@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
 import os
@@ -6,24 +6,28 @@ from typing import List
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 def get_socket_msgs(i: int) -> List[str]:
     msg = 'Socket message S{}'.format(i)
-    return ['uart_select_example: {} bytes were written to socket: {}'.format(len(msg), msg),
-            'uart_select_example: {} bytes were received through socket: {}'.format(len(msg), msg)]
+    return [
+        'uart_select_example: {} bytes were written to socket: {}'.format(len(msg), msg),
+        'uart_select_example: {} bytes were received through socket: {}'.format(len(msg), msg),
+    ]
 
 
 def get_uart_msgs(i: int) -> List[str]:
     msg = 'UART message U{}'.format(i)
-    return ['uart_select_example: {} bytes were sent to UART1: {}'.format(len(msg), msg),
-            'uart_select_example: {} bytes were received through UART1: {}'.format(len(msg), msg)]
+    return [
+        'uart_select_example: {} bytes were sent to UART1: {}'.format(len(msg), msg),
+        'uart_select_example: {} bytes were received through UART1: {}'.format(len(msg), msg),
+    ]
 
 
-@pytest.mark.supported_targets
 @pytest.mark.generic
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_examples_select(dut: Dut) -> None:
-
     dut.expect_exact('main_task: Calling app_main()', timeout=30)
 
     exp_list = []

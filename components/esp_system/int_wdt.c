@@ -53,7 +53,7 @@
 #endif // SOC_TIMER_GROUPS > 1
 
 #if CONFIG_ESP_INT_WDT
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
 static const char* TAG = "int_wdt";
 static esp_err_t sleep_int_wdt_retention_init(void *arg)
 {
@@ -160,7 +160,7 @@ void esp_int_wdt_init(void)
     wdt_hal_enable(&iwdt_context);
     wdt_hal_write_protect_enable(&iwdt_context);
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
     esp_int_wdt_retention_enable(IWDT_TIMER_GROUP);
 #endif
 

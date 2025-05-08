@@ -357,7 +357,7 @@ static int http_on_chunk_header(http_parser *parser)
 
 esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char *key, const char *value)
 {
-    if (client == NULL || client->request == NULL || client->request->headers == NULL || key == NULL || value == NULL) {
+    if (client == NULL || client->request == NULL || client->request->headers == NULL || key == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -703,10 +703,13 @@ static char *_get_host_header(char *host, int port)
 {
     int err = 0;
     char *host_name;
+    assert(host != NULL);
+    // Check if host is an IPv6 address literal that needs square brackets according to RFC3986
+    bool is_ipv6 = (host[0] != '[' && strchr(host, ':') != NULL);
     if (port != DEFAULT_HTTP_PORT && port != DEFAULT_HTTPS_PORT) {
-        err = asprintf(&host_name, "%s:%d", host, port);
+        err = asprintf(&host_name, is_ipv6 ? "[%s]:%d" : "%s:%d", host, port);
     } else {
-        err = asprintf(&host_name, "%s", host);
+        err = asprintf(&host_name, is_ipv6 ? "[%s]" : "%s", host);
     }
     if (err == -1) {
         return NULL;
@@ -1587,6 +1590,8 @@ static int http_client_prepare_first_line(esp_http_client_handle_t client, int w
                                       client->connection_info.method != HTTP_METHOD_DELETE);
         if (write_len != 0 || length_required) {
             http_header_set_format(client->request->headers, "Content-Length", "%d", write_len);
+        } else {
+            http_header_delete(client->request->headers, "Content-Length");
         }
     } else {
         esp_http_client_set_header(client, "Transfer-Encoding", "chunked");

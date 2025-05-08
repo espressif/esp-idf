@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +40,7 @@
 #include "ap/sta_info.h"
 #include "wps/wps_defs.h"
 #include "wps/wps.h"
+#include "rsn_supp/pmksa_cache.h"
 
 #ifdef CONFIG_DPP
 #include "common/dpp.h"
@@ -49,6 +50,7 @@
 bool g_wpa_pmk_caching_disabled = 0;
 const wifi_osi_funcs_t *wifi_funcs;
 struct wpa_funcs *wpa_cb;
+bool g_wpa_config_changed;
 
 void  wpa_install_key(enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
                       u8 *seq, size_t seq_len, u8 *key, size_t key_len, enum key_flag key_flag)
@@ -211,7 +213,7 @@ int dpp_connect(uint8_t *bssid, bool pdr_done)
     int res = 0;
     if (!pdr_done) {
         if (esp_wifi_sta_get_prof_authmode_internal() == WPA3_AUTH_DPP) {
-            esp_dpp_post_evt(SIG_DPP_START_NET_INTRO, (u32)bssid);
+            esp_dpp_start_net_intro_protocol(bssid);
         }
     } else {
         res = wpa_config_bss(bssid);
@@ -225,11 +227,22 @@ int dpp_connect(uint8_t *bssid, bool pdr_done)
 }
 #endif
 
+static void wpa_config_reload(void)
+{
+    struct wpa_sm *sm = &gWpaSm;
+    wpa_sm_pmksa_cache_flush(sm, NULL);
+}
+
 int wpa_sta_connect(uint8_t *bssid)
 {
     /* use this API to set AP specific IEs during connection */
     int ret = 0;
     ret = wpa_config_profile(bssid);
+
+    if (g_wpa_config_changed) {
+        wpa_config_reload();
+        g_wpa_config_changed = false;
+    }
     if (ret == 0) {
         ret = wpa_config_bss(bssid);
         if (ret) {
@@ -296,6 +309,10 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
     case WIFI_REASON_INVALID_FTE:
         wpa_sta_clear_curr_pmksa();
         wpa_sm_notify_disassoc(&gWpaSm);
+#if defined(CONFIG_IEEE80211R)
+        /* clear all ft auth related IEs so that next will be open auth */
+        wpa_sta_clear_ft_auth_ie();
+#endif
         break;
     default:
         if (g_wpa_pmk_caching_disabled) {
@@ -476,6 +493,7 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
     wpa_cb->wpa_config_done = wpa_config_done;
     wpa_cb->wpa_sta_clear_curr_pmksa = wpa_sta_clear_curr_pmksa;
+    wpa_cb->wpa_config_reload = wpa_config_reload;
 
     esp_wifi_register_wpa3_ap_cb(wpa_cb);
     esp_wifi_register_wpa3_cb(wpa_cb);

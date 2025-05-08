@@ -323,9 +323,8 @@ esp_err_t usb_host_device_open(usb_host_client_handle_t client_hdl, uint8_t dev_
  * @return
  *    - ESP_OK: Device closed successfully
  *    - ESP_ERR_INVALID_ARG: Invalid argument
- *    - ESP_ERR_NOT_FOUND: Device address not found among opened devices
- *    - ESP_ERR_INVALID_STATE: The client never opened the device, or the client has not released
- *      all the interfaces from the device
+ *    - ESP_ERR_NOT_FOUND: The client never opened the device (the device address not found among opened devices)
+ *    - ESP_ERR_INVALID_STATE: The client has not released all interfaces from the device
  */
 esp_err_t usb_host_device_close(usb_host_client_handle_t client_hdl, usb_device_handle_t dev_hdl);
 
@@ -570,6 +569,7 @@ esp_err_t usb_host_endpoint_clear(usb_device_handle_t dev_hdl, uint8_t bEndpoint
  *
  * - This function allocates a transfer object
  * - Each transfer object has a fixed sized buffer specified on allocation
+ * - The resulting data_buffer_size can be bigger that the requested size. This is to ensure that the data buffer is cache aligned
  * - A transfer object can be re-used indefinitely
  * - A transfer can be submitted using usb_host_transfer_submit() or usb_host_transfer_submit_control()
  *

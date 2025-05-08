@@ -172,10 +172,10 @@ menu "mbedTLS"
         default 4 if MBEDTLS_DEBUG_LEVEL_VERBOSE
 
     menu "mbedTLS v3.x related"
-        # NOTE: MBEDTLS_DYNAMIC_BUFFER feature is not supported with TLS 1.3 yet. Ref: IDF-4762
         config MBEDTLS_SSL_PROTO_TLS1_3
             bool "Support TLS 1.3 protocol"
-            depends on MBEDTLS_TLS_ENABLED && MBEDTLS_SSL_KEEP_PEER_CERTIFICATE && !MBEDTLS_DYNAMIC_BUFFER
+            depends on MBEDTLS_TLS_ENABLED && MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
+            select MBEDTLS_CLIENT_SSL_SESSION_TICKETS if MBEDTLS_DYNAMIC_BUFFER
             select MBEDTLS_HKDF_C
             default n
 
@@ -584,6 +584,11 @@ menu "mbedTLS"
             The key should be burnt in little endian format. espefuse.py utility handles it internally
             but care needs to be taken while burning using esp_efuse APIs
 
+    config MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
+        bool "Enable ECDSA signing using TEE secure storage"
+        default y
+        depends on SECURE_ENABLE_TEE
+
     menu "Enable Software Countermeasure for ECDSA signing using on-chip ECDSA peripheral"
         depends on MBEDTLS_HARDWARE_ECDSA_SIGN
         depends on IDF_TARGET_ESP32H2
@@ -650,7 +655,7 @@ menu "mbedTLS"
             expiry of TLS session tickets or session cache entries.
 
             Disabling this option will save some firmware size, particularly if
-            the rest of the firmware doesn't call any standard timekeeeping
+            the rest of the firmware doesn't call any standard timekeeping
             functions.
 
     config MBEDTLS_PLATFORM_TIME_ALT
@@ -697,6 +702,21 @@ menu "mbedTLS"
         help
             Standard ECDSA is "fragile" in the sense that lack of entropy when signing
             may result in a compromise of the long-term signing key.
+
+    config MBEDTLS_SHA1_C
+        bool "Enable the SHA-1 cryptographic hash algorithm"
+        default y
+        help
+            Enabling MBEDTLS_SHA1_C adds support for SHA-1.
+            SHA-1 is considered a weak message digest and its use constitutes
+            a security risk.
+            Disabling this configuration option could impact TLS 1.2 / Wi-Fi Enterprise compatibility
+            with certain older certificates that rely on SHA-1 for digital signatures.
+            Before proceeding, ensure that all your certificates are using stronger hash algorithms,
+            such as SHA-256 (part of the SHA-2 family).
+            If you're using older certificates or if you're unsure about the impact on your product,
+            please consider testing the changes in a controlled environment for individual features
+            like OTA updates, cloud connectivity, secure local control, etc.
 
     config MBEDTLS_SHA512_C
         bool "Enable the SHA-384 and SHA-512 cryptographic hash algorithms"
@@ -1257,5 +1277,12 @@ menu "mbedTLS"
             It uses the default filesystem support for the target,
             which is added through vfs component for ESP32 based targets or by
             the host system when the target is Linux.
+
+    config MBEDTLS_ALLOW_WEAK_CERTIFICATE_VERIFICATION
+        bool "Allow weak certificate verification"
+        default n
+        help
+            This options allows weak certificate verification by skipping the hostname verification.
+            It is not recommended to use this option.
 
 endmenu  # mbedTLS

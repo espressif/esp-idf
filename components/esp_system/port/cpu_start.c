@@ -58,7 +58,10 @@
 #include "esp32c2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "soc/hp_sys_clkrst_reg.h"
+#include "hal/l2mem_ll.h"
 #elif CONFIG_IDF_TARGET_ESP32H21
+#include "esp_memprot.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
 #include "esp_memprot.h"
 #endif
 
@@ -75,8 +78,10 @@
 #include "esp_private/image_process.h"
 #if CONFIG_SPIRAM
 #include "esp_psram.h"
-#include "esp_private/mmu_psram_flash.h"
 #include "esp_private/esp_psram_extram.h"
+#if SOC_SPIRAM_XIP_SUPPORTED
+#include "esp_private/mmu_psram_flash.h"
+#endif
 #endif
 
 #include "esp_private/spi_flash_os.h"
@@ -91,6 +96,7 @@
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "hal/efuse_ll.h"
+#include "hal/cpu_utility_ll.h"
 #include "soc/periph_defs.h"
 #include "esp_cpu.h"
 #include "esp_private/esp_clk.h"
@@ -226,16 +232,8 @@ void IRAM_ATTR call_start_cpu1(void)
     esp_rom_output_set_as_console(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32
-    DPORT_REG_SET_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_PDEBUG_ENABLE | DPORT_APP_CPU_RECORD_ENABLE);
-    DPORT_REG_CLR_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_RECORD_ENABLE);
-#elif CONFIG_IDF_TARGET_ESP32P4
-    REG_SET_BIT(ASSIST_DEBUG_CORE_1_RCD_EN_REG, ASSIST_DEBUG_CORE_1_RCD_PDEBUGEN);
-    REG_SET_BIT(ASSIST_DEBUG_CORE_1_RCD_EN_REG, ASSIST_DEBUG_CORE_1_RCD_RECORDEN);
-#else
-    REG_WRITE(ASSIST_DEBUG_CORE_1_RCD_PDEBUGENABLE_REG, 1);
-    REG_WRITE(ASSIST_DEBUG_CORE_1_RCD_RECORDING_REG, 1);
-#endif
+    cpu_utility_ll_enable_debug(1);
+    cpu_utility_ll_enable_record(1);
 
     s_cpu_up[1] = true;
     ESP_EARLY_LOGD(TAG, "App cpu up");
@@ -289,28 +287,7 @@ static void start_other_core(void)
     // enabled clock and taken APP CPU out of reset. In this case don't reset
     // APP CPU again, as that will clear the breakpoints which may have already
     // been set.
-#if CONFIG_IDF_TARGET_ESP32
-    if (!DPORT_GET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN)) {
-        DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_C_REG, DPORT_APPCPU_RUNSTALL);
-        DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
-    }
-#elif CONFIG_IDF_TARGET_ESP32S3
-    if (!REG_GET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN)) {
-        REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN);
-        REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RUNSTALL);
-        REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
-        REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
-    }
-#elif CONFIG_IDF_TARGET_ESP32P4
-    if (!REG_GET_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_CPU_CLK_EN)) {
-        REG_SET_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_CPU_CLK_EN);
-    }
-    if (REG_GET_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL)) {
-        REG_CLR_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
-    }
-#endif
+    cpu_utility_ll_enable_clock_and_reset_app_cpu();
 
     ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
 
@@ -588,17 +565,21 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 #endif
 
+#if CONFIG_SPIRAM_BOOT_HW_INIT
+    if (esp_psram_chip_init() != ESP_OK) {
+#if CONFIG_SPIRAM_IGNORE_NOTFOUND
+        ESP_DRAM_LOGE(TAG, "Failed to init external RAM; continuing without it.");
+#else
+        ESP_DRAM_LOGE(TAG, "Failed to init external RAM!");
+        abort();
+#endif
+    }
+#endif
+
 #if CONFIG_SPIRAM_BOOT_INIT
     if (esp_psram_init() != ESP_OK) {
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         ESP_DRAM_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
-        abort();
-#endif
-
-#if CONFIG_SPIRAM_IGNORE_NOTFOUND
-        ESP_EARLY_LOGI(TAG, "Failed to init external RAM; continuing without it.");
-#else
-        ESP_DRAM_LOGE(TAG, "Failed to init external RAM!");
         abort();
 #endif
     }
@@ -815,13 +796,13 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 
 #if CONFIG_IDF_TARGET_ESP32
-#if !CONFIG_SPIRAM_BOOT_INIT
+#if !CONFIG_SPIRAM_BOOT_HW_INIT
     // If psram is uninitialized, we need to improve some flash configuration.
     bootloader_flash_clock_config(&fhdr);
     bootloader_flash_gpio_config(&fhdr);
     bootloader_flash_dummy_config(&fhdr);
     bootloader_flash_cs_timing_config();
-#endif //!CONFIG_SPIRAM_BOOT_INIT
+#endif //!CONFIG_SPIRAM_BOOT_HW_INIT
 #endif //CONFIG_IDF_TARGET_ESP32
 
 #if CONFIG_SPI_FLASH_SIZE_OVERRIDE

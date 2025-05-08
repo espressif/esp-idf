@@ -1,0 +1,37 @@
+menu "ESP-Driver:TWAI Configurations"
+    depends on SOC_TWAI_SUPPORTED
+
+    config TWAI_ISR_IN_IRAM
+        bool "Place TWAI ISR function in IRAM"
+        select TWAI_OBJ_CACHE_SAFE
+        default n
+        help
+            Place the TWAI ISR in to IRAM to reduce latency and increase performance
+
+    config TWAI_ISR_CACHE_SAFE
+        bool "Allow TWAI ISR execute when cache disabled" if !SPI_FLASH_AUTO_SUSPEND
+        select TWAI_ISR_IN_IRAM
+        select ESP_PERIPH_CTRL_FUNC_IN_IRAM if TWAI_ERRATA_FIX_RX_FRAME_INVALID || TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
+        default n
+        help
+            Allow TWAI works under Cache disabled (such as when writing to SPI Flash),
+            to enabled this config, all callbacks and user_ctx should also place in IRAM
+
+    config TWAI_OBJ_CACHE_SAFE
+        bool
+        default n
+        help
+            This will ensure the TWAI driver object will not be allocated from a memory region
+            where its cache can be disabled.
+
+    config TWAI_ENABLE_DEBUG_LOG
+        bool "Force enable debug log"
+        default n
+        help
+            If enabled, TWAI driver component will:
+            1. ignore the global logging settings
+            2. compile all log messages into the binary
+            3. set the runtime log level to VERBOSE
+            Please enable this option by caution, as it will increase the binary size.
+
+endmenu # TWAI Configuration

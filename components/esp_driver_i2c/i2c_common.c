@@ -325,6 +325,7 @@ static esp_err_t s_hp_i2c_pins_config(i2c_bus_handle_t handle)
     } else {
         gpio_pullup_dis(handle->sda_num);
     }
+    gpio_pulldown_dis(handle->sda_num);
     gpio_func_sel(handle->sda_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->sda_num, i2c_periph_signal[port_id].sda_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->sda_num, i2c_periph_signal[port_id].sda_in_sig, 0);
@@ -338,6 +339,7 @@ static esp_err_t s_hp_i2c_pins_config(i2c_bus_handle_t handle)
     } else {
         gpio_pullup_dis(handle->scl_num);
     }
+    gpio_pulldown_dis(handle->scl_num);
     gpio_func_sel(handle->scl_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->scl_num, i2c_periph_signal[port_id].scl_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->scl_num, i2c_periph_signal[port_id].scl_in_sig, 0);

@@ -481,12 +481,12 @@ GPIO Matrix and IO_MUX
 
 .. only:: not esp32
 
-    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1", esp32p4="7" , esp32c5="10", esp32c61="8"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4", esp32p4="9" , esp32c5="6",  esp32c61="6"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5", esp32p4="8" , esp32c5="7",  esp32c61="7"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0", esp32p4="10", esp32c5="2",  esp32c61="2"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3", esp32p4="6" , esp32c5="4",  esp32c61="3"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2", esp32p4="11", esp32c5="5",  esp32c61="4"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1", esp32p4="7" , esp32c5="10", esp32c61="8", esp32h21="12"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4", esp32p4="9" , esp32c5="6",  esp32c61="6", esp32h21="2"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5", esp32p4="8" , esp32c5="7",  esp32c61="7", esp32h21="3"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0", esp32p4="10", esp32c5="2",  esp32c61="2", esp32h21="4"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3", esp32p4="6" , esp32c5="4",  esp32c61="3", esp32h21="1"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2", esp32p4="11", esp32c5="5",  esp32c61="4", esp32h21="0"}
 
     Most of the chip's peripheral signals have a direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
@@ -532,10 +532,10 @@ The main parameter that determines the transfer speed for large transactions is 
 Transaction Duration
 ^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_TRANS_TIME_INTR_DMA:default="N/A", esp32="28", esp32s2="23", esp32c3="28", esp32s3="26", esp32c2="42", esp32c6="34", esp32h2="58", esp32p4="44", esp32c5="24", esp32c61="32"}
-{IDF_TARGET_TRANS_TIME_POLL_DMA:default="N/A", esp32="10", esp32s2="9",  esp32c3="10", esp32s3="11", esp32c2="17", esp32c6="17", esp32h2="28", esp32p4="27", esp32c5="15", esp32c61="17"}
-{IDF_TARGET_TRANS_TIME_INTR_CPU:default="N/A", esp32="25", esp32s2="22", esp32c3="27", esp32s3="24", esp32c2="40", esp32c6="32", esp32h2="54", esp32p4="26", esp32c5="22", esp32c61="29"}
-{IDF_TARGET_TRANS_TIME_POLL_CPU:default="N/A", esp32="8",  esp32s2="8",  esp32c3="9",  esp32s3="9",  esp32c2="15", esp32c6="15", esp32h2="24", esp32p4="12", esp32c5="12", esp32c61="14"}
+{IDF_TARGET_MAX_TRANS_TIME_INTR_DMA:default="N/A", esp32="28", esp32s2="23", esp32c3="28", esp32s3="26", esp32c2="42", esp32c6="34", esp32h2="58", esp32p4="44", esp32c5="24", esp32c61="32"}
+{IDF_TARGET_MAX_TRANS_TIME_POLL_DMA:default="N/A", esp32="10", esp32s2="9",  esp32c3="10", esp32s3="11", esp32c2="17", esp32c6="17", esp32h2="28", esp32p4="27", esp32c5="15", esp32c61="17"}
+{IDF_TARGET_MAX_TRANS_TIME_INTR_CPU:default="N/A", esp32="25", esp32s2="22", esp32c3="27", esp32s3="24", esp32c2="40", esp32c6="32", esp32h2="54", esp32p4="26", esp32c5="22", esp32c61="29"}
+{IDF_TARGET_MAX_TRANS_TIME_POLL_CPU:default="N/A", esp32="8",  esp32s2="8",  esp32c3="9",  esp32s3="9",  esp32c2="15", esp32c6="15", esp32h2="24", esp32p4="12", esp32c5="12", esp32c61="14"}
 
 Transaction duration includes setting up SPI peripheral registers, copying data to FIFOs or setting up DMA links, and the time for SPI transactions.
 
@@ -547,21 +547,23 @@ If DMA is enabled, setting up the linked list requires about 2 µs per transacti
 
 The typical transaction duration for one byte of data is given below.
 
-- Interrupt Transaction via DMA: {IDF_TARGET_TRANS_TIME_INTR_DMA} µs.
-- Interrupt Transaction via CPU: {IDF_TARGET_TRANS_TIME_INTR_CPU} µs.
-- Polling Transaction via DMA: {IDF_TARGET_TRANS_TIME_POLL_DMA} µs.
-- Polling Transaction via CPU: {IDF_TARGET_TRANS_TIME_POLL_CPU} µs.
+- Interrupt Transaction via DMA: {IDF_TARGET_MAX_TRANS_TIME_INTR_DMA} µs.
+- Interrupt Transaction via CPU: {IDF_TARGET_MAX_TRANS_TIME_INTR_CPU} µs.
+- Polling Transaction via DMA: {IDF_TARGET_MAX_TRANS_TIME_POLL_DMA} µs.
+- Polling Transaction via CPU: {IDF_TARGET_MAX_TRANS_TIME_POLL_CPU} µs.
 
 Note that these data are tested with :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` enabled. SPI transaction related code are placed in the internal memory. If this option is turned off (for example, for internal memory optimization), the transaction duration may be affected.
 
 SPI Clock Frequency
 ^^^^^^^^^^^^^^^^^^^
 
-The clock source of the GPSPI peripherals can be selected by setting :cpp:member:`spi_device_handle_t::cfg::clock_source`. You can refer to :cpp:type:`spi_clock_source_t` to know the supported clock sources.
+The clock source of the GPSPI peripherals can be selected by setting :cpp:member:`spi_device_interface_config_t::clock_source`. You can refer to :cpp:type:`spi_clock_source_t` to know the supported clock sources.
 
-By default driver sets :cpp:member:`spi_device_handle_t::cfg::clock_source` to ``SPI_CLK_SRC_DEFAULT``. This usually stands for the highest frequency among GPSPI clock sources. Its value is different among chips.
+By default driver sets clock source to ``SPI_CLK_SRC_DEFAULT``. This usually stands for the highest frequency among GPSPI supported clock sources. Its value is different among chips.
 
-The actual clock frequency of a Device may not be exactly equal to the number you set, it is re-calculated by the driver to the nearest hardware-compatible number, and not larger than the clock frequency of the clock source. You can call :cpp:func:`spi_device_get_actual_freq` to know the actual frequency computed by the driver.
+The actual clock frequency of a device may not be exactly equal to the number you set, it is re-calculated by the driver to the nearest hardware-compatible number, and no more than the frequency of selected clock source. You can call :cpp:func:`spi_device_get_actual_freq` to know the actual frequency computed by the driver.
+
+The clock frequency of the device can be changed during transmission by setting :cpp:member:`spi_transaction_t::override_freq_hz`. This operation will use new clock frequency for the device's current and later transmissions. If the expected clock frequency cannot be achieved, the driver will print an warning and continue to use the previous clock frequency for transmission.
 
 The theoretical maximum transfer speed of the Write or Read phase can be calculated according to the table below:
 

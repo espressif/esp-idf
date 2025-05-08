@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -104,7 +104,7 @@ typedef enum {
 typedef enum {
     ESP_HIDH_DEV_ATTR_VIRTUAL_CABLE = 0x0001,           /*!< whether Virtual Cables is supported */
     ESP_HIDH_DEV_ATTR_NORMALLY_CONNECTABLE = 0x0002,    /*!< whether device is in Page Scan mode when there is no active connection */
-    ESP_HIDH_DEV_ATTR_RECONNECT_INITIATE = 0x0004,      /*!< whether the HID device inititates the reconnection process */
+    ESP_HIDH_DEV_ATTR_RECONNECT_INITIATE = 0x0004,      /*!< whether the HID device initiates the reconnection process */
 } esp_hidh_dev_attr_t;
 
 /**
@@ -128,10 +128,19 @@ typedef struct {
     int vendor_id;                            /*!< Device ID information: vendor ID */
     int product_id;                           /*!< Device ID information: product ID */
     int version;                              /*!< Device ID information: version */
-    uint8_t ctry_code;                        /*!< SDP attrbutes of HID devices: HID country code (https://www.usb.org/sites/default/files/hid1_11.pdf) */
-    int dl_len;                               /*!< SDP attrbutes of HID devices: HID device descriptor length */
-    uint8_t dsc_list[BTHH_MAX_DSC_LEN];       /*!< SDP attrbutes of HID devices: HID device descriptor definition */
+    uint8_t ctry_code;                        /*!< SDP attributes of HID devices: HID country code (https://www.usb.org/sites/default/files/hid1_11.pdf) */
+    int dl_len;                               /*!< SDP attributes of HID devices: HID device descriptor length */
+    uint8_t dsc_list[BTHH_MAX_DSC_LEN];       /*!< SDP attributes of HID devices: HID device descriptor definition */
 } esp_hidh_hid_info_t;
+
+/**
+ * @brief HID host profile status parameters
+ */
+typedef struct {
+    bool hidh_inited;                         /*!< HID host initialization */
+    uint8_t conn_num;                         /*!< Number of connections */
+    uint8_t plug_vc_dev_num;                  /*!< Number of plugged virtual cable devices*/
+} esp_hidh_profile_status_t;
 
 /**
  * @brief HID host callback parameters union
@@ -157,7 +166,7 @@ typedef union {
     struct hidh_open_evt_param {
         esp_hidh_status_t status;                /*!< operation status         */
         esp_hidh_connection_state_t conn_status; /*!< connection status        */
-        bool is_orig;                            /*!< indicate if host intiate the connection        */
+        bool is_orig;                            /*!< indicate if host initiate the connection        */
         uint8_t handle;                          /*!< device handle            */
         esp_bd_addr_t bd_addr;                   /*!< device address           */
     } open;                                      /*!< HIDH callback param of ESP_HIDH_OPEN_EVT */
@@ -474,6 +483,17 @@ esp_err_t esp_bt_hid_host_set_report(esp_bd_addr_t bd_addr, esp_hidh_report_type
  *              - other: failed
  */
 esp_err_t esp_bt_hid_host_send_data(esp_bd_addr_t bd_addr, uint8_t *data, size_t len);
+
+/**
+ * @brief       This function is used to get the status of hid host
+ *
+ * @param[out]  profile_status - HID host status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_bt_hid_host_get_profile_status(esp_hidh_profile_status_t *profile_status);
 
 #ifdef __cplusplus
 }

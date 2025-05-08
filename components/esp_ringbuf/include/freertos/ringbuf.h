@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -225,7 +225,8 @@ BaseType_t xRingbufferSendComplete(RingbufHandle_t xRingbuffer, void *pvItem);
  * @param[in]   xTicksToWait    Ticks to wait for items in the ring buffer.
  *
  * @note    A call to vRingbufferReturnItem() is required after this to free the item retrieved.
- * @note    It is possible to receive items with a pxItemSize of 0 on no-split/allow split buffers.
+ * @note    It is possible to receive items with a pxItemSize of 0 on no-split buffers.
+ * @note    To retrieve an item from an allow-split buffer, use `xRingbufferReceiveSplit()` instead.
  *
  * @return
  *      - Pointer to the retrieved item on success; *pxItemSize filled with the length of the item.
@@ -246,7 +247,8 @@ void *xRingbufferReceive(RingbufHandle_t xRingbuffer, size_t *pxItemSize, TickTy
  * @note    A call to vRingbufferReturnItemFromISR() is required after this to free the item retrieved.
  * @note    Byte buffers do not allow multiple retrievals before returning an item
  * @note    Two calls to RingbufferReceiveFromISR() are required if the bytes wrap around the end of the ring buffer.
- * @note    It is possible to receive items with a pxItemSize of 0 on no-split/allow split buffers.
+ * @note    It is possible to receive items with a pxItemSize of 0 on no-split buffers.
+ * @note    To retrieve an item from an allow-split buffer, use `xRingbufferReceiveSplitFromISR()` instead.
  *
  * @return
  *      - Pointer to the retrieved item on success; *pxItemSize filled with the length of the item.
@@ -419,10 +421,6 @@ size_t xRingbufferGetMaxItemSize(RingbufHandle_t xRingbuffer);
  * This gives the real time free space available for an item/data in the ring
  * buffer. This represents the maximum size an item/data can have if it was
  * currently sent to the ring buffer.
- *
- * @warning This API is not thread safe. So, if multiple threads are accessing
- *          the same ring buffer, it is the application's responsibility to
- *          ensure atomic access to this API and the subsequent Send
  *
  * @note    An empty no-split buffer has a max current free size for an item
  *          that is limited to ((buffer_size/2)-header_size). See API reference

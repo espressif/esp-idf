@@ -261,7 +261,7 @@ struct dpp_authentication {
 	 * Authentication exchange */
 	unsigned int freq[DPP_BOOTSTRAP_MAX_FREQ];
 	unsigned int num_freq, freq_idx;
-    unsigned int curr_chan;
+	unsigned int curr_chan;
 	unsigned int curr_freq;
 	unsigned int neg_freq;
 	unsigned int num_freq_iters;

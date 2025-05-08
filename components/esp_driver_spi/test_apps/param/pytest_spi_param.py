@@ -1,12 +1,13 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import pytest
-
-
+from pytest_embedded_idf.utils import idf_parametrize
 # If `test_env` is define, should not run on generic runner
-@pytest.mark.supported_targets
+
+
 @pytest.mark.generic
-def test_param_single_dev(case_tester) -> None:       # type: ignore
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+def test_param_single_dev(case_tester) -> None:  # type: ignore
     for case in case_tester.test_menu:
         if 'test_env' in case.attributes:
             continue
@@ -16,10 +17,16 @@ def test_param_single_dev(case_tester) -> None:       # type: ignore
 # if `test_env` not defined, will run on `generic_multi_device` by default
 # TODO: [ESP32C61] IDF-10949
 @pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='no multi-dev runner')
-@pytest.mark.supported_targets
 @pytest.mark.generic_multi_device
-@pytest.mark.parametrize('count', [2,], indirect=True)
-def test_param_multi_dev(case_tester) -> None:        # type: ignore
+@pytest.mark.parametrize(
+    'count',
+    [
+        2,
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+def test_param_multi_dev(case_tester) -> None:  # type: ignore
     for case in case_tester.test_menu:
         if case.attributes.get('test_env', 'generic_multi_device') == 'generic_multi_device':
             case_tester.run_multi_dev_case(case=case, reset=True)

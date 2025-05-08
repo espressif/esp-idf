@@ -8,10 +8,11 @@
 #include "freertos/task.h"
 #include "unity.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "esp_err.h"
 #include "esp_clock_output.h"
 #include "hal/gpio_hal.h"
-
+#include "soc/uart_pins.h"
 #include "soc/rtc.h"
 
 #define TEST_LOOPS 100
@@ -98,8 +99,8 @@ TEST_CASE("GPIO output internal clock", "[gpio_output_clock][ignore]")
 #if CONFIG_IDF_TARGET_ESP32
     /* ESP32 clock out channel pin reuses UART TX/RX pin, restore its default
        configuration at the end of the test */
-    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_U0RXD);
-    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_U0TXD);
+    gpio_iomux_output(U0RXD_GPIO_NUM, FUNC_U0RXD_U0RXD);
+    gpio_iomux_output(U0TXD_GPIO_NUM, FUNC_U0TXD_U0TXD);
 #endif
 }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// TODO: [ESP32H21] IDF-11556, file inherit from verify code, please check
-
-// md5_digest_table bedca3b10dd5d184f2e294291996a60e
+// md5_digest_table 4ec5511e3b738f65373b56d5cdecea93
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -121,8 +119,12 @@ static const esp_efuse_desc_t WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
     {EFUSE_BLK0, 16, 1}, 	 // [] wr_dis of SECURE_BOOT_AGGRESSIVE_REVOKE,
 };
 
-static const esp_efuse_desc_t WR_DIS_ECDSA_FORCE_USE_HARDWARE_K[] = {
-    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of ECDSA_FORCE_USE_HARDWARE_K,
+static const esp_efuse_desc_t WR_DIS_ECDSA_CURVE_MODE[] = {
+    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of ECDSA_CURVE_MODE,
+};
+
+static const esp_efuse_desc_t WR_DIS_ECC_FORCE_CONST_TIME[] = {
+    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of ECC_FORCE_CONST_TIME,
 };
 
 static const esp_efuse_desc_t WR_DIS_FLASH_TPUW[] = {
@@ -909,8 +911,13 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ECDSA_FORCE_USE_HARDWARE_K[] = {
-    &WR_DIS_ECDSA_FORCE_USE_HARDWARE_K[0],    		// [] wr_dis of ECDSA_FORCE_USE_HARDWARE_K
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE[] = {
+    &WR_DIS_ECDSA_CURVE_MODE[0],    		// [] wr_dis of ECDSA_CURVE_MODE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ECC_FORCE_CONST_TIME[] = {
+    &WR_DIS_ECC_FORCE_CONST_TIME[0],    		// [] wr_dis of ECC_FORCE_CONST_TIME
     NULL
 };
 

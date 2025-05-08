@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,20 +16,23 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
+#include "soc/soc_caps.h"
 #include "soc/usb_dwc_periph.h"
 #include "hal/usb_dwc_hal.h"
 #include "hcd.h"
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
 
-#include "soc/soc_caps.h"
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "esp_cache.h"
-#endif // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#include "esp_private/esp_cache_private.h"
 
 // ----------------------------------------------------- Macros --------------------------------------------------------
 
+#define ALIGN_UP(num, align)    ((align) == 0 ? (num) : (((num) + ((align) - 1)) & ~((align) - 1)))
+
 // --------------------- Constants -------------------------
+
+#define XFER_DESC_LIST_CAPS                     (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_INTERNAL)
 
 #define INIT_DELAY_MS                           30  // A delay of at least 25ms to enter Host mode. Make it 30ms to be safe
 #define DEBOUNCE_DELAY_MS                       CONFIG_USB_HOST_DEBOUNCE_DELAY_MS
@@ -383,10 +386,17 @@ static void _buffer_exec(pipe_t *pipe);
  */
 static inline bool _buffer_check_done(pipe_t *pipe)
 {
+    // Only control transfers need to be continued
     if (pipe->ep_char.type != USB_DWC_XFER_TYPE_CTRL) {
         return true;
     }
-    // Only control transfers need to be continued
+#if (CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3)
+    // The HW can't handle two transactions with preamble in one frame.
+    // TODO: IDF-12986
+    if (pipe->ep_char.ls_via_fs_hub) {
+        esp_rom_delay_us(1000);
+    }
+#endif // CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     dma_buffer_block_t *buffer_inflight = pipe->buffers[pipe->multi_buffer_control.rd_idx];
     return (buffer_inflight->flags.ctrl.cur_stg == 2);
 }
@@ -1511,16 +1521,18 @@ static dma_buffer_block_t *buffer_block_alloc(usb_transfer_type_t type)
     }
 
     // Transfer descriptor list: Must be 512 aligned and DMA capable (USB-DWC requirement) and its size must be cache aligned
-    void *xfer_desc_list = heap_caps_aligned_calloc(USB_DWC_QTD_LIST_MEM_ALIGN, desc_list_len * sizeof(usb_dwc_ll_dma_qtd_t), 1, MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_INTERNAL);
+    void *xfer_desc_list = heap_caps_aligned_calloc(USB_DWC_QTD_LIST_MEM_ALIGN, desc_list_len * sizeof(usb_dwc_ll_dma_qtd_t), 1, XFER_DESC_LIST_CAPS);
     if (xfer_desc_list == NULL) {
         free(buffer);
         heap_caps_free(xfer_desc_list);
         return NULL;
     }
     buffer->xfer_desc_list = xfer_desc_list;
-    // For targets with L1CACHE, the allocated size might be bigger than requested, this value is than used during memory sync
-    // We save this value here, so we don't have to call 'heap_caps_get_allocated_size()' during every memory sync
-    buffer->xfer_desc_list_len_bytes = heap_caps_get_allocated_size(xfer_desc_list);
+
+    // Note for developers: We do not use heap_caps_get_allocated_size() because it is broken with HEAP_POISONING=COMPREHENSIVE
+    size_t cache_align = 0;
+    esp_cache_get_alignment(XFER_DESC_LIST_CAPS, &cache_align);
+    buffer->xfer_desc_list_len_bytes = ALIGN_UP(desc_list_len * sizeof(usb_dwc_ll_dma_qtd_t), cache_align);
     return buffer;
 }
 
@@ -1616,7 +1628,14 @@ static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_
         ep_char->mps = USB_EP_DESC_GET_MPS(pipe_config->ep_desc);
     }
     ep_char->dev_addr = pipe_config->dev_addr;
-    ep_char->ls_via_fs_hub = (port_speed == USB_SPEED_FULL && pipe_config->dev_speed == USB_SPEED_LOW);
+    ep_char->ls_via_fs_hub = 0;
+    if (pipe_idx > 0) {
+        // TODO: remove warning after IDF-12986
+        if (port_speed == USB_SPEED_FULL && pipe_config->dev_speed == USB_SPEED_LOW) {
+            ESP_LOGW(HCD_DWC_TAG, "Low-speed, extra delay will be applied in ISR");
+            ep_char->ls_via_fs_hub = 1;
+        }
+    }
     // Calculate the pipe's interval in terms of USB frames
     // @see USB-OTG programming guide chapter 6.5 for more information
     if (type == USB_TRANSFER_TYPE_INTR || type == USB_TRANSFER_TYPE_ISOCHRONOUS) {

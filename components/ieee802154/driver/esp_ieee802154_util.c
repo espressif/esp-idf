@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,7 +66,7 @@ void ieee802154_set_txrx_pti(ieee802154_txrx_scene_t txrx_scene)
 // TZ-97: implement these two functions using ETM common interface
 void ieee802154_etm_channel_clear(uint32_t channel)
 {
-    if (!(REG_READ(ETM_CHEN_AD0_REG) & (1 << channel))) {
+    if ((REG_READ(ETM_CHEN_AD0_REG) & (1 << channel))) {
         REG_WRITE(ETM_CHENCLR_AD0_REG, (REG_READ(ETM_CHENCLR_AD0_REG)) | 1 << channel);
     }
 }

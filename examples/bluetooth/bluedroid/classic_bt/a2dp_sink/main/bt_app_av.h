@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -31,6 +31,14 @@ void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param);
  * @param [in]  len   length of data stream in byte
  */
 void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len);
+
+/**
+ * @brief  callback function for A2DP sink undecoded audio data
+ *
+ * @param [in]  conn_hdl  connection handle
+ * @param [in]  audio_buf pointer to audio buff
+ */
+void bt_app_a2d_audio_data_cb(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_audio_buff_t *audio_buf);
 
 /**
  * @brief  callback function for AVRCP controller

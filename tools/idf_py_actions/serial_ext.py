@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
@@ -290,7 +290,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                   format: str,
                   md5_disable: str,
                   flash_offset: str,
-                  fill_flash_size: str) -> None:
+                  fill_flash_size: str,
+                  merge_args: tuple[str]) -> None:
         ensure_build_directory(args, ctx.info_name)
         project_desc = _get_project_desc(ctx, args)
         merge_bin_args = [PYTHON, '-m', 'esptool']
@@ -320,7 +321,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 yellow_print('idf.py merge-bin: --fill-flash-size is only valid for RAW format, option will be ignored.')
             else:
                 merge_bin_args += ['--fill-flash-size', fill_flash_size]
-        merge_bin_args += ['@flash_args']
+        if merge_args:
+            merge_bin_args += list(merge_args)
+        else:
+            merge_bin_args += ['@flash_args']
         print(f'Merged binary {output} will be created in the build directory...')
         RunTool('merge_bin', merge_bin_args, args.build_dir, build_dir=args.build_dir, hints=not args.no_hints)()
 
@@ -424,6 +428,15 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             generate_signing_key_args += [extra_args['keyfile']]
         RunTool('espsecure', generate_signing_key_args, args.project_dir)()
 
+    def secure_generate_key_digest(action: str, ctx: click.core.Context, args: PropertyDict, keyfile:str, output:str, **extra_args: str) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        generate_key_digest_args = [PYTHON, '-m', 'espsecure', 'digest_sbv2_public_key']
+        if keyfile:
+            generate_key_digest_args += ['--keyfile', keyfile]
+        if output:
+            generate_key_digest_args += ['--output', output]
+        RunTool('espsecure', generate_key_digest_args, args.project_dir)()
+
     def secure_sign_data(action: str,
                          ctx: click.core.Context,
                          args: PropertyDict,
@@ -467,6 +480,35 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if extra_args['datafile']:
             verify_signature_args += [extra_args['datafile']]
         RunTool('espsecure', verify_signature_args, args.build_dir)()
+
+    def secure_generate_nvs_partition_key(action: str,
+                                          ctx: click.core.Context,
+                                          args: PropertyDict,
+                                          encryption_scheme: str,
+                                          keyfile: str,
+                                          hmac_keyfile: str,
+                                          **extra_args: str) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        generate_nvs_partition_key_args = [PYTHON, '-m', 'esp_idf_nvs_partition_gen', 'generate-key']
+        if encryption_scheme == 'HMAC':
+            generate_nvs_partition_key_args += ['--key_protect_hmac']
+            generate_nvs_partition_key_args += ['--kp_hmac_keygen']
+            generate_nvs_partition_key_args += ['--kp_hmac_keyfile', hmac_keyfile]
+        generate_nvs_partition_key_args += ['--keyfile', keyfile]
+
+        RunTool('espsecure', generate_nvs_partition_key_args, args.project_dir)()
+
+    def secure_encrypt_nvs_partition(action: str, ctx: click.core.Context, args: PropertyDict, keyfile: str, **extra_args: str) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        encrypt_nvs_partition_args = [PYTHON, '-m', 'esp_idf_nvs_partition_gen', 'encrypt']
+        encrypt_nvs_partition_args += ['--inputkey', keyfile]
+        if extra_args['input_file']:
+            encrypt_nvs_partition_args += [extra_args['input_file']]
+        if extra_args['output_file']:
+            encrypt_nvs_partition_args += [extra_args['output_file']]
+        if extra_args['partition_size']:
+            encrypt_nvs_partition_args += [extra_args['partition_size']]
+        RunTool('espsecure', encrypt_nvs_partition_args, args.project_dir)()
 
     def _parse_efuse_args(ctx: click.core.Context, args: PropertyDict, extra_args: Dict) -> List:
         efuse_args = []
@@ -638,7 +680,13 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'names': ['--fill-flash-size'],
                         'help': ('[ONLY RAW] If set, the final binary file will be padded with FF bytes up to this flash size.'),
                         'type': click.Choice(['256KB', '512KB', '1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB']),
-                    },
+                    }
+                ],
+                'arguments': [
+                    {
+                        'names': ['merge-args'],
+                        'nargs': -1,
+                    }
                 ],
                 'dependencies': ['all'],  # all = build
             },
@@ -781,6 +829,20 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     },
                 ],
             },
+            'secure-generate-key-digest': {
+                'callback': secure_generate_key_digest,
+                'help': ('Generate a digest of a puiblic key file for use with secure boot.'),
+                'options': [
+                    {
+                        'names': ['--keyfile', '-k'],
+                        'help': ('Public key file for digest generation.'),
+                    },
+                    {
+                        'names': ['--output', '-o'],
+                        'help': ('Output file for key digest.'),
+                    },
+                ],
+            },
             'secure-sign-data': {
                 'callback': secure_sign_data,
                 'help': ('Sign a data file for use with secure boot. Signing algorithm is deterministic ECDSA w/ SHA-512 (V1) or either RSA-'
@@ -851,6 +913,51 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     },
                 ],
             },
+            'secure-generate-nvs-partition-key': {
+                'callback': secure_generate_nvs_partition_key,
+                'help': 'Generate a key for NVS partition encryption.',
+                'options': [
+                    {
+                        'names': ['--keyfile', '-k'],
+                        'help': 'File to store the generated key.',
+                    },
+                    {
+                        'names': ['--encryption-scheme', '-s'],
+                        'help': 'Encryption scheme to use.',
+                        'type': click.Choice(['HMAC', 'Flash']),
+                        'default': 'HMAC',
+                    },
+                    {
+                        'names': ['--hmac-keyfile', '-l'],
+                        'help': 'File to store the generated HMAC key.',
+
+                    }
+                ],
+            },
+            'secure-encrypt-nvs-partition': {
+                'callback': secure_encrypt_nvs_partition,
+                'help': 'Encrypt the NVS partition.',
+                'options': [
+                    {
+                        'names': ['--keyfile', '-k'],
+                        'help': 'File with NVS partition key.',
+                    }
+                ],
+                'arguments': [
+                    {
+                        'names': ['input_file'],
+                        'nargs': 1,
+                    },
+                    {
+                        'names': ['output_file'],
+                        'nargs': 1,
+                    },
+                    {
+                        'names': ['partition_size'],
+                        'nargs': 1,
+                    }
+                ]
+            },
             'efuse-burn': {
                 'callback': efuse_burn,
                 'help': 'Burn the eFuse with the specified name.',
@@ -878,8 +985,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'names': ['--force-write-always'],
                         'is_flag': True,
                         'help': (
-                            "Write the eFuse even if it looks like it's already been written, or is write protected."
-                            "Note that this option can't disable write protection, or clear any bit which has already been set."
+                            'Write the eFuse even if it looks like it\'s already been written, or is write protected.'
+                            'Note that this option can\'t disable write protection, or clear any bit which has already been set.'
                         ),
                     },
                     {
@@ -977,7 +1084,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                             'Baud rate for monitor. '
                             'If this option is not provided IDF_MONITOR_BAUD and MONITORBAUD '
                             'environment variables, global baud rate and project_description.json in build directory '
-                            "(generated by CMake from project's sdkconfig) "
+                            '(generated by CMake from project\'s sdkconfig) '
                             'will be checked for default value.'
                         ),
                     },

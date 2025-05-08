@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,7 @@ esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src)
 
 void io_mux_enable_lp_io_clock(gpio_num_t gpio_num, bool enable)
 {
+    assert(gpio_num != GPIO_NUM_NC);
     portENTER_CRITICAL(&s_io_mux_spinlock);
     if (enable) {
         if (s_rtc_io_status.rtc_io_enabled_cnt[gpio_num] == 0) {
@@ -63,6 +64,20 @@ void io_mux_enable_lp_io_clock(gpio_num_t gpio_num, bool enable)
             rtcio_ll_enable_io_clock(false);
         } else {
             rtcio_ll_enable_io_clock(true);
+        }
+    }
+    portEXIT_CRITICAL(&s_io_mux_spinlock);
+}
+
+void io_mux_force_disable_lp_io_clock(gpio_num_t gpio_num)
+{
+    assert(gpio_num != GPIO_NUM_NC);
+    portENTER_CRITICAL(&s_io_mux_spinlock);
+    s_rtc_io_status.rtc_io_enabled_cnt[gpio_num] = 0;
+    s_rtc_io_status.rtc_io_using_mask &= ~(1ULL << gpio_num);
+    if (s_rtc_io_status.rtc_io_using_mask == 0) {
+        RTCIO_RCC_ATOMIC() {
+            rtcio_ll_enable_io_clock(false);
         }
     }
     portEXIT_CRITICAL(&s_io_mux_spinlock);

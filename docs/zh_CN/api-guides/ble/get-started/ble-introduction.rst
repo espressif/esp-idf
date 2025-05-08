@@ -3,49 +3,49 @@
 
 :link_to_translation:`en:[English]`
 
-本文档为低功耗蓝牙 (Bluetooth Low Energy, Bluetooth LE) 入门系列教程其一，旨在对 Bluetooth LE 的基本概念进行简要介绍，并引导读者烧录一个完整的 Bluetooth LE 例程至 {IDF_TARGET_NAME} 开发板；随后，指导读者在手机上使用 nRF Connect for Mobile 应用程序，控制开发板上 LED 的开关并读取开发板上随机生成的心率数据。本教程希望帮助读者了解如何使用 ESP-IDF 开发框架对 {IDF_TARGET_NAME} 开发板进行 Bluetooth LE 应用烧录，并通过体验例程功能，对 Bluetooth LE 的功能建立感性认知。
+本文档为低功耗蓝牙 (Bluetooth LE) 入门系列教程其一，旨在对低功耗蓝牙的基本概念进行简要介绍，并引导读者烧录一个完整的低功耗蓝牙例程至 {IDF_TARGET_NAME} 开发板；随后，指导读者在手机上使用 nRF Connect for Mobile 应用程序，控制开发板上 LED 的开关并读取开发板上随机生成的心率数据。本教程希望帮助读者了解如何使用 ESP-IDF 开发框架对 {IDF_TARGET_NAME} 开发板进行低功耗蓝牙应用烧录，并通过体验例程功能，对低功耗蓝牙的功能建立感性认知。
 
 
 学习目标
 ---------------
 
-- 认识 Bluetooth LE 的分层架构
-- 了解 Bluetooth LE 各层基本功能
+- 认识低功耗蓝牙的分层架构
+- 了解低功耗蓝牙各层基本功能
 - 了解 GAP 以及 GATT/ATT 层的功能
-- 掌握在 {IDF_TARGET_NAME} 开发板上烧录 Bluetooth LE 例程的方法，并在手机上与之交互
+- 掌握在 {IDF_TARGET_NAME} 开发板上烧录低功耗蓝牙例程的方法，并在手机上与之交互
 
 
 引言
 -----------------
 
-大多数人在生活中都接触过蓝牙，可能屏幕前的你现在正佩戴着蓝牙耳机，收听来自手机或电脑的音频。不过，音频传输是经典蓝牙 (Bluetooth Classic) 的典型应用场景，而 Bluetooth LE 是一种与经典蓝牙不兼容的蓝牙通信协议，在蓝牙 4.0 中被引入。顾名思义， Bluetooth LE 是一种功耗非常低的蓝牙协议，通信速率也比经典蓝牙更低一些，其典型应用场景是物联网 (Internet of Things, IoT) 中的数据通信，例如智能开关或智能传感器，这也是本教程中引用的 Bluetooth LE 例程所实现的功能。不过，在体验例程功能以前，让我们来了解一下 Bluetooth LE 的基本概念，以帮助你更好地入门。
+大多数人在生活中都接触过蓝牙，可能屏幕前的你现在正佩戴着蓝牙耳机，收听来自手机或电脑的音频。不过，音频传输是经典蓝牙 (Bluetooth Classic) 的典型应用场景，而低功耗蓝牙是一种与经典蓝牙不兼容的蓝牙通信协议，在蓝牙 4.0 中被引入。顾名思义，低功耗蓝牙是一种功耗非常低的蓝牙协议，通信速率也比经典蓝牙更低一些，其典型应用场景是物联网 (Internet of Things, IoT) 中的数据通信，例如智能开关或智能传感器，这也是本教程中引用的低功耗蓝牙例程所实现的功能。不过，在体验例程功能以前，让我们来了解一下低功耗蓝牙的基本概念，以帮助你更好地入门。
 
 
-Bluetooth LE 的分层架构
+低功耗蓝牙的分层架构
 -------------------------
 
-Bluetooth LE 协议定义了三层软件结构，自上而下分别是
+低功耗蓝牙协议定义了三层软件结构，自上而下分别是
 
 - 应用层 (Application Layer)
 - 主机层 (Host Layer)
 - 控制器层 (Controller Layer)
 
-应用层即以 Bluetooth LE 为底层通信技术所构建的应用，依赖于主机层向上提供的 API 接口。
+应用层即以低功耗蓝牙为底层通信技术所构建的应用，依赖于主机层向上提供的 API 接口。
 
 主机层负责实现 L2CAP、GATT/ATT、SMP、GAP 等底层蓝牙协议，向上对应用层提供 API 接口，向下通过主机控制器接口 (Host Controller Interface, HCI) 与控制器层通信。
 
 控制器层包括物理层 (Physical Layer, PHY) 和链路层 (Link Layer, LL) 两层，向下直接与控制器硬件进行交互，向上通过 HCI 与主机层进行通信。
 
-值得一提的是，蓝牙核心规范 (Core Specification) 允许主机层和控制器层在物理上分离，此时 HCI 体现为物理接口，包括 SDIO、USB 以及 UART 等；当然，主机层和控制器层可以共存于同一芯片，以实现更高的集成度，此时 HCI 体现为逻辑接口，常被称为虚拟主机控制器接口 (Virtual Host Controller Interface, VHCI)。一般认为，主机层和控制器层组成了 Bluetooth LE 协议栈 (Bluetooth LE Stack)。
+值得一提的是，蓝牙核心规范 (Core Specification) 允许主机层和控制器层在物理上分离，此时 HCI 体现为物理接口，包括 SDIO、USB 以及 UART 等；当然，主机层和控制器层可以共存于同一芯片，以实现更高的集成度，此时 HCI 体现为逻辑接口，常被称为虚拟主机控制器接口 (Virtual Host Controller Interface, VHCI)。一般认为，主机层和控制器层组成了低功耗蓝牙协议栈 (Bluetooth LE Stack)。
 
-下图展示了 Bluetooth LE 的分层结构。
+下图展示了低功耗蓝牙的分层结构。
 
 .. figure:: ../../../../_static/ble/ble-architecture.png
     :align: center
     :scale: 50%
-    :alt: Bluetooth LE 分层结构
+    :alt: 低功耗蓝牙分层结构
 
-    Bluetooth LE 分层结构
+    低功耗蓝牙分层结构
 
 作为应用开发者，在开发过程中我们主要与主机层提供的 API 接口打交道，这要求我们对主机层中的蓝牙协议有一定的了解。接下来，我们会从连接和数据交换两个角度，对 GAP 和 GATT/ATT 层的基本概念进行介绍。
 
@@ -53,7 +53,7 @@ Bluetooth LE 协议定义了三层软件结构，自上而下分别是
 GAP 层 - 定义设备的连接
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-GAP 层的全称为通用访问规范 (Generic Access Profile, GAP)，定义了 Bluetooth LE 设备之间的连接行为以及设备在连接中所扮演的角色。
+GAP 层的全称为通用访问规范 (Generic Access Profile, GAP)，定义了低功耗蓝牙设备之间的连接行为以及设备在连接中所扮演的角色。
 
 
 GAP 状态与角色
@@ -85,14 +85,14 @@ GAP 角色之间的转换关系如下图所示
     GAP 角色转换关系
 
 
-Bluetooth LE 网络拓扑
+低功耗蓝牙网络拓扑
 ########################
 
-Bluetooth LE 设备可以同时与多个 Bluetooth LE 设备建立连接，扮演多个外围设备或中央设备角色，或同时作为外围设备和中央设备。以 Bluetooth LE 网关为例，这种设备可以作为中央设备，与智能开关等外围设备连接，同时作为外围设备，与形如手机等中央设备连接，实现数据中转。
+低功耗蓝牙设备可以同时与多个低功耗蓝牙设备建立连接，扮演多个外围设备或中央设备角色，或同时作为外围设备和中央设备。以低功耗蓝牙网关为例，这种设备可以作为中央设备，与智能开关等外围设备连接，同时作为外围设备，与形如手机等中央设备连接，实现数据中转。
 
-在一个 Bluetooth LE 网络中，若所有设备都在至少一个连接中，且仅扮演一种类型的角色，则称这种网络为连接拓扑 (Connected Topology)；若存在至少一个设备同时扮演外围设备和中央设备，则称这种网络为多角色拓扑 (Multi-role Topology)。
+在一个低功耗蓝牙网络中，若所有设备都在至少一个连接中，且仅扮演一种类型的角色，则称这种网络为连接拓扑 (Connected Topology)；若存在至少一个设备同时扮演外围设备和中央设备，则称这种网络为多角色拓扑 (Multi-role Topology)。
 
-Bluetooth LE 同时也支持无连接的网络拓扑，即广播拓扑 (Broadcast Topology)。在这种网络中，存在两种角色，其中发送数据的被称为广播者 (Broadcaster)，接收数据的被称为观察者 (Observer)。广播者只广播数据，不接受连接；观察者仅接受广播数据，不发起连接。例如，某个智能传感器的数据可能在一个网络中被多个设备共用，此时维护多个连接的成本相对较高，直接向网络中的所有设备广播传感器数据更加合适。
+低功耗蓝牙同时也支持无连接的网络拓扑，即广播拓扑 (Broadcast Topology)。在这种网络中，存在两种角色，其中发送数据的被称为广播者 (Broadcaster)，接收数据的被称为观察者 (Observer)。广播者只广播数据，不接受连接；观察者仅接受广播数据，不发起连接。例如，某个智能传感器的数据可能在一个网络中被多个设备共用，此时维护多个连接的成本相对较高，直接向网络中的所有设备广播传感器数据更加合适。
 
 
 了解更多
@@ -112,7 +112,7 @@ GATT/ATT 层定义了进入连接状态后，设备之间的数据交换方式�
 ATT 层
 #############
 
-ATT 的全称是属性协议 (Attribute Protocol, ATT)，定义了一种称为**属性 (Attribute)** 的基本数据结构，以及基于服务器/客户端架构的数据访问方式。
+ATT 的全称是属性协议 (Attribute Protocol, ATT)，定义了一种称为 **属性 (Attribute)** 的基本数据结构，以及基于服务器/客户端架构的数据访问方式。
 
 简单来说，数据以属性的形式存储在服务器上，等待客户端的访问。以智能开关为例，开关量作为数据，以属性的形式存储在智能开关内的蓝牙芯片（服务器）中，此时用户可以通过手机（客户端）访问智能开关蓝牙芯片（服务器）上存放的开关量属性，获取当前的开关状态（读访问），或控制开关的闭合与断开（写访问）。
 
@@ -123,7 +123,7 @@ ATT 的全称是属性协议 (Attribute Protocol, ATT)，定义了一种称为**
 - 值 (Value)
 - 访问权限 (Permissions)
 
-在协议栈实现中，属性一般被放在称为**属性表 (Attribute Table)** 的结构体数组中管理。一个属性在这张表中的索引，就是属性的句柄，常为一无符号整型。
+在协议栈实现中，属性一般被放在称为 **属性表 (Attribute Table)** 的结构体数组中管理。一个属性在这张表中的索引，就是属性的句柄，常为一无符号整型。
 
 属性的类型由 UUID 表示，可以分为 16 位、32 位与 128 位 UUID 三类。 16 位 UUID 由蓝牙技术联盟 (Bluetooth Special Interest Group, Bluetooth SIG) 统一定义，可以在其公开发布的 `Assigned Numbers <https://www.bluetooth.com/specifications/assigned-numbers/>`__ 文件中查询；其他两种长度的 UUID 用于表示厂商自定义的属性类型，其中 128 位 UUID 较为常用。
 
@@ -172,7 +172,7 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 ----------------------
 
 
-在了解了 Bluetooth LE 的基础概念以后，让我们往 {IDF_TARGET_NAME} 开发板中烧录一个简单的 Bluetooth LE 例程，体验 LED 开关与心率数据读取功能，建立对 Bluetooth LE 技术的感性认识。
+在了解了低功耗蓝牙的基础概念以后，让我们往 {IDF_TARGET_NAME} 开发板中烧录一个简单的低功耗蓝牙例程，体验 LED 开关与心率数据读取功能，建立对低功耗蓝牙技术的感性认识。
 
 
 前提条件
@@ -263,7 +263,7 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 
     广播数据详情
 
-点击右侧的 **CONNECT** 按钮，在手机连接的同时，可以在开发板的串口输出中观察到许多与连接相关的日志信息。随后，手机上会显示 NimBLE_GATT 标签页，左上角应有 **CONNECTED** 状态，说明手机已成功通过 Bluetooth LE 协议连接至开发板。在 CLIENT 子页中，你应该能够看到四个 GATT 服务，如图所示
+点击右侧的 **CONNECT** 按钮，在手机连接的同时，可以在开发板的串口输出中观察到许多与连接相关的日志信息。随后，手机上会显示 NimBLE_GATT 标签页，左上角应有 **CONNECTED** 状态，说明手机已成功通过低功耗蓝牙协议连接至开发板。在 CLIENT 子页中，你应该能够看到四个 GATT 服务，如图所示
 
 .. figure:: ../../../../_static/ble/ble-get-started-gatt-services-list.jpg
     :align: center
@@ -272,7 +272,7 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 
     GATT 服务列表
 
-前两个服务是 GAP 服务和 GATT 服务，这两个服务是 Bluetooth LE 应用中的基础服务。后两个服务是 Bluetooth SIG 定义的 Heart Rate Service 服务和 Automation IO Service 服务，分别提供心率数据读取和 LED 控制功能。
+前两个服务是 GAP 服务和 GATT 服务，这两个服务是低功耗蓝牙应用中的基础服务。后两个服务是 Bluetooth SIG 定义的 Heart Rate Service 服务和 Automation IO Service 服务，分别提供心率数据读取和 LED 控制功能。
 
 在服务名的下方，对应有各个服务的 UUID 以及服务主次标识。如 Heart Rate Service 服务的 UUID 为 `0x180D`，是一个主服务 (Primary Service)。需要注意的是，服务的名称是通过 UUID 解析得到的。以 nRF Connect for Mobile 为例，在实现 GATT 客户端时，开发者会将 Bluetooth SIG 定义的服务，以及例程自定义的服务预先写入数据库中，然后根据 GATT 服务的 UUID 进行服务信息解析。所以，假如某一服务的 UUID 不在数据库中，那么该服务的服务信息就无法被解析，服务名称将会显示为未知服务 (Unknown Service)。
 
@@ -339,4 +339,4 @@ Heart Rate Measurement 特征数据的 UUID 是 `0x2A37`，这是一个 Bluetoot
 总结
 ---------
 
-通过本教程，你了解了 Bluetooth LE 的分层架构、Bluetooth LE 协议栈中主机层和控制器层的基本功能以及 GAP 层与 GATT/ATT 层的作用。随后，通过 :example:`NimBLE_GATT_Server <bluetooth/ble_get_started/nimble/NimBLE_GATT_Server>` 例程，你掌握了如何使用 ESP-IDF 开发框架进行 Bluetooth LE 应用的构建与烧录，能够在手机上使用 **nRF Connect for Mobile** 调试程序，远程控制开发板上 LED 的点亮与熄灭，以及接收随机生成的心率数据。你已经迈出了走向 Bluetooth LE 开发者的第一步，恭喜！
+通过本教程，你了解了低功耗蓝牙的分层架构、低功耗蓝牙协议栈中主机层和控制器层的基本功能以及 GAP 层与 GATT/ATT 层的作用。随后，通过 :example:`NimBLE_GATT_Server <bluetooth/ble_get_started/nimble/NimBLE_GATT_Server>` 例程，你掌握了如何使用 ESP-IDF 开发框架进行低功耗蓝牙应用的构建与烧录，能够在手机上使用 **nRF Connect for Mobile** 调试程序，远程控制开发板上 LED 的点亮与熄灭，以及接收随机生成的心率数据。你已经迈出了走向低功耗蓝牙开发者的第一步，恭喜！

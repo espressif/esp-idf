@@ -55,7 +55,7 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
     // esp32h2 has DIS_ICACHE. Write-protection bit = 2.
     // List of eFuses with the same write protection bit:
     // DIS_ICACHE, DIS_USB_JTAG, POWERGLITCH_EN, DIS_FORCE_DOWNLOAD, SPI_DOWNLOAD_MSPI_DIS,
-    // DIS_TWAI, JTAG_SEL_ENABLE, DIS_PAD_JTAG, DIS_DOWNLOAD_MANUAL_ENCRYPT
+    // DIS_TWAI, JTAG_SEL_ENABLE, DIS_PAD_JTAG, DIS_DOWNLOAD_MANUAL_ENCRYPT, DIS_USB_SERIAL_JTAG
     esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_DIS_ICACHE);
 #endif
 

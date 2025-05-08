@@ -243,11 +243,11 @@ Launching Debugger
 
 The toolchain for {IDF_TARGET_NAME} features GNU Debugger, in short GDB. It is available with other toolchain programs under filename: {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb. GDB can be called and operated directly from command line in a terminal. Another option is to call it from within IDE (like Eclipse, Visual Studio Code, etc.) and operate indirectly with help of GUI instead of typing commands in a terminal.
 
-The options of using debugger are discussed under links below.
+The options of using debugger are discussed under links below:
 
 * :ref:`jtag-debugging-using-debugger-eclipse`
 * :ref:`jtag-debugging-using-debugger-command-line`
-* `Configuration for Visual Studio Code Debug <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/DEBUGGING.md>`__
+* `Configuration for Visual Studio Code Debug <https://docs.espressif.com/projects/vscode-esp-idf-extension/en/latest/debugproject.html>`__
 
 It is recommended to first check if debugger works from :ref:`jtag-debugging-using-debugger-command-line` and then move to using :ref:`jtag-debugging-using-debugger-eclipse`.
 

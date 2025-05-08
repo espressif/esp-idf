@@ -6,6 +6,7 @@ if(CONFIG_SOC_PMU_SUPPORTED)
     list(APPEND srcs "rtc_clk_init.c"
                      "pmu_param.c"
                      "pmu_init.c"
+                     "pmu_sleep.c"
         )
 endif()
 

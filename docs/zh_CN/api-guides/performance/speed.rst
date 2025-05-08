@@ -4,7 +4,7 @@
 :link_to_translation:`en:[English]`
 
 {IDF_TARGET_CONTROLLER_CORE_CONFIG:default="CONFIG_BT_CTRL_PINNED_TO_CORE", esp32="CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE", esp32s3="CONFIG_BT_CTRL_PINNED_TO_CORE_CHOICE"}
-{IDF_TARGET_RF_TYPE:default="Wi-Fi/蓝牙", esp32s2="Wi-Fi", esp32c6="Wi-Fi/蓝牙/802.15.4", esp32h2="蓝牙/802.15.4, esp32c5="Wi-Fi/蓝牙/802.15.4"}
+{IDF_TARGET_RF_TYPE:default="Wi-Fi/蓝牙", esp32s2="Wi-Fi", esp32c6="Wi-Fi/蓝牙/802.15.4", esp32c61="Wi-Fi/蓝牙", esp32h2="蓝牙/802.15.4", esp32h21="蓝牙/802.15.4", esp32h4="蓝牙/802.15.4", esp32c5="Wi-Fi/蓝牙/802.15.4"}
 
 概述
 -----------

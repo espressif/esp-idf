@@ -277,6 +277,7 @@ static esp_err_t create_secure_context(const struct httpd_ssl_config *config, ht
 
     cfg->userdata = config->ssl_userdata;
     cfg->alpn_protos = config->alpn_protos;
+    cfg->tls_handshake_timeout_ms = config->tls_handshake_timeout_ms;
 
 #if defined(CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK)
     cfg->cert_select_cb = config->cert_select_cb;

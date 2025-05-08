@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -298,8 +298,14 @@ static NOINLINE_ATTR bool _dma2d_default_rx_isr(dma2d_group_t *group, int channe
         }
     }
 
-    // If last transcation completes (regardless success or not), free the channels
-    if (intr_status & (DMA2D_LL_EVENT_RX_SUC_EOF | DMA2D_LL_EVENT_RX_ERR_EOF | DMA2D_LL_EVENT_RX_DESC_ERROR)) {
+    if (intr_status & DMA2D_LL_EVENT_RX_DESC_EMPTY) {
+        if (rx_chan->on_desc_empty) {
+            need_yield |= rx_chan->on_desc_empty(&rx_chan->base, &edata, user_data);
+        }
+    }
+
+    // If last transaction completes (regardless success or not), free the channels
+    if (intr_status & (DMA2D_LL_EVENT_RX_SUC_EOF | DMA2D_LL_EVENT_RX_ERR_EOF | DMA2D_LL_EVENT_RX_DESC_ERROR | DMA2D_LL_EVENT_RX_DESC_EMPTY)) {
         if (!(intr_status & DMA2D_LL_EVENT_RX_ERR_EOF)) {
             assert(dma2d_ll_rx_is_fsm_idle(group->hal.dev, channel_id));
         }
@@ -688,6 +694,10 @@ esp_err_t dma2d_register_rx_event_callbacks(dma2d_channel_handle_t dma2d_chan, d
         rx_chan->on_desc_done = cbs->on_desc_done;
         mask |= DMA2D_LL_EVENT_RX_DONE;
     }
+    if (cbs->on_desc_empty) {
+        rx_chan->on_desc_empty = cbs->on_desc_empty;
+        mask |= DMA2D_LL_EVENT_RX_DESC_EMPTY;
+    }
     rx_chan->user_data = user_data;
     dma2d_ll_rx_enable_interrupt(group->hal.dev, rx_chan->base.channel_id, mask, true);
 
@@ -957,12 +967,14 @@ esp_err_t dma2d_force_end(dma2d_trans_t *trans, bool *need_yield)
     dma2d_group_t *group = trans->rx_chan->group;
 
     bool in_flight = false;
-    // We judge whether the transaction is in-flight by checking the RX channel it uses is in-use or free
+    // We judge whether the transaction is in-flight by checking the RX channel it uses is being occupied or free
     portENTER_CRITICAL_SAFE(&group->spinlock);
     if (!(group->rx_channel_free_mask & (1 << trans->rx_chan->channel_id))) {
         in_flight = true;
         dma2d_ll_rx_enable_interrupt(group->hal.dev, trans->rx_chan->channel_id, UINT32_MAX, false);
-        assert(!dma2d_ll_rx_is_fsm_idle(group->hal.dev, trans->rx_chan->channel_id));
+        // DMA consumer could generate an error in both cases:
+        // 1. when TX or RX is transferring data (channel not in idle state)
+        // 2. TX successfully passed data to the module, but module cannot process the data, so RX has no data to delivery (RX channel in idle state)
     }
     portEXIT_CRITICAL_SAFE(&group->spinlock);
     ESP_RETURN_ON_FALSE_ISR(in_flight, ESP_ERR_INVALID_STATE, TAG, "transaction not in-flight");

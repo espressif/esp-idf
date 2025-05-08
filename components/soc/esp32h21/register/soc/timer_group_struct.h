@@ -531,7 +531,7 @@ typedef struct {
     volatile timg_txload_reg_t load;
 } timg_hwtimer_reg_t;
 
-typedef struct {
+typedef struct timg_dev_t {
     volatile timg_hwtimer_reg_t hw_timer[1];
     uint32_t reserved_024[9];
     volatile timg_wdtconfig0_reg_t wdtconfig0;

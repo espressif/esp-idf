@@ -1,0 +1,18 @@
+{
+    "binary_ver": 1,
+    "hw_rev": 0,
+    "hdr_len": 3,
+    "inst_ct": 2,
+    "inst": [
+        {
+            "opcode": {
+                "op": "ADDCTIA"
+            }
+        },
+        {
+            "opcode": {
+                "op": "ADDCTIBH"
+            }
+        }
+    ]
+}

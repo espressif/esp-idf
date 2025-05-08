@@ -949,16 +949,16 @@ continue_processing:
 }
 
 int wpa_auth_pmksa_add_sae(struct wpa_authenticator *wpa_auth, const u8 *addr,
-               const u8 *pmk, const u8 *pmkid, bool cache_pmksa)
+               const u8 *pmk, size_t pmk_len, const u8 *pmkid, bool cache_pmksa, int akmp)
 {
     if (cache_pmksa)
         return -1;
 
     wpa_hexdump_key(MSG_DEBUG, "RSN: Cache PMK from SAE", pmk, PMK_LEN);
-    if (pmksa_cache_auth_add(wpa_auth->pmksa, pmk, PMK_LEN, pmkid,
+    if (pmksa_cache_auth_add(wpa_auth->pmksa, pmk, pmk_len, pmkid,
                   NULL, 0,
                   wpa_auth->addr, addr, 0, NULL,
-                  WPA_KEY_MGMT_SAE))
+                  akmp))
         return 0;
 
     return -1;
@@ -1599,7 +1599,7 @@ SM_STATE(WPA_PTK, PTKSTART)
 
 
 static int wpa_derive_ptk(struct wpa_state_machine *sm, const u8 *snonce,
-			  const u8 *pmk, struct wpa_ptk *ptk)
+			  const u8 *pmk, unsigned int pmk_len, struct wpa_ptk *ptk)
 {
 #ifdef CONFIG_IEEE80211R_AP
     size_t ptk_len = sm->pairwise != WPA_CIPHER_TKIP ? 48 : 64;
@@ -1609,7 +1609,7 @@ static int wpa_derive_ptk(struct wpa_state_machine *sm, const u8 *snonce,
         return wpa_auth_derive_ptk_ft(sm, pmk, ptk);
 #endif /* CONFIG_IEEE80211R_AP */
 
-    return wpa_pmk_to_ptk(pmk, PMK_LEN, "Pairwise key expansion",
+    return wpa_pmk_to_ptk(pmk, pmk_len, "Pairwise key expansion",
                   sm->wpa_auth->addr, sm->addr, sm->ANonce, snonce,
                   ptk, sm->wpa_key_mgmt, sm->pairwise);
 }
@@ -1625,9 +1625,11 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
     struct wpa_eapol_key *key;
     struct wpa_eapol_ie_parse kde;
 
+    size_t pmk_len;
     SM_ENTRY_MA(WPA_PTK, PTKCALCNEGOTIATING, wpa_ptk);
     sm->EAPOLKeyReceived = FALSE;
     sm->update_snonce = FALSE;
+    pmk_len = PMK_LEN;
 
     /* WPA with IEEE 802.1X: use the derived PMK from EAP
      * WPA-PSK: iterate through possible PSKs and select the one matching
@@ -1642,15 +1644,17 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
                 break;
             }
         } else {
+            pmk_len = sm->pmk_len;
             pmk = sm->PMK;
         }
 
         if (!pmk && sm->pmksa) {
             wpa_printf(MSG_DEBUG, "WPA: Use PMK from PMKSA cache");
             pmk = sm->pmksa->pmk;
+            pmk_len = sm->pmksa->pmk_len;
         }
 
-        wpa_derive_ptk(sm, sm->SNonce, pmk, &PTK);
+        wpa_derive_ptk(sm, sm->SNonce, pmk, pmk_len, &PTK);
 
         if (wpa_verify_key_mic(sm->wpa_key_mgmt, &PTK,
                        sm->last_rx_eapol_key,
@@ -1729,7 +1733,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
         /* PSK may have changed from the previous choice, so update
          * state machine data based on whatever PSK was selected here.
          */
-        memcpy(sm->PMK, pmk, PMK_LEN);
+        memcpy(sm->PMK, pmk, pmk_len);
     }
 
     sm->MICVerified = TRUE;
@@ -1748,13 +1752,18 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING2)
 
 #ifdef CONFIG_IEEE80211W
 
+#define WPA_IGTK_KDE_PREFIX_LEN (2 + 6)
+
 static int ieee80211w_kde_len(struct wpa_state_machine *sm)
 {
+    size_t len = 0;
+    struct wpa_authenticator *wpa_auth = sm->wpa_auth;
     if (sm->mgmt_frame_prot) {
-        return 2 + RSN_SELECTOR_LEN + sizeof(struct wpa_igtk_kde);
+        len += 2 + RSN_SELECTOR_LEN + WPA_IGTK_KDE_PREFIX_LEN;
+        len += wpa_cipher_key_len(wpa_auth->conf.group_mgmt_cipher);
     }
 
-    return 0;
+    return len;
 }
 
 
@@ -1762,6 +1771,10 @@ static u8 * ieee80211w_kde_add(struct wpa_state_machine *sm, u8 *pos)
 {
     struct wpa_igtk_kde igtk;
     struct wpa_group *gsm = sm->group;
+
+    struct wpa_authenticator *wpa_auth = sm->wpa_auth;
+    struct wpa_auth_config *conf = &wpa_auth->conf;
+    size_t len = wpa_cipher_key_len(conf->group_mgmt_cipher);
 
     if (!sm->mgmt_frame_prot)
         return pos;
@@ -1771,17 +1784,17 @@ static u8 * ieee80211w_kde_add(struct wpa_state_machine *sm, u8 *pos)
     if (gsm->wpa_group_state != WPA_GROUP_SETKEYSDONE ||
         wpa_auth_get_seqnum(sm->wpa_auth, NULL, gsm->GN_igtk, igtk.pn) < 0)
         memset(igtk.pn, 0, sizeof(igtk.pn));
-    memcpy(igtk.igtk, gsm->IGTK[gsm->GN_igtk - 4], WPA_IGTK_LEN);
+    memcpy(igtk.igtk, gsm->IGTK[gsm->GN_igtk - 4], len);
     if (sm->wpa_auth->conf.disable_gtk) {
         /*
          * Provide unique random IGTK to each STA to prevent use of
          * IGTK in the BSS.
          */
-        if (os_get_random(igtk.igtk, WPA_IGTK_LEN) < 0)
+        if (os_get_random(igtk.igtk, len) < 0)
             return pos;
     }
     pos = wpa_add_kde(pos, RSN_KEY_DATA_IGTK,
-              (const u8 *) &igtk, sizeof(igtk), NULL, 0);
+              (const u8 *) &igtk, WPA_IGTK_KDE_PREFIX_LEN + len, NULL, 0);
 
     return pos;
 }
@@ -2255,6 +2268,7 @@ static int wpa_gtk_update(struct wpa_authenticator *wpa_auth,
               struct wpa_group *group)
 {
     int ret = 0;
+    size_t len;
 
     memcpy(group->GNonce, group->Counter, WPA_NONCE_LEN);
     inc_byte_array(group->Counter, WPA_NONCE_LEN);
@@ -2268,15 +2282,16 @@ static int wpa_gtk_update(struct wpa_authenticator *wpa_auth,
 
 #ifdef CONFIG_IEEE80211W
     if (wpa_auth->conf.ieee80211w != NO_MGMT_FRAME_PROTECTION) {
+        len = wpa_cipher_key_len(wpa_auth->conf.group_mgmt_cipher);
         memcpy(group->GNonce, group->Counter, WPA_NONCE_LEN);
         inc_byte_array(group->Counter, WPA_NONCE_LEN);
         if (wpa_gmk_to_gtk(group->GMK, "IGTK key expansion",
                    wpa_auth->addr, group->GNonce,
                    group->IGTK[group->GN_igtk - 4],
-                   WPA_IGTK_LEN) < 0)
+                   len) < 0)
             ret = -1;
         wpa_hexdump_key(MSG_DEBUG, "IGTK",
-                group->IGTK[group->GN_igtk - 4], WPA_IGTK_LEN);
+                group->IGTK[group->GN_igtk - 4], len);
     }
 #endif /* CONFIG_IEEE80211W */
 

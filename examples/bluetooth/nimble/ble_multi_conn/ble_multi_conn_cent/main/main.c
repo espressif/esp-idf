@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -93,17 +93,17 @@ ble_cent_client_gap_event(struct ble_gap_event *event, void *arg)
 
         return 0;
 
-    case BLE_GAP_EVENT_LINK_ESTAB:
-        if (event->link_estab.status == 0) {
-            ESP_LOGI(TAG, "Connection established. Handle:%d, Total:%d", event->link_estab.conn_handle,
+    case BLE_GAP_EVENT_CONNECT:
+        if (event->connect.status == 0) {
+            ESP_LOGI(TAG, "Connection established. Handle:%d, Total:%d", event->connect.conn_handle,
                      ++s_ble_multi_conn_num);
             /* Remember peer. */
-            rc = peer_add(event->link_estab.conn_handle);
+            rc = peer_add(event->connect.conn_handle);
             if (rc != 0) {
                 ESP_LOGE(TAG, "Failed to add peer; rc=%d\n", rc);
             } else {
                 /* Perform service discovery */
-                rc = peer_disc_svc_by_uuid(event->link_estab.conn_handle, remote_svc_uuid,
+                rc = peer_disc_svc_by_uuid(event->connect.conn_handle, remote_svc_uuid,
                                         ble_cent_on_disc_complete, NULL);
                 if(rc != 0) {
                     ESP_LOGE(TAG, "Failed to discover services; rc=%d\n", rc);
@@ -111,7 +111,7 @@ ble_cent_client_gap_event(struct ble_gap_event *event, void *arg)
             }
         } else {
             /* Connection attempt failed; resume scanning. */
-            ESP_LOGE(TAG, "Central: Connection failed; status=0x%x\n", event->link_estab.status);
+            ESP_LOGE(TAG, "Central: Connection failed; status=0x%x\n", event->connect.status);
         }
         ble_cent_scan();
         return 0;
@@ -174,12 +174,12 @@ static int
 ble_cent_server_gap_event(struct ble_gap_event *event, void *arg)
 {
     switch (event->type) {
-    case BLE_GAP_EVENT_LINK_ESTAB:
+    case BLE_GAP_EVENT_CONNECT:
         /* The connectable adv has been established. We will act as the peripheral. */
-        if (event->link_estab.status == 0) {
-            ESP_LOGI(TAG, "Peripheral connected to central. Handle:%d", event->link_estab.conn_handle);
+        if (event->connect.status == 0) {
+            ESP_LOGI(TAG, "Peripheral connected to central. Handle:%d", event->connect.conn_handle);
         } else {
-            ESP_LOGE(TAG, "Peripheral: Connection failed; status=0x%x\n", event->link_estab.status);
+            ESP_LOGE(TAG, "Peripheral: Connection failed; status=0x%x\n", event->connect.status);
             ble_cent_advertise();
         }
         return 0;

@@ -23,8 +23,6 @@ extern "C" {
 
 #include "rom/ets_sys.h"
 
-//TODO: [ESP32H21] IDF-11511, inherit from h2
-
 /* The value that needs to be written to LP_WDT_WKEY to write-enable the wdt registers */
 #define LP_WDT_WKEY_VALUE 0x50D83AA1
 /* The value that needs to be written to LP_WDT_SWD_WPROTECT_REG to write-enable the swd registers */

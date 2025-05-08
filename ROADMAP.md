@@ -31,6 +31,10 @@ Below are the main objectives that ESP-IDF project/teams would like to implement
     -   Do more bugfix releases for IDF v5.2 and IDF v5.3 before release/5.2 and release/5.3 enter maintenance period
     -   Do more bug fixes releases for release/5.4 and release/5.5, and push the two releases to be more stable and production-ready
 
+-   Major Changes
+
+    -   We plan to upgrade MbedTLS to v4.x series in IDF v6.0. In addition, we will also be migrating to newer PSA crypto API as part of this upgrade. Please note that this may involve some breaking changes on the application side for the crypto API usage.
+
 Please note that support status of previous silicones could be found on [ESP-IDF Release and SoC Compatibility](https://github.com/espressif/esp-idf#esp-idf-release-and-soc-compatibility).
 
 ### Roadmap Details
@@ -50,7 +54,7 @@ Below are the main roadmap details for functional areas inside ESP-IDF.
 
     -   Do bugfix releases v5.0.8 and v5.0.9 and stop maintaining ESP-IDF v5.0 in May 2025
     -   Do bugfix releases v5.1.6 and v5.1.7 and stop maintaining ESP-IDF v5.1 in December 2025
-    -   Release bugfix IDF v5.2.4 and IDF v5.2.5 in 2025, and push release/5.2 to maintenance period from February 2025
+    -   Release bugfix IDF v5.2.4, IDF v5.2.5 and IDF v5.2.6 in 2025, and push release/5.2 to maintenance period from February 2025
     -   Release bugfix IDF v5.3.3 and IDF v5.3.4 in 2025, and push release/5.3 to maintenance period from July 2025
     -   Do more bug fixes releases for release/5.4 (IDF v5.4.1, IDF v5.4.2, IDF v5.4.3) and release/5.5 (IDF v5.5.1, IDF v5.5.2), and push releases to be more stable and more production-ready
 
@@ -79,9 +83,6 @@ timeline
           v6.0-RC2 : 2026/02/06  
           v6.0 : 2026/02/13   
 ```
-
-> [!NOTE]
-> However for the December release, we are also considering another minor version v5.6. We would consolidate the planning in the middle of 2025 and replace v6.0 with v5.6 if v5.6 version planning is decided.
   
 ### ESP-IDF Minor Releases
 
@@ -111,7 +112,8 @@ timeline
         section 2025 Q1 <br> Bugfix Release Planning
           v5.0.8 : 2025/01/14
           v5.1.6 : 2025/02/18
-          v5.2.4 : 2025/02/23        
+          v5.2.4 : 2025/02/23
+          v5.2.5 : 2025/02/28     
           v5.4.1 : 2025/03/27
           v5.3.3 : 2025/04/04                
         section 2025 Q2 <br> Bugfix Release Planning
@@ -119,7 +121,7 @@ timeline
           v5.4.2 : 2025/06/30 
         section 2025 Q3 <br> Bugfix Release Planning
           v5.3.4 : 2025/08/03
-          v5.2.5 : 2025/09/04
+          v5.2.6 : 2025/09/04
           v5.5.1 : 2025/09/11   
           v5.4.3 : 2025/10/08
         section 2025 Q4 <br> Bugfix Release Planning

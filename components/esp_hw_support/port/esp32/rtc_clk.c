@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -113,6 +113,11 @@ void rtc_clk_32k_enable(bool enable)
 void rtc_clk_32k_enable_external(void)
 {
     rtc_clk_32k_enable_common(CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL);
+}
+
+void rtc_clk_32k_disable_external(void)
+{
+    clk_ll_xtal32k_disable();
 }
 
 /* Helping external 32kHz crystal to start up.
@@ -404,6 +409,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     rtc_clk_apb_freq_update(80 * MHZ);
     esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
     rtc_clk_wait_for_slow_cycle();
+    esp_rom_delay_us(30);
 }
 
 void rtc_clk_cpu_freq_set_xtal(void)
@@ -418,6 +424,11 @@ void rtc_clk_cpu_set_to_default_config(void)
 
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
     rtc_clk_wait_for_slow_cycle();
+}
+
+void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
+{
+    rtc_clk_cpu_freq_set_xtal();
 }
 
 bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t* out_config)

@@ -27,12 +27,21 @@ extern "C" {
  */
 __attribute__((always_inline))
 inline static bool esp_dram_match_iram(void) {
-    bool dram_match_iram = (SOC_DRAM_LOW == SOC_IRAM_LOW) &&
-                             (SOC_DRAM_HIGH == SOC_IRAM_HIGH);
+    return ((SOC_DRAM_LOW == SOC_IRAM_LOW) && (SOC_DRAM_HIGH == SOC_IRAM_HIGH));
+}
+
+/**
+ * @brief Check if the RTC IRAM and RTC DRAM are separate or using the same memory space
+ *
+ * @return true if the RTC DRAM and RTC IRAM are sharing the same memory space, false otherwise
+ */
+__attribute__((always_inline))
+inline static bool esp_rtc_dram_match_rtc_iram(void) {
 #if SOC_RTC_FAST_MEM_SUPPORTED
-        dram_match_iram &= (SOC_RTC_IRAM_LOW == SOC_RTC_DRAM_LOW);
+    return ((SOC_RTC_IRAM_LOW == SOC_RTC_DRAM_LOW) && (SOC_RTC_IRAM_HIGH == SOC_RTC_DRAM_HIGH));
+#else
+    return false;
 #endif
-    return dram_match_iram;
 }
 
 /**
@@ -102,7 +111,7 @@ inline static bool esp_ptr_in_diram_iram(const void *p) {
  */
 __attribute__((always_inline))
 inline static bool esp_ptr_in_rtc_iram_fast(const void *p) {
-#if SOC_RTC_FAST_MEM_SUPPORTED && (SOC_RTC_IRAM_LOW != SOC_RTC_DRAM_LOW)
+#if SOC_RTC_FAST_MEM_SUPPORTED
     return ((intptr_t)p >= SOC_RTC_IRAM_LOW && (intptr_t)p < SOC_RTC_IRAM_HIGH);
 #else
     (void)p;
@@ -246,21 +255,7 @@ inline static bool esp_ptr_word_aligned(const void *p)
  *
  * @return true: is executable; false: not executable
  */
-__attribute__((always_inline))
-inline static bool esp_ptr_executable(const void *p)
-{
-    intptr_t ip = (intptr_t) p;
-    return (ip >= SOC_IROM_LOW && ip < SOC_IROM_HIGH)
-        || (ip >= SOC_IRAM_LOW && ip < SOC_IRAM_HIGH)
-        || (ip >= SOC_IROM_MASK_LOW && ip < SOC_IROM_MASK_HIGH)
-#if defined(SOC_CACHE_APP_LOW) && defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE)
-        || (ip >= SOC_CACHE_APP_LOW && ip < SOC_CACHE_APP_HIGH)
-#endif
-#if SOC_RTC_FAST_MEM_SUPPORTED
-        || (ip >= SOC_RTC_IRAM_LOW && ip < SOC_RTC_IRAM_HIGH)
-#endif
-    ;
-}
+bool esp_ptr_executable(const void *p);
 
 /**
  * @brief Check if the pointer is byte accessible

@@ -88,6 +88,7 @@ static bool is_partition_encrypted(bool encryption_config, esp_partition_type_t 
                 || (type == ESP_PARTITION_TYPE_BOOTLOADER)
                 || (type == ESP_PARTITION_TYPE_PARTITION_TABLE)
                 || (type == ESP_PARTITION_TYPE_DATA && subtype == ESP_PARTITION_SUBTYPE_DATA_OTA)
+                || (type == ESP_PARTITION_TYPE_DATA && subtype == ESP_PARTITION_SUBTYPE_DATA_TEE_OTA)
                 || (type == ESP_PARTITION_TYPE_DATA && subtype == ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS)) {
         /* If encryption is turned on, all app partitions and OTA data
             are always encrypted */

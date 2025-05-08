@@ -38,7 +38,7 @@ The features in relation to the Touch Element library in {IDF_TARGET_NAME} are g
     :align: center
 
     * - Features
-      - ESP32S2
+      - {IDF_TARGET_NAME}
     * - Touch Element waterproof
       - ✔
     * - Touch Element button
@@ -431,8 +431,6 @@ Wakeup from Light/Deep-sleep Mode
 Only Touch Button can be configured as a wake-up source.
 
 Light- or Deep-sleep modes are both supported to be wakened up by a touch sensor. For the Light-sleep mode, any installed touch button can wake it up. But only the sleep button can wake up from Deep-sleep mode, and the touch sensor will do a calibration immediately, the reference value will be calibrated to a wrong value if our finger does not remove timely. Though the wrong reference value recovers after the finger removes away and has no effect on the driver logic, if you do not want to see a wrong reference value while waking up from Deep-sleep mode, you can call :cpp:func:`touch_element_sleep_enable_wakeup_calibration` to disable the wakeup calibration.
-
-The Touch Element Wakeup example is available in `system/light_sleep` directory.
 
 .. code-block:: c
 

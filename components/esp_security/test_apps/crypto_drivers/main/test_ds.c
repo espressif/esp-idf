@@ -36,6 +36,10 @@
 #include "esp32c5/rom/digital_signature.h"
 #include "esp32c5/rom/aes.h"
 #include "esp32c5/rom/sha.h"
+#elif CONFIG_IDF_TARGET_ESP32H21
+#include "esp32h21/rom/digital_signature.h"
+#include "esp32h21/rom/aes.h"
+#include "esp32h21/rom/sha.h"
 #endif
 
 #include "esp_ds.h"

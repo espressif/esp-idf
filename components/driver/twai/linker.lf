@@ -1,9 +1,3 @@
-[mapping:twai_hal]
-archive: libhal.a
-entries:
-    if TWAI_ISR_IN_IRAM = y:
-        twai_hal_iram (noflash)
-
 [mapping:twai_driver]
 archive: libdriver.a
 entries:
@@ -12,3 +6,23 @@ entries:
         twai: twai_handle_rx_buffer_frames (noflash)
         twai: twai_handle_tx_buffer_frame (noflash)
         twai: twai_intr_handler_main (noflash)
+
+[mapping:twai_hal_legacy]
+archive: libhal.a
+entries:
+    if TWAI_ISR_IN_IRAM = y:
+        twai_hal_sja1000: twai_hal_decode_interrupt (noflash)
+        twai_hal_sja1000: twai_hal_get_events (noflash)
+        twai_hal_sja1000: twai_hal_format_frame (noflash)
+        twai_hal_sja1000: twai_hal_parse_frame (noflash)
+        twai_hal_sja1000: twai_hal_set_tx_buffer_and_transmit (noflash)
+        twai_hal_sja1000: twai_hal_get_rx_msg_count (noflash)
+        twai_hal_sja1000: twai_hal_read_rx_fifo (noflash)
+        twai_hal_sja1000: twai_hal_check_state_flags (noflash)
+
+        if TWAI_ERRATA_FIX_RX_FRAME_INVALID = y || TWAI_ERRATA_FIX_RX_FIFO_CORRUPT = y:
+            twai_hal_sja1000: twai_hal_prepare_for_reset (noflash)
+            twai_hal_sja1000: twai_hal_recover_from_reset (noflash)
+            twai_hal_sja1000: twai_hal_backup_config (noflash)
+            twai_hal_sja1000: twai_hal_restore_config (noflash)
+            twai_hal_sja1000: twai_hal_get_reset_lost_rx_cnt (noflash)

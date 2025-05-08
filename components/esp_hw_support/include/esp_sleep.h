@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -174,9 +174,13 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void);
 /**
  * @brief Enable wakeup by timer
  * @param time_in_us  time before wakeup, in microseconds
+ * @note  The valid `time_in_us` value depends on the bit width of the lp_timer/rtc_timer counter and the
+ *        current slow clock source selection (Refer RTC clock source configuration in menuconfig).
+ *        Valid values should be positive values less than RTC slow clock period * (2 ^ RTC timer bitwidth).
+ *
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if value is out of range (TBD)
+ *      - ESP_ERR_INVALID_ARG if value is out of range.
  */
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
 
@@ -429,8 +433,10 @@ __attribute__((deprecated("please use 'esp_sleep_enable_ext1_wakeup_io' and 'esp
  *
  * This function enables an IO pin to wake up the chip from deep sleep.
  *
- * @note This function does not modify pin configuration. The pins are
- *       configured inside esp_deep_sleep_start, immediately before entering sleep mode.
+ * @note 1.This function does not modify pin configuration. The pins are configured
+ *          inside `esp_deep_sleep_start`, immediately before entering sleep mode.
+ *       2.This function is also applicable to waking up the lightsleep when the peripheral
+ *         power domain is powered off, see PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP in menuconfig.
  *
  * @note You don't need to worry about pull-up or pull-down resistors before
  *       using this function because the ESP_SLEEP_GPIO_ENABLE_INTERNAL_RESISTORS
@@ -465,7 +471,12 @@ esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepslee
  * wakeup level, for each GPIO which is used for wakeup.
  * Then call this function to enable wakeup feature.
  *
- * @note On ESP32, GPIO wakeup source can not be used together with touch or ULP wakeup sources.
+ * @note 1. On ESP32, GPIO wakeup source can not be used together with touch or ULP wakeup sources.
+ *       2. If PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP is enabled (if target supported),
+ *          this API is unavailable since the GPIO module is powered down during sleep.
+ *          You can use `esp_deep_sleep_enable_gpio_wakeup` instead, or use EXT1 wakeup source
+ *          by `esp_sleep_enable_ext1_wakeup_io` to achieve the same function.
+ *          (Only GPIOs which have RTC functionality can be used)
  *
  * @return
  *      - ESP_OK on success
@@ -481,7 +492,9 @@ esp_err_t esp_sleep_enable_gpio_wakeup(void);
  * Wakeup from light sleep takes some time, so not every character sent
  * to the UART can be received by the application.
  *
- * @note ESP32 does not support wakeup from UART2.
+ * @note 1. ESP32 does not support wakeup from UART2.
+ *       2. If PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP is enabled (if target supported),
+ *          this API is unavailable since the UART module is powered down during sleep.
  *
  * @param uart_num  UART port to wake up from
  * @return

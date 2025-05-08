@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -332,6 +332,15 @@ const char *esp_console_get_hint(const char *buf, int *color, int *bold);
 esp_err_t esp_console_register_help_command(void);
 
 /**
+ * @brief Deregister a 'help' command
+ *
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - other on failure
+ */
+esp_err_t esp_console_deregister_help_command(void);
+
+/**
  * @brief Set the verbose level for 'help' command
  *
  * Set the verbose level for 'help' command. Higher verbose level shows more details.
@@ -442,12 +451,22 @@ esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_
 /**
  * @brief Start REPL environment
  * @param[in] repl REPL handle returned from esp_console_new_repl_xxx
- * @note Once the REPL gets started, it won't be stopped until the user calls repl->del(repl) to destroy the REPL environment.
+ * @note Once the REPL gets started, it won't be stopped until the user calls esp_console_stop_repl to destroy the REPL environment.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE, if repl has started already
  */
 esp_err_t esp_console_start_repl(esp_console_repl_t *repl);
+
+/**
+ * @brief Stop REPL environment
+ *
+ * @param[in] repl REPL handle returned from esp_console_new_repl_xxx
+ * @return
+ *      - ESP_OK on success
+ *      - others on failure
+ */
+esp_err_t esp_console_stop_repl(esp_console_repl_t *repl);
 
 #ifdef __cplusplus
 }

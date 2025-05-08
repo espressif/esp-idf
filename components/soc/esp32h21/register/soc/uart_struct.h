@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -16,11 +16,10 @@ extern "C" {
  */
 typedef union {
     struct {
-        /** rxfifo_rd_byte : RO; bitpos: [7:0]; default: 0;
+        /** rxfifo_rd_byte : RO; bitpos: [31:0]; default: 0;
          *  UART $n accesses FIFO via this register.
          */
-        uint32_t rxfifo_rd_byte:8;
-        uint32_t reserved_8:24;
+        uint32_t rxfifo_rd_byte:32;
     };
     uint32_t val;
 } uart_fifo_reg_t;
@@ -738,14 +737,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** xon_char : R/W; bitpos: [7:0]; default: 17;
+        /** xon_character : R/W; bitpos: [7:0]; default: 17;
          *  This register stores the Xon flow control char.
          */
-        uint32_t xon_char:8;
-        /** xoff_char : R/W; bitpos: [15:8]; default: 19;
+        uint32_t xon_character:8;
+        /** xoff_character : R/W; bitpos: [15:8]; default: 19;
          *  This register stores the Xoff flow control char.
          */
-        uint32_t xoff_char:8;
+        uint32_t xoff_character:8;
         /** xon_xoff_still_send : R/W; bitpos: [16]; default: 0;
          *  In software flow control mode, UART Tx is disabled once UART Rx receives XOFF. In
          *  this status, UART Tx can not transmit XOFF even the received data number is larger

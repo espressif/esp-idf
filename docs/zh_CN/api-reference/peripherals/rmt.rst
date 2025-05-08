@@ -443,6 +443,20 @@ RMT 编码器是 RMT TX 事务的一部分，用于在特定时间生成正确�
 
 简易回调编码器的功能通常可以通过链式组合其他编码器来实现，但相比编码器链，简易回调编码器更易于理解和维护。
 
+.. only:: SOC_BITSCRAMBLER_SUPPORTED and SOC_RMT_SUPPORT_DMA
+
+    比特调节 (BitScrambler) 编码器
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    当 RMT 的发送通道开启了 DMA, 我们可以通过编写 :doc:`比特调节器 </api-reference/peripherals/bitscrambler>` 汇编代码来控制 DMA 通路上的数据，进而实现一些简单的编码工作。相较于使用 CPU 做编码工作，比特调节器的性能更高，且不会占用 CPU 资源，但是受限于 BitScrambler 有限的指令存储器空间，它无法实现复杂的编码工作。此外，比特调节器程序的输出流数据格式必须符合 :cpp:type:`rmt_symbol_word_t` 结构。
+
+    调用 :cpp:func:`rmt_new_bitscrambler_encoder` 可以创建一个比特调节器编码器。该函数的配置参数为 :cpp:type:`rmt_bs_encoder_config_t` 结构体，包含以下配置项：
+        - :cpp:member:`rmt_bs_encoder_config_t::program_bin` 指向比特调节器程序的二进制文件的指针。该二进制文件必须符合比特调节器的汇编语言规范，并且在运行时会被加载到比特调节器的指令存储器中。如何编写并编译比特调节器程序请参考 :doc:`比特调节器编程指南 </api-reference/peripherals/bitscrambler>`。
+
+    .. note::
+
+        比特调节编码器**必须**配合开启了 DMA 的 RMT 通道使用。
+
 自定义 NEC 协议的 RMT 编码器
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -567,13 +581,15 @@ Cache 安全
 
 默认情况下，禁用 cache 时，写入/擦除主 flash 等原因将导致 RMT 中断延迟，事件回调函数也将延迟执行。在实时应用程序中，应避免此类情况。此外，当 RMT 事务依赖 **交替** 中断连续编码或复制 RMT 符号时，上述中断延迟将导致不可预测的结果。
 
-因此，可以启用 Kconfig 选项 :ref:`CONFIG_RMT_ISR_CACHE_SAFE`，该选项：
+因此，可以启用 Kconfig 选项 :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` 和 :ref:`CONFIG_RMT_RX_ISR_CACHE_SAFE`，该选项：
 
 1. 支持在禁用 cache 时启用所需中断
 2. 支持将 ISR 使用的所有函数存放在 IRAM 中 [2]_
 3. 支持将驱动程序实例存放在 DRAM 中，以防其意外映射到 PSRAM 中
 
 启用该选项可以保证 cache 禁用时的中断运行，但会相应增加 IRAM 占用。
+
+请注意，当 :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` 使能后，你必须将编码器函数 (主要是 :cpp:member:`rmt_encoder_t::encode` 和 :cpp:member:`rmt_encoder_t::reset`) 放进 IRAM 中。建议你使用 :c:macro:`RMT_ENCODER_FUNC_ATTR` 来装饰你的编码器函数。
 
 另外一个 Kconfig 选项 :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` 可以将 :cpp:func:`rmt_receive` 函数放进内部的 IRAM 中，从而当 flash cache 被关闭的时候，这个函数也能够被使用。
 
@@ -594,7 +610,7 @@ RMT 驱动程序会确保工厂函数 :cpp:func:`rmt_new_tx_channel`、:cpp:func
 Kconfig 选项
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_RMT_ISR_CACHE_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。详情请参阅 :ref:`rmt-cache-safe`。
+- :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` 和 :ref:`CONFIG_RMT_RX_ISR_CACHE_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。详情请参阅 :ref:`rmt-cache-safe`。
 - :ref:`CONFIG_RMT_ENABLE_DEBUG_LOG` 用于启用调试日志输出，启用此选项将增加固件的二进制文件大小。
 - :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` 用于控制 RMT 接收函数被链接到系统存储的哪个位置（IRAM 还是 Flash）。详情请参阅 :ref:`rmt-cache-safe`。
 

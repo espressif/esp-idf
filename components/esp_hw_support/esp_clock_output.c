@@ -8,6 +8,7 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "esp_clock_output.h"
 #include "esp_check.h"
 #include "esp_rom_gpio.h"
@@ -140,10 +141,10 @@ static esp_clock_output_mapping_t* clkout_mapping_alloc(clkout_channel_handle_t*
     allocated_mapping->ref_cnt++;
     if (allocated_mapping->ref_cnt == 1) {
 #if SOC_GPIO_CLOCKOUT_BY_IO_MUX
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], CLKOUT_CHANNEL_TO_IOMUX_FUNC(allocated_mapping->clkout_channel_hdl->channel_id));
+        gpio_iomux_output(gpio_num, CLKOUT_CHANNEL_TO_IOMUX_FUNC(allocated_mapping->clkout_channel_hdl->channel_id));
 #elif SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
         gpio_set_pull_mode(gpio_num, GPIO_FLOATING);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
+        gpio_func_sel(gpio_num, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(gpio_num, CLKOUT_CHANNEL_TO_GPIO_SIG_ID(allocated_mapping->clkout_channel_hdl->channel_id), false, false);
 #endif
     }
@@ -173,8 +174,6 @@ static void clkout_mapping_free(esp_clock_output_mapping_t *mapping_hdl)
     clkout_channel_free(mapping_hdl->clkout_channel_hdl);
     bool do_free_mapping_hdl = false;
     if (--mapping_hdl->ref_cnt == 0) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[mapping_hdl->mapped_io], PIN_FUNC_GPIO);
-        esp_rom_gpio_connect_out_signal(mapping_hdl->mapped_io, SIG_GPIO_OUT_IDX, false, false);
         gpio_output_disable(mapping_hdl->mapped_io);
 
         portENTER_CRITICAL(&mapping_hdl->clkout_channel_hdl->clkout_channel_lock);

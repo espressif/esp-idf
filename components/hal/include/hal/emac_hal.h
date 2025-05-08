@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -258,6 +258,8 @@ void emac_hal_init_dma_default(emac_hal_context_t *hal, emac_hal_dma_config_t *h
 
 #define emac_hal_set_promiscuous(hal, enable) emac_ll_promiscuous_mode_enable((hal)->mac_regs, enable)
 
+#define emac_hal_pass_all_multicast_enable(hal, enable) emac_ll_pass_all_multicast_enable((hal)->mac_regs, enable)
+
 /**
  * @brief Send MAC-CTRL frames to peer (EtherType=0x8808, opcode=0x0001, dest_addr=MAC-specific-ctrl-proto-01 (01:80:c2:00:00:01))
  */
@@ -273,6 +275,17 @@ void emac_hal_set_phy_cmd(emac_hal_context_t *hal, uint32_t phy_addr, uint32_t p
 
 void emac_hal_set_address(emac_hal_context_t *hal, uint8_t *mac_addr);
 
+esp_err_t emac_hal_add_addr_da_filter(emac_hal_context_t *hal, const uint8_t *mac_addr, uint8_t addr_num);
+
+esp_err_t emac_hal_get_addr_da_filter(emac_hal_context_t *hal, uint8_t *mac_addr, uint8_t addr_num);
+
+esp_err_t emac_hal_add_addr_da_filter_auto(emac_hal_context_t *hal, uint8_t *mac_addr);
+
+esp_err_t emac_hal_rm_addr_da_filter(emac_hal_context_t *hal, const uint8_t *mac_addr, uint8_t addr_num);
+
+esp_err_t emac_hal_rm_addr_da_filter_auto(emac_hal_context_t *hal, const uint8_t *mac_addr);
+
+void emac_hal_clear_addr_da_filters(emac_hal_context_t *hal);
 /**
  * @brief Starts EMAC Transmission & Reception
  *

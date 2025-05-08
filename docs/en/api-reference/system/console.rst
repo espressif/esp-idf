@@ -51,6 +51,14 @@ Linenoise library does not need explicit initialization. However, some configura
 
   Set maximum length of the line for linenoise library. Default length is 4096 bytes. The default value can be updated to optimize RAM memory usage.
 
+- :cpp:func:`linenoiseSetReadFunction`
+
+  Set the read function to be used by linenoise.
+
+- :cpp:func:`linenoiseSetReadCharacteristics`
+
+  Set the characteristics of the read file descriptor (e.g., blocking or non blocking mode). The function has a weak definition in linenoise.c that can be overridden
+  by providing a strong definition of the function.
 
 Main Loop
 ^^^^^^^^^

@@ -22,6 +22,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#include "sdkconfig.h"
+
 #ifndef ESP_TEE_MBEDTLS_CONFIG_H
 #define ESP_TEE_MBEDTLS_CONFIG_H
 
@@ -34,11 +36,15 @@
 #define MBEDTLS_CIPHER_C
 #define MBEDTLS_AES_C
 #define MBEDTLS_GCM_C
+#define MBEDTLS_GCM_ALT
 
 #define MBEDTLS_ASN1_WRITE_C
 #define MBEDTLS_ASN1_PARSE_C
 #define MBEDTLS_BIGNUM_C
 #define MBEDTLS_ECP_DP_SECP256R1_ENABLED
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+#define MBEDTLS_ECP_DP_SECP192R1_ENABLED
+#endif
 #define MBEDTLS_ECP_C
 #define MBEDTLS_ECDSA_C
 
@@ -46,10 +52,14 @@
 #define MBEDTLS_SHA224_C
 #define MBEDTLS_SHA256_C
 
-#ifdef CONFIG_MBEDTLS_HARDWARE_SHA
+#if CONFIG_MBEDTLS_HARDWARE_SHA
 #define MBEDTLS_SHA1_ALT
-#define MBEDTLS_SHA224_ALT
 #define MBEDTLS_SHA256_ALT
+#endif
+
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECC
+#define MBEDTLS_ECP_MUL_ALT
+#define MBEDTLS_ECP_VERIFY_ALT
 #endif
 
 #define MBEDTLS_ENTROPY_C

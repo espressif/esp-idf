@@ -51,7 +51,6 @@ enum {
     BTA_GATTS_API_OPEN_EVT,
     BTA_GATTS_API_CANCEL_OPEN_EVT,
     BTA_GATTS_API_CLOSE_EVT,
-    BTA_GATTS_API_LISTEN_EVT,
     BTA_GATTS_API_DISABLE_EVT,
     BTA_GATTS_API_SEND_SERVICE_CHANGE_EVT,
     BTA_GATTS_API_SHOW_LOCAL_DATABASE_EVT
@@ -64,7 +63,7 @@ typedef UINT16 tBTA_GATTS_INT_EVT;
 /* max number of services allowed in the device */
 #define BTA_GATTS_MAX_SRVC_NUM   GATT_MAX_SR_PROFILES
 
-/* internal strucutre for GATTC register API  */
+/* internal structure for GATTC register API  */
 typedef struct {
     BT_HDR                  hdr;
     tBT_UUID                app_uuid;
@@ -150,13 +149,6 @@ typedef tBTA_GATTS_API_OPEN tBTA_GATTS_API_CANCEL_OPEN;
 
 typedef struct {
     BT_HDR                  hdr;
-    BD_ADDR_PTR             remote_bda;
-    tBTA_GATTS_IF           server_if;
-    BOOLEAN                 start;
-} tBTA_GATTS_API_LISTEN;
-
-typedef struct {
-    BT_HDR                  hdr;
     tBTA_GATTS_IF           server_if;
     BD_ADDR                 remote_bda;
 } tBTA_GATTS_API_SEND_SERVICE_CHANGE;
@@ -177,8 +169,6 @@ typedef union {
     tBTA_GATTS_API_CANCEL_OPEN      api_cancel_open;
 
     tBTA_GATTS_INT_START_IF         int_start_if;
-    /* if peripheral role is supported */
-    tBTA_GATTS_API_LISTEN           api_listen;
     tBTA_GATTS_API_SEND_SERVICE_CHANGE api_send_service_change;
 } tBTA_GATTS_DATA;
 
@@ -250,7 +240,6 @@ extern void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_m
 extern void bta_gatts_open (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
 extern void bta_gatts_cancel_open (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
 extern void bta_gatts_close (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
-extern void bta_gatts_listen(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
 extern void bta_gatts_send_service_change_indication (tBTA_GATTS_DATA *p_msg);
 extern void bta_gatts_show_local_database (void);
 

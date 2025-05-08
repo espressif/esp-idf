@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -274,6 +274,16 @@ static inline __attribute__((always_inline)) void clk_ll_rc32k_digi_disable(void
 static inline __attribute__((always_inline)) bool clk_ll_rc32k_digi_is_enabled(void)
 {
     return LP_CLKRST.clk_to_hp.clkrst_icg_hp_osc32k;
+}
+
+/**
+ * @brief Get XTAL_CLK frequency
+ *
+ * @return Main XTAL clock frequency, in MHz.
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_get_freq_mhz(void)
+{
+    return PCR.sysclk_conf.clk_xtal_freq;
 }
 
 /**

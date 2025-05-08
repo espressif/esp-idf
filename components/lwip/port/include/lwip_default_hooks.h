@@ -70,6 +70,10 @@ int lwip_hook_ip6_input(struct pbuf *p, struct netif *inp);
 #define LWIP_HOOK_IP6_INPUT lwip_hook_ip6_input
 #endif /* CONFIG_LWIP_HOOK_IP6_INPUT_CUSTIOM... */
 
+#if defined(CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION_CUSTOM) || defined(CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION_DEFAULT)
+void lwip_dhcp_on_extra_option(struct dhcp *dhcp, uint8_t state, uint8_t option, uint8_t len, struct pbuf* p, uint16_t offset);
+#endif /* CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION_CUSTOM (or DEFAULT) */
+
 #ifdef CONFIG_LWIP_IPV4
 struct netif *
 ip4_route_src_hook(const ip4_addr_t *src,const ip4_addr_t *dest);

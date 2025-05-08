@@ -475,8 +475,9 @@ Application Examples
     :SOC_WIFI_SUPPORTED: - :example:`wifi/power_save` demonstrates the usage of Wi-Fi Modem-sleep mode and automatic Light-sleep feature to maintain Wi-Fi connections.
     :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save` demonstrates the usage of Bluetooth Modem-sleep mode and automatic Light-sleep feature to maintain Bluetooth connections.
     :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` demonstrates the usage of various Deep-sleep wakeup triggers and ULP coprocessor programming.
-    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` demonstrates the usage of Deep-sleep wakeup triggered by various sources, such as the RTC timer, GPIOs, EXT0, EXT1, the touch sensor, supported by {IDF_TARGET_NAME}.
-    - :example:`system/light_sleep` demonstrates the usage of Light-sleep wakeup triggered by various sources, such as the timer, GPIOs, the touch sensor, supported by {IDF_TARGET_NAME}.
+    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` demonstrates the usage of Deep-sleep wakeup triggered by various sources, such as the RTC timer, GPIOs, EXT0, EXT1, supported by {IDF_TARGET_NAME}.
+    - :example:`system/light_sleep` demonstrates the usage of Light-sleep wakeup triggered by various sources, such as the timer, GPIOs, supported by {IDF_TARGET_NAME}.
+    :SOC_TOUCH_SENSOR_SUPPORTED and SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP: - :example:`peripherals/touch_sensor/touch_sens_sleep` demonstrates the usage of Light-sleep and Deep-sleep wakeup triggered by the touch sensor.
 
 API Reference
 -------------

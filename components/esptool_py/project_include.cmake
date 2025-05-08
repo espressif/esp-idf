@@ -289,12 +289,14 @@ function(esptool_py_partition_needs_encryption retencrypted partition_name)
         #   - DATA 0x01
         # Subtypes:
         #   - ota      0x00
+        #   - TEE ota  0x90
         #   - nvs_keys 0x04
         # If the partition is an app, an OTA or an NVS keys partition, then it should
         # be encrypted
         if(
                 (${type} EQUAL 0) OR
                 (${type} EQUAL 1 AND ${subtype} EQUAL 0) OR
+                (${type} EQUAL 1 AND ${subtype} EQUAL 144) OR
                 (${type} EQUAL 1 AND ${subtype} EQUAL 4)
           )
             set(encrypted TRUE)

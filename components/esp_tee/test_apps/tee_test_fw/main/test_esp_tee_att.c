@@ -36,7 +36,7 @@
 
 static const char *TAG = "test_esp_tee_att";
 
-extern int verify_ecdsa_secp256r1_sign(const uint8_t *digest, size_t len, const esp_tee_sec_storage_pubkey_t *pubkey, const esp_tee_sec_storage_sign_t *sign);
+extern int verify_ecdsa_sign(const uint8_t *digest, size_t len, const esp_tee_sec_storage_pubkey_t *pubkey, const esp_tee_sec_storage_sign_t *sign, bool is_crv_p192);
 
 static uint8_t hexchar_to_byte(char hex)
 {
@@ -256,7 +256,6 @@ TEST_CASE("Test TEE Attestation - Generate and verify the EAT", "[attestation]")
     uint8_t *token_buf = heap_caps_calloc(ESP_ATT_TK_BUF_SIZE, sizeof(uint8_t), MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     TEST_ASSERT_NOT_NULL(token_buf);
 
-    ESP_LOGI(TAG, "Generating EAT for all active firmwares (Bootloader, TEE and non-secure app)...");
     // Generating the attestation token
     uint32_t token_len = 0;
     TEST_ESP_OK(esp_tee_att_generate_token(0xA1B2C3D4, 0x0FACADE0, (const char *)ESP_ATT_TK_PSA_CERT_REF,
@@ -275,9 +274,8 @@ TEST_CASE("Test TEE Attestation - Generate and verify the EAT", "[attestation]")
     esp_tee_sec_storage_sign_t sign_ctx = {};
     fetch_signature((const char *)token_buf, &sign_ctx);
 
-    ESP_LOGI(TAG, "Verifying the generated EAT...");
     // Verifying the generated token
-    TEST_ASSERT_EQUAL(0, verify_ecdsa_secp256r1_sign(digest, sizeof(digest), &pubkey_ctx, &sign_ctx));
+    TEST_ASSERT_EQUAL(0, verify_ecdsa_sign(digest, sizeof(digest), &pubkey_ctx, &sign_ctx, false));
     free(token_buf);
 }
 

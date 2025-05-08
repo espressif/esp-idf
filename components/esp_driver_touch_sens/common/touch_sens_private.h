@@ -48,6 +48,17 @@ extern "C" {
 #define TOUCH_INTR_ALLOC_FLAGS      (_TOUCH_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED)
 #endif
 
+/* Debug caps */
+#if CONFIG_TOUCH_SKIP_FSM_CHECK
+#define TOUCH_GOTO_ON_FALSE_FSM(...)
+#define TOUCH_GOTO_ON_FALSE_FSM_ISR(...)
+#define TOUCH_FSM_ERR_TAG(err_tag)
+#else
+#define TOUCH_GOTO_ON_FALSE_FSM(...)     ESP_GOTO_ON_FALSE(__VA_ARGS__)
+#define TOUCH_GOTO_ON_FALSE_FSM_ISR(...) ESP_GOTO_ON_FALSE_ISR(__VA_ARGS__)
+#define TOUCH_FSM_ERR_TAG(err_tag)       err_tag:
+#endif
+
 /* DMA caps */
 #define TOUCH_DMA_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
 

@@ -11,18 +11,28 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.join(f'{os.environ.get("IDF_PATH")}', 'tools', 'ci', 'python_packages'))
 sys.path.insert(0, os.path.join(f'{os.environ.get("IDF_PATH")}', 'tools', 'ci'))
 
-from dynamic_pipelines.models import GitlabJob  # noqa: E402
-from dynamic_pipelines.report import JobReportGenerator, TargetTestReportGenerator, BuildReportGenerator  # noqa: E402
-from dynamic_pipelines.utils import load_file, parse_testcases_from_filepattern  # noqa: E402
 from idf_build_apps.constants import BuildStatus  # noqa: E402
-from idf_ci.app import import_apps_from_txt  # noqa: E402
-from idf_ci.app import enrich_apps_with_metrics_info  # noqa: E402
+from idf_ci_local.app import enrich_apps_with_metrics_info  # noqa: E402
+from idf_ci_local.app import import_apps_from_txt  # noqa: E402
+
+from dynamic_pipelines.models import GitlabJob  # noqa: E402
+from dynamic_pipelines.report import BuildReportGenerator  # noqa: E402
+from dynamic_pipelines.report import JobReportGenerator  # noqa: E402
+from dynamic_pipelines.report import TargetTestReportGenerator  # noqa: E402
+from dynamic_pipelines.utils import load_file  # noqa: E402
+from dynamic_pipelines.utils import parse_testcases_from_filepattern  # noqa: E402
 
 
 class TestReportGeneration(unittest.TestCase):
     def setUp(self) -> None:
         self.reports_sample_data_path = os.path.join(
-            os.environ.get('IDF_PATH', ''), 'tools', 'ci', 'dynamic_pipelines', 'tests', 'test_report_generator', 'reports_sample_data'
+            os.environ.get('IDF_PATH', ''),
+            'tools',
+            'ci',
+            'dynamic_pipelines',
+            'tests',
+            'test_report_generator',
+            'reports_sample_data',
         )
         self.setup_patches()
         self.load_test_and_job_reports()
@@ -32,12 +42,15 @@ class TestReportGeneration(unittest.TestCase):
         self.gitlab_patcher = patch('dynamic_pipelines.report.Gitlab')
         self.uploader_patcher = patch('dynamic_pipelines.report.AppUploader')
         self.failure_rate_patcher = patch('dynamic_pipelines.report.fetch_failed_testcases_failure_ratio')
-        self.env_patcher = patch.dict('os.environ', {
-            'CI_DASHBOARD_HOST': 'https://test_dashboard_host',
-            'CI_PAGES_URL': 'https://artifacts_path',
-            'CI_JOB_ID': '1',
-            'JIRA_SERVER': 'https://jira.com',
-        })
+        self.env_patcher = patch.dict(
+            'os.environ',
+            {
+                'CI_DASHBOARD_HOST': 'https://test_dashboard_host',
+                'CI_PAGES_URL': 'https://artifacts_path',
+                'CI_JOB_ID': '1',
+                'JIRA_SERVER': 'https://jira.com',
+            },
+        )
         self.yaml_dump_patcher = patch('dynamic_pipelines.report.yaml.dump')
 
         self.MockGitlab = self.gitlab_patcher.start()
@@ -86,12 +99,21 @@ class TestReportGeneration(unittest.TestCase):
 
     def create_report_generators(self) -> None:
         jobs_response_raw = load_file(os.path.join(self.reports_sample_data_path, 'jobs_api_response.json'))
-        failure_rate_jobs_response = load_file(os.path.join(self.reports_sample_data_path, 'failure_rate_jobs_response.json'))
-        built_apps_size_info_response = json.loads(load_file(os.path.join(self.reports_sample_data_path, 'apps_size_info_api_response.json')))
+        failure_rate_jobs_response = load_file(
+            os.path.join(self.reports_sample_data_path, 'failure_rate_jobs_response.json')
+        )
+        built_apps_size_info_response = json.loads(
+            load_file(os.path.join(self.reports_sample_data_path, 'apps_size_info_api_response.json'))
+        )
         failure_rates = {item['name']: item for item in json.loads(failure_rate_jobs_response).get('jobs', [])}
-        jobs = [GitlabJob.from_json_data(job_json, failure_rates.get(job_json['name'], {})) for job_json in json.loads(jobs_response_raw)['jobs']]
+        jobs = [
+            GitlabJob.from_json_data(job_json, failure_rates.get(job_json['name'], {}))
+            for job_json in json.loads(jobs_response_raw)['jobs']
+        ]
         test_cases = parse_testcases_from_filepattern(os.path.join(self.reports_sample_data_path, 'XUNIT_*.xml'))
-        apps = enrich_apps_with_metrics_info(built_apps_size_info_response, import_apps_from_txt(os.path.join(self.reports_sample_data_path, 'apps')))
+        apps = enrich_apps_with_metrics_info(
+            built_apps_size_info_response, import_apps_from_txt(os.path.join(self.reports_sample_data_path, 'apps'))
+        )
         self.target_test_report_generator = TargetTestReportGenerator(
             project_id=123,
             mr_iid=1,
@@ -99,25 +121,13 @@ class TestReportGeneration(unittest.TestCase):
             job_id=0,
             commit_id='cccc',
             title='Test Report',
-            test_cases=test_cases
+            test_cases=test_cases,
         )
         self.job_report_generator = JobReportGenerator(
-            project_id=123,
-            mr_iid=1,
-            pipeline_id=456,
-            job_id=0,
-            commit_id='cccc',
-            title='Job Report',
-            jobs=jobs
+            project_id=123, mr_iid=1, pipeline_id=456, job_id=0, commit_id='cccc', title='Job Report', jobs=jobs
         )
         self.build_report_generator = BuildReportGenerator(
-            project_id=123,
-            mr_iid=1,
-            pipeline_id=456,
-            job_id=0,
-            commit_id='cccc',
-            title='Build Report',
-            apps=apps
+            project_id=123, mr_iid=1, pipeline_id=456, job_id=0, commit_id='cccc', title='Build Report', apps=apps
         )
         self.target_test_report_generator._known_failure_cases_set = {
             '*.test_wpa_supplicant_ut',
@@ -189,7 +199,7 @@ class TestReportGeneration(unittest.TestCase):
                         difference=i * 1000,
                         difference_percentage=i * 0.5,
                     )
-                }
+                },
             )
             for i in range(1, 6)
         ]
@@ -200,7 +210,7 @@ class TestReportGeneration(unittest.TestCase):
             job_id=0,
             commit_id='cccc',
             title='Build Report',
-            apps=apps_with_size_diff
+            apps=apps_with_size_diff,
         )
 
         top_apps_table = build_report_generator._generate_top_n_apps_by_size_table()
@@ -218,12 +228,7 @@ class TestReportGeneration(unittest.TestCase):
                 size_difference_percentage=1.0,
                 build_status=BuildStatus.SUCCESS,
                 preserve=True,
-                metrics={
-                    'binary_size': MagicMock(
-                        difference=1000,
-                        difference_percentage=1.0
-                    )
-                }
+                metrics={'binary_size': MagicMock(difference=1000, difference_percentage=1.0)},
             ),
             MagicMock(
                 app_dir='test_app_2',
@@ -232,23 +237,12 @@ class TestReportGeneration(unittest.TestCase):
                 size_difference_percentage=2.0,
                 build_status=BuildStatus.SUCCESS,
                 preserve=False,
-                metrics={
-                    'binary_size': MagicMock(
-                        difference=2000,
-                        difference_percentage=2.0
-                    )
-                }
+                metrics={'binary_size': MagicMock(difference=2000, difference_percentage=2.0)},
             ),
         ]
 
         build_report_generator = BuildReportGenerator(
-            project_id=123,
-            mr_iid=1,
-            pipeline_id=456,
-            job_id=0,
-            commit_id='cccc',
-            title='Build Report',
-            apps=apps
+            project_id=123, mr_iid=1, pipeline_id=456, job_id=0, commit_id='cccc', title='Build Report', apps=apps
         )
 
         built_apps_report_parts = build_report_generator.get_built_apps_report_parts()
@@ -264,24 +258,14 @@ class TestReportGeneration(unittest.TestCase):
                 build_dir='build_dir_1',
                 build_comment='Compilation error',
                 build_status=BuildStatus.FAILED,
-                metrics={
-                    'binary_size': MagicMock(
-                        difference=None,
-                        difference_percentage=None
-                    )
-                }
+                metrics={'binary_size': MagicMock(difference=None, difference_percentage=None)},
             ),
             MagicMock(
                 app_dir='failed_app_2',
                 build_dir='build_dir_2',
                 build_comment='Linker error',
                 build_status=BuildStatus.FAILED,
-                metrics={
-                    'binary_size': MagicMock(
-                        difference=None,
-                        difference_percentage=None
-                    )
-                }
+                metrics={'binary_size': MagicMock(difference=None, difference_percentage=None)},
             ),
         ]
 
@@ -292,7 +276,7 @@ class TestReportGeneration(unittest.TestCase):
             job_id=0,
             commit_id='cccc',
             title='Build Report',
-            apps=failed_apps
+            apps=failed_apps,
         )
 
         failed_apps_report_parts = build_report_generator.get_failed_apps_report_parts()
@@ -308,24 +292,14 @@ class TestReportGeneration(unittest.TestCase):
                 build_dir='build_dir_1',
                 build_comment='Dependencies unmet',
                 build_status=BuildStatus.SKIPPED,
-                metrics={
-                    'binary_size': MagicMock(
-                        difference=None,
-                        difference_percentage=None
-                    )
-                }
+                metrics={'binary_size': MagicMock(difference=None, difference_percentage=None)},
             ),
             MagicMock(
                 app_dir='skipped_app_2',
                 build_dir='build_dir_2',
                 build_comment='Feature flag disabled',
                 build_status=BuildStatus.SKIPPED,
-                metrics={
-                    'binary_size': MagicMock(
-                        difference=None,
-                        difference_percentage=None
-                    )
-                }
+                metrics={'binary_size': MagicMock(difference=None, difference_percentage=None)},
             ),
         ]
 
@@ -336,7 +310,7 @@ class TestReportGeneration(unittest.TestCase):
             job_id=0,
             commit_id='cccc',
             title='Build Report',
-            apps=skipped_apps
+            apps=skipped_apps,
         )
 
         skipped_apps_report_parts = build_report_generator.get_skipped_apps_report_parts()

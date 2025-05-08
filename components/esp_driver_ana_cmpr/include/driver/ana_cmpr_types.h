@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@ extern "C" {
 
 /**
  * @brief Analog comparator unit
- *
  */
 typedef int ana_cmpr_unit_t;
 
@@ -25,16 +24,14 @@ typedef int ana_cmpr_unit_t;
 
 /**
  * @brief Analog comparator reference source
- *
  */
 typedef enum {
-    ANA_CMPR_REF_SRC_INTERNAL,      /*!< Analog Comparator internal reference source, related to VDD */
-    ANA_CMPR_REF_SRC_EXTERNAL,      /*!< Analog Comparator external reference source, from `ANA_CMPR0_EXT_REF_GPIO` */
+    ANA_CMPR_REF_SRC_INTERNAL,      /*!< Analog Comparator reference voltage comes from internal, divided from VDD */
+    ANA_CMPR_REF_SRC_EXTERNAL,      /*!< Analog Comparator reference voltage comes from external pin, e.g. `ANA_CMPR0_EXT_REF_GPIO` */
 } ana_cmpr_ref_source_t;
 
 /**
  * @brief Analog comparator channel type
- *
  */
 typedef enum {
     ANA_CMPR_SOURCE_CHAN,           /*!< Analog Comparator source channel, which is used to input the signal that to be compared */
@@ -43,27 +40,23 @@ typedef enum {
 
 /**
  * @brief Analog comparator unit handle
- *
  */
 typedef struct ana_cmpr_t *ana_cmpr_handle_t;
 
 #if SOC_ANA_CMPR_SUPPORTED
 /**
  * @brief Analog comparator clock source
- *
  */
 typedef soc_periph_ana_cmpr_clk_src_t ana_cmpr_clk_src_t;
 #else
 /**
  * @brief Analog comparator clock source
- *
  */
 typedef int ana_cmpr_clk_src_t;
 #endif
 
 /**
  * @brief Analog comparator cross event data
- *
  */
 typedef struct {
     ana_cmpr_cross_type_t cross_type;   /*!< The cross type of the target signal to the reference signal.

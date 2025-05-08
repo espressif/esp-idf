@@ -333,7 +333,7 @@ esp_err_t touch_pad_filter_read_smooth(touch_pad_t touch_num, uint32_t *smooth);
 /**
  * @brief Force reset benchmark to raw data of touch sensor.
  * @param touch_num touch pad index
- *                  - TOUCH_PAD_MAX Reset basaline of all channels
+ *                  - TOUCH_PAD_MAX Reset baseline of all channels
  * @return
  *     - ESP_OK Success
  */

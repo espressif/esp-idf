@@ -38,7 +38,7 @@
     :align: center
 
     * - 功能
-      - ESP32S2
+      - {IDF_TARGET_NAME}
     * - 防水
       - ✔
     * - 按键
@@ -431,8 +431,6 @@
 仅触摸按键可配置为唤醒源。
 
 使用触摸传感器，可以唤醒从 Light-sleep 或 Deep-sleep 模式中唤醒芯片。在 Light-sleep 模式下，任何已安装的触摸按键都可以唤醒芯片。但在 Deep-sleep 模式下，只有睡眠按键可以唤醒芯片，触摸传感器还会立即进行校准。如果手指没有及时离开，可能导致校准参考值出错。尽管在手指离开后，校准参考值会自行恢复，不会影响驱动逻辑，但如果你不想在从 Deep-sleep 模式唤醒时看到错误的校准参考值，可以调用 :cpp:func:`touch_element_sleep_enable_wakeup_calibration`，禁用唤醒校准功能。
-
-查看使用触摸元件唤醒芯片的示例代码，请前往 ESP-IDF 示例的 :example:`system/light_sleep` 目录。
 
 .. code-block:: c
 

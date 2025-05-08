@@ -1,17 +1,25 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+/* ROM function interface esp32c5.rom.libc.ld for esp32c5
+ *
+ *
+ * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum e68b5b3e3d244713e5743335f3857c57
+ *
+ * Compatible with ROM where ECO version equal or greater to 0.
+ *
+ * THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT EDIT.
+ */
+
+/***************************************
+ Group libc
+ ***************************************/
+
+/* Functions */
 esp_rom_newlib_init_common_mutexes = 0x400004b4;
 memset = 0x400004b8;
-memcpy = 0x400004bc;
-memmove = 0x400004c0;
-memcmp = 0x400004c4;
-strcpy = 0x400004c8;
-strncpy = 0x400004cc;
-strcmp = 0x400004d0;
-strncmp = 0x400004d4;
 strlen = 0x400004d8;
 strstr = 0x400004dc;
 bzero = 0x400004e0;

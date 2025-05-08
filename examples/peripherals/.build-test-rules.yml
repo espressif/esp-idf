@@ -110,6 +110,15 @@ examples/peripherals/i2c/i2c_tools:
   depends_filepatterns:
     - examples/system/console/advanced/components/**/*
 
+examples/peripherals/i2s/i2s_advance/i2s_usb:
+  disable:
+    - if: SOC_I2S_SUPPORTED != 1
+    - if: SOC_I2C_SUPPORTED != 1
+    - if: SOC_USB_OTG_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i2s
+    - esp_driver_i2c
+
 examples/peripherals/i2s/i2s_basic/i2s_pdm:
   disable:
     - if: SOC_I2S_SUPPORTS_PDM != 1
@@ -305,6 +314,12 @@ examples/peripherals/parlio/parlio_rx:
   depends_components:
     - esp_driver_parlio
 
+examples/peripherals/parlio/parlio_tx/advanced_rgb_led_matrix:
+  disable:
+    - if: (SOC_PARLIO_SUPPORTED != 1 or SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION != 1) or SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH < 16
+  depends_components:
+    - esp_driver_parlio
+
 examples/peripherals/parlio/parlio_tx/simple_rgb_led_matrix:
   disable:
     - if: SOC_PARLIO_SUPPORTED != 1 or SOC_DEDICATED_GPIO_SUPPORTED != 1
@@ -439,7 +454,7 @@ examples/peripherals/timer_group/gptimer:
 
 examples/peripherals/timer_group/gptimer_capture_hc_sr04:
   disable:
-    - if: SOC_GPTIMER_SUPPORTED != 1 or SOC_TIMER_SUPPORT_ETM != 1
+    - if: SOC_ETM_SUPPORTED != 1 or SOC_TIMER_SUPPORT_ETM != 1
   depends_components:
     - esp_driver_gptimer
 
@@ -464,9 +479,16 @@ examples/peripherals/touch_sensor/touch_sens_basic:
   depends_components:
     - esp_driver_touch_sens
 
+examples/peripherals/touch_sensor/touch_sens_sleep:
+  disable:
+    - if: SOC_TOUCH_SENSOR_SUPPORTED != 1 or SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP != 1
+  depends_components:
+    - esp_driver_touch_sens
+
 examples/peripherals/twai/twai_alert_and_recovery:
   disable:
-    - if: SOC_TWAI_SUPPORTED != 1
+    - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD == 1
+      reason: This example not support FD
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
       temporary: true
@@ -474,7 +496,8 @@ examples/peripherals/twai/twai_alert_and_recovery:
 
 examples/peripherals/twai/twai_network:
   disable:
-    - if: SOC_TWAI_SUPPORTED != 1
+    - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD == 1
+      reason: This example not support FD
   disable_test:
     - if: 1 == 1
       temporary: true
@@ -482,11 +505,20 @@ examples/peripherals/twai/twai_network:
 
 examples/peripherals/twai/twai_self_test:
   disable:
-    - if: SOC_TWAI_SUPPORTED != 1
+    - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD == 1
+      reason: This example not support FD
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
       temporary: true
       reason: lack of runners
+
+examples/peripherals/uart/uart_dma_ota:
+  disable:
+    - if: SOC_UHCI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
+      temporary: true
+      reason: Lack runners
 
 examples/peripherals/uart/uart_echo_rs485:
   enable:

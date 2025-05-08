@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,24 @@ bool esp_ptr_dma_ext_capable(const void *p)
 #else
     return false;
 #endif  //CONFIG_SPIRAM
+}
+
+bool esp_ptr_executable(const void *p)
+{
+    intptr_t ip = (intptr_t) p;
+    return (ip >= SOC_IROM_LOW && ip < SOC_IROM_HIGH)
+        || (ip >= SOC_IRAM_LOW && ip < SOC_IRAM_HIGH)
+        || (ip >= SOC_IROM_MASK_LOW && ip < SOC_IROM_MASK_HIGH)
+#if SOC_SPIRAM_SUPPORTED && CONFIG_SPIRAM
+        || esp_ptr_external_ram(p)
+#endif
+#if defined(SOC_CACHE_APP_LOW) && defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE)
+        || (ip >= SOC_CACHE_APP_LOW && ip < SOC_CACHE_APP_HIGH)
+#endif
+#if SOC_RTC_FAST_MEM_SUPPORTED
+        || (ip >= SOC_RTC_IRAM_LOW && ip < SOC_RTC_IRAM_HIGH)
+#endif
+    ;
 }
 
 bool esp_ptr_byte_accessible(const void *p)

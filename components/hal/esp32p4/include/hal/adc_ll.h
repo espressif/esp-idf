@@ -40,7 +40,7 @@ extern "C" {
 #define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
 #define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         (1)
 #define LP_ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)      (2)
-#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (0)
+#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (10)
 
 /*---------------------------------------------------------------
                     DMA
@@ -493,6 +493,22 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
 /*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
+
+static inline void _adc_ll_sar1_clock_force_en(bool enable)
+{
+    HP_SYS_CLKRST.clk_force_on_ctrl0.reg_sar1_clk_force_on = enable;
+}
+
+// HP_SYS_CLKRST.clk_force_on_ctrl0 are shared registers, so this function must be used in an atomic way
+#define adc_ll_sar1_clock_force_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _adc_ll_sar1_clock_force_en(__VA_ARGS__)
+
+static inline void _adc_ll_sar2_clock_force_en(bool enable)
+{
+    HP_SYS_CLKRST.clk_force_on_ctrl0.reg_sar2_clk_force_on = enable;
+}
+
+// HP_SYS_CLKRST.clk_force_on_ctrl0 are shared registers, so this function must be used in an atomic way
+#define adc_ll_sar2_clock_force_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _adc_ll_sar2_clock_force_en(__VA_ARGS__)
 
 /**
  * @brief Enable the ADC clock

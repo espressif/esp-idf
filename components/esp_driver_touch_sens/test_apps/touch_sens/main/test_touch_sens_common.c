@@ -31,14 +31,14 @@ static touch_channel_config_t s_chan_cfg = {
 #if SOC_TOUCH_SENSOR_VERSION == 1
     .abs_active_thresh = {1000},
     .charge_speed = TOUCH_CHARGE_SPEED_7,
-    .init_charge_volt = TOUCH_INIT_CHARGE_VOLT_LOW,
+    .init_charge_volt = TOUCH_INIT_CHARGE_VOLT_DEFAULT,
     .group = TOUCH_CHAN_TRIG_GROUP_BOTH,
 #elif SOC_TOUCH_SENSOR_VERSION == 2
     .active_thresh = {
         2000,
     },
     .charge_speed = TOUCH_CHARGE_SPEED_7,
-    .init_charge_volt = TOUCH_INIT_CHARGE_VOLT_LOW,
+    .init_charge_volt = TOUCH_INIT_CHARGE_VOLT_DEFAULT,
 #elif SOC_TOUCH_SENSOR_VERSION == 3
     .active_thresh = {
         5000,

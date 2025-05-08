@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,10 @@
 #include "soc/gdma_channel.h"
 #include "soc/gdma_struct.h"
 #include "soc/soc_caps.h"
+
+#include "esp_tee_crypto_shared_gdma.h"
+#include "esp_aes_dma_priv.h"
+#include "esp_sha_dma_priv.h"
 
 #define TEE_CRYPTO_GDMA_CH  (0)
 
@@ -115,7 +119,7 @@ esp_err_t esp_aes_dma_start(const crypto_dma_desc_t *input, const crypto_dma_des
     return esp_tee_crypto_shared_gdma_start(input, output, GDMA_TRIG_PERIPH_AES);
 }
 
-bool esp_aes_dma_done(crypto_dma_desc_t *output)
+bool esp_aes_dma_done(const crypto_dma_desc_t *output)
 {
     return (output->dw0.owner == 0);
 }

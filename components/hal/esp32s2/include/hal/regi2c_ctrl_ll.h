@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,9 +39,9 @@ static inline void regi2c_ctrl_ll_i2c_apll_enable(void)
 }
 
 /**
- * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC and TSENS registers
  */
-static inline void regi2c_ctrl_ll_i2c_saradc_enable(void)
+static inline void regi2c_ctrl_ll_i2c_sar_periph_enable(void)
 {
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
     SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
@@ -50,7 +50,7 @@ static inline void regi2c_ctrl_ll_i2c_saradc_enable(void)
 /**
  * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
  */
-static inline void regi2c_ctrl_ll_i2c_saradc_disable(void)
+static inline void regi2c_ctrl_ll_i2c_sar_periph_disable(void)
 {
     CLEAR_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
 }

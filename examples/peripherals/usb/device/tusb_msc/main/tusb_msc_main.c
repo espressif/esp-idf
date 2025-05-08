@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -22,6 +22,7 @@
 #include "tinyusb.h"
 #include "tusb_msc_storage.h"
 #ifdef CONFIG_EXAMPLE_STORAGE_MEDIA_SDMMC
+#include "sdmmc_cmd.h"
 #include "diskio_impl.h"
 #include "diskio_sdmmc.h"
 #if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
@@ -42,6 +43,8 @@
 
 static const char *TAG = "example_main";
 static esp_console_repl_t *repl = NULL;
+
+static SemaphoreHandle_t _wait_console_smp = NULL;
 
 /* TinyUSB descriptors
    ********************************************************************* */
@@ -260,21 +263,24 @@ static int console_size(int argc, char **argv)
     return 0;
 }
 
-// exit from application
+// Show storage status
 static int console_status(int argc, char **argv)
 {
     printf("storage exposed over USB: %s\n", tinyusb_msc_storage_in_use_by_usb_host() ? "Yes" : "No");
     return 0;
 }
 
-// exit from application
+// Exit from application
 static int console_exit(int argc, char **argv)
 {
     tinyusb_msc_unregister_callback(TINYUSB_MSC_EVENT_MOUNT_CHANGED);
     tinyusb_msc_storage_deinit();
     tinyusb_driver_uninstall();
+
+    xSemaphoreGive(_wait_console_smp);
+
     printf("Application Exit\n");
-    repl->del(repl);
+
     return 0;
 }
 
@@ -402,6 +408,12 @@ void app_main(void)
 {
     ESP_LOGI(TAG, "Initializing storage...");
 
+    _wait_console_smp = xSemaphoreCreateBinary();
+    if (_wait_console_smp == NULL) {
+        ESP_LOGE(TAG, "Failed to create semaphore");
+        return;
+    }
+
 #ifdef CONFIG_EXAMPLE_STORAGE_MEDIA_SPIFLASH
     static wl_handle_t wl_handle = WL_INVALID_HANDLE;
     ESP_ERROR_CHECK(storage_init_spiflash(&wl_handle));
@@ -472,4 +484,8 @@ void app_main(void)
     }
 
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
+
+    xSemaphoreTake(_wait_console_smp, portMAX_DELAY);
+    ESP_ERROR_CHECK(esp_console_stop_repl(repl));
+    vSemaphoreDelete(_wait_console_smp);
 }

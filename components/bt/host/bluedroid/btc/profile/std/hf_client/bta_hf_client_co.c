@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,9 +14,23 @@
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
 
+#if (BTC_HFP_EXT_CODEC == FALSE)
 #include "oi_codec_sbc.h"
 #include "oi_status.h"
 #include "sbc_encoder.h"
+#endif
+
+// H2: Header with synchronization word and sequence number
+#define BTA_HF_H2_HEADER_SYNC_WORD          0x0801
+#define BTA_HF_H2_HEADER_SYNC_WORD_MASK     0x0FFF
+#define BTA_HF_H2_HEADER_BIT0_MASK          (1 << 0)
+#define BTA_HF_H2_HEADER_BIT1_MASK          (1 << 1)
+#define BTA_HF_H2_HEADER_SN0_BIT_OFFSET1    12
+#define BTA_HF_H2_HEADER_SN0_BIT_OFFSET2    13
+#define BTA_HF_H2_HEADER_SN1_BIT_OFFSET1    14
+#define BTA_HF_H2_HEADER_SN1_BIT_OFFSET2    15
+
+#define BTA_HF_H2_HEADER_SYNC_WORD_CHECK(p)         ((*((uint16_t *)p) & BTA_HF_H2_HEADER_SYNC_WORD_MASK) == BTA_HF_H2_HEADER_SYNC_WORD)
 
 #if (PLC_INCLUDED == TRUE)
 #include "sbc_plc.h"
@@ -44,18 +58,23 @@ static bta_hf_ct_plc_t *bta_hf_ct_plc_ptr;
 /* BTA-HF-CO control block to map bdaddr to BTA handle */
 typedef struct
 {
+#if (BTC_HFP_EXT_CODEC == FALSE)
     OI_CODEC_SBC_DECODER_CONTEXT    decoder_context;
     OI_UINT32                       decoder_context_data[HF_SBC_DEC_CONTEXT_DATA_LEN];
     OI_INT16                        decode_raw_data[HF_SBC_DEC_RAW_DATA_SIZE];
-
     SBC_ENC_PARAMS                  encoder;
-
     UINT8                           sequence_number;
     bool                            is_bad_frame;
     bool                            decode_first_pkt;
-    OI_BYTE                         decode_msbc_data[BTM_MSBC_FRAME_SIZE];
     bool                            encode_first_pkt;
+    OI_BYTE                         decode_msbc_data[BTM_MSBC_FRAME_SIZE];
     OI_BYTE                         encode_msbc_data[BTM_MSBC_FRAME_SIZE];
+#else
+    UINT8                           sequence_number;
+    BOOLEAN                         rx_first_pkt;
+    BOOLEAN                         is_bad_frame;
+    UINT8                           rx_half_msbc_data[BTM_MSBC_FRAME_SIZE/2];
+#endif
 } bta_hf_client_co_cb_t;
 
 #if HFP_DYNAMIC_MEMORY == FALSE
@@ -118,6 +137,8 @@ tBTA_HFP_SCO_ROUTE_TYPE bta_hf_client_sco_co_init(UINT32 rx_bw, UINT32 tx_bw,
     return BTA_HFP_SCO_ROUTE_HCI;
 }
 
+#if (BTC_HFP_EXT_CODEC == FALSE)
+
 /*******************************************************************************
  **
  ** Function       bta_hf_dec_init
@@ -168,6 +189,19 @@ static void bta_hf_enc_init(void) {
     SBC_Encoder_Init(&(bta_hf_client_co_cb.encoder));
 }
 
+#endif
+
+#if (BTC_HFP_EXT_CODEC == TRUE)
+
+void bta_hf_pkt_state_reset(void)
+{
+    bta_hf_client_co_cb.sequence_number = 0;
+    bta_hf_client_co_cb.rx_first_pkt = TRUE;
+    bta_hf_client_co_cb.is_bad_frame =  FALSE;
+}
+
+#endif
+
 /*******************************************************************************
 **
 ** Function         bta_hf_client_sco_co_open
@@ -204,8 +238,12 @@ void bta_hf_client_sco_co_open(UINT16 handle, UINT8 air_mode, UINT8 inout_pkt_si
 
 #endif  /// (HFP_DYNAMIC_MEMORY == TRUE)
 
+#if (BTC_HFP_EXT_CODEC == TRUE)
+        bta_hf_pkt_state_reset();
+#else
         bta_hf_dec_init();
         bta_hf_enc_init();
+#endif
 
         return;
     } else {
@@ -280,18 +318,9 @@ void bta_hf_client_sco_co_close(void)
 ** Returns          void
 **
 *******************************************************************************/
-static void bta_hf_client_h2_header(UINT16 *p_buf)
+void bta_hf_client_h2_header(UINT16 *p_buf)
 {
-    // H2: Header with synchronization word and sequence number
-#define BTA_HF_H2_HEADER                0x0801
-#define BTA_HF_H2_HEADER_BIT0_MASK   (1 << 0)
-#define BTA_HF_H2_HEADER_BIT1_MASK   (1 << 1)
-#define BTA_HF_H2_HEADER_SN0_BIT_OFFSET1 12
-#define BTA_HF_H2_HEADER_SN0_BIT_OFFSET2 13
-#define BTA_HF_H2_HEADER_SN1_BIT_OFFSET1 14
-#define BTA_HF_H2_HEADER_SN1_BIT_OFFSET2 15
-
-    UINT16 h2_header = BTA_HF_H2_HEADER;
+    UINT16 h2_header = BTA_HF_H2_HEADER_SYNC_WORD;
     UINT8 h2_header_sn0 = bta_hf_client_co_cb.sequence_number & BTA_HF_H2_HEADER_BIT0_MASK;
     UINT8 h2_header_sn1 = bta_hf_client_co_cb.sequence_number & BTA_HF_H2_HEADER_BIT1_MASK;
     h2_header |= (h2_header_sn0 << BTA_HF_H2_HEADER_SN0_BIT_OFFSET1
@@ -303,6 +332,8 @@ static void bta_hf_client_h2_header(UINT16 *p_buf)
     bta_hf_client_co_cb.sequence_number++;
     *p_buf = h2_header;
 }
+
+#if (BTC_HFP_EXT_CODEC == FALSE)
 
 /*******************************************************************************
 **
@@ -364,7 +395,7 @@ uint32_t bta_hf_client_sco_co_out_data(UINT8 *p_buf)
 
 
     } else {
-        APPL_TRACE_ERROR("%s invaild air mode: %d", __FUNCTION__, hf_air_mode);
+        APPL_TRACE_ERROR("%s invalid air mode: %d", __FUNCTION__, hf_air_mode);
     }
     return 0;
 }
@@ -439,6 +470,8 @@ static void bta_hf_client_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN
     }
 }
 
+#endif
+
 /*******************************************************************************
 **
 ** Function         bta_hf_client_sco_co_in_data
@@ -450,12 +483,77 @@ static void bta_hf_client_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN
 *******************************************************************************/
 void bta_hf_client_sco_co_in_data(BT_HDR  *p_buf, tBTM_SCO_DATA_FLAG status)
 {
+    if (hf_air_mode != BTM_SCO_AIR_MODE_CVSD && hf_air_mode != BTM_SCO_AIR_MODE_TRANSPNT) {
+        APPL_TRACE_ERROR("%s invalid air mode: %d", __FUNCTION__, hf_air_mode);
+        osi_free(p_buf);
+        return;
+    }
+
     UINT8 *p = (UINT8 *)(p_buf + 1) + p_buf->offset;
     UINT8 pkt_size = 0;
 
     STREAM_SKIP_UINT16(p);
     STREAM_TO_UINT8 (pkt_size, p);
 
+#if (BTC_HFP_EXT_CODEC == TRUE)
+    if (hf_air_mode == BTM_SCO_AIR_MODE_CVSD) {
+        btc_hf_client_audio_data_cb_to_app((uint8_t *)p_buf, (uint8_t *)p, pkt_size, status != BTM_SCO_DATA_CORRECT);
+    }
+    else if (hf_air_mode == BTM_SCO_AIR_MODE_TRANSPNT) {
+        if (pkt_size != hf_inout_pkt_size) {
+            bta_hf_client_co_cb.is_bad_frame = true;
+        }
+        if (status != BTM_SCO_DATA_CORRECT) {
+            bta_hf_client_co_cb.is_bad_frame = true;
+        }
+        if (hf_inout_pkt_size == BTM_MSBC_FRAME_SIZE / 2) {
+            if (pkt_size > BTM_MSBC_FRAME_SIZE / 2) {
+                pkt_size = BTM_MSBC_FRAME_SIZE / 2;
+            }
+            if (bta_hf_client_co_cb.rx_first_pkt){
+                memcpy(bta_hf_client_co_cb.rx_half_msbc_data, p, pkt_size);
+                osi_free(p_buf);
+            } else {
+                BT_HDR  *p_new_buf = osi_calloc(sizeof(BT_HDR) + BTM_MSBC_FRAME_SIZE);
+                p_new_buf->offset = 0;
+                UINT8 *p_data = (UINT8 *)(p_new_buf + 1) + p_new_buf->offset;
+                memcpy(p_data, bta_hf_client_co_cb.rx_half_msbc_data, BTM_MSBC_FRAME_SIZE / 2);
+                memcpy(p_data + BTM_MSBC_FRAME_SIZE / 2, p, pkt_size);
+                osi_free(p_buf);
+                if (BTA_HF_H2_HEADER_SYNC_WORD_CHECK(p_data)) {
+                    /* H2 header sync word found, skip */
+                    p_data += 2;
+                }
+                else if (!bta_hf_client_co_cb.is_bad_frame){
+                    /* not a bad frame, assume as H1 header */
+                    p_data += 1;
+                }
+                btc_hf_client_audio_data_cb_to_app((uint8_t *)p_new_buf, (uint8_t *)p_data, BTM_MSBC_FRAME_SIZE, bta_hf_client_co_cb.is_bad_frame);
+                bta_hf_client_co_cb.is_bad_frame = false;
+                memset(bta_hf_client_co_cb.rx_half_msbc_data, 0, BTM_MSBC_FRAME_SIZE);
+            }
+            bta_hf_client_co_cb.rx_first_pkt = !bta_hf_client_co_cb.rx_first_pkt;
+        }
+        else if (hf_inout_pkt_size == BTM_MSBC_FRAME_SIZE) {
+            if (pkt_size > BTM_MSBC_FRAME_SIZE) {
+                pkt_size = BTM_MSBC_FRAME_SIZE;
+            }
+            if (BTA_HF_H2_HEADER_SYNC_WORD_CHECK(p)) {
+                /* H2 header sync word found, skip */
+                p += 2;
+            }
+            else if (!bta_hf_client_co_cb.is_bad_frame){
+                /* not a bad frame, assume as H1 header */
+                p += 1;
+            }
+            btc_hf_client_audio_data_cb_to_app((uint8_t *)p_buf, (uint8_t *)p, pkt_size, bta_hf_client_co_cb.is_bad_frame);
+            bta_hf_client_co_cb.is_bad_frame = false;
+        }
+        else {
+            osi_free(p_buf);
+        }
+    }
+#else
     if (hf_air_mode == BTM_SCO_AIR_MODE_CVSD) {
         // CVSD
         if(status != BTM_SCO_DATA_CORRECT){
@@ -496,8 +594,10 @@ void bta_hf_client_sco_co_in_data(BT_HDR  *p_buf, tBTM_SCO_DATA_FLAG status)
             //Never run to here.
         }
     } else {
-        APPL_TRACE_ERROR("%s invaild air mode: %d", __FUNCTION__, hf_air_mode);
+        APPL_TRACE_ERROR("%s invalid air mode: %d", __FUNCTION__, hf_air_mode);
     }
+    osi_free(p_buf);
+#endif
 }
 
 #endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE) */

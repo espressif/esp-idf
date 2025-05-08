@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import binascii
 import os
@@ -16,6 +16,7 @@ from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from ecdsa import NIST256p
 from ecdsa.ellipticcurve import Point
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 def load_ecdsa_key(filename: str) -> SECP256R1:
@@ -34,10 +35,13 @@ def test_xts_aes_encryption(negotiated_key: bytes, plaintext_data: bytes, encryp
         'espsecure.py',
         'encrypt_flash_data',
         '--aes_xts',
-        '--keyfile', 'test/negotiated_key.bin',
-        '--address', '0x120000',
-        '--output', 'test/enc-data.bin',
-        'test/plaintext.bin'
+        '--keyfile',
+        'test/negotiated_key.bin',
+        '--address',
+        '0x120000',
+        '--output',
+        'test/enc-data.bin',
+        'test/plaintext.bin',
     ]
     result = subprocess.run(command, capture_output=True, text=True)
     assert result.returncode == 0, f'Command failed with error: {result.stderr}'
@@ -79,7 +83,9 @@ def calculate_key_manager_ecdh0_negotiated_key(k2_G_hex: str, k1_ecdsa_key: str)
     return negotiated_key
 
 
-def test_ecdsa_key(negotiated_key: bytes, digest: bytes, signature_r_le: bytes, signature_s_le: bytes, pubx: bytes, puby: bytes) -> None:
+def test_ecdsa_key(
+    negotiated_key: bytes, digest: bytes, signature_r_le: bytes, signature_s_le: bytes, pubx: bytes, puby: bytes
+) -> None:
     r = int.from_bytes(signature_r_le, 'little')
     s = int.from_bytes(signature_s_le, 'little')
     signature = utils.encode_dss_signature(r, s)
@@ -103,8 +109,8 @@ def test_ecdsa_key(negotiated_key: bytes, digest: bytes, signature_r_le: bytes, 
         raise
 
 
-@pytest.mark.supported_targets
 @pytest.mark.generic
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_crypto(dut: Dut) -> None:
     # if the env variable IDF_FPGA_ENV is set, we would need a longer timeout
     # as tests for efuses burning security peripherals would be run
@@ -157,9 +163,9 @@ def test_crypto(dut: Dut) -> None:
     dut.expect('Tests finished', timeout=timeout)
 
 
-@pytest.mark.supported_targets
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['long_aes_operations'], indirect=True)
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_crypto_long_aes_operations(dut: Dut) -> None:
     # if the env variable IDF_FPGA_ENV is set, we would need a longer timeout
     # as tests for efuses burning security peripherals would be run

@@ -39,7 +39,9 @@ tBTM_CB  *btm_cb_ptr;
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void btm_ble_extendadvcb_init(void);
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 extern void btm_ble_advrecod_init(void);
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 #endif
 
 
@@ -89,7 +91,9 @@ void btm_init (void)
     btm_sec_dev_init();
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     btm_ble_extendadvcb_init();
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     btm_ble_advrecod_init();
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 #endif
 
 }
@@ -122,7 +126,8 @@ void btm_free(void)
 #endif
 }
 
-uint8_t btm_acl_active_count(void)
+#if (BLE_INCLUDED == TRUE)
+uint8_t btm_ble_acl_active_count(void)
 {
     list_node_t *p_node = NULL;
     tACL_CONN *p_acl_conn = NULL;
@@ -130,14 +135,14 @@ uint8_t btm_acl_active_count(void)
 
     for (p_node = list_begin(btm_cb.p_acl_db_list); p_node; p_node = list_next(p_node)) {
         p_acl_conn = list_node(p_node);
-        if (p_acl_conn && p_acl_conn->in_use) {
+        if (p_acl_conn && p_acl_conn->in_use && p_acl_conn->transport == BT_TRANSPORT_LE) {
             count++;
         }
     }
 
     return count;
 }
-#if (BLE_INCLUDED == TRUE)
+
 // Address resolution status
 uint8_t btm_get_ble_addr_resolve_disable_status(void)
 {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -98,13 +98,6 @@ static void deep_sleep_task(void *args)
         }
 #endif // CONFIG_EXAMPLE_EXT1_WAKEUP
 
-#ifdef CONFIG_EXAMPLE_TOUCH_WAKEUP
-        case ESP_SLEEP_WAKEUP_TOUCHPAD: {
-            printf("Wake up from touch\n");
-            break;
-        }
-#endif // CONFIG_EXAMPLE_TOUCH_WAKEUP
-
         case ESP_SLEEP_WAKEUP_UNDEFINED:
         default:
             printf("Not a deep sleep reset\n");
@@ -161,11 +154,6 @@ void app_main(void)
 #if CONFIG_EXAMPLE_EXT1_WAKEUP
     /* Enable wakeup from deep sleep by ext1 */
     example_deep_sleep_register_ext1_wakeup();
-#endif
-
-#if CONFIG_EXAMPLE_TOUCH_WAKEUP
-    /* Enable wakeup from deep sleep by touch */
-    example_deep_sleep_register_touch_wakeup();
 #endif
 
     xTaskCreate(deep_sleep_task, "deep_sleep_task", 4096, NULL, 6, NULL);

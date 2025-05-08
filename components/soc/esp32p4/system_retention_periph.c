@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "soc/timer_group_reg.h"
 #include "soc/timer_periph.h"
 #include "soc/uart_reg.h"
+#include "esp32p4/rom/cache.h"
 
 /* Interrupt Matrix Registers Context */
 #define N_REGS_INTR_CORE0()    (((INTERRUPT_CORE0_CLOCK_GATE_REG - DR_REG_INTERRUPT_CORE0_BASE) / 4) + 1)
@@ -32,28 +33,84 @@ const regdma_entries_config_t intr_matrix_regs_retention[] = {
 };
 _Static_assert(ARRAY_SIZE(intr_matrix_regs_retention) == INT_MTX_RETENTION_LINK_LEN, "Inconsistent INT_MTX retention link length definitions");
 
+/* L1 Cache Registers Context */
+/*  CACHE_L1_ICACHE_CTRL_REG & CACHE_L1_DCACHE_CTRL_REG & CACHE_L1_BYPASS_CACHE_CONF_REG &
+    CACHE_L1_CACHE_ACS_FAIL_CTRL_REG & CACHE_L1_CACHE_ACS_FAIL_INT_ENA_REG*/
+#define L1_CACHE_RETENTION_REGS_CNT     (5)
+#define L1_CACHE_RETENTION_REGS_BASE    (CACHE_L1_ICACHE_CTRL_REG)
+static const uint32_t l1_cache_regs_map[4] = {0x7, 0x0, 0xc000000, 0x0};
 /* L2 Cache Registers Context */
-#define N_REGS_L2_CACHE()      (((CACHE_L2_CACHE_DATA_MEM_POWER_CTRL_REG - CACHE_L2_CACHE_CTRL_REG) / 4) + 1)
-const regdma_entries_config_t l2_cache_regs_retention[] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_HPSYS_LINK(0), CACHE_L2_CACHE_CTRL_REG, CACHE_L2_CACHE_CTRL_REG, N_REGS_L2_CACHE(), 0, 0), .owner = ENTRY(0) }  /* hp system */
+/*  CACHE_L2_CACHE_CTRL_REG & CACHE_L2_BYPASS_CACHE_CONF_REG &
+    CACHE_L2_CACHE_CACHESIZE_CONF_REG & CACHE_L2_CACHE_BLOCKSIZE_CONF_REG &
+    CACHE_L2_CACHE_ACS_FAIL_CTRL_REG & CACHE_L2_CACHE_ACS_FAIL_INT_ENA_REG */
+#define L2_CACHE_RETENTION_REGS_CNT     (6)
+#define L2_CACHE_RETENTION_REGS_BASE    (CACHE_L2_CACHE_CTRL_REG)
+static const uint32_t l2_cache_regs_map[4] = {0xc000000f, 0x0, 0x0, 0x0};
+const regdma_entries_config_t cache_regs_retention[] = {
+    [0] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_CACHE_LINK(0x00), L1_CACHE_RETENTION_REGS_BASE, L1_CACHE_RETENTION_REGS_BASE, \
+                                            L1_CACHE_RETENTION_REGS_CNT, 0, 0,              \
+                                            l1_cache_regs_map[0], l1_cache_regs_map[1],     \
+                                            l1_cache_regs_map[2], l1_cache_regs_map[3]),    \
+        .owner = ENTRY(0)
+    },
+    [1] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_CACHE_LINK(0x01),                                    \
+                                            L2_CACHE_RETENTION_REGS_BASE, L2_CACHE_RETENTION_REGS_BASE, \
+                                            L2_CACHE_RETENTION_REGS_CNT, 0, 0,                          \
+                                            l2_cache_regs_map[0], l2_cache_regs_map[1],                 \
+                                            l2_cache_regs_map[2], l2_cache_regs_map[3]),                \
+        .owner = ENTRY(0)
+    },
+    // Invalidate L1 Cache
+    [2] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CACHE_LINK(0x02), CACHE_SYNC_ADDR_REG, 0,                       CACHE_SYNC_ADDR_M,      1, 0), .owner = ENTRY(0) },
+    [3] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CACHE_LINK(0x03), CACHE_SYNC_SIZE_REG, 0,                       CACHE_SYNC_SIZE_M,      1, 0), .owner = ENTRY(0) },
+    [4] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CACHE_LINK(0x04), CACHE_SYNC_MAP_REG,  CACHE_MAP_L1_CACHE_MASK, CACHE_SYNC_MAP_M,       1, 0), .owner = ENTRY(0) },
+    [5] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CACHE_LINK(0x05), CACHE_SYNC_CTRL_REG, 0,                       CACHE_SYNC_RGID_M,      1, 0), .owner = ENTRY(0) },
+    [6] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CACHE_LINK(0x06), CACHE_SYNC_CTRL_REG, CACHE_INVALIDATE_ENA,    CACHE_INVALIDATE_ENA_M, 1, 0), .owner = ENTRY(0) },
+    [7] = { .config = REGDMA_LINK_WAIT_INIT(REGDMA_CACHE_LINK(0x07), CACHE_SYNC_CTRL_REG, CACHE_SYNC_DONE,         CACHE_SYNC_DONE_M,      1, 0), .owner = ENTRY(0) },
 };
-_Static_assert(ARRAY_SIZE(l2_cache_regs_retention) == HP_SYSTEM_RETENTION_LINK_LEN, "Inconsistent L2 CACHE retention link length definitions");
+_Static_assert(ARRAY_SIZE(cache_regs_retention) == CACHE_RETENTION_LINK_LEN, "Inconsistent L2 CACHE retention link length definitions");
 
 /* HP System Registers Context */
 #define N_REGS_HP_SYSTEM()      (((HP_SYSTEM_AHB2AXI_BRESP_ERR_INT_ENA_REG - DR_REG_HP_SYS_BASE) / 4) + 1)
 const regdma_entries_config_t hp_system_regs_retention[] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_HPSYS_LINK(0), DR_REG_HP_SYS_BASE, DR_REG_HP_SYS_BASE, N_REGS_HP_SYSTEM(), 0, 0), .owner = ENTRY(0) }  /* hp system */
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_HPSYS_LINK(2), DR_REG_HP_SYS_BASE, DR_REG_HP_SYS_BASE, N_REGS_HP_SYSTEM(), 0, 0), .owner = ENTRY(0) }  /* hp system */
 };
 _Static_assert(ARRAY_SIZE(hp_system_regs_retention) == HP_SYSTEM_RETENTION_LINK_LEN, "Inconsistent HP_SYSTEM retention link length definitions");
 
 /* IO MUX Registers Context */
-#define N_REGS_IOMUX_0()    (((IO_MUX_GPIO54_REG - REG_IO_MUX_BASE) / 4) + 1)
-#define N_REGS_GPIO_MTX()   (((GPIO_ZERO_DET1_FILTER_CNT_REG - DR_REG_GPIO_BASE) / 4) + 1)
+#define N_REGS_IOMUX()      (((IO_MUX_GPIO54_REG - REG_IO_MUX_BASE) / 4) + 1)
 #define N_REGS_MSPI_IOMUX() (((IOMUX_MSPI_PIN_PSRAM_DQS_1_PIN0_REG - IOMUX_MSPI_PIN_CLK_EN0_REG) / 4) + 1)
+#define N_REGS_GPIO_PINx()  (((GPIO_PIN56_REG - GPIO_PIN0_REG) / 4) + 1)
+#define N_REGS_GPIO_FUNCx() (((GPIO_FUNC56_OUT_SEL_CFG_REG - GPIO_FUNC1_IN_SEL_CFG_REG) / 4) + 1)
+
+#define GPIO_RETENTION_REGS_CNT0 6
+#define GPIO_RETENTION_REGS_CNT1 9
+#define GPIO_RETENTION_REGS_BASE0 (GPIO_OUT_REG)
+#define GPIO_RETENTION_REGS_BASE1 (GPIO_CLOCK_GATE_REG)
+static const uint32_t gpio_regs_map0[4] = {0x90489, 0x0, 0x0, 0x0};
+static const uint32_t gpio_regs_map1[4] = {0x1, 0x6fa000, 0x0, 0x0};
+
 const regdma_entries_config_t iomux_regs_retention[] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x00), REG_IO_MUX_BASE,             REG_IO_MUX_BASE,            N_REGS_IOMUX_0(), 0, 0), .owner = ENTRY(0) }, /* io_mux */
-    [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x01), DR_REG_GPIO_BASE,            DR_REG_GPIO_BASE,           N_REGS_GPIO_MTX(), 0, 0), .owner = ENTRY(0) },
-    [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x01), IOMUX_MSPI_PIN_CLK_EN0_REG,  IOMUX_MSPI_PIN_CLK_EN0_REG, N_REGS_GPIO_MTX(), 0, 0), .owner = ENTRY(0) },
+    /* IO_MUX */
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x00), REG_IO_MUX_BASE,             REG_IO_MUX_BASE,            N_REGS_IOMUX(), 0, 0), .owner = ENTRY(0) },
+    /* MSPI IOMUX */
+    [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x01), IOMUX_MSPI_PIN_FLASH_CS_PIN0_REG,  IOMUX_MSPI_PIN_FLASH_CS_PIN0_REG, N_REGS_MSPI_IOMUX(), 0, 0), .owner = ENTRY(0) },
+    /* GPIO_OUT_REG / GPIO_OUT1_REG / GPIO_ENABLE_REG / GPIO_ENABLE1_REG / GPIO_STATUS_REG / GPIO_STATUS1_REG*/
+    [2] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_IOMUX_LINK(0x02), GPIO_RETENTION_REGS_BASE0, GPIO_RETENTION_REGS_BASE0, GPIO_RETENTION_REGS_CNT0, 0, 0, \
+                                            gpio_regs_map0[0], gpio_regs_map0[1], gpio_regs_map0[2], gpio_regs_map0[3]), .owner = ENTRY(0)
+    },
+    /* GPIO_PIN0_REG ~ GPIO_PIN56_REG*/
+    [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x03), GPIO_PIN0_REG,            GPIO_PIN0_REG,           N_REGS_GPIO_PINx(), 0, 0), .owner = ENTRY(0) },
+    /* GPIO_FUNC1_IN_SEL_CFG_REG ~ GPIO_FUNC255_IN_SEL_CFG_REG & GPIO_FUNC0_OUT_SEL_CFG_REG ~ GPIO_FUNC56_OUT_SEL_CFG_REG */
+    [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x04), GPIO_FUNC1_IN_SEL_CFG_REG, GPIO_FUNC1_IN_SEL_CFG_REG, N_REGS_GPIO_FUNCx(), 0, 0), .owner = ENTRY(0) },
+
+    [5] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_IOMUX_LINK(0x05), GPIO_RETENTION_REGS_BASE1, GPIO_RETENTION_REGS_BASE1, GPIO_RETENTION_REGS_CNT1, 0, 0, \
+                                            gpio_regs_map1[0], gpio_regs_map1[1], gpio_regs_map1[2], gpio_regs_map1[3]), .owner = ENTRY(0)
+    },
 };
 _Static_assert(ARRAY_SIZE(iomux_regs_retention) == IOMUX_RETENTION_LINK_LEN, "Inconsistent IOMUX retention link length definitions");
 

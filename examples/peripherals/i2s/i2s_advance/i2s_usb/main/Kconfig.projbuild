@@ -1,0 +1,84 @@
+menu "Example Configuration"
+
+    menu "I2C GPIOs config"
+        config EXAMPLE_I2C_SCL_IO
+            int "SCL pin"
+            default 8 if IDF_TARGET_ESP32P4
+            default 4
+        config EXAMPLE_I2C_SDA_IO
+            int "SDA pin"
+            default 7 if IDF_TARGET_ESP32P4
+            default 5
+    endmenu
+
+    menu "I2S GPIOs config"
+        config EXAMPLE_I2S_MCK_IO
+            int "MCK pin"
+            default 13 if IDF_TARGET_ESP32P4
+            default 10
+        config EXAMPLE_I2S_BCK_IO
+            int "BCK pin"
+            default 12 if IDF_TARGET_ESP32P4
+            default 11
+        config EXAMPLE_I2S_WS_IO
+            int "WS pin"
+            default 10 if IDF_TARGET_ESP32P4
+            default 12
+        config EXAMPLE_I2S_DO_IO
+            int "DOUT pin"
+            default 9 if IDF_TARGET_ESP32P4
+            default 13
+        config EXAMPLE_I2S_DI_IO
+            int "DIN pin"
+            default 11 if IDF_TARGET_ESP32P4
+            default 14
+    endmenu
+
+    config EXAMPLE_DYNAMIC_TUNING_EN
+        bool "Enable dynamic tuning"
+        default n
+        help
+            Enable to tune the audio rate dynamically to match the I2S and UAC speed.
+
+    choice EXAMPLE_BIT_WIDTH
+        prompt "Audio data bit width"
+        default BIT_WIDTH_16BIT
+
+        config BIT_WIDTH_8BIT
+            bool "8-bit"
+        config BIT_WIDTH_16BIT
+            bool "16-bit"
+        config BIT_WIDTH_24BIT
+            bool "24-bit"
+        config BIT_WIDTH_32BIT
+            bool "32-bit"
+    endchoice
+
+    config EXAMPLE_AUDIO_BIT_WIDTH
+        int
+        default 8 if BIT_WIDTH_8BIT
+        default 16 if BIT_WIDTH_16BIT
+        default 24 if BIT_WIDTH_24BIT
+        default 32 if BIT_WIDTH_32BIT
+
+    config EXAMPLE_CODEC_MIC_GAIN
+        int "Set MIC gain (unit: dB)"
+        default 18
+        help
+            Select mic gain for echo mode
+
+    config EXAMPLE_CODEC_VOLUME
+        int "Voice volume"
+        range 0 100
+        default 60
+        help
+            Set voice volume
+
+    config EXAMPLE_PA_CTRL_IO
+        int "Power Amplifier control IO"
+        default 53 if IDF_TARGET_ESP32P4
+        default 6
+        help
+            Set GPIO number for PA control. Set -1 to disable PA control.
+
+endmenu

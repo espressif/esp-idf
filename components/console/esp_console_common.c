@@ -1,15 +1,22 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "sdkconfig.h"
 #include <sys/cdefs.h> // __containerof
+#include <sys/param.h>
+#include <sys/fcntl.h>
 #include "esp_console.h"
 #include "console_private.h"
 #include "esp_log.h"
 #include "linenoise/linenoise.h"
+
+#include "esp_vfs_eventfd.h"
+#if CONFIG_IDF_TARGET_LINUX
+#include <unistd.h>
+#endif
 
 static const char *TAG = "console.common";
 
@@ -59,6 +66,11 @@ _exit:
     return ret;
 }
 
+__attribute__((weak)) esp_err_t esp_console_internal_set_event_fd(esp_console_repl_com_t *repl_com)
+{
+    return ESP_OK;
+}
+
 esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_com_t *repl_com)
 {
     esp_err_t ret = ESP_OK;
@@ -94,9 +106,36 @@ esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_co
     linenoiseSetCompletionCallback(&esp_console_get_completion);
     linenoiseSetHintsCallback((linenoiseHintsCallback *)&esp_console_get_hint);
 
+#if CONFIG_VFS_SUPPORT_SELECT
+    ret = esp_console_internal_set_event_fd(repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+#endif
+
     return ESP_OK;
 _exit:
     return ret;
+}
+
+__attribute__((weak)) esp_err_t esp_console_common_deinit(esp_console_repl_com_t *repl_com)
+{
+    // set the state to deinit to force the while loop in
+    // esp_console_repl_task to break
+    repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+
+    /* Unregister the heap function to avoid memory leak, since it is created
+     * every time a console init is called. */
+    esp_err_t ret = esp_console_deregister_help_command();
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    /* free the history to avoid memory leak, since it is created
+     * every time a console init is called. */
+    linenoiseHistoryFree();
+
+    return ESP_OK;
 }
 
 esp_err_t esp_console_start_repl(esp_console_repl_t *repl)
@@ -125,6 +164,11 @@ void esp_console_repl_task(void *args)
     /* Waiting for task notify. This happens when `esp_console_start_repl()`
      * function is called. */
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    if (repl_com->state_mux != NULL) {
+        BaseType_t ret_val = xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
+        assert(ret_val == pdTRUE);
+    }
 
     /* Change standard input and output of the task if the requested UART is
      * NOT the default one. This block will replace stdin, stdout and stderr.
@@ -186,6 +230,10 @@ void esp_console_repl_task(void *args)
         }
         /* linenoise allocates line buffer on the heap, so need to free it */
         linenoiseFree(line);
+    }
+
+    if (repl_com->state_mux != NULL) {
+        xSemaphoreGive(repl_com->state_mux);
     }
     ESP_LOGD(TAG, "The End");
     vTaskDelete(NULL);

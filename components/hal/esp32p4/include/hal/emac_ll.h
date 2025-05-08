@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -146,6 +146,9 @@ extern "C" {
 
 /* Enable needed MAC interrupts */
 #define EMAC_LL_CONFIG_ENABLE_MAC_INTR_MASK  (EMAC_LL_MAC_INTR_TIME_STAMP_ENABLE)
+
+/* Maximum number of MAC address to be filtered */
+#define EMAC_LL_MAX_MAC_ADDR_NUM 8
 
 /************** Start of mac regs operation ********************/
 /* emacgmiiaddr */
@@ -374,6 +377,49 @@ static inline void emac_ll_set_addr(emac_mac_dev_t *mac_regs, const uint8_t *add
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(mac_regs->emacaddr0high, address0_hi, (addr[5] << 8) | addr[4]);
     mac_regs->emacaddr0low = (addr[3] << 24) | (addr[2] << 16) | (addr[1] << 8) | (addr[0]);
+}
+
+/* emacaddrN */
+static inline void emac_ll_add_addr_filter(emac_mac_dev_t *mac_regs, uint8_t addr_num, const uint8_t *mac_addr, uint8_t mask, bool filter_for_source)
+{
+    addr_num = addr_num - 1; // MAC Address1 is located at emacaddr[0]
+
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mac_regs->emacaddr[addr_num].emacaddrhigh, mac_address_hi, (mac_addr[5] << 8) | mac_addr[4]);
+    mac_regs->emacaddr[addr_num].emacaddrhigh.mask_byte_control = mask;
+    mac_regs->emacaddr[addr_num].emacaddrhigh.source_address = filter_for_source;
+    mac_regs->emacaddr[addr_num].emacaddrhigh.address_enable = 1;
+    mac_regs->emacaddr[addr_num].emacaddrlow = (mac_addr[3] << 24) | (mac_addr[2] << 16) | (mac_addr[1] << 8) | (mac_addr[0]);
+}
+
+static inline bool emac_ll_get_addr_filter(emac_mac_dev_t *mac_regs, uint8_t addr_num, uint8_t *mac_addr, uint8_t *mask, bool *filter_for_source)
+{
+    addr_num = addr_num - 1; // MAC Address1 is located at emacaddr[0]
+    if (mac_regs->emacaddr[addr_num].emacaddrhigh.address_enable) {
+        if (mac_addr != NULL) {
+            *(&mac_addr[0]) = mac_regs->emacaddr[addr_num].emacaddrlow & 0xFF;
+            *(&mac_addr[1]) = (mac_regs->emacaddr[addr_num].emacaddrlow >> 8) & 0xFF;
+            *(&mac_addr[2]) = (mac_regs->emacaddr[addr_num].emacaddrlow >> 16) & 0xFF;
+            *(&mac_addr[3]) = (mac_regs->emacaddr[addr_num].emacaddrlow >> 24) & 0xFF;
+            *(&mac_addr[4]) = mac_regs->emacaddr[addr_num].emacaddrhigh.mac_address_hi & 0xFF;
+            *(&mac_addr[5]) = (mac_regs->emacaddr[addr_num].emacaddrhigh.mac_address_hi >> 8) & 0xFF;
+        }
+        if (mask != NULL) {
+            *mask = mac_regs->emacaddr[addr_num].emacaddrhigh.mask_byte_control;
+        }
+        if (filter_for_source != NULL) {
+            *filter_for_source = mac_regs->emacaddr[addr_num].emacaddrhigh.source_address;
+        }
+        return true;
+    }
+    return false;
+}
+
+static inline void emac_ll_rm_addr_filter(emac_mac_dev_t *mac_regs, uint8_t addr_num)
+{
+    addr_num = addr_num - 1; // MAC Address1 is located at emacaddr[0]
+    mac_regs->emacaddr[addr_num].emacaddrhigh.address_enable = 0;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mac_regs->emacaddr[addr_num].emacaddrhigh, mac_address_hi, 0);
+    mac_regs->emacaddr[addr_num].emacaddrlow = 0;
 }
 
 /* emacintmask */
@@ -786,6 +832,15 @@ static inline void emac_ll_enable_bus_clock(int group_id, bool enable)
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define emac_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_enable_bus_clock(__VA_ARGS__)
 
+static inline void _emac_ll_clock_force_en(bool enable)
+{
+    HP_SYS_CLKRST.clk_force_on_ctrl0.reg_gmac_tx_clk_force_on = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define emac_ll_clock_force_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _emac_ll_clock_force_en(__VA_ARGS__)
+
 /**
  * @brief Reset the EMAC module
  *
@@ -907,7 +962,7 @@ static inline void emac_ll_clock_enable_ptp(void *ext_regs, soc_periph_emac_ptp_
 
 static inline void emac_ll_pause_frame_enable(void *ext_regs, bool enable)
 {
-    HP_SYSTEM.sys_gmac_ctrl0.sys_phy_intf_sel = enable;
+    HP_SYSTEM.sys_gmac_ctrl0.sys_sbd_flowctrl = enable;
 }
 
 #ifdef __cplusplus

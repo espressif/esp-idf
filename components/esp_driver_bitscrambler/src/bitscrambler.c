@@ -6,12 +6,19 @@
 #include <string.h>
 #include <stdatomic.h>
 #include "esp_log.h"
+#include "esp_heap_caps.h"
 #include "driver/bitscrambler.h"
 #include "bitscrambler_private.h"
 #include "hal/bitscrambler_ll.h"
 #include "esp_private/periph_ctrl.h"
 
 static const char *TAG = "bitscrambler";
+
+#if CONFIG_BITSCRAMBLER_OBJ_CACHE_SAFE
+#define BITSCRAMBLER_MEM_ALLOC_CAPS  (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#else
+#define BITSCRAMBLER_MEM_ALLOC_CAPS  MALLOC_CAP_DEFAULT
+#endif
 
 #define BITSCRAMBLER_BINARY_VER 1 //max version we're compatible with
 #define BITSCRAMBLER_HW_REV 0
@@ -153,8 +160,8 @@ esp_err_t bitscrambler_new(const bitscrambler_config_t *config, bitscrambler_han
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
-    // Allocate memory for private data
-    bitscrambler_t *bs = calloc(1, sizeof(bitscrambler_t));
+    // Allocate memory for the BitScrambler object from internal memory
+    bitscrambler_t *bs = heap_caps_calloc(1, sizeof(bitscrambler_t), BITSCRAMBLER_MEM_ALLOC_CAPS);
     if (!bs) {
         return ESP_ERR_NO_MEM;
     }
@@ -173,7 +180,7 @@ esp_err_t bitscrambler_new(const bitscrambler_config_t *config, bitscrambler_han
         return r;
     }
 
-    // Done.
+    // Return the handle
     *handle = bs;
     return ESP_OK;
 }
@@ -224,7 +231,10 @@ esp_err_t bitscrambler_load_program(bitscrambler_handle_t bs, const void *progra
     //Set options from header
     bitscrambler_ll_set_lut_width(bs->hw, bs->cfg.dir, hdr.lut_width);
     bitscrambler_ll_enable_prefetch_on_reset(bs->hw, bs->cfg.dir, hdr.prefetch);
-    bitscrambler_ll_set_eof_mode(bs->hw, bs->cfg.dir, hdr.eof_on);
+    // the bitscrambler assembler (bsasm.py) treats 'eof_on=1' as "upstream", a.k.a, read from upstream
+    // quote from bsasm.py: {'op': 'eof_on', 'default': 1, 'enum': {'upstream': 1, 'downstream': 0}},
+    bitscrambler_eof_mode_t eof_mode = hdr.eof_on ? BITSCRAMBLER_EOF_MODE_READ : BITSCRAMBLER_EOF_MODE_WRITE;
+    bitscrambler_ll_set_eof_mode(bs->hw, bs->cfg.dir, eof_mode);
     bitscrambler_ll_set_tailing_bits(bs->hw, bs->cfg.dir, hdr.trailing_bits);
     //fixed options
     bitscrambler_ll_set_dummy_mode(bs->hw, bs->cfg.dir, BITSCRAMBLER_DUMMY_MODE_DUMMY);

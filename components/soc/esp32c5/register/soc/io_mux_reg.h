@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -129,7 +129,6 @@ extern "C" {
 
 #define GPIO_PAD_PULLUP(num) do{PIN_PULLDWN_DIS(IOMUX_REG_GPIO##num);PIN_PULLUP_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_PULLDOWN(num) do{PIN_PULLUP_DIS(IOMUX_REG_GPIO##num);PIN_PULLDWN_EN(IOMUX_REG_GPIO##num);}while(0)
-#define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
 
 #define SPI_HD_GPIO_NUM              20
 #define SPI_WP_GPIO_NUM              18
@@ -144,7 +143,7 @@ extern "C" {
 
 #define EXT_OSC_SLOW_GPIO_NUM        0
 
-#define MAX_RTC_GPIO_NUM              7
+#define MAX_RTC_GPIO_NUM              6
 #define MAX_PAD_GPIO_NUM             28
 #define MAX_GPIO_NUM                 32
 #define DIG_IO_HOLD_BIT_SHIFT        32
@@ -161,11 +160,13 @@ extern "C" {
 #define FUNC_XTAL_32K_N_GPIO1                                            1
 #define FUNC_XTAL_32K_N_GPIO1_0                                          0
 
+// Strapping: Boot Mode select
 #define PERIPHS_IO_MUX_U_PAD_MTMS                  (REG_IO_MUX_BASE + 0x8)
 #define FUNC_MTMS_FSPIQ                                                  2
 #define FUNC_MTMS_GPIO2                                                  1
 #define FUNC_MTMS_MTMS                                                   0
 
+// Strapping: Boot Mode select/sdio_out_strap
 #define PERIPHS_IO_MUX_U_PAD_MTDI                  (REG_IO_MUX_BASE + 0xC)
 #define FUNC_MTDI_GPIO3                                                  1
 #define FUNC_MTDI_MTDI                                                   0
@@ -188,7 +189,7 @@ extern "C" {
 #define PERIPHS_IO_MUX_U_PAD_GPIO7                (REG_IO_MUX_BASE + 0x1C)
 #define FUNC_GPIO7_FSPID                                                 2
 #define FUNC_GPIO7_GPIO7                                                 1
-#define FUNC_GPIO7_GPIO7_0                                               0
+#define FUNC_GPIO7_SDIO_DATA1                                            0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO8                (REG_IO_MUX_BASE + 0x20)
 #define FUNC_GPIO8_GPIO8                                                 1
@@ -201,7 +202,7 @@ extern "C" {
 #define PERIPHS_IO_MUX_U_PAD_GPIO10               (REG_IO_MUX_BASE + 0x28)
 #define FUNC_GPIO10_FSPICS0                                              2
 #define FUNC_GPIO10_GPIO10                                               1
-#define FUNC_GPIO10_GPIO10_0                                             0
+#define FUNC_GPIO10_SDIO_CMD                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_U0TXD                (REG_IO_MUX_BASE + 0x2C)
 #define FUNC_U0TXD_GPIO11                                                1
@@ -213,11 +214,11 @@ extern "C" {
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO13               (REG_IO_MUX_BASE + 0x34)
 #define FUNC_GPIO13_GPIO13                                               1
-#define FUNC_GPIO13_GPIO13_0                                             0
+#define FUNC_GPIO13_SDIO_DATA3                                           0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO14               (REG_IO_MUX_BASE + 0x38)
 #define FUNC_GPIO14_GPIO14                                               1
-#define FUNC_GPIO14_GPIO14_0                                             0
+#define FUNC_GPIO14_SDIO_DATA2                                           0
 
 #define PERIPHS_IO_MUX_U_PAD_SPICS1               (REG_IO_MUX_BASE + 0x3C)
 #define FUNC_SPICS1_GPIO15                                               1
@@ -259,21 +260,38 @@ extern "C" {
 #define FUNC_GPIO24_GPIO24                                               1
 #define FUNC_GPIO24_GPIO24_0                                             0
 
+// Strapping: sdio_in_strap
 #define PERIPHS_IO_MUX_U_PAD_GPIO25               (REG_IO_MUX_BASE + 0x64)
 #define FUNC_GPIO25_GPIO25                                               1
 #define FUNC_GPIO25_GPIO25_0                                             0
 
+// Strapping: Boot Mode select (analog mode)
 #define PERIPHS_IO_MUX_U_PAD_GPIO26               (REG_IO_MUX_BASE + 0x68)
 #define FUNC_GPIO26_GPIO26                                               1
 #define FUNC_GPIO26_GPIO26_0                                             0
 
+// Strapping: Boot Mode select
 #define PERIPHS_IO_MUX_U_PAD_GPIO27               (REG_IO_MUX_BASE + 0x6C)
 #define FUNC_GPIO27_GPIO27                                               1
 #define FUNC_GPIO27_GPIO27_0                                             0
 
+// Strapping: Boot Mode select
 #define PERIPHS_IO_MUX_U_PAD_GPIO28               (REG_IO_MUX_BASE + 0x70)
 #define FUNC_GPIO28_GPIO28                                               1
 #define FUNC_GPIO28_GPIO28_0                                             0
+
+/**
+ *  Strapping Info:
+ *
+ *  GPIO28,GPIO27,GPIO3,GPIO2,GPIO26:
+ *  1XXXX: SPI Boot mode
+ *  01XXX: Download mode by UART0/USB
+ *  00XX0: Download mode by UART0/SDIO
+ *  00101: Diag mode0
+ *  00111: Test mode (GPIO25,should be 1 in mbist mode)
+ *  00001: analog mode
+ *  00011: Diag mode1
+ */
 
 /** IO_MUX_DATE_REG register
  *  Version control register

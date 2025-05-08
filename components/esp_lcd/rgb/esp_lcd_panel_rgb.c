@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -788,9 +788,14 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *rgb_panel, lcd_
     }
 
     // create pm lock based on different clock source
-    // clock sources like PLL and XTAL will be turned off in light sleep
 #if CONFIG_PM_ENABLE
-    ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "rgb_panel", &rgb_panel->pm_lock), TAG, "create pm lock failed");
+    // clock sources like PLL and XTAL will be turned off in light sleep, so basically a NO_LIGHT_SLEEP lock is sufficient
+    esp_pm_lock_type_t lock_type = ESP_PM_NO_LIGHT_SLEEP;
+#if CONFIG_IDF_TARGET_ESP32P4
+    // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
+    lock_type = ESP_PM_CPU_FREQ_MAX;
+#endif
+    ESP_RETURN_ON_ERROR(esp_pm_lock_create(lock_type, 0, "rgb_panel", &rgb_panel->pm_lock), TAG, "create pm lock failed");
     // hold the lock during the whole lifecycle of RGB panel
     esp_pm_lock_acquire(rgb_panel->pm_lock);
     ESP_LOGD(TAG, "installed pm lock and hold the lock during the whole panel lifecycle");
@@ -877,6 +882,9 @@ static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *rgb_panel)
     // alloc DMA channel and connect to LCD peripheral
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
+#if CONFIG_LCD_RGB_ISR_IRAM_SAFE
+        .flags.isr_cache_safe = true,
+#endif
     };
     ESP_RETURN_ON_ERROR(LCD_GDMA_NEW_CHANNEL(&dma_chan_config, &rgb_panel->dma_chan), TAG, "alloc DMA channel failed");
     gdma_connect(rgb_panel->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_LCD, 0));
@@ -1000,6 +1008,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
         gdma_buffer_mount_config_t restart_buffer_mount_cfg = {
             .buffer = rgb_panel->fbs[0] + restart_skip_bytes,
             .length = MIN(LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE, rgb_panel->fb_size) - restart_skip_bytes,
+            .flags.bypass_buffer_align_check = true, // the restart buffer may doesn't match the buffer alignment but it doesn't really matter in this case
         };
         ESP_RETURN_ON_ERROR(gdma_link_mount_buffers(rgb_panel->dma_restart_link, 0, &restart_buffer_mount_cfg, 1, NULL),
                             TAG, "mount DMA restart buffer failed");

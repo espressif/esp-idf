@@ -108,9 +108,7 @@ public:
         esp_err_t err = ESP_OK;
 
         size_t columns = size / column_size;
-        volatile size_t column;
-
-        for(column = 0; column < columns; column = column + 1)
+        for(size_t column = 0; column < columns; column++)
         {
             // read column
             if((err = esp_partition_read_raw(&esp_partition, dst_offset + (column * column_size), buff, column_size)) != ESP_OK) return err;

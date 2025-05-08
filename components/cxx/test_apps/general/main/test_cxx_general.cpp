@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,9 @@
 #include "unity.h"
 #include "unity_test_utils.h"
 #include "soc/soc.h"
+#include <chrono>
+#include <thread>
+#include "esp_timer.h"
 
 extern "C" void setUp()
 {
@@ -317,6 +320,29 @@ static void recur_and_smash_cxx()
 TEST_CASE("stack smashing protection CXX", "[stack_smash]")
 {
     recur_and_smash_cxx();
+}
+
+TEST_CASE("test std::this_thread::sleep_for basic functionality", "[misc]")
+{
+    const int us_per_tick = portTICK_PERIOD_MS * 1000;
+
+    // Test sub-tick sleep
+    const auto short_sleep = std::chrono::microseconds(us_per_tick / 4);
+    int64_t start = esp_timer_get_time();
+    std::this_thread::sleep_for(short_sleep);
+    int64_t end = esp_timer_get_time();
+    int64_t elapsed_us = end - start;
+    printf("short sleep: %lld us\n", elapsed_us);
+    TEST_ASSERT_GREATER_OR_EQUAL(short_sleep.count(), elapsed_us);
+
+    // Test multi-tick sleep
+    const auto long_sleep = std::chrono::microseconds(us_per_tick * 2);
+    start = esp_timer_get_time();
+    std::this_thread::sleep_for(long_sleep);
+    end = esp_timer_get_time();
+    elapsed_us = end - start;
+    printf("long sleep: %lld us\n", elapsed_us);
+    TEST_ASSERT_GREATER_OR_EQUAL(long_sleep.count(), elapsed_us);
 }
 
 extern "C" void app_main(void)

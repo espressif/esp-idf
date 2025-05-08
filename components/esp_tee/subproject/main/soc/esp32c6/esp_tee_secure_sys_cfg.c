@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,11 @@
 #include "esp_cpu.h"
 #include "esp_log.h"
 #include "hal/apm_hal.h"
+#include "hal/aes_ll.h"
+#include "hal/sha_ll.h"
+#include "hal/hmac_ll.h"
+#include "hal/ds_ll.h"
+#include "hal/ecc_ll.h"
 
 #include "esp_tee.h"
 #include "esp_tee_intr.h"
@@ -91,13 +96,18 @@ void esp_tee_soc_secure_sys_init(void)
     esp_tee_protect_intr_src(ETS_EFUSE_INTR_SOURCE);        // eFuse
     esp_tee_protect_intr_src(ETS_AES_INTR_SOURCE);          // AES
     esp_tee_protect_intr_src(ETS_SHA_INTR_SOURCE);          // SHA
+    esp_tee_protect_intr_src(ETS_ECC_INTR_SOURCE);          // ECC
+
+    /* Disable protected crypto peripheral clocks; they will be toggled as needed when the peripheral is in use */
+    aes_ll_enable_bus_clock(false);
+    sha_ll_enable_bus_clock(false);
+    hmac_ll_enable_bus_clock(false);
+    ds_ll_enable_bus_clock(false);
+    ecc_ll_enable_bus_clock(false);
 }
 
 IRAM_ATTR inline void esp_tee_switch_to_ree(uint32_t ree_entry_addr)
 {
-    /* Switch HP_CPU to REE0 mode. */
-    apm_tee_hal_set_master_secure_mode(HP_APM_CTRL, APM_LL_MASTER_HPCORE, APM_LL_SECURE_MODE_REE0);
-
     /* 2nd argument is used as magic value to detect very first M2U switch */
     /* TBD: clean this up and use proper temporary register instead of a1 */
     /* Switch to non-secure world and launch App. */

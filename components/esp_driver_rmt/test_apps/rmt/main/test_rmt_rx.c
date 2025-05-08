@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@
 #include "test_util_rmt_encoders.h"
 #include "test_board.h"
 
-#if CONFIG_RMT_ISR_CACHE_SAFE
+#if CONFIG_RMT_RX_ISR_CACHE_SAFE
 #define TEST_RMT_CALLBACK_ATTR IRAM_ATTR
 #else
 #define TEST_RMT_CALLBACK_ATTR
@@ -208,9 +208,9 @@ TEST_CASE("rmt rx nec with carrier", "[rmt]")
 #if SOC_RMT_SUPPORT_RX_PINGPONG
 #define TEST_RMT_SYMBOLS 10000   // a very long frame, contains 10000 symbols
 
-static void pwm_bit_bang(int gpio_num)
+static void pwm_bit_bang(int gpio_num, int count)
 {
-    for (int i = 0; i < TEST_RMT_SYMBOLS; i++) {
+    for (int i = 0; i < count; i++) {
         gpio_set_level(gpio_num, 1);
         esp_rom_delay_us(50);
         gpio_set_level(gpio_num, 0);
@@ -231,7 +231,7 @@ static bool test_rmt_partial_receive_done(rmt_channel_handle_t channel, const rm
     return high_task_wakeup == pdTRUE;
 }
 
-static void test_rmt_partial_receive(size_t mem_block_symbols, bool with_dma, rmt_clock_source_t clk_src)
+static void test_rmt_partial_receive(size_t mem_block_symbols, int test_symbols_num, bool with_dma, rmt_clock_source_t clk_src)
 {
     uint32_t const test_rx_buffer_symbols = 128; // the user buffer is small, it can't hold all the received symbols
     rmt_symbol_word_t *receive_user_buf = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
@@ -280,11 +280,11 @@ static void test_rmt_partial_receive(size_t mem_block_symbols, bool with_dma, rm
     TEST_ESP_OK(rmt_receive(rx_channel, receive_user_buf, test_rx_buffer_symbols * sizeof(rmt_symbol_word_t), &rx_config));
 
     // simulate input signal by GPIO
-    pwm_bit_bang(TEST_RMT_GPIO_NUM_A);
+    pwm_bit_bang(TEST_RMT_GPIO_NUM_A, test_symbols_num);
 
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(2000)));
     printf("received %zu symbols\r\n", test_user_data.received_symbol_num);
-    TEST_ASSERT_EQUAL(TEST_RMT_SYMBOLS, test_user_data.received_symbol_num);
+    TEST_ASSERT_EQUAL(test_symbols_num, test_user_data.received_symbol_num);
     // verify the received data
     for (int i = 0; i < 10; i++) {
         printf("{%d:%d},{%d:%d}\r\n", receive_user_buf[i].level0, receive_user_buf[i].duration0, receive_user_buf[i].level1, receive_user_buf[i].duration1);
@@ -303,11 +303,19 @@ static void test_rmt_partial_receive(size_t mem_block_symbols, bool with_dma, rm
 
 TEST_CASE("rmt rx long frame partially", "[rmt]")
 {
-    test_rmt_partial_receive(SOC_RMT_MEM_WORDS_PER_CHANNEL, false, RMT_CLK_SRC_DEFAULT);
+    test_rmt_partial_receive(SOC_RMT_MEM_WORDS_PER_CHANNEL, TEST_RMT_SYMBOLS, false, RMT_CLK_SRC_DEFAULT);
 #if SOC_RMT_SUPPORT_DMA
-    test_rmt_partial_receive(256, true, RMT_CLK_SRC_DEFAULT);
+    test_rmt_partial_receive(256, TEST_RMT_SYMBOLS, true, RMT_CLK_SRC_DEFAULT);
 #endif
 }
+
+TEST_CASE("rmt rx boundary conditions", "[rmt]")
+{
+    test_rmt_partial_receive(SOC_RMT_MEM_WORDS_PER_CHANNEL, SOC_RMT_MEM_WORDS_PER_CHANNEL - 1, false, RMT_CLK_SRC_DEFAULT);
+    test_rmt_partial_receive(SOC_RMT_MEM_WORDS_PER_CHANNEL, SOC_RMT_MEM_WORDS_PER_CHANNEL, false, RMT_CLK_SRC_DEFAULT);
+    test_rmt_partial_receive(SOC_RMT_MEM_WORDS_PER_CHANNEL, SOC_RMT_MEM_WORDS_PER_CHANNEL + 1, false, RMT_CLK_SRC_DEFAULT);
+}
+
 #endif // SOC_RMT_SUPPORT_RX_PINGPONG
 
 TEST_RMT_CALLBACK_ATTR

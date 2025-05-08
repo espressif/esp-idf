@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -531,7 +531,7 @@ static inline void i2c_ll_get_rxfifo_cnt(i2c_dev_t *hw, uint32_t *length)
 __attribute__((always_inline))
 static inline void i2c_ll_get_txfifo_len(i2c_dev_t *hw, uint32_t *length)
 {
-    *length = SOC_I2C_FIFO_LEN - hw->status_reg.tx_fifo_cnt;
+    *length = (hw->status_reg.tx_fifo_cnt >= SOC_I2C_FIFO_LEN) ? 0 : (SOC_I2C_FIFO_LEN - hw->status_reg.tx_fifo_cnt);
 }
 
 /**
@@ -703,6 +703,20 @@ static inline bool i2c_ll_master_is_bus_clear_done(i2c_dev_t *hw)
 }
 
 /**
+ * @brief Set the ACK level that the I2C master must send when the Rx FIFO count has reached the threshold value.
+ *        ack_level: 1 (NACK)
+ *        ack_level: 0 (ACK)
+ *
+ * @param  hw Beginning address of the peripheral registers
+ *
+ * @return None
+ */
+static inline void i2c_ll_master_rx_full_ack_level(i2c_dev_t *hw, int ack_level)
+{
+    hw->ctr.rx_full_ack_level = ack_level;
+}
+
+/**
  * @brief Set I2C source clock
  *
  * @param  hw Beginning address of the peripheral registers
@@ -729,36 +743,37 @@ static inline void i2c_ll_enable_controller_clock(i2c_dev_t *hw, bool en)
 }
 
 /**
- * @brief  Init I2C master
+ * @brief Set the I2C bus mode (Master or Slave)
  *
- * @param  hw Beginning address of the peripheral registers
- *
- * @return None
+ * @param hw Pointer to the I2C hardware register structure.
+ * @param mode The desired I2C bus mode (Master or Slave).
  */
-static inline void i2c_ll_master_init(i2c_dev_t *hw)
+static inline void i2c_ll_set_mode(i2c_dev_t *hw, i2c_bus_mode_t mode)
 {
-    typeof(hw->ctr) ctrl_reg;
-    ctrl_reg.val = 0;
-    ctrl_reg.ms_mode = 1;
-    ctrl_reg.sda_force_out = 1;
-    ctrl_reg.scl_force_out = 1;
-    hw->ctr.val = ctrl_reg.val;
+    hw->ctr.ms_mode = (mode == I2C_BUS_MODE_MASTER) ? 1 : 0;
 }
 
 /**
- * @brief  Enable I2C internal open-drain mode
- *         If internal open-drain of the I2C module is disabled, scl and sda gpio should be configured in open-drain mode.
- *         Otherwise it is not needed.
+ * @brief Enable or disable open-drain mode for I2C pins
  *
- * @param  hw Beginning address of the peripheral registers
- * @param  internal_od_ena Set true to enable internal open-drain, otherwise, set it false.
- *
- * @return None
+ * @param hw Pointer to the I2C hardware register structure.
+ * @param enable_od Boolean flag to enable or disable open-drain mode:
  */
-static inline void i2c_ll_internal_od_enable(i2c_dev_t *hw, bool internal_od_ena)
+static inline void i2c_ll_enable_pins_open_drain(i2c_dev_t *hw, bool enable_od)
 {
-    hw->ctr.sda_force_out = (internal_od_ena == false);
-    hw->ctr.scl_force_out = (internal_od_ena == false);
+    hw->ctr.sda_force_out = enable_od;
+    hw->ctr.scl_force_out = enable_od;
+}
+
+/**
+ * @brief Enable or disable arbitration for I2C communication.
+ *
+ * @param hw Pointer to the I2C hardware instance.
+ * @param enable_arbi Boolean flag to enable (true) or disable (false) arbitration.
+ */
+static inline void i2c_ll_enable_arbitration(i2c_dev_t *hw, bool enable_arbi)
+{
+    hw->ctr.arbitration_en = enable_arbi;
 }
 
 /**
@@ -1098,7 +1113,7 @@ static inline void i2c_ll_master_disable_rx_it(i2c_dev_t *hw)
 }
 
 /**
- * @brief Enable I2C slave TX interrupt
+ * @brief  Enable I2C slave TX interrupt
  *
  * @param  hw Beginning address of the peripheral registers
  *

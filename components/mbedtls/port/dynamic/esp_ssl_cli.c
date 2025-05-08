@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,11 @@
 
 int __real_mbedtls_ssl_handshake_client_step(mbedtls_ssl_context *ssl);
 int __real_mbedtls_ssl_write_client_hello(mbedtls_ssl_context *ssl);
+int __real_mbedtls_ssl_tls13_handshake_client_step(mbedtls_ssl_context *ssl);
 
 int __wrap_mbedtls_ssl_handshake_client_step(mbedtls_ssl_context *ssl);
 int __wrap_mbedtls_ssl_write_client_hello(mbedtls_ssl_context *ssl);
+int __wrap_mbedtls_ssl_tls13_handshake_client_step(mbedtls_ssl_context *ssl);
 
 static const char *TAG = "SSL client";
 
@@ -52,6 +54,15 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
 
 
         case MBEDTLS_SSL_SERVER_HELLO:
+            if (add) {
+                CHECK_OK(esp_mbedtls_add_rx_buffer(ssl));
+            } else {
+                if (!ssl->MBEDTLS_PRIVATE(keep_current_message)) {
+                    CHECK_OK(esp_mbedtls_free_rx_buffer(ssl));
+                }
+            }
+            break;
+        case MBEDTLS_SSL_ENCRYPTED_EXTENSIONS:
             if (add) {
                 CHECK_OK(esp_mbedtls_add_rx_buffer(ssl));
             } else {
@@ -117,6 +128,13 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
                 }
 
                 buffer_len = MAX(buffer_len, MBEDTLS_SSL_OUT_BUFFER_LEN);
+
+                CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, buffer_len));
+            }
+            break;
+        case MBEDTLS_SSL_CLIENT_CERTIFICATE_VERIFY:
+            if (add) {
+                size_t buffer_len = MBEDTLS_SSL_OUT_BUFFER_LEN;
 
                 CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, buffer_len));
             }
@@ -191,6 +209,39 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
             }
 #endif
             break;
+#if defined(MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE)
+        case MBEDTLS_SSL_CLIENT_CCS_BEFORE_2ND_CLIENT_HELLO:
+            if (add) {
+                CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, MBEDTLS_SSL_OUT_BUFFER_LEN));
+            }
+            break;
+        case MBEDTLS_SSL_CLIENT_CCS_AFTER_SERVER_FINISHED:
+            if (add) {
+                CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, MBEDTLS_SSL_OUT_BUFFER_LEN));
+            }
+            break;
+#if defined(MBEDTLS_SSL_EARLY_DATA)
+        case MBEDTLS_SSL_CLIENT_CCS_AFTER_CLIENT_HELLO:
+            if (add) {
+                CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, MBEDTLS_SSL_OUT_BUFFER_LEN));
+            }
+            break;
+        case MBEDTLS_SSL_END_OF_EARLY_DATA:
+            size_t buffer_len = MBEDTLS_SSL_OUT_BUFFER_LEN;
+
+            CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, buffer_len));
+            break;
+#endif /* MBEDTLS_SSL_EARLY_DATA */
+#endif /* MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE */
+#if defined(MBEDTLS_SSL_SESSION_TICKETS)
+        case MBEDTLS_SSL_TLS1_3_NEW_SESSION_TICKET:
+            if (add) {
+                CHECK_OK(esp_mbedtls_add_rx_buffer(ssl));
+            } else {
+                CHECK_OK(esp_mbedtls_free_rx_buffer(ssl));
+            }
+            break;
+#endif /* MBEDTLS_SSL_SESSION_TICKETS */
         default:
             break;
     }
@@ -203,6 +254,17 @@ int __wrap_mbedtls_ssl_handshake_client_step(mbedtls_ssl_context *ssl)
     CHECK_OK(manage_resource(ssl, true));
 
     CHECK_OK(__real_mbedtls_ssl_handshake_client_step(ssl));
+
+    CHECK_OK(manage_resource(ssl, false));
+
+    return 0;
+}
+
+int __wrap_mbedtls_ssl_tls13_handshake_client_step(mbedtls_ssl_context *ssl)
+{
+    CHECK_OK(manage_resource(ssl, true));
+
+    CHECK_OK(__real_mbedtls_ssl_tls13_handshake_client_step(ssl));
 
     CHECK_OK(manage_resource(ssl, false));
 

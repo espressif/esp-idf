@@ -145,4 +145,8 @@ menu "Example Configuration"
         default 26 if EXAMPLE_MIN_CPU_FREQ_26M
         default 13 if EXAMPLE_MIN_CPU_FREQ_13M
 
+    config EXAMPLE_POWER_SAVE_RESAMPLE
+        bool "Resample beacon when beacon loss is unstable"
+        depends on ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+
 endmenu

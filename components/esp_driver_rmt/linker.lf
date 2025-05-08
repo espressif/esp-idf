@@ -1,13 +1,32 @@
 [mapping:rmt_driver]
 archive: libesp_driver_rmt.a
 entries:
-    if RMT_ISR_HANDLER_IN_IRAM = y:
+    if RMT_TX_ISR_HANDLER_IN_IRAM = y:
         rmt_tx: rmt_tx_default_isr (noflash)
-        rmt_rx: rmt_rx_default_isr (noflash)
+        rmt_tx: rmt_isr_handle_tx_done (noflash)
+        rmt_tx: rmt_isr_handle_tx_threshold (noflash)
+        rmt_tx: rmt_tx_do_transaction (noflash)
+        rmt_tx: rmt_encode_check_result (noflash)
+        rmt_tx: rmt_tx_mark_eof (noflash)
+
+        if SOC_RMT_SUPPORT_TX_LOOP_COUNT = y:
+            rmt_tx: rmt_isr_handle_tx_loop_end (noflash)
+
         if SOC_RMT_SUPPORT_DMA = y:
             rmt_tx: rmt_dma_tx_eof_cb (noflash)
+
+    if RMT_ENCODER_FUNC_IN_IRAM = y:
+        rmt_encoder: rmt_encoder_reset (noflash)
+
+    if RMT_RX_ISR_HANDLER_IN_IRAM = y:
+        rmt_rx: rmt_rx_default_isr (noflash)
+        rmt_rx: rmt_isr_handle_rx_done (noflash)
+
+        if SOC_RMT_SUPPORT_RX_PINGPONG = y:
+            rmt_rx: rmt_isr_handle_rx_threshold (noflash)
+
+        if SOC_RMT_SUPPORT_DMA = y:
             rmt_rx: rmt_dma_rx_one_block_cb (noflash)
+
     if RMT_RECV_FUNC_IN_IRAM = y:
         rmt_rx: rmt_receive (noflash)
-        if SOC_RMT_SUPPORT_DMA = y:
-            rmt_rx: rmt_rx_mount_dma_buffer (noflash)

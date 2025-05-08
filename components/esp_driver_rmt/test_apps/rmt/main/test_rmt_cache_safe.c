@@ -23,7 +23,7 @@ static void IRAM_ATTR test_delay_post_cache_disable(void *args)
     esp_rom_delay_us(10000);
 }
 
-static void test_rmt_tx_iram_safe(size_t mem_block_symbols, bool with_dma)
+static void test_rmt_tx_cache_safe(size_t mem_block_symbols, bool with_dma)
 {
     rmt_tx_channel_config_t tx_channel_cfg = {
         .mem_block_symbols = mem_block_symbols,
@@ -81,9 +81,9 @@ static void test_rmt_tx_iram_safe(size_t mem_block_symbols, bool with_dma)
 
 TEST_CASE("rmt tx works with cache disabled", "[rmt]")
 {
-    test_rmt_tx_iram_safe(SOC_RMT_MEM_WORDS_PER_CHANNEL, false);
+    test_rmt_tx_cache_safe(SOC_RMT_MEM_WORDS_PER_CHANNEL, false);
 #if SOC_RMT_SUPPORT_DMA
-    test_rmt_tx_iram_safe(1024, true);
+    test_rmt_tx_cache_safe(1024, true);
 #endif
 }
 
@@ -128,7 +128,7 @@ static bool test_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx
     return high_task_wakeup == pdTRUE;
 }
 
-static void test_rmt_rx_iram_safe(size_t mem_block_symbols, bool with_dma, rmt_clock_source_t clk_src)
+static void test_rmt_rx_cache_safe(size_t mem_block_symbols, bool with_dma, rmt_clock_source_t clk_src)
 {
     uint32_t const test_rx_buffer_symbols = 128;
     rmt_symbol_word_t *remote_codes = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
@@ -192,8 +192,8 @@ static void test_rmt_rx_iram_safe(size_t mem_block_symbols, bool with_dma, rmt_c
 
 TEST_CASE("rmt rx works with cache disabled", "[rmt]")
 {
-    test_rmt_rx_iram_safe(SOC_RMT_MEM_WORDS_PER_CHANNEL, false, RMT_CLK_SRC_DEFAULT);
+    test_rmt_rx_cache_safe(SOC_RMT_MEM_WORDS_PER_CHANNEL, false, RMT_CLK_SRC_DEFAULT);
 #if SOC_RMT_SUPPORT_DMA
-    test_rmt_rx_iram_safe(128, true, RMT_CLK_SRC_DEFAULT);
+    test_rmt_rx_cache_safe(128, true, RMT_CLK_SRC_DEFAULT);
 #endif
 }

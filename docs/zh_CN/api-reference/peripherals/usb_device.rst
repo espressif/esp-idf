@@ -266,6 +266,88 @@ USB 大容量存储设备 (MSC)
     };
     tinyusb_msc_storage_init_sdmmc(&config_sdmmc);
 
+MSC 性能优化
+^^^^^^^^^^^^^^
+
+**single-buffer 方案**
+
+single-buffer 方案通过使用专用 buffer 临时存储接收到的写入数据，而不是在回调中立即处理，从而提升性能。
+
+- **可配置的 buffer 大小**： 通过 ``CONFIG_TINYUSB_MSC_BUFSIZE`` 参数设置 buffer 大小，用户可以根据实际需要，灵活调整性能与存储占用的平衡点。
+
+该方案确保了 USB 传输的效率，同时避免因存储操作可能带来的延迟。
+
+**USB MSC 驱动器性能**
+
+.. only:: esp32s3
+
+    .. list-table::
+        :header-rows: 1
+        :widths: 20 20 20
+
+        * - FIFO 大小
+          - 读取速度
+          - 写入速度
+
+        * - 512 B
+          - 0.566 MB/s
+          - 0.236 MB/s
+
+        * - 8192 B
+          - 0.925 MB/s
+          - 0.928 MB/s
+
+.. only:: esp32p4
+
+    .. list-table::
+        :header-rows: 1
+        :widths: 20 20 20
+
+        * - FIFO 大小
+          - 读取速度
+          - 写入速度
+
+        * - 512 B
+          - 1.174 MB/s
+          - 0.238 MB/s
+
+        * - 8192 B
+          - 4.744 MB/s
+          - 2.157 MB/s
+
+        * - 32768 B
+          - 5.998 MB/s
+          - 4.485 MB/s
+
+.. only:: esp32s2
+
+    .. note::
+
+        ESP32-S2 在 MSC 设备模式下不支持 SD 卡功能。
+
+    **SPI flash 性能：**
+
+    .. list-table::
+        :header-rows: 1
+        :widths: 20 20
+
+        * - FIFO 大小
+          - 写入速度
+
+        * - 512 B
+          - 5.59 KB/s
+
+        * - 8192 B
+          - 21.54 KB/s
+
+性能限制：
+
+- **内部 SPI flash 性能** 受架构限制影响。程序执行和存储访问共享同一 flash 芯片，导致写入 flash 时必须暂停程序执行，会显著影响性能。
+- **内部 SPI flash 主要适用于演示场景**。在需要更高性能的实际应用中，在支持的情况下使用 **外部存储设备**，如 SD 卡或外部 SPI flash 芯片。
+
+.. only:: esp32s3 or esp32p4
+
+    SD 卡不受此限制影响，因此能获得更高的性能提升。
 
 应用示例
 --------------------

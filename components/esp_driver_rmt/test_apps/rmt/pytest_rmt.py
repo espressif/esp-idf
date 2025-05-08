@@ -1,16 +1,10 @@
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32c3
-@pytest.mark.esp32c5
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -20,11 +14,13 @@ from pytest_embedded import Dut
     ],
     indirect=True,
 )
+@idf_parametrize(
+    'target', ['esp32', 'esp32s2', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4'], indirect=['target']
+)
 def test_rmt(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32s3
 @pytest.mark.octal_psram
 @pytest.mark.parametrize(
     'config',
@@ -34,5 +30,6 @@ def test_rmt(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32s3'], indirect=['target'])
 def test_rmt_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases()

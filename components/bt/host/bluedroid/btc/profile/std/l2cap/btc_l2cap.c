@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,7 +72,6 @@ typedef struct {
     uint8_t service_uuid[16];
 } l2cap_slot_t;
 
-
 typedef struct {
     l2cap_slot_t *l2cap_slots[BTA_JV_MAX_L2C_CONN + 1];
     uint32_t l2cap_slot_id;
@@ -81,7 +80,12 @@ typedef struct {
     esp_vfs_id_t l2cap_vfs_id;
 } l2cap_local_param_t;
 
+#if L2CAP_DYNAMIC_MEMORY == FALSE
 static l2cap_local_param_t l2cap_local_param;
+#else
+static l2cap_local_param_t *l2cap_local_param_ptr;
+#define l2cap_local_param (*l2cap_local_param_ptr)
+#endif
 
 /* L2CAP default options for OBEX connections */
 static const tL2CAP_FCR_OPTS obex_l2c_fcr_opts_def =
@@ -103,12 +107,14 @@ static const tL2CAP_ERTM_INFO obex_l2c_etm_opt =
     OBX_FCR_TX_POOL_ID
 };
 
-
 #if L2CAP_DYNAMIC_MEMORY == FALSE
 #define is_l2cap_init() (l2cap_local_param.l2cap_slot_mutex != NULL)
 #else
 #define is_l2cap_init() (&l2cap_local_param != NULL && l2cap_local_param.l2cap_slot_mutex != NULL)
 #endif
+
+static void btc_l2cap_vfs_register(void);
+static void btc_l2cap_vfs_unregister(void);
 
 static void l2cap_osi_free(void *p)
 {
@@ -355,12 +361,20 @@ static void *btc_l2cap_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
         // to do
         break;
     case BTA_JV_FREE_SCN_EVT:
-        slot = l2cap_find_slot_by_id(id);
-        if (slot) {
-            l2cap_free_slot(slot);
-        } else {
-            BTC_TRACE_ERROR("%s unable to find L2CAP slot, event:%d!", __func__, event);
-            p_data->free_scn.status = ESP_BT_L2CAP_NO_CONNECTION;
+        if (user_data) {
+            id = ((tBTA_JV_FREE_SCN_USER_DATA *)user_data)->slot_id;
+            slot = l2cap_find_slot_by_id(id);
+            if (slot) {
+                if (((tBTA_JV_FREE_SCN_USER_DATA *)user_data)->server_status != BTA_JV_SERVER_CONNECTED) {
+                    l2cap_free_slot(slot);
+                } else {
+                    // Currently running in btu task, free in btc task. It will be free when handling the disconnect event.
+                }
+            } else {
+                BTC_TRACE_ERROR("%s unable to find L2CAP slot, event:%d!", __func__, event);
+                p_data->free_scn.status = ESP_BT_L2CAP_NO_CONNECTION;
+            }
+            osi_free(user_data);
         }
         break;
     default:
@@ -458,6 +472,7 @@ static void btc_l2cap_init(void)
 static void btc_l2cap_uninit(void)
 {
     esp_bt_l2cap_status_t ret = ESP_BT_L2CAP_SUCCESS;
+    tBTA_JV_SERVER_STATUS server_status = BTA_JV_SERVER_RUNNING;
 
     do {
         if (!is_l2cap_init()) {
@@ -468,7 +483,8 @@ static void btc_l2cap_uninit(void)
         osi_mutex_lock(&l2cap_local_param.l2cap_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
         // first, remove all connection
         for (size_t i = 1; i <= BTA_JV_MAX_L2C_CONN; i++) {
-            if (l2cap_local_param.l2cap_slots[i] != NULL && !l2cap_local_param.l2cap_slots[i]->is_server) {
+            if (l2cap_local_param.l2cap_slots[i] != NULL && l2cap_local_param.l2cap_slots[i]->connected) {
+                server_status = BTA_JV_SERVER_CONNECTED;
                 BTA_JvL2capClose(l2cap_local_param.l2cap_slots[i]->handle, (tBTA_JV_L2CAP_CBACK *)btc_l2cap_inter_cb,
                                  (void *)l2cap_local_param.l2cap_slots[i]->id);
             }
@@ -481,8 +497,17 @@ static void btc_l2cap_uninit(void)
                                            (void *)l2cap_local_param.l2cap_slots[i]->id);
                 }
 
+                tBTA_JV_FREE_SCN_USER_DATA *user_data = osi_malloc(sizeof(tBTA_JV_FREE_SCN_USER_DATA));
+                if (user_data) {
+                    user_data->server_status = server_status;
+                    user_data->slot_id = l2cap_local_param.l2cap_slots[i]->id;
+                } else {
+                    BTC_TRACE_ERROR("%s unable to malloc user data!", __func__);
+                    assert(0);
+                }
+
                 BTA_JvFreeChannel(l2cap_local_param.l2cap_slots[i]->psm, BTA_JV_CONN_TYPE_L2CAP,
-                                      (tBTA_JV_RFCOMM_CBACK *)btc_l2cap_inter_cb, (void *)l2cap_local_param.l2cap_slots[i]->id);
+                                      (tBTA_JV_RFCOMM_CBACK *)btc_l2cap_inter_cb, (void *)user_data);
             }
         }
         BTA_JvDisable((tBTA_JV_L2CAP_CBACK *)btc_l2cap_inter_cb);
@@ -547,7 +572,8 @@ static void btc_l2cap_stop_srv(btc_l2cap_args_t *arg)
     esp_bt_l2cap_status_t ret = ESP_BT_L2CAP_SUCCESS;
     bool is_remove_all = false;
     uint8_t i, j, srv_cnt = 0;
-    uint8_t *srv_psm_arr = osi_malloc(BTA_JV_MAX_L2C_CONN);
+    uint16_t *srv_psm_arr = osi_malloc(BTA_JV_MAX_L2C_CONN);
+    tBTA_JV_SERVER_STATUS server_status = BTA_JV_SERVER_RUNNING;
 
     if (arg->stop_srv.psm == BTC_L2CAP_INVALID_PSM) {
         is_remove_all = true;
@@ -594,6 +620,7 @@ static void btc_l2cap_stop_srv(btc_l2cap_args_t *arg)
                 if (l2cap_local_param.l2cap_slots[i] != NULL && l2cap_local_param.l2cap_slots[i]->connected &&
                     l2cap_local_param.l2cap_slots[i]->handle != 0xffff &&
                     l2cap_local_param.l2cap_slots[i]->psm == srv_psm_arr[j]) {
+                    server_status = BTA_JV_SERVER_CONNECTED;
                     BTA_JvL2capClose(l2cap_local_param.l2cap_slots[i]->handle, (tBTA_JV_L2CAP_CBACK *)btc_l2cap_inter_cb,
                                      (void *)l2cap_local_param.l2cap_slots[i]->id);
                 }
@@ -606,14 +633,19 @@ static void btc_l2cap_stop_srv(btc_l2cap_args_t *arg)
                 if (l2cap_local_param.l2cap_slots[i] != NULL && l2cap_local_param.l2cap_slots[i]->is_server &&
                     l2cap_local_param.l2cap_slots[i]->handle != 0xffff &&
                     l2cap_local_param.l2cap_slots[i]->psm == srv_psm_arr[j]) {
+                    BTA_JvL2capStopServer(l2cap_local_param.l2cap_slots[i]->psm,
+                                        (void *)l2cap_local_param.l2cap_slots[i]->id);
 
-                    if (l2cap_local_param.l2cap_slots[i]->handle > 0) {
-                        BTA_JvL2capStopServer(l2cap_local_param.l2cap_slots[i]->psm,
-                                           (void *)l2cap_local_param.l2cap_slots[i]->id);
+                    tBTA_JV_FREE_SCN_USER_DATA *user_data = osi_malloc(sizeof(tBTA_JV_FREE_SCN_USER_DATA));
+                    if (user_data) {
+                        user_data->server_status = server_status;
+                        user_data->slot_id = l2cap_local_param.l2cap_slots[i]->id;
+                    } else {
+                        BTC_TRACE_ERROR("%s unable to malloc user data!", __func__);
+                        assert(0);
                     }
-
                     BTA_JvFreeChannel(l2cap_local_param.l2cap_slots[i]->psm, BTA_JV_CONN_TYPE_L2CAP,
-                                      (tBTA_JV_RFCOMM_CBACK *)btc_l2cap_inter_cb, (void *)l2cap_local_param.l2cap_slots[i]->id);
+                                      (tBTA_JV_RFCOMM_CBACK *)btc_l2cap_inter_cb, (void *)user_data);
                 }
             }
         }
@@ -755,6 +787,12 @@ void btc_l2cap_call_handler(btc_msg_t *msg)
         break;
     case BTC_L2CAP_ACT_STOP_SRV:
         btc_l2cap_stop_srv(arg);
+        break;
+    case BTC_L2CAP_ACT_VFS_REGISTER:
+        btc_l2cap_vfs_register();
+        break;
+    case BTC_L2CAP_ACT_VFS_UNREGISTER:
+        btc_l2cap_vfs_unregister();
         break;
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
@@ -1199,14 +1237,14 @@ static ssize_t l2cap_vfs_read(int fd, void * dst, size_t size)
     return item_size;
 }
 
-esp_err_t btc_l2cap_vfs_register(void)
+static void btc_l2cap_vfs_register(void)
 {
-    esp_err_t ret = ESP_OK;
+    esp_bt_l2cap_status_t ret = ESP_BT_L2CAP_SUCCESS;
 
     do {
         if (!is_l2cap_init()) {
             BTC_TRACE_ERROR("%s L2CAP have not been init\n", __func__);
-            ret = ESP_FAIL;
+            ret = ESP_BT_L2CAP_NEED_INIT;
             break;
         }
 
@@ -1223,33 +1261,54 @@ esp_err_t btc_l2cap_vfs_register(void)
         // No FD range is registered here: l2cap_vfs_id is used to register/unregister
         // file descriptors
         if (esp_vfs_register_with_id(&vfs, NULL, &l2cap_local_param.l2cap_vfs_id) != ESP_OK) {
-            ret = ESP_FAIL;
+            ret = ESP_BT_L2CAP_FAILURE;
             break;
         }
     } while (0);
 
-    return ret;
+    esp_bt_l2cap_cb_param_t param = {0};
+    param.vfs_register.status = ret;
+    btc_l2cap_cb_to_app(ESP_BT_L2CAP_VFS_REGISTER_EVT, &param);
 }
 
-esp_err_t btc_l2cap_vfs_unregister(void)
+static void btc_l2cap_vfs_unregister(void)
 {
-    esp_err_t ret = ESP_OK;
+    esp_bt_l2cap_status_t ret = ESP_BT_L2CAP_SUCCESS;
+
     do {
         if (!is_l2cap_init()) {
             BTC_TRACE_ERROR("%s L2CAP have not been init\n", __func__);
-            ret = ESP_FAIL;
+            ret = ESP_BT_L2CAP_NEED_INIT;
             break;
         }
 
         if (l2cap_local_param.l2cap_vfs_id != -1) {
             if (esp_vfs_unregister_with_id(l2cap_local_param.l2cap_vfs_id) != ESP_OK) {
-                ret = ESP_FAIL;
+                ret = ESP_BT_L2CAP_FAILURE;
             }
         }
         l2cap_local_param.l2cap_vfs_id = -1;
     } while (0);
 
-    return ret;
+    esp_bt_l2cap_cb_param_t param = {0};
+    param.vfs_unregister.status = ret;
+    btc_l2cap_cb_to_app(ESP_BT_L2CAP_VFS_UNREGISTER_EVT, &param);
+}
+
+void btc_l2cap_get_protocol_status(esp_bt_l2cap_protocol_status_t *param)
+{
+    if (is_l2cap_init()) {
+        param->l2cap_inited = true;
+        osi_mutex_lock(&l2cap_local_param.l2cap_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
+        for (size_t i = 1; i <= BTA_JV_MAX_L2C_CONN; i++) {
+            if (l2cap_local_param.l2cap_slots[i] != NULL && l2cap_local_param.l2cap_slots[i]->connected) {
+                param->conn_num++;
+            }
+        }
+        osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
+    } else {
+        param->l2cap_inited = false;
+    }
 }
 
 #endif ///defined BTC_L2CAP_INCLUDED && BTC_L2CAP_INCLUDED == TRUE

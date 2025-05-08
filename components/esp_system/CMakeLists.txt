@@ -31,6 +31,7 @@ else()
     list(APPEND srcs "crosscore_int.c"
             "esp_ipc.c"
             "esp_err.c"
+            "esp_system_console.c"
             "freertos_hooks.c"
             "int_wdt.c"
             "panic.c"

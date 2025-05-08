@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,6 +96,7 @@ typedef struct {
                                              */
 } i2s_chan_info_t;
 
+/************************************************** Basic APIs ********************************************************/
 /**
  * @brief Allocate new I2S channel(s)
  * @note  The new created I2S channel handle will be REGISTERED state after it is allocated successfully.
@@ -175,28 +176,6 @@ esp_err_t i2s_channel_enable(i2s_chan_handle_t handle);
 esp_err_t i2s_channel_disable(i2s_chan_handle_t handle);
 
 /**
- * @brief Preload the data into TX DMA buffer
- * @note  Only allowed to be called when the channel state is READY, (i.e., channel has been initialized, but not started)
- * @note  As the initial DMA buffer has no data inside, it will transmit the empty buffer after enabled the channel,
- *        this function is used to preload the data into the DMA buffer, so that the valid data can be transmitted immediately
- *        after the channel is enabled.
- * @note  This function can be called multiple times before enabling the channel, the buffer that loaded later will be concatenated
- *        behind the former loaded buffer. But when all the DMA buffers have been loaded, no more data can be preload then, please
- *        check the `bytes_loaded` parameter to see how many bytes are loaded successfully, when the `bytes_loaded` is smaller than
- *        the `size`, it means the DMA buffers are full.
- *
- * @param[in]   tx_handle   I2S TX channel handler
- * @param[in]   src         The pointer of the source buffer to be loaded
- * @param[in]   size        The source buffer size
- * @param[out]  bytes_loaded    The bytes that successfully been loaded into the TX DMA buffer
- * @return
- *      - ESP_OK    Load data successful
- *      - ESP_ERR_INVALID_ARG   NULL pointer or not TX direction
- *      - ESP_ERR_INVALID_STATE This channel has not stated
- */
-esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src, size_t size, size_t *bytes_loaded);
-
-/**
  * @brief I2S write data
  * @note  Only allowed to be called when the channel state is RUNNING, (i.e., TX channel has been started and is not writing now)
  *        but the RUNNING only stands for the software state, it doesn't mean there is no the signal transporting on line.
@@ -249,6 +228,48 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
  *      - ESP_ERR_INVALID_STATE Set event callbacks failed because the current channel state is not REGISTERED or READY
  */
 esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2s_event_callbacks_t *callbacks, void *user_data);
+
+/************************************************ Advanced APIs *******************************************************/
+/**
+ * @brief Preload the data into TX DMA buffer
+ * @note  Only allowed to be called when the channel state is READY, (i.e., channel has been initialized, but not started)
+ * @note  As the initial DMA buffer has no data inside, it will transmit the empty buffer after enabled the channel,
+ *        this function is used to preload the data into the DMA buffer, so that the valid data can be transmitted immediately
+ *        after the channel is enabled.
+ * @note  This function can be called multiple times before enabling the channel, the buffer that loaded later will be concatenated
+ *        behind the former loaded buffer. But when all the DMA buffers have been loaded, no more data can be preload then, please
+ *        check the `bytes_loaded` parameter to see how many bytes are loaded successfully, when the `bytes_loaded` is smaller than
+ *        the `size`, it means the DMA buffers are full.
+ *
+ * @param[in]   tx_handle   I2S TX channel handler
+ * @param[in]   src         The pointer of the source buffer to be loaded
+ * @param[in]   size        The source buffer size
+ * @param[out]  bytes_loaded    The bytes that successfully been loaded into the TX DMA buffer
+ * @return
+ *      - ESP_OK    Load data successful
+ *      - ESP_FAIL  Failed to push the message queue
+ *      - ESP_ERR_INVALID_ARG   NULL pointer or not TX direction
+ *      - ESP_ERR_INVALID_STATE This channel has not stated
+ */
+esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src, size_t size, size_t *bytes_loaded);
+
+/**
+ * @brief Tune the I2S clock rate
+ * @note  Only allowed to be called when the channel state is READY, (i.e., channel has been initialized, but not started)
+ * @note  This function is mainly to fine-tuning the mclk to match the speed of producer and consumer.
+ *        So that to avoid exsaust of the memory to store the data from producer.
+ *        Please take care the how different the frequency error can be tolerant by your codec,
+ *        otherwise the codec might stop working if the frequency changes a lot.
+ *
+ * @param[in]  handle       I2S channel handler
+ * @param[in]  tune_cfg     The clock tuning configuration, can be NULL if only need the current clock result
+ * @param[out] tune_info    The clock tuning information, can be NULL if not needed
+ * @return
+ *      - ESP_OK                 Tune the clock successfully
+ *      - ESP_ERR_INVALID_ARG    Tune the clock failed because of the invalid argument like NULL pointer or out of range
+ *      - ESP_ERR_NOT_SUPPORTED  Tune the clock failed because this function does not support to tune the external clock source
+ */
+esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_config_t *tune_cfg, i2s_tuning_info_t *tune_info);
 
 #ifdef __cplusplus
 }

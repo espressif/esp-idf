@@ -31,6 +31,10 @@ config SOC_GDMA_SUPPORTED
     bool
     default y
 
+config SOC_UHCI_SUPPORTED
+    bool
+    default y
+
 config SOC_AHB_GDMA_SUPPORTED
     bool
     default y
@@ -847,6 +851,10 @@ config SOC_RTCIO_WAKE_SUPPORTED
     bool
     default y
 
+config SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    bool
+    default y
+
 config SOC_SDM_GROUPS
     bool
     default y
@@ -1007,6 +1015,14 @@ config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 4
 
+config SOC_LP_TIMER_BIT_WIDTH_LO
+    int
+    default 32
+
+config SOC_LP_TIMER_BIT_WIDTH_HI
+    int
+    default 16
+
 config SOC_TOUCH_SENSOR_VERSION
     int
     default 2
@@ -1014,6 +1030,14 @@ config SOC_TOUCH_SENSOR_VERSION
 config SOC_TOUCH_SENSOR_NUM
     int
     default 15
+
+config SOC_TOUCH_MIN_CHAN_ID
+    bool
+    default y
+
+config SOC_TOUCH_MAX_CHAN_ID
+    int
+    default 14
 
 config SOC_TOUCH_SUPPORT_BENCHMARK
     bool
@@ -1048,6 +1072,10 @@ config SOC_TOUCH_SAMPLE_CFG_NUM
     default 1
 
 config SOC_TWAI_CONTROLLER_NUM
+    int
+    default 1
+
+config SOC_TWAI_MASK_FILTER_NUM
     int
     default 1
 
@@ -1106,6 +1134,10 @@ config SOC_UART_SUPPORT_XTAL_CLK
 config SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
     bool
     default y
+
+config SOC_UHCI_NUM
+    int
+    default 1
 
 config SOC_USB_OTG_PERIPH_NUM
     int
@@ -1383,7 +1415,7 @@ config SOC_SPI_MEM_SUPPORT_SW_SUSPEND
     bool
     default y
 
-config SOC_SPI_MEM_SUPPORT_OPI_MODE
+config SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     bool
     default y
 

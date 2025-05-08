@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,7 +48,7 @@ static IRAM_ATTR esp_err_t end(void *arg)
     return ESP_OK;
 }
 
-static IRAM_ATTR esp_err_t delay_us(void *arg, uint32_t us)
+static esp_err_t delay_us(void *arg, uint32_t us)
 {
     esp_rom_delay_us(us);
     return ESP_OK;
@@ -56,7 +56,7 @@ static IRAM_ATTR esp_err_t delay_us(void *arg, uint32_t us)
 
 // Currently when the os is not up yet, the caller is supposed to call esp_flash APIs with proper
 // buffers.
-IRAM_ATTR void* get_temp_buffer_not_supported(void* arg, size_t reqest_size, size_t* out_size)
+void* get_temp_buffer_not_supported(void* arg, size_t reqest_size, size_t* out_size)
 {
     return NULL;
 }
@@ -72,7 +72,7 @@ const DRAM_ATTR esp_flash_os_functions_t esp_flash_noos_functions = {
     .yield = NULL,
 };
 
-esp_err_t IRAM_ATTR esp_flash_app_disable_os_functions(esp_flash_t* chip)
+esp_err_t esp_flash_app_disable_os_functions(esp_flash_t* chip)
 {
     chip->os_func = &esp_flash_noos_functions;
 

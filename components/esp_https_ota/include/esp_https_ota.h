@@ -29,6 +29,7 @@ typedef enum {
     ESP_HTTPS_OTA_CONNECTED,                /*!< Connected to server */
     ESP_HTTPS_OTA_GET_IMG_DESC,             /*!< Read app/bootloader description from image header */
     ESP_HTTPS_OTA_VERIFY_CHIP_ID,           /*!< Verify chip id of new image */
+    ESP_HTTPS_OTA_VERIFY_CHIP_REVISION,     /*!< Verify chip revision of new image */
     ESP_HTTPS_OTA_DECRYPT_CB,               /*!< Callback to decrypt function */
     ESP_HTTPS_OTA_WRITE_FLASH,              /*!< Flash write operation */
     ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION,    /*!< Boot partition update after successful ota update */

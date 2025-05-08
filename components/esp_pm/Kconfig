@@ -1,4 +1,14 @@
 menu "Power Management"
+
+    config PM_SLEEP_FUNC_IN_IRAM
+        bool "Place Power Management module functions in IRAM" if IDF_TARGET_ESP32C2
+        default y
+        select PM_SLP_IRAM_OPT if SOC_LIGHT_SLEEP_SUPPORTED
+        select PM_RTOS_IDLE_OPT if FREERTOS_USE_TICKLESS_IDLE
+        select ESP_PERIPH_CTRL_FUNC_IN_IRAM
+        select ESP_REGI2C_CTRL_FUNC_IN_IRAM
+
+
     config PM_ENABLE
         bool "Support for power management"
         # SMP FreeRTOS currently does not support power management IDF-4997
@@ -50,6 +60,7 @@ menu "Power Management"
     config PM_SLP_IRAM_OPT
         bool "Put lightsleep related codes in internal RAM"
         depends on SOC_LIGHT_SLEEP_SUPPORTED
+        select ESP_TIMER_IN_IRAM
         help
             If enabled, about 2.1KB of lightsleep related source code would be in IRAM and chip would sleep
             longer for 310us at 160MHz CPU frequency most each time.
@@ -146,12 +157,17 @@ menu "Power Management"
         select PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP if !SOC_CPU_IN_TOP_DOMAIN
         default n #TODO: enable by default if periph init/deinit management supported (WIFI-5252)
         help
-            If enabled, digital peripherals will be powered down in light sleep, it will reduce sleep
-            current consumption by about 100 uA. Chip will save/restore register context at sleep/wake
-            time to keep the system running. Enabling this option will increase static RAM and heap usage,
-            the actual cost depends on the peripherals you have initialized. In order to save/restore the
-            context of the necessary hardware for FreeRTOS to run, it will need at least 4.55 KB free heap
-            at sleep time. Otherwise sleep will not power down the peripherals.
+            If enabled, digital peripherals will try to powered down in light sleep, then all related peripherals will
+            not be available during sleep, including wake-up sources from the peripherals (For detailed availability
+            information, see the note of the corresponding wakeup source enable function).
+            The chip will automatically save/restore register context during sleep/wakeup to make the upper layer
+            user unaware of the peripheral powerdown during sleep. Enabling this option will increase static RAM and
+            heap usage but will also significantly reduce power.
+            consumption during lightsleep, the actual memory cost depends on the peripherals you have initialized,
+            for specific power consumption data in this mode, please refer to Electrical Characteristics section
+            in the chip datasheet.
+            (In order to save/restore the context of the necessary hardware for FreeRTOS to run, it will need
+            at least 4.55 KB free heap at sleep time. Otherwise sleep will not power down the peripherals.)
 
             Note1: Please use this option with caution, the current IDF does not support the retention of
             all peripherals. When the digital peripherals are powered off and a sleep and wake-up is completed,
@@ -165,6 +181,14 @@ menu "Power Management"
             potential to block the sleep process and cause the wakeup time to be skipped, which will cause the tick
             of freertos to not be compensated correctly when returning from sleep and cause the system to crash.
             To avoid this, you can increase FREERTOS_IDLE_TIME_BEFORE_SLEEP threshold in menuconfig.
+
+            Note3: Enabling this option does not necessarily mean that the peripheral power domain will be
+            turned down during sleep. The control priority of `esp_sleep_pd_config` is higher than this option,
+            user code can still prevent the peripheral power domain from powering down during sleep by
+            `esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON)`. In addition, whether the peripheral power
+            domain is powered down during sleep also depends on the sleep working strategy selected by the driver.
+            If any module belonging to the peripheral power domain chooses not to be powered down during sleep,
+            then the peripheral power domain will not be powered off either.
 
     config PM_UPDATE_CCOMPARE_HLI_WORKAROUND
         bool

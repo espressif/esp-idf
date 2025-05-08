@@ -349,7 +349,13 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
 IDF 监视器已知问题
 =================================
 
-如果在使用 IDF 监视器过程中遇到任何问题，请查看 `GitHub 仓库 <https://github.com/espressif/esp-idf-monitor/issues>`_ 以获取已知问题列表及其当前状态。如果遇到的问题没有相关记录，请创建一个新的问题报告。
+目前已知的问题如下：
+
+- 在 Windows 上，如果在 IDF 监视器关闭之前直接关闭了终端，某些驱动程序可能无法释放串口。要解决此问题，可以尝试重新拔插 USB 线，在某些情况下，需要重启计算机。目前，已知该问题会影响 CH9102 USB-to-UART 桥接芯片，而 CP210x 和 CH340 等驱动通常不会受到影响。
+
+  为避免该问题，请在退出终端前正确关闭 IDF 监视器，或考虑使用其他 USB-to-UART 桥接芯片。
+
+如果在使用 IDF 监视器过程中遇到问题，可以访问 `IDF 监视器的 GitHub 仓库 <https://github.com/espressif/esp-idf-monitor/issues>`_ 查看已知问题及其当前状态。如果遇到的问题没有相关记录，可以提交一个新的问题报告。
 
 .. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
 .. _IDF 监视器文档: https://github.com/espressif/esp-idf-monitor/blob/v1.5.0/README.md#documentation

@@ -1,7 +1,10 @@
 idf_build_get_property(target IDF_TARGET)
 
+# On Linux, we only support a few features, hence this simple component registration
 if(${target} STREQUAL "linux")
-    return() # This component is not supported by the POSIX/Linux simulator
+    idf_component_register(SRCS "vfs_eventfd_linux.c"
+                           INCLUDE_DIRS "include")
+    return()
 endif()
 
 list(APPEND sources "vfs.c"

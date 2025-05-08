@@ -66,7 +66,8 @@
 #define SOC_ECDSA_SUPPORTED             1
 #define SOC_SPIRAM_SUPPORTED            1
 /*-------------------------- XTAL CAPS ---------------------------------------*/
-#define SOC_XTAL_SUPPORT_40M            1
+#define SOC_XTAL_SUPPORT_40M                        1
+#define SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN   1
 
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
@@ -250,8 +251,6 @@
 #define SOC_I2S_SUPPORTS_PDM_TX         (1)     // Support to output raw PDM format data
 #define SOC_I2S_SUPPORTS_PCM2PDM        (1)     // Support to write PCM format but output PDM format data with the help of PCM to PDM filter
 #define SOC_I2S_SUPPORTS_PDM_RX         (1)     // Support to input raw PDM format data
-#define SOC_I2S_SUPPORTS_PDM2PCM        (1)     // Support to input PDM format but read PCM format data with the help of PDM to PCM filter
-#define SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER (1)
 #define SOC_I2S_SUPPORTS_TX_SYNC_CNT    (1)
 #define SOC_I2S_PDM_MAX_TX_LINES        (2)
 #define SOC_I2S_PDM_MAX_RX_LINES        (1U)
@@ -465,6 +464,8 @@
 /* macro redefine for pass esp_wifi headers md5sum check */
 #define MAC_SUPPORT_PMU_MODEM_STATE     SOC_PM_SUPPORT_PMU_MODEM_STATE
 
+#define SOC_PM_SUPPORT_PMU_CLK_ICG          (1)
+
 #define SOC_PM_CPU_RETENTION_BY_SW          (1)
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA    (1)
 #define SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN (1)
@@ -474,6 +475,7 @@
 #define SOC_PM_PAU_REGDMA_LINK_WIFIMAC      (1)
 
 #define SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE  (1)
+#define SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED    (1)
 
 #define SOC_PM_RETENTION_MODULE_NUM         (32)
 
@@ -506,6 +508,7 @@
 #define SOC_WIFI_MESH_SUPPORT               (1)    /*!< Support WIFI MESH */
 #define SOC_WIFI_HE_SUPPORT                 (1)    /*!< Support Wi-Fi 6 */
 #define SOC_WIFI_MAC_VERSION_NUM            (3)    /*!< Wi-Fi MAC version num is 3 */
+#define SOC_WIFI_NAN_SUPPORT                (1)    /*!< Support WIFI Aware (NAN) */
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED                   (1)    /*!< Support Bluetooth Low Energy hardware */
@@ -517,6 +520,7 @@
 #define SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED  (1)    /*!< Support For BLE Periodic Adv Enhancements */
 #define SOC_BLUFI_SUPPORTED                 (1)    /*!< Support BLUFI */
 #define SOC_BLE_MULTI_CONN_OPTIMIZATION     (1)    /*!< Support multiple connections optimization */
+#define SOC_BLE_CTE_SUPPORTED               (1)    /*!< Support Bluetooth LE Constant Tone Extension (CTE) */
 
 /*------------------------------------- PHY CAPS -------------------------------------*/
 #define SOC_PHY_COMBO_MODULE                  (1) /*!< Support Wi-Fi, BLE and 15.4*/

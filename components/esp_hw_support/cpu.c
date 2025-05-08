@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,7 +29,7 @@
 
 void esp_cpu_stall(int core_id)
 {
-#if SOC_CPU_CORES_NUM > 1   // We don't allow stalling of the current core
+#if SOC_CPU_CORES_NUM > 1  // We don't allow stalling of the current core
     assert(core_id >= 0 && core_id < SOC_CPU_CORES_NUM);
     cpu_utility_ll_stall_cpu(core_id);
 #endif // SOC_CPU_CORES_NUM > 1

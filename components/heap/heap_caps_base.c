@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,11 @@
 #include "multi_heap.h"
 #include "esp_log.h"
 #include "heap_private.h"
+#if CONFIG_HEAP_TASK_TRACKING
+#include "esp_heap_task_info.h"
+#include "esp_heap_task_info_internal.h"
+#include "multi_heap_internal.h"
+#endif
 
 #ifdef CONFIG_HEAP_USE_HOOKS
 #define CALL_HOOK(hook, ...) {      \
@@ -62,7 +67,8 @@ HEAP_IRAM_ATTR void heap_caps_free( void *ptr)
         return;
     }
 
-    if (esp_ptr_in_diram_iram(ptr) || esp_ptr_in_rtc_iram_fast(ptr)) {
+    if ((!esp_dram_match_iram() && esp_ptr_in_diram_iram(ptr)) ||
+        (!esp_rtc_dram_match_rtc_iram() && esp_ptr_in_rtc_iram_fast(ptr))) {
         //Memory allocated here is actually allocated in the DRAM alias region and
         //cannot be de-allocated as usual. dram_alloc_to_iram_addr stores a pointer to
         //the equivalent DRAM address, though; free that.
@@ -72,6 +78,11 @@ HEAP_IRAM_ATTR void heap_caps_free( void *ptr)
     void *block_owner_ptr = MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(ptr);
     heap_t *heap = find_containing_heap(block_owner_ptr);
     assert(heap != NULL && "free() target pointer is outside heap areas");
+
+#if CONFIG_HEAP_TASK_TRACKING
+    heap_caps_update_per_task_info_free(heap, ptr);
+#endif
+
     multi_heap_free(heap->heap, block_owner_ptr);
 
     CALL_HOOK(esp_heap_trace_free_hook, ptr);
@@ -137,14 +148,22 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
                     //This heap can satisfy all the requested capabilities. See if we can grab some memory using it.
                     // If MALLOC_CAP_EXEC is requested but the DRAM and IRAM are on the same addresses (like on esp32c6)
                     // proceed as for a default allocation.
-                    if (((caps & MALLOC_CAP_EXEC) && !esp_dram_match_iram()) &&
-                        (esp_ptr_in_diram_dram((void *)heap->start) || esp_ptr_in_rtc_dram_fast((void *)heap->start))) {
+                    if ((caps & MALLOC_CAP_EXEC) &&
+                        ((!esp_dram_match_iram() && esp_ptr_in_diram_dram((void *)heap->start)) ||
+                         (!esp_rtc_dram_match_rtc_iram() && esp_ptr_in_rtc_dram_fast((void *)heap->start)))) {
                         //This is special, insofar that what we're going to get back is a DRAM address. If so,
                         //we need to 'invert' it (lowest address in DRAM == highest address in IRAM and vice-versa) and
                         //add a pointer to the DRAM equivalent before the address we're going to return.
                         ret = aligned_or_unaligned_alloc(heap->heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(size) + 4,
                                                         alignment, MULTI_HEAP_BLOCK_OWNER_SIZE());  // int overflow checked above
                         if (ret != NULL) {
+#if CONFIG_HEAP_TASK_TRACKING
+                            heap_caps_update_per_task_info_alloc(heap,
+                                                                 MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(ret),
+                                                                 multi_heap_get_full_block_size(heap->heap, ret),
+                                                                 get_all_caps(heap));
+#endif
+
                             MULTI_HEAP_SET_BLOCK_OWNER(ret);
                             ret = MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(ret);
                             uint32_t *iptr = dram_alloc_to_iram_addr(ret, size + 4);  // int overflow checked above
@@ -156,6 +175,13 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
                         ret = aligned_or_unaligned_alloc(heap->heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(size),
                                                         alignment, MULTI_HEAP_BLOCK_OWNER_SIZE());
                         if (ret != NULL) {
+#if CONFIG_HEAP_TASK_TRACKING
+                            heap_caps_update_per_task_info_alloc(heap,
+                                                                 MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(ret),
+                                                                 multi_heap_get_full_block_size(heap->heap, ret),
+                                                                 get_all_caps(heap));
+#endif
+
                             MULTI_HEAP_SET_BLOCK_OWNER(ret);
                             ret = MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(ret);
                             CALL_HOOK(esp_heap_trace_alloc_hook, ret, size, caps);
@@ -240,9 +266,25 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_realloc_base( void *ptr, size_t siz
     if (compatible_caps && !ptr_in_diram_case && alignment<=UNALIGNED_MEM_ALIGNMENT_BYTES) {
         // try to reallocate this memory within the same heap
         // (which will resize the block if it can)
+
+#if CONFIG_HEAP_TASK_TRACKING
+        size_t old_size = multi_heap_get_full_block_size(heap->heap, ptr);
+        TaskHandle_t old_task = MULTI_HEAP_GET_BLOCK_OWNER(ptr);
+#endif
+
         void *r = multi_heap_realloc(heap->heap, ptr, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(size));
         if (r != NULL) {
             MULTI_HEAP_SET_BLOCK_OWNER(r);
+
+#if CONFIG_HEAP_TASK_TRACKING
+            heap_caps_update_per_task_info_realloc(heap,
+                                                   MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(ptr),
+                                                   MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(r),
+                                                   old_size, old_task,
+                                                   multi_heap_get_full_block_size(heap->heap, r),
+                                                   get_all_caps(heap));
+#endif
+
             r = MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(r);
             CALL_HOOK(esp_heap_trace_alloc_hook, r, size, caps);
             return r;

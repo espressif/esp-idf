@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -144,22 +144,22 @@ typedef union {
          *  Ledc timer3 overflow event enable register, write 1 to enable this event.
          */
         uint32_t evt_time_ovf_timer3_en:1;
-        /** evt_time0_cmp_en : R/W; bitpos: [20]; default: 0;
+        /** evt_timer0_cmp_en : R/W; bitpos: [20]; default: 0;
          *  Ledc timer0 compare event enable register, write 1 to enable this event.
          */
-        uint32_t evt_time0_cmp_en:1;
-        /** evt_time1_cmp_en : R/W; bitpos: [21]; default: 0;
+        uint32_t evt_timer0_cmp_en:1;
+        /** evt_timer1_cmp_en : R/W; bitpos: [21]; default: 0;
          *  Ledc timer1 compare event enable register, write 1 to enable this event.
          */
-        uint32_t evt_time1_cmp_en:1;
-        /** evt_time2_cmp_en : R/W; bitpos: [22]; default: 0;
+        uint32_t evt_timer1_cmp_en:1;
+        /** evt_timer2_cmp_en : R/W; bitpos: [22]; default: 0;
          *  Ledc timer2 compare event enable register, write 1 to enable this event.
          */
-        uint32_t evt_time2_cmp_en:1;
-        /** evt_time3_cmp_en : R/W; bitpos: [23]; default: 0;
+        uint32_t evt_timer2_cmp_en:1;
+        /** evt_timer3_cmp_en : R/W; bitpos: [23]; default: 0;
          *  Ledc timer3 compare event enable register, write 1 to enable this event.
          */
-        uint32_t evt_time3_cmp_en:1;
+        uint32_t evt_timer3_cmp_en:1;
         /** task_duty_scale_update_ch0_en : R/W; bitpos: [24]; default: 0;
          *  Ledc ch0 duty scale update task enable register, write 1 to enable this task.
          */

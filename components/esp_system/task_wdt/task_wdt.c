@@ -36,6 +36,12 @@
 #define BACKTRACE_MSG   "backtrace"
 #endif
 
+#if CONFIG_PM_RTOS_IDLE_OPT
+# define TASK_WDT_FN_ATTR   IRAM_ATTR
+#else
+# define TASK_WDT_FN_ATTR
+#endif
+
 /* We will use this function in order to simulate an `abort()` occurring in
  * a different context than the one it's called from. */
 extern void xt_unhandled_exception(void *frame);
@@ -96,7 +102,7 @@ static char core_user_names[CONFIG_FREERTOS_NUMBER_OF_CORES][CORE_USER_NAME_LEN]
  * @brief Reset the timer and reset flags of each entry
  * When entering this function, the spinlock has already been taken, no need to take it back.
  */
-static void task_wdt_timer_feed(void)
+static TASK_WDT_FN_ATTR void task_wdt_timer_feed(void)
 {
     esp_task_wdt_impl_timer_feed(p_twdt_obj->impl_ctx);
 
@@ -114,7 +120,7 @@ static void task_wdt_timer_feed(void)
  * @param[out] all_reset Whether all entries have been reset
  * @return Whether the user entry exists
  */
-static bool find_entry_and_check_all_reset(twdt_entry_t *user_entry, bool *all_reset)
+static TASK_WDT_FN_ATTR bool find_entry_and_check_all_reset(twdt_entry_t *user_entry, bool *all_reset)
 {
     bool found_user_entry = false;
     bool found_non_reset = false;
@@ -139,7 +145,7 @@ static bool find_entry_and_check_all_reset(twdt_entry_t *user_entry, bool *all_r
  * @param[out] all_reset Whether all entries have been reset
  * @return Task entry, or NULL if not found
  */
-static twdt_entry_t *find_entry_from_task_handle_and_check_all_reset(TaskHandle_t handle, bool *all_reset)
+static TASK_WDT_FN_ATTR twdt_entry_t *find_entry_from_task_handle_and_check_all_reset(TaskHandle_t handle, bool *all_reset)
 {
     twdt_entry_t *target = NULL;
     bool found_non_reset = false;
@@ -448,7 +454,7 @@ static void task_wdt_timeout_handling(int cores_fail, bool panic)
  *
  * @return Whether the idle tasks should continue idling
  */
-static bool idle_hook_cb(void)
+static TASK_WDT_FN_ATTR bool idle_hook_cb(void)
 {
 #if CONFIG_FREERTOS_SMP
     esp_task_wdt_reset_user(core_user_handles[xPortGetCoreID()]);
@@ -687,7 +693,7 @@ esp_err_t esp_task_wdt_add_user(const char *user_name, esp_task_wdt_user_handle_
     return ret;
 }
 
-esp_err_t esp_task_wdt_reset(void)
+esp_err_t TASK_WDT_FN_ATTR esp_task_wdt_reset(void)
 {
     ESP_RETURN_ON_FALSE(p_twdt_obj != NULL, ESP_ERR_INVALID_STATE, TAG, "TWDT was never initialized");
     esp_err_t ret;
@@ -711,7 +717,7 @@ err:
     return ret;
 }
 
-esp_err_t esp_task_wdt_reset_user(esp_task_wdt_user_handle_t user_handle)
+esp_err_t TASK_WDT_FN_ATTR esp_task_wdt_reset_user(esp_task_wdt_user_handle_t user_handle)
 {
     ESP_RETURN_ON_FALSE(user_handle != NULL, ESP_ERR_INVALID_ARG, TAG, "Invalid arguments");
     ESP_RETURN_ON_FALSE(p_twdt_obj != NULL, ESP_ERR_INVALID_STATE, TAG, "TWDT was never initialized");

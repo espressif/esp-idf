@@ -31,6 +31,7 @@ typedef struct {
     gdma_channel_direction_t direction; /*!< DMA channel direction */
     struct {
         int reserve_sibling: 1; /*!< If set, DMA channel allocator would prefer to allocate new channel in a new pair, and reserve sibling channel for future use */
+        int isr_cache_safe: 1;  /*!< If set, DMA channel allocator would allocate interrupt in cache-safe region, and ISR is serviceable when cache is disabled */
     } flags;
 } gdma_channel_alloc_config_t;
 

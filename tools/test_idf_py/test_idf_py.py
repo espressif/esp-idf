@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
@@ -409,6 +409,7 @@ class TestSecureCommands(TestWrapperCommands):
         subprocess.run([sys.executable, idf_py_path, 'build'], stdout=subprocess.DEVNULL)
         cls.flash_encryption_key = 'test_key.bin'
         cls.signing_key = 'test_signing_key.pem'
+        cls.nvs_partition_key = 'nvs_partition_key.bin'
 
     def secure_generate_flash_encryption_key(self):
         generate_key_command = [sys.executable, idf_py_path, 'secure-generate-flash-encryption-key', self.flash_encryption_key]
@@ -449,19 +450,6 @@ class TestSecureCommands(TestWrapperCommands):
         self.assertIn('Using 256-bit key', output)
         self.assertIn('Done', output)
 
-    def secure_generate_signing_key(self):
-        generate_key_command = [sys.executable,
-                                idf_py_path,
-                                'secure-generate-signing-key',
-                                '--version',
-                                '2',
-                                '--scheme',
-                                'rsa3072',
-                                self.signing_key]
-        output = self.call_command(generate_key_command)
-        self.assertIn(f'RSA 3072 private key in PEM format written to {self.signing_key}', output)
-        self.assertIn('Done', output)
-
     def secure_sign_data(self):
         self.secure_generate_signing_key()
         sign_command = [sys.executable,
@@ -489,6 +477,43 @@ class TestSecureCommands(TestWrapperCommands):
                         'bootloader-signed.bin']
         output = self.call_command(sign_command)
         self.assertIn('verification successful', output)
+
+    def secure_generate_signing_key(self):
+        generate_key_command = [sys.executable,
+                                idf_py_path,
+                                'secure-generate-signing-key',
+                                '--version',
+                                '2',
+                                '--scheme',
+                                'rsa3072',
+                                self.signing_key]
+        output = self.call_command(generate_key_command)
+        self.assertIn(f'RSA 3072 private key in PEM format written to {self.signing_key}', output)
+
+    def test_secure_generate_key_digest(self):
+        self.secure_generate_signing_key()
+        digest_command = [sys.executable,
+                          idf_py_path,
+                          'secure-generate-key-digest',
+                          '--keyfile',
+                          f'{self.signing_key}',
+                          '--output',
+                          'key_digest.bin']
+        output = self.call_command(digest_command)
+        self.assertIn(f'Writing the public key digest of {self.signing_key} to key_digest.bin', output)
+
+    def test_secure_generate_nvs_partition_key(self):
+        generate_key_command = [sys.executable,
+                                idf_py_path,
+                                'secure-generate-nvs-partition-key',
+                                '--keyfile',
+                                f'{self.nvs_partition_key}',
+                                '--encryption-scheme',
+                                'HMAC',
+                                '--hmac-keyfile',
+                                'nvs_partition_key.bin']
+        output = self.call_command(generate_key_command)
+        self.assertIn('Created encryption keys:', output)
 
 
 class TestMergeBinCommands(TestWrapperCommands):

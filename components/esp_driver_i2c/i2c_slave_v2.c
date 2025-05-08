@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -207,7 +207,12 @@ IRAM_ATTR static void i2c_slave_isr_handler(void *arg)
 
 static esp_err_t i2c_slave_device_destroy(i2c_slave_dev_handle_t i2c_slave)
 {
-    i2c_ll_disable_intr_mask(i2c_slave->base->hal.dev, I2C_LL_SLAVE_EVENT_INTR);
+    esp_err_t ret = ESP_OK;
+    if (i2c_slave->base) {
+        i2c_ll_disable_intr_mask(i2c_slave->base->hal.dev, I2C_LL_SLAVE_EVENT_INTR);
+        i2c_common_deinit_pins(i2c_slave->base);
+        ret = i2c_release_bus_handle(i2c_slave->base);
+    }
     if (i2c_slave->rx_ring_buf) {
         vRingbufferDeleteWithCaps(i2c_slave->rx_ring_buf);
         i2c_slave->rx_ring_buf = NULL;
@@ -223,7 +228,6 @@ static esp_err_t i2c_slave_device_destroy(i2c_slave_dev_handle_t i2c_slave)
     if (i2c_slave->receive_desc.buffer) {
         free(i2c_slave->receive_desc.buffer);
     }
-    esp_err_t ret = i2c_release_bus_handle(i2c_slave->base);
 
     free(i2c_slave);
     return ret;
@@ -256,7 +260,7 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
     i2c_slave->base->sda_num = slave_config->sda_io_num;
     i2c_slave->base->pull_up_enable = slave_config->flags.enable_internal_pullup;
     i2c_slave->rx_data_count = 0;
-    int i2c_port_num = slave_config->i2c_port;
+    i2c_port_num_t i2c_port_num = i2c_slave->base->port_num;
     ESP_GOTO_ON_ERROR(i2c_common_set_pins(i2c_slave->base), err, TAG, "i2c slave set pins failed");
 
     i2c_slave->rx_ring_buf = xRingbufferCreateWithCaps(slave_config->receive_buf_depth, RINGBUF_TYPE_BYTEBUF, I2C_MEM_ALLOC_CAPS);

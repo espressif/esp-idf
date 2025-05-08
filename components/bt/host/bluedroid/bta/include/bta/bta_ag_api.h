@@ -112,7 +112,7 @@ typedef UINT8 tBTA_AG_STATUS;
 /* It is safe to use the same value as BTA_AG_HANDLE_ALL
  * HANDLE_ALL is used for delivering indication
  * SCO_NO_CHANGE is used for changing sco behavior
- * They donot interfere with each other
+ * They do not interfere with each other
  */
 #define BTA_AG_HANDLE_SCO_NO_CHANGE 0xFFFF
 
@@ -363,6 +363,13 @@ typedef struct
     tBTA_AG_CHLD_FEAT   chld_feat;
 } tBTA_AG_CONN;
 
+/* data associated with BTA_AG_AUDIO_OPEN_EVT, BTA_AG_AUDIO_CLOSE_EVT or BTA_AG_AUDIO_MSBC_OPEN_EVT */
+typedef struct
+{
+    tBTA_AG_HDR         hdr;
+    UINT16              preferred_frame_size;
+} tBTA_AG_AUDIO_STAT;
+
 /* data associated with AT command event */
 typedef struct
 {
@@ -427,6 +434,7 @@ typedef union
     tBTA_AG_OPEN             open;
     tBTA_AG_CLOSE            close;
     tBTA_AG_CONN             conn;
+    tBTA_AG_AUDIO_STAT       audio_stat;
     tBTA_AG_IND              ind;
     tBTA_AG_VAL              val;
     //add
@@ -619,6 +627,45 @@ void BTA_AgPktStatsNumsGet(UINT16 handle, UINT16 sync_conn_handle);
 **
 *******************************************************************************/
 void BTA_AgCiData(UINT16 handle);
+
+/*******************************************************************************
+**
+** Function         BTA_AgAudioBuffAlloc
+**
+** Description      Allocate an audio buffer with specific size, reserve enough
+**                  space and offset for lower layer to send the buffer directly.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AgAudioBuffAlloc(UINT16 size, UINT8 **pp_buff, UINT8 **pp_data);
+
+/*******************************************************************************
+**
+** Function         BTA_AgAudioBuffFree
+**
+** Description      Free an audio buffer.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AgAudioBuffFree(UINT8 *p_buf);
+
+/*******************************************************************************
+**
+** Function         BTA_AgAudioDataSend
+**
+** Description      Send audio data to lower layer, whether success or not, buffer
+**                  is consumed.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AgAudioDataSend(UINT16 handle, UINT8 *p_buff_start, UINT8 *p_data, UINT16 data_len);
+
 #endif /*#if (BTM_SCO_HCI_INCLUDED == TRUE ) */
 
 #ifdef __cplusplus

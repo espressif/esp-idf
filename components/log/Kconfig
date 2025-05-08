@@ -46,8 +46,15 @@ menu "Log"
         help
             This configuration sets the log version number based on the chosen log version.
 
-    orsource "./Kconfig.level"
+    rsource "./Kconfig.level"
 
-    orsource "./Kconfig.format"
+    rsource "./Kconfig.format"
+
+    rsource "./Kconfig.settings"
+
+    config LOG_IN_IRAM
+        bool "Place logging functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+        select ESP_ROM_PRINT_IN_IRAM
 
 endmenu

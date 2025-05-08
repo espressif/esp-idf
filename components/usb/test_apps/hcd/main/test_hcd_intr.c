@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "dev_hid.h"
-#include "test_hcd_common.h"
+#include "hcd_common.h"
 
 // --------------------------------------------------- Test Cases ------------------------------------------------------
 
@@ -83,6 +83,104 @@ TEST_CASE("Test HCD interrupt pipe URBs", "[intr][low_speed]")
     }
     test_hcd_pipe_free(intr_pipe);
     test_hcd_pipe_free(default_pipe);
-    // Clearnup
+    // Cleanup
+    test_hcd_wait_for_disconn(port_hdl, false);
+}
+
+/*
+Test HCD interrupt pipe allocation, when bInterval = 0
+Purpose:
+    - Test that an interrupt pipe cause no panic
+
+Procedure:
+    - Setup HCD and wait for connection
+    - Allocate interrupt pipe with bInterval = 0
+    - Expect ESP_ERR_NOT_SUPPORTED
+    - Cleanup
+*Note: for all speeds (LS, FS, HS)
+*/
+TEST_CASE("Test HCD interrupt pipe alloc: bInterval=0", "[intr][low_speed][full_speed][high_speed]")
+{
+    // Trigger a connection
+    test_hcd_wait_for_conn(port_hdl);
+    // The device speed not needed, we need just the connection to unlock pipe allocation
+    vTaskDelay(pdMS_TO_TICKS(100)); // Short delay send of SOF (for FS) or EOPs (for LS)
+
+    usb_ep_desc_t test_ep_intr_desc = {
+        .bLength = USB_EP_DESC_SIZE,
+        .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
+        .bEndpointAddress = 0x81, // IN endpoint
+        .bmAttributes = USB_BM_ATTRIBUTES_XFER_INT,
+        .wMaxPacketSize = 8,
+        .bInterval = 0, // bInterval = 0
+    };
+
+    hcd_pipe_config_t pipe_config = {
+        .callback = NULL,               // No callback
+        .callback_arg = NULL,           // No callback argument
+        .context = NULL,                // No context
+        .ep_desc = &test_ep_intr_desc,  // IN endpoint descriptor
+        .dev_addr = 1,                  // Any device address
+    };
+
+    for (usb_speed_t test_speed = USB_SPEED_LOW; test_speed <= USB_SPEED_HIGH; test_speed++) {
+        // Create an interrupt pipe (using a EP descriptor)
+        hcd_pipe_handle_t pipe_hdl = NULL;
+        pipe_config.dev_speed = test_speed;
+        TEST_ASSERT_EQUAL_MESSAGE(ESP_ERR_NOT_SUPPORTED, hcd_pipe_alloc(port_hdl, &pipe_config, &pipe_hdl), "Create pipe with bInterval=0 should fail");
+        TEST_ASSERT_NULL_MESSAGE(pipe_hdl, "Pipe handle should be NULL");
+    }
+    // Cleanup
+    test_hcd_wait_for_disconn(port_hdl, false);
+}
+
+/*
+Test HCD interrupt pipe allocation, when bInterval in the interval [0x01..0xFF]
+Purpose:
+    - Test that an interrupt pipe can be created with bInterval in the interval [0x01..0xFF]
+    - Test that an interrupt pipe creation cause no panic with any bInterval
+
+Procedure:
+    - Setup HCD and wait for connection
+    - Allocate interrupt pipe with bInterval in the interval [0x01..0xFF]
+    - Expect ESP_OK
+    - Cleanup
+*Note: for all speeds (LS, FS, HS)
+*/
+TEST_CASE("Test HCD interrupt pipe alloc: bInterval [0x1..0xff]", "[intr][low_speed][full_speed][high_speed]")
+{
+    // Trigger a connection
+    test_hcd_wait_for_conn(port_hdl);
+    // The device speed not needed, we need just the connection to unlock pipe allocation
+    vTaskDelay(pdMS_TO_TICKS(100)); // Short delay send of SOF (for FS) or EOPs (for LS)
+
+    for (int test_bInterval = 1; test_bInterval <= 0xFF; test_bInterval++) {
+        usb_ep_desc_t test_ep_intr_desc = {
+            .bLength = USB_EP_DESC_SIZE,
+            .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
+            .bEndpointAddress = 0x81, // IN endpoint
+            .bmAttributes = USB_BM_ATTRIBUTES_XFER_INT,
+            .wMaxPacketSize = 8,
+            .bInterval = test_bInterval,
+        };
+
+        hcd_pipe_config_t pipe_config = {
+            .callback = NULL,               // No callback
+            .callback_arg = NULL,           // No callback argument
+            .context = NULL,                // No context
+            .ep_desc = &test_ep_intr_desc,  // IN endpoint descriptor
+            .dev_addr = 1,                  // Any device address
+        };
+
+        for (usb_speed_t test_speed = USB_SPEED_LOW; test_speed <= USB_SPEED_HIGH; test_speed++) {
+            // Create an interrupt pipe (using a EP descriptor)
+            hcd_pipe_handle_t pipe_hdl = NULL;
+            pipe_config.dev_speed = test_speed;
+            TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, hcd_pipe_alloc(port_hdl, &pipe_config, &pipe_hdl), "Create pipe should not fail");
+            TEST_ASSERT_NOT_NULL_MESSAGE(pipe_hdl, "Pipe handle should not be NULL");
+            TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_free(pipe_hdl));
+        }
+    }
+    // Cleanup
     test_hcd_wait_for_disconn(port_hdl, false);
 }

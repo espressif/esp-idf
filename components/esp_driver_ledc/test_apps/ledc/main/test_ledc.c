@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -425,15 +425,14 @@ TEST_CASE("LEDC multi fade test", "[ledc]")
 }
 #endif // SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
 
-#if SOC_PCNT_SUPPORTED // Note. C61, C3, C2 do not have PCNT peripheral, the following test cases cannot be tested
-
-// the PCNT will count the frequency of it
+// use UART auto baud rate detection feature to count the frequency
 static void frequency_set_get(ledc_mode_t speed_mode, ledc_timer_t timer, uint32_t desired_freq, int16_t theoretical_freq, int16_t error)
 {
-    int real_freq;
     TEST_ESP_OK(ledc_set_freq(speed_mode, timer, desired_freq));
     vTaskDelay(10 / portTICK_PERIOD_MS);
-    real_freq = wave_count(1000);
+    uint32_t cnt_duration_ms = (theoretical_freq > 5000) ? 50 : ((theoretical_freq > 2000) ? 100 : 200);
+    int pulse_cnt = wave_count(cnt_duration_ms);
+    int real_freq = pulse_cnt * 1000 / cnt_duration_ms;
     TEST_ASSERT_INT16_WITHIN(error, theoretical_freq, real_freq);
     TEST_ASSERT_EQUAL_INT32(theoretical_freq, ledc_get_freq(speed_mode, timer));
 }
@@ -463,7 +462,9 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
     if (clk_src_freq == 80 * 1000 * 1000) {
         theoretical_freq = 8993;
     } else if (clk_src_freq == 96 * 1000 * 1000) {
-        theoretical_freq = 9009;
+        theoretical_freq = 8996;
+    } else if (clk_src_freq == 60 * 1000 * 1000) {
+        theoretical_freq = 8993;
     }
     frequency_set_get(speed_mode, timer, 9000, theoretical_freq, 50);
 #endif
@@ -476,8 +477,6 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
 
 TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60]")
 {
-    setup_testbench();
-
     ledc_channel_config_t ledc_ch_config = initialize_channel_config();
 #if SOC_LEDC_SUPPORT_HS_MODE
     ledc_ch_config.speed_mode = LEDC_HIGH_SPEED_MODE;
@@ -489,12 +488,10 @@ TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60]")
 #endif // SOC_LEDC_SUPPORT_HS_MODE
     ledc_ch_config.speed_mode = LEDC_LOW_SPEED_MODE;
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
-    timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_0, LEDC_LOW_SPEED_MODE);
-    timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_1, LEDC_LOW_SPEED_MODE);
-    timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_2, LEDC_LOW_SPEED_MODE);
-    timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_3, LEDC_LOW_SPEED_MODE);
-
-    tear_testbench();
+    timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_12_BIT, LEDC_TIMER_0, LEDC_LOW_SPEED_MODE);
+    timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_12_BIT, LEDC_TIMER_1, LEDC_LOW_SPEED_MODE);
+    timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_12_BIT, LEDC_TIMER_2, LEDC_LOW_SPEED_MODE);
+    timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_12_BIT, LEDC_TIMER_3, LEDC_LOW_SPEED_MODE);
 }
 
 #if SOC_CLK_TREE_SUPPORTED
@@ -517,13 +514,12 @@ static void timer_set_clk_src_and_freq_test(ledc_mode_t speed_mode, ledc_clk_cfg
     } else {
         TEST_ASSERT_EQUAL_INT32(freq_hz, ledc_get_freq(speed_mode, LEDC_TIMER_0));
     }
-    int count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(10, freq_hz, count);
+    int count = wave_count(200);
+    TEST_ASSERT_UINT32_WITHIN(10, freq_hz * 200 / 1000, count);
 }
 
 TEST_CASE("LEDC timer select specific clock source", "[ledc]")
 {
-    setup_testbench();
     const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
     ledc_channel_config_t ledc_ch_config = {
         .gpio_num = PULSE_IO,
@@ -563,14 +559,11 @@ TEST_CASE("LEDC timer select specific clock source", "[ledc]")
     TEST_ESP_OK(ledc_bind_channel_timer(test_speed_mode, LEDC_CHANNEL_0, LEDC_TIMER_0));
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(ledc_get_freq(test_speed_mode, LEDC_TIMER_0), 500);
-
-    tear_testbench();
 }
 #endif  //SOC_CLK_TREE_SUPPORTED
 
 TEST_CASE("LEDC timer pause and resume", "[ledc]")
 {
-    setup_testbench();
     const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
     int count;
 
@@ -595,30 +588,29 @@ TEST_CASE("LEDC timer pause and resume", "[ledc]")
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 
     vTaskDelay(10 / portTICK_PERIOD_MS);
-    count = wave_count(1000);
-    TEST_ASSERT_INT16_WITHIN(5, TEST_PWM_FREQ, count);
+    count = wave_count(200);
+    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ * 200 / 1000, count);
 
     //pause ledc timer, when pause it, will get no waveform count
     printf("Pause ledc timer\n");
     TEST_ESP_OK(ledc_timer_pause(test_speed_mode, LEDC_TIMER_0));
     vTaskDelay(10 / portTICK_PERIOD_MS);
-    count = wave_count(1000);
-    TEST_ASSERT_INT16_WITHIN(5, 0, count);
+    count = wave_count(200);
+    TEST_ASSERT_UINT32_WITHIN(5, 0, count);
 
     //resume ledc timer
     printf("Resume ledc timer\n");
     TEST_ESP_OK(ledc_timer_resume(test_speed_mode, LEDC_TIMER_0));
     vTaskDelay(10 / portTICK_PERIOD_MS);
-    count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ, count);
+    count = wave_count(200);
+    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ * 200 / 1000, count);
 
     //reset ledc timer
     printf("reset ledc timer\n");
     TEST_ESP_OK(ledc_timer_rst(test_speed_mode, LEDC_TIMER_0));
     vTaskDelay(100 / portTICK_PERIOD_MS);
-    count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ, count);
-    tear_testbench();
+    count = wave_count(200);
+    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ * 200 / 1000, count);
 }
 
 static void ledc_cpu_reset_test_first_stage(void)
@@ -637,14 +629,10 @@ static void ledc_cpu_reset_test_second_stage(void)
 {
     int count;
     TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
-    setup_testbench();
-    count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ, count);
-    tear_testbench();
+    count = wave_count(200);
+    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ * 200 / 1000, count);
 }
 
 TEST_CASE_MULTIPLE_STAGES("LEDC continue work after software reset", "[ledc]",
                           ledc_cpu_reset_test_first_stage,
                           ledc_cpu_reset_test_second_stage);
-
-#endif // SOC_PCNT_SUPPORTED

@@ -57,7 +57,7 @@
 #define BTA_AV_CLOSE_REQ_TIME_VAL   4000
 #endif
 
-/* number to retry on reconfigure failure - some headsets requirs this number to be more than 1 */
+/* number to retry on reconfigure failure - some headsets requires this number to be more than 1 */
 #ifndef BTA_AV_RECONFIG_RETRY
 #define BTA_AV_RECONFIG_RETRY       6
 #endif
@@ -239,7 +239,7 @@ static UINT8 bta_av_get_scb_handle(tBTA_AV_SCB *p_scb, UINT8 local_sep)
             return (p_scb->seps[xx].av_handle);
         }
     }
-    APPL_TRACE_DEBUG(" bta_av_get_scb_handle appropiate sep_type not found")
+    APPL_TRACE_DEBUG(" bta_av_get_scb_handle appropriate sep_type not found")
     return 0; /* return invalid handle */
 }
 
@@ -260,7 +260,7 @@ static UINT8 bta_av_get_scb_sep_type(tBTA_AV_SCB *p_scb, UINT8 tavdt_handle)
             return (p_scb->seps[xx].tsep);
         }
     }
-    APPL_TRACE_DEBUG(" bta_av_get_scb_sep_type appropiate handle not found")
+    APPL_TRACE_DEBUG(" bta_av_get_scb_sep_type appropriate handle not found")
     return 3; /* return invalid sep type */
 }
 
@@ -586,9 +586,18 @@ void bta_av_stream_data_cback(UINT8 handle, BT_HDR *p_pkt, UINT32 time_stamp, UI
         osi_free(p_pkt);
         return;
     }
+
+    if (p_pkt->offset >= 4) {
+        /* The offset of avdt packet will always greater than 4, it is safe to add timestamp here */
+        *((UINT32 *) (p_pkt + 1)) = time_stamp;
+    }
+    else {
+        APPL_TRACE_WARNING("bta_av_stream_data_cback avdt packet offset small than 4");
+    }
+
     p_pkt->event = BTA_AV_MEDIA_DATA_EVT;
     p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_DATA_EVT, (tBTA_AV_MEDIA *)p_pkt);
-    osi_free(p_pkt);  /* a copy of packet had been delivered, we free this buffer */
+    /* packet will be free by upper */
 }
 
 /*******************************************************************************
@@ -843,7 +852,7 @@ void bta_av_role_res (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
                 bdcpy(av_open.bd_addr, p_scb->peer_addr);
                 av_open.chnl   = p_scb->chnl;
                 av_open.hndl   = p_scb->hndl;
-                start.status = BTA_AV_FAIL_ROLE;
+                av_open.status = BTA_AV_FAIL_ROLE;
                 if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC ) {
                     av_open.sep = AVDT_TSEP_SNK;
                 } else if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK ) {
@@ -1138,7 +1147,7 @@ void bta_av_config_ind (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         p_info->media_type = p_scb->media_type;
         p_info->seid = p_data->str_msg.msg.config_ind.int_seid;
 
-        /* Sep type of Peer will be oppsite role to our local sep */
+        /* Sep type of Peer will be opposite role to our local sep */
         if (local_sep == AVDT_TSEP_SRC) {
             p_info->tsep = AVDT_TSEP_SNK;
         } else if (local_sep == AVDT_TSEP_SNK) {
@@ -1271,7 +1280,7 @@ void bta_av_setconfig_rsp (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     if (AVDT_TSEP_SNK == local_sep) {
         if ((p_data->ci_setconfig.err_code == AVDT_SUCCESS) &&
             (p_scb->seps[p_scb->sep_idx].p_app_data_cback != NULL)) {
-                p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_SINK_CFG_EVT,
+                p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_CFG_EVT,
                         (tBTA_AV_MEDIA *)p_scb->cfg.codec_info);
         }
         if (p_scb->cur_psc_mask & AVDT_PSC_DELAY_RPT) {
@@ -1384,7 +1393,7 @@ void bta_av_str_opened (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     {
         /* TODO check if other audio channel is open.
          * If yes, check if reconfig is needed
-         * Rigt now we do not do this kind of checking.
+         * Right now we do not do this kind of checking.
          * BTA-AV is INT for 2nd audio connection.
          * The application needs to make sure the current codec_info is proper.
          * If one audio connection is open and another SNK attempts to connect to AV,
@@ -1397,6 +1406,7 @@ void bta_av_str_opened (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         open.status = BTA_AV_SUCCESS;
         open.starting = bta_av_chk_start(p_scb);
         open.edr    = 0;
+        open.mtu = mtu;
         if ( NULL != (p = BTM_ReadRemoteFeatures(p_scb->peer_addr))) {
             if (HCI_EDR_ACL_2MPS_SUPPORTED(p)) {
                 open.edr |= BTA_AV_EDR_2MBPS;
@@ -1533,7 +1543,7 @@ void bta_av_do_close (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     L2CA_FlushChannel (p_scb->l2c_cid, L2CAP_FLUSH_CHANS_ALL);
 
     AVDT_CloseReq(p_scb->avdt_handle);
-    /* just in case that the link is congested, link is flow controled by peer or
+    /* just in case that the link is congested, link is flow controlled by peer or
      * for whatever reason the the close request can not be sent in time.
      * when this timer expires, AVDT_DisconnectReq will be called to disconnect the link
      */
@@ -1814,7 +1824,7 @@ void bta_av_open_failed (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 
     }
 
-    /* if there is already an active AV connnection with the same bd_addr,
+    /* if there is already an active AV connection with the same bd_addr,
        don't send disconnect req, just report the open event with BTA_AV_FAIL_GET_CAP status */
     if (is_av_opened == TRUE) {
         bdcpy(open.bd_addr, p_scb->peer_addr);
@@ -1856,7 +1866,7 @@ void bta_av_getcap_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     tAVDT_CFG   cfg;
     UINT8       media_type;
     tAVDT_SEP_INFO  *p_info = &p_scb->sep_info[p_scb->sep_info_idx];
-    UINT16 uuid_int; /* UUID for which connection was initiatied */
+    UINT16 uuid_int; /* UUID for which connection was initiated */
     tBTA_AV_SNK_PSC_CFG psc_cfg = {0};
 
     memcpy(&cfg, &p_scb->cfg, sizeof(tAVDT_CFG));
@@ -1899,15 +1909,22 @@ void bta_av_getcap_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         p_scb->cur_psc_mask = cfg.psc_mask;
 
         if (uuid_int == UUID_SERVCLASS_AUDIO_SINK) {
-           if (p_scb->seps[p_scb->sep_idx].p_app_data_cback != NULL) {
+            if (p_scb->seps[p_scb->sep_idx].p_app_data_cback != NULL) {
                 APPL_TRACE_DEBUG(" Configure Deoder for Sink Connection ");
-                p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_SINK_CFG_EVT,
+                p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_CFG_EVT,
                         (tBTA_AV_MEDIA *)p_scb->cfg.codec_info);
             }
             if (p_scb->cur_psc_mask & AVDT_PSC_DELAY_RPT) {
                 psc_cfg.psc_mask |= BTA_AV_PSC_DEALY_RPT;
             }
             (*bta_av_cb.p_cback)(BTA_AV_SNK_PSC_CFG_EVT, (tBTA_AV *)&psc_cfg);
+        }
+        else {
+            /* UUID_SERVCLASS_AUDIO_SOURCE */
+            if (p_scb->seps[p_scb->sep_idx].p_app_data_cback != NULL) {
+                p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_CFG_EVT,
+                        (tBTA_AV_MEDIA *)p_scb->cfg.codec_info);
+            }
         }
 
         /* open the stream */
@@ -2387,7 +2404,7 @@ void bta_av_start_ok (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     {
         /* If sink starts stream, disable sniff mode here */
         if (!initiator) {
-            /* If souce is the master role, disable role switch during streaming.
+            /* If source is the master role, disable role switch during streaming.
             * Otherwise allow role switch, if source is slave.
             * Because it would not hurt source, if the peer device wants source to be master */
             if ((BTM_GetRole (p_scb->peer_addr, &cur_role) == BTM_SUCCESS) &&
@@ -2502,7 +2519,7 @@ void bta_av_str_closed (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
             bta_av_str_stopped(p_scb, NULL);
         }
 
-        /* Update common mtu shared by remaining connectons */
+        /* Update common mtu shared by remaining connections */
         mtu = bta_av_chk_mtu(p_scb, BTA_AV_MAX_A2DP_MTU);
 
         {

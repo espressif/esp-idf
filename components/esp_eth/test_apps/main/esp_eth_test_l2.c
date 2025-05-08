@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -211,9 +211,6 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
 
     s_recv_info.eth_event_group = eth_event_rx_group;
     s_recv_info.check_rx_data = true;
-    s_recv_info.unicast_rx_cnt = 0;
-    s_recv_info.multicast_rx_cnt = 0;
-    s_recv_info.brdcast_rx_cnt = 0;
 
     uint8_t local_mac_addr[ETH_ADDR_LEN] = {};
     TEST_ESP_OK(mac->get_addr(mac, local_mac_addr));
@@ -222,6 +219,19 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
            local_mac_addr[3], local_mac_addr[4], local_mac_addr[5]);
 
     TEST_ESP_OK(esp_eth_update_input_path(eth_handle, l2_packet_txrx_test_cb, &s_recv_info));
+
+    // ---------------------------------------
+    printf("Enable receive all multicast\n");
+    // ---------------------------------------
+    EventBits_t expected_bits = ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT;
+    int expected_multicast_rx_cnt = 2;
+
+    s_recv_info.unicast_rx_cnt = 0;
+    s_recv_info.multicast_rx_cnt = 0;
+    s_recv_info.brdcast_rx_cnt = 0;
+    bool all_multicast = true;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_ALL_MULTICAST, &all_multicast));
+
     TEST_ESP_OK(esp_eth_start(eth_handle)); // start Ethernet driver state machine
 
     EventBits_t bits = 0;
@@ -232,11 +242,130 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
     poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
 
     bits = 0;
+    xEventGroupClearBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT);
     bits = xEventGroupWaitBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT,
-                               true, true, pdMS_TO_TICKS(5000));
+                               true, true, pdMS_TO_TICKS(1000));
     printf("bits = 0x%" PRIu32 "\n", (uint32_t)bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT));
-    TEST_ASSERT((bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT)) ==
-                                 (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT));
+    TEST_ASSERT((bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT)) == expected_bits);
+    TEST_ASSERT_EQUAL(1, s_recv_info.unicast_rx_cnt);
+    TEST_ASSERT_EQUAL(1, s_recv_info.brdcast_rx_cnt);
+    TEST_ASSERT_EQUAL(expected_multicast_rx_cnt, s_recv_info.multicast_rx_cnt);
+
+    // ---------------------------------------
+    printf("Disable receive all multicast\n");
+    // ---------------------------------------
+// *** W5500 deviation ***
+// Rationale: The W5500 always receives IPv6 multicast packets, even if the filter is set to block multicast.
+//            It's not documented behavior, but it's observed on the real hardware.
+#if CONFIG_TARGET_ETH_PHY_DEVICE_W5500
+    expected_bits = ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT;
+    expected_multicast_rx_cnt = 1;
+#else
+    expected_bits = ETH_BROADCAST_RECV_BIT | ETH_UNICAST_RECV_BIT;
+    expected_multicast_rx_cnt = 0;
+#endif
+
+    s_recv_info.unicast_rx_cnt = 0;
+    s_recv_info.multicast_rx_cnt = 0;
+    s_recv_info.brdcast_rx_cnt = 0;
+    all_multicast = false;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_ALL_MULTICAST, &all_multicast));
+    // send POKE to indicate that the DUT reconfigured the filter
+    poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
+
+    bits = 0;
+    xEventGroupClearBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT);
+    bits = xEventGroupWaitBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT,
+                               true, true, pdMS_TO_TICKS(1000));
+    printf("bits = 0x%" PRIu32 "\n", (uint32_t)bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT));
+    TEST_ASSERT((bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT)) == expected_bits);
+    TEST_ASSERT_EQUAL(1, s_recv_info.unicast_rx_cnt);
+    TEST_ASSERT_EQUAL(1, s_recv_info.brdcast_rx_cnt);
+    TEST_ASSERT_EQUAL(expected_multicast_rx_cnt, s_recv_info.multicast_rx_cnt);
+
+
+    // ---------------------------------------
+    printf("Add multicast addresses to the filter\n");
+    // ---------------------------------------
+    expected_bits = ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT;
+    expected_multicast_rx_cnt = 2;
+
+    s_recv_info.unicast_rx_cnt = 0;
+    s_recv_info.multicast_rx_cnt = 0;
+    s_recv_info.brdcast_rx_cnt = 0;
+    uint8_t multicast_addr_ip4[ETH_ADDR_LEN] = {0x01, 0x00, 0x5e, 0x00, 0x00, 0x00};
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_ADD_MAC_FILTER, multicast_addr_ip4));
+    uint8_t multicast_addr_ip6[ETH_ADDR_LEN] = {0x33, 0x33, 0x00, 0x00, 0x00, 0x00};
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_ADD_MAC_FILTER, multicast_addr_ip6));
+    // send POKE to indicate that the DUT reconfigured the filter
+    poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
+    bits = 0;
+    xEventGroupClearBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT);
+    bits = xEventGroupWaitBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT,
+                               true, true, pdMS_TO_TICKS(1000));
+    printf("bits = 0x%" PRIu32 "\n", (uint32_t)bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT));
+    TEST_ASSERT((bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT)) == expected_bits);
+    TEST_ASSERT_EQUAL(1, s_recv_info.unicast_rx_cnt);
+    TEST_ASSERT_EQUAL(1, s_recv_info.brdcast_rx_cnt);
+    TEST_ASSERT_EQUAL(expected_multicast_rx_cnt, s_recv_info.multicast_rx_cnt);
+
+    // --------------------------------------------
+    printf("Remove one multicast address from the filter\n");
+    // --------------------------------------------
+    expected_bits = ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT;
+    expected_multicast_rx_cnt = 1;
+
+    s_recv_info.unicast_rx_cnt = 0;
+    s_recv_info.multicast_rx_cnt = 0;
+    s_recv_info.brdcast_rx_cnt = 0;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_DEL_MAC_FILTER, multicast_addr_ip4));
+    // send POKE to indicate that the DUT reconfigured the filter
+    poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
+    bits = 0;
+    xEventGroupClearBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT);
+    bits = xEventGroupWaitBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT,
+                               true, true, pdMS_TO_TICKS(1000));
+    printf("bits = 0x%" PRIu32 "\n", (uint32_t)bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT));
+    TEST_ASSERT((bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT)) == expected_bits);
+    TEST_ASSERT_EQUAL(1, s_recv_info.unicast_rx_cnt);
+    TEST_ASSERT_EQUAL(1, s_recv_info.brdcast_rx_cnt);
+    TEST_ASSERT_EQUAL(expected_multicast_rx_cnt, s_recv_info.multicast_rx_cnt);
+
+    // ----------------------------------------------
+    printf("Remove all multicast addresses from the filter\n");
+    // ----------------------------------------------
+// *** W5500 deviation ***
+// Rationale: The W5500 always receives IPv6 multicast packets, even if the filter is set to block multicast.
+//            It's not documented behavior, but it's observed on the real hardware.
+#if CONFIG_TARGET_ETH_PHY_DEVICE_W5500
+    expected_bits = ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT;
+    expected_multicast_rx_cnt = 1;
+#else
+    expected_bits = ETH_BROADCAST_RECV_BIT | ETH_UNICAST_RECV_BIT;
+    expected_multicast_rx_cnt = 0;
+#endif
+
+    s_recv_info.unicast_rx_cnt = 0;
+    s_recv_info.multicast_rx_cnt = 0;
+    s_recv_info.brdcast_rx_cnt = 0;
+// *** W5500 deviation ***
+// Rationale: The W5500 always receives IPv6 multicast packets and hence filter delete fails.
+#if CONFIG_TARGET_ETH_PHY_DEVICE_W5500
+    TEST_ESP_ERR(ESP_FAIL, esp_eth_ioctl(eth_handle, ETH_CMD_DEL_MAC_FILTER, multicast_addr_ip6));
+#else
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_DEL_MAC_FILTER, multicast_addr_ip6));
+#endif
+    // send POKE to indicate that the DUT reconfigured the filter
+    poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
+    bits = 0;
+    xEventGroupClearBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT);
+    bits = xEventGroupWaitBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT,
+                               true, true, pdMS_TO_TICKS(1000));
+    printf("bits = 0x%" PRIu32 "\n", (uint32_t)bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT));
+    TEST_ASSERT((bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT)) == expected_bits);
+    TEST_ASSERT_EQUAL(1, s_recv_info.unicast_rx_cnt);
+    TEST_ASSERT_EQUAL(1, s_recv_info.brdcast_rx_cnt);
+    TEST_ASSERT_EQUAL(expected_multicast_rx_cnt, s_recv_info.multicast_rx_cnt);
 
     TEST_ESP_OK(esp_eth_stop(eth_handle));
     TEST_ESP_OK(esp_event_loop_delete_default());
@@ -254,7 +383,7 @@ TEST_CASE("ethernet start/stop stress test under heavy traffic", "[ethernet_l2]"
 // *** SPI Ethernet modules deviation ***
 // Rationale: The SPI bus is bottleneck when reading received frames from the module. The Rx Task would
 //            occupy all the resources under heavy Rx traffic and it would not be possible to access
-//            the Ethernet module to stop it. Therfore, the Rx task priority is set lower than "test" task
+//            the Ethernet module to stop it. Therefore, the Rx task priority is set lower than "test" task
 //            to be able to be preempted.
 #if CONFIG_TARGET_USE_SPI_ETHERNET
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
@@ -503,6 +632,76 @@ TEST_CASE("heap utilization", "[ethernet_l2]")
     TEST_ESP_OK(esp_eth_stop(eth_handle));
 
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
+    TEST_ESP_OK(esp_event_loop_delete_default());
+    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
+    phy->del(phy);
+    mac->del(mac);
+    extra_cleanup();
+    vEventGroupDelete(eth_event_rx_group);
+    vEventGroupDelete(eth_event_state_group);
+}
+
+#define FORMAT_MAC(mac_addr, a, b, c, d, e, f) do { mac_addr[0] = a; mac_addr[1] = b; mac_addr[2] = c; mac_addr[3] = d; mac_addr[4] = e; mac_addr[5] = f; } while(0)
+TEST_CASE("w5500_multicast_filter", "[ethernet_l2]")
+{
+    esp_eth_mac_t *mac = mac_init(NULL, NULL);
+    TEST_ASSERT_NOT_NULL(mac);
+    esp_eth_phy_t *phy = phy_init(NULL);
+    TEST_ASSERT_NOT_NULL(phy);
+    esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
+    esp_eth_handle_t eth_handle = NULL; // after driver installed, we will get the handle of the driver
+    TEST_ESP_OK(esp_eth_driver_install(&config, &eth_handle)); // install driver
+    TEST_ASSERT_NOT_NULL(eth_handle);
+    extra_eth_config(eth_handle);
+
+    TEST_ESP_OK(esp_event_loop_create_default());
+    EventGroupHandle_t eth_event_state_group = xEventGroupCreate();
+    TEST_ASSERT(eth_event_state_group != NULL);
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_state_group));
+    EventGroupHandle_t eth_event_rx_group = xEventGroupCreate();
+    TEST_ASSERT(eth_event_rx_group != NULL);
+
+    s_recv_info.eth_event_group = eth_event_rx_group;
+    s_recv_info.check_rx_data = false;
+    s_recv_info.unicast_rx_cnt = 0;
+    s_recv_info.multicast_rx_cnt = 0;
+    s_recv_info.brdcast_rx_cnt = 0;
+
+    uint8_t local_mac_addr[ETH_ADDR_LEN] = {};
+    TEST_ESP_OK(mac->get_addr(mac, local_mac_addr));
+    // test app will parse the DUT MAC from this line of log output
+    printf("DUT MAC: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n", local_mac_addr[0], local_mac_addr[1], local_mac_addr[2],
+           local_mac_addr[3], local_mac_addr[4], local_mac_addr[5]);
+
+    TEST_ESP_OK(esp_eth_update_input_path(eth_handle, l2_packet_txrx_test_cb, &s_recv_info));
+
+// *** W5500 deviation ***
+// Rationale: W5500 SPI Ethernet module does not support internal loopback
+#if !CONFIG_TARGET_ETH_PHY_DEVICE_W5500
+    // ---------------------------------------
+    // Loopback greatly simplifies the test !!
+    // ---------------------------------------
+    bool loopback_en = true;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en));
+#endif
+
+    TEST_ESP_OK(esp_eth_start(eth_handle)); // start Ethernet driver state machine
+
+    bool all_multicast = true;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_ALL_MULTICAST, &all_multicast));
+
+    EventBits_t bits = 0;
+    bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+    poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
+
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    xEventGroupClearBits(eth_event_rx_group, ETH_MULTICAST_RECV_BIT);
+    bits = xEventGroupWaitBits(eth_event_rx_group, ETH_MULTICAST_RECV_BIT, true, true, pdMS_TO_TICKS(500));
+    TEST_ASSERT((bits & ETH_MULTICAST_RECV_BIT) == ETH_MULTICAST_RECV_BIT);
+
+    TEST_ESP_OK(esp_eth_stop(eth_handle));
     TEST_ESP_OK(esp_event_loop_delete_default());
     TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
     phy->del(phy);

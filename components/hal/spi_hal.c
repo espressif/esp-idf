@@ -7,20 +7,8 @@
 // The HAL layer for SPI (common part)
 
 #include "hal/spi_hal.h"
-#include "hal/log.h"
-#include "hal/assert.h"
-#include "hal/gpio_ll.h"    //for GPIO_LL_MATRIX_DELAY_NS
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
-
-/* The tag may be unused if log level is set to NONE  */
-static const __attribute__((unused)) char SPI_HAL_TAG[] = "spi_hal";
-
-#define SPI_HAL_CHECK(a, str, ret_val, ...) \
-    if (!(a)) { \
-        HAL_LOGE(SPI_HAL_TAG,"%s(%d): "str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-        return (ret_val); \
-    }
 
 void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id)
 {
@@ -77,90 +65,7 @@ void spi_hal_sct_deinit(spi_hal_context_t *hal)
 }
 #endif  //#if SOC_SPI_SCT_SUPPORTED
 
-esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, spi_hal_timing_conf_t *timing_conf)
-{
-    spi_hal_timing_conf_t temp_conf = {};
-
-    int eff_clk_n = spi_ll_master_cal_clock(timing_param->clk_src_hz, timing_param->expected_freq, timing_param->duty_cycle, &temp_conf.clock_reg);
-
-    //When the speed is too fast, we may need to use dummy cycles to compensate the reading.
-    //But these don't work for full-duplex connections.
-    spi_hal_cal_timing(timing_param->clk_src_hz, eff_clk_n, timing_param->use_gpio, timing_param->input_delay_ns, &temp_conf.timing_dummy, &temp_conf.timing_miso_delay);
-
-#if SPI_LL_SUPPORT_TIME_TUNING
-    const int freq_limit = spi_hal_get_freq_limit(timing_param->use_gpio, timing_param->input_delay_ns);
-
-    SPI_HAL_CHECK(timing_param->half_duplex || temp_conf.timing_dummy == 0 || timing_param->no_compensate,
-                  "When work in full-duplex mode at frequency > %.1fMHz, device cannot read correct data.\n\
-Try to use IOMUX pins to increase the frequency limit, or use the half duplex mode.\n\
-Please note the SPI master can only work at divisors of 80MHz, and the driver always tries to find the closest frequency to your configuration.\n\
-Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output data at higher speed, or read data at your own risk.",
-                  ESP_ERR_NOT_SUPPORTED, freq_limit / 1000. / 1000);
-#endif
-
-    temp_conf.real_freq = eff_clk_n;
-    if (timing_conf) {
-        *timing_conf = temp_conf;
-    }
-    return ESP_OK;
-}
-
 int spi_hal_master_cal_clock(int fapb, int hz, int duty_cycle)
 {
     return spi_ll_master_cal_clock(fapb, hz, duty_cycle, NULL);
 }
-
-
-void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int input_delay_ns, int *dummy_n, int *miso_delay_n)
-{
-    const int apbclk_kHz = source_freq_hz / 1000;
-    //how many apb clocks a period has
-    const int spiclk_apb_n = source_freq_hz / eff_clk;
-    int gpio_delay_ns = 0;
-#if GPIO_LL_MATRIX_DELAY_NS
-    gpio_delay_ns = gpio_is_used ? GPIO_LL_MATRIX_DELAY_NS : 0;
-#endif
-
-    //how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
-    int delay_apb_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;
-    if (delay_apb_n < 0) {
-        delay_apb_n = 0;
-    }
-
-    int dummy_required = delay_apb_n / spiclk_apb_n;
-
-    int miso_delay = 0;
-    if (dummy_required > 0) {
-        //due to the clock delay between master and slave, there's a range in which data is random
-        //give MISO a delay if needed to make sure we sample at the time MISO is stable
-        miso_delay = (dummy_required + 1) * spiclk_apb_n - delay_apb_n - 1;
-    } else {
-        //if the dummy is not required, maybe we should also delay half a SPI clock if the data comes too early
-        if (delay_apb_n * 4 <= spiclk_apb_n) {
-            miso_delay = -1;
-        }
-    }
-    *dummy_n = dummy_required;
-    *miso_delay_n = miso_delay;
-    HAL_LOGD(SPI_HAL_TAG, "eff: %d, limit: %dk(/%d), %d dummy, %d delay", eff_clk / 1000, apbclk_kHz / (delay_apb_n + 1), delay_apb_n, dummy_required, miso_delay);
-}
-
-#if SPI_LL_SUPPORT_TIME_TUNING
-//TODO: IDF-6578
-int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns)
-{
-    const int apbclk_kHz = APB_CLK_FREQ / 1000;
-    int gpio_delay_ns = 0;
-#if GPIO_LL_MATRIX_DELAY_NS
-    gpio_delay_ns = gpio_is_used ? GPIO_LL_MATRIX_DELAY_NS : 0;
-#endif
-
-    //how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
-    int delay_apb_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;
-    if (delay_apb_n < 0) {
-        delay_apb_n = 0;
-    }
-
-    return APB_CLK_FREQ / (delay_apb_n + 1);
-}
-#endif

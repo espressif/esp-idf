@@ -1,10 +1,10 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -13,5 +13,6 @@ from pytest_embedded import Dut
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_touch_sensor_v1(dut: Dut) -> None:
-    dut.run_all_single_board_cases(timeout=60)
+    dut.run_all_single_board_cases(timeout=60, reset=True)

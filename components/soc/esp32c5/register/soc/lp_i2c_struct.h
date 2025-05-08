@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@ typedef union {
         uint32_t reserved_9:23;
     };
     uint32_t val;
-} i2c_scl_low_period_reg_t;
+} lp_i2c_scl_low_period_reg_t;
 
 /** Type of sda_hold register
  *  Configures the hold time after a negative SCL edge.
@@ -40,7 +40,7 @@ typedef union {
         uint32_t reserved_9:23;
     };
     uint32_t val;
-} i2c_sda_hold_reg_t;
+} lp_i2c_sda_hold_reg_t;
 
 /** Type of sda_sample register
  *  Configures the sample time after a positive SCL edge.
@@ -55,7 +55,7 @@ typedef union {
         uint32_t reserved_9:23;
     };
     uint32_t val;
-} i2c_sda_sample_reg_t;
+} lp_i2c_sda_sample_reg_t;
 
 /** Type of scl_high_period register
  *  Configures the high level width of SCL
@@ -75,7 +75,7 @@ typedef union {
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} i2c_scl_high_period_reg_t;
+} lp_i2c_scl_high_period_reg_t;
 
 /** Type of scl_start_hold register
  *  Configures the delay between the SDA and SCL negative edge for a start condition
@@ -90,7 +90,7 @@ typedef union {
         uint32_t reserved_9:23;
     };
     uint32_t val;
-} i2c_scl_start_hold_reg_t;
+} lp_i2c_scl_start_hold_reg_t;
 
 /** Type of scl_rstart_setup register
  *  Configures the delay between the positive
@@ -106,7 +106,7 @@ typedef union {
         uint32_t reserved_9:23;
     };
     uint32_t val;
-} i2c_scl_rstart_setup_reg_t;
+} lp_i2c_scl_rstart_setup_reg_t;
 
 /** Type of scl_stop_hold register
  *  Configures the delay after the SCL clock
@@ -122,7 +122,7 @@ typedef union {
         uint32_t reserved_9:23;
     };
     uint32_t val;
-} i2c_scl_stop_hold_reg_t;
+} lp_i2c_scl_stop_hold_reg_t;
 
 /** Type of scl_stop_setup register
  *  Configures the delay between the SDA and
@@ -138,7 +138,7 @@ typedef union {
         uint32_t reserved_9:23;
     };
     uint32_t val;
-} i2c_scl_stop_setup_reg_t;
+} lp_i2c_scl_stop_setup_reg_t;
 
 /** Type of scl_st_time_out register
  *  SCL status time out register
@@ -152,7 +152,7 @@ typedef union {
         uint32_t reserved_5:27;
     };
     uint32_t val;
-} i2c_scl_st_time_out_reg_t;
+} lp_i2c_scl_st_time_out_reg_t;
 
 /** Type of scl_main_st_time_out register
  *  SCL main status time out register
@@ -167,7 +167,7 @@ typedef union {
         uint32_t reserved_5:27;
     };
     uint32_t val;
-} i2c_scl_main_st_time_out_reg_t;
+} lp_i2c_scl_main_st_time_out_reg_t;
 
 
 /** Group: Configuration registers */
@@ -228,7 +228,7 @@ typedef union {
         uint32_t reserved_12:20;
     };
     uint32_t val;
-} i2c_ctr_reg_t;
+} lp_i2c_ctr_reg_t;
 
 /** Type of to register
  *  Setting time out control for receiving data.
@@ -247,7 +247,7 @@ typedef union {
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} i2c_to_reg_t;
+} lp_i2c_to_reg_t;
 
 /** Type of fifo_conf register
  *  FIFO configuration register.
@@ -289,7 +289,7 @@ typedef union {
         uint32_t reserved_15:17;
     };
     uint32_t val;
-} i2c_fifo_conf_reg_t;
+} lp_i2c_fifo_conf_reg_t;
 
 /** Type of filter_cfg register
  *  SCL and SDA filter configuration register
@@ -317,7 +317,7 @@ typedef union {
         uint32_t reserved_10:22;
     };
     uint32_t val;
-} i2c_filter_cfg_reg_t;
+} lp_i2c_filter_cfg_reg_t;
 
 /** Type of clk_conf register
  *  I2C CLK configuration register
@@ -347,7 +347,7 @@ typedef union {
         uint32_t reserved_22:10;
     };
     uint32_t val;
-} i2c_clk_conf_reg_t;
+} lp_i2c_clk_conf_reg_t;
 
 /** Type of scl_sp_conf register
  *  Power configuration register
@@ -377,7 +377,7 @@ typedef union {
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} i2c_scl_sp_conf_reg_t;
+} lp_i2c_scl_sp_conf_reg_t;
 
 
 /** Group: Status registers */
@@ -424,7 +424,7 @@ typedef union {
         uint32_t reserved_31:1;
     };
     uint32_t val;
-} i2c_sr_reg_t;
+} lp_i2c_sr_reg_t;
 
 /** Type of fifo_st register
  *  FIFO status register.
@@ -453,7 +453,7 @@ typedef union {
         uint32_t reserved_19:13;
     };
     uint32_t val;
-} i2c_fifo_st_reg_t;
+} lp_i2c_fifo_st_reg_t;
 
 /** Type of data register
  *  Rx FIFO read data.
@@ -467,7 +467,7 @@ typedef union {
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} i2c_data_reg_t;
+} lp_i2c_data_reg_t;
 
 
 /** Group: Interrupt registers */
@@ -543,7 +543,7 @@ typedef union {
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} i2c_int_raw_reg_t;
+} lp_i2c_int_raw_reg_t;
 
 /** Type of int_clr register
  *  Interrupt clear bits
@@ -617,7 +617,7 @@ typedef union {
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} i2c_int_clr_reg_t;
+} lp_i2c_int_clr_reg_t;
 
 /** Type of int_ena register
  *  Interrupt enable bits
@@ -691,7 +691,7 @@ typedef union {
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} i2c_int_ena_reg_t;
+} lp_i2c_int_ena_reg_t;
 
 /** Type of int_status register
  *  Status of captured I2C communication events
@@ -765,177 +765,36 @@ typedef union {
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} i2c_int_status_reg_t;
+} lp_i2c_int_status_reg_t;
 
 
 /** Group: Command registers */
-/** Type of comd0 register
- *  I2C command register 0
+/** Type of command register
+ *  I2C command register
  */
 typedef union {
     struct {
-        /** command0 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 0. It consists of three parts: op_code is the
-         *  command, 1: WRITE, 2: STOP, 3: READ, 4: END, 6: RSTART. Byte_num represents the
-         *  number of bytes that need to be sent or received.ack_check_en, ack_exp and ack are
-         *  used to control the ACK bit. See I2C cmd structure for moreInformation.
+        /** command : R/W; bitpos: [13:0]; default: 0;
+         *  This is the content of a command. It consists of three parts:
+         *  op_code is the command, 6: RSTART, 1: WRITE, 3: READ, 2: STOP, 4: END.
+         *  Byte_num represents the number of bytes that need to be sent or received.
+         *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
+         *  structure for more information.
          */
-        uint32_t command0:14;
+        uint32_t byte_num:8;
+        uint32_t ack_en:1;
+        uint32_t ack_exp:1;
+        uint32_t ack_val:1;
+        uint32_t op_code:3;
         uint32_t reserved_14:17;
-        /** command0_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 0 is done in I2C Master mode, this bit changes to highlevel.
+        /** command_done : R/W/SS; bitpos: [31]; default: 0;
+         *  When command is done in I2C Master mode, this bit changes to high
+         *  level.
          */
-        uint32_t command0_done:1;
+        uint32_t command_done:1;
     };
     uint32_t val;
-} i2c_comd0_reg_t;
-
-/** Type of comd1 register
- *  I2C command register 1
- */
-typedef union {
-    struct {
-        /** command1 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 1. It consists of three parts: op_code is the
-         *  command, 1: WRITE, 2: STOP, 3: READ, 4: END, 6: RSTART. Byte_num represents the
-         *  number of bytes that need to be sent or received.ack_check_en, ack_exp and ack are
-         *  used to control the ACK bit. See I2C cmd structure for moreInformation.
-         */
-        uint32_t command1:14;
-        uint32_t reserved_14:17;
-        /** command1_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 1 is done in I2C Master mode, this bit changes to highlevel.
-         */
-        uint32_t command1_done:1;
-    };
-    uint32_t val;
-} i2c_comd1_reg_t;
-
-/** Type of comd2 register
- *  I2C command register 2
- */
-typedef union {
-    struct {
-        /** command2 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 2. It consists of three parts: op_code is the
-         *  command, 1: WRITE, 2: STOP, 3: READ, 4: END, 6: RSTART. Byte_num represents the
-         *  number of bytes that need to be sent or received.ack_check_en, ack_exp and ack are
-         *  used to control the ACK bit. See I2C cmd structure for moreInformation.
-         */
-        uint32_t command2:14;
-        uint32_t reserved_14:17;
-        /** command2_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 2 is done in I2C Master mode, this bit changes to highLevel.
-         */
-        uint32_t command2_done:1;
-    };
-    uint32_t val;
-} i2c_comd2_reg_t;
-
-/** Type of comd3 register
- *  I2C command register 3
- */
-typedef union {
-    struct {
-        /** command3 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 3. It consists of three parts: op_code is the
-         *  command, 1: WRITE, 2: STOP, 3: READ, 4: END, 6: RSTART. Byte_num represents the
-         *  number of bytes that need to be sent or received.ack_check_en, ack_exp and ack are
-         *  used to control the ACK bit. See I2C cmd structure for moreInformation.
-         */
-        uint32_t command3:14;
-        uint32_t reserved_14:17;
-        /** command3_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 3 is done in I2C Master mode, this bit changes to highlevel.
-         */
-        uint32_t command3_done:1;
-    };
-    uint32_t val;
-} i2c_comd3_reg_t;
-
-/** Type of comd4 register
- *  I2C command register 4
- */
-typedef union {
-    struct {
-        /** command4 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 4. It consists of three parts: op_code is the
-         *  command, 1: WRITE, 2: STOP, 3: READ, 4: END, 6: RSTART. Byte_num represents the
-         *  number of bytes that need to be sent or received.ack_check_en, ack_exp and ack are
-         *  used to control the ACK bit. See I2C cmd structure for moreInformation.
-         */
-        uint32_t command4:14;
-        uint32_t reserved_14:17;
-        /** command4_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 4 is done in I2C Master mode, this bit changes to highlevel.
-         */
-        uint32_t command4_done:1;
-    };
-    uint32_t val;
-} i2c_comd4_reg_t;
-
-/** Type of comd5 register
- *  I2C command register 5
- */
-typedef union {
-    struct {
-        /** command5 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 5. It consists of three parts:op_code is the
-         *  command, 1: WRITE, 2: STOP, 3: READ, 4: END, 6: RSTART. Byte_num represents the
-         *  number of bytes that need to be sent or received.ack_check_en, ack_exp and ack are
-         *  used to control the ACK bit. See I2C cmd structure for moreInformation.
-         */
-        uint32_t command5:14;
-        uint32_t reserved_14:17;
-        /** command5_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 5 is done in I2C Master mode, this bit changes to high level.
-         */
-        uint32_t command5_done:1;
-    };
-    uint32_t val;
-} i2c_comd5_reg_t;
-
-/** Type of comd6 register
- *  I2C command register 6
- */
-typedef union {
-    struct {
-        /** command6 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 6. It consists of three parts: op_code is the
-         *  command, 1: WRITE, 2: STOP, 3: READ, 4: END, 6: RSTART. Byte_num represents the
-         *  number of bytes that need to be sent or received.ack_check_en, ack_exp and ack are
-         *  used to control the ACK bit. See I2C cmd structure for moreInformation.
-         */
-        uint32_t command6:14;
-        uint32_t reserved_14:17;
-        /** command6_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 6 is done in I2C Master mode, this bit changes to high level.
-         */
-        uint32_t command6_done:1;
-    };
-    uint32_t val;
-} i2c_comd6_reg_t;
-
-/** Type of comd7 register
- *  I2C command register 7
- */
-typedef union {
-    struct {
-        /** command7 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 7. It consists of three parts: op_code is the
-         *  command, 1: WRITE, 2: STOP, 3: READ, 4: END, 6: RSTART. Byte_num represents the
-         *  number of bytes that need to be sent or received.ack_check_en, ack_exp and ack are
-         *  used to control the ACK bit. See I2C cmd structure for moreInformation.
-         */
-        uint32_t command7:14;
-        uint32_t reserved_14:17;
-        /** command7_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 7 is done in I2C Master mode, this bit changes to high level.
-         */
-        uint32_t command7_done:1;
-    };
-    uint32_t val;
-} i2c_comd7_reg_t;
+} lp_i2c_command_reg_t;
 
 
 /** Group: Version register */
@@ -950,7 +809,7 @@ typedef union {
         uint32_t date:32;
     };
     uint32_t val;
-} i2c_date_reg_t;
+} lp_i2c_date_reg_t;
 
 
 /** Group: Address register */
@@ -965,7 +824,7 @@ typedef union {
         uint32_t txfifo_start_addr:32;
     };
     uint32_t val;
-} i2c_txfifo_start_addr_reg_t;
+} lp_i2c_txfifo_start_addr_reg_t;
 
 /** Type of rxfifo_start_addr register
  *  I2C RXFIFO base address register
@@ -978,55 +837,49 @@ typedef union {
         uint32_t rxfifo_start_addr:32;
     };
     uint32_t val;
-} i2c_rxfifo_start_addr_reg_t;
+} lp_i2c_rxfifo_start_addr_reg_t;
 
 
-typedef struct {
-    volatile i2c_scl_low_period_reg_t scl_low_period;
-    volatile i2c_ctr_reg_t ctr;
-    volatile i2c_sr_reg_t sr;
-    volatile i2c_to_reg_t to;
+typedef struct lp_i2c_dev_t {
+    volatile lp_i2c_scl_low_period_reg_t scl_low_period;
+    volatile lp_i2c_ctr_reg_t ctr;
+    volatile lp_i2c_sr_reg_t sr;
+    volatile lp_i2c_to_reg_t to;
     uint32_t reserved_010;
-    volatile i2c_fifo_st_reg_t fifo_st;
-    volatile i2c_fifo_conf_reg_t fifo_conf;
-    volatile i2c_data_reg_t data;
-    volatile i2c_int_raw_reg_t int_raw;
-    volatile i2c_int_clr_reg_t int_clr;
-    volatile i2c_int_ena_reg_t int_ena;
-    volatile i2c_int_status_reg_t int_status;
-    volatile i2c_sda_hold_reg_t sda_hold;
-    volatile i2c_sda_sample_reg_t sda_sample;
-    volatile i2c_scl_high_period_reg_t scl_high_period;
+    volatile lp_i2c_fifo_st_reg_t fifo_st;
+    volatile lp_i2c_fifo_conf_reg_t fifo_conf;
+    volatile lp_i2c_data_reg_t data;
+    volatile lp_i2c_int_raw_reg_t int_raw;
+    volatile lp_i2c_int_clr_reg_t int_clr;
+    volatile lp_i2c_int_ena_reg_t int_ena;
+    volatile lp_i2c_int_status_reg_t int_status;
+    volatile lp_i2c_sda_hold_reg_t sda_hold;
+    volatile lp_i2c_sda_sample_reg_t sda_sample;
+    volatile lp_i2c_scl_high_period_reg_t scl_high_period;
     uint32_t reserved_03c;
-    volatile i2c_scl_start_hold_reg_t scl_start_hold;
-    volatile i2c_scl_rstart_setup_reg_t scl_rstart_setup;
-    volatile i2c_scl_stop_hold_reg_t scl_stop_hold;
-    volatile i2c_scl_stop_setup_reg_t scl_stop_setup;
-    volatile i2c_filter_cfg_reg_t filter_cfg;
-    volatile i2c_clk_conf_reg_t clk_conf;
-    volatile i2c_comd0_reg_t comd0;
-    volatile i2c_comd1_reg_t comd1;
-    volatile i2c_comd2_reg_t comd2;
-    volatile i2c_comd3_reg_t comd3;
-    volatile i2c_comd4_reg_t comd4;
-    volatile i2c_comd5_reg_t comd5;
-    volatile i2c_comd6_reg_t comd6;
-    volatile i2c_comd7_reg_t comd7;
-    volatile i2c_scl_st_time_out_reg_t scl_st_time_out;
-    volatile i2c_scl_main_st_time_out_reg_t scl_main_st_time_out;
-    volatile i2c_scl_sp_conf_reg_t scl_sp_conf;
+    volatile lp_i2c_scl_start_hold_reg_t scl_start_hold;
+    volatile lp_i2c_scl_rstart_setup_reg_t scl_rstart_setup;
+    volatile lp_i2c_scl_stop_hold_reg_t scl_stop_hold;
+    volatile lp_i2c_scl_stop_setup_reg_t scl_stop_setup;
+    volatile lp_i2c_filter_cfg_reg_t filter_cfg;
+    volatile lp_i2c_clk_conf_reg_t clk_conf;
+    volatile lp_i2c_command_reg_t command[8];
+    volatile lp_i2c_scl_st_time_out_reg_t scl_st_time_out;
+    volatile lp_i2c_scl_main_st_time_out_reg_t scl_main_st_time_out;
+    volatile lp_i2c_scl_sp_conf_reg_t scl_sp_conf;
     uint32_t reserved_084[29];
-    volatile i2c_date_reg_t date;
+    volatile lp_i2c_date_reg_t date;
     uint32_t reserved_0fc;
-    volatile i2c_txfifo_start_addr_reg_t txfifo_start_addr;
+    volatile lp_i2c_txfifo_start_addr_reg_t txfifo_start_addr;
     uint32_t reserved_104[31];
-    volatile i2c_rxfifo_start_addr_reg_t rxfifo_start_addr;
-} i2c_dev_t;
+    volatile lp_i2c_rxfifo_start_addr_reg_t rxfifo_start_addr;
+} lp_i2c_dev_t;
 
-extern i2c_dev_t LP_I2C;
+// We map the LP_I2C instance to the i2c_dev_t struct for convenience of using the same HAL/LL. See soc/i2c_struct.h
+//extern lp_i2c_dev_t LP_I2C;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(i2c_dev_t) == 0x184, "Invalid size of i2c_dev_t structure");
+_Static_assert(sizeof(lp_i2c_dev_t) == 0x184, "Invalid size of lp_i2c_dev_t structure");
 #endif
 
 #ifdef __cplusplus

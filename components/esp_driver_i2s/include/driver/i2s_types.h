@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,6 +86,37 @@ typedef struct {
                                   *  It is related to the dma_frame_num and data_bit_width, typically it is fixed when data_bit_width is not changed.
                                   */
 } i2s_event_data_t;
+
+/**
+ * @brief I2S clock tuning operation
+ *
+ */
+typedef enum {
+    I2S_TUNING_MODE_ADDSUB,                 /*!< Add or subtract the tuning value based on the current clock */
+    I2S_TUNING_MODE_SET,                    /*!< Set the tuning value to overwrite the current clock */
+    I2S_TUNING_MODE_RESET,                  /*!< Set the clock to the initial value */
+} i2s_tuning_mode_t;
+
+/**
+ * @brief I2S clock tuning configurations
+ *
+ */
+typedef struct {
+    i2s_tuning_mode_t   tune_mode;          /*!< Tuning mode, which decides how to tune the MCLK with the tuning value */
+    int32_t             tune_mclk_val;      /*!< Tuning value */
+    int32_t             max_delta_mclk;     /*!< The maximum frequency that can be increased comparing to the initial MCLK freuqnecy */
+    int32_t             min_delta_mclk;     /*!< The minimum frequency that can be decreased comparing to the initial MCLK freuqnecy */
+} i2s_tuning_config_t;
+
+/**
+ * @brief I2S clock tuning result
+ *
+ */
+typedef struct {
+    int32_t             curr_mclk_hz;        /*!< The current MCLK frequency after tuned */
+    int32_t             delta_mclk_hz;       /*!< The current changed MCLK frequency comparing to the initial MCLK frequency */
+    uint32_t            water_mark;          /*!< The water mark of the internal buffer, in percent */
+} i2s_tuning_info_t;
 
 /**
  * @brief Event data structure for LP I2S

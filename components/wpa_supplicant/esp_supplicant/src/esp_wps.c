@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -119,7 +119,7 @@ static void wps_rxq_deinit(void)
 #ifdef USE_WPS_TASK
 void wps_task(void *pvParameters)
 {
-    ETSEvent *e;
+    ETSEvent e;
     wps_ioctl_param_t *param;
     bool del_task = false;
 
@@ -129,32 +129,32 @@ void wps_task(void *pvParameters)
     for (;;) {
         if (TRUE == os_queue_recv(s_wps_queue, &e, OS_BLOCK)) {
 
-            if ((e->sig >= SIG_WPS_ENABLE) && (e->sig < SIG_WPS_NUM)) {
+            if ((e.sig >= SIG_WPS_ENABLE) && (e.sig < SIG_WPS_NUM)) {
                 DATA_MUTEX_TAKE();
-                if (s_wps_sig_cnt[e->sig]) {
-                    s_wps_sig_cnt[e->sig]--;
+                if (s_wps_sig_cnt[e.sig]) {
+                    s_wps_sig_cnt[e.sig]--;
                 } else {
-                    wpa_printf(MSG_ERROR, "wpsT: invalid sig cnt, sig=%" PRId32 " cnt=%d", e->sig, s_wps_sig_cnt[e->sig]);
+                    wpa_printf(MSG_ERROR, "wpsT: invalid sig cnt, sig=%" PRId32 " cnt=%d", e.sig, s_wps_sig_cnt[e.sig]);
                 }
                 DATA_MUTEX_GIVE();
             }
 
-            wpa_printf(MSG_DEBUG, "wpsT: rx sig=%" PRId32 "", e->sig);
+            wpa_printf(MSG_DEBUG, "wpsT: rx sig=%" PRId32 "", e.sig);
 
-            switch (e->sig) {
+            switch (e.sig) {
             case SIG_WPS_ENABLE:
             case SIG_WPS_DISABLE:
             case SIG_WPS_START:
-                param = (wps_ioctl_param_t *)e->par;
+                param = (wps_ioctl_param_t *)e.par;
                 if (!param) {
-                    wpa_printf(MSG_ERROR, "wpsT: invalid param sig=%" PRId32 "", e->sig);
+                    wpa_printf(MSG_ERROR, "wpsT: invalid param sig=%" PRId32 "", e.sig);
                     os_semphr_give(s_wps_api_sem);
                     break;
                 }
 
-                if (e->sig == SIG_WPS_ENABLE) {
+                if (e.sig == SIG_WPS_ENABLE) {
                     param->ret = wifi_wps_enable_internal((esp_wps_config_t *)(param->arg));
-                } else if (e->sig == SIG_WPS_DISABLE) {
+                } else if (e.sig == SIG_WPS_DISABLE) {
                     DATA_MUTEX_TAKE();
                     param->ret = wifi_wps_disable_internal();
                     del_task = true;
@@ -198,10 +198,9 @@ void wps_task(void *pvParameters)
                 break;
 
             default:
-                wpa_printf(MSG_ERROR, "wpsT: invalid sig=%" PRId32 "", e->sig);
+                wpa_printf(MSG_ERROR, "wpsT: invalid sig=%" PRId32 "", e.sig);
                 break;
             }
-            os_free(e);
 
             if (del_task) {
                 wpa_printf(MSG_DEBUG, "wpsT: delete task");
@@ -218,39 +217,30 @@ void wps_task(void *pvParameters)
 int wps_post(uint32_t sig, uint32_t par)
 {
     wpa_printf(MSG_DEBUG, "wps post: sig=%" PRId32 " cnt=%d", sig, s_wps_sig_cnt[sig]);
-
-    DATA_MUTEX_TAKE();
+    ETSEvent evt;
 
     if (!s_wps_task_hdl) {
         wpa_printf(MSG_DEBUG, "wps post: sig=%" PRId32 " failed as wps task has been deinited", sig);
-        DATA_MUTEX_GIVE();
         return ESP_FAIL;
     }
+    DATA_MUTEX_TAKE();
     if (s_wps_sig_cnt[sig]) {
         wpa_printf(MSG_DEBUG, "wps post: sig=%" PRId32 " processing", sig);
         DATA_MUTEX_GIVE();
         return ESP_OK;
-    } else {
-        ETSEvent *evt = (ETSEvent *)os_malloc(sizeof(ETSEvent));
+    }
 
-        if (evt == NULL) {
-            wpa_printf(MSG_ERROR, "WPS: E N M");
-            DATA_MUTEX_GIVE();
-            return ESP_FAIL;
-        }
+    s_wps_sig_cnt[sig]++;
+    evt.sig = sig;
+    evt.par = par;
+    DATA_MUTEX_GIVE();
 
-        s_wps_sig_cnt[sig]++;
-        evt->sig = sig;
-        evt->par = par;
+    if (os_queue_send(s_wps_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
+        wpa_printf(MSG_ERROR, "WPS: Q S E");
+        DATA_MUTEX_TAKE();
+        s_wps_sig_cnt[sig]--;
         DATA_MUTEX_GIVE();
-
-        if (os_queue_send(s_wps_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
-            wpa_printf(MSG_ERROR, "WPS: Q S E");
-            DATA_MUTEX_TAKE();
-            s_wps_sig_cnt[sig]--;
-            DATA_MUTEX_GIVE();
-            return ESP_FAIL;
-        }
+        return ESP_FAIL;
     }
     return ESP_OK;
 }
@@ -887,9 +877,11 @@ int wps_finish(void)
     return ret;
 }
 
+/* This will get executed in the wifi task's context */
 static void wps_sm_notify_deauth(void)
 {
-    if (gWpsSm && gWpsSm->wps->state != WPS_FINISHED) {
+    if (gWpsSm && gWpsSm->wps->state != WPS_FINISHED &&
+            !gWpsSm->intermediate_disconnect) {
         wps_stop_process(WPS_FAIL_REASON_RECV_DEAUTH);
     }
 }
@@ -927,16 +919,16 @@ int wps_start_msg_timer(void)
     }
 
     if (sm->wps->state == WPS_FINISHED) {
-        msg_timeout = 100;
+        msg_timeout = 5;
         wpa_printf(MSG_DEBUG, "start msg timer WPS_FINISHED %" PRId32 " ms", msg_timeout);
-	eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
-	eloop_register_timeout(0, msg_timeout*1000, wifi_station_wps_msg_timeout, NULL, NULL);
+        eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
+        eloop_register_timeout(msg_timeout, 0, wifi_station_wps_msg_timeout, NULL, NULL);
         ret = 0;
     } else if (sm->wps->state == RECV_M2) {
-        msg_timeout = 5;
+        msg_timeout = 20;
         wpa_printf(MSG_DEBUG, "start msg timer RECV_M2 %" PRId32 " s", msg_timeout);
-	eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
-	eloop_register_timeout(msg_timeout, 0, wifi_station_wps_msg_timeout, NULL, NULL);
+        eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
+        eloop_register_timeout(msg_timeout, 0, wifi_station_wps_msg_timeout, NULL, NULL);
         ret = 0;
     }
     return ret;
@@ -1603,6 +1595,7 @@ wifi_station_wps_deinit(void)
         sm->wps = NULL;
     }
     if (s_wps_sm_cb) {
+        s_wps_sm_cb->wps_sm_notify_deauth = NULL;
         os_free(s_wps_sm_cb);
         s_wps_sm_cb = NULL;
     }
@@ -1653,7 +1646,9 @@ wifi_wps_scan_done(void *arg, ETS_STATUS status)
     sm->discover_ssid_cnt = 0;
 
     if (wps_get_status() == WPS_STATUS_PENDING) {
+        sm->intermediate_disconnect = true;
         esp_wifi_disconnect();
+        sm->intermediate_disconnect = false;
 
         os_memcpy(wifi_config.sta.bssid, sm->bssid, ETH_ALEN);
         os_memcpy(wifi_config.sta.ssid, (char *)sm->creds[0].ssid, sm->creds[0].ssid_len);
@@ -1668,7 +1663,7 @@ wifi_wps_scan_done(void *arg, ETS_STATUS status)
         esp_wifi_connect();
         sm->state = WAIT_START;
         eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
-        eloop_register_timeout(2, 0, wifi_station_wps_msg_timeout, NULL, NULL);
+        eloop_register_timeout(20, 0, wifi_station_wps_msg_timeout, NULL, NULL);
     } else if (wps_get_status() == WPS_STATUS_SCANNING) {
         if (wps_get_type() == WPS_TYPE_PIN && sm->scan_cnt > WPS_IGNORE_SEL_REG_MAX_CNT) {
             wpa_printf(MSG_INFO, "WPS: ignore selected registrar after %d scans", sm->scan_cnt);

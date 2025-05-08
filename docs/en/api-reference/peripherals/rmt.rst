@@ -443,6 +443,20 @@ A configuration structure :cpp:type:`rmt_simple_encoder_config_t` should be prov
 
 While the functionality of an encoding process using the simple callback encoder can usually also realized by chaining other encoders, the simple callback can be more easy to understand and maintain than an encoder chain.
 
+.. only:: SOC_BITSCRAMBLER_SUPPORTED and SOC_RMT_SUPPORT_DMA
+
+    BitScrambler Encoder
+    ~~~~~~~~~~~~~~~~~~~~
+
+    When the RMT transmit channel has DMA enabled, we can control the data on the DMA path by writing :doc:`BitScrambler </api-reference/peripherals/bitscrambler>` assembly code, which implements simple encoding operations. Compared to CPU-based encoding, the BitScrambler offers higher performance without consuming CPU resources. However, due to the limited instruction memory space of the BitScrambler, it cannot implement complex encoding operations. Additionally, the output data format from the BitScrambler program must conform to the :cpp:type:`rmt_symbol_word_t` structure.
+
+    A BitScrambler encoder can be created by calling :cpp:func:`rmt_new_bitscrambler_encoder`. This function takes a configuration parameter of type :cpp:type:`rmt_bs_encoder_config_t`, which includes the following configuration items:
+        - :cpp:member:`rmt_bs_encoder_config_t::program_bin` points to the binary file of the BitScrambler program. This binary file must comply with the BitScrambler assembly language specification and will be loaded into the BitScrambler's instruction memory at runtime. For information on how to write and compile BitScrambler programs, please refer to the :doc:`BitScrambler Programming Guide </api-reference/peripherals/bitscrambler>`.
+
+    .. note::
+
+        The BitScrambler encoder **must** be used with an RMT channel that has DMA enabled.
+
 Customize RMT Encoder for NEC Protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -567,13 +581,15 @@ Cache Safe
 
 By default, the RMT interrupt is deferred when the Cache is disabled for reasons like writing or erasing the main Flash. Thus the transaction-done interrupt does not get handled in time, which is not acceptable in a real-time application. What is worse, when the RMT transaction relies on **ping-pong** interrupt to successively encode or copy RMT symbols, a delayed interrupt can lead to an unpredictable result.
 
-There is a Kconfig option :ref:`CONFIG_RMT_ISR_CACHE_SAFE` that has the following features:
+There is a Kconfig option :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` and :ref:`CONFIG_RMT_RX_ISR_CACHE_SAFE` that has the following features:
 
 1. Enable the interrupt being serviced even when the cache is disabled
 2. Place all functions used by the ISR into IRAM [2]_
 3. Place the driver object into DRAM in case it is mapped to PSRAM by accident
 
 This Kconfig option allows the interrupt handler to run while the cache is disabled but comes at the cost of increased IRAM consumption.
+
+Please note, when :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` is enabled, you must also place the encoder functions (mainly the :cpp:member:`rmt_encoder_t::encode` and :cpp:member:`rmt_encoder_t::reset`) into IRAM. You can use :c:macro:`RMT_ENCODER_FUNC_ATTR` to decorate your encoder functions.
 
 Another Kconfig option :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` can place :cpp:func:`rmt_receive` into the IRAM as well. So that the receive function can be used even when the flash cache is disabled.
 
@@ -594,7 +610,7 @@ The following functions are allowed to use under ISR context as well.
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_RMT_ISR_CACHE_SAFE` controls whether the default ISR handler can work when cache is disabled, see also :ref:`rmt-cache-safe` for more information.
+- :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` and :ref:`CONFIG_RMT_RX_ISR_CACHE_SAFE` control whether the default ISR handler can work when cache is disabled, see also :ref:`rmt-cache-safe` for more information.
 - :ref:`CONFIG_RMT_ENABLE_DEBUG_LOG` is used to enable the debug log at the cost of increased firmware binary size.
 - :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` controls where to place the RMT receive function (IRAM or Flash), see :ref:`rmt-cache-safe` for more information.
 

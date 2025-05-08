@@ -118,6 +118,8 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default "y" if IDF_TARGET="esp32c5"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
+        # TODO: [ESPTOOL-1044] remove when stub supported
+        select IDF_ENV_BRINGUP
 
     config IDF_TARGET_ESP32P4
         bool
@@ -147,6 +149,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
     config IDF_TARGET_ESP32H4
         bool
         default "y" if IDF_TARGET="esp32h4"
+        select FREERTOS_UNICORE  # TODO: [ESP32H4] IDF-12319, need remove
         select IDF_TARGET_ARCH_RISCV
         select IDF_ENV_FPGA
         select IDF_ENV_BRINGUP
@@ -702,6 +705,5 @@ mainmenu "Espressif IoT Development Framework Configuration"
             - CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
             - CONFIG_ESP_WIFI_EAP_TLS1_3
             - CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-            - CONFIG_USB_HOST_EXT_PORT_SUPPORT_LS
             - CONFIG_USB_HOST_EXT_PORT_RESET_ATTEMPTS
             - CONFIG_LIBC_PICOLIBC

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,12 +38,8 @@ static void test_ledc_sleep_retention(bool allow_pd)
 
     vTaskDelay(50 / portTICK_PERIOD_MS);
 
-#if SOC_PCNT_SUPPORTED
-    setup_testbench();
-    pulse_count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ, pulse_count);
-    tear_testbench(); // tear down so that PCNT won't affect TOP PD
-#endif
+    pulse_count = wave_count(200);
+    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ * 200 / 1000, pulse_count);
 
     esp_sleep_context_t sleep_ctx;
     esp_sleep_set_sleep_context(&sleep_ctx);
@@ -74,12 +70,8 @@ static void test_ledc_sleep_retention(bool allow_pd)
         TEST_ASSERT_EQUAL(4000, ledc_get_duty(TEST_SPEED_MODE, LEDC_CHANNEL_0));
     }
 
-#if SOC_PCNT_SUPPORTED
-    setup_testbench();
-    pulse_count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ, pulse_count);
-    tear_testbench();
-#endif
+    pulse_count = wave_count(200);
+    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ * 200 / 1000, pulse_count);
 }
 
 TEST_CASE("ledc can output after light sleep (LEDC power domain xpd)", "[ledc]")
@@ -100,7 +92,6 @@ TEST_CASE("ledc can output after light sleep (LEDC power domain pd)", "[ledc]")
 }
 #endif
 
-#if SOC_PCNT_SUPPORTED
 static const ledc_clk_src_t test_ledc_clk_in_slp[] = {
     LEDC_USE_RC_FAST_CLK,
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
@@ -112,18 +103,14 @@ static const int test_clks_num = sizeof(test_ledc_clk_in_slp) / sizeof(test_ledc
 
 static void ledc_output_monitor(void)
 {
-    setup_testbench();
-
     for (int i = 0; i < test_clks_num; i++) {
         unity_wait_for_signal("Go to light sleep for 3 seconds");
         vTaskDelay(500 / portTICK_PERIOD_MS);
-        int pulse_count = wave_count(1000);
+        int pulse_count = wave_count(200);
         uint32_t acceptable_delta = (test_ledc_clk_in_slp[i] == (ledc_clk_src_t)LEDC_USE_RC_FAST_CLK) ? 20 : 5; // RC_FAST as the clk src has a bigger error range is reasonable
-        TEST_ASSERT_UINT32_WITHIN(acceptable_delta, TEST_PWM_LOW_FREQ, pulse_count);
+        TEST_ASSERT_UINT32_WITHIN(acceptable_delta, TEST_PWM_LOW_FREQ * 200 / 1000, pulse_count);
         unity_wait_for_signal("Waked up!");
     }
-
-    tear_testbench();
 }
 
 static void ledc_output_in_sleep(void)
@@ -156,4 +143,3 @@ static void ledc_output_in_sleep(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("ledc can output during light sleep", "[ledc][test_env=generic_multi_device]", ledc_output_in_sleep, ledc_output_monitor);
-#endif // SOC_PCNT_SUPPORTED

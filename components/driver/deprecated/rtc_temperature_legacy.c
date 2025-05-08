@@ -54,6 +54,7 @@ typedef enum {
 static tsens_hw_state_t tsens_hw_state = TSENS_HW_STATE_UNCONFIGURED;
 
 static float s_deltaT = NAN; // Unused number
+static int s_tsens_range;
 
 esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 {
@@ -64,7 +65,7 @@ esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
     }
     temperature_sensor_ll_set_clk_div(tsens.clk_div);
     temp_sensor_sync_tsens_idx(tsens.dac_offset);
-    temperature_sensor_ll_set_range(dac_offset[tsens.dac_offset].reg_val);
+    s_tsens_range = dac_offset[tsens.dac_offset].reg_val;
     ESP_LOGI(TAG, "Config range [%d°C ~ %d°C], error < %d°C",
              dac_offset[tsens.dac_offset].range_min,
              dac_offset[tsens.dac_offset].range_max,
@@ -95,6 +96,7 @@ esp_err_t temp_sensor_start(void)
         err = ESP_ERR_INVALID_STATE;
     }
     temperature_sensor_power_acquire();
+    temperature_sensor_ll_set_range(s_tsens_range);
     temperature_sensor_ll_clk_sel(TEMPERATURE_SENSOR_CLK_SRC_DEFAULT);
     tsens_hw_state = TSENS_HW_STATE_STARTED;
     return err;

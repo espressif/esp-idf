@@ -20,6 +20,7 @@
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "hal/assert.h"
+#include "hal/spi_flash_encrypt_types.h"
 
 #include "hal/efuse_hal.h"
 #include "soc/chip_revision.h"
@@ -158,11 +159,11 @@ static inline bool spi_flash_encrypt_ll_check(uint32_t address, uint32_t length)
  * @param increment increment number of pseudo rounds, zero if disable
  * @param key_rng_cnt update frequency of the pseudo-key, zero if disable
  */
-static inline void spi_flash_encrypt_ll_enable_pseudo_rounds(uint8_t mode, uint8_t base, uint8_t increment, uint8_t key_rng_cnt)
+static inline void spi_flash_encrypt_ll_enable_pseudo_rounds(esp_xts_aes_psuedo_rounds_state_t mode, uint8_t base, uint8_t increment, uint8_t key_rng_cnt)
 {
     REG_SET_FIELD(XTS_AES_PSEUDO_ROUND_CONF_REG(0), XTS_AES_MODE_PSEUDO, mode);
 
-    if (mode) {
+    if (mode != ESP_XTS_AES_PSEUDO_ROUNDS_DISABLE) {
         REG_SET_FIELD(XTS_AES_PSEUDO_ROUND_CONF_REG(0), XTS_AES_PSEUDO_BASE, base);
         REG_SET_FIELD(XTS_AES_PSEUDO_ROUND_CONF_REG(0), XTS_AES_PSEUDO_INC, increment);
         REG_SET_FIELD(XTS_AES_PSEUDO_ROUND_CONF_REG(0), XTS_AES_PSEUDO_RNG_CNT, key_rng_cnt);

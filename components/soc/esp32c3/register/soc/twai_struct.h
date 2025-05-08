@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,9 +19,9 @@ extern "C" {
  * the least significant byte of every 32bits.
  */
 
-typedef volatile struct twai_dev_s {
+typedef struct twai_dev_t {
     //Configuration and Control Registers
-    union {
+    volatile union {
         struct {
             uint32_t rm: 1;                     /* MOD.0 Reset Mode */
             uint32_t lom: 1;                    /* MOD.1 Listen Only Mode */
@@ -31,7 +31,7 @@ typedef volatile struct twai_dev_s {
         };
         uint32_t val;
     } mode_reg;                                 /* Address 0x0000 */
-    union {
+    volatile union {
         struct {
             uint32_t tr: 1;                     /* CMR.0 Transmission Request */
             uint32_t at: 1;                     /* CMR.1 Abort Transmission */
@@ -42,7 +42,7 @@ typedef volatile struct twai_dev_s {
         };
         uint32_t val;
     } command_reg;                              /* Address 0x0004 */
-    union {
+    volatile union {
         struct {
             uint32_t rbs: 1;                    /* SR.0 Receive Buffer Status */
             uint32_t dos: 1;                    /* SR.1 Data Overrun Status */
@@ -57,7 +57,7 @@ typedef volatile struct twai_dev_s {
         };
         uint32_t val;
     } status_reg;                               /* Address 0x0008 */
-    union {
+    volatile union {
         struct {
             uint32_t ri: 1;                     /* IR.0 Receive Interrupt */
             uint32_t ti: 1;                     /* IR.1 Transmit Interrupt */
@@ -71,7 +71,7 @@ typedef volatile struct twai_dev_s {
         };
         uint32_t val;
     } interrupt_reg;                           /* Address 0x000C */
-    union {
+    volatile union {
         struct {
             uint32_t rie: 1;                    /* IER.0 Receive Interrupt Enable */
             uint32_t tie: 1;                    /* IER.1 Transmit Interrupt Enable */
@@ -86,7 +86,7 @@ typedef volatile struct twai_dev_s {
         uint32_t val;
     } interrupt_enable_reg;                     /* Address 0x0010 */
     uint32_t reserved_14;
-    union {
+    volatile union {
         struct {
             uint32_t brp: 13;                   /* BTR0[12:0] Baud Rate Prescaler */
             uint32_t reserved13: 1;             /* Internal Reserved */
@@ -95,7 +95,7 @@ typedef volatile struct twai_dev_s {
         };
         uint32_t val;
     } bus_timing_0_reg;                         /* Address 0x0018 */
-    union {
+    volatile union {
         struct {
             uint32_t tseg1: 4;                  /* BTR1[3:0] Timing Segment 1 */
             uint32_t tseg2: 3;                  /* BTR1[6:4] Timing Segment 2 */
@@ -109,14 +109,14 @@ typedef volatile struct twai_dev_s {
     uint32_t reserved_28;                       /* Address 0x0028 */
 
     //Capture and Counter Registers
-    union {
+    volatile union {
         struct {
             uint32_t alc: 5;                    /* ALC[4:0] Arbitration lost capture */
             uint32_t reserved5: 27;             /* Internal Reserved */
         };
         uint32_t val;
     } arbitration_lost_captue_reg;              /* Address 0x002C */
-    union {
+    volatile union {
         struct {
             uint32_t seg: 5;                    /* ECC[4:0] Error Code Segment 0 to 5 */
             uint32_t dir: 1;                    /* ECC.5 Error Direction (TX/RX) */
@@ -125,21 +125,21 @@ typedef volatile struct twai_dev_s {
         };
         uint32_t val;
     } error_code_capture_reg;                   /* Address 0x0030 */
-    union {
+    volatile union {
         struct {
             uint32_t ewl: 8;                    /* EWL[7:0] Error Warning Limit */
             uint32_t reserved8: 24;             /* Internal Reserved */
         };
         uint32_t val;
     } error_warning_limit_reg;                  /* Address 0x0034 */
-    union {
+    volatile union {
         struct {
             uint32_t rxerr: 8;                  /* RXERR[7:0] Receive Error Counter */
             uint32_t reserved8: 24;             /* Internal Reserved */
         };
         uint32_t val;
     } rx_error_counter_reg;                     /* Address 0x0038 */
-    union {
+    volatile union {
         struct {
             uint32_t txerr: 8;                  /* TXERR[7:0] Receive Error Counter */
             uint32_t reserved8: 24;             /* Internal Reserved */
@@ -148,7 +148,7 @@ typedef volatile struct twai_dev_s {
     } tx_error_counter_reg;                     /* Address 0x003C */
 
     //Shared Registers (TX Buff/RX Buff/Acc Filter)
-    union {
+    volatile union {
         struct {
             union {
                 struct {
@@ -180,7 +180,7 @@ typedef volatile struct twai_dev_s {
     };                                          /* Address 0x0040 - 0x0070 */
 
     //Misc Registers
-    union {
+    volatile union {
         struct {
             uint32_t rmc: 7;                    /* RMC[6:0] RX Message Counter */
             uint32_t reserved7: 25;             /* Internal Reserved */
@@ -188,7 +188,7 @@ typedef volatile struct twai_dev_s {
         uint32_t val;
     } rx_message_counter_reg;                   /* Address 0x0074 */
     uint32_t reserved_78;                       /* Address 0x0078 (RX Buffer Start Address not supported) */
-    union {
+    volatile union {
         struct {
             uint32_t cd: 8;                     /* CDR[7:0] CLKOUT frequency selector based of fOSC */
             uint32_t co: 1;                     /* CDR.8 CLKOUT enable/disable */

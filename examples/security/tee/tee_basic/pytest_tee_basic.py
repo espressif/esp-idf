@@ -1,14 +1,15 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32c6
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_example_tee_basic(dut: Dut) -> None:
     # Logging example binary details
     binary_files = [

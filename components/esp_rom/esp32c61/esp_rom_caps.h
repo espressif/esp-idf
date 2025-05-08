@@ -21,6 +21,7 @@
 #define ESP_ROM_MULTI_HEAP_WALK_PATCH       (1) // ROM does not contain the patch of multi_heap_walk()
 #define ESP_ROM_HAS_LAYOUT_TABLE            (1) // ROM has the layout table
 #define ESP_ROM_HAS_SPI_FLASH               (1) // ROM has the implementation of SPI Flash driver
+#define ESP_ROM_HAS_SPI_FLASH_MMAP          (1) // ROM has the implementation of SPI Flash mmap driver
 #define ESP_ROM_WITHOUT_REGI2C              (1) // ROM has no regi2c APIs       TODO: IDF-10110 need refactor
 #define ESP_ROM_HAS_NEWLIB                  (1) // ROM has newlib (at least parts of it) functions included
 #define ESP_ROM_HAS_NEWLIB_NANO_FORMAT      (1) // ROM has the newlib nano version of formatting functions
@@ -32,3 +33,4 @@
 #define ESP_ROM_USB_OTG_NUM                 (-1) // No USB_OTG CDC in the ROM, set -1 for Kconfig usage.
 #define ESP_ROM_HAS_OUTPUT_PUTC_FUNC        (1) // ROM has esp_rom_output_putc (or ets_write_char_uart)
 #define ESP_ROM_CACHE_WB_INVLD_LOW_RANGE    (1) // ROM `Cache_WriteBack_Addr` and `Cache_Invalidate_Addr` can only access low vaddr parts
+#define ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY  (1) // ROM mem/str functions are not optimized well for misaligned memory access.

@@ -25,15 +25,15 @@ Simple HTTPS example that uses ESP-TLS to establish a secure socket connection: 
 Tree Structure for ESP-TLS Component
 -------------------------------------
 
-    .. code-block:: none
+.. code-block:: none
 
-        ├── esp_tls.c
-        ├── esp_tls.h
-        ├── esp_tls_mbedtls.c
-        ├── esp_tls_wolfssl.c
-        └── private_include
-            ├── esp_tls_mbedtls.h
-            └── esp_tls_wolfssl.h
+    ├── esp_tls.c
+    ├── esp_tls.h
+    ├── esp_tls_mbedtls.c
+    ├── esp_tls_wolfssl.c
+    └── private_include
+        ├── esp_tls_mbedtls.h
+        └── esp_tls_wolfssl.h
 
 The ESP-TLS component has a file :component_file:`esp-tls/esp_tls.h` which contains the public API headers for the component. Internally, the ESP-TLS component operates using either MbedTLS or WolfSSL, which are SSL/TLS libraries. APIs specific to MbedTLS are present in :component_file:`esp-tls/private_include/esp_tls_mbedtls.h` and APIs specific to WolfSSL are present in :component_file:`esp-tls/private_include/esp_tls_wolfssl.h`.
 
@@ -53,9 +53,9 @@ ESP-TLS provides multiple options for TLS server verification on the client side
     * **psk_hint_key**: To use pre-shared keys for server verification, :ref:`CONFIG_ESP_TLS_PSK_VERIFICATION` should be enabled in the ESP-TLS menuconfig. Then the pointer to the PSK hint and key should be provided to the :cpp:type:`esp_tls_cfg_t` structure. The ESP-TLS will use the PSK for server verification only when no other option regarding server verification is selected.
     * **skip server verification**: This is an insecure option provided in the ESP-TLS for testing purposes. The option can be set by enabling :ref:`CONFIG_ESP_TLS_INSECURE` and :ref:`CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY` in the ESP-TLS menuconfig. When this option is enabled the ESP-TLS will skip server verification by default when no other options for server verification are selected in the :cpp:type:`esp_tls_cfg_t` structure.
 
-    .. warning::
+      .. warning::
 
-        Enabling this option comes with a potential risk of establishing a TLS connection with a server that has a fake identity, provided that the server certificate is not provided either through API or other mechanisms like ca_store etc.
+          If this option is enabled, there is a risk of establishing a TLS connection with a server that has a fake identity, unless the server certificate is provided through the API or other mechanisms like ``ca_store``.
 
 ESP-TLS Server Cert Selection Hook
 ----------------------------------
@@ -92,22 +92,27 @@ How to Use WolfSSL with ESP-IDF
 
 There are two ways to use WolfSSL in your project:
 
-1) Directly add WolfSSL as a component in your project with the following three commands::
+- Add WolfSSL as a component directly to your project. For this, go to your project directory and run:
 
-    (First, change the directory (cd) to your project directory)
-    mkdir components
-    cd components
-    git clone --recursive https://github.com/espressif/esp-wolfssl.git
+  .. code-block:: none
 
-2) Add WolfSSL as an extra component in your project.
+      mkdir components
+      cd components
+      git clone --recursive https://github.com/espressif/esp-wolfssl.git
 
-* Download WolfSSL with::
+- Add WolfSSL as an extra component in your project.
 
-    git clone --recursive https://github.com/espressif/esp-wolfssl.git
+    1. Download WolfSSL with:
 
-* Include ESP-WolfSSL in ESP-IDF with setting ``EXTRA_COMPONENT_DIRS`` in ``CMakeLists.txt`` of your project as done in `wolfssl/examples <https://github.com/espressif/esp-wolfssl/tree/master/examples>`_. For reference see :ref:`optional_project_variable` in :doc:`build-system.</api-guides/build-system>`.
+       .. code-block:: none
 
-After the above steps, you will have the option to choose WolfSSL as the underlying SSL/TLS library in the configuration menu of your project as follows::
+           git clone --recursive https://github.com/espressif/esp-wolfssl.git
+
+    2. Include ESP-WolfSSL in ESP-IDF with setting ``EXTRA_COMPONENT_DIRS`` in ``CMakeLists.txt`` of your project as done in `wolfssl/examples <https://github.com/espressif/esp-wolfssl/tree/master/examples>`_. For reference see :ref:`optional_project_variable` in :doc:`build-system </api-guides/build-system>`.
+
+After the above steps, you will have the option to choose WolfSSL as the underlying SSL/TLS library in the configuration menu of your project as follow:
+
+.. code-block:: none
 
     idf.py menuconfig > ESP-TLS > SSL/TLS Library > Mbedtls/Wolfssl
 
@@ -138,39 +143,41 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
 
     These values can vary based on configuration options and version of respective libraries.
 
-.. only:: esp32
+ATECC608A (Secure Element) with ESP-TLS
+--------------------------------------------------
 
-    ATECC608A (Secure Element) with ESP-TLS
-    --------------------------------------------------
+ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32 series of SoCs. The use of ATECC608A is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. ESP-TLS uses MbedTLS as its underlying TLS/SSL stack by default unless changed manually.
 
-    ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32 series of SoCs. The use of ATECC608A is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. ESP-TLS uses MbedTLS as its underlying TLS/SSL stack by default unless changed manually.
+.. note::
 
-    .. note::
+    ATECC608A chip interfaced to ESP32 series must be already configured. For details, please refer to `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
 
-        ATECC608A chip interfaced to ESP32 must be already configured. For details, please refer to `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
+To enable the secure element support, and use it in your project for TLS connection, you have to follow the below steps:
 
-    To enable the secure element support, and use it in your project for TLS connection, you have to follow the below steps:
+1) Add `esp-cryptoauthlib <https://github.com/espressif/esp-cryptoauthlib>`_ in your project, for details please refer `how to use esp-cryptoauthlib with ESP-IDF <https://github.com/espressif/esp-cryptoauthlib#how-to-use-esp-cryptoauthlib-with-esp-idf>`_.
 
-    1) Add `esp-cryptoauthlib <https://github.com/espressif/esp-cryptoauthlib>`_ in your project, for details please refer `how to use esp-cryptoauthlib with ESP-IDF <https://github.com/espressif/esp-cryptoauthlib#how-to-use-esp-cryptoauthlib-with-esp-idf>`_.
+2) Enable the menuconfig option :ref:`CONFIG_ESP_TLS_USE_SECURE_ELEMENT`:
 
-    2) Enable the following menuconfig option::
+   .. code-block:: none
 
-        menuconfig > Component config > ESP-TLS > Use Secure Element (ATECC608A) with ESP-TLS
+       menuconfig > Component config > ESP-TLS > Use Secure Element (ATECC608A) with ESP-TLS
 
-    3) Select type of ATECC608A chip with following option::
+3) Select type of ATECC608A chip with following option:
 
-        menuconfig > Component config > esp-cryptoauthlib > Choose Type of ATECC608A chip
+   .. code-block:: none
 
-    To know more about different types of ATECC608A chips and how to obtain the type of ATECC608A connected to your ESP module, please visit `ATECC608A chip type <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#find-type-of-atecc608a-chip-connected-to-esp32-wroom32-se>`_.
+       menuconfig > Component config > esp-cryptoauthlib > Choose Type of ATECC608A chip
 
-    4) Enable the use of ATECC608A in ESP-TLS by providing the following config option in :cpp:type:`esp_tls_cfg_t`.
+   To know more about different types of ATECC608A chips and how to obtain the type of ATECC608A connected to your ESP module, please visit `ATECC608A chip type <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#find-type-of-atecc608a-chip-connected-to-esp32-wroom32-se>`_.
 
-    .. code-block:: c
+4) Enable the use of ATECC608A in ESP-TLS by providing the following config option in :cpp:type:`esp_tls_cfg_t`:
 
-            esp_tls_cfg_t cfg = {
-                /* other configurations options */
-                .use_secure_element = true,
-            };
+   .. code-block:: c
+
+       esp_tls_cfg_t cfg = {
+           /* other configurations options */
+           .use_secure_element = true,
+       };
 
 .. only:: SOC_DIG_SIGN_SUPPORTED
 
@@ -228,7 +235,7 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
 
 
 TLS Ciphersuites
-------------------------------------
+----------------
 
 ESP-TLS provides the ability to set a ciphersuites list in client mode. The TLS ciphersuites list informs the server about the supported ciphersuites for the specific TLS connection regardless of the TLS stack configuration. If the server supports any ciphersuite from this list, then the TLS connection will succeed; otherwise, it will fail.
 
@@ -261,12 +268,12 @@ To set TLS protocol version with ESP-TLS, set :cpp:member:`esp_tls_cfg_t::tls_ve
 
 The ESP-TLS connection can be configured to use the specified protocol version as follows:
 
-    .. code-block:: c
+.. code-block:: c
 
-        #include "esp_tls.h"
-        esp_tls_cfg_t cfg = {
-            .tls_version = ESP_TLS_VER_TLS_1_2,
-        };
+    #include "esp_tls.h"
+    esp_tls_cfg_t cfg = {
+        .tls_version = ESP_TLS_VER_TLS_1_2,
+    };
 
 API Reference
 -------------

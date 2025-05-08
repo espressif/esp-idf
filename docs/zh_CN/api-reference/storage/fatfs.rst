@@ -20,7 +20,9 @@ FatFs 与 VFS 配合使用
 
 多数应用程序在使用 ``esp_vfs_fat_`` 函数时，采用如下步骤：
 
-#. 调用 :cpp:func:`esp_vfs_fat_register`，指定：
+#.
+   调用 :cpp:func:`esp_vfs_fat_register`，指定：
+
     - 挂载文件系统的路径前缀（例如，``"/sdcard"`` 或 ``"/spiflash"``）
     - FatFs 驱动编号
     - 一个用于接收指向 ``FATFS`` 结构指针的变量
@@ -43,10 +45,11 @@ FatFs 与 VFS 配合使用
 
 便捷函数 :cpp:func:`esp_vfs_fat_sdmmc_mount`、:cpp:func:`esp_vfs_fat_sdspi_mount` 和 :cpp:func:`esp_vfs_fat_sdcard_unmount` 对上述步骤进行了封装，并加入了对 SD 卡初始化的处理。我们将在下一章节详细介绍以上函数。
 
-.. note::
+与 POSIX 标准的差异
+---------------------
 
-    FAT 文件系统不支持硬链接，因此调用 :cpp:func:`link` 后会复制文件内容（仅适用于 FatFs 卷上的文件）。
-
+#. :cpp:func:`link`：由于 FAT 文件系统不支持硬链接，调用 :cpp:func:`link` 后会复制文件内容（仅适用于 FatFs 卷上的文件）。
+#. :cpp:func:`unlink`：当尝试删除已打开的文件时，如果启用了 ``CONFIG_FATFS_FS_LOCK``，操作将失败并返回 ``EBUSY``。如果未启用，则行为未定义（可能导致文件系统损坏）。
 
 .. _using-fatfs-with-vfs-and-sdcards:
 
@@ -69,8 +72,17 @@ FatFs 与 VFS 配合使用（只读模式下）
 FatFs 组件有以下配置选项：
 
 * :ref:`CONFIG_FATFS_USE_FASTSEEK` - 如果启用该选项，POSIX :cpp:func:`lseek` 函数将以更快的速度执行。快速查找不适用于编辑模式下的文件，所以，使用快速查找时，应在只读模式下打开（或者关闭然后重新打开）文件。
-* :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC` - 如果启用该选项，FatFs 将在每次调用 :cpp:func:`write`、:cpp:func:`pwrite`、:cpp:func:`link`、:cpp:func:`truncate` 和 :cpp:func:`ftruncate` 函数后，自动调用 :cpp:func:`f_sync` 以同步最近的文件改动。该功能可提高文件系统中文件的一致性和文件大小报告的准确性，但由于需要频繁进行磁盘操作，性能将会受到影响。
+* :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC` - 如果启用该选项，FatFs 将在每次调用 :cpp:func:`write`、:cpp:func:`pwrite`、:cpp:func:`link`、:cpp:func:`truncate` 和 :cpp:func:`ftruncate` 函数后，自动调用 :cpp:func:`f_sync` 以同步最近的文件改动。该功能提升了 FatFs 的文件一致性和文件大小报告的准确性，但频繁的磁盘操作会降低性能。
 * :ref:`CONFIG_FATFS_LINK_LOCK` - 如果启用该选项，可保证 API 的线程安全，但如果应用程序需要快速频繁地进行小文件操作（例如将日志记录到文件），则可能有必要禁用该选项。请注意，如果禁用该选项，调用 :cpp:func:`link` 后的复制操作将是非原子的，此时如果在不同任务中对同一卷上的大文件调用 :cpp:func:`link`，则无法确保线程安全。
+
+以下选项用于设置 FatFs 文件系统计算和报告空闲空间的策略：
+
+* :ref:`CONFIG_FATFS_DONT_TRUST_FREE_CLUSTER_CNT` – 如果设置为 1，将忽略空闲簇计数。默认值为 0。
+* :ref:`CONFIG_FATFS_DONT_TRUST_LAST_ALLOC` – 如果设置为 1，将忽略上次分配的簇号。默认值为 0。
+
+.. note::
+
+    将这两个选项设为 1 可能会提高 :cpp:func:`f_getfree` 输出的准确性，但性能会下降，例如，可能需要执行完整的 FAT 扫描。
 
 
 .. _fatfs-diskio-layer:

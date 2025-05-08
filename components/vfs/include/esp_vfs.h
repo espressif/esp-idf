@@ -352,7 +352,7 @@ esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd);
  *
  * @param vfs_id VFS identificator returned by esp_vfs_register_with_id.
  * @param local_fd The fd in the local vfs. Passing -1 will set the local fd as the (*fd) value.
- * @param permanent Whether the fd should be treated as permannet (not removed after close())
+ * @param permanent Whether the fd should be treated as permanent (not removed after close())
  * @param fd The registered file descriptor will be written to this address.
  *
  * @return  ESP_OK if the registration is successful,

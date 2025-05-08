@@ -16,3 +16,7 @@ idf_component_register(SRCS ${srcs}
 
 target_bitscrambler_add_src("timeout.bsasm")
 target_bitscrambler_add_src("trivial.bsasm")
+target_bitscrambler_add_src("eof_upstream.bsasm")
+target_bitscrambler_add_src("eof_downstream.bsasm")
+target_bitscrambler_add_src("lut32.bsasm")
+target_bitscrambler_add_src("loop.bsasm")

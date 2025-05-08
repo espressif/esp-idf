@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,11 +11,10 @@
 #include "hal/gpio_types.h"
 #include "sdkconfig.h"
 
-#if !CONFIG_IDF_TARGET_ESP32H21 //TODO: [ESP32H21] IDF-11512
-#if !SOC_LP_TIMER_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #include "hal/rtc_cntl_ll.h"
 #endif
-#endif  //#if !CONFIG_IDF_TARGET_ESP32H21
+
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 #include "hal/rtc_io_ll.h"
 #endif

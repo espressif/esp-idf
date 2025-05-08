@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -153,7 +153,7 @@ extern "C" {
 #endif
 
 #if SOC_SDIO_SLAVE_SUPPORTED
-/// Space used for each sending descriptor. Should initialize the sendbuf accoring to this size.
+/// Space used for each sending descriptor. Should initialize the sendbuf according to this size.
 #define SDIO_SLAVE_SEND_DESC_SIZE   sizeof(sdio_slave_hal_send_desc_t)
 
 
@@ -239,7 +239,7 @@ typedef struct {
 
 /**
  * Initialize the HAL, should provide buffers to the context and configure the
- * members before this funciton is called.
+ * members before this function is called.
  *
  * @param hal Context of the HAL layer.
  */
@@ -350,7 +350,7 @@ esp_err_t sdio_slave_hal_send_get_next_finished_arg(sdio_slave_context_t *hal, v
  *
  * @note Only call when the DMA is stopped!
  * @param hal Context of the HAL layer.
- * @param out_arg Argument indiciating the buffer to send
+ * @param out_arg Argument indicating the buffer to send
  * @param out_return_cnt Space in the queue released after this descriptor is flushed.
  * @return
  *  - ESP_ERR_INVALID_STATE: This function call be called only when the DMA is stopped.
@@ -476,7 +476,7 @@ void sdio_slave_hal_recv_flush_one_buffer(sdio_slave_context_t *hal);
 /**
  * Enable some of the interrupts for the host.
  *
- * @note May have concurrency issue wit the host or other tasks, suggest only use it during
+ * @note May have concurrency issue with the host or other tasks, suggest only use it during
  *       initialization.
  * @param hal Context of the HAL layer.
  * @param mask Bitwise mask for the interrupts to enable.

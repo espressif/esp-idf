@@ -104,10 +104,11 @@ void hci_shut_down(void);
 
 bool hci_downstream_data_post(uint32_t timeout);
 
+#if (BLE_42_SCAN_EN == TRUE)
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
 int hci_adv_credits_prep_to_release(uint16_t num);
 int hci_adv_credits_try_release(uint16_t num);
 int hci_adv_credits_force_release(uint16_t num);
 #endif
-
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 #endif /* _HCI_LAYER_H_ */

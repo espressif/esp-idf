@@ -1,10 +1,12 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
 import socket
 from typing import Any
 from typing import List
+
+from idf_ci_utils import IDF_PATH
 
 try:
     import netifaces
@@ -17,8 +19,8 @@ except ImportError:
 import yaml
 
 ENV_CONFIG_FILE_SEARCH = [
-    os.path.join(os.environ['IDF_PATH'], 'EnvConfig.yml'),
-    os.path.join(os.environ['IDF_PATH'], 'ci-test-runner-configs', os.environ.get('CI_RUNNER_DESCRIPTION', ''), 'EnvConfig.yml'),
+    os.path.join(IDF_PATH, 'EnvConfig.yml'),
+    os.path.join(IDF_PATH, 'ci-test-runner-configs', os.environ.get('CI_RUNNER_DESCRIPTION', ''), 'EnvConfig.yml'),
 ]
 ENV_CONFIG_TEMPLATE = '''
 $IDF_PATH/EnvConfig.yml:

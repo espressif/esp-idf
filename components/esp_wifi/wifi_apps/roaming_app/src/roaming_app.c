@@ -44,8 +44,12 @@ static void *neighbor_list_lock = NULL;
 
 static int wifi_post_roam_event(struct cand_bss *bss);
 static void determine_best_ap(int8_t rssi_threshold);
+#if PERIODIC_RRM_MONITORING
 static void roaming_app_periodic_rrm_internal_handler(void *data, void *ctx);
+#endif
+#if PERIODIC_SCAN_MONITORING
 static void roaming_app_periodic_scan_internal_handler(void *data, void *ctx);
+#endif
 
 static const char *ROAMING_TAG = "ROAM";
 

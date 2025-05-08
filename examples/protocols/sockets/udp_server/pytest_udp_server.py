@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 
@@ -6,12 +6,14 @@ import pytest
 from common_test_methods import get_env_config_variable
 from common_test_methods import get_my_interface_by_dest_ip
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 try:
     from run_udp_client import udp_client
 except ImportError:
     import os
     import sys
+
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts')))
     from run_udp_client import udp_client
 
@@ -21,15 +23,12 @@ MESSAGE = 'Data to ESP'
 MAX_RETRIES = 3
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
-@pytest.mark.esp32c5
-@pytest.mark.esp32c6
-@pytest.mark.esp32c61
 @pytest.mark.wifi_router
+@idf_parametrize(
+    'target',
+    ['esp32', 'esp32s2', 'esp32c2', 'esp32c3', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32c61'],
+    indirect=['target'],
+)
 def test_examples_udp_server_ipv4(dut: Dut) -> None:
     # Parse IP address of STA
     logging.info('Waiting to connect with AP')
@@ -54,14 +53,10 @@ def test_examples_udp_server_ipv4(dut: Dut) -> None:
     dut.expect(MESSAGE)
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
-@pytest.mark.esp32c6
-@pytest.mark.esp32c61
 @pytest.mark.wifi_router
+@idf_parametrize(
+    'target', ['esp32', 'esp32s2', 'esp32c2', 'esp32c3', 'esp32s3', 'esp32c6', 'esp32c61'], indirect=['target']
+)
 def test_examples_udp_server_ipv6(dut: Dut) -> None:
     # Parse IP address of STA
     logging.info('Waiting to connect with AP')

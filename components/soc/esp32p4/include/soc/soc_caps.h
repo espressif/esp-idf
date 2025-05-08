@@ -22,6 +22,7 @@
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
+#define SOC_UHCI_SUPPORTED              1
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_AXI_GDMA_SUPPORTED          1
 #define SOC_DW_GDMA_SUPPORTED           1
@@ -179,6 +180,7 @@
 #define SOC_CPU_HAS_FPU                 1
 #define SOC_CPU_HAS_FPU_EXT_ILL_BUG     1       // EXT_ILL CSR doesn't support FLW/FSW
 #define SOC_CPU_HAS_HWLOOP              1
+#define SOC_CPU_HAS_HWLOOP_STATE_BUG    1       // HWLOOP state doesn't go to DIRTY after executing the last instruction of a loop
 /* PIE coprocessor assembly is only supported with GCC compiler  */
 #define SOC_CPU_HAS_PIE                 1
 
@@ -487,7 +489,7 @@
 #define SOC_PARLIO_RX_CLK_SUPPORT_GATING     1  /*!< Support gating RX clock */
 #define SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT     1  /*!< Support output RX clock to a GPIO */
 #define SOC_PARLIO_TRANS_BIT_ALIGN           1  /*!< Support bit alignment in transaction */
-#define SOC_PARLIO_TX_SIZE_BY_DMA            1   /*!< Transaction length is controlled by DMA instead of indicated by register */
+#define SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION 1  /*!< Support loop transmission */
 #define SOC_PARLIO_SUPPORT_SLEEP_RETENTION   1   /*!< Support back up registers before sleep */
 #define SOC_PARLIO_SUPPORT_SPI_LCD           1   /*!< Support to drive SPI interfaced LCD */
 #define SOC_PARLIO_SUPPORT_I80_LCD           1   /*!< Support to drive I80 interfaced LCD */
@@ -572,6 +574,7 @@
 // host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
 
+#define SOC_MSPI_HAS_INDEPENT_IOMUX 1
 #define SOC_MEMSPI_IS_INDEPENDENT   1
 #define SOC_SPI_MAX_PRE_DIVIDER     16
 
@@ -635,6 +638,8 @@
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION                    (3)     /*!< Hardware version of touch sensor */
 #define SOC_TOUCH_SENSOR_NUM                        (14)    /*!< Touch available channel number. Actually there are 15 Touch channels, but channel 14 is not pinned out, limit to 14 channels */
+#define SOC_TOUCH_MIN_CHAN_ID                       (0U)    /*!< Touch minimum channel number */
+#define SOC_TOUCH_MAX_CHAN_ID                       (13)    /*!< Touch maximum channel number */
 
 /* Touch Sensor Features */
 #define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP              (1)     /*!< Touch sensor supports sleep awake */
@@ -648,6 +653,7 @@
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM             3
+#define SOC_TWAI_MASK_FILTER_NUM            1U
 #define SOC_TWAI_CLK_SUPPORT_XTAL           1
 #define SOC_TWAI_BRP_MIN                    2
 #define SOC_TWAI_BRP_MAX                    32768
@@ -708,6 +714,9 @@
 /*-------------------------- LP_VAD CAPS -------------------------------------*/
 #define SOC_LP_I2S_SUPPORT_VAD           (1)
 
+/*--------------------------- UHCI CAPS -------------------------------------*/
+#define SOC_UHCI_NUM               (1UL)
+
 // TODO: IDF-5679 (Copy from esp32c3, need check)
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
@@ -737,6 +746,7 @@
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 #define SOC_PM_CPU_RETENTION_BY_SW      (1)
+#define SOC_PM_CACHE_RETENTION_BY_PAU   (1)
 
 #define SOC_PM_PAU_LINK_NUM             (4)
 #define SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR   (1)

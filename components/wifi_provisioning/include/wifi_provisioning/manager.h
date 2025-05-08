@@ -234,6 +234,9 @@ typedef enum wifi_prov_security {
      */
     WIFI_PROV_SECURITY_2 = 2
 #endif
+#if !CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0 && !CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1 && !CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+#error "All of the protocomm security versions are disabled. Make sure to enable at least one security version."
+#endif
 } wifi_prov_security_t;
 
 /**

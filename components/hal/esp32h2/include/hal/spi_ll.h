@@ -730,6 +730,7 @@ static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, const spi_ll_cl
  *
  * @return     Frequency of given dividers.
  */
+__attribute__((always_inline))
 static inline int spi_ll_freq_for_pre_n(int fapb, int pre, int n)
 {
     return (fapb / (pre * n));
@@ -745,6 +746,7 @@ static inline int spi_ll_freq_for_pre_n(int fapb, int pre, int n)
  *
  * @return           Actual (nearest) frequency.
  */
+__attribute__((always_inline))
 static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_ll_clock_val_t *out_reg)
 {
     typeof(GPSPI2.clock) reg = {.val = 0};

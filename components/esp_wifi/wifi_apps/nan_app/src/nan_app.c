@@ -16,6 +16,7 @@
 #include "esp_mac.h"
 #include "os.h"
 #include "esp_nan.h"
+#include "utils/common.h"
 
 /* NAN States */
 #define NAN_STARTED_BIT     BIT0
@@ -42,6 +43,7 @@ static EventGroupHandle_t nan_event_group;
 static bool s_app_default_handlers_set = false;
 static uint8_t null_mac[MACADDR_LEN] = {0};
 static void *s_nan_data_lock = NULL;
+static const uint8_t s_wfa_oui[3] = {0x50, 0x6f, 0x9a};
 
 #define NAN_DATA_LOCK() os_mutex_lock(s_nan_data_lock)
 #define NAN_DATA_UNLOCK() os_mutex_unlock(s_nan_data_lock)
@@ -371,19 +373,6 @@ static bool nan_is_datapath_active(void)
     return false;
 }
 
-static void nan_update_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t peer_nmi[])
-{
-    struct peer_svc_info *peer_info = nan_find_peer_svc(own_svc_id, 0, peer_nmi);
-    if (peer_info) {
-        peer_info->svc_id = peer_svc_id;
-    }
-
-    struct ndl_info *ndl = nan_find_ndl(0, peer_nmi);
-    if (ndl) {
-        ndl->publisher_id = peer_svc_id;
-    }
-}
-
 static void nan_fill_params_from_event(void *evt_data, uint8_t event)
 {
     switch (event) {
@@ -421,12 +410,16 @@ static void nan_fill_params_from_event(void *evt_data, uint8_t event)
     }
     case WIFI_EVENT_NAN_SVC_MATCH: {
         wifi_event_nan_svc_match_t *evt = (wifi_event_nan_svc_match_t *)evt_data;
+        struct peer_svc_info *peer_info = nan_find_peer_svc(evt->subscribe_id, 0, evt->pub_if_mac);
 
-        if (evt->update_pub_id) {
-            nan_update_peer_svc(evt->subscribe_id, evt->publish_id, evt->pub_if_mac);
-        }
+        if (peer_info && peer_info->svc_id != evt->publish_id) {
+            struct ndl_info *ndl = nan_find_ndl(0, evt->pub_if_mac);
 
-        if (!nan_find_peer_svc(evt->subscribe_id, evt->publish_id, evt->pub_if_mac)) {
+            peer_info->svc_id = evt->publish_id;
+            if (ndl) {
+                ndl->publisher_id = evt->publish_id;
+            }
+        } else {
             nan_record_peer_svc(evt->subscribe_id, evt->publish_id, evt->pub_if_mac);
         }
         break;
@@ -446,6 +439,9 @@ static void nan_app_action_service_match(void *arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "Service matched with "MACSTR" [Peer Publish id - %d]",
              MAC2STR(evt->pub_if_mac), evt->publish_id);
 
+    if (evt->ssi_len) {
+        ESP_LOG_BUFFER_HEXDUMP(TAG, evt->ssi, evt->ssi_len, ESP_LOG_DEBUG);
+    }
     NAN_DATA_LOCK();
     nan_fill_params_from_event(evt, WIFI_EVENT_NAN_SVC_MATCH);
     NAN_DATA_UNLOCK();
@@ -458,9 +454,12 @@ static void nan_app_action_replied(void *arg, esp_event_base_t event_base, int32
     }
     wifi_event_nan_replied_t *evt = (wifi_event_nan_replied_t *)data;
 
-    ESP_LOGD(TAG, "Sent Publish to Peer "MACSTR" [Peer Subscribe id - %d]",
+    ESP_LOGI(TAG, "Sent Publish to Peer "MACSTR" [Peer Subscribe id - %d]",
              MAC2STR(evt->sub_if_mac), evt->subscribe_id);
 
+    if (evt->ssi_len) {
+        ESP_LOG_BUFFER_HEXDUMP(TAG, evt->ssi, evt->ssi_len, ESP_LOG_DEBUG);
+    }
     NAN_DATA_LOCK();
     nan_fill_params_from_event(evt, WIFI_EVENT_NAN_REPLIED);
     NAN_DATA_UNLOCK();
@@ -473,8 +472,13 @@ static void nan_app_action_receive(void *arg, esp_event_base_t event_base, int32
     }
     wifi_event_nan_receive_t *evt = (wifi_event_nan_receive_t *)data;
 
-    ESP_LOGI(TAG, "Received message '%s' from Peer "MACSTR" [Peer Service id - %d]",
-             evt->peer_svc_info, MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
+    if (evt->ssi_len) {
+        ESP_LOGD(TAG, "Received payload from Peer "MACSTR" [Peer Service id - %d] - ", MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
+        ESP_LOG_BUFFER_HEXDUMP(TAG, evt->ssi, evt->ssi_len, ESP_LOG_DEBUG);
+    } else {
+        ESP_LOGD(TAG, "Received message '%s' from Peer "MACSTR" [Peer Service id - %d]",
+                 evt->peer_svc_info, MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
+    }
 
     NAN_DATA_LOCK();
     nan_fill_params_from_event(evt, WIFI_EVENT_NAN_RECEIVE);
@@ -841,6 +845,20 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg, 
         goto fail;
     }
 
+    if ((publish_cfg->ssi_len && publish_cfg->ssi == NULL) ||
+        (publish_cfg->ssi && (!publish_cfg->ssi_len || publish_cfg->ssi_len > ESP_WIFI_MAX_SVC_SSI_LEN))) {
+        ESP_LOGE(TAG, "Configured ssi and ssi_len(%d) incorrect", publish_cfg->ssi_len);
+        goto fail;
+    }
+
+    if (publish_cfg->ssi && !memcmp(publish_cfg->ssi, s_wfa_oui, sizeof(s_wfa_oui))) {
+        /* WFA defined Service Specific Info */
+        wifi_nan_wfa_ssi_t *wfa_ssi = (wifi_nan_wfa_ssi_t *)publish_cfg->ssi;
+        if (wfa_ssi->proto >= WIFI_SVC_PROTO_MAX) {
+            ESP_LOGI(TAG, "Unrecognized WFA Defined SSI protocol (%d)", wfa_ssi->proto);
+        }
+    }
+
     if (esp_nan_internal_publish_service(publish_cfg, &pub_id, false) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to publish service '%s'", publish_cfg->service_name);
         goto fail;
@@ -875,6 +893,20 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
         goto fail;
     }
 
+    if ((subscribe_cfg->ssi_len && subscribe_cfg->ssi == NULL) ||
+        (subscribe_cfg->ssi && (!subscribe_cfg->ssi_len || subscribe_cfg->ssi_len > ESP_WIFI_MAX_SVC_SSI_LEN))) {
+        ESP_LOGE(TAG, "Configured ssi and ssi_len(%d) incorrect", subscribe_cfg->ssi_len);
+        goto fail;
+    }
+
+    if (subscribe_cfg->ssi && !memcmp(subscribe_cfg->ssi, s_wfa_oui, sizeof(s_wfa_oui))) {
+        /* WFA defined Service Specific Info */
+        wifi_nan_wfa_ssi_t *wfa_ssi = (wifi_nan_wfa_ssi_t *)subscribe_cfg->ssi;
+        if (wfa_ssi->proto >= WIFI_SVC_PROTO_MAX) {
+            ESP_LOGI(TAG, "Unrecognized WFA Defined SSI protocol (%d)", wfa_ssi->proto);
+        }
+    }
+
     if (esp_nan_internal_subscribe_service(subscribe_cfg, &sub_id, false) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to subscribe to service '%s'", subscribe_cfg->service_name);
         goto fail;
@@ -903,6 +935,20 @@ esp_err_t esp_wifi_nan_send_message(wifi_nan_followup_params_t *fup_params)
         return ESP_FAIL;
     }
 
+    if ((fup_params->ssi_len && fup_params->ssi == NULL) ||
+        (fup_params->ssi && (!fup_params->ssi_len || fup_params->ssi_len > ESP_WIFI_MAX_FUP_SSI_LEN))) {
+        ESP_LOGE(TAG, "Configured ssi and ssi_len(%d) incorrect", fup_params->ssi_len);
+        return ESP_FAIL;
+    }
+
+    if (fup_params->ssi && !memcmp(fup_params->ssi, s_wfa_oui, sizeof(s_wfa_oui))) {
+        /* WFA defined Service Specific Info */
+        wifi_nan_wfa_ssi_t *wfa_ssi = (wifi_nan_wfa_ssi_t *)fup_params->ssi;
+        if (wfa_ssi->proto >= WIFI_SVC_PROTO_MAX) {
+            ESP_LOGI(TAG, "Unrecognized WFA Defined SSI protocol (%d)", wfa_ssi->proto);
+        }
+    }
+
     if (!fup_params->inst_id) {
         fup_params->inst_id = p_peer_svc->own_svc_id;
     }
@@ -918,8 +964,15 @@ esp_err_t esp_wifi_nan_send_message(wifi_nan_followup_params_t *fup_params)
         ESP_LOGE(TAG, "Failed to send Follow-up message!");
         return ESP_FAIL;
     }
-    ESP_LOGI(TAG, "Sent message '%s' to Peer "MACSTR" with Service ID %d", fup_params->svc_info,
+
+    if (fup_params->ssi) {
+        ESP_LOGD(TAG, "Sent below payload to Peer "MACSTR" with Service ID %d",
+                      MAC2STR(fup_params->peer_mac), fup_params->peer_inst_id);
+        ESP_LOG_BUFFER_HEXDUMP(TAG, fup_params->ssi, fup_params->ssi_len, ESP_LOG_DEBUG);
+    } else {
+        ESP_LOGI(TAG, "Sent message '%s' to Peer "MACSTR" with Service ID %d", fup_params->svc_info,
                   MAC2STR(fup_params->peer_mac), fup_params->peer_inst_id);
+    }
     return ESP_OK;
 }
 

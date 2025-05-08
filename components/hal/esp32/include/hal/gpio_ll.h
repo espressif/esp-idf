@@ -42,6 +42,8 @@ extern const uint8_t GPIO_PIN_MUX_REG_OFFSET[SOC_GPIO_PIN_COUNT];
 #define GPIO_LL_PRO_CPU_NMI_INTR_ENA  (BIT(3))
 #define GPIO_LL_SDIO_EXT_INTR_ENA     (BIT(4))
 
+#define GPIO_LL_INTR_SOURCE0   ETS_GPIO_INTR_SOURCE
+
 /**
  * @brief Get the configuration for an IO
  *
@@ -58,6 +60,8 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num, gpio
     io_config->pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
     io_config->ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
     io_config->oe = (((gpio_num < 32) ? hw->enable : hw->enable1.val) & bit_mask) >> bit_shift;
+    io_config->oe_ctrl_by_periph = !(hw->func_out_sel_cfg[gpio_num].oen_sel);
+    io_config->oe_inv = hw->func_out_sel_cfg[gpio_num].oen_inv_sel;
     io_config->od = hw->pin[gpio_num].pad_driver;
     io_config->drv = (gpio_drive_cap_t)((iomux_reg_val & FUN_DRV_M) >> FUN_DRV_S);
     io_config->fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
@@ -693,20 +697,8 @@ static inline void gpio_ll_set_input_signal_from(gpio_dev_t *hw, uint32_t signal
   */
 static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
 {
-    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
+    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;       // control valid only when using gpio matrix to route signal to the IO
     hw->func_out_sel_cfg[gpio_num].oen_sel = !ctrl_by_periph;
-}
-
-/**
- * @brief  Select a function for the pin in the IOMUX
- *
- * @param  pin_name Pin name to configure
- * @param  func Function to assign to the pin
- */
-__attribute__((always_inline))
-static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
-{
-    PIN_FUNC_SELECT(pin_name, func);
 }
 
 /**

@@ -64,8 +64,12 @@ secure_services:
       - id: 215
         type: custom
         function: dummy_secure_service
-        args: 0
+        args: 9
       - id: 216
         type: custom
         function: add_in_loop
         args: 3
+      - id: 217
+        type: custom
+        function: esp_tee_test_heap_malloc_write_free
+        args: 0

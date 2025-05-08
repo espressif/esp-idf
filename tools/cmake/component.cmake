@@ -494,7 +494,6 @@ function(idf_component_register)
         __component_add_include_dirs(${component_lib} "${__PRIV_INCLUDE_DIRS}" PRIVATE)
         __component_add_include_dirs(${component_lib} "${config_dir}" PUBLIC)
         set_target_properties(${component_lib} PROPERTIES OUTPUT_NAME ${COMPONENT_NAME} LINKER_LANGUAGE C)
-        __ldgen_add_component(${component_lib})
     else()
         add_library(${component_lib} INTERFACE)
         __component_set_property(${component_target} COMPONENT_TYPE CONFIG_ONLY)
@@ -542,10 +541,11 @@ endfunction()
 #                           to be passed here, too.
 # @param[in, optional] MOCK_HEADER_FILES (multivalue) list of header files from which the mocks shall be generated.
 # @param[in, optional] REQUIRES (multivalue) any other components required by the mock component.
+# @param[in, optional] MOCK_SUBDIR (singlevalue) tells cmake where are the CMock generated c files.
 #
 function(idf_component_mock)
     set(options)
-    set(single_value)
+    set(single_value MOCK_SUBDIR)
     set(multi_value MOCK_HEADER_FILES INCLUDE_DIRS REQUIRES)
     cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" ${ARGN})
 
@@ -561,8 +561,13 @@ function(idf_component_mock)
 
     foreach(header_file ${__MOCK_HEADER_FILES})
         get_filename_component(file_without_dir ${header_file} NAME_WE)
-        list(APPEND MOCK_GENERATED_HEADERS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.h")
-        list(APPEND MOCK_GENERATED_SRCS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.c")
+        if("${__MOCK_SUBDIR}" STREQUAL "")
+            list(APPEND MOCK_GENERATED_HEADERS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.h")
+            list(APPEND MOCK_GENERATED_SRCS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.c")
+        else()
+            list(APPEND MOCK_GENERATED_HEADERS "${MOCK_GEN_DIR}/mocks/${__MOCK_SUBDIR}/Mock${file_without_dir}.h")
+            list(APPEND MOCK_GENERATED_SRCS "${MOCK_GEN_DIR}/mocks/${__MOCK_SUBDIR}/Mock${file_without_dir}.c")
+        endif()
     endforeach()
 
     file(MAKE_DIRECTORY "${MOCK_GEN_DIR}/mocks")

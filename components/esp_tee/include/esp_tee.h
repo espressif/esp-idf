@@ -43,9 +43,8 @@ typedef struct {
     uint32_t magic_word;
     uint32_t api_major_version;
     uint32_t api_minor_version;
-    uint32_t reserved[2];
+    uint32_t reserved[3];
     /* TEE-related fields */
-    void *s_entry_addr;
     void *s_int_handler;
     /* REE-related fields */
     void *ns_entry_addr;
@@ -85,14 +84,12 @@ uint32_t esp_tee_service_call_with_noniram_intr_disabled(int argc, ...);
 
 #if !(__DOXYGEN__)
 /* Offsets of some values in esp_tee_config_t that are used by assembly code */
-#define ESP_TEE_CFG_OFFS_S_ENTRY_ADDR      0x14
 #define ESP_TEE_CFG_OFFS_S_INTR_HANDLER    0x18
 #define ESP_TEE_CFG_OFFS_NS_ENTRY_ADDR     0x1C
 #define ESP_TEE_CFG_OFFS_NS_INTR_HANDLER   0x20
 
 #if !defined(__ASSEMBLER__)
 /* Check the offsets are correct using the C compiler */
-ESP_STATIC_ASSERT(offsetof(esp_tee_config_t, s_entry_addr) == ESP_TEE_CFG_OFFS_S_ENTRY_ADDR, "offset macro is wrong");
 ESP_STATIC_ASSERT(offsetof(esp_tee_config_t, s_int_handler) == ESP_TEE_CFG_OFFS_S_INTR_HANDLER, "offset macro is wrong");
 ESP_STATIC_ASSERT(offsetof(esp_tee_config_t, ns_entry_addr) == ESP_TEE_CFG_OFFS_NS_ENTRY_ADDR, "offset macro is wrong");
 ESP_STATIC_ASSERT(offsetof(esp_tee_config_t, ns_int_handler) == ESP_TEE_CFG_OFFS_NS_INTR_HANDLER, "offset macro is wrong");

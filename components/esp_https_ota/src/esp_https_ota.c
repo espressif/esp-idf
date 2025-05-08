@@ -14,6 +14,7 @@
 #include <sys/param.h>
 #include <inttypes.h>
 #include "esp_check.h"
+#include "hal/efuse_hal.h"
 
 ESP_EVENT_DEFINE_BASE(ESP_HTTPS_OTA_EVENT);
 
@@ -203,6 +204,7 @@ static const char* ota_event_name_table[] = {
     "ESP_HTTPS_OTA_CONNECTED",
     "ESP_HTTPS_OTA_GET_IMG_DESC",
     "ESP_HTTPS_OTA_VERIFY_CHIP_ID",
+    "ESP_HTTPS_OTA_VERIFY_CHIP_REVISION",
     "ESP_HTTPS_OTA_DECRYPT_CB",
     "ESP_HTTPS_OTA_WRITE_FLASH",
     "ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION",
@@ -624,6 +626,17 @@ static esp_err_t esp_ota_verify_chip_id(const void *arg)
     return ESP_OK;
 }
 
+static esp_err_t esp_ota_verify_chip_revision(const void *arg)
+{
+    esp_image_header_t *data = (esp_image_header_t *)(arg);
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_VERIFY_CHIP_REVISION, (void *)(&data->min_chip_rev_full), sizeof(uint16_t));
+
+    if (!bootloader_common_check_chip_revision_validity(data, true)) {
+        return ESP_ERR_INVALID_VERSION;
+    }
+    return ESP_OK;
+}
+
 esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
 {
     esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
@@ -682,6 +695,11 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
 #endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
             if (handle->partition.final->type == ESP_PARTITION_TYPE_APP || handle->partition.final->type == ESP_PARTITION_TYPE_BOOTLOADER) {
                 err = esp_ota_verify_chip_id(data_buf);
+                if (err != ESP_OK) {
+                    return err;
+                }
+
+                err = esp_ota_verify_chip_revision(data_buf);
                 if (err != ESP_OK) {
                     return err;
                 }

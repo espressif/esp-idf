@@ -18,6 +18,8 @@ extern "C" {
 /**
  * @brief Traverse all possible wake-up sources and update the wake-up cause so that
  *        ulp_lp_core_get_wakeup_cause can obtain the bitmap of the wake-up reasons.
+ * @note Do not call it from user ULP programs because it will clear the wake-up cause bits
+ *       which were set at ULP startup in lp_core_startup().
  */
 void ulp_lp_core_update_wakeup_cause(void);
 
@@ -101,6 +103,20 @@ void ulp_lp_core_sw_intr_enable(bool enable);
  *
  */
 void ulp_lp_core_sw_intr_clear(void);
+
+#if SOC_LP_TIMER_SUPPORTED
+/**
+ * @brief Enable the LP Timer interrupt
+ *
+ */
+void ulp_lp_core_lp_timer_intr_enable(bool enable);
+
+/**
+ * @brief Clear the interrupt status for the LP Timer interrupt
+ *
+ */
+void ulp_lp_core_lp_timer_intr_clear(void);
+#endif
 
 /**
  * @brief Puts the CPU into a wait state until an interrupt is triggered

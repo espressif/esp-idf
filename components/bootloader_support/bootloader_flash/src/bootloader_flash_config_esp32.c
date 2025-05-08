@@ -93,7 +93,7 @@ void IRAM_ATTR bootloader_flash_gpio_config(const esp_image_header_t* pfhdr)
         pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
         // For ESP32D2WD or ESP32-PICO series,the SPI pins are already configured
         // flash clock signal should come from IO MUX.
-        gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
+        gpio_ll_func_sel(&GPIO, FLASH_CLK_IO, MSPI_FUNC_NUM);
         SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
     } else {
         const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
@@ -108,14 +108,14 @@ void IRAM_ATTR bootloader_flash_gpio_config(const esp_image_header_t* pfhdr)
             esp_rom_gpio_connect_out_signal(FLASH_SPIHD_IO, SPIHD_OUT_IDX, 0, 0);
             esp_rom_gpio_connect_in_signal(FLASH_SPIHD_IO, SPIHD_IN_IDX, 0);
             //select pin function gpio
-            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA0_U, PIN_FUNC_GPIO);
-            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA1_U, PIN_FUNC_GPIO);
-            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA2_U, PIN_FUNC_GPIO);
-            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA3_U, PIN_FUNC_GPIO);
-            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_CMD_U, PIN_FUNC_GPIO);
+            gpio_ll_func_sel(&GPIO, FLASH_SPIQ_IO, PIN_FUNC_GPIO);
+            gpio_ll_func_sel(&GPIO, FLASH_SPID_IO, PIN_FUNC_GPIO);
+            gpio_ll_func_sel(&GPIO, FLASH_SPIHD_IO, PIN_FUNC_GPIO);
+            gpio_ll_func_sel(&GPIO, FLASH_SPIWP_IO, PIN_FUNC_GPIO);
+            gpio_ll_func_sel(&GPIO, FLASH_CS_IO, PIN_FUNC_GPIO);
             // flash clock signal should come from IO MUX.
+            gpio_ll_func_sel(&GPIO, FLASH_CLK_IO, MSPI_FUNC_NUM);
             // set drive ability for clock
-            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
             SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
 
             uint32_t flash_id = g_rom_flashchip.device_id;
@@ -190,7 +190,7 @@ int bootloader_flash_get_wp_pin(void)
     case EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302:
         return ESP32_PICO_V3_GPIO;
     default:
-        return MSPI_IOMUX_PIN_NUM_WP;
+        return FLASH_SPIWP_IO;
     }
 #endif
 }
@@ -207,7 +207,7 @@ void bootloader_configure_spi_pins(int drv)
         pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
         // For ESP32D2WD or ESP32-PICO series,the SPI pins are already configured
         // flash clock signal should come from IO MUX.
-        gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
+        gpio_ll_func_sel(&GPIO, FLASH_CLK_IO, MSPI_FUNC_NUM);
         SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
     } else {
         const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
@@ -222,14 +222,14 @@ void bootloader_configure_spi_pins(int drv)
             esp_rom_gpio_connect_out_signal(FLASH_SPIHD_IO, SPIHD_OUT_IDX, 0, 0);
             esp_rom_gpio_connect_in_signal(FLASH_SPIHD_IO, SPIHD_IN_IDX, 0);
             //select pin function gpio
-            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA0_U, PIN_FUNC_GPIO);
-            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA1_U, PIN_FUNC_GPIO);
-            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA2_U, PIN_FUNC_GPIO);
-            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA3_U, PIN_FUNC_GPIO);
-            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_CMD_U, PIN_FUNC_GPIO);
+            gpio_ll_func_sel(&GPIO, FLASH_SPIQ_IO, PIN_FUNC_GPIO);
+            gpio_ll_func_sel(&GPIO, FLASH_SPID_IO, PIN_FUNC_GPIO);
+            gpio_ll_func_sel(&GPIO, FLASH_SPIHD_IO, PIN_FUNC_GPIO);
+            gpio_ll_func_sel(&GPIO, FLASH_SPIWP_IO, PIN_FUNC_GPIO);
+            gpio_ll_func_sel(&GPIO, FLASH_CS_IO, PIN_FUNC_GPIO);
             // flash clock signal should come from IO MUX.
+            gpio_ll_func_sel(&GPIO, FLASH_CLK_IO, MSPI_FUNC_NUM);
             // set drive ability for clock
-            gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
             SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
 
 #if CONFIG_SPIRAM_TYPE_ESPPSRAM32 || CONFIG_SPIRAM_TYPE_ESPPSRAM64

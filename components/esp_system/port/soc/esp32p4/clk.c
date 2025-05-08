@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,10 +32,12 @@
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/trace_struct.h"
 
+#include "hal/adc_ll.h"
 #include "hal/aes_ll.h"
 #include "hal/assist_debug_ll.h"
 #include "hal/ds_ll.h"
 #include "hal/ecc_ll.h"
+#include "hal/emac_ll.h"
 #include "hal/etm_ll.h"
 #include "hal/gdma_ll.h"
 #include "hal/hmac_ll.h"
@@ -249,6 +251,25 @@ __attribute__((weak)) void esp_perip_clk_init(void)
             || (rst_reason == RESET_REASON_SYS_BROWN_OUT) || (rst_reason == RESET_REASON_SYS_RWDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)
             || (rst_reason == RESET_REASON_CORE_SW) || (rst_reason == RESET_REASON_CORE_MWDT) || (rst_reason == RESET_REASON_CORE_RWDT) || (rst_reason == RESET_REASON_CORE_PWR_GLITCH) || (rst_reason == RESET_REASON_CORE_EFUSE_CRC) || (rst_reason == RESET_REASON_CORE_USB_JTAG) || (rst_reason == RESET_REASON_CORE_USB_UART)
        ) {
+        // Not gate HP_SYS_CLKRST_REG_L2MEM_MEM_CLK_FORCE_ON since the hardware will not automatically ungate when DMA accesses L2 MEM.
+        REG_CLR_BIT(HP_SYS_CLKRST_CLK_FORCE_ON_CTRL0_REG,   HP_SYS_CLKRST_REG_CPUICM_GATED_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_TCM_CPU_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_BUSMON_CPU_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_L1CACHE_CPU_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_L1CACHE_D_CPU_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_L1CACHE_I0_CPU_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_L1CACHE_I1_CPU_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_TRACE_CPU_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_TRACE_SYS_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_L1CACHE_MEM_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_L1CACHE_D_MEM_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_L1CACHE_I0_MEM_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_L1CACHE_I1_MEM_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_L2CACHE_MEM_CLK_FORCE_ON);
+        _adc_ll_sar1_clock_force_en(false);
+        _adc_ll_sar2_clock_force_en(false);
+        _emac_ll_clock_force_en(false);
+
         // hp_sys_clkrst register gets reset only if chip reset or pmu powers down hp
         // but at core reset and above, we will also disable HP modules' clock gating to save power consumption
         _gdma_ll_enable_bus_clock(0, false);
@@ -276,12 +297,12 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         _uart_ll_sclk_disable(&UART4);
 
         _timer_ll_enable_bus_clock(0, false);
-        _timer_ll_enable_clock(&TIMERG0, 0, false);
-        _timer_ll_enable_clock(&TIMERG0, 1, false);
+        _timer_ll_enable_clock(0, 0, false);
+        _timer_ll_enable_clock(0, 1, false);
 
         _timer_ll_enable_bus_clock(1, false);
-        _timer_ll_enable_clock(&TIMERG1, 0, false);
-        _timer_ll_enable_clock(&TIMERG1, 1, false);
+        _timer_ll_enable_clock(1, 0, false);
+        _timer_ll_enable_clock(1, 1, false);
 
         mipi_dsi_brg_ll_enable_ref_clock(&MIPI_DSI_BRIDGE, false);
         _mipi_csi_ll_enable_host_bus_clock(0, false);
@@ -393,7 +414,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
             REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL2_CLK_EN);
             REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL1_CLK_EN);
             REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL0_CLK_EN);
-#if !CONFIG_SPIRAM_BOOT_INIT
+#if !CONFIG_SPIRAM_BOOT_HW_INIT
             REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_MPLL_500M_CLK_EN);
 #endif
             REG_CLR_BIT(LP_SYSTEM_REG_HP_ROOT_CLK_CTRL_REG, LP_SYSTEM_REG_CPU_CLK_EN);

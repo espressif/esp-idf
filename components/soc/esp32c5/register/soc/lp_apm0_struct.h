@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -16,13 +16,13 @@ extern "C" {
  */
 typedef union {
     struct {
-        /** region_filter_en : R/W; bitpos: [3:0]; default: 1;
-         *  Configure bit $n(0-3) to enable region $n.\\
-         *  0: disable \\
-         *  1: enable  \\
+        /** region_filter_en : R/W; bitpos: [7:0]; default: 1;
+         *  Configure bit $n(0-7) to enable region $n.
+         *  0: disable
+         *  1: enable
          */
-        uint32_t region_filter_en:4;
-        uint32_t reserved_4:28;
+        uint32_t region_filter_en:8;
+        uint32_t reserved_8:24;
     };
     uint32_t val;
 } lp_apm0_region_filter_en_reg_t;
@@ -133,9 +133,9 @@ typedef union {
 typedef union {
     struct {
         /** m0_exception_status : RO; bitpos: [1:0]; default: 0;
-         *  Represents exception status.\\
-         *  bit0: 1 represents authority_exception \\
-         *  bit1: 1 represents space_exception  \\
+         *  Represents exception status.
+         *  bit0: 1 represents authority_exception
+         *  bit1: 1 represents space_exception
          */
         uint32_t m0_exception_status:2;
         uint32_t reserved_2:30;
@@ -166,11 +166,11 @@ typedef union {
  */
 typedef union {
     struct {
-        /** m0_exception_region : RO; bitpos: [3:0]; default: 0;
+        /** m0_exception_region : RO; bitpos: [7:0]; default: 0;
          *  Represents exception region
          */
-        uint32_t m0_exception_region:4;
-        uint32_t reserved_4:12;
+        uint32_t m0_exception_region:8;
+        uint32_t reserved_8:8;
         /** m0_exception_mode : RO; bitpos: [17:16]; default: 0;
          *  Represents exception mode
          */
@@ -207,9 +207,9 @@ typedef union {
 typedef union {
     struct {
         /** m0_apm_int_en : R/W; bitpos: [0]; default: 0;
-         *  Configures APM M0 interrupt enable.\\
-         *  0: disable \\
-         *  1: enable  \\
+         *  Configures APM M0 interrupt enable.
+         *  0: disable
+         *  1: enable
          */
         uint32_t m0_apm_int_en:1;
         uint32_t reserved_1:31;
@@ -225,9 +225,9 @@ typedef union {
 typedef union {
     struct {
         /** clk_en : R/W; bitpos: [0]; default: 1;
-         *  Configures whether to keep the clock always on.\\
-         *  0: enable automatic clock gating \\
-         *  1: keep the clock always on  \\
+         *  Configures whether to keep the clock always on.
+         *  0: enable automatic clock gating
+         *  1: keep the clock always on
          */
         uint32_t clk_en:1;
         uint32_t reserved_1:31;
@@ -266,7 +266,19 @@ typedef struct {
     volatile lp_apm0_regionn_addr_start_reg_t region3_addr_start;
     volatile lp_apm0_regionn_addr_end_reg_t region3_addr_end;
     volatile lp_apm0_regionn_attr_reg_t region3_attr;
-    uint32_t reserved_034[36];
+    volatile lp_apm0_regionn_addr_start_reg_t region4_addr_start;
+    volatile lp_apm0_regionn_addr_end_reg_t region4_addr_end;
+    volatile lp_apm0_regionn_attr_reg_t region4_attr;
+    volatile lp_apm0_regionn_addr_start_reg_t region5_addr_start;
+    volatile lp_apm0_regionn_addr_end_reg_t region5_addr_end;
+    volatile lp_apm0_regionn_attr_reg_t region5_attr;
+    volatile lp_apm0_regionn_addr_start_reg_t region6_addr_start;
+    volatile lp_apm0_regionn_addr_end_reg_t region6_addr_end;
+    volatile lp_apm0_regionn_attr_reg_t region6_attr;
+    volatile lp_apm0_regionn_addr_start_reg_t region7_addr_start;
+    volatile lp_apm0_regionn_addr_end_reg_t region7_addr_end;
+    volatile lp_apm0_regionn_attr_reg_t region7_attr;
+    uint32_t reserved_064[24];
     volatile lp_apm0_func_ctrl_reg_t func_ctrl;
     volatile lp_apm0_m0_status_reg_t m0_status;
     volatile lp_apm0_m0_status_clr_reg_t m0_status_clr;

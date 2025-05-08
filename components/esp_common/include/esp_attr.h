@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,9 @@ extern "C" {
 
 // Forces data into TCM instead of L2MEM
 #define TCM_DRAM_ATTR _SECTION_ATTR_IMPL(".tcm.data", __COUNTER__)
+
+// Forces data to be removed from the final binary but keeps it in the ELF file
+#define NOLOAD_ATTR _SECTION_ATTR_IMPL(".noload_keep_in_elf", __COUNTER__)
 
 // IRAM can only be accessed as an 8-bit memory on ESP32, when CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY is set
 #define IRAM_8BIT_ACCESSIBLE (CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
@@ -61,7 +64,7 @@ extern "C" {
 #define DMA_ATTR WORD_ALIGNED_ATTR DRAM_ATTR
 
 //Force data to be placed in DRAM and aligned according to DMA and cache's requirement
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#if CONFIG_SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #define DRAM_DMA_ALIGNED_ATTR __attribute__((aligned(CONFIG_CACHE_L1_CACHE_LINE_SIZE))) DRAM_ATTR
 #else
 #define DRAM_DMA_ALIGNED_ATTR WORD_ALIGNED_ATTR DRAM_ATTR

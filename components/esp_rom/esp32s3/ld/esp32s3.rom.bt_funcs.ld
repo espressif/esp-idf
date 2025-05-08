@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -424,7 +424,7 @@ r_llc_ll_unknown_ind_handler = 0x40003dbc;
 r_llc_llcp_send = 0x40003dc8;
 r_llc_llcp_state_set = 0x40003dd4;
 r_llc_llcp_trans_timer_set = 0x40003de0;
-r_llc_llcp_tx_check = 0x40003dec;
+/* r_llc_llcp_tx_check = 0x40003dec; */
 /* r_llc_loc_ch_map_proc_continue = 0x40003df8; */
 r_llc_loc_con_upd_proc_err_cb = 0x40003e10;
 r_llc_loc_dl_upd_proc_continue = 0x40003e1c;
@@ -460,7 +460,7 @@ r_llc_ver_proc_err_cb = 0x40003f90;
 r_llcp_pdu_handler_tab_p_get = 0x40003f9c;
 r_lld_aa_gen = 0x40003fa8;
 r_lld_adv_adv_data_set = 0x40003fb4;
-r_lld_adv_adv_data_update = 0x40003fc0;
+/* r_lld_adv_adv_data_update = 0x40003fc0; */
 r_lld_adv_aux_ch_idx_set = 0x40003fcc;
 r_lld_adv_aux_evt_canceled_cbk = 0x40003fd8;
 r_lld_adv_aux_evt_start_cbk = 0x40003fe4;
@@ -483,7 +483,7 @@ r_lld_adv_pkt_rx_connect_ind = 0x40004098;
 r_lld_adv_rand_addr_update = 0x400040b0;
 r_lld_adv_restart = 0x400040bc;
 r_lld_adv_scan_rsp_data_set = 0x400040c8;
-r_lld_adv_scan_rsp_data_update = 0x400040d4;
+/* r_lld_adv_scan_rsp_data_update = 0x400040d4; */
 r_lld_adv_set_tx_power = 0x400040e0;
 r_lld_adv_start = 0x400040ec;
 r_lld_adv_stop = 0x400040f8;
@@ -507,7 +507,7 @@ r_lld_con_data_len_update = 0x400041c4;
 r_lld_con_data_tx = 0x400041d0;
 r_lld_con_enc_key_load = 0x400041dc;
 r_lld_con_event_counter_get = 0x400041e8;
-r_lld_con_evt_canceled_cbk = 0x400041f4;
+/* r_lld_con_evt_canceled_cbk = 0x400041f4; */
 r_lld_con_evt_duration_min_get = 0x40004200;
 r_lld_con_evt_max_eff_time_cal = 0x4000420c;
 r_lld_con_evt_sd_evt_time_get = 0x40004218;
@@ -663,8 +663,8 @@ r_lld_test_start = 0x40004974;
 /* r_lld_test_stop = 0x40004980;*/
 r_lld_update_rxbuf = 0x4000498c;
 r_lld_update_rxbuf_isr = 0x40004998;
-r_lld_white_list_add = 0x400049a4;
-r_lld_white_list_rem = 0x400049b0;
+/* r_lld_white_list_add = 0x400049a4; */
+/* r_lld_white_list_rem = 0x400049b0; */
 r_llm_activity_free_get = 0x400049bc;
 r_llm_activity_free_set = 0x400049c8;
 r_llm_activity_syncing_get = 0x400049d4;

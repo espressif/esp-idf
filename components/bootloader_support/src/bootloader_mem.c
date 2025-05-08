@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,14 +12,12 @@
 #include "bootloader_mem.h"
 #include "esp_cpu.h"
 
-#if SOC_APM_SUPPORTED
 #include "hal/apm_hal.h"
-#endif
 
 void bootloader_init_mem(void)
 {
 
-#if !defined(BOOTLOADER_BUILD) && defined(SOC_APM_SUPPORTED)
+#if !defined(BOOTLOADER_BUILD)
     /* By default, these access path filters are enable and allow the
      * access to masters only if they are in TEE mode. Since all masters
      * except HP CPU boots in REE mode, default setting of these filters

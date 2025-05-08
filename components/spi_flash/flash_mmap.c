@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "hal/mmu_ll.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
+#include "soc/soc_caps.h"
 #if ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
 #include "soc/mmu.h"
 #endif
@@ -25,7 +26,9 @@
 #include "esp_rom_spiflash.h"
 #if CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
+#if SOC_SPIRAM_XIP_SUPPORTED
 #include "esp_private/mmu_psram_flash.h"
+#endif
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -45,7 +48,7 @@ extern char _rodata_reserved_start;
 extern char _rodata_reserved_end;
 #endif
 
-#if !CONFIG_SPI_FLASH_ROM_IMPL
+#if !ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL
 
 
 typedef struct mmap_block_t {
@@ -321,11 +324,15 @@ IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
     }
     return ret;
 }
-#endif //!CONFIG_SPI_FLASH_ROM_IMPL
+#endif // !ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL
 
-#if !CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
-//The ROM implementation returns physical address of the PSRAM when the .text or .rodata is in the PSRAM.
-//Always patch it when SPIRAM_FETCH_INSTRUCTIONS or SPIRAM_RODATA is set.
+#if !ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+/* ROM and patch information
+ * Latest: Add the mapping from psram physical address to flash when CONFIG_SPIRAM_FETCH_INSTRUCTIONS or CONFIG_SPIRAM_RODATA enabled
+ * V1 (Latest): added to ROM
+ */
+// The ROM implementation returns physical address of the PSRAM when the .text or .rodata is in the PSRAM.
+// Patched when XIP from PSRAM (partially) enabled.
 size_t spi_flash_cache2phys(const void *cached)
 {
     if (cached == NULL) {
@@ -367,6 +374,12 @@ size_t spi_flash_cache2phys(const void *cached)
     return paddr + offset * CONFIG_MMU_PAGE_SIZE;
 }
 
+/* ROM and patch information
+ * Latest: Add the mapping from flash physical address to psram when CONFIG_SPIRAM_FETCH_INSTRUCTIONS or CONFIG_SPIRAM_RODATA enabled
+ * V1 (Latest): added to ROM
+ */
+// The ROM implementation takes physical address of the PSRAM when the .text or .rodata is in the PSRAM.
+// Patched when XIP from PSRAM (partially) enabled.
 const void * spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memory)
 {
     esp_err_t ret = ESP_FAIL;
@@ -398,4 +411,4 @@ const void * spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memo
     assert(ret == ESP_OK);
     return (const void *)ptr;
 }
-#endif //!CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+#endif //!ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA

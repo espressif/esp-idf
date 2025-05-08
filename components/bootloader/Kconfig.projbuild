@@ -8,7 +8,7 @@ menu "Bootloader config"
         hex
         default 0x1000 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
         # the first 2 sectors are reserved for the key manager with AES-XTS (flash encryption) purpose
-        default 0x2000 if IDF_TARGET_ESP32P4 || IDF_TARGET_ESP32C5
+        default 0x2000 if IDF_TARGET_ESP32P4 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32H4
         default 0x0
         help
             Offset address that 2nd bootloader will be flashed to.
@@ -764,7 +764,7 @@ menu "Security features"
 
     config SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT
         bool "Flash bootloader along with other artifacts when using the default flash command"
-        depends on SECURE_BOOT_V2_ENABLED && SECURE_BOOT_BUILD_SIGNED_BINARIES
+        depends on SECURE_BOOT_V2_ENABLED
         default n
         help
             When Secure Boot V2 is enabled, by default the bootloader is not flashed along with other artifacts
@@ -1032,8 +1032,9 @@ menu "Security features"
                 DIS_USB_SERIAL_JTAG, DIS_FORCE_DOWNLOAD, DIS_TWAI, JTAG_SEL_ENABLE,
                 DIS_PAD_JTAG, DIS_DOWNLOAD_MANUAL_ENCRYPT.
 
-                ESP32-H2: DIS_ICACHE, DIS_USB_JTAG, POWERGLITCH_EN, DIS_FORCE_DOWNLOAD, SPI_DOWNLOAD_MSPI_DIS,
-                DIS_TWAI, JTAG_SEL_ENABLE, DIS_PAD_JTAG, DIS_DOWNLOAD_MANUAL_ENCRYPT.
+                ESP32-H2 & ESP32H21: DIS_ICACHE, DIS_ICACHE, DIS_USB_JTAG, POWERGLITCH_EN, DIS_FORCE_DOWNLOAD,
+                SPI_DOWNLOAD_MSPI_DIS, DIS_TWAI, JTAG_SEL_ENABLE, DIS_PAD_JTAG, DIS_DOWNLOAD_MANUAL_ENCRYPT,
+                DIS_USB_SERIAL_JTAG
 
                 ESP32-S2: DIS_ICACHE, DIS_DCACHE, DIS_DOWNLOAD_ICACHE, DIS_DOWNLOAD_DCACHE,
                 DIS_FORCE_DOWNLOAD, DIS_USB, DIS_TWAI, DIS_BOOT_REMAP, SOFT_DIS_JTAG,

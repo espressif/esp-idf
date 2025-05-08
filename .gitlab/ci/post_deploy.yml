@@ -11,3 +11,14 @@ generate_failed_jobs_report:
       - job_report.html
   script:
     - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type job
+
+sync_support_status:
+  stage: post_deploy
+  extends:
+    - .rules:sync_support_status
+  needs:
+    - push_to_github
+  image: $ESP_ENV_IMAGE
+  tags: [ brew, github_sync ]
+  script:
+    - curl --fail --request POST --form token="$IDF_STATUS_TRIG_TOKEN" --form ref="$IDF_STATUS_BRANCH" --form "variables[UPLOAD_TO_S3]=true" "$IDF_STATUS_TRIG_URL"

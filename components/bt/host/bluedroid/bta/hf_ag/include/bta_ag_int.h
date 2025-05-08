@@ -96,6 +96,19 @@
                                       BTA_AG_FEAT_VREC | BTA_AG_FEAT_INBAND | \
                                       BTA_AG_FEAT_VTAG)
 
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+/* 1 (offset can not be 0) + HCI_SCO_PREAMBLE */
+#define BTA_AG_BUFF_OFFSET_MIN              (1 + HCI_SCO_PREAMBLE_SIZE)
+/* mSBC H2 header length */
+#define BTA_AG_H2_HEADER_LEN                2
+/* mSBC frame size not include H1/H2 header */
+#define BTA_AG_MSBC_FRAME_SIZE              57
+/* max user data len of sco packet type EV3 */
+#define BTA_AG_SCO_OUT_PKT_LEN_EV3          30
+/* max user data len of sco packet type 2-EV3 */
+#define BTA_AG_SCO_OUT_PKT_LEN_2EV3         60
+#endif
+
 enum
 {
     /* these events are handled by the state machine */
@@ -107,6 +120,7 @@ enum
     BTA_AG_API_AUDIO_CLOSE_EVT,
     BTA_AG_API_RESULT_EVT,
     BTA_AG_API_SETCODEC_EVT,
+    BTA_AG_API_SCO_DATA_SEND_EVT,
     BTA_AG_RFC_OPEN_EVT,
     BTA_AG_RFC_CLOSE_EVT,
     BTA_AG_RFC_SRV_CLOSE_EVT,
@@ -295,6 +309,7 @@ typedef struct
     TIMER_LIST_ENT      cn_timer;       /* codec negotiation timer */
 #endif
     UINT16              sco_idx;        /* SCO connection index */
+    BT_HDR              *p_sco_data;    /* remaining SCO data of last sending operation */
     BOOLEAN             in_use;         /* scb in use */
     BOOLEAN             dealloc;        /* TRUE if service shutting down */
     BOOLEAN             clip_enabled;   /* set to TRUE if HF enables CLIP reporting */
@@ -452,10 +467,13 @@ extern void bta_ag_result(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 extern void bta_ag_setcodec(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 extern void bta_ag_send_ring(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 extern void bta_ag_ci_sco_data(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
+extern void bta_ag_sco_data_send(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
+extern void bta_ag_sco_data_free(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 extern void bta_ag_set_esco_param(BOOLEAN set_reset, tBTM_ESCO_PARAMS *param);
 extern void bta_ag_ci_rx_data(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 extern void bta_ag_rcvd_slc_ready(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 extern void bta_ag_pkt_stat_nums(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
+extern void bta_ag_h2_header(UINT16 *p_buf);
 
 #endif /* #if (BTA_AG_INCLUDED == TRUE) */
 

@@ -9,7 +9,7 @@ This section covers the steps to configure and run a debugger using various meth
 * :ref:`jtag-debugging-using-debugger-command-line`
 * :ref:`jtag-debugging-with-idf-py`
 
-For how to run a debugger from VS Code, see `Configuration for Visual Studio Code Debug <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/DEBUGGING.md>`__.
+For how to run a debugger from VS Code, see `Configuration for Visual Studio Code Debug <https://docs.espressif.com/projects/vscode-esp-idf-extension/en/latest/debugproject.html>`__.
 
 
 .. _jtag-debugging-using-debugger-eclipse:

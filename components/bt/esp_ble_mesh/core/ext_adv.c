@@ -65,6 +65,9 @@ static inline int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration
     switch (BLE_MESH_ADV(buf)->type) {
     case BLE_MESH_ADV_PROV:
     case BLE_MESH_ADV_DATA:
+#if CONFIG_BLE_MESH_FRIEND
+    case BLE_MESH_ADV_FRIEND:
+#endif
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
     case BLE_MESH_ADV_RELAY_DATA:
 #endif

@@ -441,6 +441,25 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF
+ *
+ * Define to 1 to bind DNS-SD server to unspecified interface, 0 to bind to Thread interface.
+ */
+#ifndef OPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF
+#define OPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_DNS_UPSTREAM_QUERY_ENABLE
+ *
+ * Define to 1 to enable upstream forwarding support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_DNS_UPSTREAM_QUERY_ENABLE
+#define OPENTHREAD_CONFIG_DNS_UPSTREAM_QUERY_ENABLE 1
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_BACKBONE_ROUTER_ENABLE
  *
  * Define to 1 to enable Backbone Router support.
@@ -492,6 +511,15 @@
  */
 #ifndef OPENTHREAD_POSIX_CONFIG_RCP_TIME_SYNC_INTERVAL
 #define OPENTHREAD_POSIX_CONFIG_RCP_TIME_SYNC_INTERVAL (60 * 1000 * 1000)
+#endif
+
+/**
+ * @def OPENTHREAD_SPINEL_CONFIG_COPROCESSOR_RESET_FAILURE_CALLBACK_ENABLE
+ *
+ * Enables co-processor reset failure callback in Spinel driver
+ */
+#ifndef OPENTHREAD_SPINEL_CONFIG_COPROCESSOR_RESET_FAILURE_CALLBACK_ENABLE
+#define OPENTHREAD_SPINEL_CONFIG_COPROCESSOR_RESET_FAILURE_CALLBACK_ENABLE 1
 #endif
 
 #endif // CONFIG_OPENTHREAD_RADIO_SPINEL_UART || CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
@@ -726,11 +754,21 @@
 /**
  * @def OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
  *
- * Define as 1 to set the ahead time for CSL transmit timing.
+ * Define how many microseconds ahead should MAC deliver CSL frame to SubMac.
  *
  */
 #ifndef OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
-#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US 20000
+#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US (2 * 1000000 / CONFIG_FREERTOS_HZ)
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
+ *
+ * Reception scheduling and ramp up time needed for the CSL receiver to be ready, in units of microseconds.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
+#define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD (OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US + 320)
 #endif
 
 /**

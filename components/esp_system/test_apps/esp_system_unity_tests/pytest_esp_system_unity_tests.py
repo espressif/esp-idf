@@ -2,18 +2,23 @@
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@pytest.mark.parametrize(
-    'config',
+@idf_parametrize(
+    'config,target',
     [
-        pytest.param('default', marks=[pytest.mark.supported_targets]),
-        pytest.param('pd_vddsdio', marks=[pytest.mark.supported_targets]),
-        pytest.param('psram', marks=[pytest.mark.esp32, pytest.mark.esp32s2, pytest.mark.esp32s3, pytest.mark.esp32p4]),
-        pytest.param('psram_with_pd_top', marks=[pytest.mark.esp32p4]),
-        pytest.param('single_core_esp32', marks=[pytest.mark.esp32]),
-    ]
+        ('default', 'supported_targets'),
+        ('pd_vddsdio', 'supported_targets'),
+        ('psram', 'esp32'),
+        ('psram', 'esp32p4'),
+        ('psram', 'esp32s2'),
+        ('psram', 'esp32s3'),
+        ('psram_with_pd_top', 'esp32p4'),
+        ('single_core_esp32', 'esp32'),
+    ],
+    indirect=['config', 'target'],
 )
 def test_esp_system(dut: Dut) -> None:
     # esp32p4 32MB PSRAM initialize in startup takes more than 30 sec
@@ -21,12 +26,8 @@ def test_esp_system(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.parametrize(
-    'config',
-    [
-        pytest.param('default', marks=[pytest.mark.supported_targets]),
-    ]
-)
+@idf_parametrize('config', ['default'], indirect=['config'])
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_stack_smash_protection(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"stack smashing protection"')
@@ -35,13 +36,8 @@ def test_stack_smash_protection(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.parametrize(
-    'config',
-    [
-        # Testing this feature on a single RISC-V target is enough
-        pytest.param('framepointer', marks=[pytest.mark.esp32c3]),
-    ]
-)
+@idf_parametrize('config', ['framepointer'], indirect=['config'])
+@idf_parametrize('target', ['esp32c3'], indirect=['target'])
 def test_frame_pointer_backtracing(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"Backtrace detects corrupted frames"')

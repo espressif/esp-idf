@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -312,6 +312,14 @@ typedef enum {
 #define ESP_BT_GAP_TPOLL_MIN                  (0x0006) /*!< Minimum poll interval, unit is 625 microseconds */
 #define ESP_BT_GAP_TPOLL_DFT                  (0x0028) /*!< Default poll interval, unit is 625 microseconds */
 #define ESP_BT_GAP_TPOLL_MAX                  (0x1000) /*!< Maximum poll interval, unit is 625 microseconds */
+
+/** GAP status */
+typedef struct {
+    esp_bt_gap_discovery_state_t disc_stat;  /*!< Device Discovery state */
+    esp_bt_connection_mode_t conn_mode;      /*!< Connection mode */
+    esp_bt_discovery_mode_t disc_mode;       /*!< Discovery mode */
+    uint8_t bredr_acl_link_num;              /*!< Number of bredr link connections */
+} esp_bt_gap_profile_status_t;
 
 /// GAP state callback parameters
 typedef union {
@@ -982,6 +990,17 @@ esp_err_t esp_bt_gap_set_device_name(const char *name);
  *                  - other  : failed
  */
 esp_err_t esp_bt_gap_get_device_name(void);
+
+/**
+ * @brief           Get the status of GAP
+ *
+ * @param[out]      profile_status - GAP status
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_bt_gap_get_profile_status(esp_bt_gap_profile_status_t *profile_status);
 
 #ifdef __cplusplus
 }

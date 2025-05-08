@@ -152,7 +152,12 @@ I (1315) cam_dsi: fmt[2].name:MIPI_2lane_24Minput_RAW8_800x800_50fps
 I (1355) cam_dsi: Format in use:MIPI_2lane_24Minput_RAW8_800x640_50fps
 ```
 
-You will also see the screen auto-focus when the screen image changes.
+Below picture is from the video stream of OV5647 and ILI9881C. The camera module is auto-focused and calibrated by ESP on-chip ISP hardware. The edge is over-sharpened as example code configured.
+
+This image is also used as a reference, you can check output image without ISP auto-focus and other pipelines in [Example MIPI Camera Display](../../camera/mipi_isp_dsi/).
+
+![ISP-MULTI-PIPELINE](image/isp2.jpg)
+
 
 ## Reference
 

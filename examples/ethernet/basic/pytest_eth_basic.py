@@ -1,21 +1,24 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import platform
 import subprocess
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
-@pytest.mark.parametrize('config', [
-    pytest.param('default_ip101', marks=[pytest.mark.ethernet_router]),
-    pytest.param('default_generic', marks=[pytest.mark.ethernet_router]),
-    pytest.param('default_dm9051', marks=[pytest.mark.eth_dm9051]),
-], indirect=True)
-def test_esp_eth_basic(
-    dut: Dut
-) -> None:
+@pytest.mark.parametrize(
+    'config',
+    [
+        pytest.param('default_ip101', marks=[pytest.mark.ethernet_router]),
+        pytest.param('default_generic', marks=[pytest.mark.ethernet_router]),
+        pytest.param('default_dm9051', marks=[pytest.mark.eth_dm9051]),
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_esp_eth_basic(dut: Dut) -> None:
     # wait for ip received
     dut_ip = dut.expect(r'esp_netif_handlers: .+ ip: (\d+\.\d+\.\d+\.\d+),').group(1)
     # ping it once

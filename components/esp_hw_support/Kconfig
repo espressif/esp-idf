@@ -70,6 +70,10 @@ menu "Hardware Settings"
         # regardless of power management configuration.
         config ESP_SLEEP_POWER_DOWN_FLASH
             bool "Power down flash in light sleep when there is no SPIRAM or SPIRAM has independent power supply"
+            # TODO: PM-383
+            select PM_SLP_IRAM_OPT if (!IDF_TARGET_ESP32H21 && !IDF_TARGET_ESP32H4)
+            select ESP_PERIPH_CTRL_FUNC_IN_IRAM
+            select ESP_REGI2C_CTRL_FUNC_IN_IRAM
             depends on !SPIRAM || ESP_LDO_RESERVE_PSRAM
             depends on !(IDF_TARGET_ESP32P4 && (ESP32P4_REV_MIN_FULL < 100))
             default n
@@ -163,7 +167,7 @@ menu "Hardware Settings"
 
                 (!!! Please adjust this value according to the Data Sheet of SPI Flash used in your project.)
                 In Flash Data Sheet, the parameters that define the Flash ready timing after power-up (minimum
-                time from Vcc(min) to CS activeare) usually named tVSL in ELECTRICAL CHARACTERISTICS chapter,
+                time from Vcc(min) to CS active) are usually named tVSL in ELECTRICAL CHARACTERISTICS chapter,
                 and the configuration value here should be:
                 ESP_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY = tVSL - 900
 
@@ -219,11 +223,18 @@ menu "Hardware Settings"
     endmenu
 
     menu "Peripheral Control"
-        config PERIPH_CTRL_FUNC_IN_IRAM
+        config ESP_PERIPH_CTRL_FUNC_IN_IRAM
             bool "Place peripheral control functions into IRAM"
             default n
             help
                 Place peripheral control functions (e.g. periph_module_reset) into IRAM,
+                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+
+        config ESP_REGI2C_CTRL_FUNC_IN_IRAM
+            bool "Place regi2c control functions into IRAM"
+            default y
+            help
+                Place analog i2c master control functions (e.g. regi2c_ctrl_read_reg, regi2c_ctrl_write_reg) into IRAM,
                 so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
     endmenu
 
@@ -284,4 +295,9 @@ menu "Hardware Settings"
             Due to the poor low-temperature characteristics of
             RC32K (it cannot operate below -40 degrees Celsius),
             please avoid using it whenever possible
+
+    config ESP_INTR_IN_IRAM
+        bool "Place esp_intr_alloc functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+
 endmenu

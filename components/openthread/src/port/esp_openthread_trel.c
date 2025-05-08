@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,7 @@ typedef struct {
 
 typedef struct {
     struct pbuf *p;
+    otSockAddr *source_addr;
 } ot_trel_recv_task_t;
 
 typedef struct {
@@ -90,36 +91,56 @@ static void trel_browse_notifier(mdns_result_t *result)
 
 static void trel_recv_task(void *ctx)
 {
-    struct pbuf *recv_buf = (struct pbuf *)ctx;
+    esp_err_t ret = ESP_OK;
+    OT_UNUSED_VARIABLE(ret);
+    ot_trel_recv_task_t *task_ctx = (ot_trel_recv_task_t *)ctx;
+    struct pbuf *recv_buf = task_ctx->p;
     uint8_t *data_buf = (uint8_t *)recv_buf->payload;
     uint8_t *data_buf_to_free = NULL;
     uint16_t length = recv_buf->len;
 
     if (recv_buf->next != NULL) {
         data_buf = (uint8_t *)malloc(recv_buf->tot_len);
-        if (data_buf != NULL) {
-            length = recv_buf->tot_len;
-            data_buf_to_free = data_buf;
-            pbuf_copy_partial(recv_buf, data_buf, recv_buf->tot_len, 0);
-        } else {
-            ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to allocate data buf when receiving Thread TREL message");
-            ExitNow();
-        }
+        ESP_GOTO_ON_FALSE(data_buf, ESP_ERR_NO_MEM, exit, OT_PLAT_LOG_TAG, "Failed to allocate data buf when receiving Thread TREL message");
+        length = recv_buf->tot_len;
+        data_buf_to_free = data_buf;
+        pbuf_copy_partial(recv_buf, data_buf, recv_buf->tot_len, 0);
     }
-    otPlatTrelHandleReceived(esp_openthread_get_instance(), data_buf, length);
+    otPlatTrelHandleReceived(esp_openthread_get_instance(), data_buf, length, task_ctx->source_addr);
 
 exit:
-    if (data_buf_to_free) {
-        free(data_buf_to_free);
+    if (recv_buf) {
+        pbuf_free(recv_buf);
     }
-    pbuf_free(recv_buf);
+    free(data_buf_to_free);
+    free(task_ctx->source_addr);
+    free(task_ctx);
 }
 
+// TZ-1704
 static void handle_trel_udp_recv(void *ctx, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, uint16_t port)
 {
+    esp_err_t ret = ESP_OK;
     ESP_LOGD(OT_PLAT_LOG_TAG, "Receive from %s:%d", ip6addr_ntoa(&(addr->u_addr.ip6)), port);
-    if (esp_openthread_task_queue_post(trel_recv_task, p) != ESP_OK) {
-        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to receive OpenThread TREL message");
+
+    ot_trel_recv_task_t *task_ctx = (ot_trel_recv_task_t *)malloc(sizeof(ot_trel_recv_task_t));
+    ESP_GOTO_ON_FALSE(task_ctx, ESP_ERR_NO_MEM, exit, OT_PLAT_LOG_TAG, "Failed to allocate buf for Thread TREL");
+    task_ctx->p = p;
+    task_ctx->source_addr = (otSockAddr *)malloc(sizeof(otSockAddr));
+    ESP_GOTO_ON_FALSE(task_ctx->source_addr, ESP_ERR_NO_MEM, exit, OT_PLAT_LOG_TAG, "Failed to allocate buf for Thread TREL");
+    memset(task_ctx->source_addr, 0, sizeof(otSockAddr));
+    task_ctx->source_addr->mPort = port;
+    memcpy(&task_ctx->source_addr->mAddress.mFields.m32, addr->u_addr.ip6.addr, sizeof(addr->u_addr.ip6.addr));
+
+    ESP_GOTO_ON_ERROR(esp_openthread_task_queue_post(trel_recv_task, task_ctx), exit, OT_PLAT_LOG_TAG, "Failed to receive OpenThread TREL message");
+
+exit:
+    if (ret != ESP_OK) {
+        free(task_ctx->source_addr);
+        free(task_ctx);
+        if (p) {
+            pbuf_free(p);
+        }
     }
 }
 
@@ -146,7 +167,7 @@ void otPlatTrelEnable(otInstance *aInstance, uint16_t *aUdpPort)
     esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
 }
 
-static void trel_send_task(void *ctx)
+static esp_err_t trel_send_task(void *ctx)
 {
     err_t err = ERR_OK;
     struct pbuf *send_buf = NULL;
@@ -160,18 +181,12 @@ static void trel_send_task(void *ctx)
     task->pcb->flags = (task->pcb->flags & (~UDP_FLAGS_MULTICAST_LOOP));
     task->pcb->local_port = s_ot_trel.port;
     send_buf = pbuf_alloc(PBUF_TRANSPORT, task->length, PBUF_RAM);
-    if (send_buf == NULL) {
-        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to allocate data buf when sending Thread TREL message");
-        ExitNow();
-    }
+    ESP_RETURN_ON_FALSE(send_buf, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG, "Failed to allocate data buf when sending Thread TREL message");
     memcpy(send_buf->payload, task->payload, task->length);
     err = udp_sendto_if(task->pcb, send_buf, &task->peer_addr, task->peer_port, netif_get_by_index(task->pcb->netif_idx));
-    if(err != ERR_OK) {
-        ESP_LOGE(OT_PLAT_LOG_TAG, "Fail to send trel msg to %s:%d %d (%d)", ip6addr_ntoa(&(task->peer_addr.u_addr.ip6)), task->peer_port, task->pcb->netif_idx, err);
-    }
-exit:
     pbuf_free(send_buf);
-    free(task);
+    ESP_RETURN_ON_FALSE(err == ERR_OK, ESP_FAIL, OT_PLAT_LOG_TAG, "Fail to send trel msg to %s:%d %d (%d)", ip6addr_ntoa(&(task->peer_addr.u_addr.ip6)), task->peer_port, task->pcb->netif_idx, err);
+    return ESP_OK;
 }
 
 void otPlatTrelSend(otInstance       *aInstance,
@@ -179,23 +194,32 @@ void otPlatTrelSend(otInstance       *aInstance,
                     uint16_t          aUdpPayloadLen,
                     const otSockAddr *aDestSockAddr)
 {
-    if (!s_trel_netif) {
-        ESP_LOGE(OT_PLAT_LOG_TAG, "None Thread TREL interface");
-        return;
-    }
-    ot_trel_send_task_t *task = (ot_trel_send_task_t *)malloc(sizeof(ot_trel_send_task_t));
-    if (task == NULL) {
-        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to allocate buf for Thread TREL");
-        return;
-    }
-    memcpy(task->peer_addr.u_addr.ip6.addr, aDestSockAddr->mAddress.mFields.m32, OT_IP6_ADDRESS_SIZE);
-    task->peer_port = aDestSockAddr->mPort;
-    ESP_LOGD(OT_PLAT_LOG_TAG, "send trel msg to %s:%d", ip6addr_ntoa(&(task->peer_addr.u_addr.ip6)), task->peer_port);
-    task->payload = aUdpPayload;
-    task->length = aUdpPayloadLen;
+    esp_err_t err = ESP_OK;
+    ot_trel_send_task_t task;
+
+    ESP_RETURN_ON_FALSE(s_trel_netif, , OT_PLAT_LOG_TAG, "None Thread TREL interface");
+    memcpy(task.peer_addr.u_addr.ip6.addr, aDestSockAddr->mAddress.mFields.m32, OT_IP6_ADDRESS_SIZE);
+    task.peer_port = aDestSockAddr->mPort;
+    task.payload = aUdpPayload;
+    task.length = aUdpPayloadLen;
     esp_openthread_task_switching_lock_release();
-    tcpip_callback(trel_send_task, task);
+    err = esp_netif_tcpip_exec(trel_send_task, &task);
     esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
+    ESP_RETURN_ON_FALSE(err == ESP_OK, , OT_PLAT_LOG_TAG, "Failed to send TREL message");
+}
+
+void otPlatTrelNotifyPeerSocketAddressDifference(otInstance       *aInstance,
+                                                 const otSockAddr *aPeerSockAddr,
+                                                 const otSockAddr *aRxSockAddr)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+
+    char peer_string[OT_IP6_SOCK_ADDR_STRING_SIZE];
+    char rx_string[OT_IP6_SOCK_ADDR_STRING_SIZE];
+    otIp6SockAddrToString(aPeerSockAddr, peer_string, sizeof(peer_string));
+    otIp6SockAddrToString(aRxSockAddr, rx_string, sizeof(rx_string));
+
+    ESP_LOGW(OT_PLAT_LOG_TAG, "TREL packet is received from a peer (%s) using a different socket address (%s)", peer_string, rx_string);
 }
 
 void otPlatTrelRegisterService(otInstance *aInstance, uint16_t aPort, const uint8_t *aTxtData, uint8_t aTxtLength)

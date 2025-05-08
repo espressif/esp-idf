@@ -499,6 +499,17 @@ static inline void isp_ll_set_bayer_mode(isp_dev_t *hw, color_raw_element_order_
     hw->frame_cfg.bayer_mode = bayer_order;
 }
 
+/**
+ * @brief Swap the data endianness order in bytes
+ *
+ * @param[in] hw           Hardware instance address
+ * @param[in] byte_swap_en byte swap enable or not
+ */
+static inline void isp_ll_set_byte_swap(isp_dev_t *hw, bool byte_swap_en)
+{
+    hw->cntl.byte_endian_order = byte_swap_en;
+}
+
 /*---------------------------------------------------------------
                       AF
 ---------------------------------------------------------------*/

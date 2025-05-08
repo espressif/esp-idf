@@ -899,6 +899,7 @@ void bta_jv_free_scn(tBTA_JV_MSG *p_data)
     }
     case BTA_JV_CONN_TYPE_L2CAP:
         bta_jv_set_free_psm(scn);
+        user_data = (tBTA_JV_FREE_SCN_USER_DATA *)fc->user_data;
         if (fc->p_cback) {
             fc->p_cback(BTA_JV_FREE_SCN_EVT, (tBTA_JV *)&evt_data, (void *)user_data);
         }
@@ -1058,7 +1059,7 @@ void sdp_bqb_add_language_attr_ctrl(BOOLEAN enable)
 
 /**
  * @brief       Adds a protocol list and service name (if provided) to an SDP record given by
- *              sdp_handle, and marks it as browseable. This is a shortcut for defining a
+ *              sdp_handle, and marks it as browsable. This is a shortcut for defining a
  *              set of protocols that includes L2CAP, RFCOMM, and optionally OBEX.
  *
  * @param[in]   sdp_handle: SDP handle
@@ -1133,9 +1134,9 @@ static bool create_base_record(const uint32_t sdp_handle, const char *name, cons
         }
     }
 
-    // Mark the service as browseable.
+    // Mark the service as browsable.
     uint16_t list = UUID_SERVCLASS_PUBLIC_BROWSE_GROUP;
-    stage = "browseable";
+    stage = "browsable";
     if (!SDP_AddUuidSequence(sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &list)){
         APPL_TRACE_ERROR("create_base_record: failed to create base service "
                    "record, stage: %s, scn: %d, name: %s, with_obex: %d",
@@ -1389,6 +1390,7 @@ void bta_jv_l2cap_close(tBTA_JV_MSG *p_data)
     evt_data.handle = cc->handle;
     evt_data.status = bta_jv_free_l2c_cb(cc->p_cb);
     evt_data.async = FALSE;
+    evt_data.user_data = (void *)cc->user_data;
 
     if (cc->p_cback) {
         cc->p_cback(BTA_JV_L2CAP_CLOSE_EVT, (tBTA_JV *)&evt_data, user_data);
@@ -1542,19 +1544,13 @@ void bta_jv_l2cap_start_server(tBTA_JV_MSG *p_data)
 void bta_jv_l2cap_stop_server(tBTA_JV_MSG *p_data)
 {
     tBTA_JV_L2C_CB      *p_cb;
-    tBTA_JV_L2CAP_CLOSE  evt_data;
     tBTA_JV_API_L2CAP_SERVER *ls = &(p_data->l2cap_server);
-    tBTA_JV_L2CAP_CBACK *p_cback;
-    void *user_data;
+
     for (int i = 0; i < BTA_JV_MAX_L2C_CONN; i++) {
         if (bta_jv_cb.l2c_cb[i].psm == ls->local_psm) {
             p_cb = &bta_jv_cb.l2c_cb[i];
-            p_cback = p_cb->p_cback;
-            user_data = p_cb->user_data;
-            evt_data.handle = p_cb->handle;
-            evt_data.status = bta_jv_free_l2c_cb(p_cb);
-            evt_data.async = FALSE;
-            p_cback(BTA_JV_L2CAP_CLOSE_EVT, (tBTA_JV *)&evt_data, user_data);
+            bta_jv_free_l2c_cb(p_cb);
+            // Report event when free psm
             break;
         }
     }
@@ -1754,6 +1750,7 @@ static void bta_jv_port_mgmt_cl_cback(UINT32 code, UINT16 port_handle, void* dat
         evt_data.rfc_close.status = BTA_JV_FAILURE;
         evt_data.rfc_close.port_status = code;
         evt_data.rfc_close.async = TRUE;
+        evt_data.rfc_close.user_data = p_pcb->user_data;
         if (p_pcb->state == BTA_JV_ST_CL_CLOSING) {
             evt_data.rfc_close.async = FALSE;
             evt_data.rfc_close.status = BTA_JV_SUCCESS;
@@ -2082,6 +2079,7 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle, void *dat
         evt_data.rfc_close.status = BTA_JV_FAILURE;
         evt_data.rfc_close.async = TRUE;
         evt_data.rfc_close.port_status = code;
+        evt_data.rfc_close.user_data = user_data;
         p_pcb->cong = FALSE;
 
         tBTA_JV_RFCOMM_CBACK    *p_cback = p_cb->p_cback;

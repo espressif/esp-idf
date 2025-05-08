@@ -13,4 +13,5 @@ Tools
    idf-tools
    idf-size
    idf-sbom
+   idf-diag
    :TARGET_SUPPORT_QEMU: qemu

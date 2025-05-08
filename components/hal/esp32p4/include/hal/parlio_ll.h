@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -524,11 +524,40 @@ static inline void parlio_ll_tx_set_trans_bit_len(parl_io_dev_t *dev, uint32_t b
 }
 
 /**
+ * @brief Set TX valid signal delay
+ *
+ * @param dev Parallel IO register base address
+ * @param start_delay Number of clock cycles to delay
+ * @param stop_delay Number of clock cycles to delay
+ * @return true: success, false: valid delay is not supported
+ */
+static inline bool parlio_ll_tx_set_valid_delay(parl_io_dev_t *dev, uint32_t start_delay, uint32_t stop_delay)
+{
+    (void)dev;
+    if (start_delay == 0 && stop_delay == 0) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * @brief Check if tx size can be determined by DMA
+ *
+ * @param dev Parallel IO register base address (not used)
+ */
+static inline bool parlio_ll_tx_support_dma_eof(parl_io_dev_t *dev)
+{
+    (void)dev;
+    return true;
+}
+
+/**
  * @brief Set the condition to generate the TX EOF event
  *
  * @param dev Parallel IO register base address
  * @param cond TX EOF condition
  */
+__attribute__((always_inline))
 static inline void parlio_ll_tx_set_eof_condition(parl_io_dev_t *dev, parlio_ll_tx_eof_cond_t cond)
 {
     dev->tx_genrl_cfg.tx_eof_gen_sel = cond;

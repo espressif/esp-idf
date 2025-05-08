@@ -305,7 +305,12 @@ static inline void touch_ll_set_init_charge_voltage(uint32_t touch_num, touch_in
 {
     // Workaround: swap chan 8 and chan 9
     touch_num = TOUCH_LL_CHAN_SWAP(touch_num);
-    RTCIO.touch_pad[touch_num].tie_opt = init_charge_volt;
+    if (init_charge_volt == TOUCH_INIT_CHARGE_VOLT_FLOAT) {
+        RTCIO.touch_pad[touch_num].xpd = 0;
+    } else {
+        RTCIO.touch_pad[touch_num].xpd = 1;
+        RTCIO.touch_pad[touch_num].tie_opt = init_charge_volt;
+    }
 }
 
 /**
@@ -503,11 +508,11 @@ static inline void touch_ll_get_sleep_time(uint16_t *sleep_time)
 }
 
 /**
- * Set touch sensor high voltage threshold of chanrge.
+ * Set touch sensor high voltage threshold of charge.
  * The touch sensor measures the channel capacitance value by charging and discharging the channel.
  * So the high threshold should be less than the supply voltage.
  *
- * @param refh The high voltage threshold of chanrge.
+ * @param refh The high voltage threshold of charge.
  */
 static inline void touch_ll_set_voltage_high(touch_high_volt_t refh)
 {
@@ -515,11 +520,11 @@ static inline void touch_ll_set_voltage_high(touch_high_volt_t refh)
 }
 
 /**
- * Get touch sensor high voltage threshold of chanrge.
+ * Get touch sensor high voltage threshold of charge.
  * The touch sensor measures the channel capacitance value by charging and discharging the channel.
  * So the high threshold should be less than the supply voltage.
  *
- * @param refh The high voltage threshold of chanrge.
+ * @param refh The high voltage threshold of charge.
  */
 static inline void touch_ll_get_voltage_high(touch_high_volt_t *refh)
 {
@@ -549,11 +554,11 @@ static inline void touch_ll_get_voltage_low(touch_low_volt_t *refl)
 }
 
 /**
- * Set touch sensor high voltage attenuation of chanrge. The actual charge threshold is high voltage threshold minus attenuation value.
+ * Set touch sensor high voltage attenuation of charge. The actual charge threshold is high voltage threshold minus attenuation value.
  * The touch sensor measures the channel capacitance value by charging and discharging the channel.
  * So the high threshold should be less than the supply voltage.
  *
- * @param refh The high voltage threshold of chanrge.
+ * @param refh The high voltage threshold of charge.
  */
 static inline void touch_ll_set_voltage_attenuation(touch_volt_atten_t atten)
 {
@@ -561,11 +566,11 @@ static inline void touch_ll_set_voltage_attenuation(touch_volt_atten_t atten)
 }
 
 /**
- * Get touch sensor high voltage attenuation of chanrge. The actual charge threshold is high voltage threshold minus attenuation value.
+ * Get touch sensor high voltage attenuation of charge. The actual charge threshold is high voltage threshold minus attenuation value.
  * The touch sensor measures the channel capacitance value by charging and discharging the channel.
  * So the high threshold should be less than the supply voltage.
  *
- * @param refh The high voltage threshold of chanrge.
+ * @param refh The high voltage threshold of charge.
  */
 static inline void touch_ll_get_voltage_attenuation(touch_volt_atten_t *atten)
 {
@@ -613,7 +618,12 @@ static inline void touch_ll_get_slope(touch_pad_t touch_num, touch_cnt_slope_t *
 static inline void touch_ll_set_tie_option(touch_pad_t touch_num, touch_tie_opt_t opt)
 {
     touch_pad_t touch_pad_wrap = touch_ll_num_wrap(touch_num);
-    RTCIO.touch_pad[touch_pad_wrap].tie_opt = opt;
+    if (opt == TOUCH_PAD_TIE_OPT_FLOAT) {
+        RTCIO.touch_pad[touch_pad_wrap].xpd = 0;
+    } else {
+        RTCIO.touch_pad[touch_pad_wrap].xpd = 1;
+        RTCIO.touch_pad[touch_pad_wrap].tie_opt = opt;
+    }
 }
 
 /**
@@ -625,7 +635,11 @@ static inline void touch_ll_set_tie_option(touch_pad_t touch_num, touch_tie_opt_
 static inline void touch_ll_get_tie_option(touch_pad_t touch_num, touch_tie_opt_t *opt)
 {
     touch_pad_t touch_pad_wrap = touch_ll_num_wrap(touch_num);
-    *opt = (touch_tie_opt_t)RTCIO.touch_pad[touch_pad_wrap].tie_opt;
+    if (RTCIO.touch_pad[touch_pad_wrap].xpd) {
+        *opt = (touch_tie_opt_t)RTCIO.touch_pad[touch_pad_wrap].tie_opt;
+    } else {
+        *opt = TOUCH_PAD_TIE_OPT_FLOAT;
+    }
 }
 
 /**

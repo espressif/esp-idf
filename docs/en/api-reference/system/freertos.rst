@@ -24,7 +24,7 @@ ESP-IDF FreeRTOS is a FreeRTOS implementation based on Vanilla FreeRTOS v10.5.1,
 
     ESP-IDF FreeRTOS is currently the default FreeRTOS implementation for ESP-IDF.
 
-.. only:: not esp32p4
+.. only:: not esp32p4 and not esp32h4
 
     .. _amazon_smp_freertos:
 

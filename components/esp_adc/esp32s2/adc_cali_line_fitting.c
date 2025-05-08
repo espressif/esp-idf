@@ -143,7 +143,7 @@ static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
     //pointers are checked in the upper layer
 
     cali_chars_line_fitting_t *ctx = arg;
-    *voltage = raw * ctx->coeff_a / coeff_a_scaling + ctx->coeff_b / coeff_b_scaling;
+    *voltage = (raw * ctx->coeff_a / (coeff_a_scaling / coeff_b_scaling) + ctx->coeff_b) / coeff_b_scaling;
 
     return ESP_OK;
 }

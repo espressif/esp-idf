@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,6 +64,7 @@ typedef struct {
 typedef struct {
     /* Connected peer information */
     tBTA_AV_CO_PEER peers[BTA_AV_NUM_STRS];
+    tBTC_AV_CODEC_INFO codec_caps;
     /* Current codec configuration - access to this variable must be protected */
     tBTC_AV_CODEC_INFO codec_cfg;
     tBTC_AV_CODEC_INFO codec_cfg_setconfig; /* remote peer setconfig preference */
@@ -189,8 +190,7 @@ void bta_av_co_audio_discard_config(tBTA_AV_HNDL hndl);
  ** Returns          Nothing
  **
  *******************************************************************************/
-void bta_av_co_init(void);
-
+void bta_av_co_init(tBTC_AV_CODEC_INFO *codec_caps);
 
 /*******************************************************************************
  **
@@ -211,7 +211,7 @@ BOOLEAN bta_av_co_peer_cp_supported(tBTA_AV_HNDL hndl);
  **                  of our exported bitpool range. If set we will set the
  **                  remote preference.
  **
- ** Returns          TRUE if config set, FALSE otherwize
+ ** Returns          TRUE if config set, FALSE otherwise
  **
  *******************************************************************************/
 BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max);

@@ -22,6 +22,8 @@
 #include "device/controller.h"
 
 #if (BLE_INCLUDED == TRUE)
+
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 #include "stack/bt_types.h"
 #include "stack/hcimsgs.h"
 #include "stack/btu.h"
@@ -218,25 +220,7 @@ tBTM_STATUS btm_ble_enable_multi_adv (BOOLEAN enable, UINT8 inst_id, UINT8 cb_ev
     }
     return rt;
 }
-/*******************************************************************************
-**
-** Function         btm_ble_map_adv_tx_power
-**
-** Description      return the actual power in dBm based on the mapping in config file
-**
-** Parameters       advertise parameters used for this instance.
-**
-** Returns          tx power in dBm
-**
-*******************************************************************************/
-static const int btm_ble_tx_power[BTM_BLE_ADV_TX_POWER_MAX + 1] = BTM_BLE_ADV_TX_POWER;
-char btm_ble_map_adv_tx_power(int tx_power_index)
-{
-    if (0 <= tx_power_index && tx_power_index <= BTM_BLE_ADV_TX_POWER_MAX) {
-        return (char)btm_ble_tx_power[tx_power_index];
-    }
-    return 0;
-}
+
 /*******************************************************************************
 **
 ** Function         btm_ble_multi_adv_set_params
@@ -882,4 +866,5 @@ void *btm_ble_multi_adv_get_ref(UINT8 inst_id)
 
     return NULL;
 }
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 #endif

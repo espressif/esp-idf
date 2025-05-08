@@ -23,4 +23,11 @@ menu "Example Configuration"
         bool
         default y if EXAMPLE_LOCAL_SERVER_URL = "FROM_STDIN"
 
+    config EXAMPLE_SSL_PROTO_TLS1_3_CLIENT
+        bool "Enable TLS 1.3 client test"
+        default n
+        select MBEDTLS_SSL_PROTO_TLS1_3
+        help
+            Enable TLS 1.3 client test support for the example.
+
 endmenu

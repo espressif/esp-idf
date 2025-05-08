@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import contextlib
 import logging
 import os
@@ -9,31 +8,49 @@ import socketserver
 import ssl
 import subprocess
 from threading import Thread
-from typing import Any, Callable, Dict, Optional
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Optional
 
 import pytest
 from common_test_methods import get_host_ip4_by_dest_ip
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 SERVER_PORT = 2222
 
 
 def _path(f):  # type: (str) -> str
-    return os.path.join(os.path.dirname(os.path.realpath(__file__)),f)
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), f)
 
 
 def set_server_cert_cn(ip):  # type: (str) -> None
     arg_list = [
-        ['openssl', 'req', '-out', _path('srv.csr'), '-key', _path('server.key'),'-subj', '/CN={}'.format(ip), '-new'],
-        ['openssl', 'x509', '-req', '-in', _path('srv.csr'), '-CA', _path('ca.crt'),
-         '-CAkey', _path('ca.key'), '-CAcreateserial', '-out', _path('srv.crt'), '-days', '360']]
+        ['openssl', 'req', '-out', _path('srv.csr'), '-key', _path('server.key'), '-subj', '/CN={}'.format(ip), '-new'],
+        [
+            'openssl',
+            'x509',
+            '-req',
+            '-in',
+            _path('srv.csr'),
+            '-CA',
+            _path('ca.crt'),
+            '-CAkey',
+            _path('ca.key'),
+            '-CAcreateserial',
+            '-out',
+            _path('srv.crt'),
+            '-days',
+            '360',
+        ],
+    ]
     for args in arg_list:
         if subprocess.check_call(args) != 0:
             raise RuntimeError('openssl command {} failed'.format(args))
 
 
 class MQTTHandler(socketserver.StreamRequestHandler):
-
     def handle(self) -> None:
         logging.info(' - connection from: {}'.format(self.client_address))
         data = bytearray(self.request.recv(1024))
@@ -56,12 +73,14 @@ class TlsServer(socketserver.TCPServer):
     allow_reuse_address = True
     allow_reuse_port = True
 
-    def __init__(self,
-                 port:int = SERVER_PORT,
-                 ServerHandler: Callable[[Any, Any, Any], socketserver.BaseRequestHandler] = MQTTHandler,
-                 client_cert:bool=False,
-                 refuse_connection:bool=False,
-                 use_alpn:bool=False):
+    def __init__(
+        self,
+        port: int = SERVER_PORT,
+        ServerHandler: Callable[[Any, Any, Any], socketserver.BaseRequestHandler] = MQTTHandler,
+        client_cert: bool = False,
+        refuse_connection: bool = False,
+        use_alpn: bool = False,
+    ):
         self.refuse_connection = refuse_connection
         self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
         self.ssl_error = ''
@@ -73,7 +92,7 @@ class TlsServer(socketserver.TCPServer):
         if use_alpn:
             self.context.set_alpn_protocols(['mymqtt', 'http/1.1'])
         self.server_thread = Thread(target=self.serve_forever)
-        super().__init__(('',port), ServerHandler)
+        super().__init__(('', port), ServerHandler)
 
     def server_activate(self) -> None:
         self.socket = self.context.wrap_socket(self.socket, server_side=True)
@@ -125,14 +144,16 @@ def get_test_cases(dut: Dut) -> Any:
     cases = {}
     try:
         # Get connection test cases configuration: symbolic names for test cases
-        for case in ['EXAMPLE_CONNECT_CASE_NO_CERT',
-                     'EXAMPLE_CONNECT_CASE_SERVER_CERT',
-                     'EXAMPLE_CONNECT_CASE_MUTUAL_AUTH',
-                     'EXAMPLE_CONNECT_CASE_INVALID_SERVER_CERT',
-                     'EXAMPLE_CONNECT_CASE_SERVER_DER_CERT',
-                     'EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_KEY_PWD',
-                     'EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_BAD_CRT',
-                     'EXAMPLE_CONNECT_CASE_NO_CERT_ALPN']:
+        for case in [
+            'EXAMPLE_CONNECT_CASE_NO_CERT',
+            'EXAMPLE_CONNECT_CASE_SERVER_CERT',
+            'EXAMPLE_CONNECT_CASE_MUTUAL_AUTH',
+            'EXAMPLE_CONNECT_CASE_INVALID_SERVER_CERT',
+            'EXAMPLE_CONNECT_CASE_SERVER_DER_CERT',
+            'EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_KEY_PWD',
+            'EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_BAD_CRT',
+            'EXAMPLE_CONNECT_CASE_NO_CERT_ALPN',
+        ]:
             cases[case] = dut.app.sdkconfig.get(case)
     except Exception:
         logging.error('ENV_TEST_FAILURE: Some mandatory CONNECTION test case not found in sdkconfig')
@@ -147,7 +168,7 @@ def get_dut_ip(dut: Dut) -> Any:
 
 
 @contextlib.contextmanager
-def connect_dut(dut: Dut, uri:str, case_id:int) -> Any:
+def connect_dut(dut: Dut, uri: str, case_id: int) -> Any:
     dut.write('connection_setup')
     dut.write(f'connect {uri} {case_id}')
     dut.expect(f'Test case:{case_id} started')
@@ -157,12 +178,16 @@ def connect_dut(dut: Dut, uri:str, case_id:int) -> Any:
     dut.write('disconnect')
 
 
-def run_cases(dut:Dut, uri:str, cases:Dict[str, int]) -> None:
+def run_cases(dut: Dut, uri: str, cases: Dict[str, int]) -> None:
     try:
         dut.write('init')
         dut.write(f'start')
         dut.write(f'disconnect')
-        for case in ['EXAMPLE_CONNECT_CASE_NO_CERT', 'EXAMPLE_CONNECT_CASE_SERVER_CERT', 'EXAMPLE_CONNECT_CASE_SERVER_DER_CERT']:
+        for case in [
+            'EXAMPLE_CONNECT_CASE_NO_CERT',
+            'EXAMPLE_CONNECT_CASE_SERVER_CERT',
+            'EXAMPLE_CONNECT_CASE_SERVER_DER_CERT',
+        ]:
             # All these cases connect to the server with no server verification or with server only verification
             with TlsServer(), connect_dut(dut, uri, cases[case]):
                 logging.info(f'Running {case}: default server - expect to connect normally')
@@ -172,9 +197,13 @@ def run_cases(dut:Dut, uri:str, cases:Dict[str, int]) -> None:
                 dut.expect(f'MQTT_EVENT_ERROR: Test={cases[case]}', timeout=30)
                 dut.expect('MQTT ERROR: 0x5')  # expecting 0x5 ... connection not authorized error
             with TlsServer(client_cert=True) as server, connect_dut(dut, uri, cases[case]):
-                logging.info(f'Running {case}: server with client verification - handshake error since client presents no client certificate')
+                logging.info(
+                    f'Running {case}: server with client verification - handshake error since client presents no client certificate'
+                )
                 dut.expect(f'MQTT_EVENT_ERROR: Test={cases[case]}', timeout=30)
-                dut.expect('ESP-TLS ERROR: ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED')  # expect ... handshake error (PEER_DID_NOT_RETURN_A_CERTIFICATE)
+                dut.expect(
+                    'ESP-TLS ERROR: ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED'
+                )  # expect ... handshake error (PEER_DID_NOT_RETURN_A_CERTIFICATE)
                 assert 'PEER_DID_NOT_RETURN_A_CERTIFICATE' in server.last_ssl_error()
 
         for case in ['EXAMPLE_CONNECT_CASE_MUTUAL_AUTH', 'EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_KEY_PWD']:
@@ -187,15 +216,21 @@ def run_cases(dut:Dut, uri:str, cases:Dict[str, int]) -> None:
         with TlsServer() as s, connect_dut(dut, uri, cases[case]):
             logging.info(f'Running {case}: invalid server certificate on default server - expect ssl handshake error')
             dut.expect(f'MQTT_EVENT_ERROR: Test={cases[case]}', timeout=30)
-            dut.expect('ESP-TLS ERROR: ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED')  # expect ... handshake error (TLSV1_ALERT_UNKNOWN_CA)
-            if re.match('.*alert.*unknown.*ca',s.last_ssl_error(), flags=re.I) is None:
+            dut.expect(
+                'ESP-TLS ERROR: ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED'
+            )  # expect ... handshake error (TLSV1_ALERT_UNKNOWN_CA)
+            if re.match('.*alert.*unknown.*ca', s.last_ssl_error(), flags=re.I) is None:
                 raise Exception(f'Unexpected ssl error from the server: {s.last_ssl_error()}')
 
         case = 'EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_BAD_CRT'
         with TlsServer(client_cert=True) as s, connect_dut(dut, uri, cases[case]):
-            logging.info(f'Running {case}: Invalid client certificate on server with client verification - expect ssl handshake error')
+            logging.info(
+                f'Running {case}: Invalid client certificate on server with client verification - expect ssl handshake error'
+            )
             dut.expect(f'MQTT_EVENT_ERROR: Test={cases[case]}', timeout=30)
-            dut.expect('ESP-TLS ERROR: ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED')  # expect ... handshake error (CERTIFICATE_VERIFY_FAILED)
+            dut.expect(
+                'ESP-TLS ERROR: ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED'
+            )  # expect ... handshake error (CERTIFICATE_VERIFY_FAILED)
             if 'CERTIFICATE_VERIFY_FAILED' not in s.last_ssl_error():
                 raise Exception('Unexpected ssl error from the server {}'.format(s.last_ssl_error()))
 
@@ -214,8 +249,8 @@ def run_cases(dut:Dut, uri:str, cases:Dict[str, int]) -> None:
         dut.write('destroy')
 
 
-@pytest.mark.esp32
 @pytest.mark.ethernet
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_mqtt_connect(
     dut: Dut,
     log_performance: Callable[[str, object], None],

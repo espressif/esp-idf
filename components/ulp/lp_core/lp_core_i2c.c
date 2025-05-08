@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,8 +7,8 @@
 #include "lp_core_i2c.h"
 #include "esp_check.h"
 #include "hal/i2c_hal.h"
+#include "hal/i2c_ll.h"
 #include "driver/rtc_io.h"
-#include "soc/rtc_io_channel.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 
@@ -32,13 +32,13 @@ static esp_err_t lp_i2c_gpio_is_cfg_valid(gpio_num_t sda_io_num, gpio_num_t scl_
 
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
     /* Verify that the SDA and SCL line belong to the LP IO Mux I2C function group */
-    if (sda_io_num != RTCIO_GPIO6_CHANNEL) {
-        ESP_LOGE(LPI2C_TAG, "SDA pin can only be configured as GPIO#6");
+    if (sda_io_num != LP_I2C_SDA_IOMUX_PAD) {
+        ESP_LOGE(LPI2C_TAG, LP_I2C_SDA_PIN_ERR_LOG);
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (scl_io_num != RTCIO_GPIO7_CHANNEL) {
-        ESP_LOGE(LPI2C_TAG, "SCL pin can only be configured as GPIO#7");
+    if (scl_io_num != LP_I2C_SCL_IOMUX_PAD) {
+        ESP_LOGE(LPI2C_TAG, LP_I2C_SCL_PIN_ERR_LOG);
         return ESP_ERR_INVALID_ARG;
     }
 #endif /* !SOC_LP_GPIO_MATRIX_SUPPORTED */

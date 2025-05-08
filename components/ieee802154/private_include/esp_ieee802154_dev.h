@@ -141,10 +141,11 @@ esp_err_t ieee802154_receive_handle_done(const uint8_t* frame);
 esp_err_t ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time);
 
 /**
- * @brief  Set the IEEE 802.15.4 Radio to receive state at a specific time.
+ * @brief  Set the IEEE 802.15.4 Radio to receive state at a specific time, for a specific duration.
  *
  *
- * @param[in]  time  A specific timestamp for starting receiving.
+ * @param[in]  time      A specific timestamp for starting receiving.
+ * @param[in]  duration  A specific duration after which to stop receiving. Set duration = 0 to rx indefinitely.
  * @return
  *      - ESP_OK on success
  *      - ESP_FAIL on failure due to invalid state.
@@ -153,7 +154,7 @@ esp_err_t ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time);
  *       Ref to esp_ieee802154_receive_done().
  *
  */
-esp_err_t ieee802154_receive_at(uint32_t time);
+esp_err_t ieee802154_receive_at(uint32_t time, uint32_t duration);
 
 /**
  * @brief  Set the IEEE 802.15.4 Radio to sleep state.
@@ -263,13 +264,11 @@ bool ieee802154_mac_is_inited(void);
 #if CONFIG_IEEE802154_TEST
 #define IEEE802154_STATIC
 #define IEEE802154_INLINE
-extern void esp_ieee802154_timer0_done(void);
-extern void esp_ieee802154_timer1_done(void);
 #else
 #define IEEE802154_STATIC  static
 #define IEEE802154_INLINE  inline
 #endif // CONFIG_IEEE802154_TEST
-#define IEEE802154_NOINLINE __attribute__((noinline))
+#define IEEE802154_NOINLINE __attribute__((noinline, used))
 
 #ifdef __cplusplus
 }

@@ -98,7 +98,7 @@ void ecdsa_hal_export_pubkey(ecdsa_hal_config_t *conf, uint8_t *pub_x, uint8_t *
  */
 bool ecdsa_hal_get_operation_result(void);
 
-#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+#if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
 /**
  * @brief Check if the K value derived by the peripheral during deterministic signature generation is valid
  *
@@ -107,7 +107,7 @@ bool ecdsa_hal_get_operation_result(void);
  */
 bool ecdsa_hal_det_signature_k_check(void);
 
-#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
 
 #ifdef __cplusplus
 }

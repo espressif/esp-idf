@@ -43,9 +43,26 @@ if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     elseif(NOT ${target} STREQUAL "linux")
         list(APPEND srcs "cache_hal.c")
     endif()
+else()
+    if(CONFIG_SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE)
+        list(APPEND srcs "cache_hal.c")
+    endif()
 endif()
 
-if(NOT BOOTLOADER_BUILD AND NOT esp_tee_build)
+if(esp_tee_build)
+    list(APPEND srcs "apm_hal.c"
+                     "brownout_hal.c"
+                     "wdt_hal_iram.c"
+                     "aes_hal.c"
+                     "sha_hal.c"
+                     "hmac_hal.c"
+                     "ds_hal.c"
+                     "ecc_hal.c")
+
+    if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
+        list(APPEND srcs "spi_flash_hal.c")
+    endif()
+elseif(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "color_hal.c")
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
@@ -113,8 +130,16 @@ if(NOT BOOTLOADER_BUILD AND NOT esp_tee_build)
         list(APPEND srcs "mcpwm_hal.c")
     endif()
 
+    if(CONFIG_SOC_UHCI_SUPPORTED)
+        list(APPEND srcs "uhci_hal.c")
+    endif()
+
     if(CONFIG_SOC_TWAI_SUPPORTED)
-        list(APPEND srcs "twai_hal.c" "twai_hal_iram.c")
+        if(CONFIG_SOC_TWAI_SUPPORT_FD)
+            list(APPEND srcs "twai_hal_ctufd.c")
+        else()
+            list(APPEND srcs "twai_hal_sja1000.c")
+        endif()
     endif()
 
     if(CONFIG_SOC_GDMA_SUPPORTED)

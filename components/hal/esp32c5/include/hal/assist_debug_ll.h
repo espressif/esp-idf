@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +9,11 @@
 #pragma once
 
 #include "soc/assist_debug_reg.h"
-#define ASSIST_DEBUG_SP_SPILL_BITS      (ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA | ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_ENA)
-#define ASSIST_DEBUG_CORE_0_MONITOR_REG  ASSIST_DEBUG_CORE_0_MONTR_ENA_REG
+#define BUS_MONITOR_SP_SPILL_BITS      (BUS_MONITOR_CORE_0_SP_SPILL_MIN_ENA | BUS_MONITOR_CORE_0_SP_SPILL_MAX_ENA)
+#define BUS_MONITOR_CORE_0_MONITOR_REG  BUS_MONITOR_CORE_0_MONTR_ENA_REG
+// Compatible alias
+#define ASSIST_DEBUG_SP_SPILL_BITS       BUS_MONITOR_SP_SPILL_BITS
+#define ASSIST_DEBUG_CORE_0_MONITOR_REG  BUS_MONITOR_CORE_0_MONITOR_REG
 
 #ifndef __ASSEMBLER__
 
@@ -60,57 +63,57 @@ extern "C" {
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_monitor_enable(__attribute__((unused)) uint32_t core_id)
 {
-    REG_SET_BIT(ASSIST_DEBUG_CORE_0_MONTR_ENA_REG, ASSIST_DEBUG_SP_SPILL_BITS);
+    REG_SET_BIT(BUS_MONITOR_CORE_0_MONTR_ENA_REG, BUS_MONITOR_SP_SPILL_BITS);
 }
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_monitor_disable(__attribute__((unused)) uint32_t core_id)
 {
-    REG_CLR_BIT(ASSIST_DEBUG_CORE_0_MONTR_ENA_REG, ASSIST_DEBUG_SP_SPILL_BITS);
+    REG_CLR_BIT(BUS_MONITOR_CORE_0_MONTR_ENA_REG, BUS_MONITOR_SP_SPILL_BITS);
 }
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_interrupt_enable(__attribute__((unused)) uint32_t core_id)
 {
-    REG_SET_BIT(ASSIST_DEBUG_CORE_0_INTR_ENA_REG, ASSIST_DEBUG_SP_SPILL_BITS);
+    REG_SET_BIT(BUS_MONITOR_CORE_0_INTR_ENA_REG, BUS_MONITOR_SP_SPILL_BITS);
 }
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_interrupt_disable(__attribute__((unused)) uint32_t core_id)
 {
-    REG_CLR_BIT(ASSIST_DEBUG_CORE_0_INTR_ENA_REG, ASSIST_DEBUG_SP_SPILL_BITS);
+    REG_CLR_BIT(BUS_MONITOR_CORE_0_INTR_ENA_REG, BUS_MONITOR_SP_SPILL_BITS);
 }
 
 FORCE_INLINE_ATTR bool assist_debug_ll_sp_spill_is_fired(__attribute__((unused)) uint32_t core_id)
 {
-    return REG_READ(ASSIST_DEBUG_CORE_0_INTR_RAW_REG) & ASSIST_DEBUG_SP_SPILL_BITS;
+    return REG_READ(BUS_MONITOR_CORE_0_INTR_RAW_REG) & BUS_MONITOR_SP_SPILL_BITS;
 }
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_interrupt_clear(__attribute__((unused)) uint32_t core_id)
 {
-    REG_WRITE(ASSIST_DEBUG_CORE_0_INTR_CLR_REG, ASSIST_DEBUG_SP_SPILL_BITS);
+    REG_WRITE(BUS_MONITOR_CORE_0_INTR_CLR_REG, BUS_MONITOR_SP_SPILL_BITS);
 }
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_set_min(__attribute__((unused)) uint32_t core_id, uint32_t min)
 {
-    REG_WRITE(ASSIST_DEBUG_CORE_0_SP_MIN_REG, min);
+    REG_WRITE(BUS_MONITOR_CORE_0_SP_MIN_REG, min);
 }
 
 FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_min(__attribute__((unused)) uint32_t core_id)
 {
-    return REG_READ(ASSIST_DEBUG_CORE_0_SP_MIN_REG);
+    return REG_READ(BUS_MONITOR_CORE_0_SP_MIN_REG);
 }
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_set_max(__attribute__((unused)) uint32_t core_id, uint32_t max)
 {
-    REG_WRITE(ASSIST_DEBUG_CORE_0_SP_MAX_REG, max);
+    REG_WRITE(BUS_MONITOR_CORE_0_SP_MAX_REG, max);
 }
 
 FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_max(__attribute__((unused)) uint32_t core_id)
 {
-    return REG_READ(ASSIST_DEBUG_CORE_0_SP_MAX_REG);
+    return REG_READ(BUS_MONITOR_CORE_0_SP_MAX_REG);
 }
 
 FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_pc(__attribute__((unused)) uint32_t core_id)
 {
-    return REG_READ(ASSIST_DEBUG_CORE_0_SP_PC_REG);
+    return REG_READ(BUS_MONITOR_CORE_0_SP_PC_REG);
 }
 
 FORCE_INLINE_ATTR void assist_debug_ll_enable_bus_clock(bool enable)
@@ -122,6 +125,11 @@ FORCE_INLINE_ATTR void assist_debug_ll_reset_register(void)
 {
     PCR.assist_conf.assist_rst_en = true;
     PCR.assist_conf.assist_rst_en = false;
+}
+
+FORCE_INLINE_ATTR bool assist_debug_ll_is_debugger_active(void)
+{
+   return REG_GET_BIT(ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
 }
 
 #ifdef __cplusplus

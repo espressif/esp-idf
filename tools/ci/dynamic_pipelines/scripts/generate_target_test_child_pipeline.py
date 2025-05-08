@@ -6,6 +6,7 @@
 2. Post the Build Report if it's running in an MR pipeline.
 3. Generate the child pipeline for target test jobs.
 """
+
 import argparse
 import glob
 import os
@@ -15,24 +16,23 @@ from collections import defaultdict
 
 import __init__  # noqa: F401 # inject the system path
 import yaml
+from idf_build_apps import App
+from idf_ci_local.app import import_apps_from_txt
+from idf_pytest.constants import TIMEOUT_4H_MARKERS
+from idf_pytest.script import get_pytest_cases
+
 from dynamic_pipelines.constants import BUILD_ONLY_LABEL
 from dynamic_pipelines.constants import DEFAULT_CASES_TEST_PER_JOB
 from dynamic_pipelines.constants import DEFAULT_TARGET_TEST_CHILD_PIPELINE_FILEPATH
 from dynamic_pipelines.constants import DEFAULT_TARGET_TEST_CHILD_PIPELINE_NAME
 from dynamic_pipelines.constants import DEFAULT_TARGET_TEST_JOB_TEMPLATE_NAME
 from dynamic_pipelines.constants import DEFAULT_TEST_PATHS
-from dynamic_pipelines.constants import (
-    KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH,
-)
+from dynamic_pipelines.constants import KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH
 from dynamic_pipelines.constants import TIMEOUT_4H_TEMPLATE_NAME
 from dynamic_pipelines.models import EmptyJob
 from dynamic_pipelines.models import Job
 from dynamic_pipelines.models import TargetTestJob
 from dynamic_pipelines.utils import dump_jobs_to_yaml
-from idf_build_apps import App
-from idf_ci.app import import_apps_from_txt
-from idf_pytest.constants import TIMEOUT_4H_MARKERS
-from idf_pytest.script import get_pytest_cases
 
 
 def get_tags_with_amount(s: str) -> t.List[str]:

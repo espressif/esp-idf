@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,13 +32,13 @@ void esp_timer_impl_unlock(void)
 void esp_timer_private_lock(void) __attribute__((alias("esp_timer_impl_lock")));
 void esp_timer_private_unlock(void) __attribute__((alias("esp_timer_impl_unlock")));
 
-void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
+void ESP_TIMER_IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 {
     esp_timer_impl_set_alarm_id(timestamp, 0);
 }
 
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
-void IRAM_ATTR esp_timer_impl_try_to_set_next_alarm(void)
+void ESP_TIMER_IRAM_ATTR esp_timer_impl_try_to_set_next_alarm(void)
 {
     portENTER_CRITICAL_ISR(&s_time_update_lock);
     unsigned now_alarm_idx;  // ISR is called due to this current alarm
@@ -65,7 +65,7 @@ void IRAM_ATTR esp_timer_impl_try_to_set_next_alarm(void)
 #endif
 
 /* FIXME: This value is safe for 80MHz APB frequency, should be modified to depend on clock frequency. */
-uint64_t IRAM_ATTR esp_timer_impl_get_min_period_us(void)
+uint64_t ESP_TIMER_IRAM_ATTR esp_timer_impl_get_min_period_us(void)
 {
     return 50;
 }

@@ -1,13 +1,19 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "esp_attr.h"
 #include "esp_private/spi_dma.h"
 #include "hal/spi_ll.h"
 
-#if !SOC_GDMA_SUPPORTED
+#if CONFIG_SPI_MASTER_ISR_IN_IRAM || CONFIG_SPI_SLAVE_ISR_IN_IRAM
+#define SPI_DMA_ISR_ATTR IRAM_ATTR
+#else
+#define SPI_DMA_ISR_ATTR
+#endif
+
 void spi_dma_enable_burst(spi_dma_chan_handle_t chan_handle, bool data_burst, bool desc_burst)
 {
     spi_dma_dev_t *spi_dma = SPI_LL_GET_HW(chan_handle.host_id);
@@ -35,7 +41,7 @@ void spi_dma_append(spi_dma_chan_handle_t chan_handle)
 
 /************************************* IRAM CONTEXT **************************************/
 
-uint32_t spi_dma_get_eof_desc(spi_dma_chan_handle_t chan_handle)
+uint32_t SPI_DMA_ISR_ATTR spi_dma_get_eof_desc(spi_dma_chan_handle_t chan_handle)
 {
     spi_dma_dev_t *spi_dma = SPI_LL_GET_HW(chan_handle.host_id);
 
@@ -45,7 +51,7 @@ uint32_t spi_dma_get_eof_desc(spi_dma_chan_handle_t chan_handle)
 }
 #endif  //SOC_SPI_SUPPORT_SLAVE_HD_VER2
 
-void spi_dma_reset(spi_dma_chan_handle_t chan_handle)
+void SPI_DMA_ISR_ATTR spi_dma_reset(spi_dma_chan_handle_t chan_handle)
 {
     spi_dma_dev_t *spi_dma = SPI_LL_GET_HW(chan_handle.host_id);
 
@@ -56,7 +62,7 @@ void spi_dma_reset(spi_dma_chan_handle_t chan_handle)
     }
 }
 
-void spi_dma_start(spi_dma_chan_handle_t chan_handle, void *addr)
+void SPI_DMA_ISR_ATTR spi_dma_start(spi_dma_chan_handle_t chan_handle, void *addr)
 {
     spi_dma_dev_t *spi_dma = SPI_LL_GET_HW(chan_handle.host_id);
 
@@ -66,4 +72,3 @@ void spi_dma_start(spi_dma_chan_handle_t chan_handle, void *addr)
         spi_dma_ll_rx_start(spi_dma, chan_handle.chan_id, (lldesc_t *)addr);
     }
 }
-#endif

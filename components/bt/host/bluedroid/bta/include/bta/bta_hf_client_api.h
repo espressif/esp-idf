@@ -188,6 +188,12 @@ typedef struct {
     tBTA_HF_CLIENT_CHLD_FEAT   chld_feat;
 } tBTA_HF_CLIENT_CONN;
 
+/* data associated with BTA_HF_CLIENT_AUDIO_XXX_EVT */
+typedef struct {
+    tBTA_HF_CLIENT_HDR      hdr;
+    UINT16                  preferred_frame_size;
+} tBTA_HF_CLIENT_AUDIO_STAT;
+
 /* data associated with BTA_HF_CLIENT_IND_EVT event */
 typedef struct {
     tBTA_HF_CLIENT_HDR         hdr;
@@ -251,6 +257,7 @@ typedef union {
     tBTA_HF_CLIENT_REGISTER         reg;
     tBTA_HF_CLIENT_OPEN             open;
     tBTA_HF_CLIENT_CONN             conn;
+    tBTA_HF_CLIENT_AUDIO_STAT       audio_stat;
     tBTA_HF_CLIENT_IND              ind;
     tBTA_HF_CLIENT_VAL              val;
     tBTA_HF_CLIENT_OPERATOR_NAME    operator;
@@ -406,9 +413,68 @@ void BTA_HfClientSendAT(UINT16 handle, tBTA_HF_CLIENT_AT_CMD_TYPE at, UINT32 val
 *******************************************************************************/
 void BTA_HfClientPktStatsNumsGet(UINT16 sync_conn_handle);
 
+/*******************************************************************************
+**
+** Function         BTA_HfClientCiData
+**
+** Description      Send SCO outgoing data ready event
+**
+**
+** Returns          void
+**
+*******************************************************************************/
 void BTA_HfClientCiData(void);
+
+/*******************************************************************************
+**
+** Function         BTA_HfClientAudioBuffAlloc
+**
+** Description      Allocate an audio buffer with specific size, reserve enough
+**                  space and offset for lower layer to send the buffer directly.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_HfClientAudioBuffAlloc(UINT16 size, UINT8 **pp_buff, UINT8 **pp_data);
+
+/*******************************************************************************
+**
+** Function         BTA_HfClientAudioBuffFree
+**
+** Description      Free an audio buffer.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_HfClientAudioBuffFree(UINT8 *p_buf);
+
+/*******************************************************************************
+**
+** Function         BTA_HfClientAudioDataSend
+**
+** Description      Send audio data to lower layer, whether success or not, buffer
+**                  is consumed.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_HfClientAudioDataSend(UINT16 sync_conn_hdl, UINT8 *p_buff_start, UINT8 *p_data, UINT16 data_len);
+
 #endif /*#if (BTM_SCO_HCI_INCLUDED == TRUE ) */
 
+/*******************************************************************************
+**
+** Function         BTA_HfClientGetCbDataSize
+**
+** Description      Get callback data size of specific event
+**
+**
+** Returns          void
+**
+*******************************************************************************/
 int BTA_HfClientGetCbDataSize(tBTA_HF_CLIENT_EVT event);
 
 #ifdef __cplusplus

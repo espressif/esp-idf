@@ -3,7 +3,7 @@ Minimizing RAM Usage
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_STATIC_MEANS_HEAP:default="Wi-Fi library, Bluetooth controller", esp32s2="Wi-Fi library", esp32c6="Wi-Fi library, Bluetooth controller, IEEE 802.15.4 library", esp32h2="Bluetooth controller, IEEE 802.15.4 library"}
+{IDF_TARGET_STATIC_MEANS_HEAP:default="Wi-Fi library, Bluetooth controller", esp32s2="Wi-Fi library", esp32c6="Wi-Fi library, Bluetooth controller, IEEE 802.15.4 library", esp32c61="Wi-Fi library, Bluetooth controller", esp32h2="Bluetooth controller, IEEE 802.15.4 library", esp32h21="Bluetooth controller, IEEE 802.15.4 library", esp32h4="Bluetooth controller, IEEE 802.15.4 library"}
 
 In some cases, a firmware application's available RAM may run low or run out entirely. In these cases, it is necessary to tune the memory usage of the firmware application.
 
@@ -193,6 +193,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     - Refer to the sdkconfig menu ``Auto-detect Flash chips``, and you can disable flash drivers which you do not need to save some IRAM.
     :SOC_GPSPI_SUPPORTED: - Enable :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`. Provided that :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` is not enabled and the heap functions are not incorrectly used from ISRs, this option is safe to enable in all configurations.
     :esp32c2: - Enable :ref:`CONFIG_BT_RELEASE_IRAM`. Release BT text section and merge BT data, bss & text into a large free heap region when ``esp_bt_mem_release`` is called. This makes Bluetooth unavailable until the next restart, but saving ~22 KB or more of IRAM.
+    - Disable :ref:`CONFIG_LIBC_LOCKS_PLACE_IN_IRAM` if no ISRs that run while cache is disabled (i.e. IRAM ISRs) use libc lock APIs.
 
 .. only:: esp32
 
@@ -216,7 +217,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
    Any memory that ends up unused for static IRAM will be added to the heap.
 
 
-.. only:: esp32c3
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
     Flash Suspend Feature
     ^^^^^^^^^^^^^^^^^^^^^
@@ -231,6 +232,8 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     User ISR callbacks and involved variables have to be in internal RAM if they are also used in interrupt contexts.
 
     Placing additional code into IRAM will exacerbate IRAM usage. For this reason, there is :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND`, which can alleviate the aforementioned kinds of IRAM usage. By enabling this feature, the Cache will not be disabled when SPI flash driver APIs and SPI flash driver-based APIs are used. Therefore, code and data in flash can be executed or accessed normally, but with some minor delay. See :ref:`auto-suspend` for more details about this feature.
+
+    IRAM usage for flash driver can be declined with :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` enabled. Please refer to :ref:`internal_memory_saving_for_flash_driver` for more detailed information.
 
     Regarding the flash suspend feature usage, and corresponding response time delay, please also see this example :example:`system/flash_suspend`.
 

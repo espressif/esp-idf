@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,9 +32,9 @@ extern "C" {
 #define CLK_LL_PLL_480M_FREQ_MHZ   (480)
 
 #define CLK_LL_XTAL32K_CONFIG_DEFAULT() { \
-    .dac = 3, \
-    .dres = 3, \
-    .dgm = 3, \
+    .dac = 7, \
+    .dres = 0, \
+    .dgm = 7, \
     .dbuf = 1, \
 }
 
@@ -214,6 +214,8 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_get_freq_mhz(v
 {
     return PCR.sysclk_conf.clk_xtal_freq;
 }
+
+#define clk_ll_xtal_load_freq_mhz() clk_ll_xtal_get_freq_mhz()
 
 /**
  * @brief Get SPLL_CLK frequency
@@ -554,8 +556,8 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_rtc_slow_load_cal(v
  */
 static inline __attribute__((always_inline)) void clk_ll_rtc_slow_store_rtc_fix_us(uint64_t rtc_fix_us)
 {
-    // TODO IDF-11022
-    return;
+    REG_WRITE(RTC_FIX_US_LOW_REG, rtc_fix_us);
+    REG_WRITE(RTC_FIX_US_HIGH_REG, rtc_fix_us >> 32);
 }
 
 /**
@@ -565,8 +567,7 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_slow_store_rtc_fix_
  */
 static inline __attribute__((always_inline)) uint64_t clk_ll_rtc_slow_load_rtc_fix_us(void)
 {
-    // TODO IDF-11022
-    return 0;
+    return REG_READ(RTC_FIX_US_LOW_REG) | ((uint64_t)REG_READ(RTC_FIX_US_HIGH_REG) << 32);
 }
 
 #ifdef __cplusplus

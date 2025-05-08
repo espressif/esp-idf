@@ -1,0 +1,6 @@
+[mapping:bitscrambler_driver]
+archive: libesp_driver_bitscrambler.a
+entries:
+    if BITSCRAMBLER_CTRL_FUNC_IN_IRAM = y:
+        bitscrambler: bitscrambler_reset (noflash)
+        bitscrambler: bitscrambler_start (noflash)

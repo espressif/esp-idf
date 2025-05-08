@@ -382,8 +382,8 @@ static httpd_handle_t test_httpd_start(void)
         ESP_LOGI(TAG, "Started HTTP server on port: '%d'", config.server_port);
         ESP_LOGI(TAG, "Max URI handlers: '%d'", config.max_uri_handlers);
         ESP_LOGI(TAG, "Max Open Sessions: '%d'", config.max_open_sockets);
-        ESP_LOGI(TAG, "Max Header Length: '%d'", HTTPD_MAX_REQ_HDR_LEN);
-        ESP_LOGI(TAG, "Max URI Length: '%d'", HTTPD_MAX_URI_LEN);
+        ESP_LOGI(TAG, "Max Header Length: '%d'", CONFIG_HTTPD_MAX_REQ_HDR_LEN);
+        ESP_LOGI(TAG, "Max URI Length: '%d'", CONFIG_HTTPD_MAX_URI_LEN);
         ESP_LOGI(TAG, "Max Stack Size: '%d'", config.stack_size);
         return hd;
     }

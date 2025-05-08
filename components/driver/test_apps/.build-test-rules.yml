@@ -72,6 +72,15 @@ components/driver/test_apps/legacy_timer_driver:
   depends_filepatterns:
     - components/driver/deprecated/**/*timer*
 
+components/driver/test_apps/legacy_twai:
+  disable:
+    - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD == 1
+      reason: legacy driver doesn't support FD
+  depends_filepatterns:
+    - components/driver/twai/**/*
+  depends_components:
+    - esp_driver_gpio
+
 components/driver/test_apps/touch_sensor_v1:
   disable:
     - if: SOC_TOUCH_SENSOR_VERSION != 1
@@ -79,11 +88,3 @@ components/driver/test_apps/touch_sensor_v1:
 components/driver/test_apps/touch_sensor_v2:
   disable:
     - if: SOC_TOUCH_SENSOR_VERSION != 2
-
-components/driver/test_apps/twai:
-  disable:
-    - if: SOC_TWAI_SUPPORTED != 1
-  depends_filepatterns:
-    - components/driver/twai/**/*
-  depends_components:
-    - esp_driver_gpio

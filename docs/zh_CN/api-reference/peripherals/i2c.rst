@@ -1,5 +1,5 @@
 I2C 接口
-==================
+========
 
 :link_to_translation:`en:[English]`
 
@@ -44,7 +44,6 @@ I2C 是一种串行同步半双工通信协议，总线上可以同时挂载多�
 .. note::
 
     我们发现 :ref:`i2c-slave-v1` 存在一些问题，且使用体验不够友好。为此，我们推出了 I2C 从机驱动 v2.0，此版本不仅解决了现有问题，还将成为我们未来的主要维护版本。我们建议并鼓励你使用 I2C 从机驱动 v2.0，你可以通过配置选项 :ref:`CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2` 启用该功能。本文档主要介绍 I2C 从机驱动 v2.0 的功能。如果你想使用 I2C 从机驱动 v1.0，请参考 :ref:`i2c-slave-v1`。I2C 从机驱动 v1.0 将在 ESP-IDF v6.0 中移除。
-
 
 I2C 时钟配置
 ------------
@@ -95,7 +94,7 @@ I2C 驱动程序提供以下服务：
 - `Kconfig 选项 <#kconfig-options>`__ - 列出了支持的 Kconfig 选项，这些选项可以对驱动程序产生不同影响。
 
 资源分配
-^^^^^^^^^
+^^^^^^^^
 
 若系统支持 I2C 主机总线，由驱动程序中的 :cpp:type:`i2c_master_bus_handle_t` 来表示。资源池管理可用的端口，并在有请求时分配空闲端口。
 
@@ -212,7 +211,7 @@ I2C 主机设备需要 :cpp:type:`i2c_device_config_t` 指定的配置：
         ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
 卸载 I2C 主机总线和设备
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 如果不再需要之前安装的 I2C 总线或设备，建议调用 :cpp:func:`i2c_master_bus_rm_device` 或 :cpp:func:`i2c_del_master_bus` 来回收资源，以释放底层硬件。
 
@@ -235,7 +234,7 @@ I2C 从机设备需要 :cpp:type:`i2c_slave_config_t` 指定的配置：
     - :cpp:member:`i2c_slave_config_t::addr_bit_len` 如果需要从机设备具有 10 位地址，则将该成员变量设为 ``I2C_ADDR_BIT_LEN_10``。
     - :cpp:member:`i2c_slave_config_t::allow_pd` 配置驱动程序是否允许系统在睡眠模式下关闭外设电源。在进入睡眠之前，系统将备份 I2C 寄存器上下文，当系统退出睡眠模式时，这些上下文将被恢复。关闭外设可以节省更多功耗，但代价是消耗更多内存来保存寄存器上下文。你需要在功耗和内存消耗之间做权衡。此配置选项依赖于特定的硬件功能，如果在不支持的芯片上启用它，你将看到类似 ``not able to power down in light sleep`` 的错误消息。
     :SOC_I2C_SLAVE_SUPPORT_BROADCAST: - :cpp:member:`i2c_slave_config_t::broadcast_en` 如果要启用从机广播，请将该成员变量设为 true。当从机设备接收到来自主机设备的通用调用地址 0x00，且后面的读写位为 0 时，无论从机设备自身地址如何，都会响应主机设备。
-    - :cpp:member:`i2c_slave_config_t::enable_internal_pullup` 置 true 使能内部上拉。尽管如此，我们强烈建议您使用外部上拉电阻。
+    - :cpp:member:`i2c_slave_config_t::enable_internal_pullup` 置 true 使能内部上拉。尽管如此，强烈建议使用外部上拉电阻。
 
 一旦填充好 :cpp:type:`i2c_slave_config_t` 结构体的必要参数，就可调用 :cpp:func:`i2c_new_slave_device` 来分配和初始化 I2C 主机总线。如果函数运行正确，则将返回一个 I2C 总线句柄。若没有可用的 I2C 端口，此函数将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。
 
@@ -261,14 +260,14 @@ I2C 从机设备需要 :cpp:type:`i2c_slave_config_t` 指定的配置：
 
 
 I2C 主机控制器
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 通过调用 :cpp:func:`i2c_new_master_bus` 安装好 I2C 主机控制器驱动程序后，{IDF_TARGET_NAME} 就可以与其他 I2C 设备进行通信了。I2C API 允许标准事务，如下图所示：
 
 .. wavedrom:: /../_static/diagrams/i2c/i2c_trans_wave.json
 
 I2C 主机写入
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 在成功安装 I2C 主机总线之后，可以通过调用 :cpp:func:`i2c_master_transmit` 来向从机设备写入数据。下图解释了该函数的原理。
 
@@ -442,21 +441,93 @@ I2C 驱动程序可以使用 :cpp:func:`i2c_master_probe` 来检测设备是否�
     ESP_ERROR_CHECK(i2c_del_master_bus(bus_handle));
 
 
+I2C 主机执行自定义事务
+~~~~~~~~~~~~~~~~~~~~~~
+
+并非所有 I2C 设备都严格遵循标准的 I2C 协议，不同制造商可能会对协议进行自定义修改。例如，某些设备可能要求地址移位，还有一些设备要求对特定操作进行应答 (ACK) 检查等。为此，开发者可以调用 :cpp:func:`i2c_master_execute_defined_operations` 函数灵活自定义和执行 I2C 事务，根据设备的特定要求来定制事务顺序、地址和应答行为，确保能与非标准设备流畅通讯。
+
+.. note::
+
+    若想在 :cpp:type:`i2c_operation_job_t` 中定义设备地址，请将 :cpp:member:`i2c_device_config_t::device_address` 设置为 ``I2C_DEVICE_ADDRESS_NOT_USED``，跳过驱动程序中的内部地址配置。
+
+假设设备地址为 ``0x20``，使用自定义事务进行地址配置时，会出现以下两种情况：
+
+.. code:: c
+
+    i2c_device_config_t i2c_device = {
+        .device_address = I2C_DEVICE_ADDRESS_NOT_USED,
+        .scl_speed_hz = 100 * 1000,
+        .scl_wait_us = 20000,
+    };
+
+    i2c_master_dev_handle_t dev_handle;
+
+    i2c_master_bus_add_device(bus_handle, &i2c_device, &dev_handle);
+
+    // 情况一：设备不要求地址移位
+    uint8_t address1 = 0x20;
+    i2c_operation_job_t i2c_ops1[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = false, .data = (uint8_t *) &address1, .total_bytes = 1 } },
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+    // 情况二：设备要求地址左移一位，以包含读位或写位（符合官方协议）
+    uint8_t address2 = (0x20 << 1 | 0); // (0x20 << 1 | 1)
+    i2c_operation_job_t i2c_ops2[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = false, .data = (uint8_t *) &address2, .total_bytes = 1 } },
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+某些设备不需要地址即可进行数据传输，如下所示：
+
+.. code:: c
+
+    uint8_t data[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+
+    i2c_operation_job_t i2c_ops[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = false, .data = (uint8_t *)data, .total_bytes = 8 } },
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+    i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), -1);
+
+读取操作的原理与写入操作相同。需要注意的是，在发送停止 (STOP) 命令之前，主机读取的最后一个字节必须是 ``NACK``。示例如下：
+
+.. code:: c
+
+    uint8_t address = (0x20 << 1 | 1);
+    uint8_t rcv_data[10] = {};
+
+    i2c_operation_job_t i2c_ops[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = false, .data = (uint8_t *) &address, .total_bytes = 1 } },
+        { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_ACK_VAL, .data = (uint8_t *)rcv_data, .total_bytes = 9 } },
+        { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_NACK_VAL, .data = (uint8_t *)(rcv_data + 9), .total_bytes = 1 } }, // 此处必须为 NACK
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+    i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), -1);
+
 I2C 从机控制器
 ^^^^^^^^^^^^^^
 
-I2C 从机不像 I2C 主机那样主观，主机知道自己何时应该发送数据，何时应该接收数据。在绝大多数情况下，I2C 从机是非常被动的，这意味着 I2C 从机发送和接收数据的能力在很大程度上取决于主机的操作。因此，我们在驱动程序中抛出了两个回调函数，分别代表 I2C 主机的读取请求和写入请求。
+调用 :cpp:func:`i2c_new_slave_device` 函数安装 I2C 从机设备驱动程序后, {IDF_TARGET_NAME} 即可作为 I2C 从机设备与其他 I2C 主机设备进行通信。
+
+与 I2C 主机设备相比，I2C 从机设备的行为更加被动。I2C 主机设备可以自主决定何时发送或接收数据，而 I2C 从机设备通常处于被动响应状态，数据的发送和接收主要依赖于主机设备的操作。因此，驱动程序中提供了两个回调函数，分别用于处理来自 I2C 主机设备的读取请求和写入请求。
 
 I2C 从机写入
-~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
-你可以通过注册 :cpp:member:`i2c_slave_event_callbacks_t::on_request` 回调来获取 I2C 从机写事件，并在获取请求事件的任务中调用 `i2c_slave_write` 来发送数据。
+通过注册 :cpp:member:`i2c_slave_event_callbacks_t::on_request` 回调函数，可以获取 I2C 从机写入事件。在触发请求事件的任务中可以调用 ``i2c_slave_write`` 函数来发送数据。
 
 传输数据的简单示例：
 
 .. code:: c
 
-    // Prepare a callback function
+    // 准备回调函数
     static bool i2c_slave_request_cb(i2c_slave_dev_handle_t i2c_slave, const i2c_slave_request_event_data_t *evt_data, void *arg)
     {
         i2c_slave_event_t evt = I2C_SLAVE_EVT_TX;
@@ -465,13 +536,13 @@ I2C 从机写入
         return xTaskWoken;
     }
 
-    // Register callback in a task
+    // 在任务中注册回调函数
     i2c_slave_event_callbacks_t cbs = {
         .on_request = i2c_slave_request_cb,
     };
     ESP_ERROR_CHECK(i2c_slave_register_event_callbacks(context.handle, &cbs, &context));
 
-    // Waiting for request event and send data in a task
+    // 等待请求事件并在任务中发送数据
     static void i2c_slave_task(void *arg)
     {
         uint8_t buffer_size = 64;
@@ -488,36 +559,35 @@ I2C 从机写入
     }
 
 I2C 从机读取
-~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
-与写入一样，您可以通过注册 :cpp:member:`i2c_slave_event_callbacks_t::on_receive` 回调来获取 I2C 从机读取事件，在任务中获取请求事件时，您可以保存数据并做您想做的事情。
+与写入事件一样，你也可以通过注册 :cpp:member:`i2c_slave_event_callbacks_t::on_receive` 回调函数来获取 I2C 从机读取事件。在触发请求事件的任务中，你可以保存数据并执行后续操作。
 
-接收数据的简单示例
+以下是接收数据的简单示例：
 
 .. code:: c
 
-    // Prepare a callback function
+    // 准备回调函数
     static bool i2c_slave_receive_cb(i2c_slave_dev_handle_t i2c_slave, const i2c_slave_rx_done_event_data_t *evt_data, void *arg)
     {
         i2c_slave_event_t evt = I2C_SLAVE_EVT_RX;
         BaseType_t xTaskWoken = 0;
-        // You can get data and length via i2c_slave_rx_done_event_data_t
+        // 通过 i2c_slave_rx_done_event_data_t 来获取数据及其长度
         xQueueSendFromISR(context->event_queue, &evt, &xTaskWoken);
         return xTaskWoken;
     }
 
-    // Register callback in a task
+    // 在任务中注册回调函数
     i2c_slave_event_callbacks_t cbs = {
         .on_receive = i2c_slave_receive_cb,
     };
     ESP_ERROR_CHECK(i2c_slave_register_event_callbacks(context.handle, &cbs, &context));
 
-
 注册事件回调函数
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 I2C 主机回调
-~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 当 I2C 主机总线触发中断时，将生成特定事件并通知 CPU。如果需要在发生这些事件时调用某些函数，可通过 :cpp:func:`i2c_master_register_event_callbacks` 将这些函数挂接到中断服务程序 (ISR) 上。由于注册的回调函数是在中断上下文中被调用的，所以应确保这些函数不会阻塞（例如，确保仅从函数内部调用带有 ``ISR`` 后缀的 FreeRTOS API）。回调函数需要返回一个布尔值，告诉 ISR 是否唤醒了高优先级任务。
 
@@ -532,7 +602,7 @@ I2C 主机事件回调函数列表见 :cpp:type:`i2c_master_event_callbacks_t`�
 - :cpp:member:`i2c_master_event_callbacks_t::on_recv_done` 可设置用于主机“传输完成”事件的回调函数。该函数原型在 :cpp:type:`i2c_master_callback_t` 中声明。
 
 I2C 从机回调
-~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 当 I2C 从机总线触发中断时，将生成特定事件并通知 CPU。如果需要在发生这些事件时调用某些函数，可通过 :cpp:func:`i2c_slave_register_event_callbacks` 将这些函数挂接到中断服务程序 (ISR) 上。由于注册的回调函数是在中断上下文中被调用的，所以应确保这些函数不会导致延迟（例如，确保仅从函数中调用带有 ``ISR`` 后缀的 FreeRTOS API）。回调函数需要返回一个布尔值，告诉调用者是否唤醒了高优先级任务。
 
@@ -544,7 +614,7 @@ I2C 从机事件回调函数列表见 :cpp:type:`i2c_slave_event_callbacks_t`。
     - :cpp:member:`i2c_slave_event_callbacks_t::on_receive` 为 receive 事件设置回调函数。函数原型在 :cpp:type:`i2c_slave_received_callback_t` 中声明。
 
 电源管理
-^^^^^^^^^^
+^^^^^^^^
 
 .. only:: SOC_I2C_SUPPORT_APB
 
@@ -574,7 +644,7 @@ Kconfig 选项 :ref:`CONFIG_I2C_ISR_IRAM_SAFE` 能够做到以下几点：
 启用以上选项，即使 cache 被禁用，I2C 中断依旧正常运行，但会增加 IRAM 的消耗。
 
 线程安全
-^^^^^^^^^^^^^
+^^^^^^^^
 
 工厂函数 :cpp:func:`i2c_new_master_bus` 和 :cpp:func:`i2c_new_slave_device` 由驱动程序保证线程安全，这意味着可以从不同的 RTOS 任务调用这些函数，而无需额外的锁保护。
 
@@ -593,7 +663,7 @@ I2C 从机操作函数也通过总线操作信号保证线程安全。
 其他函数不保证线程安全。因此，应避免在没有互斥保护的不同任务中调用这些函数。
 
 Kconfig 选项
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
 
 - :ref:`CONFIG_I2C_ISR_IRAM_SAFE` 将在 cache 被禁用时控制默认的 ISR 处理程序正常工作，详情请参阅 `IRAM 安全 <#iram-safe>`__。
 - :ref:`CONFIG_I2C_ENABLE_DEBUG_LOG` 可启用调试日志，但会增加固件二进制文件大小。

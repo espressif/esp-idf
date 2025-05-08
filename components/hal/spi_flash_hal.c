@@ -23,29 +23,29 @@ static const char *TAG = "flash_hal";
 
 static uint32_t get_flash_clock_divider(const spi_flash_hal_config_t *cfg)
 {
-    const int clk_source   = cfg->clock_src_freq;
-    const int clk_freq_mhz = cfg->freq_mhz;
+    const int src_freq_mhz = cfg->clock_src_freq;
+    const int cfg_freq_mhz = cfg->freq_mhz;
     // On ESP32, ESP32-S2, ESP32-C3, we allow specific frequency 26.666MHz
     // If user passes freq_mhz like 26 or 27, it's allowed to use integer divider 3.
     // However on other chips or on other frequency, we only allow user pass frequency which
     // can be integer divided. If no, the following strategy is round up the division and
     // round down flash frequency to keep it safe.
     int best_div = 0;
-    if (clk_source < clk_freq_mhz) {
-        HAL_LOGE(TAG, "Target frequency %dMHz higher than supported.", clk_freq_mhz);
+    if (src_freq_mhz < cfg_freq_mhz) {
+        HAL_LOGE(TAG, "Target frequency %dMHz higher than src %dMHz.", cfg_freq_mhz, src_freq_mhz);
         abort();
     }
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
-    if (clk_freq_mhz == 26 || clk_freq_mhz == 27) {
+    if (cfg_freq_mhz == 26 || cfg_freq_mhz == 27) {
         best_div = 3;
     } else
 #endif
     {
         /* Do not use float/double as the FPU may not have been initialized yet on startup.
          * The values are in MHz, so for sure we won't have an overflow by adding them. */
-        best_div = (clk_source + clk_freq_mhz - 1) / clk_freq_mhz;
+        best_div = (src_freq_mhz + cfg_freq_mhz - 1) / cfg_freq_mhz;
         /* Perform a division that returns both quotient and remainder */
-        const div_t res = div(clk_source, clk_freq_mhz);
+        const div_t res = div(src_freq_mhz, cfg_freq_mhz);
         if (res.rem != 0) {
             HAL_LOGW(TAG, "Flash clock frequency round down to %d", res.quot);
         }
@@ -138,7 +138,7 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
     data_out->flags &= ~SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_RESUME;
 #endif
 
-#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     if (cfg->octal_mode_en) {
         data_out->flags |= SPI_FLASH_HOST_CONTEXT_FLAG_OCTAL_MODE;
     }

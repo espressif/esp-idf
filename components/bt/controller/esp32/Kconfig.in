@@ -23,6 +23,14 @@ config BTDM_CTRL_BLE_MAX_CONN
         BLE maximum connections of bluetooth controller.
         Each connection uses 1KB static DRAM whenever the BT controller is enabled.
 
+config BTDM_CTRL_BR_EDR_MIN_ENC_KEY_SZ_DFT
+    int "BR/EDR default minimum size of encryption key"
+    depends on BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+    default 7
+    range 7 16
+    help
+        BR/EDR default minimum size of encryption key when start encryption.
+
 config BTDM_CTRL_BR_EDR_MAX_ACL_CONN
     int "BR/EDR ACL Max Connections"
     depends on BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
@@ -175,6 +183,11 @@ config BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
 config BTDM_CTRL_BLE_MAX_CONN_EFF
     int
     default BTDM_CTRL_BLE_MAX_CONN if BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM
+    default 0
+
+config BTDM_CTRL_BR_EDR_MIN_ENC_KEY_SZ_DFT_EFF
+    int
+    default BTDM_CTRL_BR_EDR_MIN_ENC_KEY_SZ_DFT if BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
     default 0
 
 config BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF
@@ -441,7 +454,7 @@ config BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
     default n
     help
         Disable active scan backoff. The bluetooth spec requires that scanners should run a backoff procedure to
-        minimize collision of scan request PDUs from nultiple scanners. If scan backoff is disabled, in active
+        minimize collision of scan request PDUs from multiple scanners. If scan backoff is disabled, in active
         scanning, scan request PDU will be sent every time when HW receives scannable ADV PDU.
 
 config BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
@@ -521,12 +534,14 @@ config BTDM_BLE_PING_EN
         If this option is disabled, The Controller will not start the LE authenticated payload timer.
         This option is used for some compatibility problems related to LE ping procedure.
 
-config BTDM_BLE_VS_QA_SUPPORT
-    bool "BLE vendor HCI QA support"
-    depends on (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
+config BTDM_CTRL_CONTROLLER_DEBUG_MODE_1
+    bool "Enable Bluetooth controller debugging mode 1 (for internal use only)"
     default n
+    depends on BT_ENABLED
     help
-        This enables BLE vendor HCI command and event for QA.
+        Enables specific debugging features for the Bluetooth controller.
+        This option is strictly for internal debugging purposes and should not be enabled in production environments,
+        as it may impact performance and stability.
 
 config BTDM_RESERVE_DRAM
     hex

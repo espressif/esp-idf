@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #pragma once
 
 #include <esp_types.h>
+#include "soc/soc_caps.h"
 #include "hal/mmu_types.h"
 
 #ifdef __cplusplus
@@ -117,6 +118,28 @@ bool mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t target
  *         True for valid
  */
 bool mmu_hal_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t vaddr_start, uint32_t len, mmu_vaddr_t type);
+
+#if SOC_MMU_PER_EXT_MEM_TARGET
+/**
+ * Get MMU ID from MMU target
+ *
+ * @param target      MMU target
+ *
+ * @return
+ *        MMU ID
+ */
+uint32_t mmu_hal_get_id_from_target(mmu_target_t target);
+
+/**
+ * Get MMU ID from vaddr
+ *
+ * @param vaddr       Virtual address
+ *
+ * @return
+ *        MMU ID
+ */
+uint32_t mmu_hal_get_id_from_vaddr(uint32_t vaddr);
+#endif
 
 #ifdef __cplusplus
 }

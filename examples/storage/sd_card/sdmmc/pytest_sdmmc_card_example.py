@@ -1,14 +1,15 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import re
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
 @pytest.mark.sdcard_sdmode
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_sd_card_sdmmc(dut: Dut) -> None:
     dut.expect('example: Initializing SD card', timeout=20)
     dut.expect('example: Using SDMMC peripheral', timeout=10)
@@ -24,18 +25,22 @@ def test_examples_sd_card_sdmmc(dut: Dut) -> None:
 
     logging.info('Card {} {} {}MHz {} found'.format(name, _type, speed, size))
 
-    message_list1 = ('Opening file /sdcard/hello.txt',
-                     'File written',
-                     'Renaming file /sdcard/hello.txt to /sdcard/foo.txt',
-                     'Reading file /sdcard/foo.txt',
-                     "Read from file: 'Hello {}!'".format(name))
+    message_list1 = (
+        'Opening file /sdcard/hello.txt',
+        'File written',
+        'Renaming file /sdcard/hello.txt to /sdcard/foo.txt',
+        'Reading file /sdcard/foo.txt',
+        "Read from file: 'Hello {}!'".format(name),
+    )
     sd_card_format = re.compile(str.encode('Formatting card, allocation unit size=\\S+'))
-    message_list2 = ("file doesn't exist, formatting done",
-                     'Opening file /sdcard/nihao.txt',
-                     'File written',
-                     'Reading file /sdcard/nihao.txt',
-                     "Read from file: 'Nihao {}!'".format(name),
-                     'Card unmounted')
+    message_list2 = (
+        "file doesn't exist, formatting done",
+        'Opening file /sdcard/nihao.txt',
+        'File written',
+        'Reading file /sdcard/nihao.txt',
+        "Read from file: 'Nihao {}!'".format(name),
+        'Card unmounted',
+    )
 
     for msg in message_list1:
         dut.expect_exact(msg, timeout=30)

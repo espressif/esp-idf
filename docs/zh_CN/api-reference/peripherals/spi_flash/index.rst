@@ -161,7 +161,7 @@ flash 在 {IDF_TARGET_CACHE_SIZE} 页进行映射。内存映射硬件既可将 
 - :cpp:func:`spi_flash_munmap`：取消上述区域的映射；
 - :cpp:func:`esp_partition_mmap`：将分区的一部分映射至 CPU 指令空间或数据空间；
 
- :cpp:func:`spi_flash_mmap` 和 :cpp:func:`esp_partition_mmap` 的区别如下：
+:cpp:func:`spi_flash_mmap` 和 :cpp:func:`esp_partition_mmap` 的区别如下：
 
 - :cpp:func:`spi_flash_mmap`：需要给定一个 {IDF_TARGET_CACHE_SIZE} 对齐的物理地址；
 - :cpp:func:`esp_partition_mmap`：给定分区内任意偏移量即可，此函数根据需要将返回的指针调整至指向映射内存。
@@ -257,6 +257,102 @@ flash 操作完成后，CPU A 上的函数将设置另一标志位，即 ``s_fla
 另外，所有 API 函数均受互斥量 ``s_flash_op_mutex`` 保护。
 
 在单核环境中（启用 :ref:`CONFIG_FREERTOS_UNICORE`），需要禁用上述两个 cache，以防发生 CPU 间通信。
+
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
+
+    .. _internal_memory_saving_for_flash_driver:
+
+    flash 驱动的内部存储优化
+    -----------------------------
+
+    ESP-IDF 提供了优化 IRAM 使用的选项。通过禁用 :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` 选项，可以选择性地将某些函数地放入 flash，使 SPI flash 操作函数在 flash 中执行，而不是从 IRAM 中执行。这种方式能够节省 IRAM 内存，用于其他对时间敏感的函数或任务。
+
+    然而，这种方式对 flash 性能具有一定的影响。与 IRAM 中的函数相比，放在 flash 中的函数执行时间可能略有增加。因此对于具有严格时序要求或严重依赖 SPI flash 操作的应用程序，采取此方式前需进行权衡。
+
+    .. note::
+
+        未启用 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 时，不应禁用 :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM`，否则会导致严重崩溃。关于 flash 挂起功能，请参阅 :ref:`auto-suspend`。
+
+    资源消耗
+    ^^^^^^^^^^^^
+
+    使用 :doc:`/api-guides/tools/idf-size` 工具来检查 SPI flash 驱动的代码和数据消耗。以下是测试条件（以 ESP32-C2 为例）：
+
+    **请注意，以下数据并非精确值，仅供参考；不同芯片型号可能会有所差异。**
+
+    启用 :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` 时的资源消耗如下表所示：
+
+    .. list-table:: 选项启用时的资源消耗
+       :widths: 20 10 10 10 10 10 10 10 10 10
+       :header-rows: 1
+
+       * - 组件层
+         - 总大小
+         - DIRAM
+         - .bss
+         - .data
+         - .text
+         - flash 代码
+         - .text
+         - flash 数据
+         - .rodata
+       * - hal
+         - 4624
+         - 4038
+         - 0
+         - 0
+         - 4038
+         - 586
+         - 586
+         - 0
+         - 0
+       * - spi_flash
+         - 14074
+         - 11597
+         - 82
+         - 1589
+         - 9926
+         - 2230
+         - 2230
+         - 247
+         - 247
+
+    禁用 :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` 时的资源消耗如下表所示：
+
+    .. list-table:: 选项禁用时的资源消耗
+       :widths: 20 10 10 10 10 10 10 10 10 10
+       :header-rows: 1
+
+       * - 组件层
+         - 总大小
+         - DIRAM
+         - .bss
+         - .data
+         - .text
+         - flash 代码
+         - .text
+         - flash 数据
+         - .rodata
+       * - hal
+         - 4632
+         - 0
+         - 0
+         - 0
+         - 0
+         - 4632
+         - 4632
+         - 0
+         - 0
+       * - spi_flash
+         - 14569
+         - 1399
+         - 22
+         - 429
+         - 948
+         - 11648
+         - 11648
+         - 1522
+         - 1522
 
 相关文档
 -----------------

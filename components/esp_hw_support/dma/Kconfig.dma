@@ -8,14 +8,12 @@ menu "GDMA Configurations"
             Place GDMA control functions (like start/stop/append/reset) into IRAM,
             so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
 
-    config GDMA_ISR_IRAM_SAFE
-        bool "GDMA ISR IRAM-Safe"
-        default n
+    config GDMA_ISR_HANDLER_IN_IRAM
+        bool "Place GDMA ISR handler in IRAM to reduce latency"
+        default y
         select GDMA_OBJ_DRAM_SAFE
         help
-            This will ensure the GDMA interrupt handler is IRAM-Safe, allow to avoid flash
-            cache misses, and also be able to run whilst the cache is disabled.
-            (e.g. SPI Flash write).
+            Place GDMA ISR handler functions in IRAM to reduce latency caused by cache miss.
 
     config GDMA_OBJ_DRAM_SAFE
         bool
@@ -25,11 +23,26 @@ menu "GDMA Configurations"
             cache misses, and also be accessible whilst the cache is disabled.
 
     config GDMA_ENABLE_DEBUG_LOG
-        bool "Enable debug log"
+        bool "Force enable debug log"
         default n
         help
-            Whether to enable the debug log message for GDMA driver.
-            Note that, this option only controls the GDMA driver log, won't affect other drivers.
+            If enabled, GDMA driver component will:
+            1. ignore the global logging settings
+            2. compile all log messages into the binary
+            3. set the runtime log level to VERBOSE
+            Please enable this option by caution, as it will increase the binary size.
+
+    config GDMA_ISR_IRAM_SAFE
+        bool "GDMA ISR IRAM-Safe (Deprecated. Read Help!)"
+        default n
+        select GDMA_ISR_HANDLER_IN_IRAM
+        help
+            This will ensure the GDMA interrupt handler is IRAM-Safe, allow to avoid flash
+            cache misses, and also be able to run whilst the cache is disabled.
+            (e.g. SPI Flash write).
+            If this option is enabled, ALL GDMA channel's ISR handlers should be placed in IRAM, which is a overkill.
+            It's recommend to set the "isr_cache_safe" in the "gdma_channel_alloc_config_t".
+            Then other GDMA channels won't be influenced.
 endmenu # GDMA Configurations
 
 menu "DW_GDMA Configurations"

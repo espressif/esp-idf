@@ -120,9 +120,13 @@ esp_err_t mcpwm_new_gpio_fault(const mcpwm_gpio_fault_config_t *config, mcpwm_fa
 
     if (config->flags.pull_down) {
         gpio_pulldown_en(config->gpio_num);
+    } else {
+        gpio_pulldown_dis(config->gpio_num);
     }
     if (config->flags.pull_up) {
         gpio_pullup_en(config->gpio_num);
+    } else {
+        gpio_pullup_dis(config->gpio_num);
     }
 
     // deprecated, to be removed in in esp-idf v6.0

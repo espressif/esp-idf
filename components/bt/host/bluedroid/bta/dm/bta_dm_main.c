@@ -76,15 +76,18 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
     bta_dm_set_min_enc_key_size,            /* BTA_DM_API_SET_MIN_ENC_KEY_SIZE_EVT */
 #endif
-#endif
+
     bta_dm_set_afh_channels,                /* BTA_DM_API_SET_AFH_CHANNELS_EVT */
 #if (SDP_INCLUDED == TRUE)
     bta_dm_read_rmt_name,                    /* BTA_DM_API_GET_REMOTE_NAME_EVT*/
 #endif
     bta_dm_set_visibility,                  /* BTA_DM_API_SET_VISIBILITY_EVT */
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     bta_dm_acl_change,                      /* BTA_DM_ACL_CHANGE_EVT */
     bta_dm_add_device,                      /* BTA_DM_API_ADD_DEVICE_EVT */
+#if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
     bta_dm_close_acl,                       /* BTA_DM_API_REMOVE_ACL_EVT */
+#endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
 #if (SMP_INCLUDED == TRUE)
     /* security API events */
     bta_dm_bond,                            /* BTA_DM_API_BOND_EVT */
@@ -130,11 +133,21 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #endif  ///SMP_INCLUDED == TRUE
     bta_dm_ble_set_bg_conn_type,
     bta_dm_ble_set_conn_params,             /* BTA_DM_API_BLE_CONN_PARAM_EVT */
+#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
     bta_dm_ble_set_conn_scan_params,        /* BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT */
+#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
+#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
     bta_dm_ble_set_scan_params,             /* BTA_DM_API_BLE_SCAN_PARAM_EVT */
+#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
+#if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_set_scan_fil_params,         /* BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT */
+#endif // #if (BLE_42_SCAN_EN == TRUE)
+#if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
     bta_dm_ble_observe,                     /* BTA_DM_API_BLE_OBSERVE_EVT */
+#endif // #if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
+#if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_scan,                        /* BTA_DM_API_BLE_SCAN_EVT */
+#endif // #if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_update_conn_params,          /* BTA_DM_API_UPDATE_CONN_PARAM_EVT */
     /* This handler function added by
        Yulong at 2016/9/9 to support the
@@ -145,12 +158,14 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
        Yulong at 2016/10/19 to support
        stop the ble advertising setting
        by the APP */
+#if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
     bta_dm_ble_stop_advertising,            /* BTA_DM_API_BLE_STOP_ADV_EVT */
+#endif // #if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
 #if BLE_PRIVACY_SPT == TRUE
     bta_dm_ble_config_local_privacy,        /* BTA_DM_API_LOCAL_PRIVACY_EVT */
 #endif
     bta_dm_ble_config_local_icon,           /* BTA_DM_API_LOCAL_ICON_EVT */
-    bta_dm_ble_set_adv_params,              /* BTA_DM_API_BLE_ADV_PARAM_EVT */
+#if (BLE_42_ADV_EN == TRUE)
     bta_dm_ble_set_adv_params_all,          /* BTA_DM_API_BLE_ADV_PARAM_All_EVT */
     bta_dm_ble_set_adv_config,              /* BTA_DM_API_BLE_SET_ADV_CONFIG_EVT */
     /* New function to allow set raw adv
@@ -161,36 +176,54 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
        response data to HCI */
     bta_dm_ble_set_scan_rsp_raw,            /* BTA_DM_API_BLE_SET_SCAN_RSP_RAW_EVT */
     bta_dm_ble_broadcast,                   /* BTA_DM_API_BLE_BROADCAST_EVT */
+#endif // #if (BLE_42_ADV_EN == TRUE)
     bta_dm_ble_set_data_length,             /* BTA_DM_API_SET_DATA_LENGTH_EVT */
-    bta_dm_ble_set_long_adv,                /* BTA_DM_API_BLE_SET_LONG_ADV_EVT */
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
     bta_dm_cfg_filter_cond,                 /* BTA_DM_API_CFG_FILTER_COND_EVT */
     bta_dm_scan_filter_param_setup,         /* BTA_DM_API_SCAN_FILTER_SETUP_EVT */
     bta_dm_enable_scan_filter,              /* BTA_DM_API_SCAN_FILTER_ENABLE_EVT */
 #endif
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
     bta_dm_ble_multi_adv_enb,               /* BTA_DM_API_BLE_MULTI_ADV_ENB_EVT */
     bta_dm_ble_multi_adv_upd_param,         /* BTA_DM_API_BLE_MULTI_ADV_PARAM_UPD_EVT */
     bta_dm_ble_multi_adv_data,              /* BTA_DM_API_BLE_MULTI_ADV_DATA_EVT */
     btm_dm_ble_multi_adv_disable,           /* BTA_DM_API_BLE_MULTI_ADV_DISABLE_EVT */
+#endif // BLE_HOST_BLE_MULTI_ADV_EN
+#if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
     bta_dm_ble_setup_storage,               /* BTA_DM_API_BLE_SETUP_STORAGE_EVT */
+#endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
+#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
     bta_dm_ble_enable_batch_scan,           /* BTA_DM_API_BLE_ENABLE_BATCH_SCAN_EVT */
     bta_dm_ble_disable_batch_scan,          /* BTA_DM_API_BLE_DISABLE_BATCH_SCAN_EVT */
+#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
+#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
     bta_dm_ble_read_scan_reports,           /* BTA_DM_API_BLE_READ_SCAN_REPORTS_EVT */
+#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
+#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
     bta_dm_ble_track_advertiser,            /* BTA_DM_API_BLE_TRACK_ADVERTISER_EVT */
+#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
+#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     bta_dm_ble_get_energy_info,             /* BTA_DM_API_BLE_ENERGY_INFO_EVT */
+#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     bta_dm_ble_disconnect,                  /* BTA_DM_API_BLE_DISCONNECT_EVT */
 #endif
-
+#if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
     bta_dm_enable_test_mode,                /* BTA_DM_API_ENABLE_TEST_MODE_EVT */
     bta_dm_disable_test_mode,               /* BTA_DM_API_DISABLE_TEST_MODE_EVT */
+#endif // #if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
+#if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
     bta_dm_execute_callback,                /* BTA_DM_API_EXECUTE_CBACK_EVT */
-
+#endif // #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
+#if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
     bta_dm_remove_all_acl,                  /* BTA_DM_API_REMOVE_ALL_ACL_EVT */
+#endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
     bta_dm_remove_device,                   /* BTA_DM_API_REMOVE_DEVICE_EVT */
     bta_dm_ble_set_channels,                /* BTA_DM_API_BLE_SET_CHANNELS_EVT */
     bta_dm_update_white_list,               /* BTA_DM_API_UPDATE_WHITE_LIST_EVT */
     bta_dm_clear_white_list,                /* BTA_DM_API_CLEAR_WHITE_LIST_EVT */
+#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
     bta_dm_ble_read_adv_tx_power,           /* BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT */
+#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
     bta_dm_read_rssi,                       /* BTA_DM_API_READ_RSSI_EVT */
 #if BLE_INCLUDED == TRUE
     bta_dm_ble_update_duplicate_exceptional_list,/* BTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_EVT */
@@ -199,28 +232,38 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_gap_read_phy,                /* BTA_DM_API_READ_PHY_EVT */
     bta_dm_ble_gap_set_prefer_default_phy,  /* BTA_DM_API_SET_PER_DEF_PHY_EVT */
     bta_dm_ble_gap_set_prefer_phy,          /* BTA_DM_API_SET_PER_PHY_EVT */
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     bta_dm_ble_gap_ext_adv_set_rand_addr,   /* BTA_DM_API_SET_EXT_ADV_RAND_ADDR_EVT */
     bta_dm_ble_gap_ext_adv_set_params,      /* BTA_DM_API_SET_EXT_ADV_PARAMS_EVT */
     bta_dm_ble_gap_config_ext_adv_data_raw, /* BTA_DM_API_CFG_ADV_DATA_RAW_EVT */
     bta_dm_ble_gap_start_ext_adv,           /* BTA_DM_API_EXT_ADV_ENABLE_EVT */
     bta_dm_ble_gap_ext_adv_set_remove,      /* BTA_DM_API_EXT_ADV_SET_REMOVE_EVT */
     bta_dm_ble_gap_ext_adv_set_clear,       /* BTA_DM_API_EXT_ADV_SET_CLEAR_EVT */
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
     bta_dm_ble_gap_periodic_adv_set_params, /* BTA_DM_API_PERIODIC_ADV_SET_PARAMS_EVT */
     bta_dm_ble_gap_periodic_adv_cfg_data_raw, /* BTA_DM_API_PERIODIC_ADV_CFG_DATA_EVT */
     bta_dm_ble_gap_periodic_adv_enable,     /* BTA_DM_API_PERIODIC_ADV_ENABLE_EVT */
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
     bta_dm_ble_gap_periodic_adv_create_sync, /* BTA_DM_API_PERIODIC_ADV_SYNC_EVT */
     bta_dm_ble_gap_periodic_adv_sync_cancel, /* BTA_DM_API_PERIODIC_ADV_SYNC_CANCEL_EVT */
     bta_dm_ble_gap_periodic_adv_sync_terminate, /* BTA_DM_API_PERIODIC_ADV_SYNC_TERMINATE_EVT */
     bta_dm_ble_gap_periodic_adv_add_dev_to_list, /* BTA_DM_API_PERIODIC_ADV_ADD_DEV_TO_LSIT_EVT */
     bta_dm_ble_gap_periodic_adv_remove_dev_from_list, /* BTA_DM_API_PERIODIC_ADV_REMOVE_DEV_FROM_LSIT_EVT */
     bta_dm_ble_gap_periodic_adv_clear_dev,  /* BTA_DM_API_PERIODIC_ADV_CLEAR_DEV_EVT */
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
     bta_dm_ble_gap_set_ext_scan_params,     /* BTA_DM_API_SET_EXT_SCAN_PARAMS_EVT */
     bta_dm_ble_gap_ext_scan,                /* BTA_DM_API_START_EXT_SCAN_EVT */
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
     bta_dm_ble_gap_set_prefer_ext_conn_params, /* BTA_DM_API_SET_PERF_EXT_CONN_PARAMS_EVT */
     NULL,                                   /* BTA_DM_API_EXT_CONN_EVT */
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_50_DTM_TEST_EN == TRUE)
     bta_dm_ble_gap_dtm_enhance_tx_start,    /* BTA_DM_API_DTM_ENH_TX_START_EVT */
     bta_dm_ble_gap_dtm_enhance_rx_start,    /* BTA_DM_API_DTM_ENH_RX_START_EVT */
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
     bta_dm_ble_gap_periodic_adv_recv_enable, /* BTA_DM_API_PERIODIC_ADV_RECV_ENABLE_EVT */
     bta_dm_ble_gap_periodic_adv_sync_trans,  /* BTA_DM_API_PERIODIC_ADV_SYNC_TRANS_EVT */
@@ -228,15 +271,79 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_gap_set_periodic_adv_sync_trans_params, /* BTA_DM_API_SET_PERIODIC_ADV_SYNC_TRANS_PARAMS_EVT */
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 #if BLE_INCLUDED == TRUE
+#if (BLE_42_DTM_TEST_EN == TRUE)
     bta_dm_ble_gap_dtm_tx_start, /* BTA_DM_API_DTM_TX_START_EVT */
     bta_dm_ble_gap_dtm_rx_start, /* BTA_DM_API_DTM_RX_START_EVT */
+#endif // #if (BLE_42_DTM_TEST_EN == TRUE)
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
     bta_dm_ble_gap_dtm_stop, /* BTA_DM_API_DTM_STOP_EVT */
+#endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
+#if (BLE_42_ADV_EN == TRUE)
     bta_dm_ble_gap_clear_adv, /* BTA_DM_API_BLE_CLEAR_ADV_EVT */
+#endif // #if (BLE_42_ADV_EN == TRUE)
     bta_dm_ble_gap_set_rpa_timeout, /* BTA_DM_API_SET_RPA_TIMEOUT_EVT */
     bta_dm_ble_gap_add_dev_to_resolving_list, /* BTA_DM_API_ADD_DEV_TO_RESOLVING_LIST_EVT */
     bta_dm_ble_gap_set_privacy_mode, /* BTA_DM_API_SET_PRIVACY_MODE_EVT */
     bta_dm_ble_gap_set_csa_support, /* BTA_DM_API_BLE_SET_CSA_SUPPORT_EVT */
+    bta_dm_ble_gap_set_vendor_evt_mask, /* BTA_DM_API_BLE_SET_VENDOR_EVT_MASK_EVT */
+    bta_dm_read_ble_channel_map,        /* BTA_DM_API_BLE_READ_CH_MAP_EVT */
 #endif
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+    bta_dm_ble_big_create,             /* BTA_DM_API_ISO_BIG_CREATE_EVT */
+    bta_dm_ble_big_create_test,        /* BTA_DM_API_ISO_BIG_CREATE_TEST_EVT */
+    bta_dm_ble_big_terminate,          /* BTA_DM_API_ISO_BIG_TERMINATE_EVT */
+#endif// #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    bta_dm_ble_big_sync_create,        /* BTA_DM_API_ISO_BIG_SYNC_CREATE_EVT */
+    bta_dm_ble_big_sync_terminate,     /* BTA_DM_API_ISO_BIG_SYNC_TERMINATE_EVT */
+#endif// #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    bta_dm_ble_iso_set_data_path,      /* BTA_DM_API_ISO_SET_DATA_PATH_EVT */
+    bta_dm_ble_iso_remove_data_path,   /* BTA_DM_API_ISO_REMOVE_DATA_PATH_EVT */
+    bta_dm_ble_iso_read_tx_sync,       /* BTA_DM_API_ISO_READ_TX_SYNC_EVT */
+    bta_dm_ble_iso_read_link_quality,  /* BTA_DM_API_ISO_READ_LINK_QUALITY_EVT */
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+    bta_dm_ble_set_cig_params,         /* BTA_DM_API_SET_CIG_PARAMS_EVT */
+    bta_dm_ble_set_cig_params_test,    /* BTA_DM_API_SET_CIG_PARAMS_TEST_EVT */
+    bta_dm_ble_create_cis,             /* BTA_DM_API_CREATE_CIS_EVT */
+    bta_dm_ble_remove_cig,             /* BTA_DM_API_REMOVE_CIG_PARAMS_EVT*/
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+    bta_dm_ble_accept_cis_req,         /* BTA_DM_API_ACCEPT_CIS_REQ_PARAMS_EVT */
+    bta_dm_ble_reject_cis_req,         /* BTA_DM_API_REJECT_CIS_REQ_PARAMS_EVT */
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+    bta_dm_ble_discon_cis,            /* BTA_DM_API_DISCON_CIS_EVT */
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+    bta_dm_ble_set_cte_trans_params, /* BTA_DM_API_CTE_SET_TRANS_PARAMS */
+    bta_dm_ble_set_cte_trans_enable, /* BTA_DM_API_CTE_SET_TRANS_ENABLE */
+    bta_dm_ble_set_iq_sampling_en, /* BTA_DM_API_CTE_SET_IQ_SAMPLING_EN */
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    bta_dm_ble_set_conn_cte_recv_params, /* BTA_DM_API_CTE_SET_CONN_CTE_RECV_PARAMS */
+    bta_dm_ble_set_conn_trans_params, /* BTA_DM_API_CTE_SET_CONN_CTE_TRANS_PARAMS */
+    bta_dm_ble_set_conn_cte_req_en, /* BTA_DM_API_CTE_SET_CONN_CTE_REQUEST_EN */
+    bta_dm_ble_set_conn_cte_rsp_en, /* BTA_DM_API_CTE_SET_CONN_CTE_RESPONSE_EN */
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    bta_dm_ble_read_cte_ant_infor, /* BTA_DM_API_CTE_READ_ANTENNA_INFOR */
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    bta_dm_api_enh_read_trans_power_level, /* BTA_DM_API_ENH_READ_TRANS_POWER_LEVEL */
+    bta_dm_api_read_rem_trans_power_level, /* BTA_DM_API_READ_REM_TRANS_POWER_LEVEL */
+    bta_dm_api_set_path_loss_report_params, /* BTA_DM_API_SET_PATH_LOSS_REPORT_PARAMS */
+    bta_dm_api_set_path_loss_reporting_en, /* BTA_DM_API_SET_PATH_LOSS_REPORTING_EN */
+    bta_dm_api_set_trans_power_reporting_en, /* BTA_DM_API_SET_TRANS_POWER_REPORTING_EN */
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    bta_dm_api_set_default_subrate, /* BTA_DM_API_SET_DEFALT_SUBRATE */
+    bta_dm_api_subrate_request, /* BTA_DM_API_SUBRATE_REQUEST */
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    bta_dm_ble_set_host_feature,   /* BTA_DM_API_SET_HOST_FEATURE_EVT */
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 };
 
 

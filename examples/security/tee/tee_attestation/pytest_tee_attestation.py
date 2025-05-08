@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import hashlib
 import json
@@ -11,6 +11,7 @@ from ecdsa.curves import NIST256p
 from ecdsa.keys import VerifyingKey
 from ecdsa.util import sigdecode_der
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 def verify_att_token_signature(att_tk: str) -> Any:
@@ -44,8 +45,8 @@ def verify_att_token_signature(att_tk: str) -> Any:
     return vk.verify_digest(signature, digest, sigdecode=sigdecode_der)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_example_tee_attestation(dut: Dut) -> None:
     # Erase the TEE secure_storage partition
     dut.serial.erase_partition('secure_storage')

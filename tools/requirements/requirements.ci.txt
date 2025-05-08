@@ -13,6 +13,5 @@ junit_xml
 python-gitlab
 pyyaml
 SimpleWebSocketServer
-pylint-gitlab
 minio
 prettytable

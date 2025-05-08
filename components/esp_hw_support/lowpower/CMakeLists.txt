@@ -1,6 +1,6 @@
 idf_build_get_property(non_os_build NON_OS_BUILD)
 
-if(non_os_build)
+if(non_os_build OR NOT CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
     return()
 endif()
 

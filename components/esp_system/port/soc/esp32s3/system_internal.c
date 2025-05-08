@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,8 +53,10 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
                       SYSTEM_PWM0_RST | SYSTEM_PWM1_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
 
-    // Reset dma
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
+    // Reset dma and crypto peripherals. This ensures a clean state for the crypto peripherals after a CPU restart
+    // and hence avoiding any possibility with crypto failure in ROM security workflows.
+    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST | SYSTEM_CRYPTO_AES_RST | SYSTEM_CRYPTO_DS_RST |
+                      SYSTEM_CRYPTO_HMAC_RST | SYSTEM_CRYPTO_RSA_RST | SYSTEM_CRYPTO_SHA_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
 
     SET_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
@@ -102,10 +104,6 @@ void IRAM_ATTR esp_restart_noos(void)
     }
 #endif
 
-    // Disable cache
-    Cache_Disable_ICache();
-    Cache_Disable_DCache();
-
     // Reset and stall the other CPU.
     // CPU must be reset before stalling, in case it was running a s32c1i
     // instruction. This would cause memory pool to be locked by arbiter
@@ -116,6 +114,10 @@ void IRAM_ATTR esp_restart_noos(void)
     esp_rom_software_reset_cpu(other_core_id);
     esp_cpu_stall(other_core_id);
 #endif
+
+    // Disable cache
+    Cache_Disable_ICache();
+    Cache_Disable_DCache();
 
     // 2nd stage bootloader reconfigures SPI flash signals.
     // Reset them to the defaults expected by ROM.

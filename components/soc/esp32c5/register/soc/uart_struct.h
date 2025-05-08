@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -16,11 +16,12 @@ extern "C" {
  */
 typedef union {
     struct {
-        /** rxfifo_rd_byte : RO; bitpos: [31:0]; default: 0;
-         *  Represents the data UART $n read from FIFO.\\
+        /** rxfifo_rd_byte : RO; bitpos: [7:0]; default: 0;
+         *  Represents the data UART $n read from FIFO.
          *  Measurement unit: byte.
          */
-        uint32_t rxfifo_rd_byte:32;
+        uint32_t rxfifo_rd_byte:8;
+        uint32_t reserved_8:24;
     };
     uint32_t val;
 } uart_fifo_reg_t;
@@ -50,9 +51,9 @@ typedef union {
 typedef union {
     struct {
         /** rx_tout_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to enable UART receiver's timeout function.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable UART receiver's timeout function.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t rx_tout_en:1;
         /** rx_tout_flow_dis : R/W; bitpos: [1]; default: 0;
@@ -60,7 +61,7 @@ typedef union {
          */
         uint32_t rx_tout_flow_dis:1;
         /** rx_tout_thrhd : R/W; bitpos: [11:2]; default: 10;
-         *  Configures the amount of time that the bus can remain idle before timeout.\\
+         *  Configures the amount of time that the bus can remain idle before timeout.
          *  Measurement unit: bit time (the time to transmit 1 bit).
          */
         uint32_t rx_tout_thrhd:10;
@@ -458,13 +459,14 @@ typedef union {
 typedef union {
     struct {
         /** glitch_filt : R/W; bitpos: [7:0]; default: 8;
-         *  Configures the width of a pulse to be filtered.\\Measurement unit: UART Core's
-         *  clock cycle.\\Pulses whose width is lower than this value will be ignored.
+         *  Configures the width of a pulse to be filtered.
+         *  Measurement unit: UART Core's clock cycle.
+         *  Pulses whose width is lower than this value will be ignored.
          */
         uint32_t glitch_filt:8;
         /** glitch_filt_en : R/W; bitpos: [8]; default: 0;
-         *  Configures whether or not to enable RX signal filter.\\
-         *  0: Disable\\
+         *  Configures whether or not to enable RX signal filter.
+         *  0: Disable
          *  1: Enable
          */
         uint32_t glitch_filt_en:1;
@@ -479,141 +481,139 @@ typedef union {
 typedef union {
     struct {
         /** parity : R/W; bitpos: [0]; default: 0;
-         *  Configures the parity check mode.\\
-         *  0: Even parity\\
-         *  1: Odd parity\\
+         *  Configures the parity check mode.
+         *  0: Even parity
+         *  1: Odd parity
          */
         uint32_t parity:1;
         /** parity_en : R/W; bitpos: [1]; default: 0;
-         *  Configures whether or not to enable UART parity check.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable UART parity check.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t parity_en:1;
         /** bit_num : R/W; bitpos: [3:2]; default: 3;
-         *  Configures the number of data bits.\\
-         *  0: 5 bits\\
-         *  1: 6 bits\\
-         *  2: 7 bits\\
-         *  3: 8 bits\\
+         *  Configures the number of data bits.
+         *  0: 5 bits
+         *  1: 6 bits
+         *  2: 7 bits
+         *  3: 8 bits
          */
         uint32_t bit_num:2;
         /** stop_bit_num : R/W; bitpos: [5:4]; default: 1;
-         *  Configures the number of stop bits.\\
-         *  0: Invalid. No effect\\
-         *  1: 1 bits\\
-         *  2: 1.5 bits\\
-         *  3: 2 bits\\
+         *  Configures the number of stop bits.
+         *  0: Invalid. No effect
+         *  1: 1 bits
+         *  2: 1.5 bits
+         *  3: 2 bits
          */
         uint32_t stop_bit_num:2;
         /** txd_brk : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to send NULL characters when finishing data
-         *  transmission.\\
-         *  0: Not send\\
-         *  1: Send\\
+         *  Configures whether or not to send NULL characters when finishing data transmission.
+         *  0: Not send
+         *  1: Send
          */
         uint32_t txd_brk:1;
         /** irda_dplx : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to enable IrDA loopback test.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable IrDA loopback test.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t irda_dplx:1;
         /** irda_tx_en : R/W; bitpos: [8]; default: 0;
-         *  Configures whether or not to enable the IrDA transmitter.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable the IrDA transmitter.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t irda_tx_en:1;
         /** irda_wctl : R/W; bitpos: [9]; default: 0;
-         *  Configures the 11th bit of the IrDA transmitter.\\
-         *  0: This bit is 0.\\
-         *  1: This bit is the same as the 10th bit.\\
+         *  Configures the 11th bit of the IrDA transmitter.
+         *  0: This bit is 0.
+         *  1: This bit is the same as the 10th bit.
          */
         uint32_t irda_wctl:1;
         /** irda_tx_inv : R/W; bitpos: [10]; default: 0;
-         *  Configures whether or not to invert the level of the IrDA transmitter.\\
-         *  0: Not invert\\
-         *  1: Invert\\
+         *  Configures whether or not to invert the level of the IrDA transmitter.
+         *  0: Not invert
+         *  1: Invert
          */
         uint32_t irda_tx_inv:1;
         /** irda_rx_inv : R/W; bitpos: [11]; default: 0;
-         *  Configures whether or not to invert the level of the IrDA receiver.\\
-         *  0: Not invert\\
-         *  1: Invert\\
+         *  Configures whether or not to invert the level of the IrDA receiver.
+         *  0: Not invert
+         *  1: Invert
          */
         uint32_t irda_rx_inv:1;
         /** loopback : R/W; bitpos: [12]; default: 0;
-         *  Configures whether or not to enable UART loopback test.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable UART loopback test.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t loopback:1;
         /** tx_flow_en : R/W; bitpos: [13]; default: 0;
-         *  Configures whether or not to enable flow control for the transmitter.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable flow control for the transmitter.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t tx_flow_en:1;
         /** irda_en : R/W; bitpos: [14]; default: 0;
-         *  Configures whether or not to enable IrDA protocol.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable IrDA protocol.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t irda_en:1;
         /** rxd_inv : R/W; bitpos: [15]; default: 0;
-         *  Configures whether or not to invert the level of UART RXD signal.\\
-         *  0: Not invert\\
-         *  1: Invert\\
+         *  Configures whether or not to invert the level of UART RXD signal.
+         *  0: Not invert
+         *  1: Invert
          */
         uint32_t rxd_inv:1;
         /** txd_inv : R/W; bitpos: [16]; default: 0;
-         *  Configures whether or not to invert the level of UART TXD signal.\\
-         *  0: Not invert\\
-         *  1: Invert\\
+         *  Configures whether or not to invert the level of UART TXD signal.
+         *  0: Not invert
+         *  1: Invert
          */
         uint32_t txd_inv:1;
         /** dis_rx_dat_ovf : R/W; bitpos: [17]; default: 0;
-         *  Configures whether or not to disable data overflow detection for the UART
-         *  receiver.\\
-         *  0: Enable\\
-         *  1: Disable\\
+         *  Configures whether or not to disable data overflow detection for the UART receiver.
+         *  0: Enable
+         *  1: Disable
          */
         uint32_t dis_rx_dat_ovf:1;
         /** err_wr_mask : R/W; bitpos: [18]; default: 0;
-         *  Configures whether or not to store the received data with errors into FIFO.\\
-         *  0: Store\\
-         *  1: Not store\\
+         *  Configures whether or not to store the received data with errors into FIFO.
+         *  0: Store
+         *  1: Not store
          */
         uint32_t err_wr_mask:1;
         /** autobaud_en : R/W; bitpos: [19]; default: 0;
-         *  Configures whether or not to enable baud rate detection.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable baud rate detection.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t autobaud_en:1;
         /** mem_clk_en : R/W; bitpos: [20]; default: 0;
-         *  Configures whether or not to enable clock gating for UART memory.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable clock gating for UART memory.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t mem_clk_en:1;
         /** sw_rts : R/W; bitpos: [21]; default: 0;
-         *  Configures the RTS signal used in software flow control.\\
-         *  0: The UART transmitter is allowed to send data.\\
-         *  1: The UART transmitted is not allowed to send data.\\
+         *  Configures the RTS signal used in software flow control.
+         *  0: The UART transmitter is allowed to send data.
+         *  1: The UART transmitted is not allowed to send data.
          */
         uint32_t sw_rts:1;
         /** rxfifo_rst : R/W; bitpos: [22]; default: 0;
-         *  Configures whether or not to reset the UART RX FIFO.\\
-         *  0: Not reset\\
-         *  1: Reset\\
+         *  Configures whether or not to reset the UART RX FIFO.
+         *  0: Not reset
+         *  1: Reset
          */
         uint32_t rxfifo_rst:1;
         /** txfifo_rst : R/W; bitpos: [23]; default: 0;
-         *  Configures whether or not to reset the UART TX FIFO.\\
-         *  0: Not reset\\
-         *  1: Reset\\
+         *  Configures whether or not to reset the UART TX FIFO.
+         *  0: Not reset
+         *  1: Reset
          */
         uint32_t txfifo_rst:1;
         uint32_t reserved_24:8;
@@ -627,47 +627,49 @@ typedef union {
 typedef union {
     struct {
         /** rxfifo_full_thrhd : R/W; bitpos: [7:0]; default: 96;
-         *  Configures the threshold for RX FIFO being full.\\Measurement unit: byte.
+         *  Configures the threshold for RX FIFO being full.
+         *  Measurement unit: byte.
          */
         uint32_t rxfifo_full_thrhd:8;
         /** txfifo_empty_thrhd : R/W; bitpos: [15:8]; default: 96;
-         *  Configures the threshold for TX FIFO being empty.\\Measurement unit: byte.
+         *  Configures the threshold for TX FIFO being empty.
+         *  Measurement unit: byte.
          */
         uint32_t txfifo_empty_thrhd:8;
         /** cts_inv : R/W; bitpos: [16]; default: 0;
-         *  Configures whether or not to invert the level of UART CTS signal.\\
-         *  0: Not invert\\
-         *  1: Invert\\
+         *  Configures whether or not to invert the level of UART CTS signal.
+         *  0: Not invert
+         *  1: Invert
          */
         uint32_t cts_inv:1;
         /** dsr_inv : R/W; bitpos: [17]; default: 0;
-         *  Configures whether or not to invert the level of UART DSR signal.\\
-         *  0: Not invert\\
-         *  1: Invert\\
+         *  Configures whether or not to invert the level of UART DSR signal.
+         *  0: Not invert
+         *  1: Invert
          */
         uint32_t dsr_inv:1;
         /** rts_inv : R/W; bitpos: [18]; default: 0;
-         *  Configures whether or not to invert the level of UART RTS signal.\\
-         *  0: Not invert\\
-         *  1: Invert\\
+         *  Configures whether or not to invert the level of UART RTS signal.
+         *  0: Not invert
+         *  1: Invert
          */
         uint32_t rts_inv:1;
         /** dtr_inv : R/W; bitpos: [19]; default: 0;
-         *  Configures whether or not to invert the level of UART DTR signal.\\
-         *  0: Not invert\\
-         *  1: Invert\\
+         *  Configures whether or not to invert the level of UART DTR signal.
+         *  0: Not invert
+         *  1: Invert
          */
         uint32_t dtr_inv:1;
         /** sw_dtr : R/W; bitpos: [20]; default: 0;
-         *  Configures the DTR signal used in software flow control.\\
-         *  0: Data to be transmitted is not ready.\\
-         *  1: Data to be transmitted is ready.\\
+         *  Configures the DTR signal used in software flow control.
+         *  0: Data to be transmitted is not ready.
+         *  1: Data to be transmitted is ready.
          */
         uint32_t sw_dtr:1;
         /** clk_en : R/W; bitpos: [21]; default: 0;
-         *  Configures clock gating.\\
-         *  0: Support clock only when the application writes registers.\\
-         *  1: Always force the clock on for registers.\\
+         *  Configures clock gating.
+         *  0: Support clock only when the application writes registers.
+         *  1: Always force the clock on for registers.
          */
         uint32_t clk_en:1;
         uint32_t reserved_22:10;
@@ -682,13 +684,14 @@ typedef union {
     struct {
         /** rx_flow_thrhd : R/W; bitpos: [7:0]; default: 0;
          *  Configures the maximum number of data bytes that can be received  during hardware
-         *  flow control.\\Measurement unit: byte.
+         *  flow control.
+         *  Measurement unit: byte.
          */
         uint32_t rx_flow_thrhd:8;
         /** rx_flow_en : R/W; bitpos: [8]; default: 0;
-         *  Configures whether or not to enable the UART receiver.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable the UART receiver.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t rx_flow_en:1;
         uint32_t reserved_9:23;
@@ -753,17 +756,17 @@ typedef union {
          */
         uint32_t wk_char_num:3;
         /** wk_char_mask : R/W; bitpos: [25:21]; default: 0;
-         *  Configures whether or not to mask wakeup characters.\\
-         *  0: Not mask\\
-         *  1: Mask\\
+         *  Configures whether or not to mask wakeup characters.
+         *  0: Not mask
+         *  1: Mask
          */
         uint32_t wk_char_mask:5;
         /** wk_mode_sel : R/W; bitpos: [27:26]; default: 0;
-         *  Configures which wakeup mode to select.\\
-         *  0: Mode 0\\
-         *  1: Mode 1\\
-         *  2: Mode 2\\
-         *  3: Mode 3\\
+         *  Configures which wakeup mode to select.
+         *  0: Mode 0
+         *  1: Mode 1
+         *  2: Mode 2
+         *  3: Mode 3
          */
         uint32_t wk_mode_sel:2;
         uint32_t reserved_28:4;
@@ -786,46 +789,45 @@ typedef union {
         uint32_t xoff_character:8;
         /** xon_xoff_still_send : R/W; bitpos: [16]; default: 0;
          *  Configures whether the UART transmitter can send XON or XOFF characters when it is
-         *  disabled.\\
-         *  0: Cannot send\\
-         *  1: Can send\\
+         *  disabled.
+         *  0: Cannot send
+         *  1: Can send
          */
         uint32_t xon_xoff_still_send:1;
         /** sw_flow_con_en : R/W; bitpos: [17]; default: 0;
-         *  Configures whether or not to enable software flow control.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable software flow control.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t sw_flow_con_en:1;
         /** xonoff_del : R/W; bitpos: [18]; default: 0;
-         *  Configures whether or not to remove flow control characters from the received
-         *  data.\\
-         *  0: Not move\\
-         *  1: Move\\
+         *  Configures whether or not to remove flow control characters from the received data.
+         *  0: Not move
+         *  1: Move
          */
         uint32_t xonoff_del:1;
         /** force_xon : R/W; bitpos: [19]; default: 0;
-         *  Configures whether the transmitter continues to sending data.\\
-         *  0: Not send\\
-         *  1: Send\\
+         *  Configures whether the transmitter continues to sending data.
+         *  0: Not send
+         *  1: Send
          */
         uint32_t force_xon:1;
         /** force_xoff : R/W; bitpos: [20]; default: 0;
-         *  Configures whether or not to stop the transmitter from sending data.\\
-         *  0: Not stop\\
-         *  1: Stop\\
+         *  Configures whether or not to stop the transmitter from sending data.
+         *  0: Not stop
+         *  1: Stop
          */
         uint32_t force_xoff:1;
         /** send_xon : R/W/SS/SC; bitpos: [21]; default: 0;
-         *  Configures whether or not to send XON characters.\\
-         *  0: Not send\\
-         *  1: Send\\
+         *  Configures whether or not to send XON characters.
+         *  0: Not send
+         *  1: Send
          */
         uint32_t send_xon:1;
         /** send_xoff : R/W/SS/SC; bitpos: [22]; default: 0;
-         *  Configures whether or not to send XOFF characters.\\
-         *  0: Not send\\
-         *  1: Send\\
+         *  Configures whether or not to send XOFF characters.
+         *  0: Not send
+         *  1: Send
          */
         uint32_t send_xoff:1;
         uint32_t reserved_23:9;
@@ -840,12 +842,14 @@ typedef union {
     struct {
         /** xon_threshold : R/W; bitpos: [7:0]; default: 0;
          *  Configures the threshold for data in RX FIFO to send XON characters in software
-         *  flow control.\\Measurement unit: byte.
+         *  flow control.
+         *  Measurement unit: byte.
          */
         uint32_t xon_threshold:8;
         /** xoff_threshold : R/W; bitpos: [15:8]; default: 224;
          *  Configures the threshold for data in RX FIFO to send XOFF characters in software
-         *  flow control.\\Measurement unit: byte.
+         *  flow control.
+         *  Measurement unit: byte.
          */
         uint32_t xoff_threshold:8;
         uint32_t reserved_16:16;
@@ -860,7 +864,8 @@ typedef union {
     struct {
         /** tx_brk_num : R/W; bitpos: [7:0]; default: 10;
          *  Configures the number of NULL characters to be sent after finishing data
-         *  transmission.\\Valid only when UART_TXD_BRK is 1.
+         *  transmission.
+         *  Valid only when UART_TXD_BRK is 1.
          */
         uint32_t tx_brk_num:8;
         uint32_t reserved_8:24;
@@ -875,13 +880,13 @@ typedef union {
     struct {
         /** rx_idle_thrhd : R/W; bitpos: [9:0]; default: 256;
          *  Configures the threshold to generate a frame end signal when the receiver takes
-         *  more time to receive one data byte data.\\Measurement unit: bit time (the time to
-         *  transmit 1 bit).
+         *  more time to receive one data byte data.
+         *  Measurement unit: bit time (the time to transmit 1 bit).
          */
         uint32_t rx_idle_thrhd:10;
         /** tx_idle_num : R/W; bitpos: [19:10]; default: 256;
-         *  Configures the interval between two data transfers.\\Measurement unit: bit time
-         *  (the time to transmit 1 bit).
+         *  Configures the interval between two data transfers.
+         *  Measurement unit: bit time (the time to transmit 1 bit).
          */
         uint32_t tx_idle_num:10;
         uint32_t reserved_20:12;
@@ -895,45 +900,45 @@ typedef union {
 typedef union {
     struct {
         /** rs485_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to enable RS485 mode.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable RS485 mode.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t rs485_en:1;
         /** dl0_en : R/W; bitpos: [1]; default: 0;
-         *  Configures whether or not to add a turnaround delay of 1 bit before the start bit.\\
-         *  0: Not add\\
-         *  1: Add\\
+         *  Configures whether or not to add a turnaround delay of 1 bit before the start bit.
+         *  0: Not add
+         *  1: Add
          */
         uint32_t dl0_en:1;
         /** dl1_en : R/W; bitpos: [2]; default: 0;
-         *  Configures whether or not to add a turnaround delay of 1 bit after the stop bit.\\
-         *  0: Not add\\
-         *  1: Add\\
+         *  Configures whether or not to add a turnaround delay of 1 bit after the stop bit.
+         *  0: Not add
+         *  1: Add
          */
         uint32_t dl1_en:1;
         /** rs485tx_rx_en : R/W; bitpos: [3]; default: 0;
          *  Configures whether or not to enable the receiver for data reception when the
-         *  transmitter is transmitting data in RS485 mode.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  transmitter is transmitting data in RS485 mode.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t rs485tx_rx_en:1;
         /** rs485rxby_tx_en : R/W; bitpos: [4]; default: 0;
          *  Configures whether to enable the RS485 transmitter for data transmission when the
-         *  RS485 receiver is busy.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  RS485 receiver is busy.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t rs485rxby_tx_en:1;
         /** rs485_rx_dly_num : R/W; bitpos: [5]; default: 0;
-         *  Configures the delay of internal data signals in the receiver.\\Measurement unit:
-         *  bit time (the time to transmit 1 bit)..
+         *  Configures the delay of internal data signals in the receiver.
+         *  Measurement unit: bit time (the time to transmit 1 bit)..
          */
         uint32_t rs485_rx_dly_num:1;
         /** rs485_tx_dly_num : R/W; bitpos: [9:6]; default: 0;
-         *  Configures the delay of internal data signals in the transmitter.\\Measurement
-         *  unit: bit time (the time to transmit 1 bit).
+         *  Configures the delay of internal data signals in the transmitter.
+         *  Measurement unit: bit time (the time to transmit 1 bit).
          */
         uint32_t rs485_tx_dly_num:4;
         uint32_t reserved_10:22;
@@ -946,32 +951,17 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sclk_div_b : R/W; bitpos: [5:0]; default: 0;
-         *  The  denominator of the frequency divider factor.'
-         *  Only available to LP UART instance
-         */
-        uint32_t sclk_div_b:6;                                      /* UART0/1 instance have this field reserved, configure in corresponding PCR registers */
-        /** sclk_div_a : R/W; bitpos: [11:6]; default: 0;
-         *  The numerator of the frequency divider factor.
-         *  Only available to LP UART instance
-         */
-        uint32_t sclk_div_a:6;                                      /* UART0/1 instance have this field reserved, configure in corresponding PCR registers */
-        /** sclk_div_num : R/W; bitpos: [19:12]; default: 1;
-         *  The integral part of the frequency divider factor.
-         *  Only available to LP UART instance
-         */
-        uint32_t sclk_div_num:8;                                    /* UART0/1 instance have this field reserved, configure in corresponding PCR registers */
-        uint32_t reserved_20:4;
+        uint32_t reserved_0:24;
         /** tx_sclk_en : R/W; bitpos: [24]; default: 1;
-         *  Configures whether or not to enable UART TX clock.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable UART TX clock.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t tx_sclk_en:1;
         /** rx_sclk_en : R/W; bitpos: [25]; default: 1;
-         *  Configures whether or not to enable UART RX clock.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable UART RX clock.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t rx_sclk_en:1;
         /** tx_rst_core : R/W; bitpos: [26]; default: 0;
@@ -1094,27 +1084,27 @@ typedef union {
 typedef union {
     struct {
         /** tx_afifo_full : RO; bitpos: [0]; default: 0;
-         *  Represents whether or not the APB TX asynchronous FIFO is full.\\
-         *  0: Not full\\
-         *  1: Full\\
+         *  Represents whether or not the APB TX asynchronous FIFO is full.
+         *  0: Not full
+         *  1: Full
          */
         uint32_t tx_afifo_full:1;
         /** tx_afifo_empty : RO; bitpos: [1]; default: 1;
-         *  Represents whether or not the APB TX asynchronous FIFO is empty.\\
-         *  0: Not empty\\
-         *  1: Empty\\
+         *  Represents whether or not the APB TX asynchronous FIFO is empty.
+         *  0: Not empty
+         *  1: Empty
          */
         uint32_t tx_afifo_empty:1;
         /** rx_afifo_full : RO; bitpos: [2]; default: 0;
-         *  Represents whether or not the APB RX asynchronous FIFO is full.\\
-         *  0: Not full\\
-         *  1: Full\\
+         *  Represents whether or not the APB RX asynchronous FIFO is full.
+         *  0: Not full
+         *  1: Full
          */
         uint32_t rx_afifo_full:1;
         /** rx_afifo_empty : RO; bitpos: [3]; default: 1;
-         *  Represents whether or not the APB RX asynchronous FIFO is empty.\\
-         *  0: Not empty\\
-         *  1: Empty\\
+         *  Represents whether or not the APB RX asynchronous FIFO is empty.
+         *  0: Not empty
+         *  1: Empty
          */
         uint32_t rx_afifo_empty:1;
         uint32_t reserved_4:28;
@@ -1130,8 +1120,8 @@ typedef union {
 typedef union {
     struct {
         /** pre_idle_num : R/W; bitpos: [15:0]; default: 2305;
-         *  Configures the idle time before the receiver receives the first
-         *  AT_CMD.\\Measurement unit: bit time (the time to transmit 1 bit).
+         *  Configures the idle time before the receiver receives the first AT_CMD.
+         *  Measurement unit: bit time (the time to transmit 1 bit).
          */
         uint32_t pre_idle_num:16;
         uint32_t reserved_16:16;
@@ -1145,8 +1135,8 @@ typedef union {
 typedef union {
     struct {
         /** post_idle_num : R/W; bitpos: [15:0]; default: 2305;
-         *  Configures the interval between the last AT_CMD and subsequent data.\\Measurement
-         *  unit: bit time (the time to transmit 1 bit).
+         *  Configures the interval between the last AT_CMD and subsequent data.
+         *  Measurement unit: bit time (the time to transmit 1 bit).
          */
         uint32_t post_idle_num:16;
         uint32_t reserved_16:16;
@@ -1160,8 +1150,8 @@ typedef union {
 typedef union {
     struct {
         /** rx_gap_tout : R/W; bitpos: [15:0]; default: 11;
-         *  Configures the interval between two AT_CMD characters.\\Measurement unit: bit time
-         *  (the time to transmit 1 bit).
+         *  Configures the interval between two AT_CMD characters.
+         *  Measurement unit: bit time (the time to transmit 1 bit).
          */
         uint32_t rx_gap_tout:16;
         uint32_t reserved_16:16;
@@ -1226,7 +1216,8 @@ typedef union {
     struct {
         /** lowpulse_min_cnt : RO; bitpos: [11:0]; default: 4095;
          *  Represents the minimum duration time of a low-level pulse. It is used for baud rate
-         *  detection.\\Measurement unit: APB_CLK clock cycle.
+         *  detection.
+         *  Measurement unit: APB_CLK clock cycle.
          */
         uint32_t lowpulse_min_cnt:12;
         uint32_t reserved_12:20;
@@ -1241,7 +1232,8 @@ typedef union {
     struct {
         /** highpulse_min_cnt : RO; bitpos: [11:0]; default: 4095;
          *  Represents  the maximum duration time for a high-level pulse. It is used for baud
-         *  rate detection.\\Measurement unit: APB_CLK clock cycle.
+         *  rate detection.
+         *  Measurement unit: APB_CLK clock cycle.
          */
         uint32_t highpulse_min_cnt:12;
         uint32_t reserved_12:20;
@@ -1284,9 +1276,9 @@ typedef union {
 typedef union {
     struct {
         /** reg_update : R/W/SC; bitpos: [0]; default: 0;
-         *  Configures whether or not to synchronize registers.\\
-         *  0: Not synchronize\\
-         *  1: Synchronize\\
+         *  Configures whether or not to synchronize registers.
+         *  0: Not synchronize
+         *  1: Synchronize
          */
         uint32_t reg_update:1;
         uint32_t reserved_1:31;
@@ -1338,11 +1330,11 @@ typedef struct uart_dev_s {
     volatile uart_mem_tx_status_reg_t mem_tx_status;
     volatile uart_mem_rx_status_reg_t mem_rx_status;
     volatile uart_fsm_status_reg_t fsm_status;
-    volatile uart_pospulse_reg_t pospulse;
-    volatile uart_negpulse_reg_t negpulse;
-    volatile uart_lowpulse_reg_t lowpulse;
-    volatile uart_highpulse_reg_t highpulse;
-    volatile uart_rxd_cnt_reg_t rxd_cnt;
+    volatile uart_pospulse_reg_t pospulse;      /* LP_UART instance has this register reserved */
+    volatile uart_negpulse_reg_t negpulse;      /* LP_UART instance has this register reserved */
+    volatile uart_lowpulse_reg_t lowpulse;      /* LP_UART instance has this register reserved */
+    volatile uart_highpulse_reg_t highpulse;    /* LP_UART instance has this register reserved */
+    volatile uart_rxd_cnt_reg_t rxd_cnt;        /* LP_UART instance has this register reserved */
     volatile uart_clk_conf_reg_t clk_conf;
     volatile uart_date_reg_t date;
     volatile uart_afifo_status_reg_t afifo_status;

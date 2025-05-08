@@ -32,7 +32,7 @@ class PanicTestDut(IdfDut):
     COREDUMP_UART_END = r'================= CORE DUMP END ================='
     COREDUMP_CHECKSUM = r"Coredump checksum='([a-fA-F0-9]+)'"
     REBOOT = r'.*Rebooting\.\.\.'
-    CPU_RESET = r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU)\b'
+    CPU_RESET = r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU|RTCWDT_RTC_RESET|LP_WDT_SYS|RTCWDT_RTC_RST|CHIP_LP_WDT_RESET|RTC_WDT_SYS)\b'
 
     app: IdfApp
     serial: IdfSerial
@@ -165,17 +165,19 @@ class PanicTestDut(IdfDut):
 
     def process_coredump_uart(
         self, coredump_base64: Any, expected: Optional[List[Union[str, re.Pattern]]] = None,
-    ) -> None:
+    ) -> Any:
         with open(os.path.join(self.logdir, 'coredump_data.b64'), 'w') as coredump_file:
             logging.info('Writing UART base64 core dump to %s', coredump_file.name)
             coredump_file.write(coredump_base64)
 
         output_file_name = os.path.join(self.logdir, 'coredump_uart_result.txt')
+        coredump_elf_file = os.path.join(self.logdir, 'coredump_data.elf')
         self._call_espcoredump(
-            ['--core-format', 'b64', '--core', coredump_file.name], output_file_name
+            ['--core-format', 'b64', '--core', coredump_file.name, '--save-core', coredump_elf_file], output_file_name
         )
         if expected:
             self.expect_coredump(output_file_name, expected)
+        return coredump_elf_file
 
     def process_coredump_flash(self, expected: Optional[List[Union[str, re.Pattern]]] = None) -> Any:
         coredump_file_name = os.path.join(self.logdir, 'coredump_data.bin')

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,9 +50,6 @@
 #define LEDC_EVT_TIMER1_CMP                     42
 #define LEDC_EVT_TIMER2_CMP                     43
 #define LEDC_EVT_TIMER3_CMP                     44
-#define PCNT_EVT_CNT_EQ_THRESH                  45
-#define PCNT_EVT_CNT_EQ_LMT                     46
-#define PCNT_EVT_CNT_EQ_ZERO                    47
 #define TIMER0_EVT_CNT_CMP_TIMER0               48
 #define TIMER1_EVT_CNT_CMP_TIMER0               49
 #define SYSTIMER_EVT_CNT_CMP0                   50
@@ -109,35 +106,11 @@
 #define REGDMA_EVT_ERR1                         101
 #define REGDMA_EVT_ERR2                         102
 #define REGDMA_EVT_ERR3                         103
-#define PDMA_EVT_TX_DONE                        104
-#define PDMA_EVT_OUT_EOF                        105
-#define PDMA_EVT_IN_SUC_EOF                     106
-#define PDMA_EVT_FULL_OR_EMPTY                  107
-#define PDMA_EVT_ALL_DONE                       108
-#define PDMA_EVT_RX_DONE                        109
 #define TMPSNSR_EVT_OVER_LIMIT                  110
-#define UART_EVT_REC_DATA_OVF0                  111
-#define UART_EVT_REC_DATA_OVF1                  112
-#define UART_EVT_TX_DONE0                       113
-#define UART_EVT_TX_DONE1                       114
-#define UART_EVT_TIMEOUT0                       115
-#define UART_EVT_TIMEOUT1                       116
-#define UART_EVT_ERR0                           117
-#define UART_EVT_ERR1                           118
-#define UART_EVT_CTS0                           119
-#define UART_EVT_CTS1                           120
-#define UART_EVT_TX_EMPTY0                      121
-#define UART_EVT_TX_EMPTY1                      122
-#define UART_EVT_AT_PATTERNS0                   123
-#define UART_EVT_AT_PATTERNS1                   124
-#define SPI_EVT_STOPPED                         125
 #define I2S_EVT_RX_DONE                         126
 #define I2S_EVT_TX_DONE                         127
 #define I2S_EVT_X_WORDS_RECEIVED                128
 #define I2S_EVT_X_WORDS_SENT                    129
-#define I2C_EVT_TRANS_DONE                      130
-#define LCDCAM_EVT_TRANS_DONE                   131
-#define TWAI_EVT_TRANS_DONE                     132
 #define ULP_EVT_ERR_INTR                        133
 #define ULP_EVT_START_INTR                      134
 #define RTC_EVT_TICK                            135
@@ -253,11 +226,6 @@
 #define LEDC_TASK_GAMMA_RESUME_CH3              80
 #define LEDC_TASK_GAMMA_RESUME_CH4              81
 #define LEDC_TASK_GAMMA_RESUME_CH5              82
-#define PCNT_TASK_START                         83
-#define PCNT_TASK_STOP                          84
-#define PCNT_TASK_CNT_INC                       85
-#define PCNT_TASK_CNT_DEC                       86
-#define PCNT_TASK_CNT_RST                       87
 #define TIMER0_TASK_CNT_START_TIMER0            88
 #define TIMER1_TASK_CNT_START_TIMER0            89
 #define TIMER0_TASK_ALARM_START_TIMER0          90
@@ -302,19 +270,8 @@
 #define REGDMA_TASK_START1                      129
 #define REGDMA_TASK_START2                      130
 #define REGDMA_TASK_START3                      131
-#define PDMA_TASK_START_TX                      132
-#define PDMA_TASK_START_RX                      133
-#define PDMA_TASK_STOP                          134
 #define TMPSNSR_TASK_START_SAMPLE               135
 #define TMPSNSR_TASK_STOP_SAMPLE                136
-#define UART_TASK_TX_START0                     137
-#define UART_TASK_TX_START1                     138
-#define UART_TASK_TX_STOP0                      139
-#define UART_TASK_TX_STOP1                      140
-#define UART_TASK_RX_START0                     141
-#define UART_TASK_RX_START1                     142
-#define UART_TASK_RX_STOP0                      143
-#define UART_TASK_RX_STOP1                      144
 #define SPI_TASK_TX_START                       145
 #define SPI_TASK_SLAVE_HD                       146
 #define SPI_TASK_STOP                           147
@@ -322,13 +279,7 @@
 #define I2S_TASK_START_TX                       149
 #define I2S_TASK_STOP_RX                        150
 #define I2S_TASK_STOP_TX                        151
-#define I2C_TASK_START_TRANS                    152
-#define TWAI_TASK_TRANS_START                   153
 #define ULP_TASK_WAKEUP_CPU                     154
-#define RTC_TASK_START                          155
-#define RTC_TASK_STOP                           156
-#define RTC_TASK_CLR                            157
-#define RTC_TASK_TRIGGERFLW                     158
 #define GDMA_TASK_IN_START_CH0                  159
 #define GDMA_TASK_IN_START_CH1                  160
 #define GDMA_TASK_IN_START_CH2                  161

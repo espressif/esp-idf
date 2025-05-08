@@ -3,11 +3,9 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf import CaseTester
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32c5
-@pytest.mark.esp32c6
-@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -16,12 +14,11 @@ from pytest_embedded_idf import CaseTester
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32c5', 'esp32c6', 'esp32p4'], indirect=['target'])
 def test_lp_core(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32c5
-@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -30,11 +27,11 @@ def test_lp_core(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32c5', 'esp32p4'], indirect=['target'])
 def test_lp_core_xtal(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32p4
 @pytest.mark.lp_i2s
 @pytest.mark.parametrize(
     'config',
@@ -43,16 +40,14 @@ def test_lp_core_xtal(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
 def test_lp_vad(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='lp_vad')
 
 
-@pytest.mark.esp32c6
 # TODO: Enable LP I2C test for esp32p4 (IDF-9407)
 @pytest.mark.generic_multi_device
-@pytest.mark.parametrize(
-    'count', [2], indirect=True
-)
+@pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize(
     'config',
     [
@@ -60,18 +55,23 @@ def test_lp_vad(dut: Dut) -> None:
     ],
     indirect=True,
 )
-def test_lp_core_multi_device(case_tester) -> None:        # type: ignore
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
+def test_lp_core_multi_device(case_tester) -> None:  # type: ignore
     for case in case_tester.test_menu:
         if case.attributes.get('test_env', 'generic_multi_device') == 'generic_multi_device':
             case_tester.run_multi_dev_case(case=case, reset=True)
 
 
 @pytest.mark.generic_multi_device
-@pytest.mark.parametrize('target', [
-    'esp32c5',
-    'esp32c6',
-    'esp32p4',
-], indirect=True)
+@pytest.mark.parametrize(
+    'target',
+    [
+        'esp32c5',
+        'esp32c6',
+        'esp32p4',
+    ],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     'config',
     [
@@ -81,10 +81,7 @@ def test_lp_core_multi_device(case_tester) -> None:        # type: ignore
 )
 @pytest.mark.parametrize('count', [2], indirect=True)
 def test_lp_uart_wakeup_modes(case_tester: CaseTester) -> None:
-    relevant_cases = [
-        case for case in case_tester.test_menu
-        if {'wakeup', 'uart'}.issubset(case.groups)
-    ]
+    relevant_cases = [case for case in case_tester.test_menu if {'wakeup', 'uart'}.issubset(case.groups)]
     assert len(relevant_cases) == 12, (
         f"Expected 12 test cases with groups 'wakeup' and 'uart', but found {len(relevant_cases)}."
     )

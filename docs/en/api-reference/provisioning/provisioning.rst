@@ -249,13 +249,55 @@ Details about the Security 2 scheme are shown in the below sequence diagram:
         device verifies this M1 with the M1 obtained from Client"];
                 DEVICE -> DEVICE [label = "Verification\nToken", leftnote = "
         Device generate device_proof M2 = H(A, M, K)"];
-                DEVICE -> DEVICE [label = "Initialization\nVector", leftnote = "dev_rand = gen_16byte_random()
-        This random number is to be used for AES-GCM operation
-         for encryption and decryption of the data using the shared secret"];
+                DEVICE -> DEVICE [label = "Initialization\nVector", leftnote = "dev_rand = gen_12byte_iv()
+        This random number is formed as session_id (8byte) + counter (4byte)
+        to be used for AES-GCM operation for encryption and decryption of
+        the data using the shared secret"];
                 DEVICE -> CLIENT [label = "SessionResp1(device_proof M2, dev_rand)"];
                 CLIENT -> CLIENT [label = "Verify Device", rightnote = "Client calculates device proof M2 as M2 = H(A, M, K)
         client verifies this M2 with M2 obtained from device"];
     }
+
+
+Security 2 AES-GCM IV Handling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Security 2 scheme uses AES-GCM for encryption and decryption of the data. The initialization vector (IV) consists of an 8-byte session ID and a 4-byte counter, for a total of 12 bytes. The counter starts at 1 and is incremented after each encryption/decryption operation on both the device and the client.
+
+.. seqdiag::
+    :caption: Security 2 AES-GCM IV Handling
+    :align: center
+
+    seqdiag security2_gcm {
+        activation = none;
+        node_width = 80;
+        node_height = 60;
+        edge_length = 550;
+        span_height = 5;
+        default_shape = roundedbox;
+        default_fontsize = 12;
+
+        CLIENT  [label = "Client\n(PhoneApp)"];
+        DEVICE  [label = "Device\n(ESP)"];
+
+        === Security 2 AES-GCM IV Handling ===
+        DEVICE -> DEVICE [label = "Initialize\nIV", leftnote = "Initial IV = session_id (8 bytes) || counter (4 bytes)
+        session_id = random 8 byte value
+        counter = 0x1 (stored as big-endian)"];
+        DEVICE -> CLIENT [label = "Send 12-byte IV to client (session_id || counter)"];
+        CLIENT -> CLIENT [label = "Initialize\nIV", rightnote = "Set initial IV from device:
+        - session_id (8 bytes from device)
+        - counter = 0x1"];
+        CLIENT -> DEVICE [label = "First Encrypted Command using initial IV"];
+        CLIENT -> CLIENT [label = "Increment\nCounter", rightnote = "After first command:
+        - Increment counter to 0x2
+        - New IV = session_id || counter"];
+        DEVICE -> DEVICE [label = "Increment\nCounter", leftnote = "Before first response:
+        - Increment counter to 0x2
+        - New IV = session_id || counter"];
+        DEVICE -> CLIENT [label = "Encrypted Response using updated IV"];
+    }
+
 
 Sample Code
 >>>>>>>>>>>

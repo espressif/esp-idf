@@ -145,7 +145,7 @@ Refer to the :doc:`Flash Encryption documentation </security/flash-encryption>` 
 Memory Mapping API
 ------------------
 
-{IDF_TARGET_CACHE_SIZE:default="64 KB", esp32c2=16 ~ 64 KB}
+{IDF_TARGET_CACHE_SIZE:default="64 KB", esp32c2=16~64 KB}
 
 {IDF_TARGET_NAME} features memory hardware which allows regions of flash memory to be mapped into instruction and data address spaces. This mapping works only for read operations. It is not possible to modify contents of flash memory by writing to a mapped memory region.
 
@@ -257,6 +257,102 @@ Once the flash operation is complete, the function on CPU A sets another flag, `
 Additionally, all API functions are protected with a mutex (``s_flash_op_mutex``).
 
 In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), you need to disable both caches, so that no inter-CPU communication can take place.
+
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
+
+    .. _internal_memory_saving_for_flash_driver:
+
+    Internal Memory Saving For Flash Driver
+    ---------------------------------------
+
+    The ESP-IDF provides options to optimize the usage of IRAM by selectively placing certain functions into flash memory via turning off :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM`. It allows SPI flash operation functions to be executed from flash memory instead of IRAM. Thus it saves IRAM memory for other significant time-critical functions or tasks.
+
+    However, this has some implications for flash itself. Functions placed into flash memory may have slightly increased execution times compared to those placed in IRAM. Applications with strict timing requirements or those heavily reliant on SPI flash operations may need to evaluate the trade-offs before enabling this option.
+
+    .. note::
+
+        :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` should not be turned off when :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` is not enabled, otherwise it will cause critical crash. As for flash suspend feature, please refer to :ref:`auto-suspend` for more information.
+
+    Resource Consumption
+    ^^^^^^^^^^^^^^^^^^^^
+
+    Use the :doc:`/api-guides/tools/idf-size` tool to check the code and data consumption of the SPI flash driver. The following are the test results under 2 different conditions (using ESP32-C2 as an example):
+
+    **Note that the following data are not exact values and are for reference only; they may differ on different chip models.**
+
+    Resource consumption when :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` is enabled:
+
+    .. list-table:: Resource Consumption
+       :widths: 20 10 10 10 10 10 10 10 10 10
+       :header-rows: 1
+
+       * - Component Layer
+         - Total Size
+         - DIRAM
+         - .bss
+         - .data
+         - .text
+         - Flash Code
+         - .text
+         - Flash Data
+         - .rodata
+       * - hal
+         - 4624
+         - 4038
+         - 0
+         - 0
+         - 4038
+         - 586
+         - 586
+         - 0
+         - 0
+       * - spi_flash
+         - 14074
+         - 11597
+         - 82
+         - 1589
+         - 9926
+         - 2230
+         - 2230
+         - 247
+         - 247
+
+    Resource consumption when :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` is disabled:
+
+    .. list-table:: Resource Consumption
+       :widths: 20 10 10 10 10 10 10 10 10 10
+       :header-rows: 1
+
+       * - Component Layer
+         - Total Size
+         - DIRAM
+         - .bss
+         - .data
+         - .text
+         - Flash Code
+         - .text
+         - Flash Data
+         - .rodata
+       * - hal
+         - 4632
+         - 0
+         - 0
+         - 0
+         - 0
+         - 4632
+         - 4632
+         - 0
+         - 0
+       * - spi_flash
+         - 14569
+         - 1399
+         - 22
+         - 429
+         - 948
+         - 11648
+         - 11648
+         - 1522
+         - 1522
 
 Related Documents
 ------------------

@@ -2,37 +2,35 @@
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32c3
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32c3'], indirect=['target'])
 def test_esp_event(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
 @pytest.mark.host_test
 @pytest.mark.qemu
 @pytest.mark.xfail('config.getvalue("target") == "esp32c3"', reason='Unstable on QEMU, needs investigation')
+@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_esp_event_qemu(dut: Dut) -> None:
     for case in dut.test_menu:
         if 'qemu-ignore' not in case.groups and not case.is_ignored and case.type == 'normal':
             dut._run_normal_case(case)
 
 
-@pytest.mark.linux
 @pytest.mark.host_test
+@idf_parametrize('target', ['linux'], indirect=['target'])
 def test_esp_event_posix_simulator(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests.')
     dut.write('*')
     dut.expect(r'\d{2} Tests 0 Failures 0 Ignored', timeout=120)
 
 
-@pytest.mark.esp32
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_event_profiling(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests.')
     dut.write('"profiling reports valid values"')
@@ -40,7 +38,7 @@ def test_esp_event_profiling(dut: Dut) -> None:
     # with an execution time superior to 0 us
     matches = dut.expect(r'HANDLER .+ inv:[1-9][0-9]{0,} time:[1-9][0-9]{0,} us', timeout=2)
     matches_arr = matches.group().split(b'\r\n')
-    assert (len(matches_arr) == 3)
+    assert len(matches_arr) == 3
     dut.expect('1 Tests 0 Failures 0 Ignored', timeout=120)
     dut.expect_exact("Enter next test, or 'enter' to see menu")
 
@@ -48,7 +46,7 @@ def test_esp_event_profiling(dut: Dut) -> None:
     # look for 1 handlers never invoked
     matches = dut.expect(r'HANDLER .+ inv:0 time:0 us', timeout=2)
     matches_arr = matches.group().split(b'\r\n')
-    assert (len(matches_arr) == 1)
+    assert len(matches_arr) == 1
     dut.expect('1 Tests 0 Failures 0 Ignored', timeout=120)
     dut.expect_exact("Enter next test, or 'enter' to see menu")
 

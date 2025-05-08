@@ -249,13 +249,55 @@ Security 2 方案基于 Secure Remote Password (SRP6a) 协议，详情请参阅 
         设备将该 M1 值与从客户端获得的 M1 进行验证"];
                 DEVICE -> DEVICE [label = "验证令牌", leftnote = "
         设备生成 device_proof M2 = H(A, M, K)"];
-                DEVICE -> DEVICE [label = "初始化向量", leftnote = "dev_rand = gen_16byte_random()
-         该随机数通常用作 AES-GCM 操作，
-        并使用共享密钥加密和解密数据"];
+                DEVICE -> DEVICE [label = "初始化向量", leftnote = "dev_rand = gen_12byte_iv()
+        该随机数由 session_id（8 字节）和 counter（4 字节）组成，
+        用于 AES-GCM 操作，并使用共享密钥对数据进行加密和解密"];
                 DEVICE -> CLIENT [label = "SessionResp1(device_proof M2, dev_rand)"];
                 CLIENT -> CLIENT [label = "验证设备", rightnote = "客户端计算设备证明 M2 = H(A, M, K)，
         客户端将该 M2 值与从设备获得的 M2 进行验证"];
     }
+
+
+
+Security 2 AES-GCM IV 处理
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Security 2 方案使用 AES-GCM 对数据进行加密和解密。初始化向量 (IV) 由 8 字节的会话 ID (session_id) 和 4 字节的计数器 (counter) 组成，总计 12 字节。counter 从 1 开始，并在设备和客户端每次执行加密/解密操作后递增。
+
+.. seqdiag::
+    :caption: Security 2 AES-GCM IV 处理
+    :align: center
+
+    seqdiag security2_gcm {
+        activation = none;
+        node_width = 80;
+        node_height = 60;
+        edge_length = 550;
+        span_height = 5;
+        default_shape = roundedbox;
+        default_fontsize = 12;
+
+        CLIENT  [label = "客户端\n(手机应用)"];
+        DEVICE  [label = "设备\n(ESP)"];
+
+        === Security 2 AES-GCM IV 处理 ===
+        DEVICE -> DEVICE [label = "初始化 IV", leftnote = "初始 IV = session_id (8 字节) || counter (4 字节)
+        session_id = 随机 8 字节值
+        counter = 0x1（以大端模式存储）"];
+        DEVICE -> CLIENT [label = "将 12 字节的 IV 发送给客户端 (session_id || counter)"];
+        CLIENT -> CLIENT [label = "初始化 IV", rightnote = "从设备获取并设置初始 IV：
+        - session_id（来自设备的 8 字节）
+        - counter = 0x1"];
+        CLIENT -> DEVICE [label = "使用初始 IV 发送第一个加密指令"];
+        CLIENT -> CLIENT [label = "递增 counter", rightnote = "在第一个指令后：
+        - counter 递增至 0x2
+        - 新 IV = session_id || counter"];
+        DEVICE -> DEVICE [label = "递增 counter", leftnote = "在第一个响应前：
+        - counter 递增至 0x2
+        - 新 IV = session_id || counter"];
+        DEVICE -> CLIENT [label = "使用更新后的 IV 发送加密响应"];
+    }
+
 
 示例代码
 >>>>>>>>>>>

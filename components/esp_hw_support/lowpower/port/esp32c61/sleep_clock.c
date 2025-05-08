@@ -5,6 +5,7 @@
  */
 
 #include "esp_private/sleep_clock.h"
+#include "soc/lp_analog_peri_reg.h"
 #include "soc/pcr_reg.h"
 #include "soc/pmu_reg.h"
 #include "soc/i2c_ana_mst_reg.h"
@@ -32,8 +33,10 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
         [7] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(7), PCR_AHB_FREQ_CONF_REG,      0,                              PCR_AHB_DIV_NUM,                1, 0),  .owner = ENTRY(0) | ENTRY(1) }, /* Set AHB bus frequency to XTAL frequency */
         [8] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(8), PCR_BUS_CLK_UPDATE_REG,     1,                              PCR_BUS_CLOCK_UPDATE,           1, 0),  .owner = ENTRY(0) | ENTRY(1) },
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-        [9] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(9), DR_REG_PCR_BASE,            DR_REG_PCR_BASE,    63,     0, 0, 0xfd73ffff, 0xfdffffff, 0xe001, 0x0), .owner = ENTRY(0) | ENTRY(1) }
+        [9] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(9), DR_REG_PCR_BASE,            DR_REG_PCR_BASE,    63,     0, 0, 0xfd73ffff, 0xfdffffff, 0xe001, 0x0), .owner = ENTRY(0) | ENTRY(1) },
 #endif
+        [10] = {.config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(10), LP_ANA_POWER_GLITCH_CNTL_REG,      0,                      LP_ANA_POWER_GLITCH_RESET_ENA_M, 0, 1),  .owner = ENTRY(0) | ENTRY(1)}, /* Disable power glitch detector on sleep backup */
+        [11] = {.config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(11), LP_ANA_POWER_GLITCH_CNTL_REG,      0xF,                    LP_ANA_POWER_GLITCH_RESET_ENA_M, 1, 0),  .owner = ENTRY(0) | ENTRY(1)}, /* Enable power glitch detector on wakeup restore */
     };
 
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);

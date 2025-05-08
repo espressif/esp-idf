@@ -10,9 +10,9 @@
     - mbedtls
     - protocol_examples_common
   disable:
-    - if: IDF_TARGET == "esp32h21"
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
-      reason: not supported yet  # TODO: [ESP32H21] IDF-11581
+      reason: not supported yet  # TODO: [ESP32H21] IDF-11581   [ESP32H4] IDF-12360
 
 .mqtt_dependencies: &mqtt_dependencies
   <<: *default_rules
@@ -57,6 +57,16 @@ examples/protocols/http_server:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       reason: only test on these targets
+  depends_components+:
+    - esp_http_server
+    - esp-tls
+    - esp_netif
+
+examples/protocols/http_server/async_handlers:
+  <<: *default_rules
+  disable_test:
+    - if: IDF_TARGET not in ["esp32"]
+      reason: only test on esp32
   depends_components+:
     - esp_http_server
 
@@ -241,6 +251,11 @@ examples/protocols/sockets/tcp_client:
   disable_test:
     - if: SOC_WIFI_SUPPORTED != 1
   # linux target won't work with CONFIG_EXAMPLE_SOCKET_IP_INPUT_STDIN=y
+
+examples/protocols/sockets/udp_multicast:
+  <<: *default_rules
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32p4"]
 
 examples/protocols/static_ip:
   <<: *default_rules

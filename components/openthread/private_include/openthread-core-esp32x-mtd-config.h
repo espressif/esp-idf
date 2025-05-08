@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -399,4 +399,97 @@
  */
 #ifndef OPENTHREAD_CONFIG_DELAY_AWARE_QUEUE_MANAGEMENT_MARK_ECN_INTERVAL
 #define OPENTHREAD_CONFIG_DELAY_AWARE_QUEUE_MANAGEMENT_MARK_ECN_INTERVAL 1000
+#endif
+
+#ifdef OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
+#error `OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE` is redefined.
+#endif
+#if CONFIG_OPENTHREAD_CSL_ENABLE
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
+ *
+ * Define as 1 to support Thread 1.2 CSL feature.
+ *
+ */
+#define OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE 1
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_CSL_DEBUG_ENABLE
+ *
+ * Define as 1 to enable support Thread 1.2 CSL debug.
+ *
+ */
+#ifdef OPENTHREAD_CONFIG_MAC_CSL_DEBUG_ENABLE
+#error `OPENTHREAD_CONFIG_MAC_CSL_DEBUG_ENABLE` is redefined.
+#endif
+#define OPENTHREAD_CONFIG_MAC_CSL_DEBUG_ENABLE CONFIG_OPENTHREAD_CSL_DEBUG_ENABLE
+
+#else
+
+#define OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE 0
+#endif // CONFIG_OPENTHREAD_CSL_ENABLE
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
+ *
+ * Define how many microseconds ahead should MAC deliver CSL frame to SubMac.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
+#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US (2 * 1000000 / CONFIG_FREERTOS_HZ)
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
+ *
+ * Reception scheduling and ramp up time needed for the CSL receiver to be ready, in units of microseconds.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
+#define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD (OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US + 320)
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE
+ *
+ * Enable the periodic parent search feature.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE CONFIG_OPENTHREAD_PARENT_SEARCH_MTD
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL
+ *
+ * Specifies the interval in seconds for a child to check the trigger condition to perform a parent search.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifndef OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL CONFIG_OPENTHREAD_PARENT_SEARCH_CHECK_INTERVAL_MINS * 60
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL
+ *
+ * Specifies the backoff interval in seconds for a child to not perform a parent search after triggering one. This is
+ * used when device is an MTD child.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifndef OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL CONFIG_OPENTHREAD_PARENT_SEARCH_BACKOFF_INTERVAL_MINS * 60
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD
+ *
+ * Specifies the RSS threshold used to trigger a parent search.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifndef OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD CONFIG_OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
 #endif

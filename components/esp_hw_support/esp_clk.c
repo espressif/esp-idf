@@ -26,6 +26,12 @@
 
 #define MHZ (1000000)
 
+#if CONFIG_PM_SLP_IRAM_OPT
+# define ESP_CLK_FN_ATTR    IRAM_ATTR
+#else
+# define ESP_CLK_FN_ATTR
+#endif
+
 // g_ticks_us defined in ROMs for PRO and APP CPU
 extern uint32_t g_ticks_per_us_pro;
 
@@ -48,7 +54,7 @@ _Static_assert(offsetof(retain_mem_t, checksum) == sizeof(retain_mem_t) - sizeof
 #if !NON_OS_BUILD
 static __attribute__((section(".rtc_timer_data_in_rtc_mem"))) retain_mem_t s_rtc_timer_retain_mem;
 
-static uint32_t calc_checksum(void)
+static ESP_CLK_FN_ATTR uint32_t calc_checksum(void)
 {
     uint32_t checksum = 0;
     uint32_t *data = (uint32_t*) &s_rtc_timer_retain_mem;

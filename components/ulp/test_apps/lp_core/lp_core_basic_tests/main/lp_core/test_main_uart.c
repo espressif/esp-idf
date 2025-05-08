@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "ulp_lp_core_utils.h"
 #include "ulp_lp_core_uart.h"
 #include "ulp_lp_core_print.h"
+#include "soc/soc_caps.h"
 
 #define LP_UART_PORT_NUM            LP_UART_NUM_0
 #define LP_UART_BUFFER_LEN          UART_BUF_SIZE
@@ -95,5 +96,10 @@ int main(void)
         /* Synchronize with the HP core running the test */
         test_cmd = LP_CORE_NO_COMMAND;
         test_cmd_reply = LP_CORE_COMMAND_OK;
+
+        /* Wake up the HP core */
+#if SOC_LIGHT_SLEEP_SUPPORTED
+        ulp_lp_core_wakeup_main_processor();
+#endif /* SOC_LIGHT_SLEEP_SUPPORTED */
     }
 }

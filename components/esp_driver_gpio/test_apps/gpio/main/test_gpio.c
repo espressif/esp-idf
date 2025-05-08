@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -561,6 +561,9 @@ TEST_CASE("GPIO_get_level_from_fixed_voltage_test", "[gpio]")
     TEST_ASSERT_EQUAL_INT_MESSAGE(0, level2, "get level error! the level should be low!");
 }
 
+#if !CONFIG_IDF_ENV_FPGA
+// On FPGA do not support GPIO pull down
+
 TEST_CASE("GPIO_io_pull_up/down_function", "[gpio]")
 {
     // First, ensure that the output IO will not affect the level
@@ -661,6 +664,8 @@ TEST_CASE("GPIO_mode_test", "[gpio]")
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, !level);
     TEST_ASSERT_EQUAL_INT_MESSAGE(!level, gpio_get_level(TEST_GPIO_EXT_IN_IO), "direction GPIO_MODE_INPUT_OUTPUT set error, it gives incorrect output");
 }
+
+#endif //!CONFIG_IDF_ENV_FPGA
 
 static void prompt_to_continue(const char *str)
 {

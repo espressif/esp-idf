@@ -177,6 +177,36 @@ static BOOLEAN bta_hf_client_sco_remove(BOOLEAN only_active)
     return removed_started;
 }
 
+#if (BTM_SCO_HCI_INCLUDED == TRUE) && (BTA_HFP_EXT_CODEC == TRUE)
+
+/*******************************************************************************
+**
+** Function     bta_hf_client_sco_get_frame_size
+**
+** Description  Get SCO frame size
+**
+** Returns      frame size
+**
+*******************************************************************************/
+static UINT16 bta_hf_client_sco_get_frame_size(void)
+{
+    UINT16 frame_size = 0;
+    switch (bta_hf_client_cb.scb.air_mode)
+    {
+    case BTM_SCO_AIR_MODE_CVSD:
+        frame_size = bta_hf_client_cb.scb.out_pkt_len;
+        break;
+    case BTM_SCO_AIR_MODE_TRANSPNT:
+        frame_size = BTA_HF_CLIENT_MSBC_FRAME_SIZE;
+        break;
+    default:
+        break;
+    }
+    return frame_size;
+}
+
+#endif
+
 /*******************************************************************************
 **
 ** Function         bta_hf_client_cback_sco
@@ -189,13 +219,17 @@ static BOOLEAN bta_hf_client_sco_remove(BOOLEAN only_active)
 *******************************************************************************/
 void bta_hf_client_cback_sco(UINT8 event)
 {
-    tBTA_HF_CLIENT_HDR    evt;
+    tBTA_HF_CLIENT_AUDIO_STAT audio_stat;
 
-    memset(&evt, 0, sizeof(evt));
-    evt.sync_conn_handle = BTM_ReadScoHandle(bta_hf_client_cb.scb.sco_idx);
-
+    memset(&audio_stat, 0, sizeof(audio_stat));
+    audio_stat.hdr.sync_conn_handle = BTM_ReadScoHandle(bta_hf_client_cb.scb.sco_idx);
+#if (BTM_SCO_HCI_INCLUDED == TRUE) && (BTA_HFP_EXT_CODEC == TRUE)
+    if (event != BTA_HF_CLIENT_AUDIO_CLOSE_EVT) {
+        audio_stat.preferred_frame_size = bta_hf_client_sco_get_frame_size();
+    }
+#endif
     /* call app cback */
-    (*bta_hf_client_cb.p_cback)(event, (tBTA_HF_CLIENT_HDR *) &evt);
+    (*bta_hf_client_cb.p_cback)(event, &audio_stat);
 }
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
@@ -217,7 +251,6 @@ static void bta_hf_client_sco_read_cback (UINT16 sco_idx, BT_HDR *p_data, tBTM_S
     }
 
     bta_hf_client_sco_co_in_data (p_data, status);
-    osi_free(p_data);
 }
 #endif /* BTM_SCO_HCI_INCLUDED */
 
@@ -307,7 +340,7 @@ void bta_hf_client_pkt_stat_nums(tBTA_HF_CLIENT_DATA *p_data)
 **
 ** Function         bta_hf_client_ci_sco_data
 **
-** Description      Process the SCO data ready callin event
+** Description      Process the SCO data ready call in event
 **
 **
 ** Returns          void
@@ -318,6 +351,281 @@ void bta_hf_client_ci_sco_data(tBTA_HF_CLIENT_DATA *p_data)
     UNUSED(p_data);
     bta_hf_client_sco_event(BTA_HF_CLIENT_SCO_CI_DATA_E);
 }
+
+/*******************************************************************************
+**
+** Function         bta_hf_client_write_sco_data
+**
+** Description      Write two SCO data buffers to specified instance
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+static void bta_hf_client_write_sco_data(BT_HDR *p_buf1, BT_HDR *p_buf2)
+{
+    BTM_WriteScoData(bta_hf_client_cb.scb.sco_idx, p_buf1);
+    if (p_buf2 != NULL) {
+        BTM_WriteScoData(bta_hf_client_cb.scb.sco_idx, p_buf2);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_hf_client_sco_data_send_cvsd
+**
+** Description      Process SCO data of CVSD air mode
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+static void bta_hf_client_sco_data_send_cvsd(BT_HDR *p_buf, UINT8 out_pkt_len)
+{
+    if (bta_hf_client_cb.scb.p_sco_data != NULL) {
+        /* the remaining data of last sending operation */
+        BT_HDR *p_buf_last = bta_hf_client_cb.scb.p_sco_data;
+        /* remaining data len should small than out_pkt_len */
+        assert(p_buf_last->len < out_pkt_len);
+        BT_HDR *p_buf2 = osi_calloc(sizeof(BT_HDR) + BTA_HF_CLIENT_BUFF_OFFSET_MIN + out_pkt_len);
+        if (p_buf2 == NULL) {
+            osi_free(p_buf);
+            osi_free(p_buf_last);
+            bta_hf_client_cb.scb.p_sco_data = NULL;
+            APPL_TRACE_WARNING("%s, no memory", __FUNCTION__);
+            return;
+        }
+        p_buf2->offset = BTA_HF_CLIENT_BUFF_OFFSET_MIN;
+
+        UINT8 *p_data = (UINT8 *)(p_buf2 + 1) + p_buf2->offset;
+        memcpy(p_data, (UINT8 *)(p_buf_last + 1) + p_buf_last->offset, p_buf_last->len);
+
+        if (p_buf->len + p_buf_last->len < out_pkt_len) {
+            memcpy(p_data + p_buf_last->len, (UINT8 *)(p_buf + 1) + p_buf->offset, p_buf->len);
+            p_buf2->len = p_buf->len + p_buf_last->len;
+            osi_free(p_buf);
+            osi_free(p_buf_last);
+            bta_hf_client_cb.scb.p_sco_data = p_buf2;
+        }
+        else {
+            UINT16 copy_len = out_pkt_len - p_buf_last->len;
+            memcpy(p_data + p_buf_last->len, (UINT8 *)(p_buf + 1) + p_buf->offset, copy_len);
+            p_buf2->len = out_pkt_len;
+            p_buf->offset += copy_len;
+            p_buf->len -= copy_len;
+            osi_free(p_buf_last);
+            bta_hf_client_cb.scb.p_sco_data = NULL;
+            bta_hf_client_write_sco_data(p_buf2, NULL);
+            if (p_buf->len == 0) {
+                osi_free(p_buf);
+            }
+            else {
+                /* Recursive call, this will only called once */
+                bta_hf_client_sco_data_send_cvsd(p_buf, out_pkt_len);
+            }
+        }
+    }
+    else if (p_buf->len < out_pkt_len) {
+        bta_hf_client_cb.scb.p_sco_data = p_buf;
+    }
+    else {
+        /* bta_hf_client_cb.scb.p_sco_data == NULL && p_buf->len >= out_pkt_len */
+        while (1) {
+            if (p_buf->len == out_pkt_len) {
+                bta_hf_client_write_sco_data(p_buf, NULL);
+                break;
+            }
+            else {
+                BT_HDR *p_buf2 = osi_calloc(sizeof(BT_HDR) + BTA_HF_CLIENT_BUFF_OFFSET_MIN + out_pkt_len);
+                if (p_buf2 == NULL) {
+                    osi_free(p_buf);
+                    APPL_TRACE_WARNING("%s, no memory", __FUNCTION__);
+                    return;
+                }
+                p_buf2->offset = BTA_HF_CLIENT_BUFF_OFFSET_MIN;
+                UINT8 *p_data = (UINT8 *)(p_buf2 + 1) + p_buf2->offset;
+                memcpy(p_data, (UINT8 *)(p_buf + 1) + p_buf->offset, out_pkt_len);
+                p_buf2->len = out_pkt_len;
+                p_buf->offset += out_pkt_len;
+                p_buf->len -= out_pkt_len;
+                bta_hf_client_write_sco_data(p_buf2, NULL);
+            }
+            if (p_buf->len < out_pkt_len) {
+                bta_hf_client_cb.scb.p_sco_data = p_buf;
+                break;
+            }
+        }
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_hf_client_sco_data_send_msbc
+**
+** Description      Process SCO data of mSBC air mode
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+static void bta_hf_client_sco_data_send_msbc(BT_HDR *p_buf, UINT8 out_pkt_len)
+{
+    if (p_buf->len == BTA_HF_CLIENT_MSBC_FRAME_SIZE && p_buf->offset >= BTA_HF_CLIENT_BUFF_OFFSET_MIN + BTA_HF_CLIENT_H2_HEADER_LEN) {
+        /* add H2 header */
+        p_buf->offset -= BTA_HF_CLIENT_H2_HEADER_LEN;
+        UINT8 *p_data = (UINT8 *)(p_buf + 1) + p_buf->offset;
+        bta_hf_client_h2_header((UINT16 *)p_data);
+        /* add header len, add addition one bytes, the len is BTA_HF_CLIENT_SCO_OUT_PKT_LEN_2EV3 now */
+        p_buf->len += BTA_HF_CLIENT_H2_HEADER_LEN + 1;
+
+        if (out_pkt_len == BTA_HF_CLIENT_SCO_OUT_PKT_LEN_2EV3) {
+            /* mSBC frame can be send directly */
+            bta_hf_client_write_sco_data(p_buf, NULL);
+        }
+        else if (out_pkt_len == BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3) {
+            /* need to split into 2 sco packages for sending */
+            BT_HDR *p_buf2 = osi_calloc(sizeof(BT_HDR) + BTA_HF_CLIENT_BUFF_OFFSET_MIN + BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3);
+            if (p_buf2 == NULL) {
+                /* free the first buff too */
+                osi_free(p_buf);
+                APPL_TRACE_WARNING("%s, no memory", __FUNCTION__);
+                return;
+            }
+            p_buf2->offset = BTA_HF_CLIENT_BUFF_OFFSET_MIN;
+            p_buf2->len = BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3;
+            UINT8 *p_data2 = (UINT8 *)(p_buf2 + 1) + p_buf2->offset;
+            memcpy(p_data2, p_data + BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3, BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3);
+            /* update the first packet len */
+            p_buf->len = BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3;
+            bta_hf_client_write_sco_data(p_buf, p_buf2);
+        }
+        else {
+            osi_free(p_buf);
+            APPL_TRACE_WARNING("%s, invalid out pkt len: %d", __FUNCTION__, out_pkt_len);
+        }
+    }
+    else if (p_buf->len != 0 && p_buf->len % BTA_HF_CLIENT_MSBC_FRAME_SIZE == 0) {
+        /* multiple mSBC frame in the buffer, or just one but offset is too small */
+        UINT8 *p_data = (UINT8 *)(p_buf + 1) + p_buf->offset;
+        UINT16 total_len = p_buf->len;
+        if (out_pkt_len == BTA_HF_CLIENT_SCO_OUT_PKT_LEN_2EV3) {
+            while (total_len != 0) {
+                BT_HDR *p_buf2 = osi_calloc(sizeof(BT_HDR) + BTA_HF_CLIENT_BUFF_OFFSET_MIN + BTA_HF_CLIENT_SCO_OUT_PKT_LEN_2EV3);
+                if (p_buf2 == NULL) {
+                    APPL_TRACE_WARNING("%s, no memory", __FUNCTION__);
+                    break;
+                }
+                p_buf2->offset = BTA_HF_CLIENT_BUFF_OFFSET_MIN;
+                p_buf2->len = BTA_HF_CLIENT_SCO_OUT_PKT_LEN_2EV3;
+                UINT8 *p_data2 = (UINT8 *)(p_buf2 + 1) + p_buf2->offset;
+                bta_hf_client_h2_header((UINT16 *)p_data2);
+                p_data2 += BTA_HF_CLIENT_H2_HEADER_LEN;
+                memcpy(p_data2, p_data, BTA_HF_CLIENT_MSBC_FRAME_SIZE);
+                p_data += BTA_HF_CLIENT_MSBC_FRAME_SIZE;
+                total_len -= BTA_HF_CLIENT_MSBC_FRAME_SIZE;
+                bta_hf_client_write_sco_data(p_buf2, NULL);
+            }
+        }
+        else if (out_pkt_len == BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3) {
+            while (total_len != 0) {
+                BT_HDR *p_buf2 = osi_calloc(sizeof(BT_HDR) + BTA_HF_CLIENT_BUFF_OFFSET_MIN + BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3);
+                if (p_buf2 == NULL) {
+                    APPL_TRACE_WARNING("%s, no memory", __FUNCTION__);
+                    break;
+                }
+                BT_HDR *p_buf3 = osi_calloc(sizeof(BT_HDR) + BTA_HF_CLIENT_BUFF_OFFSET_MIN + BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3);
+                if (p_buf3 == NULL) {
+                    /* free the first buff too */
+                    osi_free(p_buf2);
+                    APPL_TRACE_WARNING("%s, no memory", __FUNCTION__);
+                    break;
+                }
+
+                /* build first packet, include H2 header */
+                p_buf2->offset = BTA_HF_CLIENT_BUFF_OFFSET_MIN;
+                p_buf2->len = BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3;
+                UINT8 *p_data2 = (UINT8 *)(p_buf2 + 1) + p_buf2->offset;
+                bta_hf_client_h2_header((UINT16 *)p_data2);
+                p_data2 += BTA_HF_CLIENT_H2_HEADER_LEN;
+                memcpy(p_data2, p_data, BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3 - BTA_HF_CLIENT_H2_HEADER_LEN);
+                p_data += BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3 - BTA_HF_CLIENT_H2_HEADER_LEN;
+                total_len -= BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3 - BTA_HF_CLIENT_H2_HEADER_LEN;
+
+                /* build second packet, not include header */
+                p_buf3->offset = BTA_HF_CLIENT_BUFF_OFFSET_MIN;
+                p_buf3->len = BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3;
+                UINT8 *p_data3 = (UINT8 *)(p_buf3 + 1) + p_buf3->offset;
+                memcpy(p_data3, p_data, BTA_HF_CLIENT_MSBC_FRAME_SIZE - BTA_HF_CLIENT_H2_HEADER_LEN - BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3);
+                p_data += BTA_HF_CLIENT_MSBC_FRAME_SIZE - BTA_HF_CLIENT_H2_HEADER_LEN - BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3;
+                total_len -= BTA_HF_CLIENT_MSBC_FRAME_SIZE - BTA_HF_CLIENT_H2_HEADER_LEN - BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3;
+                bta_hf_client_write_sco_data(p_buf2, p_buf3);
+            }
+        }
+        else {
+            APPL_TRACE_WARNING("%s, invalid out pkt len: %d", __FUNCTION__, out_pkt_len);
+        }
+        osi_free(p_buf);
+    }
+    else {
+        APPL_TRACE_WARNING("%s, unaccepted data len: %d", __FUNCTION__, p_buf->len);
+        osi_free(p_buf);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_hf_client_sco_data_send
+**
+** Description      Route SCO data to specific processing function based on air mode
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_hf_client_sco_data_send(tBTA_HF_CLIENT_DATA *p_data)
+{
+    BT_HDR *p_buf = (BT_HDR *) p_data;
+
+    if (bta_hf_client_cb.scb.sco_state != BTA_HF_CLIENT_SCO_OPEN_ST) {
+        osi_free(p_data);
+        APPL_TRACE_WARNING("%s: SCO not open", __FUNCTION__);
+        return;
+    }
+
+    UINT8 out_pkt_len = bta_hf_client_cb.scb.out_pkt_len;
+    UINT8 air_mode = bta_hf_client_cb.scb.air_mode;
+
+    switch (air_mode)
+    {
+    case BTM_SCO_AIR_MODE_CVSD:
+        bta_hf_client_sco_data_send_cvsd(p_buf, out_pkt_len);
+        break;
+    case BTM_SCO_AIR_MODE_TRANSPNT:
+        bta_hf_client_sco_data_send_msbc(p_buf, out_pkt_len);
+        break;
+    default:
+        osi_free(p_buf);
+        APPL_TRACE_WARNING("%s: unsupported air mode: %d", __FUNCTION__, air_mode);
+        break;
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_hf_client_sco_data_free
+**
+** Description      Free SCO data buffer
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_hf_client_sco_data_free(tBTA_HF_CLIENT_DATA *p_data)
+{
+    /* just free the sco data buffer */
+    osi_free(p_data);
+}
+
 #endif
 
 /*******************************************************************************
@@ -539,12 +847,9 @@ static void bta_hf_client_sco_event(UINT8 event)
     APPL_TRACE_DEBUG("%s state: %d event: %d", __FUNCTION__,
                      bta_hf_client_cb.scb.sco_state, event);
 
-#if (BTM_SCO_HCI_INCLUDED == TRUE )
-    tBTA_HF_CLIENT_SCB *p_scb = &bta_hf_client_cb.scb;
+#if (BTM_SCO_HCI_INCLUDED == TRUE ) && (BTA_HFP_EXT_CODEC == FALSE)
     BT_HDR  *p_buf;
-#endif
-
-#if (BTM_SCO_HCI_INCLUDED == TRUE )
+    tBTA_HF_CLIENT_SCB *p_scb = &bta_hf_client_cb.scb;
     if (event == BTA_HF_CLIENT_SCO_CI_DATA_E) {
         UINT16 pkt_offset = 1 + HCI_SCO_PREAMBLE_SIZE;
         UINT16 len_to_send = 0;
@@ -889,6 +1194,11 @@ void bta_hf_client_sco_conn_close(tBTA_HF_CLIENT_DATA *p_data)
         bta_sys_sco_close(BTA_ID_HS, 1, bta_hf_client_cb.scb.peer_addr);
 
         bta_sys_sco_unuse(BTA_ID_HS, 1, bta_hf_client_cb.scb.peer_addr);
+
+        if (bta_hf_client_cb.scb.p_sco_data != NULL) {
+            osi_free(bta_hf_client_cb.scb.p_sco_data);
+            bta_hf_client_cb.scb.p_sco_data = NULL;
+        }
 
         /* call app callback */
         bta_hf_client_cback_sco(BTA_HF_CLIENT_AUDIO_CLOSE_EVT);

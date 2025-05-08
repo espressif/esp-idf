@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@ extern "C" {
 /** LP_APM0_REGION_FILTER_EN_REG register
  *  Region filter enable register
  */
-#define LP_APM0_REGION_FILTER_EN_REG (DR_REG_LP_BASE + 0x0)
+#define LP_APM0_REGION_FILTER_EN_REG (DR_REG_LP_APM0_BASE + 0x0)
 /** LP_APM0_REGION_FILTER_EN : R/W; bitpos: [3:0]; default: 1;
  *  Region filter enable
  */
@@ -26,7 +26,7 @@ extern "C" {
 /** LP_APM0_REGION0_ADDR_START_REG register
  *  Region address register
  */
-#define LP_APM0_REGION0_ADDR_START_REG (DR_REG_LP_BASE + 0x4)
+#define LP_APM0_REGION0_ADDR_START_REG (DR_REG_LP_APM0_BASE + 0x4)
 /** LP_APM0_REGION0_ADDR_START : R/W; bitpos: [31:0]; default: 0;
  *  Start address of region0
  */
@@ -38,7 +38,7 @@ extern "C" {
 /** LP_APM0_REGION0_ADDR_END_REG register
  *  Region address register
  */
-#define LP_APM0_REGION0_ADDR_END_REG (DR_REG_LP_BASE + 0x8)
+#define LP_APM0_REGION0_ADDR_END_REG (DR_REG_LP_APM0_BASE + 0x8)
 /** LP_APM0_REGION0_ADDR_END : R/W; bitpos: [31:0]; default: 4294967295;
  *  End address of region0
  */
@@ -50,7 +50,7 @@ extern "C" {
 /** LP_APM0_REGION0_PMS_ATTR_REG register
  *  Region access authority attribute register
  */
-#define LP_APM0_REGION0_PMS_ATTR_REG (DR_REG_LP_BASE + 0xc)
+#define LP_APM0_REGION0_PMS_ATTR_REG (DR_REG_LP_APM0_BASE + 0xc)
 /** LP_APM0_REGION0_R0_PMS_X : R/W; bitpos: [0]; default: 0;
  *  Region execute authority in REE_MODE0
  */
@@ -118,7 +118,7 @@ extern "C" {
 /** LP_APM0_REGION1_ADDR_START_REG register
  *  Region address register
  */
-#define LP_APM0_REGION1_ADDR_START_REG (DR_REG_LP_BASE + 0x10)
+#define LP_APM0_REGION1_ADDR_START_REG (DR_REG_LP_APM0_BASE + 0x10)
 /** LP_APM0_REGION1_ADDR_START : R/W; bitpos: [31:0]; default: 0;
  *  Start address of region1
  */
@@ -130,7 +130,7 @@ extern "C" {
 /** LP_APM0_REGION1_ADDR_END_REG register
  *  Region address register
  */
-#define LP_APM0_REGION1_ADDR_END_REG (DR_REG_LP_BASE + 0x14)
+#define LP_APM0_REGION1_ADDR_END_REG (DR_REG_LP_APM0_BASE + 0x14)
 /** LP_APM0_REGION1_ADDR_END : R/W; bitpos: [31:0]; default: 4294967295;
  *  End address of region1
  */
@@ -142,7 +142,7 @@ extern "C" {
 /** LP_APM0_REGION1_PMS_ATTR_REG register
  *  Region access authority attribute register
  */
-#define LP_APM0_REGION1_PMS_ATTR_REG (DR_REG_LP_BASE + 0x18)
+#define LP_APM0_REGION1_PMS_ATTR_REG (DR_REG_LP_APM0_BASE + 0x18)
 /** LP_APM0_REGION1_R0_PMS_X : R/W; bitpos: [0]; default: 0;
  *  Region execute authority in REE_MODE0
  */
@@ -210,7 +210,7 @@ extern "C" {
 /** LP_APM0_REGION2_ADDR_START_REG register
  *  Region address register
  */
-#define LP_APM0_REGION2_ADDR_START_REG (DR_REG_LP_BASE + 0x1c)
+#define LP_APM0_REGION2_ADDR_START_REG (DR_REG_LP_APM0_BASE + 0x1c)
 /** LP_APM0_REGION2_ADDR_START : R/W; bitpos: [31:0]; default: 0;
  *  Start address of region2
  */
@@ -222,7 +222,7 @@ extern "C" {
 /** LP_APM0_REGION2_ADDR_END_REG register
  *  Region address register
  */
-#define LP_APM0_REGION2_ADDR_END_REG (DR_REG_LP_BASE + 0x20)
+#define LP_APM0_REGION2_ADDR_END_REG (DR_REG_LP_APM0_BASE + 0x20)
 /** LP_APM0_REGION2_ADDR_END : R/W; bitpos: [31:0]; default: 4294967295;
  *  End address of region2
  */
@@ -234,7 +234,7 @@ extern "C" {
 /** LP_APM0_REGION2_PMS_ATTR_REG register
  *  Region access authority attribute register
  */
-#define LP_APM0_REGION2_PMS_ATTR_REG (DR_REG_LP_BASE + 0x24)
+#define LP_APM0_REGION2_PMS_ATTR_REG (DR_REG_LP_APM0_BASE + 0x24)
 /** LP_APM0_REGION2_R0_PMS_X : R/W; bitpos: [0]; default: 0;
  *  Region execute authority in REE_MODE0
  */
@@ -302,7 +302,7 @@ extern "C" {
 /** LP_APM0_REGION3_ADDR_START_REG register
  *  Region address register
  */
-#define LP_APM0_REGION3_ADDR_START_REG (DR_REG_LP_BASE + 0x28)
+#define LP_APM0_REGION3_ADDR_START_REG (DR_REG_LP_APM0_BASE + 0x28)
 /** LP_APM0_REGION3_ADDR_START : R/W; bitpos: [31:0]; default: 0;
  *  Start address of region3
  */
@@ -314,7 +314,7 @@ extern "C" {
 /** LP_APM0_REGION3_ADDR_END_REG register
  *  Region address register
  */
-#define LP_APM0_REGION3_ADDR_END_REG (DR_REG_LP_BASE + 0x2c)
+#define LP_APM0_REGION3_ADDR_END_REG (DR_REG_LP_APM0_BASE + 0x2c)
 /** LP_APM0_REGION3_ADDR_END : R/W; bitpos: [31:0]; default: 4294967295;
  *  End address of region3
  */
@@ -326,7 +326,7 @@ extern "C" {
 /** LP_APM0_REGION3_PMS_ATTR_REG register
  *  Region access authority attribute register
  */
-#define LP_APM0_REGION3_PMS_ATTR_REG (DR_REG_LP_BASE + 0x30)
+#define LP_APM0_REGION3_PMS_ATTR_REG (DR_REG_LP_APM0_BASE + 0x30)
 /** LP_APM0_REGION3_R0_PMS_X : R/W; bitpos: [0]; default: 0;
  *  Region execute authority in REE_MODE0
  */
@@ -394,7 +394,7 @@ extern "C" {
 /** LP_APM0_FUNC_CTRL_REG register
  *  PMS function control register
  */
-#define LP_APM0_FUNC_CTRL_REG (DR_REG_LP_BASE + 0xc4)
+#define LP_APM0_FUNC_CTRL_REG (DR_REG_LP_APM0_BASE + 0xc4)
 /** LP_APM0_M0_PMS_FUNC_EN : R/W; bitpos: [0]; default: 1;
  *  PMS M0 function enable
  */
@@ -406,7 +406,7 @@ extern "C" {
 /** LP_APM0_M0_STATUS_REG register
  *  M0 status register
  */
-#define LP_APM0_M0_STATUS_REG (DR_REG_LP_BASE + 0xc8)
+#define LP_APM0_M0_STATUS_REG (DR_REG_LP_APM0_BASE + 0xc8)
 /** LP_APM0_M0_EXCEPTION_STATUS : RO; bitpos: [1:0]; default: 0;
  *  Exception status
  */
@@ -418,7 +418,7 @@ extern "C" {
 /** LP_APM0_M0_STATUS_CLR_REG register
  *  M0 status clear register
  */
-#define LP_APM0_M0_STATUS_CLR_REG (DR_REG_LP_BASE + 0xcc)
+#define LP_APM0_M0_STATUS_CLR_REG (DR_REG_LP_APM0_BASE + 0xcc)
 /** LP_APM0_M0_REGION_STATUS_CLR : WT; bitpos: [0]; default: 0;
  *  Clear exception status
  */
@@ -430,7 +430,7 @@ extern "C" {
 /** LP_APM0_M0_EXCEPTION_INFO0_REG register
  *  M0 exception_info0 register
  */
-#define LP_APM0_M0_EXCEPTION_INFO0_REG (DR_REG_LP_BASE + 0xd0)
+#define LP_APM0_M0_EXCEPTION_INFO0_REG (DR_REG_LP_APM0_BASE + 0xd0)
 /** LP_APM0_M0_EXCEPTION_REGION : RO; bitpos: [3:0]; default: 0;
  *  Exception region
  */
@@ -456,7 +456,7 @@ extern "C" {
 /** LP_APM0_M0_EXCEPTION_INFO1_REG register
  *  M0 exception_info1 register
  */
-#define LP_APM0_M0_EXCEPTION_INFO1_REG (DR_REG_LP_BASE + 0xd4)
+#define LP_APM0_M0_EXCEPTION_INFO1_REG (DR_REG_LP_APM0_BASE + 0xd4)
 /** LP_APM0_M0_EXCEPTION_ADDR : RO; bitpos: [31:0]; default: 0;
  *  Exception addr
  */
@@ -468,7 +468,7 @@ extern "C" {
 /** LP_APM0_INT_EN_REG register
  *  APM interrupt enable register
  */
-#define LP_APM0_INT_EN_REG (DR_REG_LP_BASE + 0xd8)
+#define LP_APM0_INT_EN_REG (DR_REG_LP_APM0_BASE + 0xd8)
 /** LP_APM0_M0_APM_INT_EN : R/W; bitpos: [0]; default: 0;
  *  APM M0 interrupt enable
  */
@@ -480,7 +480,7 @@ extern "C" {
 /** LP_APM0_CLOCK_GATE_REG register
  *  clock gating register
  */
-#define LP_APM0_CLOCK_GATE_REG (DR_REG_LP_BASE + 0xdc)
+#define LP_APM0_CLOCK_GATE_REG (DR_REG_LP_APM0_BASE + 0xdc)
 /** LP_APM0_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  reg_clk_en
  */
@@ -492,7 +492,7 @@ extern "C" {
 /** LP_APM0_DATE_REG register
  *  Version register
  */
-#define LP_APM0_DATE_REG (DR_REG_LP_BASE + 0x7fc)
+#define LP_APM0_DATE_REG (DR_REG_LP_APM0_BASE + 0x7fc)
 /** LP_APM0_DATE : R/W; bitpos: [27:0]; default: 35672640;
  *  reg_date
  */

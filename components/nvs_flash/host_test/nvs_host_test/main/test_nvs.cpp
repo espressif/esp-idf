@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,8 @@
 #include <random>
 #include "test_fixtures.hpp"
 #include "spi_flash_mmap.h"
+
+using namespace std;
 
 #define TEST_ESP_ERR(rc, res) CHECK((rc) == (res))
 #define TEST_ESP_OK(rc) CHECK((rc) == ESP_OK)
@@ -3800,6 +3802,82 @@ TEST_CASE("nvs multiple write with same key but different types", "[nvs]")
     TEST_ESP_ERR(nvs_get_i32(handle_1, "foo", &v32), ESP_ERR_NVS_NOT_FOUND);
     TEST_ESP_ERR(nvs_erase_key(handle_1, "foo"), ESP_ERR_NVS_NOT_FOUND);
 #endif
+
+    nvs_close(handle_1);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
+}
+
+TEST_CASE("nvs multiple write with same key blob and string involved", "[nvs]")
+{
+    PartitionEmulationFixture f(0, 10);
+
+    nvs_handle_t handle_1;
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
+
+    for (uint16_t j = NVS_FLASH_SECTOR; j < NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN; ++j) {
+        f.erase(j);
+    }
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
+
+    TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle_1));
+
+    nvs_erase_all(handle_1);
+
+    const char key_name[] = "foo";
+
+    // integer variables
+    int32_t v32;
+    int8_t v8;
+
+    // string
+    #define str_data_len 64
+    const char str_data[] = "string data";
+    char str_buf[str_data_len] = {0};
+    size_t str_len = str_data_len;
+
+    // blob
+    #define blob_data_len 64
+    uint8_t blob_data[blob_data_len] = {0};
+    uint8_t blob_buf[blob_data_len] = {0};
+    size_t blob_read_size;
+
+    // first write is i32
+    TEST_ESP_OK(nvs_set_i32(handle_1, key_name, (int32_t)12345678));
+
+    TEST_ESP_ERR(nvs_get_i8(handle_1, key_name, &v8), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_get_i32(handle_1, key_name, &v32));
+    TEST_ESP_ERR(nvs_get_str(handle_1, key_name, str_buf, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
+
+
+    // second write is string
+    TEST_ESP_OK(nvs_set_str(handle_1, key_name, str_data));
+
+    TEST_ESP_ERR(nvs_get_i8(handle_1, key_name, &v8), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_i32(handle_1, key_name, &v32), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_get_str(handle_1, key_name, str_buf, &str_len));
+    TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
+
+    // third write is blob
+    TEST_ESP_OK(nvs_set_blob(handle_1, key_name, blob_data, blob_data_len));
+
+    TEST_ESP_ERR(nvs_get_i8(handle_1, key_name, &v8), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_i32(handle_1, key_name, &v32), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_str(handle_1, key_name, str_buf, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size));
+
+    // fourth write is i8
+    TEST_ESP_OK(nvs_set_i8(handle_1, key_name, (int8_t)12));
+
+    TEST_ESP_OK(nvs_get_i8(handle_1, key_name, &v8));
+    TEST_ESP_ERR(nvs_get_i32(handle_1, key_name, &v32), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_str(handle_1, key_name, str_buf, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
 
     nvs_close(handle_1);
 

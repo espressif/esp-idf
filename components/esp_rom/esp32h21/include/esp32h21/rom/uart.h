@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32H21] IDF-11618
-
 /** \defgroup uart_apis, uart configuration and communication related apis
   * @brief uart apis
   */
@@ -26,34 +24,38 @@ extern "C" {
   * @{
   */
 
+/*It is found that when the buf is only 0x400, and the baud rate is set to 921600, the download is likely to fail */
+#define RX_BUFF_SIZE 0x800
+#define TX_BUFF_SIZE 100
+
 //uart int enable register ctrl bits
-#define UART_RCV_INTEN                   BIT0
-#define UART_TRX_INTEN                   BIT1
-#define UART_LINE_STATUS_INTEN           BIT2
+#define UART_RCV_INTEN                BIT0
+#define UART_TRX_INTEN                BIT1
+#define UART_LINE_STATUS_INTEN        BIT2
 
 //uart int identification ctrl bits
-#define UART_INT_FLAG_MASK               0x0E
+#define UART_INT_FLAG_MASK            0x0E
 
 //uart fifo ctrl bits
-#define UART_CLR_RCV_FIFO                BIT1
-#define UART_CLR_TRX_FIFO                BIT2
-#define UART_RCVFIFO_TRG_LVL_BITS        BIT6
+#define UART_CLR_RCV_FIFO             BIT1
+#define UART_CLR_TRX_FIFO             BIT2
+#define UART_RCVFIFO_TRG_LVL_BITS     BIT6
 
 //uart line control bits
-#define  UART_DIV_LATCH_ACCESS_BIT       BIT7
+#define UART_DIV_LATCH_ACCESS_BIT     BIT7
 
 //uart line status bits
-#define  UART_RCV_DATA_RDY_FLAG          BIT0
-#define  UART_RCV_OVER_FLOW_FLAG         BIT1
-#define  UART_RCV_PARITY_ERR_FLAG        BIT2
-#define  UART_RCV_FRAME_ERR_FLAG         BIT3
-#define  UART_BRK_INT_FLAG               BIT4
-#define  UART_TRX_FIFO_EMPTY_FLAG        BIT5
-#define  UART_TRX_ALL_EMPTY_FLAG         BIT6   // include fifo and shift reg
-#define  UART_RCV_ERR_FLAG               BIT7
+#define UART_RCV_DATA_RDY_FLAG        BIT0
+#define UART_RCV_OVER_FLOW_FLAG       BIT1
+#define UART_RCV_PARITY_ERR_FLAG      BIT2
+#define UART_RCV_FRAME_ERR_FLAG       BIT3
+#define UART_BRK_INT_FLAG             BIT4
+#define UART_TRX_FIFO_EMPTY_FLAG      BIT5
+#define UART_TRX_ALL_EMPTY_FLAG       BIT6 // include fifo and shift reg
+#define UART_RCV_ERR_FLAG             BIT7
 
 //send and receive message frame head
-#define FRAME_FLAG                       0x7E
+#define FRAME_FLAG                    0x7E
 
 typedef enum {
     UART_LINE_STATUS_INT_FLAG  = 0x06,
@@ -86,7 +88,6 @@ typedef enum {
     NONE_BITS = 0,
     ODD_BITS  = 2,
     EVEN_BITS = 3
-
 } UartParityMode;
 
 typedef enum {
@@ -139,7 +140,7 @@ typedef enum {
 } RcvMsgState;
 
 typedef struct {
-    UartBautRate     baut_rate;
+    UartBautRate     baud_rate;
     UartBitsNum4Char data_bits;
     UartExistParity  exist_parity;
     UartParityMode   parity;    // chip size in byte
@@ -168,11 +169,9 @@ void uartAttach(void *rxBuffer);
   *
   * @param  uint8_t uart_no : 0 for UART0, else for UART1.
   *
-  * @param  uint32_t clock : clock used by uart module, to adjust baudrate.
-  *
   * @return None
   */
-void Uart_Init(uint8_t uart_no, uint32_t clock);
+void Uart_Init(uint8_t uart_no);
 
 /**
   * @brief Modify uart baudrate.
@@ -187,6 +186,19 @@ void Uart_Init(uint8_t uart_no, uint32_t clock);
 void uart_div_modify(uint8_t uart_no, uint32_t DivLatchValue);
 
 /**
+  * @brief Init uart0 or uart1 for UART download booting mode.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
+  *
+  * @param  uint8_t is_sync : 0, only one UART module, easy to detect, wait until detected;
+  *                           1, two UART modules, hard to detect, detect and return.
+  *
+  * @return None
+  */
+int uart_baudrate_detect(uint8_t uart_no, uint8_t is_sync);
+
+/**
   * @brief Switch printf channel of uart_tx_one_char.
   *        Please do not call this function when printf.
   *
@@ -197,13 +209,23 @@ void uart_div_modify(uint8_t uart_no, uint32_t DivLatchValue);
 void uart_tx_switch(uint8_t uart_no);
 
 /**
+  * @brief Switch message exchange channel for UART download booting.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
+  *
+  * @return None
+  */
+void uart_buff_switch(uint8_t uart_no);
+
+/**
   * @brief Output a char to printf channel, wait until fifo not full.
   *
   * @param  None
   *
   * @return OK.
   */
-ETS_STATUS uart_tx_one_char(uint8_t TxChar);
+ETS_STATUS uart_tx_one_char(uint8_t txchar);
 
 /**
   * @brief Output a char to message exchange channel, wait until fifo not full.
@@ -213,7 +235,17 @@ ETS_STATUS uart_tx_one_char(uint8_t TxChar);
   *
   * @return OK.
   */
-ETS_STATUS uart_tx_one_char2(uint8_t TxChar);
+ETS_STATUS uart_tx_one_char2(uint8_t txchar);
+
+/**
+  * @brief Output a char to usb-serial channel, wait until fifo not full.
+  *        Please do not call this function in SDK.
+  *
+  * @param  None
+  *
+  * @return OK.
+  */
+ETS_STATUS uart_tx_one_char3(uint8_t txchar);
 
 /**
   * @brief Wait until uart tx full empty.
@@ -288,7 +320,7 @@ void uart_rx_intr_handler(void *para);
   * @return OK for successful.
   *         FAIL for failed.
   */
-ETS_STATUS uart_rx_readbuff( RcvMsgBuff *pRxBuff, uint8_t *pRxByte);
+ETS_STATUS uart_rx_readbuff(RcvMsgBuff *pRxBuff, uint8_t *pRxByte);
 
 /**
   * @brief Get all chars from receive buffer.
@@ -337,6 +369,60 @@ void send_packet(uint8_t *p, int len);
   * @return int : the length of the string.
   */
 int recv_packet(uint8_t *p, int len, uint8_t is_sync);
+
+/**
+  * @brief Send an packet to download tool, with SLIP escaping.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t *pData : the pointer to input string.
+  *
+  * @param  uint16_t DataLen : the string length.
+  *
+  * @return OK for successful.
+  *         FAIL for failed.
+  */
+ETS_STATUS SendMsg(uint8_t *pData, uint16_t DataLen);
+
+/**
+  * @brief Receive an packet from download tool, with SLIP escaping.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t *pData : the pointer to input string.
+  *
+  * @param  uint16_t MaxDataLen : If string length > MaxDataLen, the string will be truncated.
+  *
+  * @param  uint8_t is_sync : 0, only one UART module;
+  *                           1, two UART modules.
+  *
+  * @return OK for successful.
+  *         FAIL for failed.
+  */
+ETS_STATUS RcvMsg(uint8_t *pData, uint16_t MaxDataLen, uint8_t is_sync);
+
+/**
+  * @brief Check if this UART is in download connection.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
+  *
+  * @return ETS_NO_BOOT = 0 for no.
+  *         SEL_UART_BOOT = BIT(1) for yes.
+  */
+uint8_t UartConnCheck(uint8_t uart_no);
+
+/**
+  * @brief Initialize the USB ACM UART
+  * Needs to be fed a buffer of at least 128 bytes, plus any rx buffer you may want to have.
+  *
+  * @param cdc_acm_work_mem Pointer to work mem for CDC-ACM code
+  * @param cdc_acm_work_mem_len Length of work mem
+  */
+void Uart_Init_USB(void *cdc_acm_work_mem, int cdc_acm_work_mem_len);
+
+/**
+  * @brief Install handler to reset the chip when a RTS change has been detected on the CDC-ACM 'UART'.
+  */
+void usb_serial_otg_enable_reset_on_rts(void);
 
 extern UartDevice UartDev;
 

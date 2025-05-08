@@ -475,6 +475,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
                                                                                 esp_supp_dpp_bootstrap_gen() is not
                                                                                 valid or too big */
 #   endif
+#   ifdef      ESP_ERR_DPP_CONF_TIMEOUT
+    ERR_TBL_IT(ESP_ERR_DPP_CONF_TIMEOUT),                       /* 12444 0x309c DPP Configuration was not received in time */
+#   endif
     // components/esp_common/include/esp_err.h
 #   ifdef      ESP_ERR_MESH_BASE
     ERR_TBL_IT(ESP_ERR_MESH_BASE),                              /* 16384 0x4000 Starting number of MESH error codes */
@@ -693,6 +696,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_ESP_TLS_TCP_CLOSED_FIN
     ERR_TBL_IT(ESP_ERR_ESP_TLS_TCP_CLOSED_FIN),                 /* 32776 0x8008 */
+#   endif
+#   ifdef      ESP_ERR_ESP_TLS_SERVER_HANDSHAKE_TIMEOUT
+    ERR_TBL_IT(ESP_ERR_ESP_TLS_SERVER_HANDSHAKE_TIMEOUT),       /* 32777 0x8009 TLS handshake timeout */
 #   endif
 #   ifdef      ESP_ERR_MBEDTLS_CERT_PARTLY_OK
     ERR_TBL_IT(ESP_ERR_MBEDTLS_CERT_PARTLY_OK),                 /* 32784 0x8010 mbedtls parse certificates was partly successful */

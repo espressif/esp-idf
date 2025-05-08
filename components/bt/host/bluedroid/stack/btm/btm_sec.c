@@ -1720,7 +1720,7 @@ void BTM_RemoteOobDataReply(tBTM_STATUS res, BD_ADDR bd_addr, BT_OCTET16 c, BT_O
         btsnd_hcic_rem_oob_reply (bd_addr, c, r);
     }
 }
-
+#if 0
 /*******************************************************************************
 **
 ** Function         BTM_BuildOobData
@@ -1745,8 +1745,10 @@ UINT16 BTM_BuildOobData(UINT8 *p_data, UINT16 max_len, BT_OCTET16 c,
     UINT8   *p = p_data;
     UINT16  len = 0;
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT16  name_size;
     UINT8   name_type = BTM_EIR_SHORTENED_LOCAL_NAME_TYPE;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #endif
 
     if (p_data && max_len >= BTM_OOB_MANDATORY_SIZE) {
@@ -1789,6 +1791,7 @@ UINT16 BTM_BuildOobData(UINT8 *p_data, UINT16 max_len, BT_OCTET16 c,
             max_len -= delta;
         }
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
+#if (CLASSIC_BT_INCLUDED == TRUE)
         name_size = name_len;
         if (name_size > strlen(btm_cb.cfg.bredr_bd_name)) {
             name_type = BTM_EIR_COMPLETE_LOCAL_NAME_TYPE;
@@ -1802,6 +1805,7 @@ UINT16 BTM_BuildOobData(UINT8 *p_data, UINT16 max_len, BT_OCTET16 c,
             len     += delta;
             max_len -= delta;
         }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #endif
         /* update len */
         p = p_data;
@@ -1871,6 +1875,7 @@ UINT8 *BTM_ReadOobData(UINT8 *p_data, UINT8 eir_tag, UINT8 *p_len)
 
     return p_ret;
 }
+#endif
 #endif  ///BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -4589,10 +4594,10 @@ tBTM_STATUS btm_sec_disconnect (UINT16 handle, UINT8 reason)
 ** Description      This function is when a connection to the peer device is
 **                  dropped
 **
-** Returns          void
+** Returns          tBTM_SEC_DEV_REC is not NULL
 **
 *******************************************************************************/
-void btm_sec_disconnected (UINT16 handle, UINT8 reason)
+BOOLEAN btm_sec_disconnected (UINT16 handle, UINT8 reason)
 {
     tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev_by_handle (handle);
     UINT8             old_pairing_flags = btm_cb.pairing_flags;
@@ -4608,7 +4613,7 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
 #endif
 
     if (!p_dev_rec) {
-        return;
+        return FALSE;
     }
     p_dev_rec->enc_init_by_we = FALSE;
     transport  = (handle == p_dev_rec->hci_handle) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
@@ -4649,7 +4654,7 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
     if (p_dev_rec->sec_state == BTM_SEC_STATE_DISCONNECTING_BOTH) {
         p_dev_rec->sec_state = (transport == BT_TRANSPORT_LE) ?
                                BTM_SEC_STATE_DISCONNECTING : BTM_SEC_STATE_DISCONNECTING_BLE;
-        return;
+        return TRUE;
     }
 #endif
     p_dev_rec->sec_state  = BTM_SEC_STATE_IDLE;
@@ -4685,6 +4690,7 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
                                                     p_dev_rec->sec_bd_name, result);
         }
     }
+    return TRUE;
 }
 
 /*******************************************************************************

@@ -229,11 +229,13 @@ bool btu_task_post(uint32_t sig, void *param, uint32_t timeout)
             break;
         case SIG_BTU_HCI_ADV_RPT_MSG:
 #if BLE_INCLUDED == TRUE
+#if (BLE_42_SCAN_EN == TRUE)
             if (param != NULL) {
                 btm_ble_adv_pkt_post(param);
             }
             btm_ble_adv_pkt_ready();
             status = true;
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 #else
             osi_free(param);
             status = false;
@@ -451,7 +453,7 @@ void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
     // NOTE: This value is in seconds but stored in a ticks field.
     p_tle->ticks = timeout_sec;
     p_tle->in_use = TRUE;
-    osi_alarm_set(alarm, (period_ms_t)(timeout_sec * 1000));
+    osi_alarm_set(alarm, (period_ms_t)((period_ms_t)timeout_sec * 1000));
 }
 
 

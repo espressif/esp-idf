@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -698,13 +698,14 @@ static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active)
  *----------------------------------------------------------------------------*/
 /**
  * Set the standard clock mode for master.
+ * This config take effect only when SPI_CLK (pre-div before periph) div >=2
  *
  * @param hw  Beginning address of the peripheral registers.
  * @param enable_std True for std timing, False for half cycle delay sampling.
  */
 static inline void spi_ll_master_set_rx_timing_mode(spi_dev_t *hw, spi_sampling_point_t sample_point)
 {
-    //This is not supported
+    hw->clock.clk_edge_sel = (sample_point == SPI_SAMPLING_POINT_PHASE_1);
 }
 
 /**
@@ -712,7 +713,7 @@ static inline void spi_ll_master_set_rx_timing_mode(spi_dev_t *hw, spi_sampling_
  */
 static inline bool spi_ll_master_is_rx_std_sample_supported(void)
 {
-    return false;
+    return true;
 }
 
 /**
@@ -735,6 +736,7 @@ static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, const spi_ll_cl
  *
  * @return     Frequency of given dividers.
  */
+__attribute__((always_inline))
 static inline int spi_ll_freq_for_pre_n(int fapb, int pre, int n)
 {
     return (fapb / (pre * n));
@@ -750,6 +752,7 @@ static inline int spi_ll_freq_for_pre_n(int fapb, int pre, int n)
  *
  * @return           Actual (nearest) frequency.
  */
+__attribute__((always_inline))
 static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_ll_clock_val_t *out_reg)
 {
     typeof(GPSPI2.clock) reg = {.val = 0};

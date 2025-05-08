@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -236,11 +236,14 @@ static void bte_hf_evt(tBTA_AG_EVT event, tBTA_AG *param)
     else if (BTA_AG_OPEN_EVT == event) {
         param_len = sizeof(tBTA_AG_OPEN);
     }
-    else if ((BTA_AG_CLOSE_EVT == event) || (BTA_AG_AUDIO_OPEN_EVT == event) || (BTA_AG_AUDIO_CLOSE_EVT == event)) {
+    else if ((BTA_AG_CLOSE_EVT == event)) {
         param_len = sizeof(tBTA_AG_HDR);
     }
     else if (BTA_AG_CONN_EVT == event) {
         param_len = sizeof(tBTA_AG_CONN);
+    }
+    else if ((BTA_AG_AUDIO_OPEN_EVT == event) || (BTA_AG_AUDIO_CLOSE_EVT == event) || (BTA_AG_AUDIO_MSBC_OPEN_EVT == event)) {
+        param_len = sizeof(tBTA_AG_AUDIO_STAT);
     }
     else if (param) {
         param_len = sizeof(tBTA_AG_VAL);
@@ -263,6 +266,26 @@ void btc_hf_reg_data_cb(esp_hf_incoming_data_cb_t recv, esp_hf_outgoing_data_cb_
 {
     hf_local_param[0].btc_hf_incoming_data_cb = recv;
     hf_local_param[0].btc_hf_outgoing_data_cb = send;
+}
+
+void btc_hf_reg_audio_data_cb(esp_hf_ag_audio_data_cb_t callback)
+{
+    hf_local_param[0].btc_hf_audio_data_cb = callback;
+}
+
+void btc_hf_audio_data_cb_to_app(uint8_t *buf, uint8_t *data, uint16_t len, bool is_bad_frame)
+{
+    if (hf_local_param[0].btc_hf_audio_data_cb) {
+        /* we always have sizeof(BT_HDR) bytes free space before data, it is enough for esp_hf_audio_buff_t */
+        esp_hf_audio_buff_t *audio_buff = (esp_hf_audio_buff_t *)buf;
+        audio_buff->buff_size = len;
+        audio_buff->data_len = len;
+        audio_buff->data = data;
+        hf_local_param[0].btc_hf_audio_data_cb(hf_local_param[0].btc_hf_cb.sync_conn_hdl, audio_buff, is_bad_frame);
+    }
+    else {
+        osi_free(buf);
+    }
 }
 
 void btc_hf_incoming_data_cb_to_app(const uint8_t *data, uint32_t len)
@@ -351,6 +374,9 @@ bt_status_t btc_hf_init(void)
 #endif
     clear_phone_state();
     memset(&hf_local_param[idx].btc_hf_cb, 0, sizeof(btc_hf_cb_t));
+    for (int i = 0; i < BTC_HF_NUM_CB; i++) {
+        hf_local_param[i].btc_hf_cb.sync_conn_hdl = ESP_INVALID_CONN_HANDLE;
+    }
 // set audio path
 #if (BT_CONTROLLER_INCLUDED == TRUE)
 #if BTM_SCO_HCI_INCLUDED
@@ -949,6 +975,20 @@ bt_status_t btc_hf_ci_sco_data(void)
     return status;
 }
 
+bool btc_hf_ag_audio_data_send(uint16_t sync_conn_hdl, uint8_t *p_buff_start, uint8_t *p_data, uint8_t data_len)
+{
+#if (BTM_SCO_HCI_INCLUDED == TRUE) && (BTA_HFP_EXT_CODEC == TRUE)
+    /* currently, sync_conn_hdl is not used */
+    int idx = btc_hf_latest_connected_idx();
+    CHECK_HF_SLC_CONNECTED(idx);
+    if (idx != BTC_HF_INVALID_IDX) {
+        BTA_AgAudioDataSend(hf_local_param[idx].btc_hf_cb.handle, p_buff_start, p_data, data_len);
+        return true;
+    }
+#endif
+    return false;
+}
+
 /************************************************************************************
 **  Memory malloc and release
 ************************************************************************************/
@@ -1266,6 +1306,13 @@ void btc_hf_call_handler(btc_msg_t *msg)
             btc_hf_reg_data_cb(arg->reg_data_cb.recv, arg->reg_data_cb.send);
             break;
         }
+
+        case BTC_HF_REGISTER_AUDIO_DATA_CALLBACK_EVT:
+        {
+            btc_hf_reg_audio_data_cb(arg->reg_audio_data_cb.callback);
+            break;
+        }
+
         case BTC_HF_REQUEST_PKT_STAT_EVT:
         {
             btc_hf_pkt_stat_nums_get(arg->pkt_sync_hd.sync_conn_handle);
@@ -1411,7 +1458,9 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             do {
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_CONNECTED;
                 memcpy(param.audio_stat.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+                hf_local_param[idx].btc_hf_cb.sync_conn_hdl = p_data->hdr.sync_conn_handle;
                 param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
+                param.audio_stat.preferred_frame_size = p_data->audio_stat.preferred_frame_size;
                 btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
             } while(0);
             break;
@@ -1424,7 +1473,9 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             do {
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_CONNECTED_MSBC;
                 memcpy(param.audio_stat.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+                hf_local_param[idx].btc_hf_cb.sync_conn_hdl = p_data->hdr.sync_conn_handle;
                 param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
+                param.audio_stat.preferred_frame_size = p_data->audio_stat.preferred_frame_size;
                 btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
             } while (0);
             break;
@@ -1435,6 +1486,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             CHECK_HF_IDX(idx);
             do {
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_DISCONNECTED;
+                hf_local_param[idx].btc_hf_cb.sync_conn_hdl = ESP_INVALID_CONN_HANDLE;
                 memcpy(param.audio_stat.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda, sizeof(esp_bd_addr_t));
                 param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
                 btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
@@ -1664,6 +1716,28 @@ void btc_hf_cb_handler(btc_msg_t *msg)
         default:
             BTC_TRACE_WARNING("%s: Unhandled event: %d", __FUNCTION__, event);
             break;
+    }
+}
+
+void btc_hf_get_profile_status(esp_hf_profile_status_t *param)
+{
+    param->hfp_ag_inited = false; // Not initialized by default
+
+#if HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_local_param)
+#endif
+    {
+        for (int idx = 0; idx < BTC_HF_NUM_CB; idx++) {
+            if (hf_local_param[idx].btc_hf_cb.initialized) {
+                param->hfp_ag_inited = true;
+                if (hf_local_param[idx].btc_hf_cb.connection_state == ESP_HF_CONNECTION_STATE_SLC_CONNECTED) {
+                    param->slc_conn_num++;
+                    if (hf_local_param[idx].btc_hf_cb.sync_conn_hdl != ESP_INVALID_CONN_HANDLE) {
+                        param->sync_conn_num++;
+                    }
+                }
+            }
+        }
     }
 }
 #endif // #if (BTC_HF_INCLUDED == TRUE)

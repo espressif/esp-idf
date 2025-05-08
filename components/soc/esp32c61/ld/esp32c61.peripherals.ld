@@ -58,6 +58,6 @@ PROVIDE ( LP_GPIO             = 0x600B4400 );
 PROVIDE ( EFUSE0              = 0x600B4800 );
 PROVIDE ( EFUSE1              = 0x600B4C00 );
 PROVIDE ( TRACE               = 0x600C0000 );
-PROVIDE ( ASSIST_DEBUG        = 0x600C2000 );
+PROVIDE ( BUS_MONITOR         = 0x600C2000 );
 PROVIDE ( INTPRI              = 0x600C5000 );
 PROVIDE ( CACHE               = 0x600C8000 );

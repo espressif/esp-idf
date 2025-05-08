@@ -33,13 +33,13 @@ ppCalTxAMPDULength = 0x40001bd8;
 ppRxFragmentProc = 0x40001c28;
 ppRxPkt = 0x40001c2c;
 pp_coex_tx_request = 0x40001c54;
-rcGetSched = 0x40001c88;
+/* rcGetSched = 0x40001c88; */
 rcTxUpdatePer = 0x40001c94;
 rcUpdateRate = 0x40001c9c;
 wDev_AppendRxBlocks = 0x40001cdc;
 //wDev_IndicateFrame = 0x40001cec;
 wDev_ProcessFiq = 0x40001d08;
-wDev_ProcessRxSucData = 0x40001d0c;
+/*wDev_ProcessRxSucData = 0x40001d0c;*/
 ppProcTxDone = 0x40001d1c;
 /*pm_tx_data_done_process = 0x40001d20;*/
 ppMapWaitTxq = 0x40001d28;
@@ -56,7 +56,7 @@ lmac_stop_hw_txq = 0x40001df8;
 ppTxFragmentProc = 0x40001e08;
 esf_buf_setup = 0x40001e0c;
 hal_crypto_set_key_entry = 0x40001e18;
-pm_start = 0x40001e34;
+/*pm_start = 0x40001e34;*/
 pm_stop = 0x40001e38;
 hal_set_sta_tbtt = 0x40001e4c;
 //pm_update_next_tbtt = 0x40001e50;
@@ -65,7 +65,7 @@ pm_set_sleep_type = 0x40001e54;
 //pm_tx_data_process = 0x40001eb4;
 /*pm_attach = 0x40001eb8;*/
 /*pm_coex_schm_process = 0x40001ebc;*/
-pm_on_probe_resp_rx = 0x40001ecc;
+/*pm_on_probe_resp_rx = 0x40001ecc;*/
 pm_send_probe_stop = 0x40001edc;
 hal_sniffer_rx_set_promis = 0x40001ef4;
 hal_sniffer_set_promis_misc_pkt = 0x40001efc;
@@ -92,7 +92,7 @@ ieee80211_deauth_construct = 0x40002040;
 ieee80211_disassoc_construct = 0x40002044;
 //ieee80211_add_xrates = 0x40002058;
 //ieee80211_assoc_req_construct = 0x40002060;
-ieee80211_assoc_resp_construct = 0x40002064;
+//ieee80211_assoc_resp_construct = 0x40002064;
 //ieee80211_timer_process = 0x4000208c;
 cnx_coexist_timeout = 0x40002090;
 //sta_recv_mgmt = 0x40002094;
@@ -135,16 +135,6 @@ coex_hw_timer_tick_get = 0x400021b8;
 
 
 /***************************************
- Group rom_phy
- ***************************************/
-
-/* Functions */
-phy_xpd_tsens = 0x400021e8;
-bt_track_pll_cap = 0x40002534;
-tx_pwctrl_background = 0x40002548;
-
-
-/***************************************
  Group eco4_systimer_hal
  ***************************************/
 
@@ -183,7 +173,7 @@ hal_get_time_to_sta_next_tbtt = 0x4000303c;
 pm_scale_listen_interval = 0x40003040;
 pm_beacon_monitor_tbtt_start = 0x40003044;
 pm_beacon_monitor_tbtt_stop = 0x40003048;
-pm_beacon_monitor_timeout_process = 0x4000304c;
+/*pm_beacon_monitor_timeout_process = 0x4000304c;*/
 pm_beacon_monitor_tbtt_timeout_process = 0x40003050;
 pm_on_tsf_timer = 0x40003054;
 pp_coex_tx_release = 0x40003058;
@@ -191,26 +181,26 @@ ppRegressAmpdu = 0x4000305c;
 trc_onPPTxDone = 0x40003060;
 is_fragmented_pkt = 0x40003064;
 pm_tx_null_data_done_quick_wake_process = 0x40003068;
-pm_enable_beacon_monitor_timer = 0x4000306c;
+/*pm_enable_beacon_monitor_timer = 0x4000306c;*/
 pm_disable_beacon_monitor_timer = 0x40003070;
-pm_beacon_offset_get_average = 0x40003074;
+/*pm_beacon_offset_get_average = 0x40003074;
 pm_beacon_offset_get_expect = 0x40003078;
 pm_beacon_offset_get_params = 0x4000307c;
-pm_beacon_offset_sample_start = 0x40003080;
+pm_beacon_offset_sample_start = 0x40003080;*/
 pm_beacon_offset_sample = 0x40003084;
-pm_beacon_offset_reset = 0x40003088;
+/*pm_beacon_offset_reset = 0x40003088;*/
 pm_beacon_offset_is_sampling = 0x4000308c;
 pm_beacon_offset_is_enabled = 0x40003090;
-pm_beacon_offset_configure = 0x40003094;
+/*pm_beacon_offset_configure = 0x40003094;*/
 pm_beacon_offset_resample_timeout_process = 0x40003098;
-pm_beacon_offset_set_rx_beacon_standard = 0x4000309c;
-pm_beacon_offset_get_rx_beacon_success_rate = 0x400030a0;
+/*pm_beacon_offset_set_rx_beacon_standard = 0x4000309c;*/
+/*pm_beacon_offset_get_rx_beacon_success_rate = 0x400030a0;*/
 pm_beacon_offset_add_total_counter = 0x400030a4;
 pm_beacon_offset_add_loss_counter = 0x400030a8;
-pm_beacon_offset_check = 0x400030ac;
-pm_beacon_offset_init = 0x400030b0;
+/*pm_beacon_offset_check = 0x400030ac;*/
+/*pm_beacon_offset_init = 0x400030b0;*/
 pm_beacon_offset_deinit = 0x400030b4;
-pm_get_tbtt_count = 0x400030b8;
+/*pm_get_tbtt_count = 0x400030b8;*/
 pm_coex_schm_overall_period_get = 0x400030bc;
 pm_coex_pwr_update = 0x400030c0;
 /* Data (.data, .bss, .rodata) */

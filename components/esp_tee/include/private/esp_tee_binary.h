@@ -23,6 +23,22 @@ extern "C" {
 #define ALIGN_UP_TO_MMU_PAGE_SIZE(addr)      (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
 #define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)    ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
 
+#if ((CONFIG_SECURE_TEE_IRAM_SIZE) & (0xFF))
+#error "CONFIG_SECURE_TEE_IRAM_SIZE must be 256-byte (0x100) aligned"
+#endif
+
+#if ((CONFIG_SECURE_TEE_DRAM_SIZE) & (0xFF))
+#error "CONFIG_SECURE_TEE_DRAM_SIZE must be 256-byte (0x100) aligned"
+#endif
+
+#if ((CONFIG_SECURE_TEE_STACK_SIZE) & 0xF)
+#error "CONFIG_SECURE_TEE_STACK_SIZE must be 16-byte (0x10) aligned"
+#endif
+
+#if ((CONFIG_SECURE_TEE_INTR_STACK_SIZE) & 0xF)
+#error "CONFIG_SECURE_TEE_INTR_STACK_SIZE must be 16-byte (0x10) aligned"
+#endif
+
 /* NOTE: ESP32-C6 - TEE/REE memory regions */
 /* TEE I/DRAM */
 #define SOC_S_IRAM_START      (SOC_IRAM_LOW)

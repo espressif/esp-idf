@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os.path
 import time
@@ -6,12 +6,13 @@ import time
 import pexpect.fdpexpect
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
 @pytest.mark.jtag
 @pytest.mark.parametrize('config', ['app_trace_jtag'], indirect=True)
 @pytest.mark.parametrize('embedded_services', ['esp,idf,jtag'], indirect=True)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_sysview_tracing_heap_log(idf_path: str, dut: IdfDut) -> None:
     # Construct trace log paths
     trace_log = [
@@ -52,5 +53,6 @@ def test_examples_sysview_tracing_heap_log(idf_path: str, dut: IdfDut) -> None:
     with open(dut.gdb._logfile, encoding='utf-8') as fr:  # pylint: disable=protected-access
         gdb_pexpect_proc = pexpect.fdpexpect.fdspawn(fr.fileno())
         gdb_pexpect_proc.expect_exact(
-            'Thread 2 "main" hit Temporary breakpoint 1, heap_trace_start (mode_param', timeout=10)  # should be (mode_param=HEAP_TRACE_ALL) # TODO GCC-329
+            'Thread 2 "main" hit Temporary breakpoint 1, heap_trace_start (mode_param', timeout=10
+        )  # should be (mode_param=HEAP_TRACE_ALL) # TODO GCC-329
         gdb_pexpect_proc.expect_exact('Thread 2 "main" hit Temporary breakpoint 2, heap_trace_stop ()', timeout=10)

@@ -249,6 +249,13 @@ DUT2 (slave) 终端::
 
 第一次执行此用例时，输入 ``1`` 来运行第一阶段（触发深度睡眠）。在重启 DUT 并再次选择运行此用例后，输入 ``2`` 来运行第二阶段。只有在最后一个阶段通过并且之前所有的阶段都成功触发了复位的情况下，该测试才算通过。
 
+项目构建与自动化流程
+--------------------
+
+`Github ESP Test Template <https://github.com/espressif/gh-esp-test-template>`_ 提供了应用程序的构建和测试示例，介绍了如何使用 GitHub CI 在仿真环境和现实硬件上运行测试。
+
+对于更复杂的项目，可将测试拆分为多个独立的测试应用 (test-apps)，分别验证各组件。此时，可使用 `IDF Build Apps <https://github.com/espressif/idf-build-apps>`_ 自动查找并构建所有测试应用，提高测试效率。
+
 
 .. _cache-compensated-timer:
 

@@ -9,7 +9,8 @@ if(esp_tee_build)
     list(APPEND srcs "src/test_dummy_srv.c"
                      "src/test_interrupt.c"
                      "src/test_panic.c"
-                     "src/test_sec_srv.c")
+                     "src/test_sec_srv.c"
+                     "src/test_heap.c")
     list(APPEND priv_requires main)
 else()
     list(APPEND srcs "src/test_dummy_srv_wrapper.c")

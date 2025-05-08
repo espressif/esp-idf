@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,10 @@ int bootloader_clock_get_rated_freq_mhz(void)
 
 #elif CONFIG_IDF_TARGET_ESP32H21
     //TODO: [ESP32H21] IDF-11556, please check
+    return 96;
+
+#elif CONFIG_IDF_TARGET_ESP32H4
+    //TODO: [ESP32H4] IDF-12322 inherited from verification branch, need check
     return 96;
 
 #elif CONFIG_IDF_TARGET_ESP32P4

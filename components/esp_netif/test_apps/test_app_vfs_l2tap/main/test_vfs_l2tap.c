@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -203,7 +203,7 @@ static void ethernet_init(test_vfs_eth_network_t *network_hndls)
     // combine driver with netif
     network_hndls->glue = esp_eth_new_netif_glue(network_hndls->eth_handle);
     TEST_ESP_OK(esp_netif_attach(network_hndls->eth_netif, network_hndls->glue));
-    // register user defined event handers
+    // register user defined event handlers
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
 
@@ -241,7 +241,7 @@ static void ethernet_deinit(test_vfs_eth_network_t *network_hndls)
 static test_vfs_eth_tap_msg_t s_test_msg = {
     .header = {
         .src.addr = {0},
-        .dest.addr = { 0x01, 0x00, 0x00, 0x00, 0xBE, 0xEF },
+        .dest.addr = {0},
         .type = ETH_FILTER_BE,
     },
     .str = "This is ESP32 L2 TAP test msg"
@@ -256,7 +256,10 @@ static void send_task(void *task_param)
     send_task_control_t *send_control = (send_task_control_t *)task_param;
     test_vfs_eth_network_t *eth_network_hndls = send_control->eth_network_hndls_p;
 
+    // Set test message source MAC address to the MAC of the Ethernet interface
     esp_eth_ioctl(eth_network_hndls->eth_handle, ETH_CMD_G_MAC_ADDR, &s_test_msg.header.src.addr);
+    // Set test message destination MAC address to the MAC of the Ethernet interface to not be filtered out in loopback mode
+    esp_eth_ioctl(eth_network_hndls->eth_handle, ETH_CMD_G_MAC_ADDR, &s_test_msg.header.dest.addr);
 
     if (send_control->eth_type >= 0 && send_control->eth_type <= 0xFFFF) {
         s_test_msg.header.type = htons(send_control->eth_type);
@@ -693,14 +696,11 @@ TEST_CASE("esp32 l2tap - write", "[ethernet]")
 
 
     ESP_LOGI(TAG, "Verify the write is not successful when use different Ethernet type than the fd is configured to...");
-    test_vfs_eth_tap_msg_t test_msg = {
-        .header = {
-            .src.addr = {0},
-            .dest.addr = { 0x01, 0x00, 0x00, 0x00, 0xBE, 0xEF },
-            .type = 0,
-        }
-    };
-
+    test_vfs_eth_tap_msg_t test_msg;
+    // Set test message source MAC address to the MAC of the Ethernet interface
+    esp_eth_ioctl(eth_network_hndls.eth_handle, ETH_CMD_G_MAC_ADDR, &test_msg.header.src.addr);
+    // Set test message destination MAC address to the MAC of the Ethernet interface to not be filtered out in loopback mode
+    esp_eth_ioctl(eth_network_hndls.eth_handle, ETH_CMD_G_MAC_ADDR, &test_msg.header.dest.addr);
     // set different Ethernet type than the fd is configured to
     test_msg.header.type = htons(ETH_FILTER_LE + 10);
     TEST_ASSERT_EQUAL(-1, write(eth_tap_fd, &test_msg, sizeof(test_msg)));
@@ -723,6 +723,7 @@ typedef struct {
     uint16_t task_id;
     uint16_t eth_filter;
     SemaphoreHandle_t semaphore;
+    test_vfs_eth_network_t *eth_network_hndls_p;
 } task_info_t;
 
 static void multi_fds_task (void *task_param)
@@ -732,13 +733,11 @@ static void multi_fds_task (void *task_param)
 
     int eth_tap_fds[NUM_OF_FDS];
     test_vfs_eth_tap_msg_t recv_msg;
-    test_vfs_eth_tap_msg_t test_msg = {
-        .header = {
-            .src.addr = {0},
-            .dest.addr = { 0x01, 0x00, 0x00, 0x00, 0xBE, 0xEF },
-            .type = 0,
-        }
-    };
+    test_vfs_eth_tap_msg_t test_msg;
+    // Set test message source MAC address to the MAC of the Ethernet interface
+    esp_eth_ioctl(task_info->eth_network_hndls_p->eth_handle, ETH_CMD_G_MAC_ADDR, &test_msg.header.src.addr);
+    // Set test message destination MAC address to the MAC of the Ethernet interface to not be filtered out in loopback mode
+    esp_eth_ioctl(task_info->eth_network_hndls_p->eth_handle, ETH_CMD_G_MAC_ADDR, &test_msg.header.dest.addr);
 
     for (int i = 0; i < sizeof(eth_tap_fds) / sizeof(int); i++) {
         eth_tap_fds[i] = open("/dev/net/tap", O_NONBLOCK);
@@ -805,6 +804,7 @@ TEST_CASE("esp32 l2tap - read/write multiple fd's used by multiple tasks", "[eth
         task_info[i].task_id = i;
         task_info[i].eth_filter = 0x750A + i * 100;
         task_info[i].semaphore = xSemaphoreCreateBinary();
+        task_info[i].eth_network_hndls_p = &eth_network_hndls;
     }
 
     xTaskCreate(multi_fds_task, "multi_fds_task_1", 4096, &task_info[0], tskIDLE_PRIORITY + 2, NULL);
@@ -865,9 +865,12 @@ TEST_CASE("esp32 l2tap - time stamping", "[ethernet]")
             .timestamp = 0,
         }
     };
-    uint16_t exp_sequence_id = test_ptp_msg.ptp_msg.ptp_hdr.sequence_id;
+    // Add PTP multicast destination MAC address to the filter
+    TEST_ESP_OK(esp_eth_ioctl(eth_network_hndls.eth_handle, ETH_CMD_ADD_MAC_FILTER, test_ptp_msg.eth_hdr.dest.addr));
+
     TEST_ESP_OK(esp_eth_ioctl(eth_network_hndls.eth_handle, ETH_CMD_G_MAC_ADDR, &test_ptp_msg.eth_hdr.src.addr));
 
+    uint16_t exp_sequence_id = test_ptp_msg.ptp_msg.ptp_hdr.sequence_id;
     // wrap "Info Records Buffer" into union to ensure proper alignment of data (this is typically needed when
     // accessing double word variables or structs containing double word variables)
     union {

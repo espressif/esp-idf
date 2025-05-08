@@ -54,11 +54,11 @@ The ADC continuous mode driver is implemented based on {IDF_TARGET_NAME} SAR ADC
 
 To create an ADC continuous mode driver handle, set up the required configuration structure :cpp:type:`adc_continuous_handle_cfg_t`:
 
-- :cpp:member:`adc_continuous_handle_cfg_t::max_store_buf_size`: set the maximum size of the pool in bytes, and the driver saves ADC conversion result into the pool. If this pool is full, new conversion results will be lost.
+- :cpp:member:`adc_continuous_handle_cfg_t::max_store_buf_size`: set the maximum size of the pool in bytes, and the driver saves ADC conversion result into the pool.
 - :cpp:member:`adc_continuous_handle_cfg_t::conv_frame_size`: set the size of the ADC conversion frame, in bytes.
 - :cpp:member:`adc_continuous_handle_cfg_t::flags`: set the flags that can change the driver's behavior.
 
-  - ``flush_pool``: auto flush the pool when it's full.
+  - ``flush_pool``: When the pool is full, the old data in the buffer pool will be automatically flushed and new data will be written. Otherwise, when the pool is full, new conversion results will be lost.
 
 
 After setting up the above configurations for the ADC, call :cpp:func:`adc_continuous_new_handle` with the prepared :cpp:type:`adc_continuous_handle_cfg_t`. This function may fail due to various errors such as invalid arguments, insufficient memory, etc.

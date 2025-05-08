@@ -106,6 +106,41 @@ RESTful API
 
 :example:`protocols/http_server/restful_server` demonstrates how to implement a RESTful API server and HTTP server, with a frontend browser UI, and designs several APIs to fetch resources, using mDNS to parse the domain name, and deploying the webpage to host PC via semihost technology or to SPI flash or SD Card.
 
+URI Handlers
+------------
+
+The HTTP server allows you to register URI handlers to handle different HTTP requests. Each URI handler is associated with a specific URI and HTTP method (GET, POST, etc.). The handler function is called whenever a request matching the URI and method is received.
+
+The handler function should return an :cpp:type:`esp_err_t` value.
+
+.. code-block:: c
+
+    esp_err_t my_uri_handler(httpd_req_t *req)
+    {
+        // Handle the request
+        // ...
+
+        // Return ESP_OK if the request was handled successfully
+        return ESP_OK;
+
+        // Return an error code to close the connection
+        // return ESP_FAIL;
+    }
+
+    void register_uri_handlers(httpd_handle_t server)
+    {
+        httpd_uri_t my_uri = {
+            .uri       = "/my_uri",
+            .method    = HTTP_GET,
+            .handler   = my_uri_handler,
+            .user_ctx  = NULL
+        };
+
+        httpd_register_uri_handler(server, &my_uri);
+    }
+
+In this example, the `my_uri_handler` function handles requests to the `/my_uri` URI. If the handler returns :c:macro:`ESP_OK`, the connection remains open. If it returns any other value, the connection is closed. This behavior allows the application to manage connection closure based on specific events or conditions.
+
 API Reference
 -------------
 

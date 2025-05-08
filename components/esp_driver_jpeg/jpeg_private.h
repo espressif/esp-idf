@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,7 +86,7 @@ typedef struct {
     uint8_t huffbits[2][2][JPEG_HUFFMAN_BITS_LEN_TABLE_LEN];    // Huffman bit distribution tables [id][dcac]
     uint8_t huffcode[2][2][JPEG_HUFFMAN_AC_VALUE_TABLE_LEN];    // Huffman decoded data tables [id][dcac]
     uint32_t tmp_huff[JPEG_HUFFMAN_AC_VALUE_TABLE_LEN];         // temp buffer to store huffman code
-    bool dri_marker;                                            // If we have dri marker in table
+    bool dht_marker;                                            // If we have Huffman table present in header
     uint16_t ri;                                                // Restart interval
 } jpeg_dec_header_info_t;
 
@@ -118,6 +118,7 @@ typedef enum {
     JPEG_DMA2D_RX_EOF = BIT(0),     // DMA2D rx eof event
     JPEG_DMA2D_RX_DONE = BIT(1),    // DMA2D rx done event
     JPEG_DMA2D_TX_DONE = BIT(2),    // DMA2D tx done event
+    JPEG_DMA2D_RX_DESC_EMPTY = BIT(3),    // DMA2D rx empty event
 } jpeg_dma2d_evt_enum_t;
 
 typedef struct {

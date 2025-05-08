@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "esp_rom_sys.h"
 #include "esp_private/spi_flash_os.h"
 #include "rom/ets_sys.h"
+#include "unity_test_utils_cache.h"
 
 static void test_correct_delay_timer_func(void* arg)
 {
@@ -210,40 +211,52 @@ static void IRAM_ATTR test_iram_timer_func(void* arg)
     *b = true;
 }
 
+#define INTERVAL 5
+
+void IRAM_ATTR test_iram_arm_disarm(void *ctx)
+{
+    ETSTimer *timer1 = (ETSTimer*)ctx;
+
+    ets_timer_arm(timer1, INTERVAL, false);
+    // redundant call is deliberate (test code path if already armed)
+    ets_timer_arm(timer1, INTERVAL, false);
+    ets_timer_disarm(timer1);
+}
+
+void IRAM_ATTR test_iram_arm(void *ctx)
+{
+    ETSTimer *timer1 = (ETSTimer*)ctx;
+
+    ets_timer_arm(timer1, INTERVAL, false);
+}
+
+void IRAM_ATTR test_iram_disarm(void *ctx)
+{
+    ETSTimer *timer1 = (ETSTimer*)ctx;
+
+    ets_timer_disarm(timer1);
+}
+
 /* WiFi/BT coexistence will sometimes arm/disarm
    timers from an ISR where flash may be disabled. */
 IRAM_ATTR TEST_CASE("ETSTimers arm & disarm run from IRAM", "[ets_timer]")
 {
     volatile bool flag = false;
     ETSTimer timer1;
-    const int INTERVAL = 5;
 
     ets_timer_setfn(&timer1, &test_iram_timer_func, (void *)&flag);
 
     /* arm a disabled timer, then disarm a live timer */
-
-    spi_flash_guard_get()->start(); // Disables flash cache
-
-    ets_timer_arm(&timer1, INTERVAL, false);
-    // redundant call is deliberate (test code path if already armed)
-    ets_timer_arm(&timer1, INTERVAL, false);
-    ets_timer_disarm(&timer1);
-
-    spi_flash_guard_get()->end(); // Re-enables flash cache
+    unity_utils_run_cache_disable_stub(test_iram_arm_disarm, &timer1);
 
     TEST_ASSERT_FALSE(flag); // didn't expire yet
 
     /* do the same thing but wait for the timer to expire */
-
-    spi_flash_guard_get()->start();
-    ets_timer_arm(&timer1, INTERVAL, false);
-    spi_flash_guard_get()->end();
+    unity_utils_run_cache_disable_stub(test_iram_arm, &timer1);
 
     vTaskDelay(2 * INTERVAL / portTICK_PERIOD_MS);
     TEST_ASSERT_TRUE(flag);
 
-    spi_flash_guard_get()->start();
-    ets_timer_disarm(&timer1);
-    spi_flash_guard_get()->end();
+    unity_utils_run_cache_disable_stub(test_iram_disarm, &timer1);
     ets_timer_done(&timer1);
 }

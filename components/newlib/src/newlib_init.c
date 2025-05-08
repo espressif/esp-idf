@@ -20,7 +20,7 @@
 #include "esp_attr.h"
 #include "soc/soc_caps.h"
 #include "esp_rom_caps.h"
-#include "esp_rom_libc_stubs.h"
+#include "rom/libc_stubs.h"
 
 extern int _printf_float(struct _reent *rptr,
                          void *pdata,

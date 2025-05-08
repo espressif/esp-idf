@@ -11,4 +11,5 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES "esp_mm"
-                       INCLUDE_DIRS "include")
+                       INCLUDE_DIRS "include"
+                       LDFRAGMENTS "linker.lf")

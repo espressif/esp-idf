@@ -4,31 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <sys/cdefs.h>
-#include <sys/param.h>
-#include "sdkconfig.h"
-#if CONFIG_RMT_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "esp_log.h"
-#include "esp_check.h"
 #include "esp_memory_utils.h"
 #include "esp_cache.h"
 #include "esp_rom_gpio.h"
 #include "soc/rmt_periph.h"
-#include "soc/rtc.h"
-#include "hal/rmt_ll.h"
-#include "hal/cache_hal.h"
 #include "hal/gpio_hal.h"
 #include "driver/gpio.h"
 #include "driver/rmt_rx.h"
 #include "rmt_private.h"
-
-static const char *TAG = "rmt";
 
 static esp_err_t rmt_del_rx_channel(rmt_channel_handle_t channel);
 static esp_err_t rmt_rx_demodulate_carrier(rmt_channel_handle_t channel, const rmt_carrier_config_t *config);
@@ -39,7 +22,8 @@ static void rmt_rx_default_isr(void *args);
 #if SOC_RMT_SUPPORT_DMA
 static bool rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 
-static void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t per_block_size, size_t last_block_size)
+__attribute__((always_inline))
+static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t per_block_size, size_t last_block_size)
 {
     uint8_t *data = (uint8_t *)buffer;
     for (int i = 0; i < rx_chan->num_dma_nodes; i++) {
@@ -57,6 +41,9 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
 {
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
+#if CONFIG_RMT_RX_ISR_CACHE_SAFE
+        .flags.isr_cache_safe = true,
+#endif
     };
     ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &rx_channel->base.dma_chan), TAG, "allocate RX DMA channel failed");
     gdma_transfer_config_t transfer_cfg = {
@@ -182,9 +169,6 @@ static esp_err_t rmt_rx_destroy(rmt_rx_channel_t *rx_channel)
 
 esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_handle_t *ret_chan)
 {
-#if CONFIG_RMT_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     rmt_rx_channel_t *rx_channel = NULL;
     // Check if priority is valid
@@ -196,7 +180,13 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(config->gpio_num), ESP_ERR_INVALID_ARG, TAG, "invalid GPIO number %d", config->gpio_num);
     ESP_RETURN_ON_FALSE((config->mem_block_symbols & 0x01) == 0 && config->mem_block_symbols >= SOC_RMT_MEM_WORDS_PER_CHANNEL,
                         ESP_ERR_INVALID_ARG, TAG, "mem_block_symbols must be even and at least %d", SOC_RMT_MEM_WORDS_PER_CHANNEL);
-#if !SOC_RMT_SUPPORT_DMA
+#if SOC_RMT_SUPPORT_DMA
+    if (config->flags.with_dma) {
+#if CONFIG_RMT_RX_ISR_CACHE_SAFE && (!CONFIG_GDMA_ISR_HANDLER_IN_IRAM || !CONFIG_GDMA_CTRL_FUNC_IN_IRAM)
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "CONFIG_GDMA_ISR_HANDLER_IN_IRAM and CONFIG_GDMA_CTRL_FUNC_IN_IRAM must be enabled");
+#endif
+    }
+#else
     ESP_RETURN_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, TAG, "DMA not supported");
 #endif // SOC_RMT_SUPPORT_DMA
 
@@ -268,7 +258,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
         bool priority_conflict = rmt_set_intr_priority_to_group(group, config->intr_priority);
         ESP_GOTO_ON_FALSE(!priority_conflict, ESP_ERR_INVALID_ARG, err, TAG, "intr_priority conflict");
         // 2-- Get interrupt allocation flag
-        int isr_flags = rmt_get_isr_flags(group);
+        int isr_flags = rmt_isr_priority_to_flags(group) | RMT_RX_INTR_ALLOC_FLAG;
         // 3-- Allocate interrupt using isr_flag
         ret = esp_intr_alloc_intrstatus(rmt_periph_signals.groups[group_id].irq, isr_flags,
                                         (uint32_t)rmt_ll_get_interrupt_status_reg(hal->regs),
@@ -356,7 +346,7 @@ esp_err_t rmt_rx_register_event_callbacks(rmt_channel_handle_t channel, const rm
     ESP_RETURN_ON_FALSE(channel->direction == RMT_CHANNEL_DIRECTION_RX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
     rmt_rx_channel_t *rx_chan = __containerof(channel, rmt_rx_channel_t, base);
 
-#if CONFIG_RMT_ISR_CACHE_SAFE
+#if CONFIG_RMT_RX_ISR_CACHE_SAFE
     if (cbs->on_recv_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_recv_done), ESP_ERR_INVALID_ARG, TAG, "on_recv_done callback not in IRAM");
     }
@@ -395,7 +385,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     // check buffer alignment
     uint32_t align_check_mask = mem_alignment - 1;
     ESP_RETURN_ON_FALSE_ISR(((((uintptr_t)buffer) & align_check_mask) == 0) && (((buffer_size) & align_check_mask) == 0), ESP_ERR_INVALID_ARG,
-                            TAG, "buffer address or size are not %zu bytes aligned", mem_alignment);
+                            TAG, "buffer address or size are not %"PRIu32 "bytes aligned", mem_alignment);
 
     rmt_group_t *group = channel->group;
     rmt_hal_context_t *hal = &group->hal;
@@ -408,7 +398,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 
     // check if we're in a proper state to start the receiver
     rmt_fsm_t expected_fsm = RMT_FSM_ENABLE;
-    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_RUN_WAIT),
+    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT),
                             ESP_ERR_INVALID_STATE, TAG, "channel not in enable state");
 
     // fill in the transaction descriptor
@@ -502,7 +492,7 @@ static esp_err_t rmt_rx_enable(rmt_channel_handle_t channel)
 {
     // can only enable the channel when it's in "init" state
     rmt_fsm_t expected_fsm = RMT_FSM_INIT;
-    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_ENABLE_WAIT),
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT),
                         ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
 
     rmt_group_t *group = channel->group;
@@ -538,11 +528,11 @@ static esp_err_t rmt_rx_disable(rmt_channel_handle_t channel)
     // can disable the channel when it's in `enable` or `run` state
     bool valid_state = false;
     rmt_fsm_t expected_fsm = RMT_FSM_ENABLE;
-    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_INIT_WAIT)) {
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT)) {
         valid_state = true;
     }
     expected_fsm = RMT_FSM_RUN;
-    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_INIT_WAIT)) {
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT)) {
         valid_state = true;
     }
     ESP_RETURN_ON_FALSE(valid_state, ESP_ERR_INVALID_STATE, TAG, "channel not in enable or run state");
@@ -580,7 +570,7 @@ static esp_err_t rmt_rx_disable(rmt_channel_handle_t channel)
     return ESP_OK;
 }
 
-static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
+bool rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
 {
     rmt_channel_t *channel = &rx_chan->base;
     rmt_group_t *group = channel->group;
@@ -597,9 +587,20 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     portEXIT_CRITICAL_ISR(&channel->spinlock);
 
     uint32_t offset = rmt_ll_rx_get_memory_writer_offset(hal->regs, channel_id);
-    // sanity check
-    assert(offset >= rx_chan->mem_off);
-    size_t mem_want = (offset - rx_chan->mem_off) * sizeof(rmt_symbol_word_t);
+
+    // Start from C6, the actual pulse count is the number of input pulses N - 1.
+    // Resulting in the last threshold interrupts may not be triggered correctly when the number of received symbols is a multiple of the memory block size.
+    // As shown in the figure below, So we special handle the offset
+
+    //  mem_off (should be updated here in the last threshold interrupt, but interrupt lost)
+    //     |
+    //     V
+    //     |________|________|
+    //     |        |
+    //   offset   mem_off(actually here now)
+
+    size_t mem_want = (offset >= rx_chan->mem_off ? offset - rx_chan->mem_off : rx_chan->mem_off - offset);
+    mem_want *= sizeof(rmt_symbol_word_t);
     size_t mem_have = trans_desc->buffer_size - trans_desc->copy_dest_off;
     size_t copy_size = mem_want;
     if (mem_want > mem_have) {
@@ -672,7 +673,7 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
 }
 
 #if SOC_RMT_SUPPORT_RX_PINGPONG
-static bool IRAM_ATTR rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
+bool rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
 {
     bool need_yield = false;
     rmt_channel_t *channel = &rx_chan->base;
@@ -767,7 +768,8 @@ static void rmt_rx_default_isr(void *args)
 }
 
 #if SOC_RMT_SUPPORT_DMA
-static size_t IRAM_ATTR rmt_rx_count_symbols_until_eof(rmt_rx_channel_t *rx_chan, int start_index)
+__attribute__((always_inline))
+static inline size_t rmt_rx_count_symbols_until_eof(rmt_rx_channel_t *rx_chan, int start_index)
 {
     size_t received_bytes = 0;
     for (int i = 0; i < rx_chan->num_dma_nodes; i++) {
@@ -782,7 +784,8 @@ static size_t IRAM_ATTR rmt_rx_count_symbols_until_eof(rmt_rx_channel_t *rx_chan
     return received_bytes / sizeof(rmt_symbol_word_t);
 }
 
-static size_t IRAM_ATTR rmt_rx_count_symbols_for_single_block(rmt_rx_channel_t *rx_chan, int desc_index)
+__attribute__((always_inline))
+static inline size_t rmt_rx_count_symbols_for_single_block(rmt_rx_channel_t *rx_chan, int desc_index)
 {
     size_t received_bytes = rx_chan->dma_nodes_nc[desc_index].dw0.length;
     received_bytes = ALIGN_UP(received_bytes, sizeof(rmt_symbol_word_t));

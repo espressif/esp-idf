@@ -1,34 +1,38 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import os.path
 from typing import Tuple
 
 import pytest
 from pytest_embedded_idf.dut import IdfDut
-
-
+from pytest_embedded_idf.utils import idf_parametrize
 # Case 1: ble50 security client and ble50 security server test
 # EXAMPLE_CI_ID=6
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32c5
-@pytest.mark.esp32h2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c61
+
+
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config, erase_nvs', [
-        (2,
-         f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
-         'name', 'y'),
+    'count, app_path, config, erase_nvs',
+    [
+        (
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
+            'name',
+            'y',
+        ),
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61'], indirect=['target'])
 def test_ble50_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
-    client_addr = client.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
-    server_addr = server.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
+    client_addr = (
+        client.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
+    )
+    server_addr = (
+        server.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
+    )
 
     server.expect_exact('Extended advertising params set, status 0', timeout=30)
     server.expect_exact('Extended advertising data set, status 0', timeout=30)
@@ -48,22 +52,31 @@ def test_ble50_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 # Case 2: ble50 security client and ble50 security server test for ESP32C2 26mhz xtal
 # EXAMPLE_CI_ID=6
-@pytest.mark.esp32c2
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config, erase_nvs', [
-        (2, 'esp32c2|esp32c2', '74880',
-         f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
-         'esp32c2_xtal26m', 'y'),
+    'count, target, baud, app_path, config, erase_nvs',
+    [
+        (
+            2,
+            'esp32c2|esp32c2',
+            '74880',
+            f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
+            'esp32c2_xtal26m',
+            'y',
+        ),
     ],
     indirect=True,
 )
 def test_c2_26mhz_xtal_ble50_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
-    client_addr = client.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
-    server_addr = server.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
+    client_addr = (
+        client.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
+    )
+    server_addr = (
+        server.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
+    )
 
     server.expect_exact('Extended advertising params set, status 0', timeout=30)
     server.expect_exact('Extended advertising data set, status 0', timeout=30)
@@ -83,21 +96,20 @@ def test_c2_26mhz_xtal_ble50_security_func(app_path: str, dut: Tuple[IdfDut, Idf
 
 # Case 3: period_adv and period_sync test
 # EXAMPLE_CI_ID=8
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32c5
-@pytest.mark.esp32h2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c61
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config, erase_nvs', [
-        (2,
-         f'{os.path.join(os.path.dirname(__file__), "periodic_adv")}|{os.path.join(os.path.dirname(__file__), "periodic_sync")}',
-         'name', 'y'),
+    'count, app_path, config, erase_nvs',
+    [
+        (
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "periodic_adv")}|{os.path.join(os.path.dirname(__file__), "periodic_sync")}',
+            'name',
+            'y',
+        ),
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61'], indirect=['target'])
 def test_period_adv_sync_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     adv_dut = dut[0]
     sync_dut = dut[1]
@@ -118,14 +130,19 @@ def test_period_adv_sync_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None
 
 # Case 4: period_adv and period_sync test for ESP32C2 26mhz xtal
 # EXAMPLE_CI_ID=8
-@pytest.mark.esp32c2
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config, erase_nvs', [
-        (2, 'esp32c2|esp32c2', '74880',
-         f'{os.path.join(os.path.dirname(__file__), "periodic_adv")}|{os.path.join(os.path.dirname(__file__), "periodic_sync")}',
-         'esp32c2_xtal26m', 'y'),
+    'count, target, baud, app_path, config, erase_nvs',
+    [
+        (
+            2,
+            'esp32c2|esp32c2',
+            '74880',
+            f'{os.path.join(os.path.dirname(__file__), "periodic_adv")}|{os.path.join(os.path.dirname(__file__), "periodic_sync")}',
+            'esp32c2_xtal26m',
+            'y',
+        ),
     ],
     indirect=True,
 )
@@ -149,26 +166,29 @@ def test_c2_26mhz_xtal_period_adv_sync_func(app_path: str, dut: Tuple[IdfDut, Id
 
 # Case 5: ble50 security client and ble50 security server config test
 # EXAMPLE_CI_ID=7
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32c5
-@pytest.mark.esp32h2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c61
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config, erase_nvs', [
-        (2,
-         f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
-         'cfg_test', 'y'),
+    'count, app_path, config, erase_nvs',
+    [
+        (
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
+            'cfg_test',
+            'y',
+        ),
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61'], indirect=['target'])
 def test_ble50_security_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
-    client_addr = client.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
-    server_addr = server.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
+    client_addr = (
+        client.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
+    )
+    server_addr = (
+        server.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
+    )
 
     server.expect_exact('Extended advertising params set, status 0', timeout=30)
     server.expect_exact('Extended advertising data set, status 0', timeout=30)
@@ -190,22 +210,31 @@ def test_ble50_security_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -
 
 # Case 6: ble50 security client and ble50 security server config test for ESP32C2 26mhz xtal
 # EXAMPLE_CI_ID=7
-@pytest.mark.esp32c2
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config, erase_nvs', [
-        (2, 'esp32c2|esp32c2', '74880',
-         f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
-         'esp32c2_cfg_test', 'y'),
+    'count, target, baud, app_path, config, erase_nvs',
+    [
+        (
+            2,
+            'esp32c2|esp32c2',
+            '74880',
+            f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
+            'esp32c2_cfg_test',
+            'y',
+        ),
     ],
     indirect=True,
 )
 def test_c2_26mhz_xtal_ble50_security_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
-    client_addr = client.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
-    server_addr = server.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
+    client_addr = (
+        client.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
+    )
+    server_addr = (
+        server.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
+    )
 
     server.expect_exact('Extended advertising params set, status 0', timeout=30)
     server.expect_exact('Extended advertising data set, status 0', timeout=30)

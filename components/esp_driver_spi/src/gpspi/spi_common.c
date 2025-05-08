@@ -5,8 +5,8 @@
  */
 
 #include <string.h>
+#include <stdatomic.h>
 #include "sdkconfig.h"
-#include "stdatomic.h"
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_check.h"
@@ -29,16 +29,26 @@
 #include "soc/dport_reg.h"
 #endif
 
+#if CONFIG_SPI_MASTER_ISR_IN_IRAM || CONFIG_SPI_SLAVE_ISR_IN_IRAM
+#define SPI_COMMON_ISR_ATTR IRAM_ATTR
+#else
+#define SPI_COMMON_ISR_ATTR
+#endif
+
+#if CONFIG_SPI_MASTER_ISR_IN_IRAM || CONFIG_SPI_SLAVE_ISR_IN_IRAM
+#define SPI_COMMON_MALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#else
+#define SPI_COMMON_MALLOC_CAPS    (MALLOC_CAP_DEFAULT)
+#endif
+
 static const char *SPI_TAG = "spi";
 
 #define SPI_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, SPI_TAG, str)
-
 #define SPI_CHECK_PIN(pin_num, pin_name, check_output) if (check_output) { \
             SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(pin_num), pin_name" not valid", ESP_ERR_INVALID_ARG); \
         } else { \
             SPI_CHECK(GPIO_IS_VALID_GPIO(pin_num), pin_name" not valid", ESP_ERR_INVALID_ARG); \
         }
-
 #define SPI_MAIN_BUS_DEFAULT() { \
         .host_id = 0, \
         .bus_attr = { \
@@ -66,7 +76,7 @@ static spicommon_bus_context_t* bus_ctx[SOC_SPI_PERIPH_NUM] = {&s_mainbus};
 static __attribute__((constructor)) void spi_bus_lock_init_main_bus(void)
 {
     /* Initialize bus context about the main SPI bus lock, called during chip startup. */
-    spi_bus_main_set_lock(g_main_spi_bus_lock);
+    bus_ctx[0]->bus_attr.lock = g_main_spi_bus_lock;
 }
 #endif
 
@@ -218,6 +228,9 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
     if (dma_chan == SPI_DMA_CH_AUTO) {
         gdma_channel_alloc_config_t tx_alloc_config = {
             .flags.reserve_sibling = 1,
+#if CONFIG_SPI_MASTER_ISR_IN_IRAM
+            .flags.isr_cache_safe = true,
+#endif
             .direction = GDMA_CHANNEL_DIRECTION_TX,
         };
         ESP_RETURN_ON_ERROR(SPI_GDMA_NEW_CHANNEL(&tx_alloc_config, &dma_ctx->tx_dma_chan), SPI_TAG, "alloc gdma tx failed");
@@ -225,6 +238,9 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
         gdma_channel_alloc_config_t rx_alloc_config = {
             .direction = GDMA_CHANNEL_DIRECTION_RX,
             .sibling_chan = dma_ctx->tx_dma_chan,
+#if CONFIG_SPI_MASTER_ISR_IN_IRAM
+            .flags.isr_cache_safe = true,
+#endif
         };
         ESP_RETURN_ON_ERROR(SPI_GDMA_NEW_CHANNEL(&rx_alloc_config, &dma_ctx->rx_dma_chan), SPI_TAG, "alloc gdma rx failed");
 
@@ -260,7 +276,7 @@ esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma
 #endif
 
     esp_err_t ret = ESP_OK;
-    spi_dma_ctx_t *dma_ctx = (spi_dma_ctx_t *)calloc(1, sizeof(spi_dma_ctx_t));
+    spi_dma_ctx_t *dma_ctx = (spi_dma_ctx_t *)heap_caps_calloc(1, sizeof(spi_dma_ctx_t), SPI_COMMON_MALLOC_CAPS);
     if (!dma_ctx) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
@@ -303,7 +319,7 @@ esp_err_t spicommon_dma_desc_alloc(spi_dma_ctx_t *dma_ctx, int cfg_max_sz, int *
     return ESP_OK;
 }
 
-void IRAM_ATTR spicommon_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx)
+void SPI_COMMON_ISR_ATTR spicommon_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx)
 {
     dmadesc = ADDR_DMA_2_CPU(dmadesc);
     int n = 0;
@@ -445,7 +461,7 @@ static void bus_iomux_pins_set_oct(spi_host_device_t host, const spi_bus_config_
         if (io_nums[i] > 0) {
             // In Octal mode use function channel 2
             gpio_iomux_input(io_nums[i], SPI2_FUNC_NUM_OCT, io_signals[i]);
-            gpio_iomux_output(io_nums[i], SPI2_FUNC_NUM_OCT, false);
+            gpio_iomux_output(io_nums[i], SPI2_FUNC_NUM_OCT);
         }
     }
 }
@@ -455,23 +471,23 @@ static void bus_iomux_pins_set_quad(spi_host_device_t host, const spi_bus_config
 {
     if (bus_config->mosi_io_num >= 0) {
         gpio_iomux_input(bus_config->mosi_io_num, spi_periph_signal[host].func, spi_periph_signal[host].spid_in);
-        gpio_iomux_output(bus_config->mosi_io_num, spi_periph_signal[host].func, false);
+        gpio_iomux_output(bus_config->mosi_io_num, spi_periph_signal[host].func);
     }
     if (bus_config->miso_io_num >= 0) {
         gpio_iomux_input(bus_config->miso_io_num, spi_periph_signal[host].func, spi_periph_signal[host].spiq_in);
-        gpio_iomux_output(bus_config->miso_io_num, spi_periph_signal[host].func, false);
+        gpio_iomux_output(bus_config->miso_io_num, spi_periph_signal[host].func);
     }
     if (bus_config->quadwp_io_num >= 0) {
         gpio_iomux_input(bus_config->quadwp_io_num, spi_periph_signal[host].func, spi_periph_signal[host].spiwp_in);
-        gpio_iomux_output(bus_config->quadwp_io_num, spi_periph_signal[host].func, false);
+        gpio_iomux_output(bus_config->quadwp_io_num, spi_periph_signal[host].func);
     }
     if (bus_config->quadhd_io_num >= 0) {
         gpio_iomux_input(bus_config->quadhd_io_num, spi_periph_signal[host].func, spi_periph_signal[host].spihd_in);
-        gpio_iomux_output(bus_config->quadhd_io_num, spi_periph_signal[host].func, false);
+        gpio_iomux_output(bus_config->quadhd_io_num, spi_periph_signal[host].func);
     }
     if (bus_config->sclk_io_num >= 0) {
         gpio_iomux_input(bus_config->sclk_io_num, spi_periph_signal[host].func, spi_periph_signal[host].spiclk_in);
-        gpio_iomux_output(bus_config->sclk_io_num, spi_periph_signal[host].func, false);
+        gpio_iomux_output(bus_config->sclk_io_num, spi_periph_signal[host].func);
     }
 }
 
@@ -733,7 +749,7 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
     if (!force_gpio_matrix && cs_io_num == spi_periph_signal[host].spics0_iomux_pin && cs_num == 0) {
         //The cs0s for all SPI peripherals map to pin mux source 1, so we use that instead of a define.
         gpio_iomux_input(cs_io_num, spi_periph_signal[host].func, spi_periph_signal[host].spics_in);
-        gpio_iomux_output(cs_io_num, spi_periph_signal[host].func, false);
+        gpio_iomux_output(cs_io_num, spi_periph_signal[host].func);
     } else {
         //Use GPIO matrix
         if (GPIO_IS_VALID_OUTPUT_GPIO(cs_io_num)) {
@@ -765,11 +781,6 @@ bool spicommon_bus_using_iomux(spi_host_device_t host)
     CHECK_IOMUX_PIN(host, spiwp);
     CHECK_IOMUX_PIN(host, spihd);
     return true;
-}
-
-void spi_bus_main_set_lock(spi_bus_lock_handle_t lock)
-{
-    bus_ctx[0]->bus_attr.lock = lock;
 }
 
 spi_bus_lock_handle_t spi_bus_lock_get_by_id(spi_host_device_t host_id)
@@ -815,7 +826,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     SPI_CHECK(spi_chan_claimed, "host_id already in use", ESP_ERR_INVALID_STATE);
 
     //clean and initialize the context
-    ctx = (spicommon_bus_context_t *)calloc(1, sizeof(spicommon_bus_context_t));
+    ctx = (spicommon_bus_context_t *)heap_caps_calloc(1, sizeof(spicommon_bus_context_t), SPI_COMMON_MALLOC_CAPS);
     if (!ctx) {
         err = ESP_ERR_NO_MEM;
         goto cleanup;
@@ -884,8 +895,14 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
 #endif  // SOC_SPI_SUPPORT_SLEEP_RETENTION
 
 #ifdef CONFIG_PM_ENABLE
+#if CONFIG_IDF_TARGET_ESP32P4
+    // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
+    err = esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "spi_master",
+                             &bus_attr->pm_lock);
+#else
     err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_master",
                              &bus_attr->pm_lock);
+#endif
     if (err != ESP_OK) {
         goto cleanup;
     }
@@ -1013,7 +1030,7 @@ static void *dmaworkaround_cb_arg;
 static portMUX_TYPE dmaworkaround_mux = portMUX_INITIALIZER_UNLOCKED;
 static int dmaworkaround_waiting_for_chan = 0;
 
-bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t cb, void *arg)
+bool SPI_COMMON_ISR_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t cb, void *arg)
 {
 
     int otherchan = (dmachan == 1) ? 2 : 1;
@@ -1036,12 +1053,12 @@ bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t
     return ret;
 }
 
-bool IRAM_ATTR spicommon_dmaworkaround_reset_in_progress(void)
+bool SPI_COMMON_ISR_ATTR spicommon_dmaworkaround_reset_in_progress(void)
 {
     return (dmaworkaround_waiting_for_chan != 0);
 }
 
-void IRAM_ATTR spicommon_dmaworkaround_idle(int dmachan)
+void SPI_COMMON_ISR_ATTR spicommon_dmaworkaround_idle(int dmachan)
 {
     portENTER_CRITICAL_ISR(&dmaworkaround_mux);
     dmaworkaround_channels_busy[dmachan - 1] = 0;
@@ -1058,7 +1075,7 @@ void IRAM_ATTR spicommon_dmaworkaround_idle(int dmachan)
     portEXIT_CRITICAL_ISR(&dmaworkaround_mux);
 }
 
-void IRAM_ATTR spicommon_dmaworkaround_transfer_active(int dmachan)
+void SPI_COMMON_ISR_ATTR spicommon_dmaworkaround_transfer_active(int dmachan)
 {
     portENTER_CRITICAL_ISR(&dmaworkaround_mux);
     dmaworkaround_channels_busy[dmachan - 1] = 1;

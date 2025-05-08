@@ -34,6 +34,7 @@ check_public_headers:
     - IDF_TARGET=esp32p4 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
     - IDF_TARGET=esp32c61 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
     - IDF_TARGET=esp32h21 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
+    - IDF_TARGET=esp32h4 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
 
 test_nvs_coverage:
   extends:
@@ -238,6 +239,7 @@ test_mqtt_on_host:
 
 test_transport_on_host:
   extends: .host_test_template
+  allow_failure: true # IDFCI-2781 [v5.5, v5.4] test_transport_on_host fails on ubuntu 24.04
   script:
     - cd ${IDF_PATH}/components/tcp_transport/host_test
     - idf.py build

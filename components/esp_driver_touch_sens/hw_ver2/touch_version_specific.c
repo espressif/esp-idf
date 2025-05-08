@@ -316,7 +316,7 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
     esp_sleep_pd_option_t slp_opt = ESP_PD_OPTION_AUTO;
 
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
     if (sleep_cfg) {
         ESP_GOTO_ON_FALSE(sleep_cfg->slp_wakeup_lvl == TOUCH_LIGHT_SLEEP_WAKEUP || sleep_cfg->slp_wakeup_lvl == TOUCH_DEEP_SLEEP_WAKEUP,
@@ -397,8 +397,7 @@ esp_err_t touch_sensor_config_waterproof(touch_sensor_handle_t sens_handle, cons
 
     esp_err_t ret = ESP_OK;
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
-
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
     if (wp_cfg) {
         ESP_GOTO_ON_FALSE(wp_cfg->shield_chan && wp_cfg->shield_chan->id == 14, ESP_ERR_INVALID_ARG, err, TAG, "Shield channel must be channel 14");
@@ -436,9 +435,7 @@ esp_err_t touch_sensor_config_proximity_sensing(touch_sensor_handle_t sens_handl
 
     esp_err_t ret = ESP_OK;
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
-
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
-
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
 
     /* Reset proximity sensing part of all channels */
@@ -469,7 +466,7 @@ esp_err_t touch_sensor_config_proximity_sensing(touch_sensor_handle_t sens_handl
     }
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
 
-err:
+    TOUCH_FSM_ERR_TAG(err)
     xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }
@@ -479,8 +476,7 @@ esp_err_t touch_sensor_config_denoise_channel(touch_sensor_handle_t sens_handle,
     TOUCH_NULL_POINTER_CHECK(sens_handle);
     esp_err_t ret = ESP_OK;
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
-
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
     if (denoise_cfg) {
         TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
@@ -499,7 +495,7 @@ esp_err_t touch_sensor_config_denoise_channel(touch_sensor_handle_t sens_handle,
         touch_ll_denoise_enable(false);
         TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
     }
-err:
+    TOUCH_FSM_ERR_TAG(err)
     xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }

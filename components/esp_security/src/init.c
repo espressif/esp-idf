@@ -58,6 +58,14 @@ ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
         }
     }
 #endif
+
+#if CONFIG_ESP_ECDSA_ENABLE_P192_CURVE
+    esp_err_t err = esp_efuse_enable_ecdsa_p192_curve_mode();
+    if (err != ESP_OK) {
+        return err;
+    }
+#endif
+
     return ESP_OK;
 }
 

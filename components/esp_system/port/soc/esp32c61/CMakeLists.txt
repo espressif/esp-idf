@@ -1,4 +1,3 @@
-# TODO: IDF-9526, refactor this
 set(srcs "clk.c"
          "reset_reason.c"
          "system_internal.c"

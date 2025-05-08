@@ -1,14 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
 #include <stdbool.h>
+#include <string.h>
 #include "soc/hwcrypto_reg.h"
 #include "hal/sha_types.h"
 #include "soc/dport_reg.h"
+#include "hal/mmu_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -135,11 +137,28 @@ static inline bool sha_ll_busy(void)
  */
 static inline void sha_ll_fill_text_block(const void *input_text, size_t block_word_len)
 {
-    uint32_t *data_words = (uint32_t *)input_text;
+    uint32_t input_word;
+    uint8_t *data_bytes = (uint8_t *)input_text;
     uint32_t *reg_addr_buf = (uint32_t *)(SHA_TEXT_BASE);
 
+    bool force_word_aligned_access = false;
+
+    /* In case of ESP32-S2, the DPORT bus region is word-aligned memory
+     * and does not support 8-bit accesses.
+     * Thus, when accessing data from these addresses we need to ensure
+     * the operations are word-aligned.
+     */
+    if (mmu_ll_vaddr_in_dport_bus_region((uint32_t)input_text)) {
+        force_word_aligned_access = true;
+    }
+
     for (size_t i = 0; i < block_word_len; i++) {
-        REG_WRITE(&reg_addr_buf[i], data_words[i]);
+        if (force_word_aligned_access) {
+            memcpy(&input_word, data_bytes + 4 * i, 4);
+            REG_WRITE(&reg_addr_buf[i], input_word);
+        } else {
+            REG_WRITE(&reg_addr_buf[i], *((uint32_t *)data_bytes + i));
+        }
     }
 }
 

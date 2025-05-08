@@ -10,6 +10,6 @@ endif()
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(
     SRCS ${srcs}
-    PRIV_REQUIRES unity esp_driver_pcnt esp_driver_ledc esp_driver_gpio esp_timer esp_psram
+    PRIV_REQUIRES unity esp_driver_ledc esp_driver_gpio esp_timer esp_psram esp_driver_uart
     WHOLE_ARCHIVE
 )

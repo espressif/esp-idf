@@ -204,6 +204,7 @@ extern "C" {
     .sample_rate_hz = rate, \
     .clk_src = I2S_CLK_SRC_DEFAULT, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
+    .bclk_div = 8, \
 }
 #else
 /**
@@ -215,8 +216,9 @@ extern "C" {
 #define I2S_STD_CLK_DEFAULT_CONFIG(rate) { \
     .sample_rate_hz = rate, \
     .clk_src = I2S_CLK_SRC_DEFAULT, \
-    .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
     .ext_clk_freq_hz = 0, \
+    .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
+    .bclk_div = 8, \
 }
 #endif
 
@@ -265,6 +267,7 @@ typedef struct {
                                                  *   but please set this field a multiple of `3` (like 384) when using 24-bit data width,
                                                  *   otherwise the sample rate might be inaccurate
                                                  */
+    uint32_t                bclk_div;           /*!< The division from MCLK to BCLK, only take effect for slave role, it shouldn't be smaller than 8. Increase this field when data sent by slave lag behind */
 } i2s_std_clk_config_t;
 
 /**

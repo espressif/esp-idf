@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -380,6 +380,20 @@ static inline void seg_tx_complete(struct seg_tx *tx, int err)
 
 static void schedule_retransmit(struct seg_tx *tx)
 {
+    /* It's possible that a segment broadcast hasn't finished,
+     * but the tx are already released. Only the seg_pending
+     * of this segment remains unprocessed. So, here, we
+     * determine if the tx are released by checking if the
+     * destination (dst) is unassigned, and then process
+     * the seg_pending of this segment.
+     * See BLEMESH25-92 for details */
+    if (tx->dst == BLE_MESH_ADDR_UNASSIGNED) {
+        if (tx->seg_pending) {
+            tx->seg_pending--;
+        }
+        return;
+    }
+
     if (--tx->seg_pending) {
         return;
     }
@@ -504,7 +518,15 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
            net_tx->aszmic, sdu->len);
 
     for (tx = NULL, i = 0; i < ARRAY_SIZE(seg_tx); i++) {
-        if (!seg_tx[i].nack_count) {
+        if (!seg_tx[i].nack_count &&
+            /* In some critical conditions, the tx might be
+             * reset before a segment broadcast is finished.
+             * If this happens, the seg_pending of the segment
+             * hasn't been processed. To avoid assigning this
+             * uncleared tx to a new message, extra checks for
+             * seg_pending being 0 are added. See BLEMESH25-92
+             * for details.*/
+            !seg_tx[i].seg_pending) {
             tx = &seg_tx[i];
             break;
         }

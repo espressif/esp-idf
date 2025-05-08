@@ -27,3 +27,6 @@ Test Case Filters:
     # This example will include all tests containing 'test_hello_world' in the name,
     # and include all tests containing 'test_sdm' but not 'sdmmc' in the name.
 ``` --><!-- Optional -->
+
+<!-- Don't remove the next line - assigns the MR author as the assignee -->
+/assign me

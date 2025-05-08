@@ -882,7 +882,7 @@ static int uart_tcgetattr(int fd, struct termios *p)
     }
 
     {
-        uint32_t baudrate;
+        uint32_t baudrate = 0;
         if (uart_get_baudrate(fd, &baudrate) != ESP_OK) {
             errno = EINVAL;
             return -1;

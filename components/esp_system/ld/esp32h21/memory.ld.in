@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* TODO: [ESP32H21] IDF-11900, IDF-11908 */
 
 /**
  *                    ESP32-H21 Linker Script Memory Layout
@@ -63,7 +62,7 @@ MEMORY
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
   /**
-   * lp ram memory (RWX). Persists over deep sleep. // ESP32H21-TODO IDF-11899
+   * lp ram memory (RWX). Persists over deep sleep.
    */
   lp_ram_seg(RW)  :                org = 0x50000000, len = 0x1000 - RESERVE_RTC_MEM
 
@@ -85,7 +84,8 @@ _data_seg_org = ORIGIN(rtc_data_seg);
 
 /**
  *  The lines below define location alias for .rtc.data section
- *  As H21 only has RTC fast memory, this is not configurable like on other targets
+ *  H21 has no distinguished LP(RTC) fast and slow memory sections, instead, there is a unified LP_RAM section
+ *  Thus, the following region segments are not configurable like on other targets
  */
 REGION_ALIAS("rtc_iram_seg", lp_ram_seg );
 REGION_ALIAS("rtc_data_seg", rtc_iram_seg );

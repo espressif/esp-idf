@@ -22,4 +22,13 @@ menu "ESP-Driver:Touch Sensor Configurations"
             Whether to enable the debug log message for touch driver.
             Note that, this option only controls the touch driver log, won't affect other drivers.
 
+    config TOUCH_SKIP_FSM_CHECK
+        bool "Skip the FSM check"
+        default n
+        help
+            If skipped the FSM check, the driver will allow to re-configure the touch sensor during the runtime.
+            It is mainly used to tune the parameters in the runtime to find a proper set of touch parameters.
+            CAUTION: Not suggest to enable this option in the final product, it might cause false triggering
+            which is not safe in the actual environment.
+
 endmenu # Touch Sensor Configuration

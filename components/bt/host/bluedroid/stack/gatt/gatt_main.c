@@ -502,7 +502,7 @@ static void gatt_le_connect_cback (UINT16 chan, BD_ADDR bd_addr, BOOLEAN connect
 #endif  ///GATTS_INCLUDED == TRUE
                 }
             } else {
-                GATT_TRACE_ERROR("CCB max out, no rsources");
+                GATT_TRACE_ERROR("CCB max out, no resources");
             }
         }
     } else {
@@ -929,18 +929,23 @@ static void gatt_send_conn_cback(tGATT_TCB *p_tcb)
 {
     UINT8               i;
     tGATT_REG           *p_reg;
+#if (tGATT_BG_CONN_DEV == TRUE)
     tGATT_BG_CONN_DEV   *p_bg_dev = NULL;
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
     UINT16              conn_id;
 
+#if (tGATT_BG_CONN_DEV == TRUE)
     p_bg_dev = gatt_find_bg_dev(p_tcb->peer_bda);
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
 
     /* notifying all applications for the connection up event */
     for (i = 0,  p_reg = gatt_cb.cl_rcb ; i < GATT_MAX_APPS; i++, p_reg++) {
         if (p_reg->in_use) {
+#if (tGATT_BG_CONN_DEV == TRUE)
             if (p_bg_dev && gatt_is_bg_dev_for_app(p_bg_dev, p_reg->gatt_if)) {
                 gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, TRUE, TRUE);
             }
-
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
             if (p_reg->app_cb.p_conn_cb) {
                 conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
                 (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, p_tcb->peer_bda, conn_id,
@@ -1239,7 +1244,8 @@ uint8_t gatt_tcb_active_count(void)
 
     for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
         p_tcb = list_node(p_node);
-        if (p_tcb && p_tcb->in_use && (p_tcb->ch_state != GATT_CH_CLOSE)) {
+        if (p_tcb && p_tcb->in_use && (p_tcb->transport == BT_TRANSPORT_LE) &&
+            (p_tcb->ch_state != GATT_CH_CLOSE)) {
             count++;
         }
     }

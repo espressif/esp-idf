@@ -125,7 +125,7 @@ static void example_tee_sec_stg_sign_verify(void *pvParameter)
     }
 
     esp_tee_sec_storage_sign_t sign = {};
-    err = esp_tee_sec_storage_get_signature(KEY_SLOT_ID, msg_digest, sizeof(msg_digest), &sign);
+    err = esp_tee_sec_storage_get_signature(KEY_SLOT_ID, ESP_SEC_STG_KEY_ECDSA_SECP256R1, msg_digest, sizeof(msg_digest), &sign);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate signature!");
         goto exit;
@@ -134,7 +134,7 @@ static void example_tee_sec_stg_sign_verify(void *pvParameter)
     ESP_LOG_BUFFER_HEX("Signature", &sign, sizeof(sign));
 
     esp_tee_sec_storage_pubkey_t pubkey = {};
-    err = esp_tee_sec_storage_get_pubkey(KEY_SLOT_ID, &pubkey);
+    err = esp_tee_sec_storage_get_pubkey(KEY_SLOT_ID, ESP_SEC_STG_KEY_ECDSA_SECP256R1, &pubkey);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to fetch public-key!");
         goto exit;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,10 @@ const static char *TAG = "test_ds";
 #include "esp32c5/rom/digital_signature.h"
 #include "esp32c5/rom/aes.h"
 #include "esp32c5/rom/sha.h"
+#elif CONFIG_IDF_TARGET_ESP32H21
+#include "esp32h21/rom/digital_signature.h"
+#include "esp32h21/rom/aes.h"
+#include "esp32h21/rom/sha.h"
 #endif
 
 #define ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL           (0x1) /*!< HMAC peripheral problem */

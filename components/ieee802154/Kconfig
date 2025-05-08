@@ -75,7 +75,7 @@ menu "IEEE 802.15.4"
     config IEEE802154_TIMING_OPTIMIZATION
         bool "Enable throughput optimization"
         depends on IEEE802154_ENABLED
-        default n
+        default y
         help
             Enabling this option increases throughput by ~5% at the expense of ~2.1k
             IRAM code size increase.
@@ -96,6 +96,15 @@ menu "IEEE 802.15.4"
         help
             Enabling this option allows different kinds of IEEE802154 debug output.
             All IEEE802154 debug features increase the size of the final binary.
+
+    config IEEE802154_DEBUG_ASSERT_MONITOR
+        bool "Enable IEEE802154 assert monitor"
+        depends on IEEE802154_ENABLED
+        default n
+        help
+            Enabling this option to monitor and detect certain abnormal or unexpected
+            states during the operation of the IEEE 802.15.4. When this option is enabled,
+            it will perform additional runtime checks and assertions.
 
     config IEEE802154_RX_BUFFER_STATISTIC
         bool "Rx buffer statistic"
@@ -181,10 +190,26 @@ menu "IEEE 802.15.4"
         help
             set the record abort table size
 
+    config IEEE802154_RECORD_TXRX_FRAME
+        bool "Enable record txrx packets for debugging"
+        depends on IEEE802154_DEBUG
+        default n
+        help
+            Enabling this option to record the tx and rx packets
+
+    config IEEE802154_RECORD_TXRX_FRAME_SIZE
+        int "Record frame table size"
+        depends on IEEE802154_RECORD_TXRX_FRAME
+        range 1 50
+        default 15
+        help
+            set the record frame table size
+
     config IEEE802154_TXRX_STATISTIC
         bool "Enable record tx/rx packets information for debugging"
         depends on IEEE802154_DEBUG
         default n
         help
             Enabling this option to record the tx and rx
+
 endmenu  # IEEE 802.15.4

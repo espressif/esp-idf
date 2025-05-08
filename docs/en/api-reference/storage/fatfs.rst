@@ -20,7 +20,9 @@ The function :cpp:func:`esp_vfs_fat_unregister_path` deletes the registration wi
 
 Most applications use the following workflow when working with ``esp_vfs_fat_`` functions:
 
-#. Call :cpp:func:`esp_vfs_fat_register` to specify:
+#.
+   Call :cpp:func:`esp_vfs_fat_register` to specify:
+
     - Path prefix where to mount the filesystem (e.g., ``"/sdcard"``, ``"/spiflash"``)
     - FatFs drive number
     - A variable which receives the pointer to the ``FATFS`` structure
@@ -43,10 +45,11 @@ Most applications use the following workflow when working with ``esp_vfs_fat_`` 
 
 The convenience functions :cpp:func:`esp_vfs_fat_sdmmc_mount`, :cpp:func:`esp_vfs_fat_sdspi_mount`, and :cpp:func:`esp_vfs_fat_sdcard_unmount` wrap the steps described above and also handle SD card initialization. These functions are described in the next section.
 
-.. note::
+Differences from the POSIX Standard
+-----------------------------------
 
-   Because FAT filesystem does not support hardlinks, :cpp:func:`link` copies contents of the file instead. (This only applies to files on FatFs volumes.)
-
+#. :cpp:func:`link`: Because FAT filesystem does not support hardlinks, :cpp:func:`link` copies contents of the file instead. (This only applies to files on FatFs volumes.)
+#. :cpp:func:`unlink`: Attempting to remove an open file will fail with ``EBUSY`` when ``CONFIG_FATFS_FS_LOCK`` is enabled. Otherwise, the behavior is undefined and may cause file system corruption.
 
 .. _using-fatfs-with-vfs-and-sdcards:
 
@@ -69,8 +72,17 @@ Configuration options
 The following configuration options are available for the FatFs component:
 
 * :ref:`CONFIG_FATFS_USE_FASTSEEK` - If enabled, the POSIX :cpp:func:`lseek` function will be performed faster. The fast seek does not work for files in write mode, so to take advantage of fast seek, you should open (or close and then reopen) the file in read-only mode.
-* :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC` - If enabled, the FatFs will automatically call :cpp:func:`f_sync` to flush recent file changes after each call of :cpp:func:`write`, :cpp:func:`pwrite`, :cpp:func:`link`, :cpp:func:`truncate` and :cpp:func:`ftruncate` functions. This feature improves file-consistency and size reporting accuracy for the FatFs, at a price on decreased performance due to frequent disk operations.
+* :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC` - If enabled, the FatFs will automatically call :cpp:func:`f_sync` to flush recent file changes after each call of :cpp:func:`write`, :cpp:func:`pwrite`, :cpp:func:`link`, :cpp:func:`truncate` and :cpp:func:`ftruncate` functions. This feature improves file-consistency and size reporting accuracy for the FatFs, at a price of decreased performance due to frequent disk operations.
 * :ref:`CONFIG_FATFS_LINK_LOCK` - If enabled, this option guarantees the API thread safety, while disabling this option might be necessary for applications that require fast frequent small file operations (e.g., logging to a file). Note that if this option is disabled, the copying performed by :cpp:func:`link` will be non-atomic. In such case, using :cpp:func:`link` on a large file on the same volume in a different task is not guaranteed to be thread safe.
+
+These options set a behavior of how the FatFs filesystem calculates and reports free space:
+
+* :ref:`CONFIG_FATFS_DONT_TRUST_FREE_CLUSTER_CNT` - If 1, free cluster count will be ignored. Default value is 0.
+* :ref:`CONFIG_FATFS_DONT_TRUST_LAST_ALLOC` - If 1, last allocation number will be ignored. Default value is 0.
+
+.. note::
+
+    Setting these options to 1 may increase the accuracy of :cpp:func:`f_getfree` output at a price of decreased performance, e.g., due to performing full FAT scan.
 
 
 .. _fatfs-diskio-layer:

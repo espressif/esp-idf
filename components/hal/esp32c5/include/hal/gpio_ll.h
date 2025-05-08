@@ -37,6 +37,8 @@ extern "C" {
 
 #define GPIO_LL_PRO_CPU_INTR_ENA      (BIT(0))
 
+#define GPIO_LL_INTR_SOURCE0   ETS_GPIO_INTR_SOURCE
+
 /**
  * @brief Get the configuration for an IO
  *
@@ -50,6 +52,8 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num, gpio
     io_config->pd = IO_MUX.gpio[gpio_num].fun_wpd;
     io_config->ie = IO_MUX.gpio[gpio_num].fun_ie;
     io_config->oe = (hw->enable.val & (1 << gpio_num)) >> gpio_num;
+    io_config->oe_ctrl_by_periph = !(hw->func_out_sel_cfg[gpio_num].oen_sel);
+    io_config->oe_inv = hw->func_out_sel_cfg[gpio_num].oen_inv_sel;
     io_config->od = hw->pin[gpio_num].pad_driver;
     io_config->drv = (gpio_drive_cap_t)IO_MUX.gpio[gpio_num].fun_drv;
     io_config->fun_sel = IO_MUX.gpio[gpio_num].mcu_sel;
@@ -257,7 +261,7 @@ static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
 static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     // On ESP32C5, there is an efuse bit that controls the hysteresis enable or not for all IOs.
-    // We are not going to use the hardware control in IDF for C5.
+    // We are not going to use the hardware control for C5.
     // Therefore, we need to always switch to use software control first.
     // i.e. Swt hys_sel to 1, so that hys_en determines whether hysteresis is enabled or not
     IO_MUX.gpio[gpio_num].hys_sel = 1;
@@ -483,23 +487,8 @@ static inline void gpio_ll_set_input_signal_from(gpio_dev_t *hw, uint32_t signal
   */
 static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
 {
-    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
+    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;       // control valid only when using gpio matrix to route signal to the IO
     hw->func_out_sel_cfg[gpio_num].oen_sel = !ctrl_by_periph;
-}
-
-/**
- * @brief  Select a function for the pin in the IOMUX
- *
- * @param  pin_name Pin name to configure
- * @param  func Function to assign to the pin
- */
-static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
-{
-    // Disable USB Serial JTAG if pins 13 or pins 14 needs to select an IOMUX function
-    if (pin_name == IO_MUX_GPIO13_REG || pin_name == IO_MUX_GPIO14_REG) {
-        USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
-    }
-    PIN_FUNC_SELECT(pin_name, func);
 }
 
 /**

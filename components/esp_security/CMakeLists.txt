@@ -29,8 +29,13 @@ if(NOT non_os_build)
         list(APPEND srcs "src/esp_dpa_protection.c")
     endif()
 
-    list(APPEND srcs "src/esp_crypto_lock.c")
+    list(APPEND srcs "src/esp_crypto_lock.c" "src/esp_crypto_periph_clk.c")
     list(APPEND priv_requires efuse esp_hw_support esp_system esp_timer)
+elseif(esp_tee_build)
+    list(APPEND srcs "src/esp_crypto_lock.c" "src/esp_crypto_periph_clk.c"
+                     "src/esp_hmac.c" "src/esp_ds.c")
+    list(APPEND includes "src/${IDF_TARGET}")
+    list(APPEND priv_requires esp_hw_support)
 endif()
 
 idf_component_register(SRCS ${srcs}
@@ -40,4 +45,6 @@ idf_component_register(SRCS ${srcs}
 
 if(NOT non_os_build)
     target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_security_init_include_impl")
+elseif(esp_tee_build)
+    target_link_libraries(${COMPONENT_LIB} PRIVATE idf::efuse)
 endif()

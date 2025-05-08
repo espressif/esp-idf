@@ -242,7 +242,7 @@ BOOLEAN L2CA_EnableUpdateBleConnParams (BD_ADDR rem_bda, BOOLEAN enable)
         return (FALSE);
     }
     bool is_disable = (p_lcb->conn_update_mask & L2C_BLE_CONN_UPDATE_DISABLE);
-    if(l2cu_plcb_active_count() >1 && !(enable && is_disable)) {
+    if(l2cu_ble_plcb_active_count() >1 && !(enable && is_disable)) {
         return FALSE;
     }
 
@@ -1073,11 +1073,11 @@ BOOLEAN l2cble_create_conn (tL2C_LCB *p_lcb)
         L2CAP_TRACE_WARNING ("L2CAP - LE - cannot start new connection at conn st: %d", conn_st);
 
         btm_ble_enqueue_direct_conn_req(p_lcb);
-
+#if (tGATT_BG_CONN_DEV == TRUE)
         if (conn_st == BLE_BG_CONN) {
             btm_ble_suspend_bg_conn();
         }
-
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
         rt = TRUE;
     }
     return rt;

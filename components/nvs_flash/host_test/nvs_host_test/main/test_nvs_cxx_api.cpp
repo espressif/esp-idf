@@ -11,6 +11,8 @@
 #include "test_fixtures.hpp"
 #include <iostream>
 
+using namespace std;
+
 TEST_CASE("NVSHandleSimple CXX api open invalid arguments", "[nvs cxx]")
 {
     const uint32_t NVS_FLASH_SECTOR = 6;

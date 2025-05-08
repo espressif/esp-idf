@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,8 @@
 #include "esp_local_ctrl.pb-c.h"
 
 #define ESP_LOCAL_CTRL_VERSION "v1.0"
+/* JSON format string for version endpoint */
+#define ESP_LOCAL_CTRL_VER_FMT_STR "{\"local_ctrl\":{\"ver\":\"%s\",\"sec_ver\":%d,\"sec_patch_ver\":%d}}"
 
 struct inst_ctx {
     protocomm_t *pc;
@@ -136,14 +138,6 @@ esp_err_t esp_local_ctrl_start(const esp_local_ctrl_config_t *config)
         }
     }
 
-    ret = protocomm_set_version(local_ctrl_inst_ctx->pc, "esp_local_ctrl/version",
-                                ESP_LOCAL_CTRL_VERSION);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set version endpoint");
-        esp_local_ctrl_stop();
-        return ret;
-    }
-
     protocomm_security_t *proto_sec_handle = NULL;
     switch (local_ctrl_inst_ctx->config.proto_sec.version) {
         case PROTOCOM_SEC_CUSTOM:
@@ -179,6 +173,29 @@ esp_err_t esp_local_ctrl_start(const esp_local_ctrl_config_t *config)
                                  proto_sec_handle, local_ctrl_inst_ctx->config.proto_sec.sec_params);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set session endpoint");
+        esp_local_ctrl_stop();
+        return ret;
+    }
+
+    int sec_ver = 0;
+    uint8_t sec_patch_ver = 0;
+    protocomm_get_sec_version(local_ctrl_inst_ctx->pc, &sec_ver, &sec_patch_ver);
+
+    const int rsize = snprintf(NULL, 0, ESP_LOCAL_CTRL_VER_FMT_STR, ESP_LOCAL_CTRL_VERSION, sec_ver, sec_patch_ver) + 1;
+    char *ver_str = malloc(rsize);
+    if (!ver_str) {
+        ESP_LOGE(TAG, "Failed to allocate memory for version string");
+        esp_local_ctrl_stop();
+        return ESP_ERR_NO_MEM;
+    }
+    snprintf(ver_str, rsize, ESP_LOCAL_CTRL_VER_FMT_STR, ESP_LOCAL_CTRL_VERSION, sec_ver, sec_patch_ver);
+
+    ESP_LOGD(TAG, "ver_str: %s", ver_str);
+    ret = protocomm_set_version(local_ctrl_inst_ctx->pc, "esp_local_ctrl/version",
+                                ver_str);
+    free(ver_str);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set version endpoint");
         esp_local_ctrl_stop();
         return ret;
     }

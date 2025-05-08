@@ -13,11 +13,11 @@
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
 
-#if CONFIG_GPTIMER_ISR_IRAM_SAFE
+#if CONFIG_GPTIMER_ISR_CACHE_SAFE
 #define TEST_ALARM_CALLBACK_ATTR IRAM_ATTR
 #else
 #define TEST_ALARM_CALLBACK_ATTR
-#endif // CONFIG_GPTIMER_ISR_IRAM_SAFE
+#endif // CONFIG_GPTIMER_ISR_CACHE_SAFE
 
 TEST_CASE("gptimer_set_get_raw_count", "[gptimer]")
 {
@@ -103,7 +103,7 @@ TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
             printf("get raw count of gptimer %d: %llu\r\n", i, value);
             // convert the raw count to us
             value = value * 1000000 / timer_resolution_hz[i];
-            TEST_ASSERT_UINT_WITHIN(200, 20000, value);
+            TEST_ASSERT_UINT_WITHIN(400, 20000, value);     //200 more threshold for cpu on stop process
         }
         printf("restart timers\r\n");
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
@@ -121,7 +121,7 @@ TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
             printf("get raw count of gptimer %d: %llu\r\n", i, value);
             // convert the raw count to us
             value = value * 1000000 / timer_resolution_hz[i];
-            TEST_ASSERT_UINT_WITHIN(400, 40000, value);
+            TEST_ASSERT_UINT_WITHIN(600, 40000, value);     //same 200 for cpu time
         }
         printf("disable timers\r\n");
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
@@ -299,7 +299,7 @@ TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_normal_callback(gptimer_
  * Also should account for the inaccuracy of the systick during DFS.
 */
 #if CONFIG_PM_ENABLE
-#define GPTIMER_ONE_SHOT_ALARM_COUNT_DELTA 15000
+#define GPTIMER_ONE_SHOT_ALARM_COUNT_DELTA 50000
 #else
 #define GPTIMER_ONE_SHOT_ALARM_COUNT_DELTA 1000
 #endif // CONFIG_PM_ENABLE

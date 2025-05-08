@@ -121,6 +121,9 @@ Event Handler Example
                     case ESP_HTTPS_OTA_VERIFY_CHIP_ID:
                         ESP_LOGI(TAG, "Verifying chip id of new image: %d", *(esp_chip_id_t *)event_data);
                         break;
+                    case ESP_HTTPS_OTA_VERIFY_CHIP_REVISION:
+                        ESP_LOGI(TAG, "Verifying chip revision of new image: %d", *(uint16_t *)event_data);
+                        break;
                     case ESP_HTTPS_OTA_DECRYPT_CB:
                         ESP_LOGI(TAG, "Callback to decrypt function");
                         break;
@@ -146,6 +149,7 @@ Expected data type for different ESP HTTPS OTA events in the system event loop:
     - ESP_HTTPS_OTA_CONNECTED                 : ``NULL``
     - ESP_HTTPS_OTA_GET_IMG_DESC              : ``NULL``
     - ESP_HTTPS_OTA_VERIFY_CHIP_ID            : ``esp_chip_id_t``
+    - ESP_HTTPS_OTA_VERIFY_CHIP_REVISION      : ``uint16_t``
     - ESP_HTTPS_OTA_DECRYPT_CB                : ``NULL``
     - ESP_HTTPS_OTA_WRITE_FLASH               : ``int``
     - ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION     : ``esp_partition_subtype_t``

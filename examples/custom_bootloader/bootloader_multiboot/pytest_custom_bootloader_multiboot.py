@@ -1,13 +1,13 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.app import IdfApp
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32c3', 'esp32s3'], indirect=['target'])
 def test_custom_bootloader_multiboot_example(app: IdfApp, dut: Dut) -> None:
     # Expect to see all three partitions in the list
     dut.expect_exact('default')

@@ -1853,7 +1853,11 @@ At the start of `Interval` time, RF, PHY, BB would be turned on and kept for `Wi
 
  - Event `WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START`_ would be posted at the start of `Interval`. Since `Window` also starts at that moment, its recommended to TX in that event.
 
- - At connected state, the start of `Interval` would be aligned with TBTT.
+ - At connected state, the start of `Interval` would be aligned with TBTT. To improve the packet reception success rate in connectionless modules, the sender and receiver can be connected to the same AP, and packets can be transmitted within the event `WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START`_. This synchronization helps align the connectionless modules transmission window.
+
+ .. only:: esp32
+
+    On the ESP32, TBTT timing is affected by DFS(Dynamic Frequency Scaling). To synchronize the connectionless modules transmission window using TBTT on the ESP32, DFS must be disabled.
 
 **Window**
 
@@ -2023,6 +2027,94 @@ The table below shows the best throughput results gained in Espressif's lab and 
 
     When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c3`.
 
+.. only:: esp32c5
+
+    - 2.4 GHz band
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - Type/Throughput
+          - Air In Lab
+          - Shield-box
+          - Test Tool
+          - IDF Version (commit ID)
+        * - Raw 802.11 Packet RX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - Raw 802.11 Packet TX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - UDP RX
+          - 30 MBit/s
+          - 68 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - UDP TX
+          - 30 MBit/s
+          - 63 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP RX
+          - 20 MBit/s
+          - 59 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP TX
+          - 20 MBit/s
+          - 49 MBit/s
+          - iperf example
+          - 7ff0a07d
+
+    - 5 GHz band
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - Type/Throughput
+          - Air In Lab
+          - Shield-box
+          - Test Tool
+          - IDF Version (commit ID)
+        * - Raw 802.11 Packet RX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - Raw 802.11 Packet TX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - UDP RX
+          - 30 MBit/s
+          - 71 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - UDP TX
+          - 30 MBit/s
+          - 64 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP RX
+          - 20 MBit/s
+          - 61 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP TX
+          - 20 MBit/s
+          - 50 MBit/s
+          - iperf example
+          - 7ff0a07d
+
+    When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c5`.
+
 .. only:: esp32c6
 
      .. list-table::
@@ -2046,26 +2138,70 @@ The table below shows the best throughput results gained in Espressif's lab and 
           - NA
         * - UDP RX
           - 30 MBit/s
-          - 45 MBit/s
+          - 63 MBit/s
           - iperf example
-          - 420ebd20
+          - 7ff0a07d
         * - UDP TX
           - 30 MBit/s
-          - 40 MBit/s
+          - 51 MBit/s
           - iperf example
-          - 420ebd20
+          - 7ff0a07d
         * - TCP RX
           - 20 MBit/s
-          - 30 MBit/s
+          - 46 MBit/s
           - iperf example
-          - 420ebd20
+          - 7ff0a07d
         * - TCP TX
           - 20 MBit/s
-          - 31 MBit/s
+          - 43 MBit/s
           - iperf example
-          - 420ebd20
+          - 7ff0a07d
 
     When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c6`.
+
+.. only:: esp32c61
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - Type/Throughput
+          - Air In Lab
+          - Shield-box
+          - Test Tool
+          - IDF Version (commit ID)
+        * - Raw 802.11 Packet RX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - Raw 802.11 Packet TX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - UDP RX
+          - 30 MBit/s
+          - 68 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - UDP TX
+          - 30 MBit/s
+          - 53 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP RX
+          - 20 MBit/s
+          - 45 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP TX
+          - 20 MBit/s
+          - 37 MBit/s
+          - iperf example
+          - 7ff0a07d
+
+    When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c61`.
 
 .. only:: esp32s3
 
@@ -2281,7 +2417,7 @@ Wi-Fi HT20/40
 
     In station/AP coexist mode, the station/AP can configure HT20/40 separately. If both station and AP are negotiated to HT40, the HT40 channel should be the channel of station because the station always has higher priority than AP in {IDF_TARGET_NAME}. For example, the configured bandwidth of AP is HT40, the configured primary channel is 6, and the configured secondary channel is 10. The station is connected to an router whose primary channel is 6 and secondary channel is 2, then the actual channel of AP is changed to primary 6 and secondary 2 automatically.
 
-    Theoretically, the HT40 can gain better throughput because the maximum raw physicial (PHY) data rate for HT40 is 150 Mbps while it is 72 Mbps for HT20. However, if the device is used in some special environment, e.g., there are too many other Wi-Fi devices around the {IDF_TARGET_NAME} device, the performance of HT40 may be degraded. So if the applications need to support same or similar scenarios, it is recommended that the bandwidth is always configured to HT20.
+    Theoretically, the HT40 can gain better throughput because the maximum raw physical (PHY) data rate for HT40 is 150 Mbps while it is 72 Mbps for HT20. However, if the device is used in some special environment, e.g., there are too many other Wi-Fi devices around the {IDF_TARGET_NAME} device, the performance of HT40 may be degraded. So if the applications need to support same or similar scenarios, it is recommended that the bandwidth is always configured to HT20.
 
 .. only:: esp32c2
 

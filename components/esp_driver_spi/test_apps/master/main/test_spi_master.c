@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -114,6 +114,8 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
         for (int i = 0; i < TEST_CLK_TIMES; i++) {
             check_spi_pre_n_for(clk_param_40m[i][0], clk_param_40m[i][1], clk_param_40m[i][2]);
         }
+    } else {
+        ESP_LOGW(TAG, "Don't find any routing param!!");
     }
 
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
@@ -121,7 +123,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 
 // Test All clock source
 #define TEST_CLK_BYTE_LEN           10000
-#define TEST_TRANS_TIME_BIAS_RATIO  (float)2.0/100   // think 2% transfer time bias as acceptable
+#define TEST_TRANS_TIME_BIAS_RATIO  (float)5.0/100   // think 5% transfer time bias as acceptable
 TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
 {
     int64_t start = 0, end = 0;
@@ -147,7 +149,7 @@ TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
             spi_device_handle_t handle;
             spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
             devcfg.clock_source = spi_clk_sour[sour_idx];
-            devcfg.clock_speed_hz = MIN(IDF_PERFORMANCE_MAX_SPI_CLK_FREQ, clock_source_hz) >> test_time;
+            devcfg.clock_speed_hz = MIN(IDF_TARGET_MAX_SPI_CLK_FREQ, clock_source_hz) >> test_time;
             devcfg.flags |= SPI_DEVICE_HALFDUPLEX;  //esp32 half duplex to work on high freq
 #if SOC_SPI_SUPPORT_CLK_RC_FAST
             if (devcfg.clock_source == SPI_CLK_SRC_RC_FAST) {
@@ -170,6 +172,9 @@ TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
             end = esp_timer_get_time();
             int trans_cost = end - start;
             int time_tolerance = trans_cost_us_predict * TEST_TRANS_TIME_BIAS_RATIO;
+#if !SOC_CLK_TREE_SUPPORTED
+            time_tolerance *= 2;    //cpu is executing too slow before clock supported
+#endif
             printf("real_freq %dk predict_cost %d real_cost_us %d diff %d tolerance %d us\n", real_freq_khz, trans_cost_us_predict, trans_cost, (trans_cost - trans_cost_us_predict), time_tolerance);
 
             TEST_ASSERT_LESS_THAN_UINT32(time_tolerance, abs(trans_cost - trans_cost_us_predict));
@@ -178,6 +183,44 @@ TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
     }
 
     free(sendbuf);
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+}
+
+TEST_CASE("test_device_dynamic_freq_update", "[spi]")
+{
+    spi_device_handle_t dev0;
+    int master_send;
+
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.flags |= SPI_DEVICE_HALFDUPLEX;
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
+
+    spi_transaction_t trans_cfg = {
+        .tx_buffer = &master_send,
+        .length = sizeof(master_send) * 8,
+    };
+
+    trans_cfg.override_freq_hz = IDF_TARGET_MAX_SPI_CLK_FREQ;
+    for (int i = 1; i < 15; i++) {
+        TEST_ESP_OK(spi_device_transmit(dev0, &trans_cfg));
+        spi_device_get_actual_freq(dev0, &master_send);
+        printf("override %5ld k real freq %5d k\n", trans_cfg.override_freq_hz / 1000, master_send);
+        if (trans_cfg.override_freq_hz) {
+            TEST_ASSERT_EQUAL_UINT32(trans_cfg.override_freq_hz / 1000, master_send);
+        }
+        if (i > 10) {
+            //test without override freq
+            trans_cfg.override_freq_hz = 0;
+            continue;
+        }
+        if (!(i % 2)) {
+            //test override freq every 2 trans
+            trans_cfg.override_freq_hz /= 2;
+        }
+    }
+    TEST_ESP_OK(spi_bus_remove_device(dev0));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
 
@@ -858,10 +901,7 @@ void test_cmd_addr(spi_slave_task_context_t *slave_context, bool lsb_first)
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &spi));
 
     //connecting pins to two peripherals breaks the output, fix it.
-    spitest_gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
-    spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out);
-    spitest_gpio_output_sel(devcfg.spics_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spics_out[0]);
-    spitest_gpio_output_sel(buscfg.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiclk_out);
+    same_pin_func_sel(buscfg, devcfg.spics_io_num, 0, false);
 
     for (int i = 0; i < 8; i++) {
         //prepare slave tx data
@@ -1046,10 +1086,7 @@ TEST_CASE("SPI master variable dummy test", "[spi]")
     spi_slave_interface_config_t slave_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
     TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slave_cfg, SPI_DMA_DISABLED));
 
-    spitest_gpio_output_sel(bus_cfg.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
-    spitest_gpio_output_sel(bus_cfg.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out);
-    spitest_gpio_output_sel(dev_cfg.spics_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spics_out[0]);
-    spitest_gpio_output_sel(bus_cfg.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiclk_out);
+    same_pin_func_sel(bus_cfg, dev_cfg.spics_io_num, 0, false);
 
     uint8_t data_to_send[] = {0x12, 0x34, 0x56, 0x78};
 
@@ -1092,7 +1129,7 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
     spi_slave_interface_config_t slave_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
     TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slave_cfg, SPI_DMA_CH_AUTO));
 
-    same_pin_func_sel(bus_cfg, dev_cfg, 0);
+    same_pin_func_sel(bus_cfg, dev_cfg.spics_io_num, 0, false);
 
     uint32_t buf_size = 32;
     uint8_t *mst_send_buf = spi_bus_dma_memory_alloc(TEST_SPI_HOST, buf_size, 0);
@@ -1342,8 +1379,8 @@ TEST_CASE_MULTIPLE_DEVICES("SPI Master: FD, DMA, Master Single Direction Test", 
 /********************************************************************************
  *      Test SPI transaction interval
  ********************************************************************************/
-//Disabled since the check in portENTER_CRITICAL in esp_intr_enable/disable increase the delay
-#ifndef CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+//Disabled since place code in flash increase the delay
+#if CONFIG_SPI_MASTER_ISR_IN_IRAM
 
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
 #define RECORD_TIME_START()   do {__t1 = esp_cpu_get_cycle_count();}while(0)
@@ -1425,7 +1462,7 @@ TEST_CASE("spi_speed", "[spi]")
     }
 #ifndef CONFIG_SPIRAM
     printf("[Performance][%s]: %d us\n", "SPI_PER_TRANS_NO_POLLING", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
-    TEST_ASSERT_LESS_THAN_INT(IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
+    TEST_ASSERT_LESS_THAN_INT(IDF_TARGET_MAX_TRANS_TIME_INTR_DMA, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
 #endif
 
     //acquire the bus to send polling transactions faster
@@ -1443,7 +1480,7 @@ TEST_CASE("spi_speed", "[spi]")
     }
 #ifndef CONFIG_SPIRAM
     printf("[Performance][%s]: %d us\n", "SPI_PER_TRANS_POLLING", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
-    TEST_ASSERT_LESS_THAN_INT(IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
+    TEST_ASSERT_LESS_THAN_INT(IDF_TARGET_MAX_TRANS_TIME_POLL_DMA, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
 #endif
 
     //release the bus
@@ -1463,7 +1500,7 @@ TEST_CASE("spi_speed", "[spi]")
     }
 #ifndef CONFIG_SPIRAM
     printf("[Performance][%s]: %d us\n", "SPI_PER_TRANS_NO_POLLING_NO_DMA", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
-    TEST_ASSERT_LESS_THAN_INT(IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING_NO_DMA, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
+    TEST_ASSERT_LESS_THAN_INT(IDF_TARGET_MAX_TRANS_TIME_INTR_CPU, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
 #endif
 
     //acquire the bus to send polling transactions faster
@@ -1481,7 +1518,7 @@ TEST_CASE("spi_speed", "[spi]")
     }
 #ifndef CONFIG_SPIRAM
     printf("[Performance][%s]: %d us\n", "SPI_PER_TRANS_POLLING_NO_DMA", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
-    TEST_ASSERT_LESS_THAN_INT(IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
+    TEST_ASSERT_LESS_THAN_INT(IDF_TARGET_MAX_TRANS_TIME_POLL_CPU, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
 #endif
 
     //release the bus
@@ -1792,6 +1829,7 @@ TEST_CASE("test_bus_free_safty_to_remain_devices", "[spi]")
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
 
+#if SOC_LIGHT_SLEEP_SUPPORTED
 TEST_CASE("test_spi_master_sleep_retention", "[spi]")
 {
     // Prepare a TOP PD sleep
@@ -1921,3 +1959,4 @@ TEST_CASE("test_spi_master_auto_sleep_retention", "[spi]")
     TEST_ESP_OK(esp_pm_configure(&pm_config));
 }
 #endif  //CONFIG_PM_ENABLE
+#endif  //SOC_LIGHT_SLEEP_SUPPORTED

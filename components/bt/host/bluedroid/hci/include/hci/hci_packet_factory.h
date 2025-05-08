@@ -26,7 +26,9 @@ typedef struct {
     BT_HDR *(*make_reset)(void);
     BT_HDR *(*make_read_buffer_size)(void);
     BT_HDR *(*make_set_c2h_flow_control)(uint8_t enable);
+#if (BLE_42_SCAN_EN == TRUE)
     BT_HDR *(*make_set_adv_report_flow_control)(uint8_t enable, uint16_t num, uint16_t lost_threshold);
+#endif // #if (BLE_42_SCAN_EN == TRUE)
     BT_HDR *(*make_host_buffer_size)(uint16_t acl_size, uint8_t sco_size, uint16_t acl_count, uint16_t sco_count);
     BT_HDR *(*make_read_local_version_info)(void);
     BT_HDR *(*make_read_bd_addr)(void);
@@ -39,11 +41,19 @@ typedef struct {
     BT_HDR *(*make_ble_write_host_support)(uint8_t supported_host, uint8_t simultaneous_host);
     BT_HDR *(*make_ble_read_white_list_size)(void);
     BT_HDR *(*make_ble_read_buffer_size)(void);
+#if (BLE_FEAT_ISO_EN == TRUE)
+    BT_HDR *(*make_ble_read_buffer_size_v2)(void);
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
     BT_HDR *(*make_ble_read_supported_states)(void);
     BT_HDR *(*make_ble_read_local_supported_features)(void);
     BT_HDR *(*make_ble_read_resolving_list_size)(void);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     BT_HDR *(*make_read_max_adv_data_len)(void);
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+    BT_HDR *(*read_periodic_adv_list_size)(void);
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BT_HDR *(*make_ble_read_suggested_default_data_length)(void);
     BT_HDR *(*make_ble_write_suggested_default_data_length)(uint16_t SuggestedMaxTxOctets, uint16_t SuggestedMaxTxTime);

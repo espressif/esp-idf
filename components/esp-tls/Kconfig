@@ -15,7 +15,7 @@ menu "ESP-TLS"
 
     config ESP_TLS_USE_SECURE_ELEMENT
         bool "Use Secure Element (ATECC608A) with ESP-TLS"
-        depends on IDF_TARGET_ESP32 && ESP_TLS_USING_MBEDTLS
+        depends on ESP_TLS_USING_MBEDTLS
         select ATCA_MBEDTLS_ECDSA
         select ATCA_MBEDTLS_ECDSA_SIGN
         select ATCA_MBEDTLS_ECDSA_VERIFY
@@ -84,7 +84,7 @@ menu "ESP-TLS"
     config ESP_TLS_INSECURE
         bool "Allow potentially insecure options"
         help
-            You can enable some potentially insecure options. These options should only be used for testing pusposes.
+            You can enable some potentially insecure options. These options should only be used for testing purposes.
             Only enable these options if you are very sure.
 
     config ESP_TLS_SKIP_SERVER_CERT_VERIFY

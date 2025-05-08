@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_private/regi2c_ctrl.h"
 #include "esp_private/esp_modem_clock.h"
 #include "hal/sar_ctrl_ll.h"
 
@@ -48,17 +49,18 @@ void sar_periph_ctrl_power_disable(void)
 /**
  * This gets incremented when s_sar_power_acquire() is called,
  * and decremented when s_sar_power_release() is called.
- * PWDET is powered down when the value reaches zero.
+ * PWDET and REG_I2C are powered down when the value reaches zero.
  * Should be modified within critical section.
  */
-static int s_pwdet_power_on_cnt;
+static int s_sar_power_on_cnt;
 
 static void s_sar_power_acquire(void)
 {
     modem_clock_module_enable(PERIPH_MODEM_ADC_COMMON_FE_MODULE);
+    regi2c_saradc_enable();
     portENTER_CRITICAL_SAFE(&rtc_spinlock);
-    s_pwdet_power_on_cnt++;
-    if (s_pwdet_power_on_cnt == 1) {
+    s_sar_power_on_cnt++;
+    if (s_sar_power_on_cnt == 1) {
         sar_ctrl_ll_set_power_mode_from_pwdet(SAR_CTRL_LL_POWER_ON);
     }
     portEXIT_CRITICAL_SAFE(&rtc_spinlock);
@@ -67,15 +69,16 @@ static void s_sar_power_acquire(void)
 static void s_sar_power_release(void)
 {
     portENTER_CRITICAL_SAFE(&rtc_spinlock);
-    s_pwdet_power_on_cnt--;
-    if (s_pwdet_power_on_cnt < 0) {
+    s_sar_power_on_cnt--;
+    if (s_sar_power_on_cnt < 0) {
         portEXIT_CRITICAL(&rtc_spinlock);
-        ESP_LOGE(TAG, "%s called, but s_pwdet_power_on_cnt == 0", __func__);
+        ESP_LOGE(TAG, "%s called, but s_sar_power_on_cnt == 0", __func__);
         abort();
-    } else if (s_pwdet_power_on_cnt == 0) {
+    } else if (s_sar_power_on_cnt == 0) {
         sar_ctrl_ll_set_power_mode_from_pwdet(SAR_CTRL_LL_POWER_FSM);
     }
     portEXIT_CRITICAL_SAFE(&rtc_spinlock);
+    regi2c_saradc_disable();
     modem_clock_module_disable(PERIPH_MODEM_ADC_COMMON_FE_MODULE);
 }
 

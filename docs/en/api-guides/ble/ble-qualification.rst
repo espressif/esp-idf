@@ -29,7 +29,7 @@ The table below shows the latest qualification for Espressif Bluetooth LE Contro
     +-----------------------------------------------------------------------+-------------------------------------------+------------------------------------------+
     |ESP32-C5                                                               |.. centered:: |Q331318|                    |.. centered:: 6.0                         |
     +-----------------------------------------------------------------------+-------------------------------------------+------------------------------------------+
-    |ESP32-C6                                                               |.. centered:: |199258|                     |.. centered:: 5.3                         |
+    |ESP32-C6                                                               |.. centered:: |Q335877|                    |.. centered:: 6.0                         |
     +-----------------------------------------------------------------------+-------------------------------------------+------------------------------------------+
     |ESP32-C61                                                              |.. centered:: |Q331318|                    |.. centered:: 6.0                         |
     +-----------------------------------------------------------------------+-------------------------------------------+------------------------------------------+
@@ -67,6 +67,7 @@ The table below shows the latest qualification for Espressif Bluetooth LE Host.
 .. |198312| replace:: `198312 <https://qualification.bluetooth.com/ListingDetails/165785>`__
 .. |141499| replace:: `141499 <https://qualification.bluetooth.com/ListingDetails/97856>`__
 .. |Q331318| replace:: `Q331318 <https://qualification.bluetooth.com/ListingDetails/257081>`__
+.. |Q335877| replace:: `Q335877 <https://qualification.bluetooth.com/ListingDetails/262779>`__
 
 
 .. [1]

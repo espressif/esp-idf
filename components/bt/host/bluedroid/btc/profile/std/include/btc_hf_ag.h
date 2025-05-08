@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +57,7 @@ typedef enum
     BTC_HF_END_CALL_EVT,
     //REG
     BTC_HF_REGISTER_DATA_CALLBACK_EVT,
+    BTC_HF_REGISTER_AUDIO_DATA_CALLBACK_EVT,
     BTC_HF_REQUEST_PKT_STAT_EVT
 } btc_hf_act_t;
 
@@ -189,6 +190,11 @@ typedef union
         esp_hf_outgoing_data_cb_t send;
     } reg_data_cb;
 
+    // BTC_HF_REGISTER_AUDIO_DATA_CALLBACK_EVT
+    struct ag_reg_audio_data_callback {
+        esp_hf_ag_audio_data_cb_t callback;
+    } reg_audio_data_cb;
+
     // BTC_HF_REQUEST_PKT_STAT_EVT
     struct ag_req_pkt_stat_sync_handle {
         UINT16            sync_conn_handle;
@@ -211,6 +217,7 @@ typedef struct
 {
     bool                               initialized;
     UINT16                             handle;
+    UINT16                             sync_conn_hdl;
     bt_bdaddr_t                        connected_bda;
     tBTA_AG_PEER_FEAT                  peer_feat;
     tBTA_AG_CHLD_FEAT                  chld_feat;
@@ -231,6 +238,7 @@ typedef struct
     btc_hf_cb_t                        btc_hf_cb;
     esp_hf_incoming_data_cb_t          btc_hf_incoming_data_cb;
     esp_hf_outgoing_data_cb_t          btc_hf_outgoing_data_cb;
+    esp_hf_ag_audio_data_cb_t          btc_hf_audio_data_cb;
 } hf_local_param_t;
 
 #if HFP_DYNAMIC_MEMORY == TRUE
@@ -247,6 +255,8 @@ void btc_hf_cb_handler(btc_msg_t *msg); //handle the event from bta
 
 void btc_hf_incoming_data_cb_to_app(const uint8_t *data, uint32_t len);
 
+void btc_hf_audio_data_cb_to_app(uint8_t *buf, uint8_t *data, uint16_t len, bool is_bad_frame);
+
 uint32_t btc_hf_outgoing_data_cb_to_app(uint8_t *data, uint32_t len);
 
 void btc_hf_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
@@ -255,6 +265,9 @@ void btc_hf_arg_deep_free(btc_msg_t *msg);
 
 bt_status_t btc_hf_ci_sco_data(void);
 
+bool btc_hf_ag_audio_data_send(uint16_t sync_conn_hdl, uint8_t *p_buff_start, uint8_t *p_data, uint8_t data_len);
+
+void btc_hf_get_profile_status(esp_hf_profile_status_t *param);
 #endif  // BTC_HF_INCLUDED == TRUE
 
 #endif /* __BTC_HF_AG_H__ */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -159,7 +159,7 @@ esp_err_t esp_efuse_write_field_cnt(const esp_efuse_desc_t* field[], size_t cnt)
  *
  * @return
  * - ESP_OK: The operation was successfully completed, or the bit was already set to value 1.
- * - ESP_ERR_INVALID_ARG: Error in the passed arugments, including if the efuse field is not 1 bit wide.
+ * - ESP_ERR_INVALID_ARG: Error in the passed arguments, including if the efuse field is not 1 bit wide.
  */
 esp_err_t esp_efuse_write_field_bit(const esp_efuse_desc_t* field[]);
 
@@ -468,7 +468,7 @@ esp_err_t esp_efuse_batch_write_begin(void);
  *
  * @return
  *          - ESP_OK: Successful.
- *          - ESP_ERR_INVALID_STATE: Tha batch mode was not set.
+ *          - ESP_ERR_INVALID_STATE: The batch mode was not set.
  */
 esp_err_t esp_efuse_batch_write_cancel(void);
 
@@ -805,6 +805,29 @@ esp_err_t esp_efuse_check_errors(void);
  *                and read protection can not be set.
  */
 esp_err_t esp_efuse_destroy_block(esp_efuse_block_t block);
+
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+/**
+ * @brief Checks if 192-bit ECDSA curve operations are supported.
+ *
+ * This function checks if the current eFuse configuration supports 192-bit ECDSA curve operations.
+*/
+bool esp_efuse_is_ecdsa_p192_curve_supported(void);
+
+/**
+ * @brief Enables 192-bit ECDSA curve operations by setting the appropriate eFuse value.
+ *
+ * This function enables support for 192-bit ECDSA curve operations by configuring the
+ * ECDSA curve mode eFuse. It checks the current curve mode and attempts to set it to
+ * allow both P192 and P256 operations if not already set.
+ *
+ * @return
+ *    - ESP_OK: Successfully enabled 192-bit ECDSA operations or already enabled
+ *    - ESP_FAIL: Failed to enable operations due to write protection
+ *    - Other error codes: Failed to read/write eFuse
+ */
+esp_err_t esp_efuse_enable_ecdsa_p192_curve_mode(void);
+#endif
 
 #ifdef __cplusplus
 }

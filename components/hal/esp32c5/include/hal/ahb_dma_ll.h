@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,8 +26,8 @@ extern "C" {
 #define GDMA_LL_RX_EVENT_MASK       (0x7F)
 #define GDMA_LL_TX_EVENT_MASK       (0x3F)
 
-// any "dummy" peripheral ID can be used for M2M mode
-#define AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0xFC31)
+// for M2M mode, hardware will automatically assign peri_sel ID depends on the channel number (ch0: 10, ch1: 11, ch2: 12)
+#define AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0x1C00)
 #define AHB_DMA_LL_INVALID_PERIPH_ID       (0x3F)
 
 #define GDMA_LL_EVENT_TX_FIFO_UDF   (1<<5)
@@ -219,6 +219,9 @@ static inline void ahb_dma_ll_rx_set_burst_size(ahb_dma_dev_t *dev, uint32_t cha
         break;
     case 32:
         burst_mode = 2; // incr8
+        break;
+    case 64:
+        burst_mode = 3; // incr16
         break;
     default:
         HAL_ASSERT(false);
@@ -469,6 +472,9 @@ static inline void ahb_dma_ll_tx_set_burst_size(ahb_dma_dev_t *dev, uint32_t cha
         break;
     case 32:
         burst_mode = 2; // incr8
+        break;
+    case 64:
+        burst_mode = 3; // incr16
         break;
     default:
         HAL_ASSERT(false);

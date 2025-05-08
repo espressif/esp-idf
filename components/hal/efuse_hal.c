@@ -57,9 +57,9 @@ IRAM_ATTR bool efuse_hal_flash_encryption_enabled(void)
 }
 
 #if SOC_EFUSE_ECDSA_KEY
-void efuse_hal_set_ecdsa_key(int efuse_blk)
+void efuse_hal_set_ecdsa_key(ecdsa_curve_t curve, int efuse_blk)
 {
-    efuse_ll_set_ecdsa_key_blk(efuse_blk);
+    efuse_ll_set_ecdsa_key_blk(curve, efuse_blk);
 
     efuse_ll_rs_bypass_update();
 

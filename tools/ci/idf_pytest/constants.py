@@ -1,8 +1,9 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """
 Pytest Related Constants. Don't import third-party packages here.
 """
+
 import os
 import typing as t
 import warnings
@@ -16,7 +17,18 @@ from idf_ci_utils import IDF_PATH
 from idf_ci_utils import idf_relpath
 from pytest_embedded.utils import to_list
 
-SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c5', 'esp32c61']
+SUPPORTED_TARGETS = [
+    'esp32',
+    'esp32s2',
+    'esp32c3',
+    'esp32s3',
+    'esp32c2',
+    'esp32c6',
+    'esp32h2',
+    'esp32p4',
+    'esp32c5',
+    'esp32c61',
+]
 PREVIEW_TARGETS: t.List[str] = []  # this PREVIEW_TARGETS excludes 'linux' target
 DEFAULT_SDKCONFIG = 'default'
 DEFAULT_LOGDIR = 'pytest-embedded'
@@ -30,6 +42,8 @@ TARGET_MARKERS = {
     'esp32c5': 'support esp32c5 target',
     'esp32c6': 'support esp32c6 target',
     'esp32h2': 'support esp32h2 target',
+    'esp32h4': 'support esp32h4 target',  # as preview
+    'esp32h21': 'support esp32h21 target',  # as preview
     'esp32p4': 'support esp32p4 target',
     'esp32c61': 'support esp32c61 target',
     'linux': 'support linux target',
@@ -43,6 +57,7 @@ SPECIAL_MARKERS = {
     'temp_skip': 'temp skip tests for specified targets both in ci and locally',
     'nightly_run': 'tests should be executed as part of the nightly trigger pipeline',
     'host_test': 'tests which should not be built at the build stage, and instead built in host_test stage',
+    'require_elf': 'tests which require elf file',
 }
 
 ENV_MARKERS = {
@@ -84,7 +99,7 @@ ENV_MARKERS = {
     'wifi_high_traffic': 'wifi high traffic runners',
     'wifi_wlan': 'wifi runner with a wireless NIC',
     'wifi_iperf': 'the AP and ESP dut were placed in a shielded box - for iperf test',
-    'Example_ShieldBox': 'multiple shielded APs connected to shielded ESP DUT via RF cable with programmable attenuator',
+    'Example_ShieldBox': 'multiple shielded APs connected to shielded ESP DUT via RF cable with programmable attenuator',  # noqa E501
     'xtal_26mhz': 'runner with 26MHz xtal on board',
     'xtal_40mhz': 'runner with 40MHz xtal on board',
     'external_flash': 'external flash memory connected via VSPI (FSPI)',
@@ -110,6 +125,9 @@ ENV_MARKERS = {
     'httpbin': 'runner for tests that need to access the httpbin service',
     'flash_4mb': 'C2 runners with 4 MB flash',
     'jtag_re_enable': 'Runner to re-enable jtag which is softly disabled by burning bit SOFT_DIS_JTAG on eFuse',
+    'es8311': 'Development board that carries es8311 codec',
+    'camera': 'Runner with camera',
+    'ov5647': 'Runner with camera ov5647',
     # multi-dut markers
     'multi_dut_modbus_rs485': 'a pair of runners connected by RS485 bus',
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',
@@ -122,10 +140,13 @@ ENV_MARKERS = {
     'twai_network': 'multiple runners form a TWAI network.',
     'sdio_master_slave': 'Test sdio multi board, esp32+esp32',
     'sdio_multidev_32_c6': 'Test sdio multi board, esp32+esp32c6',
+    'sdio_multidev_p4_c5': 'Test sdio multi board, esp32p4+esp32c5',
     'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)',
     'twai_std': 'twai runner with all twai supported targets connect to usb-can adapter',
     'lp_i2s': 'lp_i2s runner tested with hp_i2s',
     'ram_app': 'ram_app runners',
+    'esp32c3eco7': 'esp32c3 major version(v1.1) chips',
+    'esp32c2eco4': 'esp32c2 major version(v2.0) chips',
 }
 
 # by default the timeout is 1h, for some special cases we need to extend it
@@ -174,6 +195,7 @@ class PytestApp:
     """
     Pytest App with relative path to IDF_PATH
     """
+
     def __init__(self, path: str, target: str, config: str) -> None:
         self.path = idf_relpath(path)
         self.target = target
@@ -215,8 +237,10 @@ class PytestCase:
         for _t in [app.target for app in self.apps]:
             if _t in self.target_markers:
                 skip = False
-                warnings.warn(f'`pytest.mark.[TARGET]` defined in parametrize for multi-dut test cases is deprecated. '  # noqa: W604
-                              f'Please use parametrize instead for test case {self.item.nodeid}')
+                warnings.warn(
+                    f'`pytest.mark.[TARGET]` defined in parametrize for multi-dut test cases is deprecated. '  # noqa: W604
+                    f'Please use parametrize instead for test case {self.item.nodeid}'
+                )
                 break
 
         if not skip:
@@ -238,7 +262,7 @@ class PytestCase:
         return {marker.name for marker in self.item.iter_markers()}
 
     @property
-    def target_markers(self) -> t.Set[str]:
+    def skip_targets(self) -> t.Set[str]:
         def _get_temp_markers_disabled_targets(marker_name: str) -> t.Set[str]:
             temp_marker = self.item.get_closest_marker(marker_name)
 
@@ -260,11 +284,15 @@ class PytestCase:
 
         # in CI we skip the union of `temp_skip` and `temp_skip_ci`
         if os.getenv('CI_JOB_ID'):
-            skip_targets = temp_skip_ci_targets.union(temp_skip_targets)
+            _skip_targets = temp_skip_ci_targets.union(temp_skip_targets)
         else:  # we use `temp_skip` locally
-            skip_targets = temp_skip_targets
+            _skip_targets = temp_skip_targets
 
-        return {marker for marker in self.all_markers if marker in TARGET_MARKERS} - skip_targets
+        return _skip_targets
+
+    @property
+    def target_markers(self) -> t.Set[str]:
+        return {marker for marker in self.all_markers if marker in TARGET_MARKERS} - self.skip_targets
 
     @property
     def env_markers(self) -> t.Set[str]:
@@ -285,10 +313,9 @@ class PytestCase:
         if 'jtag' in self.env_markers or 'usb_serial_jtag' in self.env_markers:
             return True
 
-        cases_need_elf = [
-            'panic',
-            'gdbstub_runtime'
-        ]
+        cases_need_elf = ['panic', 'gdbstub_runtime']
+        if 'require_elf' in SPECIAL_MARKERS:
+            return True
 
         for case in cases_need_elf:
             if any(case in Path(app.path).parts for app in self.apps):

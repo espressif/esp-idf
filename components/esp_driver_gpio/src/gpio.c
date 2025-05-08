@@ -75,7 +75,7 @@ static gpio_context_t gpio_context = {
 
 esp_err_t gpio_pullup_en(gpio_num_t gpio_num)
 {
-    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error (input-only pad has no internal PU)", ESP_ERR_INVALID_ARG);
 
     if (!rtc_gpio_is_valid_gpio(gpio_num) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
@@ -113,7 +113,7 @@ esp_err_t gpio_pullup_dis(gpio_num_t gpio_num)
 
 esp_err_t gpio_pulldown_en(gpio_num_t gpio_num)
 {
-    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error (input-only pad has no internal PD)", ESP_ERR_INVALID_ARG);
 
     if (!rtc_gpio_is_valid_gpio(gpio_num) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
@@ -207,7 +207,7 @@ esp_err_t gpio_output_disable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_hal_output_disable(gpio_context.gpio_hal, gpio_num);
-    gpio_hal_matrix_out_default(gpio_context.gpio_hal, gpio_num); // Ensure no other output signal is routed via GPIO matrix to this pin
+    gpio_hal_set_output_enable_ctrl(gpio_context.gpio_hal, gpio_num, false, false); // so that output disable could take effect
     return ESP_OK;
 }
 
@@ -401,7 +401,7 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
                 gpio_pulldown_dis(io_num);
             }
 
-            ESP_LOGI(GPIO_TAG, "GPIO[%"PRIu32"]| InputEn: %d| OutputEn: %d| OpenDrain: %d| Pullup: %d| Pulldown: %d| Intr:%d ", io_num, input_en, output_en, od_en, pu_en, pd_en, pGPIOConfig->intr_type);
+            ESP_LOGD(GPIO_TAG, "GPIO[%"PRIu32"]| InputEn: %d| OutputEn: %d| OpenDrain: %d| Pullup: %d| Pulldown: %d| Intr:%d ", io_num, input_en, output_en, od_en, pu_en, pd_en, pGPIOConfig->intr_type);
             gpio_set_intr_type(io_num, pGPIOConfig->intr_type);
 
             if (pGPIOConfig->intr_type) {
@@ -455,16 +455,20 @@ esp_err_t gpio_config_as_analog(gpio_num_t gpio_num)
 
 esp_err_t gpio_reset_pin(gpio_num_t gpio_num)
 {
-    assert(GPIO_IS_VALID_GPIO(gpio_num));
-    gpio_config_t cfg = {
-        .pin_bit_mask = BIT64(gpio_num),
-        .mode = GPIO_MODE_DISABLE,
-        //for powersave reasons, the GPIO should not be floating, select pullup
-        .pull_up_en = true,
-        .pull_down_en = false,
-        .intr_type = GPIO_INTR_DISABLE,
-    };
-    gpio_config(&cfg);
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    gpio_intr_disable(gpio_num);
+    // for powersave reasons, the GPIO should not be floating, select pullup
+    gpio_pullup_en(gpio_num);
+    gpio_pulldown_dis(gpio_num);
+    gpio_input_disable(gpio_num);
+    gpio_output_disable(gpio_num);
+#if SOC_RTCIO_PIN_COUNT > 0
+    if (rtc_gpio_is_valid_gpio(gpio_num)) {
+        rtc_gpio_deinit(gpio_num);
+    }
+#endif
+    gpio_hal_func_sel(gpio_context.gpio_hal, gpio_num, PIN_FUNC_GPIO);
+    esp_gpio_revoke(BIT64(gpio_num));
     return ESP_OK;
 }
 
@@ -604,13 +608,7 @@ esp_err_t gpio_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags,
 {
     GPIO_CHECK(fn, "GPIO ISR null", ESP_ERR_INVALID_ARG);
     gpio_isr_alloc_t p;
-#if CONFIG_IDF_TARGET_ESP32P4  //TODO: IDF-7995
-    p.source = ETS_GPIO_INTR0_SOURCE;
-#elif CONFIG_IDF_TARGET_ESP32H21 // TODO: IDF-11611
-    p.source = ETS_GPIO_INTERRUPT_PRO_SOURCE;
-#else
-    p.source = ETS_GPIO_INTR_SOURCE;
-#endif
+    p.source = GPIO_LL_INTR_SOURCE0;
     p.intr_alloc_flags = intr_alloc_flags;
 #if SOC_ANA_CMPR_INTR_SHARE_WITH_GPIO
     p.intr_alloc_flags |= ESP_INTR_FLAG_SHARED;
@@ -836,15 +834,16 @@ esp_err_t gpio_iomux_input(gpio_num_t gpio_num, int func, uint32_t signal_idx)
 // Deprecated function
 void gpio_iomux_out(uint8_t gpio_num, int func, bool out_en_inv)
 {
-    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func, out_en_inv);
+    (void)out_en_inv; // out_en_inv only takes effect when signal goes through gpio matrix to the IO
+    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func);
 }
 
-esp_err_t gpio_iomux_output(gpio_num_t gpio_num, int func, bool out_en_inv)
+esp_err_t gpio_iomux_output(gpio_num_t gpio_num, int func)
 {
     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
 
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func, out_en_inv);
+    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func);
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
 
     return ESP_OK;
@@ -1094,11 +1093,18 @@ esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
         gpio_io_config_t io_config = {};
         gpio_get_io_config(gpio_num, &io_config);
 
+        // When the IO is used as a simple GPIO output, oe signal can only be controlled by the oe register
+        // When the IO is not used as a simple GPIO output, oe signal could be controlled by the peripheral
+        const char *oe_str = io_config.oe ? "1" : "0";
+        if (io_config.sig_out != SIG_GPIO_OUT_IDX && io_config.oe_ctrl_by_periph) {
+            oe_str = "[periph_sig_ctrl]";
+        }
+
         fprintf(out_stream, "IO[%"PRIu32"]%s -\n", gpio_num, esp_gpio_is_reserved(BIT64(gpio_num)) ? " **RESERVED**" : "");
         fprintf(out_stream, "  Pullup: %d, Pulldown: %d, DriveCap: %"PRIu32"\n", io_config.pu, io_config.pd, (uint32_t)io_config.drv);
-        fprintf(out_stream, "  InputEn: %d, OutputEn: %d, OpenDrain: %d\n", io_config.ie, io_config.oe, io_config.od);
+        fprintf(out_stream, "  InputEn: %d, OutputEn: %s%s, OpenDrain: %d\n", io_config.ie, oe_str, ((io_config.fun_sel == PIN_FUNC_GPIO) && (io_config.oe_inv)) ? " (inversed)" : "", io_config.od);
         fprintf(out_stream, "  FuncSel: %"PRIu32" (%s)\n", io_config.fun_sel, (io_config.fun_sel == PIN_FUNC_GPIO) ? "GPIO" : "IOMUX");
-        if (io_config.oe && io_config.fun_sel == PIN_FUNC_GPIO) {
+        if (io_config.fun_sel == PIN_FUNC_GPIO) {
             fprintf(out_stream, "  GPIO Matrix SigOut ID: %"PRIu32"%s\n", io_config.sig_out, (io_config.sig_out == SIG_GPIO_OUT_IDX) ? " (simple GPIO output)" : "");
         }
         if (io_config.ie && io_config.fun_sel == PIN_FUNC_GPIO) {

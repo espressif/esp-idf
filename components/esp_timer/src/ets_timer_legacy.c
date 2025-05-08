@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
 #include "esp_timer.h"
+#include "esp_timer_impl.h"
 
 // for ETSTimer type
 #include "rom/ets_sys.h"
@@ -34,7 +35,7 @@
 #define TIMER_INITIALIZED_FIELD(p_ets_timer) ((p_ets_timer)->timer_expire)
 #define TIMER_INITIALIZED_VAL 0x12121212
 
-static IRAM_ATTR bool timer_initialized(ETSTimer *ptimer)
+static ESP_TIMER_IRAM_ATTR bool timer_initialized(ETSTimer *ptimer)
 {
     return TIMER_INITIALIZED_FIELD(ptimer) == TIMER_INITIALIZED_VAL;
 }
@@ -58,7 +59,7 @@ void ets_timer_setfn(ETSTimer *ptimer, ETSTimerFunc *pfunction, void *parg)
     }
 }
 
-void IRAM_ATTR ets_timer_arm_us(ETSTimer *ptimer, uint32_t time_us, bool repeat_flag)
+void ESP_TIMER_IRAM_ATTR ets_timer_arm_us(ETSTimer *ptimer, uint32_t time_us, bool repeat_flag)
 {
     assert(timer_initialized(ptimer));
     esp_timer_stop(ESP_TIMER(ptimer));  // no error check
@@ -69,7 +70,7 @@ void IRAM_ATTR ets_timer_arm_us(ETSTimer *ptimer, uint32_t time_us, bool repeat_
     }
 }
 
-void IRAM_ATTR ets_timer_arm(ETSTimer *ptimer, uint32_t time_ms, bool repeat_flag)
+void ESP_TIMER_IRAM_ATTR ets_timer_arm(ETSTimer *ptimer, uint32_t time_ms, bool repeat_flag)
 {
     uint64_t time_us = 1000LL * (uint64_t) time_ms;
     assert(timer_initialized(ptimer));
@@ -90,7 +91,7 @@ void ets_timer_done(ETSTimer *ptimer)
     }
 }
 
-void IRAM_ATTR ets_timer_disarm(ETSTimer *ptimer)
+void ESP_TIMER_IRAM_ATTR ets_timer_disarm(ETSTimer *ptimer)
 {
     if (timer_initialized(ptimer)) {
         esp_timer_stop(ESP_TIMER(ptimer));

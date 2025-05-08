@@ -9,7 +9,7 @@
 * :ref:`jtag-debugging-using-debugger-command-line`
 * :ref:`jtag-debugging-with-idf-py`
 
-关于如何使用 VS Code 进行调试，请参阅文档 `使用 VS Code 调试 <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/DEBUGGING.md>`__。
+关于如何使用 VS Code 进行调试，请参阅文档 `使用 VS Code 调试 <https://docs.espressif.com/projects/vscode-esp-idf-extension/zh_CN/latest/debugproject.html>`__。
 
 
 .. _jtag-debugging-using-debugger-eclipse:

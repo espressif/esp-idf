@@ -486,7 +486,6 @@ components/mbedtls/port/include/sha256_alt.h
 components/mbedtls/port/include/sha512_alt.h
 components/mbedtls/port/sha/parallel_engine/sha.c
 components/nvs_flash/include/nvs_handle.hpp
-components/nvs_flash/src/nvs_cxx_api.cpp
 components/nvs_flash/src/nvs_encrypted_partition.hpp
 components/nvs_flash/src/nvs_item_hash_list.cpp
 components/nvs_flash/src/nvs_pagemanager.hpp
@@ -516,12 +515,7 @@ components/soc/esp32s2/include/soc/nrx_reg.h
 components/soc/esp32s2/include/soc/soc_ulp.h
 components/soc/esp32s2/include/soc/touch_sensor_channel.h
 components/soc/esp32s2/include/soc/touch_sensor_pins.h
-components/spi_flash/include/spi_flash_chip_boya.h
-components/spi_flash/include/spi_flash_chip_gd.h
 components/spi_flash/include/spi_flash_chip_generic.h
-components/spi_flash/include/spi_flash_chip_issi.h
-components/spi_flash/include/spi_flash_chip_mxic.h
-components/spi_flash/include/spi_flash_chip_winbond.h
 components/spi_flash/spi_flash_chip_boya.c
 components/spi_flash/spi_flash_chip_issi.c
 components/tcp_transport/include/esp_transport_ws.h
@@ -909,9 +903,6 @@ examples/protocols/static_ip/main/static_ip_example_main.c
 examples/provisioning/wifi_prov_mgr/main/app_main.c
 examples/security/flash_encryption/main/flash_encrypt_main.c
 examples/storage/custom_flash_driver/main/main.c
-examples/storage/nvs_rw_blob/main/nvs_blob_example_main.c
-examples/storage/nvs_rw_value/main/nvs_value_example_main.c
-examples/storage/nvs_rw_value_cxx/main/nvs_value_example_main.cpp
 examples/storage/partition_api/partition_find/main/main.c
 examples/storage/partition_api/partition_mmap/main/main.c
 examples/storage/partition_api/partition_ops/main/main.c
@@ -941,7 +932,6 @@ examples/system/gcov/components/sample/some_funcs.c
 examples/system/gcov/main/gcov_example_func.c
 examples/system/gcov/main/gcov_example_main.c
 examples/system/gdbstub/main/gdbstub_main.c
-examples/system/heap_task_tracking/main/heap_task_tracking_main.c
 examples/system/himem/main/himem_example_main.c
 examples/system/ota/advanced_https_ota/main/advanced_https_ota_example.c
 examples/system/ota/native_ota_example/main/native_ota_example.c
@@ -996,7 +986,6 @@ tools/test_apps/system/build_test/main/test_main.c
 tools/test_apps/system/cxx_no_except/main/main.cpp
 tools/test_apps/system/gdb_loadable_elf/main/hello_world_main.c
 tools/test_apps/system/longjmp_test/main/hello_world_main.c
-tools/test_apps/system/memprot/main/esp32s2/test_memprot_main.c
 tools/test_apps/system/no_embedded_paths/check_for_file_paths.py
 tools/test_apps/system/no_embedded_paths/main/test_no_embedded_paths_main.c
 tools/test_apps/system/startup/main/test_startup_main.c

@@ -9,7 +9,6 @@
 #include <stdint.h>
 
 #include "soc/soc_caps.h"
-#include "soc/assist_debug_reg.h"
 #include "soc/interrupt_reg.h"
 #include "esp_attr.h"
 #include "riscv/csr.h"
@@ -403,10 +402,10 @@ FORCE_INLINE_ATTR bool rv_utils_is_trigger_fired(int id)
 
 // ---------------------- Debugger -------------------------
 
-FORCE_INLINE_ATTR bool rv_utils_dbgr_is_attached(void)
-{
-    return REG_GET_BIT(ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
-}
+/** To use hal function for compatibility meanwhile keep hal dependency private,
+ *  this function is implemented in rv_utils.c
+ */
+bool rv_utils_dbgr_is_attached(void);
 
 FORCE_INLINE_ATTR void rv_utils_dbgr_break(void)
 {

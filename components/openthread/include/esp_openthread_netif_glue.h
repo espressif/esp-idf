@@ -62,7 +62,7 @@ void esp_openthread_netif_glue_deinit(void);
  * @brief This function acquires the OpenThread netif.
  *
  * @return
- *      The OpenThread netif or NULL if not initialzied.
+ *      The OpenThread netif or NULL if not initialized.
  *
  */
 esp_netif_t *esp_openthread_get_netif(void);

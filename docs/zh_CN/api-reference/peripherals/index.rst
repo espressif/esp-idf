@@ -28,7 +28,7 @@
     ledc
     :SOC_MIPI_CSI_SUPPORTED: camera_driver
     :SOC_MCPWM_SUPPORTED: mcpwm
-    :SOC_PARLIO_SUPPORTED: parlio
+    :SOC_PARLIO_SUPPORTED: parlio/index
     :SOC_PCNT_SUPPORTED: pcnt
     :SOC_PPA_SUPPORTED: ppa
     :SOC_RMT_SUPPORTED: rmt
@@ -46,7 +46,7 @@
     :SOC_JPEG_CODEC_SUPPORTED: jpeg
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
     :SOC_TOUCH_SENSOR_SUPPORTED: cap_touch_sens
-    :esp32s2: touch_element
+    :esp32s2 or esp32s3: touch_element
     :SOC_TWAI_SUPPORTED: twai
     uart
     :SOC_USB_OTG_SUPPORTED: usb_device

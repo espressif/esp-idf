@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,9 +103,8 @@ void emac_hal_init_mac_default(emac_hal_context_t *hal)
     emac_ll_sa_inverse_filter_enable(hal->mac_regs, false);
     /* MAC blocks all control frames */
     emac_ll_set_pass_ctrl_frame_mode(hal->mac_regs, EMAC_LL_CONTROL_FRAME_BLOCKALL);
-    /* AFM module passes all received broadcast frames and multicast frames */
+    /* AFM module passes all received broadcast frames */
     emac_ll_broadcast_frame_enable(hal->mac_regs, true);
-    emac_ll_pass_all_multicast_enable(hal->mac_regs, true);
     /* Address Check block operates in normal filtering mode for the DA address */
     emac_ll_da_inverse_filter_enable(hal->mac_regs, false);
     /* Disable Promiscuous Mode */
@@ -199,6 +198,82 @@ void emac_hal_set_address(emac_hal_context_t *hal, uint8_t *mac_addr)
     /* Make sure mac address is unicast type */
     if (!(mac_addr[0] & 0x01)) {
         emac_ll_set_addr(hal->mac_regs, mac_addr);
+    }
+}
+
+esp_err_t emac_hal_add_addr_da_filter(emac_hal_context_t *hal, const uint8_t *mac_addr, uint8_t addr_num)
+{
+    if (addr_num < 1 || addr_num > EMAC_LL_MAX_MAC_ADDR_NUM || mac_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    emac_ll_add_addr_filter(hal->mac_regs, addr_num, mac_addr, 0, false);
+    return ESP_OK;
+}
+
+esp_err_t emac_hal_get_addr_da_filter(emac_hal_context_t *hal, uint8_t *mac_addr, uint8_t addr_num)
+{
+    if (addr_num < 1 || addr_num > EMAC_LL_MAX_MAC_ADDR_NUM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    bool is_source = false;
+    if ((emac_ll_get_addr_filter(hal->mac_regs, addr_num, mac_addr, NULL, &is_source) != true) || is_source) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    return ESP_OK;
+}
+
+esp_err_t emac_hal_add_addr_da_filter_auto(emac_hal_context_t *hal, uint8_t *mac_addr)
+{
+    for (uint8_t i = 1; i <= EMAC_LL_MAX_MAC_ADDR_NUM; i++) {
+        // find the first free address filter
+        if (emac_ll_get_addr_filter(hal->mac_regs, i, NULL, NULL, NULL) == false) {
+            emac_hal_add_addr_da_filter(hal, mac_addr, i);
+            return ESP_OK;
+        }
+    }
+    return ESP_FAIL;
+}
+
+esp_err_t emac_hal_rm_addr_da_filter(emac_hal_context_t *hal, const uint8_t *mac_addr, uint8_t addr_num)
+{
+    esp_err_t ret = ESP_OK;
+    if (mac_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    uint8_t addr_got[6];
+    if ((ret = emac_hal_get_addr_da_filter(hal, addr_got, addr_num)) == ESP_OK) {
+        if (memcmp(addr_got, mac_addr, 6) == 0) {
+            emac_ll_rm_addr_filter(hal->mac_regs, addr_num);
+        } else {
+            ret = ESP_ERR_NOT_FOUND;
+        }
+    }
+    return ret;
+}
+
+esp_err_t emac_hal_rm_addr_da_filter_auto(emac_hal_context_t *hal, const uint8_t *mac_addr)
+{
+    if (mac_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    uint8_t addr_got[6];
+    for (uint8_t i = 1; i <= EMAC_LL_MAX_MAC_ADDR_NUM; i++) {
+        if (emac_hal_get_addr_da_filter(hal, addr_got, i) == ESP_OK) {
+            if (memcmp(addr_got, mac_addr, 6) == 0) {
+                emac_ll_rm_addr_filter(hal->mac_regs, i);
+                return ESP_OK;
+            }
+        }
+    }
+    return ESP_ERR_NOT_FOUND;
+}
+
+void emac_hal_clear_addr_da_filters(emac_hal_context_t *hal)
+{
+    for (uint8_t i = 1; i <= EMAC_LL_MAX_MAC_ADDR_NUM; i++) {
+        if (emac_hal_get_addr_da_filter(hal, NULL, i) == ESP_OK) {
+            emac_ll_rm_addr_filter(hal->mac_regs, i);
+        }
     }
 }
 

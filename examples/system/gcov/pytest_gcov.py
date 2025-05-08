@@ -1,14 +1,14 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os.path
 import time
 
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 from pytest_embedded_jtag import OpenOcd
 
 
-@pytest.mark.esp32
 @pytest.mark.jtag
 @pytest.mark.parametrize(
     'embedded_services, no_gdb',
@@ -17,6 +17,7 @@ from pytest_embedded_jtag import OpenOcd
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_gcov(dut: IdfDut, openocd: OpenOcd) -> None:
     # create the generated .gcda folder, otherwise would have error: failed to open file.
     # normally this folder would be created via `idf.py build`. but in CI the non-related files would not be preserved

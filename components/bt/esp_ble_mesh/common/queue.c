@@ -7,7 +7,7 @@
 #include "mesh/common.h"
 #include "mesh/queue.h"
 
-int bt_mesh_queue_init(bt_mesh_queue_t *queue, uint8_t queue_size, uint8_t item_size)
+int bt_mesh_queue_init(bt_mesh_queue_t *queue, uint16_t queue_size, uint8_t item_size)
 {
     __ASSERT(queue && queue_size && item_size, "Invalid queue init parameters");
 

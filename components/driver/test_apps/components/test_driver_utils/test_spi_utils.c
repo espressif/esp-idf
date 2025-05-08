@@ -9,6 +9,7 @@
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
 #include "hal/gpio_hal.h"
+#include "hal/spi_ll.h"
 #include "esp_rom_gpio.h"
 
 int test_freq_default[] = TEST_FREQ_DEFAULT();
@@ -232,48 +233,81 @@ void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx)
     esp_rom_gpio_connect_in_signal(gpio_num, signal_idx, 0);
 }
 
-//Note this cs_dev_id is the ID of the connected devices' ID, e.g. if 2 devices are connected to the bus,
-//then the cs_dev_id of the 1st and 2nd devices are 0 and 1 respectively.
-void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, uint8_t cs_dev_id)
+void same_pin_func_sel(spi_bus_config_t bus, uint8_t cs_pin, uint8_t cs_dev_id, bool soft_master)
 {
-    spitest_gpio_output_sel(bus.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
+    spitest_gpio_output_sel(bus.mosi_io_num, FUNC_GPIO, soft_master ? SIG_GPIO_OUT_IDX : spi_periph_signal[TEST_SPI_HOST].spid_out);
     spitest_gpio_input_sel(bus.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spid_in);
 
     spitest_gpio_output_sel(bus.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out);
-    spitest_gpio_input_sel(bus.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiq_in);
+    spitest_gpio_input_sel(bus.miso_io_num, FUNC_GPIO, soft_master ? SIG_GPIO_OUT_IDX : spi_periph_signal[TEST_SPI_HOST].spiq_in);
 
-    spitest_gpio_output_sel(dev.spics_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spics_out[cs_dev_id]);
-    spitest_gpio_input_sel(dev.spics_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spics_in);
+    gpio_set_level(cs_pin, 1);  //ensure CS is inactive when select to soft_master and before transaction start
+    spitest_gpio_output_sel(cs_pin, FUNC_GPIO, soft_master ? SIG_GPIO_OUT_IDX : spi_periph_signal[TEST_SPI_HOST].spics_out[cs_dev_id]);
+    spitest_gpio_input_sel(cs_pin, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spics_in);
 
-    spitest_gpio_output_sel(bus.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiclk_out);
+    spitest_gpio_output_sel(bus.sclk_io_num, FUNC_GPIO, soft_master ? SIG_GPIO_OUT_IDX : spi_periph_signal[TEST_SPI_HOST].spiclk_out);
     spitest_gpio_input_sel(bus.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiclk_in);
 }
 
-void spi_master_trans_impl_gpio(spi_bus_config_t bus, uint8_t cs_pin, uint8_t speed_hz, void *tx, void *rx, uint32_t len)
+#define GPIO_MAX_FREQ   500*1000    //max of soft spi clock at delay(0)
+void spi_master_trans_impl_gpio(spi_bus_config_t bus, uint8_t cs_pin, uint32_t speed_hz, uint8_t *tx, uint8_t *rx, uint32_t len, bool hold_cs)
 {
-    uint8_t *u8_tx = tx, *u8_rx = rx;
-    esp_rom_gpio_connect_out_signal(cs_pin, SIG_GPIO_OUT_IDX, 0, 0);
-    esp_rom_gpio_connect_out_signal(bus.sclk_io_num, SIG_GPIO_OUT_IDX, 0, 0);
-    esp_rom_gpio_connect_out_signal(bus.mosi_io_num, SIG_GPIO_OUT_IDX, 0, 0);
-    esp_rom_gpio_connect_in_signal(bus.miso_io_num, SIG_GPIO_OUT_IDX, 0);
+    gpio_dev_t *hw = GPIO_LL_GET_HW(0);
+    uint32_t half_duty_us = speed_hz ? ((GPIO_MAX_FREQ + speed_hz / 2) / speed_hz / 2) : 0;
 
-    gpio_set_level(cs_pin, 0);
-    vTaskDelay(1);  // cs_ena_pre_trans
+    gpio_ll_set_level(hw, cs_pin, 0);
     for (uint32_t index = 0; index < len; index ++) {
         uint8_t rx_data = 0;
         for (uint8_t bit = 0x80; bit > 0; bit >>= 1) {
             // mode 0, output data first
-            gpio_set_level(bus.mosi_io_num, (u8_tx) ? (u8_tx[index] & bit) : 0);
-            vTaskDelay(1);
-            gpio_set_level(bus.sclk_io_num, 1);
+            gpio_ll_set_level(hw, bus.mosi_io_num, (tx) ? (tx[index] & bit) : 0);
+            esp_rom_delay_us(half_duty_us);
             rx_data <<= 1;
             rx_data |= gpio_get_level(bus.miso_io_num);
-            vTaskDelay(1);
-            gpio_set_level(bus.sclk_io_num, 0);
+            gpio_ll_set_level(hw, bus.sclk_io_num, 1);
+            esp_rom_delay_us(half_duty_us);
+            gpio_ll_set_level(hw, bus.sclk_io_num, 0);
         }
-        if (u8_rx) {
-            u8_rx[index] = rx_data;
+        if (rx) {
+            rx[index] = rx_data;
         }
     }
-    gpio_set_level(cs_pin, 1);
+    if (!hold_cs) {
+        gpio_ll_set_level(hw, cs_pin, 1);
+    }
 }
+
+#if SOC_SPI_SUPPORT_SLAVE_HD_VER2
+void essl_sspi_hd_dma_trans_seg(spi_bus_config_t bus, uint8_t cs_pin, uint32_t speed_hz, bool is_rx, void *buffer, int len, int seg_len)
+{
+    uint8_t cmd_addr_dummy[3] = {0, 0, 0};
+    uint8_t *tx = is_rx ? NULL : buffer;
+    uint8_t *rx = is_rx ? buffer : NULL;
+
+    seg_len = (seg_len > 0) ? seg_len : len;
+    cmd_addr_dummy[0] = spi_ll_get_slave_hd_base_command(is_rx ? SPI_CMD_HD_RDDMA : SPI_CMD_HD_WRDMA);
+    while (len > 0) {
+        spi_master_trans_impl_gpio(bus, cs_pin, speed_hz, cmd_addr_dummy, NULL, sizeof(cmd_addr_dummy), true);
+
+        int send_len = (seg_len <= len) ? seg_len : len;
+        spi_master_trans_impl_gpio(bus, cs_pin, speed_hz, tx, rx, send_len, false);
+        len -= send_len;
+        tx += tx ? send_len : 0;
+        rx += rx ? send_len : 0;
+    }
+
+    cmd_addr_dummy[0] = spi_ll_get_slave_hd_base_command(is_rx ? SPI_CMD_HD_INT0 : SPI_CMD_HD_WR_END);
+    spi_master_trans_impl_gpio(bus, cs_pin, speed_hz, cmd_addr_dummy, NULL, sizeof(cmd_addr_dummy), false);
+}
+
+void essl_sspi_hd_buffer_trans(spi_bus_config_t bus, uint8_t cs_pin, uint32_t speed_hz, spi_command_t cmd, uint8_t addr, void *buffer, uint32_t len)
+{
+    uint8_t cmd_addr_dummy[3] = {0, addr, 0};
+    cmd_addr_dummy[0] = spi_ll_get_slave_hd_base_command(cmd);
+    uint8_t *tx = (cmd == SPI_CMD_HD_RDBUF) ? NULL : buffer;
+    uint8_t *rx = (cmd == SPI_CMD_HD_RDBUF) ? buffer : NULL;
+
+    spi_master_trans_impl_gpio(bus, cs_pin, speed_hz, cmd_addr_dummy, NULL, sizeof(cmd_addr_dummy), true);
+    spi_master_trans_impl_gpio(bus, cs_pin, speed_hz, tx, rx, len, false);
+}
+#endif //SOC_SPI_SUPPORT_SLAVE_HD_VER2

@@ -2,6 +2,7 @@ menu "ADC and ADC Calibration"
 
     config ADC_ONESHOT_CTRL_FUNC_IN_IRAM
         bool "Place ISR version ADC oneshot mode read function into IRAM"
+        select ESP_PERIPH_CTRL_FUNC_IN_IRAM
         default n
         help
             Place ISR version ADC oneshot mode read function into IRAM.
@@ -10,7 +11,7 @@ menu "ADC and ADC Calibration"
         depends on SOC_ADC_DMA_SUPPORTED
         bool "ADC continuous mode driver ISR IRAM-Safe"
         default n
-        select GDMA_ISR_IRAM_SAFE if SOC_ADC_DMA_SUPPORTED && SOC_GDMA_SUPPORTED
+        select GDMA_ISR_HANDLER_IN_IRAM if SOC_ADC_DMA_SUPPORTED && SOC_GDMA_SUPPORTED
         help
             Ensure the ADC continuous mode ISR is IRAM-Safe. When enabled, the ISR handler
             will be available when the cache is disabled.
@@ -57,7 +58,7 @@ menu "ADC and ADC Calibration"
 
     config ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3
         depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
-        bool "Force use ADC2 continumous mode on ESP32S3 or ESP32C3"
+        bool "Force use ADC2 continuous mode on ESP32S3 or ESP32C3"
         default n
         help
             On ESP32C3 and ESP32S3, ADC2 Digital Controller is not stable. Therefore,

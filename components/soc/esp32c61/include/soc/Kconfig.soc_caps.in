@@ -183,6 +183,10 @@ config SOC_XTAL_SUPPORT_40M
     bool
     default y
 
+config SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN
+    bool
+    default y
+
 config SOC_ADC_DIG_CTRL_SUPPORTED
     bool
     default y
@@ -596,14 +600,6 @@ config SOC_I2S_SUPPORTS_PCM2PDM
     default y
 
 config SOC_I2S_SUPPORTS_PDM_RX
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PDM2PCM
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
     bool
     default y
 
@@ -1131,6 +1127,10 @@ config SOC_PM_SUPPORT_PMU_MODEM_STATE
     bool
     default y
 
+config SOC_PM_SUPPORT_PMU_CLK_ICG
+    bool
+    default y
+
 config SOC_PM_CPU_RETENTION_BY_SW
     bool
     default y
@@ -1156,6 +1156,10 @@ config SOC_PM_PAU_REGDMA_LINK_WIFIMAC
     default y
 
 config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
+    bool
+    default y
+
+config SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED
     bool
     default y
 
@@ -1247,6 +1251,10 @@ config SOC_WIFI_MAC_VERSION_NUM
     int
     default 3
 
+config SOC_WIFI_NAN_SUPPORT
+    bool
+    default y
+
 config SOC_BLE_SUPPORTED
     bool
     default y
@@ -1280,6 +1288,10 @@ config SOC_BLUFI_SUPPORTED
     default y
 
 config SOC_BLE_MULTI_CONN_OPTIMIZATION
+    bool
+    default y
+
+config SOC_BLE_CTE_SUPPORTED
     bool
     default y
 

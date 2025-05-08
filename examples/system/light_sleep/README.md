@@ -68,46 +68,6 @@ Note #3: due to limitation of the HW, the bytes that received during light sleep
 
 Note #4: after waking-up from UART, you should send some extra data through the UART port, so that the internal wakeup indication signal can be cleared. Otherwises, the next UART wake-up would trigger with two less rising edges than the configured threshold value.
 
-### Wake-up by Touch Pad
-
-For this example, pressing any registered touch buttons can wake up the chip.
-
-Note #1: For light sleep, all registered touch buttons can wake up the chip. But only the channel which is configured as wake up channel can wake up the chip from deep sleep.
-
-Note #2: Waking-up by touch pad relies on 'touch_element' driver, which can only support ESP32-S2 and ESP32-S3 currently.
-
-```
-Entering light sleep
-Returned from light sleep, reason: timer, t=2713 ms, slept for 1999 ms
-Entering light sleep
-Returned from light sleep, reason: timer, t=4722 ms, slept for 2000 ms
-Entering light sleep
-Returned from light sleep, reason: uart, t=5148 ms, slept for 418 ms
-Entering light sleep
-Returned from light sleep, reason: uart, t=6178 ms, slept for 1022 ms
-Entering light sleep
-Returned from light sleep, reason: timer, t=8187 ms, slept for 2000 ms
-Entering light sleep
-Returned from light sleep, reason: timer, t=10195 ms, slept for 2000 ms
-Entering light sleep
-Returned from light sleep, reason: timer, t=12203 ms, slept for 2000 ms
-Entering light sleep
-Returned from light sleep, reason: pin, t=12555 ms, slept for 342 ms
-Waiting for GPIO9 to go high...
-Entering light sleep
-Returned from light sleep, reason: pin, t=12564 ms, slept for 1 ms
-Waiting for GPIO9 to go high...
-Entering light sleep
-...
-I (361) touch_wakeup: Button[1] Press
-Returned from light sleep, reason: touch, t=14471 ms, slept for 467 ms
-Entering light sleep
-
-...
-```
-
-In the scenario above, the button attached to GPIO0 was pressed and held for about 3 seconds, after the 2nd wakeup from light sleep. The program has indicated the wakeup reason after each sleep iteration.
-
 ## Current Consumption
 
 In this example, current consumption in light sleep mode is in the range of 0.8 — 1.1 mA. Current consumption in active mode is 28 — 32 mA. Average current consumption is 1.1 - 1.3 mA.

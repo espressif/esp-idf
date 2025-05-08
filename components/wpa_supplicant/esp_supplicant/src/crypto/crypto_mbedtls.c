@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include "esp_system.h"
 #endif
 
+#include <errno.h>
 #include "utils/includes.h"
 #include "utils/common.h"
 #include "crypto.h"
@@ -35,9 +36,11 @@
 #include "aes_wrap.h"
 #include "crypto.h"
 #include "mbedtls/esp_config.h"
+#include "mbedtls/sha1.h"
 
 #ifdef CONFIG_FAST_PBKDF2
 #include "fastpbkdf2.h"
+#include "fastpsk.h"
 #endif
 
 static int digest_vector(mbedtls_md_type_t md_type, size_t num_elem,
@@ -102,10 +105,33 @@ int sha512_vector(size_t num_elem, const u8 *addr[], const size_t *len,
     return digest_vector(MBEDTLS_MD_SHA512, num_elem, addr, len, mac);
 }
 
+#if CONFIG_MBEDTLS_SHA1_C || CONFIG_MBEDTLS_HARDWARE_SHA
 int sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
+#if defined(MBEDTLS_SHA1_C)
     return digest_vector(MBEDTLS_MD_SHA1, num_elem, addr, len, mac);
+#elif defined(MBEDTLS_SHA1_ALT)
+    mbedtls_sha1_context ctx;
+    size_t i;
+    int ret;
+
+    mbedtls_sha1_init(&ctx);
+    for (i = 0; i < num_elem; i++) {
+        ret = mbedtls_sha1_update(&ctx, addr[i], len[i]);
+        if (ret != 0) {
+            goto exit;
+        }
+    }
+    ret = mbedtls_sha1_finish(&ctx, mac);
+
+exit:
+    mbedtls_sha1_free(&ctx);
+    return ret;
+#else
+    return -ENOTSUP;
+#endif
 }
+#endif
 
 int md5_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
@@ -362,6 +388,7 @@ int hmac_md5(const u8 *key, size_t key_len, const u8 *data, size_t data_len,
     return hmac_md5_vector(key, key_len, 1, &data, &data_len, mac);
 }
 
+#ifdef MBEDTLS_SHA1_C
 int hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
                      const u8 *addr[], const size_t *len, u8 *mac)
 {
@@ -374,6 +401,7 @@ int hmac_sha1(const u8 *key, size_t key_len, const u8 *data, size_t data_len,
 {
     return hmac_sha1_vector(key, key_len, 1, &data, &data_len, mac);
 }
+#endif
 
 static void *aes_crypt_init(int mode, const u8 *key, size_t len)
 {
@@ -747,13 +775,21 @@ cleanup:
     return ret;
 }
 
+#if defined(CONFIG_MBEDTLS_SHA1_C) || defined(CONFIG_MBEDTLS_HARDWARE_SHA)
 int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
                 int iterations, u8 *buf, size_t buflen)
 {
 #ifdef CONFIG_FAST_PBKDF2
+    /* For ESP32: Using pbkdf2_hmac_sha1() because esp_fast_psk() utilizes hardware,
+     * but for ESP32, the SHA1 hardware implementation is slower than the software implementation.
+     */
+#if CONFIG_IDF_TARGET_ESP32
     fastpbkdf2_hmac_sha1((const u8 *) passphrase, os_strlen(passphrase),
                          ssid, ssid_len, iterations, buf, buflen);
     return 0;
+#else
+    return esp_fast_psk(passphrase, os_strlen(passphrase), ssid, ssid_len, iterations, buf, buflen);
+#endif
 #else
     int ret = mbedtls_pkcs5_pbkdf2_hmac_ext(MBEDTLS_MD_SHA1, (const u8 *) passphrase,
                                             os_strlen(passphrase), ssid,
@@ -767,6 +803,7 @@ cleanup:
     return ret;
 #endif
 }
+#endif /* defined(CONFIG_MBEDTLS_SHA1_C) || defined(CONFIG_MBEDTLS_HARDWARE_SHA) */
 
 #ifdef MBEDTLS_DES_C
 int des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)

@@ -1,11 +1,11 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 from time import sleep
 from typing import Tuple
 
 import pytest
 from pytest_embedded_idf.dut import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 TEST_CONFIGS = [
     pytest.param('default'),
@@ -36,14 +36,10 @@ available_rtcio_nums = {
 }
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
+@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3', 'esp32c6', 'esp32h2'], indirect=['target'])
 def test_ext1_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]
@@ -86,12 +82,10 @@ def test_ext1_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
             wakee.expect(f'io_wakeup_num = {gpio_num}', timeout=10)
 
 
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
+@idf_parametrize('target', ['esp32c2', 'esp32c3', 'esp32c6'], indirect=['target'])
 def test_rtcio_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]
@@ -119,14 +113,13 @@ def test_rtcio_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
             waker.expect(f'io_level = {sleep_level}', timeout=10)
 
             wakee.write('sleep -m 1')
+            wakee.expect('enter deep sleep', timeout=10)
+            sleep(2)
 
             waker.write(f'gpio_control -p {gpio_num} -l {wakeup_level}')
             waker.expect(f'io_num = {gpio_num}', timeout=10)
             waker.expect(f'io_level = {wakeup_level}', timeout=10)
-
             wakee.expect('io_wakeup_test>', timeout=10)
-
-            sleep(2)
 
             wakee.write('cause')
             wakee.expect('Wake up from GPIO', timeout=10)
@@ -134,16 +127,12 @@ def test_rtcio_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
             wakee.expect(f'io_wakeup_num = {gpio_num}', timeout=10)
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
+@idf_parametrize(
+    'target', ['esp32', 'esp32c2', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c6', 'esp32h2'], indirect=['target']
+)
 def test_gpio_wakeup_enable_lightsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]
@@ -153,7 +142,6 @@ def test_gpio_wakeup_enable_lightsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
 
     for wakeup_level in [1, 0]:
         for gpio_num in gpio_nums:
-
             wakee.write('\r\n')
             wakee.expect('io_wakeup_test>', timeout=10)
             wakee.write(f'gpio -p {gpio_num} -l {wakeup_level}')
@@ -167,12 +155,13 @@ def test_gpio_wakeup_enable_lightsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
             waker.expect(f'io_level = {sleep_level}', timeout=10)
 
             wakee.write('sleep -m 0')
+            wakee.expect('enter light sleep', timeout=10)
+            sleep(1)
 
             waker.write(f'gpio_control -p {gpio_num} -l {wakeup_level}')
             waker.expect(f'io_num = {gpio_num}', timeout=10)
             waker.expect(f'io_level = {wakeup_level}', timeout=10)
-
-            wakee.expect('esp_light_sleep_start', timeout=10)
+            wakee.expect('wakeup from lightsleep', timeout=10)
 
             wakee.write('cause')
             wakee.expect('Wake up from GPIO', timeout=10)

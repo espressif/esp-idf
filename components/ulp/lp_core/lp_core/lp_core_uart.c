@@ -68,9 +68,9 @@ void lp_core_uart_tx_flush(uart_port_t lp_uart_num)
     (void)lp_uart_num;
     int loop_cnt = 0;
 
-    if (uart_ll_is_enabled(LP_UART_NUM_0) && !uart_hal_is_tx_idle(&hal)) {
+    if (uart_ll_is_enabled(LP_UART_NUM_0)) {
         /* Wait for the Tx FIFO to be empty */
-        while (!(uart_hal_get_intraw_mask(&hal) & (LP_UART_TX_INT_FLAG | LP_UART_ERR_INT_FLAG))) {
+        while (!(uart_hal_get_intraw_mask(&hal) & (LP_UART_TX_INT_FLAG | LP_UART_ERR_INT_FLAG) && uart_hal_is_tx_idle(&hal))) {
             loop_cnt++;
             if (loop_cnt > 10000) {
                 /* Bail out */

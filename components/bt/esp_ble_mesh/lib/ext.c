@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,6 +80,22 @@
 #define ADV_DATA(a)     ((const struct bt_mesh_adv_data *)(a))
 #define RPL(a)          ((struct bt_mesh_rpl *)(a))
 #define VOID(a)         ((void *)(a))
+
+/* Declare Lib Variables */
+uint8_t __meshlib_var_BLE_MESH_ADV_PROV = BLE_MESH_ADV_PROV;
+uint8_t __meshlib_var_BLE_MESH_ADV_DATA = BLE_MESH_ADV_DATA;
+#if CONFIG_BLE_MESH_FRIEND
+uint8_t __meshlib_var_BLE_MESH_ADV_FRIEND = BLE_MESH_ADV_FRIEND;
+#endif
+#if CONFIG_BLE_MESH_RELAY_ADV_BUF
+uint8_t __meshlib_var_BLE_MESH_ADV_RELAY_DATA = BLE_MESH_ADV_RELAY_DATA;
+#endif
+uint8_t __meshlib_var_BLE_MESH_ADV_BEACON = BLE_MESH_ADV_BEACON;
+uint8_t __meshlib_var_BLE_MESH_ADV_URI = BLE_MESH_ADV_URI;
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+uint8_t __meshlib_var_BLE_MESH_ADV_BLE = BLE_MESH_ADV_BLE;
+#endif
+uint8_t __meshlib_var_BLE_MESH_ADV_TYPES_NUM = BLE_MESH_ADV_TYPES_NUM;
 
 /* Sys utilities */
 void bt_mesh_ext_put_be16(uint16_t val, uint8_t dst[2])
@@ -3989,6 +4005,7 @@ void bt_mesh_ext_mbt_server_cb_evt_to_btc(uint8_t event, void *model, void *ctx)
 typedef struct {
     uint64_t config_ble_mesh_stack_trace_level : 3;
 
+    uint64_t config_ble_mesh_use_ble_50: 1;
     uint64_t config_ble_mesh_use_duplicate_scan : 1;
     uint64_t config_ble_mesh_pb_adv : 1;
     uint64_t config_ble_mesh_pb_gatt : 1;
@@ -4154,6 +4171,7 @@ typedef struct {
 static const bt_mesh_ext_config_t bt_mesh_ext_cfg = {
     .config_ble_mesh_stack_trace_level              = BLE_MESH_LOG_LEVEL,
 
+    .config_ble_mesh_use_ble_50                     = IS_ENABLED(CONFIG_BLE_MESH_USE_BLE_50),
     .config_ble_mesh_use_duplicate_scan             = IS_ENABLED(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN),
     .config_ble_mesh_pb_adv                         = IS_ENABLED(CONFIG_BLE_MESH_PB_ADV),
     .config_ble_mesh_pb_gatt                        = IS_ENABLED(CONFIG_BLE_MESH_PB_GATT),

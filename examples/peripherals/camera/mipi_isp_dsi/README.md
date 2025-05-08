@@ -143,6 +143,12 @@ I (1315) sensor_init: fmt[2].name:MIPI_2lane_24Minput_RAW8_800x800_50fps
 I (1355) sensor_init: Format in use:MIPI_2lane_24Minput_RAW8_800x640_50fps
 ```
 
+Below picture is from the video stream of OV5647 and ILI9881C. The camera module is not focused and has not been calibrated by the ESP on-chip ISP hardware.
+
+This image is also used as a reference, you can check output image after ISP auto-focus and other pipelines in [Example ISP Multi-pipeline](../../isp/multi_pipelines/).
+
+![CSI-ISP](image/csi2.jpg)
+
 
 ## Reference
 

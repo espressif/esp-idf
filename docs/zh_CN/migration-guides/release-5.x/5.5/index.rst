@@ -8,3 +8,5 @@
 
     system
     peripherals
+    protocols
+    wifi

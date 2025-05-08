@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -377,7 +377,7 @@ TEST_CASE("internal emac interrupt priority", "[esp_emac]")
             // combine driver with netif
             esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
             TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
-            // register user defined event handers
+            // register user defined event handlers
             TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
             TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
 
@@ -563,4 +563,153 @@ TEST_CASE("internal emac erroneous frames", "[esp_emac]")
     extra_cleanup();
     vEventGroupDelete(eth_event_group);
     vSemaphoreDelete(mutex);
+}
+
+TEST_CASE("internal emac address filter", "[esp_emac]")
+{
+    EventBits_t bits = 0;
+    EventGroupHandle_t eth_event_group = xEventGroupCreate();
+    TEST_ASSERT(eth_event_group != NULL);
+    TEST_ESP_OK(esp_event_loop_create_default());
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+
+    esp_eth_mac_t *mac = mac_init(NULL, NULL);
+    TEST_ASSERT_NOT_NULL(mac);
+    esp_eth_phy_t *phy = phy_init(NULL);
+    TEST_ASSERT_NOT_NULL(phy);
+    esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
+    esp_eth_handle_t eth_handle = NULL; // after driver installed, we will get the handle of the driver
+    TEST_ESP_OK(esp_eth_driver_install(&config, &eth_handle)); // install driver
+    TEST_ASSERT_NOT_NULL(eth_handle);
+    extra_eth_config(eth_handle);
+    // ---------------------------------------
+    // Loopback greatly simplifies the test !!
+    // ---------------------------------------
+    bool loopback_en = true;
+    esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en);
+
+    // start Ethernet driver
+    TEST_ESP_OK(esp_eth_start(eth_handle));
+    // wait for connection start
+    bits = xEventGroupWaitBits(eth_event_group, ETH_START_BIT, true, true, pdMS_TO_TICKS(ETH_START_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_START_BIT) == ETH_START_BIT);
+    // wait for connection establish
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+
+    emac_hal_context_t emac_hal;
+    emac_hal_init(&emac_hal);
+
+    // Test destination address filter functions
+    uint8_t test_mac_addr1[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+    uint8_t test_mac_addr2[] = {0x11, 0x12, 0x13, 0x14, 0x15, 0x16};
+    uint8_t test_mac_addr3[] = {0x21, 0x22, 0x23, 0x24, 0x25, 0x26};
+    uint8_t mac_got[ETH_ADDR_LEN];
+
+    // Test adding filter with specific address number
+    TEST_ESP_OK(emac_hal_add_addr_da_filter(&emac_hal, test_mac_addr1, 1));
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 1));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr1, mac_got, ETH_ADDR_LEN);
+
+    // Test auto adding filter
+    TEST_ESP_OK(emac_hal_add_addr_da_filter_auto(&emac_hal, test_mac_addr2));
+    TEST_ESP_OK(emac_hal_add_addr_da_filter_auto(&emac_hal, test_mac_addr3));
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 2));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr2, mac_got, ETH_ADDR_LEN);
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 3));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr3, mac_got, ETH_ADDR_LEN);
+
+    // Test removing filter with specific address number
+    TEST_ESP_OK(emac_hal_rm_addr_da_filter(&emac_hal, test_mac_addr1, 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, emac_hal_get_addr_da_filter(&emac_hal, mac_got, 1));
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 2));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr2, mac_got, ETH_ADDR_LEN);
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 3));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr3, mac_got, ETH_ADDR_LEN);
+
+    // Test auto removing filter
+    TEST_ESP_OK(emac_hal_rm_addr_da_filter_auto(&emac_hal, test_mac_addr3));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, emac_hal_get_addr_da_filter(&emac_hal, mac_got, 3));
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 2));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr2, mac_got, ETH_ADDR_LEN);
+    TEST_ESP_OK(emac_hal_rm_addr_da_filter_auto(&emac_hal, test_mac_addr2));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, emac_hal_get_addr_da_filter(&emac_hal, mac_got, 2));
+
+    // Test clear all filters
+    TEST_ESP_OK(emac_hal_add_addr_da_filter(&emac_hal, test_mac_addr1, 1));
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 1));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr1, mac_got, ETH_ADDR_LEN);
+    TEST_ESP_OK(emac_hal_add_addr_da_filter(&emac_hal, test_mac_addr2, EMAC_LL_MAX_MAC_ADDR_NUM));
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, EMAC_LL_MAX_MAC_ADDR_NUM));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr2, mac_got, ETH_ADDR_LEN);
+    emac_hal_clear_addr_da_filters(&emac_hal);
+    for(uint8_t i = 1; i <= EMAC_LL_MAX_MAC_ADDR_NUM; i++) {
+        TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, emac_hal_get_addr_da_filter(&emac_hal, mac_got, i));
+    }
+
+    // Test auto adding filter with all addresses
+    uint8_t test_mac_addr[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x00};
+    for(uint8_t i = 1; i <= EMAC_LL_MAX_MAC_ADDR_NUM; i++) {
+        test_mac_addr[5]++;
+        TEST_ESP_OK(emac_hal_add_addr_da_filter_auto(&emac_hal, test_mac_addr));
+    }
+    TEST_ASSERT_EQUAL(ESP_FAIL, emac_hal_add_addr_da_filter_auto(&emac_hal, test_mac_addr));
+    test_mac_addr[5] = 0x00;
+    for(uint8_t i = 1; i <= EMAC_LL_MAX_MAC_ADDR_NUM; i++) {
+        test_mac_addr[5]++;
+        TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, i));
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr, mac_got, ETH_ADDR_LEN);
+    }
+
+    // Test invalid arguments
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_add_addr_da_filter(&emac_hal, NULL, 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_add_addr_da_filter(&emac_hal, test_mac_addr1, 0));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_add_addr_da_filter(&emac_hal, test_mac_addr1, EMAC_LL_MAX_MAC_ADDR_NUM + 1));
+
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, NULL, 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_get_addr_da_filter(&emac_hal, test_mac_addr1, 0));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_get_addr_da_filter(&emac_hal, test_mac_addr1, EMAC_LL_MAX_MAC_ADDR_NUM + 1));
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_rm_addr_da_filter(&emac_hal, NULL, 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_rm_addr_da_filter(&emac_hal, test_mac_addr1, 0));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_rm_addr_da_filter(&emac_hal, test_mac_addr1, EMAC_LL_MAX_MAC_ADDR_NUM + 1));
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_rm_addr_da_filter_auto(&emac_hal, NULL));
+
+    // Check EMAC_LL_MAX_MAC_ADDR_NUM is correctly defined (e.i. max MAC address was really limited to this value during coreConsultant phase)
+    emac_ll_add_addr_filter(emac_hal.mac_regs, EMAC_LL_MAX_MAC_ADDR_NUM + 1, test_mac_addr1, 0, false);
+    TEST_ASSERT_FALSE(emac_ll_get_addr_filter(emac_hal.mac_regs, EMAC_LL_MAX_MAC_ADDR_NUM + 1, mac_got, NULL, NULL));
+
+    // stop Ethernet driver
+    TEST_ESP_OK(esp_eth_stop(eth_handle));
+    // wait for connection stop
+    bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
+    TEST_ESP_OK(phy->del(phy));
+    TEST_ESP_OK(mac->del(mac));
+    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
+    TEST_ESP_OK(esp_event_loop_delete_default());
+    extra_cleanup();
+    vEventGroupDelete(eth_event_group);
+}
+
+TEST_CASE("internal emac ref rmii clk out", "[esp_emac_clk_out]")
+{
+    esp_eth_mac_t *mac = mac_init(NULL, NULL);
+    TEST_ASSERT_NOT_NULL(mac);
+    esp_eth_phy_t *phy = phy_init(NULL);
+    TEST_ASSERT_NOT_NULL(phy);
+    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
+    esp_eth_handle_t eth_handle = NULL;
+    // install Ethernet driver
+    // This is a simple test and it only verifies the REF RMII output CLK is configured and started, and the internal
+    // EMAC is clocked by it. It does not verify the whole system functionality. As such, it can be executed on the same
+    // test boards which are configured to input REF RMII CLK by default with only minor HW modification.
+    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
+    extra_eth_config(eth_handle);
+    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
+    TEST_ESP_OK(phy->del(phy));
+    TEST_ESP_OK(mac->del(mac));
+    extra_cleanup();
 }

@@ -2,22 +2,83 @@
 archive: libspi_flash.a
 entries:
     if APP_BUILD_TYPE_PURE_RAM_APP = n:
-        spi_flash_chip_generic (noflash)
-        spi_flash_chip_issi (noflash)
-        spi_flash_chip_mxic (noflash)
-        spi_flash_chip_gd (noflash)
-        spi_flash_chip_winbond (noflash)
-        spi_flash_chip_boya (noflash)
-        spi_flash_chip_th (noflash)
-        memspi_host_driver (noflash)
         flash_brownout_hook (noflash)
-        spi_flash_wrap (noflash)
 
-        if IDF_TARGET_ESP32S3 = y:
-            spi_flash_chip_mxic_opi (noflash)
+        if SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM = y:
+            spi_flash_wrap (noflash)
+            spi_flash_chip_generic (noflash)
+            spi_flash_chip_issi (noflash)
+            spi_flash_chip_mxic (noflash)
+            spi_flash_chip_gd (noflash)
+            spi_flash_chip_winbond (noflash)
+            spi_flash_chip_boya (noflash)
+            spi_flash_chip_th (noflash)
+            memspi_host_driver (noflash)
+
+            esp_flash_api: esp_flash_chip_driver_initialized (noflash)
+            esp_flash_api: esp_flash_init (noflash)
+            esp_flash_api: esp_flash_init_main (noflash)
+            esp_flash_api: read_unique_id (noflash)
+            esp_flash_api: detect_spi_flash_chip (noflash)
+            esp_flash_api: esp_flash_get_physical_size (noflash)
+
+            spi_flash_os_func_app: spi23_start (noflash)
+            spi_flash_os_func_app: spi23_end (noflash)
+            spi_flash_os_func_app: spi_flash_os_check_yield (noflash)
+            spi_flash_os_func_app: spi_flash_os_yield (noflash)
+            spi_flash_os_func_app: delay_us (noflash)
+            spi_flash_os_func_app: get_buffer_malloc (noflash)
+            spi_flash_os_func_app: release_buffer_malloc (noflash)
+            spi_flash_os_func_app: main_flash_region_protected (noflash)
+            spi_flash_os_func_app: main_flash_op_status (noflash)
+
+            spi_flash_os_func_noos: esp_flash_app_disable_os_functions (noflash)
+            spi_flash_os_func_noos: get_temp_buffer_not_supported (noflash)
+            spi_flash_os_func_noos: delay_us (noflash)
+
+            if IDF_TARGET_ESP32S3 = y:
+                spi_flash_chip_mxic_opi (noflash)
+
+            if ESPTOOLPY_OCT_FLASH = y || ESPTOOLPY_FLASH_MODE_AUTO_DETECT = y:
+                spi_flash_oct_flash_init (noflash)
+
+            if SPI_FLASH_VERIFY_WRITE = y:
+                esp_flash_api: s_verify_write (noflash)
+
+            if SPI_FLASH_ROM_IMPL = n || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV = y:
+                esp_flash_api: spiflash_start_default (noflash)
+                esp_flash_api: spiflash_end_default (noflash)
+                esp_flash_api: check_chip_pointer_default (noflash)
+                esp_flash_api: flash_end_flush_cache (noflash)
+                esp_flash_api: esp_flash_write_encrypted (noflash)
+
+            if SPI_FLASH_ROM_IMPL = n:
+                esp_flash_api: esp_flash_get_size (noflash)
+                esp_flash_api: esp_flash_erase_chip (noflash)
+                esp_flash_api: esp_flash_get_chip_write_protect (noflash)
+                esp_flash_api: esp_flash_set_chip_write_protect (noflash)
+                esp_flash_api: esp_flash_get_protected_region (noflash)
+                esp_flash_api: esp_flash_set_protected_region (noflash)
+                esp_flash_api: esp_flash_read (noflash)
+                esp_flash_api: esp_flash_write (noflash)
+                esp_flash_api: esp_flash_read_encrypted (noflash)
+                esp_flash_api: esp_flash_get_io_mode (noflash)
+                esp_flash_api: esp_flash_set_io_mode (noflash)
+                esp_flash_api: esp_flash_erase_region (noflash)
+
+                if SPI_FLASH_WARN_SETTING_ZERO_TO_ONE = y:
+                    esp_flash_api: s_check_setting_zero_to_one (noflash)
+
 
         if SPI_FLASH_HPM_ON = y:
             spi_flash_hpm_enable (noflash)
 
-        if ESPTOOLPY_OCT_FLASH = y || ESPTOOLPY_FLASH_MODE_AUTO_DETECT = y:
-            spi_flash_oct_flash_init (noflash)
+[mapping:spi_flash_hal]
+archive: libhal.a
+entries:
+    if SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM = y:
+        spi_flash_hal_iram (noflash)
+        spi_flash_encrypt_hal_iram (noflash)
+
+        if SOC_GPSPI_SUPPORTED = y && IDF_TARGET_ESP32 = n:
+            spi_flash_hal_gpspi (noflash)

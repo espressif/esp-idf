@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -297,21 +297,21 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
     /* when audio codec is configured, this event comes */
     case ESP_A2D_AUDIO_CFG_EVT: {
         a2d = (esp_a2d_cb_param_t *)(p_param);
-        ESP_LOGI(BT_AV_TAG, "A2DP audio stream configuration, codec type: %d", a2d->audio_cfg.mcc.type);
+        esp_a2d_mcc_t *p_mcc = &a2d->audio_cfg.mcc;
+        ESP_LOGI(BT_AV_TAG, "A2DP audio stream configuration, codec type: %d", p_mcc->type);
         /* for now only SBC stream is supported */
-        if (a2d->audio_cfg.mcc.type == ESP_A2D_MCT_SBC) {
+        if (p_mcc->type == ESP_A2D_MCT_SBC) {
             int sample_rate = 16000;
             int ch_count = 2;
-            char oct0 = a2d->audio_cfg.mcc.cie.sbc[0];
-            if (oct0 & (0x01 << 6)) {
+            if (p_mcc->cie.sbc_info.samp_freq & ESP_A2D_SBC_CIE_SF_32K) {
                 sample_rate = 32000;
-            } else if (oct0 & (0x01 << 5)) {
+            } else if (p_mcc->cie.sbc_info.samp_freq & ESP_A2D_SBC_CIE_SF_44K) {
                 sample_rate = 44100;
-            } else if (oct0 & (0x01 << 4)) {
+            } else if (p_mcc->cie.sbc_info.samp_freq & ESP_A2D_SBC_CIE_SF_48K) {
                 sample_rate = 48000;
             }
 
-            if (oct0 & (0x01 << 3)) {
+            if (p_mcc->cie.sbc_info.ch_mode & ESP_A2D_SBC_CIE_CH_MODE_MONO) {
                 ch_count = 1;
             }
         #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
@@ -338,11 +338,14 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
             i2s_channel_reconfig_std_slot(tx_chan, &slot_cfg);
             i2s_channel_enable(tx_chan);
         #endif
-            ESP_LOGI(BT_AV_TAG, "Configure audio player: %x-%x-%x-%x",
-                     a2d->audio_cfg.mcc.cie.sbc[0],
-                     a2d->audio_cfg.mcc.cie.sbc[1],
-                     a2d->audio_cfg.mcc.cie.sbc[2],
-                     a2d->audio_cfg.mcc.cie.sbc[3]);
+            ESP_LOGI(BT_AV_TAG, "Configure audio player: 0x%x-0x%x-0x%x-0x%x-0x%x-%d-%d",
+                     p_mcc->cie.sbc_info.samp_freq,
+                     p_mcc->cie.sbc_info.ch_mode,
+                     p_mcc->cie.sbc_info.block_len,
+                     p_mcc->cie.sbc_info.num_subbands,
+                     p_mcc->cie.sbc_info.alloc_mthd,
+                     p_mcc->cie.sbc_info.min_bitpool,
+                     p_mcc->cie.sbc_info.max_bitpool);
             ESP_LOGI(BT_AV_TAG, "Audio player configured, sample rate: %d", sample_rate);
         }
         break;
@@ -364,7 +367,7 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         if (a2d->a2d_psc_cfg_stat.psc_mask & ESP_A2D_PSC_DELAY_RPT) {
             ESP_LOGI(BT_AV_TAG, "Peer device support delay reporting");
         } else {
-            ESP_LOGI(BT_AV_TAG, "Peer device unsupport delay reporting");
+            ESP_LOGI(BT_AV_TAG, "Peer device unsupported delay reporting");
         }
         break;
     }
@@ -415,13 +418,13 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
         }
         break;
     }
-    /* when passthrough responsed, this event comes */
+    /* when passthrough responded, this event comes */
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT: {
         ESP_LOGI(BT_RC_CT_TAG, "AVRC passthrough rsp: key_code 0x%x, key_state %d, rsp_code %d", rc->psth_rsp.key_code,
                     rc->psth_rsp.key_state, rc->psth_rsp.rsp_code);
         break;
     }
-    /* when metadata responsed, this event comes */
+    /* when metadata responded, this event comes */
     case ESP_AVRC_CT_METADATA_RSP_EVT: {
         ESP_LOGI(BT_RC_CT_TAG, "AVRC metadata rsp: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
         free(rc->meta_rsp.attr_text);

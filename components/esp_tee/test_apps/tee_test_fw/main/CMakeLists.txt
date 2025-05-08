@@ -32,6 +32,10 @@ list(APPEND srcs "${mbedtls_test_srcs_dir}/test_mbedtls_sha.c"
 
 # Mixed
 list(APPEND srcs "${mbedtls_test_srcs_dir}/test_aes_sha_parallel.c")
+
+# ECC
+list(APPEND srcs "${mbedtls_test_srcs_dir}/test_ecp.c")
+
 # Utility
 list(APPEND srcs "${mbedtls_test_srcs_dir}/test_apb_dport_access.c"
                  "${mbedtls_test_srcs_dir}/test_mbedtls_utils.c")

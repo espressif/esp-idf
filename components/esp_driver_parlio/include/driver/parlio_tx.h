@@ -30,6 +30,8 @@ typedef struct {
     gpio_num_t clk_out_gpio_num; /*!< GPIO number of the output clock signal, the clock is synced with TX data */
     gpio_num_t valid_gpio_num;   /*!< GPIO number of the valid signal, which stays high when transferring data.
                                       Note that, the valid signal will always occupy the MSB data bit */
+    uint16_t valid_start_delay; /*!< The clock cycles that the valid signal becomes active before data start */
+    uint16_t valid_stop_delay;  /*!< The clock cycles that the valid signal keeps active after data end */
     size_t trans_queue_depth; /*!< Depth of internal transaction queue */
     size_t max_transfer_size; /*!< Maximum transfer size in one transaction, in bytes. This decides the number of DMA nodes will be used for each transaction */
     size_t dma_burst_size;    /*!< DMA burst size, in bytes */
@@ -126,7 +128,7 @@ typedef bool (*parlio_tx_done_callback_t)(parlio_tx_unit_handle_t tx_unit, const
 /**
  * @brief Group of Parallel IO TX callbacks
  * @note The callbacks are all running under ISR environment
- * @note When CONFIG_PARLIO_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_PARLIO_TX_ISR_CACHE_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       The variables used in the function should be in the SRAM as well.
  */
 typedef struct {
@@ -137,7 +139,7 @@ typedef struct {
  * @brief Set event callbacks for Parallel IO TX unit
  *
  * @note User can deregister a previously registered callback by calling this function and setting the callback member in the `cbs` structure to NULL.
- * @note When CONFIG_PARLIO_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_PARLIO_TX_ISR_CACHE_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       The variables used in the function should be in the SRAM as well. The `user_data` should also reside in SRAM.
  *
  * @param[in] tx_unit Parallel IO TX unit that created by `parlio_new_tx_unit`
@@ -157,6 +159,7 @@ typedef struct {
     uint32_t idle_value; /*!< The value on the data line when the parallel IO is in idle state */
     struct {
         uint32_t queue_nonblocking : 1; /*!< If set, when the transaction queue is full, driver will not block the thread but return directly */
+        uint32_t loop_transmission : 1; /*!< If set, the transmission will be repeated continuously, until the tx_unit is disabled by `parlio_tx_unit_disable` */
     } flags;                            /*!< Transmit specific config flags */
 } parlio_transmit_config_t;
 

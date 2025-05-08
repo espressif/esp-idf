@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
-from __future__ import print_function
-
 import logging
 import os
 import sys
+
+from pytest_embedded_idf.utils import idf_parametrize
 
 try:
     import esp_prov
@@ -25,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 esp_prov.config_throw_except = True
 
 
-def test_wifi_prov_mgr(dut: Dut,  sec_ver: int) -> None:
+def test_wifi_prov_mgr(dut: Dut, sec_ver: int) -> None:
     # Check if BT memory is released before provisioning starts
     dut.expect('wifi_prov_scheme_ble: BT memory released', timeout=60)
 
@@ -41,12 +40,12 @@ def test_wifi_prov_mgr(dut: Dut,  sec_ver: int) -> None:
     ap_password = 'mypassword'
 
     logging.info('Getting security')
-    if (sec_ver == 1):
+    if sec_ver == 1:
         pop = 'abcd1234'
         sec2_username = None
         sec2_password = None
         security = esp_prov.get_security(sec_ver, sec2_username, sec2_password, pop, verbose)
-    elif (sec_ver == 2):
+    elif sec_ver == 2:
         pop = None
         sec2_username = 'wifiprov'
         sec2_password = 'abcd1234'
@@ -91,18 +90,22 @@ def test_wifi_prov_mgr(dut: Dut,  sec_ver: int) -> None:
     dut.expect('wifi_prov_scheme_ble: BTDM memory released', timeout=30)
 
 
-@pytest.mark.esp32
 @pytest.mark.generic
-@pytest.mark.parametrize('config', ['security1',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'security1',
+    ],
+    indirect=True,
+)
 @pytest.mark.xfail(reason='Runner unable to connect to target over Bluetooth', run=False)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_wifi_prov_mgr_sec1(dut: Dut) -> None:
-
     test_wifi_prov_mgr(dut, 1)
 
 
-@pytest.mark.esp32
 @pytest.mark.generic
 @pytest.mark.xfail(reason='Runner unable to connect to target over Bluetooth', run=False)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_wifi_prov_mgr_sec2(dut: Dut) -> None:
-
     test_wifi_prov_mgr(dut, 2)

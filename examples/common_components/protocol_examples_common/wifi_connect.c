@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -172,9 +172,13 @@ esp_err_t example_wifi_sta_do_connect(wifi_config_t wifi_config, bool wait)
         ESP_LOGI(TAG, "Waiting for IP(s)");
 #if CONFIG_EXAMPLE_CONNECT_IPV4
         xSemaphoreTake(s_semph_get_ip_addrs, portMAX_DELAY);
+        vSemaphoreDelete(s_semph_get_ip_addrs);
+        s_semph_get_ip_addrs = NULL;
 #endif
 #if CONFIG_EXAMPLE_CONNECT_IPV6
         xSemaphoreTake(s_semph_get_ip6_addrs, portMAX_DELAY);
+        vSemaphoreDelete(s_semph_get_ip6_addrs);
+        s_semph_get_ip6_addrs = NULL;
 #endif
         if (s_retry_num > CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY) {
             return ESP_FAIL;
@@ -190,14 +194,6 @@ esp_err_t example_wifi_sta_do_disconnect(void)
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &example_handler_on_wifi_connect));
 #if CONFIG_EXAMPLE_CONNECT_IPV6
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_GOT_IP6, &example_handler_on_sta_got_ipv6));
-#endif
-    if (s_semph_get_ip_addrs) {
-        vSemaphoreDelete(s_semph_get_ip_addrs);
-    }
-#if CONFIG_EXAMPLE_CONNECT_IPV6
-    if (s_semph_get_ip6_addrs) {
-        vSemaphoreDelete(s_semph_get_ip6_addrs);
-    }
 #endif
     return esp_wifi_disconnect();
 }

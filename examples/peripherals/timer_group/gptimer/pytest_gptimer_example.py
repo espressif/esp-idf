@@ -1,12 +1,12 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.supported_targets
 @pytest.mark.generic
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_gptimer_example(dut: Dut) -> None:
     dut.expect_exact('Create timer handle', timeout=5)
     dut.expect_exact('Start timer, stop it at alarm event', timeout=5)
@@ -27,7 +27,7 @@ def test_gptimer_example(dut: Dut) -> None:
 
     dut.expect_exact('Stop timer')
     dut.expect_exact('Start timer, update alarm value dynamically')
-    for i in range(1,5):
+    for i in range(1, 5):
         res = dut.expect(r'Timer alarmed, count=(\d+)', timeout=5)
         alarm_count = res.group(1).decode('utf8')
         assert (i * 1000000 - 20) < int(alarm_count) < (i * 1000000 + 20)

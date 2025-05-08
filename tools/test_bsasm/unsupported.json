@@ -1,0 +1,5 @@
+{
+	"chipname": "esp32_basic_chip",
+	"extra_instruction_groups": [
+	]
+}

@@ -135,25 +135,9 @@ secure_services:
     entries:
       - id: 54
         type: IDF
-        function: efuse_hal_chip_revision
-        args: 0
-      - id: 55
-        type: IDF
-        function: efuse_hal_get_chip_ver_pkg
-        args: 1
-      - id: 56
-        type: IDF
-        function: efuse_hal_get_disable_wafer_version_major
-        args: 0
-      - id: 57
-        type: IDF
-        function: efuse_hal_get_mac
-        args: 1
-      - id: 58
-        type: IDF
         function: wdt_hal_init
         args: 4
-      - id: 59
+      - id: 55
         type: IDF
         function: wdt_hal_deinit
         args: 1
@@ -208,22 +192,55 @@ secure_services:
         type: IDF
         function: esp_sha_write_digest_state
         args: 2
-  # ID: 134-149 (16) - eFuse
-  - family: efuse
-    entries:
-      - id: 134
+      - id: 98
         type: IDF
-        function: esp_efuse_check_secure_version
+        function: esp_crypto_sha_enable_periph_clk
         args: 1
-      - id: 135
+      - id: 99
         type: IDF
-        function: esp_efuse_read_field_blob
-        args: 3
-      - id: 136
+        function: esp_hmac_calculate
+        args: 4
+      - id: 100
         type: IDF
-        function: esp_flash_encryption_enabled
+        function: esp_hmac_jtag_enable
+        args: 2
+      - id: 101
+        type: IDF
+        function: esp_hmac_jtag_disable
         args: 0
-  # ID: 150-169 (20) - Reserved for future use
+      - id: 102
+        type: IDF
+        function: esp_ds_sign
+        args: 4
+      - id: 103
+        type: IDF
+        function: esp_ds_start_sign
+        args: 4
+      - id: 104
+        type: IDF
+        function: esp_ds_is_busy
+        args: 0
+      - id: 105
+        type: IDF
+        function: esp_ds_finish_sign
+        args: 2
+      - id: 106
+        type: IDF
+        function: esp_ds_encrypt_params
+        args: 4
+      - id: 107
+        type: IDF
+        function: esp_crypto_mpi_enable_periph_clk
+        args: 1
+      - id: 108
+        type: IDF
+        function: esp_ecc_point_multiply
+        args: 4
+      - id: 109
+        type: IDF
+        function: esp_ecc_point_verify
+        args: 1
+  # ID: 134-169 (36) - Reserved for future use
   - family: attestation
     entries:
       - id: 170
@@ -244,11 +261,11 @@ secure_services:
       - id: 177
         type: custom
         function: esp_tee_sec_storage_get_signature
-        args: 4
+        args: 5
       - id: 178
         type: custom
         function: esp_tee_sec_storage_get_pubkey
-        args: 2
+        args: 3
       - id: 179
         type: custom
         function: esp_tee_sec_storage_encrypt

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include "soc/lp_aon_struct.h"
 #include "soc/lpperi_struct.h"
 #include "soc/pmu_struct.h"
+#include "hal/gpio_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
 
@@ -33,21 +34,6 @@ typedef enum {
     RTCIO_LL_FUNC_RTC = 0x0,         /*!< The pin controlled by RTC module. */
     RTCIO_LL_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
 } rtcio_ll_func_t;
-
-typedef enum {
-    RTCIO_LL_WAKEUP_DISABLE    = 0,    /*!< Disable GPIO interrupt                             */
-    RTCIO_LL_WAKEUP_LOW_LEVEL  = 0x4,  /*!< GPIO interrupt type : input low level trigger      */
-    RTCIO_LL_WAKEUP_HIGH_LEVEL = 0x5,  /*!< GPIO interrupt type : input high level trigger     */
-} rtcio_ll_wake_type_t;
-
-typedef enum {
-    RTCIO_INTR_DISABLE = 0,     /*!< Disable GPIO interrupt                             */
-    RTCIO_INTR_POSEDGE = 1,     /*!< GPIO interrupt type : rising edge                  */
-    RTCIO_INTR_NEGEDGE = 2,     /*!< GPIO interrupt type : falling edge                 */
-    RTCIO_INTR_ANYEDGE = 3,     /*!< GPIO interrupt type : both rising and falling edge */
-    RTCIO_INTR_LOW_LEVEL = 4,   /*!< GPIO interrupt type : input low level trigger      */
-    RTCIO_INTR_HIGH_LEVEL = 5,  /*!< GPIO interrupt type : input high level trigger     */
-} rtcio_ll_intr_type_t;
 
 typedef enum {
     RTCIO_LL_OUTPUT_NORMAL = 0,    /*!< RTCIO output mode is normal. */
@@ -327,7 +313,7 @@ static inline void rtcio_ll_force_unhold_all(void)
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  * @param type  Wakeup on high level or low level.
  */
-static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t type)
+static inline void rtcio_ll_wakeup_enable(int rtcio_num, gpio_int_type_t type)
 {
     LP_IO.pin[rtcio_num].wakeup_enable = 1;
     LP_IO.pin[rtcio_num].int_type = type;
@@ -349,7 +335,7 @@ static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t ty
 static inline void rtcio_ll_wakeup_disable(int rtcio_num)
 {
     LP_IO.pin[rtcio_num].wakeup_enable = 0;
-    LP_IO.pin[rtcio_num].int_type = RTCIO_LL_WAKEUP_DISABLE;
+    LP_IO.pin[rtcio_num].int_type = 0;
 }
 
 /**
@@ -359,7 +345,7 @@ static inline void rtcio_ll_wakeup_disable(int rtcio_num)
  * @param type  Interrupt type on high level or low level.
  */
 
-static inline void rtcio_ll_intr_enable(int rtcio_num, rtcio_ll_intr_type_t type)
+static inline void rtcio_ll_intr_enable(int rtcio_num, gpio_int_type_t type)
 {
     LP_IO.pin[rtcio_num].int_type = type;
 

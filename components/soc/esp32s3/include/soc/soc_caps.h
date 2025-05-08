@@ -29,6 +29,7 @@
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
+#define SOC_UHCI_SUPPORTED              1
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_LCDCAM_SUPPORTED            1
@@ -330,6 +331,8 @@
                                              */
 #define SOC_RTCIO_HOLD_SUPPORTED 1
 #define SOC_RTCIO_WAKE_SUPPORTED 1
+// LP IO peripherals have independent clock gating to manage
+#define SOC_LP_IO_CLOCK_IS_INDEPENDENT 1
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_GROUPS             1
@@ -390,9 +393,15 @@
 #define SOC_TIMER_GROUP_SUPPORT_APB       (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (4)
 
+/*-------------------------- LP_TIMER CAPS ----------------------------------*/
+#define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
+#define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
+
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION                    (2)  /*!< Hardware version of touch sensor */
 #define SOC_TOUCH_SENSOR_NUM                        (15) /*!< 15 Touch channels */
+#define SOC_TOUCH_MIN_CHAN_ID                       (1)  /*!< Touch minimum channel number, (0 is internal denoise channel) */
+#define SOC_TOUCH_MAX_CHAN_ID                       (14) /*!< Touch maximum channel number */
 #define SOC_TOUCH_SUPPORT_BENCHMARK                 (1)  /*!< Touch sensor supports benchmark configuration */
 #define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP              (1)  /*!< Touch sensor supports sleep awake */
 #define SOC_TOUCH_SUPPORT_WATERPROOF                (1)  /*!< Touch sensor supports waterproof */
@@ -404,7 +413,8 @@
 #define SOC_TOUCH_SAMPLE_CFG_NUM                    (1U) /*!< The sample configuration number in total, each sampler can be used to sample on one frequency */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
-#define SOC_TWAI_CONTROLLER_NUM         1UL
+#define SOC_TWAI_CONTROLLER_NUM         1U
+#define SOC_TWAI_MASK_FILTER_NUM        1U
 #define SOC_TWAI_CLK_SUPPORT_APB        1
 #define SOC_TWAI_BRP_MIN                2
 #define SOC_TWAI_BRP_MAX                16384
@@ -424,6 +434,9 @@
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
 
 #define SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE (1)
+
+/*--------------------------- UHCI CAPS -------------------------------------*/
+#define SOC_UHCI_NUM               (1UL)
 
 /*-------------------------- USB CAPS ----------------------------------------*/
 #define SOC_USB_OTG_PERIPH_NUM          (1U)
@@ -539,7 +552,7 @@
 #define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1)
 #define SOC_SPI_MEM_SUPPORT_AUTO_RESUME                   (1)
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
-#define SOC_SPI_MEM_SUPPORT_OPI_MODE                      (1)
+#define SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE                (1)
 #define SOC_SPI_MEM_SUPPORT_TIMING_TUNING                 (1)
 #define SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE          (1)
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)

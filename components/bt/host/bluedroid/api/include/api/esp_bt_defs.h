@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,83 @@ extern "C" {
         return ESP_ERR_INVALID_STATE;                \
     }
 
-#define ESP_BT_STATUS_BASE_FOR_HCI_ERR  0X0100  /* base for converting HCI error code to ESP status */
+#define ESP_BT_STATUS_BASE_FOR_HCI_ERR           0X0100  /* base for converting HCI error code to ESP status */
+
+/* See [Vol 1] Part F, Controller Error Codes for a list of error codes and descriptions */
+
+#define ESP_HCI_ERR_SUCCESS                      0x00 /* Success */
+#define ESP_HCI_ERR_UNKNOWN_CMD                  0x01 /* Unknown HCI Command */
+#define ESP_HCI_ERR_UNKNOWN_CONN_ID              0x02 /* Unknown Connection Identifier */
+#define ESP_HCI_ERR_HW_FAILURE                   0x03 /* Hardware Failure */
+#define ESP_HCI_ERR_PAGE_TIMEOUT                 0x04 /* Page Timeout */
+#define ESP_HCI_ERR_AUTH_FAIL                    0x05 /* Authentication Failure */
+#define ESP_HCI_ERR_PIN_OR_KEY_MISSING           0x06 /* PIN or Key Missing */
+#define ESP_HCI_ERR_MEM_CAPACITY_EXCEEDED        0x07 /* Memory Capacity Exceeded */
+#define ESP_HCI_ERR_CONN_TIMEOUT                 0x08 /* Connection Timeout */
+#define ESP_HCI_ERR_CONN_LIMIT_EXCEEDED          0x09 /* Connection Limit Exceeded */
+#define ESP_HCI_ERR_SYNC_CONN_LIMIT_EXCEEDED     0x0A /* ASynchronous Connection Limit To A Device Exceeded */
+#define ESP_HCI_ERR_CONN_ALREADY_EXISTS          0x0B /* Connection Already Exists */
+#define ESP_HCI_ERR_CMD_DISALLOWED               0x0C /* Command Disallowed */
+#define ESP_HCI_ERR_INSUFFICIENT_RESOURCES       0x0D /* Connection Rejected due to Limited Resources */
+#define ESP_HCI_ERR_INSUFFICIENT_SECURITY        0x0E /* Connection Rejected Due To Security Reasons */
+#define ESP_HCI_ERR_BD_ADDR_UNACCEPTABLE         0x0F /* Connection Rejected due to Unacceptable BD_ADDR */
+#define ESP_HCI_ERR_CONN_ACCEPT_TIMEOUT          0x10 /* Connection Accept Timeout Exceeded */
+#define ESP_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL     0x11 /* Unsupported Feature or Parameter Value */
+#define ESP_HCI_ERR_INVALID_PARAM                0x12 /* Invalid HCI Command Parameters */
+#define ESP_HCI_ERR_REMOTE_USER_TERM_CONN        0x13 /* Remote User Terminated Connection */
+#define ESP_HCI_ERR_REMOTE_LOW_RESOURCES         0x14 /* Remote Device Terminated Connection due to Low Resources */
+#define ESP_HCI_ERR_REMOTE_POWER_OFF             0x15 /* Remote Device Terminated Connection due to Power Off */
+#define ESP_HCI_ERR_LOCALHOST_TERM_CONN          0x16 /* Connection Terminated By Local Host */
+#define ESP_HCI_ERR_REPEATED_ATTEMPTS            0x17 /* Repeated Attempts */
+#define ESP_HCI_ERR_PAIRING_NOT_ALLOWED          0x18 /* Pairing Not Allowed */
+#define ESP_HCI_ERR_UNKNOWN_LMP_PDU              0x19 /* Unknown LMP PDU */
+#define ESP_HCI_ERR_UNSUPP_REMOTE_FEATURE        0x1A /* Unsupported Remote Feature */
+#define ESP_HCI_ERR_SCO_OFFSET_REJECTED          0x1B /* SCO Offset Rejected */
+#define ESP_HCI_ERR_SCO_INTERVAL_REJECTED        0x1C /* SCO Interval Rejected */
+#define ESP_HCI_ERR_SCO_AIR_MODE_REJECTED        0x1D /* SCO Air Mode Rejected */
+#define ESP_HCI_ERR_INVALID_LL_PARAM             0x1E /* Invalid LMP Parameters / Invalid LL Parameters */
+#define ESP_HCI_ERR_UNSPECIFIED                  0x1F /* Unspecified Error */
+#define ESP_HCI_ERR_UNSUPP_LL_PARAM_VAL          0x20 /* Unsupported LMP Parameter Value / Unsupported LL Parameter Value */
+#define ESP_HCI_ERR_ROLE_CHANGE_NOT_ALLOWED      0x21 /* Role Change Not Allowed */
+#define ESP_HCI_ERR_LL_RESP_TIMEOUT              0x22 /* LMP Response Timeout / LL Response Timeout */
+#define ESP_HCI_ERR_LL_PROC_COLLISION            0x23 /* LMP Error Transaction Collision / LL Procedure Collision */
+#define ESP_HCI_ERR_LMP_PDU_NOT_ALLOWED          0x24 /* LMP PDU Not Allowed */
+#define ESP_HCI_ERR_ENC_MODE_NOT_ACCEPTABLE      0x25 /* Encryption Mode Not Acceptable */
+#define ESP_HCI_ERR_LINK_KEY_CANNOT_BE_CHANGED   0x26 /* Link Key cannot be Changed */
+#define ESP_HCI_ERR_REQUESTED_QOS_NOT_SUPPORTED  0x27 /* Requested QoS Not Supported */
+#define ESP_HCI_ERR_INSTANT_PASSED               0x28 /* Instant Passed */
+#define ESP_HCI_ERR_PAIRING_NOT_SUPPORTED        0x29 /* Pairing With Unit Key Not Supported */
+#define ESP_HCI_ERR_DIFF_TRANS_COLLISION         0x2A /* Different Transaction Collision */
+#define ESP_HCI_ERR_UNDEFINED_0x2B               0x2B /* Reserved for future use */
+#define ESP_HCI_ERR_QOS_UNACCEPTABLE_PARAM       0x2C /* QoS Unacceptable Parameter */
+#define ESP_HCI_ERR_QOS_REJECTED                 0x2D /* QoS Rejected */
+#define ESP_HCI_ERR_CHAN_ASSESS_NOT_SUPPORTED    0x2E /* Channel Classification Not Supported */
+#define ESP_HCI_ERR_INSUFF_SECURITY              0x2F /* Insufficient Security */
+#define ESP_HCI_ERR_PARAM_OUT_OF_MANDATORY_RANGE 0x30 /* Parameter Out Of Mandatory Range */
+#define ESP_HCI_ERR_UNDEFINED_0x31               0x31 /* Reserved for future use */
+#define ESP_HCI_ERR_ROLE_SWITCH_PENDING          0x32 /* Role Switch Pending */
+#define ESP_HCI_ERR_UNDEFINED_0x33               0x33 /* Reserved for future use */
+#define ESP_HCI_ERR_RESERVED_SLOT_VIOLATION      0x34 /* Reserved Slot Violation */
+#define ESP_HCI_ERR_ROLE_SWITCH_FAILED           0x35 /* Role Switch Failed */
+#define ESP_HCI_ERR_EXT_INQ_RESP_TOO_LARGE       0x36 /* Extended Inquiry Response Too Large */
+#define ESP_HCI_ERR_SIMPLE_PAIR_NOT_SUPP_BY_HOST 0x37 /* Secure Simple Pairing Not Supported By Host */
+#define ESP_HCI_ERR_HOST_BUSY_PAIRING            0x38 /* Host Busy - Pairing*/
+#define ESP_HCI_ERR_CONN_REJECTED_DUE_TO_NO_CHAN 0x39 /* Connection Rejected due to No Suitable Channel Found */
+#define ESP_HCI_ERR_CONTROLLER_BUSY              0x3A /* Controller Busy */
+#define ESP_HCI_ERR_UNACCEPT_CONN_PARAM          0x3B /* Unacceptable Connection Parameters */
+#define ESP_HCI_ERR_ADV_TIMEOUT                  0x3C /* Advertising Timeout */
+#define ESP_HCI_ERR_TERM_DUE_TO_MIC_FAIL         0x3D /* Connection Terminated due to MIC Failure */
+#define ESP_HCI_ERR_CONN_FAIL_TO_ESTAB           0x3E /* Connection Failed to be Established / Synchronization Timeout */
+#define ESP_HCI_ERR_MAC_CONN_FAILED              0x3F /* Previously used */
+#define ESP_HCI_ERR_CLOCK_ADJUST_REJECTED        0x40 /* Coarse Clock Adjustment Rejected but Will Try to Adjust Using Clock Dragging */
+#define ESP_HCI_ERR_SUBMAP_NOT_DEFINED           0x41 /* Type0 Submap Not Defined */
+#define ESP_HCI_ERR_UNKNOWN_ADV_IDENTIFIER       0x42 /* Unknown Advertising Identifier */
+#define ESP_HCI_ERR_LIMIT_REACHED                0x43 /* Limit Reached */
+#define ESP_HCI_ERR_OP_CANCELLED_BY_HOST         0x44 /* Operation Cancelled by Host */
+#define ESP_HCI_ERR_PACKET_TOO_LONG              0x45 /* Packet Too Long */
+#define ESP_HCI_ERR_TOO_LATE                     0x46 /* Too Late */
+#define ESP_HCI_ERR_TOO_EARLY                    0x47 /* Too Early */
+#define ESP_HCI_ERR_INSUFFICIENT_CHANNELS        0x48 /* Insufficient Channels */
 
 /* relate to BT_STATUS_xxx in bt_def.h */
 /// Status Return Value
@@ -229,6 +305,8 @@ typedef uint8_t esp_ble_key_mask_t;            /* the key mask type */
 #define ESP_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 
 #define ESP_BLE_ADV_NAME_LEN_MAX 29
+
+#define ESP_INVALID_CONN_HANDLE  0xfff
 
 #ifdef __cplusplus
 }

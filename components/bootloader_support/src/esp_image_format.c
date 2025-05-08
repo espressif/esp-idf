@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,7 +48,12 @@ static const char *TAG = "esp_image";
 
 #define HASH_LEN ESP_IMAGE_HASH_LEN
 
-#define SIXTEEN_MB 0x1000000
+#if SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
+#define ESP_IMAGE_MAX_FLASH_ADDR_SIZE    UINT32_MAX
+#else
+#define ESP_IMAGE_MAX_FLASH_ADDR_SIZE    0x1000000
+#endif
+
 #define ESP_ROM_CHECKSUM_INITIAL 0xEF
 
 /* Headroom to ensure between stack SP (at time of checking) and data loaded from flash */
@@ -157,7 +162,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     verify_sha = !is_bootloader(part->offset) && do_verify;
 #endif
 
-    if (part->size > SIXTEEN_MB) {
+    if (part->size > ESP_IMAGE_MAX_FLASH_ADDR_SIZE) {
         err = ESP_ERR_INVALID_ARG;
         FAIL_LOAD("partition size 0x%"PRIx32" invalid, larger than 16MB", part->size);
     }
@@ -316,7 +321,7 @@ esp_err_t esp_image_verify(esp_image_load_mode_t mode, const esp_partition_pos_t
 esp_err_t esp_image_get_metadata(const esp_partition_pos_t *part, esp_image_metadata_t *metadata)
 {
     esp_err_t err;
-    if (metadata == NULL || part == NULL || part->size > SIXTEEN_MB) {
+    if (metadata == NULL || part == NULL || part->size > ESP_IMAGE_MAX_FLASH_ADDR_SIZE) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -780,7 +785,7 @@ static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t 
 static esp_err_t verify_segment_header(int index, const esp_image_segment_header_t *segment, uint32_t segment_data_offs, esp_image_metadata_t *metadata, bool silent)
 {
     if ((segment->data_len & 3) != 0
-            || segment->data_len >= SIXTEEN_MB) {
+            || segment->data_len >= ESP_IMAGE_MAX_FLASH_ADDR_SIZE) {
         if (!silent) {
             ESP_LOGE(TAG, "invalid segment length 0x%"PRIx32, segment->data_len);
         }

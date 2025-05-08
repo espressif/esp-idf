@@ -163,7 +163,7 @@ typedef struct {
 #endif
 } uart_obj_t;
 
-typedef struct {
+typedef struct uart_context_t {
     _lock_t mutex;                 /*!< Protect uart_module_enable, uart_module_disable, retention, etc. */
     uart_port_t port_id;
     uart_hal_context_t hal;        /*!< UART hal context*/
@@ -196,8 +196,9 @@ static portMUX_TYPE uart_selectlock = portMUX_INITIALIZER_UNLOCKED;
 static esp_err_t uart_create_sleep_retention_link_cb(void *arg);
 #endif
 
-static void uart_module_enable(uart_port_t uart_num)
+static bool uart_module_enable(uart_port_t uart_num)
 {
+    bool newly_enabled = false;
     _lock_acquire(&(uart_context[uart_num].mutex));
     if (uart_context[uart_num].hw_enabled != true) {
         if (uart_num < SOC_UART_HP_NUM) {
@@ -243,8 +244,10 @@ static void uart_module_enable(uart_port_t uart_num)
         }
 #endif
         uart_context[uart_num].hw_enabled = true;
+        newly_enabled = true;
     }
     _lock_release(&(uart_context[uart_num].mutex));
+    return newly_enabled;
 }
 
 static void uart_module_disable(uart_port_t uart_num)
@@ -347,22 +350,22 @@ esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
     uint32_t sclk_freq;
 
     uart_hal_get_sclk(&(uart_context[uart_num].hal), &src_clk);
-    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(src_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), UART_TAG, "Invalid src_clk");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(src_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), UART_TAG, "invalid src_clk");
 
+    bool success = false;
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-
     if (uart_num < SOC_UART_HP_NUM) {
         HP_UART_SRC_CLK_ATOMIC() {
-            uart_hal_set_baudrate(&(uart_context[uart_num].hal), baud_rate, sclk_freq);
+            success = uart_hal_set_baudrate(&(uart_context[uart_num].hal), baud_rate, sclk_freq);
         }
     }
 #if (SOC_UART_LP_NUM >= 1)
     else {
-        lp_uart_ll_set_baudrate(uart_context[uart_num].hal.dev, baud_rate, sclk_freq);
+        success = lp_uart_ll_set_baudrate(uart_context[uart_num].hal.dev, baud_rate, sclk_freq);
     }
 #endif
-
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    ESP_RETURN_ON_FALSE(success, ESP_FAIL, UART_TAG, "baud rate unachievable");
     return ESP_OK;
 }
 
@@ -686,7 +689,7 @@ static bool uart_try_set_iomux_pin(uart_port_t uart_num, int io_num, uint32_t id
         if (upin->input) {
             gpio_iomux_input(io_num, upin->iomux_func, upin->signal);
         } else {
-            gpio_iomux_output(io_num, upin->iomux_func, false);
+            gpio_iomux_output(io_num, upin->iomux_func);
         }
     }
 #if (SOC_UART_LP_NUM >= 1) && (SOC_RTCIO_PIN_COUNT >= 1)
@@ -768,7 +771,6 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     if (rx_io_num >= 0 && (tx_rx_same_io || !uart_try_set_iomux_pin(uart_num, rx_io_num, SOC_UART_RX_PIN_IDX))) {
         io_reserve_mask &= ~BIT64(rx_io_num); // input IO via GPIO matrix does not need to be reserved
         if (uart_num < SOC_UART_HP_NUM) {
-            gpio_func_sel(rx_io_num, PIN_FUNC_GPIO);
             gpio_input_enable(rx_io_num);
             esp_rom_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
         }
@@ -803,7 +805,6 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     if (cts_io_num >= 0  && !uart_try_set_iomux_pin(uart_num, cts_io_num, SOC_UART_CTS_PIN_IDX)) {
         io_reserve_mask &= ~BIT64(cts_io_num); // input IO via GPIO matrix does not need to be reserved
         if (uart_num < SOC_UART_HP_NUM) {
-            gpio_func_sel(cts_io_num, PIN_FUNC_GPIO);
             gpio_pullup_en(cts_io_num);
             gpio_input_enable(cts_io_num);
             esp_rom_gpio_connect_in_signal(cts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_CTS_PIN_IDX), 0);
@@ -911,15 +912,16 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     }
 #endif
     uint32_t sclk_freq;
-    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(uart_sclk_sel, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), UART_TAG, "Invalid src_clk");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(uart_sclk_sel, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), UART_TAG, "invalid src_clk");
 
+    bool success = false;
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_init(&(uart_context[uart_num].hal), uart_num);
     if (uart_num < SOC_UART_HP_NUM) {
         esp_clk_tree_enable_src((soc_module_clk_t)uart_sclk_sel, true);
         HP_UART_SRC_CLK_ATOMIC() {
             uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_sclk_sel);
-            uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate, sclk_freq);
+            success = uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate, sclk_freq);
         }
     }
 #if (SOC_UART_LP_NUM >= 1)
@@ -927,7 +929,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
         LP_UART_SRC_CLK_ATOMIC() {
             lp_uart_ll_set_source_clk(uart_context[uart_num].hal.dev, (soc_periph_lp_uart_clk_src_t)uart_sclk_sel);
         }
-        lp_uart_ll_set_baudrate(uart_context[uart_num].hal.dev, uart_config->baud_rate, sclk_freq);
+        success = lp_uart_ll_set_baudrate(uart_context[uart_num].hal.dev, uart_config->baud_rate, sclk_freq);
     }
 #endif
     uart_hal_set_parity(&(uart_context[uart_num].hal), uart_config->parity);
@@ -938,6 +940,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_rxfifo_rst(&(uart_context[uart_num].hal));
     uart_hal_txfifo_rst(&(uart_context[uart_num].hal));
+    ESP_RETURN_ON_FALSE(success, ESP_FAIL, UART_TAG, "baud rate unachievable");
     return ESP_OK;
 }
 
@@ -1999,3 +2002,88 @@ static esp_err_t uart_create_sleep_retention_link_cb(void *arg)
     return ESP_OK;
 }
 #endif
+
+/**************************** AUTO BAUD RATE DETECTION *****************************/
+esp_err_t uart_detect_bitrate_start(uart_port_t uart_num, const uart_bitrate_detect_config_t *config)
+{
+    ESP_RETURN_ON_FALSE(uart_num < SOC_UART_HP_NUM, ESP_ERR_INVALID_ARG, UART_TAG, "invalid arg");
+
+    esp_err_t ret = ESP_OK;
+    soc_module_clk_t uart_sclk_sel = 0;
+    if (uart_module_enable(uart_num)) { // if a newly acquired port, do following configurations
+        ESP_GOTO_ON_FALSE(config && GPIO_IS_VALID_GPIO(config->rx_io_num), ESP_ERR_INVALID_ARG, err, UART_TAG, "invalid arg");
+
+        uart_sclk_sel = (soc_module_clk_t)((config->source_clk) ? config->source_clk : UART_SCLK_DEFAULT); // if no specifying the clock source (soc_module_clk_t starts from 1), then just use the default clock
+        uint32_t sclk_freq = 0;
+        ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(uart_sclk_sel, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), err, UART_TAG, "invalid source_clk");
+        esp_clk_tree_enable_src(uart_sclk_sel, true);
+#if SOC_UART_SUPPORT_RTC_CLK
+        if (uart_sclk_sel == (soc_module_clk_t)UART_SCLK_RTC) {
+            periph_rtc_dig_clk8m_enable();
+        }
+#endif
+        HP_UART_SRC_CLK_ATOMIC() {
+            uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_sclk_sel);
+            uart_hal_set_baudrate(&(uart_context[uart_num].hal), 57600, sclk_freq); // set to any baudrate
+        }
+        uart_set_pin(uart_num, UART_PIN_NO_CHANGE, config->rx_io_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    } else if (config != NULL) {
+        ESP_LOGW(UART_TAG, "unable to re-configure for an acquired port, ignoring the new config");
+    }
+
+    // start auto baud rate detection
+    uart_hal_set_autobaud_en(&(uart_context[uart_num].hal), true);
+
+err:
+    if (ret != ESP_OK) {
+        uart_module_disable(uart_num);
+    }
+    return ret;
+}
+
+esp_err_t uart_detect_bitrate_stop(uart_port_t uart_num, bool deinit, uart_bitrate_res_t *ret_res)
+{
+    ESP_RETURN_ON_FALSE(uart_context[uart_num].hw_enabled && ret_res, ESP_ERR_INVALID_ARG, UART_TAG, "invalid arg");
+
+    esp_err_t ret = ESP_OK;
+    ret_res->low_period = uart_hal_get_low_pulse_cnt(&(uart_context[uart_num].hal)) + 1;
+    ret_res->high_period = uart_hal_get_high_pulse_cnt(&(uart_context[uart_num].hal)) + 1;
+    ret_res->pos_period = uart_hal_get_pos_pulse_cnt(&(uart_context[uart_num].hal)) + 1;
+    ret_res->neg_period = uart_hal_get_neg_pulse_cnt(&(uart_context[uart_num].hal)) + 1;
+    ret_res->edge_cnt = uart_hal_get_rxd_edge_cnt(&(uart_context[uart_num].hal));
+
+    // stop auto baud rate detection
+    uart_hal_set_autobaud_en(&(uart_context[uart_num].hal), false);
+
+    const char *err_str = "";
+    if (ret_res->low_period == 0 || ret_res->high_period == 0 || ret_res->pos_period == 0 || ret_res->neg_period == 0) {
+        err_str = "fast";
+    } else if (ret_res->low_period == UART_LL_PULSE_TICK_CNT_MAX || ret_res->high_period == UART_LL_PULSE_TICK_CNT_MAX || ret_res->pos_period == UART_LL_PULSE_TICK_CNT_MAX || ret_res->neg_period == UART_LL_PULSE_TICK_CNT_MAX) {
+        err_str = "slow";
+    }
+    if (strcmp(err_str, "") != 0) {
+        ESP_LOGE(UART_TAG, "bitrate too %s, unable to count ticks, please try to adjust source_clk", err_str);
+    }
+
+    soc_module_clk_t src_clk;
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+    src_clk = SOC_MOD_CLK_APB; // On such targets, ticks are counted with APB clock, regardless the UART func clock sel
+#else
+    uart_hal_get_sclk(&(uart_context[uart_num].hal), &src_clk);
+#endif
+    ret = esp_clk_tree_src_get_freq_hz(src_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &ret_res->clk_freq_hz);
+    if (ret != ESP_OK) {
+        ESP_LOGE(UART_TAG, "unknown source_clk freq");
+    }
+
+    if (deinit) { // release the port
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
+#if SOC_UART_SUPPORT_RTC_CLK
+        if (src_clk == (soc_module_clk_t)UART_SCLK_RTC) {
+            periph_rtc_dig_clk8m_disable();
+        }
+#endif
+        uart_module_disable(uart_num);
+    }
+    return ret;
+}

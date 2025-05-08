@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +32,12 @@ void *multi_heap_aligned_alloc_offs(multi_heap_handle_t heap, size_t size, size_
     return multi_heap_aligned_alloc_impl_offs(heap, size, alignment, offset);
 }
 
-#if (!defined CONFIG_HEAP_TLSF_USE_ROM_IMPL)
+size_t multi_heap_get_full_block_size(multi_heap_handle_t heap, void *p)
+{
+    return multi_heap_get_allocated_size_impl(heap, p);
+}
+
+#if(!defined CONFIG_HEAP_TLSF_USE_ROM_IMPL)
 /* if no heap poisoning, public API aliases directly to these implementations */
 void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
     __attribute__((alias("multi_heap_malloc_impl")));
@@ -67,13 +72,15 @@ size_t multi_heap_minimum_free_size(multi_heap_handle_t heap)
 void *multi_heap_get_block_address(multi_heap_block_handle_t block)
     __attribute__((alias("multi_heap_get_block_address_impl")));
 
+void *multi_heap_find_containing_block(multi_heap_handle_t heap, void *ptr)
+    __attribute__((alias("multi_heap_find_containing_block_impl")));
+
 #endif // !CONFIG_HEAP_TLSF_USE_ROM_IMPL
 #endif // !MULTI_HEAP_POISONING
 
 #define ALIGN(X) ((X) & ~(sizeof(void *)-1))
 #define ALIGN_UP(X) ALIGN((X)+sizeof(void *)-1)
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-
 
 typedef struct multi_heap_info {
     void *lock;
@@ -435,6 +442,26 @@ void multi_heap_walk(multi_heap_handle_t heap, multi_heap_walker_cb_t walker_fun
     multi_heap_internal_lock(heap);
     tlsf_walk_pool(tlsf_get_pool(heap->heap_data), walker_func, user_data);
     multi_heap_internal_unlock(heap);
+}
+
+/**
+ * @brief Structure used in multi_heap_find_containing_block to retain
+ * information while walking a given heap to find the allocated block
+ * containing the pointer ptr.
+ *
+ * @note The block_ptr gets filled with the pointer to the allocated block
+ * containing the ptr.
+ */
+typedef struct containing_block_data {
+    void *ptr; ///< Pointer to find the containing block of
+    void *block_ptr; ///< Pointer to the containing block
+} containing_block_data_t;
+
+void *multi_heap_find_containing_block_impl(multi_heap_handle_t heap, void *ptr)
+{
+    void *block_ptr = tlsf_find_containing_block(tlsf_get_pool(heap->heap_data), ptr);
+    assert(block_ptr);
+    return block_ptr;
 }
 
 #endif // CONFIG_HEAP_TLSF_USE_ROM_IMPL

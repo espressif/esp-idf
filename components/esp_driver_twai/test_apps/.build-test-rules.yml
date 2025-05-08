@@ -1,0 +1,5 @@
+components/esp_driver_twai/test_apps/test_twai:
+  disable:
+    - if: SOC_TWAI_SUPPORTED != 1
+  depends_components:
+    - esp_driver_twai

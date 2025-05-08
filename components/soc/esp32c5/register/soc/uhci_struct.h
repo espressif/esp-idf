@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -25,62 +25,61 @@ typedef union {
          */
         uint32_t rx_rst:1;
         /** uart_sel : R/W; bitpos: [4:2]; default: 7;
-         *  Configures to select which uart to connect with UHCI.\\
-         *  0: UART0\\
-         *  1: UART1\\
+         *  Configures to select which uart to connect with UHCI.
+         *  0: UART0
+         *  1: UART1
          */
         uint32_t uart_sel:3;
         /** seper_en : R/W; bitpos: [5]; default: 1;
-         *  Configures whether or not to separate the data frame with a special character.\\
-         *  0: Not separate\\
-         *  1: Separate\\
+         *  Configures whether or not to separate the data frame with a special character.
+         *  0: Not separate
+         *  1: Separate
          */
         uint32_t seper_en:1;
         /** head_en : R/W; bitpos: [6]; default: 1;
-         *  Configures whether or not to encode the data packet with a formatting header.\\
-         *  0: Not use formatting header\\
-         *  1: Use formatting header\\
+         *  Configures whether or not to encode the data packet with a formatting header.
+         *  0: Not use formatting header
+         *  1: Use formatting header
          */
         uint32_t head_en:1;
         /** crc_rec_en : R/W; bitpos: [7]; default: 1;
-         *  Configures whether or not to enable the reception of the 16-bit CRC.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable the reception of the 16-bit CRC.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t crc_rec_en:1;
         /** uart_idle_eof_en : R/W; bitpos: [8]; default: 0;
-         *  Configures whether or not to stop receiving data when UART is idle.\\
-         *  0: Not stop\\
-         *  1: Stop\\
+         *  Configures whether or not to stop receiving data when UART is idle.
+         *  0: Not stop
+         *  1: Stop
          */
         uint32_t uart_idle_eof_en:1;
         /** len_eof_en : R/W; bitpos: [9]; default: 1;
-         *  Configures when the UHCI decoder stops receiving data.\\
-         *  0: Stops after receiving 0xC0\\
+         *  Configures when the UHCI decoder stops receiving data.
+         *  0: Stops after receiving 0xC0
          *  1: Stops when the number of received data bytes reach the specified value. When
          *  UHCI_HEAD_EN is 1, the specified value is the data length indicated by the UHCI
-         *  packet header. when UHCI_HEAD_EN is 0, the specified value is the configured
-         *  value.\\
+         *  packet header. when UHCI_HEAD_EN is 0, the specified value is the configured value.
          */
         uint32_t len_eof_en:1;
         /** encode_crc_en : R/W; bitpos: [10]; default: 1;
          *  Configures whether or not to enable data integrity check by appending a 16 bit
-         *  CCITT-CRC to the end of the data.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  CCITT-CRC to the end of the data.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t encode_crc_en:1;
         /** clk_en : R/W; bitpos: [11]; default: 0;
-         *  Configures clock gating.\\
-         *  0: Support clock only when the application writes registers.\\
-         *  1: Always force the clock on for registers.\\
+         *  Configures clock gating.
+         *  0: Support clock only when the application writes registers.
+         *  1: Always force the clock on for registers.
          */
         uint32_t clk_en:1;
         /** uart_rx_brk_eof_en : R/W; bitpos: [12]; default: 0;
          *  Configures whether or not to stop UHCI from receiving data after UART has received
-         *  a NULL frame.\\
-         *  0: Not stop\\
-         *  1: Stop\\
+         *  a NULL frame.
+         *  0: Not stop
+         *  1: Stop
          */
         uint32_t uart_rx_brk_eof_en:1;
         uint32_t reserved_13:19;
@@ -95,51 +94,50 @@ typedef union {
     struct {
         /** check_sum_en : R/W; bitpos: [0]; default: 1;
          *  Configures whether or not to enable header checksum validation when UHCI receives a
-         *  data packet.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  data packet.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t check_sum_en:1;
         /** check_seq_en : R/W; bitpos: [1]; default: 1;
          *  Configures whether or not to enable the sequence number check when UHCI receives a
-         *  data packet.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  data packet.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t check_seq_en:1;
         /** crc_disable : R/W; bitpos: [2]; default: 0;
-         *  Configures whether or not to enable CRC calculation.\\
-         *  0: Disable\\
-         *  1: Enable\\
-         *  Valid only when the Data Integrity Check Present bit in UHCI packet is 1.\\
+         *  Configures whether or not to enable CRC calculation.
+         *  0: Disable
+         *  1: Enable
+         *  Valid only when the Data Integrity Check Present bit in UHCI packet is 1.
          */
         uint32_t crc_disable:1;
         /** save_head : R/W; bitpos: [3]; default: 0;
          *  Configures whether or not to save the packet header when UHCI receives a data
-         *  packet.\\
-         *  0: Not save\\
-         *  1: Save\\
+         *  packet.
+         *  0: Not save
+         *  1: Save
          */
         uint32_t save_head:1;
         /** tx_check_sum_re : R/W; bitpos: [4]; default: 1;
-         *  Configures whether or not to encode the data packet with a checksum.\\
-         *  0: Not use checksum\\
-         *  1: Use checksum\\
+         *  Configures whether or not to encode the data packet with a checksum.
+         *  0: Not use checksum
+         *  1: Use checksum
          */
         uint32_t tx_check_sum_re:1;
         /** tx_ack_num_re : R/W; bitpos: [5]; default: 1;
          *  Configures whether or not to encode the data packet with an acknowledgment when a
-         *  reliable packet is to be transmitted.\\
-         *  0: Not use acknowledgement\\
-         *  1: Use acknowledgement\\
+         *  reliable packet is to be transmitted.
+         *  0: Not use acknowledgement
+         *  1: Use acknowledgement
          */
         uint32_t tx_ack_num_re:1;
         uint32_t reserved_6:1;
         /** wait_sw_start : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to put the UHCI encoder state machine to ST_SW_WAIT
-         *  state.\\
-         *  0: No\\
-         *  1: Yes\\
+         *  Configures whether or not to put the UHCI encoder state machine to ST_SW_WAIT state.
+         *  0: No
+         *  1: Yes
          */
         uint32_t wait_sw_start:1;
         /** sw_start : WT; bitpos: [8]; default: 0;
@@ -157,57 +155,55 @@ typedef union {
 typedef union {
     struct {
         /** tx_c0_esc_en : R/W; bitpos: [0]; default: 1;
-         *  Configures whether or not to decode character 0xC0 when DMA receives data.\\
-         *  0: Not decode\\
-         *  1: Decode\\
+         *  Configures whether or not to decode character 0xC0 when DMA receives data.
+         *  0: Not decode
+         *  1: Decode
          */
         uint32_t tx_c0_esc_en:1;
         /** tx_db_esc_en : R/W; bitpos: [1]; default: 1;
-         *  Configures whether or not to decode character 0xDB when DMA receives data.\\
-         *  0: Not decode\\
-         *  1: Decode\\
+         *  Configures whether or not to decode character 0xDB when DMA receives data.
+         *  0: Not decode
+         *  1: Decode
          */
         uint32_t tx_db_esc_en:1;
         /** tx_11_esc_en : R/W; bitpos: [2]; default: 0;
          *  Configures whether or not to decode flow control character 0x11 when DMA receives
-         *  data.\\
-         *  0: Not decode\\
-         *  1: Decode\\
+         *  data.
+         *  0: Not decode
+         *  1: Decode
          */
         uint32_t tx_11_esc_en:1;
         /** tx_13_esc_en : R/W; bitpos: [3]; default: 0;
          *  Configures whether or not to decode flow control character 0x13 when DMA receives
-         *  data.\\
-         *  0: Not decode\\
-         *  1: Decode\\
+         *  data.
+         *  0: Not decode
+         *  1: Decode
          */
         uint32_t tx_13_esc_en:1;
         /** rx_c0_esc_en : R/W; bitpos: [4]; default: 1;
-         *  Configures whether or not to replace 0xC0 by special characters when DMA sends
-         *  data.\\
-         *  0: Not replace\\
-         *  1: Replace\\
+         *  Configures whether or not to replace 0xC0 by special characters when DMA sends data.
+         *  0: Not replace
+         *  1: Replace
          */
         uint32_t rx_c0_esc_en:1;
         /** rx_db_esc_en : R/W; bitpos: [5]; default: 1;
-         *  Configures whether or not to replace 0xDB by special characters when DMA sends
-         *  data.\\
-         *  0: Not replace\\
-         *  1: Replace\\
+         *  Configures whether or not to replace 0xDB by special characters when DMA sends data.
+         *  0: Not replace
+         *  1: Replace
          */
         uint32_t rx_db_esc_en:1;
         /** rx_11_esc_en : R/W; bitpos: [6]; default: 0;
          *  Configures whether or not to replace flow control character 0x11 by special
-         *  characters when DMA sends data.\\
-         *  0: Not replace\\
-         *  1: Replace\\
+         *  characters when DMA sends data.
+         *  0: Not replace
+         *  1: Replace
          */
         uint32_t rx_11_esc_en:1;
         /** rx_13_esc_en : R/W; bitpos: [7]; default: 0;
          *  Configures whether or not to replace flow control character 0x13 by special
-         *  characters when DMA sends data.\\
-         *  0: Not replace\\
-         *  1: Replace\\
+         *  characters when DMA sends data.
+         *  0: Not replace
+         *  1: Replace
          */
         uint32_t rx_13_esc_en:1;
         uint32_t reserved_8:24;
@@ -221,7 +217,8 @@ typedef union {
 typedef union {
     struct {
         /** txfifo_timeout : R/W; bitpos: [7:0]; default: 16;
-         *  Configures the timeout value for DMA data reception.\\Measurement unit: ms.
+         *  Configures the timeout value for DMA data reception.
+         *  Measurement unit: ms.
          */
         uint32_t txfifo_timeout:8;
         /** txfifo_timeout_shift : R/W; bitpos: [10:8]; default: 0;
@@ -229,13 +226,14 @@ typedef union {
          */
         uint32_t txfifo_timeout_shift:3;
         /** txfifo_timeout_ena : R/W; bitpos: [11]; default: 1;
-         *  Configures whether or not to enable the data reception timeout for TX FIFO.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable the data reception timeout for TX FIFO.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t txfifo_timeout_ena:1;
         /** rxfifo_timeout : R/W; bitpos: [19:12]; default: 16;
-         *  Configures the timeout value for DMA to read data from RAM.\\Measurement unit: ms.
+         *  Configures the timeout value for DMA to read data from RAM.
+         *  Measurement unit: ms.
          */
         uint32_t rxfifo_timeout:8;
         /** rxfifo_timeout_shift : R/W; bitpos: [22:20]; default: 0;
@@ -243,9 +241,9 @@ typedef union {
          */
         uint32_t rxfifo_timeout_shift:3;
         /** rxfifo_timeout_ena : R/W; bitpos: [23]; default: 1;
-         *  Configures whether or not to enable the DMA data transmission timeout.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable the DMA data transmission timeout.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t rxfifo_timeout_ena:1;
         uint32_t reserved_24:8;
@@ -263,9 +261,9 @@ typedef union {
          */
         uint32_t ack_num:3;
         /** ack_num_load : WT; bitpos: [3]; default: 0;
-         *  Configures whether or not load acknowledgements.\\
-         *  0: Not load\\
-         *  1: Load\\
+         *  Configures whether or not load acknowledgements.
+         *  0: Not load
+         *  1: Load
          */
         uint32_t ack_num_load:1;
         uint32_t reserved_4:28;
@@ -279,15 +277,15 @@ typedef union {
 typedef union {
     struct {
         /** single_send_num : R/W; bitpos: [2:0]; default: 0;
-         *  Configures the source of data to be transmitted in single_send mode.\\
-         *  0: Q0 register\\
-         *  1: Q1 register\\
-         *  2: Q2 register\\
-         *  3: Q3 register\\
-         *  4: Q4 register\\
-         *  5: Q5 register\\
-         *  6: Q6 register\\
-         *  7: Invalid. No effect\\
+         *  Configures the source of data to be transmitted in single_send mode.
+         *  0: Q0 register
+         *  1: Q1 register
+         *  2: Q2 register
+         *  3: Q3 register
+         *  4: Q4 register
+         *  5: Q5 register
+         *  6: Q6 register
+         *  7: Invalid. No effect
          */
         uint32_t single_send_num:3;
         /** single_send_en : WT; bitpos: [3]; default: 0;
@@ -295,21 +293,21 @@ typedef union {
          */
         uint32_t single_send_en:1;
         /** always_send_num : R/W; bitpos: [6:4]; default: 0;
-         *  Configures the source of data to be transmitted in always_send mode.\\
-         *  0: Q0 register\\
-         *  1: Q1 register\\
-         *  2: Q2 register\\
-         *  3: Q3 register\\
-         *  4: Q4 register\\
-         *  5: Q5 register\\
-         *  6: Q6 register\\
-         *  7: Invalid. No effect\\
+         *  Configures the source of data to be transmitted in always_send mode.
+         *  0: Q0 register
+         *  1: Q1 register
+         *  2: Q2 register
+         *  3: Q3 register
+         *  4: Q4 register
+         *  5: Q5 register
+         *  6: Q6 register
+         *  7: Invalid. No effect
          */
         uint32_t always_send_num:3;
         /** always_send_en : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to enable always_send mode.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable always_send mode.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t always_send_en:1;
         uint32_t reserved_8:24;
@@ -596,8 +594,9 @@ typedef union {
 typedef union {
     struct {
         /** pkt_thrs : R/W; bitpos: [12:0]; default: 128;
-         *  Configures the maximum value of the packet length.\\Measurement unit: byte.\\Valid
-         *  only when UHCI_HEAD_EN is 0.
+         *  Configures the maximum value of the packet length.
+         *  Measurement unit: byte.
+         *  Valid only when UHCI_HEAD_EN is 0.
          */
         uint32_t pkt_thrs:13;
         uint32_t reserved_13:19;
@@ -799,15 +798,15 @@ typedef union {
 typedef union {
     struct {
         /** rx_err_cause : RO; bitpos: [2:0]; default: 0;
-         *  Represents the error type when DMA has received a packet with error.\\
-         *  0: Invalid. No effect\\
-         *  1: Checksum error in the HCI packet\\
-         *  2: Sequence number error in the HCI packet\\
-         *  3: CRC bit error in the HCI packet\\
+         *  Represents the error type when DMA has received a packet with error.
+         *  0: Invalid. No effect
+         *  1: Checksum error in the HCI packet
+         *  2: Sequence number error in the HCI packet
+         *  3: CRC bit error in the HCI packet
          *  4: 0xC0 is found but the received HCI packet is not complete\
-         *  5: 0xC0 is not found when the HCI packet has been received\\
-         *  6: CRC check error\\
-         *  7: Invalid. No effect\\
+         *  5: 0xC0 is not found when the HCI packet has been received
+         *  6: CRC check error
+         *  7: Invalid. No effect
          */
         uint32_t rx_err_cause:3;
         /** decode_state : RO; bitpos: [5:3]; default: 0;
@@ -862,7 +861,7 @@ typedef union {
 } uhci_date_reg_t;
 
 
-typedef struct {
+typedef struct uhci_dev_t {
     volatile uhci_conf0_reg_t conf0;
     volatile uhci_int_raw_reg_t int_raw;
     volatile uhci_int_st_reg_t int_st;

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
 import struct
@@ -6,7 +6,7 @@ import zlib
 
 import pytest
 from pytest_embedded import Dut
-
+from pytest_embedded_idf.utils import idf_parametrize
 # To prepare a runner for these tests,
 # 1. Connect an FPGA with C3 image
 # 2. Use a COM port for programming and export it as ESPPORT
@@ -28,7 +28,9 @@ def corrupt_signature(signed_bootloader, seed=0, corrupt_sig=True, corrupt_crc=F
 
     # if corrupt_block is CORRUPT_ALL_BLOCKS, corrupt all blocks
     # otherwise, only corrupt the one with that index set
-    corr_sig_blocks = tuple(new_blocks[n] if corrupt_block in [CORRUPT_ALL_BLOCKS, n] else sig_blocks[n] for n in range(3))
+    corr_sig_blocks = tuple(
+        new_blocks[n] if corrupt_block in [CORRUPT_ALL_BLOCKS, n] else sig_blocks[n] for n in range(3)
+    )
 
     return image + b''.join(corr_sig_blocks) + signature[3648:]
 
@@ -37,8 +39,8 @@ def corrupt_sig_block(sig_block, seed=0, corrupt_sig=True, corrupt_crc=False):
     # type: (bytes, int, bool, bool) -> bytes
     assert len(sig_block) == 1216
     magic = sig_block[0]
-    assert magic in [0xe7, 0xff]
-    if magic != 0xe7:
+    assert magic in [0xE7, 0xFF]
+    if magic != 0xE7:
         return sig_block  # not valid
     data = sig_block[:812]
     new_sig = sig = sig_block[812:1196]
@@ -53,12 +55,12 @@ def corrupt_sig_block(sig_block, seed=0, corrupt_sig=True, corrupt_crc=False):
 
         new_byte = sig[corrupt_idx] ^ corrupt_delta
 
-        new_sig = sig[0:corrupt_idx] + bytes([new_byte]) + sig[corrupt_idx + 1:]
+        new_sig = sig[0:corrupt_idx] + bytes([new_byte]) + sig[corrupt_idx + 1 :]
 
         assert new_sig != sig
 
     if not corrupt_crc:
-        crc = struct.pack('<I', zlib.crc32(data + new_sig) & 0xffffffff)
+        crc = struct.pack('<I', zlib.crc32(data + new_sig) & 0xFFFFFFFF)
     else:
         crc = struct.pack('<I', zlib.crc32(crc))
 
@@ -79,11 +81,7 @@ def dut_start_secure_app(dut: Dut) -> None:
 
 # Test secure boot flow.
 # Correctly signed bootloader + correctly signed app should work
-@pytest.mark.esp32c3
-@pytest.mark.esp32c5
-@pytest.mark.esp32c61
-@pytest.mark.esp32s3
-@pytest.mark.esp32p4
+@idf_parametrize('target', ['esp32c3', 'esp32c5', 'esp32c61', 'esp32s3', 'esp32p4'], indirect=['target'])
 def test_examples_security_secure_boot(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
@@ -91,16 +89,42 @@ def test_examples_security_secure_boot(dut: Dut) -> None:
     dut.burn_wafer_version()
 
 
+# Test secure boot flow.
+# Correctly signed bootloader + correctly signed app should work
+@pytest.mark.host_test
+@pytest.mark.qemu
+@pytest.mark.esp32c3
+@pytest.mark.parametrize(
+    'qemu_extra_args',
+    [
+        f'-drive file={os.path.join(os.path.dirname(__file__), "test", "esp32c3_efuses.bin")},if=none,format=raw,id=efuse '
+        '-global driver=nvram.esp32c3.efuse,property=drive,value=efuse '
+        '-global driver=timer.esp32c3.timg,property=wdt_disable,value=true',
+    ],
+    indirect=True,
+)
+@pytest.mark.parametrize('config', ['qemu'], indirect=True)
+def test_examples_security_secure_boot_qemu(dut: Dut) -> None:
+    try:
+        dut.expect('Secure Boot is enabled', timeout=10)
+        dut.expect('Restarting now.', timeout=10)
+        dut.expect('Secure Boot is enabled', timeout=10)
+
+    finally:
+        # the above example test burns the efuses, and hence the efuses file which the
+        # qemu uses to emulate the efuses, "esp32c3_efuses.bin", gets modified.
+        # Thus, restore the efuses file values back to the default ESP32C3 efuses values.
+        with open(os.path.join(os.path.dirname(__file__), 'test', 'esp32c3_efuses.bin'), 'wb') as efuse_file:
+            esp32c3_efuses = '0' * 77 + 'c' + '0' * 1970
+            efuse_file.write(bytearray.fromhex(esp32c3_efuses))
+
+
 # Test efuse key index and key block combination.
 # Any key index can be written to any key block and should work
-@pytest.mark.esp32c3
-@pytest.mark.esp32c5
-@pytest.mark.esp32c61
-@pytest.mark.esp32s3
-@pytest.mark.esp32p4
 # Increasing the test timeout to 1200s as the test runs for 18 iterations
 # and thus the default 600s timeout is not sufficient
 @pytest.mark.timeout(1200)
+@idf_parametrize('target', ['esp32c3', 'esp32c5', 'esp32c61', 'esp32s3', 'esp32p4'], indirect=['target'])
 def test_examples_security_secure_boot_key_combo(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
@@ -117,11 +141,7 @@ def test_examples_security_secure_boot_key_combo(dut: Dut) -> None:
 
 # Test secure boot key revoke.
 # If a key is revoked, bootloader signed with that key should fail verification
-@pytest.mark.esp32c3
-@pytest.mark.esp32c5
-@pytest.mark.esp32c61
-@pytest.mark.esp32s3
-@pytest.mark.esp32p4
+@idf_parametrize('target', ['esp32c3', 'esp32c5', 'esp32c61', 'esp32s3', 'esp32p4'], indirect=['target'])
 def test_examples_security_secure_boot_key_revoke(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
@@ -138,14 +158,10 @@ def test_examples_security_secure_boot_key_revoke(dut: Dut) -> None:
 
 # Test bootloader signature corruption.
 # Corrupt one byte at a time of bootloader signature and test that the verification fails
-@pytest.mark.esp32c3
-@pytest.mark.esp32c5
-@pytest.mark.esp32c61
-@pytest.mark.esp32s3
-@pytest.mark.esp32p4
 @pytest.mark.timeout(18000)
 # Increasing the test timeout to 18000s as the test runs for 384 iterations
 # and thus the default 600s timeout is not sufficient
+@idf_parametrize('target', ['esp32c3', 'esp32c5', 'esp32c61', 'esp32s3', 'esp32p4'], indirect=['target'])
 def test_examples_security_secure_boot_corrupt_bl_sig(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
@@ -177,14 +193,10 @@ def test_examples_security_secure_boot_corrupt_bl_sig(dut: Dut) -> None:
 
 # Test app signature corruption.
 # Corrupt app signature, one byte at a time, and test that the verification fails
-@pytest.mark.esp32c3
-@pytest.mark.esp32c5
-@pytest.mark.esp32c61
-@pytest.mark.esp32s3
-@pytest.mark.esp32p4
 @pytest.mark.timeout(18000)
 # Increasing the test timeout to 18000s as the test runs for 385 iterations
 # and thus the default 600s timeout is not sufficient
+@idf_parametrize('target', ['esp32c3', 'esp32c5', 'esp32c61', 'esp32s3', 'esp32p4'], indirect=['target'])
 def test_examples_security_secure_boot_corrupt_app_sig(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
@@ -223,6 +235,11 @@ def test_examples_security_secure_boot_corrupt_app_sig(dut: Dut) -> None:
     dut.secure_boot_burn_en_bit()
     dut.secure_boot_burn_digest('test_rsa_3072_key.pem', 0, 0)
 
-    dut.expect('Sig block 0 invalid: {}'.format('CRC mismatch' if dut.target == 'esp32p4' or dut.target == 'esp32c5' else 'Stored CRC ends'), timeout=2)
+    dut.expect(
+        'Sig block 0 invalid: {}'.format(
+            'CRC mismatch' if dut.target == 'esp32p4' or dut.target == 'esp32c5' else 'Stored CRC ends'
+        ),
+        timeout=2,
+    )
     dut.expect('Secure boot signature verification failed', timeout=2)
     dut.expect('No bootable app partitions in the partition table', timeout=2)

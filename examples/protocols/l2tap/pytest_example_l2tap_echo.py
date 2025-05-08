@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import contextlib
 import logging
@@ -9,6 +9,7 @@ from typing import Iterator
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 from scapy.all import Ether
 from scapy.all import raw
 
@@ -18,7 +19,7 @@ ETH_TYPE_3 = 0x2223
 
 
 @contextlib.contextmanager
-def configure_eth_if(eth_type: int, target_if: str='') -> Iterator[socket.socket]:
+def configure_eth_if(eth_type: int, target_if: str = '') -> Iterator[socket.socket]:
     if target_if == '':
         # try to determine which interface to use
         netifs = os.listdir('/sys/class/net/')
@@ -42,7 +43,7 @@ def configure_eth_if(eth_type: int, target_if: str='') -> Iterator[socket.socket
         so.close()
 
 
-def send_recv_eth_frame(payload_str: str, eth_type: int, dest_mac: str, eth_if: str='') -> str:
+def send_recv_eth_frame(payload_str: str, eth_type: int, dest_mac: str, eth_if: str = '') -> str:
     with configure_eth_if(eth_type, eth_if) as so:
         so.settimeout(10)
         eth_frame = Ether(dst=dest_mac, src=so.getsockname()[4], type=eth_type) / raw(payload_str.encode())
@@ -62,7 +63,7 @@ def send_recv_eth_frame(payload_str: str, eth_type: int, dest_mac: str, eth_if: 
     return str(eth_frame_repl.load.decode().rstrip('\x00'))
 
 
-def recv_eth_frame(eth_type: int, eth_if: str='') -> str:
+def recv_eth_frame(eth_type: int, eth_if: str = '') -> str:
     with configure_eth_if(eth_type, eth_if) as so:
         so.settimeout(10)
         try:
@@ -101,9 +102,9 @@ def actual_test(dut: Dut) -> None:
         raise Exception('Echoed message does not match!')
 
 
-@pytest.mark.esp32  # internally tested using ESP32 with IP101 but may support all targets with SPI Ethernet
 @pytest.mark.eth_ip101
 @pytest.mark.flaky(reruns=3, reruns_delay=5)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_netif_l2tap_example(dut: Dut) -> None:
     actual_test(dut)
 
@@ -113,12 +114,12 @@ if __name__ == '__main__':
     message_1 = 'ESP32 test message with EthType ' + hex(ETH_TYPE_1)
     message_2 = 'ESP32 test message with EthType ' + hex(ETH_TYPE_2)
     # Usage: pytest_example_l2tap_echo.py [<dest_mac_address>] [<host_eth_interface>]
-    if sys.argv[2:]:    # if two arguments provided:
+    if sys.argv[2:]:  # if two arguments provided:
         send_recv_eth_frame(message_1, ETH_TYPE_1, sys.argv[1], sys.argv[2])
         send_recv_eth_frame(message_2, ETH_TYPE_2, sys.argv[1], sys.argv[2])
-    elif sys.argv[1:]:    # if one argument provided:
+    elif sys.argv[1:]:  # if one argument provided:
         send_recv_eth_frame(message_1, ETH_TYPE_1, sys.argv[1])
         send_recv_eth_frame(message_2, ETH_TYPE_2, sys.argv[1])
-    else:    # if no argument provided:
+    else:  # if no argument provided:
         send_recv_eth_frame(message_1, ETH_TYPE_1, 'ff:ff:ff:ff:ff:ff')
         send_recv_eth_frame(message_2, ETH_TYPE_2, 'ff:ff:ff:ff:ff:ff')

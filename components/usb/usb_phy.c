@@ -36,7 +36,6 @@ struct phy_context_t {
     usb_phy_controller_t controller;              /**< PHY controller */
     usb_phy_status_t status;                      /**< PHY status */
     usb_otg_mode_t otg_mode;                      /**< USB OTG mode */
-    usb_phy_speed_t otg_speed;                    /**< USB speed */
     usb_phy_ext_io_conf_t *iopins;                /**< external PHY I/O pins */
     usb_wrap_hal_context_t wrap_hal;              /**< USB WRAP HAL context */
 };
@@ -174,13 +173,10 @@ esp_err_t usb_phy_otg_dev_set_speed(usb_phy_handle_t handle, usb_phy_speed_t spe
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, USBPHY_TAG, "handle argument is invalid");
     ESP_RETURN_ON_FALSE(speed < USB_PHY_SPEED_MAX, ESP_ERR_INVALID_ARG, USBPHY_TAG, "speed argument is invalid");
-    ESP_RETURN_ON_FALSE(handle->controller == USB_PHY_CTRL_OTG, ESP_FAIL, USBPHY_TAG, "phy source is not USB_OTG");
-    ESP_RETURN_ON_FALSE((handle->target != USB_PHY_TARGET_EXT && handle->otg_mode == USB_OTG_MODE_DEVICE), ESP_FAIL,
-                        USBPHY_TAG, "set speed not supported");
     ESP_RETURN_ON_FALSE((handle->target == USB_PHY_TARGET_UTMI) == (speed == USB_PHY_SPEED_HIGH), ESP_ERR_NOT_SUPPORTED, USBPHY_TAG, "UTMI can be HighSpeed only"); // This is our software limitation
 
-    handle->otg_speed = speed;
-    // No need to configure anything neither for UTMI PHY nor for Internal USB FSLS PHY
+    // Keeping this here for backward compatibility
+    // No need to configure anything neither for UTMI PHY nor for USB FSLS PHY
     return ESP_OK;
 }
 
@@ -369,9 +365,6 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
     }
     if (config->otg_mode != USB_PHY_MODE_DEFAULT) {
         ESP_ERROR_CHECK(usb_phy_otg_set_mode(*handle_ret, config->otg_mode));
-    }
-    if (config->otg_speed != USB_PHY_SPEED_UNDEFINED) {
-        ESP_ERROR_CHECK(usb_phy_otg_dev_set_speed(*handle_ret, config->otg_speed));
     }
     if (config->otg_io_conf && (phy_context->controller == USB_PHY_CTRL_OTG)) {
         const usb_otg_signal_conn_t *otg_sig = usb_dwc_info.controllers[otg11_index].otg_signals;

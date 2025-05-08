@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,6 @@
 /*******************************************************************************
  * NOTICE
  * The hal is not public api, don't use in application code.
- * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
 #pragma once
@@ -19,15 +18,15 @@
 #include "hal/twai_types.h"
 
 #if SOC_TWAI_SUPPORTED
+
 #if SOC_TWAI_SUPPORT_FD
-#include "hal/twaifd_ll.h"
-typedef twaifd_dev_t* twai_soc_handle_t;
-typedef twaifd_frame_buffer_t twai_hal_frame_t;
+typedef struct twaifd_dev_t *twai_soc_handle_t;
+typedef union twaifd_frame_buffer_t twai_hal_frame_t;
 #else
-#include "hal/twai_ll.h"
-typedef twai_dev_t* twai_soc_handle_t;
-typedef twai_ll_frame_buffer_t twai_hal_frame_t;
+typedef struct twai_dev_t *twai_soc_handle_t;
+typedef union twai_ll_frame_buffer_t twai_hal_frame_t;
 #endif
+typedef struct twai_hal_errata_ctx_t twai_hal_errata_ctx_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,15 +44,13 @@ extern "C" {
 #define TWAI_HAL_STATE_FLAG_ERR_PASSIVE         (1 << 3)    //TEC or REC is >= 128
 #define TWAI_HAL_STATE_FLAG_BUS_OFF             (1 << 4)    //Bus-off due to TEC >= 256
 #define TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED    (1 << 5)    //Transmit buffer is occupied
-#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
 #define TWAI_HAL_STATE_FLAG_TX_NEED_RETRY       (1 << 7)    //TX needs to be restarted due to errata workarounds
-#endif
 
 //Interrupt Events
 #define TWAI_HAL_EVENT_BUS_OFF                  (1 << 0)
 #define TWAI_HAL_EVENT_BUS_RECOV_CPLT           (1 << 1)
 #define TWAI_HAL_EVENT_BUS_RECOV_PROGRESS       (1 << 2)
-#define TWAI_HAL_EVENT_ABOVE_EWL                (1 << 3)
+#define TWAI_HAL_EVENT_ERROR_WARNING            (1 << 3)
 #define TWAI_HAL_EVENT_BELOW_EWL                (1 << 4)
 #define TWAI_HAL_EVENT_ERROR_PASSIVE            (1 << 5)
 #define TWAI_HAL_EVENT_ERROR_ACTIVE             (1 << 6)
@@ -61,19 +58,20 @@ extern "C" {
 #define TWAI_HAL_EVENT_ARB_LOST                 (1 << 8)
 #define TWAI_HAL_EVENT_RX_BUFF_FRAME            (1 << 9)
 #define TWAI_HAL_EVENT_TX_BUFF_FREE             (1 << 10)
-#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
 #define TWAI_HAL_EVENT_NEED_PERIPH_RESET        (1 << 11)
-#endif
+#define TWAI_HAL_EVENT_TX_SUCCESS               (1 << 12)
 
 typedef struct {
     twai_soc_handle_t dev; // TWAI SOC layer handle (i.e. register base address)
     uint32_t state_flags;
     uint32_t clock_source_hz;
-#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
-    twai_hal_frame_t tx_frame_save;
-    twai_ll_reg_save_t reg_save;
-    uint8_t rx_msg_cnt_save;
-#endif
+    twai_error_flags_t errors;
+    uint8_t sja1000_filter_id_type;    // hardware don't check id type, check in software, 0:no_filter, 1: std_id_only, 2: ext_id_only
+    int8_t retry_cnt;
+    bool enable_self_test;
+    bool enable_loopback;
+    bool enable_listen_only;
+    twai_hal_errata_ctx_t *errata_ctx;
 } twai_hal_context_t;
 
 /* ---------------------------- Init and Config ----------------------------- */
@@ -81,35 +79,20 @@ typedef struct {
 typedef struct {
     int controller_id;
     uint32_t clock_source_hz;
+    uint32_t intr_mask;
+    int8_t retry_cnt;
+    bool no_receive_rtr;
+    bool enable_self_test;
+    bool enable_loopback;
+    bool enable_listen_only;
 } twai_hal_config_t;
 
 /**
- * @brief Translate TWAIFD format DLC code to bytes length
- * @param[in] dlc The frame DLC code follow the FD spec
- * @return        The byte length of DLC stand for
+ * @brief Get the memory requirement of hal_ctx and errata workaround context
+ *
+ * @return size_t
  */
-__attribute__((always_inline))
-static inline int twaifd_dlc2len(uint8_t dlc) {
-    HAL_ASSERT(dlc <= TWAIFD_FRAME_MAX_DLC);
-    return (dlc <= 8) ? dlc :
-           (dlc <= 12) ? (dlc - 8) * 4 + 8 :
-           (dlc <= 13) ? (dlc - 12) * 8 + 24 :
-           (dlc - 13) * 16 + 32;
-}
-
-/**
- * @brief Translate TWAIFD format bytes length to DLC code
- * @param[in] byte_len The byte length of the message
- * @return             The FD adopted frame DLC code
- */
-__attribute__((always_inline))
-static inline uint8_t twaifd_len2dlc(int byte_len) {
-    HAL_ASSERT((byte_len <= TWAIFD_FRAME_MAX_LEN) && (byte_len >= 0));
-    return (byte_len <= 8) ? byte_len :
-           (byte_len <= 24) ? (byte_len - 8 + 3) / 4 + 8 :
-           (byte_len <= 32) ? (byte_len - 24 + 7) / 8 + 12 :
-           (byte_len - 32 + 15) / 16 + 13;
-}
+size_t twai_hal_get_mem_requirment(void);
 
 /**
  * @brief Initialize TWAI peripheral and HAL context
@@ -123,7 +106,6 @@ static inline uint8_t twaifd_len2dlc(int byte_len) {
  */
 bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config);
 
-#if !SOC_TWAI_SUPPORT_FD
 /**
  * @brief Deinitialize the TWAI peripheral and HAL context
  *
@@ -134,16 +116,66 @@ bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config)
 void twai_hal_deinit(twai_hal_context_t *hal_ctx);
 
 /**
- * @brief Configure the TWAI peripheral
+ * @brief Configure the TWAI peripheral for legacy driver (deprecated)
  *
  * @param hal_ctx Context of the HAL layer
  * @param t_config Pointer to timing configuration structure
  * @param f_config Pointer to filter configuration structure
- * @param intr_mask Mask of interrupts to enable
  * @param clkout_divider Clock divider value for CLKOUT. Set to -1 to disable CLKOUT
  */
-void twai_hal_configure(twai_hal_context_t *hal_ctx, const twai_timing_config_t *t_config, const twai_filter_config_t *f_config, uint32_t intr_mask, uint32_t clkout_divider);
+void twai_hal_configure(twai_hal_context_t *hal_ctx, const twai_timing_config_t *t_config, const twai_filter_config_t *f_config, uint32_t clkout_divider);
 
+/**
+ * @brief Check if the brp value valid for hardware register
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @param brp Bit rate prescaler value
+ * @return true or False
+ */
+bool twai_hal_check_brp_validation(twai_hal_context_t *hal_ctx, uint32_t brp);
+
+/**
+ * @brief Configure the TWAI timing
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @param t_config Pointer to timing configuration structure
+ */
+void twai_hal_configure_timing(twai_hal_context_t *hal_ctx, const twai_timing_advanced_config_t *t_config);
+
+/**
+ * @brief Configure the TWAI timing of FD data
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @param t_config_fd Pointer to fd timing configuration structure
+ */
+void twai_hal_configure_timing_fd(twai_hal_context_t *hal_ctx, const twai_timing_advanced_config_t *t_config_fd);
+
+/**
+ * @brief Configure the TWAI mask filter
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @param filter_id Which filter to be configured
+ * @param f_config Pointer to filter configuration structure
+ */
+void twai_hal_configure_filter(twai_hal_context_t *hal_ctx, uint8_t filter_id, const twai_mask_filter_config_t *f_config);
+
+/**
+ * @brief Configure the TWAI range filter
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @param filter_id Which filter to be configured
+ * @param f_config Pointer to filter configuration structure
+ */
+void twai_hal_configure_range_filter(twai_hal_context_t *hal_ctx, uint8_t filter_id, const twai_range_filter_config_t *f_config);
+
+/**
+ * @brief Check if the message in rx_frame match the filter config which save in hal_ctx
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @param rx_frame Where the message will be checked saved in
+ * @return true: Pass the configured filter, false: don't pass
+ */
+bool twai_hal_soft_filter_check_msg(twai_hal_context_t *hal_ctx, twai_hal_frame_t *rx_frame);
 /* -------------------------------- Actions --------------------------------- */
 
 /**
@@ -153,9 +185,8 @@ void twai_hal_configure(twai_hal_context_t *hal_ctx, const twai_timing_config_t 
  * reset mode so that the TWAI peripheral can participate in bus activities.
  *
  * @param hal_ctx Context of the HAL layer
- * @param mode Operating mode
  */
-void twai_hal_start(twai_hal_context_t *hal_ctx, twai_mode_t mode);
+void twai_hal_start(twai_hal_context_t *hal_ctx);
 
 /**
  * @brief Stop the TWAI peripheral
@@ -172,11 +203,7 @@ void twai_hal_stop(twai_hal_context_t *hal_ctx);
  *
  * @param hal_ctx Context of the HAL layer
  */
-static inline void twai_hal_start_bus_recovery(twai_hal_context_t *hal_ctx)
-{
-    TWAI_HAL_SET_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_RECOVERING);
-    twai_ll_exit_reset_mode(hal_ctx->dev);
-}
+void twai_hal_start_bus_recovery(twai_hal_context_t *hal_ctx);
 
 /**
  * @brief Get the value of the TX Error Counter
@@ -184,10 +211,7 @@ static inline void twai_hal_start_bus_recovery(twai_hal_context_t *hal_ctx)
  * @param hal_ctx Context of the HAL layer
  * @return TX Error Counter Value
  */
-static inline uint32_t twai_hal_get_tec(twai_hal_context_t *hal_ctx)
-{
-    return twai_ll_get_tec((hal_ctx)->dev);
-}
+uint32_t twai_hal_get_tec(twai_hal_context_t *hal_ctx);
 
 /**
  * @brief Get the value of the RX Error Counter
@@ -195,34 +219,7 @@ static inline uint32_t twai_hal_get_tec(twai_hal_context_t *hal_ctx)
  * @param hal_ctx Context of the HAL layer
  * @return RX Error Counter Value
  */
-static inline uint32_t twai_hal_get_rec(twai_hal_context_t *hal_ctx)
-{
-    return twai_ll_get_rec((hal_ctx)->dev);
-}
-
-/**
- * @brief Get the RX message count register
- *
- * @param hal_ctx Context of the HAL layer
- * @return RX message count
- */
-__attribute__((always_inline))
-static inline uint32_t twai_hal_get_rx_msg_count(twai_hal_context_t *hal_ctx)
-{
-    return twai_ll_get_rx_msg_count((hal_ctx)->dev);
-}
-
-/**
- * @brief Check if the last transmitted frame was successful
- *
- * @param hal_ctx Context of the HAL layer
- * @return True if successful
- */
-__attribute__((always_inline))
-static inline bool twai_hal_check_last_tx_successful(twai_hal_context_t *hal_ctx)
-{
-    return twai_ll_is_last_tx_successful((hal_ctx)->dev);
-}
+uint32_t twai_hal_get_rec(twai_hal_context_t *hal_ctx);
 
 /**
  * @brief Check if certain HAL state flags are set
@@ -235,11 +232,7 @@ static inline bool twai_hal_check_last_tx_successful(twai_hal_context_t *hal_ctx
  * @param check_flags Bit mask of flags to check
  * @return True if one or more of the flags in check_flags are set
  */
-
-static inline bool twai_hal_check_state_flags(twai_hal_context_t *hal_ctx, uint32_t check_flags)
-{
-    return hal_ctx->state_flags & check_flags;
-}
+bool twai_hal_check_state_flags(twai_hal_context_t *hal_ctx, uint32_t check_flags);
 
 /* ----------------------------- Event Handling ----------------------------- */
 
@@ -262,7 +255,50 @@ static inline bool twai_hal_check_state_flags(twai_hal_context_t *hal_ctx, uint3
  */
 uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx);
 
+/**
+ * @brief Get the hardware error fsm state (active/passive/bus_off)
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @return twai_error_state
+ */
+twai_error_state_t twai_hal_get_err_state(twai_hal_context_t *hal_ctx);
+
+/**
+ * @brief Get hardware transmit error flags
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @return twai_error_flags_t
+ */
+__attribute__((always_inline))
+static inline twai_error_flags_t twai_hal_get_err_flags(twai_hal_context_t *hal_ctx)
+{
+    return hal_ctx->errors;
+}
+
 /* ------------------------------- TX and RX -------------------------------- */
+
+/**
+ * @brief Get the RX message count register
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @return RX message count
+ */
+uint32_t twai_hal_get_rx_msg_count(twai_hal_context_t *hal_ctx);
+
+/**
+ * @brief TWAI hal transaction description type
+ */
+typedef struct {
+    struct {
+        twai_frame_header_t *header;    // message attribute/metadata, exclude data buffer
+        uint8_t *buffer;                // buffer address for tx and rx message data
+        size_t buffer_len;              // buffer length of provided data buffer pointer, in bytes.
+    } frame;
+    struct {
+        int8_t retry_cnt;               // Number of retransmission attempts (-1 for unlimited)
+        bool loopback;                  // loopback this message
+    } config;                           // Hardware config for TX transaction
+} twai_hal_trans_desc_t;
 
 /**
  * @brief Format a TWAI Frame
@@ -270,15 +306,10 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx);
  * This function takes a TWAI message structure (containing ID, DLC, data, and
  * flags) and formats it to match the layout of the TX frame buffer.
  *
- * @param message Pointer to TWAI message
+ * @param trans_desc Pointer to TWAI hal trans config
  * @param frame Pointer to empty frame structure
  */
-static inline void twai_hal_format_frame(const twai_message_t *message, twai_hal_frame_t *frame)
-{
-    //Direct call to ll function
-    twai_ll_format_frame_buffer(message->identifier, message->data_length_code, message->data,
-                                message->flags, frame);
-}
+void twai_hal_format_frame(const twai_hal_trans_desc_t *trans_desc, twai_hal_frame_t *frame);
 
 /**
  * @brief Parse a TWAI Frame
@@ -289,12 +320,7 @@ static inline void twai_hal_format_frame(const twai_message_t *message, twai_hal
  * @param frame Pointer to frame structure
  * @param message Pointer to empty message structure
  */
-static inline void twai_hal_parse_frame(twai_hal_frame_t *frame, twai_message_t *message)
-{
-    //Direct call to ll function
-    twai_ll_parse_frame_buffer(frame, &message->identifier, &message->data_length_code,
-                               message->data, &message->flags);
-}
+void twai_hal_parse_frame(const twai_hal_frame_t *frame, twai_frame_header_t *header, uint8_t *buffer, uint8_t buffer_len);
 
 /**
  * @brief Copy a frame into the TX buffer and transmit
@@ -305,8 +331,9 @@ static inline void twai_hal_parse_frame(twai_hal_frame_t *frame, twai_message_t 
  *
  * @param hal_ctx Context of the HAL layer
  * @param tx_frame Pointer to structure containing formatted TX frame
+ * @param buffer_idx Hardware message buffer id to use
  */
-void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_frame_t *tx_frame);
+void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_frame_t *tx_frame, uint8_t buffer_idx);
 
 /**
  * @brief Copy a frame from the RX buffer and release
@@ -322,25 +349,7 @@ void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_f
  * @param rx_frame Pointer to structure to store RX frame
  * @return True if a valid frame was copied and released. False if overrun.
  */
-__attribute__((always_inline))
-static inline bool twai_hal_read_rx_buffer_and_clear(twai_hal_context_t *hal_ctx, twai_hal_frame_t *rx_frame)
-{
-#ifdef SOC_TWAI_SUPPORTS_RX_STATUS
-    if (twai_ll_get_status(hal_ctx->dev) & TWAI_LL_STATUS_MS) {
-        //Release the buffer for this particular overrun frame
-        twai_ll_set_cmd_release_rx_buffer(hal_ctx->dev);
-        return false;
-    }
-#else
-    if (twai_ll_get_status(hal_ctx->dev) & TWAI_LL_STATUS_DOS) {
-        //No need to release RX buffer as we'll be releasing all RX frames in continuously later
-        return false;
-    }
-#endif
-    twai_ll_get_rx_buffer(hal_ctx->dev, rx_frame);
-    twai_ll_set_cmd_release_rx_buffer(hal_ctx->dev);
-    return true;
-}
+bool twai_hal_read_rx_fifo(twai_hal_context_t *hal_ctx, twai_hal_frame_t *rx_frame);
 
 #ifndef SOC_TWAI_SUPPORTS_RX_STATUS
 /**
@@ -352,25 +361,32 @@ static inline bool twai_hal_read_rx_buffer_and_clear(twai_hal_context_t *hal_ctx
  * @param hal_ctx Context of the HAL layer
  * @return Number of overrun messages cleared from RX FIFO
  */
-__attribute__((always_inline))
-static inline uint32_t twai_hal_clear_rx_fifo_overrun(twai_hal_context_t *hal_ctx)
-{
-    uint32_t msg_cnt = 0;
-    //Note: Need to keep polling th rx message counter in case another message arrives whilst clearing
-    while (twai_ll_get_rx_msg_count(hal_ctx->dev) > 0) {
-        twai_ll_set_cmd_release_rx_buffer(hal_ctx->dev);
-        msg_cnt++;
-    }
-    //Set a clear data overrun command to clear the data overrun status bit
-    twai_ll_set_cmd_clear_data_overrun(hal_ctx->dev);
-
-    return msg_cnt;
-}
+uint32_t twai_hal_clear_rx_fifo_overrun(twai_hal_context_t *hal_ctx);
 #endif  //SOC_TWAI_SUPPORTS_RX_STATUS
 
 /* --------------------------- Errata Workarounds --------------------------- */
 
-#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+/**
+ * @brief Check if hardware is busy (transmitting / receiving)
+ *
+ * @param hal_ctx Context of the HAL layer
+ */
+bool twai_hal_is_hw_busy(twai_hal_context_t *hal_ctx);
+
+/**
+ * @brief Backup the hardware configs, to prepare for hardware reset
+ *
+ * @param hal_ctx Context of the HAL layer
+ */
+void twai_hal_backup_config(twai_hal_context_t *hal_ctx);
+
+/**
+ * @brief Restore the hardware configs which backup before
+ *
+ * @param hal_ctx Context of the HAL layer
+ */
+void twai_hal_restore_config(twai_hal_context_t *hal_ctx);
+
 /**
  * @brief Prepare the peripheral for a HW reset
  *
@@ -408,13 +424,7 @@ void twai_hal_recover_from_reset(twai_hal_context_t *hal_ctx);
  * @param hal_ctx Context of the HAL layer
  * @return uint32_t Number of RX messages lost due to HW reset
  */
-__attribute__((always_inline))
-static inline uint32_t twai_hal_get_reset_lost_rx_cnt(twai_hal_context_t *hal_ctx)
-{
-    return hal_ctx->rx_msg_cnt_save;
-}
-#endif  //defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
-#endif // !SOC_TWAI_SUPPORT_FD
+uint32_t twai_hal_get_reset_lost_rx_cnt(twai_hal_context_t *hal_ctx);
 
 #ifdef __cplusplus
 }

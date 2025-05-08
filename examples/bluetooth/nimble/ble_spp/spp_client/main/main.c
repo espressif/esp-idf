@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -67,11 +67,27 @@ static void
 ble_spp_client_set_handle(const struct peer *peer)
 {
     const struct peer_chr *chr;
+    const struct peer_dsc *dsc;
+    uint8_t value[2];
     chr = peer_chr_find_uuid(peer,
                              BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
                              BLE_UUID16_DECLARE(GATT_SPP_CHR_UUID));
     attribute_handle[peer->conn_handle] = chr->chr.val_handle;
+    MODLOG_DFLT(INFO, "attribute_handle %x\n", attribute_handle[peer->conn_handle]);
 
+    dsc = peer_dsc_find_uuid(peer,
+                             BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
+                             BLE_UUID16_DECLARE(GATT_SPP_CHR_UUID),
+                             BLE_UUID16_DECLARE(BLE_GATT_DSC_CLT_CFG_UUID16));
+    if (dsc == NULL) {
+        MODLOG_DFLT(ERROR, "Error: Peer lacks a CCCD for the subscribable characteristic\n");
+	return;
+    }
+
+    value[0] = 1;
+    value[1] = 0;
+    ble_gattc_write_flat(peer->conn_handle, dsc->dsc.handle,
+                            value, sizeof(value), NULL, NULL);
 }
 
 
@@ -271,27 +287,27 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
         ble_spp_client_connect_if_interesting(&event->disc);
         return 0;
 
-    case BLE_GAP_EVENT_LINK_ESTAB:
+    case BLE_GAP_EVENT_CONNECT:
         /* A new connection was established or a connection attempt failed. */
-        if (event->link_estab.status == 0) {
+        if (event->connect.status == 0) {
             /* Connection successfully established. */
             MODLOG_DFLT(INFO, "Connection established ");
-            rc = ble_gap_conn_find(event->link_estab.conn_handle, &desc);
+            rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
-            memcpy(&connected_addr[event->link_estab.conn_handle].val, desc.peer_id_addr.val,
+            memcpy(&connected_addr[event->connect.conn_handle].val, desc.peer_id_addr.val,
                    PEER_ADDR_VAL_SIZE);
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "\n");
 
             /* Remember peer. */
-            rc = peer_add(event->link_estab.conn_handle);
+            rc = peer_add(event->connect.conn_handle);
             if (rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to add peer; rc=%d\n", rc);
                 return 0;
             }
 
             /* Perform service discovery. */
-            rc = peer_disc_all(event->link_estab.conn_handle,
+            rc = peer_disc_all(event->connect.conn_handle,
                                ble_spp_client_on_disc_complete, NULL);
             if (rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
@@ -300,7 +316,7 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
         } else {
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
-                        event->link_estab.status);
+                        event->connect.status);
             ble_spp_client_scan();
         }
 

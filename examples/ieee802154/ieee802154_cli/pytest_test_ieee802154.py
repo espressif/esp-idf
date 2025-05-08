@@ -1,14 +1,15 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import random
 import re
 from time import sleep
-from typing import List, Tuple
+from typing import List
+from typing import Tuple
 
 import pexpect
 import pytest
 from pytest_embedded_idf.dut import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 def generate_shortaddr() -> str:
@@ -33,7 +34,7 @@ def generate_extaddr() -> str:
     return extaddr
 
 
-def dlt_pendingtable(ser:IdfDut, addr:str) -> None:
+def dlt_pendingtable(ser: IdfDut, addr: str) -> None:
     if addr != '':
         addr_list = re.findall(r'0x([A-Za-z0-9]{2})', addr)
         addr_field = '0x' + ''.join(reversed(addr_list))
@@ -52,7 +53,7 @@ def dlt_pendingtable(ser:IdfDut, addr:str) -> None:
             sleep(0.1)
 
 
-def add_pendingtable(ser:IdfDut, addr:str='') -> None:
+def add_pendingtable(ser: IdfDut, addr: str = '') -> None:
     if len(addr.split(' ')) == 2 or len(addr.split(' ')) == 8:
         cmd = 'pending %s\n' % (addr)
         addr_list = re.findall(r'0x([A-Za-z0-9]{2})', addr)
@@ -66,7 +67,7 @@ def add_pendingtable(ser:IdfDut, addr:str='') -> None:
         sleep(0.1)
 
 
-def generate_wrong_PANID_addr(right:str) -> str:
+def generate_wrong_PANID_addr(right: str) -> str:
     wrong = ''
     for i in right.split(' '):
         num = (int(i, 16) + random.randint(1, 255)) % 256
@@ -75,7 +76,9 @@ def generate_wrong_PANID_addr(right:str) -> str:
     return wrong
 
 
-def set_mismatch_short_extern_addr_pendingtable(ser:IdfDut, addr:str, short:int=12, extern:int=12) -> List[List]:
+def set_mismatch_short_extern_addr_pendingtable(
+    ser: IdfDut, addr: str, short: int = 12, extern: int = 12
+) -> List[List]:
     short_addr = []
     extern_addr = []
     cnt = 0
@@ -100,7 +103,7 @@ def set_mismatch_short_extern_addr_pendingtable(ser:IdfDut, addr:str, short:int=
     return [short_addr, extern_addr]
 
 
-def dlt_short_extern_addr_in_pendingtable(ser:IdfDut, table:List, short:int=5, extern:int=5) -> None:
+def dlt_short_extern_addr_in_pendingtable(ser: IdfDut, table: List, short: int = 5, extern: int = 5) -> None:
     cnt = 0
     while cnt < short:
         dlt_pendingtable(ser, table[0][cnt])
@@ -110,13 +113,15 @@ def dlt_short_extern_addr_in_pendingtable(ser:IdfDut, table:List, short:int=5, e
         cnt = cnt + 1
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'count, config', [
+    'count, config',
+    [
         (2, 'release'),
-    ], indirect=True
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_txrx(dut: Tuple[IdfDut, IdfDut]) -> None:
     transmit = dut[0]
     receive = dut[1]
@@ -147,12 +152,15 @@ def test_based_txrx(dut: Tuple[IdfDut, IdfDut]) -> None:
     assert 'Rx Done' not in str(tmp)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'config', ['release',],
-    indirect=True
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_energy(dut: IdfDut) -> None:
     transmit = dut
     transmit.expect('ieee802154>', timeout=10)
@@ -161,12 +169,15 @@ def test_based_energy(dut: IdfDut) -> None:
     transmit.expect('ed_scan_rss_value:', timeout=10)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'config', ['release',],
-    indirect=True
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_channel(dut: IdfDut) -> None:
     transmit = dut
     transmit.expect('ieee802154>', timeout=10)
@@ -176,12 +187,15 @@ def test_based_channel(dut: IdfDut) -> None:
     transmit.expect('current channel: 23', timeout=10)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'config', ['release',],
-    indirect=True
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_txpower(dut: IdfDut) -> None:
     transmit = dut
     transmit.expect('ieee802154>', timeout=10)
@@ -191,12 +205,15 @@ def test_based_txpower(dut: IdfDut) -> None:
     transmit.expect('current txpower: 13', timeout=10)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'config', ['release',],
-    indirect=True
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_promiscuous(dut: IdfDut) -> None:
     transmit = dut
     transmit.expect('ieee802154>', timeout=10)
@@ -210,12 +227,15 @@ def test_based_promiscuous(dut: IdfDut) -> None:
     transmit.expect('hardware promiscuous mode was disabled', timeout=10)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'config', ['release',],
-    indirect=True
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_panid(dut: IdfDut) -> None:
     transmit = dut
     transmit.expect('ieee802154>', timeout=10)
@@ -225,12 +245,15 @@ def test_based_panid(dut: IdfDut) -> None:
     transmit.expect('current panid: 0x60', timeout=10)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'config', ['release',],
-    indirect=True
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_shortaddr(dut: IdfDut) -> None:
     transmit = dut
     transmit.expect('ieee802154>', timeout=10)
@@ -240,12 +263,15 @@ def test_based_shortaddr(dut: IdfDut) -> None:
     transmit.expect('current shortaddr: 0x1234', timeout=10)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'config', ['release',],
-    indirect=True
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_extaddr(dut: IdfDut) -> None:
     transmit = dut
     transmit.expect('ieee802154>', timeout=10)
@@ -255,12 +281,15 @@ def test_based_extaddr(dut: IdfDut) -> None:
     transmit.expect('get extaddr: 0807060504030201', timeout=10)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'config', ['release',],
-    indirect=True
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_coordinator(dut: IdfDut) -> None:
     transmit = dut
     transmit.expect('ieee802154>', timeout=10)
@@ -274,12 +303,15 @@ def test_based_coordinator(dut: IdfDut) -> None:
     transmit.expect('hardware coordinator was disabled', timeout=10)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'config', ['release',],
-    indirect=True
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_pending(dut: IdfDut) -> None:
     transmit = dut
     transmit.expect('ieee802154>', timeout=10)
@@ -295,12 +327,15 @@ def test_based_pending(dut: IdfDut) -> None:
     transmit.expect('clear the pending address table', timeout=10)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'config', ['release',],
-    indirect=True
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_cca(dut: IdfDut) -> None:
     transmit = dut
     transmit.expect('ieee802154>', timeout=10)
@@ -312,13 +347,15 @@ def test_based_cca(dut: IdfDut) -> None:
     transmit.expect('threshold:-60 dB, mode: 0', timeout=10)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'count, config', [
+    'count, config',
+    [
         (2, 'release'),
-    ], indirect=True
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_autoack(dut: Tuple[IdfDut, IdfDut]) -> None:
     transmit = dut[0]
     receive = dut[1]
@@ -359,18 +396,20 @@ def test_based_autoack(dut: Tuple[IdfDut, IdfDut]) -> None:
     transmit.expect('02 00 00', timeout=10)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'count, config', [
+    'count, config',
+    [
         (2, 'release'),
-    ], indirect=True
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_autopending(dut: Tuple[IdfDut, IdfDut]) -> None:
     transmit = dut[0]
     receive = dut[1]
 
-# mode 0: CMD ID = 0x04 --> FP = 1
+    # mode 0: CMD ID = 0x04 --> FP = 1
     transmit.expect('ieee802154>', timeout=10)
     transmit.write('rx -r 0')
     transmit.expect('radio exit receive mode')
@@ -397,11 +436,13 @@ def test_based_autopending(dut: Tuple[IdfDut, IdfDut]) -> None:
 
     receive.write('rx -r 1')
     receive.expect('RX Start', timeout=10)
-    transmit.write('tx 0x23 0x08 0x00 0x74 0x2E 0x49 0x26 0x04 0x53 0x04 0xe3 0x71 0xc2 0x36 0xf7 0xa5 0x2b 0x68 0x79 0x8c 0x72 0x50 0x8b 0x61 0x55 0x56')
+    transmit.write(
+        'tx 0x23 0x08 0x00 0x74 0x2E 0x49 0x26 0x04 0x53 0x04 0xe3 0x71 0xc2 0x36 0xf7 0xa5 0x2b 0x68 0x79 0x8c 0x72 0x50 0x8b 0x61 0x55 0x56'
+    )
     transmit.expect('Rx ack 5 bytes', timeout=10)
     transmit.expect('12 00 00', timeout=10)
 
-# mode 0: CMD ID != 0x04 --> FP = 0
+    # mode 0: CMD ID != 0x04 --> FP = 0
     receive.write('pending -r')
     receive.expect('clear the pending address table', timeout=10)
     receive.write('promisc -d')
@@ -426,7 +467,7 @@ def test_based_autopending(dut: Tuple[IdfDut, IdfDut]) -> None:
     transmit.expect('Rx ack 5 bytes', timeout=10)
     transmit.expect('02 00 0c', timeout=10)
 
-# mode 1: CMD ID = 0x04, src addr in pending table --> FP = 1
+    # mode 1: CMD ID = 0x04, src addr in pending table --> FP = 1
     receive.write('pending -r')
     receive.expect('clear the pending address table', timeout=10)
     receive.write('promisc -d')
@@ -459,7 +500,7 @@ def test_based_autopending(dut: Tuple[IdfDut, IdfDut]) -> None:
     transmit.expect('Rx ack 5 bytes', timeout=10)
     transmit.expect('12 00 00', timeout=10)
 
-# mode 1: CMD ID = 0x04, src addr not in pending table --> FP = 0
+    # mode 1: CMD ID = 0x04, src addr not in pending table --> FP = 0
     receive.write('pending -r')
     receive.expect('clear the pending address table', timeout=10)
     receive.write('promisc -d')
@@ -487,11 +528,13 @@ def test_based_autopending(dut: Tuple[IdfDut, IdfDut]) -> None:
 
     receive.write('rx -r 1')
     receive.expect('RX Start', timeout=10)
-    transmit.write('tx 0x2b 0x88 0x08 0xE3 0x9F 0x20 0x9E 0x18 0xE7 0x66 0xC4 0x17 0x92 0x8a 0xcd 0x4c 0xd0 0x20 0x40 0x0d 0x46 0x04 0xa0 0xe3 0x9c 0x57')
+    transmit.write(
+        'tx 0x2b 0x88 0x08 0xE3 0x9F 0x20 0x9E 0x18 0xE7 0x66 0xC4 0x17 0x92 0x8a 0xcd 0x4c 0xd0 0x20 0x40 0x0d 0x46 0x04 0xa0 0xe3 0x9c 0x57'
+    )
     transmit.expect('Rx ack 5 bytes', timeout=10)
     transmit.expect('02 00 08', timeout=10)
 
-# mode 2: frame type is data, src addr in pending table --> FP = 1
+    # mode 2: frame type is data, src addr in pending table --> FP = 1
     receive.write('pending -r')
     receive.expect('clear the pending address table', timeout=10)
     receive.write('promisc -d')
@@ -524,7 +567,7 @@ def test_based_autopending(dut: Tuple[IdfDut, IdfDut]) -> None:
     transmit.expect('Rx ack 5 bytes', timeout=10)
     transmit.expect('12 00 10', timeout=10)
 
-# mode 2: frame type is data, src addr not in pending table --> FP = 0
+    # mode 2: frame type is data, src addr not in pending table --> FP = 0
     receive.write('pending -r')
     receive.expect('clear the pending address table', timeout=10)
     receive.write('promisc -d')
@@ -557,12 +600,15 @@ def test_based_autopending(dut: Tuple[IdfDut, IdfDut]) -> None:
     transmit.expect('02 00 10', timeout=10)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'config', ['release',],
-    indirect=True
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_transmit_failed(dut: IdfDut) -> None:
     transmit = dut
     transmit.expect('ieee802154>', timeout=10)
@@ -579,12 +625,15 @@ def test_based_transmit_failed(dut: IdfDut) -> None:
     transmit.expect('08 09 00 00 00 00 00 00', timeout=10)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'config', ['release',],
-    indirect=True
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_based_initialize(dut: IdfDut) -> None:
     transmit = dut
     transmit.expect('ieee802154>', timeout=10)

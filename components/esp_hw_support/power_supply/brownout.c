@@ -26,6 +26,9 @@
 #include "esp_rom_uart.h"
 #include "hal/uart_ll.h"
 #include "soc/power_supply_periph.h"
+#include "esp_brownout.h"
+#include "esp_check.h"
+#include "esp_memory_utils.h"
 
 #if defined(CONFIG_ESP_BROWNOUT_DET_LVL)
 #define BROWNOUT_DET_LVL CONFIG_ESP_BROWNOUT_DET_LVL
@@ -35,6 +38,8 @@
 
 static __attribute__((unused)) DRAM_ATTR const char TAG[] = "BOD";
 
+static brownout_callback_t s_brownout_callback = NULL;
+
 #if CONFIG_ESP_BROWNOUT_USE_INTR
 IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
 {
@@ -43,6 +48,10 @@ IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
      * cleared manually.
      */
     brownout_ll_intr_clear();
+
+    if (s_brownout_callback) {
+        s_brownout_callback();
+    }
 
     // Stop the other core.
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -122,4 +131,14 @@ void esp_brownout_disable(void)
     brownout_ll_intr_enable(false);
     rtc_isr_deregister(rtc_brownout_isr_handler, NULL);
 #endif // CONFIG_ESP_BROWNOUT_USE_INTR
+}
+
+esp_err_t esp_brownout_register_callback(brownout_callback_t callback)
+{
+    if (callback != NULL) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callback), ESP_ERR_INVALID_ARG, TAG, "brownout callback is not in IRAM");
+    }
+    s_brownout_callback = callback;
+
+    return ESP_OK;
 }

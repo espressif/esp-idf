@@ -19,9 +19,6 @@
 extern "C" {
 #endif
 
-#define TOUCH_MIN_CHAN_ID           0           /*!< The minimum available channel id of the touch pad */
-#define TOUCH_MAX_CHAN_ID           9           /*!< The maximum available channel id of the touch pad */
-
 /**
  * @brief Helper macro to the default configurations of the touch sensor controller
  *

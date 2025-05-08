@@ -434,6 +434,52 @@ NAPT 和端口转发
 - 要在两个接口之间使用 NAPT 转发数据包，必须在连接到目标网络的接口上启用 NAPT。例如，为了通过 Wi-Fi 接口为以太网流量启用互联网访问，必须在以太网接口上启用 NAPT。
 - NAPT 的使用示例可参考 :example:`network/vlan_support`。
 
+默认 lwIP 钩子
+++++++++++++++++++
+
+IDF 移植层提供了默认的钩子文件，lwIP 构建过程中会包含此文件。此文件位于 :component_file:`lwip/port/include/lwip_default_hooks.h`，并定义了多个钩子，用于实现 lwIP 协议栈的默认 ESP-IDF 行为。这些钩子可以通过以下选项进行进一步修改：
+
+- *None*：不声明任何钩子。
+- *Default*：提供默认的 IDF 实现（多数情况下被声明为可被覆盖的弱实现）。
+- *Custom*：仅提供钩子声明，应用程序必须自行实现钩子。
+
+**DHCP 额外选项钩子**
+
+ESP-IDF 允许应用程序通过定义钩子来处理额外的 DHCP 选项，可以帮助实现基于 DHCP 的自定义行为（例如获取特定的供应商选项）。若想启用此功能，可以将 :ref:`CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION` 配置为 **Default** （提供弱实现，可替换为自定义实现）或 **Custom** （需要自行实现该钩子，并定义其对 lwIP 的链接依赖）。
+
+**示例用法**
+
+应用程序可以定义以下函数来处理特定的 DHCP 选项（例如强制门户 URI）：
+
+.. code-block::
+
+    #include "esp_netif.h"
+    #include "lwip/dhcp.h"
+
+    void lwip_dhcp_on_extra_option(struct dhcp *dhcp, uint8_t state,
+                                   uint8_t option, uint8_t len,
+                                   struct pbuf* p, uint16_t offset)
+    {
+        if (option == ESP_NETIF_CAPTIVEPORTAL_URI) {
+            char *uri = (char *)p->payload + offset;
+            ESP_LOGI(TAG, "Captive Portal URI: %s", uri);
+        }
+    }
+
+**其他默认钩子**
+
+ESP-IDF 提供了其他可覆盖的 lwIP 钩子，例如：
+
+- TCP ISN 钩子 (:ref:`CONFIG_LWIP_HOOK_TCP_ISN`)：允许自定义 TCP 初始序列号 (ISN) 的随机化逻辑。ESP-IDF 提供的实现是默认选项，设置为 *Custom* 可使用自定义实现，设置为 *None* 可使用 lwIP 实现。
+- IPv6 路由钩子 (:ref:`CONFIG_LWIP_HOOK_IP6_ROUTE`)：支持自定义 IPv6 数据包的路由选择。默认无钩子，可使用 *Default* 或 *Custom* 进行覆盖。
+- IPv6 获取网关钩子 (:ref:`CONFIG_LWIP_HOOK_ND6_GET_GW`)：支持自定义网关选择逻辑。默认无钩子，可使用 *Default* 或 *Custom* 进行覆盖。
+- IPv6 源地址选择钩子 (:ref:`CONFIG_LWIP_HOOK_IP6_SELECT_SRC_ADDR`)：允许自定义源地址的选择逻辑。默认无钩子，可使用 Default 或 Custom 进行覆盖
+- Netconn 外部解析钩子 (:ref:`CONFIG_LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE`)：允许覆盖网络连接的 DNS 解析逻辑默认无钩子，可使用 *Default* 或 *Custom* 进行覆盖。
+- DNS 外部解析钩子 (:ref:`CONFIG_LWIP_HOOK_DNS_EXTERNAL_RESOLVE`)：提供用于自定义 DNS 解析逻辑的回调钩子。默认无钩子，但外部组件可以选择优先使用自定义选项；可使用 *Default* 或 *Custom* 进行覆盖。
+- IPv6 数据包输入钩子 (:ref:`CONFIG_LWIP_HOOK_IP6_INPUT`)：能够过滤或修改传入的 IPv6 数据包。ESP-IDF 提供的弱实现是默认选项；可使用 *Custom* 或强定义来覆盖 *Default* 选项，或选择 *None* 以禁用 IPv6 数据包输入过滤。
+
+这些钩子均可在 menuconfig 中进行配置，可选择默认实现、自定义实现或不启用。
+
 .. _lwip-custom-hooks:
 
 自定义 lwIP 钩子

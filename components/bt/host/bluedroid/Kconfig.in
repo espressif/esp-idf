@@ -89,6 +89,15 @@ config BT_A2DP_ENABLE
     help
         Advanced Audio Distribution Profile
 
+config BT_A2DP_USE_EXTERNAL_CODEC
+    bool "Use External Codec for A2DP"
+    depends on BT_A2DP_ENABLE
+    default n
+    help
+        If enable, user shall register audio codec capability to A2DP and encode/decode
+        audio data in application layer. The internal codec in A2DP will be remove in
+        the future, it is recommend to use external codec for new design.
+
 config BT_AVRCP_ENABLED
     bool
     depends on BT_A2DP_ENABLE
@@ -132,6 +141,26 @@ config BT_SDP_COMMON_ENABLED
     help
         This enables common SDP operation, such as SDP record creation and deletion.
 
+config BT_SDP_PAD_LEN
+    int "One or more BT SDP attributes total allocated length (bytes)"
+    depends on BT_CLASSIC_ENABLED
+    default 300
+    range   BT_SDP_ATTR_LEN 1024
+    help
+        This is the total size of all SDP attributes allowed.
+        Any attributes that exceed this size are truncated.
+        The default value is 300.
+
+config BT_SDP_ATTR_LEN
+    int "Single BT SDP attribute allocated length (bytes)"
+    depends on BT_CLASSIC_ENABLED
+    default 300
+    range   300 1024
+    help
+        This is the maximum allowed size for a single SDP attribute.
+        Any attributes that exceed this size are truncated.
+        The default value is 300.
+
 menuconfig BT_HFP_ENABLE
     bool "Hands Free/Handset Profile"
     depends on BT_CLASSIC_ENABLED
@@ -164,6 +193,15 @@ choice BT_HFP_AUDIO_DATA_PATH
         bool "HCI"
 endchoice
 
+config BT_HFP_USE_EXTERNAL_CODEC
+    bool "Use External Codec for HFP"
+    depends on BT_HFP_ENABLE && BT_HFP_AUDIO_DATA_PATH_HCI
+    default n
+    help
+        If enable, user shall encode/decode audio data in application layer. The internal
+        codec in HFP will be remove in the future, it is recommend to use external codec
+        for new design.
+
 config BT_HFP_WBS_ENABLE
     bool "Wide Band Speech"
     depends on BT_HFP_ENABLE && BT_HFP_AUDIO_DATA_PATH_HCI
@@ -191,6 +229,14 @@ config BT_HID_DEVICE_ENABLED
     depends on BT_HID_ENABLED
     help
         This enables the BT HID Device
+
+config BT_HID_REMOVE_DEVICE_BONDING_ENABLED
+    bool "Remove Device Bonding Information when HID Virtual Cable Unplugging"
+    depends on BT_HID_ENABLED
+    default y
+    help
+        This enables the BT HID to remove device bonding information when virtual cable unplugging,
+        removing device bonding information is optional in HID 1.0 but mandatory in HID 1.1
 
 menuconfig BT_PBAC_ENABLED
     bool "PBAP Client"
@@ -229,7 +275,7 @@ config BT_BLE_ENABLED
     help
         This enables Bluetooth Low Energy
 
-config BT_GATTS_ENABLE
+menuconfig BT_GATTS_ENABLE
     bool "Include GATT server module(GATTS)"
     depends on BT_BLE_ENABLED
     default y
@@ -241,8 +287,9 @@ config BT_GATTS_PPCP_CHAR_GAP
     depends on BT_GATTS_ENABLE
     default n
     help
-        This enables "Peripheral Preferred Connection Parameters" characteristic (UUID: 0x2A04) in GAP service that has
-        connection parameters like min/max connection interval, slave latency and supervision timeout multiplier
+        This enables "Peripheral Preferred Connection Parameters" characteristic (UUID: 0x2A04)
+        in GAP service that has connection parameters like min/max connection interval, slave
+        latency and supervision timeout multiplier
 
 config BT_BLE_BLUFI_ENABLE
     bool "Include blufi function"
@@ -318,7 +365,7 @@ config BT_GATTS_APPEARANCE_WRITABLE
     help
         Enabling this option allows remote GATT clients to write appearance
 
-config BT_GATTC_ENABLE
+menuconfig BT_GATTC_ENABLE
     bool "Include GATT client module(GATTC)"
     depends on BT_BLE_ENABLED
     default y
@@ -356,7 +403,16 @@ config BT_GATTC_CONNECT_RETRY_COUNT
     help
         The number of attempts to reconnect if the connection establishment failed
 
-config BT_BLE_SMP_ENABLE
+config BT_BLE_ESTAB_LINK_CONN_TOUT
+    int "Timeout of BLE connection establishment"
+    depends on BT_GATTC_ENABLE
+    range 1 60
+    default 30
+    help
+        Bluetooth Connection establishment maximum time, if connection time exceeds this value, the connection
+        establishment fails, ESP_GATTC_OPEN_EVT or ESP_GATTS_OPEN_EVT is triggered.
+
+menuconfig BT_BLE_SMP_ENABLE
     bool "Include BLE security module(SMP)"
     depends on BT_BLE_ENABLED
     default y
@@ -388,6 +444,23 @@ config BT_BLE_SMP_BOND_NVS_FLASH
     default y
     help
         This select can save SMP bonding keys to nvs flash
+
+config BT_BLE_RPA_SUPPORTED
+    bool "Update RPA to Controller"
+    depends on (BT_BLE_SMP_ENABLE && ((BT_CONTROLLER_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n if (BT_CONTROLLER_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED)
+    default y if BT_CONTROLLER_DISABLED
+    help
+        This enables controller RPA list function.
+        For ESP32, ESP32 only support network privacy mode. If this option is enabled, ESP32 will only accept
+        advertising packets from peer devices that contain private address, HW will not receive the advertising
+        packets contain identity address after IRK changed. If this option is disabled, address resolution will
+        be performed in the host, so the functions that require controller to resolve address in the white list
+        cannot be used. This option is disabled by default on ESP32, please enable or disable this option according
+        to your own needs.
+
+        For other BLE chips, devices support network privacy mode and device privacy mode,
+        users can switch the two modes according to their own needs. So this option is enabled by default.
 
 config BT_STACK_NO_LOG
     bool "Disable BT debug logs (minimize bin size)"
@@ -1169,15 +1242,6 @@ config BT_BLE_DYNAMIC_ENV_MEMORY
     help
         This select can make the allocation of memory will become more flexible
 
-config BT_BLE_HOST_QUEUE_CONG_CHECK
-    bool "BLE queue congestion check"
-    depends on BT_BLE_ENABLED
-    default n
-    help
-        When scanning and scan duplicate is not enabled, if there are a lot of adv packets around
-        or application layer handling adv packets is slow, it will cause the controller memory
-        to run out. if enabled, adv packets will be lost when host queue is congested.
-
 config BT_SMP_ENABLE
     bool
     depends on BT_BLUEDROID_ENABLED
@@ -1202,15 +1266,6 @@ config BT_BLE_ACT_SCAN_REP_ADV_SCAN
 
         # Memory reserved at start of DRAM for Bluetooth stack
 
-config BT_BLE_ESTAB_LINK_CONN_TOUT
-    int "Timeout of BLE connection establishment"
-    depends on BT_BLE_ENABLED
-    range 1 60
-    default 30
-    help
-        Bluetooth Connection establishment maximum time, if connection time exceeds this value, the connection
-        establishment fails, ESP_GATTC_OPEN_EVT or ESP_GATTS_OPEN_EVT is triggered.
-
 config BT_MAX_DEVICE_NAME_LEN
     int "length of bluetooth device name"
     depends on BT_BLUEDROID_ENABLED
@@ -1221,23 +1276,6 @@ config BT_MAX_DEVICE_NAME_LEN
         the complete device name, then only the shortname will be displayed, the rest parts that can't fit in
         will be truncated.
 
-config BT_BLE_RPA_SUPPORTED
-    bool "Update RPA to Controller"
-    depends on (BT_BLUEDROID_ENABLED && ((BT_CONTROLLER_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
-    default n if (BT_CONTROLLER_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED)
-    default y if BT_CONTROLLER_DISABLED
-    help
-        This enables controller RPA list function.
-        For ESP32, ESP32 only support network privacy mode. If this option is enabled, ESP32 will only accept
-        advertising packets from peer devices that contain private address, HW will not receive the advertising
-        packets contain identity address after IRK changed. If this option is disabled, address resolution will
-        be performed in the host, so the functions that require controller to resolve address in the white list
-        cannot be used. This option is disabled by default on ESP32, please enable or disable this option according
-        to your own needs.
-
-        For other BLE chips, devices support network privacy mode and device privacy mode,
-        users can switch the two modes according to their own needs. So this option is enabled by default.
-
 config BT_BLE_RPA_TIMEOUT
     int "Timeout of resolvable private address"
     depends on BT_BLE_ENABLED
@@ -1247,7 +1285,7 @@ config BT_BLE_RPA_TIMEOUT
         This set RPA timeout of Controller and Host.
         Default is 900 s (15 minutes). Range is 1 s to 1 hour (3600 s).
 
-config BT_BLE_50_FEATURES_SUPPORTED
+menuconfig BT_BLE_50_FEATURES_SUPPORTED
     bool "Enable BLE 5.0 features(please disable BLE 4.2 if enable BLE 5.0)"
     depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_50_SUPPORTED) || BT_CONTROLLER_DISABLED))
     default y
@@ -1256,15 +1294,40 @@ config BT_BLE_50_FEATURES_SUPPORTED
         This option is universally supported in chips that support BLE, except for ESP32.
         BLE 4.2 and BLE 5.0 cannot be used simultaneously.
 
-
-config BT_BLE_42_FEATURES_SUPPORTED
-    bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
-    depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_50_SUPPORTED) || BT_CONTROLLER_DISABLED))
-    default n
+config BT_BLE_50_EXTEND_ADV_EN
+    bool "Enable BLE extend advertising"
+    depends on BT_BLE_50_FEATURES_SUPPORTED
+    default y
     help
-        This enables BLE 4.2 features.
-        This option is universally supported by all ESP chips with BLE capabilities.
-        BLE 4.2 and BLE 5.0 cannot be used simultaneously.
+        This enables BLE extend advertising
+
+config BT_BLE_50_PERIODIC_ADV_EN
+    bool "Enable BLE periodic advertising"
+    depends on BT_BLE_50_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE periodic advertising
+
+config BT_BLE_50_EXTEND_SCAN_EN
+    bool "Enable BLE extend scan"
+    depends on BT_BLE_50_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE extend scan
+
+config BT_BLE_50_EXTEND_SYNC_EN
+    bool "Enable BLE periodic advertising sync"
+    depends on BT_BLE_50_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE periodic advertising sync
+
+config BT_BLE_50_DTM_TEST_EN
+    bool "Enable BLE 5.0 DTM test"
+    depends on BT_BLE_50_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE 5.0 direct test mode
 
 config BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER
     bool "Enable BLE periodic advertising sync transfer feature"
@@ -1286,6 +1349,149 @@ config BT_BLE_FEAT_CREATE_SYNC_ENH
     default n
     help
         Enable the create sync enhancements
+
+menuconfig BT_BLE_42_FEATURES_SUPPORTED
+    bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
+    depends on BT_BLE_ENABLED
+    default y if IDF_TARGET_ESP32
+    default n
+    help
+        This enables BLE 4.2 features.
+        This option is universally supported by all ESP chips with BLE capabilities.
+        BLE 4.2 and BLE 5.0 cannot be used simultaneously.
+
+config BT_BLE_42_DTM_TEST_EN
+    bool "Enable BLE 4.2 DTM test"
+    depends on BT_BLE_42_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE 4.2 direct test mode
+
+config BT_BLE_42_ADV_EN
+    bool "Enable BLE 4.2 advertising"
+    depends on BT_BLE_42_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE v4.2 advertising
+
+config BT_BLE_42_SCAN_EN
+    bool "Enable BLE 4.2 scan"
+    depends on BT_BLE_42_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE v4.2 scan
+
+menuconfig BT_BLE_FEAT_ISO_EN
+    bool "Enable BLE 5.2 iso feature"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_AUDIO_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE 5.2 iso
+
+config BT_BLE_FEAT_ISO_60_EN
+    bool "Enable ISO v6.0 feature"
+    depends on BT_BLE_FEAT_ISO_EN
+    default n
+    help
+        Enable iso 6.0 feature
+
+config BT_BLE_FEAT_ISO_BIG_BROCASTER
+    bool "Enable BLE iso BIG brocaster"
+    depends on BT_BLE_FEAT_ISO_EN
+    default y
+    help
+        Enable BLE 5.2 BIG brocaster
+
+config BT_BLE_FEAT_ISO_BIG_SYNCER
+    bool "Enable BLE iso BIG syncer"
+    depends on BT_BLE_FEAT_ISO_EN
+    default y
+    help
+        Enable BLE 5.2 BIG syncer
+
+config BT_BLE_ISO_BIS_MAX_COUNT
+    int "Maximum bis count"
+    depends on BT_BLE_FEAT_ISO_EN && (BT_BLE_FEAT_ISO_BIG_BROCASTER || BT_BLE_FEAT_ISO_BIG_SYNCER)
+    default 2
+    range 1 31
+    help
+        Enable BLE 5.2 CIG peripheral
+
+config BT_BLE_FEAT_ISO_CIG_CENTRAL
+    bool "Enable BLE iso CIG central"
+    depends on BT_BLE_FEAT_ISO_EN
+    default y
+    help
+        Enable BLE 5.2 CIG central
+
+config BT_BLE_FEAT_ISO_CIG_PERIPHERAL
+    bool "Enable BLE iso CIG peripheral"
+    depends on BT_BLE_FEAT_ISO_EN
+    default y
+    help
+        Enable BLE 5.2 CIG peripheral
+
+config BT_BLE_ISO_CIS_MAX_COUNT
+    int "Maximum cis count"
+    depends on BT_BLE_FEAT_ISO_EN && (BT_BLE_FEAT_ISO_CIG_CENTRAL || BT_BLE_FEAT_ISO_CIG_PERIPHERAL)
+    default 2
+    range 1 31
+    help
+        Enable BLE 5.2 CIG peripheral
+
+choice BT_BLE_ISO_FLOW_CONTROL
+    prompt "Select ISO flow control type"
+    depends on BT_BLE_FEAT_ISO_EN
+    default BT_BLE_ISO_NON_STD_FLOW_CTRL
+    help
+        Select ISO flow control type
+
+    config BT_BLE_ISO_STD_FLOW_CTRL
+        bool "ISO standard flow control"
+        help
+            Enable ISO standard flow control
+
+    config BT_BLE_ISO_NON_STD_FLOW_CTRL
+        bool "ISO non-standard flow control"
+        help
+            Enable ISO non-standard flow control
+
+endchoice
+
+menuconfig BT_BLE_FEAT_CTE_EN
+    bool "Enable BLE CTE feature"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_CTE_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE 5.1 CTE
+
+config BT_BLE_FEAT_CTE_CONNECTIONLESS_EN
+    bool "Enable BLE CTE connectionless feature"
+    depends on BT_BLE_FEAT_CTE_EN
+    default y
+    help
+        Transmission of CTE in periodic advertising
+
+config BT_BLE_FEAT_CTE_CONNECTION_EN
+    bool "Enable BLE CTE connection feature"
+    depends on BT_BLE_FEAT_CTE_EN
+    default y
+    help
+        Transmission of CTE by ACL connection
+
+config BT_BLE_FEAT_POWER_CONTROL
+    bool "Enable BLE power control feature"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_POWER_CONTROL_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE power control feature
+
+config BT_BLE_FEAT_CONN_SUBRATING
+    bool "Enable BLE connection subrating feature"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_SUBRATE_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE connection subrating feature
 
 config BT_BLE_HIGH_DUTY_ADV_INTERVAL
     bool "Enable BLE high duty advertising interval feature"

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include "unity.h"
 #include "mock_msc.h"
 #include "dev_msc.h"
-#include "test_hcd_common.h"
+#include "hcd_common.h"
 
 // --------------------------------------------------- Test Cases ------------------------------------------------------
 

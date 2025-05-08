@@ -130,7 +130,7 @@ static void initialize_eth(void)
     ESP_ERROR_CHECK(example_eth_init(&eth_handles, &eth_port_cnt));
 
     if (eth_port_cnt > 0) {
-        // Register user defined event handers
+        // Register user defined event handlers
         ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
 
         for (uint32_t i = 0; i < eth_port_cnt; i++) {

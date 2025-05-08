@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import hashlib
 import http.server
@@ -21,6 +21,7 @@ from ecdsa.curves import NIST256p
 from ecdsa.keys import VerifyingKey
 from ecdsa.util import sigdecode_der
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 from RangeHTTPServer import RangeRequestHandler
 
 TEST_MSG = 'hello world'
@@ -34,8 +35,8 @@ key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_certs/
 ###########################
 
 
-@pytest.mark.esp32c6
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_tee_cli_secure_storage(dut: Dut) -> None:
     # Dumping the REE binary size
     binary_file = os.path.join(dut.app.binary_path, 'tee_cli.bin')
@@ -80,8 +81,9 @@ def test_tee_cli_secure_storage(dut: Dut) -> None:
         dut.write(f'tee_sec_stg_decrypt {sec_stg_slots.get(i)} {test_msg_cipher} {test_msg_tag}')
         test_msg_decipher = dut.expect(r'Decrypted plaintext -\s*([0-9a-fA-F]{64})', timeout=30)[1].decode()
 
-        assert (test_msg_decipher == test_msg_hash)
+        assert test_msg_decipher == test_msg_hash
         time.sleep(1)
+
 
 ########################
 # ESP-TEE: Attestation #
@@ -119,8 +121,8 @@ def verify_att_token_signature(att_tk: str) -> Any:
     return vk.verify_digest(signature, digest, sigdecode=sigdecode_der)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_tee_cli_attestation(dut: Dut) -> None:
     # Dumping the REE binary size
     binary_file = os.path.join(dut.app.binary_path, 'tee_cli.bin')
@@ -141,15 +143,17 @@ def test_tee_cli_attestation(dut: Dut) -> None:
     att_tk = dut.expect(r"'(.*?)'", timeout=30)[1].decode()
     assert verify_att_token_signature(att_tk)
 
+
 #######################################
 # ESP-TEE: Over-the-Air (OTA) updates #
 #######################################
 
 
-def https_request_handler() -> Callable[...,http.server.BaseHTTPRequestHandler]:
+def https_request_handler() -> Callable[..., http.server.BaseHTTPRequestHandler]:
     """
     Returns a request handler class that handles broken pipe exception
     """
+
     class RequestHandler(RangeRequestHandler):
         def finish(self) -> None:
             try:
@@ -174,14 +178,12 @@ def start_https_server(ota_image_dir: str, server_ip: str, server_port: int) -> 
     requestHandler = https_request_handler()
     httpd = http.server.HTTPServer((server_ip, server_port), requestHandler)
 
-    httpd.socket = ssl.wrap_socket(httpd.socket,
-                                   keyfile=key_file,
-                                   certfile=server_file, server_side=True)
+    httpd.socket = ssl.wrap_socket(httpd.socket, keyfile=key_file, certfile=server_file, server_side=True)
     httpd.serve_forever()
 
 
-@pytest.mark.esp32c6
 @pytest.mark.wifi_high_traffic
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_tee_cli_secure_ota_wifi(dut: Dut) -> None:
     """
     This is a positive test case, which downloads complete binary file multiple number of times.

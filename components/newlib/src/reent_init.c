@@ -19,7 +19,7 @@
  * to the streams of the global struct _reent, which are initialized in
  * startup code.
  */
-void IRAM_ATTR esp_reent_init(struct _reent* r)
+void esp_reent_init(struct _reent* r)
 {
     memset(r, 0, sizeof(*r));
     _REENT_STDIN(r) = _REENT_STDIN(_GLOBAL_REENT);

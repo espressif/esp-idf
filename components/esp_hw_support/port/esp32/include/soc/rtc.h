@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,11 +71,11 @@ extern "C" {
  */
 #define RTC_CNTL_DBIAS_HP_VOLT         (RTC_CNTL_DBIAS_1V25 - efuse_ll_get_vol_level_hp_inv())
 #ifdef CONFIG_ESPTOOLPY_FLASHFREQ_80M
-#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_HP_VOLT
+#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V25
 #else
 #define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V10
 #endif
-#define DIG_DBIAS_240M      RTC_CNTL_DBIAS_HP_VOLT
+#define DIG_DBIAS_240M      RTC_CNTL_DBIAS_1V25
 #define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
 #define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
 
@@ -171,6 +171,11 @@ void rtc_clk_32k_enable(bool en);
  * @brief Configure 32 kHz XTAL oscillator to accept external clock signal
  */
 void rtc_clk_32k_enable_external(void);
+
+/**
+ * @brief Disable 32 kHz XTAL oscillator input.
+ */
+void rtc_clk_32k_disable_external(void);
 
 /**
  * @brief Get the state of 32k XTAL oscillator
@@ -477,6 +482,14 @@ bool rtc_dig_8m_enabled(void);
 uint32_t rtc_clk_freq_cal(uint32_t cal_val);
 
 /**
+ * @brief Calculate the slow clock period value by slow clock frequency
+ *
+ * @param freq_hz Frequency of the slow clock in Hz
+ * @return Fixed point value of slow clock period in microseconds
+ */
+uint32_t rtc_clk_freq_to_period(uint32_t freq_hz);
+
+/**
  * @brief sleep configuration for rtc_sleep_init function
  */
 typedef struct rtc_sleep_config_s {
@@ -564,8 +577,9 @@ void rtc_sleep_init(rtc_sleep_config_t cfg);
  * used in lightsleep mode.
  *
  * @param slowclk_period re-calibrated slow clock period
+ * @param dslp true if initialize for deepsleep request
  */
-void rtc_sleep_low_init(uint32_t slowclk_period);
+void rtc_sleep_low_init(uint32_t slowclk_period, bool dslp);
 
 #define RTC_EXT0_TRIG_EN    BIT(0)  //!< EXT0 GPIO wakeup
 #define RTC_EXT1_TRIG_EN    BIT(1)  //!< EXT1 GPIO wakeup

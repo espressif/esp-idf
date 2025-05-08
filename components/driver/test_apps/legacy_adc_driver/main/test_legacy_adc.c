@@ -139,23 +139,23 @@ TEST_CASE("Legacy ADC oneshot high/low test", "[legacy_adc_oneshot]")
 
     test_adc_set_io_level(ADC_UNIT_1, (adc1_channel_t)ADC1_TEST_CHAN0, 0);
     adc_raw = adc1_get_raw(ADC1_TEST_CHAN0);
-    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d", ADC_UNIT_1, ADC1_TEST_CHAN0, adc_raw);
+    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d", ADC_UNIT_1 + 1, ADC1_TEST_CHAN0, adc_raw);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw);
 
     test_adc_set_io_level(ADC_UNIT_1, (adc1_channel_t)ADC1_TEST_CHAN0, 1);
     adc_raw = adc1_get_raw(ADC1_TEST_CHAN0);
-    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d", ADC_UNIT_1, ADC1_TEST_CHAN0, adc_raw);
+    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d", ADC_UNIT_1 + 1, ADC1_TEST_CHAN0, adc_raw);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw);
 
 #if ADC_TEST_ADC2
     test_adc_set_io_level(ADC_UNIT_2, (adc2_channel_t)ADC2_TEST_CHAN0, 0);
     TEST_ESP_OK(adc2_get_raw(ADC2_TEST_CHAN0, ADC_WIDTH_BIT_DEFAULT, &adc_raw));
-    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d", ADC_UNIT_2, ADC2_TEST_CHAN0, adc_raw);
+    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d", ADC_UNIT_2 + 1, ADC2_TEST_CHAN0, adc_raw);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw);
 
     test_adc_set_io_level(ADC_UNIT_2, (adc2_channel_t)ADC2_TEST_CHAN0, 1);
     TEST_ESP_OK(adc2_get_raw(ADC2_TEST_CHAN0, ADC_WIDTH_BIT_DEFAULT, &adc_raw));
-    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d", ADC_UNIT_2, ADC2_TEST_CHAN0, adc_raw);
+    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d", ADC_UNIT_2 + 1, ADC2_TEST_CHAN0, adc_raw);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw);
 #endif
 }

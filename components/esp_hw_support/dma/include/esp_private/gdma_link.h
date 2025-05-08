@@ -72,6 +72,8 @@ typedef struct {
                                      Note, DMA engine will stop at this item and trigger an interrupt.
                                      If `mark_final` is not set, this list item will point to the next item, and
                                      wrap around to the head item if it's the last one in the list. */
+        uint32_t bypass_buffer_align_check: 1; /*!< Whether to bypass the buffer alignment check.
+                                                    Only enable it when you know what you are doing. */
     } flags; //!< Flags for buffer mount configurations
 } gdma_buffer_mount_config_t;
 

@@ -150,7 +150,7 @@ The table below provides more information on pin usage, and please note the comm
 .. note::
 
   - Some pins are used as strapping pins, which can be used to select in which boot mode to load the chip, etc.. The details can be found in `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`_ > ``Strapping Pins``.
-	- SPI0/1: GPIO14 ~ GPIO17 and GPIO19 ~ GPIO21 are usually used for SPI flash and not recommended for other uses.
+	- SPI0/1: GPIO14 ~ GPIO17 and GPIO19 ~ GPIO21 are usually used for SPI flash and PSRAM, they're not recommended for other uses.
 	- USB-JTAG: GPIO12 and GPIO13 are used by USB-JTAG by default. If they are reconfigured to operate as normal GPIOs, USB-JTAG functionality will be disabled.
 
 ---

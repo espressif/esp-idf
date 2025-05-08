@@ -160,6 +160,7 @@ static void http_rest_with_url(void)
         .user_data = local_response_buffer,        // Pass address of local buffer to get response
         .disable_auto_redirect = true,
     };
+    ESP_LOGI(TAG, "HTTP request with url =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
     // GET
@@ -248,6 +249,7 @@ static void http_rest_with_hostname_path(void)
         .transport_type = HTTP_TRANSPORT_OVER_TCP,
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP request with hostname and path =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
     // GET
@@ -342,6 +344,7 @@ static void http_auth_basic(void)
         .auth_type = HTTP_AUTH_TYPE_BASIC,
         .max_authorization_retries = -1,
     };
+    ESP_LOGI(TAG, "HTTP Basic Auth request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -361,6 +364,7 @@ static void http_auth_basic_redirect(void)
         .url = "http://user:passwd@"CONFIG_EXAMPLE_HTTP_ENDPOINT"/basic-auth/user/passwd",
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP Basic Auth redirect request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -382,6 +386,7 @@ static void http_auth_digest_md5(void)
         .url = "http://user:passwd@"CONFIG_EXAMPLE_HTTP_ENDPOINT"/digest-auth/auth/user/passwd/MD5/never",
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP MD5 Digest Auth request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -402,6 +407,7 @@ static void http_auth_digest_sha256(void)
         .event_handler = _http_event_handler,
         .buffer_size_tx = 1024, // Increase buffer size as header size will increase as it contains SHA-256.
     };
+    ESP_LOGI(TAG, "HTTP SHA256 Digest Auth request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -424,6 +430,7 @@ static void https_with_url(void)
         .event_handler = _http_event_handler,
         .crt_bundle_attach = esp_crt_bundle_attach,
     };
+    ESP_LOGI(TAG, "HTTPS request with url =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -447,6 +454,7 @@ static void https_with_hostname_path(void)
         .event_handler = _http_event_handler,
         .cert_pem = howsmyssl_com_root_cert_pem_start,
     };
+    ESP_LOGI(TAG, "HTTPS request with hostname and path =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -467,6 +475,7 @@ static void http_encoded_query(void)
         .path = "/get",
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP GET request with encoded query =>");
 
     static const char query_val[] = "ABC xyz!012@#%&";
     char query_val_enc[64] = {0};
@@ -494,6 +503,7 @@ static void http_relative_redirect(void)
         .url = "http://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/relative-redirect/3",
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP Relative path redirect request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -513,6 +523,7 @@ static void http_absolute_redirect(void)
         .url = "http://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/absolute-redirect/3",
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP Absolute path redirect request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -533,6 +544,7 @@ static void http_absolute_redirect_manual(void)
         .event_handler = _http_event_handler,
         .disable_auto_redirect = true,
     };
+    ESP_LOGI(TAG, "HTTP Absolute path redirect (manual) request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -553,6 +565,7 @@ static void http_redirect_to_https(void)
         .event_handler = _http_event_handler,
         .cert_pem = howsmyssl_com_root_cert_pem_start,
     };
+    ESP_LOGI(TAG, "HTTP redirect to HTTPS request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -573,6 +586,7 @@ static void http_download_chunk(void)
         .url = "http://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/stream-bytes/8912",
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP chunk encoding request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -596,6 +610,7 @@ static void http_perform_as_stream_reader(void)
     esp_http_client_config_t config = {
         .url = "http://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/get",
     };
+    ESP_LOGI(TAG, "HTTP Stream reader request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err;
     if ((err = esp_http_client_open(client, 0)) != ESP_OK) {
@@ -630,6 +645,7 @@ static void https_async(void)
         .is_async = true,
         .timeout_ms = 5000,
     };
+    ESP_LOGI(TAG, "HTTPS async requests =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err;
     const char *post_data = "Using a Palantír requires a person with great strength of will and wisdom. The Palantíri were meant to "
@@ -685,6 +701,7 @@ static void https_with_invalid_url(void)
             .url = "https://not.existent.url",
             .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTPS request with invalid url =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -713,6 +730,7 @@ static void http_native_request(void)
     esp_http_client_config_t config = {
         .url = "http://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/get",
     };
+    ESP_LOGI(TAG, "HTTP native request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
     // GET Request
@@ -777,6 +795,7 @@ static void http_partial_download(void)
         .event_handler = _http_event_handler,
         .crt_bundle_attach = esp_crt_bundle_attach,
     };
+    ESP_LOGI(TAG, "HTTP partial download =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
     // Download a file excluding first 10 bytes

@@ -3,6 +3,8 @@ USB 主机
 
 :link_to_translation:`en:[English]`
 
+{IDF_TARGET_OTG_NUM_HOST_CHAN: default="8", esp32p4="16"}
+
 本文档提供了 USB 主机库的相关信息，按以下章节展开：
 
 .. contents:: 章节
@@ -45,7 +47,6 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
     - 仅支持使用发现的首个配置，尚不支持变更为其他配置。
     - 尚不支持传输超时。
     :esp32p4: - {IDF_TARGET_NAME} 包含两个 USB-OTG 外设：USB 2.0 OTG 高速和 USB 2.0 OTG 全速。目前仅支持高速实例。
-    - 外部 Hub 驱动：仅支持与上游端口速率相同的设备。（例如，低速设备无法通过全速外部 Hub 工作。）
     - 外部 Hub 驱动：不支持远程唤醒功能（即使没有设备插入，外部 Hub 也处于工作状态）。
     - 外部 Hub 驱动：不处理错误用例（尚未实现过流处理、初始化错误等功能）。
     - 外部 Hub 驱动：不支持接口选择。驱动程序使用具有 Hub 类代码 (09h) 的第一个可用接口。
@@ -402,7 +403,7 @@ UVC
 """
 
 * USB 视频设备 Class 的主机 Class 驱动程序作为托管组件通过 `乐鑫组件注册表 <https://components.espressif.com/component/espressif/usb_host_uvc>`__ 分发。
-* 示例 :example:`peripherals/usb/host/uvc` 演示了如何使用 `libuvc` 库从 USB 摄像头捕获视频，并通过托管 TCP 服务器将视频流通过 Wi-Fi 传输，同时提供了使用 ``player.py`` 脚本在 PC 上查看捕获视频的选项。
+* 示例 :example:`peripherals/usb/host/uvc` 演示了如何使用 UVC 驱动程序从 USB 摄像头捕获视频帧。
 
 .. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------
 
@@ -471,7 +472,7 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 
 每个连接的设备需要不同数量的通道，而所需通道数则取决于设备类别（EP 数量）。
 
-对于 {IDF_TARGET_NAME}，支持的通道数量为 {OTG_NUM_HOST_CHAN}。
+对于 {IDF_TARGET_NAME}，支持的通道数量为 {IDF_TARGET_OTG_NUM_HOST_CHAN}。
 
 .. note::
 

@@ -11,12 +11,12 @@ menu "Serial flasher config"
             like compressed downloads and more. Usually you should not need to disable that feature
 
     config ESPTOOLPY_OCT_FLASH
-        depends on IDF_TARGET_ESP32S3
+        depends on SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
         bool "Enable Octal Flash"
         default n
 
     config ESPTOOLPY_FLASH_MODE_AUTO_DETECT
-        depends on IDF_TARGET_ESP32S3
+        depends on SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
         bool "Choose flash mode automatically (please read help)"
         default y
         help

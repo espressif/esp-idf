@@ -11,6 +11,18 @@ menu "LibC"
             depends on !IDF_TOOLCHAIN_CLANG && IDF_EXPERIMENTAL_FEATURES
     endchoice
 
+    config LIBC_MISC_IN_IRAM
+        bool "Place misc libc functions (abort/assert/stdatomics) in IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+
+    config LIBC_LOCKS_PLACE_IN_IRAM
+        bool "Place lock API in IRAM"
+        default y
+        depends on LIBC_NEWLIB
+        help
+            Enable this option to include be able to call the lock API from
+            code that runs while cache is disabled, e.g. IRAM interrupts.
+
     choice LIBC_STDOUT_LINE_ENDING
         prompt "Line ending for console output"
         default LIBC_STDOUT_LINE_ENDING_CRLF
@@ -130,6 +142,23 @@ menu "LibC"
             bool "None"
             select ESP_TIME_FUNCS_USE_NONE
     endchoice
+
+    config LIBC_OPTIMIZED_MISALIGNED_ACCESS
+        bool "Use performance-optimized memXXX/strXXX functions on misaligned memory access"
+        default n
+        depends on ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
+        help
+            Enables performance-optimized implementations of memory and string functions
+            when handling misaligned memory.
+
+            This increases the image size by ~1000 bytes.
+
+            Optimized functions include:
+                - memcpy
+                - memset
+                - memmove
+                - str[n]cpy
+                - str[n]cmp
 
 endmenu # LibC
 

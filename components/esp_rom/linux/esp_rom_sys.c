@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,12 @@
 #include <errno.h>
 #include <time.h>
 #include "esp_rom_sys.h"
+
+int esp_rom_output_tx_one_char(uint8_t c)
+{
+    putc(c, stdout);
+    return 0;
+}
 
 void esp_rom_output_putc(char c)
 {

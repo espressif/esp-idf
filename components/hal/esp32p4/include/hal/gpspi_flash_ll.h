@@ -1,16 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /*******************************************************************************
  * NOTICE
+ * The Lowlevel layer for SPI Flash
  * The ll is not public api, don't use in application code.
- * See readme.md in soc/include/hal/readme.md
  ******************************************************************************/
-
-// The Lowlevel layer for SPI Flash
 
 #pragma once
 
@@ -28,9 +26,14 @@
 extern "C" {
 #endif
 
-//NOTE: These macros are changed on c3 for build. MODIFY these when bringup flash.
-#define gpspi_flash_ll_get_hw(host_id)  ( ((host_id)==SPI2_HOST) ? &GPSPI2 : ({abort();(spi_dev_t*)0;}) )
-#define gpspi_flash_ll_hw_get_id(dev)   ( ((dev) == (void*)&GPSPI2) ? SPI2_HOST : -1 )
+#define gpspi_flash_ll_get_hw(host_id)  (((host_id)==SPI2_HOST ? &GPSPI2 \
+                                                : ((host_id)==SPI3_HOST ? &GPSPI3 \
+                                                : ({abort();(spi_dev_t*)0;}))))
+
+#define gpspi_flash_ll_hw_get_id(dev)   ( ((dev) == (void*)&GPSPI2) ? SPI2_HOST : (\
+                                          ((dev) == (void*)&GPSPI3) ? SPI3_HOST : (\
+                                          -1 \
+                                        )) )
 
 typedef typeof(GPSPI2.clock.val) gpspi_flash_ll_clock_reg_t;
 #define GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ  (80)

@@ -215,7 +215,19 @@ Once connected to the device, the provisioning-related protocomm endpoints can b
      - http://<mdns-hostname>.local/proto-ver
      - the endpoint for retrieving version info
 
-Immediately after connecting, the client application may fetch the version/capabilities information from the ``proto-ver`` endpoint. All communications to this endpoint are unencrypted, hence necessary information, which may be relevant for deciding compatibility, can be retrieved before establishing a secure session. The response is in JSON format and looks like : ``prov: { ver:  v1.1, cap:  [no_pop] }, my_app: { ver:  1.345, cap:  [cloud, local_ctrl] },....``. Here label ``prov`` provides provisioning service version ``ver`` and capabilities ``cap``. For now, only the ``no_pop`` capability is supported, which indicates that the service does not require proof of possession for authentication. Any application-related version or capabilities are given by other labels, e.g., ``my_app`` in this example. These additional fields are set using :cpp:func:`wifi_prov_mgr_set_app_info()`.
+Immediately after connecting, the client application may fetch the version/capabilities information from the ``proto-ver`` endpoint. All communications to this endpoint are unencrypted, hence necessary information, which may be relevant for deciding compatibility, can be retrieved before establishing a secure session. The response is in JSON format and looks like : ``prov: { ver:  v1.1, sec_ver: 1, sec_patch_ver: 0, cap:  [no_pop] }, my_app: { ver:  1.345, cap:  [cloud, local_ctrl] },....``.
+
+Here label ``prov`` provides:
+
+    - provisioning service version ``ver``
+    - security version ``sec_ver``
+    - security patch version ``sec_patch_ver`` (default is 0)
+    - capabilities ``cap``
+
+For now, only the ``no_pop`` capability is supported, which indicates that the service does not require proof of possession for authentication. Any application-related version or capabilities are given by other labels, e.g., ``my_app`` in this example. These additional fields are set using :cpp:func:`wifi_prov_mgr_set_app_info()`.
+
+.. important::
+   Client must take into account both the ``sec_ver`` and ``sec_patch_ver`` fields, as these are used to determine the security scheme to be used for the session establishment.
 
 User side applications need to implement the signature handshaking required for establishing and authenticating secure protocomm sessions as per the security scheme configured for use, which is not needed when the manager is configured to use protocomm security 0.
 

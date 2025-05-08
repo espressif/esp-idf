@@ -1,5 +1,7 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
+from pytest_embedded_idf.utils import idf_parametrize
+
 """
 Test case for iperf example.
 
@@ -26,11 +28,16 @@ NO_BANDWIDTH_LIMIT = -1  # iperf send bandwidth is not limited
 
 
 class IperfTestUtilityEth(IperfUtility.IperfTestUtility):
-    """ iperf test implementation """
-    def __init__(self, dut: str, config_name: str, pc_nic_ip: str, pc_iperf_log_file: str, test_result:Any=None) -> None:
-        IperfUtility.IperfTestUtility.__init__(self, dut, config_name, 'None', 'None', pc_nic_ip, pc_iperf_log_file, test_result)
+    """iperf test implementation"""
 
-    def setup(self) -> Tuple[str,int]:
+    def __init__(
+        self, dut: str, config_name: str, pc_nic_ip: str, pc_iperf_log_file: str, test_result: Any = None
+    ) -> None:
+        IperfUtility.IperfTestUtility.__init__(
+            self, dut, config_name, 'None', 'None', pc_nic_ip, pc_iperf_log_file, test_result
+        )
+
+    def setup(self) -> Tuple[str, int]:
         """
         setup iperf test:
 
@@ -55,7 +62,7 @@ def test_esp_eth_iperf(
     check_performance: Callable[[str, float, str], None],
     udp_tx_bw_lim: Optional[int] = NO_BANDWIDTH_LIMIT,
     udp_rx_bw_lim: Optional[int] = NO_BANDWIDTH_LIMIT,
-    spi_eth: Optional[bool] = False
+    spi_eth: Optional[bool] = False,
 ) -> None:
     """
     steps: |
@@ -86,26 +93,36 @@ def test_esp_eth_iperf(
 
     # 4. log performance and compare with pass standard
     for throughput_type in test_result:
-        log_performance('{}_throughput'.format(throughput_type),
-                        '{:.02f} Mbps'.format(test_result[throughput_type].get_best_throughput()))
+        log_performance(
+            '{}_throughput'.format(throughput_type),
+            '{:.02f} Mbps'.format(test_result[throughput_type].get_best_throughput()),
+        )
 
     # do check after logging, otherwise test will exit immediately if check fail, some performance can't be logged.
     for throughput_type in test_result:
         if spi_eth:
-            check_performance('{}_eth_throughput_spi_eth'.format(throughput_type),
-                              test_result[throughput_type].get_best_throughput(),
-                              dut.target)
+            check_performance(
+                '{}_eth_throughput_spi_eth'.format(throughput_type),
+                test_result[throughput_type].get_best_throughput(),
+                dut.target,
+            )
         else:
-            check_performance('{}_eth_throughput'.format(throughput_type),
-                              test_result[throughput_type].get_best_throughput(),
-                              dut.target)
+            check_performance(
+                '{}_eth_throughput'.format(throughput_type),
+                test_result[throughput_type].get_best_throughput(),
+                dut.target,
+            )
 
 
-@pytest.mark.esp32
 @pytest.mark.ethernet_router
-@pytest.mark.parametrize('config', [
-    'default_ip101',
-], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default_ip101',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_eth_iperf_ip101(
     dut: Dut,
     log_performance: Callable[[str, object], None],
@@ -114,11 +131,15 @@ def test_esp_eth_iperf_ip101(
     test_esp_eth_iperf(dut, log_performance, check_performance, udp_tx_bw_lim=90)
 
 
-@pytest.mark.esp32p4
 @pytest.mark.eth_ip101
-@pytest.mark.parametrize('config', [
-    'default_ip101_esp32p4',
-], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default_ip101_esp32p4',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
 def test_esp_eth_iperf_ip101_esp32p4(
     dut: Dut,
     log_performance: Callable[[str, object], None],
@@ -127,11 +148,15 @@ def test_esp_eth_iperf_ip101_esp32p4(
     test_esp_eth_iperf(dut, log_performance, check_performance, udp_tx_bw_lim=96)
 
 
-@pytest.mark.esp32
 @pytest.mark.eth_lan8720
-@pytest.mark.parametrize('config', [
-    'default_lan8720',
-], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default_lan8720',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_eth_iperf_lan8720(
     dut: Dut,
     log_performance: Callable[[str, object], None],
@@ -140,11 +165,15 @@ def test_esp_eth_iperf_lan8720(
     test_esp_eth_iperf(dut, log_performance, check_performance, udp_tx_bw_lim=90)
 
 
-@pytest.mark.esp32
 @pytest.mark.eth_rtl8201
-@pytest.mark.parametrize('config', [
-    'default_rtl8201',
-], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default_rtl8201',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_eth_iperf_rtl8201(
     dut: Dut,
     log_performance: Callable[[str, object], None],
@@ -153,11 +182,15 @@ def test_esp_eth_iperf_rtl8201(
     test_esp_eth_iperf(dut, log_performance, check_performance, udp_tx_bw_lim=90)
 
 
-@pytest.mark.esp32
 @pytest.mark.eth_dp83848
-@pytest.mark.parametrize('config', [
-    'default_dp83848',
-], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default_dp83848',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_eth_iperf_dp83848(
     dut: Dut,
     log_performance: Callable[[str, object], None],
@@ -166,11 +199,15 @@ def test_esp_eth_iperf_dp83848(
     test_esp_eth_iperf(dut, log_performance, check_performance, udp_tx_bw_lim=90)
 
 
-@pytest.mark.esp32
 @pytest.mark.eth_ksz8041
-@pytest.mark.parametrize('config', [
-    'default_ksz8041',
-], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default_ksz8041',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_eth_iperf_ksz8041(
     dut: Dut,
     log_performance: Callable[[str, object], None],
@@ -179,11 +216,15 @@ def test_esp_eth_iperf_ksz8041(
     test_esp_eth_iperf(dut, log_performance, check_performance, udp_tx_bw_lim=90)
 
 
-@pytest.mark.esp32
 @pytest.mark.eth_dm9051
-@pytest.mark.parametrize('config', [
-    'default_dm9051',
-], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default_dm9051',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_eth_iperf_dm9051(
     dut: Dut,
     log_performance: Callable[[str, object], None],
@@ -192,11 +233,15 @@ def test_esp_eth_iperf_dm9051(
     test_esp_eth_iperf(dut, log_performance, check_performance, spi_eth=True, udp_rx_bw_lim=10)
 
 
-@pytest.mark.esp32
 @pytest.mark.eth_w5500
-@pytest.mark.parametrize('config', [
-    'default_w5500',
-], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default_w5500',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_eth_iperf_w5500(
     dut: Dut,
     log_performance: Callable[[str, object], None],
@@ -205,11 +250,15 @@ def test_esp_eth_iperf_w5500(
     test_esp_eth_iperf(dut, log_performance, check_performance, spi_eth=True, udp_rx_bw_lim=10)
 
 
-@pytest.mark.esp32
 @pytest.mark.eth_ksz8851snl
-@pytest.mark.parametrize('config', [
-    'default_ksz8851snl',
-], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default_ksz8851snl',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_eth_iperf_ksz8851snl(
     dut: Dut,
     log_performance: Callable[[str, object], None],

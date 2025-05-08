@@ -49,7 +49,7 @@ uint32_t esp_rom_efuse_get_flash_gpio_info(void);
  */
 uint32_t esp_rom_efuse_get_flash_wp_gpio(void);
 
-#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
 /**
  * @brief Read opi flash pads configuration from Efuse
  *
@@ -59,7 +59,7 @@ uint32_t esp_rom_efuse_get_flash_wp_gpio(void);
  *   DQS, D4, D5, D6, D7 accordingly.
  */
 uint32_t esp_rom_efuse_get_opiconfig(void);
-#endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
+#endif // SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
 
 /**
  * @brief Read eFuse to check whether secure boot has been enabled or not

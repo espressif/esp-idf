@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,7 +68,9 @@ TEST_CASE("Test multiple calls to sample app (basic services)", "[basic]")
 
 TEST_CASE("Custom secure service call", "[basic]")
 {
-    dummy_secure_service();
+    int res = -1;
+    dummy_secure_service(1, 2, 3, 4, 5, 6, 7, 8, &res);
+    TEST_ASSERT_EQUAL_UINT32(36, res);
 }
 
 void test_task(void *pvParameters)
@@ -92,4 +94,9 @@ TEST_CASE("Task switching during secure service calls", "[basic]")
 
     world = esp_cpu_get_curr_privilege_level();
     TEST_ASSERT_MESSAGE((world == ESP_CPU_NS_MODE), "Current world is not NS");
+}
+
+TEST_CASE("Test TEE Heap: Malloc-write-free cycles", "[heap]")
+{
+    TEST_ASSERT_EQUAL(0, esp_tee_service_call(1, SS_ESP_TEE_TEST_HEAP_MALLOC_WRITE_FREE));
 }

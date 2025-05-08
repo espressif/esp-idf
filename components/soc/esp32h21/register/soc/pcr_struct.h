@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -201,111 +201,59 @@ typedef union {
     uint32_t val;
 } pcr_mspi_clk_conf_reg_t;
 
-/** Type of i2c0_conf register
+/** Type of i2c_conf register
  *  I2C configuration register
  */
 typedef union {
     struct {
-        /** i2c0_clk_en : R/W; bitpos: [0]; default: 1;
+        /** i2c_clk_en : R/W; bitpos: [0]; default: 1;
          *  Set 1 to enable i2c apb clock
          */
-        uint32_t i2c0_clk_en:1;
-        /** i2c0_rst_en : R/W; bitpos: [1]; default: 0;
+        uint32_t i2c_clk_en:1;
+        /** i2c_rst_en : R/W; bitpos: [1]; default: 0;
          *  Set 0 to reset i2c module
          */
-        uint32_t i2c0_rst_en:1;
-        /** i2c0_ready : RO; bitpos: [2]; default: 1;
-         *  Query this field after reset i2c0 module
+        uint32_t i2c_rst_en:1;
+        /** i2c_ready : RO; bitpos: [2]; default: 1;
+         *  Query this field after reset i2c module
          */
-        uint32_t i2c0_ready:1;
+        uint32_t i2c_ready:1;
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} pcr_i2c0_conf_reg_t;
+} pcr_i2c_conf_reg_t;
 
-/** Type of i2c0_sclk_conf register
+/** Type of i2c_sclk_conf register
  *  I2C_SCLK configuration register
  */
 typedef union {
     struct {
-        /** i2c0_sclk_div_a : R/W; bitpos: [5:0]; default: 0;
+        /** i2c_sclk_div_a : R/W; bitpos: [5:0]; default: 0;
          *  The  denominator of the frequency divider factor of the i2c function clock.
          */
-        uint32_t i2c0_sclk_div_a:6;
-        /** i2c0_sclk_div_b : R/W; bitpos: [11:6]; default: 0;
+        uint32_t i2c_sclk_div_a:6;
+        /** i2c_sclk_div_b : R/W; bitpos: [11:6]; default: 0;
          *  The numerator of the frequency divider factor of the i2c function clock.
          */
-        uint32_t i2c0_sclk_div_b:6;
-        /** i2c0_sclk_div_num : R/W; bitpos: [19:12]; default: 0;
+        uint32_t i2c_sclk_div_b:6;
+        /** i2c_sclk_div_num : R/W; bitpos: [19:12]; default: 0;
          *  The integral part of the frequency divider factor of the i2c function clock.
          */
-        uint32_t i2c0_sclk_div_num:8;
-        /** i2c0_sclk_sel : R/W; bitpos: [20]; default: 0;
+        uint32_t i2c_sclk_div_num:8;
+        /** i2c_sclk_sel : R/W; bitpos: [20]; default: 0;
          *  set this field to select clock-source. 0(default): XTAL, 1: FOSC.
          */
-        uint32_t i2c0_sclk_sel:1;
+        uint32_t i2c_sclk_sel:1;
         uint32_t reserved_21:1;
-        /** i2c0_sclk_en : R/W; bitpos: [22]; default: 1;
+        /** i2c_sclk_en : R/W; bitpos: [22]; default: 1;
          *  Set 1 to enable i2c function clock
          */
-        uint32_t i2c0_sclk_en:1;
+        uint32_t i2c_sclk_en:1;
         uint32_t reserved_23:9;
     };
     uint32_t val;
-} pcr_i2c0_sclk_conf_reg_t;
+} pcr_i2c_sclk_conf_reg_t;
 
-/** Type of i2c1_conf register
- *  I2C configuration register
- */
-typedef union {
-    struct {
-        /** i2c1_clk_en : R/W; bitpos: [0]; default: 1;
-         *  Set 1 to enable i2c apb clock
-         */
-        uint32_t i2c1_clk_en:1;
-        /** i2c1_rst_en : R/W; bitpos: [1]; default: 0;
-         *  Set 0 to reset i2c module
-         */
-        uint32_t i2c1_rst_en:1;
-        /** i2c1_ready : RO; bitpos: [2]; default: 1;
-         *  Query this field after reset i2c1 module
-         */
-        uint32_t i2c1_ready:1;
-        uint32_t reserved_3:29;
-    };
-    uint32_t val;
-} pcr_i2c1_conf_reg_t;
-
-/** Type of i2c1_sclk_conf register
- *  I2C_SCLK configuration register
- */
-typedef union {
-    struct {
-        /** i2c1_sclk_div_a : R/W; bitpos: [5:0]; default: 0;
-         *  The  denominator of the frequency divider factor of the i2c function clock.
-         */
-        uint32_t i2c1_sclk_div_a:6;
-        /** i2c1_sclk_div_b : R/W; bitpos: [11:6]; default: 0;
-         *  The numerator of the frequency divider factor of the i2c function clock.
-         */
-        uint32_t i2c1_sclk_div_b:6;
-        /** i2c1_sclk_div_num : R/W; bitpos: [19:12]; default: 0;
-         *  The integral part of the frequency divider factor of the i2c function clock.
-         */
-        uint32_t i2c1_sclk_div_num:8;
-        /** i2c1_sclk_sel : R/W; bitpos: [20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: FOSC.
-         */
-        uint32_t i2c1_sclk_sel:1;
-        uint32_t reserved_21:1;
-        /** i2c1_sclk_en : R/W; bitpos: [22]; default: 1;
-         *  Set 1 to enable i2c function clock
-         */
-        uint32_t i2c1_sclk_en:1;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} pcr_i2c1_sclk_conf_reg_t;
 
 /** Type of uhci_conf register
  *  UHCI configuration register
@@ -424,145 +372,75 @@ typedef union {
     uint32_t val;
 } pcr_ledc_sclk_conf_reg_t;
 
-/** Type of timergroup0_conf register
- *  TIMERGROUP0 configuration register
+/** Type of timergroup_conf register
+ *  TIMERGROUP configuration register
  */
 typedef union {
     struct {
-        /** tg0_clk_en : R/W; bitpos: [0]; default: 1;
+        /** tg_clk_en : R/W; bitpos: [0]; default: 1;
          *  Set 1 to enable timer_group0 apb clock
          */
-        uint32_t tg0_clk_en:1;
-        /** tg0_rst_en : R/W; bitpos: [1]; default: 0;
+        uint32_t tg_clk_en:1;
+        /** tg_rst_en : R/W; bitpos: [1]; default: 0;
          *  Set 0 to reset timer_group0 module
          */
-        uint32_t tg0_rst_en:1;
-        /** tg0_wdt_ready : RO; bitpos: [2]; default: 1;
+        uint32_t tg_rst_en:1;
+        /** tg_wdt_ready : RO; bitpos: [2]; default: 1;
          *  Query this field after reset timer_group0 wdt module
          */
-        uint32_t tg0_wdt_ready:1;
-        /** tg0_timer0_ready : RO; bitpos: [3]; default: 1;
+        uint32_t tg_wdt_ready:1;
+        /** tg_timer0_ready : RO; bitpos: [3]; default: 1;
          *  Query this field after reset timer_group0 timer0 module
          */
-        uint32_t tg0_timer0_ready:1;
-        /** tg0_timer1_ready : RO; bitpos: [4]; default: 1;
+        uint32_t tg_timer0_ready:1;
+        /** tg_timer1_ready : RO; bitpos: [4]; default: 1;
          *  reserved
          */
-        uint32_t tg0_timer1_ready:1;
+        uint32_t tg_timer1_ready:1;
         uint32_t reserved_5:27;
     };
     uint32_t val;
-} pcr_timergroup0_conf_reg_t;
+} pcr_timergroup_conf_reg_t;
 
-/** Type of timergroup0_timer_clk_conf register
- *  TIMERGROUP0_TIMER_CLK configuration register
+/** Type of timergroup_timer_clk_conf register
+ *  TIMERGROUP_TIMER_CLK configuration register
  */
 typedef union {
     struct {
         uint32_t reserved_0:20;
-        /** tg0_timer_clk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
+        /** tg_timer_clk_sel : R/W; bitpos: [21:20]; default: 0;
+         *  set this field to select clock-source. 0(default): XTAL, 1: FOSC, 2: 48MHz, 3:
          *  reserved.
          */
-        uint32_t tg0_timer_clk_sel:2;
-        /** tg0_timer_clk_en : R/W; bitpos: [22]; default: 1;
+        uint32_t tg_timer_clk_sel:2;
+        /** tg_timer_clk_en : R/W; bitpos: [22]; default: 1;
          *  Set 1 to enable timer_group0 timer clock
          */
-        uint32_t tg0_timer_clk_en:1;
+        uint32_t tg_timer_clk_en:1;
         uint32_t reserved_23:9;
     };
     uint32_t val;
-} pcr_timergroup0_timer_clk_conf_reg_t;
+} pcr_timergroup_timer_clk_conf_reg_t;
 
-/** Type of timergroup0_wdt_clk_conf register
- *  TIMERGROUP0_WDT_CLK configuration register
+/** Type of timergroup_wdt_clk_conf register
+ *  TIMERGROUP_WDT_CLK configuration register
  */
 typedef union {
     struct {
         uint32_t reserved_0:20;
-        /** tg0_wdt_clk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
+        /** tg_wdt_clk_sel : R/W; bitpos: [21:20]; default: 0;
+         *  set this field to select clock-source. 0(default): XTAL, 1: FOSC, 2: 48MHz, 3:
          *  reserved.
          */
-        uint32_t tg0_wdt_clk_sel:2;
-        /** tg0_wdt_clk_en : R/W; bitpos: [22]; default: 1;
+        uint32_t tg_wdt_clk_sel:2;
+        /** tg_wdt_clk_en : R/W; bitpos: [22]; default: 1;
          *  Set 1 to enable timer_group0 wdt clock
          */
-        uint32_t tg0_wdt_clk_en:1;
+        uint32_t tg_wdt_clk_en:1;
         uint32_t reserved_23:9;
     };
     uint32_t val;
-} pcr_timergroup0_wdt_clk_conf_reg_t;
-
-/** Type of timergroup1_conf register
- *  TIMERGROUP1 configuration register
- */
-typedef union {
-    struct {
-        /** tg1_clk_en : R/W; bitpos: [0]; default: 1;
-         *  Set 1 to enable timer_group1 apb clock
-         */
-        uint32_t tg1_clk_en:1;
-        /** tg1_rst_en : R/W; bitpos: [1]; default: 0;
-         *  Set 0 to reset timer_group1 module
-         */
-        uint32_t tg1_rst_en:1;
-        /** tg1_wdt_ready : RO; bitpos: [2]; default: 1;
-         *  Query this field after reset timer_group1 wdt module
-         */
-        uint32_t tg1_wdt_ready:1;
-        /** tg1_timer0_ready : RO; bitpos: [3]; default: 1;
-         *  Query this field after reset timer_group1 timer0 module
-         */
-        uint32_t tg1_timer0_ready:1;
-        /** tg1_timer1_ready : RO; bitpos: [4]; default: 1;
-         *  reserved
-         */
-        uint32_t tg1_timer1_ready:1;
-        uint32_t reserved_5:27;
-    };
-    uint32_t val;
-} pcr_timergroup1_conf_reg_t;
-
-/** Type of timergroup1_timer_clk_conf register
- *  TIMERGROUP1_TIMER_CLK configuration register
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:20;
-        /** tg1_timer_clk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
-         *  reserved.
-         */
-        uint32_t tg1_timer_clk_sel:2;
-        /** tg1_timer_clk_en : R/W; bitpos: [22]; default: 1;
-         *  Set 1 to enable timer_group1 timer clock
-         */
-        uint32_t tg1_timer_clk_en:1;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} pcr_timergroup1_timer_clk_conf_reg_t;
-
-/** Type of timergroup1_wdt_clk_conf register
- *  TIMERGROUP1_WDT_CLK configuration register
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:20;
-        /** tg1_wdt_clk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
-         *  reserved.
-         */
-        uint32_t tg1_wdt_clk_sel:2;
-        /** tg1_wdt_clk_en : R/W; bitpos: [22]; default: 1;
-         *  Set 1 to enable timer_group0 wdt clock
-         */
-        uint32_t tg1_wdt_clk_en:1;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} pcr_timergroup1_wdt_clk_conf_reg_t;
+} pcr_timergroup_wdt_clk_conf_reg_t;
 
 /** Type of systimer_conf register
  *  SYSTIMER configuration register
@@ -1181,7 +1059,7 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** spi2_clkm_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
+         *  set this field to select clock-source. 0(default): XTAL, 1: 48MHz, 2: FOSC, 3:
          *  reserved.
          */
         uint32_t spi2_clkm_sel:2;
@@ -1944,6 +1822,21 @@ typedef union {
     uint32_t val;
 } pcr_date_reg_t;
 
+/** Type of timergroup PCR config register
+ */
+typedef struct {
+    volatile pcr_timergroup_conf_reg_t timergroup_conf;
+    volatile pcr_timergroup_timer_clk_conf_reg_t timergroup_timer_clk_conf;
+    volatile pcr_timergroup_wdt_clk_conf_reg_t timergroup_wdt_clk_conf;
+} pcr_timergroup_reg_t;
+
+/**
+ * @brief The struct of I2C configuration registers
+ */
+typedef struct {
+    pcr_i2c_conf_reg_t i2c_conf;
+    pcr_i2c_sclk_conf_reg_t i2c_sclk_conf;
+} pcr_i2c_reg_t;
 
 typedef struct {
     volatile pcr_uart0_conf_reg_t uart0_conf;
@@ -1954,21 +1847,13 @@ typedef struct {
     volatile pcr_uart1_pd_ctrl_reg_t uart1_pd_ctrl;
     volatile pcr_mspi_conf_reg_t mspi_conf;
     volatile pcr_mspi_clk_conf_reg_t mspi_clk_conf;
-    volatile pcr_i2c0_conf_reg_t i2c0_conf;
-    volatile pcr_i2c0_sclk_conf_reg_t i2c0_sclk_conf;
-    volatile pcr_i2c1_conf_reg_t i2c1_conf;
-    volatile pcr_i2c1_sclk_conf_reg_t i2c1_sclk_conf;
+    volatile pcr_i2c_reg_t i2c[2];
     volatile pcr_uhci_conf_reg_t uhci_conf;
     volatile pcr_rmt_conf_reg_t rmt_conf;
     volatile pcr_rmt_sclk_conf_reg_t rmt_sclk_conf;
     volatile pcr_ledc_conf_reg_t ledc_conf;
     volatile pcr_ledc_sclk_conf_reg_t ledc_sclk_conf;
-    volatile pcr_timergroup0_conf_reg_t timergroup0_conf;
-    volatile pcr_timergroup0_timer_clk_conf_reg_t timergroup0_timer_clk_conf;
-    volatile pcr_timergroup0_wdt_clk_conf_reg_t timergroup0_wdt_clk_conf;
-    volatile pcr_timergroup1_conf_reg_t timergroup1_conf;
-    volatile pcr_timergroup1_timer_clk_conf_reg_t timergroup1_timer_clk_conf;
-    volatile pcr_timergroup1_wdt_clk_conf_reg_t timergroup1_wdt_clk_conf;
+    volatile pcr_timergroup_reg_t timergroup[2];
     volatile pcr_systimer_conf_reg_t systimer_conf;
     volatile pcr_systimer_func_clk_conf_reg_t systimer_func_clk_conf;
     volatile pcr_twai0_conf_reg_t twai0_conf;

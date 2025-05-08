@@ -37,6 +37,23 @@ if(CONFIG_STDATOMIC_S32C1I_SPIRAM_WORKAROUND)
     list(APPEND srcs "src/port/xtensa/stdatomic_s32c1i.c")
 endif()
 
+if(CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS)
+    list(APPEND srcs
+         "src/string/memcmp.c"
+         "src/string/memmove.c"
+         "src/string/strncmp.c"
+         "src/string/strncpy.c"
+         "src/port/riscv/memcpy.c"
+         "src/port/riscv/strcpy.c"
+         "src/port/riscv/strcmp.S")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_memcmp_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_memmove_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strncmp_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strncpy_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strcpy_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strcmp_impl")
+endif()
+
 if(CONFIG_LIBC_NEWLIB)
     list(APPEND srcs
         "src/flockfile.c"

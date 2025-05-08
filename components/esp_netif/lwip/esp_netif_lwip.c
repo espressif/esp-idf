@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -605,6 +605,58 @@ esp_err_t esp_netif_deinit(void)
     return ESP_ERR_INVALID_STATE;
 }
 
+#if LWIP_IPV4 && LWIP_IGMP
+static err_t netif_igmp_mac_filter_cb(struct netif *netif, const ip4_addr_t *group, enum netif_mac_filter_action action)
+{
+    esp_netif_t *esp_netif;
+    if (netif == NULL || (esp_netif = lwip_get_esp_netif(netif)) == NULL) {
+        // internal pointer hasn't been configured yet (probably in the interface init_fn())
+        return ERR_VAL;
+    }
+    ESP_LOGD(TAG, "Multicast add filter IPv4: " IPSTR, IP2STR(group));
+    uint8_t mac[NETIF_MAX_HWADDR_LEN];
+    mac[0] = 0x01;
+    mac[1] = 0x00;
+    mac[2] = 0x5E;
+    mac[3] = (group->addr >> 8) & 0x7F;  // Only use lower 7 bits
+    mac[4] = (group->addr >> 16) & 0xFF;
+    mac[5] = (group->addr >> 24) & 0xFF;
+
+    bool add = action == NETIF_ADD_MAC_FILTER ? true : false;
+    if (esp_netif->driver_set_mac_filter(esp_netif->driver_handle, mac, sizeof(mac), add) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to %s multicast filter for IPv4", add ? "add" : "remove");
+        return ERR_VAL;
+    }
+    return ERR_OK;
+}
+#endif /* LWIP_IPV4 && LWIP_IGMP */
+
+#if LWIP_IPV6 && LWIP_IPV6_MLD
+static err_t netif_mld_mac_filter_cb(struct netif *netif, const ip6_addr_t *group, enum netif_mac_filter_action action)
+{
+    esp_netif_t *esp_netif;
+    if (netif == NULL || (esp_netif = lwip_get_esp_netif(netif)) == NULL) {
+        // internal pointer hasn't been configured yet (probably in the interface init_fn())
+        return ERR_VAL;
+    }
+    ESP_LOGD(TAG, "Multicast add filter IPv6: " IPV6STR, IPV62STR(*group));
+    uint8_t mac[NETIF_MAX_HWADDR_LEN];
+    mac[0] = 0x33;
+    mac[1] = 0x33;
+    mac[2] = group->addr[3] & 0xFF;
+    mac[3] = (group->addr[3] >> 8) & 0xFF;
+    mac[4] = (group->addr[3] >> 16) & 0xFF;
+    mac[5] = (group->addr[3] >> 24) & 0xFF;
+
+    bool add = action == NETIF_ADD_MAC_FILTER ? true : false;
+    if (esp_netif->driver_set_mac_filter(esp_netif->driver_handle, mac, sizeof(mac), add) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to %s multicast filter for IPv6", add ? "add" : "remove");
+        return ERR_VAL;
+    }
+    return ERR_OK;
+}
+#endif /* LWIP_IPV6 && LWIP_IPV6_MLD */
+
 static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_netif_config_t *cfg)
 {
     // Basic esp_netif and lwip is a mandatory configuration and cannot be updated after esp_netif_new()
@@ -694,6 +746,11 @@ static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_
         if (esp_netif_driver_config->driver_free_rx_buffer) {
             esp_netif->driver_free_rx_buffer = esp_netif_driver_config->driver_free_rx_buffer;
         }
+#if (LWIP_IPV4 && LWIP_IGMP) || (LWIP_IPV6 && LWIP_IPV6_MLD)
+        if (esp_netif_driver_config->driver_set_mac_filter) {
+            esp_netif->driver_set_mac_filter = esp_netif_driver_config->driver_set_mac_filter;
+        }
+#endif
     }
     return ESP_OK;
 }
@@ -931,6 +988,14 @@ static esp_err_t esp_netif_lwip_add(esp_netif_t *esp_netif)
 #if CONFIG_ESP_NETIF_BRIDGE_EN
     }
 #endif // CONFIG_ESP_NETIF_BRIDGE_EN
+    if (esp_netif->driver_set_mac_filter) {
+#if LWIP_IPV4 && LWIP_IGMP
+        netif_set_igmp_mac_filter(esp_netif->lwip_netif, netif_igmp_mac_filter_cb);
+#endif
+#if LWIP_IPV6 && LWIP_IPV6_MLD
+        netif_set_mld_mac_filter(esp_netif->lwip_netif, netif_mld_mac_filter_cb);
+#endif
+    }
     lwip_set_esp_netif(esp_netif->lwip_netif, esp_netif);
     return ESP_OK;
 }
@@ -1001,6 +1066,9 @@ esp_err_t esp_netif_set_driver_config(esp_netif_t *esp_netif,
     esp_netif->driver_transmit = driver_config->transmit;
     esp_netif->driver_transmit_wrap = driver_config->transmit_wrap;
     esp_netif->driver_free_rx_buffer = driver_config->driver_free_rx_buffer;
+#if (LWIP_IPV4 && LWIP_IGMP) || (LWIP_IPV6 && LWIP_IPV6_MLD)
+    esp_netif->driver_set_mac_filter = driver_config->driver_set_mac_filter;
+#endif /* LWIP_IPV4 && LWIP_IGMP */
     return ESP_OK;
 }
 
@@ -1990,11 +2058,11 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
     if (esp_netif && esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
 #if ESP_DHCPS
         // if DHCP server configured to set DNS in dhcps API
-        if (type != ESP_NETIF_DNS_MAIN) {
+        if (type >= ESP_NETIF_DNS_FALLBACK) {
             ESP_LOGD(TAG, "set dns invalid type");
             return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
         } else {
-            dhcps_dns_setserver(esp_netif->dhcps, &lwip_ip);
+            dhcps_dns_setserver_by_type(esp_netif->dhcps, &lwip_ip, (dns_type_t)type);
         }
 #else
         LOG_NETIF_DISABLED_AND_DO("DHCP Server", return ESP_ERR_NOT_SUPPORTED);
@@ -2053,7 +2121,7 @@ static esp_err_t esp_netif_get_dns_info_api(esp_netif_api_msg_t *msg)
     if (esp_netif && esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
 #if ESP_DHCPS
         ip4_addr_t dns_ip;
-        dhcps_dns_getserver(esp_netif->dhcps, &dns_ip);
+        dhcps_dns_getserver_by_type(esp_netif->dhcps, &dns_ip, (dns_type_t)type);
         memcpy(&dns->ip.u_addr.ip4, &dns_ip, sizeof(ip4_addr_t));
         dns->ip.type = ESP_IPADDR_TYPE_V4;
 #else

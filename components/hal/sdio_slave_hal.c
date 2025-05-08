@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +8,10 @@
 
 #include <string.h>
 #include <inttypes.h>
-#include "soc/slc_struct.h"
-#include "soc/hinf_struct.h"
+#include "soc/sdio_slc_struct.h"
+#include "soc/sdio_hinf_struct.h"
 #include "hal/sdio_slave_types.h"
-#include "soc/host_struct.h"
+#include "soc/sdio_slc_host_struct.h"
 #include "hal/sdio_slave_hal.h"
 #include "hal/assert.h"
 #include "hal/log.h"

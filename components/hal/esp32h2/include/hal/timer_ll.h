@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,11 +99,11 @@ static inline void _timer_ll_reset_register(int group_id)
 /**
  * @brief Set clock source for timer
  *
- * @param hw Timer Group register base address
+ * @param group_id Group ID
  * @param timer_num Timer number in the group
  * @param clk_src Clock source
  */
-static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num, gptimer_clock_source_t clk_src)
+static inline void timer_ll_set_clock_source(int group_id, uint32_t timer_num, gptimer_clock_source_t clk_src)
 {
     (void)timer_num; // only one timer in each group
     uint8_t clk_id = 0;
@@ -121,7 +121,7 @@ static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num,
         HAL_ASSERT(false);
         break;
     }
-    if (hw == &TIMERG0) {
+    if (group_id == 0) {
         PCR.timergroup0_timer_clk_conf.tg0_timer_clk_sel = clk_id;
     } else {
         PCR.timergroup1_timer_clk_conf.tg1_timer_clk_sel = clk_id;
@@ -131,14 +131,14 @@ static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num,
 /**
  * @brief Enable Timer Group (GPTimer) module clock
  *
- * @param hw Timer Group register base address
+ * @param group_id Group ID
  * @param timer_num Timer index in the group
  * @param en true to enable, false to disable
  */
-static inline void timer_ll_enable_clock(timg_dev_t *hw, uint32_t timer_num, bool en)
+static inline void timer_ll_enable_clock(int group_id, uint32_t timer_num, bool en)
 {
     (void)timer_num; // only one timer in each group
-    if (hw == &TIMERG0) {
+    if (group_id == 0) {
         PCR.timergroup0_timer_clk_conf.tg0_timer_clk_en = en;
     } else {
         PCR.timergroup1_timer_clk_conf.tg1_timer_clk_en = en;

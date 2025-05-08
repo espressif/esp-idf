@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,10 +9,15 @@
 
 #include "esp_err.h"
 #include "esp_bt_defs.h"
+#include "esp_a2dp_legacy_api.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define ESP_A2D_MAX_SEPS        1               /*!< Maximum number of Stream Endpoint that supported */
+
+typedef uint16_t esp_a2d_conn_hdl_t;            /*!< Connection handle, associate with specific device that connected */
 
 /**
  * @brief Media codec types supported by A2DP.
@@ -31,6 +36,102 @@ typedef uint8_t esp_a2d_mct_t;
 typedef uint16_t esp_a2d_psc_t;
 
 /**
+ * @brief A2DP SBC sampling frequency bit mask in CIE
+ */
+#define ESP_A2D_SBC_CIE_SF_16K                  (0x8)       /*!< SBC sampling frequency 16kHz  */
+#define ESP_A2D_SBC_CIE_SF_32K                  (0x4)       /*!< SBC sampling frequency 32kHz */
+#define ESP_A2D_SBC_CIE_SF_44K                  (0x2)       /*!< SBC sampling frequency 44.1kHz  */
+#define ESP_A2D_SBC_CIE_SF_48K                  (0x1)       /*!< SBC sampling frequency 48kHz */
+
+/**
+ * @brief A2DP SBC channel mode bit mask in CIE
+ */
+#define ESP_A2D_SBC_CIE_CH_MODE_MONO            (0x8)       /*!< SBC channel mode Mono */
+#define ESP_A2D_SBC_CIE_CH_MODE_DUAL_CHANNEL    (0x4)       /*!< SBC channel mode Dual Channel */
+#define ESP_A2D_SBC_CIE_CH_MODE_STEREO          (0x2)       /*!< SBC channel mode Stereo */
+#define ESP_A2D_SBC_CIE_CH_MODE_JOINT_STEREO    (0x1)       /*!< SBC channel mode Stereo */
+
+/**
+ * @brief A2DP SBC block length bit mask in CIE
+ */
+#define ESP_A2D_SBC_CIE_BLOCK_LEN_4             (0x8)       /*!< SBC block length 4 */
+#define ESP_A2D_SBC_CIE_BLOCK_LEN_8             (0x4)       /*!< SBC block length 8 */
+#define ESP_A2D_SBC_CIE_BLOCK_LEN_12            (0x2)       /*!< SBC block length 12 */
+#define ESP_A2D_SBC_CIE_BLOCK_LEN_16            (0x1)       /*!< SBC block length 16 */
+
+/**
+ * @brief A2DP SBC number of subbands bit mask in CIE
+ */
+#define ESP_A2D_SBC_CIE_NUM_SUBBANDS_4          (0x2)       /*!< SBC number of subbands 4 */
+#define ESP_A2D_SBC_CIE_NUM_SUBBANDS_8          (0x1)       /*!< SBC number of subbands 8 */
+
+/**
+ * @brief A2DP SBC allocation method bit mask in CIE
+ */
+#define ESP_A2D_SBC_CIE_ALLOC_MTHD_SRN          (0x2)       /*!< SBC allocation method SNR */
+#define ESP_A2D_SBC_CIE_ALLOC_MTHD_LOUDNESS     (0x1)       /*!< SBC allocation method Loudness */
+
+/**
+ * @brief A2DP SBC media codec capabilities information struct
+ */
+typedef struct {
+    uint8_t ch_mode         : 4;        /*!< Channel mode */
+    uint8_t samp_freq       : 4;        /*!< Sampling frequency */
+    uint8_t alloc_mthd      : 2;        /*!< Allocation method */
+    uint8_t num_subbands    : 2;        /*!< Number of subbands */
+    uint8_t block_len       : 4;        /*!< Block length */
+    uint8_t min_bitpool;                /*!< Minimum bitpool */
+    uint8_t max_bitpool;                /*!< Maximum bitpool */
+} __attribute__((packed)) esp_a2d_cie_sbc_t;
+
+/**
+ * @brief A2DP MPEG-1, 2 media codec capabilities information struct (Not supported yet)
+ */
+typedef struct {
+    uint8_t     ch_mode         : 4;        /*!< Channel mode */
+    uint8_t     crc             : 1;        /*!< CRC protection */
+    uint8_t     layer           : 3;        /*!< Layers of MPEG-1,2 Audio */
+    uint8_t     samp_freq       : 6;        /*!< Sampling frequency */
+    uint8_t     mpf             : 1;        /*!< Media payload format */
+    uint8_t     rfu             : 1;        /*!< Reserved */
+    uint8_t     bri1            : 7;        /*!< Bit rate index part 1 */
+    uint8_t     vbr             : 1;        /*!< Support of VBR */
+    uint8_t     bri2;                       /*!< Bit rate index part 2 */
+} __attribute__((packed)) esp_a2d_cie_m12_t;
+
+/**
+ * @brief A2DP MPEG-2, 4 media codec capabilities information struct (Not supported yet)
+ */
+typedef struct {
+    uint8_t     drc             : 1;        /*!< Support of MPEG-D DRC */
+    uint8_t     obj_type        : 7;        /*!< Object type */
+    uint8_t     samp_freq1      : 8;        /*!< Sampling frequency part 1 */
+    uint8_t     ch              : 4;        /*!< Channels */
+    uint8_t     samp_freq2      : 4;        /*!< Sampling frequency part 2 */
+    uint8_t     br1             : 7;        /*!< Bit rate part 1 */
+    uint8_t     vbr             : 1;        /*!< Support of VBR */
+    uint8_t     br2;                        /*!< Bit rate part 2 */
+    uint8_t     br3;                        /*!< Bit rate part 3 */
+} __attribute__((packed)) esp_a2d_cie_m24_t;
+
+/**
+ * @brief A2DP ATRAC media codec capabilities information struct (Not supported yet)
+ */
+typedef struct {
+    uint8_t     rfu1            : 2;        /*!< Reserved */
+    uint8_t     ch_mode         : 3;        /*!< Channel mode */
+    uint8_t     version         : 3;        /*!< Version */
+    uint8_t     bri1            : 3;        /*!< Bit rate index part 1 */
+    uint8_t     vbr             : 1;        /*!< Support of VBR */
+    uint8_t     samp_freq       : 2;        /*!< Sampling frequency */
+    uint8_t     rfu2            : 2;        /*!< Reserved */
+    uint8_t     bri2;                       /*!< Bit rate index part 2 */
+    uint8_t     bri3;                       /*!< Bit rate index part 3 */
+    uint16_t    max_sul;                    /*!< Maximum SUL */
+    uint8_t     rfu3;                       /*!< Reserved */
+} __attribute__((packed)) esp_a2d_cie_atrac_t;
+
+/**
  * @brief A2DP media codec capabilities union
  */
 typedef struct {
@@ -40,10 +141,15 @@ typedef struct {
 #define ESP_A2D_CIE_LEN_M24          (6)
 #define ESP_A2D_CIE_LEN_ATRAC        (7)
     union {
-        uint8_t sbc[ESP_A2D_CIE_LEN_SBC];      /*!< SBC codec capabilities */
-        uint8_t m12[ESP_A2D_CIE_LEN_M12];      /*!< MPEG-1,2 audio codec capabilities */
-        uint8_t m24[ESP_A2D_CIE_LEN_M24];      /*!< MPEG-2, 4 AAC audio codec capabilities */
-        uint8_t atrac[ESP_A2D_CIE_LEN_ATRAC];  /*!< ATRAC family codec capabilities */
+        uint8_t sbc[ESP_A2D_CIE_LEN_SBC] __attribute__((deprecated));       /*!< SBC codec capabilities, deprecated, use sbc_info instead */
+        uint8_t m12[ESP_A2D_CIE_LEN_M12] __attribute__((deprecated));       /*!< MPEG-1,2 audio codec capabilities, deprecated, use m12_info instead */
+        uint8_t m24[ESP_A2D_CIE_LEN_M24] __attribute__((deprecated));       /*!< MPEG-2, 4 AAC audio codec capabilities, deprecated, use m24_info instead */
+        uint8_t atrac[ESP_A2D_CIE_LEN_ATRAC] __attribute__((deprecated));   /*!< ATRAC family codec capabilities, deprecated, use atrac_info instead */
+
+        esp_a2d_cie_sbc_t   sbc_info;          /*!< SBC codec capabilities */
+        esp_a2d_cie_m12_t   m12_info;          /*!< MPEG-1,2 audio codec capabilities */
+        esp_a2d_cie_m24_t   m24_info;          /*!< MPEG-2, 4 AAC audio codec capabilities */
+        esp_a2d_cie_atrac_t atrac_info;        /*!< ATRAC family codec capabilities */
     } cie;                                     /*!< A2DP codec information element */
 } __attribute__((packed)) esp_a2d_mcc_t;
 
@@ -104,6 +210,16 @@ typedef enum {
 } esp_a2d_init_state_t;
 
 /**
+ * @brief Bluetooth A2DP SEP register states
+ */
+typedef enum {
+    ESP_A2D_SEP_REG_SUCCESS = 0,               /*!< A2DP stream endpoint register success */
+    ESP_A2D_SEP_REG_FAIL,                      /*!< A2DP stream endpoint register generic fail */
+    ESP_A2D_SEP_REG_UNSUPPORTED,               /*!< A2DP stream endpoint register fail, unsupported codec type or param */
+    ESP_A2D_SEP_REG_INVALID_STATE,             /*!< A2DP stream endpoint register fail, invalid state */
+} esp_a2d_sep_reg_state_t;
+
+/**
  * @brief Bluetooth A2DP set delay report value states
  */
 typedef enum {
@@ -112,19 +228,40 @@ typedef enum {
 } esp_a2d_set_delay_value_state_t;
 
 /**
+ * @brief A2DP profile status parameters
+ */
+typedef struct {
+    bool a2d_snk_inited;                   /*!< A2DP sink initialization */
+    bool a2d_src_inited;                   /*!< A2DP source initialization */
+    uint8_t conn_num;                      /*!< Number of connections */
+} esp_a2d_profile_status_t;
+
+/**
  * @brief A2DP callback events
  */
 typedef enum {
     ESP_A2D_CONNECTION_STATE_EVT = 0,          /*!< connection state changed event */
     ESP_A2D_AUDIO_STATE_EVT,                   /*!< audio stream transmission state changed event */
-    ESP_A2D_AUDIO_CFG_EVT,                     /*!< audio codec is configured, only used for A2DP SINK */
+    ESP_A2D_AUDIO_CFG_EVT,                     /*!< audio codec is configured */
     ESP_A2D_MEDIA_CTRL_ACK_EVT,                /*!< acknowledge event in response to media control commands */
     ESP_A2D_PROF_STATE_EVT,                    /*!< indicate a2dp init&deinit complete */
+    ESP_A2D_SEP_REG_STATE_EVT,                 /*!< indicate a2dp steam endpoint register status */
     ESP_A2D_SNK_PSC_CFG_EVT,                   /*!< protocol service capabilities configured，only used for A2DP SINK */
     ESP_A2D_SNK_SET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink set delay report value complete,  only used for A2DP SINK */
     ESP_A2D_SNK_GET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink get delay report value complete,  only used for A2DP SINK */
     ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT,        /*!< report delay value,  only used for A2DP SRC */
 } esp_a2d_cb_event_t;
+
+/**
+ * @brief A2DP audio buffer
+ */
+typedef struct {
+    uint16_t    buff_size;                      /*!< audio buff size */
+    uint16_t    number_frame;                   /*!< number of encoded frame in this buff */
+    uint32_t    timestamp;                      /*!< timestamp of the first frame */
+    uint16_t    data_len;                       /*!< audio data len */
+    uint8_t    *data;                           /*!< pointer to audio data start */
+} esp_a2d_audio_buff_t;                         /*!< struct to store audio data */
 
 /**
  * @brief A2DP state callback parameters
@@ -136,6 +273,8 @@ typedef union {
     struct a2d_conn_stat_param {
         esp_a2d_connection_state_t state;      /*!< one of values from esp_a2d_connection_state_t */
         esp_bd_addr_t remote_bda;              /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;           /*!< connection handle */
+        uint16_t audio_mtu;                    /*!< MTU of audio connection */
         esp_a2d_disc_rsn_t disc_rsn;           /*!< reason of disconnection for "DISCONNECTED" */
     } conn_stat;                               /*!< A2DP connection status */
 
@@ -144,7 +283,8 @@ typedef union {
      */
     struct a2d_audio_stat_param {
         esp_a2d_audio_state_t state;           /*!< one of the values from esp_a2d_audio_state_t */
-        esp_bd_addr_t remote_bda;              /*!< remote bluetooth device address */
+        esp_bd_addr_t remote_bda;              /*!< remote bluetooth device address*/
+        esp_a2d_conn_hdl_t conn_hdl;           /*!< connection handle */
     } audio_stat;                              /*!< audio stream playing state */
 
     /**
@@ -152,6 +292,7 @@ typedef union {
      */
     struct a2d_audio_cfg_param {
         esp_bd_addr_t remote_bda;              /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;           /*!< connection handle */
         esp_a2d_mcc_t mcc;                     /*!< A2DP media codec capability information */
     } audio_cfg;                               /*!< media codec configuration information */
 
@@ -169,6 +310,14 @@ typedef union {
     struct a2d_prof_stat_param {
         esp_a2d_init_state_t init_state;       /*!< a2dp profile state param */
     } a2d_prof_stat;                           /*!< status to indicate a2d prof init or deinit */
+
+    /**
+     * @brief ESP_A2D_SEP_REG_STATE_EVT
+     */
+    struct a2d_sep_reg_stat_param {
+        uint8_t seid;                          /*!< the stream endpoint to register */
+        esp_a2d_sep_reg_state_t reg_state;     /*!< stream endpoint register state */
+    } a2d_sep_reg_stat;                        /*!< status to indicate a2d sep register success or not */
 
     /**
      * @brief ESP_A2D_SNK_PSC_CFG_EVT
@@ -213,25 +362,31 @@ typedef void (* esp_a2d_cb_t)(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *para
 /**
  * @brief           A2DP sink data callback function
  *
- * @param[in]       buf : pointer to the data received from A2DP source device and is PCM format decoded from SBC decoder;
- *                  buf references to a static memory block and can be overwritten by upcoming data
+ * @param[in]       conn_hdl: connection handle
  *
- * @param[in]       len : size(in bytes) in buf
+ * @param[in]       audio_buf: pointer to the data received from A2DP source device, should be freed by
+ *                  calling esp_a2d_audio_buff_free
  */
-typedef void (* esp_a2d_sink_data_cb_t)(const uint8_t *buf, uint32_t len);
+typedef void (* esp_a2d_sink_audio_data_cb_t)(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_audio_buff_t *audio_buf);
 
 /**
- * @brief           A2DP source data read callback function
+ * @brief           Allocate a audio buffer to store and send audio data, can be used in both sink and source.
  *
- * @param[in]       buf : buffer to be filled with PCM data stream from higher layer
+ * @param[in]       size: buffer size to allocate
  *
- * @param[in]       len : size(in bytes) of data block to be copied to buf. -1 is an indication to user
- *                  that data buffer shall be flushed
- *
- * @return          size of bytes read successfully, if the argument len is -1, this value is ignored.
+ * @return          allocated audio buffer, if Bluedroid is not enabled, no memory, or size is
+ *                  zeros, will return NULL
  *
  */
-typedef int32_t (* esp_a2d_source_data_cb_t)(uint8_t *buf, int32_t len);
+esp_a2d_audio_buff_t *esp_a2d_audio_buff_alloc(uint16_t size);
+
+/**
+ * @brief           Free a audio buffer allocated by esp_a2d_audio_buff_alloc.
+ *
+ * @param[in]       audio_buf: audio buffer to free
+ *
+ */
+void esp_a2d_audio_buff_free(esp_a2d_audio_buff_t *audio_buf);
 
 /**
  * @brief           Register application callback function to A2DP module. This function should be called
@@ -248,23 +403,20 @@ typedef int32_t (* esp_a2d_source_data_cb_t)(uint8_t *buf, int32_t len);
  */
 esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback);
 
-
 /**
- * @brief           Register A2DP sink data output function; For now the output is PCM data stream decoded
- *                  from SBC format. This function should be called only after esp_bluedroid_enable()
- *                  completes successfully, used only by A2DP sink. The callback is invoked in the context
- *                  of A2DP sink task whose stack size is configurable through menuconfig.
+ * @brief           Register A2DP sink audio data output function, the output format is undecoded audio data
+ *                  frame in esp_a2d_audio_buff_t, user shall call esp_a2d_audio_buff_free to free the buff
+ *                  when the data is consumed.
  *
- * @param[in]       callback: A2DP sink data callback function
+ * @param[in]       callback: A2DP sink audio data callback function
  *
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_FAIL: if callback is a NULL function pointer
+ *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_a2d_sink_register_data_callback(esp_a2d_sink_data_cb_t callback);
-
+esp_err_t esp_a2d_sink_register_audio_data_callback(esp_a2d_sink_audio_data_cb_t callback);
 
 /**
  *
@@ -282,6 +434,23 @@ esp_err_t esp_a2d_sink_register_data_callback(esp_a2d_sink_data_cb_t callback);
  */
 esp_err_t esp_a2d_sink_init(void);
 
+/**
+ * @brief           Register a a2dp sink Stream Endpoint (SEP) with specific codec capability, shall register
+ *                  SEP after a2dp sink initializing and before a2dp connection establishing. Register the same
+ *                  SEP index repeatedly will overwrite the old one.
+ *
+ * @param[in]       seid: local SEP identifier, start from 0, less than ESP_A2D_MAX_SEPS
+ *
+ * @param[in]       mcc: codec capability, currently only supports SBC
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: invalid parameter
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_a2d_sink_register_stream_endpoint(uint8_t seid, const esp_a2d_mcc_t *mcc);
 
 /**
  *
@@ -297,7 +466,6 @@ esp_err_t esp_a2d_sink_init(void);
  */
 esp_err_t esp_a2d_sink_deinit(void);
 
-
 /**
  *
  * @brief           Connect to remote bluetooth A2DP source device. This API must be called after
@@ -312,7 +480,6 @@ esp_err_t esp_a2d_sink_deinit(void);
  *
  */
 esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda);
-
 
 /**
  *
@@ -359,7 +526,6 @@ esp_err_t esp_a2d_sink_set_delay_value(uint16_t delay_value);
  */
 esp_err_t esp_a2d_sink_get_delay_value(void);
 
-
 /**
  *
  * @brief           Media control commands. This API can be used for both A2DP sink and source
@@ -374,6 +540,17 @@ esp_err_t esp_a2d_sink_get_delay_value(void);
  *
  */
 esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl);
+
+/**
+ * @brief       This function is used to get the status of A2DP
+ *
+ * @param[out]  profile_status - A2DP status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_a2d_get_profile_status(esp_a2d_profile_status_t *profile_status);
 
 
 /**
@@ -392,6 +569,23 @@ esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl);
  */
 esp_err_t esp_a2d_source_init(void);
 
+/**
+ * @brief           Register a a2dp source Stream Endpoint (SEP) with specific codec capability, shall register
+ *                  SEP after a2dp source initializing and before a2dp connection establishing. Register the same
+ *                  SEP index repeatedly will overwrite the old one.
+ *
+ * @param[in]       seid: local SEP identifier, start from 0, less than ESP_A2D_MAX_SEPS
+ *
+ * @param[in]       mcc: codec capability, currently, only SBC supported
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: invalid parameter
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_a2d_source_register_stream_endpoint(uint8_t seid, const esp_a2d_mcc_t *mcc);
 
 /**
  *
@@ -407,23 +601,24 @@ esp_err_t esp_a2d_source_init(void);
  */
 esp_err_t esp_a2d_source_deinit(void);
 
-
 /**
- * @brief           Register A2DP source data input function. For now, the input shoule be PCM data stream.
- *                  This function should be called only after esp_bluedroid_enable() completes
- *                  successfully. The callback is invoked in the context of A2DP source task whose
- *                  stack size is configurable through menuconfig.
+ * @brief           Send a audio buff with encoded audio data to sink, the audio data len shall not bigger than
+ *                  audio connection mtu (retrieved from ESP_A2D_CONNECTION_STATE_EVT). if the return value is
+ *                  ESP_OK, then the audio buff is consumed, otherwise, audio buff can be reused by user.
  *
- * @param[in]       callback: A2DP source data callback function
+ * @param[in]       conn_hdl: connection handle
+ *
+ * @param[in]       audio_buf: encoded audio data
  *
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_FAIL: if callback is a NULL function pointer
+ *                  - ESP_ERR_INVALID_ARG: invalid parameter
+ *                  - ESP_ERR_INVALID_SIZE: data len bigger than mtu
+ *                  - ESP_FAIL: buffer queue is full, try again later
  *
  */
-esp_err_t esp_a2d_source_register_data_callback(esp_a2d_source_data_cb_t callback);
-
+esp_err_t esp_a2d_source_audio_data_send(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_audio_buff_t *audio_buf);
 
 /**
  *
@@ -439,7 +634,6 @@ esp_err_t esp_a2d_source_register_data_callback(esp_a2d_source_data_cb_t callbac
  *
  */
 esp_err_t esp_a2d_source_connect(esp_bd_addr_t remote_bda);
-
 
 /**
  *

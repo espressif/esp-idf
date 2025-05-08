@@ -104,7 +104,7 @@ private:
     int print_to_buffer(const char *format, va_list args)
     {
         // Added support for multi-line log, for example ESP_LOG_BUFFER...
-        int ret = vsnprintf(&print_buffer[buffer_idx], BUFFER_SIZE, format, args);
+        int ret = vsnprintf(&print_buffer[buffer_idx], BUFFER_SIZE - buffer_idx, format, args);
         buffer_idx += ret;
         return ret;
     }
@@ -427,6 +427,7 @@ TEST_CASE("esp_log with formatting")
             .require_formatting = true,
             .dis_color = ESP_LOG_COLOR_DISABLED,
             .dis_timestamp = ESP_LOG_TIMESTAMP_DISABLED,
+            .binary_mode = false,
             .reserved = 0,
         }
     };
@@ -470,6 +471,7 @@ TEST_CASE("esp_log without formatting")
             .require_formatting = false, // print just text
             .dis_color = ESP_LOG_COLOR_DISABLED,
             .dis_timestamp = ESP_LOG_TIMESTAMP_DISABLED,
+            .binary_mode = false,
             .reserved = 0,
         }
     };
@@ -507,6 +509,7 @@ TEST_CASE("esp_log TAG can be NULL")
             .require_formatting = true,
             .dis_color = ESP_LOG_COLOR_DISABLED,
             .dis_timestamp = ESP_LOG_TIMESTAMP_DISABLED,
+            .binary_mode = false,
             .reserved = 0,
         }
     };
