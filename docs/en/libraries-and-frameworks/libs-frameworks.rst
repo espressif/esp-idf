@@ -4,8 +4,8 @@ Espressif's Frameworks
 
 Here you will find a collection of the official Espressif libraries and frameworks.
 
-Espressif Audio Development Framework
--------------------------------------
+Espressif Advanced Development Framework
+----------------------------------------
 
 The ESP-ADF is a comprehensive framework for audio applications including:
 
