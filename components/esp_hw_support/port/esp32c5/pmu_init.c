@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,8 @@
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_dig_reg.h"
 #include "regi2c_ctrl.h"
+#include "esp_private/ocode_init.h"
+#include "esp_rom_sys.h"
 
 static __attribute__((unused)) const char *TAG = "pmu_init";
 
@@ -212,4 +214,10 @@ void pmu_init(void)
     pmu_lp_system_init_default(PMU_instance());
 
     pmu_power_domain_force_default(PMU_instance());
+
+#if !CONFIG_IDF_ENV_FPGA
+    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
+        esp_ocode_calib_init();
+    }
+#endif
 }
