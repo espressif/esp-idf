@@ -25,7 +25,7 @@ static bool get_ssp_enabled(void)
     return cfg->ssp_en;
 }
 
-bt_status_t bluedriod_config_init(esp_bluedroid_config_t *cfg)
+bt_status_t bluedroid_config_init(esp_bluedroid_config_t *cfg)
 {
     s_stack_config_env = osi_calloc(sizeof(struct stack_config_env_tag));
     if (!s_stack_config_env) {
@@ -40,7 +40,7 @@ bt_status_t bluedriod_config_init(esp_bluedroid_config_t *cfg)
     return BT_STATUS_SUCCESS;
 }
 
-void bluedriod_config_deinit(void)
+void bluedroid_config_deinit(void)
 {
     if (s_stack_config_env) {
         osi_free(s_stack_config_env);
@@ -48,7 +48,7 @@ void bluedriod_config_deinit(void)
     }
 }
 
-const struct bluedroid_config *bluedriod_config_get(void)
+const struct bluedroid_config *bluedroid_config_get(void)
 {
     assert(s_stack_config_env);
     return &s_stack_config_env->interface;
