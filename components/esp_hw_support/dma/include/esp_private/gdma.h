@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -461,6 +461,28 @@ esp_err_t gdma_config_crc_calculator(gdma_channel_handle_t dma_chan, const gdma_
  */
 esp_err_t gdma_crc_get_result(gdma_channel_handle_t dma_chan, uint32_t *result);
 #endif // SOC_GDMA_SUPPORT_CRC
+
+#if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+/**
+ * @brief Set GDMA channel weight (0 ~ 15), default weight is 1
+ *
+ * @note Once weight arbitration is enabled, The arbitrator will allocate the corresponding number of tokens based on the weight of each channel.
+ *       You need to set weights for each channel. If the weight is 0, the channel requests will no longer be responded to.
+ * @note If channels have different weights, the channel with a larger weight can get a larger bandwidth.
+ *       e.g. if channel A has weight 2, channel B has weight 3 and channel C has weight 4, the percentage of bandwidth allocated to channel A is 2/9,
+ *       the percentage of bandwidth allocated to channel B is 3/9, and the percentage of bandwidth allocated to channel C is 4/9.
+ * @note Weighted arbitration is different from priority arbitration. "Weight" is used after comparing "priority"
+ *       After the priority comparison, then arbitrator checks whether there are still unused tokens in the channel.
+ *
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] weight Weight of GDMA channel, higher value means higher priority in weighted arbitration.
+ * @return
+ *      - ESP_OK: Set GDMA channel weight successfully
+ *      - ESP_ERR_INVALID_ARG: Set GDMA channel weight failed because of invalid argument. e.g. weight out of range [0,GDMA_LL_CHANNEL_MAX_WEIGHT]
+ *      - ESP_FAIL: Set GDMA channel weight failed because of other error
+ */
+esp_err_t gdma_set_weight(gdma_channel_handle_t dma_chan, uint32_t weight);
+#endif // SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
 
 /****************************************************************************************
  * Deprecated APIs (will be removed in esp-idf 6.0)
