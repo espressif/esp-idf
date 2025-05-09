@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,7 +111,7 @@ static esp_err_t s_i2c_master_clear_bus(i2c_bus_handle_t handle)
  *
  * @param[in] i2c_master I2C master handle
  */
-static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
+static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master, bool clear_bus)
 {
     esp_err_t ret = ESP_OK;
     i2c_hal_context_t *hal = &i2c_master->base->hal;
@@ -123,19 +123,27 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
     i2c_ll_master_get_filter(hal->dev, &filter_cfg);
 
     //to reset the I2C hw module, we need re-enable the hw
-    ret = s_i2c_master_clear_bus(i2c_master->base);
+    if (clear_bus) {
+        ret = s_i2c_master_clear_bus(i2c_master->base);
+    }
     I2C_RCC_ATOMIC() {
         i2c_ll_reset_register(i2c_master->base->port_num);
     }
 
     i2c_hal_master_init(hal);
+    // Restore the clock source here.
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
+    }
     i2c_ll_disable_intr_mask(hal->dev, I2C_LL_INTR_MASK);
     i2c_ll_clear_intr_mask(hal->dev, I2C_LL_INTR_MASK);
     i2c_hal_set_timing_config(hal, &timing_config);
     i2c_ll_master_set_filter(hal->dev, filter_cfg);
 #else
     i2c_ll_master_fsm_rst(hal->dev);
-    ret = s_i2c_master_clear_bus(i2c_master->base);
+    if (clear_bus) {
+        ret = s_i2c_master_clear_bus(i2c_master->base);
+    }
 #endif
     return ret;
 }
@@ -219,14 +227,30 @@ static bool s_i2c_write_command(i2c_master_bus_handle_t i2c_master, i2c_operatio
             i2c_master->async_break = true;
         }
     } else {
-        i2c_master->cmd_idx++;
-        i2c_master->trans_idx++;
-        i2c_master->i2c_trans.cmd_count--;
-        if (i2c_master->async_trans == false) {
-            if (xPortInIsrContext()) {
-                xSemaphoreGiveFromISR(i2c_master->cmd_semphr, do_yield);
+        // Handle consecutive i2c write operations
+        i2c_operation_t next_transaction = i2c_master->i2c_trans.ops[i2c_master->trans_idx + 1];
+        if (next_transaction.hw_cmd.op_code == I2C_LL_CMD_WRITE) {
+            portENTER_CRITICAL_SAFE(&handle->spinlock);
+            i2c_ll_master_write_cmd_reg(hal->dev, hw_end_cmd, i2c_master->cmd_idx + 1);
+            portEXIT_CRITICAL_SAFE(&handle->spinlock);
+            i2c_master->cmd_idx = 0;
+            i2c_master->trans_idx++;
+            i2c_master->i2c_trans.cmd_count--;
+            if (i2c_master->async_trans == false) {
+                i2c_hal_master_trans_start(hal);
             } else {
-                xSemaphoreGive(i2c_master->cmd_semphr);
+                i2c_master->async_break = true;
+            }
+        } else {
+            i2c_master->cmd_idx++;
+            i2c_master->trans_idx++;
+            i2c_master->i2c_trans.cmd_count--;
+            if (i2c_master->async_trans == false) {
+                if (xPortInIsrContext()) {
+                    xSemaphoreGiveFromISR(i2c_master->cmd_semphr, do_yield);
+                } else {
+                    xSemaphoreGive(i2c_master->cmd_semphr);
+                }
             }
         }
     }
@@ -267,7 +291,7 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
     i2c_master->contains_read = true;
 #if !SOC_I2C_STOP_INDEPENDENT
     if (remaining_bytes < I2C_FIFO_LEN(i2c_master->base->port_num) - 1) {
-        if (i2c_operation->hw_cmd.ack_val == ACK_VAL) {
+        if (i2c_operation->hw_cmd.ack_val == I2C_ACK_VAL) {
             if (remaining_bytes != 0) {
                 i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
                 i2c_master->read_len_static = i2c_master->rx_cnt;
@@ -276,6 +300,13 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
             i2c_master->read_buf_pos = i2c_master->trans_idx;
         } else {
             i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
+            // If the read position has not been marked, that means the transaction doesn't contain read-ack
+            // operation, then mark the read position in read-nack operation.
+            // i2c_master->read_buf_pos will never be 0.
+            if (i2c_master->read_buf_pos == 0) {
+                i2c_master->read_buf_pos = i2c_master->trans_idx;
+                i2c_master->read_len_static = i2c_master->rx_cnt;
+            }
             i2c_master->cmd_idx++;
         }
         i2c_master->trans_idx++;
@@ -303,7 +334,7 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
     portENTER_CRITICAL_SAFE(&handle->spinlock);
     // If the read command work with ack_val, but no bytes to read, we skip
     // this command, and run next command directly.
-    if (hw_cmd.ack_val == ACK_VAL) {
+    if (hw_cmd.ack_val == I2C_ACK_VAL) {
         if (i2c_operation->total_bytes == 0) {
             i2c_master->trans_idx++;
             hw_cmd = i2c_master->i2c_trans.ops[i2c_master->trans_idx].hw_cmd;
@@ -347,17 +378,25 @@ static void s_i2c_start_end_command(i2c_master_bus_handle_t i2c_master, i2c_oper
     uint8_t cmd_address = i2c_master->i2c_trans.device_address;
     uint8_t addr_byte = 1;
 #endif
+    if (i2c_master->i2c_trans.device_address == I2C_DEVICE_ADDRESS_NOT_USED) {
+        // Bypass the address.
+        addr_byte = 0;
+    }
     uint8_t addr_write[addr_byte];
     uint8_t addr_read[addr_byte];
+    memset(addr_write, 0, sizeof(addr_write));
+    memset(addr_read, 0, sizeof(addr_read));
 
-    addr_write[0] = I2C_ADDRESS_TRANS_WRITE(cmd_address);
-    addr_read[0] = I2C_ADDRESS_TRANS_READ(cmd_address);
+    if (addr_byte != 0) {
+        addr_write[0] = I2C_ADDRESS_TRANS_WRITE(cmd_address);
+        addr_read[0] = I2C_ADDRESS_TRANS_READ(cmd_address);
 #if SOC_I2C_SUPPORT_10BIT_ADDR
-    if (i2c_master->addr_10bits_bus == I2C_ADDR_BIT_LEN_10) {
-        addr_write[1] = i2c_master->i2c_trans.device_address & 0xff;
-        addr_read[1] = i2c_master->i2c_trans.device_address & 0xff;
-    }
+        if (i2c_master->addr_10bits_bus == I2C_ADDR_BIT_LEN_10) {
+            addr_write[1] = i2c_master->i2c_trans.device_address & 0xff;
+            addr_read[1] = i2c_master->i2c_trans.device_address & 0xff;
+        }
 #endif
+    }
 
     portENTER_CRITICAL_SAFE(&i2c_master->base->spinlock);
     i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
@@ -457,7 +496,7 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
         }
 
         if (atomic_load(&i2c_master->status) == I2C_STATUS_TIMEOUT) {
-            s_i2c_hw_fsm_reset(i2c_master);
+            s_i2c_hw_fsm_reset(i2c_master, true);
             i2c_master->cmd_idx = 0;
             i2c_master->trans_idx = 0;
             ESP_LOGE(TAG, "I2C hardware timeout detected");
@@ -566,7 +605,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     // Sometimes when the FSM get stuck, the ACK_ERR interrupt will occur endlessly until we reset the FSM and clear bus.
     esp_err_t ret = ESP_OK;
     if (atomic_load(&i2c_master->status) == I2C_STATUS_TIMEOUT || i2c_ll_is_bus_busy(hal->dev)) {
-        ESP_RETURN_ON_ERROR(s_i2c_hw_fsm_reset(i2c_master), TAG, "reset hardware failed");
+        ESP_RETURN_ON_ERROR(s_i2c_hw_fsm_reset(i2c_master, true), TAG, "reset hardware failed");
     }
 
     if (i2c_master->base->pm_lock) {
@@ -579,6 +618,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     i2c_master->cmd_idx = 0;
     i2c_master->rx_cnt = 0;
     i2c_master->read_len_static = 0;
+    i2c_master->read_buf_pos = 0;
 
     I2C_CLOCK_SRC_ATOMIC() {
         i2c_hal_set_bus_timing(hal, i2c_dev->scl_speed_hz, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
@@ -642,7 +682,10 @@ IRAM_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_master)
         i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->read_buf_pos];
         portENTER_CRITICAL_ISR(&i2c_master->base->spinlock);
         i2c_ll_read_rxfifo(hal->dev, i2c_operation->data + i2c_operation->bytes_used, i2c_master->read_len_static);
-        i2c_ll_read_rxfifo(hal->dev, i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data, 1);
+        // If the read command only contain nack marker, no read it for the second time.
+        if (i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data) {
+            i2c_ll_read_rxfifo(hal->dev, i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data, 1);
+        }
         i2c_master->w_r_size = i2c_master->read_len_static + 1;
         i2c_master->contains_read = false;
         portEXIT_CRITICAL_ISR(&i2c_master->base->spinlock);
@@ -895,7 +938,7 @@ static esp_err_t s_i2c_synchronous_transaction(i2c_master_dev_handle_t i2c_dev, 
 
 err:
     // When error occurs, reset hardware fsm in case not influence following transactions.
-    s_i2c_hw_fsm_reset(i2c_dev->master_bus);
+    s_i2c_hw_fsm_reset(i2c_dev->master_bus, false);
     xSemaphoreGive(i2c_dev->master_bus->bus_lock_mux);
     return ret;
 }
@@ -1100,7 +1143,7 @@ esp_err_t i2c_master_bus_reset(i2c_master_bus_handle_t bus_handle)
 {
     ESP_RETURN_ON_FALSE((bus_handle != NULL), ESP_ERR_INVALID_ARG, TAG, "This bus is not initialized");
     // Reset I2C master bus
-    ESP_RETURN_ON_ERROR(s_i2c_hw_fsm_reset(bus_handle), TAG, "I2C master bus reset failed");
+    ESP_RETURN_ON_ERROR(s_i2c_hw_fsm_reset(bus_handle, true), TAG, "I2C master bus reset failed");
     // Reset I2C status state
     atomic_store(&bus_handle->status, I2C_STATUS_IDLE);
     return ESP_OK;
@@ -1147,8 +1190,8 @@ esp_err_t i2c_master_transmit_receive(i2c_master_dev_handle_t i2c_dev, const uin
         {.hw_cmd = I2C_TRANS_START_COMMAND},
         {.hw_cmd = I2C_TRANS_WRITE_COMMAND(i2c_dev->ack_check_disable ? false : true), .data = (uint8_t *)write_buffer, .total_bytes = write_size},
         {.hw_cmd = I2C_TRANS_START_COMMAND},
-        {.hw_cmd = I2C_TRANS_READ_COMMAND(ACK_VAL), .data = read_buffer, .total_bytes = read_size - 1},
-        {.hw_cmd = I2C_TRANS_READ_COMMAND(NACK_VAL), .data = (read_buffer + read_size - 1), .total_bytes = 1},
+        {.hw_cmd = I2C_TRANS_READ_COMMAND(I2C_ACK_VAL), .data = read_buffer, .total_bytes = read_size - 1},
+        {.hw_cmd = I2C_TRANS_READ_COMMAND(I2C_NACK_VAL), .data = (read_buffer + read_size - 1), .total_bytes = 1},
         {.hw_cmd = I2C_TRANS_STOP_COMMAND},
     };
 
@@ -1167,8 +1210,8 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
 
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
-        {.hw_cmd = I2C_TRANS_READ_COMMAND(ACK_VAL), .data = read_buffer, .total_bytes = read_size - 1},
-        {.hw_cmd = I2C_TRANS_READ_COMMAND(NACK_VAL), .data = (read_buffer + read_size - 1), .total_bytes = 1},
+        {.hw_cmd = I2C_TRANS_READ_COMMAND(I2C_ACK_VAL), .data = read_buffer, .total_bytes = read_size - 1},
+        {.hw_cmd = I2C_TRANS_READ_COMMAND(I2C_NACK_VAL), .data = (read_buffer + read_size - 1), .total_bytes = 1},
         {.hw_cmd = I2C_TRANS_STOP_COMMAND},
     };
 
@@ -1212,6 +1255,8 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
         i2c_ll_set_source_clk(hal->dev, bus_handle->base->clk_src);
         i2c_hal_set_bus_timing(hal, 100000, bus_handle->base->clk_src, bus_handle->base->clk_src_freq_hz);
     }
+    i2c_ll_txfifo_rst(hal->dev);
+    i2c_ll_rxfifo_rst(hal->dev);
     i2c_ll_master_set_fractional_divider(hal->dev, 0, 0);
     i2c_ll_enable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
     // 20ms is sufficient for stretch, since there is no device config on probe operation.
@@ -1232,6 +1277,55 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
     i2c_ll_disable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
     xSemaphoreGive(bus_handle->bus_lock_mux);
     return ret;
+}
+
+esp_err_t i2c_master_execute_defined_operations(i2c_master_dev_handle_t i2c_dev, i2c_operation_job_t *i2c_operation, size_t operation_list_num, int xfer_timeout_ms)
+{
+    ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
+    ESP_RETURN_ON_FALSE(i2c_operation != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c operation pointer is invalid");
+    ESP_RETURN_ON_FALSE(operation_list_num <= (SOC_I2C_CMD_REG_NUM), ESP_ERR_INVALID_ARG, TAG, "i2c command list cannot contain so many commands");
+
+    i2c_operation_t i2c_ops[operation_list_num];
+    memset(i2c_ops, 0, sizeof(i2c_ops));
+    for (int i = 0; i < operation_list_num; i++) {
+        switch (i2c_operation[i].command) {
+        case I2C_MASTER_CMD_START:
+            i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_RESTART;
+            break;
+        case I2C_MASTER_CMD_WRITE:
+            i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_WRITE;
+            i2c_ops[i].hw_cmd.ack_en = i2c_operation[i].write.ack_check;
+            i2c_ops[i].data = i2c_operation[i].write.data;
+            i2c_ops[i].total_bytes = i2c_operation[i].write.total_bytes;
+            break;
+        case I2C_MASTER_CMD_READ:
+            i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_READ;
+            i2c_ops[i].hw_cmd.ack_val = i2c_operation[i].read.ack_value;
+            i2c_ops[i].data = i2c_operation[i].read.data;
+            i2c_ops[i].total_bytes = i2c_operation[i].read.total_bytes;
+            // Add check: If current command is READ and the next command is STOP, ack_value must be NACK
+            if (i + 1 < operation_list_num && i2c_operation[i + 1].command == I2C_MASTER_CMD_STOP) {
+                if (i2c_operation[i].read.ack_value != I2C_NACK_VAL) {
+                    ESP_LOGE(TAG, "ack_value must be NACK (1) when the next command of READ is STOP.");
+                    return ESP_ERR_INVALID_ARG;
+                }
+            }
+            break;
+        case I2C_MASTER_CMD_STOP:
+            i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_STOP;
+            break;
+        default:
+            ESP_LOGE(TAG, "Invalid command.");
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    if (i2c_dev->master_bus->async_trans == false) {
+        ESP_RETURN_ON_ERROR(s_i2c_synchronous_transaction(i2c_dev, i2c_ops, operation_list_num, xfer_timeout_ms), TAG, "I2C transaction failed");
+    } else {
+        ESP_RETURN_ON_ERROR(s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, operation_list_num, xfer_timeout_ms), TAG, "I2C transaction failed");
+    }
+    return ESP_OK;
 }
 
 esp_err_t i2c_master_register_event_callbacks(i2c_master_dev_handle_t i2c_dev, const i2c_master_event_callbacks_t *cbs, void *user_data)

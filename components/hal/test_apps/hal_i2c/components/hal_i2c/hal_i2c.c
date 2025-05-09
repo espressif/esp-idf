@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -92,7 +92,7 @@ esp_err_t hal_i2c_init(hal_i2c_config *cfg)
     // 2. Set both SCL and SDA open-drain
     // 3. Set both SCL and SDA pullup enable and pulldown disable. (If you use external pullup, this can be ignored)
     // 4. io mux function select
-    // 5. We connect out/in signal. As I2C master, out/in signal is necessary fpr both SCL and SDA according to esp hardware.
+    // 5. We connect out/in signal. As I2C master, out/in signal is necessary for both SCL and SDA according to esp hardware.
 
     // SDA pin configurations
     if (sda_io != -1) {
@@ -117,7 +117,9 @@ esp_err_t hal_i2c_init(hal_i2c_config *cfg)
         esp_rom_gpio_connect_in_signal(scl_io, i2c_periph_signal[cfg->i2c_port].scl_out_sig, 0);
     }
     // Initialize I2C master bus. Including enable its clock, choose its mode, etc.
-    i2c_ll_master_init(dev);
+    i2c_ll_set_mode(dev, I2C_BUS_MODE_MASTER);
+    i2c_ll_enable_pins_open_drain(dev, true);
+    i2c_ll_enable_arbitration(dev, false);
     //MSB (I2C standard require the data to be sent with most MSB)
     i2c_ll_set_data_mode(dev, I2C_DATA_MODE_MSB_FIRST, I2C_DATA_MODE_MSB_FIRST);
     //Reset fifo

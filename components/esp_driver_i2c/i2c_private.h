@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,9 +59,6 @@ extern "C" {
 #define I2C_PM_LOCK_NAME_LEN_MAX 16
 #define I2C_STATIC_OPERATION_ARRAY_MAX SOC_I2C_CMD_REG_NUM
 
-#define ACK_VAL 0
-#define NACK_VAL 1
-
 #define I2C_TRANS_READ_COMMAND(ack_value)    {.ack_val = (ack_value), .op_code = I2C_LL_CMD_READ}
 #define I2C_TRANS_WRITE_COMMAND(ack_check)   {.ack_en = (ack_check), .op_code = I2C_LL_CMD_WRITE}
 #define I2C_TRANS_STOP_COMMAND               {.op_code = I2C_LL_CMD_STOP}
@@ -72,11 +69,6 @@ typedef struct i2c_master_bus_t i2c_master_bus_t;
 typedef struct i2c_bus_t *i2c_bus_handle_t;
 typedef struct i2c_master_dev_t i2c_master_dev_t;
 typedef struct i2c_slave_dev_t i2c_slave_dev_t;
-
-typedef enum {
-    I2C_BUS_MODE_MASTER = 0,
-    I2C_BUS_MODE_SLAVE = 1,
-} i2c_bus_mode_t;
 
 typedef enum {
     I2C_SLAVE_FIFO = 0,
