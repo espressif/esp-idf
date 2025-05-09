@@ -72,12 +72,12 @@ ESP 主机主要功能支持状态
       - |supported|
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
-      - |developing202512|
+      - |experimental|
       - |experimental|
     * -
       - GATT Caching
       - |experimental|
-      - |experimental|
+      - |developing202512|
     * -
       - Randomized Advertising Channel Indexing
       - |NA|
@@ -88,7 +88,7 @@ ESP 主机主要功能支持状态
       - |supported|
     * - .. centered:: |5.2|
       - LE Isochronous Channels (BIS/CIS)
-      - |developing202512|
+      - |experimental|
       - |developing202512|
     * -
       - Enhanced Attribute Protocol
@@ -96,16 +96,16 @@ ESP 主机主要功能支持状态
       - |experimental|
     * -
       - LE Power Control
-      - |developing202512|
-      - |supported|
+      - |experimental|
+      - |experimental|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
       - |supported|
       - |supported|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
-      - |developing202512|
-      - |supported|
+      - |experimental|
+      - |experimental|
     * -
       - LE Channel Classification
       - |supported|
