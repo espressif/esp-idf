@@ -397,6 +397,15 @@ uint8_t coex_schm_flexible_period_get(void);
 #endif
 
 /**
+ * @brief     Get coexistence scheme phase by phase index.
+ *
+ * @param     phase_idx    Coexistence phase index
+ *
+ * @return    Coexistence scheme phase
+ */
+void * coex_schm_get_phase_by_idx(int phase_idx);
+
+/**
   * @brief     Check the MD5 values of the coexistence adapter header files in IDF and WiFi library
   *
   * @attention 1. It is used for internal CI version check
