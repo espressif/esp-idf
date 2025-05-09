@@ -558,8 +558,9 @@
 #define SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED        (0)
 
 /*-------------------------- APM CAPS-----------------------------------------*/
-#define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */
-#define SOC_APM_LP_APM0_SUPPORTED       1 /*!< Support for LP APM0 control filter */
+#define SOC_APM_CTRL_FILTER_SUPPORTED        1 /*!< Support for APM control filter */
+#define SOC_APM_LP_APM0_SUPPORTED            1 /*!< Support for LP APM0 control filter */
+#define SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL 1 /*!< Support for TEE controller per-peripheral access control */
 
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
 #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1

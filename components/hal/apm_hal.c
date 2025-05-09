@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,6 +56,16 @@ void apm_hal_dma_region_pms(apm_hal_dma_region_config_data_t *pms_data)
 void apm_tee_hal_set_master_secure_mode(apm_ll_apm_ctrl_t apm_ctrl, apm_ll_master_id_t master_id, apm_ll_secure_mode_t sec_mode)
 {
     apm_tee_ll_set_master_secure_mode(apm_ctrl, master_id, sec_mode);
+}
+
+void apm_tee_hal_set_master_secure_mode_all(apm_ll_secure_mode_t sec_mode)
+{
+    for (int i = 0; i < APM_LL_MASTER_MAX; i++) {
+        apm_tee_hal_set_master_secure_mode(HP_APM_CTRL, i, sec_mode);
+    }
+#if SOC_LP_CORE_SUPPORTED
+    apm_tee_hal_set_master_secure_mode(LP_APM_CTRL, APM_LL_MASTER_LPCORE, sec_mode);
+#endif
 }
 
 void apm_tee_hal_clk_gating_enable(bool enable)
