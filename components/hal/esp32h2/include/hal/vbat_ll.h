@@ -102,6 +102,7 @@ static inline void vbat_ll_set_charger_resistor(uint32_t resistor)
  */
 static inline void vbat_ll_start_battery_charge(bool start)
 {
+    LP_ANA_PERI.vddbat_charge_cntl.vddbat_charge_charger = start;
     LP_ANA_PERI.vddbat_bod_cntl.vddbat_charger = start;
 }
 

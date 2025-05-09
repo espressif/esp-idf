@@ -119,6 +119,7 @@ typedef enum {
     ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG,   //!< Wakeup caused by COCPU crash
     ESP_SLEEP_WAKEUP_BT,           //!< Wakeup caused by BT (light sleep only)
     ESP_SLEEP_WAKEUP_VAD,          //!< Wakeup caused by VAD
+    ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT, //!< Wakeup caused by VDD_BAT under voltage.
 } esp_sleep_source_t;
 
 /**
@@ -192,6 +193,16 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
  *      - ESP_OK on success
  */
 esp_err_t esp_sleep_enable_vad_wakeup(void);
+#endif
+
+#if SOC_VBAT_SUPPORTED
+/**
+ * Wakeup chip is VBAT power voltage is lower than the configured brownout_threshold value.
+ *
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_sleep_enable_vbat_under_volt_wakeup(void);
 #endif
 
 #if SOC_TOUCH_SENSOR_SUPPORTED
@@ -591,6 +602,7 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain,
  *
  * @return
  *  - No return - If the sleep is not rejected.
+ *  - ESP_ERR_INVALID_STATE VBAT power does not meet the requirements for entering deepsleep
  *  - ESP_ERR_SLEEP_REJECT sleep request is rejected(wakeup source set before the sleep request)
  */
 esp_err_t esp_deep_sleep_try_to_start(void);

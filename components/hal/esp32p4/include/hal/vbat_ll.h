@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include "esp_bit_defs.h"
 #include "soc/lp_analog_peri_struct.h"
+#include "hal/assert.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_brownout.h"
 
@@ -72,6 +73,7 @@ static inline void vbat_ll_enable_charger_comparator(bool enable)
  */
 static inline void vbat_ll_set_undervoltage_filter_time(uint32_t time_tick)
 {
+    HAL_ASSERT(time_tick < (2<<10));
     LP_ANA_PERI.vddbat_charge_cntl.vddbat_charge_undervoltage_target = time_tick;
 }
 
@@ -82,6 +84,7 @@ static inline void vbat_ll_set_undervoltage_filter_time(uint32_t time_tick)
  */
 static inline void vbat_ll_set_upvoltage_filter_time(uint32_t time_tick)
 {
+    HAL_ASSERT(time_tick < (2<<10));
     LP_ANA_PERI.vddbat_charge_cntl.vddbat_charge_upvoltage_target = time_tick;
 }
 
@@ -102,6 +105,7 @@ static inline void vbat_ll_set_charger_resistor(uint32_t resistor)
  */
 static inline void vbat_ll_start_battery_charge(bool start)
 {
+    LP_ANA_PERI.vddbat_charge_cntl.vddbat_charge_charger = start;
     LP_ANA_PERI.vddbat_bod_cntl.vddbat_charger = start;
 }
 

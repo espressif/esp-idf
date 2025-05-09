@@ -139,7 +139,9 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t reserved0 : 30;
+        uint32_t reserved0 : 27;
+        uint32_t bod_source_sel : 1;
+        uint32_t vddbat_mode : 2;
         uint32_t mem_dslp  : 1;
         uint32_t peri_pd_en: 1;
     };

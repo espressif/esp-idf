@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -769,9 +769,9 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t module     : 2;
-        uint32_t reserved1  : 29;
-        uint32_t sw_update  : 1;
+        uint32_t ana_vddbat_mode    : 2;
+        uint32_t reserved1          : 29;
+        uint32_t sw_update          : 1;
     };
     uint32_t val;
 } pmu_vddbat_cfg_t;

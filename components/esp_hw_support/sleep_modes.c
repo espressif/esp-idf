@@ -127,6 +127,11 @@
 #include "hal/lp_timer_hal.h"
 #endif
 
+#if SOC_VBAT_SUPPORTED
+#include "esp_vbat.h"
+#include "hal/vbat_ll.h"
+#endif
+
 #if SOC_PMU_SUPPORTED
 #include "esp_private/esp_pmu.h"
 #include "esp_private/sleep_sys_periph.h"
@@ -338,6 +343,9 @@ static void ext1_wakeup_prepare(void);
 static esp_err_t timer_wakeup_prepare(int64_t sleep_duration);
 #if SOC_TOUCH_SENSOR_SUPPORTED
 static void touch_wakeup_prepare(void);
+#endif
+#if SOC_VBAT_SUPPORTED
+static void vbat_under_volt_wakeup_prepare(void);
 #endif
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
 static void gpio_deep_sleep_wakeup_prepare(void);
@@ -1044,13 +1052,6 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
              * The configuration change will change the reading of the sleep pad, which will cause the touch wake-up sensor to trigger falsely.
              */
             keep_rtc_power_on = true;
-#elif CONFIG_IDF_TARGET_ESP32P4
-            /* Due to esp32p4 eco0 hardware bug, if LP peripheral power domain is powerdowned in sleep, there will be a possibility of
-             * triggering the EFUSE_CRC reset, so disable the power-down of this power domain on lightsleep for ECO0 version.
-             */
-            if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
-                keep_rtc_power_on = true;
-            }
 #endif
         }
     } else {
@@ -1062,6 +1063,12 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
     /* Whether need to keep RTC_PERIPH power on eventually */
     if (keep_rtc_power_on) {
         sleep_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
+    }
+#endif
+
+#if SOC_VBAT_SUPPORTED
+    if (deep_sleep && (s_config.wakeup_triggers & RTC_VBAT_UNDER_VOLT_TRIG_EN)) {
+        vbat_under_volt_wakeup_prepare();
     }
 #endif
 
@@ -1191,6 +1198,20 @@ inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, 
 
 static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 {
+#if SOC_VBAT_SUPPORTED
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE]) {
+        esp_vbat_state_t battery_state = esp_vbat_get_battery_state();
+        if (battery_state == ESP_VBAT_STATE_CHARGING) {
+            ESP_LOGW(TAG, "Battery is charging, should wait until charging is complete before entering deep sleep!");
+        } else if (battery_state == ESP_VBAT_STATE_LOWBATTERY) {
+            ESP_LOGE(TAG, "Battery is in low battery state, chip may lose power during deepsleep!");
+        }
+        if ((battery_state != ESP_VBAT_STATE_NORMAL) && allow_sleep_rejection) {
+            return ESP_ERR_INVALID_STATE;
+        }
+    }
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Due to hardware limitations, on S2 the brownout detector sometimes trigger during deep sleep
        to circumvent this we disable the brownout detector before sleeping  */
@@ -1668,6 +1689,16 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
         s_config.wakeup_triggers &= ~RTC_ULP_TRIG_EN;
     }
 #endif
+#if SOC_LP_VAD_SUPPORTED
+    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_VAD, RTC_LP_VAD_TRIG_EN)) {
+        s_config.wakeup_triggers &= ~RTC_LP_VAD_TRIG_EN;
+    }
+#endif
+#if SOC_VBAT_SUPPORTED
+    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT, RTC_VBAT_UNDER_VOLT_TRIG_EN)) {
+        s_config.wakeup_triggers &= ~RTC_VBAT_UNDER_VOLT_TRIG_EN;
+    }
+#endif
     else {
         ESP_LOGE(TAG, "Incorrect wakeup source (%d) to disable.", (int) source);
         return ESP_ERR_INVALID_STATE;
@@ -1748,6 +1779,14 @@ esp_err_t esp_sleep_enable_vad_wakeup(void)
 }
 #endif
 
+#if SOC_VBAT_SUPPORTED
+esp_err_t esp_sleep_enable_vbat_under_volt_wakeup(void)
+{
+    s_config.wakeup_triggers |= RTC_VBAT_UNDER_VOLT_TRIG_EN;
+    return ESP_OK;
+}
+#endif
+
 static SLEEP_FN_ATTR esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
 {
     if (sleep_duration < 0) {
@@ -1774,6 +1813,13 @@ static SLEEP_FN_ATTR esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
 
     return ESP_OK;
 }
+
+#if SOC_VBAT_SUPPORTED
+static void vbat_under_volt_wakeup_prepare(void)
+{
+    vbat_ll_clear_intr_mask(VBAT_LL_CHARGER_UNDERVOLTAGE_INTR);
+}
+#endif
 
 #if SOC_TOUCH_SENSOR_SUPPORTED
 static void touch_wakeup_prepare(void)
@@ -2275,6 +2321,10 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
     } else if (wakeup_cause & RTC_LP_VAD_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_VAD;
 #endif
+#if SOC_VBAT_SUPPORTED
+    } else if (wakeup_cause & RTC_VBAT_UNDER_VOLT_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT;
+#endif
     } else {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
@@ -2339,6 +2389,7 @@ int32_t* esp_sleep_sub_mode_dump_config(FILE *stream) {
                                 [ESP_SLEEP_RTC_FAST_USE_XTAL_MODE]      = "ESP_SLEEP_RTC_FAST_USE_XTAL_MODE",
                                 [ESP_SLEEP_DIG_USE_XTAL_MODE]           = "ESP_SLEEP_DIG_USE_XTAL_MODE",
                                 [ESP_SLEEP_LP_USE_XTAL_MODE]            = "ESP_SLEEP_LP_USE_XTAL_MODE",
+                                [ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE]   = "ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE",
                             }[mode],
                             s_sleep_sub_mode_ref_cnt[mode] ? "ENABLED" : "DISABLED",
                             s_sleep_sub_mode_ref_cnt[mode]);
@@ -2604,6 +2655,12 @@ static SLEEP_FN_ATTR uint32_t get_sleep_flags(uint32_t sleep_flags, bool deepsle
 #if SOC_LP_VAD_SUPPORTED
     if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_LP_USE_XTAL_MODE] && !deepsleep) {
         sleep_flags |= RTC_SLEEP_LP_PERIPH_USE_XTAL;
+    }
+#endif
+
+#if SOC_VBAT_SUPPORTED
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE] && deepsleep) {
+        sleep_flags |= RTC_SLEEP_POWER_BY_VBAT;
     }
 #endif
 
