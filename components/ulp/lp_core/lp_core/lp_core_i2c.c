@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,7 +72,7 @@ static inline esp_err_t lp_core_i2c_wait_for_interrupt(uint32_t intr_mask, int32
     uint32_t to = 0;
 
     while (1) {
-        i2c_ll_get_intr_mask(dev, &intr_status);
+        i2c_ll_get_intr_raw_mask(dev, &intr_status);
         if (intr_status & intr_mask) {
             if (intr_status & LP_I2C_NACK_INT_ST) {
                 /* The ACK/NACK received during a WRITE operation does not match the expected ACK/NACK level
@@ -82,9 +82,8 @@ static inline esp_err_t lp_core_i2c_wait_for_interrupt(uint32_t intr_mask, int32
                 return ESP_ERR_INVALID_RESPONSE;
             } else if (intr_status & LP_I2C_TRANS_COMPLETE_INT_ST_M) {
                 /* Transaction complete.
-                 * Disable and clear interrupt bits and break
+                 * Clear interrupt bits and break
                  */
-                i2c_ll_disable_intr_mask(dev, intr_mask);
                 i2c_ll_clear_intr_mask(dev, intr_mask);
                 break;
             } else {
@@ -105,8 +104,7 @@ static inline esp_err_t lp_core_i2c_wait_for_interrupt(uint32_t intr_mask, int32
             ulp_lp_core_delay_cycles(1);
             to++;
             if (to >= ticks_to_wait) {
-                /* Disable and clear interrupt bits */
-                i2c_ll_disable_intr_mask(dev, intr_mask);
+                /* Timeout. Clear interrupt bits and return an error */
                 i2c_ll_clear_intr_mask(dev, intr_mask);
                 return ESP_ERR_TIMEOUT;
             }
@@ -169,7 +167,7 @@ esp_err_t lp_core_i2c_master_read_from_device(i2c_port_t lp_i2c_num, uint16_t de
 
     /* Enable trans complete interrupt and end detect interrupt for read/write operation */
     uint32_t intr_mask = (1 << LP_I2C_TRANS_COMPLETE_INT_ST_S) | (1 << LP_I2C_END_DETECT_INT_ST_S);
-    i2c_ll_enable_intr_mask(dev, intr_mask);
+    i2c_ll_clear_intr_mask(dev, intr_mask);
 
     /* Read data */
     uint32_t fifo_size = 0;
@@ -273,7 +271,7 @@ esp_err_t lp_core_i2c_master_write_to_device(i2c_port_t lp_i2c_num, uint16_t dev
         /* Enable LP_I2C_NACK_INT to check for ACK errors */
         intr_mask |= (1 << LP_I2C_NACK_INT_ST_S);
     }
-    i2c_ll_enable_intr_mask(dev, intr_mask);
+    i2c_ll_clear_intr_mask(dev, intr_mask);
 
     /* Write data */
     uint32_t fifo_available = LP_I2C_FIFO_LEN - addr_len; // Initially, 1 or 2 fifo slots are taken by the device address
@@ -358,7 +356,7 @@ esp_err_t lp_core_i2c_master_write_read_device(i2c_port_t lp_i2c_num, uint16_t d
         /* Enable LP_I2C_NACK_INT to check for ACK errors */
         intr_mask |= (1 << LP_I2C_NACK_INT_ST_S);
     }
-    i2c_ll_enable_intr_mask(dev, intr_mask);
+    i2c_ll_clear_intr_mask(dev, intr_mask);
 
     /* Execute RSTART command to send the START bit */
     lp_core_i2c_format_cmd(cmd_idx++, I2C_LL_CMD_RESTART, 0, 0, 0, 0);
