@@ -26,13 +26,16 @@ SECTIONS
   {
     ALIGNED_SYMBOL(4, _rtc_text_start)
 
+    HIDDEN(_rtc_code_start = .);
+
     mapping[rtc_text]
 
     *rtc_wake_stub*.*(.literal .text .literal.* .text.*)
 
-    /* Padding for possible CPU prefetch + alignment for PMS split lines */
-    . += _esp_memprot_prefetch_pad_size;
-    . = ALIGN(_esp_memprot_align_size);
+    HIDDEN(_rtc_code_end = .);
+
+    /* Possibly align + 16B for CPU dummy speculative instruction fetch. */
+    . = ((_rtc_code_end - _rtc_code_start) == 0) ? ALIGN(0) : ALIGN(4) + 16;
 
     _rtc_text_end = ABSOLUTE(.);
   } > rtc_iram_seg
