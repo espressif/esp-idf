@@ -22,6 +22,7 @@
 #include "tinyusb.h"
 #include "tusb_msc_storage.h"
 #ifdef CONFIG_EXAMPLE_STORAGE_MEDIA_SDMMC
+#include "sdmmc_cmd.h"
 #include "diskio_impl.h"
 #include "diskio_sdmmc.h"
 #if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO

@@ -1,10 +1,10 @@
 /*-----------------------------------------------------------------------*/
 /* Low level disk I/O module skeleton for FatFs     (C)ChaN, 2016        */
-/* ESP-IDF port Copyright 2016 Espressif Systems (Shanghai) PTE LTD      */
+/* ESP-IDF port Copyright 2016-2025 Espressif Systems (Shanghai) PTE LTD */
 /*-----------------------------------------------------------------------*/
 /* If a working storage control module is available, it should be        */
 /* attached to the FatFs via a glue function rather than modifying it.   */
-/* This is an example of glue functions to attach various existing      */
+/* This is an example of glue functions to attach various existing       */
 /* storage control modules to the FatFs module with a defined API.       */
 /*-----------------------------------------------------------------------*/
 
@@ -19,7 +19,7 @@
 static ff_diskio_impl_t * s_impls[FF_VOLUMES] = { NULL };
 
 #if FF_MULTI_PARTITION		/* Multiple partition configuration */
-const PARTITION VolToPart[FF_VOLUMES] = {
+PARTITION VolToPart[FF_VOLUMES] = {
     {0, 0},    /* Logical drive 0 ==> Physical drive 0, auto detection */
 #if FF_VOLUMES > 1
     {1, 0},    /* Logical drive 1 ==> Physical drive 1, auto detection */
