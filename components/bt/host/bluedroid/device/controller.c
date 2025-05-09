@@ -188,7 +188,7 @@ static void start_up(void)
     // dependent on what we configure from page 0 and host SSP configuration
     controller_param.simple_pairing_supported = HCI_SIMPLE_PAIRING_SUPPORTED(
                                                     controller_param.features_classic[0].as_array) &&
-                                                (bluedriod_config_get()->get_ssp_enabled());
+                                                (bluedroid_config_get()->get_ssp_enabled());
     if (controller_param.simple_pairing_supported) {
         response = AWAIT_COMMAND(controller_param.packet_factory->make_write_simple_pairing_mode(HCI_SP_MODE_ENABLED));
         controller_param.packet_parser->parse_generic_command_complete(response);
