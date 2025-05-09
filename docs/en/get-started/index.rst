@@ -59,6 +59,15 @@ Introduction
     * Multiple peripherals
     * Intended for simple, high-volume IoT applications
 
+.. only:: esp32c5
+
+    * Wi-Fi 6 (2.4 and 5 GHz dual-band)
+    * Bluetooth Low Energy
+    * 802.15.4 Thread/Zigbee
+    * High performance 32-bit RISC-V single-core processor
+    * Multiple peripherals
+    * Built-in security hardware
+
 .. only:: esp32c6
 
     * Wi-Fi 6 (2.4 GHz band)
@@ -157,6 +166,13 @@ If you have one of {IDF_TARGET_NAME} official development boards listed below, y
         :maxdepth: 1
 
         ESP8684-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp8684/esp8684-devkitm-1/index.html>
+
+.. only:: esp32c5
+
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-C5-DevKitC-1 <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32c5/esp32-c5-devkitc-1/index.html>
 
 .. only:: esp32c6
 
