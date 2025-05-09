@@ -322,7 +322,7 @@ esp_err_t esp_bt_gap_set_security_param(esp_bt_sp_param_t param_type,
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (!(bluedriod_config_get()->get_ssp_enabled())) {
+    if (!(bluedroid_config_get()->get_ssp_enabled())) {
         ESP_LOGE(TAG, "%s is not supported when `ssp_en` in `esp_bluedroid_config_t` is disabled!", __func__);
         return ESP_ERR_NOT_SUPPORTED;
     }
@@ -347,7 +347,7 @@ esp_err_t esp_bt_gap_ssp_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint3
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (!(bluedriod_config_get()->get_ssp_enabled())) {
+    if (!(bluedroid_config_get()->get_ssp_enabled())) {
         ESP_LOGE(TAG, "%s is not supported when `ssp_en` in `esp_bluedroid_config_t` is disabled!", __func__);
         return ESP_ERR_NOT_SUPPORTED;
     }
@@ -371,7 +371,7 @@ esp_err_t esp_bt_gap_ssp_confirm_reply(esp_bd_addr_t bd_addr, bool accept)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (!(bluedriod_config_get()->get_ssp_enabled())) {
+    if (!(bluedroid_config_get()->get_ssp_enabled())) {
         ESP_LOGE(TAG, "%s is not supported when `ssp_en` in `esp_bluedroid_config_t` is disabled!", __func__);
         return ESP_ERR_NOT_SUPPORTED;
     }
