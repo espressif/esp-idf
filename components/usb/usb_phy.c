@@ -13,6 +13,7 @@
 #include "esp_private/usb_phy.h"
 #include "esp_private/critical_section.h"
 #include "soc/usb_dwc_periph.h"
+#include "hal/usb_serial_jtag_hal.h"
 #include "hal/usb_wrap_hal.h"
 #include "hal/usb_utmi_hal.h"
 #include "esp_rom_gpio.h"
@@ -347,6 +348,12 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
         usb_wrap_hal_phy_set_external(&phy_context->wrap_hal, (phy_target == USB_PHY_TARGET_EXT));
 #endif
     }
+#if SOC_USB_SERIAL_JTAG_SUPPORTED && USB_SERIAL_JTAG_LL_EXT_PHY_SUPPORTED
+    else if (config->controller == USB_PHY_CTRL_SERIAL_JTAG) {
+        usb_serial_jtag_hal_phy_set_external(NULL, (config->target == USB_PHY_TARGET_EXT));
+        phy_context->otg_mode = USB_OTG_MODE_DEVICE;
+    }
+#endif
 
     // For FSLS PHY that shares pads with GPIO peripheral, we must set drive capability to 3 (40mA)
     if (phy_target == USB_PHY_TARGET_INT) {
