@@ -29,7 +29,7 @@ typedef struct {
 /**
  * @brief TWAI transaction frame param type
  */
-typedef struct twai_frame_t {
+typedef struct {
     twai_frame_header_t header;     /**< message attribute/metadata, exclude data buffer*/
     uint8_t *buffer;                /**< buffer address for tx and rx message data*/
     size_t buffer_len;              /**< buffer length of provided data buffer pointer, in bytes.*/
@@ -57,6 +57,7 @@ typedef struct {
  * @brief TWAI "TX done" event data
  */
 typedef struct {
+    bool is_tx_success;                 /**< Indicate if frame send successful, refer `on_error` callback for fail reason if send failed */
     const twai_frame_t *done_tx_frame;  /**< Pointer to the frame that has been transmitted */
 } twai_tx_done_event_data_t;
 

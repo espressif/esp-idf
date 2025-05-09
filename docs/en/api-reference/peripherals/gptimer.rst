@@ -82,6 +82,7 @@ Here are the other configuration parameters of the :cpp:type:`gptimer_config_t` 
 - :cpp:member:`gptimer_config_t::resolution_hz` sets the resolution of the internal counter. Each tick is equivalent to **1 / resolution_hz** seconds.
 - :cpp:member:`gptimer_config_t::intr_priority` sets the interrupt priority. If set to ``0``, a default priority interrupt will be allocated; otherwise, the specified priority will be used.
 - :cpp:member:`gptimer_config_t::flags` is used to fine-tune some behaviors of the driver, including the following options:
+
     - :cpp:member:`gptimer_config_t::flags::allow_pd` configures whether the driver allows the system to power down the peripheral in sleep mode. Before entering sleep, the system will back up the GPTimer register context, which will be restored when the system wakes up. Note that powering down the peripheral can save power but will consume more memory to save the register context. You need to balance power consumption and memory usage. This configuration option depends on specific hardware features. If enabled on an unsupported chip, you will see an error message like ``not able to power down in light sleep``.
 
 .. note::
