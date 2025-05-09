@@ -199,6 +199,7 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
     ESP_RETURN_ON_FALSE(i2c_slave, ESP_ERR_NO_MEM, TAG, "no memory for i2c slave bus");
 
     ESP_GOTO_ON_ERROR(i2c_acquire_bus_handle(i2c_port_num, &i2c_slave->base, I2C_BUS_MODE_SLAVE), err, TAG, "I2C bus acquire failed");
+    i2c_port_num = i2c_slave->base->port_num;
 
     i2c_hal_context_t *hal = &i2c_slave->base->hal;
     i2c_slave->base->scl_num = slave_config->scl_io_num;
