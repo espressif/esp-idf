@@ -149,6 +149,11 @@ __attribute__((always_inline)) static inline int32_t efuse_ll_get_dbias_vol_gap(
     return EFUSE.rd_mac_sys4.lp_hp_dbias_vol_gap;
 }
 
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_recovery_bootloader_sector(void)
+{
+    return (EFUSE.rd_repeat_data2.recovery_bootloader_flash_sector_hi << 9) | EFUSE.rd_repeat_data4.recovery_bootloader_flash_sector_lo;
+}
+
 /******************* eFuse control functions *************************/
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_read_cmd(void)

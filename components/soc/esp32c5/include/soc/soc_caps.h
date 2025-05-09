@@ -519,13 +519,15 @@
 #define SOC_TWAI_SUPPORT_TIMESTAMP      1
 
 /*-------------------------- eFuse CAPS----------------------------*/
-// #define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 1
-// #define SOC_EFUSE_DIS_PAD_JTAG 1
-// #define SOC_EFUSE_DIS_USB_JTAG 1
-// #define SOC_EFUSE_DIS_DIRECT_BOOT 1
-// #define SOC_EFUSE_SOFT_DIS_JTAG 1
-// #define SOC_EFUSE_DIS_ICACHE 1
+#define SOC_EFUSE_DIS_PAD_JTAG 1
+#define SOC_EFUSE_DIS_USB_JTAG 1
+#define SOC_EFUSE_DIS_DIRECT_BOOT 1
+#define SOC_EFUSE_SOFT_DIS_JTAG 1
+#define SOC_EFUSE_DIS_ICACHE 1
+// ECDSA_P256_KEY
 #define SOC_EFUSE_ECDSA_KEY 1
+#define SOC_EFUSE_ECDSA_KEY_P192 1
+#define SOC_EFUSE_ECDSA_KEY_P384 1
 
 /*-------------------------- Key Manager CAPS----------------------------*/
 #define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY    1 /*!< Key manager responsible to deploy ECDSA key */
@@ -542,7 +544,18 @@
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_256    1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND  1
+
+/*-------------------------- PSRAM Encryption CAPS----------------------------*/
+#define SOC_PSRAM_ENCRYPTION_XTS_AES_128    (1)
+#define SOC_PSRAM_ENCRYPTION_XTS_AES_256    (1)
+
+/*------------------------Bootloader CAPS---------------------------------*/
+/* Support Recovery Bootloader */
+#define SOC_RECOVERY_BOOTLOADER_SUPPORTED             (0)
+/* Support Anti-rollback */
+#define SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED        (0)
 
 /*-------------------------- APM CAPS-----------------------------------------*/
 #define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */

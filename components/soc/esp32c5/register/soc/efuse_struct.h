@@ -434,7 +434,10 @@ typedef union {
          *  Represents the app secure version used by ESP-IDF anti-rollback feature.
          */
         uint32_t secure_version:9;
-        uint32_t reserved_18:7;
+        /** rd_reserve_0_146 : RW; bitpos: [24:18]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_146:7;
         /** secure_boot_disable_fast_wake : RO; bitpos: [25]; default: 0;
          *  Represents whether FAST VERIFY ON WAKE is disabled when Secure Boot is enabled.
          *  1: Disabled
@@ -461,11 +464,14 @@ typedef union {
          *  1: Enabled
          */
         uint32_t xts_dpa_clk_enable:1;
-        uint32_t reserved_30:1;
-        /** ecdsa_p384_enable : RO; bitpos: [31]; default: 0;
-         *  Represents if the chip supports ECDSA P384
+        /** rd_reserve_0_158 : RW; bitpos: [30]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
          */
-        uint32_t ecdsa_p384_enable:1;
+        uint32_t rd_reserve_0_158:1;
+        /** secure_boot_sha384_en : RO; bitpos: [31]; default: 0;
+         *  Represents if the chip supports Secure Boot using SHA-384
+         */
+        uint32_t secure_boot_sha384_en:1;
     };
     uint32_t val;
 } efuse_rd_repeat_data3_reg_t;
@@ -511,7 +517,10 @@ typedef union {
          *  - this feature is disabled. (The low part of the field).
          */
         uint32_t recovery_bootloader_flash_sector_lo:9;
-        uint32_t reserved_23:9;
+        /** rd_reserve_0_183 : RW; bitpos: [31:23]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_183:9;
     };
     uint32_t val;
 } efuse_rd_repeat_data4_reg_t;
@@ -663,10 +672,18 @@ typedef union {
          *  DBIAS gap between LP and HP
          */
         uint32_t lp_hp_dbias_vol_gap:5;
-        /** reserved_1_134 : R; bitpos: [31:6]; default: 0;
+        /** ref_curr_code : R; bitpos: [9:6]; default: 0;
+         *  REF PADC Calibration Curr
+         */
+        uint32_t ref_curr_code:4;
+        /** res_tune_code : R; bitpos: [14:10]; default: 0;
+         *  RES PADC Calibration Tune
+         */
+        uint32_t res_tune_code:5;
+        /** reserved_1_143 : R; bitpos: [31:15]; default: 0;
          *  reserved
          */
-        uint32_t reserved_1_134:26;
+        uint32_t reserved_1_143:17;
     };
     uint32_t val;
 } efuse_rd_mac_sys4_reg_t;
@@ -854,19 +871,119 @@ typedef union {
     uint32_t val;
 } efuse_rd_sys_part1_data7_reg_t;
 
+
 /** Group: block3 registers */
-/** Type of rd_usr_datan register
- *  Represents rd_usr_datan
+/** Type of rd_usr_data0 register
+ *  Represents rd_usr_data0
  */
 typedef union {
     struct {
-        /** usr_datan : RO; bitpos: [31:0]; default: 0;
+        /** usr_data0 : RO; bitpos: [31:0]; default: 0;
          *  Represents the zeroth 32-bit of block3 (user).
          */
-        uint32_t usr_datan:32;
+        uint32_t usr_data0:32;
     };
     uint32_t val;
-} efuse_rd_usr_datan_reg_t;
+} efuse_rd_usr_data0_reg_t;
+
+/** Type of rd_usr_data1 register
+ *  Represents rd_usr_data1
+ */
+typedef union {
+    struct {
+        /** usr_data1 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data1:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data1_reg_t;
+
+/** Type of rd_usr_data2 register
+ *  Represents rd_usr_data2
+ */
+typedef union {
+    struct {
+        /** usr_data2 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data2:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data2_reg_t;
+
+/** Type of rd_usr_data3 register
+ *  Represents rd_usr_data3
+ */
+typedef union {
+    struct {
+        /** usr_data3 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data3:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data3_reg_t;
+
+/** Type of rd_usr_data4 register
+ *  Represents rd_usr_data4
+ */
+typedef union {
+    struct {
+        /** usr_data4 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data4:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data4_reg_t;
+
+/** Type of rd_usr_data5 register
+ *  Represents rd_usr_data5
+ */
+typedef union {
+    struct {
+        /** usr_data5 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data5:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data5_reg_t;
+
+/** Type of rd_usr_data6 register
+ *  Represents rd_usr_data6
+ */
+typedef union {
+    struct {
+        /** reserved_3_192 : R; bitpos: [7:0]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_3_192:8;
+        /** custom_mac : R; bitpos: [31:8]; default: 0;
+         *  Custom MAC
+         */
+        uint32_t custom_mac:24;
+    };
+    uint32_t val;
+} efuse_rd_usr_data6_reg_t;
+
+/** Type of rd_usr_data7 register
+ *  Represents rd_usr_data7
+ */
+typedef union {
+    struct {
+        /** custom_mac_1 : R; bitpos: [23:0]; default: 0;
+         *  Custom MAC
+         */
+        uint32_t custom_mac_1:24;
+        /** reserved_3_248 : R; bitpos: [31:24]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_3_248:8;
+    };
+    uint32_t val;
+} efuse_rd_usr_data7_reg_t;
 
 
 /** Group: block4 registers */
@@ -3781,7 +3898,14 @@ typedef struct {
     volatile efuse_rd_sys_part1_data5_reg_t rd_sys_part1_data5;
     volatile efuse_rd_sys_part1_data6_reg_t rd_sys_part1_data6;
     volatile efuse_rd_sys_part1_data7_reg_t rd_sys_part1_data7;
-    volatile efuse_rd_usr_datan_reg_t rd_usr_datan[8];
+    volatile efuse_rd_usr_data0_reg_t rd_usr_data0;
+    volatile efuse_rd_usr_data1_reg_t rd_usr_data1;
+    volatile efuse_rd_usr_data2_reg_t rd_usr_data2;
+    volatile efuse_rd_usr_data3_reg_t rd_usr_data3;
+    volatile efuse_rd_usr_data4_reg_t rd_usr_data4;
+    volatile efuse_rd_usr_data5_reg_t rd_usr_data5;
+    volatile efuse_rd_usr_data6_reg_t rd_usr_data6;
+    volatile efuse_rd_usr_data7_reg_t rd_usr_data7;
     volatile efuse_rd_key0_datan_reg_t rd_key0_datan[8];
     volatile efuse_rd_key1_datan_reg_t rd_key1_datan[8];
     volatile efuse_rd_key2_datan_reg_t rd_key2_datan[8];
