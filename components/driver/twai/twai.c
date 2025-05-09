@@ -247,10 +247,13 @@ static void twai_intr_handler_main(void *arg)
 
     //Handle events that only require alerting (i.e. no handler)
     if (events & TWAI_HAL_EVENT_BUS_OFF) {
+        twai_ll_set_mode(p_twai_obj->hal->dev, true, false, false);  //Freeze TEC/REC by entering LOM
         p_twai_obj->state = TWAI_STATE_BUS_OFF;
         twai_alert_handler(p_twai_obj, TWAI_ALERT_BUS_OFF, &alert_req);
     }
     if (events & TWAI_HAL_EVENT_BUS_RECOV_CPLT) {
+        //Back to STOPPED state after recovered, for cautious engineering strategy
+        twai_ll_enter_reset_mode(p_twai_obj->hal->dev);
         p_twai_obj->state = TWAI_STATE_STOPPED;
         twai_alert_handler(p_twai_obj, TWAI_ALERT_BUS_RECOVERED, &alert_req);
     }

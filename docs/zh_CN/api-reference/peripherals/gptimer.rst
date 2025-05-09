@@ -82,6 +82,7 @@
 - :cpp:member:`gptimer_config_t::resolution_hz` 设置内部计数器的分辨率。计数器每滴答一次相当于 **1 / resolution_hz** 秒。
 - :cpp:member:`gptimer_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`gptimer_config_t::flags` 通常用来微调驱动的一些行为，包括以下选项：
+
     - :cpp:member:`gptimer_config_t::flags::allow_pd` 配置驱动程序是否允许系统在睡眠模式下关闭外设电源。在进入睡眠之前，系统将备份 GPTimer 寄存器上下文，当系统从睡眠唤醒时时，这些上下文将被恢复。请注意，关闭外设可以节省功耗，但会消耗更多内存来保存寄存器上下文。你需要在功耗和内存消耗之间做权衡。此配置选项依赖于特定的硬件功能，如果在不支持的芯片上启用它，你将看到类似 ``not able to power down in light sleep`` 的错误消息。
 
 .. note::
