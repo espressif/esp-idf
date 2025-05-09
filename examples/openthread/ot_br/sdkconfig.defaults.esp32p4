@@ -1,0 +1,6 @@
+# Enable BR auto start for Ethernet builds
+CONFIG_OPENTHREAD_BR_AUTO_START=y
+
+# Enable PPP support as a workaround to ensure LWIP thread-lib compatibility for Ethernet builds
+CONFIG_LWIP_PPP_SUPPORT=y
+CONFIG_LWIP_PPP_SERVER_SUPPORT=y
