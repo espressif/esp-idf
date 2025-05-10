@@ -994,7 +994,7 @@ nimble_hid_gap_event(struct ble_gap_event *event, void *arg)
 static esp_err_t start_nimble_scan(uint32_t seconds)
 {
     uint8_t own_addr_type;
-    struct ble_gap_disc_params disc_params;
+    struct ble_gap_disc_params disc_params = {0};
     int rc;
 
     /* Figure out address to use while advertising (no privacy for now) */
