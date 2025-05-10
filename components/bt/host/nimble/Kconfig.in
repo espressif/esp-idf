@@ -682,46 +682,45 @@ if BT_NIMBLE_50_FEATURE_SUPPORT
         default n
         help
             Enable support for Connectionless and Connection Oriented Direction Finding
-
-    menuconfig BT_NIMBLE_GATT_CACHING
-        bool "Enable GATT caching"
-        depends on BT_NIMBLE_ENABLED && BT_NIMBLE_50_FEATURE_SUPPORT
-        select BT_NIMBLE_DYNAMIC_SERVICE
-        help
-                Enable GATT caching
-    config BT_NIMBLE_GATT_CACHING_MAX_CONNS
-        int "Maximum connections to be cached"
-        depends on BT_NIMBLE_GATT_CACHING
-        default 1
-        help
-            Set this option to set the upper limit on number of connections to be cached.
-    config BT_NIMBLE_GATT_CACHING_MAX_SVCS
-        int "Maximum number of services per connection"
-        depends on BT_NIMBLE_GATT_CACHING
-        default 64
-        help
-            Set this option to set the upper limit on number of services per connection to be cached.
-    config BT_NIMBLE_GATT_CACHING_MAX_CHRS
-        int "Maximum number of characteristics per connection"
-        depends on BT_NIMBLE_GATT_CACHING
-        default 64
-        help
-            Set this option to set the upper limit on number of characteristics per connection to be cached.
-    config BT_NIMBLE_GATT_CACHING_MAX_DSCS
-        int "Maximum number of descriptors per connection"
-        depends on BT_NIMBLE_GATT_CACHING
-        default 64
-        help
-            Set this option to set the upper limit on number of descriptors per connection to be cached.
-    config BT_NIMBLE_GATT_CACHING_DISABLE_AUTO
-        bool "Do not start discovery procedure automatically upon receiving Out of Sync"
-        depends on BT_NIMBLE_GATT_CACHING
-        default n
-        help
-            When client receives ATT out-of-sync error message, it will not automatically start the discovery procedure
-            to correct the invalid cache.
 endif
 
+menuconfig BT_NIMBLE_GATT_CACHING
+    bool "Enable GATT caching"
+    depends on BT_NIMBLE_ENABLED
+    select BT_NIMBLE_DYNAMIC_SERVICE
+    help
+        Enable GATT caching
+config BT_NIMBLE_GATT_CACHING_MAX_CONNS
+    int "Maximum connections to be cached"
+    depends on BT_NIMBLE_GATT_CACHING
+    default BT_NIMBLE_MAX_CONNECTIONS
+    help
+        Set this option to set the upper limit on number of connections to be cached.
+config BT_NIMBLE_GATT_CACHING_MAX_SVCS
+    int "Maximum number of services per connection"
+    depends on BT_NIMBLE_GATT_CACHING
+    default 64
+    help
+        Set this option to set the upper limit on number of services per connection to be cached.
+config BT_NIMBLE_GATT_CACHING_MAX_CHRS
+    int "Maximum number of characteristics per connection"
+    depends on BT_NIMBLE_GATT_CACHING
+    default 64
+    help
+        Set this option to set the upper limit on number of characteristics per connection to be cached.
+config BT_NIMBLE_GATT_CACHING_MAX_DSCS
+    int "Maximum number of descriptors per connection"
+    depends on BT_NIMBLE_GATT_CACHING
+    default 64
+    help
+        Set this option to set the upper limit on number of descriptors per connection to be cached.
+config BT_NIMBLE_GATT_CACHING_DISABLE_AUTO
+    bool "Do not start discovery procedure automatically upon receiving Out of Sync"
+    depends on BT_NIMBLE_GATT_CACHING
+    default n
+    help
+        When client receives ATT out-of-sync error message, it will not automatically start the discovery procedure
+        to correct the invalid cache.
 
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"
@@ -925,6 +924,12 @@ menu "GAP Service"
         default n
         help
             Enable the LE GATT Security Level Characteristic
+
+    config BT_NIMBLE_SVC_GAP_RPA_ONLY
+        bool "Resolvable Private Address Only characteristic"
+        default n
+        help
+            Enable the Resolvable Private Address Only characteristic
 
 endmenu
 
