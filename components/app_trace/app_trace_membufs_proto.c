@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -148,6 +148,18 @@ static esp_err_t esp_apptrace_membufs_swap_waitus(esp_apptrace_membufs_proto_dat
         if (res != ESP_OK) {
             break;
         }
+#if CONFIG_IDF_TARGET_ESP32S3
+        /*
+        * ESP32S3 has a serious data corruption issue with the transferred data to host.
+        * This delay helps reduce the failure rate by temporarily reducing heavy memory writes
+        * from RTOS-level tracing and giving OpenOCD more time to read trace memory before
+        * the current thread continues execution. While this doesn't completely prevent
+        * memory access from other threads/cores/ISRs, it has shown to significantly improve
+        * reliability when combined with CRC checks in OpenOCD. In practice, this reduces the
+        * number of retries needed to read an entire block without corruption.
+        */
+        esp_rom_delay_us(100);
+#endif
     }
     return res;
 }
@@ -339,7 +351,7 @@ uint8_t *esp_apptrace_membufs_up_buffer_get(esp_apptrace_membufs_proto_data_t *p
 esp_err_t esp_apptrace_membufs_up_buffer_put(esp_apptrace_membufs_proto_data_t *proto, uint8_t *ptr, esp_apptrace_tmo_t *tmo)
 {
     esp_apptrace_membufs_pkt_end(ptr);
-    // TODO: mark block as busy in order not to re-use it for other tracing calls until it is completely written
+    // TODO: mark block as busy in order not to reuse it for other tracing calls until it is completely written
     // TODO: avoid potential situation when all memory is consumed by low prio tasks which can not complete writing due to
     // higher prio tasks and the latter can not allocate buffers at all
     // this is abnormal situation can be detected on host which will receive only uncompleted buffers
