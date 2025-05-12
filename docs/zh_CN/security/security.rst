@@ -1,7 +1,7 @@
 安全概述
 ========
 
-{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA 或 ECDSA", esp32p4="RSA 或 ECDSA", esp32c5="RSA 或 ECDSA"}
+{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA 或 ECDSA", esp32p4="RSA 或 ECDSA", esp32c5="RSA 或 ECDSA", esp32c61="ECDSA", esp32h21="RSA 或 ECDSA"}
 
 {IDF_TARGET_SIG_PERI:default="DS", esp32h2="DS 或 ECDSA", esp32p4="DS 或 ECDSA", esp32c5="DS 或 ECDSA", esp32c61="ECDSA"}
 
