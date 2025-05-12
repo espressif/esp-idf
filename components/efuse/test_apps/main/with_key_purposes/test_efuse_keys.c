@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -93,6 +93,20 @@ static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key)
 #if SOC_EFUSE_ECDSA_KEY
             purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
 #endif
+#if SOC_EFUSE_ECDSA_KEY_P192
+            purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P192 ||
+#endif
+#if SOC_EFUSE_ECDSA_KEY_P384
+            purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L ||
+            purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H ||
+#endif
+#if SOC_PSRAM_ENCRYPTION_XTS_AES_128
+            purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_PSRAM_KEY ||
+#endif
+#if SOC_PSRAM_ENCRYPTION_XTS_AES_256
+            purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_1 ||
+            purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_2 ||
+#endif
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE ||
@@ -111,7 +125,8 @@ static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key)
 
     TEST_ASSERT_EQUAL(purpose, esp_efuse_get_key_purpose(num_key));
     esp_efuse_purpose_t purpose2 = 0;
-    TEST_ESP_OK(esp_efuse_read_field_blob(esp_efuse_get_purpose_field(num_key), &purpose2, 4));
+    const esp_efuse_desc_t** key_purpose = esp_efuse_get_purpose_field(num_key);
+    TEST_ESP_OK(esp_efuse_read_field_blob(key_purpose, &purpose2, key_purpose[0]->bit_count));
     TEST_ASSERT_EQUAL(purpose, purpose2);
     TEST_ASSERT_TRUE(esp_efuse_get_keypurpose_dis_write(num_key));
     return ESP_OK;
