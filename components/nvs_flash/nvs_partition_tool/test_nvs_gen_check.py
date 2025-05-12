@@ -27,7 +27,7 @@ from nvs_parser import NVS_Entry
 from nvs_parser import NVS_Partition
 from packaging.version import Version
 
-NVS_PART_GEN_VERSION_SKIP = '0.1.8'
+NVS_PART_GEN_VERSION_SKIP = '0.1.9'
 
 
 # Temporary workaround for pytest skipping tests based on the version of the esp-idf-nvs-partition-gen package
@@ -49,7 +49,7 @@ class SilentLogger(NVS_Logger):
 
 logger = nvs_log  # SilentLogger()
 
-LOREM_STRING = '''Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+LOREM_STRING = """Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 Nullam eget orci fringilla, cursus nisi sit amet, hendrerit tortor.
 Vivamus lectus dolor, rhoncus eget metus id, convallis placerat quam.
 Nulla facilisi.
@@ -82,7 +82,7 @@ Pellentesque sed finibus sem, eu lacinia tellus.
 Vivamus imperdiet non augue in tincidunt.
 Sed aliquet tincidunt dignissim.
 Name vehicula leo eu dolor pellentesque, ultrices tempus ex hendrerit.
-'''
+"""
 
 
 def get_entry_type_bin(entry_type_str: str) -> Optional[int]:
@@ -93,7 +93,9 @@ def get_entry_type_bin(entry_type_str: str) -> Optional[int]:
     return entry_type_bin
 
 
-def create_entry_data_bytearray(namespace_index: int, entry_type: int, span: int, chunk_index: int, key: str, data: Any) -> bytearray:
+def create_entry_data_bytearray(
+    namespace_index: int, entry_type: int, span: int, chunk_index: int, key: str, data: Any
+) -> bytearray:
     key_bytearray = bytearray(key, 'ascii')
     key_encoded = (key_bytearray + bytearray({0x00}) * (16 - len(key_bytearray)))[:16]  # Pad key with null bytes
     key_encoded[15] = 0x00  # Null-terminate the key
@@ -131,6 +133,7 @@ def generate_nvs() -> Callable:
         nvs_parsed = NVS_Partition('test', bytearray(nvs_file.read()))
         nvs_file.close()
         return nvs_parsed
+
     return _execute_nvs_setup
 
 
@@ -143,7 +146,7 @@ def setup_ok_primitive(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NV
         version=nvs_partition_gen.Page.VERSION2,
         is_encrypt=False,
         key=None,
-        read_only=read_only
+        read_only=read_only,
     )
 
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
@@ -162,17 +165,19 @@ def setup_ok_variable_len(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) ->
         version=nvs_partition_gen.Page.VERSION2,
         is_encrypt=False,
         key=None,
-        read_only=read_only
+        read_only=read_only,
     )
 
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
     nvs_partition_gen.write_entry(nvs_obj, 'short_string_key', 'data', 'string', 'Hello world!')
-    nvs_partition_gen.write_entry(nvs_obj, 'blob_key', 'file', 'binary',
-                                  '../nvs_partition_generator/testdata/sample_blob.bin')
+    nvs_partition_gen.write_entry(
+        nvs_obj, 'blob_key', 'file', 'binary', '../nvs_partition_generator/testdata/sample_blob.bin'
+    )
     nvs_partition_gen.write_entry(nvs_obj, 'lorem_string_key', 'data', 'string', LOREM_STRING * 2)
     nvs_partition_gen.write_entry(nvs_obj, 'uniq_string_key', 'data', 'string', 'I am unique!')
-    nvs_partition_gen.write_entry(nvs_obj, 'multi_blob_key', 'file', 'binary',
-                                  '../nvs_partition_generator/testdata/sample_multipage_blob.bin')
+    nvs_partition_gen.write_entry(
+        nvs_obj, 'multi_blob_key', 'file', 'binary', '../nvs_partition_generator/testdata/sample_multipage_blob.bin'
+    )
 
     return nvs_obj
 
@@ -185,7 +190,7 @@ def setup_ok_mixed(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
         version=nvs_partition_gen.Page.VERSION2,
         is_encrypt=False,
         key=None,
-        read_only=read_only
+        read_only=read_only,
     )
 
     prim_types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32']
@@ -193,8 +198,9 @@ def setup_ok_mixed(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
     for i in range(20):
         nvs_partition_gen.write_entry(nvs_obj, f'test_{i}', 'data', prim_types[i % len(prim_types)], str(i))
-    nvs_partition_gen.write_entry(nvs_obj, 'blob_key', 'file', 'binary',
-                                  '../nvs_partition_generator/testdata/sample_singlepage_blob.bin')
+    nvs_partition_gen.write_entry(
+        nvs_obj, 'blob_key', 'file', 'binary', '../nvs_partition_generator/testdata/sample_singlepage_blob.bin'
+    )
 
     nvs_partition_gen.write_entry(nvs_obj, 'etc', 'namespace', '', '')
     for i in range(20):
@@ -207,8 +213,9 @@ def setup_ok_mixed(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
         nvs_partition_gen.write_entry(nvs_obj, f'test_{i}', 'data', prim_types[i % len(prim_types)], str(i))
 
     nvs_partition_gen.write_entry(nvs_obj, 'uniq_string_key', 'data', 'string', 'I am unique!')
-    nvs_partition_gen.write_entry(nvs_obj, 'blob_key', 'file', 'binary',
-                                  '../nvs_partition_generator/testdata/sample_multipage_blob.bin')
+    nvs_partition_gen.write_entry(
+        nvs_obj, 'blob_key', 'file', 'binary', '../nvs_partition_generator/testdata/sample_multipage_blob.bin'
+    )
 
     return nvs_obj
 
@@ -221,7 +228,7 @@ def setup_bad_mixed_same_key_different_page(nvs_file: Optional[Union[BytesIO, Bu
         version=nvs_partition_gen.Page.VERSION2,
         is_encrypt=False,
         key=None,
-        read_only=read_only
+        read_only=read_only,
     )
 
     prim_types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32']
@@ -229,8 +236,9 @@ def setup_bad_mixed_same_key_different_page(nvs_file: Optional[Union[BytesIO, Bu
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
     for i in range(20):
         nvs_partition_gen.write_entry(nvs_obj, f'test_{i}', 'data', prim_types[i % len(prim_types)], str(i))
-    nvs_partition_gen.write_entry(nvs_obj, 'blob_key', 'file', 'binary',
-                                  '../nvs_partition_generator/testdata/sample_singlepage_blob.bin')
+    nvs_partition_gen.write_entry(
+        nvs_obj, 'blob_key', 'file', 'binary', '../nvs_partition_generator/testdata/sample_singlepage_blob.bin'
+    )
 
     nvs_partition_gen.write_entry(nvs_obj, 'etc', 'namespace', '', '')
     for i in range(20):
@@ -239,22 +247,33 @@ def setup_bad_mixed_same_key_different_page(nvs_file: Optional[Union[BytesIO, Bu
     nvs_partition_gen.write_entry(nvs_obj, 'lorem_string_key', 'data', 'string', LOREM_STRING * 2)
 
     nvs_partition_gen.write_entry(nvs_obj, 'uniq_string_key', 'data', 'string', 'I am unique!')
-    nvs_partition_gen.write_entry(nvs_obj, 'blob_key', 'file', 'binary',
-                                  '../nvs_partition_generator/testdata/sample_multipage_blob.bin')
+    nvs_partition_gen.write_entry(
+        nvs_obj, 'blob_key', 'file', 'binary', '../nvs_partition_generator/testdata/sample_multipage_blob.bin'
+    )
 
     # Should be on a different page already - start creating duplicates
 
     for i in range(6):
         data_type = prim_types[i % len(prim_types)]
-        nvs_partition_gen.write_entry(nvs_obj, f'test_{i}', 'data', data_type, str(i))  # Conflicting keys under "abcd" namespace - 6 duplicates
-    nvs_partition_gen.write_entry(nvs_obj, 'lorem_string_key', 'data', 'string', 'abc')  # Conflicting key for string - 7th duplicate
+        nvs_partition_gen.write_entry(
+            nvs_obj, f'test_{i}', 'data', data_type, str(i)
+        )  # Conflicting keys under "abcd" namespace - 6 duplicates
+    nvs_partition_gen.write_entry(
+        nvs_obj, 'lorem_string_key', 'data', 'string', 'abc'
+    )  # Conflicting key for string - 7th duplicate
 
     # Create new duplicates of storage namespace with an unsafe version of write_namespace function
-    nvs_obj.write_namespace_unsafe('storage')  # Conflicting namespace - 8th duplicate (the function is only for testing)
+    nvs_obj.write_namespace_unsafe(
+        'storage'
+    )  # Conflicting namespace - 8th duplicate (the function is only for testing)
 
     nvs_partition_gen.write_entry(nvs_obj, 'storage2', 'namespace', '', '')  # New namespace, ignored
-    nvs_partition_gen.write_entry(nvs_obj, 'lorem_string_key', 'data', 'string', 'abc')  # Should be ignored as is under different "storage2" namespace
-    nvs_partition_gen.write_entry(nvs_obj, 'lorem_string', 'data', 'string', 'abc')  # 3 conflicting keys under "storage2" namespace - 9th duplicate
+    nvs_partition_gen.write_entry(
+        nvs_obj, 'lorem_string_key', 'data', 'string', 'abc'
+    )  # Should be ignored as is under different "storage2" namespace
+    nvs_partition_gen.write_entry(
+        nvs_obj, 'lorem_string', 'data', 'string', 'abc'
+    )  # 3 conflicting keys under "storage2" namespace - 9th duplicate
     nvs_partition_gen.write_entry(nvs_obj, 'lorem_string', 'data', 'string', 'def')
     nvs_partition_gen.write_entry(nvs_obj, 'lorem_string', 'data', 'string', '123')
 
@@ -273,7 +292,7 @@ def setup_bad_same_key_primitive(nvs_file: Optional[Union[BytesIO, BufferedRando
         version=nvs_partition_gen.Page.VERSION2,
         is_encrypt=False,
         key=None,
-        read_only=read_only
+        read_only=read_only,
     )
 
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
@@ -295,7 +314,7 @@ def setup_bad_same_key_variable_len(nvs_file: Optional[Union[BytesIO, BufferedRa
         version=nvs_partition_gen.Page.VERSION2,
         is_encrypt=False,
         key=None,
-        read_only=read_only
+        read_only=read_only,
     )
 
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
@@ -314,16 +333,19 @@ def setup_bad_same_key_blob_index(nvs_file: Optional[Union[BytesIO, BufferedRand
         version=nvs_partition_gen.Page.VERSION2,
         is_encrypt=False,
         key=None,
-        read_only=read_only
+        read_only=read_only,
     )
 
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
-    nvs_partition_gen.write_entry(nvs_obj, 'blob_key', 'file', 'binary',
-                                  '../nvs_partition_generator/testdata/sample_multipage_blob.bin')
-    nvs_partition_gen.write_entry(nvs_obj, 'blob_key_2', 'file', 'binary',
-                                  '../nvs_partition_generator/testdata/sample_multipage_blob.bin')
-    nvs_partition_gen.write_entry(nvs_obj, 'blob_key', 'file', 'binary',
-                                  '../nvs_partition_generator/testdata/sample_multipage_blob.bin')  # Duplicate key
+    nvs_partition_gen.write_entry(
+        nvs_obj, 'blob_key', 'file', 'binary', '../nvs_partition_generator/testdata/sample_multipage_blob.bin'
+    )
+    nvs_partition_gen.write_entry(
+        nvs_obj, 'blob_key_2', 'file', 'binary', '../nvs_partition_generator/testdata/sample_multipage_blob.bin'
+    )
+    nvs_partition_gen.write_entry(
+        nvs_obj, 'blob_key', 'file', 'binary', '../nvs_partition_generator/testdata/sample_multipage_blob.bin'
+    )  # Duplicate key
 
     return nvs_obj
 
@@ -336,7 +358,7 @@ def setup_read_only(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
         version=nvs_partition_gen.Page.VERSION2,
         is_encrypt=False,
         key=None,
-        read_only=read_only
+        read_only=read_only,
     )
 
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
@@ -356,17 +378,35 @@ def setup_minimal_json(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NV
         version=nvs_partition_gen.Page.VERSION2,
         is_encrypt=False,
         key=None,
-        read_only=read_only
+        read_only=read_only,
     )
 
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
     nvs_partition_gen.write_entry(nvs_obj, 'int32_test', 'data', 'i32', str(-42))
     nvs_partition_gen.write_entry(nvs_obj, 'uint32_test', 'data', 'u32', str(96))
     nvs_partition_gen.write_entry(nvs_obj, 'int8_test', 'data', 'i8', str(100))
-    nvs_partition_gen.write_entry(nvs_obj, 'blob_key', 'file', 'binary',
-                                  '../nvs_partition_generator/testdata/sample_multipage_blob.bin')
+    nvs_partition_gen.write_entry(
+        nvs_obj, 'blob_key', 'file', 'binary', '../nvs_partition_generator/testdata/sample_multipage_blob.bin'
+    )
     nvs_partition_gen.write_entry(nvs_obj, 'short_str_key', 'data', 'string', 'Another string data')
     nvs_partition_gen.write_entry(nvs_obj, 'long_str_key', 'data', 'string', LOREM_STRING)
+
+    return nvs_obj
+
+
+def setup_ok_non_ascii_string(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
+    size_fixed, read_only = nvs_partition_gen.check_size(str(0x4000))
+    nvs_obj = nvs_partition_gen.nvs_open(
+        result_obj=nvs_file,
+        input_size=size_fixed,
+        version=nvs_partition_gen.Page.VERSION2,
+        is_encrypt=False,
+        key=None,
+        read_only=read_only,
+    )
+
+    nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
+    nvs_partition_gen.write_entry(nvs_obj, 'string_key', 'data', 'string', 'ÄÄÄÄ')
 
     return nvs_obj
 
@@ -453,7 +493,9 @@ def test_check_duplicates_bad_same_key_different_pages(generate_nvs: Callable, s
 def test_check_duplicates_bad_same_key_blob_index(generate_nvs: Callable, setup_func: Callable) -> None:
     nvs = generate_nvs(setup_func)
     duplicates = prepare_duplicate_list(nvs)
-    assert len(duplicates) == 1  # Only one duplicate key list - blob_index and blob_data share the same key (which is OK),
+    assert (
+        len(duplicates) == 1
+    )  # Only one duplicate key list - blob_index and blob_data share the same key (which is OK),
     # however there are 2 duplicates of each blob_index and blob_data
     assert len(list(duplicates.values())[0]) == 6  # 6 entries with the blob_key (2x blob_index, 4x blob_data)
     nvs_check.integrity_check(nvs, logger)
@@ -513,3 +555,20 @@ def test_print_minimal_json(generate_nvs: Callable, setup_func: Callable, capsys
     assert captured.out.count('int32_test') == 2  # 2 entries for int32_test
     assert captured.out.count('uint32_test') == 1
     assert captured.out.count('int8_test') == 1
+
+
+@pytest.mark.parametrize('setup_func', [setup_ok_non_ascii_string])
+def test_check_non_ascii_string(generate_nvs: Callable, setup_func: Callable) -> None:
+    nvs = generate_nvs(setup_func)
+    assert nvs.raw_data is not None
+    assert nvs_check.check_partition_size(nvs, logger, read_only=True)
+    nvs_check.integrity_check(nvs, logger)
+
+    non_ascii_string_entry = nvs.pages[0].entries[1]  # entries[0] is the namespace entry
+    assert non_ascii_string_entry.key == 'string_key'
+
+    assert non_ascii_string_entry.metadata['crc']['original'] == non_ascii_string_entry.metadata['crc']['computed']
+    assert (
+        non_ascii_string_entry.metadata['crc']['data_original']
+        == non_ascii_string_entry.metadata['crc']['data_computed']
+    )
