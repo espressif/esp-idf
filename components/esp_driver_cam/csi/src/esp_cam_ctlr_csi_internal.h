@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,10 @@
 #include "hal/mipi_csi_types.h"
 #include "soc/soc_caps.h"
 #include "esp_private/dw_gdma.h"
+
+#if CONFIG_PM_ENABLE
+#include "esp_pm.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,6 +66,9 @@ struct csi_controller_t {
     void                        *cbs_user_data;     //callback userdata
     dw_gdma_channel_handle_t    dma_chan;           //dwgdma channel handle
     size_t                      csi_transfer_size;  //csi transfer size for dwgdma
+#if CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t        pm_lock;            //Power management lock
+#endif
     esp_cam_ctlr_t base;
 };
 
