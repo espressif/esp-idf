@@ -6,13 +6,293 @@
 #
 # Warnings in this file must be in the same overall order as the log file.
 #
-idf-component-manager.rst: WARNING: Badly formated string substitution: {IDF_TARGET}
+esp_ble_mesh_defs.inc:line: WARNING: Invalid C++ declaration: Expected identifier in nested name. [error at 0]
+  
+  ^
+esp_ble_mesh_defs.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 78]
+    union esp_ble_mesh_prov_cb_param_t::ble_mesh_provisioner_prov_output_evt_param
+    ------------------------------------------------------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 78]
+    union esp_ble_mesh_prov_cb_param_t::ble_mesh_provisioner_prov_output_evt_param
+    ------------------------------------------------------------------------------^
+
 esp_ble_mesh_defs.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp-ble-mesh:line.
 Declaration is '.. cpp:member:: uint16_t model_id'.
+esp_ble_mesh_defs.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 24]
+    union esp_ble_mesh_model
+    ------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 24]
+    union esp_ble_mesh_model
+    ------------------------^
+
+esp_ble_mesh_defs.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 34]
+    union esp_ble_mesh_device_delete_t
+    ----------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 34]
+    union esp_ble_mesh_device_delete_t
+    ----------------------------------^
+
+esp_ble_mesh_defs.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 35]
+    union esp_ble_mesh_prov_data_info_t
+    -----------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 35]
+    union esp_ble_mesh_prov_data_info_t
+    -----------------------------------^
+
+esp_ble_mesh_df_model_api.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 41]
+    union esp_ble_mesh_forwarding_table_add_t
+    -----------------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 41]
+    union esp_ble_mesh_forwarding_table_add_t
+    -----------------------------------------^
+
+esp_ble_mesh_df_model_api.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 39]
+    union esp_ble_mesh_df_client_cb_param_t
+    ---------------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 39]
+    union esp_ble_mesh_df_client_cb_param_t
+    ---------------------------------------^
+
+esp_ble_mesh_brc_model_api.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_brc_client_cb_param_t
+    ----------------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_brc_client_cb_param_t
+    ----------------------------------------^
+
+esp_ble_mesh_prb_model_api.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_prb_client_cb_param_t
+    ----------------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_prb_client_cb_param_t
+    ----------------------------------------^
+
+esp_ble_mesh_odp_model_api.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_odp_client_cb_param_t
+    ----------------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_odp_client_cb_param_t
+    ----------------------------------------^
+
+esp_ble_mesh_sar_model_api.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_sar_client_cb_param_t
+    ----------------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_sar_client_cb_param_t
+    ----------------------------------------^
+
+esp_ble_mesh_srpl_model_api.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 41]
+    union esp_ble_mesh_srpl_client_cb_param_t
+    -----------------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 41]
+    union esp_ble_mesh_srpl_client_cb_param_t
+    -----------------------------------------^
+
+esp_ble_mesh_agg_model_api.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_agg_client_cb_param_t
+    ----------------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_agg_client_cb_param_t
+    ----------------------------------------^
+
+esp_ble_mesh_agg_model_api.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_agg_server_cb_param_t
+    ----------------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_agg_server_cb_param_t
+    ----------------------------------------^
+
+esp_ble_mesh_lcd_model_api.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_lcd_client_cb_param_t
+    ----------------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_lcd_client_cb_param_t
+    ----------------------------------------^
+
 esp_ble_mesh_cm_data_api.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp-ble-mesh:line.
 Declaration is '.. cpp:member:: int8_t element_offset'.
-esp_ble_mesh_cm_data_api.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp-ble-mesh:line.
-Declaration is '.. cpp:member:: int8_t model_item_idx'.
+esp_ble_mesh_cm_data_api.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_extended_model_item_t
+    ----------------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 40]
+    union esp_ble_mesh_extended_model_item_t
+    ----------------------------------------^
+
+esp_ble_mesh_cm_data_api.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 34]
+    union esp_ble_mesh_metadata_item_t
+    ----------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 34]
+    union esp_ble_mesh_metadata_item_t
+    ----------------------------------^
+
+ecdsa_alt.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 25]
+    union esp_ecdsa_pk_conf_t
+    -------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 25]
+    union esp_ecdsa_pk_conf_t
+    -------------------------^
+
+esp_cam_ctlr_csi.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 32]
+    struct esp_cam_ctlr_csi_config_t
+    --------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 32]
+    struct esp_cam_ctlr_csi_config_t
+    --------------------------------^
+
+isp_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 32]
+    struct isp_demosaic_grad_ratio_t
+    --------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 32]
+    struct isp_demosaic_grad_ratio_t
+    --------------------------------^
+
+isp_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 33]
+    struct isp_sharpen_h_freq_coeff_t
+    ---------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 33]
+    struct isp_sharpen_h_freq_coeff_t
+    ---------------------------------^
+
+isp_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 31]
+    struct isp_sharpen_m_freq_coeff
+    -------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 31]
+    struct isp_sharpen_m_freq_coeff
+    -------------------------------^
+
+isp_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 24]
+    struct isp_hist_weight_t
+    ------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 24]
+    struct isp_hist_weight_t
+    ------------------------^
+
+isp_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 23]
+    struct isp_hist_coeff_t
+    -----------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 23]
+    struct isp_hist_coeff_t
+    -----------------------^
+
+isp_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 27]
+    struct isp_color_contrast_t
+    ---------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 27]
+    struct isp_color_contrast_t
+    ---------------------------^
+
+isp_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 29]
+    struct isp_color_saturation_t
+    -----------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 29]
+    struct isp_color_saturation_t
+    -----------------------------^
+
+isp_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 21]
+    struct isp_lsc_gain_t
+    ---------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 21]
+    struct isp_lsc_gain_t
+    ---------------------^
+
+jpeg_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 32]
+    struct jpeg_huffman_table_info_t
+    --------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 32]
+    struct jpeg_huffman_table_info_t
+    --------------------------------^
+
+rmt_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 24]
+    struct rmt_symbol_word_t
+    ------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 24]
+    struct rmt_symbol_word_t
+    ------------------------^
+
 mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
 Declaration is '.. cpp:type:: struct esp_mqtt_event_t esp_mqtt_event_t'.
 mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
@@ -27,27 +307,5 @@ mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-re
 Declaration is '.. cpp:enum:: esp_mqtt_transport_t'.
 mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
 Declaration is '.. cpp:enum:: esp_mqtt_protocol_ver_t'.
-esp_heap_trace.inc:line: WARNING: Error when parsing function declaration.
-If the function has no return type:
-  Invalid C++ declaration: Expected end of definition or ;. [error at 34]
-    TAILQ_ENTRY (heap_trace_record_t) tailq
-    ----------------------------------^
-If the function has a return type:
-  Error in declarator
-  If declarator-id with parameters-and-qualifiers:
-    Invalid C++ declaration: Expected identifier in nested name. [error at 12]
-      TAILQ_ENTRY (heap_trace_record_t) tailq
-      ------------^
-  If parenthesis in noptr-declarator:
-    Error in declarator or parameters-and-qualifiers
-    If pointer to member declarator:
-      Invalid C++ declaration: Expected '::' in pointer to member (function). [error at 32]
-        TAILQ_ENTRY (heap_trace_record_t) tailq
-        --------------------------------^
-    If declarator-id:
-      Invalid C++ declaration: Expecting "(" in parameters-and-qualifiers. [error at 32]
-        TAILQ_ENTRY (heap_trace_record_t) tailq
-        --------------------------------^
-
 esp_heap_trace.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/system/heap_debug:line.
 Declaration is '.. cpp:type:: struct heap_trace_record_t heap_trace_record_t'.
