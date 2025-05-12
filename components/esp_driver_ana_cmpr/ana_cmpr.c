@@ -241,8 +241,10 @@ esp_err_t ana_cmpr_set_cross_type(ana_cmpr_handle_t cmpr, ana_cmpr_cross_type_t 
     return ESP_ERR_NOT_SUPPORTED;
 #else
     ANA_CMPR_NULL_POINTER_CHECK_SAFE(cmpr);
-    ESP_RETURN_ON_FALSE_ISR(cross_type >= ANA_CMPR_CROSS_DISABLE && cross_type <= ANA_CMPR_CROSS_ANY,
-                            ESP_ERR_INVALID_ARG, TAG, "invalid cross type");
+    if (unlikely(cross_type < ANA_CMPR_CROSS_DISABLE || cross_type > ANA_CMPR_CROSS_ANY)) {
+        ESP_EARLY_LOGE(TAG, "invalid cross type");
+        return ESP_ERR_INVALID_ARG;
+    }
 
     portENTER_CRITICAL_SAFE(&s_spinlock);
     analog_cmpr_ll_set_intr_cross_type(cmpr->dev, cross_type);
