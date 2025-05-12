@@ -27,7 +27,15 @@ void bootloader_init_mem(void)
      */
 #ifdef SOC_APM_CTRL_FILTER_SUPPORTED
     apm_hal_apm_ctrl_filter_enable_all(false);
-#endif
+    /* [APM] On power-up, only the HP CPU starts in TEE mode; others default to REE2.
+     * APM blocks REE0–REE2 access by default. C5 ECO2 adds per-peripheral control
+     * (default REEx blocking), but config support is pending. As a workaround,
+     * all masters are set to TEE mode.
+     */
+#if SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL
+    apm_tee_hal_set_master_secure_mode_all(APM_LL_SECURE_MODE_TEE);
+#endif // SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL
+#endif // SOC_APM_CTRL_FILTER_SUPPORTED
 #endif
 
 #ifdef CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE
