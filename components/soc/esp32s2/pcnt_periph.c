@@ -11,6 +11,7 @@ const pcnt_signal_conn_t pcnt_periph_signals = {
     .groups = {
         [0] = {
             .irq = ETS_PCNT_INTR_SOURCE,
+            .module_name = "pcnt0",
             .units = {
                 [0] = {
                     .channels = {
