@@ -414,11 +414,11 @@ Binary logging is a feature available only in **Log V2**, enabling logs to be tr
 
 By default, when **Log V2** is enabled, the logging system uses **text mode**. Enabling binary logging reduces flash memory usage by removing log format strings from flash and sending only their addresses instead. Additionally, ``printf`` functions are not used, which reduces both stack usage and flash consumption.
 
-This feature introduces the :c:macro:`ESP_LOG_ATTR_STR` macro, which relocates format strings to a ``.noload`` section, effectively removing them from the final binary image. Developers can also use this mechanism for assertions or user-defined logging messages to further minimize flash usage.
+This feature introduces the :c:macro:`ESP_LOG_ATTR_STR` macro, which relocates format strings to a ``.noload`` section, effectively removing them from the final binary image. You can also use this mechanism for assertions or user-defined logging messages to further minimize flash usage.
 
 Summary of Benefits:
 
-- Reduces **flash size** by approximately **10% - 35%**, depending on the application. The more extensive the logging in a program, the greater the potential savings.
+- Reduces **flash size** by approximately **10% – 35%**, depending on the application. The more extensive the logging in a program, the greater the potential savings.
 - Minimizes **stack usage** by eliminating the need for the ``vprintf``-like function for log formatting.
 - Reduces **log transmission overhead** by transmitting compact binary data.
 
@@ -429,24 +429,26 @@ Binary Logging Workflow
 
 Binary logging consists of two main components:
 
-1. **Chip Side**: Encodes and transmits log data:
+1.  :ref:`Chip Side <chip-side>`: Encodes and transmits log data.
 
-   - Encoding process
-   - Argument type encoding
-   - Runtime argument type encoding
+    - Encoding process
+    - Argument type encoding
+    - Runtime argument type encoding
 
-2. **Host Side**: Receives and decodes data using the `esp-idf-monitor tool <https://github.com/espressif/esp-idf-monitor>`_. The ``idf.py monitor`` command automatically decodes binary logs.
+2.  :ref:`Host Side <host-side>`: Receives and decodes data using the `esp-idf-monitor tool <https://github.com/espressif/esp-idf-monitor>`_. The ``idf.py monitor`` command automatically decodes binary logs.
 
-   - Detects binary log packets.
-   - Extracts packet fields (log level, format, tag, timestamp, arguments).
-   - Determines whether addresses reference:
+    - Detects binary log packets.
+    - Extracts packet fields (log level, format, tag, timestamp, arguments).
+    - Determines whether addresses reference:
 
-      - **ELF file** (requires lookup)
-      - **Embedded string** (contained in the packet)
+        - **ELF file** (requires lookup)
+        - **Embedded string** (contained in the packet)
 
-   - Decodes arguments using the format string and the given array of arguments.
-   - Reconstructs the final log message by coupling the format string with the decoded arguments.
-   - Applies terminal colorization.
+    - Decodes arguments using the format string and the given array of arguments.
+    - Reconstructs the final log message by coupling the format string with the decoded arguments.
+    - Applies terminal colorization.
+
+.. _chip-side:
 
 Chip Side
 ^^^^^^^^^
@@ -484,7 +486,7 @@ The embedded string format is used if string is not present in ELF file, it foll
 Argument Type Encoding
 """"""""""""""""""""""
 
-Since the format string is removed from the final binary, the chip must still identify argument types to correctly transmit them to the host. This is achieved using the :c:macro:`ESP_LOG_ARGS_TYPE` macro, which leverages the `_Generic` feature to classify user arguments at compile time into three categories: **32-bit**, **64-bit**, and **pointers**. This macro generates an **argument type array** at runtime, which is passed to ``esp_log`` before the user arguments. This ensures that:
+Since the format string is removed from the final binary, the chip must still identify argument types to correctly transmit them to the host. This is achieved using the :c:macro:`ESP_LOG_ARGS_TYPE` macro, which leverages the `_Generic` feature to classify user arguments at compile time into three categories: **32-bit**, **64-bit**, and **pointers**. This macro generates an **argument type array** at runtime and passes it to ``esp_log`` before the user arguments, ensuring that:
 
 - The chip transmits data with the correct size and offset.
 - The host tool reconstructs the log message accurately.
@@ -505,7 +507,9 @@ Binary logging supports buffer log functions such as:
 - :c:macro:`ESP_LOG_BUFFER_CHAR_LEVEL`
 - :c:macro:`ESP_LOG_BUFFER_HEXDUMP`
 
-For these cases, binary log handlers check whether the format address matches predefined constants (e.g., ``ESP_BUFFER_HEX_FORMAT``). Instead of sending a format string, the handler **directly transmits raw buffer data**.
+In such cases, the binary log handler checks whether the format address matches any predefined constants (e.g., ``ESP_BUFFER_HEX_FORMAT``). If it does, the handler skips sending a format string and instead **transmits the raw buffer data directly**.
+
+.. _host-side:
 
 Host Side (Monitor Tool)
 ^^^^^^^^^^^^^^^^^^^^^^^^
