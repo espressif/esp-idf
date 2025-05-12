@@ -311,6 +311,8 @@ TX 单元可以选择各种不同的时钟源，其中外部时钟源较为特�
 
 .. only:: SOC_BITSCRAMBLER_SUPPORTED
 
+    .. _parlio-tx-bitscrambler-decorator:
+
     配合比特调节器 (BitScrambler) 产生自定义的比特流
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
