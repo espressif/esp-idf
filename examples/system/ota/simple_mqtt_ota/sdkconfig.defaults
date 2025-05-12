@@ -1,0 +1,9 @@
+# === Flash Configuration ===
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y  # Set flash size to 4MB
+
+# === Partition Table ===
+CONFIG_PARTITION_TABLE_TWO_OTA_LARGE=y  # Use two OTA partitions with larger sizes (suitable for OTA updates)
+
+# === MQTT Configuration ===
+CONFIG_MQTT_USE_CUSTOM_CONFIG=y   # Enable custom MQTT buffer config
+CONFIG_MQTT_BUFFER_SIZE=4096      # Increase MQTT buffer to 4KB for larger firmware chunks
