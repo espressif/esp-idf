@@ -29,6 +29,9 @@ extern "C" {
 #if CONFIG_IDF_TARGET_ESP32P4
 #define LP_I2C_SCL_IO   4
 #define LP_I2C_SDA_IO   5
+#elif CONFIG_IDF_TARGET_ESP32C5
+#define LP_I2C_SCL_IO   3
+#define LP_I2C_SDA_IO   2
 #else
 #define LP_I2C_SCL_IO   7
 #define LP_I2C_SDA_IO   6
