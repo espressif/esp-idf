@@ -114,6 +114,30 @@ esp_err_t bitscrambler_start(bitscrambler_handle_t handle);
  */
 esp_err_t bitscrambler_reset(bitscrambler_handle_t handle);
 
+/**
+ * @brief Enable BitScrambler
+ * @note  This function should be called before bitscrambler_load_program, bitscrambler_load_lut, bitscrambler_reset and bitscrambler_start.
+ *
+ * @param handle BitScrambler handle
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_INVALID_ARG: Invalid handle
+ */
+esp_err_t bitscrambler_enable(bitscrambler_handle_t handle);
+
+/**
+ * @brief Disable BitScrambler
+ * @note  This function should be called before bitscrambler_free.
+ *
+ * @param handle BitScrambler handle
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_INVALID_ARG: Invalid handle
+ */
+esp_err_t bitscrambler_disable(bitscrambler_handle_t handle);
+
 #ifdef __cplusplus
 }
 #endif

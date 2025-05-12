@@ -201,8 +201,12 @@ To use the assembled BitScrambler program, you would refer to it as such:
 
     bitscrambler_handle_t bs;
     [...create bitscrambler instance]
+    bitscrambler_enable(bs);
     bitscrambler_load_program(bs, my_bitscrambler_program);
 
+    [...]
+
+    bitscrambler_disable(bs);
 
 .. _bitscrambler-loopback:
 

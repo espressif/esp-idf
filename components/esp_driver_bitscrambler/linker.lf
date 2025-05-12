@@ -4,3 +4,6 @@ entries:
     if BITSCRAMBLER_CTRL_FUNC_IN_IRAM = y:
         bitscrambler: bitscrambler_reset (noflash)
         bitscrambler: bitscrambler_start (noflash)
+        bitscrambler: bitscrambler_load_program (noflash)
+        bitscrambler: bitscrambler_enable (noflash)
+        bitscrambler: bitscrambler_disable (noflash)

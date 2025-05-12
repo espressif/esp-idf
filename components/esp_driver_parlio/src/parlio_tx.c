@@ -10,43 +10,6 @@
 #include "driver/parlio_tx.h"
 #include "parlio_priv.h"
 
-typedef struct {
-    uint32_t idle_value; // Parallel IO bus idle value
-    const void *payload; // payload to be transmitted
-    size_t payload_bits; // payload size in bits
-    int dma_link_idx;  // index of DMA link list
-    struct {
-        uint32_t loop_transmission : 1; // whether the transmission is in loop mode
-    } flags;                           // Extra configuration flags
-} parlio_tx_trans_desc_t;
-
-typedef struct parlio_tx_unit_t {
-    struct parlio_unit_t base; // base unit
-    size_t data_width;     // data width
-    intr_handle_t intr;    // allocated interrupt handle
-    esp_pm_lock_handle_t pm_lock;   // power management lock
-    gdma_channel_handle_t dma_chan; // DMA channel
-    gdma_link_list_handle_t dma_link[PARLIO_DMA_LINK_NUM]; // DMA link list handle
-    size_t int_mem_align; // Alignment for internal memory
-    size_t ext_mem_align; // Alignment for external memory
-#if CONFIG_PM_ENABLE
-    char pm_lock_name[PARLIO_PM_LOCK_NAME_LEN_MAX]; // pm lock name
-#endif
-    portMUX_TYPE spinlock;     // prevent resource accessing by user and interrupt concurrently
-    uint32_t out_clk_freq_hz;  // output clock frequency
-    parlio_clock_source_t clk_src;  // Parallel IO internal clock source
-    size_t max_transfer_bits;  // maximum transfer size in bits
-    size_t queue_depth;        // size of transaction queue
-    size_t num_trans_inflight; // indicates the number of transactions that are undergoing but not recycled to ready_queue
-    QueueHandle_t trans_queues[PARLIO_TX_QUEUE_MAX]; // transaction queues
-    parlio_tx_trans_desc_t *cur_trans; // points to current transaction
-    uint32_t idle_value_mask;          // mask of idle value
-    _Atomic parlio_tx_fsm_t fsm;       // Driver FSM state
-    parlio_tx_done_callback_t on_trans_done; // callback function when the transmission is done
-    void *user_data;                   // user data passed to the callback function
-    parlio_tx_trans_desc_t trans_desc_pool[];   // transaction descriptor pool
-} parlio_tx_unit_t;
-
 static void parlio_tx_default_isr(void *args);
 
 static esp_err_t parlio_tx_create_trans_queue(parlio_tx_unit_t *tx_unit, const parlio_tx_unit_config_t *config)
@@ -82,6 +45,9 @@ exit:
 
 static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
 {
+    if (tx_unit->bs_handle) {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "please call parlio_tx_unit_undecorate_bitscrambler() before delete the tx unit");
+    }
     if (tx_unit->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(tx_unit->intr), TAG, "delete interrupt service failed");
     }
@@ -526,6 +492,11 @@ static void parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_
     parlio_ll_tx_set_idle_data_value(hal->regs, t->idle_value);
     parlio_ll_tx_set_trans_bit_len(hal->regs, t->payload_bits);
 
+    if (tx_unit->bs_handle) {
+        // load the bitscrambler program and start it
+        tx_unit->bs_enable_fn(tx_unit, t);
+    }
+
     gdma_start(tx_unit->dma_chan, gdma_link_get_head_addr(tx_unit->dma_link[t->dma_link_idx]));
     // wait until the data goes from the DMA to TX unit's FIFO
     while (parlio_ll_tx_is_ready(hal->regs) == false);
@@ -541,7 +512,7 @@ esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
     parlio_hal_context_t *hal = &tx_unit->base.group->hal;
     ESP_RETURN_ON_FALSE(tx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     parlio_tx_fsm_t expected_fsm = PARLIO_TX_FSM_INIT;
-    if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_ENABLE_WAIT)) {
+    if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_WAIT)) {
         // acquire power management lock
         if (tx_unit->pm_lock) {
             esp_pm_lock_acquire(tx_unit->pm_lock);
@@ -560,7 +531,7 @@ esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
     // check if we need to start one pending transaction
     parlio_tx_trans_desc_t *t = NULL;
     expected_fsm = PARLIO_TX_FSM_ENABLE;
-    if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_RUN_WAIT)) {
+    if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_WAIT)) {
         // check if we need to start one transaction
         if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE) {
             // sanity check
@@ -581,11 +552,11 @@ esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t tx_unit)
     bool valid_state = false;
     // check the supported states, and switch to intermediate state: INIT_WAIT
     parlio_tx_fsm_t expected_fsm = PARLIO_TX_FSM_ENABLE;
-    if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_INIT_WAIT)) {
+    if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_WAIT)) {
         valid_state = true;
     }
     expected_fsm = PARLIO_TX_FSM_RUN;
-    if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_INIT_WAIT)) {
+    if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_WAIT)) {
         valid_state = true;
         assert(tx_unit->cur_trans);
         // recycle the interrupted transaction
@@ -693,6 +664,12 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
         t->idle_value = config->idle_value & tx_unit->idle_value_mask;
         t->flags.loop_transmission = config->flags.loop_transmission;
 
+        if (tx_unit->bs_handle) {
+            t->bitscrambler_program = config->bitscrambler_program;
+        } else if (config->bitscrambler_program) {
+            ESP_RETURN_ON_ERROR(ESP_ERR_INVALID_STATE, TAG, "TX unit is not decorated with bitscrambler");
+        }
+
         // send the transaction descriptor to progress queue
         ESP_RETURN_ON_FALSE(xQueueSend(tx_unit->trans_queues[PARLIO_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE,
                             ESP_ERR_INVALID_STATE, TAG, "failed to send transaction descriptor to progress queue");
@@ -700,7 +677,7 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
 
         // check if we need to start one pending transaction
         parlio_tx_fsm_t expected_fsm = PARLIO_TX_FSM_ENABLE;
-        if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_RUN_WAIT)) {
+        if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_WAIT)) {
             // check if we need to start one transaction
             if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE) {
                 atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_RUN);
@@ -733,6 +710,10 @@ static void parlio_tx_default_isr(void *args)
         parlio_ll_clear_interrupt_status(hal->regs, PARLIO_LL_EVENT_TX_EOF);
         parlio_ll_tx_start(hal->regs, false);
 
+        if (tx_unit->bs_handle && tx_unit->cur_trans->bitscrambler_program) {
+            tx_unit->bs_disable_fn(tx_unit);
+        }
+
         // invoke callback before sending the transaction to complete queue
         parlio_tx_done_callback_t done_cb = tx_unit->on_trans_done;
         if (done_cb) {
@@ -743,7 +724,7 @@ static void parlio_tx_default_isr(void *args)
 
         parlio_tx_trans_desc_t *trans_desc = NULL;
         parlio_tx_fsm_t expected_fsm = PARLIO_TX_FSM_RUN;
-        if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_ENABLE_WAIT)) {
+        if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_WAIT)) {
             trans_desc = tx_unit->cur_trans;
             // move current finished transaction to the complete queue
             xQueueSendFromISR(tx_unit->trans_queues[PARLIO_TX_QUEUE_COMPLETE], &trans_desc, &high_task_woken);
@@ -756,7 +737,7 @@ static void parlio_tx_default_isr(void *args)
 
         // if the tx unit is till in enable state (i.e. not disabled by user), let's try start the next pending transaction
         expected_fsm = PARLIO_TX_FSM_ENABLE;
-        if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_RUN_WAIT)) {
+        if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_WAIT)) {
             if (xQueueReceiveFromISR(tx_unit->trans_queues[PARLIO_TX_QUEUE_PROGRESS], &trans_desc, &high_task_woken) == pdTRUE) {
                 // sanity check
                 assert(trans_desc);

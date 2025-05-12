@@ -93,11 +93,6 @@ static esp_err_t init_from_config(bitscrambler_t *bs, const bitscrambler_config_
 {
     bs->cfg = *config;                  //Copy config over
     bs->hw = BITSCRAMBLER_LL_GET_HW(0); //there's only one as of now; if there's more, we need to handle them as a pool.
-
-    //Attach to indicated peripheral.
-    bitscrambler_ll_select_peripheral(bs->hw, bs->cfg.dir, config->attach_to);
-    bitscrambler_ll_enable(bs->hw, bs->cfg.dir);
-
     return ESP_OK;
 }
 
@@ -147,8 +142,6 @@ esp_err_t bitscrambler_init_loopback(bitscrambler_handle_t handle, const bitscra
     handle->loopback = true;
     enable_clocks(handle);
     esp_err_t r = init_from_config(handle, config);
-    //Loopback mode also needs RX channel set to the selected peripheral, even if it's not used.
-    bitscrambler_ll_select_peripheral(handle->hw, BITSCRAMBLER_DIR_RX, config->attach_to);
     return r;
 }
 
@@ -268,6 +261,40 @@ esp_err_t bitscrambler_register_extra_clean_up(bitscrambler_handle_t handle, bit
     }
     handle->extra_clean_up = clean_up;
     handle->clean_up_user_ctx = user_ctx;
+    return ESP_OK;
+}
+
+esp_err_t bitscrambler_enable(bitscrambler_handle_t handle)
+{
+    if (!handle) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    // Attach to indicated peripheral.
+    bitscrambler_ll_select_peripheral(handle->hw, handle->cfg.dir, handle->cfg.attach_to);
+    // bitscrambler_ll_enable(handle->hw, handle->cfg.dir);
+    //enable loopback mode if requested
+    bitscrambler_ll_enable_loopback(handle->hw, handle->loopback);
+    if (handle->loopback) {
+        //Loopback mode also needs RX channel set to the selected peripheral, even if it's not used.
+        bitscrambler_ll_select_peripheral(handle->hw, BITSCRAMBLER_DIR_RX, handle->cfg.attach_to);
+    }
+    bitscrambler_ll_enable(handle->hw, handle->cfg.dir);
+    return ESP_OK;
+}
+
+esp_err_t bitscrambler_disable(bitscrambler_handle_t handle)
+{
+    if (!handle) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    bitscrambler_ll_disable(handle->hw, handle->cfg.dir);
+    // detach from peripheral
+    bitscrambler_ll_select_peripheral(handle->hw, handle->cfg.dir, SOC_BITSCRAMBLER_ATTACH_NONE);
+    if (handle->loopback) {
+        // detach loopback RX channel as well
+        bitscrambler_ll_select_peripheral(handle->hw, BITSCRAMBLER_DIR_RX, SOC_BITSCRAMBLER_ATTACH_NONE);
+    }
+
     return ESP_OK;
 }
 

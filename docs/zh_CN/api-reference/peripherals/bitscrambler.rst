@@ -201,8 +201,12 @@ LUT 内容元指令
 
     bitscrambler_handle_t bs;
     [...创建比特调节器实例]
+    bitscrambler_enable(bs);
     bitscrambler_load_program(bs, my_bitscrambler_program);
 
+    [...]
+
+    bitscrambler_disable(bs);
 
 .. _bitscrambler-loopback:
 
