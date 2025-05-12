@@ -811,6 +811,7 @@
 #define SOC_I3C_MASTER_COMMAND_TABLE_NUM            (12)
 
 /*------------------------------------- ULP CAPS -------------------------------------*/
-#define SOC_LP_CORE_SUPPORT_ETM               (1) /*!< LP Core supports ETM */
-#define SOC_LP_CORE_SUPPORT_LP_ADC            (1) /*!< LP ADC can be accessed from the LP-Core */
-#define SOC_LP_CORE_SUPPORT_LP_VAD            (1) /*!< LP VAD can be accessed from the LP-Core */
+#define SOC_LP_CORE_SUPPORT_ETM                     (1) /*!< LP Core supports ETM */
+#define SOC_LP_CORE_SUPPORT_LP_ADC                  (1) /*!< LP ADC can be accessed from the LP-Core */
+#define SOC_LP_CORE_SUPPORT_LP_VAD                  (1) /*!< LP VAD can be accessed from the LP-Core */
+#define SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS   (1) /*!< LP Core will raise exceptions if accessing invalid addresses */
