@@ -336,6 +336,14 @@ esp_err_t i2c_slave_transmit(i2c_slave_dev_handle_t i2c_slave, const uint8_t *da
     ESP_RETURN_ON_FALSE((i2c_slave->fifo_mode == I2C_SLAVE_FIFO), ESP_ERR_NOT_SUPPORTED, TAG, "non-fifo mode is not supported in this API, please set access_ram_en to false");
     esp_err_t ret = ESP_OK;
     i2c_hal_context_t *hal = &i2c_slave->base->hal;
+#if CONFIG_IDF_TARGET_ESP32C5
+    // Workaround for c5 digital bug. Please note that following code has no
+    // functionality. It's just use for workaround the potential issue for avoiding
+    // secondary transaction.
+    i2c_ll_slave_enable_auto_start(hal->dev, true);
+    i2c_ll_start_trans(hal->dev);
+    i2c_ll_slave_enable_auto_start(hal->dev, false);
+#endif
     TickType_t wait_ticks = (xfer_timeout_ms == -1) ? portMAX_DELAY : pdMS_TO_TICKS(xfer_timeout_ms);
 
     ESP_RETURN_ON_FALSE(xSemaphoreTake(i2c_slave->slv_tx_mux, wait_ticks) == pdTRUE, ESP_ERR_TIMEOUT, TAG, "transmit timeout");
@@ -358,6 +366,14 @@ esp_err_t i2c_slave_receive(i2c_slave_dev_handle_t i2c_slave, uint8_t *data, siz
     ESP_RETURN_ON_FALSE(esp_ptr_internal(data), ESP_ERR_INVALID_ARG, TAG, "buffer must locate in internal RAM if IRAM_SAFE is enabled");
 #endif
     i2c_hal_context_t *hal = &i2c_slave->base->hal;
+#if CONFIG_IDF_TARGET_ESP32C5
+    // Workaround for c5 digital bug. Please note that following code has no
+    // functionality. It's just use for workaround the potential issue for avoiding
+    // secondary transaction.
+    i2c_ll_slave_enable_auto_start(hal->dev, true);
+    i2c_ll_start_trans(hal->dev);
+    i2c_ll_slave_enable_auto_start(hal->dev, false);
+#endif
 
     xSemaphoreTake(i2c_slave->slv_rx_mux, portMAX_DELAY);
     i2c_slave_receive_t *t = &i2c_slave->receive_desc;
