@@ -36,7 +36,7 @@ static IRAM_ATTR bool test_driver_install_rx_cb(twai_node_handle_t handle, const
     return false;
 }
 
-TEST_CASE("twai install uninstall (loopback)", "[TWAI]")
+TEST_CASE("twai install uninstall (loopback)", "[twai]")
 {
     esp_err_t ret;
     twai_node_handle_t node_hdl[SOC_TWAI_CONTROLLER_NUM + 1];
@@ -145,7 +145,7 @@ static void test_twai_baudrate_correctness(twai_clock_source_t clk_src, uint32_t
     TEST_ESP_OK(twai_node_delete(twai_node));
 }
 
-TEST_CASE("twai baudrate measurement", "[TWAI]")
+TEST_CASE("twai baudrate measurement", "[twai]")
 {
     twai_clock_source_t twai_available_clk_srcs[] = SOC_TWAI_CLKS;
     for (size_t i = 0; i < sizeof(twai_available_clk_srcs) / sizeof(twai_available_clk_srcs[0]); i++) {
@@ -163,7 +163,7 @@ static IRAM_ATTR bool test_enable_disable_rx_cb(twai_node_handle_t handle, const
     return false;
 }
 
-TEST_CASE("twai transmit stop resume (loopback)", "[TWAI]")
+TEST_CASE("twai transmit stop resume (loopback)", "[twai]")
 {
     // prepare test memory
     uint8_t *send_pkg_ptr = heap_caps_malloc(TEST_TRANS_LEN, MALLOC_CAP_8BIT);
@@ -268,7 +268,7 @@ static IRAM_ATTR bool test_filter_rx_done_cb(twai_node_handle_t handle, const tw
     return false;
 }
 
-TEST_CASE("twai mask filter (loopback)", "[TWAI]")
+TEST_CASE("twai mask filter (loopback)", "[twai]")
 {
     uint8_t test_ctrl[2];
     twai_node_handle_t node_hdl;
@@ -352,7 +352,7 @@ static IRAM_ATTR bool test_dual_filter_rx_done_cb(twai_node_handle_t handle, con
     return false;
 }
 
-TEST_CASE("twai dual 16bit mask filter (loopback)", "[TWAI]")
+TEST_CASE("twai dual 16bit mask filter (loopback)", "[twai]")
 {
     uint8_t test_ctrl[2];
     twai_node_handle_t node_hdl;
@@ -421,7 +421,7 @@ static void IRAM_ATTR test_wait_trans_done_cache_disable(void *args)
     }
 }
 
-TEST_CASE("twai driver cache safe (loopback)", "[TWAI]")
+TEST_CASE("twai driver cache safe (loopback)", "[twai]")
 {
     // prepare test memory
     uint8_t *send_pkg_ptr = heap_caps_malloc(TEST_TRANS_LEN, MALLOC_CAP_8BIT);

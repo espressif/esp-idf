@@ -1,7 +1,7 @@
 set(srcs "test_app_main.c")
 
 if(CONFIG_SOC_TWAI_SUPPORTED)
-    list(APPEND srcs "test_twai_common.c")
+    list(APPEND srcs "test_twai_common.c" "test_twai_network.c")
 endif()
 
 if(CONFIG_SOC_TWAI_SUPPORT_FD)
