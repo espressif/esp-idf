@@ -22,6 +22,7 @@
 #include "esp_rom_sys.h"
 #include "esp_rom_caps.h"
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
@@ -258,6 +259,13 @@ void IRAM_ATTR call_start_cpu1(void)
         esp_rom_delay_us(100);
     }
 
+    /* SPI Flash driver initialization runs in the CORE stage of ESP SYSTEM INIT FN of core 0, which runs in parallel
+     * with this function. During that, the scheduler (hence the ipc service) is not ready, while the flash driver needs
+     * to disable the cache. s_resume_cores indicates the end of CORE stage.
+     *
+     * Other CPUs are not allowed to access the flash through the cache, i.e. run code which is not placed in IRAM or
+     * print string which locates on flash, until the SECONDARY stage of ESP SYSTEM INIT FN.
+     */
     SYS_STARTUP_FN();
 }
 
@@ -349,18 +357,8 @@ void IRAM_ATTR do_multicore_settings(void)
 #endif // !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
-/*
- * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
- * and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
- */
-void IRAM_ATTR call_start_cpu0(void)
+FORCE_INLINE_ATTR IRAM_ATTR void init_cpu(void)
 {
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-    soc_reset_reason_t rst_reas[SOC_CPU_CORES_NUM];
-#else
-    soc_reset_reason_t __attribute__((unused)) rst_reas[1];
-#endif
-
 #ifdef __riscv
     if (esp_cpu_dbgr_is_attached()) {
         /* Let debugger some time to detect that target started, halt it, enable ebreaks and resume.
@@ -403,13 +401,19 @@ void IRAM_ATTR call_start_cpu0(void)
     extern uint32_t esp_tee_service_call(int argc, ...);
     esprv_int_setup_mgmt_cb((void *)esp_tee_service_call);
 #endif
+}
 
+//Keep this static, the compiler will check if rst_reas is initialized.
+FORCE_INLINE_ATTR IRAM_ATTR void get_reset_reason(soc_reset_reason_t *rst_reas)
+{
     rst_reas[0] = esp_rom_get_reset_reason(0);
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     rst_reas[1] = esp_rom_get_reset_reason(1);
 #endif
+}
 
-    //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
+FORCE_INLINE_ATTR IRAM_ATTR void init_bss(const soc_reset_reason_t *rst_reas)
+{
 #if SOC_MEM_NON_CONTIGUOUS_SRAM
     memset(&_bss_start_low, 0, (&_bss_end_low - &_bss_start_low) * sizeof(_bss_start_low));
     memset(&_bss_start_high, 0, (&_bss_end_high - &_bss_start_high) * sizeof(_bss_start_high));
@@ -433,49 +437,30 @@ void IRAM_ATTR call_start_cpu0(void)
         memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
     }
 #endif
+}
 
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
-    do_multicore_settings();
-#endif
-
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-    //cache hal ctx needs to be initialised
-    cache_hal_init();
-#endif
-
-    // When the APP is loaded into ram for execution, some hardware initialization behaviors
-    // in the bootloader are still necessary
 #if CONFIG_APP_BUILD_TYPE_RAM
+FORCE_INLINE_ATTR IRAM_ATTR void ram_app_init(void)
+{
     bootloader_init();
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     bootloader_flash_hardware_init();
 #endif  //#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+}
 #endif  //#if CONFIG_APP_BUILD_TYPE_RAM
 
-#if CONFIG_IDF_TARGET_ESP32P4
-#define RWDT_RESET           RESET_REASON_CORE_RWDT
-#define MWDT_RESET           RESET_REASON_CORE_MWDT
-#else
-#define RWDT_RESET           RESET_REASON_CORE_RTC_WDT
-#define MWDT_RESET           RESET_REASON_CORE_MWDT0
-#endif
-
-#ifndef CONFIG_BOOTLOADER_WDT_ENABLE
-    // from panic handler we can be reset by RWDT or TG0WDT
-    if (rst_reas[0] == RWDT_RESET || rst_reas[0] == MWDT_RESET
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-            || rst_reas[1] == RWDT_RESET || rst_reas[1] == MWDT_RESET
-#endif
-       ) {
-        wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
-        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-        wdt_hal_disable(&rtc_wdt_ctx);
-        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
-    }
-#endif
-
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+//Keep this static, the compiler will check output parameters are initialized.
+FORCE_INLINE_ATTR IRAM_ATTR void cache_init(void)
+{
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
+    do_multicore_settings();
+#endif
+
+    //cache hal ctx needs to be initialised
+    cache_hal_init();
+
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Configure the mode of instruction cache : cache size, cache associated ways, cache line size. */
     extern void esp_config_instruction_cache_mode(void);
@@ -508,41 +493,59 @@ void IRAM_ATTR call_start_cpu0(void)
     esp_config_l2_cache_mode();
 #endif
 
-#if ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
-#if CONFIG_APP_BUILD_TYPE_ELF_RAM
     // For RAM loadable ELF case, we don't need to reserve IROM/DROM as instructions and data
     // are all in internal RAM. If the RAM loadable ELF has any requirement to memory map the
     // external flash then it should use flash or partition mmap APIs.
+#if ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
     uint32_t cache_mmu_irom_size = 0;
-    __attribute__((unused)) uint32_t cache_mmu_drom_size = 0;
-#else // CONFIG_APP_BUILD_TYPE_ELF_RAM
+#if !CONFIG_APP_BUILD_TYPE_ELF_RAM
     uint32_t _instruction_size = (uint32_t)&_instruction_reserved_end - (uint32_t)&_instruction_reserved_start;
-    uint32_t cache_mmu_irom_size = ((_instruction_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
-
-    uint32_t _rodata_size = (uint32_t)&_rodata_reserved_end - (uint32_t)&_rodata_reserved_start;
-    __attribute__((unused)) uint32_t cache_mmu_drom_size = ((_rodata_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
+    cache_mmu_irom_size = ((_instruction_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
 #endif // !CONFIG_APP_BUILD_TYPE_ELF_RAM
-
     /* Configure the Cache MMU size for instruction and rodata in flash. */
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 #endif // ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
+}
+#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
-#if CONFIG_ESPTOOLPY_OCT_FLASH && !CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT
-    bool efuse_opflash_en = efuse_ll_get_flash_type();
-    if (!efuse_opflash_en) {
-        ESP_DRAM_LOGE(TAG, "Octal Flash option selected, but EFUSE not configured!");
-        abort();
+// On chips with different virtual address space for flash and PSRAM, code in flash is not available before XIP is
+// initialized. Hence, these functions have to be in the IRAM.
+#if SOC_MMU_PER_EXT_MEM_TARGET
+#define MSPI_INIT_ATTR FORCE_INLINE_ATTR IRAM_ATTR
+#else
+#define MSPI_INIT_ATTR NOINLINE_ATTR static
+#endif
+
+MSPI_INIT_ATTR void sys_rtc_init(const soc_reset_reason_t *rst_reas)
+{
+#if CONFIG_IDF_TARGET_ESP32P4
+#define RWDT_RESET           RESET_REASON_CORE_RWDT
+#define MWDT_RESET           RESET_REASON_CORE_MWDT
+#else
+#define RWDT_RESET           RESET_REASON_CORE_RTC_WDT
+#define MWDT_RESET           RESET_REASON_CORE_MWDT0
+#endif
+
+#ifndef CONFIG_BOOTLOADER_WDT_ENABLE
+    // from panic handler we can be reset by RWDT or TG0WDT
+    if (rst_reas[0] == RWDT_RESET || rst_reas[0] == MWDT_RESET
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+            || rst_reas[1] == RWDT_RESET || rst_reas[1] == MWDT_RESET
+#endif
+       ) {
+        wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_disable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
 #endif
 
-    esp_mspi_pin_init();
-    // For Octal flash, it's hard to implement a read_id function in OPI mode for all vendors.
-    // So we have to read it here in SPI mode, before entering the OPI mode.
-    bootloader_flash_update_id();
-
     // Configure the power related stuff. After this the MSPI timing tuning can be done.
     esp_rtc_init();
+}
 
+NOINLINE_ATTR IRAM_ATTR void flash_init_state(void)
+{
     /**
      * This function initialise the Flash chip to the user-defined settings.
      *
@@ -556,8 +559,27 @@ void IRAM_ATTR call_start_cpu0(void)
     // some state of flash is modified.
     mspi_timing_flash_tuning();
 #endif
+}
 
-    esp_mmu_map_init();
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+MSPI_INIT_ATTR void mspi_init(void)
+{
+#if CONFIG_ESPTOOLPY_OCT_FLASH && !CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT
+    bool efuse_opflash_en = efuse_ll_get_flash_type();
+    if (!efuse_opflash_en) {
+        ESP_DRAM_LOGE(TAG, "Octal Flash option selected, but EFUSE not configured!");
+        abort();
+    }
+#endif
+
+    esp_mspi_pin_init();
+    // For Octal flash, it's hard to implement a read_id function in OPI mode for all vendors.
+    // So we have to read it here in SPI mode, before entering the OPI mode.
+    bootloader_flash_update_id();
+
+    flash_init_state();
+
+    esp_mmu_map_init(); //required by image_process() and flash_mmap APIs
 
 #if !CONFIG_APP_BUILD_TYPE_ELF_RAM
 #if CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM
@@ -584,15 +606,18 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
     }
 #endif
+}
+#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
-    //----------------------------------Separator-----------------------------//
-    /**
-     * @note
-     * After this stage, you can access the flash through the cache, i.e. run code which is not placed in IRAM
-     * or print string which locates on flash
-     */
+/*
+ * Initialize other parts of the system, including other CPUs.
+ * As CPU0 needs to disable the cache in system_early_init function, the other cores are not allowed to run with the
+ * cache until the SYS_STARTUP_FN.
+ */
+NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
+{
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     esp_mspi_pin_reserve();
-
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
 #if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -646,8 +671,19 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif  //CONFIG_SPIRAM_MEMTEST
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+
 //TODO: IDF-5023, replace with MMU driver
 #if CONFIG_IDF_TARGET_ESP32S3
+    uint32_t cache_mmu_irom_size = 0;
+    uint32_t cache_mmu_drom_size = 0;
+#if !CONFIG_APP_BUILD_TYPE_ELF_RAM
+    uint32_t _instruction_size = (uint32_t)&_instruction_reserved_end - (uint32_t)&_instruction_reserved_start;
+    cache_mmu_irom_size = ((_instruction_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
+
+    uint32_t _rodata_size = (uint32_t)&_rodata_reserved_end - (uint32_t)&_rodata_reserved_start;
+    cache_mmu_drom_size = ((_rodata_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
+#endif // !CONFIG_APP_BUILD_TYPE_ELF_RAM
+
     int s_instr_flash2spiram_off = 0;
     int s_rodata_flash2spiram_off = 0;
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
@@ -823,7 +859,6 @@ void IRAM_ATTR call_start_cpu0(void)
     s_cpu_inited[0] = true;
 
     volatile bool cpus_inited = false;
-
     while (!cpus_inited) {
         cpus_inited = true;
         for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
@@ -832,6 +867,67 @@ void IRAM_ATTR call_start_cpu0(void)
         esp_rom_delay_us(100);
     }
 #endif
+}
 
+/*
+ * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
+ * and the other CPU is in reset. We do have a stack, so we can do the initialization in C.
+ *
+ *  CORE 0                            CORE 1
+ *
+ * call_start_cpu0
+ *       │
+ *       ▼
+ * cache & other core init
+ *       │
+ *       ▼
+ * system_early_init────────────────►call_start_cpu1
+ *       │                              │
+ *       ▼                              ▼
+ * ESP SYSTEM INIT FN:CORE           core init...
+ * (accesses to ext mem here)           │
+ *       │                              │
+ *       ▼                              ▼
+ * ESP SYSTEM INIT FN:SECONDARY      ESP SYSTEM INIT FN
+ */
+void IRAM_ATTR call_start_cpu0(void)
+{
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    soc_reset_reason_t rst_reas[SOC_CPU_CORES_NUM] = { [0 ... SOC_CPU_CORES_NUM - 1] = RESET_REASON_CHIP_POWER_ON };
+#else
+    soc_reset_reason_t rst_reas[1] = { RESET_REASON_CHIP_POWER_ON };
+#endif
+
+    init_cpu();
+    get_reset_reason(rst_reas);
+    // Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
+    init_bss(rst_reas);
+
+    // When the APP is loaded into ram for execution, some hardware initialization steps used to be executed in the
+    // bootloader are done here.
+#if CONFIG_APP_BUILD_TYPE_RAM
+    ram_app_init();
+#endif  //CONFIG_APP_BUILD_TYPE_RAM
+
+    // Initialize the cache.
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    cache_init();
+#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+
+    sys_rtc_init(rst_reas);
+
+    // Frequency adjustment and other MSPI initialization stuff like PSRAM initialization.
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    mspi_init();
+#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+
+    /* ----------------------------------Separator-----------------------------
+     * CPU0 can access external memory (cache) now. Please do not access external memory before this.
+     */
+
+    // Initialize other parts of the system, including other CPUs.
+    // As CPU0 needs to disable the cache in system_early_init function and in the CORE stage of ESP SYSTEM INIT FN, the
+    // other cores are not allowed to run with the cache until the SECONDARY stage of ESP SYSTEM INIT FN.
+    system_early_init(rst_reas);
     SYS_STARTUP_FN();
 }
