@@ -311,6 +311,8 @@ The waveform of the external clock input is shown below:
 
 .. only:: SOC_BITSCRAMBLER_SUPPORTED
 
+    .. _parlio-tx-bitscrambler-decorator:
+
     Custom Bitstream Generation with BitScrambler
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
