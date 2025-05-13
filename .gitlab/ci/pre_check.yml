@@ -10,7 +10,7 @@ check_version:
   # esp_idf_version.h in a branch before tagging the next version.
   extends:
     - .pre_check_template
-    - .rules:protected
+    - .rules:protected:check
   tags: [ brew, github_sync ]
   variables:
     # need a full clone to get the latest tag

@@ -85,7 +85,7 @@ clang_tidy_check:
 #code_quality_report:
 #  extends:
 #    - .sonar_scan_template
-#    - .rules:protected
+#    - .rules:protected:check
 #  allow_failure: true  # it's using exit code to indicate the code analysis result,
 #                       # we don't want to block ci when critical issues founded
 #  script:
