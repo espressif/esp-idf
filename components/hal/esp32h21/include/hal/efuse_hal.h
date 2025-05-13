@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +55,13 @@ void efuse_hal_program(uint32_t block);
  * @param rs_values Pointer to write encoded data to (length 12 bytes)
  */
 void efuse_hal_rs_calculate(const void *data, void *rs_values);
+
+/**
+ * @brief Get ECDSA curve mode
+ *
+ * @return ECDSA curve mode
+ */
+uint32_t efuse_hal_get_ecdsa_curve_mode(void);
 
 /**
  * @brief Checks coding error in a block
