@@ -140,6 +140,13 @@ variables:
   if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then
     export IDF_MIRROR_PREFIX_MAP=
   fi
+  # Optimize pip install
+  if echo "${CI_RUNNER_TAGS}" | grep "shiny"; then
+    export PIP_INDEX_URL="${PIP_INDEX_URL_SHINY}"
+  fi
+  if [[ "$(uname -m)" == "x86_64" ]] || [[ "$(uname -m)" == "aarch64" ]]; then
+    export IDF_PIP_WHEELS_URL=""
+  fi
 
   if [[ "${CI_JOB_STAGE}" != "target_test" ]]; then
     section_start "running_install_sh" "Running install.sh"
