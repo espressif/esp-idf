@@ -42,8 +42,6 @@ typedef struct {
     struct {
         uint32_t invert_out: 1;   /*!< Whether to invert the RMT channel signal before output to GPIO pad */
         uint32_t with_dma: 1;     /*!< If set, the driver will allocate an RMT channel with DMA capability */
-        uint32_t io_loop_back: 1; /*!< The signal output from the GPIO will be fed to the input path as well */
-        uint32_t io_od_mode: 1;   /*!< Configure the GPIO as open-drain mode */
         uint32_t allow_pd: 1;     /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.
                                        This can save power, but at the expense of more RAM being consumed to save register context. */
     } flags;                      /*!< TX channel config flags */

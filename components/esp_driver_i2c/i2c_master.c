@@ -30,7 +30,6 @@
 #include "clk_ctrl_os.h"
 #include "hal/i2c_types.h"
 #include "hal/i2c_hal.h"
-#include "hal/gpio_hal.h"
 #include "esp_memory_utils.h"
 #include "freertos/idf_additions.h"
 

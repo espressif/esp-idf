@@ -246,12 +246,6 @@ static esp_err_t parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, const 
         ESP_RETURN_ON_FALSE(config->clk_in_gpio_num >= 0, ESP_ERR_INVALID_ARG, TAG, "clk_in_gpio_num must be set while the clock input from external");
         /* Connect the clock in signal to the GPIO matrix if it is set */
         gpio_input_enable(config->clk_in_gpio_num);
-
-        // deprecated, to be removed in in esp-idf v6.0
-        if (config->flags.io_loop_back) {
-            gpio_output_enable(config->clk_in_gpio_num);
-        }
-
         esp_rom_gpio_connect_in_signal(config->clk_in_gpio_num,
                                        parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_in_sig, false);
     }
@@ -260,12 +254,6 @@ static esp_err_t parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, const 
     if (config->clk_out_gpio_num >= 0) {
 #if SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
         gpio_func_sel(config->clk_out_gpio_num, PIN_FUNC_GPIO);
-
-        // deprecated, to be removed in in esp-idf v6.0
-        if (config->flags.io_loop_back) {
-            gpio_input_enable(config->clk_out_gpio_num);
-        }
-
         // connect the signal to the GPIO by matrix, it will also enable the output path properly
         esp_rom_gpio_connect_out_signal(config->clk_out_gpio_num,
                                         parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_out_sig, false, false);
@@ -277,12 +265,6 @@ static esp_err_t parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, const 
     /* Initialize the valid GPIO as input */
     if (config->valid_gpio_num >= 0) {
         gpio_input_enable(config->valid_gpio_num);
-
-        // deprecated, to be removed in in esp-idf v6.0
-        if (config->flags.io_loop_back) {
-            gpio_output_enable(config->valid_gpio_num);
-        }
-
         /* Not connect the signal here, the signal is lazy connected until the delimiter takes effect */
     }
 
@@ -291,12 +273,6 @@ static esp_err_t parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, const 
         /* Loop the data_gpio_nums to connect data and valid signals via GPIO matrix */
         if (config->data_gpio_nums[i] >= 0) {
             gpio_input_enable(config->data_gpio_nums[i]);
-
-            // deprecated, to be removed in in esp-idf v6.0
-            if (config->flags.io_loop_back) {
-                gpio_output_enable(config->data_gpio_nums[i]);
-            }
-
             esp_rom_gpio_connect_in_signal(config->data_gpio_nums[i],
                                            parlio_periph_signals.groups[group_id].rx_units[unit_id].data_sigs[i], false);
         } else {

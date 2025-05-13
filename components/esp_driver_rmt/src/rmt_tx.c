@@ -7,7 +7,6 @@
 #include "esp_rom_gpio.h"
 #include "esp_memory_utils.h"
 #include "soc/rtc.h"
-#include "hal/gpio_hal.h"
 #include "esp_cache.h"
 #include "driver/gpio.h"
 #include "driver/rmt_tx.h"
@@ -348,14 +347,6 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
                                     rmt_periph_signals.groups[group_id].channels[channel_id + RMT_TX_CHANNEL_OFFSET_IN_GROUP].tx_sig,
                                     config->flags.invert_out, false);
     tx_channel->base.gpio_num = config->gpio_num;
-
-    // deprecated, to be removed in in esp-idf v6.0
-    if (config->flags.io_loop_back) {
-        gpio_ll_input_enable(&GPIO, config->gpio_num);
-    }
-    if (config->flags.io_od_mode) {
-        gpio_ll_od_enable(&GPIO, config->gpio_num);
-    }
 
     portMUX_INITIALIZE(&tx_channel->base.spinlock);
     atomic_init(&tx_channel->base.fsm, RMT_FSM_INIT);

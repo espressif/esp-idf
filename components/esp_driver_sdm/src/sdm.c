@@ -22,7 +22,6 @@
 #include "esp_clk_tree.h"
 #include "driver/gpio.h"
 #include "driver/sdm.h"
-#include "hal/gpio_hal.h"
 #include "hal/sdm_hal.h"
 #include "hal/sdm_ll.h"
 #include "hal/hal_utils.h"
@@ -233,10 +232,6 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
     ESP_GOTO_ON_ERROR(io_mux_set_clock_source((soc_module_clk_t)(group->clk_src)), err, TAG, "set IO MUX clock source failed");
 
     gpio_func_sel(config->gpio_num, PIN_FUNC_GPIO);
-    // deprecated, to be removed in in esp-idf v6.0
-    if (config->flags.io_loop_back) {
-        gpio_input_enable(config->gpio_num);
-    }
     // connect the signal to the GPIO by matrix, it will also enable the output path properly
     esp_rom_gpio_connect_out_signal(config->gpio_num, sigma_delta_periph_signals.channels[chan_id].sd_sig, config->flags.invert_out, false);
     chan->gpio_num = config->gpio_num;

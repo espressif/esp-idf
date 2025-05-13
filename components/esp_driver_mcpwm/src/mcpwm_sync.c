@@ -5,7 +5,6 @@
  */
 
 #include "mcpwm_private.h"
-#include "hal/gpio_hal.h"
 #include "driver/mcpwm_sync.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
@@ -175,22 +174,6 @@ esp_err_t mcpwm_new_gpio_sync_src(const mcpwm_gpio_sync_src_config_t *config, mc
     gpio_input_enable(config->gpio_num);
 
     esp_rom_gpio_connect_in_signal(config->gpio_num, mcpwm_periph_signals.groups[group_id].gpio_synchros[sync_id].sync_sig, 0);
-
-    if (config->flags.pull_down) {
-        gpio_pulldown_en(config->gpio_num);
-    } else {
-        gpio_pulldown_dis(config->gpio_num);
-    }
-    if (config->flags.pull_up) {
-        gpio_pullup_en(config->gpio_num);
-    } else {
-        gpio_pullup_dis(config->gpio_num);
-    }
-
-    // deprecated, to be removed in in esp-idf v6.0
-    if (config->flags.io_loop_back) {
-        gpio_ll_output_enable(&GPIO, config->gpio_num);
-    }
 
     // different ext sync share the same config register, using a group level spin lock
     portENTER_CRITICAL(&group->spinlock);

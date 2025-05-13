@@ -13,7 +13,6 @@
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
 #include "driver/gpio.h"
-#include "hal/gpio_hal.h"
 #include "hal/dma_types.h"
 #include "esp_private/gpio.h"
 #include "esp_err.h"

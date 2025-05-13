@@ -87,12 +87,6 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
     for (size_t i = 0; i < config->data_width; i++) {
         if (config->data_gpio_nums[i] >= 0) {
             gpio_func_sel(config->data_gpio_nums[i], PIN_FUNC_GPIO);
-
-            // deprecated, to be removed in in esp-idf v6.0
-            if (config->flags.io_loop_back) {
-                gpio_input_enable(config->data_gpio_nums[i]);
-            }
-
             // connect the signal to the GPIO by matrix, it will also enable the output path properly
             esp_rom_gpio_connect_out_signal(config->data_gpio_nums[i],
                                             parlio_periph_signals.groups[group_id].tx_units[unit_id].data_sigs[i], false, false);
@@ -102,10 +96,6 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
     if (config->valid_gpio_num >= 0) {
         gpio_func_sel(config->valid_gpio_num, PIN_FUNC_GPIO);
 
-        // deprecated, to be removed in in esp-idf v6.0
-        if (config->flags.io_loop_back) {
-            gpio_input_enable(config->valid_gpio_num);
-        }
 #if !PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG
         // Configure CS signal if supported
         // Note: the default value of CS signal is low, so we need to invert the CS to keep compatible with the default value
@@ -123,24 +113,12 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
     }
     if (config->clk_out_gpio_num >= 0) {
         gpio_func_sel(config->clk_out_gpio_num, PIN_FUNC_GPIO);
-
-        // deprecated, to be removed in in esp-idf v6.0
-        if (config->flags.io_loop_back) {
-            gpio_input_enable(config->clk_out_gpio_num);
-        }
-
         // connect the signal to the GPIO by matrix, it will also enable the output path properly
         esp_rom_gpio_connect_out_signal(config->clk_out_gpio_num,
                                         parlio_periph_signals.groups[group_id].tx_units[unit_id].clk_out_sig, false, false);
     }
     if (config->clk_in_gpio_num >= 0) {
         gpio_input_enable(config->clk_in_gpio_num);
-
-        // deprecated, to be removed in in esp-idf v6.0
-        if (config->flags.io_loop_back) {
-            gpio_output_enable(config->clk_in_gpio_num);
-        }
-
         esp_rom_gpio_connect_in_signal(config->clk_in_gpio_num,
                                        parlio_periph_signals.groups[group_id].tx_units[unit_id].clk_in_sig, false);
     }

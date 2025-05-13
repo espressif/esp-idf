@@ -29,9 +29,6 @@ typedef struct {
     ana_cmpr_cross_type_t   cross_type;         /*!< The crossing types that can trigger interrupt */
     int                     intr_priority;      /*!< The interrupt priority, range 1~3.
                                                      If set to 0, the driver will automatically select a relative low priority (1,2,3) */
-    struct {
-        uint32_t            io_loop_back: 1;    /*!< Deprecated. For debug/test, a signal output from other peripheral can work as comparator input. */
-    } flags;                                    /*!< Analog comparator driver flags */
 } ana_cmpr_config_t;
 
 /**

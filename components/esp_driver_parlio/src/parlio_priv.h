@@ -28,7 +28,6 @@
 #include "freertos/idf_additions.h"
 #include "soc/soc_caps.h"
 #include "soc/gdma_channel.h"
-#include "soc/io_mux_reg.h"
 #include "soc/parlio_periph.h"
 #include "hal/parlio_types.h"
 #include "hal/parlio_hal.h"

@@ -12,7 +12,6 @@
 #include "esp_attr.h"
 #include "esp_rom_gpio.h"
 #include "driver/gpio.h"
-#include "hal/gpio_ll.h"
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"

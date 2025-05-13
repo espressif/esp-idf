@@ -25,13 +25,11 @@
 #include "soc/gpio_pins.h"
 #include "hal/pcnt_hal.h"
 #include "hal/pcnt_ll.h"
-#include "hal/gpio_hal.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/sleep_retention.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
-#include "hal/gpio_ll.h" // for io_loop_back flag only
 #include "driver/pulse_cnt.h"
 #include "esp_memory_utils.h"
 
@@ -324,8 +322,6 @@ esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit)
     if (unit->clear_signal_gpio_num >= 0) {
         uint32_t clear_signal_idx = pcnt_periph_signals.groups[group_id].units[unit_id].clear_sig;
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, clear_signal_idx, 0);
-        gpio_pullup_dis(unit->clear_signal_gpio_num);
-        gpio_pulldown_dis(unit->clear_signal_gpio_num);
     }
 #endif // SOC_PCNT_SUPPORT_CLEAR_SIGNAL
 
@@ -348,27 +344,13 @@ esp_err_t pcnt_unit_set_clear_signal(pcnt_unit_handle_t unit, const pcnt_clear_s
         int io_num = config->clear_signal_gpio_num;
         ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(io_num), ESP_ERR_INVALID_ARG, TAG, "gpio num is invalid");
 
-        if (!config->flags.invert_clear_signal) {
-            gpio_pulldown_en(io_num);
-            gpio_pullup_dis(io_num);
-        } else {
-            gpio_pullup_en(io_num);
-            gpio_pulldown_dis(io_num);
-        }
         gpio_func_sel(io_num, PIN_FUNC_GPIO);
         gpio_input_enable(io_num);
         esp_rom_gpio_connect_in_signal(io_num, clear_signal_idx, config->flags.invert_clear_signal);
         unit->clear_signal_gpio_num = config->clear_signal_gpio_num;
-
-        // io_loop_back is a deprecated flag, workaround for compatibility
-        if (config->flags.io_loop_back) {
-            gpio_ll_output_enable(&GPIO, io_num);
-        }
     } else {
         ESP_RETURN_ON_FALSE(unit->clear_signal_gpio_num >= 0, ESP_ERR_INVALID_STATE, TAG, "clear signal not set yet");
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, clear_signal_idx, 0);
-        gpio_pullup_dis(unit->clear_signal_gpio_num);
-        gpio_pulldown_dis(unit->clear_signal_gpio_num);
         unit->clear_signal_gpio_num = -1;
     }
     return ESP_OK;
@@ -785,18 +767,11 @@ esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *co
 
     // GPIO configuration
     if (config->edge_gpio_num >= 0) {
-        gpio_pullup_en(config->edge_gpio_num);
-        gpio_pulldown_dis(config->edge_gpio_num);
         gpio_func_sel(config->edge_gpio_num, PIN_FUNC_GPIO);
         gpio_input_enable(config->edge_gpio_num);
         esp_rom_gpio_connect_in_signal(config->edge_gpio_num,
                                        pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].pulse_sig,
                                        config->flags.invert_edge_input);
-
-        // io_loop_back is a deprecated flag, workaround for compatibility
-        if (config->flags.io_loop_back) {
-            gpio_ll_output_enable(&GPIO, config->edge_gpio_num);
-        }
     } else {
         // using virtual IO
         esp_rom_gpio_connect_in_signal(config->flags.virt_edge_io_level ? GPIO_MATRIX_CONST_ONE_INPUT : GPIO_MATRIX_CONST_ZERO_INPUT,
@@ -805,18 +780,11 @@ esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *co
     }
 
     if (config->level_gpio_num >= 0) {
-        gpio_pullup_en(config->level_gpio_num);
-        gpio_pulldown_dis(config->level_gpio_num);
         gpio_func_sel(config->level_gpio_num, PIN_FUNC_GPIO);
         gpio_input_enable(config->level_gpio_num);
         esp_rom_gpio_connect_in_signal(config->level_gpio_num,
                                        pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].control_sig,
                                        config->flags.invert_level_input);
-
-        // io_loop_back is a deprecated flag, workaround for compatibility
-        if (config->flags.io_loop_back) {
-            gpio_ll_output_enable(&GPIO, config->level_gpio_num);
-        }
     } else {
         // using virtual IO
         esp_rom_gpio_connect_in_signal(config->flags.virt_level_io_level ? GPIO_MATRIX_CONST_ONE_INPUT : GPIO_MATRIX_CONST_ZERO_INPUT,
@@ -856,15 +824,11 @@ esp_err_t pcnt_del_channel(pcnt_channel_handle_t chan)
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,
                                        pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].control_sig,
                                        0);
-        gpio_pullup_dis(chan->level_gpio_num);
-        gpio_pulldown_dis(chan->level_gpio_num);
     }
     if (chan->edge_gpio_num >= 0) {
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,
                                        pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].pulse_sig,
                                        0);
-        gpio_pullup_dis(chan->edge_gpio_num);
-        gpio_pulldown_dis(chan->edge_gpio_num);
     }
 
     free(chan);

@@ -879,7 +879,6 @@ MCPWM 定时器接收到同步信号后，定时器将强制进入一个预定�
         mcpwm_gpio_sync_src_config_t gpio_sync_config = {
             .group_id = 0,              // GPIO 故障应与以上定时器位于同一组中
             .gpio_num = EXAMPLE_SYNC_GPIO,
-            .flags.pull_down = true,
             .flags.active_neg = false,  // 默认情况下，一个上升沿脉冲可以触发一个同步事件
         };
         ESP_ERROR_CHECK(mcpwm_new_gpio_sync_src(&gpio_sync_config, &gpio_sync_source));

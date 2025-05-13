@@ -1,4 +1,4 @@
-menu "ESP-Driver: SD Host SDMMC Controller Configurations"
+menu "ESP-Driver:SD Host SDMMC Controller Configurations"
 
     depends on SOC_SDMMC_HOST_SUPPORTED
 

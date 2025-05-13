@@ -28,7 +28,6 @@ typedef struct {
     uint32_t sample_rate_hz;    /*!< Over sample rate in Hz, it determines the frequency of the carrier pulses */
     struct {
         uint32_t invert_out: 1;   /*!< Whether to invert the output signal */
-        uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
     } flags;                      /*!< Extra flags */
 } sdm_config_t;
 

@@ -41,7 +41,6 @@ typedef struct {
         uint32_t clk_gate_en: 1;  /*!< Enable TX clock gating,
                                        the output clock will be controlled by the MSB bit of the data bus,
                                        i.e. by data_gpio_nums[PARLIO_TX_UNIT_MAX_DATA_WIDTH-1]. High level to enable the clock output, low to disable */
-        uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
         uint32_t allow_pd: 1;      /*!< Set to allow power down. When this flag set, the driver will backup/restore the PARLIO registers before/after entering/exist sleep mode.
                                        By this approach, the system can power off PARLIO's power domain.
                                        This can save power, but at the expense of more RAM being consumed. */

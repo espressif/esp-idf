@@ -16,7 +16,6 @@
 #include "esp_clk_tree.h"
 #include "soc/soc_caps.h"
 #include "hal/ledc_hal.h"
-#include "hal/gpio_hal.h"
 #include "driver/ledc.h"
 #include "esp_rom_gpio.h"
 #include "clk_ctrl_os.h"

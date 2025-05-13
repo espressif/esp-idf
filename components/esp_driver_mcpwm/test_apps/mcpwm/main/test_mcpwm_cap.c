@@ -38,7 +38,6 @@ TEST_CASE("mcpwm_capture_install_uninstall", "[mcpwm]")
         .gpio_num = TEST_CAP_GPIO,
         .prescale = 2,
         .flags.pos_edge = true,
-        .flags.pull_up = true,
     };
     mcpwm_cap_channel_handle_t cap_channels[total_cap_timers][SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER];
     for (int i = 0; i < total_cap_timers; i++) {
@@ -98,7 +97,6 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
         .prescale = 1,
         .flags.pos_edge = true,
         .flags.neg_edge = true,
-        .flags.pull_up = true,
     };
     TEST_ESP_OK(mcpwm_new_capture_channel(cap_timer, &cap_chan_config, &pps_channel));
 

@@ -7,6 +7,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "driver/gpio.h"
 #include "onewire_bus.h"
 #include "ds18b20.h"
 
@@ -27,6 +28,9 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(onewire_new_bus_rmt(&bus_config, &rmt_config, &bus));
     ESP_LOGI(TAG, "1-Wire bus installed on GPIO%d", EXAMPLE_ONEWIRE_BUS_GPIO);
+
+    // in case the external device didn't have a pull-up resistor, we also enable the internal pull-up resistor
+    ESP_ERROR_CHECK(gpio_pullup_en(EXAMPLE_ONEWIRE_BUS_GPIO));
 
     int ds18b20_device_num = 0;
     ds18b20_device_handle_t ds18b20s[EXAMPLE_ONEWIRE_MAX_DS18B20];
