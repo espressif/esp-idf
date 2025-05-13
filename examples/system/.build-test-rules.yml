@@ -40,7 +40,6 @@ examples/system/efuse:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   disable:
-    - if: IDF_TARGET not in ["esp32", "linux"] and NIGHTLY_RUN != "1"
     - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_flash_enc"
     - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_flash_enc_release"
     - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_sb_v2_and_fe"
