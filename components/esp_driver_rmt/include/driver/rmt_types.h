@@ -56,7 +56,8 @@ typedef bool (*rmt_tx_done_callback_t)(rmt_channel_handle_t tx_chan, const rmt_t
 typedef struct {
     rmt_symbol_word_t *received_symbols; /*!< Point to the received RMT symbols */
     size_t num_symbols;                  /*!< The number of received RMT symbols */
-    struct {
+    /// Extra flags
+    struct extra_rmt_rx_done_event_flags {
         uint32_t is_last: 1; /*!< Indicating if the current received data are the last part of the transaction */
     } flags;                 /*!< Extra flags */
 } rmt_rx_done_event_data_t;
@@ -78,7 +79,8 @@ typedef bool (*rmt_rx_done_callback_t)(rmt_channel_handle_t rx_chan, const rmt_r
 typedef struct {
     uint32_t frequency_hz; /*!< Carrier wave frequency, in Hz, 0 means disabling the carrier */
     float duty_cycle;      /*!< Carrier wave duty cycle (0~100%) */
-    struct {
+    /// Extra carrier config flags
+    struct extra_rmt_carrier_config_flags {
         uint32_t polarity_active_low: 1; /*!< Specify the polarity of carrier, by default it's modulated to base signal's high level */
         uint32_t always_on: 1;           /*!< If set, the carrier can always exist even there's not transfer undergoing */
     } flags;                             /*!< Carrier config flags */
