@@ -249,6 +249,11 @@ typedef enum {
     ESP_GAP_BLE_SET_COMMON_FACTOR_CMPL_EVT,                      /*!< When set the common factor complete, the event comes */
     ESP_GAP_BLE_SET_SCH_LEN_CMPL_EVT,                            /*!< When set the scheduling length complete, the event comes */
     ESP_GAP_BLE_SET_SCAN_CHAN_MAP_CMPL_EVT,                      /*!< When set the channel map for scanning complete, the event comes */
+    ESP_GAP_BLE_SET_PERIODIC_ADV_SUBEVT_DATA_EVT,                /*!< When BLE update periodic adv subevent data complete, the event comes */
+    ESP_GAP_BLE_SET_PERIODIC_ADV_RESPONSE_DATA_EVT,              /*!< When BLE update periodic adv response data complete, the event comes */
+    ESP_GAP_BLE_SET_PERIODIC_SYNC_SUBEVT_EVT,                    /*!< When BLE update periodic sync subevent complete, the event comes */
+    ESP_GAP_BLE_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT,            /*!< When Controller is ready to transmit one or more subevents and is requesting the advertising data for these subevents, the event comes*/
+    ESP_GAP_BLE_PERIODIC_ADV_RESPONSE_REPORT_EVT,                /*!< When one or more devices have responded to a periodic advertising subevent during a PAwR train, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -975,7 +980,25 @@ typedef struct {
 typedef struct {
     uint16_t interval_min;     /*!< periodic advertising minimum interval */
     uint16_t interval_max;     /*!< periodic advertising maximum interval */
-    uint8_t  properties;       /*!< periodic advertising properties */
+    uint16_t  properties;       /*!< periodic advertising properties */
+#if (CONFIG_BT_BLE_FEAT_PAWR_EN)
+    uint8_t num_subevents;     /*!< Number of subevents in the PAwR. Range: 0x00 to 0x80
+                                    0x00: Periodic Advertising without responses */
+    uint8_t subevent_interval; /*!< Interval between subevents.
+                                    Range: 0x06 to 0xFF.
+                                    Time = N × 1.25 ms.
+                                    Time Range: 7.5 ms to 318.75 ms. */
+    uint8_t rsp_slot_delay;    /*!< Time between the advertising packet in a subevent and the first response slot.
+                                    Range: 0x01 to 0xFE.
+                                    Time = N × 1.25 ms.
+                                    Time Range: 1.25 ms to 317.5 ms. */
+    uint8_t rsp_slot_spacing;  /*!< Time between response slots.
+                                    Range: 0x02 to 0xFF.
+                                    Time = N × 0.125 ms.
+                                    Time Range: 0.25 ms to 31.875 ms */
+    uint8_t num_rsp_slots;     /*!< Number of subevent response slots
+                                    Range: 0x01 to 0xFF. */
+#endif // (CONFIG_BT_BLE_FEAT_PAWR_EN)
 } esp_ble_gap_periodic_adv_params_t;
 
 /**
@@ -1044,6 +1067,10 @@ typedef struct {
                                                     0x02: AoD Constant Tone Extension with 2 μs slots
                                                     0xFF: No Constant Tone Extension */
 #endif // BT_BLE_FEAT_CTE_EN
+#if (CONFIG_BT_BLE_FEAT_PAWR_EN)
+    uint16_t periodic_evt_counter;   /*!< The value of paEventCounter for the reported periodic advertising packet */
+    uint8_t subevt;                  /*!< The subevent number */
+#endif // (CONFIG_BT_BLE_FEAT_PAWR_EN)
     esp_ble_gap_ext_adv_data_status_t data_status; /*!< periodic advertising data type*/
     uint8_t data_length;                           /*!< periodic advertising data length */
     uint8_t data[251];                             /*!< periodic advertising data */
@@ -1221,6 +1248,70 @@ typedef struct {
                                     The supervision_timeout, in milliseconds, shall be greater than 2 × current connection interval × subrate_max × (max_latency + 1) */
 } esp_ble_subrate_req_param_t;
 
+/**
+* @brief Periodic adv subevent parameters
+*/
+typedef struct {
+	uint8_t subevent;              /*!< The subevent index of the data contained in this command. Range: 0x00 to 0x7F */
+	uint8_t response_slot_start;   /*!< The first response slots to be used in this subevent */
+	uint8_t response_slot_count;   /*!< The number of response slots to be used */
+    uint8_t subevent_data_len;     /*!< The number of octets in the Subevent_Data parameter. Range: 0 to 251 */
+	uint8_t *subevent_data;        /*!< The advertising data to be transmitted in the subevent of the advertising set */
+} esp_ble_subevent_params;
+
+/**
+* @brief Periodic adv subevent data parameters
+*/
+typedef struct {
+    uint8_t adv_handle;               /*!< Used to identify a periodic advertising train */
+    uint8_t num_subevents_with_data;  /*!< Number of subevent data in the command. Range: 0x0001 to 0x0F */
+    esp_ble_subevent_params *subevent_params;  /*!< Periodic adv subevent parameters */
+} esp_ble_per_adv_subevent_data_params;
+
+/**
+* @brief Periodic adv response data parameters
+*/
+typedef struct {
+    uint16_t sync_handle;      /*!< Sync_Handle identifying the PAwR train */
+    uint16_t request_event;    /*!< The value of eventCounter for the periodic advertising packet that the Host is responding to */
+    uint8_t request_subevent;  /*!< The subevent for the periodic advertising packet that the Host is responding to */
+    uint8_t response_subevent; /*!< Used to identify the subevent of the PAwR train. Range: 0x00 to 0x7F */
+    uint8_t response_slot;     /*!< Used to identify the response slot of the PAwR train. Range: 0x00 to 0xFF */
+    uint8_t response_data_len; /*!< The number of octets in the Response_Data parameter. Range: 0 to 251 */
+    uint8_t *response_data;    /*!< Response data */
+} esp_ble_per_adv_response_data_params;
+
+/**
+* @brief Periodic sync subevent parameters
+*/
+typedef struct {
+    uint16_t sync_handle;              /*!< Sync_Handle identifying the PAwR train */
+    uint16_t periodic_adv_properties;  /*!< Include TxPower in the advertising PDU */
+    uint8_t num_subevents_to_sync;     /*!< Number of subevents. Range: 0x01 to 0x80 */
+    uint8_t *subevent;                 /*!< The subevent to synchronize with. Range 0x00 to 0x7F */
+} esp_ble_per_sync_subevent_params;
+
+/**
+* @brief Periodic response information
+*/
+typedef struct {
+    int8_t tx_power;      /*!< Range: -127 to +20, Units: dBm
+                                0x7F: Tx Power information not available*/
+    int8_t rssi;          /*!< Range: -127 to +20. Units: dBm
+                                0x7F: RSSI is not available */
+    uint8_t cte_type;     /*!< cte type
+                            0x00: AoA Constant Tone Extension
+                            0x01: AoD Constant Tone Extension with 1 µs slots
+                            0x02: AoD Constant Tone Extension with 2 µs slots
+                            0xFF: No Constant Tone Extension*/
+    uint8_t rsp_slot;     /*!< The response slot the data was received in. */
+    uint8_t data_status;  /*!< Data status
+                            0x00: Data complete
+                            0x01: Data incomplete, more data to come
+                            0xFF: Failed to receive or listen for an AUX_SYNC_SUBEVENT_RSP PDU*/
+    uint8_t data_len;     /*!< Length of the Data field */
+    uint8_t *data;        /*!< Periodic advertising response data formatted as defined in [Vol 3] Part C, Section 11*/
+} esp_ble_pa_rsp_info;
 
 /**
  * @brief Gap callback parameters union
@@ -1634,6 +1725,12 @@ typedef union {
         esp_ble_gap_phy_t adv_phy;           /*!< periodic advertising phy type */
         uint16_t period_adv_interval;        /*!< periodic advertising interval */
         uint8_t adv_clk_accuracy;            /*!< periodic advertising clock accuracy */
+#if (CONFIG_BT_BLE_FEAT_PAWR_EN)
+        uint8_t num_subevt;                  /*!< Number of subevents, Range: 0x00 to 0x80 */
+        uint8_t subevt_interval;             /*!< Subevent interval, Time = N × 1.25 ms */
+        uint8_t rsp_slot_delay;              /*!< Response slot delay, Time = N × 1.25 ms */
+        uint8_t rsp_slot_spacing;            /*!< Response slot spacing, Time = N × 0.125 ms */
+#endif // (CONFIG_BT_BLE_FEAT_PAWR_EN)
     } periodic_adv_sync_estab;               /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_SYNC_ESTAB_EVT */
     /**
      * @brief ESP_GAP_BLE_PHY_UPDATE_COMPLETE_EVT
@@ -1879,6 +1976,49 @@ typedef union {
         esp_bt_status_t status; /*!< Indicate host feature update success status */
     } host_feature;     /*!< Event parameter of ESP_GAP_BLE_SET_HOST_FEATURE_CMPL_EVT */
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_SET_PERIODIC_ADV_SUBEVT_DATA_EVT
+     */
+    struct ble_pa_subevt_data_evt {
+        esp_bt_status_t status; /*!< Indicate periodic adv subevent data update success status */
+        uint8_t adv_handle;     /*!< Used to identify a periodic advertising train */
+    } pa_subevt_data_evt;        /*!< Event parameter of ESP_GAP_BLE_SET_PERIODIC_ADV_SUBEVT_DATA_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_PERIODIC_ADV_RESPONSE_DATA_EVT
+     */
+    struct ble_pa_rsp_data_evt {
+        esp_bt_status_t status; /*!< Indicate periodic adv response data update success status */
+        uint16_t sync_handle;   /*!< identifying the periodic advertising train */
+    } pa_rsp_data_evt;          /*!< Event parameter of ESP_GAP_BLE_SET_PERIODIC_ADV_RESPONSE_DATA_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_PERIODIC_SYNC_SUBEVT_EVT
+     */
+    struct ble_pa_sync_subevt_evt {
+        esp_bt_status_t status;  /*!< Indicate periodic sync subevent update success status */
+        uint16_t sync_handle;    /*!< identifying the periodic advertising train */
+    } pa_sync_subevt_evt;        /*!< Event parameter of ESP_GAP_BLE_SET_PERIODIC_SYNC_SUBEVT_EVT */
+    /**
+     * @brief ESP_GAP_BLE_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT
+     */
+    struct ble_pa_subevt_data_req_evt {
+        uint8_t adv_handle;        /*!< Used to identify a periodic advertising train */
+        uint8_t subevt_start;      /*!< The first subevent that data is requested for.*/
+        uint8_t subevt_data_count; /*!< The number of subevents that data is requested for.*/
+    } pa_subevt_data_req_evt;      /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT */
+    /**
+     * @brief ESP_GAP_BLE_PERIODIC_ADV_RESPONSE_REPORT_EVT
+     */
+    struct ble_pa_rsp_rpt_evt {
+        uint8_t adv_handle; /*!< Used to identify a periodic advertising train */
+        uint8_t subevt;     /*!< The subevent number */
+        uint8_t tx_status;  /*!<
+                                0x00 AUX_SYNC_SUBEVENT_IND packet was transmitted.
+                                0x01 AUX_SYNC_SUBEVENT_IND packet was not transmitted.*/
+        uint8_t num_rsp;    /*!< Number of responses in event */
+        esp_ble_pa_rsp_info *pa_rsp_info; /*!< response information */
+    } pa_rsp_rpt_evt;       /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_RESPONSE_REPORT_EVT */
+#endif // #if (CONFIG_BT_BLE_FEAT_PAWR_EN == TRUE)
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -3316,6 +3456,49 @@ esp_err_t esp_ble_gap_subrate_request(esp_ble_subrate_req_param_t *subrate_req_p
  *
  */
 esp_err_t esp_ble_gap_set_host_feature(uint16_t bit_num, uint8_t bit_val);
+
+/**
+ * @brief           This function is used to set the data for one or more subevents of PAwR in reply to a PA subevent data request event.
+ *                  The data for a subevent shall be transmitted only once.
+ *
+ *
+ * @param[in]       subevent_data_params: Periodic adv subevent data parameters.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_set_periodic_adv_subevent_data(esp_ble_per_adv_subevent_data_params *subevent_data_params);
+
+/**
+ * @brief           This function is used to set the data for a response slot in a specific subevent of the PAwR identified.
+ *                  The data for a response slot shall be transmitted only once.
+ *
+ *
+ * @param[in]       rsp_data_params: Periodic adv response data parameters.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_periodic_adv_response_data(esp_ble_per_adv_response_data_params *rsp_data_params);
+
+/**
+ * @brief           This function is used to instruct the Controller to synchronize with a subset of the subevents within a PAwR train,
+ *                  listen for packets sent by the peer device and pass any received data up to the Host.
+ *
+ *
+ * @param[in]       sync_subevent_params: Periodic sync subevent parameters.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_periodic_sync_subevent(esp_ble_per_sync_subevent_params *sync_subevent_params);
 
 #ifdef __cplusplus
 }

@@ -3169,6 +3169,77 @@ void BTA_DmBleGapSetHostFeature(uint16_t bit_num, uint8_t bit_val)
 }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+void BTA_DmBleGapSetPASubevtData(uint8_t adv_handle, uint8_t num_subevents_with_data, uint8_t *subevent_params)
+{
+    tBTA_DM_API_BLE_PA_SUBEVENT_DATA *p_msg;
+    tBTA_BLE_SUBEVENT_PARAMS *p_subevent_params = (tBTA_BLE_SUBEVENT_PARAMS*)subevent_params;
+
+    if ((p_msg = (tBTA_DM_API_BLE_PA_SUBEVENT_DATA *)osi_malloc(sizeof(tBTA_DM_API_BLE_PA_SUBEVENT_DATA) + num_subevents_with_data * sizeof(tBTA_DM_API_BLE_SUBEVENT_PARAMS)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_PA_SUBEVT_DATA;
+        p_msg->adv_handle = adv_handle;
+        p_msg->num_subevents_with_data = num_subevents_with_data;
+        p_msg->subevent_params = (tBTA_DM_API_BLE_SUBEVENT_PARAMS *)(p_msg + 1);
+        for (uint8_t i = 0; i < num_subevents_with_data; i++)
+        {
+            p_msg->subevent_params[i].subevent = p_subevent_params[i].subevent;
+            p_msg->subevent_params[i].response_slot_start = p_subevent_params[i].response_slot_start;
+            p_msg->subevent_params[i].response_slot_count = p_subevent_params[i].response_slot_count;
+            p_msg->subevent_params[i].subevent_data_len = p_subevent_params[i].subevent_data_len;
+            memcpy(&(p_msg->subevent_params[i].subevent_data), p_subevent_params[i].subevent_data, p_subevent_params[i].subevent_data_len);
+        }
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetPeriodicAdvRspData(uint16_t sync_handle, uint16_t request_event, uint8_t request_subevent,
+                                        uint8_t rsp_subevent, uint8_t rsp_slot, uint8_t rsp_data_len, uint8_t *rsp_data)
+{
+    tBTA_DM_API_BLE_PA_RSP_DATA *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_PA_RSP_DATA *)osi_malloc(sizeof(tBTA_DM_API_BLE_PA_RSP_DATA) + rsp_data_len))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_PA_RSP_DATA;
+        p_msg->sync_handle = sync_handle;
+        p_msg->request_event = request_event;
+        p_msg->request_subevent = request_subevent;
+        p_msg->rsp_subevent = rsp_subevent;
+        p_msg->rsp_slot = rsp_slot;
+        p_msg->rsp_data_len = rsp_data_len;
+        p_msg->rsp_data = (UINT8 *)(p_msg + 1);
+        if (rsp_data_len && rsp_data) {
+            memcpy(p_msg->rsp_data, rsp_data, rsp_data_len);
+        } else if (rsp_data_len) {
+            APPL_TRACE_ERROR("%s rsp_data is NULL", __func__);
+        }
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetPeriodicSyncSubevt(uint16_t sync_handle, uint16_t periodic_adv_properties, uint8_t num_subevents_to_sync, uint8_t *subevent)
+{
+    tBTA_DM_API_BLE_PA_SYNC_SUBEVT *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_PA_SYNC_SUBEVT *)osi_malloc(sizeof(tBTA_DM_API_BLE_PA_SYNC_SUBEVT) + num_subevents_to_sync))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_PA_SYNC_SUBEVT;
+        p_msg->sync_handle = sync_handle;
+        p_msg->periodic_adv_properties = periodic_adv_properties;
+        p_msg->num_subevents_to_sync = num_subevents_to_sync;
+        p_msg->subevent = (UINT8 *)(p_msg + 1);
+        if (num_subevents_to_sync && subevent) {
+            memcpy(p_msg->subevent, subevent, num_subevents_to_sync);
+        } else if (num_subevents_to_sync) {
+            APPL_TRACE_ERROR("%s subevent is NULL", __func__);
+        }
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
 /*******************************************************************************
 **
 ** Function         BTA_VendorInit

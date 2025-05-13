@@ -1013,7 +1013,7 @@ UINT8 btsnd_hcic_ble_clear_adv_set(void);
 UINT8 btsnd_hcic_ble_set_periodic_adv_params(UINT8 adv_handle,
                                                                      UINT16 interval_min,
                                                                      UINT16 interval_max,
-                                                                     UINT8 propertics);
+                                                                     UINT16 propertics);
 
 UINT8 btsnd_hcic_ble_set_periodic_adv_data(UINT8 adv_handle,
                                                                   UINT8 operation,
@@ -1242,5 +1242,27 @@ UINT8 btsnd_hcic_ble_subrate_request(UINT16 conn_handle, UINT16 subrate_min, UIN
 #define HCIC_PARAM_SIZE_SET_HOST_FEATURE_PARAMS_V2    3
 UINT8 btsnd_hcic_ble_set_host_feature(uint16_t bit_num, uint8_t bit_val);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+typedef struct {
+	uint8_t subevent;
+	uint8_t response_slot_start;
+	uint8_t response_slot_count;
+    uint8_t subevent_data_len;
+	uint8_t data[251];
+} ble_subevent_params;
+
+#define HCIC_PARAM_SIZE_SET_PA_SUBEVT_DATA_PARAMS_LEN               2
+#define HCIC_PARAM_SIZE_SET_PA_RESPONSE_DATA_PARAMS_LEN             8
+#define HCIC_PARAM_SIZE_SET_PA_SYNC_SUBEVT_PARAMS_LEN               5
+
+#define HCIC_PARAM_SIZE_SET_PERIODIC_ADV_PARAMS_V2                  12
+UINT8 btsnd_hcic_ble_set_periodic_adv_params_v2(UINT8 adv_handle, UINT16 interval_min, UINT16 interval_max,
+                                                UINT16 propertics, UINT8 num_subevents, UINT8 subevent_interval,
+                                                UINT8 rsp_slot_delay, UINT8 rsp_slot_spacing, UINT8 num_rsp_slots);
+UINT8 btsnd_hcic_ble_set_periodic_adv_subevt_data(UINT8 adv_handle, UINT8 num_subevents_with_data, ble_subevent_params *subevent_params);
+UINT8 btsnd_hcic_ble_set_periodic_adv_rsp_data(UINT16 sync_handle, UINT16 req_evt, UINT8 req_subevt, UINT8 rsp_subevt, UINT8 rsp_slot, UINT8 rsp_data_len, UINT8 *rsp_data);
+UINT8 btsnd_hcic_ble_set_periodic_sync_subevt(UINT16 sync_handle, UINT16 periodic_adv_properties, UINT8 num_subevents_to_sync, UINT8 *subevt);
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 
 #endif
