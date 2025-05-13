@@ -55,10 +55,13 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
     }
 
 #if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
-    ecdsa_ll_set_k_type(conf->sign_type);
-
-    if (conf->sign_type == ECDSA_K_TYPE_DETERMINISITIC) {
-        ecdsa_ll_set_deterministic_loop(conf->loop_number);
+    if (ecdsa_ll_is_deterministic_mode_supported()) {
+        ecdsa_ll_set_k_type(conf->sign_type);
+#if !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+        if (conf->sign_type == ECDSA_K_TYPE_DETERMINISITIC) {
+            ecdsa_ll_set_deterministic_loop(conf->loop_number);
+        }
+#endif /* !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
     }
 #endif
 }
@@ -232,11 +235,11 @@ void ecdsa_hal_export_pubkey(ecdsa_hal_config_t *conf, uint8_t *pub_x, uint8_t *
 }
 #endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
 
-#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+#if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
 
 bool ecdsa_hal_det_signature_k_check(void)
 {
     return (ecdsa_ll_check_k_value() == 0);
 }
 
-#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */

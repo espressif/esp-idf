@@ -149,9 +149,9 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
     uint8_t zeroes[32] = {0};
     uint16_t len;
 
-#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+#if !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
     uint16_t det_loop_number = 1;
-#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+#endif /* !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
 
     ecdsa_hal_config_t conf = {
         .mode = ECDSA_MODE_SIGN_GEN,
@@ -182,11 +182,11 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
     bool process_again = false;
 
     do {
-#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
-        if (k_type == ECDSA_K_TYPE_DETERMINISITIC) {
+#if !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+        if (ecdsa_ll_is_deterministic_mode_supported() && k_type == ECDSA_K_TYPE_DETERMINISITIC) {
             conf.loop_number = det_loop_number++;
         }
-#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+#endif /* !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
 
         ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
 
@@ -194,8 +194,8 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
                         || !memcmp(r_le, zeroes, len)
                         || !memcmp(s_le, zeroes, len);
 
-#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
-        if (k_type == ECDSA_K_TYPE_DETERMINISITIC) {
+#if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+        if (ecdsa_ll_is_deterministic_mode_supported() && k_type == ECDSA_K_TYPE_DETERMINISITIC) {
             process_again |= !ecdsa_hal_det_signature_k_check();
         }
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
@@ -326,12 +326,22 @@ TEST(ecdsa, ecdsa_SECP256R1_corrupt_signature)
 #ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
 TEST(ecdsa, ecdsa_SECP192R1_det_sign_and_verify)
 {
-    test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
+    if (!ecdsa_ll_is_deterministic_mode_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA deterministic mode is not supported.");
+    } else if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
+    } else {
+        test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
+    }
 }
 
 TEST(ecdsa, ecdsa_SECP256R1_det_sign_and_verify)
 {
-    test_ecdsa_sign_and_verify(1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
+    if (!ecdsa_ll_is_deterministic_mode_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA deterministic mode is not supported.");
+    } else {
+        test_ecdsa_sign_and_verify(1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
+    }
 }
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
 
