@@ -1,108 +1,72 @@
 /*
  * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+*
+* SPDX-License-Identifier: Apache-2.0
+*/
+#include "sdkconfig.h"
 #include "bootloader_random.h"
-#include "soc/soc.h"
-#include "soc/adc_reg.h"
-#include "soc/pmu_reg.h"
-#include "soc/regi2c_saradc.h"
-#include "soc/hp_sys_clkrst_reg.h"
-#include "soc/lp_adc_reg.h"
-#include "esp_private/regi2c_ctrl.h"
-#include "esp_rom_regi2c.h"
+#include "hal/regi2c_ctrl_ll.h"
+#include "hal/adc_ll.h"
+#include "hal/adc_types.h"
 
-// TODO IDF-6497: once ADC API is supported, use the API instead of defining functions and constants here
+#include "esp_private/periph_ctrl.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 
 #define I2C_SAR_ADC_INIT_CODE_VAL 2166
 
-typedef struct {
-    int atten;
-    int channel;
-} pattern_item;
-
-typedef struct {
-    pattern_item item[4];
-} pattern_table;
-
-static void adc1_fix_initcode_set(uint32_t initcode_value)
-{
-    uint32_t msb = initcode_value >> 8;
-    uint32_t lsb = initcode_value & 0xff;
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
-}
-
-//total 4 tables
-static void hpadc_sar1_pattern_table_cfg(unsigned int table_idx, pattern_table table)
-{
-    uint32_t wdata = 0;
-    wdata = (table.item[0].channel << 20 | table.item[0].atten << 18 |
-            table.item[1].channel << 14|table.item[1].atten << 12 |
-            table.item[2].channel << 8 |table.item[2].atten << 6 |
-            table.item[3].channel << 2 |table.item[3].atten);
-    WRITE_PERI_REG(ADC_SAR1_PATT_TAB1_REG + table_idx * 4, wdata);
-}
-
 void bootloader_random_enable(void)
 {
-    pattern_table sar1_table[4] = {};
-    uint32_t pattern_len = 0;
+    _adc_ll_reset_register();
+    _adc_ll_enable_bus_clock(true);
 
-    SET_PERI_REG_MASK(HP_SYS_CLKRST_SOC_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_ADC_APB_CLK_EN);
-    SET_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL23_REG, HP_SYS_CLKRST_REG_ADC_CLK_EN);
+    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_XTAL);
+    adc_ll_digi_controller_clk_div(0, 0, 0);
 
-    SET_PERI_REG_MASK(RTCADC_MEAS1_MUX_REG, RTCADC_SAR1_DIG_FORCE);
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG,PMU_XPD_PERIF_I2C);
-
-    uint32_t sar1_clk_div_num = GET_PERI_REG_BITS2((HP_SYS_CLKRST_PERI_CLK_CTRL24_REG),
-            (HP_SYS_CLKRST_REG_ADC_SAR1_CLK_DIV_NUM_M),
-            (HP_SYS_CLKRST_REG_ADC_SAR1_CLK_DIV_NUM_S));
-
-    SET_PERI_REG_MASK(ADC_CTRL_REG_REG, ADC_START_FORCE); //start force 1
+    // some ADC sensor registers are in power group PERIF_I2C and need to be enabled via PMU
+#ifndef BOOTLOADER_BUILD
+    regi2c_saradc_enable();
+#else
+    regi2c_ctrl_ll_i2c_sar_periph_enable();
+#endif
 
     // enable analog i2c master clock for RNG runtime
     ANALOG_CLOCK_ENABLE();
 
-    adc1_fix_initcode_set(I2C_SAR_ADC_INIT_CODE_VAL);
+    adc_ll_regi2c_init();
+    adc_ll_set_calibration_param(ADC_UNIT_1, I2C_SAR_ADC_INIT_CODE_VAL);
 
-    //  cfg pattern table
-    sar1_table[0].item[0].channel = 10; //rand() % 6;
-    sar1_table[0].item[0].atten = 3;
-    sar1_table[0].item[1].channel = 10;
-    sar1_table[0].item[1].atten = 3;
-    sar1_table[0].item[2].channel = 10;
-    sar1_table[0].item[2].atten = 3;
-    sar1_table[0].item[3].channel = 10;
-    sar1_table[0].item[3].atten = 3;
+    adc_digi_pattern_config_t pattern_config = {};
+    pattern_config.unit = ADC_UNIT_1;
+    pattern_config.atten = ADC_ATTEN_DB_12;
+    pattern_config.channel = ADC_CHANNEL_10;
+    adc_ll_digi_set_pattern_table(ADC_UNIT_1, 0, pattern_config);
+    adc_ll_digi_set_pattern_table(ADC_UNIT_1, 1, pattern_config);
+    adc_ll_digi_set_pattern_table(ADC_UNIT_1, 2, pattern_config);
+    adc_ll_digi_set_pattern_table(ADC_UNIT_1, 3, pattern_config);
+    adc_ll_digi_set_pattern_table_len(ADC_UNIT_1, 1);
 
-    hpadc_sar1_pattern_table_cfg(0, sar1_table[0]);
-    SET_PERI_REG_BITS(ADC_CTRL_REG_REG, ADC_SAR1_PATT_LEN, pattern_len, ADC_SAR1_PATT_LEN_S);
+    adc_ll_set_controller(ADC_UNIT_1, ADC_LL_CTRL_DIG);
+    adc_ll_digi_set_power_manage(ADC_UNIT_1, ADC_LL_POWER_SW_ON);
 
-    SET_PERI_REG_BITS(ADC_CTRL_REG_REG, ADC_XPD_SAR1_FORCE, 3, ADC_XPD_SAR1_FORCE_S);
-    SET_PERI_REG_BITS(ADC_CTRL_REG_REG, ADC_XPD_SAR2_FORCE, 3, ADC_XPD_SAR2_FORCE_S);
-
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_ENT_VDD_GRP1, 1);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_DTEST_VDD_GRP1, 0);
-
-    CLEAR_PERI_REG_MASK(ADC_CTRL_REG_REG, ADC_START_FORCE);
-    SET_PERI_REG_MASK(ADC_CTRL2_REG, ADC_TIMER_EN);
-    SET_PERI_REG_BITS(ADC_CTRL2_REG, ADC_TIMER_TARGET, sar1_clk_div_num * 25, ADC_TIMER_TARGET_S);
-
-    while (GET_PERI_REG_MASK(ADC_INT_RAW_REG, ADC_SAR1_DONE_INT_RAW) == 0) { }
-
-    SET_PERI_REG_MASK(ADC_INT_CLR_REG, ADC_APB_SARADC1_DONE_INT_CLR);
+    adc_ll_digi_set_clk_div(15);
+    adc_ll_digi_set_trigger_interval(100);
+    adc_ll_digi_trigger_enable();
 }
 
 void bootloader_random_disable(void)
 {
+    adc_ll_digi_trigger_disable();
+    adc_ll_digi_reset_pattern_table();
+    adc_ll_set_calibration_param(ADC_UNIT_1, 0x0);
+    adc_ll_set_calibration_param(ADC_UNIT_2, 0x0);
+    adc_ll_regi2c_adc_deinit();
+
+#ifndef BOOTLOADER_BUILD
+    regi2c_saradc_disable();
+#endif
+
     // disable analog i2c master clock
     ANALOG_CLOCK_DISABLE();
-
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, 0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, 0);
-
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_ENT_VDD_GRP1, 0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_DTEST_VDD_GRP1, 0);
+    adc_ll_digi_controller_clk_div(4, 0, 0);
+    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_XTAL);
 }
