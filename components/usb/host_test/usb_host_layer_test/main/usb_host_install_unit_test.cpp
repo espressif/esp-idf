@@ -51,6 +51,7 @@ SCENARIO("USB Host install")
         .root_port_unpowered = false,
         .intr_flags = 1,
         .enum_filter_cb = nullptr,
+        .fifo_settings_custom = {},
     };
 
     // USB host config is valid, USB Host driver is not installed from previous test case

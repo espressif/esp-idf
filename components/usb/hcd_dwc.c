@@ -250,8 +250,8 @@ struct port_obj {
         uint32_t val;
     } flags;
     bool initialized;
-    // FIFO biasing related
-    usb_hal_fifo_bias_t fifo_bias;                  // Bias is saved so it can be reconfigured upon reset
+    // FIFO related
+    usb_dwc_hal_fifo_config_t fifo_config;          // FIFO config to be applied at HAL level
     // Port callback and context
     hcd_port_callback_t callback;
     void *callback_arg;
@@ -555,6 +555,23 @@ static bool _port_check_all_pipes_halted(port_t *port);
 static bool _port_debounce(port_t *port);
 
 /**
+ * @brief Convert user-provided FIFO configuration to HAL format
+ *
+ * This function validates and converts a user-defined FIFO configuration
+ * (provided via `hcd_config_t.fifo_config`) into the format expected by the HAL.
+ * It ensures that both RX FIFO and Non-Periodic TX FIFO sizes are non-zero.
+ *
+ * @param[in]  src Pointer to user-defined FIFO settings (HCD format)
+ * @param[out] dst Pointer to HAL-compatible FIFO configuration structure
+ *
+ * @return
+ *      - ESP_OK: Conversion successful and values copied
+ *      - ESP_ERR_INVALID_SIZE: Either RX FIFO or Non-Periodic TX FIFO is zero
+ */
+
+static esp_err_t convert_fifo_config_to_hal_config(const hcd_fifo_settings_t *src, usb_dwc_hal_fifo_config_t *dst);
+
+/**
  * @brief Power ON the port
  *
  * @param port Port object
@@ -740,16 +757,6 @@ static usb_speed_t get_usb_port_speed(usb_dwc_speed_t priv)
     case USB_DWC_SPEED_LOW: return USB_SPEED_LOW;
     case USB_DWC_SPEED_FULL: return USB_SPEED_FULL;
     case USB_DWC_SPEED_HIGH: return USB_SPEED_HIGH;
-    default: abort();
-    }
-}
-
-static usb_hal_fifo_bias_t get_hal_fifo_bias(hcd_port_fifo_bias_t public)
-{
-    switch (public) {
-    case HCD_PORT_FIFO_BIAS_BALANCED: return USB_HAL_FIFO_BIAS_DEFAULT;
-    case HCD_PORT_FIFO_BIAS_RX: return USB_HAL_FIFO_BIAS_RX;
-    case HCD_PORT_FIFO_BIAS_PTX: return USB_HAL_FIFO_BIAS_PTX;
     default: abort();
     }
 }
@@ -954,6 +961,46 @@ static void intr_hdlr_main(void *arg)
     }
 }
 
+// ----------------------- FIFO Config -------------------------
+
+/**
+ * @brief Calculate default FIFO configuration based on bias preference
+ *
+ * This function calculates the FIFO configuration (RX, non-periodic TX, and periodic TX)
+ * according to the selected bias mode from Kconfig:
+ *
+ * - CONFIG_USB_HOST_HW_BUFFER_BIAS_IN: Prioritize RX FIFO space, useful for IN-heavy traffic.
+ * - CONFIG_USB_HOST_HW_BUFFER_BIAS_PERIODIC_OUT: Prioritize periodic TX FIFO, suitable for periodic OUT transfers.
+ * - USB_HOST_HW_BUFFER_BIAS_BALANCED: Balanced configuration between RX and both TX FIFOs.
+ *
+ * @param[inout] port Pointer to the port object whose fifo_config will be filled
+ * @param[in] hal Pointer to an initialized HAL context providing hardware FIFO limits
+ */
+static void  _calculate_fifo_from_bias(port_t *port, const usb_dwc_hal_context_t *hal)
+{
+    const int otg_dfifo_depth = hal->constant_config.hsphy_type ? 1024 : 256;
+    const uint16_t fifo_size_lines = hal->constant_config.fifo_size;
+
+#if CONFIG_USB_HOST_HW_BUFFER_BIAS_IN
+    // Prioritize RX FIFO (best for IN-heavy workloads)
+    port->fifo_config.nptx_fifo_lines = otg_dfifo_depth / 16;
+    port->fifo_config.ptx_fifo_lines = otg_dfifo_depth / 8;
+    port->fifo_config.rx_fifo_lines = fifo_size_lines - port->fifo_config.ptx_fifo_lines - port->fifo_config.nptx_fifo_lines;
+
+#elif CONFIG_USB_HOST_HW_BUFFER_BIAS_PERIODIC_OUT
+    // Prioritize periodic TX FIFO (useful for high throughput periodic endpoints)
+    port->fifo_config.rx_fifo_lines = otg_dfifo_depth / 8 + 2; // 2 extra lines are allocated for status information. See USB-OTG Programming Guide, chapter 2.1.2.1
+    port->fifo_config.nptx_fifo_lines = otg_dfifo_depth / 16;
+    port->fifo_config.ptx_fifo_lines = fifo_size_lines - port->fifo_config.nptx_fifo_lines - port->fifo_config.rx_fifo_lines;
+
+#else // USB_HOST_HW_BUFFER_BIAS_BALANCED
+    // Balanced configuration (default)
+    port->fifo_config.nptx_fifo_lines = otg_dfifo_depth / 4;
+    port->fifo_config.ptx_fifo_lines = otg_dfifo_depth / 8;
+    port->fifo_config.rx_fifo_lines = fifo_size_lines - port->fifo_config.ptx_fifo_lines - port->fifo_config.nptx_fifo_lines;
+#endif
+}
+
 // --------------------------------------------- Host Controller Driver ------------------------------------------------
 
 static port_t *port_obj_alloc(void)
@@ -1017,6 +1064,15 @@ esp_err_t hcd_install(const hcd_config_t *config)
     if (err_ret != ESP_OK) {
         ESP_LOGE(HCD_DWC_TAG, "Interrupt alloc error: %s", esp_err_to_name(err_ret));
         goto intr_alloc_err;
+    }
+    // Apply custom FIFO config if provided, otherwise mark as default (all zeros)
+    memset(&p_hcd_obj_dmy->port_obj->fifo_config, 0, sizeof(p_hcd_obj_dmy->port_obj->fifo_config));
+    if (config->fifo_config != NULL) {
+        // Convert and validate user-provided config
+        err_ret = convert_fifo_config_to_hal_config(config->fifo_config, &p_hcd_obj_dmy->port_obj->fifo_config);
+        if (err_ret != ESP_OK) {
+            goto assign_err;
+        }
     }
     HCD_ENTER_CRITICAL();
     if (s_hcd_obj != NULL) {
@@ -1100,6 +1156,34 @@ static bool _port_debounce(port_t *port)
     return is_connected;
 }
 
+static esp_err_t convert_fifo_config_to_hal_config(const hcd_fifo_settings_t *src, usb_dwc_hal_fifo_config_t *dst)
+{
+    // Check at least RX and NPTX are non-zero
+    if (src->rx_fifo_lines == 0 || src->nptx_fifo_lines == 0) {
+        ESP_LOGE(HCD_DWC_TAG, "RX and Non-Periodic TX FIFO must be > 0");
+        return ESP_ERR_INVALID_SIZE;
+    }
+    // Assign valid values
+    dst->rx_fifo_lines   = src->rx_fifo_lines;
+    dst->nptx_fifo_lines = src->nptx_fifo_lines;
+    dst->ptx_fifo_lines  = src->ptx_fifo_lines; // OK even if zero
+
+    return ESP_OK;
+}
+
+/**
+ * @brief Check if the FIFO config is marked to use bias-based default values.
+ *
+ * If all FIFO line sizes are zero, the configuration is considered uninitialized,
+ * and default values will be calculated based on bias settings.
+ */
+static inline bool _is_fifo_config_by_bias(const usb_dwc_hal_fifo_config_t *cfg)
+{
+    return (cfg->rx_fifo_lines == 0 &&
+            cfg->nptx_fifo_lines == 0 &&
+            cfg->ptx_fifo_lines == 0);
+}
+
 // ---------------------- Commands -------------------------
 
 static esp_err_t _port_cmd_power_on(port_t *port)
@@ -1177,8 +1261,16 @@ static esp_err_t _port_cmd_reset(port_t *port)
         goto bailout;
     }
 
-    // Reinitialize port registers.
-    usb_dwc_hal_set_fifo_bias(port->hal, port->fifo_bias);  // Set FIFO biases
+    // Reinitialize port registers
+    if (!usb_dwc_hal_fifo_config_is_valid(port->hal, &port->fifo_config)) {
+        HCD_EXIT_CRITICAL();
+        ret = ESP_ERR_INVALID_SIZE;
+        ESP_LOGE(HCD_DWC_TAG, "Invalid FIFO config");
+        HCD_ENTER_CRITICAL();
+        goto bailout;
+    }
+    usb_dwc_hal_set_fifo_config(port->hal, &port->fifo_config);// Apply FIFO settings
+
     usb_dwc_hal_port_set_frame_list(port->hal, port->frame_list, FRAME_LIST_LEN);   // Set periodic frame list
     usb_dwc_hal_port_periodic_enable(port->hal);    // Enable periodic scheduling
 
@@ -1287,7 +1379,6 @@ esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, h
     TAILQ_INIT(&port_obj->pipes_active_tailq);
     port_obj->state = HCD_PORT_STATE_NOT_POWERED;
     port_obj->last_event = HCD_PORT_EVENT_NONE;
-    port_obj->fifo_bias = get_hal_fifo_bias(port_config->fifo_bias);
     port_obj->callback = port_config->callback;
     port_obj->callback_arg = port_config->callback_arg;
     port_obj->context = port_config->context;
@@ -1297,10 +1388,18 @@ esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, h
     port_obj->initialized = true;
     // Clear the frame list. We set the frame list register and enable periodic scheduling after a successful reset
     memset(port_obj->frame_list, 0, FRAME_LIST_LEN * sizeof(uint32_t));
+    // If FIFO config is zeroed -> calculate from bias
+    if (_is_fifo_config_by_bias(&port_obj->fifo_config)) {
+        // Calculate default FIFO sizes based on Kconfig bias settings
+        _calculate_fifo_from_bias(port_obj, port_obj->hal);
+    }
     esp_intr_enable(s_hcd_obj->isr_hdl);
     *port_hdl = (hcd_port_handle_t)port_obj;
     HCD_EXIT_CRITICAL();
-
+    ESP_LOGD(HCD_DWC_TAG, "FIFO config lines: RX=%u, PTX=%u, NPTX=%u",
+             port_obj->fifo_config.rx_fifo_lines,
+             port_obj->fifo_config.ptx_fifo_lines,
+             port_obj->fifo_config.nptx_fifo_lines);
     vTaskDelay(pdMS_TO_TICKS(INIT_DELAY_MS));    // Need a short delay before host mode takes effect
     return ESP_OK;
 }
@@ -1452,28 +1551,6 @@ void *hcd_port_get_context(hcd_port_handle_t port_hdl)
     HCD_ENTER_CRITICAL();
     ret = port->context;
     HCD_EXIT_CRITICAL();
-    return ret;
-}
-
-esp_err_t hcd_port_set_fifo_bias(hcd_port_handle_t port_hdl, hcd_port_fifo_bias_t bias)
-{
-    esp_err_t ret;
-    usb_hal_fifo_bias_t hal_bias = get_hal_fifo_bias(bias);
-
-    // Configure the new FIFO sizes and store the pointers
-    port_t *port = (port_t *)port_hdl;
-    xSemaphoreTake(port->port_mux, portMAX_DELAY);
-    HCD_ENTER_CRITICAL();
-    // Check that port is in the correct state to update FIFO sizes
-    if (port->initialized && !port->flags.event_pending && port->num_pipes_idle == 0 && port->num_pipes_queued == 0) {
-        usb_dwc_hal_set_fifo_bias(port->hal, hal_bias);
-        port->fifo_bias = hal_bias;
-        ret = ESP_OK;
-    } else {
-        ret = ESP_ERR_INVALID_STATE;
-    }
-    HCD_EXIT_CRITICAL();
-    xSemaphoreGive(port->port_mux);
     return ret;
 }
 
