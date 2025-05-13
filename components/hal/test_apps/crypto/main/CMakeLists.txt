@@ -33,5 +33,5 @@ if(CONFIG_SOC_SHA_SUPPORTED)
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       REQUIRES test_utils unity ccomp_timer
+                       REQUIRES test_utils unity ccomp_timer efuse
                        WHOLE_ARCHIVE)

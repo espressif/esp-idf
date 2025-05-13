@@ -586,7 +586,9 @@ int __wrap_mbedtls_ecdsa_verify_restartable(mbedtls_ecp_group *grp,
                          const mbedtls_mpi *s,
                          mbedtls_ecdsa_restart_ctx *rs_ctx)
 {
-    if ((grp->id == MBEDTLS_ECP_DP_SECP192R1 || grp->id == MBEDTLS_ECP_DP_SECP256R1) && blen == ECDSA_SHA_LEN) {
+    if (((grp->id == MBEDTLS_ECP_DP_SECP192R1 && esp_efuse_is_ecdsa_p192_curve_supported())
+        || (grp->id == MBEDTLS_ECP_DP_SECP256R1 && esp_efuse_is_ecdsa_p256_curve_supported()))
+        && blen == ECDSA_SHA_LEN) {
         return esp_ecdsa_verify(grp, buf, blen, Q, r, s);
     } else {
         return __real_mbedtls_ecdsa_verify_restartable(grp, buf, blen, Q, r, s, rs_ctx);

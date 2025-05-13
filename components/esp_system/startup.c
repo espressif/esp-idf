@@ -412,6 +412,10 @@ static void do_core_init(void)
     esp_efuse_set_rom_log_scheme(ROM_LOG_MODE);
 #endif
 
+#if CONFIG_ESP_ECDSA_ENABLE_P192_CURVE
+    ESP_RETURN_ON_ERROR(esp_efuse_enable_ecdsa_p192_curve_mode(), TAG, "Failed to enable ECDSA 192-curve operations");
+#endif
+
 #if CONFIG_ESP_XT_WDT
     esp_xt_wdt_config_t cfg = {
         .timeout                = CONFIG_ESP_XT_WDT_TIMEOUT,
