@@ -445,6 +445,8 @@ While the functionality of an encoding process using the simple callback encoder
 
 .. only:: SOC_BITSCRAMBLER_SUPPORTED and SOC_RMT_SUPPORT_DMA
 
+    .. _rmt-bitscrambler-encoder:
+
     BitScrambler Encoder
     ~~~~~~~~~~~~~~~~~~~~
 

@@ -445,6 +445,8 @@ RMT 编码器是 RMT TX 事务的一部分，用于在特定时间生成正确�
 
 .. only:: SOC_BITSCRAMBLER_SUPPORTED and SOC_RMT_SUPPORT_DMA
 
+    .. _rmt-bitscrambler-encoder:
+
     比特调节 (BitScrambler) 编码器
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
