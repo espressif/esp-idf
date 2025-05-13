@@ -443,6 +443,13 @@
 #define HCI_BLE_SUBRATE_REQUEST                    (0x007E | HCI_GRP_BLE_CMDS)
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#define HCI_BLE_SET_PERIOD_ADV_SUBEVT_DATA         (0x0082 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_PERIOD_ADV_RSP_DATA            (0x0083 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_PERIOD_SYNC_SUBEVT             (0x0084 | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SET_PERIOD_ADV_PARAMS_V2           (0x0086 | HCI_GRP_BLE_CMDS)
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
 // Vendor OGF define
 #define HCI_VENDOR_OGF          0x3F
 
@@ -917,6 +924,14 @@
 #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 #define HCI_BLE_SUBRATE_CHANGE_EVT             0x23
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+#define HCI_BLE_PERIOD_ADV_SYNC_ESTAB_EVT_V2   0x24
+#define HCI_BLE_PERIOD_ADV_REPORT_EVT_V2       0x25
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#define HCI_BLE_PA_SUBEVT_DATA_REQUEST_EVT     0x27
+#define HCI_BLE_PA_RESPONSE_REPORT_EVT         0x28
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 
 /* Definitions for LE Channel Map */
 #define HCI_BLE_CHNL_MAP_SIZE               5

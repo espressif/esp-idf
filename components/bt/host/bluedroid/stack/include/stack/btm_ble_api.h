@@ -808,7 +808,14 @@ typedef struct {
 typedef struct {
     UINT16 interval_min;
     UINT16 interval_max;
-    UINT8  properties;
+    UINT16  properties;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    UINT8 num_subevents;
+    UINT8 subevent_interval;
+    UINT8 rsp_slot_delay;
+    UINT8 rsp_slot_spacing;
+    UINT8 num_rsp_slots;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 } tBTM_BLE_Periodic_Adv_Params;
 
 typedef struct {
@@ -1090,7 +1097,14 @@ typedef void (tBTM_SET_VENDOR_EVT_MASK_CBACK) (tBTM_STATUS status);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define    BTM_BLE_GAP_SET_HOST_FEATURE_EVT                        51
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
-#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               52
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#define    BTM_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT            52
+#define    BTM_BLE_GAP_SET_PERIODIC_ADV_RESPONSE_DATA_EVT          53
+#define    BTM_BLE_GAP_SET_PERIODIC_SYNC_SUBEVT_EVT                54
+#define    BTM_BLE_GAP_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT        55
+#define    BTM_BLE_GAP_PERIODIC_ADV_RESPONSE_REPORT_EVT            56
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               57
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
 #if (BLE_FEAT_ISO_EN == TRUE)
@@ -1332,6 +1346,10 @@ typedef struct {
     UINT8 tx_power;
     INT8 rssi;
     UINT8 cte_type;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    UINT16  periodic_evt_cnt;
+    UINT8   subevt;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
     tBTM_BLE_EXT_ADV_DATA_STATUS data_status;
     UINT8 data_length;
     UINT8 *data;
@@ -1350,6 +1368,12 @@ typedef struct {
     UINT8 adv_phy;
     UINT16 period_adv_interval;
     UINT8 adv_clk_accuracy;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    UINT8 num_subevt;
+    UINT8 subevt_interval;
+    UINT8 rsp_slot_delay;
+    UINT8 rsp_slot_spacing;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 } tBTM_BLE_PERIOD_ADV_SYNC_ESTAB;
 
 typedef struct {
@@ -1452,6 +1476,44 @@ typedef struct {
     UINT16 supervision_timeout;
 } __attribute__((packed)) tBTM_BLE_SUBRATE_CHANGE_EVT;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT8 adv_handle;
+} __attribute__((packed)) tBTM_BLE_PA_SUBEVT_DATA_EVT;
+typedef struct {
+    UINT8 status;
+    UINT16 sync_handle;
+} __attribute__((packed)) tBTM_BLE_PA_RSP_DATA_EVT;
+typedef struct {
+    UINT8 status;
+    UINT16 sync_handle;
+} __attribute__((packed)) tBTM_BLE_PA_SYNC_SUBEVT_DATA_EVT;
+typedef struct {
+    UINT8 adv_handle;
+    UINT8 subevt_start;
+    UINT8 subevt_data_count;
+} __attribute__((packed)) tBTM_BLE_PA_SUBEVT_DATA_REQ_EVT;
+
+typedef struct {
+    INT8 tx_power;
+    INT8 rssi;
+    UINT8 cte_type;
+    UINT8 rsp_slot;
+    UINT8 data_status;
+    UINT8 data_len;
+    UINT8 *data;
+} __attribute__((packed)) tBTM_BLE_PA_RSP_DATA_INFO;
+
+typedef struct {
+    UINT8 adv_handle;
+    UINT8 subevt;
+    UINT8 tx_status;
+    UINT8 num_rsp;
+    tBTM_BLE_PA_RSP_DATA_INFO *rsp_data_info;
+} __attribute__((packed)) tBTM_BLE_PA_RSP_REPORT_EVT;
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
@@ -1819,6 +1881,13 @@ typedef union {
 #if (BLE_FEAT_CONN_SUBRATING == TRUE)
     tBTM_BLE_SUBRATE_CHANGE_EVT          subrate_change_evt;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    tBTM_BLE_PA_SUBEVT_DATA_EVT          pa_subevt_data_evt;
+    tBTM_BLE_PA_RSP_DATA_EVT             pa_rsp_data_evt;
+    tBTM_BLE_PA_SYNC_SUBEVT_DATA_EVT     pa_sync_subevt_evt;
+    tBTM_BLE_PA_SUBEVT_DATA_REQ_EVT      pa_subevent_data_req_evt;
+    tBTM_BLE_PA_RSP_REPORT_EVT           pa_rsp_rpt_evt;
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 } tBTM_BLE_5_GAP_CB_PARAMS;
 
 typedef struct {
@@ -3371,7 +3440,15 @@ void BTM_BleSetDefaultSubrate(UINT16 subrate_min, UINT16 subrate_max, UINT16 max
 void BTM_BleSubrateRequest(UINT16 conn_handle, UINT16 subrate_min, UINT16 subrate_max,
                             UINT16 max_latency, UINT16 continuation_number, UINT16 supervision_timeout);
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 tBTM_STATUS BTM_BleSetHostFeature(uint16_t bit_num, uint8_t bit_val);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+void BTM_BleSetPaSubeventData(UINT8 adv_handle, UINT8 num_subevents_with_data, uint8_t *subevent_params);
+void BTM_BleSetPaResponseData(UINT16 sync_handle, UINT16 req_evt, UINT8 req_subevt, UINT8 rsp_subevt, UINT8 rsp_slot, UINT8 rsp_data_len, UINT8 *rsp_data);
+void BTM_BleSetPaSyncSubevt(UINT16 sync_handle, UINT16 periodic_adv_properties, UINT8 num_subevents_to_sync, UINT8 *subevt);
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
 #endif
