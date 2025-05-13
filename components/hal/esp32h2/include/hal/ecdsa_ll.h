@@ -378,6 +378,16 @@ static inline int ecdsa_ll_get_operation_result(void)
     return REG_GET_BIT(ECDSA_RESULT_REG, ECDSA_OPERATION_RESULT);
 }
 
+/**
+ * @brief Check if the ECDSA curves configuration is supported
+ * The ECDSA curves configuration is only avliable in chip version
+ * above 1.2 in ESP32-H2
+ */
+static inline bool ecdsa_ll_is_configurable_curve_supported(void)
+{
+    return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
+}
+
 #ifdef __cplusplus
 }
 #endif
