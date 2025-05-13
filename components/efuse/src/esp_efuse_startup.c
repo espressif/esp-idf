@@ -122,6 +122,10 @@ static esp_err_t init_efuse_secure(void)
     // ESP32 only: Permanently disable BASIC ROM Console feature
     esp_efuse_disable_basic_rom_console();
 #endif
+
+#if CONFIG_ESP_ECDSA_ENABLE_P192_CURVE
+    ESP_RETURN_ON_ERROR(esp_efuse_enable_ecdsa_p192_curve_mode(), TAG, "Failed to enable ECDSA 192-curve operations");
+#endif
     return ESP_OK;
 }
 

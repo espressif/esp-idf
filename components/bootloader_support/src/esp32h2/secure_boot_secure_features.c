@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <strings.h>
+#include "hal/ecdsa_ll.h"
 #include "esp_flash_encrypt.h"
 #include "esp_secure_boot.h"
 #include "esp_efuse.h"
@@ -34,6 +35,12 @@ esp_err_t esp_secure_boot_enable_secure_features(void)
     }
 #else
     ESP_LOGW(TAG, "UART ROM Download mode kept enabled - SECURITY COMPROMISED");
+#endif
+
+#ifdef SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    if (ecdsa_ll_is_configurable_curve_supported()) {
+        esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE);
+    }
 #endif
 
 #ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG

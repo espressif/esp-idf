@@ -26,6 +26,11 @@
 #if SOC_KEY_MANAGER_SUPPORTED
 #include "esp_key_mgr.h"
 #endif
+
+#if SOC_ECDSA_SUPPORTED
+#include "hal/ecdsa_ll.h"
+#endif
+
 #define TEST_ASSERT_MBEDTLS_OK(X) TEST_ASSERT_EQUAL_HEX32(0, -(X))
 
 #if CONFIG_NEWLIB_NANO_FORMAT
@@ -35,6 +40,8 @@
 #define NEWLIB_NANO_COMPAT_FORMAT             PRId64
 #define NEWLIB_NANO_COMPAT_CAST(int64_t_var)  int64_t_var
 #endif
+
+__attribute__((unused)) static const char * TAG = "mbedtls_test";
 
 /*
  * All the following values are in big endian format, as required by the mbedTLS APIs
