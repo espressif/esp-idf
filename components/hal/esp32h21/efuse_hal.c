@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +79,11 @@ void efuse_hal_program(uint32_t block)
 void efuse_hal_rs_calculate(const void *data, void *rs_values)
 {
     ets_efuse_rs_calculate(data, rs_values);
+}
+
+uint32_t efuse_hal_get_ecdsa_curve_mode(void)
+{
+    return efuse_ll_get_ecdsa_curve_mode();
 }
 
 /******************* eFuse control functions *************************/

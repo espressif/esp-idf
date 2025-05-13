@@ -12,6 +12,10 @@
 #include "esp_secure_boot.h"
 #include "hal/efuse_hal.h"
 
+#ifdef SOC_ECDSA_SUPPORTED
+#include "hal/ecdsa_ll.h"
+#endif
+
 #ifndef BOOTLOADER_BUILD
 static __attribute__((unused)) const char *TAG = "secure_boot";
 
@@ -341,15 +345,17 @@ bool esp_secure_boot_cfg_verify_release_mode(void)
     }
 
 #ifdef SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
-    secure = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE);
-    if (!secure) {
-        uint8_t current_curve;
-        esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_ECDSA_CURVE_MODE, &current_curve, ESP_EFUSE_ECDSA_CURVE_MODE[0]->bit_count);
-        if (err == ESP_OK) {
-            if (current_curve != ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P256_BIT_LOCKED) {
-                // If not P256 mode
-                result &= secure;
-                ESP_LOGW(TAG, "Not write disabled ECDSA curve mode (set WR_DIS_ECDSA_CURVE_MODE->1)");
+    if (ecdsa_ll_is_configurable_curve_supported()) {
+        secure = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE);
+        if (!secure) {
+            uint8_t current_curve;
+            esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_ECDSA_CURVE_MODE, &current_curve, ESP_EFUSE_ECDSA_CURVE_MODE[0]->bit_count);
+            if (err == ESP_OK) {
+                if (current_curve != ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P256_BIT_LOCKED) {
+                    // If not P256 mode
+                    result &= secure;
+                    ESP_LOGW(TAG, "Not write disabled ECDSA curve mode (set WR_DIS_ECDSA_CURVE_MODE->1)");
+                }
             }
         }
     }

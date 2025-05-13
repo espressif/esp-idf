@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <sys/param.h>
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "soc/chip_revision.h"
 #include "hal/assert.h"
 #include "hal/efuse_hal.h"
 #include "hal/efuse_ll.h"
@@ -77,6 +78,16 @@ void efuse_hal_program(uint32_t block)
 void efuse_hal_rs_calculate(const void *data, void *rs_values)
 {
     ets_efuse_rs_calculate(data, rs_values);
+}
+
+uint32_t efuse_hal_get_ecdsa_curve_mode(void)
+{
+     if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+        return efuse_ll_get_ecdsa_curve_mode();
+    } else {
+        // Curve mode is not configurable for previous versions
+        return 0;
+    }
 }
 
 /******************* eFuse control functions *************************/
