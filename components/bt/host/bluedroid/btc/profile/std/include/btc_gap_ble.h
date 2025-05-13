@@ -141,6 +141,11 @@ typedef enum {
     BTC_GAP_ACT_SET_HOST_FEATURE,
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_READ_CHANNEL_MAP,
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    BTC_GAP_BLE_SET_PA_SUBEVT_DATA,
+    BTC_GAP_BLE_SET_PA_RSP_DATA,
+    BTC_GAP_BLE_SET_PA_SYNC_SUBEVT,
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -531,9 +536,34 @@ typedef union {
     } subrate_req_param;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
     struct set_host_feature_arg {
-            uint16_t bit_num;
-            uint8_t bit_val;
-        } set_host_feature_params;
+        uint16_t bit_num;
+        uint8_t bit_val;
+    } set_host_feature_params;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    // BTC_GAP_BLE_SET_PA_SUBEVT_DATA
+    struct per_adv_subevent_data_params_args {
+        uint8_t adv_handle;
+        uint8_t num_subevents_with_data;
+        esp_ble_subevent_params *subevent_params;
+    } per_adv_subevent_data_params;
+    // BTC_GAP_BLE_SET_PA_RSP_DATA
+    struct per_adv_response_data_params_args {
+        uint16_t sync_handle;
+        uint16_t request_event;
+        uint8_t request_subevent;
+        uint8_t response_subevent;
+        uint8_t response_slot;
+        uint8_t response_data_len;
+        uint8_t *response_data;
+    } per_adv_response_data_params;
+    // BTC_GAP_BLE_SET_PA_SYNC_SUBEVT
+    struct per_sync_subevent_params_args {
+        uint16_t sync_handle;
+        uint16_t periodic_adv_properties;
+        uint8_t num_subevents_to_sync;
+        uint8_t *subevent;
+    } per_sync_subevent_params;
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 } btc_ble_5_gap_args_t;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 

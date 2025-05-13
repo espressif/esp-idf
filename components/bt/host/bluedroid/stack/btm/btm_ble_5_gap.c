@@ -710,11 +710,20 @@ tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Pa
         goto end;
     }
 
-    if ((err= btsnd_hcic_ble_set_periodic_adv_params(instance, params->interval_min,
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    if ((err = btsnd_hcic_ble_set_periodic_adv_params_v2(instance, params->interval_min, params->interval_max,
+                                                params->properties, params->num_subevents, params->subevent_interval,
+                                                params->rsp_slot_delay, params->rsp_slot_spacing, params->num_rsp_slots)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("LE PA SetParams_V2: cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+#else
+    if ((err = btsnd_hcic_ble_set_periodic_adv_params(instance, params->interval_min,
                                                params->interval_max, params->properties)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE PA SetParams: cmd err=0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 
 end:
 
@@ -1740,3 +1749,67 @@ tBTM_STATUS BTM_BleSetHostFeature(uint16_t bit_num, uint8_t bit_val)
     return status;
 }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+void BTM_BleSetPaSubeventData(UINT8 adv_handle, UINT8 num_subevents_with_data, uint8_t *subevent_params)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_set_periodic_adv_subevt_data(adv_handle, num_subevents_with_data, (ble_subevent_params *)subevent_params)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.pa_subevt_data_evt.status = status;
+    cb_params.pa_subevt_data_evt.adv_handle = adv_handle;
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT, &cb_params);
+}
+
+void BTM_BleSetPaResponseData(UINT16 sync_handle, UINT16 req_evt, UINT8 req_subevt, UINT8 rsp_subevt, UINT8 rsp_slot, UINT8 rsp_data_len, UINT8 *rsp_data)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_set_periodic_adv_rsp_data(sync_handle, req_evt, req_subevt, rsp_subevt, rsp_slot, rsp_data_len, rsp_data)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.pa_rsp_data_evt.status = status;
+    cb_params.pa_rsp_data_evt.sync_handle = sync_handle;
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SET_PERIODIC_ADV_RESPONSE_DATA_EVT, &cb_params);
+}
+
+void BTM_BleSetPaSyncSubevt(UINT16 sync_handle, UINT16 periodic_adv_properties, UINT8 num_subevents_to_sync, UINT8 *subevt)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_set_periodic_sync_subevt(sync_handle, periodic_adv_properties, num_subevents_to_sync, subevt)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.pa_sync_subevt_evt.status = status;
+    cb_params.pa_sync_subevt_evt.sync_handle = sync_handle;
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SET_PERIODIC_SYNC_SUBEVT_EVT, &cb_params);
+}
+
+void btm_ble_pa_subevt_data_req_evt(tBTM_BLE_PA_SUBEVT_DATA_REQ_EVT *params)
+{
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)params);
+}
+
+void btm_ble_pa_rsp_rpt_evt(tBTM_BLE_PA_RSP_REPORT_EVT *params)
+{
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_PERIODIC_ADV_RESPONSE_REPORT_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)params);
+}
+
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
