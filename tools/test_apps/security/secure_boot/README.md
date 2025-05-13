@@ -9,17 +9,6 @@ The example checks if the secure boot feature is enabled/disabled and if enabled
 
 ### Hardware Required
 
-Any of the following ESP module:
-* ESP32 (supports Secure Boot V1)
-* ESP32-ECO3 (supports  Secure Boot V2 & Secure Boot V1)
-* ESP32S2 (supports Secure Boot V2)
-* ESP32C3-ECO3 (supports Secure Boot V2)
-* ESP32S3 (supports Secure Boot V2)
-* ESP32P4 (supports Secure Boot V2)
-* ESP32C5 (supports Secure Boot V2)
-* ESP32C61 (supports Secure Boot V2)
-* ESP32H21 (supports Secure Boot V2)
-
 It is recommended to use Secure Boot V2 from ESP32-ECO3 onwards.
 
 ### Configure the project
@@ -73,7 +62,7 @@ Purpose of the test case (`pytest_secure_boot.py`) is to test the secure boot im
 
 ### Hardware required
 
-* FPGA setup with ESP32C3/ESP32S3/ESP32P4/ESP32C5/ESP32C61/ESP32H21 image
+* FPGA setup with the target image
 
 * COM port for programming and export it as ESPPORT
     e.g `export ESPPORT=/dev/ttyUSB0`
@@ -86,7 +75,7 @@ Purpose of the test case (`pytest_secure_boot.py`) is to test the secure boot im
 ```
 export IDF_ENV_FPGA=1
 
-idf.py set-target esp32c3   #(or esp32s3 / esp32p4 / esp32c5 / esp32c61 / esp32h21)
+idf.py set-target {target}
 
 idf.py menuconfig
 ```
@@ -95,7 +84,7 @@ Under `Security features`
 
 - Enable the `Enable hardware Secure Boot`
 
-- Set the secure boot signing key ("test_rsa_3072_key.pem")
+- Set the secure boot signing key
 
 - Set UART ROM download mode to ENABLED (Required for the script to read the EFUSE)
 
@@ -116,5 +105,5 @@ Under `Security features`
 - Run the example test
 
     ```
-    pytest --target esp32c3
+    pytest --target {target}
     ```
