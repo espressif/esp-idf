@@ -47,13 +47,14 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
     }
 
 #if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
-    ecdsa_ll_set_k_type(conf->sign_type);
-
+    if (ecdsa_ll_is_deterministic_mode_supported()) {
+        ecdsa_ll_set_k_type(conf->sign_type);
 #if !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
-    if (conf->sign_type == ECDSA_K_TYPE_DETERMINISITIC) {
-        ecdsa_ll_set_deterministic_loop(conf->loop_number);
-    }
+        if (conf->sign_type == ECDSA_K_TYPE_DETERMINISITIC) {
+            ecdsa_ll_set_deterministic_loop(conf->loop_number);
+        }
 #endif /* !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
+    }
 #endif
 }
 
