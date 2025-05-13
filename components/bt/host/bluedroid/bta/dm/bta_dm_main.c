@@ -338,6 +338,11 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     bta_dm_ble_set_host_feature,   /* BTA_DM_API_SET_HOST_FEATURE_EVT */
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    bta_dm_api_set_periodic_adv_subevt_data,   /* BTA_DM_API_SET_PA_SUBEVT_DATA */
+    bta_dm_api_set_periodic_adv_response_data, /* BTA_DM_API_SET_PA_RSP_DATA */
+    bta_dm_api_set_periodic_sync_subevt,       /* BTA_DM_API_SET_PA_SYNC_SUBEVT */
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 };
 
 

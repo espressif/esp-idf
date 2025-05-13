@@ -368,6 +368,12 @@
 #define BLE_FEAT_CONN_SUBRATING     FALSE
 #endif
 
+#if (UC_BT_BLE_FEAT_PAWR_EN == TRUE)
+#define BT_BLE_FEAT_PAWR_EN     TRUE
+#else
+#define BT_BLE_FEAT_PAWR_EN     FALSE
+#endif
+
 #if (UC_BT_BLE_VENDOR_HCI_EN == TRUE)
 #define BLE_VENDOR_HCI_EN TRUE
 #else

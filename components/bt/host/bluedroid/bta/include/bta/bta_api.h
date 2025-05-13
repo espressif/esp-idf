@@ -1580,7 +1580,14 @@ typedef struct {
 typedef struct {
     UINT16 interval_min;
     UINT16 interval_max;
-    UINT8  properties;
+    UINT16  properties;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    UINT8 num_subevents;
+    UINT8 subevent_interval;
+    UINT8 rsp_slot_delay;
+    UINT8 rsp_slot_spacing;
+    UINT8 num_rsp_slots;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 } tBTA_DM_BLE_Periodic_Adv_Params;
 
 typedef struct {
@@ -1696,6 +1703,14 @@ typedef struct {
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define BTA_BLE_GAP_SET_HOST_FEATURE_EVT                           BTM_BLE_GAP_SET_HOST_FEATURE_EVT
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#define BTA_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT               BTM_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT
+#define BTA_BLE_GAP_SET_PERIODIC_ADV_RESPONSE_DATA_EVT             BTM_BLE_GAP_SET_PERIODIC_ADV_RESPONSE_DATA_EVT
+#define BTA_BLE_GAP_SET_PERIODIC_SYNC_SUBEVT_EVT                   BTM_BLE_GAP_SET_PERIODIC_SYNC_SUBEVT_EVT
+#define BTA_BLE_GAP_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT           BTM_BLE_GAP_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT
+#define BTA_BLE_GAP_PERIODIC_ADV_RESPONSE_REPORT_EVT               BTM_BLE_GAP_PERIODIC_ADV_RESPONSE_REPORT_EVT
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 
 #define BTA_DM_BLE_5_GAP_UNKNOWN_EVT                               BTM_BLE_5_GAP_UNKNOWN_EVT
 typedef tBTM_BLE_5_GAP_EVENT tBTA_DM_BLE_5_GAP_EVENT;
@@ -3075,6 +3090,13 @@ void BTA_DmBleGapSubrateReqest(uint16_t conn_handle, uint16_t subrate_min, uint1
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void BTA_DmBleGapSetHostFeature(uint16_t bit_num, uint8_t bit_val);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+void BTA_DmBleGapSetPASubevtData(uint8_t adv_handle, uint8_t num_subevents_with_data, uint8_t *subevent_params);
+void BTA_DmBleGapSetPeriodicAdvRspData(uint16_t sync_handle, uint16_t request_event, uint8_t request_subevent,
+                                        uint8_t rsp_subevent, uint8_t rsp_slot, uint8_t rsp_data_len, uint8_t *rsp_data);
+void BTA_DmBleGapSetPeriodicSyncSubevt(uint16_t sync_handle, uint16_t periodic_adv_properties, uint8_t num_subevents_to_sync, uint8_t *subevent);
+#endif// (BT_BLE_FEAT_PAWR_EN == TRUE)
 
 /*******************************************************************************
 **

@@ -6320,6 +6320,25 @@ void bta_dm_ble_set_host_feature(tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+void bta_dm_api_set_periodic_adv_subevt_data(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetPaSubeventData(p_data->pa_subevt_data.adv_handle, p_data->pa_subevt_data.num_subevents_with_data, (uint8_t *)(p_data->pa_subevt_data.subevent_params));
+}
+
+void bta_dm_api_set_periodic_adv_response_data(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetPaResponseData(p_data->pa_rsp_data.sync_handle, p_data->pa_rsp_data.request_event, p_data->pa_rsp_data.request_subevent,
+                            p_data->pa_rsp_data.rsp_subevent, p_data->pa_rsp_data.rsp_slot, p_data->pa_rsp_data.rsp_data_len,
+                            p_data->pa_rsp_data.rsp_data);
+}
+
+void bta_dm_api_set_periodic_sync_subevt(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetPaSyncSubevt(p_data->pa_sync_subevt.sync_handle, p_data->pa_sync_subevt.periodic_adv_properties, p_data->pa_sync_subevt.num_subevents_to_sync, p_data->pa_sync_subevt.subevent);
+}
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 /*******************************************************************************
 **
