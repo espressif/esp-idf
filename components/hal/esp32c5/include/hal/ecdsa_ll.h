@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -413,17 +413,6 @@ static inline void ecdsa_ll_read_param(ecdsa_ll_param_t param, uint8_t *buf, uin
 static inline int ecdsa_ll_get_operation_result(void)
 {
     return REG_GET_BIT(ECDSA_RESULT_REG, ECDSA_OPERATION_RESULT);
-}
-
-/**
- * @brief Check if the k value is greater than the curve order.
- *
- * @return 0, k value is not greater than the curve order. In this case, the k value is the set k value.
- * @return 1, k value is greater than than the curve order. In this case, the k value is the set (k mod n).
- */
-static inline int ecdsa_ll_check_k_value(void)
-{
-    return REG_GET_BIT(ECDSA_RESULT_REG, ECDSA_K_VALUE_WARNING);
 }
 
 #ifdef __cplusplus
