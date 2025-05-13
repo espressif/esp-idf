@@ -511,8 +511,9 @@
 #define SOC_SDMMC_USE_IOMUX          1
 #define SOC_SDMMC_USE_GPIO_MATRIX    1
 #define SOC_SDMMC_NUM_SLOTS          2
+#define SOC_SDMMC_DATA_WIDTH_MAX     8
 /* Supported host clock delay phase number */
-#define SOC_SDMMC_DELAY_PHASE_NUM    4
+#define SOC_SDMMC_DELAY_PHASE_NUM    8
 #define SOC_SDMMC_IO_POWER_EXTERNAL  1    ///< SDMMC IO power controlled by external power supply
 #define SOC_SDMMC_PSRAM_DMA_CAPABLE  1    ///< SDMMC peripheral can do DMA transfer to/from PSRAM
 #define SOC_SDMMC_UHS_I_SUPPORTED    1

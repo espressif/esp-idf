@@ -104,11 +104,12 @@ typedef enum {
 /**
  * @brief Enable the bus clock for SDMMC module
  *
- * @param hw    hardware instance address
- * @param en    enable / disable
+ * @param group_id Group ID
+ * @param en       enable / disable
  */
-static inline void sdmmc_ll_enable_bus_clock(sdmmc_dev_t *hw, bool en)
+static inline void sdmmc_ll_enable_bus_clock(int group_id, bool en)
 {
+    (void)group_id;
     HP_SYS_CLKRST.soc_clk_ctrl1.reg_sdmmc_sys_clk_en = en;
 }
 
@@ -119,10 +120,11 @@ static inline void sdmmc_ll_enable_bus_clock(sdmmc_dev_t *hw, bool en)
 /**
  * @brief Reset the SDMMC module
  *
- * @param hw    hardware instance address
+ * @param group_id Group ID
  */
-static inline void sdmmc_ll_reset_register(sdmmc_dev_t *hw)
+static inline void sdmmc_ll_reset_register(int group_id)
 {
+    (void)group_id;
     LP_AON_CLKRST.hp_sdmmc_emac_rst_ctrl.rst_en_sdmmc = 1;
     LP_AON_CLKRST.hp_sdmmc_emac_rst_ctrl.rst_en_sdmmc = 0;
 }
@@ -348,10 +350,8 @@ static inline uint32_t sdmmc_ll_get_card_clock_div(sdmmc_dev_t *hw, uint32_t slo
     uint32_t card_div = 0;
 
     if (slot == 0) {
-        HAL_ASSERT(hw->clksrc.card0 == 0);
         card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, clk_divider0);
     } else if (slot == 1) {
-        HAL_ASSERT(hw->clksrc.card1 == 1);
         card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, clk_divider1);
     } else {
         HAL_ASSERT(false);

@@ -29,6 +29,7 @@
 #include "freertos/FreeRTOS.h"
 #include "sd_pwr_ctrl.h"
 #include "esp_dma_utils.h"
+#include "hal/sd_types.h"
 
 #ifdef __cplusplus
 extern "C" {
