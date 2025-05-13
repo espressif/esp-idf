@@ -2,12 +2,12 @@ idf_build_get_property(target IDF_TARGET)
 
 set(srcs)
 
-set(public_include "include")
+set(public_include "include" "legacy/include")
 
 # SDMMC related source files
 if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
-    list(APPEND srcs "src/sdmmc_transaction.c"
-                     "src/sdmmc_host.c")
+    list(APPEND srcs "legacy/src/sdmmc_transaction.c"
+                     "legacy/src/sdmmc_host.c"
                      "src/sd_host_sdmmc.c"
                      "src/sd_trans_sdmmc.c")
 endif()

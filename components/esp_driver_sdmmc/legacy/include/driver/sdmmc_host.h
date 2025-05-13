@@ -275,6 +275,23 @@ esp_err_t sdmmc_host_get_real_freq(int slot, int* real_freq_khz);
 esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase);
 
 /**
+ * @brief set input delayline
+ *
+ * - This API sets delay when the SDMMC Host samples the signal from the SD Slave.
+ * - This API will check if the given `delay_line` is valid or not.
+ * - This API will print out the delay time, in picosecond (ps)
+ *
+ * @param slot         slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
+ * @param delay_line   delay line, this API will convert the line into picoseconds and print it out
+ *
+ * @return
+ *        - ESP_OK:                ON success.
+ *        - ESP_ERR_INVALID_ARG:   Invalid argument.
+ *        - ESP_ERR_NOT_SUPPORTED: Some chips don't support this feature.
+ */
+esp_err_t sdmmc_host_set_input_delayline(int slot, sdmmc_delay_line_t delay_line);
+
+/**
  * @brief Get the DMA memory information for the host driver
  *
  * @deprecated This API is deprecated
