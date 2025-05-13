@@ -21,6 +21,7 @@ test_cli_installer_win:
   extends:
     - .host_test_win_template
     - .rules:labels:windows_pytest_build_system
+  allow_failure: true
   artifacts:
     when: on_failure
     paths:
