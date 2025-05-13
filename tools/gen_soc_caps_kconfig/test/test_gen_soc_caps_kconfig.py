@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import sys
@@ -13,7 +13,6 @@ except ImportError:
 
 
 class ParserTests(unittest.TestCase):
-
     def test_parse_name(self):
         res = gen_soc_caps_kconfig.parse_define('#define TEST_NAME (2)')
         self.assertEqual(res.name, 'TEST_NAME')
@@ -44,9 +43,16 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(res.int_value, '329000')
 
     def test_parse_float(self):
-        # Kconfig doesnt support floats, should not be parsed as anything
+        # Kconfig doesn't support floats, should not be parsed as anything
         res = gen_soc_caps_kconfig.parse_define('#define TEST_FLOAT (3.14)')
         self.assertEqual(res.value, '')
+
+    def test_parse_ignore_pragma(self):
+        res = gen_soc_caps_kconfig.parse_define('#define TEST_IGNORE // [gen_soc_caps:ignore]')
+        self.assertEqual(' '.join(res.ignore_pragma), '// [gen_soc_caps:ignore]')
+
+        res = gen_soc_caps_kconfig.parse_define('#define TEST_NO_IGNORE')
+        self.assertEqual(res.ignore_pragma, '')
 
 
 if __name__ == '__main__':

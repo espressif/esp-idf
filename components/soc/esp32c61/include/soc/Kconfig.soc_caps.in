@@ -204,8 +204,8 @@ config SOC_ADC_DMA_SUPPORTED
     default y
 
 config SOC_ADC_PERIPH_NUM
-    bool
-    default y
+    int
+    default 1
 
 config SOC_ADC_MAX_CHANNEL_NUM
     int
