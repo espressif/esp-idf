@@ -1,9 +1,8 @@
 menu "ESP-TEE (Trusted Execution Environment)"
-    depends on IDF_TARGET_ESP32C6
+    depends on IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
 
     config SECURE_ENABLE_TEE
         bool "Enable the ESP-TEE framework"
-        depends on IDF_TARGET_ESP32C6
         select ESP_SYSTEM_MEMPROT_FEATURE_VIA_TEE
         help
             This configuration enables the Trusted Execution Environment (TEE) feature.
@@ -75,7 +74,6 @@ menu "ESP-TEE (Trusted Execution Environment)"
                     Secure storage will be encrypted by a constant key embedded in the TEE firmware
 
             config SECURE_TEE_SEC_STG_MODE_RELEASE
-                depends on IDF_TARGET_ESP32C6
                 bool "Release"
                 help
                     Secure storage will be encrypted by the data stored in eFuse block

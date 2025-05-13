@@ -1,0 +1,304 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "sdkconfig.h"
+
+#define SRAM_IRAM_START            (0x40800000)
+#define SRAM_IRAM_TEE_ORG          (SRAM_IRAM_START)
+#define SRAM_DRAM_TEE_ORG          (SRAM_IRAM_START)
+
+#define SRAM_IRAM_ORG              (SRAM_IRAM_TEE_ORG + CONFIG_SECURE_TEE_IRAM_SIZE + CONFIG_SECURE_TEE_DRAM_SIZE)
+
+#define SRAM_DRAM_TEE_SIZE         (CONFIG_SECURE_TEE_DRAM_SIZE - CONFIG_SECURE_TEE_STACK_SIZE - CONFIG_SECURE_TEE_INTR_STACK_SIZE)
+#define SRAM_DRAM_TEE_END          (SRAM_DRAM_TEE_ORG + CONFIG_SECURE_TEE_IRAM_SIZE + SRAM_DRAM_TEE_SIZE)
+
+#define I_D_SRAM_TEE_SIZE          (CONFIG_SECURE_TEE_IRAM_SIZE + SRAM_DRAM_TEE_SIZE)
+
+/* TEE interrupt stack is placed at the end of the TEE DRAM segment.
+ * The top of the TEE stack is before the end of interrupt stack
+ * and the bottom of the stack is at _heap_end.
+ */
+#define SRAM_STACK_TEE_ORG         (SRAM_DRAM_TEE_END)
+#define SRAM_INTR_STACK_TEE_ORG    (SRAM_DRAM_TEE_END + CONFIG_SECURE_TEE_STACK_SIZE)
+
+#define FLASH_IROM_TEE_ORG         (0x42000000)
+#define FLASH_DROM_TEE_ORG         (0x42000000)
+#define I_D_FLASH_TEE_SIZE         (CONFIG_SECURE_TEE_IROM_SIZE + CONFIG_SECURE_TEE_DROM_SIZE)
+
+/**
+ * These values are the same in every app binary for the same chip target.
+ *
+ * Values that may change when the app is rebuilt, or in a new ESP-IDF version,
+ * should be stored via esp_app_tee_config structure
+ */
+
+#if CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS
+PROVIDE ( esp_tee_app_config        = SRAM_IRAM_ORG + 0x22e0 );
+#else
+PROVIDE ( esp_tee_app_config        = SRAM_IRAM_ORG + 0x2e0 );
+#endif
+
+PROVIDE ( GDMA                      = 0x60080000 );
+
+/* Default entry point: */
+ENTRY(esp_tee_init);
+
+MEMORY
+{
+/* IRAM Configuration */
+  iram_tee_seg (RX) :                    org = SRAM_IRAM_TEE_ORG, len = I_D_SRAM_TEE_SIZE
+
+/* DRAM Configuration */
+  dram_tee_seg (RW)  :                   org = SRAM_DRAM_TEE_ORG, len = I_D_SRAM_TEE_SIZE
+
+/* TEE Stack Configuration */
+  stack_tee_seg (RW)  :                  org = SRAM_STACK_TEE_ORG, len = CONFIG_SECURE_TEE_STACK_SIZE
+
+/* TEE Interrupt Stack Configuration */
+  intr_stack_tee_seg (RW)  :             org = SRAM_INTR_STACK_TEE_ORG, len = CONFIG_SECURE_TEE_INTR_STACK_SIZE
+
+/* TEE flash data section */
+  flash_data_seg (R) :                   org = FLASH_DROM_TEE_ORG + 0x20, len = I_D_FLASH_TEE_SIZE - 0x20
+
+/* TEE flash text section */
+  flash_text_seg (RX):                   org = FLASH_IROM_TEE_ORG + 0x20, len = I_D_FLASH_TEE_SIZE - 0x20
+}
+
+SECTIONS
+{
+  /**
+   * This section is required to skip .iram.tee_text area because iram_tee_seg and
+   * dram_tee_seg reflect the same address space on different buses.
+   */
+  .dram.tee_dummy (NOLOAD):
+  {
+    . = ORIGIN(dram_tee_seg) + CONFIG_SECURE_TEE_IRAM_SIZE;
+  } > dram_tee_seg
+
+  .dram.tee.bss (NOLOAD) :
+  {
+    . = ALIGN (8);
+    _tee_dram_start = ABSOLUTE(.);
+    _tee_bss_start = ABSOLUTE(.);
+    *(.bss .bss.*)
+    *(.sbss .sbss.*)
+    . = ALIGN (8);
+    _tee_bss_end = ABSOLUTE(.);
+  } > dram_tee_seg
+
+  .dram.tee.data :
+  {
+    _data_start = ABSOLUTE(.);
+    *(.data .data.*)
+    *(.sdata .sdata.*)
+    *(.dram1 .dram1.*)
+    . = ALIGN(4);
+    _data_end = ABSOLUTE(.);
+   } > dram_tee_seg
+
+  .dram.tee.rodata :
+  {
+    _rodata_start = ABSOLUTE(.);
+    /* TEE flash manager */
+    *libtee_flash_mgr.a:*(.rodata .srodata .rodata.* .srodata.*)
+    *libbootloader_support.a:bootloader_flash.*(.rodata .srodata .rodata.* .srodata.*)
+    /* Secure services */
+    *libmain.a:esp_secure_services_iram.c.*(.rodata .srodata .rodata.* .srodata.*)
+    *libmain.a:esp_secure_dispatcher.c.*(.rodata .srodata .rodata.* .srodata.*)
+    /* Panic handler */
+    *libmain.a:panic_helper_riscv.*(.rodata .srodata .rodata.* .srodata.*)
+    *libmain.a:esp_tee_apm_intr.c.*(.rodata .srodata .rodata.* .srodata.*)
+    /* HAL (noflash) */
+    *libhal.a:mmu_hal.c*(.rodata .srodata .rodata.* .srodata.*)
+    *libhal.a:cache_hal.c*(.rodata .srodata .rodata.* .srodata.*)
+    _rodata_end = ABSOLUTE(.);
+    _tee_dram_end = ABSOLUTE(.);
+  } > dram_tee_seg
+
+  .dram.tee.heap :
+  {
+    . = ALIGN (16);
+    _tee_heap_start = ABSOLUTE(.);
+    . = ORIGIN(dram_tee_seg) + LENGTH(dram_tee_seg);
+    _tee_heap_end = ABSOLUTE(.);
+  } > dram_tee_seg
+
+  .dram.tee.stack :
+  {
+    . = ALIGN (16);
+    _tee_stack_bottom = ABSOLUTE(.);
+    . = ORIGIN(stack_tee_seg) + LENGTH(stack_tee_seg);
+    _tee_stack = ABSOLUTE(.);
+  } > stack_tee_seg
+
+  .dram.tee.intr_stack :
+  {
+    . = ALIGN (16);
+    _tee_intr_stack_bottom = ABSOLUTE(.);
+    . = ORIGIN(intr_stack_tee_seg) + LENGTH(intr_stack_tee_seg);
+    _tee_intr_stack = ABSOLUTE(.);
+  } > intr_stack_tee_seg
+
+  .flash.rodata :
+  {
+    _tee_xip_data_start = ABSOLUTE(.);
+    *(.rodata_desc .rodata_desc.*)                /* Should be the first. TEE App version info. DO NOT PUT ANYTHING BEFORE IT! */
+    *(.rodata .rodata.*)
+    *(.srodata .srodata.*)
+    *(.gcc_except_table .gcc_except_table.*)
+    _tee_xip_data_end = ABSOLUTE(.);
+   } > flash_data_seg
+
+  .flash.text_dummy (NOLOAD):
+  {
+    . = ALIGN(ALIGNOF(.flash.rodata));
+    /* Create an empty gap as big as .flash.rodata section */
+    . = . + SIZEOF(.flash.rodata);
+    /* Prepare the alignment of the section above. Few bytes (0x20) must be
+     * added for the mapping header. */
+    . = ALIGN(CONFIG_MMU_PAGE_SIZE) + 0x20;
+  } > flash_text_seg
+
+
+/* HAL modules and their memory placement:
+ *
+ * +-----------+---------------+--------+
+ * | Module    | Section       | Memory |
+ * +-----------+---------------+--------+
+ * | MMU       | text+rodata   | SRAM   |
+ * | CACHE     | text+rodata   | SRAM   |
+ * | WDT       | text          | SRAM   |
+ * | APM       | text          | Flash* |
+ * | AES       | text          | Flash  |
+ * | SHA       | text          | Flash  |
+ * | HMAC      | text          | Flash  |
+ * | DS        | text          | Flash  |
+ * | ECC       | text          | Flash  |
+ * | BROWNOUT  | text          | Flash  |
+ * | EFUSE     | text          | Flash  |
+ * | LPTIMER   | text          | Flash  |
+ * | SPI_FLASH | text          | Flash  |
+ * +-----------+---------------+--------+
+ *
+ * By default, for ESP-TEE, text sections are placed in SRAM while rodata sections go to the flash.
+ * Therefore, only HAL modules that require SRAM placement for proper functionality are located there,
+ * while the remaining modules are placed in flash memory.
+ */
+
+  .flash.text :
+  {
+    _tee_xip_text_start = ABSOLUTE(.);
+    /* Secure Services */
+    *libmain.a:esp_secure_services.c*(.literal .text .literal.* .text.*)
+    /* HAL */
+    *libhal.a:aes_hal.c*(.literal .text .literal.* .text.*)
+    *libhal.a:sha_hal.c*(.literal .text .literal.* .text.*)
+    *libhal.a:hmac_hal.c*(.literal .text .literal.* .text.*)
+    *libhal.a:ds_hal.c*(.literal .text .literal.* .text.*)
+    *libhal.a:ecc_hal.c*(.literal .text .literal.* .text.*)
+    /* NOTE: There is a possibility of APM violations (SPI1 flash protection)
+     * being triggered with the flash cache disabled */
+#if !CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1
+    *libhal.a:apm_hal.c*(.literal .text .literal.* .text.*)
+#endif
+    *libhal.a:brownout_hal.c*(.literal .text .literal.* .text.*)
+    *libhal.a:spi_flash_hal.c*(.literal .text .literal.* .text.*)
+    /* These HAL modules have functions marked with the IRAM_ATTR attribute which get placed in the SRAM */
+    *libhal.a:efuse_hal.c*(.literal .text .literal.* .text.*)
+    *libhal.a:lp_timer_hal.c*(.literal .text .literal.* .text.*)
+    /* Mbedtls for TEE */
+    *libmbedtls.a:*(.literal .text .literal.* .text.*)
+    *libmbedcrypto.a:*(.literal .text .literal.* .text.*)
+    /* HMAC-DS layer */
+    *libesp_security.a:*(.literal .text .literal.* .text.*)
+    /* NVS flash and related modules */
+    *libnvs_flash.a:*(.literal .text .literal.* .text.*)
+    *libstdc++.a:*(.literal .text .literal.* .text.*)
+    *libgcc.a:*(.literal .text .literal.* .text.*)
+    /* esp_partition API */
+    *libesp_partition.a:*(.literal .text .literal.* .text.*)
+    /* TEE attestation module */
+    *libattestation.a:*(.literal .text .literal.* .text.*)
+    *json_generator.a:*(.literal .text .literal.* .text.*)
+    /* snprintf-related functions */
+    *libc_nano.a:(.literal .text .literal.* .text.*)
+    /* TEE test module */
+    *libtest_sec_srv.a:*(.literal .text .literal.* .text.*)
+    _tee_xip_text_end = ABSOLUTE(.);
+    _tee_xip_end = ABSOLUTE(.);
+   } > flash_text_seg
+
+  .iram.tee.text :
+  {
+    /* Vectors go to start of IRAM */
+    ASSERT(ABSOLUTE(.) % 0x100 == 0, "vector address must be 256 byte aligned");
+    _tee_vec_start = ABSOLUTE(.);
+    KEEP(*(.exception_vectors_table.text));
+    KEEP(*(.exception_vectors.text));
+    . = ALIGN(4);
+    _invalid_pc_placeholder = ABSOLUTE(.);
+    _tee_vec_end = ABSOLUTE(.);
+
+    _tee_iram_start = ABSOLUTE(.);
+    *(.literal .text .iram1 .literal.* .text.* .iram1.*)
+    *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
+    _tee_iram_end = ABSOLUTE(.);
+  } > iram_tee_seg
+
+  .riscv.attributes 0: { *(.riscv.attributes) }
+
+  /* DWARF 1 */
+  .debug              0 : { *(.debug) }
+  .line               0 : { *(.line) }
+  /* GNU DWARF 1 extensions */
+  .debug_srcinfo      0 : { *(.debug_srcinfo) }
+  .debug_sfnames      0 : { *(.debug_sfnames) }
+  /* DWARF 1.1 and DWARF 2 */
+  .debug_aranges      0 : { *(.debug_aranges) }
+  .debug_pubnames     0 : { *(.debug_pubnames) }
+  /* DWARF 2 */
+  .debug_info         0 : { *(.debug_info .gnu.linkonce.wi.*) }
+  .debug_abbrev       0 : { *(.debug_abbrev) }
+  .debug_line         0 : { *(.debug_line) }
+  .debug_frame        0 : { *(.debug_frame) }
+  .debug_str          0 : { *(.debug_str) }
+  .debug_loc          0 : { *(.debug_loc) }
+  .debug_macinfo      0 : { *(.debug_macinfo) }
+  .debug_pubtypes     0 : { *(.debug_pubtypes) }
+  /* DWARF 3 */
+  .debug_ranges       0 : { *(.debug_ranges) }
+  /* SGI/MIPS DWARF 2 extensions */
+  .debug_weaknames    0 : { *(.debug_weaknames) }
+  .debug_funcnames    0 : { *(.debug_funcnames) }
+  .debug_typenames    0 : { *(.debug_typenames) }
+  .debug_varnames     0 : { *(.debug_varnames) }
+  /* GNU DWARF 2 extensions */
+  .debug_gnu_pubnames 0 : { *(.debug_gnu_pubnames) }
+  .debug_gnu_pubtypes 0 : { *(.debug_gnu_pubtypes) }
+  /* DWARF 4 */
+  .debug_types        0 : { *(.debug_types) }
+  /* DWARF 5 */
+  .debug_addr         0 : { *(.debug_addr) }
+  .debug_line_str     0 : { *(.debug_line_str) }
+  .debug_loclists     0 : { *(.debug_loclists) }
+  .debug_macro        0 : { *(.debug_macro) }
+  .debug_names        0 : { *(.debug_names) }
+  .debug_rnglists     0 : { *(.debug_rnglists) }
+  .debug_str_offsets  0 : { *(.debug_str_offsets) }
+
+  .comment 0 : { *(.comment) }
+  .note.GNU-stack 0: { *(.note.GNU-stack) }
+
+  /**
+   * Discarding .rela.* sections results in the following mapping:
+   * .rela.text.* -> .text.*
+   * .rela.data.* -> .data.*
+   * And so forth...
+   */
+  /DISCARD/ : { *(.rela.*) }
+}
+
+ASSERT ((_tee_iram_end < _tee_dram_start), "Error: TEE IRAM segment overflowed into the DRAM segment!");

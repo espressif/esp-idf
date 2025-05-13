@@ -8,10 +8,9 @@
 
 #include "hal/aes_hal.h"
 #include "soc/interrupts.h"
-#include "esp_attr.h"
 
+#include "esp_attr.h"
 #include "esp_tee_intr.h"
-#include "esp_tee_aes_intr.h"
 
 volatile DRAM_ATTR bool intr_flag;
 
