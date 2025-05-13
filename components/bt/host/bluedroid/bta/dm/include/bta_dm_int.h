@@ -335,6 +335,11 @@ enum {
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BTA_DM_API_SET_HOST_FEATURE_EVT,
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    BTA_DM_API_SET_PA_SUBEVT_DATA,
+    BTA_DM_API_SET_PA_RSP_DATA,
+    BTA_DM_API_SET_PA_SYNC_SUBEVT,
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     BTA_DM_MAX_EVT
 };
 
@@ -1156,6 +1161,51 @@ typedef struct {
 } tBTA_DM_API_SET_HOST_FEATURE;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+typedef struct {
+	UINT8 subevent;
+	UINT8 response_slot_start;
+	UINT8 response_slot_count;
+    UINT8 subevent_data_len;
+	UINT8 *subevent_data;
+} tBTA_BLE_SUBEVENT_PARAMS;
+
+typedef struct {
+	UINT8 subevent;
+	UINT8 response_slot_start;
+	UINT8 response_slot_count;
+    UINT8 subevent_data_len;
+	UINT8 subevent_data[251];
+} tBTA_DM_API_BLE_SUBEVENT_PARAMS;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT8 adv_handle;
+    UINT8 num_subevents_with_data;
+    tBTA_DM_API_BLE_SUBEVENT_PARAMS *subevent_params;
+} tBTA_DM_API_BLE_PA_SUBEVENT_DATA;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 sync_handle;
+    UINT16 request_event;
+    UINT8 request_subevent;
+    UINT8 rsp_subevent;
+    UINT8 rsp_slot;
+    UINT8 rsp_data_len;
+    UINT8 *rsp_data;
+} tBTA_DM_API_BLE_PA_RSP_DATA;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 sync_handle;
+    UINT16 periodic_adv_properties;
+    UINT8 num_subevents_to_sync;
+    UINT8 *subevent;
+} tBTA_DM_API_BLE_PA_SYNC_SUBEVT;
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
 #endif /* BLE_INCLUDED */
 
 #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
@@ -1876,6 +1926,11 @@ typedef union {
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     tBTA_DM_API_SET_HOST_FEATURE    set_host_feat;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    tBTA_DM_API_BLE_PA_SUBEVENT_DATA pa_subevt_data;
+    tBTA_DM_API_BLE_PA_RSP_DATA    pa_rsp_data;
+    tBTA_DM_API_BLE_PA_SYNC_SUBEVT pa_sync_subevt;
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 } tBTA_DM_MSG;
 
 
@@ -2543,4 +2598,9 @@ void bta_dm_api_subrate_request(tBTA_DM_MSG *p_data);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void bta_dm_ble_set_host_feature(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+void bta_dm_api_set_periodic_adv_subevt_data(tBTA_DM_MSG *p_data);
+void bta_dm_api_set_periodic_adv_response_data(tBTA_DM_MSG *p_data);
+void bta_dm_api_set_periodic_sync_subevt(tBTA_DM_MSG *p_data);
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 #endif /* BTA_DM_INT_H */
