@@ -80,6 +80,13 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
             else:
                 raise
 
+    def config_report_target(target_name: str, ctx: Context, args: PropertyDict) -> None:
+        """
+        Generate a JSON file with the project configuration report in the build/config directory.
+        """
+        ensure_build_directory(args, ctx.info_name)
+        run_target(target_name, args)
+
     def size_target(
         target_name: str, ctx: Context, args: PropertyDict, output_format: str, output_file: str, diff_map_file: str
     ) -> None:
@@ -623,6 +630,11 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
                         'envvar': 'IDF_CONFSERVER_BUFFER_SIZE',
                     }
                 ],
+            },
+            'config-report': {
+                'callback': config_report_target,
+                'help': 'Generate a JSON file with the project configuration report in the build directory.',
+                'options': global_options,
             },
             'size': {
                 'callback': size_target,
