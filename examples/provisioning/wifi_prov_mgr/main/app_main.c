@@ -539,6 +539,12 @@ void app_main(void)
         }
 
         /* Resetting provisioning state machine to enable re-provisioning */
+        /* NOTE: This API is used only for demonstration purposes in this example.
+         * In real-world firmware applications, you should NOT call this API directly.
+         * Instead, the external provisioning entity should trigger reprovisioning by sending
+         * a command through the provisioning control endpoint, which will internally
+         * trigger same behaviour to reset the provisioning state.
+         */
         wifi_prov_mgr_reset_sm_state_for_reprovision();
 
         /* Wait for Wi-Fi connection */

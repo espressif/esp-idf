@@ -25,6 +25,58 @@ This example can be used, as it is, for adding a provisioning service to any app
 
 > Note: If you use this example code in your own project, in BLE mode, then remember to enable the BT stack and BTDM BLE control settings in your SDK configuration (e.g. by using the `sdkconfig.defaults` file from this project).
 
+## Transports
+
+### SoftAP Transport
+- After successful provisioning, the SoftAP connection is not disconnected by default
+- Users can directly reconnect to the device for reprovisioning
+- It's the user's responsibility to manage connection memory and handle it according to application requirements
+- **HTTP**: `POST http://<server_name>:<port>/prov-ctrl`
+
+### BLE Transport
+- By default, BT memory is released after successful provisioning
+- To keep BLE active after provisioning, enable `WIFI_PROV_KEEP_BLE_ON_AFTER_PROV` in menuconfig
+  - This configuration ensures that BLE advertising is continued even after provisioning is completed.
+- For both SoftAP and BLE transports:
+  - Enable `EXAMPLE_REPROVISIONING` in menuconfig to allow reprovisioning
+  - Use the `esp_prov.py` tool for reprovisioning
+  - Call `wifi_prov_mgr_disable_auto_stop()` API before initiating reprovisioning (already called in this example)
+- **BLE**: `GATT` characteristic for protocomm communication
+
+**NOTE: The underlying transport (HTTP/BLE) must be kept enabled for external commands to be processed**.
+
+## Reprovisioning
+
+The example supports reprovisioning of Wi-Fi credentials through both SoftAP and BLE transports. Here are the key considerations for each transport:
+
+### Commands
+
+**Internal API**: `wifi_prov_mgr_reset_sm_state_for_reprovision()`
+- This API is can be called internally by the device firmware to reset WiFi credentials and restart provisioning mode.
+- For demonstration purposes, this API has been called directly in firmware code, In real-world scenarios following command based reprovisioning is preferred.
+
+**External Command**: 
+- **Endpoint**: `prov-ctrl`
+- **Command**: `TypeCmdCtrlReprov` (protobuf)
+- **Transport**: HTTP/BLE as configured
+- External clients (like Phone apps) can send this command via the transport layer to trigger the reprovisioning.
+
+**Usage from esp_prov.py**:
+```bash
+python esp_prov.py --transport ble --service_name "PROV_DEVICE" --reprov
+```
+
+### Use Cases for Reprovisioning
+
+This flexibility is particularly useful when:
+- Network credentials need to be updated (password changes, SSID changes)
+- Device needs to connect to a different network environment
+- Troubleshooting connectivity issues requires fresh credential configuration
+- Moving devices between different locations with different network setups
+
+For more details on the provisioning process and APIs, refer to the [Wi-Fi Provisioning Manager component documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/provisioning/wifi_provisioning.html).
+
+
 ## How to use example
 
 ### Hardware Required
