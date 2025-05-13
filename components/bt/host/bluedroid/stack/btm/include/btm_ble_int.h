@@ -606,6 +606,10 @@ void btm_ble_transmit_power_report_evt(tBTM_BLE_TRANS_POWER_REPORT_EVT *params);
 #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 void btm_ble_subrate_change_evt(tBTM_BLE_SUBRATE_CHANGE_EVT *params);
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+void btm_ble_pa_subevt_data_req_evt(tBTM_BLE_PA_SUBEVT_DATA_REQ_EVT *params);
+void btm_ble_pa_rsp_rpt_evt(tBTM_BLE_PA_RSP_REPORT_EVT *params);
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 
 /*
 #ifdef __cplusplus

@@ -2082,3 +2082,101 @@ esp_err_t esp_ble_gap_set_host_feature(uint16_t bit_num, uint8_t bit_val)
                 == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+esp_err_t esp_ble_gap_set_periodic_adv_subevent_data(esp_ble_per_adv_subevent_data_params *subevent_data_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if ((!subevent_data_params) || (!subevent_data_params->subevent_params)) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    for (uint8_t i = 0; i < subevent_data_params->num_subevents_with_data; i++)
+    {
+        if (subevent_data_params->subevent_params[i].subevent_data_len && (subevent_data_params->subevent_params[i].subevent_data == NULL)) {
+            return ESP_ERR_NOT_ALLOWED;
+        }
+    }
+
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_PA_SUBEVT_DATA;
+
+    arg.per_adv_subevent_data_params.adv_handle = subevent_data_params->adv_handle;
+    arg.per_adv_subevent_data_params.num_subevents_with_data = subevent_data_params->num_subevents_with_data;
+    arg.per_adv_subevent_data_params.subevent_params = subevent_data_params->subevent_params;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), btc_gap_ble_arg_deep_copy, btc_gap_ble_arg_deep_free)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_set_periodic_adv_response_data(esp_ble_per_adv_response_data_params *rsp_data_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!rsp_data_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    if ((rsp_data_params->response_data == NULL) && rsp_data_params->response_data_len) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_PA_RSP_DATA;
+
+    arg.per_adv_response_data_params.sync_handle = rsp_data_params->sync_handle;
+    arg.per_adv_response_data_params.request_event = rsp_data_params->request_event;
+    arg.per_adv_response_data_params.request_subevent = rsp_data_params->request_subevent;
+    arg.per_adv_response_data_params.response_subevent = rsp_data_params->response_subevent;
+    arg.per_adv_response_data_params.response_slot = rsp_data_params->response_slot;
+    arg.per_adv_response_data_params.response_data_len = rsp_data_params->response_data_len;
+    arg.per_adv_response_data_params.response_data = rsp_data_params->response_data;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), btc_gap_ble_arg_deep_copy, btc_gap_ble_arg_deep_free)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_set_periodic_sync_subevent(esp_ble_per_sync_subevent_params *sync_subevent_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!sync_subevent_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    if ((sync_subevent_params->subevent == NULL) && sync_subevent_params->num_subevents_to_sync) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_PA_SYNC_SUBEVT;
+
+    arg.per_sync_subevent_params.sync_handle = sync_subevent_params->sync_handle;
+    arg.per_sync_subevent_params.periodic_adv_properties = sync_subevent_params->periodic_adv_properties;
+    arg.per_sync_subevent_params.num_subevents_to_sync = sync_subevent_params->num_subevents_to_sync;
+    arg.per_sync_subevent_params.subevent = sync_subevent_params->subevent;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), btc_gap_ble_arg_deep_copy, btc_gap_ble_arg_deep_free)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)

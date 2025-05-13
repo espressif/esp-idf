@@ -364,6 +364,12 @@
 #define UC_BT_BLE_FEAT_CONN_SUBRATING            FALSE
 #endif
 
+#ifdef CONFIG_BT_BLE_FEAT_PAWR_EN
+#define UC_BT_BLE_FEAT_PAWR_EN            CONFIG_BT_BLE_FEAT_PAWR_EN
+#else
+#define UC_BT_BLE_FEAT_PAWR_EN            FALSE
+#endif
+
 #ifdef CONFIG_BT_BLE_VENDOR_HCI_EN
 #define UC_BT_BLE_VENDOR_HCI_EN CONFIG_BT_BLE_VENDOR_HCI_EN
 #else
