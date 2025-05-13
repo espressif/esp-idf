@@ -84,9 +84,14 @@ extern "C" {
  * SDMMC capabilities
  */
 #define SDMMC_LL_SLOT_SUPPORT_GPIO_MATRIX(SLOT_ID)    1
+#define SDMMC_LL_IOMUX_FUNC                           -1
+#define SDMMC_LL_HOST_CTLR_NUMS                       1U
+#define SDMMC_LL_DELAY_MAX_NUMS_LS                    4
+#define SDMMC_LL_DELAY_PHASE_SUPPORTED                1
 
-#define SDMMC_LL_IOMUX_FUNC    -1
-
+/**
+ * SDMMC delay phase
+ */
 typedef enum {
     SDMMC_LL_DELAY_PHASE_0,
     SDMMC_LL_DELAY_PHASE_1,
@@ -94,6 +99,13 @@ typedef enum {
     SDMMC_LL_DELAY_PHASE_3,
 } sdmmc_ll_delay_phase_t;
 
+/**
+ * SDMMC speed mode
+ */
+typedef enum {
+    SDMMC_LL_SPEED_MODE_LS,
+    SDMMC_LL_SPEED_MODE_HS,
+} sdmmc_ll_speed_mode_t;
 
 /*---------------------------------------------------------------
                     Clock & Reset
@@ -220,13 +232,15 @@ static inline void sdmmc_ll_init_phase_delay(sdmmc_dev_t *hw)
 }
 
 /**
- * @brief Set SDMMC din delay
+ * @brief Set SDMMC din delay phase
  *
  * @param hw     hardware instance address
  * @param phase  delay phase
+ * @param mode   speed mode
  */
-static inline void sdmmc_ll_set_din_delay(sdmmc_dev_t *hw, sdmmc_ll_delay_phase_t phase)
+static inline void sdmmc_ll_set_din_delay_phase(sdmmc_dev_t *hw, sdmmc_ll_delay_phase_t phase, sdmmc_ll_speed_mode_t mode)
 {
+    (void)mode;
     switch (phase) {
         case SDMMC_LL_DELAY_PHASE_1:
             hw->clock.phase_din = 0x1;
@@ -241,6 +255,18 @@ static inline void sdmmc_ll_set_din_delay(sdmmc_dev_t *hw, sdmmc_ll_delay_phase_
             hw->clock.phase_din = 0x0;
             break;
     }
+}
+
+/**
+ * @brief Set SDMMC dout delay phase
+ *
+ * @param hw     hardware instance address
+ * @param phase  delay phase
+ * @param mode   speed mode
+ */
+static inline void sdmmc_ll_set_dout_delay_phase(sdmmc_dev_t *hw, sdmmc_ll_delay_phase_t phase, sdmmc_ll_speed_mode_t mode)
+{
+    //for compatibility
 }
 
 /**

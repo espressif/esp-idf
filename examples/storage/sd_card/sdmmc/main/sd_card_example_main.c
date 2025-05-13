@@ -24,7 +24,7 @@
 static const char *TAG = "example";
 
 #define MOUNT_POINT "/sdcard"
-#define EXAMPLE_IS_UHS1    (CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_SDR50 || CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_DDR50)
+#define EXAMPLE_IS_UHS1    (CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_SDR50 || CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_DDR50 || CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_SDR104)
 
 #ifdef CONFIG_EXAMPLE_DEBUG_PIN_CONNECTIONS
 const char* names[] = {"CLK", "CMD", "D0", "D1", "D2", "D3"};
@@ -138,6 +138,10 @@ void app_main(void)
 #elif CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_DDR50
     host.slot = SDMMC_HOST_SLOT_0;
     host.max_freq_khz = SDMMC_FREQ_DDR50;
+#elif CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_SDR104
+    host.slot = SDMMC_HOST_SLOT_0;
+    host.max_freq_khz = SDMMC_FREQ_SDR104;
+    host.flags &= ~SDMMC_HOST_FLAG_DDR;
 #endif
 
     // For SoCs where the SD power can be supplied both via an internal or external (e.g. on-board LDO) power supply.
