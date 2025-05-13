@@ -7,14 +7,12 @@
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 
-#include "soc/interrupt_reg.h"
-#include "soc/interrupt_matrix_reg.h"
-
 #include "riscv/encoding.h"
 #include "riscv/rvruntime-frames.h"
 #include "esp_private/vectors_const.h"
 
 #include "esp_tee.h"
+#include "esp_tee_intr_defs.h"
 #include "sdkconfig.h"
 
     .equ SAVE_REGS, 32
@@ -25,13 +23,10 @@
     .equ RTNVAL, 0xc0de
     .equ ECALL_U_MODE, 0x8
     .equ ECALL_M_MODE, 0xb
-    .equ TEE_APM_INTR_MASK_0, 0x00300000
-    .equ TEE_APM_INTR_MASK_1, 0x000000f8
     .equ TEE_INTR_DELEG_MASK, 0xffffbfff
 
     .global esp_tee_global_interrupt_handler
-    .global   esp_tee_service_dispatcher
-
+    .global esp_tee_service_dispatcher
 
     .section .data
     .align 4
@@ -441,22 +436,24 @@ _tee_s_intr_handler:
 
     /* Check if the interrupt source is related to an APM exception */
     /* Define the addresses of the registers */
-    li      t0, INTMTX_CORE0_INT_STATUS_REG_0_REG
+    li      t0, INTMTX_STATUS_REG_0
     /* Load the values from the registers */
     lw      t1, 0(t0)
     /* Define the masks */
-    li      t2, TEE_APM_INTR_MASK_0
+    li      t2, TEE_SECURE_INT_APM_MASK_0
     /* Apply the masks */
     and     t1, t1, t2
     /* Check if any of the masked bits are set */
     bnez    t1, _save_reg_ctx
 
+#if CONFIG_IDF_TARGET_ESP32C6
     /* Repeat for the other status register */
-    li      t0, INTMTX_CORE0_INT_STATUS_REG_1_REG
+    li      t0, INTMTX_STATUS_REG_1
     lw      t1, 0(t0)
-    li      t2, TEE_APM_INTR_MASK_1
+    li      t2, TEE_SECURE_INT_APM_MASK_1
     and     t1, t1, t2
     bnez    t1, _save_reg_ctx
+#endif
 
     /* Continue normal execution */
     j       _continue
@@ -464,6 +461,11 @@ _tee_s_intr_handler:
 _save_reg_ctx:
     /* Save CSR context here */
     save_mcsr
+    csrr    t0, mcause
+    sw      t0, RV_STK_MCAUSE(sp)
+    /* NOTE: With ESP-TEE, since APM violations trigger a panic, it's safe to use the mscratch
+     * register to pass on the stack pointer to the APM violation handler */
+    csrw    mscratch, sp
     j       _intr_hdlr_exec
 
 _continue:

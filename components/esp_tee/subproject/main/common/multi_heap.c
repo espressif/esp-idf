@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "esp_rom_tlsf.h"
+#include "esp_rom_sys.h"
 #include "tlsf_block_functions.h"
 #include "multi_heap.h"
 
@@ -153,15 +154,15 @@ size_t esp_tee_heap_get_min_free_size(void)
 static void heap_dump_tlsf(void* ptr, size_t size, int used, void* user)
 {
     (void)user;
-    printf("Block %p data, size: %d bytes, Free: %s\n",
-           (void *)ptr,
-           size,
-           used ? "No" : "Yes");
+    esp_rom_printf("Block %p data, size: %d bytes, Free: %s\n",
+                   (void *)ptr,
+                   size,
+                   used ? "No" : "Yes");
 }
 
 void esp_tee_heap_dump_info(void)
 {
-    printf("Showing data for TEE heap: %p (%uB)\n", (void *)tee_heap, tee_heap->pool_size);
+    esp_rom_printf("Showing data for TEE heap: %p (%uB)\n", (void *)tee_heap, tee_heap->pool_size);
     tlsf_walk_pool(tlsf_get_pool(tee_heap->heap_data), heap_dump_tlsf, NULL);
 }
 

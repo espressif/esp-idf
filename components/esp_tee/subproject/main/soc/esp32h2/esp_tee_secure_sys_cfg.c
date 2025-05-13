@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,12 +84,10 @@ void esp_tee_soc_secure_sys_init(void)
 
     /* Protect secure interrupt sources */
     esp_tee_protect_intr_src(ETS_LP_APM_M0_INTR_SOURCE);    // LP_APM_M0
-    esp_tee_protect_intr_src(ETS_LP_APM_M1_INTR_SOURCE);    // LP_APM_M1
     esp_tee_protect_intr_src(ETS_HP_APM_M0_INTR_SOURCE);    // HP_APM_M0
     esp_tee_protect_intr_src(ETS_HP_APM_M1_INTR_SOURCE);    // HP_APM_M1
     esp_tee_protect_intr_src(ETS_HP_APM_M2_INTR_SOURCE);    // HP_APM_M2
     esp_tee_protect_intr_src(ETS_HP_APM_M3_INTR_SOURCE);    // HP_APM_M3
-    esp_tee_protect_intr_src(ETS_LP_APM0_INTR_SOURCE);      // LP_APM0
     esp_tee_protect_intr_src(ETS_AES_INTR_SOURCE);          // AES
     esp_tee_protect_intr_src(ETS_SHA_INTR_SOURCE);          // SHA
     esp_tee_protect_intr_src(ETS_ECC_INTR_SOURCE);          // ECC

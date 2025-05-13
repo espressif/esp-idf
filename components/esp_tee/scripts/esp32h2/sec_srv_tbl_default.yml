@@ -1,0 +1,296 @@
+secure_services:
+  - family: misc
+    entries:
+      - id: 0
+        type: custom
+        function: invalid_secure_service
+        args: 0
+  # ID: 1-4 (4) - External memory (Flash) protection [SPI0]
+  - family: flash_protection_spi0
+    entries:
+      - id: 1
+        type: IDF
+        function: mmu_hal_map_region
+        args: 6
+      - id: 2
+        type: IDF
+        function: mmu_hal_unmap_region
+        args: 3
+      - id: 3
+        type: IDF
+        function: mmu_hal_vaddr_to_paddr
+        args: 4
+      - id: 4
+        type: IDF
+        function: mmu_hal_paddr_to_vaddr
+        args: 5
+  # ID: 5-21 (17) - External memory (Flash) protection [SPI1]
+  - family: flash_protection_spi1
+    entries:
+      - id: 5
+        type: IDF
+        function: spi_flash_hal_check_status
+        args: 1
+      - id: 6
+        type: IDF
+        function: spi_flash_hal_common_command
+        args: 2
+      - id: 7
+        type: IDF
+        function: spi_flash_hal_device_config
+        args: 1
+      - id: 8
+        type: IDF
+        function: spi_flash_hal_erase_block
+        args: 2
+      - id: 9
+        type: IDF
+        function: spi_flash_hal_erase_chip
+        args: 1
+      - id: 10
+        type: IDF
+        function: spi_flash_hal_erase_sector
+        args: 2
+      - id: 11
+        type: IDF
+        function: spi_flash_hal_program_page
+        args: 4
+      - id: 12
+        type: IDF
+        function: spi_flash_hal_read
+        args: 4
+      - id: 13
+        type: IDF
+        function: spi_flash_hal_resume
+        args: 1
+      - id: 14
+        type: IDF
+        function: spi_flash_hal_set_write_protect
+        args: 2
+      - id: 15
+        type: IDF
+        function: spi_flash_hal_setup_read_suspend
+        args: 2
+      - id: 16
+        type: IDF
+        function: spi_flash_hal_supports_direct_read
+        args: 2
+      - id: 17
+        type: IDF
+        function: spi_flash_hal_supports_direct_write
+        args: 2
+      - id: 18
+        type: IDF
+        function: spi_flash_hal_suspend
+        args: 1
+      - id: 19
+        type: IDF
+        function: bootloader_flash_execute_command_common
+        args: 7
+      - id: 20
+        type: IDF
+        function: memspi_host_flush_cache
+        args: 3
+      - id: 21
+        type: IDF
+        function: spi_flash_chip_generic_config_host_io_mode
+        args: 2
+  # ID: 30-53 (24) - Interrupt Handling
+  - family: interrupt_handling
+    entries:
+      - id: 30
+        type: IDF
+        function: esp_rom_route_intr_matrix
+        args: 3
+      - id: 31
+        type: IDF
+        function: rv_utils_intr_enable
+        args: 1
+      - id: 32
+        type: IDF
+        function: rv_utils_intr_disable
+        args: 1
+      - id: 33
+        type: IDF
+        function: rv_utils_intr_set_priority
+        args: 2
+      - id: 34
+        type: IDF
+        function: rv_utils_intr_set_type
+        args: 2
+      - id: 35
+        type: IDF
+        function: rv_utils_intr_set_threshold
+        args: 1
+      - id: 36
+        type: IDF
+        function: rv_utils_intr_edge_ack
+        args: 1
+      - id: 37
+        type: IDF
+        function: rv_utils_intr_global_enable
+        args: 0
+  # ID: 54-85 (32) - HAL
+  - family: hal
+    entries:
+      - id: 54
+        type: IDF
+        function: wdt_hal_init
+        args: 4
+      - id: 55
+        type: IDF
+        function: wdt_hal_deinit
+        args: 1
+  # ID: 86-133 (48) - Crypto
+  - family: crypto
+    entries:
+      - id: 86
+        type: IDF
+        function: esp_aes_intr_alloc
+        args: 0
+      - id: 87
+        type: IDF
+        function: esp_aes_crypt_cbc
+        args: 6
+      - id: 88
+        type: IDF
+        function: esp_aes_crypt_cfb8
+        args: 6
+      - id: 89
+        type: IDF
+        function: esp_aes_crypt_cfb128
+        args: 7
+      - id: 90
+        type: IDF
+        function: esp_aes_crypt_ctr
+        args: 7
+      - id: 91
+        type: IDF
+        function: esp_aes_crypt_ecb
+        args: 4
+      - id: 92
+        type: IDF
+        function: esp_aes_crypt_ofb
+        args: 6
+      - id: 93
+        type: IDF
+        function: esp_sha
+        args: 4
+      - id: 94
+        type: IDF
+        function: esp_sha_block
+        args: 3
+      - id: 95
+        type: IDF
+        function: esp_sha_dma
+        args: 6
+      - id: 96
+        type: IDF
+        function: esp_sha_read_digest_state
+        args: 2
+      - id: 97
+        type: IDF
+        function: esp_sha_write_digest_state
+        args: 2
+      - id: 98
+        type: IDF
+        function: esp_crypto_sha_enable_periph_clk
+        args: 1
+      - id: 99
+        type: IDF
+        function: esp_hmac_calculate
+        args: 4
+      - id: 100
+        type: IDF
+        function: esp_hmac_jtag_enable
+        args: 2
+      - id: 101
+        type: IDF
+        function: esp_hmac_jtag_disable
+        args: 0
+      - id: 102
+        type: IDF
+        function: esp_ds_sign
+        args: 4
+      - id: 103
+        type: IDF
+        function: esp_ds_start_sign
+        args: 4
+      - id: 104
+        type: IDF
+        function: esp_ds_is_busy
+        args: 0
+      - id: 105
+        type: IDF
+        function: esp_ds_finish_sign
+        args: 2
+      - id: 106
+        type: IDF
+        function: esp_ds_encrypt_params
+        args: 4
+      - id: 107
+        type: IDF
+        function: esp_crypto_mpi_enable_periph_clk
+        args: 1
+      - id: 108
+        type: IDF
+        function: esp_ecc_point_multiply
+        args: 4
+      - id: 109
+        type: IDF
+        function: esp_ecc_point_verify
+        args: 1
+      - id: 110
+        type: IDF
+        function: esp_crypto_ecc_enable_periph_clk
+        args: 1
+  # ID: 134-169 (36) - Reserved for future use
+  - family: attestation
+    entries:
+      - id: 170
+        type: custom
+        function: esp_tee_att_generate_token
+        args: 6
+  # ID: 175-194 (20) - Secure Storage
+  - family: secure_storage
+    entries:
+      - id: 175
+        type: custom
+        function: esp_tee_sec_storage_clear_key
+        args: 1
+      - id: 176
+        type: custom
+        function: esp_tee_sec_storage_gen_key
+        args: 1
+      - id: 177
+        type: custom
+        function: esp_tee_sec_storage_ecdsa_sign
+        args: 4
+      - id: 178
+        type: custom
+        function: esp_tee_sec_storage_ecdsa_get_pubkey
+        args: 2
+      - id: 179
+        type: custom
+        function: esp_tee_sec_storage_aead_encrypt
+        args: 4
+      - id: 180
+        type: custom
+        function: esp_tee_sec_storage_aead_decrypt
+        args: 4
+  # ID: 195-199 (5) - OTA
+  - family: ota
+    entries:
+      - id: 195
+        type: custom
+        function: esp_tee_ota_begin
+        args: 0
+      - id: 196
+        type: custom
+        function: esp_tee_ota_write
+        args: 3
+      - id: 197
+        type: custom
+        function: esp_tee_ota_end
+        args: 0
+  # ID: 200+ - User-defined
