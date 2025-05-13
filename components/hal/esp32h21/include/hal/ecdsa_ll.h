@@ -428,6 +428,14 @@ static inline bool ecdsa_ll_is_configurable_curve_supported(void)
     return true;
 }
 
+/**
+ * @brief Check if the ECDSA deterministic mode is supported
+ */
+static inline bool ecdsa_ll_is_deterministic_mode_supported(void)
+{
+    return true;
+}
+
 #ifdef __cplusplus
 }
 #endif
