@@ -9,11 +9,20 @@
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
 
+// ----------------------------------------------------- Macros --------------------------------------------------------
+
 #if !CONFIG_IDF_TARGET_LINUX
 #include "esp_private/esp_cache_private.h"
 #define ALIGN_UP(num, align)    ((align) == 0 ? (num) : (((num) + ((align) - 1)) & ~((align) - 1)))
 #endif
-#define DATA_BUFFER_CAPS        (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED)
+
+// ----------------------- Configs -------------------------
+
+#ifdef CONFIG_USB_HOST_DWC_DMA_CAP_MEMORY_IN_PSRAM      // In esp32p4, the USB-DWC internal DMA can access external RAM
+#define DATA_BUFFER_CAPS                     (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_SPIRAM)
+#else
+#define DATA_BUFFER_CAPS                     (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_INTERNAL)
+#endif
 
 urb_t *urb_alloc(size_t data_buffer_size, int num_isoc_packets)
 {

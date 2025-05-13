@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/queue.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -32,8 +33,6 @@
 
 // --------------------- Constants -------------------------
 
-#define XFER_DESC_LIST_CAPS                     (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_INTERNAL)
-
 #define INIT_DELAY_MS                           30  // A delay of at least 25ms to enter Host mode. Make it 30ms to be safe
 #define DEBOUNCE_DELAY_MS                       CONFIG_USB_HOST_DEBOUNCE_DELAY_MS
 #define RESET_HOLD_MS                           CONFIG_USB_HOST_RESET_HOLD_MS
@@ -47,6 +46,12 @@
 #define NUM_PORTS                               1   // The controller only has one port.
 
 // ----------------------- Configs -------------------------
+
+#ifdef CONFIG_USB_HOST_DWC_DMA_CAP_MEMORY_IN_PSRAM      // In esp32p4, the USB-DWC internal DMA can access external RAM
+#define XFER_DESC_LIST_CAPS                     (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_SPIRAM)
+#else
+#define XFER_DESC_LIST_CAPS                     (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_INTERNAL)
+#endif
 
 #define FRAME_LIST_LEN                          USB_HAL_FRAME_LIST_LEN_32
 #define NUM_BUFFERS                             2
@@ -1514,7 +1519,7 @@ static dma_buffer_block_t *buffer_block_alloc(usb_transfer_type_t type)
         break;
     }
 
-    // DMA buffer lock: Software structure for managing the transfer buffer
+    // DMA buffer block: Software structure for managing the transfer buffer
     dma_buffer_block_t *buffer = calloc(1, sizeof(dma_buffer_block_t));
     if (buffer == NULL) {
         return NULL;
@@ -1522,7 +1527,8 @@ static dma_buffer_block_t *buffer_block_alloc(usb_transfer_type_t type)
 
     // Transfer descriptor list: Must be 512 aligned and DMA capable (USB-DWC requirement) and its size must be cache aligned
     void *xfer_desc_list = heap_caps_aligned_calloc(USB_DWC_QTD_LIST_MEM_ALIGN, desc_list_len * sizeof(usb_dwc_ll_dma_qtd_t), 1, XFER_DESC_LIST_CAPS);
-    if (xfer_desc_list == NULL) {
+
+    if ((xfer_desc_list == NULL) || ((uintptr_t)xfer_desc_list & (USB_DWC_QTD_LIST_MEM_ALIGN - 1))) {
         free(buffer);
         heap_caps_free(xfer_desc_list);
         return NULL;
