@@ -478,7 +478,7 @@ typedef uint8_t esp_gatt_char_prop_t;
  *
  * This definition specifies the maximum number of bytes that a GATT attribute can hold.
  */
-#define ESP_GATT_MAX_ATTR_LEN   512 /*!< As same as GATT_MAX_ATTR_LEN. */
+#define ESP_GATT_MAX_ATTR_LEN   517 /*!< As same as GATT_MAX_ATTR_LEN. */
 
 /**
  * @brief Enumerates the possible sources of a GATT service discovery.
