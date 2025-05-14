@@ -14,8 +14,6 @@
 #include "hal/mmu_types.h"
 #include "hal/efuse_ll.h"
 
-//TODO: [ESP32H21] IDF-11540, inherit from h2
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,25 +75,34 @@ extern "C" {
 #if (SOC_MMU_PAGE_SIZE == 0x10000)
 /**
  * - 64KB MMU page size: the last 0xFFFF, which is the offset
- * - 128 MMU entries, needs 0x7F to hold it.
+ * - 256 MMU entries, needs 0xFF to hold it.
+ *
+ * Therefore, 0xFF,FFFF
+ */
+#define SOC_MMU_LINEAR_ADDR_MASK              0xFFFFFF
+
+#elif (SOC_MMU_PAGE_SIZE == 0x8000)
+/**
+ * - 32KB MMU page size: the last 0x7FFF, which is the offset
+ * - 256 MMU entries, needs 0xFF to hold it.
  *
  * Therefore, 0x7F,FFFF
  */
 #define SOC_MMU_LINEAR_ADDR_MASK              0x7FFFFF
 
-#elif (SOC_MMU_PAGE_SIZE == 0x8000)
+#elif (SOC_MMU_PAGE_SIZE == 0x4000)
 /**
- * - 32KB MMU page size: the last 0x7FFF, which is the offset
- * - 128 MMU entries, needs 0x7F to hold it.
+ * - 16KB MMU page size: the last 0x3FFF, which is the offset
+ * - 256 MMU entries, needs 0xFF to hold it.
  *
  * Therefore, 0x3F,FFFF
  */
 #define SOC_MMU_LINEAR_ADDR_MASK              0x3FFFFF
 
-#elif (SOC_MMU_PAGE_SIZE == 0x4000)
+#elif (SOC_MMU_PAGE_SIZE == 0x2000)
 /**
- * - 16KB MMU page size: the last 0x3FFF, which is the offset
- * - 128 MMU entries, needs 0x7F to hold it.
+ * - 8KB MMU page size: the last 0x1FFF, which is the offset
+ * - 256 MMU entries, needs 0xFF to hold it.
  *
  * Therefore, 0x1F,FFFF
  */
