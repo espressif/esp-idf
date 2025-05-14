@@ -2040,15 +2040,19 @@ esp_err_t esp_ble_gap_clear_rand_addr(void);
 esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable);
 
 /**
- * @brief           set local gap appearance icon
+ * @brief           Set the local GAP appearance icon.
  *
+ * @note            This API does not restrict the input icon value.
+ *                  If an undefined or incorrect icon value is used, the device icon may not display properly.
  *
- * @param[in]       icon   - External appearance value, these values are defined by the Bluetooth SIG, please refer to
+ *                  For a complete list of valid appearance values, please refer to "2.6.2 Appearance Category ranges" at:
  *                  https://www.bluetooth.com/specifications/assigned-numbers/
  *
+ * @param[in]       icon   - External appearance value (16-bit), as defined by the Bluetooth SIG.
+ *
  * @return
- *                  - ESP_OK : success
- *                  - other  : failed
+ *                  - ESP_OK   : Success
+ *                  - ESP_FAIL : Internal failure
  *
  */
 esp_err_t esp_ble_gap_config_local_icon (uint16_t icon);
@@ -2726,15 +2730,17 @@ esp_err_t esp_ble_gap_periodic_adv_stop(uint8_t instance);
 esp_err_t esp_ble_gap_set_ext_scan_params(const esp_ble_ext_scan_params_t *params);
 
 /**
-* @brief           This function is used to enable scanning.
+* @brief           Enables extended scanning.
 *
-* @param[in]       duration  Scan duration time, where Time = N * 10 ms. Range: 0x0001 to 0xFFFF.
-* @param[in]       period    Time interval from when the Controller started its last Scan Duration until it begins the subsequent Scan Duration.
-*                            Time = N * 1.28 sec. Range: 0x0001 to 0xFFFF.
+* @param[in]       duration  Scan duration in units of 10 ms.
+*                            - Range: 0x0001 to 0xFFFF (Time = N * 10 ms).
+*                            - 0x0000: Scan continuously until explicitly disabled.
 *
+* @param[in]       period    Time interval between the start of consecutive scan durations, in units of 1.28 seconds.
+*                            - Range: 0x0001 to 0xFFFF (Time = N * 1.28 sec).
+*                            - 0x0000: Scan continuously.
 * @return            - ESP_OK : success
 *                    - other  : failed
-*
 */
 esp_err_t esp_ble_gap_start_ext_scan(uint32_t duration, uint16_t period);
 
