@@ -289,36 +289,27 @@ TEST_TEAR_DOWN(ecdsa)
 
 TEST(ecdsa, ecdsa_SECP192R1_signature_verification)
 {
-#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
     if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
-    } else
-#endif
-    {
+    } else {
         TEST_ASSERT_EQUAL(0, test_ecdsa_verify(0, sha, ecdsa192_r, ecdsa192_s, ecdsa192_pub_x, ecdsa192_pub_y));
     }
 }
 
 TEST(ecdsa, ecdsa_SECP192R1_sign_and_verify)
 {
-#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
     if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
-    } else
-#endif
-    {
+    } else {
         test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_TRNG);
     }
 }
 
 TEST(ecdsa, ecdsa_SECP192R1_corrupt_signature)
 {
-#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
     if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
-    } else
-#endif
-    {
+    } else {
         test_ecdsa_corrupt_data(0, sha, ecdsa192_r, ecdsa192_s, ecdsa192_pub_x, ecdsa192_pub_y);
     }
 }
@@ -341,12 +332,9 @@ TEST(ecdsa, ecdsa_SECP256R1_corrupt_signature)
 #ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
 TEST(ecdsa, ecdsa_SECP192R1_det_sign_and_verify)
 {
-#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
     if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
-    } else
-#endif
-    {
+    } else {
         test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
     }
 }
@@ -360,12 +348,9 @@ TEST(ecdsa, ecdsa_SECP256R1_det_sign_and_verify)
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
 TEST(ecdsa, ecdsa_SECP192R1_export_pubkey)
 {
-#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
     if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
-    } else
-#endif
-    {
+    } else {
         test_ecdsa_export_pubkey(0, ecdsa192_pub_x, ecdsa192_pub_y, 0);
     }
 }

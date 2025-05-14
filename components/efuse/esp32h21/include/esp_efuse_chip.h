@@ -77,13 +77,6 @@ typedef enum {
     ESP_EFUSE_KEY_PURPOSE_MAX,                              /**< MAX PURPOSE */
 } esp_efuse_purpose_t;
 
-typedef enum {
-    ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P256_BIT = 0,
-    ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P192_BIT = 1,
-    ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_BOTH_P192_P256_BIT = 2,
-    ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P256_BIT_LOCKED = 3,
-} esp_efuse_ecdsa_curve_mode_t;
-
 #ifdef __cplusplus
 }
 #endif
