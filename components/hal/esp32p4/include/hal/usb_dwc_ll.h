@@ -204,6 +204,11 @@ static inline void usb_dwc_ll_gusbcfg_force_host_mode(usb_dwc_dev_t *hw)
     hw->gusbcfg_reg.forcehstmode = 1;
 }
 
+static inline void usb_dwc_ll_gusbcfg_en_hnp_cap(usb_dwc_dev_t *hw)
+{
+    hw->gusbcfg_reg.hnpcap = 1;
+}
+
 static inline void usb_dwc_ll_gusbcfg_dis_hnp_cap(usb_dwc_dev_t *hw)
 {
     hw->gusbcfg_reg.hnpcap = 0;
