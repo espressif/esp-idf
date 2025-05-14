@@ -796,20 +796,27 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
     bool map_segment = should_map(load_addr);
 
 #if SOC_MMU_PAGE_SIZE_CONFIGURABLE
+    esp_err_t err = ESP_FAIL;
+
     /* ESP APP descriptor is present in the DROM segment #0 */
     if (index == 0 && !is_bootloader(metadata->start_addr)) {
-        const esp_app_desc_t *app_desc = (const esp_app_desc_t *)bootloader_mmap(segment_data_offs, sizeof(esp_app_desc_t));
-        if (!app_desc || app_desc->magic_word != ESP_APP_DESC_MAGIC_WORD) {
+        uint32_t mmu_page_size = 0, magic_word = 0;
+        const uint32_t mmu_page_size_offset = segment_data_offs + offsetof(esp_app_desc_t, mmu_page_size);
+        CHECK_ERR(bootloader_flash_read(segment_data_offs, &magic_word, sizeof(uint32_t), true));
+        CHECK_ERR(bootloader_flash_read(mmu_page_size_offset, &mmu_page_size, sizeof(uint32_t), true));
+        // Extract only the lowest byte from mmu_page_size (as per image format)
+        mmu_page_size &= 0xFF;
+
+        if (magic_word != ESP_APP_DESC_MAGIC_WORD) {
             ESP_LOGE(TAG, "Failed to fetch app description header!");
             return ESP_FAIL;
         }
 
         // Convert from log base 2 number to actual size while handling legacy image case (value 0)
-        metadata->mmu_page_size = (app_desc->mmu_page_size > 0) ? (1UL << app_desc->mmu_page_size) : SPI_FLASH_MMU_PAGE_SIZE;
+        metadata->mmu_page_size = (mmu_page_size > 0) ? (1UL << mmu_page_size) : SPI_FLASH_MMU_PAGE_SIZE;
         if (metadata->mmu_page_size != SPI_FLASH_MMU_PAGE_SIZE) {
             ESP_LOGI(TAG, "MMU page size mismatch, configured: 0x%x, found: 0x%"PRIx32, SPI_FLASH_MMU_PAGE_SIZE, metadata->mmu_page_size);
         }
-        bootloader_munmap(app_desc);
     } else if (index == 0 && is_bootloader(metadata->start_addr)) {
         // Bootloader always uses the default MMU page size
         metadata->mmu_page_size = SPI_FLASH_MMU_PAGE_SIZE;
@@ -836,6 +843,10 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
     }
 
     return ESP_OK;
+#if SOC_MMU_PAGE_SIZE_CONFIGURABLE
+err:
+    return err;
+#endif
 }
 
 static bool should_map(uint32_t load_addr)
