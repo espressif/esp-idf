@@ -23,11 +23,10 @@
 
 examples/openthread/ot_br:
   enable:
-    - if: (SOC_WIFI_SUPPORTED == 1 and IDF_TARGET != "esp32c61") and CONFIG_NAME != "native_radio"
-    - if: (SOC_WIFI_SUPPORTED == 1 and IDF_TARGET != "esp32c61") and (SOC_IEEE802154_SUPPORTED == 1 and CONFIG_NAME == "native_radio")
+    - if: (SOC_WIFI_SUPPORTED == 1 or IDF_TARGET == "esp32p4") and CONFIG_NAME != "native_radio"
+    - if: SOC_WIFI_SUPPORTED == 1 and (SOC_IEEE802154_SUPPORTED == 1 and CONFIG_NAME == "native_radio")
   disable_test:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32c2", "esp32c6", "esp32s2"]
-      temporary: true
+    - if: IDF_TARGET not in ["esp32s3"]
       reason: only test on esp32s3
   <<: *openthread_dependencies
 
@@ -39,9 +38,6 @@ examples/openthread/ot_cli:
 examples/openthread/ot_rcp:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
-  disable_test:
-    - if: IDF_TARGET not in ["esp32h2", "esp32c6"]
-      reason: only test on esp32h2 and esp32c6
   <<: *openthread_dependencies
 
 examples/openthread/ot_sleepy_device/deep_sleep:
