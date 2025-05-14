@@ -4,7 +4,8 @@
     - .before_script:fetch:target_test
   stage: target_test
   timeout: 1 hour
-  dependencies: []
+  needs:
+    - pipeline_variables
   cache:
     # Usually do not need submodule-cache in target_test
     - key: pip-cache
