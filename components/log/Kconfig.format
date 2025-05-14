@@ -8,6 +8,9 @@ menu "Format"
             Enable ANSI terminal color codes. Logs (info, errors, warnings) will contain color codes.
             In order to view these, your terminal program must support ANSI color codes.
 
+            This is disabled by default, as colors are added in IDF Monitor. If you want to use new lines
+            in the messages or you are using a different terminal program, you may want to enable this option.
+
     config LOG_COLORS_SUPPORT
         bool "Allow enabling color output at run time"
         depends on LOG_VERSION_2
