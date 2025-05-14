@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,12 +10,11 @@
 
 #include <stdbool.h>
 #include "soc/cache_reg.h"
+#include "soc/cache_struct.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"
 #include "hal/assert.h"
 #include "rom/cache.h"
-
-//TODO: [ESP32H21] IDF-11525, inherit from h2
 
 #ifdef __cplusplus
 extern "C" {
@@ -187,7 +186,6 @@ __attribute__((always_inline))
 #endif
 static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
-    //TODO: [ESP32H21] IDF-11525, inherit from h2
     HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     cache_bus_mask_t mask = (cache_bus_mask_t)0;
 
@@ -213,7 +211,6 @@ __attribute__((always_inline))
 #endif
 static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t mask)
 {
-    //TODO: [ESP32H21] IDF-11525, inherit from h2
     HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     //On esp32h21, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
@@ -236,7 +233,6 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
 __attribute__((always_inline))
 static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t mask)
 {
-    //TODO: [ESP32H21] IDF-11525, inherit from h2
     HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     //On esp32h21, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
@@ -263,7 +259,6 @@ static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t m
 __attribute__((always_inline))
 static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32_t len, uint32_t *out_level, uint32_t *out_id)
 {
-    //TODO: [ESP32H21] IDF-11525, inherit from h2
     bool valid = false;
     uint32_t vaddr_end = vaddr_start + len - 1;
 
@@ -278,6 +273,17 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
     return valid;
 }
 
+/**
+ * Enable the Cache fail tracer
+ *
+ * @param cache_id    cache ID
+ * @param en          enable / disable
+ */
+static inline void cache_ll_l1_enable_fail_tracer(uint32_t cache_id, bool en)
+{
+    CACHE.trace_ena.l1_cache_trace_ena = en;
+}
+
 /*------------------------------------------------------------------------------
  * Interrupt
  *----------------------------------------------------------------------------*/
@@ -289,7 +295,7 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
  */
 static inline void cache_ll_l1_enable_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
-    //TODO: [ESP32H21] IDF-11525
+    CACHE.l1_cache_acs_fail_int_ena.val |= mask;
 }
 
 /**
@@ -300,7 +306,7 @@ static inline void cache_ll_l1_enable_access_error_intr(uint32_t cache_id, uint3
  */
 static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
-    //TODO: [ESP32H21] IDF-11525
+    CACHE.l1_cache_acs_fail_int_clr.val = mask;
 }
 
 /**
@@ -313,8 +319,7 @@ static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32
  */
 static inline uint32_t cache_ll_l1_get_access_error_intr_status(uint32_t cache_id, uint32_t mask)
 {
-    //TODO: [ESP32H21] IDF-11525
-    return 0;
+    return CACHE.l1_cache_acs_fail_int_st.val & mask;
 }
 
 #ifdef __cplusplus

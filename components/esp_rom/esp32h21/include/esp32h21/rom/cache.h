@@ -13,8 +13,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32H21] IDF-11525
-
 /** \defgroup cache_apis, cache operation related apis
   * @brief cache apis
   */
