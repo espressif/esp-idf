@@ -2865,6 +2865,17 @@ typedef union {
     uint32_t val;
 } pmu_clk_state2_reg_t;
 
+typedef struct pmu_imm_hw_regmap_t
+{
+    pmu_imm_hp_ck_power_reg_t   hp_ck_power;
+    pmu_imm_sleep_sysclk_reg_t  sleep_sysclk;
+    pmu_imm_hp_func_icg_reg_t   hp_func_icg;
+    pmu_imm_hp_apb_icg_reg_t    hp_apb_icg;
+    pmu_imm_modem_icg_reg_t     modem_icg;
+    pmu_imm_lp_icg_reg_t        lp_icg;
+    pmu_imm_pad_hold_all_reg_t  pad_hold_all;
+    pmu_imm_i2c_iso_reg_t       i2c_iso;
+} pmu_imm_hw_regmap_t;
 
 typedef struct {
     volatile pmu_hp_active_dig_power_reg_t hp_active_dig_power;
@@ -2906,14 +2917,7 @@ typedef struct {
     volatile pmu_lp_sleep_lp_dig_power_reg_t lp_sleep_lp_dig_power;
     volatile pmu_lp_sleep_lp_ck_power_reg_t lp_sleep_lp_ck_power;
     volatile pmu_lp_sleep_bias_reg_t lp_sleep_bias;
-    volatile pmu_imm_hp_ck_power_reg_t imm_hp_ck_power;
-    volatile pmu_imm_sleep_sysclk_reg_t imm_sleep_sysclk;
-    volatile pmu_imm_hp_func_icg_reg_t imm_hp_func_icg;
-    volatile pmu_imm_hp_apb_icg_reg_t imm_hp_apb_icg;
-    volatile pmu_imm_modem_icg_reg_t imm_modem_icg;
-    volatile pmu_imm_lp_icg_reg_t imm_lp_icg;
-    volatile pmu_imm_pad_hold_all_reg_t imm_pad_hold_all;
-    volatile pmu_imm_i2c_iso_reg_t imm_i2c_iso;
+    volatile pmu_imm_hw_regmap_t         imm;
     volatile pmu_power_wait_timer0_reg_t power_wait_timer0;
     volatile pmu_power_wait_timer1_reg_t power_wait_timer1;
     volatile pmu_power_wait_timer2_reg_t power_wait_timer2;

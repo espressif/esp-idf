@@ -163,13 +163,27 @@ typedef union {
 typedef union {
     struct {
         /** aon_gpio_hold0 : R/W; bitpos: [31:0]; default: 0;
-         *  configure io0~28 hold enable,when io in hold status, all io configure and output
+         *  configure io0~31 hold enable,when io in hold status, all io configure and output
          *  will be latch , input function is useful
          */
         uint32_t gpio_hold0:32;
     };
     uint32_t val;
 } lp_aon_gpio_hold0_reg_t;
+
+/** Type of gpio_hold1 register
+ *  reserved
+ */
+typedef union {
+    struct {
+        /** gpio_hold1 : R/W; bitpos: [31:0]; default: 0;
+         *  reserved
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t gpio_hold1:32;
+    };
+    uint32_t val;
+} lp_aon_gpio_hold1_reg_t;
 
 /** Type of aon_sys_cfg register
  *  configure system register
@@ -633,7 +647,7 @@ typedef struct {
     volatile lp_aon_store9_reg_t store9;
     volatile lp_aon_gpio_mux_reg_t gpio_mux;
     volatile lp_aon_gpio_hold0_reg_t gpio_hold0;
-    uint32_t reserved_030;
+    volatile lp_aon_gpio_hold1_reg_t gpio_hold1;
     volatile lp_aon_sys_cfg_reg_t sys_cfg;
     volatile lp_aon_cpucore_cfg_reg_t cpucore_cfg;
     volatile lp_aon_io_mux_reg_t io_mux;

@@ -83,28 +83,6 @@ extern "C" {
 #define HYS_SEL_V 1
 #define HYS_SEL_S 17
 
-#define PIN_SLP_INPUT_ENABLE(PIN_NAME)      SET_PERI_REG_MASK(PIN_NAME,SLP_IE)
-#define PIN_SLP_INPUT_DISABLE(PIN_NAME)     CLEAR_PERI_REG_MASK(PIN_NAME,SLP_IE)
-#define PIN_SLP_OUTPUT_ENABLE(PIN_NAME)     SET_PERI_REG_MASK(PIN_NAME,SLP_OE)
-#define PIN_SLP_OUTPUT_DISABLE(PIN_NAME)    CLEAR_PERI_REG_MASK(PIN_NAME,SLP_OE)
-#define PIN_SLP_PULLUP_ENABLE(PIN_NAME)     SET_PERI_REG_MASK(PIN_NAME,SLP_PU)
-#define PIN_SLP_PULLUP_DISABLE(PIN_NAME)    CLEAR_PERI_REG_MASK(PIN_NAME,SLP_PU)
-#define PIN_SLP_PULLDOWN_ENABLE(PIN_NAME)   SET_PERI_REG_MASK(PIN_NAME,SLP_PD)
-#define PIN_SLP_PULLDOWN_DISABLE(PIN_NAME)  CLEAR_PERI_REG_MASK(PIN_NAME,SLP_PD)
-#define PIN_SLP_SEL_ENABLE(PIN_NAME)        SET_PERI_REG_MASK(PIN_NAME,SLP_SEL)
-#define PIN_SLP_SEL_DISABLE(PIN_NAME)       CLEAR_PERI_REG_MASK(PIN_NAME,SLP_SEL)
-
-#define PIN_INPUT_ENABLE(PIN_NAME)               SET_PERI_REG_MASK(PIN_NAME,FUN_IE)
-#define PIN_INPUT_DISABLE(PIN_NAME)              CLEAR_PERI_REG_MASK(PIN_NAME,FUN_IE)
-#define PIN_SET_DRV(PIN_NAME, drv)            REG_SET_FIELD(PIN_NAME, FUN_DRV, (drv));
-#define PIN_PULLUP_DIS(PIN_NAME)                 REG_CLR_BIT(PIN_NAME, FUN_PU)
-#define PIN_PULLUP_EN(PIN_NAME)                  REG_SET_BIT(PIN_NAME, FUN_PU)
-#define PIN_PULLDWN_DIS(PIN_NAME)             REG_CLR_BIT(PIN_NAME, FUN_PD)
-#define PIN_PULLDWN_EN(PIN_NAME)              REG_SET_BIT(PIN_NAME, FUN_PD)
-#define PIN_FUNC_SELECT(PIN_NAME, FUNC)      REG_SET_FIELD(PIN_NAME, MCU_SEL, FUNC)
-#define PIN_FILTER_EN(PIN_NAME)             REG_SET_BIT(PIN_NAME, FILTER_EN)
-#define PIN_FILTER_DIS(PIN_NAME)            REG_CLR_BIT(PIN_NAME, FILTER_EN)
-
 #define IO_MUX_GPIO0_REG                    PERIPHS_IO_MUX_U_PAD_GPIO0
 #define IO_MUX_GPIO1_REG                    PERIPHS_IO_MUX_U_PAD_GPIO1
 #define IO_MUX_GPIO2_REG                    PERIPHS_IO_MUX_U_PAD_GPIO2
@@ -146,47 +124,18 @@ extern "C" {
 #define IO_MUX_GPIO38_REG                   PERIPHS_IO_MUX_U_PAD_GPIO38
 #define IO_MUX_GPIO39_REG                   PERIPHS_IO_MUX_U_PAD_GPIO39
 
-#define FUNC_GPIO_GPIO                              1
-#define PIN_FUNC_GPIO								1
+#define PIN_FUNC_GPIO                1
 
-#define GPIO_PAD_PULLUP(num) do{PIN_PULLDWN_DIS(IOMUX_REG_GPIO##num);PIN_PULLUP_EN(IOMUX_REG_GPIO##num);}while(0)
-#define GPIO_PAD_PULLDOWN(num) do{PIN_PULLUP_DIS(IOMUX_REG_GPIO##num);PIN_PULLDWN_EN(IOMUX_REG_GPIO##num);}while(0)
-#define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
+#define USB_INT_PHY0_DM_GPIO_NUM     13
+#define USB_INT_PHY0_DP_GPIO_NUM     14
 
 #define EXT_OSC_SLOW_GPIO_NUM         0
 #define MAX_RTC_GPIO_NUM              5
 #define MAX_PAD_GPIO_NUM             39
-#define MAX_GPIO_NUM                 43
+#define MAX_GPIO_NUM                 39
 #define HIGH_IO_HOLD_BIT_SHIFT       32
 
-#define GPIO_NUM_IN_FORCE_0          0x60
-#define GPIO_NUM_IN_FORCE_1          0x40
-#define GPIO_NUM_IN_INVALID          0x50
-
-#define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE
-#define PIN_CTRL                          (REG_IO_MUX_BASE +0x00)
-#define PAD_POWER_SEL                               BIT(15)
-#define PAD_POWER_SEL_V                             0x1
-#define PAD_POWER_SEL_M                             BIT(15)
-#define PAD_POWER_SEL_S                             15
-
-#define PAD_POWER_SWITCH_DELAY                      0x7
-#define PAD_POWER_SWITCH_DELAY_V                    0x7
-#define PAD_POWER_SWITCH_DELAY_M                    (PAD_POWER_SWITCH_DELAY_V << PAD_POWER_SWITCH_DELAY_S)
-#define PAD_POWER_SWITCH_DELAY_S                    12
-
-#define CLK_OUT3                                    0x0000000F
-#define CLK_OUT3_V                                  0xF
-#define CLK_OUT3_S                                  8
-#define CLK_OUT3_M                                  ((0xF)<<(8))
-#define CLK_OUT2                                    0x0000000F
-#define CLK_OUT2_V                                  0xF
-#define CLK_OUT2_S                                  8
-#define CLK_OUT2_M                                  ((0xF)<<(8))
-#define CLK_OUT1                                    0x0000000F
-#define CLK_OUT1_V                                  0xF
-#define CLK_OUT1_S                                  8
-#define CLK_OUT1_M                                  ((0xF)<<(8))
+#define REG_IO_MUX_BASE                             DR_REG_IO_MUX_BASE
 // definitions above are inherited from previous version of code, should double check
 
 // definitions below are generated from pin_txt.csv
