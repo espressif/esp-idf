@@ -293,6 +293,50 @@ esp_err_t gpio_pulldown_en(gpio_num_t gpio_num);
 esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
 
 /**
+ * @brief Enable output for an IO (as a simple GPIO output)
+ *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG GPIO number error
+ */
+esp_err_t gpio_output_enable(gpio_num_t gpio_num);
+
+/**
+ * @brief Disable output for an IO
+ *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG GPIO number error
+ */
+esp_err_t gpio_output_disable(gpio_num_t gpio_num);
+
+/**
+ * @brief Enable open-drain for an IO
+ *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG GPIO number error
+ */
+esp_err_t gpio_od_enable(gpio_num_t gpio_num);
+
+/**
+ * @brief Disable open-drain for an IO
+ *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG GPIO number error
+ */
+esp_err_t gpio_od_disable(gpio_num_t gpio_num);
+
+/**
   * @brief Install the GPIO driver's ETS_GPIO_INTR_SOURCE ISR handler service, which allows per-pin GPIO interrupt handlers.
   *
   * This function is incompatible with gpio_isr_register() - if that function is used, a single global ISR is registered for all GPIO interrupts. If this function is used, the ISR service provides a global GPIO ISR and individual pin handlers are registered via the gpio_isr_handler_add() function.
