@@ -273,6 +273,17 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
     return valid;
 }
 
+/**
+ * Enable the Cache fail tracer
+ *
+ * @param cache_id    cache ID
+ * @param en          enable / disable
+ */
+static inline void cache_ll_l1_enable_fail_tracer(uint32_t cache_id, bool en)
+{
+    CACHE.trace_ena.l1_cache_trace_ena = en;
+}
+
 /*------------------------------------------------------------------------------
  * Interrupt
  *----------------------------------------------------------------------------*/
@@ -284,7 +295,7 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
  */
 static inline void cache_ll_l1_enable_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
-    //TODO: [ESP32H21] IDF-11525
+    CACHE.l1_cache_acs_fail_int_ena.val |= mask;
 }
 
 /**
@@ -295,7 +306,7 @@ static inline void cache_ll_l1_enable_access_error_intr(uint32_t cache_id, uint3
  */
 static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
-    //TODO: [ESP32H21] IDF-11525
+    CACHE.l1_cache_acs_fail_int_clr.val = mask;
 }
 
 /**
@@ -308,8 +319,7 @@ static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32
  */
 static inline uint32_t cache_ll_l1_get_access_error_intr_status(uint32_t cache_id, uint32_t mask)
 {
-    //TODO: [ESP32H21] IDF-11525
-    return 0;
+    return CACHE.l1_cache_acs_fail_int_st.val & mask;
 }
 
 #ifdef __cplusplus
