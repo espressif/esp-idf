@@ -122,6 +122,7 @@ USB_DOCS = ['api-reference/peripherals/usb_device.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_usbh.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_enum.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_ext_hub.rst',
+            'api-reference/peripherals/usb_host/usb_host_notes_ext_port.rst',
             'api-guides/usb-otg-console.rst',
             'api-guides/dfu.rst']
 

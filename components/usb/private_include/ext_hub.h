@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,10 +13,7 @@
 #include "usb/usb_types_stack.h"
 #include "usb/usb_types_ch9.h"
 #include "usb/usb_types_ch11.h"
-
-#if CONFIG_USB_HOST_HUB_MULTI_LEVEL
-#define ENABLE_MULTIPLE_HUBS             1
-#endif // CONFIG_USB_HOST_HUB_MULTI_LEVEL
+#include "ext_port.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,32 +31,13 @@ typedef struct ext_hub_s *ext_hub_handle_t;
  */
 typedef bool (*ext_hub_cb_t)(bool in_isr, void *user_arg);
 
-// ------------------------ External Port API typedefs -------------------------
-
-/**
- * @brief External Hub Port driver
- */
-typedef struct {
-    esp_err_t (*new)(void *port_cfg, void **port_hdl);
-    esp_err_t (*reset)(void *port_hdl);
-    esp_err_t (*recycle)(void *port_hdl);
-    esp_err_t (*active)(void *port_hdl);
-    esp_err_t (*disable)(void *port_hdl);
-    esp_err_t (*gone)(void *port_hdl);
-    esp_err_t (*del)(void *port_hdl);
-    esp_err_t (*get_speed)(void *por_hdl, usb_speed_t *speed);
-    esp_err_t (*get_status)(void *port_hdl);
-    esp_err_t (*set_status)(void *port_hdl, const usb_port_status_t *status);
-    esp_err_t (*req_process)(void *port_hdl);
-} ext_hub_port_driver_t;
-
 /**
  * @brief External Hub Driver configuration
  */
 typedef struct {
     ext_hub_cb_t proc_req_cb;                       /**< External Hub process callback */
     void *proc_req_cb_arg;                          /**< External Hub process callback argument */
-    const ext_hub_port_driver_t* port_driver;       /**< External Port Driver */
+    const ext_port_driver_api_t* port_driver;       /**< External Port Driver */
 } ext_hub_config_t;
 
 // ------------------------------ Driver ---------------------------------------
@@ -127,7 +105,7 @@ esp_err_t ext_hub_get_handle(usb_device_handle_t dev_hdl, ext_hub_handle_t *ext_
  *
  * @return
  *    - ESP_OK: New device added successfully
- *    - ESP_ERR_INVALID_STATE: External Hub driver is not installed, or not in correct state to add a new device
+ *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
  */
 esp_err_t ext_hub_new_dev(uint8_t dev_addr);
 
@@ -141,7 +119,7 @@ esp_err_t ext_hub_new_dev(uint8_t dev_addr);
  *
  * @return
  *    - ESP_OK: Device freed successfully
- *    - ESP_ERR_INVALID_STATE: External Hub driver is not installed
+ *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
  *    - ESP_ERR_INVALID_ARG: Invalid argument
  *    - ESP_ERR_NOT_FOUND: Device address not found
  */
@@ -182,7 +160,7 @@ esp_err_t ext_hub_status_handle_complete(ext_hub_handle_t ext_hub_hdl);
  *
  * @return
  *    - ESP_OK: All events handled
- *    - ESP_ERR_INVALID_STATE: External Hub driver is not installed
+ *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
  */
 esp_err_t ext_hub_process(void);
 
@@ -199,10 +177,11 @@ esp_err_t ext_hub_process(void);
  *
  * @return
  *    - ESP_OK: The port can be recycled
- *    - ESP_ERR_INVALID_STATE: External Hub driver is not installed
+ *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
  *    - ESP_ERR_INVALID_ARG: Invalid argument
  *    - ESP_ERR_INVALID_SIZE: External Hub port number out of the hub's range
  *    - ESP_ERR_NOT_SUPPORTED: External Port Driver has not been installed
+ *    - ESP_ERR_INVALID_STATE: External Hub wasn't configured or suspended
  */
 esp_err_t ext_hub_port_recycle(ext_hub_handle_t ext_hub_hdl, uint8_t port_num);
 
@@ -214,7 +193,7 @@ esp_err_t ext_hub_port_recycle(ext_hub_handle_t ext_hub_hdl, uint8_t port_num);
  *
  * @return
  *    - ESP_OK: The port can be reset
- *    - ESP_ERR_INVALID_STATE: External Hub driver is not installed
+ *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
  *    - ESP_ERR_INVALID_ARG: Invalid argument
  *    - ESP_ERR_INVALID_SIZE: External Hub port number out of the hub's range
  *    - ESP_ERR_NOT_SUPPORTED: External Port Driver has not been installed
@@ -229,7 +208,7 @@ esp_err_t ext_hub_port_reset(ext_hub_handle_t ext_hub_hdl, uint8_t port_num);
  *
  * @return
  *    - ESP_OK: Device on the External hub's port has been enumerated
- *    - ESP_ERR_INVALID_STATE: External Hub driver is not installed
+ *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
  *    - ESP_ERR_INVALID_ARG: Invalid argument
  *    - ESP_ERR_INVALID_SIZE: External Hub port number out of the hub's range
  *    - ESP_ERR_NOT_SUPPORTED: External Port Driver has not been installed
@@ -244,10 +223,11 @@ esp_err_t ext_hub_port_active(ext_hub_handle_t ext_hub_hdl, uint8_t port_num);
  *
  * @return
  *    - ESP_OK: Device on the External hub's port can be disabled
- *    - ESP_ERR_INVALID_STATE: External Hub driver is not installed
+ *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
  *    - ESP_ERR_INVALID_ARG: Invalid argument
  *    - ESP_ERR_INVALID_SIZE: External Hub port number out of the hub's range
  *    - ESP_ERR_NOT_SUPPORTED: External Port Driver has not been installed
+ *    - ESP_ERR_INVALID_STATE: External Hub wasn't configured or suspended
  */
 esp_err_t ext_hub_port_disable(ext_hub_handle_t ext_hub_hdl, uint8_t port_num);
 
@@ -260,61 +240,34 @@ esp_err_t ext_hub_port_disable(ext_hub_handle_t ext_hub_hdl, uint8_t port_num);
  *
  * @return
  *    - ESP_OK: The device's speed obtained successfully
- *    - ESP_ERR_INVALID_STATE: External Hub driver is not installed
+ *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
  *    - ESP_ERR_INVALID_ARG: Invalid argument
  *    - ESP_ERR_INVALID_SIZE: External Hub port number out of the hub's range
  *    - ESP_ERR_NOT_SUPPORTED: External Port Driver has not been installed
+ *    - ESP_ERR_INVALID_STATE: External Hub wasn't configured or suspended
  */
 esp_err_t ext_hub_port_get_speed(ext_hub_handle_t ext_hub_hdl, uint8_t port_num, usb_speed_t *speed);
 
 // --------------------------- USB Chapter 11 ----------------------------------
 
 /**
- * @brief Set Port Feature request
+ * @brief USB Hub Request
  *
- * @param[in] ext_hub_hdl   External Hub device handle
- * @param[in] port_num      Port number
- * @param[in] feature       Port Feature to set
+ * @note This function designed to be called from the External Port driver
  *
- * @return
- *    - ESP_OK: Port's feature set successfully
- *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
- *    - ESP_ERR_INVALID_ARG: Invalid argument
- *    - ESP_ERR_INVALID_SIZE: External Hub port number out of the hub's range
- */
-esp_err_t ext_hub_set_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_num, uint8_t feature);
-
-/**
- * @brief Clear Port Feature request
- *
- * @param[in] ext_hub_hdl   External Hub device handle
- * @param[in] port_num      Port number
- * @param[in] feature       Port Feature to clear
+ * @param[in] port_hdl      External Port handle
+ * @param[in] data          Request data
+ * @param[in] user_arg      User argument
  *
  * @return
- *    - ESP_OK: Port's feature cleared successfully
- *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
- *    - ESP_ERR_INVALID_ARG: Invalid argument
- *    - ESP_ERR_INVALID_SIZE: External Hub port number out of the hub's range
+ *    - ESP_ERR_NOT_ALLOWED if External Hub Driver is not installed
+ *    - ESP_ERR_INVALID_ARG if invalid argument
+ *    - ESP_ERR_INVALID_SIZE if port number is out of the hub's range
+ *    - ESP_ERR_INVALID_STATE if the hub device wasn't configured
+ *    - ESP_ERR_NOT_SUPPORTED if the request is not supported
+ *    - ESP_OK if control transfer was successfully submitted
  */
-esp_err_t ext_hub_clear_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_num, uint8_t feature);
-
-/**
- * @brief Get Port Status request
- *
- * Sends the request to retrieve port status data.
- * Actual port status data could be requested by calling ext_hub_get_port_status() after request completion.
- *
- * @param[in] ext_hub_hdl   External Hub device handle
- * @param[in] port_num      Port number
- *
- * @return
- *    - ESP_OK: Port's status obtained successfully
- *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
- *    - ESP_ERR_INVALID_ARG: Invalid argument
- *    - ESP_ERR_INVALID_SIZE: External Hub port number out of the hub's range
- */
-esp_err_t ext_hub_get_port_status(ext_hub_handle_t ext_hub_hdl, uint8_t port_num);
+esp_err_t ext_hub_request(ext_port_hdl_t port_hdl, ext_port_parent_request_data_t *data, void *user_arg);
 
 #ifdef __cplusplus
 }
