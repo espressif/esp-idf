@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,10 @@
 #include "esp_cam_ctlr_isp_dvp.h"
 #include "../../dvp_share_ctrl.h"
 
+#if CONFIG_PM_ENABLE
+#include "esp_pm.h"
+#endif
+
 #if CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE
 #define ISP_DVP_MEM_ALLOC_CAPS   (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
@@ -55,6 +59,9 @@ typedef struct isp_dvp_controller_t {
     dw_gdma_channel_handle_t  dma_chan;           //dwgdma channel handle
     size_t                    dvp_transfer_size;  //csi transfer size for dwgdma
     bool                      isr_installed;      //is isr installed
+#if CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t      pm_lock;            //Power management lock
+#endif
     esp_cam_ctlr_t base;
 } isp_dvp_controller_t;
 
@@ -180,6 +187,11 @@ esp_err_t esp_cam_new_isp_dvp_ctlr(isp_proc_handle_t isp_proc, const esp_cam_ctl
     mipi_csi_brg_ll_set_burst_len(isp_proc->csi_brg_hw, 512);
 
     esp_cam_ctlr_t *cam_ctlr = &(dvp_ctlr->base);
+
+#if CONFIG_PM_ENABLE
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "isp_dvp_cam_ctlr", &dvp_ctlr->pm_lock), err, TAG, "failed to create pm lock");
+#endif //CONFIG_PM_ENABLE
+
     cam_ctlr->del = s_isp_del_dvp_controller;
     cam_ctlr->enable = s_isp_dvp_enable;
     cam_ctlr->start = s_isp_dvp_start;
@@ -221,6 +233,12 @@ esp_err_t s_isp_del_dvp_controller(esp_cam_ctlr_handle_t handle)
     if (dvp_ctlr->trans_que) {
         vQueueDeleteWithCaps(dvp_ctlr->trans_que);
     }
+#if CONFIG_PM_ENABLE
+    if (dvp_ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_delete(dvp_ctlr->pm_lock), TAG, "delete pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
+
     free(dvp_ctlr);
 
     return ESP_OK;
@@ -294,6 +312,11 @@ static esp_err_t s_isp_dvp_enable(esp_cam_ctlr_handle_t handle)
 
     portENTER_CRITICAL(&dvp_ctlr->spinlock);
     dvp_ctlr->fsm = ISP_FSM_ENABLE;
+#if CONFIG_PM_ENABLE
+    if (dvp_ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(dvp_ctlr->pm_lock), TAG, "acquire pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
     portEXIT_CRITICAL(&dvp_ctlr->spinlock);
 
     return ESP_OK;
@@ -307,6 +330,11 @@ static esp_err_t s_isp_dvp_disable(esp_cam_ctlr_handle_t handle)
 
     portENTER_CRITICAL(&dvp_ctlr->spinlock);
     dvp_ctlr->fsm = ISP_FSM_INIT;
+#if CONFIG_PM_ENABLE
+    if (dvp_ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_release(dvp_ctlr->pm_lock), TAG, "release pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
     portEXIT_CRITICAL(&dvp_ctlr->spinlock);
 
     return ESP_OK;

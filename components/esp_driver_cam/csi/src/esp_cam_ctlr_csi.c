@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -210,6 +210,10 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     };
     ESP_GOTO_ON_ERROR(dw_gdma_channel_register_event_callbacks(csi_dma_chan, &csi_dma_cbs, ctlr), err, TAG, "failed to register dwgdma callback");
 
+#if CONFIG_PM_ENABLE
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "cam_csi_ctlr", &ctlr->pm_lock), err, TAG, "failed to create pm lock");
+#endif //CONFIG_PM_ENABLE
+
     ctlr->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     ctlr->csi_fsm = CSI_FSM_INIT;
     ctlr->base.del = s_ctlr_del;
@@ -236,6 +240,12 @@ esp_err_t s_del_csi_ctlr(csi_controller_t *ctlr)
 {
     ESP_RETURN_ON_FALSE(ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(ctlr->csi_fsm == CSI_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
+
+#if CONFIG_PM_ENABLE
+    if (ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_delete(ctlr->pm_lock), TAG, "delete pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
 
     if (ctlr->dma_chan) {
         ESP_RETURN_ON_ERROR(dw_gdma_del_channel(ctlr->dma_chan), TAG, "failed to delete dwgdma channel");
@@ -400,6 +410,11 @@ esp_err_t s_csi_ctlr_enable(esp_cam_ctlr_handle_t handle)
 
     portENTER_CRITICAL(&ctlr->spinlock);
     ctlr->csi_fsm = CSI_FSM_ENABLED;
+#if CONFIG_PM_ENABLE
+    if (ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(ctlr->pm_lock), TAG, "acquire pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
     portEXIT_CRITICAL(&ctlr->spinlock);
 
     return ESP_OK;
@@ -413,6 +428,11 @@ esp_err_t s_csi_ctlr_disable(esp_cam_ctlr_handle_t handle)
 
     portENTER_CRITICAL(&ctlr->spinlock);
     ctlr->csi_fsm = CSI_FSM_INIT;
+#if CONFIG_PM_ENABLE
+    if (ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_release(ctlr->pm_lock), TAG, "release pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
     portEXIT_CRITICAL(&ctlr->spinlock);
 
     return ESP_OK;
