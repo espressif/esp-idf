@@ -1087,8 +1087,7 @@ config BT_NIMBLE_HIGH_DUTY_ADV_ITVL
 
 config BT_NIMBLE_HOST_ALLOW_CONNECT_WITH_SCAN
     bool "Allow Connections with scanning in progress"
-    depends on BT_NIMBLE_ENABLED
-    depends on (!SOC_ESP_NIMBLE_CONTROLLER || IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2)
+    depends on BT_NIMBLE_ENABLED && !(IDF_TARGET_ESP32C2)
     help
         This enables support for user to initiate a new connection with scan in progress
 
