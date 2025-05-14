@@ -57,6 +57,9 @@
     ENV_MARKERS: ""
     INSTALL_EXTRA_TOOLS: "xtensa-esp-elf-gdb riscv32-esp-elf-gdb openocd-esp32 esp-rom-elfs"
     PYTEST_EXTRA_FLAGS: "--dev-passwd ${ETHERNET_TEST_PASSWORD} --dev-user ${ETHERNET_TEST_USER} --capture=fd --verbosity=0 --unity-test-report-mode merge"
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: pipeline_variables
   cache:
     # Usually do not need submodule-cache in target_test
     - key: pip-cache-${LATEST_GIT_TAG}

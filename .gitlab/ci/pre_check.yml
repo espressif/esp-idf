@@ -165,6 +165,8 @@ pipeline_variables:
       if [ -n "$CI_PYTHON_CONSTRAINT_BRANCH" ]; then
         echo "BUILD_AND_TEST_ALL_APPS=1" >> pipeline.env
       fi
+    - echo "OOCD_DISTRO_URL_ARMHF=$OOCD_DISTRO_URL_ARMHF" >> pipeline.env
+    - echo "OOCD_DISTRO_URL_ARM64=$OOCD_DISTRO_URL_ARM64" >> pipeline.env
     - python tools/ci/ci_process_description.py
     - cat pipeline.env
     - python tools/ci/artifacts_handler.py upload --type modified_files_and_components_report
