@@ -209,6 +209,11 @@ void esp_openthread_radio_update(esp_openthread_mainloop_context_t *mainloop)
     s_spinel_interface.GetSpinelInterface().UpdateFdSet((void *)mainloop);
 }
 
+void esp_openthread_handle_netif_state_change(bool state)
+{
+    s_radio.SetTimeSyncState(state);
+}
+
 void otPlatRadioGetIeeeEui64(otInstance *instance, uint8_t *ieee_eui64)
 {
     SuccessOrDie(s_radio.GetIeeeEui64(ieee_eui64));
@@ -522,4 +527,28 @@ uint32_t otPlatRadioGetSupportedChannelMask(otInstance *aInstance)
     OT_UNUSED_VARIABLE(aInstance);
     // Refer to `GetRadioChannelMask(bool aPreferred)`: FALSE to get supported channel mask
     return s_radio.GetRadioChannelMask(false);
+}
+
+uint32_t otPlatRadioGetBusSpeed(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+
+#if CONFIG_OPENTHREAD_RADIO_SPINEL_UART
+    return s_esp_openthread_radio_config->radio_uart_config.uart_config.baud_rate;
+#elif CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
+    return s_esp_openthread_radio_config->radio_spi_config.spi_device.clock_speed_hz;
+#else
+    return 0;
+#endif
+}
+
+uint32_t otPlatRadioGetBusLatency(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+
+#if CONFIG_OPENTHREAD_RADIO_SPINEL_UART || CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
+    return CONFIG_OPENTHREAD_BUS_LATENCY;
+#else
+    return 0;
+#endif
 }
