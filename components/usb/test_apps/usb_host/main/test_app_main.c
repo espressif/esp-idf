@@ -13,17 +13,36 @@
 #include "phy_common.h"
 #include "usb/usb_host.h"
 
+// ----------------------------------------------------- Macros --------------------------------------------------------
+
+#define TEST_P4_OTG11 0 // Change this to 1 to test on OTG1.1 peripheral - only for ESP32-P4
+
+// --------------------- Constants -------------------------
+
+#if TEST_P4_OTG11
+#define TEST_PHY                USB_PHY_TARGET_INT
+#define TEST_PERIPHERAL_MAP     BIT1
+#else
+#if CONFIG_IDF_TARGET_ESP32P4
+#define TEST_PHY                USB_PHY_TARGET_UTMI
+#else
+#define TEST_PHY                USB_PHY_TARGET_INT
+#endif
+#define TEST_PERIPHERAL_MAP     BIT0
+#endif // TEST_P4_OTG11
+
 void setUp(void)
 {
     unity_utils_record_free_mem();
     dev_msc_init();
     // Install PHY separately
-    test_setup_usb_phy();
+    test_setup_usb_phy(TEST_PHY);
     // Install USB Host
     usb_host_config_t host_config = {
         .skip_phy_setup = true,
         .root_port_unpowered = false,
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
+        .peripheral_map = TEST_PERIPHERAL_MAP,
     };
     ESP_ERROR_CHECK(usb_host_install(&host_config));
     printf("USB Host installed\n");

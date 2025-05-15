@@ -113,8 +113,10 @@ static void usb_host_lib_task(void *arg)
 # ifdef ENABLE_ENUM_FILTER_CALLBACK
         .enum_filter_cb = set_config_cb,
 # endif // ENABLE_ENUM_FILTER_CALLBACK
+        .peripheral_map = BIT0,
     };
     ESP_ERROR_CHECK(usb_host_install(&host_config));
+    ESP_LOGI(TAG, "USB Host installed with peripheral map 0x%x", host_config.peripheral_map);
 
     //Signalize the app_main, the USB host library has been installed
     xTaskNotifyGive(arg);

@@ -11,6 +11,7 @@
 #include <sys/queue.h>
 #include "esp_err.h"
 #include "esp_heap_caps.h"
+#include "esp_bit_defs.h"
 #include "esp_private/critical_section.h"
 #include "esp_log.h"
 #include "usb_private.h"
@@ -26,8 +27,6 @@
 Implementation of the HUB driver that only supports the Root Hub with a single port. Therefore, we currently don't
 implement the bare minimum to control the root HCD port.
 */
-
-#define HUB_ROOT_PORT_NUM                           1  // HCD only supports one port
 
 #ifdef CONFIG_USB_HOST_HW_BUFFER_BIAS_IN
 #define HUB_ROOT_HCD_PORT_FIFO_BIAS                 HCD_PORT_FIFO_BIAS_RX
@@ -60,7 +59,6 @@ typedef enum {
     ROOT_PORT_STATE_POWERED,        /**< Root port is powered, device is not connected */
     ROOT_PORT_STATE_DISABLED,       /**< A device is connected but is disabled (i.e., not reset, no SOFs are sent) */
     ROOT_PORT_STATE_ENABLED,        /**< A device is connected, port has been reset, SOFs are sent */
-    ROOT_PORT_STATE_RECOVERY,       /**< Root port encountered an error and needs to be recovered */
 } root_port_state_t;
 
 /**
@@ -566,7 +564,14 @@ esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
         .context = NULL,
     };
     hcd_port_handle_t root_port_hdl;
-    ret = hcd_port_init(HUB_ROOT_PORT_NUM, &port_config, &root_port_hdl);
+
+    // Right now we support only one root port, can be extended in future
+    int root_port_index = 0;
+    if (hub_config->port_map & BIT1) {
+        root_port_index = 1;
+    }
+
+    ret = hcd_port_init(root_port_index, &port_config, &root_port_hdl);
     if (ret != ESP_OK) {
         ESP_LOGE(HUB_DRIVER_TAG, "HCD Port init error: %s", esp_err_to_name(ret));
         goto err;
