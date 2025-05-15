@@ -33,8 +33,8 @@ typedef enum {
   * @brief SD sampling mode
   */
  typedef enum {
-    SD_SAMPLING_MODE_SDR,  ///< Single data rate mode
-    SD_SAMPLING_MODE_DDR,  ///< Double data rate mode
+    SD_SAMPLING_MODE_SDR = 1,  ///< Single data rate mode
+    SD_SAMPLING_MODE_DDR,      ///< Double data rate mode
 } sd_sampling_mode_t;
 
 /**
@@ -49,7 +49,7 @@ typedef enum {
  * Driver will print out how long the delay is, in picosecond (ps).
  */
 typedef enum {
-    SDMMC_DELAY_PHASE_0,            /*!< Delay phase 0 */
+    SDMMC_DELAY_PHASE_0 = 1,        /*!< Delay phase 0 */
     SDMMC_DELAY_PHASE_1,            /*!< Delay phase 1 */
     SDMMC_DELAY_PHASE_2,            /*!< Delay phase 2 */
     SDMMC_DELAY_PHASE_3,            /*!< Delay phase 3 */
@@ -64,15 +64,15 @@ typedef enum {
  * @brief SD/MMC Host clock timing delay lines
  */
 typedef enum {
-    SDMMC_DELAY_LINE_0,            /*!< Delay line 0 */
-    SDMMC_DELAY_LINE_1,            /*!< Delay line 1 */
-    SDMMC_DELAY_LINE_2,            /*!< Delay line 2 */
-    SDMMC_DELAY_LINE_3,            /*!< Delay line 3 */
-    SDMMC_DELAY_LINE_4,            /*!< Delay line 4 */
-    SDMMC_DELAY_LINE_5,            /*!< Delay line 5 */
-    SDMMC_DELAY_LINE_6,            /*!< Delay line 6 */
-    SDMMC_DELAY_LINE_7,            /*!< Delay line 7 */
-    SDMMC_DELAY_LINE_AUTO,         /*!< Auto detect line */
+    SDMMC_DELAY_LINE_0 = 1,         /*!< Delay line 0 */
+    SDMMC_DELAY_LINE_1,             /*!< Delay line 1 */
+    SDMMC_DELAY_LINE_2,             /*!< Delay line 2 */
+    SDMMC_DELAY_LINE_3,             /*!< Delay line 3 */
+    SDMMC_DELAY_LINE_4,             /*!< Delay line 4 */
+    SDMMC_DELAY_LINE_5,             /*!< Delay line 5 */
+    SDMMC_DELAY_LINE_6,             /*!< Delay line 6 */
+    SDMMC_DELAY_LINE_7,             /*!< Delay line 7 */
+    SDMMC_DELAY_LINE_AUTO,          /*!< Auto detect line */
 } sdmmc_delay_line_t;
 
 #if SOC_SDMMC_DATA_WIDTH_MAX

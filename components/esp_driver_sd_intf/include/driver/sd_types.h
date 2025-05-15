@@ -29,35 +29,21 @@ typedef struct sd_slot_driver_t *sd_host_slot_handle_t;
  * @brief SD Host slot configuration
  */
 typedef struct {
-    struct {
-        int freq_hz;                                 ///< Frequency in Hz
-        bool override;                               ///< If set to true, frequency will be set to freq_hz; If set to false, frequency is unchanged. By default it's false
-    } freq;                                          ///< Frequency settings
-    struct {
-        bool override;                               ///< If set to true, width will be set to width configured in `sd_host_sdmmc_slot_io_cfg_t`; If set to false, width is unchanged. By default it's false
-    } width;                                         ///< Bus width settings
-    struct {
-        sd_sampling_mode_t mode;                     ///< Sampling mode, see `sd_sampling_mode_t`
-        bool override;                               ///< If set to true, sampling mode will be set to sampling_mode; If set to false, sampling mode is unchanged. By default it's false
-    } sampling_mode;                                 ///< Sampling mode settings
-    struct {
-        sdmmc_delay_phase_t delayphase;              ///< Delay phase, see `sdmmc_delay_phase_t`
-        bool override;                               ///< If set to true, delay phase will be set to delay_phase; If set to false, delay phase is unchanged. By default it's false
-    } delay_phase;                                   ///< Delay phase settings
-    struct {
-        sdmmc_delay_line_t delayline;                ///< Delay line, see `sdmmc_delay_line_t`
-        bool override;                               ///< If set to true, delay line will be set to delay_line; If set to false, delay line is unchanged. By default it's false
-    } delay_line;                                    ///< Delay line settings
+    int freq_hz;                                 ///< Frequency in Hz
+    sd_bus_width_t width;                        ///< Bus width
+    sd_sampling_mode_t sampling_mode;            ///< Sampling mode, see `sd_sampling_mode_t`
+    sdmmc_delay_phase_t delayphase;              ///< Delay phase, see `sdmmc_delay_phase_t`
+    sdmmc_delay_line_t delayline;                ///< Delay line, see `sdmmc_delay_line_t`
 } sd_host_slot_cfg_t;
 
 /**
  * @brief Slot info
  */
 typedef struct {
-    int freq_hz;                                     ///< Frequency in Hz
-    uint8_t width;                                   ///< Bus width
-    sd_mode_t sd_mode;                               ///< SD mode, see `sd_mode_t`
-    sd_sampling_mode_t sampling_mode;                ///< Sampling mode, see `sd_sampling_mode_t`
+    int freq_hz;                                 ///< Frequency in Hz
+    sd_bus_width_t width;                        ///< Bus width
+    sd_mode_t sd_mode;                           ///< SD mode, see `sd_mode_t`
+    sd_sampling_mode_t sampling_mode;            ///< Sampling mode, see `sd_sampling_mode_t`
 } sd_host_slot_info_t;
 
 /*---------------------------------------------

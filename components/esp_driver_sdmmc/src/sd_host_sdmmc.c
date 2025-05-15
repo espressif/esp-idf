@@ -201,20 +201,20 @@ static esp_err_t sd_host_slot_sdmmc_configure(sd_host_slot_handle_t slot, const 
 {
     ESP_RETURN_ON_FALSE(slot && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
 #if SDMMC_LL_DELAY_PHASE_SUPPORTED
-    ESP_RETURN_ON_FALSE(config->delay_phase.delayphase < SOC_SDMMC_DELAY_PHASE_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid delay phase");
+    ESP_RETURN_ON_FALSE(config->delayphase < (SOC_SDMMC_DELAY_PHASE_NUM + 1), ESP_ERR_INVALID_ARG, TAG, "invalid delay phase");
 #else
     //DIG-217
     ESP_LOGW(TAG, "esp32 doesn't support input phase delay, fallback to 0 delay");
 #endif
 
 #if SOC_SDMMC_UHS_I_SUPPORTED
-    ESP_RETURN_ON_FALSE(config->delay_line.delayline < SOC_SDMMC_DELAY_PHASE_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid delay line");
+    ESP_RETURN_ON_FALSE(config->delayline < (SOC_SDMMC_DELAY_PHASE_NUM + 1), ESP_ERR_INVALID_ARG, TAG, "invalid delay line");
 #else
     ESP_LOGW(TAG, "input line delay not supported, fallback to 0 delay");
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32P4
-    if (config->freq.freq_hz == SDMMC_FREQ_SDR104 * 1000) {
+    if (config->freq_hz == SDMMC_FREQ_SDR104 * 1000) {
         unsigned chip_version = efuse_hal_chip_revision();
         ESP_LOGD(TAG, "chip_version: %d", chip_version);
         if (!ESP_CHIP_REV_ABOVE(chip_version, 200)) {
@@ -225,28 +225,28 @@ static esp_err_t sd_host_slot_sdmmc_configure(sd_host_slot_handle_t slot, const 
 
     sd_host_sdmmc_slot_t *slot_ctx = __containerof(slot, sd_host_sdmmc_slot_t, drv);
     portENTER_CRITICAL(&slot_ctx->ctlr->spinlock);
-    if (config->freq.override) {
-        slot_ctx->freq.freq_hz = config->freq.freq_hz;
+    if (config->freq_hz != 0) {
+        slot_ctx->freq.freq_hz = config->freq_hz;
         slot_ctx->freq.freq_state = SD_HOST_SLOT_STATE_READY;
     }
-    if (config->width.override) {
+    if (config->width != 0) {
         slot_ctx->width.width_state = SD_HOST_SLOT_STATE_READY;
     }
-    if (config->sampling_mode.override) {
-        slot_ctx->sampling_mode.mode = config->sampling_mode.mode;
+    if (config->sampling_mode != 0) {
+        slot_ctx->sampling_mode.mode = config->sampling_mode;
         slot_ctx->sampling_mode.sampling_mode_state = SD_HOST_SLOT_STATE_READY;
     }
-    if (config->delay_phase.override) {
+    if (config->delayphase != 0) {
 #if SDMMC_LL_DELAY_PHASE_SUPPORTED
-        slot_ctx->delay_phase.delayphase = config->delay_phase.delayphase;
+        slot_ctx->delay_phase.delayphase = config->delayphase;
 #else
         slot_ctx->delay_phase.delayphase = SDMMC_DELAY_PHASE_0;
 #endif
         slot_ctx->delay_phase.delay_phase_state = SD_HOST_SLOT_STATE_READY;
     }
-    if (config->delay_line.override) {
+    if (config->delayline != 0) {
 #if SOC_SDMMC_UHS_I_SUPPORTED
-        slot_ctx->delay_line.delayline = config->delay_line.delayline;
+        slot_ctx->delay_line.delayline = config->delayline;
 #else
         slot_ctx->delay_line.delayline = SDMMC_DELAY_LINE_0;
 #endif

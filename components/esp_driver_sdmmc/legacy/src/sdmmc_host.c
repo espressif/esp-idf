@@ -33,8 +33,7 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
 
     sd_host_slot_handle_t hdl = sdmmc_get_slot_handle(slot);
     sd_host_slot_cfg_t cfg = {
-        .freq.freq_hz = freq_khz * 1000,
-        .freq.override = true,
+        .freq_hz = freq_khz * 1000,
     };
     ESP_RETURN_ON_ERROR(sd_host_slot_configure(hdl, &cfg), TAG, "failed to configure slot freq");
 
@@ -57,8 +56,7 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase)
     SLOT_CHECK(slot);
     sd_host_slot_handle_t hdl = sdmmc_get_slot_handle(slot);
     sd_host_slot_cfg_t cfg = {
-        .delay_phase.delayphase = delay_phase,
-        .delay_phase.override = true,
+        .delayphase = delay_phase,
     };
     ESP_RETURN_ON_ERROR(sd_host_slot_configure(hdl, &cfg), TAG, "failed to configure slot delay phase");
 
@@ -70,8 +68,7 @@ esp_err_t sdmmc_host_set_input_delayline(int slot, sdmmc_delay_line_t delay_line
     SLOT_CHECK(slot);
     sd_host_slot_handle_t hdl = sdmmc_get_slot_handle(slot);
     sd_host_slot_cfg_t cfg = {
-        .delay_line.delayline = delay_line,
-        .delay_line.override = true,
+        .delayline = delay_line,
     };
     ESP_RETURN_ON_ERROR(sd_host_slot_configure(hdl, &cfg), TAG, "failed to configure slot delay line");
 
@@ -181,7 +178,7 @@ esp_err_t sdmmc_host_set_bus_width(int slot, size_t width)
 
     sd_host_slot_handle_t hdl = sdmmc_get_slot_handle(slot);
     sd_host_slot_cfg_t cfg = {
-        .width.override = true,
+        .width = width,
     };
     ESP_RETURN_ON_ERROR(sd_host_slot_configure(hdl, &cfg), TAG, "failed to configure slot bus width");
 
@@ -204,8 +201,7 @@ esp_err_t sdmmc_host_set_bus_ddr_mode(int slot, bool ddr_enabled)
 {
     sd_host_slot_handle_t hdl = sdmmc_get_slot_handle(slot);
     sd_host_slot_cfg_t cfg = {
-        .sampling_mode.mode = ddr_enabled ? SD_SAMPLING_MODE_DDR : SD_SAMPLING_MODE_SDR,
-        .sampling_mode.override = true,
+        .sampling_mode = ddr_enabled ? SD_SAMPLING_MODE_DDR : SD_SAMPLING_MODE_SDR,
     };
     ESP_RETURN_ON_ERROR(sd_host_slot_configure(hdl, &cfg), TAG, "failed to configure slot ddr mode");
 
