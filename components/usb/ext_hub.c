@@ -312,13 +312,32 @@ static bool _device_set_actions(ext_hub_dev_t *ext_hub_dev, uint32_t action_flag
 
 static esp_err_t device_enable_int_ep(ext_hub_dev_t *ext_hub_dev)
 {
-    ESP_LOGD(EXT_HUB_TAG, "[%d] Enable EP IN", ext_hub_dev->constant.dev_addr);
-    esp_err_t ret = usbh_ep_enqueue_urb(ext_hub_dev->constant.ep_in_hdl, ext_hub_dev->constant.in_urb);
-    if (ret != ESP_OK) {
-        ESP_LOGE(EXT_HUB_TAG, "[%d] Failed to submit in urb: %s", ext_hub_dev->constant.dev_addr, esp_err_to_name(ret));
-        device_error(ext_hub_dev);
+    bool call_proc_req_cb = false;
+    bool is_active = true;
+    ESP_LOGD(EXT_HUB_TAG, "[%d] Device ports handle complete", ext_hub_dev->constant.dev_addr);
+
+    // Check if the device should be released
+    EXT_HUB_ENTER_CRITICAL();
+    if (ext_hub_dev->dynamic.flags.waiting_release) {
+        is_active = false;
+        call_proc_req_cb = _device_set_actions(ext_hub_dev, DEV_ACTION_RELEASE);
     }
-    return ret;
+    EXT_HUB_EXIT_CRITICAL();
+
+    if (is_active) {
+        ESP_LOGD(EXT_HUB_TAG, "[%d] Enable IN EP", ext_hub_dev->constant.dev_addr);
+        esp_err_t ret = usbh_ep_enqueue_urb(ext_hub_dev->constant.ep_in_hdl, ext_hub_dev->constant.in_urb);
+        if (ret != ESP_OK) {
+            ESP_LOGE(EXT_HUB_TAG, "[%d] Failed to submit in urb: %s", ext_hub_dev->constant.dev_addr, esp_err_to_name(ret));
+            device_error(ext_hub_dev);
+        }
+        return ret;
+    }
+
+    if (call_proc_req_cb) {
+        p_ext_hub_driver->constant.proc_req_cb(false, p_ext_hub_driver->constant.proc_req_cb_arg);
+    }
+    return ESP_OK;
 }
 
 static void device_has_changed(ext_hub_dev_t *ext_hub_dev)
@@ -1396,10 +1415,9 @@ exit:
     return ret;
 }
 
-esp_err_t ext_hub_all_free(void)
+void ext_hub_mark_all_free(void)
 {
     bool call_proc_req_cb = false;
-    bool wait_for_free = false;
 
     EXT_HUB_ENTER_CRITICAL();
     for (int i = 0; i < 2; i++) {
@@ -1414,11 +1432,13 @@ esp_err_t ext_hub_all_free(void)
         while (hub_curr != NULL) {
             hub_next = TAILQ_NEXT(hub_curr, dynamic.tailq_entry);
             hub_curr->dynamic.flags.waiting_release = 1;
-            call_proc_req_cb = _device_set_actions(hub_curr,  DEV_ACTION_EP1_FLUSH |
-                                                   DEV_ACTION_EP1_DEQUEUE |
-                                                   DEV_ACTION_RELEASE);
-            // At least one hub should be released
-            wait_for_free = true;
+            uint32_t action_flags = DEV_ACTION_EP1_FLUSH | DEV_ACTION_EP1_DEQUEUE;
+            // If device in the IDLE stage, add the release action
+            // otherwise, device will be released when the stage changed to IDLE
+            if (hub_curr->single_thread.stage == EXT_HUB_STAGE_IDLE) {
+                action_flags |= DEV_ACTION_RELEASE;
+            }
+            call_proc_req_cb = _device_set_actions(hub_curr, action_flags);
             hub_curr = hub_next;
         }
     }
@@ -1427,8 +1447,6 @@ esp_err_t ext_hub_all_free(void)
     if (call_proc_req_cb) {
         p_ext_hub_driver->constant.proc_req_cb(false, p_ext_hub_driver->constant.proc_req_cb_arg);
     }
-
-    return (wait_for_free) ? ESP_ERR_NOT_FINISHED : ESP_OK;
 }
 
 esp_err_t ext_hub_status_handle_complete(ext_hub_handle_t ext_hub_hdl)
