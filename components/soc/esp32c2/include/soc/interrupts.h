@@ -64,8 +64,6 @@ typedef enum {
     ETS_MAX_INTR_SOURCE,
 } periph_interrupt_t;
 
-typedef periph_interrupt_t periph_interrput_t __attribute__((deprecated("in favor of periph_interrupt_t")));
-
 extern const char * const esp_isr_names[ETS_MAX_INTR_SOURCE];
 
 #ifdef __cplusplus

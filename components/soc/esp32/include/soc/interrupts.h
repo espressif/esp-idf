@@ -86,8 +86,6 @@ typedef enum {
     ETS_MAX_INTR_SOURCE,                     /**< total number of interrupt sources*/
 } periph_interrupt_t;
 
-typedef periph_interrupt_t periph_interrput_t __attribute__((deprecated("in favor of periph_interrupt_t")));
-
 #define ETS_CAN_INTR_SOURCE ETS_TWAI_INTR_SOURCE
 
 extern const char *const esp_isr_names[ETS_MAX_INTR_SOURCE];
