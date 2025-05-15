@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2017 Nordic Semiconductor ASA
  * SPDX-FileCopyrightText: 2015-2016 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -494,6 +494,14 @@ void bt_mesh_ble_ext_adv_report(struct ble_gap_ext_disc_desc *desc)
 }
 #endif
 
+#if CONFIG_BLE_MESH_LONG_PACKET
+static struct {
+    struct bt_mesh_adv_report adv_rpt;
+    uint8_t adv_data_len;
+    uint8_t adv_data[2 + CONFIG_BLE_MESH_LONG_PACKET_ADV_LEN];
+} adv_report_cache;
+#endif
+
 int disc_cb(struct ble_gap_event *event, void *arg)
 {
 #if CONFIG_BLE_MESH_USE_BLE_50
@@ -517,29 +525,84 @@ int disc_cb(struct ble_gap_event *event, void *arg)
 #if CONFIG_BLE_MESH_USE_BLE_50
     case BLE_GAP_EVENT_EXT_DISC: {
         struct bt_mesh_adv_report adv_rpt = {0};
+        uint8_t *adv_data = NULL;
+        uint8_t adv_data_len = 0;
 
         desc = &event->ext_disc;
-
+        if (desc->length_data > BLE_MESH_GAP_ADV_MAX_LEN) {
+            /* @todo: bt_mesh_ble_ext_adv_report and transfer
+             * to user have functional duplication */
+            goto report_to_user;
+        }
         memcpy(&adv_rpt.addr, &desc->addr, sizeof(bt_mesh_addr_t));
         adv_rpt.rssi = desc->rssi;
         adv_rpt.adv_type = desc->props;
         adv_rpt.primary_phy = desc->prim_phy;
         adv_rpt.secondary_phy = desc->sec_phy;
+        adv_rpt.tx_power = desc->tx_power;
+        adv_data = (uint8_t *)desc->data;
+        adv_data_len = desc->length_data;
 
-        net_buf_simple_init_with_data(&adv_rpt.adv_data, (void *)desc->data, desc->length_data);
+#if CONFIG_BLE_MESH_LONG_PACKET
+    switch (desc->data_status) {
+    case BLE_GAP_EXT_ADV_DATA_STATUS_COMPLETE:
+        if (adv_report_cache.adv_data_len) {
+            memcpy(adv_report_cache.adv_data + adv_report_cache.adv_data_len,
+                desc->data, desc->length_data);
+            adv_report_cache.adv_data_len += desc->length_data;
+            adv_data = adv_report_cache.adv_data;
+            adv_data_len = adv_report_cache.adv_data_len;
+            adv_report_cache.adv_data_len = 0;
+        }
+        break;
+    case BLE_GAP_EXT_ADV_DATA_STATUS_INCOMPLETE:
+        if ((adv_report_cache.adv_data_len + desc->length_data) > BLE_MESH_GAP_ADV_MAX_LEN) {
+            adv_report_cache.adv_data_len = 0;
+            return false;
+        }
+        if (adv_report_cache.adv_data_len == 0) {
+            memcpy(&adv_report_cache.adv_rpt, &adv_rpt, sizeof(struct bt_mesh_adv_report));
+        }
+        memcpy(adv_report_cache.adv_data + adv_report_cache.adv_data_len,
+                desc->data, desc->length_data);
+        adv_report_cache.adv_data_len += desc->length_data;
+        /* To avoid discarding user's packets,
+         * it is assumed here that this packet
+         * is not mesh's packet */
+        goto report_to_user;
+    case BLE_GAP_EXT_ADV_DATA_STATUS_TRUNCATED:
+         if (adv_report_cache.adv_data_len) {
+            memset(&adv_report_cache, 0, sizeof(adv_report_cache));
+         }
+         goto report_to_user;
+    default:
+         assert(0);
+    }
+#else /* CONFIG_BLE_MESH_LONG_PACKET */
+    if (desc->data_status != BLE_GAP_EXT_ADV_DATA_STATUS_COMPLETE) {
+        goto report_to_user;
+    }
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+
+        net_buf_simple_init_with_data(&adv_rpt.adv_data, (void *)adv_data, adv_data_len);
 
         if (bt_mesh_scan_dev_found_cb) {
             /* TODO: Support Scan Response data length for NimBLE host */
-            if (desc->props & BLE_HCI_ADV_LEGACY_MASK) {
+            if (desc->props & BLE_HCI_ADV_LEGACY_MASK ||
+                (IS_ENABLED(CONFIG_BLE_MESH_EXT_ADV) &&
+                desc->props == BLE_MESH_EXT_ADV_NONCONN_IND)) {
                 bt_mesh_scan_dev_found_cb(&adv_rpt);
             }
         }
 
         /* Mesh didn't process that data */
-        if (adv_rpt.adv_data.len == desc->length_data) {
-            bt_mesh_ble_ext_adv_report(desc);
+        if (adv_rpt.adv_data.len == adv_data_len) {
+            goto report_to_user;
         }
+        break;
 
+report_to_user:
+        bt_mesh_ble_ext_adv_report(desc);
         break;
     }
 #else /* CONFIG_BLE_MESH_USE_BLE_50 */
@@ -1101,6 +1164,11 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
 #endif /* CONFIG_BLE_MESH_NODE */
 
 #if CONFIG_BLE_MESH_USE_BLE_50
+static struct {
+    bool set;
+    struct ble_gap_ext_adv_params param;
+} last_param[BLE_MESH_ADV_INS_TYPES_NUM];
+
 int bt_le_ext_adv_start(const uint8_t inst_id,
                         const struct bt_mesh_adv_param *param,
                         const struct bt_mesh_adv_data *ad, size_t ad_len,
@@ -1125,7 +1193,7 @@ int bt_le_ext_adv_start(const uint8_t inst_id,
         return -EALREADY;
     }
 #endif
-    buf = bt_mesh_calloc(ad_len * BLE_HS_ADV_MAX_SZ);
+    buf = bt_mesh_calloc(ad_len * BLE_MESH_GAP_ADV_MAX_LEN);
     if (!buf) {
         BT_ERR("ad buffer alloc failed");
         return -ENOMEM;
@@ -1201,16 +1269,19 @@ int bt_le_ext_adv_start(const uint8_t inst_id,
         adv_params.legacy_pdu = true;
     } else {
         if (param->primary_phy == BLE_MESH_ADV_PHY_1M &&
-            param->secondary_phy == BLE_MESH_ADV_PHY_1M) {
-            adv_params.legacy_pdu = true;
+            param->secondary_phy == BLE_MESH_ADV_PHY_1M &&
+            param->include_tx_power == false &&
+            ad->data_len <= 29) {
+                adv_params.legacy_pdu = true;
         }
     }
 
     adv_params.sid = inst_id;
     adv_params.primary_phy = param->primary_phy;
     adv_params.secondary_phy = param->secondary_phy;
-    adv_params.tx_power = 0x7F; // tx power will be selected by controller
+    adv_params.tx_power = param->tx_power;
     adv_params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    adv_params.include_tx_power = param->include_tx_power;
 
     interval = param->interval_min;
 
@@ -1230,10 +1301,23 @@ int bt_le_ext_adv_start(const uint8_t inst_id,
     adv_params.itvl_min = interval;
     adv_params.itvl_max = interval;
 
-    err = ble_gap_ext_adv_configure(inst_id, &adv_params, NULL, gap_event_cb, NULL);
-    if (err != 0) {
-        BT_ERR("Advertising config failed: err %d", err);
-        return err;
+    if (memcmp(&adv_params, &last_param[inst_id].param,
+        sizeof(struct ble_gap_ext_adv_params))) {
+        if (last_param[inst_id].set) {
+            err = ble_gap_ext_adv_remove(inst_id);
+            if (err != 0 && err != BLE_HS_EALREADY) {
+                BT_ERR("Advertising rm failed: err %d", err);
+                return err;
+            }
+        }
+        last_param[inst_id].set = true;
+        err = ble_gap_ext_adv_configure(inst_id, &adv_params, NULL, gap_event_cb, NULL);
+        if (err != 0) {
+            BT_ERR("Advertising config failed: err %d", err);
+            return err;
+        }
+
+        memcpy(&last_param[inst_id].param, &adv_params, sizeof(struct ble_gap_ext_adv_params));
     }
 
     err = ble_gap_ext_adv_set_data(inst_id, data);
@@ -1358,6 +1442,7 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
 
     adv_params.itvl_min = interval;
     adv_params.itvl_max = interval;
+    adv_params.channel_map = param->channel_map;
 
 again:
     err = ble_gap_adv_start(BLE_OWN_ADDR_PUBLIC, NULL, BLE_HS_FOREVER, &adv_params,
@@ -1460,7 +1545,7 @@ int bt_mesh_ble_ext_adv_start(const uint8_t inst_id,
 
     adv_params.itvl_min = param->interval;
     adv_params.itvl_max = param->interval;
-    adv_params.channel_map = BLE_MESH_ADV_CHNL_37 | BLE_MESH_ADV_CHNL_38 | BLE_MESH_ADV_CHNL_39;
+    adv_params.channel_map = BLE_MESH_ADV_CHAN_37 | BLE_MESH_ADV_CHAN_38 | BLE_MESH_ADV_CHAN_39;
     adv_params.filter_policy = BLE_MESH_AP_SCAN_CONN_ALL;
     adv_params.primary_phy = BLE_MESH_ADV_PHY_1M;
     adv_params.secondary_phy = BLE_MESH_ADV_PHY_1M;
@@ -1581,7 +1666,7 @@ int bt_mesh_ble_adv_start(const struct bt_mesh_ble_adv_param *param,
     }
     adv_params.itvl_min = param->interval;
     adv_params.itvl_max = param->interval;
-    adv_params.channel_map = BLE_MESH_ADV_CHNL_37 | BLE_MESH_ADV_CHNL_38 | BLE_MESH_ADV_CHNL_39;
+    adv_params.channel_map = BLE_MESH_ADV_CHAN_37 | BLE_MESH_ADV_CHAN_38 | BLE_MESH_ADV_CHAN_39;
     adv_params.filter_policy = BLE_MESH_AP_SCAN_CONN_ALL;
     adv_params.high_duty_cycle = (param->adv_type == BLE_MESH_ADV_DIRECT_IND) ? true : false;
 

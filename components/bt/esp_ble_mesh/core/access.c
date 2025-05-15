@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,11 @@
 #endif
 
 #define BLE_MESH_SDU_MAX_LEN    384
+
+/* Extended SDU maximum length (message length + TransMIC size) calculation:
+ * 32 segments maximum × (249 bytes max PDU - 17 bytes overhead)
+ * 17 bytes = 9 bytes mesh header + 4 bytes transport overhead + 4-byte NetMIC */
+#define BLE_MESH_EXT_SDU_MAX_LEN    (32*(249-17))
 
 extern const struct bt_mesh_comp *comp_0;
 static uint16_t dev_primary_addr;
@@ -973,10 +978,24 @@ static int model_send(struct bt_mesh_model *model,
         return -EINVAL;
     }
 
+#if CONFIG_BLE_MESH_LONG_PACKET
+    if (msg->len > MIN(BLE_MESH_EXT_TX_SDU_MAX, BLE_MESH_EXT_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT) {
+        BT_ERR("Too big ext message (len %d)", msg->len);
+        return -EMSGSIZE;
+    }
+
+    if ((msg->len <= MIN(BLE_MESH_EXT_TX_SDU_MAX, BLE_MESH_EXT_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT) &&
+        (msg->len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT) &&
+        !tx->ctx->enh.long_pkt_cfg_used) {
+        BT_ERR("Extended message length %d requires long packet mode, but long_pkt_cfg_used is false", msg->len);
+        return -EMSGSIZE;
+    }
+#else
     if (msg->len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT) {
         BT_ERR("Too big message (len %d)", msg->len);
         return -EMSGSIZE;
     }
+#endif
 
     if (!implicit_bind && !model_has_key(model, tx->ctx->app_idx)) {
         BT_ERR("Model not bound to AppKey 0x%04x", tx->ctx->app_idx);

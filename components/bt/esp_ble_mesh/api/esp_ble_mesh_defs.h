@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,12 @@ extern "C" {
 
 /*!< The maximum length of a BLE Mesh message, including Opcode, Payload and TransMIC */
 #define ESP_BLE_MESH_SDU_MAX_LEN                    384
+#if CONFIG_BLE_MESH_LONG_PACKET
+/* Extended SDU maximum length (included Opcode, Payload and TransMIC) calculation:
+ * SEGMENT_COUNT × (ADV_PAYLOAD_LEN - 17 bytes overhead)
+ * 17 bytes = 9 bytes mesh network header + 4 bytes transport overhead + 4 bytes NetMIC */
+#define ESP_BLE_MESH_EXT_SDU_MAX_LEN                (CONFIG_BLE_MESH_LONG_PACKET_TX_SEG_CNT * (CONFIG_BLE_MESH_LONG_PACKET_ADV_LEN - 17))
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
 
 /*!< Length of a short Mesh MIC. */
 #define ESP_BLE_MESH_MIC_SHORT                      4
@@ -613,6 +619,166 @@ struct esp_ble_mesh_model {
  */
 #define ESP_BLE_MESH_MODEL_NONE ((esp_ble_mesh_model_t []){})
 
+#if CONFIG_BLE_MESH_USE_BLE_50
+#define ESP_BLE_MESH_ADV_CHAN_UNASSIGNED        (0)
+#define ESP_BLE_MESH_ADV_CHAN_37                BIT(0)
+#define ESP_BLE_MESH_ADV_CHAN_38                BIT(1)
+#define ESP_BLE_MESH_ADV_CHAN_39                BIT(2)
+
+#define ESP_BLE_MESH_DEFAULT_CHANNEL_MAP        (ESP_BLE_MESH_ADV_CHAN_37| \
+                                                 ESP_BLE_MESH_ADV_CHAN_38| \
+                                                 ESP_BLE_MESH_ADV_CHAN_39)
+
+#define ESP_BLE_MESH_ADV_PHY_UNASSIGNED         (0)
+#define ESP_BLE_MESH_ADV_PHY_1M                 (1)
+#define ESP_BLE_MESH_ADV_PHY_2M                 (2)
+#define ESP_BLE_MESH_ADV_PHY_CODED              (3)
+#define ESP_BLE_MESH_ADV_PHY_DEFAULT            ESP_BLE_MESH_ADV_PHY_1M
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
+
+/**
+ * Enhanced configuration for Mesh messages with legacy advertising
+ */
+typedef struct {
+    /**
+     * Advertising interval in milliseconds.
+     * If set to 0, the Mesh protocol stack's xmit parameters are used.
+     * If set to another value (e.g., 10), the advertising interval will be 10 ms.
+     */
+    uint32_t adv_itvl;
+
+    /**
+     * Number of advertising per packet.
+     * If set to 0, the Mesh protocol stack's xmit parameters are used.
+     * If set to another value (e.g., 3), the number of advertising per packet will be 3.
+     */
+    uint8_t adv_cnt;
+
+    /**
+     * Advertising channel map.
+     * If set to 0, the protocol stack uses default channels.
+     * If set to another value (e.g., ESP_BLE_MESH_ADV_CHAN_37),
+     * the advertising channel map will be 0x01, the advertising
+     * packet will only advertise on channel 37.
+     */
+    uint8_t channel_map;
+} esp_ble_mesh_adv_cfg_t;
+
+#if CONFIG_BLE_MESH_EXT_ADV
+/** Enhanced configuration for Mesh messages with extended advertising */
+typedef struct {
+    /**
+     * Primary PHY for advertising (ESP_BLE_MESH_ADV_PHY_1M or
+     * ESP_BLE_MESH_ADV_PHY_CODED).
+     * When using coded PHY, receivers must use coded scanning.
+     */
+    uint8_t primary_phy;
+
+    /**
+     * Secondary PHY for advertising (ESP_BLE_MESH_ADV_PHY_1M,
+     * ESP_BLE_MESH_ADV_PHY_2M, or ESP_BLE_MESH_ADV_PHY_CODED).
+     * When using coded PHY, receivers must use coded scanning.
+     */
+    uint8_t secondary_phy;
+
+    /**
+     * Include TX power in advertising packets (0: disabled, 1: enabled).
+     * Allows receivers/relays to maintain original transmission power.
+     */
+    uint8_t include_tx_power:1;
+
+    /** Transmission power level (in dBm) */
+    int8_t tx_power;
+} esp_ble_mesh_ext_adv_cfg_t;
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+/** Force this message to use long packet format */
+#define ESP_BLE_MESH_LONG_PACKET_FORCE     (1)
+
+/**
+ * Whether to use the long packet mode will be chosen by the protocol stack,
+ * which currently makes the decision based on message length.
+ * Advertising using the standard BLE Mesh protocol when possible.
+ * Switch to long packet mode for advertising when the standard BLE
+ * Mesh protocol cannot be used.
+ */
+#define ESP_BLE_MESH_LONG_PACKET_PREFER    (2)
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+
+/** Enhanced message advertising parameters */
+typedef struct {
+    /**
+     * Use custom advertising parameters (0: disabled, 1: enabled).
+     * When enabled, `adv_cfg` parameters override stack defaults.
+     */
+    uint8_t adv_cfg_used:1;
+
+#if CONFIG_BLE_MESH_EXT_ADV
+    /**
+     * Use extended advertising parameters (0: disabled, 1: enabled).
+     * When enabled, `ext_adv_cfg` parameters override stack defaults.
+     */
+    uint8_t ext_adv_cfg_used:1;
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+    /**
+     * Control long packet usage (0: disabled, 1: enabled).
+     * When disabled, the protocol stack cannot use long packets to
+     * send this message.
+     */
+    uint8_t long_pkt_cfg_used:1;
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+
+    /** Standard advertising parameters */
+    esp_ble_mesh_adv_cfg_t adv_cfg;
+
+#if CONFIG_BLE_MESH_EXT_ADV
+    /** Extended advertising parameters */
+    esp_ble_mesh_ext_adv_cfg_t ext_adv_cfg;
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+    /**
+     * Long packet configuration:
+     * - ESP_BLE_MESH_LONG_PACKET_FORCE
+     * - ESP_BLE_MESH_LONG_PACKET_PREFER
+     */
+    uint8_t long_pkt_cfg:2;
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+} esp_ble_mesh_msg_enh_params_t;
+
+#define ESP_BLE_MESH_ADV_CFG_NULL ((esp_ble_mesh_adv_cfg_t){0})
+#define ESP_BLE_MESH_EXT_ADV_CFG_NULL ((esp_ble_mesh_ext_adv_cfg_t){0})
+
+#define ESP_BLE_MESH_ADV_CFG_DEFAULT \
+        ((esp_ble_mesh_adv_cfg_t){\
+            .adv_itvl= 0, \
+            .adv_cnt = 0, \
+            .channel_map = ESP_BLE_MESH_DEFAULT_CHANNEL_MAP, \
+        })
+
+#define ESP_BLE_MESH_EXT_ADV_CFG_DEFAULT \
+        ((esp_ble_mesh_ext_adv_cfg_t){ \
+            .primary_phy = ESP_BLE_MESH_ADV_PHY_1M, \
+            .secondary_phy = ESP_BLE_MESH_ADV_PHY_1M, \
+            .tx_power = 0x7f, \
+            .include_tx_power = false,\
+        })
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+#define ESP_BLE_MESH_LONG_PACKET_DEF_ENH_SET(ADV_CFG, EXT_ADV_CFG, LONG_PACKET_CFG) \
+    ((esp_ble_mesh_msg_enh_params_t){    \
+        .adv_cfg_used = true,\
+        .adv_cfg = ADV_CFG, \
+        .ext_adv_cfg_used = true,  \
+        .ext_adv_cfg = EXT_ADV_CFG, \
+        .long_pkt_cfg_used = true,  \
+        .long_pkt_cfg = LONG_PACKET_CFG, \
+    })
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+
 /** Message sending context.
  *  This structure is associated with struct bt_mesh_msg_ctx in mesh_access.h
  */
@@ -664,6 +830,9 @@ typedef struct {
 
     /** Indicate if the message is sent by a node server model, no need to be initialized before sending message */
     bool srv_send __attribute__((deprecated));
+
+    /** Enhanced message advertising parameters */
+    esp_ble_mesh_msg_enh_params_t enh;
 } esp_ble_mesh_msg_ctx_t;
 
 /** Provisioning properties & capabilities.

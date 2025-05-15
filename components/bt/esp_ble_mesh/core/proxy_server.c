@@ -56,11 +56,14 @@ static const struct bt_mesh_adv_param slow_adv_param = {
     .options = ADV_OPT,
     .interval_min = BLE_MESH_GAP_ADV_SLOW_INT_MIN,
     .interval_max = BLE_MESH_GAP_ADV_SLOW_INT_MAX,
+    .channel_map = BLE_MESH_ADV_CHAN_DEFAULT,
 #if CONFIG_BLE_MESH_USE_BLE_50
     .primary_phy = BLE_MESH_ADV_PHY_1M,
     .secondary_phy = BLE_MESH_ADV_PHY_1M,
     .adv_duration = 0,
     .adv_count = 0,
+    .tx_power = 0x7f,
+    .include_tx_power = false,
 #endif
 };
 
@@ -68,11 +71,14 @@ static const struct bt_mesh_adv_param fast_adv_param = {
     .options = ADV_OPT,
     .interval_min = BLE_MESH_GAP_ADV_FAST_INT_MIN_0,
     .interval_max = BLE_MESH_GAP_ADV_FAST_INT_MAX_0,
+    .channel_map = BLE_MESH_ADV_CHAN_DEFAULT,
 #if CONFIG_BLE_MESH_USE_BLE_50
     .primary_phy = BLE_MESH_ADV_PHY_1M,
     .secondary_phy = BLE_MESH_ADV_PHY_1M,
     .adv_duration = 0,
     .adv_count = 0,
+    .tx_power = 0x7f,
+    .include_tx_power = false,
 #endif
 };
 
