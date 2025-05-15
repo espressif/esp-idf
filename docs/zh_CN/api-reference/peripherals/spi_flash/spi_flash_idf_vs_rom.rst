@@ -15,7 +15,7 @@ ESP-IDF 支持但不包含在芯片 ROM 中的功能
 .. list::
 
     - 八线 flash 芯片。详情请参阅 :ref:`oct-flash-doc`。
-    - GD25Q256 32 位地址。请注意，此功能为可选功能，详情请参阅 :ref:`32-bit-flash-doc`。
+    - Flash 的 32 位地址。请注意，此功能为可选功能，详情请参阅 :ref:`32-bit-flash-doc`。
     - TH flash 芯片。
     - Kconfig 选项 :ref:`CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED`。
     - :ref:`CONFIG_SPI_FLASH_VERIFY_WRITE`，启用此选项可检测错误写入。
