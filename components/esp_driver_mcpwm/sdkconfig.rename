@@ -1,0 +1,4 @@
+# sdkconfig replacement configurations for deprecated options formatted as
+# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
+
+CONFIG_MCPWM_ISR_IRAM_SAFE   CONFIG_MCPWM_ISR_CACHE_SAFE

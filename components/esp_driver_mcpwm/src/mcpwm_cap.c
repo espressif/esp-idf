@@ -1,36 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <sys/cdefs.h>
-#include "sdkconfig.h"
-#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "freertos/FreeRTOS.h"
-#include "esp_attr.h"
-#include "esp_check.h"
+#include "mcpwm_private.h"
 #include "esp_private/esp_clk.h"
 #include "esp_clk_tree.h"
-#include "esp_err.h"
-#include "esp_log.h"
 #include "esp_memory_utils.h"
-#include "soc/soc_caps.h"
-#include "soc/mcpwm_periph.h"
-#include "hal/mcpwm_ll.h"
-#include "hal/gpio_hal.h"
 #include "driver/mcpwm_cap.h"
 #include "driver/gpio.h"
-#include "mcpwm_private.h"
 #include "esp_private/gpio.h"
-
-static const char *TAG = "mcpwm";
+#include "hal/gpio_ll.h"
 
 static void mcpwm_capture_default_isr(void *args);
 
@@ -85,9 +66,6 @@ static esp_err_t mcpwm_cap_timer_destroy(mcpwm_cap_timer_t *cap_timer)
 
 esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mcpwm_cap_timer_handle_t *ret_cap_timer)
 {
-#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     mcpwm_cap_timer_t *cap_timer = NULL;
     ESP_GOTO_ON_FALSE(config && ret_cap_timer, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
@@ -403,7 +381,7 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
     int group_id = group->group_id;
     int cap_chan_id = cap_channel->cap_chan_id;
 
-#if CONFIG_MCPWM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_CACHE_SAFE
     if (cbs->on_cap) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_cap), ESP_ERR_INVALID_ARG, TAG, "on_cap callback not in IRAM");
     }
@@ -488,7 +466,7 @@ esp_err_t mcpwm_capture_timer_set_phase_on_sync(mcpwm_cap_timer_handle_t cap_tim
     return ESP_OK;
 }
 
-IRAM_ATTR static void mcpwm_capture_default_isr(void *args)
+static void mcpwm_capture_default_isr(void *args)
 {
     mcpwm_cap_channel_t *cap_chan = (mcpwm_cap_channel_t *)args;
     mcpwm_group_t *group = cap_chan->cap_timer->group;
