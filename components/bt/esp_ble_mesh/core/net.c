@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,6 @@
 #include "fast_prov.h"
 #include "prov_node.h"
 #include "test.h"
-#include "fast_prov.h"
 #include "proxy_client.h"
 #include "proxy_server.h"
 #include "pvnr_mgmt.h"
@@ -1674,7 +1673,27 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
      */
 
 #if !CONFIG_BLE_MESH_RELAY_ADV_BUF
-    buf = bt_mesh_adv_create(BLE_MESH_ADV_DATA, K_NO_WAIT);
+#if CONFIG_BLE_MESH_EXT_ADV
+    if (rx->ctx.enh.ext_adv_cfg_used) {
+#if CONFIG_BLE_MESH_LONG_PACKET
+        if (rx->ctx.enh.long_pkt_cfg) {
+            buf = bt_mesh_adv_create(BLE_MESH_ADV_EXT_LONG_RELAY_DATA, K_NO_WAIT);
+        } else
+#endif
+        {
+            buf = bt_mesh_adv_create(BLE_MESH_ADV_EXT_DATA, K_NO_WAIT);
+        }
+        if (buf) {
+            EXT_ADV(buf)->primary_phy = rx->ctx.enh.ext_adv_cfg.primary_phy;
+            EXT_ADV(buf)->secondary_phy = rx->ctx.enh.ext_adv_cfg.secondary_phy;
+            EXT_ADV(buf)->include_tx_power = rx->ctx.enh.ext_adv_cfg.include_tx_power;
+            EXT_ADV(buf)->tx_power = rx->ctx.enh.ext_adv_cfg.tx_power;
+        }
+    } else
+#endif
+    {
+        buf = bt_mesh_adv_create(BLE_MESH_ADV_DATA, K_NO_WAIT);
+    }
 #else
     /* Check if the number of relay packets in queue is too large, if so
      * use minimum relay retransmit value for later relay packets.
@@ -1682,7 +1701,27 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
     if (bt_mesh_get_stored_relay_count() >= BLE_MESH_MAX_STORED_RELAY_COUNT) {
         xmit = BLE_MESH_TRANSMIT(0, 20);
     }
-    buf = bt_mesh_relay_adv_create(BLE_MESH_ADV_RELAY_DATA, K_NO_WAIT);
+#if CONFIG_BLE_MESH_EXT_ADV
+    if (rx->ctx.enh.ext_adv_cfg_used) {
+#if CONFIG_BLE_MESH_LONG_PACKET
+        if (rx->ctx.enh.long_pkt_cfg) {
+            buf = bt_mesh_adv_create(BLE_MESH_ADV_EXT_LONG_RELAY_DATA, K_NO_WAIT);
+        } else
+#endif
+        {
+            buf = bt_mesh_adv_create(BLE_MESH_ADV_EXT_DATA, K_NO_WAIT);
+        }
+        if (buf) {
+            EXT_ADV(buf)->primary_phy = rx->ctx.enh.ext_adv_cfg.primary_phy;
+            EXT_ADV(buf)->secondary_phy = rx->ctx.enh.ext_adv_cfg.secondary_phy;
+            EXT_ADV(buf)->include_tx_power = rx->ctx.enh.ext_adv_cfg.include_tx_power;
+            EXT_ADV(buf)->tx_power = rx->ctx.enh.ext_adv_cfg.tx_power;
+        }
+    } else
+#endif
+    {
+        buf = bt_mesh_relay_adv_create(BLE_MESH_ADV_RELAY_DATA, K_NO_WAIT);
+    }
 #endif
 
     if (!buf) {
@@ -1922,33 +1961,42 @@ void bt_mesh_generic_net_recv(struct net_buf_simple *data,
                               struct bt_mesh_net_rx *rx,
                               enum bt_mesh_net_if net_if)
 {
-    NET_BUF_SIMPLE_DEFINE(buf, 29);
     struct net_buf_simple_state state = {0};
+    struct net_buf_simple *buf = NULL;
 
-    assert(rx);
-
-    BT_DBG("rssi %d net_if %u", rx->ctx.recv_rssi, net_if);
+    if (data->len > (BLE_MESH_GAP_ADV_MAX_LEN - 2)) {
+        BT_ERR("Invalid net message length %d", data->len);
+        return;
+    }
 
     if (!ready_to_recv()) {
         return;
     }
 
-    if (bt_mesh_net_decode(data, net_if, rx, &buf)) {
+    buf = bt_mesh_alloc_buf(data->len);
+    if (!buf) {
+        BT_ERR("Alloc net msg buffer failed");
         return;
+    }
+
+    BT_DBG("rssi %d net_if %u", rx->ctx.recv_rssi, net_if);
+
+    if (bt_mesh_net_decode(data, net_if, rx, buf)) {
+        goto free_net_msg_buf;
     }
 
     if (ignore_net_msg(rx->ctx.addr, rx->ctx.recv_dst)) {
-        return;
+        goto free_net_msg_buf;
     }
 
     /* Save the state so the buffer can later be relayed */
-    net_buf_simple_save(&buf, &state);
+    net_buf_simple_save(buf, &state);
 
     BT_BQB(BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE | \
            BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_NET,
            "\nNetRecv: ctl: %d, src: %d, dst: %d, ttl: %d, data: 0x%s",
            rx->ctl, rx->ctx.addr, rx->ctx.recv_dst, rx->ctx.recv_ttl,
-           bt_hex(buf.data + BLE_MESH_NET_HDR_LEN, buf.len - BLE_MESH_NET_HDR_LEN));
+           bt_hex(buf->data + BLE_MESH_NET_HDR_LEN, buf->len - BLE_MESH_NET_HDR_LEN));
 
     /* If trying to handle a message with DST set to all-directed-forwarding-nodes,
      * we need to make sure the directed forwarding functionality is enabled in the
@@ -1957,6 +2005,15 @@ void bt_mesh_generic_net_recv(struct net_buf_simple *data,
     rx->local_match = (bt_mesh_fixed_group_match(rx->ctx.recv_dst) ||
                       bt_mesh_fixed_direct_match(rx->sub, rx->ctx.recv_dst) ||
                       bt_mesh_elem_find(rx->ctx.recv_dst));
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+    /* It should be noted that if the length of buf
+     * is less than or equal to 29, it still may be the
+     * last segment for a long packet, But if the bit
+     * is set, it must be part of the long packet*/
+    rx->ctx.enh.long_pkt_cfg_used = (buf->len >= 29);
+    rx->ctx.enh.long_pkt_cfg = BLE_MESH_LONG_PACKET_FORCE;
+#endif
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
 #if CONFIG_BLE_MESH_PRB_SRV
@@ -1968,7 +2025,7 @@ void bt_mesh_generic_net_recv(struct net_buf_simple *data,
         if (bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_DISABLED &&
             !rx->local_match) {
             BT_INFO("Proxy is disabled; ignoring message");
-            return;
+            goto free_net_msg_buf;
         }
 
         /* If the Directed Proxy Server receives a valid Network PDU from the Directed
@@ -1995,7 +2052,7 @@ void bt_mesh_generic_net_recv(struct net_buf_simple *data,
     * credentials. Remove it from the message cache so that we accept
     * it again in the future.
     */
-    if (bt_mesh_trans_recv(&buf, rx) == -EAGAIN) {
+    if (bt_mesh_trans_recv(buf, rx) == -EAGAIN) {
         BT_WARN("Removing rejected message from Network Message Cache");
         msg_cache[rx->msg_cache_idx].src = BLE_MESH_ADDR_UNASSIGNED;
         /* Rewind the next index now that we're not using this entry */
@@ -2011,9 +2068,12 @@ void bt_mesh_generic_net_recv(struct net_buf_simple *data,
         && !rx->replay_msg
 #endif
         )) {
-        net_buf_simple_restore(&buf, &state);
-        bt_mesh_net_relay(&buf, rx);
+        net_buf_simple_restore(buf, &state);
+        bt_mesh_net_relay(buf, rx);
     }
+
+free_net_msg_buf:
+    bt_mesh_free(buf);
 }
 
 static void ivu_refresh(struct k_work *work)

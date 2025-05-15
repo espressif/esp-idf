@@ -30,8 +30,10 @@ static struct bt_mesh_ble_adv_tx ble_adv_tx[CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT];
 
 static void bt_mesh_ble_task_post(bt_mesh_msg_t *msg, uint32_t timeout, bool front);
 
-static struct bt_mesh_adv *ble_adv_alloc(int id)
+static struct bt_mesh_adv *ble_adv_alloc(int id, enum bt_mesh_adv_type type)
 {
+    memset(&ble_adv_pool[id], 0, sizeof(struct bt_mesh_adv));
+    ble_adv_pool[id].type = type;
     return &ble_adv_pool[id];
 }
 
