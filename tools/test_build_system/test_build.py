@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -12,12 +12,12 @@ from typing import Union
 
 import pytest
 from test_build_system_helpers import APP_BINS
-from test_build_system_helpers import append_to_file
 from test_build_system_helpers import BOOTLOADER_BINS
+from test_build_system_helpers import PARTITION_BIN
+from test_build_system_helpers import IdfPyFunc
+from test_build_system_helpers import append_to_file
 from test_build_system_helpers import file_contains
 from test_build_system_helpers import get_idf_build_env
-from test_build_system_helpers import IdfPyFunc
-from test_build_system_helpers import PARTITION_BIN
 from test_build_system_helpers import replace_in_file
 from test_build_system_helpers import run_cmake_and_build
 
@@ -35,7 +35,9 @@ def test_build_alternative_directories(idf_py: IdfPyFunc, func_work_dir: Path, t
         assert os.listdir(alt_build_dir) != [], 'No files found in new build directory!'
         default_build_dir = test_app_copy / 'build'
         if default_build_dir.exists():
-            assert os.listdir(default_build_dir) == [], f'Some files were incorrectly put into the default build directory: {default_build_dir}'
+            assert os.listdir(default_build_dir) == [], (
+                f'Some files were incorrectly put into the default build directory: {default_build_dir}'
+            )
     except Exception:
         raise
     else:
@@ -146,10 +148,17 @@ def test_build_with_sdkconfig_build_abspath(idf_py: IdfPyFunc, test_app_copy: Pa
 
 def test_build_fail_on_build_time(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('Fail on build time works')
-    append_to_file(test_app_copy / 'CMakeLists.txt', '\n'.join(['',
-                                                                'if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/hello.txt")',
-                                                                'fail_at_build_time(test_file "hello.txt does not exists")',
-                                                                'endif()']))
+    append_to_file(
+        test_app_copy / 'CMakeLists.txt',
+        '\n'.join(
+            [
+                '',
+                'if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/hello.txt")',
+                'fail_at_build_time(test_file "hello.txt does not exists")',
+                'endif()',
+            ]
+        ),
+    )
     ret = idf_py('build', check=False)
     assert ret.returncode != 0, 'Build should fail if requirements are not satisfied'
     (test_app_copy / 'hello.txt').touch()
@@ -160,10 +169,14 @@ def test_build_fail_on_build_time(idf_py: IdfPyFunc, test_app_copy: Path) -> Non
 def test_build_dfu(idf_py: IdfPyFunc) -> None:
     logging.info('DFU build works')
     ret = idf_py('dfu', check=False)
-    assert 'command "dfu" is not known to idf.py and is not a Ninja target' in ret.stderr, 'DFU build should fail for default chip target'
+    assert 'command "dfu" is not known to idf.py and is not a Ninja target' in ret.stderr, (
+        'DFU build should fail for default chip target'
+    )
     idf_py('set-target', 'esp32s2')
     ret = idf_py('dfu')
-    assert 'build/dfu.bin" has been written. You may proceed with DFU flashing.' in ret.stdout, 'DFU build should succeed for esp32s2'
+    assert 'build/dfu.bin" has been written. You may proceed with DFU flashing.' in ret.stdout, (
+        'DFU build should succeed for esp32s2'
+    )
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/dfu.bin'])
 
 
@@ -174,23 +187,35 @@ def test_build_uf2(idf_py: IdfPyFunc) -> None:
     assert 'build/uf2.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, 'UF2 build should work for esp32'
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/uf2.bin'])
     ret = idf_py('uf2-app')
-    assert 'build/uf2-app.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, 'UF2 build should work for application binary'
+    assert 'build/uf2-app.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, (
+        'UF2 build should work for application binary'
+    )
     assert_built(['build/uf2-app.bin'])
     idf_py('set-target', 'esp32s2')
     ret = idf_py('uf2')
-    assert 'build/uf2.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, 'UF2 build should work for esp32s2'
+    assert 'build/uf2.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, (
+        'UF2 build should work for esp32s2'
+    )
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/uf2.bin'])
 
 
 def test_build_loadable_elf(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('Loadable ELF build works')
-    (test_app_copy / 'sdkconfig').write_text('\n'.join(['CONFIG_APP_BUILD_TYPE_RAM=y',
-                                                        'CONFIG_VFS_SUPPORT_TERMIOS=n',
-                                                        'CONFIG_NEWLIB_NANO_FORMAT=y',
-                                                        'CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y',
-                                                        'CONFIG_ESP_ERR_TO_NAME_LOOKUP=n']))
+    (test_app_copy / 'sdkconfig').write_text(
+        '\n'.join(
+            [
+                'CONFIG_APP_BUILD_TYPE_RAM=y',
+                'CONFIG_VFS_SUPPORT_TERMIOS=n',
+                'CONFIG_NEWLIB_NANO_FORMAT=y',
+                'CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y',
+                'CONFIG_ESP_ERR_TO_NAME_LOOKUP=n',
+            ]
+        )
+    )
     idf_py('reconfigure')
-    assert (test_app_copy / 'build' / 'flasher_args.json').exists(), 'flasher_args.json should be generated in a loadable ELF build'
+    assert (test_app_copy / 'build' / 'flasher_args.json').exists(), (
+        'flasher_args.json should be generated in a loadable ELF build'
+    )
     idf_py('build')
 
 
@@ -221,3 +246,15 @@ def test_build_cmake_executable_suffix(idf_py: IdfPyFunc, test_app_copy: Path) -
     append_to_file((test_app_copy / 'CMakeLists.txt'), 'set(CMAKE_EXECUTABLE_SUFFIX_CXX ".ext")')
     ret = idf_py('build')
     assert 'Project build complete' in ret.stdout, 'Build with CMAKE_EXECUTABLE_SUFFIX set failed'
+
+
+def test_build_with_misspelled_kconfig(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('idf.py can build with misspelled Kconfig file')
+    ret = idf_py('build')
+    assert " file should be named 'Kconfig.projbuild'" in ret.stderr, 'Misspelled Kconfig file should be detected'
+    assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
+    with open(test_app_copy / 'sdkconfig', 'r') as f:
+        sdkconfig = f.read()
+        assert 'CONFIG_FROM_MISSPELLED_KCONFIG=y' in sdkconfig, (
+            'There should be a config from the misspelled Kconfig file in sdkconfig'
+        )
