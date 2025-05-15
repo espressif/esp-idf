@@ -37,9 +37,17 @@ static const char *TAG = "transport_ws";
 #define WS_SIZE16                   126
 #define WS_SIZE64                   127
 #define MAX_WEBSOCKET_HEADER_SIZE   16
-#define WS_RESPONSE_OK              101
 #define WS_TRANSPORT_MAX_CONTROL_FRAME_BUFFER_LEN 125
 
+// HTTP status codes for redirection as described in RFC 9110.
+#define WS_HTTP_CODE_MOVED_PERMANENTLY      301
+#define WS_HTTP_CODE_FOUND                  302
+#define WS_HTTP_CODE_SEE_OTHER              303
+#define WS_HTTP_CODE_TEMPORARY_REDIRECT     307
+#define WS_HTTP_CODE_PERMANENT_REDIRECT     308
+// Grouped HTTP status codes for redirection types.
+#define WS_HTTP_PERMANENT_REDIRECT(code) ((code == WS_HTTP_CODE_MOVED_PERMANENTLY) || (code == WS_HTTP_CODE_PERMANENT_REDIRECT))
+#define WS_HTTP_TEMPORARY_REDIRECT(code) ((code == WS_HTTP_CODE_FOUND) || (code == WS_HTTP_CODE_SEE_OTHER) || (code == WS_HTTP_CODE_TEMPORARY_REDIRECT))
 
 typedef struct {
     uint8_t opcode;
@@ -62,6 +70,7 @@ typedef struct {
     bool propagate_control_frames;
     ws_transport_frame_state_t frame_state;
     esp_transport_handle_t parent;
+    char *redir_host;
 } transport_ws_t;
 
 /**
@@ -306,6 +315,13 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     if (ws->http_status_code == -1) {
         ESP_LOGE(TAG, "HTTP upgrade failed");
         return -1;
+    } else if (WS_HTTP_TEMPORARY_REDIRECT(ws->http_status_code) || WS_HTTP_PERMANENT_REDIRECT(ws->http_status_code)) {
+        ws->redir_host = get_http_header(ws->buffer, "Location:");
+        if (ws->redir_host == NULL) {
+            ESP_LOGE(TAG, "Location header not found");
+            return -1;
+        }
+        return ws->http_status_code;
     }
 
     char *server_key = get_http_header(ws->buffer, "Sec-WebSocket-Accept:");
@@ -343,6 +359,7 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         } else {
 #ifdef CONFIG_WS_DYNAMIC_BUFFER
             free(ws->buffer);
+            ws->redir_host = NULL;
             ws->buffer = NULL;
 #endif
             ws->buffer_len = 0;
@@ -895,6 +912,22 @@ int esp_transport_ws_get_upgrade_request_status(esp_transport_handle_t t)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
     return ws->http_status_code;
+}
+
+char* esp_transport_ws_get_redir_uri(esp_transport_handle_t t)
+{
+    if (!t) {
+        ESP_LOGE(TAG, "Invalid Transport handle (null)");
+        return NULL;
+    }
+
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (!ws) {
+        ESP_LOGE(TAG, "Invalid ws context data (null)");
+        return NULL;
+    }
+
+    return ws->redir_host;
 }
 
 ws_transport_opcodes_t esp_transport_ws_get_read_opcode(esp_transport_handle_t t)
