@@ -11,6 +11,7 @@
  * Updates to this file should be made carefully and should not include FreeRTOS APIs or other IDF-specific functionalities, such as the interrupt allocator.
  */
 
+#include "esp_check.h"
 #include "driver/uart_wakeup.h"
 #include "hal/uart_hal.h"
 #include "esp_private/esp_sleep_internal.h"
@@ -54,29 +55,26 @@ static esp_err_t uart_char_seq_wk_configure(uart_dev_t *hw, const char* phrase)
 
 esp_err_t uart_wakeup_setup(uart_port_t uart_num, const uart_wakeup_cfg_t *cfg)
 {
-
-    if (cfg == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    ESP_RETURN_ON_FALSE(cfg, ESP_ERR_INVALID_ARG, TAG, "cfg is NULL");
     uart_dev_t *hw = UART_LL_GET_HW(uart_num);
+    uart_hal_context_t hal = {
+        .dev = hw,
+    };
+    soc_module_clk_t src_clk;
+    uart_hal_get_sclk(&hal, &src_clk);
+    if (uart_num < SOC_UART_HP_NUM && cfg->wakeup_mode != UART_WK_MODE_ACTIVE_THRESH) {
+        // For wakeup modes except ACTIVE_THRESH, the function clock needs to be exist to trigger wakeup
+        ESP_RETURN_ON_FALSE(src_clk == SOC_MOD_CLK_XTAL, ESP_ERR_NOT_SUPPORTED, TAG, "failed to setup uart wakeup due to the clock source is not XTAL!");
+    }
+
+    esp_err_t ret = ESP_OK;
 
     // This should be mocked at ll level if the selection of the UART wakeup mode is not supported by this SOC.
     uart_ll_set_wakeup_mode(hw, cfg->wakeup_mode);
 
 #if SOC_PM_SUPPORT_PMU_CLK_ICG
     // When hp uarts are utilized, the main XTAL need to be PU and UARTx & IOMX ICG need to be ungate
-    bool __attribute__((unused)) is_hp_uart = (uart_num < SOC_UART_HP_NUM);
-    uart_hal_context_t hal = {
-        .dev = hw,
-    };
-    soc_module_clk_t src_clk;
-    uart_hal_get_sclk(&hal, &src_clk);
-
-    if (is_hp_uart && cfg->wakeup_mode != UART_WK_MODE_ACTIVE_THRESH) {
-        if (src_clk != SOC_MOD_CLK_XTAL) {
-            ESP_LOGE(TAG, "Failed to setup uart wakeup due to the clock source is not XTAL!");
-            return ESP_ERR_NOT_SUPPORTED;
-        }
+    if (uart_num < SOC_UART_HP_NUM && cfg->wakeup_mode != UART_WK_MODE_ACTIVE_THRESH) {
         esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
         esp_sleep_clock_config(UART_LL_SLEEP_CLOCK(uart_num), ESP_SLEEP_CLOCK_OPTION_UNGATE);
         esp_sleep_clock_config(ESP_SLEEP_CLOCK_IOMUX, ESP_SLEEP_CLOCK_OPTION_UNGATE);
@@ -86,45 +84,48 @@ esp_err_t uart_wakeup_setup(uart_port_t uart_num, const uart_wakeup_cfg_t *cfg)
     switch (cfg->wakeup_mode) {
 #if SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
     case UART_WK_MODE_ACTIVE_THRESH:
-        // UART_ACTIVE_THRESHOLD register has only 10 bits, and the min value is 3.
         if (cfg->rx_edge_threshold < UART_LL_WAKEUP_EDGE_THRED_MIN || cfg->rx_edge_threshold > UART_LL_WAKEUP_EDGE_THRED_MAX(hw)) {
-            return ESP_ERR_INVALID_ARG;
+            ret = ESP_ERR_INVALID_ARG;
+        } else {
+            uart_ll_set_wakeup_edge_thrd(hw, cfg->rx_edge_threshold);
         }
-        uart_ll_set_wakeup_edge_thrd(hw, cfg->rx_edge_threshold);
-        return ESP_OK;
+        break;
 #endif
 #if SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE
     case UART_WK_MODE_FIFO_THRESH:
         if (cfg->rx_fifo_threshold > UART_LL_WAKEUP_FIFO_THRED_MAX(hw)) {
-            return ESP_ERR_INVALID_ARG;
+            ret = ESP_ERR_INVALID_ARG;
+        } else {
+            uart_ll_set_wakeup_fifo_thrd(hw, cfg->rx_fifo_threshold);
         }
-        uart_ll_set_wakeup_fifo_thrd(hw, cfg->rx_fifo_threshold);
-        return ESP_OK;
+        break;
 #endif
 #if SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE
     case UART_WK_MODE_START_BIT:
-        return ESP_OK;
+        break;
 #endif
 #if SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
     case UART_WK_MODE_CHAR_SEQ:
-        return uart_char_seq_wk_configure(hw, cfg->wake_chars_seq);
+        ret = uart_char_seq_wk_configure(hw, cfg->wake_chars_seq);
+        break;
 #endif
+    default:
+        ret = ESP_ERR_INVALID_ARG;
+        break;
     }
 
-    return ESP_ERR_INVALID_ARG;
+    return ret;
 }
 
-void uart_wakeup_clear(uart_port_t uart_num, uart_wakeup_mode_t wakeup_mode)
+esp_err_t uart_wakeup_clear(uart_port_t uart_num, uart_wakeup_mode_t wakeup_mode)
 {
 #if SOC_PM_SUPPORT_PMU_CLK_ICG
     // When hp uarts are utilized, the main XTAL need to be PU and UARTx & IOMX ICG need to be ungate
-    bool __attribute__((unused)) is_hp_uart = (uart_num < SOC_UART_HP_NUM);
-
-    if (is_hp_uart && wakeup_mode != UART_WK_MODE_ACTIVE_THRESH) {
+    if (uart_num < SOC_UART_HP_NUM && wakeup_mode != UART_WK_MODE_ACTIVE_THRESH) {
         esp_sleep_clock_config(UART_LL_SLEEP_CLOCK(uart_num), ESP_SLEEP_CLOCK_OPTION_GATE);
         esp_sleep_clock_config(ESP_SLEEP_CLOCK_IOMUX, ESP_SLEEP_CLOCK_OPTION_GATE);
         esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF);
     }
 #endif
-
+    return ESP_OK;
 }

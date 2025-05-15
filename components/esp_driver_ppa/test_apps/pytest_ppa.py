@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -13,6 +14,6 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_PPA_SUPPORTED == 1'), indirect=['target'])
 def test_ppa(dut: Dut) -> None:
     dut.run_all_single_board_cases()

@@ -12,7 +12,6 @@
 #include "soc/uart_pins.h"
 #include "driver/uart.h"
 #include "driver/uart_wakeup.h"
-#include "driver/gpio.h"
 #include "sdkconfig.h"
 
 #define EXAMPLE_UART_NUM        0
@@ -42,6 +41,7 @@ static void uart_wakeup_task(void *arg)
     }
 
     uint8_t* dtmp = (uint8_t*) malloc(EXAMPLE_READ_BUF_SIZE);
+    assert(dtmp);
 
     while(1) {
         // Waiting for UART event.
@@ -100,7 +100,7 @@ static void uart_wakeup_task(void *arg)
     vTaskDelete(NULL);
 }
 
-static esp_err_t uart_initialization(void)
+static void uart_initialization(void)
 {
     uart_config_t uart_cfg = {
         .baud_rate  = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
@@ -115,19 +115,16 @@ static esp_err_t uart_initialization(void)
 #endif
     };
     //Install UART driver, and get the queue.
-    ESP_RETURN_ON_ERROR(uart_driver_install(EXAMPLE_UART_NUM, EXAMPLE_UART_BUF_SIZE, EXAMPLE_UART_BUF_SIZE, 20, &uart_evt_que, 0),
-                        TAG, "Install uart failed");
+    ESP_ERROR_CHECK(uart_driver_install(EXAMPLE_UART_NUM, EXAMPLE_UART_BUF_SIZE, EXAMPLE_UART_BUF_SIZE, 20, &uart_evt_que, 0));
     if (EXAMPLE_UART_NUM == CONFIG_ESP_CONSOLE_UART_NUM) {
         /* temp fix for uart garbled output, can be removed when IDF-5683 done */
-        ESP_RETURN_ON_ERROR(uart_wait_tx_idle_polling(EXAMPLE_UART_NUM), TAG, "Wait uart tx done failed");
+        ESP_ERROR_CHECK(uart_wait_tx_idle_polling(EXAMPLE_UART_NUM));
     }
-    ESP_RETURN_ON_ERROR(uart_param_config(EXAMPLE_UART_NUM, &uart_cfg), TAG, "Configure uart param failed");
-    ESP_RETURN_ON_ERROR(uart_set_pin(EXAMPLE_UART_NUM, EXAMPLE_UART_TX_IO_NUM, EXAMPLE_UART_RX_IO_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE),
-                        TAG, "Configure uart gpio pins failed");
-    return ESP_OK;
+    ESP_ERROR_CHECK(uart_param_config(EXAMPLE_UART_NUM, &uart_cfg));
+    ESP_ERROR_CHECK(uart_set_pin(EXAMPLE_UART_NUM, EXAMPLE_UART_TX_IO_NUM, EXAMPLE_UART_RX_IO_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 }
 
-static esp_err_t uart_wakeup_config(void)
+static void uart_wakeup_config(void)
 {
     uart_wakeup_cfg_t uart_wakeup_cfg = {};
     uint8_t wakeup_mode = CONFIG_EXAMPLE_UART_WAKEUP_MODE_SELCTED;
@@ -162,23 +159,23 @@ static esp_err_t uart_wakeup_config(void)
 #endif
     default:
         ESP_LOGE(TAG, "Unknown UART wakeup mode");
-        return ESP_FAIL;
+        ESP_ERROR_CHECK(ESP_FAIL);
         break;
     }
 
     ESP_ERROR_CHECK(uart_wakeup_setup(EXAMPLE_UART_NUM, &uart_wakeup_cfg));
     ESP_ERROR_CHECK(esp_sleep_enable_uart_wakeup(EXAMPLE_UART_NUM));
-    return ESP_OK;
 }
 
 esp_err_t example_register_uart_wakeup(void)
 {
-    /* Initialize uart1 */
-    ESP_RETURN_ON_ERROR(uart_initialization(), TAG, "Initialize uart%d failed", EXAMPLE_UART_NUM);
+    /* Initialize console uart */
+    uart_initialization();
     /* Enable wakeup from uart */
-    ESP_RETURN_ON_ERROR(uart_wakeup_config(), TAG, "Configure uart as wakeup source failed");
+    uart_wakeup_config();
 
     xTaskCreate(uart_wakeup_task, "uart_wakeup_task", 4096, NULL, 5, NULL);
     ESP_LOGI(TAG, "uart wakeup source is ready");
+
     return ESP_OK;
 }

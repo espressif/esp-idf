@@ -74,8 +74,11 @@ esp_err_t uart_wakeup_setup(uart_port_t uart_num, const uart_wakeup_cfg_t *cfg);
  *
  * @param uart_num The UART port to initialize for wakeup (e.g., UART_NUM_0, UART_NUM_1, etc.).
  * @param wakeup_mode The UART wakeup mode set in `uart_wakeup_setup`.
+ *
+ * @return
+ * - `ESP_OK` Clear wakeup configuration successfully.
  */
-void uart_wakeup_clear(uart_port_t uart_num, uart_wakeup_mode_t wakeup_mode);
+esp_err_t uart_wakeup_clear(uart_port_t uart_num, uart_wakeup_mode_t wakeup_mode);
 
 #ifdef __cplusplus
 }
