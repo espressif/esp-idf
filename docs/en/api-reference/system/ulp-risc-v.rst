@@ -242,7 +242,17 @@ Once the RTC I2C controller is initialized, the I2C slave device address must be
 
 .. note::
 
-    The RTC I2C peripheral always expects a slave sub-register address to be programmed via the :cpp:func:`ulp_riscv_i2c_master_set_slave_reg_addr` API. If it is not, the I2C peripheral uses the ``SENS_SAR_I2C_CTRL_REG[18:11]`` as the sub-register address for the subsequent read or write operations. This could make the RTC I2C peripheral incompatible with certain I2C devices or sensors which do not need any sub-register to be programmed.
+    The RTC I2C peripheral issues two kinds of I2C transactions:
+
+    - **READ**: [start] → write device address → write device sub-register address → [repeated start] → write device address → read N bytes → [stop]
+    - **WRITE**: [start] → write device address → write device sub-register address → [repeated start] → write device address → write N bytes → [stop]
+
+    In both cases, sending the sub-register address is required and cannot be disabled. Therefore, the peripheral always expects a slave sub-register address to be set using the :cpp:func:`ulp_riscv_i2c_master_set_slave_reg_addr` API. If it is not set explicitly, the peripheral uses the value in ``SENS_SAR_I2C_CTRL_REG[18:11]`` as the sub-register address for subsequent transactions.
+
+    This behavior makes the RTC I2C peripheral incompatible with:
+
+    - Devices that do not expect a sub-register address write before initiating a read or write transaction.
+    - Devices requiring 16-bit or wider register addresses, since only 8-bit addressing is supported.
 
 .. note::
 

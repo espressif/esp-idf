@@ -242,7 +242,17 @@ RTC I2C 控制器提供了在 RTC 电源域中作为 I2C 主机的功能。ULP R
 
 .. note::
 
-    RTC I2C 外设首先将检查 :cpp:func:`ulp_riscv_i2c_master_set_slave_reg_addr` API 是否将从机子寄存器地址编入程序。如未编入，I2C 外设将以 ``SENS_SAR_I2C_CTRL_REG[18:11]`` 作为后续读写操作的子寄存器地址。这可能会导致 RTC I2C 外设与某些无需对子寄存器进行配置的 I2C 设备或传感器不兼容。
+    RTC I2C 外设发起两种类型的 I2C 事务：
+
+    - **读取 (READ)**： [start] → 写入设备地址 → 写入设备子寄存器地址 → [repeated start] → 写入设备地址 → 读取 N 字节 → [stop]
+    - **写入 (WRITE)**： [start] → 写入设备地址 → 写入设备子寄存器地址 → [repeated start] → 写入设备地址 → 写入 N 字节 → [stop]
+
+    在这两类事务中，都必须发送子寄存器的地址，且不能禁用此行为。因此，该外设始终需要通过 :cpp:func:`ulp_riscv_i2c_master_set_slave_reg_addr` API 显式地设置从设备的子寄存器地址。如未显式设置，该外设会使用 ``SENS_SAR_I2C_CTRL_REG[18:11]`` 中的值作为后续事务的子寄存器地址。
+
+    正因此， RTC I2C 外设不兼容以下情况：
+
+    - 不期望在读写事务前写入子寄存器地址的设备；
+    - 需要 16 位或更宽的寄存器地址的设备，因为该外设仅支持 8 位地址访问。
 
 .. note::
 
