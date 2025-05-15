@@ -206,7 +206,7 @@ esp_err_t hub_port_disable(usb_device_handle_t parent_dev_hdl, uint8_t parent_po
  *    - ESP_OK: New device added successfully
  *    - ESP_ERR_INVALID_STATE: Hub driver is not in a correct state
  */
-esp_err_t hub_notify_new_dev(uint8_t dev_addr);
+esp_err_t hub_dev_new(uint8_t dev_addr);
 
 /**
  * @brief Notify Hub driver that device has been removed
@@ -222,7 +222,7 @@ esp_err_t hub_notify_new_dev(uint8_t dev_addr);
  *    - ESP_OK: A device removed successfully
  *    - ESP_ERR_INVALID_STATE: Hub driver is not in a correct state
  */
-esp_err_t hub_notify_dev_gone(uint8_t dev_addr);
+esp_err_t hub_dev_gone(uint8_t dev_addr);
 
 #if ENABLE_USB_HUBS
 /**
