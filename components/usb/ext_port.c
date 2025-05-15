@@ -717,7 +717,7 @@ static void handle_port_state(ext_port_t *ext_port)
     switch (curr_state) {
     case USB_PORT_STATE_NOT_CONFIGURED:
         new_state = USB_PORT_STATE_POWERED_OFF;
-        ESP_ERROR_CHECK(port_request_status(ext_port));
+        port_request_status(ext_port);
         need_handling = true;
         break;
     case USB_PORT_STATE_POWERED_OFF:
