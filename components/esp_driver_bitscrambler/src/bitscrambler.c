@@ -165,13 +165,14 @@ esp_err_t bitscrambler_new(const bitscrambler_config_t *config, bitscrambler_han
         return ESP_ERR_NOT_FOUND;
     }
 
-    enable_clocks(bs);
     // Do initialization of BS object.
     esp_err_t r = init_from_config(bs, config);
     if (r != ESP_OK) {
         bitscrambler_free(bs);
         return r;
     }
+
+    enable_clocks(bs);
 
     // Return the handle
     *handle = bs;
