@@ -180,7 +180,6 @@ api-reference/peripherals/parlio.rst
 api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/lp_i2s.rst
 api-reference/peripherals/ecdsa.rst
-api-reference/peripherals/gpio.rst
 api-reference/peripherals/dac.rst
 api-reference/peripherals/spi_slave.rst
 api-reference/peripherals/spi_flash/index.rst

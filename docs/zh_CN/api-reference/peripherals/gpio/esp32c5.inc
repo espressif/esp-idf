@@ -23,8 +23,8 @@
       - 注释
 
     * - GPIO0
-      - LP_GPIO0
       -
+      - LP_GPIO0
       -
 
     * - GPIO1

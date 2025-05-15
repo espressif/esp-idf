@@ -16,6 +16,7 @@
 #include "esp_hw_log.h"
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
+#include "hal/gpio_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "soc/io_mux_reg.h"
 #include "soc/lp_aon_reg.h"
@@ -50,14 +51,14 @@ void rtc_clk_32k_enable(bool enable)
 void rtc_clk_32k_enable_external(void)
 {
     // EXT_OSC_SLOW_GPIO_NUM == GPIO_NUM_0
-    PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG);
+    gpio_ll_input_enable(&GPIO, GPIO_NUM_0);
     REG_SET_BIT(LP_AON_GPIO_HOLD0_REG, BIT(EXT_OSC_SLOW_GPIO_NUM));
     clk_ll_xtal32k_enable(CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL);
 }
 
 void rtc_clk_32k_disable_external(void)
 {
-    PIN_INPUT_DISABLE(IO_MUX_GPIO0_REG);
+    gpio_ll_input_disable(&GPIO, GPIO_NUM_0);
     REG_CLR_BIT(LP_AON_GPIO_HOLD0_REG, BIT(EXT_OSC_SLOW_GPIO_NUM));
     clk_ll_xtal32k_disable();
 }
@@ -155,7 +156,7 @@ static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
     regi2c_ctrl_ll_bbpll_calibration_start();
     clk_ll_bbpll_set_config(pll_freq, xtal_freq);
     /* WAIT CALIBRATION DONE */
-    while(!regi2c_ctrl_ll_bbpll_calibration_is_done());
+    while (!regi2c_ctrl_ll_bbpll_calibration_is_done());
     /* BBPLL CALIBRATION STOP */
     regi2c_ctrl_ll_bbpll_calibration_stop();
 

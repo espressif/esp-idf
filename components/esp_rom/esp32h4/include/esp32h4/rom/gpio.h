@@ -10,8 +10,6 @@
 #include <stdbool.h>
 #include "soc/gpio_reg.h"
 
-//TODO: [ESP32H4] IDF-12390 inherit from verification branch, need check
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,9 +24,6 @@ extern "C" {
 
 #define GPIO_REG_READ(reg)       READ_PERI_REG(reg)
 #define GPIO_REG_WRITE(reg, val) WRITE_PERI_REG(reg, val)
-
-#define GPIO_FUNC_ZERO 0
-#define GPIO_FUNC_GPIO 1
 
 #define GPIO_OUTPUT_SET(gpio_no, bit_value) gpio_set_output_level(gpio_no, bit_value)
 #define GPIO_DIS_OUTPUT(gpio_no)            gpio_output_disable(gpio_no)
@@ -55,8 +50,8 @@ uint32_t gpio_get_input_level(uint32_t gpio_num);
   * @brief set gpio input to a signal, one gpio can input to several signals.
   *
   * @param uint32_t gpio_num : gpio number
-  *                        gpio == GPIO_NUM_IN_FORCE_0, input 0 to signal
-  *                        gpio == GPIO_NUM_IN_FORCE_1, input 1 to signal
+  *                        gpio == GPIO_MATRIX_CONST_ZERO_INPUT, input 0 to signal
+  *                        gpio == GPIO_MATRIX_CONST_ONE_INPUT,  input 1 to signal
   *
   * @param uint32_t signal_idx : signal index.
   *
