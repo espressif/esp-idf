@@ -478,6 +478,7 @@
 
 // USB PHY Caps
 #define SOC_USB_UTMI_PHY_NUM            (1U)
+#define SOC_USB_UTMI_PHY_NO_POWER_OFF_ISO    1
 
 /*-------------------------- PARLIO CAPS --------------------------------------*/
 #define SOC_PARLIO_GROUPS                    1U  /*!< Number of parallel IO peripherals */
