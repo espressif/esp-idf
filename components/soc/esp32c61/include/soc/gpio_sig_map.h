@@ -1,12 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
-// version date 2310090
 #define EXT_ADC_START_IDX                       0
 #define LEDC_LS_SIG_OUT0_IDX                    0
 #define LEDC_LS_SIG_OUT1_IDX                    1
@@ -141,6 +140,7 @@
 #define GPIO_TASK_MATRIX_OUT2_IDX               120
 #define GPIO_EVENT_MATRIX_IN3_IDX               121
 #define GPIO_TASK_MATRIX_OUT3_IDX               121
+#define SDIO_TOHOST_INT_OUT_IDX                 124
 #define CLK_OUT_OUT1_IDX                        126
 #define CLK_OUT_OUT2_IDX                        127
 #define CLK_OUT_OUT3_IDX                        128
@@ -176,5 +176,5 @@
 #define MODEM_DIAG29_IDX                        158
 #define MODEM_DIAG30_IDX                        159
 #define MODEM_DIAG31_IDX                        160
-
+// version date 2310090
 #define SIG_GPIO_OUT_IDX                        256
