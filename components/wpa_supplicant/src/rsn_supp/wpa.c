@@ -2261,7 +2261,7 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
     struct wpa_sm *sm = &gWpaSm;
 
     sm->proto = wpa_proto;
-    if (auth_mode == WPA2_AUTH_ENT) {
+    if (auth_mode == WPA2_AUTH_ENT || (auth_mode == WPA_AUTH_UNSPEC)) {
         sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X; /* for wpa2 enterprise */
     } else if (auth_mode == WPA2_AUTH_ENT_SHA256) {
         sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X_SHA256; /* for wpa2 enterprise sha256 */
