@@ -143,10 +143,12 @@ esp_err_t esp_lcd_del_dsi_bus(esp_lcd_dsi_bus_handle_t bus)
     DSI_RCC_ATOMIC() {
         mipi_dsi_ll_enable_bus_clock(bus_id, false);
     }
+#if CONFIG_PM_ENABLE
     if (bus->pm_lock) {
         esp_pm_lock_release(bus->pm_lock);
         esp_pm_lock_delete(bus->pm_lock);
     }
+#endif
     free(bus);
     return ESP_OK;
 }

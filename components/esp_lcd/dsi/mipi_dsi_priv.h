@@ -39,7 +39,9 @@ extern "C" {
 typedef struct esp_lcd_dsi_bus_t {
     int bus_id;
     mipi_dsi_hal_context_t hal;
+#if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
+#endif
 } esp_lcd_dsi_bus_t;
 
 #ifdef __cplusplus
