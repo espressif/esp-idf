@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,15 +68,6 @@ void esp_timer_impl_set_alarm(uint64_t timestamp);
  *                 1 - alarm_1 for the ESP_TIMER_ISR dispatch method.
  */
 void esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id);
-
-/**
- * @brief Notify esp_timer implementation that APB frequency has changed
- *
- * Called by the frequency switching code.
- *
- * @param apb_ticks_per_us new number of APB clock ticks per microsecond
- */
-void esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us);
 
 /**
  * @brief Adjust current esp_timer time by a certain value
