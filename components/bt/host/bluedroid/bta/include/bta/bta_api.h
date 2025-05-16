@@ -1569,6 +1569,10 @@ typedef struct {
     tBTA_DM_BLE_GAP_PHY secondary_phy;
     UINT8 sid;
     BOOLEAN scan_req_notif;
+#if (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
+    uint8_t primary_adv_phy_options;
+    uint8_t secondary_adv_phy_options;
+#endif // (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
 } tBTA_DM_BLE_GAP_EXT_ADV_PARAMS;
 
 typedef struct {

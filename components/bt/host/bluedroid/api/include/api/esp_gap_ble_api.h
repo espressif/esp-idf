@@ -862,6 +862,12 @@ typedef uint8_t esp_ble_gap_all_phys_t;
 #define ESP_BLE_GAP_PRI_PHY_CODED  ESP_BLE_GAP_PHY_CODED  /*!< Primary Phy is LE CODED */
 typedef uint8_t esp_ble_gap_pri_phy_t; // primary phy
 
+#define ESP_BLE_GAP_RPT_PHY_1M     1     /*!< Advertiser PHY is LE 1M */
+#define ESP_BLE_GAP_RPT_PHY_2M     2     /*!< Advertiser PHY is LE 2M */
+#define ESP_BLE_GAP_RPT_PHY_S8     3     /*!< If the Advertising Coding Selection feature bit is set: Advertising PHY is LE 125K Otherwise: Advertiser PHY is LE Coded */
+#define ESP_BLE_GAP_RPT_PHY_S2     4     /*!< If the Advertising Coding Selection feature bit is set: Advertising PHY is LE 500K Otherwise: Reserved for future use */
+typedef uint8_t esp_ble_gap_rpt_phy_t; // extended Advertising report phy
+
 #define ESP_BLE_GAP_PHY_1M_PREF_MASK                   (1 << 0) /*!< The Host prefers use the LE1M transmitter or receiver PHY */
 #define ESP_BLE_GAP_PHY_2M_PREF_MASK                   (1 << 1) /*!< The Host prefers use the LE2M transmitter or receiver PHY */
 #define ESP_BLE_GAP_PHY_CODED_PREF_MASK                (1 << 2) /*!< The Host prefers use the LE CODED transmitter or receiver PHY */
@@ -910,6 +916,21 @@ typedef uint8_t esp_ble_gap_adv_type_t;
 /// max number of advertising sets to enable or disable
 #define EXT_ADV_NUM_SETS_MAX                              (10) /*!< max evt instance num */
 
+#if (CONFIG_BT_BLE_FEAT_ADV_CODING_SELECTION)
+// The Host has no preferred or required coding when transmitting on the LE Coded PHY
+#define ESP_BLE_ADV_PHY_OPTIONS_NO_PREFER_CODED     (0x00)
+// The Host prefers that S=2 coding be used when transmitting on the LE Coded PHY
+#define ESP_BLE_ADV_PHY_OPTIONS_PREFER_CODED_S2     (0x01)
+// The Host prefers that S=8 coding be used when transmitting on the LE Coded PHY
+#define ESP_BLE_ADV_PHY_OPTIONS_PREFER_CODED_S8     (0x02)
+// The Host requires that S=2 coding be used when transmitting on the LE Coded PHY
+#define ESP_BLE_ADV_PHY_OPTIONS_REQUIRE_CODED_S2    (0x03)
+// The Host requires that S=8 coding be used when transmitting on the LE Coded PHY
+#define ESP_BLE_ADV_PHY_OPTIONS_REQUIRE_CODED_S8    (0x04)
+
+typedef uint8_t esp_ble_gap_adv_phy_options_t;
+#endif //(CONFIG_BT_BLE_FEAT_ADV_CODING_SELECTION)
+
 /**
 * @brief ext adv parameters
 */
@@ -928,6 +949,20 @@ typedef struct {
     esp_ble_gap_phy_t secondary_phy;    /*!< ext adv secondary phy */
     uint8_t sid;                        /*!< ext adv sid */
     bool scan_req_notif;                /*!< ext adv scan request event notify */
+#if (CONFIG_BT_BLE_FEAT_ADV_CODING_SELECTION)
+    esp_ble_gap_adv_phy_options_t primary_adv_phy_options;   /*!<
+                                                                0x00: The Host has no preferred or required coding when transmitting on the LE Coded PHY
+                                                                0x01: The Host prefers that S=2 coding be used when transmitting on the LE Coded PHY
+                                                                0x02: The Host prefers that S=8 coding be used when transmitting on the LE Coded PHY
+                                                                0x03: The Host requires that S=2 coding be used when transmitting on the LE Coded PHY
+                                                                0x04: The Host requires that S=8 coding be used when transmitting on the LE Coded PHY */
+    esp_ble_gap_adv_phy_options_t secondary_adv_phy_options;  /*!<
+                                                                0x00: The Host has no preferred or required coding when transmitting on the LE Coded PHY
+                                                                0x01: The Host prefers that S=2 coding be used when transmitting on the LE Coded PHY
+                                                                0x02: The Host prefers that S=8 coding be used when transmitting on the LE Coded PHY
+                                                                0x03: The Host requires that S=2 coding be used when transmitting on the LE Coded PHY
+                                                                0x04: The Host requires that S=8 coding be used when transmitting on the LE Coded PHY */
+#endif // CONFIG_BT_BLE_FEAT_ADV_CODING_SELECTION
 } esp_ble_gap_ext_adv_params_t;
 
 /**
@@ -1040,8 +1075,28 @@ typedef struct {
     esp_ble_gap_adv_type_t event_type;              /*!< extend advertising type */
     uint8_t addr_type;                              /*!< extend advertising address type */
     esp_bd_addr_t addr;                             /*!< extend advertising address */
+#if (CONFIG_BT_BLE_FEAT_PAWR_EN)
+    esp_ble_gap_rpt_phy_t primary_phy;              /*!< extend advertising primary phy
+                                                    0x01: Advertiser PHY is LE 1M
+                                                    0x03: If the Advertising Coding Selection (Host Support) feature bit is set: Advertising PHY is LE Coded with S=8 data coding
+                                                        Otherwise: Advertiser PHY is LE Coded
+                                                    0x04: If the Advertising Coding Selection (Host Support) feature bit is set: Advertising PHY is LE Coded with S=2 data coding
+                                                        Otherwise: Reserved for future use
+                                                    */
+
+    esp_ble_gap_rpt_phy_t secondly_phy;                 /*!< extend advertising secondary phy
+                                                    0x00: No packets on the secondary advertising physical channel
+                                                    0x01: Advertiser PHY is LE 1M
+                                                    0x02: Advertiser PHY is LE 2M
+                                                    0x03: If the Advertising Coding Selection (Host Support) feature bit is set: Advertising PHY is LE Coded with S=8 data coding
+                                                        Otherwise: Advertiser PHY is LE Coded
+                                                    0x04: If the Advertising Coding Selection (Host Support) feature bit is set: Advertising PHY is LE Coded with S=2 data coding
+                                                        Otherwise: Reserved for future use
+                                                    */
+#else
     esp_ble_gap_pri_phy_t primary_phy;              /*!< extend advertising primary phy */
     esp_ble_gap_phy_t secondly_phy;                 /*!< extend advertising secondary phy */
+#endif
     uint8_t sid;                                    /*!< extend advertising sid */
     uint8_t tx_power;                               /*!< extend advertising tx power */
     int8_t rssi;                                    /*!< extend advertising rssi */

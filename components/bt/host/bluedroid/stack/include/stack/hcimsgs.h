@@ -1261,4 +1261,15 @@ UINT8 btsnd_hcic_ble_set_periodic_adv_rsp_data(UINT16 sync_handle, UINT16 req_ev
 UINT8 btsnd_hcic_ble_set_periodic_sync_subevt(UINT16 sync_handle, UINT16 periodic_adv_properties, UINT8 num_subevents_to_sync, UINT8 *subevt);
 #endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 
+#if (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
+UINT8 btsnd_hcic_ble_set_ext_adv_params_v2(UINT8 adv_handle, UINT16 properties, UINT32 interval_min,
+                                          UINT32 interval_max, UINT8 channel_map, UINT8 own_addr_type,
+                                          UINT8 peer_addr_type, BD_ADDR peer_addr,
+                                          UINT8 adv_filter_policy, INT8 adv_tx_power,
+                                          UINT8 primary_adv_phy, UINT8 secondary_adv_max_skip,
+                                          UINT8 secondary_adv_phy,
+                                          UINT8 adv_sid, UINT8 scan_req_ntf_enable,
+                                          UINT8 primary_adv_phy_options, UINT8 secondary_adv_phy_options);
+#endif // (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
+
 #endif
