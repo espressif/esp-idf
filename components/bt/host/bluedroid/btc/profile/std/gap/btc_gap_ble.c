@@ -2138,7 +2138,7 @@ void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
     default:
-       BTC_TRACE_ERROR("%s, Unhandled deep copy %d\n", __func__, msg->act);
+       // BTC_TRACE_ERROR("%s, Unhandled deep copy %d\n", __func__, msg->act);
        break;
     }
 }
@@ -2619,7 +2619,10 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         params.secondary_phy = arg_5->ext_adv_set_params.params.secondary_phy;
         params.sid = arg_5->ext_adv_set_params.params.sid;
         params.scan_req_notif = arg_5->ext_adv_set_params.params.scan_req_notif;
-
+#if (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
+        params.primary_adv_phy_options = arg_5->ext_adv_set_params.params.primary_adv_phy_options;
+        params.secondary_adv_phy_options= arg_5->ext_adv_set_params.params.secondary_adv_phy_options;
+#endif // (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
         memcpy(params.peer_addr, arg_5->ext_adv_set_params.params.peer_addr, sizeof(BD_ADDR));
 
      	BTC_TRACE_DEBUG("BTC_GAP_BLE_SET_EXT_ADV_PARAMS");
