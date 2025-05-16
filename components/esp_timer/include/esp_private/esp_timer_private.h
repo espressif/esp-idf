@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,16 +24,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Notify esp_timer implementation that APB frequency has changed
- *
- * Called by the frequency switching code.
- *
- * @param apb_ticks_per_us new number of APB clock ticks per microsecond
- */
-void esp_timer_private_update_apb_freq(uint32_t apb_ticks_per_us);
-
 /**
  * @brief Set esp_timer time to a certain value
  *

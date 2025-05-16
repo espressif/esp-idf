@@ -77,15 +77,6 @@ void esp_timer_impl_set_alarm(uint64_t timestamp);
 void esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id);
 
 /**
- * @brief Notify esp_timer implementation that APB frequency has changed
- *
- * Called by the frequency switching code.
- *
- * @param apb_ticks_per_us new number of APB clock ticks per microsecond
- */
-void esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us);
-
-/**
  * @brief Adjust current esp_timer time by a certain value
  *
  * Called from light sleep code to synchronize esp_timer time with RTC time.
