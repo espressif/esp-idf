@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -129,13 +129,6 @@ static void IRAM_ATTR timer_alarm_isr(void *arg)
 #endif // ISR_HANDLERS != 1
 }
 
-void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
-{
-#if !SOC_SYSTIMER_FIXED_DIVIDER
-    systimer_hal_on_apb_freq_update(&systimer_hal, apb_ticks_per_us);
-#endif
-}
-
 void esp_timer_impl_set(uint64_t new_us)
 {
     portENTER_CRITICAL_SAFE(&s_time_update_lock);
@@ -249,6 +242,5 @@ uint64_t esp_timer_impl_get_alarm_reg(void)
     return val;
 }
 
-void esp_timer_private_update_apb_freq(uint32_t apb_ticks_per_us) __attribute__((alias("esp_timer_impl_update_apb_freq")));
 void esp_timer_private_set(uint64_t new_us) __attribute__((alias("esp_timer_impl_set")));
 void esp_timer_private_advance(int64_t time_diff_us) __attribute__((alias("esp_timer_impl_advance")));
