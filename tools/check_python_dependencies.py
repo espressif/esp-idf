@@ -40,6 +40,21 @@ except ImportError:
 PYTHON_PACKAGE_RE = re.compile(r'[^<>=~]+')
 
 
+def validate_requirement_list(file_path: str) -> str:
+    """Validate that a requirement file exists and is readable."""
+    if not os.path.isfile(file_path):
+        raise argparse.ArgumentTypeError(
+            f'Requirement file {file_path} not found\n'
+            'Please make sure the file path is correct.\n'
+            'In case the file was removed, please run the export script again, to update the environment.'
+        )
+    try:
+        open(file_path, encoding='utf-8').close()
+    except IOError as e:
+        raise argparse.ArgumentTypeError(f'Cannot read requirement file {file_path}: {e}')
+    return file_path
+
+
 # The version and requires function from importlib.metadata in python prior
 # 3.10 does perform distribution name normalization before searching for
 # package distribution. This might cause problems for package with dot in its
@@ -75,6 +90,7 @@ if __name__ == '__main__':
         help='Path to a requirements file (can be used multiple times)',
         action='append',
         default=[],
+        type=validate_requirement_list,
     )
     parser.add_argument(
         '--constraints',
