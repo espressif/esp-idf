@@ -20,6 +20,7 @@ extern "C" {
 #endif
 
 typedef struct {
+    const char *module_name;
     const uint8_t sda_out_sig;
     const uint8_t sda_in_sig;
     const uint8_t scl_out_sig;

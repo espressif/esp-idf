@@ -66,7 +66,6 @@ extern "C" {
 
 #define I2C_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
-#define I2C_PM_LOCK_NAME_LEN_MAX 16
 #define I2C_STATIC_OPERATION_ARRAY_MAX SOC_I2C_CMD_REG_NUM
 
 #define I2C_TRANS_READ_COMMAND(ack_value)    {.ack_val = (ack_value), .op_code = I2C_LL_CMD_READ}
@@ -116,9 +115,8 @@ struct i2c_bus_t {
     int scl_num; // SCL pin number
     bool pull_up_enable; // Enable pull-ups
     intr_handle_t intr_handle; // I2C interrupt handle
-    esp_pm_lock_handle_t pm_lock; // power manage lock
 #if CONFIG_PM_ENABLE
-    char pm_lock_name[I2C_PM_LOCK_NAME_LEN_MAX]; // pm lock name
+    esp_pm_lock_handle_t pm_lock; // power manage lock
 #endif
     i2c_bus_mode_t bus_mode; // I2C bus mode
 #if SOC_I2C_SUPPORT_SLEEP_RETENTION

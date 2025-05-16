@@ -13,6 +13,7 @@
 */
 const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM] = {
     {
+        .module_name = "I2C0",
         .sda_out_sig = I2C0_SDA_PAD_OUT_IDX,
         .sda_in_sig = I2C0_SDA_PAD_IN_IDX,
         .scl_out_sig = I2C0_SCL_PAD_OUT_IDX,
@@ -20,6 +21,7 @@ const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM] = {
         .irq = ETS_I2C0_INTR_SOURCE,
     },
     {
+        .module_name = "I2C1",
         .sda_out_sig = I2C1_SDA_PAD_OUT_IDX,
         .sda_in_sig = I2C1_SDA_PAD_IN_IDX,
         .scl_out_sig = I2C1_SCL_PAD_OUT_IDX,
@@ -27,6 +29,7 @@ const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM] = {
         .irq = ETS_I2C1_INTR_SOURCE,
     },
     {
+        .module_name = "LP_I2C0",
         .sda_out_sig = LP_I2C_SDA_PAD_OUT_IDX,
         .sda_in_sig = LP_I2C_SDA_PAD_IN_IDX,
         .scl_out_sig = LP_I2C_SCL_PAD_OUT_IDX,
