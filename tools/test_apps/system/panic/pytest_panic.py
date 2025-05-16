@@ -675,83 +675,86 @@ def test_panic_handler_crash1(dut: PanicTestDut, config: str, test_func_name: st
 #########################
 
 # Memprot-related tests are supported only on targets with PMS/PMA peripheral;
-# currently ESP32-S2, ESP32-C3, ESP32-C2, ESP32-H2, ESP32-C6, ESP32-P4, ESP32-C5 and ESP32-C61 are supported
+# currently ESP32-S2, ESP32-C3, ESP32-C2, ESP32-H2, ESP32-H21, ESP32-C6, ESP32-P4, ESP32-C5 and ESP32-C61 are supported
 CONFIGS_MEMPROT_IDRAM = list(
-    itertools.chain(
-        itertools.product(
-            [
-                'memprot_esp32s2',
-                'memprot_esp32c3',
-                'memprot_esp32c2',
-                'memprot_esp32c5',
-                'memprot_esp32c61',
-                'memprot_esp32h2',
-                'memprot_esp32p4',
-            ],
-            ['esp32s2', 'esp32c3', 'esp32c2', 'esp32c5', 'esp32c61', 'esp32h2', 'esp32p4'],
-        )
+    zip(
+        [
+            'memprot_esp32s2',
+            'memprot_esp32c3',
+            'memprot_esp32c2',
+            'memprot_esp32c5',
+            'memprot_esp32c61',
+            'memprot_esp32h2',
+            'memprot_esp32p4',
+            'memprot_esp32h21',
+        ],
+        ['esp32s2', 'esp32c3', 'esp32c2', 'esp32c5', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21'],
     )
 )
 
-CONFIGS_MEMPROT_DCACHE = list(itertools.chain(itertools.product(['memprot_esp32s2'], ['esp32s2'])))
+CONFIGS_MEMPROT_DCACHE = list(zip(['memprot_esp32s2'], ['esp32s2']))
 
 CONFIGS_MEMPROT_RTC_FAST_MEM = list(
-    itertools.chain(
-        itertools.product(
-            [
-                'memprot_esp32s2',
-                'memprot_esp32c3',
-                'memprot_esp32c5',
-                'memprot_esp32c6',
-                'memprot_esp32h2',
-                'memprot_esp32p4',
-            ],
-            ['esp32s2', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4'],
-        )
+    zip(
+        [
+            'memprot_esp32s2',
+            'memprot_esp32c3',
+            'memprot_esp32c5',
+            'memprot_esp32c6',
+            'memprot_esp32h2',
+            'memprot_esp32p4',
+            'memprot_esp32h21',
+        ],
+        ['esp32s2', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32h21'],
     )
 )
 
-
-CONFIGS_MEMPROT_RTC_SLOW_MEM = list(itertools.chain(itertools.product(['memprot_esp32s2'], ['esp32s2'])))
+CONFIGS_MEMPROT_RTC_SLOW_MEM = list(zip(['memprot_esp32s2'], ['esp32s2']))
 
 CONFIGS_MEMPROT_FLASH_IDROM = list(
-    itertools.chain(
-        itertools.product(
-            ['memprot_esp32c5', 'memprot_esp32c6', 'memprot_esp32c61', 'memprot_esp32h2', 'memprot_esp32p4'],
-            ['esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4'],
-        )
+    zip(
+        [
+            'memprot_esp32c5',
+            'memprot_esp32c6',
+            'memprot_esp32c61',
+            'memprot_esp32h2',
+            'memprot_esp32p4',
+            'memprot_esp32h21',
+        ],
+        ['esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21'],
     )
 )
 
 CONFIGS_MEMPROT_SPIRAM_XIP_IROM_ALIGNMENT_HEAP = list(
-    itertools.chain(
-        itertools.product(
-            ['memprot_spiram_xip_esp32c5', 'memprot_spiram_xip_esp32c61', 'memprot_spiram_xip_esp32p4'],
-            ['esp32c5', 'esp32c61', 'esp32p4'],
-        )
+    zip(
+        ['memprot_spiram_xip_esp32c5', 'memprot_spiram_xip_esp32c61', 'memprot_spiram_xip_esp32p4'],
+        ['esp32c5', 'esp32c61', 'esp32p4'],
     )
 )
 
 CONFIGS_MEMPROT_SPIRAM_XIP_DROM_ALIGNMENT_HEAP = list(
-    itertools.chain(
-        itertools.product(
-            [
-                'memprot_spiram_xip_esp32s3',
-                'memprot_spiram_xip_esp32c5',
-                'memprot_spiram_xip_esp32c61',
-                'memprot_spiram_xip_esp32p4',
-            ],
-            ['esp32s3', 'esp32c5', 'esp32c61', 'esp32p4'],
-        )
+    zip(
+        [
+            'memprot_spiram_xip_esp32s3',
+            'memprot_spiram_xip_esp32c5',
+            'memprot_spiram_xip_esp32c61',
+            'memprot_spiram_xip_esp32p4',
+        ],
+        ['esp32s3', 'esp32c5', 'esp32c61', 'esp32p4'],
     )
 )
 
 CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA = list(
-    itertools.chain(
-        itertools.product(
-            ['memprot_esp32c5', 'memprot_esp32c6', 'memprot_esp32c61', 'memprot_esp32h2', 'memprot_esp32p4'],
-            ['esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4'],
-        )
+    zip(
+        [
+            'memprot_esp32c5',
+            'memprot_esp32c6',
+            'memprot_esp32c61',
+            'memprot_esp32h2',
+            'memprot_esp32p4',
+            'memprot_esp32h21',
+        ],
+        ['esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21'],
     )
 )
 
@@ -778,6 +781,7 @@ def test_dcache_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_IDRAM, indirect=['config', 'target'])
 def test_iram_reg1_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -798,6 +802,7 @@ def test_iram_reg1_write_violation(dut: PanicTestDut, test_func_name: str) -> No
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_IDRAM, indirect=['config', 'target'])
 def test_iram_reg2_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -823,6 +828,7 @@ def test_iram_reg2_write_violation(dut: PanicTestDut, test_func_name: str) -> No
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_IDRAM, indirect=['config', 'target'])
 def test_iram_reg3_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -850,6 +856,7 @@ def test_iram_reg3_write_violation(dut: PanicTestDut, test_func_name: str) -> No
 # TODO: IDF-6820: ESP32-S2 -> Fix incorrect panic reason: Unhandled debug exception
 @pytest.mark.generic
 @pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='Incorrect panic reason may be observed', run=False)
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_IDRAM, indirect=['config', 'target'])
 def test_iram_reg4_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -879,6 +886,7 @@ def test_iram_reg4_write_violation(dut: PanicTestDut, test_func_name: str) -> No
 @pytest.mark.xfail(
     'config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_IDRAM, indirect=['config', 'target'])
 def test_dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -901,6 +909,7 @@ def test_dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> 
 @pytest.mark.xfail(
     'config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_IDRAM, indirect=['config', 'target'])
 def test_dram_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -918,6 +927,7 @@ def test_dram_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> 
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_RTC_FAST_MEM, indirect=['config', 'target'])
 def test_rtc_fast_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -927,9 +937,10 @@ def test_rtc_fast_reg1_execute_violation(dut: PanicTestDut, test_func_name: str)
 
 @pytest.mark.generic
 @pytest.mark.skipif(
-    'config.getvalue("target") in ["esp32c5", "esp32c6", "esp32h2", "esp32p4"]',
+    'config.getvalue("target") in ["esp32c5", "esp32c6", "esp32h2", "esp32p4", "esp32h21"]',
     reason='Not a violation condition, no PMS peripheral case',
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_RTC_FAST_MEM, indirect=['config', 'target'])
 def test_rtc_fast_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -954,6 +965,7 @@ def test_rtc_fast_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
 @pytest.mark.xfail(
     'config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_RTC_FAST_MEM, indirect=['config', 'target'])
 def test_rtc_fast_reg3_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -1001,6 +1013,7 @@ def test_rtc_slow_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_FLASH_IDROM, indirect=['config', 'target'])
 def test_irom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -1010,6 +1023,7 @@ def test_irom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> Non
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_FLASH_IDROM, indirect=['config', 'target'])
 def test_drom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -1019,6 +1033,7 @@ def test_drom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> Non
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_FLASH_IDROM, indirect=['config', 'target'])
 def test_drom_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -1055,6 +1070,7 @@ def test_spiram_xip_drom_alignment_reg_execute_violation(dut: PanicTestDut, test
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA, indirect=['config', 'target'])
 def test_invalid_memory_region_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -1064,6 +1080,7 @@ def test_invalid_memory_region_write_violation(dut: PanicTestDut, test_func_name
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA, indirect=['config', 'target'])
 def test_invalid_memory_region_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
