@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -157,19 +157,7 @@ esp_err_t usb_phy_otg_dev_set_speed(usb_phy_handle_t handle, usb_phy_speed_t spe
                         USBPHY_TAG, "set speed not supported");
 
     handle->otg_speed = speed;
-    // Configure pull resistors for device
-    usb_wrap_pull_override_vals_t vals = {
-        .dp_pd = false,
-        .dm_pd = false,
-    };
-    if (speed == USB_PHY_SPEED_LOW) {
-        vals.dp_pu = false;
-        vals.dm_pu = true;
-    } else {
-        vals.dp_pu = true;
-        vals.dm_pu = false;
-    }
-    usb_wrap_hal_phy_enable_pull_override(&handle->wrap_hal, &vals);
+    // No need to configure anything for Internal USB FSLS PHY
     return ESP_OK;
 }
 
