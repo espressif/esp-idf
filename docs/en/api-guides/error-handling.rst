@@ -83,6 +83,9 @@ Error message will typically look like this:
 
 :c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` macro serves similar purpose as ``ESP_ERROR_CHECK``, except that it will not call ``abort()``.
 
+.. note::
+
+    Macros below require ``esp_check.h`` header file to be included
 
 .. _esp-return-on-error-macro:
 
