@@ -105,8 +105,10 @@ struct uhci_controller_t {
     void *user_data;                                    // user data
     size_t int_mem_cache_line_size;                     // internal memory cache line size
     size_t ext_mem_cache_line_size;                     // external memory cache line size
+#if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;                       // power management lock
     char pm_lock_name[UHCI_PM_LOCK_NAME_LEN_MAX];       // pm lock name
+#endif
 };
 
 #ifdef __cplusplus

@@ -71,9 +71,11 @@ static bool uhci_gdma_tx_callback_eof(gdma_channel_handle_t dma_chan, gdma_event
         atomic_store(&uhci_ctrl->tx_dir.tx_fsm, UHCI_TX_FSM_ENABLE);
     }
 
+#if CONFIG_PM_ENABLE
     if (uhci_ctrl->pm_lock) {
         esp_pm_lock_release(uhci_ctrl->pm_lock);
     }
+#endif
 
     if (uhci_ctrl->tx_dir.on_tx_trans_done) {
         uhci_tx_done_event_data_t evt_data = {
@@ -143,10 +145,12 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
         if (need_cache_sync) {
             esp_cache_msync(uhci_ctrl->rx_dir.buffer_pointers[uhci_ctrl->rx_dir.node_index], m2c_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         }
+#if CONFIG_PM_ENABLE
         // release power manager lock
         if (uhci_ctrl->pm_lock) {
             esp_pm_lock_release(uhci_ctrl->pm_lock);
         }
+#endif
         if (uhci_ctrl->rx_dir.on_rx_trans_event) {
             need_yield |= uhci_ctrl->rx_dir.on_rx_trans_event(uhci_ctrl, &evt_data, uhci_ctrl->user_data);
         }
@@ -273,10 +277,12 @@ static void uhci_do_transmit(uhci_controller_handle_t uhci_ctrl, uhci_transactio
         }
     };
 
+#if CONFIG_PM_ENABLE
     // acquire power manager lock
     if (uhci_ctrl->pm_lock) {
         esp_pm_lock_acquire(uhci_ctrl->pm_lock);
     }
+#endif
 
     gdma_link_mount_buffers(uhci_ctrl->tx_dir.dma_link, 0, &mount_config, 1, NULL);
     gdma_start(uhci_ctrl->tx_dir.dma_chan, gdma_link_get_head_addr(uhci_ctrl->tx_dir.dma_link));
@@ -339,10 +345,12 @@ esp_err_t uhci_receive(uhci_controller_handle_t uhci_ctrl, uint8_t *read_buffer,
         read_buffer += uhci_ctrl->rx_dir.buffer_size_per_desc_node[i];
     }
 
+#if CONFIG_PM_ENABLE
     // acquire power manager lock
     if (uhci_ctrl->pm_lock) {
         esp_pm_lock_acquire(uhci_ctrl->pm_lock);
     }
+#endif
 
     gdma_link_mount_buffers(uhci_ctrl->rx_dir.dma_link, 0, mount_configs, node_count, NULL);
 
@@ -434,9 +442,11 @@ esp_err_t uhci_del_controller(uhci_controller_handle_t uhci_ctrl)
         free(uhci_ctrl->rx_dir.buffer_pointers);
     }
 
+#if CONFIG_PM_ENABLE
     if (uhci_ctrl->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(uhci_ctrl->pm_lock), TAG, "delete rx pm_lock failed");
     }
+#endif
 
     ESP_RETURN_ON_ERROR(uhci_gdma_deinitialize(uhci_ctrl), TAG, "deinitialize uhci dam channel failed");
 
