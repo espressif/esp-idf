@@ -148,9 +148,11 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
 
     esp_err_t ret = ESP_OK;
 
+#if CONFIG_PM_ENABLE
     if (encoder_engine->codec_base->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(encoder_engine->codec_base->pm_lock), TAG, "acquire pm_lock failed");
     }
+#endif
     jpeg_hal_context_t *hal = &encoder_engine->codec_base->hal;
     uint8_t *raw_buffer = (uint8_t*)encode_inbuf;
     uint32_t compressed_size;
@@ -280,18 +282,22 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     *out_size = compressed_size;
 
     xSemaphoreGive(encoder_engine->codec_base->codec_mutex);
+#if CONFIG_PM_ENABLE
     if (encoder_engine->codec_base->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(encoder_engine->codec_base->pm_lock), TAG, "release pm_lock failed");
     }
+#endif
     return ESP_OK;
 
 err1:
     dma2d_force_end(encoder_engine->trans_desc, &need_yield);
 err2:
     xSemaphoreGive(encoder_engine->codec_base->codec_mutex);
+#if CONFIG_PM_ENABLE
     if (encoder_engine->codec_base->pm_lock) {
         esp_pm_lock_release(encoder_engine->codec_base->pm_lock);
     }
+#endif
     return ret;
 }
 

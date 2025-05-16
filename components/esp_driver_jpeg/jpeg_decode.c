@@ -212,9 +212,11 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
 
     esp_err_t ret = ESP_OK;
 
+#if CONFIG_PM_ENABLE
     if (decoder_engine->codec_base->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(decoder_engine->codec_base->pm_lock), TAG, "acquire pm_lock failed");
     }
+#endif
 
     xSemaphoreTake(decoder_engine->codec_base->codec_mutex, portMAX_DELAY);
     /* Reset queue */
@@ -269,18 +271,22 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     }
 
     xSemaphoreGive(decoder_engine->codec_base->codec_mutex);
+#if CONFIG_PM_ENABLE
     if (decoder_engine->codec_base->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(decoder_engine->codec_base->pm_lock), TAG, "release pm_lock failed");
     }
+#endif
     return ESP_OK;
 
 err1:
     dma2d_force_end(decoder_engine->trans_desc, &need_yield);
 err2:
     xSemaphoreGive(decoder_engine->codec_base->codec_mutex);
+#if CONFIG_PM_ENABLE
     if (decoder_engine->codec_base->pm_lock) {
         esp_pm_lock_release(decoder_engine->codec_base->pm_lock);
     }
+#endif
     return ret;
 }
 
