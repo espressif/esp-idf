@@ -119,7 +119,7 @@ TEST_CASE("Test TEE Secure Storage - Sign-verify (ecdsa_secp256r1)", "[sec_stora
     }
 }
 
-#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2)
 TEST_CASE("Test TEE Secure Storage - Sign-verify (ecdsa_secp192r1)", "[sec_storage]")
 {
     const size_t buf_sz = 16 * 1024 + 6;  // NOTE: Not an exact multiple of SHA block size
@@ -507,7 +507,7 @@ static void test_ecdsa_sign(mbedtls_ecp_group_id gid)
 TEST_CASE("Test TEE Secure Storage - mbedtls ECDSA signing", "[mbedtls]")
 {
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1);
-#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2)
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1);
 #endif
 }

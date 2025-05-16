@@ -7,5 +7,5 @@ components/esp_tee/test_apps/tee_cli_app:
 
 components/esp_tee/test_apps/tee_test_fw:
   disable:
-    - if: IDF_TARGET not in ["esp32c6"]
-      reason: only supported with esp32c6 for now
+    - if: IDF_TARGET not in ["esp32c6", "esp32h2"]
+      reason: only supported with esp32c6 and esp32h2 for now
