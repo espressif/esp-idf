@@ -303,5 +303,6 @@ uint8_t* esp_wifi_sta_get_rsnxe(u8 *bssid);
 esp_err_t esp_wifi_sta_connect_internal(const uint8_t *bssid);
 void esp_wifi_enable_sae_pk_only_mode_internal(void);
 uint8_t esp_wifi_ap_get_transition_disable_internal(void);
+void esp_wifi_ap_set_group_mgmt_cipher_internal(wifi_cipher_type_t cipher);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */
