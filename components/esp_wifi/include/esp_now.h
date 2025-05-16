@@ -113,7 +113,7 @@ typedef void (*esp_now_recv_cb_t)(const esp_now_recv_info_t * esp_now_info, cons
 
 /**
   * @brief     Callback function of sending ESPNOW data
-  * @param     esp_now_send_info_t Sending information for ESPNOW data
+  * @param     tx_info Sending information for ESPNOW data
   * @param     status status of sending ESPNOW data (succeed or fail). This is will be removed later, since the tx_info->tx_status also works.
   */
 typedef void (*esp_now_send_cb_t)(const esp_now_send_info_t *tx_info, esp_now_send_status_t status);
