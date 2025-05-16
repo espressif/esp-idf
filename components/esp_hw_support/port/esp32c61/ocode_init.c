@@ -18,15 +18,15 @@
 
 static const char *TAG = "ocode_init";
 
-// static void set_ocode_by_efuse(int ocode_scheme_ver)
-// {
-    // assert(ocode_scheme_ver == 1);
-    // unsigned int ocode = efuse_ll_get_ocode();
+static void set_ocode_by_efuse(int ocode_scheme_ver)
+{
+    assert(ocode_scheme_ver == 1);
+    unsigned int ocode = efuse_ll_get_ocode();
 
-    // //set ext_ocode
-    // REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_EXT_CODE, ocode);
-    // REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE, 1);
-// }
+    //set ext_ocode
+    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_EXT_CODE, ocode);
+    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE, 1);
+}
 
 static void IRAM_ATTR NOINLINE_ATTR calibrate_ocode(void)
 {
@@ -82,9 +82,9 @@ static void IRAM_ATTR NOINLINE_ATTR calibrate_ocode(void)
 
 void esp_ocode_calib_init(void)
 {
-    // if (efuse_hal_blk_version() >= 1) {
-    //     set_ocode_by_efuse(1);
-    // } else {
+    if (efuse_hal_blk_version() >= 1) {
+        set_ocode_by_efuse(1);
+    } else {
         calibrate_ocode();
-    // }
+    }
 }
