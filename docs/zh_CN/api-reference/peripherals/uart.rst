@@ -18,6 +18,15 @@
 
     此外，{IDF_TARGET_NAME} 芯片还有一个满足低功耗需求的 LP UART 控制器。LP UART 是原 UART 的功能剪裁版本。它只支持基础 UART 功能，不支持 IrDA 或 RS485 协议，并且只有一块较小的 RAM 存储空间。想要全面了解的 UART 及 LP UART 功能区别，请参考 **{IDF_TARGET_NAME} 技术参考手册** > UART 控制器 (UART) > 主要特性 [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]。
 
+.. toctree::
+    :hidden:
+
+    uhci
+
+.. only:: SOC_UHCI_SUPPORTED
+
+    {IDF_TARGET_NAME} 芯片也支持 UART DMA 模式, 请参考 :doc:`uhci` 以获得更多信息.
+
 功能概述
 -------------------
 

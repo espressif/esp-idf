@@ -18,6 +18,15 @@ Each UART controller is independently configurable with parameters such as baud 
 
     Additionally, the {IDF_TARGET_NAME} chip has one low-power (LP) UART controller. It is the cut-down version of regular UART. Usually, the LP UART controller only support basic UART functionality with a much smaller RAM size, and does not support IrDA or RS485 protocols. For a full list of difference between UART and LP UART, please refer to the **{IDF_TARGET_NAME} Technical Reference Manual** > **UART Controller (UART)** > **Features** [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]).
 
+.. toctree::
+    :hidden:
+
+    uhci
+
+.. only:: SOC_UHCI_SUPPORTED
+
+    The {IDF_TARGET_NAME} chip also supports using DMA with UART. For details, see to :doc:`uhci`.
+
 Functional Overview
 -------------------
 
