@@ -10,6 +10,7 @@
 const parlio_signal_conn_t parlio_periph_signals = {
     .groups = {
         [0] = {
+            .module_name = "PARLIO0",
             .module = PERIPH_PARLIO_MODULE,
             .tx_irq_id = ETS_PARL_IO_INTR_SOURCE,
             .rx_irq_id = ETS_PARL_IO_INTR_SOURCE,

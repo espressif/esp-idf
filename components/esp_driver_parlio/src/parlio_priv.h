@@ -101,8 +101,6 @@
 #define PARLIO_RCC_ATOMIC()
 #endif  // SOC_RCC_IS_INDEPENDENT
 
-#define PARLIO_PM_LOCK_NAME_LEN_MAX 16
-
 ///!< Logging settings
 #define TAG "parlio"
 
@@ -169,13 +167,12 @@ typedef struct parlio_tx_unit_t {
     struct parlio_unit_t base; // base unit
     size_t data_width;     // data width
     intr_handle_t intr;    // allocated interrupt handle
-    esp_pm_lock_handle_t pm_lock;   // power management lock
     gdma_channel_handle_t dma_chan; // DMA channel
     gdma_link_list_handle_t dma_link[PARLIO_DMA_LINK_NUM]; // DMA link list handle
     size_t int_mem_align; // Alignment for internal memory
     size_t ext_mem_align; // Alignment for external memory
 #if CONFIG_PM_ENABLE
-    char pm_lock_name[PARLIO_PM_LOCK_NAME_LEN_MAX]; // pm lock name
+    esp_pm_lock_handle_t pm_lock;   // power management lock
 #endif
     portMUX_TYPE spinlock;     // prevent resource accessing by user and interrupt concurrently
     uint32_t out_clk_freq_hz;  // output clock frequency

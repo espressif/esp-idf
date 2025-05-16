@@ -55,10 +55,9 @@ typedef struct parlio_rx_unit_t {
     SemaphoreHandle_t               mutex;                  /*!< Mutex lock for concurrence safety,
                                                              *   which should be acquired and released in a same function */
 
+#if CONFIG_PM_ENABLE
     /* Power Management */
     esp_pm_lock_handle_t            pm_lock;                /*!< power management lock */
-#if CONFIG_PM_ENABLE
-    char                            pm_lock_name[PARLIO_PM_LOCK_NAME_LEN_MAX]; /*!< pm lock name */
 #endif
 
     /* Transaction Resources */
@@ -526,12 +525,11 @@ static esp_err_t parlio_select_periph_clock(parlio_rx_unit_handle_t rx_unit, con
     if (clk_src != PARLIO_CLK_SRC_EXTERNAL) {
         // XTAL and PLL clock source will be turned off in light sleep, so basically a NO_LIGHT_SLEEP lock is sufficient
         esp_pm_lock_type_t lock_type = ESP_PM_NO_LIGHT_SLEEP;
-        sprintf(rx_unit->pm_lock_name, "parlio_rx_%d_%d", rx_unit->base.group->group_id, rx_unit->base.unit_id); // e.g. parlio_rx_0_0
 #if CONFIG_IDF_TARGET_ESP32P4
         // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
         lock_type = ESP_PM_CPU_FREQ_MAX;
 #endif
-        esp_err_t ret  = esp_pm_lock_create(lock_type, 0, rx_unit->pm_lock_name, &rx_unit->pm_lock);
+        esp_err_t ret  = esp_pm_lock_create(lock_type, 0, parlio_periph_signals.groups[rx_unit->base.group->group_id].module_name, &rx_unit->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
     }
 #endif
@@ -567,10 +565,12 @@ static esp_err_t parlio_destroy_rx_unit(parlio_rx_unit_handle_t rx_unit)
     if (rx_unit->trans_sem) {
         vSemaphoreDeleteWithCaps(rx_unit->trans_sem);
     }
+#if CONFIG_PM_ENABLE
     /* Free the power management lock */
     if (rx_unit->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(rx_unit->pm_lock), TAG, "delete pm lock failed");
     }
+#endif
     /* Delete the GDMA channel */
     if (rx_unit->dma_chan) {
         ESP_RETURN_ON_ERROR(gdma_disconnect(rx_unit->dma_chan), TAG, "disconnect dma channel failed");
@@ -713,10 +713,12 @@ esp_err_t parlio_rx_unit_enable(parlio_rx_unit_handle_t rx_unit, bool reset_queu
     ESP_GOTO_ON_FALSE(!rx_unit->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "the unit has enabled or running");
     rx_unit->is_enabled = true;
 
+#if CONFIG_PM_ENABLE
     /* Acquire the power management lock in case */
     if (rx_unit->pm_lock) {
         esp_pm_lock_acquire(rx_unit->pm_lock);
     }
+#endif
 
     /* For non-free running clock, the unit can't stop once enabled, otherwise the data alignment will go wrong */
     if (!rx_unit->cfg.flags.free_clk) {
@@ -785,10 +787,12 @@ esp_err_t parlio_rx_unit_disable(parlio_rx_unit_handle_t rx_unit)
         free(rx_unit->dma_buf);
         rx_unit->dma_buf = NULL;
     }
+#if CONFIG_PM_ENABLE
     /* release power management lock */
     if (rx_unit->pm_lock) {
         esp_pm_lock_release(rx_unit->pm_lock);
     }
+#endif
     /* Erase the current transaction */
     memset(&rx_unit->curr_trans, 0, sizeof(parlio_rx_transaction_t));
 err:

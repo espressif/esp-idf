@@ -51,9 +51,11 @@ static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
     if (tx_unit->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(tx_unit->intr), TAG, "delete interrupt service failed");
     }
+#if CONFIG_PM_ENABLE
     if (tx_unit->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(tx_unit->pm_lock), TAG, "delete pm lock failed");
     }
+#endif
     if (tx_unit->dma_chan) {
         ESP_RETURN_ON_ERROR(gdma_disconnect(tx_unit->dma_chan), TAG, "disconnect dma channel failed");
         ESP_RETURN_ON_ERROR(gdma_del_channel(tx_unit->dma_chan), TAG, "delete dma channel failed");
@@ -221,12 +223,11 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
     if (clk_src != PARLIO_CLK_SRC_EXTERNAL) {
         // XTAL and PLL clock source will be turned off in light sleep, so basically a NO_LIGHT_SLEEP lock is sufficient
         esp_pm_lock_type_t lock_type = ESP_PM_NO_LIGHT_SLEEP;
-        sprintf(tx_unit->pm_lock_name, "parlio_tx_%d_%d", tx_unit->base.group->group_id, tx_unit->base.unit_id); // e.g. parlio_tx_0_0
 #if CONFIG_IDF_TARGET_ESP32P4
         // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
         lock_type = ESP_PM_CPU_FREQ_MAX;
 #endif
-        esp_err_t ret  = esp_pm_lock_create(lock_type, 0, tx_unit->pm_lock_name, &tx_unit->pm_lock);
+        esp_err_t ret  = esp_pm_lock_create(lock_type, 0, parlio_periph_signals.groups[tx_unit->base.group->group_id].module_name, &tx_unit->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
     }
 #endif
@@ -513,10 +514,12 @@ esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
     ESP_RETURN_ON_FALSE(tx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     parlio_tx_fsm_t expected_fsm = PARLIO_TX_FSM_INIT;
     if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_WAIT)) {
+#if CONFIG_PM_ENABLE
         // acquire power management lock
         if (tx_unit->pm_lock) {
             esp_pm_lock_acquire(tx_unit->pm_lock);
         }
+#endif
         parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_MASK, true);
         atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_ENABLE);
     } else {
@@ -587,10 +590,12 @@ esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t tx_unit)
     // change the EOF condition to be the data length, so the EOF will be triggered normally
     parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DATA_LEN);
 
+#if CONFIG_PM_ENABLE
     // release power management lock
     if (tx_unit->pm_lock) {
         esp_pm_lock_release(tx_unit->pm_lock);
     }
+#endif
 
     // finally we switch to the INIT state
     atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_INIT);
