@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <pthread.h>
+#include <signal.h>
 #include "esp_log.h"
 
 const static char *TAG = "esp32_asio_pthread";
@@ -22,6 +23,8 @@ int pthread_sigmask(int how, const sigset_t *restrict set, sigset_t *restrict os
     return 0;
 }
 
+// picolibc has sigfillset macro in signal.h
+#if !CONFIG_LIBC_PICOLIBC
 int sigfillset(sigset_t *what)
 {
     ESP_LOGD(TAG, "%s: Signals not supported in ESP pthread", __func__);
@@ -30,6 +33,7 @@ int sigfillset(sigset_t *what)
     }
     return 0;
 }
+#endif /* !CONFIG_LIBC_PICOLIBC */
 
 void esp_libc_include_pthread_impl(void)
 {

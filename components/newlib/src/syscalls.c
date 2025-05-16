@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 
 #if CONFIG_LIBC_PICOLIBC
 int open(const char *pathname, int flags, ...)

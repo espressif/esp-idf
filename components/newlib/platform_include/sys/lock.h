@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#ifdef _RETARGETABLE_LOCKING
+#if defined(_RETARGETABLE_LOCKING) || defined(CONFIG_LIBC_PICOLIBC)
 
 /* Actual platfrom-specific definition of struct __lock.
  * The size here should be sufficient for a FreeRTOS mutex.
@@ -52,10 +52,6 @@ int _lock_try_acquire_recursive(_lock_t *plock);
 void _lock_release(_lock_t *plock);
 void _lock_release_recursive(_lock_t *plock);
 
-#if CONFIG_LIBC_PICOLIBC
-#define __lock_try_acquire(lock) _lock_try_acquire(&(lock))
-#define __lock_try_acquire_recursive(lock) _lock_try_acquire_recursive(&(lock))
-#endif // CONFIG_LIBC_PICOLIBC
 #endif // _RETARGETABLE_LOCKING
 
 #ifdef __cplusplus

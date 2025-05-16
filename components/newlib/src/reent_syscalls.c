@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <reent.h>
 #include <sys/fcntl.h>
+#include <sys/stat.h>
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 #include "esp_system_console.h"
