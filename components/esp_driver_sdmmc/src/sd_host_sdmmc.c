@@ -373,9 +373,11 @@ static esp_err_t sd_host_del_sdmmc_controller(sd_host_ctlr_handle_t ctlr)
     if (ctlr_ctx->io_intr_sem) {
         vSemaphoreDeleteWithCaps(ctlr_ctx->io_intr_sem);
     }
+#if CONFIG_PM_ENABLE
     if (ctlr_ctx->pm_lock) {
         esp_pm_lock_delete(ctlr_ctx->pm_lock);
     }
+#endif
 
     free(ctlr_ctx->dma_desc);
     ctlr_ctx->dma_desc = NULL;
