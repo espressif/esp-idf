@@ -623,6 +623,9 @@ esp_err_t http_event_handle(esp_http_client_event_t *evt)
     case HTTP_EVENT_ON_HEADER:
         ESP_LOGI(TAG, "HTTP_EVENT_ON_HEADER");
         break;
+    case HTTP_EVENT_ON_HEADERS_COMPLETE:
+        ESP_LOGI(TAG, "HTTP_EVENT_ON_HEADERS_COMPLETE");
+        break;
     case HTTP_EVENT_ON_DATA:
         esp_rom_md5_update(&md5_context, evt->data, evt->data_len);
         break;
