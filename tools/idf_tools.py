@@ -1559,6 +1559,25 @@ class IDFRecord:
         features.add('core')
         self._features = list(features)
 
+    def check_feature_requirements_files(self) -> None:
+        """
+        Check if feature requirements files exist.
+        If not, remove the feature from the features list.
+        """
+        features_to_remove: Tuple[str, ...] = ()
+        for feature in self._features:
+            if not os.path.isfile(feature_to_requirements_path(feature)):
+                info(
+                    '\n'.join(
+                        [
+                            f"Feature file '{feature_to_requirements_path(feature)}' does not exist.",
+                            f'Removing feature {feature}',
+                        ]
+                    )
+                )
+                features_to_remove += (feature,)
+        self.update_features(remove=features_to_remove)
+
     @property
     def targets(self) -> List[str]:
         return self._targets
@@ -1947,6 +1966,7 @@ def process_and_check_features(idf_env_obj: IDFEnv, features_str: str) -> List[s
         raise SystemExit(1)
 
     idf_env_obj.get_active_idf_record().update_features(tuple(new_features), tuple(remove_features))
+    idf_env_obj.get_active_idf_record().check_feature_requirements_files()
     return idf_env_obj.get_active_idf_record().features
 
 
