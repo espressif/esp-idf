@@ -395,13 +395,11 @@ static inline bool _buffer_check_done(pipe_t *pipe)
     if (pipe->ep_char.type != USB_DWC_XFER_TYPE_CTRL) {
         return true;
     }
-#if (CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3)
     // The HW can't handle two transactions with preamble in one frame.
     // TODO: IDF-12986
     if (pipe->ep_char.ls_via_fs_hub) {
         esp_rom_delay_us(1000);
     }
-#endif // CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     dma_buffer_block_t *buffer_inflight = pipe->buffers[pipe->multi_buffer_control.rd_idx];
     return (buffer_inflight->flags.ctrl.cur_stg == 2);
 }
