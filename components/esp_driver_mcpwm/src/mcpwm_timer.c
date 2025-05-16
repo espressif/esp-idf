@@ -247,13 +247,15 @@ esp_err_t mcpwm_timer_enable(mcpwm_timer_handle_t timer)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(timer->fsm == MCPWM_TIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
-    mcpwm_group_t *group = timer->group;
+    [[maybe_unused]] mcpwm_group_t *group = timer->group;
     if (timer->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_enable(timer->intr), TAG, "enable interrupt failed");
     }
+#if CONFIG_PM_ENABLE
     if (group->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(group->pm_lock), TAG, "acquire pm lock failed");
     }
+#endif
     timer->fsm = MCPWM_TIMER_FSM_ENABLE;
     return ESP_OK;
 }
@@ -262,13 +264,15 @@ esp_err_t mcpwm_timer_disable(mcpwm_timer_handle_t timer)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(timer->fsm == MCPWM_TIMER_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "timer not in enable state");
-    mcpwm_group_t *group = timer->group;
+    [[maybe_unused]] mcpwm_group_t *group = timer->group;
     if (timer->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_disable(timer->intr), TAG, "disable interrupt failed");
     }
+#if CONFIG_PM_ENABLE
     if (group->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(group->pm_lock), TAG, "acquire pm lock failed");
     }
+#endif
     timer->fsm = MCPWM_TIMER_FSM_INIT;
     return ESP_OK;
 }

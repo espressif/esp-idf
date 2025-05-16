@@ -83,7 +83,9 @@ struct mcpwm_group_t {
     portMUX_TYPE spinlock;   // group level spinlock
     uint32_t prescale;       // group prescale
     uint32_t resolution_hz;  // MCPWM group clock resolution: clock_src_hz / clock_prescale = resolution_hz
+#if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; // power management lock
+#endif
     soc_module_clk_t clk_src; // peripheral source clock
     mcpwm_cap_timer_t *cap_timer; // mcpwm capture timers
     mcpwm_timer_t *timers[SOC_MCPWM_TIMERS_PER_GROUP]; // mcpwm timer array
@@ -254,7 +256,9 @@ struct mcpwm_cap_timer_t {
     portMUX_TYPE spinlock;  // spin lock, to prevent concurrently accessing capture timer level resources, including registers
     uint32_t resolution_hz; // resolution of capture timer
     mcpwm_cap_timer_fsm_t fsm;    // driver FSM
+#if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; // power management lock
+#endif
     mcpwm_cap_channel_t *cap_channels[SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER]; // capture channel array
 };
 
