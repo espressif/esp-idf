@@ -364,7 +364,7 @@ FORCE_INLINE_ATTR bool esp_cpu_intr_has_handler(int intr_num)
 #ifdef __XTENSA__
     has_handler = xt_int_has_handler(intr_num, esp_cpu_get_core_id());
 #else
-    has_handler = intr_handler_get(intr_num);
+    has_handler = intr_handler_get(intr_num) != NULL;
 #endif
     return has_handler;
 }
