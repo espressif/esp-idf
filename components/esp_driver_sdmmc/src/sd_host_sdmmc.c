@@ -1190,14 +1190,21 @@ static esp_err_t sdmmc_slot_io_config(sd_host_sdmmc_slot_t *slot, const sd_host_
 
     if (slot_id == 0) {
 #if !SDMMC_LL_SLOT_SUPPORT_GPIO_MATRIX(0)
-        if (use_gpio_matrix &&
-                SDMMC_SLOT0_IOMUX_PIN_NUM_CLK == io_config->clk_io &&
-                SDMMC_SLOT0_IOMUX_PIN_NUM_CMD == io_config->cmd_io &&
-                SDMMC_SLOT0_IOMUX_PIN_NUM_D0 == io_config->d0_io &&
-                SDMMC_SLOT0_IOMUX_PIN_NUM_D1 == io_config->d1_io &&
-                SDMMC_SLOT0_IOMUX_PIN_NUM_D2 == io_config->d2_io &&
-                SDMMC_SLOT0_IOMUX_PIN_NUM_D3 == io_config->d3_io) {
-            use_gpio_matrix = false;
+        if (use_gpio_matrix) {
+            if (slot_width >= 1) {
+                if (SDMMC_SLOT0_IOMUX_PIN_NUM_CLK == io_config->clk_io && SDMMC_SLOT0_IOMUX_PIN_NUM_CMD == io_config->cmd_io && SDMMC_SLOT0_IOMUX_PIN_NUM_D0 == io_config->d0_io) {
+                    use_gpio_matrix = false;
+                } else {
+                    use_gpio_matrix = true;
+                }
+            }
+            if (slot_width >= 4) {
+                if (SDMMC_SLOT0_IOMUX_PIN_NUM_D1 == io_config->d1_io && SDMMC_SLOT0_IOMUX_PIN_NUM_D2 == io_config->d2_io && SDMMC_SLOT0_IOMUX_PIN_NUM_D3 == io_config->d3_io) {
+                    use_gpio_matrix = false;
+                } else {
+                    use_gpio_matrix = true;
+                }
+            }
         } else {
             ESP_RETURN_ON_FALSE(!use_gpio_matrix, ESP_ERR_INVALID_ARG, TAG, "doesn't support routing from GPIO matrix, driver uses dedicated IOs");
         }
