@@ -1474,11 +1474,13 @@ void wifi_prov_mgr_wait(void)
     RELEASE_LOCK(prov_ctx_lock);
 }
 
-void wifi_prov_mgr_deinit(void)
+esp_err_t wifi_prov_mgr_deinit(void)
 {
+    esp_err_t ret = ESP_FAIL;
+
     if (!prov_ctx_lock) {
-        ESP_LOGE(TAG, "Provisioning manager not initialized");
-        return;
+        ESP_LOGW(TAG, "Provisioning manager not initialized");
+        return ESP_OK;
     }
 
     ACQUIRE_LOCK(prov_ctx_lock);
@@ -1498,7 +1500,7 @@ void wifi_prov_mgr_deinit(void)
         RELEASE_LOCK(prov_ctx_lock);
         vSemaphoreDelete(prov_ctx_lock);
         prov_ctx_lock = NULL;
-        return;
+        return ESP_OK;
     }
 
     if (prov_ctx->app_info_json) {
@@ -1531,8 +1533,10 @@ void wifi_prov_mgr_deinit(void)
         if (app_cb) {
             app_cb(app_data, WIFI_PROV_END, NULL);
         }
-        if (esp_event_post(WIFI_PROV_EVENT, WIFI_PROV_END, NULL, 0, portMAX_DELAY) != ESP_OK) {
+        ret = esp_event_post(WIFI_PROV_EVENT, WIFI_PROV_END, NULL, 0, portMAX_DELAY);
+        if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to post event WIFI_PROV_END");
+            return ret;
         }
     }
 
@@ -1545,12 +1549,15 @@ void wifi_prov_mgr_deinit(void)
     if (app_cb) {
         app_cb(app_data, WIFI_PROV_DEINIT, NULL);
     }
-    if (esp_event_post(WIFI_PROV_EVENT, WIFI_PROV_DEINIT, NULL, 0, portMAX_DELAY) != ESP_OK) {
+    ret = esp_event_post(WIFI_PROV_EVENT, WIFI_PROV_DEINIT, NULL, 0, portMAX_DELAY);
+    if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to post event WIFI_PROV_DEINIT");
+        return ret;
     }
 
     vSemaphoreDelete(prov_ctx_lock);
     prov_ctx_lock = NULL;
+    return ESP_OK;
 }
 
 esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const void *wifi_prov_sec_params,

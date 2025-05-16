@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -120,7 +120,10 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         break;
     case WIFI_PROV_END:
         /* De-initialize manager once provisioning is finished */
-        wifi_prov_mgr_deinit();
+        esp_err_t err = wifi_prov_mgr_deinit();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to de-initialize provisioning manager: %s", esp_err_to_name(err));
+        }
         xEventGroupSetBits(*handler_args->flags, handler_args->success ? handler_args->success_bit : handler_args->fail_bit);
         free(handler_args);
         break;
