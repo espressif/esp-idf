@@ -401,7 +401,18 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
 #else
     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = params->own_addr_type;
 #endif
-
+#if (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
+    if ((err = btsnd_hcic_ble_set_ext_adv_params_v2(instance, params->type, params->interval_min, params->interval_max,
+                                      params->channel_map, params->own_addr_type, params->peer_addr_type,
+                                      params->peer_addr, params->filter_policy, params->tx_power,
+                                      params->primary_phy, params->max_skip,
+                                      params->secondary_phy, params->sid, params->scan_req_notif,
+                                      params->primary_adv_phy_options, params->secondary_adv_phy_options)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("LE EA SetParams: cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+        goto end;
+    }
+#else
     if ((err = btsnd_hcic_ble_set_ext_adv_params(instance, params->type, params->interval_min, params->interval_max,
                                       params->channel_map, params->own_addr_type, params->peer_addr_type,
                                       params->peer_addr, params->filter_policy, params->tx_power,
@@ -411,6 +422,7 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
         status = BTM_HCI_ERROR | err;
         goto end;
     }
+#endif // (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
 
     extend_adv_cb.inst[instance].configured = true;
 
@@ -692,7 +704,6 @@ tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Pa
     tBTM_STATUS status = BTM_SUCCESS;
     tHCI_STATUS err = HCI_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
-    //ext_adv_flag = true;
 
     if (instance >= MAX_BLE_ADV_INSTANCE) {
         status = BTM_ILLEGAL_VALUE;
