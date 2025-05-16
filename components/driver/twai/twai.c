@@ -100,8 +100,10 @@ typedef struct twai_obj_t {
     SemaphoreHandle_t alert_semphr;
     uint32_t alerts_enabled;
     uint32_t alerts_triggered;
+#ifdef CONFIG_PM_ENABLE
     //Power Management Lock
     esp_pm_lock_handle_t pm_lock;
+#endif
     portMUX_TYPE spinlock;
 } twai_obj_t;
 

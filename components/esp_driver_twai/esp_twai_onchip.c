@@ -71,7 +71,9 @@ typedef struct {
     uint32_t valid_fd_timing;
     twai_event_callbacks_t cbs;
     void *user_data;
+#ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
+#endif
 
     _Atomic twai_error_state_t state;
     uint16_t tx_error_count;
@@ -285,9 +287,11 @@ static void _node_isr_main(void *arg)
 
 static void _node_destroy(twai_onchip_ctx_t *twai_ctx)
 {
+#ifdef CONFIG_PM_ENABLE
     if (twai_ctx->pm_lock) {
         esp_pm_lock_delete(twai_ctx->pm_lock);
     }
+#endif
     if (twai_ctx->intr_hdl) {
         esp_intr_free(twai_ctx->intr_hdl);
     }
