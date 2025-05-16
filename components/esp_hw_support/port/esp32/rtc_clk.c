@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include "esp_attr.h"
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
 #include "soc/rtc_periph.h"
@@ -26,6 +27,10 @@
 #include "hal/clk_tree_ll.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/io_mux_reg.h"
+#ifndef BOOTLOADER_BUILD
+#include "esp_private/systimer.h"
+#include "hal/timer_ll.h"
+#endif
 
 #define XTAL_32K_BOOTSTRAP_TIME_US      7
 
@@ -365,6 +370,9 @@ void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     clk_ll_ref_tick_set_divider(SOC_CPU_CLK_SRC_XTAL, cpu_freq);
     /* switch clock source */
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
+#ifndef BOOTLOADER_BUILD
+    timer_ll_set_lact_clock_prescale(TIMER_LL_GET_HW(LACT_MODULE), cpu_freq / LACT_TICKS_PER_US);
+#endif
     rtc_clk_apb_freq_update(cpu_freq * MHZ);
     /* lower the voltage */
     int dbias = (cpu_freq <= 2) ? DIG_DBIAS_2M : DIG_DBIAS_XTAL;
@@ -380,6 +388,9 @@ static void rtc_clk_cpu_freq_to_8m(void)
     clk_ll_ref_tick_set_divider(SOC_CPU_CLK_SRC_RC_FAST, 8);
     /* switch clock source */
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_RC_FAST);
+#ifndef BOOTLOADER_BUILD
+    timer_ll_set_lact_clock_prescale(TIMER_LL_GET_HW(LACT_MODULE), SOC_CLK_RC_FAST_FREQ_APPROX / MHZ / LACT_TICKS_PER_US);
+#endif
     rtc_clk_apb_freq_update(SOC_CLK_RC_FAST_FREQ_APPROX);
 }
 
@@ -391,8 +402,11 @@ static void rtc_clk_cpu_freq_to_8m(void)
 static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 {
     int dbias = (cpu_freq_mhz == 240) ? DIG_DBIAS_240M : DIG_DBIAS_80M_160M;
-    clk_ll_cpu_set_freq_mhz_from_pll(cpu_freq_mhz);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, dbias);
+#ifndef BOOTLOADER_BUILD
+    timer_ll_set_lact_clock_prescale(TIMER_LL_GET_HW(LACT_MODULE), 80 / LACT_TICKS_PER_US);
+#endif
+    clk_ll_cpu_set_freq_mhz_from_pll(cpu_freq_mhz);
     /* adjust ref_tick */
     clk_ll_ref_tick_set_divider(SOC_CPU_CLK_SRC_PLL, cpu_freq_mhz);
     /* switch clock source */
