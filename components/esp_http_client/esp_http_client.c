@@ -282,6 +282,8 @@ static int http_on_headers_complete(http_parser *parser)
 {
     esp_http_client_handle_t client = parser->data;
     http_on_header_event(client);
+    http_dispatch_event(client, HTTP_EVENT_ON_HEADERS_COMPLETE, NULL, 0);
+    http_dispatch_event_to_event_loop(HTTP_EVENT_ON_HEADERS_COMPLETE, &client, sizeof(esp_http_client_handle_t));
     client->response->status_code = parser->status_code;
     client->response->data_offset = parser->nread;
     client->response->content_length = parser->content_length;
