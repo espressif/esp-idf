@@ -1419,9 +1419,13 @@ config SOC_SDMMC_NUM_SLOTS
     int
     default 2
 
+config SOC_SDMMC_DATA_WIDTH_MAX
+    int
+    default 8
+
 config SOC_SDMMC_DELAY_PHASE_NUM
     int
-    default 4
+    default 8
 
 config SOC_SDMMC_IO_POWER_EXTERNAL
     bool

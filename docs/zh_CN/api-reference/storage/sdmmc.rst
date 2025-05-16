@@ -9,7 +9,7 @@ SD/SDIO/MMC 驱动程序
 SD/SDIO/MMC 驱动支持 SD 存储器、SDIO 卡和 eMMC 芯片。这是一个协议层驱动 (:component_file:`sdmmc/include/sdmmc_cmd.h`)，可以与以下驱动配合使用：
 
 .. list::
-    :SOC_SDMMC_HOST_SUPPORTED: - SDMMC 主机驱动 (:component_file:`esp_driver_sdmmc/include/driver/sdmmc_host.h`)，详情请参阅 :doc:`SDMMC Host API <../peripherals/sdmmc_host>`。
+    :SOC_SDMMC_HOST_SUPPORTED: - SDMMC 主机驱动 (:component_file:`esp_driver_sdmmc/legacy/include/driver/sdmmc_host.h`)，详情请参阅 :doc:`SDMMC Host API <../peripherals/sdmmc_host>`。
     :SOC_GPSPI_SUPPORTED: - SDSPI 主机驱动 (:component_file:`esp_driver_sdspi/include/driver/sdspi_host.h`)，详情请参阅 :doc:`SD SPI Host API <../peripherals/sdspi_host>`。
 
 协议层与主机层

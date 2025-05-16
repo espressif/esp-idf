@@ -87,16 +87,46 @@ extern "C" {
  * SDMMC capabilities
  */
 #define SDMMC_LL_SLOT_SUPPORT_GPIO_MATRIX(SLOT_ID)    ((SLOT_ID == 0) ? 0 : 1)
+#define SDMMC_LL_IOMUX_FUNC                           0
+#define SDMMC_LL_HOST_CTLR_NUMS                       1U
+#define SDMMC_LL_DELAY_MAX_NUMS_LS                    4
+#define SDMMC_LL_DELAY_PHASE_SUPPORTED                1
 
-#define SDMMC_LL_IOMUX_FUNC    0
-
+/**
+ * SDMMC delay phase
+ */
 typedef enum {
     SDMMC_LL_DELAY_PHASE_0,
     SDMMC_LL_DELAY_PHASE_1,
     SDMMC_LL_DELAY_PHASE_2,
     SDMMC_LL_DELAY_PHASE_3,
+    SDMMC_LL_DELAY_PHASE_4,
+    SDMMC_LL_DELAY_PHASE_5,
+    SDMMC_LL_DELAY_PHASE_6,
+    SDMMC_LL_DELAY_PHASE_7,
 } sdmmc_ll_delay_phase_t;
 
+/**
+ * SDMMC delayline
+ */
+typedef enum {
+    SDMMC_LL_DELAY_LINE_0,
+    SDMMC_LL_DELAY_LINE_1,
+    SDMMC_LL_DELAY_LINE_2,
+    SDMMC_LL_DELAY_LINE_3,
+    SDMMC_LL_DELAY_LINE_4,
+    SDMMC_LL_DELAY_LINE_5,
+    SDMMC_LL_DELAY_LINE_6,
+    SDMMC_LL_DELAY_LINE_7,
+} sdmmc_ll_delay_line_t;
+
+/**
+ * SDMMC speed mode
+ */
+typedef enum {
+    SDMMC_LL_SPEED_MODE_LS,
+    SDMMC_LL_SPEED_MODE_HS,
+} sdmmc_ll_speed_mode_t;
 
 /*---------------------------------------------------------------
                     Clock & Reset
@@ -104,11 +134,12 @@ typedef enum {
 /**
  * @brief Enable the bus clock for SDMMC module
  *
- * @param hw    hardware instance address
- * @param en    enable / disable
+ * @param group_id Group ID
+ * @param en       enable / disable
  */
-static inline void sdmmc_ll_enable_bus_clock(sdmmc_dev_t *hw, bool en)
+static inline void sdmmc_ll_enable_bus_clock(int group_id, bool en)
 {
+    (void)group_id;
     HP_SYS_CLKRST.soc_clk_ctrl1.reg_sdmmc_sys_clk_en = en;
 }
 
@@ -119,10 +150,11 @@ static inline void sdmmc_ll_enable_bus_clock(sdmmc_dev_t *hw, bool en)
 /**
  * @brief Reset the SDMMC module
  *
- * @param hw    hardware instance address
+ * @param group_id Group ID
  */
-static inline void sdmmc_ll_reset_register(sdmmc_dev_t *hw)
+static inline void sdmmc_ll_reset_register(int group_id)
 {
+    (void)group_id;
     LP_AON_CLKRST.hp_sdmmc_emac_rst_ctrl.rst_en_sdmmc = 1;
     LP_AON_CLKRST.hp_sdmmc_emac_rst_ctrl.rst_en_sdmmc = 0;
 }
@@ -272,32 +304,85 @@ static inline void sdmmc_ll_init_phase_delay(sdmmc_dev_t *hw)
 #define sdmmc_ll_init_phase_delay(...) (void)__DECLARE_RCC_ATOMIC_ENV; sdmmc_ll_init_phase_delay(__VA_ARGS__)
 
 /**
- * @brief Set SDMMC din delay
+ * @brief Set SDMMC din delay phase
  *
  * @param hw     hardware instance address
  * @param phase  delay phase
+ * @param mode   speed mode
  */
-static inline void sdmmc_ll_set_din_delay(sdmmc_dev_t *hw, sdmmc_ll_delay_phase_t phase)
+static inline void sdmmc_ll_set_din_delay_phase(sdmmc_dev_t *hw, sdmmc_ll_delay_phase_t phase, sdmmc_ll_speed_mode_t mode)
 {
-    switch (phase) {
-        case SDMMC_LL_DELAY_PHASE_1:
-            HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_sam_clk_edge_sel = 0x1;
-            break;
-        case SDMMC_LL_DELAY_PHASE_2:
-            HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_sam_clk_edge_sel = 0x2;
-            break;
-        case SDMMC_LL_DELAY_PHASE_3:
-            HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_sam_clk_edge_sel = 0x3;
-            break;
-        default:
-            HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_sam_clk_edge_sel = 0x0;
-            break;
+    if (mode == SDMMC_LL_SPEED_MODE_LS) {
+        switch (phase) {
+            case SDMMC_LL_DELAY_PHASE_1:
+                HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_sam_clk_edge_sel = 0x1;
+                break;
+            case SDMMC_LL_DELAY_PHASE_2:
+                HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_sam_clk_edge_sel = 0x2;
+                break;
+            case SDMMC_LL_DELAY_PHASE_3:
+                HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_sam_clk_edge_sel = 0x3;
+                break;
+            default:
+                HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_sam_clk_edge_sel = 0x0;
+                break;
+        }
+    } else {
+        SDMMC.dll_clk_conf.dll_cclk_in_sam_phase = (phase << 3);
     }
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sdmmc_ll_set_din_delay(...) (void)__DECLARE_RCC_ATOMIC_ENV; sdmmc_ll_set_din_delay(__VA_ARGS__)
+#define sdmmc_ll_set_din_delay_phase(...) (void)__DECLARE_RCC_ATOMIC_ENV; sdmmc_ll_set_din_delay_phase(__VA_ARGS__)
+
+/**
+ * @brief Set SDMMC dout delay phase
+ *
+ * @param hw     hardware instance address
+ * @param phase  delay phase
+ * @param mode   speed mode
+ */
+static inline void sdmmc_ll_set_dout_delay_phase(sdmmc_dev_t *hw, sdmmc_ll_delay_phase_t phase, sdmmc_ll_speed_mode_t mode)
+{
+    if (mode == SDMMC_LL_SPEED_MODE_HS) {
+        SDMMC.dll_clk_conf.dll_cclk_in_drv_phase = (phase << 3);
+    }
+}
+
+/**
+ * @brief Set SDMMC din delay line
+ *
+ * @param hw     hardware instance address
+ * @param phase  delay line
+ * @param mode   speed mode
+ */
+static inline void sdmmc_ll_set_din_delay_line(sdmmc_dev_t *hw, sdmmc_ll_delay_line_t phase, sdmmc_ll_speed_mode_t mode)
+{
+    SDMMC.dll_clk_conf.dll_cclk_in_sam_phase &= ~0x7;
+    if (mode == SDMMC_LL_SPEED_MODE_HS) {
+        SDMMC.dll_clk_conf.dll_cclk_in_sam_phase |= phase;
+    } else {
+        HAL_ASSERT(false);
+    }
+}
+
+/**
+ * @brief Set SDMMC dout delay line
+ *
+ * @param hw     hardware instance address
+ * @param phase  delay line
+ * @param mode   speed mode
+ */
+static inline void sdmmc_ll_set_dout_delay_line(sdmmc_dev_t *hw, sdmmc_ll_delay_line_t phase, sdmmc_ll_speed_mode_t mode)
+{
+    SDMMC.dll_clk_conf.dll_cclk_in_drv_phase &= ~0x7;
+    if (mode == SDMMC_LL_SPEED_MODE_HS) {
+        SDMMC.dll_clk_conf.dll_cclk_in_drv_phase |= phase;
+    } else {
+        HAL_ASSERT(false);
+    }
+}
 
 /**
  * @brief Enable card clock
@@ -348,10 +433,8 @@ static inline uint32_t sdmmc_ll_get_card_clock_div(sdmmc_dev_t *hw, uint32_t slo
     uint32_t card_div = 0;
 
     if (slot == 0) {
-        HAL_ASSERT(hw->clksrc.card0 == 0);
         card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, clk_divider0);
     } else if (slot == 1) {
-        HAL_ASSERT(hw->clksrc.card1 == 1);
         card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, clk_divider1);
     } else {
         HAL_ASSERT(false);

@@ -442,8 +442,9 @@
 /* On ESP32, clock/cmd/data pins use IO MUX.
  * Card detect, write protect, interrupt use GPIO Matrix on all chips.
  */
-#define SOC_SDMMC_USE_IOMUX  1
-#define SOC_SDMMC_NUM_SLOTS  2
+#define SOC_SDMMC_USE_IOMUX          1
+#define SOC_SDMMC_NUM_SLOTS          2
+#define SOC_SDMMC_DATA_WIDTH_MAX     8
 
 /*-------------------------- WI-FI HARDWARE CAPS -------------------------------*/
 #define SOC_WIFI_WAPI_SUPPORT                   (1)    /*!< Support WAPI */

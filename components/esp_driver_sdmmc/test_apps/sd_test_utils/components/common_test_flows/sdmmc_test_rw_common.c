@@ -158,7 +158,7 @@ void sdmmc_test_rw_performance(sdmmc_card_t *card, FILE *perf_log)
 void sdmmc_test_rw_with_offset(sdmmc_card_t* card)
 {
     sdmmc_card_print_info(stdout, card);
-    printf("  sector  | count | align | size(kB)  | wr_time(ms) | wr_speed(MB/s)  |  rd_time(ms)  | rd_speed(MB/s)\n");
+    printf("  sector  | count | align | alloc | size(kB)  | wr_time(ms) | wr_speed(MB/s)  |  rd_time(ms)  | rd_speed(MB/s)\n");
     /* aligned */
     do_single_rw_perf_test(card, 1, 16, 4, NULL, 0);
     do_single_rw_perf_test(card, 16, 32, 4, NULL, 0);
@@ -216,6 +216,7 @@ void sdmmc_test_rw_highprio_task(sdmmc_card_t* card)
 
     xSemaphoreGive(args.stop);
     xSemaphoreTake(args.done, portMAX_DELAY);
+    vTaskDelay(1);
     vSemaphoreDelete(args.stop);
     vSemaphoreDelete(args.done);
 }

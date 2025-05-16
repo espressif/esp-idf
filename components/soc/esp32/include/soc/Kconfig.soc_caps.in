@@ -943,6 +943,10 @@ config SOC_SDMMC_NUM_SLOTS
     int
     default 2
 
+config SOC_SDMMC_DATA_WIDTH_MAX
+    int
+    default 8
+
 config SOC_WIFI_WAPI_SUPPORT
     bool
     default y
