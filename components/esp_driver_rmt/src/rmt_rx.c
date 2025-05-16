@@ -148,9 +148,11 @@ static esp_err_t rmt_rx_destroy(rmt_rx_channel_t *rx_channel)
     if (rx_channel->base.intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(rx_channel->base.intr), TAG, "delete interrupt service failed");
     }
+#if CONFIG_PM_ENABLE
     if (rx_channel->base.pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(rx_channel->base.pm_lock), TAG, "delete pm_lock failed");
     }
+#endif
 #if SOC_RMT_SUPPORT_DMA
     if (rx_channel->base.dma_chan) {
         ESP_RETURN_ON_ERROR(gdma_del_channel(rx_channel->base.dma_chan), TAG, "delete dma channel failed");
@@ -499,10 +501,13 @@ static esp_err_t rmt_rx_enable(rmt_channel_handle_t channel)
     rmt_hal_context_t *hal = &group->hal;
     int channel_id = channel->channel_id;
 
+#if CONFIG_PM_ENABLE
     // acquire power manager lock
     if (channel->pm_lock) {
         esp_pm_lock_acquire(channel->pm_lock);
     }
+#endif
+
     if (channel->dma_chan) {
 #if SOC_RMT_SUPPORT_DMA
         // enable the DMA access mode
@@ -560,10 +565,12 @@ static esp_err_t rmt_rx_disable(rmt_channel_handle_t channel)
         portEXIT_CRITICAL(&group->spinlock);
     }
 
+#if CONFIG_PM_ENABLE
     // release power manager lock
     if (channel->pm_lock) {
         esp_pm_lock_release(channel->pm_lock);
     }
+#endif
 
     // now we can switch the state to init
     atomic_store(&channel->fsm, RMT_FSM_INIT);

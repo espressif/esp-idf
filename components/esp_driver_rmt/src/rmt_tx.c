@@ -203,9 +203,11 @@ static esp_err_t rmt_tx_destroy(rmt_tx_channel_t *tx_channel)
     if (tx_channel->base.intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(tx_channel->base.intr), TAG, "delete interrupt service failed");
     }
+#if CONFIG_PM_ENABLE
     if (tx_channel->base.pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(tx_channel->base.pm_lock), TAG, "delete pm_lock failed");
     }
+#endif
 #if SOC_RMT_SUPPORT_DMA
     if (tx_channel->base.dma_chan) {
         ESP_RETURN_ON_ERROR(gdma_del_channel(tx_channel->base.dma_chan), TAG, "delete dma channel failed");
@@ -766,10 +768,12 @@ static esp_err_t rmt_tx_enable(rmt_channel_handle_t channel)
                         ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
 
+#if CONFIG_PM_ENABLE
     // acquire power manager lock
     if (channel->pm_lock) {
         esp_pm_lock_acquire(channel->pm_lock);
     }
+#endif
 
 #if SOC_RMT_SUPPORT_DMA
     rmt_group_t *group = channel->group;
@@ -860,10 +864,12 @@ static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel)
     }
     tx_chan->cur_trans = NULL;
 
+#if CONFIG_PM_ENABLE
     // release power manager lock
     if (channel->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(channel->pm_lock), TAG, "release pm_lock failed");
     }
+#endif
 
     // finally we switch to the INIT state
     atomic_store(&channel->fsm, RMT_FSM_INIT);
