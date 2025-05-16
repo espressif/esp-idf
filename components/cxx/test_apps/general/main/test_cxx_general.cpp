@@ -108,18 +108,16 @@ TEST_CASE("static initialization guards work as expected", "[misc]")
     TEST_ASSERT_NOT_NULL(s_slow_init_sem);
     int task_count = 0;
     // four tasks competing for static initialization of one object
-    task_count += start_slow_init_task<1>(0, PRO_CPU_NUM);
-#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
-    task_count += start_slow_init_task<1>(1, APP_CPU_NUM);
-#endif
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
+        task_count += start_slow_init_task<1>(i, i);
+    }
     task_count += start_slow_init_task<1>(2, PRO_CPU_NUM);
     task_count += start_slow_init_task<1>(3, tskNO_AFFINITY);
 
     // four tasks competing for static initialization of another object
-    task_count += start_slow_init_task<2>(0, PRO_CPU_NUM);
-#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
-    task_count += start_slow_init_task<2>(1, APP_CPU_NUM);
-#endif
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
+        task_count += start_slow_init_task<2>(i, i);
+    }
     task_count += start_slow_init_task<2>(2, PRO_CPU_NUM);
     task_count += start_slow_init_task<2>(3, tskNO_AFFINITY);
 
