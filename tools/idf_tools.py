@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 #
-# SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -776,13 +776,36 @@ class IDFTool(object):
             return recommended_versions[0]
         return None
 
-    def get_preferred_installed_version(self):  # type: () -> Optional[str]
-        recommended_versions = [k for k in self.versions_installed
-                                if self.versions[k].status == IDFToolVersion.STATUS_RECOMMENDED
-                                and self.versions[k].compatible_with_platform(self._platform)]
-        assert len(recommended_versions) <= 1
-        if recommended_versions:
-            return recommended_versions[0]
+    def get_preferred_installed_version(self) -> Optional[str]:
+        """
+        Get the preferred installed version of the tool.
+        If more versions installed, return recommended version if exists, otherwise return the highest supported version
+        """
+
+        self.find_installed_versions()
+
+        if self.get_recommended_version() in self.versions_installed:
+            return self.get_recommended_version()
+
+        supported_installed_versions = [
+            k
+            for k in self.versions_installed
+            if self.versions[k].status == IDFToolVersion.STATUS_SUPPORTED
+            and self.versions[k].compatible_with_platform(self._platform)
+        ]
+        sorted_supported_installed_versions = sorted(
+            supported_installed_versions, key=lambda x: self.versions[x], reverse=True
+        )
+        if sorted_supported_installed_versions:
+            warn(
+                ''.join(
+                    [
+                        f'Using supported version {sorted_supported_installed_versions[0]} for tool {self.name} ',
+                        f'as recommended version {self.get_recommended_version()} is not installed.',
+                    ]
+                )
+            )
+            return sorted_supported_installed_versions[0]
         return None
 
     def find_installed_versions(self):  # type: () -> None
@@ -828,8 +851,7 @@ class IDFTool(object):
                 if ver_str != version:
                     warn('tool {} version {} is installed, but has reported version {}'.format(
                         self.name, version, ver_str))
-                else:
-                    self.versions_installed.append(version)
+                self.versions_installed.append(version)
 
     def latest_installed_version(self):  # type: () -> Optional[str]
         """
@@ -1479,6 +1501,9 @@ def expand_tools_arg(tools_spec, overall_tools, targets):  # type: (list[str], O
 
     # Filtering by ESP_targets
     tools = [k for k in tools if overall_tools[k].is_supported_for_any_of_targets(targets)]
+
+    # Processing specific version of tool - defined with '@'
+    tools.extend([tool_pattern for tool_pattern in tools_spec if '@' in tool_pattern])
     return tools
 
 
@@ -1772,7 +1797,6 @@ def process_tool(
     tool_export_paths: List[str] = []
     tool_export_vars: Dict[str, str] = {}
 
-    tool.find_installed_versions()
     recommended_version_to_use = tool.get_preferred_installed_version()
 
     if not tool.is_executable and recommended_version_to_use:
