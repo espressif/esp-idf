@@ -21,6 +21,10 @@
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
 #include "hal/clk_tree_ll.h"
+#ifndef BOOTLOADER_BUILD
+#include "esp_private/systimer.h"
+#include "hal/systimer_ll.h"
+#endif
 
 static const char *TAG = "rtc_clk";
 
@@ -468,6 +472,9 @@ static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     /* no need to adjust the REF_TICK, default register value already set it to 1MHz with any cpu clock source */
     /* switch clock source */
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
+#ifndef BOOTLOADER_BUILD
+    systimer_ll_set_step_for_xtal(&SYSTIMER, systimer_us_to_ticks(1) / cpu_freq);
+#endif
     rtc_clk_apb_freq_update(cpu_freq * MHZ);
 
     /* lower the voltage
