@@ -2107,10 +2107,6 @@ config SOC_PERIPH_CLK_CTRL_SHARED
     bool
     default y
 
-config SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE
-    bool
-    default y
-
 config SOC_TEMPERATURE_SENSOR_LP_PLL_SUPPORT
     bool
     default y

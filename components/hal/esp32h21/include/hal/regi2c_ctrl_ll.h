@@ -10,7 +10,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "soc/soc.h"
-#include "soc/regi2c_defs.h"
 #include "soc/i2c_ana_mst_reg.h"
 #include "soc/pmu_reg.h"
 #include "modem/modem_lpcon_struct.h"
@@ -18,6 +17,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define ANA_I2C_MST_CLK_HAS_ROOT_GATING 1   /*!< Any regi2c operation needs enable the analog i2c master clock first */
 
 /**
  * @brief Enable analog I2C master clock

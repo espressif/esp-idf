@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,10 +24,3 @@
 
 #define ANA_CONFIG2_REG 0x6000E048
 #define ANA_SAR_CFG2_M  (BIT(16))
-
-/**
- * Restore regi2c analog calibration related configuration registers.
- * This is a workaround for calibration error when waking up from light sleep
- */
-#define REGI2C_ANA_CALI_PD_WORKAROUND    1
-#define REGI2C_ANA_CALI_BYTE_NUM         8

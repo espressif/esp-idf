@@ -599,9 +599,6 @@ void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq, bool thread_
         _regi2c_ctrl_ll_master_enable_clock(true);
     } else {
         ANALOG_CLOCK_ENABLE();
-#if !BOOTLOADER_BUILD
-        regi2c_enter_critical();
-#endif
     }
     /* MPLL calibration start */
     regi2c_ctrl_ll_mpll_calibration_start();
@@ -614,9 +611,6 @@ void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq, bool thread_
     if (thread_safe) {
         _regi2c_ctrl_ll_master_enable_clock(false);
     } else {
-#if !BOOTLOADER_BUILD
-        regi2c_exit_critical();
-#endif
         ANALOG_CLOCK_DISABLE();
     }
     s_cur_mpll_freq = mpll_freq;

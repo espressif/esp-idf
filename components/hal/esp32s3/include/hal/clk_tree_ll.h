@@ -11,7 +11,6 @@
 #include "soc/clk_tree_defs.h"
 #include "soc/system_reg.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/regi2c_defs.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
 #include "hal/assert.h"
