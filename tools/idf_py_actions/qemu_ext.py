@@ -279,9 +279,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if options.wait_for_gdb or gdb:
             qemu_args += ['-gdb', f'tcp::{QEMU_PORT_GDB}', '-S']
 
-        if qemu_extra_args:
-            qemu_args += qemu_extra_args.split(' ')
-
         if graphics:
             qemu_args += ['-display', 'sdl']
         else:
@@ -293,6 +290,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         # Launch QEMU!
         if not options.bg_mode:
             qemu_args += ['-serial', 'mon:stdio']
+
+            if qemu_extra_args:
+                qemu_args += qemu_extra_args.split(' ')
+
             yellow_print('Running qemu (fg): ' + ' '.join(qemu_args))
             subprocess.run(qemu_args)
         else:
@@ -300,6 +301,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 qemu_args += ['-serial', f'tcp::{QEMU_PORT_SERIAL},server']
             else:
                 qemu_args += ['-serial', f'tcp::{QEMU_PORT_SERIAL},server,nowait']
+
+            if qemu_extra_args:
+                qemu_args += qemu_extra_args.split(' ')
 
             yellow_print('Running qemu (bg): ' + ' '.join(qemu_args))
             qemu_proc = subprocess.Popen(qemu_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
