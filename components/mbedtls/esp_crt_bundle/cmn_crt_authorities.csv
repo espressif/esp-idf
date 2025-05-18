@@ -4,7 +4,6 @@ Amazon Trust Services,Amazon Root CA 2
 Amazon Trust Services,Amazon Root CA 3
 Amazon Trust Services,Amazon Root CA 4
 Amazon Trust Services,Starfield Services Root Certificate Authority - G2
-DigiCert,Baltimore CyberTrust Root
 DigiCert,DigiCert Assured ID Root CA
 DigiCert,DigiCert Assured ID Root G2
 DigiCert,DigiCert Assured ID Root G3
@@ -15,8 +14,8 @@ DigiCert,DigiCert High Assurance EV Root CA
 DigiCert,DigiCert TLS ECC P384 Root G5
 DigiCert,DigiCert TLS RSA4096 Root G5
 DigiCert,DigiCert Trusted Root G4
-GlobalSign nv-sa,GlobalSign Root CA - R6
 GlobalSign nv-sa,GlobalSign ECC Root CA - R5
+GlobalSign nv-sa,GlobalSign Root CA - R6
 GlobalSign nv-sa,GlobalSign Root CA - R3
 GlobalSign nv-sa,GlobalSign Root CA
 GlobalSign nv-sa,GlobalSign Root E46
