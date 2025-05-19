@@ -5,3 +5,5 @@ components/esp_timer/test_apps:
     - if: IDF_TARGET in ["esp32h2", "esp32p4"] # Sleep support IDF-6267, IDF-7528
       temporary: true
       reason: Not supported yet
+    - if: CONFIG_NAME == "dfs" and SOC_CLK_XTAL32K_SUPPORTED != 1
+      reason: The test requires the XTAL32K clock to measure the esp_timer timing accuracy
