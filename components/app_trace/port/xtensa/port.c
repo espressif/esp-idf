@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -12,7 +12,7 @@
 // ======================
 
 // Xtensa has useful feature: TRAX debug module. It allows recording program execution flow at run-time without disturbing CPU.
-// Exectution flow data are written to configurable Trace RAM block. Besides accessing Trace RAM itself TRAX module also allows to read/write
+// Execution flow data are written to configurable Trace RAM block. Besides accessing Trace RAM itself TRAX module also allows to read/write
 // trace memory via its registers by means of JTAG, APB or ERI transactions.
 // ESP32 has two Xtensa cores with separate TRAX modules on them and provides two special memory regions to be used as trace memory.
 // Chip allows muxing access to those trace memory blocks in such a way that while one block is accessed by CPUs another one can be accessed by host
@@ -47,7 +47,7 @@
 // 2. TRAX Registers layout
 // ========================
 
-// This module uses two TRAX HW registers to communicate with host SW (OpenOCD).
+// This module uses two TRAX HW registers and one Performance Monitor register to communicate with host SW (OpenOCD).
 //  - Control register uses TRAX_DELAYCNT as storage. Only lower 24 bits of TRAX_DELAYCNT are writable. Control register has the following bitfields:
 //   | 31..XXXXXX..24 | 23 .(host_connect). 23| 22..(block_id)..15 | 14..(block_len)..0 |
 //    14..0  bits - actual length of user data in trace memory block. Target updates it every time it fills memory block and exposes it to host.
@@ -55,9 +55,15 @@
 //    21..15 bits - trace memory block transfer ID. Block counter. It can overflow. Updated by target, host should not modify it. Actually can be 2 bits;
 //    22     bit  - 'host data present' flag. If set to one there is data from host, otherwise - no host data;
 //    23     bit  - 'host connected' flag. If zero then host is not connected and tracing module works in post-mortem mode, otherwise in streaming mode;
-// - Status register uses TRAX_TRIGGERPC as storage. If this register is not zero then current CPU is changing TRAX registers and
-//   this register holds address of the instruction which application will execute when it finishes with those registers modifications.
-//   See 'Targets Connection' setion for details.
+//  - Status register uses TRAX_TRIGGERPC as storage. If this register is not zero then current CPU is changing TRAX registers and
+//    this register holds address of the instruction which application will execute when it finishes with those registers modifications.
+//    See 'Targets Connection' section for details.
+//  - CRC16 register uses ERI_PERFMON_PM1 as storage. This register is used to store CRC16 checksum of the exposed trace memory block.
+//    The register has the following format:
+//    | 31..16 (CRC indicator) | 15..0 (CRC16 value) |
+//    CRC indicator (0xA55A) is used to distinguish valid CRC values from other data that might be in the register.
+//    CRC16 is calculated over the entire exposed block and is updated every time a block is exposed to the host.
+//    This allows the host to verify data integrity of the received trace data.
 
 // 3. Modes of operation
 // =====================
@@ -127,7 +133,7 @@
 
 // Access to internal module's data is synchronized with custom mutex. Mutex is a wrapper for portMUX_TYPE and uses almost the same sync mechanism as in
 // vPortCPUAcquireMutex/vPortCPUReleaseMutex. The mechanism uses S32C1I Xtensa instruction to implement exclusive access to module's data from tasks and
-// ISRs running on both cores. Also custom mutex allows specifying timeout for locking operation. Locking routine checks underlaying mutex in cycle until
+// ISRs running on both cores. Also custom mutex allows specifying timeout for locking operation. Locking routine checks underlying mutex in cycle until
 // it gets its ownership or timeout expires. The differences of application tracing module's mutex implementation from vPortCPUAcquireMutex/vPortCPUReleaseMutex are:
 // - Support for timeouts.
 // - Local IRQs for CPU which owns the mutex are disabled till the call to unlocking routine. This is made to avoid possible task's prio inversion.
@@ -142,9 +148,9 @@
 
 // Timeout mechanism is based on xthal_get_ccount() routine and supports timeout values in microseconds.
 // There are two situations when task/ISR can be delayed by tracing API call. Timeout mechanism takes into account both conditions:
-// - Trace data are locked by another task/ISR. When wating on trace data lock.
+// - Trace data are locked by another task/ISR. When waiting on trace data lock.
 // - Current TRAX memory input block is full when working in streaming mode (host is connected). When waiting for host to complete previous block reading.
-// When wating for any of above conditions xthal_get_ccount() is called periodically to calculate time elapsed from trace API routine entry. When elapsed
+// When waiting for any of above conditions xthal_get_ccount() is called periodically to calculate time elapsed from trace API routine entry. When elapsed
 // time exceeds specified timeout value operation is canceled and ESP_ERR_TIMEOUT code is returned.
 #include "sdkconfig.h"
 #include "soc/soc.h"
@@ -159,11 +165,15 @@
 #include "esp_log.h"
 #include "esp_app_trace_membufs_proto.h"
 #include "esp_app_trace_port.h"
+#include "esp_rom_crc.h"
 
 // TRAX is disabled, so we use its registers for our own purposes
 // | 31..XXXXXX..24 | 23 .(host_connect). 23 | 22 .(host_data). 22| 21..(block_id)..15 | 14..(block_len)..0 |
 #define ESP_APPTRACE_TRAX_CTRL_REG              ERI_TRAX_DELAYCNT
 #define ESP_APPTRACE_TRAX_STAT_REG              ERI_TRAX_TRIGGERPC
+#define ESP_APPTRACE_TRAX_CRC16_REG             ERI_PERFMON_PM1
+
+#define ESP_APPTRACE_CRC_INDICATOR              (0xA55AU << 16)
 
 #define ESP_APPTRACE_TRAX_BLOCK_LEN_MSK         0x7FFFUL
 #define ESP_APPTRACE_TRAX_BLOCK_LEN(_l_)        ((_l_) & ESP_APPTRACE_TRAX_BLOCK_LEN_MSK)
@@ -498,7 +508,8 @@ static esp_err_t esp_apptrace_trax_buffer_swap_start(uint32_t curr_block_id)
         uint32_t acked_block = ESP_APPTRACE_TRAX_BLOCK_ID_GET(ctrl_reg);
         uint32_t host_to_read = ESP_APPTRACE_TRAX_BLOCK_LEN_GET(ctrl_reg);
         if (host_to_read != 0 || acked_block != (curr_block_id & ESP_APPTRACE_TRAX_BLOCK_ID_MSK)) {
-            ESP_APPTRACE_LOGD("HC[%d]: Can not switch %" PRIx32 " %" PRIu32 " %" PRIx32 " %" PRIx32 "/%" PRIx32, esp_cpu_get_core_id(), ctrl_reg, host_to_read, acked_block,
+            ESP_APPTRACE_LOGD("HC[%d]: Can not switch %" PRIx32 " %" PRIu32 " %" PRIx32 " %" PRIx32 "/%" PRIx32,
+                esp_cpu_get_core_id(), ctrl_reg, host_to_read, acked_block,
                 curr_block_id & ESP_APPTRACE_TRAX_BLOCK_ID_MSK, curr_block_id);
             res = ESP_ERR_NO_MEM;
             goto _on_err;
@@ -514,6 +525,14 @@ static esp_err_t esp_apptrace_trax_buffer_swap_end(uint32_t new_block_id, uint32
 {
     uint32_t ctrl_reg = eri_read(ESP_APPTRACE_TRAX_CTRL_REG);
     uint32_t host_connected = ESP_APPTRACE_TRAX_HOST_CONNECT & ctrl_reg;
+
+    /* calculate CRC16 of the already switched block */
+    if (prev_block_len > 0) {
+        const uint8_t *prev_block_start = s_trax_blocks[!((new_block_id % 2))];
+        uint16_t crc16 = esp_rom_crc16_le(0, prev_block_start, prev_block_len);
+        eri_write(ESP_APPTRACE_TRAX_CRC16_REG, crc16 | ESP_APPTRACE_CRC_INDICATOR);
+        ESP_APPTRACE_LOGD("CRC16:%x %d @%x", crc16, prev_block_len, prev_block_start);
+    }
     eri_write(ESP_APPTRACE_TRAX_CTRL_REG, ESP_APPTRACE_TRAX_BLOCK_ID(new_block_id) |
               host_connected | ESP_APPTRACE_TRAX_BLOCK_LEN(prev_block_len));
     esp_apptrace_trax_buffer_swap_unlock();
