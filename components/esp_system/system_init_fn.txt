@@ -120,7 +120,7 @@ SECONDARY: 230: usb_serial_jtag_conn_status_init in components/esp_driver_usb_se
 
 # psram adjust timing point need a separate task which should be created at startup.
 # Valid only `CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR` is enabled.
-SECONDARY: 240: psram_adjust_timing_point_via_temperature in components/esp_hw_support/mspi_timing_tuning/mspi_timing_by_mspi_delay.c on BIT(0)
+SECONDARY: 240: psram_adjust_timing_point_via_temperature in components/esp_hw_support/mspi_timing_tuning/port/esp32s3/mspi_timing_by_mspi_delay.c on BIT(0)
 
 # Has to be the last step!
 # Now that the application is about to start, disable boot watchdog
