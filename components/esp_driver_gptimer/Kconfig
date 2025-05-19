@@ -17,7 +17,7 @@ menu "ESP-Driver:GPTimer Configurations"
             If enabled, these functions can also be called when cache is disabled.
 
     config GPTIMER_ISR_CACHE_SAFE
-        bool "Allow GPTimer ISR to execute when cache is disabled"
+        bool "Allow GPTimer ISR to execute when cache is disabled" if !SPI_FLASH_AUTO_SUSPEND
         select GPTIMER_ISR_HANDLER_IN_IRAM
         default n
         help

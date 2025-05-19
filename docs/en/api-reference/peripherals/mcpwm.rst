@@ -989,7 +989,7 @@ IRAM Safe
 
 By default, the MCPWM interrupt will be deferred when the Cache is disabled for reasons like writing/erasing Flash. Thus the event callback functions will not get executed in time, which is not expected in a real-time application.
 
-There is a Kconfig option :ref:`CONFIG_MCPWM_ISR_IRAM_SAFE` that:
+There is a Kconfig option :ref:`CONFIG_MCPWM_ISR_CACHE_SAFE` that:
 
 * enables the interrupt to be serviced even when the cache is disabled
 * places all functions used by the ISR into IRAM [2]_
@@ -1023,7 +1023,7 @@ Other functions that are not related to `Resource Allocation and Initialization 
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_MCPWM_ISR_IRAM_SAFE` controls whether the default ISR handler can work when the cache is disabled, see :ref:`mcpwm-iram-safe` for more information.
+- :ref:`CONFIG_MCPWM_ISR_CACHE_SAFE` controls whether the default ISR handler can work when the cache is disabled, see :ref:`mcpwm-iram-safe` for more information.
 - :ref:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` controls where to place the MCPWM control functions (IRAM or flash), see :ref:`mcpwm-iram-safe` for more information.
 - :ref:`CONFIG_MCPWM_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enabling this option will increase the firmware binary size.
 

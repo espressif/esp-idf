@@ -1,34 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <sys/cdefs.h>
-#include "sdkconfig.h"
-#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "freertos/FreeRTOS.h"
-#include "esp_attr.h"
-#include "esp_check.h"
-#include "esp_err.h"
-#include "esp_log.h"
-#include "soc/soc_caps.h"
-#include "soc/mcpwm_periph.h"
-#include "hal/mcpwm_ll.h"
+#include "mcpwm_private.h"
 #include "hal/gpio_hal.h"
 #include "driver/gpio.h"
 #include "driver/mcpwm_gen.h"
-#include "mcpwm_private.h"
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_private/gpio.h"
-
-static const char *TAG = "mcpwm";
 
 static esp_err_t mcpwm_generator_register_to_operator(mcpwm_gen_t *gen, mcpwm_oper_t *oper)
 {

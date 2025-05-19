@@ -1,26 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <sys/cdefs.h>
-#include "sdkconfig.h"
-#include "freertos/FreeRTOS.h"
-#include "esp_attr.h"
-#include "esp_check.h"
-#include "esp_err.h"
-#include "esp_log.h"
-#include "soc/soc_caps.h"
-#include "soc/mcpwm_periph.h"
-#include "hal/mcpwm_ll.h"
-#include "driver/mcpwm_etm.h"
 #include "mcpwm_private.h"
+#include "driver/mcpwm_etm.h"
 #include "esp_private/etm_interface.h"
-
-static const char *TAG = "mcpwm-etm";
 
 typedef struct {
     esp_etm_event_t base;

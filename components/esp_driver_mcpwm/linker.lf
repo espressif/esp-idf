@@ -4,3 +4,9 @@ entries:
     if MCPWM_CTRL_FUNC_IN_IRAM = y:
         mcpwm_cmpr: mcpwm_comparator_set_compare_value (noflash)
         mcpwm_timer: mcpwm_timer_set_period (noflash)
+    if MCPWM_ISR_HANDLER_IN_IRAM = y:
+        mcpwm_cap: mcpwm_capture_default_isr (noflash)
+        mcpwm_cmpr: mcpwm_comparator_default_isr (noflash)
+        mcpwm_fault: mcpwm_gpio_fault_default_isr (noflash)
+        mcpwm_oper: mcpwm_operator_default_isr (noflash)
+        mcpwm_timer: mcpwm_timer_default_isr (noflash)

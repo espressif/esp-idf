@@ -9,7 +9,7 @@ set(srcs "test_app_main.c"
          "test_mcpwm_common.c"
          "test_mcpwm_utils.c")
 
-if(CONFIG_MCPWM_ISR_IRAM_SAFE)
+if(CONFIG_MCPWM_ISR_CACHE_SAFE)
     list(APPEND srcs "test_mcpwm_iram.c")
 endif()
 
