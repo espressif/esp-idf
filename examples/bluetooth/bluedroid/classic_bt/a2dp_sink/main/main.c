@@ -153,17 +153,17 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         esp_bt_dev_register_callback(bt_app_dev_cb);
         esp_bt_gap_register_callback(bt_app_gap_cb);
 
-        assert(esp_avrc_ct_init() == ESP_OK);
         esp_avrc_ct_register_callback(bt_app_rc_ct_cb);
-        assert(esp_avrc_tg_init() == ESP_OK);
+        assert(esp_avrc_ct_init() == ESP_OK);
         esp_avrc_tg_register_callback(bt_app_rc_tg_cb);
+        assert(esp_avrc_tg_init() == ESP_OK);
 
         esp_avrc_rn_evt_cap_mask_t evt_set = {0};
         esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_SET, &evt_set, ESP_AVRC_RN_VOLUME_CHANGE);
         assert(esp_avrc_tg_set_rn_evt_cap(&evt_set) == ESP_OK);
 
-        assert(esp_a2d_sink_init() == ESP_OK);
         esp_a2d_register_callback(&bt_app_a2d_cb);
+        assert(esp_a2d_sink_init() == ESP_OK);
 
 #if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
         esp_a2d_sink_register_data_callback(bt_app_a2d_data_cb);
