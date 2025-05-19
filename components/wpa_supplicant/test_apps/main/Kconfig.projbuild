@@ -1,0 +1,3 @@
+config ESP_WIFI_TESTING_OPTIONS
+    bool
+    default y

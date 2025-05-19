@@ -28,15 +28,12 @@
 #include "test_wpa_supplicant_common.h"
 #include "sdkconfig.h"
 
-#define WIFI_START_EVENT        0x00000001
-#define WIFI_ROC_DONE_EVENT     0x00000002
-#define WIFI_ACTION_RX_EVENT    0x00000003
-#define WIFI_SCAN_DONE_EVENT    0x00000004
+#define WIFI_START_EVENT        BIT(0)
+#define WIFI_ROC_DONE_EVENT     BIT(1)
+#define WIFI_ACTION_RX_EVENT    BIT(2)
+#define WIFI_SCAN_DONE_EVENT    BIT(3)
 
 #define TEST_LISTEN_CHANNEL     6
-
-/* No runners; IDF-5046 */
-#if CONFIG_IDF_TARGET_ESP32
 
 static const char *TAG = "test_offchan";
 esp_netif_t *wifi_netif;
@@ -268,5 +265,3 @@ static void test_wifi_roc(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("test ROC and Offchannel Action Frame Tx", "[Offchan][test_env=wifi_two_dut][timeout=90]", test_wifi_roc, test_wifi_offchan_tx);
-
-#endif //CONFIG_IDF_TARGET_ESP32

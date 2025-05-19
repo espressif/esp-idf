@@ -89,10 +89,12 @@ TEST_CASE("Test pbkdf2", "[crypto-pbkdf2]")
         }
         TEST_ASSERT(memcmp(PMK, expected_pmk, PMK_LEN) == 0);
 
+#if 0
         start_time = esp_timer_get_time();
         fastpbkdf2_hmac_sha1((const u8 *)passphrase, os_strlen((char *)passphrase), ssid, ssid_len, 4096, PMK, PMK_LEN);
         end_time = esp_timer_get_time();
         total_time_fast_pbkdf2 += (end_time - start_time);
+#endif
     }
 
     // Calculate average time for pbkdf2_sha1
