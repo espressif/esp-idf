@@ -38,9 +38,9 @@ examples/system/flash_suspend:
 
 examples/system/gcov:
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET == "esp32s3"
       temporary: true
-      reason: lack of runners
+      reason: unstable, known data corruption issue #TODO: OCD-1048
 
 examples/system/gdbstub:
   disable:
