@@ -15,3 +15,11 @@ ESP-IDF 5.x Migration Guide
     release-5.x/5.3/index
     release-5.x/5.4/index
     release-5.x/5.5/index
+
+ESP-IDF 6.x Migration Guide
+===========================
+
+.. toctree::
+    :maxdepth: 1
+
+    release-6.x/6.0/index
