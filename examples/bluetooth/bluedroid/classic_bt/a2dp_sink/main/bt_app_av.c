@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -364,7 +364,7 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         if (a2d->a2d_psc_cfg_stat.psc_mask & ESP_A2D_PSC_DELAY_RPT) {
             ESP_LOGI(BT_AV_TAG, "Peer device support delay reporting");
         } else {
-            ESP_LOGI(BT_AV_TAG, "Peer device unsupport delay reporting");
+            ESP_LOGI(BT_AV_TAG, "Peer device unsupported delay reporting");
         }
         break;
     }
@@ -415,13 +415,13 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
         }
         break;
     }
-    /* when passthrough responsed, this event comes */
+    /* when passthrough responded, this event comes */
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT: {
         ESP_LOGI(BT_RC_CT_TAG, "AVRC passthrough rsp: key_code 0x%x, key_state %d, rsp_code %d", rc->psth_rsp.key_code,
                     rc->psth_rsp.key_state, rc->psth_rsp.rsp_code);
         break;
     }
-    /* when metadata responsed, this event comes */
+    /* when metadata responded, this event comes */
     case ESP_AVRC_CT_METADATA_RSP_EVT: {
         ESP_LOGI(BT_RC_CT_TAG, "AVRC metadata rsp: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
         free(rc->meta_rsp.attr_text);
@@ -446,6 +446,17 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
         bt_av_new_track();
         bt_av_playback_changed();
         bt_av_play_pos_changed();
+        break;
+    }
+    /* when avrcp controller init or deinit completed, this event comes */
+    case ESP_AVRC_CT_PROF_STATE_EVT: {
+        if (ESP_AVRC_INIT_SUCCESS == rc->avrc_ct_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP CT STATE: Init Complete");
+        } else if (ESP_AVRC_DEINIT_SUCCESS == rc->avrc_ct_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP CT STATE: Deinit Complete");
+        } else {
+            ESP_LOGE(BT_RC_CT_TAG, "AVRCP CT STATE error: %d", rc->avrc_ct_init_stat.state);
+        }
         break;
     }
     /* others */
@@ -503,6 +514,17 @@ static void bt_av_hdl_avrc_tg_evt(uint16_t event, void *p_param)
         ESP_LOGI(BT_RC_TG_TAG, "AVRC remote features: %"PRIx32", CT features: %x", rc->rmt_feats.feat_mask, rc->rmt_feats.ct_feat_flag);
         break;
     }
+    /* when avrcp target init or deinit completed, this event comes */
+    case ESP_AVRC_TG_PROF_STATE_EVT: {
+        if (ESP_AVRC_INIT_SUCCESS == rc->avrc_tg_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP TG STATE: Init Complete");
+        } else if (ESP_AVRC_DEINIT_SUCCESS == rc->avrc_tg_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP TG STATE: Deinit Complete");
+        } else {
+            ESP_LOGE(BT_RC_CT_TAG, "AVRCP TG STATE error: %d", rc->avrc_tg_init_stat.state);
+        }
+        break;
+    }
     /* others */
     default:
         ESP_LOGE(BT_RC_TG_TAG, "%s unhandled event: %d", __func__, event);
@@ -553,7 +575,8 @@ void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT:
     case ESP_AVRC_CT_CHANGE_NOTIFY_EVT:
     case ESP_AVRC_CT_REMOTE_FEATURES_EVT:
-    case ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT: {
+    case ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT:
+    case ESP_AVRC_CT_PROF_STATE_EVT: {
         bt_app_work_dispatch(bt_av_hdl_avrc_ct_evt, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL);
         break;
     }
@@ -572,6 +595,7 @@ void bt_app_rc_tg_cb(esp_avrc_tg_cb_event_t event, esp_avrc_tg_cb_param_t *param
     case ESP_AVRC_TG_SET_ABSOLUTE_VOLUME_CMD_EVT:
     case ESP_AVRC_TG_REGISTER_NOTIFICATION_EVT:
     case ESP_AVRC_TG_SET_PLAYER_APP_VALUE_EVT:
+    case ESP_AVRC_TG_PROF_STATE_EVT:
         bt_app_work_dispatch(bt_av_hdl_avrc_tg_evt, event, param, sizeof(esp_avrc_tg_cb_param_t), NULL);
         break;
     default:
