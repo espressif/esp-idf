@@ -83,6 +83,8 @@ ERI registers / OCD offsets and field definitions
 
 // Performance counter value
 #define ERI_PERFMON_PM0             (ERI_PERFMON_OFFSET+0x0080)
+#define ERI_PERFMON_PM1             (ERI_PERFMON_OFFSET+0x0084) /* used in apptrace module to store CRC16 */
+
 // Performance counter control register
 #define ERI_PERFMON_PMCTRL0         (ERI_PERFMON_OFFSET+0x0100)
 // Performance counter status register
