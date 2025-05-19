@@ -638,11 +638,13 @@ static void scan_done_event_handler(void *arg, ETS_STATUS status)
         esp_wifi_scan_get_ap_records(&g_roaming_app.scanned_aps.current_count, g_roaming_app.scanned_aps.ap_records);
         print_ap_records(&g_roaming_app.scanned_aps);
         parse_scan_results_and_roam();
-        g_roaming_app.scan_ongoing = false;
         ROAM_SCAN_RESULTS_UNLOCK();
-        } else {
-            ESP_LOGD(ROAMING_TAG, "Scan Done with error %d ", status);
+    } else {
+        ESP_LOGD(ROAMING_TAG, "Scan Done with error %d ", status);
     }
+    ROAM_SCAN_RESULTS_LOCK();
+    g_roaming_app.scan_ongoing = false;
+    ROAM_SCAN_RESULTS_UNLOCK();
 }
 static void conduct_scan(void)
 {
