@@ -303,6 +303,7 @@ static uint32_t received_adv_evts_handle(uint32_t recv_evts)
 CONFIG_BLE_MESH_GATT_PROXY_SERVER
             if (unlikely(i == BLE_MESH_ADV_PROXY_INS)) {
                 BT_DBG("Mesh Proxy Advertising auto stop");
+                bt_mesh_proxy_server_adv_flag_set(false);
             } else
 #endif
             {
@@ -366,7 +367,7 @@ void bt_mesh_adv_update(void)
 {
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
      CONFIG_BLE_MESH_GATT_PROXY_SERVER
-    BT_WARN("Mesh Proxy Advertising stopped manually");
+    BT_DBG("Mesh Proxy Advertising stopped manually");
     bt_mesh_proxy_server_adv_stop();
     if (adv_insts[BLE_MESH_ADV_PROXY_INS].busy) {
         ble_mesh_adv_task_wakeup(ADV_TASK_PROXY_ADV_UPD_EVT);
