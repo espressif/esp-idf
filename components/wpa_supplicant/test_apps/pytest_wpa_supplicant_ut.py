@@ -24,7 +24,11 @@ def test_wpa_supplicant_ut(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32'], indirect=['target'])
+@idf_parametrize(
+    'target',
+    ['esp32', 'esp32s2', 'esp32s3', 'esp32c6', 'esp32c61', 'esp32c5'],
+    indirect=['target'],
+)
 def test_wpa_supplicant_ut_offchan(case_tester: CaseTester) -> None:
     for case in case_tester.test_menu:
         if case.attributes.get('test_env') == 'wifi_two_dut':
