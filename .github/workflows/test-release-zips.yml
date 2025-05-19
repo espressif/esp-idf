@@ -1,9 +1,7 @@
 name: Create recursive zip file for release
 
 on:
-  push:
-    tags:
-      - v*
+  workflow_dispatch:
 
 jobs:
   release_zips:
