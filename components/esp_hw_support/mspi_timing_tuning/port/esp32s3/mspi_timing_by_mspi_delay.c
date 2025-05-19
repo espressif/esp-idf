@@ -23,7 +23,7 @@
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "esp_private/mspi_timing_config.h"
-#include "mspi_timing_by_mspi_delay.h"
+#include "esp_private/mspi_timing_by_mspi_delay.h"
 #include "bootloader_flash.h"
 #include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/opi_flash.h"
