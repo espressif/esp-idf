@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,14 @@ extern "C" {
 #define ESP_SLAVE_ADDR 0x28         /*!< ESP_I2C slave address, you can set any 7bit value */
 #define TEST_I2C_PORT     0
 #define DATA_LENGTH     100
+
+/**
+ * @brief Slave test event
+ */
+typedef enum {
+    I2C_SLAVE_EVT_RX,
+    I2C_SLAVE_EVT_TX
+} i2c_slave_event_t;
 
 /**
  * @brief Display buffer

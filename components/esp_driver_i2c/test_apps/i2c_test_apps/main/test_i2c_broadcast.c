@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -22,14 +22,26 @@
 #include "test_utils.h"
 #include "test_board.h"
 
-static QueueHandle_t s_receive_queue;
+static QueueHandle_t event_queue;
+static uint8_t *temp_data;
+static size_t temp_len = 0;
 
-static IRAM_ATTR bool example_i2c_rx_done_callback(i2c_slave_dev_handle_t channel, const i2c_slave_rx_done_event_data_t *edata, void *user_data)
+static IRAM_ATTR bool i2c_slave_request_cb(i2c_slave_dev_handle_t i2c_slave, const i2c_slave_request_event_data_t *evt_data, void *arg)
 {
-    BaseType_t high_task_wakeup = pdFALSE;
-    QueueHandle_t receive_queue = (QueueHandle_t)user_data;
-    xQueueSendFromISR(receive_queue, edata, &high_task_wakeup);
-    return high_task_wakeup == pdTRUE;
+    BaseType_t xTaskWoken;
+    i2c_slave_event_t evt = I2C_SLAVE_EVT_TX;
+    xQueueSendFromISR(event_queue, &evt, &xTaskWoken);
+    return xTaskWoken;
+}
+
+static IRAM_ATTR bool i2c_slave_receive_cb(i2c_slave_dev_handle_t i2c_slave, const i2c_slave_rx_done_event_data_t *evt_data, void *arg)
+{
+    BaseType_t xTaskWoken;
+    i2c_slave_event_t evt = I2C_SLAVE_EVT_RX;
+    memcpy(temp_data, evt_data->buffer, evt_data->length);
+    temp_len = evt_data->length;
+    xQueueSendFromISR(event_queue, &evt, &xTaskWoken);
+    return xTaskWoken;
 }
 
 static void i2c_master_write_test_broadcast(void)
@@ -77,43 +89,52 @@ static void i2c_master_write_test_broadcast(void)
 static void i2c_slave_read_test_broadcast(void)
 {
     unity_wait_for_signal("i2c master init first");
-    uint8_t data_rd[DATA_LENGTH] = {0};
+    i2c_slave_dev_handle_t handle;
+    event_queue = xQueueCreate(2, sizeof(i2c_slave_event_t));
+    assert(event_queue);
+    temp_data = heap_caps_malloc(DATA_LENGTH, MALLOC_CAP_DEFAULT);
+    assert(temp_data);
 
     i2c_slave_config_t i2c_slv_config = {
-        .addr_bit_len = I2C_ADDR_BIT_LEN_7,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = TEST_I2C_PORT,
-        .send_buf_depth = 256,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
         .scl_io_num = I2C_SLAVE_SCL_IO,
         .sda_io_num = I2C_SLAVE_SDA_IO,
-        .slave_addr = 0x53,
+        .slave_addr = ESP_SLAVE_ADDR,
+        .send_buf_depth = DATA_LENGTH,
+        .receive_buf_depth = DATA_LENGTH,
+        .flags.enable_internal_pullup = true,
         .flags.broadcast_en = true,
     };
 
-    i2c_slave_dev_handle_t slave_handle;
-    TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
+    TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &handle));
 
-    s_receive_queue = xQueueCreate(1, sizeof(i2c_slave_rx_done_event_data_t));
     i2c_slave_event_callbacks_t cbs = {
-        .on_recv_done = example_i2c_rx_done_callback,
+        .on_receive = i2c_slave_receive_cb,
+        .on_request = i2c_slave_request_cb,
     };
-    ESP_ERROR_CHECK(i2c_slave_register_event_callbacks(slave_handle, &cbs, s_receive_queue));
 
-    i2c_slave_rx_done_event_data_t rx_data;
-    TEST_ESP_OK(i2c_slave_receive(slave_handle, data_rd, DATA_LENGTH));
+    TEST_ESP_OK(i2c_slave_register_event_callbacks(handle, &cbs, NULL));
 
     unity_send_signal("i2c slave init finish");
 
     unity_wait_for_signal("master write");
 
-    xQueueReceive(s_receive_queue, &rx_data, pdMS_TO_TICKS(1000));
-    disp_buf(data_rd, DATA_LENGTH);
-    for (int i = 0; i < DATA_LENGTH; i++) {
-        TEST_ASSERT(data_rd[i] == i);
+    i2c_slave_event_t evt;
+    if (xQueueReceive(event_queue, &evt, portMAX_DELAY) == pdTRUE) {
+        if (evt == I2C_SLAVE_EVT_RX) {
+            disp_buf(temp_data, temp_len);
+            printf("length is %x\n", temp_len);
+            for (int i = 0; i < temp_len; i++) {
+                TEST_ASSERT(temp_data[i] == i);
+            }
+        }
     }
-    vQueueDelete(s_receive_queue);
+
     unity_send_signal("ready to delete");
-    TEST_ESP_OK(i2c_del_slave_device(slave_handle));
+    free(temp_data);
+    vQueueDelete(event_queue);
+    TEST_ESP_OK(i2c_del_slave_device(handle));
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test broadcast", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_test_broadcast, i2c_slave_read_test_broadcast);
