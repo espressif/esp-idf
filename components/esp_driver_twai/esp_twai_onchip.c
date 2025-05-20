@@ -579,8 +579,8 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     ESP_RETURN_ON_FALSE(node_config->tx_queue_depth > 0, ESP_ERR_INVALID_ARG, TAG, "tx_queue_depth at least 1");
     ESP_RETURN_ON_FALSE(!node_config->intr_priority || (BIT(node_config->intr_priority) & ESP_INTR_FLAG_LOWMED), ESP_ERR_INVALID_ARG, TAG, "Invalid intr_priority level");
 
-    // Allocate TWAI node object memory
-    twai_onchip_ctx_t *node = heap_caps_calloc(1, sizeof(twai_onchip_ctx_t) + twai_hal_get_mem_requirment(), TWAI_MALLOC_CAPS);
+    // Allocate TWAI node from internal memory because it contains atomic variable
+    twai_onchip_ctx_t *node = heap_caps_calloc(1, sizeof(twai_onchip_ctx_t) + twai_hal_get_mem_requirment(), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(node, ESP_ERR_NO_MEM, TAG, "No mem");
     node->ctrlr_id = -1;
     // Acquire controller
