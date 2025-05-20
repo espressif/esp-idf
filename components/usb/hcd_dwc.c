@@ -1421,7 +1421,7 @@ esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, h
     esp_intr_enable(port_obj->isr_hdl);
     *port_hdl = (hcd_port_handle_t)port_obj;
     HCD_EXIT_CRITICAL();
-    ESP_LOGD(HCD_DWC_TAG, "FIFO config lines: RX=%u, PTX=%u, NPTX=%u",
+    ESP_LOGD(HCD_DWC_TAG, "FIFO config lines: RX=%" PRIu32 ", PTX=%" PRIu32 ", NPTX=%" PRIu32,
              port_obj->fifo_config.rx_fifo_lines,
              port_obj->fifo_config.ptx_fifo_lines,
              port_obj->fifo_config.nptx_fifo_lines);
