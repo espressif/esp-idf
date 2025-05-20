@@ -20,6 +20,11 @@
 #include "driver/gpio.h"
 #include "soc/soc_caps.h"
 
+#if SOC_USB_UTMI_PHY_NO_POWER_OFF_ISO
+#include "esp_private/sleep_usb.h"
+#include "esp_sleep.h"
+#endif
+
 #if !SOC_RCC_IS_INDEPENDENT
 #define USB_PHY_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 #else
@@ -291,6 +296,12 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
             ESP_LOGW(USBPHY_TAG, "Using UTMI PHY instead of requested %s PHY", (phy_target == USB_PHY_TARGET_INT) ? "internal" : "external");
             phy_target = USB_PHY_TARGET_UTMI;
         }
+    }
+#endif
+
+#if SOC_USB_UTMI_PHY_NO_POWER_OFF_ISO
+    if (phy_target == USB_PHY_TARGET_UTMI) {
+        esp_deep_sleep_register_hook(&sleep_usb_suppress_deepsleep_leakage);
     }
 #endif
 
