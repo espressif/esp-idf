@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 
 #include "unity.h"
 #include "esp_partition.h"
+#include "esp_image_format.h"
 
 #define SZ 4096
 
@@ -37,4 +38,24 @@ void app_main(void)
     esp_partition_munmap(handle1);
 
     printf("Partition test done\n");
+
+    // Get the factory partition
+    partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+    if (partition == NULL) {
+        printf("Failed to find factory partition\n");
+        return;
+    }
+
+    esp_image_metadata_t data;
+    const esp_partition_pos_t part_pos = {
+      .offset = partition->address,
+      .size = partition->size,
+    };
+
+    if (esp_image_verify(ESP_IMAGE_VERIFY, &part_pos, &data) != ESP_OK) {
+        printf("Failed to verify image\n");
+    } else {
+        printf("Image verified successfully\n");
+    }
+    return;
 }
