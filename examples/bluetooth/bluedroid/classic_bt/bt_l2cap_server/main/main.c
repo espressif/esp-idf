@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -163,7 +163,8 @@ static void esp_bt_l2cap_cb(esp_bt_l2cap_cb_event_t event, esp_bt_l2cap_cb_param
     case ESP_BT_L2CAP_CLOSE_EVT:
     case ESP_BT_L2CAP_CL_INIT_EVT:
     case ESP_BT_L2CAP_START_EVT:
-    case ESP_BT_L2CAP_SRV_STOP_EVT: {
+    case ESP_BT_L2CAP_SRV_STOP_EVT:
+    case ESP_BT_L2CAP_VFS_REGISTER_EVT: {
         bt_app_work_dispatch(esp_hdl_bt_l2cap_cb_evt, event, param, sizeof(esp_bt_l2cap_cb_param_t), NULL);
         break;
     }
@@ -183,9 +184,8 @@ static void esp_hdl_bt_l2cap_cb_evt(uint16_t event, void *p_param)
         if (l2cap_param->init.status == ESP_BT_L2CAP_SUCCESS) {
             ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_INIT_EVT: status:%d\n", l2cap_param->init.status);
             esp_bt_l2cap_vfs_register();
-            esp_bt_l2cap_start_srv(sec_mask, BT_L2CAP_DYNMIC_PSM);
         } else {
-            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_INIT_EVT: status:%d\n", l2cap_param->init.status);
+            ESP_LOGE(L2CAP_TAG, "ESP_BT_L2CAP_INIT_EVT: status:%d\n", l2cap_param->init.status);
         }
         break;
     case ESP_BT_L2CAP_UNINIT_EVT:
@@ -197,7 +197,7 @@ static void esp_hdl_bt_l2cap_cb_evt(uint16_t event, void *p_param)
                     l2cap_param->open.fd, l2cap_param->open.tx_mtu, bda2str(l2cap_param->open.rem_bda, bda_str, sizeof(bda_str)));
             l2cap_wr_task_start_up(l2cap_read_handle, l2cap_param->open.fd);
         } else {
-            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_OPEN_EVT: status:%d\n", l2cap_param->open.status);
+            ESP_LOGE(L2CAP_TAG, "ESP_BT_L2CAP_OPEN_EVT: status:%d\n", l2cap_param->open.status);
         }
         break;
     case ESP_BT_L2CAP_CLOSE_EVT:
@@ -212,11 +212,19 @@ static void esp_hdl_bt_l2cap_cb_evt(uint16_t event, void *p_param)
             ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_START_EVT: status:%d, hdl:0x%"PRIx32", sec_id:0x%x\n",
                 l2cap_param->start.status, l2cap_param->start.handle, l2cap_param->start.sec_id);
         } else {
-            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_START_EVT: status:%d\n", l2cap_param->start.status);
+            ESP_LOGE(L2CAP_TAG, "ESP_BT_L2CAP_START_EVT: status:%d\n", l2cap_param->start.status);
         }
         break;
     case ESP_BT_L2CAP_SRV_STOP_EVT:
         ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_SRV_STOP_EVT: status:%d, psm = 0x%x\n", l2cap_param->srv_stop.status, l2cap_param->srv_stop.psm);
+        break;
+    case ESP_BT_L2CAP_VFS_REGISTER_EVT:
+        if (l2cap_param->vfs_register.status == ESP_BT_L2CAP_SUCCESS) {
+            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_VFS_REGISTER_EVT: status:%d", l2cap_param->vfs_register.status);
+            esp_bt_l2cap_start_srv(sec_mask, BT_L2CAP_DYNMIC_PSM);
+        } else {
+            ESP_LOGE(L2CAP_TAG, "ESP_BT_L2CAP_VFS_REGISTER_EVT: status:%d", l2cap_param->vfs_register.status);
+        }
         break;
     default:
         break;

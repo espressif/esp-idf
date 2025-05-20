@@ -59,6 +59,8 @@ typedef enum {
     ESP_BT_L2CAP_START_EVT                = 18,     /*!< When L2CAP server started, the event comes */
     ESP_BT_L2CAP_CL_INIT_EVT              = 19,     /*!< When L2CAP client initiated a connection, the event comes */
     ESP_BT_L2CAP_SRV_STOP_EVT             = 36,     /*!< When L2CAP server stopped, the event comes */
+    ESP_BT_L2CAP_VFS_REGISTER_EVT         = 38,     /*!< When L2CAP VFS register, the event comes */
+    ESP_BT_L2CAP_VFS_UNREGISTER_EVT       = 39,     /*!< When L2CAP VFS unregister, the event comes */
 } esp_bt_l2cap_cb_event_t;
 
 /**
@@ -124,6 +126,20 @@ typedef union {
         esp_bt_l2cap_status_t  status;         /*!< status */
         uint16_t               psm;            /*!< local psm */
     } srv_stop;                                /*!< L2CAP callback param of ESP_BT_L2CAP_SRV_STOP_EVT */
+
+    /**
+     * @brief ESP_BT_L2CAP_VFS_REGISTER_EVT
+     */
+    struct l2cap_vfs_register_evt_param {
+        esp_bt_l2cap_status_t    status;       /*!< status */
+    } vfs_register;                            /*!< L2CAP callback param of ESP_BT_L2CAP_VFS_REGISTER_EVT */
+
+    /**
+     * @brief ESP_BT_L2CAP_VFS_UNREGISTER_EVT
+     */
+    struct l2cap_vfs_unregister_evt_param {
+        esp_bt_l2cap_status_t    status;        /*!< status */
+    } vfs_unregister;                           /*!< L2CAP callback param of ESP_BT_L2CAP_VFS_UNREGISTER_EVT */
 
 } esp_bt_l2cap_cb_param_t;
 
@@ -234,6 +250,7 @@ esp_err_t esp_bt_l2cap_stop_srv(uint16_t local_psm);
 /**
  * @brief       This function is used to register VFS.
  *              Only supports write, read and close.
+ *              When the operation is completed, the callback function will be called with ESP_BT_L2CAP_VFS_REGISTER_EVT.
  *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
  *
  * @return
@@ -244,6 +261,7 @@ esp_err_t esp_bt_l2cap_vfs_register(void);
 
 /**
  * @brief       This function is used to unregister VFS.
+ *              When the operation is completed, the callback function will be called with ESP_BT_L2CAP_VFS_UNREGISTER_EVT.
  *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
  *
  * @return

@@ -72,7 +72,6 @@ typedef struct {
     uint8_t service_uuid[16];
 } l2cap_slot_t;
 
-
 typedef struct {
     l2cap_slot_t *l2cap_slots[BTA_JV_MAX_L2C_CONN + 1];
     uint32_t l2cap_slot_id;
@@ -81,7 +80,12 @@ typedef struct {
     esp_vfs_id_t l2cap_vfs_id;
 } l2cap_local_param_t;
 
+#if L2CAP_DYNAMIC_MEMORY == FALSE
 static l2cap_local_param_t l2cap_local_param;
+#else
+static l2cap_local_param_t *l2cap_local_param_ptr;
+#define l2cap_local_param (*l2cap_local_param_ptr)
+#endif
 
 /* L2CAP default options for OBEX connections */
 static const tL2CAP_FCR_OPTS obex_l2c_fcr_opts_def =
@@ -103,12 +107,14 @@ static const tL2CAP_ERTM_INFO obex_l2c_etm_opt =
     OBX_FCR_TX_POOL_ID
 };
 
-
 #if L2CAP_DYNAMIC_MEMORY == FALSE
 #define is_l2cap_init() (l2cap_local_param.l2cap_slot_mutex != NULL)
 #else
 #define is_l2cap_init() (&l2cap_local_param != NULL && l2cap_local_param.l2cap_slot_mutex != NULL)
 #endif
+
+static void btc_l2cap_vfs_register(void);
+static void btc_l2cap_vfs_unregister(void);
 
 static void l2cap_osi_free(void *p)
 {
@@ -782,6 +788,12 @@ void btc_l2cap_call_handler(btc_msg_t *msg)
     case BTC_L2CAP_ACT_STOP_SRV:
         btc_l2cap_stop_srv(arg);
         break;
+    case BTC_L2CAP_ACT_VFS_REGISTER:
+        btc_l2cap_vfs_register();
+        break;
+    case BTC_L2CAP_ACT_VFS_UNREGISTER:
+        btc_l2cap_vfs_unregister();
+        break;
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
         break;
@@ -1225,14 +1237,14 @@ static ssize_t l2cap_vfs_read(int fd, void * dst, size_t size)
     return item_size;
 }
 
-esp_err_t btc_l2cap_vfs_register(void)
+static void btc_l2cap_vfs_register(void)
 {
-    esp_err_t ret = ESP_OK;
+    esp_bt_l2cap_status_t ret = ESP_BT_L2CAP_SUCCESS;
 
     do {
         if (!is_l2cap_init()) {
             BTC_TRACE_ERROR("%s L2CAP have not been init\n", __func__);
-            ret = ESP_FAIL;
+            ret = ESP_BT_L2CAP_NEED_INIT;
             break;
         }
 
@@ -1249,33 +1261,38 @@ esp_err_t btc_l2cap_vfs_register(void)
         // No FD range is registered here: l2cap_vfs_id is used to register/unregister
         // file descriptors
         if (esp_vfs_register_with_id(&vfs, NULL, &l2cap_local_param.l2cap_vfs_id) != ESP_OK) {
-            ret = ESP_FAIL;
+            ret = ESP_BT_L2CAP_FAILURE;
             break;
         }
     } while (0);
 
-    return ret;
+    esp_bt_l2cap_cb_param_t param = {0};
+    param.vfs_register.status = ret;
+    btc_l2cap_cb_to_app(ESP_BT_L2CAP_VFS_REGISTER_EVT, &param);
 }
 
-esp_err_t btc_l2cap_vfs_unregister(void)
+static void btc_l2cap_vfs_unregister(void)
 {
-    esp_err_t ret = ESP_OK;
+    esp_bt_l2cap_status_t ret = ESP_BT_L2CAP_SUCCESS;
+
     do {
         if (!is_l2cap_init()) {
             BTC_TRACE_ERROR("%s L2CAP have not been init\n", __func__);
-            ret = ESP_FAIL;
+            ret = ESP_BT_L2CAP_NEED_INIT;
             break;
         }
 
         if (l2cap_local_param.l2cap_vfs_id != -1) {
             if (esp_vfs_unregister_with_id(l2cap_local_param.l2cap_vfs_id) != ESP_OK) {
-                ret = ESP_FAIL;
+                ret = ESP_BT_L2CAP_FAILURE;
             }
         }
         l2cap_local_param.l2cap_vfs_id = -1;
     } while (0);
 
-    return ret;
+    esp_bt_l2cap_cb_param_t param = {0};
+    param.vfs_unregister.status = ret;
+    btc_l2cap_cb_to_app(ESP_BT_L2CAP_VFS_UNREGISTER_EVT, &param);
 }
 
 void btc_l2cap_get_protocol_status(esp_bt_l2cap_protocol_status_t *param)
