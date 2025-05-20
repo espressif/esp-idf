@@ -146,15 +146,8 @@ void test_ecdsa_verify(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8
 
 TEST_CASE("mbedtls ECDSA signature verification performance on SECP192R1", "[mbedtls]")
 {
-#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
-    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
-        ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
-    } else
-#endif
-    {
-        test_ecdsa_verify(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_r, ecdsa192_s,
-                 ecdsa192_pub_x, ecdsa192_pub_y);
-    }
+    test_ecdsa_verify(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_r, ecdsa192_s,
+                ecdsa192_pub_x, ecdsa192_pub_y);
 }
 
 TEST_CASE("mbedtls ECDSA signature verification performance on SECP256R1", "[mbedtls]")
