@@ -113,13 +113,15 @@ def get_default_backtrace(config: str) -> List[str]:
     return [config, 'app_main', 'main_task', 'vPortTaskWrapper']
 
 
-def expect_coredump_flash_write_logs(dut: PanicTestDut, config: str) -> None:
+def expect_coredump_flash_write_logs(dut: PanicTestDut, config: str, check_cpu_reset: Optional[bool] = True) -> None:
     dut.expect_exact('Save core dump to flash...')
     if 'extram_stack' in config:
         dut.expect_exact('Backing up stack @')
         dut.expect_exact('Restoring stack')
     dut.expect_exact('Core dump has been saved to flash.')
     dut.expect(dut.REBOOT)
+    if check_cpu_reset:
+        dut.expect_cpu_reset()
 
 
 def expect_coredump_uart_write_logs(dut: PanicTestDut, check_cpu_reset: Optional[bool] = True) -> Any:
@@ -173,8 +175,9 @@ def common_test(
         dut.process_coredump_uart(coredump_base64, expected_coredump)
         check_cpu_reset = False  # CPU reset is already checked in expect_coredump_uart_write_logs
     elif 'flash' in config:
-        expect_coredump_flash_write_logs(dut, config)
+        expect_coredump_flash_write_logs(dut, config, check_cpu_reset)
         dut.process_coredump_flash(expected_coredump)
+        check_cpu_reset = False  # CPU reset is already checked in expect_coredump_flash_write_logs
     elif 'panic' in config:
         dut.expect(dut.REBOOT, timeout=60)
 
