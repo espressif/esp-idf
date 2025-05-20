@@ -641,11 +641,11 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
         tlen = frag_len;
     }
 
+    if (tlen > 50000) {
+        wpa_printf(MSG_ERROR, "EAP-WSC: Invalid Message Length");
+        return ESP_FAIL;
+    }
     if ((flag & WPS_MSG_FLAG_MORE) || wps_buf != NULL) {//frag msg
-        if (tlen > 50000) {
-            wpa_printf(MSG_ERROR, "EAP-WSC: Invalid Message Length");
-            return ESP_FAIL;
-        }
         wpa_printf(MSG_DEBUG, "rx frag msg id:%d, flag:%d, frag_len: %d, tot_len: %d, be_tot_len:%d", sm->current_identifier, flag, frag_len, tlen, be_tot_len);
         if (ESP_OK != wps_enrollee_process_msg_frag(&wps_buf, tlen, tbuf, frag_len, flag)) {
             if (wps_buf) {
