@@ -1177,6 +1177,7 @@ struct wpabuf * crypto_ecdh_get_pubkey(struct crypto_ecdh *ecdh, int y)
 {
     struct wpabuf *public_key = NULL;
     uint8_t *buf = NULL;
+    int ret;
     mbedtls_ecdh_context *ctx = (mbedtls_ecdh_context *)ecdh;
     size_t prime_len = ACCESS_ECDH(ctx, grp).pbits / 8;
 
@@ -1187,8 +1188,13 @@ struct wpabuf * crypto_ecdh_get_pubkey(struct crypto_ecdh *ecdh, int y)
     }
 
     /* Export an MPI into unsigned big endian binary data of fixed size */
-    mbedtls_mpi_write_binary(ACCESS_ECDH(&ctx, Q).MBEDTLS_PRIVATE(X), buf, prime_len);
+    ret = mbedtls_mpi_write_binary(ACCESS_ECDH(&ctx, Q).MBEDTLS_PRIVATE(X), buf, prime_len);
+    if (ret) {
+        goto cleanup;
+    }
     public_key = wpabuf_alloc_copy(buf, 32);
+
+cleanup:
     os_free(buf);
     return public_key;
 }

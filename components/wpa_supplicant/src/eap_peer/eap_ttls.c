@@ -117,7 +117,7 @@ static void * eap_ttls_init(struct eap_sm *sm)
 
 
 static void eap_ttls_phase2_eap_deinit(struct eap_sm *sm,
-			   struct eap_ttls_data *data)
+				       struct eap_ttls_data *data)
 {
 	if (data->phase2_priv && data->phase2_method) {
 		data->phase2_method->deinit(sm, data->phase2_priv);
@@ -130,7 +130,7 @@ static void eap_ttls_phase2_eap_deinit(struct eap_sm *sm,
 static void eap_ttls_free_key(struct eap_ttls_data *data)
 {
 	if (data->key_data) {
-		bin_clear_free(data->key_data, EAP_TLS_KEY_LEN);
+		bin_clear_free(data->key_data, EAP_TLS_KEY_LEN + EAP_EMSK_LEN);
 		data->key_data = NULL;
 	}
 }
@@ -153,7 +153,7 @@ static void eap_ttls_deinit(struct eap_sm *sm, void *priv)
 
 
 static u8 * eap_ttls_avp_hdr(u8 *avphdr, u32 avp_code, u32 vendor_id,
-		 int mandatory, size_t len)
+			     int mandatory, size_t len)
 {
 	struct ttls_avp_vendor *avp;
 	u8 flags;
@@ -170,7 +170,7 @@ static u8 * eap_ttls_avp_hdr(u8 *avphdr, u32 avp_code, u32 vendor_id,
 	}
 
 	avp->avp_code = host_to_be32(avp_code);
-	avp->avp_length = host_to_be32(((u32) (flags << 24)) |
+	avp->avp_length = host_to_be32(((u32) flags << 24) |
 				       (u32) (hdrlen + len));
 
 	return avphdr + hdrlen;
