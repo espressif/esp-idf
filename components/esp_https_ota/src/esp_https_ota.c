@@ -379,6 +379,11 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         }
 
         https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
+        if (https_ota_handle->image_length == -1) {
+            ESP_LOGE(TAG, "Failed to get image length from http response");
+            err = ESP_FAIL;
+            goto http_cleanup;
+        }
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
         /* In case of pre ecnrypted OTA, actual image size of OTA binary includes header size
          * which stored in variable enc_img_header_size */
