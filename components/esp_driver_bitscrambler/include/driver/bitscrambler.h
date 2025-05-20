@@ -50,6 +50,9 @@ typedef struct {
 /**
  * @brief Allocate BitScrambler handle for a hardware channel
  *
+ * @note This function can only be used to create a single direction BitScrambler handle.
+ *       If you need a loopback BitScrambler, call bitscrambler_loopback_create() instead.
+ *
  * @param config Configuration for requested BitScrambler
  * @param[out] handle BitScrambler controller handle
  *
