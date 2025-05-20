@@ -109,7 +109,7 @@ static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t ms
                                       const uint8_t *key, size_t nkey)        \
   {                                                                           \
     /* Prepare key: */                                                        \
-    uint8_t k[_blocksz];                                                      \
+    uint8_t k[_blocksz] = {0};                                                \
                                                                               \
     /* Shorten long keys. */                                                  \
     if (nkey > _blocksz)                                                      \
