@@ -95,8 +95,7 @@ static inline void bootloader_ana_reset_config(void)
 {
     //Enable BOD reset (mode1)
     brownout_ll_ana_reset_enable(true);
-    uint8_t power_glitch_dref = 0;
-    bootloader_power_glitch_reset_config(true, power_glitch_dref);
+    bootloader_power_glitch_reset_config(true);
 }
 
 esp_err_t bootloader_init(void)
