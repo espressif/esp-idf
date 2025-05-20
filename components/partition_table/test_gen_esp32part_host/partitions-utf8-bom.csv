@@ -1,0 +1,3 @@
+﻿nvs,      data, nvs,      0x9000,  24K,
+phy_инит_, data, phy,      0xf000,  0x1000,
+factory,  app,  factory,  0x10000,  1M,

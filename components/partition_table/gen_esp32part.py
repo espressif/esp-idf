@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import binascii
+import codecs
 import errno
 import hashlib
 import os
@@ -175,21 +176,36 @@ def critical(msg):
     sys.stderr.write('\n')
 
 
+def get_encoding(first_bytes):
+    """Detect the encoding by checking for BOM (Byte Order Mark)"""
+    BOMS = {
+        codecs.BOM_UTF8: 'utf-8-sig',
+        codecs.BOM_UTF16_LE: 'utf-16',
+        codecs.BOM_UTF16_BE: 'utf-16',
+        codecs.BOM_UTF32_LE: 'utf-32',
+        codecs.BOM_UTF32_BE: 'utf-32',
+    }
+    for bom, encoding in BOMS.items():
+        if first_bytes.startswith(bom):
+            return encoding
+    return 'utf-8'
+
+
 class PartitionTable(list):
     def __init__(self):
         super(PartitionTable, self).__init__(self)
 
     @classmethod
     def from_file(cls, f):
-        data = f.read()
-        data_is_binary = data[0:2] == PartitionDefinition.MAGIC_BYTES
+        bin_data = f.read()
+        data_is_binary = bin_data[0:2] == PartitionDefinition.MAGIC_BYTES
         if data_is_binary:
             status('Parsing binary partition input...')
-            return cls.from_binary(data), True
+            return cls.from_binary(bin_data), True
 
-        data = data.decode()
+        str_data = bin_data.decode(get_encoding(bin_data))
         status('Parsing CSV input...')
-        return cls.from_csv(data), False
+        return cls.from_csv(str_data), False
 
     @classmethod
     def from_csv(cls, csv_contents):
