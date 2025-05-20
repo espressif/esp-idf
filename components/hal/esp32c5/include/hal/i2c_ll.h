@@ -938,6 +938,7 @@ static inline void i2c_ll_enable_arbitration(i2c_dev_t *hw, bool enable_arbi)
  * @param hw Beginning address of the peripheral registers
  * @param slv_ex_auto_en 1 if slave auto start data transaction, otherwise, 0.
  */
+__attribute__((always_inline))
 static inline void i2c_ll_slave_enable_auto_start(i2c_dev_t *hw, bool slv_ex_auto_en)
 {
     hw->ctr.slv_tx_auto_start_en = slv_ex_auto_en;
