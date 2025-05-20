@@ -93,7 +93,7 @@ menu "Roaming Methods"
     config ESP_WIFI_NETWORK_ASSISTED_ROAMING_IP_RENEW_SKIP
         bool "Skip IP renew during BTM based roaming"
         depends on ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM
-        default y
+        default n
         help
             Station will not ask for IP renew after a BTM based roaming. Before enabling please
             make sure your network supports this.
