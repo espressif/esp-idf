@@ -272,9 +272,12 @@ static int ssl_read(esp_transport_handle_t t, char *buffer, int len, int timeout
 
     int ret = esp_tls_conn_read(ssl->tls, (unsigned char *)buffer, len);
     if (ret < 0) {
-        ESP_LOGE(TAG, "esp_tls_conn_read error, errno=%s", strerror(errno));
         if (ret == ESP_TLS_ERR_SSL_WANT_READ || ret == ESP_TLS_ERR_SSL_TIMEOUT) {
             ret = ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT;
+            ESP_LOGD(TAG, "esp_tls_conn_read error, errno=%s", strerror(errno));
+        }
+        else {
+            ESP_LOGE(TAG, "esp_tls_conn_read error, errno=%s", strerror(errno));
         }
 
         esp_tls_error_handle_t esp_tls_error_handle;
