@@ -31,10 +31,6 @@ config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
-config SOC_BT_SUPPORTED
-    bool
-    default y
-
 config SOC_USB_SERIAL_JTAG_SUPPORTED
     bool
     default y
@@ -44,14 +40,6 @@ config SOC_ASYNC_MEMCPY_SUPPORTED
     default y
 
 config SOC_TEMP_SENSOR_SUPPORTED
-    bool
-    default y
-
-config SOC_PHY_SUPPORTED
-    bool
-    default y
-
-config SOC_WIFI_SUPPORTED
     bool
     default y
 
@@ -1212,85 +1200,5 @@ config SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
     default y
 
 config SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN
-    bool
-    default y
-
-config SOC_WIFI_HW_TSF
-    bool
-    default y
-
-config SOC_WIFI_FTM_SUPPORT
-    bool
-    default n
-
-config SOC_WIFI_GCMP_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_WAPI_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_CSI_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_MESH_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_HE_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_MAC_VERSION_NUM
-    int
-    default 3
-
-config SOC_WIFI_NAN_SUPPORT
-    bool
-    default y
-
-config SOC_BLE_SUPPORTED
-    bool
-    default y
-
-config SOC_BLE_MESH_SUPPORTED
-    bool
-    default y
-
-config SOC_ESP_NIMBLE_CONTROLLER
-    bool
-    default y
-
-config SOC_BLE_50_SUPPORTED
-    bool
-    default y
-
-config SOC_BLE_DEVICE_PRIVACY_SUPPORTED
-    bool
-    default y
-
-config SOC_BLE_POWER_CONTROL_SUPPORTED
-    bool
-    default y
-
-config SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
-    bool
-    default y
-
-config SOC_BLUFI_SUPPORTED
-    bool
-    default y
-
-config SOC_BLE_MULTI_CONN_OPTIMIZATION
-    bool
-    default y
-
-config SOC_BLE_CTE_SUPPORTED
-    bool
-    default y
-
-config SOC_PHY_COMBO_MODULE
     bool
     default y
