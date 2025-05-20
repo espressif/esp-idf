@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,15 +51,20 @@ cleanup:
 
 struct crypto_bignum * crypto_bignum_init_uint(unsigned int val)
 {
+    int ret;
 
     mbedtls_mpi *bn = os_zalloc(sizeof(mbedtls_mpi));
-    if (bn == NULL) {
+    if (!bn) {
         return NULL;
     }
 
     mbedtls_mpi_init(bn);
-    mbedtls_mpi_lset(bn, val);
+    ret = mbedtls_mpi_lset(bn, val);
 
+    if (ret) {
+        crypto_bignum_deinit((struct crypto_bignum *)bn, 0);
+        bn = NULL;
+    }
     return (struct crypto_bignum *)bn;
 }
 
