@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include "soc/soc.h"
 #include "soc/system_intr.h"
 #include "soc/hp_system_reg.h"
+#include "soc/system_reg.h"
 #include "esp_intr_alloc.h"
 #include "riscv/interrupt.h"
 #include "esp_rom_sys.h"
@@ -39,9 +40,9 @@ IRAM_ATTR void esp_ipc_isr_port_int_trigger(const int cpuid)
 {
     if (cpuid == 0) {
         // it runs an interrupt on cpu0
-        REG_WRITE(HP_SYSTEM_CPU_INT_FROM_CPU_2_REG, HP_SYSTEM_CPU_INT_FROM_CPU_2);
+        REG_WRITE(SYSTEM_CPU_INTR_FROM_CPU_2_REG, SYSTEM_CPU_INTR_FROM_CPU_2);
     } else {
         // it runs an interrupt on cpu1
-        REG_WRITE(HP_SYSTEM_CPU_INT_FROM_CPU_3_REG, HP_SYSTEM_CPU_INT_FROM_CPU_3);
+        REG_WRITE(SYSTEM_CPU_INTR_FROM_CPU_3_REG, SYSTEM_CPU_INTR_FROM_CPU_3);
     }
 }

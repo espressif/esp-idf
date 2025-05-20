@@ -247,7 +247,7 @@ typedef enum {
     MWDT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
     MWDT_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M,   /*!< Select PLL fixed 48MHz as the source clock */
     MWDT_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RTC fast as the source clock */
-    MWDT_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,        /*!< Select PLL fixed 48MHz as the default clock choice */
+    MWDT_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as the default clock choice */
 } soc_periph_mwdt_clk_src_t;
 
 //////////////////////////////////////////////////FLASH///////////////////////////////////////////////////////////////////

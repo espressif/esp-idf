@@ -56,9 +56,6 @@
 #include "portmacro.h"
 #include "port_systick.h"
 #include "esp_memory_utils.h"
-#if CONFIG_IDF_TARGET_ESP32P4
-#include "soc/hp_system_reg.h"
-#endif
 
 #if SOC_CPU_HAS_HWLOOP
 #include "riscv/csr.h"

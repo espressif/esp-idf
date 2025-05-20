@@ -1,10 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/hp_system_reg.h"
+#include "soc/system_reg.h"
 
 /* IPC_ISR handler */
     .equ SAVE_REGS, 16  /* count of saving regs: a0 - a7, t0 - t6, ra */
@@ -36,10 +36,10 @@ esp_ipc_isr_handler:
     /* MIE is cleared, so nested interrupts are disabled */
 
     /* Reset isr interrupt flags */
-    li      a1, HP_SYSTEM_CPU_INT_FROM_CPU_2_REG
+    li      a1, SYSTEM_CPU_INTR_FROM_CPU_2_REG
     csrr    a0, mhartid                            # Get CORE_ID
     beqz    a0, 1f
-    li      a1, HP_SYSTEM_CPU_INT_FROM_CPU_3_REG
+    li      a1, SYSTEM_CPU_INTR_FROM_CPU_3_REG
 1:
     sw      zero, (a1)
 
