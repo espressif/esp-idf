@@ -12,6 +12,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
 #include "esp_private/mspi_timing_impl_types.h"

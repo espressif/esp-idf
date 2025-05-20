@@ -649,6 +649,11 @@ static inline void spimem_flash_ll_set_extra_dummy(spi_mem_dev_t *dev, uint32_t 
     //for compatibility
 }
 
+static inline void spimem_flash_ll_set_fdummy_rin(spi_mem_dev_t *dev, uint32_t fdummy_rin)
+{
+    dev->ctrl.fdummy_rin = fdummy_rin;
+}
+
 /**
  * Get the spi flash source clock frequency. Used for calculating
  * the divider parameters.
