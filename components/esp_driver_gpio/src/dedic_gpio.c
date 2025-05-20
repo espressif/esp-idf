@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,8 @@
 #if !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
 #include "hal/dedic_gpio_ll.h"
 #endif
+
+#define DEDIC_GPIO_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
 
 static const char *TAG = "dedic_gpio";
 
@@ -74,7 +76,7 @@ static esp_err_t dedic_gpio_build_platform(int core_id)
         // prevent building platform concurrently
         _lock_acquire(&s_platform_mutexlock[core_id]);
         if (!s_platform[core_id]) {
-            s_platform[core_id] = calloc(1, sizeof(dedic_gpio_platform_t));
+            s_platform[core_id] = (dedic_gpio_platform_t *)heap_caps_calloc(1, sizeof(dedic_gpio_platform_t), DEDIC_GPIO_MEM_ALLOC_CAPS);
             if (s_platform[core_id]) {
                 // initialize platform members
                 s_platform[core_id]->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
@@ -212,7 +214,7 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
     ESP_GOTO_ON_ERROR(dedic_gpio_build_platform(core_id), err, TAG, "build platform %d failed", core_id);
 
     size_t bundle_size = sizeof(dedic_gpio_bundle_t) + config->array_size * sizeof(config->gpio_array[0]);
-    bundle = calloc(1, bundle_size);
+    bundle = (dedic_gpio_bundle_t *)heap_caps_calloc(1, bundle_size, DEDIC_GPIO_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(bundle, ESP_ERR_NO_MEM, err, TAG, "no mem for bundle");
 
     // for performance reasons, we only search for continuous channels
