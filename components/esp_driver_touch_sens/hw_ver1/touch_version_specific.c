@@ -198,6 +198,7 @@ esp_err_t touch_priv_config_controller(touch_sensor_handle_t sens_handle, const 
     sens_handle->sample_cfg_num = 1;  // Only have one set of sampling configuration
 
     /* Configure the hardware */
+    assert(hal_cfg.sample_cfg_num == 1);
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
     touch_hal_config_controller(&hal_cfg);
     touch_ll_reset_trigger_groups();
