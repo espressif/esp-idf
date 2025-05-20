@@ -805,3 +805,10 @@ config BT_LE_CTRL_ADV_DATA_LENGTH_ZERO_AUX
 config BT_LE_RXBUF_OPT_ENABLED
     bool "Enable rxbuf optimization feature"
     default y
+
+config BT_LE_CTRL_FAST_CONN_DATA_TX_EN
+    bool "Enable fast sending of connection data"
+    default y
+    help
+        If this option is enabled, The Controller will continue to
+        Send an empty PDU after sending valid connection data within an interval.
