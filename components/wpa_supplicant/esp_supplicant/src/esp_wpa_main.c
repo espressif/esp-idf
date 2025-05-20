@@ -295,6 +295,8 @@ static void wpa_sta_connected_cb(uint8_t *bssid)
 
 static void wpa_sta_disconnected_cb(uint8_t reason_code)
 {
+    struct wpa_sm *sm = &gWpaSm;
+
     switch (reason_code) {
     case WIFI_REASON_AUTH_EXPIRE:
     case WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA:
@@ -308,7 +310,7 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
     case WIFI_REASON_INVALID_MDE:
     case WIFI_REASON_INVALID_FTE:
         wpa_sta_clear_curr_pmksa();
-        wpa_sm_notify_disassoc(&gWpaSm);
+        wpa_sm_notify_disassoc(sm);
 #if defined(CONFIG_IEEE80211R)
         /* clear all ft auth related IEs so that next will be open auth */
         wpa_sta_clear_ft_auth_ie();
@@ -320,6 +322,13 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
         }
         break;
     }
+
+    sm->rx_replay_counter_set = 0;  //init state not intall replay counter value
+    memset(sm->rx_replay_counter, 0, WPA_REPLAY_COUNTER_LEN);
+    sm->wpa_ptk_rekey = 0;
+    pmksa_cache_clear_current(sm);
+    sm->sae_pk = false;
+    sm->eapol1_count = 0;
 
     struct wps_sm_funcs *wps_sm_cb = wps_get_wps_sm_cb();
     if (wps_sm_cb && wps_sm_cb->wps_sm_notify_deauth) {
