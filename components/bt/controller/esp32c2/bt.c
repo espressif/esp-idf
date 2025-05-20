@@ -119,6 +119,11 @@ struct ext_funcs_t {
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 typedef void (*interface_func_t) (uint32_t len, const uint8_t *addr, uint32_t len_append, const uint8_t *addr_append, uint32_t flag);
+
+enum {
+    BLE_LOG_INTERFACE_FLAG_CONTINUE = 0,
+    BLE_LOG_INTERFACE_FLAG_END,
+};
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 /* External functions or variables
@@ -411,20 +416,22 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
 #if !CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
 static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, uint32_t len_append, const uint8_t *addr_append, uint32_t flag)
 {
-    bool end = flag ? true : false;
+    bool end = (flag & BIT(BLE_LOG_INTERFACE_FLAG_END));
 #if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
     esp_bt_controller_log_storage(len, addr, end);
 #else // !CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
     portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL_SAFE(&spinlock);
     esp_panic_handler_feed_wdts();
-    for (int i = 0; i < len; i++) {
-        esp_rom_printf("%02x ", addr[i]);
-    }
 
-    if (end) {
-        esp_rom_printf("\n");
+    if (len && addr) {
+        for (int i = 0; i < len; i++) { esp_rom_printf("%02x ", addr[i]); }
     }
+    if (len_append && addr_append) {
+        for (int i = 0; i < len_append; i++) { esp_rom_printf("%02x ", addr_append[i]); }
+    }
+    if (end) { esp_rom_printf("\n"); }
+
     portEXIT_CRITICAL_SAFE(&spinlock);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 }
