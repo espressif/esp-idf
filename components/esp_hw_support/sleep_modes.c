@@ -228,7 +228,7 @@
                                             (source == value))
 
 #if CONFIG_PM_SLP_IRAM_OPT
-# define SLEEP_FN_ATTR      IRAM_ATTR
+# define SLEEP_FN_ATTR      FORCE_IRAM_ATTR
 #else
 # define SLEEP_FN_ATTR
 #endif
@@ -532,7 +532,7 @@ static void s_do_deep_sleep_phy_callback(void)
 static int s_cache_suspend_cnt = 0;
 
 // Must be called from critical sections.
-static void IRAM_ATTR suspend_cache(void) {
+static void FORCE_IRAM_ATTR suspend_cache(void) {
     s_cache_suspend_cnt++;
     if (s_cache_suspend_cnt == 1) {
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_IDF_TARGET_ESP32P4
@@ -546,7 +546,7 @@ static void IRAM_ATTR suspend_cache(void) {
 }
 
 // Must be called from critical sections.
-static void IRAM_ATTR resume_cache(void) {
+static void FORCE_IRAM_ATTR resume_cache(void) {
     s_cache_suspend_cnt--;
     assert(s_cache_suspend_cnt >= 0 && DRAM_STR("cache resume doesn't match suspend ops"));
     if (s_cache_suspend_cnt == 0) {
@@ -832,12 +832,12 @@ static SLEEP_FN_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
 }
 
 
-inline static uint32_t call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu, bool dslp);
+static uint32_t call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu, bool dslp);
 
 #if SOC_PMU_SUPPORTED
-static esp_err_t IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint32_t reject_triggers, bool deep_sleep, pmu_sleep_config_t *config)
+static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint32_t reject_triggers, bool deep_sleep, pmu_sleep_config_t *config)
 #else
-static esp_err_t IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint32_t reject_triggers, bool deep_sleep, rtc_sleep_config_t *config)
+static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint32_t reject_triggers, bool deep_sleep, rtc_sleep_config_t *config)
 #endif
 {
     esp_err_t result = ESP_OK;
@@ -1185,7 +1185,7 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
     return result ? ESP_ERR_SLEEP_REJECT : ESP_OK;
 }
 
-inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu, bool dslp)
+static uint32_t FORCE_IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
 #ifdef CONFIG_IDF_TARGET_ESP32
     return rtc_sleep_start(s_config.wakeup_triggers, reject_triggers);
@@ -1196,7 +1196,7 @@ inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, 
 #endif
 }
 
-static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
+static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 {
 #if SOC_VBAT_SUPPORTED
     if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE]) {
@@ -1298,7 +1298,7 @@ static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     return err;
 }
 
-void IRAM_ATTR esp_deep_sleep_start(void)
+void FORCE_IRAM_ATTR esp_deep_sleep_start(void)
 {
     bool allow_sleep_rejection = true;
     deep_sleep_start(!allow_sleep_rejection);
@@ -1306,7 +1306,7 @@ void IRAM_ATTR esp_deep_sleep_start(void)
     abort();
 }
 
-esp_err_t IRAM_ATTR esp_deep_sleep_try_to_start(void)
+esp_err_t FORCE_IRAM_ATTR esp_deep_sleep_try_to_start(void)
 {
     bool allow_sleep_rejection = true;
     return deep_sleep_start(allow_sleep_rejection);
