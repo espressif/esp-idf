@@ -8,12 +8,6 @@
             "requirement_path": "tools/requirements/requirements.core.txt"
         },
         {
-            "name": "gdbgui",
-            "description": "Packages for supporting debugging from web browser",
-            "optional": true,
-            "requirement_path": "tools/requirements/requirements.gdbgui.txt"
-        },
-        {
             "name": "pytest",
             "description": "Packages for CI with pytest",
             "optional": true,

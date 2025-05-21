@@ -7,3 +7,4 @@
     :maxdepth: 1
 
     peripherals
+    tools
