@@ -740,6 +740,7 @@ esp_err_t parlio_rx_unit_enable(parlio_rx_unit_handle_t rx_unit, bool reset_queu
                 parlio_ll_rx_enable_clock(hal->regs, false);
             }
         }
+        assert(trans.delimiter);
         parlio_rx_set_delimiter_config(rx_unit, trans.delimiter);
         parlio_rx_mount_transaction_buffer(rx_unit, &trans);
         gdma_start(rx_unit->dma_chan, (intptr_t)rx_unit->curr_desc);

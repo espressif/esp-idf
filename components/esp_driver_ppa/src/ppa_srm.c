@@ -252,7 +252,8 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
 
     esp_err_t ret = ESP_OK;
     ppa_trans_t *trans_elm = NULL;
-    if (xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
+    if (xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0) == pdTRUE) {
+        assert(trans_elm);
         dma2d_trans_config_t *dma_trans_desc = trans_elm->trans_desc;
 
         ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = dma_trans_desc->user_config;

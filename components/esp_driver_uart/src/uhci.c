@@ -88,6 +88,8 @@ static bool uhci_gdma_tx_callback_eof(gdma_channel_handle_t dma_chan, gdma_event
     expected_fsm = UHCI_TX_FSM_ENABLE;
     if (atomic_compare_exchange_strong(&uhci_ctrl->tx_dir.tx_fsm, &expected_fsm, UHCI_TX_FSM_RUN_WAIT)) {
         if (xQueueReceiveFromISR(uhci_ctrl->tx_dir.trans_queues[UHCI_TRANS_QUEUE_PROGRESS], &trans_desc, &do_yield) == pdTRUE) {
+            // sanity check
+            assert(trans_desc);
             atomic_store(&uhci_ctrl->tx_dir.tx_fsm, UHCI_TX_FSM_RUN);
             uhci_do_transmit(uhci_ctrl, trans_desc);
             if (do_yield) {
@@ -219,7 +221,7 @@ static esp_err_t uhci_gdma_initialize(uhci_controller_handle_t uhci_ctrl, const 
     ESP_RETURN_ON_ERROR(gdma_new_link_list(&dma_link_config, &uhci_ctrl->rx_dir.dma_link), TAG, "DMA rx link list alloc failed");
     ESP_LOGD(TAG, "rx_dma node number is %d", uhci_ctrl->rx_dir.rx_num_dma_nodes);
 
-    uhci_ctrl->rx_dir.buffer_size_per_desc_node = heap_caps_calloc(uhci_ctrl->rx_dir.rx_num_dma_nodes, sizeof(uhci_ctrl->rx_dir.buffer_size_per_desc_node), UHCI_MEM_ALLOC_CAPS);
+    uhci_ctrl->rx_dir.buffer_size_per_desc_node = heap_caps_calloc(uhci_ctrl->rx_dir.rx_num_dma_nodes, sizeof(*uhci_ctrl->rx_dir.buffer_size_per_desc_node), UHCI_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(uhci_ctrl->rx_dir.buffer_size_per_desc_node, ESP_ERR_NO_MEM, TAG, "no memory for recording buffer size for desc node");
     uhci_ctrl->rx_dir.buffer_pointers = heap_caps_calloc(uhci_ctrl->rx_dir.rx_num_dma_nodes, sizeof(*uhci_ctrl->rx_dir.buffer_pointers), UHCI_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(uhci_ctrl->rx_dir.buffer_pointers, ESP_ERR_NO_MEM, TAG, "no memory for recording buffer pointers for desc node");
