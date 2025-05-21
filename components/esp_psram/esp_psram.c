@@ -56,6 +56,7 @@ extern uint8_t _rodata_reserved_end;
 #endif /* CONFIG_SPIRAM_RODATA */
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+extern uint8_t _instruction_reserved_start;
 extern uint8_t _instruction_reserved_end;
 #endif /* CONFIG_SPIRAM_FETCH_INSTRUCTIONS */
 
@@ -466,6 +467,12 @@ bool IRAM_ATTR esp_psram_check_ptr_addr(const void *p)
         return true;
     }
 #endif /* CONFIG_SPIRAM_FETCH_INSTRUCTIONS && SOC_MMU_DI_VADDR_SHARED */
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+    if ((intptr_t)p >= (uint32_t)&_instruction_reserved_start && (intptr_t)p < (uint32_t)&_instruction_reserved_end) {
+        return true;
+    }
+#endif /* CONFIG_SPIRAM_FETCH_INSTRUCTIONS */
 
     return false;
 }
