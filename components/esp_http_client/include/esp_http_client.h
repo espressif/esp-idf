@@ -291,6 +291,9 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
  * @return
  *  - ESP_OK on successful
  *  - ESP_FAIL on error
+ *  - ESP_ERR_HTTP_CONNECTING is timed-out before connection is made
+ *  - ESP_ERR_HTTP_WRITE_DATA is timed-out before request fully sent
+ *  - ESP_ERR_HTTP_EAGAIN is timed-out before any data was ready
  */
 esp_err_t esp_http_client_perform(esp_http_client_handle_t client);
 
@@ -552,6 +555,7 @@ esp_err_t esp_http_client_delete_all_headers(esp_http_client_handle_t client);
  * @return
  *  - ESP_OK
  *  - ESP_FAIL
+ *  - ESP_ERR_HTTP_CONNECTING if timed-out before connection is made
  */
 esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len);
 
