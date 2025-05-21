@@ -1,14 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/* ROM function interface esp32c61.rom.pp.ld for esp32c61
- *
- *
- * Generated from ./target/esp32c6lite/interface-esp32c6lite.yml md5sum 27eb0efac0883ee622c22767242c9457
- *
- * Compatible with ROM where ECO version equal or greater to 0.
+
+/* ROM function interface
  *
  * THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT EDIT.
  */
@@ -27,14 +23,14 @@ esf_buf_recycle = 0x40000b64;
 GetAccess = 0x40000b68;
 hal_mac_is_low_rate_enabled = 0x40000b6c;
 hal_mac_tx_get_blockack = 0x40000b70;
-/*hal_mac_tx_set_ppdu = 0x40000b74;*/
+hal_mac_tx_set_ppdu = 0x40000b74;
 hal_mac_tx_clr_mplen = 0x40000b78;
 hal_mac_get_txq_state = 0x40000b7c;
 hal_mac_clr_txq_state = 0x40000b80;
 hal_mac_get_txq_complete = 0x40000b84;
 hal_mac_deinit_twt_tx = 0x40000b88;
 hal_mac_is_dma_enable = 0x40000b8c;
-/*hal_he_get_bss_color = 0x40000b90;*/
+hal_he_get_bss_color = 0x40000b90;
 hal_he_set_ersu = 0x40000b94;
 hal_he_get_mplen_addr_start = 0x40000b98;
 hal_he_get_mplen_addr_end = 0x40000b9c;
@@ -53,11 +49,6 @@ hal_tsf_get_tbttstart = 0x40000bcc;
 hal_get_tsf_time = 0x40000bd0;
 hal_get_sta_tsf = 0x40000bd4;
 tsf_hal_get_tbtt_interval = 0x40000bd8;
-tsf_hal_get_time = 0x400014cc;
-/*pm_get_tbtt_count = 0x400014c8;*/
-tsf_hal_get_counter_value = 0x400014d0;
-dbg_hal_check_clr_mplen_bitmap = 0x40000bdc;
-dbg_hal_check_set_mplen_bitmap = 0x40000be0;
 ic_get_trc = 0x40000be4;
 ic_mac_deinit = 0x40000be8;
 ic_mac_init = 0x40000bec;
@@ -81,7 +72,7 @@ lmacRecycleMPDU = 0x40000c30;
 lmacRxDone = 0x40000c34;
 lmacSetTxFrame = 0x40000c38;
 lmacTxDone = 0x40000c3c;
-/*lmacTxFrame = 0x40000c40;*/
+lmacTxFrame = 0x40000c40;
 lmacDisableTransmit = 0x40000c44;
 lmacDiscardFrameExchangeSequence = 0x40000c48;
 lmacProcessCollision = 0x40000c4c;
@@ -105,7 +96,7 @@ mac_tx_set_plcp1 = 0x40000c90;
 mac_tx_set_plcp2 = 0x40000c94;
 mac_tx_set_len = 0x40000c98;
 mac_tx_set_htsig = 0x40000c9c;
-/*mac_tx_set_hesig = 0x40000ca0;*/
+mac_tx_set_hesig = 0x40000ca0;
 mac_tx_set_tb = 0x40000ca4;
 mac_tx_set_mplen = 0x40000ca8;
 mac_tx_set_txop_q = 0x40000cac;
@@ -116,14 +107,14 @@ pm_disable_sleep_delay_timer = 0x40000cbc;
 pm_dream = 0x40000cc0;
 pm_mac_wakeup = 0x40000cc4;
 pm_mac_sleep = 0x40000cc8;
-/*pm_enable_active_timer = 0x40000ccc;*/
+pm_enable_active_timer = 0x40000ccc;
 pm_enable_sleep_delay_timer = 0x40000cd0;
 pm_local_tsf_process = 0x40000cd4;
-//pm_set_beacon_filter = 0x40000cd8;
-/*pm_is_in_wifi_slice_threshold = 0x40000cdc;*/
+pm_set_beacon_filter = 0x40000cd8;
+pm_is_in_wifi_slice_threshold = 0x40000cdc;
 pm_is_waked = 0x40000ce0;
-//pm_keep_alive = 0x40000ce4;
-/*pm_on_beacon_rx = 0x40000ce8;*/
+pm_keep_alive = 0x40000ce4;
+pm_on_beacon_rx = 0x40000ce8;
 pm_on_data_rx = 0x40000cec;
 pm_on_data_tx = 0x40000cf0;
 pm_on_tbtt = 0x40000cf4;
@@ -133,38 +124,38 @@ pm_on_isr_set_twt_target = 0x40000d00;
 pm_on_isr_twt_wake = 0x40000d04;
 pm_on_tsf_timer = 0x40000d08;
 pm_on_twt_force_tx = 0x40000d0c;
-/*pm_parse_beacon = 0x40000d10;*/
-/*pm_process_tim = 0x40000d14;*/
+pm_parse_beacon = 0x40000d10;
+pm_process_tim = 0x40000d14;
 pm_rx_beacon_process = 0x40000d18;
 pm_rx_data_process = 0x40000d1c;
 pm_sleep = 0x40000d20;
 pm_sleep_for = 0x40000d24;
-/*pm_tbtt_process = 0x40000d28;*/
+pm_tbtt_process = 0x40000d28;
 pm_tx_data_done_process = 0x40000d2c;
 pm_allow_tx = 0x40000d30;
 pm_extend_tbtt_adaptive_servo = 0x40000d34;
 pm_scale_listen_interval = 0x40000d38;
 pm_parse_mbssid_element = 0x40000d3c;
 pm_disconnected_wake = 0x40000d40;
-/*pm_tx_data_process = 0x40000d44;*/
+pm_tx_data_process = 0x40000d44;
 pm_is_twt_awake = 0x40000d48;
 pm_enable_twt_keep_alive = 0x40000d4c;
 pm_twt_on_tsf_timer = 0x40000d50;
-/*pm_twt_process = 0x40000d54;*/
+pm_twt_process = 0x40000d54;
 pm_is_twt_start = 0x40000d58;
 pm_twt_set_target_wdev_time = 0x40000d5c;
 pm_twt_set_target_tsf = 0x40000d60;
 pm_enable_twt_keep_alive_timer = 0x40000d64;
-/*pm_mac_try_enable_modem_state = 0x40000d68;*/
+pm_mac_try_enable_modem_state = 0x40000d68;
 pm_beacon_monitor_tbtt_timeout_process = 0x40000d6c;
 pm_update_next_tbtt = 0x40000d70;
 pm_twt_disallow_tx = 0x40000d74;
 pm_clear_wakeup_signal = 0x40000d78;
-/*pm_mac_disable_tsf_tbtt_soc_wakeup = 0x40000d7c;
+pm_mac_disable_tsf_tbtt_soc_wakeup = 0x40000d7c;
 pm_mac_disable_tsf_tbtt_modem_wakeup = 0x40000d80;
-//pm_mac_enable_tsf_tbtt_soc_wakeup = 0x40000d84;
-//pm_mac_enable_tsf_tbtt_modem_wakeup = 0x40000d88;
-//pm_mac_modem_params_rt_update = 0x40000d8c;*/
+pm_mac_enable_tsf_tbtt_soc_wakeup = 0x40000d84;
+pm_mac_enable_tsf_tbtt_modem_wakeup = 0x40000d88;
+pm_mac_modem_params_rt_update = 0x40000d8c;
 pm_update_at_next_beacon = 0x40000d90;
 pm_get_null_max_tx_time = 0x40000d94;
 pm_coex_schm_overall_period_get = 0x40000d98;
@@ -184,17 +175,17 @@ ppEmptyDelimiterLength = 0x40000dcc;
 ppEnqueueRxq = 0x40000dd0;
 ppEnqueueTxDone = 0x40000dd4;
 ppGetTxframe = 0x40000dd8;
-/*ppMapTxQueue = 0x40000ddc;*/
+ppMapTxQueue = 0x40000ddc;
 ppProcTxSecFrame = 0x40000de0;
 ppProcessRxPktHdr = 0x40000de4;
-/*ppProcessTxQ = 0x40000de8;*/
+ppProcessTxQ = 0x40000de8;
 ppRecordBarRRC = 0x40000dec;
 ppRecycleAmpdu = 0x40000df0;
 ppRecycleRxPkt = 0x40000df4;
 ppResortTxAMPDU = 0x40000df8;
 ppResumeTxAMPDU = 0x40000dfc;
 ppRxFragmentProc = 0x40000e00;
-/*ppRxPkt = 0x40000e04;*/
+ppRxPkt = 0x40000e04;
 ppRxProtoProc = 0x40000e08;
 ppSearchTxQueue = 0x40000e0c;
 ppSearchTxframe = 0x40000e10;
@@ -214,7 +205,7 @@ ppMapWaitTxq = 0x40000e44;
 ppProcessWaitingQueue = 0x40000e48;
 ppDisableQueue = 0x40000e4c;
 ppCheckTxRTS = 0x40000e50;
-/*ppProcessLifeTime = 0x40000e54;*/
+ppProcessLifeTime = 0x40000e54;
 ppProcTxCallback = 0x40000e58;
 ppCalPreFecPaddingFactor = 0x40000e5c;
 ppCalDeliNum = 0x40000e60;
@@ -228,7 +219,7 @@ pp_coex_tx_release = 0x40000e7c;
 ppAdd2AMPDUTail = 0x40000e80;
 ppDirectRecycleAmpdu = 0x40000e84;
 ppRegressAmpdu = 0x40000e88;
-/*pp_timer_do_process = 0x40000e8c;*/
+pp_timer_do_process = 0x40000e8c;
 rcGetAmpduSched = 0x40000e90;
 rcUpdateRxDone = 0x40000e94;
 rc_get_trc = 0x40000e98;
@@ -238,7 +229,7 @@ rcampduuprate = 0x40000ea4;
 rcClearCurAMPDUSched = 0x40000ea8;
 rcClearCurSched = 0x40000eac;
 rcClearCurStat = 0x40000eb0;
-/* rcGetSched = 0x40000eb4;*/
+rcGetSched = 0x40000eb4;
 rcLowerSched = 0x40000eb8;
 rcSetTxAmpduLimit = 0x40000ebc;
 rcTxUpdatePer = 0x40000ec0;
@@ -278,7 +269,7 @@ wdev_mac_special_reg_store = 0x40000f44;
 wdev_mac_wakeup = 0x40000f48;
 wdev_mac_sleep = 0x40000f4c;
 wDev_ProcessFiq = 0x40000f50;
-/*wDev_ProcessRxSucData = 0x40000f54;*/
+wDev_ProcessRxSucData = 0x40000f54;
 wdevProcessRxSucDataAll = 0x40000f58;
 wdev_csi_len_align = 0x40000f5c;
 wDev_IndicateBeaconMemoryFrame = 0x40000f60;
@@ -290,8 +281,6 @@ wdev_process_tsf_timer = 0x40000f74;
 wdev_process_beacon_filter = 0x40000f78;
 wdev_process_mac_modem_beacon_miss = 0x40000f7c;
 config_is_cache_tx_buf_enabled = 0x40000f80;
-config_get_wifi_feature_capabilities = 0x40000f84;
-config_get_wifi_ampdu_tx_hetb_tid_limit = 0x40000f88;
 esp_test_disable_tx_statistics = 0x40000f8c;
 esp_test_enable_tx_statistics = 0x40000f90;
 esp_test_clr_tx_statistics = 0x40000f94;
@@ -451,3 +440,33 @@ g_pp_timer_info_ptr = 0x4084fc98;
 g_rts_threshold_bytes_ptr = 0x4084fc94;
 g_he_max_apep_length_tab_ptr = 0x4084fc90;
 s_tbttstart = 0x4084fc88;
+
+
+/***************************************
+ Group rom_pp
+ ***************************************/
+
+/* Functions */
+pm_get_tbtt_count = 0x400014c8;
+tsf_hal_get_time = 0x400014cc;
+tsf_hal_get_counter_value = 0x400014d0;
+
+/***************************************
+ Group rom_pp
+ ***************************************/
+
+/* Functions */
+pm_save_tbtt_info = 0x40001550;
+pm_beacon_offset_is_enabled = 0x40001554;
+pm_beacon_offset_is_sampling = 0x40001558;
+pm_beacon_offset_add_total_counter = 0x4000155c;
+pm_beacon_offset_add_loss_counter = 0x40001560;
+pm_beacon_offset_check = 0x40001564;
+pm_beacon_offset_get_average = 0x40001568;
+pm_beacon_offset_get_expect = 0x4000156c;
+pm_beacon_offset_get_params = 0x40001570;
+pm_beacon_monitor_tbtt_stop = 0x40001574;
+pm_enable_max_idle_timer = 0x40001578;
+/* Data (.data, .bss, .rodata) */
+s_pm_beacon_offset_ptr = 0x4084fc64;
+s_pm_beacon_offset_config_ptr = 0x4084fc60;

@@ -1,14 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/* ROM function interface esp32c61.rom.net80211.ld for esp32c61
- *
- *
- * Generated from ./target/esp32c6lite/interface-esp32c6lite.yml md5sum 27eb0efac0883ee622c22767242c9457
- *
- * Compatible with ROM where ECO version equal or greater to 0.
+
+/* ROM function interface
  *
  * THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT EDIT.
  */
@@ -40,7 +36,7 @@ ieee80211_encap_esfbuf = 0x40000ac8;
 ieee80211_is_tx_allowed = 0x40000acc;
 ieee80211_output_pending_eb = 0x40000ad0;
 ieee80211_output_process = 0x40000ad4;
-/*ieee80211_set_tx_desc = 0x40000ad8;*/
+ieee80211_set_tx_desc = 0x40000ad8;
 ieee80211_classify = 0x40000adc;
 ieee80211_copy_eb_header = 0x40000ae0;
 ieee80211_recycle_cache_eb = 0x40000ae4;
@@ -60,12 +56,12 @@ ieee80211_find_ext_elem = 0x40000b18;
 ieee80211_find_ie = 0x40000b1c;
 ieee80211_find_ext_ie = 0x40000b20;
 ieee80211_merge_mbssid_profile = 0x40000b24;
-/*ieee80211_encap_esfbuf_htc = 0x40000b28;*/
+ieee80211_encap_esfbuf_htc = 0x40000b28;
 wifi_get_macaddr = 0x40000b2c;
 wifi_rf_phy_disable = 0x40000b30;
 wifi_rf_phy_enable = 0x40000b34;
 wifi_is_started = 0x40000b38;
-/*sta_input = 0x40000b3c;*/
+sta_input = 0x40000b3c;
 sta_rx_eapol = 0x40000b40;
 sta_reset_beacon_timeout = 0x40000b44;
 sta_get_beacon_timeout = 0x40000b48;

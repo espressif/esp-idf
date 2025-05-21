@@ -1,14 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/* ROM function interface esp32c61.rom.ld for esp32c61
- *
- *
- * Generated from ./target/esp32c6lite/interface-esp32c6lite.yml md5sum 27eb0efac0883ee622c22767242c9457
- *
- * Compatible with ROM where ECO version equal or greater to 0.
+
+/* ROM function interface
  *
  * THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT EDIT.
  */
@@ -54,8 +50,6 @@ software_reset_cpu = 0x40000098;
 ets_clk_assist_debug_clock_enable = 0x4000009c;
 clear_super_wdt_reset_flag = 0x400000a0;
 disable_default_watchdog = 0x400000a4;
-esp_rom_set_rtc_wake_addr = 0x400000a8;
-esp_rom_get_rtc_wake_addr = 0x400000ac;
 send_packet = 0x400000b0;
 recv_packet = 0x400000b4;
 GetUartDevice = 0x400000b8;
@@ -192,9 +186,9 @@ MMU_Set_Page_Mode = 0x40000624;
 MMU_Get_Page_Mode = 0x40000628;
 Cache_Sync_Items = 0x4000062c;
 Cache_Op_Addr = 0x40000630;
-/*Cache_Invalidate_Addr = 0x40000634; rom version API has issue that unable to access higher vaddr range, use IDF patch */
+Cache_Invalidate_Addr = 0x40000634;
 Cache_Clean_Addr = 0x40000638;
-/*Cache_WriteBack_Addr = 0x4000063c; rom version API has issue that unable to access higher vaddr range, use IDF patch */
+Cache_WriteBack_Addr = 0x4000063c;
 Cache_WriteBack_Invalidate_Addr = 0x40000640;
 Cache_Invalidate_All = 0x40000644;
 Cache_Clean_All = 0x40000648;
@@ -369,7 +363,6 @@ ets_efuse_jtag_disabled = 0x400007fc;
 ets_efuse_usb_print_is_disabled = 0x40000800;
 ets_efuse_usb_download_mode_disabled = 0x40000804;
 ets_efuse_usb_device_disabled = 0x40000808;
-ets_efuse_secure_boot_fast_wake_enabled = 0x4000080c;
 
 
 /***************************************
@@ -393,3 +386,60 @@ usb_serial_device_rx_one_char = 0x40000a20;
 usb_serial_device_rx_one_char_block = 0x40000a24;
 usb_serial_device_tx_flush = 0x40000a28;
 usb_serial_device_tx_one_char = 0x40000a2c;
+
+
+/***************************************
+ Group lldesc
+ ***************************************/
+
+/* Functions */
+lldesc_build_chain = 0x400014dc;
+
+
+/***************************************
+ Group sip
+ ***************************************/
+
+/* Functions */
+sip_after_tx_complete = 0x400014e0;
+sip_alloc_to_host_evt = 0x400014e4;
+sip_download_begin = 0x400014e8;
+sip_get_ptr = 0x400014ec;
+sip_get_state = 0x400014f0;
+sip_init_attach = 0x400014f4;
+sip_install_rx_ctrl_cb = 0x400014f8;
+sip_install_rx_data_cb = 0x400014fc;
+sip_is_active = 0x40001500;
+sip_post_init = 0x40001504;
+sip_reclaim_from_host_cmd = 0x40001508;
+sip_reclaim_tx_data_pkt = 0x4000150c;
+sip_send = 0x40001510;
+sip_to_host_chain_append = 0x40001514;
+sip_to_host_evt_send_done = 0x40001518;
+
+
+/***************************************
+ Group slc
+ ***************************************/
+
+/* Functions */
+slc_add_credits = 0x4000151c;
+slc_enable = 0x40001520;
+slc_from_host_chain_fetch = 0x40001524;
+slc_from_host_chain_recycle = 0x40001528;
+slc_has_pkt_to_host = 0x4000152c;
+slc_init_attach = 0x40001530;
+slc_init_credit = 0x40001534;
+slc_reattach = 0x40001538;
+slc_send_to_host_chain = 0x4000153c;
+slc_set_host_io_max_window = 0x40001540;
+slc_to_host_chain_recycle = 0x40001544;
+
+
+/***************************************
+ Group recovery_bootloader
+ ***************************************/
+
+/* Functions */
+ets_get_bootloader_offset = 0x40001548;
+ets_set_bootloader_offset = 0x4000154c;
