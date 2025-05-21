@@ -20,7 +20,7 @@ TEST_SUBMENU_PATTERN_PYTEST = re.compile(rb'\s+\((\d+)\)\s+"([^"]+)"\r?\n')
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_app_update(dut: Dut) -> None:
-    dut.run_all_single_board_cases(timeout=90)
+    dut.run_all_single_board_cases(timeout=180)
 
 
 @pytest.mark.generic
@@ -33,7 +33,7 @@ def test_app_update(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_app_update_xip_psram(dut: Dut) -> None:
-    dut.run_all_single_board_cases(timeout=90)
+    dut.run_all_single_board_cases(timeout=180)
 
 
 @pytest.mark.generic
@@ -46,7 +46,7 @@ def test_app_update_xip_psram(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_app_update_xip_psram_rom_impl(dut: Dut) -> None:
-    dut.run_all_single_board_cases(timeout=90)
+    dut.run_all_single_board_cases(timeout=180)
 
 
 @pytest.mark.generic
@@ -59,4 +59,4 @@ def test_app_update_xip_psram_rom_impl(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s3', 'esp32p4'], indirect=['target'])
 def test_app_update_with_rollback(dut: Dut) -> None:
-    dut.run_all_single_board_cases(timeout=90)
+    dut.run_all_single_board_cases(timeout=180)

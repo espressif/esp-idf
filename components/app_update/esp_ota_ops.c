@@ -33,7 +33,7 @@
 #include "esp_flash.h"
 #include "esp_flash_internal.h"
 
-#define SUB_TYPE_ID(i) (i & 0x0F)
+#define OTA_SLOT(i) (i & 0x0F)
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 /* Partial_data is word aligned so no reallocation is necessary for encrypted flash write */
@@ -539,6 +539,69 @@ static esp_err_t rewrite_ota_seq(esp_ota_select_entry_t *two_otadata, uint32_t s
     }
 }
 
+/**
+ * @brief Calculate the next OTA sequence number that will boot the given OTA slot.
+ *
+ * Based on the ESP-IDF OTA boot scheme, the system selects the OTA slot to boot by:
+ *   boot_slot = (seq - 1) % ota_app_count
+ *
+ * This function determines the required seq value that would cause the given ota_slot_idx
+ * to be selected on next boot.
+ *
+ * @param current_seq     Current active OTA sequence number
+ * @param ota_slot_idx    Target OTA slot index (0-based)
+ * @param ota_app_count   Total number of OTA slots
+ *
+ * @return New sequence number that will result in booting ota_slot_idx
+ */
+static uint32_t compute_ota_seq_for_target_slot(uint32_t current_seq, uint32_t ota_slot_idx, uint8_t ota_app_count)
+{
+    if (ota_app_count == 0) {
+        return 0;
+    }
+    /* ESP-IDF stores OTA boot information in the OTA data partition, which consists of two sectors.
+     * Each sector holds an esp_ota_select_entry_t structure: otadata[0] and otadata[1].
+     * These structures record the OTA sequence number (ota_seq) used to determine the current boot partition.
+     *
+     * Boot selection logic:
+     * - If both otadata[0].ota_seq and otadata[1].ota_seq are 0xFFFFFFFF (invalid), it is the initial state:
+     *     → Boot the factory app, if it exists.
+     *     → Otherwise, fall back to booting ota[0].
+     *
+     * - If both otadata entries have valid sequence numbers and CRCs:
+     *     → Choose the higher sequence number (max_seq).
+     *     → Determine the OTA partition for boot (or running partition) using:
+     *          running_ota_slot = (max_seq - 1) % ota_app_count
+     *       where ota_app_count is the total number of OTA app partitions.
+     *
+     * Example:
+     *     otadata[0].ota_seq = 4
+     *     otadata[1].ota_seq = 5
+     *     ota_app_count = 8 (available OTA slots: ota_0 to ota_7)
+     *     → max_seq = 5
+     *     → running slot = (5 - 1) % 8 = 4
+     *     → So ota_4 is currently running
+     *
+     * If you want to switch to boot a different OTA slot (e.g., ota_7):
+     *     → You need to compute a new sequence number such that:
+     *          (new_seq - 1) % ota_app_count == 7
+     *       while ensuring new_seq > current_seq.
+     *
+     * General formula:
+     *         x = current OTA slot ID
+     *         ota_slot_idx = desired OTA slot ID
+     *         seq = current ota_seq
+     *
+     *     To find the next ota_seq that will boot ota_y, use:
+     *         new_seq = ((ota_slot_idx + 1) % ota_app_count) + ota_app_count * i;
+     *         // where i is the smallest non-negative integer such that new_seq > seq
+     */
+    uint32_t i = 0;
+    uint32_t base = (ota_slot_idx + 1) % ota_app_count;
+    while (current_seq > (base + i * ota_app_count)) { i++; };
+    return base + i * ota_app_count;
+}
+
 uint8_t esp_ota_get_app_partition_count(void)
 {
     uint16_t ota_app_count = 0;
@@ -549,6 +612,30 @@ uint8_t esp_ota_get_app_partition_count(void)
     return ota_app_count;
 }
 
+/**
+ * @brief Update the OTA data partition to set the given OTA app subtype as the next boot target.
+ *
+ * ESP-IDF uses the OTA data partition to track which OTA app should boot.
+ * This partition contains two entries (otadata[0] and otadata[1]), each storing an esp_ota_select_entry_t struct,
+ * which includes the OTA sequence number (ota_seq).
+ *
+ * On boot, the chip determines the current running OTA slot using:
+ *     current_slot = (max(ota_seq) - 1) % ota_app_count
+ *
+ * This function updates the OTA data to switch the next boot to the partition with the given subtype.
+ *
+ * Behavior:
+ * - If the currently selected OTA slot already matches the requested subtype,
+ *   only the state field is updated (e.g., to mark the app as newly downloaded).
+ * - Otherwise, it calculates the next valid ota_seq that will cause the bootloader to select
+ *   the requested OTA slot on reboot, and writes it to the inactive OTA data sector.
+ *
+ * @param subtype The OTA partition subtype (e.g., ESP_PARTITION_SUBTYPE_APP_OTA_0, ..._OTA_1, ...)
+ * @return
+ *     - ESP_OK if update was successful
+ *     - ESP_ERR_NOT_FOUND if OTA data partition not found
+ *     - ESP_ERR_INVALID_ARG if subtype is out of range
+ */
 static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
 {
     esp_ota_select_entry_t otadata[2];
@@ -558,42 +645,31 @@ static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
     }
 
     uint8_t ota_app_count = esp_ota_get_app_partition_count();
-    if (SUB_TYPE_ID(subtype) >= ota_app_count) {
+    if (OTA_SLOT(subtype) >= ota_app_count) {
         return ESP_ERR_INVALID_ARG;
     }
-
-    //esp32_idf use two sector for store information about which partition is running
-    //it defined the two sector as ota data partition,two structure esp_ota_select_entry_t is saved in the two sector
-    //named data in first sector as otadata[0], second sector data as otadata[1]
-    //e.g.
-    //if otadata[0].ota_seq == otadata[1].ota_seq == 0xFFFFFFFF,means ota info partition is in init status
-    //so it will boot factory application(if there is),if there's no factory application,it will boot ota[0] application
-    //if otadata[0].ota_seq != 0 and otadata[1].ota_seq != 0,it will choose a max seq ,and get value of max_seq%max_ota_app_number
-    //and boot a subtype (mask 0x0F) value is (max_seq - 1)%max_ota_app_number,so if want switch to run ota[x],can use next formulas.
-    //for example, if otadata[0].ota_seq = 4, otadata[1].ota_seq = 5, and there are 8 ota application,
-    //current running is (5-1)%8 = 4,running ota[4],so if we want to switch to run ota[7],
-    //we should add otadata[0].ota_seq (is 4) to 4 ,(8-1)%8=7,then it will boot ota[7]
-    //if      A=(B - C)%D
-    //then    B=(A + C)%D + D*n ,n= (0,1,2...)
-    //so current ota app sub type id is x , dest bin subtype is y,total ota app count is n
-    //seq will add (x + n*1 + 1 - seq)%n
-
     int active_otadata = bootloader_common_get_active_otadata(otadata);
+    int next_otadata;
+    uint32_t new_seq;
     if (active_otadata != -1) {
-        uint32_t seq = otadata[active_otadata].ota_seq;
-        uint32_t i = 0;
-        while (seq > (SUB_TYPE_ID(subtype) + 1) % ota_app_count + i * ota_app_count) {
-            i++;
+        uint32_t ota_slot = (otadata[active_otadata].ota_seq - 1) % ota_app_count;
+        if (ota_slot == OTA_SLOT(subtype)) {
+            // ota_data is already valid and points to the correct OTA slot.
+            // So after reboot the requested partition will be selected for boot.
+            // Only update the ota_state of the requested partition.
+            next_otadata = active_otadata;
+            new_seq = otadata[active_otadata].ota_seq;
+        } else {
+            next_otadata = (~active_otadata) & 1; // if 0 -> will be next 1. and if 1 -> will be next 0.
+            new_seq = compute_ota_seq_for_target_slot(otadata[active_otadata].ota_seq, OTA_SLOT(subtype), ota_app_count);
         }
-        int next_otadata = (~active_otadata)&1; // if 0 -> will be next 1. and if 1 -> will be next 0.
-        otadata[next_otadata].ota_state = set_new_state_otadata();
-        return rewrite_ota_seq(otadata, (SUB_TYPE_ID(subtype) + 1) % ota_app_count + i * ota_app_count, next_otadata, otadata_partition);
     } else {
         /* Both OTA slots are invalid, probably because unformatted... */
-        int next_otadata = 0;
-        otadata[next_otadata].ota_state = set_new_state_otadata();
-        return rewrite_ota_seq(otadata, SUB_TYPE_ID(subtype) + 1, next_otadata, otadata_partition);
+        next_otadata = 0;
+        new_seq = OTA_SLOT(subtype) + 1;
     }
+    otadata[next_otadata].ota_state = set_new_state_otadata();
+    return rewrite_ota_seq(otadata, new_seq, next_otadata, otadata_partition);
 }
 
 esp_err_t esp_ota_set_boot_partition(const esp_partition_t *partition)

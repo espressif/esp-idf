@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -204,15 +204,13 @@ static const esp_partition_t* get_running_firmware(void)
 {
     const esp_partition_t *configured = esp_ota_get_boot_partition();
     const esp_partition_t *running = esp_ota_get_running_partition();
+    // If a reboot hasn't occurred after app_update(), the configured and running partitions may differ
     ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08"PRIx32")",
             running->type, running->subtype, running->address);
     ESP_LOGI(TAG, "Configured partition type %d subtype %d (offset 0x%08"PRIx32")",
             configured->type, configured->subtype, configured->address);
     TEST_ASSERT_NOT_EQUAL(NULL, configured);
     TEST_ASSERT_NOT_EQUAL(NULL, running);
-    if (running->subtype != ESP_PARTITION_SUBTYPE_APP_TEST) {
-        TEST_ASSERT_EQUAL_PTR(running, configured);
-    }
     return running;
 }
 
@@ -930,3 +928,51 @@ static void test_rollback3_1(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("Test rollback. Updated partition invalidated after esp_ota_begin", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_rollback3, test_rollback3, test_rollback3, test_rollback3_1);
+
+static void test_rollback4(void)
+{
+    uint8_t boot_count = get_boot_count_from_nvs();
+    boot_count++;
+    set_boot_count_in_nvs(boot_count);
+    ESP_LOGI(TAG, "boot count %d", boot_count);
+    const esp_partition_t *cur_app = get_running_firmware();
+    switch (boot_count) {
+        case 2:
+            ESP_LOGI(TAG, "Factory");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
+            app_update();
+            reboot_as_deep_sleep();
+            break;
+        case 3:
+            ESP_LOGI(TAG, "OTA0");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
+            TEST_ESP_OK(esp_ota_mark_app_valid_cancel_rollback());
+            app_update();
+
+            // Do not reboot and call app_update again.
+            // This will not change the running partition since we haven't rebooted.
+            // The esp_rewrite_otadata() will update the otadata for the non-running partition only.
+            app_update();
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+            // The last call to esp_rewrite_otadata should have updated the otadata for the non-running partition only.
+            // Therefore, calling esp_ota_get_state_partition on the running partition should succeed and not return ESP_ERR_NOT_FOUND
+            const esp_partition_t* running_partition;
+            running_partition = esp_ota_get_running_partition();
+            esp_ota_img_states_t ota_state;
+            TEST_ESP_OK(esp_ota_get_state_partition(running_partition, &ota_state));
+#endif
+            reboot_as_deep_sleep();
+            break;
+        case 4:
+            ESP_LOGI(TAG, "OTA1");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_1, cur_app->subtype);
+            TEST_ESP_OK(esp_ota_mark_app_valid_cancel_rollback());
+            break;
+        default:
+            erase_ota_data();
+            TEST_FAIL_MESSAGE("Unexpected stage");
+            break;
+    }
+}
+
+TEST_CASE_MULTIPLE_STAGES("Test esp_rewrite_otadata. Updated sequence number for non-running partition always", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_rollback4, test_rollback4, test_rollback4);
