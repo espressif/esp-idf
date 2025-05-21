@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,10 @@ extern "C" {
 
 #define RV_TOTAL_INT_COUNT   48
 
+/* Use the closest upper power of two (minus 1) as a mask for the interrupts mapping */
+#define RV_INT_MASK          63
+
+
 /**
  * @brief Route any interrupt source to any CPU interrupt, including internal ones
  *
@@ -34,12 +38,12 @@ FORCE_INLINE_ATTR void interrupt_clic_ll_route(uint32_t core_id, int intr_src, i
 
 #if SOC_CPU_CORES_NUM > 1
     if (core_id == 0) {
-        REG_WRITE(DR_REG_INTERRUPT_CORE0_BASE + 4 * intr_src, intr_num);
+        REG_SET_BITS(DR_REG_INTERRUPT_CORE0_BASE + 4 * intr_src, intr_num, RV_INT_MASK);
     } else {
-        REG_WRITE(DR_REG_INTERRUPT_CORE1_BASE + 4 * intr_src, intr_num);
+        REG_SET_BITS(DR_REG_INTERRUPT_CORE1_BASE + 4 * intr_src, intr_num, RV_INT_MASK);
     }
 #else
-    REG_WRITE(DR_REG_INTERRUPT_CORE0_BASE + 4 * intr_src, intr_num);
+    REG_SET_BITS(DR_REG_INTERRUPT_CORE0_BASE + 4 * intr_src, intr_num, RV_INT_MASK);
 #endif // SOC_CPU_CORES_NUM > 1
 }
 
