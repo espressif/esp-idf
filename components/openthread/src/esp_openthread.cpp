@@ -26,6 +26,8 @@
 #include "openthread/dataset_ftd.h"
 #endif
 
+static bool s_ot_mainloop_running = false;
+
 static int hex_digit_to_int(char hex)
 {
     if ('A' <= hex && hex <= 'F') {
@@ -158,13 +160,24 @@ esp_err_t esp_openthread_auto_start(otOperationalDatasetTlvs *datasetTlvs)
     return ESP_OK;
 }
 
+static void mainloop_safe_exit(void *ctx)
+{
+    s_ot_mainloop_running = false;
+}
+
+esp_err_t esp_openthread_mainloop_exit(void)
+{
+    return esp_openthread_task_queue_post(mainloop_safe_exit, NULL);
+}
+
 esp_err_t esp_openthread_launch_mainloop(void)
 {
     esp_openthread_mainloop_context_t mainloop;
     otInstance *instance = esp_openthread_get_instance();
     esp_err_t error = ESP_OK;
+    s_ot_mainloop_running = true;
 
-    while (true) {
+    while (s_ot_mainloop_running) {
         FD_ZERO(&mainloop.read_fds);
         FD_ZERO(&mainloop.write_fds);
         FD_ZERO(&mainloop.error_fds);
