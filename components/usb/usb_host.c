@@ -223,7 +223,7 @@ static bool _unblock_lib(bool in_isr)
     return yield;
 }
 
-static inline bool _is_internal_client(void *client)
+static inline bool is_internal_client(void *client)
 {
     if (p_host_lib_obj->constant.enum_client && (client == p_host_lib_obj->constant.enum_client)) {
         return true;
@@ -297,7 +297,7 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         assert(event_data->ctrl_xfer_data.urb != NULL);
         assert(event_data->ctrl_xfer_data.urb->usb_host_client != NULL);
         // Redistribute completed control transfers to the clients that submitted them
-        if (_is_internal_client(event_data->ctrl_xfer_data.urb->usb_host_client)) {
+        if (is_internal_client(event_data->ctrl_xfer_data.urb->usb_host_client)) {
             // Simply call the transfer callback
             event_data->ctrl_xfer_data.urb->transfer.callback(&event_data->ctrl_xfer_data.urb->transfer);
         } else {
@@ -311,10 +311,11 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         break;
     }
     case USBH_EVENT_NEW_DEV: {
-        // Internal client
-        hub_notify_new_dev(event_data->new_dev_data.dev_addr);
-        // External clients
-        // Prepare a NEW_DEV client event message, the send it to all clients
+        if (hub_dev_new(event_data->new_dev_data.dev_addr) == ESP_OK) {
+            // Device is a hub, we do not need to propagate the event to the clients
+            break;
+        }
+        // Prepare a NEW_DEV client event message, and send it to all clients
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_NEW_DEV,
             .new_dev.address = event_data->new_dev_data.dev_addr,
@@ -323,10 +324,11 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         break;
     }
     case USBH_EVENT_DEV_GONE: {
-        // Internal client
-        hub_notify_dev_gone(event_data->new_dev_data.dev_addr);
-        // External clients
-        // Prepare event msg, send only to clients that have opened the device
+        if (hub_dev_gone(event_data->new_dev_data.dev_addr) == ESP_OK) {
+            // Device is a hub, we do not need to propagate the event to the clients
+            break;
+        }
+        // Prepare a DEV GONE event, send only to clients that have opened the device
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_DEV_GONE,
             .dev_gone.dev_hdl = event_data->dev_gone_data.dev_hdl,
