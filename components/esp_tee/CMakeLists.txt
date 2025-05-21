@@ -6,8 +6,8 @@ idf_build_get_property(target IDF_TARGET)
 # headers & sources here are compiled into the app, not the esp_tee binary
 # (see subproject/ for the esp_tee binary build files)
 
-# ESP-TEE is currently supported only on the ESP32-C6 SoC
-if(NOT ${target} STREQUAL "esp32c6")
+# ESP-TEE is currently supported only on the ESP32-C6 and ESP32-H2 SoCs
+if(NOT ${target} STREQUAL "esp32c6" AND NOT ${target} STREQUAL "esp32h2")
     return()
 endif()
 

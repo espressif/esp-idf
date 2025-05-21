@@ -15,7 +15,13 @@
 #include "sdkconfig.h"
 #include "ld.common"
 
-#define SRAM_SEG_START     0x40800000
+#if !CONFIG_SECURE_ENABLE_TEE
+#define SRAM_SEG_START        (0x40800000)
+#else
+#define SRAM_SEG_START        (0x40800000 + CONFIG_SECURE_TEE_IRAM_SIZE + CONFIG_SECURE_TEE_DRAM_SIZE)
+#define FLASH_SEG_OFFSET      (CONFIG_SECURE_TEE_IROM_SIZE + CONFIG_SECURE_TEE_DROM_SIZE)
+#endif // CONFIG_SECURE_ENABLE_TEE
+
 #define SRAM_SEG_END       0x4083EFD0  /* 2nd stage bootloader iram_loader_seg start address */
 #define SRAM_SEG_SIZE      SRAM_SEG_END - SRAM_SEG_START
 
@@ -35,8 +41,14 @@ MEMORY
    */
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+#if CONFIG_SECURE_ENABLE_TEE
+  /* Flash mapped instruction data */
+  irom_seg (RX) :                    org = 0x42000020 + FLASH_SEG_OFFSET,
+                                     len = IDRAM0_2_SEG_SIZE - FLASH_SEG_OFFSET - 0x20
+#else
   /* Flash mapped instruction data */
   irom_seg (RX) :                    org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
+#endif
 
   /**
    * (0x20 offset above is a convenience for the app binary image generation.
@@ -54,8 +66,14 @@ MEMORY
   sram_seg (RWX) :                   org = SRAM_SEG_START, len = SRAM_SEG_SIZE
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+#if CONFIG_SECURE_ENABLE_TEE
   /* Flash mapped constant data */
+  drom_seg (R) :                     org = 0x42000020 + FLASH_SEG_OFFSET,
+                                     len = IDRAM0_2_SEG_SIZE - FLASH_SEG_OFFSET - 0x20
+#else
+  /* Flash mapped instruction data */
   drom_seg (R) :                     org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
+#endif
 
   /* (See irom_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS

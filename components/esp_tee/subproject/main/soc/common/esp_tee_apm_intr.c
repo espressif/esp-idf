@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdint.h>
-#include <assert.h>
 
-#include "hal/apm_ll.h"
+#include "soc/soc_caps.h"
+#include "esp_bit_defs.h"
+
 #include "hal/apm_hal.h"
-
-#include "esp_tee.h"
-#include "esp_tee_apm_intr.h"
+#include "hal/apm_ll.h"
 
 static const char *const excp_mid_strs[] = {
     [APM_LL_MASTER_HPCORE]        = "HPCORE",
@@ -41,9 +40,9 @@ const char *esp_tee_apm_excp_type_to_str(uint8_t type)
 {
     char *excp_type = "APM - Unknown exception";
 
-    if (type & 0x01) {
+    if (type & BIT(0)) {
         excp_type = "APM - Authority exception";
-    } else if (type & 0x02) {
+    } else if (type & BIT(1)) {
         excp_type = "APM - Space exception";
     }
 
@@ -55,9 +54,11 @@ const char *esp_tee_apm_excp_ctrl_to_str(apm_ll_apm_ctrl_t apm_ctrl)
     char *excp_ctrl = NULL;
 
     switch (apm_ctrl) {
+#if SOC_APM_LP_APM0_SUPPORTED
     case LP_APM0_CTRL:
         excp_ctrl = "LP_APM0";
         break;
+#endif
     case HP_APM_CTRL:
         excp_ctrl = "HP_APM";
         break;
