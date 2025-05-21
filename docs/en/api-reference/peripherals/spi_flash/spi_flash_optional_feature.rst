@@ -155,6 +155,7 @@ List of Flash chips that support this feature:
 
 1. W25Q256
 2. GD25Q256
+3. XM25QH256D
 
 Restrictions
 ^^^^^^^^^^^^

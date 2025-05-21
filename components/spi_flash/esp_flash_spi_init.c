@@ -34,6 +34,10 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 #error "CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM cannot be disabled when CONFIG_SPI_FLASH_AUTO_SUSPEND is disabled."
 #endif
 
+#if CONFIG_SPI_FLASH_ROM_IMPL && (CONFIG_ESPTOOLPY_FLASHSIZE_32MB || CONFIG_ESPTOOLPY_FLASHSIZE_64MB || CONFIG_ESPTOOLPY_FLASHSIZE_128MB)
+#error "Flash chip size equal or over 32MB memory cannot use driver in ROM"
+#endif
+
 /* This pointer is defined in ROM and extern-ed on targets where CONFIG_SPI_FLASH_ROM_IMPL = y*/
 #if !CONFIG_SPI_FLASH_ROM_IMPL
 esp_flash_t *esp_flash_default_chip = NULL;
