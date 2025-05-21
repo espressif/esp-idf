@@ -92,7 +92,8 @@ static int ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
 #if defined(MBEDTLS_DHM_C)
     mbedtls_dhm_init( &handshake->dhm_ctx );
 #endif
-#if defined(MBEDTLS_ECDH_C)
+#if defined(MBEDTLS_ECDH_C) && \
+    defined(MBEDTLS_KEY_EXCHANGE_SOME_ECDH_OR_ECDHE_1_2_ENABLED)
     mbedtls_ecdh_init( &handshake->ecdh_ctx );
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
@@ -121,9 +122,11 @@ static int ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
 
 static int ssl_handshake_init( mbedtls_ssl_context *ssl )
 {
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
     /* Clear old handshake information if present */
     if( ssl->transform_negotiate )
         mbedtls_ssl_transform_free( ssl->transform_negotiate );
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
     if( ssl->session_negotiate )
         mbedtls_ssl_session_free( ssl->session_negotiate );
     if( ssl->handshake )
@@ -133,10 +136,12 @@ static int ssl_handshake_init( mbedtls_ssl_context *ssl )
      * Either the pointers are now NULL or cleared properly and can be freed.
      * Now allocate missing structures.
      */
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
     if( ssl->transform_negotiate == NULL )
     {
         ssl->transform_negotiate = mbedtls_calloc( 1, sizeof(mbedtls_ssl_transform) );
     }
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
 
     if( ssl->session_negotiate == NULL )
     {
@@ -156,17 +161,22 @@ static int ssl_handshake_init( mbedtls_ssl_context *ssl )
 
     /* All pointers should exist and can be directly freed without issue */
     if( ssl->handshake == NULL ||
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
         ssl->transform_negotiate == NULL ||
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
         ssl->session_negotiate == NULL )
     {
         ESP_LOGD(TAG, "alloc() of ssl sub-contexts failed");
 
         mbedtls_free( ssl->handshake );
-        mbedtls_free( ssl->transform_negotiate );
-        mbedtls_free( ssl->session_negotiate );
-
         ssl->handshake = NULL;
+
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
+        mbedtls_free( ssl->transform_negotiate );
         ssl->transform_negotiate = NULL;
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
+
+        mbedtls_free( ssl->session_negotiate );
         ssl->session_negotiate = NULL;
 
         return( MBEDTLS_ERR_SSL_ALLOC_FAILED );
@@ -174,7 +184,9 @@ static int ssl_handshake_init( mbedtls_ssl_context *ssl )
 
     /* Initialize structures */
     mbedtls_ssl_session_init( ssl->session_negotiate );
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
     mbedtls_ssl_transform_init( ssl->transform_negotiate );
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
     int ret = ssl_handshake_params_init( ssl->handshake );
     if (ret != 0) {
         return ret;

@@ -130,6 +130,7 @@ def test_examples_protocol_https_request_cli_session_tickets(dut: Dut) -> None:
     'config',
     [
         'ssldyn_tls1_3',
+        'ssldyn_tls1_3_only',
     ],
     indirect=True,
 )
