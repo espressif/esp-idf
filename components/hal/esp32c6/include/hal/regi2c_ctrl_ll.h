@@ -9,13 +9,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "soc/soc.h"
-#include "soc/regi2c_defs.h"
+#include "soc/i2c_ana_mst_reg.h"
 #include "soc/pmu_reg.h"
 #include "modem/modem_lpcon_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define ANA_I2C_MST_CLK_HAS_ROOT_GATING 1   /*!< Any regi2c operation needs enable the analog i2c master clock first */
 
 /**
  * @brief Enable analog I2C master clock
@@ -71,8 +73,8 @@ static inline __attribute__((always_inline)) void regi2c_ctrl_ll_master_configur
  */
 static inline __attribute__((always_inline)) void regi2c_ctrl_ll_bbpll_calibration_start(void)
 {
-    REG_CLR_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
-    REG_SET_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
+    REG_CLR_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
+    REG_SET_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
 }
 
 /**
@@ -80,8 +82,8 @@ static inline __attribute__((always_inline)) void regi2c_ctrl_ll_bbpll_calibrati
  */
 static inline __attribute__((always_inline)) void regi2c_ctrl_ll_bbpll_calibration_stop(void)
 {
-    REG_CLR_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
-    REG_SET_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
+    REG_CLR_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
+    REG_SET_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
 }
 
 /**
@@ -91,7 +93,7 @@ static inline __attribute__((always_inline)) void regi2c_ctrl_ll_bbpll_calibrati
  */
 static inline __attribute__((always_inline)) bool regi2c_ctrl_ll_bbpll_calibration_is_done(void)
 {
-    return REG_GET_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_CAL_DONE);
+    return REG_GET_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_CAL_DONE);
 }
 
 /**
@@ -108,7 +110,7 @@ static inline void regi2c_ctrl_ll_i2c_sar_periph_enable(void)
 }
 
 /**
- * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC and TSENS registers
  */
 static inline void regi2c_ctrl_ll_i2c_sar_periph_disable(void)
 {

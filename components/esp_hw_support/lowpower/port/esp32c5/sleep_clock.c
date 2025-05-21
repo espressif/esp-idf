@@ -12,7 +12,6 @@
 #include "modem/modem_syscon_reg.h"
 #include "modem/modem_lpcon_reg.h"
 #include "soc/i2c_ana_mst_reg.h"
-#include "soc/regi2c_defs.h"
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 

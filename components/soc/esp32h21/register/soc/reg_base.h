@@ -47,6 +47,7 @@
 #define DR_REG_TEE_BASE                           0x60098000
 #define DR_REG_HP_APM_BASE                        0x60099000
 #define DR_REG_LP_APM0_BASE                       0x60099800
+#define DR_REG_I2C_ANA_MST_BASE                   0x600AD800
 #define DR_REG_PMU_BASE                           0x600B0000
 #define DR_REG_LP_CLKRST_BASE                     0x600B0400
 #define DR_REG_LP_TIMER_BASE                      0x600B0C00
@@ -61,5 +62,4 @@
 #define DR_REG_INTPRI_BASE                        0x600C5000
 #define DR_REG_CACHE_BASE                         0x600C8000
 
-#define DR_REG_I2C_ANA_MST_BASE                   0x600AD800 //TODO: [ESP32H21] IDF-11550, need check
 #define PWDET_CONF_REG                            0x600A0810 //TODO: [ESP32H21] IDF-11589, IDF-11592, need check

@@ -446,6 +446,8 @@ static inline __attribute__((always_inline)) void clk_ll_mpll_set_config(uint32_
 {
     HAL_ASSERT(xtal_freq_mhz == SOC_XTAL_FREQ_40M);
 
+    // There are sequential regi2c operations in `clk_ll_mpll_set_config`, use the raw regi2c API with one lock wrapper to save time.
+    REGI2C_ENTER_CRITICAL();
     uint8_t mpll_dhref_val = esp_rom_regi2c_read(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DHREF);
     esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DHREF,  mpll_dhref_val | (3 << I2C_MPLL_DHREF_LSB));
     uint8_t mpll_rstb_val = esp_rom_regi2c_read(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_IR_CAL_RSTB);
@@ -457,6 +459,7 @@ static inline __attribute__((always_inline)) void clk_ll_mpll_set_config(uint32_
     uint8_t div = mpll_freq_mhz / 20 - 1;
     uint8_t val = ((div << 3) | ref_div);
     esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DIV_REG_ADDR, val);
+    REGI2C_EXIT_CRITICAL();
 }
 
 /**

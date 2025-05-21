@@ -1543,10 +1543,6 @@ config SOC_RCC_IS_INDEPENDENT
     bool
     default y
 
-config SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE
-    bool
-    default y
-
 config SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
     bool
     default y

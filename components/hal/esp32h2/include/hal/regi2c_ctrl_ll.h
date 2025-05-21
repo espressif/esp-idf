@@ -9,7 +9,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "soc/soc.h"
-#include "soc/regi2c_defs.h"
 #include "soc/i2c_ana_mst_reg.h"
 #include "soc/pmu_reg.h"
 #include "modem/modem_lpcon_struct.h"
@@ -17,6 +16,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define ANA_I2C_MST_CLK_HAS_ROOT_GATING 1   /*!< Any regi2c operation needs enable the analog i2c master clock first */
+
+/**
+ * Restore regi2c analog calibration related configuration registers.
+ * This is a workaround for calibration error when waking up from light sleep
+ */
+#define REGI2C_LL_ANA_CALI_PD_WORKAROUND    1
+#define REGI2C_LL_ANA_CALI_BYTE_NUM         8
 
 /**
  * @brief Enable analog I2C master clock
@@ -104,7 +112,7 @@ static inline void regi2c_ctrl_ll_i2c_sar_periph_enable(void)
 }
 
 /**
- * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC and TSENS registers
  */
 static inline void regi2c_ctrl_ll_i2c_sar_periph_disable(void)
 {

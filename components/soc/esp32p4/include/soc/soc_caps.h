@@ -778,8 +778,6 @@
 
 #define SOC_PERIPH_CLK_CTRL_SHARED                (1)     /*!< Peripheral clock control (e.g. set clock source) is shared between various peripherals */
 
-#define SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE         (1)     /*!< Any regi2c operation needs enable the analog i2c master clock first */
-
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_LP_PLL_SUPPORT                (1)
 #define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                  (1)

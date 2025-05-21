@@ -99,6 +99,10 @@ config SOC_MODEM_CLOCK_SUPPORTED
     bool
     default y
 
+config SOC_REG_I2C_SUPPORTED
+    bool
+    default y
+
 config SOC_AES_SUPPORTED
     bool
     default y

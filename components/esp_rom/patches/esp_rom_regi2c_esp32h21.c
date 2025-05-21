@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -8,73 +8,16 @@
 #include "soc/i2c_ana_mst_reg.h"
 #include "hal/regi2c_ctrl_ll.h"
 
-/**
- * BB    - 0x67 - BIT0
- * TXRF  - 0x6B - BIT1
- * SDM   - 0x63 - BIT2
- * PLL   - 0x62 - BIT3
- * BIAS  - 0x6A - BIT4
- * BBPLL - 0x66 - BIT5
- * ULP   - 0x61 - BIT6
- * SAR   - 0x69 - BIT7
- * PMU   - 0x6d - BIT8
-*/
-
-#define REGI2C_BIAS_MST_SEL    (BIT(8))
-#define REGI2C_BBPLL_MST_SEL   (BIT(9))
-#define REGI2C_ULP_CAL_MST_SEL (BIT(10))
-#define REGI2C_SAR_I2C_MST_SEL (BIT(11))
-#define REGI2C_DIG_REG_MST_SEL (BIT(12))
-
-#define REGI2C_BIAS_RD_MASK     (~BIT(6)    & I2C_MST_ANA_CONF1_M)
-#define REGI2C_BBPLL_RD_MASK    (~BIT(7)    & I2C_MST_ANA_CONF1_M)
-#define REGI2C_ULP_CAL_RD_MASK  (~BIT(8)    & I2C_MST_ANA_CONF1_M)
-#define REGI2C_SAR_I2C_RD_MASK  (~BIT(9)    & I2C_MST_ANA_CONF1_M)
-#define REGI2C_DIG_REG_RD_MASK  (~BIT(10)   & I2C_MST_ANA_CONF1_M)
-
-#define I2C_ANA_MST_I2C_CTRL_REG(n) (I2C_MST_I2C0_CTRL_REG + n*4) // 0: I2C_ANA_MST_I2C0_CTRL_REG; 1: I2C_ANA_MST_I2C1_CTRL_REG
-
-#define REGI2C_RTC_BUSY           (BIT(25))
-#define REGI2C_RTC_BUSY_M         (BIT(25))
-#define REGI2C_RTC_BUSY_V         0x1
-#define REGI2C_RTC_BUSY_S         25
-
-#define REGI2C_RTC_WR_CNTL        (BIT(24))
-#define REGI2C_RTC_WR_CNTL_M      (BIT(24))
-#define REGI2C_RTC_WR_CNTL_V      0x1
-#define REGI2C_RTC_WR_CNTL_S      24
-
-#define REGI2C_RTC_DATA           0x000000FF
-#define REGI2C_RTC_DATA_M         ((I2C_RTC_DATA_V)<<(I2C_RTC_DATA_S))
-#define REGI2C_RTC_DATA_V         0xFF
-#define REGI2C_RTC_DATA_S         16
-
-#define REGI2C_RTC_ADDR           0x000000FF
-#define REGI2C_RTC_ADDR_M         ((I2C_RTC_ADDR_V)<<(I2C_RTC_ADDR_S))
-#define REGI2C_RTC_ADDR_V         0xFF
-#define REGI2C_RTC_ADDR_S         8
-
-#define REGI2C_RTC_SLAVE_ID       0x000000FF
-#define REGI2C_RTC_SLAVE_ID_M     ((I2C_RTC_SLAVE_ID_V)<<(I2C_RTC_SLAVE_ID_S))
-#define REGI2C_RTC_SLAVE_ID_V     0xFF
-#define REGI2C_RTC_SLAVE_ID_S     0
-
 /* SLAVE */
-
-#define REGI2C_BBPLL              (0x66)
-#define REGI2C_BBPLL_HOSTID       0
-
-#define REGI2C_BIAS               (0x6a)
-#define REGI2C_BIAS_HOSTID        0
-
-#define REGI2C_PMU                (0x6d)
-#define REGI2C_PMU_HOSTID         0
-
-#define REGI2C_ULP_CAL            (0x61)
-#define REGI2C_ULP_CAL_HOSTID     0
-
-#define REGI2C_SAR_I2C            (0x69)
-#define REGI2C_SAR_I2C_HOSTID     0
+#define REGI2C_BBPLL       0x66    // regi2c_bbpll.h
+#define REGI2C_BBTOP       0x67
+#define REGI2C_DCDC        0x6D    // regi2c_pmu.h
+#define REGI2C_PERIF       0x69    // regi2c_saradc.h
+#define REGI2C_RFPLL       0x62
+#define REGI2C_SDM         0x63
+#define REGI2C_TXTOP       0x6B
+#define REGI2C_ULP         0x61    // regi2c_lp_bias.h
+#define REGI2C_BIAS        0x6A    // regi2c_bias.h
 
 /* SLAVE END */
 
@@ -86,33 +29,44 @@ void esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, 
 static IRAM_ATTR uint8_t regi2c_enable_block(uint8_t block)
 {
     uint32_t i2c_sel = 0;
-    regi2c_ctrl_ll_master_enable_clock(true);
+    assert(regi2c_ctrl_ll_master_is_clock_enabled());
 
     /* Before config I2C register, enable corresponding slave. */
     switch (block) {
-    case REGI2C_BBPLL  :
-        i2c_sel = REG_GET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_BBPLL_MST_SEL);
-        REG_WRITE(I2C_MST_ANA_CONF1_REG, REGI2C_BBPLL_RD_MASK);
-        break;
-    case REGI2C_BIAS   :
-        i2c_sel = REG_GET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_BIAS_MST_SEL);
-        REG_WRITE(I2C_MST_ANA_CONF1_REG, REGI2C_BIAS_RD_MASK);
-        break;
-    case REGI2C_PMU:
-        i2c_sel = REG_GET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_DIG_REG_MST_SEL);
-        REG_WRITE(I2C_MST_ANA_CONF1_REG, REGI2C_DIG_REG_RD_MASK);
-        break;
-    case REGI2C_ULP_CAL:
-        i2c_sel = REG_GET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_ULP_CAL_MST_SEL);
-        REG_WRITE(I2C_MST_ANA_CONF1_REG, REGI2C_ULP_CAL_RD_MASK);
-        break;
-    case REGI2C_SAR_I2C:
-        i2c_sel = REG_GET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_SAR_I2C_MST_SEL);
-        REG_WRITE(I2C_MST_ANA_CONF1_REG, REGI2C_SAR_I2C_RD_MASK);
-        break;
+        case REGI2C_BBPLL:
+            i2c_sel = REG_GET_BIT(I2C_ANA_MST_ANA_CONF2_REG, REGI2C_CONF2_BBPLL_SEL);
+            REG_WRITE(I2C_ANA_MST_ANA_CONF1_REG, ~REGI2C_CONF1_BBPLL_SEL & I2C_ANA_MST_ANA_CONF1_M);
+            break;
+        case REGI2C_BBTOP:
+            i2c_sel = REG_GET_BIT(I2C_ANA_MST_ANA_CONF2_REG, REGI2C_CONF2_BBTOP_SEL);
+            REG_WRITE(I2C_ANA_MST_ANA_CONF1_REG, ~REGI2C_CONF1_BBTOP_SEL & I2C_ANA_MST_ANA_CONF1_M);
+            break;
+        case REGI2C_DCDC:
+            i2c_sel = REG_GET_BIT(I2C_ANA_MST_ANA_CONF2_REG, REGI2C_CONF2_PMU_SEL);
+            REG_WRITE(I2C_ANA_MST_ANA_CONF1_REG, ~REGI2C_CONF1_PMU_SEL & I2C_ANA_MST_ANA_CONF1_M);
+            break;
+        case REGI2C_PERIF:
+            i2c_sel = REG_GET_BIT(I2C_ANA_MST_ANA_CONF2_REG, REGI2C_CONF2_PERIF_SEL);
+            REG_WRITE(I2C_ANA_MST_ANA_CONF1_REG, ~REGI2C_CONF1_PERIF_SEL & I2C_ANA_MST_ANA_CONF1_M);
+            break;
+        case REGI2C_RFPLL:
+            i2c_sel = REG_GET_BIT(I2C_ANA_MST_ANA_CONF2_REG, REGI2C_CONF2_PLL_SEL);
+            REG_WRITE(I2C_ANA_MST_ANA_CONF1_REG, ~REGI2C_CONF1_PLL_SEL   & I2C_ANA_MST_ANA_CONF1_M);
+            break;
+        case REGI2C_SDM:
+            i2c_sel = REG_GET_BIT(I2C_ANA_MST_ANA_CONF2_REG, REGI2C_CONF2_SDM_SEL);
+            REG_WRITE(I2C_ANA_MST_ANA_CONF1_REG, ~REGI2C_CONF1_SDM_SEL   & I2C_ANA_MST_ANA_CONF1_M);
+            break;
+        case REGI2C_TXTOP:
+            i2c_sel = REG_GET_BIT(I2C_ANA_MST_ANA_CONF2_REG, REGI2C_CONF2_TXTOP_SEL);
+            REG_WRITE(I2C_ANA_MST_ANA_CONF1_REG, ~REGI2C_CONF1_TXTOP_SEL & I2C_ANA_MST_ANA_CONF1_M);
+            break;
+        case REGI2C_ULP:
+            i2c_sel = REG_GET_BIT(I2C_ANA_MST_ANA_CONF2_REG, REGI2C_CONF2_ULP_SEL);
+            REG_WRITE(I2C_ANA_MST_ANA_CONF1_REG, ~REGI2C_CONF1_ULP_SEL   & I2C_ANA_MST_ANA_CONF1_M);
+            break;
     }
-
-    return (uint8_t)(i2c_sel ? 0: 1);
+    return (uint8_t)(i2c_sel ? 0 : 1);
 }
 
 uint8_t IRAM_ATTR regi2c_read_impl(uint8_t block, uint8_t host_id, uint8_t reg_add)

@@ -50,7 +50,7 @@ static inline void regi2c_ctrl_ll_i2c_sar_periph_enable(void)
 }
 
 /**
- * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC and TSENS registers
  */
 static inline void regi2c_ctrl_ll_i2c_sar_periph_disable(void)
 {

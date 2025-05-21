@@ -57,7 +57,7 @@
 #include "hal/rtc_hal.h"
 
 #include "soc/rtc.h"
-#include "regi2c_ctrl.h"    //For `REGI2C_ANA_CALI_PD_WORKAROUND`, temp
+#include "regi2c_ctrl.h"    //For `REGI2C_LL_ANA_CALI_PD_WORKAROUND`, temp
 
 #include "hal/cache_ll.h"
 #include "hal/clk_tree_ll.h"
@@ -733,7 +733,7 @@ static SLEEP_FN_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool 
         Cache_WriteBack_All();
     }
 #endif
-#if REGI2C_ANA_CALI_PD_WORKAROUND
+#if REGI2C_LL_ANA_CALI_PD_WORKAROUND
         regi2c_analog_cali_reg_read();
 #endif
 #if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
@@ -786,7 +786,7 @@ static SLEEP_FN_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
     clk_ll_soc_root_clk_auto_gating_bypass(true);
 # endif
 #endif
-#if REGI2C_ANA_CALI_PD_WORKAROUND
+#if REGI2C_LL_ANA_CALI_PD_WORKAROUND
     regi2c_analog_cali_reg_write();
 #endif
 #if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
