@@ -1,0 +1,70 @@
+menu "Example Configuration"
+
+    choice
+        prompt "Periodic Sync Matching Method"
+        default EXAMPLE_SYNC_BY_SID
+
+        config EXAMPLE_SYNC_BY_SID
+            bool "Sync by Advertising SID"
+
+        config EXAMPLE_SYNC_BY_NAME
+            bool "Sync by Device Name"
+
+    endchoice
+
+    config EXAMPLE_SYNC_TARGET_SID
+        int "Target SID for periodic sync"
+        depends on EXAMPLE_SYNC_BY_SID
+        default 2
+
+    config EXAMPLE_SYNC_TARGET_DEVNAME
+        string "Target Device Name for sync"
+        depends on EXAMPLE_SYNC_BY_NAME
+        default "CTE_Periodic_Adv"
+
+
+    config EXAMPLE_ANT_GPIO_BIT_COUNT
+        int "Number of GPIO bits for antenna encoding"
+        range 1 4
+        default 2
+        help
+            Select the number of GPIO pins used as encoded bits for antenna switching.
+            Each additional GPIO bit doubles the number of controllable antennas.
+            Example:
+            1 bit -> 2 antennas (0, 1)
+            2 bits -> 4 antennas (00, 01, 10, 11)
+            3 bits -> 8 antennas
+            4 bits -> 16 antennas
+
+    config EXAMPLE_ANT_GPIO_0
+        int "GPIO Bit 0 (LSB)"
+        range 0 39
+        default 0
+        help
+            GPIO pin number for the least significant bit (LSB) of antenna encoding.
+
+    config EXAMPLE_ANT_GPIO_1
+        int "GPIO Bit 1"
+        range 0 39
+        default 1
+        depends on EXAMPLE_ANT_GPIO_BIT_COUNT > 1
+        help
+            GPIO pin number for bit 1 of antenna encoding.
+
+    config EXAMPLE_ANT_GPIO_2
+        int "GPIO Bit 2"
+        range 0 39
+        default 2
+        depends on EXAMPLE_ANT_GPIO_BIT_COUNT > 2
+        help
+            GPIO pin number for bit 2 of antenna encoding.
+
+    config EXAMPLE_ANT_GPIO_3
+        int "GPIO Bit 3 (MSB)"
+        range 0 39
+        default 3
+        depends on EXAMPLE_ANT_GPIO_BIT_COUNT > 3
+        help
+            GPIO pin number for the most significant bit (MSB) of antenna encoding.
+
+endmenu
