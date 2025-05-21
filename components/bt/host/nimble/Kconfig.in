@@ -412,7 +412,7 @@ config BT_NIMBLE_GATT_MAX_PROCS
 
 config BT_NIMBLE_HS_FLOW_CTRL
     bool "Enable Host Flow control"
-    depends on BT_NIMBLE_ENABLED
+    depends on BT_NIMBLE_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER
     default y if IDF_TARGET_ESP32
     default n
     help
