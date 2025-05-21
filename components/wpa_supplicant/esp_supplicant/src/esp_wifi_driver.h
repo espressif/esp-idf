@@ -285,6 +285,7 @@ esp_err_t esp_wifi_register_mgmt_frame_internal(uint32_t type, uint32_t subtype)
 esp_err_t esp_wifi_send_mgmt_frm_internal(const wifi_mgmt_frm_req_t *req);
 uint8_t esp_wifi_ap_get_prof_pairwise_cipher_internal(void);
 uint8_t esp_wifi_ap_get_sae_ext_config_internal(void);
+uint16_t esp_wifi_ap_get_gtk_rekeying_config_internal(void);
 bool esp_wifi_is_mbo_enabled_internal(uint8_t if_index);
 void esp_wifi_get_pmf_config_internal(wifi_pmf_config_t *pmf_cfg, uint8_t ifx);
 bool esp_wifi_is_ft_enabled_internal(uint8_t if_index);
