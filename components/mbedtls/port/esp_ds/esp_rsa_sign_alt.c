@@ -440,7 +440,7 @@ int esp_ds_rsa_sign( void *ctx,
                     mbedtls_md_type_t md_alg, unsigned int hashlen,
                     const unsigned char *hash, unsigned char *sig )
 {
-    esp_ds_context_t *esp_ds_ctx;
+    esp_ds_context_t *esp_ds_ctx = NULL;
     esp_err_t ds_r;
     int ret = -1;
 
