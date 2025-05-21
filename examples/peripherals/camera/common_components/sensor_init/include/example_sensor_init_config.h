@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-#define EXAMPLE_CAM_SCCB_FREQ                   (100000)
+#define EXAMPLE_CAM_SCCB_FREQ                   (10 * 1000)
 
 #ifdef __cplusplus
 }
