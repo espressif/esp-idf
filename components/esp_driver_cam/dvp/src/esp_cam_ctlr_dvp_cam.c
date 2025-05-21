@@ -146,8 +146,11 @@ static IRAM_ATTR esp_err_t esp_cam_ctlr_dvp_start_trans(esp_cam_ctlr_dvp_cam_t *
         ESP_RETURN_ON_ERROR_ISR(esp_cam_ctlr_dvp_dma_stop(&ctlr->dma), TAG, "failed to stop DMA");
     }
 
-    if (ctlr->cbs.on_get_new_trans && ctlr->cbs.on_get_new_trans(&(ctlr->base), &trans, ctlr->cbs_user_data)) {
-        buffer_ready = true;
+    if (ctlr->cbs.on_get_new_trans) {
+        ctlr->cbs.on_get_new_trans(&(ctlr->base), &trans, ctlr->cbs_user_data);
+        if (trans.buffer) {
+            buffer_ready = true;
+        }
     } else if (!ctlr->bk_buffer_dis) {
         trans.buffer = ctlr->backup_buffer;
         trans.buflen = ctlr->fb_size_in_bytes;
@@ -740,12 +743,13 @@ esp_err_t esp_cam_new_dvp_ctlr(const esp_cam_ctlr_dvp_config_t *config, esp_cam_
         .port = config->ctlr_id,
         .byte_swap_en = config->byte_swap_en,
     };
-    cam_hal_init(&ctlr->hal, &cam_hal_config);
 
     if (!config->pin_dont_init) {
         ESP_GOTO_ON_ERROR(esp_cam_ctlr_dvp_init(config->ctlr_id, config->clk_src, config->pin),
                           fail5, TAG, "failed to initialize clock and GPIO");
     }
+
+    cam_hal_init(&ctlr->hal, &cam_hal_config);
 
     ctlr->ctlr_id = config->ctlr_id;
     ctlr->fb_size_in_bytes = fb_size_in_bytes;
