@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "soc/interrupt_matrix_reg.h"
 #include "soc/soc_caps.h"
 #include "soc/clic_reg.h"
 
@@ -16,3 +17,5 @@
 #define INTERRUPT_CORE0_CPU_INT_THRESH_REG INTERRUPT_CURRENT_CORE_INT_THRESH_REG
 
 #define DR_REG_INTERRUPT_CORE0_BASE DR_REG_INTMTX_BASE
+
+#define INTERRUPT_COREx_INTR_STATUS_REG_BASE(cpu)   INTERRUPT_CORE0_INT_STATUS_0_REG
