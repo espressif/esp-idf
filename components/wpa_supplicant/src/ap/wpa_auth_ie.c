@@ -235,7 +235,7 @@ static u8 * rsne_write_data(u8 *buf, size_t len, u8 *pos, int group,
 	}
 #endif /* CONFIG_SAE */
 #ifdef CONFIG_OWE_SOFTAP
-	if (conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) {
+	if (key_mgmt & WPA_KEY_MGMT_OWE) {
 		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_OWE);
 		pos += RSN_SELECTOR_LEN;
 		num_suites++;
@@ -869,7 +869,7 @@ int wpa_auth_uses_mfp(struct wpa_state_machine *sm)
 	return sm ? sm->mgmt_frame_prot : 0;
 }
 
-
+#ifdef CONFIG_OWE_SOFTAP
 uint8_t *wpa_auth_write_assoc_resp_owe(struct hostapd_data *hapd, struct wpa_state_machine *sm,
 				   u8 *pos, size_t max_len)
 
@@ -877,8 +877,9 @@ uint8_t *wpa_auth_write_assoc_resp_owe(struct hostapd_data *hapd, struct wpa_sta
 	int res;
 
 	res = wpa_write_rsn_ie(&hapd->wpa_auth->conf, pos, max_len,
-			       sm->pmksa ? sm->pmksa->pmkid : NULL, hapd->wpa_auth->conf.group_mgmt_cipher);
+			       sm->pmksa ? sm->pmksa->pmkid : NULL);
 	if (res < 0)
 		return pos;
 	return pos + res;
 }
+#endif /* CONFIG_OWE_SOFTAP */

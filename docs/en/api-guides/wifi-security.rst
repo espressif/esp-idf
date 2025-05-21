@@ -170,4 +170,8 @@ A configuration option :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA` and configurat
 
 For softap mode :
 
-A configuration option :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP` from menuconfig and configuration parameter :cpp:type:`owe_enabled` in :cpp:type:`wifi_ap_config_t` should be enabled and configuration parameter `authmode` from :cpp:type:`wifi_ap_config_t` should be set to ``WIFI_AUTH_OWE``.
+A configuration option :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP` from menuconfig should be enabled and configuration parameter `authmode` from :cpp:type:`wifi_ap_config_t` should be set to ``WIFI_AUTH_OWE``.
+
+.. note::
+
+   In softap mode, if the configuration option :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP` is enabled and authmode is set to ``WIFI_AUTH_OPEN``, authmode will be set to ``WIFI_AUTH_OWE`` internally.

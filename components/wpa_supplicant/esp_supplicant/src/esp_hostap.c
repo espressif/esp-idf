@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,7 @@
 #ifdef CONFIG_OWE_SOFTAP
 #include "crypto/crypto.h"
 #include "ap/ieee802_11.h"
+#include "esp_owe_i.h"
 #endif
 
 struct hostapd_data *global_hapd;
@@ -375,28 +376,28 @@ u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
                         u16 status_code, bool omit_rsnxe, int subtype)
 {
 #define ASSOC_RESP_LENGTH 20
-    wifi_mgmt_frm_req_t *reply = NULL;
-    int res = WLAN_STATUS_SUCCESS;
-
-#ifdef CONFIG_OWE_SOFTAP
-    if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) && esp_wifi_ap_get_owe_config_internal()) {
-        int owe_ie_len = 0;
-        u8 *owe_ie = NULL;
-        owe_ie = owe_build_assoc_resp_dhie(hapd, addr, &owe_ie_len);
-        if (owe_ie_len <= 0 || !owe_ie) {
-            wpa_printf(MSG_ERROR, "%s : error creating dhie for assoc resp %d ", __func__, owe_ie_len);
-        }
-        esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, owe_ie, owe_ie_len, 0);
-    }
-#else
     u8 buf[ASSOC_RESP_LENGTH];
+    wifi_mgmt_frm_req_t *reply = NULL;
     int send_len = 0;
+
+    int res = WLAN_STATUS_SUCCESS;
 
     if (!omit_rsnxe) {
         send_len = esp_wifi_build_rsnxe(hapd, buf, ASSOC_RESP_LENGTH);
     }
 
     esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, buf, send_len, 0);
+#ifdef CONFIG_OWE_SOFTAP
+    if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) && esp_wifi_ap_get_owe_config_internal()) {
+        int owe_ie_len = 0;
+        struct wpabuf *owe_ie = esp_owe_build_assoc_resp_dhie(hapd, addr, &owe_ie_len);
+        if (owe_ie_len <= 0 || !owe_ie) {
+            wpa_printf(MSG_ERROR, "%s : error creating dhie for assoc resp %d ", __func__, owe_ie_len);
+            return WLAN_STATUS_UNSPECIFIED_FAILURE;
+        }
+        esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, (uint8_t *)wpabuf_head(owe_ie), owe_ie_len, 0);
+        wpabuf_free(owe_ie);
+    }
 #endif /* CONFIG_OWE_SOFTAP */
 
     reply = os_zalloc(sizeof(wifi_mgmt_frm_req_t) + sizeof(uint16_t));

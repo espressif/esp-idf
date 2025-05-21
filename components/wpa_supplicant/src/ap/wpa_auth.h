@@ -328,8 +328,6 @@ static inline bool wpa_auth_pmf_enabled(struct wpa_auth_config *conf)
        return conf->ieee80211w != NO_MGMT_FRAME_PROTECTION;
 #endif
 }
-u8 * wpa_auth_write_assoc_resp_owe(struct wpa_state_machine *sm,
-				   u8 *pos, size_t max_len);
 uint8_t *wpa_auth_write_assoc_resp_owe(struct hostapd_data *hapd, struct wpa_state_machine *sm,
 		            u8 *pos, size_t max_len);
 

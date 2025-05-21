@@ -353,8 +353,6 @@ menu "Wi-Fi"
             depends on ESP_WIFI_SOFTAP_SUPPORT
             help
                 Select this option to allow the device to enable OWE Only mode for softap.
-                PMF (Protected Management Frames) is a prerequisite feature, it needs to be explicitly configured
-                before attempting connection. Please refer to the Wi-Fi Driver API Guide for details.
 
         config ESP_WIFI_SLP_IRAM_OPT
             bool "WiFi SLP IRAM speed optimization"

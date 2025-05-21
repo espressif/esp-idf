@@ -130,7 +130,7 @@ struct wpa_funcs {
     bool (*wpa_sta_in_4way_handshake)(void);
     void *(*wpa_ap_init)(void);
     bool (*wpa_ap_deinit)(void *data);
-    bool (*wpa_ap_join)(void **sm, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8* rsnxe, u16 rsnxe_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *rsn_selection_ie, uint8_t *owe_dh, uint8_t owe_ie_len);
+    bool (*wpa_ap_join)(void **sm, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8* rsnxe, u16 rsnxe_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *rsn_selection_ie, uint8_t *owe_dhie, uint8_t owe_dh_len);
     bool (*wpa_ap_remove)(u8 *bssid);
     uint8_t *(*wpa_ap_get_wpa_ie)(size_t *len);
     bool (*wpa_ap_rx_eapol)(void *hapd_data, void *sm, u8 *data, size_t data_len);
@@ -312,6 +312,6 @@ void esp_wifi_set_sigma_internal(bool flag);
 void esp_wifi_ap_set_group_mgmt_cipher_internal(wifi_cipher_type_t cipher);
 uint8_t esp_wifi_op_class_supported_internal(uint8_t op_class, uint8_t min_chan, uint8_t max_chan, uint8_t inc, uint8_t bw, channel_bitmap_t *non_pref_channels);
 bool esp_wifi_is_wpa3_compatible_mode_enabled(uint8_t if_index);
-uint8_t esp_wifi_ap_get_owe_config_internal();
+uint8_t esp_wifi_ap_get_owe_config_internal(void);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */

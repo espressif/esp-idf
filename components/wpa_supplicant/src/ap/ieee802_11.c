@@ -24,14 +24,6 @@
 #include "crypto/crypto.h"
 #include "ap/wpa_auth_i.h"
 #define OWE_DH_GRP19 19
-#define OWE_DHIE_LEN 37
-/*
-OWE_DHIE_LEN = 1 byte   {WLAN_EID_EXTENSION}
-             + 1 byte   {len of DHIE (1(pub_key len) + 2(dh group) + 32(len of pub_key)) = 35)}
-             + 1 byte   {pub_key len}
-             + 2 bytes  {DH group}
-             + 32 bytes {public key}
-*/
 #endif
 
 #ifdef CONFIG_SAE
@@ -945,65 +937,6 @@ uint16_t owe_process_assoc_req(struct hostapd_data *hapd, struct sta_info *sta, 
     sta->wpa_sm->pmkid_set = 1;
 
     return WLAN_STATUS_SUCCESS;
-}
-
-
-uint8_t *owe_build_assoc_resp_dhie(struct hostapd_data *hapd, const u8 *bssid, int *owe_ie_len)
-{
-
-    if (!hapd || !hapd->wpa_auth || !hapd->wpa_auth->wpa_ie) {
-        wpa_printf(MSG_ERROR, "Invalid hapd or WPA auth data");
-        return NULL;
-    }
-
-    struct wpabuf *pub;
-    struct sta_info *sta = ap_get_sta(hapd, bssid);
-    if (!sta) {
-        return NULL;
-    }
-
-    struct wpabuf *owe_buf = wpabuf_alloc(hapd->wpa_auth->wpa_ie_len);
-    if (!owe_buf) {
-        wpa_printf(MSG_ERROR, "Memory allocation failed for OWE IE");
-        return NULL;
-    }
-
-    // If PMKSA caching is used, write and return only RSN IE with PMKID
-    if (sta->wpa_sm && sta->wpa_sm->pmksa) {
-        u8 *pos, buf[128];
-        pos = buf;
-
-	wpa_printf(MSG_DEBUG, "OWE: Using PMKSA caching for Assoc Resp");
-        pos = wpa_auth_write_assoc_resp_owe(hapd, sta->wpa_sm, pos,
-                                      buf + sizeof(buf) - pos);
-
-        wpabuf_resize(&owe_buf, pos - buf);
-        wpabuf_put_data(owe_buf, buf, pos - buf);
-        *owe_ie_len = pos - buf;
-	return (uint8_t *)wpabuf_head(owe_buf);
-    }
-
-    if (sta->owe_ecdh) {
-        pub = crypto_ecdh_get_pubkey(sta->owe_ecdh, 0);
-        if (!pub) {
-            return NULL;
-        }
-
-        wpa_hexdump_buf(MSG_DEBUG, "Own public key", pub);
-
-        wpabuf_resize(&owe_buf, OWE_DHIE_LEN);
-        wpabuf_put_u8(owe_buf, WLAN_EID_EXTENSION);
-        wpabuf_put_u8(owe_buf, 1 + 2 + wpabuf_len(pub));
-        wpabuf_put_u8(owe_buf, WLAN_EID_EXT_OWE_DH_PARAM);
-        wpabuf_put_le16(owe_buf, IANA_SECP256R1);
-        wpabuf_put_buf(owe_buf, pub);
-        wpabuf_free(pub);
-
-        wpa_hexdump_buf(MSG_DEBUG, "OWE: Buffer", owe_buf);
-    }
-    *owe_ie_len = wpabuf_len(owe_buf);
-
-    return (uint8_t *)wpabuf_head(owe_buf);
 }
 
 #endif /* CONFIG_OWE_SOFTAP */
