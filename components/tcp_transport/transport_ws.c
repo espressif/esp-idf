@@ -71,6 +71,8 @@ typedef struct {
     ws_transport_frame_state_t frame_state;
     esp_transport_handle_t parent;
     char *redir_host;
+    char *response_header;
+    size_t response_header_len;
 } transport_ws_t;
 
 /**
@@ -305,14 +307,24 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     } while (NULL == strstr(ws->buffer, delimiter) && header_len < WS_BUFFER_SIZE - 1);
 
     if (header_len >= WS_BUFFER_SIZE - 1) {
-        ESP_LOGE(TAG, "Header size exceeded buffer size");
+        ESP_LOGE(TAG, "Header size exceeded buffer size (need=%d, max=%d)", header_len + 1, WS_BUFFER_SIZE);
         return -1;
+    }
+
+    if(ws->response_header) {
+        if(ws->response_header_len < header_len) {
+            ESP_LOGW(TAG, "Received header length exceedes the allocated buffer size (need=%d, allocated=%d), truncating to allocated size", header_len, ws->response_header_len);
+            header_len = ws->response_header_len;
+        }
+        // Copy response header to the static array
+        strncpy(ws->response_header, ws->buffer, header_len);
+        ws->response_header[header_len] = '\0';
     }
 
     char* delim_ptr = strstr(ws->buffer, delimiter);
 
     ws->http_status_code = get_http_status_code(ws->buffer);
-    if (ws->http_status_code == -1) {
+    if (ws->http_status_code == -1)  {
         ESP_LOGE(TAG, "HTTP upgrade failed");
         return -1;
     } else if (WS_HTTP_TEMPORARY_REDIRECT(ws->http_status_code) || WS_HTTP_PERMANENT_REDIRECT(ws->http_status_code)) {
@@ -605,7 +617,7 @@ static int ws_handle_control_frame_internal(esp_transport_handle_t t, int timeou
 
     if (payload_len > WS_TRANSPORT_MAX_CONTROL_FRAME_BUFFER_LEN) {
         ESP_LOGE(TAG, "Not enough room for reading control frames (need=%d, max_allowed=%d)",
-                 ws->frame_state.payload_len, WS_TRANSPORT_MAX_CONTROL_FRAME_BUFFER_LEN);
+                ws->frame_state.payload_len, WS_TRANSPORT_MAX_CONTROL_FRAME_BUFFER_LEN);
         return -1;
     }
 
@@ -625,7 +637,7 @@ static int ws_handle_control_frame_internal(esp_transport_handle_t t, int timeou
     int actual_len = ws_read_payload(t, control_frame_buffer, control_frame_buffer_len, timeout_ms);
     if (actual_len != payload_len) {
         ESP_LOGE(TAG, "Control frame (opcode=%d) payload read failed (payload_len=%d, read_len=%d)",
-                 ws->frame_state.opcode, payload_len, actual_len);
+                ws->frame_state.opcode, payload_len, actual_len);
         ret = -1;
         goto free_payload_buffer;
     }
@@ -751,8 +763,8 @@ static int ws_get_socket(esp_transport_handle_t t)
 esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handle)
 {
     if (parent_handle == NULL) {
-      ESP_LOGE(TAG, "Invalid parent ptotocol");
-      return NULL;
+    ESP_LOGE(TAG, "Invalid parent ptotocol");
+    return NULL;
     }
     esp_transport_handle_t t = esp_transport_init();
     if (t == NULL) {
@@ -870,6 +882,28 @@ esp_err_t esp_transport_ws_set_auth(esp_transport_handle_t t, const char *auth)
     return ESP_OK;
 }
 
+esp_err_t esp_transport_ws_set_response_headers(esp_transport_handle_t t, char *response_header, size_t response_header_len)
+{
+    if (t == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (response_header != NULL && response_header_len == 0) {
+        ESP_LOGE(TAG, "Invalid response header length");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+
+    if (ws == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ws->response_header = response_header;
+    ws->response_header_len = response_header_len;
+    return ESP_OK;
+}
+
 esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transport_ws_config_t *config)
 {
     if (t == NULL) {
@@ -897,6 +931,11 @@ esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transp
         err = esp_transport_ws_set_auth(t, config->auth);
         ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
     }
+    if(config->response_headers) {
+        err = esp_transport_ws_set_response_headers(t, config->response_headers, config->response_headers_len);
+        ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
+    }
+
     ws->propagate_control_frames = config->propagate_control_frames;
 
     return err;
@@ -904,8 +943,8 @@ esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transp
 
 bool esp_transport_ws_get_fin_flag(esp_transport_handle_t t)
 {
-  transport_ws_t *ws = esp_transport_get_context_data(t);
-  return ws->frame_state.fin;
+transport_ws_t *ws = esp_transport_get_context_data(t);
+return ws->frame_state.fin;
 }
 
 int esp_transport_ws_get_upgrade_request_status(esp_transport_handle_t t)
@@ -969,7 +1008,7 @@ static int esp_transport_ws_handle_control_frames(esp_transport_handle_t t, char
     if (ws->frame_state.opcode == WS_OPCODE_PING) {
         // handle PING frames internally: just send a PONG with the same payload
         actual_len = _ws_write(t, WS_OPCODE_PONG | WS_FIN, WS_MASK, buffer,
-                               payload_len, timeout_ms);
+                            payload_len, timeout_ms);
         if (actual_len != payload_len) {
             ESP_LOGE(TAG, "PONG send failed (payload_len=%d, written_len=%d)", payload_len, actual_len);
             return -1;
