@@ -25,7 +25,7 @@ In certain situations, the execution of the program can not be continued in a we
         - Heap integrity check
         - Undefined behavior sanitizer (UBSAN) checks
 
-- Failed assertions, via ``assert``, ``configASSERT`` and similar macros.
+- Failed assertions, via ``assert``, ``configASSERT`` and :doc:`similar macros </api-guides/error-handling>`.
 
 This guide explains the procedure used in ESP-IDF for handling these errors, and provides suggestions on troubleshooting the errors.
 

@@ -21,7 +21,7 @@ Identifying and handling run-time errors is important for developing robust appl
   - CPU exceptions: access to protected regions of memory, illegal instruction, etc.
   - System level checks: watchdog timeout, cache access error, stack overflow, stack smashing, heap corruption, etc.
 
-This guide explains ESP-IDF error handling mechanisms related to recoverable errors, and provides some common error handling patterns.
+This guide primarily introduces the error handling mechanisms in ESP-IDF for **recoverable errors** and provides common error handling patterns. Some sections also mention macros used for **unrecoverable errors**, with the aim of illustrating their use in scenarios with different levels of error severity.
 
 For instructions on diagnosing unrecoverable errors, see :doc:`Fatal Errors <fatal-errors>`.
 
@@ -63,11 +63,11 @@ Use :c:macro:`ESP_ERROR_CHECK` in situations where an error is considered fatal 
 ``ESP_ERROR_CHECK_WITHOUT_ABORT``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` macro, defined in ``esp_err.h``, is closely related to the **Macros For Recoverable Errors**. The macro behaves similarly to :c:macro:`ESP_ERROR_CHECK`, but instead of terminating the program with ``abort()``, it logs an error message in the same format and returns the error code if the value is not :c:macro:`ESP_OK`. This allows the application to continue running, making it suitable for cases where errors should be reported but are not considered fatal.
+The :c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` macro, defined in ``esp_err.h``, is closely related to the **Macros For Recoverable Errors**. The macro behaves similarly to :c:macro:`ESP_ERROR_CHECK`, but instead of terminating the program with ``abort()``, it prints an error message in the same format and returns the error code if the value is not :c:macro:`ESP_OK`. This allows the application to continue running, making it suitable for cases where errors should be reported but are not considered fatal.
 
 The behavior of :c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` is controlled by the same assertion-related configuration options as :c:macro:`ESP_ERROR_CHECK`. If either ``CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE`` or ``CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT`` is enabled, the macro does not print any error message, otherwise, the macro prints an error message.
 
-Use :c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` when you want to log errors for diagnostic purposes without stopping the application.
+Use :c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` when you want to print errors for diagnostic purposes without stopping the application.
 
 Error message will typically look like this:
 

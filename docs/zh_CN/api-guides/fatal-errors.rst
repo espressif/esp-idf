@@ -25,7 +25,7 @@
         - 堆完整性检查
         - 未定义行为清理器 (UBSAN) 检查
 
-- 使用 ``assert``、``configASSERT`` 等类似的宏断言失败。
+- 使用 ``assert``、``configASSERT`` 等 :doc:`类似的宏 </api-guides/error-handling>` 断言失败。
 
 本指南会介绍 ESP-IDF 中这类错误的处理流程，并给出对应的解决建议。
 
