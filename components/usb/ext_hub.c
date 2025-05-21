@@ -1064,6 +1064,11 @@ static bool device_set_next_stage(ext_hub_dev_t *ext_hub_dev, bool last_stage_pa
         } else {
             // Terminal stages, move to IDLE
             next_stage = EXT_HUB_STAGE_IDLE;
+            EXT_HUB_ENTER_CRITICAL();
+            if (ext_hub_dev->dynamic.flags.waiting_release) {
+                call_proc_req_cb = _device_set_actions(ext_hub_dev, DEV_ACTION_RELEASE);
+            }
+            EXT_HUB_EXIT_CRITICAL();
         }
         ext_hub_dev->single_thread.stage = next_stage;
         call_proc_req_cb = stage_need_process(next_stage);
