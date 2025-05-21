@@ -16,7 +16,7 @@
 
 ```bash
 cd $IDF_PATH
-bash install.sh --enable-ci --enable-pytest
+bash install.sh --enable-ci
 . ./export.sh
 ```
 

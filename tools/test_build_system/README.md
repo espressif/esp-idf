@@ -9,7 +9,7 @@ This directory contains tests for the build system and build-related tools. Thes
 
 ## Running the tests locally
 
-1. Install pytest using `install.{sh,bat,ps1,fish} --enable-pytest`.
+1. Install pytest using `install.{sh,bat,ps1,fish} --enable-ci`.
 1. Activate the IDF shell environment using `export.{sh,bat,ps1,fish}`.
 1. To run all the tests, go to `$IDF_PATH/tools/test_build_system` directory, then run:
     ```

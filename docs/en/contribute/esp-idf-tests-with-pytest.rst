@@ -33,13 +33,13 @@ On the host side, ESP-IDF employs the pytest framework (alongside certain pytest
 Installation
 ============
 
-All basic dependencies could be installed by running the ESP-IDF install script with the ``--enable-pytest`` argument:
+All basic dependencies could be installed by running the ESP-IDF install script with the ``--enable-ci`` argument:
 
 .. code-block:: bash
 
-    $ install.sh --enable-pytest
+    $ install.sh --enable-ci
 
-Additional test script specific dependencies could be installed separately by running the ESP-IDF install script with the ``--enable-pytest-specific`` argument:
+Additional test script specific dependencies could be installed separately by running the ESP-IDF install script with the ``--enable-test-specific`` argument:
 
 .. code-block:: bash
 
@@ -494,7 +494,7 @@ First you need to install ESP-IDF with additional Python requirements:
 .. code-block:: shell
 
     $ cd $IDF_PATH
-    $ bash install.sh --enable-ci --enable-pytest
+    $ bash install.sh --enable-ci
     $ . ./export.sh
 
 Build Directories

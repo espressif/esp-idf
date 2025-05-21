@@ -102,7 +102,7 @@ Under `Security features`
 - Install pytest requirements
 
     ```
-    bash $IDF_PATH/install.sh --enable-pytest
+    bash $IDF_PATH/install.sh --enable-ci
     ```
 
 ### Build and test

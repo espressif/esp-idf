@@ -56,7 +56,7 @@ They can also be run locally. Ref: [ESP-IDF Tests with Pytest Guide](https://doc
 Example:
 ```bash
 $ cd $IDF_PATH
-$ bash install.sh --enable-pytest
+$ bash install.sh --enable-ci
 $ . ./export.sh
 $ cd examples/protocols/sockets/tcp_client
 $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32 -vv --pytest-apps

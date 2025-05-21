@@ -33,13 +33,13 @@ ESP-IDF 在主机端使用 pytest 框架（以及一些 pytest 插件）来自�
 安装
 ============
 
-基础依赖项可以通过执行 ESP-IDF 安装脚本 ``--enable-pytest`` 进行安装：
+基础依赖项可以通过执行 ESP-IDF 安装脚本 ``--enable-ci`` 进行安装：
 
 .. code-block:: bash
 
-    $ install.sh --enable-pytest
+    $ install.sh --enable-ci
 
-额外的测试脚本依赖项可以通过执行 ESP-IDF 安装脚本 ``--enable-pytest-specific`` 进行安装：
+额外的测试脚本依赖项可以通过执行 ESP-IDF 安装脚本 ``--enable-test-specific`` 进行安装：
 
 .. code-block:: bash
 
@@ -494,7 +494,7 @@ CI 的工作流程如下所示：
 .. code-block:: shell
 
     $ cd $IDF_PATH
-    $ bash install.sh --enable-ci --enable-pytest
+    $ bash install.sh --enable-ci
     $ . ./export.sh
 
 编译目录
