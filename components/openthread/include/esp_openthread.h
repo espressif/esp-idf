@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +79,15 @@ esp_err_t esp_openthread_deinit(void);
  */
 otInstance *esp_openthread_get_instance(void);
 
+/**
+ * @brief Signals the OpenThread main loop to exit.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
+ */
+esp_err_t esp_openthread_mainloop_exit(void);
 
 #ifdef __cplusplus
 } // end of extern "C"
