@@ -91,6 +91,7 @@ enum {
 
 // Private variables
 static bool spi_out_inited = false;
+static bool spi_out_enabled = false;
 static spi_device_handle_t spi_handle = NULL;
 static uint32_t last_tx_done_ts = 0;
 
@@ -237,6 +238,13 @@ IRAM_ATTR static inline int spi_out_append_trans(spi_out_trans_cb_t *trans_cb)
 {
     if (trans_cb->flag != TRANS_CB_FLAG_NEED_QUEUE || !trans_cb->length) {
         return -1;
+    }
+
+    // Note: To support dump log when disabled
+    if (!spi_out_enabled) {
+        trans_cb->length = 0;
+        trans_cb->flag = TRANS_CB_FLAG_AVAILABLE;
+        return 0;
     }
 
     // CRITICAL: Length unit conversion from bytes to bits
@@ -740,6 +748,7 @@ int ble_log_spi_out_init(void)
     // Initialization done
     ESP_LOGI(BLE_LOG_TAG, "Succeeded to initialize BLE log SPI output interface!");
     spi_out_inited = true;
+    spi_out_enabled = true;
 
 #if SPI_OUT_FLUSH_TIMER_ENABLED
     // Start flushout timer
@@ -796,6 +805,7 @@ void ble_log_spi_out_deinit(void)
 
     // Reset init flag
     spi_out_inited = false;
+    spi_out_enabled = false;
 }
 
 #if SPI_OUT_TS_SYNC_ENABLED
@@ -1048,6 +1058,17 @@ void ble_log_spi_out_dump_all(void)
         esp_rom_printf("\n:UL_LOG_DUMP_END]\n\n");
     }
     portEXIT_CRITICAL_SAFE(&spinlock);
+}
+
+void ble_log_spi_out_enable(bool enable)
+{
+    spi_out_enabled = enable;
+
+    if (!enable) {
+#if CONFIG_BT_BLE_LOG_SPI_OUT_TS_SYNC_ENABLED
+        ble_log_spi_out_ts_sync_stop();
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_TS_SYNC_ENABLED
+    }
 }
 
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
