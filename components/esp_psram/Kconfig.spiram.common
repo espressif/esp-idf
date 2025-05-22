@@ -10,6 +10,30 @@ config SPIRAM_BOOT_INIT
         have specific requirements, you'll want to leave this enabled so memory allocated
         during boot-up can also be placed in SPI RAM.
 
+config SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    bool "Pre-configure memory protection for PSRAM"
+    default y if SPIRAM_BOOT_INIT
+    default n
+    depends on SPIRAM
+    help
+        If this is enabled, the PSRAM will be pre-configured for memory protection during initial boot.
+        This configuration takes into consideration the PSRAM memory configurations that are performed
+        by ESP-IDF's default PSRAM initialization function, esp_psram_init().
+        Thus, the config is enabled by default when SPIRAM_BOOT_INIT is enabled,
+        because the function esp_psram_init() would be called in the startup code.
+
+        In case you wish to disable SPIRAM_BOOT_INIT just for delaying the PSRAM initialization and plan
+        to use the ESP-IDF's default PSRAM initialization function, esp_psram_init() in the application code,
+        you should still enable this config to enable memory protection for the PSRAM.
+
+        Note that enabling this config also considers that the rest of the PSRAM memory that is left after
+        the memory configurations are performed by esp_psram_init(), can be allocated to the heap using the function
+        esp_psram_extram_add_to_heap_allocator(), thus configures this region with heap memory protection (RW).
+
+        As an advanced usage, if you plan to initialize the PSRAM memory regions manually by yourself without
+        using the function esp_psram_init(), you should disable this config to avoid any memory protection and
+        usage conflicts.
+
 config SPIRAM_IGNORE_NOTFOUND
     bool "Ignore PSRAM when not found"
     default "n"

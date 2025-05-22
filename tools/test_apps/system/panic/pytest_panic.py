@@ -157,7 +157,8 @@ def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[Lis
         dut.revert_log_level()
         return  # don't expect "Rebooting" output below
 
-    # We will only perform comparisons for ELF files, as we are not introducing any new fields to the binary file format.
+    # We will only perform comparisons for ELF files,
+    # as we are not introducing any new fields to the binary file format.
     if 'bin' in config:
         expected_coredump = None
 
@@ -751,6 +752,15 @@ CONFIGS_MEMPROT_FLASH_IDROM = [
     pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4])
 ]
 
+CONFIGS_MEMPROT_SPIRAM_XIP_IROM_ALIGNMENT_HEAP = [
+    pytest.param('memprot_spiram_xip_esp32p4', marks=[pytest.mark.esp32p4])
+]
+
+CONFIGS_MEMPROT_SPIRAM_XIP_DROM_ALIGNMENT_HEAP = [
+    pytest.param('memprot_spiram_xip_esp32s3', marks=[pytest.mark.esp32s3]),
+    pytest.param('memprot_spiram_xip_esp32p4', marks=[pytest.mark.esp32p4])
+]
+
 CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA = [
     pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6]),
     pytest.param('memprot_esp32h2', marks=[pytest.mark.esp32h2]),
@@ -1020,8 +1030,35 @@ def test_drom_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> N
     dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA, indirect=True)
+@pytest.mark.parametrize('config', CONFIGS_MEMPROT_SPIRAM_XIP_IROM_ALIGNMENT_HEAP, indirect=True)
 @pytest.mark.generic
+def test_spiram_xip_irom_alignment_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    try:
+        dut.expect_gme('Instruction access fault')
+    except Exception:
+        dut.expect_exact('SPIRAM (IROM): IROM alignment gap not added into heap')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.parametrize('config', CONFIGS_MEMPROT_SPIRAM_XIP_DROM_ALIGNMENT_HEAP, indirect=True)
+@pytest.mark.generic
+def test_spiram_xip_drom_alignment_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    try:
+        if dut.target == 'esp32s3':
+            dut.expect_gme('InstructionFetchError')
+        else:
+            dut.expect_gme('Instruction access fault')
+    except Exception:
+        dut.expect_exact('SPIRAM (DROM): DROM alignment gap not added into heap')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA, indirect=True)
 def test_invalid_memory_region_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Store access fault')
