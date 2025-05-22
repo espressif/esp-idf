@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -133,7 +133,10 @@ static inline void lp_i2s_ll_enable_module_clock(int id, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lp_i2s_ll_enable_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2s_ll_enable_module_clock(__VA_ARGS__)
+#define lp_i2s_ll_enable_module_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lp_i2s_ll_enable_module_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the LP I2S module
@@ -148,7 +151,10 @@ static inline void lp_i2s_ll_reset_module_clock(int id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lp_i2s_ll_reset_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2s_ll_reset_module_clock(__VA_ARGS__)
+#define lp_i2s_ll_reset_module_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lp_i2s_ll_reset_module_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable the bus clock for LP I2S RX module
@@ -163,7 +169,10 @@ static inline void lp_i2s_ll_enable_rx_module_clock(int id, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lp_i2s_ll_enable_rx_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2s_ll_enable_rx_module_clock(__VA_ARGS__)
+#define lp_i2s_ll_enable_rx_module_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lp_i2s_ll_enable_rx_module_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Select ISP clock source
@@ -190,7 +199,10 @@ static inline void lp_i2s_ll_select_rx_clk_source(int id, soc_periph_lp_i2s_clk_
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lp_i2s_ll_select_rx_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2s_ll_select_rx_clk_source(__VA_ARGS__)
+#define lp_i2s_ll_select_rx_clk_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lp_i2s_ll_select_rx_clk_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set LP I2S clock source div num

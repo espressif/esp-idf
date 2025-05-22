@@ -124,7 +124,10 @@ static inline void sdmmc_ll_enable_bus_clock(int group_id, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sdmmc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; sdmmc_ll_enable_bus_clock(__VA_ARGS__)
+#define sdmmc_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        sdmmc_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the SDMMC module
@@ -140,7 +143,10 @@ static inline void sdmmc_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sdmmc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; sdmmc_ll_reset_register(__VA_ARGS__)
+#define sdmmc_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        sdmmc_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Select SDMMC clock source

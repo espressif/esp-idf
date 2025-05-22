@@ -637,7 +637,10 @@ static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define gpio_ll_iomux_set_clk_src(...) (void)__DECLARE_RCC_ATOMIC_ENV; gpio_ll_iomux_set_clk_src(__VA_ARGS__)
+#define gpio_ll_iomux_set_clk_src(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        gpio_ll_iomux_set_clk_src(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Get the GPIO number that is routed to the input peripheral signal through GPIO matrix.

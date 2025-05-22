@@ -26,7 +26,10 @@ FORCE_INLINE_ATTR void _clk_gate_ll_ref_20m_clk_en(bool enable)
 }
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define clk_gate_ll_ref_20m_clk_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _clk_gate_ll_ref_20m_clk_en(__VA_ARGS__)
+#define clk_gate_ll_ref_20m_clk_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _clk_gate_ll_ref_20m_clk_en(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Enable or disable the clock gate for ref_20m.
@@ -38,7 +41,10 @@ FORCE_INLINE_ATTR void _clk_gate_ll_ref_25m_clk_en(bool enable)
 }
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define clk_gate_ll_ref_25m_clk_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _clk_gate_ll_ref_25m_clk_en(__VA_ARGS__)
+#define clk_gate_ll_ref_25m_clk_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _clk_gate_ll_ref_25m_clk_en(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Enable or disable the clock gate for ref_20m.
@@ -50,7 +56,10 @@ FORCE_INLINE_ATTR void _clk_gate_ll_ref_80m_clk_en(bool enable)
 }
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define clk_gate_ll_ref_80m_clk_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _clk_gate_ll_ref_80m_clk_en(__VA_ARGS__)
+#define clk_gate_ll_ref_80m_clk_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _clk_gate_ll_ref_80m_clk_en(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Enable or disable the clock gate for ref_20m.
@@ -62,7 +71,10 @@ FORCE_INLINE_ATTR void _clk_gate_ll_ref_160m_clk_en(bool enable)
 }
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define clk_gate_ll_ref_160m_clk_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _clk_gate_ll_ref_160m_clk_en(__VA_ARGS__)
+#define clk_gate_ll_ref_160m_clk_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _clk_gate_ll_ref_160m_clk_en(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Enable or disable the clock gate for ref_20m.
@@ -74,7 +86,10 @@ FORCE_INLINE_ATTR void _clk_gate_ll_ref_240m_clk_en(bool enable)
 }
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define clk_gate_ll_ref_240m_clk_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _clk_gate_ll_ref_240m_clk_en(__VA_ARGS__)
+#define clk_gate_ll_ref_240m_clk_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _clk_gate_ll_ref_240m_clk_en(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Enable or disable the clock gate for xtal to lp periph
@@ -86,7 +101,10 @@ FORCE_INLINE_ATTR void _clk_gate_ll_xtal_to_lp_periph_en(bool enable)
 }
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define clk_gate_ll_xtal_to_lp_periph_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _clk_gate_ll_xtal_to_lp_periph_en(__VA_ARGS__)
+#define clk_gate_ll_xtal_to_lp_periph_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _clk_gate_ll_xtal_to_lp_periph_en(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Enable or disable the clock gate for ref_50m.
@@ -98,7 +116,10 @@ FORCE_INLINE_ATTR void _clk_gate_ll_ref_50m_clk_en(bool enable)
 }
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define clk_gate_ll_ref_50m_clk_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _clk_gate_ll_ref_50m_clk_en(__VA_ARGS__)
+#define clk_gate_ll_ref_50m_clk_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _clk_gate_ll_ref_50m_clk_en(__VA_ARGS__); \
+    } while(0)
 
 
 #ifdef __cplusplus

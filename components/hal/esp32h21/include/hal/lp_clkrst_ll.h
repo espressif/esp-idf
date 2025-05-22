@@ -67,7 +67,10 @@ static inline void _lp_clkrst_ll_enable_rng_clock(bool en)
 }
 
 /// LPPERI.clk_en is a shared register, so this function must be used in an atomic way
-#define lp_clkrst_ll_enable_rng_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _lp_clkrst_ll_enable_rng_clock(__VA_ARGS__)
+#define lp_clkrst_ll_enable_rng_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _lp_clkrst_ll_enable_rng_clock(__VA_ARGS__); \
+    } while(0)
 
 #ifdef __cplusplus
 }

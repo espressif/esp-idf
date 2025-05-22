@@ -115,7 +115,10 @@ static inline void _spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enab
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spi_ll_enable_bus_clock(__VA_ARGS__)
+#define spi_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _spi_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Reset whole peripheral register to init value defined by HW design
@@ -139,7 +142,10 @@ static inline void spi_ll_reset_register(spi_host_device_t host_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spi_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_reset_register(__VA_ARGS__)
+#define spi_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        spi_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Enable functional output clock within peripheral
@@ -164,7 +170,10 @@ static inline void _spi_ll_enable_clock(spi_host_device_t host_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spi_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spi_ll_enable_clock(__VA_ARGS__)
+#define spi_ll_enable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _spi_ll_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Select SPI peripheral clock source (master).
@@ -199,7 +208,10 @@ static inline void spi_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_s
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spi_ll_set_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_set_clk_source(__VA_ARGS__)
+#define spi_ll_set_clk_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        spi_ll_set_clk_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Config clock source integrate pre_div before it enter GPSPI peripheral
@@ -225,7 +237,10 @@ static inline void spi_ll_clk_source_pre_div(spi_dev_t *hw, uint8_t hs_div, uint
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spi_ll_clk_sour_pre_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_clk_sour_pre_div(__VA_ARGS__)
+#define spi_ll_clk_sour_pre_div(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        spi_ll_clk_sour_pre_div(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Initialize SPI peripheral (master).

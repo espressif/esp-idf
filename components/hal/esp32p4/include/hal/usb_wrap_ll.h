@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -247,7 +247,10 @@ FORCE_INLINE_ATTR void _usb_wrap_ll_enable_bus_clock(bool clk_en)
 }
 
 // HP_SYS_CLKRST.soc_clk_ctrlx and LP_AON_CLKRST.hp_usb_clkrst_ctrlx are shared registers, so this function must be used in an atomic way
-#define usb_wrap_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _usb_wrap_ll_enable_bus_clock(__VA_ARGS__)
+#define usb_wrap_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _usb_wrap_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the USB Wrap module and USB_DWC_FS controller
@@ -260,7 +263,10 @@ FORCE_INLINE_ATTR void _usb_wrap_ll_reset_register(void)
 }
 
 // P_AON_CLKRST.hp_usb_clkrst_ctrlx are shared registers, so this function must be used in an atomic way
-#define usb_wrap_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _usb_wrap_ll_reset_register(__VA_ARGS__)
+#define usb_wrap_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _usb_wrap_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 #ifdef __cplusplus
 }

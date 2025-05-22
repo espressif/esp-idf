@@ -149,7 +149,10 @@ static inline void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_uart_
 }
 
 /// LP_CLKRST.lpperi is a shared register, so this function must be used in an atomic way
-#define lp_uart_ll_set_source_clk(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_uart_ll_set_source_clk(__VA_ARGS__)
+#define lp_uart_ll_set_source_clk(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lp_uart_ll_set_source_clk(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief  Configure the lp uart baud-rate.
@@ -192,7 +195,10 @@ static inline void _lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
 }
 
 /// LPPERI.clk_en is a shared register, so this function must be used in an atomic way
-#define lp_uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _lp_uart_ll_enable_bus_clock(__VA_ARGS__)
+#define lp_uart_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _lp_uart_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief  Enable the UART clock.
@@ -231,7 +237,10 @@ static inline void lp_uart_ll_reset_register(int hw_id)
 }
 
 /// LPPERI.reset_en is a shared register, so this function must be used in an atomic way
-#define lp_uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_uart_ll_reset_register(__VA_ARGS__)
+#define lp_uart_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lp_uart_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /*************************************** General LL functions ******************************************/
 

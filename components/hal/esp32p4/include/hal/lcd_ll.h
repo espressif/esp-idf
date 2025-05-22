@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,7 +56,10 @@ static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define lcd_ll_enable_bus_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; lcd_ll_enable_bus_clock(__VA_ARGS__)
+#define lcd_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
+        lcd_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the LCD module
@@ -72,7 +75,10 @@ static inline void _lcd_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define lcd_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _lcd_ll_reset_register(__VA_ARGS__)
+#define lcd_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
+        _lcd_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable clock gating
@@ -87,7 +93,10 @@ static inline void lcd_ll_enable_clock(lcd_cam_dev_t *dev, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lcd_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lcd_ll_enable_clock(__VA_ARGS__)
+#define lcd_ll_enable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lcd_ll_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Select clock source for LCD peripheral
@@ -116,7 +125,10 @@ static inline void lcd_ll_select_clk_src(lcd_cam_dev_t *dev, lcd_clock_source_t 
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lcd_ll_select_clk_src(...) (void)__DECLARE_RCC_ATOMIC_ENV; lcd_ll_select_clk_src(__VA_ARGS__)
+#define lcd_ll_select_clk_src(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lcd_ll_select_clk_src(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set clock coefficient of LCD peripheral
@@ -138,7 +150,10 @@ static inline void lcd_ll_set_group_clock_coeff(lcd_cam_dev_t *dev, int div_num,
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lcd_ll_set_group_clock_coeff(...) (void)__DECLARE_RCC_ATOMIC_ENV; lcd_ll_set_group_clock_coeff(__VA_ARGS__)
+#define lcd_ll_set_group_clock_coeff(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lcd_ll_set_group_clock_coeff(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the PCLK clock level state when there's no transaction undergoing

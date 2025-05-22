@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,10 @@ static inline void cam_ll_enable_bus_clock(int group_id, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define cam_ll_enable_bus_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; cam_ll_enable_bus_clock(__VA_ARGS__)
+#define cam_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
+        cam_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the CAM module
@@ -51,7 +54,10 @@ static inline void cam_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define cam_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; cam_ll_reset_register(__VA_ARGS__)
+#define cam_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
+        cam_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable clock gating
@@ -66,7 +72,10 @@ static inline void cam_ll_enable_clk(int group_id, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define cam_ll_enable_clk(...) (void)__DECLARE_RCC_ATOMIC_ENV; cam_ll_enable_clk(__VA_ARGS__)
+#define cam_ll_enable_clk(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        cam_ll_enable_clk(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Get the clock status for the CAM module
@@ -81,7 +90,10 @@ static inline bool cam_ll_get_clk_status(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define cam_ll_get_clk_status(...) (void)__DECLARE_RCC_ATOMIC_ENV; cam_ll_get_clk_status(__VA_ARGS__)
+#define cam_ll_get_clk_status(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        cam_ll_get_clk_status(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Select clock source for CAM peripheral
@@ -109,7 +121,10 @@ static inline void cam_ll_select_clk_src(int group_id, cam_clock_source_t src)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define cam_ll_select_clk_src(...) (void)__DECLARE_RCC_ATOMIC_ENV; cam_ll_select_clk_src(__VA_ARGS__)
+#define cam_ll_select_clk_src(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        cam_ll_select_clk_src(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief  Get the CAM source clock type
@@ -156,7 +171,10 @@ static inline void cam_ll_set_group_clock_coeff(int group_id, int div_num, int d
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define cam_ll_set_group_clock_coeff(...) (void)__DECLARE_RCC_ATOMIC_ENV; cam_ll_set_group_clock_coeff(__VA_ARGS__)
+#define cam_ll_set_group_clock_coeff(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        cam_ll_set_group_clock_coeff(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable stop signal for CAM peripheral

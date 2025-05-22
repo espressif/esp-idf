@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,10 @@ static inline void mpi_ll_enable_bus_clock(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mpi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mpi_ll_enable_bus_clock(__VA_ARGS__)
+#define mpi_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mpi_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the MPI peripheral module
@@ -51,7 +54,10 @@ static inline void mpi_ll_reset_register(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mpi_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; mpi_ll_reset_register(__VA_ARGS__)
+#define mpi_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mpi_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 static inline size_t mpi_ll_calculate_hardware_words(size_t words)
 {

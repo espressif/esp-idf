@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,7 +47,10 @@ static inline void ledc_ll_enable_bus_clock(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; ledc_ll_enable_bus_clock(__VA_ARGS__)
+#define ledc_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        ledc_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset whole peripheral register to init value defined by HW design
@@ -59,7 +62,10 @@ static inline void ledc_ll_enable_reset_reg(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_enable_reset_reg(...) (void)__DECLARE_RCC_ATOMIC_ENV; ledc_ll_enable_reset_reg(__VA_ARGS__)
+#define ledc_ll_enable_reset_reg(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        ledc_ll_enable_reset_reg(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable the power for LEDC memory block

@@ -98,7 +98,10 @@ static inline void _timer_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define timer_ll_enable_bus_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _timer_ll_enable_bus_clock(__VA_ARGS__)
+#define timer_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
+        _timer_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the timer group module
@@ -124,7 +127,10 @@ static inline void _timer_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define timer_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _timer_ll_reset_register(__VA_ARGS__)
+#define timer_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
+        _timer_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set clock source for timer
@@ -167,7 +173,10 @@ static inline void timer_ll_set_clock_source(int group_id, uint32_t timer_num, g
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define timer_ll_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; timer_ll_set_clock_source(__VA_ARGS__)
+#define timer_ll_set_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        timer_ll_set_clock_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable Timer Group (GPTimer) module clock
@@ -195,7 +204,10 @@ static inline void _timer_ll_enable_clock(int group_id, uint32_t timer_num, bool
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define timer_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _timer_ll_enable_clock(__VA_ARGS__)
+#define timer_ll_enable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _timer_ll_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable alarm event

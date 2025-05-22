@@ -140,7 +140,10 @@ static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_bus_clock(__VA_ARGS__)
+#define i2s_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        i2s_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the I2S module
@@ -167,7 +170,10 @@ static inline void i2s_ll_reset_register(int i2s_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_reset_register(__VA_ARGS__)
+#define i2s_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        i2s_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief I2S module general init, enable I2S clock.
@@ -184,7 +190,10 @@ static inline void i2s_ll_enable_core_clock(i2s_dev_t *hw, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_enable_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_core_clock(__VA_ARGS__)
+#define i2s_ll_enable_core_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        i2s_ll_enable_core_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable I2S tx module clock
@@ -209,7 +218,10 @@ static inline void _i2s_ll_tx_enable_clock(i2s_dev_t *hw)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_tx_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_tx_enable_clock(__VA_ARGS__)
+#define i2s_ll_tx_enable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _i2s_ll_tx_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable I2S rx module clock
@@ -234,7 +246,10 @@ static inline void _i2s_ll_rx_enable_clock(i2s_dev_t *hw)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_rx_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_rx_enable_clock(__VA_ARGS__)
+#define i2s_ll_rx_enable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _i2s_ll_rx_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Disable I2S tx module clock
@@ -259,7 +274,10 @@ static inline void i2s_ll_tx_disable_clock(i2s_dev_t *hw)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_tx_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_tx_disable_clock(__VA_ARGS__)
+#define i2s_ll_tx_disable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        i2s_ll_tx_disable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Disable I2S rx module clock
@@ -284,7 +302,10 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_rx_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_rx_disable_clock(__VA_ARGS__)
+#define i2s_ll_rx_disable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        i2s_ll_rx_disable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief I2S mclk use tx module clock
@@ -310,7 +331,10 @@ static inline void _i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_mclk_bind_to_tx_clk(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_mclk_bind_to_tx_clk(__VA_ARGS__)
+#define i2s_ll_mclk_bind_to_tx_clk(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _i2s_ll_mclk_bind_to_tx_clk(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief I2S mclk use rx module clock
@@ -336,7 +360,10 @@ static inline void _i2s_ll_mclk_bind_to_rx_clk(i2s_dev_t *hw)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_mclk_bind_to_rx_clk(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_mclk_bind_to_rx_clk(__VA_ARGS__)
+#define i2s_ll_mclk_bind_to_rx_clk(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _i2s_ll_mclk_bind_to_rx_clk(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable I2S TX slave mode
@@ -445,7 +472,10 @@ static inline void _i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_tx_clk_set_src(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_tx_clk_set_src(__VA_ARGS__)
+#define i2s_ll_tx_clk_set_src(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _i2s_ll_tx_clk_set_src(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set RX source clock
@@ -472,7 +502,10 @@ static inline void _i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_rx_clk_set_src(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_rx_clk_set_src(__VA_ARGS__)
+#define i2s_ll_rx_clk_set_src(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _i2s_ll_rx_clk_set_src(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set I2S tx bck div num
@@ -639,7 +672,10 @@ static inline void _i2s_ll_tx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t 
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_tx_set_mclk(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_tx_set_mclk(__VA_ARGS__)
+#define i2s_ll_tx_set_mclk(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _i2s_ll_tx_set_mclk(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set I2S rx bck div num
@@ -677,7 +713,10 @@ static inline void _i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t 
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_rx_set_mclk(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_rx_set_mclk(__VA_ARGS__)
+#define i2s_ll_rx_set_mclk(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _i2s_ll_rx_set_mclk(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Update the TX configuration

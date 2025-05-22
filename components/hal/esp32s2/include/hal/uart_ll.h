@@ -99,7 +99,10 @@ static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
     }
     WRITE_PERI_REG(DPORT_PERIP_CLK_EN0_REG, reg_val);
 }
-#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_enable_bus_clock(__VA_ARGS__)
+#define uart_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        uart_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset UART module
@@ -122,7 +125,10 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
     }
 }
 // SYSTEM.perip_rst_enx are shared registers, so this function must be used in an atomic way
-#define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
+#define uart_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        uart_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief  Enable the UART clock.
@@ -684,7 +690,10 @@ FORCE_INLINE_ATTR void _uart_ll_enable_pad_sleep_clock(uart_dev_t *hw, bool enab
     (void)hw; (void)enable;
 }
 
-#define uart_ll_enable_pad_sleep_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _uart_ll_enable_pad_sleep_clock(__VA_ARGS__)
+#define uart_ll_enable_pad_sleep_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _uart_ll_enable_pad_sleep_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief  Configure the UART work in normal mode.
