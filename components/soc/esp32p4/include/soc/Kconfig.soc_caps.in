@@ -1745,11 +1745,11 @@ config SOC_TOUCH_SENSOR_NUM
 
 config SOC_TOUCH_MIN_CHAN_ID
     int
-    default 0
+    default 1
 
 config SOC_TOUCH_MAX_CHAN_ID
     int
-    default 13
+    default 14
 
 config SOC_TOUCH_SUPPORT_SLEEP_WAKEUP
     bool
