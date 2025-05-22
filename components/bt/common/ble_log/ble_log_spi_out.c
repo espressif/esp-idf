@@ -67,10 +67,29 @@ typedef struct {
 typedef struct {
     spi_out_trans_cb_t *trans_cb[2];
     uint8_t trans_cb_idx;
-    uint8_t frame_cnt;
-    uint32_t bytes_loss_cnt;
-    uint8_t trans_loss_cnt;
+    uint8_t frame_sn;
+    uint16_t lost_frame_cnt;
+    uint32_t lost_bytes_cnt;
+    uint8_t type;
 } spi_out_log_cb_t;
+
+typedef struct {
+    uint16_t length;
+    uint8_t source;
+    uint8_t frame_sn;
+} __attribute__((packed)) frame_head_t;
+
+typedef struct {
+    uint8_t type;
+    uint16_t lost_frame_cnt;
+    uint32_t lost_bytes_cnt;
+} __attribute__((packed)) loss_payload_t;
+
+typedef struct {
+    uint8_t io_level;
+    uint32_t lc_ts;
+    uint32_t esp_ts;
+} __attribute__((packed)) sync_payload_t;
 
 // Private enums
 enum {
@@ -145,7 +164,7 @@ static void spi_out_deinit_trans(spi_out_trans_cb_t **trans_cb);
 static void spi_out_tx_done_cb(spi_transaction_t *ret_trans);
 static inline int spi_out_append_trans(spi_out_trans_cb_t *trans_cb);
 
-static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size);
+static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size, uint8_t type);
 static void spi_out_log_cb_deinit(spi_out_log_cb_t **log_cb);
 static inline bool spi_out_log_cb_check_trans(spi_out_log_cb_t *log_cb, uint16_t len, bool *need_append);
 static inline void spi_out_log_cb_append_trans(spi_out_log_cb_t *log_cb);
@@ -153,7 +172,7 @@ static inline void spi_out_log_cb_flush_trans(spi_out_log_cb_t *log_cb);
 static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, uint16_t len,
                                  const uint8_t *addr_append, uint16_t len_append, uint8_t source,
                                  bool with_checksum);
-static void spi_out_log_cb_write_packet_loss(spi_out_log_cb_t *log_cb, uint8_t flag);
+static void spi_out_log_cb_write_loss(spi_out_log_cb_t *log_cb);
 static void spi_out_log_cb_dump(spi_out_log_cb_t *log_cb);
 static void spi_out_log_flush(void);
 
@@ -270,7 +289,7 @@ IRAM_ATTR static inline int spi_out_append_trans(spi_out_trans_cb_t *trans_cb)
     }
 }
 
-static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size)
+static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size, uint8_t type)
 {
     // Initialize log control block
     *log_cb = (spi_out_log_cb_t *)malloc(sizeof(spi_out_log_cb_t));
@@ -290,6 +309,8 @@ static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size)
         spi_out_log_cb_deinit(log_cb);
         return -1;
     }
+
+    (*log_cb)->type = type;
     return 0;
 }
 
@@ -330,8 +351,9 @@ IRAM_ATTR static inline bool spi_out_log_cb_check_trans(spi_out_log_cb_t *log_cb
         log_cb->trans_cb_idx = !(log_cb->trans_cb_idx);
     }
 failed:
-    log_cb->bytes_loss_cnt += len + SPI_OUT_FRAME_OVERHEAD;
-    log_cb->frame_cnt++;
+    log_cb->lost_bytes_cnt += frame_len;
+    log_cb->lost_frame_cnt++;
+    log_cb->frame_sn++;
     return false;
 }
 
@@ -343,9 +365,7 @@ IRAM_ATTR static inline void spi_out_log_cb_append_trans(spi_out_log_cb_t *log_c
     for (uint8_t i = 0; i < 2; i++) {
         trans_cb = log_cb->trans_cb[idx];
         if (trans_cb->flag == TRANS_CB_FLAG_NEED_QUEUE) {
-            if (spi_out_append_trans(trans_cb) != 0) {
-                log_cb->trans_loss_cnt++;
-            }
+            spi_out_append_trans(trans_cb);
         }
         idx = !idx;
     }
@@ -371,7 +391,11 @@ IRAM_ATTR static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8
 
     uint8_t *buf = (uint8_t *)trans_cb->trans.tx_buffer + trans_cb->length;
     uint16_t total_length = len + len_append;
-    const uint8_t head[4] = {total_length & 0xFF, (total_length >> 8) & 0xFF, source, log_cb->frame_cnt};
+    frame_head_t head = {
+        .length = total_length,
+        .source = source,
+        .frame_sn = log_cb->frame_sn,
+    };
     uint32_t checksum = 0;
     if (with_checksum) {
         for (int i = 0; i < len; i++) {
@@ -382,7 +406,7 @@ IRAM_ATTR static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8
         }
     }
 
-    memcpy(buf, head, SPI_OUT_FRAME_HEAD_LEN);
+    memcpy(buf, (const uint8_t *)&head, SPI_OUT_FRAME_HEAD_LEN);
     memcpy(buf + SPI_OUT_FRAME_HEAD_LEN, addr, len);
     if (len_append) {
         memcpy(buf + SPI_OUT_FRAME_HEAD_LEN + len, addr_append, len_append);
@@ -390,7 +414,7 @@ IRAM_ATTR static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8
     memcpy(buf + SPI_OUT_FRAME_HEAD_LEN + total_length, &checksum, SPI_OUT_FRAME_TAIL_LEN);
 
     trans_cb->length += total_length + SPI_OUT_FRAME_OVERHEAD;
-    log_cb->frame_cnt++;
+    log_cb->frame_sn++;
     if ((trans_cb->buf_size - trans_cb->length) <= SPI_OUT_FRAME_OVERHEAD) {
         trans_cb->flag = TRANS_CB_FLAG_NEED_QUEUE;
         return true;
@@ -398,22 +422,23 @@ IRAM_ATTR static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8
     return false;
 }
 
-IRAM_ATTR static void spi_out_log_cb_write_packet_loss(spi_out_log_cb_t *log_cb, uint8_t flag)
+IRAM_ATTR static void spi_out_log_cb_write_loss(spi_out_log_cb_t *log_cb)
 {
-    if (!log_cb->bytes_loss_cnt && !log_cb->trans_loss_cnt) {
+    if (!log_cb->lost_bytes_cnt || !log_cb->lost_frame_cnt) {
         return;
     }
     bool need_append;
-    if (spi_out_log_cb_check_trans(log_cb, SPI_OUT_PACKET_LOSS_FRAME_SIZE, &need_append)) {
-        uint8_t packet_loss_frame[SPI_OUT_PACKET_LOSS_FRAME_SIZE];
-        packet_loss_frame[0] = flag;
-        memcpy(packet_loss_frame + 1, (uint8_t *)&log_cb->bytes_loss_cnt, 4);
-        packet_loss_frame[5] = log_cb->trans_loss_cnt;
-        spi_out_log_cb_write(log_cb, packet_loss_frame, SPI_OUT_PACKET_LOSS_FRAME_SIZE,
+    if (spi_out_log_cb_check_trans(log_cb, sizeof(loss_payload_t), &need_append)) {
+        loss_payload_t payload = {
+            .type = log_cb->type,
+            .lost_frame_cnt = log_cb->lost_frame_cnt,
+            .lost_bytes_cnt = log_cb->lost_bytes_cnt,
+        };
+        spi_out_log_cb_write(log_cb, (const uint8_t *)&payload, sizeof(loss_payload_t),
                              NULL, 0, BLE_LOG_SPI_OUT_SOURCE_LOSS, true);
 
-        log_cb->bytes_loss_cnt = 0;
-        log_cb->trans_loss_cnt = 0;
+        log_cb->lost_frame_cnt = 0;
+        log_cb->lost_bytes_cnt = 0;
     }
 }
 
@@ -482,7 +507,7 @@ static int spi_out_ul_log_init(void)
     }
 
     // Initialize log control block
-    if (spi_out_log_cb_init(&ul_log_cb, SPI_OUT_UL_TASK_BUF_SIZE) != 0) {
+    if (spi_out_log_cb_init(&ul_log_cb, SPI_OUT_UL_TASK_BUF_SIZE, LOG_CB_TYPE_UL) != 0) {
         ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control blocks for upper layer task log!");
         goto log_cb_init_failed;
     }
@@ -541,7 +566,7 @@ static void spi_out_ul_log_write(uint8_t source, const uint8_t *addr, uint16_t l
     if (need_append) {
         spi_out_log_cb_append_trans(ul_log_cb);
     }
-    spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
+    spi_out_log_cb_write_loss(ul_log_cb);
 }
 
 static bool spi_out_ul_log_printf(uint8_t source, const char *format, va_list args)
@@ -569,15 +594,15 @@ static int spi_out_ll_log_init(void)
     }
 
     // Initialize log control blocks for controller task & ISR logs
-    if (spi_out_log_cb_init(&ll_task_log_cb, SPI_OUT_LL_TASK_BUF_SIZE) != 0) {
+    if (spi_out_log_cb_init(&ll_task_log_cb, SPI_OUT_LL_TASK_BUF_SIZE, LOG_CB_TYPE_LL_TASK) != 0) {
         ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control blocks for controller task!");
         goto task_log_cb_init_failed;
     }
-    if (spi_out_log_cb_init(&ll_isr_log_cb, SPI_OUT_LL_ISR_BUF_SIZE) != 0) {
+    if (spi_out_log_cb_init(&ll_isr_log_cb, SPI_OUT_LL_ISR_BUF_SIZE, LOG_CB_TYPE_LL_ISR) != 0) {
         ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control blocks for controller ISR!");
         goto isr_log_cb_init_failed;
     }
-    if (spi_out_log_cb_init(&ll_hci_log_cb, SPI_OUT_LL_HCI_BUF_SIZE) != 0) {
+    if (spi_out_log_cb_init(&ll_hci_log_cb, SPI_OUT_LL_HCI_BUF_SIZE, LOG_CB_TYPE_LL_HCI) != 0) {
         ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control blocks for controller ISR!");
         goto hci_log_cb_init_failed;
     }
@@ -738,11 +763,12 @@ static void esp_timer_cb_ts_sync(void)
     // Exit critical
 
     // Write timestamp sync log
-    uint8_t sync_frame[9];
-    sync_frame[0] = ((uint8_t)sync_io_level & 0xFF);
-    memcpy(sync_frame + 1, &lc_ts, sizeof(lc_ts));
-    memcpy(sync_frame + 5, &esp_ts, sizeof(esp_ts));
-    ble_log_spi_out_write(BLE_LOG_SPI_OUT_SOURCE_SYNC, sync_frame, 9);
+    sync_payload_t payload = {
+        .io_level = sync_io_level,
+        .lc_ts = lc_ts,
+        .esp_ts = esp_ts,
+    };
+    ble_log_spi_out_write(BLE_LOG_SPI_OUT_SOURCE_SYNC, (const uint8_t *)&payload, sizeof(sync_payload_t));
 }
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
@@ -754,7 +780,7 @@ static int spi_out_le_audio_log_init(void)
     }
 
     // Initialize log control blocks for controller task & ISR logs
-    if (spi_out_log_cb_init(&le_audio_log_cb, SPI_OUT_LE_AUDIO_BUF_SIZE) != 0) {
+    if (spi_out_log_cb_init(&le_audio_log_cb, SPI_OUT_LE_AUDIO_BUF_SIZE, LOG_CB_TYPE_LE_AUDIO) != 0) {
         ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control blocks for LE audio!");
         return -1;
     }
@@ -968,21 +994,17 @@ IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint3
     }
 
     bool in_isr = false;
-    uint8_t log_cb_type;
     uint8_t source;
     spi_out_log_cb_t *log_cb;
     if (flag & BIT(LL_LOG_FLAG_ISR)) {
         log_cb = ll_isr_log_cb;
-        log_cb_type = LOG_CB_TYPE_LL_ISR;
         source = BLE_LOG_SPI_OUT_SOURCE_ESP_ISR;
         in_isr = true;
     } else if (flag & BIT(LL_LOG_FLAG_HCI)) {
         log_cb = ll_hci_log_cb;
-        log_cb_type = LOG_CB_TYPE_LL_HCI;
         source = BLE_LOG_SPI_OUT_SOURCE_ESP;
     } else {
         log_cb = ll_task_log_cb;
-        log_cb_type = LOG_CB_TYPE_LL_TASK;
         source = BLE_LOG_SPI_OUT_SOURCE_ESP;
     }
 
@@ -999,7 +1021,7 @@ IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint3
             spi_out_log_cb_append_trans(log_cb);
         }
     }
-    spi_out_log_cb_write_packet_loss(log_cb, log_cb_type);
+    spi_out_log_cb_write_loss(log_cb);
 
     // Update controller status
     if (!in_isr) {
@@ -1156,7 +1178,7 @@ IRAM_ATTR void ble_log_spi_out_le_audio_write(const uint8_t *addr, uint16_t len)
     if (need_append) {
         spi_out_log_cb_append_trans(le_audio_log_cb);
     }
-    spi_out_log_cb_write_packet_loss(le_audio_log_cb, LOG_CB_TYPE_LE_AUDIO);
+    spi_out_log_cb_write_loss(le_audio_log_cb);
     return;
 }
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
