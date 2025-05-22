@@ -21,6 +21,7 @@
 #define SPI_OUT_CS_IO_NUM                       CONFIG_BT_BLE_LOG_SPI_OUT_CS_IO_NUM
 #define SPI_OUT_TS_SYNC_ENABLED                 CONFIG_BT_BLE_LOG_SPI_OUT_TS_SYNC_ENABLED
 #define SPI_OUT_SYNC_IO_NUM                     CONFIG_BT_BLE_LOG_SPI_OUT_SYNC_IO_NUM
+#define SPI_OUT_TS_SYNC_SLEEP_SUPPORT           CONFIG_BT_BLE_LOG_SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 #define SPI_OUT_FLUSH_TIMER_ENABLED             CONFIG_BT_BLE_LOG_SPI_OUT_FLUSH_TIMER_ENABLED
 #define SPI_OUT_FLUSH_TIMEOUT_US                (CONFIG_BT_BLE_LOG_SPI_OUT_FLUSH_TIMEOUT * 1000)
 #define SPI_OUT_LE_AUDIO_ENABLED                CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
@@ -89,7 +90,7 @@ typedef struct {
     uint8_t io_level;
     uint32_t lc_ts;
     uint32_t esp_ts;
-} __attribute__((packed)) sync_payload_t;
+} __attribute__((packed)) ts_sync_data_t;
 
 // Private enums
 enum {
@@ -137,13 +138,16 @@ static spi_out_log_cb_t *ll_task_log_cb = NULL;
 static spi_out_log_cb_t *ll_isr_log_cb = NULL;
 static spi_out_log_cb_t *ll_hci_log_cb = NULL;
 static uint32_t ll_ev_flags = 0;
-static esp_bt_controller_status_t ll_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 #endif // SPI_OUT_LL_ENABLED
 
 #if SPI_OUT_TS_SYNC_ENABLED
 static bool ts_sync_inited = false;
-static bool sync_io_level = false;
+static bool ts_sync_enabled = false;
+static ts_sync_data_t ts_sync_data = {0};
+
+#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 static esp_timer_handle_t ts_sync_timer = NULL;
+#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
 #if SPI_OUT_FLUSH_TIMER_ENABLED
@@ -185,13 +189,24 @@ static bool spi_out_ul_log_printf(uint8_t source, const char *format, va_list ar
 static int spi_out_ll_log_init(void);
 static void spi_out_ll_log_deinit(void);
 static void spi_out_ll_log_flush(void);
-static inline void spi_out_ll_log_put_ev(void);
+
+#if defined(CONFIG_IDF_TARGET_ESP32H2) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5) ||\
+    defined(CONFIG_IDF_TARGET_ESP32C61) || defined(CONFIG_IDF_TARGET_ESP32H21)
+extern void r_ble_log_simple_put_ev(void);
+#define SPI_OUT_LL_PUT_EV r_ble_log_simple_put_ev()
+#elif defined(CONFIG_IDF_TARGET_ESP32C2)
+extern void ble_log_simple_put_ev(void);
+#define SPI_OUT_LL_PUT_EV ble_log_simple_put_ev()
+#else
+#define SPI_OUT_LL_PUT_EV
+#endif
 #endif // SPI_OUT_LL_ENABLED
 
 #if SPI_OUT_TS_SYNC_ENABLED
 static int spi_out_ts_sync_init(void);
 static void spi_out_ts_sync_deinit(void);
-static void esp_timer_cb_ts_sync(void);
+static void spi_out_ts_sync_enable(bool enable);
+static void spi_out_ts_sync_toggle(void);
 
 #if defined(CONFIG_IDF_TARGET_ESP32H2) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5) ||\
     defined(CONFIG_IDF_TARGET_ESP32C61) || defined(CONFIG_IDF_TARGET_ESP32H21)
@@ -204,6 +219,9 @@ extern uint32_t r_os_cputime_get32(void);
 #define SPI_OUT_GET_LC_TIME 0
 #endif
 
+#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
+static void esp_timer_cb_ts_sync(void);
+#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
 #if SPI_OUT_LE_AUDIO_ENABLED
@@ -472,9 +490,10 @@ static void spi_out_log_flush(void)
     xSemaphoreGive(ul_log_mutex);
 
 #if SPI_OUT_LL_ENABLED
-    // LL log flush shall be run in LL task context
-    ll_ev_flags |= BIT(LL_EV_FLAG_FLUSH_LOG);
-    spi_out_ll_log_put_ev();
+    if (esp_bt_controller_get_status() >= ESP_BT_CONTROLLER_STATUS_INITED) {
+        ll_ev_flags |= BIT(LL_EV_FLAG_FLUSH_LOG);
+        SPI_OUT_LL_PUT_EV;
+    }
 #endif // SPI_OUT_LL_ENABLED
 }
 
@@ -637,23 +656,6 @@ static void spi_out_ll_log_deinit(void)
     return;
 }
 
-IRAM_ATTR static inline void spi_out_ll_log_put_ev(void)
-{
-    if (ll_status < ESP_BT_CONTROLLER_STATUS_INITED) {
-        return;
-    }
-
-#if defined(CONFIG_IDF_TARGET_ESP32H2) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5) ||\
-    defined(CONFIG_IDF_TARGET_ESP32C61) || defined(CONFIG_IDF_TARGET_ESP32H21)
-    extern void r_ble_log_simple_put_ev(void);
-    r_ble_log_simple_put_ev();
-#elif defined(CONFIG_IDF_TARGET_ESP32C2)
-    extern void ble_log_simple_put_ev(void);
-    ble_log_simple_put_ev();
-#else
-#endif
-}
-
 // Context: LL task
 static void spi_out_ll_log_flush(void)
 {
@@ -681,6 +683,7 @@ static int spi_out_ts_sync_init(void)
         return 0;
     }
 
+#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
     // Initialize sync timer
     esp_timer_create_args_t timer_args = {
         .callback = (esp_timer_cb_t)esp_timer_cb_ts_sync,
@@ -690,12 +693,13 @@ static int spi_out_ts_sync_init(void)
         ESP_LOGE(BLE_LOG_TAG, "Failed to initialize timestamp synchronizer timer!");
         goto timer_init_failed;
     }
+#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 
     // Initialize sync IO
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = (1UL << SPI_OUT_SYNC_IO_NUM),
+        .pin_bit_mask = BIT(SPI_OUT_SYNC_IO_NUM),
         .pull_down_en = 0,
         .pull_up_en = 0
     };
@@ -706,14 +710,14 @@ static int spi_out_ts_sync_init(void)
 
     // Initialization done
     ESP_LOGI(BLE_LOG_TAG, "Succeeded to initialize timestamp synchronizer!");
-    sync_io_level = false;
-    gpio_set_level(SPI_OUT_SYNC_IO_NUM, sync_io_level);
     ts_sync_inited = true;
     return 0;
 
 gpio_init_failed:
+#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
     esp_timer_delete(ts_sync_timer);
 timer_init_failed:
+#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
     return -1;
 }
 
@@ -723,13 +727,14 @@ static void spi_out_ts_sync_deinit(void)
         return;
     }
 
+#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
     // Deinitialize timestamp synchronizer
     esp_timer_stop(ts_sync_timer);
     esp_timer_delete(ts_sync_timer);
+#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 
     // Deinitialize sync IO
-    sync_io_level = false;
-    gpio_set_level(SPI_OUT_SYNC_IO_NUM, sync_io_level);
+    spi_out_ts_sync_enable(false);
     gpio_reset_pin(SPI_OUT_SYNC_IO_NUM);
 
     // Deinitialization done
@@ -738,39 +743,67 @@ static void spi_out_ts_sync_deinit(void)
     return;
 }
 
-// CRITICAL: This function is called in ESP Timer task
-static void esp_timer_cb_ts_sync(void)
+static void spi_out_ts_sync_enable(bool enable)
 {
-    // Initialize variables
-    uint32_t lc_ts = 0;
-    uint32_t esp_ts = 0;
+    // Reset ts sync io
+    ts_sync_data.io_level = false;
+    gpio_set_level(SPI_OUT_SYNC_IO_NUM, (uint32_t)ts_sync_data.io_level);
 
+    // Update ts sync status
+    ts_sync_enabled = enable;
+    if (enable) {
+#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
+        // Start timestamp sync timer
+        if (ts_sync_timer) {
+            if (!esp_timer_is_active(ts_sync_timer)) {
+                esp_timer_start_periodic(ts_sync_timer, SPI_OUT_TS_SYNC_TIMEOUT);
+            }
+        }
+#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
+    } else {
+#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
+        // Stop timestamp sync timer
+        if (ts_sync_timer) {
+            if (esp_timer_is_active(ts_sync_timer)) {
+                esp_timer_stop(ts_sync_timer);
+            }
+        }
+#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
+    }
+}
+
+static void spi_out_ts_sync_toggle(void)
+{
     // Toggle sync IO
-    sync_io_level = !sync_io_level;
+    ts_sync_data.io_level = !ts_sync_data.io_level;
 
     // Enter critical
     portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL(&spinlock);
 
     // Get LC timestamp
-    lc_ts = SPI_OUT_GET_LC_TIME;
+    ts_sync_data.lc_ts = SPI_OUT_GET_LC_TIME;
 
     // Set sync IO level
-    gpio_set_level(SPI_OUT_SYNC_IO_NUM, (uint32_t)sync_io_level);
+    gpio_set_level(SPI_OUT_SYNC_IO_NUM, (uint32_t)ts_sync_data.io_level);
 
     // Get ESP timestamp
-    esp_ts = esp_timer_get_time();
+    ts_sync_data.esp_ts = esp_timer_get_time();
     portEXIT_CRITICAL(&spinlock);
     // Exit critical
-
-    // Write timestamp sync log
-    sync_payload_t payload = {
-        .io_level = sync_io_level,
-        .lc_ts = lc_ts,
-        .esp_ts = esp_ts,
-    };
-    ble_log_spi_out_write(BLE_LOG_SPI_OUT_SOURCE_SYNC, (const uint8_t *)&payload, sizeof(sync_payload_t));
 }
+
+#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
+// CRITICAL: This function is called in ESP Timer task
+static void esp_timer_cb_ts_sync(void)
+{
+    spi_out_ts_sync_toggle();
+    ble_log_spi_out_write(BLE_LOG_SPI_OUT_SOURCE_SYNC, (const uint8_t *)&ts_sync_data,
+                          sizeof(ts_sync_data_t));
+}
+#else
+
+#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
 #if SPI_OUT_LE_AUDIO_ENABLED
@@ -956,13 +989,7 @@ void ble_log_spi_out_ts_sync_start(void)
     if (!spi_out_inited) {
         return;
     }
-
-    // Start timestamp sync timer
-    if (ts_sync_timer) {
-        if (!esp_timer_is_active(ts_sync_timer)) {
-            esp_timer_start_periodic(ts_sync_timer, SPI_OUT_TS_SYNC_TIMEOUT);
-        }
-    }
+    spi_out_ts_sync_enable(true);
 }
 
 void ble_log_spi_out_ts_sync_stop(void)
@@ -971,17 +998,7 @@ void ble_log_spi_out_ts_sync_stop(void)
     if (!spi_out_inited) {
         return;
     }
-
-    // Stop timestamp sync timer
-    if (ts_sync_timer) {
-        if (esp_timer_is_active(ts_sync_timer)) {
-            esp_timer_stop(ts_sync_timer);
-        }
-
-        // Set sync IO to low level
-        sync_io_level = 0;
-        gpio_set_level(SPI_OUT_SYNC_IO_NUM, (uint32_t)sync_io_level);
-    }
+    spi_out_ts_sync_enable(false);
 }
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
@@ -1014,7 +1031,7 @@ IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint3
         in_isr = true;
     } else if (flag & BIT(LL_LOG_FLAG_HCI)) {
         log_cb = ll_hci_log_cb;
-        source = BLE_LOG_SPI_OUT_SOURCE_ESP;
+        source = BLE_LOG_SPI_OUT_SOURCE_LL_HCI;
     } else {
         log_cb = ll_task_log_cb;
         source = BLE_LOG_SPI_OUT_SOURCE_ESP;
@@ -1028,18 +1045,24 @@ IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint3
     if (need_append) {
         if (in_isr) {
             ll_ev_flags |= BIT(LL_EV_FLAG_ISR_APPEND);
-            spi_out_ll_log_put_ev();
+            SPI_OUT_LL_PUT_EV;
         } else {
             spi_out_log_cb_append_trans(log_cb);
+
+#if SPI_OUT_TS_SYNC_SLEEP_SUPPORT
+            if (ts_sync_inited && ts_sync_enabled) {
+                if ((last_tx_done_ts - ts_sync_data.esp_ts) >= SPI_OUT_TS_SYNC_TIMEOUT) {
+                    if (spi_out_log_cb_check_trans(ll_task_log_cb, sizeof(ts_sync_data_t), &need_append)) {
+                        spi_out_ts_sync_toggle();
+                        spi_out_log_cb_write(ll_task_log_cb, (const uint8_t *)&ts_sync_data,
+                                             sizeof(ts_sync_data_t), NULL, 0, BLE_LOG_SPI_OUT_SOURCE_SYNC, true);
+                    }
+                }
+            }
+#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
         }
     }
     spi_out_log_cb_write_loss(log_cb);
-
-    // Update controller status
-    if (!in_isr) {
-        ll_status = esp_bt_controller_get_status();
-    }
-    return;
 }
 
 IRAM_ATTR void ble_log_spi_out_ll_log_ev_proc(void)
@@ -1057,6 +1080,8 @@ IRAM_ATTR void ble_log_spi_out_ll_log_ev_proc(void)
         spi_out_ll_log_flush();
         ll_ev_flags &= ~BIT(LL_EV_FLAG_FLUSH_LOG);
     }
+
+    ll_ev_flags = 0;
 }
 #endif // SPI_OUT_LL_ENABLED
 
