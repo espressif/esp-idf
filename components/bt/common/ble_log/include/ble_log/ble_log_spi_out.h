@@ -55,5 +55,6 @@ int ble_log_spi_out_printf(uint8_t source, const char *format, ...);
 int ble_log_spi_out_printf_enh(uint8_t source, uint8_t level, const char *tag, const char *format, ...);
 int ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t len);
 void ble_log_spi_out_dump_all(void);
+void ble_log_spi_out_enable(bool enable);
 
 #endif // __BT_SPI_OUT_H__
