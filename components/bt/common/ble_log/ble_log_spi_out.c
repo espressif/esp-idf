@@ -33,6 +33,7 @@
 #define SPI_OUT_FRAME_OVERHEAD                  (8)
 #define SPI_OUT_PACKET_LOSS_FRAME_SIZE          (6)
 #define SPI_OUT_TRANS_ITVL_MIN_US               (30)
+#define SPI_OUT_UL_LOG_STR_BUF_SIZE             (100)
 
 #if SPI_OUT_TS_SYNC_ENABLED
 #define SPI_OUT_TS_SYNC_TIMEOUT                 (1000 * 1000)
@@ -106,6 +107,7 @@ static uint32_t last_tx_done_ts = 0;
 static bool ul_log_inited = false;
 static SemaphoreHandle_t ul_log_mutex = NULL;
 static spi_out_log_cb_t *ul_log_cb = NULL;
+static uint8_t *ul_log_str_buf = NULL;
 
 #if SPI_OUT_LL_ENABLED
 static bool ll_log_inited = false;
@@ -148,6 +150,8 @@ static void spi_out_log_flush(void);
 
 static int spi_out_ul_log_init(void);
 static void spi_out_ul_log_deinit(void);
+static void spi_out_ul_log_write(uint8_t source, const uint8_t *addr, uint16_t len, bool with_ts);
+static bool spi_out_ul_log_printf(uint8_t source, const char *format, va_list args);
 
 #if SPI_OUT_LL_ENABLED
 static int spi_out_ll_log_init(void);
@@ -452,6 +456,13 @@ static int spi_out_ul_log_init(void)
         goto mutex_init_failed;
     }
 
+    // Initialize string buffer
+    ul_log_str_buf = (uint8_t *)malloc(SPI_OUT_UL_LOG_STR_BUF_SIZE);
+    if (!ul_log_str_buf) {
+        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize string buffer for upper layer task log!");
+        goto str_buf_init_failed;
+    }
+
     // Initialize log control block
     if (spi_out_log_cb_init(&ul_log_cb, SPI_OUT_UL_TASK_BUF_SIZE) != 0) {
         ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control blocks for upper layer task log!");
@@ -464,6 +475,11 @@ static int spi_out_ul_log_init(void)
     return 0;
 
 log_cb_init_failed:
+    if (ul_log_str_buf) {
+        free(ul_log_str_buf);
+        ul_log_str_buf = NULL;
+    }
+str_buf_init_failed:
     vSemaphoreDelete(ul_log_mutex);
 mutex_init_failed:
     return -1;
@@ -474,8 +490,13 @@ static void spi_out_ul_log_deinit(void)
     if (!ul_log_inited) {
         return;
     }
+    ul_log_inited = false;
 
     xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
+    if (ul_log_str_buf) {
+        free(ul_log_str_buf);
+        ul_log_str_buf = NULL;
+    }
     spi_out_log_cb_deinit(&ul_log_cb);
     xSemaphoreGive(ul_log_mutex);
 
@@ -483,8 +504,43 @@ static void spi_out_ul_log_deinit(void)
     ul_log_mutex = NULL;
 
     ESP_LOGI(BLE_LOG_TAG, "Succeeded to deinitialize upper layer log!");
-    ul_log_inited = false;
     return;
+}
+
+static void spi_out_ul_log_write(uint8_t source, const uint8_t *addr, uint16_t len, bool with_ts)
+{
+    uint16_t total_len = with_ts? (len + sizeof(uint32_t)): len;
+    bool need_append;
+    if (spi_out_log_cb_check_trans(ul_log_cb, total_len, &need_append)) {
+        if (with_ts) {
+            uint32_t esp_ts = esp_timer_get_time();
+            need_append |= spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&esp_ts,
+                                                sizeof(uint32_t), addr, len, source);
+        } else {
+            need_append |= spi_out_log_cb_write(ul_log_cb, addr, len, NULL, 0, source);
+        }
+    }
+    if (need_append) {
+        spi_out_log_cb_append_trans(ul_log_cb);
+    }
+    spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
+}
+
+static bool spi_out_ul_log_printf(uint8_t source, const char *format, va_list args)
+{
+    int len = vsnprintf((char *)ul_log_str_buf, SPI_OUT_UL_LOG_STR_BUF_SIZE, format, args);
+    if (len < 0) {
+        return false;
+    }
+
+    // Truncate string if overflowed
+    if (len >= SPI_OUT_UL_LOG_STR_BUF_SIZE) {
+        len = SPI_OUT_UL_LOG_STR_BUF_SIZE - 1;
+        ul_log_str_buf[len] = '\0';
+    }
+
+    spi_out_ul_log_write(source, ul_log_str_buf, len, true);
+    return true;
 }
 
 #if SPI_OUT_LL_ENABLED
@@ -913,15 +969,8 @@ int ble_log_spi_out_write(uint8_t source, const uint8_t *addr, uint16_t len)
         return -1;
     }
 
-    bool need_append;
     xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    if (spi_out_log_cb_check_trans(ul_log_cb, len, &need_append)) {
-        need_append |= spi_out_log_cb_write(ul_log_cb, addr, len, NULL, 0, source);
-    }
-    if (need_append) {
-        spi_out_log_cb_append_trans(ul_log_cb);
-    }
-    spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
+    spi_out_ul_log_write(source, addr, len, false);
     xSemaphoreGive(ul_log_mutex);
     return 0;
 }
@@ -936,45 +985,13 @@ int ble_log_spi_out_printf(uint8_t source, const char *format, ...)
     va_list args;
     va_start(args, format);
 
-    // Get len as ref to allocate heap memory
-    va_list args_copy;
-    va_copy(args_copy, args);
-    int len = vsnprintf(NULL, 0, format, args_copy);
-    va_end(args_copy);
-
-    // Length validation
-    if ((len < 0) || (len > 0xFFFF)) {
-        va_end(args);
-        return -1;
-    }
-
-    // Allocate memory
-    uint8_t *buffer = malloc(len + 1);
-    if (!buffer) {
-        va_end(args);
-        return -1;
-    }
-
-    // Generate string
-    vsnprintf((char *)buffer, len + 1, format, args);
-    va_end(args);
-
-    uint32_t esp_ts = esp_timer_get_time();
-    bool need_append;
     xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    if (spi_out_log_cb_check_trans(ul_log_cb, sizeof(uint32_t) + len, &need_append)) {
-        need_append |= spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&esp_ts, sizeof(uint32_t),
-                                            (const uint8_t *)buffer, len, source);
-    }
-    if (need_append) {
-        spi_out_log_cb_append_trans(ul_log_cb);
-    }
-    spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
+    bool ret = spi_out_ul_log_printf(source, format, args);
     xSemaphoreGive(ul_log_mutex);
 
-    // Release
-    free(buffer);
-    return 0;
+    va_end(args);
+
+    return ret? 0: -1;
 }
 
 int ble_log_spi_out_printf_enh(uint8_t source, uint8_t level, const char *tag, const char *format, ...)
@@ -983,54 +1000,19 @@ int ble_log_spi_out_printf_enh(uint8_t source, uint8_t level, const char *tag, c
         return -1;
     }
 
-    // Create log prefix in the format: "[level][tag] "
-    char prefix[32];
-    int prefix_len = snprintf(prefix, sizeof(prefix), "[%d][%s] ", level, tag ? tag : "NULL");
-
-    // Compute the length of the formatted log message
     va_list args;
     va_start(args, format);
-    va_list args_copy;
-    va_copy(args_copy, args);
-    int log_len = vsnprintf(NULL, 0, format, args_copy);
-    va_end(args_copy);
 
-    // Validate length
-    if (log_len < 0 || log_len > 0xFFFF) {
-        va_end(args);
-        return -1;
-    }
-
-    // Compute total log length (prefix + formatted message)
-    int total_len = prefix_len + log_len;
-
-    // Allocate memory for the complete log message
-    uint8_t *buffer = malloc(total_len + 1);
-    if (!buffer) {
-        va_end(args);
-        return -1;
-    }
-
-    // Construct the final log message
-    memcpy(buffer, prefix, prefix_len);  // Copy the prefix
-    vsnprintf((char *)(buffer + prefix_len), log_len + 1, format, args);
-    va_end(args);
-
-    uint32_t esp_ts = esp_timer_get_time();
-    bool need_append;
+    // Create log prefix in the format: "[level][tag] "
     xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    if (spi_out_log_cb_check_trans(ul_log_cb, sizeof(uint32_t) + total_len, &need_append)) {
-        need_append |= spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&esp_ts, sizeof(uint32_t),
-                                            (const uint8_t *)buffer, total_len, source);
-    }
-    if (need_append) {
-        spi_out_log_cb_append_trans(ul_log_cb);
-    }
-    spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
+    snprintf((char *)ul_log_str_buf, SPI_OUT_UL_LOG_STR_BUF_SIZE,
+             "[%d][%s] %s", level, tag? tag: "NULL", format);
+    bool ret = spi_out_ul_log_printf(source, (const char *)ul_log_str_buf, args);
     xSemaphoreGive(ul_log_mutex);
 
-    free(buffer);
-    return 0;
+    va_end(args);
+
+    return ret? 0: -1;
 }
 
 int ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t len)
@@ -1039,16 +1021,8 @@ int ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t 
         return -1;
     }
 
-    uint32_t esp_ts = esp_timer_get_time();
-    bool need_append;
     xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    if (spi_out_log_cb_check_trans(ul_log_cb, sizeof(uint32_t) + len, &need_append)) {
-        need_append |= spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&esp_ts, sizeof(uint32_t), addr, len, source);
-    }
-    if (need_append) {
-        spi_out_log_cb_append_trans(ul_log_cb);
-    }
-    spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
+    spi_out_ul_log_write(source, addr, len, true);
     xSemaphoreGive(ul_log_mutex);
     return 0;
 }
