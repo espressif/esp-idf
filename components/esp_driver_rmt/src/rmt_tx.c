@@ -808,14 +808,14 @@ static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel)
         // disable the hardware
         portENTER_CRITICAL(&channel->spinlock);
         rmt_ll_tx_enable_loop(hal->regs, channel->channel_id, false);
-#if SOC_RMT_SUPPORT_TX_ASYNC_STOP
+#if SOC_RMT_SUPPORT_ASYNC_STOP
         rmt_ll_tx_stop(hal->regs, channel->channel_id);
 #endif
         portEXIT_CRITICAL(&channel->spinlock);
 
         portENTER_CRITICAL(&group->spinlock);
         rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_MASK(channel_id), false);
-#if !SOC_RMT_SUPPORT_TX_ASYNC_STOP
+#if !SOC_RMT_SUPPORT_ASYNC_STOP
         // we do a trick to stop the undergoing transmission
         // stop interrupt, insert EOF marker to the RMT memory, polling the trans_done event
         channel->hw_mem_base[0].val = 0;
