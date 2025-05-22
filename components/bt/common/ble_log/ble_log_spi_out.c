@@ -231,6 +231,7 @@ static int spi_out_init_trans(spi_out_trans_cb_t **trans_cb, uint16_t buf_size)
     // Initialization
     (*trans_cb)->buf_size = buf_size;
     (*trans_cb)->trans.tx_buffer = buf;
+    (*trans_cb)->trans.user = (void *)(*trans_cb);
     return 0;
 }
 
@@ -252,7 +253,7 @@ static void spi_out_deinit_trans(spi_out_trans_cb_t **trans_cb)
 IRAM_ATTR static void spi_out_tx_done_cb(spi_transaction_t *ret_trans)
 {
     last_tx_done_ts = esp_timer_get_time();
-    spi_out_trans_cb_t *trans_cb = __containerof(ret_trans, spi_out_trans_cb_t, trans);
+    spi_out_trans_cb_t *trans_cb = (spi_out_trans_cb_t *)ret_trans->user;
     trans_cb->length = 0;
     trans_cb->flag = TRANS_CB_FLAG_AVAILABLE;
 }
@@ -989,6 +990,17 @@ void ble_log_spi_out_ts_sync_stop(void)
 IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint32_t len_append,
                                         const uint8_t *addr_append, uint32_t flag)
 {
+    // Raw logs will come in case of assert, shall be printed to console directly
+    if (flag & BIT(LL_LOG_FLAG_RAW)) {
+        if (len && addr) {
+            for (uint32_t i = 0; i < len; i++) { esp_rom_printf("%02x ", addr[i]); }
+        }
+        if (len_append && addr_append) {
+            for (uint32_t i = 0; i < len_append; i++) { esp_rom_printf("%02x ", addr_append[i]); }
+        }
+        if (flag & BIT(LL_LOG_FLAG_END)) { esp_rom_printf("\n"); }
+    }
+
     if (!ll_log_inited) {
         return;
     }
