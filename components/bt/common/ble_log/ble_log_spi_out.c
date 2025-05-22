@@ -166,7 +166,7 @@ extern void esp_panic_handler_feed_wdts(void);
 static int spi_out_init_trans(spi_out_trans_cb_t **trans_cb, uint16_t buf_size);
 static void spi_out_deinit_trans(spi_out_trans_cb_t **trans_cb);
 static void spi_out_tx_done_cb(spi_transaction_t *ret_trans);
-static inline int spi_out_append_trans(spi_out_trans_cb_t *trans_cb);
+static inline void spi_out_append_trans(spi_out_trans_cb_t *trans_cb);
 
 static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size, uint8_t type);
 static void spi_out_log_cb_deinit(spi_out_log_cb_t **log_cb);
@@ -282,30 +282,30 @@ IRAM_ATTR static void spi_out_pre_tx_cb(spi_transaction_t *ret_trans)
     while (esp_timer_get_time() - last_tx_done_ts < SPI_OUT_TRANS_ITVL_MIN_US) {}
 }
 
-IRAM_ATTR static inline int spi_out_append_trans(spi_out_trans_cb_t *trans_cb)
+IRAM_ATTR static inline void spi_out_append_trans(spi_out_trans_cb_t *trans_cb)
 {
     if (trans_cb->flag != TRANS_CB_FLAG_NEED_QUEUE || !trans_cb->length) {
-        return -1;
+        return;
     }
 
     // Note: To support dump log when disabled
     if (!spi_out_enabled) {
-        trans_cb->length = 0;
-        trans_cb->flag = TRANS_CB_FLAG_AVAILABLE;
-        return 0;
+        goto recycle;
     }
 
     // CRITICAL: Length unit conversion from bytes to bits
     trans_cb->trans.length = trans_cb->length * 8;
     trans_cb->trans.rxlength = 0;
-    if (spi_device_queue_trans(spi_handle, &(trans_cb->trans), 0) == ESP_OK) {
-        trans_cb->flag = TRANS_CB_FLAG_IN_QUEUE;
-        return 0;
-    } else {
-        trans_cb->length = 0;
-        trans_cb->flag = TRANS_CB_FLAG_AVAILABLE;
-        return -1;
+    trans_cb->flag = TRANS_CB_FLAG_IN_QUEUE;
+    if (spi_device_queue_trans(spi_handle, &(trans_cb->trans), 0) != ESP_OK) {
+        goto recycle;
     }
+    return;
+
+recycle:
+    trans_cb->length = 0;
+    trans_cb->flag = TRANS_CB_FLAG_AVAILABLE;
+    return;
 }
 
 static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size, uint8_t type)
@@ -360,7 +360,7 @@ IRAM_ATTR static inline bool spi_out_log_cb_check_trans(spi_out_log_cb_t *log_cb
             goto failed;
         }
         if (trans_cb->flag == TRANS_CB_FLAG_AVAILABLE) {
-            if ((trans_cb->buf_size - trans_cb->length) >= (len + SPI_OUT_FRAME_OVERHEAD)) {
+            if ((trans_cb->buf_size - trans_cb->length) >= frame_len) {
                 return true;
             } else {
                 trans_cb->flag = TRANS_CB_FLAG_NEED_QUEUE;
