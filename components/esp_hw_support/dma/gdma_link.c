@@ -227,17 +227,21 @@ uintptr_t gdma_link_get_head_addr(gdma_link_list_handle_t list)
 
 esp_err_t gdma_link_concat(gdma_link_list_handle_t first_link, int first_link_item_index, gdma_link_list_handle_t second_link, int second_link_item_index)
 {
-    ESP_RETURN_ON_FALSE(first_link && second_link, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(first_link, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     gdma_link_list_item_t *lli_nc = NULL;
     // ensure the first_link_item_index is between 0 and `num_items - 1`
     int num_items = first_link->num_items;
     first_link_item_index = (first_link_item_index % num_items + num_items) % num_items;
     lli_nc = (gdma_link_list_item_t *)(first_link->items_nc + first_link_item_index * first_link->item_size);
-    // ensure the second_link_item_index is between 0 and `num_items - 1`
-    num_items = second_link->num_items;
-    second_link_item_index = (second_link_item_index % num_items + num_items) % num_items;
-    // concatenate the two link lists
-    lli_nc->next = (gdma_link_list_item_t *)(second_link->items + second_link_item_index * second_link->item_size);
+    if (second_link == NULL) {
+        lli_nc->next = NULL;
+    } else {
+        // ensure the second_link_item_index is between 0 and `num_items - 1`
+        num_items = second_link->num_items;
+        second_link_item_index = (second_link_item_index % num_items + num_items) % num_items;
+        // concatenate the two link lists
+        lli_nc->next = (gdma_link_list_item_t *)(second_link->items + second_link_item_index * second_link->item_size);
+    }
     return ESP_OK;
 }
 
@@ -284,7 +288,7 @@ size_t gdma_link_count_buffer_size_till_eof(gdma_link_list_handle_t list, int st
     return buf_size;
 }
 
-void *gdma_link_get_buffer(gdma_link_list_handle_t list, int item_index)
+void* gdma_link_get_buffer(gdma_link_list_handle_t list, int item_index)
 {
     if (!list) {
         return NULL;
@@ -306,4 +310,27 @@ size_t gdma_link_get_length(gdma_link_list_handle_t list, int item_index)
     item_index = (item_index % num_items + num_items) % num_items;
     gdma_link_list_item_t *lli = (gdma_link_list_item_t *)(list->items_nc + item_index * list->item_size);
     return lli->dw0.length;
+}
+
+esp_err_t gdma_link_set_length(gdma_link_list_handle_t list, int item_index, size_t length)
+{
+    ESP_RETURN_ON_FALSE_ISR(list, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    int num_items = list->num_items;
+    // ensure the item_index is between 0 and `num_items - 1`
+    item_index = (item_index % num_items + num_items) % num_items;
+    gdma_link_list_item_t *lli = (gdma_link_list_item_t *)(list->items_nc + item_index * list->item_size);
+    lli->dw0.length = length;
+    return ESP_OK;
+}
+
+bool gdma_link_check_end(gdma_link_list_handle_t list, int item_index)
+{
+    if (!list) {
+        return false;
+    }
+    int num_items = list->num_items;
+    // ensure the item_index is between 0 and `num_items - 1`
+    item_index = (item_index % num_items + num_items) % num_items;
+    gdma_link_list_item_t *lli = (gdma_link_list_item_t *)(list->items_nc + item_index * list->item_size);
+    return lli->next == NULL;
 }
