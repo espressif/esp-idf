@@ -116,3 +116,18 @@ config BT_BLE_LOG_SPI_OUT_FLUSH_TIMEOUT
     default 1000
     help
         Buffer flush out period in unit of ms
+
+config BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
+    bool "Enable LE Audio log output to SPI"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default n
+    help
+        Enable LE Audio log output to SPI
+
+config BT_BLE_LOG_SPI_OUT_LE_AUDIO_BUF_SIZE
+    int "SPI transaction buffer size for LE Audio logs"
+    depends on BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
+    default 1024
+    help
+        SPI transaction buffer size for LE Audio logs.
+        There will be 2 SPI DMA buffers with the same size.
