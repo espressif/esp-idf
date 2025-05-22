@@ -469,3 +469,30 @@
 -
     re: "spi_hal: The clock_speed_hz should less than"
     hint: "When operating in full-duplex mode at high frequencies, the device may not read data correctly.\nTry using IOMUX pins to increase the frequency limit or switch to half-duplex mode.\nNote that the SPI master can only operate at divisors of 80 MHz, and the driver always selects the closest available frequency to your configuration.\nSpecify SPI_DEVICE_NO_DUMMY to bypass this check. This allows higher output speeds but may result in unreliable data reads."
+
+-
+    re: "has no member named 'io_loop_back'"
+    hint: "If you want to bind different driver objects to the same GPIO, just set them with the same GPIO number."
+
+-
+    re: "has no member named '{}'"
+    hint: "Please include 'driver/gpio.h' and call 'gpio_set_pull_mode' to set the correct pull mode."
+    variables:
+        -
+            re_variables: ['pull_up']
+            hint_variables: []
+        -
+            re_variables: ['pull_down']
+            hint_variables: []
+
+-
+    re: "has no member named 'io_od_mode'"
+    hint: "Please include 'driver/gpio.h' and call 'gpio_od_enable' to enable the open-drain mode."
+
+-
+    re: "fatal error: {}: No such file or directory"
+    hint: "The {} driver is removed. It should be replaced by '{}' in the '{}' component. Please read the migration guide for more details."
+    variables:
+        -
+            re_variables: ['driver/timer.h']
+            hint_variables: ['legacy timer group', 'driver/gptimer.h', 'esp_driver_gptimer']

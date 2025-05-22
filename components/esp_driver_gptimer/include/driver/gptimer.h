@@ -30,7 +30,6 @@ typedef struct {
         uint32_t intr_shared: 1;         /*!< Set true, the timer interrupt number can be shared with other peripherals */
         uint32_t allow_pd: 1;            /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.
                                               This can save power, but at the expense of more RAM being consumed to save register context. */
-        uint32_t backup_before_sleep: 1; /*!< @deprecated, same meaning as allow_pd */
     } flags;                             /*!< GPTimer config flags*/
 } gptimer_config_t;
 

@@ -31,11 +31,6 @@ if(CONFIG_SOC_DAC_SUPPORTED)
                      "deprecated/${target}/dac_legacy.c")
 endif()
 
-# GPTimer legacy driver
-if(CONFIG_SOC_GPTIMER_SUPPORTED)
-    list(APPEND srcs "deprecated/timer_legacy.c")
-endif()
-
 # I2C related source files
 if(CONFIG_SOC_I2C_SUPPORTED)
     list(APPEND srcs "i2c/i2c.c")

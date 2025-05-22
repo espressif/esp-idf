@@ -49,3 +49,8 @@ Major Changes in Usage
 - ``i2c_slave_transmit`` has been replaced by ``i2c_slave_write``.
 - ``i2c_slave_write_ram`` has been removed。
 - ``i2c_slave_read_ram`` has been removed。
+
+Legacy Timer Group Driver is Removed
+------------------------------------
+
+The legacy timer group driver ``driver/timer.h`` is deprecated since version 5.0 (see :ref:`deprecate_gptimer_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_gptimer`, and the header file path is ``driver/gptimer.h``.

@@ -66,12 +66,6 @@ components/driver/test_apps/legacy_sigma_delta_driver:
   depends_components:
     - esp_driver_gpio
 
-components/driver/test_apps/legacy_timer_driver:
-  disable:
-    - if: SOC_GPTIMER_SUPPORTED != 1
-  depends_filepatterns:
-    - components/driver/deprecated/**/*timer*
-
 components/driver/test_apps/legacy_twai:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD == 1
