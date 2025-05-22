@@ -199,16 +199,30 @@ esp_err_t jpeg_decoder_get_info(const uint8_t *in_buf, uint32_t inbuf_len, jpeg_
     return ESP_OK;
 }
 
+static bool _check_buffer_alignment(void *buffer, uint32_t buffer_size, uint32_t alignment)
+{
+    if (alignment == 0) {
+        alignment = 4; // basic align requirement from DMA
+    }
+    if ((uintptr_t)buffer & (alignment - 1)) {
+        return false;
+    }
+    if (buffer_size & (alignment - 1)) {
+        return false;
+    }
+    return true;
+}
+
 esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_decode_cfg_t *decode_cfg, const uint8_t *bit_stream, uint32_t stream_size, uint8_t *decode_outbuf, uint32_t outbuf_size, uint32_t *out_size)
 {
     ESP_RETURN_ON_FALSE(decoder_engine, ESP_ERR_INVALID_ARG, TAG, "jpeg decode handle is null");
     ESP_RETURN_ON_FALSE(decode_cfg, ESP_ERR_INVALID_ARG, TAG, "jpeg decode config is null");
-    ESP_RETURN_ON_FALSE(decode_outbuf, ESP_ERR_INVALID_ARG, TAG, "jpeg decode picture buffer is null");
-    esp_dma_mem_info_t dma_mem_info = {
-        .dma_alignment_bytes = 4,
-    };
-    //TODO: IDF-9637
-    ESP_RETURN_ON_FALSE(esp_dma_is_buffer_alignment_satisfied(decode_outbuf, outbuf_size, dma_mem_info), ESP_ERR_INVALID_ARG, TAG, "jpeg decode decode_outbuf or out_buffer size is not aligned, please use jpeg_alloc_decoder_mem to malloc your buffer");
+    ESP_RETURN_ON_FALSE(decode_outbuf && outbuf_size, ESP_ERR_INVALID_ARG, TAG, "jpeg decode picture buffer is null");
+
+    uint32_t outbuf_cache_line_size = esp_cache_get_line_size_by_addr(decode_outbuf);
+    // check alignment of the output buffer
+    ESP_RETURN_ON_FALSE(_check_buffer_alignment(decode_outbuf, outbuf_size, outbuf_cache_line_size), ESP_ERR_INVALID_ARG, TAG,
+                        "jpeg decode decode_outbuf or out_buffer size is not aligned, please use jpeg_alloc_decoder_mem to malloc your buffer");
 
     esp_err_t ret = ESP_OK;
 
@@ -232,8 +246,10 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     ESP_GOTO_ON_ERROR(jpeg_parse_header_info_to_hw(decoder_engine), err2, TAG, "write header info to hw failed");
     ESP_GOTO_ON_ERROR(jpeg_dec_config_dma_descriptor(decoder_engine), err2, TAG, "config dma descriptor failed");
 
-    *out_size = decoder_engine->header_info->process_h * decoder_engine->header_info->process_v * decoder_engine->bit_per_pixel / 8;
-    ESP_GOTO_ON_FALSE((*out_size <= outbuf_size), ESP_ERR_INVALID_ARG, err2, TAG, "Given buffer size % " PRId32 " is smaller than actual jpeg decode output size % " PRId32 "the height and width of output picture size will be adjusted to 16 bytes aligned automatically", outbuf_size, *out_size);
+    if (out_size) {
+        *out_size = decoder_engine->header_info->process_h * decoder_engine->header_info->process_v * decoder_engine->bit_per_pixel / 8;
+        ESP_GOTO_ON_FALSE((*out_size <= outbuf_size), ESP_ERR_INVALID_ARG, err2, TAG, "Given buffer size % " PRId32 " is smaller than actual jpeg decode output size % " PRId32 "the height and width of output picture size will be adjusted to 16 bytes aligned automatically", outbuf_size, *out_size);
+    }
 
     dma2d_trans_config_t trans_desc = {
         .tx_channel_num = 1,
@@ -268,8 +284,10 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
         }
 
         if (jpeg_dma2d_event.dma_evt & JPEG_DMA2D_RX_EOF) {
-            ret = esp_cache_msync((void*)decoder_engine->decoded_buf, outbuf_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
-            assert(ret == ESP_OK);
+            if (outbuf_cache_line_size > 0) {
+                ret = esp_cache_msync((void*)decoder_engine->decoded_buf, outbuf_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+                assert(ret == ESP_OK);
+            }
             break;
         }
     }

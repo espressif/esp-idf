@@ -210,19 +210,14 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
         return ESP_ERR_INVALID_SIZE;
     }
 
-    int int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-    int ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
-
-    bool need_cache_sync = esp_ptr_internal(buffer_in) ? (int_mem_cache_line_size > 0) : (ext_mem_cache_line_size > 0);
-    if (need_cache_sync) {
+    if (esp_cache_get_line_size_by_addr(buffer_in) > 0) {
         //Note: we add the ESP_CACHE_MSYNC_FLAG_UNALIGNED flag for now as otherwise esp_cache_msync will complain about
         //the size not being aligned... we miss out on a check to see if the address is aligned this way. This needs to
         //be improved, but potentially needs a fix in esp_cache_msync not to check the size.
         ESP_RETURN_ON_ERROR(esp_cache_msync(buffer_in, length_bytes_in, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED),
                             TAG, "failed in cache sync for input buffer");
     }
-    need_cache_sync = esp_ptr_internal(buffer_out) ? (int_mem_cache_line_size > 0) : (ext_mem_cache_line_size > 0);
-    if (need_cache_sync) {
+    if (esp_cache_get_line_size_by_addr(buffer_out) > 0) {
         ESP_RETURN_ON_ERROR(esp_cache_msync(buffer_out, length_bytes_out, ESP_CACHE_MSYNC_FLAG_DIR_M2C),
                             TAG, "failed in cache sync for output buffer");
     }

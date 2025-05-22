@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,11 +52,7 @@ typedef bool (*async_memcpy_isr_cb_t)(async_memcpy_handle_t mcp_hdl, async_memcp
 typedef struct {
     uint32_t backlog;          /*!< Maximum number of transactions that can be prepared in the background */
     uint32_t weight;           /*!< Weight of async memcpy dma channel, higher weight means higher average bandwidth */
-    size_t sram_trans_align __attribute__((deprecated)); /*!< DMA transfer alignment (both in size and address) for SRAM memory */
-    union {
-        size_t psram_trans_align __attribute__((deprecated)); /*!< DMA transfer alignment (both in size and address) for PSRAM memory */
-        size_t dma_burst_size;    /*!< DMA transfer burst size, in bytes */
-    };
+    size_t dma_burst_size;     /*!< DMA transfer burst size, in bytes */
     uint32_t flags;            /*!< Extra flags to control async memcpy feature */
 } async_memcpy_config_t;
 

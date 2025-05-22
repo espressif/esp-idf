@@ -379,15 +379,8 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
 
     // read the cache line size of internal and external memory, we use this information to check if a given memory is behind the cache
     // write back the source data if it's behind the cache
-    size_t int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-    size_t ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
-    bool need_write_back = false;
-    if (esp_ptr_external_ram(src)) {
-        need_write_back = ext_mem_cache_line_size > 0;
-    } else if (esp_ptr_internal(src)) {
-        need_write_back = int_mem_cache_line_size > 0;
-    }
-    if (need_write_back) {
+    size_t cache_line_size = esp_cache_get_line_size_by_addr(src);
+    if (cache_line_size > 0) {
         esp_cache_msync(src, n, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     }
 

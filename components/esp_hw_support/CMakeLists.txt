@@ -77,7 +77,7 @@ if(NOT non_os_build)
     endif()
 
     if(CONFIG_SOC_GDMA_SUPPORTED)
-        list(APPEND srcs "dma/gdma.c" "deprecated/gdma_legacy.c")
+        list(APPEND srcs "dma/gdma.c")
         if(CONFIG_SOC_GDMA_SUPPORT_SLEEP_RETENTION AND CONFIG_SOC_PAU_SUPPORTED)
             list(APPEND srcs "dma/gdma_sleep_retention.c")
         endif()

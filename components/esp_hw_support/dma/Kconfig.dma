@@ -32,18 +32,6 @@ menu "GDMA Configurations"
             3. set the runtime log level to VERBOSE
             Please enable this option by caution, as it will increase the binary size.
 
-    config GDMA_ISR_IRAM_SAFE
-        bool "GDMA ISR IRAM-Safe (Deprecated. Read Help!)"
-        default n
-        select GDMA_ISR_HANDLER_IN_IRAM
-        help
-            This will ensure the GDMA interrupt handler is IRAM-Safe, allow to avoid flash
-            cache misses, and also be able to run whilst the cache is disabled.
-            (e.g. SPI Flash write).
-            If this option is enabled, ALL GDMA channel's ISR handlers should be placed in IRAM, which is a overkill.
-            It's recommend to set the "isr_cache_safe" in the "gdma_channel_alloc_config_t".
-            Then other GDMA channels won't be influenced.
-
     config GDMA_ENABLE_WEIGHTED_ARBITRATION
         depends on SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION && IDF_EXPERIMENTAL_FEATURES
         bool "GDMA enable weighted arbitration (Experimental)"
@@ -52,8 +40,6 @@ menu "GDMA Configurations"
             Whether to enable the weighted arbitration for GDMA driver.
             The default weight of each channel is 1. You need to set weight for each channel before transmissions.
             If this option is enabled, the buffer should be aligned to the burst size.
-
-
 endmenu # GDMA Configurations
 
 menu "DW_GDMA Configurations"

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,6 +78,16 @@ extern "C" {
  *        - ESP_ERR_INVALID_ARG:   Invalid argument, not cache supported addr, see printed logs
  */
 esp_err_t esp_cache_msync(void *addr, size_t size, int flags);
+
+/**
+ * @brief Get the cache line size by address
+ *
+ * @param[in] addr The buffer address to examine
+ *
+ * @return The cache line size in bytes.
+ *         Return 0 if the memory (that the address points to) is not cacheable.
+ */
+size_t esp_cache_get_line_size_by_addr(const void *addr);
 
 #ifdef __cplusplus
 }

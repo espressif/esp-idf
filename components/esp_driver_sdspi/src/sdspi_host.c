@@ -1003,14 +1003,6 @@ esp_err_t sdspi_host_io_int_wait(sdspi_dev_handle_t handle, TickType_t timeout_t
     return ESP_OK;
 }
 
-esp_err_t sdspi_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info)
-{
-    (void)slot;
-    dma_mem_info->extra_heap_caps = MALLOC_CAP_DMA;
-    dma_mem_info->dma_alignment_bytes = 4;
-    return ESP_OK;
-}
-
 bool sdspi_host_check_buffer_alignment(int slot, const void *buf, size_t size)
 {
     //for future-proof

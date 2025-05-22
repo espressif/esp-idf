@@ -484,52 +484,6 @@ esp_err_t gdma_crc_get_result(gdma_channel_handle_t dma_chan, uint32_t *result);
 esp_err_t gdma_set_weight(gdma_channel_handle_t dma_chan, uint32_t weight);
 #endif // SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
 
-/****************************************************************************************
- * Deprecated APIs (will be removed in esp-idf 6.0)
- ****************************************************************************************/
-
-/** @cond */
-/**
- * @brief Create GDMA channel (Legacy API)
- *
- * @param[in] config Pointer to a collection of configurations for allocating GDMA channel
- * @param[out] ret_chan Returned channel handle
- * @return
- *      - ESP_OK: Create DMA channel successfully
- *      - ESP_ERR_INVALID_ARG: Create DMA channel failed because of invalid argument
- *      - ESP_ERR_NO_MEM: Create DMA channel failed because out of memory
- *      - ESP_FAIL: Create DMA channel failed because of other error
- */
-esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
-__attribute__((deprecated("please use gdma_new_ahb_channel or gdma_new_axi_channel respectively")));
-
-/**
- * @brief GDMA transfer ability
- *
- * @note The alignment set in this structure is **not** a guarantee that gdma driver will take care of the nonalignment cases.
- *       Actually the GDMA driver has no knowledge about the DMA buffer (address and size) used by upper layer.
- *       So it's the responsibility of the **upper layer** to take care of the buffer address and size.
- *
- */
-typedef struct {
-    size_t sram_trans_align;  /*!< DMA transfer alignment for memory in SRAM, in bytes. The driver enables/disables burst mode based on this value. 0 means no alignment is required */
-    size_t psram_trans_align; /*!< DMA transfer alignment for memory in PSRAM, in bytes. The driver sets proper burst block size based on the alignment value. 0 means no alignment is required */
-} gdma_transfer_ability_t;
-
-/**
- * @brief Set DMA channel transfer ability
- *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
- * @param[in] ability Transfer ability, e.g. alignment
- * @return
- *      - ESP_OK: Set DMA channel transfer ability successfully
- *      - ESP_ERR_INVALID_ARG: Set DMA channel transfer ability failed because of invalid argument
- *      - ESP_FAIL: Set DMA channel transfer ability failed because of other error
- */
-esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_transfer_ability_t *ability)
-__attribute__((deprecated("please use gdma_config_transfer instead")));
-/** @endcond */
-
 #ifdef __cplusplus
 }
 #endif

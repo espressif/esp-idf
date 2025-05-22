@@ -636,16 +636,12 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     }
 #endif // !SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
 
-    size_t cache_line_size = 0;
-    size_t alignment = 0;
-    uint8_t cache_type = 0;
-    esp_ptr_external_ram(payload) ? (alignment = tx_unit->ext_mem_align, cache_type = CACHE_LL_LEVEL_EXT_MEM) : (alignment = tx_unit->int_mem_align, cache_type = CACHE_LL_LEVEL_INT_MEM);
+    size_t alignment = esp_ptr_external_ram(payload) ? tx_unit->ext_mem_align : tx_unit->int_mem_align;
     // check alignment
     ESP_RETURN_ON_FALSE(((uint32_t)payload & (alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "payload address not aligned");
     ESP_RETURN_ON_FALSE((payload_bits & (alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "payload size not aligned");
-    cache_line_size = cache_hal_get_cache_line_size(cache_type, CACHE_TYPE_DATA);
 
-    if (cache_line_size > 0) {
+    if (esp_cache_get_line_size_by_addr(payload) > 0) {
         // Write back to cache to synchronize the cache before DMA start
         ESP_RETURN_ON_ERROR(esp_cache_msync((void *)payload, (payload_bits + 7) / 8,
                                             ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED), TAG, "cache sync failed");

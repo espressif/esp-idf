@@ -226,7 +226,6 @@ typedef struct {
     esp_err_t (*set_input_delayline)(int slot, sdmmc_delay_line_t delay_line); /*!< set input delay line */
     void* dma_aligned_buffer; /*!< Leave it NULL. Reserved for cache aligned buffers for SDIO mode */
     sd_pwr_ctrl_handle_t pwr_ctrl_handle;  /*!< Power control handle */
-    esp_err_t (*get_dma_info)(int slot, esp_dma_mem_info_t *dma_mem_info); /*!< host function to dma memory information*/
     bool (*check_buffer_alignment)(int slot, const void *buf, size_t size); /*!< Check if buffer meets alignment requirements */
     esp_err_t (*is_slot_set_to_uhs1)(int slot, bool *is_uhs1); /*!< host slot is set to uhs1 or not*/
 } sdmmc_host_t;
