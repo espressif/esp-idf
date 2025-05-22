@@ -93,8 +93,8 @@ enum {
 };
 
 enum {
-    LL_EV_ISR_APPEND = 0,
-    LL_EV_FLUSH_LOG,
+    LL_EV_FLAG_ISR_APPEND = 0,
+    LL_EV_FLAG_FLUSH_LOG,
 };
 
 // Private variables
@@ -106,9 +106,6 @@ static uint32_t last_tx_done_ts = 0;
 static bool ul_log_inited = false;
 static SemaphoreHandle_t ul_log_mutex = NULL;
 static spi_out_log_cb_t *ul_log_cb = NULL;
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-static esp_timer_handle_t ul_log_flushout_timer = NULL;
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
 #if SPI_OUT_LL_ENABLED
 static bool ll_log_inited = false;
@@ -117,9 +114,6 @@ static spi_out_log_cb_t *ll_isr_log_cb = NULL;
 static spi_out_log_cb_t *ll_hci_log_cb = NULL;
 static uint32_t ll_ev_flags = 0;
 static esp_bt_controller_status_t ll_status = ESP_BT_CONTROLLER_STATUS_IDLE;
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-static esp_timer_handle_t ll_log_flushout_timer = NULL;
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
 #endif // SPI_OUT_LL_ENABLED
 
 #if SPI_OUT_TS_SYNC_ENABLED
@@ -127,6 +121,10 @@ static bool ts_sync_inited = false;
 static bool sync_io_level = false;
 static esp_timer_handle_t ts_sync_timer = NULL;
 #endif // SPI_OUT_TS_SYNC_ENABLED
+
+#if SPI_OUT_FLUSH_TIMER_ENABLED
+static esp_timer_handle_t flush_timer = NULL;
+#endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
 // Extern function declarations
 extern void esp_panic_handler_feed_wdts(void);
@@ -146,21 +144,16 @@ static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, 
                                  const uint8_t *addr_append, uint16_t len_append, uint8_t source);
 static void spi_out_log_cb_write_packet_loss(spi_out_log_cb_t *log_cb, uint8_t flag);
 static void spi_out_log_cb_dump(spi_out_log_cb_t *log_cb);
+static void spi_out_log_flush(void);
 
 static int spi_out_ul_log_init(void);
 static void spi_out_ul_log_deinit(void);
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-static void esp_timer_cb_ul_log_flushout(void);
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
 #if SPI_OUT_LL_ENABLED
 static int spi_out_ll_log_init(void);
 static void spi_out_ll_log_deinit(void);
 static void spi_out_ll_log_flush(void);
 static inline void spi_out_ll_log_put_ev(void);
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-static void esp_timer_cb_ll_log_flushout(void);
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
 #endif // SPI_OUT_LL_ENABLED
 
 #if SPI_OUT_TS_SYNC_ENABLED
@@ -342,9 +335,12 @@ IRAM_ATTR static inline void spi_out_log_cb_append_trans(spi_out_log_cb_t *log_c
 
 IRAM_ATTR static inline void spi_out_log_cb_flush_trans(spi_out_log_cb_t *log_cb)
 {
-    spi_out_trans_cb_t *trans_cb = log_cb->trans_cb[log_cb->trans_cb_idx];
-    if (trans_cb->length && (trans_cb->flag == TRANS_CB_FLAG_AVAILABLE)) {
-        trans_cb->flag = TRANS_CB_FLAG_NEED_QUEUE;
+    spi_out_trans_cb_t *trans_cb;
+    for (uint8_t i = 0; i < 2; i++) {
+        trans_cb = log_cb->trans_cb[i];
+        if (trans_cb->length && (trans_cb->flag == TRANS_CB_FLAG_AVAILABLE)) {
+            trans_cb->flag = TRANS_CB_FLAG_NEED_QUEUE;
+        }
     }
 }
 
@@ -419,6 +415,30 @@ static void spi_out_log_cb_dump(spi_out_log_cb_t *log_cb)
     }
 }
 
+static void spi_out_log_flush(void)
+{
+    // Flush ul log
+    xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
+    spi_out_log_cb_flush_trans(ul_log_cb);
+    spi_out_log_cb_append_trans(ul_log_cb);
+    xSemaphoreGive(ul_log_mutex);
+
+#if SPI_OUT_LL_ENABLED
+    // LL log flush shall be run in LL task context
+    ll_ev_flags |= BIT(LL_EV_FLAG_FLUSH_LOG);
+    spi_out_ll_log_put_ev();
+#endif // SPI_OUT_LL_ENABLED
+}
+
+#if SPI_OUT_FLUSH_TIMER_ENABLED
+// Context: ESP timer
+static void esp_timer_cb_log_flush(void)
+{
+    spi_out_log_flush();
+    esp_timer_start_once(flush_timer, SPI_OUT_FLUSH_TIMEOUT_US);
+}
+#endif // SPI_OUT_FLUSH_TIMER_ENABLED
+
 static int spi_out_ul_log_init(void)
 {
     if (ul_log_inited) {
@@ -432,18 +452,6 @@ static int spi_out_ul_log_init(void)
         goto mutex_init_failed;
     }
 
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-    // Initialize flushout timer
-    esp_timer_create_args_t timer_args = {
-        .callback = (esp_timer_cb_t)esp_timer_cb_ul_log_flushout,
-        .dispatch_method = ESP_TIMER_TASK
-    };
-    if (esp_timer_create(&timer_args, &ul_log_flushout_timer) != ESP_OK) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize flushout timer upper layer task log!");
-        goto timer_init_failed;
-    }
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
-
     // Initialize log control block
     if (spi_out_log_cb_init(&ul_log_cb, SPI_OUT_UL_TASK_BUF_SIZE) != 0) {
         ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control blocks for upper layer task log!");
@@ -456,10 +464,6 @@ static int spi_out_ul_log_init(void)
     return 0;
 
 log_cb_init_failed:
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-    esp_timer_delete(ul_log_flushout_timer);
-timer_init_failed:
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
     vSemaphoreDelete(ul_log_mutex);
 mutex_init_failed:
     return -1;
@@ -470,11 +474,6 @@ static void spi_out_ul_log_deinit(void)
     if (!ul_log_inited) {
         return;
     }
-
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-    esp_timer_stop(ul_log_flushout_timer);
-    esp_timer_delete(ul_log_flushout_timer);
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
     xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
     spi_out_log_cb_deinit(&ul_log_cb);
@@ -488,36 +487,12 @@ static void spi_out_ul_log_deinit(void)
     return;
 }
 
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-IRAM_ATTR static void esp_timer_cb_ul_log_flushout(void)
-{
-    xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    spi_out_log_cb_flush_trans(ul_log_cb);
-    spi_out_log_cb_append_trans(ul_log_cb);
-    xSemaphoreGive(ul_log_mutex);
-
-    esp_timer_start_once(ul_log_flushout_timer, SPI_OUT_FLUSH_TIMEOUT_US);
-}
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
-
 #if SPI_OUT_LL_ENABLED
 static int spi_out_ll_log_init(void)
 {
     if (ll_log_inited) {
         return 0;
     }
-
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-    // Initialize flushout timer
-    esp_timer_create_args_t timer_args = {
-        .callback = (esp_timer_cb_t)esp_timer_cb_ll_log_flushout,
-        .dispatch_method = ESP_TIMER_TASK
-    };
-    if (esp_timer_create(&timer_args, &ll_log_flushout_timer) != ESP_OK) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize flushout timer for controller log!");
-        goto timer_init_failed;
-    }
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
     // Initialize log control blocks for controller task & ISR logs
     if (spi_out_log_cb_init(&ll_task_log_cb, SPI_OUT_LL_TASK_BUF_SIZE) != 0) {
@@ -543,10 +518,6 @@ hci_log_cb_init_failed:
 isr_log_cb_init_failed:
     spi_out_log_cb_deinit(&ll_task_log_cb);
 task_log_cb_init_failed:
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-    esp_timer_delete(ll_log_flushout_timer);
-timer_init_failed:
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
     return -1;
 }
 
@@ -555,11 +526,6 @@ static void spi_out_ll_log_deinit(void)
     if (!ll_log_inited) {
         return;
     }
-
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-    esp_timer_stop(ll_log_flushout_timer);
-    esp_timer_delete(ll_log_flushout_timer);
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
     spi_out_log_cb_deinit(&ll_hci_log_cb);
     spi_out_log_cb_deinit(&ll_isr_log_cb);
@@ -606,14 +572,6 @@ static void spi_out_ll_log_flush(void)
     spi_out_log_cb_append_trans(ll_hci_log_cb);
     spi_out_log_cb_append_trans(ll_isr_log_cb);
 }
-
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-IRAM_ATTR static void esp_timer_cb_ll_log_flushout(void)
-{
-    ll_ev_flags |= BIT(LL_EV_FLUSH_LOG);
-    spi_out_ll_log_put_ev();
-}
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
 #endif // SPI_OUT_LL_ENABLED
 
 #if SPI_OUT_TS_SYNC_ENABLED
@@ -768,22 +726,32 @@ int ble_log_spi_out_init(void)
     }
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
+#if SPI_OUT_FLUSH_TIMER_ENABLED
+    esp_timer_create_args_t timer_args = {
+        .callback = (esp_timer_cb_t)esp_timer_cb_log_flush,
+        .dispatch_method = ESP_TIMER_TASK
+    };
+    if (esp_timer_create(&timer_args, &flush_timer) != ESP_OK) {
+        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize flush timer!");
+        goto timer_init_failed;
+    }
+#endif // SPI_OUT_FLUSH_TIMER_ENABLED
+
     // Initialization done
     ESP_LOGI(BLE_LOG_TAG, "Succeeded to initialize BLE log SPI output interface!");
     spi_out_inited = true;
     spi_out_enabled = true;
 
 #if SPI_OUT_FLUSH_TIMER_ENABLED
-    // Start flushout timer
-    esp_timer_start_once(ul_log_flushout_timer, SPI_OUT_FLUSH_TIMEOUT_US);
-
-#if SPI_OUT_LL_ENABLED
-    esp_timer_start_once(ll_log_flushout_timer, SPI_OUT_FLUSH_TIMEOUT_US);
-#endif // SPI_OUT_LL_ENABLED
+    esp_timer_start_once(flush_timer, SPI_OUT_FLUSH_TIMEOUT_US);
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
     return 0;
 
+#if SPI_OUT_FLUSH_TIMER_ENABLED
+timer_init_failed:
+#endif // SPI_OUT_FLUSH_TIMER_ENABLED
 #if SPI_OUT_TS_SYNC_ENABLED
+    spi_out_ts_sync_deinit();
 ts_sync_init_failed:
 #endif // SPI_OUT_TS_SYNC_ENABLED
 #if SPI_OUT_LL_ENABLED
@@ -806,6 +774,11 @@ void ble_log_spi_out_deinit(void)
     if (!spi_out_inited) {
         return;
     }
+
+#if SPI_OUT_FLUSH_TIMER_ENABLED
+    esp_timer_stop(flush_timer);
+    esp_timer_delete(flush_timer);
+#endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
     // Drain all queued transactions
     assert(spi_device_acquire_bus(spi_handle, portMAX_DELAY) == ESP_OK);
@@ -901,7 +874,7 @@ IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint3
     }
     if (need_append) {
         if (in_isr) {
-            ll_ev_flags |= BIT(LL_EV_ISR_APPEND);
+            ll_ev_flags |= BIT(LL_EV_FLAG_ISR_APPEND);
             spi_out_ll_log_put_ev();
         } else {
             spi_out_log_cb_append_trans(log_cb);
@@ -922,14 +895,14 @@ IRAM_ATTR void ble_log_spi_out_ll_log_ev_proc(void)
         return;
     }
 
-    if (ll_ev_flags & BIT(LL_EV_ISR_APPEND)) {
+    if (ll_ev_flags & BIT(LL_EV_FLAG_ISR_APPEND)) {
         spi_out_log_cb_append_trans(ll_isr_log_cb);
-        ll_ev_flags &= ~BIT(LL_EV_ISR_APPEND);
+        ll_ev_flags &= ~BIT(LL_EV_FLAG_ISR_APPEND);
     }
 
-    if (ll_ev_flags & BIT(LL_EV_FLUSH_LOG)) {
+    if (ll_ev_flags & BIT(LL_EV_FLAG_FLUSH_LOG)) {
         spi_out_ll_log_flush();
-        ll_ev_flags &= ~BIT(LL_EV_FLUSH_LOG);
+        ll_ev_flags &= ~BIT(LL_EV_FLAG_FLUSH_LOG);
     }
 }
 #endif // SPI_OUT_LL_ENABLED
@@ -1120,6 +1093,15 @@ void ble_log_spi_out_enable(bool enable)
         ble_log_spi_out_ts_sync_stop();
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_TS_SYNC_ENABLED
     }
+}
+
+void ble_log_spi_out_flush(void)
+{
+    if (!spi_out_enabled) {
+        return;
+    }
+
+    spi_out_log_flush();
 }
 
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
