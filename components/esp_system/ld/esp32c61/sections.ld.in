@@ -37,6 +37,11 @@ SECTIONS
 
     mapping[iram0_text]
 
+    /* mutable libs begin */
+    mutable[iram0_text]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
+
   } > sram_seg
 
   /* Marks the end of IRAM code segment */
@@ -54,6 +59,10 @@ SECTIONS
 
     mapping[iram0_data]
 
+    /* mutable libs begin */
+    mutable[iram0_data]
+    /* mutable libs end */
+
     _iram_data_end = ABSOLUTE(.);
   } > sram_seg
 
@@ -62,6 +71,10 @@ SECTIONS
     ALIGNED_SYMBOL(16, _iram_bss_start)
 
     mapping[iram0_bss]
+
+    /* mutable libs begin */
+    mutable[iram0_bss]
+    /* mutable libs end */
 
     _iram_bss_end = ABSOLUTE(.);
     ALIGNED_SYMBOL(16, _iram_end)
@@ -89,6 +102,11 @@ SECTIONS
     *(.jcr)
 
     mapping[dram0_data]
+
+    /* mutable libs begin */
+    mutable[dram0_data]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
 
     _data_end = ABSOLUTE(.);
   } > sram_seg
@@ -119,6 +137,10 @@ SECTIONS
      */
     mapping[dram0_bss]
 
+    /* mutable libs begin */
+    mutable[dram0_bss]
+    /* mutable libs end */
+
     ALIGNED_SYMBOL(8, _bss_end)
   } > sram_seg
 
@@ -135,6 +157,11 @@ SECTIONS
     _text_start = ABSOLUTE(.);
 
     mapping[flash_text]
+
+    /* mutable libs begin */
+    mutable[flash_text]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
 
     *(.stub)
     *(.gnu.linkonce.t.*)
@@ -246,6 +273,11 @@ SECTIONS
     KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
     _esp_system_init_fn_array_end = ABSOLUTE(.);
 
+    /* mutable libs begin */
+    mutable[flash_rodata]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
+
     _rodata_end = ABSOLUTE(.);
     . = ALIGN(ALIGNOF(SECTION_AFTER_FLASH_RODATA));
   } > default_rodata_seg
@@ -325,6 +357,10 @@ SECTIONS
     _rodata_reserved_end = ADDR(.flash.tbss);
 
     mapping[rodata_noload]
+
+    /* mutable libs begin */
+    mutable[rodata_noload]
+    /* mutable libs end */
   } > default_rodata_seg
 
   /* Marks the end of data, bss and possibly rodata */
@@ -352,6 +388,10 @@ SECTIONS
     _ext_ram_bss_start = ABSOLUTE(.);
 
     mapping[extern_ram]
+
+    /* mutable libs begin */
+    mutable[extern_ram]
+    /* mutable libs end */
 
     ALIGNED_SYMBOL(4, _ext_ram_bss_end)
   } > extern_ram_seg
