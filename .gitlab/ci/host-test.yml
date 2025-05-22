@@ -348,7 +348,7 @@ test_pytest_macos:
     - .host_test_template
     - .before_script:build:macos
   tags:
-    - macos_shell
+    - macos
   artifacts:
     paths:
       - XUNIT_RESULT.xml
@@ -359,18 +359,22 @@ test_pytest_macos:
   variables:
     PYENV_VERSION: "3.9"
     PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
+    # Workaround for a bug in Parallels executor where CI_PROJECT_DIR is not an absolute path,
+    # but a relative path to the build directory (builds/espressif/esp-idf instead of ~/builds/espressif/esp-idf.
+    # GitLab sets the project dir to this template `<builds_dir>/<namespace>/<project_name>`
+    IDF_PATH: "/Users/espressif/builds/espressif/esp-idf"
   script:
     - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -v
       --target linux
       --pytest-apps
-      -m \"host_test and macos_shell\"
+      -m \"host_test and macos\"
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
     - python tools/ci/get_known_failure_cases_file.py
     - run_cmd pytest
       --target linux
-      -m \"host_test and macos_shell\"
+      -m \"host_test and macos\"
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
       --app-info-filepattern \"list_job_*.txt\"

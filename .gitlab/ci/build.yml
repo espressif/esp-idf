@@ -231,13 +231,18 @@ pytest_build_system_macos:
     - .after_script:build:macos:upload-failed-job-logs:ccache-show-stats
     - .rules:build:macos
   tags:
-    - macos_shell
+    - macos
   parallel: 3
   variables:
     PYENV_VERSION: "3.9"
     # CCACHE_DIR: "/cache/idf_ccache". On macOS, you cannot write to this folder due to insufficient permissions.
     CCACHE_DIR: "" # ccache will use "$HOME/Library/Caches/ccache".
     CCACHE_MAXSIZE: "5G" # To preserve the limited Macbook storage. CCACHE automatically prunes old caches to fit the set limit.
+    # Workaround for a bug in Parallels executor where CI_PROJECT_DIR is not an absolute path,
+    # but a relative path to the build directory (builds/espressif/esp-idf instead of ~/builds/espressif/esp-idf.
+    # GitLab sets the project dir to this template `<builds_dir>/<namespace>/<project_name>`
+    IDF_PATH: "/Users/espressif/builds/espressif/esp-idf"
+
 build_docker:
   extends:
     - .before_script:minimal

@@ -243,8 +243,6 @@ variables:
     # Ensure pyenv and PYENV_VERSION installed
     - eval "$(pyenv init -)"
     - *common-before_scripts
-    # On macOS, these tools need to be installed
-    - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
     # remove idf-env.json, since it may contains enabled "features"
     - rm -f $IDF_TOOLS_PATH/idf-env.json
     # This adds tools (compilers) and the version-specific Python environment to PATH
