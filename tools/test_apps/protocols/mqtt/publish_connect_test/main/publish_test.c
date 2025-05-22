@@ -67,31 +67,44 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         ESP_LOGI(TAG, "TOPIC=%.*s", event->topic_len, event->topic);
         ESP_LOGI(TAG, "ID=%d, total_len=%d, data_len=%d, current_data_offset=%d", event->msg_id, event->total_data_len, event->data_len, event->current_data_offset);
-        if (event->topic) {
-            actual_len = event->data_len;
-            msg_id = event->msg_id;
-        } else {
-            actual_len += event->data_len;
-            // check consistency with msg_id across multiple data events for single msg
-            if (msg_id != event->msg_id) {
-                ESP_LOGI(TAG, "Wrong msg_id in chunked message %d != %d", msg_id, event->msg_id);
-                abort();
-            }
-        }
-        memcpy(test_data->received_data + event->current_data_offset, event->data, event->data_len);
-        if (actual_len == event->total_data_len) {
-            if (0 == memcmp(test_data->received_data, test_data->expected, test_data->expected_size)) {
-                memset(test_data->received_data, 0, test_data->expected_size);
-                test_data->nr_of_msg_received ++;
-                if (test_data->nr_of_msg_received == test_data->nr_of_msg_expected) {
-                    ESP_LOGI(TAG, "Correct pattern received exactly x times");
-                    ESP_LOGI(TAG, "Test finished correctly!");
-                }
-            } else {
-                ESP_LOGE(TAG, "FAILED!");
-                abort();
-            }
-        }
+          if (event->current_data_offset == 0) {
+              actual_len = event->data_len;
+              msg_id = event->msg_id;
+              if (event->total_data_len != test_data->expected_size) {
+                  ESP_LOGE(TAG, "Incorrect message size: %d != %d", event->total_data_len, test_data->expected_size);
+                  abort();
+              }
+          } else {
+              actual_len += event->data_len;
+              // check consistency with msg_id across multiple data events for single msg
+              if (msg_id != event->msg_id) {
+                  ESP_LOGE(TAG, "Wrong msg_id in chunked message %d != %d", msg_id, event->msg_id);
+                  abort();
+              }
+          }
+          if (event->current_data_offset + event->data_len > test_data->expected_size) {
+              ESP_LOGE(TAG, "Buffer overflow detected: offset %d + data_len %d > buffer size %d", event->current_data_offset, event->data_len, test_data->expected_size);
+              abort();
+          }
+          if (memcmp(test_data->expected + event->current_data_offset, event->data, event->data_len) != 0) {
+            ESP_LOGE(TAG, "Data mismatch at offset %d: \n expected %.*s, \n got %.*s", event->current_data_offset, event->data_len, test_data->expected + event->current_data_offset, event->data_len, event->data);
+            abort();
+          }
+
+          memcpy(test_data->received_data + event->current_data_offset, event->data, event->data_len);
+          if (actual_len == event->total_data_len) {
+              if (0 == memcmp(test_data->received_data, test_data->expected, test_data->expected_size)) {
+                  memset(test_data->received_data, 0, test_data->expected_size);
+                  test_data->nr_of_msg_received++;
+                  if (test_data->nr_of_msg_received == test_data->nr_of_msg_expected) {
+                      ESP_LOGI(TAG, "Correct pattern received exactly x times");
+                      ESP_LOGI(TAG, "Test finished correctly!");
+                  }
+              } else {
+                  ESP_LOGE(TAG, "FAILED!");
+                  abort();
+              }
+          }
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGE(TAG, "MQTT_EVENT_ERROR");
