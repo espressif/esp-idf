@@ -1,5 +1,5 @@
 CONFIG_SPIRAM=y
-CONFIG_SPIRAM_SPEED_40M=y
+CONFIG_SPIRAM_SPEED_80M=y
 # Enabling the following configurations can help increase the PCLK frequency in the case when
 # the Frame Buffer is allocated from the PSRAM and fetched by EDMA
 CONFIG_SPIRAM_XIP_FROM_PSRAM=y
