@@ -7,6 +7,9 @@
 
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 
+// Private includes
+#include "esp_bt.h"
+
 // sdkconfig defines
 #define SPI_OUT_UL_TASK_BUF_SIZE                CONFIG_BT_BLE_LOG_SPI_OUT_UL_TASK_BUF_SIZE
 #define SPI_OUT_LL_ENABLED                      CONFIG_BT_BLE_LOG_SPI_OUT_LL_ENABLED
@@ -89,6 +92,11 @@ enum {
     LL_LOG_FLAG_RAW,
 };
 
+enum {
+    LL_EV_ISR_APPEND = 0,
+    LL_EV_FLUSH_LOG,
+};
+
 // Private variables
 static bool spi_out_inited = false;
 static bool spi_out_enabled = false;
@@ -107,6 +115,8 @@ static bool ll_log_inited = false;
 static spi_out_log_cb_t *ll_task_log_cb = NULL;
 static spi_out_log_cb_t *ll_isr_log_cb = NULL;
 static spi_out_log_cb_t *ll_hci_log_cb = NULL;
+static uint32_t ll_ev_flags = 0;
+static esp_bt_controller_status_t ll_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 #if SPI_OUT_FLUSH_TIMER_ENABLED
 static esp_timer_handle_t ll_log_flushout_timer = NULL;
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
@@ -129,10 +139,10 @@ static inline int spi_out_append_trans(spi_out_trans_cb_t *trans_cb);
 
 static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size);
 static void spi_out_log_cb_deinit(spi_out_log_cb_t **log_cb);
-static inline int spi_out_log_cb_check_trans(spi_out_log_cb_t *log_cb, uint16_t len);
+static inline bool spi_out_log_cb_check_trans(spi_out_log_cb_t *log_cb, uint16_t len, bool *need_append);
 static inline void spi_out_log_cb_append_trans(spi_out_log_cb_t *log_cb);
 static inline void spi_out_log_cb_flush_trans(spi_out_log_cb_t *log_cb);
-static void spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, uint16_t len, \
+static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, uint16_t len, \
                                  const uint8_t *addr_append, uint16_t len_append, uint8_t source);
 static void spi_out_log_cb_write_packet_loss(spi_out_log_cb_t *log_cb, uint8_t flag);
 static void spi_out_log_cb_dump(spi_out_log_cb_t *log_cb);
@@ -146,22 +156,11 @@ static void esp_timer_cb_ul_log_flushout(void);
 #if SPI_OUT_LL_ENABLED
 static int spi_out_ll_log_init(void);
 static void spi_out_ll_log_deinit(void);
-static void spi_out_ll_log_ev_proc(void);
+static void spi_out_ll_log_flush(void);
+static inline void spi_out_ll_log_put_ev(void);
 #if SPI_OUT_FLUSH_TIMER_ENABLED
 static void esp_timer_cb_ll_log_flushout(void);
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
-
-#if defined(CONFIG_IDF_TARGET_ESP32H2) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5) ||\
-    defined(CONFIG_IDF_TARGET_ESP32C61) || defined(CONFIG_IDF_TARGET_ESP32H21)
-extern void r_ble_log_simple_put_ev(void);
-#define BLE_LOG_LL_PUT_EV r_ble_log_simple_put_ev()
-#elif defined(CONFIG_IDF_TARGET_ESP32C2)
-extern void ble_log_simple_put_ev(void);
-#define BLE_LOG_LL_PUT_EV ble_log_simple_put_ev()
-#else
-#define BLE_LOG_LL_PUT_EV
-#endif
-
 #endif // SPI_OUT_LL_ENABLED
 
 #if SPI_OUT_TS_SYNC_ENABLED
@@ -299,10 +298,11 @@ static void spi_out_log_cb_deinit(spi_out_log_cb_t **log_cb)
     return;
 }
 
-IRAM_ATTR static inline int spi_out_log_cb_check_trans(spi_out_log_cb_t *log_cb, uint16_t len)
+IRAM_ATTR static inline bool spi_out_log_cb_check_trans(spi_out_log_cb_t *log_cb, uint16_t len, bool *need_append)
 {
     spi_out_trans_cb_t *trans_cb;
     uint16_t frame_len = len + SPI_OUT_FRAME_OVERHEAD;
+    *need_append = false;
     for (uint8_t i = 0; i < 2; i++) {
         trans_cb = log_cb->trans_cb[log_cb->trans_cb_idx];
         if (frame_len > trans_cb->buf_size) {
@@ -310,9 +310,10 @@ IRAM_ATTR static inline int spi_out_log_cb_check_trans(spi_out_log_cb_t *log_cb,
         }
         if (trans_cb->flag == TRANS_CB_FLAG_AVAILABLE) {
             if ((trans_cb->buf_size - trans_cb->length) >= (len + SPI_OUT_FRAME_OVERHEAD)) {
-                return 0;
+                return true;
             } else {
                 trans_cb->flag = TRANS_CB_FLAG_NEED_QUEUE;
+                *need_append = true;
             }
         }
         log_cb->trans_cb_idx = !(log_cb->trans_cb_idx);
@@ -320,7 +321,7 @@ IRAM_ATTR static inline int spi_out_log_cb_check_trans(spi_out_log_cb_t *log_cb,
 failed:
     log_cb->bytes_loss_cnt += len + SPI_OUT_FRAME_OVERHEAD;
     log_cb->frame_cnt++;
-    return -1;
+    return false;
 }
 
 // CRITICAL: Shall not be called from ISR!
@@ -347,7 +348,8 @@ IRAM_ATTR static inline void spi_out_log_cb_flush_trans(spi_out_log_cb_t *log_cb
     }
 }
 
-IRAM_ATTR static void spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, uint16_t len, \
+// Return value: Need append
+IRAM_ATTR static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, uint16_t len, \
                                            const uint8_t *addr_append, uint16_t len_append, uint8_t source)
 {
     spi_out_trans_cb_t *trans_cb = log_cb->trans_cb[log_cb->trans_cb_idx];
@@ -374,8 +376,9 @@ IRAM_ATTR static void spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8
     log_cb->frame_cnt++;
     if ((trans_cb->buf_size - trans_cb->length) <= SPI_OUT_FRAME_OVERHEAD) {
         trans_cb->flag = TRANS_CB_FLAG_NEED_QUEUE;
+        return true;
     }
-    return;
+    return false;
 }
 
 IRAM_ATTR static void spi_out_log_cb_write_packet_loss(spi_out_log_cb_t *log_cb, uint8_t flag)
@@ -383,7 +386,8 @@ IRAM_ATTR static void spi_out_log_cb_write_packet_loss(spi_out_log_cb_t *log_cb,
     if (!log_cb->bytes_loss_cnt && !log_cb->trans_loss_cnt) {
         return;
     }
-    if (spi_out_log_cb_check_trans(log_cb, SPI_OUT_PACKET_LOSS_FRAME_SIZE) == 0) {
+    bool need_append;
+    if (spi_out_log_cb_check_trans(log_cb, SPI_OUT_PACKET_LOSS_FRAME_SIZE, &need_append)) {
         uint8_t packet_loss_frame[SPI_OUT_PACKET_LOSS_FRAME_SIZE];
         packet_loss_frame[0] = flag;
         memcpy(packet_loss_frame + 1, (uint8_t *)&log_cb->bytes_loss_cnt, 4);
@@ -567,28 +571,47 @@ static void spi_out_ll_log_deinit(void)
     return;
 }
 
-IRAM_ATTR static void spi_out_ll_log_ev_proc(void)
+IRAM_ATTR static inline void spi_out_ll_log_put_ev(void)
 {
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-    // Request from flushout timer
-    spi_out_log_cb_flush_trans(ll_hci_log_cb);
-    spi_out_log_cb_append_trans(ll_hci_log_cb);
+    if (ll_status < ESP_BT_CONTROLLER_STATUS_INITED) {
+        return;
+    }
 
-    spi_out_log_cb_flush_trans(ll_isr_log_cb);
-    spi_out_log_cb_append_trans(ll_isr_log_cb);
+#if defined(CONFIG_IDF_TARGET_ESP32H2) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5) ||\
+    defined(CONFIG_IDF_TARGET_ESP32C61) || defined(CONFIG_IDF_TARGET_ESP32H21)
+    extern void r_ble_log_simple_put_ev(void);
+    r_ble_log_simple_put_ev();
+#elif defined(CONFIG_IDF_TARGET_ESP32C2)
+    extern void ble_log_simple_put_ev(void);
+    ble_log_simple_put_ev();
+#else
+#endif
+}
 
+// Context: LL task
+static void spi_out_ll_log_flush(void)
+{
+    // Flush task log and hci log buffer
     spi_out_log_cb_flush_trans(ll_task_log_cb);
-    spi_out_log_cb_append_trans(ll_task_log_cb);
+    spi_out_log_cb_flush_trans(ll_hci_log_cb);
 
-    esp_timer_start_once(ll_log_flushout_timer, SPI_OUT_FLUSH_TIMEOUT_US);
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
-    return;
+    // Race condition for isr log buffer
+    portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
+    portENTER_CRITICAL_SAFE(&spinlock);
+    spi_out_log_cb_flush_trans(ll_isr_log_cb);
+    portEXIT_CRITICAL_SAFE(&spinlock);
+
+    // Note: Save SPI transfer start time
+    spi_out_log_cb_append_trans(ll_task_log_cb);
+    spi_out_log_cb_append_trans(ll_hci_log_cb);
+    spi_out_log_cb_append_trans(ll_isr_log_cb);
 }
 
 #if SPI_OUT_FLUSH_TIMER_ENABLED
 IRAM_ATTR static void esp_timer_cb_ll_log_flushout(void)
 {
-    BLE_LOG_LL_PUT_EV;
+    ll_ev_flags |= BIT(LL_EV_FLUSH_LOG);
+    spi_out_ll_log_put_ev();
 }
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
 #endif // SPI_OUT_LL_ENABLED
@@ -872,14 +895,23 @@ IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint3
         source = BLE_LOG_SPI_OUT_SOURCE_ESP;
     }
 
-    if (spi_out_log_cb_check_trans(log_cb, (uint16_t)(len + len_append)) == 0) {
-        spi_out_log_cb_write(log_cb, addr, (uint16_t)len, addr_append, (uint16_t)len_append, source);
-        spi_out_log_cb_write_packet_loss(log_cb, log_cb_type);
-        if (!in_isr) {
-            spi_out_log_cb_append_trans(ll_isr_log_cb);
-            spi_out_log_cb_append_trans(ll_task_log_cb);
-            spi_out_log_cb_append_trans(ll_hci_log_cb);
+    bool need_append;
+    if (spi_out_log_cb_check_trans(log_cb, (uint16_t)(len + len_append), &need_append)) {
+        need_append |= spi_out_log_cb_write(log_cb, addr, (uint16_t)len, addr_append, (uint16_t)len_append, source);
+    }
+    if (need_append) {
+        if (in_isr) {
+            ll_ev_flags |= BIT(LL_EV_ISR_APPEND);
+            spi_out_ll_log_put_ev();
+        } else {
+            spi_out_log_cb_append_trans(log_cb);
         }
+    }
+    spi_out_log_cb_write_packet_loss(log_cb, log_cb_type);
+
+    // Update controller status
+    if (!in_isr) {
+        ll_status = esp_bt_controller_get_status();
     }
     return;
 }
@@ -889,7 +921,16 @@ IRAM_ATTR void ble_log_spi_out_ll_log_ev_proc(void)
     if (!ll_log_inited) {
         return;
     }
-    return spi_out_ll_log_ev_proc();
+
+    if (ll_ev_flags & BIT(LL_EV_ISR_APPEND)) {
+        spi_out_log_cb_append_trans(ll_isr_log_cb);
+        ll_ev_flags &= ~BIT(LL_EV_ISR_APPEND);
+    }
+
+    if (ll_ev_flags & BIT(LL_EV_FLUSH_LOG)) {
+        spi_out_ll_log_flush();
+        ll_ev_flags &= ~BIT(LL_EV_FLUSH_LOG);
+    }
 }
 #endif // SPI_OUT_LL_ENABLED
 
@@ -899,13 +940,15 @@ int ble_log_spi_out_write(uint8_t source, const uint8_t *addr, uint16_t len)
         return -1;
     }
 
+    bool need_append;
     xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    if (spi_out_log_cb_check_trans(ul_log_cb, len) == 0) {
-        spi_out_log_cb_write(ul_log_cb, addr, len, NULL, 0, source);
-        spi_out_log_cb_append_trans(ul_log_cb);
-
-        spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
+    if (spi_out_log_cb_check_trans(ul_log_cb, len, &need_append)) {
+        need_append |= spi_out_log_cb_write(ul_log_cb, addr, len, NULL, 0, source);
     }
+    if (need_append) {
+        spi_out_log_cb_append_trans(ul_log_cb);
+    }
+    spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
     xSemaphoreGive(ul_log_mutex);
     return 0;
 }
@@ -944,13 +987,16 @@ int ble_log_spi_out_printf(uint8_t source, const char *format, ...)
     va_end(args);
 
     uint32_t esp_ts = esp_timer_get_time();
+    bool need_append;
     xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    if (spi_out_log_cb_check_trans(ul_log_cb, sizeof(uint32_t) + len) == 0) {
-        spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&esp_ts, sizeof(uint32_t), (const uint8_t *)buffer, len, source);
-        spi_out_log_cb_append_trans(ul_log_cb);
-
-        spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
+    if (spi_out_log_cb_check_trans(ul_log_cb, sizeof(uint32_t) + len, &need_append)) {
+        need_append |= spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&esp_ts, sizeof(uint32_t),
+                                            (const uint8_t *)buffer, len, source);
     }
+    if (need_append) {
+        spi_out_log_cb_append_trans(ul_log_cb);
+    }
+    spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
     xSemaphoreGive(ul_log_mutex);
 
     // Release
@@ -998,13 +1044,16 @@ int ble_log_spi_out_printf_enh(uint8_t source, uint8_t level, const char *tag, c
     va_end(args);
 
     uint32_t esp_ts = esp_timer_get_time();
+    bool need_append;
     xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    if (spi_out_log_cb_check_trans(ul_log_cb, sizeof(uint32_t) + total_len) == 0) {
-        spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&esp_ts, sizeof(uint32_t), (const uint8_t *)buffer, total_len, source);
-        spi_out_log_cb_append_trans(ul_log_cb);
-
-        spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
+    if (spi_out_log_cb_check_trans(ul_log_cb, sizeof(uint32_t) + total_len, &need_append)) {
+        need_append |= spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&esp_ts, sizeof(uint32_t),
+                                            (const uint8_t *)buffer, total_len, source);
     }
+    if (need_append) {
+        spi_out_log_cb_append_trans(ul_log_cb);
+    }
+    spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
     xSemaphoreGive(ul_log_mutex);
 
     free(buffer);
@@ -1018,13 +1067,15 @@ int ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t 
     }
 
     uint32_t esp_ts = esp_timer_get_time();
+    bool need_append;
     xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    if (spi_out_log_cb_check_trans(ul_log_cb, sizeof(uint32_t) + len) == 0) {
-        spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&esp_ts, sizeof(uint32_t), addr, len, source);
-        spi_out_log_cb_append_trans(ul_log_cb);
-
-        spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
+    if (spi_out_log_cb_check_trans(ul_log_cb, sizeof(uint32_t) + len, &need_append)) {
+        need_append |= spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&esp_ts, sizeof(uint32_t), addr, len, source);
     }
+    if (need_append) {
+        spi_out_log_cb_append_trans(ul_log_cb);
+    }
+    spi_out_log_cb_write_packet_loss(ul_log_cb, LOG_CB_TYPE_UL);
     xSemaphoreGive(ul_log_mutex);
     return 0;
 }
