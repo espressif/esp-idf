@@ -25,6 +25,7 @@ enum {
     BLE_LOG_SPI_OUT_SOURCE_ESP_ISR,
     BLE_LOG_SPI_OUT_SOURCE_ESP_LEGACY_ISR,
     BLE_LOG_SPI_OUT_SOURCE_LL_HCI,
+    BLE_LOG_SPI_OUT_SOURCE_LE_AUDIO,
     BLE_LOG_SPI_OUT_SOURCE_USER = 0x10,
     BLE_LOG_SPI_OUT_SOURCE_SSC = 0xFD,
     BLE_LOG_SPI_OUT_SOURCE_SYNC,
@@ -57,5 +58,6 @@ int ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t 
 void ble_log_spi_out_dump_all(void);
 void ble_log_spi_out_enable(bool enable);
 void ble_log_spi_out_flush(void);
+void ble_log_spi_out_le_audio_write(const uint8_t *addr, uint16_t len);
 
 #endif // __BT_SPI_OUT_H__

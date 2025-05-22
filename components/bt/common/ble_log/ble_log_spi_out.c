@@ -23,6 +23,8 @@
 #define SPI_OUT_SYNC_IO_NUM                     CONFIG_BT_BLE_LOG_SPI_OUT_SYNC_IO_NUM
 #define SPI_OUT_FLUSH_TIMER_ENABLED             CONFIG_BT_BLE_LOG_SPI_OUT_FLUSH_TIMER_ENABLED
 #define SPI_OUT_FLUSH_TIMEOUT_US                (CONFIG_BT_BLE_LOG_SPI_OUT_FLUSH_TIMEOUT * 1000)
+#define SPI_OUT_LE_AUDIO_ENABLED                CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
+#define SPI_OUT_LE_AUDIO_BUF_SIZE               CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_BUF_SIZE
 
 // Private defines
 #define BLE_LOG_TAG                             "BLE_LOG"
@@ -82,6 +84,7 @@ enum {
     LOG_CB_TYPE_LL_TASK,
     LOG_CB_TYPE_LL_ISR,
     LOG_CB_TYPE_LL_HCI,
+    LOG_CB_TYPE_LE_AUDIO,
 };
 
 enum {
@@ -128,6 +131,11 @@ static esp_timer_handle_t ts_sync_timer = NULL;
 static esp_timer_handle_t flush_timer = NULL;
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
+#if SPI_OUT_LE_AUDIO_ENABLED
+static bool le_audio_log_inited = false;
+static spi_out_log_cb_t *le_audio_log_cb = NULL;
+#endif // SPI_OUT_LE_AUDIO_ENABLED
+
 // Extern function declarations
 extern void esp_panic_handler_feed_wdts(void);
 
@@ -142,8 +150,9 @@ static void spi_out_log_cb_deinit(spi_out_log_cb_t **log_cb);
 static inline bool spi_out_log_cb_check_trans(spi_out_log_cb_t *log_cb, uint16_t len, bool *need_append);
 static inline void spi_out_log_cb_append_trans(spi_out_log_cb_t *log_cb);
 static inline void spi_out_log_cb_flush_trans(spi_out_log_cb_t *log_cb);
-static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, uint16_t len, \
-                                 const uint8_t *addr_append, uint16_t len_append, uint8_t source);
+static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, uint16_t len,
+                                 const uint8_t *addr_append, uint16_t len_append, uint8_t source,
+                                 bool with_checksum);
 static void spi_out_log_cb_write_packet_loss(spi_out_log_cb_t *log_cb, uint8_t flag);
 static void spi_out_log_cb_dump(spi_out_log_cb_t *log_cb);
 static void spi_out_log_flush(void);
@@ -177,6 +186,11 @@ extern uint32_t r_os_cputime_get32(void);
 #endif
 
 #endif // SPI_OUT_TS_SYNC_ENABLED
+
+#if SPI_OUT_LE_AUDIO_ENABLED
+static int spi_out_le_audio_log_init(void);
+static void spi_out_le_audio_log_deinit(void);
+#endif // SPI_OUT_LE_AUDIO_ENABLED
 
 // Private functions
 static int spi_out_init_trans(spi_out_trans_cb_t **trans_cb, uint16_t buf_size)
@@ -349,8 +363,9 @@ IRAM_ATTR static inline void spi_out_log_cb_flush_trans(spi_out_log_cb_t *log_cb
 }
 
 // Return value: Need append
-IRAM_ATTR static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, uint16_t len, \
-                                           const uint8_t *addr_append, uint16_t len_append, uint8_t source)
+IRAM_ATTR static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, uint16_t len,
+                                           const uint8_t *addr_append, uint16_t len_append, uint8_t source,
+                                           bool with_checksum)
 {
     spi_out_trans_cb_t *trans_cb = log_cb->trans_cb[log_cb->trans_cb_idx];
 
@@ -358,11 +373,13 @@ IRAM_ATTR static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8
     uint16_t total_length = len + len_append;
     const uint8_t head[4] = {total_length & 0xFF, (total_length >> 8) & 0xFF, source, log_cb->frame_cnt};
     uint32_t checksum = 0;
-    for (int i = 0; i < len; i++) {
-        checksum += addr[i];
-    }
-    for (int i = 0; i < len_append; i++) {
-        checksum += addr_append[i];
+    if (with_checksum) {
+        for (int i = 0; i < len; i++) {
+            checksum += addr[i];
+        }
+        for (int i = 0; i < len_append; i++) {
+            checksum += addr_append[i];
+        }
     }
 
     memcpy(buf, head, SPI_OUT_FRAME_HEAD_LEN);
@@ -392,7 +409,8 @@ IRAM_ATTR static void spi_out_log_cb_write_packet_loss(spi_out_log_cb_t *log_cb,
         packet_loss_frame[0] = flag;
         memcpy(packet_loss_frame + 1, (uint8_t *)&log_cb->bytes_loss_cnt, 4);
         packet_loss_frame[5] = log_cb->trans_loss_cnt;
-        spi_out_log_cb_write(log_cb, packet_loss_frame, SPI_OUT_PACKET_LOSS_FRAME_SIZE, NULL, 0, BLE_LOG_SPI_OUT_SOURCE_LOSS);
+        spi_out_log_cb_write(log_cb, packet_loss_frame, SPI_OUT_PACKET_LOSS_FRAME_SIZE,
+                             NULL, 0, BLE_LOG_SPI_OUT_SOURCE_LOSS, true);
 
         log_cb->bytes_loss_cnt = 0;
         log_cb->trans_loss_cnt = 0;
@@ -515,9 +533,9 @@ static void spi_out_ul_log_write(uint8_t source, const uint8_t *addr, uint16_t l
         if (with_ts) {
             uint32_t esp_ts = esp_timer_get_time();
             need_append |= spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&esp_ts,
-                                                sizeof(uint32_t), addr, len, source);
+                                                sizeof(uint32_t), addr, len, source, true);
         } else {
-            need_append |= spi_out_log_cb_write(ul_log_cb, addr, len, NULL, 0, source);
+            need_append |= spi_out_log_cb_write(ul_log_cb, addr, len, NULL, 0, source, true);
         }
     }
     if (need_append) {
@@ -728,6 +746,40 @@ static void esp_timer_cb_ts_sync(void)
 }
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
+#if SPI_OUT_LE_AUDIO_ENABLED
+static int spi_out_le_audio_log_init(void)
+{
+    if (le_audio_log_inited) {
+        return 0;
+    }
+
+    // Initialize log control blocks for controller task & ISR logs
+    if (spi_out_log_cb_init(&le_audio_log_cb, SPI_OUT_LE_AUDIO_BUF_SIZE) != 0) {
+        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control blocks for LE audio!");
+        return -1;
+    }
+
+    // Initialization done
+    ESP_LOGI(BLE_LOG_TAG, "Succeeded to initialize log control blocks for LE Audio!");
+    le_audio_log_inited = true;
+    return 0;
+}
+
+static void spi_out_le_audio_log_deinit(void)
+{
+    if (!le_audio_log_inited) {
+        return;
+    }
+
+    spi_out_log_cb_deinit(&le_audio_log_cb);
+
+    // Deinitialization done
+    ESP_LOGI(BLE_LOG_TAG, "Succeeded to deinitialize LE audio log!");
+    le_audio_log_inited = false;
+    return;
+}
+#endif // SPI_OUT_LE_AUDIO_ENABLED
+
 // Public functions
 int ble_log_spi_out_init(void)
 {
@@ -782,6 +834,12 @@ int ble_log_spi_out_init(void)
     }
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
+#if SPI_OUT_LE_AUDIO_ENABLED
+    if (spi_out_le_audio_log_init() != 0) {
+        goto le_audio_init_failed;
+    }
+#endif // SPI_OUT_LE_AUDIO_ENABLED
+
 #if SPI_OUT_FLUSH_TIMER_ENABLED
     esp_timer_create_args_t timer_args = {
         .callback = (esp_timer_cb_t)esp_timer_cb_log_flush,
@@ -806,6 +864,10 @@ int ble_log_spi_out_init(void)
 #if SPI_OUT_FLUSH_TIMER_ENABLED
 timer_init_failed:
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
+#if SPI_OUT_LE_AUDIO_ENABLED
+    spi_out_le_audio_log_deinit();
+le_audio_init_failed:
+#endif // SPI_OUT_LE_AUDIO_ENABLED
 #if SPI_OUT_TS_SYNC_ENABLED
     spi_out_ts_sync_deinit();
 ts_sync_init_failed:
@@ -898,7 +960,7 @@ void ble_log_spi_out_ts_sync_stop(void)
 
 #if SPI_OUT_LL_ENABLED
 // Only LL task has access to this API
-IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint32_t len_append,\
+IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint32_t len_append,
                                         const uint8_t *addr_append, uint32_t flag)
 {
     if (!ll_log_inited) {
@@ -926,7 +988,8 @@ IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint3
 
     bool need_append;
     if (spi_out_log_cb_check_trans(log_cb, (uint16_t)(len + len_append), &need_append)) {
-        need_append |= spi_out_log_cb_write(log_cb, addr, (uint16_t)len, addr_append, (uint16_t)len_append, source);
+        need_append |= spi_out_log_cb_write(log_cb, addr, (uint16_t)len, addr_append,
+                                            (uint16_t)len_append, source, true);
     }
     if (need_append) {
         if (in_isr) {
@@ -1078,4 +1141,23 @@ void ble_log_spi_out_flush(void)
     spi_out_log_flush();
 }
 
+#if CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
+IRAM_ATTR void ble_log_spi_out_le_audio_write(const uint8_t *addr, uint16_t len)
+{
+    if (!le_audio_log_inited) {
+        return;
+    }
+
+    bool need_append;
+    if (spi_out_log_cb_check_trans(le_audio_log_cb, len, &need_append)) {
+        need_append |= spi_out_log_cb_write(le_audio_log_cb, addr, len, NULL, 0,
+                                            BLE_LOG_SPI_OUT_SOURCE_LE_AUDIO, false);
+    }
+    if (need_append) {
+        spi_out_log_cb_append_trans(le_audio_log_cb);
+    }
+    spi_out_log_cb_write_packet_loss(le_audio_log_cb, LOG_CB_TYPE_LE_AUDIO);
+    return;
+}
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
