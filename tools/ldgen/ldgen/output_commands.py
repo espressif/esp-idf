@@ -19,9 +19,10 @@ class AlignAtAddress:
     command to be emitted.
     """
 
-    def __init__(self, alignment, tied=False):
+    def __init__(self, alignment, tied=False, mutable=False):
         self.alignment = alignment
         self.tied = tied
+        self.mutable = mutable
 
     def __str__(self):
         return ('. = ALIGN(%d);' % self.alignment)
@@ -43,9 +44,10 @@ class SymbolAtAddress:
     an InputSectionDesc.
     """
 
-    def __init__(self, symbol, tied=False):
+    def __init__(self, symbol, tied=False, mutable=False):
         self.symbol = symbol
         self.tied = tied
+        self.mutable = mutable
 
     def __str__(self):
         return ('%s = ABSOLUTE(.);' % self.symbol)
@@ -65,7 +67,7 @@ class InputSectionDesc:
     the emitted input section description.
     """
 
-    def __init__(self, entity, sections, exclusions=None, keep=False, sort=None, tied=False):
+    def __init__(self, entity, sections, exclusions=None, keep=False, sort=None, tied=False, mutable=False):
         assert entity.specificity != Entity.Specificity.SYMBOL
 
         self.entity = entity
@@ -83,6 +85,7 @@ class InputSectionDesc:
         self.keep = keep
         self.sort = sort
         self.tied = tied
+        self.mutable = mutable
 
     def __str__(self):
         sections_string = ''

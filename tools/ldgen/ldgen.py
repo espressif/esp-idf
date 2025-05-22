@@ -63,6 +63,11 @@ def main():
         help='File that contains the list of libraries in the build')
 
     argparser.add_argument(
+        '--mutable-libraries-file',
+        type=argparse.FileType('r'),
+        help='File that contains the list of mutable libraries in the build')
+
+    argparser.add_argument(
         '--output', '-o',
         help='Output linker script',
         type=str)
@@ -104,6 +109,7 @@ def main():
 
     input_file = args.input
     libraries_file = args.libraries_file
+    mutable_libraries_file = args.mutable_libraries_file or []
     config_file = args.config
     output_path = args.output
     kconfig_file = args.kconfig
@@ -132,7 +138,8 @@ def main():
                 dump.name = library
                 sections_infos.add_sections_info(dump)
 
-        generation_model = Generation(check_mapping, check_mapping_exceptions)
+        mutable_libs = [lib.strip() for lib in mutable_libraries_file]
+        generation_model = Generation(check_mapping, check_mapping_exceptions, mutable_libs, args.debug)
 
         _update_environment(args)  # assign args.env and args.env_file to os.environ
 
