@@ -48,7 +48,7 @@ config BT_BLE_LOG_SPI_OUT_LL_TASK_BUF_SIZE
     depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
     default 1024
     help
-        SPI transaction buffer size for upper layer task logs.
+        SPI transaction buffer size for lower layer task logs.
         There will be 2 SPI DMA buffers with the same size.
 
 config BT_BLE_LOG_SPI_OUT_LL_ISR_BUF_SIZE
@@ -56,8 +56,16 @@ config BT_BLE_LOG_SPI_OUT_LL_ISR_BUF_SIZE
     depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
     default 512
     help
-        SPI transaction buffer size for upper layer ISR logs.
+        SPI transaction buffer size for lower layer ISR logs.
         There will be 2 SPI DMA buffers with the same size.
+
+config BT_BLE_LOG_SPI_OUT_LL_HCI_BUF_SIZE
+    int "SPI transaction buffer size for lower layer HCI logs"
+    depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
+    default 512
+    help
+        SPI transaction buffer size for upper layer HCI logs.
+        There will be 2 SPI DMA buffers with the same size
 
 config BT_BLE_LOG_SPI_OUT_MOSI_IO_NUM
     int "GPIO number of SPI MOSI"
