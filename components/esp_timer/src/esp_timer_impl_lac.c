@@ -16,6 +16,7 @@
 #include "esp_log.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/systimer.h"
 #include "soc/soc.h"
 #include "soc/timer_group_reg.h"
 #include "soc/rtc.h"
@@ -32,9 +33,6 @@
  * The timer can be configured to produce an edge or a level interrupt.
  */
 
-/* Selects which Timer Group peripheral to use */
-#define LACT_MODULE     0
-
 #if LACT_MODULE == 0
 #define INTR_SOURCE_LACT ETS_TG0_LACT_LEVEL_INTR_SOURCE
 #define PERIPH_LACT PERIPH_TIMG0_MODULE
@@ -44,18 +42,6 @@
 #else
 #error "Incorrect the number of LACT module (only 0 or 1)"
 #endif
-
-/* Desired number of timer ticks per microsecond.
- * This value should be small enough so that all possible APB frequencies
- * could be divided by it without remainder.
- * On the other hand, the smaller this value is, the longer we need to wait
- * after setting UPDATE_REG before the timer value can be read.
- * If TICKS_PER_US == 1, then we need to wait up to 1 microsecond, which
- * makes esp_timer_impl_get_time function take too much time.
- * The value TICKS_PER_US == 2 allows for most of the APB frequencies, and
- * allows reading the counter quickly enough.
- */
-#define TICKS_PER_US    2
 
 /* Shorter register names, used in this file */
 #define CONFIG_REG      (TIMG_LACTCONFIG_REG(LACT_MODULE))
@@ -139,7 +125,7 @@ uint64_t ESP_TIMER_IRAM_ATTR esp_timer_impl_get_counter_reg(void)
 
 int64_t ESP_TIMER_IRAM_ATTR esp_timer_impl_get_time(void)
 {
-    return esp_timer_impl_get_counter_reg() / TICKS_PER_US;
+    return esp_timer_impl_get_counter_reg() / LACT_TICKS_PER_US;
 }
 
 int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")));
@@ -151,9 +137,9 @@ void ESP_TIMER_IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigne
     timestamp_id[alarm_id] = timestamp;
     timestamp = MIN(timestamp_id[0], timestamp_id[1]);
     if (timestamp != UINT64_MAX) {
-        int64_t offset = TICKS_PER_US * 2;
+        int64_t offset = LACT_TICKS_PER_US * 2;
         uint64_t now_time = esp_timer_impl_get_counter_reg();
-        timer_64b_reg_t alarm = { .val = MAX(timestamp * TICKS_PER_US, now_time + offset) };
+        timer_64b_reg_t alarm = { .val = MAX(timestamp * LACT_TICKS_PER_US, now_time + offset) };
         do {
             REG_CLR_BIT(CONFIG_REG, TIMG_LACT_ALARM_EN);
             REG_WRITE(ALARM_LO_REG, alarm.lo);
@@ -163,7 +149,7 @@ void ESP_TIMER_IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigne
             int64_t delta = (int64_t)alarm.val - (int64_t)now_time;
             if (delta <= 0 && REG_GET_FIELD(INT_ST_REG, TIMG_LACT_INT_ST) == 0) {
                 // new alarm is less than the counter and the interrupt flag is not set
-                offset += llabs(delta) + TICKS_PER_US * 2;
+                offset += llabs(delta) + LACT_TICKS_PER_US * 2;
                 alarm.val = now_time + offset;
             } else {
                 // finish if either (alarm > counter) or the interrupt flag is already set.
@@ -220,19 +206,10 @@ static void ESP_TIMER_IRAM_ATTR timer_alarm_isr(void *arg)
 #endif // ISR_HANDLERS != 1
 }
 
-void ESP_TIMER_IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
-{
-    portENTER_CRITICAL_SAFE(&s_time_update_lock);
-    assert(apb_ticks_per_us >= 3 && "divider value too low");
-    assert(apb_ticks_per_us % TICKS_PER_US == 0 && "APB frequency (in MHz) should be divisible by TICK_PER_US");
-    REG_SET_FIELD(CONFIG_REG, TIMG_LACT_DIVIDER, apb_ticks_per_us / TICKS_PER_US);
-    portEXIT_CRITICAL_SAFE(&s_time_update_lock);
-}
-
 void esp_timer_impl_set(uint64_t new_us)
 {
     portENTER_CRITICAL(&s_time_update_lock);
-    timer_64b_reg_t dst = { .val = new_us * TICKS_PER_US };
+    timer_64b_reg_t dst = { .val = new_us * LACT_TICKS_PER_US };
     REG_WRITE(LOAD_LO_REG, dst.lo);
     REG_WRITE(LOAD_HI_REG, dst.hi);
     REG_WRITE(LOAD_REG, 1);
@@ -261,7 +238,7 @@ esp_err_t esp_timer_impl_early_init(void)
     REG_WRITE(ALARM_HI_REG, UINT32_MAX);
     REG_WRITE(LOAD_REG, 1);
     REG_SET_BIT(INT_CLR_REG, TIMG_LACT_INT_CLR);
-    REG_SET_FIELD(CONFIG_REG, TIMG_LACT_DIVIDER, APB_CLK_FREQ / 1000000 / TICKS_PER_US);
+    REG_SET_FIELD(CONFIG_REG, TIMG_LACT_DIVIDER, APB_CLK_FREQ / 1000000 / LACT_TICKS_PER_US);
     REG_SET_BIT(CONFIG_REG, TIMG_LACT_INCREASE |
                 TIMG_LACT_LEVEL_INT_EN |
                 TIMG_LACT_EN);
@@ -299,12 +276,10 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
         * will not cause issues in practice.
         */
         REG_SET_BIT(INT_ENA_REG, TIMG_LACT_INT_ENA);
-
-        esp_timer_impl_update_apb_freq(esp_clk_apb_freq() / 1000000);
-
+        timer_ll_set_lact_clock_prescale(TIMER_LL_GET_HW(LACT_MODULE), esp_clk_apb_freq() / MHZ / LACT_TICKS_PER_US);
         // Set the step for the sleep mode when the timer will work
         // from a slow_clk frequency instead of the APB frequency.
-        uint32_t slowclk_ticks_per_us = esp_clk_slowclk_cal_get() * TICKS_PER_US;
+        uint32_t slowclk_ticks_per_us = esp_clk_slowclk_cal_get() * LACT_TICKS_PER_US;
         REG_SET_FIELD(RTC_STEP_REG, TIMG_LACT_RTC_STEP_LEN, slowclk_ticks_per_us);
     }
 
@@ -347,6 +322,5 @@ uint64_t esp_timer_impl_get_alarm_reg(void)
     return alarm.val;
 }
 
-void esp_timer_private_update_apb_freq(uint32_t apb_ticks_per_us) __attribute__((alias("esp_timer_impl_update_apb_freq")));
 void esp_timer_private_set(uint64_t new_us) __attribute__((alias("esp_timer_impl_set")));
 void esp_timer_private_advance(int64_t time_diff_us) __attribute__((alias("esp_timer_impl_advance")));
