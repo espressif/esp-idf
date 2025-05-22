@@ -88,6 +88,32 @@ function(__ldgen_get_lib_deps_of_target target out_list_var)
     set(${out_list_var} ${out_list} PARENT_SCOPE)
 endfunction()
 
+# __ldgen_get_mutable_libs
+#
+# Helper function to get the list of library file name generator expressions
+# for project components. These libraries are placed by ldgen into a separate
+# location in the linker script, allowing the fast reflashing feature.
+#
+function(__ldgen_get_mutable_libs out_list_var)
+    set(mutable_libs)
+    idf_build_get_property(build_component_targets __BUILD_COMPONENT_TARGETS)
+    foreach(component_target ${build_component_targets})
+        __component_get_property(component_source ${component_target} COMPONENT_SOURCE)
+        __component_get_property(component_lib ${component_target} COMPONENT_LIB)
+        __component_get_property(component_type ${component_target} COMPONENT_TYPE)
+        if("${component_type}" STREQUAL "CONFIG_ONLY")
+            # Configuration only component interface target without a library.
+            continue()
+        endif()
+        if(NOT "${component_source}" STREQUAL "project_components")
+            # Add only project components as mutable.
+            continue()
+        endif()
+        set(unstable_lib "$<TARGET_LINKER_FILE_NAME:${component_lib}>")
+        list(APPEND mutable_libs "${unstable_lib}")
+    endforeach()
+    set(${out_list_var} ${mutable_libs} PARENT_SCOPE)
+endfunction()
 
 # __ldgen_create_target
 #
@@ -177,6 +203,17 @@ function(__ldgen_create_target exe_target)
         message(STATUS "Mapping check enabled in ldgen")
     endif()
 
+    if(CONFIG_ESPTOOLPY_FAST_REFLASHING)
+        # Create a file containing a list of mutable libraries used by ldgen
+        # for fast reflashing.
+        set(mutable_libs_path "${build_dir}/ldgen_mutable_libraries")
+        __ldgen_get_mutable_libs(mutable_libs)
+        list(JOIN mutable_libs "\n" mutable_libs_str)
+        file(GENERATE OUTPUT "${mutable_libs_path}"
+            CONTENT "${mutable_libs_str}")
+        set(mutable_libs_option "--mutable-libraries-file" "${mutable_libs_path}")
+    endif()
+
     add_custom_command(
         OUTPUT ${output}
         COMMAND ${python} "${idf_path}/tools/ldgen/ldgen.py"
@@ -189,6 +226,7 @@ function(__ldgen_create_target exe_target)
         --libraries-file "${build_dir}/ldgen_libraries"
         --objdump   "${CMAKE_OBJDUMP}"
         ${ldgen_check}
+        ${mutable_libs_option}
         DEPENDS     ${template} ${ldgen_fragment_files} ${ldgen_deps} ${SDKCONFIG}
         VERBATIM
     )
