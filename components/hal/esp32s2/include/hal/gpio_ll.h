@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,6 @@
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/rtc_io_reg.h"
 #include "soc/gpio_struct.h"
 #include "hal/gpio_types.h"
 #include "hal/assert.h"
