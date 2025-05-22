@@ -33,8 +33,6 @@ r_rwip_crypt_evt_handler = 0;
 /* LE ping */
 f_ll_ping_req_handler = 0;
 f_ll_ping_rsp_handler = 0;
-r_llc_le_ping_set = 0;
-r_llc_le_ping_restart = 0;
 f_llc_op_le_ping_ind_handler = 0;
 f_llc_auth_payl_nearly_op_handler = 0;
 f_llc_auth_payl_real_to_handler = 0;

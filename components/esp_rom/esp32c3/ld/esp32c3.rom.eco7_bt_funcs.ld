@@ -75,31 +75,31 @@ r_lld_cca_chan_avl_timeout_check = 0x40001e00;
 r_lld_con_start_hook = 0x40001ca8;
 
 /* ble Functions eco */
-r_bt_bb_isr = 0x40000b9c;
-r_bt_rf_coex_conn_phy_coded_data_time_limit_en_get = 0x40000ba8;
-r_bt_rtp_get_txpwr_idx_by_act = 0x40000c00;
-r_btdm_task_post = 0x40000c14;
-r_btdm_task_post_from_isr = 0x40000c18;
-r_btdm_task_recycle = 0x40000c1c;
-r_ke_task_schedule = 0x40000e80;
-r_llc_hci_command_handler = 0x40000ef0;
-r_llc_loc_ch_map_proc_continue = 0x40000f5c;
-r_llc_loc_con_upd_proc_continue = 0x40000f60;
-r_llc_loc_phy_upd_proc_continue = 0x40000f78;
-r_llc_rem_con_upd_proc_continue = 0x40000fb4;
-r_lld_con_sched = 0x40001118;
-r_lld_con_stop = 0x40001124;
-r_lld_llcp_rx_ind_handler = 0x400011b0;
-r_lld_per_adv_sched = 0x400011f8;
-r_rf_txpwr_cs_get = 0x40001428;
-r_rf_txpwr_dbm_get = 0x4000142c;
-r_sch_arb_event_start_isr = 0x400014f8;
-r_sch_plan_set = 0x40001534;
-r_sch_prog_end_isr = 0x40001538;
-r_lld_adv_ext_chain_scannable_construct = 0x40001b58;
+r_bt_bb_isr_hack = 0x40000b9c;
+r_bt_rf_coex_conn_phy_coded_data_time_limit_en_get_hack = 0x40000ba8;
+r_bt_rtp_get_txpwr_idx_by_act_hack = 0x40000c00;
+r_btdm_task_post_hack = 0x40000c14;
+r_btdm_task_post_from_isr_hack = 0x40000c18;
+r_btdm_task_recycle_hack = 0x40000c1c;
+r_ke_task_schedule_hack = 0x40000e80;
+r_llc_hci_command_handler_hack = 0x40000ef0;
+r_llc_loc_ch_map_proc_continue_hack = 0x40000f5c;
+r_llc_loc_con_upd_proc_continue_hack = 0x40000f60;
+r_llc_loc_phy_upd_proc_continue_hack = 0x40000f78;
+r_llc_rem_con_upd_proc_continue_hack = 0x40000fb4;
+r_lld_con_sched_hack = 0x40001118;
+r_lld_con_stop_hack = 0x40001124;
+r_lld_llcp_rx_ind_handler_hack = 0x400011b0;
+r_lld_per_adv_sched_hack = 0x400011f8;
+r_rf_txpwr_cs_get_hack = 0x40001428;
+r_rf_txpwr_dbm_get_hack = 0x4000142c;
+r_sch_arb_event_start_isr_hack = 0x400014f8;
+r_sch_plan_set_hack = 0x40001534;
+r_sch_prog_end_isr_hack = 0x40001538;
+r_lld_adv_ext_chain_scannable_construct_hack = 0x40001b58;
 
-r_lld_scan_process_pkt_rx = 0x40001280;
-r_llm_le_features_get = 0x400013b0;
+r_lld_scan_process_pkt_rx_hack = 0x40001280;
+r_llm_le_features_get_hack = 0x400013b0;
 
 /* ble functions rename */
 r_lld_init_start_hack = 0x400011a4;
