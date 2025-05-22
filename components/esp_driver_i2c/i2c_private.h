@@ -193,27 +193,6 @@ typedef struct {
     uint32_t rcv_fifo_cnt;      // receive fifo count.
 } i2c_slave_receive_t;
 
-#if !CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2
-
-struct i2c_slave_dev_t {
-    i2c_bus_t *base;                            // bus base class
-    SemaphoreHandle_t slv_rx_mux;               // Mutex for slave rx direction
-    SemaphoreHandle_t slv_tx_mux;               // Mutex for slave tx direction
-    RingbufHandle_t rx_ring_buf;                // Handle for rx ringbuffer
-    RingbufHandle_t tx_ring_buf;                // Handle for tx ringbuffer
-    uint8_t data_buf[SOC_I2C_FIFO_LEN];         // Data buffer for slave
-    uint32_t trans_data_length;                 // Send data length
-    i2c_slave_event_callbacks_t callbacks;      // I2C slave callbacks
-    void *user_ctx;                             // Callback user context
-    i2c_slave_fifo_mode_t fifo_mode;            // Slave fifo mode.
-    QueueHandle_t slv_evt_queue;                // Event Queue used in slave nonfifo mode.
-    i2c_slave_evt_t slave_evt;                  // Slave event structure.
-    i2c_slave_receive_t receive_desc;           // Slave receive descriptor
-    uint32_t already_receive_len;               // Data length already received in ISR.
-};
-
-#else // CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2
-
 struct i2c_slave_dev_t {
     i2c_bus_t *base;                                  // bus base class
     SemaphoreHandle_t operation_mux;                  // Mux for i2c slave operation
@@ -225,8 +204,6 @@ struct i2c_slave_dev_t {
     uint32_t rx_data_count;                           // receive data count
     i2c_slave_receive_t receive_desc;                 // slave receive descriptor
 };
-
-#endif // CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2
 
 /**
  * @brief Acquire I2C bus handle

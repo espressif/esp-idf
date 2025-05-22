@@ -29,3 +29,23 @@ MCPWM
     - :cpp:type:`mcpwm_gpio_fault_config_t`
     - :cpp:type:`mcpwm_gpio_sync_src_config_t`
     - :cpp:type:`mcpwm_capture_channel_config_t`
+
+I2C
+---
+
+I2C 从机在 v5.4 上已经被重新设计。在当前版本上，老的 I2C 从机驱动已经被移除，详细内容请参考编程指南中关于 I2C 从机的部分。
+
+主要的概念上和用法上的改变如下所示:
+
+主要概念更新
+~~~~~~~~~~~~~~~~~~
+
+- 老版本的 I2C 从机驱动是主动读写，这不符合 I2C 从机的一般用法。在新版的 I2C 从机中，I2C 的读写通过主机驱动产生的事件以触发回调被动完成。
+
+主要用法更新
+~~~~~~~~~~~~~~~~~~
+
+- ``i2c_slave_receive`` 被移除， 在新驱动中使用回调接收数据。
+- ``i2c_slave_transmit`` 已被 ``i2c_slave_write`` 取代.
+- ``i2c_slave_write_ram`` 被移除。
+- ``i2c_slave_read_ram`` 被移除。

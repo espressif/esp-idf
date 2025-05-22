@@ -106,9 +106,7 @@ typedef bool (*i2c_master_callback_t)(i2c_master_dev_handle_t i2c_dev, const i2c
  */
 typedef struct {
     uint8_t *buffer;  /**< Pointer for buffer received in callback. */
-#if CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2
     uint32_t length;      /**< Length for buffer received in callback. */
-#endif
 } i2c_slave_rx_done_event_data_t;
 
 /**
