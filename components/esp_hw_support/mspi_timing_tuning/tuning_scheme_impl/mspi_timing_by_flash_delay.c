@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@
 #include "esp_err.h"
 #include "esp_types.h"
 #include "esp_log.h"
-#include "mspi_timing_by_flash_delay.h"
+#include "esp_private/mspi_timing_by_flash_delay.h"
 #include "mspi_timing_tuning_configs.h"
 #include "esp_private/mspi_timing_config.h"
 #include "hal/mspi_ll.h"
@@ -110,11 +110,8 @@ static uint32_t s_select_best_tuning_config_str(const mspi_timing_config_t *conf
 static uint32_t s_select_best_tuning_config(const mspi_timing_config_t *configs, uint32_t consecutive_length, uint32_t end, const uint8_t *reference_data, bool is_ddr, bool is_flash)
 {
     uint32_t best_point = 0;
-    if (is_ddr) {
-        assert(false);
-    } else {
-        best_point = s_select_best_tuning_config_str(configs, consecutive_length, end);
-    }
+    assert(!is_ddr);
+    best_point = s_select_best_tuning_config_str(configs, consecutive_length, end);
 
     return best_point;
 }

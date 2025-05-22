@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -135,6 +136,6 @@ def test_xip_psram_no_boot_init(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1'), indirect=['target'])
 def test_psram_no_boot_init(dut: Dut) -> None:
     dut.run_all_single_board_cases()

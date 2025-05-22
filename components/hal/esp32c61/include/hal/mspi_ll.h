@@ -30,6 +30,11 @@
 extern "C" {
 #endif
 
+#define MSPI_TIMING_LL_MSPI_ID_0                      0
+#define MSPI_TIMING_LL_MSPI_ID_1                      1
+#define MSPI_LL_CORE_CLOCK_80_MHZ                     80
+#define MSPI_LL_CORE_CLOCK_120_MHZ                    120
+#define MSPI_TIMING_LL_CORE_CLOCK_MHZ_DEFAULT         MSPI_LL_CORE_CLOCK_80_MHZ
 
 /************************** MSPI pll clock configurations **************************/
 
@@ -61,19 +66,34 @@ static inline void _mspi_timing_ll_set_flash_clk_src(uint32_t mspi_id, soc_perip
 /**
  * @brief Set MSPI_FAST_CLK's high-speed divider (valid when SOC_ROOT clock source is PLL)
  *
- * @param divider Divider.
+ * @param mspi_id       SPI0 / SPI1
+ * @param core_clk_mhz  core clock mhz
  */
-static inline __attribute__((always_inline)) void mspi_ll_fast_set_hs_divider(uint32_t divider)
+static inline __attribute__((always_inline)) void mspi_timing_ll_set_core_clock(uint8_t mspi_id, uint32_t core_clk_mhz)
 {
+    HAL_ASSERT(mspi_id == 0);
+    uint32_t divider = 0;
+    switch (core_clk_mhz) {
+        case 80:
+            divider = 6;
+            break;
+        case 120:
+            divider = 4;
+            break;
+        default:
+            HAL_ASSERT(false);
+    }
+
     HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.mspi_clk_conf, mspi_fast_div_num, divider - 1);
 }
 
 /**
- * @brief Enable the mspi bus clock
+ * @brief Enable the mspi core clock
  *
- * @param enable enable the bus clock
+ * @param mspi_id       SPI0 / SPI1
+ * @param enable        enable the core clock
  */
-static inline __attribute__((always_inline)) void mspi_ll_enable_bus_clock(bool enable)
+static inline __attribute__((always_inline)) void mspi_timing_ll_enable_core_clock(uint8_t mspi_id, bool enable)
 {
     PCR.mspi_conf.mspi_clk_en = enable;
 }

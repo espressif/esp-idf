@@ -19,7 +19,7 @@
 #include "esp_err.h"
 #include "esp_types.h"
 #include "esp_log.h"
-#include "mspi_timing_by_dqs.h"
+#include "esp_private/mspi_timing_by_dqs.h"
 #include "mspi_timing_tuning_configs.h"
 #include "esp_private/mspi_timing_config.h"
 #include "esp_private/rtc_clk.h"

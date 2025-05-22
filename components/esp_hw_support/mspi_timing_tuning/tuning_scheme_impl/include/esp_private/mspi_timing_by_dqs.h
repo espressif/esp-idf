@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 #if SOC_MEMSPI_TIMING_TUNING_BY_DQS
-#include "mspi_timing_types.h"
+#include "esp_private/mspi_timing_impl_types.h"
 #include "mspi_timing_tuning_configs.h"
 #include "hal/mspi_ll.h"
 #endif
