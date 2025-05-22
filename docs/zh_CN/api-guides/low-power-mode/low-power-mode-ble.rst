@@ -1,0 +1,210 @@
+低功耗蓝牙\ :sup:`®` 场景下低功耗模式介绍
+========================================================================
+
+:link_to_translation:`en:[English]`
+
+本节介绍低功耗蓝牙 (Bluetooth LE) 在低功耗模式下的时钟源选择，以及常见相关问题。
+
+低功耗模式下的时钟源选择
+--------------------------------------------
+
+在低功耗蓝牙应用场景中，由于协议要求休眠时钟精度需在 500 PPM 以内，light-sleep 和 modem-sleep 模式下所用的时钟源必须满足该要求。如果时钟精度不足，可能会出现 ACL 连接失败或超时断开等问题。**因此在使用前请确保所选时钟源及其精度满足 BLE 要求。**
+
+
+选择主晶振
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+要选择主晶振作为 BLE 内部时钟源，请配置以下选项：
+
+.. only:: esp32 or esp32c3 or esp32s3
+
+    **配置路径：**
+
+    ``Component config → Bluetooth → Controller Options → MODEM SLEEP Options → Bluetooth modem sleep → Bluetooth Modem sleep Mode 1 → Bluetooth low power clock``
+
+    **配置选项：**
+
+    - \ (X) Main crystal
+
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
+
+    **配置路径：**
+
+    ``Component config → Bluetooth → Controller Options → BLE low power clock source``
+
+    **配置选项：**
+
+    - \ (X) Use main XTAL as RTC clock source
+
+选择主晶振后，light-sleep 模式下主晶振电源不会关闭，因此电流消耗更高。使用 XTAL 和 32kHz 外部晶振时 light-sleep 电流参考如下：
+
+.. list-table:: light-sleep 模式下不同时钟源的电流参考值
+    :widths: auto
+    :header-rows: 1
+
+    * - 时钟源
+      - 典型 light-sleep 电流
+    * - 主晶振
+      - 3.3 mA
+    * - 32kHz 外部晶振 / 136 kHz RC
+      - 34 uA
+
+
+选择 32kHz 外部晶振
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+要使用 32kHz 外部晶振作为 BLE 内部时钟源，请配置以下选项：
+
+.. only:: esp32 or esp32c3 or esp32s3
+
+    **配置路径：**
+
+    ``Component config → Bluetooth → Controller Options → MODEM SLEEP Options → Bluetooth modem sleep → Bluetooth Modem sleep Mode 1 → Bluetooth low power clock``
+
+    **配置选项：**
+
+    - \ (X) External 32kHz crystal/oscillator
+
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
+
+    **配置路径 1：**
+
+    ``Component config → Bluetooth → Controller Options → BLE low power clock source``
+
+    **配置选项：**
+
+    - \ (X) Use system RTC slow clock source
+
+    **配置路径 2：**
+
+    ``Component config → Hardware Settings → RTC Clock Config → RTC clock source``
+
+    **配置选项：**
+
+    - \ (X) External 32 kHz crystal
+
+**注意：** 即使在 menuconfig 中选择了 32kHz 外部晶振，如果 BLE 初始化时未检测到外部晶振，系统会自动切换为主晶振，可能导致 light-sleep 电流高于预期。
+
+
+选择 136 kHz RC 振荡器
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. only:: esp32c3 or esp32s3
+
+    要使用 136 kHz 内部 RC 振荡器作为 BLE 内部时钟源，请配置以下选项：
+
+    **配置路径：**
+
+    ``Component config → Bluetooth → Controller Options → MODEM SLEEP Options → Bluetooth modem sleep → Bluetooth Modem sleep Mode 1 → Bluetooth low power clock``
+
+    **配置选项：**
+
+    - \ (X) Internal 136kHz RC oscillator
+
+    一般来说，136 kHz RC 振荡器难以满足 BLE 的精度要求，仅适用于对时钟精度要求不高的场景，如传统广播 (ADV) 或扫描 (SCAN)。
+
+    但测试时，如果对端设备也用 136 kHz RC 作为时钟源，可通过如下配置实现 BLE 在 136 kHz RC 下运行：
+
+    **配置路径：**
+
+    ``Component config → Bluetooth → Controller Options``
+
+    **配置选项：**
+
+    - \ [*] Enable to set constant peer SCA
+    - \ (3000) Constant peer sleep clock accuracy value
+
+    **注意：** 使用 136 kHz RC 振荡器可能偶发连接断开或连接失败。
+
+.. only:: esp32
+
+    **注意：** ESP32 不支持 136 kHz RC 振荡器作为 BLE 时钟源。
+
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
+
+    要使用 136 kHz 内部 RC 振荡器作为 BLE 内部时钟源，请配置以下选项：
+
+    **配置路径 1：**
+
+    ``Component config → Bluetooth → Controller Options → BLE low power clock source``
+
+    **配置选项：**
+
+    - \ (X) Use system RTC slow clock source
+
+    **配置路径 2：**
+
+    ``Component config → Hardware Settings → RTC Clock Config → RTC clock source``
+
+    **配置选项：**
+
+    - \ (X) Internal 136 kHz RC oscillator
+
+    一般来说，136 kHz RC 振荡器难以满足 BLE 的精度要求，仅适用于对时钟精度要求不高的场景，如传统广播 (ADV) 或扫描 (SCAN)。
+
+    对于需要低功耗且没有32kHz外部晶振的场景下，可以选择136 kHz RC振荡器。然而这个时钟无法满足BLE的500PPM的休眠时钟精度需求。不过如果对端设备使用的是ESP芯片，仍能支持BLE行为。但是如果对端设备并非使用ESP芯片，则使用下面BLE行为将无法支持：
+
+      1. 作为连接的Central方
+      2. 作为Periodic Advertising的广播方
+
+    如果对端设备也用 136 kHz RC 作为时钟源，需要如下配置:
+
+    **配置路径：**
+
+    ``Component config → Bluetooth → Controller Options``
+
+    **配置选项：**
+
+    - \ [*] Enable to set constant peer SCA
+    - \ (3000) Constant peer sleep clock accuracy value
+
+    **注意：** 使用 136 kHz RC 振荡器可能偶发连接断开或连接失败。
+
+
+**如何确认当前 BLE 使用的时钟源**
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+可通过 BLE 初始化时的日志判断当前时钟源：
+
+.. list-table:: BLE 初始化日志与时钟源对应关系
+    :widths: 50 50
+    :header-rows: 1
+
+    * - 日志内容
+      - 时钟源
+    * - Using main XTAL as clock source
+      - 主晶振 (Main XTAL)
+    * - Using 136 kHz RC as clock source
+      - 内部 136 kHz RC 振荡器 (Internal 136 kHz RC oscillator)
+    * - Using external 32.768 kHz crystal as clock source
+      - 外部 32 kHz 晶振 (External 32 kHz crystal)
+    * - Using external 32.768 kHz oscillator at 32K_XP pin as clock source
+      - 外部 32 kHz 振荡器 (32K_XP 引脚) (External 32 kHz oscillator at 32K_XP pin)
+
+
+常见问题
+--------------------------------------
+
+**1. BLE ACL 连接在低功耗模式下建立失败或断开**
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+如时钟源选择部分所述，ACL 连接建立失败或断开时，请首先检查当前时钟源是否满足 BLE 精度要求。
+
+
+**2. 实测 light-sleep 电流高于预期**
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+如时钟源选择部分所述，若主晶振为时钟源，light-sleep 模式下主晶振持续供电，电流消耗高于其他时钟源。
+
+此外，BLE 运行在 Auto Light-sleep 模式下，系统在进入 IDLE 后自动决定是否休眠。广播或扫描时电流远高于 light-sleep。
+
+因此，低功耗模式下的平均电流介于 light-sleep 电流与峰值电流（通常为 TX 电流）之间。
+
+一个应用程序的平均电流一般取决于在light-sleep模式下的时间，以及蓝牙的配置。如果一个应用中蓝牙收发包的时间更长，这个应用的平均电流也会更高
+
+**3. 无法进入 light-sleep 模式**
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+启用 Auto light-sleep 后，若设备无法进入 light-sleep，通常是 IDLE 时间不足，未满足自动进入条件。
+
+这可能由日志过多或 BLE 配置导致 IDLE 时间过短（如连续扫描）引起。
