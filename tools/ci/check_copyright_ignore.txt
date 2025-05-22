@@ -533,7 +533,6 @@ components/soc/esp32s2/include/soc/gpio_sig_map.h
 components/soc/esp32s2/include/soc/memprot_defs.h
 components/soc/esp32s2/include/soc/nrx_reg.h
 components/soc/esp32s2/include/soc/soc_ulp.h
-components/soc/esp32s2/include/soc/touch_sensor_channel.h
 components/soc/esp32s2/include/soc/touch_sensor_pins.h
 components/soc/esp32s2/include/soc/uart_pins.h
 components/soc/esp32s2/include/soc/wdev_reg.h
