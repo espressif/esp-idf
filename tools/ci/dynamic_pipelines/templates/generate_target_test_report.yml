@@ -9,7 +9,7 @@ generate_pytest_report:
       - failed_cases.html
       - skipped_cases.html
       - succeeded_cases.html
-    expire_in: 1 week
+    expire_in: 2 week
     when: always
 
   script:

@@ -12,10 +12,11 @@ generate_pytest_build_report:
       - skipped_apps.html
       - build_report.html
       - test_related_apps_download_urls.yml
-    expire_in: 1 week
+    expire_in: 2 week
     when: always
 
   script:
+    - env
     - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type build
     - python tools/ci/previous_stage_job_status.py --stage build
 

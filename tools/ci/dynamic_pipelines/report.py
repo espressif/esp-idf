@@ -20,7 +20,10 @@ from idf_ci_local.uploader import AppUploader
 from prettytable import PrettyTable
 
 from .constants import BINARY_SIZE_METRIC_NAME
+from .constants import CI_DASHBOARD_API
 from .constants import COMMENT_START_MARKER
+from .constants import CSS_STYLES_FILEPATH
+from .constants import JS_SCRIPTS_FILEPATH
 from .constants import REPORT_TEMPLATE_FILEPATH
 from .constants import RETRY_JOB_PICTURE_LINK
 from .constants import RETRY_JOB_PICTURE_PATH
@@ -56,6 +59,14 @@ class ReportGenerator:
         self.output_filepath = self.title.lower().replace(' ', '_') + '.html'
         self.additional_info = ''
 
+    @property
+    def get_commit_summary(self) -> str:
+        """Return a formatted commit summary string."""
+        return (
+            f'with CI commit SHA: {self.commit_id[:8]}, '
+            f'local commit SHA: {os.getenv("CI_MERGE_REQUEST_SOURCE_BRANCH_SHA", "")[:8]}'
+        )
+
     @staticmethod
     def get_download_link_for_url(url: str) -> str:
         if url:
@@ -83,14 +94,36 @@ class ReportGenerator:
         report_url: str = get_artifacts_url(job_id, output_filepath)
         return report_url
 
+    @staticmethod
+    def _load_file_content(filepath: str) -> str:
+        """
+        Load the content of a file as string
+
+        :param filepath: Path to the file to load
+        :return: Content of the file as string
+        """
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return f.read()
+        except (IOError, FileNotFoundError) as e:
+            print(f'Warning: Could not read file {filepath}: {e}')
+            return ''
+
     def generate_html_report(self, table_str: str) -> str:
         # we're using bootstrap table
         table_str = table_str.replace(
             '<table>',
             '<table data-toggle="table" data-search-align="left" data-search="true" data-sticky-header="true">',
         )
-        with open(REPORT_TEMPLATE_FILEPATH) as fr:
-            template = fr.read()
+
+        template = self._load_file_content(REPORT_TEMPLATE_FILEPATH)
+        css_content = self._load_file_content(CSS_STYLES_FILEPATH)
+        js_content = self._load_file_content(JS_SCRIPTS_FILEPATH)
+
+        template = template.replace('{{css_content}}', css_content)
+        template = template.replace('{{js_content}}', js_content)
+        template = template.replace('{{pipeline_id}}', str(self.pipeline_id))
+        template = template.replace('{{apiBaseUrl}}', CI_DASHBOARD_API)
 
         return template.replace('{{title}}', self.title).replace('{{table}}', table_str)
 
@@ -136,17 +169,23 @@ class ReportGenerator:
         return report_sections
 
     @staticmethod
-    def generate_additional_info_section(title: str, count: int, report_url: t.Optional[str] = None) -> str:
+    def generate_additional_info_section(
+        title: str, count: int, report_url: t.Optional[str] = None, add_permalink: bool = True
+    ) -> str:
         """
         Generate a section for the additional info string.
 
         :param title: The title of the section.
         :param count: The count of test cases.
         :param report_url: The URL of the report. If count = 0, only the count will be included.
+        :param add_permalink: Whether to include a permalink in the report URL. Defaults to True.
         :return: The formatted additional info section string.
         """
         if count != 0 and report_url:
-            return f'- **{title}:** [{count}]({report_url}/#{format_permalink(title)})\n'
+            if add_permalink:
+                return f'- **{title}:** [{count}]({report_url}/#{format_permalink(title)})\n'
+            else:
+                return f'- **{title}:** [{count}]({report_url})\n'
         else:
             return f'- **{title}:** {count}\n'
 
@@ -673,7 +712,11 @@ class BuildReportGenerator(ReportGenerator):
         return skipped_apps_table_section
 
     def _get_report_str(self) -> str:
-        self.additional_info = f'**Build Summary (with commit {self.commit_id[:8]}):**\n'
+        self.additional_info = (
+            f'**Build Summary ({self.get_commit_summary}):**\n'
+            '\n'
+            '> ℹ️ Note: Binary artifacts stored in MinIO are retained for 4 DAYS from their build date\n'
+        )
         failed_apps_report_parts = self.get_failed_apps_report_parts()
         skipped_apps_report_parts = self.get_skipped_apps_report_parts()
         built_apps_report_parts = self.get_built_apps_report_parts()
@@ -700,8 +743,8 @@ class TargetTestReportGenerator(ReportGenerator):
         self.test_cases = test_cases
         self._known_failure_cases_set = None
         self.report_titles_map = {
-            'failed_yours': 'Failed Test Cases on Your branch (Excludes Known Failure Cases)',
-            'failed_others': 'Failed Test Cases on Other branches (Excludes Known Failure Cases)',
+            'failed_yours': 'Testcases failed ONLY on your branch (known failures are excluded)',
+            'failed_others': 'Testcases failed on your branch as well as on others (known failures are excluded)',
             'failed_known': 'Known Failure Cases',
             'skipped': 'Skipped Test Cases',
             'succeeded': 'Succeeded Test Cases',
@@ -794,7 +837,7 @@ class TargetTestReportGenerator(ReportGenerator):
                 'Test Case',
                 'Test App Path',
                 'Failure Reason',
-                'Failures on your branch (40 latest testcases)',
+                'These test cases failed exclusively on your branch in the latest 40 runs',
                 'Dut Log URL',
                 'Create Known Failure Case Jira',
                 'Job URL',
@@ -803,9 +846,9 @@ class TargetTestReportGenerator(ReportGenerator):
             row_attrs=['name', 'app_path', 'failure', 'dut_log_url', 'ci_job_url', 'ci_dashboard_url'],
             value_functions=[
                 (
-                    'Failures on your branch (40 latest testcases)',
-                    lambda item: f'{getattr(item, "latest_failed_count", "")} '
-                    f'/ {getattr(item, "latest_total_count", "")}',
+                    'These test cases failed exclusively on your branch in the latest 40 runs',
+                    lambda item: f'{getattr(item, "latest_failed_count", "")} / '
+                    f'{getattr(item, "latest_total_count", "")}',
                 ),
                 ('Create Known Failure Case Jira', known_failure_issue_jira_fast_link),
             ],
@@ -901,7 +944,10 @@ class TargetTestReportGenerator(ReportGenerator):
             self.succeeded_cases_report_file,
         )
         self.additional_info += self.generate_additional_info_section(
-            self.report_titles_map['succeeded'], len(succeeded_test_cases), succeeded_cases_report_url
+            self.report_titles_map['succeeded'],
+            len(succeeded_test_cases),
+            succeeded_cases_report_url,
+            add_permalink=False,
         )
         self.additional_info += '\n'
         return succeeded_cases_table_section
@@ -911,7 +957,7 @@ class TargetTestReportGenerator(ReportGenerator):
         Generate a complete HTML report string by processing test cases.
         :return: Complete HTML report string.
         """
-        self.additional_info = f'**Test Case Summary (with commit {self.commit_id[:8]}):**\n'
+        self.additional_info = f'**Test Case Summary ({self.get_commit_summary}):**\n'
         failed_cases_report_parts = self.get_failed_cases_report_parts()
         skipped_cases_report_parts = self.get_skipped_cases_report_parts()
         succeeded_cases_report_parts = self.get_succeeded_cases_report_parts()
@@ -960,7 +1006,7 @@ class JobReportGenerator(ReportGenerator):
         )
         succeeded_jobs = self._filter_items(self.jobs, lambda job: job.is_success)
 
-        self.additional_info = f'**Job Summary (with commit {self.commit_id[:8]}):**\n'
+        self.additional_info = f'**Job Summary ({self.get_commit_summary}):**\n'
         self.additional_info += self.generate_additional_info_section(
             self.report_titles_map['succeeded'], len(succeeded_jobs)
         )

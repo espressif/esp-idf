@@ -1,8 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{{title}}</title>
+        <link
+            rel="shortcut icon"
+            href="https://www.espressif.com/sites/all/themes/espressif/favicon.ico"
+            type="image/vnd.microsoft.icon"
+        />
+        <!-- External CSS libraries -->
         <link
             href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
             rel="stylesheet"
@@ -19,114 +26,106 @@
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
             rel="stylesheet"
         />
+        <!-- CSS content will be injected here during template rendering -->
         <style>
-            .text-toggle,
-            .full-text {
-                cursor: pointer;
+            /* {{css_content}} */
+            /* Additional styles for disabled tabs */
+            .report-nav-tabs .nav-tab.disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                pointer-events: none;
             }
-            th:nth-child(1),
-            td:nth-child(1) {
-                width: 5%;
+
+            /* Loading animation for tabs */
+            .report-nav-tabs .nav-tab.loading:after {
+                content: "";
+                display: inline-block;
+                width: 1em;
+                height: 1em;
+                border: 2px solid rgba(0, 0, 0, 0.2);
+                border-left-color: #333;
+                border-radius: 50%;
+                margin-left: 8px;
+                animation: spin 1s linear infinite;
             }
-            th:nth-child(2),
-            td:nth-child(2),
-            th:nth-child(3),
-            td:nth-child(3) {
-                width: 30%;
-            }
-            th,
-            td {
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            h2 {
-                margin-top: 10px;
-            }
-            .copy-link-icon {
-                font-size: 20px;
-                margin-left: 10px;
-                color: #8f8f97;
-                cursor: pointer;
-            }
-            .copy-link-icon:hover {
-                color: #282b2c;
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
             }
         </style>
     </head>
-    <body>
-        <div class="container-fluid">{{table}}</div>
+    <body data-pipeline-id="{{pipeline_id}}">
+        <!-- Navigation progress bar -->
+        <div class="nav-progress-container">
+            <div class="nav-progress-bar" id="nav-progress-bar"></div>
+        </div>
+
+        <div class="container-fluid">
+            <!-- Report header section -->
+            <header class="report-header">
+                <div class="logo-container">
+                    <img
+                        src="https://www.espressif.com/sites/all/themes/espressif/logo-black.svg"
+                        alt="Espressif Logo"
+                        class="logo"
+                    />
+                </div>
+                <div class="title-container">
+                    <h1>
+                        <span style="color: #333">Dynamic Pipeline Report</span>
+                    </h1>
+                </div>
+                <div class="spacer"></div>
+            </header>
+
+            <!-- Search and controls section -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="action-buttons">
+                        <button
+                            class="btn btn-esp btn-sm"
+                            id="expand-all-tables"
+                        >
+                            <i class="fas fa-table"></i> Expand All
+                        </button>
+                        <button
+                            class="btn btn-outline-secondary btn-sm ms-2"
+                            id="collapse-all-tables"
+                        >
+                            <i class="fas fa-minus"></i> Collapse All
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <div class="table-container">{{table}}</div>
+            </div>
+        </div>
+
+        <!-- Floating action buttons -->
+        <div class="floating-actions">
+            <div class="floating-action-btn back-to-top" id="back-to-top">
+                <i class="fas fa-arrow-up"></i>
+            </div>
+        </div>
+
+        <!-- JavaScript libraries -->
         <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
         <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.23.0/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
+        <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/export/bootstrap-table-export.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/tableexport.jquery.plugin@1.10.21/tableExport.min.js"></script>
+        <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
+
+        <!-- Custom scripts -->
         <script>
-            $(window).on("load", function () {
-                var hash = window.location.hash;
-                if (hash) {
-                    setTimeout(function () {
-                        $("html, body").animate(
-                            { scrollTop: $(hash).offset().top },
-                            100
-                        );
-                    }, 100);
-                }
-            });
-        </script>
-        <script>
-            $(document).ready(function () {
-                scrollToHashLocation();
-                setupTextToggles();
-                setupEventHandlers();
-            });
-
-            function setupEventHandlers() {
-                $(window).on("load", scrollToHashLocation);
-                $("body").on("click", ".toggle-link", toggleText);
-            }
-
-            function scrollToHashLocation() {
-                const hash = window.location.hash;
-                if (hash) {
-                    setTimeout(() => {
-                        $("html, body").animate(
-                            { scrollTop: $(hash).offset().top },
-                            100
-                        );
-                    }, 100);
-                }
-            }
-
-            function copyPermalink(anchorId) {
-                const fullUrl = `${window.location.origin}${window.location.pathname}${anchorId}`;
-                history.pushState(null, null, anchorId);
-                navigator.clipboard.writeText(fullUrl);
-                scrollToHashLocation();
-            }
-
-            function toggleText(e) {
-                e.preventDefault();
-                const link = $(this),
-                    textSpan = link.siblings(".full-text"),
-                    toggleSpan = link.siblings(".text-toggle");
-                const visible = textSpan.is(":visible");
-                link.text(visible ? "Show More" : "Show Less");
-                textSpan.toggle();
-                toggleSpan.toggle();
-            }
-
-            function setupTextToggles() {
-                $("table.table td").each(function () {
-                    var cell = $(this);
-                    if (cell.text().length > 100) {
-                        var originalText = cell.text();
-                        var displayText =
-                            originalText.substring(0, 100) + "...";
-                        cell.html(
-                            `<span class="text-toggle">${displayText}</span><span class="full-text" style="display: none;">${originalText}</span><a href="#" class="toggle-link">Show More</a>`
-                        );
-                    }
-                });
-            }
+            {{js_content}}
         </script>
     </body>
 </html>
