@@ -14,27 +14,33 @@
 #include "esp_log.h"
 #include "freertos/semphr.h"
 
-// Public typedefs
-#define BLE_LOG_SPI_OUT_SOURCE_ESP 0
-#define BLE_LOG_SPI_OUT_SOURCE_ESP_LEGACY 1
-#define BLE_LOG_SPI_OUT_SOURCE_BLUEDROID 2
-#define BLE_LOG_SPI_OUT_SOURCE_NIMBLE 3
-#define BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM 4
-#define BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM 5
-#define BLE_LOG_SPI_OUT_SOURCE_ESP_ISR 6
-#define BLE_LOG_SPI_OUT_SOURCE_ESP_LEGACY_ISR 7
-#define BLE_LOG_SPI_OUT_SOURCE_USER 0x10
-#define BLE_LOG_SPI_OUT_SOURCE_SYNC 0xFE
-#define BLE_LOG_SPI_OUT_SOURCE_LOSS 0xFF
+// Public enums
+enum {
+    BLE_LOG_SPI_OUT_SOURCE_ESP = 0,
+    BLE_LOG_SPI_OUT_SOURCE_ESP_LEGACY,
+    BLE_LOG_SPI_OUT_SOURCE_BLUEDROID,
+    BLE_LOG_SPI_OUT_SOURCE_NIMBLE,
+    BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM,
+    BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM,
+    BLE_LOG_SPI_OUT_SOURCE_ESP_ISR,
+    BLE_LOG_SPI_OUT_SOURCE_ESP_LEGACY_ISR,
+    BLE_LOG_SPI_OUT_SOURCE_LL_HCI,
+    BLE_LOG_SPI_OUT_SOURCE_LE_AUDIO,
+    BLE_LOG_SPI_OUT_SOURCE_USER = 0x10,
+    BLE_LOG_SPI_OUT_SOURCE_SSC = 0xFD,
+    BLE_LOG_SPI_OUT_SOURCE_SYNC,
+    BLE_LOG_SPI_OUT_SOURCE_LOSS,
+};
 
-// SPI Log Level Definitions
-#define BLE_LOG_SPI_OUT_LEVEL_NONE      0  /*!< No log output */
-#define BLE_LOG_SPI_OUT_LEVEL_ERROR     1  /*!< Critical errors that SPI driver cannot recover from */
-#define BLE_LOG_SPI_OUT_LEVEL_WARN      2  /*!< Recoverable error conditions in SPI communication */
-#define BLE_LOG_SPI_OUT_LEVEL_INFO      3  /*!< Informational messages about SPI transactions */
-#define BLE_LOG_SPI_OUT_LEVEL_DEBUG     4  /*!< Detailed debug information, such as SPI register values */
-#define BLE_LOG_SPI_OUT_LEVEL_VERBOSE   5  /*!< Very detailed debugging logs, potentially flooding output */
-#define BLE_LOG_SPI_OUT_LEVEL_MAX       6  /*!< Number of SPI log levels supported */
+enum {
+    BLE_LOG_SPI_OUT_LEVEL_NONE = 0,
+    BLE_LOG_SPI_OUT_LEVEL_ERROR,
+    BLE_LOG_SPI_OUT_LEVEL_WARN,
+    BLE_LOG_SPI_OUT_LEVEL_INFO,
+    BLE_LOG_SPI_OUT_LEVEL_DEBUG,
+    BLE_LOG_SPI_OUT_LEVEL_VERBOSE,
+    BLE_LOG_SPI_OUT_LEVEL_MAX,
+};
 
 // Public functions
 int ble_log_spi_out_init(void);
@@ -50,5 +56,8 @@ int ble_log_spi_out_printf(uint8_t source, const char *format, ...);
 int ble_log_spi_out_printf_enh(uint8_t source, uint8_t level, const char *tag, const char *format, ...);
 int ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t len);
 void ble_log_spi_out_dump_all(void);
+void ble_log_spi_out_enable(bool enable);
+void ble_log_spi_out_flush(void);
+void ble_log_spi_out_le_audio_write(const uint8_t *addr, uint16_t len);
 
 #endif // __BT_SPI_OUT_H__
