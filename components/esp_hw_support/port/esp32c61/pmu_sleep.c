@@ -19,12 +19,67 @@
 #include "hal/efuse_hal.h"
 #include "esp_private/esp_pmu.h"
 #include "pmu_param.h"
+#include "esp_hw_log.h"
+
+static __attribute__((unused)) const char *TAG = "pmu_sleep";
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
 
 
 static bool s_pmu_sleep_regdma_backup_enabled;
+
+static uint32_t get_lslp_dbg(void)
+{
+    uint32_t pmu_dbg_atten_lightsleep = PMU_DBG_ATTEN_LIGHTSLEEP_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 1) {
+        pmu_dbg_atten_lightsleep = efuse_ll_get_lslp_dbg();
+    } else {
+        ESP_HW_LOGD(TAG, "lslp dbg not burnt in efuse, use default\n");
+    }
+
+    return pmu_dbg_atten_lightsleep;
+}
+
+static uint32_t get_lslp_hp_dbias(void)
+{
+    uint32_t pmu_hp_dbias_lightsleep_0v6 = PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 1) {
+        pmu_hp_dbias_lightsleep_0v6 = efuse_ll_get_lslp_hp_dbias();
+    } else {
+        ESP_HW_LOGD(TAG, "lslp hp dbias not burnt in efuse, use default\n");
+    }
+
+    return pmu_hp_dbias_lightsleep_0v6;
+}
+
+static uint32_t get_dslp_dbg(void)
+{
+    uint32_t pmu_dbg_atten_deepsleep = PMU_DBG_ATTEN_DEEPSLEEP_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 1) {
+        pmu_dbg_atten_deepsleep = efuse_ll_get_dslp_dbg();
+    } else {
+        ESP_HW_LOGD(TAG, "dslp dbg not burnt in efuse, use default\n");
+    }
+
+    return pmu_dbg_atten_deepsleep;
+}
+
+static uint32_t get_dslp_lp_dbias(void)
+{
+    uint32_t pmu_lp_dbias_deepsleep_0v7 = PMU_LP_DBIAS_DEEPSLEEP_0V7_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 1) {
+        pmu_lp_dbias_deepsleep_0v7 = efuse_ll_get_dslp_lp_dbias();
+    } else {
+        ESP_HW_LOGD(TAG, "dslp lp dbias not burnt in efuse\n");
+    }
+
+    return pmu_lp_dbias_deepsleep_0v7;
+}
 
 void pmu_sleep_enable_regdma_backup(void)
 {
@@ -191,22 +246,27 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->digital = digital_default;
 
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags);
+        analog_default.lp_sys[LP(SLEEP)].analog.dbg_atten = get_dslp_dbg();
+        analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_dslp_lp_dbias();
         config->analog = analog_default;
     } else {
         pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags);
         config->digital = digital_default;
 
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(sleep_flags);
+        analog_default.hp_sys.analog.dbg_atten = get_lslp_dbg();
+        analog_default.hp_sys.analog.dbias = get_lslp_hp_dbias();
+        analog_default.lp_sys[LP(SLEEP)].analog.dbias = PMU_LP_DBIAS_LIGHTSLEEP_0V7_DEFAULT;
 
         if (!(sleep_flags & PMU_SLEEP_PD_XTAL) || !(sleep_flags & PMU_SLEEP_PD_RC_FAST)){
             analog_default.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
-            analog_default.hp_sys.analog.dbias = HP_CALI_DBIAS_SLP_1V1;
+            analog_default.hp_sys.analog.dbias =  get_act_hp_dbias();
             analog_default.hp_sys.analog.dbg_atten = 0;
 
             analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
-            analog_default.lp_sys[LP(SLEEP)].analog.dbias = LP_CALI_DBIAS_SLP_1V1;
+            analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
             analog_default.lp_sys[LP(SLEEP)].analog.dbg_atten = 0;
         }
 

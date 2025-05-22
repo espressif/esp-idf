@@ -18,6 +18,8 @@
 #include "esp_hw_log.h"
 #include "soc/clk_tree_defs.h"
 
+static __attribute__((unused)) const char *TAG = "pmu_param";
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))
 #endif
@@ -416,52 +418,46 @@ const pmu_lp_system_analog_param_t * pmu_lp_system_analog_param_default(pmu_lp_m
 
 uint32_t get_act_hp_dbias(void)
 {
-    // TODO: IDF-9274
     /* hp_cali_dbias is read from efuse to ensure that the hp_active_voltage is close to 1.15V
     */
     uint32_t hp_cali_dbias = HP_CALI_DBIAS_DEFAULT;
-    // uint32_t blk_version = efuse_hal_blk_version();
-    // if (blk_version >= 3) {
-    //     hp_cali_dbias = efuse_ll_get_active_hp_dbias();
-    //     if (hp_cali_dbias != 0) {
-    //         //efuse dbias need to add 2 to meet the CPU frequency switching
-    //         if (hp_cali_dbias + 2 > 31) {
-    //             hp_cali_dbias = 31;
-    //         } else {
-    //             hp_cali_dbias += 2;
-    //         }
-    //     } else {
-    //         hp_cali_dbias = HP_CALI_DBIAS_DEFAULT;
-    //         ESP_HW_LOGD(TAG, "hp_cali_dbias not burnt in efuse or wrong value was burnt in blk version: %" PRIu32 "\n", blk_version);
-    //     }
-    // }
+    uint32_t blk_version = efuse_hal_blk_version();
+    uint32_t hp_cali_dbias_efuse = 0;
+    if (blk_version >= 1) {
+        hp_cali_dbias_efuse = efuse_ll_get_active_hp_dbias();
+    }
 
+    if (hp_cali_dbias_efuse > 0) {
+        //efuse dbias need to add 3 to meet the CPU frequency switching
+        hp_cali_dbias = hp_cali_dbias_efuse + 16 + 3;
+        if (hp_cali_dbias > 31) {
+            hp_cali_dbias = 31;
+        }
+    } else {
+        ESP_HW_LOGW(TAG, "hp_cali_dbias not burnt in efuse, use default.");
+    }
     return hp_cali_dbias;
 }
 
 uint32_t get_act_lp_dbias(void)
 {
-    // TODO: IDF-9274
     /* lp_cali_dbias is read from efuse to ensure that the lp_active_voltage is close to 1.15V
     */
     uint32_t lp_cali_dbias = LP_CALI_DBIAS_DEFAULT;
-    // uint32_t blk_version = efuse_hal_blk_version();
-    // if (blk_version >= 3) {
-    //     lp_cali_dbias = efuse_ll_get_active_lp_dbias();
-    //     if (lp_cali_dbias != 0) {
-    //         //efuse dbias need to add 2 to meet the CPU frequency switching
-    //         if (lp_cali_dbias + 2 > 31) {
-    //             lp_cali_dbias = 31;
-    //         } else {
-    //             lp_cali_dbias += 2;
-    //         }
-    //     } else {
-    //         lp_cali_dbias = LP_CALI_DBIAS_DEFAULT;
-    //         ESP_HW_LOGD(TAG, "lp_cali_dbias not burnt in efuse or wrong value was burnt in blk version: %" PRIu32 "\n", blk_version);
-    //     }
-    // } else {
-    //     ESP_HW_LOGD(TAG, "blk_version is less than 3, act dbias not burnt in efuse\n");
-    // }
+    uint32_t blk_version = efuse_hal_blk_version();
+    uint32_t lp_cali_dbias_efuse = 0;
+    if (blk_version >= 1) {
+        lp_cali_dbias_efuse = efuse_ll_get_active_lp_dbias();
+    }
 
+    if (lp_cali_dbias_efuse > 0) {
+        //efuse dbias need to add 3 to meet the CPU frequency switching
+        lp_cali_dbias = lp_cali_dbias_efuse + 16 + 3;
+        if (lp_cali_dbias > 31) {
+            lp_cali_dbias = 31;
+        }
+    } else {
+        ESP_HW_LOGW(TAG, "lp_cali_dbias not burnt in efuse, use default.");
+    }
     return lp_cali_dbias;
 }

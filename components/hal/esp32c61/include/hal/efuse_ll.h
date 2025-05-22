@@ -57,6 +57,46 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en
     return EFUSE0.rd_repeat_data1.secure_boot_en;
 }
 
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)
+{
+    return EFUSE0.rd_sys_part1_data4.ocode;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_hp_dbias(void)
+{
+    return (EFUSE0.rd_mac_sys3.active_hp_dbias_1 << 3)|EFUSE0.rd_mac_sys2.active_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_lp_dbias(void)
+{
+    return EFUSE0.rd_mac_sys3.active_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_lslp_dbg(void)
+{
+    return EFUSE0.rd_mac_sys3.lslp_hp_dbg;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_lslp_hp_dbias(void)
+{
+    return EFUSE0.rd_mac_sys3.lslp_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_dslp_dbg(void)
+{
+    return EFUSE0.rd_mac_sys3.dslp_lp_dbg;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_dslp_lp_dbias(void)
+{
+    return EFUSE0.rd_mac_sys3.dslp_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline int32_t efuse_ll_get_dbias_vol_gap(void)
+{
+    return EFUSE0.rd_mac_sys3.lp_hp_dbias_vol_gap;
+}
+
 // use efuse_hal_get_major_chip_version() to get major chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_major(void)
 {
