@@ -28,6 +28,22 @@
 extern "C" {
 #endif
 
+
+/**
+ * @brief Macro to combine two key blocks into a single integer
+ * @note Least significant 4 bits stores block number of the low key block, and the next 4 more significant bits store the high key block number.
+ */
+#define ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS(blk_high, blk_low) (((blk_high) << 4) | (blk_low))
+
+/**
+ * @brief Macro to extract high and low key block numbers from a combined integer
+ * @note Extracts high block from bits 4-7 and low block from bits 0-3
+ */
+#define ESP_TLS_ECDSA_EXTRACT_KEY_BLOCKS(combined_blk, blk_high, blk_low) do { \
+    (blk_high) = ((combined_blk) >> 4) & 0xF; \
+    (blk_low) = (combined_blk) & 0xF; \
+} while(0)
+
 /**
  *  @brief ESP-TLS Connection State
  */
@@ -169,7 +185,7 @@ typedef struct esp_tls_cfg {
 
     bool use_ecdsa_peripheral;              /*!< Use the ECDSA peripheral for the private key operations */
 
-    uint8_t ecdsa_key_efuse_blk;            /*!< The efuse block where the ECDSA key is stored */
+    uint8_t ecdsa_key_efuse_blk;            /*!< The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. */
 
     bool non_block;                         /*!< Configure non-blocking mode. If set to true the
                                                  underneath socket will be configured in non
@@ -313,7 +329,7 @@ typedef struct esp_tls_cfg_server {
 
     bool use_ecdsa_peripheral;                  /*!< Use ECDSA peripheral to use private key */
 
-    uint8_t ecdsa_key_efuse_blk;                /*!< The efuse block where ECDSA key is stored */
+    uint8_t ecdsa_key_efuse_blk;                /*!< The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. */
 
     bool use_secure_element;                    /*!< Enable this option to use secure element or
                                                  atecc608a chip */

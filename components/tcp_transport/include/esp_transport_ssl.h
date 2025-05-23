@@ -94,7 +94,7 @@ void esp_transport_ssl_set_client_cert_data(esp_transport_handle_t t, const char
  * @brief      Set SSL client key data for mutual authentication when using ECDSA peripheral.
  *
  * @param      t            ssl transport
- * @param[in]  efuse_blk    Efuse block where ECDSA private key is stored
+ * @param[in]  efuse_blk. The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. The macro is defined in esp_tls.h
  */
 void esp_transport_ssl_set_client_key_ecdsa_peripheral(esp_transport_handle_t t, uint8_t ecdsa_efuse_blk);
 #endif
