@@ -42,6 +42,11 @@
       "rev": 3,
       "build_date_str_addr": "0x3ff1a374",
       "build_date_str": "Feb  7 2021"
+    },
+    {
+      "rev": 101,
+      "build_date_str_addr": "0x3ff1a3dc",
+      "build_date_str": "Mar  1 2023"
     }
   ],
   "esp32c5": [
