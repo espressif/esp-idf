@@ -246,11 +246,11 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
     uint32_t ibus_mask = 0;
-    ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? CACHE_L1_ICACHE_SHUT_IBUS0 : 0);
+    ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? CACHE_L1_CACHE_SHUT_BUS0 : 0);
     REG_CLR_BIT(CACHE_L1_CACHE_CTRL_REG, ibus_mask);
 
     uint32_t dbus_mask = 0;
-    dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? CACHE_L1_CACHE_SHUT_BUS0 : 0);
+    dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? CACHE_L1_CACHE_SHUT_BUS1 : 0);
     REG_CLR_BIT(CACHE_L1_CACHE_CTRL_REG, dbus_mask);
 }
 
@@ -268,11 +268,11 @@ static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t m
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
     uint32_t ibus_mask = 0;
-    ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? CACHE_L1_ICACHE_SHUT_IBUS0 : 0);
+    ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? CACHE_L1_CACHE_SHUT_BUS0 : 0);
     REG_SET_BIT(CACHE_L1_CACHE_CTRL_REG, ibus_mask);
 
     uint32_t dbus_mask = 0;
-    dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? CACHE_L1_CACHE_SHUT_BUS0 : 0);
+    dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? CACHE_L1_CACHE_SHUT_BUS1 : 0);
     REG_SET_BIT(CACHE_L1_CACHE_CTRL_REG, dbus_mask);
 }
 
