@@ -212,6 +212,11 @@ uint32_t _ss_spi_flash_hal_check_status(spi_flash_host_inst_t *host)
 
 esp_err_t _ss_spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_trans_t *trans)
 {
+    bool paddr_chk = esp_tee_flash_check_paddr_in_tee_region(trans->address);
+    if (paddr_chk) {
+        ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, trans->address);
+        return ESP_FAIL;
+    }
     return spi_flash_hal_common_command(host, trans);
 }
 

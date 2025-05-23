@@ -3,6 +3,10 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
-config SPI_FLASH_VENDOR_XMC_SUPPORTED
+config SPI_FLASH_VENDOR_XMC_SUPPORT_ENABLED
+    bool
+    default y
+
+config SPI_FLASH_VENDOR_GD_SUPPORT_ENABLED
     bool
     default y

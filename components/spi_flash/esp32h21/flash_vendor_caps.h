@@ -5,4 +5,5 @@
  */
 #pragma once
 
-#define SPI_FLASH_VENDOR_XMC_SUPPORTED       (1)
+#define SPI_FLASH_VENDOR_XMC_SUPPORT_ENABLED       (1)
+#define SPI_FLASH_VENDOR_GD_SUPPORT_ENABLED        (1)

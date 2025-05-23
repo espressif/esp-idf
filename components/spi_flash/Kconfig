@@ -374,7 +374,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_ISSI_CHIP
             bool "ISSI"
-            default y if SPI_FLASH_VENDOR_ISSI_SUPPORTED
+            default y if SPI_FLASH_VENDOR_ISSI_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of ISSI chips if chip vendor not directly
@@ -383,7 +383,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_MXIC_CHIP
             bool "MXIC"
-            default y if SPI_FLASH_VENDOR_MXIC_SUPPORTED
+            default y if SPI_FLASH_VENDOR_MXIC_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of MXIC chips if chip vendor not directly
@@ -392,7 +392,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_GD_CHIP
             bool "GigaDevice"
-            default y if SPI_FLASH_VENDOR_GD_SUPPORTED
+            default y if SPI_FLASH_VENDOR_GD_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of GD (GigaDevice) chips if chip vendor not
@@ -406,7 +406,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_WINBOND_CHIP
             bool "Winbond"
-            default y if SPI_FLASH_VENDOR_WINBOND_SUPPORTED
+            default y if SPI_FLASH_VENDOR_WINBOND_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of Winbond chips if chip vendor not directly
@@ -416,7 +416,7 @@ menu "SPI Flash driver"
         config SPI_FLASH_SUPPORT_BOYA_CHIP
             bool "BOYA"
             # ESP32 doesn't usually use this chip, default n to save iram.
-            default y if SPI_FLASH_VENDOR_BOYA_SUPPORTED
+            default y if SPI_FLASH_VENDOR_BOYA_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of BOYA chips if chip vendor not directly
@@ -426,7 +426,7 @@ menu "SPI Flash driver"
         config SPI_FLASH_SUPPORT_TH_CHIP
             bool "TH"
             # ESP32 doesn't usually use this chip, default n to save iram.
-            default y if SPI_FLASH_VENDOR_TH_SUPPORTED
+            default y if SPI_FLASH_VENDOR_TH_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of TH chips if chip vendor not directly
