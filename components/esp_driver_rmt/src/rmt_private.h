@@ -159,8 +159,8 @@ struct rmt_channel_t {
     rmt_channel_direction_t direction; // channel direction
     rmt_symbol_word_t *hw_mem_base;    // base address of RMT channel hardware memory
     gdma_channel_handle_t dma_chan;    // DMA channel
-    esp_pm_lock_handle_t pm_lock;      // power management lock
 #if CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t pm_lock;      // power management lock
     char pm_lock_name[RMT_PM_LOCK_NAME_LEN_MAX]; // pm lock name
 #endif
     // RMT channel common interface

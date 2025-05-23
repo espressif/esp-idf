@@ -23,6 +23,7 @@ extern "C" {
 
 typedef struct {
     struct {
+        const char *module_name[SOC_TIMER_GROUP_TIMERS_PER_GROUP];
         const periph_module_t module; // Peripheral module
         const int timer_irq_id[SOC_TIMER_GROUP_TIMERS_PER_GROUP]; // interrupt source ID
     } groups[SOC_TIMER_GROUPS];

@@ -104,7 +104,9 @@ struct esp_rgb_panel_t {
     size_t dma_burst_size;  // DMA transfer burst size
     int disp_gpio_num;     // Display control GPIO, which is used to perform action like "disp_off"
     intr_handle_t intr;    // LCD peripheral interrupt handle
+#if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; // Power management lock
+#endif
     size_t num_dma_nodes;  // Number of DMA descriptors that used to carry the frame buffer
     gdma_channel_handle_t dma_chan; // DMA channel handle
     gdma_link_list_handle_t dma_fb_links[RGB_LCD_PANEL_MAX_FB_NUM]; // DMA link lists for multiple frame buffers
@@ -235,10 +237,12 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
     if (rgb_panel->intr) {
         esp_intr_free(rgb_panel->intr);
     }
+#if CONFIG_PM_ENABLE
     if (rgb_panel->pm_lock) {
         esp_pm_lock_release(rgb_panel->pm_lock);
         esp_pm_lock_delete(rgb_panel->pm_lock);
     }
+#endif
     free(rgb_panel);
     return ESP_OK;
 }

@@ -108,9 +108,11 @@ static void gptimer_unregister_from_group(gptimer_t *timer)
 
 static esp_err_t gptimer_destroy(gptimer_t *timer)
 {
+#if CONFIG_PM_ENABLE
     if (timer->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(timer->pm_lock), TAG, "delete pm_lock failed");
     }
+#endif
     if (timer->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(timer->intr), TAG, "delete interrupt service failed");
     }
@@ -347,10 +349,12 @@ esp_err_t gptimer_enable(gptimer_handle_t timer)
     ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_ENABLE),
                         ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
 
+#if CONFIG_PM_ENABLE
     // acquire power manager lock
     if (timer->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(timer->pm_lock), TAG, "acquire pm_lock failed");
     }
+#endif
 
     // enable interrupt service
     if (timer->intr) {
@@ -373,10 +377,12 @@ esp_err_t gptimer_disable(gptimer_handle_t timer)
         ESP_RETURN_ON_ERROR(esp_intr_disable(timer->intr), TAG, "disable interrupt service failed");
     }
 
+#if CONFIG_PM_ENABLE
     // release power manager lock
     if (timer->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(timer->pm_lock), TAG, "release pm_lock failed");
     }
+#endif
 
     return ESP_OK;
 }

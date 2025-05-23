@@ -51,8 +51,6 @@ extern "C" {
 
 #define GPTIMER_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
-#define GPTIMER_PM_LOCK_NAME_LEN_MAX 16
-
 #define GPTIMER_USE_RETENTION_LINK  (SOC_TIMER_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 #if SOC_PERIPH_CLK_CTRL_SHARED
@@ -95,9 +93,8 @@ struct gptimer_t {
     gptimer_alarm_cb_t on_alarm;
     void *user_ctx;
     gptimer_clock_source_t clk_src;
-    esp_pm_lock_handle_t pm_lock; // power management lock
 #if CONFIG_PM_ENABLE
-    char pm_lock_name[GPTIMER_PM_LOCK_NAME_LEN_MAX]; // pm lock name
+    esp_pm_lock_handle_t pm_lock; // power management lock
 #endif
     struct {
         uint32_t intr_shared: 1;

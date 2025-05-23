@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,7 +84,9 @@ struct esp_lcd_i80_bus_t {
     lcd_hal_context_t hal; // Hal object
     size_t bus_width;      // Number of data lines
     intr_handle_t intr;    // LCD peripheral interrupt handle
+#if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; // Power management lock
+#endif
     uint8_t *format_buffer;  // The driver allocates an internal buffer for DMA to do data format transformer
     uint8_t *format_buffer_nc; // Non-cacheable version of format buffer
     size_t resolution_hz;    // LCD_CLK resolution, determined by selected clock source
@@ -251,9 +253,11 @@ err:
         if (bus->format_buffer) {
             free(bus->format_buffer);
         }
+#if CONFIG_PM_ENABLE
         if (bus->pm_lock) {
             esp_pm_lock_delete(bus->pm_lock);
         }
+#endif
         free(bus);
     }
     return ret;
@@ -275,9 +279,11 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
     gdma_del_channel(bus->dma_chan);
     esp_intr_free(bus->intr);
     free(bus->format_buffer);
+#if CONFIG_PM_ENABLE
     if (bus->pm_lock) {
         esp_pm_lock_delete(bus->pm_lock);
     }
+#endif
     gdma_del_link_list(bus->dma_link);
     free(bus);
     ESP_LOGD(TAG, "del i80 bus(%d)", bus_id);
@@ -497,17 +503,21 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
         }
     };
     gdma_link_mount_buffers(bus->dma_link, 0, &mount_config, 1, NULL);
+#if CONFIG_PM_ENABLE
     // increase the pm lock reference count before starting a new transaction
     if (bus->pm_lock) {
         esp_pm_lock_acquire(bus->pm_lock);
     }
+#endif
     lcd_start_transaction(bus, trans_desc);
     // polling the trans done event, but don't clear the event status
     while (!(lcd_ll_get_interrupt_status(bus->hal.dev) & LCD_LL_EVENT_TRANS_DONE)) {}
+#if CONFIG_PM_ENABLE
     // decrease pm lock reference count
     if (bus->pm_lock) {
         esp_pm_lock_release(bus->pm_lock);
     }
+#endif
     return ESP_OK;
 }
 
@@ -752,10 +762,12 @@ IRAM_ATTR static void i80_lcd_default_isr_handler(void *args)
         // process finished transaction
         if (trans_desc) {
             assert(trans_desc->i80_device == cur_device && "transaction device mismatch");
+#if CONFIG_PM_ENABLE
             // decrease pm lock reference count
             if (bus->pm_lock) {
                 esp_pm_lock_release(bus->pm_lock);
             }
+#endif
             // device callback
             if (trans_desc->trans_done_cb) {
                 if (trans_desc->trans_done_cb(&cur_device->base, NULL, trans_desc->user_ctx)) {
@@ -802,10 +814,12 @@ IRAM_ATTR static void i80_lcd_default_isr_handler(void *args)
                 gdma_link_mount_buffers(bus->dma_link, 0, &mount_config, 1, NULL);
                 // enable interrupt again, because the new transaction can trigger new trans done event
                 esp_intr_enable(bus->intr);
+#if CONFIG_PM_ENABLE
                 // increase the pm lock reference count before starting a new transaction
                 if (bus->pm_lock) {
                     esp_pm_lock_acquire(bus->pm_lock);
                 }
+#endif
                 lcd_start_transaction(bus, trans_desc);
                 break; // exit for-each loop
             }

@@ -482,9 +482,11 @@ esp_err_t sd_host_slot_sdmmc_do_transaction(sd_host_slot_handle_t slot, sdmmc_co
     sd_host_sdmmc_slot_t *slot_ctx = __containerof(slot, sd_host_sdmmc_slot_t, drv);
 
     xSemaphoreTake(slot_ctx->ctlr->mutex, portMAX_DELAY);
+#if CONFIG_PM_ENABLE
     if (slot_ctx->ctlr->pm_lock) {
         ESP_GOTO_ON_ERROR(esp_pm_lock_acquire(slot_ctx->ctlr->pm_lock), out, TAG, "acquire pm_lock failed");
     }
+#endif
     slot_ctx->ctlr->cur_slot_id = slot_ctx->slot_id;
 
     // By default, set probing frequency (400kHz) and 1-bit bus
@@ -579,9 +581,11 @@ esp_err_t sd_host_slot_sdmmc_do_transaction(sd_host_slot_handle_t slot, sdmmc_co
 #endif
 
 out:
+#if CONFIG_PM_ENABLE
     if (slot_ctx->ctlr->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(slot_ctx->ctlr->pm_lock), TAG, "release pm_lock failed");
     }
+#endif
     xSemaphoreGive(slot_ctx->ctlr->mutex);
 
     return ret;

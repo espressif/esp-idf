@@ -617,9 +617,11 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
         ESP_RETURN_ON_ERROR(s_i2c_hw_fsm_reset(i2c_master, true), TAG, "reset hardware failed");
     }
 
+#if CONFIG_PM_ENABLE
     if (i2c_master->base->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(i2c_master->base->pm_lock), TAG, "acquire pm_lock failed");
     }
+#endif
 
     portENTER_CRITICAL(&i2c_master->base->spinlock);
     atomic_init(&i2c_master->trans_idx, 0);
@@ -655,9 +657,11 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
         i2c_ll_disable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
     }
 
+#if CONFIG_PM_ENABLE
     if (i2c_master->base->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(i2c_master->base->pm_lock), TAG, "release pm_lock failed");
     }
+#endif
 
     return ret;
 }

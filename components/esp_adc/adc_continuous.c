@@ -264,9 +264,11 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
         adc_ll_reset_register();
     }
 
+#if CONFIG_PM_ENABLE
     if (handle->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(handle->pm_lock), ADC_TAG, "acquire pm_lock failed");
     }
+#endif
 
     handle->fsm = ADC_FSM_STARTED;
     sar_periph_ctrl_adc_continuous_power_acquire();
@@ -369,10 +371,12 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t handle)
     }
     sar_periph_ctrl_adc_continuous_power_release();
 
+#if CONFIG_PM_ENABLE
     //release power manager lock
     if (handle->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(handle->pm_lock), ADC_TAG, "release pm_lock failed");
     }
+#endif
 
     ANALOG_CLOCK_DISABLE();
 
@@ -422,9 +426,11 @@ esp_err_t adc_continuous_deinit(adc_continuous_handle_t handle)
         free(handle->ringbuf_struct);
     }
 
+#if CONFIG_PM_ENABLE
     if (handle->pm_lock) {
         esp_pm_lock_delete(handle->pm_lock);
     }
+#endif
 
     free(handle->rx_dma_buf);
     free(handle->hal.rx_desc);

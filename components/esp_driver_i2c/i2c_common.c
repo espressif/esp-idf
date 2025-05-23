@@ -211,9 +211,11 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
             if (i2c_bus->intr_handle) {
                 ESP_RETURN_ON_ERROR(esp_intr_free(i2c_bus->intr_handle), TAG, "delete interrupt service failed");
             }
+#if CONFIG_PM_ENABLE
             if (i2c_bus->pm_lock) {
                 ESP_RETURN_ON_ERROR(esp_pm_lock_delete(i2c_bus->pm_lock), TAG, "delete pm_lock failed");
             }
+#endif
             // Disable I2C module
             if (!i2c_bus->is_lp_i2c) {
                 I2C_RCC_ATOMIC() {
@@ -306,8 +308,7 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_
     }
 
     if (need_pm_lock) {
-        sprintf(handle->pm_lock_name, "I2C_%d", handle->port_num); // e.g. PORT_0
-        ret  = esp_pm_lock_create(pm_lock_type, 0, handle->pm_lock_name, &handle->pm_lock);
+        ret  = esp_pm_lock_create(pm_lock_type, 0, i2c_periph_signal[handle->port_num].module_name, &handle->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
     }
 #endif // CONFIG_PM_ENABLE

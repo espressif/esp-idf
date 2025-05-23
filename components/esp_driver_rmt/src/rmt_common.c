@@ -143,7 +143,7 @@ void rmt_release_group_handle(rmt_group_t *group)
 }
 
 #if !SOC_RMT_CHANNEL_CLK_INDEPENDENT
-static esp_err_t s_rmt_set_group_prescale(rmt_channel_t *chan, uint32_t expect_resolution_hz, uint32_t *ret_channel_prescale)
+static esp_err_t rmt_set_group_prescale(rmt_channel_t *chan, uint32_t expect_resolution_hz, uint32_t *ret_channel_prescale)
 {
     uint32_t periph_src_clk_hz = 0;
     rmt_group_t *group = chan->group;
@@ -256,7 +256,7 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     real_div = (group->resolution_hz + expect_channel_resolution / 2) / expect_channel_resolution;
 #else
     // set division for group clock source, to achieve highest resolution while guaranteeing the channel resolution.
-    ESP_RETURN_ON_ERROR(s_rmt_set_group_prescale(chan, expect_channel_resolution, &real_div), TAG, "set rmt group prescale failed");
+    ESP_RETURN_ON_ERROR(rmt_set_group_prescale(chan, expect_channel_resolution, &real_div), TAG, "set rmt group prescale failed");
 #endif // SOC_RMT_CHANNEL_CLK_INDEPENDENT
 
     if (chan->direction == RMT_CHANNEL_DIRECTION_TX) {

@@ -39,6 +39,7 @@ typedef struct {
         const int tx_irq_id;
         const int rx_irq_id;
         const periph_module_t module;
+        const char *module_name;
     } groups[SOC_PARLIO_GROUPS];
 } parlio_signal_conn_t;
 

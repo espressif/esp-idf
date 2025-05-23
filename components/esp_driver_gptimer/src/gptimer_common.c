@@ -134,8 +134,7 @@ esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t s
 #endif // CONFIG_IDF_TARGET_ESP32C2
 
     if (need_pm_lock) {
-        sprintf(timer->pm_lock_name, "gptimer_%d_%d", group_id, timer_id); // e.g. gptimer_0_0
-        ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, timer->pm_lock_name, &timer->pm_lock),
+        ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, timer_group_periph_signals.groups[group_id].module_name[timer_id], &timer->pm_lock),
                             TAG, "create pm lock failed");
     }
 #endif // CONFIG_PM_ENABLE
@@ -165,12 +164,14 @@ esp_err_t gptimer_get_intr_handle(gptimer_handle_t timer, intr_handle_t *ret_int
     return ESP_OK;
 }
 
+#if CONFIG_PM_ENABLE
 esp_err_t gptimer_get_pm_lock(gptimer_handle_t timer, esp_pm_lock_handle_t *ret_pm_lock)
 {
     ESP_RETURN_ON_FALSE(timer && ret_pm_lock, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     *ret_pm_lock = timer->pm_lock;
     return ESP_OK;
 }
+#endif // CONFIG_PM_ENABLE
 
 int gptimer_get_group_id(gptimer_handle_t timer, int *group_id)
 {

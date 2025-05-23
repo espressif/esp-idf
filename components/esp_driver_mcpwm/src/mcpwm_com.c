@@ -120,9 +120,11 @@ void mcpwm_release_group_handle(mcpwm_group_t *group)
         MCPWM_RCC_ATOMIC() {
             mcpwm_ll_enable_bus_clock(group_id, false);
         }
+#if CONFIG_PM_ENABLE
         if (group->pm_lock) {
             esp_pm_lock_delete(group->pm_lock);
         }
+#endif
 #if MCPWM_USE_RETENTION_LINK
         const periph_retention_module_t module_id = mcpwm_reg_retention_info[group_id].retention_module;
         if (sleep_retention_is_module_created(module_id)) {

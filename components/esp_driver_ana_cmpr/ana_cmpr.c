@@ -27,7 +27,9 @@ struct ana_cmpr_t {
     uint32_t                    intr_mask;          /*!< Interrupt mask */
     int                         intr_priority;      /*!< Interrupt priority */
     uint32_t                    src_clk_freq_hz;    /*!< Source clock frequency of the Analog Comparator unit */
+#if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t        pm_lock;            /*!< The Power Management lock that used to avoid unexpected power down of the clock domain */
+#endif
 };
 
 /* Helper macros */
@@ -80,9 +82,11 @@ static esp_err_t s_ana_cmpr_init_gpio(ana_cmpr_handle_t cmpr, bool is_external_r
 
 static void ana_cmpr_destroy_unit(ana_cmpr_handle_t cmpr)
 {
+#if CONFIG_PM_ENABLE
     if (cmpr->pm_lock) {
         esp_pm_lock_delete(cmpr->pm_lock);
     }
+#endif
     if (cmpr->intr_handle) {
         esp_intr_free(cmpr->intr_handle);
     }
@@ -274,9 +278,11 @@ esp_err_t ana_cmpr_enable(ana_cmpr_handle_t cmpr)
     ANA_CMPR_NULL_POINTER_CHECK(cmpr);
     ana_cmpr_fsm_t expected_fsm = ANA_CMPR_FSM_INIT;
     if (atomic_compare_exchange_strong(&cmpr->fsm, &expected_fsm, ANA_CMPR_FSM_WAIT)) {
+#if CONFIG_PM_ENABLE
         if (cmpr->pm_lock) {
             esp_pm_lock_acquire(cmpr->pm_lock);
         }
+#endif
 
         // the underlying register may be accessed by different threads at the same time, so use spin lock to protect it
         portENTER_CRITICAL(&s_spinlock);
@@ -305,9 +311,11 @@ esp_err_t ana_cmpr_disable(ana_cmpr_handle_t cmpr)
         analog_cmpr_ll_enable(cmpr->dev, false);
         portEXIT_CRITICAL(&s_spinlock);
 
+#if CONFIG_PM_ENABLE
         if (cmpr->pm_lock) {
             esp_pm_lock_release(cmpr->pm_lock);
         }
+#endif
 
         // switch the state machine to init state
         atomic_store(&cmpr->fsm, ANA_CMPR_FSM_INIT);

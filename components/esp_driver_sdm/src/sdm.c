@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,9 +70,9 @@ struct sdm_channel_t {
     int gpio_num;                    // GPIO number
     uint32_t sample_rate_hz;         // Sample rate, in Hz
     portMUX_TYPE spinlock;           // to protect per-channels resources concurrently accessed by task and ISR handler
-    esp_pm_lock_handle_t pm_lock;    // PM lock, for glitch filter, as that module can only be functional under APB
     sdm_fsm_t fsm;              // FSM state
 #if CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t pm_lock;    // PM lock, for glitch filter, as that module can only be functional under APB
     char pm_lock_name[SDM_PM_LOCK_NAME_LEN_MAX]; // pm lock name
 #endif
 };
@@ -181,9 +181,11 @@ static void sdm_unregister_from_group(sdm_channel_t *chan)
 
 static esp_err_t sdm_destroy(sdm_channel_t *chan)
 {
+#if CONFIG_PM_ENABLE
     if (chan->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(chan->pm_lock), TAG, "delete pm lock failed");
     }
+#endif
     if (chan->group) {
         sdm_unregister_from_group(chan);
     }
@@ -292,10 +294,12 @@ esp_err_t sdm_channel_enable(sdm_channel_handle_t chan)
     ESP_RETURN_ON_FALSE(chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(chan->fsm == SDM_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
 
+#if CONFIG_PM_ENABLE
     // acquire power manager lock
     if (chan->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(chan->pm_lock), TAG, "acquire pm_lock failed");
     }
+#endif
     chan->fsm = SDM_FSM_ENABLE;
     return ESP_OK;
 }
@@ -305,10 +309,12 @@ esp_err_t sdm_channel_disable(sdm_channel_handle_t chan)
     ESP_RETURN_ON_FALSE(chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(chan->fsm == SDM_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "channel not in enable state");
 
+#if CONFIG_PM_ENABLE
     // release power manager lock
     if (chan->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(chan->pm_lock), TAG, "release pm_lock failed");
     }
+#endif
     chan->fsm = SDM_FSM_INIT;
     return ESP_OK;
 }

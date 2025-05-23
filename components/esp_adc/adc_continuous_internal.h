@@ -89,7 +89,9 @@ struct adc_continuous_ctx_t {
     adc_hal_digi_ctrlr_cfg_t        hal_digi_ctrlr_cfg;         //Hal digital controller configuration
     adc_continuous_evt_cbs_t        cbs;                        //Callbacks
     void                            *user_data;                 //User context
+#if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t            pm_lock;                    //For power management
+#endif
     struct {
         uint32_t flush_pool: 1;     //Flush the internal pool when the pool is full. With this flag, the `on_pool_ovf` event will not happen.
     } flags;
