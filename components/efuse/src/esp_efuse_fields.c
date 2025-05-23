@@ -18,6 +18,11 @@
 #include "sys/param.h"
 #include "soc/soc_caps.h"
 #include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
+
+#ifdef SOC_ECDSA_SUPPORTED
+#include "hal/ecdsa_ll.h"
+#endif /* SOC_ECDSA_SUPPORTED */
 
 static __attribute__((unused)) const char *TAG = "efuse";
 
@@ -88,8 +93,12 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
 bool esp_efuse_is_ecdsa_p192_curve_supported(void)
 {
 #if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
-    uint32_t current_curve = efuse_ll_get_ecdsa_curve_mode();
-    return (current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_BOTH_P192_P256_BIT || current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P192_BIT);
+    if (ecdsa_ll_is_configurable_curve_supported()) {
+        uint32_t current_curve = efuse_hal_get_ecdsa_curve_mode();
+        return (current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_BOTH_P192_P256_BIT || current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P192_BIT);
+    } else {
+        return true;
+    }
 #else
     return true;
 #endif /* SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED */
@@ -98,8 +107,12 @@ bool esp_efuse_is_ecdsa_p192_curve_supported(void)
 bool esp_efuse_is_ecdsa_p256_curve_supported(void)
 {
 #if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
-    uint32_t current_curve = efuse_ll_get_ecdsa_curve_mode();
-    return (current_curve != ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P192_BIT);
+    if (ecdsa_ll_is_configurable_curve_supported()) {
+        uint32_t current_curve = efuse_hal_get_ecdsa_curve_mode();
+        return (current_curve != ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P192_BIT);
+    } else {
+        return true;
+    }
 #else
     return true;
 #endif /* SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED */
@@ -109,30 +122,32 @@ bool esp_efuse_is_ecdsa_p256_curve_supported(void)
 #if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
 esp_err_t esp_efuse_enable_ecdsa_p192_curve_mode(void)
 {
-    esp_err_t err;
-    uint8_t current_curve, next_curve;
 
-    current_curve = efuse_ll_get_ecdsa_curve_mode();
-    // Check if already in desired state
-    if (current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_BOTH_P192_P256_BIT || current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P192_BIT) {
-        ESP_EARLY_LOGD(TAG, "ECDSA P-192 curve mode is already enabled");
-        return ESP_OK;
+    if (ecdsa_ll_is_configurable_curve_supported()) {
+        esp_err_t err;
+        uint8_t current_curve, next_curve;
+
+        current_curve = efuse_hal_get_ecdsa_curve_mode();
+        // Check if already in desired state
+        if (current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_BOTH_P192_P256_BIT || current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P192_BIT) {
+            ESP_EARLY_LOGD(TAG, "ECDSA P-192 curve mode is already enabled");
+            return ESP_OK;
+        }
+
+        // Check if write is disabled or already locked to P256
+        if (esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE) || current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P256_BIT_LOCKED) {
+            ESP_EARLY_LOGE(TAG, "ECDSA curve mode is locked, cannot enable P-192 curve");
+            return ESP_FAIL;
+        }
+
+        // Attempt to write new curve mode
+        next_curve = ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_BOTH_P192_P256_BIT;
+        err = esp_efuse_write_field_blob(ESP_EFUSE_ECDSA_CURVE_MODE, &next_curve, ESP_EFUSE_ECDSA_CURVE_MODE[0]->bit_count);
+        if (err != ESP_OK) {
+            ESP_EARLY_LOGE(TAG, "Failed to enable ECDSA P-192 curve %d", err);
+            return err;
+        }
     }
-
-    // Check if write is disabled or already locked to P256
-    if (esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE) || current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P256_BIT_LOCKED) {
-        ESP_EARLY_LOGE(TAG, "ECDSA curve mode is locked, cannot enable P-192 curve");
-        return ESP_FAIL;
-    }
-
-    // Attempt to write new curve mode
-    next_curve = ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_BOTH_P192_P256_BIT;
-    err = esp_efuse_write_field_blob(ESP_EFUSE_ECDSA_CURVE_MODE, &next_curve, ESP_EFUSE_ECDSA_CURVE_MODE[0]->bit_count);
-    if (err != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "Failed to enable ECDSA P-192 curve %d", err);
-        return err;
-    }
-
     return ESP_OK;
 }
 #endif /* SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED */
