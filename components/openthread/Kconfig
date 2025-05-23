@@ -357,7 +357,7 @@ menu "OpenThread"
 
             config OPENTHREAD_CSL_UNCERTAIN
                 int "The CSL Uncertainty in units of 10 us."
-                default 0
+                default 50
                 help
                     The fixed uncertainty of the Device for scheduling CSL Transmissions in units of 10 microseconds.
 
