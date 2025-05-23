@@ -100,7 +100,7 @@ struct httpd_ssl_config {
     /** Use ECDSA peripheral to use private key */
     bool use_ecdsa_peripheral;
 
-    /** The efuse block where ECDSA key is stored */
+    /*!< The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. The macro is defined in esp_tls.h */
     uint8_t ecdsa_key_efuse_blk;
 
     /** Transport Mode (default secure) */

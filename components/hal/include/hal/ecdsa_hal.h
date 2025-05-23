@@ -40,7 +40,7 @@ typedef struct {
     ecdsa_mode_t mode;              /* Mode of operation */
     ecdsa_curve_t curve;            /* Curve to use for operation */
     ecdsa_sha_mode_t sha_mode;      /* Source of SHA that needs to be signed */
-    int efuse_key_blk;              /* Efuse block to use as ECDSA key (The purpose of the efuse block must be ECDSA_KEY) */
+    int efuse_key_blk;              /*!< The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro HAL_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. The macro is defined in hal/ecdsa_types.h */
     bool use_km_key;                /* Use an ECDSA key from the Key Manager peripheral */
     ecdsa_sign_type_t sign_type;    /* Type of signature generation */
     uint16_t loop_number;           /* Determines the loop number value in deterministic derivation algorithm to derive K.

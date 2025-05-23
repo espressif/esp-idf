@@ -21,6 +21,9 @@
 
 #define ECDSA_HAL_P192_COMPONENT_LEN        24
 #define ECDSA_HAL_P256_COMPONENT_LEN        32
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+#define ECDSA_HAL_P384_COMPONENT_LEN        48
+#endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
 
 static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
 {
@@ -133,7 +136,11 @@ __attribute__((optimize("O0"))) static void ecdsa_hal_gen_signature_with_counter
 void ecdsa_hal_gen_signature(ecdsa_hal_config_t *conf, const uint8_t *hash,
                         uint8_t *r_out, uint8_t *s_out, uint16_t len)
 {
-    if (len != ECDSA_HAL_P192_COMPONENT_LEN && len != ECDSA_HAL_P256_COMPONENT_LEN) {
+    if (len != ECDSA_HAL_P192_COMPONENT_LEN && len != ECDSA_HAL_P256_COMPONENT_LEN
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    && len != ECDSA_HAL_P384_COMPONENT_LEN
+#endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
+    ) {
         HAL_ASSERT(false && "Incorrect length");
     }
 
@@ -166,7 +173,11 @@ void ecdsa_hal_gen_signature(ecdsa_hal_config_t *conf, const uint8_t *hash,
 int ecdsa_hal_verify_signature(ecdsa_hal_config_t *conf, const uint8_t *hash, const uint8_t *r, const uint8_t *s,
                                const uint8_t *pub_x, const uint8_t *pub_y, uint16_t len)
 {
-    if (len != ECDSA_HAL_P192_COMPONENT_LEN && len != ECDSA_HAL_P256_COMPONENT_LEN) {
+    if (len != ECDSA_HAL_P192_COMPONENT_LEN && len != ECDSA_HAL_P256_COMPONENT_LEN
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    && len != ECDSA_HAL_P384_COMPONENT_LEN
+#endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
+    ) {
         HAL_ASSERT(false && "Incorrect length");
     }
 
@@ -202,7 +213,11 @@ int ecdsa_hal_verify_signature(ecdsa_hal_config_t *conf, const uint8_t *hash, co
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
 void ecdsa_hal_export_pubkey(ecdsa_hal_config_t *conf, uint8_t *pub_x, uint8_t *pub_y, uint16_t len)
 {
-    if (len != ECDSA_HAL_P192_COMPONENT_LEN && len != ECDSA_HAL_P256_COMPONENT_LEN) {
+    if (len != ECDSA_HAL_P192_COMPONENT_LEN && len != ECDSA_HAL_P256_COMPONENT_LEN
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    && len != ECDSA_HAL_P384_COMPONENT_LEN
+#endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
+    ) {
         HAL_ASSERT(false && "Incorrect length");
     }
 
