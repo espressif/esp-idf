@@ -21,7 +21,7 @@
   - CPU 异常：访问受保护的内存区域、非法指令等
   - 系统级检查：看门狗超时、缓存访问错误、堆栈溢出、堆栈粉碎、堆栈损坏等
 
-本文将介绍 ESP-IDF 中针对可恢复错误的错误处理机制，并提供一些常见错误的处理模式。
+本文主要介绍 ESP-IDF 中用于 **可恢复错误** 的处理机制，并提供一些常见错误的处理模式。部分章节也提及了用于 **不可恢复错误** 的相关宏，旨在说明其在不同错误严重程度下的应用场景。
 
 关于如何处理不可恢复的错误，请参阅 :doc:`/api-guides/fatal-errors`。
 
@@ -45,13 +45,29 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码，:
 
 该功能（即在无法匹配 ``ESP_ERR_`` 值时，尝试用标准 POSIX 解释错误码）默认启用。用户也可以禁用该功能，从而减小应用程序的二进制文件大小，详情可见 :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`。注意，该功能对禁用并不影响 :cpp:func:`esp_err_to_name` 和 :cpp:func:`esp_err_to_name_r` 函数的定义，用户仍可调用这两个函数转化错误码。在这种情况下， :cpp:func:`esp_err_to_name` 函数在遇到无法匹配错误码的情况会返回 ``UNKNOWN ERROR``，而 :cpp:func:`esp_err_to_name_r` 函数会返回 ``Unknown error 0xXXXX(YYYYY)``，其中 ``0xXXXX`` 和 ``YYYYY`` 分别代表错误代码的十六进制和十进制表示。
 
-
 .. _esp-error-check-macro:
 
-``ESP_ERROR_CHECK`` 宏
+用于不可恢复错误的宏
 ----------------------
 
-宏 :c:macro:`ESP_ERROR_CHECK` 的功能和 ``assert`` 类似，不同之处在于：这个宏会检查 :cpp:type:`esp_err_t` 的值，而非判断 ``bool`` 条件。如果传给 :c:macro:`ESP_ERROR_CHECK` 的参数不等于 :c:macro:`ESP_OK` ，则会在控制台上打印错误消息，然后调用 ``abort()`` 函数。
+宏 :c:macro:`ESP_ERROR_CHECK` 用于处理 ESP-IDF 应用中不可恢复的错误，具体定义参考 ``esp_err.h`` 头文件。该宏的功能和标准的 ``assert`` 宏类似，不同之处在于它会专门检查 :cpp:type:`esp_err_t` 的值是否等于 :c:macro:`ESP_OK`。如果该值不为 :c:macro:`ESP_OK`，会将打印详细的错误信息，并调用 ``abort()`` 函数，从而终止程序运行。
+
+使用下列断言配置选项，可以控制 :c:macro:`ESP_ERROR_CHECK` 宏的行为：
+
+- 启用 ``CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE`` （默认设置），该宏会打印错误信息并终止程序。
+- 启用 ``CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT``，程序会在不打印任何错误信息的情况下直接终止。
+- 启用 ``CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE`` （即定义了 ``NDEBUG``），该宏仅打印错误信息，但不会终止程序。
+
+:c:macro:`ESP_ERROR_CHECK` 适用于严重错误且程序无法安全运行的情况。对于可以从错误中恢复的情况，请使用下一节中介绍的相关宏。
+
+``ESP_ERROR_CHECK_WITHOUT_ABORT``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+宏 :c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` 用于 **可恢复错误** 的处理， 具体定义见 ``esp_err.h`` 头文件。该宏的行为与 :c:macro:`ESP_ERROR_CHECK` 类似，但在 :cpp:type:`esp_err_t` 值不为 :c:macro:`ESP_OK` 时，不会调用 ``abort()`` 函数终止程序，而是用同样的格式打印错误信息，并返回该错误码，允许程序继续运行。该宏适用于需要报告错误，但无需中断程序的情况。
+
+:c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` 宏的行为也受断言相关配置选项（与 :c:macro:`ESP_ERROR_CHECK` 相同）的控制。启用 ``CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE`` 或 ``CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT`` 时，该宏不打印任何错误信息；否则打印错误信息。
+
+当需要打印错误信息用于诊断，但希望应用程序继续运行时，请使用宏 :c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT`。
 
 错误消息通常如下所示：
 
@@ -76,50 +92,40 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码，:
 - 最后一行打印回溯结果。对于所有不可恢复错误，这里在应急处理程序中打印的内容都是一样的。更多有关回溯结果的详细信息，请参阅 :doc:`/api-guides/fatal-errors`。
 
 
-.. _esp-error-check-without-abort-macro:
+用于可恢复错误的宏
+----------------------
 
-``ESP_ERROR_CHECK_WITHOUT_ABORT`` 宏
-------------------------------------
+ESP-IDF 提供了一组宏来处理可恢复的错误，定义在 ``esp_check.h`` 头文件中。 **ESP_RETURN_ON_...**、 **ESP_GOTO_ON_...** 和 **ESP_RETURN_VOID_ON_...** 系列宏可简洁、一致地处理错误，提升代码的可读性与可维护性。与 ``ESP_ERROR_CHECK`` 不同，这些宏不会终止程序，而是在检测到错误时打印错误信息并执行返回或跳转。针对中断服务例程 (ISR) 场景，还提供了相应的 ``_ISR`` 版本（如 :c:macro:`ESP_RETURN_ON_ERROR_ISR`），确保中断上下文的安全性。
 
-宏 :c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` 的功能和 ``ESP_ERROR_CHECK`` 类似，不同之处在于它不会调用 ``abort()``。
+这些宏的定义如下：
 
+- **ESP_RETURN_ON_...**：当检测到错误或条件失败时，从函数返回：
 
-.. _esp-return-on-error-macro:
+    - :c:macro:`ESP_RETURN_ON_ERROR` - 检查错误码，如果不是 :c:macro:`ESP_OK`，打印信息并返回该错误码。
+    - :c:macro:`ESP_RETURN_ON_FALSE` - 检查某个条件，如果为假，打印信息并返回提供的 ``err_code``。
+    - :c:macro:`ESP_RETURN_ON_ERROR_ISR` - 适用于中断服务例程 (ISR) 上下文。
+    - :c:macro:`ESP_RETURN_ON_FALSE_ISR` - 适用于中断服务例程 (ISR) 上下文。
 
-``ESP_RETURN_ON_ERROR`` 宏
---------------------------
+- **ESP_GOTO_ON_...**：当检测到错误或条件失败时，跳转到指定标签：
 
-宏 :c:macro:`ESP_RETURN_ON_ERROR` 用于错误码检查，如果错误码不等于 :c:macro:`ESP_OK`， 该宏会打印错误信息，并使原函数立刻返回。
+    - :c:macro:`ESP_GOTO_ON_ERROR` - 检查错误码，如果不是 :c:macro:`ESP_OK`，打印信息，将 ``ret`` 设为错误码，并跳转到 ``goto_tag``。
+    - :c:macro:`ESP_GOTO_ON_FALSE` - 检查某个条件，如果为假，打印信息，将 ``ret`` 设为错误码，并跳转到 ``goto_tag``。
+    - :c:macro:`ESP_GOTO_ON_ERROR_ISR` - 适用于中断服务例程 (ISR) 上下文。
+    - :c:macro:`ESP_GOTO_ON_FALSE_ISR` - 适用于中断服务例程 (ISR) 上下文。
 
+- **ESP_RETURN_VOID_...**：当检测到错误或条件失败时，从 ``void`` 函数返回：
 
-.. _esp-goto-on-error-macro:
+    - :c:macro:`ESP_RETURN_VOID_ON_ERROR` - 检查错误码，如果不是 :c:macro:`ESP_OK`，打印信息并返回。
+    - :c:macro:`ESP_RETURN_VOID_ON_FALSE` - 检查某个条件，如果为假，打印信息并返回。
+    - :c:macro:`ESP_RETURN_VOID_ON_ERROR_ISR` - 适用于中断服务例程 (ISR) 上下文。
+    - :c:macro:`ESP_RETURN_VOID_ON_FALSE_ISR` - 适用于中断服务例程 (ISR) 上下文。
 
-``ESP_GOTO_ON_ERROR`` 宏
-------------------------
-
-宏 :c:macro:`ESP_GOTO_ON_ERROR` 用于错误码检查，如果错误码不等于 :c:macro:`ESP_OK`，该宏会打印错误信息，将局部变量 ``ret`` 赋值为该错误码，并使原函数跳转至给定的 ``goto_tag``。
-
-
-.. _esp-return-on-false-macro:
-
-``ESP_RETURN_ON_FALSE`` 宏
---------------------------
-
-宏 :c:macro:`ESP_RETURN_ON_FALSE` 用于条件检查，如果给定条件不等于 ``true``，该宏会打印错误信息，并使原函数立刻返回，返回值为给定的 ``err_code``。
-
-
-.. _esp-goto-on-false-macro:
-
-``ESP_GOTO_ON_FALSE`` 宏
-------------------------
-
-宏 :c:macro:`ESP_GOTO_ON_FALSE` 用于条件检查，如果给定条件不等于 ``true``，该宏会打印错误信息，将局部变量 ``ret`` 赋值为给定的 ``err_code``，并使原函数跳转至给定的 ``goto_tag``。
-
+这些宏的默认行为可通过 Kconfig 进行配置：如果启用了 :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` 选项，错误信息将不会被包含在应用程序二进制文件中，也不会被打印出来。
 
 .. _check_macros_examples:
 
-``CHECK 宏使用示例``
--------------------------
+错误处理示例
+-----------------
 
 示例：
 
@@ -142,13 +148,6 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码，:
         // clean up
         return ret;
     }
-
-.. note::
-
-     如果 Kconfig 中的 :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` 选项被打开，CHECK 宏将不会打印错误信息，其他功能不变。
-
-     ``ESP_RETURN_xx`` 和 ``ESP_GOTO_xx`` 宏不可以在中断服务程序里被调用。如需要在中断中使用类似功能，请使用 ``xx_ISR`` 宏，如 ``ESP_RETURN_ON_ERROR_ISR`` 等。
-
 
 错误处理模式
 ------------
@@ -191,7 +190,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码，:
             return err;
         }
 
-3. 转为不可恢复错误，比如使用 ``ESP_ERROR_CHECK``。详情请见 `ESP_ERROR_CHECK 宏 <#esp-error-check-macro>`_ 章节。
+3. 转为不可恢复错误，比如使用 ``ESP_ERROR_CHECK``。详情请见 `用于不可恢复错误的宏 <#esp-error-check-macro>`_ 章节。
 
     对于中间件组件而言，通常并不希望在发生错误时中止应用程序。不过，有时在应用程序级别，这种做法是可以接受的。
 
@@ -208,3 +207,8 @@ C++ 异常
 --------
 
 请参考 :ref:`cplusplus_exceptions`。
+
+API 参考
+-------------
+
+请参考 :ref:`esp-check-api-ref`。
