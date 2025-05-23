@@ -10,22 +10,24 @@
 extern "C" {
 #endif
 
-/** Group: Tee mode control register */
+/** Group: Configuration Registers */
 /** Type of m0_mode_ctrl register
- *  TEE mode control register
+ *  Security mode configuration register
  */
 typedef union {
     struct {
         /** m0_mode : R/W; bitpos: [1:0]; default: 3;
-         *  Configures M0 security level mode.
-         *  0: tee_mode
-         *  1: ree_mode0
-         *  2: ree_mode1
-         *  3: ree_mode2
+         *  Configures the security mode for LP CPU.
+         *  0: TEE
+         *  1: REE0
+         *  2: REE1
+         *  3: REE2
          */
         uint32_t m0_mode:2;
         /** m0_lock : R/W; bitpos: [2]; default: 0;
-         *  Set 1 to lock m0 tee configuration
+         *  Configures to lock the value of LP_TEE_M0_MODE.
+         *  0: Do not lock
+         *  1: Lock
          */
         uint32_t m0_lock:1;
         uint32_t reserved_3:29;
@@ -34,9 +36,9 @@ typedef union {
 } lp_tee_m0_mode_ctrl_reg_t;
 
 
-/** Group: read write control register */
+/** Group: Peripheral Read/Write Control Register */
 /** Type of efuse_ctrl register
- *  efuse read/write control register
+ *  eFuse read/write control register
  */
 typedef union {
     struct {
@@ -94,7 +96,7 @@ typedef union {
 } lp_tee_efuse_ctrl_reg_t;
 
 /** Type of pmu_ctrl register
- *  pmu read/write control register
+ *  PMU read/write control register
  */
 typedef union {
     struct {
@@ -152,7 +154,7 @@ typedef union {
 } lp_tee_pmu_ctrl_reg_t;
 
 /** Type of clkrst_ctrl register
- *  clkrst read/write control register
+ *  LP_CLKRST read/write control register
  */
 typedef union {
     struct {
@@ -210,7 +212,7 @@ typedef union {
 } lp_tee_clkrst_ctrl_reg_t;
 
 /** Type of lp_aon_ctrl_ctrl register
- *  lp_aon_ctrl read/write control register
+ *  LP_AON read/write control register
  */
 typedef union {
     struct {
@@ -268,7 +270,7 @@ typedef union {
 } lp_tee_lp_aon_ctrl_ctrl_reg_t;
 
 /** Type of lp_timer_ctrl register
- *  lp_timer read/write control register
+ *  LP_TIMER read/write control register
  */
 typedef union {
     struct {
@@ -326,7 +328,7 @@ typedef union {
 } lp_tee_lp_timer_ctrl_reg_t;
 
 /** Type of lp_wdt_ctrl register
- *  lp_wdt read/write control register
+ *  LP_WDT read/write control register
  */
 typedef union {
     struct {
@@ -384,7 +386,7 @@ typedef union {
 } lp_tee_lp_wdt_ctrl_reg_t;
 
 /** Type of lp_peri_ctrl register
- *  lp_peri read/write control register
+ *  LPPERI read/write control register
  */
 typedef union {
     struct {
@@ -442,7 +444,7 @@ typedef union {
 } lp_tee_lp_peri_ctrl_reg_t;
 
 /** Type of lp_ana_peri_ctrl register
- *  lp_ana_peri read/write control register
+ *  LP_ANA_PERI read/write control register
  */
 typedef union {
     struct {
@@ -500,7 +502,7 @@ typedef union {
 } lp_tee_lp_ana_peri_ctrl_reg_t;
 
 /** Type of lp_io_ctrl register
- *  lp_io read/write control register
+ *  LP_GPIO and LP_IO_MUX read/write control register
  */
 typedef union {
     struct {
@@ -558,7 +560,7 @@ typedef union {
 } lp_tee_lp_io_ctrl_reg_t;
 
 /** Type of lp_tee_ctrl register
- *  lp_tee read/write control register
+ *  LP_TEE read/write control register
  */
 typedef union {
     struct {
@@ -616,7 +618,7 @@ typedef union {
 } lp_tee_lp_tee_ctrl_reg_t;
 
 /** Type of uart_ctrl register
- *  uart read/write control register
+ *  LP_UART read/write control register
  */
 typedef union {
     struct {
@@ -674,7 +676,7 @@ typedef union {
 } lp_tee_uart_ctrl_reg_t;
 
 /** Type of i2c_ext_ctrl register
- *  i2c_ext read/write control register
+ *  LP_I2C read/write control register
  */
 typedef union {
     struct {
@@ -732,7 +734,7 @@ typedef union {
 } lp_tee_i2c_ext_ctrl_reg_t;
 
 /** Type of i2c_ana_mst_ctrl register
- *  i2c_ana_mst read/write control register
+ *  I2C_ANA_MST read/write control register
  */
 typedef union {
     struct {
@@ -789,66 +791,8 @@ typedef union {
     uint32_t val;
 } lp_tee_i2c_ana_mst_ctrl_reg_t;
 
-/** Type of huk_ctrl register
- *  huk read/write control register
- */
-typedef union {
-    struct {
-        /** read_tee_huk : R/W; bitpos: [0]; default: 1;
-         *  Configures huk registers read permission in tee mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_tee_huk:1;
-        /** read_ree0_huk : R/W; bitpos: [1]; default: 0;
-         *  Configures huk registers read permission in ree0 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree0_huk:1;
-        /** read_ree1_huk : R/W; bitpos: [2]; default: 0;
-         *  Configures huk registers read permission in ree1 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree1_huk:1;
-        /** read_ree2_huk : R/W; bitpos: [3]; default: 0;
-         *  Configures huk registers read permission in ree2 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree2_huk:1;
-        /** write_tee_huk : R/W; bitpos: [4]; default: 1;
-         *  Configures huk registers write permission in tee mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_tee_huk:1;
-        /** write_ree0_huk : R/W; bitpos: [5]; default: 0;
-         *  Configures huk registers write permission in ree0 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree0_huk:1;
-        /** write_ree1_huk : R/W; bitpos: [6]; default: 0;
-         *  Configures huk registers write permission in ree1 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree1_huk:1;
-        /** write_ree2_huk : R/W; bitpos: [7]; default: 0;
-         *  Configures huk registers write permission in ree2 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree2_huk:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} lp_tee_huk_ctrl_reg_t;
-
 /** Type of lp_apm_ctrl register
- *  lp_apm read/write control register
+ *  LP_APM read/write control register
  */
 typedef union {
     struct {
@@ -905,18 +849,16 @@ typedef union {
     uint32_t val;
 } lp_tee_lp_apm_ctrl_reg_t;
 
-
-/** Group: Force access to hpmem configuration register */
 /** Type of force_acc_hp register
- *  Force access to hpmem configuration register
+ *  Force access to HP SRAM configuration register
  */
 typedef union {
     struct {
         /** force_acc_hpmem_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether to allow LP CPU to force access to HP_MEM regardless of
+         *  Configures whether to allow LP CPU to forcibly access HP SRAM regardless of
          *  permission management.
-         *  0: disable force access HP_MEM
-         *  1: enable force access HP_MEM
+         *  0: Disable force access to HP SRAM
+         *  1: Enable force access to HP SRAM
          */
         uint32_t force_acc_hpmem_en:1;
         uint32_t reserved_1:31;
@@ -924,17 +866,15 @@ typedef union {
     uint32_t val;
 } lp_tee_force_acc_hp_reg_t;
 
-
-/** Group: config register */
 /** Type of bus_err_conf register
- *  Clock gating register
+ *  Error message return configuration register
  */
 typedef union {
     struct {
         /** bus_err_resp_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether return error response to cpu when access blocked
-         *  0: disable error response
-         *  1: enable error response
+         *  Configures whether to return error message to CPU when access is blocked.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t bus_err_resp_en:1;
         uint32_t reserved_1:31;
@@ -943,7 +883,7 @@ typedef union {
 } lp_tee_bus_err_conf_reg_t;
 
 
-/** Group: clock gating register */
+/** Group: Clock Gating Registers */
 /** Type of clock_gate register
  *  Clock gating register
  */
@@ -951,8 +891,8 @@ typedef union {
     struct {
         /** clk_en : R/W; bitpos: [0]; default: 1;
          *  Configures whether to keep the clock always on.
-         *  0: enable automatic clock gating
-         *  1: keep the clock always on
+         *  0: Enable automatic clock gating
+         *  1: Keep the clock always on
          */
         uint32_t clk_en:1;
         uint32_t reserved_1:31;
@@ -961,14 +901,14 @@ typedef union {
 } lp_tee_clock_gate_reg_t;
 
 
-/** Group: Version control register */
+/** Group: Version Control Registers */
 /** Type of date register
  *  Version control register
  */
 typedef union {
     struct {
         /** date : R/W; bitpos: [27:0]; default: 2363416;
-         *  Version control register
+         *  Version control register.
          */
         uint32_t date:28;
         uint32_t reserved_28:4;
@@ -995,7 +935,7 @@ typedef struct {
     uint32_t reserved_03c;
     volatile lp_tee_i2c_ext_ctrl_reg_t i2c_ext_ctrl;
     volatile lp_tee_i2c_ana_mst_ctrl_reg_t i2c_ana_mst_ctrl;
-    volatile lp_tee_huk_ctrl_reg_t huk_ctrl;
+    uint32_t reserved_048;
     volatile lp_tee_lp_apm_ctrl_reg_t lp_apm_ctrl;
     uint32_t reserved_050[16];
     volatile lp_tee_force_acc_hp_reg_t force_acc_hp;
