@@ -785,25 +785,25 @@ static void tx_status_handler(void *arg, esp_event_base_t event_base,
         return;
     }
     if (!auth) {
-        dpp_abort_with_failure(ESP_ERR_DPP_FAILURE);
+        wpa_printf(MSG_DEBUG, "Auth already deinitialized, return");
         return;
     }
     if (auth->waiting_auth_conf) {
         eloop_cancel_timeout(esp_dpp_auth_resp_retry_timeout, NULL, NULL);
-        if (evt->status) {
+        if (evt->status == WIFI_ACTION_TX_FAILED) {
             /* failed to send auth response frame */
             eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
             eloop_register_timeout(1, 0, esp_dpp_auth_resp_retry, NULL, NULL);
-        } else {
+        } else if (evt->status == WIFI_ACTION_TX_DONE) {
             eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
             eloop_register_timeout(ESP_DPP_AUTH_TIMEOUT_SECS, 0, esp_dpp_auth_conf_wait_timeout, NULL, NULL);
         }
     } else if (auth->auth_success) {
-        if (evt->status) {
+        if (evt->status == WIFI_ACTION_TX_FAILED) {
             /* failed to send gas query frame, retry logic needed? */
             wpa_printf(MSG_WARNING, "DPP: failed to send GAS query frame");
             dpp_abort_with_failure(ESP_ERR_DPP_TX_FAILURE);
-        } else {
+        } else if (evt->status == WIFI_ACTION_TX_DONE) {
             eloop_cancel_timeout(gas_query_timeout, NULL, auth);
             eloop_register_timeout(ESP_GAS_TIMEOUT_SECS, 0, gas_query_timeout, NULL, auth);
         }
