@@ -1053,7 +1053,7 @@ IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint3
 
 #if SPI_OUT_TS_SYNC_SLEEP_SUPPORT
             if (ts_sync_inited && ts_sync_enabled) {
-                if ((last_tx_done_ts - ts_sync_data.esp_ts) >= SPI_OUT_TS_SYNC_TIMEOUT) {
+                if (last_tx_done_ts >= (SPI_OUT_TS_SYNC_TIMEOUT + ts_sync_data.esp_ts)) {
                     if (spi_out_log_cb_check_trans(ll_task_log_cb, sizeof(ts_sync_data_t), &need_append)) {
                         spi_out_ts_sync_toggle();
                         spi_out_log_cb_write(ll_task_log_cb, (const uint8_t *)&ts_sync_data,
