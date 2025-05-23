@@ -69,7 +69,7 @@ The CSV format is the same format as printed in the summaries shown above. Howev
     ota_1,    app,  ota_1,    ,         1M
     nvs_key,  data, nvs_keys, ,        0x1000
 
-* Whitespace between fields is ignored, and so is any line starting with # (comments).
+* Whitespace between fields is ignored, and so is any line starting with ``#`` (comments).
 * Each non-comment line in the CSV file is a partition definition.
 * If you change the value of :ref:`CONFIG_PARTITION_TABLE_OFFSET`, you should update any fixed ``Offset`` in your CSV file to avoid overlaps with the new partition table location. Alternatively, leaving the ``Offset`` field blank allows the ``gen_esp32part.py`` tool to automatically calculate the correct offset based on the current partition table offset and alignment requirements.
 
@@ -226,7 +226,7 @@ Offset & Size
 
 .. note::
 
-    If you want the partitions in the partition table to work relative to any placement (:ref:`CONFIG_PARTITION_TABLE_OFFSET`) of the table itself, leave the offset field (in CSV file) for all partitions blank. Similarly, if changing the partition table offset then be aware that all blank partition offsets may change to match, and that any fixed offsets may now collide with the partition table (causing an error).
+    If you want the partitions in the partition table to work relative to any placement (:ref:`CONFIG_PARTITION_TABLE_OFFSET`) of the table itself, leave the offset field (in CSV file) for all partitions blank. Similarly, if changing the partition table offset, then be aware that all blank partition offsets may change to match, and that any fixed offsets may now collide with the partition table (causing an error).
 
 Flags
 ~~~~~
