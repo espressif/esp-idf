@@ -208,7 +208,9 @@ esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode);
 esp_err_t uart_get_sclk_freq(uart_sclk_t sclk, uint32_t* out_freq_hz);
 
 /**
- * @brief Set UART baud rate.
+ * @brief Set desired UART baud rate.
+ *
+ * Note that the actual baud rate set could have a slight deviation from the user-configured value due to rounding error.
  *
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param baudrate UART baud rate.
@@ -220,7 +222,9 @@ esp_err_t uart_get_sclk_freq(uart_sclk_t sclk, uint32_t* out_freq_hz);
 esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baudrate);
 
 /**
- * @brief Get the UART baud rate configuration.
+ * @brief Get the actual UART baud rate.
+ *
+ * It returns the real UART rate set in the hardware. It could have a slight deviation from the user-configured baud rate.
  *
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param baudrate Pointer to accept value of UART baud rate

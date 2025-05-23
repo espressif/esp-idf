@@ -118,7 +118,8 @@ typedef struct {
  * @brief UART configuration parameters for uart_param_config function
  */
 typedef struct {
-    int baud_rate;                      /*!< UART baud rate*/
+    int baud_rate;                      /*!< UART baud rate
+                                             Note that the actual baud rate set could have a slight deviation from the user-configured value due to rounding error*/
     uart_word_length_t data_bits;       /*!< UART byte size*/
     uart_parity_t parity;               /*!< UART parity mode*/
     uart_stop_bits_t stop_bits;         /*!< UART stop bits*/
