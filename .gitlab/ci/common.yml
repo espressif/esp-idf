@@ -198,13 +198,21 @@ variables:
   fi
 
   # Custom OpenOCD
-  if [[ ! -z "$OOCD_DISTRO_URL" && "$CI_JOB_STAGE" == "target_test" ]]; then
-    echo "Using custom OpenOCD from ${OOCD_DISTRO_URL}"
-    wget $OOCD_DISTRO_URL
-    ARCH_NAME=$(basename $OOCD_DISTRO_URL)
-    tar -x -f $ARCH_NAME
-    export OPENOCD_SCRIPTS=$PWD/openocd-esp32/share/openocd/scripts
-    export PATH=$PWD/openocd-esp32/bin:$PATH
+  if [[ "$CI_JOB_STAGE" == "target_test" ]]; then
+    machine="$(uname -m)"
+    if [[ "$machine" == "armv7l" ]] ; then
+      OOCD_DISTRO_URL="$OOCD_DISTRO_URL_ARMHF"
+    elif [[ "$machine" == "aarch64" ]] ; then
+      OOCD_DISTRO_URL="$OOCD_DISTRO_URL_ARM64"
+    fi
+    if [[ ! -z "$OOCD_DISTRO_URL" ]]; then
+      echo "Using custom OpenOCD from ${OOCD_DISTRO_URL}"
+      wget $OOCD_DISTRO_URL
+      ARCH_NAME=$(basename $OOCD_DISTRO_URL)
+      tar -x -f $ARCH_NAME
+      export OPENOCD_SCRIPTS=$PWD/openocd-esp32/share/openocd/scripts
+      export PATH=$PWD/openocd-esp32/bin:$PATH
+    fi
   fi
 
   if [[ -n "$CI_PYTHON_TOOL_REPO" ]]; then
