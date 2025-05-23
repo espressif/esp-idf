@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -100,7 +100,7 @@ extern "C" {
 #define LP_UART_RXFIFO_TOUT_INT_RAW_V  0x00000001U
 #define LP_UART_RXFIFO_TOUT_INT_RAW_S  8
 /** LP_UART_SW_XON_INT_RAW : R/WTC/SS; bitpos: [9]; default: 0;
- *  This interrupt raw bit turns to high level when receiver recevies Xon char when
+ *  This interrupt raw bit turns to high level when receiver receives Xon char when
  *  uart_sw_flow_con_en is set to 1.
  */
 #define LP_UART_SW_XON_INT_RAW    (BIT(9))
@@ -671,7 +671,7 @@ extern "C" {
 #define LP_UART_STOP_BIT_NUM_V  0x00000003U
 #define LP_UART_STOP_BIT_NUM_S  4
 /** LP_UART_TXD_BRK : R/W; bitpos: [6]; default: 0;
- *  Set this bit to enbale transmitter to  send NULL when the process of sending data
+ *  Set this bit to enable transmitter to  send NULL when the process of sending data
  *  is done.
  */
 #define LP_UART_TXD_BRK    (BIT(6))
@@ -1151,7 +1151,7 @@ extern "C" {
  */
 #define LP_UART_TOUT_CONF_SYNC_REG (DR_REG_LP_UART_BASE + 0x64)
 /** LP_UART_RX_TOUT_EN : R/W; bitpos: [0]; default: 0;
- *  This is the enble bit for uart receiver's timeout function.
+ *  This is the enable bit for uart receiver's timeout function.
  */
 #define LP_UART_RX_TOUT_EN    (BIT(0))
 #define LP_UART_RX_TOUT_EN_M  (LP_UART_RX_TOUT_EN_V << LP_UART_RX_TOUT_EN_S)
@@ -1235,48 +1235,6 @@ extern "C" {
  *  UART core clock configuration
  */
 #define LP_UART_CLK_CONF_REG (DR_REG_LP_UART_BASE + 0x88)
-/** LP_UART_SCLK_DIV_B : R/W; bitpos: [5:0]; default: 0;
- *  The  denominator of the frequency divider factor.
- */
-#define LP_UART_SCLK_DIV_B    0x0000003FU
-#define LP_UART_SCLK_DIV_B_M  (LP_UART_SCLK_DIV_B_V << LP_UART_SCLK_DIV_B_S)
-#define LP_UART_SCLK_DIV_B_V  0x0000003FU
-#define LP_UART_SCLK_DIV_B_S  0
-/** LP_UART_SCLK_DIV_A : R/W; bitpos: [11:6]; default: 0;
- *  The numerator of the frequency divider factor.
- */
-#define LP_UART_SCLK_DIV_A    0x0000003FU
-#define LP_UART_SCLK_DIV_A_M  (LP_UART_SCLK_DIV_A_V << LP_UART_SCLK_DIV_A_S)
-#define LP_UART_SCLK_DIV_A_V  0x0000003FU
-#define LP_UART_SCLK_DIV_A_S  6
-/** LP_UART_SCLK_DIV_NUM : R/W; bitpos: [19:12]; default: 1;
- *  The integral part of the frequency divider factor.
- */
-#define LP_UART_SCLK_DIV_NUM    0x000000FFU
-#define LP_UART_SCLK_DIV_NUM_M  (LP_UART_SCLK_DIV_NUM_V << LP_UART_SCLK_DIV_NUM_S)
-#define LP_UART_SCLK_DIV_NUM_V  0x000000FFU
-#define LP_UART_SCLK_DIV_NUM_S  12
-/** LP_UART_SCLK_SEL : R/W; bitpos: [21:20]; default: 3;
- *  UART clock source select. 1: 80Mhz.  2: 8Mhz.  3: XTAL.
- */
-#define LP_UART_SCLK_SEL    0x00000003U
-#define LP_UART_SCLK_SEL_M  (LP_UART_SCLK_SEL_V << LP_UART_SCLK_SEL_S)
-#define LP_UART_SCLK_SEL_V  0x00000003U
-#define LP_UART_SCLK_SEL_S  20
-/** LP_UART_SCLK_EN : R/W; bitpos: [22]; default: 1;
- *  Set this bit to enable UART Tx/Rx clock.
- */
-#define LP_UART_SCLK_EN    (BIT(22))
-#define LP_UART_SCLK_EN_M  (LP_UART_SCLK_EN_V << LP_UART_SCLK_EN_S)
-#define LP_UART_SCLK_EN_V  0x00000001U
-#define LP_UART_SCLK_EN_S  22
-/** LP_UART_RST_CORE : R/W; bitpos: [23]; default: 0;
- *  Write 1 then write 0 to this bit to reset UART Tx/Rx.
- */
-#define LP_UART_RST_CORE    (BIT(23))
-#define LP_UART_RST_CORE_M  (LP_UART_RST_CORE_V << LP_UART_RST_CORE_S)
-#define LP_UART_RST_CORE_V  0x00000001U
-#define LP_UART_RST_CORE_S  23
 /** LP_UART_TX_SCLK_EN : R/W; bitpos: [24]; default: 1;
  *  Set this bit to enable UART Tx clock.
  */

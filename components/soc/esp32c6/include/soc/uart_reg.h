@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -100,7 +100,7 @@ extern "C" {
 #define UART_RXFIFO_TOUT_INT_RAW_V  0x00000001U
 #define UART_RXFIFO_TOUT_INT_RAW_S  8
 /** UART_SW_XON_INT_RAW : R/WTC/SS; bitpos: [9]; default: 0;
- *  This interrupt raw bit turns to high level when receiver recevies Xon char when
+ *  This interrupt raw bit turns to high level when receiver receives Xon char when
  *  uart_sw_flow_con_en is set to 1.
  */
 #define UART_SW_XON_INT_RAW    (BIT(9))
@@ -760,7 +760,7 @@ extern "C" {
 #define UART_STOP_BIT_NUM_V  0x00000003U
 #define UART_STOP_BIT_NUM_S  4
 /** UART_TXD_BRK : R/W; bitpos: [6]; default: 0;
- *  Set this bit to enbale transmitter to  send NULL when the process of sending data
+ *  Set this bit to enable transmitter to  send NULL when the process of sending data
  *  is done.
  */
 #define UART_TXD_BRK    (BIT(6))
@@ -1326,7 +1326,7 @@ extern "C" {
  */
 #define UART_TOUT_CONF_SYNC_REG(i) (REG_UART_BASE(i) + 0x64)
 /** UART_RX_TOUT_EN : R/W; bitpos: [0]; default: 0;
- *  This is the enble bit for uart receiver's timeout function.
+ *  This is the enable bit for uart receiver's timeout function.
  */
 #define UART_RX_TOUT_EN    (BIT(0))
 #define UART_RX_TOUT_EN_M  (UART_RX_TOUT_EN_V << UART_RX_TOUT_EN_S)
@@ -1450,7 +1450,7 @@ extern "C" {
  */
 #define UART_HIGHPULSE_REG(i) (REG_UART_BASE(i) + 0x80)
 /** UART_HIGHPULSE_MIN_CNT : RO; bitpos: [11:0]; default: 4095;
- *  This register stores  the value of the maxinum duration time for the high level
+ *  This register stores  the value of the maximum duration time for the high level
  *  pulse. It is used in baud rate-detect process.
  */
 #define UART_HIGHPULSE_MIN_CNT    0x00000FFFU
@@ -1470,6 +1470,40 @@ extern "C" {
 #define UART_RXD_EDGE_CNT_M  (UART_RXD_EDGE_CNT_V << UART_RXD_EDGE_CNT_S)
 #define UART_RXD_EDGE_CNT_V  0x000003FFU
 #define UART_RXD_EDGE_CNT_S  0
+
+
+/** UART_CLK_CONF_REG register
+ *  UART core clock configuration
+ */
+#define UART_CLK_CONF_REG(i) (REG_UART_BASE(i) + 0x88)
+/** UART_TX_SCLK_EN : R/W; bitpos: [24]; default: 1;
+ *  Set this bit to enable UART Tx clock.
+ */
+#define UART_TX_SCLK_EN    (BIT(24))
+#define UART_TX_SCLK_EN_M  (UART_TX_SCLK_EN_V << UART_TX_SCLK_EN_S)
+#define UART_TX_SCLK_EN_V  0x00000001U
+#define UART_TX_SCLK_EN_S  24
+/** UART_RX_SCLK_EN : R/W; bitpos: [25]; default: 1;
+ *  Set this bit to enable UART Rx clock.
+ */
+#define UART_RX_SCLK_EN    (BIT(25))
+#define UART_RX_SCLK_EN_M  (UART_RX_SCLK_EN_V << UART_RX_SCLK_EN_S)
+#define UART_RX_SCLK_EN_V  0x00000001U
+#define UART_RX_SCLK_EN_S  25
+/** UART_TX_RST_CORE : R/W; bitpos: [26]; default: 0;
+ *  Write 1 then write 0 to this bit to reset UART Tx.
+ */
+#define UART_TX_RST_CORE    (BIT(26))
+#define UART_TX_RST_CORE_M  (UART_TX_RST_CORE_V << UART_TX_RST_CORE_S)
+#define UART_TX_RST_CORE_V  0x00000001U
+#define UART_TX_RST_CORE_S  26
+/** UART_RX_RST_CORE : R/W; bitpos: [27]; default: 0;
+ *  Write 1 then write 0 to this bit to reset UART Rx.
+ */
+#define UART_RX_RST_CORE    (BIT(27))
+#define UART_RX_RST_CORE_M  (UART_RX_RST_CORE_V << UART_RX_RST_CORE_S)
+#define UART_RX_RST_CORE_V  0x00000001U
+#define UART_RX_RST_CORE_S  27
 
 /** UART_DATE_REG register
  *  UART Version register
