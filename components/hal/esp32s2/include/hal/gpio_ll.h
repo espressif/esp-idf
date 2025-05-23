@@ -295,18 +295,6 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 }
 
 /**
- * @brief Disconnect any peripheral output signal routed via GPIO matrix to the pin
- *
- * @param  hw Peripheral GPIO hardware instance address.
- * @param  gpio_num GPIO number
- */
-__attribute__((always_inline))
-static inline void gpio_ll_matrix_out_default(gpio_dev_t *hw, uint32_t gpio_num)
-{
-    REG_WRITE(GPIO_FUNC0_OUT_SEL_CFG_REG + (gpio_num * 4), SIG_GPIO_OUT_IDX);
-}
-
-/**
  * @brief  Select a function for the pin in the IOMUX
  *
  * @param  hw Peripheral GPIO hardware instance address.
@@ -502,30 +490,20 @@ static inline void gpio_ll_set_input_signal_from(gpio_dev_t *hw, uint32_t signal
 }
 
 /**
-  * @brief Configure the source of output enable signal for the GPIO pin.
-  *
-  * @param hw Peripheral GPIO hardware instance address.
-  * @param gpio_num GPIO number of the pad.
-  * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG
-  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
-  */
-static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
-{
-    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;       // control valid only when using gpio matrix to route signal to the IO
-    hw->func_out_sel_cfg[gpio_num].oen_sel = !ctrl_by_periph;
-}
-
-/**
- * @brief  Control the pin in the IOMUX
+ * @brief Connect a GPIO input with a peripheral signal, which tagged as input attribute.
  *
- * @param  bmap   write mask of control value
- * @param  val    Control value
- * @param  shift  write mask shift of control value
+ * @note There's no limitation on the number of signals that a GPIO can combine with.
+ *
+ * @param signal_idx Peripheral signal index (tagged as input attribute)
+ * @param gpio_num GPIO number, especially, `GPIO_MATRIX_CONST_ZERO_INPUT` means connect logic 0 to signal
+ *                                          `GPIO_MATRIX_CONST_ONE_INPUT` means connect logic 1 to signal
+ * @param in_inv True if the GPIO input needs to be inverted, otherwise False.
  */
-__attribute__((always_inline))
-static inline void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
+static inline void gpio_ll_set_input_signal_matrix_source(gpio_dev_t *hw, uint32_t signal_idx, uint32_t gpio_num, bool in_inv)
 {
-    SET_PERI_REG_BITS(PIN_CTRL, bmap, val, shift);
+    hw->func_in_sel_cfg[signal_idx].func_sel = gpio_num;
+    hw->func_in_sel_cfg[signal_idx].sig_in_inv = in_inv;
+    gpio_ll_set_input_signal_from(hw, signal_idx, true);
 }
 
 /**
@@ -543,6 +521,48 @@ static inline int gpio_ll_get_in_signal_connected_io(gpio_dev_t *hw, uint32_t in
     typeof(hw->func_in_sel_cfg[in_sig_idx]) reg;
     reg.val = hw->func_in_sel_cfg[in_sig_idx].val;
     return (reg.sig_in_sel ? reg.func_sel : -1);
+}
+
+/**
+  * @brief Configure the source of output enable signal for the GPIO pin.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number of the pad.
+  * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG
+  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
+  */
+static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
+{
+    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;       // control valid only when using gpio matrix to route signal to the IO
+    hw->func_out_sel_cfg[gpio_num].oen_sel = !ctrl_by_periph;
+}
+
+/**
+ * @brief Connect a peripheral signal which tagged as output attribute with a GPIO.
+ *
+ * @note There's no limitation on the number of signals that a GPIO can combine with.
+ *
+ * @param gpio_num GPIO number
+ * @param signal_idx Peripheral signal index (tagged as output attribute). Particularly, `SIG_GPIO_OUT_IDX` means disconnect GPIO and other peripherals. Only the GPIO driver can control the output level.
+ * @param out_inv True if the signal output needs to be inverted, otherwise False.
+ */
+static inline void gpio_ll_set_output_signal_matrix_source(gpio_dev_t *hw, uint32_t gpio_num, uint32_t signal_idx, bool out_inv)
+{
+    hw->func_out_sel_cfg[gpio_num].func_sel = signal_idx;
+    hw->func_out_sel_cfg[gpio_num].inv_sel = out_inv;
+}
+
+/**
+ * @brief  Control the pin in the IOMUX
+ *
+ * @param  bmap   write mask of control value
+ * @param  val    Control value
+ * @param  shift  write mask shift of control value
+ */
+__attribute__((always_inline))
+static inline void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
+{
+    SET_PERI_REG_BITS(PIN_CTRL, bmap, val, shift);
 }
 
 /**

@@ -7,3 +7,5 @@ CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT=y
 # ledc driver uses assert in the ISR code path
 CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE=y
 CONFIG_LEDC_CTRL_FUNC_IN_IRAM=y
+# test gpio signal connection with non-default option
+CONFIG_HAL_GPIO_USE_ROM_IMPL=n

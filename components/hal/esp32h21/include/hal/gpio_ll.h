@@ -328,21 +328,6 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 }
 
 /**
- * @brief Disconnect any peripheral output signal routed via GPIO matrix to the pin
- *
- * @param  hw Peripheral GPIO hardware instance address.
- * @param  gpio_num GPIO number
- */
-__attribute__((always_inline))
-static inline void gpio_ll_matrix_out_default(gpio_dev_t *hw, uint32_t gpio_num)
-{
-    gpio_funcn_out_sel_cfg_reg_t reg = {
-      .funcn_out_sel = SIG_GPIO_OUT_IDX,
-    };
-    hw->funcn_out_sel_cfg[gpio_num].val = reg.val;
-}
-
-/**
  * @brief  GPIO set output level
  *
  * @param  hw Peripheral GPIO hardware instance address.
@@ -479,6 +464,40 @@ static inline void gpio_ll_set_input_signal_from(gpio_dev_t *hw, uint32_t signal
 }
 
 /**
+ * @brief Connect a GPIO input with a peripheral signal, which tagged as input attribute.
+ *
+ * @note There's no limitation on the number of signals that a GPIO can combine with.
+ *
+ * @param signal_idx Peripheral signal index (tagged as input attribute)
+ * @param gpio_num GPIO number, especially, `GPIO_MATRIX_CONST_ZERO_INPUT` means connect logic 0 to signal
+ *                                          `GPIO_MATRIX_CONST_ONE_INPUT` means connect logic 1 to signal
+ * @param in_inv True if the GPIO input needs to be inverted, otherwise False.
+ */
+static inline void gpio_ll_set_input_signal_matrix_source(gpio_dev_t *hw, uint32_t signal_idx, uint32_t gpio_num, bool in_inv)
+{
+    hw->func_in_sel_cfg[signal_idx].func_in_sel = gpio_num;
+    hw->func_in_sel_cfg[signal_idx].func_in_inv_sel = in_inv;
+    gpio_ll_set_input_signal_from(hw, signal_idx, true);
+}
+
+/**
+ * @brief Get the GPIO number that is routed to the input peripheral signal through GPIO matrix.
+ *
+ * @param hw Peripheral GPIO hardware instance address.
+ * @param in_sig_idx Peripheral signal index (tagged as input attribute).
+ *
+ * @return
+ *    - -1     Signal bypassed GPIO matrix
+ *    - Others GPIO number
+ */
+static inline int gpio_ll_get_in_signal_connected_io(gpio_dev_t *hw, uint32_t in_sig_idx)
+{
+    gpio_func_in_sel_cfg_reg_t reg;
+    reg.val = hw->func_in_sel_cfg[in_sig_idx].val;
+    return (reg.sig_in_sel ? reg.func_in_sel : -1);
+}
+
+/**
   * @brief Configure the source of output enable signal for the GPIO pin.
   *
   * @param hw Peripheral GPIO hardware instance address.
@@ -490,6 +509,21 @@ static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_n
 {
     hw->funcn_out_sel_cfg[gpio_num].funcn_oe_inv_sel = oen_inv;       // control valid only when using gpio matrix to route signal to the IO
     hw->funcn_out_sel_cfg[gpio_num].funcn_oe_sel = !ctrl_by_periph;
+}
+
+/**
+ * @brief Connect a peripheral signal which tagged as output attribute with a GPIO.
+ *
+ * @note There's no limitation on the number of signals that a GPIO can combine with.
+ *
+ * @param gpio_num GPIO number
+ * @param signal_idx Peripheral signal index (tagged as output attribute). Particularly, `SIG_GPIO_OUT_IDX` means disconnect GPIO and other peripherals. Only the GPIO driver can control the output level.
+ * @param out_inv True if the signal output needs to be inverted, otherwise False.
+ */
+static inline void gpio_ll_set_output_signal_matrix_source(gpio_dev_t *hw, uint32_t gpio_num, uint32_t signal_idx, bool out_inv)
+{
+    hw->funcn_out_sel_cfg[gpio_num].funcn_out_sel = signal_idx;
+    hw->funcn_out_sel_cfg[gpio_num].funcn_out_inv_sel = out_inv;
 }
 
 /**
@@ -530,23 +564,6 @@ static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
         // Unsupported IO_MUX clock source
         HAL_ASSERT(false);
     }
-}
-
-/**
- * @brief Get the GPIO number that is routed to the input peripheral signal through GPIO matrix.
- *
- * @param hw Peripheral GPIO hardware instance address.
- * @param in_sig_idx Peripheral signal index (tagged as input attribute).
- *
- * @return
- *    - -1     Signal bypassed GPIO matrix
- *    - Others GPIO number
- */
-static inline int gpio_ll_get_in_signal_connected_io(gpio_dev_t *hw, uint32_t in_sig_idx)
-{
-    gpio_func_in_sel_cfg_reg_t reg;
-    reg.val = hw->func_in_sel_cfg[in_sig_idx].val;
-    return (reg.sig_in_sel ? reg.func_in_sel : -1);
 }
 
 /**

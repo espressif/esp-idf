@@ -91,6 +91,16 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
             features will be added and bugs will be fixed in the IDF source
             but cannot be synced to ROM.
 
+    config HAL_GPIO_USE_ROM_IMPL
+        bool "Use ROM implementation of GPIO HAL driver"
+        default y
+        help
+            Enable this flag to use HAL functions from ROM when applicable instead of ESP-IDF.
+
+            If keeping this as "n" in your project, you will have less free IRAM.
+            When compiling an application for a CPU that cannot access to the ROM memory,
+            this option should be disabled.
+
     config HAL_ECDSA_GEN_SIG_CM
         bool "Enable countermeasure for ECDSA signature generation"
         depends on IDF_TARGET_ESP32H2

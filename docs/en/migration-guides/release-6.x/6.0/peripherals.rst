@@ -30,6 +30,11 @@ The ``pull_up`` and ``pull_down`` members have been removed from the following c
     - :cpp:type:`mcpwm_gpio_sync_src_config_t`
     - :cpp:type:`mcpwm_capture_channel_config_t`
 
+GPIO
+----
+
+:func:`gpio_iomux_in` and :func:`gpio_iomux_out` have been replaced by :func:`gpio_iomux_input` and :func:`gpio_iomux_output`, and have been moved to ``esp_private/gpio.h`` header file as private APIs for internal use only.
+
 I2C
 ---
 

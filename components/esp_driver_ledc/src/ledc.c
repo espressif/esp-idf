@@ -17,7 +17,6 @@
 #include "soc/soc_caps.h"
 #include "hal/ledc_hal.h"
 #include "driver/ledc.h"
-#include "esp_rom_gpio.h"
 #include "clk_ctrl_os.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/periph_ctrl.h"
@@ -807,14 +806,13 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t *timer_conf)
 
 esp_err_t _ledc_set_pin(int gpio_num, bool out_inv, ledc_mode_t speed_mode, ledc_channel_t channel)
 {
-    gpio_func_sel(gpio_num, PIN_FUNC_GPIO);
     // reserve the GPIO output path, because we don't expect another peripheral to signal to the same GPIO
     uint64_t old_gpio_rsv_mask = esp_gpio_reserve(BIT64(gpio_num));
     // check if the GPIO is already used by others, LEDC signal only uses the output path of the GPIO
     if (old_gpio_rsv_mask & BIT64(gpio_num)) {
         ESP_LOGW(LEDC_TAG, "GPIO %d is not usable, maybe conflict with others", gpio_num);
     }
-    esp_rom_gpio_connect_out_signal(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + channel, out_inv, 0);
+    gpio_matrix_output(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + channel, out_inv, false);
     return ESP_OK;
 }
 

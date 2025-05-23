@@ -12,7 +12,7 @@ There is no need to enable the output for the IO explicitly, it is done internal
 
 If the signal is routed through IO MUX to the pin, then only needs to call `gpio_iomux_output` to select the IO MUX function index. Output enable is controlled by the signal itself.
 
-If the signal is routed through GPIO Matrix to the pin, then first call `gpio_func_sel` to let the pin use `PIN_FUNC_GPIO` function, follow by calling `esp_rom_gpio_connect_out_signal` to connect the signal.
+If the signal is routed through GPIO Matrix to the pin, then call `gpio_matrix_output` to select the `PIN_FUNC_GPIO` function and connect the signal to the pin.
 
 When a peripheral driver does de-initialization, to de-configure the pin as the peripheral signal output, a call to `gpio_output_disable` is enough. It will disconnect the signal internally.
 
@@ -20,7 +20,7 @@ When a peripheral driver does de-initialization, to de-configure the pin as the 
 
 If the signal is routed through IO MUX to the pin, then only needs to call `gpio_iomux_input` to select the IO MUX function index and direct the signal to IO MUX. Input will be enabled for the IO internally.
 
-If the signal is routed through GPIO Matrix to the pin, then call `gpio_input_enable` and `esp_rom_gpio_connect_in_signal` to enable the input and connect the signal to the pin.
+If the signal is routed through GPIO Matrix to the pin, then call `gpio_matrix_input` to enable the input and connect the signal to the pin.
 
 When a peripheral driver does de-initialization, to de-configure the pin as the peripheral signal input, use `esp_rom_gpio_connect_in_signal` to connect the signal to CONST_ONE or CONST_ZERO, so that it is disconnected from the pin. It is not desired to call `gpio_input_disable`, because there might be other drivers still using this pin as an input.
 

@@ -813,13 +813,6 @@ esp_err_t IRAM_ATTR gpio_force_unhold_all()
 }
 #endif //SOC_GPIO_SUPPORT_FORCE_HOLD
 
-// Deprecated function
-void gpio_iomux_in(uint32_t gpio, uint32_t signal_idx)
-{
-    gpio_ll_set_input_signal_from(gpio_context.gpio_hal->dev, signal_idx, false);
-    gpio_hal_input_enable(gpio_context.gpio_hal, gpio);
-}
-
 esp_err_t gpio_iomux_input(gpio_num_t gpio_num, int func, uint32_t signal_idx)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
@@ -831,13 +824,6 @@ esp_err_t gpio_iomux_input(gpio_num_t gpio_num, int func, uint32_t signal_idx)
     return ESP_OK;
 }
 
-// Deprecated function
-void gpio_iomux_out(uint8_t gpio_num, int func, bool out_en_inv)
-{
-    (void)out_en_inv; // out_en_inv only takes effect when signal goes through gpio matrix to the IO
-    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func);
-}
-
 esp_err_t gpio_iomux_output(gpio_num_t gpio_num, int func)
 {
     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
@@ -845,6 +831,24 @@ esp_err_t gpio_iomux_output(gpio_num_t gpio_num, int func)
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
     gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func);
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+
+    return ESP_OK;
+}
+
+esp_err_t gpio_matrix_input(gpio_num_t gpio_num, uint32_t signal_idx, bool in_inv)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+
+    gpio_hal_matrix_in(gpio_context.gpio_hal, gpio_num, signal_idx, in_inv);
+
+    return ESP_OK;
+}
+
+esp_err_t gpio_matrix_output(gpio_num_t gpio_num, uint32_t signal_idx, bool out_inv, bool oen_inv)
+{
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+
+    gpio_hal_matrix_out(gpio_context.gpio_hal, gpio_num, signal_idx, out_inv, oen_inv);
 
     return ESP_OK;
 }
