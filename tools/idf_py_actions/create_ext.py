@@ -2,13 +2,57 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
 import re
+import shutil
 import sys
-from shutil import copyfile
-from shutil import copytree
 from typing import Dict
 
 import click
 from idf_py_actions.tools import PropertyDict
+
+# See https://github.com/espressif/esp-idf/issues/15964
+def custom_copytree(src: str, dst: str, dirs_exist_ok: bool = False) -> str:
+    if not os.path.exists(src):
+        raise FileNotFoundError(f"Source directory '{src}' does not exist.")
+    if not os.path.isdir(src):
+        raise NotADirectoryError(f"Source path '{src}' is not a directory.")
+    if (not dirs_exist_ok) and os.path.exists(dst) and os.listdir(dst):
+        raise FileExistsError(
+            f"Destination directory '{dst}' already exists and is not empty and dirs_exist_ok is False."
+        )
+
+    try:
+        os.makedirs(dst, exist_ok=True)
+    except FileExistsError:
+        raise NotADirectoryError(f"Destination path '{dst}' exists and is not a directory.")
+    except OSError as e:
+        raise shutil.Error(f"Could not create destination directory '{dst}': {e}")
+
+    names = os.listdir(src)
+    errors = []
+    for name in names:
+        srcname = os.path.join(src, name)
+        dstname = os.path.join(dst, name)
+        try:
+            if os.path.islink(srcname):
+                if os.path.isdir(srcname):
+                    custom_copytree(srcname, dstname, dirs_exist_ok=True)
+                else:
+                    shutil.copyfile(srcname, dstname)
+            elif os.path.isdir(srcname):
+                custom_copytree(srcname, dstname, dirs_exist_ok=True)
+            else:
+                shutil.copyfile(srcname, dstname)
+        except shutil.Error as e:
+            if hasattr(e, 'args') and e.args and isinstance(e.args[0], list):
+                errors.extend(e.args[0])
+            else:
+                errors.append((srcname, dstname, str(e)))
+        except OSError as why:
+            errors.append((srcname, dstname, str(why)))
+
+    if errors:
+        raise shutil.Error(errors)
+    return dst
 
 
 def get_type(action: str) -> str:
@@ -39,11 +83,9 @@ def is_empty_and_create(path: str, action: str) -> None:
 
 
 def create_project(target_path: str, name: str) -> None:
-    copytree(
+    custom_copytree(
         os.path.join(os.environ['IDF_PATH'], 'tools', 'templates', 'sample_project'),
         target_path,
-        # 'copyfile' ensures only data are copied, without any metadata (file permissions)
-        copy_function=copyfile,
         dirs_exist_ok=True,
     )
     main_folder = os.path.join(target_path, 'main')
@@ -53,11 +95,9 @@ def create_project(target_path: str, name: str) -> None:
 
 
 def create_component(target_path: str, name: str) -> None:
-    copytree(
+    custom_copytree(
         os.path.join(os.environ['IDF_PATH'], 'tools', 'templates', 'sample_component'),
         target_path,
-        # 'copyfile' ensures only data are copied, without any metadata (file permissions)
-        copy_function=copyfile,
         dirs_exist_ok=True,
     )
     os.rename(os.path.join(target_path, 'main.c'), os.path.join(target_path, '.'.join((name, 'c'))))
