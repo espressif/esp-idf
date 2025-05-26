@@ -192,7 +192,10 @@ static inline void isp_ll_enable_module_clock(isp_dev_t *hw, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define isp_ll_enable_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; isp_ll_enable_module_clock(__VA_ARGS__)
+#define isp_ll_enable_module_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        isp_ll_enable_module_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the ISP module
@@ -207,7 +210,10 @@ static inline void isp_ll_reset_module_clock(isp_dev_t *hw)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define isp_ll_reset_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; isp_ll_reset_module_clock(__VA_ARGS__)
+#define isp_ll_reset_module_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        isp_ll_reset_module_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Select ISP clock source
@@ -238,7 +244,10 @@ static inline void isp_ll_select_clk_source(isp_dev_t *hw, soc_periph_isp_clk_sr
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define isp_ll_select_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; isp_ll_select_clk_source(__VA_ARGS__)
+#define isp_ll_select_clk_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        isp_ll_select_clk_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set ISP clock div
@@ -254,7 +263,10 @@ static inline void isp_ll_set_clock_div(isp_dev_t *hw, const hal_utils_clk_div_t
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define isp_ll_set_clock_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; isp_ll_set_clock_div(__VA_ARGS__)
+#define isp_ll_set_clock_div(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        isp_ll_set_clock_div(__VA_ARGS__); \
+    } while(0)
 
 /*---------------------------------------------------------------
                       Misc

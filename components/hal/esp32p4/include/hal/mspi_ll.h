@@ -134,7 +134,10 @@ static inline void _mspi_timing_ll_reset_mspi(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define mspi_timing_ll_reset_mspi(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _mspi_timing_ll_reset_mspi(__VA_ARGS__)
+#define mspi_timing_ll_reset_mspi(...) do { \
+        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
+        _mspi_timing_ll_reset_mspi(__VA_ARGS__); \
+    } while(0)
 
 /*---------------------------------------------------------------
                     PSRAM tuning
@@ -289,7 +292,10 @@ static inline void _mspi_timing_ll_set_flash_clk_src(uint32_t mspi_id, soc_perip
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mspi_timing_ll_set_flash_clk_src(...) (void)__DECLARE_RCC_ATOMIC_ENV; _mspi_timing_ll_set_flash_clk_src(__VA_ARGS__)
+#define mspi_timing_ll_set_flash_clk_src(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _mspi_timing_ll_set_flash_clk_src(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Set MSPI Flash core clock
@@ -315,7 +321,10 @@ static inline void _mspi_timing_ll_set_flash_core_clock(int spi_num, uint32_t co
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mspi_timing_ll_set_flash_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _mspi_timing_ll_set_flash_core_clock(__VA_ARGS__)
+#define mspi_timing_ll_set_flash_core_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _mspi_timing_ll_set_flash_core_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Set MSPI Flash clock

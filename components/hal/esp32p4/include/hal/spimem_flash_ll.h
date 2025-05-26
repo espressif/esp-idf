@@ -747,7 +747,10 @@ static inline void _spimem_ctrlr_ll_unset_clock(uint8_t mspi_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spimem_ctrlr_ll_unset_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spimem_ctrlr_ll_unset_clock(__VA_ARGS__)
+#define spimem_ctrlr_ll_unset_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _spimem_ctrlr_ll_unset_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset whole memory spi

@@ -61,7 +61,10 @@ static inline void rmt_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define rmt_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; rmt_ll_enable_bus_clock(__VA_ARGS__)
+#define rmt_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        rmt_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the RMT module
@@ -77,7 +80,10 @@ static inline void rmt_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define rmt_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; rmt_ll_reset_register(__VA_ARGS__)
+#define rmt_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        rmt_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set clock source and divider for RMT channel group
@@ -117,7 +123,10 @@ static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, 
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define rmt_ll_set_group_clock_src(...) (void)__DECLARE_RCC_ATOMIC_ENV; rmt_ll_set_group_clock_src(__VA_ARGS__)
+#define rmt_ll_set_group_clock_src(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        rmt_ll_set_group_clock_src(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable RMT peripheral source clock
@@ -133,7 +142,10 @@ static inline void rmt_ll_enable_group_clock(rmt_dev_t *dev, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define rmt_ll_enable_group_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; rmt_ll_enable_group_clock(__VA_ARGS__)
+#define rmt_ll_enable_group_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        rmt_ll_enable_group_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable clock gate for register and memory

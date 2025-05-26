@@ -65,7 +65,10 @@ static inline void _rtcio_ll_enable_io_clock(bool enable)
     }
 }
 
-#define rtcio_ll_enable_io_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _rtcio_ll_enable_io_clock(__VA_ARGS__)
+#define rtcio_ll_enable_io_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _rtcio_ll_enable_io_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Select the rtcio function.

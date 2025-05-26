@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,7 +38,10 @@ static inline void mipi_csi_ll_enable_brg_module_clock(int csi_bridge_id, bool e
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_csi_ll_enable_brg_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_csi_ll_enable_brg_module_clock(__VA_ARGS__)
+#define mipi_csi_ll_enable_brg_module_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_csi_ll_enable_brg_module_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the CSI Bridge module
@@ -53,7 +56,10 @@ static inline void mipi_csi_ll_reset_brg_module_clock(int csi_bridge_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_csi_ll_reset_brg_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_csi_ll_reset_brg_module_clock(__VA_ARGS__)
+#define mipi_csi_ll_reset_brg_module_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_csi_ll_reset_brg_module_clock(__VA_ARGS__); \
+    } while(0)
 
 /*---------------------------------------------------------------
                       CSI PHY
@@ -84,7 +90,10 @@ static inline void mipi_csi_ll_set_phy_clock_source(int group_id, mipi_csi_phy_c
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_csi_ll_set_phy_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_csi_ll_set_phy_clock_source(__VA_ARGS__)
+#define mipi_csi_ll_set_phy_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_csi_ll_set_phy_clock_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable MIPI CSI PHY configuration clock
@@ -100,7 +109,10 @@ static inline void mipi_csi_ll_enable_phy_config_clock(int group_id, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_csi_ll_enable_phy_config_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_csi_ll_enable_phy_config_clock(__VA_ARGS__)
+#define mipi_csi_ll_enable_phy_config_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_csi_ll_enable_phy_config_clock(__VA_ARGS__); \
+    } while(0)
 
 /*---------------------------------------------------------------
                       CSI Host
@@ -119,7 +131,10 @@ static inline void _mipi_csi_ll_enable_host_bus_clock(int group_id, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_csi_ll_enable_host_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _mipi_csi_ll_enable_host_bus_clock(__VA_ARGS__)
+#define mipi_csi_ll_enable_host_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _mipi_csi_ll_enable_host_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the MIPI CSI host CLK
@@ -135,7 +150,10 @@ static inline void mipi_csi_ll_reset_host_clock(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_csi_ll_reset_host_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_csi_ll_reset_host_clock(__VA_ARGS__)
+#define mipi_csi_ll_reset_host_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_csi_ll_reset_host_clock(__VA_ARGS__); \
+    } while(0)
 
 #ifdef __cplusplus
 }

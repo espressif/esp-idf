@@ -37,7 +37,10 @@ static inline void _l2mem_ll_clock_force_en(bool enable)
 }
 
 // HP_SYS_CLKRST.soc_clk_ctrl2 are shared registers, so this function must be used in an atomic way
-#define l2mem_ll_clock_force_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _l2mem_ll_clock_force_en(__VA_ARGS__)
+#define l2mem_ll_clock_force_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _l2mem_ll_clock_force_en(__VA_ARGS__); \
+    } while(0)
 
 #ifdef __cplusplus
 }

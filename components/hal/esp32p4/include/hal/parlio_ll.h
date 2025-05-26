@@ -65,7 +65,10 @@ static inline void _parlio_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_enable_bus_clock(__VA_ARGS__)
+#define parlio_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the parlio module
@@ -81,7 +84,10 @@ static inline void _parlio_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_reset_register(__VA_ARGS__)
+#define parlio_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 ///////////////////////////////////////RX Unit///////////////////////////////////////
 
@@ -118,7 +124,10 @@ static inline void _parlio_ll_rx_set_clock_source(parl_io_dev_t *dev, parlio_clo
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_rx_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_rx_set_clock_source(__VA_ARGS__)
+#define parlio_ll_rx_set_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_rx_set_clock_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the clock divider for the RX unit
@@ -137,7 +146,10 @@ static inline void _parlio_ll_rx_set_clock_div(parl_io_dev_t *dev, const hal_uti
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_rx_set_clock_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_rx_set_clock_div(__VA_ARGS__)
+#define parlio_ll_rx_set_clock_div(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_rx_set_clock_div(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the RX unit Core clock domain
@@ -153,7 +165,10 @@ static inline void _parlio_ll_rx_reset_clock(parl_io_dev_t *dev)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_rx_reset_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_rx_reset_clock(__VA_ARGS__)
+#define parlio_ll_rx_reset_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_rx_reset_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable the RX unit Core clock domain
@@ -171,7 +186,10 @@ static inline void _parlio_ll_rx_enable_clock(parl_io_dev_t *dev, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_rx_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_rx_enable_clock(__VA_ARGS__)
+#define parlio_ll_rx_enable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_rx_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the condition to generate the RX EOF event
@@ -455,7 +473,10 @@ static inline void _parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_clo
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_tx_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_tx_set_clock_source(__VA_ARGS__)
+#define parlio_ll_tx_set_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_tx_set_clock_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the clock divider for the TX unit
@@ -474,7 +495,10 @@ static inline void _parlio_ll_tx_set_clock_div(parl_io_dev_t *dev, const hal_uti
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_tx_set_clock_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_tx_set_clock_div(__VA_ARGS__)
+#define parlio_ll_tx_set_clock_div(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_tx_set_clock_div(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the TX unit Core clock domain
@@ -491,7 +515,10 @@ static inline void _parlio_ll_tx_reset_clock(parl_io_dev_t *dev)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_tx_reset_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_tx_reset_clock(__VA_ARGS__)
+#define parlio_ll_tx_reset_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_tx_reset_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable the TX unit Core clock domain
@@ -509,7 +536,10 @@ static inline void _parlio_ll_tx_enable_clock(parl_io_dev_t *dev, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_tx_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_tx_enable_clock(__VA_ARGS__)
+#define parlio_ll_tx_enable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_tx_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the data length to be transmitted

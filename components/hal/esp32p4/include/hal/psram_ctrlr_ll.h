@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -298,7 +298,10 @@ static inline void _psram_ctrlr_ll_enable_module_clock(uint32_t mspi_id, bool en
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define psram_ctrlr_ll_enable_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _psram_ctrlr_ll_enable_module_clock(__VA_ARGS__)
+#define psram_ctrlr_ll_enable_module_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _psram_ctrlr_ll_enable_module_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset PSRAM module clock
@@ -317,7 +320,10 @@ static inline void psram_ctrlr_ll_reset_module_clock(uint32_t mspi_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define psram_ctrlr_ll_reset_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; psram_ctrlr_ll_reset_module_clock(__VA_ARGS__)
+#define psram_ctrlr_ll_reset_module_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        psram_ctrlr_ll_reset_module_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Select PSRAM clock source
@@ -353,7 +359,10 @@ static inline void _psram_ctrlr_ll_select_clk_source(uint32_t mspi_id, soc_perip
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define psram_ctrlr_ll_select_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; _psram_ctrlr_ll_select_clk_source(__VA_ARGS__)
+#define psram_ctrlr_ll_select_clk_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _psram_ctrlr_ll_select_clk_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set PSRAM core clock
@@ -369,7 +378,10 @@ static inline void _psram_ctrlr_ll_set_core_clock_div(uint8_t spi_num, uint32_t 
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define psram_ctrlr_ll_set_core_clock_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; _psram_ctrlr_ll_set_core_clock_div(__VA_ARGS__)
+#define psram_ctrlr_ll_set_core_clock_div(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _psram_ctrlr_ll_set_core_clock_div(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable or disable the PSRAM core clock
@@ -384,7 +396,10 @@ static inline void _psram_ctrlr_ll_enable_core_clock(uint8_t spi_num, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define psram_ctrlr_ll_enable_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _psram_ctrlr_ll_enable_core_clock(__VA_ARGS__)
+#define psram_ctrlr_ll_enable_core_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _psram_ctrlr_ll_enable_core_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set PSRAM bus clock

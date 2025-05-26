@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -932,7 +932,10 @@ static inline void adc_ll_enable_bus_clock(bool enable)
     WRITE_PERI_REG(DPORT_PERIP_CLK_EN0_REG, reg_val);
 }
 // SYSTEM.perip_clk_en0 is a shared register, so this function must be used in an atomic way
-#define adc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_enable_bus_clock(__VA_ARGS__)
+#define adc_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        adc_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset ADC module
@@ -943,7 +946,10 @@ static inline void adc_ll_reset_register(void)
     CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_APB_SARADC_RST);
 }
 //  SYSTEM.perip_rst_en0 is a shared register, so this function must be used in an atomic way
-#define adc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_reset_register(__VA_ARGS__)
+#define adc_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        adc_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Set ADC module power management.

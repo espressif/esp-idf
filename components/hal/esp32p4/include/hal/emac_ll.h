@@ -830,7 +830,10 @@ static inline void emac_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define emac_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_enable_bus_clock(__VA_ARGS__)
+#define emac_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        emac_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 static inline void _emac_ll_clock_force_en(bool enable)
 {
@@ -839,7 +842,10 @@ static inline void _emac_ll_clock_force_en(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define emac_ll_clock_force_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _emac_ll_clock_force_en(__VA_ARGS__)
+#define emac_ll_clock_force_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _emac_ll_clock_force_en(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the EMAC module
@@ -855,7 +861,10 @@ static inline void emac_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define emac_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_reset_register(__VA_ARGS__)
+#define emac_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        emac_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 static inline eth_data_interface_t emac_ll_get_phy_intf(void *ext_regs)
 {
@@ -887,7 +896,10 @@ static inline void emac_ll_clock_enable_mii(void *ext_regs)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define emac_ll_clock_enable_mii(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_clock_enable_mii(__VA_ARGS__)
+#define emac_ll_clock_enable_mii(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        emac_ll_clock_enable_mii(__VA_ARGS__); \
+    } while(0)
 
 static inline void emac_ll_clock_enable_rmii_input(void *ext_regs)
 {
@@ -913,7 +925,10 @@ static inline void emac_ll_clock_enable_rmii_input(void *ext_regs)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define emac_ll_clock_enable_rmii_input(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_clock_enable_rmii_input(__VA_ARGS__)
+#define emac_ll_clock_enable_rmii_input(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        emac_ll_clock_enable_rmii_input(__VA_ARGS__); \
+    } while(0)
 
 static inline void emac_ll_clock_rmii_rx_tx_div(void *ext_regs, int div)
 {
@@ -923,7 +938,10 @@ static inline void emac_ll_clock_rmii_rx_tx_div(void *ext_regs, int div)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define emac_ll_clock_rmii_rx_tx_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_clock_rmii_rx_tx_div(__VA_ARGS__)
+#define emac_ll_clock_rmii_rx_tx_div(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        emac_ll_clock_rmii_rx_tx_div(__VA_ARGS__); \
+    } while(0)
 
 static inline void emac_ll_clock_enable_rmii_output(void *ext_regs)
 {
@@ -934,7 +952,10 @@ static inline void emac_ll_clock_enable_rmii_output(void *ext_regs)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define emac_ll_clock_enable_rmii_output(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_clock_enable_rmii_output(__VA_ARGS__)
+#define emac_ll_clock_enable_rmii_output(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        emac_ll_clock_enable_rmii_output(__VA_ARGS__); \
+    } while(0)
 
 static inline void emac_ll_clock_enable_ptp(void *ext_regs, soc_periph_emac_ptp_clk_src_t clk_src, bool enable)
 {
@@ -958,7 +979,10 @@ static inline void emac_ll_clock_enable_ptp(void *ext_regs, soc_periph_emac_ptp_
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define emac_ll_clock_enable_ptp(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_clock_enable_ptp(__VA_ARGS__)
+#define emac_ll_clock_enable_ptp(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        emac_ll_clock_enable_ptp(__VA_ARGS__); \
+    } while(0)
 
 static inline void emac_ll_pause_frame_enable(void *ext_regs, bool enable)
 {

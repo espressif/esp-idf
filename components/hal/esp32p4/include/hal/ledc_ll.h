@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,10 @@ static inline void ledc_ll_enable_bus_clock(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; ledc_ll_enable_bus_clock(__VA_ARGS__)
+#define ledc_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        ledc_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset whole peripheral register to init value defined by HW design
@@ -55,7 +58,10 @@ static inline void ledc_ll_enable_reset_reg(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_enable_reset_reg(...) (void)__DECLARE_RCC_ATOMIC_ENV; ledc_ll_enable_reset_reg(__VA_ARGS__)
+#define ledc_ll_enable_reset_reg(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        ledc_ll_enable_reset_reg(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable the power for LEDC memory block
@@ -81,7 +87,10 @@ static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; ledc_ll_enable_clock(__VA_ARGS__)
+#define ledc_ll_enable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        ledc_ll_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set LEDC low speed timer clock
@@ -115,7 +124,10 @@ static inline void ledc_ll_set_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t 
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_set_slow_clk_sel(...) (void)__DECLARE_RCC_ATOMIC_ENV; ledc_ll_set_slow_clk_sel(__VA_ARGS__)
+#define ledc_ll_set_slow_clk_sel(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        ledc_ll_set_slow_clk_sel(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Get LEDC low speed timer clock

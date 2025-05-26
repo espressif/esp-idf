@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,7 +89,10 @@ static inline void jpeg_ll_enable_bus_clock(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define jpeg_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; jpeg_ll_enable_bus_clock(__VA_ARGS__)
+#define jpeg_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        jpeg_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the JPEG module
@@ -102,7 +105,10 @@ static inline void jpeg_ll_reset_module_register(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define jpeg_ll_reset_module_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; jpeg_ll_reset_module_register(__VA_ARGS__)
+#define jpeg_ll_reset_module_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        jpeg_ll_reset_module_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Write the numbers of 1~n codewords length sum of ac0 table and write the minimum codeword of code length

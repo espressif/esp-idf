@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,10 @@ static inline void _mipi_dsi_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_dsi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _mipi_dsi_ll_enable_bus_clock(__VA_ARGS__)
+#define mipi_dsi_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _mipi_dsi_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the MIPI DSI module
@@ -51,7 +54,10 @@ static inline void mipi_dsi_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_dsi_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_dsi_ll_reset_register(__VA_ARGS__)
+#define mipi_dsi_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_dsi_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable MIPI DSI DPI clock
@@ -67,7 +73,10 @@ static inline void mipi_dsi_ll_enable_dpi_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_dsi_ll_enable_dpi_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_dsi_ll_enable_dpi_clock(__VA_ARGS__)
+#define mipi_dsi_ll_enable_dpi_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_dsi_ll_enable_dpi_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the clock source for the DSI DPI interface
@@ -95,7 +104,10 @@ static inline void mipi_dsi_ll_set_dpi_clock_source(int group_id, mipi_dsi_dpi_c
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_dsi_ll_set_dpi_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_dsi_ll_set_dpi_clock_source(__VA_ARGS__)
+#define mipi_dsi_ll_set_dpi_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_dsi_ll_set_dpi_clock_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the clock division factor for the DPI clock source
@@ -111,7 +123,10 @@ static inline void mipi_dsi_ll_set_dpi_clock_div(int group_id, uint32_t div)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_dsi_ll_set_dpi_clock_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_dsi_ll_set_dpi_clock_div(__VA_ARGS__)
+#define mipi_dsi_ll_set_dpi_clock_div(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_dsi_ll_set_dpi_clock_div(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable MIPI DSI PHY configuration clock
@@ -127,7 +142,10 @@ static inline void mipi_dsi_ll_enable_phy_config_clock(int group_id, bool enable
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_dsi_ll_enable_phy_config_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_dsi_ll_enable_phy_config_clock(__VA_ARGS__)
+#define mipi_dsi_ll_enable_phy_config_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_dsi_ll_enable_phy_config_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable MIPI DSI PHY PLL reference clock
@@ -143,7 +161,10 @@ static inline void mipi_dsi_ll_enable_phy_reference_clock(int group_id, bool ena
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_dsi_ll_enable_phy_reference_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_dsi_ll_enable_phy_reference_clock(__VA_ARGS__)
+#define mipi_dsi_ll_enable_phy_reference_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_dsi_ll_enable_phy_reference_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the clock source for the DSI PHY interface
@@ -171,7 +192,10 @@ static inline void mipi_dsi_ll_set_phy_clock_source(int group_id, mipi_dsi_phy_c
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_dsi_ll_set_phy_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_dsi_ll_set_phy_clock_source(__VA_ARGS__)
+#define mipi_dsi_ll_set_phy_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_dsi_ll_set_phy_clock_source(__VA_ARGS__); \
+    } while(0)
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +37,10 @@ static inline void _key_mgr_ll_enable_bus_clock(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define key_mgr_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _key_mgr_ll_enable_bus_clock(__VA_ARGS__)
+#define key_mgr_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _key_mgr_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable the peripheral clock for Key Manager
@@ -51,7 +54,10 @@ static inline void _key_mgr_ll_enable_peripheral_clock(bool enable)
     HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_km_clk_en = enable;
 }
 
-#define key_mgr_ll_enable_peripheral_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _key_mgr_ll_enable_peripheral_clock(__VA_ARGS__)
+#define key_mgr_ll_enable_peripheral_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _key_mgr_ll_enable_peripheral_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Read state of Key Manager
@@ -82,7 +88,10 @@ static inline void _key_mgr_ll_reset_register(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define key_mgr_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _key_mgr_ll_reset_register(__VA_ARGS__)
+#define key_mgr_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _key_mgr_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /* @brief Start the key manager at IDLE state */
 static inline void key_mgr_ll_start(void)

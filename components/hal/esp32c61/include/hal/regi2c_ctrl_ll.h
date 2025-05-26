@@ -30,7 +30,10 @@ static inline __attribute__((always_inline)) void _regi2c_ctrl_ll_master_enable_
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define regi2c_ctrl_ll_master_enable_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _regi2c_ctrl_ll_master_enable_clock(__VA_ARGS__)
+#define regi2c_ctrl_ll_master_enable_clock(...) do { \
+        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
+        _regi2c_ctrl_ll_master_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Check whether analog I2C master clock is enabled
@@ -51,7 +54,10 @@ static inline __attribute__((always_inline)) void _regi2c_ctrl_ll_master_reset(v
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define regi2c_ctrl_ll_master_reset(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _regi2c_ctrl_ll_master_reset(__VA_ARGS__)
+#define regi2c_ctrl_ll_master_reset(...) do { \
+        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
+        _regi2c_ctrl_ll_master_reset(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Force enable analog I2C master clock

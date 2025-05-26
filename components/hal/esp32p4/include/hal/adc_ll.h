@@ -520,7 +520,10 @@ static inline void _adc_ll_sar1_clock_force_en(bool enable)
 }
 
 // HP_SYS_CLKRST.clk_force_on_ctrl0 are shared registers, so this function must be used in an atomic way
-#define adc_ll_sar1_clock_force_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _adc_ll_sar1_clock_force_en(__VA_ARGS__)
+#define adc_ll_sar1_clock_force_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _adc_ll_sar1_clock_force_en(__VA_ARGS__); \
+    } while(0)
 
 static inline void _adc_ll_sar2_clock_force_en(bool enable)
 {
@@ -528,7 +531,10 @@ static inline void _adc_ll_sar2_clock_force_en(bool enable)
 }
 
 // HP_SYS_CLKRST.clk_force_on_ctrl0 are shared registers, so this function must be used in an atomic way
-#define adc_ll_sar2_clock_force_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _adc_ll_sar2_clock_force_en(__VA_ARGS__)
+#define adc_ll_sar2_clock_force_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _adc_ll_sar2_clock_force_en(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable the ADC clock
@@ -541,7 +547,10 @@ static inline void _adc_ll_enable_bus_clock(bool enable)
     HP_SYS_CLKRST.peri_clk_ctrl23.reg_adc_clk_en = enable;
 }
 // HP_SYS_CLKRST.soc_clk_ctrl2 are shared registers, so this function must be used in an atomic way
-#define adc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _adc_ll_enable_bus_clock(__VA_ARGS__)
+#define adc_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _adc_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset ADC module
@@ -553,7 +562,10 @@ static inline void _adc_ll_reset_register(void)
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_adc = 0;
 }
 //  HP_SYS_CLKRST.hp_rst_en2 is a shared register, so this function must be used in an atomic way
-#define adc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _adc_ll_reset_register(__VA_ARGS__)
+#define adc_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _adc_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 
 
