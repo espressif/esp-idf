@@ -905,7 +905,9 @@ Full-duplex mode registers TX and RX channel in an I2S port at the same time, an
 
 Note that one handle can only stand for one channel. Therefore, it is still necessary to configure the slot and clock for both TX and RX channels one by one.
 
-Here is an example of how to allocate a pair of full-duplex channels:
+There are two methods to allocate a pair of full-duplex channels:
+
+1. Allocate both TX and RX handles in a single call of :cpp:func:`i2s_new_channel`.
 
 .. code-block:: c
 
@@ -945,6 +947,48 @@ Here is an example of how to allocate a pair of full-duplex channels:
 
     ...
 
+2. Allocate TX and RX handles separately, and initialize them with the same configuration.
+
+.. code-block:: c
+
+    #include "driver/i2s_std.h"
+    #include "driver/gpio.h"
+
+    i2s_chan_handle_t tx_handle;
+    i2s_chan_handle_t rx_handle;
+
+    /* Allocate a pair of I2S channels on a same port */
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    /* Allocate for TX and RX channel separately, they are not full-duplex yet */
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+
+    /* Set the configurations for BOTH TWO channels, they will constitute in full-duplex mode automatically */
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(32000),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = {
+            .mclk = I2S_GPIO_UNUSED,
+            .bclk = GPIO_NUM_4,
+            .ws = GPIO_NUM_5,
+            .dout = GPIO_NUM_18,
+            .din = GPIO_NUM_19,
+            .invert_flags = {
+                .mclk_inv = false,
+                .bclk_inv = false,
+                .ws_inv = false,
+            },
+        },
+    };
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
+    // ...
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+
+    ...
+
+
 .. only:: SOC_I2S_HW_VERSION_1
 
     Simplex Mode
@@ -961,7 +1005,7 @@ Here is an example of how to allocate a pair of full-duplex channels:
         i2s_chan_handle_t rx_handle;
 
         i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
-        i2s_new_channel(&chan_cfg, &tx_handle, NULL);
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
         i2s_std_config_t std_tx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(48000),
             .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
@@ -979,12 +1023,12 @@ Here is an example of how to allocate a pair of full-duplex channels:
             },
         };
         /* Initialize the channel */
-        i2s_channel_init_std_mode(tx_handle, &std_tx_cfg);
-        i2s_channel_enable(tx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_tx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
 
         /* RX channel will be registered on another I2S, if no other available I2S unit found
          * it will return ESP_ERR_NOT_FOUND */
-        i2s_new_channel(&chan_cfg, NULL, &rx_handle);
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
         i2s_std_config_t std_rx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
             .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
@@ -1001,8 +1045,8 @@ Here is an example of how to allocate a pair of full-duplex channels:
                 },
             },
         };
-        i2s_channel_init_std_mode(rx_handle, &std_rx_cfg);
-        i2s_channel_enable(rx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_rx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
 
 .. only:: SOC_I2S_HW_VERSION_2
 
@@ -1021,7 +1065,7 @@ Here is an example of how to allocate a pair of full-duplex channels:
         i2s_chan_handle_t tx_handle;
         i2s_chan_handle_t rx_handle;
         i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
-        i2s_new_channel(&chan_cfg, &tx_handle, NULL);
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
         i2s_std_config_t std_tx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(48000),
             .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
@@ -1039,12 +1083,12 @@ Here is an example of how to allocate a pair of full-duplex channels:
             },
         };
         /* Initialize the channel */
-        i2s_channel_init_std_mode(tx_handle, &std_tx_cfg);
-        i2s_channel_enable(tx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_tx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
 
         /* RX channel will be registered on another I2S, if no other available I2S unit found
          * it will return ESP_ERR_NOT_FOUND */
-        i2s_new_channel(&chan_cfg, NULL, &rx_handle); // Both RX and TX channel will be registered on I2S0, but they can work with different configurations.
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle)); // Both RX and TX channel will be registered on I2S0, but they can work with different configurations.
         i2s_std_config_t std_rx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
             .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
@@ -1061,8 +1105,8 @@ Here is an example of how to allocate a pair of full-duplex channels:
                 },
             },
         };
-        i2s_channel_init_std_mode(rx_handle, &std_rx_cfg);
-        i2s_channel_enable(rx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_rx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
 
 .. only:: SOC_I2S_SUPPORTS_ETM
 
