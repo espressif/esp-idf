@@ -331,6 +331,7 @@ esp_err_t esp_psram_impl_enable(void)
             return ESP_ERR_NOT_SUPPORTED;
         }
     }
+    ESP_EARLY_LOGV(TAG, "MFID: 0x%x", PSRAM_QUAD_MFID(psram_id));
 
     if (PSRAM_QUAD_IS_64MBIT_TRIAL(psram_id)) {
         s_psram_size = PSRAM_SIZE_8MB;
@@ -345,7 +346,7 @@ esp_err_t esp_psram_impl_enable(void)
                        eid == PSRAM_QUAD_QEMU_16MB_ID ? PSRAM_SIZE_16MB :
                        eid == PSRAM_QUAD_QEMU_32MB_ID ? PSRAM_SIZE_32MB : 0;
 
-        if ((s_psram_size == PSRAM_SIZE_8MB) && s_check_2tmode()) {
+        if (PSRAM_QUAD_MFID(psram_id) == PSRAM_QUAD_MFID_AP && (s_psram_size == PSRAM_SIZE_8MB) && s_check_2tmode()) {
             //2t mode is only valid for EID[47:45] == 0x10 chips
             s_psram_size = s_psram_size / 2;
         }
