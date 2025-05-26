@@ -12,17 +12,22 @@
 #include "driver/gpio.h"
 #include "esp_app_trace.h"
 #include "sdkconfig.h"
+#include "esp_log.h"
 
 /* Can use project configuration menu (idf.py menuconfig) to choose the GPIO
    to blink, or you can edit the following line and set a number here.
 */
 #define BLINK_GPIO CONFIG_BLINK_GPIO
 
+static const char *TAG = "example";
+
 void blink_dummy_func(void);
 void some_dummy_func(void);
 
 static void blink_task(void *pvParameter)
 {
+    ESP_LOGI(TAG, "Ready for OpenOCD connection");
+
     // The first two iterations GCOV data are dumped using call to esp_gcov_dump() and OOCD's "esp32 gcov dump" command.
     // After that they can be dumped using OOCD's "esp32 gcov" command only.
     int dump_gcov_after = -2;

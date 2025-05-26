@@ -2,6 +2,9 @@
 # in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.16)
 
+# keep this string to detect as project file in CI:
+#include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
 file(TO_NATIVE_PATH "$ENV{IDF_PATH}/tools/cmake/project.cmake" _project_path)
 
 include(${_project_path})
