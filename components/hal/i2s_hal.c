@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,7 +72,11 @@ void _i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *c
         hal_utils_clk_div_t mclk_div = {};
 #if SOC_I2S_HW_VERSION_2
         i2s_ll_tx_enable_clock(hal->dev);
+#if SOC_PERIPH_CLK_CTRL_SHARED
+        _i2s_ll_mclk_bind_to_tx_clk(hal->dev);
+#else
         i2s_ll_mclk_bind_to_tx_clk(hal->dev);
+#endif
 #endif
         i2s_ll_tx_clk_set_src(hal->dev, clk_src);
         i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
@@ -89,7 +93,11 @@ void _i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *c
         hal_utils_clk_div_t mclk_div = {};
 #if SOC_I2S_HW_VERSION_2
         i2s_ll_rx_enable_clock(hal->dev);
+#if SOC_PERIPH_CLK_CTRL_SHARED
+        _i2s_ll_mclk_bind_to_rx_clk(hal->dev);
+#else
         i2s_ll_mclk_bind_to_rx_clk(hal->dev);
+#endif
 #endif
         i2s_ll_rx_clk_set_src(hal->dev, clk_src);
         i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
