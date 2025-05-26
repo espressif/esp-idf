@@ -51,6 +51,14 @@
 #define PSRAM_EARLY_LOGI   ESP_EARLY_LOGI
 #endif
 
+#if CONFIG_SPIRAM_RODATA
+extern uint8_t _rodata_reserved_end;
+#endif /* CONFIG_SPIRAM_RODATA */
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+extern uint8_t _instruction_reserved_end;
+#endif /* CONFIG_SPIRAM_FETCH_INSTRUCTIONS */
+
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 extern uint8_t _ext_ram_bss_start;
 extern uint8_t _ext_ram_bss_end;
@@ -60,6 +68,8 @@ extern uint8_t _ext_ram_bss_end;
 extern uint8_t _ext_ram_noinit_start;
 extern uint8_t _ext_ram_noinit_end;
 #endif  //#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+
+#define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 typedef struct {
     intptr_t vaddr_start;
@@ -401,6 +411,36 @@ esp_err_t esp_psram_extram_add_to_heap_allocator(void)
     ESP_EARLY_LOGI(TAG, "Adding pool of %dK of PSRAM memory to heap allocator",
                    (s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size + s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].size) / 1024);
 
+    // To allow using the page alignment gaps created while mapping the flash segments,
+    // the alignment gaps must be configured with correct memory protection configurations.
+#if CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    // Here, SOC_MMU_DI_VADDR_SHARED is necessary because, for the targets that have separate data and instruction virtual address spaces,
+    // the SPIRAM gap created due to the alignment needed while placing the instruction segment in the instruction virtual address space
+    // cannot be added in heap because the region cannot be configured with write permissions.
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && SOC_MMU_DI_VADDR_SHARED
+    if ((uint32_t)&_instruction_reserved_end & (CONFIG_MMU_PAGE_SIZE - 1)) {
+        uint32_t instruction_alignment_gap_heap_start, instruction_alignment_gap_heap_end;
+        mmu_psram_get_instruction_alignment_gap_info(&instruction_alignment_gap_heap_start, &instruction_alignment_gap_heap_end);
+        ret = heap_caps_add_region_with_caps(byte_aligned_caps, instruction_alignment_gap_heap_start, instruction_alignment_gap_heap_end);
+        if (ret == ESP_OK) {
+            ESP_EARLY_LOGI(TAG, "Adding pool of %dK of PSRAM memory gap generated due to end address alignment of irom to the heap allocator", (instruction_alignment_gap_heap_end - instruction_alignment_gap_heap_start) / 1024);
+        }
+    }
+#endif /* CONFIG_SPIRAM_FETCH_INSTRUCTIONS */
+
+    // In the case of ESP32S2, the rodata is mapped to a read-only region (SOC_DROM0_ADDRESS_LOW - SOC_DROM0_ADDRESS_HIGH), thus we cannot add this region to the heap.
+#if CONFIG_SPIRAM_RODATA && !CONFIG_IDF_TARGET_ESP32S2
+    if ((uint32_t)&_rodata_reserved_end & (CONFIG_MMU_PAGE_SIZE - 1)) {
+        uint32_t rodata_alignment_gap_heap_start, rodata_alignment_gap_heap_end;
+        mmu_psram_get_rodata_alignment_gap_info(&rodata_alignment_gap_heap_start, &rodata_alignment_gap_heap_end);
+        ret = heap_caps_add_region_with_caps(byte_aligned_caps, rodata_alignment_gap_heap_start, rodata_alignment_gap_heap_end);
+        if (ret == ESP_OK) {
+            ESP_EARLY_LOGI(TAG, "Adding pool of %dK of PSRAM memory gap generated due to end address alignment of drom to the heap allocator", (rodata_alignment_gap_heap_end - rodata_alignment_gap_heap_start) / 1024);
+        }
+    }
+#endif /* CONFIG_SPIRAM_RODATA */
+#endif /* CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
+
     return ESP_OK;
 }
 
@@ -410,8 +450,24 @@ bool IRAM_ATTR esp_psram_check_ptr_addr(const void *p)
         return false;
     }
 
-    return ((intptr_t)p >= s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].vaddr_start && (intptr_t)p < s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].vaddr_end) ||
-           ((intptr_t)p >= s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].vaddr_start && (intptr_t)p < s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].vaddr_end);
+    if (((intptr_t)p >= s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].vaddr_start && (intptr_t)p < s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].vaddr_end) ||
+            ((intptr_t)p >= s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].vaddr_start && (intptr_t)p < s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].vaddr_end)) {
+        return true;
+    }
+
+#if CONFIG_SPIRAM_RODATA && !CONFIG_IDF_TARGET_ESP32S2
+    if (mmu_psram_check_ptr_addr_in_rodata_alignment_gap(p)) {
+        return true;
+    }
+#endif /* CONFIG_SPIRAM_RODATA && !CONFIG_IDF_TARGET_ESP32S2 */
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && SOC_MMU_DI_VADDR_SHARED
+    if (mmu_psram_check_ptr_addr_in_instruction_alignment_gap(p)) {
+        return true;
+    }
+#endif /* CONFIG_SPIRAM_FETCH_INSTRUCTIONS && SOC_MMU_DI_VADDR_SHARED */
+
+    return false;
 }
 
 esp_err_t esp_psram_extram_reserve_dma_pool(size_t size)
@@ -541,3 +597,84 @@ void esp_psram_bss_init(void)
     memset(&_ext_ram_bss_start, 0, size);
 #endif
 }
+
+#if CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+static inline uint32_t s_get_ext_bss_size(void)
+{
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    return ((intptr_t)&_ext_ram_bss_end - (intptr_t)&_ext_ram_bss_start);
+#else
+    return 0;
+#endif /* CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY */
+}
+
+static inline uint32_t s_get_ext_noinit_size(void)
+{
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    return ((intptr_t)&_ext_ram_noinit_end - (intptr_t)&_ext_ram_noinit_start);
+#else
+    return 0;
+#endif /* CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY */
+}
+
+/**
+ * @brief Calculates the effective PSRAM memory that would be / is mapped.
+ *
+ * @return The size of PSRAM memory that would be / is mapped in bytes, or 0 if PSRAM isn't successfully initialized
+ */
+static size_t esp_psram_get_effective_mapped_size(void)
+{
+    size_t byte_aligned_size = 0;
+    size_t total_mapped_size = 0;
+
+    if (s_psram_ctx.is_initialised) {
+        return s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].size + s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].size;
+    } else {
+        uint32_t psram_available_size = 0;
+        esp_err_t ret = esp_psram_impl_get_available_size(&psram_available_size);
+        assert(ret == ESP_OK);
+
+#if CONFIG_SPIRAM_RODATA
+        psram_available_size -= mmu_psram_get_rodata_segment_length();
+#endif /* CONFIG_SPIRAM_RODATA */
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+        psram_available_size -= mmu_psram_get_text_segment_length();
+#endif /* CONFIG_SPIRAM_FETCH_INSTRUCTIONS */
+
+        ret = esp_mmu_map_get_max_consecutive_free_block_size(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0, &byte_aligned_size);
+        assert(ret == ESP_OK);
+        total_mapped_size += MIN(byte_aligned_size, psram_available_size - total_mapped_size);
+
+#if CONFIG_IDF_TARGET_ESP32S2
+        if (total_mapped_size < psram_available_size) {
+            size_t word_aligned_size = 0;
+            ret = esp_mmu_map_get_max_consecutive_free_block_size(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0,  &word_aligned_size);
+            assert(ret == ESP_OK);
+            total_mapped_size += MIN(word_aligned_size, psram_available_size - total_mapped_size);
+        }
+#endif
+        return total_mapped_size;
+    }
+}
+
+size_t esp_psram_get_heap_size_to_protect(void)
+{
+    if (s_psram_ctx.is_initialised) {
+        return s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size + s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].size;
+    } else {
+        size_t effective_mapped_size = esp_psram_get_effective_mapped_size();
+        if (effective_mapped_size == 0) {
+            return 0;
+        }
+
+        effective_mapped_size -= s_get_ext_bss_size();
+        effective_mapped_size -= s_get_ext_noinit_size();
+
+#if CONFIG_IDF_TARGET_ESP32
+        effective_mapped_size -= esp_himem_reserved_area_size() - 1;
+#endif
+        return effective_mapped_size;
+    }
+}
+#endif /* CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */

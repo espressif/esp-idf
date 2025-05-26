@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,9 @@
 
 #include "test_panic.h"
 #include "test_memprot.h"
+
+#include "sdkconfig.h"
+#include "soc/soc_caps.h"
 
 /* Test Utility Functions */
 
@@ -170,6 +173,13 @@ void app_main(void)
     HANDLE_TEST(test_name, test_irom_reg_write_violation);
     HANDLE_TEST(test_name, test_drom_reg_write_violation);
     HANDLE_TEST(test_name, test_drom_reg_execute_violation);
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && SOC_MMU_DI_VADDR_SHARED
+    HANDLE_TEST(test_name, test_spiram_xip_irom_alignment_reg_execute_violation);
+#endif
+#endif
+
+#if CONFIG_SPIRAM_RODATA && !CONFIG_IDF_TARGET_ESP32S2
+    HANDLE_TEST(test_name, test_spiram_xip_drom_alignment_reg_execute_violation);
 #endif
 
 #ifdef CONFIG_SOC_CPU_HAS_PMA
