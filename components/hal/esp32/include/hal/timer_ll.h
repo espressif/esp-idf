@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "esp_attr.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/timer_types.h"
@@ -327,6 +328,19 @@ static inline void timer_ll_enable_register_clock_always_on(timg_dev_t *hw, bool
 static inline volatile void *timer_ll_get_intr_status_reg(timg_dev_t *hw)
 {
     return &hw->int_st_timers.val;
+}
+
+/**
+ * @brief Set clock prescale for LACT timer
+ *
+ * @param hw Timer Group register base address
+ * @param timer_num Timer number in the group
+ * @param divider Prescale value (0 and 1 are not valid)
+ */
+FORCE_INLINE_ATTR void timer_ll_set_lact_clock_prescale(timg_dev_t *hw, uint32_t divider)
+{
+    HAL_ASSERT(divider>=2);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->lactconfig, lact_divider, divider);
 }
 
 #ifdef __cplusplus
