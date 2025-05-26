@@ -64,19 +64,23 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
 
     // Reset crypto peripherals. This ensures a clean state for the crypto peripherals after a CPU restart
     // and hence avoiding any possibility with crypto failure in ROM security workflows.
+    // We also avoid resetting all the crypto peripherals at once because it would create a period when
+    // all the peripherals are reset at the same time, which triggers a hardware SEC reset. The SEC reset
+    // causes the crypto -> APB path to be reset, but the APB -> crypto path is not reset. This asymmetry
+    // results in the crypto module hanging and refusing all access.
     SET_PERI_REG_MASK(PCR_AES_CONF_REG, PCR_AES_RST_EN);
-    SET_PERI_REG_MASK(PCR_DS_CONF_REG, PCR_DS_RST_EN);
-    SET_PERI_REG_MASK(PCR_ECC_CONF_REG, PCR_ECC_RST_EN);
-    SET_PERI_REG_MASK(PCR_ECDSA_CONF_REG, PCR_ECDSA_RST_EN);
-    SET_PERI_REG_MASK(PCR_HMAC_CONF_REG, PCR_HMAC_RST_EN);
-    SET_PERI_REG_MASK(PCR_RSA_CONF_REG, PCR_RSA_RST_EN);
-    SET_PERI_REG_MASK(PCR_SHA_CONF_REG, PCR_SHA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_AES_CONF_REG, PCR_AES_RST_EN);
+    SET_PERI_REG_MASK(PCR_DS_CONF_REG, PCR_DS_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_DS_CONF_REG, PCR_DS_RST_EN);
+    SET_PERI_REG_MASK(PCR_ECC_CONF_REG, PCR_ECC_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_ECC_CONF_REG, PCR_ECC_RST_EN);
+    SET_PERI_REG_MASK(PCR_ECDSA_CONF_REG, PCR_ECDSA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_ECDSA_CONF_REG, PCR_ECDSA_RST_EN);
+    SET_PERI_REG_MASK(PCR_HMAC_CONF_REG, PCR_HMAC_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_HMAC_CONF_REG, PCR_HMAC_RST_EN);
+    SET_PERI_REG_MASK(PCR_RSA_CONF_REG, PCR_RSA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_RSA_CONF_REG, PCR_RSA_RST_EN);
+    SET_PERI_REG_MASK(PCR_SHA_CONF_REG, PCR_SHA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_SHA_CONF_REG, PCR_SHA_RST_EN);
 }
 
