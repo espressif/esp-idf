@@ -349,17 +349,17 @@ FORCE_INLINE_ATTR void pmu_sleep_cache_sync_items(uint32_t gid, uint32_t type, u
 
 static TCM_DRAM_ATTR uint32_t s_mpll_freq_mhz_before_sleep = 0;
 
+__attribute__((optimize("-O2")))
 TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
     lp_aon_hal_inform_wakeup_type(dslp);
 
-    assert(PMU_instance()->hal);
-    pmu_ll_hp_set_wakeup_enable(PMU_instance()->hal->dev, wakeup_opt);
-    pmu_ll_hp_set_reject_enable(PMU_instance()->hal->dev, reject_opt);
+    pmu_ll_hp_set_wakeup_enable(&PMU, wakeup_opt);
+    pmu_ll_hp_set_reject_enable(&PMU, reject_opt);
 
-    pmu_ll_hp_clear_wakeup_intr_status(PMU_instance()->hal->dev);
-    pmu_ll_hp_clear_reject_intr_status(PMU_instance()->hal->dev);
-    pmu_ll_hp_clear_reject_cause(PMU_instance()->hal->dev);
+    pmu_ll_hp_clear_wakeup_intr_status(&PMU);
+    pmu_ll_hp_clear_reject_intr_status(&PMU);
+    pmu_ll_hp_clear_reject_cause(&PMU);
 
     // 1. For the sleep where powered down the TOP domain, the L1 cache data memory will be lost and needs to be written back here.
     // 2. For the sleep without power down the TOP domain, regdma retention may still be enabled, and dirty data in the L1 cache needs
@@ -400,13 +400,13 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
     // The PMU state machine will switch PAD to sleep setting and do IO holding at the same stage.
     // IO may be held to an indeterminate state, so the software needs to trigger the PAD to switch
     // to the sleep setting before starting the PMU state machine.
-    pmu_ll_imm_set_pad_slp_sel(PMU_instance()->hal->dev, true);
+    pmu_ll_imm_set_pad_slp_sel(&PMU, true);
 
     /* Start entry into sleep mode */
-    pmu_ll_hp_set_sleep_enable(PMU_instance()->hal->dev);
+    pmu_ll_hp_set_sleep_enable(&PMU);
 
-    while (!pmu_ll_hp_is_sleep_wakeup(PMU_instance()->hal->dev) &&
-        !pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev)) {
+    while (!pmu_ll_hp_is_sleep_wakeup(&PMU) &&
+        !pmu_ll_hp_is_sleep_reject(&PMU)) {
         ;
     }
 
@@ -430,7 +430,7 @@ TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
     {
         pmu_ll_hp_set_dcm_vset(&PMU, PMU_MODE_HP_ACTIVE, HP_CALI_ACTIVE_DCM_VSET_DEFAULT);
         pmu_sleep_enable_dcdc();
-        if (pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev)) {
+        if (pmu_ll_hp_is_sleep_reject(&PMU)) {
             // If sleep is rejected, the hardware wake-up process that turns on DCDC
             // is skipped, and wait DCDC volt rise up by software here.
             esp_rom_delay_us(950);
@@ -438,11 +438,11 @@ TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
         pmu_sleep_shutdown_ldo();
     }
 
-    pmu_ll_imm_set_pad_slp_sel(PMU_instance()->hal->dev, false);
+    pmu_ll_imm_set_pad_slp_sel(&PMU, false);
 
     if (s_mpll_freq_mhz_before_sleep && !dslp) {
         rtc_clk_mpll_enable();
-        rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), s_mpll_freq_mhz_before_sleep);
+        rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), s_mpll_freq_mhz_before_sleep, true);
 #if CONFIG_SPIRAM
         if (!s_pmu_sleep_regdma_backup_enabled) {
             // MSPI2 and MSPI3 share the register for core clock. So we only set MSPI2 here.
@@ -463,7 +463,7 @@ TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
         REGI2C_WRITE_MASK(I2C_CPLL, I2C_CPLL_OC_DIV_7_0, 6); // lower default cpu_pll freq to 400M
         REGI2C_WRITE_MASK(I2C_SYSPLL, I2C_SYSPLL_OC_DIV_7_0, 8); // lower default sys_pll freq to 480M
     }
-    return pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev);
+    return pmu_ll_hp_is_sleep_reject(&PMU);
 }
 
 uint32_t pmu_sleep_get_wakup_retention_cost(void)

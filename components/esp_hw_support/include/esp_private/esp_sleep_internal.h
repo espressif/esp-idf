@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,6 +72,15 @@ esp_err_t esp_deep_sleep_register_phy_hook(esp_deep_sleep_cb_t new_dslp_cb);
   */
 void esp_deep_sleep_deregister_phy_hook(esp_deep_sleep_cb_t old_dslp_cb);
 #endif
+
+/**
+ * @brief Notify the sleep process that `sleep_time_overhead_out` needs to be remeasured, which must be called
+ *        in the following scenarios:
+ *        1. When the CPU frequency changes to below the crystal oscillator frequency.
+ *        2. When a new callback function is registered in the sleep process.
+ *        3. Other events occur that affect the execution time of the CPU sleep process.
+ */
+void esp_sleep_overhead_out_time_refresh(void);
 
 #ifdef __cplusplus
 }
