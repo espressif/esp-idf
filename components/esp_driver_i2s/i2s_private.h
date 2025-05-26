@@ -161,6 +161,8 @@ struct i2s_channel_obj_t {
     void                    *mode_info;     /*!< Slot, clock and gpio information of each mode */
     bool                    is_etm_start;   /*!< Whether start by etm tasks */
     bool                    is_etm_stop;    /*!< Whether stop by etm tasks */
+    bool                    full_duplex_slave; /*!< whether the channel is forced to switch to slave role for full duplex */
+
 #if SOC_I2S_SUPPORTS_APLL
     bool                    apll_en;        /*!< Flag of whether APLL enabled */
 #endif
