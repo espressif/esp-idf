@@ -1123,15 +1123,15 @@ static void esp_netif_dhcps_cb(void* arg, uint8_t ip[4], uint8_t mac[6])
 {
     esp_netif_t *esp_netif = arg;
     ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
-    ip_event_ap_staipassigned_t evt = { .esp_netif = esp_netif };
+    ip_event_assigned_ip_to_client_t evt = { .esp_netif = esp_netif };
     memcpy((char *)&evt.ip.addr, (char *)ip, sizeof(evt.ip.addr));
     memcpy((char *)&evt.mac, mac, sizeof(evt.mac));
     ESP_LOGI(TAG, "DHCP server assigned IP to a client, IP is: " IPSTR, IP2STR(&evt.ip));
     ESP_LOGD(TAG, "Client's MAC: %x:%x:%x:%x:%x:%x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-    int ret = esp_event_post(IP_EVENT, IP_EVENT_AP_STAIPASSIGNED, &evt, sizeof(evt), 0);
+    int ret = esp_event_post(IP_EVENT, IP_EVENT_ASSIGNED_IP_TO_CLIENT, &evt, sizeof(evt), 0);
     if (ESP_OK != ret) {
-        ESP_LOGE(TAG, "dhcps cb: failed to post IP_EVENT_AP_STAIPASSIGNED (%x)", ret);
+        ESP_LOGE(TAG, "dhcps cb: failed to post IP_EVENT_ASSIGNED_IP_TO_CLIENT (%x)", ret);
     }
 }
 #endif

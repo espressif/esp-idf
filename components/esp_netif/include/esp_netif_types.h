@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -98,7 +98,11 @@ typedef enum{
 typedef enum {
     IP_EVENT_STA_GOT_IP,               /*!< station got IP from connected AP */
     IP_EVENT_STA_LOST_IP,              /*!< station lost IP and the IP is reset to 0 */
-    IP_EVENT_AP_STAIPASSIGNED,         /*!< soft-AP assign an IP to a connected station */
+    IP_EVENT_ASSIGNED_IP_TO_CLIENT,    /*!< DHCP server assigned an IP to a connected client */
+    IP_EVENT_AP_STAIPASSIGNED __attribute__((deprecated("Use IP_EVENT_ASSIGNED_IP_TO_CLIENT instead")))
+                              = IP_EVENT_ASSIGNED_IP_TO_CLIENT,         /*!< compatibility enum,
+                                            soft-AP assign an IP to a connected station
+                                            @deprecated Use IP_EVENT_ASSIGNED_IP_TO_CLIENT instead */
     IP_EVENT_GOT_IP6,                  /*!< station or ap or ethernet interface v6IP addr is preferred */
     IP_EVENT_ETH_GOT_IP,               /*!< ethernet got IP from connected AP */
     IP_EVENT_ETH_LOST_IP,              /*!< ethernet lost IP and the IP is reset to 0 */
@@ -148,12 +152,17 @@ typedef struct {
     bool preferred;                 /*!< The default preference of the address */
 } ip_event_add_ip6_t;
 
-/** Event structure for IP_EVENT_AP_STAIPASSIGNED event */
+/** Event structure for IP_EVENT_ASSIGNED_IP_TO_CLIENT event */
 typedef struct {
     esp_netif_t *esp_netif; /*!< Pointer to the associated netif handle */
     esp_ip4_addr_t ip; /*!< IP address which was assigned to the station */
     uint8_t mac[6];    /*!< MAC address of the connected client */
-} ip_event_ap_staipassigned_t;
+} ip_event_assigned_ip_to_client_t;
+
+/** Compatibility event structure for ip_event_ap_staipassigned_t event
+ *  @deprecated Use ip_event_assigned_ip_to_client_t instead */
+__attribute__((deprecated("Use ip_event_assigned_ip_to_client_t instead of ip_event_ap_staipassigned_t")))
+typedef ip_event_assigned_ip_to_client_t ip_event_ap_staipassigned_t;
 
 typedef enum {
     ESP_NETIF_TX = 0,  // Data is being transmitted.
