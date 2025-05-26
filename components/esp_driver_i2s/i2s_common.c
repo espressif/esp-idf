@@ -297,12 +297,6 @@ static inline bool i2s_take_available_channel(i2s_controller_t *i2s_obj, uint8_t
 {
     bool is_available = false;
 
-#if SOC_I2S_HW_VERSION_1
-    /* In ESP32 and ESP32-S2, tx channel and rx channel are not totally separated
-     * Take both two channels in case one channel can affect another
-     */
-    chan_search_mask = I2S_DIR_RX | I2S_DIR_TX;
-#endif
     portENTER_CRITICAL(&g_i2s.spinlock);
     if (!(chan_search_mask & i2s_obj->chan_occupancy)) {
         i2s_obj->chan_occupancy |= chan_search_mask;
