@@ -14,6 +14,7 @@
 #include "soc/gpio_sig_map.h"
 #include "soc/rtc.h"
 #include "hal/gpio_ll.h"
+#include "hal/uart_ll.h"
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_common.h"
@@ -22,7 +23,7 @@
 #include "hal/usb_wrap_ll.h"
 #endif
 #include "esp_rom_gpio.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_caps.h"
 
@@ -91,7 +92,7 @@ void bootloader_console_init(void)
 #if ESP_ROM_UART_CLK_IS_XTAL
     clock_hz = (uint32_t)rtc_clk_xtal_freq_get() * MHZ; // From esp32-s3 on, UART clk source is selected to XTAL in ROM
 #endif
-    esp_rom_uart_set_clock_baudrate(uart_num, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+    _uart_ll_set_baudrate(UART_LL_GET_HW(uart_num), CONFIG_ESP_CONSOLE_UART_BAUDRATE, clock_hz);
 }
 #endif // CONFIG_ESP_CONSOLE_UART
 

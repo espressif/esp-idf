@@ -25,7 +25,7 @@
 #include "soc/usb_struct.h"
 #include "soc/usb_reg.h"
 #include "hal/soc_hal.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_caps.h"
 #ifdef CONFIG_IDF_TARGET_ESP32S2

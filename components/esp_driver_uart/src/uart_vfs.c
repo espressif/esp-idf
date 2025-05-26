@@ -16,7 +16,7 @@
 #include "driver/uart_vfs.h"
 #include "driver/uart.h"
 #include "driver/uart_select.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "hal/uart_ll.h"
 #include "soc/soc_caps.h"
 #include "esp_vfs_dev.h" // Old headers for the aliasing functions

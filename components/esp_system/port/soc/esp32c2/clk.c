@@ -25,7 +25,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "bootloader_clock.h"
 #include "soc/syscon_reg.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive

@@ -15,7 +15,7 @@
 #include "esp_private/panic_internal.h"
 #include "esp_private/system_internal.h"
 #include "esp_heap_caps.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 #include "sdkconfig.h"
 

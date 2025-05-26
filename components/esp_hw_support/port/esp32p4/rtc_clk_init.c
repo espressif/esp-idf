@@ -20,7 +20,7 @@
 #include "soc/pmu_reg.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_private/esp_pmu.h"
 #include "hal/clk_tree_ll.h"
 

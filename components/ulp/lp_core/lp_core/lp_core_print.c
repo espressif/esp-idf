@@ -7,7 +7,7 @@
 #include "sdkconfig.h"
 #include "ulp_lp_core_uart.h"
 #include "hal/uart_hal.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
 #define LP_UART_PORT_NUM LP_UART_NUM_0
 #define BINARY_SUPPORT 1

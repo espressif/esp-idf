@@ -22,7 +22,7 @@
 #include "hal/clk_tree_ll.h"
 #endif
 #include "esp_rom_sys.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
 __attribute__((weak)) void bootloader_clock_configure(void)
 {

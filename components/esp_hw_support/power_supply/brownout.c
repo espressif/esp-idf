@@ -23,7 +23,7 @@
 #include "hal/brownout_hal.h"
 #include "hal/brownout_ll.h"
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "hal/uart_ll.h"
 #include "soc/power_supply_periph.h"
 #include "esp_brownout.h"

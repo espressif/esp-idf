@@ -71,7 +71,7 @@
 #include "hal/mspi_ll.h"
 
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 #include "esp_private/cache_utils.h"
 #include "esp_private/brownout.h"
