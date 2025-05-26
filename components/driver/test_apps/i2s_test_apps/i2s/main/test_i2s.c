@@ -201,6 +201,38 @@ TEST_CASE("I2S_basic_channel_allocation_reconfig_deleting_test", "[i2s]")
     TEST_ESP_OK(i2s_del_channel(tx_handle));
     TEST_ESP_OK(i2s_del_channel(rx_handle));
 
+    /* Lazy initialize std duplex test */
+    chan_cfg.id = I2S_NUM_0;    // Specify port id to I2S port 0
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
+    TEST_ESP_OK(i2s_channel_get_info(tx_handle, &chan_info));
+    TEST_ASSERT(chan_info.pair_chan == NULL);
+    TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
+    TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+    TEST_ESP_OK(i2s_channel_get_info(tx_handle, &chan_info));
+    TEST_ASSERT(chan_info.pair_chan == rx_handle);
+    TEST_ESP_OK(i2s_del_channel(tx_handle));
+    TEST_ESP_OK(i2s_del_channel(rx_handle));
+
+#if SOC_I2S_SUPPORTS_TDM
+    /* Lazy initialize tdm duplex test */
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+    TEST_ESP_OK(i2s_channel_get_info(tx_handle, &chan_info));
+    TEST_ASSERT(chan_info.pair_chan == NULL);
+    i2s_tdm_config_t tdm_cfg = {
+        .clk_cfg = I2S_TDM_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
+        .slot_cfg = I2S_TDM_PHILIPS_SLOT_DEFAULT_CONFIG(SAMPLE_BITS, I2S_SLOT_MODE_STEREO, 0x0F),
+        .gpio_cfg = I2S_TEST_MASTER_DEFAULT_PIN,
+    };
+    TEST_ESP_OK(i2s_channel_init_tdm_mode(tx_handle, &tdm_cfg));
+    TEST_ESP_OK(i2s_channel_init_tdm_mode(rx_handle, &tdm_cfg));
+    TEST_ESP_OK(i2s_channel_get_info(tx_handle, &chan_info));
+    TEST_ASSERT(chan_info.pair_chan == rx_handle);
+    TEST_ESP_OK(i2s_del_channel(tx_handle));
+    TEST_ESP_OK(i2s_del_channel(rx_handle));
+#endif
+
     /* Repeat to check if a same port can be allocated again */
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
     TEST_ESP_OK(i2s_del_channel(rx_handle));
@@ -216,7 +248,26 @@ TEST_CASE("I2S_basic_channel_allocation_reconfig_deleting_test", "[i2s]")
 
 static volatile bool task_run_flag;
 
-static void i2s_read_task(void *args) {
+#define TEST_I2S_DATA 0x78
+
+static void i2s_read_check_task(void *args)
+{
+    i2s_chan_handle_t rx_handle = (i2s_chan_handle_t)args;
+    uint8_t *recv_buf = (uint8_t *)calloc(1, 2000);
+    TEST_ASSERT(recv_buf);
+    size_t recv_size = 0;
+
+    while (task_run_flag) {
+        TEST_ASSERT_EQUAL(i2s_channel_read(rx_handle, recv_buf, 2000, &recv_size, 300), ESP_OK);
+        TEST_ASSERT_EQUAL(recv_buf[0], TEST_I2S_DATA);
+    }
+
+    free(recv_buf);
+    vTaskDelete(NULL);
+}
+
+static void i2s_read_task(void *args)
+{
     i2s_chan_handle_t rx_handle = (i2s_chan_handle_t)args;
     uint8_t *recv_buf = (uint8_t *)calloc(1, 2000);
     TEST_ASSERT(recv_buf);
@@ -239,6 +290,7 @@ static void i2s_write_task(void *args) {
     i2s_chan_handle_t tx_handle = (i2s_chan_handle_t)args;
     uint8_t *send_buf = (uint8_t *)calloc(1, 2000);
     TEST_ASSERT(send_buf);
+    memset(send_buf, TEST_I2S_DATA, 2000);
     size_t send_size = 0;
     esp_err_t ret = ESP_OK;
     uint32_t cnt = 1;
@@ -350,6 +402,65 @@ TEST_CASE("I2S_thread_concurrent_safety_test", "[i2s]")
 
     /* Wait 3 seconds to see if any failures occur */
     vTaskDelay(pdMS_TO_TICKS(4000));
+
+    /* Stop those three tasks */
+    task_run_flag = false;
+
+    /* Wait for the three thread deleted */
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    /* Disable the channels, they will keep waiting until the current reading / writing finished */
+    TEST_ESP_OK(i2s_channel_disable(tx_handle));
+    TEST_ESP_OK(i2s_channel_disable(rx_handle));
+    /* Delete the channels */
+    TEST_ESP_OK(i2s_del_channel(tx_handle));
+    TEST_ESP_OK(i2s_del_channel(rx_handle));
+}
+
+TEST_CASE("I2S_lazy_duplex_test", "[i2s]")
+{
+    i2s_chan_handle_t tx_handle;
+    i2s_chan_handle_t rx_handle;
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
+        .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(SAMPLE_BITS, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = {
+            .mclk = MASTER_MCK_IO,
+            .bclk = MASTER_BCK_IO,
+            .ws = MASTER_WS_IO,
+            .dout = DATA_OUT_IO,
+            .din = DATA_OUT_IO,
+            .invert_flags = {
+                .mclk_inv = false,
+                .bclk_inv = false,
+                .ws_inv = false,
+            },
+        },
+    };
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+    TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
+    TEST_ESP_OK(i2s_channel_enable(tx_handle));
+    printf("Enabled TX channel\n");
+
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
+    TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+    /* Enable the channels before creating reading/writing task*/
+    TEST_ESP_OK(i2s_channel_enable(rx_handle));
+    printf("Enabled RX channel\n");
+
+    task_run_flag = true;
+    /* writing task to keep writing */
+    xTaskCreate(i2s_write_task, "i2s_write_task", 4096, tx_handle, 5, NULL);
+    printf("TX started\n");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    /* reading task to keep reading */
+    xTaskCreate(i2s_read_check_task, "i2s_read_check_task", 4096, rx_handle, 5, NULL);
+    printf("RX started\n");
+
+    /* Wait 3 seconds to see if any failures occur */
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    printf("Finished\n");
 
     /* Stop those three tasks */
     task_run_flag = false;

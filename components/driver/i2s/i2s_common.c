@@ -211,12 +211,6 @@ static inline bool i2s_take_available_channel(i2s_controller_t *i2s_obj, uint8_t
 {
     bool is_available = false;
 
-#if SOC_I2S_HW_VERSION_1
-    /* In ESP32 and ESP32-S2, tx channel and rx channel are not totally separated
-     * Take both two channels in case one channel can affect another
-     */
-    chan_search_mask = I2S_DIR_RX | I2S_DIR_TX;
-#endif
     portENTER_CRITICAL(&g_i2s.spinlock);
     if (!(chan_search_mask & i2s_obj->chan_occupancy)) {
         i2s_obj->chan_occupancy |= chan_search_mask;
@@ -731,11 +725,11 @@ void i2s_gpio_check_and_set(gpio_num_t gpio, uint32_t signal_idx, bool is_input,
     if (gpio != I2S_GPIO_UNUSED) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
         if (is_input) {
-            /* Set direction, for some GPIOs, the input function are not enabled as default */
-            gpio_set_direction(gpio, GPIO_MODE_INPUT);
+            /* Enable the input, for some GPIOs, the input function are not enabled as default */
+            gpio_ll_input_enable(GPIO_HAL_GET_HW(GPIO_PORT_0), (uint32_t)gpio);
             esp_rom_gpio_connect_in_signal(gpio, signal_idx, is_invert);
         } else {
-            gpio_set_direction(gpio, GPIO_MODE_OUTPUT);
+            /* output will be enabled in esp_rom_gpio_connect_out_signal */
             esp_rom_gpio_connect_out_signal(gpio, signal_idx, is_invert, 0);
         }
     }
@@ -745,7 +739,7 @@ void i2s_gpio_loopback_set(gpio_num_t gpio, uint32_t out_sig_idx, uint32_t in_si
 {
     if (gpio != I2S_GPIO_UNUSED) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
-        gpio_set_direction(gpio, GPIO_MODE_INPUT_OUTPUT);
+        gpio_ll_input_enable(GPIO_HAL_GET_HW(GPIO_PORT_0), (uint32_t)gpio);
         esp_rom_gpio_connect_out_signal(gpio, out_sig_idx, 0, 0);
         esp_rom_gpio_connect_in_signal(gpio, in_sig_idx, 0);
     }
