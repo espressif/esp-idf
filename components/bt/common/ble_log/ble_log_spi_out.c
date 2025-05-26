@@ -747,10 +747,6 @@ static void spi_out_ts_sync_deinit(void)
 
 static void spi_out_ts_sync_enable(bool enable)
 {
-    // Reset ts sync io
-    ts_sync_data.io_level = false;
-    gpio_set_level(SPI_OUT_SYNC_IO_NUM, (uint32_t)ts_sync_data.io_level);
-
     // Update ts sync status
     ts_sync_enabled = enable;
     if (enable) {
@@ -771,7 +767,12 @@ static void spi_out_ts_sync_enable(bool enable)
             }
         }
 #endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
+        if (!ts_sync_data.io_level) {
+            gpio_set_level(SPI_OUT_SYNC_IO_NUM, 1);
+        }
     }
+    ts_sync_data.io_level = 0;
+    gpio_set_level(SPI_OUT_SYNC_IO_NUM, (uint32_t)ts_sync_data.io_level);
 }
 
 static void spi_out_ts_sync_toggle(void)
