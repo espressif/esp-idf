@@ -179,6 +179,10 @@ deploy_docs_preview:
     DOCS_DEPLOY_SERVER_USER: "$DOCS_SERVER_USER"
     DOCS_DEPLOY_PATH: "$DOCS_PATH"
     DOCS_DEPLOY_URL_BASE: "https://$DOCS_PREVIEW_SERVER_URL/docs/esp-idf"
+  environment:
+    name: deploy_docs_preview
+    deployment_tier: staging
+    url: "https://$DOCS_PREVIEW_SERVER_URL/docs/esp-idf"
 
 # stage: post_deploy
 deploy_docs_production:
@@ -200,6 +204,10 @@ deploy_docs_production:
     DOCS_DEPLOY_PATH: "$DOCS_PROD_PATH"
     DOCS_DEPLOY_URL_BASE: "https://docs.espressif.com/projects/esp-idf"
     DEPLOY_STABLE: 1
+  environment:
+    name: deploy_docs_production
+    deployment_tier: production
+    url: "https://docs.espressif.com/projects/esp-idf"
 
 check_doc_links:
   extends:
