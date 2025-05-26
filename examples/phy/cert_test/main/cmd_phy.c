@@ -42,6 +42,7 @@ static phy_gpio_output_set_t phy_gpio_output_set_args;
 #define arg_int1(_a, _b, _c, _d) arg_int1(NULL, NULL, _c, _d)
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C6
 static int esp_phy_tx_contin_en_func(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void **) &phy_args);
@@ -57,6 +58,7 @@ static int esp_phy_tx_contin_en_func(int argc, char **argv)
     }
     return 0;
 }
+#endif
 
 static int esp_phy_cmdstop_func(int argc, char **argv)
 {
@@ -518,6 +520,7 @@ void register_phy_cmd(void)
     phy_args.enable  = arg_int0(NULL, NULL, "<enable>", "enable");
     phy_args.end = arg_end(1);
 
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C6
     const esp_console_cmd_t tx_contin_cmd = {
         .command = "tx_contin_en",
         .help = "TX Continuous mode, 1: enable, 0: disable",
@@ -526,6 +529,7 @@ void register_phy_cmd(void)
         .argtable = &phy_args
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&tx_contin_cmd) );
+#endif
 
     const esp_console_cmd_t cmdstop_cmd = {
         .command = "cmdstop",

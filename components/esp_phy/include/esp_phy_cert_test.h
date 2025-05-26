@@ -38,7 +38,6 @@ typedef enum {
     PHY_RATE_MCS5 = 0x15,
     PHY_RATE_MCS6 = 0x16,
     PHY_RATE_MCS7 = 0x17,
-#if CONFIG_SOC_WIFI_HE_SUPPORT
     // 11ax
     PHY_RATE_11AX_MCS0   = 0x20,
     PHY_RATE_11AX_MCS1   = 0x21,
@@ -50,7 +49,16 @@ typedef enum {
     PHY_RATE_11AX_MCS7   = 0x27,
     PHY_RATE_11AX_MCS8   = 0x28,
     PHY_RATE_11AX_MCS9   = 0x29,
-#endif//CONFIG_SOC_WIFI_HE_SUPPORT
+   //VHT
+    PHY_RATE_VHT_MCS0 = 0x30,
+    PHY_RATE_VHT_MCS1 = 0x31,
+    PHY_RATE_VHT_MCS2 = 0x32,
+    PHY_RATE_VHT_MCS3 = 0x33,
+    PHY_RATE_VHT_MCS4 = 0x34,
+    PHY_RATE_VHT_MCS5 = 0x35,
+    PHY_RATE_VHT_MCS6 = 0x36,
+    PHY_RATE_VHT_MCS7 = 0x37,
+    PHY_RATE_VHT_MCS8 = 0x38,
     PHY_WIFI_RATE_MAX
 } esp_phy_wifi_rate_t;
 
