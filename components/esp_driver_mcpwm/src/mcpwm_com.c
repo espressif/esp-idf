@@ -187,6 +187,7 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
     esp_err_t ret = ESP_OK;
     bool clock_selection_conflict = false;
     bool do_clock_init = false;
+    int group_id = group->group_id;
     // check if we need to update the group clock source, group clock source is shared by all mcpwm modules
     portENTER_CRITICAL(&group->spinlock);
     if (group->clk_src == 0) {
@@ -202,15 +203,21 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
     if (do_clock_init) {
 
 #if CONFIG_PM_ENABLE
-        sprintf(group->pm_lock_name, "mcpwm_%d", group->group_id); // e.g. mcpwm_0
-        ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, group->pm_lock_name, &group->pm_lock);
+        sprintf(group->pm_lock_name, "mcpwm_%d", group_id); // e.g. mcpwm_0
+        // to make the mcpwm works reliable, the source clock must stay alive and unchanged
+        esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
+        // on ESP32 and ESP32S3, MCPWM's clock source (PLL_160M) frequency is automatically reduced during DFS, resulting in an inaccurate time base
+        // thus we want to use the APB_MAX lock
+        pm_lock_type = ESP_PM_APB_FREQ_MAX;
+#endif
+        ret  = esp_pm_lock_create(pm_lock_type, 0, group->pm_lock_name, &group->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
-        ESP_LOGD(TAG, "install NO_LIGHT_SLEEP lock for MCPWM group(%d)", group->group_id);
 #endif // CONFIG_PM_ENABLE
 
         esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
         MCPWM_CLOCK_SRC_ATOMIC() {
-            mcpwm_ll_group_set_clock_source(group->group_id, clk_src);
+            mcpwm_ll_group_set_clock_source(group_id, clk_src);
         }
     }
     return ret;
