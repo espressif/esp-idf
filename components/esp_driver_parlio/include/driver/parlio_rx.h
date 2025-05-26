@@ -39,8 +39,6 @@ typedef struct {
         uint32_t            clk_gate_en : 1;        /*!< Enable RX clock gating, only available when the clock direction is output(not supported on ESP32-C6)
                                                          the output clock will be controlled by the valid gpio,
                                                          i.e. high level of valid gpio to enable the clock output, low to disable */
-        uint32_t            io_loop_back: 1;        /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-        uint32_t            io_no_init: 1 __attribute__((deprecated)); /*!< Deprecated. Driver won't change the GPIO configuration in inilization. */
         uint32_t            allow_pd: 1;             /*!< Set to allow power down. When this flag set, the driver will backup/restore the PARLIO registers before/after entering/exist sleep mode.
                                                          By this approach, the system can power off PARLIO's power domain.
                                                          This can save power, but at the expense of more RAM being consumed. */

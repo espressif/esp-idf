@@ -85,7 +85,6 @@ The driver of FIFOs works as below:
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "hal/sdio_slave_hal.h"
-#include "hal/gpio_hal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_private/periph_ctrl.h"

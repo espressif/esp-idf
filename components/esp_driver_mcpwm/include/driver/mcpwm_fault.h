@@ -26,9 +26,6 @@ typedef struct {
     int gpio_num;                 /*!< GPIO used by the fault signal */
     struct {
         uint32_t active_level: 1; /*!< On which level the fault signal is treated as active */
-        uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-        uint32_t pull_up: 1;      /*!< Whether to pull up internally */
-        uint32_t pull_down: 1;    /*!< Whether to pull down internally */
     } flags;                      /*!< Extra configuration flags for GPIO fault */
 } mcpwm_gpio_fault_config_t;
 

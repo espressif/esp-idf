@@ -16,7 +16,6 @@
 #include "driver/i2s_tdm.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
-#include "hal/gpio_hal.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "soc/soc_caps.h"

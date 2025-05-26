@@ -26,7 +26,6 @@
 #include "esp_err.h"
 #include "soc/soc_caps.h"
 #include "soc/twai_periph.h"
-#include "soc/io_mux_reg.h"
 #include "hal/twai_hal.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"

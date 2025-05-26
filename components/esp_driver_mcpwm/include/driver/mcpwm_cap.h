@@ -146,11 +146,7 @@ typedef struct {
     struct extra_capture_channel_flags {
         uint32_t pos_edge: 1;          /*!< Whether to capture on positive edge */
         uint32_t neg_edge: 1;          /*!< Whether to capture on negative edge */
-        uint32_t pull_up: 1;           /*!< Whether to pull up internally */
-        uint32_t pull_down: 1;         /*!< Whether to pull down internally */
         uint32_t invert_cap_signal: 1; /*!< Invert the input capture signal */
-        uint32_t io_loop_back: 1;      /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-        uint32_t keep_io_conf_at_exit: 1 __attribute__((deprecated)); /*!< Deprecated. Driver won't change the GPIO configuration in deinilization. */
     } flags;                           /*!< Extra configuration flags for capture channel */
 } mcpwm_capture_channel_config_t;
 

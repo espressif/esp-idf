@@ -879,7 +879,6 @@ Sync Timers by GPIO
         mcpwm_gpio_sync_src_config_t gpio_sync_config = {
             .group_id = 0,              // GPIO fault should be in the same group of the above timers
             .gpio_num = EXAMPLE_SYNC_GPIO,
-            .flags.pull_down = true,
             .flags.active_neg = false,  // By default, a posedge pulse can trigger a sync event
         };
         ESP_ERROR_CHECK(mcpwm_new_gpio_sync_src(&gpio_sync_config, &gpio_sync_source));

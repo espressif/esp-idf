@@ -7,7 +7,6 @@
 #include <sys/lock.h>
 #include <sys/param.h>
 #include "esp_memory_utils.h"
-#include "hal/gpio_ll.h"
 #include "hal/cam_ll.h"
 #include "hal/color_hal.h"
 #include "driver/gpio.h"

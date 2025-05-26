@@ -11,7 +11,6 @@
 #include "driver/mcpwm_cap.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
-#include "hal/gpio_ll.h"
 
 static void mcpwm_capture_default_isr(void *args);
 
@@ -289,21 +288,6 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
         gpio_func_sel(config->gpio_num, PIN_FUNC_GPIO);
         gpio_input_enable(config->gpio_num);
         esp_rom_gpio_connect_in_signal(config->gpio_num, mcpwm_periph_signals.groups[group->group_id].captures[cap_chan_id].cap_sig, 0);
-        if (config->flags.pull_down) {
-            gpio_pulldown_en(config->gpio_num);
-        } else {
-            gpio_pulldown_dis(config->gpio_num);
-        }
-        if (config->flags.pull_up) {
-            gpio_pullup_en(config->gpio_num);
-        } else {
-            gpio_pullup_dis(config->gpio_num);
-        }
-
-        // deprecated, to be removed in in esp-idf v6.0
-        if (config->flags.io_loop_back) {
-            gpio_ll_output_enable(&GPIO, config->gpio_num);
-        }
     }
 
     cap_chan->gpio_num = config->gpio_num;

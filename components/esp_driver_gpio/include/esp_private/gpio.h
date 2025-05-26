@@ -7,9 +7,9 @@
 #pragma once
 
 #include "sdkconfig.h"
-#include <esp_types.h>
-
+#include "esp_types.h"
 #include "soc/soc_caps.h"
+#include "soc/io_mux_reg.h"
 #include "driver/gpio.h"
 
 #ifdef __cplusplus

@@ -14,7 +14,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "hal/gpio_ll.h"
 #include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
 #include "esp_system.h"

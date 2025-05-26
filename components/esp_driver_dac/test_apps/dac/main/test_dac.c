@@ -19,7 +19,6 @@
 #include "esp_private/i2s_platform.h"
 // Following headers are used to test the conversion frequency
 #include "soc/i2s_periph.h"
-#include "hal/gpio_hal.h"
 #include "driver/pulse_cnt.h"
 #include "soc/pcnt_periph.h"
 #elif CONFIG_IDF_TARGET_ESP32S2

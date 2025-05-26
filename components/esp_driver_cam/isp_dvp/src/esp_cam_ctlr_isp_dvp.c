@@ -15,7 +15,6 @@
 #include "driver/isp_types.h"
 #include "driver/gpio.h"
 #include "hal/isp_hal.h"
-#include "hal/gpio_hal.h"
 #include "hal/isp_ll.h"
 #include "hal/mipi_csi_brg_ll.h"
 #include "hal/mipi_csi_ll.h"

@@ -1018,8 +1018,6 @@ TEST_CASE("mcpwm_generator_action_on_fault_trigger_event", "[mcpwm]")
     mcpwm_gpio_fault_config_t gpio_trigger_config = {
         .group_id = 0,
         .flags.active_level = 1,
-        .flags.pull_down = 1,
-        .flags.pull_up = 0,
     };
     for (int i = 0 ; i < 3; i++) {
         gpio_trigger_config.gpio_num = fault_gpio_num[i];
@@ -1253,7 +1251,6 @@ TEST_CASE("mcpwm_generator_action_on_gpio_sync_trigger_event", "[mcpwm]")
     mcpwm_gpio_sync_src_config_t gpio_sync_config = {
         .group_id = 0,
         .gpio_num = sync_gpio,
-        .flags.pull_down = true, // internally pull down
     };
     TEST_ESP_OK(mcpwm_new_gpio_sync_src(&gpio_sync_config, &gpio_sync));
 

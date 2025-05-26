@@ -17,7 +17,6 @@
 #include "soc/i2c_periph.h"
 #include "esp_rom_gpio.h"
 #include "driver/gpio.h"
-#include "hal/gpio_ll.h"
 #include "clk_ctrl_os.h"
 #include "esp_private/esp_clk.h"
 #include "driver/i2c_slave.h"

@@ -48,9 +48,6 @@ typedef struct {
     int gpio_num; /*!< GPIO used by sync source */
     struct {
         uint32_t active_neg: 1;   /*!< Whether the sync signal is active on negedge, by default, the sync signal's posedge is treated as active */
-        uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-        uint32_t pull_up: 1;      /*!< Whether to pull up internally */
-        uint32_t pull_down: 1;    /*!< Whether to pull down internally */
     } flags;                      /*!< Extra configuration flags for GPIO sync source */
 } mcpwm_gpio_sync_src_config_t;
 

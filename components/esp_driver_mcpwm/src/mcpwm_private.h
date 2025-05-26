@@ -25,7 +25,6 @@
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
 #include "esp_pm.h"
-#include "soc/io_mux_reg.h"
 #include "soc/mcpwm_periph.h"
 #include "hal/mcpwm_hal.h"
 #include "hal/mcpwm_ll.h"

@@ -18,7 +18,6 @@
 #include "esp_pm.h"
 #include "freertos/FreeRTOS.h"
 #include "hal/i2c_hal.h"
-#include "hal/gpio_hal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_rom_gpio.h"
 #include "i2c_private.h"

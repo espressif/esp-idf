@@ -72,7 +72,6 @@ TEST_CASE("mcpwm_gpio_fault_event_callbacks", "[mcpwm]")
         .group_id = 0,
         .gpio_num = fault_gpio,
         .flags.active_level = true, // active on high level
-        .flags.pull_down = true,
     };
     TEST_ESP_OK(mcpwm_new_gpio_fault(&gpio_fault_config, &fault));
 
