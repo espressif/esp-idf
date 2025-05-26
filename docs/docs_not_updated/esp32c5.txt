@@ -39,13 +39,3 @@ api-reference/system/inc/power_management_esp32c5.rst
 api-reference/index.rst
 api-reference/protocols/esp_serial_slave_link.rst
 api-reference/protocols/esp_crt_bundle.rst
-get-started/establish-serial-connection.rst
-get-started/linux-macos-setup.rst
-get-started/linux-macos-start-project.rst
-get-started/windows-setup.rst
-get-started/start-project.rst
-get-started/flashing-troubleshooting.rst
-get-started/windows-start-project.rst
-get-started/index.rst
-get-started/windows-setup-update.rst
-hw-reference/index.rst
