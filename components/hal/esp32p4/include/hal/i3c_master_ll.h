@@ -31,7 +31,6 @@ extern "C" {
 #define I3C_LL_MASTER_TRANSMIT_EVENT_INTR    (I3C_MST_TX_DATA_BUF_THLD_INT_ENA_M | I3C_MST_TRANSFER_COMPLETE_INT_ENA_M | I3C_MST_COMMAND_DONE_INT_ENA_M)
 #define I3C_LL_MASTER_RECEIVE_EVENT_INTR     (I3C_MST_RX_DATA_BUF_THLD_INT_ENA_M | I3C_MST_TRANSFER_COMPLETE_INT_ENA_M | I3C_MST_COMMAND_DONE_INT_ENA_M)
 #define I3C_MASTER_LL_DEFAULT_SETUP_TIME     (600)
-<<<<<<< HEAD
 
 /**
  * @brief I3C master command types
@@ -222,6 +221,17 @@ typedef enum {
 } i3c_master_ll_mode_t;
 
 /**
+ * @brief I2C under I3C master speed mode
+ *
+ * This enumeration defines the speed modes for an I3C master.
+ * It can either operate in the I3C protocol mode or be backward-compatible with I2C devices.
+ */
+typedef enum {
+    I3C_MASTER_LL_I2C_FAST_MODE = 0, ///< I3C works under I2C fast mode
+    I3C_MASTER_LL_I2C_FAST_MODE_PLUS = 1, ///< I3C works under I2C fast mode plus
+} i3c_master_ll_i2c_speed_mode_t;
+
+/**
  * @brief I3C Device address descriptor
  *
  * This structure represents a single entry in the I3C master address table.
@@ -279,8 +289,6 @@ typedef union {
      */
     uint32_t val; ///< Raw 32-bit value of the address table entry.
 } i3c_master_ll_device_address_descriptor_t;
-=======
->>>>>>> 0fb9d0462d1 (feat(i3c): Add support for i2c mode in i3c peripheral)
 
 typedef enum {
     I3C_MASTER_LL_FIFO_WM_LENGTH_2 = 0x0,
@@ -291,29 +299,6 @@ typedef enum {
 } i3c_master_ll_fifo_wm_t;
 
 /**
- * @brief I3C Master Error State Enumeration
- */
-typedef enum {
-    I3C_MASTER_LL_NO_ERROR = 0,                                       ///< Indicates that the I3C master encountered no errors.
-    I3C_MASTER_LL_READ_LENGTH_MISMATCH = 3,                           ///< The length of data read from the slave device does not match the expected or requested length.
-    I3C_MASTER_LL_BROADCAST_ADDRESS_NACK_ERROR = 4,                   ///< Broadcast Address NACK Error.
-    I3C_MASTER_LL_ADDRESS_NACK_OR_DYNAMIC_ADDRESS_NACK = 5,           ///< Address NACK or Dynamic Address NACK.
-    I3C_MASTER_LL_BUFFER_RX_OVERFLOW_TX_UNDERFLOW = 6,                ///< Buffer RX Overflow or TX Underflow.
-    I3C_MASTER_LL_I2C_SLAVE_WRITE_DATA_NACK_ERROR = 9,                ///< I2C Slave Write Data NACK Error.
-} i3c_master_ll_error_state_enum_t;
-
-/**
- * @brief I3C master operating mode
- *
- * This enumeration defines the operating modes for an I3C master.
- * It can either operate in the I3C protocol mode or be backward-compatible with I2C devices.
- */
-typedef enum {
-    I3C_MASTER_LL_MODE_I3C = 0,                 ///< I3C works under I3C mode
-    I3C_MASTER_LL_MODE_I2C = 1,                 ///< I3C works under I2C mode
-} i3c_master_ll_mode_t;
-
-/**
  * @brief Set the clock source for the I3C master
  *
  * @param hw I3C master hardware instance
@@ -322,8 +307,19 @@ typedef enum {
 static inline void i3c_master_ll_set_source_clk(i3c_mst_dev_t *hw, i3c_master_clock_source_t src_clk)
 {
     (void)hw; // Suppress unused parameter warning
-    // src_clk : (1) for PLL_F160M, (0) for XTAL
-    HP_SYS_CLKRST.peri_clk_ctrl119.reg_i3c_mst_clk_src_sel = (src_clk == I3C_MASTER_CLK_SRC_PLL_F160M) ? 1 : 0;
+    switch (src_clk) {
+    case I3C_MASTER_CLK_SRC_XTAL:
+        HP_SYS_CLKRST.peri_clk_ctrl119.reg_i3c_mst_clk_src_sel = 0;
+        break;
+    case I3C_MASTER_CLK_SRC_PLL_F160M:
+        HP_SYS_CLKRST.peri_clk_ctrl119.reg_i3c_mst_clk_src_sel = 1;
+        break;
+    case I3C_MASTER_CLK_SRC_PLL_F120M:
+        HP_SYS_CLKRST.peri_clk_ctrl119.reg_i3c_mst_clk_src_sel = 2;
+        break;
+    default:
+        HAL_ASSERT(false);
+    }
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -338,11 +334,7 @@ static inline void i3c_master_ll_set_source_clk(i3c_mst_dev_t *hw, i3c_master_cl
  * @param device_number Number of devices
  */
 __attribute__((always_inline))
-<<<<<<< HEAD
 static inline void i3c_master_ll_set_device_address_table(i3c_mst_dev_t *hw, i3c_master_ll_device_address_descriptor_t *addr_table, size_t device_number)
-=======
-static inline void i3c_master_ll_set_address_device_table(i3c_mst_dev_t *hw, i3c_master_address_table_t *addr_table, size_t device_number)
->>>>>>> 0fb9d0462d1 (feat(i3c): Add support for i2c mode in i3c peripheral)
 {
     for (int i = 0; i < device_number; i++) {
         I3C_MST_MEM.dev_addr_table[i].val = addr_table[i].val;
@@ -405,11 +397,7 @@ static inline void i3c_master_ll_reset_register(i3c_mst_dev_t *hw)
  * @param command_num Number of commands
  */
 __attribute__((always_inline))
-<<<<<<< HEAD
 static inline void i3c_master_ll_set_command(i3c_mst_dev_t *hw, i3c_master_ll_command_descriptor_t *command_buf, size_t command_num)
-=======
-static inline void i3c_master_ll_set_command(i3c_mst_dev_t *hw, i3c_master_command_table_t *command_buf, size_t command_num)
->>>>>>> 0fb9d0462d1 (feat(i3c): Add support for i2c mode in i3c peripheral)
 {
     for (int i = 0; i < command_num; i++) {
         I3C_MST_MEM.command_buf_port.reg_command = command_buf[i].cmd_l.val;
@@ -472,13 +460,14 @@ static inline void i3c_master_ll_set_i2c_fast_mode_timing(i3c_mst_dev_t *hw, uin
 }
 
 /**
- * @brief Set the fast+ mode timing for I2C master
+ * @brief Set the fast mode+ timing for I2C master
+ *
  * @param hw I3C master hardware instance
  * @param clock_source_freq Clock source frequency
  * @param scl_freq SCL frequency
  */
 __attribute__((always_inline))
-static inline void i3c_master_ll_set_i2c_fast_plus_mode_timing(i3c_mst_dev_t *hw, uint32_t clock_source_freq, uint32_t scl_freq)
+static inline void i3c_master_ll_set_i2c_fast_mode_plus_timing(i3c_mst_dev_t *hw, uint32_t clock_source_freq, uint32_t scl_freq)
 {
     uint32_t period_cnt = clock_source_freq / scl_freq / 2;
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->scl_i2c_fmp_time, reg_i2c_fmp_high_period, (period_cnt - 1));
@@ -742,11 +731,7 @@ static inline void i3c_master_ll_enable_rx_by_dma(i3c_mst_dev_t *dev, bool enabl
  * @return Response data
  */
 __attribute__((always_inline))
-<<<<<<< HEAD
 static inline i3c_master_ll_response_descriptor_t i3c_master_ll_get_response_data(i3c_mst_dev_t *dev)
-=======
-static inline uint32_t i3c_master_ll_get_response_buffer_value(i3c_mst_dev_t *dev)
->>>>>>> 0fb9d0462d1 (feat(i3c): Add support for i2c mode in i3c peripheral)
 {
     return (i3c_master_ll_response_descriptor_t)(I3C_MST_MEM.response_buf_port.val);
 }

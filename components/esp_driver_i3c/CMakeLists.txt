@@ -4,7 +4,7 @@ set(srcs)
 set(include "include")
 
 # I3C related source files.
-if(CONFIG_SOC_I3C_MASTER_SUPPORTED)
+if(CONFIG_I3C_MASTER_ENABLED)
     list(APPEND srcs "i3c_master.c"
         )
 endif()

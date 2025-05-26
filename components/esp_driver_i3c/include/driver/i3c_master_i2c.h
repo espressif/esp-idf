@@ -8,7 +8,6 @@
 
 #include <stdint.h>
 #include "esp_err.h"
-#include "hal/gpio_types.h"
 #include "driver/i3c_master_types.h"
 
 #ifdef __cplusplus
@@ -26,10 +25,7 @@ extern "C" {
  */
 typedef struct {
     uint8_t device_address;                              /*!< Device address. Must be 7-bit in I3C-I2C mode */
-    uint32_t scl_speed_hz;                               /*!< I2C Device SCL line frequency. */
-    struct {
-        uint32_t disable_ack_check : 1;                  /*!< Disable ACK check. By default this is 0, this means ack check is enabled, the transaction will be stopped and API returns error when nack is detected. */
-    } flags;                                             /*!< I2C Devices config flags */
+    uint32_t scl_freq_hz;                                /*!< I2C Device SCL line frequency. */                                         /*!< I2C Devices config flags */
 } i3c_device_i2c_config_t;
 
 /**
@@ -82,7 +78,7 @@ esp_err_t i3c_master_bus_rm_i2c_device(i3c_master_i2c_device_handle_t dev_handle
  * @param[in] dev_handle      Handle to the I2C device.
  * @param[in] write_buffer    Pointer to the buffer containing data to transmit.
  * @param[in] write_size      Size of the data in bytes.
- * @param[in] xfer_timeout_ms Timeout for the operation in milliseconds.
+ * @param[in] xfer_timeout_ms Timeout for the operation in milliseconds. Note: -1 means wait forever.
  *
  * @note If `enable_async_trans` is set, this function operates in asynchronous transmission mode.
  * In this mode, the function returns immediately after being called, even if the transmission
@@ -104,7 +100,7 @@ esp_err_t i3c_master_i2c_device_transmit(i3c_master_i2c_device_handle_t dev_hand
  * @param[in] dev_handle      Handle to the I2C device.
  * @param[out] read_buffer    Pointer to the buffer where received data will be stored.
  * @param[in] read_size       Number of bytes to read.
- * @param[in] xfer_timeout_ms Timeout for the operation in milliseconds.
+ * @param[in] xfer_timeout_ms Timeout for the operation in milliseconds. Note: -1 means wait forever.
  *
  * @note If `enable_async_trans` is set, this function operates in asynchronous transmission mode.
  * In this mode, the function returns immediately after being called, even if the transmission
@@ -128,7 +124,7 @@ esp_err_t i3c_master_i2c_device_receive(i3c_master_i2c_device_handle_t dev_handl
  * @param[in] write_size      Size of the data in bytes to transmit.
  * @param[out] read_buffer    Pointer to the buffer where received data will be stored.
  * @param[in] read_size       Number of bytes to read.
- * @param[in] xfer_timeout_ms Timeout for the operation in milliseconds.
+ * @param[in] xfer_timeout_ms Timeout for the operation in milliseconds. Note: -1 means wait forever.
  *
  * @note If `enable_async_trans` is set, this function operates in asynchronous transmission mode.
  * In this mode, the function returns immediately after being called, even if the transmission

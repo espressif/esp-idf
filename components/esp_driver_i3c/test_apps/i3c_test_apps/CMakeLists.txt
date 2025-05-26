@@ -11,17 +11,18 @@ set(EXTRA_COMPONENT_DIRS
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(i3c_master_test)
 
+idf_build_get_property(elf EXECUTABLE)
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
     add_custom_target(check_test_app_sections ALL
-                        COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
-                        --rtl-dirs ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_i3c/,${CMAKE_BINARY_DIR}/esp-idf/hal/
-                        --elf-file ${CMAKE_BINARY_DIR}/i3c_master_test.elf
-                        find-refs
-                        --from-sections=.iram0.text
-                        --to-sections=.flash.text,.flash.rodata
-                        --exit-code
-                        DEPENDS ${elf}
-                        )
+                      COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
+                      --rtl-dirs ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_i3c/,${CMAKE_BINARY_DIR}/esp-idf/hal/
+                      --elf-file ${CMAKE_BINARY_DIR}/i3c_master_test.elf
+                      find-refs
+                      --from-sections=.iram0.text
+                      --to-sections=.flash.text,.flash.rodata
+                      --exit-code
+                      DEPENDS ${elf}
+                      )
 endif()
 
 message(STATUS "Checking i3c registers are not read-write by half-word")

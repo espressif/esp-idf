@@ -23,11 +23,6 @@ TEST_CASE("I3C bus install-uninstall test", "[i3c]")
         .clock_source = I3C_MASTER_CLK_SRC_DEFAULT,
         .scl_io_num = 5,
         .sda_io_num = 6,
-        .flags.enable_internal_opendrain = true,
-        .flags.enable_internal_pullup = true,
-        .flags.use_dma = true,
-        .flags.enable_async_trans = true,
-        .max_transfer_size = 1024,
         .trans_queue_depth = 30,
     };
     i3c_master_bus_handle_t bus_handle;
@@ -50,11 +45,6 @@ TEST_CASE("I3C driver memory leaking check", "[i3c]")
         .clock_source = I3C_MASTER_CLK_SRC_DEFAULT,
         .scl_io_num = 5,
         .sda_io_num = 6,
-        .flags.enable_internal_opendrain = true,
-        .flags.enable_internal_pullup = true,
-        .flags.use_dma = true,
-        .flags.enable_async_trans = true,
-        .max_transfer_size = 1024,
         .trans_queue_depth = 30,
     };
     i3c_master_bus_handle_t bus_handle;
@@ -75,11 +65,7 @@ TEST_CASE("I3C device add & remove check", "[i3c]")
         .clock_source = I3C_MASTER_CLK_SRC_DEFAULT,
         .scl_io_num = 5,
         .sda_io_num = 6,
-        .flags.enable_internal_opendrain = true,
-        .flags.enable_internal_pullup = true,
-        .flags.use_dma = true,
         .flags.enable_async_trans = true,
-        .max_transfer_size = 1024,
         .trans_queue_depth = 30,
     };
     i3c_master_bus_handle_t bus_handle;
@@ -87,30 +73,30 @@ TEST_CASE("I3C device add & remove check", "[i3c]")
     TEST_ESP_OK(i3c_new_master_bus(&i2c_mst_config_1, &bus_handle));
 
     i3c_device_i2c_config_t dev_cfg_1 = {
-        .scl_speed_hz = 100 * 1000,
+        .scl_freq_hz = 100 * 1000,
         .device_address = 0x10,
     };
     i3c_master_i2c_device_handle_t dev_1;
-    i3c_master_bus_add_i2c_device(bus_handle, &dev_cfg_1, &dev_1);
+    TEST_ESP_OK(i3c_master_bus_add_i2c_device(bus_handle, &dev_cfg_1, &dev_1));
 
     i3c_device_i2c_config_t dev_cfg_2 = {
-        .scl_speed_hz = 100 * 1000,
+        .scl_freq_hz = 100 * 1000,
         .device_address = 0x20,
     };
     i3c_master_i2c_device_handle_t dev_2;
-    i3c_master_bus_add_i2c_device(bus_handle, &dev_cfg_2, &dev_2);
+    TEST_ESP_OK(i3c_master_bus_add_i2c_device(bus_handle, &dev_cfg_2, &dev_2));
 
     i3c_device_i2c_config_t dev_cfg_3 = {
-        .scl_speed_hz = 100 * 1000,
+        .scl_freq_hz = 100 * 1000,
         .device_address = 0x30,
     };
     i3c_master_i2c_device_handle_t dev_3;
-    i3c_master_bus_add_i2c_device(bus_handle, &dev_cfg_3, &dev_3);
+    TEST_ESP_OK(i3c_master_bus_add_i2c_device(bus_handle, &dev_cfg_3, &dev_3));
 
-    i3c_master_bus_rm_i2c_device(dev_1);
-    i3c_master_bus_rm_i2c_device(dev_2);
+    TEST_ESP_OK(i3c_master_bus_rm_i2c_device(dev_1));
+    TEST_ESP_OK(i3c_master_bus_rm_i2c_device(dev_2));
 
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, i3c_del_master_bus(bus_handle));
-    i3c_master_bus_rm_i2c_device(dev_3);
+    TEST_ESP_OK(i3c_master_bus_rm_i2c_device(dev_3));
     TEST_ESP_OK(i3c_del_master_bus(bus_handle));
 }

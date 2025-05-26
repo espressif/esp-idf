@@ -8,7 +8,6 @@
 
 #include <stdint.h>
 #include "esp_err.h"
-#include "hal/gpio_types.h"
 #include "driver/i3c_master_types.h"
 
 #ifdef __cplusplus
@@ -22,20 +21,25 @@ extern "C" {
  * including GPIO pins, clock source, queue depth, interrupt priority, and other options.
  */
 typedef struct {
-    gpio_num_t sda_io_num;                               /*!< GPIO number of I3C SDA signal, pulled-up internally */
-    gpio_num_t scl_io_num;                               /*!< GPIO number of I3C SCL signal, pulled-up internally */
+    gpio_num_t sda_io_num;                               /*!< GPIO number of I3C SDA signal*/
+    gpio_num_t scl_io_num;                               /*!< GPIO number of I3C SCL signal*/
     i3c_master_clock_source_t clock_source;              /*!< Clock source of I3C master bus */
     size_t trans_queue_depth;                            /*!< Depth of internal transfer queue, increase this value can support more transfers pending in the background, only valid in asynchronous transaction. (Typically max_device_num * per_transaction)*/
-    size_t max_transfer_size;                            /*!< Maximum transfer size in one transaction, in bytes. This decides the number of DMA nodes will be used for each transaction */
-    size_t dma_burst_size;                               /*!< DMA burst size, in bytes */
     int intr_priority;                                   /*!< I3C interrupt priority, if set to 0, driver will select the default priority (1,2,3). */
     struct {
-        uint32_t enable_internal_pullup : 1;             /*!< Enable internal pullups. Note: This is not strong enough to pullup buses under high-speed frequency. Recommend proper external pull-up if possible */
-        uint32_t enable_internal_opendrain : 1;          /*!< Pull-Push mode on I3C SCL/SDA pins by default. Set true if open-drain mode is needed */
-        uint32_t use_dma : 1;                            /*!< Use dma transaction. Set to 1 to enable the use of DMA for handling data transfers, which can improve performance for large transactions. */
-        uint32_t enable_async_trans : 1;                 /*!< Enable asynchronous transactions, allowing the master to perform other tasks while a transaction is in progress. Only works when `use_dma` is set as true. */
+        uint32_t enable_async_trans : 1;                 /*!< Enable asynchronous transactions, allowing the master to perform other tasks while a transaction is in progress. Only works when DMA is enabled via i3c_master_bus_decorate_dma(). */
     } flags;                                             /*!< I3C master config flags */
 } i3c_master_bus_config_t;
+
+/**
+ * @brief Configuration structure for I3C master bus DMA decorator
+ *
+ * This structure defines the DMA configuration parameters for the I3C master bus.
+ */
+typedef struct {
+    size_t max_transfer_size;                            /*!< Maximum transfer size in one transaction, in bytes. This decides the number of DMA nodes */
+    size_t dma_burst_size;                               /*!< DMA burst size, in bytes. If 0, driver will use default value (16 bytes) */
+} i3c_master_dma_config_t;
 
 /**
  * @brief Create a new I3C master bus.
@@ -69,6 +73,23 @@ esp_err_t i3c_new_master_bus(const i3c_master_bus_config_t *bus_config, i3c_mast
 esp_err_t i3c_del_master_bus(i3c_master_bus_handle_t bus_handle);
 
 /**
+ * @brief Enable DMA for I3C master bus (decorator pattern)
+ *
+ * This function enables DMA functionality for an existing I3C master bus. It follows the decorator
+ * pattern to avoid linking DMA code when not needed, thus reducing binary size.
+ *
+ * @param[in] bus_handle  Handle to the I3C master bus to be decorated with DMA capability.
+ * @param[in] dma_config  Pointer to the DMA configuration structure. If NULL, DMA will be disabled and fifo will be used.
+ *
+ * @return
+ *      - ESP_OK: DMA decorator applied successfully.
+ *      - ESP_ERR_INVALID_ARG: Invalid bus handle or configuration.
+ *      - ESP_ERR_INVALID_STATE: Bus is already decorated with DMA or bus is in use.
+ *      - ESP_ERR_NO_MEM: Memory allocation failed for DMA resources.
+ */
+esp_err_t i3c_master_bus_decorate_dma(i3c_master_bus_handle_t bus_handle, const i3c_master_dma_config_t *dma_config);
+
+/**
  * @brief Wait for all pending I3C transactions done
  *
  * @param[in] bus_handle I3C bus handle
@@ -79,26 +100,6 @@ esp_err_t i3c_del_master_bus(i3c_master_bus_handle_t bus_handle);
  *      - ESP_ERR_TIMEOUT: Flush transactions failed because of timeout
  */
 esp_err_t i3c_master_bus_wait_all_done(i3c_master_bus_handle_t bus_handle, int timeout_ms);
-
-/**
- * @brief Toggle between synchronous and asynchronous transfer modes for the I3C master bus.
- *
- * This function allows switching the I3C master bus between synchronous and asynchronous
- * transfer modes. It ensures that the necessary preconditions are met before making the switch:
- * - If switching to asynchronous mode, it requires that the async memory has been initialized.
- * - If switching to synchronous mode, it verifies that no pending transactions are in the queue.
- *
- * @param[in] bus_handle Handle to the I3C master bus.
- * @param[in] async_mode Boolean value indicating the target mode:
- *                       - `true` for asynchronous mode.
- *                       - `false` for synchronous mode.
- *
- * @return
- *      - ESP_OK: The mode was successfully toggled.
- *      - ESP_ERR_INVALID_ARG: Invalid input arguments.
- *      - ESP_ERR_INVALID_STATE: Cannot switch to synchronous mode due to pending transactions.
- */
-esp_err_t i3c_master_toggle_transfer_async_mode(i3c_master_bus_handle_t bus_handle, bool async_mode);
 
 #ifdef __cplusplus
 }
