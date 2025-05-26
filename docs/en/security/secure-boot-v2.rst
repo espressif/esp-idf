@@ -442,7 +442,7 @@ Restrictions After Secure Boot Is Enabled
 
 .. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
 
-    When Secure Boot is enabled, the ECDSA curve mode becomes write-protected. This means that if the curve mode was not previously set to use the ECDSA-P192 key before enabling Secure Boot, it will no longer be possible to configure or use the ECDSA-P192 curve with the ECDSA peripheral afterward.
+    When Secure Boot is enabled, the ECDSA curve mode becomes write-protected. This means that if the curve mode was not previously set to use the ECDSA-P192 key before enabling Secure Boot, it will no longer be possible to configure or use the ECDSA-P192 curve on the ECDSA peripheral afterward.
 
 Burning read-protected keys
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -468,7 +468,7 @@ The following keys must not be read-protected on the device as the software need
     :SOC_SECURE_BOOT_SUPPORTED:* Secure boot public key digest
     * User data
 
-When Secure Boot is enabled, it shall disable the ability to read-protect further eFuses by default. If you want keep the ability to read-protect an eFuse later in the application (e.g, a key mentioned in the above list of read-protected keys) then you need to enable the config :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS` at the same time when you enable Secure Boot.
+When Secure Boot is enabled, it shall disable the ability to read-protect further eFuses by default. If you want keep the ability to read-protect an eFuse later in the application (e.g, a key mentioned in the above list of read-protected keys), then you need to enable the config :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS` at the same time when you enable Secure Boot.
 
 Ideally, it is strongly recommended that all such keys must been burned before enabling secure boot. However, if you need to enable :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS`, make sure that you burn the eFuse {IDF_TARGET_EFUSE_WR_DIS_RD_DIS}, using :cpp:func:`esp_efuse_write_field_bit`, once all the read-protected eFuse keys have been programmed.
 

@@ -1,7 +1,7 @@
 Security Overview
 =================
 
-{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA or ECDSA", esp32p4="RSA or ECDSA", esp32c5="RSA or ECDSA", esp32c61="ECDSA"}
+{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA or ECDSA", esp32p4="RSA or ECDSA", esp32c5="RSA or ECDSA", esp32c61="ECDSA", esp32h21="RSA or ECDSA"}
 
 {IDF_TARGET_SIG_PERI:default="DS", esp32h2="DS or ECDSA", esp32p4="DS or ECDSA", esp32c5="DS or ECDSA"}
 

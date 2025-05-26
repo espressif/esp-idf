@@ -1339,6 +1339,10 @@ config SOC_USB_UTMI_PHY_NUM
     int
     default 1
 
+config SOC_USB_UTMI_PHY_NO_POWER_OFF_ISO
+    bool
+    default y
+
 config SOC_PARLIO_GROUPS
     int
     default 1
@@ -1415,9 +1419,13 @@ config SOC_SDMMC_NUM_SLOTS
     int
     default 2
 
+config SOC_SDMMC_DATA_WIDTH_MAX
+    int
+    default 8
+
 config SOC_SDMMC_DELAY_PHASE_NUM
     int
-    default 4
+    default 8
 
 config SOC_SDMMC_IO_POWER_EXTERNAL
     bool
@@ -2192,5 +2200,9 @@ config SOC_LP_CORE_SUPPORT_LP_ADC
     default y
 
 config SOC_LP_CORE_SUPPORT_LP_VAD
+    bool
+    default y
+
+config SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS
     bool
     default y

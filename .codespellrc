@@ -1,4 +1,4 @@
 [codespell]
-skip = build,*.yuv,components/fatfs/src/*,alice.txt,*.rgb,components/wpa_supplicant/*,components/esp_wifi/*,*.pem,components/newlib/COPYING.*
+skip = build,*.yuv,components/fatfs/src/*,alice.txt,*.rgb,components/wpa_supplicant/*,components/esp_wifi/*,*.pem,components/newlib/COPYING.*,docs/sphinx-known-warnings.txt
 ignore-words-list = ser,dout,rsource,fram,inout,shs,ans,aci,unstall,unstalling,hart,wheight,wel,ot,fane,assertIn,registr,oen,parms
 write-changes = true

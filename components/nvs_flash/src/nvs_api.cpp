@@ -129,6 +129,7 @@ extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
     }
     Lock lock;
 
+    assert(nvs::Page::SEC_SIZE == esp_partition_get_main_flash_sector_size());
     return NVSPartitionManager::get_instance()->init_partition(part_name);
 }
 
@@ -169,6 +170,7 @@ extern "C" esp_err_t nvs_flash_secure_init_partition(const char *part_name, nvs_
     }
     Lock lock;
 
+    assert(nvs::Page::SEC_SIZE == esp_partition_get_main_flash_sector_size());
     return NVSPartitionManager::get_instance()->secure_init_partition(part_name, cfg);
 }
 

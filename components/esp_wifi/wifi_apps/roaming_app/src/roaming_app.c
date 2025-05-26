@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -415,13 +415,17 @@ static void roaming_app_rssi_low_handler(void* arg, esp_event_base_t event_base,
 static void trigger_network_assisted_roam(void)
 {
 #if PERIODIC_RRM_MONITORING
-    ROAM_NEIGHBOR_LIST_LOCK();
+    if (g_roaming_app.config.rrm_monitor) {
+        ROAM_NEIGHBOR_LIST_LOCK();
+    }
 #endif /*PERIODIC_RRM_MONITORING*/
     if (esp_wnm_send_bss_transition_mgmt_query(REASON_RSSI, g_roaming_app.btm_neighbor_list, 1) < 0) {
         ESP_LOGD(ROAMING_TAG, "failed to send btm query");
     }
 #if PERIODIC_RRM_MONITORING
-    ROAM_NEIGHBOR_LIST_UNLOCK();
+    if (g_roaming_app.config.rrm_monitor) {
+        ROAM_NEIGHBOR_LIST_UNLOCK();
+    }
 #endif /*PERIODIC_RRM_MONITORING*/
     ESP_LOGD(ROAMING_TAG, "Sent BTM Query");
     gettimeofday(&g_roaming_app.last_roamed_time, NULL);
@@ -634,11 +638,13 @@ static void scan_done_event_handler(void *arg, ETS_STATUS status)
         esp_wifi_scan_get_ap_records(&g_roaming_app.scanned_aps.current_count, g_roaming_app.scanned_aps.ap_records);
         print_ap_records(&g_roaming_app.scanned_aps);
         parse_scan_results_and_roam();
-        g_roaming_app.scan_ongoing = false;
         ROAM_SCAN_RESULTS_UNLOCK();
-        } else {
-            ESP_LOGD(ROAMING_TAG, "Scan Done with error %d ", status);
+    } else {
+        ESP_LOGD(ROAMING_TAG, "Scan Done with error %d ", status);
     }
+    ROAM_SCAN_RESULTS_LOCK();
+    g_roaming_app.scan_ongoing = false;
+    ROAM_SCAN_RESULTS_UNLOCK();
 }
 static void conduct_scan(void)
 {

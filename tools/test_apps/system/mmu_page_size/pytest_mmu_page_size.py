@@ -28,6 +28,7 @@ def test_app_mmu_page_size_32k_and_bootloader_mmu_page_size_64k(dut: Dut, app_do
     dut.expect('MMU page size mismatch')
     dut.expect('App is running')
     dut.expect('Partition test done')
+    dut.expect('Image verified successfully', timeout=30)
 
 
 @pytest.mark.generic
@@ -49,3 +50,4 @@ def test_app_mmu_page_size_64k_and_bootloader_mmu_page_size_32k(dut: Dut, app_do
     dut.expect('MMU page size mismatch')
     dut.expect('App is running')
     dut.expect('Partition test done')
+    dut.expect('Image verified successfully', timeout=30)

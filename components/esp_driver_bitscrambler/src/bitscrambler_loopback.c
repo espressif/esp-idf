@@ -141,7 +141,7 @@ esp_err_t bitscrambler_loopback_create(bitscrambler_handle_t *handle, int attach
         .on_recv_eof = trans_done_cb,
     };
     gdma_register_rx_event_callbacks(bs->rx_channel, &rx_cbs, bs);
-
+    ESP_GOTO_ON_ERROR(bitscrambler_enable(&bs->bs), err, TAG, "failed to enable bitscrambler");
     *handle = (bitscrambler_handle_t)bs;
     return ESP_OK;
 
@@ -175,6 +175,7 @@ static void bitscrambler_loopback_free(bitscrambler_loopback_t *bsl)
 static esp_err_t bitscrambler_loopback_cleanup(bitscrambler_handle_t bs, void* user_ctx)
 {
     bitscrambler_loopback_t *bsl = (bitscrambler_loopback_t*)user_ctx;
+    ESP_RETURN_ON_ERROR(bitscrambler_disable(bs), TAG, "failed to disable bitscrambler");
     bitscrambler_loopback_free(bsl);
     return ESP_OK;
 }

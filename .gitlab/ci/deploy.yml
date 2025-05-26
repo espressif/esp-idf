@@ -3,7 +3,6 @@
   image: $ESP_ENV_IMAGE
   tags: [ deploy ]
 
-# Check this before push_to_github
 check_submodule_sync:
   extends:
     - .deploy_job_template
@@ -31,8 +30,9 @@ push_to_github:
   extends:
     - .deploy_job_template
     - .before_script:minimal
-    - .rules:push_to_github
+    - .rules:protected:deploy
   needs:
+    # submodule must be synced before pushing to github
     - check_submodule_sync
   tags: [ brew, github_sync ]
   variables:
@@ -50,7 +50,7 @@ deploy_update_SHA_in_esp-dockerfiles:
   extends:
     - .deploy_job_template
     - .before_script:minimal
-    - .rules:protected-no_label-always
+    - .rules:protected:deploy
   dependencies: []
   variables:
     GIT_DEPTH: 2

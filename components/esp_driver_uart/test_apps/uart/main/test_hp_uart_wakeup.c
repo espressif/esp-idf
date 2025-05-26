@@ -5,26 +5,14 @@
  */
 #include <stdio.h>
 #include <unistd.h>
-#include <string.h>
-#include <sys/param.h>
 #include "unity.h"
 #include "test_utils.h"
 #include "driver/uart.h"
 #include "driver/uart_wakeup.h"
-#include "esp_log.h"
-#include "esp_rom_gpio.h"
-#include "esp_private/gpio.h"
 #include "esp_sleep.h"
 #include "esp_timer.h"
-#if SOC_LP_GPIO_MATRIX_SUPPORTED
-#include "driver/lp_io.h"
-#include "driver/rtc_io.h"
-#include "hal/rtc_io_ll.h"
-#endif
-#include "soc/uart_periph.h"
 #include "soc/uart_pins.h"
 #include "soc/soc_caps.h"
-#include "soc/clk_tree_defs.h"
 #include "test_common.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32P4
@@ -61,7 +49,7 @@
 #define SLAVE_UART_RX_IO_NUM    DEFAULT_UART1_TX_IO_NUM
 #define UART_BAUD_RATE          (115200)
 #define BUF_SIZE                (1024)
-#define TIMER_WAKEUP_TIME_US    (5 * 100 * 1000)
+#define TIMER_WAKEUP_TIME_US    (1 * 100 * 1000)
 
 static void force_stdout(void)
 {
@@ -84,9 +72,9 @@ static esp_err_t uart_initialization(uart_port_param_t *port_param)
     };
     const int uart_tx = port_param->tx_pin_num;
     const int uart_rx = port_param->rx_pin_num;
+    TEST_ESP_OK(uart_driver_install(uart_num, BUF_SIZE * 2, BUF_SIZE * 2, 20, NULL, 0));
     TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
     TEST_ESP_OK(uart_set_pin(uart_num, uart_tx, uart_rx, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
-    TEST_ESP_OK(uart_driver_install(uart_num, BUF_SIZE * 2, BUF_SIZE * 2, 20, NULL, 0));
 
     return ESP_OK;
 }
@@ -100,9 +88,6 @@ static esp_err_t uart_wakeup_config(uart_port_param_t *port_param, uart_wakeup_c
      * of the SOC to ensure proper operation. Besides, the Rx pin need extra configuration to enable it can work during light sleep */
 
     uart_port_t uart_num = port_param->port_num;
-    int rx_io_num = port_param->rx_pin_num;
-    // Keep configure of rx_io
-    TEST_ESP_OK(gpio_sleep_sel_dis(rx_io_num));
     // Initializes the UART wakeup functionality.
     TEST_ESP_OK(uart_wakeup_setup(uart_num, uart_wakeup_cfg));
     TEST_ESP_OK(esp_sleep_enable_uart_wakeup(uart_num));
@@ -139,14 +124,16 @@ void send_and_verify_recived_data(const char* message, uint8_t length, bool shou
 
     uart_flush_input(MASTER_UART_NUM);
     uart_write_bytes(MASTER_UART_NUM, message, length);
-
-    char *data = (char *) malloc(BUF_SIZE);
-    int len = uart_read_bytes(MASTER_UART_NUM, data, (BUF_SIZE - 1), 1000 / portTICK_PERIOD_MS);
+    /* Wait for uart write finish */
+    uart_wait_tx_idle_polling(MASTER_UART_NUM);
 
     bool wake_up_detected = false;
     const char *target = "Wakeup OK!";
     int target_len = 11;
     bool match = true;
+    char *data = (char *) malloc(BUF_SIZE);
+    int len = uart_read_bytes(MASTER_UART_NUM, data, target_len, 5000 / portTICK_PERIOD_MS);
+
     if (len > 0) {
         if (len != target_len) {
             match = false;
@@ -207,8 +194,11 @@ static void enter_sleep_and_send_respond(void)
     /* Get timestamp after waking up from sleep */
     int64_t t_after_us = esp_timer_get_time();
 
+    /* Clear uart input buffer */
     uart_flush_input(SLAVE_UART_NUM);
     printf("sleep duration: %lld\n", t_after_us - t_before_us);
+
+    /* Determine the reason for uart wakeup */
     switch (esp_sleep_get_wakeup_cause()) {
     case ESP_SLEEP_WAKEUP_UART:
         /* Hang-up for a while to switch and execute the uart task

@@ -56,7 +56,7 @@ Since these limitations are not very practical, in particular for testing and de
 
 Note furthermore that if you use the ESP-IDF FreeRTOS mock component (``tools/mocks/freertos``), these limitations do not apply. But that mock component will not do any scheduling, either.
 
-.. only:: not esp32p4
+.. only:: not esp32p4 and not esp32h4
 
     .. note::
 

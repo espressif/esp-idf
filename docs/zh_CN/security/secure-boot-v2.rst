@@ -5,11 +5,11 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6="RSA-PSS 或 ECDSA", esp32h2="RSA-PSS 或 ECDSA", esp32p4="RSA-PSS 或 ECDSA", esp32c5="RSA-PSS 或 ECDSA", esp32c61="ECDSA}
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6="RSA-PSS 或 ECDSA", esp32h2="RSA-PSS 或 ECDSA", esp32p4="RSA-PSS 或 ECDSA", esp32c5="RSA-PSS 或 ECDSA", esp32c61="ECDSA", esp32h21="RSA-PSS 或 ECDSA"}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 或 ECDSA-192", esp32c6="RSA-3072、ECDSA-256 或 ECDSA-192", esp32h2="RSA-3072、ECDSA-256 或 ECDSA-192", esp32p4="RSA-3072、ECDSA-256 或 ECDSA-192", esp32c5="RSA-3072、ECDSA-256、或 ECDSA-192", esp32c61="ECDSA-256 或 ECDSA-192"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 或 ECDSA-192", esp32c6="RSA-3072、ECDSA-256 或 ECDSA-192", esp32h2="RSA-3072、ECDSA-256 或 ECDSA-192", esp32p4="RSA-3072、ECDSA-256 或 ECDSA-192", esp32c5="RSA-3072、ECDSA-256 或 ECDSA-192", esp32c61="ECDSA-256 或 ECDSA-192", esp32h21="RSA-3072、ECDSA-256 或 ECDSA-192"}
 
-{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32h2="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32p4="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32c5="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。"}
+{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32h2="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32p4="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32c5="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32h21="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。"}
 
 {IDF_TARGET_ECO_VERSION:default="", esp32="（v3.0 及以上版本）", esp32c3="（v0.3 及以上版本）"}
 
@@ -69,6 +69,9 @@
 
 2. 二级引导加载程序加载特定应用程序镜像，并验证应用程序的 {IDF_TARGET_SBV2_SCHEME} 签名。若验证通过，则执行应用程序镜像。
 
+.. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+
+    默认情况下，{IDF_TARGET_NAME} 禁用 ECDSA-P192 曲线。如果提供的安全启动签名密钥使用的是 ECDSA-P192 曲线，为配置安全启动，系统将尝试启用 ECDSA-P192 曲线模式。然而，如果该曲线模式已被锁定，则无法启用 ECDSA-P192。在这种情况下，无法使用 ECDSA-P192 密钥配置安全启动。用户必须改为提供基于 ECDSA-P256 曲线或基于 RSA 的签名密钥。
 
 优势
 ----
@@ -436,6 +439,10 @@
 - 注意，启用安全启动或 flash 加密会禁用 ROM 中的 USB-OTG USB 栈，阻止通过该端口进行串行仿真或设备固件更新 (DFU)。
 
 - 一旦启用安全启动，就无法再对 eFuse 密钥进行读保护，这可以避免攻击者对存储公共密钥摘要的 eFuse 块进行读保护，进而导致系统无法验证和处理签名，系统服务无法正常运行。有关读保护密钥的更多信息，请参阅下方详细说明。
+
+.. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+
+    启用安全启动后，ECDSA 曲线模式将锁定为写保护状态。因此，如果启用前未将曲线模式设置为使用 ECDSA-P192 密钥，那么之后将无法再配置或使用 ECDSA 外设中的 ECDSA-P192 曲线。
 
 烧录读保护密钥
 ~~~~~~~~~~~~~~

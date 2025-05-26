@@ -193,6 +193,10 @@ examples/protocols/mqtt/ssl_psk:
   <<: *mqtt_dependencies
 examples/protocols/mqtt/tcp:
   <<: *mqtt_dependencies
+  disable+:
+    - if: IDF_TARGET in ["esp32p4", "esp32h2"]
+      temporary: true
+      reason: need to update esp_wifi_remote component to support idf-v6.0
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
@@ -230,9 +234,12 @@ examples/protocols/smtp_client:
 examples/protocols/sntp:
   <<: *default_rules
   enable:
-    - if: IDF_TARGET == "esp32"
+    - if: IDF_TARGET in ["esp32", "esp32h2"]
       temporary: true
       reason: the other targets are not tested yet
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only test on esp32
 
 examples/protocols/sockets:
   <<: *default_rules

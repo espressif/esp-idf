@@ -18,6 +18,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "esp_tee_sec_storage.h"
 #include "example_tee_srv.h"
 
 #define PROMPT_STR CONFIG_IDF_TARGET

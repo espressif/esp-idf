@@ -4,31 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <sys/cdefs.h>
-#include "sdkconfig.h"
-#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "freertos/FreeRTOS.h"
-#include "esp_attr.h"
-#include "esp_check.h"
-#include "esp_err.h"
-#include "esp_log.h"
-#include "esp_memory_utils.h"
-#include "soc/soc_caps.h"
-#include "soc/mcpwm_periph.h"
-#include "hal/mcpwm_ll.h"
+#include "mcpwm_private.h"
 #include "hal/gpio_hal.h"
 #include "driver/mcpwm_sync.h"
 #include "driver/gpio.h"
-#include "mcpwm_private.h"
 #include "esp_private/gpio.h"
-
-static const char *TAG = "mcpwm";
 
 static esp_err_t mcpwm_del_timer_sync_src(mcpwm_sync_t *sync_src);
 static esp_err_t mcpwm_del_gpio_sync_src(mcpwm_sync_t *sync_src);
@@ -176,9 +156,6 @@ static esp_err_t mcpwm_gpio_sync_src_destroy(mcpwm_gpio_sync_src_t *gpio_sync_sr
 
 esp_err_t mcpwm_new_gpio_sync_src(const mcpwm_gpio_sync_src_config_t *config, mcpwm_sync_handle_t *ret_sync)
 {
-#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     mcpwm_gpio_sync_src_t *gpio_sync_src = NULL;
     ESP_GOTO_ON_FALSE(config && ret_sync, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");

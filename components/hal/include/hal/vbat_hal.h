@@ -21,8 +21,8 @@ typedef struct {
     uint8_t low_threshold;                // low voltage threshold
     uint8_t high_threshold;               // high voltage threshold
     uint8_t brownout_threshold;           // brownout threshold
-    uint8_t undervoltage_filter_time;     // under voltage filter time
-    uint8_t upvoltage_filter_time;        // up voltage filter time
+    uint16_t undervoltage_filter_time;     // under voltage filter time
+    uint16_t upvoltage_filter_time;        // up voltage filter time
 } vbat_hal_config_t;
 
 /**

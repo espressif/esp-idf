@@ -36,6 +36,9 @@ examples/wifi/iperf:
   disable:
     - if: (SOC_WIFI_SUPPORTED != 1) and (SOC_WIRELESS_HOST_SUPPORTED != 1)
     - if: (IDF_TARGET == "esp32p4") and CONFIG_NAME in ["defaults", "99"]
+    - if: IDF_TARGET in ["esp32p4", "esp32h2"]
+      temporary: true
+      reason: need to update esp_wifi_remote component to support idf-v6.0
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
       temporary: true

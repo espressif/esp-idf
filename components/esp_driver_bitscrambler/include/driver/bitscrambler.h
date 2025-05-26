@@ -50,6 +50,9 @@ typedef struct {
 /**
  * @brief Allocate BitScrambler handle for a hardware channel
  *
+ * @note This function can only be used to create a single direction BitScrambler handle.
+ *       If you need a loopback BitScrambler, call bitscrambler_loopback_create() instead.
+ *
  * @param config Configuration for requested BitScrambler
  * @param[out] handle BitScrambler controller handle
  *
@@ -113,6 +116,30 @@ esp_err_t bitscrambler_start(bitscrambler_handle_t handle);
  *        - ESP_ERR_INVALID_ARG: Invalid handle
  */
 esp_err_t bitscrambler_reset(bitscrambler_handle_t handle);
+
+/**
+ * @brief Enable BitScrambler
+ * @note  This function should be called before bitscrambler_load_program, bitscrambler_load_lut, bitscrambler_reset and bitscrambler_start.
+ *
+ * @param handle BitScrambler handle
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_INVALID_ARG: Invalid handle
+ */
+esp_err_t bitscrambler_enable(bitscrambler_handle_t handle);
+
+/**
+ * @brief Disable BitScrambler
+ * @note  This function should be called before bitscrambler_free.
+ *
+ * @param handle BitScrambler handle
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_INVALID_ARG: Invalid handle
+ */
+esp_err_t bitscrambler_disable(bitscrambler_handle_t handle);
 
 #ifdef __cplusplus
 }

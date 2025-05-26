@@ -134,9 +134,12 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_types.h \
     $(PROJECT_PATH)/components/esp_driver_sdio/include/driver/sdio_slave.h \
     $(PROJECT_PATH)/components/esp_driver_sdm/include/driver/sdm.h \
-    $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sdmmc_default_configs.h \
-    $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sdmmc_host.h \
-    $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sdmmc_types.h \
+    $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sd_host_sdmmc.h \
+    $(PROJECT_PATH)/components/esp_driver_sdmmc/legacy/include/driver/sdmmc_default_configs.h \
+    $(PROJECT_PATH)/components/esp_driver_sdmmc/legacy/include/driver/sdmmc_host.h \
+    $(PROJECT_PATH)/components/esp_driver_sdmmc/legacy/include/driver/sdmmc_types.h \
+    $(PROJECT_PATH)/components/esp_driver_sd_intf/include/driver/sd_host.h \
+    $(PROJECT_PATH)/components/esp_driver_sd_intf/include/driver/sd_types.h \
     $(PROJECT_PATH)/components/esp_driver_sdspi/include/driver/sdspi_host.h \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_common.h \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_master.h \
@@ -146,6 +149,8 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_tsens/include/driver/temperature_sensor_etm.h \
     $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart.h \
     $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart_vfs.h \
+    $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uhci.h \
+    $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uhci_types.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_driver.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac.h \
@@ -267,6 +272,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/efuse_hal.h \
     $(PROJECT_PATH)/components/hal/include/hal/eth_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/lp_core_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/uhci_types.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps_init.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_task_info.h \

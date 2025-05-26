@@ -348,8 +348,8 @@ config SOC_CPU_WATCHPOINTS_NUM
     default 2
 
 config SOC_CPU_WATCHPOINT_MAX_REGION_SIZE
-    int
-    default 64
+    hex
+    default 0x40
 
 config SOC_DAC_CHAN_NUM
     int
@@ -776,8 +776,8 @@ config SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
     default y
 
 config SOC_SYSTIMER_COUNTER_NUM
-    bool
-    default y
+    int
+    default 1
 
 config SOC_SYSTIMER_ALARM_NUM
     int
@@ -832,8 +832,8 @@ config SOC_TOUCH_SENSOR_NUM
     default 15
 
 config SOC_TOUCH_MIN_CHAN_ID
-    bool
-    default y
+    int
+    default 1
 
 config SOC_TOUCH_MAX_CHAN_ID
     int

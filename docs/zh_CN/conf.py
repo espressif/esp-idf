@@ -29,4 +29,7 @@ language = 'zh_CN'
 
 html_zip = f'esp-idf-{language}-{release}'  # noqa: F405
 
-html_js_files = ['js/chatbot_widget_cn.js']
+# The chatbot is able to answer only about the latest documentation.
+# Enable Documentation Chatbot widget only for the master branch.
+if release == 'latest':  # noqa: F405
+    html_js_files = ['js/chatbot_widget_cn.js']

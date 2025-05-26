@@ -131,8 +131,8 @@ def _test_examples_app_trace_basic(dut: IdfDut) -> None:
         with open(openocd.log_file, encoding='utf-8') as oocd_log:  # pylint: disable=protected-access
             cores = 1 if dut.app.sdkconfig.get('ESP_SYSTEM_SINGLE_CORE_MODE') is True else 2
             search_strings.append('App trace params: from {} cores,'.format(cores))
-            found = False
             for search_str in search_strings:
+                found = False
                 oocd_log.seek(0)
                 for line in oocd_log:
                     if search_str in line:

@@ -129,6 +129,7 @@ TX 单元以比特为单位进行传输，且传输的比特长度必须配置�
 .. list::
 
     - :cpp:member:`parlio_transmit_config_t::idle_value` 设置 TX 单元发送完毕后空闲状态时数据线上的值。该值在调用 :cpp:func:`parlio_tx_unit_disable` 禁用 TX 单元后依然会保持。
+    :SOC_BITSCRAMBLER_SUPPORTED: - :cpp:member:`parlio_transmit_config_t::bitscrambler_program` 指向比特调节器程序的二进制文件的指针。若此次传输不使用比特调节器，则设置为 ``NULL``。
     - :cpp:member:`parlio_transmit_config_t::flags` 通常用来微调传输的一些行为，包括以下选项
     - :cpp:member:`parlio_transmit_config_t::flags::queue_nonblocking` 设置当传输队列满的时候该函数是否需要等待。如果该值设置为 ``true`` 那么当遇到队列满的时候，该函数会立即返回错误代码 :c:macro:`ESP_ERR_INVALID_STATE`。否则，函数会阻塞当前线程，直到传输队列有空档。
     :SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION: - :cpp:member:`parlio_transmit_config_t::flags::loop_transmission` 设置为 ``true``，会启用无限循环发送机制。此时，除非手动调用 :cpp:func:`parlio_tx_unit_disable`，否则发送不会停止，也不会生成“完成发送”事件。由于循环由 DMA 控制， TX 单元可以在几乎不需要 CPU 干预的情况下，生成周期性序列。
@@ -307,6 +308,19 @@ TX 单元可以选择各种不同的时钟源，其中外部时钟源较为特�
     .. note::
 
         如果启用无限循环发送后需要修改发送内容，可以配置 :cpp:member:`parlio_transmit_config_t::flags::loop_transmission` 并再次调用 :cpp:func:`parlio_tx_unit_transmit` 传入新的 payload buffer，驱动会在旧 buffer 完整发送后，切换到新传入的 buffer。因此需要用户自行维护好两块buffer，避免旧 buffer 被提早修改或者回收导致产生数据不连贯的现象。
+
+.. only:: SOC_BITSCRAMBLER_SUPPORTED
+
+    .. _parlio-tx-bitscrambler-decorator:
+
+    配合比特调节器 (BitScrambler) 产生自定义的比特流
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    我们可以通过编写 :doc:`比特调节器 </api-reference/peripherals/bitscrambler>` 汇编代码来控制 DMA 通路上的数据，进而实现一些简单的编码工作。相较于使用 CPU 做编码工作，比特调节器的性能更高，且不会占用 CPU 资源，但是受限于 BitScrambler 有限的指令存储器空间，它无法实现复杂的编码工作。
+
+    编写好比特调节器程序后，通过调用 :cpp:func:`parlio_tx_unit_decorate_bitscrambler` 启用比特调节器。并在 :cpp:member:`parlio_transmit_config_t::bitscrambler_program` 配置本次传输使用比特调节器程序的二进制文件。不同的传输事务可以使用不同的比特调节器程序。该二进制文件必须符合比特调节器的汇编语言规范，并且在运行时会被加载到比特调节器的指令存储器中。如何编写并编译比特调节器程序请参考 :doc:`比特调节器编程指南 </api-reference/peripherals/bitscrambler>`。
+
+    :cpp:func:`parlio_tx_unit_decorate_bitscrambler` 和 :cpp:func:`parlio_tx_unit_undecorate_bitscrambler` 需要成对使用。在删除 TX 单元时，需要先调用 :cpp:func:`parlio_tx_unit_undecorate_bitscrambler` 移除比特调节器。
 
 电源管理
 ^^^^^^^^^^^^^^^^

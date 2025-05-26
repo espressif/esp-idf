@@ -140,11 +140,6 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
     )
 {
     pmu_sleep_power_config_t power_default = PMU_SLEEP_POWER_CONFIG_DEFAULT(sleep_flags);
-    config->power = power_default;
-
-    pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(sleep_flags);
-    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, sleep_flags, adjustment, slowclk_period, fastclk_period);
-
     if (dslp) {
         pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags);
         config->digital = digital_default;
@@ -152,6 +147,11 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags);
         analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_slp_lp_dbias();
         config->analog = analog_default;
+
+        if (sleep_flags & RTC_SLEEP_POWER_BY_VBAT) {
+            power_default.lp_sys[PMU_MODE_LP_SLEEP].dig_power.vddbat_mode = 1;
+            power_default.lp_sys[PMU_MODE_LP_SLEEP].dig_power.bod_source_sel = 1;
+        }
     } else {
         pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags);
         config->digital = digital_default;
@@ -174,6 +174,9 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         }
         config->analog = analog_default;
     }
+    config->power = power_default;
+    pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(sleep_flags);
+    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, sleep_flags, adjustment, slowclk_period, fastclk_period);
     return config;
 }
 

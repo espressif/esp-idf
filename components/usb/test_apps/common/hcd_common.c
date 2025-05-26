@@ -23,7 +23,26 @@
 #include "unity.h"
 #include "sdkconfig.h"
 
-#define PORT_NUM                1
+// ----------------------------------------------------- Macros --------------------------------------------------------
+
+#define TEST_P4_OTG11 0 // Change this to 1 to test on OTG1.1 peripheral - only for ESP32-P4
+
+// --------------------- Constants -------------------------
+
+#if TEST_P4_OTG11
+#define TEST_PHY                USB_PHY_TARGET_INT
+#define TEST_PERIPHERAL_MAP     BIT1
+#define TEST_PORT_NUM           1
+#else
+#if CONFIG_IDF_TARGET_ESP32P4
+#define TEST_PHY                USB_PHY_TARGET_UTMI
+#else
+#define TEST_PHY                USB_PHY_TARGET_INT
+#endif
+#define TEST_PERIPHERAL_MAP     BIT0
+#define TEST_PORT_NUM           0
+#endif // TEST_P4_OTG11
+
 #define EVENT_QUEUE_LEN         5
 #define ENUM_ADDR               1   // Device address to use for tests that enumerate the device
 #define ENUM_CONFIG             1   // Device configuration number to use for tests that enumerate the device
@@ -145,7 +164,7 @@ int test_hcd_get_num_pipe_events(hcd_pipe_handle_t pipe_hdl)
 
 hcd_port_handle_t test_hcd_setup(void)
 {
-    test_setup_usb_phy();
+    test_setup_usb_phy(TEST_PHY);
 
     // Create a queue for port callback to queue up port events
     QueueHandle_t port_evt_queue = xQueueCreate(EVENT_QUEUE_LEN, sizeof(port_event_msg_t));
@@ -153,17 +172,17 @@ hcd_port_handle_t test_hcd_setup(void)
     // Install HCD
     hcd_config_t hcd_config = {
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
+        .peripheral_map = TEST_PERIPHERAL_MAP,
     };
     TEST_ASSERT_EQUAL(ESP_OK, hcd_install(&hcd_config));
     // Initialize a port
     hcd_port_config_t port_config = {
-        .fifo_bias = HCD_PORT_FIFO_BIAS_BALANCED,
         .callback = port_callback,
         .callback_arg = (void *)port_evt_queue,
         .context = (void *)port_evt_queue,
     };
     hcd_port_handle_t port_hdl;
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_port_init(PORT_NUM, &port_config, &port_hdl));
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_port_init(TEST_PORT_NUM, &port_config, &port_hdl));
     TEST_ASSERT_NOT_NULL(port_hdl);
     return port_hdl;
 }
@@ -261,8 +280,14 @@ void test_hcd_pipe_free(hcd_pipe_handle_t pipe_hdl)
 }
 
 #include "esp_private/esp_cache_private.h"
-#define DATA_BUFFER_CAPS        (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED)
+
 #define ALIGN_UP(num, align)    ((align) == 0 ? (num) : (((num) + ((align) - 1)) & ~((align) - 1)))
+
+#ifdef CONFIG_USB_HOST_DWC_DMA_CAP_MEMORY_IN_PSRAM      // In esp32p4, the USB-DWC internal DMA can access external RAM
+#define DATA_BUFFER_CAPS                     (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_SPIRAM)
+#else
+#define DATA_BUFFER_CAPS                     (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_INTERNAL)
+#endif
 
 urb_t *test_hcd_alloc_urb(int num_isoc_packets, size_t data_buffer_size)
 {

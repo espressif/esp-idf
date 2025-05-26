@@ -137,6 +137,13 @@ void apm_tee_hal_set_master_secure_mode(apm_ll_apm_ctrl_t apm_ctrl, apm_ll_maste
                                         apm_ll_secure_mode_t sec_mode);
 
 /**
+ * @brief Set all masters to a given secure mode
+ *
+ * @param sec_mode Secure mode
+ */
+void apm_tee_hal_set_master_secure_mode_all(apm_ll_secure_mode_t sec_mode);
+
+/**
  * @brief TEE controller clock auto gating enable
  *
  * @param enable Flag for HP clock auto gating enable/disable

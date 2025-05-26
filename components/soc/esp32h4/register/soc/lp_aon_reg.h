@@ -150,13 +150,28 @@ extern "C" {
  */
 #define LP_AON_GPIO_HOLD0_REG (DR_REG_LP_AON_BASE + 0x2c)
 /** LP_AON_GPIO_HOLD0 : R/W; bitpos: [31:0]; default: 0;
- *  configure io0~28 hold enable,when io in hold status, all io configure and output
+ *  configure io0~31 hold enable,when io in hold status, all io configure and output
  *  will be latch , input function is useful
  */
 #define LP_AON_GPIO_HOLD0    0xFFFFFFFFU
 #define LP_AON_GPIO_HOLD0_M  (LP_AON_GPIO_HOLD0_V << LP_AON_GPIO_HOLD0_S)
 #define LP_AON_GPIO_HOLD0_V  0xFFFFFFFFU
 #define LP_AON_GPIO_HOLD0_S  0
+
+/** LP_AON_GPIO_HOLD1_REG register
+ *  reserved
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define LP_AON_GPIO_HOLD1_REG (DR_REG_LP_AON_BASE + 0x30)
+/** LP_AON_GPIO_HOLD1 : R/W; bitpos: [31:0]; default: 0;
+ *  reserved
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define LP_AON_GPIO_HOLD1    0xFFFFFFFFU
+#define LP_AON_GPIO_HOLD1_M  (LP_AON_GPIO_HOLD1_V << LP_AON_GPIO_HOLD1_S)
+#define LP_AON_GPIO_HOLD1_V  0xFFFFFFFFU
+#define LP_AON_GPIO_HOLD1_S  0
 
 /** LP_AON_SYS_CFG_REG register
  *  configure system register

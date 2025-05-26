@@ -350,7 +350,8 @@ typedef struct {
     uint32_t tx_muedca_enable; /* count TX times within mu-timer working */
     uint32_t collision;
     uint32_t timeout;
-} esp_test_tx_statistics_t; //136 bytes
+    uint32_t tx_error_a0;
+} esp_test_tx_statistics_t; //140 bytes
 
 typedef struct {
     uint32_t complete_suc_tb;

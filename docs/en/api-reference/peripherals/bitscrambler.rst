@@ -201,8 +201,12 @@ To use the assembled BitScrambler program, you would refer to it as such:
 
     bitscrambler_handle_t bs;
     [...create bitscrambler instance]
+    bitscrambler_enable(bs);
     bitscrambler_load_program(bs, my_bitscrambler_program);
 
+    [...]
+
+    bitscrambler_disable(bs);
 
 .. _bitscrambler-loopback:
 
@@ -215,6 +219,16 @@ Resource Allocation and Program Loading
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In loopback mode, a BitScrambler object is created using :cpp:func:`bitscrambler_loopback_create`. If there is a BitScrambler peripheral matching the requested characteristics, this function will return a handle to it. You can then use :cpp:func:`bitscrambler_load_program` to load a program into it, then call :cpp:func:`bitscrambler_loopback_run` to transform a memory buffer using the loaded program. You can call :cpp:func:`bitscrambler_loopback_run` any number of times; it's also permissible to use :cpp:func:`bitscrambler_load_program` to change programs between calls. Finally, to free the hardware resources and clean up memory, call :cpp:func:`bitscrambler_free`.
+
+Integrating BitScrambler with Peripheral Drivers
+------------------------------------------------
+
+The BitScrambler can be used alongside other peripheral modules (with GDMA interface support) to perform data transformation and transmission tasks. Currently, the following peripheral modules are integrated with the BitScrambler:
+
+.. list::
+
+    :SOC_PARLIO_SUPPORTED: - **Parlio TX Driver**: The BitScrambler acts as a transmission layer decorator function, which can be dynamically enabled during runtime. For details, refer to :ref:`parlio-tx-bitscrambler-decorator`.
+    :SOC_RMT_SUPPORT_DMA: - **RMT TX Driver**: The BitScrambler functions similarly to an RMT encoder. A dedicated encoder has been designed using the BitScrambler. For details, refer to :ref:`rmt-bitscrambler-encoder`.
 
 Application Example
 -------------------

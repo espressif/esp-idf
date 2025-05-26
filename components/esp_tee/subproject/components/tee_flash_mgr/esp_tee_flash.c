@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -166,7 +166,14 @@ esp_err_t esp_tee_flash_setup_prot_ctx(uint8_t tee_boot_part)
         if (type == PART_TYPE_APP) {
             needs_protection = (subtype == PART_SUBTYPE_TEE_0 || subtype == PART_SUBTYPE_TEE_1);
         } else if (type == PART_TYPE_DATA) {
-            needs_protection = (subtype == PART_SUBTYPE_DATA_TEE_OTA || subtype == PART_SUBTYPE_DATA_TEE_SEC_STORAGE);
+            if (subtype == PART_SUBTYPE_DATA_TEE_OTA) {
+                needs_protection = true;
+            } else if (subtype == PART_SUBTYPE_DATA_WIFI) {
+                size_t label_len = strlen(ESP_TEE_SEC_STG_PART_LABEL);
+                if (memcmp(partition_entry->partition.label, ESP_TEE_SEC_STG_PART_LABEL, label_len) == 0) {
+                    needs_protection = true;
+                }
+            }
         }
 
         if (needs_protection) {

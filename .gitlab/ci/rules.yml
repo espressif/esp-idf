@@ -167,22 +167,19 @@
 ##############
 # if anchors #
 ##############
-.if-ref-master: &if-ref-master
-  if: '$CI_COMMIT_REF_NAME == "master"'
+.if-master-push: &if-master-push
+  if: '$CI_COMMIT_REF_NAME == "master" && $CI_PIPELINE_SOURCE == "push"'
 
-.if-ref-master-no_label: &if-ref-master-no_label
-  if: '$CI_COMMIT_REF_NAME == "master" && $BOT_TRIGGER_WITH_LABEL == null'
-
-.if-tag-release: &if-tag-release
+.if-release-tag: &if-release-tag
   if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/'
 
-.if-protected: &if-protected
+.if-protected-check: &if-protected-check
   if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) || $CI_COMMIT_TAG =~ /^qa-test/'
 
-.if-protected-no_label: &if-protected-no_label
-  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) && $BOT_TRIGGER_WITH_LABEL == null'
+.if-protected-deploy: &if-protected-deploy
+  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "api")'
 
-.if-protected-ref-push: &if-protected-ref-push
+.if-protected-branch-push: &if-protected-branch-push
   # rules:changes always evaluates to true for new branch pipelines or when there is no Git push event
   if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/) && $CI_PIPELINE_SOURCE == "push"'
 
@@ -191,9 +188,6 @@
 
 .if-dev-push: &if-dev-push
   if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
-
-.if-schedule: &if-schedule
-  if: '$CI_PIPELINE_SOURCE == "schedule"'
 
 .if-schedule-nightly: &if-schedule-nightly
   if: '$CI_PIPELINE_SOURCE == "schedule" && $INCLUDE_NIGHTLY_RUN == "1"'
@@ -214,51 +208,41 @@
 # Rules #
 #########
 ### Branches ###
-.rules:protected:
+.rules:protected:check:
   rules:
-    - <<: *if-protected
+    - <<: *if-protected-check
 
-.rules:push_to_github:
+.rules:protected:deploy:
   rules:
     - <<: *if-qa-test-tag
       when: never
-    - <<: *if-protected-no_label
+    - <<: *if-protected-deploy
 
-# Not uploading on release branches
-.rules:sync_support_status:
+.rules:master:push:
   rules:
-    - <<: *if-ref-master-no_label
-
-.rules:protected-no_label-always:
-  rules:
-    - <<: *if-qa-test-tag
-      when: never
-    - <<: *if-protected-no_label
-      when: always
+    - <<: *if-master-push
 
 .rules:tag:release:
   rules:
-    - <<: *if-tag-release
+    - <<: *if-release-tag
 
 .rules:dev-push:
   rules:
     - <<: *if-dev-push
 
-# Do not upload caches on dev branches by default
 .rules:upload-python-cache:
   rules:
-    - <<: *if-tag-release
+    - <<: *if-release-tag
     - <<: *if-schedule-nightly
-    - <<: *if-protected-ref-push
+    - <<: *if-protected-branch-push
       changes: *patterns-python-cache
     - <<: *if-label-upload_cache
       when: manual
 
 .rules:upload-submodule-cache:
   rules:
-    # Needn't upload submodule cache in schedule pipeline
-    - <<: *if-tag-release
-    - <<: *if-protected-ref-push
+    - <<: *if-release-tag
+    - <<: *if-protected-branch-push
       changes: *patterns-submodule
     - <<: *if-label-upload_cache
       when: manual
@@ -266,10 +250,9 @@
 ### Patterns ###
 .rules:patterns:clang_tidy:
   rules:
-    - <<: *if-protected
+    - <<: *if-protected-check
     - <<: *if-dev-push
       changes: *patterns-c-files
-
 
 #.rules:patterns:static-code-analysis-preview:
 #  rules:
@@ -282,7 +265,7 @@
 
 .rules:patterns:idf-pytest-plugin:
   rules:
-    - <<: *if-protected
+    - <<: *if-protected-check
     - <<: *if-dev-push
       changes: *patterns-idf-pytest-plugin
 
@@ -326,7 +309,7 @@
   rules:
     - <<: *if-revert-branch
       when: never
-    - <<: *if-protected
+    - <<: *if-protected-check
     - <<: *if-label-build
     - <<: *if-dev-push
       changes: *patterns-build_components
@@ -339,7 +322,7 @@
   rules:
     - <<: *if-revert-branch
       when: never
-    - <<: *if-protected
+    - <<: *if-protected-check
     - <<: *if-label-build
     - <<: *if-dev-push
       changes: *patterns-build_check
@@ -354,7 +337,7 @@
   rules:
     - <<: *if-revert-branch
       when: never
-    - <<: *if-protected
+    - <<: *if-protected-check
     - <<: *if-label-build
     - <<: *if-label-docker
     - <<: *if-dev-push
@@ -370,7 +353,7 @@
   rules:
     - <<: *if-revert-branch
       when: never
-    - <<: *if-protected
+    - <<: *if-protected-check
     - <<: *if-label-build
     - <<: *if-label-macos
     - <<: *if-label-macos_test
@@ -385,7 +368,7 @@
   rules:
     - <<: *if-revert-branch
       when: never
-    - <<: *if-protected
+    - <<: *if-protected-check
     - <<: *if-label-build
     - <<: *if-dev-push
       changes: *patterns-build_components
@@ -415,7 +398,7 @@
   rules:
     - <<: *if-revert-branch
       when: never
-    - <<: *if-protected
+    - <<: *if-protected-check
     - <<: *if-label-build-only
       when: never
     - <<: *if-label-host_test
@@ -426,7 +409,7 @@
   rules:
     - <<: *if-revert-branch
       when: never
-    - <<: *if-protected
+    - <<: *if-protected-check
     - <<: *if-label-build-only
       when: never
     - <<: *if-label-submodule

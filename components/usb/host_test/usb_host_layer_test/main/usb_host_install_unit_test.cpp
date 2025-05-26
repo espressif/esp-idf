@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <catch2/catch_test_macros.hpp>
 
+#include "esp_bit_defs.h"
 #include "usb_host.h"   // Real implementation of usb_host.h
 
 // Test all the mocked headers defined for this mock
@@ -51,6 +52,8 @@ SCENARIO("USB Host install")
         .root_port_unpowered = false,
         .intr_flags = 1,
         .enum_filter_cb = nullptr,
+        .fifo_settings_custom = {},
+        .peripheral_map = BIT0,
     };
 
     // USB host config is valid, USB Host driver is not installed from previous test case

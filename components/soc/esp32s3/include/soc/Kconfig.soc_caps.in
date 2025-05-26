@@ -400,8 +400,8 @@ config SOC_CPU_WATCHPOINTS_NUM
     default 2
 
 config SOC_CPU_WATCHPOINT_MAX_REGION_SIZE
-    int
-    default 64
+    hex
+    default 0x40
 
 config SOC_SIMD_PREFERRED_DATA_ALIGNMENT
     int
@@ -856,8 +856,8 @@ config SOC_LP_IO_CLOCK_IS_INDEPENDENT
     default y
 
 config SOC_SDM_GROUPS
-    bool
-    default y
+    int
+    default 1
 
 config SOC_SDM_CHANNELS_PER_GROUP
     int
@@ -1032,8 +1032,8 @@ config SOC_TOUCH_SENSOR_NUM
     default 15
 
 config SOC_TOUCH_MIN_CHAN_ID
-    bool
-    default y
+    int
+    default 1
 
 config SOC_TOUCH_MAX_CHAN_ID
     int
@@ -1462,6 +1462,10 @@ config SOC_SDMMC_USE_GPIO_MATRIX
 config SOC_SDMMC_NUM_SLOTS
     int
     default 2
+
+config SOC_SDMMC_DATA_WIDTH_MAX
+    int
+    default 8
 
 config SOC_SDMMC_SUPPORT_XTAL_CLOCK
     bool

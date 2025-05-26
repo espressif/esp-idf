@@ -37,6 +37,7 @@ Pytest Target Test Jobs:
   needs:
     - generate_pytest_child_pipeline
   variables:
+    OOCD_DISTRO_URL: ${OOCD_DISTRO_URL:-}
     PARENT_PIPELINE_ID: $PARENT_PIPELINE_ID
     REPORT_EXIT_CODE: $REPORT_EXIT_CODE
   # https://gitlab.com/gitlab-org/gitlab/-/issues/214340

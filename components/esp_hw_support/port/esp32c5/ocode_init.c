@@ -27,7 +27,7 @@ static void set_ocode_by_efuse(int ocode_scheme_ver)
     REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE, 1);
 }
 
-static void IRAM_ATTR calibrate_ocode(void)
+static void IRAM_ATTR NOINLINE_ATTR calibrate_ocode(void)
 {
     /*
     Bandgap output voltage is not precise when calibrate o-code by hardware sometimes, so need software o-code calibration (must turn off PLL).
@@ -81,8 +81,9 @@ static void IRAM_ATTR calibrate_ocode(void)
 
 void esp_ocode_calib_init(void)
 {
+    uint32_t chip_version = efuse_hal_chip_revision();
     uint32_t blk_ver = efuse_hal_blk_version();
-    if ((blk_ver >= 1) && (blk_ver < 100)) {
+    if ((chip_version == 1 && blk_ver >= 1) || (chip_version >= 100 && blk_ver >= 2)) {
         set_ocode_by_efuse(1);
         ESP_HW_LOGD(TAG, "efuse ocode");
     } else {

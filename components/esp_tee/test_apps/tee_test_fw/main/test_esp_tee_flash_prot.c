@@ -27,6 +27,8 @@
 #define TEST_PART_LABEL      "custom"
 #define TEST_BUF_SZ          256
 
+#define ESP_TEE_SEC_STG_PART_LABEL "secure_storage"
+
 static const char *TAG = "test_esp_tee_flash_prot";
 
 static void set_boot_count_in_nvs(uint8_t boot_count)
@@ -93,7 +95,7 @@ static void test_esp_partition_mmap_api(void)
         TEST_FAIL_MESSAGE("System fault should have been generated");
         break;
     case 5:
-        part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_TEE_SEC_STORAGE, NULL);
+        part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, ESP_TEE_SEC_STG_PART_LABEL);
         TEST_ASSERT_NOT_NULL(part);
         TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, ESP_PARTITION_MMAP_DATA, &outptr, &out_handle));
         ESP_LOG_BUFFER_HEXDUMP(TAG, outptr, 0x20, ESP_LOG_INFO);
@@ -149,7 +151,7 @@ static void test_esp_partition_api(void)
         test_esp_partition_api_w(part);
         break;
     case 4:
-        part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_TEE_SEC_STORAGE, NULL);
+        part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, ESP_TEE_SEC_STG_PART_LABEL);
         test_esp_partition_api_w(part);
         break;
     case 5:
@@ -255,7 +257,7 @@ static void test_esp_flash_api(void)
         test_esp_flash_api_r(part->address);
         break;
     case 4:
-        part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_TEE_SEC_STORAGE, NULL);
+        part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, ESP_TEE_SEC_STG_PART_LABEL);
         TEST_ASSERT_NOT_NULL(part);
         test_esp_flash_api_e(part->address);
         break;
@@ -327,7 +329,7 @@ static void test_esp_rom_spiflash_api(void)
         TEST_FAIL_MESSAGE("System fault should have been generated");
         break;
     case 4:
-        part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_TEE_SEC_STORAGE, NULL);
+        part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, ESP_TEE_SEC_STG_PART_LABEL);
         TEST_ASSERT_NOT_NULL(part);
         test_esp_rom_spiflash_api_e(part->address);
         TEST_FAIL_MESSAGE("System fault should have been generated");

@@ -111,8 +111,47 @@ __attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(ecd
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)
 {
-    // TODO: IDF-13007
-    return 0;
+    return EFUSE.rd_sys_part1_data4.ocode;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_hp_dbias(void)
+{
+    return EFUSE.rd_mac_sys3.active_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_lp_dbias(void)
+{
+    return EFUSE.rd_mac_sys3.active_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_lslp_dbg(void)
+{
+    return EFUSE.rd_mac_sys3.lslp_hp_dbg;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_lslp_hp_dbias(void)
+{
+    return EFUSE.rd_mac_sys3.lslp_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_dslp_dbg(void)
+{
+    return EFUSE.rd_mac_sys3.dslp_lp_dbg;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_dslp_lp_dbias(void)
+{
+    return (EFUSE.rd_mac_sys4.dslp_lp_dbias_1 << 4)|EFUSE.rd_mac_sys3.dslp_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline int32_t efuse_ll_get_dbias_vol_gap(void)
+{
+    return EFUSE.rd_mac_sys4.lp_hp_dbias_vol_gap;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_recovery_bootloader_sector(void)
+{
+    return (EFUSE.rd_repeat_data2.recovery_bootloader_flash_sector_hi << 9) | EFUSE.rd_repeat_data4.recovery_bootloader_flash_sector_lo;
 }
 
 /******************* eFuse control functions *************************/

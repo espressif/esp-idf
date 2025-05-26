@@ -114,7 +114,6 @@ typedef enum {
     ESP_PARTITION_SUBTYPE_DATA_LITTLEFS = 0x83,                               //!< LITTLEFS partition
 
     ESP_PARTITION_SUBTYPE_DATA_TEE_OTA = 0x90,                                //!< TEE OTA selection partition
-    ESP_PARTITION_SUBTYPE_DATA_TEE_SEC_STORAGE= 0x91,                         //!< TEE secure storage partition
 
 #if __has_include("extra_partition_subtypes.inc")
     #include "extra_partition_subtypes.inc"

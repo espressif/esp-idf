@@ -19,14 +19,20 @@ extern "C" {
 //and all variables in shared RAM. These macros can be used to redirect
 //particular functions/variables to other memory regions.
 
-// Forces code into IRAM instead of flash
+// Places code into IRAM instead of flash
 #define IRAM_ATTR _SECTION_ATTR_IMPL(".iram1", __COUNTER__)
+
+// Forces code into IRAM instead of flash
+#define FORCE_IRAM_ATTR _SECTION_FORCE_ATTR_IMPL(".iram1", __COUNTER__)
 
 // Forces data into DRAM instead of flash
 #define DRAM_ATTR _SECTION_ATTR_IMPL(".dram1", __COUNTER__)
 
-// Forces code into TCM instead of flash
+// Places code into TCM instead of flash
 #define TCM_IRAM_ATTR _SECTION_ATTR_IMPL(".tcm.text", __COUNTER__)
+
+// Forces code into TCM instead of flash
+#define FORCE_TCM_IRAM_ATTR _SECTION_FORCE_ATTR_IMPL(".tcm.text", __COUNTER__)
 
 // Forces data into TCM instead of L2MEM
 #define TCM_DRAM_ATTR _SECTION_ATTR_IMPL(".tcm.data", __COUNTER__)
@@ -189,11 +195,13 @@ FORCE_INLINE_ATTR TYPE& operator<<=(TYPE& a, int b) { a = a << b; return a; }
 // data with a custom section type set
 #ifndef CONFIG_IDF_TARGET_LINUX
 #define _SECTION_ATTR_IMPL(SECTION, COUNTER) __attribute__((section(SECTION "." _COUNTER_STRINGIFY(COUNTER))))
+#define _SECTION_FORCE_ATTR_IMPL(SECTION, COUNTER) __attribute__((noinline, section(SECTION "." _COUNTER_STRINGIFY(COUNTER))))
 #define _COUNTER_STRINGIFY(COUNTER) #COUNTER
 #else
 // Custom section attributes are generally not used in the port files for Linux target, but may be found
 // in the common header files. Don't declare custom sections in that case.
 #define _SECTION_ATTR_IMPL(SECTION, COUNTER)
+#define _SECTION_FORCE_ATTR_IMPL(SECTION, COUNTER)
 #endif
 
 /* Use IDF_DEPRECATED attribute to mark anything deprecated from use in

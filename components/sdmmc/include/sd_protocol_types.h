@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: ISC
  *
- * SPDX-FileContributor: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2025 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
@@ -29,6 +29,7 @@
 #include "freertos/FreeRTOS.h"
 #include "sd_pwr_ctrl.h"
 #include "esp_dma_utils.h"
+#include "hal/sd_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -154,24 +155,6 @@ typedef struct {
 } sdmmc_command_t;
 
 /**
- * SD/MMC Host clock timing delay phases
- *
- * This will only take effect when the host works in
- * - SDMMC_FREQ_HIGHSPEED
- * - SDMMC_FREQ_52M
- * - SDR50
- * - DDR50
- * Driver will print out how long the delay is, in picosecond (ps).
- */
-typedef enum {
-    SDMMC_DELAY_PHASE_0,            /*!< Delay phase 0 */
-    SDMMC_DELAY_PHASE_1,            /*!< Delay phase 1 */
-    SDMMC_DELAY_PHASE_2,            /*!< Delay phase 2 */
-    SDMMC_DELAY_PHASE_3,            /*!< Delay phase 3 */
-    SDMMC_DELAY_PHASE_AUTO,         /*!< Auto detect phase, only valid for UHS-I mode */
-} sdmmc_delay_phase_t;
-
-/**
  * @brief SD/MMC Driver Strength
  */
 typedef enum {
@@ -219,6 +202,7 @@ typedef struct {
 #define SDMMC_FREQ_26M          26000       /*!< MMC 26MHz speed */
 #define SDMMC_FREQ_DDR50        50000       /*!< MMC 50MHz speed */
 #define SDMMC_FREQ_SDR50        100000      /*!< MMC 100MHz speed */
+#define SDMMC_FREQ_SDR104       200000      /*!< MMC 200MHz speed */
     float io_voltage;           /*!< I/O voltage used by the controller (voltage switching is not supported) */
     sdmmc_driver_strength_t driver_strength; /*!< Driver Strength */
     sdmmc_current_limit_t current_limit;     /*!< Current Limit */
@@ -239,6 +223,7 @@ typedef struct {
     esp_err_t (*get_real_freq)(int slot, int* real_freq); /*!< Host function to provide real working freq, based on SDMMC controller setup */
     sdmmc_delay_phase_t input_delay_phase; /*!< input delay phase, this will only take into effect when the host works in SDMMC_FREQ_HIGHSPEED or SDMMC_FREQ_52M. Driver will print out how long the delay is*/
     esp_err_t (*set_input_delay)(int slot, sdmmc_delay_phase_t delay_phase); /*!< set input delay phase */
+    esp_err_t (*set_input_delayline)(int slot, sdmmc_delay_line_t delay_line); /*!< set input delay line */
     void* dma_aligned_buffer; /*!< Leave it NULL. Reserved for cache aligned buffers for SDIO mode */
     sd_pwr_ctrl_handle_t pwr_ctrl_handle;  /*!< Power control handle */
     esp_err_t (*get_dma_info)(int slot, esp_dma_mem_info_t *dma_mem_info); /*!< host function to dma memory information*/

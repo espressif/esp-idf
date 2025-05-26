@@ -72,24 +72,24 @@ menu "ESP-TEE (Trusted Execution Environment)"
             config SECURE_TEE_SEC_STG_MODE_DEVELOPMENT
                 bool "Development"
                 help
-                    Secure storage will be encrypted by the data stored in eFuse BLK2
+                    Secure storage will be encrypted by a constant key embedded in the TEE firmware
 
             config SECURE_TEE_SEC_STG_MODE_RELEASE
                 depends on IDF_TARGET_ESP32C6
                 bool "Release"
                 help
                     Secure storage will be encrypted by the data stored in eFuse block
-                    configured through the SECURE_TEE_SEC_STG_KEY_EFUSE_BLK option
+                    configured through the SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID option
 
         endchoice
 
-        config SECURE_TEE_SEC_STG_KEY_EFUSE_BLK
-            int "Secure Storage: Encryption key eFuse block"
+        config SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID
+            int "Secure Storage: eFuse HMAC key ID"
             depends on SECURE_TEE_SEC_STG_MODE_RELEASE
-            range 4 10
-            default 10
+            range -1 5
+            default -1
             help
-                eFuse block ID storing the TEE secure storage encryption key
+                eFuse block key ID storing the HMAC key for deriving the TEE secure storage encryption keys
 
         config SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
             bool "Secure Storage: Support signing with the ECDSA SECP192R1 curve"
@@ -104,13 +104,12 @@ menu "ESP-TEE (Trusted Execution Environment)"
                 This configuration enables the support for the Attestation service.
 
 
-        config SECURE_TEE_ATT_KEY_SLOT_ID
+        config SECURE_TEE_ATT_KEY_STR_ID
             depends on SECURE_TEE_ATTESTATION
-            int "Attestation: Secure Storage slot ID for EAT signing"
-            default 0
-            range 0 14
+            string "Attestation: Secure Storage key ID for EAT signing"
+            default "tee_att_key0"
             help
-                This configuration sets the slot ID from the TEE secure storage
+                This configuration sets the key ID from the TEE secure storage
                 storing the ECDSA keypair for executing sign/verify operations
                 from the TEE side for attestation.
 

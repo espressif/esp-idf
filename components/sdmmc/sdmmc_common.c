@@ -206,7 +206,12 @@ esp_err_t sdmmc_init_sd_current_limit(sdmmc_card_t *card)
 
 esp_err_t sdmmc_init_sd_timing_tuning(sdmmc_card_t *card)
 {
-    return sdmmc_do_timing_tuning(card);
+    ESP_RETURN_ON_ERROR(sdmmc_do_timing_tuning(card, SDMMC_DELAY_MODE_PHASE), TAG, "failed to do phase timing tuning");
+    if (card->host.max_freq_khz == SDMMC_FREQ_SDR104) {
+        ESP_RETURN_ON_ERROR(sdmmc_do_timing_tuning(card, SDMMC_DELAY_MODE_LINE), TAG, "failed to do delayline timing tuning");
+    }
+
+    return ESP_OK;
 }
 
 esp_err_t sdmmc_init_host_bus_width(sdmmc_card_t* card)

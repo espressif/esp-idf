@@ -16,6 +16,7 @@
 #include "hal/uart_ll.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/i2c_master.h"
+#include "driver/i2c_slave.h"
 #include "esp_log.h"
 #include "test_utils.h"
 #include "test_board.h"
@@ -440,3 +441,48 @@ TEST_CASE("Test get handle with known port", "[i2c]")
     TEST_ASSERT((uint32_t)bus_handle == (uint32_t)handle);
     _test_i2c_del_bus_device(bus_handle, dev_handle);
 }
+
+#if SOC_I2C_SUPPORT_SLAVE
+
+TEST_CASE("I2C peripheral allocate slave all", "[i2c]")
+{
+    i2c_slave_dev_handle_t dev_handle[SOC_HP_I2C_NUM];
+    for (int i = 0; i < SOC_HP_I2C_NUM; i++) {
+        i2c_slave_config_t i2c_slv_config_1 = {
+            .clk_source = I2C_CLK_SRC_DEFAULT,
+            .i2c_port = -1,
+            .scl_io_num = I2C_SLAVE_SCL_IO,
+            .sda_io_num = I2C_SLAVE_SDA_IO,
+            .slave_addr = ESP_SLAVE_ADDR,
+            .send_buf_depth = DATA_LENGTH,
+            .receive_buf_depth = DATA_LENGTH,
+            .flags.enable_internal_pullup = true,
+        };
+
+        TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config_1, &dev_handle[i]));
+    }
+    i2c_slave_config_t i2c_slv_config_1 = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = -1,
+        .scl_io_num = I2C_SLAVE_SCL_IO,
+        .sda_io_num = I2C_SLAVE_SDA_IO,
+        .slave_addr = ESP_SLAVE_ADDR,
+        .send_buf_depth = DATA_LENGTH,
+        .receive_buf_depth = DATA_LENGTH,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_slave_dev_handle_t dev_handle_2;
+
+    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, i2c_new_slave_device(&i2c_slv_config_1, &dev_handle_2));
+
+    for (int i = 0; i < SOC_HP_I2C_NUM; i++) {
+        TEST_ESP_OK(i2c_del_slave_device(dev_handle[i]));
+    }
+
+    // Get another one
+
+    TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config_1, &dev_handle_2));
+    TEST_ESP_OK(i2c_del_slave_device(dev_handle_2));
+}
+
+#endif // SOC_I2C_SUPPORT_SLAVE

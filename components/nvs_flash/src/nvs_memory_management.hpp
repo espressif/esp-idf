@@ -5,7 +5,9 @@
  */
 
 #include <cstdlib>
+#if !ESP_TEE_BUILD
 #include "esp_heap_caps.h"
+#endif
 
 #pragma once
 

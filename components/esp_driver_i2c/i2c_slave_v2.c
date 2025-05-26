@@ -188,6 +188,14 @@ IRAM_ATTR static void i2c_slave_isr_handler(void *arg)
             }
 #endif
         }
+#if CONFIG_IDF_TARGET_ESP32C5
+        // Workaround for c5 digital bug. Please note that following code has no
+        // functionality. It's just use for workaround the potential issue for avoiding
+        // secondary transaction.
+        i2c_ll_slave_enable_auto_start(hal->dev, true);
+        i2c_ll_start_trans(hal->dev);
+        i2c_ll_slave_enable_auto_start(hal->dev, false);
+#endif
     }
 
 #if SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE

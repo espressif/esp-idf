@@ -168,7 +168,11 @@ If you have one of {IDF_TARGET_NAME} official development boards listed below, y
 
 .. only:: esp32p4
 
-    To be announced.
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-P4-Function-EV-Board <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/index.html>
+        ESP32-P4-EYE <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-eye/index.html>
 
 .. _get-started-get-prerequisites:
 

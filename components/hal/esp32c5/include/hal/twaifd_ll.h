@@ -154,15 +154,17 @@ static inline void twaifd_ll_enable_hw(twaifd_dev_t *hw, bool enable)
  * @brief   Set operating mode of TWAI controller
  *
  * @param hw Start address of the TWAI registers
- * @param modes Operating mode
+ * @param listen_only Listen only mode (a.k.a. bus monitoring mode)
+ * @param self_test Self test mode
+ * @param loopback Loopback mode
  */
-static inline void twaifd_ll_set_mode(twaifd_dev_t *hw, bool listen_only, bool no_ack, bool loopback)
+static inline void twaifd_ll_set_mode(twaifd_dev_t *hw, bool listen_only, bool self_test, bool loopback)
 {
     //mode should be changed under disabled
     HAL_ASSERT(hw->mode_settings.ena == 0);
 
     twaifd_mode_settings_reg_t opmode = {.val = hw->mode_settings.val};
-    opmode.stm = no_ack;
+    opmode.stm = self_test;
     opmode.bmm = listen_only;
     opmode.ilbp = loopback;
 

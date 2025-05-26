@@ -1339,10 +1339,12 @@
 **************************/
 
 /* 4.1/4.2 secure connections feature */
-#ifndef SC_MODE_INCLUDED
-// Disable AES-CCM (BT 4.1) for BT Classic to workaround controller AES issue. E0 encryption (BT 4.0) will be used.
+#if defined(CONFIG_IDF_TARGET_ESP32) && (BT_CONTROLLER_INCLUDED == TRUE)
+// Disable AES-CCM (BT 4.1) for BT Classic to workaround controller AES issue on ESP32 controller. E0 encryption (BT 4.0) will be used.
 #define SC_MODE_INCLUDED                FALSE
-#endif
+#else
+#define SC_MODE_INCLUDED                TRUE
+#endif // CONFIG_IDF_TARGET_ESP32
 
 /* Used for conformance testing ONLY */
 #ifndef BTM_BLE_CONFORMANCE_TESTING

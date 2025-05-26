@@ -162,8 +162,8 @@ Carrier-related configurations lie in :cpp:type:`rmt_carrier_config_t`:
 
 - :cpp:member:`rmt_carrier_config_t::frequency_hz` sets the carrier frequency, in Hz.
 - :cpp:member:`rmt_carrier_config_t::duty_cycle` sets the carrier duty cycle.
-- :cpp:member:`rmt_carrier_config_t::polarity_active_low` sets the carrier polarity, i.e., on which level the carrier is applied.
-- :cpp:member:`rmt_carrier_config_t::always_on` sets whether to output the carrier even when the data transmission has finished. This configuration is only valid for the TX channel.
+- :cpp:member:`rmt_carrier_config_t::extra_rmt_carrier_config_flags::polarity_active_low` sets the carrier polarity, i.e., on which level the carrier is applied.
+- :cpp:member:`rmt_carrier_config_t::extra_rmt_carrier_config_flags::always_on` sets whether to output the carrier even when the data transmission has finished. This configuration is only valid for the TX channel.
 
 .. note::
 
@@ -218,7 +218,7 @@ The RX-complete event data is defined in :cpp:type:`rmt_rx_done_event_data_t`:
 
 - :cpp:member:`rmt_rx_done_event_data_t::received_symbols` points to the received RMT symbols. These symbols are saved in the ``buffer`` parameter of the :cpp:func:`rmt_receive` function. Users should not free this receive buffer before the callback returns. If you also enabled the partial receive feature, then the user buffer will be used as a "second level buffer", where its content can be overwritten by data comes in afterwards. In this case, you should copy the received data to another place if you want to keep it or process it later.
 - :cpp:member:`rmt_rx_done_event_data_t::num_symbols` indicates the number of received RMT symbols. This value is not larger than the ``buffer_size`` parameter of :cpp:func:`rmt_receive` function. If the ``buffer_size`` is not sufficient to accommodate all the received RMT symbols, the driver only keeps the maximum number of symbols that the buffer can hold, and excess symbols are discarded or ignored.
-- :cpp:member:`rmt_rx_done_event_data_t::is_last` indicates whether the current received buffer is the last one in the transaction. This is useful when you enable the partial reception feature by :cpp:member:`rmt_receive_config_t::extra_rmt_receive_flags::en_partial_rx`.
+- :cpp:member:`rmt_rx_done_event_data_t::extra_rmt_rx_done_event_flags::is_last` indicates whether the current received buffer is the last one in the transaction. This is useful when you enable the partial reception feature by :cpp:member:`rmt_receive_config_t::extra_rmt_receive_flags::en_partial_rx`.
 
 .. _rmt-enable-and-disable-channel:
 
@@ -334,9 +334,13 @@ As also discussed in the :ref:`rmt-enable-and-disable-channel`, calling :cpp:fun
 
 - :cpp:member:`rmt_receive_config_t::signal_range_min_ns` specifies the minimal valid pulse duration in either high or low logic levels. A pulse width that is smaller than this value is treated as a glitch, and ignored by the hardware.
 - :cpp:member:`rmt_receive_config_t::signal_range_max_ns` specifies the maximum valid pulse duration in either high or low logic levels. A pulse width that is bigger than this value is treated as **Stop Signal**, and the receiver generates receive-complete event immediately.
-- If the incoming packet is long, that they cannot be stored in the user buffer at once, you can enable the partial reception feature by setting :cpp:member:`rmt_receive_config_t::extra_rmt_receive_flags::en_partial_rx` to ``true``. In this case, the driver invokes :cpp:member:`rmt_rx_event_callbacks_t::on_recv_done` callback multiple times during one transaction, when the user buffer is **almost full**. You can check the value of :cpp:member::`rmt_rx_done_event_data_t::is_last` to know if the transaction is about to finish. Please note this features is not supported on all ESP series chips because it relies on hardware abilities like "ping-pong receive" or "DMA receive".
+- If the incoming packet is long, that they cannot be stored in the user buffer at once, you can enable the partial reception feature by setting :cpp:member:`rmt_receive_config_t::extra_rmt_receive_flags::en_partial_rx` to ``true``. In this case, the driver invokes :cpp:member:`rmt_rx_event_callbacks_t::on_recv_done` callback multiple times during one transaction, when the user buffer is **almost full**. You can check the value of :cpp:member:`rmt_rx_done_event_data_t::extra_rmt_rx_done_event_flags::is_last` to know if the transaction is about to finish. Please note this features is not supported on all ESP series chips because it relies on hardware abilities like "ping-pong receive" or "DMA receive".
 
 The RMT receiver starts the RX machine after the user calls :cpp:func:`rmt_receive` with the provided configuration above. Note that, this configuration is transaction specific, which means, to start a new round of reception, the user needs to set the :cpp:type:`rmt_receive_config_t` again. The receiver saves the incoming signals into its internal memory block or DMA buffer, in the format of :cpp:type:`rmt_symbol_word_t`.
+
+.. note::
+
+    After calling :cpp:func:`rmt_receive` function, the actual reception starts at the first level change of the received signal. If you need to get the start time of the reception, you can register a GPIO interrupt on the GPIO of the RMT RX channel, please refer to :doc:`GPIO doc </api-reference/peripherals/gpio>` for details.
 
 .. only:: SOC_RMT_SUPPORT_RX_PINGPONG
 
@@ -444,6 +448,8 @@ A configuration structure :cpp:type:`rmt_simple_encoder_config_t` should be prov
 While the functionality of an encoding process using the simple callback encoder can usually also realized by chaining other encoders, the simple callback can be more easy to understand and maintain than an encoder chain.
 
 .. only:: SOC_BITSCRAMBLER_SUPPORTED and SOC_RMT_SUPPORT_DMA
+
+    .. _rmt-bitscrambler-encoder:
 
     BitScrambler Encoder
     ~~~~~~~~~~~~~~~~~~~~

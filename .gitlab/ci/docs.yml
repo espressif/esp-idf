@@ -19,11 +19,8 @@
 .patterns-docs-preview: &patterns-docs-preview
   - "docs/**/*"
 
-.if-protected: &if-protected
+.if-protected-check: &if-protected-check
   if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/)'
-
-.if-protected-no_label: &if-protected-no_label
-  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) && $BOT_TRIGGER_WITH_LABEL == null'
 
 .if-qa-test-tag: &if-qa-test-tag
   if: '$CI_COMMIT_TAG =~ /^qa-test/'
@@ -41,7 +38,7 @@
   rules:
     - <<: *if-qa-test-tag
       when: never
-    - <<: *if-protected
+    - <<: *if-protected-check
     - <<: *if-label-build_docs
     - <<: *if-label-docs_full
     - <<: *if-dev-push
@@ -64,7 +61,7 @@ check_readme_links:
   tags: ["build", "amd64", "internet"]
   allow_failure: true
   rules:
-    - <<: *if-protected
+    - <<: *if-protected-check
     - <<: *if-dev-push
       changes: *patterns-example-readme
   script:
@@ -96,7 +93,7 @@ check_docs_lang_sync:
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3", "esp32c2", "esp32c6", "esp32c61", "esp32c5","esp32h2", "esp32h21", "esp32p4"]
+        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3", "esp32c2", "esp32c6", "esp32c61", "esp32c5", "esp32h2", "esp32h4", "esp32h21", "esp32p4"]
 
 check_docs_gh_links:
   image: $ESP_IDF_DOC_ENV_IMAGE
@@ -188,8 +185,7 @@ deploy_docs_production:
   # The DOCS_PROD_* variables used by this job are "Protected" so these branches must all be marked "Protected" in Gitlab settings
   extends:
     - .deploy_docs_template
-  rules:
-    - <<: *if-protected-no_label
+    - .rules:protected:deploy
   stage: post_deploy
   dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs: # ensure runs after push_to_github succeeded
@@ -208,8 +204,7 @@ deploy_docs_production:
 check_doc_links:
   extends:
     - .build_docs_template
-  rules:
-    - <<: *if-protected-no_label
+    - .rules:protected:deploy
   stage: post_deploy
   needs:
     - job: deploy_docs_production

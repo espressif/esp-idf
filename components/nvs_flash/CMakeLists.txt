@@ -1,3 +1,5 @@
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+
 if(BOOTLOADER_BUILD)
     # bootloader build simplified version
     set(srcs "src/nvs_bootloader.c"
@@ -13,8 +15,33 @@ if(BOOTLOADER_BUILD)
                         PRIV_INCLUDE_DIRS "private_include"
     )
 
+elseif(esp_tee_build)
+    # esp-tee build simplified version
+    set(srcs "src/nvs_api.cpp"
+             "src/nvs_item_hash_list.cpp"
+             "src/nvs_page.cpp"
+             "src/nvs_pagemanager.cpp"
+             "src/nvs_storage.cpp"
+             "src/nvs_handle_simple.cpp"
+             "src/nvs_handle_locked.cpp"
+             "src/nvs_partition.cpp"
+             "src/nvs_encrypted_partition.cpp"
+             "src/nvs_partition_lookup.cpp"
+             "src/nvs_partition_manager.cpp"
+             "src/nvs_types.cpp"
+             "src/nvs_platform.cpp")
+
+    set(requires esp_partition mbedtls)
+    set(priv_requires spi_flash newlib cxx)
+
+    idf_component_register(SRCS "${srcs}"
+                    REQUIRES "${requires}"
+                    PRIV_REQUIRES "${priv_requires}"
+                    INCLUDE_DIRS "include"
+                    PRIV_INCLUDE_DIRS "private_include")
+
 else()
-    # regular, non bootloader build
+    # regular, OS build
     idf_build_get_property(target IDF_TARGET)
 
     set(srcs "src/nvs_api.cpp"
@@ -66,4 +93,4 @@ else()
         target_compile_options(${COMPONENT_LIB} PUBLIC "-fno-analyzer")
     endif()
 
-endif() #bootloader build
+endif() #non-OS build

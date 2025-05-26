@@ -519,13 +519,15 @@
 #define SOC_TWAI_SUPPORT_TIMESTAMP      1
 
 /*-------------------------- eFuse CAPS----------------------------*/
-// #define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 1
-// #define SOC_EFUSE_DIS_PAD_JTAG 1
-// #define SOC_EFUSE_DIS_USB_JTAG 1
-// #define SOC_EFUSE_DIS_DIRECT_BOOT 1
-// #define SOC_EFUSE_SOFT_DIS_JTAG 1
-// #define SOC_EFUSE_DIS_ICACHE 1
+#define SOC_EFUSE_DIS_PAD_JTAG 1
+#define SOC_EFUSE_DIS_USB_JTAG 1
+#define SOC_EFUSE_DIS_DIRECT_BOOT 1
+#define SOC_EFUSE_SOFT_DIS_JTAG 1
+#define SOC_EFUSE_DIS_ICACHE 1
+// ECDSA_P256_KEY
 #define SOC_EFUSE_ECDSA_KEY 1
+#define SOC_EFUSE_ECDSA_KEY_P192 1
+#define SOC_EFUSE_ECDSA_KEY_P384 1
 
 /*-------------------------- Key Manager CAPS----------------------------*/
 #define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY    1 /*!< Key manager responsible to deploy ECDSA key */
@@ -542,11 +544,23 @@
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_256    1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND  1
 
+/*-------------------------- PSRAM Encryption CAPS----------------------------*/
+#define SOC_PSRAM_ENCRYPTION_XTS_AES_128    (1)
+#define SOC_PSRAM_ENCRYPTION_XTS_AES_256    (1)
+
+/*------------------------Bootloader CAPS---------------------------------*/
+/* Support Recovery Bootloader */
+#define SOC_RECOVERY_BOOTLOADER_SUPPORTED             (0)
+/* Support Anti-rollback */
+#define SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED        (0)
+
 /*-------------------------- APM CAPS-----------------------------------------*/
-#define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */
-#define SOC_APM_LP_APM0_SUPPORTED       1 /*!< Support for LP APM0 control filter */
+#define SOC_APM_CTRL_FILTER_SUPPORTED        1 /*!< Support for APM control filter */
+#define SOC_APM_LP_APM0_SUPPORTED            1 /*!< Support for LP APM0 control filter */
+#define SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL 1 /*!< Support for TEE controller per-peripheral access control */
 
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
 #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1
@@ -653,7 +667,7 @@
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                     (1)    /*!< Support hardware TSF */
-#define SOC_WIFI_FTM_SUPPORT                (0)    /*!< Support FTM */ // TODO: [ESP32C5] WIFI-6426
+#define SOC_WIFI_FTM_SUPPORT                (1)    /*!< Support FTM */
 #define SOC_WIFI_GCMP_SUPPORT               (1)    /*!< Support GCMP(GCMP128 and GCMP256) */
 #define SOC_WIFI_WAPI_SUPPORT               (1)    /*!< Support WAPI */
 #define SOC_WIFI_CSI_SUPPORT                (1)    /*!< Support CSI */
@@ -677,5 +691,6 @@
 // #define SOC_PHY_COMBO_MODULE                  (1) /*!< Support Wi-Fi, BLE and 15.4*/
 
 /*------------------------------------- ULP CAPS -------------------------------------*/
-#define SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR   (1) /*!< LP Core interrupts all map to a single entry in vector table */
-#define SOC_LP_CORE_SUPPORT_ETM               (1) /*!< LP Core supports ETM */
+#define SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR         (1) /*!< LP Core interrupts all map to a single entry in vector table */
+#define SOC_LP_CORE_SUPPORT_ETM                     (1) /*!< LP Core supports ETM */
+#define SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS   (1) /*!< LP Core will raise exceptions if accessing invalid addresses */

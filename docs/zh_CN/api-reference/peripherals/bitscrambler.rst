@@ -201,8 +201,12 @@ LUT 内容元指令
 
     bitscrambler_handle_t bs;
     [...创建比特调节器实例]
+    bitscrambler_enable(bs);
     bitscrambler_load_program(bs, my_bitscrambler_program);
 
+    [...]
+
+    bitscrambler_disable(bs);
 
 .. _bitscrambler-loopback:
 
@@ -215,6 +219,16 @@ LUT 内容元指令
 ^^^^^^^^^^^^^^^^^^^^^
 
 在回环模式下，使用 :cpp:func:`bitscrambler_loopback_create` 创建一个比特调节器对象。如果有一个与请求的特性匹配的比特调节器外设，该函数将返回此外设的句柄。然后，使用 :cpp:func:`bitscrambler_load_program` 将比特调节器程序加载到创建的对象中，再调用 :cpp:func:`bitscrambler_loopback_run` 使用此加载的程序进行内存缓冲区的比特转换。可以多次调用 :cpp:func:`bitscrambler_loopback_run`，也可以在调用之间使用 :cpp:func:`bitscrambler_load_program` 更改程序。最后，调用 :cpp:func:`bitscrambler_free` 释放硬件资源并清理内存。
+
+在外设驱动中集成比特调节器
+--------------------------
+
+比特调节器可以与其他外设模块（须支持 GDMA 接口）配合使用，以实现数据转换和传输任务。当前，以下外设模块已经完成了与 BitScrambler 的对接：
+
+.. list::
+
+    :SOC_PARLIO_SUPPORTED: - **Parlio TX 驱动**：比特调节器被设计成了传输层的装饰器函数，可以在运行期间动态启用，详情请参考 :ref:`parlio-tx-bitscrambler-decorator`
+    :SOC_RMT_SUPPORT_DMA: - **RMT TX 驱动**：比特调节器的作用和 RMT 编码器的功能类似，因此我们利用比特调节器设计了一个专门的编码器，详情请参考 :ref:`rmt-bitscrambler-encoder`
 
 应用示例
 --------

@@ -130,7 +130,7 @@ s_trans_id = 0x3fcdfac4;
 
 /* Functions */
 coex_core_event_duration_get = 0x40002178;
-coex_core_timer_idx_get = 0x4000218c;
+/* coex_core_timer_idx_get = 0x4000218c; */
 coex_hw_timer_tick_get = 0x400021b8;
 
 
@@ -202,7 +202,7 @@ pm_beacon_offset_add_loss_counter = 0x400030a8;
 pm_beacon_offset_deinit = 0x400030b4;
 /*pm_get_tbtt_count = 0x400030b8;*/
 pm_coex_schm_overall_period_get = 0x400030bc;
-pm_coex_pwr_update = 0x400030c0;
+//pm_coex_pwr_update = 0x400030c0;
 /* Data (.data, .bss, .rodata) */
 s_pm_beacon_offset_ptr = 0x3fcdfa64;
 s_pm_beacon_offset_config_ptr = 0x3fcdfa60;

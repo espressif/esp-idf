@@ -30,11 +30,13 @@ typedef enum {
  */
 typedef struct {
     bool ssp_en; /*!< Whether SSP(secure simple pairing) or legacy pairing is used for Classic Bluetooth */
+    bool sc_en; /*!< Whether secure connection host support is enabled or disabled for Classic Bluetooth */
 } esp_bluedroid_config_t;
 
 #define BT_BLUEDROID_INIT_CONFIG_DEFAULT()                                                                             \
     {                                                                                                                  \
         .ssp_en = true,                                                                                                \
+        .sc_en = false,                                                                                                \
     }
 
 /**

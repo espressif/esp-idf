@@ -23,8 +23,8 @@ The table below provides more information on pin usage, and please note the comm
       - Comments
 
     * - GPIO0
-      - LP_GPIO0
       -
+      - LP_GPIO0
       -
 
     * - GPIO1

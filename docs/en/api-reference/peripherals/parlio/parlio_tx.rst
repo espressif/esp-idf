@@ -129,6 +129,7 @@ The following are the configuration parameters of the :cpp:type:`parlio_transmit
 .. list::
 
     - :cpp:member:`parlio_transmit_config_t::idle_value` Sets the value on the data lines when the TX unit is idle after transmission. This value will remain even after calling :cpp:func:`parlio_tx_unit_disable` to disable the TX unit.
+    :SOC_BITSCRAMBLER_SUPPORTED: - :cpp:member:`parlio_transmit_config_t::bitscrambler_program` The pointer to the bitscrambler program binary file. Set to ``NULL`` if the bitscrambler is not used in this transmission.
     - :cpp:member:`parlio_transmit_config_t::flags` Usually used to fine-tune some behaviors of the transmission, including the following options
     - :cpp:member:`parlio_transmit_config_t::flags::queue_nonblocking` Sets whether the function needs to wait when the transmission queue is full. If this value is set to ``true``, the function will immediately return the error code :c:macro:`ESP_ERR_INVALID_STATE` when the queue is full. Otherwise, the function will block the current thread until there is space in the transmission queue.
     :SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION: - :cpp:member:`parlio_transmit_config_t::flags::loop_transmission` Setting this to ``true`` enables infinite loop transmission. In this case, the transmission will not stop unless manually calling :cpp:func:`parlio_tx_unit_disable`, and no "trans_done" event will be generated. Since the loop is controlled by DMA, the TX unit can generate periodic sequences with minimal CPU intervention.
@@ -307,6 +308,19 @@ The waveform of the external clock input is shown below:
     .. note::
 
         If you need to modify the transmission payload after enabling infinite loop transmission, you can configure :cpp:member:`parlio_transmit_config_t::flags::loop_transmission` and call :cpp:func:`parlio_tx_unit_transmit` again with a new payload buffer. The driver will switch to the new buffer after the old buffer is completely transmitted. Therefore, users need to maintain two buffers to avoid data inconsistency caused by premature modification or recycling of the old buffer.
+
+.. only:: SOC_BITSCRAMBLER_SUPPORTED
+
+    .. _parlio-tx-bitscrambler-decorator:
+
+    Custom Bitstream Generation with BitScrambler
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    We can use the :doc:`BitScrambler </api-reference/peripherals/bitscrambler>` assembly code to control the data on the DMA path, thereby implementing some simple encoding work. Compared to using the CPU for encoding, the BitScrambler has higher performance and does not consume CPU resources, but is limited by the limited instruction memory of the BitScrambler, so it cannot implement complex encoding work.
+
+    After writing the BitScrambler program, we can enable it by calling :cpp:func:`parlio_tx_unit_decorate_bitscrambler`. And configure the :cpp:member:`parlio_transmit_config_t::bitscrambler_program` to point to the binary file of the BitScrambler program. Different transmission transactions can use different BitScrambler programs. The binary file must conform to the BitScrambler assembly language specification, and will be loaded into the BitScrambler's instruction memory at runtime. For details on how to write and compile the BitScrambler program, please refer to :doc:`BitScrambler Programming Guide </api-reference/peripherals/bitscrambler>`.
+
+    :cpp:func:`parlio_tx_unit_decorate_bitscrambler` and :cpp:func:`parlio_tx_unit_undecorate_bitscrambler` need to be used in pairs. When deleting the TX unit, you need to call :cpp:func:`parlio_tx_unit_undecorate_bitscrambler` first to remove the BitScrambler.
 
 Power Management
 ^^^^^^^^^^^^^^^^

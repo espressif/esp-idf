@@ -155,16 +155,6 @@ extern "C" {
 #define TWAIFD_TXBBM_M  (TWAIFD_TXBBM_V << TWAIFD_TXBBM_S)
 #define TWAIFD_TXBBM_V  0x00000001U
 #define TWAIFD_TXBBM_S  10
-/** TWAIFD_SAM : R/W; bitpos: [11]; default: 0;
- *  Self-acknowledge mode.
- *  0b0 - SAM_DISABLE - Do not send dominant ACK bit when CTU CAN FD sends Acknowledge
- *  bit.
- *  0b1 - SAM_ENABLE - Send dominant ACK bit when CTU CAN FD transmits CAN frame.
- */
-#define TWAIFD_SAM    (BIT(11))
-#define TWAIFD_SAM_M  (TWAIFD_SAM_V << TWAIFD_SAM_S)
-#define TWAIFD_SAM_V  0x00000001U
-#define TWAIFD_SAM_S  11
 /** TWAIFD_RTRLE : R/W; bitpos: [16]; default: 0;
  *  Retransmitt Limit Enable. If enabled, CTU CAN FD only attempts to retransmitt each
  *  frame up to RTR_TH

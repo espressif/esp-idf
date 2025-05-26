@@ -349,15 +349,15 @@ is_wps_pbc_overlap(struct wps_sm *sm, const u8 *sel_uuid)
 {
     if (!sel_uuid) {
         wpa_printf(MSG_DEBUG, "WPS: null uuid field");
-        return false;
+        return true;
     }
 
-    if (os_memcmp(sel_uuid, sm->uuid, WPS_UUID_LEN) != 0) {
+    if (os_memcmp(sel_uuid, sm->uuid_r, WPS_UUID_LEN) != 0) {
         wpa_printf(MSG_DEBUG, "uuid is not same");
         wpa_hexdump(MSG_DEBUG, "WPS: UUID of scanned BSS is",
                     sel_uuid, WPS_UUID_LEN);
         wpa_hexdump(MSG_DEBUG, "WPS: UUID of sm BSS is",
-                    sm->uuid, WPS_UUID_LEN);
+                    sm->uuid_r, WPS_UUID_LEN);
         return true;
     }
 
@@ -369,7 +369,10 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
 {
     struct wps_sm *sm = gWpsSm;
     wifi_mode_t op_mode = 0;
-    sm->wps_pbc_overlap = false;
+
+    if (sm->wps_pbc_overlap) {
+        return false;
+    }
 
     if (!sm->is_wps_scan || !scan->bssid) {
         return false;
@@ -442,12 +445,14 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
                 os_memcpy(sm->bssid, scan->bssid, ETH_ALEN);
 
                 scan_uuid = wps_get_uuid_e(buf);
+                if (sm->discover_ssid_cnt > 1 && wps_get_type() == WPS_TYPE_PBC && is_wps_pbc_overlap(sm, scan_uuid) == true) {
+                    wpa_printf(MSG_INFO, "pbc_overlap flag is true");
+                    sm->wps_pbc_overlap = true;
+                    wpabuf_free(buf);
+                    return false;
+                }
                 if (scan_uuid) {
-                    if (wps_get_type() == WPS_TYPE_PBC && is_wps_pbc_overlap(sm, scan_uuid) == true) {
-                        wpa_printf(MSG_INFO, "pbc_overlap flag is true");
-                        sm->wps_pbc_overlap = true;
-                    }
-                    os_memcpy(sm->uuid, scan_uuid, WPS_UUID_LEN);
+                    os_memcpy(sm->uuid_r, scan_uuid, WPS_UUID_LEN);
                 }
 
                 if (ap_supports_sae(scan)) {
@@ -1452,7 +1457,7 @@ static int wifi_station_wps_init(const esp_wps_config_t *config)
     }
 
     sm = gWpsSm;
-
+    esp_wifi_disconnect();
     esp_wifi_get_macaddr_internal(WIFI_IF_STA, sm->ownaddr);
     os_memcpy(gWpaSm.own_addr, sm->ownaddr, ETH_ALEN);
 
@@ -1738,6 +1743,8 @@ int wifi_station_wps_start(void)
     default:
         break;
     }
+    os_memset(sm->uuid_r, 0, sizeof(sm->uuid_r));
+    sm->wps_pbc_overlap = false;
     sm->discard_ap_cnt = 0;
     os_memset(&sm->dis_ap_list, 0, WPS_MAX_DIS_AP_NUM * sizeof(struct discard_ap_list_t));
     esp_wifi_set_wps_start_flag_internal(true);

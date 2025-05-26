@@ -163,6 +163,20 @@ void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t);
  */
 void esp_transport_ssl_set_common_name(esp_transport_handle_t t, const char *common_name);
 
+
+/**
+ * @brief      Set the SSL cipher suites list
+ *
+ * @note       This function stores a pointer to the data rather than making a copy.
+ *             Therefore, the data must remain valid until the connection is cleaned up.
+ *             The `ciphersuites_list` is a pointer to a zero-terminated array of IANA identifiers of TLS cipher suites.
+ *             You can verify the validity of the list using the `esp_tls_get_ciphersuites_list()` API.
+ *
+ * @param      t                  SSL transport
+ * @param[in]  ciphersuites_list  A pointer to a zero-terminated array of IANA identifiers of TLS cipher suites
+ */
+void esp_transport_ssl_set_ciphersuites_list(esp_transport_handle_t t, const int *ciphersuites_list);
+
 /**
  * @brief      Set the ssl context to use secure element (atecc608a) for client(device) private key and certificate
  *

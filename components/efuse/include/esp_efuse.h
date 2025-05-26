@@ -806,13 +806,29 @@ esp_err_t esp_efuse_check_errors(void);
  */
 esp_err_t esp_efuse_destroy_block(esp_efuse_block_t block);
 
-#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+#if SOC_ECDSA_SUPPORTED
 /**
  * @brief Checks if 192-bit ECDSA curve operations are supported.
  *
  * This function checks if the current eFuse configuration supports 192-bit ECDSA curve operations.
 */
 bool esp_efuse_is_ecdsa_p192_curve_supported(void);
+
+/**
+ * @brief Checks if 256-bit ECDSA curve operations are supported.
+ *
+ * This function checks if the current eFuse configuration supports 256-bit ECDSA curve operations.
+*/
+bool esp_efuse_is_ecdsa_p256_curve_supported(void);
+#endif /* SOC_ECDSA_SUPPORTED*/
+
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+typedef enum {
+    ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P256_BIT = 0,
+    ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P192_BIT = 1,
+    ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_BOTH_P192_P256_BIT = 2,
+    ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P256_BIT_LOCKED = 3,
+} esp_efuse_ecdsa_curve_mode_t;
 
 /**
  * @brief Enables 192-bit ECDSA curve operations by setting the appropriate eFuse value.

@@ -31,8 +31,6 @@
 
     I (81) esp_image: segment 3: paddr=0x0002f18c vaddr=0x00000000 size=0x00e8c (  3724)
     I (84) esp_image: segment 4: paddr=0x00030020 vaddr=0x42000020 size=0x171a8 ( 94632) map
-    0x42000020: esp_ota_get_app_description at /home/marius/clean/esp-idf_2/components/app_update/esp_app_desc.c:63
-
     I (132) boot: Loaded app from partition at offset 0x20000
     I (133) boot: Checking flash encryption...
     I (137) efuse: Batch mode of writing fields is enabled
@@ -57,8 +55,6 @@
 
     I (715) esp_image: segment 3: paddr=0x0002f18c vaddr=0x00000000 size=0x00e8c (  3724)
     I (717) esp_image: segment 4: paddr=0x00030020 vaddr=0x42000020 size=0x171a8 ( 94632) map
-    0x42000020: esp_ota_get_app_description at /home/marius/clean/esp-idf_2/components/app_update/esp_app_desc.c:63
-
     I (760) flash_encrypt: Encrypting partition 2 at offset 0x20000 (length 0x100000)...
     I (14797) flash_encrypt: Done encrypting
     I (14801) flash_encrypt: Flash encryption completed
@@ -100,8 +96,6 @@
 
     I (86) esp_image: segment 3: paddr=0x0002f18c vaddr=0x00000000 size=0x00e8c (  3724)
     I (88) esp_image: segment 4: paddr=0x00030020 vaddr=0x42000020 size=0x171a8 ( 94632) map
-    0x42000020: esp_ota_get_app_description at /home/marius/clean/esp-idf_2/components/app_update/esp_app_desc.c:63
-
     I (139) boot: Loaded app from partition at offset 0x20000
     I (139) boot: Checking flash encryption...
     I (144) flash_encrypt: flash encryption is enabled (1 plaintext flashes left)

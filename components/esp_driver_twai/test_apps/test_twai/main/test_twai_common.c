@@ -15,6 +15,7 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
+#include "driver/uart.h" // for baudrate detection
 
 #define TEST_TX_GPIO                4
 #define TEST_RX_GPIO                5
@@ -97,6 +98,58 @@ TEST_CASE("twai install uninstall (loopback)", "[TWAI]")
             printf("Uninstall TWAI%d\n", i - 1);
             TEST_ESP_OK(twai_node_delete(node_hdl[i]));
         }
+    }
+}
+
+static void test_twai_baudrate_correctness(twai_clock_source_t clk_src, uint32_t test_bitrate)
+{
+    twai_node_handle_t twai_node = NULL;
+    twai_onchip_node_config_t node_config = {
+        .clk_src = clk_src,
+        .io_cfg.tx = TEST_TX_GPIO,
+        .io_cfg.rx = TEST_TX_GPIO,
+        .bit_timing.bitrate = test_bitrate,
+        .tx_queue_depth = 1,
+        .flags.enable_loopback = true,
+        .flags.enable_self_test = true,
+    };
+    TEST_ESP_OK(twai_new_node_onchip(&node_config, &twai_node));
+    TEST_ESP_OK(twai_node_enable(twai_node));
+
+    // We use the UART baudrate detection submodule to measure the TWAI baudrate
+    uart_bitrate_detect_config_t detect_config = {
+        .rx_io_num = TEST_TX_GPIO,
+    };
+    TEST_ESP_OK(uart_detect_bitrate_start(UART_NUM_1, &detect_config));
+
+    twai_frame_t tx_frame = {
+        .buffer = (uint8_t []){0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55},
+        .buffer_len = 8,
+        .header = {
+            .id = 0x55555,
+            .ide = true,
+            .dlc = 8,
+        }
+    };
+    TEST_ESP_OK(twai_node_transmit(twai_node, &tx_frame, 500));
+    vTaskDelay(100);
+
+    // analyze the measurement result
+    uart_bitrate_res_t measure_result;
+    TEST_ESP_OK(uart_detect_bitrate_stop(UART_NUM_1, true, &measure_result));
+    uint32_t bitrate_measured = measure_result.clk_freq_hz * 4 / (measure_result.pos_period + measure_result.neg_period);
+    printf("TWAI bitrate measured: %"PRIu32"\r\n", bitrate_measured);
+    TEST_ASSERT_INT_WITHIN(1000, test_bitrate, bitrate_measured); // 1k tolerance
+
+    TEST_ESP_OK(twai_node_disable(twai_node));
+    TEST_ESP_OK(twai_node_delete(twai_node));
+}
+
+TEST_CASE("twai baudrate measurement", "[TWAI]")
+{
+    twai_clock_source_t twai_available_clk_srcs[] = SOC_TWAI_CLKS;
+    for (size_t i = 0; i < sizeof(twai_available_clk_srcs) / sizeof(twai_available_clk_srcs[0]); i++) {
+        test_twai_baudrate_correctness(twai_available_clk_srcs[i], 200000);
     }
 }
 

@@ -51,6 +51,9 @@ static bool IRAM_ATTR camera_trans_finished(esp_cam_ctlr_handle_t handle, esp_ca
 
 TEST_CASE("TEST esp_cam on ov5647", "[csi][camera][ov5647]")
 {
+    new_buffer_count = 0;
+    trans_finished_count = 0;
+
     size_t frame_buffer_size = TEST_MIPI_CSI_DISP_HRES *
                                TEST_MIPI_DSI_DISP_VRES *
                                TEST_RGB565_BITS_PER_PIXEL / 8;
@@ -127,11 +130,12 @@ TEST_CASE("TEST esp_cam on ov5647", "[csi][camera][ov5647]")
     TEST_ESP_OK(esp_isp_enable(isp_proc));
     TEST_ESP_OK(esp_cam_ctlr_start(cam_handle));
     TEST_ESP_OK(esp_cam_ctlr_receive(cam_handle, &trans_data, ESP_CAM_CTLR_MAX_DELAY));
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(esp_cam_ctlr_stop(cam_handle));
 
-    TEST_ASSERT_GREATER_THAN(2, new_buffer_count);
-    TEST_ASSERT_GREATER_THAN(2, trans_finished_count);
+    // At least 35 new buffers callback and 34 completed transfer callback are expected within 1 second when camera is 50fps.
+    TEST_ASSERT_GREATER_OR_EQUAL(35, new_buffer_count);
+    TEST_ASSERT_GREATER_OR_EQUAL(34, trans_finished_count);
 
     TEST_ESP_OK(esp_cam_ctlr_disable(cam_handle));
     TEST_ESP_OK(esp_cam_ctlr_del(cam_handle));

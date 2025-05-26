@@ -427,6 +427,9 @@ esp_err_t esp_psram_extram_add_to_heap_allocator(void)
     ESP_EARLY_LOGI(TAG, "Adding pool of %dK of PSRAM memory to heap allocator",
                    (s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size + s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].size) / 1024);
 
+    // To allow using the page alignment gaps created while mapping the flash segments,
+    // the alignment gaps must be configured with correct memory protection configurations.
+#if CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
     // Here, SOC_MMU_DI_VADDR_SHARED is necessary because, for the targets that have separate data and instruction virtual address spaces,
     // the SPIRAM gap created due to the alignment needed while placing the instruction segment in the instruction virtual address space
     // cannot be added in heap because the region cannot be configured with write permissions.
@@ -452,6 +455,8 @@ esp_err_t esp_psram_extram_add_to_heap_allocator(void)
         }
     }
 #endif /* CONFIG_SPIRAM_RODATA */
+#endif /* CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
+
     return ESP_OK;
 }
 

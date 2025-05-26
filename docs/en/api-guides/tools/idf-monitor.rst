@@ -34,22 +34,22 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
      -
    * - * Ctrl + P
      - Reset target into bootloader to pause app via RTS and DTR lines
-     - Resets the target into the bootloader using the RTS and DTR lines (if connected). This stops the board from executing the application, making it useful when waiting for another device to start. For additional details, refer to :ref:`target-reset-into-bootloader`.
+     - Reset the target into the bootloader using the RTS and DTR lines (if connected). This stops the board from executing the application, making it useful when waiting for another device to start. For additional details, refer to :ref:`target-reset-into-bootloader`.
    * - * Ctrl + R
      - Reset target board via RTS
-     - Resets the target board and re-starts the application via the RTS line (if connected).
+     - Reset the target board and re-starts the application via the RTS line (if connected).
    * - * Ctrl + F
      - Build and flash the project
-     - Pauses idf_monitor to run the project ``flash`` target, then resumes idf_monitor. Any changed source files are recompiled and then re-flashed. Target ``encrypted-flash`` is run if idf_monitor was started with argument ``-E``.
+     - Pause idf_monitor to run the project ``flash`` target, then resumes idf_monitor. Any changed source files are recompiled and then re-flashed. Target ``encrypted-flash`` is run if idf_monitor was started with argument ``-E``.
    * - * Ctrl + A (or A)
      - Build and flash the app only
-     - Pauses idf_monitor to run the ``app-flash`` target, then resumes idf_monitor. Similar to the ``flash`` target, but only the main app is built and re-flashed. Target ``encrypted-app-flash`` is run if idf_monitor was started with argument ``-E``.
+     - Pause idf_monitor to run the ``app-flash`` target, then resumes idf_monitor. Similar to the ``flash`` target, but only the main app is built and re-flashed. Target ``encrypted-app-flash`` is run if idf_monitor was started with argument ``-E``.
    * - * Ctrl + Y
      - Stop/resume log output printing on screen
-     - Discards all incoming serial data while activated. Allows to quickly pause and examine log output without quitting the monitor.
+     - Discard all incoming serial data while activated. Allows to quickly pause and examine log output without quitting the monitor.
    * - * Ctrl + L
      - Stop/resume log output saved to file
-     - Creates a file in the project directory and the output is written to that file until this is disabled with the same keyboard shortcut (or IDF Monitor exits).
+     - Create a file in the project directory and the output is written to that file until this is disabled with the same keyboard shortcut (or IDF Monitor exits).
    * - * Ctrl + I (or I)
      - Stop/resume printing timestamps
      - IDF Monitor can print a timestamp in the beginning of each line. The timestamp format can be changed by the ``--timestamp-format`` command line argument.
@@ -61,9 +61,25 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
      -
    * - Ctrl + C
      - Interrupt running application
-     - Pauses IDF Monitor and runs GDB_ project debugger to debug the application at runtime. This requires :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME` option to be enabled.
+     - Pause IDF Monitor and runs GDB_ project debugger to debug the application at runtime. This requires :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME` option to be enabled.
 
 Any keys pressed, other than ``Ctrl-]`` and ``Ctrl-T``, will be sent through the serial port.
+
+
+Automatic Coloring
+==================
+
+IDF Monitor automatically colors the output based on the log level. This feature reduces the number of bytes transferred over the serial console by avoiding redundant log formatting, which can improve performance by reducing latency in log transmission. Other benefits include adding colors to precompiled libraries (such as Wi-Fi) and reduced binary size of the application.
+
+The automatic coloring is enabled by default. To disable it, use the command line option ``--disable-auto-color``.
+
+The coloring is done based on the log level followed by optional timestamp and tag. For option to enable coloring on the {IDF_TARGET_NAME} side, see :ref:`CONFIG_LOG_COLORS`.
+
+For more details on the log, see :doc:`Logging <../../api-reference/system/log>`.
+
+.. note::
+
+    The automatic coloring will not work properly if the message contains new lines. In this case the IDF Monitor will only color the first line of the message.
 
 
 ESP-IDF-specific Features
@@ -350,6 +366,10 @@ Known Issues with IDF Monitor
 =============================
 
 The following issues are currently known:
+
+- Autocoloring cannot detect the log level if the message contains new lines. In this case, the IDF Monitor will only color the first line of the message.
+
+  To work around this issue, enable :ref:`CONFIG_LOG_COLORS` in menuconfig. Please note that this might have some impact on binary size and performance.
 
 - On Windows, if the terminal is closed without first closing the IDF Monitor, some drivers may fail to release the serial port. To release the port, you may need to unplug and replug the USB cable, or in some cases even restart the computer. This issue has been observed with the CH9102 USB-to-UART bridge. Other drivers, such as CP210x and CH340, should work fine.
 

@@ -157,7 +157,7 @@ if(NOT non_os_build)
         list(APPEND srcs "power_supply/brownout.c")
     endif()
 
-    if(CONFIG_ESP_VBAT_INIT_AUTO)
+    if(CONFIG_SOC_VBAT_SUPPORTED)
         list(APPEND srcs "power_supply/vbat.c")
     endif()
 

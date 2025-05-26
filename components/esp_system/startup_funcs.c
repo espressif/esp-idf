@@ -80,6 +80,10 @@ ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
     // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
     esp_err_t ret = ESP_OK;
+    // BOD and VBAT share the same interrupt number. To avoid blocking the system in an intermediate state
+    // where an interrupt occurs and the interrupt number is enabled, but the ISR is not configured, enable
+    // the interrupt after configuring both ISRs.
+    portDISABLE_INTERRUPTS();
 #if CONFIG_ESP_BROWNOUT_DET
     esp_brownout_init();
 #else
@@ -91,7 +95,7 @@ ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
 #if CONFIG_ESP_VBAT_INIT_AUTO
     ret = esp_vbat_init();
 #endif
-
+    portENABLE_INTERRUPTS();
     return ret;
 }
 #endif

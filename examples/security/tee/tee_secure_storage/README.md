@@ -8,18 +8,14 @@
 - This example demonstrates the ESP-TEE framework's Secure Storage with two workflows:
   - Signing and verification
     - Create and securely store an ECDSA `secp256r1` keypair in a protected memory space i.e. the secure storage partition
-    - Sign a message in the TEE (given its digest) using the ECDSA keypair stored in the given slot ID
-    - Retrieve the ECDSA public key associated with the private key for the given slot ID
+    - Sign a message in the TEE (given its digest) using the ECDSA keypair stored with the given ID
+    - Retrieve the ECDSA public key associated with the private key with the given ID
     - Verify the generated signature in the REE
   - Encryption and decryption
     - Generate and securely store an AES-256 key in the secure storage partition
-    - Encrypt a message in the TEE using the AES key stored in the given slot ID with the `aes-256-gcm` algorithm and generate an authentication tag
+    - Encrypt a message in the TEE using the AES key stored with the given ID with the `aes-256-gcm` algorithm and generate an authentication tag
     - Decrypt the ciphertext using the same AES key and validate the authentication tag
     - Verify that the decrypted message matches the original
-
-### Notes
-
-- Secure Storage currently supports only the `ecdsa-secp256r1-sha256` algorithm for signing and the `aes-256-gcm` algorithm for encryption.
 
 ## How to use the example
 
@@ -33,24 +29,26 @@ Before the project configuration and build, be sure to set the correct chip targ
 
 Open the project configuration menu (`idf.py menuconfig`).
 
-- Configure the secure storage slot ID for storing the ECDSA keypair at `Example Configuration → TEE: Secure Storage keypair slot ID`.
+- Configure the secure storage example key ID at `Example Configuration → TEE: Secure Storage Key ID`.
 
-The TEE Secure Storage feature supports two modes for determining which eFuse block stores the encryption key:
+TEE Secure Storage follows the NVS partition format and uses an AES-XTS encryption scheme derived via the HMAC peripheral. It supports two key derivation modes, configurable via `CONFIG_SECURE_TEE_SEC_STG_MODE`:
 
-- **Development** Mode: The encryption key is embedded (constant for all instances) in the ESP-TEE firmware.
-- **Release** Mode: The encryption key is stored in eFuse BLK4 - BLK9, depending on the `SECURE_TEE_SEC_STG_KEY_EFUSE_BLK` Kconfig option.
+  - **Development** Mode: Encryption keys are embedded in the ESP-TEE firmware (identical across all instances).
+  - **Release** Mode: Encryption keys are derived via the HMAC peripheral using a key stored in eFuse, specified by `CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID`.
 
-#### Configure the eFuse Block ID for Encryption Key Storage
+#### Configure the eFuse key ID storing the HMAC key
 
-- Navigate to `Security features → Trusted Execution Environment → TEE: Secure Storage Mode` and enable the Release mode configuration.
-- Set the eFuse block ID to store the encryption key in `Security features → Trusted Execution Environment → TEE: Secure Storage encryption key eFuse block`.
+- Navigate to `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: Mode` and enable the `Release` mode configuration.
+- Set the eFuse key ID storing the HMAC key at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: eFuse HMAC key ID`.
 
-**Note:** Before running the example, users must program the encryption key into the configured eFuse block - refer to the snippet below. The TEE checks whether the specified eFuse block is empty or already programmed with a key. If the block is empty, an error will be returned; otherwise, the pre-programmed key will be used.
+**Note:** Before running the example, users must program the HMAC key into the configured eFuse block - refer to the snippet below. The TEE checks whether the specified eFuse block is empty or already programmed with a key. If the block is empty, an error will be returned; otherwise, the pre-programmed key will be used.
 
 ```shell
-# Programming the user key (256-bit) in eFuse
+# Generate a random 32-byte HMAC key
+openssl rand -out hmac_key_file.bin 32
+# Programming the HMAC key (256-bit) in eFuse
 # Here, BLOCK_KEYx is a free eFuse key-block between BLOCK_KEY0 and BLOCK_KEY5
-espefuse.py -p PORT burn_key BLOCK_KEYx user_key.bin USER
+espefuse.py -p PORT burn_key BLOCK_KEYx hmac_key_file.bin HMAC_UP
 ```
 
 ### Build and Flash

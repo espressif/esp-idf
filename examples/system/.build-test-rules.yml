@@ -2,9 +2,15 @@
 
 examples/system/app_trace_basic:
   disable_test:
-    - if: IDF_TARGET in ["esp32p4", "esp32h21"]
+    - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners.
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: not supported yet #TODO: OCD-1081
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: not supported yet #TODO: OCD-1137
 
 examples/system/base_mac_address:
   depends_components:
@@ -40,7 +46,6 @@ examples/system/efuse:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   disable:
-    - if: IDF_TARGET not in ["esp32", "linux"] and NIGHTLY_RUN != "1"
     - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_flash_enc"
     - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_flash_enc_release"
     - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_sb_v2_and_fe"
@@ -86,9 +91,18 @@ examples/system/freertos/real_time_stats:
 
 examples/system/gcov:
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
+    - if: IDF_TARGET == "esp32s3"
+      temporary: true
+      reason: unstable, known data corruption issue #TODO: OCD-1048
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: not supported yet #TODO: OCD-1079
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: not supported yet #TODO: OCD-1138
 
 examples/system/gdbstub:
   disable:
@@ -273,6 +287,10 @@ examples/system/ulp/lp_core/build_system:
 examples/system/ulp/lp_core/debugging:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
+  disable:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: binary size too large TODO IDF-13063
   depends_components:
     - ulp
 

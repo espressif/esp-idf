@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,10 @@
 #include "hal/cam_hal.h"
 #include "esp_cam_ctlr_dvp_dma.h"
 #include "esp_cam_ctlr_dvp.h"
+
+#if CONFIG_PM_ENABLE
+#include "esp_pm.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +53,9 @@ typedef struct esp_cam_ctlr_dvp_cam {
     uint8_t *backup_buffer;                             /*!< DVP CAM backup buffer */
     bool bk_buffer_exposed;                             /*!< status of if back_buffer is exposed to users */
     portMUX_TYPE spinlock;                              /*!< DVP CAM spinlock */
+#if CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t pm_lock;                       /*!< Power management lock */
+#endif
 } esp_cam_ctlr_dvp_cam_t;
 
 #ifdef __cplusplus

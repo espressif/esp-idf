@@ -42,85 +42,62 @@ menu "SD/MMC Example Configuration"
         config EXAMPLE_SDMMC_SPEED_UHS_I_DDR50
             bool "UHS-I DDR50 (50 MHz, 50 MB/s)"
             depends on SOC_SDMMC_UHS_I_SUPPORTED
+        config EXAMPLE_SDMMC_SPEED_UHS_I_SDR104
+            bool "UHS-I SDR104 (200 MHz, 100 MB/s)"
+            depends on SOC_SDMMC_UHS_I_SUPPORTED
     endchoice
 
-    if SOC_SDMMC_USE_GPIO_MATRIX
+    config EXAMPLE_PIN_CMD
+        int
+        prompt "CMD GPIO number" if SOC_SDMMC_USE_GPIO_MATRIX
+        default 35 if IDF_TARGET_ESP32S3
+        default 44 if IDF_TARGET_ESP32P4
+        default 15 if IDF_TARGET_ESP32
 
-        config EXAMPLE_PIN_CMD
-            int "CMD GPIO number"
-            default 35 if IDF_TARGET_ESP32S3
-            default 44 if IDF_TARGET_ESP32P4
+    config EXAMPLE_PIN_CLK
+        int
+        prompt "CLK GPIO number" if SOC_SDMMC_USE_GPIO_MATRIX
+        default 36 if IDF_TARGET_ESP32S3
+        default 43 if IDF_TARGET_ESP32P4
+        default 14 if IDF_TARGET_ESP32
 
-        config EXAMPLE_PIN_CLK
-            int "CLK GPIO number"
-            default 36 if IDF_TARGET_ESP32S3
-            default 43 if IDF_TARGET_ESP32P4
+    config EXAMPLE_PIN_D0
+        int
+        prompt "D0 GPIO number" if SOC_SDMMC_USE_GPIO_MATRIX
+        default 37 if IDF_TARGET_ESP32S3
+        default 39 if IDF_TARGET_ESP32P4
+        default 2 if IDF_TARGET_ESP32
 
-        config EXAMPLE_PIN_D0
-            int "D0 GPIO number"
-            default 37 if IDF_TARGET_ESP32S3
-            default 39 if IDF_TARGET_ESP32P4
+    if EXAMPLE_SDMMC_BUS_WIDTH_4
 
-        if EXAMPLE_SDMMC_BUS_WIDTH_4
+        config EXAMPLE_PIN_D1
+            int
+            prompt "D1 GPIO number" if SOC_SDMMC_USE_GPIO_MATRIX
+            default 38 if IDF_TARGET_ESP32S3
+            default 40 if IDF_TARGET_ESP32P4
+            default 4 if IDF_TARGET_ESP32
 
-            config EXAMPLE_PIN_D1
-                int "D1 GPIO number"
-                default 38 if IDF_TARGET_ESP32S3
-                default 40 if IDF_TARGET_ESP32P4
 
-            config EXAMPLE_PIN_D2
-                int "D2 GPIO number"
-                default 33 if IDF_TARGET_ESP32S3
-                default 41 if IDF_TARGET_ESP32P4
+        config EXAMPLE_PIN_D2
+            int
+            prompt "D2 GPIO number" if SOC_SDMMC_USE_GPIO_MATRIX
+            default 33 if IDF_TARGET_ESP32S3
+            default 41 if IDF_TARGET_ESP32P4
+            default 12 if IDF_TARGET_ESP32
 
-            config EXAMPLE_PIN_D3
-                int "D3 GPIO number"
-                default 34 if IDF_TARGET_ESP32S3
-                default 42 if IDF_TARGET_ESP32P4
 
-        endif  # EXAMPLE_SDMMC_BUS_WIDTH_4
+        config EXAMPLE_PIN_D3
+            int
+            prompt "D3 GPIO number" if SOC_SDMMC_USE_GPIO_MATRIX
+            default 34 if IDF_TARGET_ESP32S3
+            default 42 if IDF_TARGET_ESP32P4
+            default 13 if IDF_TARGET_ESP32
 
-    endif  # SOC_SDMMC_USE_GPIO_MATRIX
+    endif  # EXAMPLE_SDMMC_BUS_WIDTH_4
 
     config EXAMPLE_DEBUG_PIN_CONNECTIONS
         bool "Debug sd pin connections and pullup strength"
         default n
-
-    if !SOC_SDMMC_USE_GPIO_MATRIX
-        config EXAMPLE_PIN_CMD
-            int
-            depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
-            default 15 if IDF_TARGET_ESP32
-
-        config EXAMPLE_PIN_CLK
-            int
-            depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
-            default 14 if IDF_TARGET_ESP32
-
-        config EXAMPLE_PIN_D0
-            int
-            depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
-            default 2 if IDF_TARGET_ESP32
-
-        if EXAMPLE_SDMMC_BUS_WIDTH_4
-
-            config EXAMPLE_PIN_D1
-                int
-                depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
-                default 4 if IDF_TARGET_ESP32
-
-            config EXAMPLE_PIN_D2
-                int
-                depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
-                default 12 if IDF_TARGET_ESP32
-
-            config EXAMPLE_PIN_D3
-                int
-                depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
-                default 13 if IDF_TARGET_ESP32
-
-        endif  # EXAMPLE_SDMMC_BUS_WIDTH_4
-    endif
 
     config EXAMPLE_ENABLE_ADC_FEATURE
         bool "Enable ADC feature"

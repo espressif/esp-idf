@@ -3,18 +3,6 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
-config SOC_BROWNOUT_RESET_SUPPORTED
-    string
-    default "Not determined"
-
-config SOC_TWAI_BRP_DIV_SUPPORTED
-    string
-    default "Not determined"
-
-config SOC_DPORT_WORKAROUND
-    string
-    default "Not determined"
-
 config SOC_CAPS_ECO_VER_MAX
     int
     default 301
@@ -279,6 +267,10 @@ config SOC_ADC_SHARED_POWER
     bool
     default y
 
+config SOC_BROWNOUT_RESET_SUPPORTED
+    bool
+    default y
+
 config SOC_SHARED_IDCACHE_SUPPORTED
     bool
     default y
@@ -312,8 +304,8 @@ config SOC_CPU_WATCHPOINTS_NUM
     default 2
 
 config SOC_CPU_WATCHPOINT_MAX_REGION_SIZE
-    int
-    default 64
+    hex
+    default 0x40
 
 config SOC_DAC_CHAN_NUM
     int
@@ -836,8 +828,8 @@ config SOC_MPI_MEM_BLOCKS_NUM
     default 4
 
 config SOC_MPI_OPERATIONS_NUM
-    bool
-    default y
+    int
+    default 1
 
 config SOC_RSA_MAX_BIT_LEN
     int
@@ -860,8 +852,8 @@ config SOC_SECURE_BOOT_V1
     default y
 
 config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
-    bool
-    default y
+    int
+    default 1
 
 config SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX
     int
@@ -950,6 +942,10 @@ config SOC_SDMMC_USE_IOMUX
 config SOC_SDMMC_NUM_SLOTS
     int
     default 2
+
+config SOC_SDMMC_DATA_WIDTH_MAX
+    int
+    default 8
 
 config SOC_WIFI_WAPI_SUPPORT
     bool

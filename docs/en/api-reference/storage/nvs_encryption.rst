@@ -14,6 +14,7 @@ Data stored in NVS partitions can be encrypted using XTS-AES in the manner simil
 
     NVS encryption can be facilitated by enabling :ref:`CONFIG_NVS_ENCRYPTION` and :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` > ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC`` or ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` depending on the scheme to be used.
 
+.. _nvs_encr_flash_enc_scheme:
 
 NVS Encryption: Flash Encryption-Based Scheme
 ---------------------------------------------
@@ -103,6 +104,8 @@ Since the key partition is marked as ``encrypted`` and :doc:`Flash Encryption <.
 It is possible for an application to use different keys for different NVS partitions and thereby have multiple key-partitions. However, it is a responsibility of the application to provide the correct key-partition and keys for encryption or decryption.
 
 .. only:: SOC_HMAC_SUPPORTED
+
+    .. _nvs_encr_hmac_scheme:
 
     NVS Encryption: HMAC Peripheral-Based Scheme
     --------------------------------------------

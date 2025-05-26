@@ -13,11 +13,17 @@
 #include "esp_private/usb_phy.h"
 #include "esp_private/critical_section.h"
 #include "soc/usb_dwc_periph.h"
+#include "hal/usb_serial_jtag_hal.h"
 #include "hal/usb_wrap_hal.h"
 #include "hal/usb_utmi_hal.h"
 #include "esp_rom_gpio.h"
 #include "driver/gpio.h"
 #include "soc/soc_caps.h"
+
+#if SOC_USB_UTMI_PHY_NO_POWER_OFF_ISO
+#include "esp_private/sleep_usb.h"
+#include "esp_sleep.h"
+#endif
 
 #if !SOC_RCC_IS_INDEPENDENT
 #define USB_PHY_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
@@ -293,6 +299,12 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
     }
 #endif
 
+#if SOC_USB_UTMI_PHY_NO_POWER_OFF_ISO
+    if (phy_target == USB_PHY_TARGET_UTMI) {
+        esp_deep_sleep_register_hook(&sleep_usb_suppress_deepsleep_leakage);
+    }
+#endif
+
     ESP_RETURN_ON_FALSE(config, ESP_ERR_INVALID_ARG, USBPHY_TAG, "config argument is invalid");
     ESP_RETURN_ON_FALSE(phy_target < USB_PHY_TARGET_MAX, ESP_ERR_INVALID_ARG, USBPHY_TAG, "specified PHY argument is invalid");
     ESP_RETURN_ON_FALSE(config->controller < USB_PHY_CTRL_MAX, ESP_ERR_INVALID_ARG, USBPHY_TAG, "specified source argument is invalid");
@@ -347,6 +359,12 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
         usb_wrap_hal_phy_set_external(&phy_context->wrap_hal, (phy_target == USB_PHY_TARGET_EXT));
 #endif
     }
+#if SOC_USB_SERIAL_JTAG_SUPPORTED && USB_SERIAL_JTAG_LL_EXT_PHY_SUPPORTED
+    else if (config->controller == USB_PHY_CTRL_SERIAL_JTAG) {
+        usb_serial_jtag_hal_phy_set_external(NULL, (config->target == USB_PHY_TARGET_EXT));
+        phy_context->otg_mode = USB_OTG_MODE_DEVICE;
+    }
+#endif
 
     // For FSLS PHY that shares pads with GPIO peripheral, we must set drive capability to 3 (40mA)
     if (phy_target == USB_PHY_TARGET_INT) {

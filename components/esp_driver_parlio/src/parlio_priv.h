@@ -38,6 +38,7 @@
 #include "rom/cache.h"
 #include "esp_heap_caps.h"
 #include "driver/parlio_types.h"
+#include "driver/bitscrambler.h"
 #include "esp_cache.h"
 #include "esp_clk_tree.h"
 #include "esp_pm.h"
@@ -122,12 +123,10 @@ typedef enum {
 } parlio_dir_t;
 
 typedef enum {
-    PARLIO_TX_FSM_INIT_WAIT,
     PARLIO_TX_FSM_INIT,
-    PARLIO_TX_FSM_ENABLE_WAIT,
     PARLIO_TX_FSM_ENABLE,
-    PARLIO_TX_FSM_RUN_WAIT,
     PARLIO_TX_FSM_RUN,
+    PARLIO_TX_FSM_WAIT,
 } parlio_tx_fsm_t;
 
 typedef struct parlio_unit_t *parlio_unit_base_handle_t;
@@ -149,6 +148,52 @@ struct parlio_unit_t {
     parlio_dir_t    dir;      // direction
     parlio_group_t  *group;   // group handle
 };
+
+typedef struct {
+    uint32_t idle_value; // Parallel IO bus idle value
+    const void *payload; // payload to be transmitted
+    size_t payload_bits; // payload size in bits
+    int dma_link_idx;  // index of DMA link list
+    const void *bitscrambler_program; // bitscrambler program binary
+    struct {
+        uint32_t loop_transmission : 1; // whether the transmission is in loop mode
+    } flags;                           // Extra configuration flags
+} parlio_tx_trans_desc_t;
+
+// original function pointer type definition
+
+typedef esp_err_t (*parlio_tx_bs_enable_fn_t)(parlio_tx_unit_handle_t tx_unit, parlio_tx_trans_desc_t *t);
+typedef esp_err_t (*parlio_tx_bs_disable_fn_t)(parlio_tx_unit_handle_t tx_unit);
+
+typedef struct parlio_tx_unit_t {
+    struct parlio_unit_t base; // base unit
+    size_t data_width;     // data width
+    intr_handle_t intr;    // allocated interrupt handle
+    esp_pm_lock_handle_t pm_lock;   // power management lock
+    gdma_channel_handle_t dma_chan; // DMA channel
+    gdma_link_list_handle_t dma_link[PARLIO_DMA_LINK_NUM]; // DMA link list handle
+    size_t int_mem_align; // Alignment for internal memory
+    size_t ext_mem_align; // Alignment for external memory
+#if CONFIG_PM_ENABLE
+    char pm_lock_name[PARLIO_PM_LOCK_NAME_LEN_MAX]; // pm lock name
+#endif
+    portMUX_TYPE spinlock;     // prevent resource accessing by user and interrupt concurrently
+    uint32_t out_clk_freq_hz;  // output clock frequency
+    parlio_clock_source_t clk_src;  // Parallel IO internal clock source
+    size_t max_transfer_bits;  // maximum transfer size in bits
+    size_t queue_depth;        // size of transaction queue
+    size_t num_trans_inflight; // indicates the number of transactions that are undergoing but not recycled to ready_queue
+    QueueHandle_t trans_queues[PARLIO_TX_QUEUE_MAX]; // transaction queues
+    parlio_tx_trans_desc_t *cur_trans; // points to current transaction
+    uint32_t idle_value_mask;          // mask of idle value
+    _Atomic parlio_tx_fsm_t fsm;       // Driver FSM state
+    parlio_tx_done_callback_t on_trans_done; // callback function when the transmission is done
+    void *user_data;                   // user data passed to the callback function
+    bitscrambler_handle_t bs_handle;   // bitscrambler handle
+    parlio_tx_bs_enable_fn_t bs_enable_fn;   // bitscrambler enable function
+    parlio_tx_bs_disable_fn_t bs_disable_fn; // bitscrambler disable function
+    parlio_tx_trans_desc_t trans_desc_pool[];   // transaction descriptor pool
+} parlio_tx_unit_t;
 
 /**
  * @brief Register the rx or tx unit to the parlio group

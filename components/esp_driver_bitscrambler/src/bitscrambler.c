@@ -5,6 +5,7 @@
  */
 #include <string.h>
 #include <stdatomic.h>
+#include "soc/soc_caps.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "driver/bitscrambler.h"
@@ -18,6 +19,13 @@ static const char *TAG = "bitscrambler";
 #define BITSCRAMBLER_MEM_ALLOC_CAPS  (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define BITSCRAMBLER_MEM_ALLOC_CAPS  MALLOC_CAP_DEFAULT
+#endif
+
+#if !SOC_RCC_IS_INDEPENDENT
+// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
+#define BS_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define BS_RCC_ATOMIC()
 #endif
 
 #define BITSCRAMBLER_BINARY_VER 1 //max version we're compatible with
@@ -54,38 +62,66 @@ typedef struct {
 atomic_flag tx_in_use = ATOMIC_FLAG_INIT;
 atomic_flag rx_in_use = ATOMIC_FLAG_INIT;
 
-// Claim both TX and RX channels for loopback use
-// Returns true on success, false if any of the two directions already is claimed.
-static bool claim_channel_loopback(void)
-{
-    bool old_val_tx = atomic_flag_test_and_set(&tx_in_use);
-    if (old_val_tx) {
-        return false;
-    }
-    bool old_val_rx = atomic_flag_test_and_set(&rx_in_use);
-    if (old_val_rx) {
-        atomic_flag_clear(&tx_in_use);
-        return false;
-    }
-    return true;
-}
+// This is a reference count for the BitScrambler module. It is used to keep track of how many clients are using the module.
+atomic_int group_ref_count = 0;
 
 // Claim a channel using the direction it indicated.
 // Returns true on success, false if the direction already is claimed
 static bool claim_channel(bitscrambler_direction_t dir)
 {
+    int old_use_count = atomic_fetch_add(&group_ref_count, 1);
+    if (old_use_count == 0) {
+        BS_RCC_ATOMIC() {
+            // This is the first client using the module, so we need to enable the sys clock
+            bitscrambler_ll_set_bus_clock_sys_enable(true);
+            bitscrambler_ll_reset_sys();
+            // also power on the memory
+            bitscrambler_ll_mem_power_by_pmu();
+        }
+    }
     if (dir == BITSCRAMBLER_DIR_TX) {
         bool old_val = atomic_flag_test_and_set(&tx_in_use);
         if (old_val) {
-            return false;
+            goto err;
+        } else {
+            BS_RCC_ATOMIC() {
+                bitscrambler_ll_set_bus_clock_tx_enable(true);
+                bitscrambler_ll_reset_tx();
+            }
         }
-    } else if (dir == BITSCRAMBLER_DIR_RX) {
+    } else {
         bool old_val = atomic_flag_test_and_set(&rx_in_use);
         if (old_val) {
-            return false;
+            goto err;
+        } else {
+            BS_RCC_ATOMIC() {
+                bitscrambler_ll_set_bus_clock_rx_enable(true);
+                bitscrambler_ll_reset_rx();
+            }
         }
     }
     return true;
+err:
+    atomic_fetch_sub(&group_ref_count, 1);
+    return false;
+}
+
+// Release the channel using the direction it indicated.
+static void release_channel(bitscrambler_direction_t dir)
+{
+    if (dir == BITSCRAMBLER_DIR_TX) {
+        atomic_flag_clear(&tx_in_use);
+    } else if (dir == BITSCRAMBLER_DIR_RX) {
+        atomic_flag_clear(&rx_in_use);
+    }
+    int old_use_count = atomic_fetch_sub(&group_ref_count, 1);
+    if (old_use_count == 1) {
+        // This is the last client using the module, so we need to disable the sys clock
+        BS_RCC_ATOMIC() {
+            bitscrambler_ll_set_bus_clock_sys_enable(false);
+            bitscrambler_ll_mem_force_power_off();
+        }
+    }
 }
 
 //Initialize the BitScrambler object and hardware using the given config.
@@ -93,63 +129,25 @@ static esp_err_t init_from_config(bitscrambler_t *bs, const bitscrambler_config_
 {
     bs->cfg = *config;                  //Copy config over
     bs->hw = BITSCRAMBLER_LL_GET_HW(0); //there's only one as of now; if there's more, we need to handle them as a pool.
-
-    //Attach to indicated peripheral.
-    bitscrambler_ll_select_peripheral(bs->hw, bs->cfg.dir, config->attach_to);
-    bitscrambler_ll_enable(bs->hw, bs->cfg.dir);
-
     return ESP_OK;
 }
 
-static void enable_clocks(bitscrambler_t *bs)
-{
-    PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_BITSCRAMBLER_MODULE, ref_count) {
-        if (ref_count == 0) { //we're the first to enable the BitScrambler module
-            bitscrambler_ll_set_bus_clock_sys_enable(1);
-            bitscrambler_ll_reset_sys();
-            bitscrambler_ll_mem_power_by_pmu();
-        }
-        if (bs->cfg.dir == BITSCRAMBLER_DIR_RX || bs->loopback) {
-            bitscrambler_ll_set_bus_clock_rx_enable(1);
-            bitscrambler_ll_reset_rx();
-        }
-        if (bs->cfg.dir == BITSCRAMBLER_DIR_TX || bs->loopback) {
-            bitscrambler_ll_set_bus_clock_tx_enable(1);
-            bitscrambler_ll_reset_tx();
-        }
-    }
-}
-
-static void disable_clocks(bitscrambler_t *bs)
-{
-    PERIPH_RCC_RELEASE_ATOMIC(PERIPH_BITSCRAMBLER_MODULE, ref_count) {
-        if (bs->cfg.dir == BITSCRAMBLER_DIR_RX || bs->loopback) {
-            bitscrambler_ll_set_bus_clock_rx_enable(0);
-        }
-        if (bs->cfg.dir == BITSCRAMBLER_DIR_TX || bs->loopback) {
-            bitscrambler_ll_set_bus_clock_tx_enable(0);
-        }
-        if (ref_count == 0) { //we're the last to disable the BitScrambler module
-            bitscrambler_ll_set_bus_clock_sys_enable(0);
-            bitscrambler_ll_mem_force_power_off();
-        }
-    }
-}
-
-//Private function: init an existing BitScrambler object as a loopback BitScrambler.
+// init an existing BitScrambler object as a loopback BitScrambler, only used by the bitscrambler loopback driver
 esp_err_t bitscrambler_init_loopback(bitscrambler_handle_t handle, const bitscrambler_config_t *config)
 {
-    if (!claim_channel_loopback()) {
+    // claim the TX channel first
+    if (!claim_channel(BITSCRAMBLER_DIR_TX)) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    // claim the RX channel, if it fails, release the TX channel
+    if (!claim_channel(BITSCRAMBLER_DIR_RX)) {
+        release_channel(BITSCRAMBLER_DIR_TX);
         return ESP_ERR_NOT_FOUND;
     }
 
-    assert(config->dir == BITSCRAMBLER_DIR_TX);
+    // mark the BitScrambler object as a loopback BitScrambler
     handle->loopback = true;
-    enable_clocks(handle);
-    esp_err_t r = init_from_config(handle, config);
-    //Loopback mode also needs RX channel set to the selected peripheral, even if it's not used.
-    bitscrambler_ll_select_peripheral(handle->hw, BITSCRAMBLER_DIR_RX, config->attach_to);
-    return r;
+    return init_from_config(handle, config);
 }
 
 esp_err_t bitscrambler_new(const bitscrambler_config_t *config, bitscrambler_handle_t *handle)
@@ -172,7 +170,6 @@ esp_err_t bitscrambler_new(const bitscrambler_config_t *config, bitscrambler_han
         return ESP_ERR_NOT_FOUND;
     }
 
-    enable_clocks(bs);
     // Do initialization of BS object.
     esp_err_t r = init_from_config(bs, config);
     if (r != ESP_OK) {
@@ -271,19 +268,50 @@ esp_err_t bitscrambler_register_extra_clean_up(bitscrambler_handle_t handle, bit
     return ESP_OK;
 }
 
+esp_err_t bitscrambler_enable(bitscrambler_handle_t handle)
+{
+    if (!handle) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    // Attach to indicated peripheral.
+    bitscrambler_ll_select_peripheral(handle->hw, handle->cfg.dir, handle->cfg.attach_to);
+    // bitscrambler_ll_enable(handle->hw, handle->cfg.dir);
+    //enable loopback mode if requested
+    bitscrambler_ll_enable_loopback(handle->hw, handle->loopback);
+    if (handle->loopback) {
+        //Loopback mode also needs RX channel set to the selected peripheral, even if it's not used.
+        bitscrambler_ll_select_peripheral(handle->hw, BITSCRAMBLER_DIR_RX, handle->cfg.attach_to);
+    }
+    bitscrambler_ll_enable(handle->hw, handle->cfg.dir);
+    return ESP_OK;
+}
+
+esp_err_t bitscrambler_disable(bitscrambler_handle_t handle)
+{
+    if (!handle) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    bitscrambler_ll_disable(handle->hw, handle->cfg.dir);
+    // detach from peripheral
+    bitscrambler_ll_select_peripheral(handle->hw, handle->cfg.dir, SOC_BITSCRAMBLER_ATTACH_NONE);
+    if (handle->loopback) {
+        // detach loopback RX channel as well
+        bitscrambler_ll_select_peripheral(handle->hw, BITSCRAMBLER_DIR_RX, SOC_BITSCRAMBLER_ATTACH_NONE);
+    }
+
+    return ESP_OK;
+}
+
 void bitscrambler_free(bitscrambler_handle_t handle)
 {
     if (!handle) {
         return;
     }
-    disable_clocks(handle);
     if (handle->loopback) {
-        atomic_flag_clear(&tx_in_use);
-        atomic_flag_clear(&rx_in_use);
-    } else if (handle->cfg.dir == BITSCRAMBLER_DIR_TX) {
-        atomic_flag_clear(&tx_in_use);
-    } else if (handle->cfg.dir == BITSCRAMBLER_DIR_RX) {
-        atomic_flag_clear(&rx_in_use);
+        release_channel(BITSCRAMBLER_DIR_TX);
+        release_channel(BITSCRAMBLER_DIR_RX);
+    } else {
+        release_channel(handle->cfg.dir);
     }
     if (handle->extra_clean_up) {
         handle->extra_clean_up(handle, handle->clean_up_user_ctx);

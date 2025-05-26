@@ -478,6 +478,7 @@
 
 // USB PHY Caps
 #define SOC_USB_UTMI_PHY_NUM            (1U)
+#define SOC_USB_UTMI_PHY_NO_POWER_OFF_ISO    1
 
 /*-------------------------- PARLIO CAPS --------------------------------------*/
 #define SOC_PARLIO_GROUPS                    1U  /*!< Number of parallel IO peripherals */
@@ -511,8 +512,9 @@
 #define SOC_SDMMC_USE_IOMUX          1
 #define SOC_SDMMC_USE_GPIO_MATRIX    1
 #define SOC_SDMMC_NUM_SLOTS          2
+#define SOC_SDMMC_DATA_WIDTH_MAX     8
 /* Supported host clock delay phase number */
-#define SOC_SDMMC_DELAY_PHASE_NUM    4
+#define SOC_SDMMC_DELAY_PHASE_NUM    8
 #define SOC_SDMMC_IO_POWER_EXTERNAL  1    ///< SDMMC IO power controlled by external power supply
 #define SOC_SDMMC_PSRAM_DMA_CAPABLE  1    ///< SDMMC peripheral can do DMA transfer to/from PSRAM
 #define SOC_SDMMC_UHS_I_SUPPORTED    1
@@ -811,6 +813,7 @@
 #define SOC_I3C_MASTER_COMMAND_TABLE_NUM            (12)
 
 /*------------------------------------- ULP CAPS -------------------------------------*/
-#define SOC_LP_CORE_SUPPORT_ETM               (1) /*!< LP Core supports ETM */
-#define SOC_LP_CORE_SUPPORT_LP_ADC            (1) /*!< LP ADC can be accessed from the LP-Core */
-#define SOC_LP_CORE_SUPPORT_LP_VAD            (1) /*!< LP VAD can be accessed from the LP-Core */
+#define SOC_LP_CORE_SUPPORT_ETM                     (1) /*!< LP Core supports ETM */
+#define SOC_LP_CORE_SUPPORT_LP_ADC                  (1) /*!< LP ADC can be accessed from the LP-Core */
+#define SOC_LP_CORE_SUPPORT_LP_VAD                  (1) /*!< LP VAD can be accessed from the LP-Core */
+#define SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS   (1) /*!< LP Core will raise exceptions if accessing invalid addresses */

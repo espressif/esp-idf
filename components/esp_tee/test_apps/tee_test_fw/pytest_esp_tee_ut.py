@@ -442,7 +442,18 @@ def test_esp_tee_secure_storage(dut: IdfDut) -> None:
     # Flash image and erase the secure_storage partition
     dut.serial.custom_flash_with_empty_sec_stg()
 
-    dut.run_all_single_board_cases(group='secure_storage')
+    dut.run_all_single_board_cases(group='sec_storage')
+
+
+@pytest.mark.generic
+@idf_parametrize('config', ['ota'], indirect=['config'])
+@idf_parametrize('skip_autoflash', ['y'], indirect=['skip_autoflash'])
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
+def test_esp_tee_secure_storage_with_host_img(dut: IdfDut) -> None:
+    # Flash image and write the secure_storage partition with host-generated keys
+    dut.serial.custom_flash_with_host_gen_sec_stg_img()
+
+    dut.run_all_single_board_cases(group='sec_storage_host_keygen')
 
 
 # ---------------- TEE Attestation tests ----------------

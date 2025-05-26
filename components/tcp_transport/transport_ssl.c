@@ -272,9 +272,12 @@ static int ssl_read(esp_transport_handle_t t, char *buffer, int len, int timeout
 
     int ret = esp_tls_conn_read(ssl->tls, (unsigned char *)buffer, len);
     if (ret < 0) {
-        ESP_LOGE(TAG, "esp_tls_conn_read error, errno=%s", strerror(errno));
         if (ret == ESP_TLS_ERR_SSL_WANT_READ || ret == ESP_TLS_ERR_SSL_TIMEOUT) {
             ret = ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT;
+            ESP_LOGD(TAG, "esp_tls_conn_read error, errno=%s", strerror(errno));
+        }
+        else {
+            ESP_LOGE(TAG, "esp_tls_conn_read error, errno=%s", strerror(errno));
         }
 
         esp_tls_error_handle_t esp_tls_error_handle;
@@ -458,6 +461,12 @@ void esp_transport_ssl_set_common_name(esp_transport_handle_t t, const char *com
 {
     GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
     ssl->cfg.common_name = common_name;
+}
+
+void esp_transport_ssl_set_ciphersuites_list(esp_transport_handle_t t, const int *ciphersuites_list)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.ciphersuites_list = ciphersuites_list;
 }
 
 #ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT

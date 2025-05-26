@@ -145,7 +145,7 @@ static void
 ble_cts_cent_scan(void)
 {
     uint8_t own_addr_type;
-    struct ble_gap_disc_params disc_params;
+    struct ble_gap_disc_params disc_params = {0};
     int rc;
 
     /* Figure out address to use while advertising (no privacy for now) */
@@ -505,9 +505,9 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
 #if CONFIG_EXAMPLE_EXTENDED_ADV
     case BLE_GAP_EVENT_EXT_DISC:
         /* An advertisement report was received during GAP discovery. */
-        ext_print_adv_report(&event->disc);
+        ext_print_adv_report(&event->ext_disc);
 
-        ble_cts_cent_connect_if_interesting(&event->disc);
+        ble_cts_cent_connect_if_interesting(&event->ext_disc);
         return 0;
 #endif
 
@@ -571,9 +571,11 @@ app_main(void)
     rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
     assert(rc == 0);
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-cts-cent");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();

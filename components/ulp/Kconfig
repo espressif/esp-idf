@@ -97,7 +97,7 @@ menu "Ultra Low Power (ULP) Co-processor"
             depends on ULP_COPROC_TYPE_LP_CORE && SOC_ULP_LP_UART_SUPPORTED
             bool
             prompt "Enable panic handler which outputs over LP UART"
-            default "y" if IDF_TARGET_ESP32P4
+            default "y" if SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS
             help
                 Set this option to enable panic handler functionality. If this option is
                 enabled then the LP Core will output a panic dump over LP UART,

@@ -219,12 +219,13 @@ int usleep(useconds_t us)
         do {
             vTaskDelay((((target_us - now_us) + us_per_tick - 1) / us_per_tick));
             now_us = esp_time_impl_get_time();
-            /* If the time left until the target is less than 1 tick, then we use ROM delay to fill the gap */
-            uint64_t time_left = target_us - now_us;
-            if (time_left != 0 && time_left < us_per_tick) {
-                esp_rom_delay_us(time_left);
-                break;
-            }
+            /* It is possible that the time left until the target time is less
+             * than a tick period. However, we let usleep() to sleep for an
+             * entire tick period. This, could result in usleep() sleeping for
+             * a longer time than the requested time but that does not violate
+             * the spec of usleep(). Additionally, it allows FreeRTOS to schedule
+             * other tasks while the current task is sleeping.
+             */
         } while (now_us < target_us);
     }
     return 0;

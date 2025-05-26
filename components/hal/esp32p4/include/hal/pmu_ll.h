@@ -678,9 +678,11 @@ FORCE_INLINE_ATTR void pmu_ll_set_dcdc_switch_force_power_down(pmu_dev_t *hw, bo
 FORCE_INLINE_ATTR void pmu_ll_set_dcdc_en(pmu_dev_t *hw, bool en)
 {
     if (en) {
+        hw->dcm_ctrl.done_force = 0;
         hw->dcm_ctrl.on_req = 1;
     } else {
         hw->dcm_ctrl.off_req = 1;
+        hw->dcm_ctrl.done_force = 1;
     }
 }
 

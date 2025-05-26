@@ -1,26 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdint.h>
-#include <sys/lock.h>
-#include "sdkconfig.h"
-#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "esp_log.h"
-#include "esp_check.h"
+#include "mcpwm_private.h"
 #include "esp_clk_tree.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
-#include "soc/mcpwm_periph.h"
-#include "soc/soc_caps.h"
-#include "hal/mcpwm_ll.h"
-#include "mcpwm_private.h"
 #include "esp_private/rtc_clk.h"
 
 #if SOC_PERIPH_CLK_CTRL_SHARED
@@ -38,8 +25,6 @@
 #if MCPWM_USE_RETENTION_LINK
 static esp_err_t mcpwm_create_sleep_retention_link_cb(void *arg);
 #endif
-
-static const char *TAG = "mcpwm";
 
 typedef struct {
     _lock_t mutex;                           // platform level mutex lock
@@ -187,6 +172,7 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
     esp_err_t ret = ESP_OK;
     bool clock_selection_conflict = false;
     bool do_clock_init = false;
+    int group_id = group->group_id;
     // check if we need to update the group clock source, group clock source is shared by all mcpwm modules
     portENTER_CRITICAL(&group->spinlock);
     if (group->clk_src == 0) {
@@ -202,15 +188,20 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
     if (do_clock_init) {
 
 #if CONFIG_PM_ENABLE
-        sprintf(group->pm_lock_name, "mcpwm_%d", group->group_id); // e.g. mcpwm_0
-        ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, group->pm_lock_name, &group->pm_lock);
+        // to make the mcpwm works reliable, the source clock must stay alive and unchanged
+        esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
+        // on ESP32 and ESP32S3, MCPWM's clock source (PLL_160M) frequency is automatically reduced during DFS, resulting in an inaccurate time base
+        // thus we want to use the APB_MAX lock
+        pm_lock_type = ESP_PM_APB_FREQ_MAX;
+#endif
+        ret  = esp_pm_lock_create(pm_lock_type, 0, mcpwm_periph_signals.groups[group_id].module_name, &group->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
-        ESP_LOGD(TAG, "install NO_LIGHT_SLEEP lock for MCPWM group(%d)", group->group_id);
 #endif // CONFIG_PM_ENABLE
 
         esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
         MCPWM_CLOCK_SRC_ATOMIC() {
-            mcpwm_ll_group_set_clock_source(group->group_id, clk_src);
+            mcpwm_ll_group_set_clock_source(group_id, clk_src);
         }
     }
     return ret;
@@ -314,3 +305,11 @@ void mcpwm_create_retention_module(mcpwm_group_t *group)
     _lock_release(&s_platform.mutex);
 }
 #endif // MCPWM_USE_RETENTION_LINK
+
+#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
+__attribute__((constructor))
+static void mcpwm_override_default_log_level(void)
+{
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+}
+#endif

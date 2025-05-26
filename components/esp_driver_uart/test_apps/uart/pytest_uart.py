@@ -37,7 +37,11 @@ def test_uart_single_dev(case_tester) -> None:  # type: ignore
     assert uart_ports, f"Error: Chip type '{chip_type}' is not defined in input_argv. Aborting..."
 
     for case in case_tester.test_menu:
-        if 'hp-uart-only' not in case.groups and 'wakeup' not in case.groups:
+        if 'wakeup' in case.groups:
+            # multi-dev cases, skip on generic runner
+            continue
+
+        if 'hp-uart-only' not in case.groups:
             for uart_port in uart_ports:
                 dut.serial.hard_reset()
                 dut._get_ready()
@@ -46,7 +50,7 @@ def test_uart_single_dev(case_tester) -> None:  # type: ignore
                 dut.expect("select to test 'uart' or 'lp_uart' port", timeout=10)
                 dut.write(f'{uart_port}')
                 dut.expect_unity_test_output()
-        elif 'wakeup' not in case.groups:
+        else:
             dut._run_normal_case(case, reset=True)
 
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -148,7 +148,7 @@
 
 #define SOC_CPU_BREAKPOINTS_NUM             2
 #define SOC_CPU_WATCHPOINTS_NUM             2
-#define SOC_CPU_WATCHPOINT_MAX_REGION_SIZE  64 // bytes
+#define SOC_CPU_WATCHPOINT_MAX_REGION_SIZE  0x40 // bytes
 
 #define SOC_SIMD_PREFERRED_DATA_ALIGNMENT 16 // The preferred data alignment accepted by the SIMD instructions, in bytes
 
@@ -335,7 +335,7 @@
 #define SOC_LP_IO_CLOCK_IS_INDEPENDENT 1
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
-#define SOC_SDM_GROUPS             1
+#define SOC_SDM_GROUPS             (1U)
 #define SOC_SDM_CHANNELS_PER_GROUP 8
 #define SOC_SDM_CLK_SUPPORT_APB    1
 
@@ -400,7 +400,7 @@
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION                    (2)  /*!< Hardware version of touch sensor */
 #define SOC_TOUCH_SENSOR_NUM                        (15) /*!< 15 Touch channels */
-#define SOC_TOUCH_MIN_CHAN_ID                       (1)  /*!< Touch minimum channel number, (0 is internal denoise channel) */
+#define SOC_TOUCH_MIN_CHAN_ID                       (1U)  /*!< Touch minimum channel number, (0 is internal denoise channel) */
 #define SOC_TOUCH_MAX_CHAN_ID                       (14) /*!< Touch maximum channel number */
 #define SOC_TOUCH_SUPPORT_BENCHMARK                 (1)  /*!< Touch sensor supports benchmark configuration */
 #define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP              (1)  /*!< Touch sensor supports sleep awake */
@@ -574,6 +574,7 @@
  */
 #define SOC_SDMMC_USE_GPIO_MATRIX  1
 #define SOC_SDMMC_NUM_SLOTS        2
+#define SOC_SDMMC_DATA_WIDTH_MAX   8
 /* Indicates that there is an option to use XTAL clock instead of PLL for SDMMC */
 #define SOC_SDMMC_SUPPORT_XTAL_CLOCK    1
 /* Supported host clock delay phase number */

@@ -11,9 +11,9 @@ extern "C" {
 #endif
 
 /** Major version number (X.x.x) */
-#define ESP_IDF_VERSION_MAJOR   5
+#define ESP_IDF_VERSION_MAJOR   6
 /** Minor version number (x.X.x) */
-#define ESP_IDF_VERSION_MINOR   5
+#define ESP_IDF_VERSION_MINOR   0
 /** Patch version number (x.x.X) */
 #define ESP_IDF_VERSION_PATCH   0
 

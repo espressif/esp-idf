@@ -62,7 +62,13 @@ extern "C" {
 #define SDMMC_MMC_TRIM_ARG      1
 #define SDMMC_MMC_DISCARD_ARG   3
 
-#define SDMMC_FREQ_SDR104       208000      /*!< MMC 208MHz speed */
+/**
+ * Delay mode
+ */
+typedef enum {
+    SDMMC_DELAY_MODE_PHASE,
+    SDMMC_DELAY_MODE_LINE,
+} sdmmc_delay_mode_t;
 
 /* Functions to send individual commands */
 esp_err_t sdmmc_send_cmd(sdmmc_card_t* card, sdmmc_command_t* cmd);
@@ -97,7 +103,7 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
 uint32_t sdmmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb);
 esp_err_t sdmmc_select_driver_strength(sdmmc_card_t *card, sdmmc_driver_strength_t driver_strength);
 esp_err_t sdmmc_select_current_limit(sdmmc_card_t *card, sdmmc_current_limit_t current_limit);
-esp_err_t sdmmc_do_timing_tuning(sdmmc_card_t *card);
+esp_err_t sdmmc_do_timing_tuning(sdmmc_card_t *card, sdmmc_delay_mode_t delay_mode);
 
 /* SD specific */
 esp_err_t sdmmc_check_scr(sdmmc_card_t* card);

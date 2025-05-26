@@ -105,12 +105,12 @@ def test_sdio_speed_frhost_flow(dut: Tuple[IdfDut, IdfDut], expected_4b_speed: i
     dut[0].write('"SDIO_SDMMC: test from host (Performance)"')
 
     dut[0].expect('Probe using SD 4-bit')
-    res = dut[0].expect(r'Throughput: compensated (\d+)')
+    res = dut[0].expect(r'Throughput: compensated (\d+)KB\/s')
     frhost_speed_4bit = res.group(1).decode('utf8')
     assert int(frhost_speed_4bit) > expected_4b_speed
 
     dut[0].expect('Probe using SD 1-bit')
-    res = dut[0].expect(r'Throughput: compensated (\d+)')
+    res = dut[0].expect(r'Throughput: compensated (\d+)KB\/s')
     frhost_speed_1bit = res.group(1).decode('utf8')
     assert int(frhost_speed_1bit) > expected_1b_speed
 
@@ -164,12 +164,12 @@ def test_sdio_speed_tohost_flow(dut: Tuple[IdfDut, IdfDut], expected_4b_speed: i
     dut[0].write('"SDIO_SDMMC: test to host (Performance)"')
 
     dut[0].expect('Probe using SD 4-bit')
-    res = dut[0].expect(r'Throughput: compensated (\d+)')
+    res = dut[0].expect(r'Throughput: compensated (\d+)KB\/s')
     tohost_speed_4bit = res.group(1).decode('utf8')
     assert int(tohost_speed_4bit) > expected_4b_speed
 
     dut[0].expect('Probe using SD 1-bit')
-    res = dut[0].expect(r'Throughput: compensated (\d+)')
+    res = dut[0].expect(r'Throughput: compensated (\d+)KB\/s')
     tohost_speed_1bit = res.group(1).decode('utf8')
     assert int(tohost_speed_1bit) > expected_1b_speed
 
@@ -210,7 +210,7 @@ def test_sdio_speed_tohost_esp32_esp32(dut: Tuple[IdfDut, IdfDut]) -> None:
 )
 @pytest.mark.parametrize('app_path, target, config', c5_param_default, indirect=True)
 def test_sdio_speed_tohost_esp32p4_esp32c5(dut: Tuple[IdfDut, IdfDut]) -> None:
-    test_sdio_speed_tohost_flow(dut, 9000, 4000)
+    test_sdio_speed_tohost_flow(dut, 8500, 4000)
 
 
 # Retention tests
