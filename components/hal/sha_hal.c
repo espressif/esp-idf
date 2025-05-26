@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,12 +66,14 @@ inline static size_t state_length(esp_sha_type type)
 }
 #endif
 
+void sha_hal_set_mode(esp_sha_type sha_type)
+{
+    sha_ll_set_mode(sha_type);
+}
 
 /* Hash a single block */
 void sha_hal_hash_block(esp_sha_type sha_type, const void *data_block, size_t block_word_len, bool first_block)
 {
-    sha_hal_wait_idle();
-
     sha_ll_fill_text_block(data_block, block_word_len);
 
     /* Start hashing */
@@ -85,17 +87,15 @@ void sha_hal_hash_block(esp_sha_type sha_type, const void *data_block, size_t bl
 #if SOC_SHA_SUPPORT_DMA
 
 /* Hashes a number of message blocks using DMA */
-void sha_hal_hash_dma(esp_sha_type sha_type, size_t num_blocks, bool first_block)
+void sha_hal_hash_dma(size_t num_blocks, bool first_block)
 {
-    sha_hal_wait_idle();
-
     sha_ll_set_block_num(num_blocks);
 
     /* Start hashing */
     if (first_block) {
-        sha_ll_start_dma(sha_type);
+        sha_ll_start_dma();
     } else {
-        sha_ll_continue_dma(sha_type);
+        sha_ll_continue_dma();
     }
 }
 

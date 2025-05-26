@@ -126,6 +126,9 @@ static void esp_internal_sha256_block_process(mbedtls_sha256_context *ctx, const
 int mbedtls_internal_sha256_process(mbedtls_sha256_context *ctx, const unsigned char data[64])
 {
     esp_sha_acquire_hardware();
+
+    esp_sha_set_mode(ctx->mode);
+
     esp_internal_sha_update_state(ctx);
 
 #if SOC_SHA_SUPPORT_DMA
@@ -184,6 +187,8 @@ int mbedtls_sha256_update(mbedtls_sha256_context *ctx, const unsigned char *inpu
     if (len || local_len) {
 
         esp_sha_acquire_hardware();
+
+        esp_sha_set_mode(ctx->mode);
 
         esp_internal_sha_update_state(ctx);
 

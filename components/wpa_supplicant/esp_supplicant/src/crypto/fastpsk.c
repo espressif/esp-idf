@@ -160,6 +160,7 @@ static inline void write32_be(uint32_t n, uint8_t out[4])
 
 void sha1_op(uint32_t blocks[FAST_PSK_SHA1_BLOCKS_BUF_WORDS], uint32_t output[SHA1_OUTPUT_SZ_WORDS])
 {
+    esp_sha_set_mode(SHA1);
     /* First block */
     esp_sha_block(SHA1, blocks, true);
     /* Second block */

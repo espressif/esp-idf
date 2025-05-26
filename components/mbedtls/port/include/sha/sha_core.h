@@ -50,12 +50,19 @@ extern "C" {
  */
 void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output);
 
+/**
+ * @brief Set the mode for the SHA engine
+ *
+ * @param sha_type The SHA algorithm type
+ */
+void esp_sha_set_mode(esp_sha_type sha_type);
+
 /** @brief Execute SHA block operation
  *
  * @note This is a piece of a SHA algorithm, rather than an entire SHA
  * algorithm.
  *
- * @note Call esp_sha_acquire_hardware() before calling this
+ * @note Call esp_sha_acquire_hardware() and esp_sha_set_mode() before calling this
  * function.
  *
  * @param sha_type SHA algorithm to use.
@@ -78,7 +85,7 @@ void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_
  * @note This is a piece of a SHA algorithm, rather than an entire SHA
  * algorithm.
  *
- * @note Call esp_sha_aquire_hardware() before calling this
+ * @note Call esp_sha_aquire_hardware() and esp_sha_set_mode() before calling this
  * function.
  *
  * @param sha_type SHA algorithm to use.
@@ -144,7 +151,6 @@ void esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state);
  * @param digest_state
  */
 void esp_sha_write_digest_state(esp_sha_type sha_type, void *digest_state);
-
 
 /**
  * @brief Enables the SHA and crypto DMA peripheral and takes the
