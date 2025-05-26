@@ -1327,6 +1327,12 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * LWIP_ND6_NUM_DESTINATIONS: Maximum number of entries in IPv6 destinations cache
  */
 #define LWIP_ND6_NUM_DESTINATIONS          CONFIG_LWIP_IPV6_ND6_NUM_DESTINATIONS
+
+/**
+ * LWIP_IPV6_DUP_DETECT_ATTEMPTS: Number of duplicate address detection attempts
+ */
+#define LWIP_IPV6_DUP_DETECT_ATTEMPTS   CONFIG_LWIP_IPV6_DUP_DETECT_ATTEMPTS
+
 /*
    ---------------------------------------
    ---------- Hook options ---------------
