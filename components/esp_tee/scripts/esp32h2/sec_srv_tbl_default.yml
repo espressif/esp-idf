@@ -244,6 +244,10 @@ secure_services:
         type: IDF
         function: esp_crypto_ecc_enable_periph_clk
         args: 1
+      - id: 111
+        type: IDF
+        function: esp_sha_set_mode
+        args: 1
   # ID: 134-169 (36) - Reserved for future use
   - family: attestation
     entries:

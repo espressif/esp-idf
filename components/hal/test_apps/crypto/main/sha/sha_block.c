@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -72,6 +72,9 @@ static void sha1_update_block(sha1_ctx* ctx, esp_sha_type sha_type, const unsign
             sha_ll_enable_bus_clock(true);
             sha_ll_reset_register();
         }
+
+        sha_hal_wait_idle();
+        sha_hal_set_mode(sha_type);
 
         if (ctx->first_block == 0) {
             /* Writes the message digest to the SHA engine */
@@ -173,6 +176,9 @@ static void sha256_update_block(sha256_ctx* ctx, esp_sha_type sha_type, const un
             sha_ll_enable_bus_clock(true);
             sha_ll_reset_register();
         }
+
+        sha_hal_wait_idle();
+        sha_hal_set_mode(sha_type);
 
         if (ctx->first_block == 0) {
             /* Writes the message digest to the SHA engine */
@@ -319,6 +325,9 @@ static void sha512_update_block(sha512_ctx* ctx, esp_sha_type sha_type, const un
             sha_ll_enable_bus_clock(true);
             sha_ll_reset_register();
         }
+
+        sha_hal_wait_idle();
+        sha_hal_set_mode(sha_type);
 
         if (ctx->first_block && sha_type == SHA2_512T){
             sha_512_t_init_hash_block(ctx->t_val);
