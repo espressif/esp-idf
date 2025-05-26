@@ -367,19 +367,24 @@
 #endif
 #define OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT CONFIG_OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT
 
-/*----The following options set fixed default values but can be overridden by the user header file.----*/
-
-#if CONFIG_OPENTHREAD_BORDER_ROUTER
 /**
  * @def OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE
  *
  * Define to 1 to enable Border Agent support.
  *
  */
-#ifndef OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE
+#ifdef OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE
+#error `OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE` is redefined.
+#endif
+#if CONFIG_OPENTHREAD_BORDER_AGENT_ENABLE
 #define OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE 1
+#else
+#define OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE 0
 #endif
 
+/*----The following options set fixed default values but can be overridden by the user header file.----*/
+
+#if CONFIG_OPENTHREAD_BORDER_ROUTER
 /**
  * @def OPENTHREAD_CONFIG_BORDER_AGENT_ID_ENABLE
  *
