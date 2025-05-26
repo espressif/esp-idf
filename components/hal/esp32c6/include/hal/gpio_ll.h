@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,13 +20,13 @@
 #include "soc/gpio_periph.h"
 #include "soc/gpio_struct.h"
 #include "soc/lp_aon_struct.h"
-#include "soc/lp_io_struct.h"
 #include "soc/pmu_struct.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/clk_tree_defs.h"
 #include "hal/gpio_types.h"
 #include "hal/assert.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,6 +47,8 @@ extern "C" {
  * @param pd Pull-down enabled or not
  * @param ie Input enabled or not
  * @param oe Output enabled or not
+ * @param oe_ctrl_by_periph Output enable signal from peripheral or not
+ * @param oe_inv Output enable signal is inversed or not
  * @param od Open-drain enabled or not
  * @param drv Drive strength value
  * @param fun_sel IOMUX function selection value
@@ -54,7 +56,7 @@ extern "C" {
  * @param slp_sel Pin sleep mode enabled or not
  */
 static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
-                                         bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
+                                         bool *pu, bool *pd, bool *ie, bool *oe, bool *oe_ctrl_by_periph, bool *oe_inv, bool *od, uint32_t *drv,
                                          uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
 {
     uint32_t bit_mask = 1 << gpio_num;
@@ -63,10 +65,12 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
     *pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
     *ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
     *oe = (hw->enable.val & bit_mask) >> gpio_num;
+    *oe_ctrl_by_periph = !(hw->func_out_sel_cfg[gpio_num].oen_sel);
+    *oe_inv = hw->func_out_sel_cfg[gpio_num].oen_inv_sel;
     *od = hw->pin[gpio_num].pad_driver;
     *drv = (iomux_reg_val & FUN_DRV_M) >> FUN_DRV_S;
     *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
-    *sig_out = hw->func_out_sel_cfg[gpio_num].out_sel;
+    *sig_out = HAL_FORCE_READ_U32_REG_FIELD(hw->func_out_sel_cfg[gpio_num], out_sel);
     *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
 }
 
@@ -315,10 +319,7 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_matrix_out_default(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    gpio_func_out_sel_cfg_reg_t reg = {
-      .out_sel = SIG_GPIO_OUT_IDX,
-    };
-    hw->func_out_sel_cfg[gpio_num].val = reg.val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->func_out_sel_cfg[gpio_num], out_sel, SIG_GPIO_OUT_IDX);
 }
 
 /**
@@ -474,6 +475,20 @@ static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
 }
 
 /**
+  * @brief Configure the source of output enable signal for the GPIO pin.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number of the pad.
+  * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG
+  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
+  */
+static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
+{
+    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;       // control valid only when using gpio matrix to route signal to the IO
+    hw->func_out_sel_cfg[gpio_num].oen_sel = !ctrl_by_periph;
+}
+
+/**
  * @brief  Control the pin in the IOMUX
  *
  * @param  bmap   write mask of control value
@@ -510,12 +525,10 @@ static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t f
   * @param gpio_num gpio_num GPIO number of the pad.
   * @param func The function number of the peripheral pin to output pin.
   *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
-  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
   */
-static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func, uint32_t oen_inv)
+static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func)
 {
-    hw->func_out_sel_cfg[gpio_num].oen_sel = 0;
-    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
+    gpio_ll_set_output_enable_ctrl(hw, gpio_num, true, false);
     gpio_ll_func_sel(hw, gpio_num, func);
 }
 

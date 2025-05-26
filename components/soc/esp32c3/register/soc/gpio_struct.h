@@ -182,7 +182,7 @@ typedef volatile struct gpio_dev_s {
     uint32_t reserved_150;
     union {
         struct {
-            uint32_t func_sel:         5;
+            uint32_t in_sel:           5;
             uint32_t sig_in_inv:       1;
             uint32_t sig_in_sel:       1;
             uint32_t reserved7:       25;
@@ -319,7 +319,7 @@ typedef volatile struct gpio_dev_s {
     uint32_t reserved_550;
     union {
         struct {
-            uint32_t func_sel:          8;
+            uint32_t out_sel:           8;
             uint32_t inv_sel:           1;
             uint32_t oen_sel:           1;
             uint32_t oen_inv_sel:       1;

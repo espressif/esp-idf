@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,8 @@ extern "C" {
  * @param pd Pull-down enabled or not
  * @param ie Input enabled or not
  * @param oe Output enabled or not
+ * @param oe_ctrl_by_periph Output enable signal from peripheral or not
+ * @param oe_inv Output enable signal is inversed or not
  * @param od Open-drain enabled or not
  * @param drv Drive strength value
  * @param fun_sel IOMUX function selection value
@@ -54,13 +56,15 @@ extern "C" {
  * @param slp_sel Pin sleep mode enabled or not
  */
 static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
-                                         bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
+                                         bool *pu, bool *pd, bool *ie, bool *oe, bool *oe_ctrl_by_periph, bool *oe_inv, bool *od, uint32_t *drv,
                                          uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
 {
     *pu = IO_MUX.gpion[gpio_num].gpion_fun_wpu;
     *pd = IO_MUX.gpion[gpio_num].gpion_fun_wpd;
     *ie = IO_MUX.gpion[gpio_num].gpion_fun_ie;
     *oe = (hw->enable.val & (1 << gpio_num)) >> gpio_num;
+    *oe_ctrl_by_periph = !(hw->funcn_out_sel_cfg[gpio_num].funcn_oe_sel);
+    *oe_inv = hw->funcn_out_sel_cfg[gpio_num].funcn_oe_inv_sel;
     *od = hw->pinn[gpio_num].pinn_pad_driver;
     *drv = IO_MUX.gpion[gpio_num].gpion_fun_drv;
     *fun_sel = IO_MUX.gpion[gpio_num].gpion_mcu_sel;
@@ -517,18 +521,30 @@ static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t f
 }
 
 /**
+  * @brief Configure the source of output enable signal for the GPIO pin.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number of the pad.
+  * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG
+  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
+  */
+static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
+{
+    hw->funcn_out_sel_cfg[gpio_num].funcn_oe_inv_sel = oen_inv;       // control valid only when using gpio matrix to route signal to the IO
+    hw->funcn_out_sel_cfg[gpio_num].funcn_oe_sel = !ctrl_by_periph;
+}
+
+/**
   * @brief Set peripheral output to an GPIO pad through the IO_MUX.
   *
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num gpio_num GPIO number of the pad.
   * @param func The function number of the peripheral pin to output pin.
   *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
-  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
   */
-static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func, uint32_t oen_inv)
+static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func)
 {
-    hw->funcn_out_sel_cfg[gpio_num].funcn_oe_sel = 0;
-    hw->funcn_out_sel_cfg[gpio_num].funcn_oe_inv_sel = oen_inv;
+    gpio_ll_set_output_enable_ctrl(hw, gpio_num, true, false);
     gpio_ll_func_sel(hw, gpio_num, func);
 }
 

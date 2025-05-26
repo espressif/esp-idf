@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -30,10 +30,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** out_data_w1ts : WT; bitpos: [7:0]; default: 0;
+        /** out_w1ts : WT; bitpos: [7:0]; default: 0;
          *  set one time output data
          */
-        uint32_t out_data_w1ts:8;
+        uint32_t out_w1ts:8;
         uint32_t reserved_8:24;
     };
     uint32_t val;
@@ -44,10 +44,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** out_data_w1tc : WT; bitpos: [7:0]; default: 0;
+        /** out_w1tc : WT; bitpos: [7:0]; default: 0;
          *  clear one time output data
          */
-        uint32_t out_data_w1tc:8;
+        uint32_t out_w1tc:8;
         uint32_t reserved_8:24;
     };
     uint32_t val;
@@ -114,10 +114,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** status_w1ts : WT; bitpos: [7:0]; default: 0;
+        /** status_intr_w1ts : WT; bitpos: [7:0]; default: 0;
          *  set one time output data
          */
-        uint32_t status_w1ts:8;
+        uint32_t status_intr_w1ts:8;
         uint32_t reserved_8:24;
     };
     uint32_t val;
@@ -128,10 +128,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** status_w1tc : WT; bitpos: [7:0]; default: 0;
+        /** status_intr_w1tc : WT; bitpos: [7:0]; default: 0;
          *  clear one time output data
          */
-        uint32_t status_w1tc:8;
+        uint32_t status_intr_w1tc:8;
         uint32_t reserved_8:24;
     };
     uint32_t val;
