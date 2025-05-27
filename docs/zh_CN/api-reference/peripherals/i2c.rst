@@ -36,15 +36,6 @@ I2C 是一种串行同步半双工通信协议，总线上可以同时挂载多�
 
     请注意，SCL 的频率越高，上拉电阻应该越小（但不能小于 1 kΩ）。较大的电阻会降低电流，增加时钟切换时间并降低频率。通常推荐 2 kΩ 到 5 kΩ 左右的电阻，也可根据电流需求进行一定调整。
 
-.. toctree::
-    :hidden:
-
-    i2c_slave_v1
-
-.. note::
-
-    我们发现 :ref:`i2c-slave-v1` 存在一些问题，且使用体验不够友好。为此，我们推出了 I2C 从机驱动 v2.0，此版本不仅解决了现有问题，还将成为我们未来的主要维护版本。我们建议并鼓励你使用 I2C 从机驱动 v2.0，你可以通过配置选项 :ref:`CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2` 启用该功能。本文档主要介绍 I2C 从机驱动 v2.0 的功能。如果你想使用 I2C 从机驱动 v1.0，请参考 :ref:`i2c-slave-v1`。I2C 从机驱动 v1.0 将在 ESP-IDF v6.0 中移除。
-
 I2C 时钟配置
 ------------
 
@@ -667,7 +658,6 @@ Kconfig 选项
 
 - :ref:`CONFIG_I2C_ISR_IRAM_SAFE` 将在 cache 被禁用时控制默认的 ISR 处理程序正常工作，详情请参阅 `IRAM 安全 <#iram-safe>`__。
 - :ref:`CONFIG_I2C_ENABLE_DEBUG_LOG` 可启用调试日志，但会增加固件二进制文件大小。
-- :ref:`CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2` 用于启用 I2C 从机驱动 v2.0 程序。
 
 应用示例
 --------

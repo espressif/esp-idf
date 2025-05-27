@@ -36,15 +36,6 @@ Typically, an I2C slave device has a 7-bit address or 10-bit address. {IDF_TARGE
 
     Keep in mind that the higher the frequency, the smaller the pull-up resistor should be (but not less than 1 kΩ). Indeed, large resistors will decline the current, which will increase the clock switching time and reduce the frequency. A range of 2 kΩ to 5 kΩ is recommended, but adjustments may also be necessary depending on their current draw requirements.
 
-.. toctree::
-    :hidden:
-
-    i2c_slave_v1
-
-.. note::
-
-    We realized that our first version of the I2C slave driver had some problems and was not easy to use, so we have prepared a second version of the I2C slave driver, which solves many of the problems with our current I2C slave and which will be the focus of our maintenance. We encourage and recommend that you use the second version of the I2C slave driver, which you can do by enabling :ref:`CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2`. This document focuses on the content of I2C slave v2.0. If you still want to read programming guide of I2C slave v1.0, please refer to :ref:`i2c-slave-v1`. The I2C slave v1.0 driver will be removed with the IDF v6.0 update.
-
 I2C Clock Configuration
 -----------------------
 
@@ -667,7 +658,6 @@ Kconfig Options
 
 - :ref:`CONFIG_I2C_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see also `IRAM Safe <#iram-safe>`__ for more information.
 - :ref:`CONFIG_I2C_ENABLE_DEBUG_LOG` is used to enable the debug log at the cost of increased firmware binary size.
-- :ref:`CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2` is used to enable the I2C slave driver v2.0.
 
 Application Examples
 --------------------

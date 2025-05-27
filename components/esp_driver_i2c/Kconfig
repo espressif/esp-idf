@@ -18,12 +18,6 @@ menu "ESP-Driver:I2C Configurations"
 
             note: This cannot be used in the I2C legacy driver.
 
-    config I2C_ENABLE_SLAVE_DRIVER_VERSION_2
-        bool "Enable I2C slave driver version 2"
-        default n
-        help
-            I2C slave version 2 solves some existing known issues. Such as write/read workflow, stretch handling, etc.
-
     config I2C_MASTER_ISR_HANDLER_IN_IRAM
         bool "Place I2C master ISR handler into IRAM"
         default y
