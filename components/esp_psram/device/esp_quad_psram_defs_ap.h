@@ -36,6 +36,8 @@ extern "C" {
 // ID
 #define PSRAM_QUAD_ID_BITS_NUM            24
 #define PSRAM_QUAD_EID_BITS_NUM           48
+#define PSRAM_QUAD_MFID_AP                0xD
+#define PSRAM_QUAD_MFID_M                 0xff
 #define PSRAM_QUAD_ID_KGD_M               0xff
 #define PSRAM_QUAD_ID_KGD_S               8
 #define PSRAM_QUAD_ID_KGD                 0x5d
@@ -52,6 +54,7 @@ extern "C" {
 #define PSRAM_QUAD_EID_BIT_47_45_M        0x07
 #define PSRAM_QUAD_EID_BIT_47_45_S        5
 
+#define PSRAM_QUAD_MFID(id)               ((id) & PSRAM_QUAD_MFID_M)
 #define PSRAM_QUAD_KGD(id)                (((id) >> PSRAM_QUAD_ID_KGD_S) & PSRAM_QUAD_ID_KGD_M)
 #define PSRAM_QUAD_EID_BIT_47_40(id)      (((id) >> PSRAM_QUAD_ID_EID_BIT_47_40_S) & PSRAM_QUAD_ID_EID_BIT_47_40_M)
 #define PSRAM_QUAD_SIZE_ID(id)            ((PSRAM_QUAD_EID_BIT_47_40(id) >> PSRAM_QUAD_EID_BIT_47_45_S) & PSRAM_QUAD_EID_BIT_47_45_M)
