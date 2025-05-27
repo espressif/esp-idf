@@ -2946,7 +2946,7 @@ uint8_t btm_ble_scan_active_count(void)
 }
 
 #if (SMP_INCLUDED == TRUE)
-uint8_t btm_ble_sec_dev_active_count(void)
+uint8_t btm_ble_sec_dev_record_count(void)
 {
     tBTM_SEC_DEV_REC *p_dev_rec = NULL;
     list_node_t *p_node = NULL;
@@ -2961,6 +2961,12 @@ uint8_t btm_ble_sec_dev_active_count(void)
     }
 
     return count;
+}
+
+void btm_ble_clear_sec_dev_record(void)
+{
+    /* only used when connection is closed */
+    if(btm_cb.p_sec_dev_rec_list) list_clear(btm_cb.p_sec_dev_rec_list);
 }
 #endif
 

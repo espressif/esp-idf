@@ -34,7 +34,7 @@ typedef enum {
     BTC_BLE_STATUS_EXT_ADV,     // Extended advertising exist
     BTC_BLE_STATUS_SCAN,        // Scanning exist
     BTC_BLE_STATUS_CONN,        // Connection exist
-    BTC_BLE_STATUS_KEYS,        // Device keys record exist
+    BTC_BLE_STATUS_DEVICE_REC,  // Device record exist
     BTC_BLE_STATUS_BOND,        // Bond info exist
     BTC_BLE_STATUS_GATTC_CACHE, // GATTC cache exist
     BTC_BLE_STATUS_GATTC_APP,   // GATTC application exist
