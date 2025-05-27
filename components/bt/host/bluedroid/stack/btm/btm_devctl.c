@@ -952,6 +952,7 @@ tBTM_STATUS BTM_EnableTestMode(void)
     }
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_DeleteStoredLinkKey
@@ -1026,6 +1027,7 @@ void btm_delete_stored_link_key_complete (UINT8 *p)
     }
 }
 
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_report_device_status

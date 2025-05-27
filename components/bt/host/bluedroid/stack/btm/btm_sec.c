@@ -1001,12 +1001,12 @@ tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
         return (BTM_SUCCESS);
     }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* Tell controller to get rid of the link key if it has one stored */
     if ((BTM_DeleteStoredLinkKey (bd_addr, NULL)) != BTM_SUCCESS) {
         return (BTM_NO_RESOURCES);
     }
 
-#if (CLASSIC_BT_INCLUDED == TRUE)
     /* Save the PIN code if we got a valid one */
     if (p_pin && (pin_len <= PIN_CODE_LEN) && (pin_len != 0)) {
         btm_cb.pin_code_len = pin_len;
