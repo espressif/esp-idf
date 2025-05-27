@@ -187,8 +187,10 @@ BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr, tBT_TRANSPORT transport)
     }
 
     if ((p_dev_rec = btm_find_dev(bd_addr)) != NULL) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* Tell controller to get rid of the link key, if it has one stored */
         BTM_DeleteStoredLinkKey (p_dev_rec->bd_addr, NULL);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
         btm_sec_free_dev(p_dev_rec, transport);
     }
