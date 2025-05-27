@@ -33,6 +33,7 @@
 #define PMU_ICG_APB_ENA_MEM_MONITOR             25
 #define PMU_ICG_APB_ENA_IOMUX                   26
 #define PMU_ICG_APB_ENA_PVT_MONITOR             27
+#define PMU_ICG_APB_ENA_BS                      28
 #define PMU_ICG_FUNC_ENA_GDMA                   0
 #define PMU_ICG_FUNC_ENA_SPI2                   1
 #define PMU_ICG_FUNC_ENA_I2S_RX                 2
