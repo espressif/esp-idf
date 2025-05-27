@@ -50,6 +50,7 @@ Description of the MCPWM functionality is divided into the following sections:
     - :ref:`mcpwm-capture` - describes how to use the MCPWM capture module to measure the pulse width of a signal.
     :SOC_MCPWM_SUPPORT_ETM: - :ref:`mcpwm-etm-event-and-task` - describes what the events and tasks can be connected to the ETM channel.
     - :ref:`mcpwm-power-management` - describes how different source clocks affects power consumption.
+    - :ref:`mcpwm-resolution-config` - describes the resolution configuration rules for the MCPWM submodule.
     - :ref:`mcpwm-iram-safe` - describes tips on how to make the RMT interrupt work better along with a disabled cache.
     - :ref:`mcpwm-thread-safety` - lists which APIs are guaranteed to be thread-safe by the driver.
     - :ref:`mcpwm-kconfig-options` - lists the supported Kconfig options that can bring different effects to the driver.
@@ -78,6 +79,10 @@ You can allocate a MCPWM timer object by calling :cpp:func:`mcpwm_new_timer` fun
 The :cpp:func:`mcpwm_new_timer` will return a pointer to the allocated timer object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there are no more free timers in the MCPWM group, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
 
 On the contrary, calling the :cpp:func:`mcpwm_del_timer` function will free the allocated timer object.
+
+.. note::
+
+    The prescale for the MCPWM group will be calculated with the resolution of the first timer, and the driver will find the appropriate prescale from low to high. If there is a prescale conflict when allocating multiple timers, allocate timers in order of their target resolution, either from highest to lowest or lowest to highest. For more information, please refer to :ref:`mcpwm-resolution-config`.
 
 MCPWM Operators
 ~~~~~~~~~~~~~~~
@@ -192,6 +197,12 @@ To allocate a capture timer, you can call the :cpp:func:`mcpwm_new_capture_timer
     .. note::
 
         In {IDF_TARGET_NAME}, :cpp:member:`mcpwm_capture_timer_config_t::resolution_hz` parameter is invalid, the capture timer resolution is always equal to the :cpp:enumerator:`MCPWM_CAPTURE_CLK_SRC_APB`.
+
+.. only:: SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
+
+    .. note::
+
+        Timers and capture timers share the MCPWM group clock source. The prescale for the MCPWM group will be calculated with the resolution of the first allocated (capture)timer. The driver will search for the appropriate prescale from low to high. If there is a prescale conflict when allocating multiple (capture)timers, allocate (capture)timers in order of their target resolution, either from highest to lowest or lowest to highest. For more information, please refer to :ref:`mcpwm-resolution-config`.
 
 The :cpp:func:`mcpwm_new_capture_timer` will return a pointer to the allocated capture timer object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there is no free capture timer left in the MCPWM group, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
 
@@ -758,8 +769,8 @@ The MCPWM operator has a carrier submodule that can be used if galvanic isolatio
 To configure the carrier submodule, you can call :cpp:func:`mcpwm_operator_apply_carrier`, and provide configuration structure :cpp:type:`mcpwm_carrier_config_t`:
 
 - :cpp:member:`mcpwm_carrier_config_t::clk_src` sets the clock source of the carrier.
-- :cpp:member:`mcpwm_carrier_config_t::frequency_hz` indicates carrier frequency in Hz.
-- :cpp:member:`mcpwm_carrier_config_t::duty_cycle` indicates the duty cycle of the carrier. Note that, the supported choices of the duty cycle are discrete, the driver searches for the nearest one based on your configuration.
+- :cpp:member:`mcpwm_carrier_config_t::frequency_hz` indicates carrier frequency in Hz. For more information, please refer to :ref:`mcpwm-resolution-config`.
+- :cpp:member:`mcpwm_carrier_config_t::duty_cycle` indicates the duty cycle of the carrier. Note that, there are only 7 supported duty cycles: 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875.
 - :cpp:member:`mcpwm_carrier_config_t::first_pulse_duration_us` indicates the duration of the first pulse in microseconds. The resolution of the first pulse duration is determined by the carrier frequency you set in the :cpp:member:`mcpwm_carrier_config_t::frequency_hz`. The first pulse duration can not be zero, and it has to be at least one period of the carrier. A longer pulse width can help conduct the inductance quicker.
 - :cpp:member:`mcpwm_carrier_config_t::invert_before_modulate` and :cpp:member:`mcpwm_carrier_config_t::invert_after_modulate` set whether to invert the carrier output before and after modulation.
 
@@ -980,6 +991,18 @@ Likewise, whenever the driver creates an MCPWM capture timer instance, the drive
     {IDF_TARGET_NAME} supports to retain the MCPWM register context before entering **Light-sleep** and restore them after woke up. Which means you don't have to re-init the MCPWM driver after the **Light-sleep**.
 
     This feature can be enabled by setting the flag :cpp:member:`mcpwm_timer_config_t::allow_pd` or :cpp:member:`mcpwm_capture_timer_config_t::allow_pd`. It will allow the system to power down the MCPWM in Light-sleep, meanwhile save the MCPWM register context. It can help to save more power consumption with some extra cost of the memory.
+
+.. _mcpwm-resolution-config:
+
+Resolution Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The MCPWM group has clock dividers and some sub-modules will have their own clock dividers. The final clock frequency of the sub-module depends on the group clock divider and its own divider (if any). The group clock divider affects all submodules. When configuring the clock frequency (also called resolution) of an MCPWM submodule, the driver sets the divider according to the following rules:
+
+1. If the clock frequency of the submodule can be divisible by the clock source, the frequency of the submodule is prioritized to ensure the accuracy of the submodule.
+2. If it cannot be divisible by the clock source, the group clock is guaranteed to have the highest frequency possible, and the submodule frequency is adjusted to the closest frequency that can be divisible by the clock source.
+
+When multiple MCPWM submodules coexist, you need to consider whether there is a clock divider conflict. When there is a group clock divider conflict, try adjusting the submodule allocation order. See [`TRM <{IDF_TARGET_TRM_EN_URL}#mcpwm>`__] for details on group frequency divider and submodule frequency divider ranges.
 
 .. _mcpwm-iram-safe:
 

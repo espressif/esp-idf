@@ -356,7 +356,7 @@ static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t p
     mcpwm_capture_timer_config_t cap_timer_config = {
         .clk_src = MCPWM_CAPTURE_CLK_SRC_DEFAULT,
         .group_id = 0,
-        .resolution_hz = clk_src_freq_hz / 2,
+        .resolution_hz = clk_src_freq_hz,
     };
     TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timer));
 
@@ -602,7 +602,7 @@ static void mcpwm_deadtime_test_template(uint32_t timer_resolution, uint32_t per
     mcpwm_capture_timer_config_t cap_timer_config = {
         .clk_src = MCPWM_CAPTURE_CLK_SRC_DEFAULT,
         .group_id = 0,
-        .resolution_hz = clk_src_freq_hz / 2,
+        .resolution_hz = clk_src_freq_hz,
     };
     TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timer));
 
