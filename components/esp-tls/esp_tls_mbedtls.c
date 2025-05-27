@@ -20,7 +20,7 @@
 #include <errno.h>
 #include "esp_log.h"
 #include "esp_check.h"
-
+#include "mbedtls/esp_mbedtls_dynamic.h"
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
 #include "ecdsa/ecdsa_alt.h"
 #endif
@@ -114,6 +114,10 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
     }
 
     mbedtls_ssl_conf_rng(&tls->conf, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
+
+#if CONFIG_MBEDTLS_DYNAMIC_BUFFER
+    tls->esp_tls_dyn_buf_strategy = ((esp_tls_cfg_t *)cfg)->esp_tls_dyn_buf_strategy;
+#endif
 
     if (tls->role == ESP_TLS_CLIENT) {
         esp_ret = set_client_config(hostname, hostlen, (esp_tls_cfg_t *)cfg, tls);
@@ -256,6 +260,15 @@ int esp_mbedtls_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
 #endif
     ret = mbedtls_ssl_handshake(&tls->ssl);
     if (ret == 0) {
+#if CONFIG_MBEDTLS_DYNAMIC_BUFFER
+        if (tls->esp_tls_dyn_buf_strategy != 0) {
+            ret = esp_mbedtls_dynamic_set_rx_buf_static(&tls->ssl);
+            if (ret != 0) {
+                ESP_LOGE(TAG, "esp_mbedtls_dynamic_set_rx_buf_static returned -0x%04X", -ret);
+                return ret;
+            }
+        }
+#endif
         tls->conn_state = ESP_TLS_DONE;
 
 #ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL

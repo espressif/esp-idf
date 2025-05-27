@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -364,6 +364,14 @@ void esp_transport_ssl_enable_global_ca_store(esp_transport_handle_t t)
     GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
     ssl->cfg.use_global_ca_store = true;
 }
+
+#if CONFIG_MBEDTLS_DYNAMIC_BUFFER
+void esp_transport_ssl_set_esp_tls_dyn_buf_strategy(esp_transport_handle_t t, esp_tls_dyn_buf_strategy_t strategy)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.esp_tls_dyn_buf_strategy = strategy;
+}
+#endif
 
 void esp_transport_ssl_set_tls_version(esp_transport_handle_t t, esp_tls_proto_ver_t tls_version)
 {
