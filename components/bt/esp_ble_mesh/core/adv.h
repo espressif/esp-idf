@@ -44,6 +44,7 @@ enum bt_mesh_adv_type {
     BLE_MESH_ADV_URI,
     BLE_MESH_ADV_BLE,
     BLE_MESH_ADV_PROXY_SOLIC,
+    BLE_MESH_ADV_TYPES_NUM,
 };
 
 struct bt_mesh_adv {
