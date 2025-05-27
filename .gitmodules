@@ -54,8 +54,10 @@
 	sbom-supplier = Person: Dave Gamble
 	sbom-url = https://github.com/DaveGamble/cJSON
 	sbom-description = Ultralightweight JSON parser in ANSI C
-	sbom-hash = acc76239bee01d8e9c858ae2cab296704e52d916
+	sbom-hash = 8f2beb57ddad1f94bed899790b00f46df893ccac
 	sbom-cve-exclude-list = CVE-2024-31755 Resolved in v1.7.18
+	sbom-cve-exclude-list = CVE-2023-26819 Resolved in commit a328d65ad490b64da8c87523cbbfe16050ba5bf6
+	sbom-cve-exclude-list = CVE-2023-53154 Resolved in v1.7.18
 
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
