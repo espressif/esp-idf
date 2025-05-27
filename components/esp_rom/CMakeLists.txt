@@ -189,7 +189,7 @@ else() # Regular app build
         endif()
 
     elseif(target STREQUAL "esp32c3")
-        if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY AND NOT CONFIG_BT_CTRL_HCI_MODE_UART_H4)
+        if(NOT CONFIG_BT_CTRL_HCI_MODE_UART_H4)
             if(NOT CONFIG_BT_CTRL_BLE_MASTER)
                 rom_linker_script("ble_master")
             endif()
@@ -229,7 +229,7 @@ else() # Regular app build
             endif()
         endif()
     elseif(target STREQUAL "esp32s3")
-        if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY AND NOT CONFIG_BT_CTRL_HCI_MODE_UART_H4)
+        if(NOT CONFIG_BT_CTRL_HCI_MODE_UART_H4)
             if(NOT CONFIG_BT_CTRL_BLE_MASTER)
                 rom_linker_script("ble_master")
             endif()
