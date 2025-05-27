@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -12,1091 +12,1391 @@ extern "C" {
 #endif
 
 /** SOC_ETM_CH_ENA_AD0_REG register
- *  channel enable register
+ *  Channel enable status register
  */
-#define SOC_ETM_CH_ENA_AD0_REG (DR_REG_SOC_BASE + 0x0)
-/** SOC_ETM_CH_ENA0 : R/WTC/WTS; bitpos: [0]; default: 0;
- *  ch0 enable
+#define SOC_ETM_CH_ENA_AD0_REG (DR_REG_SOC_ETM_BASE + 0x0)
+/** SOC_ETM_CH_ENABLED0 : R/WTC/SS; bitpos: [0]; default: 0;
+ *  Represents channel0 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA0    (BIT(0))
-#define SOC_ETM_CH_ENA0_M  (SOC_ETM_CH_ENA0_V << SOC_ETM_CH_ENA0_S)
-#define SOC_ETM_CH_ENA0_V  0x00000001U
-#define SOC_ETM_CH_ENA0_S  0
-/** SOC_ETM_CH_ENA1 : R/WTC/WTS; bitpos: [1]; default: 0;
- *  ch1 enable
+#define SOC_ETM_CH_ENABLED0    (BIT(0))
+#define SOC_ETM_CH_ENABLED0_M  (SOC_ETM_CH_ENABLED0_V << SOC_ETM_CH_ENABLED0_S)
+#define SOC_ETM_CH_ENABLED0_V  0x00000001U
+#define SOC_ETM_CH_ENABLED0_S  0
+/** SOC_ETM_CH_ENABLED1 : R/WTC/SS; bitpos: [1]; default: 0;
+ *  Represents channel1 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA1    (BIT(1))
-#define SOC_ETM_CH_ENA1_M  (SOC_ETM_CH_ENA1_V << SOC_ETM_CH_ENA1_S)
-#define SOC_ETM_CH_ENA1_V  0x00000001U
-#define SOC_ETM_CH_ENA1_S  1
-/** SOC_ETM_CH_ENA2 : R/WTC/WTS; bitpos: [2]; default: 0;
- *  ch2 enable
+#define SOC_ETM_CH_ENABLED1    (BIT(1))
+#define SOC_ETM_CH_ENABLED1_M  (SOC_ETM_CH_ENABLED1_V << SOC_ETM_CH_ENABLED1_S)
+#define SOC_ETM_CH_ENABLED1_V  0x00000001U
+#define SOC_ETM_CH_ENABLED1_S  1
+/** SOC_ETM_CH_ENABLED2 : R/WTC/SS; bitpos: [2]; default: 0;
+ *  Represents channel2 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA2    (BIT(2))
-#define SOC_ETM_CH_ENA2_M  (SOC_ETM_CH_ENA2_V << SOC_ETM_CH_ENA2_S)
-#define SOC_ETM_CH_ENA2_V  0x00000001U
-#define SOC_ETM_CH_ENA2_S  2
-/** SOC_ETM_CH_ENA3 : R/WTC/WTS; bitpos: [3]; default: 0;
- *  ch3 enable
+#define SOC_ETM_CH_ENABLED2    (BIT(2))
+#define SOC_ETM_CH_ENABLED2_M  (SOC_ETM_CH_ENABLED2_V << SOC_ETM_CH_ENABLED2_S)
+#define SOC_ETM_CH_ENABLED2_V  0x00000001U
+#define SOC_ETM_CH_ENABLED2_S  2
+/** SOC_ETM_CH_ENABLED3 : R/WTC/SS; bitpos: [3]; default: 0;
+ *  Represents channel3 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA3    (BIT(3))
-#define SOC_ETM_CH_ENA3_M  (SOC_ETM_CH_ENA3_V << SOC_ETM_CH_ENA3_S)
-#define SOC_ETM_CH_ENA3_V  0x00000001U
-#define SOC_ETM_CH_ENA3_S  3
-/** SOC_ETM_CH_ENA4 : R/WTC/WTS; bitpos: [4]; default: 0;
- *  ch4 enable
+#define SOC_ETM_CH_ENABLED3    (BIT(3))
+#define SOC_ETM_CH_ENABLED3_M  (SOC_ETM_CH_ENABLED3_V << SOC_ETM_CH_ENABLED3_S)
+#define SOC_ETM_CH_ENABLED3_V  0x00000001U
+#define SOC_ETM_CH_ENABLED3_S  3
+/** SOC_ETM_CH_ENABLED4 : R/WTC/SS; bitpos: [4]; default: 0;
+ *  Represents channel4 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA4    (BIT(4))
-#define SOC_ETM_CH_ENA4_M  (SOC_ETM_CH_ENA4_V << SOC_ETM_CH_ENA4_S)
-#define SOC_ETM_CH_ENA4_V  0x00000001U
-#define SOC_ETM_CH_ENA4_S  4
-/** SOC_ETM_CH_ENA5 : R/WTC/WTS; bitpos: [5]; default: 0;
- *  ch5 enable
+#define SOC_ETM_CH_ENABLED4    (BIT(4))
+#define SOC_ETM_CH_ENABLED4_M  (SOC_ETM_CH_ENABLED4_V << SOC_ETM_CH_ENABLED4_S)
+#define SOC_ETM_CH_ENABLED4_V  0x00000001U
+#define SOC_ETM_CH_ENABLED4_S  4
+/** SOC_ETM_CH_ENABLED5 : R/WTC/SS; bitpos: [5]; default: 0;
+ *  Represents channel5 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA5    (BIT(5))
-#define SOC_ETM_CH_ENA5_M  (SOC_ETM_CH_ENA5_V << SOC_ETM_CH_ENA5_S)
-#define SOC_ETM_CH_ENA5_V  0x00000001U
-#define SOC_ETM_CH_ENA5_S  5
-/** SOC_ETM_CH_ENA6 : R/WTC/WTS; bitpos: [6]; default: 0;
- *  ch6 enable
+#define SOC_ETM_CH_ENABLED5    (BIT(5))
+#define SOC_ETM_CH_ENABLED5_M  (SOC_ETM_CH_ENABLED5_V << SOC_ETM_CH_ENABLED5_S)
+#define SOC_ETM_CH_ENABLED5_V  0x00000001U
+#define SOC_ETM_CH_ENABLED5_S  5
+/** SOC_ETM_CH_ENABLED6 : R/WTC/SS; bitpos: [6]; default: 0;
+ *  Represents channel6 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA6    (BIT(6))
-#define SOC_ETM_CH_ENA6_M  (SOC_ETM_CH_ENA6_V << SOC_ETM_CH_ENA6_S)
-#define SOC_ETM_CH_ENA6_V  0x00000001U
-#define SOC_ETM_CH_ENA6_S  6
-/** SOC_ETM_CH_ENA7 : R/WTC/WTS; bitpos: [7]; default: 0;
- *  ch7 enable
+#define SOC_ETM_CH_ENABLED6    (BIT(6))
+#define SOC_ETM_CH_ENABLED6_M  (SOC_ETM_CH_ENABLED6_V << SOC_ETM_CH_ENABLED6_S)
+#define SOC_ETM_CH_ENABLED6_V  0x00000001U
+#define SOC_ETM_CH_ENABLED6_S  6
+/** SOC_ETM_CH_ENABLED7 : R/WTC/SS; bitpos: [7]; default: 0;
+ *  Represents channel7 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA7    (BIT(7))
-#define SOC_ETM_CH_ENA7_M  (SOC_ETM_CH_ENA7_V << SOC_ETM_CH_ENA7_S)
-#define SOC_ETM_CH_ENA7_V  0x00000001U
-#define SOC_ETM_CH_ENA7_S  7
-/** SOC_ETM_CH_ENA8 : R/WTC/WTS; bitpos: [8]; default: 0;
- *  ch8 enable
+#define SOC_ETM_CH_ENABLED7    (BIT(7))
+#define SOC_ETM_CH_ENABLED7_M  (SOC_ETM_CH_ENABLED7_V << SOC_ETM_CH_ENABLED7_S)
+#define SOC_ETM_CH_ENABLED7_V  0x00000001U
+#define SOC_ETM_CH_ENABLED7_S  7
+/** SOC_ETM_CH_ENABLED8 : R/WTC/SS; bitpos: [8]; default: 0;
+ *  Represents channel8 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA8    (BIT(8))
-#define SOC_ETM_CH_ENA8_M  (SOC_ETM_CH_ENA8_V << SOC_ETM_CH_ENA8_S)
-#define SOC_ETM_CH_ENA8_V  0x00000001U
-#define SOC_ETM_CH_ENA8_S  8
-/** SOC_ETM_CH_ENA9 : R/WTC/WTS; bitpos: [9]; default: 0;
- *  ch9 enable
+#define SOC_ETM_CH_ENABLED8    (BIT(8))
+#define SOC_ETM_CH_ENABLED8_M  (SOC_ETM_CH_ENABLED8_V << SOC_ETM_CH_ENABLED8_S)
+#define SOC_ETM_CH_ENABLED8_V  0x00000001U
+#define SOC_ETM_CH_ENABLED8_S  8
+/** SOC_ETM_CH_ENABLED9 : R/WTC/SS; bitpos: [9]; default: 0;
+ *  Represents channel9 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA9    (BIT(9))
-#define SOC_ETM_CH_ENA9_M  (SOC_ETM_CH_ENA9_V << SOC_ETM_CH_ENA9_S)
-#define SOC_ETM_CH_ENA9_V  0x00000001U
-#define SOC_ETM_CH_ENA9_S  9
-/** SOC_ETM_CH_ENA10 : R/WTC/WTS; bitpos: [10]; default: 0;
- *  ch10 enable
+#define SOC_ETM_CH_ENABLED9    (BIT(9))
+#define SOC_ETM_CH_ENABLED9_M  (SOC_ETM_CH_ENABLED9_V << SOC_ETM_CH_ENABLED9_S)
+#define SOC_ETM_CH_ENABLED9_V  0x00000001U
+#define SOC_ETM_CH_ENABLED9_S  9
+/** SOC_ETM_CH_ENABLED10 : R/WTC/SS; bitpos: [10]; default: 0;
+ *  Represents channel10 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA10    (BIT(10))
-#define SOC_ETM_CH_ENA10_M  (SOC_ETM_CH_ENA10_V << SOC_ETM_CH_ENA10_S)
-#define SOC_ETM_CH_ENA10_V  0x00000001U
-#define SOC_ETM_CH_ENA10_S  10
-/** SOC_ETM_CH_ENA11 : R/WTC/WTS; bitpos: [11]; default: 0;
- *  ch11 enable
+#define SOC_ETM_CH_ENABLED10    (BIT(10))
+#define SOC_ETM_CH_ENABLED10_M  (SOC_ETM_CH_ENABLED10_V << SOC_ETM_CH_ENABLED10_S)
+#define SOC_ETM_CH_ENABLED10_V  0x00000001U
+#define SOC_ETM_CH_ENABLED10_S  10
+/** SOC_ETM_CH_ENABLED11 : R/WTC/SS; bitpos: [11]; default: 0;
+ *  Represents channel11 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA11    (BIT(11))
-#define SOC_ETM_CH_ENA11_M  (SOC_ETM_CH_ENA11_V << SOC_ETM_CH_ENA11_S)
-#define SOC_ETM_CH_ENA11_V  0x00000001U
-#define SOC_ETM_CH_ENA11_S  11
-/** SOC_ETM_CH_ENA12 : R/WTC/WTS; bitpos: [12]; default: 0;
- *  ch12 enable
+#define SOC_ETM_CH_ENABLED11    (BIT(11))
+#define SOC_ETM_CH_ENABLED11_M  (SOC_ETM_CH_ENABLED11_V << SOC_ETM_CH_ENABLED11_S)
+#define SOC_ETM_CH_ENABLED11_V  0x00000001U
+#define SOC_ETM_CH_ENABLED11_S  11
+/** SOC_ETM_CH_ENABLED12 : R/WTC/SS; bitpos: [12]; default: 0;
+ *  Represents channel12 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA12    (BIT(12))
-#define SOC_ETM_CH_ENA12_M  (SOC_ETM_CH_ENA12_V << SOC_ETM_CH_ENA12_S)
-#define SOC_ETM_CH_ENA12_V  0x00000001U
-#define SOC_ETM_CH_ENA12_S  12
-/** SOC_ETM_CH_ENA13 : R/WTC/WTS; bitpos: [13]; default: 0;
- *  ch13 enable
+#define SOC_ETM_CH_ENABLED12    (BIT(12))
+#define SOC_ETM_CH_ENABLED12_M  (SOC_ETM_CH_ENABLED12_V << SOC_ETM_CH_ENABLED12_S)
+#define SOC_ETM_CH_ENABLED12_V  0x00000001U
+#define SOC_ETM_CH_ENABLED12_S  12
+/** SOC_ETM_CH_ENABLED13 : R/WTC/SS; bitpos: [13]; default: 0;
+ *  Represents channel13 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA13    (BIT(13))
-#define SOC_ETM_CH_ENA13_M  (SOC_ETM_CH_ENA13_V << SOC_ETM_CH_ENA13_S)
-#define SOC_ETM_CH_ENA13_V  0x00000001U
-#define SOC_ETM_CH_ENA13_S  13
-/** SOC_ETM_CH_ENA14 : R/WTC/WTS; bitpos: [14]; default: 0;
- *  ch14 enable
+#define SOC_ETM_CH_ENABLED13    (BIT(13))
+#define SOC_ETM_CH_ENABLED13_M  (SOC_ETM_CH_ENABLED13_V << SOC_ETM_CH_ENABLED13_S)
+#define SOC_ETM_CH_ENABLED13_V  0x00000001U
+#define SOC_ETM_CH_ENABLED13_S  13
+/** SOC_ETM_CH_ENABLED14 : R/WTC/SS; bitpos: [14]; default: 0;
+ *  Represents channel14 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA14    (BIT(14))
-#define SOC_ETM_CH_ENA14_M  (SOC_ETM_CH_ENA14_V << SOC_ETM_CH_ENA14_S)
-#define SOC_ETM_CH_ENA14_V  0x00000001U
-#define SOC_ETM_CH_ENA14_S  14
-/** SOC_ETM_CH_ENA15 : R/WTC/WTS; bitpos: [15]; default: 0;
- *  ch15 enable
+#define SOC_ETM_CH_ENABLED14    (BIT(14))
+#define SOC_ETM_CH_ENABLED14_M  (SOC_ETM_CH_ENABLED14_V << SOC_ETM_CH_ENABLED14_S)
+#define SOC_ETM_CH_ENABLED14_V  0x00000001U
+#define SOC_ETM_CH_ENABLED14_S  14
+/** SOC_ETM_CH_ENABLED15 : R/WTC/SS; bitpos: [15]; default: 0;
+ *  Represents channel15 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA15    (BIT(15))
-#define SOC_ETM_CH_ENA15_M  (SOC_ETM_CH_ENA15_V << SOC_ETM_CH_ENA15_S)
-#define SOC_ETM_CH_ENA15_V  0x00000001U
-#define SOC_ETM_CH_ENA15_S  15
-/** SOC_ETM_CH_ENA16 : R/WTC/WTS; bitpos: [16]; default: 0;
- *  ch16 enable
+#define SOC_ETM_CH_ENABLED15    (BIT(15))
+#define SOC_ETM_CH_ENABLED15_M  (SOC_ETM_CH_ENABLED15_V << SOC_ETM_CH_ENABLED15_S)
+#define SOC_ETM_CH_ENABLED15_V  0x00000001U
+#define SOC_ETM_CH_ENABLED15_S  15
+/** SOC_ETM_CH_ENABLED16 : R/WTC/SS; bitpos: [16]; default: 0;
+ *  Represents channel16 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA16    (BIT(16))
-#define SOC_ETM_CH_ENA16_M  (SOC_ETM_CH_ENA16_V << SOC_ETM_CH_ENA16_S)
-#define SOC_ETM_CH_ENA16_V  0x00000001U
-#define SOC_ETM_CH_ENA16_S  16
-/** SOC_ETM_CH_ENA17 : R/WTC/WTS; bitpos: [17]; default: 0;
- *  ch17 enable
+#define SOC_ETM_CH_ENABLED16    (BIT(16))
+#define SOC_ETM_CH_ENABLED16_M  (SOC_ETM_CH_ENABLED16_V << SOC_ETM_CH_ENABLED16_S)
+#define SOC_ETM_CH_ENABLED16_V  0x00000001U
+#define SOC_ETM_CH_ENABLED16_S  16
+/** SOC_ETM_CH_ENABLED17 : R/WTC/SS; bitpos: [17]; default: 0;
+ *  Represents channel17 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA17    (BIT(17))
-#define SOC_ETM_CH_ENA17_M  (SOC_ETM_CH_ENA17_V << SOC_ETM_CH_ENA17_S)
-#define SOC_ETM_CH_ENA17_V  0x00000001U
-#define SOC_ETM_CH_ENA17_S  17
-/** SOC_ETM_CH_ENA18 : R/WTC/WTS; bitpos: [18]; default: 0;
- *  ch18 enable
+#define SOC_ETM_CH_ENABLED17    (BIT(17))
+#define SOC_ETM_CH_ENABLED17_M  (SOC_ETM_CH_ENABLED17_V << SOC_ETM_CH_ENABLED17_S)
+#define SOC_ETM_CH_ENABLED17_V  0x00000001U
+#define SOC_ETM_CH_ENABLED17_S  17
+/** SOC_ETM_CH_ENABLED18 : R/WTC/SS; bitpos: [18]; default: 0;
+ *  Represents channel18 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA18    (BIT(18))
-#define SOC_ETM_CH_ENA18_M  (SOC_ETM_CH_ENA18_V << SOC_ETM_CH_ENA18_S)
-#define SOC_ETM_CH_ENA18_V  0x00000001U
-#define SOC_ETM_CH_ENA18_S  18
-/** SOC_ETM_CH_ENA19 : R/WTC/WTS; bitpos: [19]; default: 0;
- *  ch19 enable
+#define SOC_ETM_CH_ENABLED18    (BIT(18))
+#define SOC_ETM_CH_ENABLED18_M  (SOC_ETM_CH_ENABLED18_V << SOC_ETM_CH_ENABLED18_S)
+#define SOC_ETM_CH_ENABLED18_V  0x00000001U
+#define SOC_ETM_CH_ENABLED18_S  18
+/** SOC_ETM_CH_ENABLED19 : R/WTC/SS; bitpos: [19]; default: 0;
+ *  Represents channel19 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA19    (BIT(19))
-#define SOC_ETM_CH_ENA19_M  (SOC_ETM_CH_ENA19_V << SOC_ETM_CH_ENA19_S)
-#define SOC_ETM_CH_ENA19_V  0x00000001U
-#define SOC_ETM_CH_ENA19_S  19
-/** SOC_ETM_CH_ENA20 : R/WTC/WTS; bitpos: [20]; default: 0;
- *  ch20 enable
+#define SOC_ETM_CH_ENABLED19    (BIT(19))
+#define SOC_ETM_CH_ENABLED19_M  (SOC_ETM_CH_ENABLED19_V << SOC_ETM_CH_ENABLED19_S)
+#define SOC_ETM_CH_ENABLED19_V  0x00000001U
+#define SOC_ETM_CH_ENABLED19_S  19
+/** SOC_ETM_CH_ENABLED20 : R/WTC/SS; bitpos: [20]; default: 0;
+ *  Represents channel20 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA20    (BIT(20))
-#define SOC_ETM_CH_ENA20_M  (SOC_ETM_CH_ENA20_V << SOC_ETM_CH_ENA20_S)
-#define SOC_ETM_CH_ENA20_V  0x00000001U
-#define SOC_ETM_CH_ENA20_S  20
-/** SOC_ETM_CH_ENA21 : R/WTC/WTS; bitpos: [21]; default: 0;
- *  ch21 enable
+#define SOC_ETM_CH_ENABLED20    (BIT(20))
+#define SOC_ETM_CH_ENABLED20_M  (SOC_ETM_CH_ENABLED20_V << SOC_ETM_CH_ENABLED20_S)
+#define SOC_ETM_CH_ENABLED20_V  0x00000001U
+#define SOC_ETM_CH_ENABLED20_S  20
+/** SOC_ETM_CH_ENABLED21 : R/WTC/SS; bitpos: [21]; default: 0;
+ *  Represents channel21 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA21    (BIT(21))
-#define SOC_ETM_CH_ENA21_M  (SOC_ETM_CH_ENA21_V << SOC_ETM_CH_ENA21_S)
-#define SOC_ETM_CH_ENA21_V  0x00000001U
-#define SOC_ETM_CH_ENA21_S  21
-/** SOC_ETM_CH_ENA22 : R/WTC/WTS; bitpos: [22]; default: 0;
- *  ch22 enable
+#define SOC_ETM_CH_ENABLED21    (BIT(21))
+#define SOC_ETM_CH_ENABLED21_M  (SOC_ETM_CH_ENABLED21_V << SOC_ETM_CH_ENABLED21_S)
+#define SOC_ETM_CH_ENABLED21_V  0x00000001U
+#define SOC_ETM_CH_ENABLED21_S  21
+/** SOC_ETM_CH_ENABLED22 : R/WTC/SS; bitpos: [22]; default: 0;
+ *  Represents channel22 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA22    (BIT(22))
-#define SOC_ETM_CH_ENA22_M  (SOC_ETM_CH_ENA22_V << SOC_ETM_CH_ENA22_S)
-#define SOC_ETM_CH_ENA22_V  0x00000001U
-#define SOC_ETM_CH_ENA22_S  22
-/** SOC_ETM_CH_ENA23 : R/WTC/WTS; bitpos: [23]; default: 0;
- *  ch23 enable
+#define SOC_ETM_CH_ENABLED22    (BIT(22))
+#define SOC_ETM_CH_ENABLED22_M  (SOC_ETM_CH_ENABLED22_V << SOC_ETM_CH_ENABLED22_S)
+#define SOC_ETM_CH_ENABLED22_V  0x00000001U
+#define SOC_ETM_CH_ENABLED22_S  22
+/** SOC_ETM_CH_ENABLED23 : R/WTC/SS; bitpos: [23]; default: 0;
+ *  Represents channel23 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA23    (BIT(23))
-#define SOC_ETM_CH_ENA23_M  (SOC_ETM_CH_ENA23_V << SOC_ETM_CH_ENA23_S)
-#define SOC_ETM_CH_ENA23_V  0x00000001U
-#define SOC_ETM_CH_ENA23_S  23
-/** SOC_ETM_CH_ENA24 : R/WTC/WTS; bitpos: [24]; default: 0;
- *  ch24 enable
+#define SOC_ETM_CH_ENABLED23    (BIT(23))
+#define SOC_ETM_CH_ENABLED23_M  (SOC_ETM_CH_ENABLED23_V << SOC_ETM_CH_ENABLED23_S)
+#define SOC_ETM_CH_ENABLED23_V  0x00000001U
+#define SOC_ETM_CH_ENABLED23_S  23
+/** SOC_ETM_CH_ENABLED24 : R/WTC/SS; bitpos: [24]; default: 0;
+ *  Represents channel24 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA24    (BIT(24))
-#define SOC_ETM_CH_ENA24_M  (SOC_ETM_CH_ENA24_V << SOC_ETM_CH_ENA24_S)
-#define SOC_ETM_CH_ENA24_V  0x00000001U
-#define SOC_ETM_CH_ENA24_S  24
-/** SOC_ETM_CH_ENA25 : R/WTC/WTS; bitpos: [25]; default: 0;
- *  ch25 enable
+#define SOC_ETM_CH_ENABLED24    (BIT(24))
+#define SOC_ETM_CH_ENABLED24_M  (SOC_ETM_CH_ENABLED24_V << SOC_ETM_CH_ENABLED24_S)
+#define SOC_ETM_CH_ENABLED24_V  0x00000001U
+#define SOC_ETM_CH_ENABLED24_S  24
+/** SOC_ETM_CH_ENABLED25 : R/WTC/SS; bitpos: [25]; default: 0;
+ *  Represents channel25 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA25    (BIT(25))
-#define SOC_ETM_CH_ENA25_M  (SOC_ETM_CH_ENA25_V << SOC_ETM_CH_ENA25_S)
-#define SOC_ETM_CH_ENA25_V  0x00000001U
-#define SOC_ETM_CH_ENA25_S  25
-/** SOC_ETM_CH_ENA26 : R/WTC/WTS; bitpos: [26]; default: 0;
- *  ch26 enable
+#define SOC_ETM_CH_ENABLED25    (BIT(25))
+#define SOC_ETM_CH_ENABLED25_M  (SOC_ETM_CH_ENABLED25_V << SOC_ETM_CH_ENABLED25_S)
+#define SOC_ETM_CH_ENABLED25_V  0x00000001U
+#define SOC_ETM_CH_ENABLED25_S  25
+/** SOC_ETM_CH_ENABLED26 : R/WTC/SS; bitpos: [26]; default: 0;
+ *  Represents channel26 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA26    (BIT(26))
-#define SOC_ETM_CH_ENA26_M  (SOC_ETM_CH_ENA26_V << SOC_ETM_CH_ENA26_S)
-#define SOC_ETM_CH_ENA26_V  0x00000001U
-#define SOC_ETM_CH_ENA26_S  26
-/** SOC_ETM_CH_ENA27 : R/WTC/WTS; bitpos: [27]; default: 0;
- *  ch27 enable
+#define SOC_ETM_CH_ENABLED26    (BIT(26))
+#define SOC_ETM_CH_ENABLED26_M  (SOC_ETM_CH_ENABLED26_V << SOC_ETM_CH_ENABLED26_S)
+#define SOC_ETM_CH_ENABLED26_V  0x00000001U
+#define SOC_ETM_CH_ENABLED26_S  26
+/** SOC_ETM_CH_ENABLED27 : R/WTC/SS; bitpos: [27]; default: 0;
+ *  Represents channel27 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA27    (BIT(27))
-#define SOC_ETM_CH_ENA27_M  (SOC_ETM_CH_ENA27_V << SOC_ETM_CH_ENA27_S)
-#define SOC_ETM_CH_ENA27_V  0x00000001U
-#define SOC_ETM_CH_ENA27_S  27
-/** SOC_ETM_CH_ENA28 : R/WTC/WTS; bitpos: [28]; default: 0;
- *  ch28 enable
+#define SOC_ETM_CH_ENABLED27    (BIT(27))
+#define SOC_ETM_CH_ENABLED27_M  (SOC_ETM_CH_ENABLED27_V << SOC_ETM_CH_ENABLED27_S)
+#define SOC_ETM_CH_ENABLED27_V  0x00000001U
+#define SOC_ETM_CH_ENABLED27_S  27
+/** SOC_ETM_CH_ENABLED28 : R/WTC/SS; bitpos: [28]; default: 0;
+ *  Represents channel28 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA28    (BIT(28))
-#define SOC_ETM_CH_ENA28_M  (SOC_ETM_CH_ENA28_V << SOC_ETM_CH_ENA28_S)
-#define SOC_ETM_CH_ENA28_V  0x00000001U
-#define SOC_ETM_CH_ENA28_S  28
-/** SOC_ETM_CH_ENA29 : R/WTC/WTS; bitpos: [29]; default: 0;
- *  ch29 enable
+#define SOC_ETM_CH_ENABLED28    (BIT(28))
+#define SOC_ETM_CH_ENABLED28_M  (SOC_ETM_CH_ENABLED28_V << SOC_ETM_CH_ENABLED28_S)
+#define SOC_ETM_CH_ENABLED28_V  0x00000001U
+#define SOC_ETM_CH_ENABLED28_S  28
+/** SOC_ETM_CH_ENABLED29 : R/WTC/SS; bitpos: [29]; default: 0;
+ *  Represents channel29 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA29    (BIT(29))
-#define SOC_ETM_CH_ENA29_M  (SOC_ETM_CH_ENA29_V << SOC_ETM_CH_ENA29_S)
-#define SOC_ETM_CH_ENA29_V  0x00000001U
-#define SOC_ETM_CH_ENA29_S  29
-/** SOC_ETM_CH_ENA30 : R/WTC/WTS; bitpos: [30]; default: 0;
- *  ch30 enable
+#define SOC_ETM_CH_ENABLED29    (BIT(29))
+#define SOC_ETM_CH_ENABLED29_M  (SOC_ETM_CH_ENABLED29_V << SOC_ETM_CH_ENABLED29_S)
+#define SOC_ETM_CH_ENABLED29_V  0x00000001U
+#define SOC_ETM_CH_ENABLED29_S  29
+/** SOC_ETM_CH_ENABLED30 : R/WTC/SS; bitpos: [30]; default: 0;
+ *  Represents channel30 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA30    (BIT(30))
-#define SOC_ETM_CH_ENA30_M  (SOC_ETM_CH_ENA30_V << SOC_ETM_CH_ENA30_S)
-#define SOC_ETM_CH_ENA30_V  0x00000001U
-#define SOC_ETM_CH_ENA30_S  30
-/** SOC_ETM_CH_ENA31 : R/WTC/WTS; bitpos: [31]; default: 0;
- *  ch31 enable
+#define SOC_ETM_CH_ENABLED30    (BIT(30))
+#define SOC_ETM_CH_ENABLED30_M  (SOC_ETM_CH_ENABLED30_V << SOC_ETM_CH_ENABLED30_S)
+#define SOC_ETM_CH_ENABLED30_V  0x00000001U
+#define SOC_ETM_CH_ENABLED30_S  30
+/** SOC_ETM_CH_ENABLED31 : R/WTC/SS; bitpos: [31]; default: 0;
+ *  Represents channel31 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA31    (BIT(31))
-#define SOC_ETM_CH_ENA31_M  (SOC_ETM_CH_ENA31_V << SOC_ETM_CH_ENA31_S)
-#define SOC_ETM_CH_ENA31_V  0x00000001U
-#define SOC_ETM_CH_ENA31_S  31
+#define SOC_ETM_CH_ENABLED31    (BIT(31))
+#define SOC_ETM_CH_ENABLED31_M  (SOC_ETM_CH_ENABLED31_V << SOC_ETM_CH_ENABLED31_S)
+#define SOC_ETM_CH_ENABLED31_V  0x00000001U
+#define SOC_ETM_CH_ENABLED31_S  31
 
 /** SOC_ETM_CH_ENA_AD0_SET_REG register
- *  channel enable set register
+ *  Channel enable register
  */
-#define SOC_ETM_CH_ENA_AD0_SET_REG (DR_REG_SOC_BASE + 0x4)
-/** SOC_ETM_CH_SET0 : WT; bitpos: [0]; default: 0;
- *  ch0 set
+#define SOC_ETM_CH_ENA_AD0_SET_REG (DR_REG_SOC_ETM_BASE + 0x4)
+/** SOC_ETM_CH_ENABLE0 : WT; bitpos: [0]; default: 0;
+ *  Configures whether or not to enable channel0.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET0    (BIT(0))
-#define SOC_ETM_CH_SET0_M  (SOC_ETM_CH_SET0_V << SOC_ETM_CH_SET0_S)
-#define SOC_ETM_CH_SET0_V  0x00000001U
-#define SOC_ETM_CH_SET0_S  0
-/** SOC_ETM_CH_SET1 : WT; bitpos: [1]; default: 0;
- *  ch1 set
+#define SOC_ETM_CH_ENABLE0    (BIT(0))
+#define SOC_ETM_CH_ENABLE0_M  (SOC_ETM_CH_ENABLE0_V << SOC_ETM_CH_ENABLE0_S)
+#define SOC_ETM_CH_ENABLE0_V  0x00000001U
+#define SOC_ETM_CH_ENABLE0_S  0
+/** SOC_ETM_CH_ENABLE1 : WT; bitpos: [1]; default: 0;
+ *  Configures whether or not to enable channel1.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET1    (BIT(1))
-#define SOC_ETM_CH_SET1_M  (SOC_ETM_CH_SET1_V << SOC_ETM_CH_SET1_S)
-#define SOC_ETM_CH_SET1_V  0x00000001U
-#define SOC_ETM_CH_SET1_S  1
-/** SOC_ETM_CH_SET2 : WT; bitpos: [2]; default: 0;
- *  ch2 set
+#define SOC_ETM_CH_ENABLE1    (BIT(1))
+#define SOC_ETM_CH_ENABLE1_M  (SOC_ETM_CH_ENABLE1_V << SOC_ETM_CH_ENABLE1_S)
+#define SOC_ETM_CH_ENABLE1_V  0x00000001U
+#define SOC_ETM_CH_ENABLE1_S  1
+/** SOC_ETM_CH_ENABLE2 : WT; bitpos: [2]; default: 0;
+ *  Configures whether or not to enable channel2.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET2    (BIT(2))
-#define SOC_ETM_CH_SET2_M  (SOC_ETM_CH_SET2_V << SOC_ETM_CH_SET2_S)
-#define SOC_ETM_CH_SET2_V  0x00000001U
-#define SOC_ETM_CH_SET2_S  2
-/** SOC_ETM_CH_SET3 : WT; bitpos: [3]; default: 0;
- *  ch3 set
+#define SOC_ETM_CH_ENABLE2    (BIT(2))
+#define SOC_ETM_CH_ENABLE2_M  (SOC_ETM_CH_ENABLE2_V << SOC_ETM_CH_ENABLE2_S)
+#define SOC_ETM_CH_ENABLE2_V  0x00000001U
+#define SOC_ETM_CH_ENABLE2_S  2
+/** SOC_ETM_CH_ENABLE3 : WT; bitpos: [3]; default: 0;
+ *  Configures whether or not to enable channel3.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET3    (BIT(3))
-#define SOC_ETM_CH_SET3_M  (SOC_ETM_CH_SET3_V << SOC_ETM_CH_SET3_S)
-#define SOC_ETM_CH_SET3_V  0x00000001U
-#define SOC_ETM_CH_SET3_S  3
-/** SOC_ETM_CH_SET4 : WT; bitpos: [4]; default: 0;
- *  ch4 set
+#define SOC_ETM_CH_ENABLE3    (BIT(3))
+#define SOC_ETM_CH_ENABLE3_M  (SOC_ETM_CH_ENABLE3_V << SOC_ETM_CH_ENABLE3_S)
+#define SOC_ETM_CH_ENABLE3_V  0x00000001U
+#define SOC_ETM_CH_ENABLE3_S  3
+/** SOC_ETM_CH_ENABLE4 : WT; bitpos: [4]; default: 0;
+ *  Configures whether or not to enable channel4.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET4    (BIT(4))
-#define SOC_ETM_CH_SET4_M  (SOC_ETM_CH_SET4_V << SOC_ETM_CH_SET4_S)
-#define SOC_ETM_CH_SET4_V  0x00000001U
-#define SOC_ETM_CH_SET4_S  4
-/** SOC_ETM_CH_SET5 : WT; bitpos: [5]; default: 0;
- *  ch5 set
+#define SOC_ETM_CH_ENABLE4    (BIT(4))
+#define SOC_ETM_CH_ENABLE4_M  (SOC_ETM_CH_ENABLE4_V << SOC_ETM_CH_ENABLE4_S)
+#define SOC_ETM_CH_ENABLE4_V  0x00000001U
+#define SOC_ETM_CH_ENABLE4_S  4
+/** SOC_ETM_CH_ENABLE5 : WT; bitpos: [5]; default: 0;
+ *  Configures whether or not to enable channel5.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET5    (BIT(5))
-#define SOC_ETM_CH_SET5_M  (SOC_ETM_CH_SET5_V << SOC_ETM_CH_SET5_S)
-#define SOC_ETM_CH_SET5_V  0x00000001U
-#define SOC_ETM_CH_SET5_S  5
-/** SOC_ETM_CH_SET6 : WT; bitpos: [6]; default: 0;
- *  ch6 set
+#define SOC_ETM_CH_ENABLE5    (BIT(5))
+#define SOC_ETM_CH_ENABLE5_M  (SOC_ETM_CH_ENABLE5_V << SOC_ETM_CH_ENABLE5_S)
+#define SOC_ETM_CH_ENABLE5_V  0x00000001U
+#define SOC_ETM_CH_ENABLE5_S  5
+/** SOC_ETM_CH_ENABLE6 : WT; bitpos: [6]; default: 0;
+ *  Configures whether or not to enable channel6.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET6    (BIT(6))
-#define SOC_ETM_CH_SET6_M  (SOC_ETM_CH_SET6_V << SOC_ETM_CH_SET6_S)
-#define SOC_ETM_CH_SET6_V  0x00000001U
-#define SOC_ETM_CH_SET6_S  6
-/** SOC_ETM_CH_SET7 : WT; bitpos: [7]; default: 0;
- *  ch7 set
+#define SOC_ETM_CH_ENABLE6    (BIT(6))
+#define SOC_ETM_CH_ENABLE6_M  (SOC_ETM_CH_ENABLE6_V << SOC_ETM_CH_ENABLE6_S)
+#define SOC_ETM_CH_ENABLE6_V  0x00000001U
+#define SOC_ETM_CH_ENABLE6_S  6
+/** SOC_ETM_CH_ENABLE7 : WT; bitpos: [7]; default: 0;
+ *  Configures whether or not to enable channel7.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET7    (BIT(7))
-#define SOC_ETM_CH_SET7_M  (SOC_ETM_CH_SET7_V << SOC_ETM_CH_SET7_S)
-#define SOC_ETM_CH_SET7_V  0x00000001U
-#define SOC_ETM_CH_SET7_S  7
-/** SOC_ETM_CH_SET8 : WT; bitpos: [8]; default: 0;
- *  ch8 set
+#define SOC_ETM_CH_ENABLE7    (BIT(7))
+#define SOC_ETM_CH_ENABLE7_M  (SOC_ETM_CH_ENABLE7_V << SOC_ETM_CH_ENABLE7_S)
+#define SOC_ETM_CH_ENABLE7_V  0x00000001U
+#define SOC_ETM_CH_ENABLE7_S  7
+/** SOC_ETM_CH_ENABLE8 : WT; bitpos: [8]; default: 0;
+ *  Configures whether or not to enable channel8.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET8    (BIT(8))
-#define SOC_ETM_CH_SET8_M  (SOC_ETM_CH_SET8_V << SOC_ETM_CH_SET8_S)
-#define SOC_ETM_CH_SET8_V  0x00000001U
-#define SOC_ETM_CH_SET8_S  8
-/** SOC_ETM_CH_SET9 : WT; bitpos: [9]; default: 0;
- *  ch9 set
+#define SOC_ETM_CH_ENABLE8    (BIT(8))
+#define SOC_ETM_CH_ENABLE8_M  (SOC_ETM_CH_ENABLE8_V << SOC_ETM_CH_ENABLE8_S)
+#define SOC_ETM_CH_ENABLE8_V  0x00000001U
+#define SOC_ETM_CH_ENABLE8_S  8
+/** SOC_ETM_CH_ENABLE9 : WT; bitpos: [9]; default: 0;
+ *  Configures whether or not to enable channel9.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET9    (BIT(9))
-#define SOC_ETM_CH_SET9_M  (SOC_ETM_CH_SET9_V << SOC_ETM_CH_SET9_S)
-#define SOC_ETM_CH_SET9_V  0x00000001U
-#define SOC_ETM_CH_SET9_S  9
-/** SOC_ETM_CH_SET10 : WT; bitpos: [10]; default: 0;
- *  ch10 set
+#define SOC_ETM_CH_ENABLE9    (BIT(9))
+#define SOC_ETM_CH_ENABLE9_M  (SOC_ETM_CH_ENABLE9_V << SOC_ETM_CH_ENABLE9_S)
+#define SOC_ETM_CH_ENABLE9_V  0x00000001U
+#define SOC_ETM_CH_ENABLE9_S  9
+/** SOC_ETM_CH_ENABLE10 : WT; bitpos: [10]; default: 0;
+ *  Configures whether or not to enable channel10.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET10    (BIT(10))
-#define SOC_ETM_CH_SET10_M  (SOC_ETM_CH_SET10_V << SOC_ETM_CH_SET10_S)
-#define SOC_ETM_CH_SET10_V  0x00000001U
-#define SOC_ETM_CH_SET10_S  10
-/** SOC_ETM_CH_SET11 : WT; bitpos: [11]; default: 0;
- *  ch11 set
+#define SOC_ETM_CH_ENABLE10    (BIT(10))
+#define SOC_ETM_CH_ENABLE10_M  (SOC_ETM_CH_ENABLE10_V << SOC_ETM_CH_ENABLE10_S)
+#define SOC_ETM_CH_ENABLE10_V  0x00000001U
+#define SOC_ETM_CH_ENABLE10_S  10
+/** SOC_ETM_CH_ENABLE11 : WT; bitpos: [11]; default: 0;
+ *  Configures whether or not to enable channel11.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET11    (BIT(11))
-#define SOC_ETM_CH_SET11_M  (SOC_ETM_CH_SET11_V << SOC_ETM_CH_SET11_S)
-#define SOC_ETM_CH_SET11_V  0x00000001U
-#define SOC_ETM_CH_SET11_S  11
-/** SOC_ETM_CH_SET12 : WT; bitpos: [12]; default: 0;
- *  ch12 set
+#define SOC_ETM_CH_ENABLE11    (BIT(11))
+#define SOC_ETM_CH_ENABLE11_M  (SOC_ETM_CH_ENABLE11_V << SOC_ETM_CH_ENABLE11_S)
+#define SOC_ETM_CH_ENABLE11_V  0x00000001U
+#define SOC_ETM_CH_ENABLE11_S  11
+/** SOC_ETM_CH_ENABLE12 : WT; bitpos: [12]; default: 0;
+ *  Configures whether or not to enable channel12.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET12    (BIT(12))
-#define SOC_ETM_CH_SET12_M  (SOC_ETM_CH_SET12_V << SOC_ETM_CH_SET12_S)
-#define SOC_ETM_CH_SET12_V  0x00000001U
-#define SOC_ETM_CH_SET12_S  12
-/** SOC_ETM_CH_SET13 : WT; bitpos: [13]; default: 0;
- *  ch13 set
+#define SOC_ETM_CH_ENABLE12    (BIT(12))
+#define SOC_ETM_CH_ENABLE12_M  (SOC_ETM_CH_ENABLE12_V << SOC_ETM_CH_ENABLE12_S)
+#define SOC_ETM_CH_ENABLE12_V  0x00000001U
+#define SOC_ETM_CH_ENABLE12_S  12
+/** SOC_ETM_CH_ENABLE13 : WT; bitpos: [13]; default: 0;
+ *  Configures whether or not to enable channel13.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET13    (BIT(13))
-#define SOC_ETM_CH_SET13_M  (SOC_ETM_CH_SET13_V << SOC_ETM_CH_SET13_S)
-#define SOC_ETM_CH_SET13_V  0x00000001U
-#define SOC_ETM_CH_SET13_S  13
-/** SOC_ETM_CH_SET14 : WT; bitpos: [14]; default: 0;
- *  ch14 set
+#define SOC_ETM_CH_ENABLE13    (BIT(13))
+#define SOC_ETM_CH_ENABLE13_M  (SOC_ETM_CH_ENABLE13_V << SOC_ETM_CH_ENABLE13_S)
+#define SOC_ETM_CH_ENABLE13_V  0x00000001U
+#define SOC_ETM_CH_ENABLE13_S  13
+/** SOC_ETM_CH_ENABLE14 : WT; bitpos: [14]; default: 0;
+ *  Configures whether or not to enable channel14.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET14    (BIT(14))
-#define SOC_ETM_CH_SET14_M  (SOC_ETM_CH_SET14_V << SOC_ETM_CH_SET14_S)
-#define SOC_ETM_CH_SET14_V  0x00000001U
-#define SOC_ETM_CH_SET14_S  14
-/** SOC_ETM_CH_SET15 : WT; bitpos: [15]; default: 0;
- *  ch15 set
+#define SOC_ETM_CH_ENABLE14    (BIT(14))
+#define SOC_ETM_CH_ENABLE14_M  (SOC_ETM_CH_ENABLE14_V << SOC_ETM_CH_ENABLE14_S)
+#define SOC_ETM_CH_ENABLE14_V  0x00000001U
+#define SOC_ETM_CH_ENABLE14_S  14
+/** SOC_ETM_CH_ENABLE15 : WT; bitpos: [15]; default: 0;
+ *  Configures whether or not to enable channel15.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET15    (BIT(15))
-#define SOC_ETM_CH_SET15_M  (SOC_ETM_CH_SET15_V << SOC_ETM_CH_SET15_S)
-#define SOC_ETM_CH_SET15_V  0x00000001U
-#define SOC_ETM_CH_SET15_S  15
-/** SOC_ETM_CH_SET16 : WT; bitpos: [16]; default: 0;
- *  ch16 set
+#define SOC_ETM_CH_ENABLE15    (BIT(15))
+#define SOC_ETM_CH_ENABLE15_M  (SOC_ETM_CH_ENABLE15_V << SOC_ETM_CH_ENABLE15_S)
+#define SOC_ETM_CH_ENABLE15_V  0x00000001U
+#define SOC_ETM_CH_ENABLE15_S  15
+/** SOC_ETM_CH_ENABLE16 : WT; bitpos: [16]; default: 0;
+ *  Configures whether or not to enable channel16.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET16    (BIT(16))
-#define SOC_ETM_CH_SET16_M  (SOC_ETM_CH_SET16_V << SOC_ETM_CH_SET16_S)
-#define SOC_ETM_CH_SET16_V  0x00000001U
-#define SOC_ETM_CH_SET16_S  16
-/** SOC_ETM_CH_SET17 : WT; bitpos: [17]; default: 0;
- *  ch17 set
+#define SOC_ETM_CH_ENABLE16    (BIT(16))
+#define SOC_ETM_CH_ENABLE16_M  (SOC_ETM_CH_ENABLE16_V << SOC_ETM_CH_ENABLE16_S)
+#define SOC_ETM_CH_ENABLE16_V  0x00000001U
+#define SOC_ETM_CH_ENABLE16_S  16
+/** SOC_ETM_CH_ENABLE17 : WT; bitpos: [17]; default: 0;
+ *  Configures whether or not to enable channel17.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET17    (BIT(17))
-#define SOC_ETM_CH_SET17_M  (SOC_ETM_CH_SET17_V << SOC_ETM_CH_SET17_S)
-#define SOC_ETM_CH_SET17_V  0x00000001U
-#define SOC_ETM_CH_SET17_S  17
-/** SOC_ETM_CH_SET18 : WT; bitpos: [18]; default: 0;
- *  ch18 set
+#define SOC_ETM_CH_ENABLE17    (BIT(17))
+#define SOC_ETM_CH_ENABLE17_M  (SOC_ETM_CH_ENABLE17_V << SOC_ETM_CH_ENABLE17_S)
+#define SOC_ETM_CH_ENABLE17_V  0x00000001U
+#define SOC_ETM_CH_ENABLE17_S  17
+/** SOC_ETM_CH_ENABLE18 : WT; bitpos: [18]; default: 0;
+ *  Configures whether or not to enable channel18.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET18    (BIT(18))
-#define SOC_ETM_CH_SET18_M  (SOC_ETM_CH_SET18_V << SOC_ETM_CH_SET18_S)
-#define SOC_ETM_CH_SET18_V  0x00000001U
-#define SOC_ETM_CH_SET18_S  18
-/** SOC_ETM_CH_SET19 : WT; bitpos: [19]; default: 0;
- *  ch19 set
+#define SOC_ETM_CH_ENABLE18    (BIT(18))
+#define SOC_ETM_CH_ENABLE18_M  (SOC_ETM_CH_ENABLE18_V << SOC_ETM_CH_ENABLE18_S)
+#define SOC_ETM_CH_ENABLE18_V  0x00000001U
+#define SOC_ETM_CH_ENABLE18_S  18
+/** SOC_ETM_CH_ENABLE19 : WT; bitpos: [19]; default: 0;
+ *  Configures whether or not to enable channel19.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET19    (BIT(19))
-#define SOC_ETM_CH_SET19_M  (SOC_ETM_CH_SET19_V << SOC_ETM_CH_SET19_S)
-#define SOC_ETM_CH_SET19_V  0x00000001U
-#define SOC_ETM_CH_SET19_S  19
-/** SOC_ETM_CH_SET20 : WT; bitpos: [20]; default: 0;
- *  ch20 set
+#define SOC_ETM_CH_ENABLE19    (BIT(19))
+#define SOC_ETM_CH_ENABLE19_M  (SOC_ETM_CH_ENABLE19_V << SOC_ETM_CH_ENABLE19_S)
+#define SOC_ETM_CH_ENABLE19_V  0x00000001U
+#define SOC_ETM_CH_ENABLE19_S  19
+/** SOC_ETM_CH_ENABLE20 : WT; bitpos: [20]; default: 0;
+ *  Configures whether or not to enable channel20.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET20    (BIT(20))
-#define SOC_ETM_CH_SET20_M  (SOC_ETM_CH_SET20_V << SOC_ETM_CH_SET20_S)
-#define SOC_ETM_CH_SET20_V  0x00000001U
-#define SOC_ETM_CH_SET20_S  20
-/** SOC_ETM_CH_SET21 : WT; bitpos: [21]; default: 0;
- *  ch21 set
+#define SOC_ETM_CH_ENABLE20    (BIT(20))
+#define SOC_ETM_CH_ENABLE20_M  (SOC_ETM_CH_ENABLE20_V << SOC_ETM_CH_ENABLE20_S)
+#define SOC_ETM_CH_ENABLE20_V  0x00000001U
+#define SOC_ETM_CH_ENABLE20_S  20
+/** SOC_ETM_CH_ENABLE21 : WT; bitpos: [21]; default: 0;
+ *  Configures whether or not to enable channel21.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET21    (BIT(21))
-#define SOC_ETM_CH_SET21_M  (SOC_ETM_CH_SET21_V << SOC_ETM_CH_SET21_S)
-#define SOC_ETM_CH_SET21_V  0x00000001U
-#define SOC_ETM_CH_SET21_S  21
-/** SOC_ETM_CH_SET22 : WT; bitpos: [22]; default: 0;
- *  ch22 set
+#define SOC_ETM_CH_ENABLE21    (BIT(21))
+#define SOC_ETM_CH_ENABLE21_M  (SOC_ETM_CH_ENABLE21_V << SOC_ETM_CH_ENABLE21_S)
+#define SOC_ETM_CH_ENABLE21_V  0x00000001U
+#define SOC_ETM_CH_ENABLE21_S  21
+/** SOC_ETM_CH_ENABLE22 : WT; bitpos: [22]; default: 0;
+ *  Configures whether or not to enable channel22.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET22    (BIT(22))
-#define SOC_ETM_CH_SET22_M  (SOC_ETM_CH_SET22_V << SOC_ETM_CH_SET22_S)
-#define SOC_ETM_CH_SET22_V  0x00000001U
-#define SOC_ETM_CH_SET22_S  22
-/** SOC_ETM_CH_SET23 : WT; bitpos: [23]; default: 0;
- *  ch23 set
+#define SOC_ETM_CH_ENABLE22    (BIT(22))
+#define SOC_ETM_CH_ENABLE22_M  (SOC_ETM_CH_ENABLE22_V << SOC_ETM_CH_ENABLE22_S)
+#define SOC_ETM_CH_ENABLE22_V  0x00000001U
+#define SOC_ETM_CH_ENABLE22_S  22
+/** SOC_ETM_CH_ENABLE23 : WT; bitpos: [23]; default: 0;
+ *  Configures whether or not to enable channel23.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET23    (BIT(23))
-#define SOC_ETM_CH_SET23_M  (SOC_ETM_CH_SET23_V << SOC_ETM_CH_SET23_S)
-#define SOC_ETM_CH_SET23_V  0x00000001U
-#define SOC_ETM_CH_SET23_S  23
-/** SOC_ETM_CH_SET24 : WT; bitpos: [24]; default: 0;
- *  ch24 set
+#define SOC_ETM_CH_ENABLE23    (BIT(23))
+#define SOC_ETM_CH_ENABLE23_M  (SOC_ETM_CH_ENABLE23_V << SOC_ETM_CH_ENABLE23_S)
+#define SOC_ETM_CH_ENABLE23_V  0x00000001U
+#define SOC_ETM_CH_ENABLE23_S  23
+/** SOC_ETM_CH_ENABLE24 : WT; bitpos: [24]; default: 0;
+ *  Configures whether or not to enable channel24.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET24    (BIT(24))
-#define SOC_ETM_CH_SET24_M  (SOC_ETM_CH_SET24_V << SOC_ETM_CH_SET24_S)
-#define SOC_ETM_CH_SET24_V  0x00000001U
-#define SOC_ETM_CH_SET24_S  24
-/** SOC_ETM_CH_SET25 : WT; bitpos: [25]; default: 0;
- *  ch25 set
+#define SOC_ETM_CH_ENABLE24    (BIT(24))
+#define SOC_ETM_CH_ENABLE24_M  (SOC_ETM_CH_ENABLE24_V << SOC_ETM_CH_ENABLE24_S)
+#define SOC_ETM_CH_ENABLE24_V  0x00000001U
+#define SOC_ETM_CH_ENABLE24_S  24
+/** SOC_ETM_CH_ENABLE25 : WT; bitpos: [25]; default: 0;
+ *  Configures whether or not to enable channel25.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET25    (BIT(25))
-#define SOC_ETM_CH_SET25_M  (SOC_ETM_CH_SET25_V << SOC_ETM_CH_SET25_S)
-#define SOC_ETM_CH_SET25_V  0x00000001U
-#define SOC_ETM_CH_SET25_S  25
-/** SOC_ETM_CH_SET26 : WT; bitpos: [26]; default: 0;
- *  ch26 set
+#define SOC_ETM_CH_ENABLE25    (BIT(25))
+#define SOC_ETM_CH_ENABLE25_M  (SOC_ETM_CH_ENABLE25_V << SOC_ETM_CH_ENABLE25_S)
+#define SOC_ETM_CH_ENABLE25_V  0x00000001U
+#define SOC_ETM_CH_ENABLE25_S  25
+/** SOC_ETM_CH_ENABLE26 : WT; bitpos: [26]; default: 0;
+ *  Configures whether or not to enable channel26.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET26    (BIT(26))
-#define SOC_ETM_CH_SET26_M  (SOC_ETM_CH_SET26_V << SOC_ETM_CH_SET26_S)
-#define SOC_ETM_CH_SET26_V  0x00000001U
-#define SOC_ETM_CH_SET26_S  26
-/** SOC_ETM_CH_SET27 : WT; bitpos: [27]; default: 0;
- *  ch27 set
+#define SOC_ETM_CH_ENABLE26    (BIT(26))
+#define SOC_ETM_CH_ENABLE26_M  (SOC_ETM_CH_ENABLE26_V << SOC_ETM_CH_ENABLE26_S)
+#define SOC_ETM_CH_ENABLE26_V  0x00000001U
+#define SOC_ETM_CH_ENABLE26_S  26
+/** SOC_ETM_CH_ENABLE27 : WT; bitpos: [27]; default: 0;
+ *  Configures whether or not to enable channel27.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET27    (BIT(27))
-#define SOC_ETM_CH_SET27_M  (SOC_ETM_CH_SET27_V << SOC_ETM_CH_SET27_S)
-#define SOC_ETM_CH_SET27_V  0x00000001U
-#define SOC_ETM_CH_SET27_S  27
-/** SOC_ETM_CH_SET28 : WT; bitpos: [28]; default: 0;
- *  ch28 set
+#define SOC_ETM_CH_ENABLE27    (BIT(27))
+#define SOC_ETM_CH_ENABLE27_M  (SOC_ETM_CH_ENABLE27_V << SOC_ETM_CH_ENABLE27_S)
+#define SOC_ETM_CH_ENABLE27_V  0x00000001U
+#define SOC_ETM_CH_ENABLE27_S  27
+/** SOC_ETM_CH_ENABLE28 : WT; bitpos: [28]; default: 0;
+ *  Configures whether or not to enable channel28.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET28    (BIT(28))
-#define SOC_ETM_CH_SET28_M  (SOC_ETM_CH_SET28_V << SOC_ETM_CH_SET28_S)
-#define SOC_ETM_CH_SET28_V  0x00000001U
-#define SOC_ETM_CH_SET28_S  28
-/** SOC_ETM_CH_SET29 : WT; bitpos: [29]; default: 0;
- *  ch29 set
+#define SOC_ETM_CH_ENABLE28    (BIT(28))
+#define SOC_ETM_CH_ENABLE28_M  (SOC_ETM_CH_ENABLE28_V << SOC_ETM_CH_ENABLE28_S)
+#define SOC_ETM_CH_ENABLE28_V  0x00000001U
+#define SOC_ETM_CH_ENABLE28_S  28
+/** SOC_ETM_CH_ENABLE29 : WT; bitpos: [29]; default: 0;
+ *  Configures whether or not to enable channel29.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET29    (BIT(29))
-#define SOC_ETM_CH_SET29_M  (SOC_ETM_CH_SET29_V << SOC_ETM_CH_SET29_S)
-#define SOC_ETM_CH_SET29_V  0x00000001U
-#define SOC_ETM_CH_SET29_S  29
-/** SOC_ETM_CH_SET30 : WT; bitpos: [30]; default: 0;
- *  ch30 set
+#define SOC_ETM_CH_ENABLE29    (BIT(29))
+#define SOC_ETM_CH_ENABLE29_M  (SOC_ETM_CH_ENABLE29_V << SOC_ETM_CH_ENABLE29_S)
+#define SOC_ETM_CH_ENABLE29_V  0x00000001U
+#define SOC_ETM_CH_ENABLE29_S  29
+/** SOC_ETM_CH_ENABLE30 : WT; bitpos: [30]; default: 0;
+ *  Configures whether or not to enable channel30.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET30    (BIT(30))
-#define SOC_ETM_CH_SET30_M  (SOC_ETM_CH_SET30_V << SOC_ETM_CH_SET30_S)
-#define SOC_ETM_CH_SET30_V  0x00000001U
-#define SOC_ETM_CH_SET30_S  30
-/** SOC_ETM_CH_SET31 : WT; bitpos: [31]; default: 0;
- *  ch31 set
+#define SOC_ETM_CH_ENABLE30    (BIT(30))
+#define SOC_ETM_CH_ENABLE30_M  (SOC_ETM_CH_ENABLE30_V << SOC_ETM_CH_ENABLE30_S)
+#define SOC_ETM_CH_ENABLE30_V  0x00000001U
+#define SOC_ETM_CH_ENABLE30_S  30
+/** SOC_ETM_CH_ENABLE31 : WT; bitpos: [31]; default: 0;
+ *  Configures whether or not to enable channel31.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET31    (BIT(31))
-#define SOC_ETM_CH_SET31_M  (SOC_ETM_CH_SET31_V << SOC_ETM_CH_SET31_S)
-#define SOC_ETM_CH_SET31_V  0x00000001U
-#define SOC_ETM_CH_SET31_S  31
+#define SOC_ETM_CH_ENABLE31    (BIT(31))
+#define SOC_ETM_CH_ENABLE31_M  (SOC_ETM_CH_ENABLE31_V << SOC_ETM_CH_ENABLE31_S)
+#define SOC_ETM_CH_ENABLE31_V  0x00000001U
+#define SOC_ETM_CH_ENABLE31_S  31
 
 /** SOC_ETM_CH_ENA_AD0_CLR_REG register
- *  channel enable clear register
+ *  Channel disable register
  */
-#define SOC_ETM_CH_ENA_AD0_CLR_REG (DR_REG_SOC_BASE + 0x8)
-/** SOC_ETM_CH_CLR0 : WT; bitpos: [0]; default: 0;
- *  ch0 clear
+#define SOC_ETM_CH_ENA_AD0_CLR_REG (DR_REG_SOC_ETM_BASE + 0x8)
+/** SOC_ETM_CH_DISABLE0 : WT; bitpos: [0]; default: 0;
+ *  Configures whether or not to disable channel0.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR0    (BIT(0))
-#define SOC_ETM_CH_CLR0_M  (SOC_ETM_CH_CLR0_V << SOC_ETM_CH_CLR0_S)
-#define SOC_ETM_CH_CLR0_V  0x00000001U
-#define SOC_ETM_CH_CLR0_S  0
-/** SOC_ETM_CH_CLR1 : WT; bitpos: [1]; default: 0;
- *  ch1 clear
+#define SOC_ETM_CH_DISABLE0    (BIT(0))
+#define SOC_ETM_CH_DISABLE0_M  (SOC_ETM_CH_DISABLE0_V << SOC_ETM_CH_DISABLE0_S)
+#define SOC_ETM_CH_DISABLE0_V  0x00000001U
+#define SOC_ETM_CH_DISABLE0_S  0
+/** SOC_ETM_CH_DISABLE1 : WT; bitpos: [1]; default: 0;
+ *  Configures whether or not to disable channel1.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR1    (BIT(1))
-#define SOC_ETM_CH_CLR1_M  (SOC_ETM_CH_CLR1_V << SOC_ETM_CH_CLR1_S)
-#define SOC_ETM_CH_CLR1_V  0x00000001U
-#define SOC_ETM_CH_CLR1_S  1
-/** SOC_ETM_CH_CLR2 : WT; bitpos: [2]; default: 0;
- *  ch2 clear
+#define SOC_ETM_CH_DISABLE1    (BIT(1))
+#define SOC_ETM_CH_DISABLE1_M  (SOC_ETM_CH_DISABLE1_V << SOC_ETM_CH_DISABLE1_S)
+#define SOC_ETM_CH_DISABLE1_V  0x00000001U
+#define SOC_ETM_CH_DISABLE1_S  1
+/** SOC_ETM_CH_DISABLE2 : WT; bitpos: [2]; default: 0;
+ *  Configures whether or not to disable channel2.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR2    (BIT(2))
-#define SOC_ETM_CH_CLR2_M  (SOC_ETM_CH_CLR2_V << SOC_ETM_CH_CLR2_S)
-#define SOC_ETM_CH_CLR2_V  0x00000001U
-#define SOC_ETM_CH_CLR2_S  2
-/** SOC_ETM_CH_CLR3 : WT; bitpos: [3]; default: 0;
- *  ch3 clear
+#define SOC_ETM_CH_DISABLE2    (BIT(2))
+#define SOC_ETM_CH_DISABLE2_M  (SOC_ETM_CH_DISABLE2_V << SOC_ETM_CH_DISABLE2_S)
+#define SOC_ETM_CH_DISABLE2_V  0x00000001U
+#define SOC_ETM_CH_DISABLE2_S  2
+/** SOC_ETM_CH_DISABLE3 : WT; bitpos: [3]; default: 0;
+ *  Configures whether or not to disable channel3.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR3    (BIT(3))
-#define SOC_ETM_CH_CLR3_M  (SOC_ETM_CH_CLR3_V << SOC_ETM_CH_CLR3_S)
-#define SOC_ETM_CH_CLR3_V  0x00000001U
-#define SOC_ETM_CH_CLR3_S  3
-/** SOC_ETM_CH_CLR4 : WT; bitpos: [4]; default: 0;
- *  ch4 clear
+#define SOC_ETM_CH_DISABLE3    (BIT(3))
+#define SOC_ETM_CH_DISABLE3_M  (SOC_ETM_CH_DISABLE3_V << SOC_ETM_CH_DISABLE3_S)
+#define SOC_ETM_CH_DISABLE3_V  0x00000001U
+#define SOC_ETM_CH_DISABLE3_S  3
+/** SOC_ETM_CH_DISABLE4 : WT; bitpos: [4]; default: 0;
+ *  Configures whether or not to disable channel4.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR4    (BIT(4))
-#define SOC_ETM_CH_CLR4_M  (SOC_ETM_CH_CLR4_V << SOC_ETM_CH_CLR4_S)
-#define SOC_ETM_CH_CLR4_V  0x00000001U
-#define SOC_ETM_CH_CLR4_S  4
-/** SOC_ETM_CH_CLR5 : WT; bitpos: [5]; default: 0;
- *  ch5 clear
+#define SOC_ETM_CH_DISABLE4    (BIT(4))
+#define SOC_ETM_CH_DISABLE4_M  (SOC_ETM_CH_DISABLE4_V << SOC_ETM_CH_DISABLE4_S)
+#define SOC_ETM_CH_DISABLE4_V  0x00000001U
+#define SOC_ETM_CH_DISABLE4_S  4
+/** SOC_ETM_CH_DISABLE5 : WT; bitpos: [5]; default: 0;
+ *  Configures whether or not to disable channel5.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR5    (BIT(5))
-#define SOC_ETM_CH_CLR5_M  (SOC_ETM_CH_CLR5_V << SOC_ETM_CH_CLR5_S)
-#define SOC_ETM_CH_CLR5_V  0x00000001U
-#define SOC_ETM_CH_CLR5_S  5
-/** SOC_ETM_CH_CLR6 : WT; bitpos: [6]; default: 0;
- *  ch6 clear
+#define SOC_ETM_CH_DISABLE5    (BIT(5))
+#define SOC_ETM_CH_DISABLE5_M  (SOC_ETM_CH_DISABLE5_V << SOC_ETM_CH_DISABLE5_S)
+#define SOC_ETM_CH_DISABLE5_V  0x00000001U
+#define SOC_ETM_CH_DISABLE5_S  5
+/** SOC_ETM_CH_DISABLE6 : WT; bitpos: [6]; default: 0;
+ *  Configures whether or not to disable channel6.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR6    (BIT(6))
-#define SOC_ETM_CH_CLR6_M  (SOC_ETM_CH_CLR6_V << SOC_ETM_CH_CLR6_S)
-#define SOC_ETM_CH_CLR6_V  0x00000001U
-#define SOC_ETM_CH_CLR6_S  6
-/** SOC_ETM_CH_CLR7 : WT; bitpos: [7]; default: 0;
- *  ch7 clear
+#define SOC_ETM_CH_DISABLE6    (BIT(6))
+#define SOC_ETM_CH_DISABLE6_M  (SOC_ETM_CH_DISABLE6_V << SOC_ETM_CH_DISABLE6_S)
+#define SOC_ETM_CH_DISABLE6_V  0x00000001U
+#define SOC_ETM_CH_DISABLE6_S  6
+/** SOC_ETM_CH_DISABLE7 : WT; bitpos: [7]; default: 0;
+ *  Configures whether or not to disable channel7.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR7    (BIT(7))
-#define SOC_ETM_CH_CLR7_M  (SOC_ETM_CH_CLR7_V << SOC_ETM_CH_CLR7_S)
-#define SOC_ETM_CH_CLR7_V  0x00000001U
-#define SOC_ETM_CH_CLR7_S  7
-/** SOC_ETM_CH_CLR8 : WT; bitpos: [8]; default: 0;
- *  ch8 clear
+#define SOC_ETM_CH_DISABLE7    (BIT(7))
+#define SOC_ETM_CH_DISABLE7_M  (SOC_ETM_CH_DISABLE7_V << SOC_ETM_CH_DISABLE7_S)
+#define SOC_ETM_CH_DISABLE7_V  0x00000001U
+#define SOC_ETM_CH_DISABLE7_S  7
+/** SOC_ETM_CH_DISABLE8 : WT; bitpos: [8]; default: 0;
+ *  Configures whether or not to disable channel8.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR8    (BIT(8))
-#define SOC_ETM_CH_CLR8_M  (SOC_ETM_CH_CLR8_V << SOC_ETM_CH_CLR8_S)
-#define SOC_ETM_CH_CLR8_V  0x00000001U
-#define SOC_ETM_CH_CLR8_S  8
-/** SOC_ETM_CH_CLR9 : WT; bitpos: [9]; default: 0;
- *  ch9 clear
+#define SOC_ETM_CH_DISABLE8    (BIT(8))
+#define SOC_ETM_CH_DISABLE8_M  (SOC_ETM_CH_DISABLE8_V << SOC_ETM_CH_DISABLE8_S)
+#define SOC_ETM_CH_DISABLE8_V  0x00000001U
+#define SOC_ETM_CH_DISABLE8_S  8
+/** SOC_ETM_CH_DISABLE9 : WT; bitpos: [9]; default: 0;
+ *  Configures whether or not to disable channel9.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR9    (BIT(9))
-#define SOC_ETM_CH_CLR9_M  (SOC_ETM_CH_CLR9_V << SOC_ETM_CH_CLR9_S)
-#define SOC_ETM_CH_CLR9_V  0x00000001U
-#define SOC_ETM_CH_CLR9_S  9
-/** SOC_ETM_CH_CLR10 : WT; bitpos: [10]; default: 0;
- *  ch10 clear
+#define SOC_ETM_CH_DISABLE9    (BIT(9))
+#define SOC_ETM_CH_DISABLE9_M  (SOC_ETM_CH_DISABLE9_V << SOC_ETM_CH_DISABLE9_S)
+#define SOC_ETM_CH_DISABLE9_V  0x00000001U
+#define SOC_ETM_CH_DISABLE9_S  9
+/** SOC_ETM_CH_DISABLE10 : WT; bitpos: [10]; default: 0;
+ *  Configures whether or not to disable channel10.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR10    (BIT(10))
-#define SOC_ETM_CH_CLR10_M  (SOC_ETM_CH_CLR10_V << SOC_ETM_CH_CLR10_S)
-#define SOC_ETM_CH_CLR10_V  0x00000001U
-#define SOC_ETM_CH_CLR10_S  10
-/** SOC_ETM_CH_CLR11 : WT; bitpos: [11]; default: 0;
- *  ch11 clear
+#define SOC_ETM_CH_DISABLE10    (BIT(10))
+#define SOC_ETM_CH_DISABLE10_M  (SOC_ETM_CH_DISABLE10_V << SOC_ETM_CH_DISABLE10_S)
+#define SOC_ETM_CH_DISABLE10_V  0x00000001U
+#define SOC_ETM_CH_DISABLE10_S  10
+/** SOC_ETM_CH_DISABLE11 : WT; bitpos: [11]; default: 0;
+ *  Configures whether or not to disable channel11.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR11    (BIT(11))
-#define SOC_ETM_CH_CLR11_M  (SOC_ETM_CH_CLR11_V << SOC_ETM_CH_CLR11_S)
-#define SOC_ETM_CH_CLR11_V  0x00000001U
-#define SOC_ETM_CH_CLR11_S  11
-/** SOC_ETM_CH_CLR12 : WT; bitpos: [12]; default: 0;
- *  ch12 clear
+#define SOC_ETM_CH_DISABLE11    (BIT(11))
+#define SOC_ETM_CH_DISABLE11_M  (SOC_ETM_CH_DISABLE11_V << SOC_ETM_CH_DISABLE11_S)
+#define SOC_ETM_CH_DISABLE11_V  0x00000001U
+#define SOC_ETM_CH_DISABLE11_S  11
+/** SOC_ETM_CH_DISABLE12 : WT; bitpos: [12]; default: 0;
+ *  Configures whether or not to disable channel12.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR12    (BIT(12))
-#define SOC_ETM_CH_CLR12_M  (SOC_ETM_CH_CLR12_V << SOC_ETM_CH_CLR12_S)
-#define SOC_ETM_CH_CLR12_V  0x00000001U
-#define SOC_ETM_CH_CLR12_S  12
-/** SOC_ETM_CH_CLR13 : WT; bitpos: [13]; default: 0;
- *  ch13 clear
+#define SOC_ETM_CH_DISABLE12    (BIT(12))
+#define SOC_ETM_CH_DISABLE12_M  (SOC_ETM_CH_DISABLE12_V << SOC_ETM_CH_DISABLE12_S)
+#define SOC_ETM_CH_DISABLE12_V  0x00000001U
+#define SOC_ETM_CH_DISABLE12_S  12
+/** SOC_ETM_CH_DISABLE13 : WT; bitpos: [13]; default: 0;
+ *  Configures whether or not to disable channel13.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR13    (BIT(13))
-#define SOC_ETM_CH_CLR13_M  (SOC_ETM_CH_CLR13_V << SOC_ETM_CH_CLR13_S)
-#define SOC_ETM_CH_CLR13_V  0x00000001U
-#define SOC_ETM_CH_CLR13_S  13
-/** SOC_ETM_CH_CLR14 : WT; bitpos: [14]; default: 0;
- *  ch14 clear
+#define SOC_ETM_CH_DISABLE13    (BIT(13))
+#define SOC_ETM_CH_DISABLE13_M  (SOC_ETM_CH_DISABLE13_V << SOC_ETM_CH_DISABLE13_S)
+#define SOC_ETM_CH_DISABLE13_V  0x00000001U
+#define SOC_ETM_CH_DISABLE13_S  13
+/** SOC_ETM_CH_DISABLE14 : WT; bitpos: [14]; default: 0;
+ *  Configures whether or not to disable channel14.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR14    (BIT(14))
-#define SOC_ETM_CH_CLR14_M  (SOC_ETM_CH_CLR14_V << SOC_ETM_CH_CLR14_S)
-#define SOC_ETM_CH_CLR14_V  0x00000001U
-#define SOC_ETM_CH_CLR14_S  14
-/** SOC_ETM_CH_CLR15 : WT; bitpos: [15]; default: 0;
- *  ch15 clear
+#define SOC_ETM_CH_DISABLE14    (BIT(14))
+#define SOC_ETM_CH_DISABLE14_M  (SOC_ETM_CH_DISABLE14_V << SOC_ETM_CH_DISABLE14_S)
+#define SOC_ETM_CH_DISABLE14_V  0x00000001U
+#define SOC_ETM_CH_DISABLE14_S  14
+/** SOC_ETM_CH_DISABLE15 : WT; bitpos: [15]; default: 0;
+ *  Configures whether or not to disable channel15.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR15    (BIT(15))
-#define SOC_ETM_CH_CLR15_M  (SOC_ETM_CH_CLR15_V << SOC_ETM_CH_CLR15_S)
-#define SOC_ETM_CH_CLR15_V  0x00000001U
-#define SOC_ETM_CH_CLR15_S  15
-/** SOC_ETM_CH_CLR16 : WT; bitpos: [16]; default: 0;
- *  ch16 clear
+#define SOC_ETM_CH_DISABLE15    (BIT(15))
+#define SOC_ETM_CH_DISABLE15_M  (SOC_ETM_CH_DISABLE15_V << SOC_ETM_CH_DISABLE15_S)
+#define SOC_ETM_CH_DISABLE15_V  0x00000001U
+#define SOC_ETM_CH_DISABLE15_S  15
+/** SOC_ETM_CH_DISABLE16 : WT; bitpos: [16]; default: 0;
+ *  Configures whether or not to disable channel16.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR16    (BIT(16))
-#define SOC_ETM_CH_CLR16_M  (SOC_ETM_CH_CLR16_V << SOC_ETM_CH_CLR16_S)
-#define SOC_ETM_CH_CLR16_V  0x00000001U
-#define SOC_ETM_CH_CLR16_S  16
-/** SOC_ETM_CH_CLR17 : WT; bitpos: [17]; default: 0;
- *  ch17 clear
+#define SOC_ETM_CH_DISABLE16    (BIT(16))
+#define SOC_ETM_CH_DISABLE16_M  (SOC_ETM_CH_DISABLE16_V << SOC_ETM_CH_DISABLE16_S)
+#define SOC_ETM_CH_DISABLE16_V  0x00000001U
+#define SOC_ETM_CH_DISABLE16_S  16
+/** SOC_ETM_CH_DISABLE17 : WT; bitpos: [17]; default: 0;
+ *  Configures whether or not to disable channel17.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR17    (BIT(17))
-#define SOC_ETM_CH_CLR17_M  (SOC_ETM_CH_CLR17_V << SOC_ETM_CH_CLR17_S)
-#define SOC_ETM_CH_CLR17_V  0x00000001U
-#define SOC_ETM_CH_CLR17_S  17
-/** SOC_ETM_CH_CLR18 : WT; bitpos: [18]; default: 0;
- *  ch18 clear
+#define SOC_ETM_CH_DISABLE17    (BIT(17))
+#define SOC_ETM_CH_DISABLE17_M  (SOC_ETM_CH_DISABLE17_V << SOC_ETM_CH_DISABLE17_S)
+#define SOC_ETM_CH_DISABLE17_V  0x00000001U
+#define SOC_ETM_CH_DISABLE17_S  17
+/** SOC_ETM_CH_DISABLE18 : WT; bitpos: [18]; default: 0;
+ *  Configures whether or not to disable channel18.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR18    (BIT(18))
-#define SOC_ETM_CH_CLR18_M  (SOC_ETM_CH_CLR18_V << SOC_ETM_CH_CLR18_S)
-#define SOC_ETM_CH_CLR18_V  0x00000001U
-#define SOC_ETM_CH_CLR18_S  18
-/** SOC_ETM_CH_CLR19 : WT; bitpos: [19]; default: 0;
- *  ch19 clear
+#define SOC_ETM_CH_DISABLE18    (BIT(18))
+#define SOC_ETM_CH_DISABLE18_M  (SOC_ETM_CH_DISABLE18_V << SOC_ETM_CH_DISABLE18_S)
+#define SOC_ETM_CH_DISABLE18_V  0x00000001U
+#define SOC_ETM_CH_DISABLE18_S  18
+/** SOC_ETM_CH_DISABLE19 : WT; bitpos: [19]; default: 0;
+ *  Configures whether or not to disable channel19.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR19    (BIT(19))
-#define SOC_ETM_CH_CLR19_M  (SOC_ETM_CH_CLR19_V << SOC_ETM_CH_CLR19_S)
-#define SOC_ETM_CH_CLR19_V  0x00000001U
-#define SOC_ETM_CH_CLR19_S  19
-/** SOC_ETM_CH_CLR20 : WT; bitpos: [20]; default: 0;
- *  ch20 clear
+#define SOC_ETM_CH_DISABLE19    (BIT(19))
+#define SOC_ETM_CH_DISABLE19_M  (SOC_ETM_CH_DISABLE19_V << SOC_ETM_CH_DISABLE19_S)
+#define SOC_ETM_CH_DISABLE19_V  0x00000001U
+#define SOC_ETM_CH_DISABLE19_S  19
+/** SOC_ETM_CH_DISABLE20 : WT; bitpos: [20]; default: 0;
+ *  Configures whether or not to disable channel20.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR20    (BIT(20))
-#define SOC_ETM_CH_CLR20_M  (SOC_ETM_CH_CLR20_V << SOC_ETM_CH_CLR20_S)
-#define SOC_ETM_CH_CLR20_V  0x00000001U
-#define SOC_ETM_CH_CLR20_S  20
-/** SOC_ETM_CH_CLR21 : WT; bitpos: [21]; default: 0;
- *  ch21 clear
+#define SOC_ETM_CH_DISABLE20    (BIT(20))
+#define SOC_ETM_CH_DISABLE20_M  (SOC_ETM_CH_DISABLE20_V << SOC_ETM_CH_DISABLE20_S)
+#define SOC_ETM_CH_DISABLE20_V  0x00000001U
+#define SOC_ETM_CH_DISABLE20_S  20
+/** SOC_ETM_CH_DISABLE21 : WT; bitpos: [21]; default: 0;
+ *  Configures whether or not to disable channel21.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR21    (BIT(21))
-#define SOC_ETM_CH_CLR21_M  (SOC_ETM_CH_CLR21_V << SOC_ETM_CH_CLR21_S)
-#define SOC_ETM_CH_CLR21_V  0x00000001U
-#define SOC_ETM_CH_CLR21_S  21
-/** SOC_ETM_CH_CLR22 : WT; bitpos: [22]; default: 0;
- *  ch22 clear
+#define SOC_ETM_CH_DISABLE21    (BIT(21))
+#define SOC_ETM_CH_DISABLE21_M  (SOC_ETM_CH_DISABLE21_V << SOC_ETM_CH_DISABLE21_S)
+#define SOC_ETM_CH_DISABLE21_V  0x00000001U
+#define SOC_ETM_CH_DISABLE21_S  21
+/** SOC_ETM_CH_DISABLE22 : WT; bitpos: [22]; default: 0;
+ *  Configures whether or not to disable channel22.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR22    (BIT(22))
-#define SOC_ETM_CH_CLR22_M  (SOC_ETM_CH_CLR22_V << SOC_ETM_CH_CLR22_S)
-#define SOC_ETM_CH_CLR22_V  0x00000001U
-#define SOC_ETM_CH_CLR22_S  22
-/** SOC_ETM_CH_CLR23 : WT; bitpos: [23]; default: 0;
- *  ch23 clear
+#define SOC_ETM_CH_DISABLE22    (BIT(22))
+#define SOC_ETM_CH_DISABLE22_M  (SOC_ETM_CH_DISABLE22_V << SOC_ETM_CH_DISABLE22_S)
+#define SOC_ETM_CH_DISABLE22_V  0x00000001U
+#define SOC_ETM_CH_DISABLE22_S  22
+/** SOC_ETM_CH_DISABLE23 : WT; bitpos: [23]; default: 0;
+ *  Configures whether or not to disable channel23.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR23    (BIT(23))
-#define SOC_ETM_CH_CLR23_M  (SOC_ETM_CH_CLR23_V << SOC_ETM_CH_CLR23_S)
-#define SOC_ETM_CH_CLR23_V  0x00000001U
-#define SOC_ETM_CH_CLR23_S  23
-/** SOC_ETM_CH_CLR24 : WT; bitpos: [24]; default: 0;
- *  ch24 clear
+#define SOC_ETM_CH_DISABLE23    (BIT(23))
+#define SOC_ETM_CH_DISABLE23_M  (SOC_ETM_CH_DISABLE23_V << SOC_ETM_CH_DISABLE23_S)
+#define SOC_ETM_CH_DISABLE23_V  0x00000001U
+#define SOC_ETM_CH_DISABLE23_S  23
+/** SOC_ETM_CH_DISABLE24 : WT; bitpos: [24]; default: 0;
+ *  Configures whether or not to disable channel24.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR24    (BIT(24))
-#define SOC_ETM_CH_CLR24_M  (SOC_ETM_CH_CLR24_V << SOC_ETM_CH_CLR24_S)
-#define SOC_ETM_CH_CLR24_V  0x00000001U
-#define SOC_ETM_CH_CLR24_S  24
-/** SOC_ETM_CH_CLR25 : WT; bitpos: [25]; default: 0;
- *  ch25 clear
+#define SOC_ETM_CH_DISABLE24    (BIT(24))
+#define SOC_ETM_CH_DISABLE24_M  (SOC_ETM_CH_DISABLE24_V << SOC_ETM_CH_DISABLE24_S)
+#define SOC_ETM_CH_DISABLE24_V  0x00000001U
+#define SOC_ETM_CH_DISABLE24_S  24
+/** SOC_ETM_CH_DISABLE25 : WT; bitpos: [25]; default: 0;
+ *  Configures whether or not to disable channel25.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR25    (BIT(25))
-#define SOC_ETM_CH_CLR25_M  (SOC_ETM_CH_CLR25_V << SOC_ETM_CH_CLR25_S)
-#define SOC_ETM_CH_CLR25_V  0x00000001U
-#define SOC_ETM_CH_CLR25_S  25
-/** SOC_ETM_CH_CLR26 : WT; bitpos: [26]; default: 0;
- *  ch26 clear
+#define SOC_ETM_CH_DISABLE25    (BIT(25))
+#define SOC_ETM_CH_DISABLE25_M  (SOC_ETM_CH_DISABLE25_V << SOC_ETM_CH_DISABLE25_S)
+#define SOC_ETM_CH_DISABLE25_V  0x00000001U
+#define SOC_ETM_CH_DISABLE25_S  25
+/** SOC_ETM_CH_DISABLE26 : WT; bitpos: [26]; default: 0;
+ *  Configures whether or not to disable channel26.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR26    (BIT(26))
-#define SOC_ETM_CH_CLR26_M  (SOC_ETM_CH_CLR26_V << SOC_ETM_CH_CLR26_S)
-#define SOC_ETM_CH_CLR26_V  0x00000001U
-#define SOC_ETM_CH_CLR26_S  26
-/** SOC_ETM_CH_CLR27 : WT; bitpos: [27]; default: 0;
- *  ch27 clear
+#define SOC_ETM_CH_DISABLE26    (BIT(26))
+#define SOC_ETM_CH_DISABLE26_M  (SOC_ETM_CH_DISABLE26_V << SOC_ETM_CH_DISABLE26_S)
+#define SOC_ETM_CH_DISABLE26_V  0x00000001U
+#define SOC_ETM_CH_DISABLE26_S  26
+/** SOC_ETM_CH_DISABLE27 : WT; bitpos: [27]; default: 0;
+ *  Configures whether or not to disable channel27.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR27    (BIT(27))
-#define SOC_ETM_CH_CLR27_M  (SOC_ETM_CH_CLR27_V << SOC_ETM_CH_CLR27_S)
-#define SOC_ETM_CH_CLR27_V  0x00000001U
-#define SOC_ETM_CH_CLR27_S  27
-/** SOC_ETM_CH_CLR28 : WT; bitpos: [28]; default: 0;
- *  ch28 clear
+#define SOC_ETM_CH_DISABLE27    (BIT(27))
+#define SOC_ETM_CH_DISABLE27_M  (SOC_ETM_CH_DISABLE27_V << SOC_ETM_CH_DISABLE27_S)
+#define SOC_ETM_CH_DISABLE27_V  0x00000001U
+#define SOC_ETM_CH_DISABLE27_S  27
+/** SOC_ETM_CH_DISABLE28 : WT; bitpos: [28]; default: 0;
+ *  Configures whether or not to disable channel28.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR28    (BIT(28))
-#define SOC_ETM_CH_CLR28_M  (SOC_ETM_CH_CLR28_V << SOC_ETM_CH_CLR28_S)
-#define SOC_ETM_CH_CLR28_V  0x00000001U
-#define SOC_ETM_CH_CLR28_S  28
-/** SOC_ETM_CH_CLR29 : WT; bitpos: [29]; default: 0;
- *  ch29 clear
+#define SOC_ETM_CH_DISABLE28    (BIT(28))
+#define SOC_ETM_CH_DISABLE28_M  (SOC_ETM_CH_DISABLE28_V << SOC_ETM_CH_DISABLE28_S)
+#define SOC_ETM_CH_DISABLE28_V  0x00000001U
+#define SOC_ETM_CH_DISABLE28_S  28
+/** SOC_ETM_CH_DISABLE29 : WT; bitpos: [29]; default: 0;
+ *  Configures whether or not to disable channel29.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR29    (BIT(29))
-#define SOC_ETM_CH_CLR29_M  (SOC_ETM_CH_CLR29_V << SOC_ETM_CH_CLR29_S)
-#define SOC_ETM_CH_CLR29_V  0x00000001U
-#define SOC_ETM_CH_CLR29_S  29
-/** SOC_ETM_CH_CLR30 : WT; bitpos: [30]; default: 0;
- *  ch30 clear
+#define SOC_ETM_CH_DISABLE29    (BIT(29))
+#define SOC_ETM_CH_DISABLE29_M  (SOC_ETM_CH_DISABLE29_V << SOC_ETM_CH_DISABLE29_S)
+#define SOC_ETM_CH_DISABLE29_V  0x00000001U
+#define SOC_ETM_CH_DISABLE29_S  29
+/** SOC_ETM_CH_DISABLE30 : WT; bitpos: [30]; default: 0;
+ *  Configures whether or not to disable channel30.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR30    (BIT(30))
-#define SOC_ETM_CH_CLR30_M  (SOC_ETM_CH_CLR30_V << SOC_ETM_CH_CLR30_S)
-#define SOC_ETM_CH_CLR30_V  0x00000001U
-#define SOC_ETM_CH_CLR30_S  30
-/** SOC_ETM_CH_CLR31 : WT; bitpos: [31]; default: 0;
- *  ch31 clear
+#define SOC_ETM_CH_DISABLE30    (BIT(30))
+#define SOC_ETM_CH_DISABLE30_M  (SOC_ETM_CH_DISABLE30_V << SOC_ETM_CH_DISABLE30_S)
+#define SOC_ETM_CH_DISABLE30_V  0x00000001U
+#define SOC_ETM_CH_DISABLE30_S  30
+/** SOC_ETM_CH_DISABLE31 : WT; bitpos: [31]; default: 0;
+ *  Configures whether or not to disable channel31.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR31    (BIT(31))
-#define SOC_ETM_CH_CLR31_M  (SOC_ETM_CH_CLR31_V << SOC_ETM_CH_CLR31_S)
-#define SOC_ETM_CH_CLR31_V  0x00000001U
-#define SOC_ETM_CH_CLR31_S  31
+#define SOC_ETM_CH_DISABLE31    (BIT(31))
+#define SOC_ETM_CH_DISABLE31_M  (SOC_ETM_CH_DISABLE31_V << SOC_ETM_CH_DISABLE31_S)
+#define SOC_ETM_CH_DISABLE31_V  0x00000001U
+#define SOC_ETM_CH_DISABLE31_S  31
 
 /** SOC_ETM_CH_ENA_AD1_REG register
- *  channel enable register
+ *  Channel enable status register
  */
-#define SOC_ETM_CH_ENA_AD1_REG (DR_REG_SOC_BASE + 0xc)
-/** SOC_ETM_CH_ENA32 : R/WTC/WTS; bitpos: [0]; default: 0;
- *  ch32 enable
+#define SOC_ETM_CH_ENA_AD1_REG (DR_REG_SOC_ETM_BASE + 0xc)
+/** SOC_ETM_CH_ENABLED32 : R/WTC/SS; bitpos: [0]; default: 0;
+ *  Represents channel32 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA32    (BIT(0))
-#define SOC_ETM_CH_ENA32_M  (SOC_ETM_CH_ENA32_V << SOC_ETM_CH_ENA32_S)
-#define SOC_ETM_CH_ENA32_V  0x00000001U
-#define SOC_ETM_CH_ENA32_S  0
-/** SOC_ETM_CH_ENA33 : R/WTC/WTS; bitpos: [1]; default: 0;
- *  ch33 enable
+#define SOC_ETM_CH_ENABLED32    (BIT(0))
+#define SOC_ETM_CH_ENABLED32_M  (SOC_ETM_CH_ENABLED32_V << SOC_ETM_CH_ENABLED32_S)
+#define SOC_ETM_CH_ENABLED32_V  0x00000001U
+#define SOC_ETM_CH_ENABLED32_S  0
+/** SOC_ETM_CH_ENABLED33 : R/WTC/SS; bitpos: [1]; default: 0;
+ *  Represents channel33 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA33    (BIT(1))
-#define SOC_ETM_CH_ENA33_M  (SOC_ETM_CH_ENA33_V << SOC_ETM_CH_ENA33_S)
-#define SOC_ETM_CH_ENA33_V  0x00000001U
-#define SOC_ETM_CH_ENA33_S  1
-/** SOC_ETM_CH_ENA34 : R/WTC/WTS; bitpos: [2]; default: 0;
- *  ch34 enable
+#define SOC_ETM_CH_ENABLED33    (BIT(1))
+#define SOC_ETM_CH_ENABLED33_M  (SOC_ETM_CH_ENABLED33_V << SOC_ETM_CH_ENABLED33_S)
+#define SOC_ETM_CH_ENABLED33_V  0x00000001U
+#define SOC_ETM_CH_ENABLED33_S  1
+/** SOC_ETM_CH_ENABLED34 : R/WTC/SS; bitpos: [2]; default: 0;
+ *  Represents channel34 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA34    (BIT(2))
-#define SOC_ETM_CH_ENA34_M  (SOC_ETM_CH_ENA34_V << SOC_ETM_CH_ENA34_S)
-#define SOC_ETM_CH_ENA34_V  0x00000001U
-#define SOC_ETM_CH_ENA34_S  2
-/** SOC_ETM_CH_ENA35 : R/WTC/WTS; bitpos: [3]; default: 0;
- *  ch35 enable
+#define SOC_ETM_CH_ENABLED34    (BIT(2))
+#define SOC_ETM_CH_ENABLED34_M  (SOC_ETM_CH_ENABLED34_V << SOC_ETM_CH_ENABLED34_S)
+#define SOC_ETM_CH_ENABLED34_V  0x00000001U
+#define SOC_ETM_CH_ENABLED34_S  2
+/** SOC_ETM_CH_ENABLED35 : R/WTC/SS; bitpos: [3]; default: 0;
+ *  Represents channel35 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA35    (BIT(3))
-#define SOC_ETM_CH_ENA35_M  (SOC_ETM_CH_ENA35_V << SOC_ETM_CH_ENA35_S)
-#define SOC_ETM_CH_ENA35_V  0x00000001U
-#define SOC_ETM_CH_ENA35_S  3
-/** SOC_ETM_CH_ENA36 : R/WTC/WTS; bitpos: [4]; default: 0;
- *  ch36 enable
+#define SOC_ETM_CH_ENABLED35    (BIT(3))
+#define SOC_ETM_CH_ENABLED35_M  (SOC_ETM_CH_ENABLED35_V << SOC_ETM_CH_ENABLED35_S)
+#define SOC_ETM_CH_ENABLED35_V  0x00000001U
+#define SOC_ETM_CH_ENABLED35_S  3
+/** SOC_ETM_CH_ENABLED36 : R/WTC/SS; bitpos: [4]; default: 0;
+ *  Represents channel36 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA36    (BIT(4))
-#define SOC_ETM_CH_ENA36_M  (SOC_ETM_CH_ENA36_V << SOC_ETM_CH_ENA36_S)
-#define SOC_ETM_CH_ENA36_V  0x00000001U
-#define SOC_ETM_CH_ENA36_S  4
-/** SOC_ETM_CH_ENA37 : R/WTC/WTS; bitpos: [5]; default: 0;
- *  ch37 enable
+#define SOC_ETM_CH_ENABLED36    (BIT(4))
+#define SOC_ETM_CH_ENABLED36_M  (SOC_ETM_CH_ENABLED36_V << SOC_ETM_CH_ENABLED36_S)
+#define SOC_ETM_CH_ENABLED36_V  0x00000001U
+#define SOC_ETM_CH_ENABLED36_S  4
+/** SOC_ETM_CH_ENABLED37 : R/WTC/SS; bitpos: [5]; default: 0;
+ *  Represents channel37 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA37    (BIT(5))
-#define SOC_ETM_CH_ENA37_M  (SOC_ETM_CH_ENA37_V << SOC_ETM_CH_ENA37_S)
-#define SOC_ETM_CH_ENA37_V  0x00000001U
-#define SOC_ETM_CH_ENA37_S  5
-/** SOC_ETM_CH_ENA38 : R/WTC/WTS; bitpos: [6]; default: 0;
- *  ch38 enable
+#define SOC_ETM_CH_ENABLED37    (BIT(5))
+#define SOC_ETM_CH_ENABLED37_M  (SOC_ETM_CH_ENABLED37_V << SOC_ETM_CH_ENABLED37_S)
+#define SOC_ETM_CH_ENABLED37_V  0x00000001U
+#define SOC_ETM_CH_ENABLED37_S  5
+/** SOC_ETM_CH_ENABLED38 : R/WTC/SS; bitpos: [6]; default: 0;
+ *  Represents channel38 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA38    (BIT(6))
-#define SOC_ETM_CH_ENA38_M  (SOC_ETM_CH_ENA38_V << SOC_ETM_CH_ENA38_S)
-#define SOC_ETM_CH_ENA38_V  0x00000001U
-#define SOC_ETM_CH_ENA38_S  6
-/** SOC_ETM_CH_ENA39 : R/WTC/WTS; bitpos: [7]; default: 0;
- *  ch39 enable
+#define SOC_ETM_CH_ENABLED38    (BIT(6))
+#define SOC_ETM_CH_ENABLED38_M  (SOC_ETM_CH_ENABLED38_V << SOC_ETM_CH_ENABLED38_S)
+#define SOC_ETM_CH_ENABLED38_V  0x00000001U
+#define SOC_ETM_CH_ENABLED38_S  6
+/** SOC_ETM_CH_ENABLED39 : R/WTC/SS; bitpos: [7]; default: 0;
+ *  Represents channel39 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA39    (BIT(7))
-#define SOC_ETM_CH_ENA39_M  (SOC_ETM_CH_ENA39_V << SOC_ETM_CH_ENA39_S)
-#define SOC_ETM_CH_ENA39_V  0x00000001U
-#define SOC_ETM_CH_ENA39_S  7
-/** SOC_ETM_CH_ENA40 : R/WTC/WTS; bitpos: [8]; default: 0;
- *  ch40 enable
+#define SOC_ETM_CH_ENABLED39    (BIT(7))
+#define SOC_ETM_CH_ENABLED39_M  (SOC_ETM_CH_ENABLED39_V << SOC_ETM_CH_ENABLED39_S)
+#define SOC_ETM_CH_ENABLED39_V  0x00000001U
+#define SOC_ETM_CH_ENABLED39_S  7
+/** SOC_ETM_CH_ENABLED40 : R/WTC/SS; bitpos: [8]; default: 0;
+ *  Represents channel40 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA40    (BIT(8))
-#define SOC_ETM_CH_ENA40_M  (SOC_ETM_CH_ENA40_V << SOC_ETM_CH_ENA40_S)
-#define SOC_ETM_CH_ENA40_V  0x00000001U
-#define SOC_ETM_CH_ENA40_S  8
-/** SOC_ETM_CH_ENA41 : R/WTC/WTS; bitpos: [9]; default: 0;
- *  ch41 enable
+#define SOC_ETM_CH_ENABLED40    (BIT(8))
+#define SOC_ETM_CH_ENABLED40_M  (SOC_ETM_CH_ENABLED40_V << SOC_ETM_CH_ENABLED40_S)
+#define SOC_ETM_CH_ENABLED40_V  0x00000001U
+#define SOC_ETM_CH_ENABLED40_S  8
+/** SOC_ETM_CH_ENABLED41 : R/WTC/SS; bitpos: [9]; default: 0;
+ *  Represents channel41 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA41    (BIT(9))
-#define SOC_ETM_CH_ENA41_M  (SOC_ETM_CH_ENA41_V << SOC_ETM_CH_ENA41_S)
-#define SOC_ETM_CH_ENA41_V  0x00000001U
-#define SOC_ETM_CH_ENA41_S  9
-/** SOC_ETM_CH_ENA42 : R/WTC/WTS; bitpos: [10]; default: 0;
- *  ch42 enable
+#define SOC_ETM_CH_ENABLED41    (BIT(9))
+#define SOC_ETM_CH_ENABLED41_M  (SOC_ETM_CH_ENABLED41_V << SOC_ETM_CH_ENABLED41_S)
+#define SOC_ETM_CH_ENABLED41_V  0x00000001U
+#define SOC_ETM_CH_ENABLED41_S  9
+/** SOC_ETM_CH_ENABLED42 : R/WTC/SS; bitpos: [10]; default: 0;
+ *  Represents channel42 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA42    (BIT(10))
-#define SOC_ETM_CH_ENA42_M  (SOC_ETM_CH_ENA42_V << SOC_ETM_CH_ENA42_S)
-#define SOC_ETM_CH_ENA42_V  0x00000001U
-#define SOC_ETM_CH_ENA42_S  10
-/** SOC_ETM_CH_ENA43 : R/WTC/WTS; bitpos: [11]; default: 0;
- *  ch43 enable
+#define SOC_ETM_CH_ENABLED42    (BIT(10))
+#define SOC_ETM_CH_ENABLED42_M  (SOC_ETM_CH_ENABLED42_V << SOC_ETM_CH_ENABLED42_S)
+#define SOC_ETM_CH_ENABLED42_V  0x00000001U
+#define SOC_ETM_CH_ENABLED42_S  10
+/** SOC_ETM_CH_ENABLED43 : R/WTC/SS; bitpos: [11]; default: 0;
+ *  Represents channel43 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA43    (BIT(11))
-#define SOC_ETM_CH_ENA43_M  (SOC_ETM_CH_ENA43_V << SOC_ETM_CH_ENA43_S)
-#define SOC_ETM_CH_ENA43_V  0x00000001U
-#define SOC_ETM_CH_ENA43_S  11
-/** SOC_ETM_CH_ENA44 : R/WTC/WTS; bitpos: [12]; default: 0;
- *  ch44 enable
+#define SOC_ETM_CH_ENABLED43    (BIT(11))
+#define SOC_ETM_CH_ENABLED43_M  (SOC_ETM_CH_ENABLED43_V << SOC_ETM_CH_ENABLED43_S)
+#define SOC_ETM_CH_ENABLED43_V  0x00000001U
+#define SOC_ETM_CH_ENABLED43_S  11
+/** SOC_ETM_CH_ENABLED44 : R/WTC/SS; bitpos: [12]; default: 0;
+ *  Represents channel44 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA44    (BIT(12))
-#define SOC_ETM_CH_ENA44_M  (SOC_ETM_CH_ENA44_V << SOC_ETM_CH_ENA44_S)
-#define SOC_ETM_CH_ENA44_V  0x00000001U
-#define SOC_ETM_CH_ENA44_S  12
-/** SOC_ETM_CH_ENA45 : R/WTC/WTS; bitpos: [13]; default: 0;
- *  ch45 enable
+#define SOC_ETM_CH_ENABLED44    (BIT(12))
+#define SOC_ETM_CH_ENABLED44_M  (SOC_ETM_CH_ENABLED44_V << SOC_ETM_CH_ENABLED44_S)
+#define SOC_ETM_CH_ENABLED44_V  0x00000001U
+#define SOC_ETM_CH_ENABLED44_S  12
+/** SOC_ETM_CH_ENABLED45 : R/WTC/SS; bitpos: [13]; default: 0;
+ *  Represents channel45 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA45    (BIT(13))
-#define SOC_ETM_CH_ENA45_M  (SOC_ETM_CH_ENA45_V << SOC_ETM_CH_ENA45_S)
-#define SOC_ETM_CH_ENA45_V  0x00000001U
-#define SOC_ETM_CH_ENA45_S  13
-/** SOC_ETM_CH_ENA46 : R/WTC/WTS; bitpos: [14]; default: 0;
- *  ch46 enable
+#define SOC_ETM_CH_ENABLED45    (BIT(13))
+#define SOC_ETM_CH_ENABLED45_M  (SOC_ETM_CH_ENABLED45_V << SOC_ETM_CH_ENABLED45_S)
+#define SOC_ETM_CH_ENABLED45_V  0x00000001U
+#define SOC_ETM_CH_ENABLED45_S  13
+/** SOC_ETM_CH_ENABLED46 : R/WTC/SS; bitpos: [14]; default: 0;
+ *  Represents channel46 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA46    (BIT(14))
-#define SOC_ETM_CH_ENA46_M  (SOC_ETM_CH_ENA46_V << SOC_ETM_CH_ENA46_S)
-#define SOC_ETM_CH_ENA46_V  0x00000001U
-#define SOC_ETM_CH_ENA46_S  14
-/** SOC_ETM_CH_ENA47 : R/WTC/WTS; bitpos: [15]; default: 0;
- *  ch47 enable
+#define SOC_ETM_CH_ENABLED46    (BIT(14))
+#define SOC_ETM_CH_ENABLED46_M  (SOC_ETM_CH_ENABLED46_V << SOC_ETM_CH_ENABLED46_S)
+#define SOC_ETM_CH_ENABLED46_V  0x00000001U
+#define SOC_ETM_CH_ENABLED46_S  14
+/** SOC_ETM_CH_ENABLED47 : R/WTC/SS; bitpos: [15]; default: 0;
+ *  Represents channel47 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA47    (BIT(15))
-#define SOC_ETM_CH_ENA47_M  (SOC_ETM_CH_ENA47_V << SOC_ETM_CH_ENA47_S)
-#define SOC_ETM_CH_ENA47_V  0x00000001U
-#define SOC_ETM_CH_ENA47_S  15
-/** SOC_ETM_CH_ENA48 : R/WTC/WTS; bitpos: [16]; default: 0;
- *  ch48 enable
+#define SOC_ETM_CH_ENABLED47    (BIT(15))
+#define SOC_ETM_CH_ENABLED47_M  (SOC_ETM_CH_ENABLED47_V << SOC_ETM_CH_ENABLED47_S)
+#define SOC_ETM_CH_ENABLED47_V  0x00000001U
+#define SOC_ETM_CH_ENABLED47_S  15
+/** SOC_ETM_CH_ENABLED48 : R/WTC/SS; bitpos: [16]; default: 0;
+ *  Represents channel48 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA48    (BIT(16))
-#define SOC_ETM_CH_ENA48_M  (SOC_ETM_CH_ENA48_V << SOC_ETM_CH_ENA48_S)
-#define SOC_ETM_CH_ENA48_V  0x00000001U
-#define SOC_ETM_CH_ENA48_S  16
-/** SOC_ETM_CH_ENA49 : R/WTC/WTS; bitpos: [17]; default: 0;
- *  ch49 enable
+#define SOC_ETM_CH_ENABLED48    (BIT(16))
+#define SOC_ETM_CH_ENABLED48_M  (SOC_ETM_CH_ENABLED48_V << SOC_ETM_CH_ENABLED48_S)
+#define SOC_ETM_CH_ENABLED48_V  0x00000001U
+#define SOC_ETM_CH_ENABLED48_S  16
+/** SOC_ETM_CH_ENABLED49 : R/WTC/SS; bitpos: [17]; default: 0;
+ *  Represents channel49 enable status.
+ *  0: Disable
+ *  1: Enable
  */
-#define SOC_ETM_CH_ENA49    (BIT(17))
-#define SOC_ETM_CH_ENA49_M  (SOC_ETM_CH_ENA49_V << SOC_ETM_CH_ENA49_S)
-#define SOC_ETM_CH_ENA49_V  0x00000001U
-#define SOC_ETM_CH_ENA49_S  17
+#define SOC_ETM_CH_ENABLED49    (BIT(17))
+#define SOC_ETM_CH_ENABLED49_M  (SOC_ETM_CH_ENABLED49_V << SOC_ETM_CH_ENABLED49_S)
+#define SOC_ETM_CH_ENABLED49_V  0x00000001U
+#define SOC_ETM_CH_ENABLED49_S  17
 
 /** SOC_ETM_CH_ENA_AD1_SET_REG register
- *  channel enable set register
+ *  Channel enable register
  */
-#define SOC_ETM_CH_ENA_AD1_SET_REG (DR_REG_SOC_BASE + 0x10)
-/** SOC_ETM_CH_SET32 : WT; bitpos: [0]; default: 0;
- *  ch32 set
+#define SOC_ETM_CH_ENA_AD1_SET_REG (DR_REG_SOC_ETM_BASE + 0x10)
+/** SOC_ETM_CH_ENABLE32 : WT; bitpos: [0]; default: 0;
+ *  Configures whether or not to enable channel32.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET32    (BIT(0))
-#define SOC_ETM_CH_SET32_M  (SOC_ETM_CH_SET32_V << SOC_ETM_CH_SET32_S)
-#define SOC_ETM_CH_SET32_V  0x00000001U
-#define SOC_ETM_CH_SET32_S  0
-/** SOC_ETM_CH_SET33 : WT; bitpos: [1]; default: 0;
- *  ch33 set
+#define SOC_ETM_CH_ENABLE32    (BIT(0))
+#define SOC_ETM_CH_ENABLE32_M  (SOC_ETM_CH_ENABLE32_V << SOC_ETM_CH_ENABLE32_S)
+#define SOC_ETM_CH_ENABLE32_V  0x00000001U
+#define SOC_ETM_CH_ENABLE32_S  0
+/** SOC_ETM_CH_ENABLE33 : WT; bitpos: [1]; default: 0;
+ *  Configures whether or not to enable channel33.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET33    (BIT(1))
-#define SOC_ETM_CH_SET33_M  (SOC_ETM_CH_SET33_V << SOC_ETM_CH_SET33_S)
-#define SOC_ETM_CH_SET33_V  0x00000001U
-#define SOC_ETM_CH_SET33_S  1
-/** SOC_ETM_CH_SET34 : WT; bitpos: [2]; default: 0;
- *  ch34 set
+#define SOC_ETM_CH_ENABLE33    (BIT(1))
+#define SOC_ETM_CH_ENABLE33_M  (SOC_ETM_CH_ENABLE33_V << SOC_ETM_CH_ENABLE33_S)
+#define SOC_ETM_CH_ENABLE33_V  0x00000001U
+#define SOC_ETM_CH_ENABLE33_S  1
+/** SOC_ETM_CH_ENABLE34 : WT; bitpos: [2]; default: 0;
+ *  Configures whether or not to enable channel34.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET34    (BIT(2))
-#define SOC_ETM_CH_SET34_M  (SOC_ETM_CH_SET34_V << SOC_ETM_CH_SET34_S)
-#define SOC_ETM_CH_SET34_V  0x00000001U
-#define SOC_ETM_CH_SET34_S  2
-/** SOC_ETM_CH_SET35 : WT; bitpos: [3]; default: 0;
- *  ch35 set
+#define SOC_ETM_CH_ENABLE34    (BIT(2))
+#define SOC_ETM_CH_ENABLE34_M  (SOC_ETM_CH_ENABLE34_V << SOC_ETM_CH_ENABLE34_S)
+#define SOC_ETM_CH_ENABLE34_V  0x00000001U
+#define SOC_ETM_CH_ENABLE34_S  2
+/** SOC_ETM_CH_ENABLE35 : WT; bitpos: [3]; default: 0;
+ *  Configures whether or not to enable channel35.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET35    (BIT(3))
-#define SOC_ETM_CH_SET35_M  (SOC_ETM_CH_SET35_V << SOC_ETM_CH_SET35_S)
-#define SOC_ETM_CH_SET35_V  0x00000001U
-#define SOC_ETM_CH_SET35_S  3
-/** SOC_ETM_CH_SET36 : WT; bitpos: [4]; default: 0;
- *  ch36 set
+#define SOC_ETM_CH_ENABLE35    (BIT(3))
+#define SOC_ETM_CH_ENABLE35_M  (SOC_ETM_CH_ENABLE35_V << SOC_ETM_CH_ENABLE35_S)
+#define SOC_ETM_CH_ENABLE35_V  0x00000001U
+#define SOC_ETM_CH_ENABLE35_S  3
+/** SOC_ETM_CH_ENABLE36 : WT; bitpos: [4]; default: 0;
+ *  Configures whether or not to enable channel36.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET36    (BIT(4))
-#define SOC_ETM_CH_SET36_M  (SOC_ETM_CH_SET36_V << SOC_ETM_CH_SET36_S)
-#define SOC_ETM_CH_SET36_V  0x00000001U
-#define SOC_ETM_CH_SET36_S  4
-/** SOC_ETM_CH_SET37 : WT; bitpos: [5]; default: 0;
- *  ch37 set
+#define SOC_ETM_CH_ENABLE36    (BIT(4))
+#define SOC_ETM_CH_ENABLE36_M  (SOC_ETM_CH_ENABLE36_V << SOC_ETM_CH_ENABLE36_S)
+#define SOC_ETM_CH_ENABLE36_V  0x00000001U
+#define SOC_ETM_CH_ENABLE36_S  4
+/** SOC_ETM_CH_ENABLE37 : WT; bitpos: [5]; default: 0;
+ *  Configures whether or not to enable channel37.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET37    (BIT(5))
-#define SOC_ETM_CH_SET37_M  (SOC_ETM_CH_SET37_V << SOC_ETM_CH_SET37_S)
-#define SOC_ETM_CH_SET37_V  0x00000001U
-#define SOC_ETM_CH_SET37_S  5
-/** SOC_ETM_CH_SET38 : WT; bitpos: [6]; default: 0;
- *  ch38 set
+#define SOC_ETM_CH_ENABLE37    (BIT(5))
+#define SOC_ETM_CH_ENABLE37_M  (SOC_ETM_CH_ENABLE37_V << SOC_ETM_CH_ENABLE37_S)
+#define SOC_ETM_CH_ENABLE37_V  0x00000001U
+#define SOC_ETM_CH_ENABLE37_S  5
+/** SOC_ETM_CH_ENABLE38 : WT; bitpos: [6]; default: 0;
+ *  Configures whether or not to enable channel38.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET38    (BIT(6))
-#define SOC_ETM_CH_SET38_M  (SOC_ETM_CH_SET38_V << SOC_ETM_CH_SET38_S)
-#define SOC_ETM_CH_SET38_V  0x00000001U
-#define SOC_ETM_CH_SET38_S  6
-/** SOC_ETM_CH_SET39 : WT; bitpos: [7]; default: 0;
- *  ch39 set
+#define SOC_ETM_CH_ENABLE38    (BIT(6))
+#define SOC_ETM_CH_ENABLE38_M  (SOC_ETM_CH_ENABLE38_V << SOC_ETM_CH_ENABLE38_S)
+#define SOC_ETM_CH_ENABLE38_V  0x00000001U
+#define SOC_ETM_CH_ENABLE38_S  6
+/** SOC_ETM_CH_ENABLE39 : WT; bitpos: [7]; default: 0;
+ *  Configures whether or not to enable channel39.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET39    (BIT(7))
-#define SOC_ETM_CH_SET39_M  (SOC_ETM_CH_SET39_V << SOC_ETM_CH_SET39_S)
-#define SOC_ETM_CH_SET39_V  0x00000001U
-#define SOC_ETM_CH_SET39_S  7
-/** SOC_ETM_CH_SET40 : WT; bitpos: [8]; default: 0;
- *  ch40 set
+#define SOC_ETM_CH_ENABLE39    (BIT(7))
+#define SOC_ETM_CH_ENABLE39_M  (SOC_ETM_CH_ENABLE39_V << SOC_ETM_CH_ENABLE39_S)
+#define SOC_ETM_CH_ENABLE39_V  0x00000001U
+#define SOC_ETM_CH_ENABLE39_S  7
+/** SOC_ETM_CH_ENABLE40 : WT; bitpos: [8]; default: 0;
+ *  Configures whether or not to enable channel40.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET40    (BIT(8))
-#define SOC_ETM_CH_SET40_M  (SOC_ETM_CH_SET40_V << SOC_ETM_CH_SET40_S)
-#define SOC_ETM_CH_SET40_V  0x00000001U
-#define SOC_ETM_CH_SET40_S  8
-/** SOC_ETM_CH_SET41 : WT; bitpos: [9]; default: 0;
- *  ch41 set
+#define SOC_ETM_CH_ENABLE40    (BIT(8))
+#define SOC_ETM_CH_ENABLE40_M  (SOC_ETM_CH_ENABLE40_V << SOC_ETM_CH_ENABLE40_S)
+#define SOC_ETM_CH_ENABLE40_V  0x00000001U
+#define SOC_ETM_CH_ENABLE40_S  8
+/** SOC_ETM_CH_ENABLE41 : WT; bitpos: [9]; default: 0;
+ *  Configures whether or not to enable channel41.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET41    (BIT(9))
-#define SOC_ETM_CH_SET41_M  (SOC_ETM_CH_SET41_V << SOC_ETM_CH_SET41_S)
-#define SOC_ETM_CH_SET41_V  0x00000001U
-#define SOC_ETM_CH_SET41_S  9
-/** SOC_ETM_CH_SET42 : WT; bitpos: [10]; default: 0;
- *  ch42 set
+#define SOC_ETM_CH_ENABLE41    (BIT(9))
+#define SOC_ETM_CH_ENABLE41_M  (SOC_ETM_CH_ENABLE41_V << SOC_ETM_CH_ENABLE41_S)
+#define SOC_ETM_CH_ENABLE41_V  0x00000001U
+#define SOC_ETM_CH_ENABLE41_S  9
+/** SOC_ETM_CH_ENABLE42 : WT; bitpos: [10]; default: 0;
+ *  Configures whether or not to enable channel42.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET42    (BIT(10))
-#define SOC_ETM_CH_SET42_M  (SOC_ETM_CH_SET42_V << SOC_ETM_CH_SET42_S)
-#define SOC_ETM_CH_SET42_V  0x00000001U
-#define SOC_ETM_CH_SET42_S  10
-/** SOC_ETM_CH_SET43 : WT; bitpos: [11]; default: 0;
- *  ch43 set
+#define SOC_ETM_CH_ENABLE42    (BIT(10))
+#define SOC_ETM_CH_ENABLE42_M  (SOC_ETM_CH_ENABLE42_V << SOC_ETM_CH_ENABLE42_S)
+#define SOC_ETM_CH_ENABLE42_V  0x00000001U
+#define SOC_ETM_CH_ENABLE42_S  10
+/** SOC_ETM_CH_ENABLE43 : WT; bitpos: [11]; default: 0;
+ *  Configures whether or not to enable channel43.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET43    (BIT(11))
-#define SOC_ETM_CH_SET43_M  (SOC_ETM_CH_SET43_V << SOC_ETM_CH_SET43_S)
-#define SOC_ETM_CH_SET43_V  0x00000001U
-#define SOC_ETM_CH_SET43_S  11
-/** SOC_ETM_CH_SET44 : WT; bitpos: [12]; default: 0;
- *  ch44 set
+#define SOC_ETM_CH_ENABLE43    (BIT(11))
+#define SOC_ETM_CH_ENABLE43_M  (SOC_ETM_CH_ENABLE43_V << SOC_ETM_CH_ENABLE43_S)
+#define SOC_ETM_CH_ENABLE43_V  0x00000001U
+#define SOC_ETM_CH_ENABLE43_S  11
+/** SOC_ETM_CH_ENABLE44 : WT; bitpos: [12]; default: 0;
+ *  Configures whether or not to enable channel44.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET44    (BIT(12))
-#define SOC_ETM_CH_SET44_M  (SOC_ETM_CH_SET44_V << SOC_ETM_CH_SET44_S)
-#define SOC_ETM_CH_SET44_V  0x00000001U
-#define SOC_ETM_CH_SET44_S  12
-/** SOC_ETM_CH_SET45 : WT; bitpos: [13]; default: 0;
- *  ch45 set
+#define SOC_ETM_CH_ENABLE44    (BIT(12))
+#define SOC_ETM_CH_ENABLE44_M  (SOC_ETM_CH_ENABLE44_V << SOC_ETM_CH_ENABLE44_S)
+#define SOC_ETM_CH_ENABLE44_V  0x00000001U
+#define SOC_ETM_CH_ENABLE44_S  12
+/** SOC_ETM_CH_ENABLE45 : WT; bitpos: [13]; default: 0;
+ *  Configures whether or not to enable channel45.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET45    (BIT(13))
-#define SOC_ETM_CH_SET45_M  (SOC_ETM_CH_SET45_V << SOC_ETM_CH_SET45_S)
-#define SOC_ETM_CH_SET45_V  0x00000001U
-#define SOC_ETM_CH_SET45_S  13
-/** SOC_ETM_CH_SET46 : WT; bitpos: [14]; default: 0;
- *  ch46 set
+#define SOC_ETM_CH_ENABLE45    (BIT(13))
+#define SOC_ETM_CH_ENABLE45_M  (SOC_ETM_CH_ENABLE45_V << SOC_ETM_CH_ENABLE45_S)
+#define SOC_ETM_CH_ENABLE45_V  0x00000001U
+#define SOC_ETM_CH_ENABLE45_S  13
+/** SOC_ETM_CH_ENABLE46 : WT; bitpos: [14]; default: 0;
+ *  Configures whether or not to enable channel46.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET46    (BIT(14))
-#define SOC_ETM_CH_SET46_M  (SOC_ETM_CH_SET46_V << SOC_ETM_CH_SET46_S)
-#define SOC_ETM_CH_SET46_V  0x00000001U
-#define SOC_ETM_CH_SET46_S  14
-/** SOC_ETM_CH_SET47 : WT; bitpos: [15]; default: 0;
- *  ch47 set
+#define SOC_ETM_CH_ENABLE46    (BIT(14))
+#define SOC_ETM_CH_ENABLE46_M  (SOC_ETM_CH_ENABLE46_V << SOC_ETM_CH_ENABLE46_S)
+#define SOC_ETM_CH_ENABLE46_V  0x00000001U
+#define SOC_ETM_CH_ENABLE46_S  14
+/** SOC_ETM_CH_ENABLE47 : WT; bitpos: [15]; default: 0;
+ *  Configures whether or not to enable channel47.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET47    (BIT(15))
-#define SOC_ETM_CH_SET47_M  (SOC_ETM_CH_SET47_V << SOC_ETM_CH_SET47_S)
-#define SOC_ETM_CH_SET47_V  0x00000001U
-#define SOC_ETM_CH_SET47_S  15
-/** SOC_ETM_CH_SET48 : WT; bitpos: [16]; default: 0;
- *  ch48 set
+#define SOC_ETM_CH_ENABLE47    (BIT(15))
+#define SOC_ETM_CH_ENABLE47_M  (SOC_ETM_CH_ENABLE47_V << SOC_ETM_CH_ENABLE47_S)
+#define SOC_ETM_CH_ENABLE47_V  0x00000001U
+#define SOC_ETM_CH_ENABLE47_S  15
+/** SOC_ETM_CH_ENABLE48 : WT; bitpos: [16]; default: 0;
+ *  Configures whether or not to enable channel48.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET48    (BIT(16))
-#define SOC_ETM_CH_SET48_M  (SOC_ETM_CH_SET48_V << SOC_ETM_CH_SET48_S)
-#define SOC_ETM_CH_SET48_V  0x00000001U
-#define SOC_ETM_CH_SET48_S  16
-/** SOC_ETM_CH_SET49 : WT; bitpos: [17]; default: 0;
- *  ch49 set
+#define SOC_ETM_CH_ENABLE48    (BIT(16))
+#define SOC_ETM_CH_ENABLE48_M  (SOC_ETM_CH_ENABLE48_V << SOC_ETM_CH_ENABLE48_S)
+#define SOC_ETM_CH_ENABLE48_V  0x00000001U
+#define SOC_ETM_CH_ENABLE48_S  16
+/** SOC_ETM_CH_ENABLE49 : WT; bitpos: [17]; default: 0;
+ *  Configures whether or not to enable channel49.
+ *  0: Invalid. No effect
+ *  1: Enable
  */
-#define SOC_ETM_CH_SET49    (BIT(17))
-#define SOC_ETM_CH_SET49_M  (SOC_ETM_CH_SET49_V << SOC_ETM_CH_SET49_S)
-#define SOC_ETM_CH_SET49_V  0x00000001U
-#define SOC_ETM_CH_SET49_S  17
+#define SOC_ETM_CH_ENABLE49    (BIT(17))
+#define SOC_ETM_CH_ENABLE49_M  (SOC_ETM_CH_ENABLE49_V << SOC_ETM_CH_ENABLE49_S)
+#define SOC_ETM_CH_ENABLE49_V  0x00000001U
+#define SOC_ETM_CH_ENABLE49_S  17
 
 /** SOC_ETM_CH_ENA_AD1_CLR_REG register
- *  channel enable clear register
+ *  Channel disable register
  */
-#define SOC_ETM_CH_ENA_AD1_CLR_REG (DR_REG_SOC_BASE + 0x14)
-/** SOC_ETM_CH_CLR32 : WT; bitpos: [0]; default: 0;
- *  ch32 clear
+#define SOC_ETM_CH_ENA_AD1_CLR_REG (DR_REG_SOC_ETM_BASE + 0x14)
+/** SOC_ETM_CH_DISABLE32 : WT; bitpos: [0]; default: 0;
+ *  Configures whether or not to disable channel32.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR32    (BIT(0))
-#define SOC_ETM_CH_CLR32_M  (SOC_ETM_CH_CLR32_V << SOC_ETM_CH_CLR32_S)
-#define SOC_ETM_CH_CLR32_V  0x00000001U
-#define SOC_ETM_CH_CLR32_S  0
-/** SOC_ETM_CH_CLR33 : WT; bitpos: [1]; default: 0;
- *  ch33 clear
+#define SOC_ETM_CH_DISABLE32    (BIT(0))
+#define SOC_ETM_CH_DISABLE32_M  (SOC_ETM_CH_DISABLE32_V << SOC_ETM_CH_DISABLE32_S)
+#define SOC_ETM_CH_DISABLE32_V  0x00000001U
+#define SOC_ETM_CH_DISABLE32_S  0
+/** SOC_ETM_CH_DISABLE33 : WT; bitpos: [1]; default: 0;
+ *  Configures whether or not to disable channel33.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR33    (BIT(1))
-#define SOC_ETM_CH_CLR33_M  (SOC_ETM_CH_CLR33_V << SOC_ETM_CH_CLR33_S)
-#define SOC_ETM_CH_CLR33_V  0x00000001U
-#define SOC_ETM_CH_CLR33_S  1
-/** SOC_ETM_CH_CLR34 : WT; bitpos: [2]; default: 0;
- *  ch34 clear
+#define SOC_ETM_CH_DISABLE33    (BIT(1))
+#define SOC_ETM_CH_DISABLE33_M  (SOC_ETM_CH_DISABLE33_V << SOC_ETM_CH_DISABLE33_S)
+#define SOC_ETM_CH_DISABLE33_V  0x00000001U
+#define SOC_ETM_CH_DISABLE33_S  1
+/** SOC_ETM_CH_DISABLE34 : WT; bitpos: [2]; default: 0;
+ *  Configures whether or not to disable channel34.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR34    (BIT(2))
-#define SOC_ETM_CH_CLR34_M  (SOC_ETM_CH_CLR34_V << SOC_ETM_CH_CLR34_S)
-#define SOC_ETM_CH_CLR34_V  0x00000001U
-#define SOC_ETM_CH_CLR34_S  2
-/** SOC_ETM_CH_CLR35 : WT; bitpos: [3]; default: 0;
- *  ch35 clear
+#define SOC_ETM_CH_DISABLE34    (BIT(2))
+#define SOC_ETM_CH_DISABLE34_M  (SOC_ETM_CH_DISABLE34_V << SOC_ETM_CH_DISABLE34_S)
+#define SOC_ETM_CH_DISABLE34_V  0x00000001U
+#define SOC_ETM_CH_DISABLE34_S  2
+/** SOC_ETM_CH_DISABLE35 : WT; bitpos: [3]; default: 0;
+ *  Configures whether or not to disable channel35.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR35    (BIT(3))
-#define SOC_ETM_CH_CLR35_M  (SOC_ETM_CH_CLR35_V << SOC_ETM_CH_CLR35_S)
-#define SOC_ETM_CH_CLR35_V  0x00000001U
-#define SOC_ETM_CH_CLR35_S  3
-/** SOC_ETM_CH_CLR36 : WT; bitpos: [4]; default: 0;
- *  ch36 clear
+#define SOC_ETM_CH_DISABLE35    (BIT(3))
+#define SOC_ETM_CH_DISABLE35_M  (SOC_ETM_CH_DISABLE35_V << SOC_ETM_CH_DISABLE35_S)
+#define SOC_ETM_CH_DISABLE35_V  0x00000001U
+#define SOC_ETM_CH_DISABLE35_S  3
+/** SOC_ETM_CH_DISABLE36 : WT; bitpos: [4]; default: 0;
+ *  Configures whether or not to disable channel36.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR36    (BIT(4))
-#define SOC_ETM_CH_CLR36_M  (SOC_ETM_CH_CLR36_V << SOC_ETM_CH_CLR36_S)
-#define SOC_ETM_CH_CLR36_V  0x00000001U
-#define SOC_ETM_CH_CLR36_S  4
-/** SOC_ETM_CH_CLR37 : WT; bitpos: [5]; default: 0;
- *  ch37 clear
+#define SOC_ETM_CH_DISABLE36    (BIT(4))
+#define SOC_ETM_CH_DISABLE36_M  (SOC_ETM_CH_DISABLE36_V << SOC_ETM_CH_DISABLE36_S)
+#define SOC_ETM_CH_DISABLE36_V  0x00000001U
+#define SOC_ETM_CH_DISABLE36_S  4
+/** SOC_ETM_CH_DISABLE37 : WT; bitpos: [5]; default: 0;
+ *  Configures whether or not to disable channel37.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR37    (BIT(5))
-#define SOC_ETM_CH_CLR37_M  (SOC_ETM_CH_CLR37_V << SOC_ETM_CH_CLR37_S)
-#define SOC_ETM_CH_CLR37_V  0x00000001U
-#define SOC_ETM_CH_CLR37_S  5
-/** SOC_ETM_CH_CLR38 : WT; bitpos: [6]; default: 0;
- *  ch38 clear
+#define SOC_ETM_CH_DISABLE37    (BIT(5))
+#define SOC_ETM_CH_DISABLE37_M  (SOC_ETM_CH_DISABLE37_V << SOC_ETM_CH_DISABLE37_S)
+#define SOC_ETM_CH_DISABLE37_V  0x00000001U
+#define SOC_ETM_CH_DISABLE37_S  5
+/** SOC_ETM_CH_DISABLE38 : WT; bitpos: [6]; default: 0;
+ *  Configures whether or not to disable channel38.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR38    (BIT(6))
-#define SOC_ETM_CH_CLR38_M  (SOC_ETM_CH_CLR38_V << SOC_ETM_CH_CLR38_S)
-#define SOC_ETM_CH_CLR38_V  0x00000001U
-#define SOC_ETM_CH_CLR38_S  6
-/** SOC_ETM_CH_CLR39 : WT; bitpos: [7]; default: 0;
- *  ch39 clear
+#define SOC_ETM_CH_DISABLE38    (BIT(6))
+#define SOC_ETM_CH_DISABLE38_M  (SOC_ETM_CH_DISABLE38_V << SOC_ETM_CH_DISABLE38_S)
+#define SOC_ETM_CH_DISABLE38_V  0x00000001U
+#define SOC_ETM_CH_DISABLE38_S  6
+/** SOC_ETM_CH_DISABLE39 : WT; bitpos: [7]; default: 0;
+ *  Configures whether or not to disable channel39.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR39    (BIT(7))
-#define SOC_ETM_CH_CLR39_M  (SOC_ETM_CH_CLR39_V << SOC_ETM_CH_CLR39_S)
-#define SOC_ETM_CH_CLR39_V  0x00000001U
-#define SOC_ETM_CH_CLR39_S  7
-/** SOC_ETM_CH_CLR40 : WT; bitpos: [8]; default: 0;
- *  ch40 clear
+#define SOC_ETM_CH_DISABLE39    (BIT(7))
+#define SOC_ETM_CH_DISABLE39_M  (SOC_ETM_CH_DISABLE39_V << SOC_ETM_CH_DISABLE39_S)
+#define SOC_ETM_CH_DISABLE39_V  0x00000001U
+#define SOC_ETM_CH_DISABLE39_S  7
+/** SOC_ETM_CH_DISABLE40 : WT; bitpos: [8]; default: 0;
+ *  Configures whether or not to disable channel40.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR40    (BIT(8))
-#define SOC_ETM_CH_CLR40_M  (SOC_ETM_CH_CLR40_V << SOC_ETM_CH_CLR40_S)
-#define SOC_ETM_CH_CLR40_V  0x00000001U
-#define SOC_ETM_CH_CLR40_S  8
-/** SOC_ETM_CH_CLR41 : WT; bitpos: [9]; default: 0;
- *  ch41 clear
+#define SOC_ETM_CH_DISABLE40    (BIT(8))
+#define SOC_ETM_CH_DISABLE40_M  (SOC_ETM_CH_DISABLE40_V << SOC_ETM_CH_DISABLE40_S)
+#define SOC_ETM_CH_DISABLE40_V  0x00000001U
+#define SOC_ETM_CH_DISABLE40_S  8
+/** SOC_ETM_CH_DISABLE41 : WT; bitpos: [9]; default: 0;
+ *  Configures whether or not to disable channel41.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR41    (BIT(9))
-#define SOC_ETM_CH_CLR41_M  (SOC_ETM_CH_CLR41_V << SOC_ETM_CH_CLR41_S)
-#define SOC_ETM_CH_CLR41_V  0x00000001U
-#define SOC_ETM_CH_CLR41_S  9
-/** SOC_ETM_CH_CLR42 : WT; bitpos: [10]; default: 0;
- *  ch42 clear
+#define SOC_ETM_CH_DISABLE41    (BIT(9))
+#define SOC_ETM_CH_DISABLE41_M  (SOC_ETM_CH_DISABLE41_V << SOC_ETM_CH_DISABLE41_S)
+#define SOC_ETM_CH_DISABLE41_V  0x00000001U
+#define SOC_ETM_CH_DISABLE41_S  9
+/** SOC_ETM_CH_DISABLE42 : WT; bitpos: [10]; default: 0;
+ *  Configures whether or not to disable channel42.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR42    (BIT(10))
-#define SOC_ETM_CH_CLR42_M  (SOC_ETM_CH_CLR42_V << SOC_ETM_CH_CLR42_S)
-#define SOC_ETM_CH_CLR42_V  0x00000001U
-#define SOC_ETM_CH_CLR42_S  10
-/** SOC_ETM_CH_CLR43 : WT; bitpos: [11]; default: 0;
- *  ch43 clear
+#define SOC_ETM_CH_DISABLE42    (BIT(10))
+#define SOC_ETM_CH_DISABLE42_M  (SOC_ETM_CH_DISABLE42_V << SOC_ETM_CH_DISABLE42_S)
+#define SOC_ETM_CH_DISABLE42_V  0x00000001U
+#define SOC_ETM_CH_DISABLE42_S  10
+/** SOC_ETM_CH_DISABLE43 : WT; bitpos: [11]; default: 0;
+ *  Configures whether or not to disable channel43.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR43    (BIT(11))
-#define SOC_ETM_CH_CLR43_M  (SOC_ETM_CH_CLR43_V << SOC_ETM_CH_CLR43_S)
-#define SOC_ETM_CH_CLR43_V  0x00000001U
-#define SOC_ETM_CH_CLR43_S  11
-/** SOC_ETM_CH_CLR44 : WT; bitpos: [12]; default: 0;
- *  ch44 clear
+#define SOC_ETM_CH_DISABLE43    (BIT(11))
+#define SOC_ETM_CH_DISABLE43_M  (SOC_ETM_CH_DISABLE43_V << SOC_ETM_CH_DISABLE43_S)
+#define SOC_ETM_CH_DISABLE43_V  0x00000001U
+#define SOC_ETM_CH_DISABLE43_S  11
+/** SOC_ETM_CH_DISABLE44 : WT; bitpos: [12]; default: 0;
+ *  Configures whether or not to disable channel44.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR44    (BIT(12))
-#define SOC_ETM_CH_CLR44_M  (SOC_ETM_CH_CLR44_V << SOC_ETM_CH_CLR44_S)
-#define SOC_ETM_CH_CLR44_V  0x00000001U
-#define SOC_ETM_CH_CLR44_S  12
-/** SOC_ETM_CH_CLR45 : WT; bitpos: [13]; default: 0;
- *  ch45 clear
+#define SOC_ETM_CH_DISABLE44    (BIT(12))
+#define SOC_ETM_CH_DISABLE44_M  (SOC_ETM_CH_DISABLE44_V << SOC_ETM_CH_DISABLE44_S)
+#define SOC_ETM_CH_DISABLE44_V  0x00000001U
+#define SOC_ETM_CH_DISABLE44_S  12
+/** SOC_ETM_CH_DISABLE45 : WT; bitpos: [13]; default: 0;
+ *  Configures whether or not to disable channel45.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR45    (BIT(13))
-#define SOC_ETM_CH_CLR45_M  (SOC_ETM_CH_CLR45_V << SOC_ETM_CH_CLR45_S)
-#define SOC_ETM_CH_CLR45_V  0x00000001U
-#define SOC_ETM_CH_CLR45_S  13
-/** SOC_ETM_CH_CLR46 : WT; bitpos: [14]; default: 0;
- *  ch46 clear
+#define SOC_ETM_CH_DISABLE45    (BIT(13))
+#define SOC_ETM_CH_DISABLE45_M  (SOC_ETM_CH_DISABLE45_V << SOC_ETM_CH_DISABLE45_S)
+#define SOC_ETM_CH_DISABLE45_V  0x00000001U
+#define SOC_ETM_CH_DISABLE45_S  13
+/** SOC_ETM_CH_DISABLE46 : WT; bitpos: [14]; default: 0;
+ *  Configures whether or not to disable channel46.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR46    (BIT(14))
-#define SOC_ETM_CH_CLR46_M  (SOC_ETM_CH_CLR46_V << SOC_ETM_CH_CLR46_S)
-#define SOC_ETM_CH_CLR46_V  0x00000001U
-#define SOC_ETM_CH_CLR46_S  14
-/** SOC_ETM_CH_CLR47 : WT; bitpos: [15]; default: 0;
- *  ch47 clear
+#define SOC_ETM_CH_DISABLE46    (BIT(14))
+#define SOC_ETM_CH_DISABLE46_M  (SOC_ETM_CH_DISABLE46_V << SOC_ETM_CH_DISABLE46_S)
+#define SOC_ETM_CH_DISABLE46_V  0x00000001U
+#define SOC_ETM_CH_DISABLE46_S  14
+/** SOC_ETM_CH_DISABLE47 : WT; bitpos: [15]; default: 0;
+ *  Configures whether or not to disable channel47.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR47    (BIT(15))
-#define SOC_ETM_CH_CLR47_M  (SOC_ETM_CH_CLR47_V << SOC_ETM_CH_CLR47_S)
-#define SOC_ETM_CH_CLR47_V  0x00000001U
-#define SOC_ETM_CH_CLR47_S  15
-/** SOC_ETM_CH_CLR48 : WT; bitpos: [16]; default: 0;
- *  ch48 clear
+#define SOC_ETM_CH_DISABLE47    (BIT(15))
+#define SOC_ETM_CH_DISABLE47_M  (SOC_ETM_CH_DISABLE47_V << SOC_ETM_CH_DISABLE47_S)
+#define SOC_ETM_CH_DISABLE47_V  0x00000001U
+#define SOC_ETM_CH_DISABLE47_S  15
+/** SOC_ETM_CH_DISABLE48 : WT; bitpos: [16]; default: 0;
+ *  Configures whether or not to disable channel48.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR48    (BIT(16))
-#define SOC_ETM_CH_CLR48_M  (SOC_ETM_CH_CLR48_V << SOC_ETM_CH_CLR48_S)
-#define SOC_ETM_CH_CLR48_V  0x00000001U
-#define SOC_ETM_CH_CLR48_S  16
-/** SOC_ETM_CH_CLR49 : WT; bitpos: [17]; default: 0;
- *  ch49 clear
+#define SOC_ETM_CH_DISABLE48    (BIT(16))
+#define SOC_ETM_CH_DISABLE48_M  (SOC_ETM_CH_DISABLE48_V << SOC_ETM_CH_DISABLE48_S)
+#define SOC_ETM_CH_DISABLE48_V  0x00000001U
+#define SOC_ETM_CH_DISABLE48_S  16
+/** SOC_ETM_CH_DISABLE49 : WT; bitpos: [17]; default: 0;
+ *  Configures whether or not to disable channel49.
+ *  0: Invalid. No effect
+ *  1: Clear
  */
-#define SOC_ETM_CH_CLR49    (BIT(17))
-#define SOC_ETM_CH_CLR49_M  (SOC_ETM_CH_CLR49_V << SOC_ETM_CH_CLR49_S)
-#define SOC_ETM_CH_CLR49_V  0x00000001U
-#define SOC_ETM_CH_CLR49_S  17
+#define SOC_ETM_CH_DISABLE49    (BIT(17))
+#define SOC_ETM_CH_DISABLE49_M  (SOC_ETM_CH_DISABLE49_V << SOC_ETM_CH_DISABLE49_S)
+#define SOC_ETM_CH_DISABLE49_V  0x00000001U
+#define SOC_ETM_CH_DISABLE49_S  17
 
 /** SOC_ETM_CH0_EVT_ID_REG register
- *  channel0 event id register
+ *  Channel0 event ID register
  */
-#define SOC_ETM_CH0_EVT_ID_REG (DR_REG_SOC_BASE + 0x18)
+#define SOC_ETM_CH0_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x18)
 /** SOC_ETM_CH0_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch0_evt_id
+ *  Configures the event ID of channel0.
  */
 #define SOC_ETM_CH0_EVT_ID    0x000000FFU
 #define SOC_ETM_CH0_EVT_ID_M  (SOC_ETM_CH0_EVT_ID_V << SOC_ETM_CH0_EVT_ID_S)
@@ -1104,11 +1404,11 @@ extern "C" {
 #define SOC_ETM_CH0_EVT_ID_S  0
 
 /** SOC_ETM_CH0_TASK_ID_REG register
- *  channel0 task id register
+ *  Channel0 task ID register
  */
-#define SOC_ETM_CH0_TASK_ID_REG (DR_REG_SOC_BASE + 0x1c)
+#define SOC_ETM_CH0_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x1c)
 /** SOC_ETM_CH0_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch0_task_id
+ *  Configures the task ID of channel0.
  */
 #define SOC_ETM_CH0_TASK_ID    0x000000FFU
 #define SOC_ETM_CH0_TASK_ID_M  (SOC_ETM_CH0_TASK_ID_V << SOC_ETM_CH0_TASK_ID_S)
@@ -1116,11 +1416,11 @@ extern "C" {
 #define SOC_ETM_CH0_TASK_ID_S  0
 
 /** SOC_ETM_CH1_EVT_ID_REG register
- *  channel1 event id register
+ *  Channel1 event ID register
  */
-#define SOC_ETM_CH1_EVT_ID_REG (DR_REG_SOC_BASE + 0x20)
+#define SOC_ETM_CH1_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x20)
 /** SOC_ETM_CH1_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch1_evt_id
+ *  Configures the event ID of channel1.
  */
 #define SOC_ETM_CH1_EVT_ID    0x000000FFU
 #define SOC_ETM_CH1_EVT_ID_M  (SOC_ETM_CH1_EVT_ID_V << SOC_ETM_CH1_EVT_ID_S)
@@ -1128,11 +1428,11 @@ extern "C" {
 #define SOC_ETM_CH1_EVT_ID_S  0
 
 /** SOC_ETM_CH1_TASK_ID_REG register
- *  channel1 task id register
+ *  Channel1 task ID register
  */
-#define SOC_ETM_CH1_TASK_ID_REG (DR_REG_SOC_BASE + 0x24)
+#define SOC_ETM_CH1_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x24)
 /** SOC_ETM_CH1_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch1_task_id
+ *  Configures the task ID of channel1.
  */
 #define SOC_ETM_CH1_TASK_ID    0x000000FFU
 #define SOC_ETM_CH1_TASK_ID_M  (SOC_ETM_CH1_TASK_ID_V << SOC_ETM_CH1_TASK_ID_S)
@@ -1140,11 +1440,11 @@ extern "C" {
 #define SOC_ETM_CH1_TASK_ID_S  0
 
 /** SOC_ETM_CH2_EVT_ID_REG register
- *  channel2 event id register
+ *  Channel2 event ID register
  */
-#define SOC_ETM_CH2_EVT_ID_REG (DR_REG_SOC_BASE + 0x28)
+#define SOC_ETM_CH2_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x28)
 /** SOC_ETM_CH2_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch2_evt_id
+ *  Configures the event ID of channel2.
  */
 #define SOC_ETM_CH2_EVT_ID    0x000000FFU
 #define SOC_ETM_CH2_EVT_ID_M  (SOC_ETM_CH2_EVT_ID_V << SOC_ETM_CH2_EVT_ID_S)
@@ -1152,11 +1452,11 @@ extern "C" {
 #define SOC_ETM_CH2_EVT_ID_S  0
 
 /** SOC_ETM_CH2_TASK_ID_REG register
- *  channel2 task id register
+ *  Channel2 task ID register
  */
-#define SOC_ETM_CH2_TASK_ID_REG (DR_REG_SOC_BASE + 0x2c)
+#define SOC_ETM_CH2_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x2c)
 /** SOC_ETM_CH2_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch2_task_id
+ *  Configures the task ID of channel2.
  */
 #define SOC_ETM_CH2_TASK_ID    0x000000FFU
 #define SOC_ETM_CH2_TASK_ID_M  (SOC_ETM_CH2_TASK_ID_V << SOC_ETM_CH2_TASK_ID_S)
@@ -1164,11 +1464,11 @@ extern "C" {
 #define SOC_ETM_CH2_TASK_ID_S  0
 
 /** SOC_ETM_CH3_EVT_ID_REG register
- *  channel3 event id register
+ *  Channel3 event ID register
  */
-#define SOC_ETM_CH3_EVT_ID_REG (DR_REG_SOC_BASE + 0x30)
+#define SOC_ETM_CH3_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x30)
 /** SOC_ETM_CH3_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch3_evt_id
+ *  Configures the event ID of channel3.
  */
 #define SOC_ETM_CH3_EVT_ID    0x000000FFU
 #define SOC_ETM_CH3_EVT_ID_M  (SOC_ETM_CH3_EVT_ID_V << SOC_ETM_CH3_EVT_ID_S)
@@ -1176,11 +1476,11 @@ extern "C" {
 #define SOC_ETM_CH3_EVT_ID_S  0
 
 /** SOC_ETM_CH3_TASK_ID_REG register
- *  channel3 task id register
+ *  Channel3 task ID register
  */
-#define SOC_ETM_CH3_TASK_ID_REG (DR_REG_SOC_BASE + 0x34)
+#define SOC_ETM_CH3_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x34)
 /** SOC_ETM_CH3_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch3_task_id
+ *  Configures the task ID of channel3.
  */
 #define SOC_ETM_CH3_TASK_ID    0x000000FFU
 #define SOC_ETM_CH3_TASK_ID_M  (SOC_ETM_CH3_TASK_ID_V << SOC_ETM_CH3_TASK_ID_S)
@@ -1188,11 +1488,11 @@ extern "C" {
 #define SOC_ETM_CH3_TASK_ID_S  0
 
 /** SOC_ETM_CH4_EVT_ID_REG register
- *  channel4 event id register
+ *  Channel4 event ID register
  */
-#define SOC_ETM_CH4_EVT_ID_REG (DR_REG_SOC_BASE + 0x38)
+#define SOC_ETM_CH4_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x38)
 /** SOC_ETM_CH4_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch4_evt_id
+ *  Configures the event ID of channel4.
  */
 #define SOC_ETM_CH4_EVT_ID    0x000000FFU
 #define SOC_ETM_CH4_EVT_ID_M  (SOC_ETM_CH4_EVT_ID_V << SOC_ETM_CH4_EVT_ID_S)
@@ -1200,11 +1500,11 @@ extern "C" {
 #define SOC_ETM_CH4_EVT_ID_S  0
 
 /** SOC_ETM_CH4_TASK_ID_REG register
- *  channel4 task id register
+ *  Channel4 task ID register
  */
-#define SOC_ETM_CH4_TASK_ID_REG (DR_REG_SOC_BASE + 0x3c)
+#define SOC_ETM_CH4_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x3c)
 /** SOC_ETM_CH4_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch4_task_id
+ *  Configures the task ID of channel4.
  */
 #define SOC_ETM_CH4_TASK_ID    0x000000FFU
 #define SOC_ETM_CH4_TASK_ID_M  (SOC_ETM_CH4_TASK_ID_V << SOC_ETM_CH4_TASK_ID_S)
@@ -1212,11 +1512,11 @@ extern "C" {
 #define SOC_ETM_CH4_TASK_ID_S  0
 
 /** SOC_ETM_CH5_EVT_ID_REG register
- *  channel5 event id register
+ *  Channel5 event ID register
  */
-#define SOC_ETM_CH5_EVT_ID_REG (DR_REG_SOC_BASE + 0x40)
+#define SOC_ETM_CH5_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x40)
 /** SOC_ETM_CH5_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch5_evt_id
+ *  Configures the event ID of channel5.
  */
 #define SOC_ETM_CH5_EVT_ID    0x000000FFU
 #define SOC_ETM_CH5_EVT_ID_M  (SOC_ETM_CH5_EVT_ID_V << SOC_ETM_CH5_EVT_ID_S)
@@ -1224,11 +1524,11 @@ extern "C" {
 #define SOC_ETM_CH5_EVT_ID_S  0
 
 /** SOC_ETM_CH5_TASK_ID_REG register
- *  channel5 task id register
+ *  Channel5 task ID register
  */
-#define SOC_ETM_CH5_TASK_ID_REG (DR_REG_SOC_BASE + 0x44)
+#define SOC_ETM_CH5_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x44)
 /** SOC_ETM_CH5_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch5_task_id
+ *  Configures the task ID of channel5.
  */
 #define SOC_ETM_CH5_TASK_ID    0x000000FFU
 #define SOC_ETM_CH5_TASK_ID_M  (SOC_ETM_CH5_TASK_ID_V << SOC_ETM_CH5_TASK_ID_S)
@@ -1236,11 +1536,11 @@ extern "C" {
 #define SOC_ETM_CH5_TASK_ID_S  0
 
 /** SOC_ETM_CH6_EVT_ID_REG register
- *  channel6 event id register
+ *  Channel6 event ID register
  */
-#define SOC_ETM_CH6_EVT_ID_REG (DR_REG_SOC_BASE + 0x48)
+#define SOC_ETM_CH6_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x48)
 /** SOC_ETM_CH6_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch6_evt_id
+ *  Configures the event ID of channel6.
  */
 #define SOC_ETM_CH6_EVT_ID    0x000000FFU
 #define SOC_ETM_CH6_EVT_ID_M  (SOC_ETM_CH6_EVT_ID_V << SOC_ETM_CH6_EVT_ID_S)
@@ -1248,11 +1548,11 @@ extern "C" {
 #define SOC_ETM_CH6_EVT_ID_S  0
 
 /** SOC_ETM_CH6_TASK_ID_REG register
- *  channel6 task id register
+ *  Channel6 task ID register
  */
-#define SOC_ETM_CH6_TASK_ID_REG (DR_REG_SOC_BASE + 0x4c)
+#define SOC_ETM_CH6_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x4c)
 /** SOC_ETM_CH6_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch6_task_id
+ *  Configures the task ID of channel6.
  */
 #define SOC_ETM_CH6_TASK_ID    0x000000FFU
 #define SOC_ETM_CH6_TASK_ID_M  (SOC_ETM_CH6_TASK_ID_V << SOC_ETM_CH6_TASK_ID_S)
@@ -1260,11 +1560,11 @@ extern "C" {
 #define SOC_ETM_CH6_TASK_ID_S  0
 
 /** SOC_ETM_CH7_EVT_ID_REG register
- *  channel7 event id register
+ *  Channel7 event ID register
  */
-#define SOC_ETM_CH7_EVT_ID_REG (DR_REG_SOC_BASE + 0x50)
+#define SOC_ETM_CH7_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x50)
 /** SOC_ETM_CH7_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch7_evt_id
+ *  Configures the event ID of channel7.
  */
 #define SOC_ETM_CH7_EVT_ID    0x000000FFU
 #define SOC_ETM_CH7_EVT_ID_M  (SOC_ETM_CH7_EVT_ID_V << SOC_ETM_CH7_EVT_ID_S)
@@ -1272,11 +1572,11 @@ extern "C" {
 #define SOC_ETM_CH7_EVT_ID_S  0
 
 /** SOC_ETM_CH7_TASK_ID_REG register
- *  channel7 task id register
+ *  Channel7 task ID register
  */
-#define SOC_ETM_CH7_TASK_ID_REG (DR_REG_SOC_BASE + 0x54)
+#define SOC_ETM_CH7_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x54)
 /** SOC_ETM_CH7_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch7_task_id
+ *  Configures the task ID of channel7.
  */
 #define SOC_ETM_CH7_TASK_ID    0x000000FFU
 #define SOC_ETM_CH7_TASK_ID_M  (SOC_ETM_CH7_TASK_ID_V << SOC_ETM_CH7_TASK_ID_S)
@@ -1284,11 +1584,11 @@ extern "C" {
 #define SOC_ETM_CH7_TASK_ID_S  0
 
 /** SOC_ETM_CH8_EVT_ID_REG register
- *  channel8 event id register
+ *  Channel8 event ID register
  */
-#define SOC_ETM_CH8_EVT_ID_REG (DR_REG_SOC_BASE + 0x58)
+#define SOC_ETM_CH8_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x58)
 /** SOC_ETM_CH8_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch8_evt_id
+ *  Configures the event ID of channel8.
  */
 #define SOC_ETM_CH8_EVT_ID    0x000000FFU
 #define SOC_ETM_CH8_EVT_ID_M  (SOC_ETM_CH8_EVT_ID_V << SOC_ETM_CH8_EVT_ID_S)
@@ -1296,11 +1596,11 @@ extern "C" {
 #define SOC_ETM_CH8_EVT_ID_S  0
 
 /** SOC_ETM_CH8_TASK_ID_REG register
- *  channel8 task id register
+ *  Channel8 task ID register
  */
-#define SOC_ETM_CH8_TASK_ID_REG (DR_REG_SOC_BASE + 0x5c)
+#define SOC_ETM_CH8_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x5c)
 /** SOC_ETM_CH8_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch8_task_id
+ *  Configures the task ID of channel8.
  */
 #define SOC_ETM_CH8_TASK_ID    0x000000FFU
 #define SOC_ETM_CH8_TASK_ID_M  (SOC_ETM_CH8_TASK_ID_V << SOC_ETM_CH8_TASK_ID_S)
@@ -1308,11 +1608,11 @@ extern "C" {
 #define SOC_ETM_CH8_TASK_ID_S  0
 
 /** SOC_ETM_CH9_EVT_ID_REG register
- *  channel9 event id register
+ *  Channel9 event ID register
  */
-#define SOC_ETM_CH9_EVT_ID_REG (DR_REG_SOC_BASE + 0x60)
+#define SOC_ETM_CH9_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x60)
 /** SOC_ETM_CH9_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch9_evt_id
+ *  Configures the event ID of channel9.
  */
 #define SOC_ETM_CH9_EVT_ID    0x000000FFU
 #define SOC_ETM_CH9_EVT_ID_M  (SOC_ETM_CH9_EVT_ID_V << SOC_ETM_CH9_EVT_ID_S)
@@ -1320,11 +1620,11 @@ extern "C" {
 #define SOC_ETM_CH9_EVT_ID_S  0
 
 /** SOC_ETM_CH9_TASK_ID_REG register
- *  channel9 task id register
+ *  Channel9 task ID register
  */
-#define SOC_ETM_CH9_TASK_ID_REG (DR_REG_SOC_BASE + 0x64)
+#define SOC_ETM_CH9_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x64)
 /** SOC_ETM_CH9_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch9_task_id
+ *  Configures the task ID of channel9.
  */
 #define SOC_ETM_CH9_TASK_ID    0x000000FFU
 #define SOC_ETM_CH9_TASK_ID_M  (SOC_ETM_CH9_TASK_ID_V << SOC_ETM_CH9_TASK_ID_S)
@@ -1332,11 +1632,11 @@ extern "C" {
 #define SOC_ETM_CH9_TASK_ID_S  0
 
 /** SOC_ETM_CH10_EVT_ID_REG register
- *  channel10 event id register
+ *  Channel10 event ID register
  */
-#define SOC_ETM_CH10_EVT_ID_REG (DR_REG_SOC_BASE + 0x68)
+#define SOC_ETM_CH10_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x68)
 /** SOC_ETM_CH10_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch10_evt_id
+ *  Configures the event ID of channel10.
  */
 #define SOC_ETM_CH10_EVT_ID    0x000000FFU
 #define SOC_ETM_CH10_EVT_ID_M  (SOC_ETM_CH10_EVT_ID_V << SOC_ETM_CH10_EVT_ID_S)
@@ -1344,11 +1644,11 @@ extern "C" {
 #define SOC_ETM_CH10_EVT_ID_S  0
 
 /** SOC_ETM_CH10_TASK_ID_REG register
- *  channel10 task id register
+ *  Channel10 task ID register
  */
-#define SOC_ETM_CH10_TASK_ID_REG (DR_REG_SOC_BASE + 0x6c)
+#define SOC_ETM_CH10_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x6c)
 /** SOC_ETM_CH10_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch10_task_id
+ *  Configures the task ID of channel10.
  */
 #define SOC_ETM_CH10_TASK_ID    0x000000FFU
 #define SOC_ETM_CH10_TASK_ID_M  (SOC_ETM_CH10_TASK_ID_V << SOC_ETM_CH10_TASK_ID_S)
@@ -1356,11 +1656,11 @@ extern "C" {
 #define SOC_ETM_CH10_TASK_ID_S  0
 
 /** SOC_ETM_CH11_EVT_ID_REG register
- *  channel11 event id register
+ *  Channel11 event ID register
  */
-#define SOC_ETM_CH11_EVT_ID_REG (DR_REG_SOC_BASE + 0x70)
+#define SOC_ETM_CH11_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x70)
 /** SOC_ETM_CH11_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch11_evt_id
+ *  Configures the event ID of channel11.
  */
 #define SOC_ETM_CH11_EVT_ID    0x000000FFU
 #define SOC_ETM_CH11_EVT_ID_M  (SOC_ETM_CH11_EVT_ID_V << SOC_ETM_CH11_EVT_ID_S)
@@ -1368,11 +1668,11 @@ extern "C" {
 #define SOC_ETM_CH11_EVT_ID_S  0
 
 /** SOC_ETM_CH11_TASK_ID_REG register
- *  channel11 task id register
+ *  Channel11 task ID register
  */
-#define SOC_ETM_CH11_TASK_ID_REG (DR_REG_SOC_BASE + 0x74)
+#define SOC_ETM_CH11_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x74)
 /** SOC_ETM_CH11_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch11_task_id
+ *  Configures the task ID of channel11.
  */
 #define SOC_ETM_CH11_TASK_ID    0x000000FFU
 #define SOC_ETM_CH11_TASK_ID_M  (SOC_ETM_CH11_TASK_ID_V << SOC_ETM_CH11_TASK_ID_S)
@@ -1380,11 +1680,11 @@ extern "C" {
 #define SOC_ETM_CH11_TASK_ID_S  0
 
 /** SOC_ETM_CH12_EVT_ID_REG register
- *  channel12 event id register
+ *  Channel12 event ID register
  */
-#define SOC_ETM_CH12_EVT_ID_REG (DR_REG_SOC_BASE + 0x78)
+#define SOC_ETM_CH12_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x78)
 /** SOC_ETM_CH12_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch12_evt_id
+ *  Configures the event ID of channel12.
  */
 #define SOC_ETM_CH12_EVT_ID    0x000000FFU
 #define SOC_ETM_CH12_EVT_ID_M  (SOC_ETM_CH12_EVT_ID_V << SOC_ETM_CH12_EVT_ID_S)
@@ -1392,11 +1692,11 @@ extern "C" {
 #define SOC_ETM_CH12_EVT_ID_S  0
 
 /** SOC_ETM_CH12_TASK_ID_REG register
- *  channel12 task id register
+ *  Channel12 task ID register
  */
-#define SOC_ETM_CH12_TASK_ID_REG (DR_REG_SOC_BASE + 0x7c)
+#define SOC_ETM_CH12_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x7c)
 /** SOC_ETM_CH12_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch12_task_id
+ *  Configures the task ID of channel12.
  */
 #define SOC_ETM_CH12_TASK_ID    0x000000FFU
 #define SOC_ETM_CH12_TASK_ID_M  (SOC_ETM_CH12_TASK_ID_V << SOC_ETM_CH12_TASK_ID_S)
@@ -1404,11 +1704,11 @@ extern "C" {
 #define SOC_ETM_CH12_TASK_ID_S  0
 
 /** SOC_ETM_CH13_EVT_ID_REG register
- *  channel13 event id register
+ *  Channel13 event ID register
  */
-#define SOC_ETM_CH13_EVT_ID_REG (DR_REG_SOC_BASE + 0x80)
+#define SOC_ETM_CH13_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x80)
 /** SOC_ETM_CH13_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch13_evt_id
+ *  Configures the event ID of channel13.
  */
 #define SOC_ETM_CH13_EVT_ID    0x000000FFU
 #define SOC_ETM_CH13_EVT_ID_M  (SOC_ETM_CH13_EVT_ID_V << SOC_ETM_CH13_EVT_ID_S)
@@ -1416,11 +1716,11 @@ extern "C" {
 #define SOC_ETM_CH13_EVT_ID_S  0
 
 /** SOC_ETM_CH13_TASK_ID_REG register
- *  channel13 task id register
+ *  Channel13 task ID register
  */
-#define SOC_ETM_CH13_TASK_ID_REG (DR_REG_SOC_BASE + 0x84)
+#define SOC_ETM_CH13_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x84)
 /** SOC_ETM_CH13_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch13_task_id
+ *  Configures the task ID of channel13.
  */
 #define SOC_ETM_CH13_TASK_ID    0x000000FFU
 #define SOC_ETM_CH13_TASK_ID_M  (SOC_ETM_CH13_TASK_ID_V << SOC_ETM_CH13_TASK_ID_S)
@@ -1428,11 +1728,11 @@ extern "C" {
 #define SOC_ETM_CH13_TASK_ID_S  0
 
 /** SOC_ETM_CH14_EVT_ID_REG register
- *  channel14 event id register
+ *  Channel14 event ID register
  */
-#define SOC_ETM_CH14_EVT_ID_REG (DR_REG_SOC_BASE + 0x88)
+#define SOC_ETM_CH14_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x88)
 /** SOC_ETM_CH14_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch14_evt_id
+ *  Configures the event ID of channel14.
  */
 #define SOC_ETM_CH14_EVT_ID    0x000000FFU
 #define SOC_ETM_CH14_EVT_ID_M  (SOC_ETM_CH14_EVT_ID_V << SOC_ETM_CH14_EVT_ID_S)
@@ -1440,11 +1740,11 @@ extern "C" {
 #define SOC_ETM_CH14_EVT_ID_S  0
 
 /** SOC_ETM_CH14_TASK_ID_REG register
- *  channel14 task id register
+ *  Channel14 task ID register
  */
-#define SOC_ETM_CH14_TASK_ID_REG (DR_REG_SOC_BASE + 0x8c)
+#define SOC_ETM_CH14_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x8c)
 /** SOC_ETM_CH14_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch14_task_id
+ *  Configures the task ID of channel14.
  */
 #define SOC_ETM_CH14_TASK_ID    0x000000FFU
 #define SOC_ETM_CH14_TASK_ID_M  (SOC_ETM_CH14_TASK_ID_V << SOC_ETM_CH14_TASK_ID_S)
@@ -1452,11 +1752,11 @@ extern "C" {
 #define SOC_ETM_CH14_TASK_ID_S  0
 
 /** SOC_ETM_CH15_EVT_ID_REG register
- *  channel15 event id register
+ *  Channel15 event ID register
  */
-#define SOC_ETM_CH15_EVT_ID_REG (DR_REG_SOC_BASE + 0x90)
+#define SOC_ETM_CH15_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x90)
 /** SOC_ETM_CH15_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch15_evt_id
+ *  Configures the event ID of channel15.
  */
 #define SOC_ETM_CH15_EVT_ID    0x000000FFU
 #define SOC_ETM_CH15_EVT_ID_M  (SOC_ETM_CH15_EVT_ID_V << SOC_ETM_CH15_EVT_ID_S)
@@ -1464,11 +1764,11 @@ extern "C" {
 #define SOC_ETM_CH15_EVT_ID_S  0
 
 /** SOC_ETM_CH15_TASK_ID_REG register
- *  channel15 task id register
+ *  Channel15 task ID register
  */
-#define SOC_ETM_CH15_TASK_ID_REG (DR_REG_SOC_BASE + 0x94)
+#define SOC_ETM_CH15_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x94)
 /** SOC_ETM_CH15_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch15_task_id
+ *  Configures the task ID of channel15.
  */
 #define SOC_ETM_CH15_TASK_ID    0x000000FFU
 #define SOC_ETM_CH15_TASK_ID_M  (SOC_ETM_CH15_TASK_ID_V << SOC_ETM_CH15_TASK_ID_S)
@@ -1476,11 +1776,11 @@ extern "C" {
 #define SOC_ETM_CH15_TASK_ID_S  0
 
 /** SOC_ETM_CH16_EVT_ID_REG register
- *  channel16 event id register
+ *  Channel16 event ID register
  */
-#define SOC_ETM_CH16_EVT_ID_REG (DR_REG_SOC_BASE + 0x98)
+#define SOC_ETM_CH16_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x98)
 /** SOC_ETM_CH16_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch16_evt_id
+ *  Configures the event ID of channel16.
  */
 #define SOC_ETM_CH16_EVT_ID    0x000000FFU
 #define SOC_ETM_CH16_EVT_ID_M  (SOC_ETM_CH16_EVT_ID_V << SOC_ETM_CH16_EVT_ID_S)
@@ -1488,11 +1788,11 @@ extern "C" {
 #define SOC_ETM_CH16_EVT_ID_S  0
 
 /** SOC_ETM_CH16_TASK_ID_REG register
- *  channel16 task id register
+ *  Channel16 task ID register
  */
-#define SOC_ETM_CH16_TASK_ID_REG (DR_REG_SOC_BASE + 0x9c)
+#define SOC_ETM_CH16_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x9c)
 /** SOC_ETM_CH16_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch16_task_id
+ *  Configures the task ID of channel16.
  */
 #define SOC_ETM_CH16_TASK_ID    0x000000FFU
 #define SOC_ETM_CH16_TASK_ID_M  (SOC_ETM_CH16_TASK_ID_V << SOC_ETM_CH16_TASK_ID_S)
@@ -1500,11 +1800,11 @@ extern "C" {
 #define SOC_ETM_CH16_TASK_ID_S  0
 
 /** SOC_ETM_CH17_EVT_ID_REG register
- *  channel17 event id register
+ *  Channel17 event ID register
  */
-#define SOC_ETM_CH17_EVT_ID_REG (DR_REG_SOC_BASE + 0xa0)
+#define SOC_ETM_CH17_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xa0)
 /** SOC_ETM_CH17_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch17_evt_id
+ *  Configures the event ID of channel17.
  */
 #define SOC_ETM_CH17_EVT_ID    0x000000FFU
 #define SOC_ETM_CH17_EVT_ID_M  (SOC_ETM_CH17_EVT_ID_V << SOC_ETM_CH17_EVT_ID_S)
@@ -1512,11 +1812,11 @@ extern "C" {
 #define SOC_ETM_CH17_EVT_ID_S  0
 
 /** SOC_ETM_CH17_TASK_ID_REG register
- *  channel17 task id register
+ *  Channel17 task ID register
  */
-#define SOC_ETM_CH17_TASK_ID_REG (DR_REG_SOC_BASE + 0xa4)
+#define SOC_ETM_CH17_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xa4)
 /** SOC_ETM_CH17_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch17_task_id
+ *  Configures the task ID of channel17.
  */
 #define SOC_ETM_CH17_TASK_ID    0x000000FFU
 #define SOC_ETM_CH17_TASK_ID_M  (SOC_ETM_CH17_TASK_ID_V << SOC_ETM_CH17_TASK_ID_S)
@@ -1524,11 +1824,11 @@ extern "C" {
 #define SOC_ETM_CH17_TASK_ID_S  0
 
 /** SOC_ETM_CH18_EVT_ID_REG register
- *  channel18 event id register
+ *  Channel18 event ID register
  */
-#define SOC_ETM_CH18_EVT_ID_REG (DR_REG_SOC_BASE + 0xa8)
+#define SOC_ETM_CH18_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xa8)
 /** SOC_ETM_CH18_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch18_evt_id
+ *  Configures the event ID of channel18.
  */
 #define SOC_ETM_CH18_EVT_ID    0x000000FFU
 #define SOC_ETM_CH18_EVT_ID_M  (SOC_ETM_CH18_EVT_ID_V << SOC_ETM_CH18_EVT_ID_S)
@@ -1536,11 +1836,11 @@ extern "C" {
 #define SOC_ETM_CH18_EVT_ID_S  0
 
 /** SOC_ETM_CH18_TASK_ID_REG register
- *  channel18 task id register
+ *  Channel18 task ID register
  */
-#define SOC_ETM_CH18_TASK_ID_REG (DR_REG_SOC_BASE + 0xac)
+#define SOC_ETM_CH18_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xac)
 /** SOC_ETM_CH18_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch18_task_id
+ *  Configures the task ID of channel18.
  */
 #define SOC_ETM_CH18_TASK_ID    0x000000FFU
 #define SOC_ETM_CH18_TASK_ID_M  (SOC_ETM_CH18_TASK_ID_V << SOC_ETM_CH18_TASK_ID_S)
@@ -1548,11 +1848,11 @@ extern "C" {
 #define SOC_ETM_CH18_TASK_ID_S  0
 
 /** SOC_ETM_CH19_EVT_ID_REG register
- *  channel19 event id register
+ *  Channel19 event ID register
  */
-#define SOC_ETM_CH19_EVT_ID_REG (DR_REG_SOC_BASE + 0xb0)
+#define SOC_ETM_CH19_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xb0)
 /** SOC_ETM_CH19_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch19_evt_id
+ *  Configures the event ID of channel19.
  */
 #define SOC_ETM_CH19_EVT_ID    0x000000FFU
 #define SOC_ETM_CH19_EVT_ID_M  (SOC_ETM_CH19_EVT_ID_V << SOC_ETM_CH19_EVT_ID_S)
@@ -1560,11 +1860,11 @@ extern "C" {
 #define SOC_ETM_CH19_EVT_ID_S  0
 
 /** SOC_ETM_CH19_TASK_ID_REG register
- *  channel19 task id register
+ *  Channel19 task ID register
  */
-#define SOC_ETM_CH19_TASK_ID_REG (DR_REG_SOC_BASE + 0xb4)
+#define SOC_ETM_CH19_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xb4)
 /** SOC_ETM_CH19_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch19_task_id
+ *  Configures the task ID of channel19.
  */
 #define SOC_ETM_CH19_TASK_ID    0x000000FFU
 #define SOC_ETM_CH19_TASK_ID_M  (SOC_ETM_CH19_TASK_ID_V << SOC_ETM_CH19_TASK_ID_S)
@@ -1572,11 +1872,11 @@ extern "C" {
 #define SOC_ETM_CH19_TASK_ID_S  0
 
 /** SOC_ETM_CH20_EVT_ID_REG register
- *  channel20 event id register
+ *  Channel20 event ID register
  */
-#define SOC_ETM_CH20_EVT_ID_REG (DR_REG_SOC_BASE + 0xb8)
+#define SOC_ETM_CH20_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xb8)
 /** SOC_ETM_CH20_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch20_evt_id
+ *  Configures the event ID of channel20.
  */
 #define SOC_ETM_CH20_EVT_ID    0x000000FFU
 #define SOC_ETM_CH20_EVT_ID_M  (SOC_ETM_CH20_EVT_ID_V << SOC_ETM_CH20_EVT_ID_S)
@@ -1584,11 +1884,11 @@ extern "C" {
 #define SOC_ETM_CH20_EVT_ID_S  0
 
 /** SOC_ETM_CH20_TASK_ID_REG register
- *  channel20 task id register
+ *  Channel20 task ID register
  */
-#define SOC_ETM_CH20_TASK_ID_REG (DR_REG_SOC_BASE + 0xbc)
+#define SOC_ETM_CH20_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xbc)
 /** SOC_ETM_CH20_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch20_task_id
+ *  Configures the task ID of channel20.
  */
 #define SOC_ETM_CH20_TASK_ID    0x000000FFU
 #define SOC_ETM_CH20_TASK_ID_M  (SOC_ETM_CH20_TASK_ID_V << SOC_ETM_CH20_TASK_ID_S)
@@ -1596,11 +1896,11 @@ extern "C" {
 #define SOC_ETM_CH20_TASK_ID_S  0
 
 /** SOC_ETM_CH21_EVT_ID_REG register
- *  channel21 event id register
+ *  Channel21 event ID register
  */
-#define SOC_ETM_CH21_EVT_ID_REG (DR_REG_SOC_BASE + 0xc0)
+#define SOC_ETM_CH21_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xc0)
 /** SOC_ETM_CH21_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch21_evt_id
+ *  Configures the event ID of channel21.
  */
 #define SOC_ETM_CH21_EVT_ID    0x000000FFU
 #define SOC_ETM_CH21_EVT_ID_M  (SOC_ETM_CH21_EVT_ID_V << SOC_ETM_CH21_EVT_ID_S)
@@ -1608,11 +1908,11 @@ extern "C" {
 #define SOC_ETM_CH21_EVT_ID_S  0
 
 /** SOC_ETM_CH21_TASK_ID_REG register
- *  channel21 task id register
+ *  Channel21 task ID register
  */
-#define SOC_ETM_CH21_TASK_ID_REG (DR_REG_SOC_BASE + 0xc4)
+#define SOC_ETM_CH21_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xc4)
 /** SOC_ETM_CH21_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch21_task_id
+ *  Configures the task ID of channel21.
  */
 #define SOC_ETM_CH21_TASK_ID    0x000000FFU
 #define SOC_ETM_CH21_TASK_ID_M  (SOC_ETM_CH21_TASK_ID_V << SOC_ETM_CH21_TASK_ID_S)
@@ -1620,11 +1920,11 @@ extern "C" {
 #define SOC_ETM_CH21_TASK_ID_S  0
 
 /** SOC_ETM_CH22_EVT_ID_REG register
- *  channel22 event id register
+ *  Channel22 event ID register
  */
-#define SOC_ETM_CH22_EVT_ID_REG (DR_REG_SOC_BASE + 0xc8)
+#define SOC_ETM_CH22_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xc8)
 /** SOC_ETM_CH22_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch22_evt_id
+ *  Configures the event ID of channel22.
  */
 #define SOC_ETM_CH22_EVT_ID    0x000000FFU
 #define SOC_ETM_CH22_EVT_ID_M  (SOC_ETM_CH22_EVT_ID_V << SOC_ETM_CH22_EVT_ID_S)
@@ -1632,11 +1932,11 @@ extern "C" {
 #define SOC_ETM_CH22_EVT_ID_S  0
 
 /** SOC_ETM_CH22_TASK_ID_REG register
- *  channel22 task id register
+ *  Channel22 task ID register
  */
-#define SOC_ETM_CH22_TASK_ID_REG (DR_REG_SOC_BASE + 0xcc)
+#define SOC_ETM_CH22_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xcc)
 /** SOC_ETM_CH22_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch22_task_id
+ *  Configures the task ID of channel22.
  */
 #define SOC_ETM_CH22_TASK_ID    0x000000FFU
 #define SOC_ETM_CH22_TASK_ID_M  (SOC_ETM_CH22_TASK_ID_V << SOC_ETM_CH22_TASK_ID_S)
@@ -1644,11 +1944,11 @@ extern "C" {
 #define SOC_ETM_CH22_TASK_ID_S  0
 
 /** SOC_ETM_CH23_EVT_ID_REG register
- *  channel23 event id register
+ *  Channel23 event ID register
  */
-#define SOC_ETM_CH23_EVT_ID_REG (DR_REG_SOC_BASE + 0xd0)
+#define SOC_ETM_CH23_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xd0)
 /** SOC_ETM_CH23_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch23_evt_id
+ *  Configures the event ID of channel23.
  */
 #define SOC_ETM_CH23_EVT_ID    0x000000FFU
 #define SOC_ETM_CH23_EVT_ID_M  (SOC_ETM_CH23_EVT_ID_V << SOC_ETM_CH23_EVT_ID_S)
@@ -1656,11 +1956,11 @@ extern "C" {
 #define SOC_ETM_CH23_EVT_ID_S  0
 
 /** SOC_ETM_CH23_TASK_ID_REG register
- *  channel23 task id register
+ *  Channel23 task ID register
  */
-#define SOC_ETM_CH23_TASK_ID_REG (DR_REG_SOC_BASE + 0xd4)
+#define SOC_ETM_CH23_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xd4)
 /** SOC_ETM_CH23_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch23_task_id
+ *  Configures the task ID of channel23.
  */
 #define SOC_ETM_CH23_TASK_ID    0x000000FFU
 #define SOC_ETM_CH23_TASK_ID_M  (SOC_ETM_CH23_TASK_ID_V << SOC_ETM_CH23_TASK_ID_S)
@@ -1668,11 +1968,11 @@ extern "C" {
 #define SOC_ETM_CH23_TASK_ID_S  0
 
 /** SOC_ETM_CH24_EVT_ID_REG register
- *  channel24 event id register
+ *  Channel24 event ID register
  */
-#define SOC_ETM_CH24_EVT_ID_REG (DR_REG_SOC_BASE + 0xd8)
+#define SOC_ETM_CH24_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xd8)
 /** SOC_ETM_CH24_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch24_evt_id
+ *  Configures the event ID of channel24.
  */
 #define SOC_ETM_CH24_EVT_ID    0x000000FFU
 #define SOC_ETM_CH24_EVT_ID_M  (SOC_ETM_CH24_EVT_ID_V << SOC_ETM_CH24_EVT_ID_S)
@@ -1680,11 +1980,11 @@ extern "C" {
 #define SOC_ETM_CH24_EVT_ID_S  0
 
 /** SOC_ETM_CH24_TASK_ID_REG register
- *  channel24 task id register
+ *  Channel24 task ID register
  */
-#define SOC_ETM_CH24_TASK_ID_REG (DR_REG_SOC_BASE + 0xdc)
+#define SOC_ETM_CH24_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xdc)
 /** SOC_ETM_CH24_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch24_task_id
+ *  Configures the task ID of channel24.
  */
 #define SOC_ETM_CH24_TASK_ID    0x000000FFU
 #define SOC_ETM_CH24_TASK_ID_M  (SOC_ETM_CH24_TASK_ID_V << SOC_ETM_CH24_TASK_ID_S)
@@ -1692,11 +1992,11 @@ extern "C" {
 #define SOC_ETM_CH24_TASK_ID_S  0
 
 /** SOC_ETM_CH25_EVT_ID_REG register
- *  channel25 event id register
+ *  Channel25 event ID register
  */
-#define SOC_ETM_CH25_EVT_ID_REG (DR_REG_SOC_BASE + 0xe0)
+#define SOC_ETM_CH25_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xe0)
 /** SOC_ETM_CH25_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch25_evt_id
+ *  Configures the event ID of channel25.
  */
 #define SOC_ETM_CH25_EVT_ID    0x000000FFU
 #define SOC_ETM_CH25_EVT_ID_M  (SOC_ETM_CH25_EVT_ID_V << SOC_ETM_CH25_EVT_ID_S)
@@ -1704,11 +2004,11 @@ extern "C" {
 #define SOC_ETM_CH25_EVT_ID_S  0
 
 /** SOC_ETM_CH25_TASK_ID_REG register
- *  channel25 task id register
+ *  Channel25 task ID register
  */
-#define SOC_ETM_CH25_TASK_ID_REG (DR_REG_SOC_BASE + 0xe4)
+#define SOC_ETM_CH25_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xe4)
 /** SOC_ETM_CH25_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch25_task_id
+ *  Configures the task ID of channel25.
  */
 #define SOC_ETM_CH25_TASK_ID    0x000000FFU
 #define SOC_ETM_CH25_TASK_ID_M  (SOC_ETM_CH25_TASK_ID_V << SOC_ETM_CH25_TASK_ID_S)
@@ -1716,11 +2016,11 @@ extern "C" {
 #define SOC_ETM_CH25_TASK_ID_S  0
 
 /** SOC_ETM_CH26_EVT_ID_REG register
- *  channel26 event id register
+ *  Channel26 event ID register
  */
-#define SOC_ETM_CH26_EVT_ID_REG (DR_REG_SOC_BASE + 0xe8)
+#define SOC_ETM_CH26_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xe8)
 /** SOC_ETM_CH26_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch26_evt_id
+ *  Configures the event ID of channel26.
  */
 #define SOC_ETM_CH26_EVT_ID    0x000000FFU
 #define SOC_ETM_CH26_EVT_ID_M  (SOC_ETM_CH26_EVT_ID_V << SOC_ETM_CH26_EVT_ID_S)
@@ -1728,11 +2028,11 @@ extern "C" {
 #define SOC_ETM_CH26_EVT_ID_S  0
 
 /** SOC_ETM_CH26_TASK_ID_REG register
- *  channel26 task id register
+ *  Channel26 task ID register
  */
-#define SOC_ETM_CH26_TASK_ID_REG (DR_REG_SOC_BASE + 0xec)
+#define SOC_ETM_CH26_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xec)
 /** SOC_ETM_CH26_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch26_task_id
+ *  Configures the task ID of channel26.
  */
 #define SOC_ETM_CH26_TASK_ID    0x000000FFU
 #define SOC_ETM_CH26_TASK_ID_M  (SOC_ETM_CH26_TASK_ID_V << SOC_ETM_CH26_TASK_ID_S)
@@ -1740,11 +2040,11 @@ extern "C" {
 #define SOC_ETM_CH26_TASK_ID_S  0
 
 /** SOC_ETM_CH27_EVT_ID_REG register
- *  channel27 event id register
+ *  Channel27 event ID register
  */
-#define SOC_ETM_CH27_EVT_ID_REG (DR_REG_SOC_BASE + 0xf0)
+#define SOC_ETM_CH27_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xf0)
 /** SOC_ETM_CH27_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch27_evt_id
+ *  Configures the event ID of channel27.
  */
 #define SOC_ETM_CH27_EVT_ID    0x000000FFU
 #define SOC_ETM_CH27_EVT_ID_M  (SOC_ETM_CH27_EVT_ID_V << SOC_ETM_CH27_EVT_ID_S)
@@ -1752,11 +2052,11 @@ extern "C" {
 #define SOC_ETM_CH27_EVT_ID_S  0
 
 /** SOC_ETM_CH27_TASK_ID_REG register
- *  channel27 task id register
+ *  Channel27 task ID register
  */
-#define SOC_ETM_CH27_TASK_ID_REG (DR_REG_SOC_BASE + 0xf4)
+#define SOC_ETM_CH27_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xf4)
 /** SOC_ETM_CH27_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch27_task_id
+ *  Configures the task ID of channel27.
  */
 #define SOC_ETM_CH27_TASK_ID    0x000000FFU
 #define SOC_ETM_CH27_TASK_ID_M  (SOC_ETM_CH27_TASK_ID_V << SOC_ETM_CH27_TASK_ID_S)
@@ -1764,11 +2064,11 @@ extern "C" {
 #define SOC_ETM_CH27_TASK_ID_S  0
 
 /** SOC_ETM_CH28_EVT_ID_REG register
- *  channel28 event id register
+ *  Channel28 event ID register
  */
-#define SOC_ETM_CH28_EVT_ID_REG (DR_REG_SOC_BASE + 0xf8)
+#define SOC_ETM_CH28_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xf8)
 /** SOC_ETM_CH28_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch28_evt_id
+ *  Configures the event ID of channel28.
  */
 #define SOC_ETM_CH28_EVT_ID    0x000000FFU
 #define SOC_ETM_CH28_EVT_ID_M  (SOC_ETM_CH28_EVT_ID_V << SOC_ETM_CH28_EVT_ID_S)
@@ -1776,11 +2076,11 @@ extern "C" {
 #define SOC_ETM_CH28_EVT_ID_S  0
 
 /** SOC_ETM_CH28_TASK_ID_REG register
- *  channel28 task id register
+ *  Channel28 task ID register
  */
-#define SOC_ETM_CH28_TASK_ID_REG (DR_REG_SOC_BASE + 0xfc)
+#define SOC_ETM_CH28_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xfc)
 /** SOC_ETM_CH28_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch28_task_id
+ *  Configures the task ID of channel28.
  */
 #define SOC_ETM_CH28_TASK_ID    0x000000FFU
 #define SOC_ETM_CH28_TASK_ID_M  (SOC_ETM_CH28_TASK_ID_V << SOC_ETM_CH28_TASK_ID_S)
@@ -1788,11 +2088,11 @@ extern "C" {
 #define SOC_ETM_CH28_TASK_ID_S  0
 
 /** SOC_ETM_CH29_EVT_ID_REG register
- *  channel29 event id register
+ *  Channel29 event ID register
  */
-#define SOC_ETM_CH29_EVT_ID_REG (DR_REG_SOC_BASE + 0x100)
+#define SOC_ETM_CH29_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x100)
 /** SOC_ETM_CH29_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch29_evt_id
+ *  Configures the event ID of channel29.
  */
 #define SOC_ETM_CH29_EVT_ID    0x000000FFU
 #define SOC_ETM_CH29_EVT_ID_M  (SOC_ETM_CH29_EVT_ID_V << SOC_ETM_CH29_EVT_ID_S)
@@ -1800,11 +2100,11 @@ extern "C" {
 #define SOC_ETM_CH29_EVT_ID_S  0
 
 /** SOC_ETM_CH29_TASK_ID_REG register
- *  channel29 task id register
+ *  Channel29 task ID register
  */
-#define SOC_ETM_CH29_TASK_ID_REG (DR_REG_SOC_BASE + 0x104)
+#define SOC_ETM_CH29_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x104)
 /** SOC_ETM_CH29_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch29_task_id
+ *  Configures the task ID of channel29.
  */
 #define SOC_ETM_CH29_TASK_ID    0x000000FFU
 #define SOC_ETM_CH29_TASK_ID_M  (SOC_ETM_CH29_TASK_ID_V << SOC_ETM_CH29_TASK_ID_S)
@@ -1812,11 +2112,11 @@ extern "C" {
 #define SOC_ETM_CH29_TASK_ID_S  0
 
 /** SOC_ETM_CH30_EVT_ID_REG register
- *  channel30 event id register
+ *  Channel30 event ID register
  */
-#define SOC_ETM_CH30_EVT_ID_REG (DR_REG_SOC_BASE + 0x108)
+#define SOC_ETM_CH30_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x108)
 /** SOC_ETM_CH30_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch30_evt_id
+ *  Configures the event ID of channel30.
  */
 #define SOC_ETM_CH30_EVT_ID    0x000000FFU
 #define SOC_ETM_CH30_EVT_ID_M  (SOC_ETM_CH30_EVT_ID_V << SOC_ETM_CH30_EVT_ID_S)
@@ -1824,11 +2124,11 @@ extern "C" {
 #define SOC_ETM_CH30_EVT_ID_S  0
 
 /** SOC_ETM_CH30_TASK_ID_REG register
- *  channel30 task id register
+ *  Channel30 task ID register
  */
-#define SOC_ETM_CH30_TASK_ID_REG (DR_REG_SOC_BASE + 0x10c)
+#define SOC_ETM_CH30_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x10c)
 /** SOC_ETM_CH30_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch30_task_id
+ *  Configures the task ID of channel30.
  */
 #define SOC_ETM_CH30_TASK_ID    0x000000FFU
 #define SOC_ETM_CH30_TASK_ID_M  (SOC_ETM_CH30_TASK_ID_V << SOC_ETM_CH30_TASK_ID_S)
@@ -1836,11 +2136,11 @@ extern "C" {
 #define SOC_ETM_CH30_TASK_ID_S  0
 
 /** SOC_ETM_CH31_EVT_ID_REG register
- *  channel31 event id register
+ *  Channel31 event ID register
  */
-#define SOC_ETM_CH31_EVT_ID_REG (DR_REG_SOC_BASE + 0x110)
+#define SOC_ETM_CH31_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x110)
 /** SOC_ETM_CH31_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch31_evt_id
+ *  Configures the event ID of channel31.
  */
 #define SOC_ETM_CH31_EVT_ID    0x000000FFU
 #define SOC_ETM_CH31_EVT_ID_M  (SOC_ETM_CH31_EVT_ID_V << SOC_ETM_CH31_EVT_ID_S)
@@ -1848,11 +2148,11 @@ extern "C" {
 #define SOC_ETM_CH31_EVT_ID_S  0
 
 /** SOC_ETM_CH31_TASK_ID_REG register
- *  channel31 task id register
+ *  Channel31 task ID register
  */
-#define SOC_ETM_CH31_TASK_ID_REG (DR_REG_SOC_BASE + 0x114)
+#define SOC_ETM_CH31_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x114)
 /** SOC_ETM_CH31_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch31_task_id
+ *  Configures the task ID of channel31.
  */
 #define SOC_ETM_CH31_TASK_ID    0x000000FFU
 #define SOC_ETM_CH31_TASK_ID_M  (SOC_ETM_CH31_TASK_ID_V << SOC_ETM_CH31_TASK_ID_S)
@@ -1860,11 +2160,11 @@ extern "C" {
 #define SOC_ETM_CH31_TASK_ID_S  0
 
 /** SOC_ETM_CH32_EVT_ID_REG register
- *  channel32 event id register
+ *  Channel32 event ID register
  */
-#define SOC_ETM_CH32_EVT_ID_REG (DR_REG_SOC_BASE + 0x118)
+#define SOC_ETM_CH32_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x118)
 /** SOC_ETM_CH32_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch32_evt_id
+ *  Configures the event ID of channel32.
  */
 #define SOC_ETM_CH32_EVT_ID    0x000000FFU
 #define SOC_ETM_CH32_EVT_ID_M  (SOC_ETM_CH32_EVT_ID_V << SOC_ETM_CH32_EVT_ID_S)
@@ -1872,11 +2172,11 @@ extern "C" {
 #define SOC_ETM_CH32_EVT_ID_S  0
 
 /** SOC_ETM_CH32_TASK_ID_REG register
- *  channel32 task id register
+ *  Channel32 task ID register
  */
-#define SOC_ETM_CH32_TASK_ID_REG (DR_REG_SOC_BASE + 0x11c)
+#define SOC_ETM_CH32_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x11c)
 /** SOC_ETM_CH32_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch32_task_id
+ *  Configures the task ID of channel32.
  */
 #define SOC_ETM_CH32_TASK_ID    0x000000FFU
 #define SOC_ETM_CH32_TASK_ID_M  (SOC_ETM_CH32_TASK_ID_V << SOC_ETM_CH32_TASK_ID_S)
@@ -1884,11 +2184,11 @@ extern "C" {
 #define SOC_ETM_CH32_TASK_ID_S  0
 
 /** SOC_ETM_CH33_EVT_ID_REG register
- *  channel33 event id register
+ *  Channel33 event ID register
  */
-#define SOC_ETM_CH33_EVT_ID_REG (DR_REG_SOC_BASE + 0x120)
+#define SOC_ETM_CH33_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x120)
 /** SOC_ETM_CH33_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch33_evt_id
+ *  Configures the event ID of channel33.
  */
 #define SOC_ETM_CH33_EVT_ID    0x000000FFU
 #define SOC_ETM_CH33_EVT_ID_M  (SOC_ETM_CH33_EVT_ID_V << SOC_ETM_CH33_EVT_ID_S)
@@ -1896,11 +2196,11 @@ extern "C" {
 #define SOC_ETM_CH33_EVT_ID_S  0
 
 /** SOC_ETM_CH33_TASK_ID_REG register
- *  channel33 task id register
+ *  Channel33 task ID register
  */
-#define SOC_ETM_CH33_TASK_ID_REG (DR_REG_SOC_BASE + 0x124)
+#define SOC_ETM_CH33_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x124)
 /** SOC_ETM_CH33_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch33_task_id
+ *  Configures the task ID of channel33.
  */
 #define SOC_ETM_CH33_TASK_ID    0x000000FFU
 #define SOC_ETM_CH33_TASK_ID_M  (SOC_ETM_CH33_TASK_ID_V << SOC_ETM_CH33_TASK_ID_S)
@@ -1908,11 +2208,11 @@ extern "C" {
 #define SOC_ETM_CH33_TASK_ID_S  0
 
 /** SOC_ETM_CH34_EVT_ID_REG register
- *  channel34 event id register
+ *  Channel34 event ID register
  */
-#define SOC_ETM_CH34_EVT_ID_REG (DR_REG_SOC_BASE + 0x128)
+#define SOC_ETM_CH34_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x128)
 /** SOC_ETM_CH34_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch34_evt_id
+ *  Configures the event ID of channel34.
  */
 #define SOC_ETM_CH34_EVT_ID    0x000000FFU
 #define SOC_ETM_CH34_EVT_ID_M  (SOC_ETM_CH34_EVT_ID_V << SOC_ETM_CH34_EVT_ID_S)
@@ -1920,11 +2220,11 @@ extern "C" {
 #define SOC_ETM_CH34_EVT_ID_S  0
 
 /** SOC_ETM_CH34_TASK_ID_REG register
- *  channel34 task id register
+ *  Channel34 task ID register
  */
-#define SOC_ETM_CH34_TASK_ID_REG (DR_REG_SOC_BASE + 0x12c)
+#define SOC_ETM_CH34_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x12c)
 /** SOC_ETM_CH34_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch34_task_id
+ *  Configures the task ID of channel34.
  */
 #define SOC_ETM_CH34_TASK_ID    0x000000FFU
 #define SOC_ETM_CH34_TASK_ID_M  (SOC_ETM_CH34_TASK_ID_V << SOC_ETM_CH34_TASK_ID_S)
@@ -1932,11 +2232,11 @@ extern "C" {
 #define SOC_ETM_CH34_TASK_ID_S  0
 
 /** SOC_ETM_CH35_EVT_ID_REG register
- *  channel35 event id register
+ *  Channel35 event ID register
  */
-#define SOC_ETM_CH35_EVT_ID_REG (DR_REG_SOC_BASE + 0x130)
+#define SOC_ETM_CH35_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x130)
 /** SOC_ETM_CH35_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch35_evt_id
+ *  Configures the event ID of channel35.
  */
 #define SOC_ETM_CH35_EVT_ID    0x000000FFU
 #define SOC_ETM_CH35_EVT_ID_M  (SOC_ETM_CH35_EVT_ID_V << SOC_ETM_CH35_EVT_ID_S)
@@ -1944,11 +2244,11 @@ extern "C" {
 #define SOC_ETM_CH35_EVT_ID_S  0
 
 /** SOC_ETM_CH35_TASK_ID_REG register
- *  channel35 task id register
+ *  Channel35 task ID register
  */
-#define SOC_ETM_CH35_TASK_ID_REG (DR_REG_SOC_BASE + 0x134)
+#define SOC_ETM_CH35_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x134)
 /** SOC_ETM_CH35_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch35_task_id
+ *  Configures the task ID of channel35.
  */
 #define SOC_ETM_CH35_TASK_ID    0x000000FFU
 #define SOC_ETM_CH35_TASK_ID_M  (SOC_ETM_CH35_TASK_ID_V << SOC_ETM_CH35_TASK_ID_S)
@@ -1956,11 +2256,11 @@ extern "C" {
 #define SOC_ETM_CH35_TASK_ID_S  0
 
 /** SOC_ETM_CH36_EVT_ID_REG register
- *  channel36 event id register
+ *  Channel36 event ID register
  */
-#define SOC_ETM_CH36_EVT_ID_REG (DR_REG_SOC_BASE + 0x138)
+#define SOC_ETM_CH36_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x138)
 /** SOC_ETM_CH36_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch36_evt_id
+ *  Configures the event ID of channel36.
  */
 #define SOC_ETM_CH36_EVT_ID    0x000000FFU
 #define SOC_ETM_CH36_EVT_ID_M  (SOC_ETM_CH36_EVT_ID_V << SOC_ETM_CH36_EVT_ID_S)
@@ -1968,11 +2268,11 @@ extern "C" {
 #define SOC_ETM_CH36_EVT_ID_S  0
 
 /** SOC_ETM_CH36_TASK_ID_REG register
- *  channel36 task id register
+ *  Channel36 task ID register
  */
-#define SOC_ETM_CH36_TASK_ID_REG (DR_REG_SOC_BASE + 0x13c)
+#define SOC_ETM_CH36_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x13c)
 /** SOC_ETM_CH36_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch36_task_id
+ *  Configures the task ID of channel36.
  */
 #define SOC_ETM_CH36_TASK_ID    0x000000FFU
 #define SOC_ETM_CH36_TASK_ID_M  (SOC_ETM_CH36_TASK_ID_V << SOC_ETM_CH36_TASK_ID_S)
@@ -1980,11 +2280,11 @@ extern "C" {
 #define SOC_ETM_CH36_TASK_ID_S  0
 
 /** SOC_ETM_CH37_EVT_ID_REG register
- *  channel37 event id register
+ *  Channel37 event ID register
  */
-#define SOC_ETM_CH37_EVT_ID_REG (DR_REG_SOC_BASE + 0x140)
+#define SOC_ETM_CH37_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x140)
 /** SOC_ETM_CH37_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch37_evt_id
+ *  Configures the event ID of channel37.
  */
 #define SOC_ETM_CH37_EVT_ID    0x000000FFU
 #define SOC_ETM_CH37_EVT_ID_M  (SOC_ETM_CH37_EVT_ID_V << SOC_ETM_CH37_EVT_ID_S)
@@ -1992,11 +2292,11 @@ extern "C" {
 #define SOC_ETM_CH37_EVT_ID_S  0
 
 /** SOC_ETM_CH37_TASK_ID_REG register
- *  channel37 task id register
+ *  Channel37 task ID register
  */
-#define SOC_ETM_CH37_TASK_ID_REG (DR_REG_SOC_BASE + 0x144)
+#define SOC_ETM_CH37_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x144)
 /** SOC_ETM_CH37_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch37_task_id
+ *  Configures the task ID of channel37.
  */
 #define SOC_ETM_CH37_TASK_ID    0x000000FFU
 #define SOC_ETM_CH37_TASK_ID_M  (SOC_ETM_CH37_TASK_ID_V << SOC_ETM_CH37_TASK_ID_S)
@@ -2004,11 +2304,11 @@ extern "C" {
 #define SOC_ETM_CH37_TASK_ID_S  0
 
 /** SOC_ETM_CH38_EVT_ID_REG register
- *  channel38 event id register
+ *  Channel38 event ID register
  */
-#define SOC_ETM_CH38_EVT_ID_REG (DR_REG_SOC_BASE + 0x148)
+#define SOC_ETM_CH38_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x148)
 /** SOC_ETM_CH38_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch38_evt_id
+ *  Configures the event ID of channel38.
  */
 #define SOC_ETM_CH38_EVT_ID    0x000000FFU
 #define SOC_ETM_CH38_EVT_ID_M  (SOC_ETM_CH38_EVT_ID_V << SOC_ETM_CH38_EVT_ID_S)
@@ -2016,11 +2316,11 @@ extern "C" {
 #define SOC_ETM_CH38_EVT_ID_S  0
 
 /** SOC_ETM_CH38_TASK_ID_REG register
- *  channel38 task id register
+ *  Channel38 task ID register
  */
-#define SOC_ETM_CH38_TASK_ID_REG (DR_REG_SOC_BASE + 0x14c)
+#define SOC_ETM_CH38_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x14c)
 /** SOC_ETM_CH38_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch38_task_id
+ *  Configures the task ID of channel38.
  */
 #define SOC_ETM_CH38_TASK_ID    0x000000FFU
 #define SOC_ETM_CH38_TASK_ID_M  (SOC_ETM_CH38_TASK_ID_V << SOC_ETM_CH38_TASK_ID_S)
@@ -2028,11 +2328,11 @@ extern "C" {
 #define SOC_ETM_CH38_TASK_ID_S  0
 
 /** SOC_ETM_CH39_EVT_ID_REG register
- *  channel39 event id register
+ *  Channel39 event ID register
  */
-#define SOC_ETM_CH39_EVT_ID_REG (DR_REG_SOC_BASE + 0x150)
+#define SOC_ETM_CH39_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x150)
 /** SOC_ETM_CH39_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch39_evt_id
+ *  Configures the event ID of channel39.
  */
 #define SOC_ETM_CH39_EVT_ID    0x000000FFU
 #define SOC_ETM_CH39_EVT_ID_M  (SOC_ETM_CH39_EVT_ID_V << SOC_ETM_CH39_EVT_ID_S)
@@ -2040,11 +2340,11 @@ extern "C" {
 #define SOC_ETM_CH39_EVT_ID_S  0
 
 /** SOC_ETM_CH39_TASK_ID_REG register
- *  channel39 task id register
+ *  Channel39 task ID register
  */
-#define SOC_ETM_CH39_TASK_ID_REG (DR_REG_SOC_BASE + 0x154)
+#define SOC_ETM_CH39_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x154)
 /** SOC_ETM_CH39_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch39_task_id
+ *  Configures the task ID of channel39.
  */
 #define SOC_ETM_CH39_TASK_ID    0x000000FFU
 #define SOC_ETM_CH39_TASK_ID_M  (SOC_ETM_CH39_TASK_ID_V << SOC_ETM_CH39_TASK_ID_S)
@@ -2052,11 +2352,11 @@ extern "C" {
 #define SOC_ETM_CH39_TASK_ID_S  0
 
 /** SOC_ETM_CH40_EVT_ID_REG register
- *  channel40 event id register
+ *  Channel40 event ID register
  */
-#define SOC_ETM_CH40_EVT_ID_REG (DR_REG_SOC_BASE + 0x158)
+#define SOC_ETM_CH40_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x158)
 /** SOC_ETM_CH40_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch40_evt_id
+ *  Configures the event ID of channel40.
  */
 #define SOC_ETM_CH40_EVT_ID    0x000000FFU
 #define SOC_ETM_CH40_EVT_ID_M  (SOC_ETM_CH40_EVT_ID_V << SOC_ETM_CH40_EVT_ID_S)
@@ -2064,11 +2364,11 @@ extern "C" {
 #define SOC_ETM_CH40_EVT_ID_S  0
 
 /** SOC_ETM_CH40_TASK_ID_REG register
- *  channel40 task id register
+ *  Channel40 task ID register
  */
-#define SOC_ETM_CH40_TASK_ID_REG (DR_REG_SOC_BASE + 0x15c)
+#define SOC_ETM_CH40_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x15c)
 /** SOC_ETM_CH40_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch40_task_id
+ *  Configures the task ID of channel40.
  */
 #define SOC_ETM_CH40_TASK_ID    0x000000FFU
 #define SOC_ETM_CH40_TASK_ID_M  (SOC_ETM_CH40_TASK_ID_V << SOC_ETM_CH40_TASK_ID_S)
@@ -2076,11 +2376,11 @@ extern "C" {
 #define SOC_ETM_CH40_TASK_ID_S  0
 
 /** SOC_ETM_CH41_EVT_ID_REG register
- *  channel41 event id register
+ *  Channel41 event ID register
  */
-#define SOC_ETM_CH41_EVT_ID_REG (DR_REG_SOC_BASE + 0x160)
+#define SOC_ETM_CH41_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x160)
 /** SOC_ETM_CH41_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch41_evt_id
+ *  Configures the event ID of channel41.
  */
 #define SOC_ETM_CH41_EVT_ID    0x000000FFU
 #define SOC_ETM_CH41_EVT_ID_M  (SOC_ETM_CH41_EVT_ID_V << SOC_ETM_CH41_EVT_ID_S)
@@ -2088,11 +2388,11 @@ extern "C" {
 #define SOC_ETM_CH41_EVT_ID_S  0
 
 /** SOC_ETM_CH41_TASK_ID_REG register
- *  channel41 task id register
+ *  Channel41 task ID register
  */
-#define SOC_ETM_CH41_TASK_ID_REG (DR_REG_SOC_BASE + 0x164)
+#define SOC_ETM_CH41_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x164)
 /** SOC_ETM_CH41_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch41_task_id
+ *  Configures the task ID of channel41.
  */
 #define SOC_ETM_CH41_TASK_ID    0x000000FFU
 #define SOC_ETM_CH41_TASK_ID_M  (SOC_ETM_CH41_TASK_ID_V << SOC_ETM_CH41_TASK_ID_S)
@@ -2100,11 +2400,11 @@ extern "C" {
 #define SOC_ETM_CH41_TASK_ID_S  0
 
 /** SOC_ETM_CH42_EVT_ID_REG register
- *  channel42 event id register
+ *  Channel42 event ID register
  */
-#define SOC_ETM_CH42_EVT_ID_REG (DR_REG_SOC_BASE + 0x168)
+#define SOC_ETM_CH42_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x168)
 /** SOC_ETM_CH42_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch42_evt_id
+ *  Configures the event ID of channel42.
  */
 #define SOC_ETM_CH42_EVT_ID    0x000000FFU
 #define SOC_ETM_CH42_EVT_ID_M  (SOC_ETM_CH42_EVT_ID_V << SOC_ETM_CH42_EVT_ID_S)
@@ -2112,11 +2412,11 @@ extern "C" {
 #define SOC_ETM_CH42_EVT_ID_S  0
 
 /** SOC_ETM_CH42_TASK_ID_REG register
- *  channel42 task id register
+ *  Channel42 task ID register
  */
-#define SOC_ETM_CH42_TASK_ID_REG (DR_REG_SOC_BASE + 0x16c)
+#define SOC_ETM_CH42_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x16c)
 /** SOC_ETM_CH42_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch42_task_id
+ *  Configures the task ID of channel42.
  */
 #define SOC_ETM_CH42_TASK_ID    0x000000FFU
 #define SOC_ETM_CH42_TASK_ID_M  (SOC_ETM_CH42_TASK_ID_V << SOC_ETM_CH42_TASK_ID_S)
@@ -2124,11 +2424,11 @@ extern "C" {
 #define SOC_ETM_CH42_TASK_ID_S  0
 
 /** SOC_ETM_CH43_EVT_ID_REG register
- *  channel43 event id register
+ *  Channel43 event ID register
  */
-#define SOC_ETM_CH43_EVT_ID_REG (DR_REG_SOC_BASE + 0x170)
+#define SOC_ETM_CH43_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x170)
 /** SOC_ETM_CH43_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch43_evt_id
+ *  Configures the event ID of channel43.
  */
 #define SOC_ETM_CH43_EVT_ID    0x000000FFU
 #define SOC_ETM_CH43_EVT_ID_M  (SOC_ETM_CH43_EVT_ID_V << SOC_ETM_CH43_EVT_ID_S)
@@ -2136,11 +2436,11 @@ extern "C" {
 #define SOC_ETM_CH43_EVT_ID_S  0
 
 /** SOC_ETM_CH43_TASK_ID_REG register
- *  channel43 task id register
+ *  Channel43 task ID register
  */
-#define SOC_ETM_CH43_TASK_ID_REG (DR_REG_SOC_BASE + 0x174)
+#define SOC_ETM_CH43_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x174)
 /** SOC_ETM_CH43_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch43_task_id
+ *  Configures the task ID of channel43.
  */
 #define SOC_ETM_CH43_TASK_ID    0x000000FFU
 #define SOC_ETM_CH43_TASK_ID_M  (SOC_ETM_CH43_TASK_ID_V << SOC_ETM_CH43_TASK_ID_S)
@@ -2148,11 +2448,11 @@ extern "C" {
 #define SOC_ETM_CH43_TASK_ID_S  0
 
 /** SOC_ETM_CH44_EVT_ID_REG register
- *  channel44 event id register
+ *  Channel44 event ID register
  */
-#define SOC_ETM_CH44_EVT_ID_REG (DR_REG_SOC_BASE + 0x178)
+#define SOC_ETM_CH44_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x178)
 /** SOC_ETM_CH44_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch44_evt_id
+ *  Configures the event ID of channel44.
  */
 #define SOC_ETM_CH44_EVT_ID    0x000000FFU
 #define SOC_ETM_CH44_EVT_ID_M  (SOC_ETM_CH44_EVT_ID_V << SOC_ETM_CH44_EVT_ID_S)
@@ -2160,11 +2460,11 @@ extern "C" {
 #define SOC_ETM_CH44_EVT_ID_S  0
 
 /** SOC_ETM_CH44_TASK_ID_REG register
- *  channel44 task id register
+ *  Channel44 task ID register
  */
-#define SOC_ETM_CH44_TASK_ID_REG (DR_REG_SOC_BASE + 0x17c)
+#define SOC_ETM_CH44_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x17c)
 /** SOC_ETM_CH44_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch44_task_id
+ *  Configures the task ID of channel44.
  */
 #define SOC_ETM_CH44_TASK_ID    0x000000FFU
 #define SOC_ETM_CH44_TASK_ID_M  (SOC_ETM_CH44_TASK_ID_V << SOC_ETM_CH44_TASK_ID_S)
@@ -2172,11 +2472,11 @@ extern "C" {
 #define SOC_ETM_CH44_TASK_ID_S  0
 
 /** SOC_ETM_CH45_EVT_ID_REG register
- *  channel45 event id register
+ *  Channel45 event ID register
  */
-#define SOC_ETM_CH45_EVT_ID_REG (DR_REG_SOC_BASE + 0x180)
+#define SOC_ETM_CH45_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x180)
 /** SOC_ETM_CH45_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch45_evt_id
+ *  Configures the event ID of channel45.
  */
 #define SOC_ETM_CH45_EVT_ID    0x000000FFU
 #define SOC_ETM_CH45_EVT_ID_M  (SOC_ETM_CH45_EVT_ID_V << SOC_ETM_CH45_EVT_ID_S)
@@ -2184,11 +2484,11 @@ extern "C" {
 #define SOC_ETM_CH45_EVT_ID_S  0
 
 /** SOC_ETM_CH45_TASK_ID_REG register
- *  channel45 task id register
+ *  Channel45 task ID register
  */
-#define SOC_ETM_CH45_TASK_ID_REG (DR_REG_SOC_BASE + 0x184)
+#define SOC_ETM_CH45_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x184)
 /** SOC_ETM_CH45_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch45_task_id
+ *  Configures the task ID of channel45.
  */
 #define SOC_ETM_CH45_TASK_ID    0x000000FFU
 #define SOC_ETM_CH45_TASK_ID_M  (SOC_ETM_CH45_TASK_ID_V << SOC_ETM_CH45_TASK_ID_S)
@@ -2196,11 +2496,11 @@ extern "C" {
 #define SOC_ETM_CH45_TASK_ID_S  0
 
 /** SOC_ETM_CH46_EVT_ID_REG register
- *  channel46 event id register
+ *  Channel46 event ID register
  */
-#define SOC_ETM_CH46_EVT_ID_REG (DR_REG_SOC_BASE + 0x188)
+#define SOC_ETM_CH46_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x188)
 /** SOC_ETM_CH46_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch46_evt_id
+ *  Configures the event ID of channel46.
  */
 #define SOC_ETM_CH46_EVT_ID    0x000000FFU
 #define SOC_ETM_CH46_EVT_ID_M  (SOC_ETM_CH46_EVT_ID_V << SOC_ETM_CH46_EVT_ID_S)
@@ -2208,11 +2508,11 @@ extern "C" {
 #define SOC_ETM_CH46_EVT_ID_S  0
 
 /** SOC_ETM_CH46_TASK_ID_REG register
- *  channel46 task id register
+ *  Channel46 task ID register
  */
-#define SOC_ETM_CH46_TASK_ID_REG (DR_REG_SOC_BASE + 0x18c)
+#define SOC_ETM_CH46_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x18c)
 /** SOC_ETM_CH46_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch46_task_id
+ *  Configures the task ID of channel46.
  */
 #define SOC_ETM_CH46_TASK_ID    0x000000FFU
 #define SOC_ETM_CH46_TASK_ID_M  (SOC_ETM_CH46_TASK_ID_V << SOC_ETM_CH46_TASK_ID_S)
@@ -2220,11 +2520,11 @@ extern "C" {
 #define SOC_ETM_CH46_TASK_ID_S  0
 
 /** SOC_ETM_CH47_EVT_ID_REG register
- *  channel47 event id register
+ *  Channel47 event ID register
  */
-#define SOC_ETM_CH47_EVT_ID_REG (DR_REG_SOC_BASE + 0x190)
+#define SOC_ETM_CH47_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x190)
 /** SOC_ETM_CH47_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch47_evt_id
+ *  Configures the event ID of channel47.
  */
 #define SOC_ETM_CH47_EVT_ID    0x000000FFU
 #define SOC_ETM_CH47_EVT_ID_M  (SOC_ETM_CH47_EVT_ID_V << SOC_ETM_CH47_EVT_ID_S)
@@ -2232,11 +2532,11 @@ extern "C" {
 #define SOC_ETM_CH47_EVT_ID_S  0
 
 /** SOC_ETM_CH47_TASK_ID_REG register
- *  channel47 task id register
+ *  Channel47 task ID register
  */
-#define SOC_ETM_CH47_TASK_ID_REG (DR_REG_SOC_BASE + 0x194)
+#define SOC_ETM_CH47_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x194)
 /** SOC_ETM_CH47_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch47_task_id
+ *  Configures the task ID of channel47.
  */
 #define SOC_ETM_CH47_TASK_ID    0x000000FFU
 #define SOC_ETM_CH47_TASK_ID_M  (SOC_ETM_CH47_TASK_ID_V << SOC_ETM_CH47_TASK_ID_S)
@@ -2244,11 +2544,11 @@ extern "C" {
 #define SOC_ETM_CH47_TASK_ID_S  0
 
 /** SOC_ETM_CH48_EVT_ID_REG register
- *  channel48 event id register
+ *  Channel48 event ID register
  */
-#define SOC_ETM_CH48_EVT_ID_REG (DR_REG_SOC_BASE + 0x198)
+#define SOC_ETM_CH48_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x198)
 /** SOC_ETM_CH48_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch48_evt_id
+ *  Configures the event ID of channel48.
  */
 #define SOC_ETM_CH48_EVT_ID    0x000000FFU
 #define SOC_ETM_CH48_EVT_ID_M  (SOC_ETM_CH48_EVT_ID_V << SOC_ETM_CH48_EVT_ID_S)
@@ -2256,11 +2556,11 @@ extern "C" {
 #define SOC_ETM_CH48_EVT_ID_S  0
 
 /** SOC_ETM_CH48_TASK_ID_REG register
- *  channel48 task id register
+ *  Channel48 task ID register
  */
-#define SOC_ETM_CH48_TASK_ID_REG (DR_REG_SOC_BASE + 0x19c)
+#define SOC_ETM_CH48_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x19c)
 /** SOC_ETM_CH48_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch48_task_id
+ *  Configures the task ID of channel48.
  */
 #define SOC_ETM_CH48_TASK_ID    0x000000FFU
 #define SOC_ETM_CH48_TASK_ID_M  (SOC_ETM_CH48_TASK_ID_V << SOC_ETM_CH48_TASK_ID_S)
@@ -2268,11 +2568,11 @@ extern "C" {
 #define SOC_ETM_CH48_TASK_ID_S  0
 
 /** SOC_ETM_CH49_EVT_ID_REG register
- *  channel49 event id register
+ *  Channel49 event ID register
  */
-#define SOC_ETM_CH49_EVT_ID_REG (DR_REG_SOC_BASE + 0x1a0)
+#define SOC_ETM_CH49_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x1a0)
 /** SOC_ETM_CH49_EVT_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch49_evt_id
+ *  Configures the event ID of channel49.
  */
 #define SOC_ETM_CH49_EVT_ID    0x000000FFU
 #define SOC_ETM_CH49_EVT_ID_M  (SOC_ETM_CH49_EVT_ID_V << SOC_ETM_CH49_EVT_ID_S)
@@ -2280,11 +2580,11 @@ extern "C" {
 #define SOC_ETM_CH49_EVT_ID_S  0
 
 /** SOC_ETM_CH49_TASK_ID_REG register
- *  channel49 task id register
+ *  Channel49 task ID register
  */
-#define SOC_ETM_CH49_TASK_ID_REG (DR_REG_SOC_BASE + 0x1a4)
+#define SOC_ETM_CH49_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x1a4)
 /** SOC_ETM_CH49_TASK_ID : R/W; bitpos: [7:0]; default: 0;
- *  ch49_task_id
+ *  Configures the task ID of channel49.
  */
 #define SOC_ETM_CH49_TASK_ID    0x000000FFU
 #define SOC_ETM_CH49_TASK_ID_M  (SOC_ETM_CH49_TASK_ID_V << SOC_ETM_CH49_TASK_ID_S)
@@ -2292,11 +2592,13 @@ extern "C" {
 #define SOC_ETM_CH49_TASK_ID_S  0
 
 /** SOC_ETM_CLK_EN_REG register
- *  etm clock enable register
+ *  ETM clock enable register
  */
-#define SOC_ETM_CLK_EN_REG (DR_REG_SOC_BASE + 0x1a8)
+#define SOC_ETM_CLK_EN_REG (DR_REG_SOC_ETM_BASE + 0x1a8)
 /** SOC_ETM_CLK_EN : R/W; bitpos: [0]; default: 0;
- *  clock enable
+ *  Configures resister clock gating.
+ *  0: Support clock only when application writes registers
+ *  1: Force on clock gating for registers
  */
 #define SOC_ETM_CLK_EN    (BIT(0))
 #define SOC_ETM_CLK_EN_M  (SOC_ETM_CLK_EN_V << SOC_ETM_CLK_EN_S)
@@ -2304,11 +2606,11 @@ extern "C" {
 #define SOC_ETM_CLK_EN_S  0
 
 /** SOC_ETM_DATE_REG register
- *  etm date register
+ *  Version control register
  */
-#define SOC_ETM_DATE_REG (DR_REG_SOC_BASE + 0x1ac)
+#define SOC_ETM_DATE_REG (DR_REG_SOC_ETM_BASE + 0x1ac)
 /** SOC_ETM_DATE : R/W; bitpos: [27:0]; default: 35664018;
- *  date
+ *  Version control register.
  */
 #define SOC_ETM_DATE    0x0FFFFFFFU
 #define SOC_ETM_DATE_M  (SOC_ETM_DATE_V << SOC_ETM_DATE_S)
