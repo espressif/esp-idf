@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -104,12 +104,12 @@ typedef union {
          *  1: Allowed
          */
         uint32_t lp_mm_l2mem_mon_allow:1;
-        /** lp_mm_tcm_mon_allow : R/W; bitpos: [10]; default: 1;
-         *  Configures whether the LP CPU in machine mode has permission to access TCM monitor.
+        /** lp_mm_spm_mon_allow : R/W; bitpos: [10]; default: 1;
+         *  Configures whether the LP CPU in machine mode has permission to access SPM monitor.
          *  0: Not allowed
          *  1: Allowed
          */
-        uint32_t lp_mm_tcm_mon_allow:1;
+        uint32_t lp_mm_spm_mon_allow:1;
         /** lp_mm_cache_allow : R/W; bitpos: [11]; default: 1;
          *  Configures whether the LP CPU in machine mode has permission to access cache.
          *  0: Not allowed
@@ -153,13 +153,7 @@ typedef union {
          *  1: Allowed
          */
         uint32_t lp_mm_hp_gdma_allow:1;
-        /** lp_mm_hp_regdma_allow : R/W; bitpos: [4]; default: 1;
-         *  Configures whether the LP CPU in machine mode has permission to access HP GDMA (DW
-         *  GDMA).
-         *  0: Not allowed
-         *  1: Allow
-         */
-        uint32_t lp_mm_hp_regdma_allow:1;
+        uint32_t reserved_4:1;
         /** lp_mm_hp_sdmmc_allow : R/W; bitpos: [5]; default: 1;
          *  Configures whether the LP CPU in machine mode has permission to access HP SDMMC.
          *  0: Not allowed

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -1555,65 +1555,35 @@ extern "C" {
 #define PMS_DMA_L2MEM_MON_W_PMS_V  0xFFFFFFFFU
 #define PMS_DMA_L2MEM_MON_W_PMS_S  0
 
-/** PMS_DMA_TCM_MON_PMS_R_REG register
- *  TCM Monitor read permission control register
+/** PMS_DMA_SPM_MON_PMS_R_REG register
+ *  SPM Monitor read permission control register
  */
-#define PMS_DMA_TCM_MON_PMS_R_REG (DR_REG_DMA_PMS_BASE + 0x1e4)
-/** PMS_DMA_TCM_MON_R_PMS : R/W; bitpos: [31:0]; default: 4294967295;
- *  Configures read permission for TCM MON. Each bit corresponds to a region. Bit 0
+#define PMS_DMA_SPM_MON_PMS_R_REG (DR_REG_DMA_PMS_BASE + 0x1e4)
+/** PMS_DMA_SPM_MON_R_PMS : R/W; bitpos: [31:0]; default: 4294967295;
+ *  Configures read permission for SPM MON. Each bit corresponds to a region. Bit 0
  *  corresponds to region0, and so on.
  *  0: Disable read permission.
  *  1: Enable read permission.
  */
-#define PMS_DMA_TCM_MON_R_PMS    0xFFFFFFFFU
-#define PMS_DMA_TCM_MON_R_PMS_M  (PMS_DMA_TCM_MON_R_PMS_V << PMS_DMA_TCM_MON_R_PMS_S)
-#define PMS_DMA_TCM_MON_R_PMS_V  0xFFFFFFFFU
-#define PMS_DMA_TCM_MON_R_PMS_S  0
+#define PMS_DMA_SPM_MON_R_PMS    0xFFFFFFFFU
+#define PMS_DMA_SPM_MON_R_PMS_M  (PMS_DMA_SPM_MON_R_PMS_V << PMS_DMA_SPM_MON_R_PMS_S)
+#define PMS_DMA_SPM_MON_R_PMS_V  0xFFFFFFFFU
+#define PMS_DMA_SPM_MON_R_PMS_S  0
 
-/** PMS_DMA_TCM_MON_PMS_W_REG register
- *  TCM Monitor write permission control register
+/** PMS_DMA_SPM_MON_PMS_W_REG register
+ *  SPM Monitor write permission control register
  */
-#define PMS_DMA_TCM_MON_PMS_W_REG (DR_REG_DMA_PMS_BASE + 0x1e8)
-/** PMS_DMA_TCM_MON_W_PMS : R/W; bitpos: [31:0]; default: 4294967295;
- *  Configures write permission for TCM monitor to access 32 address ranges. Bit 0
+#define PMS_DMA_SPM_MON_PMS_W_REG (DR_REG_DMA_PMS_BASE + 0x1e8)
+/** PMS_DMA_SPM_MON_W_PMS : R/W; bitpos: [31:0]; default: 4294967295;
+ *  Configures write permission for SPM monitor to access 32 address ranges. Bit 0
  *  corresponds to region0, and so on.
  *  0: Disable write permission.
  *  1: Enable write permission.
  */
-#define PMS_DMA_TCM_MON_W_PMS    0xFFFFFFFFU
-#define PMS_DMA_TCM_MON_W_PMS_M  (PMS_DMA_TCM_MON_W_PMS_V << PMS_DMA_TCM_MON_W_PMS_S)
-#define PMS_DMA_TCM_MON_W_PMS_V  0xFFFFFFFFU
-#define PMS_DMA_TCM_MON_W_PMS_S  0
-
-/** PMS_DMA_REGDMA_PMS_R_REG register
- *  REGDMA read permission control register
- */
-#define PMS_DMA_REGDMA_PMS_R_REG (DR_REG_DMA_PMS_BASE + 0x1ec)
-/** PMS_DMA_REGDMA_R_PMS : R/W; bitpos: [31:0]; default: 4294967295;
- *  Configures read permission for REGDMA. Each bit corresponds to a region. Bit 0
- *  corresponds to region0, and so on.
- *  0: Disable read permission.
- *  1: Enable read permission.
- */
-#define PMS_DMA_REGDMA_R_PMS    0xFFFFFFFFU
-#define PMS_DMA_REGDMA_R_PMS_M  (PMS_DMA_REGDMA_R_PMS_V << PMS_DMA_REGDMA_R_PMS_S)
-#define PMS_DMA_REGDMA_R_PMS_V  0xFFFFFFFFU
-#define PMS_DMA_REGDMA_R_PMS_S  0
-
-/** PMS_DMA_REGDMA_PMS_W_REG register
- *  REGDMA write permission control register
- */
-#define PMS_DMA_REGDMA_PMS_W_REG (DR_REG_DMA_PMS_BASE + 0x1f0)
-/** PMS_DMA_REGDMA_W_PMS : R/W; bitpos: [31:0]; default: 4294967295;
- *  Configures write permission for REGDMA. Each bit corresponds to a region. Bit 0
- *  corresponds to region0, and so on.
- *  0: Disable write permission.
- *  1: Enable write permission.
- */
-#define PMS_DMA_REGDMA_W_PMS    0xFFFFFFFFU
-#define PMS_DMA_REGDMA_W_PMS_M  (PMS_DMA_REGDMA_W_PMS_V << PMS_DMA_REGDMA_W_PMS_S)
-#define PMS_DMA_REGDMA_W_PMS_V  0xFFFFFFFFU
-#define PMS_DMA_REGDMA_W_PMS_S  0
+#define PMS_DMA_SPM_MON_W_PMS    0xFFFFFFFFU
+#define PMS_DMA_SPM_MON_W_PMS_M  (PMS_DMA_SPM_MON_W_PMS_V << PMS_DMA_SPM_MON_W_PMS_S)
+#define PMS_DMA_SPM_MON_W_PMS_V  0xFFFFFFFFU
+#define PMS_DMA_SPM_MON_W_PMS_S  0
 
 /** PMS_DMA_H264_PMS_R_REG register
  *  H264 DMA read permission control register
