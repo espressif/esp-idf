@@ -342,6 +342,11 @@ esp_err_t esp_bt_hid_device_unregister_app(void);
  *                  esp_bluedroid_init() and esp_bluedroid_enable() success, and should be called after esp_bt_hid_device_init().
  *                  When the operation is complete, the callback function will be called with ESP_HIDD_OPEN_EVT.
  *
+ * @note            The connection between the HID Host and the HID Device is established as a virtual cable by default.
+ *                  A new HID Host connection request will only be accepted after the previous HID Host has been
+ *                  explicitly unplugged. For details on disconnection and virtual cable unplugging, please refer to API
+ *                  `esp_bt_hid_device_disconnect` and `esp_bt_hid_device_virtual_cable_unplug`.
+ *
  * @param[in]       bd_addr: Remote host bluetooth device address.
  *
  * @return
