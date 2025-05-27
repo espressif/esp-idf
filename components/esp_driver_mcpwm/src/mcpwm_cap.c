@@ -93,7 +93,8 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
     ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz), err, TAG, "get clock source freq failed");
     ESP_LOGD(TAG, "periph_src_clk_hz %"PRIu32"", periph_src_clk_hz);
     // when resolution_hz set to zero, use default resolution_hz
-    uint32_t resolution_hz = config->resolution_hz ? config->resolution_hz : periph_src_clk_hz / MCPWM_GROUP_CLOCK_DEFAULT_PRESCALE;
+    uint32_t cap_timer_prescale = group->prescale > 0 ? group->prescale : MCPWM_GROUP_CLOCK_DEFAULT_PRESCALE;
+    uint32_t resolution_hz = config->resolution_hz ? config->resolution_hz : periph_src_clk_hz / cap_timer_prescale;
 
     ESP_GOTO_ON_ERROR(mcpwm_set_prescale(group, resolution_hz, MCPWM_LL_MAX_CAPTURE_TIMER_PRESCALE, NULL), err, TAG, "set prescale failed");
     cap_timer->resolution_hz = group->resolution_hz;

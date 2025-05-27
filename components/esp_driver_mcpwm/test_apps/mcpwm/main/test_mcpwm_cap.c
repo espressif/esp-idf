@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -73,7 +73,7 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     printf("init a gpio to simulate the external capture signal\r\n");
     const int cap_gpio = TEST_CAP_GPIO;
     gpio_config_t ext_gpio_conf = {
-        .mode = GPIO_MODE_OUTPUT,
+        .mode = GPIO_MODE_INPUT_OUTPUT,
         .pin_bit_mask = BIT(cap_gpio),
     };
     TEST_ESP_OK(gpio_config(&ext_gpio_conf));
@@ -110,6 +110,12 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     printf("enable capture channel\r\n");
     TEST_ESP_OK(mcpwm_capture_channel_enable(pps_channel));
 
+    printf("check input function before starting capture\r\n");
+    gpio_set_level(cap_gpio, 1);
+    TEST_ASSERT_EQUAL(1, gpio_get_level(cap_gpio));
+    gpio_set_level(cap_gpio, 0);
+    TEST_ASSERT_EQUAL(0, gpio_get_level(cap_gpio));
+
     printf("enable and start capture timer\r\n");
     TEST_ESP_OK(mcpwm_capture_timer_enable(cap_timer));
     TEST_ESP_OK(mcpwm_capture_timer_start(cap_timer));
@@ -131,6 +137,13 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_capture_channel(pps_channel));
     TEST_ESP_OK(mcpwm_capture_timer_disable(cap_timer));
     TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));
+
+    printf("check input function after removing capture\r\n");
+    gpio_set_level(cap_gpio, 1);
+    TEST_ASSERT_EQUAL(1, gpio_get_level(cap_gpio));
+    gpio_set_level(cap_gpio, 0);
+    TEST_ASSERT_EQUAL(0, gpio_get_level(cap_gpio));
+
     TEST_ESP_OK(gpio_reset_pin(cap_gpio));
 }
 

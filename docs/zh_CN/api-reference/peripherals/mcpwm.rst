@@ -50,6 +50,7 @@ MCPWM 外设是一个多功能 PWM 生成器，集成多个子模块，在电力
     - :ref:`mcpwm-capture` - 介绍如何使用 MCPWM 捕获模块测量信号脉宽。
     :SOC_MCPWM_SUPPORT_ETM: - :ref:`mcpwm-etm-event-and-task` - MCPWM 提供了哪些事件和任务可以连接到 ETM 通道上。
     - :ref:`mcpwm-power-management` - 介绍不同的时钟源对功耗的影响。
+    - :ref:`mcpwm-resolution-config` - 介绍 MCPWM 子模块的分辨率配置规则。
     - :ref:`mcpwm-iram-safe` - 介绍如何协调 RMT 中断与禁用缓存。
     - :ref:`mcpwm-thread-safety` - 列出了由驱动程序认证为线程安全的 API。
     - :ref:`mcpwm-kconfig-options` - 列出了针对驱动的数个 Kconfig 支持选项。
@@ -78,6 +79,10 @@ MCPWM 定时器
 分配成功后，:cpp:func:`mcpwm_new_timer` 将返回一个指向已分配定时器的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 组中没有空闲定时器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
 
 反之，调用 :cpp:func:`mcpwm_del_timer` 函数将释放已分配的定时器。
+
+.. note::
+
+    同时分配多个 MCPWM 定时器时，MCPWM 组的分频系数将以第一个定时器的分辨率来计算，驱动会从低到高寻找合适的分频系数。若分配多个定时器时出现分频系数冲突，请调整分配定时器的顺序，按照目标分辨率的大小按序申请定时器（从大到小或者从小到大）。更多相关内容请参阅 :ref:`mcpwm-resolution-config`。
 
 MCPWM 操作器
 ~~~~~~~~~~~~~~~
@@ -192,6 +197,12 @@ MCPWM 组有一个专用定时器，用于捕获特定事件发生时的时间�
     .. note::
 
         在 {IDF_TARGET_NAME} 中，:cpp:member:`mcpwm_capture_timer_config_t::resolution_hz` 参数无效，捕获定时器的分辨率始终等于 :cpp:enumerator:`MCPWM_CAPTURE_CLK_SRC_APB`。
+
+.. only:: SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
+
+    .. note::
+
+        定时器和捕获定时器共享 MCPWM 组时钟源。MCPWM 组的分频系数将以第一个分配的(捕获)定时器的分辨率来计算，驱动会从低到高寻找合适的分频系数。若分配多个(捕获)定时器时出现分频系数冲突，请调整分配定时器的顺序，按照目标分辨率的大小按序申请(捕获)定时器（从大到小或者从小到大）。更多相关内容请参阅 :ref:`mcpwm-resolution-config`。
 
 分配成功后，:cpp:func:`mcpwm_new_capture_timer` 将返回一个指向已分配捕获定时器的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 组中没有空闲捕获定时器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
 
@@ -758,8 +769,8 @@ MCPWM 操作器具有载波子模块，可以根据需要（例如隔离式数�
 调用 :cpp:func:`mcpwm_operator_apply_carrier`，并提供配置结构体 :cpp:type:`mcpwm_carrier_config_t`，配置载波子模块：
 
 - :cpp:member:`mcpwm_carrier_config_t::clk_src` 设置载波的时钟源。
-- :cpp:member:`mcpwm_carrier_config_t::frequency_hz` 表示载波频率，单位为赫兹。内部驱动将根据时钟源和载波频率设置合适的分频器。
-- :cpp:member:`mcpwm_carrier_config_t::duty_cycle` 表示载波的占空比。需注意，支持的占空比选项并不连续，驱动程序将根据配置查找最接近的占空比。
+- :cpp:member:`mcpwm_carrier_config_t::frequency_hz` 表示载波频率，单位为赫兹。内部驱动将根据时钟源和载波频率设置合适的分频器。有关频率限制的相关内容请参阅 :ref:`mcpwm-resolution-config`。
+- :cpp:member:`mcpwm_carrier_config_t::duty_cycle` 表示载波的占空比。需注意，占空比仅支持的7种，分别为 0.125、0.25、0.375、0.5、0.625、0.75、0.875。
 - :cpp:member:`mcpwm_carrier_config_t::first_pulse_duration_us` 表示第一个脉冲的脉宽，单位为微秒。该脉冲的分辨率由 :cpp:member:`mcpwm_carrier_config_t::frequency_hz` 中的配置决定。第一个脉冲的脉宽不能为零，且至少为一个载波周期。脉宽越长，电感传导越快。
 - :cpp:member:`mcpwm_carrier_config_t::invert_before_modulate` 和 :cpp:member:`mcpwm_carrier_config_t::invert_after_modulate` 设置是否在调制前和调制后取反载波输出。
 
@@ -980,6 +991,18 @@ MCPWM 捕获通道支持在信号上检测到有效边沿时发送通知。须�
     {IDF_TARGET_NAME} 支持在进入 **Light-sleep** 之前保留 MCPWM 寄存器中的内容，并在唤醒后恢复。也就是说程序不需要在 **Light-sleep** 唤醒后重新配置 MCPWM。
 
     该特性可以通过置位配置中的 :cpp:member:`mcpwm_timer_config_t::allow_pd` 或 :cpp:member:`mcpwm_capture_timer_config_t::allow_pd` 标志位启用。启用后驱动允许系统在 Light-sleep 时对 MCPWM 掉电，同时保存 MCPWM 的寄存器内容。它可以帮助降低 Light-sleep 时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
+
+.. _mcpwm-resolution-config:
+
+分辨率配置
+^^^^^^^^^^^^^
+
+MCPWM 组拥有时钟分频器，并且部分子模块会有自己的时钟分频器，子模块最终的时钟频率取决于组时钟分频器和自身的分频器（如果有）。而组时钟分频器会影响所有子模块。当配置 MCPWM 子模块的时钟频率（或者叫分辨率）时，驱动会按照以下规则设置分频器：
+
+1. 如果子模块的时钟频率可以被时钟源整除，优先保证子模块的频率准确。
+2. 如果无法被时钟源整除，则尽可能保证组时钟的频率最高，将子模块频率调整到最接近的能够被时钟源整除的频率。
+
+当多个 MCPWM 子模块共存时，需要考虑是否存在时钟分频器冲突。当出现组时钟分频器冲突，可以尝试调整子模块分配顺序。组分频器和子模块分频器范围详情请参见 [`TRM <{IDF_TARGET_TRM_EN_URL}#mcpwm>`__]。
 
 .. _mcpwm-iram-safe:
 

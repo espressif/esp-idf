@@ -53,7 +53,7 @@ extern "C" {
 
 #define MCPWM_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
-#define MCPWM_GROUP_CLOCK_DEFAULT_PRESCALE 2
+#define MCPWM_GROUP_CLOCK_DEFAULT_PRESCALE 1
 
 ///!< Logging settings
 #define TAG "mcpwm"
