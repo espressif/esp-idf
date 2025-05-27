@@ -69,9 +69,9 @@ The CSV format is the same format as printed in the summaries shown above. Howev
     ota_1,    app,  ota_1,    ,         1M
     nvs_key,  data, nvs_keys, ,        0x1000
 
-* Whitespace between fields is ignored, and so is any line starting with # (comments).
+* Whitespace between fields is ignored, and so is any line starting with ``#`` (comments).
 * Each non-comment line in the CSV file is a partition definition.
-* The ``Offset`` field for each partition is empty. The ``gen_esp32part.py`` tool fills in each blank offset, starting after the partition table and making sure each partition is aligned correctly.
+* If you change the value of :ref:`CONFIG_PARTITION_TABLE_OFFSET`, you should update any fixed ``Offset`` in your CSV file to avoid overlaps with the new partition table location. Alternatively, leaving the ``Offset`` field blank allows the ``gen_esp32part.py`` tool to automatically calculate the correct offset based on the current partition table offset and alignment requirements.
 
 Here is an example of a CSV partition table that includes bootloader and partition table partitions:
 
@@ -224,7 +224,9 @@ Offset & Size
     - Sizes and offsets can be specified as decimal numbers, hex numbers with the prefix 0x, or size multipliers K or M (1024 and 1024*1024 bytes).
     - For ``bootloader`` and ``partition_table`` types, specifying ``N/A`` for size and offset in the CSV file means that these values are automatically determined by the tool and cannot be manually defined. This requires setting the ``--offset`` and ``--primary-partition-offset`` arguments of ``gen_esp32part.py``.
 
-If you want the partitions in the partition table to work relative to any placement (:ref:`CONFIG_PARTITION_TABLE_OFFSET`) of the table itself, leave the offset field (in CSV file) for all partitions blank. Similarly, if changing the partition table offset then be aware that all blank partition offsets may change to match, and that any fixed offsets may now collide with the partition table (causing an error).
+.. note::
+
+    If you want the partitions in the partition table to work relative to any placement (:ref:`CONFIG_PARTITION_TABLE_OFFSET`) of the table itself, leave the offset field (in CSV file) for all partitions blank. Similarly, if changing the partition table offset, then be aware that all blank partition offsets may change to match, and that any fixed offsets may now collide with the partition table (causing an error).
 
 Flags
 ~~~~~
