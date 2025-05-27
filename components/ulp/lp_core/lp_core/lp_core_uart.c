@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,7 +99,6 @@ esp_err_t lp_core_uart_write_bytes(uart_port_t lp_uart_num, const void *src, siz
     /* Enable the Tx done interrupt */
     uint32_t intr_mask = LP_UART_TX_INT_FLAG | LP_UART_ERR_INT_FLAG;
     uart_hal_clr_intsts_mask(&hal, intr_mask);
-    uart_hal_ena_intr_mask(&hal, intr_mask);
 
     /* Transmit data */
     uint32_t tx_len;
@@ -118,22 +117,23 @@ esp_err_t lp_core_uart_write_bytes(uart_port_t lp_uart_num, const void *src, siz
             /* We have managed to write some data to the Tx FIFO. Check Tx interrupt status */
             while (1) {
                 /* Fetch the interrupt status */
-                intr_status = uart_hal_get_intsts_mask(&hal);
+                intr_status = uart_hal_get_intraw_mask(&hal);
                 if (intr_status & LP_UART_TX_INT_FLAG) {
                     /* Clear interrupt status and break */
                     uart_hal_clr_intsts_mask(&hal, intr_mask);
                     break;
                 } else if ((intr_status & LP_UART_ERR_INT_FLAG)) {
                     /* Transaction error. Abort */
+                    uart_hal_clr_intsts_mask(&hal, intr_mask);
                     return ESP_FAIL;
                 }
 
                 /* Check for transaction timeout */
                 ret = lp_core_uart_check_timeout(intr_mask, timeout, &to);
                 if (ret == ESP_ERR_TIMEOUT) {
-                    /* Timeout */
-                    uart_hal_disable_intr_mask(&hal, intr_mask);
-                    return ret;
+                    /* Timeout. Clear interrupt status and break */
+                    uart_hal_clr_intsts_mask(&hal, intr_mask);
+                    break;
                 }
             }
 
@@ -144,15 +144,12 @@ esp_err_t lp_core_uart_write_bytes(uart_port_t lp_uart_num, const void *src, siz
             /* Tx FIFO does not have empty slots. Check for transaction timeout */
             ret = lp_core_uart_check_timeout(intr_mask, timeout, &to);
             if (ret == ESP_ERR_TIMEOUT) {
-                /* Timeout */
-                uart_hal_disable_intr_mask(&hal, intr_mask);
-                return ret;
+                /* Timeout. Clear interrupt status and break */
+                uart_hal_clr_intsts_mask(&hal, intr_mask);
+                break;
             }
         }
     }
-
-    /* Disable the Tx done interrupt */
-    uart_hal_disable_intr_mask(&hal, intr_mask);
 
     return ret;
 }
@@ -179,8 +176,6 @@ int lp_core_uart_read_bytes(uart_port_t lp_uart_num, void *buf, size_t size, int
     /* Enable the Rx interrupts */
     uint32_t intr_mask = LP_UART_RX_INT_FLAG | LP_UART_ERR_INT_FLAG;
     uart_hal_clr_intsts_mask(&hal, intr_mask);
-    uart_hal_ena_intr_mask(&hal, intr_mask);
-
     /* Receive data */
     int rx_len = 0;
     uint32_t bytes_rcvd = 0;
@@ -198,7 +193,7 @@ int lp_core_uart_read_bytes(uart_port_t lp_uart_num, void *buf, size_t size, int
 
         if (rx_len) {
             /* We have some data to read from the Rx FIFO. Check Rx interrupt status */
-            intr_status = uart_hal_get_intsts_mask(&hal);
+            intr_status = uart_hal_get_intraw_mask(&hal);
             if ((intr_status & UART_INTR_RXFIFO_FULL) ||
                     (intr_status & UART_INTR_RXFIFO_TOUT)) {
                 /* This is expected. Clear interrupt status and break */
@@ -212,7 +207,6 @@ int lp_core_uart_read_bytes(uart_port_t lp_uart_num, void *buf, size_t size, int
             } else if ((intr_status & LP_UART_ERR_INT_FLAG)) {
                 /* Transaction error. Abort */
                 uart_hal_clr_intsts_mask(&hal, intr_mask);
-                uart_hal_disable_intr_mask(&hal, intr_mask);
                 return -1;
             }
 
@@ -223,13 +217,12 @@ int lp_core_uart_read_bytes(uart_port_t lp_uart_num, void *buf, size_t size, int
             /* We have no data to read from the Rx FIFO. Check for transaction timeout */
             ret = lp_core_uart_check_timeout(intr_mask, timeout, &to);
             if (ret == ESP_ERR_TIMEOUT) {
+                /* Timeout. Clear interrupt status and break */
+                uart_hal_clr_intsts_mask(&hal, intr_mask);
                 break;
             }
         }
     }
-
-    /* Disable the Rx interrupts */
-    uart_hal_disable_intr_mask(&hal, intr_mask);
 
     /* Return the number of bytes received */
     return bytes_rcvd;
