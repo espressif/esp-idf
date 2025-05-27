@@ -48,7 +48,7 @@ config BT_BLE_LOG_SPI_OUT_LL_TASK_BUF_SIZE
     depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
     default 1024
     help
-        SPI transaction buffer size for upper layer task logs.
+        SPI transaction buffer size for lower layer task logs.
         There will be 2 SPI DMA buffers with the same size.
 
 config BT_BLE_LOG_SPI_OUT_LL_ISR_BUF_SIZE
@@ -56,8 +56,16 @@ config BT_BLE_LOG_SPI_OUT_LL_ISR_BUF_SIZE
     depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
     default 512
     help
-        SPI transaction buffer size for upper layer ISR logs.
+        SPI transaction buffer size for lower layer ISR logs.
         There will be 2 SPI DMA buffers with the same size.
+
+config BT_BLE_LOG_SPI_OUT_LL_HCI_BUF_SIZE
+    int "SPI transaction buffer size for lower layer HCI logs"
+    depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
+    default 512
+    help
+        SPI transaction buffer size for upper layer HCI logs.
+        There will be 2 SPI DMA buffers with the same size
 
 config BT_BLE_LOG_SPI_OUT_MOSI_IO_NUM
     int "GPIO number of SPI MOSI"
@@ -94,6 +102,13 @@ config BT_BLE_LOG_SPI_OUT_SYNC_IO_NUM
     help
         GPIO number of SYNC IO
 
+config BT_BLE_LOG_SPI_OUT_TS_SYNC_SLEEP_SUPPORT
+    bool "Enable ble log & logic analyzer log time sync sleep support"
+    depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
+    default n
+    help
+        Enable ble log & logic analyzer log time sync sleep support
+
 config BT_BLE_LOG_SPI_OUT_FLUSH_TIMER_ENABLED
     bool "Enable periodic buffer flush out"
     depends on BT_BLE_LOG_SPI_OUT_ENABLED
@@ -108,3 +123,18 @@ config BT_BLE_LOG_SPI_OUT_FLUSH_TIMEOUT
     default 1000
     help
         Buffer flush out period in unit of ms
+
+config BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
+    bool "Enable LE Audio log output to SPI"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default n
+    help
+        Enable LE Audio log output to SPI
+
+config BT_BLE_LOG_SPI_OUT_LE_AUDIO_BUF_SIZE
+    int "SPI transaction buffer size for LE Audio logs"
+    depends on BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
+    default 1024
+    help
+        SPI transaction buffer size for LE Audio logs.
+        There will be 2 SPI DMA buffers with the same size.
