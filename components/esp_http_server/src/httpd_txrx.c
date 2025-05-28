@@ -95,7 +95,7 @@ static size_t httpd_recv_pending(httpd_req_t *r, char *buf, size_t buf_len)
     return buf_len;
 }
 
-int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, bool halt_after_pending)
+int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, httpd_recv_opt_t opt)
 {
     ESP_LOGD(TAG, LOG_FMT("requested length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST(buf_len));
 
@@ -112,34 +112,41 @@ int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, bool halt_aft
         /* If buffer filled then no need to recv.
          * If asked to halt after receiving pending data then
          * return with received length */
-        if (!buf_len || halt_after_pending) {
+        if (!buf_len || opt == HTTPD_RECV_OPT_HALT_AFTER_PENDING) {
             return pending_len;
         }
     }
 
     /* Receive data of remaining length */
-    int ret = ra->sd->recv_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, 0);
-    if (ret < 0) {
-        ESP_LOGD(TAG, LOG_FMT("error in recv_fn"));
-        if ((ret == HTTPD_SOCK_ERR_TIMEOUT) && (pending_len != 0)) {
-            /* If recv() timeout occurred, but pending data is
-             * present, return length of pending data.
-             * This behavior is similar to that of socket recv()
-             * function, which, in case has only partially read the
-             * requested length, due to timeout, returns with read
-             * length, rather than error */
-            return pending_len;
+    size_t recv_len = pending_len;
+    do {
+        int ret = ra->sd->recv_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, 0);
+        if (ret < 0) {
+            ESP_LOGD(TAG, LOG_FMT("error in recv_fn"));
+            if ((ret == HTTPD_SOCK_ERR_TIMEOUT) && (pending_len != 0)) {
+                /* If recv() timeout occurred, but pending data is
+                * present, return length of pending data.
+                * This behavior is similar to that of socket recv()
+                * function, which, in case has only partially read the
+                * requested length, due to timeout, returns with read
+                * length, rather than error */
+                return pending_len;
+            }
+            return ret;
         }
-        return ret;
-    }
 
-    ESP_LOGD(TAG, LOG_FMT("received length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST((ret + pending_len)));
-    return ret + pending_len;
+        recv_len += ret;
+        buf      += ret;
+        buf_len  -= ret;
+    } while (buf_len > 0 && opt == HTTPD_RECV_OPT_BLOCKING);
+
+    ESP_LOGD(TAG, LOG_FMT("received length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST(recv_len));
+    return recv_len;
 }
 
 int httpd_recv(httpd_req_t *r, char *buf, size_t buf_len)
 {
-    return httpd_recv_with_opt(r, buf, buf_len, false);
+    return httpd_recv_with_opt(r, buf, buf_len, HTTPD_RECV_OPT_NONE);
 }
 
 size_t httpd_unrecv(struct httpd_req *r, const char *buf, size_t buf_len)

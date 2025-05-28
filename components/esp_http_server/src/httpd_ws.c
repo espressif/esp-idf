@@ -296,7 +296,7 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
 
         /* Grab the second byte */
         uint8_t second_byte = 0;
-        if (httpd_recv_with_opt(req, (char *)&second_byte, sizeof(second_byte), false) <= 0) {
+        if (httpd_recv_with_opt(req, (char *)&second_byte, sizeof(second_byte), HTTPD_RECV_OPT_BLOCKING) < sizeof(second_byte)) {
             ESP_LOGW(TAG, LOG_FMT("Failed to receive the second byte"));
             return ESP_FAIL;
         }
@@ -313,7 +313,7 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
         } else if (init_len == 126) {
             /* Case 2: If length byte is 126, then this frame's length bit is 16 bits */
             uint8_t length_bytes[2] = { 0 };
-            if (httpd_recv_with_opt(req, (char *)length_bytes, sizeof(length_bytes), false) <= 0) {
+            if (httpd_recv_with_opt(req, (char *)length_bytes, sizeof(length_bytes), HTTPD_RECV_OPT_BLOCKING) < sizeof(length_bytes)) {
                 ESP_LOGW(TAG, LOG_FMT("Failed to receive 2 bytes length"));
                 return ESP_FAIL;
             }
@@ -322,8 +322,8 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
         } else if (init_len == 127) {
             /* Case 3: If length is byte 127, then this frame's length bit is 64 bits */
             uint8_t length_bytes[8] = { 0 };
-            if (httpd_recv_with_opt(req, (char *)length_bytes, sizeof(length_bytes), false) <= 0) {
-                ESP_LOGW(TAG, LOG_FMT("Failed to receive 2 bytes length"));
+            if (httpd_recv_with_opt(req, (char *)length_bytes, sizeof(length_bytes), HTTPD_RECV_OPT_BLOCKING) < sizeof(length_bytes)) {
+                ESP_LOGW(TAG, LOG_FMT("Failed to receive 8 bytes length"));
                 return ESP_FAIL;
             }
 
@@ -338,7 +338,7 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
         }
         /* If this frame is masked, dump the mask as well */
         if (masked) {
-            if (httpd_recv_with_opt(req, (char *)aux->mask_key, sizeof(aux->mask_key), false) <= 0) {
+            if (httpd_recv_with_opt(req, (char *)aux->mask_key, sizeof(aux->mask_key), HTTPD_RECV_OPT_BLOCKING) < sizeof(aux->mask_key)) {
                 ESP_LOGW(TAG, LOG_FMT("Failed to receive mask key"));
                 return ESP_FAIL;
             }
@@ -375,7 +375,7 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
     size_t offset = 0;
 
     while (left_len > 0) {
-        int read_len = httpd_recv_with_opt(req, (char *)frame->payload + offset, left_len, false);
+        int read_len = httpd_recv_with_opt(req, (char *)frame->payload + offset, left_len, HTTPD_RECV_OPT_NONE);
         if (read_len <= 0) {
             ESP_LOGW(TAG, LOG_FMT("Failed to receive payload"));
             return ESP_FAIL;
@@ -483,7 +483,7 @@ esp_err_t httpd_ws_get_frame_type(httpd_req_t *req)
     /* Read the first byte from the frame to get the FIN flag and Opcode */
     /* Please refer to RFC6455 Section 5.2 for more details */
     uint8_t first_byte = 0;
-    if (httpd_recv_with_opt(req, (char *)&first_byte, sizeof(first_byte), false) <= 0) {
+    if (httpd_recv_with_opt(req, (char *)&first_byte, sizeof(first_byte), HTTPD_RECV_OPT_BLOCKING) < sizeof(first_byte)) {
         /* If the recv() return code is <= 0, then this socket FD is invalid (i.e. a broken connection) */
         /* Here we mark it as a Close message and close it later. */
         ESP_LOGW(TAG, LOG_FMT("Failed to read header byte (socket FD invalid), closing socket now"));
