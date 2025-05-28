@@ -13,7 +13,7 @@
 #include "crypto/sha256.h"
 #include "crypto/sha384.h"
 
-#include "mbedtls/esp_random.h"
+#include "mbedtls/esp_mbedtls_random.h"
 
 /* TODO: Remove this once the appropriate solution is found
  *
