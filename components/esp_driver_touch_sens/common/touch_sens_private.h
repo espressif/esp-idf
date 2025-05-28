@@ -67,6 +67,7 @@ struct touch_sensor_s {
     touch_channel_handle_t  ch[SOC_TOUCH_SENSOR_NUM];   /*!< Touch sensor channel handles, will be NULL if the channel is not registered */
     uint32_t                chan_mask;                  /*!< Enabled channel mask, corresponding bit will be set if the channel is registered */
     uint32_t                src_freq_hz;                /*!< Source clock frequency */
+    uint32_t                interval_freq_hz;           /*!< Frequency of the interval clock */
     intr_handle_t           intr_handle;                /*!< Interrupt handle */
     touch_event_callbacks_t cbs;                        /*!< Event callbacks */
     touch_channel_handle_t  deep_slp_chan;              /*!< The configured channel for depp sleep, will be NULL if not enable the deep sleep */
