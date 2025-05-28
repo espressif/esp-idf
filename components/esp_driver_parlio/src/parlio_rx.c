@@ -466,6 +466,7 @@ static esp_err_t parlio_select_periph_clock(parlio_rx_unit_handle_t rx_unit, con
 {
     parlio_hal_context_t *hal = &rx_unit->base.group->hal;
     parlio_clock_source_t clk_src = config->clk_src;
+    rx_unit->clk_src = clk_src;
     uint32_t src_freq_hz = 0;
     uint32_t exp_freq_hz = 0;
     hal_utils_clk_div_t clk_div = {
@@ -510,14 +511,12 @@ static esp_err_t parlio_select_periph_clock(parlio_rx_unit_handle_t rx_unit, con
     }
 #endif
 
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     /* Set clock configuration */
     PARLIO_CLOCK_SRC_ATOMIC() {
         parlio_ll_rx_set_clock_source(hal->regs, clk_src);
         parlio_ll_rx_set_clock_div(hal->regs, &clk_div);
     }
 
-    rx_unit->clk_src = clk_src;
     /* warning if precision lost due to division */
     if ((clk_src != PARLIO_CLK_SRC_EXTERNAL) &&
             (config->exp_clk_freq_hz != rx_unit->cfg.exp_clk_freq_hz)) {
@@ -570,6 +569,9 @@ static esp_err_t parlio_destroy_rx_unit(parlio_rx_unit_handle_t rx_unit)
     /* Unregister the RX unit from the PARLIO group */
     if (rx_unit->base.group) {
         parlio_unregister_unit_from_group(&rx_unit->base);
+    }
+    if (rx_unit->clk_src) {
+        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)rx_unit->clk_src, false), TAG, "clock source disable failed");
     }
     /* Free the RX unit */
     free(rx_unit);
@@ -637,6 +639,7 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
     }
     parlio_ll_rx_start(hal->regs, false);
     /* parlio_ll_clock_source_t and parlio_clock_source_t are binary compatible if the clock source is from internal */
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)(config->clk_src), true), err, TAG, "clock source enable failed");
     ESP_GOTO_ON_ERROR(parlio_select_periph_clock(unit, config), err, TAG, "set clock source failed");
     /* Set the data width */
     parlio_ll_rx_set_bus_width(hal->regs, config->data_width);

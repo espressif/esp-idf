@@ -376,6 +376,8 @@ static esp_err_t _node_set_bit_timing(twai_node_handle_t node, const twai_timing
 #endif
 
     if (new_clock_src != twai_ctx->curr_clk_src) {
+        // TODO: IDF-13144
+        ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(new_clock_src), true));
         twai_ctx->curr_clk_src = new_clock_src;
         _twai_rcc_clock_sel(twai_ctx->ctrlr_id, new_clock_src);
     }

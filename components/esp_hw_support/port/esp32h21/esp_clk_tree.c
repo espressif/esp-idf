@@ -54,5 +54,5 @@ uint32_t *freq_value)
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
 {
     (void)clk_src; (void)enable;
-    return ESP_ERR_NOT_SUPPORTED;
+    return ESP_OK;
 }

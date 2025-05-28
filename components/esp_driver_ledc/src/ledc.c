@@ -698,7 +698,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         if (p_ledc_obj[speed_mode]->glb_clk != glb_clk) {
             // TODO: release old glb_clk (if not UNINIT), and acquire new glb_clk [clk_tree]
             p_ledc_obj[speed_mode]->glb_clk = glb_clk;
-            esp_clk_tree_enable_src((soc_module_clk_t)glb_clk, true);
+            ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)glb_clk, true), LEDC_TAG, "clock source enable failed");
             LEDC_FUNC_CLOCK_ATOMIC() {
                 ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);
             }
@@ -863,7 +863,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     else if (new_speed_mode_ctx_created) {
         portENTER_CRITICAL(&ledc_spinlock);
         if (p_ledc_obj[speed_mode]->glb_clk == LEDC_SLOW_CLK_UNINIT) {
-            esp_clk_tree_enable_src((soc_module_clk_t)LEDC_LL_GLOBAL_CLK_DEFAULT, true);
+            ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)LEDC_LL_GLOBAL_CLK_DEFAULT, true));
             ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), LEDC_LL_GLOBAL_CLK_DEFAULT);
         }
         portEXIT_CRITICAL(&ledc_spinlock);

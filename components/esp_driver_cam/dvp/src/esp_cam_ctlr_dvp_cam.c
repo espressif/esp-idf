@@ -332,7 +332,7 @@ esp_err_t esp_cam_ctlr_dvp_init(int ctlr_id, cam_clock_source_t clk_src, const e
         }
     }
 
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true));
     PERIPH_RCC_ATOMIC() {
         cam_ll_enable_clk(ctlr_id, true);
         cam_ll_select_clk_src(ctlr_id, clk_src);

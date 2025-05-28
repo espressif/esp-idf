@@ -582,7 +582,7 @@ static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
                         TAG, "get clock source frequency failed");
 
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
     LCD_CLOCK_SRC_ATOMIC() {
         lcd_ll_select_clk_src(bus->hal.dev, clk_src);
         // force to use integer division, as fractional division might lead to clock jitter

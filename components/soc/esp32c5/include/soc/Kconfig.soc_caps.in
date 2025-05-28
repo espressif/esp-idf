@@ -255,6 +255,10 @@ config SOC_PM_SUPPORTED
     bool
     default y
 
+config SOC_CLOCK_TREE_MANAGEMENT_SUPPORTED
+    bool
+    default y
+
 config SOC_SPIRAM_SUPPORTED
     bool
     default y
@@ -1668,6 +1672,10 @@ config SOC_CLK_LP_FAST_SUPPORT_XTAL_D2
     default y
 
 config SOC_RCC_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_CLK_ANA_I2C_MST_DEPENDS_ON_MODEM_APB
     bool
     default y
 

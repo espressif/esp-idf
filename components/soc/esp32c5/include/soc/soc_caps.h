@@ -82,6 +82,7 @@
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
 #define SOC_DEEP_SLEEP_SUPPORTED        1
 #define SOC_PM_SUPPORTED                1
+#define SOC_CLOCK_TREE_MANAGEMENT_SUPPORTED 1
 
 #define SOC_SPIRAM_SUPPORTED            1
 #define SOC_BT_SUPPORTED                1
@@ -657,6 +658,8 @@
 #define SOC_CLK_LP_FAST_SUPPORT_XTAL_D2           (1)     /*!< Support XTAL_D2 clock as the LP_FAST clock source */
 
 #define SOC_RCC_IS_INDEPENDENT                    1       /*!< Reset and Clock Control is independent, thanks to the PCR registers */
+
+#define SOC_CLK_ANA_I2C_MST_DEPENDS_ON_MODEM_APB  (1)     /*!< Analog I2C master clock depends on  CLK_160M_REF on clock tree */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)

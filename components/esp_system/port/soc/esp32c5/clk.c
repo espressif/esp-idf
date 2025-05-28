@@ -27,6 +27,38 @@
 #if SOC_MODEM_CLOCK_SUPPORTED
 #include "hal/modem_lpcon_ll.h"
 #endif
+#include "hal/adc_ll.h"
+#include "hal/aes_ll.h"
+#include "hal/assist_debug_ll.h"
+#include "hal/apm_ll.h"
+#include "hal/clk_gate_ll.h"
+#include "hal/clk_tree_ll.h"
+#include "hal/ds_ll.h"
+#include "hal/ecc_ll.h"
+#include "hal/etm_ll.h"
+#include "hal/gdma_ll.h"
+#include "hal/hmac_ll.h"
+#include "hal/i2c_ll.h"
+#include "hal/i2s_ll.h"
+#include "hal/ledc_ll.h"
+#include "hal/lp_core_ll.h"
+#include "hal/lp_clkrst_ll.h"
+#include "hal/mcpwm_ll.h"
+#include "hal/mpi_ll.h"
+#include "hal/mspi_ll.h"
+#include "hal/parlio_ll.h"
+#include "hal/pau_ll.h"
+#include "hal/pcnt_ll.h"
+#include "hal/rmt_ll.h"
+#include "hal/rtc_io_ll.h"
+#include "hal/sha_ll.h"
+#include "hal/spi_ll.h"
+#include "hal/temperature_sensor_ll.h"
+#include "hal/timer_ll.h"
+#include "hal/twaifd_ll.h"
+#include "hal/uart_ll.h"
+#include "hal/uhci_ll.h"
+#include "hal/usb_serial_jtag_ll.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/periph_ctrl.h"
@@ -200,16 +232,14 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
-// TODO: [ESP32C5] IDF-8844
-#if SOC_MODEM_CLOCK_SUPPORTED
-    // modem_clock_domain_pmu_state_icg_map_init();
     /* During system initialization, the low-power clock source of the modem
      * (WiFi, BLE or Coexist) follows the configuration of the slow clock source
      * of the system. If the WiFi, BLE or Coexist module needs a higher
      * precision sleep clock (for example, the BLE needs to use the main XTAL
      * oscillator (40 MHz) to provide the clock during the sleep process in some
      * scenarios), the module needs to switch to the required clock source by
-     * itself. */ //TODO - WIFI-5233
+     * itself. */
+#if CONFIG_ESP_WIFI_ENABLED
     soc_rtc_slow_clk_src_t rtc_slow_clk_src = rtc_clk_slow_src_get();
     modem_clock_lpclk_src_t modem_lpclk_src = (modem_clock_lpclk_src_t)(
                                                   (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)  ? MODEM_CLOCK_LPCLK_SRC_XTAL32K
@@ -225,102 +255,99 @@ __attribute__((weak)) void esp_perip_clk_init(void)
      * to IDF-11064. */
     clk_ll_soc_root_clk_auto_gating_bypass(true);
 
-    ESP_EARLY_LOGW(TAG, "esp_perip_clk_init() has not been implemented yet");
-#if 0  // TODO: [ESP32C5] IDF-8844
-    uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
-    uint32_t common_perip_clk1 = 0;
-
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-
-    /* For reason that only reset CPU, do not disable the clocks
-     * that have been enabled before reset.
-     */
-    if (rst_reason == RESET_REASON_CPU0_MWDT0 || rst_reason == RESET_REASON_CPU0_SW ||
-            rst_reason == RESET_REASON_CPU0_RTC_WDT || rst_reason == RESET_REASON_CPU0_MWDT1) {
-        common_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN0_REG);
-        hwcrypto_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN1_REG);
-        wifi_bt_sdio_clk = ~READ_PERI_REG(SYSTEM_WIFI_CLK_EN_REG);
-    } else {
-        common_perip_clk = SYSTEM_WDG_CLK_EN |
-                           SYSTEM_I2S0_CLK_EN |
+    if ((rst_reason != RESET_REASON_CPU0_MWDT0) && (rst_reason != RESET_REASON_CPU0_MWDT1)          \
+            && (rst_reason != RESET_REASON_CPU0_SW) && (rst_reason != RESET_REASON_CPU0_RTC_WDT)    \
+            && (rst_reason != RESET_REASON_CPU0_JTAG) && (rst_reason != RESET_REASON_CPU0_LOCKUP)) {
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
-                           SYSTEM_UART_CLK_EN |
+        uart_ll_enable_bus_clock(UART_NUM_0, false);
+        uart_ll_sclk_disable(&UART0);
+#elif CONFIG_ESP_CONSOLE_UART_NUM != 1
+        uart_ll_sclk_disable(&UART1);
+        uart_ll_enable_bus_clock(UART_NUM_1, false);
 #endif
-#if CONFIG_ESP_CONSOLE_UART_NUM != 1
-                           SYSTEM_UART1_CLK_EN |
+        i2c_ll_enable_bus_clock(0, false);
+        i2c_ll_enable_controller_clock(&I2C0, false);
+        rmt_ll_enable_bus_clock(0, false);
+        rmt_ll_enable_group_clock(0, false);
+        ledc_ll_enable_clock(&LEDC, false);
+        ledc_ll_enable_bus_clock(false);
+        clk_ll_enable_timergroup_rtc_calibration_clock(false);
+        timer_ll_enable_clock(0, 0, false);
+        timer_ll_enable_clock(1, 0, false);
+        _timer_ll_enable_bus_clock(0, false);
+        _timer_ll_enable_bus_clock(1, false);
+        twaifd_ll_enable_clock(0, false);
+        twaifd_ll_enable_bus_clock(0, false);
+        twaifd_ll_enable_clock(1, false);
+        twaifd_ll_enable_bus_clock(1, false);
+        i2s_ll_enable_bus_clock(0, false);
+        i2s_ll_tx_disable_clock(&I2S0);
+        i2s_ll_rx_disable_clock(&I2S0);
+        adc_ll_enable_bus_clock(false);
+        pcnt_ll_enable_bus_clock(0, false);
+        etm_ll_enable_bus_clock(0, false);
+        mcpwm_ll_enable_bus_clock(0, false);
+        mcpwm_ll_group_enable_clock(0, false);
+        parlio_ll_rx_enable_clock(&PARL_IO, false);
+        parlio_ll_tx_enable_clock(&PARL_IO, false);
+        parlio_ll_enable_bus_clock(0, false);
+        ahb_dma_ll_force_enable_reg_clock(&AHB_DMA, false);
+        _gdma_ll_enable_bus_clock(0, false);
+#if CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+        mspi_timing_ll_enable_core_clock(0, false);
 #endif
-                           SYSTEM_SPI2_CLK_EN |
-                           SYSTEM_I2C_EXT0_CLK_EN |
-                           SYSTEM_UHCI0_CLK_EN |
-                           SYSTEM_RMT_CLK_EN |
-                           SYSTEM_LEDC_CLK_EN |
-                           SYSTEM_TIMERGROUP1_CLK_EN |
-                           SYSTEM_SPI3_CLK_EN |
-                           SYSTEM_SPI4_CLK_EN |
-                           SYSTEM_TWAI_CLK_EN |
-                           SYSTEM_I2S0_CLK_EN |
-                           SYSTEM_SPI2_DMA_CLK_EN |
-                           SYSTEM_SPI3_DMA_CLK_EN;
+        spi_ll_enable_bus_clock(SPI2_HOST, false);
+        temperature_sensor_ll_bus_clk_enable(false);
+        pau_ll_enable_bus_clock(false);
+#if !CONFIG_ESP_SYSTEM_HW_PC_RECORD
+        /* Disable ASSIST Debug module clock if PC recoreding function is not used,
+         * if stack guard function needs it, it will be re-enabled at esp_hw_stack_guard_init */
+        assist_debug_ll_enable_bus_clock(false);
+#endif
+        mpi_ll_enable_bus_clock(false);
+        aes_ll_enable_bus_clock(false);
+        sha_ll_enable_bus_clock(false);
+        ecc_ll_enable_bus_clock(false);
+        hmac_ll_enable_bus_clock(false);
+        ds_ll_enable_bus_clock(false);
+        apm_tee_ll_clk_gating_enable(false);
+        uhci_ll_enable_bus_clock(0, false);
 
-        common_perip_clk1 = 0;
-        hwcrypto_perip_clk = SYSTEM_CRYPTO_AES_CLK_EN |
-                             SYSTEM_CRYPTO_SHA_CLK_EN |
-                             SYSTEM_CRYPTO_RSA_CLK_EN;
-        wifi_bt_sdio_clk = SYSTEM_WIFI_CLK_WIFI_EN |
-                           SYSTEM_WIFI_CLK_BT_EN_M |
-                           SYSTEM_WIFI_CLK_UNUSED_BIT5 |
-                           SYSTEM_WIFI_CLK_UNUSED_BIT12;
+        // TODO: Replace with hal implementation
+        REG_CLR_BIT(HP_APM_CLOCK_GATE_REG, HP_APM_CLK_EN);
+        REG_CLR_BIT(LP_TEE_CLOCK_GATE_REG, LP_TEE_CLK_EN);
+        REG_CLR_BIT(PCR_TRACE_CONF_REG, PCR_TRACE_CLK_EN);
+        REG_CLR_BIT(PCR_TCM_MEM_MONITOR_CONF_REG, PCR_TCM_MEM_MONITOR_CLK_EN);
+        REG_CLR_BIT(PCR_PSRAM_MEM_MONITOR_CONF_REG, PCR_PSRAM_MEM_MONITOR_CLK_EN);
+        REG_CLR_BIT(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_CLK_EN);
+        REG_CLR_BIT(PCR_PVT_MONITOR_FUNC_CLK_CONF_REG, PCR_PVT_MONITOR_FUNC_CLK_EN);
+        WRITE_PERI_REG(PCR_CTRL_CLK_OUT_EN_REG, 0);
+
+#if !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG && !CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+        // Disable USB-Serial-JTAG clock and it's pad if not used
+        usb_serial_jtag_ll_phy_enable_pad(false);
+        usb_serial_jtag_ll_enable_bus_clock(false);
+        usb_serial_jtag_ll_enable_mem_clock(false);
+        usb_serial_jtag_ll_set_mem_pd(true);
+#endif
     }
 
-    //Reset the communication peripherals like I2C, SPI, UART, I2S and bring them to known state.
-    common_perip_clk |= SYSTEM_I2S0_CLK_EN |
-#if CONFIG_ESP_CONSOLE_UART_NUM != 0
-                        SYSTEM_UART_CLK_EN |
-#endif
-#if CONFIG_ESP_CONSOLE_UART_NUM != 1
-                        SYSTEM_UART1_CLK_EN |
-#endif
-                        SYSTEM_SPI2_CLK_EN |
-                        SYSTEM_I2C_EXT0_CLK_EN |
-                        SYSTEM_UHCI0_CLK_EN |
-                        SYSTEM_RMT_CLK_EN |
-                        SYSTEM_UHCI1_CLK_EN |
-                        SYSTEM_SPI3_CLK_EN |
-                        SYSTEM_SPI4_CLK_EN |
-                        SYSTEM_I2C_EXT1_CLK_EN |
-                        SYSTEM_I2S0_CLK_EN |
-                        SYSTEM_SPI2_DMA_CLK_EN |
-                        SYSTEM_SPI3_DMA_CLK_EN;
-    common_perip_clk1 = 0;
+    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CHIP_BROWN_OUT)       \
+            || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)   \
+            || (rst_reason == RESET_REASON_CORE_PWR_GLITCH)) {
+        _lp_i2c_ll_enable_bus_clock(0, false);
+        lp_uart_ll_sclk_disable(0);
+        _lp_uart_ll_enable_bus_clock(0, false);
+        _lp_core_ll_enable_bus_clock(false);
+        _rtcio_ll_enable_io_clock(false);
+        _lp_clkrst_ll_enable_rng_clock(false);
+        _lp_clkrst_ll_enable_otp_dbg_clock(false);
+        _lp_clkrst_ll_enable_lp_ana_i2c_clock(false);
+        _lp_clkrst_ll_enable_lp_ext_i2c_clock(false);
 
-    /* Change I2S clock to audio PLL first. Because if I2S uses 160MHz clock,
-     * the current is not reduced when disable I2S clock.
-     */
-    // TOCK(check replacement)
-    // REG_SET_FIELD(I2S_CLKM_CONF_REG(0), I2S_CLK_SEL, I2S_CLK_AUDIO_PLL);
-    // REG_SET_FIELD(I2S_CLKM_CONF_REG(1), I2S_CLK_SEL, I2S_CLK_AUDIO_PLL);
-
-    /* Disable some peripheral clocks. */
-    CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, common_perip_clk);
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG, common_perip_clk);
-
-    CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN1_REG, common_perip_clk1);
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, common_perip_clk1);
-
-    /* Disable hardware crypto clocks. */
-    CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN1_REG, hwcrypto_perip_clk);
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, hwcrypto_perip_clk);
-
-    /* Disable WiFi/BT/SDIO clocks. */
-    CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, wifi_bt_sdio_clk);
-    SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
-
-    /* Set WiFi light sleep clock source to RTC slow clock */
-    REG_SET_FIELD(SYSTEM_BT_LPCK_DIV_INT_REG, SYSTEM_BT_LPCK_DIV_NUM, 0);
-    CLEAR_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_8M);
-    SET_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_RTC_SLOW);
-
-    /* Enable RNG clock. */
-    periph_module_enable(PERIPH_RNG_MODULE);
-#endif
+        REG_CLR_BIT(LP_APM_CLOCK_GATE_REG, LP_APM_CLK_EN);
+        REG_CLR_BIT(LP_APM0_CLOCK_GATE_REG, LP_APM0_CLK_EN);
+        WRITE_PERI_REG(LP_CLKRST_LP_CLK_PO_EN_REG, 0);
+    }
 }

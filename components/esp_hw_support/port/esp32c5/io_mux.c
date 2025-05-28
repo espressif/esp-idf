@@ -6,6 +6,7 @@
 
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/io_mux.h"
 #include "esp_private/periph_ctrl.h"
 #include "hal/gpio_ll.h"
@@ -40,6 +41,7 @@ esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src)
         return ESP_ERR_INVALID_STATE;
     }
 
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true));
     gpio_ll_iomux_set_clk_src(clk_src);
 
     return ESP_OK;

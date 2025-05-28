@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,6 +91,11 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
 
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
 {
+    if(!enable) {
+        // TODO: remove it after reference counter supported
+        return ESP_OK;
+    }
+
     PERIPH_RCC_ATOMIC() {
         switch (clk_src) {
         case SOC_MOD_CLK_PLL_F20M:

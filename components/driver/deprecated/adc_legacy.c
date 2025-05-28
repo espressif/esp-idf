@@ -756,7 +756,7 @@ int adc1_get_raw(adc1_channel_t channel)
 
     adc_apb_periph_claim();
     sar_periph_ctrl_adc_oneshot_power_acquire();
-    esp_clk_tree_enable_src((soc_module_clk_t)ADC_DIGI_CLK_SRC_DEFAULT, true);
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)ADC_DIGI_CLK_SRC_DEFAULT, true));
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);
 
     adc_atten_t atten = s_atten1_single[channel];
@@ -775,6 +775,7 @@ int adc1_get_raw(adc1_channel_t channel)
     adc_hal_convert(ADC_UNIT_1, channel, clk_src_freq_hz, &raw_out);
     ADC_REG_LOCK_EXIT();
 
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)ADC_DIGI_CLK_SRC_DEFAULT, false));
     sar_periph_ctrl_adc_oneshot_power_release();
     adc_apb_periph_free();
     adc_lock_release(ADC_UNIT_1);
@@ -820,7 +821,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     adc_apb_periph_claim();
     sar_periph_ctrl_adc_oneshot_power_acquire();
-    esp_clk_tree_enable_src((soc_module_clk_t)ADC_DIGI_CLK_SRC_DEFAULT, true);
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)ADC_DIGI_CLK_SRC_DEFAULT, true));
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);
 
 #if SOC_ADC_ARBITER_SUPPORTED
@@ -838,6 +839,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     ret = adc_hal_convert(ADC_UNIT_2, channel, clk_src_freq_hz, raw_out);
     ADC_REG_LOCK_EXIT();
 
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)ADC_DIGI_CLK_SRC_DEFAULT, false));
     sar_periph_ctrl_adc_oneshot_power_release();
     adc_apb_periph_free();
     adc_lock_release(ADC_UNIT_2);

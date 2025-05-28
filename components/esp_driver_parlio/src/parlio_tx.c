@@ -74,6 +74,9 @@ static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
             ESP_RETURN_ON_ERROR(gdma_del_link_list(tx_unit->dma_link[i]), TAG, "delete dma link list failed");
         }
     }
+    if (tx_unit->clk_src) {
+        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)tx_unit->clk_src, false), TAG, "clock source disable failed");
+    }
     free(tx_unit);
     return ESP_OK;
 }
@@ -182,6 +185,7 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
 {
     parlio_hal_context_t *hal = &tx_unit->base.group->hal;
     parlio_clock_source_t clk_src = config->clk_src;
+    tx_unit->clk_src = clk_src;
     if (config->clk_in_gpio_num >= 0 && clk_src != PARLIO_CLK_SRC_EXTERNAL) {
         ESP_LOGW(TAG, "input clock GPIO is set, use external clk src");
         clk_src = PARLIO_CLK_SRC_EXTERNAL;
@@ -223,7 +227,6 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
 #else
     tx_unit->out_clk_freq_hz = hal_utils_calc_clk_div_integer(&clk_info, &clk_div.integer);
 #endif
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     PARLIO_CLOCK_SRC_ATOMIC() {
         // turn on the tx module clock to sync the clock divider configuration because of the CDC (Cross Domain Crossing)
         parlio_ll_tx_enable_clock(hal->regs, true);
@@ -235,8 +238,6 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
     if (tx_unit->out_clk_freq_hz != config->output_clk_freq_hz) {
         ESP_LOGW(TAG, "precision loss, real output frequency: %"PRIu32, tx_unit->out_clk_freq_hz);
     }
-    tx_unit->clk_src = clk_src;
-
     return ESP_OK;
 }
 
@@ -284,6 +285,7 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     parlio_group_t *group = unit->base.group;
     parlio_hal_context_t *hal = &group->hal;
     // select the clock source
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)(config->clk_src), true), err, TAG, "clock source enable failed");
     ESP_GOTO_ON_ERROR(parlio_select_periph_clock(unit, config), err, TAG, "set clock source failed");
 
     // install interrupt service
