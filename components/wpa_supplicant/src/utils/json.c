@@ -269,7 +269,8 @@ struct json_token * json_parse(const char *data, size_t data_len)
 		case ']': /* end array */
 		case '}': /* end object */
 			if (!curr_token || !curr_token->parent ||
-			    curr_token->parent->state != JSON_STARTED) {
+			    curr_token->parent->state != JSON_STARTED ||
+			    depth == 0) {
 				wpa_printf(MSG_DEBUG,
 					   "JSON: Invalid state for end array/object");
 				goto fail;

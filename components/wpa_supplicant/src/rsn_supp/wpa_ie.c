@@ -297,7 +297,7 @@ int  wpa_gen_wpa_ie(struct wpa_sm *sm, u8 *wpa_ie, size_t wpa_ie_len)
 int wpa_gen_rsnxe(struct wpa_sm *sm, u8 *rsnxe, size_t rsnxe_len)
 {
     u8 *pos = rsnxe;
-    u16 capab = 0;
+    u16 capab = 0, tmp;
     size_t flen;
 
     if (wpa_key_mgmt_sae(sm->key_mgmt) &&
@@ -311,9 +311,15 @@ int wpa_gen_rsnxe(struct wpa_sm *sm, u8 *rsnxe, size_t rsnxe_len)
 #endif /* CONFIG_SAE_PK */
     }
 
-    flen = (capab & 0xff00) ? 2 : 1;
     if (!capab)
         return 0; /* no supported extended RSN capabilities */
+
+    tmp = capab;
+    flen = 0;
+    while (tmp) {
+        flen++;
+        tmp >>= 8;
+    }
     if (rsnxe_len < 2 + flen)
         return -1;
     capab |= flen - 1; /* bit 0-3 = Field length (n - 1) */
