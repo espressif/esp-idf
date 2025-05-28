@@ -126,14 +126,15 @@ ESP HTTP 客户端诊断信息
 
 事件循环中不同 HTTP 客户端事件的预期数据类型如下所示：
 
-    - HTTP_EVENT_ERROR            :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_ON_CONNECTED     :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_HEADERS_SENT     :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_ON_HEADER        :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_ON_DATA          :   ``esp_http_client_on_data_t``
-    - HTTP_EVENT_ON_FINISH        :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_DISCONNECTED     :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_REDIRECT         :   ``esp_http_client_redirect_event_data_t``
+    - HTTP_EVENT_ERROR              :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_CONNECTED       :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_HEADERS_SENT       :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_HEADER          :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_HEADERS_COMPLETE:   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_DATA            :   ``esp_http_client_on_data_t``
+    - HTTP_EVENT_ON_FINISH          :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_DISCONNECTED       :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_REDIRECT           :   ``esp_http_client_redirect_event_data_t``
 
 在无法接收到 :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` 之前，与事件数据一起接收到的 :cpp:type:`esp_http_client_handle_t` 将始终有效。这个句柄主要是为了区分不同的客户端连接，无法用于其他目的，因为它可能会随着客户端连接状态的变化而改变。
 
