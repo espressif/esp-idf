@@ -56,6 +56,9 @@
   - "tools/ci/ci_build_apps.py"
   - "tools/test_build_system/**/*"
 
+.patterns-build_system_win: &patterns-build_system_win
+  - "tools/test_build_system/**/*"
+
 .patterns-build_macos: &patterns-build_macos
   - "tools/ci/test_configure_ci_environment.sh"
 
@@ -392,7 +395,7 @@
     - <<: *if-schedule-test-build-system-windows
     - <<: *if-label-windows
     - <<: *if-dev-push
-      changes: *patterns-build_system
+      changes: *patterns-build_system_win
 
 .rules:test:host_test:
   rules:
