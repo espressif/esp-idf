@@ -747,6 +747,10 @@ config SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
     bool
     default y
 
+config SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+    bool
+    default y
+
 config SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
     bool
     default y
