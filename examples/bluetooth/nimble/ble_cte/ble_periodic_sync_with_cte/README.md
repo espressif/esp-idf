@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C5 | ESP32-H2 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-C61 | ESP32-H2 |
+| ----------------- | -------- | --------- | -------- |
 
 # Bluetooth LE Direction Finding Example (Periodic Sync with CTE) 
 
