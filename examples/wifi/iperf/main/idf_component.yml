@@ -8,11 +8,11 @@ dependencies:
   esp-qa/ping-cmd:
     version: "~1.0.0"
   espressif/esp_wifi_remote:
-    version: "~0.5.3"
+    version: ">=0.10,<2.0"
     rules:
       - if: "target in [esp32p4, esp32h2]"
   espressif/esp_hosted:
-    version: "~1"
+    version: "~2"
     rules:
       - if: "target in [esp32p4, esp32h2]"
   espressif/esp-extconn:

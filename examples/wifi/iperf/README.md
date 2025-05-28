@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-P4 | ESP32-S2 | ESP32-S3 | ESP32-H2 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # Iperf Example
 
@@ -77,68 +77,10 @@ Steps to test station/soft-AP TCP/UDP RX/TX throughput are similar as test steps
 
 See the README.md file in the upper level 'examples' directory for more information about examples.
 
-## ESP Chips without Native Wi-Fi
+## Running the example on ESP Chips without Wi-Fi
 
-Some ESP chips like the ESP32-P4 or ESP32-H2, without built-in Wi-Fi or Bluetooth, can still use these features through a **two-chip solution** via ESP-Hosted. The host chip, when connected to a ESP chip as a Wi-Fi co-processor, can invoke Wi-Fi APIs over a communication bus like SPI or SDIO.
+This example can run on ESP Chips without Wi-Fi using ESP-Hosted. See the [Two-Chip Solution](../README.md#wi-fi-examples-with-two-chip-solution) section in the upper level `README.md` for information.
 
-The two chip solution needs:
+## Troubleshooting
 
-- Communication bus like SDIO or SPI between the host and co-processor
-- Co-processor flashed with ESP-Hosted co-processor (slave) software
-- Host processor flashed with additional software components: [esp-hosted](https://components.espressif.com/components/espressif/esp_hosted/) and [esp-wifi-remote](https://components.espressif.com/components/espressif/esp_wifi_remote/)
-
-### Running iperf on the ESP32-P4-Function-EV-Board
-
-On this board,
-
-* The ESP32-P4 is already connected with the on-board ESP32-C6 (co-processor) using SDIO communication bus. See this ESP-Hosted EV Board [documentation](https://github.com/espressif/esp-hosted-mcu/blob/main/docs/esp32_p4_function_ev_board.md) for more information.
-* The ESP32-C6 is pre-flashed with ESP-Hosted slave software.
-  * Optionally, you can re-flash the ESP32-C6 using [ESP-Hosted Slave Flashing Steps](https://github.com/espressif/esp-hosted-mcu/blob/main/docs/esp32_p4_function_ev_board.md#5-flashing-esp32-c6)
-* Only the example code on the Host needs to be built & flashed using the steps below.
-
-#### Host Flashing Steps
-
-* Set the ESP32-P4 as the target
-
-```sh
-idf.py set-target esp32p4
-```
-
-You may see lines similar to this:
-
-```
-NOTICE: Processing 11 dependencies:
-NOTICE: [1/11] cmd_system (*) (/home/esp/esp-idf/examples/system/console/advanced/components/cmd_system)
-NOTICE: [2/11] esp-qa/ping-cmd (1.0.0)
-NOTICE: [3/11] esp-qa/wifi-cmd (0.1.10)
-NOTICE: [4/11] espressif/eppp_link (0.2.0)
-NOTICE: [5/11] espressif/esp-extconn (0.1.0)
-NOTICE: [6/11] espressif/esp_hosted (1.1.1)
-NOTICE: [7/11] espressif/esp_serial_slave_link (1.1.0)
-NOTICE: [8/11] espressif/esp_wifi_remote (0.5.3)
-NOTICE: [9/11] espressif/iperf (0.1.3)
-NOTICE: [10/11] espressif/iperf-cmd (0.1.3)
-NOTICE: [11/11] idf (5.5.0)
-```
-
-The Wi-Fi Remote and ESP-Hosted components are automatically fetched during the configuration.
-
-* Build
-
-  ```sh
-  idf.py build
-  ```
-* Flash
-
-  ```sh
-  idf.py -p <host_serial_port> flash
-  ```
-* Monitor
-
-  ```sh
-  idf.py -p <host_serial_port> monitor
-  ```
-
-### Using ESP-Hosted with other hosts
-
-As the other hosts may not have prior hardware communication bus set-up, the hardware connections and co-processor flashing with slave firmware need to be done explicitly. See the [ESP-Hosted Repository](https://github.com/espressif/esp-hosted-mcu/) for step-by-step instructions on setting up ESP-Hosted.
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
