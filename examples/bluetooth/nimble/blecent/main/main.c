@@ -27,6 +27,9 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "blecent.h"
+#if MYNEWT_VAL(BLE_GATT_CACHING)
+#include "host/ble_esp_gattc_cache.h"
+#endif
 
 #if CONFIG_EXAMPLE_USE_CI_ADDRESS
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -50,6 +53,7 @@
 #endif
 #endif
 
+#if MYNEWT_VAL(BLE_GATTC)
 /*** The UUID of the service containing the subscribable characteristic ***/
 static const ble_uuid_t * remote_svc_uuid =
     BLE_UUID128_DECLARE(0x2d, 0x71, 0xa2, 0x59, 0xb4, 0x58, 0xc8, 0x12,
@@ -59,6 +63,7 @@ static const ble_uuid_t * remote_svc_uuid =
 static const ble_uuid_t * remote_chr_uuid =
     BLE_UUID128_DECLARE(0x00, 0x00, 0x00, 0x00, 0x11, 0x11, 0x11, 0x11,
                      	0x22, 0x22, 0x22, 0x22, 0x33, 0x33, 0x33, 0x33);
+#endif
 
 static const char *tag = "NimBLE_BLE_CENT";
 static int blecent_gap_event(struct ble_gap_event *event, void *arg);
@@ -70,6 +75,7 @@ static uint16_t bearers;
 
 void ble_store_config_init(void);
 
+#if MYNEWT_VAL(BLE_GATTC)
 /**
  * Application Callback. Called when the custom subscribable chatacteristic
  * in the remote GATT server is read.
@@ -427,6 +433,7 @@ blecent_on_disc_complete(const struct peer *peer, int status, void *arg)
      */
     blecent_read_write_subscribe(peer);
 }
+#endif  //MYNEWT_VAL(BLE_GATTC)
 
 /**
  * Initiates the GAP general discovery procedure.
@@ -779,6 +786,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(INFO, "Connection secured\n");
             }
 #else
+#if MYNEWT_VAL(BLE_GATTC)
             /* Perform service discovery */
             rc = peer_disc_all(event->connect.conn_handle,
                         blecent_on_disc_complete, NULL);
@@ -786,6 +794,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
             }
+#endif
 #endif
         } else {
             /* Connection attempt failed; resume scanning. */
@@ -830,7 +839,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         assert(rc == 0);
         print_conn_desc(&desc);
 #if !MYNEWT_VAL(BLE_EATT_CHAN_NUM)
-#if CONFIG_EXAMPLE_ENCRYPTION
+#if CONFIG_EXAMPLE_ENCRYPTION && MYNEWT_VAL(BLE_GATTC)
         /*** Go for service discovery after encryption has been successfully enabled ***/
         rc = peer_disc_all(event->enc_change.conn_handle,
                            blecent_on_disc_complete, NULL);
@@ -946,7 +955,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         MODLOG_DFLT(INFO, "Cannot set default EATT bearer, rc = %d\n", rc);
         return rc;
     }
-
+#if MYNEWT_VAL(BLE_GATTC)
     /* Perform service discovery */
     rc = peer_disc_all(event->eatt.conn_handle,
                 blecent_on_disc_complete, NULL);
@@ -954,6 +963,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
         return 0;
     }
+#endif
 #endif
         return 0;
     default:
@@ -1052,12 +1062,19 @@ app_main(void)
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
     /* Initialize data structures to track connected peers. */
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+    rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64, 64);
+    assert(rc == 0);
+#else
     rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
     assert(rc == 0);
+#endif
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-blecent");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();
