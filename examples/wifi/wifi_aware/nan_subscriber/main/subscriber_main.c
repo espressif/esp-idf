@@ -31,6 +31,9 @@
 #else
 #define EXAMPLE_NAN_SVC_MSG             "Hello"
 #endif
+#ifndef ETH_ALEN
+#define ETH_ALEN 6
+#endif
 
 static const char *TAG = "subscriber";
 
