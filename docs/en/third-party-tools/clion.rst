@@ -1,9 +1,9 @@
 .. _clion:
 
-:link_to_translation:`zh_CN:[中文]`
-
 CLion
 #####
+
+:link_to_translation:`zh_CN:[中文]`
 
 What Is CLion?
 ~~~~~~~~~~~~~~
@@ -15,7 +15,12 @@ Starting with v2025.1.1, `CLion is available at no cost <https://blog.jetbrains.
 Installation
 ~~~~~~~~~~~~
 
-You can download CLion as a `standalone version <https://www.jetbrains.com/clion/download/>`__, via `Toolbox App <https://www.jetbrains.com/toolbox-app/>`__, or as a snap package if you’re using Ubuntu. To learn about the required toolchains, see the `documentation <https://www.jetbrains.com/help/clion/installation-guide.html#toolchain-reqs>`__.
+You can download CLion:
+
+- as a `standalone version <https://www.jetbrains.com/clion/download/>`__, via `Toolbox App <https://www.jetbrains.com/toolbox-app/>`__.
+- or as a snap package if you’re using Ubuntu.
+
+To learn about the required toolchains, check this `documentation <https://www.jetbrains.com/help/clion/installation-guide.html#toolchain-reqs>`__.
 
 Configuration
 ~~~~~~~~~~~~~
