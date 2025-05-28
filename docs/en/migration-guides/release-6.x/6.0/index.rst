@@ -7,4 +7,5 @@ Migration from 5.5 to 6.0
     :maxdepth: 1
 
     peripherals
+    security
     tools
