@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,8 @@
  ***************************************/
 
 /* Functions */
-/* The following ROM functions are commented out because they're patched in the esp_rom_systimer.c */
-/* systimer_hal_init = 0x400003d0; */
-/* systimer_hal_deinit = 0x400003d4; */
+systimer_hal_init = 0x400003d0;
+systimer_hal_deinit = 0x400003d4;
 systimer_hal_set_tick_rate_ops = 0x400003d8;
 systimer_hal_get_counter_value = 0x400003dc;
 systimer_hal_get_time = 0x400003e0;

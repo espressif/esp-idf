@@ -287,7 +287,7 @@ ESP32C2_DOCS = ['api-guides/RF_calibration.rst', 'api-guides/phy.rst']
 
 ESP32C5_DOCS = ['api-guides/phy.rst', 'api-reference/peripherals/sd_pullup_requirements.rst']
 
-ESP32C61_DOCS = ['api-guides/phy.rst']
+ESP32C61_DOCS = []  # TODO: IDF-13141, re-open for c61 eco3
 
 ESP32C6_DOCS = [
     'api-guides/RF_calibration.rst',

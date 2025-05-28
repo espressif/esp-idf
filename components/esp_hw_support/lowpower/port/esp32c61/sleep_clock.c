@@ -81,7 +81,9 @@ bool clock_domain_pd_allowed(void)
      * necessary to check the state of CLOCK_MODEM to determine MODEM domain on
      * or off. The clock and reset of digital peripherals are managed through
      * PCR, with TOP domain similar to MODEM domain. */
+#if SOC_WIFI_SUPPORTED || SOC_BT_SUPPORTED
     sleep_retention_module_bitmap_t modem_clk_dep_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
+#endif
 #if SOC_WIFI_SUPPORTED
     modem_clk_dep_modules.bitmap[SLEEP_RETENTION_MODULE_WIFI_MAC >> 5] |= BIT(SLEEP_RETENTION_MODULE_WIFI_MAC % 32);
     modem_clk_dep_modules.bitmap[SLEEP_RETENTION_MODULE_WIFI_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_WIFI_BB % 32);

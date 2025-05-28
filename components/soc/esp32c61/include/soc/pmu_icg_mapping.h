@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
+
 #define PMU_ICG_APB_ENA_SEC                     0
 #define PMU_ICG_APB_ENA_GDMA                    1
 #define PMU_ICG_APB_ENA_SPI2                    2
@@ -35,6 +36,7 @@
 #define PMU_ICG_FUNC_ENA_I2S_TX                 7
 #define PMU_ICG_FUNC_ENA_REGDMA                 8
 #define PMU_ICG_FUNC_ENA_MEM_MONITOR            10
+#define PMU_ICG_FUNC_ENA_SDIO_SLAVE             11
 #define PMU_ICG_FUNC_ENA_TSENS                  12
 #define PMU_ICG_FUNC_ENA_TG1                    13
 #define PMU_ICG_FUNC_ENA_TG0                    14

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-C61 |
-| ----------------- | -------- | -------- | --------- |
+| Supported Targets | ESP32-C5 | ESP32-C6 |
+| ----------------- | -------- | -------- |
 
 # Wifi itwt Example
 

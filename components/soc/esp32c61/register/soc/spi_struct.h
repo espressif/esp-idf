@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -18,23 +18,23 @@ typedef union {
     struct {
         /** conf_bitlen : R/W; bitpos: [17:0]; default: 0;
          *  Configures the SPI_CLK cycles of SPI CONF state.
-         *  Measurement unit: SPI_CLK clock cycle.\\
+         *  Measurement unit: SPI_CLK clock cycle.
          *  Can be configured in CONF state.
          */
         uint32_t conf_bitlen:18;
         uint32_t reserved_18:5;
         /** update : WT; bitpos: [23]; default: 0;
          *  Configures whether or not to synchronize SPI registers from APB clock domain into
-         *  SPI module clock domain. \\
-         *  0: Not synchronize \\
-         *  1: Synchronize \\
+         *  SPI module clock domain.
+         *  0: Not synchronize
+         *  1: Synchronize
          *  This bit is only used in SPI master transfer.
          */
         uint32_t update:1;
         /** usr : R/W/SC; bitpos: [24]; default: 0;
-         *  Configures whether or not to enable user-defined command. \\
-         *  0: Not enable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable user-defined command.
+         *  0: Not enable
+         *  1: Enable
          *  An SPI operation will be triggered when the bit is set. This bit will be cleared
          *  once the operation is done. Can not be changed by CONF_buf.
          */
@@ -64,17 +64,17 @@ typedef union {
 typedef union {
     struct {
         /** doutdin : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to enable full-duplex communication. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable full-duplex communication.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t doutdin:1;
         uint32_t reserved_1:2;
         /** qpi_mode : R/W/SS/SC; bitpos: [3]; default: 0;
-         *  Configures whether or not to enable QPI mode. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable QPI mode.
+         *  0: Disable
+         *  1: Enable
          *  This configuration is applicable when the SPI controller works as master or slave.
          *  Can be configured in CONF state.
          */
@@ -85,51 +85,50 @@ typedef union {
          */
         uint32_t opi_mode:1;
         /** tsck_i_edge : R/W; bitpos: [5]; default: 0;
-         *  Configures whether or not to change the polarity of TSCK in slave transfer. \\
-         *  0: TSCK = SPI_CK_I \\
-         *  1: TSCK = !SPI_CK_I \\
+         *  Configures whether or not to change the polarity of TSCK in slave transfer.
+         *  0: TSCK = SPI_CK_I
+         *  1: TSCK = !SPI_CK_I
          */
         uint32_t tsck_i_edge:1;
         /** cs_hold : R/W; bitpos: [6]; default: 1;
-         *  Configures whether or not to keep SPI CS low when SPI is in DONE state. \\
-         *  0: Not keep low \\
-         *  1: Keep low \\
+         *  Configures whether or not to keep SPI CS low when SPI is in DONE state.
+         *  0: Not keep low
+         *  1: Keep low
          *  Can be configured in CONF state.
          */
         uint32_t cs_hold:1;
         /** cs_setup : R/W; bitpos: [7]; default: 1;
-         *  Configures whether or not to enable SPI CS when SPI is in prepare (PREP) state. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable SPI CS when SPI is in prepare (PREP) state.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t cs_setup:1;
         /** rsck_i_edge : R/W; bitpos: [8]; default: 0;
-         *  Configures whether or not to change the polarity of RSCK in slave transfer. \\
-         *  0: RSCK = !SPI_CK_I \\
-         *  1: RSCK = SPI_CK_I \\
+         *  Configures whether or not to change the polarity of RSCK in slave transfer.
+         *  0: RSCK = !SPI_CK_I
+         *  1: RSCK = SPI_CK_I
          */
         uint32_t rsck_i_edge:1;
         /** ck_out_edge : R/W; bitpos: [9]; default: 0;
          *  Configures SPI clock mode together with SPI_CK_IDLE_EDGE.
-         *  Can be configured in CONF state. For more information, see Section <a href="GP-SPI2
-         *  master clock control">link</a>.
+         *  Can be configured in CONF state. For more information, see Section .
          */
         uint32_t ck_out_edge:1;
         uint32_t reserved_10:2;
         /** fwrite_dual : R/W; bitpos: [12]; default: 0;
          *  Configures whether or not to enable the 2-bit mode of read-data phase in write
-         *  operations.\\
-         *  0: Not enable \\
-         *  1: Enable \\
+         *  operations.
+         *  0: Not enable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t fwrite_dual:1;
         /** fwrite_quad : R/W; bitpos: [13]; default: 0;
          *  Configures whether or not to enable the 4-bit mode of read-data phase in write
-         *  operations. \\
-         *  0: Not enable \\
-         *  1: Enable \\
+         *  operations.
+         *  0: Not enable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t fwrite_quad:1;
@@ -140,79 +139,79 @@ typedef union {
         uint32_t fwrite_oct:1;
         /** usr_conf_nxt : R/W; bitpos: [15]; default: 0;
          *  Configures whether or not to enable the CONF state for the next transaction
-         *  (segment) in a configurable segmented transfer. \\
+         *  (segment) in a configurable segmented transfer.
          *  0: this transfer will end after the current transaction (segment) is finished. Or
-         *  this is not a configurable segmented transfer. \\
+         *  this is not a configurable segmented transfer.
          *  1: this configurable segmented transfer will continue its next transaction
-         *  (segment). \\
+         *  (segment).
          *  Can be configured in CONF state.
          */
         uint32_t usr_conf_nxt:1;
         uint32_t reserved_16:1;
         /** sio : R/W; bitpos: [17]; default: 0;
          *  Configures whether or not to enable 3-line half-duplex communication, where MOSI
-         *  and MISO signals share the same pin.\\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  and MISO signals share the same pin.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t sio:1;
         uint32_t reserved_18:6;
         /** usr_miso_highpart : R/W; bitpos: [24]; default: 0;
          *  Configures whether or not to enable high part mode, i.e., only access to high part
-         *  of the buffers: SPI_W8_REG ~ SPI_W15_REG in read-data phase. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  of the buffers: SPI_W8_REG ~ SPI_W15_REG in read-data phase.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t usr_miso_highpart:1;
         /** usr_mosi_highpart : R/W; bitpos: [25]; default: 0;
          *  Configures whether or not to enable high part mode, i.e., only access to high part
-         *  of the buffers: SPI_W8_REG ~ SPI_W15_REG in write-data phase. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  of the buffers: SPI_W8_REG ~ SPI_W15_REG in write-data phase.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t usr_mosi_highpart:1;
         /** usr_dummy_idle : R/W; bitpos: [26]; default: 0;
-         *  Configures whether or not to disable SPI clock in DUMMY state. \\
-         *  0: Not disable \\
-         *  1: Disable \\
+         *  Configures whether or not to disable SPI clock in DUMMY state.
+         *  0: Not disable
+         *  1: Disable
          *  Can be configured in CONF state.
          */
         uint32_t usr_dummy_idle:1;
         /** usr_mosi : R/W; bitpos: [27]; default: 0;
-         *  Configures whether or not to enable the write-data (DOUT) state of an operation. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable the write-data (DOUT) state of an operation.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t usr_mosi:1;
         /** usr_miso : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to enable the read-data (DIN) state of an operation. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable the read-data (DIN) state of an operation.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t usr_miso:1;
         /** usr_dummy : R/W; bitpos: [29]; default: 0;
-         *  Configures whether or not to enable the DUMMY state of an operation. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable the DUMMY state of an operation.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t usr_dummy:1;
         /** usr_addr : R/W; bitpos: [30]; default: 0;
-         *  Configures whether or not to enable the address (ADDR) state of an operation. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable the address (ADDR) state of an operation.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t usr_addr:1;
         /** usr_command : R/W; bitpos: [31]; default: 1;
-         *  Configures whether or not to enable the command (CMD) state of an operation. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable the command (CMD) state of an operation.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t usr_command:1;
@@ -227,28 +226,28 @@ typedef union {
     struct {
         /** usr_dummy_cyclelen : R/W; bitpos: [7:0]; default: 7;
          *  Configures the length of DUMMY state.
-         *  Measurement unit: SPI_CLK clock cycles.\\
+         *  Measurement unit: SPI_CLK clock cycles.
          *  This value is (the expected cycle number - 1). Can be configured in CONF state.
          */
         uint32_t usr_dummy_cyclelen:8;
         uint32_t reserved_8:8;
         /** mst_wfull_err_end_en : R/W; bitpos: [16]; default: 1;
          *  Configures whether or not to end the SPI transfer when SPI RX AFIFO wfull error
-         *  occurs in master full-/half-duplex transfers. \\
-         *  0: Not end \\
-         *  1: End \\
+         *  occurs in master full-/half-duplex transfers.
+         *  0: Not end
+         *  1: End
          */
         uint32_t mst_wfull_err_end_en:1;
         /** cs_setup_time : R/W; bitpos: [21:17]; default: 0;
          *  Configures the length of prepare (PREP) state.
-         *  Measurement unit: SPI_CLK clock cycles.\\
+         *  Measurement unit: SPI_CLK clock cycles.
          *  This value is equal to the expected cycles - 1. This field is used together with
          *  SPI_CS_SETUP. Can be configured in CONF state.
          */
         uint32_t cs_setup_time:5;
         /** cs_hold_time : R/W; bitpos: [26:22]; default: 1;
          *  Configures the delay cycles of CS pin.
-         *  Measurement unit: SPI_CLK clock cycles. \\
+         *  Measurement unit: SPI_CLK clock cycles.
          *  This field is used together with SPI_CS_HOLD. Can be configured in CONF state.
          */
         uint32_t cs_hold_time:5;
@@ -274,9 +273,9 @@ typedef union {
         uint32_t reserved_16:11;
         /** mst_rempty_err_end_en : R/W; bitpos: [27]; default: 1;
          *  Configures whether or not to end the SPI transfer when SPI TX AFIFO read empty
-         *  error occurs in master full-/half-duplex transfers. \\
-         *  0: Not end \\
-         *  1: End \\
+         *  error occurs in master full-/half-duplex transfers.
+         *  0: Not end
+         *  1: End
          */
         uint32_t mst_rempty_err_end_en:1;
         /** usr_command_bitlen : R/W; bitpos: [31:28]; default: 7;
@@ -297,122 +296,122 @@ typedef union {
     struct {
         uint32_t reserved_0:3;
         /** dummy_out : R/W; bitpos: [3]; default: 0;
-         *  Configures whether or not to output the FSPI bus signals in DUMMY state. \\
-         *  0: Not output \\
-         *  1: Output \\
+         *  Configures whether or not to output the FSPI bus signals in DUMMY state.
+         *  0: Not output
+         *  1: Output
          *  Can be configured in CONF state.
          */
         uint32_t dummy_out:1;
         uint32_t reserved_4:1;
         /** faddr_dual : R/W; bitpos: [5]; default: 0;
-         *  Configures whether or not to enable 2-bit mode during address (ADDR) state.\\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable 2-bit mode during address (ADDR) state.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t faddr_dual:1;
         /** faddr_quad : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to enable 4-bit mode during address (ADDR) state. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable 4-bit mode during address (ADDR) state.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t faddr_quad:1;
         /** faddr_oct : HRO; bitpos: [7]; default: 0;
-         *  Configures whether or not to enable 8-bit mode during address (ADDR) state. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable 8-bit mode during address (ADDR) state.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t faddr_oct:1;
         /** fcmd_dual : R/W; bitpos: [8]; default: 0;
-         *  Configures whether or not to enable 2-bit mode during command (CMD) state. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable 2-bit mode during command (CMD) state.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t fcmd_dual:1;
         /** fcmd_quad : R/W; bitpos: [9]; default: 0;
-         *  Configures whether or not to enable 4-bit mode during command (CMD) state. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable 4-bit mode during command (CMD) state.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t fcmd_quad:1;
         /** fcmd_oct : HRO; bitpos: [10]; default: 0;
-         *  Configures whether or not to enable 8-bit mode during command (CMD) state. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  Configures whether or not to enable 8-bit mode during command (CMD) state.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t fcmd_oct:1;
         uint32_t reserved_11:3;
         /** fread_dual : R/W; bitpos: [14]; default: 0;
          *  Configures whether or not to enable the 2-bit mode of read-data (DIN) state in read
-         *  operations. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  operations.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t fread_dual:1;
         /** fread_quad : R/W; bitpos: [15]; default: 0;
          *  Configures whether or not to enable the 4-bit mode of read-data (DIN) state in read
-         *  operations. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  operations.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t fread_quad:1;
         /** fread_oct : HRO; bitpos: [16]; default: 0;
          *  Configures whether or not to enable the 8-bit mode of read-data (DIN) state in read
-         *  operations. \\
-         *  0: Disable \\
-         *  1: Enable \\
+         *  operations.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t fread_oct:1;
         uint32_t reserved_17:1;
         /** q_pol : R/W; bitpos: [18]; default: 1;
-         *  Configures MISO line polarity. \\
-         *  0: Low \\
-         *  1: High \\
+         *  Configures MISO line polarity.
+         *  0: Low
+         *  1: High
          *  Can be configured in CONF state.
          */
         uint32_t q_pol:1;
         /** d_pol : R/W; bitpos: [19]; default: 1;
-         *  Configures MOSI line polarity. \\
-         *  0: Low \\
-         *  1: High \\
+         *  Configures MOSI line polarity.
+         *  0: Low
+         *  1: High
          *  Can be configured in CONF state.
          */
         uint32_t d_pol:1;
         /** hold_pol : R/W; bitpos: [20]; default: 1;
-         *  Configures SPI_HOLD output value when SPI is in idle. \\
-         *  0: Output low \\
-         *  1: Output high \\
+         *  Configures SPI_HOLD output value when SPI is in idle.
+         *  0: Output low
+         *  1: Output high
          *  Can be configured in CONF state.
          */
         uint32_t hold_pol:1;
         /** wp_pol : R/W; bitpos: [21]; default: 1;
-         *  Configures the output value of write-protect signal when SPI is in idle. \\
-         *  0: Output low \\
-         *  1: Output high \\
+         *  Configures the output value of write-protect signal when SPI is in idle.
+         *  0: Output low
+         *  1: Output high
          *  Can be configured in CONF state.
          */
         uint32_t wp_pol:1;
         uint32_t reserved_22:1;
         /** rd_bit_order : R/W; bitpos: [24:23]; default: 0;
-         *  Configures the bit order in read-data (MISO) state. \\
-         *  0: MSB first \\
-         *  1: LSB first \\
+         *  Configures the bit order in read-data (MISO) state.
+         *  0: MSB first
+         *  1: LSB first
          *  Can be configured in CONF state.
          */
         uint32_t rd_bit_order:2;
         /** wr_bit_order : R/W; bitpos: [26:25]; default: 0;
          *  Configures the bit order in command (CMD), address (ADDR), and write-data (MOSI)
-         *  states. \\
-         *  0: MSB first \\
-         *  1: LSB first \\
+         *  states.
+         *  0: MSB first
+         *  1: LSB first
          *  Can be configured in CONF state.
          */
         uint32_t wr_bit_order:2;
@@ -444,58 +443,58 @@ typedef union {
 typedef union {
     struct {
         /** cs0_dis : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to disable SPI_CS$n pin.\\
-         *  0: SPI_CS$n signal is from/to SPI_CS$n pin.\\
-         *  1: Disable SPI_CS$n pin.\\
+         *  Configures whether or not to disable SPI_CS$n pin.
+         *  0: SPI_CS$n signal is from/to SPI_CS$n pin.
+         *  1: Disable SPI_CS$n pin.
          *  Can be configured in CONF state.
          */
         uint32_t cs0_dis:1;
         /** cs1_dis : R/W; bitpos: [1]; default: 1;
-         *  Configures whether or not to disable SPI_CS$n pin.\\
-         *  0: SPI_CS$n signal is from/to SPI_CS$n pin.\\
-         *  1: Disable SPI_CS$n pin.\\
+         *  Configures whether or not to disable SPI_CS$n pin.
+         *  0: SPI_CS$n signal is from/to SPI_CS$n pin.
+         *  1: Disable SPI_CS$n pin.
          *  Can be configured in CONF state.
          */
         uint32_t cs1_dis:1;
         /** cs2_dis : R/W; bitpos: [2]; default: 1;
-         *  Configures whether or not to disable SPI_CS$n pin.\\
-         *  0: SPI_CS$n signal is from/to SPI_CS$n pin.\\
-         *  1: Disable SPI_CS$n pin.\\
+         *  Configures whether or not to disable SPI_CS$n pin.
+         *  0: SPI_CS$n signal is from/to SPI_CS$n pin.
+         *  1: Disable SPI_CS$n pin.
          *  Can be configured in CONF state.
          */
         uint32_t cs2_dis:1;
         /** cs3_dis : R/W; bitpos: [3]; default: 1;
-         *  Configures whether or not to disable SPI_CS$n pin.\\
-         *  0: SPI_CS$n signal is from/to SPI_CS$n pin.\\
-         *  1: Disable SPI_CS$n pin.\\
+         *  Configures whether or not to disable SPI_CS$n pin.
+         *  0: SPI_CS$n signal is from/to SPI_CS$n pin.
+         *  1: Disable SPI_CS$n pin.
          *  Can be configured in CONF state.
          */
         uint32_t cs3_dis:1;
         /** cs4_dis : R/W; bitpos: [4]; default: 1;
-         *  Configures whether or not to disable SPI_CS$n pin.\\
-         *  0: SPI_CS$n signal is from/to SPI_CS$n pin.\\
-         *  1: Disable SPI_CS$n pin.\\
+         *  Configures whether or not to disable SPI_CS$n pin.
+         *  0: SPI_CS$n signal is from/to SPI_CS$n pin.
+         *  1: Disable SPI_CS$n pin.
          *  Can be configured in CONF state.
          */
         uint32_t cs4_dis:1;
         /** cs5_dis : R/W; bitpos: [5]; default: 1;
-         *  Configures whether or not to disable SPI_CS$n pin.\\
-         *  0: SPI_CS$n signal is from/to SPI_CS$n pin.\\
-         *  1: Disable SPI_CS$n pin.\\
+         *  Configures whether or not to disable SPI_CS$n pin.
+         *  0: SPI_CS$n signal is from/to SPI_CS$n pin.
+         *  1: Disable SPI_CS$n pin.
          *  Can be configured in CONF state.
          */
         uint32_t cs5_dis:1;
         /** ck_dis : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to disable SPI_CLK output.\\
-         *  0: Enable\\
-         *  1: Disable\\
+         *  Configures whether or not to disable SPI_CLK output.
+         *  0: Enable
+         *  1: Disable
          *  Can be configured in CONF state.
          */
         uint32_t ck_dis:1;
         /** master_cs_pol : R/W; bitpos: [12:7]; default: 0;
-         *  Configures the polarity of SPI_CS$n ($n = 0-5) line in master transfer.\\
-         *  0: SPI_CS$n is low active.\\
-         *  1: SPI_CS$n is high active.\\
+         *  Configures the polarity of SPI_CS$n ($n = 0-5) line in master transfer.
+         *  0: SPI_CS$n is low active.
+         *  1: SPI_CS$n is high active.
          *  Can be configured in CONF state.
          */
         uint32_t master_cs_pol:6;
@@ -525,9 +524,9 @@ typedef union {
         uint32_t cmd_dtr_en:1;
         uint32_t reserved_20:3;
         /** slave_cs_pol : R/W; bitpos: [23]; default: 0;
-         *  Configures whether or not invert SPI slave input CS polarity.\\
-         *  0: Not change\\
-         *  1: Invert\\
+         *  Configures whether or not invert SPI slave input CS polarity.
+         *  0: Not change
+         *  1: Invert
          *  Can be configured in CONF state.
          */
         uint32_t slave_cs_pol:1;
@@ -537,16 +536,16 @@ typedef union {
         uint32_t dqs_idle_edge:1;
         uint32_t reserved_25:4;
         /** ck_idle_edge : R/W; bitpos: [29]; default: 0;
-         *  Configures the level of SPI_CLK line when GP-SPI2 is in idle.\\
-         *  0: Low\\
-         *  1: High\\
+         *  Configures the level of SPI_CLK line when GP-SPI2 is in idle.
+         *  0: Low
+         *  1: High
          *  Can be configured in CONF state.
          */
         uint32_t ck_idle_edge:1;
         /** cs_keep_active : R/W; bitpos: [30]; default: 0;
-         *  Configures whether or not to keep the SPI_CS line low.\\
-         *  0: Not keep low\\
-         *  1: Keep low\\
+         *  Configures whether or not to keep the SPI_CS line low.
+         *  0: Not keep low
+         *  1: Keep low
          *  Can be configured in CONF state.
          */
         uint32_t cs_keep_active:1;
@@ -565,31 +564,31 @@ typedef union {
 typedef union {
     struct {
         /** dma_outfifo_empty : RO; bitpos: [0]; default: 1;
-         *  Represents whether or not the DMA TX FIFO is ready for sending data.\\
-         *  0: Ready\\
-         *  1: Not ready\\
+         *  Represents whether or not the DMA TX FIFO is ready for sending data.
+         *  0: Ready
+         *  1: Not ready
          */
         uint32_t dma_outfifo_empty:1;
         /** dma_infifo_full : RO; bitpos: [1]; default: 1;
-         *  Represents whether or not the DMA RX FIFO is ready for receiving data.\\
-         *  0: Ready\\
-         *  1: Not ready\\
+         *  Represents whether or not the DMA RX FIFO is ready for receiving data.
+         *  0: Ready
+         *  1: Not ready
          */
         uint32_t dma_infifo_full:1;
         uint32_t reserved_2:16;
         /** dma_slv_seg_trans_en : R/W; bitpos: [18]; default: 0;
          *  Configures whether or not to enable DMA-controlled segmented transfer in slave
-         *  half-duplex communication.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  half-duplex communication.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t dma_slv_seg_trans_en:1;
         /** slv_rx_seg_trans_clr_en : R/W; bitpos: [19]; default: 0;
          *  In slave segmented transfer, if the size of the DMA RX buffer is smaller than the
-         *  size of the received data, \\1: the data in all the following Wr_DMA transactions
-         *  will not be received\\ 0: the data in this Wr_DMA transaction will not be received,
-         *  but in the following transactions,\\
-         *
+         *  size of the received data,
+         *  1: the data in all the following Wr_DMA transactions will not be received
+         *  0: the data in this Wr_DMA transaction will not be received, but in the following
+         *  transactions,
          *  - if the size of DMA RX buffer is not 0, the data in following Wr_DMA transactions
          *  will be received.
          *  - if the size of DMA RX buffer is 0, the data in following Wr_DMA transactions will
@@ -598,12 +597,11 @@ typedef union {
         uint32_t slv_rx_seg_trans_clr_en:1;
         /** slv_tx_seg_trans_clr_en : R/W; bitpos: [20]; default: 0;
          *  In slave segmented transfer, if the size of the DMA TX buffer is smaller than the
-         *  size of the transmitted data,\\
+         *  size of the transmitted data,
          *  1: the data in the following transactions will not be updated, i.e. the old data is
-         *  transmitted repeatedly.\\
+         *  transmitted repeatedly.
          *  0: the data in this transaction will not be updated. But in the following
-         *  transactions,\\
-         *
+         *  transactions,
          *  - if new data is filled in DMA TX FIFO, new data will be transmitted.
          *  - if no new data is filled in DMA TX FIFO, no new data will be transmitted.
          */
@@ -618,41 +616,35 @@ typedef union {
         uint32_t rx_eof_en:1;
         uint32_t reserved_22:5;
         /** dma_rx_ena : R/W; bitpos: [27]; default: 0;
-         *  Configures whether or not to enable DMA-controlled receive data transfer.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable DMA-controlled receive data transfer.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t dma_rx_ena:1;
         /** dma_tx_ena : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to enable DMA-controlled send data transfer.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable DMA-controlled send data transfer.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t dma_tx_ena:1;
         /** rx_afifo_rst : WT; bitpos: [29]; default: 0;
-         *  Configures whether or not to reset spi_rx_afifo as shown in Figure <a
-         *  href="fig:spi-master-data-flow-control">link</a> and in Figure  <a
-         *  href="fig:spi-slave-data-flow-control">link</a>.\\
-         *  0: Not reset\\
-         *  1: Reset\\
+         *  Configures whether or not to reset spi_rx_afifo as shown in Figure .
+         *  0: Not reset
+         *  1: Reset
          *  spi_rx_afifo is used to receive data in SPI master and slave transfer.
          */
         uint32_t rx_afifo_rst:1;
         /** buf_afifo_rst : WT; bitpos: [30]; default: 0;
-         *  Configures whether or not to reset buf_tx_afifo as shown in Figure <a
-         *  href="fig:spi-master-data-flow-control">link</a> and in Figure  <a
-         *  href="fig:spi-slave-data-flow-control">link</a>.\\
-         *  0: Not reset\\
-         *  1: Reset\\
+         *  Configures whether or not to reset buf_tx_afifo as shown in Figure .
+         *  0: Not reset
+         *  1: Reset
          *  buf_tx_afifo is used to send data out in CPU-controlled master and slave transfer.
          */
         uint32_t buf_afifo_rst:1;
         /** dma_afifo_rst : WT; bitpos: [31]; default: 0;
-         *  Configures whether or not to reset dma_tx_afifo as shown in Figure <a
-         *  href="fig:spi-master-data-flow-control">link</a> and in Figure  <a
-         *  href="fig:spi-slave-data-flow-control">link</a>.\\
-         *  0: Not reset\\
-         *  1: Reset\\
+         *  Configures whether or not to reset dma_tx_afifo as shown in Figure .
+         *  0: Not reset
+         *  1: Reset
          *  dma_tx_afifo is used to send data out in DMA-controlled slave transfer.
          */
         uint32_t dma_afifo_rst:1;
@@ -666,55 +658,53 @@ typedef union {
 typedef union {
     struct {
         /** clk_mode : R/W; bitpos: [1:0]; default: 0;
-         *  Configures SPI clock mode.\\
-         *  0: SPI clock is off when CS becomes inactive.\\
-         *  1: SPI clock is delayed one cycle after CS becomes inactive.\\
-         *  2: SPI clock is delayed two cycles after CS becomes inactive.\\
-         *  3: SPI clock is always on.\\
+         *  Configures SPI clock mode.
+         *  0: SPI clock is off when CS becomes inactive.
+         *  1: SPI clock is delayed one cycle after CS becomes inactive.
+         *  2: SPI clock is delayed two cycles after CS becomes inactive.
+         *  3: SPI clock is always on.
          *  Can be configured in CONF state.
          */
         uint32_t clk_mode:2;
         /** clk_mode_13 : R/W; bitpos: [2]; default: 0;
-         *  Configure clock mode.\\
-         *  0: Support SPI clock mode 0 or 2. See Table <a
-         *  href="table:clock_pol_slave">link</a>.\\
-         *  1: Support SPI clock mode 1 or 3. See Table <a
-         *  href="table:clock_pol_slave">link</a>.\\
+         *  Configure clock mode.
+         *  0: Support SPI clock mode 0 or 2. See Table .
+         *  1: Support SPI clock mode 1 or 3. See Table .
          */
         uint32_t clk_mode_13:1;
         /** rsck_data_out : R/W; bitpos: [3]; default: 0;
-         *  Configures the edge of output data.\\
-         *  0: Output data at TSCK rising edge.\\
-         *  1: Output data at RSCK rising edge.\\
+         *  Configures the edge of output data.
+         *  0: Output data at TSCK rising edge.
+         *  1: Output data at RSCK rising edge.
          */
         uint32_t rsck_data_out:1;
         uint32_t reserved_4:4;
         /** slv_rddma_bitlen_en : R/W; bitpos: [8]; default: 0;
          *  Configures whether or not to use SPI_SLV_DATA_BITLEN to store the data bit length
-         *  of Rd_DMA transfer.\\
-         *  0: Not use\\
-         *  1: Use\\
+         *  of Rd_DMA transfer.
+         *  0: Not use
+         *  1: Use
          */
         uint32_t slv_rddma_bitlen_en:1;
         /** slv_wrdma_bitlen_en : R/W; bitpos: [9]; default: 0;
          *  Configures whether or not to use SPI_SLV_DATA_BITLEN to store the data bit length
-         *  of Wr_DMA transfer.\\
-         *  0: Not use\\
-         *  1: Use\\
+         *  of Wr_DMA transfer.
+         *  0: Not use
+         *  1: Use
          */
         uint32_t slv_wrdma_bitlen_en:1;
         /** slv_rdbuf_bitlen_en : R/W; bitpos: [10]; default: 0;
          *  Configures whether or not to use SPI_SLV_DATA_BITLEN to store the data bit length
-         *  of Rd_BUF transfer.\\
-         *  0: Not use\\
-         *  1: Use\\
+         *  of Rd_BUF transfer.
+         *  0: Not use
+         *  1: Use
          */
         uint32_t slv_rdbuf_bitlen_en:1;
         /** slv_wrbuf_bitlen_en : R/W; bitpos: [11]; default: 0;
          *  Configures whether or not to use SPI_SLV_DATA_BITLEN to store the data bit length
-         *  of Wr_BUF transfer.\\
-         *  0: Not use\\
-         *  1: Use\\
+         *  of Wr_BUF transfer.
+         *  0: Not use
+         *  1: Use
          */
         uint32_t slv_wrbuf_bitlen_en:1;
         /** slv_last_byte_strb : R/SS; bitpos: [19:12]; default: 0;
@@ -729,32 +719,31 @@ typedef union {
          */
         uint32_t dma_seg_magic_value:4;
         /** slave_mode : R/W; bitpos: [26]; default: 0;
-         *  Configures SPI work mode.\\
-         *  0: Master\\
-         *  1: Slave\\
+         *  Configures SPI work mode.
+         *  0: Master
+         *  1: Slave
          */
         uint32_t slave_mode:1;
         /** soft_reset : WT; bitpos: [27]; default: 0;
-         *  Configures whether to reset the SPI clock line, CS line, and data line via
-         *  software.\\
-         *  0: Not reset\\
-         *  1: Reset\\
+         *  Configures whether to reset the SPI clock line, CS line, and data line via software.
+         *  0: Not reset
+         *  1: Reset
          *  Can be configured in CONF state.
          */
         uint32_t soft_reset:1;
         /** usr_conf : R/W; bitpos: [28]; default: 0;
          *  Configures whether or not to enable the CONF state of current DMA-controlled
-         *  configurable segmented transfer.\\
+         *  configurable segmented transfer.
          *  0: No effect, which means the current transfer is not a configurable segmented
-         *  transfer.\\
-         *  1: Enable, which means a configurable segmented transfer is started.\\
+         *  transfer.
+         *  1: Enable, which means a configurable segmented transfer is started.
          */
         uint32_t usr_conf:1;
         /** mst_fd_wait_dma_tx_data : R/W; bitpos: [29]; default: 0;
          *  Configures whether or not to wait DMA TX data gets ready before starting SPI
-         *  transfer in master full-duplex transfer.\\
-         *  0: Not wait\\
-         *  1: Wait\\
+         *  transfer in master full-duplex transfer.
+         *  0: Not wait
+         *  1: Wait
          */
         uint32_t mst_fd_wait_dma_tx_data:1;
         uint32_t reserved_30:2;
@@ -799,14 +788,14 @@ typedef union {
          *  Configures the duty cycle of SPI_CLK (high level) in master transfer.
          *  It's recommended to configure this value to floor((SPI_CLKCNT_N + 1)/2 - 1).
          *  floor() here is to round a number down, e.g., floor(2.2) = 2. In slave mode, it
-         *  must be 0. \\
+         *  must be 0.
          *  Can be configured in CONF state.
          */
         uint32_t clkcnt_h:6;
         /** clkcnt_n : R/W; bitpos: [17:12]; default: 3;
          *  Configures the divider of SPI_CLK in master transfer.
          *  SPI_CLK frequency is $f_{\textrm{apb_clk}}$/(SPI_CLKDIV_PRE + 1)/(SPI_CLKCNT_N +
-         *  1). \\
+         *  1).
          *  Can be configured in CONF state.
          */
         uint32_t clkcnt_n:6;
@@ -815,11 +804,19 @@ typedef union {
          *  Can be configured in CONF state.
          */
         uint32_t clkdiv_pre:4;
-        uint32_t reserved_22:9;
+        uint32_t reserved_22:8;
+        /** clk_edge_sel : R/W; bitpos: [30]; default: 0;
+         *  Configures use standard clock sampling edge or delay the sampling edge by half a
+         *  cycle in master transfer.
+         *  0: clock sampling edge is delayed by half a cycle.
+         *  1: clock sampling edge is standard.
+         *  Can be configured in CONF state.
+         */
+        uint32_t clk_edge_sel:1;
         /** clk_equ_sysclk : R/W; bitpos: [31]; default: 1;
-         *  Configures whether or not the SPI_CLK is equal to APB_CLK in master transfer.\\
-         *  0: SPI_CLK is divided from APB_CLK.\\
-         *  1: SPI_CLK is equal to APB_CLK.\\
+         *  Configures whether or not the SPI_CLK is equal to APB_CLK in master transfer.
+         *  0: SPI_CLK is divided from APB_CLK.
+         *  1: SPI_CLK is equal to APB_CLK.
          *  Can be configured in CONF state.
          */
         uint32_t clk_equ_sysclk:1;
@@ -833,9 +830,9 @@ typedef union {
 typedef union {
     struct {
         /** clk_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to enable clock gate.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable clock gate.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t clk_en:1;
         /** mst_clk_active : R/W; bitpos: [1]; default: 0;
@@ -860,46 +857,46 @@ typedef union {
 typedef union {
     struct {
         /** din0_mode : R/W; bitpos: [1:0]; default: 0;
-         *  Configures the input mode for FSPID signal.\\
-         *  0: Input without delay\\
-         *  1: Input at the (SPI_DIN0_NUM + 1)th falling edge of clk_spi_mst\\
+         *  Configures the input mode for FSPID signal.
+         *  0: Input without delay
+         *  1: Input at the (SPI_DIN0_NUM + 1)th falling edge of clk_spi_mst
          *  2: Input at the (SPI_DIN0_NUM + 1)th rising edge of clk_hclk plus one clk_spi_mst
-         *  rising edge cycle\\
+         *  rising edge cycle
          *  3: Input at the (SPI_DIN0_NUM + 1)th rising edge of clk_hclk plus one clk_spi_mst
-         *  falling edge cycle\\
+         *  falling edge cycle
          *  Can be configured in CONF state.
          */
         uint32_t din0_mode:2;
         /** din1_mode : R/W; bitpos: [3:2]; default: 0;
-         *  Configures the input mode for FSPIQ signal.\\
-         *  0: Input without delay\\
-         *  1: Input at the (SPI_DIN1_NUM+1)th falling edge of clk_spi_mst\\
+         *  Configures the input mode for FSPIQ signal.
+         *  0: Input without delay
+         *  1: Input at the (SPI_DIN1_NUM+1)th falling edge of clk_spi_mst
          *  2: Input at the (SPI_DIN1_NUM + 1)th rising edge of clk_hclk plus one clk_spi_mst
-         *  rising edge cycle\\
+         *  rising edge cycle
          *  3: Input at the (SPI_DIN1_NUM + 1)th rising edge of clk_hclk plus one clk_spi_mst
-         *  falling edge cycle\\
+         *  falling edge cycle
          *  Can be configured in CONF state.
          */
         uint32_t din1_mode:2;
         /** din2_mode : R/W; bitpos: [5:4]; default: 0;
-         *  Configures the input mode for FSPIWP signal.\\
-         *  0: Input without delay\\
-         *  1: Input at the (SPI_DIN2_NUM + 1)th falling edge of clk_spi_mst\\
+         *  Configures the input mode for FSPIWP signal.
+         *  0: Input without delay
+         *  1: Input at the (SPI_DIN2_NUM + 1)th falling edge of clk_spi_mst
          *  2: Input at the (SPI_DIN2_NUM + 1)th rising edge of clk_hclk plus one clk_spi_mst
-         *  rising edge cycle\\
+         *  rising edge cycle
          *  3: Input at the (SPI_DIN2_NUM + 1)th rising edge of clk_hclk plus one clk_spi_mst
-         *  falling edge cycle\\
+         *  falling edge cycle
          *  Can be configured in CONF state.
          */
         uint32_t din2_mode:2;
         /** din3_mode : R/W; bitpos: [7:6]; default: 0;
-         *  Configures the input mode for FSPIHD signal.\\
-         *  0: Input without delay\\
-         *  1: Input at the (SPI_DIN3_NUM + 1)th falling edge of clk_spi_mst\\
+         *  Configures the input mode for FSPIHD signal.
+         *  0: Input without delay
+         *  1: Input at the (SPI_DIN3_NUM + 1)th falling edge of clk_spi_mst
          *  2: Input at the (SPI_DIN3_NUM + 1)th rising edge of clk_hclk plus one clk_spi_mst
-         *  rising edge cycle\\
+         *  rising edge cycle
          *  3: Input at the (SPI_DIN3_NUM + 1)th rising edge of clk_hclk plus one clk_spi_mst
-         *  falling edge cycle\\
+         *  falling edge cycle
          *  Can be configured in CONF state.
          *
          */
@@ -930,9 +927,9 @@ typedef union {
         uint32_t din7_mode:2;
         /** timing_hclk_active : R/W; bitpos: [16]; default: 0;
          *  Configures whether or not to enable HCLK (high-frequency clock) in SPI input timing
-         *  module.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  module.
+         *  0: Disable
+         *  1: Enable
          *  Can be configured in CONF state.
          */
         uint32_t timing_hclk_active:1;
@@ -947,40 +944,38 @@ typedef union {
 typedef union {
     struct {
         /** din0_num : R/W; bitpos: [1:0]; default: 0;
-         *  Configures the delays to input signal FSPID based on the setting of SPI_DIN0_MODE.\\
-         *  0: Delayed by 1 clock cycle\\
-         *  1: Delayed by 2 clock cycles\\
-         *  2: Delayed by 3 clock cycles\\
-         *  3: Delayed by 4 clock cycles\\
+         *  Configures the delays to input signal FSPID based on the setting of SPI_DIN0_MODE.
+         *  0: Delayed by 1 clock cycle
+         *  1: Delayed by 2 clock cycles
+         *  2: Delayed by 3 clock cycles
+         *  3: Delayed by 4 clock cycles
          *  Can be configured in CONF state.
          */
         uint32_t din0_num:2;
         /** din1_num : R/W; bitpos: [3:2]; default: 0;
-         *  Configures the delays to input signal FSPIQ based on the setting of SPI_DIN1_MODE.\\
-         *  0: Delayed by 1 clock cycle\\
-         *  1: Delayed by 2 clock cycles\\
-         *  2: Delayed by 3 clock cycles\\
-         *  3: Delayed by 4 clock cycles\\
+         *  Configures the delays to input signal FSPIQ based on the setting of SPI_DIN1_MODE.
+         *  0: Delayed by 1 clock cycle
+         *  1: Delayed by 2 clock cycles
+         *  2: Delayed by 3 clock cycles
+         *  3: Delayed by 4 clock cycles
          *  Can be configured in CONF state.
          */
         uint32_t din1_num:2;
         /** din2_num : R/W; bitpos: [5:4]; default: 0;
-         *  Configures the delays to input signal FSPIWP based on the setting of
-         *  SPI_DIN2_MODE.\\
-         *  0: Delayed by 1 clock cycle\\
-         *  1: Delayed by 2 clock cycles\\
-         *  2: Delayed by 3 clock cycles\\
-         *  3: Delayed by 4 clock cycles\\
+         *  Configures the delays to input signal FSPIWP based on the setting of SPI_DIN2_MODE.
+         *  0: Delayed by 1 clock cycle
+         *  1: Delayed by 2 clock cycles
+         *  2: Delayed by 3 clock cycles
+         *  3: Delayed by 4 clock cycles
          *  Can be configured in CONF state.
          */
         uint32_t din2_num:2;
         /** din3_num : R/W; bitpos: [7:6]; default: 0;
-         *  Configures the delays to input signal FSPIHD based on the setting of
-         *  SPI_DIN3_MODE.\\
-         *  0: Delayed by 1 clock cycle\\
-         *  1: Delayed by 2 clock cycles\\
-         *  2: Delayed by 3 clock cycles\\
-         *  3: Delayed by 4 clock cycles\\
+         *  Configures the delays to input signal FSPIHD based on the setting of SPI_DIN3_MODE.
+         *  0: Delayed by 1 clock cycle
+         *  1: Delayed by 2 clock cycles
+         *  2: Delayed by 3 clock cycles
+         *  3: Delayed by 4 clock cycles
          *  Can be configured in CONF state.
          */
         uint32_t din3_num:2;
@@ -1015,30 +1010,30 @@ typedef union {
 typedef union {
     struct {
         /** dout0_mode : R/W; bitpos: [0]; default: 0;
-         *  Configures the output mode for FSPID signal.\\
-         *  0: Output without delay\\
-         *  1: Output with a delay of a SPI module clock cycle at its falling edge\\
+         *  Configures the output mode for FSPID signal.
+         *  0: Output without delay
+         *  1: Output with a delay of a SPI module clock cycle at its falling edge
          *  Can be configured in CONF state.
          */
         uint32_t dout0_mode:1;
         /** dout1_mode : R/W; bitpos: [1]; default: 0;
-         *  Configures the output mode for FSPIQ signal.\\
-         *  0: Output without delay\\
-         *  1: Output with a delay of a SPI module clock cycle at its falling edge\\
+         *  Configures the output mode for FSPIQ signal.
+         *  0: Output without delay
+         *  1: Output with a delay of a SPI module clock cycle at its falling edge
          *  Can be configured in CONF state.
          */
         uint32_t dout1_mode:1;
         /** dout2_mode : R/W; bitpos: [2]; default: 0;
-         *  Configures the output mode for FSPIWP signal.\\
-         *  0: Output without delay\\
-         *  1: Output with a delay of a SPI module clock cycle at its falling edge\\
+         *  Configures the output mode for FSPIWP signal.
+         *  0: Output without delay
+         *  1: Output with a delay of a SPI module clock cycle at its falling edge
          *  Can be configured in CONF state.
          */
         uint32_t dout2_mode:1;
         /** dout3_mode : R/W; bitpos: [3]; default: 0;
-         *  Configures the output mode for FSPIHD signal.\\
-         *  0: Output without delay\\
-         *  1: Output with a delay of a SPI module clock cycle at its falling edge\\
+         *  Configures the output mode for FSPIHD signal.
+         *  0: Output without delay
+         *  1: Output with a delay of a SPI module clock cycle at its falling edge
          *  Can be configured in CONF state.
          */
         uint32_t dout3_mode:1;
@@ -1556,12 +1551,12 @@ typedef union {
 
 /** Group: CPU-controlled data buffer */
 /** Type of wn register
- *  SPI CPU-controlled buffer n
+ *  SPI CPU-controlled buffer0
  */
 typedef union {
     struct {
         /** buf : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
+         *  32-bit data buffer $n.
          */
         uint32_t buf:32;
     };
@@ -1575,7 +1570,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 36716931;
+        /** date : R/W; bitpos: [27:0]; default: 37761424;
          *  Version control register.
          */
         uint32_t date:28;

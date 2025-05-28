@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C5 | ESP32-C61 | ESP32-S2 |
-| ----------------- | ----- | -------- | --------- | -------- |
+| Supported Targets | ESP32 | ESP32-C5 | ESP32-S2 |
+| ----------------- | ----- | -------- | -------- |
 
 # NAN Publisher Example
 
