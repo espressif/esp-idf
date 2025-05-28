@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -827,6 +827,12 @@ static void proxy_connected(struct bt_mesh_conn *conn, uint8_t err)
     int i;
 
     BT_DBG("conn %p err 0x%02x", conn, err);
+
+    if (gatt_svc == MESH_GATT_PROV && conn_count == 1) {
+       BT_WARN("Only one prov connection could exists");
+       bt_mesh_gatts_disconnect(conn, 0x13);
+       return;
+    }
 
     conn_count++;
 
