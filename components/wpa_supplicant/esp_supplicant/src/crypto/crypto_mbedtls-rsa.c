@@ -6,7 +6,7 @@
 
 #ifdef ESP_PLATFORM
 #include "mbedtls/bignum.h"
-#include "mbedtls/esp_random.h"
+#include "mbedtls/esp_mbedtls_random.h"
 #endif
 
 #include "utils/includes.h"
