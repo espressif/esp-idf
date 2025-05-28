@@ -6,7 +6,7 @@ menu "FreeRTOS"
 
         config FREERTOS_SMP
             bool "Run the Amazon SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
-            depends on !IDF_TARGET_ESP32P4 #TODO: IDF-8113: Enable P4 support on AMZ SMP
+            depends on !IDF_TARGET_ESP32P4 && !IDF_TARGET_ESP32H4  #TODO: IDF-8113: Enable P4/H4 support on AMZ SMP
             default  "n"
             help
                 Amazon has released an SMP version of the FreeRTOS Kernel which can be found via the following link:

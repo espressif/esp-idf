@@ -288,6 +288,7 @@ static void start_other_core(void)
     // APP CPU again, as that will clear the breakpoints which may have already
     // been set.
     cpu_utility_ll_enable_clock_and_reset_app_cpu();
+    cpu_utility_ll_enable_clock_and_reset_app_cpu_int_matrix();
 
     ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
 
@@ -302,7 +303,7 @@ static void start_other_core(void)
     }
 }
 
-#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && !CONFIG_IDF_TARGET_ESP32H4 // TODO IDF-12289
 #if CONFIG_IDF_TARGET_ESP32
 static void restore_app_mmu_from_pro_mmu(void)
 {
@@ -356,7 +357,7 @@ void IRAM_ATTR do_multicore_settings(void)
 void IRAM_ATTR call_start_cpu0(void)
 {
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-    soc_reset_reason_t rst_reas[SOC_CPU_CORES_NUM];
+    soc_reset_reason_t __attribute__((unused)) rst_reas[SOC_CPU_CORES_NUM];
 #else
     soc_reset_reason_t __attribute__((unused)) rst_reas[1];
 #endif
@@ -434,7 +435,7 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 #endif
 
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && !CONFIG_IDF_TARGET_ESP32H4 // TODO IDF-12289
     // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
     do_multicore_settings();
 #endif

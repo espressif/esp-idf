@@ -47,7 +47,6 @@
 // #define SOC_LP_CORE_SUPPORTED           0
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1       // TODO: [ESP32H4] IDF-12268
 #define SOC_EFUSE_SUPPORTED             1       // TODO: [ESP32H4] IDF-12268
-// #define SOC_RTC_FAST_MEM_SUPPORTED      0
 // #define SOC_RTC_MEM_SUPPORTED           1    // TODO: [ESP32H4] IDF-12313
 // #define SOC_I2S_SUPPORTED               1    // TODO: [ESP32H4] IDF-12385
 // #define SOC_RMT_SUPPORTED               1    // TODO: [ESP32H4] IDF-12402
@@ -77,7 +76,7 @@
 // #define SOC_ULP_LP_UART_SUPPORTED       1    // TODO: [ESP32H4] IDF-12445 IDF-12451
 // #define SOC_CLK_TREE_SUPPORTED          1    // TODO: [ESP32H4] IDF-12285
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1    // TODO: [ESP32H4] IDF-12310
-// #define SOC_WDT_SUPPORTED               1    // TODO: [ESP32H4] IDF-12293
+#define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1       // TODO: [ESP32H4] IDF-12388
 // #define SOC_SPIRAM_SUPPORTED            1    // TODO: [ESP32H4] IDF-12351
 
