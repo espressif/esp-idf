@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
+#include <string.h>
 
 #include "btc/btc_manage.h"
 
@@ -90,5 +91,35 @@ esp_err_t esp_ble_mesh_register_rpr_server_callback(esp_ble_mesh_rpr_server_cb_t
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_RPR_SERVER, callback) == 0 ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_rpr_server_set_uuid_match(const uint8_t *match_val, uint8_t match_len, uint8_t offset)
+{
+    btc_ble_mesh_rpr_server_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_RPR_SERVER;
+    msg.act = BTC_BLE_MESH_ACT_RPR_SRV_SET_UUID_MATCH;
+
+    if (!match_len || match_len > 16 ||
+        !match_val || offset >= 16 ||
+        offset + match_len > 16) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    arg.set_uuid_match.match_val = bt_mesh_calloc(match_len);
+    if (!arg.set_uuid_match.match_val) {
+        BT_ERR("%s:Out of memory", __func__);
+        return ESP_ERR_NO_MEM;
+    }
+
+    memcpy(arg.set_uuid_match.match_val, match_val, match_len);
+    arg.set_uuid_match.match_len = match_len;
+    arg.set_uuid_match.offset = offset;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_rpr_server_args_t),
+                                 btc_ble_mesh_rpr_server_arg_deep_copy,
+                                 btc_ble_mesh_rpr_server_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif /* CONFIG_BLE_MESH_RPR_SRV */
