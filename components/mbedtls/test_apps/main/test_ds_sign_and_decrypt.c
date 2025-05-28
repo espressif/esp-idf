@@ -21,7 +21,7 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 #include "esp_ds.h"
 #include "esp_ds/esp_ds_rsa.h"
 
-int mbedtls_esp_random(void *ctx, unsigned char *output, size_t len)
+static int mbedtls_esp_random(void *ctx, unsigned char *output, size_t len)
 {
     if (len == 0 || output == NULL) {
         return -1;
