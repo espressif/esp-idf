@@ -65,7 +65,7 @@ TEST_CASE("touch_sens_install_uninstall_test", "[touch]")
         TEST_ESP_OK(touch_sensor_new_channel(touch, i + TOUCH_MIN_CHAN_ID, &s_chan_cfg, &touch_chan[i]));
     }
     touch_channel_handle_t fault_chan = NULL;
-    TEST_ASSERT(touch_sensor_new_channel(touch, TOUCH_TOTAL_CHAN_NUM, &s_chan_cfg, &fault_chan) == ESP_ERR_INVALID_ARG);
+    TEST_ASSERT(touch_sensor_new_channel(touch, TOUCH_TOTAL_CHAN_NUM + TOUCH_MIN_CHAN_ID, &s_chan_cfg, &fault_chan) == ESP_ERR_INVALID_ARG);
     TEST_ASSERT(touch_sensor_new_channel(touch, TOUCH_MIN_CHAN_ID, &s_chan_cfg, &fault_chan) == ESP_ERR_INVALID_STATE);
 
     TEST_ESP_OK(touch_sensor_enable(touch));
