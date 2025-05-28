@@ -66,12 +66,12 @@ set(extra_components_which_shouldnt_be_included
     # IDF-10415
     esp_pm
 
-    # esp_timer is a dependency of esp_pm, esp_system and esp_hw_support
+    # esp_timer is a dependency of esp_pm, esp_system, esp_security, esp_hw_support
     # esp_pm should be removed from G1 build
     # esp_system's dependency is due to usb_console (used for timeout functionality)
     # and task_wdt timer implementation on C2, we could possibly place this implementation in esp_timer instead
-    # esp_hw_support uses it for esp_ds (used for timeout functionality)
-    # and for componensating time after sleep (dependency could be reversed) IDF-10416
+    # esp_security uses it for esp_ds (used for timeout functionality)
+    # esp_hw_support uses it for componensating time after sleep (dependency could be reversed) IDF-10416
     esp_timer
 
     # esptool_py is a dependency of bootloader, app_update, partition_table, all of which
@@ -92,9 +92,7 @@ set(extra_components_which_shouldnt_be_included
     # pthread is required by cxx. See [refactor-todo] about cxx, can it work without pthread?
     pthread
 
-    # esp_security is a private dependency of the following G1 components:
-    #    esp_hw_support
-    #    TODO: will be removed in IDF 6.x (see IDF-10733)
+    # esp_security is required by mbedtls and spi_flash
     esp_security
 )
 
@@ -117,10 +115,13 @@ if(NOT "${expected_components}" STREQUAL "${build_components}")
 endif()
 
 set(comp_deps_dot "${CMAKE_BINARY_DIR}/component_deps.dot")
+idf_build_get_property(target IDF_TARGET)
 
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E echo "Checking dependency violations"
-    COMMAND python "${CMAKE_SOURCE_DIR}/check_dependencies.py" --component_deps_file ${comp_deps_dot}
+    COMMAND python "${CMAKE_SOURCE_DIR}/check_dependencies.py"
+            --component_deps_file ${comp_deps_dot}
+            --target ${IDF_TARGET}
     RESULT_VARIABLE result
 )
 

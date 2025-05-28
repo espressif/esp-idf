@@ -12,7 +12,8 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS include
-                       PRIV_REQUIRES bootloader_support efuse esp_partition nvs_flash)
+                       PRIV_REQUIRES bootloader_support efuse esp_partition nvs_flash
+                       REQUIRES esp_security)
 
 # NOTE: In a case where only the default NVS partition is to be encrypted
 # and no custom NVS partitions exist, `nvs_flash_init` is the only API that

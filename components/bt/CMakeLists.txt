@@ -917,6 +917,7 @@ set(bt_priv_requires
     esp_driver_spi
     esp_driver_gpio
     esp_gdbstub
+    esp_security
 )
 
 idf_component_register(SRCS "${srcs}"
