@@ -155,9 +155,6 @@ if(CONFIG_BT_ENABLED)
             host/bluedroid/bta/sys/include
             host/bluedroid/device/include
             host/bluedroid/hci/include
-            host/bluedroid/external/sbc/decoder/include
-            host/bluedroid/external/sbc/encoder/include
-            host/bluedroid/external/sbc/plc/include
             host/bluedroid/btc/profile/esp/include
             host/bluedroid/btc/profile/std/a2dp/include
             host/bluedroid/btc/profile/std/include
@@ -315,29 +312,6 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/device/bdaddr.c"
                    "host/bluedroid/device/controller.c"
                    "host/bluedroid/device/interop.c"
-                   "host/bluedroid/external/sbc/decoder/srce/alloc.c"
-                   "host/bluedroid/external/sbc/decoder/srce/bitalloc-sbc.c"
-                   "host/bluedroid/external/sbc/decoder/srce/bitalloc.c"
-                   "host/bluedroid/external/sbc/decoder/srce/bitstream-decode.c"
-                   "host/bluedroid/external/sbc/decoder/srce/decoder-oina.c"
-                   "host/bluedroid/external/sbc/decoder/srce/decoder-private.c"
-                   "host/bluedroid/external/sbc/decoder/srce/decoder-sbc.c"
-                   "host/bluedroid/external/sbc/decoder/srce/dequant.c"
-                   "host/bluedroid/external/sbc/decoder/srce/framing-sbc.c"
-                   "host/bluedroid/external/sbc/decoder/srce/framing.c"
-                   "host/bluedroid/external/sbc/decoder/srce/oi_codec_version.c"
-                   "host/bluedroid/external/sbc/decoder/srce/synthesis-8-generated.c"
-                   "host/bluedroid/external/sbc/decoder/srce/synthesis-dct8.c"
-                   "host/bluedroid/external/sbc/decoder/srce/synthesis-sbc.c"
-                   "host/bluedroid/external/sbc/encoder/srce/sbc_analysis.c"
-                   "host/bluedroid/external/sbc/encoder/srce/sbc_dct.c"
-                   "host/bluedroid/external/sbc/encoder/srce/sbc_dct_coeffs.c"
-                   "host/bluedroid/external/sbc/encoder/srce/sbc_enc_bit_alloc_mono.c"
-                   "host/bluedroid/external/sbc/encoder/srce/sbc_enc_bit_alloc_ste.c"
-                   "host/bluedroid/external/sbc/encoder/srce/sbc_enc_coeffs.c"
-                   "host/bluedroid/external/sbc/encoder/srce/sbc_encoder.c"
-                   "host/bluedroid/external/sbc/encoder/srce/sbc_packing.c"
-                   "host/bluedroid/external/sbc/plc/sbc_plc.c"
                    "host/bluedroid/hci/hci_audio.c"
                    "host/bluedroid/hci/hci_hal_h4.c"
                    "host/bluedroid/hci/hci_layer.c"
@@ -472,6 +446,38 @@ if(CONFIG_BT_ENABLED)
             list(APPEND srcs "host/bluedroid/stack/btm/btm_ble_cte.c"
                             "host/bluedroid/btc/profile/std/cte/btc_ble_cte.c"
                             "host/bluedroid/api/esp_ble_cte_api.c")
+        endif()
+
+        if((CONFIG_BT_A2DP_ENABLE AND NOT CONFIG_BT_A2DP_USE_EXTERNAL_CODEC) OR
+           (CONFIG_BT_HFP_ENABLE AND CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI AND NOT CONFIG_BT_HFP_USE_EXTERNAL_CODEC))
+            list(APPEND priv_include_dirs
+                host/bluedroid/external/sbc/decoder/include
+                host/bluedroid/external/sbc/encoder/include
+                host/bluedroid/external/sbc/plc/include)
+
+            list(APPEND srcs "host/bluedroid/external/sbc/decoder/srce/alloc.c"
+                "host/bluedroid/external/sbc/decoder/srce/bitalloc-sbc.c"
+                "host/bluedroid/external/sbc/decoder/srce/bitalloc.c"
+                "host/bluedroid/external/sbc/decoder/srce/bitstream-decode.c"
+                "host/bluedroid/external/sbc/decoder/srce/decoder-oina.c"
+                "host/bluedroid/external/sbc/decoder/srce/decoder-private.c"
+                "host/bluedroid/external/sbc/decoder/srce/decoder-sbc.c"
+                "host/bluedroid/external/sbc/decoder/srce/dequant.c"
+                "host/bluedroid/external/sbc/decoder/srce/framing-sbc.c"
+                "host/bluedroid/external/sbc/decoder/srce/framing.c"
+                "host/bluedroid/external/sbc/decoder/srce/oi_codec_version.c"
+                "host/bluedroid/external/sbc/decoder/srce/synthesis-8-generated.c"
+                "host/bluedroid/external/sbc/decoder/srce/synthesis-dct8.c"
+                "host/bluedroid/external/sbc/decoder/srce/synthesis-sbc.c"
+                "host/bluedroid/external/sbc/encoder/srce/sbc_analysis.c"
+                "host/bluedroid/external/sbc/encoder/srce/sbc_dct.c"
+                "host/bluedroid/external/sbc/encoder/srce/sbc_dct_coeffs.c"
+                "host/bluedroid/external/sbc/encoder/srce/sbc_enc_bit_alloc_mono.c"
+                "host/bluedroid/external/sbc/encoder/srce/sbc_enc_bit_alloc_ste.c"
+                "host/bluedroid/external/sbc/encoder/srce/sbc_enc_coeffs.c"
+                "host/bluedroid/external/sbc/encoder/srce/sbc_encoder.c"
+                "host/bluedroid/external/sbc/encoder/srce/sbc_packing.c"
+                "host/bluedroid/external/sbc/plc/sbc_plc.c")
         endif()
 
     endif()
