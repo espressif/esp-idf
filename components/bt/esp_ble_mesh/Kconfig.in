@@ -408,7 +408,7 @@ if BLE_MESH
         int "Maximum capacity of solicitation replay protection list"
         depends on BLE_MESH_PROXY_SOLIC_PDU_RX
         default 2
-        range 1 255
+        range 1 65536
         help
             This option specifies the maximum capacity of the solicitation replay
             protection list. The solicitation replay protection list is used to
