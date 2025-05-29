@@ -53,4 +53,13 @@ menu "Example Configuration"
             This option allows one to configure the OTA process to resume downloading the OTA image
             from where it left off in case of an error or reboot.
 
+    config EXAMPLE_USE_CERT_BUNDLE
+        bool "Enable certificate bundle"
+        default y
+        depends on MBEDTLS_CERTIFICATE_BUNDLE
+        help
+            Enable trusted root certificate bundle. This approach allows to have
+            OTA updates functional with any public server without requirement
+            to explicitly add its server certificate.
+
 endmenu
