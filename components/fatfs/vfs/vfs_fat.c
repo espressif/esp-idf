@@ -455,7 +455,7 @@ static ssize_t vfs_fat_write(void* ctx, int fd, const void * data, size_t size)
             return -1;
         }
     }
-    unsigned written = 0;
+    UINT written = 0;
     res = f_write(file, data, size, &written);
     if (((written == 0) && (size != 0)) && (res == 0)) {
         errno = ENOSPC;
@@ -490,7 +490,7 @@ static ssize_t vfs_fat_read(void* ctx, int fd, void * dst, size_t size)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     FIL* file = &fat_ctx->files[fd];
-    unsigned read = 0;
+    UINT read = 0;
     FRESULT res = f_read(file, dst, size, &read);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
@@ -518,7 +518,7 @@ static ssize_t vfs_fat_pread(void *ctx, int fd, void *dst, size_t size, off_t of
         goto pread_release;
     }
 
-    unsigned read = 0;
+    UINT read = 0;
     f_res = f_read(file, dst, size, &read);
     if (f_res == FR_OK) {
         ret = read;
@@ -558,7 +558,7 @@ static ssize_t vfs_fat_pwrite(void *ctx, int fd, const void *src, size_t size, o
         goto pwrite_release;
     }
 
-    unsigned wr = 0;
+    UINT wr = 0;
     f_res = f_write(file, src, size, &wr);
     if (((wr == 0) && (size != 0)) && (f_res == 0)) {
         errno = ENOSPC;
@@ -714,22 +714,23 @@ static void update_stat_struct(struct stat *st, FILINFO *info)
     memset(st, 0, sizeof(*st));
     st->st_size = info->fsize;
     st->st_mode = get_stat_mode((info->fattrib & AM_DIR) != 0);
-    fat_date_t fdate = { .as_int = info->fdate };
-    fat_time_t ftime = { .as_int = info->ftime };
-    struct tm tm = {
-        .tm_mday = fdate.mday,
-        .tm_mon = fdate.mon - 1,    /* unlike tm_mday, tm_mon is zero-based */
-        .tm_year = fdate.year + 80,
-        .tm_sec = ftime.sec * 2,
-        .tm_min = ftime.min,
-        .tm_hour = ftime.hour,
-        /* FAT doesn't keep track if the time was DST or not, ask the C library
-         * to try to figure this out. Note that this may yield incorrect result
-         * in the hour before the DST comes in effect, when the local time can't
-         * be converted to UTC uniquely.
-         */
-        .tm_isdst = -1
-    };
+    fat_date_t fdate = { 0 };
+    fdate.as_int = info->fdate;
+    fat_time_t ftime = { 0 };
+    ftime.as_int = info->ftime;
+    struct tm tm = { 0 };
+    tm.tm_mday = fdate.mday;
+    tm.tm_mon = fdate.mon - 1;    /* unlike tm_mday, tm_mon is zero-based */
+    tm.tm_year = fdate.year + 80;
+    tm.tm_sec = ftime.sec * 2;
+    tm.tm_min = ftime.min;
+    tm.tm_hour = ftime.hour;
+    /* FAT doesn't keep track if the time was DST or not, ask the C library
+     * to try to figure this out. Note that this may yield incorrect result
+     * in the hour before the DST comes in effect, when the local time can't
+     * be converted to UTC uniquely.
+     */
+    tm.tm_isdst = -1;
     st->st_mtime = mktime(&tm);
     st->st_atime = 0;
     st->st_ctime = 0;
@@ -830,8 +831,8 @@ static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
 
     size_t size_left = f_size(pf1);
     while (size_left > 0) {
-        size_t will_copy = (size_left < copy_buf_size) ? size_left : copy_buf_size;
-        size_t read;
+        UINT will_copy = (size_left < copy_buf_size) ? size_left : copy_buf_size;
+        UINT read = 0;
         res = f_read(pf1, buf, will_copy, &read);
         if (res != FR_OK) {
             goto close_both;
@@ -839,7 +840,7 @@ static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
             res = FR_DISK_ERR;
             goto close_both;
         }
-        size_t written;
+        UINT written = 0;
         res = f_write(pf2, buf, will_copy, &written);
         if (res != FR_OK) {
             goto close_both;
@@ -1345,7 +1346,7 @@ static int vfs_fat_utime(void *ctx, const char *path, const struct utimbuf *time
     FILINFO filinfo_time;
 
     {
-        struct tm tm_time;
+        struct tm tm_time = { 0 };
 
         if (times) {
             localtime_r(&times->modtime, &tm_time);
@@ -1369,7 +1370,7 @@ static int vfs_fat_utime(void *ctx, const char *path, const struct utimbuf *time
         fdate.mday = tm_time.tm_mday;
         fdate.mon = tm_time.tm_mon + 1;     // January in fdate.mon is 1, and 0 in tm_time.tm_mon
         fdate.year = tm_time.tm_year - 80;  // tm_time.tm_year=0 is 1900, tm_time.tm_year=0 is 1980
-        ftime.sec = tm_time.tm_sec / 2,     // ftime.sec counts seconds by 2
+        ftime.sec = tm_time.tm_sec / 2;     // ftime.sec counts seconds by 2
         ftime.min = tm_time.tm_min;
         ftime.hour = tm_time.tm_hour;
 
@@ -1550,7 +1551,7 @@ esp_err_t esp_vfs_fat_format_drive(uint8_t ldrv, const esp_vfs_fat_mount_config_
     }
 
     size_t sector_size = 512; // default value
-    ff_diskio_get_sector_size(ldrv, &sector_size);
+    ff_diskio_get_sector_size(ldrv, (UINT *)&sector_size);
     size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(sector_size, mount_config->allocation_unit_size);
     ESP_LOGW(TAG, "formatting drive, allocation unit size=%d", alloc_unit_size);
     const MKFS_PARM opt = {(BYTE)FM_ANY, (mount_config->use_one_fat ? 1 : 2), 0, 0, alloc_unit_size};

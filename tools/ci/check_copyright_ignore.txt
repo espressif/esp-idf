@@ -449,7 +449,6 @@ components/esp_rom/patches/esp_rom_longjmp.S
 components/esp_system/ubsan.c
 components/esp_wifi/src/mesh_event.c
 components/fatfs/diskio/diskio.c
-components/fatfs/diskio/diskio_impl.h
 components/fatfs/diskio/diskio_rawflash.h
 components/fatfs/diskio/diskio_wl.h
 components/fatfs/port/freertos/ffsystem.c
