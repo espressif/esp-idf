@@ -124,6 +124,9 @@ def detect_shell(args: Any) -> str:
         debug(f'Parent: pid: {parent_pid}, cmdline: {parent_cmdline}, exe: {parent_exe}, name: {parent_name}')
         if not parent_name.lower().startswith('python'):
             detected_shell_name = parent_name
+            # ksh variants often have a name like oksh, loksh, or pdksh.
+            if detected_shell_name.endswith('ksh'):
+                detected_shell_name = 'ksh'
             break
         current_pid = parent_pid
 
