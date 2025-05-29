@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,7 +115,7 @@ pm_mac_sleep = 0x40000d5c;
 /*pm_enable_active_timer = 0x40000d60;*/
 pm_enable_sleep_delay_timer = 0x40000d64;
 pm_local_tsf_process = 0x40000d68;
-pm_set_beacon_filter = 0x40000d6c;
+//pm_set_beacon_filter = 0x40000d6c;
 /*pm_is_in_wifi_slice_threshold = 0x40000d70;*/
 pm_is_waked = 0x40000d74;
 /*pm_keep_alive = 0x40000d78;*/
@@ -158,9 +158,9 @@ pm_twt_disallow_tx = 0x40000e08;
 pm_clear_wakeup_signal = 0x40000e0c;
 pm_mac_disable_tsf_tbtt_soc_wakeup = 0x40000e10;
 pm_mac_disable_tsf_tbtt_modem_wakeup = 0x40000e14;
-pm_mac_enable_tsf_tbtt_soc_wakeup = 0x40000e18;
-pm_mac_enable_tsf_tbtt_modem_wakeup = 0x40000e1c;
-pm_mac_modem_params_rt_update = 0x40000e20;
+//pm_mac_enable_tsf_tbtt_soc_wakeup = 0x40000e18;
+//pm_mac_enable_tsf_tbtt_modem_wakeup = 0x40000e1c;
+//pm_mac_modem_params_rt_update = 0x40000e20;
 pm_update_at_next_beacon = 0x40000e24;
 tbtt_adaptive_setup = 0x40000e28;
 tbtt_adaptive_servo = 0x40000e2c;
