@@ -511,6 +511,10 @@ config SOC_AHB_GDMA_SUPPORT_PSRAM
     bool
     default y
 
+config SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+    bool
+    default y
+
 config SOC_ETM_GROUPS
     int
     default 1

@@ -22,6 +22,7 @@ extern "C" {
 #define AHB_DMA_LL_GET_HW(id) (((id) == 0) ? (&AHB_DMA) : NULL)
 
 #define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
+#define GDMA_LL_CHANNEL_MAX_WEIGHT 15  // supported weight levels: [0,15]
 
 #define GDMA_LL_RX_EVENT_MASK       (0x7F)
 #define GDMA_LL_TX_EVENT_MASK       (0x3F)
@@ -136,6 +137,25 @@ static inline void ahb_dma_ll_set_default_memory_range(ahb_dma_dev_t *dev)
     // AHB-DMA can access SRAM, ROM, MSPI Flash, MSPI PSRAM
     dev->intr_mem_start_addr.val = 0x40800000;
     dev->intr_mem_end_addr.val = 0x44000000;
+}
+
+/**
+ * @brief Enable the weighted arbitration for AHB-DMA
+ */
+static inline void ahb_dma_ll_enable_weighted_arb(ahb_dma_dev_t *dev, bool enable)
+{
+    dev->weight_en.weight_en = enable;
+}
+
+/**
+ * @brief Set the weighted arbitration timeout for AHB-DMA
+ *
+ * @param timeout AHB bus clock cycle
+ */
+static inline void ahb_dma_ll_set_weighted_arb_timeout(ahb_dma_dev_t *dev, uint32_t timeout)
+{
+    HAL_ASSERT(timeout != 0 && timeout <= 65535);
+    dev->arb_timeout.arb_timeout_num = timeout;
 }
 
 ///////////////////////////////////// RX /////////////////////////////////////////
@@ -391,6 +411,22 @@ static inline void ahb_dma_ll_rx_enable_etm_task(ahb_dma_dev_t *dev, uint32_t ch
     dev->channel[channel].in.in_conf0.in_etm_en_chn = enable;
 }
 
+/**
+ * @brief Enable the weighted arbitration optimize for DMA RX channel
+ */
+static inline void ahb_dma_ll_rx_enable_weighted_arb_opt(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->in_crc_arb[channel].arb_weight_opt.rx_arb_weight_opt_dis_chn = !enable;
+}
+
+/**
+ * @brief Set the weight for DMA RX channel
+ */
+static inline void ahb_dma_ll_rx_set_weight(ahb_dma_dev_t *dev, uint32_t channel, uint32_t weight)
+{
+    dev->in_crc_arb[channel].ch_arb_weight.rx_arb_weight_value_chn = weight;
+}
+
 ///////////////////////////////////// TX /////////////////////////////////////////
 /**
  * @brief Get DMA TX channel interrupt status word
@@ -640,6 +676,22 @@ static inline void ahb_dma_ll_tx_disconnect_from_periph(ahb_dma_dev_t *dev, uint
 static inline void ahb_dma_ll_tx_enable_etm_task(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->channel[channel].out.out_conf0.out_etm_en_chn = enable;
+}
+
+/**
+ * @brief Enable the weighted arbitration optimize for DMA TX channel
+ */
+static inline void ahb_dma_ll_tx_enable_weighted_arb_opt(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->out_crc_arb[channel].arb_weight_opt.tx_arb_weight_opt_dis_chn = !enable;
+}
+
+/**
+ * @brief Set the weight for DMA TX channel
+ */
+static inline void ahb_dma_ll_tx_set_weight(ahb_dma_dev_t *dev, uint32_t channel, uint32_t weight)
+{
+    dev->out_crc_arb[channel].ch_arb_weight.tx_arb_weight_value_chn = weight;
 }
 
 #ifdef __cplusplus

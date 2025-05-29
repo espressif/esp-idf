@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -120,3 +120,10 @@ void gdma_hal_enable_etm_task(gdma_hal_context_t *hal, int chan_id, gdma_channel
     hal->enable_etm_task(hal, chan_id, dir, en_or_dis);
 }
 #endif // SOC_GDMA_SUPPORT_ETM
+
+#if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+void gdma_hal_set_weight(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t weight)
+{
+    hal->set_weight(hal, chan_id, dir, weight);
+}
+#endif // SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION

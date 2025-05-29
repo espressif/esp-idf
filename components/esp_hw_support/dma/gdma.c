@@ -173,7 +173,10 @@ search_done:
         alloc_rx_channel->base.del = gdma_del_rx_channel; // set channel deletion function
         *ret_chan = &alloc_rx_channel->base; // return the installed channel
     }
-
+#if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+    // set 1 as default weight, can be overwritten by user
+    gdma_set_weight(*ret_chan, 1);
+#endif
     (*ret_chan)->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     ESP_LOGD(TAG, "new %s channel (%d,%d) at %p", (config->direction == GDMA_CHANNEL_DIRECTION_TX) ? "tx" : "rx",
              group->group_id, pair->pair_id, *ret_chan);
@@ -370,6 +373,11 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
     gdma_hal_enable_burst(hal, pair->pair_id, dma_chan->direction, en_data_burst, en_desc_burst);
     if (en_data_burst) {
         gdma_hal_set_burst_size(hal, pair->pair_id, dma_chan->direction, max_data_burst_size);
+#if CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
+        // due to hardware limitation, if weighted arbitration is enabled, the data must be aligned to burst size
+        int_mem_alignment = MAX(int_mem_alignment, max_data_burst_size);
+        ext_mem_alignment = MAX(ext_mem_alignment, max_data_burst_size);
+#endif
     }
 
 #if GDMA_LL_AHB_RX_BURST_NEEDS_ALIGNMENT
@@ -436,6 +444,20 @@ esp_err_t gdma_set_priority(gdma_channel_handle_t dma_chan, uint32_t priority)
 
     return ESP_OK;
 }
+
+#if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+esp_err_t gdma_set_weight(gdma_channel_handle_t dma_chan, uint32_t weight)
+{
+    ESP_RETURN_ON_FALSE(dma_chan && weight <= GDMA_LL_CHANNEL_MAX_WEIGHT, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    gdma_pair_t *pair = dma_chan->pair;
+    gdma_group_t *group = pair->group;
+    gdma_hal_context_t *hal = &group->hal;
+
+    gdma_hal_set_weight(hal, pair->pair_id, dma_chan->direction, weight);
+
+    return ESP_OK;
+}
+# endif
 
 esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_tx_event_callbacks_t *cbs, void *user_data)
 {
@@ -636,6 +658,9 @@ static gdma_group_t *gdma_acquire_group_handle(int group_id, void (*hal_init)(gd
         }
         gdma_hal_config_t config = {
             .group_id = group_id,
+#if CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
+            .flags.enable_weighted_arbitration = true,
+#endif
         };
         hal_init(&group->hal, &config);
         ESP_LOGD(TAG, "new group (%d) at %p", group_id, group);

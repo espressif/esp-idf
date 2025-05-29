@@ -145,6 +145,12 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
     gdma_apply_strategy(mcp_gdma->tx_channel, &strategy_cfg);
     gdma_apply_strategy(mcp_gdma->rx_channel, &strategy_cfg);
 
+#if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+    if(config->weight){
+        ESP_GOTO_ON_ERROR(gdma_set_weight(mcp_gdma->rx_channel, config->weight), err, TAG, "Set GDMA rx channel weight failed");
+        ESP_GOTO_ON_ERROR(gdma_set_weight(mcp_gdma->tx_channel, config->weight), err, TAG, "Set GDMA tx channel weight failed");
+    }
+#endif
     gdma_transfer_config_t transfer_cfg = {
         .max_data_burst_size = config->dma_burst_size,
         .access_ext_mem = true, // allow to do memory copy from/to external memory

@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -32,4 +33,17 @@ def test_dma(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32s3'], indirect=['target'])
 def test_dma_psram(dut: Dut) -> None:
+    dut.run_all_single_board_cases(reset=True)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'weighted_arbitration',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', soc_filtered_targets('SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION == 1'), indirect=['target'])
+def test_dma_weighted_arbitration(dut: Dut) -> None:
     dut.run_all_single_board_cases(reset=True)
