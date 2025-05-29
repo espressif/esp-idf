@@ -155,7 +155,9 @@
       - "**/build*/flash_project_args"
       - "**/build*/config/sdkconfig.json"
       - "**/build*/bootloader/*.bin"
+      - "**/build*/bootloader/*.elf"
       - "**/build*/partition_table/*.bin"
+      - "**/build*/project_description.json"
       - list_job_*.json
       - size_info.txt
     when: always
