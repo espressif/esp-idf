@@ -22,6 +22,14 @@ if BLE_MESH
             for mesh packets. And this could help avoid collision of
             advertising packets.
 
+    config BLE_MESH_USE_UNIFIED_CRYPTO
+        bool "Use the unified BLE tinycrypt implementation"
+        depends on !BT_LE_CRYPTO_STACK_MBEDTLS && !BT_NIMBLE_CRYPTO_STACK_MBEDTLS
+        default n
+        help
+            Enable this option to use the unified BLE tinycrypt solution
+            instead of the default one in BLE Mesh stack.
+
     menuconfig BLE_MESH_USE_BLE_50
         bool "Support using BLE 5.0 APIs for BLE Mesh"
         depends on BLE_MESH_EXPERIMENTAL
