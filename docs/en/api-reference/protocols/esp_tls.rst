@@ -234,6 +234,82 @@ To enable the secure element support, and use it in your project for TLS connect
         When using ECDSA peripheral with TLS, only ``MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`` ciphersuite is supported. If using TLS v1.3, ``MBEDTLS_TLS1_3_AES_128_GCM_SHA256`` ciphersuite is supported.
 
 
+.. _esp_tls_client_session_tickets:
+
+Client Session Tickets
+----------------------
+
+ESP-TLS supports client-side session resumption, which can significantly reduce the time and resources spent on full TLS handshakes for subsequent connections to the same server. This feature is available when ESP-TLS uses MbedTLS as its underlying SSL/TLS stack.
+
+The mechanism for session resumption differs slightly between TLS versions:
+
+*   **TLS 1.2**: Session resumption can be achieved using session IDs (managed internally by the TLS stack) or session tickets (as per `RFC 5077 <https://tools.ietf.org/html/rfc5077>`_). ESP-TLS focuses on the session ticket mechanism for explicit application control.
+*   **TLS 1.3**: Session resumption is accomplished exclusively through session tickets, which are sent by the server via a "NewSessionTicket" message after the main handshake is complete. Unlike TLS 1.2, these tickets can be sent at any time during the session, not just immediately after the handshake.
+
+To enable and use client session tickets:
+
+1.  Enable the Kconfig option :ref:`CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS`.
+2.  After a successful TLS connection (and handshake completion), retrieve the session ticket using :cpp:func:`esp_tls_get_client_session`.
+
+    *   **For TLS 1.3**: Since session tickets can arrive from the server at any point after the handshake, an application might need to call :cpp:func:`esp_tls_get_client_session` periodically or after specific application-level exchanges if it wants to ensure it has the most recent ticket. Each new ticket received and processed by the TLS stack supersedes the previous one for future resumption attempts.
+
+3.  Store this session ticket securely.
+4.  For subsequent connections to the same server, provide the stored session ticket in the :cpp:member:`esp_tls_cfg_t::client_session` field.
+5.  Remember to free the client session context using :cpp:func:`esp_tls_free_client_session` when it's no longer needed or before obtaining a new one.
+
+.. code-block:: c
+
+    #include "esp_tls.h"
+
+    // Global or persistent storage for the client session
+    esp_tls_client_session_t *saved_session = NULL;
+
+    void connect_to_server(bool use_saved_session_arg) {
+        esp_tls_cfg_t cfg = {0}; // Initialize other config parameters as needed
+        // ... set other cfg members like cacert_buf, common_name etc. ...
+
+        if (use_saved_session_arg && saved_session) {
+            cfg.client_session = saved_session;
+            // ESP_LOGI(TAG, "Attempting connection with saved session ticket.");
+        } else {
+            // ESP_LOGI(TAG, "Attempting connection without a saved session ticket (full handshake).");
+        }
+
+        esp_tls_t *tls = esp_tls_init();
+        if (!tls) {
+            // ESP_LOGE(TAG, "Failed to initialize ESP-TLS handle.");
+            return;
+        }
+
+        if (esp_tls_conn_http_new_sync("https://your-server.com", &cfg, tls) == 1) {
+            // ESP_LOGI(TAG, "Connection successful.");
+
+            // Always try to get/update the session ticket to have the latest one.
+            // This is beneficial whether the connection was a new handshake or a resumption,
+            // especially for TLS 1.3 where new tickets can arrive post-handshake.
+            if (saved_session) {
+                esp_tls_free_client_session(saved_session); // Free previous session if any
+                saved_session = NULL;
+            }
+            saved_session = esp_tls_get_client_session(tls);
+            if (saved_session) {
+                // ESP_LOGI(TAG, "Successfully retrieved/updated client session ticket.");
+            } else {
+                // ESP_LOGW(TAG, "Failed to get client session ticket even after a successful connection.");
+            }
+
+            // ... do TLS communication ...
+
+        }
+        esp_tls_conn_destroy(tls);
+    }
+
+.. note::
+    - The session ticket obtained from a server is typically valid for a limited time. The server dictates this lifetime.
+    - When attempting a connection using a stored session ticket, if the ticket is found to be invalid by the server (e.g., it has expired or is otherwise rejected), ESP-TLS will automatically attempt to perform a full TLS handshake to establish the connection. The application does not need to implement separate logic to retry the connection without the ticket in this scenario. A connection failure will only be reported if both the session resumption and the subsequent internal attempt at a full handshake are unsuccessful.
+    - The :cpp:type:`esp_tls_client_session_t` context should be freed using :cpp:func:`esp_tls_free_client_session` when it is no longer needed, or before a new session is obtained and stored in the same pointer.
+    - For TLS 1.3, be mindful that the server can send multiple NewSessionTicket messages during a connection. Each successful call to :cpp:func:`esp_tls_get_client_session` will provide the context of the latest ticket processed by the underlying TLS stack. It is the application's responsibility to manage and update its stored session if it wishes to use the newest tickets for resumption.
+
 TLS Ciphersuites
 ----------------
 
