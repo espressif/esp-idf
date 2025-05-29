@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -140,6 +140,18 @@ TEST_CASE("test spi1 flash operation after putting .text and .rodata into psram"
     TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
+
+TEST_CASE("test esp_psram_check_ptr_addr with xip rodata and instruction region", "[psram]")
+{
+    bool on_psram = false;
+
+    on_psram = esp_psram_check_ptr_addr(s_get_partition);
+    TEST_ASSERT(on_psram);
+
+    on_psram = esp_psram_check_ptr_addr(s_test_buf);
+    TEST_ASSERT(on_psram);
+}
+
 #endif  //CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA
 
 TEST_CASE("test psram unaligned access", "[psram]")
