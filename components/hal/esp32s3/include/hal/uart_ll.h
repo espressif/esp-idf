@@ -112,18 +112,21 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
     // ESP32S3 requires a workaround: enable core reset before enabling uart module clock to prevent uart output garbage value
     switch (uart_num) {
     case 0:
+        SYSTEM.perip_rst_en0.uart_rst = 0;
         UART0.clk_conf.rst_core = 1;
         SYSTEM.perip_rst_en0.uart_rst = 1;
         SYSTEM.perip_rst_en0.uart_rst = 0;
         UART0.clk_conf.rst_core = 0;
         break;
     case 1:
+        SYSTEM.perip_rst_en0.uart1_rst = 0;
         UART1.clk_conf.rst_core = 1;
         SYSTEM.perip_rst_en0.uart1_rst = 1;
         SYSTEM.perip_rst_en0.uart1_rst = 0;
         UART1.clk_conf.rst_core = 0;
         break;
     case 2:
+        SYSTEM.perip_rst_en1.uart2_rst = 0;
         UART2.clk_conf.rst_core = 1;
         SYSTEM.perip_rst_en1.uart2_rst = 1;
         SYSTEM.perip_rst_en1.uart2_rst = 0;

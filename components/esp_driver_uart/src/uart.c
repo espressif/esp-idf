@@ -36,6 +36,9 @@
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_ll.h"
 #include "driver/lp_io.h"
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+#include "soc/lp_gpio_pins.h"
+#endif
 #endif
 #include "clk_ctrl_os.h"
 #include "esp_pm.h"
@@ -109,6 +112,11 @@ static const char *UART_TAG = "uart";
     .hal.dev = UART_LL_GET_HW(uart_num), \
     INIT_CRIT_SECTION_LOCK_IN_STRUCT(spinlock) \
     .hw_enabled = false, \
+    .tx_io_num = -1, \
+    .rx_io_num = -1, \
+    .rts_io_num = -1, \
+    .cts_io_num = -1, \
+    .io_reserved_mask = 0, \
 }
 
 typedef struct {
@@ -170,6 +178,11 @@ typedef struct {
     uart_hal_context_t hal;        /*!< UART hal context*/
     DECLARE_CRIT_SECTION_LOCK_IN_STRUCT(spinlock)
     bool hw_enabled;
+    int tx_io_num;
+    int rx_io_num;
+    int rts_io_num;
+    int cts_io_num;
+    uint64_t io_reserved_mask;
 } uart_context_t;
 
 static uart_obj_t *p_uart_obj[UART_NUM_MAX] = {0};
@@ -707,8 +720,72 @@ static bool uart_try_set_iomux_pin(uart_port_t uart_num, int io_num, uint32_t id
     return true;
 }
 
-//internal signal can be output to multiple GPIO pads
-//only one GPIO pad can connect with input signal
+static void uart_release_pin(uart_port_t uart_num)
+{
+    if (uart_num >= UART_NUM_MAX) {
+        return;
+    }
+    if (uart_context[uart_num].tx_io_num >= 0) {
+        gpio_output_disable(uart_context[uart_num].tx_io_num);
+#if (SOC_UART_LP_NUM >= 1)
+        if (!(uart_num < SOC_UART_HP_NUM)) {
+            rtc_gpio_deinit(uart_context[uart_num].tx_io_num);
+        }
+#endif
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
+        gpio_sleep_sel_en(uart_context[uart_num].tx_io_num); // re-enable the switch to the sleep configuration to save power consumption
+#endif
+    }
+
+    if (uart_context[uart_num].rx_io_num >= 0) {
+        if (uart_num < SOC_UART_HP_NUM) {
+            esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), false);
+        }
+#if (SOC_UART_LP_NUM >= 1)
+        else {
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+            lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), false);
+#endif
+            rtc_gpio_deinit(uart_context[uart_num].rx_io_num);
+        }
+#endif
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
+        gpio_sleep_sel_en(uart_context[uart_num].rx_io_num); // re-enable the switch to the sleep configuration to save power consumption
+#endif
+    }
+
+    if (uart_context[uart_num].rts_io_num >= 0) {
+        gpio_output_disable(uart_context[uart_num].rts_io_num);
+#if (SOC_UART_LP_NUM >= 1)
+        if (!(uart_num < SOC_UART_HP_NUM)) {
+            rtc_gpio_deinit(uart_context[uart_num].rts_io_num);
+        }
+#endif
+    }
+
+    if (uart_context[uart_num].cts_io_num >= 0) {
+        if (uart_num < SOC_UART_HP_NUM) {
+            esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_CTS_PIN_IDX), false);
+        }
+#if (SOC_UART_LP_NUM >= 1)
+        else {
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+            lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_CTS_PIN_IDX), false);
+#endif
+            rtc_gpio_deinit(uart_context[uart_num].cts_io_num);
+        }
+#endif
+    }
+
+    esp_gpio_revoke(uart_context[uart_num].io_reserved_mask);
+
+    uart_context[uart_num].tx_io_num = -1;
+    uart_context[uart_num].rx_io_num = -1;
+    uart_context[uart_num].rts_io_num = -1;
+    uart_context[uart_num].cts_io_num = -1;
+    uart_context[uart_num].io_reserved_mask = 0;
+}
+
 esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num)
 {
     ESP_RETURN_ON_FALSE((uart_num >= 0), ESP_FAIL, UART_TAG, "uart_num error");
@@ -740,6 +817,9 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     }
 #endif
 
+    // First, release previously configured IOs if there is
+    uart_release_pin(uart_num);
+
     // Potential IO reserved mask
     uint64_t io_reserve_mask = 0;
     io_reserve_mask |= (tx_io_num > 0 ? BIT64(tx_io_num) : 0);
@@ -752,42 +832,60 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     bool tx_rx_same_io = (tx_io_num == rx_io_num);
 
     /* In the following statements, if the io_num is negative, no need to configure anything. */
-    if (tx_io_num >= 0 && (tx_rx_same_io || !uart_try_set_iomux_pin(uart_num, tx_io_num, SOC_UART_TX_PIN_IDX))) {
-        if (uart_num < SOC_UART_HP_NUM) {
-            gpio_func_sel(tx_io_num, PIN_FUNC_GPIO);
-            esp_rom_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX), 0, 0);
-            // output enable is set inside esp_rom_gpio_connect_out_signal func after the signal is connected
-            // (output enabled too early may cause unnecessary level change at the pad)
-        }
-#if SOC_LP_GPIO_MATRIX_SUPPORTED
-        else {
-            rtc_gpio_init(tx_io_num); // set as a LP_GPIO pin
-            lp_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX), 0, 0);
-            // output enable is set inside lp_gpio_connect_out_signal func after the signal is connected
-        }
+    if (tx_io_num >= 0) {
+        uart_context[uart_num].tx_io_num = tx_io_num;
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
+        // In such case, IOs are going to switch to sleep configuration (isolate) when entering sleep for power saving reason
+        // But TX IO in isolate state could write garbled data to the other end
+        // Therefore, we should disable the switch of the TX pin to sleep configuration
+        gpio_sleep_sel_dis(tx_io_num);
 #endif
-    }
-
-    if (rx_io_num >= 0 && (tx_rx_same_io || !uart_try_set_iomux_pin(uart_num, rx_io_num, SOC_UART_RX_PIN_IDX))) {
-        io_reserve_mask &= ~BIT64(rx_io_num); // input IO via GPIO matrix does not need to be reserved
-        if (uart_num < SOC_UART_HP_NUM) {
-            gpio_input_enable(rx_io_num);
-            esp_rom_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
-        }
-#if SOC_LP_GPIO_MATRIX_SUPPORTED
-        else {
-            rtc_gpio_mode_t mode = (tx_rx_same_io ? RTC_GPIO_MODE_INPUT_OUTPUT : RTC_GPIO_MODE_INPUT_ONLY);
-            rtc_gpio_set_direction(rx_io_num, mode);
-            if (!tx_rx_same_io) { // set the same pin again as a LP_GPIO will overwrite connected out_signal, not desired, so skip
-                rtc_gpio_init(rx_io_num); // set as a LP_GPIO pin
+        if (tx_rx_same_io || !uart_try_set_iomux_pin(uart_num, tx_io_num, SOC_UART_TX_PIN_IDX)) {
+            if (uart_num < SOC_UART_HP_NUM) {
+                gpio_func_sel(tx_io_num, PIN_FUNC_GPIO);
+                esp_rom_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX), 0, 0);
+                // output enable is set inside esp_rom_gpio_connect_out_signal func after the signal is connected
+                // (output enabled too early may cause unnecessary level change at the pad)
             }
-
-            lp_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
-        }
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+            else {
+                rtc_gpio_init(tx_io_num); // set as a LP_GPIO pin
+                lp_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX), 0, 0);
+                // output enable is set inside lp_gpio_connect_out_signal func after the signal is connected
+            }
 #endif
+        }
     }
 
-    if (rts_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, rts_io_num, SOC_UART_RTS_PIN_IDX)) {
+    if (rx_io_num >= 0) {
+        uart_context[uart_num].rx_io_num = rx_io_num;
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
+        // In such case, IOs are going to switch to sleep configuration (isolate) when entering sleep for power saving reason
+        // But RX IO in isolate state could receive garbled data into FIFO, which is not desired
+        // Therefore, we should disable the switch of the RX pin to sleep configuration
+        gpio_sleep_sel_dis(rx_io_num);
+#endif
+        if (tx_rx_same_io || !uart_try_set_iomux_pin(uart_num, rx_io_num, SOC_UART_RX_PIN_IDX)) {
+            io_reserve_mask &= ~BIT64(rx_io_num); // input IO via GPIO matrix does not need to be reserved
+            if (uart_num < SOC_UART_HP_NUM) {
+                gpio_input_enable(rx_io_num);
+                esp_rom_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
+            }
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+            else {
+                rtc_gpio_mode_t mode = (tx_rx_same_io ? RTC_GPIO_MODE_INPUT_OUTPUT : RTC_GPIO_MODE_INPUT_ONLY);
+                rtc_gpio_set_direction(rx_io_num, mode);
+                if (!tx_rx_same_io) { // set the same pin again as a LP_GPIO will overwrite connected out_signal, not desired, so skip
+                    rtc_gpio_init(rx_io_num); // set as a LP_GPIO pin
+                }
+
+                lp_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
+            }
+#endif
+        }
+    }
+
+    if (rts_io_num >= 0 && (uart_context[uart_num].rts_io_num = rts_io_num, !uart_try_set_iomux_pin(uart_num, rts_io_num, SOC_UART_RTS_PIN_IDX))) {
         if (uart_num < SOC_UART_HP_NUM) {
             gpio_func_sel(rts_io_num, PIN_FUNC_GPIO);
             esp_rom_gpio_connect_out_signal(rts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
@@ -802,7 +900,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
 #endif
     }
 
-    if (cts_io_num >= 0  && !uart_try_set_iomux_pin(uart_num, cts_io_num, SOC_UART_CTS_PIN_IDX)) {
+    if (cts_io_num >= 0  && (uart_context[uart_num].cts_io_num = cts_io_num, !uart_try_set_iomux_pin(uart_num, cts_io_num, SOC_UART_CTS_PIN_IDX))) {
         io_reserve_mask &= ~BIT64(cts_io_num); // input IO via GPIO matrix does not need to be reserved
         if (uart_num < SOC_UART_HP_NUM) {
             gpio_pullup_en(cts_io_num);
@@ -819,6 +917,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     }
 
     // IO reserve
+    uart_context[uart_num].io_reserved_mask = io_reserve_mask;
     uint64_t old_busy_mask = esp_gpio_reserve(io_reserve_mask);
     uint64_t conflict_mask = old_busy_mask & io_reserve_mask;
     while (conflict_mask > 0) {
@@ -1801,6 +1900,9 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
         ESP_LOGI(UART_TAG, "ALREADY NULL");
         return ESP_OK;
     }
+
+    uart_release_pin(uart_num);
+
     esp_intr_free(p_uart_obj[uart_num]->intr_handle);
     uart_disable_rx_intr(uart_num);
     uart_disable_tx_intr(uart_num);
