@@ -140,6 +140,9 @@ enum bt_mesh_adv_type {
 #endif
     BLE_MESH_ADV_BEACON,
     BLE_MESH_ADV_URI,
+#if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX
+    BLE_MESH_ADV_PROXY_SOLIC,
+#endif
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
     BLE_MESH_ADV_BLE,
 #endif
