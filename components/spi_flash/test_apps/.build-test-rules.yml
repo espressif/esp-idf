@@ -36,6 +36,8 @@ components/spi_flash/test_apps/flash_encryption:
     - spi_flash
 
 components/spi_flash/test_apps/flash_mmap:
+  disable:
+    - if: IDF_TARGET == "esp32c5"
   depends_components:
     - esp_mm
     - spi_flash
