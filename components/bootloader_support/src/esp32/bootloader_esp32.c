@@ -167,7 +167,7 @@ esp_err_t bootloader_init(void)
 
 #if XCHAL_ERRATUM_572
     uint32_t memctl = XCHAL_CACHE_MEMCTL_DEFAULT;
-    WSR(MEMCTL, memctl);
+    WSR(XT_REG_MEMCTL, memctl);
 #endif // XCHAL_ERRATUM_572
 
 // In RAM_APP, memory will be initialized in `call_start_cpu0`

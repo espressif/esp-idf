@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,15 +7,6 @@
 #pragma once
 
 #include <stdint.h>
-
-#include "soc/soc_caps.h"
-
-#include "xt_instr_macros.h"
-#include "xtensa/config/specreg.h"
-#include "xtensa/config/extreg.h"
-#include "esp_bit_defs.h"
-#include "esp_attr.h"
-#include "xtensa/config/core.h"
 
 #ifdef __cplusplus
 extern "C" {

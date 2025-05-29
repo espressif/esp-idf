@@ -40,7 +40,7 @@ xt_highint5:
     wsr a0, CCOMPARE2
     esync
 
-    rsr     a0, EXCSAVE_5 // restore a0
+    rsr     a0, XT_REG_EXCSAVE_5 // restore a0
     rfi     5
 
 
@@ -74,7 +74,7 @@ xt_highint5:
     l32i    a4, a0, L5_INTR_A4_OFFSET
     rsync
 .L_xt_highint5_exit:
-    rsr     a0, EXCSAVE_5                   // restore a0
+    rsr     a0, XT_REG_EXCSAVE_5                   // restore a0
     rfi     5
 
 /* The linker has no reason to link in this file; all symbols it exports are already defined

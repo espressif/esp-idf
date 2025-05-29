@@ -11,7 +11,7 @@
 #include "xtensa/config/core-isa.h"
 #include "xtensa/config/core.h"
 #include "xtensa/config/extreg.h"
-#include "xtensa/config/specreg.h"
+#include "xtensa/config/xt_specreg.h"
 #include "xtensa/xtruntime.h"
 #include "xt_instr_macros.h"
 #include "esp_bit_defs.h"
@@ -68,13 +68,13 @@ FORCE_INLINE_ATTR void *xt_utils_get_sp(void)
 FORCE_INLINE_ATTR uint32_t xt_utils_get_cycle_count(void)
 {
     uint32_t ccount;
-    RSR(CCOUNT, ccount);
+    RSR(XT_REG_CCOUNT, ccount);
     return ccount;
 }
 
 static inline void xt_utils_set_cycle_count(uint32_t ccount)
 {
-    WSR(CCOUNT, ccount);
+    WSR(XT_REG_CCOUNT, ccount);
 }
 
 FORCE_INLINE_ATTR void xt_utils_wait_for_intr(void)
@@ -100,7 +100,7 @@ FORCE_INLINE_ATTR void xt_utils_set_vecbase(uint32_t vecbase)
 FORCE_INLINE_ATTR uint32_t xt_utils_intr_get_enabled_mask(void)
 {
     uint32_t intr_mask;
-    RSR(INTENABLE, intr_mask);
+    RSR(XT_REG_INTENABLE, intr_mask);
     return intr_mask;
 }
 
@@ -118,30 +118,30 @@ FORCE_INLINE_ATTR void xt_utils_set_breakpoint(int bp_num, uint32_t bp_addr)
 {
     //Set the breakpoint's address
     if (bp_num == 1) {
-        WSR(IBREAKA_1, bp_addr);
+        WSR(XT_REG_IBREAKA_1, bp_addr);
     } else {
-        WSR(IBREAKA_0, bp_addr);
+        WSR(XT_REG_IBREAKA_0, bp_addr);
     }
     //Enable the breakpoint
     uint32_t brk_ena_reg;
-    RSR(IBREAKENABLE, brk_ena_reg);
+    RSR(XT_REG_IBREAKENABLE, brk_ena_reg);
     brk_ena_reg |= BIT(bp_num);
-    WSR(IBREAKENABLE, brk_ena_reg);
+    WSR(XT_REG_IBREAKENABLE, brk_ena_reg);
 }
 
 FORCE_INLINE_ATTR void xt_utils_clear_breakpoint(int bp_num)
 {
     // Disable the breakpoint using the break enable register
     uint32_t bp_en = 0;
-    RSR(IBREAKENABLE, bp_en);
+    RSR(XT_REG_IBREAKENABLE, bp_en);
     bp_en &= ~BIT(bp_num);
-    WSR(IBREAKENABLE, bp_en);
+    WSR(XT_REG_IBREAKENABLE, bp_en);
     // Zero the break address register
     uint32_t bp_addr = 0;
     if (bp_num == 1) {
-        WSR(IBREAKA_1, bp_addr);
+        WSR(XT_REG_IBREAKA_1, bp_addr);
     } else {
-        WSR(IBREAKA_0, bp_addr);
+        WSR(XT_REG_IBREAKA_0, bp_addr);
     }
 }
 
@@ -163,11 +163,11 @@ FORCE_INLINE_ATTR void xt_utils_set_watchpoint(int wp_num,
     }
     // Enable break address and break control register
     if (wp_num == 1) {
-        WSR(DBREAKA_1, (uint32_t) wp_addr);
-        WSR(DBREAKC_1, dbreakc_reg);
+        WSR(XT_REG_DBREAKA_1, (uint32_t) wp_addr);
+        WSR(XT_REG_DBREAKC_1, dbreakc_reg);
     } else {
-        WSR(DBREAKA_0, (uint32_t) wp_addr);
-        WSR(DBREAKC_0, dbreakc_reg);
+        WSR(XT_REG_DBREAKA_0, (uint32_t) wp_addr);
+        WSR(XT_REG_DBREAKC_0, dbreakc_reg);
     }
 }
 
@@ -175,11 +175,11 @@ FORCE_INLINE_ATTR void xt_utils_clear_watchpoint(int wp_num)
 {
     // Clear both break control and break address register
     if (wp_num == 1) {
-        WSR(DBREAKC_1, 0);
-        WSR(DBREAKA_1, 0);
+        WSR(XT_REG_DBREAKC_1, 0);
+        WSR(XT_REG_DBREAKA_1, 0);
     } else {
-        WSR(DBREAKC_0, 0);
-        WSR(DBREAKA_0, 0);
+        WSR(XT_REG_DBREAKC_0, 0);
+        WSR(XT_REG_DBREAKA_0, 0);
     }
 }
 

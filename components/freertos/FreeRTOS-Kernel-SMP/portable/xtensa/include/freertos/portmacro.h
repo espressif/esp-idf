@@ -12,7 +12,7 @@
 #include "xtensa/xtruntime.h"
 #include "xtensa/config/core.h"
 #include "xtensa/config/core-isa.h"
-#include "xtensa/config/specreg.h"
+#include "xtensa/config/xt_specreg.h"
 #include "xt_instr_macros.h"
 #include "portbenchmark.h"
 #include "esp_macros.h"
@@ -181,7 +181,7 @@ Note: XTOS_RESTORE_INTLEVEL() will overwrite entire PS register on XEA2. So we n
 */
 #define portCLEAR_INTERRUPT_MASK(x)         ({ \
     unsigned int ps_reg; \
-    RSR(PS, ps_reg); \
+    RSR(XT_REG_PS, ps_reg); \
     ps_reg = (ps_reg & ~XCHAL_PS_INTLEVEL_MASK); \
     ps_reg |= ((x << XCHAL_PS_INTLEVEL_SHIFT) & XCHAL_PS_INTLEVEL_MASK); \
     XTOS_RESTORE_INTLEVEL(ps_reg); \
@@ -360,7 +360,7 @@ static inline bool IRAM_ATTR xPortCanYield(void)
     uint32_t ps_reg = 0;
 
     //Get the current value of PS (processor status) register
-    RSR(PS, ps_reg);
+    RSR(XT_REG_PS, ps_reg);
 
     /*
      * intlevel = (ps_reg & 0xf);
