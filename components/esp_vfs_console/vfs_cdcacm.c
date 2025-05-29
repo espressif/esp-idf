@@ -196,9 +196,6 @@ static ssize_t cdcacm_read(int fd, void *data, size_t size)
                 break;
             }
             data_c[received++] = (char) c;
-            if (c == '\n') {
-                break;
-            }
         }
     }
     _lock_release_recursive(&s_read_lock);
