@@ -257,9 +257,6 @@ static ssize_t usb_serial_jtag_read(int fd, void* data, size_t size)
         }
         data_c[received] = (char) c;
         ++received;
-        if (c == '\n') {
-            break;
-        }
     }
     _lock_release_recursive(&s_ctx.read_lock);
     if (received > 0) {
