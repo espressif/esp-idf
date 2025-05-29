@@ -326,7 +326,7 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
 #ifndef CONFIG_FREERTOS_UNICORE
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
 #include "xt_instr_macros.h"
-#include "xtensa/config/specreg.h"
+#include "xtensa/config/xt_specreg.h"
 
 static int size_stack = 1024 * 4;
 static StackType_t *start_addr_stack;

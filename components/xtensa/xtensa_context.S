@@ -127,15 +127,15 @@ _xt_context_save:
     s32i    a15, sp, XT_STK_A15
     #endif
 
-    rsr     a3,  SAR
+    rsr     a3,  XT_REG_SAR
     s32i    a3,  sp, XT_STK_SAR
 
     #if XCHAL_HAVE_LOOPS
-    rsr     a3,  LBEG
+    rsr     a3,  XT_REG_LBEG
     s32i    a3,  sp, XT_STK_LBEG
-    rsr     a3,  LEND
+    rsr     a3,  XT_REG_LEND
     s32i    a3,  sp, XT_STK_LEND
-    rsr     a3,  LCOUNT
+    rsr     a3,  XT_REG_LCOUNT
     s32i    a3,  sp, XT_STK_LCOUNT
     #endif
 
@@ -188,7 +188,7 @@ _xt_context_save:
      * used as a temporary by this code, the temporary value would get stored
      * onto the stack, instead of the real value.
      */
-    rsr     a2, PS                     /* to be restored after SPILL_ALL_WINDOWS */
+    rsr     a2, XT_REG_PS              /* to be restored after SPILL_ALL_WINDOWS */
     movi    a0, PS_INTLEVEL_MASK
     and     a3, a2, a0                 /* get the current INTLEVEL */
     bgeui   a3, XCHAL_EXCM_LEVEL, 1f   /* calculate max(INTLEVEL, XCHAL_EXCM_LEVEL) */
@@ -203,7 +203,7 @@ _xt_context_save:
     SPILL_ALL_WINDOWS                  /* place the live register windows there */
     addi    sp,  sp, -XT_STK_FRMSZ     /* return the current stack pointer and proceed with context save*/
 
-    wsr     a2, PS                     /* restore to the value at entry */
+    wsr     a2, XT_REG_PS              /* restore to the value at entry */
     rsync
     wsr     a0, EPC1                   /* likewise */
 
@@ -274,10 +274,10 @@ _xt_context_restore:
     #if XCHAL_HAVE_LOOPS
     l32i    a2,  sp, XT_STK_LBEG
     l32i    a3,  sp, XT_STK_LEND
-    wsr     a2,  LBEG
+    wsr     a2,  XT_REG_LBEG
     l32i    a2,  sp, XT_STK_LCOUNT
-    wsr     a3,  LEND
-    wsr     a2,  LCOUNT
+    wsr     a3,  XT_REG_LEND
+    wsr     a2,  XT_REG_LCOUNT
     #endif
 
     #ifdef XT_USE_OVLY
@@ -309,7 +309,7 @@ _xt_context_restore:
 
     l32i    a3,  sp, XT_STK_SAR
     l32i    a2,  sp, XT_STK_A2
-    wsr     a3,  SAR
+    wsr     a3,  XT_REG_SAR
     l32i    a3,  sp, XT_STK_A3
     l32i    a4,  sp, XT_STK_A4
     l32i    a5,  sp, XT_STK_A5
@@ -445,7 +445,7 @@ _xt_coproc_release:
     /* Release previously taken spinlock */
     spinlock_release a7 a8 _xt_coproc_owner_sa_lock
 #endif /* portNUM_PROCESSORS > 1 */
-    wsr     a6, PS                          /* restore interrupts */
+    wsr     a6, XT_REG_PS                   /* restore interrupts */
 
     RET0
 
@@ -484,7 +484,7 @@ _xt_coproc_savecs:
 
     /* At entry, CPENABLE should be showing which CPs are enabled. */
 
-    rsr     a2, CPENABLE                /* a2 = which CPs are enabled      */
+    rsr     a2, XT_REG_CPENABLE                /* a2 = which CPs are enabled      */
     beqz    a2, .Ldone                  /* quick exit if none              */
     mov     a14, a0                     /* save return address             */
     call0   XT_RTOS_CP_STATE            /* get address of CP save area     */

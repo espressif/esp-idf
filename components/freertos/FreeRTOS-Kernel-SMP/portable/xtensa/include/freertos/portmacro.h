@@ -12,7 +12,7 @@
 #include "xtensa/xtruntime.h"
 #include "xtensa/config/core.h"
 #include "xtensa/config/core-isa.h"
-#include "xtensa/config/specreg.h"
+#include "xtensa/config/xt_specreg.h"
 #include "xt_instr_macros.h"
 #include "portbenchmark.h"
 #include "esp_macros.h"
