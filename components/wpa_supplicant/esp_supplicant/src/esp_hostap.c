@@ -84,6 +84,12 @@ void *hostap_init(void)
 
     hapd->conf->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_AP);
     auth_conf->sae_pwe = hapd->conf->sae_pwe;
+    auth_conf->wpa_group_rekey = esp_wifi_ap_get_gtk_rekeying_config_internal();
+#define MIN_GTK_REKEYING_INTERVAL 60
+    if (auth_conf->wpa_group_rekey && auth_conf->wpa_group_rekey < MIN_GTK_REKEYING_INTERVAL) {
+        auth_conf->wpa_group_rekey = MIN_GTK_REKEYING_INTERVAL;
+    }
+#undef MIN_GTK_REKEYING_INTERVAL
 
     authmode = esp_wifi_ap_get_prof_authmode_internal();
     if (authmode_has_wpa(authmode)) {
