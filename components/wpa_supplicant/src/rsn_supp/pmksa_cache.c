@@ -18,7 +18,7 @@
 #ifdef IEEE8021X_EAPOL
 
 static const int pmksa_cache_max_entries = 10;
-static const int dot11RSNAConfigPMKLifetime = 8640000; // 100 days = 3600 x 24 x 100 Seconds
+static const int dot11RSNAConfigPMKLifetime = INT32_MAX;
 static const int dot11RSNAConfigPMKReauthThreshold = 70;
 
 struct rsn_pmksa_cache {
@@ -133,8 +133,7 @@ pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
 
     os_get_reltime(&now);
     entry->expiration = now.sec + dot11RSNAConfigPMKLifetime;
-    entry->reauth_time = now.sec + dot11RSNAConfigPMKLifetime *
-        dot11RSNAConfigPMKReauthThreshold / 100;
+    entry->reauth_time = now.sec + dot11RSNAConfigPMKLifetime / 100 * dot11RSNAConfigPMKReauthThreshold;
     entry->akmp = akmp;
     os_memcpy(entry->aa, aa, ETH_ALEN);
     entry->network_ctx = network_ctx;
