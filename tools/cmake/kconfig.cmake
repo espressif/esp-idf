@@ -15,12 +15,37 @@ endfunction()
 #
 function(__kconfig_component_init component_target)
     __component_get_property(component_dir ${component_target} COMPONENT_DIR)
-    file(GLOB kconfig "${component_dir}/Kconfig")
+    file(GLOB all_files "${component_dir}/*")
+
+    set(kconfig "")
+    set(kconfig_projbuild "")
+
+    foreach(_file IN LISTS all_files)
+        get_filename_component(_fname ${_file} NAME)
+        string(TOLOWER "${_fname}" _fname_lowercase)
+        if(_fname_lowercase STREQUAL "kconfig")
+            list(APPEND kconfig "${_file}")
+            if(NOT _fname STREQUAL "Kconfig")
+                message(WARNING
+                    "${_fname} file should be named 'Kconfig' (uppercase K, the rest lowercase)."
+                    " Full path to the file: ${_file}")
+            endif()
+        elseif(_fname_lowercase STREQUAL "kconfig.projbuild")
+            list(APPEND kconfig_projbuild "${_file}")
+            if(NOT _fname STREQUAL "Kconfig.projbuild")
+                message(WARNING
+                    "${_fname} file should be named 'Kconfig.projbuild' (uppercase K, the rest lowercase)."
+                    " Full path to the file: ${_file}")
+            endif()
+        endif()
+    endforeach()
+
     list(SORT kconfig)
     __component_set_property(${component_target} KCONFIG "${kconfig}")
-    file(GLOB kconfig "${component_dir}/Kconfig.projbuild")
-    list(SORT kconfig)
-    __component_set_property(${component_target} KCONFIG_PROJBUILD "${kconfig}")
+
+    list(SORT kconfig_projbuild)
+    __component_set_property(${component_target} KCONFIG_PROJBUILD "${kconfig_projbuild}")
+
     file(GLOB sdkconfig_rename "${component_dir}/sdkconfig.rename")
     file(GLOB sdkconfig_rename_target "${component_dir}/sdkconfig.rename.${IDF_TARGET}")
 
