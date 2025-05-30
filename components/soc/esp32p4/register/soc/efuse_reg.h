@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -754,13 +754,13 @@ extern "C" {
 #define EFUSE_WAFER_VERSION_MINOR_M  (EFUSE_WAFER_VERSION_MINOR_V << EFUSE_WAFER_VERSION_MINOR_S)
 #define EFUSE_WAFER_VERSION_MINOR_V  0x0000000FU
 #define EFUSE_WAFER_VERSION_MINOR_S  0
-/** EFUSE_WAFER_VERSION_MAJOR : R; bitpos: [5:4]; default: 0;
- *  Major chip version
+/** EFUSE_WAFER_VERSION_MAJOR_LO : R; bitpos: [5:4]; default: 0;
+ *  Major chip version (lower 2 bits)
  */
-#define EFUSE_WAFER_VERSION_MAJOR    0x00000003U
-#define EFUSE_WAFER_VERSION_MAJOR_M  (EFUSE_WAFER_VERSION_MAJOR_V << EFUSE_WAFER_VERSION_MAJOR_S)
-#define EFUSE_WAFER_VERSION_MAJOR_V  0x00000003U
-#define EFUSE_WAFER_VERSION_MAJOR_S  4
+#define EFUSE_WAFER_VERSION_MAJOR_LO    0x00000003U
+#define EFUSE_WAFER_VERSION_MAJOR_LO_M  (EFUSE_WAFER_VERSION_MAJOR_LO_V << EFUSE_WAFER_VERSION_MAJOR_LO_S)
+#define EFUSE_WAFER_VERSION_MAJOR_LO_V  0x00000003U
+#define EFUSE_WAFER_VERSION_MAJOR_LO_S  4
 /** EFUSE_DISABLE_WAFER_VERSION_MAJOR : R; bitpos: [6]; default: 0;
  *  Disables check of wafer version major
  */
@@ -817,13 +817,13 @@ extern "C" {
 #define EFUSE_PKG_VERSION_M  (EFUSE_PKG_VERSION_V << EFUSE_PKG_VERSION_S)
 #define EFUSE_PKG_VERSION_V  0x00000007U
 #define EFUSE_PKG_VERSION_S  20
-/** EFUSE_RESERVED_1_87 : R; bitpos: [23]; default: 0;
- *  reserved
+/** EFUSE_WAFER_VERSION_MAJOR_HI : R; bitpos: [23]; default: 0;
+ *  Major chip version (MSB)
  */
-#define EFUSE_RESERVED_1_87    (BIT(23))
-#define EFUSE_RESERVED_1_87_M  (EFUSE_RESERVED_1_87_V << EFUSE_RESERVED_1_87_S)
-#define EFUSE_RESERVED_1_87_V  0x00000001U
-#define EFUSE_RESERVED_1_87_S  23
+#define EFUSE_WAFER_VERSION_MAJOR_HI    (BIT(23))
+#define EFUSE_WAFER_VERSION_MAJOR_HI_M  (EFUSE_WAFER_VERSION_MAJOR_HI_V << EFUSE_WAFER_VERSION_MAJOR_HI_S)
+#define EFUSE_WAFER_VERSION_MAJOR_HI_V  0x00000001U
+#define EFUSE_WAFER_VERSION_MAJOR_HI_S  23
 /** EFUSE_LDO_VO1_DREF : R; bitpos: [27:24]; default: 0;
  *  Output VO1 parameter
  */
