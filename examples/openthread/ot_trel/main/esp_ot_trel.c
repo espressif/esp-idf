@@ -125,8 +125,9 @@ void app_main(void)
     // Used eventfds:
     // * netif
     // * ot task queue
+    // * ot trel
     esp_vfs_eventfd_config_t eventfd_config = {
-        .max_fds = 2,
+        .max_fds = 3,
     };
 
     ESP_ERROR_CHECK(nvs_flash_init());
