@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -190,12 +190,11 @@ static inline int adv_send(struct net_buf *buf)
 #if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX
         if (BLE_MESH_ADV(buf)->type == BLE_MESH_ADV_PROXY_SOLIC) {
             bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
-            struct bt_mesh_adv_data solic_ad[3] = {
-                BLE_MESH_ADV_DATA_BYTES(BLE_MESH_DATA_FLAGS, (BLE_MESH_AD_GENERAL | BLE_MESH_AD_NO_BREDR)),
+            struct bt_mesh_adv_data solic_ad[2] = {
                 BLE_MESH_ADV_DATA_BYTES(BLE_MESH_DATA_UUID16_ALL, 0x59, 0x18),
                 BLE_MESH_ADV_DATA(BLE_MESH_DATA_SVC_DATA16, buf->data, buf->len),
             };
-            err = bt_le_adv_start(&param, solic_ad, 3, NULL, 0);
+            err = bt_le_adv_start(&param, solic_ad, ARRAY_SIZE(solic_ad), NULL, 0);
         } else
 #endif
         {
