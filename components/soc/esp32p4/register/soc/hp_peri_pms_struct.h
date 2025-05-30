@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -103,12 +103,12 @@ typedef union {
          *  1: Allowed
          */
         uint32_t coren_mm_l2mem_mon_allow:1;
-        /** coren_mm_tcm_mon_allow : R/W; bitpos: [10]; default: 1;
-         *  Configures whether HP CPUn in machine mode has permission to access TCM monitor.
+        /** coren_mm_spm_mon_allow : R/W; bitpos: [10]; default: 1;
+         *  Configures whether HP CPUn in machine mode has permission to access SPM monitor.
          *  0: Not allowed
          *  1: Allowed
          */
-        uint32_t coren_mm_tcm_mon_allow:1;
+        uint32_t coren_mm_spm_mon_allow:1;
         /** coren_mm_cache_allow : R/W; bitpos: [11]; default: 1;
          *  Configures whether HP CPUn in machine mode has permission to access cache.
          *  0: Not allowed
@@ -152,13 +152,7 @@ typedef union {
          *  1: Allowed
          */
         uint32_t coren_mm_hp_gdma_allow:1;
-        /** coren_mm_hp_regdma_allow : R/W; bitpos: [4]; default: 1;
-         *  Configures whether HP CPUn in machine mode has permission to access HP GDMA (DW
-         *  GDMA).
-         *  0: Not allowed
-         *  1: Allow
-         */
-        uint32_t coren_mm_hp_regdma_allow:1;
+        uint32_t reserved_4:1;
         /** coren_mm_hp_sdmmc_allow : R/W; bitpos: [5]; default: 1;
          *  Configures whether HP CPUn in machine mode has permission to access HP SDMMC.
          *  0: Not allowed
@@ -616,12 +610,12 @@ typedef union {
          *  1: Allowed
          */
         uint32_t coren_um_l2mem_mon_allow:1;
-        /** coren_um_tcm_mon_allow : R/W; bitpos: [10]; default: 1;
-         *  Configures whether HP CPUn in user mode has permission to access TCM monitor.
+        /** coren_um_spm_mon_allow : R/W; bitpos: [10]; default: 1;
+         *  Configures whether HP CPUn in user mode has permission to access SPM monitor.
          *  0: Not allowed
          *  1: Allowed
          */
-        uint32_t coren_um_tcm_mon_allow:1;
+        uint32_t coren_um_spm_mon_allow:1;
         /** coren_um_cache_allow : R/W; bitpos: [11]; default: 1;
          *  Configures whether HP CPUn in user mode has permission to access cache.
          *  0: Not allowed
@@ -667,12 +661,7 @@ typedef union {
          *  1: Allowed
          */
         uint32_t coren_um_hp_gdma_allow:1;
-        /** coren_um_hp_regdma_allow : R/W; bitpos: [4]; default: 1;
-         *  Configures whether HP CPUn in user mode has permission to access HP  regdma.
-         *  0: Not allowed
-         *  1: Allow
-         */
-        uint32_t coren_um_hp_regdma_allow:1;
+        uint32_t reserved_4:1;
         /** coren_um_hp_sdmmc_allow : R/W; bitpos: [5]; default: 1;
          *  Configures whether HP CPUn in user mode has permission to access HP SDMMC.
          *  0: Not allowed
@@ -1063,25 +1052,6 @@ typedef union {
 } pms_coren_um_hp_peri_pms_reg3_reg_t;
 
 
-/** Group: TEE Peripheral Permission Control Registers */
-/** Type of regdma_peri_pms register
- *  Permission register for REGDMA
- */
-typedef union {
-    struct {
-        /** regdma_peri_allow : R/W; bitpos: [0]; default: 1;
-         *  Configures whether REGDMA has permission to access all HP peripheral (including CPU
-         *  peripherals).
-         *  0: Not allowed
-         *  1: Allow
-         */
-        uint32_t regdma_peri_allow:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} pms_regdma_peri_pms_reg_t;
-
-
 typedef struct {
     volatile pms_hp_peri_pms_date_reg_t hp_peri_pms_date;
     volatile pms_hp_peri_pms_clk_en_reg_t hp_peri_pms_clk_en;
@@ -1101,13 +1071,12 @@ typedef struct {
     volatile pms_coren_um_hp_peri_pms_reg1_reg_t core1_um_hp_peri_pms_reg1;
     volatile pms_coren_um_hp_peri_pms_reg2_reg_t core1_um_hp_peri_pms_reg2;
     volatile pms_coren_um_hp_peri_pms_reg3_reg_t core1_um_hp_peri_pms_reg3;
-    volatile pms_regdma_peri_pms_reg_t regdma_peri_pms;
 } hp_peri_pms_dev_t;
 
 extern hp_peri_pms_dev_t HP_PERI_PMS;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(hp_peri_pms_dev_t) == 0x4c, "Invalid size of hp_peri_pms_dev_t structure");
+_Static_assert(sizeof(hp_peri_pms_dev_t) == 0x48, "Invalid size of hp_peri_pms_dev_t structure");
 #endif
 
 #ifdef __cplusplus

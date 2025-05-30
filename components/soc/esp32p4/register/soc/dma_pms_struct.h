@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -778,69 +778,37 @@ typedef union {
     uint32_t val;
 } pms_dma_l2mem_mon_pms_w_reg_t;
 
-/** Type of tcm_mon_pms_r register
- *  TCM Monitor read permission control register
+/** Type of spm_mon_pms_r register
+ *  SPM Monitor read permission control register
  */
 typedef union {
     struct {
-        /** tcm_mon_r_pms : R/W; bitpos: [31:0]; default: 4294967295;
-         *  Configures read permission for TCM MON. Each bit corresponds to a region. Bit 0
+        /** spm_mon_r_pms : R/W; bitpos: [31:0]; default: 4294967295;
+         *  Configures read permission for SPM MON. Each bit corresponds to a region. Bit 0
          *  corresponds to region0, and so on.
          *  0: Disable read permission.
          *  1: Enable read permission.
          */
-        uint32_t tcm_mon_r_pms:32;
+        uint32_t spm_mon_r_pms:32;
     };
     uint32_t val;
-} pms_dma_tcm_mon_pms_r_reg_t;
+} pms_dma_spm_mon_pms_r_reg_t;
 
-/** Type of tcm_mon_pms_w register
- *  TCM Monitor write permission control register
+/** Type of spm_mon_pms_w register
+ *  SPM Monitor write permission control register
  */
 typedef union {
     struct {
-        /** tcm_mon_w_pms : R/W; bitpos: [31:0]; default: 4294967295;
-         *  Configures write permission for TCM monitor to access 32 address ranges. Bit 0
+        /** spm_mon_w_pms : R/W; bitpos: [31:0]; default: 4294967295;
+         *  Configures write permission for SPM monitor to access 32 address ranges. Bit 0
          *  corresponds to region0, and so on.
          *  0: Disable write permission.
          *  1: Enable write permission.
          */
-        uint32_t tcm_mon_w_pms:32;
+        uint32_t spm_mon_w_pms:32;
     };
     uint32_t val;
-} pms_dma_tcm_mon_pms_w_reg_t;
-
-/** Type of regdma_pms_r register
- *  REGDMA read permission control register
- */
-typedef union {
-    struct {
-        /** regdma_r_pms : R/W; bitpos: [31:0]; default: 4294967295;
-         *  Configures read permission for REGDMA. Each bit corresponds to a region. Bit 0
-         *  corresponds to region0, and so on.
-         *  0: Disable read permission.
-         *  1: Enable read permission.
-         */
-        uint32_t regdma_r_pms:32;
-    };
-    uint32_t val;
-} pms_dma_regdma_pms_r_reg_t;
-
-/** Type of regdma_pms_w register
- *  REGDMA write permission control register
- */
-typedef union {
-    struct {
-        /** regdma_w_pms : R/W; bitpos: [31:0]; default: 4294967295;
-         *  Configures write permission for REGDMA. Each bit corresponds to a region. Bit 0
-         *  corresponds to region0, and so on.
-         *  0: Disable write permission.
-         *  1: Enable write permission.
-         */
-        uint32_t regdma_w_pms:32;
-    };
-    uint32_t val;
-} pms_dma_regdma_pms_w_reg_t;
+} pms_dma_spm_mon_pms_w_reg_t;
 
 /** Type of h264_pms_r register
  *  H264 DMA read permission control register
@@ -1121,11 +1089,9 @@ typedef struct {
     volatile pms_dma_trace1_pms_w_reg_t trace1_pms_w;
     volatile pms_dma_l2mem_mon_pms_r_reg_t l2mem_mon_pms_r;
     volatile pms_dma_l2mem_mon_pms_w_reg_t l2mem_mon_pms_w;
-    volatile pms_dma_tcm_mon_pms_r_reg_t tcm_mon_pms_r;
-    volatile pms_dma_tcm_mon_pms_w_reg_t tcm_mon_pms_w;
-    volatile pms_dma_regdma_pms_r_reg_t regdma_pms_r;
-    volatile pms_dma_regdma_pms_w_reg_t regdma_pms_w;
-    uint32_t reserved_1f4[2];
+    volatile pms_dma_spm_mon_pms_r_reg_t spm_mon_pms_r;
+    volatile pms_dma_spm_mon_pms_w_reg_t spm_mon_pms_w;
+    uint32_t reserved_1ec[4];
     volatile pms_dma_h264_pms_r_reg_t h264_pms_r;
     volatile pms_dma_h264_pms_w_reg_t h264_pms_w;
     volatile pms_dma_dma2d_ppa_pms_r_reg_t dma2d_ppa_pms_r;
