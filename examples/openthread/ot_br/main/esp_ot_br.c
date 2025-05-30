@@ -199,15 +199,20 @@ void app_main(void)
     // * netif
     // * task queue
     // * border router
-    esp_vfs_eventfd_config_t eventfd_config = {
+    size_t max_eventfd = 3;
+
 #if CONFIG_OPENTHREAD_RADIO_NATIVE || CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
-        // * radio driver (A native radio device needs a eventfd for radio driver.)
-        // * SpiSpinelInterface (The Spi Spinel Interface needs a eventfd.)
-        // The above will not exist at the same time.
-        .max_fds = 4,
-#else
-        .max_fds = 3,
+    // * radio driver (A native radio device needs a eventfd for radio driver.)
+    // * SpiSpinelInterface (The Spi Spinel Interface needs a eventfd.)
+    // The above will not exist at the same time.
+    max_eventfd++;
 #endif
+#if CONFIG_OPENTHREAD_RADIO_TREL
+    // * TREL reception (The Thread Radio Encapsulation Link needs a eventfd for reception.)
+    max_eventfd++;
+#endif
+    esp_vfs_eventfd_config_t eventfd_config = {
+        .max_fds = max_eventfd,
     };
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
     ESP_ERROR_CHECK(nvs_flash_init());
