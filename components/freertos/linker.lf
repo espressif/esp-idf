@@ -310,12 +310,12 @@ entries:
         # - Critical sections functions are always placed in internal RAM for better performance
         # - The following functions are also placed in internal RAM as they are called from vTaskSwitchContext, which is
         #   also always placed in internal RAM
-        #   - vApplicationStackOverflowHook
         #   - vPortSetStackWatchpoint
         # --------------------------------------------------------------------------------------------------------------
         if IDF_TARGET_ARCH_XTENSA = y:
             port:xPortStartScheduler (default)
             port:vPortEndScheduler (default)
+            port:vApplicationStackOverflowHook (default)
             if FREERTOS_TASK_FUNCTION_WRAPPER = y:
                 port:vPortTaskWrapper (default)
             if SOC_CPU_COPROC_NUM > 0:
@@ -342,7 +342,6 @@ entries:
         # - Critical sections functions are always placed in internal RAM for better performance
         # - The following functions are also placed in internal RAM as they are called from vTaskSwitchContext, which is
         #   also always placed in internal RAM
-        #   - vApplicationStackOverflowHook
         #   - vPortSetStackWatchpoint
         # - vPortCoprocUsedInISR is directly called from RISC-V assembly code with a direct branch instruction which
         #   may be too far when placed in Flash. Hence, it is always placed in internal RAM
@@ -350,6 +349,7 @@ entries:
         if IDF_TARGET_ARCH_RISCV = y:
             port:xPortStartScheduler (default)
             port:vPortEndScheduler (default)
+            port:vApplicationStackOverflowHook (default)
             port:uxInitialiseStackTLS (default)
             if FREERTOS_TASK_FUNCTION_WRAPPER = y:
                 port:vPortTaskWrapper (default)
