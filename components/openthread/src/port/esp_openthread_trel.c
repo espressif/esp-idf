@@ -18,10 +18,12 @@
 #include "esp_netif_ip_addr.h"
 #include "esp_openthread.h"
 #include "esp_openthread_border_router.h"
+#include "esp_openthread_common.h"
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_lock.h"
+#include "esp_openthread_platform.h"
 #include "esp_openthread_radio.h"
-#include "esp_openthread_task_queue.h"
+#include "esp_vfs_eventfd.h"
 #include "lwip/pbuf.h"
 #include "lwip/tcpip.h"
 #include "lwip/udp.h"
@@ -54,6 +56,10 @@ typedef struct {
 
 static ot_trel_t s_ot_trel = {CONFIG_OPENTHREAD_TREL_PORT, NULL};
 static bool s_is_service_registered = false;
+static ot_trel_recv_task_t s_trel_receive_buffer[CONFIG_OPENTHREAD_TREL_BUFFER_SIZE];
+static esp_openthread_circular_queue_info_t s_recv_queue = {.head = 0, .tail = 0, .used = 0};
+static const char *s_trel_workflow = "trel";
+static int s_trel_event_fd = -1;
 
 static void trel_browse_notifier(mdns_result_t *result)
 {
@@ -89,55 +95,27 @@ static void trel_browse_notifier(mdns_result_t *result)
     }
 }
 
-static void trel_recv_task(void *ctx)
-{
-    esp_err_t ret = ESP_OK;
-    OT_UNUSED_VARIABLE(ret);
-    ot_trel_recv_task_t *task_ctx = (ot_trel_recv_task_t *)ctx;
-    struct pbuf *recv_buf = task_ctx->p;
-    uint8_t *data_buf = (uint8_t *)recv_buf->payload;
-    uint8_t *data_buf_to_free = NULL;
-    uint16_t length = recv_buf->len;
-
-    if (recv_buf->next != NULL) {
-        data_buf = (uint8_t *)malloc(recv_buf->tot_len);
-        ESP_GOTO_ON_FALSE(data_buf, ESP_ERR_NO_MEM, exit, OT_PLAT_LOG_TAG, "Failed to allocate data buf when receiving Thread TREL message");
-        length = recv_buf->tot_len;
-        data_buf_to_free = data_buf;
-        pbuf_copy_partial(recv_buf, data_buf, recv_buf->tot_len, 0);
-    }
-    otPlatTrelHandleReceived(esp_openthread_get_instance(), data_buf, length, task_ctx->source_addr);
-
-exit:
-    if (recv_buf) {
-        pbuf_free(recv_buf);
-    }
-    free(data_buf_to_free);
-    free(task_ctx->source_addr);
-    free(task_ctx);
-}
-
-// TZ-1704
 static void handle_trel_udp_recv(void *ctx, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, uint16_t port)
 {
     esp_err_t ret = ESP_OK;
+    otSockAddr *source_addr = NULL;
+    uint64_t event_trel_rx = 1;
     ESP_LOGD(OT_PLAT_LOG_TAG, "Receive from %s:%d", ip6addr_ntoa(&(addr->u_addr.ip6)), port);
+    ESP_GOTO_ON_FALSE(atomic_load(&s_recv_queue.used) < CONFIG_OPENTHREAD_TREL_BUFFER_SIZE, ESP_ERR_NO_MEM, exit, OT_PLAT_LOG_TAG, "trel receive buffer full!");
+    source_addr = (otSockAddr *)malloc(sizeof(otSockAddr));
+    ESP_GOTO_ON_FALSE(source_addr, ESP_ERR_NO_MEM, exit, OT_PLAT_LOG_TAG, "Failed to allocate buf for Thread TREL");
 
-    ot_trel_recv_task_t *task_ctx = (ot_trel_recv_task_t *)malloc(sizeof(ot_trel_recv_task_t));
-    ESP_GOTO_ON_FALSE(task_ctx, ESP_ERR_NO_MEM, exit, OT_PLAT_LOG_TAG, "Failed to allocate buf for Thread TREL");
-    task_ctx->p = p;
-    task_ctx->source_addr = (otSockAddr *)malloc(sizeof(otSockAddr));
-    ESP_GOTO_ON_FALSE(task_ctx->source_addr, ESP_ERR_NO_MEM, exit, OT_PLAT_LOG_TAG, "Failed to allocate buf for Thread TREL");
-    memset(task_ctx->source_addr, 0, sizeof(otSockAddr));
-    task_ctx->source_addr->mPort = port;
-    memcpy(&task_ctx->source_addr->mAddress.mFields.m32, addr->u_addr.ip6.addr, sizeof(addr->u_addr.ip6.addr));
-
-    ESP_GOTO_ON_ERROR(esp_openthread_task_queue_post(trel_recv_task, task_ctx), exit, OT_PLAT_LOG_TAG, "Failed to receive OpenThread TREL message");
+    memset(source_addr, 0, sizeof(otSockAddr));
+    source_addr->mPort = port;
+    memcpy(&source_addr->mAddress.mFields.m32, addr->u_addr.ip6.addr, sizeof(addr->u_addr.ip6.addr));
+    s_trel_receive_buffer[s_recv_queue.tail].source_addr = source_addr;
+    s_trel_receive_buffer[s_recv_queue.tail].p = p;
+    s_recv_queue.tail = (s_recv_queue.tail + 1) % CONFIG_OPENTHREAD_TREL_BUFFER_SIZE;
+    atomic_fetch_add(&s_recv_queue.used, 1);
+    assert(write(s_trel_event_fd, &event_trel_rx, sizeof(event_trel_rx)) == sizeof(event_trel_rx));
 
 exit:
     if (ret != ESP_OK) {
-        free(task_ctx->source_addr);
-        free(task_ctx);
         if (p) {
             pbuf_free(p);
         }
@@ -146,25 +124,76 @@ exit:
 
 static esp_err_t ot_new_trel(void *ctx)
 {
-    ot_trel_t *task = (ot_trel_t *)ctx;
+    s_ot_trel.trel_pcb = udp_new();
+    ESP_RETURN_ON_FALSE(s_ot_trel.trel_pcb != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG, "Failed to create a new UDP pcb");
+    udp_bind(s_ot_trel.trel_pcb, IP6_ADDR_ANY, s_ot_trel.port);
+    udp_recv(s_ot_trel.trel_pcb, handle_trel_udp_recv, NULL);
+    return ESP_OK;
+}
 
-    task->trel_pcb = udp_new();
-    ESP_RETURN_ON_FALSE(task->trel_pcb != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG, "Failed to create a new UDP pcb");
-    udp_bind(task->trel_pcb, IP6_ADDR_ANY, task->port);
-    udp_recv(task->trel_pcb, handle_trel_udp_recv, NULL);
+void esp_openthread_trel_update(esp_openthread_mainloop_context_t *mainloop)
+{
+    FD_SET(s_trel_event_fd, &mainloop->read_fds);
+    if (s_trel_event_fd > mainloop->max_fd) {
+        mainloop->max_fd = s_trel_event_fd;
+    }
+}
+
+esp_err_t esp_openthread_trel_process(otInstance *aInstance, const esp_openthread_mainloop_context_t *mainloop)
+{
+    uint64_t event_read = 0;
+    assert(read(s_trel_event_fd, &event_read, sizeof(event_read)) == sizeof(event_read));
+    struct pbuf *recv_buf = NULL;
+    uint8_t *data_buf = NULL;
+    uint16_t length = 0;
+    otSockAddr *source_addr = NULL;
+
+    while (atomic_load(&s_recv_queue.used)) {
+        if (s_trel_receive_buffer[s_recv_queue.head].p != NULL) {
+
+            uint8_t *data_buf_to_free = NULL;
+            bool should_handle = true;
+            recv_buf = s_trel_receive_buffer[s_recv_queue.head].p;
+            data_buf = (uint8_t *)recv_buf->payload;
+            length = recv_buf->len;
+            source_addr = s_trel_receive_buffer[s_recv_queue.head].source_addr;
+
+            if (recv_buf->next != NULL) {
+                data_buf = (uint8_t *)malloc(recv_buf->tot_len);
+                if (data_buf) {
+                    pbuf_copy_partial(recv_buf, data_buf, recv_buf->tot_len, 0);
+                } else {
+                    should_handle = false;
+                }
+                length = recv_buf->tot_len;
+                data_buf_to_free = data_buf;
+            }
+            if (should_handle) {
+                otPlatTrelHandleReceived(aInstance, data_buf, length, source_addr);
+            }
+            pbuf_free(recv_buf);
+            free(data_buf_to_free);
+            free(source_addr);
+
+            s_recv_queue.head = (s_recv_queue.head + 1) % CONFIG_OPENTHREAD_TREL_BUFFER_SIZE;
+            atomic_fetch_sub(&s_recv_queue.used, 1);
+        }
+    }
+
     return ESP_OK;
 }
 
 void otPlatTrelEnable(otInstance *aInstance, uint16_t *aUdpPort)
 {
+    ESP_RETURN_ON_FALSE(s_trel_event_fd == -1, , OT_PLAT_LOG_TAG, "ot trel has been initialized.");
+    s_trel_event_fd = eventfd(0, 0);
+    assert(s_trel_event_fd >= 0);
     *aUdpPort = s_ot_trel.port;
     esp_openthread_task_switching_lock_release();
-    esp_err_t err = esp_netif_tcpip_exec(ot_new_trel, &s_ot_trel);
-    if (err != ESP_OK) {
-        ESP_LOGE(OT_PLAT_LOG_TAG, "Fail to create trel udp");
-    }
+    ESP_ERROR_CHECK(esp_netif_tcpip_exec(ot_new_trel, NULL));
     mdns_browse_new(TREL_MDNS_TYPE, TREL_MDNS_PROTO, trel_browse_notifier);
     esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
+    ESP_ERROR_CHECK(esp_openthread_platform_workflow_register(&esp_openthread_trel_update, &esp_openthread_trel_process, s_trel_workflow));
 }
 
 static esp_err_t trel_send_task(void *ctx)
@@ -263,23 +292,41 @@ void otPlatTrelResetCounters(otInstance *aInstance)
     memset(&s_trel_counters, 0, sizeof(otPlatTrelCounters));
 }
 
-static void trel_disable_task(void *ctx)
+static esp_err_t trel_disable_task(void *ctx)
 {
-    struct udp_pcb *pcb = (struct udp_pcb *)ctx;
-    udp_remove(pcb);
+    if (ctx) {
+        struct udp_pcb *pcb = (struct udp_pcb *)ctx;
+        udp_remove(pcb);
+    }
+    return ESP_OK;
+}
+
+static void free_all_buffer(void)
+{
+    while (atomic_load(&s_recv_queue.used)) {
+        if (s_trel_receive_buffer[s_recv_queue.head].p != NULL) {
+            pbuf_free(s_trel_receive_buffer[s_recv_queue.head].p);
+            free(s_trel_receive_buffer[s_recv_queue.head].source_addr);
+            s_recv_queue.head = (s_recv_queue.head + 1) % CONFIG_OPENTHREAD_TREL_BUFFER_SIZE;
+            atomic_fetch_sub(&s_recv_queue.used, 1);
+        }
+    }
 }
 
 void otPlatTrelDisable(otInstance *aInstance)
 {
+    ESP_RETURN_ON_FALSE(s_trel_event_fd >= 0, , OT_PLAT_LOG_TAG, "ot trel is not initialized.");
     esp_openthread_task_switching_lock_release();
-    if (s_ot_trel.trel_pcb) {
-        tcpip_callback(trel_disable_task, s_ot_trel.trel_pcb);
-    }
+    esp_netif_tcpip_exec(trel_disable_task, s_ot_trel.trel_pcb);
+    s_ot_trel.trel_pcb = NULL;
     mdns_service_remove(TREL_MDNS_TYPE, TREL_MDNS_PROTO);
     s_is_service_registered = false;
     mdns_browse_delete(TREL_MDNS_TYPE, TREL_MDNS_PROTO);
     esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
-    s_ot_trel.trel_pcb = NULL;
+    esp_openthread_platform_workflow_unregister(s_trel_workflow);
+    free_all_buffer();
+    close(s_trel_event_fd);
+    s_trel_event_fd = -1;
 }
 
 const otPlatTrelCounters *otPlatTrelGetCounters(otInstance *aInstance)
