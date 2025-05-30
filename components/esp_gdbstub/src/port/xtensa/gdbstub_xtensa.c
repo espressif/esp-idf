@@ -7,7 +7,7 @@
 #include <string.h>
 #include "esp_gdbstub_common.h"
 #include "soc/soc_memory_layout.h"
-#include "xtensa/config/specreg.h"
+#include "xtensa/config/xt_specreg.h"
 #include "sdkconfig.h"
 #include "esp_cpu.h"
 #include "esp_ipc_isr.h"
