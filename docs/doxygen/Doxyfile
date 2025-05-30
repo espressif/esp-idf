@@ -74,7 +74,6 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
     $(PROJECT_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     $(PROJECT_PATH)/components/console/esp_console.h \
-    $(PROJECT_PATH)/components/driver/twai/include/driver/twai.h \
     $(PROJECT_PATH)/components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
     $(PROJECT_PATH)/components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h \
     $(PROJECT_PATH)/components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
@@ -89,6 +88,9 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_idf_version.h \
+    $(PROJECT_PATH)/components/esp_driver_twai/include/esp_twai.h \
+    $(PROJECT_PATH)/components/esp_driver_twai/include/esp_twai_types.h \
+    $(PROJECT_PATH)/components/esp_driver_twai/include/esp_twai_onchip.h \
     $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr.h \
     $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr_etm.h \
     $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr_types.h \
@@ -267,7 +269,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/spi_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/temperature_sensor_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/timer_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/twai_types_deprecated.h \
+    $(PROJECT_PATH)/components/hal/include/hal/twai_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/uart_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/efuse_hal.h \
     $(PROJECT_PATH)/components/hal/include/hal/eth_types.h \

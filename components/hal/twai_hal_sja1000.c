@@ -216,8 +216,8 @@ static inline uint32_t twai_hal_decode_interrupt(twai_hal_context_t *hal_ctx)
                 TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_ERROR_WARNING);
                 TWAI_HAL_SET_BITS(state_flags, TWAI_HAL_STATE_FLAG_ERR_WARN);
             } else if (hal_ctx->state_flags & TWAI_HAL_STATE_FLAG_RECOVERING) {
-                //Previously undergoing bus recovery. Thus means bus recovery complete
-                TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_BUS_RECOV_CPLT);
+                //Previously undergoing bus recovery. Thus means bus recovery complete, hardware back to error_active
+                TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_BUS_RECOV_CPLT | TWAI_HAL_EVENT_ERROR_ACTIVE);
                 TWAI_HAL_CLEAR_BITS(state_flags, TWAI_HAL_STATE_FLAG_RECOVERING | TWAI_HAL_STATE_FLAG_BUS_OFF);
             } else {        //Just went below EWL
                 TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_BELOW_EWL);
@@ -269,16 +269,12 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
 
     //Handle low latency events
     if (events & TWAI_HAL_EVENT_BUS_OFF) {
-        twai_ll_set_mode(hal_ctx->dev, true, false, false);  //Freeze TEC/REC by entering LOM
 #ifdef CONFIG_TWAI_ERRATA_FIX_BUS_OFF_REC
         //Errata workaround: Force REC to 0 by re-triggering bus-off (by setting TEC to 0 then 255)
         twai_ll_set_tec(hal_ctx->dev, 0);
         twai_ll_set_tec(hal_ctx->dev, 255);
         (void) twai_ll_get_and_clear_intrs(hal_ctx->dev);    //Clear the re-triggered bus-off interrupt
 #endif
-    }
-    if (events & TWAI_HAL_EVENT_BUS_RECOV_CPLT) {
-        twai_ll_enter_reset_mode(hal_ctx->dev);     //Enter reset mode to stop the controller
     }
     if (events & TWAI_HAL_EVENT_BUS_ERR) {
         twai_ll_err_type_t type;

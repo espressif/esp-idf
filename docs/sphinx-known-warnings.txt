@@ -293,6 +293,16 @@ If declarator-id:
     struct rmt_symbol_word_t
     ------------------------^
 
+twai_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 25]
+    struct twai_error_flags_t
+    -------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 25]
+    struct twai_error_flags_t
+    -------------------------^
+
 mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
 Declaration is '.. cpp:type:: struct esp_mqtt_event_t esp_mqtt_event_t'.
 mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.

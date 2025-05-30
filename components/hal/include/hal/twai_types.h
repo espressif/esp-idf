@@ -17,8 +17,8 @@ extern "C" {
 #endif
 
 /* valid bits in TWAI ID for frame formats */
-#define TWAI_STD_ID_MASK    0x000007FFU /* Mask of the ID fields in a standard frame */
-#define TWAI_EXT_ID_MASK    0x1FFFFFFFU /* Mask of the ID fields in an extended frame */
+#define TWAI_STD_ID_MASK        0x000007FFU /**< Mask of the ID fields in a standard frame */
+#define TWAI_EXT_ID_MASK        0x1FFFFFFFU /**< Mask of the ID fields in an extended frame */
 
 /* TWAI payload length and DLC definitions */
 #define TWAI_FRAME_MAX_DLC      8
@@ -32,10 +32,10 @@ extern "C" {
  * @brief TWAI node error fsm states
  */
 typedef enum {
-    TWAI_ERROR_ACTIVE,          /**< Error active state: TEC/REC < 96 */
-    TWAI_ERROR_WARNING,         /**< Error warning state: TEC/REC >= 96 and < 128 */
-    TWAI_ERROR_PASSIVE,         /**< Error passive state: TEC/REC >= 128 and < 256 */
-    TWAI_ERROR_BUS_OFF,         /**< Bus-off state: TEC >= 256 (node offline) */
+    TWAI_ERROR_ACTIVE,              /**< Error active state: TEC/REC < 96 */
+    TWAI_ERROR_WARNING,             /**< Error warning state: TEC/REC >= 96 and < 128 */
+    TWAI_ERROR_PASSIVE,             /**< Error passive state: TEC/REC >= 128 and < 256 */
+    TWAI_ERROR_BUS_OFF,             /**< Bus-off state: TEC >= 256 (node offline) */
 } twai_error_state_t;
 
 /**

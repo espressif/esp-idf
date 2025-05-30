@@ -234,6 +234,15 @@ static void _node_isr_main(void *arg)
         if (twai_ctx->cbs.on_state_change) {
             do_yield |= twai_ctx->cbs.on_state_change(&twai_ctx->api_base, &e_data, twai_ctx->user_data);
         }
+        // node recover from busoff, restart remain tx transaction
+        if ((e_data.old_sta == TWAI_ERROR_BUS_OFF) && (e_data.new_sta == TWAI_ERROR_ACTIVE)) {
+            if (xQueueReceiveFromISR(twai_ctx->tx_mount_queue, &twai_ctx->p_curr_tx, &do_yield)) {
+                atomic_store(&twai_ctx->hw_busy, true);
+                _node_start_trans(twai_ctx);
+            } else {
+                atomic_store(&twai_ctx->hw_busy, false);
+            }
+        }
     }
 
     // deal RX event, then TX later, TODO: DIG-620
@@ -263,9 +272,9 @@ static void _node_isr_main(void *arg)
 
     // deal TX event
     if (events & TWAI_HAL_EVENT_TX_BUFF_FREE) {
-        // only call tx_done_cb when tx without error, otherwise on_error_cb should triggered if it is registered
-        if (twai_ctx->cbs.on_tx_done && (events & TWAI_HAL_EVENT_TX_SUCCESS)) {
+        if (twai_ctx->cbs.on_tx_done) {
             twai_tx_done_event_data_t tx_ev = {
+                .is_tx_success = (events & TWAI_HAL_EVENT_TX_SUCCESS),  // find 'on_error_cb' if not success
                 .done_tx_frame = twai_ctx->p_curr_tx,
             };
             do_yield |= twai_ctx->cbs.on_tx_done(&twai_ctx->api_base, &tx_ev, twai_ctx->user_data);
@@ -484,6 +493,9 @@ static esp_err_t _node_config_mask_filter(twai_node_handle_t node, uint8_t filte
     twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
     ESP_RETURN_ON_FALSE(filter_id < SOC_TWAI_MASK_FILTER_NUM, ESP_ERR_INVALID_ARG, TAG, "Invalid mask filter id %d", filter_id);
     ESP_RETURN_ON_FALSE(mask_cfg->num_of_ids <= 1, ESP_ERR_INVALID_ARG, TAG, "Invalid num_of_ids");
+    uint32_t id = mask_cfg->num_of_ids ? mask_cfg->id_list[0] : mask_cfg->id;
+    bool full_close = (mask_cfg->mask == UINT32_MAX) && (id == UINT32_MAX);
+    ESP_RETURN_ON_FALSE(full_close || mask_cfg->dual_filter || mask_cfg->is_ext || !((mask_cfg->mask | id) & ~TWAI_STD_ID_MASK), ESP_ERR_INVALID_ARG, TAG, "std_id only (is_ext=0) but valid id/mask larger than 11 bits");
 #if SOC_TWAI_SUPPORT_FD
     // FD targets don't support Dual filter
     ESP_RETURN_ON_FALSE(!mask_cfg->dual_filter, ESP_ERR_NOT_SUPPORTED, TAG, "The target don't support Dual Filter");
@@ -499,6 +511,8 @@ static esp_err_t _node_config_range_filter(twai_node_handle_t node, uint8_t filt
 {
     twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
     ESP_RETURN_ON_FALSE(filter_id < SOC_TWAI_RANGE_FILTER_NUM, ESP_ERR_INVALID_ARG, TAG, "Invalid range filter id %d", filter_id);
+    ESP_RETURN_ON_FALSE((range_cfg->range_low > range_cfg->range_high) || range_cfg->is_ext || !(range_cfg->range_high & ~TWAI_STD_ID_MASK), \
+                        ESP_ERR_INVALID_ARG, TAG, "std_id only (is_ext=0) but valid low/high id larger than 11 bits");
     ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "config filter must when node stopped");
 
     twai_hal_configure_range_filter(twai_ctx->hal, filter_id, range_cfg);
