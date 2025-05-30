@@ -612,12 +612,12 @@ static tBTM_STATUS btm_send_connect_request(UINT16 acl_handle,
             ** If so, we cannot use SCO-only packet types (HFP 1.7)
             */
             if (BTM_BothEndsSupportSecureConnections(p_acl->remote_addr)) {
-                temp_pkt_types &= ~(BTM_SCO_PKT_TYPE_MASK);
+                temp_pkt_types &= ~(BTM_SCO_LINK_ONLY_MASK);
                 BTM_TRACE_DEBUG("%s: SCO Conn: pkt_types after removing SCO (0x%04x)", __FUNCTION__,
                                 temp_pkt_types);
 
                 /* Return error if no packet types left */
-                if (temp_pkt_types == 0) {
+                if (temp_pkt_types == BTM_SCO_EXCEPTION_PKTS_MASK) {
                     BTM_TRACE_ERROR("%s: SCO Conn (BR/EDR SC): No packet types available",__FUNCTION__);
                     return (BTM_WRONG_MODE);
                 }
