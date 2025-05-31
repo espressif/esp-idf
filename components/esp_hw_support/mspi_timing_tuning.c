@@ -268,8 +268,17 @@ static void s_find_max_consecutive_success_points(uint32_t *array, uint32_t size
         i++;
     }
 
-    *out_length = match_num > max ? match_num : max;
-    *out_end_index = match_num == size ? size : end;
+    /**
+     * this is to deal with the case when the last points are consecutive 1, e.g.
+     * {1, 0, 0, 1, 1, 1, 1, 1, 1}
+     */
+    if (match_num > max) {
+        max = match_num;
+        end = i - 1;
+    }
+
+    *out_length = max;
+    *out_end_index = end;
 }
 
 static void s_select_best_tuning_config(mspi_timing_config_t *config, uint32_t consecutive_length, uint32_t end, const uint8_t *reference_data, bool is_flash)
