@@ -320,3 +320,12 @@ foreach(component_target ${build_component_targets})
     endif()
     set(__idf_component_context 0)
 endforeach()
+
+# Run component validation checks after all components have been processed
+# Only run validation for the main project, not subprojects like bootloader
+idf_build_get_property(bootloader_build BOOTLOADER_BUILD)
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+if(NOT bootloader_build AND NOT esp_tee_build)
+    include("${CMAKE_CURRENT_LIST_DIR}/tools/cmake/component_validation.cmake")
+    __component_validation_run_checks()
+endif()

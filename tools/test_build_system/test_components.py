@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import re
 import shutil
 from collections.abc import Generator
 from pathlib import Path
@@ -302,3 +303,248 @@ def test_unknown_component_error(idf_py: IdfPyFunc, test_app_copy: Path) -> None
     )
     ret = idf_py('reconfigure', check=False)
     assert "Failed to resolve component 'unknown' required by component 'main'" in ret.stderr
+
+
+def test_component_with_improper_dependency(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    # test for __component_validation_check_include_dirs and __component_validation_check_sources
+    # Checks that the following warnings are produced:
+    #  - Include directory X belongs to component Y but is being used by component Z
+    #  - Source file A belongs to component Y but is being built by component Z
+    logging.info(
+        'Check for warnings when component includes source files or include directories that belong to other components'
+    )
+    idf_py('create-component', '-C', 'components', 'my_comp')
+
+    # Create a source file and include directory in my_comp
+    (test_app_copy / 'components' / 'my_comp' / 'my_comp.c').write_text('void my_func() {}')
+    (test_app_copy / 'components' / 'my_comp' / 'include').mkdir(exist_ok=True)
+    (test_app_copy / 'components' / 'my_comp' / 'include' / 'my_comp.h').write_text('#pragma once')
+
+    # Make main component try to use files from my_comp
+    replace_in_file(
+        (test_app_copy / 'main' / 'CMakeLists.txt'),
+        '# placeholder_inside_idf_component_register',
+        '"../components/my_comp/my_comp.c"\n                       INCLUDE_DIRS "../components/my_comp/include"',
+    )
+    ret = idf_py('reconfigure')
+
+    inc_dir = (test_app_copy / 'components' / 'my_comp' / 'include').as_posix()
+    src_file = (test_app_copy / 'components' / 'my_comp' / 'my_comp.c').as_posix()
+
+    # Check for new validation warnings
+    re_include = re.compile(
+        rf"Include directory\s+'{re.escape(inc_dir)}'\s+belongs to component\s+my_comp\s+but is being used by "
+        rf'component\s+main'
+    )
+    re_source = re.compile(
+        rf"Source file\s+'{re.escape(src_file)}'\s+belongs to component\s+my_comp\s+but is being built by "
+        rf'component\s+main'
+    )
+
+    assert re_include.search(ret.stderr) is not None, f'Expected include directory warning not found in: {ret.stderr}'
+    assert re_source.search(ret.stderr) is not None, f'Expected source file warning not found in: {ret.stderr}'
+
+
+def test_component_validation_not_run_in_subprojects(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    # test that component validation doesn't run in subprojects like bootloader
+    logging.info('Check that component validation warnings are not shown in subprojects')
+
+    # Create a component that would trigger validation warnings
+    idf_py('create-component', '-C', 'components', 'test_comp')
+    (test_app_copy / 'components' / 'test_comp' / 'test_comp.c').write_text('void test_func() {}')
+    (test_app_copy / 'components' / 'test_comp' / 'include').mkdir(exist_ok=True)
+    (test_app_copy / 'components' / 'test_comp' / 'include' / 'test_comp.h').write_text('#pragma once')
+
+    # Make main component try to use files from test_comp
+    replace_in_file(
+        (test_app_copy / 'main' / 'CMakeLists.txt'),
+        '# placeholder_inside_idf_component_register',
+        '"../components/test_comp/test_comp.c"\n                       INCLUDE_DIRS "../components/test_comp/include"',
+    )
+
+    # Build the project - this will trigger bootloader build as well
+    ret = idf_py('build')
+
+    # Check that validation warnings appear in the main build output
+    inc_dir = (test_app_copy / 'components' / 'test_comp' / 'include').as_posix()
+    src_file = (test_app_copy / 'components' / 'test_comp' / 'test_comp.c').as_posix()
+
+    re_include = re.compile(
+        rf"Include directory\s+'{re.escape(inc_dir)}'\s+belongs to component\s+test_comp\s+but is being used by "
+        rf'component\s+main'
+    )
+    re_source = re.compile(
+        rf"Source file\s+'{re.escape(src_file)}'\s+belongs to component\s+test_comp\s+but is being built by "
+        rf'component\s+main'
+    )
+
+    # The warnings should appear in the main build, not in bootloader build
+    assert re_include.search(ret.stderr) is not None, f'Expected include directory warning not found in: {ret.stderr}'
+    assert re_source.search(ret.stderr) is not None, f'Expected source file warning not found in: {ret.stderr}'
+
+    # Verify that the build completed successfully despite the warnings
+    assert ret.returncode == 0, 'Build should complete successfully with validation warnings'
+
+
+def test_component_validation_private_include_dirs(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    # test that component validation works for private include directories
+    logging.info('Check that component validation warnings are shown for private include directories')
+
+    # Create a component with private include directory
+    idf_py('create-component', '-C', 'components', 'private_comp')
+    (test_app_copy / 'components' / 'private_comp' / 'private').mkdir(exist_ok=True)
+    (test_app_copy / 'components' / 'private_comp' / 'private' / 'private.h').write_text('#pragma once')
+
+    # Make main component try to use private include directory from private_comp
+    replace_in_file(
+        (test_app_copy / 'main' / 'CMakeLists.txt'),
+        '# placeholder_inside_idf_component_register',
+        'PRIV_INCLUDE_DIRS "../components/private_comp/private"',
+    )
+
+    ret = idf_py('reconfigure')
+
+    # Check for private include directory warning
+    priv_inc_dir = (test_app_copy / 'components' / 'private_comp' / 'private').as_posix()
+    re_priv_include = re.compile(
+        rf"Private include directory\s+'{re.escape(priv_inc_dir)}'\s+belongs to "
+        rf'component\s+private_comp\s+but is being used by component\s+main'
+    )
+
+    assert re_priv_include.search(ret.stderr) is not None, (
+        f'Expected private include directory warning not found in: {ret.stderr}'
+    )
+
+
+def test_component_validation_finds_right_component(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    # test that __component_validation_get_component_for_path finds the correct component for a given path
+    #
+    # components/my_comp/test_apps/components/my_subcomp/src/test.c
+    # The component for test.c should be my_subcomp, not my_comp
+
+    idf_py('create-component', '-C', 'components', 'my_comp')
+
+    nested_components_dir = test_app_copy / 'components' / 'my_comp' / 'test_apps' / 'components'
+    my_subcomp_dir = nested_components_dir / 'my_subcomp'
+    (my_subcomp_dir / 'src').mkdir(parents=True)
+    (my_subcomp_dir / 'include').mkdir(parents=True)
+
+    # Files of the nested component
+    (my_subcomp_dir / 'src' / 'test.c').write_text('void test_func() {}')
+    (my_subcomp_dir / 'include' / 'test.h').write_text('#pragma once')
+    (my_subcomp_dir / 'CMakeLists.txt').write_text('idf_component_register(SRCS "src/test.c" INCLUDE_DIRS "include")')
+
+    # Make sure build system discovers the nested component by adding its parent directory to EXTRA_COMPONENT_DIRS
+    replace_in_file(
+        test_app_copy / 'CMakeLists.txt',
+        '# placeholder_before_include_project_cmake',
+        f'set(EXTRA_COMPONENT_DIRS {nested_components_dir.as_posix()})',
+    )
+
+    # Make main component try to use files from my_subcomp via absolute-like relative paths
+    replace_in_file(
+        test_app_copy / 'main' / 'CMakeLists.txt',
+        '# placeholder_inside_idf_component_register',
+        '"../components/my_comp/test_apps/components/my_subcomp/src/test.c"\n'
+        '                       INCLUDE_DIRS "../components/my_comp/test_apps/components/my_subcomp/include"',
+    )
+
+    ret = idf_py('reconfigure')
+
+    inc_dir = (my_subcomp_dir / 'include').as_posix()
+    src_file = (my_subcomp_dir / 'src' / 'test.c').as_posix()
+
+    # The warnings must attribute ownership to my_subcomp (deepest component), not my_comp
+    re_include = re.compile(
+        rf"Include directory\s+'{re.escape(inc_dir)}'\s+belongs to component\s+my_subcomp\s+but is being used by "
+        rf'component\s+main'
+    )
+    re_source = re.compile(
+        rf"Source file\s+'{re.escape(src_file)}'\s+belongs to component\s+my_subcomp\s+but is being built by "
+        rf'component\s+main'
+    )
+
+    assert re_include.search(ret.stderr) is not None, f'Expected include directory warning not found in: {ret.stderr}'
+    assert re_source.search(ret.stderr) is not None, f'Expected source file warning not found in: {ret.stderr}'
+
+    # components/my_comp/test_apps/components/my_subcomp/include/test.h
+    # The component for test.h should be my_subcomp, not my_comp
+    # Modify main to also list the header as a source to exercise file-level ownership
+    replace_in_file(
+        test_app_copy / 'main' / 'CMakeLists.txt',
+        '"../components/my_comp/test_apps/components/my_subcomp/src/test.c"\n'
+        '                       INCLUDE_DIRS "../components/my_comp/test_apps/components/my_subcomp/include"',
+        '"../components/my_comp/test_apps/components/my_subcomp/src/test.c" '
+        '"../components/my_comp/test_apps/components/my_subcomp/include/test.h"\n'
+        '                       INCLUDE_DIRS "../components/my_comp/test_apps/components/my_subcomp/include"',
+    )
+
+    ret = idf_py('reconfigure')
+
+    header_path = (my_subcomp_dir / 'include' / 'test.h').as_posix()
+    re_header = re.compile(
+        rf"Source file\s+'{re.escape(header_path)}'\s+belongs to component\s+my_subcomp\s+but is being built by "
+        rf'component\s+main'
+    )
+    assert re_header.search(ret.stderr) is not None, (
+        f'Expected header file ownership warning not found in: {ret.stderr}'
+    )
+
+
+def test_component_validation_with_common_platform_example(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    # Test the following structure which should not produce a warning::
+    #
+    # my_project/
+    # ├── common/                         # Common product code for all platforms (not a component)
+    # │   ├── include/
+    # │   │   ├── product_config.h
+    # │   │   └── business_logic.h
+    # │   └── src/
+    # │       └── business_logic.c
+    # └── env/
+    #     ├── esp-idf/
+    #     │   ├── main/                   # main component
+    #     │   │   ├── idf_main.c          # includes product_config.h and business_logic.h
+    #     │   │   └── CMakeLists.txt      # adds ../../../common/include to include dirs
+    #     │   └── CMakeLists.txt
+    #     └── other_rtos/
+    #
+    #
+    # Implementation: create a sibling 'common' directory outside the IDF project and
+    # make the main component include headers and a source file from it. This should
+    # NOT produce component ownership warnings because the paths don't belong to any component.
+
+    # Create common directory with headers and source outside the project root
+    common_dir = (test_app_copy / '..' / 'common').resolve()
+    (common_dir / 'include').mkdir(parents=True, exist_ok=True)
+    (common_dir / 'src').mkdir(parents=True, exist_ok=True)
+    (common_dir / 'include' / 'product_config.h').write_text('#pragma once\n')
+    (common_dir / 'include' / 'business_logic.h').write_text('#pragma once\n')
+    (common_dir / 'src' / 'business_logic.c').write_text('void bl(void) {}\n')
+
+    # From main component dir to common dir is ../../common
+    replace_in_file(
+        test_app_copy / 'main' / 'CMakeLists.txt',
+        '# placeholder_inside_idf_component_register',
+        '"../../common/src/business_logic.c"\n                       INCLUDE_DIRS "../../common/include"',
+    )
+
+    # Optionally create a main source that includes the headers (not required for validation)
+    (test_app_copy / 'main' / 'idf_main.c').write_text(
+        '#include "product_config.h"\n#include "business_logic.h"\nvoid app_main(void) {}\n'
+    )
+
+    ret = idf_py('reconfigure')
+
+    inc_dir_abs = (common_dir / 'include').as_posix()
+    src_file_abs = (common_dir / 'src' / 'business_logic.c').as_posix()
+
+    re_include = re.compile(rf"Include directory\s+'{re.escape(inc_dir_abs)}'\s+belongs to component")
+    re_source = re.compile(rf"Source file\s+'{re.escape(src_file_abs)}'\s+belongs to component")
+
+    assert re_include.search(ret.stderr) is None, (
+        f'Unexpected include directory ownership warning for common path: {ret.stderr}'
+    )
+    assert re_source.search(ret.stderr) is None, (
+        f'Unexpected source file ownership warning for common path: {ret.stderr}'
+    )
