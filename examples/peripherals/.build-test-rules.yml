@@ -44,6 +44,13 @@ examples/peripherals/bitscrambler:
   depends_components:
     - esp_driver_bitscrambler
 
+examples/peripherals/camera/dvp_dsi:
+  disable:
+    - if: SOC_LCDCAM_CAM_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+    - esp_driver_cam
+
 examples/peripherals/camera/dvp_isp_dsi:
   disable:
     - if: SOC_ISP_DVP_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1
