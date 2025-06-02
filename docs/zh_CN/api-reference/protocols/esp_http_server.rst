@@ -12,6 +12,8 @@ HTTP Server 组件提供了在 ESP32 上运行轻量级 Web 服务器的功能�
     * :cpp:func:`httpd_stop`： 根据传入的句柄停止服务器，并释放相关联的内存和资源。这是一个阻塞函数，首先给服务器任务发送停止信号，然后等待其终止。期间服务器任务会关闭所有已打开的连接，删除已注册的 URI 处理程序，并将所有会话的上下文数据重置为空。
     * :cpp:func:`httpd_register_uri_handler`： 通过传入 ``httpd_uri_t`` 结构体类型的对象来注册 URI 处理程序。该结构体包含如下成员：``uri`` 名字，``method`` 类型（比如 ``HTTP_GET/HTTP_POST/HTTP_PUT`` 等等）， ``esp_err_t *handler (httpd_req_t *req)`` 类型的函数指针，指向用户上下文数据的 ``user_ctx`` 指针。
 
+.. note:: HTTP Server 组件的 API 并不是线程安全的。如果需要线程安全，应用层需自行确保在多个任务之间进行适当的同步。
+
 应用示例
 --------
 

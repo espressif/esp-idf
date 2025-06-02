@@ -32,6 +32,8 @@ The following APIs of :doc:`esp_http_server` should not be used with :doc:`esp_h
 
 Everything else can be used without limitations.
 
+.. note:: APIs in the HTTPS server are not thread-safe. If thread safety is required, it is the responsibility of the application layer to ensure proper synchronization between multiple tasks.
+
 Usage
 -----
 
