@@ -122,6 +122,14 @@ class Placement:
     def add_subplacement(self, subplacement):
         self.subplacements.add(subplacement)
 
+    def __str__(self):
+        sections_str = ', '.join(self.sections)
+        basis_str = self.basis.node.name if self.basis else 'NONE'
+        return (f'({sections_str} -> {self.target}), basis: {basis_str}, '
+                f'force: {self.force}, stable: {self.stable}, '
+                f'explicit: {self.explicit}, flags: {self.flags}')
+
+
 class EntityNode:
     """
     Node in entity tree. An EntityNode
@@ -399,6 +407,7 @@ class Generation:
         self.schemes = {}
         self.placements = {}
         self.mappings = {}
+        self.debug = debug
 
         self.check_mappings = check_mappings
 
@@ -587,6 +596,14 @@ class Generation:
         res.sort(key=lambda m: m.entity)
         return res
 
+    def _dump_entity_tree(self, node, indent=''):
+        print(f'{indent}-> {node.name}')
+        for placement in node.placements.values():
+            print(f'{indent}     {placement}')
+        print()
+        for child in node.children:
+            self._dump_entity_tree(child, ' ' * 8 + indent)
+
     def generate(self, entities, non_contiguous_sram):
         scheme_dictionary = self._prepare_scheme_dictionary()
         entity_mappings = self._prepare_entity_mappings(scheme_dictionary, entities)
@@ -597,6 +614,9 @@ class Generation:
                 root_node.insert(entity, sections, target, flags, mutable, entities)
             except ValueError as e:
                 raise GenerationException(str(e))
+
+        if self.debug:
+            self._dump_entity_tree(root_node)
 
         # Traverse the tree, creating the placements
         commands = root_node.get_output_commands(non_contiguous_sram)

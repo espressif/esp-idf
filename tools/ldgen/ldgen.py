@@ -105,6 +105,12 @@ def main():
         '--objdump',
         help='Path to toolchain objdump')
 
+    argparser.add_argument(
+        '--debug', '-d',
+        help='Print debugging information.',
+        action='store_true'
+    )
+
     args = argparser.parse_args()
 
     input_file = args.input
