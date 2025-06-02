@@ -331,6 +331,48 @@ esp_err_t esp_task_wdt_reset(void)
     return ESP_OK;
 }
 
+esp_err_t esp_task_wdt_reset_core(int core_id)
+{
+    portENTER_CRITICAL(&twdt_spinlock);
+    //TWDT must already be initialized
+    ASSERT_EXIT_CRIT_RETURN((twdt_config != NULL), ESP_ERR_INVALID_STATE);
+
+    TaskHandle_t handle = xTaskGetIdleTaskHandleForCPU(core_id);
+    twdt_task_t *target_task;
+    bool all_reset;
+
+    //Check if task exists in task list, and if all other tasks have reset
+    target_task = find_task_in_twdt_list(handle, &all_reset);
+    //Return error if trying to reset task that is not on the task list
+    ASSERT_EXIT_CRIT_RETURN((target_task != NULL), ESP_ERR_NOT_FOUND);
+
+    target_task->has_reset = true;    //Reset the task if it's on the task list
+    if(all_reset){     //Reset if all other tasks in list have reset in
+        reset_hw_timer();
+    }
+
+    portEXIT_CRITICAL(&twdt_spinlock);
+    return ESP_OK;
+}
+
+esp_err_t esp_task_wdt_reset_both_cores(void)
+{
+    esp_err_t rc;
+    rc = esp_task_wdt_reset_core(0);
+    if( rc < 0)
+    {
+        return rc;
+    }
+
+    rc = esp_task_wdt_reset_core(1);
+    if( rc < 0)
+    {
+        return rc;
+    }
+
+    return ESP_OK;
+}
+
 esp_err_t esp_task_wdt_delete(TaskHandle_t handle)
 {
     if(handle == NULL){

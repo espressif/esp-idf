@@ -141,6 +141,9 @@ esp_err_t esp_task_wdt_delete(TaskHandle_t handle);
   */
 esp_err_t esp_task_wdt_status(TaskHandle_t handle);
 
+/* RTA function, resets the IDLE TWDT on both cores*/
+esp_err_t esp_task_wdt_reset_both_cores(void);
+
 
 #ifdef __cplusplus
 }

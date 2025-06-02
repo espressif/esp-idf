@@ -311,6 +311,8 @@ esp_err_t esp_eth_increase_reference(esp_eth_handle_t hdl);
 */
 esp_err_t esp_eth_decrease_reference(esp_eth_handle_t hdl);
 
+eth_link_t esp_eth_get_link_state(esp_eth_handle_t hdl);
+
 #ifdef __cplusplus
 }
 #endif

@@ -487,7 +487,11 @@ static esp_err_t esp_emac_alloc_driver_obj(const eth_mac_config_t *config, emac_
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "emac_esp32", &emac->pm_lock), err, TAG, "create pm lock failed");
 #endif
     /* create rx task */
+#ifdef USE_BRADY_V1400 || MICRO_USE_EXTERNAL_HANDLE
+    BaseType_t core_num = 1;
+#else
     BaseType_t core_num = tskNO_AFFINITY;
+#endif
     if (config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
         core_num = cpu_hal_get_core_id();
     }
