@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -297,6 +297,7 @@ Procedure:
 */
 static void host_lib_task(void *arg)
 {
+    TaskHandle_t pending_task = (TaskHandle_t)arg;
     while (1) {
         // Start handling system events
         uint32_t event_flags;
@@ -306,10 +307,12 @@ static void host_lib_task(void *arg)
             TEST_ASSERT_EQUAL(ESP_ERR_NOT_FINISHED, usb_host_device_free_all());
         }
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
+            printf("All devices freed\n");
             break;
         }
     }
-
+    // Notify the main task that the host library task is done
+    xTaskNotifyGive(pending_task);
     printf("Deleting host_lib_task\n");
     vTaskDelete(NULL);
 }
@@ -330,13 +333,16 @@ TEST_CASE("Test USB Host multiconfig client (single client)", "[usb_host][full_s
     xTaskNotifyGive(client_task);
 
     TaskHandle_t host_lib_task_hdl;
-    xTaskCreatePinnedToCore(host_lib_task, "host lib", 4096, NULL, 2, &host_lib_task_hdl, 0);
+    // Get Current task handle
+    TaskHandle_t pending_task = xTaskGetCurrentTaskHandle();
+    xTaskCreatePinnedToCore(host_lib_task, "host lib", 4096, (void*)pending_task, 2, &host_lib_task_hdl, 0);
     TEST_ASSERT_NOT_NULL_MESSAGE(host_lib_task_hdl, "Failed to create host lib task");
 
     // Wait for the device to be open
     xSemaphoreTake(dev_open_smp, portMAX_DELAY);
     multiconf_client_get_conf_desc();
-
+    // Wait for the host library task to finish
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     // Cleanup
     vSemaphoreDelete(dev_open_smp);
 }

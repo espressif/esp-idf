@@ -131,11 +131,8 @@ esp_err_t ext_hub_dev_gone(uint8_t dev_addr);
  * Entry:
  * - should be called within Hub Driver when USB Host library need to be uninstalled
  *
- * @return
- *    - ESP_OK: All devices freed
- *    - ESP_ERR_NOT_FINISHED: Operation not finished: devices waiting children to be freed.
  */
-esp_err_t ext_hub_all_free(void);
+void ext_hub_mark_all_free(void);
 
 /**
  * @brief The External Hub or Ports statuses change completed
