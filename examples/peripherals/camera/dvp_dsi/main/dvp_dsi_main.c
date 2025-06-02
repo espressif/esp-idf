@@ -104,9 +104,9 @@ void app_main(void)
         .v_res = CONFIG_EXAMPLE_CAM_VRES,
         .input_data_color_type = CAM_CTLR_COLOR_RGB565,
         .dma_burst_size = 128,
-        .pin_dont_init = false,
         .pin = &pin_cfg,
         .bk_buffer_dis = 1,
+        .xclk_freq = EXAMPLE_DVP_CAM_XCLK_FREQ_HZ,
     };
 
     ret = esp_cam_new_dvp_ctlr(&dvp_config, &cam_handle);
