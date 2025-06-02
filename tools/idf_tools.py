@@ -2913,8 +2913,10 @@ def action_uninstall(args: Any) -> None:
     for tool in installed_tools:
         tool_versions = os.listdir(os.path.join(tools_path, tool)) if os.path.isdir(os.path.join(tools_path, tool)) else []
         try:
-            unused_versions = ([x for x in tool_versions if x != tools_info[tool].get_recommended_version()])
-        except KeyError:  # When tool that is not supported by tools_info (tools.json) anymore, remove the whole tool file
+            unused_versions = [x for x in tool_versions if x != tools_info[tool].get_preferred_installed_version()]
+        except (
+            KeyError
+        ):  # When tool that is not supported by tools_info (tools.json) anymore, remove the whole tool file
             unused_versions = ['']
         if unused_versions:
             unused_tools_versions[tool] = unused_versions
@@ -2959,7 +2961,7 @@ def action_uninstall(args: Any) -> None:
                 tool_name, tool_version = tool_spec.split('@', 1)
             tool_obj = tools_info_for_platform[tool_name]
             if tool_version is None:
-                tool_version = tool_obj.get_recommended_version()
+                tool_version = tool_obj.get_preferred_installed_version()
             # mypy-checks
             if tool_version is not None:
                 archive_version = tool_obj.versions[tool_version].get_download_for_platform(CURRENT_PLATFORM)
