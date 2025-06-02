@@ -43,10 +43,12 @@ typedef struct esp_cam_ctlr_dvp_config {
         uint32_t bk_buffer_dis  : 1;            /*!< Disable backup buffer */
         uint32_t pin_dont_init : 1;             /*!< Don't initialize DVP pins if users have called "esp_cam_ctlr_dvp_init" before */
         uint32_t pic_format_jpeg : 1;           /*!< Input picture format is JPEG, if set this flag and "input_data_color_type" will be ignored */
+        uint32_t external_xtal : 1;             /*!< Using external XTAL, if set, xclk_io and dvp output clock will be ignored */
     };                                          /*!< Boolean Flags */
 
     uint32_t dma_burst_size;                    /*!< DVP DMA burst transmission block size, set to 0 means to disable the data burst,
                                                      other value must be power of 2, e.g., 4/8/16/32/64/128 */
+    uint32_t xclk_freq;                         /*!< DVP output clock frequency in HZ, only valid if `external_xtal` is set to true */
 
     const esp_cam_ctlr_dvp_pin_config_t *pin;   /*!< DVP pin configuration, this will be ignored by "esp_cam_new_dvp_ctlr" if "pin_dont_init" is set */
 } esp_cam_ctlr_dvp_config_t;
