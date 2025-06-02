@@ -1051,6 +1051,7 @@ BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask,
 
     TCB_t * pxTCB = ( TCB_t * ) pxTask;
     pxTaskSnapshot->pxTCB = pxTCB;
+    pxTaskSnapshot->pxStack      = ( StackType_t * ) pxTCB->pxStack;
     pxTaskSnapshot->pxTopOfStack = ( StackType_t * ) pxTCB->pxTopOfStack;
     pxTaskSnapshot->pxEndOfStack = ( StackType_t * ) pxTCB->pxEndOfStack;
     return pdTRUE;
