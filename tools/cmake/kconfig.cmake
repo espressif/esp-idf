@@ -15,6 +15,24 @@ endfunction()
 #
 function(__kconfig_component_init component_target)
     __component_get_property(component_dir ${component_target} COMPONENT_DIR)
+
+    # Check for misspelled Kconfig files
+    # If found, print a status message, but do not add them to the configuration.
+    file(GLOB all_files "${component_dir}/*")
+    foreach(_file IN LISTS all_files)
+        get_filename_component(_fname ${_file} NAME)
+        string(TOLOWER "${_fname}" _fname_lowercase)
+        if(_fname_lowercase STREQUAL "kconfig" AND NOT _fname STREQUAL "Kconfig")
+            message(STATUS
+                "${_fname} file should be named 'Kconfig' (uppercase K, the rest lowercase)."
+                " Full path to the file: ${_file}")
+        elseif(_fname_lowercase STREQUAL "kconfig.projbuild" AND NOT _fname STREQUAL "Kconfig.projbuild")
+                message(STATUS
+                    "${_fname} file should be named 'Kconfig.projbuild' (uppercase K, the rest lowercase)."
+                    " Full path to the file: ${_file}")
+        endif()
+    endforeach()
+
     file(GLOB kconfig "${component_dir}/Kconfig")
     list(SORT kconfig)
     __component_set_property(${component_target} KCONFIG "${kconfig}")
