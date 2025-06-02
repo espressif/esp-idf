@@ -8,7 +8,9 @@ Introduction
 
 .. list::
 
-    : SOC_MIPI_CSI_SUPPORTED : - MIPI Camera Serial Interface (CSI)
+    : SOC_MIPI_CSI_SUPPORTED : - MIPI Camera Serial Interface (MIPI CSI)
+    : SOC_ISP_DVP_SUPPORTED : - Digital Video Port through ISP module (ISP DVP)
+    : SOC_LCDCAM_CAM_SUPPORTED : - Digital Video Port through LCD_CAM module(LCD_CAM DVP)
 
 The Camera Controller Driver is designed for this hardware peripheral.
 
@@ -31,6 +33,17 @@ Functional Overview
 
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
+
+Install Camera Controller Driver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Camera controller driver can be implemented in one of following ways:
+
+.. list::
+
+    : SOC_MIPI_CSI_SUPPORTED : - :cpp:func:`esp_cam_new_csi_ctlr`
+    : SOC_ISP_DVP_SUPPORTED : - :cpp:func:`esp_cam_new_isp_dvp_ctlr`
+    : SOC_LCDCAM_CAM_SUPPORTED : - :cpp:func:`esp_cam_new_lcd_cam_ctlr`
 
 .. only:: SOC_MIPI_CSI_SUPPORTED
 
@@ -56,6 +69,83 @@ Resource Allocation
         };
         esp_cam_ctlr_handle_t handle = NULL;
         ESP_ERROR_CHECK(esp_cam_new_csi_ctlr(&csi_config, &handle));
+
+.. only:: SOC_ISP_DVP_SUPPORTED
+
+    A camera controller driver can be implemented by the ISP DVP peripheral, which requires the configuration that specified by :cpp:type:`esp_cam_ctlr_isp_dvp_cfg_t`.
+
+    If the configurations in :cpp:type:`esp_cam_ctlr_isp_dvp_cfg_t` is specified, users can call :cpp:func:`esp_cam_new_isp_dvp_ctlr` to allocate and initialize a ISP DVP camera controller handle. This function will return an ISP DVP camera controller handle if it runs correctly. You can take following code as reference.
+
+    Before calling :cpp:func:`esp_cam_new_isp_dvp_ctlr`, you should also call :cpp:func:`esp_isp_new_processor` to create an ISP handle.
+
+    .. code:: c
+
+        isp_proc_handle_t isp_proc = NULL;
+        esp_isp_processor_cfg_t isp_config = {
+            .clk_hz = 120 * 1000 * 1000,
+            .input_data_source = ISP_INPUT_DATA_SOURCE_DVP,
+            .input_data_color_type = ISP_COLOR_RAW8,
+            .output_data_color_type = ISP_COLOR_RGB565,
+            .has_line_start_packet = false,
+            .has_line_end_packet = false,
+            .h_res = MIPI_CSI_DISP_HSIZE,
+            .v_res = MIPI_CSI_DISP_VSIZE,
+        };
+        ESP_ERROR_CHECK(esp_isp_new_processor(&isp_config, &isp_proc));
+
+        esp_cam_ctlr_isp_dvp_cfg_t dvp_ctlr_config = {
+            .data_width = 8,
+            .data_io = {53, 54, 52, 0, 1, 45, 46, 47, -1, -1, -1, -1, -1, -1, -1, -1},
+            .pclk_io = 21,
+            .hsync_io = 5,
+            .vsync_io = 23,
+            .de_io = 22,
+            .io_flags.vsync_invert = 1,
+            .queue_items = 10,
+        };
+        ESP_ERROR_CHECK(esp_cam_new_isp_dvp_ctlr(isp_proc, &dvp_ctlr_config, &cam_handle));
+
+.. only:: SOC_LCDCAM_CAM_SUPPORTED
+
+    A camera controller driver can be implemented by the DVP port of LCD_CAM, which requires the configuration that specified by :cpp:type:`esp_cam_ctlr_dvp_config_t`.
+
+    :cpp:member:`esp_cam_ctlr_dvp_config_t::exexternal_xtal`: set this to use externally generated xclk, otherwise the camera driver will generate it internally.
+
+    If :cpp:type:`esp_cam_ctlr_lcd_cam_cfg_t` is specified, users can call :cpp:func:`esp_cam_new_lcd_cam_ctlr` to allocate and initialize a DVP camera controller handle. This function will return an DVP camera controller handle if it runs correctly. You can take following code as reference.
+
+    .. code:: c
+
+        esp_cam_ctlr_handle_t cam_handle = NULL;
+        esp_cam_ctlr_dvp_pin_config_t pin_cfg = {
+            .data_width = EXAMPLE_DVP_CAM_DATA_WIDTH,
+            .data_io = {
+                EXAMPLE_DVP_CAM_D0_IO,
+                EXAMPLE_DVP_CAM_D1_IO,
+                EXAMPLE_DVP_CAM_D2_IO,
+                EXAMPLE_DVP_CAM_D3_IO,
+                EXAMPLE_DVP_CAM_D4_IO,
+                EXAMPLE_DVP_CAM_D5_IO,
+                EXAMPLE_DVP_CAM_D6_IO,
+                EXAMPLE_DVP_CAM_D7_IO,
+            },
+            .vsync_io = EXAMPLE_DVP_CAM_VSYNC_IO,
+            .de_io = EXAMPLE_DVP_CAM_DE_IO,
+            .pclk_io = EXAMPLE_DVP_CAM_PCLK_IO,
+            .xclk_io = EXAMPLE_DVP_CAM_XCLK_IO, // Set XCLK pin to generate XCLK signal
+        };
+        esp_cam_ctlr_dvp_config_t dvp_config = {
+            .ctlr_id = 0,
+            .clk_src = CAM_CLK_SRC_DEFAULT,
+            .h_res = CONFIG_EXAMPLE_CAM_HRES,
+            .v_res = CONFIG_EXAMPLE_CAM_VRES,
+            .input_data_color_type = CAM_CTLR_COLOR_RGB565,
+            .dma_burst_size = 128,
+            .pin = &pin_cfg,
+            .bk_buffer_dis = 1,
+            .xclk_freq = EXAMPLE_DVP_CAM_XCLK_FREQ_HZ,
+        };
+
+        ESP_ERROR_CHECK(esp_cam_new_dvp_ctlr(&dvp_config, &cam_handle));
 
 Uninstall Camera Controller Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
