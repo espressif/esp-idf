@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -146,7 +146,7 @@
 
 #define SOC_CPU_BREAKPOINTS_NUM             2
 #define SOC_CPU_WATCHPOINTS_NUM             2
-#define SOC_CPU_WATCHPOINT_MAX_REGION_SIZE  64 // bytes
+#define SOC_CPU_WATCHPOINT_MAX_REGION_SIZE  0x40 // bytes
 
 #define SOC_SIMD_PREFERRED_DATA_ALIGNMENT 16 // The preferred data alignment accepted by the SIMD instructions, in bytes
 
@@ -327,7 +327,7 @@
 #define SOC_LP_IO_CLOCK_IS_INDEPENDENT 1
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
-#define SOC_SDM_GROUPS             1
+#define SOC_SDM_GROUPS             (1U)
 #define SOC_SDM_CHANNELS_PER_GROUP 8
 #define SOC_SDM_CLK_SUPPORT_APB    1
 
