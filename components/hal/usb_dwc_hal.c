@@ -185,64 +185,53 @@ void usb_dwc_hal_core_soft_reset(usb_dwc_hal_context_t *hal)
     }
 }
 
-void usb_dwc_hal_set_fifo_bias(usb_dwc_hal_context_t *hal, const usb_hal_fifo_bias_t fifo_bias)
+bool usb_dwc_hal_fifo_config_is_valid(const usb_dwc_hal_context_t *hal, const usb_dwc_hal_fifo_config_t *config)
 {
-    HAL_ASSERT(hal->channels.hdls);
-    const uint16_t fifo_size_lines = hal->constant_config.fifo_size;
-    /*
-    * Recommended FIFO sizes (see 2.1.2.4 for programming guide)
-    *
-    * RXFIFO:   ((LPS/4) * 2) + 2
-    * NPTXFIFO: (LPS/4) * 2
-    * PTXFIFO:  (LPS/4) * 2
-    *
-    * Recommended sizes fit 2 packets of each type. For S2 and S3 we can't fit even one MPS ISOC packet (1023 FS and 1024 HS).
-    * So the calculations below are compromises between the available FIFO size and optimal performance.
-    */
-
-    // Information for maintainers: this calculation is here for backward compatibility
-    // It should be removed when we allow HAL users to configure the FIFO sizes IDF-9042
-    const int otg_dfifo_depth = hal->constant_config.hsphy_type ? 1024 : 256;
-
-    usb_dwc_hal_fifo_config_t fifo_config;
-    switch (fifo_bias) {
-        // Define minimum viable (fits at least 1 MPS) FIFO sizes for non-biased FIFO types
-        // Allocate the remaining size to the biased FIFO type
-        case USB_HAL_FIFO_BIAS_DEFAULT:
-            fifo_config.nptx_fifo_lines = otg_dfifo_depth / 4;
-            fifo_config.ptx_fifo_lines  = otg_dfifo_depth / 8;
-            fifo_config.rx_fifo_lines   = fifo_size_lines - fifo_config.ptx_fifo_lines - fifo_config.nptx_fifo_lines;
-            break;
-        case USB_HAL_FIFO_BIAS_RX:
-            fifo_config.nptx_fifo_lines = otg_dfifo_depth / 16;
-            fifo_config.ptx_fifo_lines  = otg_dfifo_depth / 8;
-            fifo_config.rx_fifo_lines   = fifo_size_lines - fifo_config.ptx_fifo_lines - fifo_config.nptx_fifo_lines;
-            break;
-        case USB_HAL_FIFO_BIAS_PTX:
-            fifo_config.rx_fifo_lines   = otg_dfifo_depth / 8 + 2; // 2 extra lines are allocated for status information. See USB-OTG Programming Guide, chapter 2.1.2.1
-            fifo_config.nptx_fifo_lines = otg_dfifo_depth / 16;
-            fifo_config.ptx_fifo_lines  = fifo_size_lines - fifo_config.nptx_fifo_lines - fifo_config.rx_fifo_lines;
-            break;
-        default:
-            abort();
+    if (!hal || !config) {
+        return false;
     }
+    uint32_t used_lines = config->rx_fifo_lines + config->nptx_fifo_lines + config->ptx_fifo_lines;
+    return (used_lines <= hal->constant_config.fifo_size);
+}
 
-    HAL_ASSERT((fifo_config.rx_fifo_lines + fifo_config.nptx_fifo_lines + fifo_config.ptx_fifo_lines) <= fifo_size_lines);
-    //Check that none of the channels are active
+
+void usb_dwc_hal_set_fifo_config(usb_dwc_hal_context_t *hal, const usb_dwc_hal_fifo_config_t *config)
+{
+    // Check internal HAL state
+    HAL_ASSERT(hal != NULL);
+    HAL_ASSERT(hal->channels.hdls != NULL);
+
+    // Validate provided config
+    HAL_ASSERT(config != NULL);
+
+    // Check if configuration exceeds available FIFO memory
+    HAL_ASSERT(usb_dwc_hal_fifo_config_is_valid(hal, config));
+
+    // Ensure no active channels (must only be called before USB install completes)
     for (int i = 0; i < hal->constant_config.chan_num_total; i++) {
         if (hal->channels.hdls[i] != NULL) {
             HAL_ASSERT(!hal->channels.hdls[i]->flags.active);
         }
     }
-    //Set the new FIFO lengths
-    usb_dwc_ll_grxfsiz_set_fifo_size(hal->dev, fifo_config.rx_fifo_lines);
-    usb_dwc_ll_gnptxfsiz_set_fifo_size(hal->dev, fifo_config.rx_fifo_lines, fifo_config.nptx_fifo_lines);
-    usb_dwc_ll_hptxfsiz_set_ptx_fifo_size(hal->dev, fifo_config.rx_fifo_lines + fifo_config.nptx_fifo_lines, fifo_config.ptx_fifo_lines);
-    //Flush the FIFOs
+
+    // Program FIFO size registers
+    usb_dwc_ll_grxfsiz_set_fifo_size(hal->dev, config->rx_fifo_lines);// Set RX FIFO size (GRXFSIZ)
+    // Set Non-Periodic TX FIFO (GNPTXFSIZ)
+    // Offset = RX FIFO lines
+    usb_dwc_ll_gnptxfsiz_set_fifo_size(hal->dev, config->rx_fifo_lines, config->nptx_fifo_lines);
+    // Set Periodic TX FIFO (HPTXFSIZ)
+    // Offset = RX + NPTX
+    usb_dwc_ll_hptxfsiz_set_ptx_fifo_size(hal->dev,
+                                          config->rx_fifo_lines + config->nptx_fifo_lines,
+                                          config->ptx_fifo_lines);
+
+    // Flush all FIFOs
     usb_dwc_ll_grstctl_flush_nptx_fifo(hal->dev);
     usb_dwc_ll_grstctl_flush_ptx_fifo(hal->dev);
     usb_dwc_ll_grstctl_flush_rx_fifo(hal->dev);
-    hal->fifo_config = fifo_config; // Implicit struct copy
+
+    // Save configuration to HAL context
+    hal->fifo_config = *config;
     hal->flags.fifo_sizes_set = 1;
 }
 
