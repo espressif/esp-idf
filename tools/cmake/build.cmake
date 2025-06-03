@@ -579,10 +579,14 @@ macro(idf_build_process target)
 
     # Call for component manager to download dependencies for all components
     idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
+
+    set(result 0)
     if(idf_component_manager EQUAL 1)
         idf_build_get_property(build_dir BUILD_DIR)
         set(managed_components_list_file ${build_dir}/managed_components_list.temp.cmake)
         set(local_components_list_file ${build_dir}/local_components_list.temp.yml)
+
+        set(__RERUN_EXITCODE 10) # missing kconfig
 
         set(__contents "components:\n")
         idf_build_get_property(build_component_targets BUILD_COMPONENT_TARGETS)
@@ -610,6 +614,7 @@ macro(idf_build_process target)
             "idf_component_manager.prepare_components"
             "--project_dir=${project_dir}"
             "--lock_path=${dependencies_lock_file}"
+            "--sdkconfig_json_file=${build_dir}/config/sdkconfig.json"
             "--interface_version=${component_manager_interface_version}"
             "prepare_dependencies"
             "--local_components_list_file=${local_components_list_file}"
@@ -618,7 +623,11 @@ macro(idf_build_process target)
             ERROR_VARIABLE error)
 
         if(NOT result EQUAL 0)
-            message(FATAL_ERROR "${error}")
+            if(result EQUAL ${__RERUN_EXITCODE})
+                message(WARNING "${error}")
+            else()
+                message(FATAL_ERROR "${error}")
+            endif()
         endif()
 
         include(${managed_components_list_file})
@@ -689,21 +698,30 @@ macro(idf_build_process target)
     # Generate config values in different formats
     idf_build_get_property(sdkconfig SDKCONFIG)
     idf_build_get_property(sdkconfig_defaults SDKCONFIG_DEFAULTS)
-    __kconfig_generate_config("${sdkconfig}" "${sdkconfig_defaults}")
+
+    # add target here since we have all components
+    if(result EQUAL 0)
+        __kconfig_generate_config("${sdkconfig}" "${sdkconfig_defaults}" CREATE_MENUCONFIG_TARGET)
+    else()
+        __kconfig_generate_config("${sdkconfig}" "${sdkconfig_defaults}")
+    endif()
+
     __build_import_configs()
 
-    # All targets built under this scope is with the ESP-IDF build system
-    set(ESP_PLATFORM 1)
-    idf_build_set_property(COMPILE_DEFINITIONS "ESP_PLATFORM" APPEND)
+    if(result EQUAL 0)
+        # All targets built under this scope is with the ESP-IDF build system
+        set(ESP_PLATFORM 1)
+        idf_build_set_property(COMPILE_DEFINITIONS "ESP_PLATFORM" APPEND)
 
-    # Perform component processing (inclusion of project_include.cmake, adding component
-    # subdirectories, creating library targets, linking libraries, etc.)
-    __build_process_project_includes()
+        # Perform component processing (inclusion of project_include.cmake, adding component
+        # subdirectories, creating library targets, linking libraries, etc.)
+        __build_process_project_includes()
 
-    idf_build_get_property(idf_path IDF_PATH)
-    add_subdirectory(${idf_path} ${build_dir}/esp-idf)
+        idf_build_get_property(idf_path IDF_PATH)
+        add_subdirectory(${idf_path} ${build_dir}/esp-idf)
 
-    unset(ESP_PLATFORM)
+        unset(ESP_PLATFORM)
+    endif()
 endmacro()
 
 # idf_build_executable
