@@ -382,6 +382,68 @@
 #define OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE 0
 #endif
 
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL
+ *
+ * Specifies the interval in seconds for a child to check the trigger condition to perform a parent search.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifdef OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL
+#error `OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL` is redefined.
+#endif
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL CONFIG_OPENTHREAD_PARENT_SEARCH_CHECK_INTERVAL_MINS * 60
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL
+ *
+ * Specifies the backoff interval in seconds for a child to not perform a parent search after triggering one. This is
+ * used when device is an MTD child.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifdef OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL
+#error `OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL` is redefined.
+#endif
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL CONFIG_OPENTHREAD_PARENT_SEARCH_BACKOFF_INTERVAL_MINS * 60
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD
+ *
+ * Specifies the RSS threshold used to trigger a parent search.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifdef OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD
+#error `OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD` is redefined.
+#endif
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD CONFIG_OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_RESELECT_TIMEOUT
+ *
+ * Specifies parent reselect timeout duration in seconds used on FTD child devices. When an attach attempt to a
+ * neighboring router selected as a potential new parent fails, the same router cannot be selected again until this
+ * timeout expires.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifdef OPENTHREAD_CONFIG_PARENT_SEARCH_RESELECT_TIMEOUT
+#error `OPENTHREAD_CONFIG_PARENT_SEARCH_RESELECT_TIMEOUT` is redefined.
+#endif
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_RESELECT_TIMEOUT CONFIG_OPENTHREAD_PARENT_SEARCH_RESELECT_TIMEOUT_MINS * 60
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_MARGIN
+ *
+ * Specifies the RSS margin over the current parent RSS for allowing selection of a neighboring router as a potential
+ * new parent to attach to. Used on FTD child devices.
+ */
+#ifdef OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_MARGIN
+#error `OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_MARGIN` is redefined.
+#endif
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_MARGIN CONFIG_OPENTHREAD_PARENT_SEARCH_RSS_MARGIN
+
 /*----The following options set fixed default values but can be overridden by the user header file.----*/
 
 #if CONFIG_OPENTHREAD_BORDER_ROUTER
