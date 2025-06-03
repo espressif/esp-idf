@@ -153,7 +153,7 @@ protected:
 
     void fillEntryInfo(Item &item, nvs_entry_info_t &info);
 
-    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item, uint8_t chunkIdx = Page::CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
+    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item, uint8_t chunkIdx = Page::CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY, size_t* itemIndex = NULL);
 
 protected:
     Partition *mPartition;

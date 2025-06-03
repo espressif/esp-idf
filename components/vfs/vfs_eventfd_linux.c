@@ -5,7 +5,6 @@
  */
 
 #include "esp_vfs_eventfd.h"
-#include <sys/eventfd.h>
 
 esp_err_t esp_vfs_eventfd_register(const esp_vfs_eventfd_config_t *config)
 {

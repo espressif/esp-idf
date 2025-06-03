@@ -250,6 +250,43 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
     return ESP_OK;
 }
 
+// Reads the data entries of the variable length item.
+// The metadata entry is already read in the item object.
+// index is the index of the metadata entry on the page.
+// data is pointer to the buffer where the data will be copied to. It has to be at least
+// item.varLength.dataSize bytes long.
+// The function returns ESP_OK if the data was read successfully, or an error code if there was an error.
+esp_err_t Page::readVariableLengthItemData(const Item& item, const size_t index, void* data)
+{
+    if (mState == PageState::INVALID) {
+        return ESP_ERR_NVS_INVALID_STATE;
+    }
+
+    esp_err_t rc;
+    uint8_t* dst = reinterpret_cast<uint8_t*>(data);
+    size_t left = item.varLength.dataSize;
+    for (size_t i = index + 1; i < index + item.span; ++i) {
+        Item ditem;
+        rc = readEntry(i, ditem);
+        if (rc != ESP_OK) {
+            return rc;
+        }
+        size_t willCopy = ENTRY_SIZE;
+        willCopy = (left < willCopy) ? left : willCopy;
+        memcpy(dst, ditem.rawData, willCopy);
+        left -= willCopy;
+        dst += willCopy;
+    }
+    if (Item::calculateCrc32(reinterpret_cast<uint8_t * >(data), item.varLength.dataSize) != item.varLength.dataCrc32) {
+        rc = eraseEntryAndSpan(index);
+        if (rc != ESP_OK) {
+            return rc;
+        }
+        return ESP_ERR_NVS_NOT_FOUND;
+    }
+    return ESP_OK;
+}
+
 esp_err_t Page::readItem(uint8_t nsIndex, ItemType datatype, const char* key, void* data, size_t dataSize, uint8_t chunkIdx, VerOffset chunkStart)
 {
     size_t index = 0;
@@ -277,28 +314,7 @@ esp_err_t Page::readItem(uint8_t nsIndex, ItemType datatype, const char* key, vo
         return ESP_ERR_NVS_INVALID_LENGTH;
     }
 
-    uint8_t* dst = reinterpret_cast<uint8_t*>(data);
-    size_t left = item.varLength.dataSize;
-    for (size_t i = index + 1; i < index + item.span; ++i) {
-        Item ditem;
-        rc = readEntry(i, ditem);
-        if (rc != ESP_OK) {
-            return rc;
-        }
-        size_t willCopy = ENTRY_SIZE;
-        willCopy = (left < willCopy) ? left : willCopy;
-        memcpy(dst, ditem.rawData, willCopy);
-        left -= willCopy;
-        dst += willCopy;
-    }
-    if (Item::calculateCrc32(reinterpret_cast<uint8_t * >(data), item.varLength.dataSize) != item.varLength.dataCrc32) {
-        rc = eraseEntryAndSpan(index);
-        if (rc != ESP_OK) {
-            return rc;
-        }
-        return ESP_ERR_NVS_NOT_FOUND;
-    }
-    return ESP_OK;
+    return readVariableLengthItemData(item, index, data);
 }
 
 esp_err_t Page::cmpItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize, uint8_t chunkIdx, VerOffset chunkStart)
@@ -330,9 +346,23 @@ esp_err_t Page::cmpItem(uint8_t nsIndex, ItemType datatype, const char* key, con
         return ESP_ERR_NVS_INVALID_LENGTH;
     }
 
+    // We have metadata of the variable length data chunk. It contains the length of the data and the crc32.
+    // As a first step we can calculate the crc32 of the data buffer to be compared with the crc32 of the item in the flash.
+    // If they are not equal, immediately return ESP_ERR_NVS_CONTENT_DIFFERS.
+    // If they are equal, to avoid crc32 collision false positive, we will read the data from the flash entry by entry and compare
+    // it with the respective chunk of input data buffer. The crc32 of the data read from the flash will be calculated on the fly.
+    // At the end, we will compare the crc32 of the data read from the flash with the crc32 of the metadata item in the flash to make sure
+    // that the data in the flash is not corrupted.
+    if (Item::calculateCrc32(reinterpret_cast<const uint8_t * >(data), item.varLength.dataSize) != item.varLength.dataCrc32) {
+        return ESP_ERR_NVS_CONTENT_DIFFERS;
+    }
+
     const uint8_t* dst = reinterpret_cast<const uint8_t*>(data);
     size_t left = item.varLength.dataSize;
-    for (size_t i = index + 1; i < index + item.span; ++i) {
+    uint32_t accumulatedCRC32;
+    size_t initial_index = index + 1;
+
+    for (size_t i = initial_index; i < index + item.span; ++i) {
         Item ditem;
         rc = readEntry(i, ditem);
         if (rc != ESP_OK) {
@@ -343,11 +373,18 @@ esp_err_t Page::cmpItem(uint8_t nsIndex, ItemType datatype, const char* key, con
         if (memcmp(dst, ditem.rawData, willCopy)) {
             return ESP_ERR_NVS_CONTENT_DIFFERS;
         }
+
+        // Calculate the crc32 of the actual ditem.rawData buffer. Do not pass accumulatedCRC32 in the first call.
+        // In the first call, calculateCrc32 will use its default. In the subsequent calls, accumulatedCRC32 is the crc32 of the previous buffer.
+        accumulatedCRC32 = Item::calculateCrc32(ditem.rawData, willCopy, (i == initial_index) ? nullptr : &accumulatedCRC32);
+
         left -= willCopy;
         dst += willCopy;
     }
-    if (Item::calculateCrc32(reinterpret_cast<const uint8_t * >(data), item.varLength.dataSize) != item.varLength.dataCrc32) {
-        return ESP_ERR_NVS_NOT_FOUND;
+    // Check if the CRC32 calculated on the fly matches the variable length data CRC32 indicated in the metadata entry.
+    // If they are not equal, it means the data in the flash is corrupt, we will return ESP_ERR_NVS_CONTENT_DIFFERS.
+    if (accumulatedCRC32 != item.varLength.dataCrc32) {
+        return ESP_ERR_NVS_CONTENT_DIFFERS;
     }
 
     return ESP_OK;
