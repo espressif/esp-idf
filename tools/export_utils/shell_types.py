@@ -323,7 +323,16 @@ SHELL_CLASSES = {
     'zsh': ZshShell,
     'fish': FishShell,
     'sh': UnixShell,
+
+    # KornShell variants
     'ksh': UnixShell,
+    'ksh93': UnixShell,
+    'mksh': UnixShell,
+    'lksh': UnixShell,
+    'pdksh': UnixShell,
+    'oksh': UnixShell,
+    'loksh': UnixShell,
+
     'dash': UnixShell,
     'nu': UnixShell,
     'pwsh.exe': PowerShell,
