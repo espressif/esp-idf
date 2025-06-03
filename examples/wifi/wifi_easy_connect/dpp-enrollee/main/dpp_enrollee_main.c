@@ -175,7 +175,8 @@ void dpp_enrollee_init(void)
 
     /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
      * happened. */
-    if (bits & DPP_CONNECT_FAIL_BIT) {
+    if (bits & DPP_CONNECTED_BIT) {
+    } else if (bits & DPP_CONNECT_FAIL_BIT) {
         ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
                  s_dpp_wifi_config.sta.ssid, s_dpp_wifi_config.sta.password);
     } else if (bits & DPP_AUTH_FAIL_BIT) {

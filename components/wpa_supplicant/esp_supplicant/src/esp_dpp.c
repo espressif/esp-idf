@@ -32,8 +32,11 @@ struct action_rx_param {
 };
 
 static void *s_dpp_api_lock = NULL;
+static void *s_dpp_event_group = NULL;
 
-static atomic_bool s_dpp_listen_in_progress;
+#define DPP_ROC_EVENT_HANDLED  BIT0
+
+static atomic_bool roc_in_progress;
 static struct esp_dpp_context_t s_dpp_ctx;
 static int esp_supp_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t channel);
 static wifi_action_rx_cb_t s_action_rx_cb = esp_supp_rx_action;
@@ -42,6 +45,7 @@ static void tx_status_handler(void *arg, esp_event_base_t event_base,
                               int32_t event_id, void *event_data);
 static void roc_status_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data);
+static void dpp_listen_next_channel(void *data, void *user_ctx);
 static esp_err_t dpp_api_lock(void)
 {
     if (!s_dpp_api_lock) {
@@ -103,9 +107,11 @@ static int listen_stop_handler(void *data, void *user_ctx)
 {
     wifi_roc_req_t req = {0};
 
-    atomic_store(&s_dpp_listen_in_progress, false);
+    wpa_printf(MSG_DEBUG, "DPP: Stoping ROC");
     req.ifx = WIFI_IF_STA;
     req.type = WIFI_ROC_CANCEL;
+    eloop_cancel_timeout(dpp_listen_next_channel, NULL, NULL);
+    s_dpp_ctx.dpp_listen_ongoing = false;
 
     esp_wifi_remain_on_channel(&req);
 
@@ -328,7 +334,7 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
         wpa_printf(MSG_INFO, DPP_EVENT_CONNECTOR "%s",
                    conf->connector);
     }
-    if (atomic_load(&s_dpp_listen_in_progress)) {
+    if (atomic_load(&roc_in_progress)) {
         listen_stop_handler(NULL, NULL);
     }
     /* deinit AUTH since authentication is done */
@@ -589,7 +595,7 @@ static void esp_dpp_rx_action(void *data, void *user_ctx)
                                     (size_t)(public_action->v.pa_vendor_spec.vendor_data -
                                              (u8 *)rx_param->action_frm);
 
-        if (atomic_load(&s_dpp_listen_in_progress)) {
+        if (atomic_load(&roc_in_progress)) {
             listen_stop_handler(NULL, NULL);
         }
 
@@ -615,7 +621,7 @@ static void esp_dpp_rx_action(void *data, void *user_ctx)
     }
 }
 
-void esp_dpp_listen_next_channel(void *data, void *user_ctx)
+static void dpp_listen_next_channel(void *data, void *user_ctx)
 {
     struct dpp_bootstrap_params_t *p = &s_dpp_ctx.bootstrap_params;
     static int counter;
@@ -623,10 +629,14 @@ void esp_dpp_listen_next_channel(void *data, void *user_ctx)
     esp_err_t ret = 0;
     wifi_roc_req_t req = {0};
 
+    if (!s_dpp_ctx.dpp_listen_ongoing) {
+        return;
+    }
     if (p->num_chan <= 0) {
         wpa_printf(MSG_ERROR, "Listen channel not set");
         return;
     }
+
     channel = p->chan_list[counter++ % p->num_chan];
 
     wpa_printf(MSG_DEBUG, "DPP: Starting ROC on channel %d", channel);
@@ -641,6 +651,7 @@ void esp_dpp_listen_next_channel(void *data, void *user_ctx)
         wpa_printf(MSG_ERROR, "Failed ROC. error : 0x%x", ret);
         return;
     }
+    os_event_group_clear_bits(s_dpp_event_group, DPP_ROC_EVENT_HANDLED);
 }
 
 static void esp_dpp_bootstrap_gen(void *data, void *user_ctx)
@@ -666,9 +677,9 @@ static void esp_dpp_bootstrap_gen(void *data, void *user_ctx)
     if (!event) {
         return;
     }
-    event->uri_len = os_strlen(uri);
-    os_memcpy(event->uri, uri, event->uri_len);
-    event->uri[event->uri_len++] = '\0';
+    event->uri_data_len = os_strlen(uri);
+    os_memcpy(event->uri, uri, event->uri_data_len);
+    event->uri[event->uri_data_len++] = '\0';
     esp_event_post(WIFI_EVENT, WIFI_EVENT_DPP_URI_READY, event, len, OS_BLOCK);
     os_free(event);
     os_free(command);
@@ -714,6 +725,10 @@ static int esp_dpp_deinit(void *data, void *user_ctx)
     s_dpp_ctx.dpp_init_done = false;
     s_dpp_ctx.bootstrap_done = false;
     s_dpp_ctx.dpp_event_cb = NULL;
+    if (s_dpp_event_group) {
+        os_event_group_delete(s_dpp_event_group);
+        s_dpp_event_group = NULL;
+    }
 
     return 0;
 }
@@ -808,6 +823,7 @@ static void tx_status_handler(void *arg, esp_event_base_t event_base,
             eloop_register_timeout(ESP_GAS_TIMEOUT_SECS, 0, gas_query_timeout, NULL, auth);
         }
     }
+    atomic_store(&roc_in_progress, true);
 }
 
 static void roc_status_handler(void *arg, esp_event_base_t event_base,
@@ -815,9 +831,13 @@ static void roc_status_handler(void *arg, esp_event_base_t event_base,
 {
     wifi_event_roc_done_t *evt = (wifi_event_roc_done_t *)event_data;
 
-    if (atomic_load(&s_dpp_listen_in_progress) && evt->context == (uint32_t)s_action_rx_cb) {
-        eloop_register_timeout(0, 0, esp_dpp_listen_next_channel, NULL, NULL);
+    if (evt->context == (uint32_t)s_action_rx_cb) {
+        eloop_cancel_timeout(dpp_listen_next_channel, NULL, NULL);
+        eloop_register_timeout(0, 0, dpp_listen_next_channel, NULL, NULL);
     }
+
+    atomic_store(&roc_in_progress, false);
+    os_event_group_set_bits(s_dpp_event_group, DPP_ROC_EVENT_HANDLED);
 }
 
 static char *esp_dpp_parse_chan_list(const char *chan_list)
@@ -977,6 +997,12 @@ fail:
     return ret;
 }
 
+static void dpp_listen_start(void *ctx, void *data)
+{
+    s_dpp_ctx.dpp_listen_ongoing = true;
+    dpp_listen_next_channel(NULL, NULL);
+}
+
 esp_err_t esp_supp_dpp_start_listen(void)
 {
     int ret = dpp_api_lock();
@@ -994,12 +1020,14 @@ esp_err_t esp_supp_dpp_start_listen(void)
         wpa_printf(MSG_ERROR, "DPP: ROC not possible before wifi is started");
         return ESP_ERR_INVALID_STATE;
     }
-    wpa_printf(MSG_DEBUG, "DPP: Starting ROC");
 
     /* cancel previous ROC if ongoing */
     esp_supp_dpp_stop_listen();
-    atomic_store(&s_dpp_listen_in_progress, true);
-    eloop_register_timeout(0, 0, esp_dpp_listen_next_channel, NULL, NULL);
+
+    /* Give ample time to set the bit, timeout is necessary when ROC is not running previously */
+    os_event_group_wait_bits(s_dpp_event_group, DPP_ROC_EVENT_HANDLED, 0, 0, os_task_ms_to_tick(100));
+    wpa_printf(MSG_DEBUG, "DPP: Starting ROC");
+    eloop_register_timeout(0, 0, dpp_listen_start, NULL, NULL);
     return 0;
 }
 
@@ -1045,7 +1073,6 @@ static int esp_dpp_init(void *eloop_data, void *user_ctx)
         goto init_fail;
     }
 
-    atomic_store(&s_dpp_listen_in_progress, false);
     s_dpp_ctx.dpp_event_cb = cb;
 
     if (cb) {
@@ -1061,6 +1088,7 @@ static int esp_dpp_init(void *eloop_data, void *user_ctx)
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
                                &roc_status_handler, NULL);
 
+    s_dpp_event_group = os_event_group_create();
     wpa_printf(MSG_INFO, "DPP: dpp init done");
     s_dpp_ctx.dpp_init_done = true;
 
