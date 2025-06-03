@@ -44,6 +44,9 @@ typedef struct {
 
 typedef struct {
     spi_host_device_t host_id;
+    spi_bus_config_t bus_config;
+    int cs_io_num;
+    uint64_t gpio_reserve;
     _Atomic spi_bus_fsm_t fsm;
     spi_dma_ctx_t   *dma_ctx;
     uint16_t internal_mem_align_size;
@@ -100,7 +103,6 @@ static esp_err_t s_spi_create_sleep_retention_cb(void *arg)
 
 esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *bus_config, const spi_slave_hd_slot_config_t *config)
 {
-    bool spi_chan_claimed;
     bool append_mode = (config->flags & SPI_SLAVE_HD_APPEND_MODE);
     esp_err_t ret = ESP_OK;
 
@@ -115,9 +117,8 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     SPIHD_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM) == 0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_SLAVE_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
 #endif
 
-    spi_chan_claimed = spicommon_periph_claim(host_id, "slave_hd");
-    SPIHD_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
-
+    SPIHD_CHECK(spicommon_periph_claim(host_id, "slave_hd"), "host already in use", ESP_ERR_INVALID_STATE);
+    // spi_slave_hd_slot_t contains atomic variable, memory must be allocated from internal memory
     spi_slave_hd_slot_t *host = heap_caps_calloc(1, sizeof(spi_slave_hd_slot_t), MALLOC_CAP_INTERNAL);
     if (host == NULL) {
         ret = ESP_ERR_NO_MEM;
@@ -128,6 +129,8 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     host->int_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     host->append_mode = append_mode;
     atomic_store(&host->fsm, SPI_BUS_FSM_ENABLED);
+    memcpy(&host->bus_config, bus_config, sizeof(spi_bus_config_t));
+    host->cs_io_num = config->spics_io_num;
 
     ret = spicommon_dma_chan_alloc(host_id, config->dma_chan, &host->dma_ctx);
     if (ret != ESP_OK) {
@@ -169,12 +172,11 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     host->internal_mem_align_size = 4;
 #endif
 
-    ret = spicommon_bus_initialize_io(host_id, bus_config, SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, &host->flags);
+    ret = spicommon_bus_initialize_io(host_id, bus_config, SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, &host->flags, &host->gpio_reserve);
     if (ret != ESP_OK) {
         goto cleanup;
     }
-    gpio_set_direction(config->spics_io_num, GPIO_MODE_INPUT);
-    spicommon_cs_initialize(host_id, config->spics_io_num, 0, !(bus_config->flags & SPICOMMON_BUSFLAG_NATIVE_PINS));
+    spicommon_cs_initialize(host_id, config->spics_io_num, 0, !(bus_config->flags & SPICOMMON_BUSFLAG_NATIVE_PINS), &host->gpio_reserve);
 
     spi_slave_hd_hal_config_t hal_config = {
         .host_id = host_id,
@@ -347,6 +349,8 @@ esp_err_t spi_slave_hd_deinit(spi_host_device_t host_id)
     }
 #endif
 
+    spicommon_bus_free_io_cfg(&host->bus_config, &host->gpio_reserve);
+    spicommon_cs_free_io(host->cs_io_num, &host->gpio_reserve);
     spicommon_periph_free(host_id);
     free(host->dma_ctx->dmadesc_tx);
     free(host->dma_ctx->dmadesc_rx);
