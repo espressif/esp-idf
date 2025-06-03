@@ -226,9 +226,11 @@ static void usb_serial_jtag_return_char(int fd, int c)
 
 static ssize_t usb_serial_jtag_read(int fd, void* data, size_t size)
 {
+    assert(fd == USJ_LOCAL_FD);
     char *data_c = (char *) data;
     size_t received = 0;
     _lock_acquire_recursive(&s_ctx.read_lock);
+
     while (received < size) {
         int c = usb_serial_jtag_read_char(fd);
         if (c == '\r') {
