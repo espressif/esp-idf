@@ -175,8 +175,56 @@ static void test_usb_cdc_read_non_blocking(void)
     TEST_ASSERT(errno != EWOULDBLOCK);
 }
 
+static void test_usb_cdc_read_no_exit_on_newline_reception(void)
+{
+    test_setup(__func__, sizeof(__func__));
+
+    // Send a string with length less than the read requested length
+    const char in_buffer[] = "!(@*#&(!*@&#((SDasdkjhad\nce"; // read should not early return on \n
+    const size_t in_buffer_len = sizeof(in_buffer);
+
+    const size_t out_buffer_len = in_buffer_len - 1; // don't compare the null character at the end of in_buffer string
+    char out_buffer[out_buffer_len] = {};
+
+    ESP_ERROR_CHECK(esp_vfs_dev_cdcacm_register());
+
+    esp_vfs_dev_cdcacm_set_rx_line_endings(ESP_LINE_ENDINGS_LF);
+    esp_vfs_dev_cdcacm_set_tx_line_endings(ESP_LINE_ENDINGS_LF);
+
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+
+    // trigger the test environment to send the test message
+    char ready_msg[] = "ready to receive\n";
+    write(fileno(stdout), ready_msg, sizeof(ready_msg));
+
+    // wait for the string to be sent and buffered
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    char *out_buffer_ptr = out_buffer;
+    size_t bytes_read = 0;
+    do {
+        int nread = read(STDIN_FILENO, out_buffer_ptr, out_buffer_len);
+        if (nread > 0) {
+            out_buffer_ptr += nread;
+            bytes_read += nread;
+        }
+    } while (bytes_read < in_buffer_len);
+
+    // string compare
+    for (size_t i = 0; i < out_buffer_len; i++) {
+        TEST_ASSERT_EQUAL(in_buffer[i], out_buffer[i]);
+    }
+
+    fcntl(STDIN_FILENO, F_SETFL, flags);
+    esp_vfs_dev_cdcacm_set_rx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    esp_vfs_dev_cdcacm_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    vTaskDelay(2);  // wait for tasks to exit
+}
+
 void app_main(void)
 {
     test_usb_cdc_select();
     test_usb_cdc_read_non_blocking();
+    test_usb_cdc_read_no_exit_on_newline_reception();
 }
