@@ -70,5 +70,6 @@ def test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: str
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.esp32p4
 def test_examples_sysview_tracing_heap_log_usj(openocd_dut: 'OpenOCD', idf_path: str, dut: IdfDut) -> None:
     _test_examples_sysview_tracing_heap_log(openocd_dut, idf_path, dut)

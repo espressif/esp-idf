@@ -83,6 +83,7 @@ def test_gcov(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.esp32p4
 @pytest.mark.usb_serial_jtag
 def test_gcov_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_gcov(openocd_dut, dut)
