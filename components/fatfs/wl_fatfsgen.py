@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 from typing import Optional
 
@@ -92,7 +92,7 @@ class WLFATFS:
                  reserved_sectors_cnt: int = FATDefaults.RESERVED_SECTORS_COUNT,
                  fat_tables_cnt: int = FATDefaults.FAT_TABLES_COUNT,
                  sectors_per_cluster: int = FATDefaults.SECTORS_PER_CLUSTER,
-                 explicit_fat_type: int = None,
+                 explicit_fat_type: Optional[int] = None,
                  hidden_sectors: int = FATDefaults.HIDDEN_SECTORS,
                  long_names_enabled: bool = False,
                  num_heads: int = FATDefaults.NUM_HEADS,
@@ -103,7 +103,7 @@ class WLFATFS:
                  use_default_datetime: bool = True,
                  version: int = FATDefaults.VERSION,
                  temp_buff_size: int = FATDefaults.TEMP_BUFFER_SIZE,
-                 device_id: int = None,
+                 device_id: Optional[int] = None,
                  root_entry_count: int = FATDefaults.ROOT_ENTRIES_COUNT,
                  media_type: int = FATDefaults.MEDIA_TYPE,
                  wl_mode: Optional[str] = None) -> None:
@@ -119,13 +119,14 @@ class WLFATFS:
         # determine the number of required sectors (roundup to sector size)
         self.wl_state_sectors = (self.wl_state_size + FATDefaults.WL_SECTOR_SIZE - 1) // FATDefaults.WL_SECTOR_SIZE
 
-        self.boot_sector_start = FATDefaults.WL_SECTOR_SIZE  # shift by one "dummy" sector
-        self.fat_table_start = self.boot_sector_start + reserved_sectors_cnt * FATDefaults.WL_SECTOR_SIZE
-
         wl_sectors = (WLFATFS.WL_DUMMY_SECTORS_COUNT + WLFATFS.WL_CFG_SECTORS_COUNT +
                       self.wl_state_sectors * WLFATFS.WL_STATE_COPY_COUNT)
+
         if self.wl_mode is not None and self.wl_mode == 'safe':
             wl_sectors += WLFATFS.WL_SAFE_MODE_DUMP_SECTORS
+
+        self.boot_sector_start = FATDefaults.WL_SECTOR_SIZE  # shift by one "dummy" sector
+        self.fat_table_start = self.boot_sector_start + reserved_sectors_cnt * FATDefaults.WL_SECTOR_SIZE
 
         self.plain_fat_sectors = self.total_sectors - wl_sectors
         self.plain_fatfs = FATFS(
@@ -200,10 +201,14 @@ class WLFATFS:
         wl_state_crc = Int32ul.build(crc)
         wl_state = wl_state_data + wl_state_crc
         wl_state_sector_padding: bytes = (FATDefaults.WL_SECTOR_SIZE - WLFATFS.WL_STATE_HEADER_SIZE) * FULL_BYTE
-        wl_state_sector: bytes = (
-            wl_state + wl_state_sector_padding + (self.wl_state_sectors - 1) * FATDefaults.WL_SECTOR_SIZE * FULL_BYTE
-        )
-        self.fatfs_binary_image += (WLFATFS.WL_STATE_COPY_COUNT * wl_state_sector)
+        wl_state_sectors: bytes = (wl_state + wl_state_sector_padding + (self.wl_state_sectors - 1) * FATDefaults.WL_SECTOR_SIZE * FULL_BYTE)
+
+        # add 2 extra state-preservation sectors in 'Safe' mode
+        if self.wl_mode is not None and self.wl_mode == 'safe':
+            wl_safe_dummy_sec: bytes = (WLFATFS.WL_SAFE_MODE_DUMP_SECTORS * FATDefaults.WL_SECTOR_SIZE * FULL_BYTE)
+            self.fatfs_binary_image += wl_safe_dummy_sec
+
+        self.fatfs_binary_image += (WLFATFS.WL_STATE_COPY_COUNT * wl_state_sectors)
 
     def wl_write_filesystem(self, output_path: str) -> None:
         if not self._initialized:
