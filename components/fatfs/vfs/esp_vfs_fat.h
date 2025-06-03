@@ -111,6 +111,12 @@ typedef struct {
      * may be different.
      */
     bool use_one_fat;
+    /**
+     * Number of reserved root directory items.
+     * Effective only on FAT12/16, ignored on other file systems (by FatFS lib).
+     * 0 == default (maximum number of 32B entries given by the sector size).
+     */
+    size_t rootdir_entries;
 } esp_vfs_fat_mount_config_t;
 
 #define VFS_FAT_MOUNT_DEFAULT_CONFIG() \
@@ -120,6 +126,7 @@ typedef struct {
         .allocation_unit_size = 0, \
         .disk_status_check_enable = false, \
         .use_one_fat = false, \
+        .rootdir_entries = 0, \
     }
 
 // Compatibility definition
