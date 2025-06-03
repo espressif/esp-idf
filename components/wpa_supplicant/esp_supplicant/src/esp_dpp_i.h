@@ -40,6 +40,7 @@ struct esp_dpp_context_t {
     int id;
     bool dpp_init_done;
     bool bootstrap_done;
+    bool dpp_listen_ongoing;
 };
 
 #ifdef CONFIG_TESTING_OPTIONS

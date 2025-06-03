@@ -1525,7 +1525,7 @@ typedef struct {
 
 /** Argument structure for WIFI_EVENT_DPP_URI_READY event */
 typedef struct {
-    uint32_t uri_len;            /**< URI length */
+    uint32_t uri_data_len;       /**< URI data length including null termination */
     char uri[];                  /**< URI data */
 } wifi_event_dpp_uri_ready_t;
 

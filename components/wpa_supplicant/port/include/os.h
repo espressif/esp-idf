@@ -376,7 +376,7 @@ extern const wifi_osi_funcs_t *wifi_funcs;
 #define os_timer_get_time(void) wifi_funcs->_esp_timer_get_time(void)
 
 #define os_event_group_create(void) wifi_funcs->_event_group_create(void)
-#define os_event_group_delete(void) wifi_funcs->_event_group_delete(void)
+#define os_event_group_delete(a) wifi_funcs->_event_group_delete((a))
 #define os_event_group_wait_bits(a, b, c, d, e) wifi_funcs->_event_group_wait_bits((a), (b), (c), (d), (e))
 #define os_event_group_clear_bits(a, b) wifi_funcs->_event_group_clear_bits((a), (b))
 #define os_event_group_set_bits(a, b) wifi_funcs->_event_group_set_bits((a), (b))
