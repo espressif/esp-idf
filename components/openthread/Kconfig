@@ -320,8 +320,8 @@ menu "OpenThread"
 
         config OPENTHREAD_RX_ON_WHEN_IDLE
             bool "Enable OpenThread radio capability rx on when idle"
-            default y if !ESP_COEX_SW_COEXIST_ENABLE
-            default n if ESP_COEX_SW_COEXIST_ENABLE
+            default y if !ESP_COEX_SW_COEXIST_ENABLE && !ESP_COEX_EXTERNAL_COEXIST_ENABLE
+            default n if ESP_COEX_SW_COEXIST_ENABLE || ESP_COEX_EXTERNAL_COEXIST_ENABLE
             help
                 Select this option to enable OpenThread radio capability rx on when idle.
                 Do not support this feature when SW coexistence is enabled.
@@ -343,7 +343,7 @@ menu "OpenThread"
                 RSS to its current parent every periodically and starts a parent search process if the average
                 RSS is below OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD. This feature is always enabled for FTDs.
         menu "Parent Search Configurations"
-            depends on OPENTHREAD_PARENT_SEARCH_MTD
+            depends on OPENTHREAD_PARENT_SEARCH_MTD || OPENTHREAD_FTD
             config OPENTHREAD_PARENT_SEARCH_CHECK_INTERVAL_MINS
                 int "The interval in minutes for a child to check the trigger condition to perform a parent search"
                 default 9
@@ -353,6 +353,12 @@ menu "OpenThread"
             config OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
                 int "The RSS threshold used to trigger a parent search"
                 default -65
+            config OPENTHREAD_PARENT_SEARCH_RESELECT_TIMEOUT_MINS
+                int "The parent reselect timeout duration in minutes used on FTD child devices"
+                default 90
+            config OPENTHREAD_PARENT_SEARCH_RSS_MARGIN
+                int "The RSS margin over the current parent RSS used on FTD child devices"
+                default 7
         endmenu
 
         menu "Thread Memory Allocation"
