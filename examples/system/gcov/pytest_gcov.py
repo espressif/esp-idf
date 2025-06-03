@@ -80,7 +80,7 @@ def test_gcov(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 
 @pytest.mark.usb_serial_jtag
 @idf_parametrize(
-    'target', ['esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2'], indirect=['target']
+    'target', ['esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4'], indirect=['target']
 )
 def test_gcov_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_gcov(openocd_dut, dut)
