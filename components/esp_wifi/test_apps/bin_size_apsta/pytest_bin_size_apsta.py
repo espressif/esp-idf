@@ -23,8 +23,8 @@ SAVE_BIN_SIZE_TH = {
     },
     'disable_nan': {
         'esp32': 29600,
-        'esp32c5': 32400,
-        'esp32c61': 32400,
+        'esp32c5': 32000,
+        'esp32c61': 32000,
         'esp32s2': 28000,
         # other chips does not support nan
         'default': 0,
