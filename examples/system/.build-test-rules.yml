@@ -9,9 +9,6 @@ examples/system/app_trace_basic:
       temporary: true
       reason: not supported yet #TODO: OCD-1137
   disable_test:
-    - if: IDF_TARGET in ["esp32p4", "esp32c61"]
-      temporary: true
-      reason: lack of runners.
     - if: IDF_TARGET == "esp32c61"
       temporary: true
       reason: lack of runners
@@ -103,9 +100,6 @@ examples/system/gcov:
       temporary: true
       reason: not supported yet #TODO: OCD-1138
   disable_test:
-    - if: IDF_TARGET in ["esp32p4", "esp32c61"]
-      temporary: true
-      reason: lack of runners
     - if: IDF_TARGET == "esp32c61"
       temporary: true
       reason: lack of runners
@@ -271,9 +265,6 @@ examples/system/sysview_tracing:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners
     - if: IDF_TARGET == "esp32h21"
       temporary: true
       reason: not supported yet #TODO: OCD-1082
@@ -288,9 +279,6 @@ examples/system/sysview_tracing_heap_log:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners
     - if: IDF_TARGET == "esp32h21"
       temporary: true
       reason: not supported yet #TODO: OCD-1082
