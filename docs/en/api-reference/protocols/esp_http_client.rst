@@ -126,14 +126,15 @@ Diagnostic information could be helpful to gain insights into a problem. In the 
 
 Expected data types for different HTTP Client events in the event loop are as follows:
 
-    - HTTP_EVENT_ERROR            :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_ON_CONNECTED     :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_HEADERS_SENT     :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_ON_HEADER        :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_ON_DATA          :   ``esp_http_client_on_data_t``
-    - HTTP_EVENT_ON_FINISH        :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_DISCONNECTED     :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_REDIRECT         :   ``esp_http_client_redirect_event_data_t``
+    - HTTP_EVENT_ERROR              : ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_CONNECTED       : ``esp_http_client_handle_t``
+    - HTTP_EVENT_HEADERS_SENT       : ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_HEADER          : ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_HEADERS_COMPLETE: ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_DATA            : ``esp_http_client_on_data_t``
+    - HTTP_EVENT_ON_FINISH          : ``esp_http_client_handle_t``
+    - HTTP_EVENT_DISCONNECTED       : ``esp_http_client_handle_t``
+    - HTTP_EVENT_REDIRECT           : ``esp_http_client_redirect_event_data_t``
 
 The :cpp:type:`esp_http_client_handle_t` received along with the event data will be valid until :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` is not received. This handle has been sent primarily to differentiate between different client connections and must not be used for any other purpose, as it may change based on client connection state.
 
