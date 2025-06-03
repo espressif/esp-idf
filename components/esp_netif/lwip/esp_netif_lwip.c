@@ -1455,7 +1455,14 @@ static void esp_netif_internal_dhcpc_cb(struct netif *netif)
                 ESP_LOGE(TAG, "dhcpc cb: failed to post got ip event (%x)", ret);
             }
 #ifdef CONFIG_LWIP_DHCP_RESTORE_LAST_IP
-            dhcp_ip_addr_store(netif);
+            /*
+             * Store the IP address only for non-Point-to-Point interfaces.
+             * P2P interfaces (like PPP) have dynamic addressing that shouldn't be stored
+             * for later restoration, as they're negotiated on each connection.
+             */
+            if (!_IS_NETIF_ANY_POINT2POINT_TYPE(esp_netif)) {
+                dhcp_ip_addr_store(netif);
+            }
 #endif /* CONFIG_LWIP_DHCP_RESTORE_LAST_IP */
         } else {
             ESP_LOGD(TAG, "if%p ip unchanged", esp_netif);
