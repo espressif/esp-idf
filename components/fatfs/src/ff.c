@@ -6298,6 +6298,14 @@ FRESULT f_mkfs (
 			}
 			if (fsty == FS_FAT12 && n_clst > MAX_FAT12) LEAVE_MKFS(FR_MKFS_ABORTED);	/* Too many clusters for FAT12 */
 
+			/* deploy de-facto rootdir limits given for FAT12 and FAT16 */
+			if (fsty == FS_FAT12) {
+				if (n_root > 224) n_root = 224;
+			}
+			else if (fsty == FS_FAT16) {
+				if (n_root > 512) n_root = 512;
+			}
+
 			/* Ok, it is the valid cluster configuration */
 			break;
 		} while (1);
