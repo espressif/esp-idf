@@ -303,6 +303,8 @@ class FATDefaults:
     VOLUME_LABEL: str = 'Espressif'
     FILE_SYS_TYPE: str = 'FAT'
     ROOT_ENTRIES_COUNT: int = 512  # number of entries in the root directory, recommended 512
+    FAT12_MAX_ROOT_ENTRIES: int = 224  # maximum number of entries in FAT12 root directory
+    FAT16_MAX_ROOT_ENTRIES: int = 512  # maximum number of entries in FAT16 root directory
     MEDIA_TYPE: int = 0xf8
     SIGNATURE_WORD: bytes = b'\x55\xAA'
 

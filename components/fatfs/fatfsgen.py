@@ -57,8 +57,7 @@ class FATFS:
                  root_entry_count: int = FATDefaults.ROOT_ENTRIES_COUNT,
                  explicit_fat_type: Optional[int] = None,
                  media_type: int = FATDefaults.MEDIA_TYPE) -> None:
-        # root directory bytes should be aligned by sector size
-        assert (int(root_entry_count) * BYTES_PER_DIRECTORY_ENTRY) % sector_size == 0
+
         # number of bytes in the root dir must be even multiple of BPB_BytsPerSec
         if (int(root_entry_count) > 128):
             assert ((int(root_entry_count) * BYTES_PER_DIRECTORY_ENTRY) // sector_size) % 2 == 0
@@ -251,10 +250,24 @@ def calculate_min_space(path: List[str],
 def main() -> None:
     args = get_args_for_partition_generator('Create a FAT filesystem and populate it with directory content', wl=False)
 
+    # 0 == default (512 items)
+    root_dir_count = args.root_entry_count
+    if root_dir_count == 0:
+        root_dir_count = FATDefaults.ROOT_ENTRIES_COUNT
+
+    # apply de-facto limits based on FAT type
+    if args.fat_type == 12:
+        if root_dir_count > FATDefaults.FAT12_MAX_ROOT_ENTRIES:
+            root_dir_count = FATDefaults.FAT12_MAX_ROOT_ENTRIES
+
+    if args.fat_type == 16:
+        if root_dir_count > FATDefaults.FAT16_MAX_ROOT_ENTRIES:
+            root_dir_count = FATDefaults.FAT16_MAX_ROOT_ENTRIES
+
     if args.partition_size == -1:
         clusters = calculate_min_space([], args.input_directory, args.sector_size, long_file_names=True, is_root=True)
         fats = get_fat_sectors_count(clusters, args.sector_size)
-        root_dir_sectors = (FATDefaults.ROOT_ENTRIES_COUNT * FATDefaults.ENTRY_SIZE) // args.sector_size
+        root_dir_sectors = max((root_dir_count * FATDefaults.ENTRY_SIZE // args.sector_size), 1)
         args.partition_size = max(FATFS_MIN_ALLOC_UNIT * args.sector_size,
                                   (clusters + fats + get_non_data_sectors_cnt(RESERVED_CLUSTERS_COUNT,
                                                                               fats,
@@ -269,7 +282,7 @@ def main() -> None:
                   sector_size=args.sector_size,
                   long_names_enabled=args.long_name_support,
                   use_default_datetime=args.use_default_datetime,
-                  root_entry_count=args.root_entry_count,
+                  root_entry_count=root_dir_count,
                   explicit_fat_type=args.fat_type)
 
     fatfs.generate(args.input_directory)
