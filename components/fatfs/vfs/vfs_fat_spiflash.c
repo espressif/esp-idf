@@ -25,7 +25,7 @@ static vfs_fat_spiflash_ctx_t *s_ctx[FF_VOLUMES] = {};
 
 extern esp_err_t esp_vfs_set_readonly_flag(const char* base_path); // from vfs/vfs.c to set readonly flag in esp_vfs_t struct externally
 
-static bool s_get_context_id_by_label(const char *label, uint32_t *out_id)
+static bool get_context_id_by_label(const char *label, uint32_t *out_id)
 {
     vfs_fat_spiflash_ctx_t *p_ctx = NULL;
     for (int i = 0; i < FF_VOLUMES; i++) {
@@ -44,7 +44,7 @@ static bool s_get_context_id_by_label(const char *label, uint32_t *out_id)
     return false;
 }
 
-static bool s_get_context_id_by_wl_handle(wl_handle_t wlhandle, uint32_t *out_id)
+static bool get_context_id_by_wl_handle(wl_handle_t wlhandle, uint32_t *out_id)
 {
     vfs_fat_spiflash_ctx_t *p_ctx = NULL;
     for (int i = 0; i < FF_VOLUMES; i++) {
@@ -59,7 +59,7 @@ static bool s_get_context_id_by_wl_handle(wl_handle_t wlhandle, uint32_t *out_id
     return false;
 }
 
-static uint32_t s_get_unused_context_id(void)
+static uint32_t get_unused_context_id(void)
 {
     for (uint32_t i = 0; i < FF_VOLUMES; i++) {
         if (!s_ctx[i]) {
@@ -72,13 +72,13 @@ static uint32_t s_get_unused_context_id(void)
 vfs_fat_spiflash_ctx_t* get_vfs_fat_spiflash_ctx(wl_handle_t wlhandle)
 {
     uint32_t id = FF_VOLUMES;
-    if (s_get_context_id_by_wl_handle(wlhandle, &id)) {
+    if (get_context_id_by_wl_handle(wlhandle, &id)) {
         return s_ctx[id];
     }
     return NULL;
 }
 
-static esp_err_t s_f_mount_rw(FATFS *fs, const char *drv, const esp_vfs_fat_mount_config_t *mount_config, vfs_fat_x_ctx_flags_t *out_flags)
+static esp_err_t f_mount_rw(FATFS *fs, const char *drv, const esp_vfs_fat_mount_config_t *mount_config, vfs_fat_x_ctx_flags_t *out_flags)
 {
     FRESULT fresult = f_mount(fs, drv, 1);
     if (fresult != FR_OK) {
@@ -222,7 +222,7 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
     vfs_fat_x_ctx_flags_t flags = 0;
 
     // Try to mount partition
-    ret = s_f_mount_rw(fs, drv, mount_config, &flags);
+    ret = f_mount_rw(fs, drv, mount_config, &flags);
     if (ret != ESP_OK) {
         goto fail;
     }
@@ -236,7 +236,7 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
     ctx->wlhandle = *wl_handle;
     ctx->flags = flags;
     memcpy(&ctx->mount_config, mount_config, sizeof(esp_vfs_fat_mount_config_t));
-    ctx_id = s_get_unused_context_id();
+    ctx_id = get_unused_context_id();
     //At this stage, we should always get a free context, otherwise program should return already
     assert(ctx_id != FF_VOLUMES);
     s_ctx[ctx_id] = ctx;
@@ -260,7 +260,7 @@ esp_err_t esp_vfs_fat_spiflash_unmount_rw_wl(const char* base_path, wl_handle_t 
     ESP_RETURN_ON_FALSE(pdrv != 0xff, ESP_ERR_INVALID_STATE, TAG, "partition isn't registered, call esp_vfs_fat_spiflash_mount_rw_wl first");
 
     uint32_t id = FF_VOLUMES;
-    ESP_RETURN_ON_FALSE(s_get_context_id_by_wl_handle(wl_handle, &id), ESP_ERR_INVALID_STATE, TAG, "partition isn't registered, call esp_vfs_fat_spiflash_mount_rw_wl first");
+    ESP_RETURN_ON_FALSE(get_context_id_by_wl_handle(wl_handle, &id), ESP_ERR_INVALID_STATE, TAG, "partition isn't registered, call esp_vfs_fat_spiflash_mount_rw_wl first");
     //At this stage, as the wl_handle is valid, we should always get its context id, otherwise program should return already
     assert(id != FF_VOLUMES);
 
@@ -289,7 +289,7 @@ esp_err_t esp_vfs_fat_spiflash_format_cfg_rw_wl(const char* base_path, const cha
     wl_handle_t temp_handle = WL_INVALID_HANDLE;
     uint32_t id = FF_VOLUMES;
 
-    bool found = s_get_context_id_by_label(partition_label, &id);
+    bool found = get_context_id_by_label(partition_label, &id);
     if (!found) {
         esp_vfs_fat_mount_config_t default_mount_config = {
             .max_files = 1,
@@ -302,7 +302,7 @@ esp_err_t esp_vfs_fat_spiflash_format_cfg_rw_wl(const char* base_path, const cha
             mount_cfg = &default_mount_config;
         }
         ESP_RETURN_ON_ERROR(esp_vfs_fat_spiflash_mount_rw_wl(base_path, partition_label, mount_cfg, &temp_handle), TAG, "Failed to mount");
-        found = s_get_context_id_by_label(partition_label, &id);
+        found = get_context_id_by_label(partition_label, &id);
         assert(found);
         if (s_ctx[id]->flags & FORMATTED_DURING_LAST_MOUNT) {
             ESP_LOGD(TAG, "partition was formatted during mounting, skipping another format");
@@ -346,7 +346,7 @@ esp_err_t esp_vfs_fat_spiflash_format_cfg_rw_wl(const char* base_path, const cha
 
 mount_back:
     if (partition_was_mounted) {
-        esp_err_t err = s_f_mount_rw(s_ctx[id]->fs, drv, &s_ctx[id]->mount_config, NULL);
+        esp_err_t err = f_mount_rw(s_ctx[id]->fs, drv, &s_ctx[id]->mount_config, NULL);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "failed to mount back, go to recycle");
             goto recycle;
