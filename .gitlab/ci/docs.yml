@@ -4,10 +4,10 @@
   - "**/*.rst"
   - "CONTRIBUTING.rst"
   - "**/soc_caps.h"
+  - "**/Kconfig*"
 
 .patterns-docs-partial: &patterns-docs-partial
   - "components/**/*.h"
-  - "components/**/Kconfig*"
   - "components/**/CMakeList.txt"
   - "components/**/sdkconfig*"
   - "tools/tools.json"
