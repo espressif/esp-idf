@@ -19,7 +19,12 @@ no_runner_tags:
   - esp32c5,sdcard_spimode
   - esp32c5_2,generic_multi_device
   - esp32c6,jtag
+  - esp32c61,generic
   - esp32c61,jtag
+  - esp32c61,usb_serial_jtag
+  - esp32c61,wifi_ap
+  - esp32c61,wifi_router
+  - esp32c61_2,wifi_two_dut
   - esp32h2,jtag
   - esp32p4,jtag
   - esp32s2,usb_host_flash_disk
