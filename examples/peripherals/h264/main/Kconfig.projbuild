@@ -1,0 +1,96 @@
+menu "H.264 Example Configuration"
+
+    choice H264_ENCODER_TYPE
+        prompt "H.264 Encoder Type"
+        default H264_ENCODER_HARDWARE if IDF_TARGET_ESP32P4
+        default H264_ENCODER_SOFTWARE
+        help
+            Select the H.264 encoder type to use.
+            Hardware encoder is only available on ESP32P4 and provides
+            better performance and lower power consumption.
+            Software encoder is available on all targets but requires
+            more CPU resources.
+
+        config H264_ENCODER_HARDWARE
+            bool "Hardware Encoder (ESP32P4 only)"
+            depends on IDF_TARGET_ESP32P4
+            help
+                Use hardware H.264 encoder.
+                This option is only available on ESP32P4 which has
+                dedicated H.264 hardware encoding capabilities.
+                Provides better performance and lower power consumption
+                compared to software encoding.
+
+        config H264_ENCODER_SOFTWARE
+            bool "Software Encoder"
+            help
+                Use software H.264 encoder using OpenH264 library.
+                Available on all supported targets (ESP32S3, ESP32P4)
+                but requires more CPU resources and power consumption
+                compared to hardware encoding.
+    endchoice
+
+    menu "H.264 Encoder Parameters"
+
+        config H264_ENCODER_WIDTH
+            int "Video Width"
+            range 64 1920
+            default 320
+            help
+                Video frame width in pixels.
+                Must be multiple of 16 for optimal performance.
+                Recommended values: 128, 160, 320, 640, 1280.
+
+        config H264_ENCODER_HEIGHT
+            int "Video Height"
+            range 64 1080
+            default 240
+            help
+                Video frame height in pixels.
+                Must be multiple of 16 for optimal performance.
+                Recommended values: 96, 120, 240, 480, 720.
+
+        config H264_ENCODER_FPS
+            int "Frame Rate (FPS)"
+            range 1 60
+            default 30 if H264_ENCODER_HARDWARE
+            default 15 if H264_ENCODER_SOFTWARE
+            help
+                Video frame rate in frames per second.
+                Hardware encoder can support higher frame rates.
+                Software encoder performance depends on CPU capability.
+
+        config H264_ENCODER_BITRATE
+            int "Bitrate (bps)"
+            range 64000 10000000
+            default 512000 if H264_ENCODER_HARDWARE
+            default 256000 if H264_ENCODER_SOFTWARE
+            help
+                Video bitrate in bits per second.
+                Higher bitrate provides better quality but larger file size.
+                Hardware encoder can handle higher bitrates more efficiently.
+                Typical values: 256K-1M for low quality, 1M-5M for high quality.
+
+        config H264_ENCODER_GOP_SIZE
+            int "GOP Size"
+            range 1 255
+            default 30
+            help
+                Group of Pictures size. Determines the frequency
+                of I-frames in the video stream.
+                Larger GOP size = better compression, higher latency.
+                Smaller GOP size = lower compression, lower latency.
+
+        config H264_ENCODER_QP_VALUE
+            int "Quantization Parameter (QP)"
+            range 10 51
+            default 26 if H264_ENCODER_HARDWARE
+            default 28 if H264_ENCODER_SOFTWARE
+            help
+                Quantization parameter that controls video quality.
+                Lower values = higher quality, larger file size.
+                Higher values = lower quality, smaller file size.
+                Hardware encoder can handle lower QP values more efficiently.
+
+    endmenu
+endmenu

@@ -80,6 +80,13 @@ examples/peripherals/gpio/matrix_keyboard:
   enable:
     - if: IDF_TARGET == "esp32s2"
 
+examples/peripherals/h264:
+  enable:
+    - if: IDF_TARGET in ["esp32p4", "esp32s3"]
+      reason: only supports esp32p4 and esp32s3
+  depends_components:
+    - esp_h264
+
 examples/peripherals/i2c/i2c_basic:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
