@@ -52,6 +52,9 @@ bool esp_ptr_byte_accessible(const void *p)
     intptr_t ip = (intptr_t) p;
     bool r;
     r = (ip >= SOC_BYTE_ACCESSIBLE_LOW && ip < SOC_BYTE_ACCESSIBLE_HIGH);
+#if SOC_MEM_TCM_SUPPORTED
+    r |= esp_ptr_in_tcm(p);
+#endif
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     /* For ESP32 case, RTC fast memory is accessible to PRO cpu only and hence
      * for single core configuration (where it gets added to system heap) following
