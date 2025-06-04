@@ -517,6 +517,12 @@ esp_err_t emac_hal_ptp_set_target_time(emac_hal_context_t *hal, uint32_t seconds
     emac_ll_ts_target_int_trig_enable(hal->ptp_regs);
     return ESP_OK;
 }
+
+esp_err_t emac_hal_ptp_enable_ts4all(emac_hal_context_t *hal, bool enable)
+{
+    emac_ll_ts_all_enable(hal->ptp_regs, enable);
+    return ESP_OK;
+}
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 
 
