@@ -1,14 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "esp_openthread_cli.h"
 
 #include <stdio.h>
 #include <string.h>
-
+#include "sdkconfig.h"
 #include "openthread/cli.h"
 
 #include "esp_check.h"
@@ -16,6 +15,7 @@
 #include "esp_log.h"
 #include "esp_openthread.h"
 #include "esp_openthread_common_macro.h"
+#include "esp_openthread_cli.h"
 #include "esp_openthread_task_queue.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -61,6 +61,40 @@ esp_err_t esp_openthread_cli_input(const char *line)
     ESP_RETURN_ON_FALSE(line_copy != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG, "Failed to copy OpenThread CLI line input");
 
     return esp_openthread_task_queue_post(line_handle_task, line_copy);
+}
+
+static int ot_cli_console_callback(int argc, char **argv)
+{
+    char cli_cmd[OT_CLI_MAX_LINE_LENGTH] = {0};
+    strncpy(cli_cmd, argv[1], sizeof(cli_cmd) - strlen(cli_cmd) - 1);
+    for (int i = 2; i < argc; i++) {
+        strncat(cli_cmd, " ", sizeof(cli_cmd) - strlen(cli_cmd) - 1);
+        strncat(cli_cmd, argv[i], sizeof(cli_cmd) - strlen(cli_cmd) - 1);
+    }
+    s_cli_task = xTaskGetCurrentTaskHandle();
+    if (esp_openthread_cli_input(cli_cmd) == ESP_OK) {
+        xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
+    } else {
+        printf("Openthread task is busy, failed to run command: %s\n", cli_cmd);
+    }
+    s_cli_task = NULL;
+    return 0;
+}
+
+esp_err_t esp_openthread_cli_console_command_register(void)
+{
+    esp_console_cmd_t cmd = {
+        .command = CONFIG_OPENTHREAD_CONSOLE_COMMAND_PREFIX,
+        .help = "Execute `"CONFIG_OPENTHREAD_CONSOLE_COMMAND_PREFIX" ...` to run openthread cli",
+        .hint = NULL,
+        .func = ot_cli_console_callback,
+    };
+    return esp_console_cmd_register(&cmd);
+}
+
+esp_err_t esp_openthread_cli_console_command_unregister(void)
+{
+    return esp_console_cmd_deregister(CONFIG_OPENTHREAD_CONSOLE_COMMAND_PREFIX);
 }
 
 static void ot_cli_loop(void *context)
