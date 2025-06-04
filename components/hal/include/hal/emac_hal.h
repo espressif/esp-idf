@@ -416,6 +416,16 @@ esp_err_t emac_hal_ptp_get_sys_time(emac_hal_context_t *hal, uint32_t *seconds, 
 esp_err_t emac_hal_ptp_set_target_time(emac_hal_context_t *hal, uint32_t seconds, uint32_t nano_seconds);
 
 /**
+ * @brief Enable rx/tx timestamps for all Ethernet frames
+ *
+ * @param hal EMAC HAL context infostructure
+ * @param enable timestamping for non-PTP Ethernet frames
+ * @return
+ *          - ESP_OK on success
+ */
+esp_err_t emac_hal_ptp_enable_ts4all(emac_hal_context_t *hal, bool enable);
+
+/**
  * @brief Get timestamp from receive descriptor
  *
  * @param hal EMAC HAL context infostructure
