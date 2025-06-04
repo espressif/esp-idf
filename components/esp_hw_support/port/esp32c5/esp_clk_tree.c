@@ -71,7 +71,7 @@ uint32_t *freq_value)
 }
 
 #define ENUM2ARRAY(clk_src) (clk_src - SOC_MOD_CLK_PLL_F12M)
-static __NOINIT_ATTR int16_t s_pll_src_cg_ref_cnt[9] = { 0 };
+static int16_t s_pll_src_cg_ref_cnt[9] = { 0 };
 static bool esp_clk_tree_initialized = false;
 
 void esp_clk_tree_initialize(void)
@@ -82,8 +82,6 @@ void esp_clk_tree_initialize(void)
             || (rst_reason == RESET_REASON_CPU0_JTAG) || (rst_reason == RESET_REASON_CPU0_LOCKUP)) {
         esp_clk_tree_initialized = true;
         return;
-    } else {
-        bzero(s_pll_src_cg_ref_cnt, sizeof(s_pll_src_cg_ref_cnt));
     }
 
     soc_cpu_clk_src_t current_cpu_clk_src = clk_ll_cpu_get_src();
@@ -146,7 +144,10 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
         if (!enable) {
             s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)]--;
         }
-        assert(s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)] >= 0);
+        if (s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)] < 0) {
+            ESP_EARLY_LOGW(TAG, "soc_module_clk_t %d disabled multiple times!!", clk_src);
+            s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)] = 0;
+        }
     }
     return ESP_OK;
 }
