@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -129,6 +129,9 @@ esp_flash_t *esp_flash_default_chip = NULL;
     .cs_setup = 1,\
 }
 #define TSUS_VAL_SUSPEND CONFIG_SPI_FLASH_SUSPEND_TSUS_VAL_US
+#if SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+#define TRS_VAL_SUSPEND CONFIG_SPI_FLASH_SUSPEND_TRS_VAL_US
+#endif // SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
 #endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
 #endif // Other target
 
@@ -396,6 +399,16 @@ esp_err_t esp_flash_init_default_chip(void)
         return ESP_ERR_INVALID_ARG;
     }
     cfg.tsus_val = TSUS_VAL_SUSPEND;
+
+    #if SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+    if (TRS_VAL_SUSPEND > 400 || TRS_VAL_SUSPEND < 20) {
+        // Assume that the TRS value cannot larger than 400 (because the performance might be really bad)
+        // And value cannot smaller than 20 (never see that small tsus value, might be wrong)
+        return ESP_ERR_INVALID_ARG;
+    }
+    cfg.trs_val = TRS_VAL_SUSPEND;
+    #endif // SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+
     #endif // CONFIG_SPI_FLASH_AUTO_SUSPEND
 
     #if CONFIG_SPI_FLASH_AUTO_CHECK_SUSPEND_STATUS

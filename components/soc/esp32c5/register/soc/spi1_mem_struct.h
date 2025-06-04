@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -338,11 +338,16 @@ typedef union {
          */
         uint32_t clk_mode:2;
         /** cs_hold_dly_res : R/W; bitpos: [11:2]; default: 1023;
-         *  After RES/DP/HPM command is sent, SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 512)
-         *  SPI_CLK cycles.
+         *  After RES/DP/HPM/PES command is sent, SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] *
+         *  128) SPI_CLK cycles.
          */
         uint32_t cs_hold_dly_res:10;
-        uint32_t reserved_12:20;
+        /** cs_hold_dly_per : R/W; bitpos: [21:12]; default: 1023;
+         *  After PER command is sent, SPI1 waits (SPI_MEM_CS_HOLD_DLY_PER[9:0] * 128) SPI_CLK
+         *  cycles.
+         */
+        uint32_t cs_hold_dly_per:10;
+        uint32_t reserved_22:10;
     };
     uint32_t val;
 } spi_mem_ctrl1_reg_t;
@@ -367,16 +372,16 @@ typedef union {
 typedef union {
     struct {
         /** clkcnt_l : R/W; bitpos: [7:0]; default: 3;
-         *  In the master mode it must be equal to spi_mem_clkcnt_N.
+         *  In the master mode it must be equal to SPI_MEM_CLKCNT_N.
          */
         uint32_t clkcnt_l:8;
         /** clkcnt_h : R/W; bitpos: [15:8]; default: 1;
-         *  In the master mode it must be floor((spi_mem_clkcnt_N+1)/2-1).
+         *  In the master mode it must be floor((SPI_MEM_CLKCNT_N+1)/2-1).
          */
         uint32_t clkcnt_h:8;
         /** clkcnt_n : R/W; bitpos: [23:16]; default: 3;
          *  In the master mode it is the divider of spi_mem_clk. So spi_mem_clk frequency is
-         *  system/(spi_mem_clkcnt_N+1)
+         *  system/(SPI_MEM_CLKCNT_N+1)
          */
         uint32_t clkcnt_n:8;
         uint32_t reserved_24:7;
@@ -1222,7 +1227,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 36774400;
+        /** date : R/W; bitpos: [27:0]; default: 37786176;
          *  Version control register
          */
         uint32_t date:28;
