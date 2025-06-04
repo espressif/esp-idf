@@ -735,6 +735,7 @@ components/xtensa/esp32/include/xtensa/config/specreg.h
 components/xtensa/esp32/include/xtensa/config/system.h
 components/xtensa/esp32/include/xtensa/config/tie-asm.h
 components/xtensa/esp32/include/xtensa/config/tie.h
+components/xtensa/esp32/include/xtensa/config/xt_specreg.h
 components/xtensa/esp32s2/include/xtensa/config/core-isa.h
 components/xtensa/esp32s2/include/xtensa/config/core-matmap.h
 components/xtensa/esp32s2/include/xtensa/config/core.h
@@ -744,6 +745,7 @@ components/xtensa/esp32s2/include/xtensa/config/specreg.h
 components/xtensa/esp32s2/include/xtensa/config/system.h
 components/xtensa/esp32s2/include/xtensa/config/tie-asm.h
 components/xtensa/esp32s2/include/xtensa/config/tie.h
+components/xtensa/esp32s2/include/xtensa/config/xt_specreg.h
 components/xtensa/esp32s3/include/xtensa/config/core-isa.h
 components/xtensa/esp32s3/include/xtensa/config/core-matmap.h
 components/xtensa/esp32s3/include/xtensa/config/core.h
@@ -753,6 +755,7 @@ components/xtensa/esp32s3/include/xtensa/config/specreg.h
 components/xtensa/esp32s3/include/xtensa/config/system.h
 components/xtensa/esp32s3/include/xtensa/config/tie-asm.h
 components/xtensa/esp32s3/include/xtensa/config/tie.h
+components/xtensa/esp32s3/include/xtensa/config/xt_specreg.h
 components/xtensa/include/eri.h
 components/xtensa/include/esp_private/panic_reason.h
 components/xtensa/include/xt_trax.h
@@ -769,6 +772,7 @@ components/xtensa/include/xtensa/specreg.h
 components/xtensa/include/xtensa/traxreg.h
 components/xtensa/include/xtensa/xdm-regs.h
 components/xtensa/include/xtensa/xt_perf_consts.h
+components/xtensa/include/xtensa/xt_specreg.h
 components/xtensa/include/xtensa/xtensa-libdb-macros.h
 components/xtensa/include/xtensa/xtensa-versions.h
 components/xtensa/include/xtensa/xtensa-xer.h

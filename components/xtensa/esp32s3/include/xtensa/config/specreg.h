@@ -28,6 +28,8 @@
 #ifndef XTENSA_SPECREG_H
 #define XTENSA_SPECREG_H
 
+#warning "xtensa/config/specreg.h is deprecated, please use xtensa/config/xt_specreg.h instead"
+
 /*  Include these special register bitfield definitions, for historical reasons:  */
 #include <xtensa/corebits.h>
 
