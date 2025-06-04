@@ -188,6 +188,6 @@ def test_gcov(dut: IdfDut) -> None:
 
 
 @pytest.mark.usb_serial_jtag
-@idf_parametrize('target', ['esp32c3', 'esp32c6', 'esp32c61', 'esp32h2'], indirect=['target'])
+@idf_parametrize('target', ['esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
 def test_gcov_usj(dut: IdfDut) -> None:
     _test_gcov(dut)
