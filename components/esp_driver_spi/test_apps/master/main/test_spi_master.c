@@ -150,7 +150,7 @@ TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
             int real_freq_khz;
             spi_device_get_actual_freq(handle, &real_freq_khz);
             // (byte_len * 8 / real_freq_hz) * 1000 000, (unit)us
-            int trans_cost_us_predict = (float)TEST_CLK_BYTE_LEN * 8 * 1000 / real_freq_khz;
+            int trans_cost_us_predict = (float)TEST_CLK_BYTE_LEN * 8 * 1000 / real_freq_khz + IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING;
 
             // transaction and measure time
             start = esp_timer_get_time();

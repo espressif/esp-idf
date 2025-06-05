@@ -115,6 +115,7 @@ We have two bits to control the interrupt:
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/spi_master_internal.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "driver/spi_master.h"
 #include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
@@ -139,6 +140,7 @@ We have two bits to control the interrupt:
 #define SPI_MASTER_MALLOC_CAPS    (MALLOC_CAP_DEFAULT)
 #endif
 
+#define SPI_PERIPH_SRC_FREQ_MAX     (80*1000*1000)    //peripheral hardware limitation for clock source into peripheral
 typedef struct spi_device_t spi_device_t;
 
 /// struct to hold private transaction data (like tx and rx buffer for DMA).
@@ -383,6 +385,25 @@ int spi_get_freq_limit(bool gpio_is_used, int input_delay_ns)
 #endif
 }
 
+#if SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
+static uint32_t s_spi_find_clock_src_pre_div(uint32_t src_freq, uint32_t target_freq)
+{
+    // pre division must be even and at least 2
+    uint32_t min_div = ((src_freq / SPI_PERIPH_SRC_FREQ_MAX) + 1) & (~0x01UL);
+    min_div = min_div < 2 ? 2 : min_div;
+
+    uint32_t total_div = src_freq / target_freq;
+    // Loop the `div` to find a divisible value of `total_div`
+    for (uint32_t pre_div = min_div; pre_div <= total_div; pre_div += 2) {
+        if ((total_div % pre_div) || (total_div / pre_div) > SPI_LL_PERIPH_CLK_DIV_MAX) {
+            continue;
+        }
+        return pre_div;
+    }
+    return min_div;
+}
+#endif //SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
+
 /*
  Add a device. This allocates a CS line for the device, allocates memory for the device structure and hooks
  up the CS pin to whatever is specified.
@@ -404,36 +425,21 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     spi_host_t *host = bus_driver_ctx[host_id];
     const spi_bus_attr_t* bus_attr = host->bus_attr;
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(dev_config->clock_speed_hz > 0, "invalid sclk speed", ESP_ERR_INVALID_ARG);
 #if SOC_SPI_SUPPORT_CLK_RC_FAST
     if (dev_config->clock_source == SPI_CLK_SRC_RC_FAST) {
         SPI_CHECK(periph_rtc_dig_clk8m_enable(), "the selected clock not available", ESP_ERR_INVALID_STATE);
     }
 #endif
-    spi_clock_source_t clk_src = SPI_CLK_SRC_DEFAULT;
     uint32_t clock_source_hz = 0;
     uint32_t clock_source_div = 1;
-    if (dev_config->clock_source) {
-        clk_src = dev_config->clock_source;
-    }
+    spi_clock_source_t clk_src = dev_config->clock_source ? dev_config->clock_source : SPI_CLK_SRC_DEFAULT;
     esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_source_hz);
 #if SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
-    SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= MIN(clock_source_hz / 2, (80 * 1000000))), "invalid sclk speed", ESP_ERR_INVALID_ARG);
-
-    if (clock_source_hz / 2 > (80 * 1000000)) {    //clock_source_hz beyond peripheral HW limitation, calc pre-divider
-        hal_utils_clk_info_t clk_cfg = {
-            .src_freq_hz = clock_source_hz,
-            .exp_freq_hz = dev_config->clock_speed_hz * 2,  //we have (hs_clk = 2*mst_clk), calc hs_clk first
-            .round_opt = HAL_DIV_ROUND,
-            .min_integ = 1,
-            .max_integ = SPI_LL_CLK_SRC_PRE_DIV_MAX / 2,
-        };
-        hal_utils_calc_clk_div_integer(&clk_cfg, &clock_source_div);
-    }
-    clock_source_div *= 2; //convert to mst_clk function divider
-    clock_source_hz /= clock_source_div;    //actual freq enter to SPI peripheral
-#else
-    SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= clock_source_hz), "invalid sclk speed", ESP_ERR_INVALID_ARG);
+    clock_source_div = s_spi_find_clock_src_pre_div(clock_source_hz, dev_config->clock_speed_hz);
+    clock_source_hz /= clock_source_div; //actual freq enter to SPI peripheral
 #endif
+    SPI_CHECK(dev_config->clock_speed_hz <= clock_source_hz, "invalid sclk speed", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
     //The hardware looks like it would support this, but actually setting cs_ena_pretrans when transferring in full
     //duplex mode does absolutely nothing on the ESP32.
