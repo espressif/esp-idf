@@ -26,9 +26,9 @@ def test_usj_vfs_select(dut: Dut, test_message: list) -> None:
 
 @pytest.mark.usb_serial_jtag
 @pytest.mark.parametrize(
-    'port, config',
+    'port, flash_port, config',
     [
-        pytest.param('/dev/ttyACM1', 'release'),
+        pytest.param('/dev/serial_ports/ttyACM-esp32', '/dev/serial_ports/ttyUSB-esp32', 'release'),
     ],
     indirect=True,
 )
@@ -36,7 +36,25 @@ def test_usj_vfs_select(dut: Dut, test_message: list) -> None:
 @idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
 def test_usj_vfs_read(dut: Dut, test_message: list) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"read with usj driver (non-blocking)"')
+    dut.write('"read does not return on new line character"')
+    dut.expect_exact('ready to receive', timeout=2)
+    dut.write(test_message)
+    dut.expect(r'\d{1} Tests 0 Failures 0 Ignored', timeout=10)
+
+
+@pytest.mark.usb_serial_jtag
+@pytest.mark.parametrize(
+    'port, flash_port, config',
+    [
+        pytest.param('/dev/serial_ports/ttyACM-esp32', '/dev/serial_ports/ttyUSB-esp32', 'release'),
+    ],
+    indirect=True,
+)
+@pytest.mark.parametrize('test_message', ['testdata'])
+@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
+def test_usj_vfs_read(dut: Dut, test_message: list) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"blocking read returns with available data"')
     dut.expect_exact('ready to receive', timeout=2)
     dut.write(test_message)
     dut.expect(r'\d{1} Tests 0 Failures 0 Ignored', timeout=10)

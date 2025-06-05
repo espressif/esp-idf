@@ -129,6 +129,9 @@ static void test_usb_cdc_select(void)
     vTaskDelay(10); // wait for the string to send
 }
 
+/**
+ * @brief Test that the non blocking read is compliant with POSIX standards
+ */
 static void test_usb_cdc_read_non_blocking(void)
 {
     test_setup(__func__, sizeof(__func__));
@@ -175,6 +178,44 @@ static void test_usb_cdc_read_non_blocking(void)
     TEST_ASSERT(errno != EWOULDBLOCK);
 }
 
+/**
+ * @brief Test that the blocking read will return with the available
+ * data even if the size is less than the requested size.
+ */
+static void test_usb_cdc_read_blocking(void)
+{
+    test_setup(__func__, sizeof(__func__));
+
+    const size_t out_buffer_len = 32;
+    char out_buffer[out_buffer_len] = {};
+
+    ESP_ERROR_CHECK(esp_vfs_dev_cdcacm_register());
+
+    esp_vfs_dev_cdcacm_set_rx_line_endings(ESP_LINE_ENDINGS_LF);
+    esp_vfs_dev_cdcacm_set_tx_line_endings(ESP_LINE_ENDINGS_LF);
+
+    /* make sure blocking mode is enabled */
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags & (~O_NONBLOCK));
+
+    // trigger the test environment to send the test message
+    char ready_msg[] = "ready to receive\n";
+    write(fileno(stdout), ready_msg, sizeof(ready_msg));
+
+    const int nread = read(STDIN_FILENO, out_buffer, out_buffer_len);
+    TEST_ASSERT(nread > 0);
+    TEST_ASSERT(nread < out_buffer_len);
+
+    fcntl(STDIN_FILENO, F_SETFL, flags);
+    esp_vfs_dev_cdcacm_set_rx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    esp_vfs_dev_cdcacm_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    vTaskDelay(2);  // wait for tasks to exit
+}
+
+/**
+ * @brief Test that the read function does not prematurely return
+ * on reception of new line character.
+ */
 static void test_usb_cdc_read_no_exit_on_newline_reception(void)
 {
     test_setup(__func__, sizeof(__func__));
@@ -222,9 +263,13 @@ static void test_usb_cdc_read_no_exit_on_newline_reception(void)
     vTaskDelay(2);  // wait for tasks to exit
 }
 
+/* Always make sure that the function calling sequence in the main
+ * function matches the expected order in the pytest function.
+ */
 void app_main(void)
 {
     test_usb_cdc_select();
     test_usb_cdc_read_non_blocking();
+    test_usb_cdc_read_blocking();
     test_usb_cdc_read_no_exit_on_newline_reception();
 }
