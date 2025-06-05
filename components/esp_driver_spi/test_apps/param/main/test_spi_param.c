@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <sys/param.h>
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "soc/spi_periph.h"
@@ -20,10 +21,6 @@
 
 #if (TEST_SPI_PERIPH_NUM >= 2)
 //These will only be enabled on chips with 2 or more SPI peripherals
-
-#ifndef MIN
-#define MIN(a, b)((a) > (b)? (b): (a))
-#endif
 
 /********************************************************************************
  *      Test By Internal Connections
@@ -108,10 +105,6 @@ static void local_test_start(spi_device_handle_t *spi, int freq, const spitest_p
     if (pset->master_limit != 0 && freq > pset->master_limit) {
         devcfg.flags |= SPI_DEVICE_NO_DUMMY;
     }
-
-#if CONFIG_IDF_TARGET_ESP32P4      //TODO: IDF-8313, update P4 defaulte clock source
-    devcfg.clock_source = SPI_CLK_SRC_SPLL;
-#endif
 
     //slave config
     slvcfg.mode = pset->mode;
@@ -660,20 +653,10 @@ TEST_CASE("Slave receive correct data", "[spi]")
     }
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
-//These tests are ESP32 only due to lack of runners
+#else // #if (TEST_SPI_PERIPH_NUM >= 2)
+
 /********************************************************************************
- *      Test By Master & Slave (2 boards)
- *
- *  Wiring:
- * | Master | Slave |
- * | ------ | ----- |
- * | 12     | 19    |
- * | 13     | 23    |
- * | 14     | 18    |
- * | 15     | 5     |
- * | GND    | GND   |
- *
+ *      Test By Master & Slave (2 boards) using burger runner
  ********************************************************************************/
 static void test_master_init(void **context);
 static void test_master_deinit(void *context);
@@ -732,7 +715,7 @@ static void test_master_start(spi_device_handle_t *spi, int freq, const spitest_
         buspset.quadhd_io_num = UNCONNECTED_PIN;
     }
     spi_device_interface_config_t devpset = SPI_DEVICE_TEST_DEFAULT_CONFIG();
-    devpset.spics_io_num = SPI2_IOMUX_PIN_NUM_CS;
+    devpset.spics_io_num = PIN_NUM_CS;
     devpset.mode = pset->mode;
     const int cs_pretrans_max = 15;
     if (pset->dup == HALF_DUPLEX_MISO) {
@@ -876,7 +859,7 @@ static void timing_slave_start(int speed, const spitest_param_set_t *pset, spite
         slv_buscfg.quadhd_io_num = UNCONNECTED_PIN;
     }
     spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
-    slvcfg.spics_io_num = SPI2_IOMUX_PIN_NUM_CS;
+    slvcfg.spics_io_num = PIN_NUM_CS;
     slvcfg.mode = pset->mode;
     //Enable pull-ups on SPI lines so we don't detect rogue pulses when no master is connected.
     slave_pull_up(&slv_buscfg, slvcfg.spics_io_num);
@@ -1261,9 +1244,6 @@ spitest_param_set_t mode_conf[] = {
     },
 };
 TEST_SPI_MASTER_SLAVE(MODE, mode_conf, "")
-
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
-
 #endif // #if (TEST_SPI_PERIPH_NUM >= 2)
 
 #define TEST_STEP_LEN         96
@@ -1273,9 +1253,7 @@ static int s_spi_bus_freq[] = {
     IDF_TARGET_MAX_SPI_CLK_FREQ / 7,
     IDF_TARGET_MAX_SPI_CLK_FREQ / 4,
     IDF_TARGET_MAX_SPI_CLK_FREQ / 2,
-#if !CONFIG_IDF_TARGET_ESP32P4      //TODO: IDF-8313, update P4 defaulte clock source
     IDF_TARGET_MAX_SPI_CLK_FREQ,
-#endif
 };
 
 //------------------------------------------- Full Duplex with DMA Freq test --------------------------------------
