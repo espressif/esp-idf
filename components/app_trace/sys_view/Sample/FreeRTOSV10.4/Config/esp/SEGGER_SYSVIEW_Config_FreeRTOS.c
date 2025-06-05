@@ -65,6 +65,7 @@ Revision: $Rev: 7745 $
 #include "esp_app_trace.h"
 #include "esp_app_trace_util.h"
 #include "esp_intr_alloc.h"
+#include "esp_clk_tree.h"
 #include "esp_cpu.h"
 #include "soc/soc.h"
 #include "soc/interrupts.h"
@@ -100,9 +101,6 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 
 // Timer group timer divisor
 #define SYSVIEW_TIMER_DIV       2
-
-// Frequency of the timestamp, using APB as GPTimer source clock
-#define SYSVIEW_TIMESTAMP_FREQ  (esp_clk_apb_freq() / SYSVIEW_TIMER_DIV)
 
 // GPTimer handle
 gptimer_handle_t s_sv_gptimer;
@@ -173,30 +171,38 @@ static void _cbSendSystemDesc(void) {
 *
 **********************************************************************
 */
-static void SEGGER_SYSVIEW_TS_Init(void)
+static int SEGGER_SYSVIEW_TS_Init(void)
 {
     /* We only need to initialize something if we use Timer Group.
      * esp_timer and ccount can be used as is.
      */
 #if TS_USE_TIMERGROUP
+    // get clock source frequency
+    uint32_t counter_src_hz = 0;
+    ESP_ERROR_CHECK(esp_clk_tree_src_get_freq_hz(
+        (soc_module_clk_t)GPTIMER_CLK_SRC_DEFAULT,
+        ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &counter_src_hz));
     gptimer_config_t config = {
         .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
-        .resolution_hz = SYSVIEW_TIMESTAMP_FREQ,
+        .resolution_hz = counter_src_hz / SYSVIEW_TIMER_DIV,
     };
     // pick any free GPTimer instance
     ESP_ERROR_CHECK(gptimer_new_timer(&config, &s_sv_gptimer));
     /* Start counting */
     gptimer_enable(s_sv_gptimer);
     gptimer_start(s_sv_gptimer);
+    return config.resolution_hz;
+#else
+    return SYSVIEW_TIMESTAMP_FREQ;
 #endif // TS_USE_TIMERGROUP
 }
 
 void SEGGER_SYSVIEW_Conf(void) {
     U32 disable_evts = 0;
 
-    SEGGER_SYSVIEW_TS_Init();
-    SEGGER_SYSVIEW_Init(SYSVIEW_TIMESTAMP_FREQ, SYSVIEW_CPU_FREQ,
+    int timestamp_freq = SEGGER_SYSVIEW_TS_Init();
+    SEGGER_SYSVIEW_Init(timestamp_freq, SYSVIEW_CPU_FREQ,
                         &SYSVIEW_X_OS_TraceAPI, _cbSendSystemDesc);
     SEGGER_SYSVIEW_SetRAMBase(SYSVIEW_RAM_BASE);
 
