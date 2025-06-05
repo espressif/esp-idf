@@ -74,7 +74,9 @@ TEST_CASE("Task WDT task timeout after peripheral powerdown lightsleep", "[task_
 
     esp_light_sleep_start();
 
+#if !SOC_PM_TOP_PD_NOT_ALLOWED
     TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+#endif
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
     esp_sleep_set_sleep_context(NULL);
 
