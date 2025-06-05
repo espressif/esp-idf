@@ -408,6 +408,8 @@ static esp_err_t cb_headers_complete(http_parser *parser)
 
     parser_data->status = PARSING_BODY;
     ra->remaining_len = r->content_len;
+    struct httpd_data *hd = (struct httpd_data *) r->handle;
+    hd->http_server_state = HTTP_SERVER_EVENT_ON_HEADER;
     esp_http_server_dispatch_event(HTTP_SERVER_EVENT_ON_HEADER, &(ra->sd->fd), sizeof(int));
     return ESP_OK;
 }
@@ -1208,4 +1210,45 @@ esp_err_t httpd_req_get_cookie_val(httpd_req_t *req, const char *cookie_name, ch
     free(cookie_str);
     return ret;
 
+}
+
+/* Get the length of the raw request data received from the client.
+ */
+size_t httpd_get_raw_req_data_len(httpd_req_t *req)
+{
+    if (req == NULL) {
+        return 0;
+    }
+    struct httpd_req_aux *ra = req->aux;
+    return ra->scratch_cur_size;
+}
+
+/* Get the raw request data, which contains the raw HTTP request headers and
+ * URI related information. Internally, the httpd_parse.c file uses a scratch buffer
+ * to store the original HTTP request data exactly as received from the client.
+ * This function returns the contents of this scratch buffer.
+ *
+ * NOTE - This function returns different data for different http server states.
+ * 1. HTTP_SERVER_EVENT_ON_CONNECTED - Returns the data containing information related to URI and headers.
+ * 2. HTTP_SERVER_EVENT_ON_HEADER - Returns the data containing information related to only headers.
+ * 3. HTTP_SERVER_EVENT_ON_DATA - Returns the data containing information related to only headers.
+ * 4. HTTP_SERVER_EVENT_SENT_DATA - Returns the data containing information related to only headers.
+ * 5. HTTP_SERVER_EVENT_DISCONNECTED - Returns the data containing information related to only headers.
+ * 6. HTTP_SERVER_EVENT_STOP - Returns the data containing information related to only headers.
+ */
+esp_err_t httpd_get_raw_req_data(httpd_req_t *req, char *buf, size_t buf_len)
+{
+    if (req == NULL || buf == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (buf_len == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (req->aux == NULL) {
+        ESP_LOGW(TAG, "Request auxiliary data is NULL for URI: [%s]", req->uri ? req->uri : "(null)");
+        return ESP_ERR_INVALID_ARG;
+    }
+    struct httpd_req_aux *ra = req->aux;
+    memcpy(buf, ra->scratch, buf_len);
+    return ESP_OK;
 }

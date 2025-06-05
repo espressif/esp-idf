@@ -1813,6 +1813,44 @@ esp_err_t httpd_ws_send_data_async(httpd_handle_t handle, int socket, httpd_ws_f
  * @}
  */
 
+/**
+ * @brief Get the length of the raw request data received from the client.
+ *
+ * @param[in] req     Current request
+ * @return
+ *  - 0      : If req is NULL
+ *  - size_t : The length of the buffer containing raw HTTP request data
+ */
+size_t httpd_get_raw_req_data_len(httpd_req_t *req);
+
+/**
+ * @brief Get the raw HTTP request data received from the client.
+ *
+ *        NOTE - This function returns different data for different http server states.
+ * 1. HTTP_SERVER_EVENT_ON_CONNECTED - Returns the data containing information related to URI and headers.
+ * 2. HTTP_SERVER_EVENT_ON_HEADER - Returns the data containing information related to only headers.
+ * 3. HTTP_SERVER_EVENT_ON_DATA - Returns the data containing information related to only headers.
+ * 4. HTTP_SERVER_EVENT_SENT_DATA - Returns the data containing information related to only headers.
+ * 5. HTTP_SERVER_EVENT_DISCONNECTED - Returns the data containing information related to only headers.
+ * 6. HTTP_SERVER_EVENT_STOP - Returns the data containing information related to only headers.
+ *
+ * @param[in] req     Current request
+ * @param[out] buf    Buffer to store the raw request data
+ * @param[in] buf_len The length of the buffer.
+ * @return
+ *  - ESP_OK                : On successful copy of raw request data
+ *  - ESP_ERR_INVALID_ARG   : If req or buf is NULL, or buf_len is 0
+ */
+esp_err_t httpd_get_raw_req_data(httpd_req_t *req, char *buf, size_t buf_len);
+
+/**
+ * @brief Get the HTTPD server state
+ *
+ * @param[in] handle    Handle to server returned by httpd_start
+ * @return HTTPD server state
+ */
+esp_http_server_event_id_t httpd_get_server_state(httpd_handle_t handle);
+
 #ifdef __cplusplus
 }
 #endif

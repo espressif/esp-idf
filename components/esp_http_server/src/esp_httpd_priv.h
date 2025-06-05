@@ -127,6 +127,7 @@ struct httpd_data {
     struct httpd_req hd_req;                /*!< The current HTTPD request */
     struct httpd_req_aux hd_req_aux;        /*!< Additional data about the HTTPD request kept unexposed */
     uint64_t lru_counter;                   /*!< LRU counter */
+    esp_http_server_event_id_t http_server_state;              /*!< HTTPD server state */
 
     /* Array of registered error handler functions */
     httpd_err_handler_func_t *err_handler_fns;
