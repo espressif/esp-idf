@@ -999,6 +999,7 @@ esp_err_t esp_wifi_get_promiscuous_ctrl_filter(wifi_promiscuous_filter_t *filter
   *    - ESP_ERR_WIFI_MODE: invalid mode
   *    - ESP_ERR_WIFI_PASSWORD: invalid password
   *    - ESP_ERR_WIFI_NVS: WiFi internal NVS error
+  *    - ESP_ERR_WIFI_STATE: WiFi still connecting when invoke esp_wifi_set_config
   *    - others: refer to the error code in esp_err.h
   */
 esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf);
