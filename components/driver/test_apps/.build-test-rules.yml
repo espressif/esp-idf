@@ -6,14 +6,6 @@ components/driver/test_apps/dac_test_apps/legacy_dac_driver:
   depends_components:
     - esp_adc
 
-components/driver/test_apps/i2s_test_apps/legacy_i2s_adc_dac:
-  disable:
-    - if: SOC_I2S_SUPPORTS_ADC_DAC != 1
-
-components/driver/test_apps/i2s_test_apps/legacy_i2s_driver:
-  disable:
-    - if: SOC_I2S_SUPPORTED != 1
-
 components/driver/test_apps/legacy_adc_driver:
   disable:
     - if: SOC_ADC_SUPPORTED != 1

@@ -462,12 +462,14 @@ LCD
 
 .. only:: SOC_I2S_SUPPORTED
 
+    .. _deprecate_i2s_legacy_driver:
+
     I2S 驱动
     -----------------------
 
     旧版 I2S 驱动在支持 ESP32-C3 和 ESP32-S3 新功能时暴露了很多缺点，为解决这些缺点，I2S 驱动已更新（请参考:doc:`I2S Driver <../../../api-reference/peripherals/i2s>`）。用户可以通过引用不同 I2S 模式对应的头文件来使用新版驱动的 API，如 :component_file:`esp_driver_i2s/include/driver/i2s_std.h`， :component_file:`esp_driver_i2s/include/driver/i2s_pdm.h` 以及 :component_file:`esp_driver_i2s/include/driver/i2s_tdm.h`。
 
-    为保证前向兼容，旧版驱动的 API 仍然在 :component_file:`driver/deprecated/driver/i2s.h` 中可用。但使用旧版 API 会触发编译警告，该警告可通过配置 Kconfig 选项 :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN` 来关闭。
+    为保证前向兼容，旧版驱动的 API 仍然在 ``driver/i2s.h`` 可用。但使用旧版 API 会触发编译警告，该警告可通过配置 Kconfig 选项 ``CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`` 来关闭。
 
     以下是更新后的 I2S 文件概况。
 

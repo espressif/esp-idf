@@ -496,3 +496,6 @@
         -
             re_variables: ['driver/timer.h']
             hint_variables: ['legacy timer group', 'driver/gptimer.h', 'esp_driver_gptimer']
+        -
+            re_variables: ['driver/i2s.h']
+            hint_variables: ['legacy I2S', 'driver/i2s_std.h, driver/i2s_pdm.h, driver/i2s_tdm.h', 'esp_driver_i2s']
