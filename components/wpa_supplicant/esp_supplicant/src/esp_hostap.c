@@ -130,6 +130,21 @@ void *hostap_init(void)
         wpa_printf(MSG_DEBUG, "%s : pmf optional", __func__);
     }
 
+    if (auth_conf->ieee80211w != NO_MGMT_FRAME_PROTECTION) {
+        switch (pairwise_cipher) {
+        case WIFI_CIPHER_TYPE_CCMP:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
+            break;
+        case WIFI_CIPHER_TYPE_GCMP:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_BIP_GMAC_128;
+            break;
+        case WIFI_CIPHER_TYPE_GCMP256:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_BIP_GMAC_256;
+            break;
+        default:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
+        }
+    }
     if (authmode == WIFI_AUTH_WPA2_WPA3_PSK) {
         auth_conf->wpa_key_mgmt |= WPA_KEY_MGMT_SAE;
     }
