@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,7 +55,10 @@ typedef void (*esp_supp_dpp_event_cb_t)(esp_supp_dpp_event_t evt, void *data);
   *
   *        Starts DPP Supplicant and initializes related Data Structures.
   *
-  * @param evt_cb Callback function to receive DPP related events
+  * @note The `evt_cb` parameter is deprecated and will be ignored in future IDF versions.
+  *       Directly register for WiFi events to get DPP events.
+  *
+  * @param evt_cb (Deprecated) Callback function to receive DPP related events
   *
   * return
   *    - ESP_OK: Success
