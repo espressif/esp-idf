@@ -39,11 +39,11 @@ extern "C" {
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
 #define SPI_LL_GET_HW(ID) (((ID)==1) ? &GPSPI2 : NULL)
 
-#define SPI_LL_DMA_MAX_BIT_LEN    (1 << 18)    //reg len: 18 bits
+#define SPI_LL_DMA_MAX_BIT_LEN    SPI_MS_DATA_BITLEN
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
 #define SPI_LL_MOSI_FREE_LEVEL    1            //Default level after bus initialized
 #define SPI_LL_SUPPORT_CLK_SRC_PRE_DIV      1  //clock source have divider before peripheral
-#define SPI_LL_CLK_SRC_PRE_DIV_MAX          256//div1(8bit)
+#define SPI_LL_PERIPH_CLK_DIV_MAX   ((SPI_CLKCNT_N + 1) * (SPI_CLKDIV_PRE + 1)) //peripheral internal maxmum clock divider
 
 /**
  * The data structure holding calculated clock configuration. Since the
