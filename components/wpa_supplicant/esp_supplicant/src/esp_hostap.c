@@ -158,7 +158,7 @@ void *hostap_init(void)
             auth_conf->group_mgmt_cipher = WPA_CIPHER_BIP_GMAC_256;
             break;
         default:
-            wpa_printf(MSG_DEBUG, "Invalid pairwise cipher (0x%x)", pairwise_cipher);
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
         }
     }
     if (authmode == WIFI_AUTH_WPA2_WPA3_PSK) {
