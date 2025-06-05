@@ -16,6 +16,7 @@ import signal
 import sys
 import tempfile
 import traceback
+from urllib.parse import urlparse
 
 import espytrace.apptrace as apptrace
 import espytrace.sysview as sysview
@@ -24,27 +25,27 @@ import espytrace.sysview as sysview
 def is_segger_multicore_format(file_path):
     """Check if the file has offsets in header"""
     try:
-        with open(file_path, 'rb') as f:
-            header = f.read(200)
-            header_str = header.decode('utf-8', errors='ignore')
-
-            if (
-                '; Version     SEGGER SystemViewer' in header_str
-                and '; Author      Espressif Inc' in header_str
-                and '; Offset Core0' in header_str
-                and '; Offset Core1' in header_str
-            ):
-                logging.info('Detected SEGGER multicore format in file:', file_path)
-                return True
+        url = urlparse(file_path)
+        if len(url.scheme) == 0 or url.scheme == 'file':
+            with open(url.path, 'rb') as f:
+                header = f.read(200)
+                header_str = header.decode('utf-8', errors='ignore')
+                if (
+                    '; Version     SEGGER SystemViewer' in header_str
+                    and '; Author      Espressif Inc' in header_str
+                    and '; Offset Core0' in header_str
+                    and '; Offset Core1' in header_str
+                ):
+                    return True
     except Exception as e:
-        logging.error('Error checking file format:', e)
+        logging.error('Error checking SEGGER multicore file format:', e)
     return False
 
 
 def split_segger_multicore_file(file_path):
     """Split SEGGER multicore file into separate core files."""
     try:
-        with open(file_path, 'rb') as f:
+        with open(urlparse(file_path).path, 'rb') as f:
             # Read first few lines to get offsets for each core
             header = f.read(200)
             header_str = header.decode('utf-8', errors='ignore')
@@ -165,15 +166,15 @@ def main():
 
     logging.basicConfig(level=verbosity_levels[args.verbose], format='[%(levelname)s] %(message)s')
 
-    segger_files = []
+    temp_files = []
     # Only check for SEGGER format if there's exactly one trace source
     if len(args.trace_sources) == 1:
         trace_source = args.trace_sources[0]
         if is_segger_multicore_format(trace_source):
             core0_file, core1_file = split_segger_multicore_file(trace_source)
             if core0_file and core1_file:
-                segger_files.extend([core0_file, core1_file])
-                args.trace_sources = segger_files
+                temp_files.extend([core0_file, core1_file])
+                args.trace_sources = temp_files
             else:
                 sys.exit(2)
 
@@ -257,8 +258,8 @@ def main():
             proc.print_report()
         proc.cleanup()
 
-        if segger_files:
-            for file in segger_files:
+        if len(temp_files) > 0:
+            for file in temp_files:
                 try:
                     os.remove(file)
                 except Exception as e:
