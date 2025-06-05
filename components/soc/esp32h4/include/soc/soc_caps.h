@@ -54,7 +54,7 @@
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1       // TODO: [ESP32H4] IDF-12268
 #define SOC_EFUSE_SUPPORTED             1       // TODO: [ESP32H4] IDF-12268
 // #define SOC_RTC_MEM_SUPPORTED           1    // TODO: [ESP32H4] IDF-12313
-// #define SOC_I2S_SUPPORTED               1    // TODO: [ESP32H4] IDF-12385
+#define SOC_I2S_SUPPORTED               1
 // #define SOC_RMT_SUPPORTED               1    // TODO: [ESP32H4] IDF-12402
 // #define SOC_SDM_SUPPORTED               1    // TODO: [ESP32H4] IDF-12348
 // #define SOC_GPSPI_SUPPORTED             1    // TODO: [ESP32H4] IDF-12362 IDF-12364 IDF-12366
@@ -268,15 +268,26 @@
 #define SOC_I2C_SUPPORT_SLEEP_RETENTION (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-// #define SOC_I2S_NUM                 (1U)
-// #define SOC_I2S_HW_VERSION_2        (1)
-// #define SOC_I2S_SUPPORTS_XTAL       (1)
-// #define SOC_I2S_SUPPORTS_PLL_F160M  (1)
-// #define SOC_I2S_SUPPORTS_PCM        (1)
-// #define SOC_I2S_SUPPORTS_PDM        (1)
-// #define SOC_I2S_SUPPORTS_PDM_TX     (1)
-// #define SOC_I2S_PDM_MAX_TX_LINES    (2)
-// #define SOC_I2S_SUPPORTS_TDM        (1)
+#define SOC_I2S_NUM                 (1U)
+#define SOC_I2S_HW_VERSION_2        (1)
+// #define SOC_I2S_SUPPORTS_ETM        (1)
+#define SOC_I2S_SUPPORTS_ETM_SYNC   (1)
+#define SOC_I2S_SUPPORTS_XTAL       (1)
+#define SOC_I2S_SUPPORTS_PLL_F96M   (1)
+#define SOC_I2S_SUPPORTS_PLL_F64M   (1)
+#define SOC_I2S_SUPPORTS_PCM        (1)
+#define SOC_I2S_SUPPORTS_PDM        (1)
+#define SOC_I2S_SUPPORTS_PDM_TX     (1)     // Support to output raw PDM format data
+#define SOC_I2S_SUPPORTS_PCM2PDM    (1)     // Support to write PCM format but output PDM format data with the help of PCM to PDM filter
+#define SOC_I2S_SUPPORTS_PDM_RX     (1)     // Support to input raw PDM format data
+#define SOC_I2S_SUPPORTS_TX_SYNC_CNT (1)
+#define SOC_I2S_PDM_MAX_TX_LINES    (2)
+#define SOC_I2S_PDM_MAX_RX_LINES    (1U)
+#define SOC_I2S_SUPPORTS_TDM        (1)
+#define SOC_I2S_TDM_FULL_DATA_WIDTH (1)  /*!< No limitation to data bit width when using multiple slots */
+
+// TODO: [ESP32H4] IDF-12386
+// #define SOC_I2S_SUPPORT_SLEEP_RETENTION       1  /*!< The sleep retention feature can help back up I2S registers before sleep */
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 // #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)

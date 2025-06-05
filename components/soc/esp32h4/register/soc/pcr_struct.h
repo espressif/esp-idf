@@ -728,8 +728,8 @@ typedef union {
         /** i2s_tx_clkm_sel : R/W; bitpos: [21:20]; default: 0;
          *  Configures the clock source of I2S TX.
          *  0 (default): XTAL_CLK
-         *  1: PLL_F240M_CLK
-         *  2: PLL_F160M_CLK
+         *  1: PLL_F96M_CLK
+         *  2: PLL_F64M_CLK
          *  3: I2S_MCLK_in
          */
         uint32_t i2s_tx_clkm_sel:2;
@@ -785,8 +785,8 @@ typedef union {
         /** i2s_rx_clkm_sel : R/W; bitpos: [21:20]; default: 0;
          *  Configures the clock source of I2S RX.
          *  0 (default): XTAL_CLK
-         *  1: PLL_F240M_CLK
-         *  2: PLL_F160M_CLK
+         *  1: PLL_F96M_CLK
+         *  2: PLL_F64M_CLK
          *  3: I2S_MCLK_in
          */
         uint32_t i2s_rx_clkm_sel:2;
