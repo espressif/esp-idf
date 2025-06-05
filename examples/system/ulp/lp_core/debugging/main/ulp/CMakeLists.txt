@@ -27,5 +27,5 @@ ulp_add_build_binary_targets(${ULP_APP_NAME})
 # Set custom compile flags
 # By default ULP sources are compiled with -Os which is set in toolchain file in IDF build system.
 # These options will appear on command line after default ones effectively overriding them.
-# Therefore '-Os' will be overridden with '-O0' for this example for convenient debugging.
-target_compile_options(${ULP_APP_NAME} PRIVATE -O0 -fsanitize=undefined -fno-sanitize=shift-base)
+# Therefore '-Os' can be overridden here with '-O0' for this example for convenient debugging.
+target_compile_options(${ULP_APP_NAME} PRIVATE -fsanitize=undefined -fno-sanitize=shift-base)
