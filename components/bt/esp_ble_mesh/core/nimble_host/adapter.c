@@ -1223,7 +1223,7 @@ int bt_le_ext_adv_start(const uint8_t inst_id,
         interval >>= 1;
         interval += (bt_mesh_get_rand() % (interval + 1));
 
-        BT_INFO("%u->%u", param->interval_min, interval);
+        BT_DBG("%u->%u", param->interval_min, interval);
     }
 #endif
 

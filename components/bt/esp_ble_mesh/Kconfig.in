@@ -33,7 +33,6 @@ if BLE_MESH
     menuconfig BLE_MESH_USE_BLE_50
         bool "Support using BLE 5.0 APIs for BLE Mesh"
         depends on BLE_MESH_EXPERIMENTAL
-        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         select BT_NIMBLE_50_FEATURE_SUPPORT if BT_NIMBLE_ENABLED
         select BT_NIMBLE_EXT_ADV if BT_NIMBLE_ENABLED
         select BT_BLE_50_FEATURES_SUPPORTED if BT_BLUEDROID_ENABLED
