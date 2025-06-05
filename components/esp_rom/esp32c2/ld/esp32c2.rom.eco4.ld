@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,7 +57,7 @@ lmac_stop_hw_txq = 0x40001df8;
 esf_buf_setup = 0x40001e0c;
 hal_crypto_set_key_entry = 0x40001e18;
 pm_start = 0x40001e34;
-pm_stop = 0x40001e38;
+/*pm_stop = 0x40001e38;*/
 hal_set_sta_tbtt = 0x40001e4c;
 //pm_update_next_tbtt = 0x40001e50;
 pm_set_sleep_type = 0x40001e54;
