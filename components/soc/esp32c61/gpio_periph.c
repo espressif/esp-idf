@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,11 @@ const uint32_t GPIO_HOLD_MASK[] = {
     BIT(22),         //GPIO22
     BIT(23),         //GPIO23
     BIT(24),         //GPIO24
+    BIT(25),         //GPIO25
+    BIT(26),         //GPIO26
+    BIT(27),         //GPIO27
+    BIT(28),         //GPIO28
+    BIT(29),         //GPIO29
 };
 
 _Static_assert(sizeof(GPIO_HOLD_MASK) == SOC_GPIO_PIN_COUNT * sizeof(uint32_t), "Invalid size of GPIO_HOLD_MASK");

@@ -9,7 +9,7 @@
 
 .. gpio-summary
 
-{IDF_TARGET_NAME} 芯片具有 25 个物理 GPIO 管脚（GPIO0 ~ GPIO24）。每个管脚都可用作一个通用 IO，或连接一个内部的外设 信号。通过 GPIO 交换矩阵和 IO MUX，可配置外设模块的输入信号来源于任何的 IO 管脚，并且外设模块的输 出信号也可连接到任意 IO 管脚。这些模块共同组成了芯片的 IO 控制。更多详细信息，请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *IO MUX 和 GPIO 矩阵（GPIO、IO_MUX）* [`PDF <{IDF_TARGET_TRM_CN_URL}#iomuxgpio>`__]。
+{IDF_TARGET_NAME} 芯片具有 30 个物理 GPIO 管脚（GPIO0 ~ GPIO29）。每个管脚都可用作一个通用 IO，或连接一个内部的外设 信号。通过 GPIO 交换矩阵和 IO MUX，可配置外设模块的输入信号来源于任何的 IO 管脚，并且外设模块的输 出信号也可连接到任意 IO 管脚。这些模块共同组成了芯片的 IO 控制。更多详细信息，请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *IO MUX 和 GPIO 矩阵（GPIO、IO_MUX）* [`PDF <{IDF_TARGET_TRM_CN_URL}#iomuxgpio>`__]。
 
 下表提供了各管脚的详细信息，部分 GPIO 具有特殊的使用限制，具体可参考表中的注释列。
 
@@ -143,6 +143,31 @@
       -
 
     * - GPIO24
+      -
+      -
+      -
+
+    * - GPIO25
+      -
+      -
+      -
+
+    * - GPIO26
+      -
+      -
+      -
+
+    * - GPIO27
+      -
+      -
+      -
+
+    * - GPIO28
+      -
+      -
+      -
+
+    * - GPIO29
       -
       -
       -
