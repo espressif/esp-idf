@@ -718,6 +718,7 @@ static int spi_out_ts_sync_init(void)
 gpio_init_failed:
 #if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
     esp_timer_delete(ts_sync_timer);
+    ts_sync_timer = NULL;
 timer_init_failed:
 #endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
     return -1;
@@ -733,6 +734,7 @@ static void spi_out_ts_sync_deinit(void)
     // Deinitialize timestamp synchronizer
     esp_timer_stop(ts_sync_timer);
     esp_timer_delete(ts_sync_timer);
+    ts_sync_timer = NULL;
 #endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 
     // Deinitialize sync IO
@@ -959,6 +961,7 @@ void ble_log_spi_out_deinit(void)
 #if SPI_OUT_FLUSH_TIMER_ENABLED
     esp_timer_stop(flush_timer);
     esp_timer_delete(flush_timer);
+    flush_timer = NULL;
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
     // Drain all queued transactions
