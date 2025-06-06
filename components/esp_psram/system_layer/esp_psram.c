@@ -471,17 +471,17 @@ bool IRAM_ATTR esp_psram_check_ptr_addr(const void *p)
         return true;
     }
 
-#if CONFIG_SPIRAM_RODATA && !CONFIG_IDF_TARGET_ESP32S2
-    if (mmu_psram_check_ptr_addr_in_rodata_alignment_gap(p)) {
+#if CONFIG_SPIRAM_RODATA
+    if (mmu_psram_check_ptr_addr_in_xip_psram_rodata_region(p)) {
         return true;
     }
-#endif /* CONFIG_SPIRAM_RODATA && !CONFIG_IDF_TARGET_ESP32S2 */
+#endif
 
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && SOC_MMU_DI_VADDR_SHARED
-    if (mmu_psram_check_ptr_addr_in_instruction_alignment_gap(p)) {
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+    if (mmu_psram_check_ptr_addr_in_xip_psram_instruction_region(p)) {
         return true;
     }
-#endif /* CONFIG_SPIRAM_FETCH_INSTRUCTIONS && SOC_MMU_DI_VADDR_SHARED */
+#endif
 
     return false;
 }
