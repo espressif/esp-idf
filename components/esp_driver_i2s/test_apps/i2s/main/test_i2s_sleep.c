@@ -42,7 +42,7 @@ static void s_test_i2s_enter_light_sleep(int sec, bool allow_power_down)
     printf("Woke up from light sleep\n");
 
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_I2S_SUPPORT_SLEEP_RETENTION
+#if SOC_I2S_SUPPORT_SLEEP_RETENTION && !SOC_PM_TOP_PD_NOT_ALLOWED
     // check if the power domain also is powered down
     TEST_ASSERT_EQUAL(allow_power_down ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif

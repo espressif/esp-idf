@@ -2441,6 +2441,11 @@ FORCE_INLINE_ATTR bool top_domain_pd_allowed(void) {
 #if SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN
     top_pd_allowed &= (s_config.domain[ESP_PD_DOMAIN_XTAL].pd_option != ESP_PD_OPTION_ON);
 #endif
+#if SOC_PM_TOP_PD_NOT_ALLOWED
+    // TODO: PM-436, Need to use efuse_hal_chip_revision() to determine whether
+    // the TOP domain power-down is allowed
+    top_pd_allowed = false;
+#endif
 
     return top_pd_allowed;
 }
