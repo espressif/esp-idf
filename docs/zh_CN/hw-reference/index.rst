@@ -7,7 +7,7 @@ H/W 硬件参考
 .. toctree::
     :maxdepth: 1
 
-    :not esp32p4: 技术参考手册 (PDF) <{IDF_TARGET_TRM_CN_URL}>
+    技术参考手册 (PDF) <{IDF_TARGET_TRM_CN_URL}>
     :esp32:   技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>
     :esp32s2: 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-s2_datasheet_cn.pdf>
     :esp32s3: 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-s3_datasheet_cn.pdf>
@@ -16,6 +16,7 @@ H/W 硬件参考
     :esp32c6: 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-c6_datasheet_cn.pdf>
     :esp32h2: 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-h2_datasheet_cn.pdf>
     :esp32c5: 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-c5_datasheet_cn.pdf>
+    :esp32p4: 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-p4_datasheet_cn.pdf>
     :esp32:   硬件设计指南 <https://docs.espressif.com/projects/esp-hardware-design-guidelines/zh_CN/latest/esp32/index.html>
     :esp32s2: 硬件设计指南 <https://docs.espressif.com/projects/esp-hardware-design-guidelines/zh_CN/latest/esp32s2/index.html>
     :esp32s3: 硬件设计指南 <https://docs.espressif.com/projects/esp-hardware-design-guidelines/zh_CN/latest/esp32s3/index.html>

@@ -7,7 +7,7 @@ Hardware Reference
 .. toctree::
     :maxdepth: 1
 
-    :not esp32p4: Technical Reference Manual (PDF) <{IDF_TARGET_TRM_EN_URL}>
+    Technical Reference Manual (PDF) <{IDF_TARGET_TRM_EN_URL}>
     :esp32:   Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>
     :esp32s2: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>
     :esp32s3: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf>
@@ -16,6 +16,7 @@ Hardware Reference
     :esp32c6: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-c6_datasheet_en.pdf>
     :esp32h2: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-h2_datasheet_en.pdf>
     :esp32c5: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-c5_datasheet_en.pdf>
+    :esp32p4: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-p4_datasheet_en.pdf>
     :esp32:   Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32/index.html>
     :esp32s2: Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s2/index.html>
     :esp32s3: Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/index.html>
