@@ -23,7 +23,7 @@ except ImportError:
     sys.path.append('..')
     import idf_tools
 
-IDF_PATH = os.environ.get('IDF_PATH', '../..')
+IDF_PATH = os.path.abspath(os.environ.get('IDF_PATH', '../..'))
 TOOLS_DIR = os.environ.get('IDF_TOOLS_PATH') or os.path.expanduser(idf_tools.IDF_TOOLS_PATH_DEFAULT)
 PYTHON_DIR = os.path.join(TOOLS_DIR, 'python_env')
 PYTHON_DIR_BACKUP = tempfile.mkdtemp()
@@ -32,7 +32,7 @@ REQ_SATISFIED = 'Python requirements are satisfied'
 # Python 3.8 and 3.9 has a different error message that does not include the "No package metadata was found for" part
 REQ_MISSING = r'Package was not found and is required by the application: (No package metadata was found for )?{}'
 REQ_CORE = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.core.txt'))
-REQ_GDBGUI = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.gdbgui.txt'))
+REQ_DOCS = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.docs.txt'))
 CONSTR = 'Constraint file: {}'.format(os.path.join(TOOLS_DIR, 'espidf.constraints'))
 
 # Set default global paths for idf_tools. If some test needs to
@@ -191,29 +191,29 @@ class TestPythonInstall(BasePythonInstall):
         output = self.run_idf_tools(['install-python-env'])
         self.assertIn(CONSTR, output)
         self.assertIn(REQ_CORE, output)
-        self.assertNotIn(REQ_GDBGUI, output)
+        self.assertNotIn(REQ_DOCS, output)
 
         output = self.run_idf_tools(['check-python-dependencies'])
         self.assertIn(REQ_SATISFIED, output)
 
     def test_opt_argument(self):  # type: () -> None
-        output = self.run_idf_tools(['install-python-env', '--features', 'gdbgui'])
+        output = self.run_idf_tools(['install-python-env', '--features', 'docs'])
         self.assertIn(CONSTR, output)
         self.assertIn(REQ_CORE, output)
-        self.assertIn(REQ_GDBGUI, output)
+        self.assertIn(REQ_DOCS, output)
 
         output = self.run_idf_tools(['install-python-env'])
-        # The gdbgui should be installed as well because the feature is is stored in the JSON file
+        # The docs should be installed as well because the feature is is stored in the JSON file
         self.assertIn(CONSTR, output)
         self.assertIn(REQ_CORE, output)
-        self.assertIn(REQ_GDBGUI, output)
+        self.assertIn(REQ_DOCS, output)
 
         # Argument that begins with '-' can't stand alone to be parsed as value
-        output = self.run_idf_tools(['install-python-env', '--features=-gdbgui'])
-        # After removing the gdbgui should not be present
+        output = self.run_idf_tools(['install-python-env', '--features=-docs'])
+        # After removing the docs should not be present
         self.assertIn(CONSTR, output)
         self.assertIn(REQ_CORE, output)
-        self.assertNotIn(REQ_GDBGUI, output)
+        self.assertNotIn(REQ_DOCS, output)
 
     def test_no_constraints(self):  # type: () -> None
         output = self.run_idf_tools(['install-python-env', '--no-constraints'])
