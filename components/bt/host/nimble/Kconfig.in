@@ -1217,6 +1217,15 @@ config BT_NIMBLE_GATTC_PROC_PREEMPTION_PROTECT
         can disrupt the GATT context,causing the service discovery callback to not be invoked.
         A temporary list is maintained to preserve the GATT context and use it in case of preemption.
 
+config BT_NIMBLE_GATTC_AUTO_PAIR
+    bool "Automatically pair upon receiving service request failure"
+    depends on BT_NIMBLE_ENABLED
+    default n
+    help
+        If enabled, when a service request (e.g. read, write) to a server fails, and the ATT
+        error suggests insufficient security, then the central will initiate pairing and retry
+        the service request.
+
 menu "Host-controller Transport"
     config BT_NIMBLE_TRANSPORT_UART
         bool "Enable Uart Transport"
