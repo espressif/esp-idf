@@ -1050,117 +1050,61 @@ typedef union {
     uint32_t val;
 } ahb_dma_out_done_des_addr_ch1_reg_t;
 
-/** Type of tx_ch_arb_weight_ch0 register
- *  TX channel 0 arbitration weight configuration register
+/** Type of tx_ch_arb_weight_chn register
+ *  TX channel n arbitration weight configuration register
  */
 typedef union {
     struct {
-        /** tx_arb_weight_value_ch0 : R/W; bitpos: [3:0]; default: 0;
+        /** tx_arb_weight_value_chn : R/W; bitpos: [3:0]; default: 0;
          *  Configures the weight(i.e the number of tokens) of TX channel0
          */
-        uint32_t tx_arb_weight_value_ch0:4;
+        uint32_t tx_arb_weight_value_chn:4;
         uint32_t reserved_4:28;
     };
     uint32_t val;
-} ahb_dma_tx_ch_arb_weight_ch0_reg_t;
+} ahb_dma_tx_ch_arb_weight_chn_reg_t;
 
-/** Type of tx_arb_weight_opt_dir_ch0 register
- *  TX channel 0 weight arbitration optimization enable register
+/** Type of tx_arb_weight_opt_dir_chn register
+ *  TX channel n weight arbitration optimization enable register
  */
 typedef union {
     struct {
-        /** tx_arb_weight_opt_dis_ch0 : R/W; bitpos: [0]; default: 0;
+        /** tx_arb_weight_opt_dis_chn : R/W; bitpos: [0]; default: 0;
          *  reserved
          */
-        uint32_t tx_arb_weight_opt_dis_ch0:1;
+        uint32_t tx_arb_weight_opt_dis_chn:1;
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} ahb_dma_tx_arb_weight_opt_dir_ch0_reg_t;
+} ahb_dma_tx_arb_weight_opt_dir_chn_reg_t;
 
-/** Type of tx_ch_arb_weight_ch1 register
- *  TX channel 1 arbitration weight configuration register
+/** Type of rx_ch_arb_weight_chn register
+ *  RX channel n arbitration weight configuration register
  */
 typedef union {
     struct {
-        /** tx_arb_weight_value_ch1 : R/W; bitpos: [3:0]; default: 0;
-         *  Configures the weight(i.e the number of tokens) of TX channel1
-         */
-        uint32_t tx_arb_weight_value_ch1:4;
-        uint32_t reserved_4:28;
-    };
-    uint32_t val;
-} ahb_dma_tx_ch_arb_weight_ch1_reg_t;
-
-/** Type of tx_arb_weight_opt_dir_ch1 register
- *  TX channel 1 weight arbitration optimization enable register
- */
-typedef union {
-    struct {
-        /** tx_arb_weight_opt_dis_ch1 : R/W; bitpos: [0]; default: 0;
-         *  reserved
-         */
-        uint32_t tx_arb_weight_opt_dis_ch1:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} ahb_dma_tx_arb_weight_opt_dir_ch1_reg_t;
-
-/** Type of rx_ch_arb_weight_ch0 register
- *  RX channel 0 arbitration weight configuration register
- */
-typedef union {
-    struct {
-        /** rx_arb_weight_value_ch0 : R/W; bitpos: [3:0]; default: 0;
+        /** rx_arb_weight_value_chn : R/W; bitpos: [3:0]; default: 0;
          *  Configures the weight(i.e the number of tokens) of RX channel0
          */
-        uint32_t rx_arb_weight_value_ch0:4;
+        uint32_t rx_arb_weight_value_chn:4;
         uint32_t reserved_4:28;
     };
     uint32_t val;
-} ahb_dma_rx_ch_arb_weight_ch0_reg_t;
+} ahb_dma_rx_ch_arb_weight_chn_reg_t;
 
-/** Type of rx_arb_weight_opt_dir_ch0 register
- *  RX channel 0 weight arbitration optimization enable register
+/** Type of rx_arb_weight_opt_dir_chn register
+ *  RX channel n weight arbitration optimization enable register
  */
 typedef union {
     struct {
-        /** rx_arb_weight_opt_dis_ch0 : R/W; bitpos: [0]; default: 0;
+        /** rx_arb_weight_opt_dis_chn : R/W; bitpos: [0]; default: 0;
          *  reserved
          */
-        uint32_t rx_arb_weight_opt_dis_ch0:1;
+        uint32_t rx_arb_weight_opt_dis_chn:1;
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} ahb_dma_rx_arb_weight_opt_dir_ch0_reg_t;
-
-/** Type of rx_ch_arb_weight_ch1 register
- *  RX channel 1 arbitration weight configuration register
- */
-typedef union {
-    struct {
-        /** rx_arb_weight_value_ch1 : R/W; bitpos: [3:0]; default: 0;
-         *  Configures the weight(i.e the number of tokens) of RX channel1
-         */
-        uint32_t rx_arb_weight_value_ch1:4;
-        uint32_t reserved_4:28;
-    };
-    uint32_t val;
-} ahb_dma_rx_ch_arb_weight_ch1_reg_t;
-
-/** Type of rx_arb_weight_opt_dir_ch1 register
- *  RX channel 1 weight arbitration optimization enable register
- */
-typedef union {
-    struct {
-        /** rx_arb_weight_opt_dis_ch1 : R/W; bitpos: [0]; default: 0;
-         *  reserved
-         */
-        uint32_t rx_arb_weight_opt_dis_ch1:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} ahb_dma_rx_arb_weight_opt_dir_ch1_reg_t;
+} ahb_dma_rx_arb_weight_opt_dir_chn_reg_t;
 
 /** Type of in_link_addr_chn register
  *  Link list descriptor address configuration of RX channel 0
@@ -1454,6 +1398,18 @@ typedef struct {
 } ahb_dma_chn_reg_t;
 
 typedef struct {
+    uint32_t reserved[8];
+    ahb_dma_tx_ch_arb_weight_chn_reg_t ch_arb_weight;
+    ahb_dma_tx_arb_weight_opt_dir_chn_reg_t arb_weight_opt;
+} ahb_dma_out_crc_arb_chn_reg_t;
+
+typedef struct {
+    uint32_t reserved[8];
+    ahb_dma_rx_ch_arb_weight_chn_reg_t ch_arb_weight;
+    ahb_dma_rx_arb_weight_opt_dir_chn_reg_t arb_weight_opt;
+} ahb_dma_in_crc_arb_chn_reg_t;
+
+typedef struct {
     volatile ahb_dma_in_int_chn_reg_t in_intr[2];
     uint32_t reserved_020[4];
     volatile ahb_dma_out_int_chn_reg_t out_intr[2];
@@ -1463,18 +1419,10 @@ typedef struct {
     volatile ahb_dma_date_reg_t date;
     uint32_t reserved_06c;
     volatile ahb_dma_chn_reg_t channel[2];
-    uint32_t reserved_1db[59];
-    volatile ahb_dma_tx_ch_arb_weight_ch0_reg_t tx_ch_arb_weight_ch0;
-    volatile ahb_dma_tx_arb_weight_opt_dir_ch0_reg_t tx_arb_weight_opt_dir_ch0;
-    uint32_t reserved_2e4[8];
-    volatile ahb_dma_tx_ch_arb_weight_ch1_reg_t tx_ch_arb_weight_ch1;
-    volatile ahb_dma_tx_arb_weight_opt_dir_ch1_reg_t tx_arb_weight_opt_dir_ch1;
-    uint32_t reserved_30c[18];
-    volatile ahb_dma_rx_ch_arb_weight_ch0_reg_t rx_ch_arb_weight_ch0;
-    volatile ahb_dma_rx_arb_weight_opt_dir_ch0_reg_t rx_arb_weight_opt_dir_ch0;
-    uint32_t reserved_35c[8];
-    volatile ahb_dma_rx_ch_arb_weight_ch1_reg_t rx_ch_arb_weight_ch1;
-    volatile ahb_dma_rx_arb_weight_opt_dir_ch1_reg_t rx_arb_weight_opt_dir_ch1;
+    uint32_t reserved_1db[51];
+    volatile ahb_dma_out_crc_arb_chn_reg_t out_crc_arb[2];
+    uint32_t reserved_30c[10];
+    volatile ahb_dma_in_crc_arb_chn_reg_t in_crc_arb[2];
     uint32_t reserved_384[10];
     volatile ahb_dma_in_link_addr_chn_reg_t in_link_addr[2];
     uint32_t reserved_3b4;
