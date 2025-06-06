@@ -850,7 +850,9 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
     ESP_LOGD(TAG, "Enabling client-side tls session ticket support");
     mbedtls_ssl_conf_session_tickets(&tls->conf, MBEDTLS_SSL_SESSION_TICKETS_ENABLED);
+#ifdef CONFIG_MBEDTLS_SSL_RENEGOTIATION
     mbedtls_ssl_conf_renegotiation(&tls->conf, MBEDTLS_SSL_RENEGOTIATION_ENABLED);
+#endif /* CONFIG_MBEDTLS_SSL_RENEGOTIATION */
 #endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 
 #if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
