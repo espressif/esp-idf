@@ -6,7 +6,7 @@
  * See README for more details.
  */
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,9 @@
 #include "eloop.h"
 #include "esp_wifi_driver.h"
 #include "rom/ets_sys.h"
+#include <stdatomic.h>
+
+bool current_task_is_wifi_task(void);
 
 struct eloop_timeout {
     struct dl_list list;
@@ -29,12 +32,17 @@ struct eloop_timeout {
     char func_name[100];
     int line;
 #endif
+    void *sync_semph;
+    int ret;
+    eloop_blocking_timeout_handler blocking_handler;
 };
 
 struct eloop_data {
     struct dl_list timeout;
     ETSTimer eloop_timer;
-    bool eloop_started;
+    atomic_bool eloop_started;
+    atomic_bool timeout_running;
+    void *eloop_semph;
 };
 
 #define ELOOP_LOCK() os_mutex_lock(eloop_data_lock)
@@ -74,7 +82,8 @@ int eloop_init(void)
         wpa_printf(MSG_ERROR, "failed to create eloop data loop");
         return -1;
     }
-    eloop.eloop_started = true;
+    atomic_store(&eloop.eloop_started, true);
+    atomic_store(&eloop.timeout_running, false);
 
     return 0;
 }
@@ -95,6 +104,9 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs,
     int count = 0;
 #endif
 
+    if (!atomic_load(&eloop.eloop_started)) {
+        return -1;
+    }
     timeout = os_zalloc(sizeof(*timeout));
     if (timeout == NULL) {
         return -1;
@@ -164,6 +176,90 @@ overflow:
     return 0;
 }
 
+#ifdef ELOOP_DEBUG
+int eloop_register_timeout_blocking_debug(eloop_blocking_timeout_handler handler, void *eloop_data,
+                                          void *user_data, const char *func, int line)
+#else
+int eloop_register_timeout_blocking(eloop_blocking_timeout_handler handler,
+                                    void *eloop_data, void *user_data)
+#endif
+{
+    struct eloop_timeout *timeout, *tmp;
+#ifdef ELOOP_DEBUG
+    int count = 0;
+#endif
+    int ret;
+
+    if (current_task_is_wifi_task()) {
+        assert(false);
+        return -1;
+    }
+
+    if (!atomic_load(&eloop.eloop_started)) {
+        return -1;
+    }
+    timeout = os_zalloc(sizeof(*timeout));
+    if (timeout == NULL) {
+        return -1;
+    }
+    if (os_get_reltime(&timeout->time) < 0) {
+        os_free(timeout);
+        return -1;
+    }
+    timeout->eloop_data = eloop_data;
+    timeout->user_data = user_data;
+    timeout->blocking_handler = handler;
+#ifdef ELOOP_DEBUG
+    os_strlcpy(timeout->func_name, func, 100);
+    timeout->line = line;
+#endif
+
+    ELOOP_LOCK();
+    if (!eloop.eloop_semph) {
+        eloop.eloop_semph = os_semphr_create(1, 0);
+    }
+    ELOOP_UNLOCK();
+
+    if (!eloop.eloop_semph) {
+        wpa_printf(MSG_INFO, "ELOOP: sync semphr not available");
+        os_free(timeout);
+        return -1;
+    }
+    timeout->sync_semph = eloop.eloop_semph;
+    /* Maintain timeouts in order of increasing time */
+    dl_list_for_each(tmp, &eloop.timeout, struct eloop_timeout, list) {
+        if (os_reltime_before(&timeout->time, &tmp->time)) {
+            ELOOP_LOCK();
+            dl_list_add(tmp->list.prev, &timeout->list);
+            ELOOP_UNLOCK();
+            goto run;
+        }
+#ifdef ELOOP_DEBUG
+        count++;
+#endif
+    }
+    ELOOP_LOCK();
+    dl_list_add_tail(&eloop.timeout, &timeout->list);
+    ELOOP_UNLOCK();
+
+run:
+#ifdef ELOOP_DEBUG
+    wpa_printf(MSG_DEBUG, "ELOOP: Added one blocking timer from %s:%d to call %p, current order=%d",
+               timeout->func_name, line, timeout->handler, count);
+#endif
+    ELOOP_LOCK();
+    os_timer_disarm(&eloop.eloop_timer);
+    os_timer_arm(&eloop.eloop_timer, 0, 0);
+    ELOOP_UNLOCK();
+
+    wpa_printf(MSG_DEBUG, "ELOOP: waiting for sync semphr");
+    os_semphr_take(eloop.eloop_semph, OS_BLOCK);
+
+    ret = timeout->ret;
+    os_free(timeout);
+    return ret;
+}
+
 static bool timeout_exists(struct eloop_timeout *old)
 {
     struct eloop_timeout *timeout, *prev;
@@ -175,6 +271,18 @@ static bool timeout_exists(struct eloop_timeout *old)
     }
 
     return false;
+}
+
+static void eloop_remove_blocking_timeout(struct eloop_timeout *timeout)
+{
+    bool timeout_present = false;
+    ELOOP_LOCK();
+    /* Make sure timeout still exists(Another context may have deleted this) */
+    timeout_present = timeout_exists(timeout);
+    if (timeout_present) {
+        dl_list_del(&timeout->list);
+    }
+    ELOOP_UNLOCK();
 }
 
 static void eloop_remove_timeout(struct eloop_timeout *timeout)
@@ -331,6 +439,11 @@ void eloop_run(void)
 {
     struct os_reltime tv, now;
 
+    if (!atomic_load(&eloop.eloop_started)) {
+        return;
+    }
+    atomic_store(&eloop.timeout_running, true);
+
     while (!dl_list_empty(&eloop.timeout)) {
         struct eloop_timeout *timeout;
 
@@ -348,17 +461,10 @@ void eloop_run(void)
                 os_timer_arm(&eloop.eloop_timer, ms, 0);
                 ELOOP_UNLOCK();
                 goto out;
-            }
-        }
-
-        /* check if some registered timeouts have occurred */
-        timeout = dl_list_first(&eloop.timeout, struct eloop_timeout,
-                                list);
-        if (timeout) {
-            os_get_reltime(&now);
-            if (!os_reltime_before(&now, &timeout->time)) {
+            } else {
                 void *eloop_data = timeout->eloop_data;
                 void *user_data = timeout->user_data;
+                void *sync_semaphr = timeout->sync_semph;
                 eloop_timeout_handler handler =
                     timeout->handler;
 #ifdef ELOOP_DEBUG
@@ -366,30 +472,54 @@ void eloop_run(void)
                 int line = timeout->line;
                 os_strlcpy(fn_name, timeout->func_name, 100);
 #endif
-                eloop_remove_timeout(timeout);
+                /* will be freed in caller context in blocking call */
+                if (!sync_semaphr) {
+                    eloop_remove_timeout(timeout);
 #ifdef ELOOP_DEBUG
-                wpa_printf(MSG_DEBUG, "ELOOP: Running timer fn:%p scheduled by %s:%d ",
-                           handler, fn_name, line);
+                    wpa_printf(MSG_DEBUG, "ELOOP: Running timer fn:%p scheduled by %s:%d ",
+                               handler, fn_name, line);
 #endif
-                handler(eloop_data, user_data);
+                    handler(eloop_data, user_data);
+                } else {
+                    eloop_remove_blocking_timeout(timeout);
+                    eloop_blocking_timeout_handler handler2 =
+                        timeout->blocking_handler;
+#ifdef ELOOP_DEBUG
+                    wpa_printf(MSG_DEBUG, "ELOOP: Running blocking timer fn:%p scheduled by %s:%d ",
+                               handler2, fn_name, line);
+#endif
+                    timeout->ret = handler2(eloop_data, user_data);
+#ifdef ELOOP_DEBUG
+                    wpa_printf(MSG_DEBUG, "ELOOP: releasing sync semaphor");
+#endif
+                    os_semphr_give(sync_semaphr);
+                }
             }
         }
     }
 out:
+    atomic_store(&eloop.timeout_running, false);
     return;
 }
 
 void eloop_destroy(void)
 {
     struct eloop_timeout *timeout, *prev;
-    struct os_reltime now;
 
-    if (!eloop.eloop_started) {
+    if (!atomic_load(&eloop.eloop_started)) {
         return;
     }
-    os_get_reltime(&now);
+
+    atomic_store(&eloop.eloop_started, false);
+
+    while (atomic_load(&eloop.timeout_running)) {
+        vTaskDelay(100 / portTICK_PERIOD_MS);  // Yield CPU
+    }
     dl_list_for_each_safe(timeout, prev, &eloop.timeout,
                           struct eloop_timeout, list) {
+#ifdef ELOOP_DEBUG
+        struct os_reltime now;
+        os_get_reltime(&now);
         int sec, usec;
         sec = timeout->time.sec - now.sec;
         usec = timeout->time.usec - now.usec;
@@ -401,11 +531,16 @@ void eloop_destroy(void)
                    "eloop_data=%p user_data=%p handler=%p",
                    sec, usec, timeout->eloop_data, timeout->user_data,
                    timeout->handler);
+#endif
         eloop_remove_timeout(timeout);
     }
     if (eloop_data_lock) {
         os_mutex_delete(eloop_data_lock);
         eloop_data_lock = NULL;
+    }
+    if (eloop.eloop_semph) {
+        os_semphr_delete(eloop.eloop_semph);
+        eloop.eloop_semph = NULL;
     }
     os_timer_disarm(&eloop.eloop_timer);
     os_timer_done(&eloop.eloop_timer);

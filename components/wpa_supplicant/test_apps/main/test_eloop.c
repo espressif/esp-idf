@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -24,7 +24,6 @@ static uint32_t timeouts_sec[6] = { 10, 1, 10, 5, 15, 1 };
 static int executed_order[6];
 static int t;
 static struct os_reltime ts;
-
 
 /* there is only single instance of esp_timer so no need of protection */
 static void callback(void *a, void *b)
@@ -80,6 +79,15 @@ TEST_CASE("Test eloop timers run", "[eloop]")
     os_sleep(20, 0);
     /* check the execution order, this will also check whether they were fired at correct time */
     TEST_ASSERT(memcmp(execution_order, executed_order, 6 * sizeof(int)) == 0);
+
+    /* Add timers to check deinit happens gracefully */
+    for (int i = 0; i < 6; i++) {
+        eloop_register_timeout(timeouts_sec[i], timeouts_usec[i],
+                               callback, &index[i], NULL);
+    }
+
+    /* Stop wifi before all the timers have run */
+    os_sleep(2, 0);
     TEST_ESP_OK(esp_wifi_stop());
     TEST_ESP_OK(esp_wifi_deinit());
     os_sleep(3, 0);
