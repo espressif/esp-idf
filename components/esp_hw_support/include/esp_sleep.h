@@ -755,6 +755,16 @@ void esp_default_wake_deep_sleep(void);
  */
 void esp_deep_sleep_disable_rom_logging(void);
 
+#if CONFIG_IDF_TARGET_ESP32
+/**
+ * @brief If analog-related peripherals(ADC, TOUCH) is not used in monitor mode, analog low power mode
+ *        can be enabled by this API to reduce power consumption in monitor state.
+ *
+ * @param enable Enable or disable lowpower analog mode
+ */
+void esp_sleep_enable_lowpower_analog_mode(bool enable);
+#endif
+
 #if ESP_SLEEP_POWER_DOWN_CPU
 
 #if SOC_PM_CPU_RETENTION_BY_RTCCNTL

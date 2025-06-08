@@ -40,6 +40,9 @@ typedef enum {
     ESP_SLEEP_DIG_USE_XTAL_MODE,          //!< The mode requested by digital peripherals to keep XTAL clock on during sleep (both HP_SLEEP and LP_SLEEP mode). (!!! Only valid for lightsleep, will override the XTAL domain config by esp_sleep_pd_config)
     ESP_SLEEP_LP_USE_XTAL_MODE,           //!< The mode requested by lp peripherals to keep XTAL clock on during sleep. Only valid for lightsleep.
     ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE,  //!< The mode to switch power supply to VBAT during deep sleep.
+#if CONFIG_IDF_TARGET_ESP32
+    ESP_SLEEP_ANALOG_LOW_POWER_MODE,      //!< If analog-related peripherals(ADC, TSENS, TOUCH) is not used in monitor mode, analog low power mode can be enabled to reduce power consumption (~300uA) in monitor state.
+#endif
     ESP_SLEEP_MODE_MAX,
 } esp_sleep_sub_mode_t;
 
