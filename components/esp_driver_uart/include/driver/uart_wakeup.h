@@ -7,6 +7,7 @@
 #pragma once
 
 #include "esp_err.h"
+#include "esp_attr.h"
 #include "soc/soc_caps.h"
 #include "hal/uart_types.h"
 
@@ -45,7 +46,7 @@ typedef struct {
     '*' represents any symbol.
     The end character cannot be '*'.
     Example: "he**o" matches hello, heyyo. */
-    char wake_chars_seq[SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN];
+    NONSTRING_ATTR char wake_chars_seq[SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN];
 #endif
 
 } uart_wakeup_cfg_t;
