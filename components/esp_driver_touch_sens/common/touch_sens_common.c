@@ -136,6 +136,7 @@ esp_err_t touch_sensor_new_channel(touch_sensor_handle_t sens_handle, int chan_i
     TOUCH_NULL_POINTER_CHECK(chan_cfg);
     TOUCH_NULL_POINTER_CHECK(ret_chan_handle);
     TOUCH_CHANNEL_CHECK(chan_id);
+    uint32_t ch_offset = chan_id - TOUCH_MIN_CHAN_ID;
 
     ESP_RETURN_ON_FALSE(g_touch == sens_handle, ESP_ERR_INVALID_ARG, TAG, "The input touch sensor handle is unmatched");
 
@@ -143,31 +144,31 @@ esp_err_t touch_sensor_new_channel(touch_sensor_handle_t sens_handle, int chan_i
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
 
     TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err2, TAG, "Please disable the touch sensor first");
-    ESP_GOTO_ON_FALSE(!sens_handle->ch[chan_id], ESP_ERR_INVALID_STATE, err2, TAG, "The channel %d has been registered", chan_id);
+    ESP_GOTO_ON_FALSE(!sens_handle->ch[ch_offset], ESP_ERR_INVALID_STATE, err2, TAG, "The channel %d has been registered", chan_id);
 
-    sens_handle->ch[chan_id] = (touch_channel_handle_t)heap_caps_calloc(1, sizeof(struct touch_channel_s), TOUCH_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(sens_handle->ch[chan_id], ESP_ERR_NO_MEM, err2, TAG, "No memory for touch channel");
-    sens_handle->ch[chan_id]->id = chan_id;
-    sens_handle->ch[chan_id]->base = sens_handle;
+    sens_handle->ch[ch_offset] = (touch_channel_handle_t)heap_caps_calloc(1, sizeof(struct touch_channel_s), TOUCH_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(sens_handle->ch[ch_offset], ESP_ERR_NO_MEM, err2, TAG, "No memory for touch channel");
+    sens_handle->ch[ch_offset]->id = chan_id;
+    sens_handle->ch[ch_offset]->base = sens_handle;
 #if SOC_TOUCH_SUPPORT_PROX_SENSING
-    sens_handle->ch[chan_id]->prox_id = 0;
+    sens_handle->ch[ch_offset]->prox_id = 0;
 #endif
 
     /* Init the channel */
-    ESP_GOTO_ON_ERROR(touch_priv_config_channel(sens_handle->ch[chan_id], chan_cfg),
+    ESP_GOTO_ON_ERROR(touch_priv_config_channel(sens_handle->ch[ch_offset], chan_cfg),
                       err1, TAG, "Failed to configure the touch channel %d", chan_id);
     touch_channel_pin_init(chan_id);
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
     sens_handle->chan_mask |= 1 << chan_id;
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
 
-    *ret_chan_handle = sens_handle->ch[chan_id];
+    *ret_chan_handle = sens_handle->ch[ch_offset];
 
     xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 err1:
-    free(sens_handle->ch[chan_id]);
-    sens_handle->ch[chan_id] = NULL;
+    free(sens_handle->ch[ch_offset]);
+    sens_handle->ch[ch_offset] = NULL;
 err2:
     xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
@@ -205,13 +206,14 @@ esp_err_t touch_sensor_del_channel(touch_channel_handle_t chan_handle)
         TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
     }
 #endif
-    int id = chan_handle->id;
+    int ch_offset = chan_handle->id - TOUCH_MIN_CHAN_ID;
+    assert(ch_offset >= 0);
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
-    sens_handle->chan_mask &= ~(1UL << id);
+    sens_handle->chan_mask &= ~(1UL << chan_handle->id);
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
 
-    free(g_touch->ch[id]);
-    g_touch->ch[id] = NULL;
+    free(g_touch->ch[ch_offset]);
+    g_touch->ch[ch_offset] = NULL;
 err:
     xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
@@ -376,7 +378,7 @@ esp_err_t touch_sensor_trigger_oneshot_scanning(touch_sensor_handle_t sens_handl
     FOR_EACH_TOUCH_CHANNEL(i) {
         if (sens_handle->ch[i]) {
             TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
-            touch_ll_channel_sw_measure_mask(BIT(i));
+            touch_ll_channel_sw_measure_mask(BIT(sens_handle->ch[i]->id));
             touch_ll_trigger_oneshot_measurement();
             TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
             while (!touch_ll_is_measure_done()) {
