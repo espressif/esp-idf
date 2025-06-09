@@ -57,6 +57,8 @@ typedef struct {
 #if CONFIG_SOC_WIFI_HE_SUPPORT
 typedef struct {
     struct arg_int *he_format;
+    struct arg_int *pe;
+    struct arg_int *giltf_num;
     struct arg_int *ru_index;
     struct arg_end *end;
 } phy_wifi_11ax_tx_set_t;
