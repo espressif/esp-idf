@@ -960,6 +960,11 @@ MCPWM 捕获通道支持在信号上检测到有效边沿时发送通知。须�
 
 某些场景下，可能存在需要软件触发“虚假”捕获事件的需求。此时，可以调用 :cpp:func:`mcpwm_capture_channel_trigger_soft_catch` 实现。需注意，此类“虚假”捕获事件仍然会触发中断，并从而调用捕获事件回调函数。
 
+获得上一次锁存的捕获值
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+如果不想在捕获事件回调函数中处理捕获值，而是想在其他地方处理，可以调用 :cpp:func:`mcpwm_capture_get_latched_value` 获得上一次锁存的捕获值。
+
 .. only:: SOC_MCPWM_SUPPORT_ETM
 
     .. _mcpwm-etm-event-and-task:
