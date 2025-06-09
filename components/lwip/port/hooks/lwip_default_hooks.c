@@ -8,9 +8,19 @@
 #include "lwip/prot/dhcp.h"
 #include "lwip/dhcp.h"
 #include "lwip/prot/iana.h"
+#include "esp_log.h"
 #include <string.h>
 
 #define __weak __attribute__((weak))
+
+/**
+ * Default lwip behavior is to silence LWIP_ERROR() if LWIP_DEBUG is not set.
+ * In some case (if IDF hooks are used), we need to log the error message
+ * instead of silently ignoring it -- using this macro
+ */
+#define LWIP_ERROR_LOG(message, expression, handler) do { if (!(expression)) { \
+  ESP_LOGE("LWIP_ERROR", message); \
+  handler;}} while(0)
 
 #ifdef CONFIG_LWIP_HOOK_IP6_ROUTE_DEFAULT
 struct netif *__weak
@@ -259,8 +269,9 @@ void dhcp_append_extra_opts(struct netif *netif, uint8_t state, struct dhcp_msg 
       state == DHCP_STATE_REQUESTING || state == DHCP_STATE_BACKING_OFF || state == DHCP_STATE_SELECTING) {
     size_t i;
     u8_t *options = msg_out->options + *options_out_len;
-    LWIP_ERROR("dhcp_append(client_id): options_out_len + 3 + netif->hwaddr_len <= DHCP_OPTIONS_LEN",
-               *options_out_len + 3U + netif->hwaddr_len <= DHCP_OPTIONS_LEN, return;);
+    /* size of this option is not hwaddr_len, but hwaddr_len + 1 (IANA_HWTYPE_ETHERNET) */
+    LWIP_ERROR_LOG("dhcp_append(client_id): options_out_len + 3 + (netif->hwaddr_len + 1) <= DHCP_OPTIONS_LEN, please increase LWIP_DHCP_OPTIONS_LEN",
+               *options_out_len + 3U + (netif->hwaddr_len + 1) <= DHCP_OPTIONS_LEN, return;);
     *options_out_len = *options_out_len + netif->hwaddr_len + 3;
     *options++ = DHCP_OPTION_CLIENT_ID;
     *options++ = netif->hwaddr_len + 1; /* option size */
@@ -290,7 +301,7 @@ void dhcp_append_extra_opts(struct netif *netif, uint8_t state, struct dhcp_msg 
       }
 #endif /* LWIP_NETIF_HOSTNAME */
     }
-    LWIP_ERROR("dhcp_append(vci): options_out_len + 3 + vci_size <= DHCP_OPTIONS_LEN",
+    LWIP_ERROR_LOG("dhcp_append(vci): options_out_len + 3 + vci_size <= DHCP_OPTIONS_LEN, please increase LWIP_DHCP_OPTIONS_LEN",
                *options_out_len + 3U + len <= DHCP_OPTIONS_LEN, return;);
     if (p) {
       u8_t *options = msg_out->options + *options_out_len;
