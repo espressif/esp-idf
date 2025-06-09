@@ -82,7 +82,6 @@ static const char *TAG_AP = "ftm_ap";
 
 static EventGroupHandle_t s_wifi_event_group;
 static const int CONNECTED_BIT = BIT0;
-static const int DISCONNECTED_BIT = BIT1;
 
 static EventGroupHandle_t s_ftm_event_group;
 static const int FTM_REPORT_BIT = BIT0;
@@ -90,8 +89,6 @@ static const int FTM_FAILURE_BIT = BIT1;
 static uint8_t s_ftm_report_num_entries;
 static uint32_t s_rtt_est, s_dist_est;
 static bool s_ap_started;
-static uint8_t s_ap_channel;
-static uint8_t s_ap_bssid[ETH_ALEN];
 
 const int g_report_lvl =
 #ifdef CONFIG_ESP_FTM_REPORT_SHOW_DIAG
@@ -120,9 +117,6 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         ESP_LOGI(TAG_STA, "Connected to %s (BSSID: "MACSTR", Channel: %d)", event->ssid,
                  MAC2STR(event->bssid), event->channel);
 
-        memcpy(s_ap_bssid, event->bssid, ETH_ALEN);
-        s_ap_channel = event->channel;
-        xEventGroupClearBits(s_wifi_event_group, DISCONNECTED_BIT);
         xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
     } else if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
         if (s_reconnect && ++s_retry_num < MAX_CONNECT_RETRY_ATTEMPTS) {
@@ -132,7 +126,6 @@ static void event_handler(void *arg, esp_event_base_t event_base,
             ESP_LOGI(TAG_STA, "sta disconnected");
         }
         xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
-        xEventGroupSetBits(s_wifi_event_group, DISCONNECTED_BIT);
     } else if (event_id == WIFI_EVENT_FTM_REPORT) {
         wifi_event_ftm_report_t *event = (wifi_event_ftm_report_t *) event_data;
 
@@ -269,12 +262,12 @@ esp_err_t wifi_add_mode(wifi_mode_t mode)
 
     if (mode == WIFI_MODE_STA) {
         if (cur_mode == WIFI_MODE_STA || cur_mode == WIFI_MODE_APSTA) {
-            int bits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, 0, 1, 0);
-            if (bits & CONNECTED_BIT) {
+            wifi_ap_record_t ap_info;
+            esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
+            if (ret == ESP_OK) {
                 s_reconnect = false;
                 xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
                 ESP_ERROR_CHECK( esp_wifi_disconnect() );
-                xEventGroupWaitBits(s_wifi_event_group, DISCONNECTED_BIT, 0, 1, portMAX_DELAY);
             }
             return ESP_OK;
         } else if (cur_mode == WIFI_MODE_AP) {
@@ -314,7 +307,7 @@ static bool wifi_cmd_sta_join(const char *ssid, const char *pass)
     s_reconnect = true;
     s_retry_num = 0;
 
-    xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, 0, 1, 5000 / portTICK_PERIOD_MS);
+    xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, pdTRUE, pdTRUE, 5000 / portTICK_PERIOD_MS);
 
     return true;
 }
@@ -329,9 +322,14 @@ static int wifi_cmd_sta(int argc, char **argv)
     }
     if (sta_args.disconnect->count) {
         s_reconnect = false;
+        wifi_ap_record_t ap_info;
+        esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG_STA, "Sta Already disconnected");
+            return 0;
+        }
         xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
         esp_wifi_disconnect();
-        xEventGroupWaitBits(s_wifi_event_group, DISCONNECTED_BIT, 0, 1, portMAX_DELAY);
         return 0;
     }
 
@@ -496,19 +494,30 @@ static int wifi_cmd_query(int argc, char **argv)
 {
     wifi_config_t cfg;
     wifi_mode_t mode;
+    wifi_ap_record_t ap_info;
 
     esp_wifi_get_mode(&mode);
     if (WIFI_MODE_AP == mode) {
         esp_wifi_get_config(WIFI_IF_AP, &cfg);
         ESP_LOGI(TAG_AP, "AP mode, %s %s", cfg.ap.ssid, cfg.ap.password);
     } else if (WIFI_MODE_STA == mode) {
-        int bits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, 0, 1, 0);
-        if (bits & CONNECTED_BIT) {
-            esp_wifi_get_config(WIFI_IF_STA, &cfg);
-            ESP_LOGI(TAG_STA, "sta mode, connected %s", cfg.ap.ssid);
+        esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
+        if (ret == ESP_OK) {
+            ESP_LOGI(TAG_STA, "sta mode, connected %s", ap_info.ssid);
         } else {
             ESP_LOGI(TAG_STA, "sta mode, disconnected");
         }
+    } else if (WIFI_MODE_APSTA == mode) {
+        ESP_LOGI(TAG_STA, "AP-Sta mode");
+        esp_wifi_get_config(WIFI_IF_AP, &cfg);
+        ESP_LOGI(TAG_AP, "AP mode, %s %s", cfg.ap.ssid, cfg.ap.password);
+        esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
+        if (ret == ESP_OK) {
+            ESP_LOGI(TAG_STA, "sta mode, connected %s", ap_info.ssid);
+        } else {
+            ESP_LOGI(TAG_STA, "sta mode, disconnected");
+        }
+
     } else {
         ESP_LOGI(TAG_STA, "NULL mode");
         return 0;
@@ -555,7 +564,7 @@ retry:
 static int wifi_cmd_ftm(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void **) &ftm_args);
-    wifi_ap_record_t *ap_record;
+    wifi_ap_record_t *ap_record, ap_info;
     uint32_t wait_time_ms = DEFAULT_WAIT_TIME_MS;
     EventBits_t bits;
 
@@ -578,10 +587,10 @@ static int wifi_cmd_ftm(int argc, char **argv)
     if (ftm_args.responder->count != 0)
         goto ftm_responder;
 
-    bits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, 0, 1, 0);
-    if (bits & CONNECTED_BIT && !ftm_args.ssid->count) {
-        memcpy(ftmi_cfg.resp_mac, s_ap_bssid, ETH_ALEN);
-        ftmi_cfg.channel = s_ap_channel;
+    esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
+    if (ret == ESP_OK && !ftm_args.ssid->count) {
+        memcpy(ftmi_cfg.resp_mac, ap_info.bssid, ETH_ALEN);
+        ftmi_cfg.channel = ap_info.primary;
     } else if (ftm_args.ssid->count == 1) {
         ap_record = find_ftm_responder_ap(ftm_args.ssid->sval[0]);
         if (ap_record) {
