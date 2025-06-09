@@ -248,12 +248,14 @@ LEDC
 
 .. only:: SOC_PCNT_SUPPORTED
 
-    Pulse Counter Driver
-    --------------------
+    .. _deprecate_pcnt_legacy_driver:
+
+    Legacy PCNT Driver is Deprecated
+    --------------------------------
 
     Pulse counter driver has been redesigned (see :doc:`PCNT <../../../api-reference/peripherals/pcnt>`), which aims to unify and simplify the usage of PCNT peripheral.
 
-    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/pcnt.h``. However, including ``driver/pcnt.h`` triggers the build warning below by default. The warning can be suppressed by the Kconfig option :ref:`CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN`.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/pcnt.h``. However, including ``driver/pcnt.h`` triggers the build warning below by default. The warning can be suppressed by the Kconfig option ``CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN``.
 
     .. code-block:: text
 

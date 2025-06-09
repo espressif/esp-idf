@@ -41,11 +41,6 @@ if(CONFIG_SOC_MCPWM_SUPPORTED)
     list(APPEND srcs "deprecated/mcpwm_legacy.c")
 endif()
 
-# PCNT legacy driver
-if(CONFIG_SOC_PCNT_SUPPORTED)
-    list(APPEND srcs "deprecated/pcnt_legacy.c")
-endif()
-
 # RMT legacy driver
 if(CONFIG_SOC_RMT_SUPPORTED)
     list(APPEND srcs "deprecated/rmt_legacy.c")
