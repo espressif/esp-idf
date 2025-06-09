@@ -1493,6 +1493,13 @@ config BT_BLE_FEAT_CONN_SUBRATING
     help
         Enable BLE connection subrating feature
 
+config BT_BLE_VENDOR_HCI_EN
+    bool "Enable BLE Vendor HCI command and event"
+    depends on BT_BLE_ENABLED
+    default y
+    help
+        This enables BLE vendor HCI command and event
+
 config BT_BLE_HIGH_DUTY_ADV_INTERVAL
     bool "Enable BLE high duty advertising interval feature"
     depends on BT_BLE_ENABLED
