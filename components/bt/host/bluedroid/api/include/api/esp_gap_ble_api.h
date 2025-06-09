@@ -1305,12 +1305,6 @@ typedef union {
     struct ble_adv_stop_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate adv stop operation success status */
     } adv_stop_cmpl;                                /*!< Event parameter of ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT */
-    /**
-     * @brief ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT
-     */
-    struct ble_adv_clear_cmpl_evt_param {
-        esp_bt_status_t status;                     /*!< Indicate adv clear operation success status */
-    } adv_clear_cmpl;                                /*!< Event parameter of ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT */
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
     /**
      * @brief ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT
@@ -1713,6 +1707,19 @@ typedef union {
         uint16_t num_of_pkt;                        /*!< number of packets received, only valid if update_evt is DTM_TEST_STOP_EVT and shall be reported as 0 for a transmitter */
     } dtm_state_update;                             /*!< Event parameter of ESP_GAP_BLE_DTM_TEST_UPDATE_EVT */
     /**
+     * @brief ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT
+     */
+    struct ble_set_privacy_mode_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate privacy mode set operation success status */
+    } set_privacy_mode_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT */
+#if (BLE_VENDOR_HCI_EN == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT
+     */
+    struct ble_adv_clear_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate adv clear operation success status */
+    } adv_clear_cmpl;                               /*!< Event parameter of ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT */
+    /**
      * @brief ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT
      */
     struct vendor_cmd_cmpl_evt_param {
@@ -1720,12 +1727,6 @@ typedef union {
         uint16_t        param_len;                  /*!< The length of parameter buffer */
         uint8_t         *p_param_buf;               /*!< The point of parameter buffer */
     } vendor_cmd_cmpl;                              /*!< Event parameter of ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT */
-    /**
-     * @brief ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT
-     */
-    struct ble_set_privacy_mode_cmpl_evt_param {
-        esp_bt_status_t status;                     /*!< Indicate privacy mode set operation success status */
-    } set_privacy_mode_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_SET_CSA_SUPPORT_COMPLETE_EVT
      */
@@ -1747,6 +1748,7 @@ typedef union {
         uint8_t param_len;                          /*!< The length of the event parameter buffer (for internal use only) */
         uint8_t *param_buf;                         /*!< The pointer of the event parameter buffer (for internal use only) */
     } vendor_hci_evt;                               /*!< Event parameter of ESP_GAP_BLE_VENDOR_HCI_EVT */
+#endif // #if (BLE_VENDOR_HCI_EN == TRUE)
 #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
     /**
      * @brief ESP_GAP_BLE_ENH_READ_TRANS_PWR_LEVEL_EVT
