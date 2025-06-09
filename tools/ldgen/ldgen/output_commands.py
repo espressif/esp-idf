@@ -1,5 +1,5 @@
 #
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 from .entity import Entity
@@ -25,11 +25,10 @@ class AlignAtAddress:
         self.mutable = mutable
 
     def __str__(self):
-        return ('. = ALIGN(%d);' % self.alignment)
+        return '. = ALIGN(%d);' % self.alignment
 
     def __eq__(self, other):
-        return (isinstance(other, AlignAtAddress) and
-                self.alignment == other.alignment)
+        return isinstance(other, AlignAtAddress) and self.alignment == other.alignment
 
 
 class SymbolAtAddress:
@@ -50,11 +49,10 @@ class SymbolAtAddress:
         self.mutable = mutable
 
     def __str__(self):
-        return ('%s = ABSOLUTE(.);' % self.symbol)
+        return '%s = ABSOLUTE(.);' % self.symbol
 
     def __eq__(self, other):
-        return (isinstance(other, SymbolAtAddress) and
-                self.symbol == other.symbol)
+        return isinstance(other, SymbolAtAddress) and self.symbol == other.symbol
 
 
 class InputSectionDesc:
@@ -76,8 +74,11 @@ class InputSectionDesc:
         self.exclusions = set()
 
         if exclusions:
-            assert not [e for e in exclusions if e.specificity == Entity.Specificity.SYMBOL or
-                        e.specificity == Entity.Specificity.NONE]
+            assert not [
+                e
+                for e in exclusions
+                if e.specificity == Entity.Specificity.SYMBOL or e.specificity == Entity.Specificity.NONE
+            ]
             self.exclusions = set(exclusions)
         else:
             self.exclusions = set()
@@ -152,9 +153,11 @@ class InputSectionDesc:
         return res
 
     def __eq__(self, other):
-        return (isinstance(other, InputSectionDesc) and
-                self.entity == other.entity and
-                self.sections == other.sections and
-                self.exclusions == other.exclusions and
-                self.keep == other.keep and
-                self.sort == other.sort)
+        return (
+            isinstance(other, InputSectionDesc)
+            and self.entity == other.entity
+            and self.sections == other.sections
+            and self.exclusions == other.exclusions
+            and self.keep == other.keep
+            and self.sort == other.sort
+        )
