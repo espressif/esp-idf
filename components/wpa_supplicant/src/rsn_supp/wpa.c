@@ -422,6 +422,17 @@ static int wpa_supplicant_get_pmk(struct wpa_sm *sm,
         //eapol_sm_notify_cached(sm->eapol);
 #ifdef CONFIG_IEEE80211R
         sm->xxkey_len = 0;
+#ifdef CONFIG_WPA3_SAE
+        if (sm->key_mgmt == WPA_KEY_MGMT_FT_SAE && sm->pmk_len == PMK_LEN) {
+            /* Need to allow FT key derivation to proceed with
+             * PMK from SAE being used as the XXKey in cases where
+             * the PMKID in msg 1/4 matches the PMKSA entry that was
+             * just added based on SAE authentication for the
+             * initial mobility domain association. */
+            os_memcpy(sm->xxkey, sm->pmk, sm->pmk_len);
+            sm->xxkey_len = sm->pmk_len;
+        }
+#endif
 #endif /* CONFIG_IEEE80211R */
     } else if (wpa_key_mgmt_wpa_ieee8021x(sm->key_mgmt)) {
         int res = 0, pmk_len;
@@ -1348,6 +1359,133 @@ static void wpa_sm_set_seq(struct wpa_sm *sm, struct wpa_eapol_key *key, u8 ispt
     memcpy(seq, key_rsc, WPA_KEY_RSC_LEN);
 }
 
+#ifdef CONFIG_IEEE80211R
+
+static int ft_validate_mdie(struct wpa_sm *sm,
+                            const unsigned char *src_addr,
+                            struct wpa_eapol_ie_parse *ie,
+                            const u8 *assoc_resp_mdie)
+{
+        struct rsn_mdie *mdie;
+
+        mdie = (struct rsn_mdie *) (ie->mdie + 2);
+        if (ie->mdie == NULL || ie->mdie_len < 2 + sizeof(*mdie) ||
+            os_memcmp(mdie->mobility_domain, sm->mobility_domain,
+                      MOBILITY_DOMAIN_ID_LEN) != 0) {
+                wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "FT: MDIE in msg 3/4 did "
+                        "not match with the current mobility domain");
+                return -1;
+        }
+
+        if (assoc_resp_mdie &&
+            (assoc_resp_mdie[1] != ie->mdie[1] ||
+             os_memcmp(assoc_resp_mdie, ie->mdie, 2 + ie->mdie[1]) != 0)) {
+                wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "FT: MDIE mismatch");
+                wpa_hexdump(MSG_DEBUG, "FT: MDIE in EAPOL-Key msg 3/4",
+                            ie->mdie, 2 + ie->mdie[1]);
+                wpa_hexdump(MSG_DEBUG, "FT: MDIE in (Re)Association Response",
+                            assoc_resp_mdie, 2 + assoc_resp_mdie[1]);
+                return -1;
+        }
+
+        return 0;
+}
+
+
+static int ft_validate_ftie(struct wpa_sm *sm,
+                            const unsigned char *src_addr,
+                            struct wpa_eapol_ie_parse *ie,
+                            const u8 *assoc_resp_ftie)
+{
+        if (ie->ftie == NULL) {
+                wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
+                        "FT: No FTIE in EAPOL-Key msg 3/4");
+                return -1;
+        }
+
+        if (assoc_resp_ftie == NULL)
+                return 0;
+
+        if (assoc_resp_ftie[1] != ie->ftie[1] ||
+            os_memcmp(assoc_resp_ftie, ie->ftie, 2 + ie->ftie[1]) != 0) {
+                wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "FT: FTIE mismatch");
+                wpa_hexdump(MSG_DEBUG, "FT: FTIE in EAPOL-Key msg 3/4",
+                            ie->ftie, 2 + ie->ftie[1]);
+                wpa_hexdump(MSG_DEBUG, "FT: FTIE in (Re)Association Response",
+                            assoc_resp_ftie, 2 + assoc_resp_ftie[1]);
+                return -1;
+        }
+
+        return 0;
+}
+
+
+static int ft_validate_rsnie(struct wpa_sm *sm,
+                             const unsigned char *src_addr,
+                             struct wpa_eapol_ie_parse *ie)
+{
+        struct wpa_ie_data rsn;
+
+        if (!ie->rsn_ie)
+                return 0;
+
+        /*
+         * Verify that PMKR1Name from EAPOL-Key message 3/4
+         * matches with the value we derived.
+         */
+        if (wpa_parse_wpa_ie_rsn(ie->rsn_ie, ie->rsn_ie_len, &rsn) < 0 ||
+            rsn.num_pmkid != 1 || rsn.pmkid == NULL) {
+                wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "FT: No PMKR1Name in "
+                        "FT 4-way handshake message 3/4");
+                return -1;
+        }
+
+        if (os_memcmp_const(rsn.pmkid, sm->pmk_r1_name, WPA_PMK_NAME_LEN) != 0)
+        {
+                wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
+                        "FT: PMKR1Name mismatch in "
+                        "FT 4-way handshake message 3/4");
+                wpa_hexdump(MSG_DEBUG, "FT: PMKR1Name from Authenticator",
+                            rsn.pmkid, WPA_PMK_NAME_LEN);
+                wpa_hexdump(MSG_DEBUG, "FT: Derived PMKR1Name",
+                            sm->pmk_r1_name, WPA_PMK_NAME_LEN);
+                return -1;
+        }
+
+        return 0;
+}
+
+static int wpa_supplicant_validate_ie_ft(struct wpa_sm *sm,
+                                         const unsigned char *src_addr,
+                                         struct wpa_eapol_ie_parse *ie)
+{
+    const u8 *pos, *end, *mdie = NULL, *ftie = NULL;
+
+    if (sm->assoc_resp_ies) {
+        pos = sm->assoc_resp_ies;
+        end = pos + sm->assoc_resp_ies_len;
+        while (end - pos > 2) {
+               if (2 + pos[1] > end -pos)
+                   break;
+               switch (*pos) {
+               case WLAN_EID_MOBILITY_DOMAIN:
+                       mdie = pos;
+                       break;
+               case WLAN_EID_FAST_BSS_TRANSITION:
+                       ftie = pos;
+                       break;
+               }
+               pos += 2 + pos[1];
+        }
+    }
+    if (ft_validate_mdie(sm, src_addr, ie, mdie) < 0 ||
+        ft_validate_ftie(sm, src_addr, ie, ftie) < 0 ||
+        ft_validate_rsnie(sm, src_addr, ie) < 0) {
+        return -1;
+    }
+    return 0;
+}
+#endif /* CONFIG_IEEE80211R */
 static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
                       struct wpa_eapol_key *key,
                       u16 ver, const u8 *key_data,
@@ -1364,6 +1502,11 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
     if (wpa_supplicant_parse_ies(key_data, key_data_len, &ie) < 0) {
         goto failed;
     }
+#ifdef CONFIG_IEEE80211R
+    if (wpa_key_mgmt_ft(sm->key_mgmt) && wpa_supplicant_validate_ie_ft(sm, sm->bssid, &ie) < 0) {
+        goto failed;
+    }
+#endif /* CONFIG_IEEE80211R */
     if (wpa_supplicant_validate_ie(sm, sm->bssid, &ie) < 0) {
         goto failed;
     }
@@ -2453,6 +2596,8 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
         sm->key_mgmt = WPA_KEY_MGMT_SAE_EXT_KEY; /* for WPA3 PSK */
     } else if (auth_mode == WPA3_AUTH_DPP) {
         sm->key_mgmt = WPA_KEY_MGMT_DPP;
+    } else if (auth_mode == WPA3_AUTH_FT_SAE) {
+        sm->key_mgmt = WPA_KEY_MGMT_FT_SAE;
     } else {
         sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
     }
@@ -2497,7 +2642,7 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_
      * is part of libraries,
      * TODO Correct this in future during NVS restructuring */
     if ((sm->key_mgmt == WPA_KEY_MGMT_SAE ||
-         sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY) &&
+         sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY || sm->key_mgmt == WPA_KEY_MGMT_FT_SAE) &&
         (os_memcmp(sm->bssid, bssid, ETH_ALEN) == 0) &&
         (os_memcmp(sm->ssid, ssid, ssid_len) != 0)) {
         use_pmk_cache = false;
@@ -2580,7 +2725,7 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_
     }
 #endif
 #ifdef CONFIG_IEEE80211R
-    if (sm->key_mgmt == WPA_KEY_MGMT_FT_PSK) {
+    if (sm->key_mgmt == WPA_KEY_MGMT_FT_PSK || sm->key_mgmt == WPA_KEY_MGMT_FT_SAE) {
         const u8 *ie, *md = NULL;
         struct wpa_bss *bss = wpa_bss_get_bssid(&g_wpa_supp, bssid);
         if (!bss) {
@@ -2709,7 +2854,8 @@ void wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
     if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
         sm->key_mgmt == WPA_KEY_MGMT_OWE ||
         sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY ||
-        sm->key_mgmt == WPA_KEY_MGMT_DPP)
+        sm->key_mgmt == WPA_KEY_MGMT_DPP ||
+        sm->key_mgmt == WPA_KEY_MGMT_FT_SAE)
         return;
 
     /* This is really SLOW, so just re cacl while reset param */

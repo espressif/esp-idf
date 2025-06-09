@@ -15,6 +15,7 @@
 #include "common/ieee802_11_common.h"
 #include "wpa.h"
 #include "wpa_i.h"
+#include "wpa_ie.h"
 
 #ifdef CONFIG_IEEE80211R
 
@@ -164,11 +165,16 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 	struct rsn_ie_hdr *rsnie;
 	int mdie_len;
 	u16 capab;
+        int rsnxe_used;
+        size_t rsnxe_len;
+        u8 mic_control;
+        int res;
+        u8 rsnxe[20];
 
 	sm->ft_completed = 0;
 
 	buf_len = 2 + sizeof(struct rsn_mdie) + 2 + sizeof(struct rsn_ftie) +
-		2 + sm->r0kh_id_len + ric_ies_len + 100;
+		2 + sm->r0kh_id_len + ric_ies_len + 100 + sizeof(rsnxe);
 	buf = os_zalloc(buf_len);
 	if (buf == NULL)
 		return NULL;
@@ -245,10 +251,20 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 	pos += WPA_PMK_NAME_LEN;
 
 #ifdef CONFIG_IEEE80211W
-	if (sm->mgmt_group_cipher == WPA_CIPHER_AES_128_CMAC) {
-		/* Management Group Cipher Suite */
-		RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_AES_128_CMAC);
-		pos += RSN_SELECTOR_LEN;
+        /* Management Group Cipher Suite */
+        switch (sm->mgmt_group_cipher) {
+        case WPA_CIPHER_AES_128_CMAC:
+                RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_AES_128_CMAC);
+                pos += RSN_SELECTOR_LEN;
+                break;
+        case WPA_CIPHER_BIP_GMAC_128:
+                RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_BIP_GMAC_128);
+                pos += RSN_SELECTOR_LEN;
+                break;
+        case WPA_CIPHER_BIP_GMAC_256:
+                RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_BIP_GMAC_256);
+                pos += RSN_SELECTOR_LEN;
+                break;
 	}
 #endif /* CONFIG_IEEE80211W */
 
@@ -269,6 +285,10 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 	ftie_len = pos++;
 	ftie = (struct rsn_ftie *) pos;
 	pos += sizeof(*ftie);
+        rsnxe_used = wpa_key_mgmt_sae(sm->key_mgmt) && anonce &&
+                     (sm->sae_pwe == SAE_PWE_BOTH ||
+                      sm->sae_pwe == SAE_PWE_HASH_TO_ELEMENT);
+        mic_control = rsnxe_used ? FTE_MIC_CTRL_RSNXE_USED : 0;
 	os_memcpy(ftie->snonce, sm->snonce, WPA_NONCE_LEN);
 	if (anonce)
 		os_memcpy(ftie->anonce, anonce, WPA_NONCE_LEN);
@@ -292,6 +312,15 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 		pos += ric_ies_len;
 	}
 
+        res = wpa_gen_rsnxe(sm, rsnxe, sizeof(rsnxe));
+        if (res < 0) {
+            os_free(buf);
+            return NULL;
+        }
+        rsnxe_len = res;
+        os_memcpy(pos, rsnxe, rsnxe_len);
+        pos += rsnxe_len;
+
 	if (kck) {
 		/*
 		 * IEEE Std 802.11r-2008, 11A.8.4
@@ -303,14 +332,20 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 		 * MDIE
 		 * FTIE (with MIC field set to 0)
 		 * RIC-Request (if present)
+                 * RSNXE (if present)
 		 */
 		/* Information element count */
+                mic_control |= FTE_MIC_LEN_16 << FTE_MIC_CTRL_MIC_LEN_SHIFT;
+                ftie->mic_control[0] = mic_control;
 		ftie->mic_control[1] = 3 + ieee802_11_ie_count(ric_ies,
 							       ric_ies_len);
+                if (rsnxe_len)
+                    ftie->mic_control[1] += 1;
 		if (wpa_ft_mic(kck, kck_len, sm->own_addr, target_ap, 5,
 			       ((u8 *) mdie) - 2, 2 + sizeof(*mdie),
 			       ftie_pos, 2 + *ftie_len,
-			       (u8 *) rsnie, 2 + rsnie->len, ric_ies,
+			       (u8 *) rsnie, 2 + rsnie->len,
+                               rsnxe_len ? rsnxe : NULL, rsnxe_len, ric_ies,
 			       ric_ies_len, ftie->mic) < 0) {
 			wpa_printf(MSG_INFO, "FT: Failed to calculate MIC");
 			os_free(buf);
@@ -660,6 +695,7 @@ static int wpa_ft_process_igtk_subelem(struct wpa_sm *sm, const u8 *igtk_elem,
 				       size_t igtk_elem_len)
 {
 	u8 igtk[WPA_IGTK_LEN];
+        wifi_wpa_igtk_t *_igtk = (wifi_wpa_igtk_t*)igtk_elem;
 
 	if (sm->mgmt_group_cipher != WPA_CIPHER_AES_128_CMAC)
 		return 0;
@@ -692,12 +728,12 @@ static int wpa_ft_process_igtk_subelem(struct wpa_sm *sm, const u8 *igtk_elem,
 
 	/* KeyID[2] | IPN[6] | Key Length[1] | Key[16+8] */
 
-	wpa_hexdump_key(MSG_DEBUG, "FT: IGTK from Reassoc Resp", igtk,
+	wpa_hexdump_key(MSG_DEBUG, "FT: IGTK from Reassoc Resp ", igtk,
 			WPA_IGTK_LEN);
 #ifdef ESP_SUPPLICANT
-        if (esp_wifi_set_igtk_internal(WIFI_IF_STA, (wifi_wpa_igtk_t *)igtk) < 0) {
+        if (esp_wifi_set_igtk_internal(WIFI_IF_STA, (wifi_wpa_igtk_t *)_igtk) < 0) {
 #else
-	keyidx = WPA_GET_LE16(igtk_elem);
+        keyidx = WPA_GET_LE16(igtk_elem);
 	if (wpa_sm_set_key(&(sm->install_gtk), WIFI_WPA_ALG_IGTK, sm->bssid, keyidx, 0,
 			   (u8 *)(igtk_elem + 2), 6, igtk, WPA_IGTK_LEN, sm->key_entry_valid) < 0) {
 #endif
@@ -809,6 +845,8 @@ int wpa_ft_validate_reassoc_resp(struct wpa_sm *sm, const u8 *ies,
 	count = 3;
 	if (parse.ric)
 		count += ieee802_11_ie_count(parse.ric, parse.ric_len);
+        if (parse.rsnxe)
+                count++;
 	if (ftie->mic_control[1] != count) {
 		wpa_printf(MSG_DEBUG, "FT: Unexpected IE count in MIC "
 			   "Control: received %u expected %u",
@@ -820,6 +858,8 @@ int wpa_ft_validate_reassoc_resp(struct wpa_sm *sm, const u8 *ies,
 		       parse.mdie - 2, parse.mdie_len + 2,
 		       parse.ftie - 2, parse.ftie_len + 2,
 		       parse.rsn - 2, parse.rsn_len + 2,
+                       parse.rsnxe ? parse.rsnxe - 2 : NULL,
+                       parse.rsnxe ? parse.rsnxe_len + 2 : 0,
 		       parse.ric, parse.ric_len,
 		       mic) < 0) {
 		wpa_printf(MSG_DEBUG, "FT: Failed to calculate MIC");

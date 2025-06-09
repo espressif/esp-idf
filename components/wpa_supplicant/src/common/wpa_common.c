@@ -28,6 +28,7 @@ int wpa_ft_mic(const u8 *kck, size_t kck_len, const u8 *sta_addr,
                const u8 *mdie, size_t mdie_len,
 	       const u8 *ftie, size_t ftie_len,
 	       const u8 *rsnie, size_t rsnie_len,
+               const u8 *rsnxe, size_t rsnxe_len,
 	       const u8 *ric, size_t ric_len, u8 *mic)
 {
 	u8 *buf, *pos;
@@ -39,7 +40,7 @@ int wpa_ft_mic(const u8 *kck, size_t kck_len, const u8 *sta_addr,
 		return -1;
 	}
 
-	buf_len = 2 * ETH_ALEN + 1 + mdie_len + ftie_len + rsnie_len + ric_len;
+	buf_len = 2 * ETH_ALEN + 1 + mdie_len + ftie_len + rsnie_len + ric_len + rsnxe_len;
 	buf = os_malloc(buf_len);
 	if (buf == NULL)
 		return -1;
@@ -51,38 +52,41 @@ int wpa_ft_mic(const u8 *kck, size_t kck_len, const u8 *sta_addr,
 	pos += ETH_ALEN;
 	*pos++ = transaction_seqnum;
 	if (rsnie) {
-		os_memcpy(pos, rsnie, rsnie_len);
-		pos += rsnie_len;
+            os_memcpy(pos, rsnie, rsnie_len);
+            pos += rsnie_len;
 	}
 	if (mdie) {
-		os_memcpy(pos, mdie, mdie_len);
-		pos += mdie_len;
+            os_memcpy(pos, mdie, mdie_len);
+            pos += mdie_len;
 	}
 	if (ftie) {
-		struct rsn_ftie *_ftie;
-		os_memcpy(pos, ftie, ftie_len);
-		if (ftie_len < 2 + sizeof(*_ftie)) {
-			os_free(buf);
-			return -1;
-		}
-		_ftie = (struct rsn_ftie *) (pos + 2);
-		os_memset(_ftie->mic, 0, sizeof(_ftie->mic));
-		pos += ftie_len;
-	}
-	if (ric) {
-		os_memcpy(pos, ric, ric_len);
-		pos += ric_len;
-	}
-
+            struct rsn_ftie *_ftie;
+            os_memcpy(pos, ftie, ftie_len);
+            if (ftie_len < 2 + sizeof(*_ftie)) {
+                os_free(buf);
+                return -1;
+            }
+            _ftie = (struct rsn_ftie *) (pos + 2);
+            os_memset(_ftie->mic, 0, sizeof(_ftie->mic));
+            pos += ftie_len;
+        }
+        if (ric) {
+            os_memcpy(pos, ric, ric_len);
+            pos += ric_len;
+        }
+        if (rsnxe) {
+            os_memcpy(pos, rsnxe, rsnxe_len);
+            pos += rsnxe_len;
+        }
 	wpa_hexdump(MSG_MSGDUMP, "FT: MIC data", buf, pos - buf);
-	if (omac1_aes_128(kck, buf, pos - buf, mic)) {
-		os_free(buf);
-		return -1;
-	}
+        if (omac1_aes_128(kck, buf, pos - buf, mic)) {
+            os_free(buf);
+            return -1;
+        }
 
 	os_free(buf);
 
-	return 0;
+        return 0;
 }
 
 
@@ -151,6 +155,9 @@ int wpa_ft_parse_ies(const u8 *ies, size_t ies_len,
 	pos = ies;
 	end = ies + ies_len;
 	while (pos + 2 <= end && pos + 2 + pos[1] <= end) {
+                u8 len;
+
+                len = pos[1];
 		switch (pos[0]) {
 		case WLAN_EID_RSN:
 			parse->rsn = pos + 2;
@@ -166,6 +173,13 @@ int wpa_ft_parse_ies(const u8 *ies, size_t ies_len,
 			if (data.num_pmkid == 1 && data.pmkid)
 				parse->rsn_pmkid = data.pmkid;
 			break;
+                case WLAN_EID_RSNX:
+                        wpa_hexdump(MSG_DEBUG, "FT: RSNXE", pos, len);
+                        if (len < 1)
+                                break;
+                        parse->rsnxe = pos + 2;
+                        parse->rsnxe_len = pos[1];
+                        break;
 		case WLAN_EID_MOBILITY_DOMAIN:
 			parse->mdie = pos + 2;
 			parse->mdie_len = pos[1];
@@ -198,16 +212,18 @@ int wpa_ft_parse_ies(const u8 *ies, size_t ies_len,
 	 * Check that the protected IE count matches with IEs included in the
 	 * frame.
 	 */
+        if (parse->rsnxe)
+            prot_ie_count--;
 	if (parse->rsn)
-		prot_ie_count--;
+	    prot_ie_count--;
 	if (parse->mdie)
-		prot_ie_count--;
+	    prot_ie_count--;
 	if (parse->ftie)
-		prot_ie_count--;
+	    prot_ie_count--;
 	if (prot_ie_count < 0) {
-		wpa_printf(MSG_DEBUG, "FT: Some required IEs not included in "
-			   "the protected IE count");
-		return -1;
+	    wpa_printf(MSG_DEBUG, "FT: Some required IEs not included in "
+		       "the protected IE count");
+            return -1;
 	}
 
 	if (prot_ie_count == 0 && parse->ric) {
@@ -225,9 +241,9 @@ int wpa_ft_parse_ies(const u8 *ies, size_t ies_len,
 	}
 	parse->ric_len = pos - parse->ric;
 	if (prot_ie_count) {
-		wpa_printf(MSG_DEBUG, "FT: %d protected IEs missing from "
-			   "frame", (int) prot_ie_count);
-		return -1;
+	    wpa_printf(MSG_DEBUG, "FT: %d protected IEs missing from "
+		       "frame", (int) prot_ie_count);
+	    return -1;
 	}
 
 	return 0;
@@ -326,6 +342,8 @@ static int rsn_key_mgmt_to_bitfield(const u8 *s)
                 return WPA_KEY_MGMT_SAE;
         if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_SAE_EXT_KEY)
                 return WPA_KEY_MGMT_SAE_EXT_KEY;
+        if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_FT_SAE)
+                return WPA_KEY_MGMT_FT_SAE;
 #endif /* CONFIG_WPA3_SAE */
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_802_1X_SHA256)
 		return WPA_KEY_MGMT_IEEE8021X_SHA256;
@@ -340,12 +358,6 @@ static int rsn_key_mgmt_to_bitfield(const u8 *s)
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_802_1X_SUITE_B_192)
 		return WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
 #endif
-#ifdef CONFIG_WPA3_SAE
-	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_SAE)
-		return WPA_KEY_MGMT_SAE;
-	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_SAE_EXT_KEY)
-		return WPA_KEY_MGMT_SAE_EXT_KEY;
-#endif /* CONFIG_WPA3_SAE */
 #ifdef CONFIG_OWE_STA
 	if(RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_OWE)
 		return WPA_KEY_MGMT_OWE;
@@ -943,6 +955,7 @@ int wpa_eapol_key_mic(const u8 *key, size_t key_len, int akmp, int ver,
 		switch (akmp) {
 #ifdef CONFIG_WPA3_SAE
 		case WPA_KEY_MGMT_SAE:
+                case WPA_KEY_MGMT_FT_SAE:
 			return omac1_aes_128(key, buf, len, mic);
 		case WPA_KEY_MGMT_SAE_EXT_KEY:
 			wpa_printf(MSG_DEBUG,
@@ -1730,14 +1743,14 @@ int wpa_parse_kde_ies(const u8 *buf, size_t len, struct wpa_eapol_ie_parse *ie)
 		if (*pos == WLAN_EID_RSN) {
 			ie->rsn_ie = pos;
 			ie->rsn_ie_len = pos[1] + 2;
-#ifdef CONFIG_IEEE80211R_AP
+#ifdef CONFIG_IEEE80211R
 		} else if (*pos == WLAN_EID_MOBILITY_DOMAIN) {
 			ie->mdie = pos;
 			ie->mdie_len = pos[1] + 2;
 		} else if (*pos == WLAN_EID_FAST_BSS_TRANSITION) {
 			ie->ftie = pos;
 			ie->ftie_len = pos[1] + 2;
-#endif /* CONFIG_IEEE80211R_AP */
+#endif /* CONFIG_IEEE80211R */
 		} else if (*pos == WLAN_EID_RSNX) {
 			ie->rsnxe = pos;
 			ie->rsnxe_len = pos[1] + 2;
