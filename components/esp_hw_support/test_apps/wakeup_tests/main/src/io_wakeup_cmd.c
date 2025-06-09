@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,6 +10,7 @@
 #include "esp_sleep.h"
 #include "driver/rtc_io.h"
 #include "driver/gpio.h"
+#include "hal/gpio_ll.h"
 #include "esp_console.h"
 #include "linenoise/linenoise.h"
 #include "argtable3/argtable3.h"
@@ -128,7 +129,7 @@ static void register_ext1_wakeup(void)
 
     const esp_console_cmd_t cmd = {
         .command = "ext1",
-        .help = "configue ext1 wakeup",
+        .help = "configure ext1 wakeup",
         .hint = NULL,
         .func = &process_ext1_wakeup,
         .argtable = &ext1_wakeup_args
@@ -202,7 +203,7 @@ static void register_rtcio_wakeup(void)
 
     const esp_console_cmd_t cmd = {
         .command = "rtcio",
-        .help = "configue rtcio wakeup",
+        .help = "configure rtcio wakeup",
         .hint = NULL,
         .func = &process_rtcio_wakeup,
         .argtable = &rtcio_wakeup_args
@@ -247,13 +248,14 @@ static int process_gpio_wakeup(int argc, char **argv)
 
     if (gpio_wakeup_args.disable->count) {
         ESP_ERROR_CHECK(gpio_wakeup_disable(io_wakeup_num));
+        ESP_ERROR_CHECK(gpio_intr_disable(io_wakeup_num));
     } else {
         gpio_config_t config = {
             .pin_bit_mask = BIT64(io_wakeup_num),
             .mode = GPIO_MODE_INPUT,
             .pull_down_en = false,
             .pull_up_en = false,
-            .intr_type = GPIO_INTR_DISABLE
+            .intr_type = (io_wakeup_level == 0) ? GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL
         };
         ESP_ERROR_CHECK(gpio_config(&config));
 
@@ -277,7 +279,7 @@ static void register_gpio_wakeup(void)
 
     const esp_console_cmd_t cmd = {
         .command = "gpio",
-        .help = "configue gpio wakeup",
+        .help = "configure gpio wakeup",
         .hint = NULL,
         .func = &process_gpio_wakeup,
         .argtable = &gpio_wakeup_args
@@ -336,7 +338,7 @@ static void register_gpio_control(void)
 
     const esp_console_cmd_t cmd = {
         .command = "gpio_control",
-        .help = "configue gpio control",
+        .help = "configure gpio control",
         .hint = NULL,
         .func = &process_gpio_control,
         .argtable = &gpio_control_args
@@ -358,11 +360,51 @@ static int process_get_wakeup_cause(int argc, char **argv)
 
     switch (esp_sleep_get_wakeup_cause()) {
     case ESP_SLEEP_WAKEUP_EXT1: {
-        printf("Wake up from EXT1\n");
+#if SOC_PM_SUPPORT_EXT1_WAKEUP && SOC_RTCIO_PIN_COUNT > 0
+        uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
+        if (wakeup_pin_mask != 0) {
+            int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
+            printf("Wake up from EXT1 at IO%d\n", pin);
+        } else
+#endif
+        {
+            printf("Wake up from EXT1 triggered, but unknown wake-up IO\n");
+        }
         break;
     }
     case ESP_SLEEP_WAKEUP_GPIO: {
-        printf("Wake up from GPIO\n");
+        if (esp_reset_reason() == ESP_RST_DEEPSLEEP) {
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+            uint64_t wakeup_pin_mask = esp_sleep_get_gpio_wakeup_status();
+            if (wakeup_pin_mask != 0) {
+                int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
+                printf("Wake up from GPIO at IO%d\n", pin);
+            } else {
+                printf("Wake up from GPIO triggered, but unknown wake-up IO\n");
+            }
+#endif
+        } else {
+            struct {
+                union {
+                    struct
+                    {
+                        uint32_t status_l;
+                        uint32_t status_h;
+                    };
+                    uint64_t val;
+                };
+            } gpio_intr_status;
+            gpio_ll_get_intr_status(&GPIO, 0, &gpio_intr_status.status_l);
+            gpio_ll_get_intr_status_high(&GPIO, 0, &gpio_intr_status.status_h);
+
+            if (gpio_intr_status.val) {
+                printf("Wake up from GPIO at IO%d\n", __builtin_ffsll(gpio_intr_status.val) - 1);
+            } else {
+                printf("Wake up from GPIO triggered, but unknown wake-up IO\n");
+            }
+            gpio_ll_clear_intr_status(&GPIO, 0xFFFFFFFF);
+            gpio_ll_clear_intr_status_high(&GPIO, 0xFFFFFFFF);
+        }
         break;
     }
     default: {

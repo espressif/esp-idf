@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 from time import sleep
 from typing import Tuple
@@ -76,7 +76,12 @@ def test_ext1_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
             sleep(2)
 
             wakee.write('cause')
-            wakee.expect('Wake up from EXT1', timeout=10)
+            # esp32 ext1 all low wakeup mode can not detect wakeup pin.
+            if (dut[0].target == 'esp32') and (wakeup_level == 0):
+                wakee.expect('Wake up from EXT1', timeout=10)
+            else:
+                wakee.expect(f'Wake up from EXT1 at IO{gpio_num}', timeout=10)
+
             wakee.write(f'ext1 -p {gpio_num} -d')
             wakee.expect(f'io_wakeup_num = {gpio_num}', timeout=10)
 
@@ -84,6 +89,7 @@ def test_ext1_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.esp32c2
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
+@pytest.mark.esp32p4
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
@@ -124,7 +130,7 @@ def test_rtcio_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
             sleep(2)
 
             wakee.write('cause')
-            wakee.expect('Wake up from GPIO', timeout=10)
+            wakee.expect(f'Wake up from GPIO at IO{gpio_num}', timeout=10)
             wakee.write(f'rtcio -p {gpio_num} -d')
             wakee.expect(f'io_wakeup_num = {gpio_num}', timeout=10)
 
@@ -136,6 +142,7 @@ def test_rtcio_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.esp32s3
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.esp32p4
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
@@ -170,7 +177,7 @@ def test_gpio_wakeup_enable_lightsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
             wakee.expect('esp_light_sleep_start', timeout=10)
 
             wakee.write('cause')
-            wakee.expect('Wake up from GPIO', timeout=10)
+            wakee.expect(f'Wake up from GPIO at IO{gpio_num}', timeout=10)
 
             wakee.write(f'gpio -p {gpio_num} -d')
             wakee.expect(f'io_wakeup_num = {gpio_num}', timeout=10)
