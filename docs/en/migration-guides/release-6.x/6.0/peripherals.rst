@@ -22,19 +22,28 @@ RMT
 
 The ``io_od_mode`` member in the :cpp:type:`rmt_tx_channel_config_t` configuration structure has been removed. If you want to use open-drain mode, you need to manually call the :func:`gpio_od_enable` function.
 
-MCPWM
------
+.. only:: SOC_MCPWM_SUPPORTED
 
-The ``io_od_mode`` member in the :cpp:type:`mcpwm_generator_config_t` configuration structure has been removed. If you want to use open-drain mode, you need to manually call the :func:`gpio_od_enable` function.
+    MCPWM
+    -----
 
-The ``pull_up`` and ``pull_down`` members have been removed from the following configuration structures. You need to manually call the :func:`gpio_set_pull_mode` function to configure the pull-up and pull-down resistors for the IO:
+    The ``io_od_mode`` member in the :cpp:type:`mcpwm_generator_config_t` configuration structure has been removed. If you want to use open-drain mode, you need to manually call the :func:`gpio_od_enable` function.
 
-.. list::
+    The ``pull_up`` and ``pull_down`` members have been removed from the following configuration structures. You need to manually call the :func:`gpio_set_pull_mode` function to configure the pull-up and pull-down resistors for the IO:
 
-    - :cpp:type:`mcpwm_generator_config_t`
-    - :cpp:type:`mcpwm_gpio_fault_config_t`
-    - :cpp:type:`mcpwm_gpio_sync_src_config_t`
-    - :cpp:type:`mcpwm_capture_channel_config_t`
+    .. list::
+
+        - :cpp:type:`mcpwm_generator_config_t`
+        - :cpp:type:`mcpwm_gpio_fault_config_t`
+        - :cpp:type:`mcpwm_gpio_sync_src_config_t`
+        - :cpp:type:`mcpwm_capture_channel_config_t`
+
+    The default MCPWM group clock divider has been changed to 1. This allows you to obtain a higher default resolution.
+
+    Legacy MCPWM Driver is Removed
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    The legacy MCPWM driver ``driver/mcpwm.h`` is deprecated since version 5.0 (see :ref:`deprecate_mcpwm_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_mcpwm`, and the header file path is ``driver/mcpwm_prelude``.
 
 GPIO
 ----

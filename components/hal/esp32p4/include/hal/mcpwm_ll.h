@@ -1748,48 +1748,6 @@ static inline void mcpwm_ll_etm_enable_evt_comparator_event(mcpwm_dev_t *mcpwm, 
     }
 }
 
-//////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////
-/////////////////////////////The following functions are only used by the legacy driver/////////////////////////////////
-/////////////////////////////They might be removed in the next major release (ESP-IDF 6.0)//////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static inline uint32_t mcpwm_ll_timer_get_peak(mcpwm_dev_t *mcpwm, int timer_id, bool symmetric)
-{
-    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period) + (symmetric ? 0 : 1);
-}
-
-static inline mcpwm_timer_count_mode_t mcpwm_ll_timer_get_count_mode(mcpwm_dev_t *mcpwm, int timer_id)
-{
-    switch (mcpwm->timer[timer_id].timer_cfg1.timer_mod) {
-    case 1:
-        return MCPWM_TIMER_COUNT_MODE_UP;
-    case 2:
-        return MCPWM_TIMER_COUNT_MODE_DOWN;
-    case 3:
-        return MCPWM_TIMER_COUNT_MODE_UP_DOWN;
-    case 0:
-    default:
-        return MCPWM_TIMER_COUNT_MODE_PAUSE;
-    }
-}
-
-static inline uint32_t mcpwm_ll_operator_get_compare_value(mcpwm_dev_t *mcpwm, int operator_id, int compare_id)
-{
-    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->operators[operator_id].timestamp[compare_id], cmpr);
-}
-
-__attribute__((always_inline))
-static inline uint32_t mcpwm_ll_intr_get_capture_status(mcpwm_dev_t *mcpwm)
-{
-    return (mcpwm->int_st.val >> 27) & 0x07;
-}
-
-__attribute__((always_inline))
-static inline void mcpwm_ll_intr_clear_capture_status(mcpwm_dev_t *mcpwm, uint32_t capture_mask)
-{
-    mcpwm->int_clr.val = (capture_mask & 0x07) << 27;
-}
-
 #ifdef __cplusplus
 }
 #endif
