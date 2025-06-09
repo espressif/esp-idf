@@ -318,7 +318,7 @@ TEST_CASE("SDIO_Slave: test to host (Performance)", "[sdio_speed]")
     test_to_host();
 }
 
-#if SOC_PAU_SUPPORTED
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 #include "esp_private/sleep_sys_periph.h"
 #include "esp_private/sleep_retention.h"
 
