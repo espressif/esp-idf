@@ -277,18 +277,29 @@ Step 5. First Steps on ESP-IDF
 .. include:: linux-macos-start-project.rst
 .. include:: start-project.rst
 
-Tip: Updating ESP-IDF
-======================
+.. _get-started-update-esp-idf:
+
+Updating ESP-IDF and Python Packages in the ESP-IDF Environment
+===============================================================
 
 It is recommended to update ESP-IDF from time to time, as newer versions fix bugs and/or provide new features. Please note that each ESP-IDF major and minor release version has an associated support period, and when one release branch is approaching end of life (EOL), all users are encouraged to upgrade their projects to more recent ESP-IDF releases, to find out more about support periods, see :doc:`ESP-IDF Versions <../versions>`.
 
 The simplest way to do the update is to delete the existing ``esp-idf`` folder and clone it again, as if performing the initial installation described in :ref:`get-started-get-esp-idf`.
 
-Another solution is to update only what has changed. :ref:`The update procedure depends on the version of ESP-IDF you are using <updating>`.
+Another solution is to update only what has changed. For specific instructions, please visit :ref:`Updating ESP-IDF <updating-master>` page.
 
-After updating ESP-IDF, execute the Install script again, in case the new ESP-IDF version requires different versions of tools. See instructions at :ref:`get-started-set-up-tools`.
+After updating ESP-IDF, execute the install script again (``./install.sh`` in your ``$IDF_PATH``), in case the new ESP-IDF version requires different versions of tools. See instructions at :ref:`get-started-set-up-tools`.
 
-Once the new tools are installed, update the environment using the Export script. See instructions at :ref:`get-started-set-up-env`.
+Once all the new tools are installed, enter the ESP-IDF environment using the export script as described in :ref:`get-started-set-up-env`.
+
+Updating Python Packages in the ESP-IDF Environment Without Updating ESP-IDF
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some features in ESP-IDF are not included directly in the ESP-IDF repository. Instead, they are provided by Python packages such as ``esp-idf-monitor`` or ``esptool``, which are installed in the ESP-IDF environment by the install script. These packages can be updated independently of ESP-IDF. To update them, simply re-run the install script (``./install.sh`` in your ``$IDF_PATH``). If the ESP-IDF environment already exists, the script will update all Python packages in it to the latest versions compatible with the current ESP-IDF version — without updating the ESP-IDF itself.
+
+.. note::
+
+    If you are an advanced user and want more control over the update process, you can also check :ref:`idf-tools-py` and its ``install-python-env`` command, which is used by the install script and handles the creation or update of the ESP-IDF environment.
 
 Related Documents
 =================

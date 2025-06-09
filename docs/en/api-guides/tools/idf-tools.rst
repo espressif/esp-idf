@@ -35,7 +35,7 @@ This file is used by the :idf_file:`tools/idf_tools.py` script when installing t
 Tools Installation Directory
 ----------------------------
 
-The ``IDF_TOOLS_PATH`` environment variable specifies the location where the tools are to be downloaded and installed. If not set, the default location will be ``HOME/.espressif`` on Linux and macOS, and ``%USER_PROFILE%\.espressif`` on Windows.
+The ``IDF_TOOLS_PATH`` environment variable specifies the location where the tools are to be downloaded and installed. If not set, the default location will be ``$HOME/.espressif`` on Linux and macOS, and ``%USER_PROFILE%\.espressif`` on Windows.
 
 Inside the ``IDF_TOOLS_PATH`` directory, the tools installation scripts create the following directories and files:
 
@@ -60,6 +60,7 @@ Any mirror server can be used provided the URL matches the ``github.com`` downlo
 
 .. note:: The Espressif download server currently does not mirror everything from GitHub, but only files attached as Assets to some releases, as well as source archives for some releases.
 
+.. _idf-tools-py:
 
 ``idf_tools.py`` Script
 -----------------------
@@ -119,7 +120,7 @@ The :idf_file:`tools/idf_tools.py` script bundled with ESP-IDF performs several 
 
 * ``check``: For each tool, checks whether the tool is available in the system path and in ``IDF_TOOLS_PATH``.
 
-* ``install-python-env``: Creates a Python virtual environment in the ``${IDF_TOOLS_PATH}/python_env`` directory or directly in the directory set by the ``IDF_PYTHON_ENV_PATH`` environment variable, and install the required Python packages there.
+* ``install-python-env``: Creates a Python virtual environment in the ``${IDF_TOOLS_PATH}/python_env`` directory or directly in the directory set by the ``IDF_PYTHON_ENV_PATH`` environment variable, and installs the required Python packages there. If the Python virtual environment already exists, packages inside are updated to their latest versions with respect to the ``espidf.constraints.*.txt`` file.
 
   * An optional ``--features`` argument allows one to specify a comma-separated list of features to be added or removed.
 
