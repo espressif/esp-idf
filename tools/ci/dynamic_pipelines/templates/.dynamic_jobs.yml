@@ -51,6 +51,9 @@
     TARGET_SELECTOR: ""
     ENV_MARKERS: ""
     PYTEST_EXTRA_FLAGS: "--dev-passwd ${ETHERNET_TEST_PASSWORD} --dev-user ${ETHERNET_TEST_USER} --capture=fd --verbosity=0"
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: pipeline_variables
   cache:
     # Usually do not need submodule-cache in target_test
     - key: pip-cache-${LATEST_GIT_TAG}
