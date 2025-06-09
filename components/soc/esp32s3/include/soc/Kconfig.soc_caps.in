@@ -47,6 +47,10 @@ config SOC_LCDCAM_SUPPORTED
     bool
     default y
 
+config SOC_LCDCAM_CAM_SUPPORTED
+    bool
+    default y
+
 config SOC_LCDCAM_I80_LCD_SUPPORTED
     bool
     default y
@@ -1538,3 +1542,15 @@ config SOC_ULP_HAS_ADC
 config SOC_PHY_COMBO_MODULE
     bool
     default y
+
+config SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV
+    bool
+    default y
+
+config SOC_LCDCAM_CAM_PERIPH_NUM
+    int
+    default 1
+
+config SOC_LCDCAM_CAM_DATA_WIDTH_MAX
+    int
+    default 16
