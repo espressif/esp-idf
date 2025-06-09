@@ -153,7 +153,7 @@ static void test_gptimer_etm_sleep_retention(bool back_up_before_sleep)
         .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1 * 1000 * 1000, // 1MHz, 1 tick = 1us
-        .flags.backup_before_sleep = back_up_before_sleep,
+        .flags.allow_pd = back_up_before_sleep,
     };
     TEST_ESP_OK(gptimer_new_timer(&timer_config, &gptimer));
 

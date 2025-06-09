@@ -119,12 +119,18 @@ GPIO
     - 更新前，通道配置由通道分配在 :cpp:func:`sdm_new_channel` 完成。在新驱动中，只有 ``density`` 可在运行时由 :cpp:func:`sdm_channel_set_pulse_density` 更新。其他参数如 ``gpio number``、 ``prescale`` 只能在通道分配时进行设置。
     - 在进行下一步通道操作前，用户应通过调用 :cpp:func:`sdm_channel_enable` 提前 **使能** 该通道。该函数有助于管理一些系统级服务，如 **电源管理**。
 
-定时器组驱动
------------------------------------------
+    .. _deprecate_gptimer_legacy_driver:
+
+.. only:: not SOC_SDM_SUPPORTED
+
+    .. _deprecate_gptimer_legacy_driver:
+
+旧版定时器组驱动被弃用
+----------------------
 
 为统一和简化通用定时器的使用，定时器组驱动已更新为 :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`。
 
-尽管我们推荐使用新的驱动 API， 旧版驱动仍然可用，其头文件引用路径为 ``driver/timer.h``。但是，引用 ``driver/timer.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
+尽管我们推荐使用新的驱动 API， 旧版驱动仍然可用，其头文件引用路径为 ``driver/timer.h``。但是，引用 ``driver/timer.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 ``CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`` 关闭该警告。
 
 .. code-block:: text
 

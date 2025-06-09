@@ -137,7 +137,7 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
                             TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
 
-    bool allow_pd = (config->flags.allow_pd == 1) || (config->flags.backup_before_sleep == 1);
+    bool allow_pd = config->flags.allow_pd == 1;
 #if !SOC_TIMER_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(allow_pd == false, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_TIMER_SUPPORT_SLEEP_RETENTION

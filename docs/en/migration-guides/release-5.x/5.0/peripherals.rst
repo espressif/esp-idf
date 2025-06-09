@@ -119,12 +119,18 @@ GPIO
     - Channel configuration was done by channel allocation, in :cpp:func:`sdm_new_channel`. In the new driver, only the ``density`` can be changed at runtime, by :cpp:func:`sdm_channel_set_pulse_density`. Other parameters like ``gpio number`` and ``prescale`` are only allowed to set during channel allocation.
     - Before further channel operations, users should **enable** the channel in advance, by calling :cpp:func:`sdm_channel_enable`. This function helps to manage some system level services, like **Power Management**.
 
-Timer Group Driver
-------------------
+    .. _deprecate_gptimer_legacy_driver:
+
+.. only:: not SOC_SDM_SUPPORTED
+
+    .. _deprecate_gptimer_legacy_driver:
+
+Legacy Timer Group Driver is Deprecated
+---------------------------------------
 
 Timer Group driver has been redesigned into :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer.
 
-Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` triggers the build warning below. The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
+Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` triggers the build warning below. The warning can be suppressed by the Kconfig option ``CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN``.
 
 .. code-block:: text
 
