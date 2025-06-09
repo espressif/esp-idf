@@ -364,6 +364,12 @@ esp_err_t emac_esp_custom_ioctl(esp_eth_mac_t *mac, int cmd, void *data)
                             "failed to set PTP target time");
         break;
     }
+    case ETH_MAC_ESP_CMD_ENABLE_TS4ALL: {
+	ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP enable TS for all invalid argument, cant' be NULL");
+	bool enable = *(bool *)data;
+	ESP_RETURN_ON_ERROR(emac_hal_ptp_enable_ts4all(&emac->hal, enable), TAG, "failed to enable timestamping for all frames");
+	break;
+    }
 #else
     case ETH_MAC_ESP_CMD_PTP_ENABLE:
     case ETH_MAC_ESP_CMD_S_PTP_TIME:
@@ -372,7 +378,8 @@ esp_err_t emac_esp_custom_ioctl(esp_eth_mac_t *mac, int cmd, void *data)
     case ETH_MAC_ESP_CMD_ADJ_PTP_FREQ:
     case ETH_MAC_ESP_CMD_S_TARGET_CB:
     case ETH_MAC_ESP_CMD_S_TARGET_TIME:
-        return ESP_ERR_NOT_SUPPORTED;
+    case ETH_MAC_ESP_CMD_ENABLE_TS4ALL:
+	return ESP_ERR_NOT_SUPPORTED;
 #endif
     case ETH_MAC_ESP_CMD_SET_TDES0_CFG_BITS:
         ESP_RETURN_ON_FALSE(data != NULL, ESP_ERR_INVALID_ARG, TAG, "cannot set DMA tx desc flag to null");
