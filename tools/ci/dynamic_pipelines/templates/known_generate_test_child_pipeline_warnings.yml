@@ -25,6 +25,7 @@ no_runner_tags:
   - esp32c5_2,generic_multi_device
   - esp32c5_2,wifi_two_dut
   - esp32c6,jtag
+  - esp32c61,generic
   - esp32c61,jtag
   - esp32h2,jtag
   - esp32p4,jtag
