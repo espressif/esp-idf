@@ -60,6 +60,7 @@ static struct eap_sm *gEapSm = NULL;
 
 static int eap_peer_sm_init(void);
 static void eap_peer_sm_deinit(void);
+static void eap_start_eapol(void *ctx, void *data);
 
 static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid);
 static int wpa2_start_eapol_internal(void);
@@ -529,6 +530,10 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
         return ESP_FAIL;
     }
 
+    if (!sm->eap_process_started) {
+        sm->eap_process_started = true;
+        eloop_cancel_timeout(eap_start_eapol, NULL, NULL);
+    }
     if (len < sizeof(*hdr) + sizeof(*ehdr)) {
         wpa_printf(MSG_DEBUG, "WPA: EAPOL frame too short to be a WPA "
                    "EAPOL-Key (len %lu, expecting at least %lu)",
@@ -612,13 +617,26 @@ _out:
     return ret;
 }
 
-static int wpa2_start_eapol(void)
+static void eap_start_eapol(void *ctx, void *data)
 {
 #ifdef USE_WPA2_TASK
-    return wpa2_post(SIG_WPA2_START, 0);
+    wpa2_post(SIG_WPA2_START, 0);
 #else
-    return wpa2_start_eapol_internal();
+    wpa2_start_eapol_internal();
 #endif
+}
+
+static int eap_start_eapol_timer(void)
+{
+    /*
+     * Do not send EAPOL-Start immediately since in most cases,
+     * Authenticator is going to start authentication immediately
+     * after association and an extra EAPOL-Start is just going to
+     * delay authentication. Use a short timeout to send the first
+     * EAPOL-Start if Authenticator does not start authentication.
+     */
+    eloop_register_timeout(2, 0, eap_start_eapol, NULL, NULL);
+    return 0;
 }
 
 static int wpa2_start_eapol_internal(void)
@@ -739,6 +757,7 @@ static int eap_peer_sm_init(void)
     wpa_printf(MSG_INFO, "wifi_task prio:%d, stack:%d", WPA2_TASK_PRIORITY, WPA2_TASK_STACK_SIZE);
 #endif
     sm->workaround = 1;
+    sm->eap_process_started = false;
     return ESP_OK;
 
 _err:
@@ -806,7 +825,7 @@ static esp_err_t esp_client_enable_fn(void *arg)
     }
 
     wpa2_cb->wpa2_sm_rx_eapol = wpa2_ent_rx_eapol;
-    wpa2_cb->wpa2_start = wpa2_start_eapol;
+    wpa2_cb->wpa2_start = eap_start_eapol_timer;
     wpa2_cb->wpa2_init = eap_peer_sm_init;
     wpa2_cb->wpa2_deinit = eap_peer_sm_deinit;
 
