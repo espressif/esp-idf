@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
 import re
+import stat
 import sys
 from shutil import copyfile
 from shutil import copytree
 from typing import Dict
 
 import click
-
 from idf_py_actions.tools import PropertyDict
 
 
@@ -43,14 +43,37 @@ def is_empty_and_create(path: str, action: str) -> None:
         sys.exit(3)
 
 
+def make_directory_permissions_writable(root_path: str) -> None:
+    """
+    Ensures all directories under `root_path` have write permission for the owner.
+    Skips files and doesn't override existing permissions unnecessarily.
+    Only applies to POSIX systems (Linux/macOS).
+    """
+    if sys.platform == 'win32':
+        return
+
+    for current_root, dirs, _ in os.walk(root_path):
+        for dirname in dirs:
+            dir_path = os.path.join(current_root, dirname)
+            try:
+                current_perm = stat.S_IMODE(os.stat(dir_path).st_mode)
+                new_perm = current_perm | stat.S_IWUSR  # mask permission for owner (write)
+                if new_perm != current_perm:
+                    os.chmod(dir_path, new_perm)
+            except PermissionError:
+                continue
+
+
 def create_project(target_path: str, name: str) -> None:
     copytree(
         os.path.join(os.environ['IDF_PATH'], 'tools', 'templates', 'sample_project'),
         target_path,
-        # 'copyfile' ensures only data are copied, without any metadata (file permissions)
+        # 'copyfile' ensures only data are copied, without any metadata (file permissions) - for files only
         copy_function=copyfile,
         dirs_exist_ok=True,
     )
+    # since 'copyfile' does preserve directory metadata, we need to make sure the directories are writable
+    make_directory_permissions_writable(target_path)
     main_folder = os.path.join(target_path, 'main')
     os.rename(os.path.join(main_folder, 'main.c'), os.path.join(main_folder, '.'.join((name, 'c'))))
     replace_in_file(os.path.join(main_folder, 'CMakeLists.txt'), 'main', name)
@@ -61,10 +84,12 @@ def create_component(target_path: str, name: str) -> None:
     copytree(
         os.path.join(os.environ['IDF_PATH'], 'tools', 'templates', 'sample_component'),
         target_path,
-        # 'copyfile' ensures only data are copied, without any metadata (file permissions)
+        # 'copyfile' ensures only data are copied, without any metadata (file permissions) - for files only
         copy_function=copyfile,
         dirs_exist_ok=True,
     )
+    # since 'copyfile' does preserve directory metadata, we need to make sure the directories are writable
+    make_directory_permissions_writable(target_path)
     os.rename(os.path.join(target_path, 'main.c'), os.path.join(target_path, '.'.join((name, 'c'))))
     os.rename(
         os.path.join(target_path, 'include', 'main.h'), os.path.join(target_path, 'include', '.'.join((name, 'h')))
