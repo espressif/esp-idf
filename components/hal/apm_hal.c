@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include "hal/assert.h"
 #include "hal/apm_hal.h"
 #include "hal/apm_ll.h"
@@ -53,192 +54,398 @@ void apm_hal_dma_region_pms(apm_hal_dma_region_config_data_t *pms_data)
 }
 #else
 
-void apm_tee_hal_set_master_secure_mode(apm_ll_apm_ctrl_t apm_ctrl, apm_ll_master_id_t master_id, apm_ll_secure_mode_t sec_mode)
+void apm_hal_set_master_sec_mode(uint32_t master_mask, apm_security_mode_t mode)
 {
-    apm_tee_ll_set_master_secure_mode(apm_ctrl, master_id, sec_mode);
-}
-
-void apm_tee_hal_set_master_secure_mode_all(apm_ll_secure_mode_t sec_mode)
-{
-    for (int i = 0; i < APM_LL_MASTER_MAX; i++) {
-        apm_tee_hal_set_master_secure_mode(HP_APM_CTRL, i, sec_mode);
-    }
-#if SOC_LP_CORE_SUPPORTED
-    apm_tee_hal_set_master_secure_mode(LP_APM_CTRL, APM_LL_MASTER_LPCORE, sec_mode);
-#endif
-}
-
-void apm_tee_hal_clk_gating_enable(bool enable)
-{
-    apm_tee_ll_clk_gating_enable(enable);
-}
-
-void apm_hal_apm_ctrl_region_filter_enable(apm_ll_apm_ctrl_t apm_ctrl, uint32_t regn_num, bool enable)
-{
-    apm_ll_apm_ctrl_region_filter_enable(apm_ctrl, regn_num, enable);
-}
-
-void apm_hal_apm_ctrl_filter_enable(apm_ctrl_path_t *apm_path, bool enable)
-{
-    HAL_ASSERT(apm_path ||
-#if defined(SOC_APM_LP_APM0_SUPPORTED)
-               ((apm_path->apm_ctrl == LP_APM0_CTRL) && (apm_path->apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-#endif
-               ((apm_path->apm_ctrl == HP_APM_CTRL) && (apm_path->apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_path->apm_ctrl == LP_APM_CTRL) && (apm_path->apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
-    apm_ll_apm_ctrl_filter_enable(apm_path->apm_ctrl, apm_path->apm_m_path, enable);
-}
-
-void apm_hal_apm_ctrl_filter_enable_all(bool enable)
-{
-    apm_ctrl_path_t apm_path;
-
-    for (int i = 0; i < HP_APM_MAX_ACCESS_PATH; i++) {
-        apm_path.apm_ctrl = HP_APM_CTRL;
-        apm_path.apm_m_path = i;
-        apm_hal_apm_ctrl_filter_enable(&apm_path, enable);
-    }
-    for (int i = 0; i < LP_APM_MAX_ACCESS_PATH; i++) {
-        apm_path.apm_ctrl = LP_APM_CTRL;
-        apm_path.apm_m_path = i;
-        apm_hal_apm_ctrl_filter_enable(&apm_path, enable);
-    }
-#if defined(SOC_APM_LP_APM0_SUPPORTED)
-    for (int i = 0; i < LP_APM0_MAX_ACCESS_PATH; i++) {
-        apm_path.apm_ctrl = LP_APM0_CTRL;
-        apm_path.apm_m_path = i;
-        apm_hal_apm_ctrl_filter_enable(&apm_path, enable);
-    }
-#endif
-}
-
-void apm_hal_apm_ctrl_region_config(const apm_ctrl_region_config_data_t *pms_data)
-{
-    HAL_ASSERT(pms_data ||
-               ((
-#if defined(SOC_APM_LP_APM0_SUPPORTED)
-                 (pms_data->apm_ctrl == LP_APM0_CTRL) ||
-#endif
-                 (pms_data->apm_ctrl == LP_APM_CTRL)
-                ) &&
-                (pms_data->regn_num <= APM_LL_LP_MAX_REGION_NUM)
-               ) ||
-               ((pms_data->apm_ctrl == HP_APM_CTRL) && (pms_data->regn_num <= APM_LL_HP_MAX_REGION_NUM))
-              );
-
-    apm_ll_apm_ctrl_set_region_start_address(pms_data->apm_ctrl, pms_data->regn_num, pms_data->regn_start_addr);
-    apm_ll_apm_ctrl_set_region_end_address(pms_data->apm_ctrl, pms_data->regn_num, pms_data->regn_end_addr);
-    apm_ll_apm_ctrl_sec_mode_region_attr_config(pms_data->apm_ctrl, pms_data->regn_num, pms_data->sec_mode, pms_data->regn_pms);
-}
-
-uint8_t apm_hal_apm_ctrl_exception_status(apm_ctrl_path_t *apm_path)
-{
-    HAL_ASSERT(apm_path ||
-#if defined(SOC_APM_LP_APM0_SUPPORTED)
-               ((apm_path->apm_ctrl == LP_APM0_CTRL) && (apm_path->apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-#endif
-               ((apm_path->apm_ctrl == HP_APM_CTRL) && (apm_path->apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_path->apm_ctrl == LP_APM_CTRL) && (apm_path->apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
-    return apm_ll_apm_ctrl_exception_status(apm_path->apm_ctrl, apm_path->apm_m_path);
-}
-
-void apm_hal_apm_ctrl_exception_clear(apm_ctrl_path_t *apm_path)
-{
-    HAL_ASSERT(apm_path ||
-#if defined(SOC_APM_LP_APM0_SUPPORTED)
-               ((apm_path->apm_ctrl == LP_APM0_CTRL) && (apm_path->apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-#endif
-               ((apm_path->apm_ctrl == HP_APM_CTRL) && (apm_path->apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_path->apm_ctrl == LP_APM_CTRL) && (apm_path->apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
-    apm_ll_apm_ctrl_exception_clear(apm_path->apm_ctrl, apm_path->apm_m_path);
-}
-
-void apm_hal_apm_ctrl_get_exception_info(apm_ctrl_exception_info_t *excp_info)
-{
-    HAL_ASSERT(excp_info ||
-#if defined(SOC_APM_LP_APM0_SUPPORTED)
-               ((excp_info->apm_path.apm_ctrl == LP_APM0_CTRL) && (excp_info->apm_path.apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-#endif
-               ((excp_info->apm_path.apm_ctrl == HP_APM_CTRL) && (excp_info->apm_path.apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((excp_info->apm_path.apm_ctrl == LP_APM_CTRL) && (excp_info->apm_path.apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
-    apm_ll_apm_ctrl_get_exception_info(excp_info);
-}
-
-void apm_hal_apm_ctrl_interrupt_enable(apm_ctrl_path_t *apm_path, bool enable)
-{
-    HAL_ASSERT(apm_path ||
-#if defined(SOC_APM_LP_APM0_SUPPORTED)
-               ((apm_path->apm_ctrl == LP_APM0_CTRL) && (apm_path->apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-#endif
-               ((apm_path->apm_ctrl == HP_APM_CTRL) && (apm_path->apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_path->apm_ctrl == LP_APM_CTRL) && (apm_path->apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
-    apm_ll_apm_ctrl_interrupt_enable(apm_path->apm_ctrl, apm_path->apm_m_path, enable);
-}
-
-void apm_hal_apm_ctrl_clk_gating_enable(apm_ll_apm_ctrl_t apm_ctrl, bool enable)
-{
-    apm_ll_apm_ctrl_clk_gating_enable(apm_ctrl, enable);
-}
-
-void apm_hal_apm_ctrl_master_sec_mode_config(apm_ctrl_secure_mode_config_t *sec_mode_data)
-{
-    apm_ctrl_path_t apm_path;
-
-    /* Configure given secure mode for all specified Masters. */
-    for (int i = 0; i < APM_LL_MASTER_MAX; i++) {
-        if (sec_mode_data->master_ids & (1 << i)) {
-            apm_tee_hal_set_master_secure_mode(sec_mode_data->apm_ctrl, i, sec_mode_data->sec_mode);
+    master_mask &= APM_MASTER_MASK_ALL;
+    while (master_mask) {
+        uint32_t master = __builtin_ctz(master_mask);
+        master_mask &= ~(1U << master);
+        apm_ll_hp_tee_set_master_sec_mode(master, mode);
+#if SOC_APM_SUPPORT_LP_TEE_CTRL
+        if (master == APM_MASTER_LPCORE) {
+            apm_ll_lp_tee_set_master_sec_mode(master, mode);
         }
-    }
-
-    /* Configure the given APM Ctrl for all Masters for the:
-     * - Secure mode,
-     * - Regions range,
-     * - access permissions and
-     * - region filter
-     */
-    for (int i = 0; i < sec_mode_data->regn_count; i++) {
-        sec_mode_data->pms_data[i].sec_mode = sec_mode_data->sec_mode;
-        sec_mode_data->pms_data[i].apm_ctrl = sec_mode_data->apm_ctrl;
-        apm_hal_apm_ctrl_region_config(&sec_mode_data->pms_data[i]);
-        apm_hal_apm_ctrl_region_filter_enable(sec_mode_data->pms_data[i].apm_ctrl,
-                                              sec_mode_data->pms_data[i].regn_num,
-                                              sec_mode_data->pms_data[i].filter_enable);
-    }
-
-    /* Configure APM Ctrl access path(M[0:n]) */
-    for (int i = 0; i < sec_mode_data->apm_m_cnt; i++) {
-        apm_path.apm_ctrl = sec_mode_data->apm_ctrl;
-        apm_path.apm_m_path = i;
-        apm_hal_apm_ctrl_filter_enable(&apm_path, 1);
-    }
-}
-
-void apm_hal_apm_ctrl_reset_event_enable(bool enable)
-{
-    apm_ll_apm_ctrl_reset_event_enable(enable);
-}
-
-int apm_hal_apm_ctrl_get_int_src_num(apm_ctrl_path_t *apm_path)
-{
-    HAL_ASSERT(apm_path ||
-#if defined(SOC_APM_LP_APM0_SUPPORTED)
-               ((apm_path->apm_ctrl == LP_APM0_CTRL) && (apm_path->apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
 #endif
-               ((apm_path->apm_ctrl == HP_APM_CTRL) && (apm_path->apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_path->apm_ctrl == LP_APM_CTRL) && (apm_path->apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
-    return apm_ll_apm_ctrl_get_int_src_num(apm_path->apm_ctrl, apm_path->apm_m_path);
+    }
 }
+
+void apm_hal_set_master_sec_mode_all(apm_security_mode_t mode)
+{
+    apm_hal_set_master_sec_mode(APM_MASTER_MASK_ALL, mode);
+}
+
+#if SOC_APM_SUPPORT_CTRL_CFG_LOCK
+void apm_hal_lock_master_sec_mode(uint32_t master_mask)
+{
+    master_mask &= APM_MASTER_MASK_ALL;
+    while (master_mask) {
+        uint32_t master = __builtin_ctz(master_mask);
+        master_mask &= ~(1U << master);
+        apm_ll_hp_tee_lock_master_sec_mode(master);
+#if SOC_APM_SUPPORT_LP_TEE_CTRL
+        if (master == APM_MASTER_LPCORE) {
+            apm_ll_lp_tee_lock_master_sec_mode(master);
+        }
+#endif
+    }
+}
+
+void apm_hal_lock_master_sec_mode_all(void)
+{
+    apm_hal_lock_master_sec_mode(APM_MASTER_MASK_ALL);
+}
+#endif
+
+#if SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL
+void apm_hal_tee_set_peri_access(apm_tee_ctrl_module_t ctrl_mod, uint64_t periph_mask, apm_security_mode_t mode, apm_perm_t pms)
+{
+    switch (ctrl_mod) {
+        case APM_TEE_CTRL_HP:
+            uint64_t hp_tee_peri_mask = periph_mask & APM_TEE_HP_PERIPH_MASK_ALL;
+            for (uint32_t periph = 0; periph < APM_TEE_HP_PERIPH_MAX; periph++) {
+                if (hp_tee_peri_mask & (1ULL << periph)) {
+                    apm_ll_hp_tee_set_peri_access((apm_tee_hp_periph_t)periph, mode, pms);
+                }
+            }
+            apm_ll_hp_tee_enable_bus_err_resp(true);
+            break;
+#if SOC_APM_SUPPORT_LP_TEE_CTRL
+        case APM_TEE_CTRL_LP:
+            uint32_t lp_tee_peri_mask = (uint32_t)periph_mask & (uint32_t)APM_TEE_LP_PERIPH_MASK_ALL;
+            while (lp_tee_peri_mask) {
+                uint32_t periph = __builtin_ctz(lp_tee_peri_mask);
+                apm_ll_lp_tee_set_peri_access((apm_tee_lp_periph_t)periph, mode, pms);
+                lp_tee_peri_mask &= ~(1U << periph);
+            }
+            apm_ll_lp_tee_enable_bus_err_resp(true);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void apm_hal_tee_set_peri_access_all(apm_tee_ctrl_module_t ctrl_mod, apm_security_mode_t mode, apm_perm_t pms)
+{
+    switch (ctrl_mod) {
+        case APM_TEE_CTRL_HP:
+            apm_hal_tee_set_peri_access(APM_TEE_CTRL_HP, (uint64_t)(APM_TEE_HP_PERIPH_MASK_ALL), mode, pms);
+            break;
+#if SOC_APM_SUPPORT_LP_TEE_CTRL
+        case APM_TEE_CTRL_LP:
+            apm_hal_tee_set_peri_access(APM_TEE_CTRL_LP, (uint64_t)(APM_TEE_LP_PERIPH_MASK_ALL), mode, pms);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+#endif
+
+void apm_hal_tee_enable_clk_gating(apm_tee_ctrl_module_t ctrl_mod, bool enable)
+{
+    switch (ctrl_mod) {
+        case APM_TEE_CTRL_HP:
+            apm_ll_hp_tee_enable_clk_gating(enable);
+            break;
+#if SOC_APM_SUPPORT_LP_TEE_CTRL
+        case APM_TEE_CTRL_LP:
+            apm_ll_lp_tee_enable_clk_gating(enable);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void apm_hal_enable_ctrl_filter(apm_ctrl_module_t ctrl_mod, apm_ctrl_access_path_t path, bool enable)
+{
+    switch (ctrl_mod) {
+        case APM_CTRL_HP_APM:
+            apm_ll_hp_apm_enable_ctrl_filter(path, enable);
+            break;
+#if SOC_APM_LP_APM0_SUPPORTED
+        case APM_CTRL_LP_APM0:
+            apm_ll_lp_apm0_enable_ctrl_filter(path, enable);
+            break;
+#endif
+        case APM_CTRL_LP_APM:
+            apm_ll_lp_apm_enable_ctrl_filter(path, enable);
+            break;
+#if SOC_APM_CPU_APM_SUPPORTED
+        case APM_CTRL_CPU_APM:
+            apm_ll_cpu_apm_enable_ctrl_filter(path, enable);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void apm_hal_enable_ctrl_filter_all(bool enable)
+{
+    apm_ll_hp_apm_enable_ctrl_filter_all(enable);
+#if SOC_APM_LP_APM0_SUPPORTED
+    apm_ll_lp_apm0_enable_ctrl_filter_all(enable);
+#endif
+    apm_ll_lp_apm_enable_ctrl_filter_all(enable);
+#if SOC_APM_CPU_APM_SUPPORTED
+    apm_ll_cpu_apm_enable_ctrl_filter_all(enable);
+#endif
+}
+
+void apm_hal_enable_region_filter(apm_ctrl_module_t ctrl_mod, uint32_t regn_num, bool enable)
+{
+    switch (ctrl_mod) {
+        case APM_CTRL_HP_APM:
+            apm_ll_hp_apm_enable_region_filter(regn_num, enable);
+            break;
+#if SOC_APM_LP_APM0_SUPPORTED
+        case APM_CTRL_LP_APM0:
+            apm_ll_lp_apm0_enable_region_filter(regn_num, enable);
+            break;
+#endif
+        case APM_CTRL_LP_APM:
+            apm_ll_lp_apm_enable_region_filter(regn_num, enable);
+            break;
+#if SOC_APM_CPU_APM_SUPPORTED
+        case APM_CTRL_CPU_APM:
+            apm_ll_cpu_apm_enable_region_filter(regn_num, enable);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void apm_hal_set_region_filter_cfg(apm_ctrl_module_t ctrl_mod, apm_security_mode_t mode, const apm_hal_ctrl_region_cfg_t *regn_cfg)
+{
+    HAL_ASSERT(regn_cfg);
+
+    switch (ctrl_mod) {
+        case APM_CTRL_HP_APM:
+            apm_ll_hp_apm_set_region_start_addr(regn_cfg->regn_num, regn_cfg->regn_start_addr);
+            apm_ll_hp_apm_set_region_end_addr(regn_cfg->regn_num, regn_cfg->regn_end_addr);
+            apm_ll_hp_apm_set_sec_mode_region_attr(regn_cfg->regn_num, mode, regn_cfg->regn_pms);
+            break;
+#if SOC_APM_LP_APM0_SUPPORTED
+        case APM_CTRL_LP_APM0:
+            apm_ll_lp_apm0_set_region_start_addr(regn_cfg->regn_num, regn_cfg->regn_start_addr);
+            apm_ll_lp_apm0_set_region_end_addr(regn_cfg->regn_num, regn_cfg->regn_end_addr);
+            apm_ll_lp_apm0_set_sec_mode_region_attr(regn_cfg->regn_num, mode, regn_cfg->regn_pms);
+            break;
+#endif
+        case APM_CTRL_LP_APM:
+            apm_ll_lp_apm_set_region_start_addr(regn_cfg->regn_num, regn_cfg->regn_start_addr);
+            apm_ll_lp_apm_set_region_end_addr(regn_cfg->regn_num, regn_cfg->regn_end_addr);
+            apm_ll_lp_apm_set_sec_mode_region_attr(regn_cfg->regn_num, mode, regn_cfg->regn_pms);
+            break;
+#if SOC_APM_CPU_APM_SUPPORTED
+        case APM_CTRL_CPU_APM:
+            apm_ll_cpu_apm_set_region_start_addr(regn_cfg->regn_num, regn_cfg->regn_start_addr);
+            apm_ll_cpu_apm_set_region_end_addr(regn_cfg->regn_num, regn_cfg->regn_end_addr);
+            apm_ll_cpu_apm_set_sec_mode_region_attr(regn_cfg->regn_num, mode, regn_cfg->regn_pms);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+#if SOC_APM_SUPPORT_CTRL_CFG_LOCK
+void apm_hal_lock_region_filter_cfg(apm_ctrl_module_t ctrl_mod, uint32_t regn_num)
+{
+    switch (ctrl_mod) {
+        case APM_CTRL_HP_APM:
+            apm_ll_hp_apm_lock_sec_mode_region_attr(regn_num);
+            break;
+#if SOC_APM_LP_APM0_SUPPORTED
+        case APM_CTRL_LP_APM0:
+            apm_ll_lp_apm0_lock_sec_mode_region_attr(regn_num);
+            break;
+#endif
+        case APM_CTRL_LP_APM:
+            apm_ll_lp_apm_lock_sec_mode_region_attr(regn_num);
+            break;
+#if SOC_APM_CPU_APM_SUPPORTED
+        case APM_CTRL_CPU_APM:
+            apm_ll_cpu_apm_lock_sec_mode_region_attr(regn_num);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+#endif
+
+void apm_hal_set_ctrl_sec_mode_cfg(const apm_hal_ctrl_sec_mode_cfg_t *cfg)
+{
+    HAL_ASSERT(cfg);
+    HAL_ASSERT(cfg->regions);
+
+    for (uint32_t regn_idx = 0; regn_idx < cfg->regn_count; regn_idx++) {
+        const apm_hal_ctrl_region_cfg_t *region = &cfg->regions[regn_idx];
+        apm_hal_set_region_filter_cfg(cfg->ctrl_mod, cfg->mode, region);
+        apm_hal_enable_region_filter(cfg->ctrl_mod, region->regn_num, region->filter_en);
+#if SOC_APM_SUPPORT_CTRL_CFG_LOCK
+        if (region->lock_en) {
+            apm_hal_lock_region_filter_cfg(cfg->ctrl_mod, region->regn_num);
+        }
+#endif
+        apm_hal_enable_ctrl_filter(cfg->ctrl_mod, region->path_id, true);
+    }
+}
+
+uint32_t apm_hal_get_exception_type(apm_hal_ctrl_info_t *ctrl_info)
+{
+    HAL_ASSERT(ctrl_info);
+
+    switch (ctrl_info->ctrl_mod) {
+        case APM_CTRL_HP_APM:
+            return apm_ll_hp_apm_get_excp_type(ctrl_info->path);
+#if SOC_APM_LP_APM0_SUPPORTED
+        case APM_CTRL_LP_APM0:
+            return apm_ll_lp_apm0_get_excp_type(ctrl_info->path);
+#endif
+        case APM_CTRL_LP_APM:
+            return apm_ll_lp_apm_get_excp_type(ctrl_info->path);
+#if SOC_APM_CPU_APM_SUPPORTED
+        case APM_CTRL_CPU_APM:
+            return apm_ll_cpu_apm_get_excp_type(ctrl_info->path);
+#endif
+        default:
+            return UINT8_MAX;
+    }
+}
+
+void apm_hal_clear_exception_status(apm_hal_ctrl_info_t *ctrl_info)
+{
+    HAL_ASSERT(ctrl_info);
+
+    switch (ctrl_info->ctrl_mod) {
+        case APM_CTRL_HP_APM:
+            apm_ll_hp_apm_clear_ctrl_excp_status(ctrl_info->path);
+            break;
+#if SOC_APM_LP_APM0_SUPPORTED
+        case APM_CTRL_LP_APM0:
+            apm_ll_lp_apm0_clear_ctrl_excp_status(ctrl_info->path);
+            break;
+#endif
+        case APM_CTRL_LP_APM:
+            apm_ll_lp_apm_clear_ctrl_excp_status(ctrl_info->path);
+            break;
+#if SOC_APM_CPU_APM_SUPPORTED
+        case APM_CTRL_CPU_APM:
+            apm_ll_cpu_apm_clear_ctrl_excp_status(ctrl_info->path);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void apm_hal_get_exception_info(apm_hal_ctrl_info_t *ctrl_info, apm_ctrl_exception_info_t *excp_info)
+{
+    HAL_ASSERT(ctrl_info);
+    HAL_ASSERT(excp_info);
+
+    switch (ctrl_info->ctrl_mod) {
+        case APM_CTRL_HP_APM:
+            apm_ll_hp_apm_get_excp_info(ctrl_info->path, excp_info);
+            break;
+#if SOC_APM_LP_APM0_SUPPORTED
+        case APM_CTRL_LP_APM0:
+            apm_ll_lp_apm0_get_excp_info(ctrl_info->path, excp_info);
+            break;
+#endif
+        case APM_CTRL_LP_APM:
+            apm_ll_lp_apm_get_excp_info(ctrl_info->path, excp_info);
+            break;
+#if SOC_APM_CPU_APM_SUPPORTED
+        case APM_CTRL_CPU_APM:
+            apm_ll_cpu_apm_get_excp_info(ctrl_info->path, excp_info);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void apm_hal_enable_intr(apm_hal_ctrl_info_t *ctrl_info, bool enable)
+{
+    HAL_ASSERT(ctrl_info);
+
+    switch (ctrl_info->ctrl_mod) {
+        case APM_CTRL_HP_APM:
+            apm_ll_hp_apm_enable_ctrl_intr(ctrl_info->path, enable);
+            break;
+#if SOC_APM_LP_APM0_SUPPORTED
+        case APM_CTRL_LP_APM0:
+            apm_ll_lp_apm0_enable_ctrl_intr(ctrl_info->path, enable);
+            break;
+#endif
+        case APM_CTRL_LP_APM:
+            apm_ll_lp_apm_enable_ctrl_intr(ctrl_info->path, enable);
+            break;
+#if SOC_APM_CPU_APM_SUPPORTED
+        case APM_CTRL_CPU_APM:
+            apm_ll_cpu_apm_enable_ctrl_intr(ctrl_info->path, enable);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+int apm_hal_get_intr_src_num(apm_hal_ctrl_info_t *ctrl_info)
+{
+    HAL_ASSERT(ctrl_info);
+
+    switch (ctrl_info->ctrl_mod) {
+        case APM_CTRL_HP_APM:
+            return apm_ll_hp_apm_get_ctrl_intr_src(ctrl_info->path);
+#if SOC_APM_LP_APM0_SUPPORTED
+        case APM_CTRL_LP_APM0:
+            return apm_ll_lp_apm0_get_ctrl_intr_src(ctrl_info->path);
+#endif
+        case APM_CTRL_LP_APM:
+            return apm_ll_lp_apm_get_ctrl_intr_src(ctrl_info->path);
+#if SOC_APM_CPU_APM_SUPPORTED
+        case APM_CTRL_CPU_APM:
+            return apm_ll_cpu_apm_get_ctrl_intr_src(ctrl_info->path);
+#endif
+        default:
+            return -1;
+    }
+}
+
+void apm_hal_enable_reset_event_bypass(bool enable)
+{
+    apm_ll_enable_reset_event_bypass(enable);
+}
+
+void apm_hal_enable_ctrl_clk_gating(apm_ctrl_module_t ctrl_mod, bool enable)
+{
+    switch (ctrl_mod) {
+        case APM_CTRL_HP_APM:
+            apm_ll_hp_apm_enable_ctrl_clk_gating(enable);
+            break;
+#if SOC_APM_LP_APM0_SUPPORTED
+        case APM_CTRL_LP_APM0:
+            apm_ll_lp_apm0_enable_ctrl_clk_gating(enable);
+            break;
+#endif
+        case APM_CTRL_LP_APM:
+            apm_ll_lp_apm_enable_ctrl_clk_gating(enable);
+            break;
+#if SOC_APM_CPU_APM_SUPPORTED
+        case APM_CTRL_CPU_APM:
+            apm_ll_cpu_apm_enable_ctrl_clk_gating(enable);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
 #endif //CONFIG_IDF_TARGET_ESP32P4

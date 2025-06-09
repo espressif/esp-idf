@@ -1299,6 +1299,10 @@ config SOC_APM_LP_APM0_SUPPORTED
     bool
     default y
 
+config SOC_APM_SUPPORT_LP_TEE_CTRL
+    bool
+    default y
+
 config SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
     bool
     default y
