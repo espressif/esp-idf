@@ -19,6 +19,10 @@ config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
+config SOC_ETM_SUPPORTED
+    bool
+    default y
+
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -203,6 +207,10 @@ config SOC_GDMA_PAIRS_PER_GROUP_MAX
     int
     default 5
 
+config SOC_GDMA_SUPPORT_ETM
+    bool
+    default y
+
 config SOC_GDMA_SUPPORT_SLEEP_RETENTION
     bool
     default y
@@ -210,6 +218,14 @@ config SOC_GDMA_SUPPORT_SLEEP_RETENTION
 config SOC_AHB_GDMA_SUPPORT_PSRAM
     bool
     default y
+
+config SOC_ETM_GROUPS
+    int
+    default 1
+
+config SOC_ETM_CHANNELS_PER_GROUP
+    int
+    default 50
 
 config SOC_GPIO_PORT
     int
@@ -226,6 +242,18 @@ config SOC_GPIO_IN_RANGE_MAX
 config SOC_GPIO_OUT_RANGE_MAX
     int
     default 39
+
+config SOC_GPIO_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_GPIO_ETM_EVENTS_PER_GROUP
+    int
+    default 8
+
+config SOC_GPIO_ETM_TASKS_PER_GROUP
+    int
+    default 8
 
 config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
@@ -300,6 +328,10 @@ config SOC_I2S_NUM
     default 1
 
 config SOC_I2S_HW_VERSION_2
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_ETM
     bool
     default y
 
@@ -466,6 +498,14 @@ config SOC_LP_TIMER_BIT_WIDTH_LO
 config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
+
+config SOC_SYSTIMER_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_TIMER_SUPPORT_ETM
+    bool
+    default y
 
 config SOC_TIMER_SUPPORT_SLEEP_RETENTION
     bool

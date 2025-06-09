@@ -5985,113 +5985,17 @@ typedef union {
 } soc_etm_date_reg_t;
 
 
-typedef struct {
+typedef struct soc_etm_dev_t {
     volatile soc_etm_ch_ena_ad0_reg_t etm_ch_ena_ad0;
     volatile soc_etm_ch_ena_ad0_set_reg_t etm_ch_ena_ad0_set;
     volatile soc_etm_ch_ena_ad0_clr_reg_t etm_ch_ena_ad0_clr;
     volatile soc_etm_ch_ena_ad1_reg_t etm_ch_ena_ad1;
     volatile soc_etm_ch_ena_ad1_set_reg_t etm_ch_ena_ad1_set;
     volatile soc_etm_ch_ena_ad1_clr_reg_t etm_ch_ena_ad1_clr;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch0_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch0_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch1_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch1_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch2_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch2_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch3_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch3_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch4_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch4_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch5_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch5_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch6_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch6_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch7_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch7_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch8_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch8_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch9_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch9_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch10_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch10_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch11_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch11_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch12_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch12_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch13_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch13_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch14_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch14_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch15_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch15_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch16_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch16_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch17_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch17_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch18_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch18_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch19_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch19_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch20_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch20_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch21_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch21_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch22_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch22_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch23_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch23_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch24_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch24_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch25_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch25_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch26_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch26_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch27_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch27_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch28_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch28_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch29_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch29_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch30_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch30_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch31_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch31_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch32_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch32_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch33_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch33_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch34_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch34_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch35_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch35_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch36_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch36_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch37_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch37_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch38_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch38_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch39_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch39_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch40_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch40_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch41_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch41_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch42_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch42_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch43_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch43_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch44_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch44_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch45_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch45_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch46_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch46_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch47_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch47_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch48_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch48_task_id;
-    volatile soc_etm_chn_evt_id_reg_t etm_ch49_evt_id;
-    volatile soc_etm_chn_task_id_reg_t etm_ch49_task_id;
+    volatile struct {
+        soc_etm_chn_evt_id_reg_t eid;
+        soc_etm_chn_task_id_reg_t tid;
+    } channel[50];
     volatile soc_etm_evt_st0_reg_t etm_evt_st0;
     volatile soc_etm_evt_st0_clr_reg_t etm_evt_st0_clr;
     volatile soc_etm_evt_st1_reg_t etm_evt_st1;
@@ -6120,12 +6024,12 @@ typedef struct {
     volatile soc_etm_task_st5_clr_reg_t etm_task_st5_clr;
     volatile soc_etm_clk_en_reg_t etm_clk_en;
     volatile soc_etm_date_reg_t etm_date;
-} soc_dev_t;
+} soc_etm_dev_t;
 
-extern soc_dev_t SOC_ETM;
+extern soc_etm_dev_t SOC_ETM;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(soc_dev_t) == 0x218, "Invalid size of soc_dev_t structure");
+_Static_assert(sizeof(soc_etm_dev_t) == 0x218, "Invalid size of soc_etm_dev_t structure");
 #endif
 
 #ifdef __cplusplus

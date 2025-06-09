@@ -829,7 +829,7 @@ typedef union {
 } i2s_lc_hung_conf_reg_t;
 
 /** Type of conf_sigle_data register
- *  I2S signal data register
+ *  I2S single data register
  */
 typedef union {
     struct {
@@ -839,7 +839,7 @@ typedef union {
         uint32_t single_data:32;
     };
     uint32_t val;
-} i2s_conf_sigle_data_reg_t;
+} i2s_conf_single_data_reg_t;
 
 
 /** Group: TX status registers */

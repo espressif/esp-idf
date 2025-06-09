@@ -41,7 +41,7 @@
 // #define SOC_PCNT_SUPPORTED              1    // TODO: [ESP32H4] IDF-12338
 // #define SOC_MCPWM_SUPPORTED             1    // TODO: [ESP32H4] IDF-12380
 // #define SOC_TWAI_SUPPORTED              1    // TODO: [ESP32H4] IDF-12352
-// #define SOC_ETM_SUPPORTED               1    // TODO: [ESP32H4] IDF-12355
+#define SOC_ETM_SUPPORTED               1
 // #define SOC_PARLIO_SUPPORTED            1    // TODO: [ESP32H4] IDF-12345 IDF-12347
 // #define SOC_BT_SUPPORTED                1
 // #define SOC_IEEE802154_SUPPORTED        1
@@ -191,13 +191,14 @@
 #define SOC_AHB_GDMA_VERSION                2
 #define SOC_GDMA_NUM_GROUPS_MAX             1U
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX        5
-// #define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule  TODO: [ESP32H4] IDF-12383
+#define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 #define SOC_AHB_GDMA_SUPPORT_PSRAM 1
 
 /*-------------------------- ETM CAPS --------------------------------------*/
-// #define SOC_ETM_GROUPS                  1U  // Number of ETM groups
-// #define SOC_ETM_CHANNELS_PER_GROUP      50  // Number of ETM channels in the group
+#define SOC_ETM_GROUPS                  1U  // Number of ETM groups
+#define SOC_ETM_CHANNELS_PER_GROUP      50  // Number of ETM channels in the group
+// #define SOC_ETM_SUPPORT_SLEEP_RETENTION 1   // TODO: [ESP32H4] IDF-12356 Support sleep retention
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-H4 has 1 GPIO peripheral
@@ -212,9 +213,9 @@
 // #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM    8  // TODO: [ESP32H4] IDF-12391
 
 // GPIO peripheral has the ETM extension
-// #define SOC_GPIO_SUPPORT_ETM          1  // TODO: [ESP32H4] IDF-12394
-// #define SOC_GPIO_ETM_EVENTS_PER_GROUP 8
-// #define SOC_GPIO_ETM_TASKS_PER_GROUP  8
+#define SOC_GPIO_SUPPORT_ETM          1
+#define SOC_GPIO_ETM_EVENTS_PER_GROUP 8
+#define SOC_GPIO_ETM_TASKS_PER_GROUP  8
 
 // Target has the full LP IO subsystem
 // On ESP32-H4, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
@@ -270,7 +271,7 @@
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (1U)
 #define SOC_I2S_HW_VERSION_2        (1)
-// #define SOC_I2S_SUPPORTS_ETM        (1)
+#define SOC_I2S_SUPPORTS_ETM        (1)
 #define SOC_I2S_SUPPORTS_ETM_SYNC   (1)
 #define SOC_I2S_SUPPORTS_XTAL       (1)
 #define SOC_I2S_SUPPORTS_PLL_F96M   (1)
@@ -438,7 +439,7 @@
 #define SOC_SYSTIMER_SUPPORT_RC_FAST        1  // Systimer can use RC_FAST clock source
 #define SOC_SYSTIMER_INT_LEVEL              1  // Systimer peripheral uses level interrupt
 #define SOC_SYSTIMER_ALARM_MISS_COMPENSATE  1  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
-// #define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
+#define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
 
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
@@ -446,6 +447,7 @@
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 // #define SOC_TIMER_SUPPORT_ETM             (1)     // TODO: [ESP32H4] IDF-12355
+#define SOC_TIMER_SUPPORT_ETM             (1)
 #define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
