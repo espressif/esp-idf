@@ -109,6 +109,18 @@ menu "Main Flash configuration"
                 This config is used for setting Tsus parameter. Tsus means CS# high to next command after
                 suspend. You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
 
+        config SPI_FLASH_SUSPEND_TRS_VAL_US
+            int "SPI flash tRS value (refer to chapter AC CHARACTERISTICS)"
+            default 50
+            range 20 200
+            depends on SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+            help
+                This config is used for setting Trs parameter. Trs means CS Latency Between Resume And Next Suspend.
+                You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
+                For high-performance scenarios, some flash chips allow this set value to be smaller than the
+                given value in the datasheet without causing errors in the flash state machine.
+                When you have any related needs, please contact espressif business team.
+
         config SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND
             bool "Enable XMC-C series flash chip suspend feature anyway"
             default n

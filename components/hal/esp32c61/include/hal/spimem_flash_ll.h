@@ -215,7 +215,7 @@ static inline void spimem_flash_ll_set_read_sus_status(spi_mem_dev_t *dev, uint3
 }
 
 /**
- * Configure the delay after Suspend/Resume
+ * Configure the delay after Suspend
  *
  * @param dev Beginning address of the peripheral registers.
  * @param dly_val delay time
@@ -223,8 +223,19 @@ static inline void spimem_flash_ll_set_read_sus_status(spi_mem_dev_t *dev, uint3
 static inline void spimem_flash_ll_set_sus_delay(spi_mem_dev_t *dev, uint32_t dly_val)
 {
     dev->ctrl1.cs_hold_dly_res = dly_val;
-    dev->sus_status.flash_per_dly_128 = 1;
     dev->sus_status.flash_pes_dly_128 = 1;
+}
+
+/**
+ * Configure the delay after Resume
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param dly_val delay time
+ */
+static inline void spimem_flash_ll_set_rs_delay(spi_mem_dev_t *dev, uint32_t dly_val)
+{
+    dev->ctrl1.cs_hold_dly_per = dly_val;
+    dev->sus_status.flash_per_dly_128 = 1;
 }
 
 /**

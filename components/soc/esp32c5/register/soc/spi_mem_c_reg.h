@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -205,29 +205,21 @@ extern "C" {
 #define SPI_MEM_CLK_MODE_M  (SPI_MEM_CLK_MODE_V << SPI_MEM_CLK_MODE_S)
 #define SPI_MEM_CLK_MODE_V  0x00000003U
 #define SPI_MEM_CLK_MODE_S  0
-/** SPI_AR_SIZE0_1_SUPPORT_EN : R/W; bitpos: [21]; default: 1;
+/** SPI_AR_SIZE0_1_SUPPORT_EN : R/W; bitpos: [22]; default: 1;
  *  1: MSPI supports ARSIZE 0~3. When ARSIZE =0~2, MSPI read address is 4*n and reply
  *  the real AXI read data back. 0: When ARSIZE 0~1, MSPI reply SLV_ERR.
  */
-#define SPI_AR_SIZE0_1_SUPPORT_EN    (BIT(21))
+#define SPI_AR_SIZE0_1_SUPPORT_EN    (BIT(22))
 #define SPI_AR_SIZE0_1_SUPPORT_EN_M  (SPI_AR_SIZE0_1_SUPPORT_EN_V << SPI_AR_SIZE0_1_SUPPORT_EN_S)
 #define SPI_AR_SIZE0_1_SUPPORT_EN_V  0x00000001U
-#define SPI_AR_SIZE0_1_SUPPORT_EN_S  21
-/** SPI_AW_SIZE0_1_SUPPORT_EN : R/W; bitpos: [22]; default: 1;
+#define SPI_AR_SIZE0_1_SUPPORT_EN_S  22
+/** SPI_AW_SIZE0_1_SUPPORT_EN : R/W; bitpos: [23]; default: 1;
  *  1: MSPI supports AWSIZE 0~3. 0: When AWSIZE 0~1, MSPI reply SLV_ERR.
  */
-#define SPI_AW_SIZE0_1_SUPPORT_EN    (BIT(22))
+#define SPI_AW_SIZE0_1_SUPPORT_EN    (BIT(23))
 #define SPI_AW_SIZE0_1_SUPPORT_EN_M  (SPI_AW_SIZE0_1_SUPPORT_EN_V << SPI_AW_SIZE0_1_SUPPORT_EN_S)
 #define SPI_AW_SIZE0_1_SUPPORT_EN_V  0x00000001U
-#define SPI_AW_SIZE0_1_SUPPORT_EN_S  22
-/** SPI_AXI_RDATA_BACK_FAST : R/W; bitpos: [23]; default: 1;
- *  1: Reply AXI read data to AXI bus when one AXI read beat data is available. 0:
- *  Reply AXI read data to AXI bus when all the read data is available.
- */
-#define SPI_AXI_RDATA_BACK_FAST    (BIT(23))
-#define SPI_AXI_RDATA_BACK_FAST_M  (SPI_AXI_RDATA_BACK_FAST_V << SPI_AXI_RDATA_BACK_FAST_S)
-#define SPI_AXI_RDATA_BACK_FAST_V  0x00000001U
-#define SPI_AXI_RDATA_BACK_FAST_S  23
+#define SPI_AW_SIZE0_1_SUPPORT_EN_S  23
 /** SPI_MEM_RRESP_ECC_ERR_EN : R/W; bitpos: [24]; default: 0;
  *  1: RRESP is SLV_ERR when there is a ECC error in AXI read data. 0: RRESP is OKAY
  *  when there is a ECC error in AXI read data. The ECC error information is recorded
@@ -370,14 +362,14 @@ extern "C" {
  */
 #define SPI_MEM_CLOCK_REG(i) (REG_SPI_MEM_BASE(i) + 0x14)
 /** SPI_MEM_CLKCNT_L : R/W; bitpos: [7:0]; default: 3;
- *  In the master mode it must be equal to spi_mem_clkcnt_N.
+ *  In the master mode it must be equal to SPI_MEM_CLKCNT_N.
  */
 #define SPI_MEM_CLKCNT_L    0x000000FFU
 #define SPI_MEM_CLKCNT_L_M  (SPI_MEM_CLKCNT_L_V << SPI_MEM_CLKCNT_L_S)
 #define SPI_MEM_CLKCNT_L_V  0x000000FFU
 #define SPI_MEM_CLKCNT_L_S  0
 /** SPI_MEM_CLKCNT_H : R/W; bitpos: [15:8]; default: 1;
- *  In the master mode it must be floor((spi_mem_clkcnt_N+1)/2-1).
+ *  In the master mode it must be floor((SPI_MEM_CLKCNT_N+1)/2-1).
  */
 #define SPI_MEM_CLKCNT_H    0x000000FFU
 #define SPI_MEM_CLKCNT_H_M  (SPI_MEM_CLKCNT_H_V << SPI_MEM_CLKCNT_H_S)
@@ -385,7 +377,7 @@ extern "C" {
 #define SPI_MEM_CLKCNT_H_S  8
 /** SPI_MEM_CLKCNT_N : R/W; bitpos: [23:16]; default: 3;
  *  In the master mode it is the divider of spi_mem_clk. So spi_mem_clk frequency is
- *  system/(spi_mem_clkcnt_N+1)
+ *  system/(SPI_MEM_CLKCNT_N+1)
  */
 #define SPI_MEM_CLKCNT_N    0x000000FFU
 #define SPI_MEM_CLKCNT_N_M  (SPI_MEM_CLKCNT_N_V << SPI_MEM_CLKCNT_N_S)
@@ -488,10 +480,13 @@ extern "C" {
 
 /** SPI_MEM_RD_STATUS_REG register
  *  SPI0 read control register.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define SPI_MEM_RD_STATUS_REG(i) (REG_SPI_MEM_BASE(i) + 0x2c)
 /** SPI_MEM_WB_MODE : R/W; bitpos: [23:16]; default: 0;
  *  Mode bits in the flash fast read mode  it is combined with spi_mem_fastrd_mode bit.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define SPI_MEM_WB_MODE    0x000000FFU
 #define SPI_MEM_WB_MODE_M  (SPI_MEM_WB_MODE_V << SPI_MEM_WB_MODE_S)
@@ -499,6 +494,7 @@ extern "C" {
 #define SPI_MEM_WB_MODE_S  16
 /** SPI_MEM_WB_MODE_BITLEN : R/W; bitpos: [26:24]; default: 0;
  *  Mode bits length for flash fast read mode.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define SPI_MEM_WB_MODE_BITLEN    0x00000007U
 #define SPI_MEM_WB_MODE_BITLEN_M  (SPI_MEM_WB_MODE_BITLEN_V << SPI_MEM_WB_MODE_BITLEN_S)
@@ -506,6 +502,7 @@ extern "C" {
 #define SPI_MEM_WB_MODE_BITLEN_S  24
 /** SPI_MEM_WB_MODE_EN : R/W; bitpos: [27]; default: 0;
  *  Mode bits is valid while this bit is enable. 1: enable 0: disable.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define SPI_MEM_WB_MODE_EN    (BIT(27))
 #define SPI_MEM_WB_MODE_EN_M  (SPI_MEM_WB_MODE_EN_V << SPI_MEM_WB_MODE_EN_S)
@@ -937,14 +934,16 @@ extern "C" {
  */
 #define SPI_MEM_SRAM_CLK_REG(i) (REG_SPI_MEM_BASE(i) + 0x50)
 /** SPI_MEM_SCLKCNT_L : R/W; bitpos: [7:0]; default: 3;
- *  For SPI0 external RAM  interface, it must be equal to spi_mem_clkcnt_N.
+ *  For SPI0 external RAM  interface, it must be equal to SPI_MEM_SCLKCNT_N.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define SPI_MEM_SCLKCNT_L    0x000000FFU
 #define SPI_MEM_SCLKCNT_L_M  (SPI_MEM_SCLKCNT_L_V << SPI_MEM_SCLKCNT_L_S)
 #define SPI_MEM_SCLKCNT_L_V  0x000000FFU
 #define SPI_MEM_SCLKCNT_L_S  0
 /** SPI_MEM_SCLKCNT_H : R/W; bitpos: [15:8]; default: 1;
- *  For SPI0 external RAM  interface, it must be floor((spi_mem_clkcnt_N+1)/2-1).
+ *  For SPI0 external RAM  interface, it must be floor((SPI_MEM_SCLKCNT_N+1)/2-1).
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define SPI_MEM_SCLKCNT_H    0x000000FFU
 #define SPI_MEM_SCLKCNT_H_M  (SPI_MEM_SCLKCNT_H_V << SPI_MEM_SCLKCNT_H_S)
@@ -952,7 +951,8 @@ extern "C" {
 #define SPI_MEM_SCLKCNT_H_S  8
 /** SPI_MEM_SCLKCNT_N : R/W; bitpos: [23:16]; default: 3;
  *  For SPI0 external RAM  interface, it is the divider of spi_mem_clk. So spi_mem_clk
- *  frequency is system/(spi_mem_clkcnt_N+1)
+ *  frequency is system/(SPI_MEM_SCLKCNT_N+1)
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define SPI_MEM_SCLKCNT_N    0x000000FFU
 #define SPI_MEM_SCLKCNT_N_M  (SPI_MEM_SCLKCNT_N_V << SPI_MEM_SCLKCNT_N_S)
@@ -961,6 +961,7 @@ extern "C" {
 /** SPI_MEM_SCLK_EQU_SYSCLK : R/W; bitpos: [31]; default: 0;
  *  For SPI0 external RAM  interface, 1: spi_mem_clk is equal to system 0: spi_mem_clk
  *  is divided from system clock.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define SPI_MEM_SCLK_EQU_SYSCLK    (BIT(31))
 #define SPI_MEM_SCLK_EQU_SYSCLK_M  (SPI_MEM_SCLK_EQU_SYSCLK_V << SPI_MEM_SCLK_EQU_SYSCLK_S)
@@ -971,27 +972,27 @@ extern "C" {
  *  SPI0 FSM status register
  */
 #define SPI_MEM_FSM_REG(i) (REG_SPI_MEM_BASE(i) + 0x54)
-/** SPI_MEM_LOCK_DELAY_TIME : R/W; bitpos: [11:7]; default: 4;
+/** SPI_MEM_LOCK_DELAY_TIME : R/W; bitpos: [18:7]; default: 4;
  *  The lock delay time of SPI0/1 arbiter by spi0_slv_st, after PER is sent by SPI1.
  */
-#define SPI_MEM_LOCK_DELAY_TIME    0x0000001FU
+#define SPI_MEM_LOCK_DELAY_TIME    0x00000FFFU
 #define SPI_MEM_LOCK_DELAY_TIME_M  (SPI_MEM_LOCK_DELAY_TIME_V << SPI_MEM_LOCK_DELAY_TIME_S)
-#define SPI_MEM_LOCK_DELAY_TIME_V  0x0000001FU
+#define SPI_MEM_LOCK_DELAY_TIME_V  0x00000FFFU
 #define SPI_MEM_LOCK_DELAY_TIME_S  7
-/** SPI_MEM_FLASH_LOCK_EN : R/W; bitpos: [12]; default: 0;
+/** SPI_MEM_FLASH_LOCK_EN : R/W; bitpos: [19]; default: 0;
  *  The lock enable for FLASH to lock spi0 trans req.1: Enable. 0: Disable.
  */
-#define SPI_MEM_FLASH_LOCK_EN    (BIT(12))
+#define SPI_MEM_FLASH_LOCK_EN    (BIT(19))
 #define SPI_MEM_FLASH_LOCK_EN_M  (SPI_MEM_FLASH_LOCK_EN_V << SPI_MEM_FLASH_LOCK_EN_S)
 #define SPI_MEM_FLASH_LOCK_EN_V  0x00000001U
-#define SPI_MEM_FLASH_LOCK_EN_S  12
-/** SPI_MEM_SRAM_LOCK_EN : R/W; bitpos: [13]; default: 0;
+#define SPI_MEM_FLASH_LOCK_EN_S  19
+/** SPI_MEM_SRAM_LOCK_EN : R/W; bitpos: [20]; default: 0;
  *  The lock enable for external RAM to lock spi0 trans req.1: Enable. 0: Disable.
  */
-#define SPI_MEM_SRAM_LOCK_EN    (BIT(13))
+#define SPI_MEM_SRAM_LOCK_EN    (BIT(20))
 #define SPI_MEM_SRAM_LOCK_EN_M  (SPI_MEM_SRAM_LOCK_EN_V << SPI_MEM_SRAM_LOCK_EN_S)
 #define SPI_MEM_SRAM_LOCK_EN_V  0x00000001U
-#define SPI_MEM_SRAM_LOCK_EN_S  13
+#define SPI_MEM_SRAM_LOCK_EN_S  20
 
 /** SPI_MEM_INT_ENA_REG register
  *  SPI0 interrupt enable register
@@ -1593,7 +1594,7 @@ extern "C" {
 #define SPI_SMEM_HYPERBUS_CA_S  30
 
 /** SPI_FMEM_PMS0_ATTR_REG register
- *  MSPI flash PMS section 0 attribute register
+ *  SPI1 flash PMS section 0 attribute register
  */
 #define SPI_FMEM_PMS0_ATTR_REG(i) (REG_SPI_MEM_BASE(i) + 0x100)
 /** SPI_FMEM_PMS0_RD_ATTR : R/W; bitpos: [0]; default: 1;
@@ -1621,7 +1622,7 @@ extern "C" {
 #define SPI_FMEM_PMS0_ECC_S  2
 
 /** SPI_FMEM_PMS1_ATTR_REG register
- *  MSPI flash PMS section 1 attribute register
+ *  SPI1 flash PMS section 1 attribute register
  */
 #define SPI_FMEM_PMS1_ATTR_REG(i) (REG_SPI_MEM_BASE(i) + 0x104)
 /** SPI_FMEM_PMS1_RD_ATTR : R/W; bitpos: [0]; default: 1;
@@ -1649,7 +1650,7 @@ extern "C" {
 #define SPI_FMEM_PMS1_ECC_S  2
 
 /** SPI_FMEM_PMS2_ATTR_REG register
- *  MSPI flash PMS section 2 attribute register
+ *  SPI1 flash PMS section 2 attribute register
  */
 #define SPI_FMEM_PMS2_ATTR_REG(i) (REG_SPI_MEM_BASE(i) + 0x108)
 /** SPI_FMEM_PMS2_RD_ATTR : R/W; bitpos: [0]; default: 1;
@@ -1677,7 +1678,7 @@ extern "C" {
 #define SPI_FMEM_PMS2_ECC_S  2
 
 /** SPI_FMEM_PMS3_ATTR_REG register
- *  MSPI flash PMS section 3 attribute register
+ *  SPI1 flash PMS section 3 attribute register
  */
 #define SPI_FMEM_PMS3_ATTR_REG(i) (REG_SPI_MEM_BASE(i) + 0x10c)
 /** SPI_FMEM_PMS3_RD_ATTR : R/W; bitpos: [0]; default: 1;
@@ -1805,7 +1806,7 @@ extern "C" {
 #define SPI_FMEM_PMS3_SIZE_S  0
 
 /** SPI_SMEM_PMS0_ATTR_REG register
- *  SPI1 flash PMS section 0 start address register
+ *  SPI1 external RAM PMS section 0 attribute register
  */
 #define SPI_SMEM_PMS0_ATTR_REG(i) (REG_SPI_MEM_BASE(i) + 0x130)
 /** SPI_SMEM_PMS0_RD_ATTR : R/W; bitpos: [0]; default: 1;
@@ -1833,7 +1834,7 @@ extern "C" {
 #define SPI_SMEM_PMS0_ECC_S  2
 
 /** SPI_SMEM_PMS1_ATTR_REG register
- *  SPI1 flash PMS section 1 start address register
+ *  SPI1 external RAM PMS section 1 attribute register
  */
 #define SPI_SMEM_PMS1_ATTR_REG(i) (REG_SPI_MEM_BASE(i) + 0x134)
 /** SPI_SMEM_PMS1_RD_ATTR : R/W; bitpos: [0]; default: 1;
@@ -1861,7 +1862,7 @@ extern "C" {
 #define SPI_SMEM_PMS1_ECC_S  2
 
 /** SPI_SMEM_PMS2_ATTR_REG register
- *  SPI1 flash PMS section 2 start address register
+ *  SPI1 external RAM PMS section 2 attribute register
  */
 #define SPI_SMEM_PMS2_ATTR_REG(i) (REG_SPI_MEM_BASE(i) + 0x138)
 /** SPI_SMEM_PMS2_RD_ATTR : R/W; bitpos: [0]; default: 1;
@@ -1889,7 +1890,7 @@ extern "C" {
 #define SPI_SMEM_PMS2_ECC_S  2
 
 /** SPI_SMEM_PMS3_ATTR_REG register
- *  SPI1 flash PMS section 3 start address register
+ *  SPI1 external RAM PMS section 3 attribute register
  */
 #define SPI_SMEM_PMS3_ATTR_REG(i) (REG_SPI_MEM_BASE(i) + 0x13c)
 /** SPI_SMEM_PMS3_RD_ATTR : R/W; bitpos: [0]; default: 1;
@@ -2669,7 +2670,7 @@ extern "C" {
 #define SPI_SMEM_DLL_TIMING_CALI_M  (SPI_SMEM_DLL_TIMING_CALI_V << SPI_SMEM_DLL_TIMING_CALI_S)
 #define SPI_SMEM_DLL_TIMING_CALI_V  0x00000001U
 #define SPI_SMEM_DLL_TIMING_CALI_S  5
-/** SPI_SMEM_DQS0_270_SEL : R/W; bitpos: [8:7]; default: 1;
+/** SPI_SMEM_DQS0_270_SEL : HRO; bitpos: [8:7]; default: 1;
  *  Set these bits to delay dqs signal & invert delayed signal for DLL timing adjust.
  *  2'd0: 0.5ns, 2'd1: 1.0ns, 2'd2: 1.5ns 2'd3: 2.0ns.
  */
@@ -2677,7 +2678,7 @@ extern "C" {
 #define SPI_SMEM_DQS0_270_SEL_M  (SPI_SMEM_DQS0_270_SEL_V << SPI_SMEM_DQS0_270_SEL_S)
 #define SPI_SMEM_DQS0_270_SEL_V  0x00000003U
 #define SPI_SMEM_DQS0_270_SEL_S  7
-/** SPI_SMEM_DQS0_90_SEL : R/W; bitpos: [10:9]; default: 1;
+/** SPI_SMEM_DQS0_90_SEL : HRO; bitpos: [10:9]; default: 1;
  *  Set these bits to delay dqs signal for DLL timing adjust. 2'd0: 0.5ns, 2'd1: 1.0ns,
  *  2'd2: 1.5ns 2'd3: 2.0ns.
  */
@@ -2685,6 +2686,22 @@ extern "C" {
 #define SPI_SMEM_DQS0_90_SEL_M  (SPI_SMEM_DQS0_90_SEL_V << SPI_SMEM_DQS0_90_SEL_S)
 #define SPI_SMEM_DQS0_90_SEL_V  0x00000003U
 #define SPI_SMEM_DQS0_90_SEL_S  9
+/** SPI_SMEM_DQS1_270_SEL : HRO; bitpos: [12:11]; default: 1;
+ *  Set these bits to delay dqs signal & invert delayed signal for DLL timing adjust.
+ *  2'd0: 0.5ns, 2'd1: 1.0ns, 2'd2: 1.5ns 2'd3: 2.0ns.
+ */
+#define SPI_SMEM_DQS1_270_SEL    0x00000003U
+#define SPI_SMEM_DQS1_270_SEL_M  (SPI_SMEM_DQS1_270_SEL_V << SPI_SMEM_DQS1_270_SEL_S)
+#define SPI_SMEM_DQS1_270_SEL_V  0x00000003U
+#define SPI_SMEM_DQS1_270_SEL_S  11
+/** SPI_SMEM_DQS1_90_SEL : HRO; bitpos: [14:13]; default: 1;
+ *  Set these bits to delay dqs signal for DLL timing adjust. 2'd0: 0.5ns, 2'd1: 1.0ns,
+ *  2'd2: 1.5ns 2'd3: 2.0ns.
+ */
+#define SPI_SMEM_DQS1_90_SEL    0x00000003U
+#define SPI_SMEM_DQS1_90_SEL_M  (SPI_SMEM_DQS1_90_SEL_V << SPI_SMEM_DQS1_90_SEL_S)
+#define SPI_SMEM_DQS1_90_SEL_V  0x00000003U
+#define SPI_SMEM_DQS1_90_SEL_S  13
 
 /** SPI_SMEM_DIN_MODE_REG register
  *  MSPI external RAM input timing delay mode control register
@@ -3309,6 +3326,13 @@ extern "C" {
 #define SPI_CLK_EN_M  (SPI_CLK_EN_V << SPI_CLK_EN_S)
 #define SPI_CLK_EN_V  0x00000001U
 #define SPI_CLK_EN_S  0
+/** SPI_MSPI_CLK_FORCE_ON : HRO; bitpos: [1]; default: 1;
+ *  MSPI lowpower function clock gate force on signal. 1: Enable. 0: Disable.
+ */
+#define SPI_MSPI_CLK_FORCE_ON    (BIT(1))
+#define SPI_MSPI_CLK_FORCE_ON_M  (SPI_MSPI_CLK_FORCE_ON_V << SPI_MSPI_CLK_FORCE_ON_S)
+#define SPI_MSPI_CLK_FORCE_ON_V  0x00000001U
+#define SPI_MSPI_CLK_FORCE_ON_S  1
 
 /** SPI_MEM_NAND_FLASH_EN_REG register
  *  NAND FLASH control register
@@ -3755,14 +3779,14 @@ extern "C" {
 #define SPI_MMU_MEM_FORCE_ON_M  (SPI_MMU_MEM_FORCE_ON_V << SPI_MMU_MEM_FORCE_ON_S)
 #define SPI_MMU_MEM_FORCE_ON_V  0x00000001U
 #define SPI_MMU_MEM_FORCE_ON_S  0
-/** SPI_MMU_MEM_FORCE_PD : R/W; bitpos: [1]; default: 1;
+/** SPI_MMU_MEM_FORCE_PD : R/W; bitpos: [1]; default: 0;
  *  Set this bit to force mmu-memory powerdown
  */
 #define SPI_MMU_MEM_FORCE_PD    (BIT(1))
 #define SPI_MMU_MEM_FORCE_PD_M  (SPI_MMU_MEM_FORCE_PD_V << SPI_MMU_MEM_FORCE_PD_S)
 #define SPI_MMU_MEM_FORCE_PD_V  0x00000001U
 #define SPI_MMU_MEM_FORCE_PD_S  1
-/** SPI_MMU_MEM_FORCE_PU : R/W; bitpos: [2]; default: 0;
+/** SPI_MMU_MEM_FORCE_PU : R/W; bitpos: [2]; default: 1;
  *  Set this bit to force mmu-memory powerup, in this case, the power should also be
  *  controlled by rtc.
  */
@@ -3770,7 +3794,7 @@ extern "C" {
 #define SPI_MMU_MEM_FORCE_PU_M  (SPI_MMU_MEM_FORCE_PU_V << SPI_MMU_MEM_FORCE_PU_S)
 #define SPI_MMU_MEM_FORCE_PU_V  0x00000001U
 #define SPI_MMU_MEM_FORCE_PU_S  2
-/** SPI_MMU_PAGE_SIZE : HRO; bitpos: [4:3]; default: 0;
+/** SPI_MMU_PAGE_SIZE : R/W; bitpos: [4:3]; default: 0;
  *  0: Max page size , 1: Max page size/2 , 2: Max page size/4, 3: Max page size/8
  */
 #define SPI_MMU_PAGE_SIZE    0x00000003U
@@ -3786,6 +3810,7 @@ extern "C" {
 #define SPI_MEM_AUX_CTRL_S  16
 /** SPI_MEM_RDN_ENA : R/W; bitpos: [30]; default: 0;
  *  ECO register enable bit
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define SPI_MEM_RDN_ENA    (BIT(30))
 #define SPI_MEM_RDN_ENA_M  (SPI_MEM_RDN_ENA_V << SPI_MEM_RDN_ENA_S)
@@ -3793,6 +3818,7 @@ extern "C" {
 #define SPI_MEM_RDN_ENA_S  30
 /** SPI_MEM_RDN_RESULT : RO; bitpos: [31]; default: 0;
  *  MSPI module clock domain and AXI clock domain ECO register result register
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define SPI_MEM_RDN_RESULT    (BIT(31))
 #define SPI_MEM_RDN_RESULT_M  (SPI_MEM_RDN_RESULT_V << SPI_MEM_RDN_RESULT_S)
@@ -3894,7 +3920,7 @@ extern "C" {
  *  SPI0 version control register
  */
 #define SPI_MEM_DATE_REG(i) (REG_SPI_MEM_BASE(i) + 0x3fc)
-/** SPI_MEM_DATE : R/W; bitpos: [27:0]; default: 36774400;
+/** SPI_MEM_DATE : R/W; bitpos: [27:0]; default: 37822512;
  *  SPI0 register version.
  */
 #define SPI_MEM_DATE    0x0FFFFFFFU
