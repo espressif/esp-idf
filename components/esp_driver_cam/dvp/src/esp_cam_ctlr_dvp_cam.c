@@ -146,8 +146,11 @@ static IRAM_ATTR esp_err_t esp_cam_ctlr_dvp_start_trans(esp_cam_ctlr_dvp_cam_t *
         ESP_RETURN_ON_ERROR_ISR(esp_cam_ctlr_dvp_dma_stop(&ctlr->dma), TAG, "failed to stop DMA");
     }
 
-    if (ctlr->cbs.on_get_new_trans && ctlr->cbs.on_get_new_trans(&(ctlr->base), &trans, ctlr->cbs_user_data)) {
-        buffer_ready = true;
+    if (ctlr->cbs.on_get_new_trans) {
+        ctlr->cbs.on_get_new_trans(&(ctlr->base), &trans, ctlr->cbs_user_data);
+        if (trans.buffer) {
+            buffer_ready = true;
+        }
     } else if (!ctlr->bk_buffer_dis) {
         trans.buffer = ctlr->backup_buffer;
         trans.buflen = ctlr->fb_size_in_bytes;
@@ -704,6 +707,9 @@ esp_err_t esp_cam_new_dvp_ctlr(const esp_cam_ctlr_dvp_config_t *config, esp_cam_
     ESP_RETURN_ON_FALSE(config && ret_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: config or ret_handle is null");
     ESP_RETURN_ON_FALSE(config->ctlr_id < CAP_DVP_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid argument: ctlr_id >= %d", CAP_DVP_PERIPH_NUM);
     ESP_RETURN_ON_FALSE(config->pin_dont_init || config->pin, ESP_ERR_INVALID_ARG, TAG, "invalid argument: pin_dont_init is unset and pin is null");
+    ESP_RETURN_ON_FALSE(config->external_xtal || config->pin_dont_init || config->pin->xclk_io != GPIO_NUM_NC, ESP_ERR_INVALID_ARG, TAG, "invalid argument: xclk_io is not set");
+    ESP_RETURN_ON_FALSE(config->external_xtal || config->xclk_freq, ESP_ERR_INVALID_ARG, TAG, "invalid argument: xclk_freq is not set");
+
     ESP_RETURN_ON_ERROR(esp_cache_get_alignment(MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA, &alignment_size), TAG, "failed to get cache alignment");
     ESP_RETURN_ON_ERROR(esp_cam_ctlr_dvp_cam_get_frame_size(config, &fb_size_in_bytes), TAG, "invalid argument: input frame pixel format is not supported");
     ESP_RETURN_ON_ERROR(dvp_shared_ctrl_claim_io_signals(), TAG, "failed to claim io signals");
@@ -740,12 +746,20 @@ esp_err_t esp_cam_new_dvp_ctlr(const esp_cam_ctlr_dvp_config_t *config, esp_cam_
         .port = config->ctlr_id,
         .byte_swap_en = config->byte_swap_en,
     };
-    cam_hal_init(&ctlr->hal, &cam_hal_config);
 
     if (!config->pin_dont_init) {
+        // Initialzie DVP clock and GPIO internally
         ESP_GOTO_ON_ERROR(esp_cam_ctlr_dvp_init(config->ctlr_id, config->clk_src, config->pin),
                           fail5, TAG, "failed to initialize clock and GPIO");
     }
+
+    if (!config->external_xtal) {
+        // Generate DVP xtal clock internally
+        ESP_GOTO_ON_ERROR(esp_cam_ctlr_dvp_output_clock(config->ctlr_id, config->clk_src, config->xclk_freq),
+                          fail5, TAG, "failed to generate xtal clock");
+    }
+
+    cam_hal_init(&ctlr->hal, &cam_hal_config);
 
     ctlr->ctlr_id = config->ctlr_id;
     ctlr->fb_size_in_bytes = fb_size_in_bytes;
