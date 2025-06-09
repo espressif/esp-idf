@@ -243,6 +243,8 @@ static int esp_phy_wifiscwout_func(int argc, char **argv)
 static int esp_phy_wifi_11ax_tx_set_func(int argc, char **argv)
 {
     uint32_t he_format;
+    uint32_t pe;
+    uint32_t giltf_num;
     uint32_t ru_index = 0;
     int nerrors = arg_parse(argc, argv, (void **) &phy_wifi_11ax_tx_set_args);
     if (nerrors != 0) {
@@ -255,6 +257,20 @@ static int esp_phy_wifi_11ax_tx_set_func(int argc, char **argv)
     } else {
         ESP_LOGE(TAG, "Please enter the HE format 1:HESU, 2:HEER, 3:HETB, 0:exit 11ax mode");
         return 1;
+    }
+
+    if (phy_wifi_11ax_tx_set_args.pe->count == 1) {
+        pe = phy_wifi_11ax_tx_set_args.pe->ival[0];
+    } else {
+        pe = 16;
+        ESP_LOGW(TAG, "Default pe is 16");
+    }
+
+    if (phy_wifi_11ax_tx_set_args.giltf_num->count == 1) {
+        giltf_num = phy_wifi_11ax_tx_set_args.giltf_num->ival[0];
+    } else {
+        giltf_num = 1;
+        ESP_LOGW(TAG, "Default giltf_num is 1");
     }
 
     if (he_format > 3) {
@@ -271,7 +287,7 @@ static int esp_phy_wifi_11ax_tx_set_func(int argc, char **argv)
         }
     }
 
-    esp_phy_11ax_tx_set(he_format, ru_index);
+    esp_phy_11ax_tx_set(he_format, pe, giltf_num, ru_index);
     return 0;
 }
 #endif//CONFIG_SOC_WIFI_HE_SUPPORT
@@ -580,6 +596,8 @@ void register_phy_cmd(void)
 
 #if CONFIG_SOC_WIFI_HE_SUPPORT
     phy_wifi_11ax_tx_set_args.he_format     = arg_int0("f", "he_format"     , "<he_format>"     , "1:HESU, 2:HEER, 3:HETB, 0:exit 11ax mode");
+    phy_wifi_11ax_tx_set_args.pe     = arg_int0("p", "pe"     , "<pe>"     , "pe=0/8/16, default 16");
+    phy_wifi_11ax_tx_set_args.giltf_num     = arg_int0("g", "giltf_num"     , "<giltf_num>"     , "giltf_num=1/2/3, default 1");
     phy_wifi_11ax_tx_set_args.ru_index        = arg_int0("i", "ru_index"        , "<ru_index>"        , "0~8, 37~40, 53~54, 61,\
         ru_index is only effective in HETB mode. In other modes, this parameter can be omitted or set to 0, with the default value being 0");
     phy_wifi_11ax_tx_set_args.end         = arg_end(1);

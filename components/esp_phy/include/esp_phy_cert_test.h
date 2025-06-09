@@ -12,6 +12,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
 
 typedef enum {
     //11b
@@ -202,7 +203,7 @@ void esp_phy_bt_tx_tone(uint32_t start, uint32_t chan, uint32_t power);
 void esp_phy_get_rx_result(esp_phy_rx_result_t *rx_result);
 
 #if CONFIG_SOC_WIFI_HE_SUPPORT
-void esp_phy_11ax_tx_set(uint32_t he_format, uint32_t ru_index);
+void esp_phy_11ax_tx_set(uint32_t he_format, uint32_t pe, uint32_t giltf_num, uint32_t ru_index);
 #endif
 
 #ifdef __cplusplus
