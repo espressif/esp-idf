@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.esp32s3
@@ -36,7 +37,7 @@ def test_usj_vfs_select(dut: Dut, test_message: list) -> None:
 )
 @pytest.mark.parametrize('test_message', ['!(@*#&(!*@&#((SDasdkjhad\nce'])
 @idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
-def test_usj_vfs_read(dut: Dut, test_message: list) -> None:
+def test_usj_vfs_read_return(dut: Dut, test_message: list) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"read does not return on new line character"')
     dut.expect_exact('ready to receive', timeout=2)
@@ -54,7 +55,7 @@ def test_usj_vfs_read(dut: Dut, test_message: list) -> None:
 )
 @pytest.mark.parametrize('test_message', ['testdata'])
 @idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
-def test_usj_vfs_read(dut: Dut, test_message: list) -> None:
+def test_usj_vfs_read_blocking(dut: Dut, test_message: list) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"blocking read returns with available data"')
     dut.expect_exact('ready to receive', timeout=2)
