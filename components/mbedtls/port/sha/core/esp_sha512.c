@@ -160,6 +160,8 @@ int mbedtls_internal_sha512_process(mbedtls_sha512_context *ctx, const unsigned 
 
     esp_sha_acquire_hardware();
 
+    esp_sha_set_mode(ctx->mode);
+
     ret = esp_internal_sha_update_state(ctx);
     if (ret != 0) {
         esp_sha_release_hardware();
@@ -219,6 +221,8 @@ int mbedtls_sha512_update(mbedtls_sha512_context *ctx, const unsigned char *inpu
     if (len || local_len) {
 
         esp_sha_acquire_hardware();
+
+        esp_sha_set_mode(ctx->mode);
 
         int ret = esp_internal_sha_update_state(ctx);
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -60,6 +60,8 @@ static void sha1_update_dma(sha1_ctx* ctx, esp_sha_type sha_type, const unsigned
     if ( len || local_len) {
         /* Enable peripheral module */
         esp_sha_acquire_hardware();
+
+        esp_sha_set_mode(sha_type);
 
         esp_internal_sha1_update_state(ctx, sha_type);
 
@@ -156,6 +158,8 @@ static void sha256_update_dma(sha256_ctx* ctx, esp_sha_type sha_type, const unsi
     if ( len || local_len) {
         /* Enable peripheral module */
         esp_sha_acquire_hardware();
+
+        esp_sha_set_mode(sha_type);
 
         esp_internal_sha256_update_state(ctx);
 
@@ -305,6 +309,8 @@ static void sha512_update_dma(sha512_ctx* ctx, esp_sha_type sha_type, const unsi
 
         /* Enable peripheral module */
         esp_sha_acquire_hardware();
+
+        esp_sha_set_mode(sha_type);
 
         esp_internal_sha512_update_state(ctx);
 

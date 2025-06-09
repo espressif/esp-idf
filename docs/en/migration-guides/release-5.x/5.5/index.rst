@@ -6,6 +6,7 @@ Migration from 5.4 to 5.5
 .. toctree::
     :maxdepth: 1
 
+    security
     system
     peripherals
     protocols

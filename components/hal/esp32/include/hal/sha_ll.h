@@ -133,6 +133,16 @@ static inline void sha_ll_load(esp_sha_type sha_type)
 }
 
 /**
+ * @brief Load the mode for the SHA engine
+ *
+ * @param sha_type The SHA algorithm type
+ */
+static inline void sha_ll_set_mode(esp_sha_type sha_type)
+{
+    (void) sha_type;
+}
+
+/**
  * @brief Checks if the SHA engine is currently busy hashing a block
  *
  * @return true SHA engine busy

@@ -113,6 +113,9 @@ static void esp_internal_sha1_block_process(mbedtls_sha1_context *ctx, const uin
 int mbedtls_internal_sha1_process(mbedtls_sha1_context *ctx, const unsigned char data[64])
 {
     esp_sha_acquire_hardware();
+
+    esp_sha_set_mode(ctx->mode);
+
     esp_internal_sha_update_state(ctx);
 
 #if SOC_SHA_SUPPORT_DMA
@@ -165,6 +168,8 @@ int mbedtls_sha1_update(mbedtls_sha1_context *ctx, const unsigned char *input, s
     if (len || local_len) {
 
         esp_sha_acquire_hardware();
+
+        esp_sha_set_mode(ctx->mode);
 
         esp_internal_sha_update_state(ctx);
 
