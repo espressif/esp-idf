@@ -214,6 +214,90 @@ entries:
         self.test_rule_generation_default()
 
 
+class MutableMappingTest(GenerationTest):
+    # Collection of tests for mutable library mappings
+
+    def dump_rules(self, rules):
+        # A simple helper for displaying the rules. It can be used to manually
+        # compare the actual and expected rules to identify any issues while
+        # preparing tests.
+        print()
+        for target, section_descs in rules.items():
+            print(f'target: {target}')
+            for section_desc in section_descs:
+                print(f'    {section_desc.entity}: {section_desc.sections}')
+                for exclusion in section_desc.exclusions:
+                    print(f'        {exclusion}')
+
+    def add_mutable_libs_to_rules(self, libs, default_rules):
+        # Insert mutable lib rules and exclusions into default test rules.
+        rules = collections.defaultdict(list)
+        for target, section_descs in default_rules.items():
+            for section_desc in section_descs:
+                # Duplicate the current section description.
+                section_desc_copy = InputSectionDesc(section_desc.entity, section_desc.sections)
+                for lib in libs:
+                    # Exclude each mutable library from ROOT entity rule.
+                    section_desc_copy.exclusions.add(Entity(lib))
+                rules[target].append(section_desc_copy)
+
+            # Add a rule for each mutable library and each ROOT entity rule section.
+            # This is done separately because the order is important.
+            for lib in libs:
+                for section_desc in section_descs:
+                    rules[target].append(InputSectionDesc(Entity(lib), section_desc.sections))
+        return rules
+
+    def test_rule_generation_default(self):
+        # Verifies that the default rules are correctly generated from the
+        # default scheme and that mutable libraries are included in the
+        # generated rules.
+        mutable_libs = ['libmutable.a', 'libmutable2.a']
+
+        self.generation.mutable_libs = mutable_libs
+
+        actual = self.generation.generate(self.entities, False)
+        default_rules = self.generate_default_rules()
+        expected = self.add_mutable_libs_to_rules(mutable_libs, default_rules)
+
+        self.compare_rules(expected, actual)
+        self.generation.mutable_libs = []
+
+    def test_default_mapping_obj(self):
+        # Verifies that libfreertos.a:croutine entity is correctly excluded
+        # from the libfreertos.a entity and moved to iram and dram.
+        mapping = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine (noflash)
+"""
+        mutable_libs = ['libfreertos.a']
+
+        self.generation.mutable_libs = mutable_libs
+
+        self.add_fragments(mapping)
+        actual = self.generation.generate(self.entities, False)
+        default_rules = self.generate_default_rules()
+        expected = self.add_mutable_libs_to_rules(mutable_libs, default_rules)
+
+        flash_text = expected['flash_text']
+        flash_rodata = expected['flash_rodata']
+        iram0_text = expected['iram0_text']
+        dram0_data = expected['dram0_data']
+
+        # Add exclusions for the libfreertos.a:croutine entity into
+        # libfreertos.a entity in test and rodata.
+        flash_text[1].exclusions.add(CROUTINE)
+        flash_rodata[1].exclusions.add(CROUTINE)
+
+        # Add rules for the libfreertos.a:croutine entity in iram and dram.
+        iram0_text.append(InputSectionDesc(CROUTINE, flash_text[1].sections))
+        dram0_data.append(InputSectionDesc(CROUTINE, flash_rodata[1].sections))
+
+        self.compare_rules(expected, actual)
+
+
 class BasicTest(GenerationTest):
     # Test basic and fundamental interactions between typical
     # entries.
