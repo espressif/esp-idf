@@ -64,9 +64,12 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
     touch_base_event_data_t data;
     touch_ll_get_active_channel_mask(&data.status_mask);
     uint32_t curr_chan = touch_ll_get_current_meas_channel();
+    if (curr_chan == 0) {
+        return;
+    }
     /* It actually won't be out of range in the real environment, but limit the range to pass the coverity check */
-    curr_chan = curr_chan >= SOC_TOUCH_SENSOR_NUM ? SOC_TOUCH_SENSOR_NUM - 1 : curr_chan;
-    data.chan = g_touch->ch[curr_chan];
+    uint32_t curr_chan_offset = (curr_chan >= SOC_TOUCH_SENSOR_NUM ? SOC_TOUCH_SENSOR_NUM - 1 : curr_chan) - TOUCH_MIN_CHAN_ID;
+    data.chan = g_touch->ch[curr_chan_offset];
     /* If the channel is not registered, return directly */
     if (!data.chan) {
         return;
