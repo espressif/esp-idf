@@ -119,6 +119,7 @@ esp_err_t esp_cam_ctlr_dvp_dma_init(esp_cam_ctlr_dvp_dma_t *dma, uint32_t burst_
 
     ESP_LOGD(TAG, "alignment_size: %d, dma->desc_count: %d, dma->desc_size: %d", alignment_size, dma->desc_count, dma->desc_size);
     dma->desc = heap_caps_aligned_alloc(alignment_size, dma->desc_size, DVP_GDMA_DESC_ALLOC_CAPS);
+
     ESP_GOTO_ON_FALSE(dma->desc, ESP_ERR_NO_MEM, fail1, TAG, "no mem for DVP DMA descriptor");
 
     return ESP_OK;
