@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,15 +89,12 @@ typedef enum {
  *
  * See Table 9-2 of USB2.0 specification for more details
  */
-typedef union {
-    struct {
-        uint8_t bmRequestType;              /**< Characteristics of request */
-        uint8_t bRequest;                   /**< Specific request */
-        uint16_t wValue;                    /**< Word-sized field that varies according to request */
-        uint16_t wIndex;                    /**< Word-sized field that varies according to request; typically used to pass an index or offset */
-        uint16_t wLength;                   /**< Number of bytes to transfer if there is a data stage */
-    } USB_DESC_ATTR;                        /**< USB descriptor attributes */
-    uint8_t val[USB_SETUP_PACKET_SIZE];     /**< Descriptor value */
+typedef struct USB_DESC_ATTR {
+    uint8_t bmRequestType;              /**< Characteristics of request */
+    uint8_t bRequest;                   /**< Specific request */
+    uint16_t wValue;                    /**< Word-sized field that varies according to request */
+    uint16_t wIndex;                    /**< Word-sized field that varies according to request; typically used to pass an index or offset */
+    uint16_t wLength;                   /**< Number of bytes to transfer if there is a data stage */
 } usb_setup_packet_t;
 ESP_STATIC_ASSERT(sizeof(usb_setup_packet_t) == USB_SETUP_PACKET_SIZE, "Size of usb_setup_packet_t incorrect");
 
@@ -106,13 +103,10 @@ ESP_STATIC_ASSERT(sizeof(usb_setup_packet_t) == USB_SETUP_PACKET_SIZE, "Size of 
  *
  * See Figures 9-4 Information Returned by a GetStatus() Request to a Device of USB2.0 specification for more details
  */
-typedef union {
-    struct {
-        uint16_t self_powered: 1;           /**< 1 - Device is currently self-powered, 0 - bus powered */
-        uint16_t remote_wakeup: 1;          /**< 1 - the ability of the device to signal remote wakeup is enabled, 0 - the ability of the device to signal remote wakeup is disabled. */
-        uint16_t reserved: 14;              /**< reserved */
-    } USB_DESC_ATTR;                        /**< Packed */
-    uint16_t val;                           /**< Device status value */
+typedef struct USB_DESC_ATTR {
+    uint16_t self_powered: 1;           /**< 1 - Device is currently self-powered, 0 - bus powered */
+    uint16_t remote_wakeup: 1;          /**< 1 - the ability of the device to signal remote wakeup is enabled, 0 - the ability of the device to signal remote wakeup is disabled. */
+    uint16_t reserved: 14;              /**< reserved */
 } usb_device_status_t;
 ESP_STATIC_ASSERT(sizeof(usb_device_status_t) == sizeof(uint16_t), "Size of usb_device_status_t incorrect");
 
@@ -266,12 +260,9 @@ ESP_STATIC_ASSERT(sizeof(usb_device_status_t) == sizeof(uint16_t), "Size of usb_
  *
  * All USB standard descriptors start with these two bytes. Use this type when traversing over configuration descriptors
  */
-typedef union {
-    struct {
-        uint8_t bLength;                    /**< Size of the descriptor in bytes */
-        uint8_t bDescriptorType;            /**< Descriptor Type */
-    } USB_DESC_ATTR;                        /**< USB descriptor attributes */
-    uint8_t val[USB_STANDARD_DESC_SIZE];    /**< Descriptor value */
+typedef struct USB_DESC_ATTR {
+    uint8_t bLength;                    /**< Size of the descriptor in bytes */
+    uint8_t bDescriptorType;            /**< Descriptor Type */
 } usb_standard_desc_t;
 ESP_STATIC_ASSERT(sizeof(usb_standard_desc_t) == USB_STANDARD_DESC_SIZE, "Size of usb_standard_desc_t incorrect");
 
@@ -287,24 +278,21 @@ ESP_STATIC_ASSERT(sizeof(usb_standard_desc_t) == USB_STANDARD_DESC_SIZE, "Size o
  *
  * See Table 9-8 of USB2.0 specification for more details
  */
-typedef union {
-    struct {
-        uint8_t bLength;                    /**< Size of the descriptor in bytes */
-        uint8_t bDescriptorType;            /**< DEVICE Descriptor Type */
-        uint16_t bcdUSB;                    /**< USB Specification Release Number in Binary-Coded Decimal (i.e., 2.10 is 210H) */
-        uint8_t bDeviceClass;               /**< Class code (assigned by the USB-IF) */
-        uint8_t bDeviceSubClass;            /**< Subclass code (assigned by the USB-IF) */
-        uint8_t bDeviceProtocol;            /**< Protocol code (assigned by the USB-IF) */
-        uint8_t bMaxPacketSize0;            /**< Maximum packet size for endpoint zero (only 8, 16, 32, or 64 are valid) */
-        uint16_t idVendor;                  /**< Vendor ID (assigned by the USB-IF) */
-        uint16_t idProduct;                 /**< Product ID (assigned by the manufacturer) */
-        uint16_t bcdDevice;                 /**< Device release number in binary-coded decimal */
-        uint8_t iManufacturer;              /**< Index of string descriptor describing manufacturer */
-        uint8_t iProduct;                   /**< Index of string descriptor describing product */
-        uint8_t iSerialNumber;              /**< Index of string descriptor describing the device’s serial number */
-        uint8_t bNumConfigurations;         /**< Number of possible configurations */
-    } USB_DESC_ATTR;                        /**< USB descriptor attributes */
-    uint8_t val[USB_DEVICE_DESC_SIZE];      /**< Descriptor value */
+typedef struct USB_DESC_ATTR {
+    uint8_t bLength;                    /**< Size of the descriptor in bytes */
+    uint8_t bDescriptorType;            /**< DEVICE Descriptor Type */
+    uint16_t bcdUSB;                    /**< USB Specification Release Number in Binary-Coded Decimal (i.e., 2.10 is 210H) */
+    uint8_t bDeviceClass;               /**< Class code (assigned by the USB-IF) */
+    uint8_t bDeviceSubClass;            /**< Subclass code (assigned by the USB-IF) */
+    uint8_t bDeviceProtocol;            /**< Protocol code (assigned by the USB-IF) */
+    uint8_t bMaxPacketSize0;            /**< Maximum packet size for endpoint zero (only 8, 16, 32, or 64 are valid) */
+    uint16_t idVendor;                  /**< Vendor ID (assigned by the USB-IF) */
+    uint16_t idProduct;                 /**< Product ID (assigned by the manufacturer) */
+    uint16_t bcdDevice;                 /**< Device release number in binary-coded decimal */
+    uint8_t iManufacturer;              /**< Index of string descriptor describing manufacturer */
+    uint8_t iProduct;                   /**< Index of string descriptor describing product */
+    uint8_t iSerialNumber;              /**< Index of string descriptor describing the device’s serial number */
+    uint8_t bNumConfigurations;         /**< Number of possible configurations */
 } usb_device_desc_t;
 ESP_STATIC_ASSERT(sizeof(usb_device_desc_t) == USB_DEVICE_DESC_SIZE, "Size of usb_device_desc_t incorrect");
 
@@ -356,18 +344,15 @@ ESP_STATIC_ASSERT(sizeof(usb_device_desc_t) == USB_DEVICE_DESC_SIZE, "Size of us
  * @note The full USB configuration includes all the interface and endpoint
  *       descriptors of that configuration.
  */
-typedef union {
-    struct {
-        uint8_t bLength;                    /**< Size of the descriptor in bytes */
-        uint8_t bDescriptorType;            /**< CONFIGURATION Descriptor Type */
-        uint16_t wTotalLength;              /**< Total length of data returned for this configuration */
-        uint8_t bNumInterfaces;             /**< Number of interfaces supported by this configuration */
-        uint8_t bConfigurationValue;        /**< Value to use as an argument to the SetConfiguration() request to select this configuration */
-        uint8_t iConfiguration;             /**< Index of string descriptor describing this configuration */
-        uint8_t bmAttributes;               /**< Configuration characteristics */
-        uint8_t bMaxPower;                  /**< Maximum power consumption of the USB device from the bus in this specific configuration when the device is fully operational. */
-    } USB_DESC_ATTR;                        /**< USB descriptor attributes */
-    uint8_t val[USB_CONFIG_DESC_SIZE];      /**< Descriptor value */
+typedef struct USB_DESC_ATTR {
+    uint8_t bLength;                    /**< Size of the descriptor in bytes */
+    uint8_t bDescriptorType;            /**< CONFIGURATION Descriptor Type */
+    uint16_t wTotalLength;              /**< Total length of data returned for this configuration */
+    uint8_t bNumInterfaces;             /**< Number of interfaces supported by this configuration */
+    uint8_t bConfigurationValue;        /**< Value to use as an argument to the SetConfiguration() request to select this configuration */
+    uint8_t iConfiguration;             /**< Index of string descriptor describing this configuration */
+    uint8_t bmAttributes;               /**< Configuration characteristics */
+    uint8_t bMaxPower;                  /**< Maximum power consumption of the USB device from the bus in this specific configuration when the device is fully operational. */
 } usb_config_desc_t;
 ESP_STATIC_ASSERT(sizeof(usb_config_desc_t) == USB_CONFIG_DESC_SIZE, "Size of usb_config_desc_t incorrect");
 
@@ -384,23 +369,20 @@ ESP_STATIC_ASSERT(sizeof(usb_config_desc_t) == USB_CONFIG_DESC_SIZE, "Size of us
 /**
  * @brief Size of a USB interface association descriptor in bytes
  */
-#define USB_IAD_DESC_SIZE    9
+#define USB_IAD_DESC_SIZE    8
 
 /**
  * @brief Structure representing a USB interface association descriptor
  */
-typedef union {
-    struct {
-        uint8_t bLength;                    /**< Size of the descriptor in bytes */
-        uint8_t bDescriptorType;            /**< INTERFACE ASSOCIATION Descriptor Type */
-        uint8_t bFirstInterface;            /**< Interface number of the first interface that is associated with this function */
-        uint8_t bInterfaceCount;            /**< Number of contiguous interfaces that are associated with this function */
-        uint8_t bFunctionClass;             /**< Class code (assigned by USB-IF) */
-        uint8_t bFunctionSubClass;          /**< Subclass code (assigned by USB-IF) */
-        uint8_t bFunctionProtocol;          /**< Protocol code (assigned by USB-IF) */
-        uint8_t iFunction;                  /**< Index of string descriptor describing this function */
-    } USB_DESC_ATTR;                        /**< USB descriptor attributes */
-    uint8_t val[USB_IAD_DESC_SIZE];         /**< Descriptor value */
+typedef struct USB_DESC_ATTR {
+    uint8_t bLength;                    /**< Size of the descriptor in bytes */
+    uint8_t bDescriptorType;            /**< INTERFACE ASSOCIATION Descriptor Type */
+    uint8_t bFirstInterface;            /**< Interface number of the first interface that is associated with this function */
+    uint8_t bInterfaceCount;            /**< Number of contiguous interfaces that are associated with this function */
+    uint8_t bFunctionClass;             /**< Class code (assigned by USB-IF) */
+    uint8_t bFunctionSubClass;          /**< Subclass code (assigned by USB-IF) */
+    uint8_t bFunctionProtocol;          /**< Protocol code (assigned by USB-IF) */
+    uint8_t iFunction;                  /**< Index of string descriptor describing this function */
 } usb_iad_desc_t;
 ESP_STATIC_ASSERT(sizeof(usb_iad_desc_t) == USB_IAD_DESC_SIZE, "Size of usb_iad_desc_t incorrect");
 
@@ -416,19 +398,16 @@ ESP_STATIC_ASSERT(sizeof(usb_iad_desc_t) == USB_IAD_DESC_SIZE, "Size of usb_iad_
  *
  * See Table 9-12 of USB2.0 specification for more details
  */
-typedef union {
-    struct {
-        uint8_t bLength;                    /**< Size of the descriptor in bytes */
-        uint8_t bDescriptorType;            /**< INTERFACE Descriptor Type */
-        uint8_t bInterfaceNumber;           /**< Number of this interface. */
-        uint8_t bAlternateSetting;          /**< Value used to select this alternate setting for the interface identified in the prior field */
-        uint8_t bNumEndpoints;              /**< Number of endpoints used by this interface (excluding endpoint zero). */
-        uint8_t bInterfaceClass;            /**< Class code (assigned by the USB-IF) */
-        uint8_t bInterfaceSubClass;         /**< Subclass code (assigned by the USB-IF) */
-        uint8_t bInterfaceProtocol;         /**< Protocol code (assigned by the USB) */
-        uint8_t iInterface;                 /**< Index of string descriptor describing this interface */
-    } USB_DESC_ATTR;                        /**< USB descriptor attributes */
-    uint8_t val[USB_INTF_DESC_SIZE];        /**< Descriptor value */
+typedef struct USB_DESC_ATTR {
+    uint8_t bLength;                    /**< Size of the descriptor in bytes */
+    uint8_t bDescriptorType;            /**< INTERFACE Descriptor Type */
+    uint8_t bInterfaceNumber;           /**< Number of this interface. */
+    uint8_t bAlternateSetting;          /**< Value used to select this alternate setting for the interface identified in the prior field */
+    uint8_t bNumEndpoints;              /**< Number of endpoints used by this interface (excluding endpoint zero). */
+    uint8_t bInterfaceClass;            /**< Class code (assigned by the USB-IF) */
+    uint8_t bInterfaceSubClass;         /**< Subclass code (assigned by the USB-IF) */
+    uint8_t bInterfaceProtocol;         /**< Protocol code (assigned by the USB) */
+    uint8_t iInterface;                 /**< Index of string descriptor describing this interface */
 } usb_intf_desc_t;
 ESP_STATIC_ASSERT(sizeof(usb_intf_desc_t) == USB_INTF_DESC_SIZE, "Size of usb_intf_desc_t incorrect");
 
@@ -444,16 +423,13 @@ ESP_STATIC_ASSERT(sizeof(usb_intf_desc_t) == USB_INTF_DESC_SIZE, "Size of usb_in
  *
  * See Table 9-13 of USB2.0 specification for more details
  */
-typedef union {
-    struct {
-        uint8_t bLength;                    /**< Size of the descriptor in bytes */
-        uint8_t bDescriptorType;            /**< ENDPOINT Descriptor Type */
-        uint8_t bEndpointAddress;           /**< The address of the endpoint on the USB device described by this descriptor */
-        uint8_t bmAttributes;               /**< This field describes the endpoint’s attributes when it is configured using the bConfigurationValue. */
-        uint16_t wMaxPacketSize;            /**< Maximum packet size this endpoint is capable of sending or receiving when this configuration is selected. */
-        uint8_t bInterval;                  /**< Interval for polling Isochronous and Interrupt endpoints. Expressed in frames or microframes depending on the device operating speed (1 ms for Low-Speed and Full-Speed or 125 us for USB High-Speed and above). */
-    } USB_DESC_ATTR;                        /**< USB descriptor attributes */
-    uint8_t val[USB_EP_DESC_SIZE];          /**< Descriptor value */
+typedef struct USB_DESC_ATTR {
+    uint8_t bLength;                    /**< Size of the descriptor in bytes */
+    uint8_t bDescriptorType;            /**< ENDPOINT Descriptor Type */
+    uint8_t bEndpointAddress;           /**< The address of the endpoint on the USB device described by this descriptor */
+    uint8_t bmAttributes;               /**< This field describes the endpoint’s attributes when it is configured using the bConfigurationValue. */
+    uint16_t wMaxPacketSize;            /**< Maximum packet size this endpoint is capable of sending or receiving when this configuration is selected. */
+    uint8_t bInterval;                  /**< Interval for polling Isochronous and Interrupt endpoints. Expressed in frames or microframes depending on the device operating speed (1 ms for Low-Speed and Full-Speed or 125 us for USB High-Speed and above). */
 } usb_ep_desc_t;
 ESP_STATIC_ASSERT(sizeof(usb_ep_desc_t) == USB_EP_DESC_SIZE, "Size of usb_ep_desc_t incorrect");
 
@@ -508,13 +484,10 @@ ESP_STATIC_ASSERT(sizeof(usb_ep_desc_t) == USB_EP_DESC_SIZE, "Size of usb_ep_des
 /**
  * @brief Structure representing a USB string descriptor
  */
-typedef union {
-    struct {
-        uint8_t bLength;                    /**< Size of the descriptor in bytes */
-        uint8_t bDescriptorType;            /**< STRING Descriptor Type */
-        uint16_t wData[];                   /**< UTF-16LE encoded */
-    } USB_DESC_ATTR;                        /**< USB descriptor attributes */
-    uint8_t val[USB_STR_DESC_SIZE];         /**< Descriptor value */
+typedef struct USB_DESC_ATTR {
+    uint8_t bLength;                    /**< Size of the descriptor in bytes */
+    uint8_t bDescriptorType;            /**< STRING Descriptor Type */
+    uint16_t wData[];                   /**< UTF-16LE encoded */
 } usb_str_desc_t;
 ESP_STATIC_ASSERT(sizeof(usb_str_desc_t) == USB_STR_DESC_SIZE, "Size of usb_str_desc_t incorrect");
 
