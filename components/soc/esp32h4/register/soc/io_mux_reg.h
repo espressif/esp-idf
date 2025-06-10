@@ -133,7 +133,6 @@ extern "C" {
 #define MAX_RTC_GPIO_NUM              5
 #define MAX_PAD_GPIO_NUM             39
 #define MAX_GPIO_NUM                 39
-#define HIGH_IO_HOLD_BIT_SHIFT       32
 
 #define REG_IO_MUX_BASE                             DR_REG_IO_MUX_BASE
 // definitions above are inherited from previous version of code, should double check

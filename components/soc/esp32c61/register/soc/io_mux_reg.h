@@ -112,9 +112,8 @@ extern "C" {
 #define EXT_OSC_SLOW_GPIO_NUM        0
 
 #define MAX_RTC_GPIO_NUM              6
-#define MAX_PAD_GPIO_NUM             24
-#define MAX_GPIO_NUM                 28
-#define HIGH_IO_HOLD_BIT_SHIFT       32
+#define MAX_PAD_GPIO_NUM             29
+#define MAX_GPIO_NUM                 33
 
 #define REG_IO_MUX_BASE                             DR_REG_IO_MUX_BASE
 // definitions above are inherited from previous version of code, should double check
