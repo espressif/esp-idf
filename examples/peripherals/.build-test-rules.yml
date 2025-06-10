@@ -58,6 +58,17 @@ examples/peripherals/camera/dvp_isp_dsi:
     - esp_lcd
     - esp_driver_cam
 
+examples/peripherals/camera/dvp_spi_lcd:
+  disable:
+    - if: SOC_LCDCAM_CAM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32s3"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_lcd
+    - esp_driver_cam
+
 examples/peripherals/camera/mipi_isp_dsi:
   disable:
     - if: SOC_MIPI_CSI_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1
