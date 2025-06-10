@@ -1102,10 +1102,57 @@ typedef struct {
 } esp_ble_gap_past_params_t;
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
-typedef enum{
+typedef enum {
     ESP_BLE_NETWORK_PRIVACY_MODE    = 0X00,    /*!< Network Privacy Mode for peer device (default) */
     ESP_BLE_DEVICE_PRIVACY_MODE     = 0X01,    /*!< Device Privacy Mode for peer device */
 } esp_ble_privacy_mode_t;
+
+#define ESP_BLE_VENDOR_SCAN_REQ_RECV_EVT_MASK   BIT(0)  /*!< Vendor BLE legacy SCAN_REQ received event mask */
+#define ESP_BLE_VENDOR_CHMAP_UPDATE_EVT_MASK    BIT(1)  /*!< Vendor BLE channel map update event mask */
+#define ESP_BLE_VENDOR_SLEEP_WAKEUP_EVT_MASK    BIT(3)  /*!< Vendor BLE sleep wakeup event mask */
+#define ESP_BLE_VENDOR_CONN_REQ_RECV_EVT_MASK   BIT(4)  /*!< Vendor BLE CONNECT_IND and AUX_CONNECT_REQ received event mask */
+#define ESP_BLE_VENDOR_CONN_RSP_RECV_EVT_MASK   BIT(5)  /*!< Vendor BLE AUX_CONNECT_RSP received event mask */
+typedef uint32_t esp_ble_vendor_evt_mask_t;
+
+#define ESP_BLE_VENDOR_PDU_RECV_EVT         (0)     /*!< Vendor BLE specify PDU received event */
+#define ESP_BLE_VENDOR_CHAN_MAP_UPDATE_EVT  (1)     /*!< Vendor BLE channel map update complete event */
+#define ESP_BLE_VENDOR_SLEEP_WAKEUP_EVT     (2)     /*!< Vendor BLE sleep wakeup event */
+typedef uint8_t esp_ble_vendor_evt_t;
+
+typedef enum {
+    ESP_BLE_VENDOR_PDU_SCAN_REQ = 0,                /*!< SCAN_REQ PDU type */
+    ESP_BLE_VENDOR_PDU_CONN_REQ,                    /*!< CONNECT_IND and AUX_CONNECT_REQ PDU type */
+    ESP_BLE_VENDOR_PDU_CONN_RSP,                    /*!< AUX_CONNECT_RSP PDU type */
+} esp_ble_vendor_pdu_t;
+
+/**
+ * @brief BLE vendor event parameters union
+ */
+typedef union {
+    /**
+     * @brief ESP_BLE_VENDOR_PDU_RECV_EVT
+     */
+    struct ble_pdu_recv_evt_param {
+        esp_ble_vendor_pdu_t type;                  /*!< The type of LE PDU */
+        uint8_t handle;                             /*!< The handle of advertising set */
+        esp_ble_addr_type_t addr_type;              /*!< The address type of peer device */
+        esp_bd_addr_t peer_addr;                    /*!< The address of peer device */
+    } pdu_recv;                                     /*!< Event parameter of ESP_BLE_VENDOR_PDU_RECV_EVT */
+    /**
+     * @brief ESP_BLE_VENDOR_CHAN_MAP_UPDATE_EVT
+     */
+    struct ble_chan_map_update_evt_param {
+        uint8_t status;                             /*!< Indicate the channel map update status (HCI error code) */
+        uint16_t conn_handle;                       /*!< The connection handle */
+        esp_gap_ble_channels ch_map;                /*!< The channel map after updated */
+    } chan_map_update;                              /*!< Event parameter of ESP_BLE_VENDOR_CHAN_MAP_UPDATE_EVT */
+    /**
+     * @brief ESP_BLE_VENDOR_SLEEP_WAKEUP_EVT
+     */
+    struct ble_sleep_wakeup_evt_param {
+        // No parameters
+    } sleep_wakeup;                                 /*!< Event parameter of ESP_BLE_VENDOR_SLEEP_WAKEUP_EVT */
+} esp_ble_vendor_evt_param_t;
 
 /**
 * @brief path loss report parameters
@@ -1258,12 +1305,6 @@ typedef union {
     struct ble_adv_stop_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate adv stop operation success status */
     } adv_stop_cmpl;                                /*!< Event parameter of ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT */
-    /**
-     * @brief ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT
-     */
-    struct ble_adv_clear_cmpl_evt_param {
-        esp_bt_status_t status;                     /*!< Indicate adv clear operation success status */
-    } adv_clear_cmpl;                                /*!< Event parameter of ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT */
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
     /**
      * @brief ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT
@@ -1666,6 +1707,19 @@ typedef union {
         uint16_t num_of_pkt;                        /*!< number of packets received, only valid if update_evt is DTM_TEST_STOP_EVT and shall be reported as 0 for a transmitter */
     } dtm_state_update;                             /*!< Event parameter of ESP_GAP_BLE_DTM_TEST_UPDATE_EVT */
     /**
+     * @brief ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT
+     */
+    struct ble_set_privacy_mode_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate privacy mode set operation success status */
+    } set_privacy_mode_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT */
+#if (BLE_VENDOR_HCI_EN == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT
+     */
+    struct ble_adv_clear_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate adv clear operation success status */
+    } adv_clear_cmpl;                               /*!< Event parameter of ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT */
+    /**
      * @brief ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT
      */
     struct vendor_cmd_cmpl_evt_param {
@@ -1673,12 +1727,6 @@ typedef union {
         uint16_t        param_len;                  /*!< The length of parameter buffer */
         uint8_t         *p_param_buf;               /*!< The point of parameter buffer */
     } vendor_cmd_cmpl;                              /*!< Event parameter of ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT */
-    /**
-     * @brief ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT
-     */
-    struct ble_set_privacy_mode_cmpl_evt_param {
-        esp_bt_status_t status;                     /*!< Indicate privacy mode set operation success status */
-    } set_privacy_mode_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_SET_CSA_SUPPORT_COMPLETE_EVT
      */
@@ -1695,10 +1743,12 @@ typedef union {
      * @brief ESP_GAP_BLE_VENDOR_HCI_EVT
      */
     struct ble_vendor_hci_event_evt_param {
-        uint8_t        subevt_code;                 /*!< Subevent code for vendor HCI event, the range is 0xC0 to 0xFF */
-        uint8_t        param_len;                   /*!< The length of the event parameter buffer */
-        uint8_t        *param_buf;                  /*!< The pointer of the event parameter buffer */
-    } vendor_hci_evt;                               /*!< Event parameter buffer of ESP_GAP_BLE_VENDOR_HCI_EVT */
+        esp_ble_vendor_evt_t subevt_code;           /*!< Subevent code for BLE vendor HCI event */
+        esp_ble_vendor_evt_param_t param;           /*!< Event parameter of BLE vendor HCI subevent */
+        uint8_t param_len;                          /*!< The length of the event parameter buffer (for internal use only) */
+        uint8_t *param_buf;                         /*!< The pointer of the event parameter buffer (for internal use only) */
+    } vendor_hci_evt;                               /*!< Event parameter of ESP_GAP_BLE_VENDOR_HCI_EVT */
+#endif // #if (BLE_VENDOR_HCI_EN == TRUE)
 #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
     /**
      * @brief ESP_GAP_BLE_ENH_READ_TRANS_PWR_LEVEL_EVT
@@ -3032,14 +3082,13 @@ esp_err_t esp_ble_gap_set_csa_support(uint8_t csa_select);
 /**
  * @brief           This function is used to control which vendor events are generated by the HCI for the Host.
  *
- * @param[in]       event_mask: Bit0: Legacy scan request received event
- *                              Bit1: Vendor channel map update complete event
+ * @param[in]       event_mask: The BLE vendor HCI event mask
  *
  * @return
  *                  - ESP_OK : success
  *                  - other  : failed
  */
-esp_err_t esp_ble_gap_set_vendor_event_mask(uint32_t event_mask);
+esp_err_t esp_ble_gap_set_vendor_event_mask(esp_ble_vendor_evt_mask_t event_mask);
 
 /**
  * @brief           This function is used to read the current and maximum transmit power levels of the local Controller.

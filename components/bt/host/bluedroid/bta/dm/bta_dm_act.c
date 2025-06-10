@@ -733,6 +733,7 @@ void bta_dm_cfg_coex_status (tBTA_DM_MSG *p_data)
 }
 #endif
 
+#if (BLE_VENDOR_HCI_EN == TRUE)
 void bta_dm_send_vendor_hci(tBTA_DM_MSG *p_data)
 {
     BTM_VendorSpecificCommand(p_data->vendor_hci_cmd.opcode,
@@ -740,6 +741,28 @@ void bta_dm_send_vendor_hci(tBTA_DM_MSG *p_data)
                               p_data->vendor_hci_cmd.p_param_buf,
                               p_data->vendor_hci_cmd.vendor_hci_cb);
 }
+
+void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data)
+{
+    if (BTM_BleClearAdv(p_data->ble_clear_adv.p_clear_adv_cback) == FALSE) {
+        if (p_data->ble_clear_adv.p_clear_adv_cback) {
+            (*p_data->ble_clear_adv.p_clear_adv_cback)(BTA_FAILURE);
+        }
+    }
+}
+
+void bta_dm_ble_gap_set_csa_support(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s, csa_select = %d", __func__, p_data->ble_set_csa_support.csa_select);
+    BTM_BleSetCsaSupport(p_data->ble_set_csa_support.csa_select, p_data->ble_set_csa_support.p_cback);
+}
+
+void bta_dm_ble_gap_set_vendor_evt_mask(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s, evt_mask = %d", __func__, p_data->ble_set_vendor_evt_mask.evt_mask);
+    BTM_BleSetVendorEventMask(p_data->ble_set_vendor_evt_mask.evt_mask, p_data->ble_set_vendor_evt_mask.p_cback);
+}
+#endif // #if (BLE_VENDOR_HCI_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -5822,15 +5845,6 @@ void bta_dm_ble_gap_dtm_stop(tBTA_DM_MSG *p_data)
 }
 #endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 
-void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data)
-{
-    if (BTM_BleClearAdv(p_data->ble_clear_adv.p_clear_adv_cback) == FALSE) {
-        if (p_data->ble_clear_adv.p_clear_adv_cback) {
-            (*p_data->ble_clear_adv.p_clear_adv_cback)(BTA_FAILURE);
-        }
-    }
-}
-
 void bta_dm_ble_gap_set_rpa_timeout(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_API("%s, rpa_timeout = %d", __func__, p_data->set_rpa_timeout.rpa_timeout);
@@ -5851,18 +5865,6 @@ void bta_dm_ble_gap_set_privacy_mode(tBTA_DM_MSG *p_data)
     APPL_TRACE_API("%s, privacy_mode = %d", __func__, p_data->ble_set_privacy_mode.privacy_mode);
     BTM_BleSetPrivacyMode(p_data->ble_set_privacy_mode.addr_type, p_data->ble_set_privacy_mode.addr,
                         p_data->ble_set_privacy_mode.privacy_mode, p_data->ble_set_privacy_mode.p_cback);
-}
-
-void bta_dm_ble_gap_set_csa_support(tBTA_DM_MSG *p_data)
-{
-    APPL_TRACE_API("%s, csa_select = %d", __func__, p_data->ble_set_csa_support.csa_select);
-    BTM_BleSetCsaSupport(p_data->ble_set_csa_support.csa_select, p_data->ble_set_csa_support.p_cback);
-}
-
-void bta_dm_ble_gap_set_vendor_evt_mask(tBTA_DM_MSG *p_data)
-{
-    APPL_TRACE_API("%s, evt_mask = %d", __func__, p_data->ble_set_vendor_evt_mask.evt_mask);
-    BTM_BleSetVendorEventMask(p_data->ble_set_vendor_evt_mask.evt_mask, p_data->ble_set_vendor_evt_mask.p_cback);
 }
 
 void bta_dm_read_ble_channel_map(tBTA_DM_MSG *p_data)
