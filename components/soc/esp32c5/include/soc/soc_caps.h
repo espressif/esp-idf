@@ -548,6 +548,7 @@
 #define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY        1 /*!< Key manager responsible to deploy ECDSA key */
 #define SOC_KEY_MANAGER_FE_KEY_DEPLOY           1 /*!< Key manager responsible to deploy Flash Encryption key */
 #define SOC_KEY_MANAGER_HMAC_KEY_DEPLOY         1 /*!< Key manager responsible to deploy HMAC key */
+#define SOC_KEY_MANAGER_DS_KEY_DEPLOY           1 /*!< Key manager responsible to deploy DS key */
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1

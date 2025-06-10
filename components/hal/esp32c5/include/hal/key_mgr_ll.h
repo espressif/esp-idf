@@ -189,6 +189,14 @@ static inline void key_mgr_ll_set_key_usage(const esp_key_mgr_key_type_t key_typ
             }
             break;
 
+        case ESP_KEY_MGR_DS_KEY:
+            if (key_usage == ESP_KEY_MGR_USE_EFUSE_KEY) {
+                REG_SET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_DS);
+            } else {
+                REG_CLR_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_DS);
+            }
+            break;
+
         default:
             HAL_ASSERT(false && "Unsupported mode");
             return;
@@ -211,6 +219,10 @@ static inline esp_key_mgr_key_usage_t key_mgr_ll_get_key_usage(esp_key_mgr_key_t
 
         case ESP_KEY_MGR_HMAC_KEY:
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_HMAC));
+            break;
+
+        case ESP_KEY_MGR_DS_KEY:
+            return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_DS));
             break;
 
         default:
@@ -253,6 +265,10 @@ static inline void key_mgr_ll_lock_use_efuse_key_reg(esp_key_mgr_key_type_t key_
             REG_SET_BIT(KEYMNG_LOCK_REG, KEYMNG_USE_EFUSE_KEY_LOCK_HMAC);
             break;
 
+        case ESP_KEY_MGR_DS_KEY:
+            REG_SET_BIT(KEYMNG_LOCK_REG, KEYMNG_USE_EFUSE_KEY_LOCK_DS);
+            break;
+
         default:
             HAL_ASSERT(false && "Unsupported mode");
             return;
@@ -291,7 +307,6 @@ static inline bool key_mgr_ll_is_result_success(void)
 static inline bool key_mgr_ll_is_key_deployment_valid(const esp_key_mgr_key_type_t key_type)
 {
     switch (key_type) {
-
         case ESP_KEY_MGR_ECDSA_192_KEY:
             return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_ECDSA_192_VLD);
         case ESP_KEY_MGR_ECDSA_256_KEY:
@@ -307,6 +322,10 @@ static inline bool key_mgr_ll_is_key_deployment_valid(const esp_key_mgr_key_type
 
         case ESP_KEY_MGR_HMAC_KEY:
             return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_HMAC_VLD);
+            break;
+
+        case ESP_KEY_MGR_DS_KEY:
+            return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_DS_VLD);
             break;
 
         default:
