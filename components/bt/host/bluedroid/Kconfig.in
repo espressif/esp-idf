@@ -377,6 +377,13 @@ config BT_GATTS_APPEARANCE_WRITABLE
     help
         Enabling this option allows remote GATT clients to write appearance
 
+config BT_GATTS_SECURITY_LEVELS_CHAR
+    bool "Enable LE GATT Security Levels Characteristic"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        Enable LE GATT Security Levels Characteristic
+
 menuconfig BT_GATTC_ENABLE
     bool "Include GATT client module(GATTC)"
     depends on BT_BLE_ENABLED
