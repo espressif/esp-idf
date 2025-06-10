@@ -233,6 +233,16 @@ static void btu_ble_pa_subevt_data_request_evt(UINT8 *p);
 static void btu_ble_pa_response_report_evt(UINT8 *p);
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+static void btu_ble_cs_read_remote_supp_caps_evt(UINT8 *p);
+static void btu_ble_cs_read_remote_fae_tab_evt(UINT8 *p);
+static void btu_ble_cs_security_enable_cmpl_evt(UINT8 *p);
+static void btu_ble_cs_config_cmpl_evt(UINT8 *p);
+static void btu_ble_cs_proc_enable_cmpl_evt(UINT8 *p);
+static void btu_ble_cs_subevt_result_evt(UINT8 *p);
+static void btu_ble_cs_subevt_result_continue_evt(UINT8 *p);
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
 #if (BLE_42_ADV_EN == TRUE)
 extern osi_sem_t adv_enable_sem;
 extern osi_sem_t adv_data_sem;
@@ -607,6 +617,29 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_pa_response_report_evt(p);
             break;
 #endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+        case HCI_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT:
+            btu_ble_cs_read_remote_supp_caps_evt(p);
+            break;
+        case HCI_BLE_CS_READ_REMOTE_FAE_TAB_CMPL_EVT:
+            btu_ble_cs_read_remote_fae_tab_evt(p);
+            break;
+        case HCI_BLE_CS_SECURITY_ENABLE_CMPL_EVT:
+            btu_ble_cs_security_enable_cmpl_evt(p);
+            break;
+        case HCI_BLE_CS_CONFIG_CMPL_EVT:
+            btu_ble_cs_config_cmpl_evt(p);
+            break;
+        case HCI_BLE_CS_PROC_ENABLE_CMPL_EVT:
+            btu_ble_cs_proc_enable_cmpl_evt(p);
+            break;
+        case HCI_BLE_CS_SUBEVENT_RESULT_EVT:
+            btu_ble_cs_subevt_result_evt(p);
+            break;
+        case HCI_BLE_CS_SUBEVENT_RESULT_CONTINUE_EVT:
+            btu_ble_cs_subevt_result_continue_evt(p);
+            break;
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
         }
         break;
 #endif /* BLE_INCLUDED */
@@ -1411,7 +1444,11 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_enh_read_trans_pwr_level_cmpl_evt(p);
         break;
 #endif //#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
-
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    case HCI_BLE_CS_READ_LOCAL_SUPP_CAPS:
+        btm_ble_cs_read_local_supp_caps_cmpl_evt(p);
+        break;
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 #endif /* (BLE_INCLUDED == TRUE) */
 
     default: {
@@ -1619,6 +1656,23 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
         btm_subrate_req_cmd_status(status);
         break;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    case HCI_BLE_CS_READ_REMOTE_SUPP_CAPS:
+        btm_ble_cs_read_remote_supp_caps_cmd_status(status);
+        break;
+    case HCI_BLE_CS_SECURITY_ENABLE:
+        btm_ble_cs_security_enable_cmd_status(status);
+        break;
+    case HCI_BLE_CS_READ_REMOTE_FAE_TABLE:
+        btm_ble_cs_read_remote_fae_table_cmd_status(status);
+        break;
+    case HCI_BLE_CS_CREATE_CONFIG:
+        btm_ble_cs_update_config_cmd_status(status, true);
+        break;
+    case HCI_BLE_CS_REMOVE_CONFIG:
+        btm_ble_cs_update_config_cmd_status(status, false);
+        break;
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
     default:
         /* If command failed to start, we may need to tell BTM */
         if (status != HCI_SUCCESS) {
@@ -3190,6 +3244,228 @@ static void btu_ble_pa_response_report_evt(UINT8 *p)
     }
 }
 #endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+static void btu_ble_cs_read_remote_supp_caps_evt(UINT8 *p)
+{
+    tBTM_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT cs_read_remote_supp_caps = {0};
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(cs_read_remote_supp_caps.status, p);
+    STREAM_TO_UINT16(cs_read_remote_supp_caps.conn_handle, p);
+    STREAM_TO_UINT8(cs_read_remote_supp_caps.num_config_supported, p);
+    STREAM_TO_UINT16(cs_read_remote_supp_caps.max_consecutive_proc_supported, p);
+    STREAM_TO_UINT8(cs_read_remote_supp_caps.num_ant_supported, p);
+    STREAM_TO_UINT8(cs_read_remote_supp_caps.max_ant_paths_supported, p);
+    STREAM_TO_UINT8(cs_read_remote_supp_caps.roles_supported, p);
+    STREAM_TO_UINT8(cs_read_remote_supp_caps.modes_supported, p);
+    STREAM_TO_UINT8(cs_read_remote_supp_caps.rtt_capability, p);
+    STREAM_TO_UINT8(cs_read_remote_supp_caps.rtt_aa_only_n, p);
+    STREAM_TO_UINT8(cs_read_remote_supp_caps.rtt_sounding_n, p);
+    STREAM_TO_UINT8(cs_read_remote_supp_caps.rtt_random_payload_n, p);
+    STREAM_TO_UINT16(cs_read_remote_supp_caps.NADM_sounding_capability, p);
+    STREAM_TO_UINT16(cs_read_remote_supp_caps.NADM_random_capability, p);
+    STREAM_TO_UINT8(cs_read_remote_supp_caps.cs_sync_phys_supported, p);
+    STREAM_TO_UINT16(cs_read_remote_supp_caps.subfeatures_supported, p);
+    STREAM_TO_UINT16(cs_read_remote_supp_caps.T_IP1_times_supported, p);
+    STREAM_TO_UINT16(cs_read_remote_supp_caps.T_IP2_times_supported, p);
+    STREAM_TO_UINT16(cs_read_remote_supp_caps.T_FCS_times_supported, p);
+    STREAM_TO_UINT16(cs_read_remote_supp_caps.T_PM_times_supported, p);
+    STREAM_TO_UINT8(cs_read_remote_supp_caps.T_SW_times_supported, p);
+    STREAM_TO_UINT8(cs_read_remote_supp_caps.TX_SNR_capability, p);
+
+    btm_ble_cs_read_remote_supp_caps_cmpl_evt(&cs_read_remote_supp_caps);
+}
+
+static void btu_ble_cs_read_remote_fae_tab_evt(UINT8 *p)
+{
+    tBTM_BLE_CS_READ_REMOTE_FAE_TAB_CMPL_EVT cs_read_remote_fae_tab = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(cs_read_remote_fae_tab.status, p);
+    STREAM_TO_UINT16(cs_read_remote_fae_tab.conn_handle, p);
+    STREAM_TO_ARRAY(cs_read_remote_fae_tab.remote_fae_table, p, 72);
+
+    btm_ble_cs_read_remote_fae_tab_cmpl_evt(&cs_read_remote_fae_tab);
+}
+
+static void btu_ble_cs_security_enable_cmpl_evt(UINT8 *p)
+{
+    tBTM_BLE_CS_SEC_ENABLE_CMPL_EVT cs_security_enable = {0};
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+    STREAM_TO_UINT8(cs_security_enable.status, p);
+    STREAM_TO_UINT16(cs_security_enable.conn_handle, p);
+
+    btm_ble_cs_securuty_enable_cmpl_evt(&cs_security_enable);
+}
+
+static void btu_ble_cs_config_cmpl_evt(UINT8 *p)
+{
+    tBTM_BLE_CS_CONFIG_CMPL_EVT config_cmpl = {0};
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+    STREAM_TO_UINT8(config_cmpl.status, p);
+    STREAM_TO_UINT16(config_cmpl.conn_handle, p);
+    STREAM_TO_UINT8(config_cmpl.config_id, p);
+    STREAM_TO_UINT8(config_cmpl.action, p);;
+    STREAM_TO_UINT8(config_cmpl.main_mode_type, p);
+    STREAM_TO_UINT8(config_cmpl.sub_mode_type, p);
+    STREAM_TO_UINT8(config_cmpl.min_main_mode_steps, p);
+    STREAM_TO_UINT8(config_cmpl.max_main_mode_steps, p);
+    STREAM_TO_UINT8(config_cmpl.main_mode_repetition, p);
+    STREAM_TO_UINT8(config_cmpl.mode_0_steps, p);
+    STREAM_TO_UINT8(config_cmpl.role, p);
+    STREAM_TO_UINT8(config_cmpl.rtt_type, p);
+    STREAM_TO_UINT8(config_cmpl.cs_sync_phy, p);
+    STREAM_TO_ARRAY(config_cmpl.channel_map, p, 10);
+    STREAM_TO_UINT8(config_cmpl.channel_map_repetition, p);
+    STREAM_TO_UINT8(config_cmpl.channel_selection_type, p);
+    STREAM_TO_UINT8(config_cmpl.ch3c_shape, p);
+    STREAM_TO_UINT8(config_cmpl.ch3c_jump, p);
+    STREAM_TO_UINT8(config_cmpl.reserved, p);
+    STREAM_TO_UINT8(config_cmpl.t_ip1_time, p);
+    STREAM_TO_UINT8(config_cmpl.t_ip2_time, p);
+    STREAM_TO_UINT8(config_cmpl.t_fcs_time, p);
+    STREAM_TO_UINT8(config_cmpl.t_pm_time, p);
+
+    btm_ble_cs_config_cmpl_evt(&config_cmpl);
+}
+
+static void btu_ble_cs_proc_enable_cmpl_evt(UINT8 *p)
+{
+    tBTM_BLE_CS_PROC_ENABLE_CMPL_EVT proc_en = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(proc_en.status, p);
+    STREAM_TO_UINT16(proc_en.conn_handle, p);
+    STREAM_TO_UINT8(proc_en.config_id, p);
+    STREAM_TO_UINT8(proc_en.state, p);
+    STREAM_TO_UINT8(proc_en.tone_Ant_config_select, p);
+    STREAM_TO_UINT8(proc_en.select_tx_power, p);
+    STREAM_TO_UINT24(proc_en.subevent_Len, p);
+    STREAM_TO_UINT8(proc_en.subevents_per_event, p);
+    STREAM_TO_UINT16(proc_en.subevent_interval, p);
+    STREAM_TO_UINT16(proc_en.event_interval, p);
+    STREAM_TO_UINT16(proc_en.procedure_interval, p);
+    STREAM_TO_UINT16(proc_en.procedure_count, p);
+    STREAM_TO_UINT16(proc_en.max_procedure_len, p);
+
+    btm_ble_cs_proc_enable_cmpl_evt(&proc_en);
+}
+
+static void btu_ble_cs_subevt_result_evt(UINT8 *p)
+{
+    tBTM_BLE_CS_SUBEVT_RESULT_CMPL_EVT subevt_result = {0};
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+    STREAM_TO_UINT16(subevt_result.conn_handle, p);
+    STREAM_TO_UINT8(subevt_result.config_id, p);
+    STREAM_TO_UINT16(subevt_result.start_acl_conn_event_counter, p);
+    STREAM_TO_UINT16(subevt_result.procedure_counter, p);
+    STREAM_TO_UINT16(subevt_result.frequency_compensation, p);
+    STREAM_TO_UINT8(subevt_result.reference_power_level, p);
+    STREAM_TO_UINT8(subevt_result.procedure_done_status, p);
+    STREAM_TO_UINT8(subevt_result.subevent_done_status, p);
+    STREAM_TO_UINT8(subevt_result.abort_reason, p);
+    STREAM_TO_UINT8(subevt_result.num_ant_paths, p);
+    STREAM_TO_UINT8(subevt_result.num_steps_reported, p);
+
+    subevt_result.step_info = osi_malloc(subevt_result.num_steps_reported * sizeof(tBTM_BLE_CS_STEP_INFO));
+    if (subevt_result.step_info) {
+        for (uint8_t i = 0; i < subevt_result.num_steps_reported; i++)
+        {
+            STREAM_TO_UINT8(subevt_result.step_info[i].step_mode, p);
+            STREAM_TO_UINT8(subevt_result.step_info[i].step_channel, p);
+            STREAM_TO_UINT8(subevt_result.step_info[i].step_data_len, p);
+            subevt_result.step_info[i].data = osi_malloc(subevt_result.step_info[i].step_data_len);
+            if (subevt_result.step_info[i].data) {
+                STREAM_TO_ARRAY(subevt_result.step_info[i].data, p, subevt_result.step_info[i].step_data_len);
+            } else if (subevt_result.step_info[i].step_data_len) {
+                HCI_TRACE_ERROR("%s, no memory.", __func__);
+            }
+        }
+    }
+
+    btm_ble_cs_subevt_result_evt(&subevt_result);
+
+    if (subevt_result.step_info)
+    {
+        for (UINT8 i = 0; i < subevt_result.num_steps_reported; i++)
+        {
+            if (subevt_result.step_info[i].data) {
+                osi_free(subevt_result.step_info[i].data);
+            }
+        }
+        osi_free(subevt_result.step_info);
+    }
+
+}
+
+static void btu_ble_cs_subevt_result_continue_evt(UINT8 *p)
+{
+    tBTM_BLE_CS_SUBEVT_RESULT_CONTINUE_EVT subevt_continue_result = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT16(subevt_continue_result.conn_handle, p);
+    STREAM_TO_UINT8(subevt_continue_result.config_id, p);
+    STREAM_TO_UINT8(subevt_continue_result.proc_done_status, p);
+    STREAM_TO_UINT8(subevt_continue_result.subevt_done_status, p);
+    STREAM_TO_UINT8(subevt_continue_result.abort_reason, p);
+    STREAM_TO_UINT8(subevt_continue_result.num_ant_paths, p);
+    STREAM_TO_UINT8(subevt_continue_result.num_steps_reported, p);
+
+    subevt_continue_result.step_info = osi_malloc(subevt_continue_result.num_steps_reported * sizeof(tBTM_BLE_CS_STEP_INFO));
+    if (subevt_continue_result.step_info) {
+        for (uint8_t i = 0; i < subevt_continue_result.num_steps_reported; i++) {
+            STREAM_TO_UINT8(subevt_continue_result.step_info[i].step_mode, p);
+            STREAM_TO_UINT8(subevt_continue_result.step_info[i].step_channel, p);
+            STREAM_TO_UINT8(subevt_continue_result.step_info[i].step_data_len, p);
+            subevt_continue_result.step_info[i].data = osi_malloc(subevt_continue_result.step_info[i].step_data_len);
+            if (subevt_continue_result.step_info[i].data) {
+                STREAM_TO_ARRAY(subevt_continue_result.step_info[i].data, p, subevt_continue_result.step_info[i].step_data_len);
+            } else if (subevt_continue_result.step_info[i].step_data_len) {
+                HCI_TRACE_ERROR("%s, no memory.", __func__);
+            }
+        }
+    }
+
+    btm_ble_cs_subevt_continue_result_evt(&subevt_continue_result);
+
+    if (subevt_continue_result.step_info)
+    {
+        for (UINT8 i = 0; i < subevt_continue_result.num_steps_reported; i++)
+        {
+            if (subevt_continue_result.step_info[i].data) {
+                osi_free(subevt_continue_result.step_info[i].data);
+            }
+        }
+        osi_free(subevt_continue_result.step_info);
+    }
+
+}
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
 /**********************************************
 ** End of BLE Events Handler
