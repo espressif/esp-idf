@@ -34,6 +34,7 @@ static const char *TAG = "esp_key_mgr";
 
 static _lock_t s_key_mgr_ecdsa_key_lock;
 static _lock_t s_key_mgr_xts_aes_key_lock;
+static _lock_t s_key_mgr_hmac_key_lock;
 
 ESP_STATIC_ASSERT(sizeof(esp_key_mgr_key_recovery_info_t) == sizeof(struct huk_key_block), "Size of esp_key_mgr_key_recovery_info_t should match huk_key_block (from ROM)");
 
@@ -53,6 +54,9 @@ static void esp_key_mgr_acquire_key_lock(esp_key_mgr_key_type_t key_type)
     case ESP_KEY_MGR_XTS_AES_256_KEY:
         _lock_acquire(&s_key_mgr_xts_aes_key_lock);
         break;
+    case ESP_KEY_MGR_HMAC_KEY:
+        _lock_acquire(&s_key_mgr_hmac_key_lock);
+        break;
     default:
         ESP_LOGE(TAG, "Invalid key type");
         break;
@@ -71,6 +75,9 @@ static void esp_key_mgr_release_key_lock(esp_key_mgr_key_type_t key_type)
     case ESP_KEY_MGR_XTS_AES_128_KEY:
     case ESP_KEY_MGR_XTS_AES_256_KEY:
         _lock_release(&s_key_mgr_xts_aes_key_lock);
+        break;
+    case ESP_KEY_MGR_HMAC_KEY:
+        _lock_release(&s_key_mgr_hmac_key_lock);
         break;
     default:
         ESP_LOGE(TAG, "Invalid key type");
@@ -342,6 +349,8 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
         aes_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_128;
     } else if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY) {
         aes_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1;
+    } else if (key_type == ESP_KEY_MGR_HMAC_KEY) {
+        aes_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_HMAC;
     } else {
         ESP_LOGE(TAG, "Invalid key type");
         return ESP_ERR_INVALID_ARG;
@@ -461,6 +470,8 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
         key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_128;
     } else if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY) {
         key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1;
+    } else if (key_type == ESP_KEY_MGR_HMAC_KEY) {
+        key_purpose = ESP_KEY_MGR_KEY_PURPOSE_HMAC;
     } else {
         ESP_LOGE(TAG, "Invalid key type");
         return ESP_ERR_INVALID_ARG;
@@ -629,6 +640,9 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
     } else if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY) {
         ecdh0_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1;
         ecdh0_deploy_config.ecdh0_key_info = ecdh0_key_info->k2_G[0];
+    } else if (key_type == ESP_KEY_MGR_HMAC_KEY) {
+        ecdh0_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_HMAC;
+        ecdh0_deploy_config.ecdh0_key_info = ecdh0_key_info->k2_G[0];
     } else {
         ESP_LOGE(TAG, "Invalid key type");
         return ESP_ERR_INVALID_ARG;
@@ -761,6 +775,8 @@ esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_con
         random_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_128;
     } else if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY) {
         random_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1;
+    } else if (key_type == ESP_KEY_MGR_HMAC_KEY) {
+        random_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_HMAC;
     } else {
         ESP_LOGE(TAG, "Invalid key type");
         return ESP_ERR_INVALID_ARG;
