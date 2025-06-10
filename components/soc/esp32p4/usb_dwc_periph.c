@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include "soc/interrupts.h"
 #include "soc/gpio_sig_map.h"
-#include "soc/usb_dwc_periph.h"
+#include "soc/usb_periph.h"
 #include "soc/usb_dwc_struct.h"
 
 /* -------------------------------- Private --------------------------------- */

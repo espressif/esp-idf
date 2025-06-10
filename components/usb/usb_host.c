@@ -17,7 +17,7 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "esp_private/critical_section.h"
-#include "soc/usb_dwc_periph.h"
+#include "soc/usb_periph.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"

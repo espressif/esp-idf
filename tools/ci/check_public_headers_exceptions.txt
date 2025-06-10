@@ -98,7 +98,6 @@ components/protocomm/include/transports/protocomm_httpd.h
 components/fatfs/src/diskio.h
 components/fatfs/diskio/diskio_sdmmc.h
 components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
-components/usb/include/esp_private/usb_phy.h
 components/usb/include/usb/usb_types_stack.h
 
 ### Headers that don't compile with C++

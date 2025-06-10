@@ -5,16 +5,21 @@
 message(STATUS "building USB HOST Layer MOCKS")
 
 idf_component_get_property(original_usb_dir usb COMPONENT_OVERRIDEN_DIR)
+idf_component_get_property(original_esp_hw_support_dir esp_hw_support COMPONENT_OVERRIDEN_DIR)
+if(NOT original_esp_hw_support_dir)
+    idf_component_get_property(original_esp_hw_support_dir esp_hw_support COMPONENT_DIR)
+endif()
+
 
 idf_component_mock(INCLUDE_DIRS "${original_usb_dir}/include"
-                                "${original_usb_dir}/include/esp_private"
                                 "${original_usb_dir}/include/usb"
                                 "${original_usb_dir}/private_include"
+                                "${original_esp_hw_support_dir}/include/esp_private"     # for USB PHY
                    MOCK_HEADER_FILES ${original_usb_dir}/private_include/enum.h
                                      ${original_usb_dir}/private_include/hcd.h
                                      ${original_usb_dir}/private_include/hub.h
                                      ${original_usb_dir}/private_include/usbh.h
-                                     ${original_usb_dir}/include/esp_private/usb_phy.h
+                                     ${original_esp_hw_support_dir}/include/esp_private/usb_phy.h
                    REQUIRES freertos)
 
 # We do not mock usb_host.c, we use the original implementation of it

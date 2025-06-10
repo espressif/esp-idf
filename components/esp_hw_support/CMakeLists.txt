@@ -37,6 +37,9 @@ if(NOT non_os_build)
                      "dma/gdma_link.c"
                      "spi_bus_lock.c"
                      "clk_utils.c")
+    if(CONFIG_SOC_USB_OTG_SUPPORTED)
+        list(APPEND srcs "usb_phy/usb_phy.c")
+    endif()
     if(CONFIG_SOC_CLK_TREE_SUPPORTED)
         list(APPEND srcs "port/esp_clk_tree_common.c")
     endif()

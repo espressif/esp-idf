@@ -44,15 +44,6 @@ typedef enum {
 } usb_phy_status_t;
 
 /**
- * @brief USB PHY available actions
- */
-typedef enum {
-    USB_PHY_ACTION_HOST_ALLOW_CONN,             /**< Enable physical connection when operating as an OTG Host */
-    USB_PHY_ACTION_HOST_FORCE_DISCONN,          /**< Disable physical connection when operating as an OTG Host */
-    USB_PHY_ACTION_MAX,
-} usb_phy_action_t;
-
-/**
  * @brief USB external PHY IO pins configuration structure
  */
 typedef struct {
@@ -131,32 +122,6 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
  *     - ESP_FAIL OTG set mode fail.
  */
 esp_err_t usb_phy_otg_set_mode(usb_phy_handle_t handle, usb_otg_mode_t mode);
-
-/**
- * @brief Configure USB speed for a USB PHY that is operating as an OTG Device
- *
- * @param handle Pointer of USB PHY context handle
- * @param mode USB speed
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Parameter error.
- *     - ESP_FAIL OTG set speed fail.
- */
-esp_err_t __attribute__((deprecated)) usb_phy_otg_dev_set_speed(usb_phy_handle_t handle, usb_phy_speed_t speed);
-
-/**
- * @brief Take a action for a USB PHY
- *
- * @param handle Pointer of USB PHY context handle
- * @param action USB PHY action
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Parameter error.
- *     - ESP_FAIL Action cannot be performed.
- */
-esp_err_t __attribute__((deprecated)) usb_phy_action(usb_phy_handle_t handle, usb_phy_action_t action);
 
 /**
  * @brief Delete a USB PHY

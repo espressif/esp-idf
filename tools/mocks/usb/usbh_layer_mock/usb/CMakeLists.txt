@@ -7,7 +7,6 @@ message(STATUS "building USBH Layer MOCKS")
 idf_component_get_property(original_usb_dir usb COMPONENT_OVERRIDEN_DIR)
 
 idf_component_mock(INCLUDE_DIRS "${original_usb_dir}/include"
-                                "${original_usb_dir}/include/esp_private"
                                 "${original_usb_dir}/include/usb"
                                 "${original_usb_dir}/private_include"
                    MOCK_HEADER_FILES ${original_usb_dir}/private_include/hcd.h
