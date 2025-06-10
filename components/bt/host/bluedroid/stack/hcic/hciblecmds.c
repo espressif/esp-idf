@@ -3080,3 +3080,324 @@ UINT8 btsnd_hcic_ble_set_periodic_sync_subevt(UINT16 sync_handle, UINT16 periodi
     return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 #endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+UINT8 btsnd_hcic_ble_cs_read_local_supported_caps(void)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("cs read local supported caps");
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_READ_LOCAL_SUPP_CAPS_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_READ_LOCAL_SUPP_CAPS);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_LOCAL_SUPP_CAPS_PARAMS_LEN);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return (TRUE);
+}
+
+UINT8 btsnd_hcic_ble_cs_read_remote_supported_capabilities(UINT16 conn_handle)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_ERROR("cs read remote supported caps, conn_handle %d", conn_handle);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_READ_REMOTE_SUPP_CAPS_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_READ_REMOTE_SUPP_CAPS);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_REMOTE_SUPP_CAPS_PARAMS_LEN);
+    UINT16_TO_STREAM(pp, conn_handle);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return (TRUE);
+}
+
+UINT8 btsnd_hcic_ble_cs_write_cached_remote_supported_capabilities(UINT16 conn_handle, UINT8 num_config_supported, UINT16 max_consecutive_proc_supported,
+                                                                    UINT8 num_ant_supported, UINT8 max_ant_paths_supported, UINT8 roles_supported,
+                                                                    UINT8 modes_supported, UINT8 rtt_capability, UINT8 rtt_aa_only_n,
+                                                                    UINT8 rtt_sounding_n, UINT8 rtt_random_payload_n, UINT16 NADM_sounding_capability,
+                                                                    UINT16 NADM_random_capability, UINT8  cs_sync_phys_supported, UINT16 subfeatures_supported,
+                                                                    UINT16 T_IP1_times_supported, UINT16 T_IP2_times_supported, UINT16 T_FCS_times_supported,
+                                                                    UINT16 T_PM_times_supported, UINT8 T_SW_times_supported, UINT8 TX_SNR_capability)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("cs write cached remote supported caps");
+    HCI_TRACE_DEBUG("conn_handle %d num_config_supported %d max_consecutive_proc_supported %d, num_ant_supported %d max_ant_paths_supported %d roles_supported %d,\
+                    modes_supported %d, rtt_capability %d, rtt_aa_only_n %d, rtt_sounding_n %d, rtt_random_payload_n %d, NADM_sounding_capability %d, NADM_random_capability %d\
+                    ,cs_sync_phys_supported %d, subfeatures_supported %d, T_IP1_times_supported %d, T_IP2_times_supported %d, T_FCS_times_supported %d, T_PM_times_supported %d\
+                    ,T_SW_times_supported %d, TX_SNR_capability %d",
+                    conn_handle, num_config_supported, max_consecutive_proc_supported, num_ant_supported, max_ant_paths_supported, roles_supported,
+                    modes_supported, rtt_capability, rtt_aa_only_n, rtt_sounding_n, rtt_random_payload_n, NADM_sounding_capability,
+                    NADM_random_capability, cs_sync_phys_supported, subfeatures_supported, T_IP1_times_supported, T_IP2_times_supported, T_FCS_times_supported,
+                    T_PM_times_supported, T_SW_times_supported, TX_SNR_capability);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_WRITE_CACHE_REMOTE_SUPP_CAPS_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_WRITE_CACHED_REMOTE_SUPP_CAPS);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_WRITE_CACHE_REMOTE_SUPP_CAPS_PARAMS_LEN);
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT8_TO_STREAM(pp, num_config_supported);
+    UINT16_TO_STREAM(pp, max_consecutive_proc_supported);
+    UINT8_TO_STREAM(pp, num_ant_supported);
+    UINT8_TO_STREAM(pp, max_ant_paths_supported);
+    UINT8_TO_STREAM(pp, roles_supported);
+    UINT8_TO_STREAM(pp, modes_supported);
+    UINT8_TO_STREAM(pp, rtt_capability);
+    UINT8_TO_STREAM(pp, rtt_aa_only_n);
+    UINT8_TO_STREAM(pp, rtt_sounding_n);
+    UINT8_TO_STREAM(pp, rtt_random_payload_n);
+    UINT16_TO_STREAM(pp, NADM_sounding_capability);
+    UINT16_TO_STREAM(pp, NADM_random_capability);
+    UINT8_TO_STREAM(pp, cs_sync_phys_supported);
+    UINT16_TO_STREAM(pp, subfeatures_supported);
+    UINT16_TO_STREAM(pp, T_IP1_times_supported);
+    UINT16_TO_STREAM(pp, T_IP2_times_supported);
+    UINT16_TO_STREAM(pp, T_FCS_times_supported);
+    UINT16_TO_STREAM(pp, T_PM_times_supported);
+    UINT8_TO_STREAM(pp, T_SW_times_supported);
+    UINT8_TO_STREAM(pp, TX_SNR_capability);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+
+}
+
+UINT8 btsnd_hcic_ble_cs_security_enable(UINT16 conn_handle)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("cs security enable conn_handle %d", conn_handle);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SECURITY_ENABLE_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_SECURITY_ENABLE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SECURITY_ENABLE_PARAMS_LEN);
+    UINT16_TO_STREAM(pp, conn_handle);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return (TRUE);
+}
+
+UINT8 btsnd_hcic_ble_cs_set_default_settings(UINT16 conn_handle, UINT8 role_enable, UINT8 cs_sync_ant_selection, INT8 max_tx_power)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("cs set default settings, conn_handle %d role_enable %d cs_sync_ant_selection %d max_tx_power %d", conn_handle, role_enable, cs_sync_ant_selection, max_tx_power);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_DEFAULT_SETTINGS_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_SET_DEFAULT_SETTINGS);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_DEFAULT_SETTINGS_PARAMS_LEN);
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT8_TO_STREAM(pp, role_enable);
+    UINT8_TO_STREAM(pp, cs_sync_ant_selection);
+    INT8_TO_STREAM(pp, max_tx_power);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_cs_read_remote_fae_table(UINT16 conn_handle)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("cs read remote fae table, conn_handle %d", conn_handle);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_READ_REMOTE_FAE_TAB_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_READ_REMOTE_FAE_TABLE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_REMOTE_FAE_TAB_PARAMS_LEN);
+    UINT16_TO_STREAM(pp, conn_handle);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return (TRUE);
+}
+
+UINT8 btsnd_hcic_ble_cs_write_cached_remote_fae_table(UINT16 conn_handle, UINT8 *remote_fae_table)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("cs write cached remote fae table, conn_handle %d", conn_handle);
+    esp_log_buffer_hex_internal("remote_fae_table", remote_fae_table, 72, ESP_LOG_DEBUG);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_WRITE_CACHED_REMOTE_FAE_TAB_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_WRITE_CACHED_REMOTE_FAE_TABLE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_WRITE_CACHED_REMOTE_FAE_TAB_PARAMS_LEN);
+    UINT16_TO_STREAM(pp, conn_handle);
+    ARRAY_TO_STREAM(pp, remote_fae_table, 72);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_cs_create_config(UINT16 conn_handle, UINT8 config_id, UINT8 create_context,
+                                UINT8 main_mode_type, UINT8 sub_mode_type, UINT8 min_main_mode_steps,
+                                UINT8 max_main_mode_steps, UINT8 main_mode_repetition, UINT8 mode_0_steps,
+                                UINT8 role, UINT8 rtt_type, UINT8 cs_sync_phy, UINT8 *channel_map,
+                                UINT8 channel_map_repetition, UINT8 channel_selection_type, UINT8 ch3c_shape,
+                                UINT8 ch3c_jump,UINT8 reserved)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("cs create config");
+    HCI_TRACE_DEBUG("conn_handle %d config_id %d create_context %d main_mode_type %d sub_mode_type %d min_main_mode_steps %d max_main_mode_steps\
+                    %d main_mode_repetition %d mode_0_steps %d role %d rtt_type %d cs_sync_phy %d, channel_map_repetition %d, channel_selection_type %d\
+                    ch3c_shape %d ch3c_jump %d,reserved %d", conn_handle, config_id, create_context, main_mode_type, sub_mode_type, min_main_mode_steps, max_main_mode_steps,\
+                    main_mode_repetition, mode_0_steps, role, rtt_type, cs_sync_phy, channel_map_repetition, channel_selection_type\
+                    ,ch3c_shape, ch3c_jump, reserved);
+    esp_log_buffer_hex_internal("channel_map", channel_map, 10, ESP_LOG_DEBUG);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_CREATE_CONFIG_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_CREATE_CONFIG);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CREATE_CONFIG_PARAMS_LEN);
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT8_TO_STREAM(pp, config_id);
+    UINT8_TO_STREAM(pp, create_context);
+    UINT8_TO_STREAM(pp, main_mode_type);
+    UINT8_TO_STREAM(pp, sub_mode_type);
+    UINT8_TO_STREAM(pp, min_main_mode_steps);
+    UINT8_TO_STREAM(pp, max_main_mode_steps);
+    UINT8_TO_STREAM(pp, main_mode_repetition);
+    UINT8_TO_STREAM(pp, mode_0_steps);
+    UINT8_TO_STREAM(pp, role);
+    UINT8_TO_STREAM(pp, rtt_type);
+    UINT8_TO_STREAM(pp, cs_sync_phy);
+    ARRAY_TO_STREAM(pp, channel_map, 10);
+    UINT8_TO_STREAM(pp, channel_map_repetition);
+    UINT8_TO_STREAM(pp, channel_selection_type);
+    UINT8_TO_STREAM(pp, ch3c_shape);
+    UINT8_TO_STREAM(pp, ch3c_jump);
+    UINT8_TO_STREAM(pp, reserved);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return (TRUE);
+}
+
+UINT8 btsnd_hcic_ble_cs_remove_config(UINT16 conn_handle, UINT8 config_id)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_ERROR("cs remove config, conn_handle %d config_id %d", conn_handle, config_id);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_REMOVE_CONFIG_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_REMOVE_CONFIG);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_REMOVE_CONFIG_PARAMS_LEN);
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT8_TO_STREAM(pp, config_id);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+
+    return TRUE;
+}
+
+UINT8 btsnd_hcic_ble_cs_set_channel_classification(UINT8 *channel_class)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("cs set channel class");
+    esp_log_buffer_hex_internal("channel", channel_class, 10, ESP_LOG_DEBUG);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_CHANNEL_CLASS_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_SET_CAHNNEL_CLASS);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_CHANNEL_CLASS_PARAMS_LEN);
+    ARRAY_TO_STREAM(pp, channel_class, 10);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_cs_set_procedure_params(UINT16 conn_handle, UINT8 config_id, UINT16 max_procedure_len,
+                                UINT16 min_procedure_interval, UINT16 max_procedure_interval,
+                                UINT16 max_procedure_count, UINT32 min_subevent_len,
+                                UINT32 max_subevent_len, UINT8 tone_ant_config_selection,
+                                UINT8 phy, UINT8 tx_power_delta, UINT8 preferred_peer_antenna,
+                                UINT8 SNR_control_initiator, UINT8 SNR_control_reflector)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("cs set procedure params");
+    HCI_TRACE_DEBUG("conn_handle %d config_id %d max_procedure_len %d min_procedure_interval %d max_procedure_interval %d\
+    max_procedure_count %d min_subevent_len %d max_subevent_len %d tone_ant_config_selection %d phy %d tx_power_delta %d,\
+    preferred_peer_antenna %d SNR_control_initiator %d SNR_control_reflector %d\n",
+    conn_handle, config_id, max_procedure_len, min_procedure_interval, max_procedure_interval, max_procedure_count, min_subevent_len, max_subevent_len,
+    tone_ant_config_selection, phy, tx_power_delta, preferred_peer_antenna, SNR_control_initiator, SNR_control_reflector);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_PROCEDURE_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_SET_PROCEDURE_PARAMS);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_PROCEDURE_PARAMS_LEN);
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT8_TO_STREAM(pp, config_id);
+    UINT16_TO_STREAM(pp, max_procedure_len);
+    UINT16_TO_STREAM(pp, min_procedure_interval);
+    UINT16_TO_STREAM(pp, max_procedure_interval);
+    UINT16_TO_STREAM(pp, max_procedure_count);
+    UINT24_TO_STREAM(pp, min_subevent_len);
+    UINT24_TO_STREAM(pp, max_subevent_len);
+    UINT8_TO_STREAM(pp, tone_ant_config_selection);
+    UINT8_TO_STREAM(pp, phy);
+    UINT8_TO_STREAM(pp, tx_power_delta);
+    UINT8_TO_STREAM(pp, preferred_peer_antenna);
+    UINT8_TO_STREAM(pp, SNR_control_initiator);
+    UINT8_TO_STREAM(pp, SNR_control_reflector);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_cs_procedure_enable(UINT16 conn_handle, UINT8 config_id, UINT8 enable)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("cs set procedure enable, conn_handle %d config_id %d enable %d", conn_handle, config_id, enable);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_PROCEDURE_ENABLE_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_SET_PROCEDURE_ENABLE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_PROCEDURE_ENABLE_PARAMS_LEN);
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT8_TO_STREAM(pp, config_id);
+    UINT8_TO_STREAM(pp, enable);
+
+    btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+
+    return TRUE;
+}
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)

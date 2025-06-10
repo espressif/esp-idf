@@ -1391,6 +1391,13 @@ config BT_BLE_FEAT_ADV_CODING_SELECTION
     help
         Enable Advertising Coding Selection
 
+config BT_BLE_FEAT_CHANNEL_SOUNDING
+    bool "Enable BLE channel sounding"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_CHANNEL_SOUNDING_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE channel sounding
+
 menuconfig BT_BLE_42_FEATURES_SUPPORTED
     bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
     depends on BT_BLE_ENABLED

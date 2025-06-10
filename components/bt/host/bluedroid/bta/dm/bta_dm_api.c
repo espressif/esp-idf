@@ -3215,6 +3215,167 @@ void BTA_DmBleGapSetPeriodicSyncSubevt(uint16_t sync_handle, uint16_t periodic_a
 
 #endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+void BTA_DmBleGapReadLocalSupportedCaps(void)
+{
+    tBTA_DM_API_CS_READ_LOCAL_SUPP_CAPS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_READ_LOCAL_SUPP_CAPS *)osi_malloc(sizeof(tBTA_DM_API_CS_READ_LOCAL_SUPP_CAPS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_READ_LOCAL_SUPPORTED_CAPS;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapReadRemoteSupportedCaps(uint16_t conn_handle)
+{
+    tBTA_DM_API_CS_READ_REMOTE_SUPP_CAPS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_READ_REMOTE_SUPP_CAPS *)osi_malloc(sizeof(tBTA_DM_API_CS_READ_REMOTE_SUPP_CAPS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_READ_REMOTE_SUPPORTED_CAPS;
+        p_msg->conn_handle = conn_handle;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapWriteCachedRemoteSupportedCaps(tBTA_DM_CS_WRITE_CACHED_REMOTE_SUPP_CAPS *write_cachedremote_supp_caps)
+{
+    tBTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPP_CAPS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPP_CAPS *)osi_malloc(sizeof(tBTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPP_CAPS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPS;
+        memcpy(&p_msg->conn_handle, &write_cachedremote_supp_caps->conn_handle, sizeof(tBTA_DM_CS_WRITE_CACHED_REMOTE_SUPP_CAPS));
+        // p_msg->conn_handle = write_cachedremote_supp_caps->conn_handle;
+        // p_msg->num_config_supported = write_cachedremote_supp_caps->num_config_supported;
+        // p_msg->max_consecutive_proc_supported = write_cachedremote_supp_caps->max_consecutive_proc_supported;
+        // p_msg->num_ant_supported = write_cachedremote_supp_caps->num_ant_supported;
+        // p_msg->max_ant_paths_supported = write_cachedremote_supp_caps->max_ant_paths_supported;
+        // p_msg->roles_supported = write_cachedremote_supp_caps->roles_supported;
+        // p_msg->modes_supported = write_cachedremote_supp_caps->modes_supported;
+        // p_msg->rtt_capability = write_cachedremote_supp_caps->rtt_capability;
+        // p_msg->rtt_aa_only_n = write_cachedremote_supp_caps->rtt_aa_only_n;
+        // p_msg->rtt_sounding_n = write_cachedremote_supp_caps->rtt_sounding_n;
+        // p_msg->rtt_random_payload_n = write_cachedremote_supp_caps->rtt_random_payload_n;
+        // p_msg->NADM_sounding_capability = write_cachedremote_supp_caps->NADM_sounding_capability;
+        // p_msg->NADM_random_capability = write_cachedremote_supp_caps->NADM_random_capability;
+        // p_msg->cs_sync_phys_supported = write_cachedremote_supp_caps->cs_sync_phys_supported;
+        // p_msg->subfeatures_supported = write_cachedremote_supp_caps->subfeatures_supported;
+        // p_msg->T_IP1_times_supported = write_cachedremote_supp_caps->T_IP1_times_supported;
+        // p_msg->T_IP2_times_supported = write_cachedremote_supp_caps->T_IP2_times_supported;
+        // p_msg->T_FCS_times_supported = write_cachedremote_supp_caps->T_FCS_times_supported;
+        // p_msg->T_PM_times_supported = write_cachedremote_supp_caps->T_PM_times_supported;
+        // p_msg->T_SW_times_supported = write_cachedremote_supp_caps->T_SW_times_supported;
+        // p_msg->TX_SNR_capability = write_cachedremote_supp_caps->TX_SNR_capability;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsSecurityEnable(uint16_t conn_handle)
+{
+    tBTA_DM_API_CS_SECURITY_ENABLE *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_SECURITY_ENABLE *)osi_malloc(sizeof(tBTA_DM_API_CS_SECURITY_ENABLE))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_SECURITY_ENABLE;
+        p_msg->conn_handle = conn_handle;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsSetDefaultSetting(uint16_t conn_handle, uint8_t role_enable, uint8_t cs_sync_ant_selection, int8_t max_tx_power)
+{
+    tBTA_DM_API_CS_SET_DEFAULT_SETTING_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_SET_DEFAULT_SETTING_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_SET_DEFAULT_SETTING_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_SET_DEFAULT_SETTINGS;
+        p_msg->conn_handle = conn_handle;
+        p_msg->role_enable = role_enable;
+        p_msg->cs_sync_ant_selection = cs_sync_ant_selection;
+        p_msg->max_tx_power = max_tx_power;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+void BTA_DmBleGapCsReadRemoteFaeTable(uint16_t conn_handle)
+{
+    tBTA_DM_API_CS_READ_REMOTE_TAB *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_READ_REMOTE_TAB *)osi_malloc(sizeof(tBTA_DM_API_CS_READ_REMOTE_TAB))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_READ_REMOTE_FAE_TABLE;
+        p_msg->conn_handle = conn_handle;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapWriteCachedRemoteFaeTable(uint16_t conn_handle, uint8_t *remote_fae_table, uint8_t table_len)
+{
+    tBTA_DM_API_CS_WRITE_CACHED_REMOTE_FAE_TAB_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_WRITE_CACHED_REMOTE_FAE_TAB_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_WRITE_CACHED_REMOTE_FAE_TAB_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_WRITE_CACHED_REMOTE_FAE_TABLE;
+        p_msg->conn_handle = conn_handle;
+        memcpy(&p_msg->remote_fae_table[0], remote_fae_table, table_len);
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsCreateConfig(tBTA_DM_CS_CREATE_CONFIG_PARAMS *create_config_params)
+{
+    tBTA_DM_API_CS_CREATE_CONFIG_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_CREATE_CONFIG_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_CREATE_CONFIG_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_CREATE_CONFIG;
+        memcpy(&p_msg->conn_handle, &create_config_params->conn_handle, sizeof(tBTA_DM_CS_CREATE_CONFIG_PARAMS));
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsRemoveConfig(uint16_t conn_handle, uint8_t config_id)
+{
+    tBTA_DM_API_CS_REMOVE_CONFIG_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_REMOVE_CONFIG_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_REMOVE_CONFIG_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_REMOVE_CONFIG;
+        p_msg->conn_handle = conn_handle;
+        p_msg->config_id = config_id;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsSetChannelClass(uint8_t *channel_class, uint8_t channl_len)
+{
+    tBTA_DM_API_CS_SET_CHANNEL_CLASS_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_SET_CHANNEL_CLASS_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_SET_CHANNEL_CLASS_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_SET_CAHNNEL_CLASSIFICATION;
+        memcpy(&p_msg->channel_class[0], channel_class,  channl_len);
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsSetProcPatams(tBTA_DM_CS_SET_PROC_PARAMS *set_proc_params)
+{
+    tBTA_DM_API_CS_SET_PROC_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_SET_PROC_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_SET_PROC_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_SET_PROCEDURE_PARAMS;
+        memcpy(&p_msg->conn_handle, &set_proc_params->conn_handle, sizeof(tBTA_DM_CS_SET_PROC_PARAMS));
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsProcEnable(uint16_t conn_handle, uint8_t config_id, uint8_t enable)
+{
+    tBTA_DM_API_CS_PROC_ENABLE_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_PROC_ENABLE_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_PROC_ENABLE_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_PROCEDURE_ENABLE;
+        p_msg->conn_handle = conn_handle;
+        p_msg->config_id = config_id;
+        p_msg->enable = enable;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
 /*******************************************************************************
 **
 ** Function         BTA_VendorInit

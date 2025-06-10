@@ -1280,4 +1280,49 @@ UINT8 btsnd_hcic_ble_set_ext_adv_params_v2(UINT8 adv_handle, UINT16 properties, 
                                           UINT8 primary_adv_phy_options, UINT8 secondary_adv_phy_options);
 #endif // (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
 
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#define HCIC_PARAM_SIZE_READ_LOCAL_SUPP_CAPS_PARAMS_LEN         0
+#define HCIC_PARAM_SIZE_READ_REMOTE_SUPP_CAPS_PARAMS_LEN        2
+#define HCIC_PARAM_SIZE_WRITE_CACHE_REMOTE_SUPP_CAPS_PARAMS_LEN        30
+#define HCIC_PARAM_SIZE_SECURITY_ENABLE_PARAMS_LEN              2
+#define HCIC_PARAM_SIZE_SET_DEFAULT_SETTINGS_PARAMS_LEN         5
+#define HCIC_PARAM_SIZE_READ_REMOTE_FAE_TAB_PARAMS_LEN          2
+#define HCIC_PARAM_SIZE_WRITE_CACHED_REMOTE_FAE_TAB_PARAMS_LEN  74
+#define HCIC_PARAM_SIZE_CREATE_CONFIG_PARAMS_LEN                28
+#define HCIC_PARAM_SIZE_REMOVE_CONFIG_PARAMS_LEN                3
+#define HCIC_PARAM_SIZE_SET_CHANNEL_CLASS_PARAMS_LEN            10
+#define HCIC_PARAM_SIZE_SET_PROCEDURE_PARAMS_LEN                21
+#define HCIC_PARAM_SIZE_SET_PROCEDURE_ENABLE_PARAMS_LEN         4
+
+UINT8 btsnd_hcic_ble_cs_read_local_supported_caps(void);
+UINT8 btsnd_hcic_ble_cs_read_remote_supported_capabilities(UINT16 conn_handle);
+UINT8 btsnd_hcic_ble_cs_write_cached_remote_supported_capabilities(UINT16 conn_handle, UINT8 num_config_supported, UINT16 max_consecutive_proc_supported,
+                                                                    UINT8 num_ant_supported, UINT8 max_ant_paths_supported, UINT8 roles_supported,
+                                                                    UINT8 modes_supported, UINT8 rtt_capability, UINT8 rtt_aa_only_n,
+                                                                    UINT8 rtt_sounding_n, UINT8 rtt_random_payload_n, UINT16 NADM_sounding_capability,
+                                                                    UINT16 NADM_random_capability, UINT8  cs_sync_phys_supported, UINT16 subfeatures_supported,
+                                                                    UINT16 T_IP1_times_supported, UINT16 T_IP2_times_supported, UINT16 T_FCS_times_supported,
+                                                                    UINT16 T_PM_times_supported, UINT8 T_SW_times_supported, UINT8 TX_SNR_capability);
+
+UINT8 btsnd_hcic_ble_cs_security_enable(UINT16 conn_handle);
+UINT8 btsnd_hcic_ble_cs_set_default_settings(UINT16 conn_handle, UINT8 role_enable, UINT8 cs_sync_ant_selection, INT8 max_tx_power);
+UINT8 btsnd_hcic_ble_cs_read_remote_fae_table(UINT16 conn_handle);
+UINT8 btsnd_hcic_ble_cs_write_cached_remote_fae_table(UINT16 conn_handle, UINT8 *remote_fae_table);
+UINT8 btsnd_hcic_ble_cs_create_config(UINT16 conn_handle, UINT8 config_id, UINT8 create_context,
+                                UINT8 main_mode_type, UINT8 sub_mode_type, UINT8 min_main_mode_steps,
+                                UINT8 max_main_mode_steps, UINT8 main_mode_repetition, UINT8 mode_0_steps,
+                                UINT8 role, UINT8 rtt_type, UINT8 cs_sync_phy, UINT8 *channel_map,
+                                UINT8 channel_map_repetition, UINT8 channel_selection_type, UINT8 ch3c_shape,
+                                UINT8 ch3c_jump,UINT8 reserved);
+UINT8 btsnd_hcic_ble_cs_remove_config(UINT16 conn_handle, UINT8 config_id);
+UINT8 btsnd_hcic_ble_cs_set_channel_classification(UINT8 *channel_class);
+UINT8 btsnd_hcic_ble_cs_set_procedure_params(UINT16 conn_handle, UINT8 config_id, UINT16 max_procedure_len,
+                                UINT16 min_procedure_interval, UINT16 max_procedure_interval,
+                                UINT16 max_procedure_count, UINT32 min_subevent_len,
+                                UINT32 max_subevent_len, UINT8 tone_ant_config_selection,
+                                UINT8 phy, UINT8 tx_power_delta, UINT8 preferred_peer_antenna,
+                                UINT8 SNR_control_initiator, UINT8 SNR_control_reflector);
+UINT8 btsnd_hcic_ble_cs_procedure_enable(UINT16 conn_handle, UINT8 config_id, UINT8 enable);
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
 #endif
