@@ -30,7 +30,7 @@ extern "C" {
 /* Helper macros */
 #define TOUCH_NULL_POINTER_CHECK(p)     ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, TAG, "input parameter '"#p"' is NULL")
 #define TOUCH_NULL_POINTER_CHECK_ISR(p) ESP_RETURN_ON_FALSE_ISR((p), ESP_ERR_INVALID_ARG, TAG, "input parameter '"#p"' is NULL")
-#define FOR_EACH_TOUCH_CHANNEL(i)       for (int i = 0; i < SOC_TOUCH_SENSOR_NUM; i++)
+#define FOR_EACH_TOUCH_CHANNEL(i)       for (int i = 0; i < TOUCH_TOTAL_CHAN_NUM; i++)
 #define TOUCH_IRAM_CHECK(cb)            (!(cb) || esp_ptr_in_iram(cb))
 
 /* IRAM safe caps */

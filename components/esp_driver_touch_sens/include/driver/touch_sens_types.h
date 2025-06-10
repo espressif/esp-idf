@@ -16,7 +16,6 @@
 extern "C" {
 #endif
 
-#define TOUCH_TOTAL_CHAN_NUM        SOC_TOUCH_SENSOR_NUM                /*!< The total channel number of the touch sensor */
 #define TOUCH_SAMPLE_CFG_NUM        SOC_TOUCH_SAMPLE_CFG_NUM            /*!< The supported max sample configuration number */
 #if SOC_TOUCH_SUPPORT_PROX_SENSING
 #define TOUCH_PROXIMITY_CHAN_NUM    SOC_TOUCH_PROXIMITY_CHANNEL_NUM     /*!< The supported proximity channel number in proximity sensing mode */
@@ -24,6 +23,7 @@ extern "C" {
 
 #define TOUCH_MIN_CHAN_ID           SOC_TOUCH_MIN_CHAN_ID               /*!< The minimum available channel id of the touch pad */
 #define TOUCH_MAX_CHAN_ID           SOC_TOUCH_MAX_CHAN_ID               /*!< The maximum available channel id of the touch pad */
+#define TOUCH_TOTAL_CHAN_NUM        (TOUCH_MAX_CHAN_ID - TOUCH_MIN_CHAN_ID + 1) /*!< The total channel number of the touch sensor */
 
 /**
  * @brief The chip sleep level that allows the touch sensor to wake-up
