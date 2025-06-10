@@ -54,3 +54,10 @@ Legacy Timer Group Driver is Removed
 ------------------------------------
 
 The legacy timer group driver ``driver/timer.h`` is deprecated since version 5.0 (see :ref:`deprecate_gptimer_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_gptimer`, and the header file path is ``driver/gptimer.h``.
+
+.. only:: SOC_I2S_SUPPORTED
+
+    Legacy I2S Driver is Removed
+    ------------------------------------
+
+    The legacy i2s driver ``driver/i2s.h`` is deprecated since version 5.0 (see :ref:`deprecate_i2s_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_i2s`, and the header file path is ``driver/i2s_std.h``, ``driver/i2s_pdm.h`` and ``driver/i2s_tdm.h``.

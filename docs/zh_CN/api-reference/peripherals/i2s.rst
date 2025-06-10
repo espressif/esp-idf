@@ -350,7 +350,6 @@ Kconfig 选项
 ^^^^^^^^^^^^
 
 - :ref:`CONFIG_I2S_ISR_IRAM_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。更多信息可参考 `IRAM 安全 <#iram-safe>`__。
-- :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN` 控制是否在使用原有 I2S 驱动时关闭警告信息。
 - :ref:`CONFIG_I2S_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用该选项将增加固件的二进制文件大小。
 
 应用实例

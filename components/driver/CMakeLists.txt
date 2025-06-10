@@ -36,11 +36,6 @@ if(CONFIG_SOC_I2C_SUPPORTED)
     list(APPEND srcs "i2c/i2c.c")
 endif()
 
-# I2S related source files
-if(CONFIG_SOC_I2S_SUPPORTED)
-    list(APPEND srcs "deprecated/i2s_legacy.c")
-endif()
-
 # MCPWM legacy driver
 if(CONFIG_SOC_MCPWM_SUPPORTED)
     list(APPEND srcs "deprecated/mcpwm_legacy.c")

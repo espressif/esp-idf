@@ -119,23 +119,6 @@ menu "Driver Configurations"
                 This configuration option allows the user to bypass the conflict check mechanism with legacy code.
     endmenu # Legacy RMT Driver Configurations
 
-    menu "Legacy I2S Driver Configurations"
-        depends on SOC_I2S_SUPPORTED
-        config I2S_SUPPRESS_DEPRECATE_WARN
-            bool "Suppress legacy driver deprecated warning"
-            default n
-            help
-                Whether to suppress the deprecation warnings when using legacy i2s driver (driver/i2s.h).
-                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
-                you can enable this option.
-
-        config I2S_SKIP_LEGACY_CONFLICT_CHECK
-            bool "Skip legacy conflict check"
-            default n
-            help
-                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
-    endmenu # Legacy I2S Driver Configurationss
-
     menu "Legacy I2C Driver Configurations"
         depends on SOC_I2C_SUPPORTED
         config I2C_SKIP_LEGACY_CONFLICT_CHECK
