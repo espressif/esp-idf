@@ -1328,6 +1328,161 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             param.pa_rsp_rpt_evt.pa_rsp_info = (esp_ble_pa_rsp_info *)params->pa_rsp_rpt_evt.rsp_data_info;
             break;
 #endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+        case BTA_BLE_GAP_CS_READ_LOCAL_SUPP_CAPS_EVT:
+            msg.act = ESP_GAP_BLE_CS_READ_LOCAL_SUPP_CAPS_EVT;
+            param.cs_read_local_supp_caps.status = params->cs_read_local_supp_caps.status;
+            param.cs_read_local_supp_caps.conn_handle = params->cs_read_local_supp_caps.conn_handle;
+            param.cs_read_local_supp_caps.num_config_supported = params->cs_read_local_supp_caps.num_config_supported;
+            param.cs_read_local_supp_caps.max_consecutive_proc_supported = params->cs_read_local_supp_caps.max_consecutive_proc_supported;
+            param.cs_read_local_supp_caps.num_ant_supported = params->cs_read_local_supp_caps.num_ant_supported;
+            param.cs_read_local_supp_caps.max_ant_paths_supported= params->cs_read_local_supp_caps.max_ant_paths_supported;
+            param.cs_read_local_supp_caps.roles_supported = params->cs_read_local_supp_caps.roles_supported;
+            param.cs_read_local_supp_caps.modes_supported = params->cs_read_local_supp_caps.modes_supported;
+            param.cs_read_local_supp_caps.rtt_capability = params->cs_read_local_supp_caps.rtt_capability;
+            param.cs_read_local_supp_caps.rtt_aa_only_n = params->cs_read_local_supp_caps.rtt_aa_only_n;
+            param.cs_read_local_supp_caps.rtt_sounding_n = params->cs_read_local_supp_caps.rtt_sounding_n;
+            param.cs_read_local_supp_caps.rtt_random_payload_n = params->cs_read_local_supp_caps.rtt_random_payload_n;
+            param.cs_read_local_supp_caps.NADM_sounding_capability = params->cs_read_local_supp_caps.NADM_sounding_capability;
+            param.cs_read_local_supp_caps.NADM_random_capability = params->cs_read_local_supp_caps.NADM_random_capability;
+            param.cs_read_local_supp_caps.cs_sync_phys_supported = params->cs_read_local_supp_caps.cs_sync_phys_supported;
+            param.cs_read_local_supp_caps.subfeatures_supported = params->cs_read_local_supp_caps.subfeatures_supported;
+            param.cs_read_local_supp_caps.T_IP1_times_supported = params->cs_read_local_supp_caps.T_IP1_times_supported;
+            param.cs_read_local_supp_caps.T_IP2_times_supported = params->cs_read_local_supp_caps.T_IP2_times_supported;
+            param.cs_read_local_supp_caps.T_FCS_times_supported = params->cs_read_local_supp_caps.T_FCS_times_supported;
+            param.cs_read_local_supp_caps.T_PM_times_supported = params->cs_read_local_supp_caps.T_PM_times_supported;
+            param.cs_read_local_supp_caps.T_SW_times_supported = params->cs_read_local_supp_caps.T_SW_times_supported;
+            param.cs_read_local_supp_caps.TX_SNR_capability = params->cs_read_local_supp_caps.TX_SNR_capability;
+            break;
+        case BTA_BLE_GAP_CS_WRITE_CACHED_REMOTE_SUPP_CAPS_EVT:
+            msg.act = ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_SUPP_CAPS_EVT;
+            param.cs_write_cached_remote_supp_caps.status = params->cs_write_cached_remote_supp_caps.status;
+            param.cs_write_cached_remote_supp_caps.conn_handle = params->cs_write_cached_remote_supp_caps.conn_handle;
+            break;
+        case BTA_BLE_GAP_CS_SET_DEFAULT_SETTINGS_EVT:
+            msg.act = ESP_GAP_BLE_CS_SET_DEFAULT_SETTINGS_EVT;
+            param.cs_set_default_settings.status = params->cs_set_default_settings.status;
+            param.cs_set_default_settings.conn_handle = params->cs_set_default_settings.conn_handle;
+            break;
+        case BTA_BLE_GAP_CS_WRITE_CACHED_REMOTE_FAE_TAB_EVT:
+            msg.act = ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_EVT;
+            param.cs_write_cached_remote_fae_tab.status = params->cs_write_cached_remote_fae_tab.status;
+            param.cs_write_cached_remote_fae_tab.conn_handle = params->cs_write_cached_remote_fae_tab.conn_handle;
+            break;
+        case BTA_BLE_GAP_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT:
+            msg.act = ESP_GAP_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT;
+            param.cs_read_remote_supp_caps.status = params->cs_read_remote_supp_caps.status;
+            param.cs_read_remote_supp_caps.conn_handle = params->cs_read_remote_supp_caps.conn_handle;
+            param.cs_read_remote_supp_caps.num_config_supported = params->cs_read_remote_supp_caps.num_config_supported;
+            param.cs_read_remote_supp_caps.max_consecutive_proc_supported = params->cs_read_remote_supp_caps.max_consecutive_proc_supported;
+            param.cs_read_remote_supp_caps.num_ant_supported = params->cs_read_remote_supp_caps.num_ant_supported;
+            param.cs_read_remote_supp_caps.max_ant_paths_supported = params->cs_read_remote_supp_caps.max_ant_paths_supported;
+            param.cs_read_remote_supp_caps.roles_supported = params->cs_read_remote_supp_caps.roles_supported;
+            param.cs_read_remote_supp_caps.modes_supported = params->cs_read_remote_supp_caps.modes_supported;
+            param.cs_read_remote_supp_caps.rtt_capability = params->cs_read_remote_supp_caps.rtt_capability;
+            param.cs_read_remote_supp_caps.rtt_aa_only_n = params->cs_read_remote_supp_caps.rtt_aa_only_n;
+            param.cs_read_remote_supp_caps.rtt_sounding_n = params->cs_read_remote_supp_caps.rtt_sounding_n;
+            param.cs_read_remote_supp_caps.rtt_random_payload_n = params->cs_read_remote_supp_caps.rtt_random_payload_n;
+            param.cs_read_remote_supp_caps.NADM_sounding_capability = params->cs_read_remote_supp_caps.NADM_sounding_capability;
+            param.cs_read_remote_supp_caps.NADM_random_capability = params->cs_read_remote_supp_caps.NADM_random_capability;
+            param.cs_read_remote_supp_caps.cs_sync_phys_supported = params->cs_read_remote_supp_caps.cs_sync_phys_supported;
+            param.cs_read_remote_supp_caps.subfeatures_supported = params->cs_read_remote_supp_caps.subfeatures_supported;
+            param.cs_read_remote_supp_caps.T_IP1_times_supported = params->cs_read_remote_supp_caps.T_IP1_times_supported;
+            param.cs_read_remote_supp_caps.T_IP2_times_supported = params->cs_read_remote_supp_caps.T_IP2_times_supported;
+            param.cs_read_remote_supp_caps.T_FCS_times_supported = params->cs_read_remote_supp_caps.T_FCS_times_supported;
+            param.cs_read_remote_supp_caps.T_PM_times_supported = params->cs_read_remote_supp_caps.T_PM_times_supported;
+            param.cs_read_remote_supp_caps.T_SW_times_supported = params->cs_read_remote_supp_caps.T_SW_times_supported;
+            param.cs_read_remote_supp_caps.TX_SNR_capability = params->cs_read_remote_supp_caps.TX_SNR_capability;
+            break;
+        case BTA_BLE_GAP_CS_SET_CHANNEL_CLASS_CMPL_EVT:
+            msg.act = ESP_GAP_BLE_CS_SET_CHANNEL_CLASS_CMPL_EVT;
+            param.cs_set_channel_class.status = params->status;
+            break;
+        case BTA_BLE_GAP_CS_PROC_PARAMS_CMPL_EVT:
+            msg.act = ESP_GAP_BLE_CS_SET_PROC_PARAMS_CMPL_EVT;
+            param.cs_set_proc_params.status = params->cs_set_proc_params.status;
+            param.cs_set_proc_params.conn_handle = params->cs_set_proc_params.conn_handle;
+            break;
+        case BTA_BLE_GAP_CS_PROC_ENABLE_CMPL_EVT:
+            msg.act = ESP_GAP_BLE_CS_PROC_ENABLE_CMPL_EVT;
+            param.cs_proc_enable.status = params->cs_proc_en.status;
+            param.cs_proc_enable.conn_handle = params->cs_proc_en.conn_handle;
+            param.cs_proc_enable.config_id = params->cs_proc_en.config_id;
+            param.cs_proc_enable.state = params->cs_proc_en.state;
+            param.cs_proc_enable.tone_Ant_config_select = params->cs_proc_en.tone_Ant_config_select;
+            param.cs_proc_enable.select_tx_power = params->cs_proc_en.select_tx_power;
+            param.cs_proc_enable.subevent_Len = params->cs_proc_en.subevent_Len;
+            param.cs_proc_enable.subevents_per_event = params->cs_proc_en.subevents_per_event;
+            param.cs_proc_enable.subevent_interval = params->cs_proc_en.subevent_interval;
+            param.cs_proc_enable.event_interval = params->cs_proc_en.event_interval;
+            param.cs_proc_enable.procedure_interval = params->cs_proc_en.procedure_interval;
+            param.cs_proc_enable.procedure_count = params->cs_proc_en.procedure_count;
+            param.cs_proc_enable.max_procedure_len = params->cs_proc_en.max_procedure_len;
+            break;
+        case BTA_BLE_GAP_CS_READ_REMOTE_FAE_TABLE_CMPL_EVT:
+            msg.act = ESP_GAP_BLE_CS_READ_REMOTE_FAE_TABLE_CMPL_EVT;
+            param.cs_read_remote_fae_tab.status = params->cs_read_remote_fae_tab.status;
+            param.cs_read_remote_fae_tab.conn_handle = params->cs_read_remote_fae_tab.conn_handle;
+            memcpy(param.cs_read_remote_fae_tab.remote_fae_table, params->cs_read_remote_fae_tab.remote_fae_table, 72);
+            break;
+        case BTA_BLE_GAP_CS_SECURITY_ENABLE_CMPL_EVT:
+            msg.act = ESP_GAP_BLE_CS_SECURITY_ENABLE_CMPL_EVT;
+            param.cs_security_enable.status = params->cs_security_enable.status;
+            param.cs_security_enable.conn_handle =  params->cs_security_enable.conn_handle;
+            break;
+        case BTA_BLE_GAP_CS_CONFIG_CMPL_EVT:
+            msg.act = ESP_GAP_BLE_CS_CONFIG_CMPL_EVT;
+            param.cs_config_update.status = params->cs_config_update.status;
+            param.cs_config_update.conn_handle = params->cs_config_update.conn_handle;
+            param.cs_config_update.config_id = params->cs_config_update.config_id;
+            param.cs_config_update.action = params->cs_config_update.action;
+            param.cs_config_update.main_mode_type = params->cs_config_update.main_mode_type;
+            param.cs_config_update.sub_mode_type = params->cs_config_update.sub_mode_type;
+            param.cs_config_update.min_main_mode_steps = params->cs_config_update.min_main_mode_steps;
+            param.cs_config_update.max_main_mode_steps = params->cs_config_update.max_main_mode_steps;
+            param.cs_config_update.main_mode_repetition = params->cs_config_update.main_mode_repetition;
+            param.cs_config_update.mode_0_steps = params->cs_config_update.mode_0_steps;
+            param.cs_config_update.role = params->cs_config_update.role;
+            param.cs_config_update.rtt_type = params->cs_config_update.rtt_type;
+            param.cs_config_update.cs_sync_phy = params->cs_config_update.cs_sync_phy;
+            memcpy(param.cs_config_update.channel_map, params->cs_config_update.channel_map, 10);
+            param.cs_config_update.channel_map_repetition = params->cs_config_update.channel_map_repetition;
+            param.cs_config_update.channel_selection_type = params->cs_config_update.channel_selection_type;
+            param.cs_config_update.ch3c_shape = params->cs_config_update.ch3c_shape;
+            param.cs_config_update.ch3c_jump = params->cs_config_update.ch3c_jump;
+            param.cs_config_update.reserved = params->cs_config_update.reserved;
+            param.cs_config_update.t_ip1_time = params->cs_config_update.t_ip1_time;
+            param.cs_config_update.t_ip2_time = params->cs_config_update.t_ip2_time;
+            param.cs_config_update.t_fcs_time = params->cs_config_update.t_fcs_time;
+            param.cs_config_update.t_pm_time = params->cs_config_update.t_pm_time;
+            break;
+        case BTA_BLE_GAP_CS_SUBEVENT_RESULT_EVT:
+            msg.act = ESP_GAP_BLE_CS_SUBEVENT_RESULT_EVT;
+            param.cs_subevt_result.conn_handle = params->cs_subevt_result.conn_handle;
+            param.cs_subevt_result.config_id = params->cs_subevt_result.config_id;
+            param.cs_subevt_result.start_acl_conn_event_counter = params->cs_subevt_result.start_acl_conn_event_counter;
+            param.cs_subevt_result.procedure_counter = params->cs_subevt_result.procedure_counter;
+            param.cs_subevt_result.frequency_compensation = params->cs_subevt_result.frequency_compensation;
+            param.cs_subevt_result.reference_power_level = params->cs_subevt_result.reference_power_level;
+            param.cs_subevt_result.procedure_done_status = params->cs_subevt_result.procedure_done_status;
+            param.cs_subevt_result.subevent_done_status = params->cs_subevt_result.subevent_done_status;
+            param.cs_subevt_result.abort_reason = params->cs_subevt_result.abort_reason;
+            param.cs_subevt_result.num_ant_paths = params->cs_subevt_result.num_ant_paths;
+            param.cs_subevt_result.num_steps_reported = params->cs_subevt_result.num_steps_reported;
+            param.cs_subevt_result.step_info = (esp_ble_cs_step_info *)params->cs_subevt_result.step_info;
+            break;
+        case BTA_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT:
+            msg.act = ESP_GAP_BLE_CS_SUBEVENT_RESULT_CONTINUE_EVT;
+            param.cs_subevt_result_continue.conn_handle = params->cs_subevt_result_continue.conn_handle;
+            param.cs_subevt_result_continue.config_id = params->cs_subevt_result_continue.config_id;
+            param.cs_subevt_result_continue.proc_done_status = params->cs_subevt_result_continue.proc_done_status;
+            param.cs_subevt_result_continue.subevt_done_status = params->cs_subevt_result_continue.subevt_done_status;
+            param.cs_subevt_result_continue.abort_reason = params->cs_subevt_result_continue.abort_reason;
+            param.cs_subevt_result_continue.num_ant_paths = params->cs_subevt_result_continue.num_ant_paths;
+            param.cs_subevt_result_continue.num_steps_reported = params->cs_subevt_result_continue.num_steps_reported;
+            param.cs_subevt_result_continue.step_info = (esp_ble_cs_step_info *)params->cs_subevt_result_continue.step_info;
+            break;
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
         default:
             break;
     }
@@ -2137,6 +2292,54 @@ void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         }
         break;
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    case BTA_BLE_GAP_CS_SUBEVENT_RESULT_EVT:
+        if (src->cs_subevt_result.step_info) {
+            dst->cs_subevt_result.step_info = osi_malloc(src->cs_subevt_result.num_steps_reported * sizeof(esp_ble_cs_step_info));
+            if (dst->cs_subevt_result.step_info) {
+                for (UINT8 i = 0; i < src->cs_subevt_result.num_steps_reported; i++)
+                {
+                    dst->cs_subevt_result.step_info[i].step_mode = src->cs_subevt_result.step_info[i].step_mode;
+                    dst->cs_subevt_result.step_info[i].step_channel = src->cs_subevt_result.step_info[i].step_channel;
+                    dst->cs_subevt_result.step_info[i].step_data_len = src->cs_subevt_result.step_info[i].step_data_len;
+                    if (src->cs_subevt_result.step_info[i].step_data_len) {
+                        dst->cs_subevt_result.step_info[i].data = osi_malloc(src->cs_subevt_result.step_info[i].step_data_len);
+                        if (dst->cs_subevt_result.step_info[i].data) {
+                            memcpy(dst->cs_subevt_result.step_info[i].data, src->cs_subevt_result.step_info[i].data, src->cs_subevt_result.step_info[i].step_data_len);
+                        } else {
+                            BTC_TRACE_ERROR("%s, data, no enough memory.", __func__);
+                        }
+                    }
+                }
+            } else {
+                BTC_TRACE_ERROR("%s, pa_rsp_info, no enough memory.", __func__);
+            }
+        }
+        break;
+    case BTA_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT:
+        if (src->cs_subevt_result_continue.step_info) {
+            dst->cs_subevt_result_continue.step_info = osi_malloc(src->cs_subevt_result_continue.num_steps_reported * sizeof(esp_ble_cs_step_info));
+            if (dst->cs_subevt_result_continue.step_info) {
+                for (UINT8 i = 0; i < src->cs_subevt_result_continue.num_steps_reported; i++)
+                {
+                    dst->cs_subevt_result_continue.step_info[i].step_mode = src->cs_subevt_result_continue.step_info[i].step_mode;
+                    dst->cs_subevt_result_continue.step_info[i].step_channel = src->cs_subevt_result_continue.step_info[i].step_channel;
+                    dst->cs_subevt_result_continue.step_info[i].step_data_len = src->cs_subevt_result_continue.step_info[i].step_data_len;
+                    if (src->cs_subevt_result_continue.step_info[i].step_data_len) {
+                        dst->cs_subevt_result_continue.step_info[i].data = osi_malloc(src->cs_subevt_result_continue.step_info[i].step_data_len);
+                        if (dst->cs_subevt_result_continue.step_info[i].data) {
+                            memcpy(dst->cs_subevt_result_continue.step_info[i].data, src->cs_subevt_result_continue.step_info[i].data, src->cs_subevt_result.step_info[i].step_data_len);
+                        } else {
+                            BTC_TRACE_ERROR("%s, data, no enough memory.", __func__);
+                        }
+                    }
+                }
+            } else {
+                BTC_TRACE_ERROR("%s, pa_rsp_info, no enough memory.", __func__);
+            }
+        }
+        break;
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
     default:
        // BTC_TRACE_ERROR("%s, Unhandled deep copy %d\n", __func__, msg->act);
        break;
@@ -2333,6 +2536,38 @@ void btc_gap_ble_cb_deep_free(btc_msg_t *msg)
         }
         break;
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+   case BTA_BLE_GAP_CS_SUBEVENT_RESULT_EVT:
+   {
+        esp_ble_cs_step_info *step_info = ((esp_ble_gap_cb_param_t *)msg->arg)->cs_subevt_result.step_info;
+        if (step_info) {
+            uint8_t num_step = ((esp_ble_gap_cb_param_t *)msg->arg)->cs_subevt_result.num_steps_reported;
+            for (uint8_t i = 0; i < num_step; i++)
+            {
+                if (step_info[i].data) {
+                    osi_free(step_info[i].data);
+                }
+            }
+            osi_free(step_info);
+        }
+   }
+        break;
+    case BTA_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT:
+    {
+        esp_ble_cs_step_info *step_info = ((esp_ble_gap_cb_param_t *)msg->arg)->cs_subevt_result_continue.step_info;
+        if (step_info) {
+            uint8_t num_step = ((esp_ble_gap_cb_param_t *)msg->arg)->cs_subevt_result_continue.num_steps_reported;
+            for (uint8_t i = 0; i < num_step; i++)
+            {
+                if (step_info[i].data) {
+                    osi_free(step_info[i].data);
+                }
+            }
+            osi_free(step_info);
+        }
+    }
+        break;
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
         default:
             BTC_TRACE_DEBUG("Unhandled deep free %d", msg->act);
             break;
@@ -2913,6 +3148,45 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         BTA_DmBleGapSetPeriodicSyncSubevt(arg_5->per_sync_subevent_params.sync_handle, arg_5->per_sync_subevent_params.periodic_adv_properties, arg_5->per_sync_subevent_params.num_subevents_to_sync, arg_5->per_sync_subevent_params.subevent);
         break;
 #endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    case BTC_GAP_BLE_CS_READ_LOCAL_SUPPORTED_CAPS:
+        BTA_DmBleGapReadLocalSupportedCaps();
+        break;
+    case BTC_GAP_BLE_CS_READ_REMOTE_SUPPORTED_CAPS:
+        BTA_DmBleGapReadRemoteSupportedCaps(arg_5->cs_read_remote_supp_caps.conn_handle);
+        break;
+    case BTC_GAP_BLE_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPS:
+        BTA_DmBleGapWriteCachedRemoteSupportedCaps((tBTA_DM_CS_WRITE_CACHED_REMOTE_SUPP_CAPS *)&arg_5->cs_write_cached_remote_supp_caps);
+        break;
+    case BTC_GAP_BLE_CS_SECURITY_ENABLE:
+        BTA_DmBleGapCsSecurityEnable(arg_5->cs_security_enable.conn_handle);
+        break;
+    case BTC_GAP_BLE_CS_SET_DEFAULT_SETTINGS:
+        BTA_DmBleGapCsSetDefaultSetting(arg_5->cs_set_default_settings_params.conn_handle, arg_5->cs_set_default_settings_params.role_enable,
+                                        arg_5->cs_set_default_settings_params.cs_sync_ant_selection, arg_5->cs_set_default_settings_params.max_tx_power);
+        break;
+    case BTC_GAP_BLE_CS_READ_REMOTE_FAE_TABLE:
+        BTA_DmBleGapCsReadRemoteFaeTable(arg_5->cs_read_remote_tab.conn_handle);
+        break;
+    case BTC_GAP_BLE_CS_WRITE_CACHED_REMOTE_FAE_TABLE:
+        BTA_DmBleGapWriteCachedRemoteFaeTable(arg_5->cs_write_cached_remote_fae_table_params.conn_handle, &arg_5->cs_write_cached_remote_fae_table_params.remote_fae_table[0], 72);
+        break;
+    case BTC_GAP_BLE_CS_CREATE_CONFIG:
+        BTA_DmBleGapCsCreateConfig((tBTA_DM_CS_CREATE_CONFIG_PARAMS*)&arg_5->cs_create_config_params);
+        break;
+    case BTC_GAP_BLE_CS_REMOVE_CONFIG:
+        BTA_DmBleGapCsRemoveConfig(arg_5->cs_remove_config_params.conn_handle, arg_5->cs_remove_config_params.config_id);
+        break;
+    case BTC_GAP_BLE_CS_SET_CAHNNEL_CLASSIFICATION:
+        BTA_DmBleGapCsSetChannelClass(&arg_5->cs_set_channel_class_params.channel_class[0], 10);
+        break;
+    case BTC_GAP_BLE_CS_SET_PROCEDURE_PARAMS:
+        BTA_DmBleGapCsSetProcPatams((tBTA_DM_CS_SET_PROC_PARAMS *)&arg_5->cs_set_procedure_params);
+        break;
+    case BTC_GAP_BLE_CS_PROCEDURE_ENABLE:
+        BTA_DmBleGapCsProcEnable(arg_5->cs_procedure_enable_params.conn_handle, arg_5->cs_procedure_enable_params.config_id, arg_5->cs_procedure_enable_params.enable);
+        break;
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
     default:
         break;
     }
