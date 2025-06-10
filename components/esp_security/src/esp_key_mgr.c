@@ -157,6 +157,30 @@ typedef struct {
     esp_key_mgr_huk_info_t *huk_recovery_info;
 } huk_deploy_config_t;
 
+static esp_err_t configure_huk(esp_huk_mode_t huk_mode, uint8_t *huk_info)
+{
+    esp_err_t ret = huk_hal_configure(huk_mode, huk_info);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+#if SOC_HUK_MEM_NEEDS_RECHARGE
+    if (!key_mgr_hal_is_huk_valid()) {
+        huk_hal_recharge_huk_memory();
+        ret = huk_hal_configure(huk_mode, huk_info);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+    }
+#endif
+
+    if (!key_mgr_hal_is_huk_valid()) {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
 static esp_err_t deploy_huk(huk_deploy_config_t *config)
 {
     esp_err_t esp_ret = ESP_FAIL;
@@ -174,7 +198,8 @@ static esp_err_t deploy_huk(huk_deploy_config_t *config)
         }
         memcpy(huk_recovery_info, config->pre_generated_huk_info->info, KEY_MGR_HUK_INFO_SIZE);
         ESP_LOGI(TAG, "Recovering HUK from given HUK recovery info");
-        esp_ret = huk_hal_configure(ESP_HUK_MODE_RECOVERY, huk_recovery_info);
+
+        esp_ret = configure_huk(ESP_HUK_MODE_RECOVERY, huk_recovery_info);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to recover HUK");
             heap_caps_free(huk_recovery_info);
@@ -186,7 +211,8 @@ static esp_err_t deploy_huk(huk_deploy_config_t *config)
     } else {
         // Generate new HUK and corresponding HUK info
         ESP_LOGI(TAG, "Generating new HUK");
-        esp_ret = huk_hal_configure(ESP_HUK_MODE_GENERATION, huk_recovery_info);
+
+        esp_ret = configure_huk(ESP_HUK_MODE_GENERATION, huk_recovery_info);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to generate HUK");
             heap_caps_free(huk_recovery_info);
@@ -194,12 +220,6 @@ static esp_err_t deploy_huk(huk_deploy_config_t *config)
         }
         memcpy(config->huk_recovery_info->info, huk_recovery_info, KEY_MGR_HUK_INFO_SIZE);
         config->huk_recovery_info->crc = esp_rom_crc32_le(0,  huk_recovery_info, KEY_MGR_HUK_INFO_SIZE);
-    }
-
-    if (!key_mgr_hal_is_huk_valid()) {
-        ESP_LOGE(TAG, "HUK is invalid");
-        heap_caps_free(huk_recovery_info);
-        return ESP_FAIL;
     }
 
     ESP_LOG_BUFFER_HEX_LEVEL("HUK INFO", huk_recovery_info, KEY_MGR_HUK_INFO_SIZE, ESP_LOG_DEBUG);
@@ -368,15 +388,10 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
 
     if ((!key_mgr_hal_is_huk_valid()) || (!config->huk_recovered)) {
         check_huk_risk_level();
-        esp_err_t esp_ret = huk_hal_configure(ESP_HUK_MODE_RECOVERY, config->key_recovery_info->huk_info.info);
+        esp_err_t esp_ret = configure_huk(ESP_HUK_MODE_RECOVERY, config->key_recovery_info->huk_info.info);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to recover HUK");
-            return ESP_FAIL;
-        }
-        if (!key_mgr_hal_is_huk_valid()) {
-            ESP_LOGE(TAG, "HUK is invalid");
-            // TODO - define error code
-            return ESP_FAIL;
+            return esp_ret;
         }
         ESP_LOGI(TAG, "HUK recovered successfully");
         ESP_LOG_BUFFER_HEX_LEVEL("HUK INFO", config->key_recovery_info->huk_info.info, KEY_MGR_HUK_INFO_SIZE, ESP_LOG_DEBUG);
@@ -433,9 +448,11 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_key_mgr_key_purpose_t key_purpose;
     ESP_LOGI(TAG, "Activating key of type %d", key_recovery_info->key_type);
+
     esp_key_mgr_key_type_t key_type = (esp_key_mgr_key_type_t) key_recovery_info->key_type;
+    esp_key_mgr_key_purpose_t key_purpose;
+
     if (key_type == ESP_KEY_MGR_ECDSA_192_KEY) {
         key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA_192;
     } else if (key_type == ESP_KEY_MGR_ECDSA_256_KEY) {
@@ -450,7 +467,6 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
     }
 
     esp_err_t esp_ret = ESP_FAIL;
-    ESP_LOGI(TAG, "Activating key of type %d", key_recovery_info->key_type);
     esp_key_mgr_acquire_key_lock(key_type);
     key_recovery_config_t key_recovery_config = {};
     key_recovery_config.key_recovery_info = key_recovery_info;
@@ -482,7 +498,7 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
     return ESP_OK;
 
 cleanup:
-    ESP_LOGI(TAG, "Key activation failed");
+    ESP_LOGE(TAG, "Key activation failed");
     esp_key_mgr_release_hardware(false);
     return esp_ret;
 }

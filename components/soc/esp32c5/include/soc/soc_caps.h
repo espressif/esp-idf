@@ -540,6 +540,9 @@
 #define SOC_EFUSE_ECDSA_KEY_P192 1
 #define SOC_EFUSE_ECDSA_KEY_P384 1
 
+/*-------------------------- HUK CAPS----------------------------*/
+#define SOC_HUK_MEM_NEEDS_RECHARGE 1
+
 /*-------------------------- Key Manager CAPS----------------------------*/
 #define SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT  1 /*!< Key manager supports key deployment */
 #define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY        1 /*!< Key manager responsible to deploy ECDSA key */

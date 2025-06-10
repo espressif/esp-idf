@@ -14,6 +14,10 @@
 #include "esp_err.h"
 #include "hal/efuse_hal.h"
 
+#if SOC_HUK_MEM_NEEDS_RECHARGE
+#include "hal/huk_hal.h"
+#endif
+
 #if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
 #include "hal/key_mgr_ll.h"
 #endif /* SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT */
