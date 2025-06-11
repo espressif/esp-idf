@@ -3,7 +3,8 @@ archive: libesp_mm.a
 entries:
 
     if APP_BUILD_TYPE_PURE_RAM_APP = n:
-        esp_cache (noflash)
+        esp_cache_msync (noflash)
+        esp_cache_utils (noflash)
 
         if IDF_TARGET_ESP32 = y:
             cache_esp32 (noflash)
