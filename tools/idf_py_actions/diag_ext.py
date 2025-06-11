@@ -100,6 +100,13 @@ def diag(action: str,
             diag_args += ['--force']
         if purge_file:
             diag_args += ['--purge', purge_file]
+        if args.port:
+            diag_args += ['--port', args.port]
+        else:
+            yellow_print( ( 'The target serial port is not specified, so '
+                            'autodetection will be used. To set it manually, use '
+                            'the "--port" option. Example: "idf.py --port '
+                            '/dev/ttyUSB0 diag".'))
 
     try:
         RunTool('idf_diag', diag_args, args.project_dir, hints=not args.no_hints)()
