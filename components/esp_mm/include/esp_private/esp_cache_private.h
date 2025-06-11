@@ -53,6 +53,18 @@ void esp_cache_freeze_ext_mem_cache(void);
  * @note This API must be called after a `esp_cache_freeze_ext_mem_cache`
  */
 void esp_cache_unfreeze_ext_mem_cache(void);
+
+/**
+ * @brief Freeze external memory cache and disable non-iram interrupts
+ *
+ * @note This API will enter a critical section, you will need to call `esp_cache_unfreeze_caches_enable_interrupts` to exit it.
+ */
+void esp_cache_freeze_caches_disable_interrupts(void);
+
+/**
+ * @brief Unfreeze external memory cache and re-enable non-iram interrupts
+ */
+void esp_cache_unfreeze_caches_enable_interrupts(void);
 #endif
 
 /**
