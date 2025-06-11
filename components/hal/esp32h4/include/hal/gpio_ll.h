@@ -26,6 +26,8 @@
 #include "hal/gpio_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
+#include "hal/config.h"
+#include "rom/gpio.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -314,6 +316,9 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t level)
 {
+#if HAL_CONFIG_GPIO_USE_ROM_API
+    gpio_set_output_level(gpio_num, level);
+#else
     if (level) {
         if (gpio_num < 32) {
             hw->out_w1ts.val = (1 << gpio_num);
@@ -327,6 +332,7 @@ static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t
             hw->out1_w1tc.val = (1 << (gpio_num - 32));
         }
     }
+#endif
 }
 
 /**
@@ -344,11 +350,15 @@ static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t
 __attribute__((always_inline))
 static inline int gpio_ll_get_level(gpio_dev_t *hw, uint32_t gpio_num)
 {
+#if HAL_CONFIG_GPIO_USE_ROM_API
+    return gpio_get_input_level(gpio_num);
+#else
     if (gpio_num < 32) {
         return (hw->in.in_data_next >> gpio_num) & 0x1;
     } else {
         return (hw->in1.in1_data_next >> (gpio_num - 32)) & 0x1;
     }
+#endif
 }
 
 /**

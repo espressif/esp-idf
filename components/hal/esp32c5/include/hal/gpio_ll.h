@@ -27,6 +27,8 @@
 #include "soc/usb_serial_jtag_struct.h"
 #include "hal/gpio_types.h"
 #include "hal/assert.h"
+#include "hal/config.h"
+#include "rom/gpio.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -336,11 +338,15 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t level)
 {
+#if HAL_CONFIG_GPIO_USE_ROM_API
+    gpio_set_output_level(gpio_num, level);
+#else
     if (level) {
         hw->out_w1ts.val = 1 << gpio_num;
     } else {
         hw->out_w1tc.val = 1 << gpio_num;
     }
+#endif
 }
 
 /**
@@ -358,7 +364,11 @@ static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t
 __attribute__((always_inline))
 static inline int gpio_ll_get_level(gpio_dev_t *hw, uint32_t gpio_num)
 {
+#if HAL_CONFIG_GPIO_USE_ROM_API
+    return gpio_get_input_level(gpio_num);
+#else
     return (hw->in.in_data_next >> gpio_num) & 0x1;
+#endif
 }
 
 /**

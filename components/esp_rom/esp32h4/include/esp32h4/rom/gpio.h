@@ -25,10 +25,6 @@ extern "C" {
 #define GPIO_REG_READ(reg)       READ_PERI_REG(reg)
 #define GPIO_REG_WRITE(reg, val) WRITE_PERI_REG(reg, val)
 
-#define GPIO_OUTPUT_SET(gpio_no, bit_value) gpio_set_output_level(gpio_no, bit_value)
-#define GPIO_DIS_OUTPUT(gpio_no)            gpio_output_disable(gpio_no)
-#define GPIO_INPUT_GET(gpio_no)             gpio_get_input_level(gpio_no)
-
 /**
   * @brief Set GPIO output level
   *
@@ -83,23 +79,23 @@ void gpio_bypass_matrix_in(uint32_t signal_idx);
   */
 void gpio_matrix_out(uint32_t gpio_num, uint32_t signal_idx, bool out_inv, bool oen_inv);
 
-/**
-  * @brief enable gpio output.
-  *
-  * @param uint32_t gpio_num : gpio number
-  *
-  * @return None
-  */
-void gpio_output_enable(uint32_t gpio_num);
+// /**
+//   * @brief enable gpio output.
+//   *
+//   * @param uint32_t gpio_num : gpio number
+//   *
+//   * @return None
+//   */
+// void gpio_output_enable(uint32_t gpio_num);
 
-/**
-  * @brief disable gpio output.
-  *
-  * @param uint32_t gpio_num : gpio number
-  *
-  * @return None
-  */
-void gpio_output_disable(uint32_t gpio_num);
+// /**
+//   * @brief disable gpio output.
+//   *
+//   * @param uint32_t gpio_num : gpio number
+//   *
+//   * @return None
+//   */
+// void gpio_output_disable(uint32_t gpio_num);
 
 /**
   * @brief Select pad as a gpio function from IOMUX.
@@ -109,15 +105,6 @@ void gpio_output_disable(uint32_t gpio_num);
   * @return None
   */
 void gpio_pad_select_gpio(uint32_t gpio_num);
-
-/**
-  * @brief Select a mux for the pad(LP pad) in the IOMUX.
-  * @note This function is only for LP pad and not all chips have LP pad.
-  *
-  * @param gpio_num GPIO number should be LP GPIO
-  * @param mux_sel Select pad as LP GPIO or HP GPIO, 1:LP GPIO,0:HP GPIO
-  */
-void gpio_lppad_select_mux(uint32_t gpio_num, uint32_t mux_sel);
 
 /**
   * @brief Set pad driver capability.
@@ -131,17 +118,6 @@ void gpio_lppad_select_mux(uint32_t gpio_num, uint32_t mux_sel);
 void gpio_pad_set_drv(uint32_t gpio_num, uint32_t drv);
 
 /**
-  * @brief Set MSPI dedicated pad driver capability.
-  *
-  * @param uint32_t gpio_num : MSPI dedicated gpio number
-  *
-  * @param uint32_t drv : 0-3
-  *
-  * @return None
-  */
-void gpio_ded_pad_set_drv(uint32_t ded_gpio_num, uint32_t drv);
-
-/**
   * @brief Pull up the pad from gpio number.
   *
   * @param uint32_t gpio_num : gpio number
@@ -151,15 +127,6 @@ void gpio_ded_pad_set_drv(uint32_t ded_gpio_num, uint32_t drv);
 void gpio_pad_pullup(uint32_t gpio_num);
 
 /**
-  * @brief Pull up the MSPI dedicated pad from gpio number.
-  *
-  * @param uint32_t gpio_num : MSPI dedicated gpio number
-  *
-  * @return None
-  */
-void gpio_ded_pad_pullup(uint32_t ded_gpio_num);
-
-/**
   * @brief Pull down the pad from gpio number.
   *
   * @param uint32_t gpio_num : gpio number
@@ -167,15 +134,6 @@ void gpio_ded_pad_pullup(uint32_t ded_gpio_num);
   * @return None
   */
 void gpio_pad_pulldown(uint32_t gpio_num);
-
-/**
-  * @brief Pull down the MSPI dedicated pad from gpio number.
-  *
-  * @param uint32_t gpio_num : MSPI dedicated gpio number
-  *
-  * @return None
-  */
-void gpio_ded_pad_pulldown(uint32_t ded_gpio_num);
 
 /**
   * @brief enable gpio pad input.
@@ -205,15 +163,6 @@ void gpio_pad_input_disable(uint32_t gpio_num);
 void gpio_pad_unhold(uint32_t gpio_num);
 
 /**
-  * @brief Unhold the mspi dedicated pad from gpio number.
-  *
-  * @param uint32_t gpio_num : mspi dedicated gpio number
-  *
-  * @return None
-  */
-void gpio_ded_pad_unhold(uint32_t ded_gpio_num);
-
-/**
   * @brief Hold the pad from gpio number.
   *
   * @param uint32_t gpio_num : gpio number
@@ -221,15 +170,6 @@ void gpio_ded_pad_unhold(uint32_t ded_gpio_num);
   * @return None
   */
 void gpio_pad_hold(uint32_t gpio_num);
-
-/**
-  * @brief Hold the mspi dedicated pad from gpio number.
-  *
-  * @param uint32_t gpio_num : mspi dedicated gpio number
-  *
-  * @return None
-  */
-void gpio_ded_pad_hold(uint32_t gpio_num);
 
 /**
   * @}
