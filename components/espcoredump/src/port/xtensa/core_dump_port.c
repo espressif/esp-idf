@@ -37,10 +37,10 @@ const static char TAG[] __attribute__((unused)) = "esp_core_dump_port";
                                                 }
 
 #define COREDUMP_GET_EPC(reg, ptr) \
-    if (reg - EPC_1 + 1 <= XCHAL_NUM_INTLEVELS) COREDUMP_GET_REG_PAIR(reg, ptr)
+    if (reg - XT_REG_EPC_1 + 1 <= XCHAL_NUM_INTLEVELS) COREDUMP_GET_REG_PAIR(reg, ptr)
 
 #define COREDUMP_GET_EPS(reg, ptr) \
-    if (reg - EPS_2 + 2 <= XCHAL_NUM_INTLEVELS) COREDUMP_GET_REG_PAIR(reg, ptr)
+    if (reg - XT_REG_EPS_2 + 2 <= XCHAL_NUM_INTLEVELS) COREDUMP_GET_REG_PAIR(reg, ptr)
 
 // Enumeration of registers of exception stack frame
 // and solicited stack frame
@@ -158,13 +158,13 @@ static core_dump_reg_pair_t *esp_core_dump_get_epc_regs(core_dump_reg_pair_t* sr
     uint32_t* reg_ptr = (uint32_t*)src;
 #pragma GCC diagnostic pop
     // get InterruptException program counter registers
-    COREDUMP_GET_EPC(EPC_1, reg_ptr);
-    COREDUMP_GET_EPC(EPC_2, reg_ptr);
-    COREDUMP_GET_EPC(EPC_3, reg_ptr);
-    COREDUMP_GET_EPC(EPC_4, reg_ptr);
-    COREDUMP_GET_EPC(EPC_5, reg_ptr);
-    COREDUMP_GET_EPC(EPC_6, reg_ptr);
-    COREDUMP_GET_EPC(EPC_7, reg_ptr);
+    COREDUMP_GET_EPC(XT_REG_EPC_1, reg_ptr);
+    COREDUMP_GET_EPC(XT_REG_EPC_2, reg_ptr);
+    COREDUMP_GET_EPC(XT_REG_EPC_3, reg_ptr);
+    COREDUMP_GET_EPC(XT_REG_EPC_4, reg_ptr);
+    COREDUMP_GET_EPC(XT_REG_EPC_5, reg_ptr);
+    COREDUMP_GET_EPC(XT_REG_EPC_6, reg_ptr);
+    COREDUMP_GET_EPC(XT_REG_EPC_7, reg_ptr);
     return (core_dump_reg_pair_t*)reg_ptr;
 }
 
@@ -177,12 +177,12 @@ static core_dump_reg_pair_t *esp_core_dump_get_eps_regs(core_dump_reg_pair_t* sr
     uint32_t* reg_ptr = (uint32_t*)src;
 #pragma GCC diagnostic pop
     // get InterruptException processor state registers
-    COREDUMP_GET_EPS(EPS_2, reg_ptr);
-    COREDUMP_GET_EPS(EPS_3, reg_ptr);
-    COREDUMP_GET_EPS(EPS_4, reg_ptr);
-    COREDUMP_GET_EPS(EPS_5, reg_ptr);
-    COREDUMP_GET_EPS(EPS_6, reg_ptr);
-    COREDUMP_GET_EPS(EPS_7, reg_ptr);
+    COREDUMP_GET_EPS(XT_REG_EPS_2, reg_ptr);
+    COREDUMP_GET_EPS(XT_REG_EPS_3, reg_ptr);
+    COREDUMP_GET_EPS(XT_REG_EPS_4, reg_ptr);
+    COREDUMP_GET_EPS(XT_REG_EPS_5, reg_ptr);
+    COREDUMP_GET_EPS(XT_REG_EPS_6, reg_ptr);
+    COREDUMP_GET_EPS(XT_REG_EPS_7, reg_ptr);
     return (core_dump_reg_pair_t*)reg_ptr;
 }
 
@@ -205,9 +205,9 @@ static esp_err_t esp_core_dump_get_regs_from_stack(void* stack_addr,
     // is this current crashed task?
     if (rc == COREDUMP_CURR_TASK_MARKER) {
         s_extra_info.exccause.reg_val = exc_frame->exccause;
-        s_extra_info.exccause.reg_index = EXCCAUSE;
+        s_extra_info.exccause.reg_index = XT_REG_EXCCAUSE;
         s_extra_info.excvaddr.reg_val = exc_frame->excvaddr;
-        s_extra_info.excvaddr.reg_index = EXCVADDR;
+        s_extra_info.excvaddr.reg_index = XT_REG_EXCVADDR;
         // get InterruptException registers into extra_info
         core_dump_reg_pair_t *regs_ptr = esp_core_dump_get_eps_regs(s_extra_info.extra_regs);
         esp_core_dump_get_epc_regs(regs_ptr);
@@ -257,7 +257,7 @@ inline void esp_core_dump_port_init(panic_info_t *info, bool isr_context)
     s_extra_info.crashed_task_tcb = COREDUMP_CURR_TASK_MARKER;
     // Initialize exccause register to default value (required if current task corrupted)
     s_extra_info.exccause.reg_val = COREDUMP_INVALID_CAUSE_VALUE;
-    s_extra_info.exccause.reg_index = EXCCAUSE;
+    s_extra_info.exccause.reg_index = XT_REG_EXCCAUSE;
 
     XtExcFrame *s_exc_frame = (XtExcFrame *) info->frame;
     s_exc_frame->exit = COREDUMP_CURR_TASK_MARKER;
@@ -486,10 +486,10 @@ void esp_core_dump_summary_parse_extra_info(esp_core_dump_summary_t *summary, vo
     memset(summary->ex_info.epcx, 0, sizeof(summary->ex_info.epcx));
     summary->ex_info.epcx_reg_bits = 0;
     for (i = 0; i < COREDUMP_EXTRA_REG_NUM; i++) {
-        if (ei->extra_regs[i].reg_index >= EPC_1
-                && ei->extra_regs[i].reg_index < (EPC_1 + XCHAL_NUM_INTLEVELS)) {
-            summary->ex_info.epcx[ei->extra_regs[i].reg_index - EPC_1] = ei->extra_regs[i].reg_val;
-            summary->ex_info.epcx_reg_bits |= (1 << (ei->extra_regs[i].reg_index - EPC_1));
+        if (ei->extra_regs[i].reg_index >= XT_REG_EPC_1
+                && ei->extra_regs[i].reg_index < (XT_REG_EPC_1 + XCHAL_NUM_INTLEVELS)) {
+            summary->ex_info.epcx[ei->extra_regs[i].reg_index - XT_REG_EPC_1] = ei->extra_regs[i].reg_val;
+            summary->ex_info.epcx_reg_bits |= (1 << (ei->extra_regs[i].reg_index - XT_REG_EPC_1));
         }
     }
 }
