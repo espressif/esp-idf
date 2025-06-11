@@ -490,10 +490,10 @@ static bt_status_t btc_init_mem(void) {
 #endif
 
 #if BTC_HF_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
-    if ((hf_local_param_ptr = (hf_local_param_t *)osi_malloc(BTC_HF_NUM_CB * sizeof(hf_local_param_t))) == NULL) {
+    if ((hf_local_param_ptr = (hf_local_param_t *)osi_malloc(sizeof(hf_local_param_t))) == NULL) {
         goto error_exit;
     }
-    memset((void *)hf_local_param_ptr, 0, BTC_HF_NUM_CB * sizeof(hf_local_param_t));
+    memset((void *)hf_local_param_ptr, 0, sizeof(hf_local_param_t));
 #endif
 
 #if BTC_HF_CLIENT_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
