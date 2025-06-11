@@ -29,7 +29,7 @@ typedef struct {
 
 typedef struct {
     esp_err_t (*swap_start)(uint32_t curr_block_id);
-    esp_err_t (*swap)(uint32_t new_block_id);
+    esp_err_t (*swap)(uint32_t new_block_id, uint32_t prev_block_len);
     esp_err_t (*swap_end)(uint32_t new_block_id, uint32_t prev_block_len);
     bool (*host_data_pending)(void);
 } esp_apptrace_membufs_proto_hw_t;
