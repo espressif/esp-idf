@@ -6,6 +6,28 @@ menu "OpenThread"
         help
             Select this option to enable OpenThread and show the submenu with OpenThread configuration choices.
 
+    menu "Thread Task Parameters"
+        depends on OPENTHREAD_ENABLED
+
+        config OPENTHREAD_TASK_NAME
+            string "OpenThread task name"
+            default "ot_main"
+            help
+                The OpenThread task name.
+
+        config OPENTHREAD_TASK_SIZE
+            int "Size of OpenThread task"
+            default 8192
+            help
+                The size in bytes of OpenThread task.
+
+        config OPENTHREAD_TASK_PRIORITY
+            int "Priority of OpenThread task"
+            default 5
+            help
+                The priority of OpenThread task.
+    endmenu
+
     menu "Thread Version Message"
         depends on OPENTHREAD_ENABLED
 
@@ -23,10 +45,18 @@ menu "OpenThread"
     endmenu
 
     menu "Thread Console"
-        depends on OPENTHREAD_ENABLED
+        config OPENTHREAD_CONSOLE_ENABLE
+            bool "Enable OpenThread console"
+            depends on OPENTHREAD_ENABLED
+            default y
+            help
+                Enable the OpenThread-specific console provided by the SDK. This only controls whether
+                the SDK sets up a dedicated console for OpenThread. Even if disabled, the default
+                ESP-IDF console (if initialized elsewhere) can still be used independently.
 
         choice OPENTHREAD_CONSOLE_TYPE
             prompt "OpenThread console type"
+            depends on OPENTHREAD_CONSOLE_ENABLE
             default OPENTHREAD_CONSOLE_TYPE_UART
             help
                 Select OpenThread console type
