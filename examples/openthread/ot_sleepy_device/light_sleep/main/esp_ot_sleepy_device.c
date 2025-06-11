@@ -25,6 +25,7 @@
 #include "esp_openthread_netif_glue.h"
 #include "esp_ot_sleepy_device_config.h"
 #include "esp_vfs_eventfd.h"
+#include "esp_private/esp_clk.h"
 #include "driver/uart.h"
 #include "nvs_flash.h"
 #include "openthread/logging.h"
@@ -192,7 +193,7 @@ static esp_err_t ot_power_save_init(void)
 
     esp_pm_config_t pm_config = {
         .max_freq_mhz = cur_cpu_freq_mhz,
-        .min_freq_mhz = cur_cpu_freq_mhz,
+        .min_freq_mhz = esp_clk_xtal_freq() / MHZ,
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
         .light_sleep_enable = true
 #endif
