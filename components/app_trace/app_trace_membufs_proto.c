@@ -92,7 +92,7 @@ static esp_err_t esp_apptrace_membufs_swap(esp_apptrace_membufs_proto_data_t *pr
     // switch to new block
     proto->state.in_block++;
 
-    proto->hw->swap(new_block_num);
+    proto->hw->swap(new_block_num, proto->state.markers[prev_block_num]);
 
     // handle data from host
     esp_hostdata_hdr_t *hdr = (esp_hostdata_hdr_t *)proto->blocks[new_block_num].start;
