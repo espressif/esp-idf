@@ -81,51 +81,14 @@ vfs_fat_spiflash_ctx_t* get_vfs_fat_spiflash_ctx(wl_handle_t wlhandle)
 static esp_err_t f_mount_rw(FATFS *fs, const char *drv, const esp_vfs_fat_mount_config_t *mount_config, vfs_fat_x_ctx_flags_t *out_flags)
 {
     FRESULT fresult = f_mount(fs, drv, 1);
-    if (fresult != FR_OK) {
-        ESP_LOGW(TAG, "f_mount failed (%d)", fresult);
-
-        bool need_mount_again = (fresult == FR_NO_FILESYSTEM || fresult == FR_INT_ERR) && mount_config->format_if_mount_failed;
-        if (!need_mount_again) {
-            return ESP_FAIL;
-        }
-
-        const size_t workbuf_size = 4096;
-        void *workbuf = ff_memalloc(workbuf_size);
-        if (workbuf == NULL) {
-            return ESP_ERR_NO_MEM;
-        }
-
-        size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(CONFIG_WL_SECTOR_SIZE, mount_config->allocation_unit_size);
-        ESP_LOGI(TAG, "Formatting FATFS partition, allocation unit size=%d", alloc_unit_size);
-        UINT root_dir_entries = mount_config->rootdir_entries;
-        if (root_dir_entries == 0) {
-            root_dir_entries = CONFIG_WL_SECTOR_SIZE / 32;
-        }
-
-        const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), (mount_config->use_one_fat ? 1 : 2), 0, root_dir_entries, alloc_unit_size};
-        fresult = f_mkfs(drv, &opt, workbuf, workbuf_size);
-        free(workbuf);
-        workbuf = NULL;
-        ESP_RETURN_ON_FALSE(fresult == FR_OK, ESP_FAIL, TAG, "f_mkfs failed (%d)", fresult);
-
-        if (out_flags) {
-            *out_flags |= FORMATTED_DURING_LAST_MOUNT; // set flag
-        }
-
-        ESP_LOGI(TAG, "Mounting again");
-        fresult = f_mount(fs, drv, 1);
-        ESP_RETURN_ON_FALSE(fresult == FR_OK, ESP_FAIL, TAG, "f_mount failed after formatting (%d)", fresult);
-    } else {
-        if (out_flags) {
-            *out_flags  &= ~FORMATTED_DURING_LAST_MOUNT; // reset flag
-        }
-    }
 
     const char *msg = "Unknown";
     const char *note = "";
     bool recoverable = false;
 
     switch (fresult) {
+        case FR_OK:
+            return ESP_OK;
         case FR_NO_FILESYSTEM:
             msg = "No filesystem detected";
             note = "(This may indicate corrupt FS, or attempt to mount read-only fatfsgen image for write)";
