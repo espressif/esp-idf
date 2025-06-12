@@ -44,6 +44,7 @@ typedef struct {
         uint32_t with_dma: 1;     /*!< If set, the driver will allocate an RMT channel with DMA capability */
         uint32_t io_loop_back: 1; /*!< The signal output from the GPIO will be fed to the input path as well */
         uint32_t io_od_mode: 1;   /*!< Configure the GPIO as open-drain mode */
+        uint32_t init_level: 1;    /*!< Set the initial level of the RMT channel signal */
     } flags;                      /*!< TX channel config flags */
 } rmt_tx_channel_config_t;
 
