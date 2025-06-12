@@ -233,18 +233,6 @@ esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks)
     return ESP_OK;
 }
 
-esp_err_t sdmmc_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info)
-{
-    SLOT_CHECK(slot);
-
-    if (dma_mem_info == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    dma_mem_info->extra_heap_caps = MALLOC_CAP_DMA;
-    dma_mem_info->dma_alignment_bytes = 4;
-    return ESP_OK;
-}
-
 bool sdmmc_host_check_buffer_alignment(int slot, const void *buf, size_t size)
 {
     assert(slot == 0 || slot == 1);

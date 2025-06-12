@@ -292,19 +292,6 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase);
 esp_err_t sdmmc_host_set_input_delayline(int slot, sdmmc_delay_line_t delay_line);
 
 /**
- * @brief Get the DMA memory information for the host driver
- *
- * @deprecated This API is deprecated
- *
- * @param[in]  slot slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
- * @param[out] dma_mem_info  DMA memory information structure
- * @return
- *        - ESP_OK:                ON success.
- *        - ESP_ERR_INVALID_ARG:   Invalid argument.
- */
-esp_err_t sdmmc_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info) __attribute__((deprecated("This API is deprecated")));
-
-/**
  * @brief Check if the buffer meets the alignment requirements
  *
  * @param[in]  slot slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)

@@ -20,6 +20,7 @@
 #include "hal/cache_ll.h"
 #include "esp_cache.h"
 #include "esp_compiler.h"
+#include "esp_memory_utils.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/critical_section.h"
 
@@ -147,125 +148,6 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
     return ESP_OK;
 }
 
-//The esp_cache_aligned_malloc function is marked deprecated but also called by other
-//(also deprecated) functions in this file. In order to work around that generating warnings, it's
-//split into a non-deprecated internal function and the stubbed external deprecated function.
-static esp_err_t esp_cache_aligned_malloc_internal(size_t size, uint32_t heap_caps, void **out_ptr, size_t *actual_size)
-{
-    ESP_RETURN_ON_FALSE_ISR(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
-    uint32_t valid_caps = MALLOC_CAP_SPIRAM | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
-    ESP_RETURN_ON_FALSE_ISR((heap_caps & valid_caps) > 0, ESP_ERR_INVALID_ARG, TAG, "not supported cap matches");
-
-    uint32_t cache_level = CACHE_LL_LEVEL_INT_MEM;
-    uint32_t data_cache_line_size = 0;
-    void *ptr = NULL;
-
-    if (heap_caps & MALLOC_CAP_SPIRAM) {
-        cache_level = CACHE_LL_LEVEL_EXT_MEM;
-    }
-
-    data_cache_line_size = cache_hal_get_cache_line_size(cache_level, CACHE_TYPE_DATA);
-    if (data_cache_line_size == 0) {
-        //default alignment
-        data_cache_line_size = 4;
-    }
-
-    size = ALIGN_UP_BY(size, data_cache_line_size);
-    ptr = heap_caps_aligned_alloc(data_cache_line_size, size, (uint32_t)heap_caps);
-    if (!ptr) {
-        return ESP_ERR_NO_MEM;
-    }
-
-    *out_ptr = ptr;
-    if (actual_size) {
-        *actual_size = size;
-    }
-
-    return ESP_OK;
-}
-
-//this is the deprecated stub for the above function
-esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t heap_caps, void **out_ptr, size_t *actual_size)
-{
-    return esp_cache_aligned_malloc_internal(size, heap_caps, out_ptr, actual_size);
-}
-
-esp_err_t esp_cache_aligned_malloc_prefer(size_t size, void **out_ptr, size_t *actual_size, size_t flag_nums, ...)
-{
-    ESP_RETURN_ON_FALSE_ISR(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
-
-    esp_err_t ret = ESP_FAIL;
-    va_list argp;
-    uint32_t flags = 0;
-    va_start(argp, flag_nums);
-    *out_ptr = NULL;
-
-    while (flag_nums--) {
-        flags = va_arg(argp, int);
-        ret = esp_cache_aligned_malloc_internal(size, flags, out_ptr, actual_size);
-        if (ret == ESP_OK) {
-            break;
-        }
-    }
-
-    va_end(argp);
-    return ret;
-}
-
-esp_err_t esp_cache_aligned_calloc(size_t n, size_t size, uint32_t heap_caps, void **out_ptr, size_t *actual_size)
-{
-    ESP_RETURN_ON_FALSE_ISR(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
-
-    esp_err_t ret = ESP_FAIL;
-    size_t size_bytes = 0;
-    bool ovf = false;
-
-    ovf = __builtin_mul_overflow(n, size, &size_bytes);
-    ESP_RETURN_ON_FALSE_ISR(!ovf, ESP_ERR_INVALID_ARG, TAG, "wrong size, total size overflow");
-
-    void *ptr = NULL;
-    ret = esp_cache_aligned_malloc_internal(size_bytes, heap_caps, &ptr, actual_size);
-    if (ret == ESP_OK) {
-        memset(ptr, 0, size_bytes);
-        *out_ptr = ptr;
-    }
-
-    return ret;
-}
-
-esp_err_t esp_cache_aligned_calloc_prefer(size_t n, size_t size, void **out_ptr, size_t *actual_size, size_t flag_nums, ...)
-{
-    ESP_RETURN_ON_FALSE_ISR(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
-
-    esp_err_t ret = ESP_FAIL;
-    size_t size_bytes = 0;
-    bool ovf = false;
-
-    *out_ptr = NULL;
-    ovf = __builtin_mul_overflow(n, size, &size_bytes);
-    ESP_RETURN_ON_FALSE_ISR(!ovf, ESP_ERR_INVALID_ARG, TAG, "wrong size, total size overflow");
-
-    void *ptr = NULL;
-    va_list argp;
-    va_start(argp, flag_nums);
-    int arg;
-    for (int i = 0; i < flag_nums; i++) {
-        arg = va_arg(argp, int);
-        ret = esp_cache_aligned_malloc_internal(size_bytes, arg, &ptr, actual_size);
-        if (ret == ESP_OK) {
-            ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-null-argument")
-            memset(ptr, 0, size_bytes);
-            *out_ptr = ptr;
-            ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-null-argument")
-            break;
-        }
-
-    }
-    va_end(argp);
-
-    return ret;
-}
-
 esp_err_t esp_cache_get_alignment(uint32_t heap_caps, size_t *out_alignment)
 {
     ESP_RETURN_ON_FALSE(out_alignment, ESP_ERR_INVALID_ARG, TAG, "null pointer");
@@ -282,4 +164,20 @@ esp_err_t esp_cache_get_alignment(uint32_t heap_caps, size_t *out_alignment)
     *out_alignment = data_cache_line_size;
 
     return ESP_OK;
+}
+
+size_t esp_cache_get_line_size_by_addr(const void *addr)
+{
+    if (!addr) {
+        return 0;
+    }
+
+    size_t data_cache_line_size = 0;
+    if (esp_ptr_external_ram(addr)) {
+        data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
+    } else if (esp_ptr_internal(addr)) {
+        data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    }
+
+    return data_cache_line_size;
 }

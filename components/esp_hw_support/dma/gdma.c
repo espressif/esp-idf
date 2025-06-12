@@ -148,12 +148,7 @@ search_done:
         alloc_tx_channel->base.pair = pair;
         alloc_tx_channel->base.direction = GDMA_CHANNEL_DIRECTION_TX;
         alloc_tx_channel->base.periph_id = GDMA_INVALID_PERIPH_TRIG;
-        // for backward compatibility, `CONFIG_GDMA_ISR_IRAM_SAFE` can still force ALL GDMA ISRs to be cache safe
-#if CONFIG_GDMA_ISR_IRAM_SAFE
-        alloc_tx_channel->base.flags.isr_cache_safe = true;
-#else
         alloc_tx_channel->base.flags.isr_cache_safe = config->flags.isr_cache_safe;
-#endif
         alloc_tx_channel->base.del = gdma_del_tx_channel; // set channel deletion function
         *ret_chan = &alloc_tx_channel->base; // return the installed channel
     }
@@ -164,12 +159,7 @@ search_done:
         alloc_rx_channel->base.pair = pair;
         alloc_rx_channel->base.direction = GDMA_CHANNEL_DIRECTION_RX;
         alloc_rx_channel->base.periph_id = GDMA_INVALID_PERIPH_TRIG;
-        // for backward compatibility, `CONFIG_GDMA_ISR_IRAM_SAFE` can still force ALL GDMA ISRs to be cache safe
-#if CONFIG_GDMA_ISR_IRAM_SAFE
-        alloc_rx_channel->base.flags.isr_cache_safe = true;
-#else
         alloc_rx_channel->base.flags.isr_cache_safe = config->flags.isr_cache_safe;
-#endif
         alloc_rx_channel->base.del = gdma_del_rx_channel; // set channel deletion function
         *ret_chan = &alloc_rx_channel->base; // return the installed channel
     }

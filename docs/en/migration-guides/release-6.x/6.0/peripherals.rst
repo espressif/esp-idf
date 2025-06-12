@@ -68,3 +68,16 @@ The legacy timer group driver ``driver/timer.h`` is deprecated since version 5.0
     ------------------------------------
 
     The legacy PCNT driver ``driver/pcnt.h`` is deprecated since version 5.0 (see :ref:`deprecate_pcnt_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_pcnt`, and the header file path is ``driver/pulse_cnt.h``.
+
+GDMA
+----
+
+- The ``GDMA_ISR_IRAM_SAFE`` Kconfig option has been removed due to potential risks. Now, the interrupt behavior of different DMA channels during Cache disabled periods are independent of each other.
+- ``gdma_new_channel`` is removed. When requesting a GDMA channel, use either ``gdma_new_ahb_channel`` or ``gdma_new_axi_channel`` according to the bus type.
+- The ``sram_trans_align`` and ``psram_trans_align`` members have been removed from :cpp:type:`async_memcpy_config_t`. Use :cpp:member:`async_memcpy_config_t::dma_burst_size` to set the DMA burst transfer size.
+- The ``esp_dma_capable_malloc`` and ``esp_dma_capable_calloc`` functions have been removed. Use :cpp:func:`heap_caps_malloc` and :cpp:func:`heap_caps_calloc` from :component_file:`heap/include/esp_heap_caps.h` with ``MALLOC_CAP_DMA|MALLOC_CAP_CACHE_ALIGNED`` to allocate memory suitable for DMA and cache alignment.
+
+SDMMC
+-----
+
+- The ``get_dma_info`` member in the :cpp:type:`sdmmc_host_t` structure, as well as the ``sdspi_host_get_dma_info`` and ``sdmmc_host_get_dma_info`` functions, have been removed. DMA configuration is now handled internally by the driver.

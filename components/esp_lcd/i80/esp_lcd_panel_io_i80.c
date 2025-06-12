@@ -527,19 +527,16 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_i80_bus_t *bus = i80_device->bus;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
     assert(color_size <= bus->max_transfer_bytes && "color bytes too long, enlarge max_transfer_bytes");
-    uint32_t cache_line_size = 0;
     if (esp_ptr_external_ram(color)) {
         // check alignment
         ESP_RETURN_ON_FALSE(((uint32_t)color & (bus->ext_mem_align - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "color address not aligned");
         ESP_RETURN_ON_FALSE((color_size & (bus->ext_mem_align - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "color size not aligned");
-        cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
     } else {
         // check alignment
         ESP_RETURN_ON_FALSE(((uint32_t)color & (bus->int_mem_align - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "color address not aligned");
         ESP_RETURN_ON_FALSE((color_size & (bus->int_mem_align - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "color size not aligned");
-        cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     }
-    if (cache_line_size > 0) {
+    if (esp_cache_get_line_size_by_addr(color) > 0) {
         // flush data from cache to the physical memory
         esp_cache_msync((void *)color, color_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     }

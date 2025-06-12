@@ -68,3 +68,16 @@ I2C 从机在 v5.4 上已经被重新设计。在当前版本上，老的 I2C �
     ----------------------
 
     旧版的 PCNT 驱动 ``driver/pcnt.h`` 在 5.0 的版本中就已经被弃用 （参考 :ref:`deprecate_pcnt_legacy_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_driver_pcnt` 组件中，头文件引用路径为 ``driver/pulse_cnt.h``。
+
+GDMA
+----
+
+- ``GDMA_ISR_IRAM_SAFE`` Kconfig 选项会带来不必要的风险，因此被移除。现在，不同的 GDMA 通道它们的中断在 Cache 关闭期间的行为可以互不影响。
+- ``gdma_new_channel`` 已经被移除。现在当申请一个 GDMA 通道时，必须要根据实际使用的总线调用 ``gdma_new_ahb_channel`` 或 ``gdma_new_axi_channel`` 函数。
+- :cpp:type:`async_memcpy_config_t` 中的 ``sram_trans_align`` 和 ``psram_trans_align`` 成员均已经被移除。请使用 :cpp:member:`async_memcpy_config_t::dma_burst_size` 来设置 DMA 的突发传输大小。
+- ``esp_dma_capable_malloc`` 和 ``esp_dma_capable_calloc`` 函数已经被移除。请使用 :component_file:`heap/include/esp_heap_caps.h` 中的 :cpp:func:`heap_caps_malloc` 和 :cpp:func:`heap_caps_calloc` 函数搭配 ``MALLOC_CAP_DMA|MALLOC_CAP_CACHE_ALIGNED`` 分配满足 DMA 和 Cache 对齐要求的内存。
+
+SDMMC
+-----
+
+- :cpp:type:`sdmmc_host_t` 结构体中的 ``get_dma_info`` 成员接口已经被移除。对应的 ``sdspi_host_get_dma_info`` 和 ``sdmmc_host_get_dma_info`` 函数也已经被移除。DMA 相关的设置会由驱动内部处理好。
