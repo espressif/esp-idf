@@ -751,9 +751,11 @@ config BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
         Enable this option to include *included services* (e.g., services referenced by other services)
         in the GATT database cache. Disabling this will skip caching of included service entries.
 config BT_NIMBLE_INCL_SVC_DISCOVERY
-    bool "Enable Included service discovery"
-    default y if BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
-    default n
+    bool
+    default y if BT_NIMBLE_GATT_CACHING && BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
+    default n if BT_NIMBLE_GATT_CACHING && !BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
+    default n if !BT_NIMBLE_GATT_CACHING
+    prompt "Enable Included service discovery" if !BT_NIMBLE_GATT_CACHING
     help
         Enable this option to start discovery for included service.
 config BT_NIMBLE_GATT_CACHING_MAX_CONNS
