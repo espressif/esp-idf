@@ -115,6 +115,7 @@ esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t unit);
  */
 typedef struct {
     parlio_tx_done_callback_t on_trans_done; /*!< Event callback, invoked when one transmission is finished */
+    parlio_tx_buffer_switched_callback_t on_buffer_switched; /*!< Event callback, invoked when the buffer is switched in loop transmission */
 } parlio_tx_event_callbacks_t;
 
 /**

@@ -187,7 +187,9 @@ typedef struct parlio_tx_unit_t {
     parlio_tx_trans_desc_t *cur_trans; // points to current transaction
     uint32_t idle_value_mask;          // mask of idle value
     _Atomic parlio_tx_fsm_t fsm;       // Driver FSM state
+    _Atomic bool buffer_need_switch;   // whether the buffer need to be switched
     parlio_tx_done_callback_t on_trans_done; // callback function when the transmission is done
+    parlio_tx_buffer_switched_callback_t on_buffer_switched; // callback function when the buffer is switched in loop transmission
     void *user_data;                   // user data passed to the callback function
     bitscrambler_handle_t bs_handle;   // bitscrambler handle
     parlio_tx_bs_enable_fn_t bs_enable_fn;   // bitscrambler enable function

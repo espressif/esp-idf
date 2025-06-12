@@ -174,6 +174,7 @@ TX 单元以比特为单位进行传输，且传输的比特长度必须配置�
 有关 TX 单元支持的事件回调，请参阅 :cpp:type:`parlio_tx_event_callbacks_t`：
 
 - :cpp:member:`parlio_tx_event_callbacks_t::on_trans_done` 为“发送完成”的事件设置回调函数，函数原型声明为 :cpp:type:`parlio_tx_done_callback_t`。
+- :cpp:member:`parlio_tx_event_callbacks_t::on_buffer_switched` 为“缓冲区切换”的事件设置回调函数，函数原型声明为 :cpp:type:`parlio_tx_buffer_switched_callback_t`。
 
 资源回收
 ^^^^^^^^
@@ -307,7 +308,7 @@ TX 单元可以选择各种不同的时钟源，其中外部时钟源较为特�
 
     .. note::
 
-        如果启用无限循环发送后需要修改发送内容，可以配置 :cpp:member:`parlio_transmit_config_t::flags::loop_transmission` 并再次调用 :cpp:func:`parlio_tx_unit_transmit` 传入新的 payload buffer，驱动会在旧 buffer 完整发送后，切换到新传入的 buffer。因此需要用户自行维护好两块buffer，避免旧 buffer 被提早修改或者回收导致产生数据不连贯的现象。
+        如果启用无限循环发送后需要修改发送内容，可以配置 :cpp:member:`parlio_transmit_config_t::flags::loop_transmission` 并再次调用 :cpp:func:`parlio_tx_unit_transmit` 传入新的 payload buffer，驱动会在旧 buffer 完整发送后，切换到新传入的 buffer。可以通过注册 :cpp:member:`parlio_tx_event_callbacks_t::on_buffer_switched` 为“缓冲区切换”的事件设置回调函数，用户需要自行维护好两块buffer，避免旧 buffer 被提早修改或者回收导致产生数据不连贯的现象。
 
 .. only:: SOC_BITSCRAMBLER_SUPPORTED
 

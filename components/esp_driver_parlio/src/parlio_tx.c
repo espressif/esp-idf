@@ -10,6 +10,9 @@
 #include "driver/parlio_tx.h"
 #include "parlio_priv.h"
 
+#if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
+static bool parlio_tx_gdma_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
+#endif
 static void parlio_tx_default_isr(void *args);
 
 static esp_err_t parlio_tx_create_trans_queue(parlio_tx_unit_t *tx_unit, const parlio_tx_unit_config_t *config)
@@ -342,14 +345,6 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     // set sample clock edge
     parlio_ll_tx_set_sample_clock_edge(hal->regs, config->sample_edge);
 
-#if SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
-    // always use DMA EOF as the Parlio TX EOF if supported
-    parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DMA_EOF);
-#else
-    // In default, use DATA LEN EOF as the Parlio TX EOF
-    parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DATA_LEN);
-#endif // SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
-
     // clear any pending interrupt
     parlio_ll_clear_interrupt_status(hal->regs, PARLIO_LL_EVENT_TX_MASK);
 
@@ -364,6 +359,7 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
 
     portMUX_INITIALIZE(&unit->spinlock);
     atomic_init(&unit->fsm, PARLIO_TX_FSM_INIT);
+    atomic_init(&unit->buffer_need_switch, false);
     // return TX unit handle
     *ret_unit = unit;
     ESP_LOGD(TAG, "new tx unit(%d,%d) at %p, out clk=%"PRIu32"Hz, queue_depth=%zu, idle_mask=%"PRIx32,
@@ -426,12 +422,30 @@ esp_err_t parlio_tx_unit_register_event_callbacks(parlio_tx_unit_handle_t tx_uni
     if (cbs->on_trans_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_trans_done), ESP_ERR_INVALID_ARG, TAG, "on_trans_done callback not in IRAM");
     }
+    if (cbs->on_buffer_switched) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_buffer_switched), ESP_ERR_INVALID_ARG, TAG, "on_buffer_switched callback not in IRAM");
+    }
     if (user_data) {
         ESP_RETURN_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
     }
 #endif
 
+    if (cbs->on_buffer_switched) {
+#if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
+        // workaround for DIG-559
+        ESP_RETURN_ON_FALSE(tx_unit->data_width > 1, ESP_ERR_NOT_SUPPORTED, TAG, "on_buffer_switched callback is not supported for 1-bit data width");
+
+        gdma_tx_event_callbacks_t gdma_cbs = {
+            .on_trans_eof = parlio_tx_gdma_eof_callback,
+        };
+        ESP_RETURN_ON_ERROR(gdma_register_tx_event_callbacks(tx_unit->dma_chan, &gdma_cbs, tx_unit), TAG, "install DMA callback failed");
+#else
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "on_buffer_switched callback is not supported");
+#endif
+    }
+
     tx_unit->on_trans_done = cbs->on_trans_done;
+    tx_unit->on_buffer_switched = cbs->on_buffer_switched;
     tx_unit->user_data = user_data;
     return ESP_OK;
 }
@@ -443,8 +457,8 @@ static void parlio_mount_buffer(parlio_tx_unit_t *tx_unit, parlio_tx_trans_desc_
         .buffer = (void *)t->payload,
         .length = (t->payload_bits + 7) / 8,
         .flags = {
-            // if transmission is loop, we don't need to generate the EOF, as well as the final mark
-            .mark_eof = !t->flags.loop_transmission,
+            // if transmission is loop, we don't need to generate the EOF for 1-bit data width, DIG-559
+            .mark_eof = tx_unit->data_width == 1 ? !t->flags.loop_transmission : true,
             .mark_final = !t->flags.loop_transmission,
         }
     };
@@ -462,13 +476,6 @@ static void parlio_mount_buffer(parlio_tx_unit_t *tx_unit, parlio_tx_trans_desc_
 static void parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_desc_t *t)
 {
     parlio_hal_context_t *hal = &tx_unit->base.group->hal;
-
-    if (t->flags.loop_transmission) {
-        // Once a loop transmission is started, it cannot be stopped until it is disabled
-        // If SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA is supported, setting the eof condition to PARLIO_LL_TX_EOF_COND_DMA_EOF again is harmless
-        parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DMA_EOF);
-    }
-
     tx_unit->cur_trans = t;
 
     // If the external clock is a non-free-running clock, it needs to be switched to the internal free-running clock first.
@@ -497,7 +504,30 @@ static void parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_
     // reset tx fifo after disabling tx core clk to avoid unexpected rempty interrupt
     parlio_ll_tx_reset_fifo(hal->regs);
     parlio_ll_tx_set_idle_data_value(hal->regs, t->idle_value);
-    parlio_ll_tx_set_trans_bit_len(hal->regs, t->payload_bits);
+
+    // set EOF condition
+    if (t->flags.loop_transmission) {
+        if (tx_unit->data_width == 1) {
+            // for 1-bit data width, we need to set the EOF condition to DMA EOF
+            parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DMA_EOF);
+        } else {
+            // for other data widths, we still use the data length EOF condition,
+            // but let the `bit counter` + `data width` for each cycle is never equal to the configured bit lens.
+            // Thus, we can skip the exact match, prevents EOF
+            parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DATA_LEN);
+            parlio_ll_tx_set_trans_bit_len(hal->regs, 0x01);
+        }
+    } else {
+        // non-loop transmission
+#if SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+        // for DMA EOF supported target, we need to set the EOF condition to DMA EOF
+        parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DMA_EOF);
+#else
+        // for DMA EOF not supported target, we need to set the bit length to the configured bit lens
+        parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DATA_LEN);
+        parlio_ll_tx_set_trans_bit_len(hal->regs, t->payload_bits);
+#endif // SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+    }
 
     if (tx_unit->bs_handle) {
         // load the bitscrambler program and start it
@@ -592,12 +622,6 @@ esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t tx_unit)
     parlio_ll_tx_start(hal->regs, false);
     parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_MASK, false);
 
-#if !SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
-    // Once a loop teansmission transaction is started, it can only be stopped in disable function
-    // change the EOF condition to be the data length, so the EOF will be triggered normally in the following transaction
-    parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DATA_LEN);
-#endif // !SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
-
 #if CONFIG_PM_ENABLE
     // release power management lock
     if (tx_unit->pm_lock) {
@@ -622,7 +646,8 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
 
 #if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
     if (config->flags.loop_transmission) {
-        ESP_RETURN_ON_FALSE(parlio_ll_tx_support_dma_eof(NULL), ESP_ERR_NOT_SUPPORTED, TAG, "loop transmission is not supported by this chip revision");
+        ESP_RETURN_ON_FALSE(parlio_ll_tx_support_dma_eof(NULL) || tx_unit->data_width > 1, ESP_ERR_NOT_SUPPORTED, TAG,
+                            "1-bit data width loop transmission is not supported by this chip revision");
     }
 #else
     ESP_RETURN_ON_FALSE(config->flags.loop_transmission == false, ESP_ERR_NOT_SUPPORTED, TAG, "loop transmission is not supported on this chip");
@@ -653,6 +678,7 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
         tx_unit->cur_trans->payload = payload;
         tx_unit->cur_trans->payload_bits = payload_bits;
         parlio_mount_buffer(tx_unit, tx_unit->cur_trans);
+        atomic_store(&tx_unit->buffer_need_switch, true);
     } else {
         TickType_t queue_wait_ticks = portMAX_DELAY;
         if (config->flags.queue_nonblocking) {
@@ -700,6 +726,31 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
 
     return ESP_OK;
 }
+
+#if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
+static bool parlio_tx_gdma_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+{
+    parlio_tx_unit_t *tx_unit = (parlio_tx_unit_t *) user_data;
+    bool need_yield = false;
+    bool expected_state = true;
+    // invoke callback to notify the application
+    parlio_tx_buffer_switched_callback_t on_buffer_switched = tx_unit->on_buffer_switched;
+    if (on_buffer_switched) {
+        if (atomic_compare_exchange_strong(&tx_unit->buffer_need_switch, &expected_state, false)) {
+            parlio_tx_buffer_switched_event_data_t edata = {
+                // we use 2 dma links to do the buffer switch in loop transmission
+                .old_buffer_addr = gdma_link_get_buffer(tx_unit->dma_link[1 - tx_unit->cur_trans->dma_link_idx], 0),
+                .new_buffer_addr = gdma_link_get_buffer(tx_unit->dma_link[tx_unit->cur_trans->dma_link_idx], 0),
+            };
+            if (on_buffer_switched(tx_unit, &edata, tx_unit->user_data)) {
+                need_yield = true;
+            }
+        }
+    }
+
+    return need_yield;
+}
+#endif // SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
 
 static void parlio_tx_default_isr(void *args)
 {
