@@ -79,7 +79,7 @@ esp_err_t esp_transport_ws_set_subprotocol(esp_transport_handle_t t, const char 
  * @brief               Set websocket user-agent header
  *
  * @param t             websocket transport handle
- * @param sub_protocol  user-agent string
+ * @param user_agent    user-agent string
  *
  * @return
  *      - ESP_OK on success
@@ -91,7 +91,7 @@ esp_err_t esp_transport_ws_set_user_agent(esp_transport_handle_t t, const char *
  * @brief               Set websocket additional headers
  *
  * @param t             websocket transport handle
- * @param sub_protocol  additional header strings each terminated with \r\n
+ * @param headers       additional header strings each terminated with \r\n
  *
  * @return
  *      - ESP_OK on success
@@ -103,7 +103,7 @@ esp_err_t esp_transport_ws_set_headers(esp_transport_handle_t t, const char *hea
  * @brief               Set websocket authorization headers
  *
  * @param t             websocket transport handle
- * @param sub_protocol  The HTTP authorization header string, set NULL to clear the old value
+ * @param auth          The HTTP authorization header string, set NULL to clear the old value
  *
  * @return
  *      - ESP_OK on success
