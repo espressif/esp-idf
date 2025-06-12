@@ -15,7 +15,6 @@ size_t mpi_hal_calc_hardware_words(size_t words)
 
 void mpi_hal_enable_hardware_hw_op(void)
 {
-    mpi_ll_power_up();
     while (mpi_ll_check_memory_init_complete()) {
     }
     // Note: from enabling RSA clock to here takes about 1.3us
@@ -27,7 +26,7 @@ void mpi_hal_enable_hardware_hw_op(void)
 
 void mpi_hal_disable_hardware_hw_op(void)
 {
-    mpi_ll_power_down();
+
 }
 
 void mpi_hal_interrupt_enable(bool enable)

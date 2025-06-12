@@ -253,12 +253,14 @@ static void ds_acquire_enable(void)
     // We also enable SHA and HMAC here. SHA is used by HMAC, HMAC is used by DS.
     esp_crypto_hmac_enable_periph_clk(true);
     esp_crypto_sha_enable_periph_clk(true);
+    esp_crypto_mpi_enable_periph_clk(true);
     esp_crypto_ds_enable_periph_clk(true);
 }
 
 static void ds_disable_release(void)
 {
     esp_crypto_ds_enable_periph_clk(false);
+    esp_crypto_mpi_enable_periph_clk(false);
     esp_crypto_sha_enable_periph_clk(false);
     esp_crypto_hmac_enable_periph_clk(false);
 

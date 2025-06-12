@@ -80,7 +80,10 @@ void esp_crypto_mpi_enable_periph_clk(bool enable)
     MPI_RCC_ATOMIC() {
         mpi_ll_enable_bus_clock(enable);
         if (enable) {
+            mpi_ll_power_up();
             mpi_ll_reset_register();
+        } else {
+            mpi_ll_power_down();
         }
     }
 }

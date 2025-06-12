@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -19,17 +19,13 @@
 #include "hal/mpi_hal.h"
 #include "hal/mpi_ll.h"
 #include "mpi_params.h"
+#include "esp_crypto_periph_clk.h"
 
 #define _DEBUG_ 0
 
 static void esp_mpi_enable_hardware_hw_op( void )
 {
-    /* Enable RSA hardware */
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(true);
-        mpi_ll_reset_register();
-    }
-
+    esp_crypto_mpi_enable_periph_clk(true);
     mpi_hal_enable_hardware_hw_op();
 }
 
@@ -37,11 +33,7 @@ static void esp_mpi_enable_hardware_hw_op( void )
 static void esp_mpi_disable_hardware_hw_op( void )
 {
     mpi_hal_disable_hardware_hw_op();
-
-    /* Disable RSA hardware */
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(false);
-    }
+    esp_crypto_mpi_enable_periph_clk(false);
 }
 
 
