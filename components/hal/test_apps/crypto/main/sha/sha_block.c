@@ -12,7 +12,7 @@
 
 #include "soc/periph_defs.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/esp_crypto_lock_internal.h"
+#include "esp_crypto_periph_clk.h"
 #include "hal/sha_hal.h"
 #include "hal/sha_ll.h"
 #include "sha_block.h"
@@ -68,10 +68,7 @@ static void sha1_update_block(sha1_ctx* ctx, esp_sha_type sha_type, const unsign
 
     if ( (ilen >= 64) || local_len) {
         /* Enable peripheral module */
-        SHA_RCC_ATOMIC() {
-            sha_ll_enable_bus_clock(true);
-            sha_ll_reset_register();
-        }
+        esp_crypto_sha_enable_periph_clk(true);
 
         sha_hal_wait_idle();
         sha_hal_set_mode(sha_type);
@@ -103,9 +100,7 @@ static void sha1_update_block(sha1_ctx* ctx, esp_sha_type sha_type, const unsign
         sha_hal_read_digest(sha_type, ctx->state);
 
         /* Disable peripheral module */
-        SHA_RCC_ATOMIC() {
-            sha_ll_enable_bus_clock(false);
-        }
+        esp_crypto_sha_enable_periph_clk(false);
     }
 
     if ( ilen > 0 ) {
@@ -172,10 +167,7 @@ static void sha256_update_block(sha256_ctx* ctx, esp_sha_type sha_type, const un
 
     if ( (ilen >= 64) || local_len) {
         /* Enable peripheral module */
-        SHA_RCC_ATOMIC() {
-            sha_ll_enable_bus_clock(true);
-            sha_ll_reset_register();
-        }
+        esp_crypto_sha_enable_periph_clk(true);
 
         sha_hal_wait_idle();
         sha_hal_set_mode(sha_type);
@@ -207,9 +199,7 @@ static void sha256_update_block(sha256_ctx* ctx, esp_sha_type sha_type, const un
         sha_hal_read_digest(sha_type, ctx->state);
 
         /* Disable peripheral module */
-        SHA_RCC_ATOMIC() {
-            sha_ll_enable_bus_clock(false);
-        }
+        esp_crypto_sha_enable_periph_clk(false);
     }
 
     if ( ilen > 0 ) {
@@ -321,10 +311,7 @@ static void sha512_update_block(sha512_ctx* ctx, esp_sha_type sha_type, const un
     if ( (ilen >= 128) || local_len) {
 
         /* Enable peripheral module */
-        SHA_RCC_ATOMIC() {
-            sha_ll_enable_bus_clock(true);
-            sha_ll_reset_register();
-        }
+        esp_crypto_sha_enable_periph_clk(true);
 
         sha_hal_wait_idle();
         sha_hal_set_mode(sha_type);
@@ -360,9 +347,7 @@ static void sha512_update_block(sha512_ctx* ctx, esp_sha_type sha_type, const un
         sha_hal_read_digest(sha_type, ctx->state);
 
         /* Disable peripheral module */
-        SHA_RCC_ATOMIC() {
-            sha_ll_enable_bus_clock(false);
-        }
+        esp_crypto_sha_enable_periph_clk(false);
     }
 
     if ( ilen > 0 ) {

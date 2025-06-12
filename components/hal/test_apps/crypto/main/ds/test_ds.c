@@ -13,84 +13,23 @@
 
 #include "soc/soc_caps.h"
 #include "esp_log.h"
+#include "ds_types.h"
 
 const static char *TAG = "test_ds";
 
 #include "rom/efuse.h"
-#if CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/digital_signature.h"
-#include "esp32s2/rom/aes.h"
-#include "esp32s2/rom/sha.h"
-#include "esp32s2/rom/hmac.h"
-#include "soc/soc_memory_layout.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/digital_signature.h"
-#include "esp32c3/rom/hmac.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/digital_signature.h"
-#include "esp32s3/rom/aes.h"
-#include "esp32s3/rom/sha.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/digital_signature.h"
-#include "esp32c6/rom/aes.h"
-#include "esp32c6/rom/sha.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/digital_signature.h"
-#include "esp32h2/rom/aes.h"
-#include "esp32h2/rom/sha.h"
-#elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/digital_signature.h"
-#include "esp32p4/rom/aes.h"
-#include "esp32p4/rom/sha.h"
-#elif CONFIG_IDF_TARGET_ESP32C5
-#include "esp32c5/rom/digital_signature.h"
-#include "esp32c5/rom/aes.h"
-#include "esp32c5/rom/sha.h"
-#elif CONFIG_IDF_TARGET_ESP32H21
-#include "esp32h21/rom/digital_signature.h"
-#include "esp32h21/rom/aes.h"
-#include "esp32h21/rom/sha.h"
+#include "rom/sha.h"
+#include "rom/digital_signature.h"
+#include "rom/aes.h"
+#include "rom/hmac.h"
+
+#if SOC_KEY_MANAGER_DS_KEY_DEPLOY
+#include "hal/key_mgr_ll.h"
 #endif
 
-#define ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL           (0x1) /*!< HMAC peripheral problem */
-#define ESP_ERR_HW_CRYPTO_DS_INVALID_KEY         (0x2) /*!< given HMAC key isn't correct, HMAC peripheral problem */
-#define ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST      (0x4) /*!< message digest check failed, result is invalid */
-#define ESP_ERR_HW_CRYPTO_DS_INVALID_PADDING     (0x5) /*!< padding check failed, but result is produced anyway and can be read*/
-
-#define ESP_DS_IV_BIT_LEN 128
-#define ESP_DS_IV_LEN (ESP_DS_IV_BIT_LEN / 8)
-#define ESP_DS_SIGNATURE_MAX_BIT_LEN SOC_RSA_MAX_BIT_LEN
-#define ESP_DS_SIGNATURE_MD_BIT_LEN 256
-#define ESP_DS_SIGNATURE_M_PRIME_BIT_LEN 32
-#define ESP_DS_SIGNATURE_L_BIT_LEN 32
-#define ESP_DS_SIGNATURE_PADDING_BIT_LEN 64
-
-#define ESP_DS_C_LEN (((ESP_DS_SIGNATURE_MAX_BIT_LEN * 3 \
-        + ESP_DS_SIGNATURE_MD_BIT_LEN   \
-        + ESP_DS_SIGNATURE_M_PRIME_BIT_LEN   \
-        + ESP_DS_SIGNATURE_L_BIT_LEN   \
-        + ESP_DS_SIGNATURE_PADDING_BIT_LEN) / 8))
-
-typedef enum {
-    ESP_DS_RSA_1024 = (1024 / 32) - 1,
-    ESP_DS_RSA_2048 = (2048 / 32) - 1,
-    ESP_DS_RSA_3072 = (3072 / 32) - 1,
-    ESP_DS_RSA_4096 = (4096 / 32) - 1
-} esp_digital_signature_length_t;
-
-typedef struct esp_digital_signature_data {
-    esp_digital_signature_length_t rsa_length;
-    uint32_t iv[ESP_DS_IV_BIT_LEN / 32];
-    uint8_t c[ESP_DS_C_LEN];
-} esp_ds_data_t;
-
-typedef struct {
-    uint32_t  Y[ESP_DS_SIGNATURE_MAX_BIT_LEN / 32];
-    uint32_t  M[ESP_DS_SIGNATURE_MAX_BIT_LEN / 32];
-    uint32_t Rb[ESP_DS_SIGNATURE_MAX_BIT_LEN / 32];
-    uint32_t M_prime;
-    uint32_t length;
-} esp_ds_p_data_t;
+#if CONFIG_IDF_TARGET_ESP32S2
+#include "soc/soc_memory_layout.h"
+#endif
 
 #define NUM_RESULTS 10
 
@@ -128,43 +67,23 @@ _Static_assert(NUM_RESULTS == NUM_MESSAGES, "expected_results size should be the
 #include "hal/hmac_hal.h"
 #include "hal/hmac_ll.h"
 #include "hal/sha_ll.h"
-
+#include "esp_crypto_periph_clk.h"
 
 static void ds_acquire_enable(void)
 {
-    HMAC_RCC_ATOMIC() {
-        hmac_ll_enable_bus_clock(true);
-        hmac_ll_reset_register();
-    }
-
-    SHA_RCC_ATOMIC() {
-        sha_ll_enable_bus_clock(true);
-        sha_ll_reset_register();
-    }
-
-    DS_RCC_ATOMIC() {
-        ds_ll_enable_bus_clock(true);
-        ds_ll_reset_register();
-    }
-
-    hmac_hal_start();
+    // We also enable SHA and HMAC here. SHA is used by HMAC, HMAC is used by DS.
+    esp_crypto_hmac_enable_periph_clk(true);
+    esp_crypto_sha_enable_periph_clk(true);
+    esp_crypto_mpi_enable_periph_clk(true);
+    esp_crypto_ds_enable_periph_clk(true);
 }
 
 static void ds_disable_release(void)
 {
-    ds_hal_finish();
-
-    DS_RCC_ATOMIC() {
-        ds_ll_enable_bus_clock(false);
-    }
-
-    SHA_RCC_ATOMIC() {
-        sha_ll_enable_bus_clock(false);
-    }
-
-    HMAC_RCC_ATOMIC() {
-        hmac_ll_enable_bus_clock(false);
-    }
+    esp_crypto_mpi_enable_periph_clk(false);
+    esp_crypto_sha_enable_periph_clk(false);
+    esp_crypto_hmac_enable_periph_clk(false);
+    esp_crypto_ds_enable_periph_clk(false);
 }
 
 
@@ -172,11 +91,22 @@ static esp_err_t esp_ds_start_sign(const void *message, const esp_ds_data_t *dat
 {
     ds_acquire_enable();
 
-    uint32_t conf_error = hmac_hal_configure(HMAC_OUTPUT_DS, key_id);
-    if (conf_error) {
-        ds_disable_release();
-        return ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL;
+#if SOC_KEY_MANAGER_DS_KEY_DEPLOY
+    if (key_id == HMAC_KEY_KM) {
+        ds_hal_set_key_source(DS_KEY_SOURCE_KEY_MGR);
+    } else {
+        ds_hal_set_key_source(DS_KEY_SOURCE_EFUSE);
+#endif
+        hmac_hal_start();
+        uint32_t conf_error = hmac_hal_configure(HMAC_OUTPUT_DS, key_id);
+        if (conf_error) {
+            ds_disable_release();
+            ESP_LOGE(TAG, "HMAC configure failed");
+            return ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL;
+        }
+#if SOC_KEY_MANAGER_DS_KEY_DEPLOY
     }
+#endif
 
     ds_hal_start();
 
@@ -211,13 +141,13 @@ static esp_err_t esp_ds_finish_sign(void *signature, const esp_ds_data_t *data)
     }
 
     hmac_hal_clean();
-
+    ds_hal_finish();
     ds_disable_release();
 
     return return_value;
 }
 
-static esp_err_t esp_ds_sign(const void *message,
+esp_err_t esp_ds_sign(const void *message,
                       const esp_ds_data_t *data,
                       uint32_t key_id,
                       void *signature)
@@ -287,8 +217,8 @@ static void ds_disable_release(void)
 }
 
 static esp_err_t esp_ds_start_sign(const void *message,
-                            const esp_ds_data_t *data,
-                            uint32_t key_id)
+                                const esp_ds_data_t *data,
+                                uint32_t key_id)
 {
     ds_acquire_enable();
 
