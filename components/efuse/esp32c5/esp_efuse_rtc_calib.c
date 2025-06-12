@@ -53,7 +53,7 @@ uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int a
     uint32_t init_code = 0;
     ESP_ERROR_CHECK(esp_efuse_read_field_blob(init_code_efuse, &init_code, init_code_size));
 
-    return init_code + 1400;    // version 1 logic
+    return init_code + 1600;    // version 1 logic
 
 }
 
