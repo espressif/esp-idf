@@ -965,7 +965,7 @@ static void btdm_sleep_enter_phase1_wrapper(uint32_t lpcycles)
     assert(us_to_sleep > BTDM_MIN_TIMER_UNCERTAINTY_US);
     // allow a maximum time uncertainty to be about 488ppm(1/2048) at least as clock drift
     // and set the timer in advance
-    uint32_t uncertainty = (us_to_sleep >> 11);
+    uint32_t uncertainty = (us_to_sleep / 1000);
     if (uncertainty < BTDM_MIN_TIMER_UNCERTAINTY_US) {
         uncertainty = BTDM_MIN_TIMER_UNCERTAINTY_US;
     }
