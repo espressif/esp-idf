@@ -27,6 +27,7 @@
 
 #include "esp_private/cache_utils.h"
 #include "esp_private/esp_cache_esp32_private.h"
+#include "esp_private/esp_cache_private.h"
 #include "esp_private/esp_mmu_map_private.h"
 #include "ext_mem_layout.h"
 #include "esp_mmu_map.h"
@@ -373,6 +374,26 @@ IRAM_ATTR esp_err_t esp_mmu_paddr_find_caps(const esp_paddr_t paddr, mmu_mem_cap
     return ESP_OK;
 }
 
+static void IRAM_ATTR NOINLINE_ATTR s_stop_cache(void)
+{
+#if SOC_CACHE_FREEZE_SUPPORTED && !CONFIG_IDF_TARGET_ESP32P4
+    // On P4, due to limitations on stalling another core, we temporarily use cache disable/enable
+    esp_cache_freeze_caches_disable_interrupts();
+#else
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+#endif
+}
+
+static void IRAM_ATTR NOINLINE_ATTR s_start_cache(void)
+{
+#if SOC_CACHE_FREEZE_SUPPORTED && !CONFIG_IDF_TARGET_ESP32P4
+    // On P4, due to limitations on stalling another core, we temporarily use cache disable/enable
+    esp_cache_unfreeze_caches_enable_interrupts();
+#else
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+#endif
+}
+
 static void IRAM_ATTR NOINLINE_ATTR s_do_cache_invalidate(uint32_t vaddr_start, uint32_t size)
 {
 #if CONFIG_IDF_TARGET_ESP32
@@ -416,10 +437,8 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_mapping(mmu_target_t target, uint32_t v
 {
     /**
      * Disable Cache, after this function, involved code and data should be placed in internal RAM.
-     *
-     * @note we call this for now, but this will be refactored to move out of `spi_flash`
      */
-    spi_flash_disable_interrupts_caches_and_other_cpu();
+    s_stop_cache();
 
     uint32_t actual_mapped_len = s_mapping_operation(target, vaddr_start, paddr_start, size);
 
@@ -433,7 +452,7 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_mapping(mmu_target_t target, uint32_t v
     s_do_cache_invalidate(vaddr_start, size);
 
     //enable Cache, after this function, internal RAM access is no longer mandatory
-    spi_flash_enable_interrupts_caches_and_other_cpu();
+    s_start_cache();
 
     ESP_EARLY_LOGV(TAG, "actual_mapped_len is 0x%"PRIx32, actual_mapped_len);
 }
@@ -613,15 +632,13 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_unmapping(uint32_t vaddr_start, uint32_
 {
     /**
      * Disable Cache, after this function, involved code and data should be placed in internal RAM.
-     *
-     * @note we call this for now, but this will be refactored to move out of `spi_flash`
      */
-    spi_flash_disable_interrupts_caches_and_other_cpu();
+    s_stop_cache();
 
     s_unmapping_operation(vaddr_start, size);
 
     //enable Cache, after this function, internal RAM access is no longer mandatory
-    spi_flash_enable_interrupts_caches_and_other_cpu();
+    s_start_cache();
 }
 
 esp_err_t esp_mmu_unmap(void *ptr)
@@ -759,8 +776,11 @@ esp_err_t IRAM_ATTR esp_mmu_map_dump_mapped_blocks_private(void)
 static bool NOINLINE_ATTR IRAM_ATTR s_vaddr_to_paddr(uint32_t vaddr, esp_paddr_t *out_paddr, mmu_target_t *out_target)
 {
     uint32_t mmu_id = 0;
-    //we call this for now, but this will be refactored to move out of `spi_flash`
-    spi_flash_disable_interrupts_caches_and_other_cpu();
+    /**
+     * Disable Cache, after this function, involved code and data should be placed in internal RAM.
+     */
+    s_stop_cache();
+
 #if SOC_MMU_PER_EXT_MEM_TARGET
     mmu_id = mmu_hal_get_id_from_vaddr(vaddr);
 #endif
@@ -770,7 +790,9 @@ static bool NOINLINE_ATTR IRAM_ATTR s_vaddr_to_paddr(uint32_t vaddr, esp_paddr_t
         is_mapped = mmu_hal_vaddr_to_paddr(1, vaddr, out_paddr, out_target);
     }
 #endif
-    spi_flash_enable_interrupts_caches_and_other_cpu();
+
+    //enable Cache, after this function, internal RAM access is no longer mandatory
+    s_start_cache();
 
     return is_mapped;
 }
@@ -794,14 +816,19 @@ esp_err_t esp_mmu_vaddr_to_paddr(void *vaddr, esp_paddr_t *out_paddr, mmu_target
 
 static bool NOINLINE_ATTR IRAM_ATTR s_paddr_to_vaddr(esp_paddr_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr)
 {
-    //we call this for now, but this will be refactored to move out of `spi_flash`
-    spi_flash_disable_interrupts_caches_and_other_cpu();
+    /**
+     * Disable Cache, after this function, involved code and data should be placed in internal RAM.
+     */
+    s_stop_cache();
+
     uint32_t mmu_id = 0;
 #if SOC_MMU_PER_EXT_MEM_TARGET
     mmu_id = mmu_hal_get_id_from_target(target);
 #endif
     bool found = mmu_hal_paddr_to_vaddr(mmu_id, paddr, target, type, out_vaddr);
-    spi_flash_enable_interrupts_caches_and_other_cpu();
+
+    //enable Cache, after this function, internal RAM access is no longer mandatory
+    s_start_cache();
 
     return found;
 }
