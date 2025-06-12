@@ -63,6 +63,8 @@ typedef struct {
     char *sub_protocol;
     char *user_agent;
     char *headers;
+    ws_header_hook header_hook;
+    void * header_userp;
     char *auth;
     char *buffer;             /*!< Initial HTTP connection buffer, which may include data beyond the handshake headers, such as the next WebSocket packet*/
     size_t buffer_len;        /*!< The buffer length */
@@ -144,29 +146,31 @@ static int esp_transport_read_internal(transport_ws_t *ws, char *buffer, int len
     return to_read;
 }
 
-static char *trimwhitespace(char *str)
+static int esp_transport_read_blocking(transport_ws_t *ws, char *buffer, int len, int timeout_ms)
 {
-    char *end;
+    int orig_len = len;
+    int did_read = 0;
 
-    // Trim leading space
-    while (isspace((unsigned char)*str)) {
-        str++;
+    //Sometimes we get 1B/read, sometimes we need 8B?
+    //Never seen this need >2 reads, better be safe though - need those headers.
+    const unsigned MAX_ATTEMPT = 8;
+    //TODO: change this(or the underlying transports) to retry only until timeout_ms expires.
+    unsigned attempt = 0;
+    for(attempt = 0; attempt < MAX_ATTEMPT && len > 0; ++attempt){
+        int tmp = esp_transport_read_internal(ws, buffer, len, timeout_ms);
+        if(tmp < 0){
+            return tmp;
+        }
+
+        buffer += tmp;
+        len -= tmp;
+        did_read += tmp;
     }
 
-    if (*str == 0) {
-        return str;
+    if(attempt > 1){
+        ESP_LOGI(TAG, "tried %u attempts to read %i bytes. did read %i bytes", attempt, orig_len, did_read);
     }
-
-    // Trim trailing space
-    end = str + strlen(str) - 1;
-    while (end > str && isspace((unsigned char)*end)) {
-        end--;
-    }
-
-    // Write new null terminator
-    *(end + 1) = '\0';
-
-    return str;
+    return did_read;
 }
 
 static int get_http_status_code(const char *buffer)
@@ -187,21 +191,6 @@ static int get_http_status_code(const char *buffer)
         }
     }
     return -1;
-}
-
-static char *get_http_header(char *buffer, const char *key)
-{
-    char *found = strcasestr(buffer, key);
-    if (found) {
-        found += strlen(key);
-        char *found_end = strstr(found, "\r\n");
-        if (found_end) {
-            *found_end = '\0'; // terminal string
-
-            return trimwhitespace(found);
-        }
-    }
-    return NULL;
 }
 
 static int ws_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
@@ -336,7 +325,45 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         return ws->http_status_code;
     }
 
-    char *server_key = get_http_header(ws->buffer, "Sec-WebSocket-Accept:");
+    const char *server_key = NULL;
+    int server_key_len = 0;
+    const char * header_cursor = strnstr(ws->buffer, "\r\n", header_len);
+    if (!header_cursor){
+      ESP_LOGE(TAG, "HTTP Header locate failed");
+      return -1;
+    }
+    header_cursor += strlen("\r\n");
+
+    while(header_cursor < delim_ptr){
+        const char * end_of_line = strnstr(header_cursor, "\r\n", header_len - (header_cursor - ws->buffer));
+        if(!end_of_line){
+            ESP_LOGE(TAG, "HTTP Header walk failed");
+            return -1;
+        }
+        else if(end_of_line == header_cursor){
+            ESP_LOGD(TAG, "HTTP Header walk found end");
+            break;
+        }
+        int line_len = end_of_line - header_cursor;
+        ESP_LOGD(TAG, "HTTP Header walk line:%.*s", line_len, header_cursor);
+
+        // Find the Sec-WebSocket-Accept header
+        const char * header_sec_websocket_accept = "Sec-WebSocket-Accept: ";
+        size_t header_sec_websocket_accept_len = strlen(header_sec_websocket_accept);
+        if (line_len >= header_sec_websocket_accept_len && !strncmp(header_cursor, header_sec_websocket_accept, header_sec_websocket_accept_len)) {
+          ESP_LOGD(TAG, "found server-key");
+          server_key = header_cursor + header_sec_websocket_accept_len;
+          server_key_len = line_len - header_sec_websocket_accept_len;
+        }
+        else if (ws->header_hook) {
+            ws->header_hook(ws->header_userp, header_cursor, line_len);
+        }
+
+        // Adjust cursor to the start of the next line
+        header_cursor += line_len;
+        header_cursor += strlen("\r\n");
+    }
+
     if (server_key == NULL) {
         ESP_LOGE(TAG, "Sec-WebSocket-Accept not found");
         return -1;
@@ -357,7 +384,7 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     esp_crypto_base64_encode(expected_server_key, sizeof(expected_server_key),  &outlen, expected_server_sha1, sizeof(expected_server_sha1));
     expected_server_key[ (outlen < sizeof(expected_server_key)) ? outlen : (sizeof(expected_server_key) - 1) ] = 0;
     ESP_LOGD(TAG, "server key=%s, send_key=%s, expected_server_key=%s", (char *)server_key, (char *)client_key, expected_server_key);
-    if (strcmp((char *)expected_server_key, (char *)server_key) != 0) {
+    if (strncmp((char *)expected_server_key, (char *)server_key, server_key_len) != 0) {
         ESP_LOGE(TAG, "Invalid websocket key");
         return -1;
     }
@@ -862,6 +889,26 @@ esp_err_t esp_transport_ws_set_headers(esp_transport_handle_t t, const char *hea
     return ESP_OK;
 }
 
+esp_err_t esp_transport_ws_set_header_hook(esp_transport_handle_t t, ws_header_hook hook)
+{
+    if (t == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    ws->header_hook = hook;
+    return ESP_OK;
+}
+
+esp_err_t esp_transport_ws_set_header_userp(esp_transport_handle_t t, void * userp)
+{
+    if (t == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    ws->header_userp = userp;
+    return ESP_OK;
+}
+
 esp_err_t esp_transport_ws_set_auth(esp_transport_handle_t t, const char *auth)
 {
     if (t == NULL) {
@@ -926,6 +973,14 @@ esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transp
     if (config->headers) {
         err = esp_transport_ws_set_headers(t, config->headers);
         ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
+    }
+    if (config->header_hook) {
+        err = esp_transport_ws_set_header_hook(t, config->header_hook);
+        ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
+    }
+    if (config->header_userp) {
+      err = esp_transport_ws_set_header_userp(t, config->header_userp);
+      ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
     }
     if (config->auth) {
         err = esp_transport_ws_set_auth(t, config->auth);
