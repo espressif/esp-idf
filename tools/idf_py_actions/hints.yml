@@ -499,3 +499,6 @@
         -
             re_variables: ['driver/i2s.h']
             hint_variables: ['legacy I2S', 'driver/i2s_std.h, driver/i2s_pdm.h, driver/i2s_tdm.h', 'esp_driver_i2s']
+        -
+            re_variables: ['driver/pcnt.h']
+            hint_variables: ['legacy pcnt', 'driver/pulse_cnt.h', 'esp_driver_pcnt']

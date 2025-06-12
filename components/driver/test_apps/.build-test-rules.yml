@@ -34,12 +34,6 @@ components/driver/test_apps/legacy_mcpwm_driver:
   depends_filepatterns:
     - components/driver/deprecated/**/*mcpwm*
 
-components/driver/test_apps/legacy_pcnt_driver:
-  disable:
-    - if: SOC_PCNT_SUPPORTED != 1
-  depends_filepatterns:
-    - components/driver/deprecated/**/*pcnt*
-
 components/driver/test_apps/legacy_rmt_driver:
   disable:
     - if: SOC_RMT_SUPPORTED != 1

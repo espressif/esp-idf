@@ -248,12 +248,14 @@ LEDC
 
 .. only:: SOC_PCNT_SUPPORTED
 
-    脉冲计数器 (PCNT) 驱动
+    .. _deprecate_pcnt_legacy_driver:
+
+    旧版 PCNT 驱动被弃用
     ----------------------------------
 
     为统一和简化 PCNT 外设，PCNT 驱动已更新，详见 :doc:`PCNT <../../../api-reference/peripherals/pcnt>`。
 
-    尽管我们推荐使用新的驱动 API，旧版驱动仍然可用，保留在头文件引用路径 ``driver/pcnt.h`` 中。但是，引用路径 ``driver/pcnt.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN` 来关闭该警告。
+    尽管我们推荐使用新的驱动 API，旧版驱动仍然可用，保留在头文件引用路径 ``driver/pcnt.h`` 中。但是，引用路径 ``driver/pcnt.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 ``CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN`` 来关闭该警告。
 
     .. code-block:: text
 
