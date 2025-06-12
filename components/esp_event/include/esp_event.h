@@ -118,7 +118,9 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
  *
  * Registering multiple handlers to events is possible. Registering a single handler to multiple events is
  * also possible. However, registering the same handler to the same event multiple times would cause the
- * previous registrations to be overwritten.
+ * overwriting of the event_handler_arg but the handler will be kept at the same position in the list associated
+ * with the event that triggers it. It means that the call order of registered handlers for that event will remain
+ * the same.
  *
  * @param[in] event_base the base ID of the event to register the handler for
  * @param[in] event_id the ID of the event to register the handler for
