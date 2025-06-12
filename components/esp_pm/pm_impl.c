@@ -647,6 +647,8 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
         if (switch_down) {
             on_freq_update(old_ticks_per_us, new_ticks_per_us);
         }
+        extern portMUX_TYPE s_time_update_lock;
+        portENTER_CRITICAL_SAFE(&s_time_update_lock);
         if (new_config.source == SOC_CPU_CLK_SRC_PLL) {
             rtc_clk_cpu_freq_set_config_fast(&new_config);
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
@@ -658,6 +660,7 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
 #endif
             rtc_clk_cpu_freq_set_config_fast(&new_config);
         }
+        portEXIT_CRITICAL_SAFE(&s_time_update_lock);
         if (!switch_down) {
             on_freq_update(old_ticks_per_us, new_ticks_per_us);
         }
