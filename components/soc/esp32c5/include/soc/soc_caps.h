@@ -392,6 +392,7 @@
 #define SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT     1  /*!< Support output RX clock to a GPIO */
 #define SOC_PARLIO_TRANS_BIT_ALIGN           1  /*!< Support bit alignment in transaction */
 #define SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION 1  /*!< Support loop transmission */
+#define SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA   1   /*!< Support to treat DMA EOF as TX unit EOF */
 #define SOC_PARLIO_SUPPORT_SLEEP_RETENTION   1   /*!< Support back up registers before sleep */
 #define SOC_PARLIO_SUPPORT_SPI_LCD           1   /*!< Support to drive SPI interfaced LCD */
 #define SOC_PARLIO_SUPPORT_I80_LCD           1   /*!< Support to drive I80 interfaced LCD */

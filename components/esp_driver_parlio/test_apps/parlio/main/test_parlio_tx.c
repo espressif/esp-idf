@@ -598,3 +598,51 @@ TEST_CASE("parlio_tx_loop_transmission", "[parlio_tx]")
     TEST_ESP_OK(parlio_del_tx_unit(tx_unit));
 }
 #endif  // SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
+
+#if SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+TEST_CASE("parlio_tx can transmit buffer larger than max_size decided by datalen_eof", "[parlio_tx]")
+{
+    printf("install parlio tx unit\r\n");
+    parlio_tx_unit_handle_t tx_unit = NULL;
+    parlio_tx_unit_config_t config = {
+        .clk_src = PARLIO_CLK_SRC_DEFAULT,
+        .data_width = 4,
+        .clk_in_gpio_num = -1,  // use internal clock source
+        .valid_gpio_num = TEST_VALID_GPIO, // generate the valid signal
+        .clk_out_gpio_num = TEST_CLK_GPIO,
+        .data_gpio_nums = {
+            TEST_DATA0_GPIO,
+            TEST_DATA1_GPIO,
+            TEST_DATA2_GPIO,
+            TEST_DATA3_GPIO,
+        },
+        .output_clk_freq_hz = 10 * 1000 * 1000,
+        .trans_queue_depth = 1,
+        .max_transfer_size = 100 * 1024,
+        .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
+        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .flags.clk_gate_en = true,
+    };
+
+    TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
+    TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
+
+    const size_t buffer_size = 100 * 1024; // 100KB, larger than the 65535 bytes limit
+    uint8_t *buffer = heap_caps_malloc(buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(buffer);
+    for (int i = 0; i < buffer_size; i++) {
+        buffer[i] = i;
+    }
+
+    parlio_transmit_config_t transmit_config = {
+        .idle_value = 0x00,
+    };
+
+    TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, buffer, buffer_size * 8, &transmit_config));
+    TEST_ESP_OK(parlio_tx_unit_wait_all_done(tx_unit, -1));
+
+    TEST_ESP_OK(parlio_tx_unit_disable(tx_unit));
+    TEST_ESP_OK(parlio_del_tx_unit(tx_unit));
+    free(buffer);
+}
+#endif // SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
