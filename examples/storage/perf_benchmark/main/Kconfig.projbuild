@@ -167,6 +167,10 @@ menu "Performance Benchmark Example Configuration"
                     Otherwise the card may enter SPI mode,
                     the only way to recover from which is to cycle power to the card.
 
+                config EXAMPLE_SDMMC_BUS_WIDTH_8
+                    bool "8 lines (D0 - D7)"
+                    depends on IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32P4
+
                 config EXAMPLE_SDMMC_BUS_WIDTH_4
                     bool "4 lines (D0 - D3)"
 
@@ -191,7 +195,7 @@ menu "Performance Benchmark Example Configuration"
                     default 37 if IDF_TARGET_ESP32S3
                     default 39 if IDF_TARGET_ESP32P4
 
-                if EXAMPLE_SDMMC_BUS_WIDTH_4
+                if EXAMPLE_SDMMC_BUS_WIDTH_4 || EXAMPLE_SDMMC_BUS_WIDTH_8
 
                     config EXAMPLE_PIN_D1
                         int "D1 GPIO number"
@@ -208,7 +212,31 @@ menu "Performance Benchmark Example Configuration"
                         default 34 if IDF_TARGET_ESP32S3
                         default 42 if IDF_TARGET_ESP32P4
 
-                endif  # EXAMPLE_SDMMC_BUS_WIDTH_4
+                endif  # EXAMPLE_SDMMC_BUS_WIDTH_4 || EXAMPLE_SDMMC_BUS_WIDTH_8
+
+                if EXAMPLE_SDMMC_BUS_WIDTH_8
+
+                    config EXAMPLE_PIN_D4
+                        int "D4 GPIO number"
+                        default 35 if IDF_TARGET_ESP32S3
+                        default 45 if IDF_TARGET_ESP32P4
+
+                    config EXAMPLE_PIN_D5
+                        int "D5 GPIO number"
+                        default 40 if IDF_TARGET_ESP32S3
+                        default 46 if IDF_TARGET_ESP32P4
+
+                    config EXAMPLE_PIN_D6
+                        int "D6 GPIO number"
+                        default 42 if IDF_TARGET_ESP32S3
+                        default 47 if IDF_TARGET_ESP32P4
+
+                    config EXAMPLE_PIN_D7
+                        int "D7 GPIO number"
+                        default 41 if IDF_TARGET_ESP32S3
+                        default 48 if IDF_TARGET_ESP32P4
+
+                endif  # EXAMPLE_SDMMC_BUS_WIDTH_8
 
             endif  # SOC_SDMMC_USE_GPIO_MATRIX
 
