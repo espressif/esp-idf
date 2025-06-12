@@ -81,3 +81,10 @@ SDMMC
 -----
 
 - :cpp:type:`sdmmc_host_t` 结构体中的 ``get_dma_info`` 成员接口已经被移除。对应的 ``sdspi_host_get_dma_info`` 和 ``sdmmc_host_get_dma_info`` 函数也已经被移除。DMA 相关的设置会由驱动内部处理好。
+
+.. only:: SOC_DAC_SUPPORTED
+
+    旧版 DAC 驱动被移除
+    ----------------------
+
+    旧版的 DAC 驱动 ``driver/dac.h`` 在 5.1 的版本中就已经被弃用（请参考 :ref:`deprecate_dac_legacy_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_driver_dac` 组件中，头文件引用路径为 ``driver/dac_oneshot.h``， ``driver/dac_continuous.h`` 和 ``driver/dac_cosine.h``。

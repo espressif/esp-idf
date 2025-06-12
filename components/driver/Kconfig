@@ -68,23 +68,6 @@ menu "Driver Configurations"
         endmenu # Legacy ADC Calibration Configuration
     endmenu  # Legacy ADC Driver Configuration
 
-    menu "Legacy DAC Driver Configurations"
-        depends on SOC_DAC_SUPPORTED
-        config DAC_SUPPRESS_DEPRECATE_WARN
-            bool "Suppress legacy driver deprecated warning"
-            default n
-            help
-                Whether to suppress the deprecation warnings when using legacy dac driver (driver/dac.h).
-                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
-                you can enable this option.
-
-        config DAC_SKIP_LEGACY_CONFLICT_CHECK
-            bool "Skip legacy conflict check"
-            default n
-            help
-                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
-    endmenu # Legacy DAC Driver Configurations
-
     menu "Legacy MCPWM Driver Configurations"
         depends on SOC_MCPWM_SUPPORTED
         config MCPWM_SUPPRESS_DEPRECATE_WARN
