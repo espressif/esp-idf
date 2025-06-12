@@ -325,7 +325,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     // disable carrier modulation by default, can re-enable by `rmt_apply_carrier()`
     rmt_ll_tx_enable_carrier_modulation(hal->regs, channel_id, false);
     // idle level is determined by register value
-    rmt_ll_tx_fix_idle_level(hal->regs, channel_id, 0, true);
+    rmt_ll_tx_fix_idle_level(hal->regs, channel_id, config->flags.init_level, true);
     // always enable tx wrap, both DMA mode and ping-pong mode rely this feature
     rmt_ll_tx_enable_wrap(hal->regs, channel_id, true);
 
