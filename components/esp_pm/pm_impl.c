@@ -667,7 +667,10 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
         esp_clk_utils_mspi_speed_mode_sync_before_cpu_freq_switching(new_config.source_freq_mhz, new_config.freq_mhz);
 #endif
+        extern portMUX_TYPE s_time_update_lock;
+        portENTER_CRITICAL_SAFE(&s_time_update_lock);
         rtc_clk_cpu_freq_set_config_fast(&new_config);
+        portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
         esp_clk_utils_mspi_speed_mode_sync_after_cpu_freq_switching(new_config.source_freq_mhz, new_config.freq_mhz);
 #endif

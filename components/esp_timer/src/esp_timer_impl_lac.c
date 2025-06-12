@@ -276,7 +276,9 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
         * will not cause issues in practice.
         */
         REG_SET_BIT(INT_ENA_REG, TIMG_LACT_INT_ENA);
+        portENTER_CRITICAL_SAFE(&s_time_update_lock);
         timer_ll_set_lact_clock_prescale(TIMER_LL_GET_HW(LACT_MODULE), esp_clk_apb_freq() / MHZ / LACT_TICKS_PER_US);
+        portEXIT_CRITICAL_SAFE(&s_time_update_lock);
         // Set the step for the sleep mode when the timer will work
         // from a slow_clk frequency instead of the APB frequency.
         uint32_t slowclk_ticks_per_us = esp_clk_slowclk_cal_get() * LACT_TICKS_PER_US;
