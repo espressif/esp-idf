@@ -65,7 +65,6 @@ f_lld_per_adv_rep_ind_handler = 0x40000000;
 r_lld_sync_init = 0x40000000;
 
 /* phy update*/
-r_phy_upd_proc_start = 0x40000000;
 f_llc_op_phy_upd_ind_handler = 0x40000000;
 f_ll_phy_req_handler = 0x40000000;
 f_ll_phy_rsp_handler = 0x40000000;
