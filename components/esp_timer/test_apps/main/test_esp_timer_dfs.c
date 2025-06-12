@@ -63,14 +63,18 @@ static IRAM_ATTR void periodic_timer_callback(void* arg)
 static int64_t measuring_periodic_timer_accuracy(uint64_t alarm_records[])
 {
     int64_t sum_jitter_us = 0;
-    int64_t max_jitter_us = 0;
+    int64_t max_jitter_us = -(ALARM_PERIOD_MS * 1000);
+    int64_t min_jitter_us = ALARM_PERIOD_MS * 1000;
     int64_t jitter_array[ALARM_TIMES] = {0};
 
     for (int i = 1; i <= ALARM_TIMES; ++i) {
         int64_t jitter_us = (int64_t)alarm_records[i] - (int64_t)alarm_records[i - 1] - ALARM_PERIOD_MS * 1000;
         jitter_array[i - 1] = jitter_us;
-        if (llabs(jitter_us) > llabs(max_jitter_us)) {
+        if (jitter_us > max_jitter_us) {
             max_jitter_us = jitter_us;
+        }
+        if (jitter_us < min_jitter_us) {
+            min_jitter_us = jitter_us;
         }
         sum_jitter_us += jitter_us;
     }
@@ -86,14 +90,19 @@ static int64_t measuring_periodic_timer_accuracy(uint64_t alarm_records[])
     double stddev = sqrt(variance);
 
     printf("Average jitter us:  %"PRIi64"\n", avg_jitter_us);
-    printf("Max jitter us:      %"PRIi64"\n", max_jitter_us);
+    if (max_jitter_us > 0) {
+        printf("\e[1;31mMax jitter us:      %"PRIi64"\n\e[0m", max_jitter_us);
+    } else {
+        printf("Max jitter us:      %"PRIi64"\n", max_jitter_us);
+    }
+    printf("Min jitter us:      %"PRIi64"\n", min_jitter_us);
     printf("Standard Deviation: %.3f\n", stddev);
     printf("Drift Percentage:   %.3f%%\n", (double)avg_jitter_us / (ALARM_PERIOD_MS * 10));
 
     // Reset measurement
     s_current_alarm = 0;
     bzero(s_alarm_records, sizeof(s_alarm_records));
-    return avg_jitter_us;
+    return max_jitter_us;
 }
 
 static int64_t test_periodic_timer_accuracy_on_dfs(esp_timer_handle_t timer)
@@ -109,9 +118,9 @@ static int64_t test_periodic_timer_accuracy_on_dfs(esp_timer_handle_t timer)
     // Each FreeRTOS tick will perform a min_freq_mhz->max_freq_mhz -> min_freq_mhz frequency switch
     xSemaphoreTake(s_alarm_finished, portMAX_DELAY);
     ESP_ERROR_CHECK(esp_timer_stop(timer));
-    int64_t avg_jitter_us = measuring_periodic_timer_accuracy(s_alarm_records);
+    int64_t max_jitter_us = measuring_periodic_timer_accuracy(s_alarm_records);
     vSemaphoreDelete(s_alarm_finished);
-    return avg_jitter_us;
+    return max_jitter_us;
 }
 
 // The results of this test are meaningful only if `CONFIG_ESP_SYSTEM_RTC_EXT_XTAL` is enabled
@@ -183,7 +192,7 @@ TEST_CASE("Test DFS lact conpensate magic table ", "[esp_timer][manual][ignore]"
             esp_pm_configure(&pm_config);
 
             int32_t max_delay = 300;
-            int32_t min_delay = (pm_config.max_freq_mhz == 240) ? -4000 : 0;
+            int32_t min_delay = (pm_config.max_freq_mhz == 240) ? -4000 : -300;
             int32_t test_delay = (max_delay + min_delay) / 2;
             int32_t last_delay = 0;
             int32_t best_delay = 0;
@@ -192,19 +201,19 @@ TEST_CASE("Test DFS lact conpensate magic table ", "[esp_timer][manual][ignore]"
             do {
                 printf("Test delay %ld\n", test_delay);
                 test_lact_compensation_delay = test_delay;
-                int64_t avg = test_periodic_timer_accuracy_on_dfs(periodic_timer);
+                int64_t max_jitter_us = test_periodic_timer_accuracy_on_dfs(periodic_timer);
                 last_delay = test_delay;
-                if (avg < 0) {
-                    test_delay = (test_delay + max_delay) / 2;
-                    min_delay = last_delay;
-                } else {
+                if (max_jitter_us > 0) {
                     test_delay = (test_delay + min_delay) / 2;
                     max_delay = last_delay;
+                } else {
+                    test_delay = (test_delay + max_delay) / 2;
+                    min_delay = last_delay;
                 }
 
-                if (llabs(avg) < llabs(min_avg)) {
+                if (llabs(max_jitter_us) < llabs(min_avg)) {
                     best_delay = last_delay;
-                    min_avg = avg;
+                    min_avg = max_jitter_us;
                 }
             } while (test_delay != last_delay);
 
