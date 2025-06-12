@@ -577,7 +577,6 @@ components/soc/esp32/include/soc/soc_ulp.h
 components/soc/esp32/include/soc/spi_pins.h
 components/soc/esp32/include/soc/syscon_reg.h
 components/soc/esp32/include/soc/syscon_struct.h
-components/soc/esp32/include/soc/touch_sensor_channel.h
 components/soc/esp32/include/soc/uart_pins.h
 components/soc/esp32/include/soc/uart_reg.h
 components/soc/esp32/include/soc/uart_struct.h
@@ -643,7 +642,6 @@ components/soc/esp32s2/include/soc/soc_ulp.h
 components/soc/esp32s2/include/soc/spi_pins.h
 components/soc/esp32s2/include/soc/systimer_reg.h
 components/soc/esp32s2/include/soc/systimer_struct.h
-components/soc/esp32s2/include/soc/touch_sensor_channel.h
 components/soc/esp32s2/include/soc/touch_sensor_pins.h
 components/soc/esp32s2/include/soc/uart_pins.h
 components/soc/esp32s2/include/soc/uart_reg.h
@@ -700,7 +698,6 @@ components/soc/esp32s3/include/soc/system_reg.h
 components/soc/esp32s3/include/soc/system_struct.h
 components/soc/esp32s3/include/soc/systimer_reg.h
 components/soc/esp32s3/include/soc/systimer_struct.h
-components/soc/esp32s3/include/soc/touch_channel.h
 components/soc/esp32s3/include/soc/uart_pins.h
 components/soc/esp32s3/include/soc/uart_reg.h
 components/soc/esp32s3/include/soc/uart_struct.h
