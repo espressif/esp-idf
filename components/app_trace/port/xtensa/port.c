@@ -208,7 +208,7 @@ static uint8_t *esp_apptrace_trax_down_buffer_get(esp_apptrace_trax_data_t *hw_d
 static esp_err_t esp_apptrace_trax_down_buffer_put(esp_apptrace_trax_data_t *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo);
 static bool esp_apptrace_trax_host_is_connected(esp_apptrace_trax_data_t *hw_data);
 static esp_err_t esp_apptrace_trax_buffer_swap_start(uint32_t curr_block_id);
-static esp_err_t esp_apptrace_trax_buffer_swap(uint32_t new_block_id);
+static esp_err_t esp_apptrace_trax_buffer_swap(uint32_t new_block_id, uint32_t prev_block_len);
 static esp_err_t esp_apptrace_trax_buffer_swap_end(uint32_t new_block_id, uint32_t prev_block_len);
 static bool esp_apptrace_trax_host_data_pending(void);
 
@@ -526,21 +526,21 @@ static esp_err_t esp_apptrace_trax_buffer_swap_end(uint32_t new_block_id, uint32
     uint32_t ctrl_reg = eri_read(ESP_APPTRACE_TRAX_CTRL_REG);
     uint32_t host_connected = ESP_APPTRACE_TRAX_HOST_CONNECT & ctrl_reg;
 
-    /* calculate CRC16 of the already switched block */
-    if (prev_block_len > 0) {
-        const uint8_t *prev_block_start = s_trax_blocks[!((new_block_id % 2))];
-        uint16_t crc16 = esp_rom_crc16_le(0, prev_block_start, prev_block_len);
-        eri_write(ESP_APPTRACE_TRAX_CRC16_REG, crc16 | ESP_APPTRACE_CRC_INDICATOR);
-        ESP_APPTRACE_LOGD("CRC16:%x %d @%x", crc16, prev_block_len, prev_block_start);
-    }
     eri_write(ESP_APPTRACE_TRAX_CTRL_REG, ESP_APPTRACE_TRAX_BLOCK_ID(new_block_id) |
               host_connected | ESP_APPTRACE_TRAX_BLOCK_LEN(prev_block_len));
     esp_apptrace_trax_buffer_swap_unlock();
     return ESP_OK;
 }
 
-static esp_err_t esp_apptrace_trax_buffer_swap(uint32_t new_block_id)
+static esp_err_t esp_apptrace_trax_buffer_swap(uint32_t new_block_id, uint32_t prev_block_len)
 {
+    /* Before switching to the new block, calculate CRC16 of the current block */
+    if (prev_block_len > 0) {
+        const uint8_t *prev_block_start = s_trax_blocks[!((new_block_id % 2))];
+        uint16_t crc16 = esp_rom_crc16_le(0, prev_block_start, prev_block_len);
+        eri_write(ESP_APPTRACE_TRAX_CRC16_REG, crc16 | ESP_APPTRACE_CRC_INDICATOR);
+        ESP_APPTRACE_LOGD("CRC16:%x %d @%x", crc16, prev_block_len, prev_block_start);
+    }
     esp_apptrace_trax_select_memory_block(new_block_id);
     return ESP_OK;
 }
