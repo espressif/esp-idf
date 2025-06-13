@@ -12,8 +12,11 @@
 #include "esp_types.h"
 #include "assert.h"
 #include "esp_err.h"
+#include "esp_check.h"
 #include "esp_fault.h"
 #include "esp_log.h"
+#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
 #include "soc/efuse_periph.h"
 #include "sys/param.h"
 #include "soc/soc_caps.h"
@@ -151,3 +154,34 @@ esp_err_t esp_efuse_enable_ecdsa_p192_curve_mode(void)
     return ESP_OK;
 }
 #endif /* SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED */
+
+#if SOC_RECOVERY_BOOTLOADER_SUPPORTED
+esp_err_t esp_efuse_set_recovery_bootloader_offset(const uint32_t offset)
+{
+    // The eFuse field stores the sector number instead of the full address to conserve eFuse bits.
+    if (efuse_ll_get_recovery_bootloader_sector() == 0) {
+        ESP_LOGI(TAG, "Recovery bootloader offset has not been set yet.");
+        uint32_t recovery_flash_sector = efuse_hal_convert_recovery_bootloader_address_to_flash_sectors(offset);
+        ESP_RETURN_ON_FALSE((recovery_flash_sector & ((1U << EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_LEN) - 1)) == recovery_flash_sector, ESP_ERR_INVALID_ARG, TAG,
+            "Given address exceeds the allowed range of the efuse field");
+
+        size_t recovery_flash_sector_len = esp_efuse_get_field_size(ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR);
+        assert(recovery_flash_sector_len == EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_LEN);
+        ESP_RETURN_ON_ERROR(esp_efuse_write_field_blob(ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR, &recovery_flash_sector, recovery_flash_sector_len), TAG,
+            "Failed to burn recovery bootloader offset to eFuse");
+
+    } else if (!efuse_hal_recovery_bootloader_enabled()) {
+        ESP_LOGE(TAG, "Recovery bootloader offset is disabled");
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    uint32_t programmed_offset = efuse_hal_get_recovery_bootloader_address();
+    if (programmed_offset != offset) {
+        ESP_LOGE(TAG, "Verification failed. eFuse recovery bootloader offset=0x%" PRIx32 ", expected=0x%" PRIx32, programmed_offset, offset);
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "Recovery bootloader offset in eFuse = 0x%" PRIx32, programmed_offset);
+    return ESP_OK;
+}
+#endif // SOC_RECOVERY_BOOTLOADER_SUPPORTED

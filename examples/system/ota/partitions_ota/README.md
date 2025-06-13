@@ -22,7 +22,42 @@ Application OTA updates use one active and one passive partition. The new image 
 
 ### Bootloader
 
-Bootloader OTA updates are not inherently safe because the ROM bootloader does not support fallback to a recovery bootloader partition. Only the primary bootloader partition can be loaded by the ROM bootloader. Updating the bootloader is rarely necessary, and it is generally not recommended. However, if required, it can be done using the following approaches:
+Updating the bootloader is rarely necessary, and it is generally not recommended. However, if required, it can be done using the following approaches, depending on chip support:
+
+- **Safe OTA Update (with Recovery Bootloader):** On chips that support the recovery bootloader feature in the ROM, a backup of the original bootloader is created in a dedicated recovery partition before updating. If the update fails or power is lost, the device can boot from this recovery bootloader, reducing the risk of bricking. The recovery bootloader partition and its offset must be configured in the partition table and eFuse.
+
+- Enable `CONFIG_BOOTLOADER_RECOVERY_ENABLE` and set the reocevery bootloader offset in `CONFIG_BOOTLOADER_RECOVERY_OFFSET`.
+- Ensure that both the primary and recovery bootloader partitions are defined in the partition table (see `test/partitions_efuse_emul_2.csv`). If these entries are missing, the application can register them automatically, so manual addition is optional.
+- Backup the primary bootloader to the recovery bootloader.
+- Download directly into the primary bootloader partition or into a passive app partition.
+
+#### Example: ROM Bootloader Fallback to Recovery Bootloader
+
+Below is a sample log output demonstrating the ROM bootloader behavior when the primary bootloader is corrupted or fails to load, and the device successfully falls back to the recovery bootloader partition. This mechanism helps prevent device bricking in the event of a failed bootloader update.
+
+```
+ESP-ROM:esp32c5-eco2-20250121
+Build:Jan 21 2025
+rst:0x1 (POWERON),boot:0x18 (SPI_FAST_FLASH_BOOT)
+invalid header: 0xffffffff
+invalid header: 0xffffffff
+invalid header: 0xffffffff
+PRIMARY - FAIL
+Loading RECOVERY Bootloader...
+SPI mode:DIO, clock div:1
+load:0x408556b0,len:0x17cc
+load:0x4084bba0,len:0xdac
+load:0x4084e5a0,len:0x3140
+entry 0x4084bbaa
+I (46) boot: ESP-IDF v6.0-dev-172-g12c5d730097-dirty 2nd stage bootloader
+I (46) boot: compile time May 22 2025 12:41:59
+I (47) boot: chip revision: v1.0
+I (48) boot: efuse block revision: v0.1
+I (52) boot.esp32c5: SPI Speed      : 80MHz
+...
+```
+
+- **Unsafe OTA Update (ROM bootloader does not support the Recovery Bootloader):** Bootloader OTA updates are not inherently safe because the ROM bootloader does not support fallback to a recovery bootloader partition. Only the primary bootloader partition can be loaded by the ROM bootloader. On chips without recovery bootloader support, the new bootloader is downloaded to a staging partition and then copied to the primary bootloader partition. If power is lost during the final copy, the device may become unbootable.
 
 - Register the primary bootloader partition in the partition table, if not already present (see `test/partitions_efuse_emul_2.csv`).
 - Decide where to download the new bootloader image:
@@ -32,9 +67,11 @@ Bootloader OTA updates are not inherently safe because the ROM bootloader does n
 
 After verification, if `finalize_with_copy` is set to `true`, the tool will automatically copy the new image to the primary bootloader partition. Set `finalize_with_copy` to `false` if you wish to control the final copy step manually.
 
-Limitations for Bootloader OTA updates:
+**Limitations:**
 - Secure Boot V1-enabled devices do not support bootloader updates.
-- There is always a risk of device bricking when updating the bootloader.
+- There is always a risk of device bricking when updating the bootloader, especially if power is lost during the final copy step to the primary bootloader.
+
+On chips that support a recovery bootloader feature, a backup of the original bootloader can be created in a dedicated recovery partition before updating. If the update fails or power is lost, the device is able to boot from this recovery bootloader, reducing the risk of bricking. The recovery bootloader partition and its offset must be configured in the partition table and eFuse.
 
 ### Partition Table
 

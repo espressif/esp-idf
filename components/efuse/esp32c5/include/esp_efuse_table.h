@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table 0c453d200f282e320677c1ac46786658
+// md5_digest_table a89a21bde56c3936f31af16ba1de1fe3
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -193,7 +193,6 @@ extern const esp_efuse_desc_t* ESP_EFUSE_KEY_PURPOSE_4[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY_PURPOSE_5[];
 #define ESP_EFUSE_KEY5_PURPOSE ESP_EFUSE_KEY_PURPOSE_5
 extern const esp_efuse_desc_t* ESP_EFUSE_SEC_DPA_LEVEL[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_HI[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KM_XTS_KEY_LENGTH_256[];
@@ -216,7 +215,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_HUK_GEN_STATE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_XTAL_48M_SEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_XTAL_48M_SEL_MODE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ECC_FORCE_CONST_TIME[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_LO[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC[];
 #define ESP_EFUSE_MAC_FACTORY ESP_EFUSE_MAC
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[];

@@ -60,3 +60,18 @@ def test_app_update_xip_psram_rom_impl(dut: Dut) -> None:
 @idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s3', 'esp32p4'], indirect=['target'])
 def test_app_update_with_rollback(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=180)
+
+
+@pytest.mark.recovery_bootloader
+@pytest.mark.parametrize(
+    'config',
+    ['recovery_bootloader'],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_recovery_bootloader_update(dut: Dut) -> None:
+    try:
+        dut.run_all_single_board_cases(group='recovery_bootloader', timeout=90)
+    finally:
+        # Erase recovery bootloader after test because it may interfere with other tests using this runner
+        dut.serial.erase_flash()

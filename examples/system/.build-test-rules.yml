@@ -191,10 +191,16 @@ examples/system/ota/partitions_ota:
     - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
       temporary: true
       reason: not supported yet
+    - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED != 1
+      temporary: true
+      reason: disabled for targets that do not support recovery bootloader
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
+    - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED == 1
+      temporary: true
+      reason: lack of runners with recovery_bootloader lablel
   depends_components:
     - app_update
     - esp_https_ota

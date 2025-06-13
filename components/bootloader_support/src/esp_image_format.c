@@ -23,6 +23,7 @@
 #include "soc/soc_caps.h"
 #include "hal/cache_ll.h"
 #include "spi_flash_mmap.h"
+#include "hal/efuse_hal.h"
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -119,11 +120,26 @@ void esp_image_bootloader_offset_set(const uint32_t offset)
 {
     s_bootloader_partition_offset = offset;
     ESP_LOGI(TAG, "Bootloader offsets for PRIMARY: 0x%x, Secondary: 0x%" PRIx32, ESP_PRIMARY_BOOTLOADER_OFFSET, s_bootloader_partition_offset);
+#if SOC_RECOVERY_BOOTLOADER_SUPPORTED
+    uint32_t recovery_offset = efuse_hal_get_recovery_bootloader_address();
+    if (efuse_hal_recovery_bootloader_enabled()) {
+        ESP_LOGI(TAG, "Bootloader offset for RECOVERY: 0x%" PRIx32, recovery_offset);
+    } else if (recovery_offset == 0) {
+        ESP_LOGI(TAG, "Bootloader offset for RECOVERY: has not been set yet");
+    } else {
+        ESP_LOGI(TAG, "Bootloader offset for RECOVERY: is disabled");
+    }
+#endif
 }
 
 static bool is_bootloader(uint32_t offset)
 {
-    return ((offset == ESP_PRIMARY_BOOTLOADER_OFFSET) || (offset == s_bootloader_partition_offset));
+    return ((offset == ESP_PRIMARY_BOOTLOADER_OFFSET)
+         || (offset == s_bootloader_partition_offset)
+#if SOC_RECOVERY_BOOTLOADER_SUPPORTED
+         || (efuse_hal_recovery_bootloader_enabled() ? offset == efuse_hal_get_recovery_bootloader_address() : false)
+#endif
+    );
 }
 
 static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *part, esp_image_metadata_t *data)

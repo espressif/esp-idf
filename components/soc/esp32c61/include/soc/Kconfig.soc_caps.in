@@ -967,6 +967,14 @@ config SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
     bool
     default y
 
+config SOC_RECOVERY_BOOTLOADER_SUPPORTED
+    bool
+    default y
+
+config SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED
+    bool
+    default y
+
 config SOC_APM_CTRL_FILTER_SUPPORTED
     bool
     default y

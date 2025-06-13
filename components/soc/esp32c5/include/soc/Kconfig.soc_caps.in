@@ -1457,11 +1457,11 @@ config SOC_PSRAM_ENCRYPTION_XTS_AES_256
 
 config SOC_RECOVERY_BOOTLOADER_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_APM_CTRL_FILTER_SUPPORTED
     bool

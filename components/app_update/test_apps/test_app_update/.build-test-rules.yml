@@ -7,6 +7,7 @@ components/app_update/test_apps:
     - if: CONFIG_NAME == "xip_psram" and SOC_SPIRAM_XIP_SUPPORTED == 1
     # S2 doesn't have ROM for flash
     - if: CONFIG_NAME == "xip_psram_with_rom_impl" and (SOC_SPIRAM_XIP_SUPPORTED == 1 and IDF_TARGET != "esp32s2")
+    - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED == 1
   disable:
     - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
@@ -14,3 +15,7 @@ components/app_update/test_apps:
     - if: IDF_TARGET == "esp32c61" and CONFIG_NAME == "xip_psram_with_rom_impl"
       temporary: true
       reason: not supported yet  # TODO: [ESP32C61] IDF-12784
+  disable_test:
+    - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED == 1 and IDF_TARGET == "esp32c61"
+      temporary: true
+      reason: lack of runners  # TODO: [ESP32C61] IDF-13165

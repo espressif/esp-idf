@@ -282,6 +282,22 @@ esp_err_t esp_efuse_write_block(esp_efuse_block_t blk, const void* src_key, size
  */
 uint32_t esp_efuse_get_pkg_ver(void);
 
+#if SOC_RECOVERY_BOOTLOADER_SUPPORTED || __DOXYGEN__
+/**
+ * @brief Sets the recovery bootloader flash offset in eFuse.
+ *
+ * This function is used to set the flash offset in eFuse for the recovery bootloader.
+ * If an offset is already set in eFuse, it will be validated against the provided offset.
+ *
+ * @param offset Flash offset where the recovery bootloader is located.
+ * @return
+ *    - ESP_OK: Successfully set or given offset is already set.
+ *    - ESP_ERR_NOT_ALLOWED: Recovery bootloader feature is disabled in eFuse.
+ *    - ESP_FAIL: Failed to update the recovery bootloader flash offset.
+ *    - Error code from eFuse read/write operations if an error occurs.
+ */
+esp_err_t esp_efuse_set_recovery_bootloader_offset(const uint32_t offset);
+#endif // SOC_RECOVERY_BOOTLOADER_SUPPORTED
 
 /**
  *  @brief Reset efuse write registers
