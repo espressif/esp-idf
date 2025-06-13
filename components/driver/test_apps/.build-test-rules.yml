@@ -34,10 +34,6 @@ components/driver/test_apps/legacy_rmt_driver:
   depends_filepatterns:
     - components/driver/deprecated/**/*rmt*
 
-components/driver/test_apps/legacy_rtc_temp_driver:
-  disable:
-    - if: SOC_TEMP_SENSOR_SUPPORTED != 1
-
 components/driver/test_apps/legacy_sigma_delta_driver:
   disable:
     - if: SOC_SDM_SUPPORTED != 1

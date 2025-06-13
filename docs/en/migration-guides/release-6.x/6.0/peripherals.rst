@@ -88,3 +88,10 @@ SDMMC
     ------------------------------------
 
     The legacy DAC driver ``driver/dac.h`` is deprecated since version 5.1 (see :ref:`deprecate_dac_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_dac`, and the header file path is ``driver/dac_oneshot.h``, ``driver/dac_continuous.h`` and ``driver/dac_cosine.h``.
+
+.. only:: SOC_TEMP_SENSOR_SUPPORTED
+
+    Legacy Temperature Senor Driver is Removed
+    ------------------------------------------
+
+    The legacy temperature sensor driver ``driver/temp_sensor.h`` is deprecated since version 5.0 (see :ref:`deprecate_tsens_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_tsens`, and the header file path is ``driver/temperature_sensor.h``.

@@ -294,12 +294,14 @@ LEDC
 
 .. only:: SOC_TEMP_SENSOR_SUPPORTED
 
-    Temperature Sensor Driver
-    -------------------------
+    .. _deprecate_tsens_legacy_driver:
+
+    Legacy Temperature Sensor Driver is Deprecated
+    ----------------------------------------------
 
     The temperature sensor driver has been redesigned and it is recommended to use the new driver. However, the old driver is still available but cannot be used with the new driver simultaneously.
 
-    The new driver can be included via ``driver/temperature_sensor.h``. The old driver is still available in the previous include path ``driver/temp_sensor.h``. However, including ``driver/temp_sensor.h`` triggers the build warning below by default. The warning can be suppressed by enabling the menuconfig option :ref:`CONFIG_TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN`.
+    The new driver can be included via ``driver/temperature_sensor.h``. The old driver is still available in the previous include path ``driver/temp_sensor.h``. However, including ``driver/temp_sensor.h`` triggers the build warning below by default. The warning can be suppressed by enabling the menuconfig option ``CONFIG_TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN``.
 
     .. code-block:: text
 
