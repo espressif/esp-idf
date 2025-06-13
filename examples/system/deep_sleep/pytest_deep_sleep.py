@@ -7,25 +7,6 @@ import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
-CONFIGS = [
-    pytest.param('esp32_singlecore', marks=[pytest.mark.esp32]),
-    pytest.param(
-        'basic',
-        marks=[
-            pytest.mark.esp32,
-            pytest.mark.esp32s2,
-            pytest.mark.esp32s3,
-            pytest.mark.esp32c3,
-            pytest.mark.esp32c5,
-            pytest.mark.esp32c6,
-            pytest.mark.esp32c61,
-            pytest.mark.esp32h2,
-            pytest.mark.esp32p4,
-            pytest.mark.esp32c2,
-        ],
-    ),
-]
-
 
 @pytest.mark.generic
 @idf_parametrize(

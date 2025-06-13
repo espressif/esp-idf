@@ -145,6 +145,7 @@ variables:
     export IDF_PIP_WHEELS_URL=""
   fi
 
+  # install.sh
   if [[ "${CI_JOB_STAGE}" != "target_test" ]]; then
     section_start "running_install_sh" "Running install.sh"
     if [[ "${CI_JOB_STAGE}" == "build_doc" ]]; then
@@ -154,8 +155,9 @@ variables:
     fi
     section_end "running_install_sh"
   else
-    section_start "install_python_env" "Install Python environment"
+    section_start "install_python_env" "Install Python environment, skip required tools check"
     run_cmd python tools/idf_tools.py install-python-env --features ci,test-specific
+    export IDF_SKIP_TOOLS_CHECK=1
     section_end "install_python_env"
   fi
 
@@ -170,11 +172,6 @@ variables:
     $IDF_PATH/tools/idf_tools.py --non-interactive install esp-clang
   fi
 
-  if [[ "${CI_JOB_STAGE}" == "target_test" ]]; then
-    section_start "IDF_SKIP_TOOLS_CHECK" "Skip required tools check"
-    export IDF_SKIP_TOOLS_CHECK=1
-    section_end "IDF_SKIP_TOOLS_CHECK"
-  fi
   section_start "source_export" "Source export.sh"
   source ./export.sh
   section_end "source_export"

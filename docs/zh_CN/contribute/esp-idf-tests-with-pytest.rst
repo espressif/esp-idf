@@ -91,32 +91,23 @@ ESP-IDF 在主机端使用 pytest 框架（以及一些 pytest 插件）来自�
 
 .. code-block:: python
 
-    @pytest.mark.esp32
-    @pytest.mark.esp32s2
+    @pytest.mark.parametrize('target', [
+        'esp32',
+        'esp32s2',
+    ], indirect=True)
     @pytest.mark.generic
     def test_hello_world(dut) -> None:
         dut.expect('Hello world!')
 
 这是一个简单的测试脚本，可以与入门示例 :example:`get-started/hello_world` 一起运行。
 
-前两行是目标标记：
+在这个测试脚本中，使用了 ``@pytest.mark.parametrize`` 装饰器来参数化测试用例。``target`` 参数是一个特殊参数，用于指示目标板类型。``indirect=True`` 参数表示此参数在其他 fixture 之前被预先计算。
 
-* ``@pytest.mark.esp32`` 是一个标记，表示此测试用例应在 ESP32 上运行。
-* ``@pytest.mark.esp32s2`` 是一个标记，表示此测试用例应在 ESP32-S2 上运行。
-
-.. note::
-
-    如果测试用例可以在 ESP-IDF 官方支持的所有目标芯片上运行，调用 ``idf.py --list-targets`` 获取更多详情，可以使用特殊的标记 ``supported_targets`` 来在一行中应用所有目标。
-
-    也支持 ``preview_targets`` 和 ``all_targets`` 作为特殊的目标标记，调用 ``idf.py --list-targets --preview`` 获取包括预览目标的完整目标列表。
-
-环境标记：
-
-* ``@pytest.mark.generic`` 标记表示此测试用例应在 generic 板类型上运行。
+紧接着是环境标记。``@pytest.mark.generic`` 标记表示此测试用例应在 generic 板类型上运行。
 
 .. note::
 
-    有关环境标记的详细解释，请参阅 :idf_file:`ENV_MARKERS 定义 <tools/ci/idf_pytest/constants.py>`。
+    有关环境标记的详细解释，请参阅 :idf_file:`env_markers 定义 <pytest.ini>`。
 
 关于测试函数，使用了一个 ``dut`` fixture。在单一 DUT 测试用例中，``dut`` fixture 是 ``IdfDut`` 类的一个实例，对于多个 DUT 测试用例，它是 ``IdfDut`` 实例的一个元组。有关 ``IdfDut`` 类的更多详细信息，请参阅 `pytest-embedded IdfDut API 参考 <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.dut.IdfDut>`__。
 
@@ -142,8 +133,10 @@ ESP-IDF 在主机端使用 pytest 框架（以及一些 pytest 插件）来自�
 
 .. code-block:: python
 
-    @pytest.mark.esp32
-    @pytest.mark.esp32s2
+    @pytest.mark.parametrize('target', [
+        'esp32',                            # <-- run with esp32 target
+        'esp32s2',                          # <-- run with esp32s2 target
+    ], indirect=True)
     @pytest.mark.parametrize('config', [    # <-- parameterize the sdkconfig file
         'foo',                              # <-- run with sdkconfig.ci.foo
         'bar',                              # <-- run with sdkconfig.ci.bar
@@ -180,17 +173,6 @@ ESP-IDF 在主机端使用 pytest 框架（以及一些 pytest 插件）来自�
 
     几乎所有 pytest-embedded 的 CLI 选项都支持参数化。要查看所有支持的 CLI 选项，您可以运行 ``pytest --help`` 命令，并检查 ``embedded-...`` 部分以查看普通 pytest-embedded 选项，以及 ``idf`` 部分以查看 ESP-IDF 特定选项。
 
-.. note::
-
-    目标标记，例如 ``@pytest.mark.esp32`` 和 ``@pytest.mark.esp32s2``，是参数化的一种语法糖。它们被定义为：
-
-    .. code-block:: python
-
-        @pytest.mark.parametrize('target', [
-            'esp32',
-            'esp32s2',
-        ], indirect=True)
-
 使用不同的 sdkconfig 文件运行相同的应用程序，支持不同的目标芯片
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -198,9 +180,9 @@ ESP-IDF 在主机端使用 pytest 框架（以及一些 pytest 插件）来自�
 
 .. code-block:: python
 
-    @pytest.mark.parametrize('config', [
-        pytest.param('foo', marks=[pytest.mark.esp32]),
-        pytest.param('bar', marks=[pytest.mark.esp32s2]),
+    @pytest.mark.parametrize('config, target', [
+        pytest.param('foo', 'esp32'),
+        pytest.param('bar', 'esp32s2'),
     ], indirect=True)
 
 此时，这个测试函数将被复制为 2 个测试用例（测试用例 ID）：
@@ -260,40 +242,6 @@ ESP-IDF 在主机端使用 pytest 框架（以及一些 pytest 插件）来自�
 .. note::
 
     有关详细的多个 DUT 参数化文档，请参阅 `pytest-embedded Multi-DUT 文档 <https://docs.espressif.com/projects/pytest-embedded/en/latest/key_concepts.html#multi-duts>`__。
-
-.. warning::
-
-    在一些测试脚本中，您可能会看到目标标记，如 ``@pytest.mark.esp32`` 和 ``@pytest.mark.esp32s2`` 用于多个 DUT 测试用例。这些脚本已被弃用，应该替换为 ``target`` 参数化。
-
-    例如，
-
-    .. code-block:: python
-
-        @pytest.mark.esp32
-        @pytest.mark.esp32s2
-        @pytest.mark.parametrize('count', [
-            2,
-        ], indirect=True)
-        def test_hello_world(dut) -> None:
-            dut[0].expect('Hello world!')
-            dut[1].expect('Hello world!')
-
-    应该改为：
-
-    .. code-block:: python
-
-        @pytest.mark.parametrize('count', [
-            2,
-        ], indirect=True)
-        @pytest.mark.parametrize('target', [
-            'esp32',
-            'esp32s2',
-        ], indirect=True)
-        def test_hello_world(dut) -> None:
-            dut[0].expect('Hello world!')
-            dut[1].expect('Hello world!')
-
-    这有助于避免多个 DUT 测试用例在运行不同目标芯片时造成歧义。
 
 用不同应用程序和目标芯片进行多目标测试
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -699,7 +647,7 @@ Pytest 使用技巧
 
 我们目前使用两种自定义 marker。target marker 是指测试用例支持此目标芯片，env marker 是指测试用例应分配到 CI 中具有相应 tag 的 runner 上。
 
-你可以在 :idf_file:`conftest.py` 文件后添加一行新的 marker。如果该 marker 是 target marker，应将其添加到 ``TARGET_MARKERS`` 中。如果该 marker 指定了一类测试环境，应将其添加到 ``ENV_MARKERS`` 中。自定义 marker 格式：``<marker_name>: <marker_description>``。
+你可以通过在 :idf_file:`pytest.ini` 文件中添加一行来添加新的 marker。如果该 marker 指定了一类测试环境，应将其添加到 ``env_markers`` 部分。否则，应将其添加到 ``markers`` 部分。语法应为：``<marker_name>: <marker_description>``。
 
 跳过自动烧录二进制文件
 -------------------------------------

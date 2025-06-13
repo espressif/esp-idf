@@ -2,7 +2,13 @@
 # no_env_marker_test_cases: List of test cases that do not have environment markers.
 #   each item shall be the test node id, you may check the error message to get the node id.
 no_env_marker_test_cases:
-  - dummy_test_case
+  - test_examples_security_secure_boot
+  - test_examples_security_secure_boot_corrupt_app_sig
+  - test_examples_security_secure_boot_corrupt_bl_sig
+  - test_examples_security_secure_boot_key_combo
+  - test_examples_security_secure_boot_key_revoke
+  - test_usb_enum
+  - test_usb_ext_port
 
 # no_runner_tags: List of runner tags that has no test runner set.
 #   each item shall be a comma separated list of runner tags.

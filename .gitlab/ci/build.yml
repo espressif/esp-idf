@@ -34,7 +34,6 @@
   variables:
     IDF_TOOLCHAIN: clang
     TEST_BUILD_OPTS_EXTRA: ""
-    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd idf-build-apps build
@@ -292,8 +291,6 @@ generate_build_child_pipeline:
       - non_test_related_apps.txt
     expire_in: 1 week
     when: always
-  variables:
-    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
     - run_cmd python tools/ci/dynamic_pipelines/scripts/generate_build_child_pipeline.py
 
