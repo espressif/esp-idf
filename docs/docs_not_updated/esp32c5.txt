@@ -20,7 +20,6 @@ api-reference/storage/mass_mfg.rst
 api-reference/storage/fatfsgen.rst
 api-reference/storage/index.rst
 api-reference/storage/nvs_partition_parse.rst
-api-reference/peripherals/twai.rst
 api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/index.rst
 api-reference/peripherals/ecdsa.rst
