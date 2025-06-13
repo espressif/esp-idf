@@ -259,11 +259,17 @@ variables:
 
 .after_script:build:ccache-show-stats:
   after_script:
+    - source tools/ci/utils.sh
+    - section_start "ccache_show_stats" "Show ccache statistics"
     - *show_ccache_statistics
+    - section_end "ccache_show_stats"
 
 .after_script:build:ccache-show-stats:upload-failed-job-logs:
   after_script:
+    - source tools/ci/utils.sh
+    - section_start "ccache_show_stats" "Show ccache statistics"
     - *show_ccache_statistics
+    - section_end "ccache_show_stats"
     - *upload_failed_job_log_artifacts
 
 ##############################

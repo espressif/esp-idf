@@ -42,12 +42,10 @@ from idf_ci_local.uploader import AppUploader
 from idf_ci_utils import IDF_PATH
 from idf_ci_utils import idf_relpath
 from idf_pytest.constants import DEFAULT_LOGDIR
-from idf_pytest.constants import DEFAULT_SDKCONFIG
 from idf_pytest.plugin import IDF_LOCAL_PLUGIN_KEY
 from idf_pytest.plugin import IdfLocalPlugin
 from idf_pytest.plugin import requires_elf_or_map
 from idf_pytest.utils import format_case_id
-from pytest_embedded.plugin import multi_dut_argument
 from pytest_embedded.plugin import multi_dut_fixture
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.unity_tester import CaseTester
@@ -70,23 +68,6 @@ def session_root_logdir(idf_path: str) -> str:
 @pytest.fixture
 def case_tester(unity_tester: CaseTester) -> CaseTester:
     return unity_tester
-
-
-@pytest.fixture
-@multi_dut_argument
-def config(request: FixtureRequest) -> str:
-    return getattr(request, 'param', None) or DEFAULT_SDKCONFIG  # type: ignore
-
-
-@pytest.fixture
-@multi_dut_fixture
-def target(request: FixtureRequest, dut_total: int, dut_index: int) -> str:
-    plugin = request.config.stash[IDF_LOCAL_PLUGIN_KEY]
-
-    if dut_total == 1:
-        return plugin.target[0]  # type: ignore
-
-    return plugin.target[dut_index]  # type: ignore
 
 
 @pytest.fixture

@@ -10,7 +10,6 @@ from urllib.parse import urlencode
 from urllib.parse import urlparse
 
 import requests
-import yaml
 
 from .constants import CI_DASHBOARD_API
 from .constants import CI_JOB_TOKEN
@@ -18,40 +17,7 @@ from .constants import CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
 from .constants import CI_PAGES_URL
 from .constants import CI_PROJECT_URL
 from .models import GitlabJob
-from .models import Job
 from .models import TestCase
-
-
-def dump_jobs_to_yaml(
-    jobs: t.List[Job],
-    output_filepath: str,
-    pipeline_name: str,
-    extra_include_yml: t.Optional[t.List[str]] = None,
-) -> None:
-    yaml_dict = {}
-    for job in jobs:
-        yaml_dict.update(job.to_dict())
-
-    # global stuffs
-    yaml_dict.update(
-        {
-            'include': [
-                'tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml',
-                '.gitlab/ci/common.yml',
-            ],
-            'workflow': {
-                'name': pipeline_name,
-                'rules': [
-                    # always run the child pipeline, if they are created
-                    {'when': 'always'},
-                ],
-            },
-        }
-    )
-    yaml_dict['include'].extend(extra_include_yml or [])
-
-    with open(output_filepath, 'w') as fw:
-        yaml.dump(yaml_dict, fw, indent=2)
 
 
 def parse_testcases_from_filepattern(junit_report_filepattern: str) -> t.List[TestCase]:

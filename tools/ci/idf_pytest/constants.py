@@ -19,7 +19,7 @@ SUPPORTED_TARGETS = [
     'esp32c61',
 ]
 PREVIEW_TARGETS: t.List[str] = []  # this PREVIEW_TARGETS excludes 'linux' target
-DEFAULT_SDKCONFIG = 'default'
+
 DEFAULT_LOGDIR = 'pytest-embedded'
 
 # by default the timeout is 1h, for some special cases we need to extend it

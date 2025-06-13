@@ -6,9 +6,11 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 import pytest
+import yaml
 from _pytest.config import Config
 from _pytest.python import Function
 from _pytest.runner import CallInfo
+from dynamic_pipelines.constants import KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH
 from idf_ci import IdfPytestPlugin
 from idf_ci import PytestCase
 from idf_ci.idf_pytest.plugin import IDF_CI_PYTEST_DEBUG_INFO_KEY
@@ -18,7 +20,6 @@ from pytest_embedded.utils import find_by_suffix
 from pytest_ignore_test_results.ignore_results import ChildCase
 from pytest_ignore_test_results.ignore_results import ChildCasesStashKey
 
-from .constants import DEFAULT_SDKCONFIG
 from .utils import format_case_id
 from .utils import merge_junit_files
 from .utils import normalize_testcase_file_path
@@ -83,6 +84,12 @@ class IdfLocalPlugin:
         'IGNORE': 'skipped',
     }
 
+    def __init__(self) -> None:
+        with open(KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH) as fr:
+            known_warnings_dict = yaml.safe_load(fr) or dict()
+
+        self.exclude_no_env_markers_test_cases: t.Set[str] = set(known_warnings_dict['no_env_marker_test_cases'])
+
     @staticmethod
     def get_param(item: Function, key: str, default: t.Any = None) -> t.Any:
         # funcargs is not calculated while collection
@@ -111,6 +118,17 @@ class IdfLocalPlugin:
                 item.stash[IDF_CI_PYTEST_DEBUG_INFO_KEY] = 'skipped by temp_skip markers'
                 continue
 
+            if not case.env_markers and 'host_test' not in case.all_markers:
+                if case.name in self.exclude_no_env_markers_test_cases:
+                    deselected_items.append(item)
+                    continue
+
+                raise ValueError(
+                    f'Test case {case.name} does not have any env markers. '
+                    f'Please add env markers to the test case or add it to the '
+                    f'`no_env_markers_test_cases` list in {KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH}'
+                )
+
             filtered_items.append(item)
 
         items[:] = filtered_items
@@ -119,12 +137,11 @@ class IdfLocalPlugin:
         config.hook.pytest_deselected(items=deselected_items)
 
         # OKAY!!! All left ones will be executed, sort it and add more markers
-        items[:] = sorted(
-            items, key=lambda x: (os.path.dirname(x.path), self.get_param(x, 'config', DEFAULT_SDKCONFIG))
-        )
+        items[:] = sorted(items, key=lambda x: (os.path.dirname(x.path), self.get_param(x, 'config', 'default')))
 
         for item in items:
             case = IdfPytestPlugin.get_case_by_item(item)
+
             # set default timeout 10 minutes for each case
             if 'timeout' not in item.keywords:
                 item.add_marker(pytest.mark.timeout(10 * 60))

@@ -5,6 +5,10 @@ generate_pytest_build_report:
     - build
     - shiny
   when: always
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: pipeline_variables
+    - build_apps
   artifacts:
     paths:
       - failed_apps.html
@@ -14,7 +18,6 @@ generate_pytest_build_report:
       - test_related_apps_download_urls.yml
     expire_in: 2 week
     when: always
-
   script:
     - env
     - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type build
@@ -27,6 +30,10 @@ generate_pytest_child_pipeline:
   tags:
     - build
     - shiny
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: pipeline_variables
+    - build_apps
   artifacts:
     paths:
       - target_test_child_pipeline.yml
