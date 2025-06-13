@@ -168,11 +168,10 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
     }
 
     uint32_t src_freq_mhz = sens_handle->src_freq_hz / 1000000;
-    uint32_t interval_freq_mhz = sens_handle->interval_freq_hz / 1000000;
     hal_cfg->power_on_wait_ticks = (uint32_t)sens_cfg->power_on_wait_us * src_freq_mhz;
     hal_cfg->power_on_wait_ticks = hal_cfg->power_on_wait_ticks > TOUCH_LL_PAD_MEASURE_WAIT_MAX ?
                                    TOUCH_LL_PAD_MEASURE_WAIT_MAX : hal_cfg->power_on_wait_ticks;
-    hal_cfg->meas_interval_ticks = (uint32_t)(sens_cfg->meas_interval_us * interval_freq_mhz);
+    hal_cfg->meas_interval_ticks = (uint32_t)(sens_cfg->meas_interval_us * sens_handle->interval_freq_hz / 1000000);
 
     sens_handle->is_below_trig = sens_cfg->intr_trig_mode == TOUCH_INTR_TRIG_ON_BELOW_THRESH;
     hal_cfg->intr_trig_mode = sens_cfg->intr_trig_mode;
