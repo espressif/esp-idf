@@ -223,10 +223,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if test_case_filters := os.getenv('TEST_CASE_FILTERS', None):
+    if test_case_filters := os.getenv('IDF_CI_SELECT_BY_FILTER_EXPR', None):
         args.filter_expr = test_case_filters
 
-    if os.getenv('IS_MR_PIPELINE') == '0' or os.getenv('BUILD_AND_TEST_ALL_APPS') == '1':
+    if not os.getenv('CI_MERGE_REQUEST_IID') or os.getenv('IDF_CI_SELECT_ALL_PYTEST_CASES') == '1':
         print('Build and run all test cases, and compile all cmake apps')
         args.modified_components = None
         args.modified_files = None

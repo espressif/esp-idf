@@ -3,6 +3,7 @@
 """
 This file is used in CI generate binary files for different kinds of apps
 """
+
 import argparse
 import os
 import sys
@@ -259,7 +260,7 @@ if __name__ == '__main__':
             os.environ[_k] = _v  # type: ignore
             print(f'env var {_k} set to "{_v}"')
 
-    if os.getenv('IS_MR_PIPELINE') == '0' or os.getenv('BUILD_AND_TEST_ALL_APPS') == '1':
+    if not os.getenv('CI_MERGE_REQUEST_IID') or os.getenv('IDF_CI_SELECT_ALL_PYTEST_CASES') == '1':
         print('Build and run all test cases, and compile all cmake apps')
         arguments.modified_components = None
         arguments.modified_files = None
