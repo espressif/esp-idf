@@ -1,0 +1,18 @@
+name: Create recursive zip file for release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  release_zips:
+    name: Create release zip files
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Create a recursive clone source zip for a Release
+        uses: vsaltxx/release-zips-action@feat/git-extra-args
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_project_name: ESP-IDF
+          git_extra_args: --shallow-since="1 year ago"
