@@ -4,7 +4,6 @@ tools/bt/bt_hci_to_btsnoop.py
 tools/catch/**/*
 tools/check_term.py
 tools/ci/*exclude*.txt
-tools/ci/artifacts_handler.py
 tools/ci/astyle-rules.yml
 tools/ci/check_*.py
 tools/ci/check_*.sh
@@ -23,7 +22,6 @@ tools/ci/fix_empty_prototypes.sh
 tools/ci/generate_rules.py
 tools/ci/get-full-sources.sh
 tools/ci/get_all_test_results.py
-tools/ci/get_known_failure_cases_file.py
 tools/ci/get_supported_examples.sh
 tools/ci/gitlab_yaml_linter.py
 tools/ci/idf_build_apps_dump_soc_caps.py

@@ -6,7 +6,6 @@ from idf_ci_utils import IDF_PATH
 
 COMMENT_START_MARKER = '### Dynamic Pipeline Report'
 
-TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME = 'test_related_apps_download_urls.yml'
 REPORT_TEMPLATE_FILEPATH = os.path.join(
     IDF_PATH, 'tools', 'ci', 'dynamic_pipelines', 'templates', 'report.template.html'
 )

@@ -303,7 +303,7 @@ test_pytest_qemu:
       --only-test-related
       -m qemu
       --modified-files ${MR_MODIFIED_FILES}
-    - python tools/ci/get_known_failure_cases_file.py
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - run_cmd pytest
       --target $IDF_TARGET
       --log-cli-level DEBUG
@@ -331,7 +331,7 @@ test_pytest_linux:
       --target linux
       --only-test-related
       --modified-files ${MR_MODIFIED_FILES}
-    - python tools/ci/get_known_failure_cases_file.py
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - run_cmd pytest
       --target linux
       --embedded-services idf
@@ -365,7 +365,7 @@ test_pytest_macos:
       --only-test-related
       -m macos
       --modified-files ${MR_MODIFIED_FILES}
-    - python tools/ci/get_known_failure_cases_file.py
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - run_cmd pytest
       --target linux
       -m macos

@@ -1,22 +1,20 @@
 # SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import os
+import subprocess
 import sys
 import typing as t
 
 from dynamic_pipelines.constants import BINARY_SIZE_METRIC_NAME
 from idf_build_apps import App
 from idf_build_apps import CMakeApp
-from idf_build_apps import json_to_app
-
-from .uploader import get_app_uploader
+from idf_build_apps.utils import rmdir
 
 if t.TYPE_CHECKING:
-    from .uploader import AppUploader
+    pass
 
 
 class IdfCMakeApp(CMakeApp):
-    uploader: t.ClassVar[t.Optional['AppUploader']] = get_app_uploader()
     build_system: t.Literal['idf_cmake'] = 'idf_cmake'
 
     def _initialize_hook(self, **kwargs: t.Any) -> None:
@@ -28,8 +26,24 @@ class IdfCMakeApp(CMakeApp):
     def _post_build(self) -> None:
         super()._post_build()
 
-        if self.uploader:
-            self.uploader.upload_app(self.build_path)
+        # only upload in CI
+        if os.getenv('CI_JOB_ID'):
+            subprocess.run(
+                [
+                    'idf-ci',
+                    'gitlab',
+                    'upload-artifacts',
+                    self.app_dir,
+                ],
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
+            rmdir(
+                self.build_path,
+                exclude_file_patterns=[
+                    'build_log.txt',
+                ],
+            )
 
 
 class Metrics:
@@ -73,26 +87,6 @@ class AppWithMetricsInfo(IdfCMakeApp):
 
     class Config:
         arbitrary_types_allowed = True
-
-
-def dump_apps_to_txt(apps: t.List[App], output_filepath: str) -> None:
-    with open(output_filepath, 'w') as fw:
-        for app in apps:
-            fw.write(app.model_dump_json() + '\n')
-
-
-def import_apps_from_txt(input_filepath: str) -> t.List[App]:
-    apps: t.List[App] = []
-    with open(input_filepath) as fr:
-        for line in fr:
-            if line := line.strip():
-                try:
-                    apps.append(json_to_app(line, extra_classes=[IdfCMakeApp]))
-                except Exception:  # noqa
-                    print('Failed to deserialize app from line: %s' % line)
-                    sys.exit(1)
-
-    return apps
 
 
 def enrich_apps_with_metrics_info(

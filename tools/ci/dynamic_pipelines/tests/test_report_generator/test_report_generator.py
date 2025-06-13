@@ -8,12 +8,13 @@ import unittest
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from idf_build_apps import json_list_files_to_apps
+
 sys.path.insert(0, os.path.join(f'{os.environ.get("IDF_PATH")}', 'tools', 'ci', 'python_packages'))
 sys.path.insert(0, os.path.join(f'{os.environ.get("IDF_PATH")}', 'tools', 'ci'))
 
 from idf_build_apps.constants import BuildStatus  # noqa: E402
 from idf_ci_local.app import enrich_apps_with_metrics_info  # noqa: E402
-from idf_ci_local.app import import_apps_from_txt  # noqa: E402
 
 from dynamic_pipelines.models import GitlabJob  # noqa: E402
 from dynamic_pipelines.report import BuildReportGenerator  # noqa: E402
@@ -40,7 +41,6 @@ class TestReportGeneration(unittest.TestCase):
 
     def setup_patches(self) -> None:
         self.gitlab_patcher = patch('dynamic_pipelines.report.Gitlab')
-        self.uploader_patcher = patch('dynamic_pipelines.report.AppUploader')
         self.failure_rate_patcher = patch('dynamic_pipelines.report.fetch_failed_testcases_failure_ratio')
         self.env_patcher = patch.dict(
             'os.environ',
@@ -54,7 +54,6 @@ class TestReportGeneration(unittest.TestCase):
         self.yaml_dump_patcher = patch('dynamic_pipelines.report.yaml.dump')
 
         self.MockGitlab = self.gitlab_patcher.start()
-        self.MockUploader = self.uploader_patcher.start()
         self.test_cases_failure_rate = self.failure_rate_patcher.start()
         self.env_patcher.start()
         self.yaml_dump_patcher.start()
@@ -63,10 +62,8 @@ class TestReportGeneration(unittest.TestCase):
         self.mock_mr = MagicMock()
         self.MockGitlab.return_value.project = self.mock_project
         self.mock_project.mergerequests.get.return_value = self.mock_mr
-        self.MockUploader.return_value.get_app_presigned_url.return_value = 'https://example.com/presigned-url'
 
         self.addCleanup(self.gitlab_patcher.stop)
-        self.addCleanup(self.uploader_patcher.stop)
         self.addCleanup(self.failure_rate_patcher.stop)
         self.addCleanup(self.env_patcher.stop)
         self.addCleanup(self.yaml_dump_patcher.stop)
@@ -80,7 +77,6 @@ class TestReportGeneration(unittest.TestCase):
             self.build_report_generator.failed_apps_report_file,
             self.build_report_generator.built_apps_report_file,
             self.build_report_generator.skipped_apps_report_file,
-            self.build_report_generator.apps_presigned_url_filepath,
         ]
         for file_path in files_to_delete:
             if os.path.exists(file_path):
@@ -112,7 +108,8 @@ class TestReportGeneration(unittest.TestCase):
         ]
         test_cases = parse_testcases_from_filepattern(os.path.join(self.reports_sample_data_path, 'XUNIT_*.xml'))
         apps = enrich_apps_with_metrics_info(
-            built_apps_size_info_response, import_apps_from_txt(os.path.join(self.reports_sample_data_path, 'apps'))
+            built_apps_size_info_response,
+            json_list_files_to_apps([os.path.join(self.reports_sample_data_path, 'apps')]),
         )
         self.target_test_report_generator = TargetTestReportGenerator(
             project_id=123,

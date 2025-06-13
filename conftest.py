@@ -9,6 +9,7 @@
 # please report to https://github.com/espressif/pytest-embedded/issues
 # or discuss at https://github.com/espressif/pytest-embedded/discussions
 import os
+import subprocess
 import sys
 
 if os.path.join(os.path.dirname(__file__), 'tools', 'ci') not in sys.path:
@@ -17,29 +18,20 @@ if os.path.join(os.path.dirname(__file__), 'tools', 'ci') not in sys.path:
 if os.path.join(os.path.dirname(__file__), 'tools', 'ci', 'python_packages') not in sys.path:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci', 'python_packages'))
 
-import io
 import logging
 import os
 import re
 import typing as t
-import zipfile
 from copy import deepcopy
 from urllib.parse import quote
 
 import common_test_methods  # noqa: F401
 import gitlab_api
 import pytest
-import requests
-import yaml
 from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
-from artifacts_handler import ArtifactType
-from dynamic_pipelines.constants import TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
 from idf_ci import PytestCase
 from idf_ci.idf_pytest import IDF_CI_PYTEST_CASE_KEY
-from idf_ci_local.uploader import AppDownloader
-from idf_ci_local.uploader import AppUploader
-from idf_ci_utils import IDF_PATH
 from idf_ci_utils import idf_relpath
 from idf_pytest.constants import DEFAULT_LOGDIR
 from idf_pytest.plugin import IDF_LOCAL_PLUGIN_KEY
@@ -96,69 +88,76 @@ def pipeline_id(request: FixtureRequest) -> t.Optional[str]:
     return request.config.getoption('pipeline_id', None) or os.getenv('PARENT_PIPELINE_ID', None)  # type: ignore
 
 
-class BuildReportDownloader(AppDownloader):
-    def __init__(self, presigned_url_yaml: str) -> None:
-        self.app_presigned_urls_dict: t.Dict[str, t.Dict[str, str]] = yaml.safe_load(presigned_url_yaml)
+def get_pipeline_commit_sha_by_pipeline_id(pipeline_id: str) -> t.Optional[str]:
+    gl = gitlab_api.Gitlab(os.getenv('CI_PROJECT_ID', 'espressif/esp-idf'))
+    pipeline = gl.project.pipelines.get(pipeline_id)
+    if not pipeline:
+        return None
 
-    def _download_app(self, app_build_path: str, artifact_type: ArtifactType) -> None:
-        url = self.app_presigned_urls_dict[app_build_path][artifact_type.value]
+    commit = gl.project.commits.get(pipeline.sha)
+    if not commit or not commit.parent_ids:
+        return None
 
-        logging.info('Downloading app from %s', url)
-        with io.BytesIO() as f:
-            for chunk in requests.get(url).iter_content(chunk_size=1024 * 1024):
-                if chunk:
-                    f.write(chunk)
+    if len(commit.parent_ids) == 1:
+        return commit.parent_ids[0]  # type: ignore
 
-            f.seek(0)
+    for parent_id in commit.parent_ids:
+        parent_commit = gl.project.commits.get(parent_id)
+        if parent_commit.parent_ids and len(parent_commit.parent_ids) == 1:
+            return parent_id  # type: ignore
 
-            with zipfile.ZipFile(f) as zip_ref:
-                zip_ref.extractall(IDF_PATH)
+    return None
 
-    def download_app(self, app_build_path: str, artifact_type: t.Optional[ArtifactType] = None) -> None:
-        if app_build_path not in self.app_presigned_urls_dict:
-            raise ValueError(
-                f'No presigned url found for {app_build_path}. '
-                f'Usually this should not happen, please re-trigger a pipeline.'
-                f'If this happens again, please report this bug to the CI channel.'
-            )
 
-        super().download_app(app_build_path, artifact_type)
+class AppDownloader:
+    def __init__(
+        self,
+        commit_sha: str,
+        pipeline_id: t.Optional[str] = None,
+    ) -> None:
+        self.commit_sha = commit_sha
+        self.pipeline_id = pipeline_id
+
+    def download_app(self, app_build_path: str, artifact_type: t.Optional[str] = None) -> None:
+        args = [
+            'idf-ci',
+            'gitlab',
+            'download-artifacts',
+            '--commit-sha',
+            self.commit_sha,
+        ]
+        if artifact_type:
+            args.extend(['--type', artifact_type])
+        if self.pipeline_id:
+            args.extend(['--pipeline-id', self.pipeline_id])
+        args.append(app_build_path)
+
+        subprocess.run(
+            args,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+
+
+PRESIGNED_JSON = 'presigned.json'
 
 
 @pytest.fixture(scope='session')
-def app_downloader(pipeline_id: t.Optional[str]) -> t.Optional[AppDownloader]:
+def app_downloader(
+    pipeline_id: t.Optional[str],
+) -> t.Optional[AppDownloader]:
     if not pipeline_id:
         return None
 
-    if (
-        'IDF_S3_BUCKET' in os.environ
-        and 'IDF_S3_ACCESS_KEY' in os.environ
-        and 'IDF_S3_SECRET_KEY' in os.environ
-        and 'IDF_S3_SERVER' in os.environ
-        and 'IDF_S3_BUCKET' in os.environ
-    ):
-        return AppUploader(pipeline_id)
+    commit_sha = get_pipeline_commit_sha_by_pipeline_id(pipeline_id)
+    if not commit_sha:
+        raise ValueError(
+            'commit sha cannot be found for pipeline id %s. Please check the pipeline id. '
+            'If you think this is a bug, please report it to CI team',
+        )
+    logging.debug('pipeline commit sha of pipeline %s is %s', pipeline_id, commit_sha)
 
-    logging.info('Downloading build report from the build pipeline %s', pipeline_id)
-    test_app_presigned_urls_file = None
-
-    gl = gitlab_api.Gitlab(os.getenv('CI_PROJECT_ID', 'espressif/esp-idf'))
-
-    for child_pipeline in gl.project.pipelines.get(pipeline_id, lazy=True).bridges.list(iterator=True):
-        if child_pipeline.name == 'build_child_pipeline':
-            for job in gl.project.pipelines.get(child_pipeline.downstream_pipeline['id'], lazy=True).jobs.list(
-                iterator=True
-            ):
-                if job.name == 'generate_pytest_build_report':
-                    test_app_presigned_urls_file = gl.download_artifact(
-                        job.id, [TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME]
-                    )[0]
-                    break
-
-    if test_app_presigned_urls_file:
-        return BuildReportDownloader(test_app_presigned_urls_file)
-
-    return None
+    return AppDownloader(commit_sha, pipeline_id)
 
 
 @pytest.fixture
@@ -189,7 +188,7 @@ def build_dir(
         if requires_elf_or_map(case):
             app_downloader.download_app(app_build_path)
         else:
-            app_downloader.download_app(app_build_path, ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES)
+            app_downloader.download_app(app_build_path, 'flash')
         check_dirs = [f'build_{target}_{config}']
     else:
         check_dirs = []
@@ -390,8 +389,8 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
     idf_group.addoption(
         '--pipeline-id',
-        help='main pipeline id, not the child pipeline id. Specify this option to download the artifacts '
-        'from the minio server for debugging purpose.',
+        help='For users without s3 access. main pipeline id, not the child pipeline id. '
+        'Specify this option to download the artifacts from the minio server for debugging purpose.',
     )
 
 

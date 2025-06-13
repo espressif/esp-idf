@@ -9,6 +9,9 @@ IDF_CI_BUILD = "1"
 [gitlab]
 
 [gitlab.build_pipeline]
+workflow_name = "build_child_pipeline"
+presigned_json_job_name = 'generate_pytest_build_report'
+
 job_tags = ['build', 'shiny']
 job_template_name = '.dynamic_build_template'
 job_template_jinja = ''  # write in tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml
@@ -38,3 +41,57 @@ include:
   - tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml
   - tools/ci/dynamic_pipelines/templates/generate_target_test_report.yml
 """
+
+[gitlab.artifacts.s3.debug]
+bucket = "idf-artifacts"
+patterns = [
+    '**/build*/bootloader/*.map',
+    '**/build*/bootloader/*.elf',
+    '**/build*/*.map',
+    '**/build*/*.elf',
+    # customized
+    '**/build*/esp_tee/*.map',
+    '**/build*/esp_tee/*.elf',
+    '**/build*/gdbinit/*',
+]
+
+[gitlab.artifacts.s3.flash]
+bucket = "idf-artifacts"
+patterns = [
+    '**/build*/bootloader/*.bin',
+    '**/build*/*.bin',
+    '**/build*/partition_table/*.bin',
+    '**/build*/flasher_args.json',
+    '**/build*/flash_project_args',
+    '**/build*/config/sdkconfig.json',
+    '**/build*/sdkconfig',
+    '**/build*/project_description.json',
+    # customized
+    '**/build*/esp_tee/*.bin',
+]
+
+[gitlab.artifacts.s3.log]
+bucket = "idf-artifacts"
+patterns = [
+    '**/build*/build_log.txt',
+    '**/build*/size.json',
+]
+
+[gitlab.artifacts.s3.junit]
+bucket = "idf-artifacts"
+patterns = [
+    'XUNIT_RESULT_*.xml',
+]
+
+[gitlab.artifacts.s3.env]
+bucket = "idf-artifacts"
+patterns = [
+    'pipeline.env',
+]
+
+[gitlab.artifacts.s3.longterm]
+bucket = "longterm"
+if_clause = '"$CI_COMMIT_REF_NAME" == "master"'
+patterns = [
+    '**/build*/size.json',
+]

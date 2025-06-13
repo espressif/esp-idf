@@ -21,7 +21,7 @@
     - pipeline_variables
   artifacts:
     paths:
-      # The other artifacts patterns are defined under tools/ci/artifacts_handler.py
+      # The other artifacts patterns are defined under .idf_ci.toml
       # Now we're uploading/downloading the binary files from our internal storage server
       #
       # keep the log file to help debug
@@ -44,7 +44,6 @@
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
       $TEST_BUILD_OPTS_EXTRA
-    - python tools/ci/artifacts_handler.py upload
 
 ######################
 # build_template_app #
@@ -206,7 +205,7 @@ build_clang_test_apps_esp32p4:
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - cd ${IDF_PATH}/tools/test_build_system
-    - python ${IDF_PATH}/tools/ci/get_known_failure_cases_file.py
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - pytest
       --cleanup-idf-copy
       --parallel-count ${CI_NODE_TOTAL:-1}
