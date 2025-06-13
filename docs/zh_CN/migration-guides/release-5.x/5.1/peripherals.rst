@@ -5,10 +5,12 @@
 
 .. only:: SOC_DAC_SUPPORTED
 
+    .. _deprecate_dac_legacy_driver:
+
     DAC
     ---
 
-    DAC 驱动程序已经过重新设计（参考 :doc:`DAC API 参考 <../../../api-reference/peripherals/dac>`），以统一接口并扩展 DAC 外设的使用。建议使用更新后的驱动 API，但用户仍然可以通过包含路径 ``driver/dac.h`` 使用原有驱动。然而默认情况下，在文件中包含 ``driver/dac.h`` 会引发构建警告，例如 ``The legacy DAC driver is deprecated, please use 'driver/dac_oneshot.h', 'driver/dac_cosine.h' or 'driver/dac_continuous.h' instead``。可通过 Kconfig 选项 :ref:`CONFIG_DAC_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
+    DAC 驱动程序已经过重新设计（参考 :doc:`DAC API 参考 <../../../api-reference/peripherals/dac>`），以统一接口并扩展 DAC 外设的使用。建议使用更新后的驱动 API，但用户仍然可以通过包含路径 ``driver/dac.h`` 使用原有驱动。然而默认情况下，在文件中包含 ``driver/dac.h`` 会引发构建警告，例如 ``The legacy DAC driver is deprecated, please use 'driver/dac_oneshot.h', 'driver/dac_cosine.h' or 'driver/dac_continuous.h' instead``。可通过 Kconfig 选项 ``CONFIG_DAC_SUPPRESS_DEPRECATE_WARN`` 关闭该警告。
 
     主要概念和使用方法上的更新如下所示：
 

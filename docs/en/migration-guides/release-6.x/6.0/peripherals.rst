@@ -81,3 +81,10 @@ SDMMC
 -----
 
 - The ``get_dma_info`` member in the :cpp:type:`sdmmc_host_t` structure, as well as the ``sdspi_host_get_dma_info`` and ``sdmmc_host_get_dma_info`` functions, have been removed. DMA configuration is now handled internally by the driver.
+
+.. only:: SOC_DAC_SUPPORTED
+
+    Legacy DAC Driver is Removed
+    ------------------------------------
+
+    The legacy DAC driver ``driver/dac.h`` is deprecated since version 5.1 (see :ref:`deprecate_dac_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_dac`, and the header file path is ``driver/dac_oneshot.h``, ``driver/dac_continuous.h`` and ``driver/dac_cosine.h``.

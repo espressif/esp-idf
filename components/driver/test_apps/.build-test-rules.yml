@@ -1,11 +1,5 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/driver/test_apps/dac_test_apps/legacy_dac_driver:
-  disable:
-    - if: SOC_DAC_SUPPORTED != 1
-  depends_components:
-    - esp_adc
-
 components/driver/test_apps/legacy_adc_driver:
   disable:
     - if: SOC_ADC_SUPPORTED != 1

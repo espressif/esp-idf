@@ -120,7 +120,6 @@ Kconfig 选项
 ^^^^^^^^^^^^^
 
 - :ref:`CONFIG_DAC_ISR_IRAM_SAFE` 控制默认 ISR 处理程序在 cache 被禁用时能否继续运行。更多信息可参考 `IRAM 安全 <#iram-safe>`__。
-- :ref:`CONFIG_DAC_SUPPRESS_DEPRECATE_WARN` 控制是否在使用原有 DAC 驱动时关闭警告信息。
 - :ref:`CONFIG_DAC_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用该选项将增加固件的二进制文件大小。
 
 .. only:: esp32

@@ -506,3 +506,6 @@
         -
             re_variables: ['driver/pcnt.h']
             hint_variables: ['legacy pcnt', 'driver/pulse_cnt.h', 'esp_driver_pcnt']
+        -
+            re_variables: ['driver/dac.h']
+            hint_variables: ['legacy DAC', 'driver/dac_oneshot.h, driver/dac_continuous.h, driver/dac_cosine.h', 'esp_driver_dac']

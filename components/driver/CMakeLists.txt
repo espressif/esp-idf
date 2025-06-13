@@ -25,12 +25,6 @@ if(CONFIG_SOC_ADC_SUPPORTED)
     endif()
 endif()
 
-# DAC related source files
-if(CONFIG_SOC_DAC_SUPPORTED)
-    list(APPEND srcs "deprecated/dac_common_legacy.c"
-                     "deprecated/${target}/dac_legacy.c")
-endif()
-
 # I2C related source files
 if(CONFIG_SOC_I2C_SUPPORTED)
     list(APPEND srcs "i2c/i2c.c")
