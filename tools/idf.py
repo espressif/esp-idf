@@ -246,6 +246,8 @@ def init_cli(verbose_output: list | None = None) -> Any:
             self.callback(self.name, context, global_args, **action_args)
 
     class Action(click.Command):
+        callback: Callable
+
         def __init__(
             self,
             name: str | None = None,
