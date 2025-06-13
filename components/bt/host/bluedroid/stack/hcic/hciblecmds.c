@@ -1088,27 +1088,6 @@ BOOLEAN btsnd_hcic_ble_set_channels (BLE_CHANNELS channels)
     return (TRUE);
 }
 
-BOOLEAN btsnd_hcic_ble_clear_adv (void)
-{
-    BT_HDR *p;
-    UINT8 *pp;
-
-    if ((p = HCI_GET_CMD_BUF (HCIC_PARAM_SIZE_BLE_CLEAR_ADV)) == NULL) {
-        return (FALSE);
-    }
-
-    pp = (UINT8 *)(p + 1);
-
-    p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_CLEAR_ADV;
-    p->offset = 0;
-
-    UINT16_TO_STREAM (pp, HCI_VENDOR_BLE_CLEAR_ADV);
-    UINT8_TO_STREAM (pp, HCIC_PARAM_SIZE_BLE_CLEAR_ADV);
-
-    btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID, p);
-    return TRUE;
-}
-
 #define HCIC_BLE_CMD_CREATED(p, pp, size) do{\
     if ((p = HCI_GET_CMD_BUF(size)) == NULL) { \
         return FALSE; \
@@ -1948,6 +1927,28 @@ BOOLEAN btsnd_hcic_ble_set_privacy_mode(UINT8 addr_type, BD_ADDR addr, UINT8 pri
     return (TRUE);
 }
 
+#if (BLE_VENDOR_HCI_EN == TRUE)
+BOOLEAN btsnd_hcic_ble_clear_adv (void)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if ((p = HCI_GET_CMD_BUF (HCIC_PARAM_SIZE_BLE_CLEAR_ADV)) == NULL) {
+        return (FALSE);
+    }
+
+    pp = (UINT8 *)(p + 1);
+
+    p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_CLEAR_ADV;
+    p->offset = 0;
+
+    UINT16_TO_STREAM (pp, HCI_VENDOR_BLE_CLEAR_ADV);
+    UINT8_TO_STREAM (pp, HCIC_PARAM_SIZE_BLE_CLEAR_ADV);
+
+    btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return TRUE;
+}
+
 BOOLEAN btsnd_hcic_ble_set_csa_support (UINT8 csa_select)
 {
     BT_HDR *p;
@@ -1991,6 +1992,7 @@ BOOLEAN btsnd_hcic_ble_set_vendor_evt_mask (UINT32 evt_mask)
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID, p);
     return TRUE;
 }
+#endif // #if (BLE_VENDOR_HCI_EN == TRUE)
 #endif
 
 #if (BLE_FEAT_ISO_EN == TRUE)

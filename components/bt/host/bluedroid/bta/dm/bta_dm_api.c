@@ -231,6 +231,7 @@ void BTA_DmCfgCoexStatus(UINT8 op, UINT8 type, UINT8 status)
 }
 #endif
 
+#if (BLE_VENDOR_HCI_EN == TRUE)
 void BTA_DmsendVendorHciCmd(UINT16 opcode, UINT8 param_len, UINT8 *p_param_buf, tBTA_SEND_VENDOR_HCI_CMPL_CBACK p_vendor_cmd_complete_cback)
 {
     tBTA_DM_API_SEND_VENDOR_HCI_CMD *p_msg;
@@ -245,6 +246,57 @@ void BTA_DmsendVendorHciCmd(UINT16 opcode, UINT8 param_len, UINT8 *p_param_buf, 
         bta_sys_sendmsg(p_msg);
     }
 }
+
+/*******************************************************************************
+**
+** Function         BTA_DmBleClearAdv
+**
+** Description      This function is called to clear Advertising
+**
+** Parameters       p_adv_data_cback : clear adv complete callback.
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTA_DmBleClearAdv (tBTA_CLEAR_ADV_CMPL_CBACK *p_clear_adv_cback)
+{
+    tBTA_DM_API_CLEAR_ADV  *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CLEAR_ADV *)
+                 osi_malloc(sizeof(tBTA_DM_API_CLEAR_ADV))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_CLEAR_ADV_EVT;
+        p_msg->p_clear_adv_cback = p_clear_adv_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetCsaSupport(uint8_t csa_select, tBTA_SET_CSA_SUPPORT_CMPL_CBACK *p_callback)
+{
+    tBTA_DM_API_BLE_SET_CSA_SUPPORT *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_CSA_SUPPORT *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_CSA_SUPPORT)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_SET_CSA_SUPPORT_EVT;
+        p_msg->csa_select = csa_select;
+        p_msg->p_cback = p_callback;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetVendorEventMask(uint32_t evt_mask, tBTA_SET_VENDOR_EVT_MASK_CBACK *p_callback)
+{
+    tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_SET_VENDOR_EVT_MASK_EVT;
+        p_msg->evt_mask = evt_mask;
+        p_msg->p_cback = p_callback;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+#endif // #if (BLE_VENDOR_HCI_EN == TRUE)
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 
@@ -1896,30 +1948,6 @@ extern void BTA_DmBleBroadcast (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p
         bta_sys_sendmsg(p_msg);
     }
 }
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleClearAdv
-**
-** Description      This function is called to clear Advertising
-**
-** Parameters       p_adv_data_cback : clear adv complete callback.
-**
-** Returns          None
-**
-*******************************************************************************/
-void BTA_DmBleClearAdv (tBTA_CLEAR_ADV_CMPL_CBACK *p_clear_adv_cback)
-{
-    tBTA_DM_API_CLEAR_ADV  *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_CLEAR_ADV *)
-                 osi_malloc(sizeof(tBTA_DM_API_CLEAR_ADV))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_CLEAR_ADV_EVT;
-        p_msg->p_clear_adv_cback = p_clear_adv_cback;
-
-        bta_sys_sendmsg(p_msg);
-    }
-}
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
 #endif
@@ -3010,32 +3038,6 @@ void BTA_DmClearRandAddress(void)
     if ((p_msg = (tBTA_DM_APT_CLEAR_ADDR *) osi_malloc(sizeof(tBTA_DM_APT_CLEAR_ADDR))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_APT_CLEAR_ADDR));
         p_msg->hdr.event = BTA_DM_API_CLEAR_RAND_ADDR_EVT;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-void BTA_DmBleGapSetCsaSupport(uint8_t csa_select, tBTA_SET_CSA_SUPPORT_CMPL_CBACK *p_callback)
-{
-    tBTA_DM_API_BLE_SET_CSA_SUPPORT *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_BLE_SET_CSA_SUPPORT *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_CSA_SUPPORT)))
-        != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_SET_CSA_SUPPORT_EVT;
-        p_msg->csa_select = csa_select;
-        p_msg->p_cback = p_callback;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-void BTA_DmBleGapSetVendorEventMask(uint32_t evt_mask, tBTA_SET_VENDOR_EVT_MASK_CBACK *p_callback)
-{
-    tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK)))
-        != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_SET_VENDOR_EVT_MASK_EVT;
-        p_msg->evt_mask = evt_mask;
-        p_msg->p_cback = p_callback;
         bta_sys_sendmsg(p_msg);
     }
 }
