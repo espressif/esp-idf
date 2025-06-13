@@ -13,7 +13,7 @@ pyserial
 cryptography
 pyparsing
 pyelftools
-idf-component-manager
+idf-component-manager>=2.2
 esp-coredump
 esptool
 esp-idf-kconfig
