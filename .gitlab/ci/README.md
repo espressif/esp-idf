@@ -250,6 +250,7 @@ We're using the latest version of [idf-build-apps][idf-build-apps]. Please refer
 In ESP-IDF CI, there's a few more special rules are additionally supported to disable the check app dependencies feature:
 
 - Add MR labels `BUILD_AND_TEST_ALL_APPS`
+- Pipeline variable `IDF_CI_SELECT_ALL_PYTEST_CASES=1`
 - Run in protected branches
 
 ## Upload/Download Artifacts to Internal Minio Server

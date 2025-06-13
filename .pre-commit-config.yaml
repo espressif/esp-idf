@@ -25,7 +25,7 @@ repos:
           - pytest-ignore-test-results~=0.3
           - pytest-rerunfailures
           - pytest-timeout
-          - idf-build-apps~=2.8
+          - idf-build-apps~=2.11
           - python-gitlab
           - minio
           - click
@@ -163,7 +163,7 @@ repos:
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf-build-apps>=2.8,<3
+          - idf-build-apps~=2.11
       - id: sort-yaml-files
         name: sort yaml files
         entry: tools/ci/sort_yaml.py

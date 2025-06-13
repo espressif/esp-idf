@@ -1,0 +1,5 @@
+[local_runtime_envs]
+EXTRA_CFLAGS = "-Werror -Werror=deprecated-declarations -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function -Wstrict-prototypes"
+EXTRA_CXXFLAGS = "-Werror -Werror=deprecated-declarations -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function"
+LDGEN_CHECK_MAPPING = "1"
+IDF_CI_BUILD = "1"

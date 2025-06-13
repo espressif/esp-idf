@@ -3,20 +3,21 @@
 import os
 import sys
 import typing as t
-from typing import Literal
 
 from dynamic_pipelines.constants import BINARY_SIZE_METRIC_NAME
 from idf_build_apps import App
 from idf_build_apps import CMakeApp
 from idf_build_apps import json_to_app
 
-from .uploader import AppUploader
 from .uploader import get_app_uploader
+
+if t.TYPE_CHECKING:
+    from .uploader import AppUploader
 
 
 class IdfCMakeApp(CMakeApp):
     uploader: t.ClassVar[t.Optional['AppUploader']] = get_app_uploader()
-    build_system: Literal['idf_cmake'] = 'idf_cmake'
+    build_system: t.Literal['idf_cmake'] = 'idf_cmake'
 
     def _initialize_hook(self, **kwargs: t.Any) -> None:
         # ensure this env var exists

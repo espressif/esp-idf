@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import abc
 import glob
@@ -15,8 +15,6 @@ from artifacts_handler import getenv
 from idf_build_apps import App
 from idf_build_apps.utils import rmdir
 from idf_ci_utils import IDF_PATH
-from idf_pytest.constants import DEFAULT_BUILD_LOG_FILENAME
-from idf_pytest.constants import DEFAULT_SIZE_JSON_FILENAME
 
 
 class AppDownloader:
@@ -63,7 +61,7 @@ class AppUploader(AppDownloader):
             'project_description.json',
         ],
         ArtifactType.LOGS: [
-            DEFAULT_BUILD_LOG_FILENAME,
+            'build_log.txt',
         ],
     }
 
@@ -116,7 +114,7 @@ class AppUploader(AppDownloader):
             uploaded |= self._upload_app(app_build_path, upload_type)
 
         if uploaded:
-            rmdir(app_build_path, exclude_file_patterns=[DEFAULT_BUILD_LOG_FILENAME, DEFAULT_SIZE_JSON_FILENAME])
+            rmdir(app_build_path, exclude_file_patterns=['build_log.txt', 'size.json'])
 
     def _download_app(self, app_build_path: str, artifact_type: ArtifactType) -> None:
         app_path, build_dir = os.path.split(app_build_path)

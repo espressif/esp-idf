@@ -100,7 +100,7 @@ managed_components
 pytest-embedded/
 # legacy one
 pytest_embedded_log/
-list_job*.txt
+app_info_*.txt
 size_info*.txt
 XUNIT_RESULT*.xml
 .manifest_sha

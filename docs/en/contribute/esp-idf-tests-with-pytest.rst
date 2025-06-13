@@ -544,7 +544,7 @@ If you want to build and test with all sdkconfig files at the same time, you sho
 .. code-block:: shell
 
     $ cd $IDF_PATH/examples/system/console/basic
-    $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32 -v --pytest-apps
+    $ idf-ci build run --target esp32 --only-test-related
     $ pytest --target esp32
 
 The app with ``sdkconfig.ci.history`` will be built in ``build_esp32_history``, and the app with ``sdkconfig.ci.nohistory`` will be built in ``build_esp32_nohistory``. ``pytest --target esp32`` will run tests on both apps.
@@ -580,8 +580,8 @@ Of course we can build the required binaries manually, but we can also use our C
 .. code-block:: shell
 
     $ cd $IDF_PATH/examples/openthread
-    $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target all -v --pytest-apps -k test_thread_connect
-    $ pytest --target esp32c6,esp32h2,esp32s3 -k test_thread_connect
+    $ idf-ci build run --only-test-related -k test_thread_connect
+    $ pytest -k test_thread_connect
 
 .. important::
 

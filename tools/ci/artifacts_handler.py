@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import fnmatch
@@ -12,7 +12,6 @@ from zipfile import ZipFile
 
 import urllib3
 from idf_ci_utils import sanitize_job_name
-from idf_pytest.constants import DEFAULT_BUILD_LOG_FILENAME
 from minio import Minio
 
 
@@ -36,7 +35,7 @@ TYPE_PATTERNS_DICT = {
         '**/build*/*.elf',
     ],
     ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES: [
-        f'**/build*/{DEFAULT_BUILD_LOG_FILENAME}',
+        '**/build*/build_log.txt',
         '**/build*/*.bin',
         '**/build*/bootloader/*.bin',
         '**/build*/esp_tee/*.bin',
@@ -46,10 +45,10 @@ TYPE_PATTERNS_DICT = {
         '**/build*/config/sdkconfig.json',
         '**/build*/sdkconfig',
         '**/build*/project_description.json',
-        'list_job*.txt',
+        'app_info_*.txt',
     ],
     ArtifactType.LOGS: [
-        f'**/build*/{DEFAULT_BUILD_LOG_FILENAME}',
+        '**/build*/build_log.txt',
     ],
     ArtifactType.SIZE_REPORTS: [
         '**/build*/size.json',

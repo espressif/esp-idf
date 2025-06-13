@@ -26,23 +26,21 @@
     paths:
       # The other artifacts patterns are defined under tools/ci/artifacts_handler.py
       # Now we're uploading/downloading the binary files from our internal storage server
-      #
+
       # keep the log file to help debug
       - "**/build*/build_log.txt"
       # build spec files
       - build_summary_*.xml
       # list of built apps
-      - list_job_*.txt
+      - app_info_*.txt
     when: always
     expire_in: 1 week
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/dynamic_pipelines/scripts/child_pipeline_build_apps.py $APP_LIST_FILE
+    - run_cmd idf-ci build run
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
-      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --junitxml "build_summary_${CI_JOB_NAME_SLUG}.xml"
+      --modified-files ${MR_MODIFIED_FILES}
     - run_cmd python tools/ci/artifacts_handler.py upload --type size_reports
 
 .dynamic_target_test_template:

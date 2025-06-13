@@ -65,7 +65,7 @@ def common_arguments(parser: argparse.ArgumentParser) -> None:
 
 def conditional_arguments(report_type_args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     if report_type_args.report_type == 'build':
-        parser.add_argument('--app-list-filepattern', default='list_job_*.txt', help='Pattern to match app list files')
+        parser.add_argument('--app-list-filepattern', default='app_info_*.txt', help='Pattern to match app list files')
     elif report_type_args.report_type == 'target_test':
         parser.add_argument(
             '--junit-report-filepattern', default='XUNIT_RESULT*.xml', help='Pattern to match JUnit report files'

@@ -122,15 +122,6 @@ check_test_scripts_build_test_rules:
     # requires basic pytest dependencies
     - python tools/ci/check_build_test_rules.py check-test-scripts examples/ tools/test_apps components
 
-check_configure_ci_environment_parsing:
-  extends:
-    - .pre_check_template
-    - .before_script:build
-    - .rules:build
-  script:
-    - cd tools/ci
-    - python -m unittest ci_build_apps.py
-
 pipeline_variables:
   extends:
     - .pre_check_template

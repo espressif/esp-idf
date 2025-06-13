@@ -544,7 +544,7 @@ CI 的工作流程如下所示：
 .. code-block:: shell
 
     $ cd $IDF_PATH/examples/system/console/basic
-    $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32 -v --pytest-apps
+    $ idf-ci build run --target esp32 --only-test-related
     $ pytest --target esp32
 
 包含 ``sdkconfig.ci.history`` 配置的应用程序会编译到 ``build_esp32_history`` 中，而包含 ``sdkconfig.ci.nohistory`` 配置的应用程序会编译到 ``build_esp32_nohistory`` 中。 ``pytest --target esp32`` 命令会在这两个应用程序上运行测试。
@@ -580,8 +580,8 @@ CI 的工作流程如下所示：
 .. code-block:: shell
 
     $ cd $IDF_PATH/examples/openthread
-    $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target all -v --pytest-apps -k test_thread_connect
-    $ pytest --target esp32c6,esp32h2,esp32s3 -k test_thread_connect
+    $ idf-ci build run --only-test-related -k test_thread_connect
+    $ pytest -k test_thread_connect
 
 .. important::
 

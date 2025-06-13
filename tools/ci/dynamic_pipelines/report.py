@@ -89,7 +89,7 @@ class ReportGenerator:
         with open(output_filepath, 'w') as file:
             file.write(report_str)
 
-        # for example, {URL}/-/esp-idf/-/jobs/{id}/artifacts/list_job_84.txt
+        # for example, {URL}/-/esp-idf/-/jobs/{id}/artifacts/app_info_84.txt
         # CI_PAGES_URL is {URL}/esp-idf, which missed one `-`
         report_url: str = get_artifacts_url(job_id, output_filepath)
         return report_url

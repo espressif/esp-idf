@@ -34,13 +34,12 @@
   variables:
     IDF_TOOLCHAIN: clang
     TEST_BUILD_OPTS_EXTRA: ""
-    TEST_DIR: tools/test_apps/system/clang_build_test
     PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
+    - run_cmd idf-build-apps build
+      -p tools/test_apps/system/clang_build_test
       -t $IDF_TARGET
-      --copy-sdkconfig
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
       --modified-components ${MR_MODIFIED_COMPONENTS}
@@ -105,7 +104,7 @@ gcc_static_analyzer:
     ANALYZING_APP: "examples/get-started/hello_world"
   script:
     - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
-    - python -m idf_build_apps build -v -p ${ANALYZING_APP} -t all
+    - idf-build-apps build -p ${ANALYZING_APP}
 
 ########################################
 # Clang Build Apps Without Tests Cases #
