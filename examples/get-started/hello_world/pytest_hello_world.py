@@ -25,7 +25,7 @@ def test_hello_world_linux(dut: IdfDut) -> None:
 
 
 @pytest.mark.host_test
-@pytest.mark.macos_shell
+@pytest.mark.macos
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_hello_world_macos(dut: IdfDut) -> None:
     dut.expect('Hello world!')

@@ -35,7 +35,7 @@ fi
 
 # https://ccache.dev/manual/latest.html#_configuring_ccache
 # Set ccache base directory to the project checkout path, to cancel out differences between runners
-export CCACHE_BASEDIR="${CI_PROJECT_DIR}"
+export CCACHE_BASEDIR="${IDF_PATH}"
 
 # host mapping volume to share ccache fbetween runner concurrent jobs
 export CCACHE_SLOPPINESS="time_macros"
