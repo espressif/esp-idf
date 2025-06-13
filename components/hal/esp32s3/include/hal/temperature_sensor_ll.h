@@ -144,22 +144,17 @@ static inline void temperature_sensor_ll_set_clk_div(uint8_t clk_div)
 /**
  * @brief Retrieve and calculate the temperature sensor calibration value.
  *
- * @param[out] tsens_cal Pointer to a float where the calculated calibration value will be stored.
- *                       The output is a signed floating-point value based on the efuse data.
- *
- * @return returns true to indicate successful retrieval. false for calibration failed.
+ * @return Temperature calibration value.
  */
-static inline bool temperature_sensor_ll_calib_get_tsens_val(float* tsens_cal)
+static inline int temperature_sensor_ll_load_calib_param(void)
 {
-    uint32_t version = efuse_ll_get_blk_version_major();
-    if (version == 0) {
-        *tsens_cal = 0.0;
-        return false;
+    if (efuse_ll_get_blk_version_major() == 0) {
+        return 0;
     }
-
     uint32_t cal_temp = EFUSE.rd_sys_part1_data4.temp_calib;
-    *tsens_cal = ((cal_temp & BIT(8)) != 0)? -(uint8_t)cal_temp: (uint8_t)cal_temp;
-    return true;
+    // BIT(8) stands for sign: 1: negative, 0: positive
+    int tsens_cal = ((cal_temp & BIT(8)) != 0)? -(uint8_t)cal_temp: (uint8_t)cal_temp;
+    return tsens_cal;
 }
 
 #ifdef __cplusplus
