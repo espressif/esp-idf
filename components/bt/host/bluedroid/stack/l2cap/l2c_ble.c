@@ -242,7 +242,7 @@ BOOLEAN L2CA_EnableUpdateBleConnParams (BD_ADDR rem_bda, BOOLEAN enable)
         return (FALSE);
     }
     bool is_disable = (p_lcb->conn_update_mask & L2C_BLE_CONN_UPDATE_DISABLE);
-    if(l2cu_plcb_active_count() >1 && !(enable && is_disable)) {
+    if(l2cu_ble_plcb_active_count() >1 && !(enable && is_disable)) {
         return FALSE;
     }
 

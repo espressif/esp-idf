@@ -22,6 +22,10 @@ extern tBTA_BLE_ADV_DATA *gl_bta_scan_rsp_data_ptr;
 
 #define BLE_ISVALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)))
 
+#define BLE_VENDOR_PDU_RECV_EVT         (0xC0)
+#define BLE_VENDOR_CHMAP_UPDATE_EVT     (0xC1)
+#define BLE_VENDOR_SLEEP_WAKEUP_EVT     (0xC3)
+
 typedef enum {
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_ACT_CFG_ADV_DATA = 0,

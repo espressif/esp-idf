@@ -336,14 +336,14 @@ tL2C_LCB  *l2cu_find_free_lcb (void)
     return (NULL);
 }
 
-uint8_t l2cu_plcb_active_count(void)
+uint8_t l2cu_ble_plcb_active_count(void)
 {
     list_node_t *p_node = NULL;
     tL2C_LCB    *p_lcb  = NULL;
     uint8_t active_count = 0;
     for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
         p_lcb = list_node(p_node);
-        if (p_lcb && p_lcb->in_use) {
+        if (p_lcb && p_lcb->in_use && p_lcb->transport == BT_TRANSPORT_LE) {
             active_count ++;
         }
     }
@@ -615,7 +615,7 @@ void l2cu_send_peer_connect_rsp (tL2C_CCB *p_ccb, UINT16 result, UINT16 status)
 **
 ** Description      Build and send an L2CAP "connection response neg" message
 **                  to the peer. This function is called when there is no peer
-**                  CCB (non-existant PSM or no resources).
+**                  CCB (non-existent PSM or no resources).
 **
 ** Returns          void
 **
@@ -1737,7 +1737,7 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
        ) {
         l2cu_dequeue_ccb (p_ccb);
 
-        /* Delink the CCB from the LCB */
+        /* Unlink the CCB from the LCB */
         p_ccb->p_lcb = NULL;
     }
 
@@ -1960,7 +1960,7 @@ tL2C_RCB *l2cu_find_ble_rcb_by_psm (UINT16 psm)
 **
 ** Returns          UINT8 - L2CAP_PEER_CFG_OK if passed to upper layer,
 **                          L2CAP_PEER_CFG_UNACCEPTABLE if automatically responded to
-**                              because parameters are unnacceptable from a specification
+**                              because parameters are unacceptable from a specification
 **                              point of view.
 **                          L2CAP_PEER_CFG_DISCONNECT if no compatible channel modes
 **                              between the two devices, and shall be closed.
@@ -2558,7 +2558,7 @@ BOOLEAN l2cu_set_acl_priority (BD_ADDR bd_addr, UINT8 priority, BOOLEAN reset_af
 **
 ** Function         l2cu_set_non_flushable_pbf
 **
-** Description      set L2CAP_PKT_START_NON_FLUSHABLE if controller supoorts
+** Description      set L2CAP_PKT_START_NON_FLUSHABLE if controller supports
 **
 ** Returns          void
 **
@@ -3328,7 +3328,7 @@ static tL2C_CCB *l2cu_get_next_channel_in_rr(tL2C_LCB *p_lcb)
     for ( i = 0; (i < L2CAP_NUM_CHNL_PRIORITY) && (!p_serve_ccb); i++ ) {
         /* scan all channel within serving priority group until finding a channel to serve */
         for ( j = 0; (j < p_lcb->rr_serv[p_lcb->rr_pri].num_ccb) && (!p_serve_ccb); j++) {
-            /* scaning from next serving channel */
+            /* scanning from next serving channel */
             p_ccb = p_lcb->rr_serv[p_lcb->rr_pri].p_serve_ccb;
 
             if (!p_ccb) {

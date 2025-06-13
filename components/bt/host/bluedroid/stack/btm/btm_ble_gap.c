@@ -4547,7 +4547,7 @@ static void btm_ble_vs_evt_callback(UINT8 len, UINT8 *p)
     STREAM_TO_UINT8(sub_event, p);
     len--;
 
-    if (sub_event < HCI_VSE_LE_LEGACY_SCAN_REQ_RECEIVED_EVT) {
+    if (sub_event < HCI_VSE_LE_SUBEVT_BASE) {
         return;
     }
 
