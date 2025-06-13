@@ -1,6 +1,6 @@
 menu "ESP-Driver:Camera Controller Configurations"
 
-    depends on SOC_MIPI_CSI_SUPPORTED || SOC_LCDCAM_CAM_SUPPORTED
+    depends on SOC_MIPI_CSI_SUPPORTED || SOC_ISP_DVP_SUPPORTED || SOC_LCDCAM_CAM_SUPPORTED
 
     config CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE
         bool "CSI ISR Cache-Safe"
@@ -16,6 +16,7 @@ menu "ESP-Driver:Camera Controller Configurations"
 
     config CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE # IDF-10093
         bool "ISP_DVP ISR Cache-Safe"
+        depends on SOC_ISP_DVP_SUPPORTED
         default n
         select DW_GDMA_ISR_IRAM_SAFE
         select DW_GDMA_CTRL_FUNC_IN_IRAM
