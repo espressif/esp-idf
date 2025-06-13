@@ -79,7 +79,7 @@
 #define ADC_TEST_LOW_VAL         0
 #define ADC_TEST_LOW_THRESH      17
 
-#define ADC_TEST_HIGH_VAL        3430
+#define ADC_TEST_HIGH_VAL        3375
 #define ADC_TEST_HIGH_THRESH     200
 
 #elif CONFIG_IDF_TARGET_ESP32C61
