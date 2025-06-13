@@ -268,6 +268,8 @@ void apm_hal_set_region_end_addr(apm_ctrl_module_t ctrl_mod, uint32_t regn_num, 
 
 void apm_hal_set_sec_mode_region_attr(apm_ctrl_module_t ctrl_mod, uint32_t regn_num, apm_security_mode_t mode, uint32_t regn_pms)
 {
+    HAL_ASSERT(mode != APM_SEC_MODE_TEE);
+
     switch (ctrl_mod) {
         case APM_CTRL_HP_APM:
             apm_ll_hp_apm_set_sec_mode_region_attr(regn_num, mode, regn_pms);

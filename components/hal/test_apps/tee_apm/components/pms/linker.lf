@@ -1,0 +1,5 @@
+[mapping:pms]
+archive: libpms.a
+entries:
+    test_intr_utils (noflash)
+    test_panic_handler (noflash)

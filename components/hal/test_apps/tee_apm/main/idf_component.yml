@@ -1,0 +1,4 @@
+dependencies:
+  ccomp_timer: "^1.0.0"
+  test_utils:
+    path: ${IDF_PATH}/tools/unit-test-app/components/test_utils
