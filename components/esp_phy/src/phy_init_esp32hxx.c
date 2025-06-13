@@ -113,11 +113,15 @@ void esp_phy_enable(esp_phy_modem_t modem)
         } else {
             phy_wakeup_init();
         }
+#if !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
         phy_track_pll_init();
+#endif
     }
     phy_set_modem_flag(modem);
     // Immediately track pll when phy enabled.
+#if !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
     phy_track_pll();
+#endif
 #if CONFIG_ESP_PHY_RECORD_USED_TIME
     phy_record_time(true, modem);
 #endif
@@ -133,7 +137,9 @@ void esp_phy_disable(esp_phy_modem_t modem)
     phy_clr_modem_flag(modem);
     if (phy_get_modem_flag() == 0) {
 
+#if !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
         phy_track_pll_deinit();
+#endif
         phy_close_rf();
         phy_xpd_tsens();
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
