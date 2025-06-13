@@ -6,11 +6,9 @@
 
 /*******************************************************************************
  * NOTICE
- * The hal is not public api, don't use in application code.
- * See readme.md in soc/include/hal/readme.md
+ * The LL layer for ESP32C5 SPI register operations
+ * It is NOT public api, don't use in application code.
  ******************************************************************************/
-
-// The LL layer for SPI register operations
 
 #pragma once
 
@@ -197,6 +195,10 @@ static inline void spi_ll_master_init(spi_dev_t *hw)
     //use all 64 bytes of the buffer
     hw->user.usr_miso_highpart = 0;
     hw->user.usr_mosi_highpart = 0;
+
+    //Disable unused error_end condition
+    hw->user1.mst_wfull_err_end_en = 0;
+    hw->user2.mst_rempty_err_end_en = 0;
 
     //Disable unneeded ints
     hw->slave.val = 0;
