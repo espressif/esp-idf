@@ -329,7 +329,7 @@ void esp_phy_enable(esp_phy_modem_t modem)
 #endif
 
 // ESP32 will track pll in the wifi/BT modem interrupt handler.
-#if !CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
         phy_track_pll_init();
 #endif
 
@@ -340,7 +340,7 @@ void esp_phy_enable(esp_phy_modem_t modem)
 
     }
     phy_set_modem_flag(modem);
-#if !CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
     // Immediately track pll when phy enabled.
     phy_track_pll();
 #endif
@@ -360,7 +360,7 @@ void esp_phy_disable(esp_phy_modem_t modem)
     phy_clr_modem_flag(modem);
     if (phy_get_modem_flag() == 0) {
 // ESP32 will track pll in the wifi/BT modem interrupt handler.
-#if !CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
         phy_track_pll_deinit();
 #endif
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
