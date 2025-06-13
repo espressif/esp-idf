@@ -274,7 +274,7 @@ esp_err_t temperature_sensor_disable(temperature_sensor_handle_t tsens)
 
 static esp_err_t read_delta_t_from_efuse(void)
 {
-    if (esp_efuse_rtc_calib_get_tsens_val(&s_deltaT) != ESP_OK) {
+    if (temperature_sensor_ll_calib_get_tsens_val(&s_deltaT) != true) {
         ESP_LOGW(TAG, "Calibration failed");
     }
     ESP_LOGD(TAG, "s_deltaT = %f", s_deltaT);

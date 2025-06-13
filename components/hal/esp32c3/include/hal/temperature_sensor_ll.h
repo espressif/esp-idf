@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@
 #include "hal/temperature_sensor_types.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
+#include "hal/efuse_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -149,6 +150,27 @@ static inline uint32_t temperature_sensor_ll_get_clk_div(void)
 static inline void temperature_sensor_ll_set_clk_div(uint8_t clk_div)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.apb_tsens_ctrl, tsens_clk_div, clk_div);
+}
+
+/**
+ * @brief Retrieve and calculate the temperature sensor calibration value.
+ *
+ * @param[out] tsens_cal Pointer to a float where the calculated calibration value will be stored.
+ *                       The output is a signed floating-point value based on the efuse data.
+ *
+ * @return returns true to indicate successful retrieval. false for calibration failed.
+ */
+static inline bool temperature_sensor_ll_calib_get_tsens_val(float* tsens_cal)
+{
+    uint32_t version = efuse_ll_get_blk_version_major();
+    if (version == 0) {
+        *tsens_cal = 0.0;
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    uint32_t cal_temp = EFUSE.rd_sys_part1_data4.temp_calib;
+    *tsens_cal = ((cal_temp & BIT(8)) != 0)? -(uint8_t)cal_temp: (uint8_t)cal_temp;
+    return ESP_OK;
 }
 
 #ifdef __cplusplus

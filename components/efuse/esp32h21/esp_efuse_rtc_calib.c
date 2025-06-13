@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,11 +44,5 @@ int esp_efuse_rtc_calib_get_chan_compens(int version, uint32_t adc_unit, uint32_
 esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, int atten, uint32_t* out_digi, uint32_t* out_vol_mv)
 {
     // TODO: [ESP32H21] IDF-11590
-    return ESP_OK;
-}
-
-esp_err_t esp_efuse_rtc_calib_get_tsens_val(float* tsens_cal)
-{
-    // TODO: [ESP32H21] IDF-11624
     return ESP_OK;
 }

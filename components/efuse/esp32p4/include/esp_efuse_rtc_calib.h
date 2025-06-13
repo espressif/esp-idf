@@ -57,16 +57,6 @@ int esp_efuse_rtc_calib_get_chan_compens(int version, uint32_t adc_unit, uint32_
  */
 esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, int atten, uint32_t* out_digi, uint32_t* out_vol_mv);
 
-/**
- * @brief Get the temperature sensor calibration number delta_T stored in the efuse.
- *
- * @param tsens_cal Pointer of the specification of temperature sensor calibration number in efuse.
- *
- * @return ESP_OK if get the calibration value successfully.
- *         ESP_ERR_INVALID_ARG if can't get the calibration value.
- */
-esp_err_t esp_efuse_rtc_calib_get_tsens_val(float* tsens_cal);
-
 #ifdef __cplusplus
 }
 #endif
