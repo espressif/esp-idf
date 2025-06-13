@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
@@ -277,11 +277,11 @@ static void esp_wifi_connect_first_time(void)
     // make sure softap has started
     vTaskDelay(1000/portTICK_PERIOD_MS);
 
-    wifi_config_t w_config;
-    memset(&w_config, 0, sizeof(w_config));
-    memcpy(w_config.sta.ssid, TEST_DEFAULT_SSID, strlen(TEST_DEFAULT_SSID));
-    memcpy(w_config.sta.password, TEST_DEFAULT_PWD, strlen(TEST_DEFAULT_PWD));
-    w_config.sta.channel = 1;
+    wifi_config_t w_config = {
+        .sta.ssid = TEST_DEFAULT_SSID,
+        .sta.password = "invalid_password",
+        .sta.channel = 1,
+    };
 
     wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
 
@@ -289,7 +289,6 @@ static void esp_wifi_connect_first_time(void)
     ESP_LOGI(TAG, "start esp_wifi_connect first time: %s", TEST_DEFAULT_SSID);
     TEST_ESP_OK(esp_wifi_connect());
 }
-
 static void test_wifi_connect_at_scan_phase(void)
 {
 
@@ -309,8 +308,8 @@ static void test_wifi_connect_before_connected_phase(void)
 
     esp_wifi_connect_first_time();
 
-    // connect before connected
-    vTaskDelay(730/portTICK_PERIOD_MS);
+    // connect before connected from channel 1 to 6 need 720ms
+    vTaskDelay(725 / portTICK_PERIOD_MS);
     ESP_LOGI(TAG, "connect when first connect after scan before connected");
     TEST_ESP_ERR(ESP_ERR_WIFI_CONN, esp_wifi_connect());
     wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
