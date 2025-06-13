@@ -178,11 +178,11 @@ menu "PHY"
         help
             If enabled, there will be some logs while pll tracking
 
-            menuconfig ESP_PHY_DEBUG
-            bool "Enable PHY Debug"
-            default n
-            help
-                Enabling this option allows different kinds of phy debugging features.
+    menuconfig ESP_PHY_DEBUG
+        bool "Enable PHY Debug"
+        default n
+        help
+            Enabling this option allows different kinds of phy debugging features.
 
     config ESP_PHY_DISABLE_PLL_TRACK
         bool "Disable phy pll track(only for experimental)"
