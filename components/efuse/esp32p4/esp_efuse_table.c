@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table c56ed98dde7a08c8f70d57a01faba96a
+// md5_digest_table 665d4d3a1354653f8e46869d49df1a2f
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -247,8 +247,8 @@ static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MINOR[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WAFER_VERSION_MINOR,
 };
 
-static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MAJOR[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WAFER_VERSION_MAJOR,
+static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MAJOR_LO[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WAFER_VERSION_MAJOR_LO,
 };
 
 static const esp_efuse_desc_t WR_DIS_DISABLE_WAFER_VERSION_MAJOR[] = {
@@ -285,6 +285,10 @@ static const esp_efuse_desc_t WR_DIS_PKG_VERSION[] = {
 
 static const esp_efuse_desc_t WR_DIS_SYS_DATA_PART1[] = {
     {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of BLOCK2,
+};
+
+static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MAJOR_HI[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WAFER_VERSION_MAJOR_HI,
 };
 
 static const esp_efuse_desc_t WR_DIS_LDO_VO1_DREF[] = {
@@ -892,8 +896,8 @@ static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
     {EFUSE_BLK1, 64, 4}, 	 // [] Minor chip version,
 };
 
-static const esp_efuse_desc_t WAFER_VERSION_MAJOR[] = {
-    {EFUSE_BLK1, 68, 2}, 	 // [] Major chip version,
+static const esp_efuse_desc_t WAFER_VERSION_MAJOR_LO[] = {
+    {EFUSE_BLK1, 68, 2}, 	 // [] Major chip version (lower 2 bits),
 };
 
 static const esp_efuse_desc_t DISABLE_WAFER_VERSION_MAJOR[] = {
@@ -926,6 +930,10 @@ static const esp_efuse_desc_t PSRAM_VENDOR[] = {
 
 static const esp_efuse_desc_t PKG_VERSION[] = {
     {EFUSE_BLK1, 84, 3}, 	 // [] Package version,
+};
+
+static const esp_efuse_desc_t WAFER_VERSION_MAJOR_HI[] = {
+    {EFUSE_BLK1, 87, 1}, 	 // [] Major chip version (MSB),
 };
 
 static const esp_efuse_desc_t LDO_VO1_DREF[] = {
@@ -1446,8 +1454,8 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MINOR[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR[] = {
-    &WR_DIS_WAFER_VERSION_MAJOR[0],    		// [] wr_dis of WAFER_VERSION_MAJOR
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR_LO[] = {
+    &WR_DIS_WAFER_VERSION_MAJOR_LO[0],    		// [] wr_dis of WAFER_VERSION_MAJOR_LO
     NULL
 };
 
@@ -1493,6 +1501,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[] = {
     &WR_DIS_SYS_DATA_PART1[0],    		// [] wr_dis of BLOCK2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR_HI[] = {
+    &WR_DIS_WAFER_VERSION_MAJOR_HI[0],    		// [] wr_dis of WAFER_VERSION_MAJOR_HI
     NULL
 };
 
@@ -2251,8 +2264,8 @@ const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[] = {
-    &WAFER_VERSION_MAJOR[0],    		// [] Major chip version
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR_LO[] = {
+    &WAFER_VERSION_MAJOR_LO[0],    		// [] Major chip version (lower 2 bits)
     NULL
 };
 
@@ -2293,6 +2306,11 @@ const esp_efuse_desc_t* ESP_EFUSE_PSRAM_VENDOR[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
     &PKG_VERSION[0],    		// [] Package version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR_HI[] = {
+    &WAFER_VERSION_MAJOR_HI[0],    		// [] Major chip version (MSB)
     NULL
 };
 
