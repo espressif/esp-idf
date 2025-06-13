@@ -520,7 +520,6 @@ components/soc/esp32/include/soc/reset_reasons.h
 components/soc/esp32/include/soc/sdmmc_pins.h
 components/soc/esp32/include/soc/soc_pins.h
 components/soc/esp32/include/soc/soc_ulp.h
-components/soc/esp32/include/soc/touch_sensor_channel.h
 components/soc/esp32/include/soc/uart_pins.h
 components/soc/esp32/include/soc/wdev_reg.h
 components/soc/esp32/ledc_periph.c
