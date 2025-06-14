@@ -74,5 +74,6 @@ static __attribute__((constructor)) void adc_hw_calibration(void)
 #endif
         }
     }
+    adc_apb_periph_free();
 }
 #endif //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
