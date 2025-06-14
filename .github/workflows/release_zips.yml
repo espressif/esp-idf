@@ -11,7 +11,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Create a recursive clone source zip
-        uses: espressif/github-actions/release_zips@master
-        env:
-            RELEASE_PROJECT_NAME: ESP-IDF
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: espressif/release-zips-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_project_name: ESP-IDF
+          git_extra_args: --shallow-since="1 year ago"
