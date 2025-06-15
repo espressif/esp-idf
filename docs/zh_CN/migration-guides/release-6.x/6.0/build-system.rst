@@ -1,26 +1,26 @@
-Build System
-============
+迁移构建系统至 ESP-IDF v6.0
+===================================
 
 :link_to_translation:`en:[English]`
 
-Linker Orphan-Handling Behavior Changed to Error
-------------------------------------------------
+链接器孤立段处理行为变更为报错
+-------------------------------
 
-Starting with ESP-IDF v6.0, the build system no longer allows orphan sections in the final ELF file. The linker will now produce an error if any orphan sections are encountered during linking.
+从 ESP-IDF v6.0 开始，构建系统不再允许最终 ELF 文件中存在孤立段。如果链接过程中发现任何孤立段，链接器将报错。
 
 .. note::
 
-   An *orphan section* is a section that is not explicitly placed into any output section by the linker script and is not discarded during linking.
+   *孤立段* 是指未被链接脚本显式放置到任何输出段，且在链接过程中未被丢弃的段。
 
-How to Resolve Orphan Section Errors
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+如何解决孤立段错误
+~~~~~~~~~~~~~~~~~~~~
 
-If you encounter an orphan section error during linking, you can resolve it using one of the following methods:
+如果在链接时遇到孤立段错误，可通过以下任一方式解决：
 
-1. Remove the code or data that causes the orphan section, if it's unused or unnecessary.
-2. Explicitly place the orphan section using a :ref:`linker fragment file <ldgen-linker-fragment-files>`.
-3. Suppress errors by setting :ref:`CONFIG_COMPILER_ORPHAN_SECTIONS` to ``warning`` or ``place``.
+1. 移除导致孤立段的代码或数据（若未使用或不必要）。
+2. 使用 :ref:`链接器片段文件 <ldgen-linker-fragment-files>` 显式放置孤立段。
+3. 通过设置 :ref:`CONFIG_COMPILER_ORPHAN_SECTIONS` 为 ``warning`` 或 ``place`` 来抑制错误。
 
 .. warning::
 
-  The option 3 is **not recommended**, as orphan sections may indicate misconfigured memory mapping or unintentional behavior in your application.
+   方案3 **不推荐使用**，因为孤立段可能意味着内存映射配置存在问题，或应用程序中存在非预期行为。

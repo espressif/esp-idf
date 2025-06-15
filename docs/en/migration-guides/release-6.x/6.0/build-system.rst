@@ -23,4 +23,4 @@ If you encounter an orphan section error during linking, you can resolve it usin
 
 .. warning::
 
-  The option 3 is **not recommended**, as orphan sections may indicate misconfigured memory mapping or unintentional behavior in your application.
+   The option 3 is **not recommended**, as orphan sections may indicate misconfigured memory mapping or unintentional behavior in your application.
