@@ -879,6 +879,9 @@ macro(project project_name)
         if(CONFIG_COMPILER_ORPHAN_SECTIONS_WARNING)
             # Print warnings if orphan sections are found
             target_link_options(${project_elf} PRIVATE "-Wl,--orphan-handling=warn")
+        elseif(CONFIG_COMPILER_ORPHAN_SECTIONS_ERROR)
+            # Throw error if orphan sections are found
+            target_link_options(${project_elf} PRIVATE "-Wl,--orphan-handling=error")
         endif()
         unset(idf_target)
     endif()
