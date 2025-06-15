@@ -312,13 +312,13 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     }
 
     if(ws->response_header) {
-        if(ws->response_header_len < header_len) {
+        if(ws->response_header_len - 1 < header_len) {
             ESP_LOGW(TAG, "Received header length exceedes the allocated buffer size (need=%d, allocated=%d), truncating to allocated size", header_len, ws->response_header_len);
             header_len = ws->response_header_len;
         }
         // Copy response header to the static array
         strncpy(ws->response_header, ws->buffer, header_len);
-        ws->response_header[header_len] = '\0';
+        ws->response_header[ws->response_header_len - 1] = '\0';
     }
 
     char* delim_ptr = strstr(ws->buffer, delimiter);
