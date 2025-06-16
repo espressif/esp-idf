@@ -18,9 +18,9 @@
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/mspi_timing_config.h"
-#include "mspi_timing_by_mspi_delay.h"
-#include "mspi_timing_by_dqs.h"
-#include "mspi_timing_by_flash_delay.h"
+#include "esp_private/mspi_timing_by_mspi_delay.h"
+#include "esp_private/mspi_timing_by_dqs.h"
+#include "esp_private/mspi_timing_by_flash_delay.h"
 #if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY || SOC_MEMSPI_TIMING_TUNING_BY_DQS || SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY
 #include "mspi_timing_tuning_configs.h"
 #endif
@@ -233,6 +233,9 @@ static void s_sweep_for_success_sample_points(uint8_t *reference_data, void *con
 #endif
             if (memcmp(reference_data, read_data, sizeof(read_data)) == 0) {
                 out_array[config_idx] += 1;
+                ESP_EARLY_LOGV(TAG, "config_idx: %d, good", config_idx);
+            } else {
+                ESP_EARLY_LOGV(TAG, "config_idx: %d, bad", config_idx);
             }
         }
     }
@@ -619,9 +622,8 @@ void spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing
  *----------------------------------------------------------------------------*/
 void mspi_timing_set_pin_drive_strength(void)
 {
-#if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
-    //For now, set them all to 3. Need to check after QVL test results are out. TODO: IDF-3663
+#if CONFIG_IDF_TARGET_ESP32S3
     //Set default pin drive
     mspi_timing_ll_set_all_pin_drive(0, 3);
-#endif  //  #if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
+#endif
 }

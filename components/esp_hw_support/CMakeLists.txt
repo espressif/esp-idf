@@ -134,14 +134,17 @@ if(NOT non_os_build)
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         list(APPEND srcs "mspi_timing_tuning/mspi_timing_tuning.c")
-        if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY)
-            list(APPEND srcs "mspi_timing_tuning/mspi_timing_by_mspi_delay.c")
+        if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY AND NOT CONFIG_IDF_TARGET_ESP32S3)
+            if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_mspi_delay.c")
+                list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_mspi_delay.c")
+            endif()
         endif()
+
         if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_DQS)
-            list(APPEND srcs "mspi_timing_tuning/mspi_timing_by_dqs.c")
+            list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_dqs.c")
         endif()
         if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY)
-            list(APPEND srcs "mspi_timing_tuning/mspi_timing_by_flash_delay.c")
+            list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_flash_delay.c")
         endif()
     endif()
 
@@ -171,7 +174,8 @@ endif()
 
 set(public_include_dirs "include" "include/soc" "include/soc/${target}"
                         "dma/include" "ldo/include" "debug_probe/include"
-                        "mspi_timing_tuning/include" "power_supply/include")
+                        "mspi_timing_tuning/include" "mspi_timing_tuning/tuning_scheme_impl/include"
+                        "power_supply/include")
 
 if(CONFIG_IDF_TARGET_ESP32H4)
     list(REMOVE_ITEM srcs

@@ -55,7 +55,8 @@ void IRAM_ATTR bootloader_init_mspi_clock(void)
     // SPLL clock on C5 is 480MHz , and mspi_pll needs 80MHz
     // in this stage, set divider as 6
     _mspi_timing_ll_set_flash_clk_src(0, FLASH_CLK_SRC_SPLL);
-    mspi_ll_fast_set_hs_divider(6);
+    // MSPI0 and MSPI1 share this core clock register, but only setting to MSPI0 register is valid
+    mspi_timing_ll_set_core_clock(MSPI_TIMING_LL_MSPI_ID_0, MSPI_TIMING_LL_CORE_CLOCK_MHZ_DEFAULT);
 }
 
 void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t *pfhdr)

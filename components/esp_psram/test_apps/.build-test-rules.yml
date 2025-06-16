@@ -1,8 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/esp_psram/test_apps/psram:
-  enable:
-    - if: CONFIG_NAME == "psram_no_boot_init" and SOC_SPIRAM_SUPPORTED == 1
   disable:
     - if: SOC_SPIRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "xip_psram_no_boot_init" and SOC_SPIRAM_XIP_SUPPORTED != 1
