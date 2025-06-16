@@ -6,7 +6,6 @@
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example shows how to use the Certification test APIS.
-
 ## How to use example
 
 Before project configuration and build, be sure to set the correct chip target using `idf.py set-target <chip_name>`.
@@ -110,6 +109,13 @@ I (191970) phy: BT TX TONE STOP!
 phy>
 ```
 
+## PHY Commands Format
+
+For BLE test, if you want to use `fcc_le_tx` and `rw_le_rx_per` legacy commands for tx/rx test, you need to enable `ESP_PHY_LEGACY_COMMANDS` in menuconfig, otherwise, the new format commands `esp_ble_tx` and `esp_ble_rx` are supported.
+
+## BLE DTM Test Function
+
+The BLE DTM test function in this example currently supports only the ESP32-H2 and ESP32-C6 chips.
 ## Troubleshooting
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
