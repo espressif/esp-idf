@@ -3,4 +3,4 @@ dependencies:
   espressif/json_generator:
     version: "^1.1.2"
     rules:
-      - if: "target in [esp32c6]"
+      - if: "target in [esp32c6, esp32h2]"

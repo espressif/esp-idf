@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C6 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-C6 | ESP32-H2 |
+| ----------------- | -------- | -------- |
 
 ## ESP-TEE: Test Suite
 

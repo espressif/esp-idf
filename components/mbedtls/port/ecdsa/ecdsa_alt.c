@@ -22,14 +22,17 @@
 
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
 #include "esp_tee_sec_storage.h"
-#else
-#include "hal/ecc_ll.h"
+#endif
+#if SOC_ECDSA_SUPPORTED
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_hal.h"
+#include "esp_efuse.h"
+#endif
+#if SOC_ECC_SUPPORTED
+#include "hal/ecc_ll.h"
+#endif
 #if SOC_MPI_SUPPORTED
 #include "hal/mpi_ll.h"
-#endif
-#include "esp_efuse.h"
 #endif
 
 #define ECDSA_KEY_MAGIC             (short) 0xECD5A

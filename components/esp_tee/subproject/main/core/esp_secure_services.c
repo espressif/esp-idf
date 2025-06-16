@@ -345,6 +345,11 @@ int _ss_esp_ecc_point_verify(const ecc_point_t *point)
     return esp_ecc_point_verify(point);
 }
 
+void _ss_esp_crypto_ecc_enable_periph_clk(bool enable)
+{
+    esp_crypto_ecc_enable_periph_clk(enable);
+}
+
 /* ---------------------------------------------- OTA ------------------------------------------------- */
 
 int _ss_esp_tee_ota_begin(void)

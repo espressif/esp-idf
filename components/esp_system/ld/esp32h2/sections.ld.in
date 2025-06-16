@@ -173,8 +173,21 @@ SECTIONS
 
     /* Vectors go to start of IRAM */
     ASSERT(ABSOLUTE(.) % 0x100 == 0, "vector address must be 256 byte aligned");
+    _vector_table_start = ABSOLUTE(.);
     KEEP(*(.exception_vectors_table.text));
     KEEP(*(.exception_vectors.text));
+
+    ALIGNED_SYMBOL(4, _invalid_pc_placeholder)
+
+    /* esp_tee_config_t structure: used to share information between the TEE and REE
+     * (e.g. interrupt handler addresses, REE flash text-rodata boundaries, etc.)
+     * This symbol is expected by the TEE at an offset of 0x300 from the vector table start.
+     */
+#if CONFIG_SECURE_ENABLE_TEE
+    ALIGNED_SYMBOL(0x10, _esp_tee_app_cfg)
+    ASSERT(ABSOLUTE(.) == _vector_table_start + 0x2e0, "esp_tee_app_cfg must be at an offset 0x2e0 from the vector table start");
+    *libesp_tee.a:(.esp_tee_app_cfg);
+#endif
 
     /* Code marked as running out of IRAM */
     _iram_text_start = ABSOLUTE(.);

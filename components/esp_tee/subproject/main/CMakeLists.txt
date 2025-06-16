@@ -20,9 +20,10 @@ list(APPEND srcs "arch/${arch}/esp_tee_vectors.S"
 # SoC specific implementation for TEE
 list(APPEND srcs "soc/${target}/esp_tee_secure_sys_cfg.c"
                  "soc/${target}/esp_tee_pmp_pma_prot_cfg.c"
-                 "soc/${target}/esp_tee_apm_prot_cfg.c"
-                 "soc/${target}/esp_tee_apm_intr.c"
-                 "soc/${target}/esp_tee_aes_intr.c")
+                 "soc/${target}/esp_tee_apm_prot_cfg.c")
+
+list(APPEND srcs "soc/common/esp_tee_apm_intr.c"
+                 "soc/common/esp_tee_aes_intr.c")
 
 # Common module implementation for TEE
 
@@ -35,6 +36,7 @@ list(APPEND srcs "common/brownout.c")
 
 list(APPEND include "include"
                     "common"
+                    "soc/common/include"
                     "soc/${target}/include")
 
 # Heap
@@ -51,6 +53,12 @@ list(APPEND srcs "common/syscall_stubs.c")
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${include})
+
+# NOTE: The ESP32-H2 ROM does not have sprintf/snprintf implementation,
+# thus newlib-nano implementation from the toolchain has been used.
+if(CONFIG_IDF_TARGET_ESP32H2)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "--specs=nano.specs")
+endif()
 
 # TODO: Currently only -Og optimization level works correctly at runtime
 set_source_files_properties("core/esp_secure_dispatcher.c" PROPERTIES COMPILE_FLAGS "-Og")
