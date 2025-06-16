@@ -303,6 +303,13 @@ static inline void _bitscrambler_ll_set_bus_clock_sys_enable(bool enable)
     HP_SYS_CLKRST.soc_clk_ctrl1.reg_bitscrambler_sys_clk_en = enable;
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define bitscrambler_ll_set_bus_clock_sys_enable(...) do {  \
+    (void)__DECLARE_RCC_ATOMIC_ENV;                         \
+    _bitscrambler_ll_set_bus_clock_sys_enable(__VA_ARGS__); \
+} while (0)
+
 /**
  * @brief Enable the bus clock for RX BitScrambler module
  */
@@ -311,6 +318,13 @@ static inline void _bitscrambler_ll_set_bus_clock_rx_enable(bool enable)
     HP_SYS_CLKRST.soc_clk_ctrl1.reg_bitscrambler_rx_sys_clk_en = enable;
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define bitscrambler_ll_set_bus_clock_rx_enable(...) do {  \
+    (void)__DECLARE_RCC_ATOMIC_ENV;                        \
+    _bitscrambler_ll_set_bus_clock_rx_enable(__VA_ARGS__); \
+} while (0)
+
 /**
  * @brief Enable the bus clock for TX BitScrambler module
  */
@@ -318,6 +332,13 @@ static inline void _bitscrambler_ll_set_bus_clock_tx_enable(bool enable)
 {
     HP_SYS_CLKRST.soc_clk_ctrl1.reg_bitscrambler_tx_sys_clk_en = enable;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define bitscrambler_ll_set_bus_clock_tx_enable(...) do {  \
+    (void)__DECLARE_RCC_ATOMIC_ENV;                        \
+    _bitscrambler_ll_set_bus_clock_tx_enable(__VA_ARGS__); \
+} while (0)
 
 /**
  * @brief Force power on the bitscrambler memory block, regardless of the outside PMU logic
@@ -352,6 +373,13 @@ static inline void _bitscrambler_ll_reset_sys(void)
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_bitscrambler = 0;
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define bitscrambler_ll_reset_sys(...) do {  \
+    (void)__DECLARE_RCC_ATOMIC_ENV;          \
+    _bitscrambler_ll_reset_sys(__VA_ARGS__); \
+} while (0)
+
 /**
  * @brief Reset the BitScrambler RX module
  */
@@ -360,6 +388,13 @@ static inline void _bitscrambler_ll_reset_rx(void)
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_bitscrambler_rx = 1;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_bitscrambler_rx = 0;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define bitscrambler_ll_reset_rx(...) do {  \
+    (void)__DECLARE_RCC_ATOMIC_ENV;         \
+    _bitscrambler_ll_reset_rx(__VA_ARGS__); \
+} while (0)
 
 /**
  * @brief Reset the BitScrambler TX module
@@ -371,14 +406,11 @@ static inline void _bitscrambler_ll_reset_tx(void)
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define bitscrambler_ll_set_bus_clock_sys_enable(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _bitscrambler_ll_set_bus_clock_sys_enable(__VA_ARGS__)
-#define bitscrambler_ll_set_bus_clock_rx_enable(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _bitscrambler_ll_set_bus_clock_rx_enable(__VA_ARGS__)
-#define bitscrambler_ll_set_bus_clock_tx_enable(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _bitscrambler_ll_set_bus_clock_tx_enable(__VA_ARGS__)
-
-#define bitscrambler_ll_reset_sys(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _bitscrambler_ll_reset_sys(__VA_ARGS__)
-#define bitscrambler_ll_reset_rx(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _bitscrambler_ll_reset_rx(__VA_ARGS__)
-#define bitscrambler_ll_reset_tx(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _bitscrambler_ll_reset_tx(__VA_ARGS__)
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define bitscrambler_ll_reset_tx(...) do {  \
+    (void)__DECLARE_RCC_ATOMIC_ENV;         \
+    _bitscrambler_ll_reset_tx(__VA_ARGS__); \
+} while (0)
 
 #ifdef __cplusplus
 }
