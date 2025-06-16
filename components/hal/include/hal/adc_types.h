@@ -49,7 +49,6 @@ typedef enum {
     ADC_ATTEN_DB_2_5 = 1,  ///<The input voltage of ADC will be attenuated extending the range of measurement by about 2.5 dB
     ADC_ATTEN_DB_6   = 2,  ///<The input voltage of ADC will be attenuated extending the range of measurement by about 6 dB
     ADC_ATTEN_DB_12  = 3,  ///<The input voltage of ADC will be attenuated extending the range of measurement by about 12 dB
-    ADC_ATTEN_DB_11 __attribute__((deprecated)) = ADC_ATTEN_DB_12,  ///<This is deprecated, it behaves the same as `ADC_ATTEN_DB_12`
 } adc_atten_t;
 
 /**
@@ -243,25 +242,6 @@ typedef struct {
         uint32_t val;                   /*!<Raw data value */
     };
 } adc_digi_output_data_t;
-
-#endif
-
-
-#if CONFIG_IDF_TARGET_ESP32S2
-/**
- * @brief ADC digital controller (DMA mode) clock system setting.
- *        Calculation formula: controller_clk = (`APLL` or `APB`) / (div_num + div_a / div_b + 1).
- *
- * @note: The clocks of the DAC digital controller use the ADC digital controller clock divider.
- */
-typedef struct {
-    bool use_apll;      /*!<true: use APLL clock; false: use APB clock. */
-    uint32_t div_num;   /*!<Division factor. Range: 0 ~ 255.
-                            Note: When a higher frequency clock is used (the division factor is less than 9),
-                            the ADC reading value will be slightly offset. */
-    uint32_t div_b;     /*!<Division factor. Range: 1 ~ 63. */
-    uint32_t div_a;     /*!<Division factor. Range: 0 ~ 63. */
-} adc_digi_clk_t;
 #endif
 
 #ifdef __cplusplus

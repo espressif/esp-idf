@@ -11,6 +11,11 @@
 
 不同的驱动对象可以共享同一个 GPIO 编号，联合起来可以实现更加复杂的功能。比如将 RMT 外设的 TX 通道和 RX 通道绑定在同一个 GPIO 上，进而模拟单总线的读写时序。在以前的版本中，你需要在驱动的配置中额外设置 ``io_loop_back`` 来实现这种“回环”功能，现在，这个配置已经被移除。不同的驱动只需要在配置中设置相同的 GPIO 编号就能实现这个功能。
 
+ADC
+---
+
+旧版的 ADC 驱动 ``driver/adc.h`` 在 5.0 的版本中就已经被弃用 （参考 :ref:`deprecate_adc_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_adc` 组件中，头文件引用路径为 ``esp_adc/adc_oneshot.h``, ``esp_adc/adc_continuous.h``, ``esp_adc/adc_cali.h`` 和 ``esp_adc/adc_cali_scheme.h``。
+
 RMT
 ---
 
@@ -65,7 +70,8 @@ I2C 从机在 v5.4 上已经被重新设计。在当前版本上，老的 I2C �
     旧版 I2S 驱动被移除
     ----------------------
 
-    旧版的 I2S 驱动 ``driver/i2s.h`` 在 5.0 的版本中就已经被弃用（请参考 :ref:`deprecate_i2s_legacy_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_driver_i2s` 组件中，头文件引用路径为 ``driver/i2s_std.h``, ``driver/i2s_pdm.h`` and ``driver/i2s_tdm.h``。
+    - 旧版的 I2S 驱动 ``driver/i2s.h`` 在 5.0 的版本中就已经被弃用（请参考 :ref:`deprecate_i2s_legacy_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_driver_i2s` 组件中，头文件引用路径为 ``driver/i2s_std.h``, ``driver/i2s_pdm.h`` and ``driver/i2s_tdm.h``。
+    - ``i2s_set_adc_mode``,  ``i2s_adc_enable`` 和 ``i2s_adc_disable`` 在 5.0 版本中就已经被弃用。从 6.0 版本开始，这三个接口被完全移除。
 
 .. only:: SOC_PCNT_SUPPORTED
 

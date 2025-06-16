@@ -185,9 +185,9 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
     Kconfig 选项
     ^^^^^^^^^^^^^^^
 
-    - :ref:`CONFIG_ADC_CAL_EFUSE_TP_ENABLE` - 如果校准相关的 eFuse 值没有配置为 :cpp:type:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_TP`，则可以禁用该选项，减小代码大小。
-    - :ref:`CONFIG_ADC_CAL_EFUSE_VREF_ENABLE` - 如果校准相关的 eFuse 值没有配置为 :cpp:type:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_VREF`，则可以禁用该选项，减小代码大小。
-    - :ref:`CONFIG_ADC_CAL_LUT_ENABLE` - 如果校准 ADC 原始结果时，衰减没有设置成 :c:macro:`ADC_ATTEN_DB_12`，则可以禁用该选项，减小代码大小。
+    - :ref:`CONFIG_ADC_CALI_EFUSE_TP_ENABLE` - 如果校准相关的 eFuse 值没有配置为 :cpp:type:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_TP`，则可以禁用该选项，减小代码大小。
+    - :ref:`CONFIG_ADC_CALI_EFUSE_VREF_ENABLE` - 如果校准相关的 eFuse 值没有配置为 :cpp:type:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_VREF`，则可以禁用该选项，减小代码大小。
+    - :ref:`CONFIG_ADC_CALI_LUT_ENABLE` - 如果校准 ADC 原始结果时，衰减没有设置成 :c:macro:`ADC_ATTEN_DB_12`，则可以禁用该选项，减小代码大小。
 
 
 .. _adc-minimize-noise:

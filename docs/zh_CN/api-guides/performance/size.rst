@@ -118,7 +118,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
     ADC
     @@@
 
-    - 如果使用 ADC 驱动程序，禁用 :ref:`CONFIG_ADC_CAL_EFUSE_TP_ENABLE`、:ref:`CONFIG_ADC_CAL_EFUSE_VREF_ENABLE` 和 :ref:`CONFIG_ADC_CAL_LUT_ENABLE` 可以减小一小部分二进制文件的大小，但准确性会降低。
+    - 如果使用 ADC 驱动程序，禁用 :ref:`CONFIG_ADC_CALI_EFUSE_TP_ENABLE`、:ref:`CONFIG_ADC_CALI_EFUSE_VREF_ENABLE` 和 :ref:`CONFIG_ADC_CALI_LUT_ENABLE` 可以减小一小部分二进制文件的大小，但准确性会降低。
 
 .. only:: SOC_BT_SUPPORTED
 

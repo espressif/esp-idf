@@ -509,3 +509,6 @@
         -
             re_variables: ['driver/dac.h']
             hint_variables: ['legacy DAC', 'driver/dac_oneshot.h, driver/dac_continuous.h, driver/dac_cosine.h', 'esp_driver_dac']
+        -
+            re_variables: ['driver/adc.h']
+            hint_variables: ['legacy ADC', 'esp_adc/adc_oneshot.h, esp_adc/adc_continuous.h, esp_adc/adc_cali.h, esp_adc/adc_cali_scheme.h', 'esp_adc']

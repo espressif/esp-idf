@@ -16,15 +16,6 @@ set(includes "deprecated"
 # Always included linker fragments
 set(ldfragments "")
 
-# ADC related source files (deprecated)
-if(CONFIG_SOC_ADC_SUPPORTED)
-    list(APPEND srcs "deprecated/adc_legacy.c")
-
-    if(CONFIG_SOC_ADC_DMA_SUPPORTED)
-        list(APPEND srcs "deprecated/adc_dma_legacy.c")
-    endif()
-endif()
-
 # I2C related source files
 if(CONFIG_SOC_I2C_SUPPORTED)
     list(APPEND srcs "i2c/i2c.c")
@@ -61,18 +52,11 @@ if(CONFIG_SOC_TWAI_SUPPORTED AND NOT CONFIG_SOC_TWAI_SUPPORT_FD)
     list(APPEND ldfragments "twai/linker.lf")
 endif()
 
-# Other source files
-if(${target} STREQUAL "esp32")
-    list(APPEND srcs "deprecated/adc_i2s_deprecated.c")
-endif()
-
 if(BOOTLOADER_BUILD)
     # Bootloader shall NOT depend on the drivers
     idf_component_register()
 else()
     # (REQUIRES cannot hide soc headers, since many arguments in the driver headers are chip-dependent)
-    # (Legacy drivers requires `esp_adc`, due to ADC HW resource mutex logics are there.
-    # Can be removed together with legacy drivers)
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS ${includes}
                            PRIV_REQUIRES efuse esp_timer esp_mm
@@ -86,9 +70,4 @@ else()
                                     esp_driver_twai
                            LDFRAGMENTS ${ldfragments}
                           )
-    if(CONFIG_SOC_ADC_SUPPORTED AND
-       CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO GCC-366
-        set_source_files_properties(deprecated/adc_legacy.c
-                                    PROPERTIES COMPILE_FLAGS "-Wno-analyzer-use-of-uninitialized-value")
-    endif()
 endif()

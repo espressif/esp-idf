@@ -1,19 +1,5 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/driver/test_apps/legacy_adc_driver:
-  disable:
-    - if: SOC_ADC_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32c61"
-      temporary: true
-      reason: lack of runners
-  depends_components:
-    - efuse
-    - esp_driver_i2s
-    - esp_driver_spi
-  depends_filepatterns:
-    - components/driver/deprecated/**/*adc*
-
 components/driver/test_apps/legacy_i2c_driver:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
