@@ -59,6 +59,15 @@
     * 多种外设
     * 适用于较简单、大批量生产的物联网应用
 
+.. only:: esp32c5
+
+    * 2.4 & 5 GHz 双频 Wi-Fi 6
+    * 低功耗蓝牙
+    * 802.15.4，支持 Thread 和 Zigbee 协议
+    * 高性能 32 位 RISC-V 单核处理器
+    * 多种外设
+    * 内置安全硬件
+
 .. only:: esp32c6
 
     * 2.4 GHz Wi-Fi 6
@@ -157,6 +166,13 @@
         :maxdepth: 1
 
         ESP8684-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp8684/esp8684-devkitm-1/index.html>
+
+.. only:: esp32c5
+
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-C5-DevKitC-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32c5/esp32-c5-devkitc-1/index.html>
 
 .. only:: esp32c6
 
