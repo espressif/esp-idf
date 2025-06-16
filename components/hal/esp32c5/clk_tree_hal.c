@@ -9,7 +9,6 @@
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/gpio_ll.h"
-#include "hal/log.h"
 
 uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
 {

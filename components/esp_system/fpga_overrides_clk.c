@@ -5,6 +5,7 @@
  */
 #include "sdkconfig.h"
 #include "soc/soc.h"
+#include "soc/soc_caps.h"
 #include "esp_private/periph_ctrl.h"
 #ifndef CONFIG_IDF_TARGET_ESP32
 #include "soc/system_reg.h"
@@ -12,7 +13,7 @@
 #include "soc/rtc.h"
 #include "rom/rtc.h"
 
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C61
+#if SOC_PMU_SUPPORTED
 #include "esp_private/esp_pmu.h"
 #endif
 
@@ -31,10 +32,11 @@ void bootloader_clock_configure(void)
 {
     s_warn();
     esp_rom_output_tx_wait_idle(0);
+    uint32_t xtal_freq_mhz __attribute__((unused));
 #if CONFIG_IDF_TARGET_ESP32H21 || CONFIG_IDF_TARGET_ESP32H4
-    uint32_t xtal_freq_mhz = 32;
+    xtal_freq_mhz = 32;
 #else
-    uint32_t xtal_freq_mhz = 40;
+    xtal_freq_mhz = 40;
 #endif
 #ifdef CONFIG_IDF_TARGET_ESP32S2
     uint32_t apb_freq_hz = 20000000;
@@ -45,7 +47,9 @@ void bootloader_clock_configure(void)
 #ifdef RTC_APB_FREQ_REG
     REG_WRITE(RTC_APB_FREQ_REG, (apb_freq_hz >> 12) | ((apb_freq_hz >> 12) << 16));
 #endif
+#ifdef RTC_XTAL_FREQ_REG
     REG_WRITE(RTC_XTAL_FREQ_REG, (xtal_freq_mhz) | ((xtal_freq_mhz) << 16));
+#endif
 }
 
 void esp_rtc_init(void)

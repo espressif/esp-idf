@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,8 +13,6 @@
 #include "soc/lp_aon_reg.h"
 #include "soc/reset_reasons.h"
 #include "esp_assert.h"
-
-//TODO: [ESP32H21] IDF-11548
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,30 +32,29 @@ extern "C" {
   *          Please do not use reserved or used rtc memory or registers.              *
   *                                                                                   *
   *************************************************************************************
-  *                          RTC  Memory & Store Register usage
+  *                          LP Memory & Store Register usage
   *************************************************************************************
   *     rtc memory addr         type    size            usage
-  *     0x50000000              Fast    0x4000          deep sleep entry code
+  *     0x50000000              Fast    0x1000          deep sleep entry code
   *
   *************************************************************************************
   *     RTC store registers     usage
-  *     RTC_CNTL_STORE0_REG     Reserved
-  *     RTC_CNTL_STORE1_REG     RTC_SLOW_CLK calibration value
-  *     RTC_CNTL_STORE2_REG     Boot time, low word
-  *     RTC_CNTL_STORE3_REG     Boot time, high word
-  *     RTC_CNTL_STORE4_REG     External XTAL frequency
-  *     RTC_CNTL_STORE5_REG     FAST_RTC_MEMORY_LENGTH
-  *     RTC_CNTL_STORE6_REG     FAST_RTC_MEMORY_ENTRY
-  *     RTC_CNTL_STORE7_REG     FAST_RTC_MEMORY_CRC
+  *     LP_AON_STORE0_REG       Reserved
+  *     LP_AON_STORE1_REG       RTC_SLOW_CLK calibration value
+  *     LP_AON_STORE2_REG       Boot time, low word
+  *     LP_AON_STORE3_REG       Boot time, high word
+  *     LP_AON_STORE4_REG       Status of whether to disable LOG from ROM at bit[0]
+  *     LP_AON_STORE5_REG       FAST_RTC_MEMORY_LENGTH
+  *     LP_AON_STORE6_REG       FAST_RTC_MEMORY_ENTRY
+  *     LP_AON_STORE7_REG       FAST_RTC_MEMORY_CRC
+  *     LP_AON_STORE8_REG       Store light sleep wake stub addr
+  *     LP_AON_STORE9_REG       Store the sleep mode at bit[0]  (0:light sleep 1:deep sleep)
   *************************************************************************************
   */
 
-//TODO: [ESP32H21] IDF-1154, need to check from esp_rom
 #define RTC_SLOW_CLK_CAL_REG          LP_AON_STORE1_REG
 #define RTC_BOOT_TIME_LOW_REG         LP_AON_STORE2_REG
 #define RTC_BOOT_TIME_HIGH_REG        LP_AON_STORE3_REG
-#define RTC_XTAL_FREQ_REG             LP_AON_STORE4_REG
-#define RTC_APB_FREQ_REG              LP_AON_STORE5_REG
 #define RTC_ENTRY_ADDR_REG            LP_AON_STORE6_REG
 #define RTC_RESET_CAUSE_REG           LP_AON_STORE6_REG
 #define RTC_MEMORY_CRC_REG            LP_AON_STORE7_REG
@@ -209,7 +206,7 @@ void esp_rom_set_rtc_wake_addr(esp_rom_wake_func_t entry_addr, size_t length);
 static inline void rtc_suppress_rom_log(void)
 {
     /* To disable logging in the ROM, only the least significant bit of the register is used,
-     * but since this register is also used to store the frequency of the main crystal (RTC_XTAL_FREQ_REG),
+     * but this register was also used to store the frequency of the main crystal (RTC_XTAL_FREQ_REG) on old targets,
      * you need to write to this register in the same format.
      * Namely, the upper 16 bits and lower should be the same.
      */

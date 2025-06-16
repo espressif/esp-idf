@@ -190,7 +190,7 @@ static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div, bool to_default)
     esp_rom_set_cpu_ticks_per_us(cpu_freq);
 }
 
-static void rtc_clk_cpu_freq_to_8m(void)
+static void rtc_clk_cpu_freq_to_rc_fast(void)
 {
     // let f_cpu = f_mem = f_sys = f_apb
     clk_ll_cpu_set_divider(1, 0, 0);
@@ -359,7 +359,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
         rtc_clk_cpu_freq_to_cpll_mhz(config->freq_mhz, (hal_utils_clk_div_t *)&config->div);
         rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_PLL_EN_STOP);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
-        rtc_clk_cpu_freq_to_8m();
+        rtc_clk_cpu_freq_to_rc_fast();
         if (old_cpu_clk_src == SOC_CPU_CLK_SRC_CPLL) {
             rtc_clk_cpll_disable();
         }
@@ -418,7 +418,7 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config)
                s_cur_cpll_freq == config->source_freq_mhz) {
         rtc_clk_cpu_freq_to_cpll_mhz(config->freq_mhz, (hal_utils_clk_div_t *)&config->div);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
-        rtc_clk_cpu_freq_to_8m();
+        rtc_clk_cpu_freq_to_rc_fast();
     } else {
         /* fallback */
         rtc_clk_cpu_freq_set_config(config);

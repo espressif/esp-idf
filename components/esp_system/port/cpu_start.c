@@ -100,6 +100,7 @@
 #include "soc/periph_defs.h"
 #include "esp_cpu.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_clk_tree_common.h"
 
 #if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 #include "esp_private/trax.h"
@@ -708,9 +709,7 @@ void IRAM_ATTR call_start_cpu0(void)
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif // CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 
-#if SOC_CLOCK_TREE_MANAGEMENT_SUPPORTED
     esp_clk_tree_initialize();
-#endif
     esp_clk_init();
     esp_perip_clk_init();
 

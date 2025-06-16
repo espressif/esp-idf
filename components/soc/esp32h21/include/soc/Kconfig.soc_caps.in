@@ -87,6 +87,14 @@ config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
+config SOC_PMU_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_TREE_SUPPORTED
+    bool
+    default y
+
 config SOC_WDT_SUPPORTED
     bool
     default y
@@ -891,6 +899,14 @@ config SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     bool
     default y
 
+config SOC_PM_SUPPORT_PMU_CLK_ICG
+    bool
+    default y
+
+config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
+    bool
+    default y
+
 config SOC_CLK_XTAL32K_SUPPORTED
     bool
     default y
@@ -899,11 +915,7 @@ config SOC_CLK_OSC_SLOW_SUPPORTED
     bool
     default y
 
-config SOC_CLK_RC32K_SUPPORTED
-    bool
-    default y
-
-config SOC_CLK_LP_FAST_SUPPORT_LP_PLL
+config SOC_CLK_LP_FAST_SUPPORT_XTAL_D2
     bool
     default y
 

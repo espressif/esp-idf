@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include "esp32h2/rom/ets_sys.h"
 #include "esp32h2/rom/rtc.h"
-#include "esp32h2/rom/uart.h"
 #include "soc/rtc.h"
 #include "esp_cpu.h"
 #include "regi2c_ctrl.h"

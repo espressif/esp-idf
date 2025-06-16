@@ -90,12 +90,33 @@ uint32_t esp_clk_tree_lp_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t prec
  */
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable);
 
-#if SOC_CLOCK_TREE_MANAGEMENT_SUPPORTED
 /**
- * @brief Set the clock source not in use  on the clock tree to the gated state.
+ * @brief Initialize clock circuit power and clock gating
+ *
+ * Set the clock source not in uses on the clock tree to the gated state,
+ * and initialize reference counters for clock circuit power and clock gating.
  */
 void esp_clk_tree_initialize(void);
-#endif
+
+/**
+ * @brief Enable / Disable the power of the clock circuit
+ *
+ * @param[in] clk_circuit Clock circuits, in soc_root_clk_circuit_t
+ * @param[in] enable  Enable / Disable the power of the clock circuit
+ *
+ * @return
+ *      - ESP_OK               Success
+ */
+esp_err_t esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable);
+
+/**
+ * @brief Get the power status of the clock circuit
+ *
+ * @param[in] clk_circuit Clock circuits, in soc_root_clk_circuit_t
+ *
+ * @return True if the clock circuit power is on, false otherwise
+ */
+bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit);
 
 #ifdef __cplusplus
 }

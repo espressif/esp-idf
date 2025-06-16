@@ -18,7 +18,7 @@
 #include "soc/pmu_reg.h"
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32
 #include "hal/clk_tree_ll.h"
 #endif
 #include "esp_rom_sys.h"

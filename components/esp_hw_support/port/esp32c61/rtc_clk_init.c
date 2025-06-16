@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include "esp32c61/rom/ets_sys.h"
 #include "esp32c61/rom/rtc.h"
-#include "esp32c61/rom/uart.h"
 #include "soc/rtc.h"
 #include "esp_cpu.h"
 #include "regi2c_ctrl.h"
@@ -18,7 +17,6 @@
 #include "soc/regi2c_dig_reg.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
 #include "esp_private/esp_pmu.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/pmu_ll.h"

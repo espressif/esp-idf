@@ -3,15 +3,15 @@ Clock Tree
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_RC_FAST_VAGUE_FREQ: default="17.5", esp32="8", esp32s2="8", esp32h2="8"}
+{IDF_TARGET_RC_FAST_VAGUE_FREQ: default="17.5", esp32="8", esp32s2="8", esp32h2="8", esp32h21="20"}
 
-{IDF_TARGET_RC_FAST_ADJUSTED_FREQ: default="17.5", esp32="8.5", esp32s2="8.5", esp32h2="8.5"}
+{IDF_TARGET_RC_FAST_ADJUSTED_FREQ: default="17.5", esp32="8.5", esp32s2="8.5", esp32h2="8.5", esp32h21="20"}
 
-{IDF_TARGET_XTAL_FREQ: default="40", esp32="2 ~ 40", esp32c2="40/26", esp32h2="32", esp32c5="48"}
+{IDF_TARGET_XTAL_FREQ: default="40", esp32="2 ~ 40", esp32c2="40/26", esp32h2="32", esp32c5="48", esp32h21="32"}
 
-{IDF_TARGET_RC_SLOW_VAGUE_FREQ: default="136", esp32="150", esp32s2="90"}
+{IDF_TARGET_RC_SLOW_VAGUE_FREQ: default="136", esp32="150", esp32s2="90", esp32h21="600"}
 
-{IDF_TARGET_OSC_SLOW_PIN: default="GPIO0", esp32c2="pin0 (when its frequency is no more than 136 kHz)", "esp32c6="GPIO0", esp32h2="GPIO13"}
+{IDF_TARGET_OSC_SLOW_PIN: default="GPIO0", esp32c2="pin0 (when its frequency is no more than 136 kHz)", "esp32c6="GPIO0", esp32h2="GPIO13", esp32h21="GPIO11"}
 
 The clock subsystem of {IDF_TARGET_NAME} is used to source and distribute system/module clocks from a range of root clocks. The clock tree driver maintains the basic functionality of the system clock and the intricate relationship among module clocks.
 

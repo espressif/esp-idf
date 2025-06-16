@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "hal/mspi_ll.h"
+#include "hal/clk_tree_ll.h"
 #include "soc/pcr_reg.h"
 
 static const char *TAG = "boot.esp32h21";
@@ -80,7 +81,9 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 
 static void IRAM_ATTR bootloader_flash_clock_init(void)
 {
-    // At this moment, BBPLL should be enabled, safe to switch MSPI clock source to PLL_F64M (default clock src) to raise speed
+    // To raise the MSPI clock to 64MHz, needs to enable the 64MHz clock source, which is XTAL_X2_CLK
+    // (FPGA image fixed MSPI0/1 clock to 64MHz)
+    clk_ll_xtal_x2_enable();
     _mspi_timing_ll_set_flash_clk_src(0, FLASH_CLK_SRC_PLL_F64M);
 }
 

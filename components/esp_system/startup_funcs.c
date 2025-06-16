@@ -74,7 +74,7 @@ ESP_SYSTEM_INIT_FN(init_show_cpu_freq, CORE, BIT(0), 10)
  * It is protected from all REE accesses through memory protection mechanisms,
  * as it is a critical module for device functioning.
  */
-#if !CONFIG_SECURE_ENABLE_TEE
+#if SOC_BOD_SUPPORTED && !CONFIG_SECURE_ENABLE_TEE
 ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
 {
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->

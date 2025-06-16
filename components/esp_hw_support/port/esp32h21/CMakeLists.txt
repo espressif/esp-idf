@@ -1,10 +1,11 @@
 set(srcs "rtc_clk.c"
          "rtc_time.c"
          "chip_info.c"
+         "rtc_clk_init.c"
          )
+
 if(CONFIG_SOC_PMU_SUPPORTED)
-    list(APPEND srcs "rtc_clk_init.c"
-                     "pmu_param.c"
+    list(APPEND srcs "pmu_param.c"
                      "pmu_init.c"
                      "pmu_sleep.c"
         )

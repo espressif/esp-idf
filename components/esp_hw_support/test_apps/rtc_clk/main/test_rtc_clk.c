@@ -244,8 +244,9 @@ static void start_freq(soc_rtc_slow_clk_src_t required_src, uint32_t start_delay
         } else {
             printf("PASS. Time measurement...");
         }
-        uint64_t clk_rtc_time;
         uint32_t fail_measure = 0;
+#if SOC_LP_TIMER_SUPPORTED
+        uint64_t clk_rtc_time;
         for (int j = 0; j < 3; ++j) {
             clk_rtc_time = esp_clk_rtc_time();
             esp_rom_delay_us(1000000);
@@ -257,6 +258,7 @@ static void start_freq(soc_rtc_slow_clk_src_t required_src, uint32_t start_delay
                 break;
             }
         }
+#endif
         if(fail_measure == 0) {
             printf("PASS");
         }
@@ -285,10 +287,10 @@ TEST_CASE("Test starting external RTC quartz", "[rtc_clk][test_env=xtal32k]")
             bootstrap_cycles,
             CONFIG_RTC_CLK_CAL_CYCLES);
 #endif // CONFIG_RTC_CLK_SRC_EXT_CRYS
-    if (CONFIG_RTC_CLK_CAL_CYCLES < 1500){
+    if (CONFIG_RTC_CLK_CAL_CYCLES < 1500) {
         printf("Recommended increase Number of cycles for RTC_SLOW_CLK calibration to 3000!\n");
     }
-    while(i < COUNT_TEST){
+    while (i < COUNT_TEST) {
         start_time = xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
         i++;
         printf("attempt #%d/%d...", i, COUNT_TEST);
@@ -296,7 +298,7 @@ TEST_CASE("Test starting external RTC quartz", "[rtc_clk][test_env=xtal32k]")
         rtc_clk_select_rtc_slow_clk();
         end_time = xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
         printf(" [time=%"PRIu32"] ", end_time - start_time);
-        if((end_time - start_time) > TIMEOUT_TEST_MS){
+        if ((end_time - start_time) > TIMEOUT_TEST_MS) {
             printf("FAIL\n");
             fail = 1;
         } else {
@@ -332,6 +334,7 @@ TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_
 #endif // !defined(CONFIG_IDF_CI_BUILD) || !CONFIG_SPIRAM_BANKSWITCH_ENABLE
 #endif // SOC_CLK_XTAL32K_SUPPORTED
 
+#if SOC_LP_TIMER_SUPPORTED
 TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
 {
     int64_t t1 = esp_rtc_get_time_us();
@@ -358,6 +361,7 @@ TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
 
     TEST_ASSERT_GREATER_THAN(t1, t2);
 }
+#endif
 
 #if SOC_DEEP_SLEEP_SUPPORTED
 static RTC_NOINIT_ATTR int64_t start = 0;

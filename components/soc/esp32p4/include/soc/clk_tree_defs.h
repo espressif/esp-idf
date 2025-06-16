@@ -51,6 +51,9 @@ extern "C" {
  * 6) LP_PLL (8MHz), used for RTC_FAST_CLK clock source and LP peripherals' clock sources
  */
 
+/* The pin number to connect the external slow clock (OSC_SLOW_CLK), XTAL_32K_N */
+#define SOC_EXT_OSC_SLOW_GPIO_NUM           0
+
 /* With the default value of FOSC_DFREQ = 100, RC_FAST clock frequency is 17.5 MHz +/- 7% */
 #define SOC_CLK_RC_FAST_FREQ_APPROX         17500000                            /*!< Approximate RC_FAST_CLK frequency in Hz */
 #define SOC_CLK_RC_SLOW_FREQ_APPROX         136000                              /*!< Approximate RC_SLOW_CLK frequency in Hz */
@@ -72,6 +75,15 @@ typedef enum {
     SOC_ROOT_CLK_INT_RC32K,            /*!< Internal 32kHz RC oscillator */
     SOC_ROOT_CLK_EXT_OSC_SLOW,         /*!< External slow clock signal at pin1 */
 } soc_root_clk_t;
+
+/**
+ * @brief ROOT clock circuit, which requires explicitly enabling the targeting circuit to use
+ */
+typedef enum {
+    SOC_ROOT_CIRCUIT_CLK_CPLL,          /*!< CPLL_CLK is the output of the CPLL generator circuit */
+    SOC_ROOT_CIRCUIT_CLK_APLL,          /*!< APLL_CLK is the output of the APLL generator circuit */
+    SOC_ROOT_CIRCUIT_CLK_MPLL,          /*!< MPLL_CLK is the output of the MPLL generator circuit */
+} soc_root_clk_circuit_t;
 
 /**
  * @brief CPU_CLK mux inputs, which are the supported clock sources for the CPU_CLK
