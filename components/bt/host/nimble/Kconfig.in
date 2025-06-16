@@ -156,7 +156,7 @@ config BT_NIMBLE_ROLE_BROADCASTER
     depends on BT_NIMBLE_ENABLED
     default y
     help
-                Enables broadcaster role
+            Enables broadcaster role
 
 config BT_NIMBLE_ROLE_OBSERVER
     bool "Enable BLE Observer role"
@@ -164,6 +164,20 @@ config BT_NIMBLE_ROLE_OBSERVER
     default y
     help
             Enables observer role
+
+config BT_NIMBLE_GATT_CLIENT
+    bool "Enable BLE GATT Client support"
+    depends on BT_NIMBLE_ROLE_CENTRAL
+    default y
+    help
+            Enables support for GATT Client
+
+config BT_NIMBLE_GATT_SERVER
+    bool "Enable BLE GATT Server support"
+    depends on BT_NIMBLE_ROLE_PERIPHERAL
+    default y
+    help
+            Enables support for GATT Server
 
 config BT_NIMBLE_NVS_PERSIST
     bool "Persist the BLE Bonding keys in NVS"
@@ -237,6 +251,13 @@ config BT_NIMBLE_SM_SC_ONLY
     help
         Enable Secure Connections Only Mode
 
+config BT_NIMBLE_PRINT_ERR_NAME
+    bool "Enable feature to print Error description"
+    depends on BT_NIMBLE_ENABLED
+    default y
+    help
+        Enable feature to give useful explanation for HCI errors
+
 config BT_NIMBLE_DEBUG
     bool "Enable extra runtime asserts and host debugging"
     default n
@@ -273,6 +294,13 @@ config BT_NIMBLE_ATT_PREFERRED_MTU
     help
         This is the default value of ATT MTU indicated by the device during an ATT MTU exchange.
         This value can be changed using API ble_att_set_preferred_mtu()
+
+config BT_NIMBLE_ATT_MAX_PREP_ENTRIES
+    int "Max Prepare write entries"
+    depends on BT_NIMBLE_ENABLED
+    default 64
+    help
+        This is the default value of ATT Maximum prepare entries
 
 config BT_NIMBLE_SVC_GAP_APPEARANCE
     hex "External appearance of the device"
@@ -384,7 +412,7 @@ config BT_NIMBLE_GATT_MAX_PROCS
 
 config BT_NIMBLE_HS_FLOW_CTRL
     bool "Enable Host Flow control"
-    depends on BT_NIMBLE_ENABLED
+    depends on BT_NIMBLE_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER
     default y if IDF_TARGET_ESP32
     default n
     help
@@ -807,8 +835,172 @@ config BT_NIMBLE_BLE_GATT_BLOB_TRANSFER
         This option is used when data to be sent is more than 512 bytes. For peripheral role,
         BT_NIMBLE_MSYS_1_BLOCK_COUNT needs to be increased according to the need.
 
-menu "GAP Service"
+menu "BLE Services"
+    depends on BT_NIMBLE_GATT_SERVER
+
+    config BT_NIMBLE_PROX_SERVICE
+        bool "Proximity service"
+        default y
+        help
+            Enable Proximity Service support
+
+    config BT_NIMBLE_ANS_SERVICE
+        bool "Alert Notification service"
+        default y
+        help
+            Enable Alert Notification Service support
+
+    config BT_NIMBLE_CTS_SERVICE
+        bool "Current Time Service"
+        default y
+        help
+            Enable Current Time Service support
+
+    config BT_NIMBLE_HTP_SERVICE
+        bool "Health Thermometer service"
+        default y
+        help
+            Enable Health Thermometer Service support
+
+    config BT_NIMBLE_IPSS_SERVICE
+        bool "Internet Protocol Support service"
+        default y
+        help
+            Enable Internet Protocol Service support
+
+    config BT_NIMBLE_TPS_SERVICE
+        bool "Tx Power service"
+        default y
+        help
+            Enable Tx Power Service support
+
+    config BT_NIMBLE_IAS_SERVICE
+        bool "Immediate Alert service"
+        default y
+        help
+            Enable Immediate Alert Service support
+
+    config BT_NIMBLE_LLS_SERVICE
+        bool "Link Loss service"
+        default y
+        help
+            Enable Link Loss Service support
+
+    config BT_NIMBLE_SPS_SERVICE
+        bool "Serial Port service"
+        default y
+        help
+            Enable Serial Port Service support
+
+    config BT_NIMBLE_HR_SERVICE
+        bool "Heart Rate service"
+        default y
+        help
+            Enable HeartRate Service support
+
+    menuconfig BT_NIMBLE_HID_SERVICE
+        bool "HID service"
+        default n
+        help
+            Enable HID service support
+
+    config BT_NIMBLE_SVC_HID_MAX_INSTANCES
+        depends on BT_NIMBLE_HID_SERVICE
+        int "Maximum HID service instances"
+        default 2
+        help
+            Defines maximum number of HID service instances
+
+    config BT_NIMBLE_SVC_HID_MAX_RPTS
+        depends on BT_NIMBLE_HID_SERVICE
+        int "Maximum HID Report characteristics per service instance"
+        default 3
+        help
+            Defines maximum number of report characteristics per service instance
+
+    menuconfig BT_NIMBLE_BAS_SERVICE
+        bool "Battery service"
+        default y
+        help
+            Enable Battery service support
+
+    config BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_NOTIFY
+        depends on BT_NIMBLE_BAS_SERVICE
+        bool "BAS Battery Level NOTIFY permission"
+        help
+            Enable/Disable notifications on BAS Battery Level Characteristic
+
+    menuconfig BT_NIMBLE_DIS_SERVICE
+        bool "DIS service"
+        default y
+        help
+            Enable DIS service support
+
+    config BT_NIMBLE_SVC_DIS_MANUFACTURER_NAME
+        depends on BT_NIMBLE_DIS_SERVICE
+        bool "Manufacturer Name"
+        default n
+        help
+                Enable the DIS characteristic Manufacturer Name String characteristic
+
+    config BT_NIMBLE_SVC_DIS_SERIAL_NUMBER
+        depends on BT_NIMBLE_DIS_SERVICE
+        bool "Serial Number"
+        default n
+        help
+                Enable the DIS Serial Number characteristic
+
+    config BT_NIMBLE_SVC_DIS_HARDWARE_REVISION
+        depends on BT_NIMBLE_DIS_SERVICE
+        bool "Hardware Revision"
+        default n
+        help
+                Enable the DIS Hardware Revision characteristic
+
+    config BT_NIMBLE_SVC_DIS_FIRMWARE_REVISION
+        depends on BT_NIMBLE_DIS_SERVICE
+        bool "Firmware Revision"
+        default n
+        help
+                Enable the DIS Firmware Revision characteristic
+
+    config BT_NIMBLE_SVC_DIS_SOFTWARE_REVISION
+        depends on BT_NIMBLE_DIS_SERVICE
+        bool "Software Revision"
+        default n
+        help
+                Enable the DIS Software Revision characteristic
+
+    config BT_NIMBLE_SVC_DIS_SYSTEM_ID
+        depends on BT_NIMBLE_DIS_SERVICE
+        bool "System ID"
+        default n
+        help
+                Enable the DIS System ID characteristic
+
+    config BT_NIMBLE_SVC_DIS_PNP_ID
+        depends on BT_NIMBLE_DIS_SERVICE
+        bool "PnP ID"
+        default n
+        help
+                Enable the DIS PnP ID characteristic
+
+    config BT_NIMBLE_SVC_DIS_INCLUDED
+        depends on BT_NIMBLE_DIS_SERVICE
+        bool "DIS as an Included Service"
+        default n
+        help
+                Use DIS as an included service
+
+    menuconfig BT_NIMBLE_GAP_SERVICE
+        bool "GAP Service"
+        default y
+        help
+            Enable GAP Service support
+
     menu "GAP Appearance write permissions"
+        depends on BT_NIMBLE_GAP_SERVICE
+
         config BT_NIMBLE_SVC_GAP_APPEAR_WRITE
             bool "Write"
             default n
@@ -818,14 +1010,12 @@ menu "GAP Service"
         config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_ENC
             depends on BT_NIMBLE_SVC_GAP_APPEAR_WRITE
             bool "Write with encryption"
-            default n
             help
                 Enable write with encryption permission (BLE_GATT_CHR_F_WRITE_ENC)
 
         config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHEN
             depends on BT_NIMBLE_SVC_GAP_APPEAR_WRITE
             bool "Write with authentication"
-            default n
             help
                 Enable write with authentication permission (BLE_GATT_CHR_F_WRITE_AUTHEN)
 
@@ -835,48 +1025,49 @@ menu "GAP Service"
             default n
             help
                 Enable write with authorisation permission (BLE_GATT_CHR_F_WRITE_AUTHOR)
+
+        config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_PERM
+            int
+            default 0 if !BT_NIMBLE_SVC_GAP_APPEAR_WRITE
+            default 8 if BT_NIMBLE_SVC_GAP_APPEAR_WRITE
+
+        config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_PERM_ENC
+            int
+            default 0 if !BT_NIMBLE_SVC_GAP_APPEAR_WRITE_ENC
+            default 4096 if BT_NIMBLE_SVC_GAP_APPEAR_WRITE_ENC
+
+        config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_PERM_ATHN
+            int
+            default 0 if !BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHEN
+            default 8192 if BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHEN
+
+        config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_PERM_ATHR
+            int
+            default 0 if !BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHOR
+            default 16384 if BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHOR
     endmenu
-
-    config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_PERM
-        int
-        default 0 if !BT_NIMBLE_SVC_GAP_APPEAR_WRITE
-        default 8 if BT_NIMBLE_SVC_GAP_APPEAR_WRITE
-
-    config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_PERM_ENC
-        int
-        default 0 if !BT_NIMBLE_SVC_GAP_APPEAR_WRITE_ENC
-        default 4096 if BT_NIMBLE_SVC_GAP_APPEAR_WRITE_ENC
-
-    config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_PERM_ATHN
-        int
-        default 0 if !BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHEN
-        default 8192 if BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHEN
-
-    config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_PERM_ATHR
-        int
-        default 0 if !BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHOR
-        default 16384 if BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHOR
 
     choice BT_NIMBLE_SVC_GAP_CENT_ADDR_RESOLUTION
         prompt "GAP Characteristic - Central Address Resolution"
+        depends on BT_NIMBLE_GAP_SERVICE
         default BT_NIMBLE_SVC_GAP_CAR_CHAR_NOT_SUPP
         help
-            Weather or not Central Address Resolution characteristic is supported on
-            the device, and if supported, weather or not Central Address Resolution
-            is supported.
+                Weather or not Central Address Resolution characteristic is supported on
+                the device, and if supported, weather or not Central Address Resolution
+                is supported.
 
-            - Central Address Resolution characteristic not supported
-            - Central Address Resolution not supported
-            - Central Address Resolution supported
+                - Central Address Resolution characteristic not supported
+                - Central Address Resolution not supported
+                - Central Address Resolution supported
 
-        config BT_NIMBLE_SVC_GAP_CAR_CHAR_NOT_SUPP
-            bool "Characteristic not supported"
+            config BT_NIMBLE_SVC_GAP_CAR_CHAR_NOT_SUPP
+                bool "Characteristic not supported"
 
-        config BT_NIMBLE_SVC_GAP_CAR_NOT_SUPP
-            bool "Central Address Resolution not supported"
+            config BT_NIMBLE_SVC_GAP_CAR_NOT_SUPP
+                bool "Central Address Resolution not supported"
 
-        config BT_NIMBLE_SVC_GAP_CAR_SUPP
-            bool "Central Address Resolution supported"
+            config BT_NIMBLE_SVC_GAP_CAR_SUPP
+                bool "Central Address Resolution supported"
     endchoice
 
     config BT_NIMBLE_SVC_GAP_CENT_ADDR_RESOLUTION
@@ -885,7 +1076,9 @@ menu "GAP Service"
         default 0 if BT_NIMBLE_SVC_GAP_CAR_NOT_SUPP
         default 1 if BT_NIMBLE_SVC_GAP_CAR_SUPP
 
+
     menu "GAP device name write permissions"
+        depends on BT_NIMBLE_GAP_SERVICE
         config BT_NIMBLE_SVC_GAP_NAME_WRITE
             bool "Write"
             default n
@@ -914,6 +1107,40 @@ menu "GAP Service"
                 Enable write with authorisation permission (BLE_GATT_CHR_F_WRITE_AUTHOR)
     endmenu
 
+    menu "PPCP settings"
+        depends on BT_NIMBLE_GAP_SERVICE
+        config BT_NIMBLE_SVC_GAP_PPCP_MAX_CONN_INTERVAL
+            int "PPCP Connection Interval Max (Unit: 1.25 ms)"
+            depends on BT_NIMBLE_ROLE_PERIPHERAL && BT_NIMBLE_GAP_SERVICE
+            default 0
+            help
+                Peripheral Preferred Connection Parameter: Connection Interval maximum value
+                Interval Max = value * 1.25 ms
+
+        config BT_NIMBLE_SVC_GAP_PPCP_MIN_CONN_INTERVAL
+            int "PPCP Connection Interval Min (Unit: 1.25 ms)"
+            depends on BT_NIMBLE_ROLE_PERIPHERAL && BT_NIMBLE_GAP_SERVICE
+            default 0
+            help
+                Peripheral Preferred Connection Parameter: Connection Interval minimum value
+                Interval Min = value * 1.25 ms
+
+        config BT_NIMBLE_SVC_GAP_PPCP_SLAVE_LATENCY
+            int "PPCP Slave Latency"
+            depends on BT_NIMBLE_GAP_SERVICE
+            default 0
+            help
+                Peripheral Preferred Connection Parameter: Slave Latency
+
+        config BT_NIMBLE_SVC_GAP_PPCP_SUPERVISION_TMO
+            int "PPCP Supervision Timeout (Uint: 10 ms)"
+            depends on BT_NIMBLE_GAP_SERVICE
+            default 0
+            help
+                Peripheral Preferred Connection Parameter: Supervision Timeout
+                Timeout = Value * 10 ms
+    endmenu
+
     config BT_NIMBLE_SVC_GAP_NAME_WRITE_PERM
         int
         default 0 if !BT_NIMBLE_SVC_GAP_NAME_WRITE
@@ -934,35 +1161,6 @@ menu "GAP Service"
         default 0 if !BT_NIMBLE_SVC_GAP_NAME_WRITE_AUTHOR
         default 16384 if BT_NIMBLE_SVC_GAP_NAME_WRITE_AUTHOR
 
-    config BT_NIMBLE_SVC_GAP_PPCP_MAX_CONN_INTERVAL
-        int "PPCP Connection Interval Max (Unit: 1.25 ms)"
-        depends on BT_NIMBLE_ROLE_PERIPHERAL
-        default 0
-        help
-            Peripheral Preferred Connection Parameter: Connection Interval maximum value
-            Interval Max = value * 1.25 ms
-
-    config BT_NIMBLE_SVC_GAP_PPCP_MIN_CONN_INTERVAL
-        int "PPCP Connection Interval Min (Unit: 1.25 ms)"
-        depends on BT_NIMBLE_ROLE_PERIPHERAL
-        default 0
-        help
-            Peripheral Preferred Connection Parameter: Connection Interval minimum value
-            Interval Min = value * 1.25 ms
-
-    config BT_NIMBLE_SVC_GAP_PPCP_SLAVE_LATENCY
-        int "PPCP Slave Latency"
-        default 0
-        help
-            Peripheral Preferred Connection Parameter: Slave Latency
-
-    config BT_NIMBLE_SVC_GAP_PPCP_SUPERVISION_TMO
-        int "PPCP Supervision Timeout (Uint: 10 ms)"
-        default 0
-        help
-            Peripheral Preferred Connection Parameter: Supervision Timeout
-            Timeout = Value * 10 ms
-
     config BT_NIMBLE_SVC_GAP_GATT_SECURITY_LEVEL
         bool "LE GATT Security Level Characteristic"
         default n
@@ -975,94 +1173,6 @@ menu "GAP Service"
         help
             Enable the Resolvable Private Address Only characteristic
 
-endmenu
-
-menu "BLE Services"
-    menuconfig BT_NIMBLE_HID_SERVICE
-        bool "HID service"
-        depends on BT_NIMBLE_ENABLED
-        default n
-        help
-            Enable HID service support
-
-    config BT_NIMBLE_SVC_HID_MAX_INSTANCES
-        depends on BT_NIMBLE_HID_SERVICE
-        int "Maximum HID service instances"
-        default 2
-        help
-            Defines maximum number of HID service instances
-
-    config BT_NIMBLE_SVC_HID_MAX_RPTS
-        depends on BT_NIMBLE_HID_SERVICE
-        int "Maximum HID Report characteristics per service instance"
-        default 3
-        help
-            Defines maximum number of report characteristics per service instance
-
-    config BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_NOTIFY
-        depends on BT_NIMBLE_ENABLED
-        bool "BAS Battery Level NOTIFY permission"
-        default n
-        help
-            Enable/Disable notifications on BAS Battery Level Characteristic
-
-    menu "Device Information Service"
-        config BT_NIMBLE_SVC_DIS_MANUFACTURER_NAME
-            depends on BT_NIMBLE_ENABLED
-            bool "Manufacturer Name"
-            default n
-            help
-                Enable the DIS characteristic Manufacturer Name String characteristic
-
-        config BT_NIMBLE_SVC_DIS_SERIAL_NUMBER
-            depends on BT_NIMBLE_ENABLED
-            bool "Serial Number"
-            default n
-            help
-                Enable the DIS Serial Number characteristic
-
-        config BT_NIMBLE_SVC_DIS_HARDWARE_REVISION
-            depends on BT_NIMBLE_ENABLED
-            bool "Hardware Revision"
-            default n
-            help
-                Enable the DIS Hardware Revision characteristic
-
-        config BT_NIMBLE_SVC_DIS_FIRMWARE_REVISION
-            depends on BT_NIMBLE_ENABLED
-            bool "Firmware Revision"
-            default n
-            help
-                Enable the DIS Firmware Revision characteristic
-
-        config BT_NIMBLE_SVC_DIS_SOFTWARE_REVISION
-            depends on BT_NIMBLE_ENABLED
-            bool "Software Revision"
-            default n
-            help
-                Enable the DIS Software Revision characteristic
-
-        config BT_NIMBLE_SVC_DIS_SYSTEM_ID
-            depends on BT_NIMBLE_ENABLED
-            bool "System ID"
-            default n
-            help
-                Enable the DIS System ID characteristic
-
-        config BT_NIMBLE_SVC_DIS_PNP_ID
-            depends on BT_NIMBLE_ENABLED
-            bool "PnP ID"
-            default n
-            help
-                Enable the DIS PnP ID characteristic
-
-        config BT_NIMBLE_SVC_DIS_INCLUDED
-            depends on BT_NIMBLE_ENABLED
-            bool "DIS as an Included Service"
-            default n
-            help
-                Use DIS as an included service
-    endmenu
 endmenu
 
 config BT_NIMBLE_VS_SUPPORT
