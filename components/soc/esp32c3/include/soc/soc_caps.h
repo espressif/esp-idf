@@ -125,6 +125,7 @@
 
 /*-------------------------- CACHE CAPS --------------------------------------*/
 #define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
+#define SOC_CACHE_FREEZE_SUPPORTED              1
 #define SOC_CACHE_MEMORY_IBANK_SIZE        0x4000   // has to be same as the definition in ROM component
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
