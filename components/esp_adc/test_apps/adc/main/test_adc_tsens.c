@@ -24,7 +24,7 @@
 static const char *TAG = "adc_tsens";
 
 #define EXAMPLE_ADC1_CHAN0          ADC_CHANNEL_2
-#define EXAMPLE_ADC1_CHAN1          ADC_CHANNEL_4
+#define EXAMPLE_ADC1_CHAN1          ADC_CHANNEL_3
 #define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_12
 
 static int adc_raw[2][10];
