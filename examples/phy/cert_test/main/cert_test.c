@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,9 @@
 
 #include "cmd_phy.h"
 #include "esp_phy_cert_test.h"
+#if CONFIG_COMMANDS_ENABLE_BLE_DTM_TEST
+#include "cmd_ble_dtm.h"
+#endif
 
 void app_main(void)
 {
@@ -20,7 +23,6 @@ void app_main(void)
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     repl_config.prompt = "phy>";
-
 #if CONFIG_ESP_CONSOLE_UART
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
@@ -46,7 +48,9 @@ void app_main(void)
     esp_phy_rftest_config(1);
     esp_phy_rftest_init();
 #endif
-
+#if CONFIG_COMMANDS_ENABLE_BLE_DTM_TEST
+    dtm_configuration_command_register();
+#endif
     int help_index = 1;
     printf("\n ==================================================\n");
     printf(" |            RF certification test               |\n");

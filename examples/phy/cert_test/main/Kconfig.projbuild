@@ -11,4 +11,11 @@ menu "Example Configuration"
 
     endchoice
 
+    config COMMANDS_ENABLE_BLE_DTM_TEST
+        bool "Enable BLE DTM Test Mode"
+        depends on IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+        default n
+        help
+            Enable this option to support BLE Direct Test Mode (DTM) for RF testing and validation.
+
 endmenu
