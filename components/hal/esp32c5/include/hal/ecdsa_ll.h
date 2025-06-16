@@ -405,6 +405,14 @@ static inline int ecdsa_ll_get_operation_result(void)
     return REG_GET_BIT(ECDSA_RESULT_REG, ECDSA_OPERATION_RESULT);
 }
 
+/**
+ * @brief Check if the ECDSA deterministic mode is supported
+ */
+static inline bool ecdsa_ll_is_deterministic_mode_supported(void)
+{
+    return true;
+}
+
 #ifdef __cplusplus
 }
 #endif

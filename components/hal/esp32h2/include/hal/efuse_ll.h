@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,11 @@ extern "C" {
 // Always inline these functions even no gcc optimization is applied.
 
 /******************* eFuse fields *************************/
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_curve_mode(void)
+{
+    return EFUSE.rd_repeat_data0.ecdsa_curve_mode;
+}
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_flash_crypt_cnt(void)
 {
