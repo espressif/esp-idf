@@ -315,6 +315,10 @@ config SOC_SHARED_IDCACHE_SUPPORTED
     bool
     default y
 
+config SOC_CACHE_FREEZE_SUPPORTED
+    bool
+    default y
+
 config SOC_CACHE_MEMORY_IBANK_SIZE
     hex
     default 0x4000
