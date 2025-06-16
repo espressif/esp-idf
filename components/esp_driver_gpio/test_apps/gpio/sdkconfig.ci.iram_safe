@@ -8,3 +8,5 @@ CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT=y
 CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT=y
 # GPIO test uses IPC call, the default stack size of IPC task can satisfy the -O0 optimization
 CONFIG_ESP_IPC_TASK_STACK_SIZE=2048
+# test gpio functionality with non-default option
+CONFIG_HAL_GPIO_USE_ROM_IMPL=n

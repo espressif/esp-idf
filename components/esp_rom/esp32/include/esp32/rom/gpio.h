@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,15 +35,6 @@ extern "C" {
     ((reg_id >= GPIO_ID_PIN0) && (reg_id <= GPIO_ID_PIN(GPIO_PIN_COUNT-1)))
 
 #define GPIO_REGID_TO_PINIDX(reg_id) ((reg_id) - GPIO_ID_PIN0)
-
-typedef enum {
-    GPIO_PIN_INTR_DISABLE = 0,
-    GPIO_PIN_INTR_POSEDGE = 1,
-    GPIO_PIN_INTR_NEGEDGE = 2,
-    GPIO_PIN_INTR_ANYEDGE = 3,
-    GPIO_PIN_INTR_LOLEVEL = 4,
-    GPIO_PIN_INTR_HILEVEL = 5
-} GPIO_INT_TYPE;
 
 #define GPIO_OUTPUT_SET(gpio_no, bit_value) \
         ((gpio_no < 32) ? gpio_output_set(bit_value<<gpio_no, (bit_value ? 0 : 1)<<gpio_no, 1<<gpio_no,0) : \
@@ -102,28 +93,6 @@ uint32_t gpio_input_get(void);
   * @return uint32_t : bitmask for GPIO input pins, BIT(0) for GPIO32.
   */
 uint32_t gpio_input_get_high(void);
-
-/**
-  * @brief Set GPIO to wakeup the ESP32.
-  *        Please do not call this function in SDK.
-  *
-  * @param uint32_t i: gpio number.
-  *
-  * @param GPIO_INT_TYPE intr_state : only GPIO_PIN_INTR_LOLEVEL\GPIO_PIN_INTR_HILEVEL can be used
-  *
-  * @return None
-  */
-void gpio_pin_wakeup_enable(uint32_t i, GPIO_INT_TYPE intr_state);
-
-/**
-  * @brief disable GPIOs to wakeup the ESP32.
-  *        Please do not call this function in SDK.
-  *
-  * @param None
-  *
-  * @return None
-  */
-void gpio_pin_wakeup_disable(void);
 
 /**
   * @brief set gpio input to a signal, one gpio can input to several signals.

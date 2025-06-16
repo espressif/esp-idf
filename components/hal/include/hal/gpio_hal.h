@@ -192,7 +192,7 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
   * @param hal Context of the HAL layer
   * @param gpio_num GPIO number
   */
-#define gpio_hal_matrix_out_default(hal, gpio_num) gpio_ll_matrix_out_default((hal)->dev, gpio_num)
+#define gpio_hal_matrix_out_default(hal, gpio_num) gpio_ll_set_output_signal_matrix_source((hal)->dev, gpio_num, SIG_GPIO_OUT_IDX, false)
 
 /**
  * @brief  Select a function for the pin in the IOMUX
@@ -363,7 +363,7 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
   * @param gpio_num GPIO number of the pad.
   * @param func The index number of the IOMUX function to be selected for the pin.
   *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
-  * @param signal_idx Peripheral signal id to input. One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
+  * @param signal_idx Peripheral signal index to input. One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
   */
 void gpio_hal_iomux_in(gpio_hal_context_t *hal, uint32_t gpio_num, int func, uint32_t signal_idx);
 
@@ -376,6 +376,32 @@ void gpio_hal_iomux_in(gpio_hal_context_t *hal, uint32_t gpio_num, int func, uin
   *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
   */
  void gpio_hal_iomux_out(gpio_hal_context_t *hal, uint32_t gpio_num, int func);
+
+/**
+ * @brief Set pad input to a peripheral signal through the GPIO matrix.
+ *
+ * @note There's no limitation on the number of signals that a GPIO can combine with.
+ *
+ * @param hal Context of the HAL layer
+ * @param gpio_num GPIO number, especially, `GPIO_MATRIX_CONST_ZERO_INPUT` means connect logic 0 to signal;
+ *                                          `GPIO_MATRIX_CONST_ONE_INPUT` means connect logic 1 to signal.
+ * @param signal_idx Peripheral signal index (tagged as input attribute). One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
+ * @param in_inv Whether the GPIO input to be inverted or not.
+ */
+void gpio_hal_matrix_in(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t signal_idx, bool in_inv);
+
+/**
+ * @brief Set peripheral output to an GPIO pad through the GPIO matrix.
+ *
+ * @note There's no limitation on the number of signals that a GPIO can combine with.
+ *
+ * @param hal Context of the HAL layer
+ * @param gpio_num GPIO number
+ * @param signal_idx Peripheral signal index (tagged as output attribute). One of the ``*_OUT_IDX`` signals in ``soc/gpio_sig_map.h``. Particularly, `SIG_GPIO_OUT_IDX` means disconnect GPIO and other peripherals. Only the GPIO driver can control the output level.
+ * @param out_inv Whether to signal to be inverted or not.
+ * @param oen_inv Whether the output enable control is inverted or not.
+ */
+void gpio_hal_matrix_out(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t signal_idx, bool out_inv, bool oen_inv);
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**

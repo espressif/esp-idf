@@ -30,6 +30,11 @@ MCPWM
     - :cpp:type:`mcpwm_gpio_sync_src_config_t`
     - :cpp:type:`mcpwm_capture_channel_config_t`
 
+GPIO
+----
+
+:func:`gpio_iomux_in` 和 :func:`gpio_iomux_out` 已被 :func:`gpio_iomux_input` 和 :func:`gpio_iomux_output` 函数取代， 并移至 ``esp_private/gpio.h`` 头文件中作为仅供内部使用的私有 API。
+
 I2C
 ---
 

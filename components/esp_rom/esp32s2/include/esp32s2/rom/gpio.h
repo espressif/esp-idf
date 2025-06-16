@@ -104,7 +104,7 @@ uint32_t gpio_input_get(void);
 uint32_t gpio_input_get_high(void);
 
 /**
-  * @brief Set GPIO to wakeup the ESP32.
+  * @brief Set GPIO to wakeup the chip.
   *        Please do not call this function in SDK.
   *
   * @param uint32_t i: gpio number.
@@ -116,7 +116,7 @@ uint32_t gpio_input_get_high(void);
 void gpio_pin_wakeup_enable(uint32_t i, GPIO_INT_TYPE intr_state);
 
 /**
-  * @brief disable GPIOs to wakeup the ESP32.
+  * @brief disable GPIOs to wakeup the chip.
   *        Please do not call this function in SDK.
   *
   * @param None
