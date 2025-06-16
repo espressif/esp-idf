@@ -294,12 +294,14 @@ LEDC
 
 .. only:: SOC_TEMP_SENSOR_SUPPORTED
 
-    温度传感器驱动
+    .. _deprecate_tsens_legacy_driver:
+
+    旧版温度传感器驱动已被弃用
     ------------------------------------------------------------
 
     温度传感器的驱动已更新，推荐用户使用新驱动。旧版驱动仍然可用，但是无法与新驱动同时使用。
 
-    新驱动的头文件引用路径为 ``driver/temperature_sensor.h``。旧版驱动仍然可用，保留在引用路径 ``driver/temp_sensor.h`` 中。但是，引用路径 ``driver/temp_sensor.h`` 会默认触发如下编译警告，可通过设置 Kconfig 选项 :ref:`CONFIG_TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN` 来关闭该警告。
+    新驱动的头文件引用路径为 ``driver/temperature_sensor.h``。旧版驱动仍然可用，保留在引用路径 ``driver/temp_sensor.h`` 中。但是，引用路径 ``driver/temp_sensor.h`` 会默认触发如下编译警告，可通过设置 Kconfig 选项 ``CONFIG_TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN`` 来关闭该警告。
 
     .. code-block:: text
 

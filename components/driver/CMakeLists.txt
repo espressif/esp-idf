@@ -45,11 +45,6 @@ if(CONFIG_SOC_SDM_SUPPORTED)
     list(APPEND srcs "deprecated/sigma_delta_legacy.c")
 endif()
 
-# Temperature Sensor related source files
-if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
-    list(APPEND srcs "deprecated/rtc_temperature_legacy.c")
-endif()
-
 # Touch Sensor related source files
 if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
     if(CONFIG_SOC_TOUCH_SENSOR_VERSION LESS 3)
