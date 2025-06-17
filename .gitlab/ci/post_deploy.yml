@@ -27,3 +27,6 @@ sync_support_status:
   before_script: []
   script:
     - curl --fail --request POST --form token="$IDF_STATUS_TRIG_TOKEN" --form ref="$IDF_STATUS_BRANCH" --form "variables[UPLOAD_TO_S3]=true" "$IDF_STATUS_TRIG_URL"
+  environment:
+    name: sync_support_status_production
+    deployment_tier: production
