@@ -57,6 +57,9 @@ if(NOT non_os_build)
     if(CONFIG_SOC_MODEM_SUPPORT_ETM)
         list(APPEND srcs "modem/modem_etm.c")
     endif()
+    if(CONFIG_SOC_PMU_SUPPORTED)
+        list(APPEND srcs "pmu_share_hw.c")
+    endif()
     if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
         list(APPEND srcs "sleep_modem.c"
                          "sleep_modes.c"

@@ -10,6 +10,7 @@ INPUT += \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_uart.h \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h \
+	$(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_mailbox.h \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_spi.h \
     $(PROJECT_PATH)/components/ulp/lp_core/shared/include/ulp_lp_core_lp_vad_shared.h \
     $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \

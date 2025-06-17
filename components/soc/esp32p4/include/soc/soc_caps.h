@@ -93,6 +93,7 @@
 #define SOC_LP_SPI_SUPPORTED            1
 #define SOC_LP_ADC_SUPPORTED            1
 #define SOC_LP_VAD_SUPPORTED            1
+#define SOC_LP_MAILBOX_SUPPORTED        1
 #define SOC_SPIRAM_SUPPORTED            1
 #define SOC_PSRAM_DMA_CAPABLE           1
 #define SOC_SDMMC_HOST_SUPPORTED        1

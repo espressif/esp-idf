@@ -8,6 +8,7 @@ components/ulp/lp_core/lp_core/include/ulp_lp_core_uart.h
 components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h
 components/ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h
 components/ulp/lp_core/lp_core/include/ulp_lp_core_spi.h
+components/ulp/lp_core/lp_core/include/ulp_lp_core_mailbox.h
 # ESP-TEE header files
 components/esp_tee/subproject/components/tee_sec_storage/include/esp_tee_sec_storage.h
 components/esp_tee/subproject/components/tee_attestation/esp_tee_attestation.h

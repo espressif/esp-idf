@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -11,213 +11,213 @@ extern "C" {
 #endif
 
 /** Group: configure_register */
-/** Type of massege_0 register
+/** Type of message_0 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_0 : R/W; bitpos: [31:0]; default: 0;
+        /** message_0 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_0:32;
+        uint32_t message_0:32;
     };
     uint32_t val;
-} mb_massege_0_reg_t;
+} mb_message_0_reg_t;
 
-/** Type of massege_1 register
+/** Type of message_1 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_1 : R/W; bitpos: [31:0]; default: 0;
+        /** message_1 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_1:32;
+        uint32_t message_1:32;
     };
     uint32_t val;
-} mb_massege_1_reg_t;
+} mb_message_1_reg_t;
 
-/** Type of massege_2 register
+/** Type of message_2 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_2 : R/W; bitpos: [31:0]; default: 0;
+        /** message_2 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_2:32;
+        uint32_t message_2:32;
     };
     uint32_t val;
-} mb_massege_2_reg_t;
+} mb_message_2_reg_t;
 
-/** Type of massege_3 register
+/** Type of message_3 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_3 : R/W; bitpos: [31:0]; default: 0;
+        /** message_3 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_3:32;
+        uint32_t message_3:32;
     };
     uint32_t val;
-} mb_massege_3_reg_t;
+} mb_message_3_reg_t;
 
-/** Type of massege_4 register
+/** Type of message_4 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_4 : R/W; bitpos: [31:0]; default: 0;
+        /** message_4 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_4:32;
+        uint32_t message_4:32;
     };
     uint32_t val;
-} mb_massege_4_reg_t;
+} mb_message_4_reg_t;
 
-/** Type of massege_5 register
+/** Type of message_5 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_5 : R/W; bitpos: [31:0]; default: 0;
+        /** message_5 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_5:32;
+        uint32_t message_5:32;
     };
     uint32_t val;
-} mb_massege_5_reg_t;
+} mb_message_5_reg_t;
 
-/** Type of massege_6 register
+/** Type of message_6 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_6 : R/W; bitpos: [31:0]; default: 0;
+        /** message_6 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_6:32;
+        uint32_t message_6:32;
     };
     uint32_t val;
-} mb_massege_6_reg_t;
+} mb_message_6_reg_t;
 
-/** Type of massege_7 register
+/** Type of message_7 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_7 : R/W; bitpos: [31:0]; default: 0;
+        /** message_7 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_7:32;
+        uint32_t message_7:32;
     };
     uint32_t val;
-} mb_massege_7_reg_t;
+} mb_message_7_reg_t;
 
-/** Type of massege_8 register
+/** Type of message_8 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_8 : R/W; bitpos: [31:0]; default: 0;
+        /** message_8 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_8:32;
+        uint32_t message_8:32;
     };
     uint32_t val;
-} mb_massege_8_reg_t;
+} mb_message_8_reg_t;
 
-/** Type of massege_9 register
+/** Type of message_9 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_9 : R/W; bitpos: [31:0]; default: 0;
+        /** message_9 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_9:32;
+        uint32_t message_9:32;
     };
     uint32_t val;
-} mb_massege_9_reg_t;
+} mb_message_9_reg_t;
 
-/** Type of massege_10 register
+/** Type of message_10 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_10 : R/W; bitpos: [31:0]; default: 0;
+        /** message_10 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_10:32;
+        uint32_t message_10:32;
     };
     uint32_t val;
-} mb_massege_10_reg_t;
+} mb_message_10_reg_t;
 
-/** Type of massege_11 register
+/** Type of message_11 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_11 : R/W; bitpos: [31:0]; default: 0;
+        /** message_11 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_11:32;
+        uint32_t message_11:32;
     };
     uint32_t val;
-} mb_massege_11_reg_t;
+} mb_message_11_reg_t;
 
-/** Type of massege_12 register
+/** Type of message_12 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_12 : R/W; bitpos: [31:0]; default: 0;
+        /** message_12 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_12:32;
+        uint32_t message_12:32;
     };
     uint32_t val;
-} mb_massege_12_reg_t;
+} mb_message_12_reg_t;
 
-/** Type of massege_13 register
+/** Type of message_13 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_13 : R/W; bitpos: [31:0]; default: 0;
+        /** message_13 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_13:32;
+        uint32_t message_13:32;
     };
     uint32_t val;
-} mb_massege_13_reg_t;
+} mb_message_13_reg_t;
 
-/** Type of massege_14 register
+/** Type of message_14 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_14 : R/W; bitpos: [31:0]; default: 0;
+        /** message_14 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_14:32;
+        uint32_t message_14:32;
     };
     uint32_t val;
-} mb_massege_14_reg_t;
+} mb_message_14_reg_t;
 
-/** Type of massege_15 register
+/** Type of message_15 register
  *  need_des
  */
 typedef union {
     struct {
-        /** massege_15 : R/W; bitpos: [31:0]; default: 0;
+        /** message_15 : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t massege_15:32;
+        uint32_t message_15:32;
     };
     uint32_t val;
-} mb_massege_15_reg_t;
+} mb_message_15_reg_t;
 
 /** Type of reg_clk_en register
  *  need_des
@@ -829,22 +829,22 @@ typedef union {
 
 
 typedef struct {
-    volatile mb_massege_0_reg_t massege_0;
-    volatile mb_massege_1_reg_t massege_1;
-    volatile mb_massege_2_reg_t massege_2;
-    volatile mb_massege_3_reg_t massege_3;
-    volatile mb_massege_4_reg_t massege_4;
-    volatile mb_massege_5_reg_t massege_5;
-    volatile mb_massege_6_reg_t massege_6;
-    volatile mb_massege_7_reg_t massege_7;
-    volatile mb_massege_8_reg_t massege_8;
-    volatile mb_massege_9_reg_t massege_9;
-    volatile mb_massege_10_reg_t massege_10;
-    volatile mb_massege_11_reg_t massege_11;
-    volatile mb_massege_12_reg_t massege_12;
-    volatile mb_massege_13_reg_t massege_13;
-    volatile mb_massege_14_reg_t massege_14;
-    volatile mb_massege_15_reg_t massege_15;
+    volatile mb_message_0_reg_t message_0;
+    volatile mb_message_1_reg_t message_1;
+    volatile mb_message_2_reg_t message_2;
+    volatile mb_message_3_reg_t message_3;
+    volatile mb_message_4_reg_t message_4;
+    volatile mb_message_5_reg_t message_5;
+    volatile mb_message_6_reg_t message_6;
+    volatile mb_message_7_reg_t message_7;
+    volatile mb_message_8_reg_t message_8;
+    volatile mb_message_9_reg_t message_9;
+    volatile mb_message_10_reg_t message_10;
+    volatile mb_message_11_reg_t message_11;
+    volatile mb_message_12_reg_t message_12;
+    volatile mb_message_13_reg_t message_13;
+    volatile mb_message_14_reg_t message_14;
+    volatile mb_message_15_reg_t message_15;
     volatile mb_lp_int_raw_reg_t lp_int_raw;
     volatile mb_lp_int_st_reg_t lp_int_st;
     volatile mb_lp_int_ena_reg_t lp_int_ena;
@@ -854,11 +854,12 @@ typedef struct {
     volatile mb_hp_int_ena_reg_t hp_int_ena;
     volatile mb_hp_int_clr_reg_t hp_int_clr;
     volatile mb_reg_clk_en_reg_t reg_clk_en;
-} mb_dev_t;
+} lp_mb_dev_t;
 
+extern lp_mb_dev_t LP_MAILBOX;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(mb_dev_t) == 0x64, "Invalid size of mb_dev_t structure");
+_Static_assert(sizeof(lp_mb_dev_t) == 0x64, "Invalid size of lp_mb_dev_t structure");
 #endif
 
 #ifdef __cplusplus
