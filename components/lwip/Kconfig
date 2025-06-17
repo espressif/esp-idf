@@ -949,6 +949,20 @@ menu "LWIP"
         help
             Maximum number of entries in IPv6 destinations cache
 
+    config LWIP_IPV6_ND6_ROUTE_INFO_OPTION_SUPPORT
+        bool "Enable IPV6 ND6 route information option support"
+        depends on LWIP_ND6
+        default n
+        help
+            Enable route information option (RIO) support in IPV6 ND6
+
+    config LWIP_IPV6_ND6_NUM_ROUTE_INFO
+        int "Max number of entries in IPv6 route information options cache"
+        depends on LWIP_IPV6_ND6_ROUTE_INFO_OPTION_SUPPORT
+        default 10
+        help
+            Maximum number of entries in IPv6 route information options cache
+
     menuconfig LWIP_PPP_SUPPORT
         bool "Enable PPP support"
         default n
