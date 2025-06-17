@@ -1644,6 +1644,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
     SM_ENTRY_MA(WPA_PTK, PTKCALCNEGOTIATING, wpa_ptk);
     sm->EAPOLKeyReceived = FALSE;
     sm->update_snonce = FALSE;
+    os_memset(&PTK, 0, sizeof(PTK));
     pmk_len = PMK_LEN;
 
     /* WPA with IEEE 802.1X: use the derived PMK from EAP
