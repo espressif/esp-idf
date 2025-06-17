@@ -22,15 +22,15 @@ void app_main(void)
     onewire_bus_handle_t bus;
     onewire_bus_config_t bus_config = {
         .bus_gpio_num = EXAMPLE_ONEWIRE_BUS_GPIO,
+        .flags = {
+            .en_pull_up = true, // enable the internal pull-up resistor in case the external device didn't have one
+        }
     };
     onewire_bus_rmt_config_t rmt_config = {
         .max_rx_bytes = 10, // 1byte ROM command + 8byte ROM number + 1byte device command
     };
     ESP_ERROR_CHECK(onewire_new_bus_rmt(&bus_config, &rmt_config, &bus));
     ESP_LOGI(TAG, "1-Wire bus installed on GPIO%d", EXAMPLE_ONEWIRE_BUS_GPIO);
-
-    // in case the external device didn't have a pull-up resistor, we also enable the internal pull-up resistor
-    ESP_ERROR_CHECK(gpio_pullup_en(EXAMPLE_ONEWIRE_BUS_GPIO));
 
     int ds18b20_device_num = 0;
     ds18b20_device_handle_t ds18b20s[EXAMPLE_ONEWIRE_MAX_DS18B20];
