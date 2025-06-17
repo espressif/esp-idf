@@ -270,6 +270,8 @@ static void record_and_send_task(void *pvParameters) {
     
     // 録音状態リセット
     recording_active = false;
+
+    vTaskDelay(pdMS_TO_TICKS(1000)); // 200ms待機
     
     // VADタスクを再開
     if (vad_task_handle != NULL) {
