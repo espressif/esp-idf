@@ -71,6 +71,9 @@ static inline int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
     case BLE_MESH_ADV_RELAY_DATA:
 #endif
+#if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX
+    case BLE_MESH_ADV_PROXY_SOLIC:
+#endif
     case BLE_MESH_ADV_BEACON:
     case BLE_MESH_ADV_URI: {
         adv_int = MAX(ADV_ITVL_MIN,
@@ -96,9 +99,20 @@ static inline int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration
         param.primary_phy = BLE_MESH_ADV_PHY_1M;
         param.secondary_phy = BLE_MESH_ADV_PHY_1M;
 
-        bt_mesh_adv_buf_ref_debug(__func__, buf, 4U, BLE_MESH_BUF_REF_SMALL);
-
-        err = bt_le_ext_adv_start(inst->id, &param, &ad, 1, NULL, 0);
+#if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX
+        if (BLE_MESH_ADV(buf)->type == BLE_MESH_ADV_PROXY_SOLIC) {
+            bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
+            struct bt_mesh_adv_data solic_ad[2] = {
+                BLE_MESH_ADV_DATA_BYTES(BLE_MESH_DATA_UUID16_ALL, 0x59, 0x18),
+                BLE_MESH_ADV_DATA(BLE_MESH_DATA_SVC_DATA16, buf->data, buf->len),
+            };
+            err = bt_le_ext_adv_start(CONFIG_BLE_MESH_ADV_INST_ID, &param, solic_ad, ARRAY_SIZE(solic_ad), NULL, 0);
+        } else
+#endif
+        {
+            bt_mesh_adv_buf_ref_debug(__func__, buf, 4U, BLE_MESH_BUF_REF_SMALL);
+            err = bt_le_ext_adv_start(inst->id, &param, &ad, 1, NULL, 0);
+        }
         }
         break;
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
