@@ -558,7 +558,7 @@ pytest_build_system_macos:
     PYENV_VERSION: "3.8"
     # CCACHE_DIR: "/cache/idf_ccache". On macOS, you cannot write to this folder due to insufficient permissions.
     CCACHE_DIR: "" # ccache will use "$HOME/Library/Caches/ccache".
-    CCACHE_MAXSIZE: "5G" # To preserve the limited Macbook storage. CCACHE automatically prunes old caches to fit the set limit.
+
 build_docker:
   extends:
     - .before_script:minimal
