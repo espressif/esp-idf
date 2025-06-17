@@ -99,6 +99,7 @@ volatile UBaseType_t port_uxInterruptNesting[portNUM_PROCESSORS] = {0};  // Inte
 volatile UBaseType_t port_uxCriticalNesting[portNUM_PROCESSORS] = {0};
 volatile UBaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};
 volatile UBaseType_t xPortSwitchFlag[portNUM_PROCESSORS] = {0};
+volatile UBaseType_t port_uxCoreStartupDone[portNUM_PROCESSORS] = {0};  // Indicates whether the core has completed its startup sequence
 
 #if ( SOC_CPU_COPROC_NUM > 0 )
 
@@ -156,6 +157,7 @@ BaseType_t xPortStartScheduler(void)
     port_uxInterruptNesting[coreID] = 0;
     port_uxCriticalNesting[coreID] = 0;
     port_xSchedulerRunning[coreID] = 0;
+    port_uxCoreStartupDone[coreID] = 0;
 
     /* Initialize ISR Stack(s) */
     for (int i = 0; i < portNUM_PROCESSORS; i++) {

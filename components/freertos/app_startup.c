@@ -108,7 +108,7 @@ void esp_startup_start_app_other_cores(void)
     }
 
     // Wait for CPU0 to start FreeRTOS before progressing
-    extern volatile unsigned port_xSchedulerRunning[portNUM_PROCESSORS];
+    extern volatile unsigned port_xSchedulerRunning[CONFIG_FREERTOS_NUMBER_OF_CORES];
     while (port_xSchedulerRunning[0] == 0) {
         ;
     }
@@ -137,27 +137,27 @@ void esp_startup_start_app_other_cores(void)
 
 ESP_LOG_ATTR_TAG(MAIN_TAG, "main_task");
 
-#if !CONFIG_FREERTOS_UNICORE
-static volatile bool s_other_cpu_startup_done = false;
-static bool other_cpu_startup_idle_hook_cb(void)
+/* This function has to guarantee that all CPUs have finished the FreeRTOS initialization
+* and the startup stack is not in use.
+*/
+static void wait_for_all_cores_ready(void)
 {
-    s_other_cpu_startup_done = true;
-    return true;
+#if !CONFIG_FREERTOS_UNICORE
+    extern volatile unsigned port_uxCoreStartupDone[CONFIG_FREERTOS_NUMBER_OF_CORES];
+    bool all_cpus_has_been_started;
+    do {
+        all_cpus_has_been_started = true;
+        for (int cpu = 0; cpu < CONFIG_FREERTOS_NUMBER_OF_CORES; cpu++) {
+            all_cpus_has_been_started &= port_uxCoreStartupDone[cpu] != 0;
+        }
+    } while (!all_cpus_has_been_started);
+#endif // !CONFIG_FREERTOS_UNICORE
 }
-#endif
 
-static void main_task(void* args)
+// Reinitialize the startup stack heaps, so it can be used for heap allocation.
+static void reclaim_startup_stack_memory_for_heap(void)
 {
-    ESP_LOGI(MAIN_TAG, "Started on CPU%d", (int)xPortGetCoreID());
-#if !CONFIG_FREERTOS_UNICORE
-    // Wait for FreeRTOS initialization to finish on other core, before replacing its startup stack
-    esp_register_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, !xPortGetCoreID());
-    while (!s_other_cpu_startup_done) {
-        ;
-    }
-    esp_deregister_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, !xPortGetCoreID());
-#endif
-
+    wait_for_all_cores_ready();
     // [refactor-todo] check if there is a way to move the following block to esp_system startup
     heap_caps_enable_nonos_stack_heaps();
 
@@ -171,6 +171,13 @@ static void main_task(void* args)
         }
     }
 #endif
+}
+
+static void main_task(void* args)
+{
+    ESP_LOGI(MAIN_TAG, "Started on CPU%d", (int)xPortGetCoreID());
+
+    reclaim_startup_stack_memory_for_heap();
 
     // Initialize TWDT if configured to do so
 #if CONFIG_ESP_TASK_WDT_INIT

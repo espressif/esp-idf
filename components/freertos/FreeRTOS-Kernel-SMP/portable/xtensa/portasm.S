@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2025 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
@@ -284,7 +284,7 @@ _frxt_int_exit:
 * Manages the tick timer and calls xPortSysTickHandler() every tick.
 * See the detailed description of the XT_RTOS_ENTER macro in xtensa_rtos.h.
 *
-* Callable from C (obeys ABI conventions). Implemented in assmebly code for performance.
+* Callable from C (obeys ABI conventions). Implemented in assembly code for performance.
 *
 **********************************************************************************************************
 */
@@ -373,7 +373,7 @@ _frxt_timer_int:
 *                                           _frxt_tick_timer_init
 *                                      void _frxt_tick_timer_init(void)
 *
-* Initialize timer and timer interrrupt handler (_xt_tick_divisor_init() has already been been called).
+* Initialize timer and timer interrupt handler (_xt_tick_divisor_init() has already been been called).
 * Callable from C (obeys ABI conventions on entry).
 *
 **********************************************************************************************************
@@ -462,6 +462,15 @@ _frxt_dispatch:
     l32i    a3,  a2, 0
     l32i    sp,  a3, TOPOFSTACK_OFFS     /* SP = next_TCB->pxTopOfStack;  */
     s32i    a3,  a2, 0
+
+#if ( configNUM_CORES > 1 )
+    /* Indicate that this CPU has completed startup. */
+    movi    a2, port_uxCoreStartupDone  /* a2 = &port_uxCoreStartupDone */
+    getcoreid a3
+    addx4   a2, a3, a2                  /* a2 = &port_uxCoreStartupDone[coreid] */
+    movi    a3, 1                       /* a3 = 1 */
+    s32i    a3, a2, 0                   /* port_uxCoreStartupDone[coreid] = 1 */
+#endif /* ( configNUM_CORES > 1 ) */
 
     /* Determine the type of stack frame. */
     l32i    a2,  sp, XT_STK_EXIT        /* exit dispatcher or solicited flag */
