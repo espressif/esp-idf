@@ -105,7 +105,7 @@ config BT_BLE_LOG_SPI_OUT_SYNC_IO_NUM
 config BT_BLE_LOG_SPI_OUT_TS_SYNC_SLEEP_SUPPORT
     bool "Enable ble log & logic analyzer log time sync sleep support"
     depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
-    default n
+    default y
     help
         Enable ble log & logic analyzer log time sync sleep support
 
