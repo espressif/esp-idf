@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <stdatomic.h>
 #include "sdkconfig.h"
 #include "esp_private/spi_share_hw_ctrl.h"
+#include "esp_private/critical_section.h"
 #include "esp_intr_alloc.h"
 #include "soc/soc_caps.h"
 #include "stdatomic.h"
@@ -368,9 +369,9 @@ SPI_BUS_LOCK_ISR_ATTR static inline bool acquire_core(spi_bus_lock_dev_t *dev_ha
     spi_bus_lock_t* lock = dev_handle->parent;
 
     //For this critical section, search `@note 1` in this file, to know details
-    portENTER_CRITICAL_SAFE(&s_spinlock);
+    esp_os_enter_critical_safe(&s_spinlock);
     uint32_t status = lock_status_fetch_set(lock, dev_handle->mask & LOCK_MASK);
-    portEXIT_CRITICAL_SAFE(&s_spinlock);
+    esp_os_exit_critical_safe(&s_spinlock);
 
     // Check all bits except WEAK_BG
     if ((status & (BG_MASK | LOCK_MASK)) == 0) {
@@ -451,10 +452,10 @@ IRAM_ATTR static inline void acquire_end_core(spi_bus_lock_dev_t *dev_handle)
     spi_bus_lock_dev_t* desired_dev = NULL;
 
     //For this critical section, search `@note 1` in this file, to know details
-    portENTER_CRITICAL_SAFE(&s_spinlock);
+    esp_os_enter_critical_safe(&s_spinlock);
     uint32_t status = lock_status_clear(lock, dev_handle->mask & LOCK_MASK);
     bool invoke_bg = !schedule_core(lock, status, &desired_dev);
-    portEXIT_CRITICAL_SAFE(&s_spinlock);
+    esp_os_exit_critical_safe(&s_spinlock);
 
     if (invoke_bg) {
         bg_enable(lock);
