@@ -26,3 +26,13 @@ def test_usb_cdc_vfs_default(dut: Dut, test_message: str) -> None:
     dut.expect_exact('test_usb_cdc_read_non_blocking', timeout=2)
     dut.expect_exact('send_bytes', timeout=2)
     dut.write('abcdefgh')
+
+    # test run: test_usb_cdc_read_blocking
+    dut.expect_exact('test_usb_cdc_read_blocking', timeout=2)
+    dut.expect_exact('ready to receive', timeout=2)
+    dut.write('testdata')
+
+    # test run: test_usb_cdc_read_no_exit_on_newline_reception
+    dut.expect_exact('test_usb_cdc_read_no_exit_on_newline_reception', timeout=2)
+    dut.expect_exact('ready to receive', timeout=2)
+    dut.write('!(@*#&(!*@&#((SDasdkjhad\nce')

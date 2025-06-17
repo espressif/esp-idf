@@ -366,12 +366,23 @@ void usb_serial_jtag_set_select_notif_callback(usj_select_notif_callback_t usj_s
     }
 }
 
-bool usb_serial_jtag_read_ready(void)
+size_t usb_serial_jtag_get_read_bytes_available(void)
 {
     // sign the the driver is read ready is that data is waiting in the RX ringbuffer
-    UBaseType_t items_waiting = 0;
-    vRingbufferGetInfo(p_usb_serial_jtag_obj->rx_ring_buf, NULL, NULL, NULL, NULL, &items_waiting);
-    return items_waiting != 0;
+    UBaseType_t bytes_available = 0;
+    if (usb_serial_jtag_is_driver_installed()) {
+        vRingbufferGetInfo(p_usb_serial_jtag_obj->rx_ring_buf, NULL, NULL, NULL, NULL, &bytes_available);
+        if (bytes_available <= 0) {
+            return 0;
+        }
+    }
+
+    return (size_t)bytes_available;
+}
+
+bool usb_serial_jtag_read_ready(void)
+{
+    return usb_serial_jtag_get_read_bytes_available() != 0;
 }
 
 bool usb_serial_jtag_write_ready(void)
