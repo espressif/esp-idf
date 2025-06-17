@@ -30,9 +30,17 @@ typedef enum {
  * @brief Length of the XTS AES key
  */
 typedef enum {
-    ESP_KEY_MGR_XTS_AES_LEN_256 = 0,     /* xts-aes key is 256 bit, please note that xts-aes algorithm is XTS_AES_128*/
+    ESP_KEY_MGR_XTS_AES_LEN_256 = 0,     /* xts-aes key is 256 bit, please note that xts-aes algorithm is XTS_AES_128 */
     ESP_KEY_MGR_XTS_AES_LEN_512,         /* xts-aes key is 512 bit, please note that xts-aes algorithm is XTS_AES_256  */
 } esp_key_mgr_xts_aes_key_len_t;
+
+/**
+ * @brief Length of the PSRAM key
+ */
+typedef enum {
+    ESP_KEY_MGR_PSRAM_LEN_256 = 0,     /* psram key is 256 bit, please note that xts-aes algorithm is XTS_AES_128 */
+    ESP_KEY_MGR_PSRAM_LEN_512,         /* psram key is 512 bit, please note that xts-aes algorithm is XTS_AES_256 */
+} esp_key_mgr_psram_key_len_t;
 
 /**
  * @brief Type of the key: ECDSA, XTS
