@@ -25,4 +25,6 @@ idf_component_register(SRCS ${srcs}
 if(CONFIG_SOC_BITSCRAMBLER_SUPPORTED)
     target_bitscrambler_add_src("test_parlio_tx_LSB_to_MSB.bsasm")
     target_bitscrambler_add_src("test_parlio_tx_multiply.bsasm")
+    target_bitscrambler_add_src("test_parlio_tx_in8_out32.bsasm")
+    target_bitscrambler_add_src("test_parlio_tx_in32_out8.bsasm")
 endif()
