@@ -127,11 +127,12 @@ void mmu_psram_get_instruction_alignment_gap_info(uint32_t *gap_start, uint32_t 
     *gap_end = INSTRUCTION_ALIGNMENT_GAP_END;
 }
 
-bool IRAM_ATTR mmu_psram_check_ptr_addr_in_instruction_alignment_gap(const void *p)
+bool mmu_psram_check_ptr_addr_in_xip_psram_instruction_region(const void *p)
 {
-    if ((intptr_t)p >= INSTRUCTION_ALIGNMENT_GAP_START && (intptr_t)p < INSTRUCTION_ALIGNMENT_GAP_END) {
+    if ((intptr_t)p >= ALIGN_DOWN_BY((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE) && (intptr_t)p < ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE)) {
         return true;
     }
+
     return false;
 }
 
@@ -188,11 +189,12 @@ void mmu_psram_get_rodata_alignment_gap_info(uint32_t *gap_start, uint32_t *gap_
     *gap_end = RODATA_ALIGNMENT_GAP_END;
 }
 
-bool IRAM_ATTR mmu_psram_check_ptr_addr_in_rodata_alignment_gap(const void *p)
+bool mmu_psram_check_ptr_addr_in_xip_psram_rodata_region(const void *p)
 {
-    if ((intptr_t)p >= RODATA_ALIGNMENT_GAP_START && (intptr_t)p < RODATA_ALIGNMENT_GAP_END) {
+    if ((intptr_t)p >= ALIGN_DOWN_BY((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE) && (intptr_t)p < ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE)) {
         return true;
     }
+
     return false;
 }
 
