@@ -161,7 +161,6 @@ hcd_port_handle_t test_hcd_setup(void)
     TEST_ASSERT_EQUAL(ESP_OK, hcd_install(&hcd_config));
     // Initialize a port
     hcd_port_config_t port_config = {
-        .fifo_bias = HCD_PORT_FIFO_BIAS_BALANCED,
         .callback = port_callback,
         .callback_arg = (void *)port_evt_queue,
         .context = (void *)port_evt_queue,

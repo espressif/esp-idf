@@ -94,9 +94,11 @@ The HCD currently has the following limitations:
   - `HCD_PORT_EVENT_DISCONNECTION`
   - `HCD_PORT_EVENT_ERROR`
   - `HCD_PORT_EVENT_OVERCURRENT`
-- The port's internal FIFOs (RX, Periodic TX, Non-periodic TX) must be after each port reset (a port reset seems to clear the FIFO sizing registers). The sizing of these FIFOs will affect the largest supported MPS of endpoints using that FIFO. For convenience, the HCD provides the `hcd_port_fifo_bias_t` enum that will set the FIFO sizes for you but biased towards a particular use case. For example, if the connected device has an IN endpoint with large MPS (e.g., 512 bytes), the FIFO should be biased as `HCD_PORT_FIFO_BIAS_RX`.
-    - The FIFO sizes will be set on port initialization (supplied in `hcd_port_config_t`)
-    - FIFOs can be resized after port reset using `hcd_port_set_fifo_bias()` but some restrictions apply (see API description).
+- The port's internal FIFOs (RX, Periodic TX, Non-periodic TX) must be configured during port initialization. The sizing of these FIFOs affects the maximum supported MPS (Maximum Packet Size) of endpoints using that FIFO.
+  - FIFO sizes can be explicitly configured by the user via the `usb_host_config_t::fifo_settings_custom` structure during `usb_host_install()`.
+  - If no custom FIFO configuration is provided (i.e., all fields are set to zero), the driver will automatically select FIFO sizes based on Kconfig bias settings (`USB_HOST_HW_BUFFER_BIAS_BALANCED`, `CONFIG_USB_HOST_HW_BUFFER_BIAS_IN`, or `CONFIG_USB_HOST_HW_BUFFER_BIAS_PERIODIC_OUT`).
+  - After each USB port reset, the FIFO configuration is re-applied to the hardware registers based on the stored settings.
+  - Manual FIFO reconfiguration after initialization is not supported. FIFO sizes must be set before any pipes are created or transfers occur.
 
 ## HCD Pipes
 

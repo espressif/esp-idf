@@ -15,7 +15,7 @@ static const usb_ep_desc_t isoc_out_ep_desc = {
     .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
     .bEndpointAddress = 0x02,   // EP 2 OUT
     .bmAttributes = USB_BM_ATTRIBUTES_XFER_ISOC,
-    .wMaxPacketSize = 512,
+    .wMaxPacketSize = 128,
     .bInterval = 1,     // Isoc interval is (2 ^ (bInterval - 1)) which means an interval of 1ms
 };
 
