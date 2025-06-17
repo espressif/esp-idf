@@ -30,6 +30,8 @@ extern "C" {
 #define ADC_LL_EVENT_ADC1_ONESHOT_DONE    BIT(31)
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
 
+#define ADC_LL_NEED_APB_PERIPH_CLAIM(ADC_UNIT)      (1)
+
 /*---------------------------------------------------------------
                     Oneshot
 ---------------------------------------------------------------*/
