@@ -45,7 +45,7 @@ extern "C" {
 #define TOUCH_LL_INTR_MASK_PROX_DONE        BIT(5)
 #define TOUCH_LL_INTR_MASK_ALL              (0x3F)
 
-#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << SOC_TOUCH_SENSOR_NUM) - 1))
+#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << (SOC_TOUCH_SENSOR_NUM)) - 1) << SOC_TOUCH_MIN_CHAN_ID)
 #define TOUCH_LL_NULL_CHANNEL               (15)  // Null Channel id. Used for disabling some functions like sleep/proximity/waterproof
 
 #define TOUCH_LL_PAD_MEASURE_WAIT_MAX      (0x7FFF)    // The timer frequency is 8Mhz, the max value is 0xff
@@ -262,8 +262,7 @@ static inline void touch_ll_trigger_oneshot_measurement(void)
 
 static inline void touch_ll_measure_channel_once(uint16_t chan_mask)
 {
-    // Channel shift workaround
-    LP_ANA_PERI.touch_mux1.touch_start = chan_mask << 1;
+    LP_ANA_PERI.touch_mux1.touch_start = chan_mask;
 }
 
 /**
@@ -279,8 +278,7 @@ static inline void touch_ll_measure_channel_once(uint16_t chan_mask)
 static inline void touch_ll_set_chan_active_threshold(uint32_t touch_num, uint8_t sample_cfg_id, uint32_t thresh)
 {
     HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
-    // Channel shift workaround
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_padx_thn[touch_num + 1].thresh[sample_cfg_id], threshold, thresh);  // codespell:ignore
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_padx_thn[touch_num].thresh[sample_cfg_id], threshold, thresh);  // codespell:ignore
 }
 
 /**
@@ -297,8 +295,7 @@ static inline void touch_ll_set_chan_active_threshold(uint32_t touch_num, uint8_
 static inline uint32_t touch_ll_get_chan_active_threshold(uint32_t touch_num, uint8_t sample_cfg_id)
 {
     HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
-    // Channel shift workaround
-    return HAL_FORCE_READ_U32_REG_FIELD(LP_ANA_PERI.touch_padx_thn[touch_num + 1].thresh[sample_cfg_id], threshold);  // codespell:ignore
+    return HAL_FORCE_READ_U32_REG_FIELD(LP_ANA_PERI.touch_padx_thn[touch_num].thresh[sample_cfg_id], threshold);  // codespell:ignore
 }
 
 /**
@@ -311,8 +308,8 @@ static inline uint32_t touch_ll_get_chan_active_threshold(uint32_t touch_num, ui
 __attribute__((always_inline))
 static inline void touch_ll_enable_scan_mask(uint16_t chan_mask, bool enable)
 {
-    // Channel shift workaround: the lowest bit takes no effect
-    uint16_t mask = (chan_mask << 1) & TOUCH_LL_FULL_CHANNEL_MASK;
+    // the lowest bit takes no effect
+    uint16_t mask = chan_mask & TOUCH_LL_FULL_CHANNEL_MASK;
     uint16_t prev_mask = LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map;
     if (enable) {
         LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map = prev_mask | mask;
@@ -335,8 +332,8 @@ static inline void touch_ll_enable_scan_mask(uint16_t chan_mask, bool enable)
  */
 static inline void touch_ll_enable_channel_mask(uint16_t enable_mask)
 {
-    // Channel shift workaround: the lowest bit takes no effect
-    uint16_t mask = (enable_mask << 1) & TOUCH_LL_FULL_CHANNEL_MASK;
+    // the lowest bit takes no effect
+    uint16_t mask = enable_mask & TOUCH_LL_FULL_CHANNEL_MASK;
     LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map = mask;
     LP_ANA_PERI.touch_filter2.touch_outen = mask;
 }
@@ -349,9 +346,8 @@ static inline void touch_ll_enable_channel_mask(uint16_t enable_mask)
 __attribute__((always_inline))
 static inline void touch_ll_channel_sw_measure_mask(uint16_t chan_mask)
 {
-    // Channel shift workaround
-    LP_ANA_PERI.touch_mux1.touch_xpd = chan_mask << 1;
-    LP_ANA_PERI.touch_mux1.touch_start = chan_mask << 1;
+    LP_ANA_PERI.touch_mux1.touch_xpd = chan_mask;
+    LP_ANA_PERI.touch_mux1.touch_start = chan_mask;
 }
 
 /**
@@ -362,8 +358,7 @@ static inline void touch_ll_channel_sw_measure_mask(uint16_t chan_mask)
 static inline void touch_ll_channel_power_off(uint16_t chan_mask)
 {
     uint32_t curr_mask = LP_ANA_PERI.touch_mux1.touch_xpd;
-    // Channel shift workaround
-    LP_ANA_PERI.touch_mux1.touch_xpd = (~(chan_mask << 1)) & curr_mask;
+    LP_ANA_PERI.touch_mux1.touch_xpd = (~chan_mask) & curr_mask;
 }
 
 /**
@@ -374,8 +369,7 @@ static inline void touch_ll_channel_power_off(uint16_t chan_mask)
 __attribute__((always_inline))
 static inline void touch_ll_get_active_channel_mask(uint32_t *active_mask)
 {
-    // Channel shift workaround
-    *active_mask = (LP_TOUCH.chn_status.pad_active >> 1);
+    *active_mask = LP_TOUCH.chn_status.pad_active;
 }
 
 /**
@@ -407,8 +401,7 @@ static inline void touch_ll_read_chan_data(uint32_t touch_num, uint8_t sample_cf
     HAL_ASSERT(type == TOUCH_LL_READ_BENCHMARK || type == TOUCH_LL_READ_SMOOTH);
     LP_ANA_PERI.touch_mux0.touch_freq_sel = sample_cfg_id;
     LP_ANA_PERI.touch_mux0.touch_data_sel = type;
-    // Channel shift workaround
-    *data = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.chn_data[touch_num + 1], pad_data);
+    *data = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.chn_data[touch_num], pad_data);
 }
 
 /**
@@ -423,11 +416,6 @@ static inline bool touch_ll_is_measure_done(void)
     return (bool)LP_TOUCH.chn_status.meas_done;
 }
 
-static inline uint32_t touch_ll_get_current_measure_channel(void)
-{
-    // Channel shift workaround
-    return (uint32_t)(LP_TOUCH.chn_status.scan_curr - 1);
-}
 /**
  * Select the counting mode of the binarized touch out wave
  *
@@ -500,8 +488,11 @@ static inline void touch_ll_set_idle_channel_connect(touch_idle_conn_t type)
 __attribute__((always_inline))
 static inline uint32_t touch_ll_get_current_meas_channel(void)
 {
-    // Channel shift workaround
-    return (uint32_t)(LP_TOUCH.chn_status.scan_curr - 1);
+    uint32_t curr_chan = LP_TOUCH.chn_status.scan_curr;
+    HAL_ASSERT(curr_chan < 14);
+    // Workaround: the curr channel read 0 when the actual channel is 14
+    curr_chan = curr_chan == 0 ? 14 : curr_chan;
+    return curr_chan;
 }
 
 /**
@@ -784,8 +775,7 @@ static inline void touch_ll_force_update_benchmark(uint32_t benchmark)
  */
 static inline void touch_ll_waterproof_set_guard_chan(uint32_t pad_num)
 {
-    // Channel shift workaround
-    LP_ANA_PERI.touch_scan_ctrl2.touch_out_ring = pad_num == TOUCH_LL_NULL_CHANNEL ? TOUCH_LL_NULL_CHANNEL : pad_num + 1;
+    LP_ANA_PERI.touch_scan_ctrl2.touch_out_ring = pad_num;
 }
 
 /**
@@ -808,8 +798,7 @@ static inline void touch_ll_waterproof_enable(bool enable)
  */
 static inline void touch_ll_waterproof_set_shield_chan_mask(uint32_t mask)
 {
-    // Channel shift workaround
-    LP_ANA_PERI.touch_mux0.touch_bufsel = mask << 1;
+    LP_ANA_PERI.touch_mux0.touch_bufsel = mask;
 }
 
 /**
@@ -835,16 +824,13 @@ static inline void touch_ll_set_proximity_sensing_channel(uint8_t prox_chan, uin
 {
     switch (prox_chan) {
         case 0:
-            // Channel shift workaround
-            LP_ANA_PERI.touch_approach.touch_approach_pad0 = touch_num + 1;
+            LP_ANA_PERI.touch_approach.touch_approach_pad0 = touch_num;
             break;
         case 1:
-            // Channel shift workaround
-            LP_ANA_PERI.touch_approach.touch_approach_pad1 = touch_num + 1;
+            LP_ANA_PERI.touch_approach.touch_approach_pad1 = touch_num;
             break;
         case 2:
-            // Channel shift workaround
-            LP_ANA_PERI.touch_approach.touch_approach_pad2 = touch_num + 1;
+            LP_ANA_PERI.touch_approach.touch_approach_pad2 = touch_num;
             break;
         default:
             // invalid proximity channel
@@ -935,8 +921,7 @@ static inline bool touch_ll_is_proximity_sensing_channel(uint32_t touch_num)
  */
 static inline void touch_ll_sleep_set_channel_num(uint32_t touch_num)
 {
-    // Channel shift workaround
-    LP_ANA_PERI.touch_slp0.touch_slp_pad = touch_num + 1;
+    LP_ANA_PERI.touch_slp0.touch_slp_pad = touch_num;
 }
 
 /**

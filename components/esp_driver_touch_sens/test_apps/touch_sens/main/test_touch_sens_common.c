@@ -61,20 +61,20 @@ TEST_CASE("touch_sens_install_uninstall_test", "[touch]")
     touch_sensor_filter_config_t filter_cfg = TOUCH_SENSOR_DEFAULT_FILTER_CONFIG();
     TEST_ESP_OK(touch_sensor_config_filter(touch, &filter_cfg));
 
-    for (int i = TOUCH_MIN_CHAN_ID; i <= TOUCH_MAX_CHAN_ID; i++) {
-        TEST_ESP_OK(touch_sensor_new_channel(touch, i, &s_chan_cfg, &touch_chan[i]));
+    for (int i = 0; i < TOUCH_TOTAL_CHAN_NUM; i++) {
+        TEST_ESP_OK(touch_sensor_new_channel(touch, i + TOUCH_MIN_CHAN_ID, &s_chan_cfg, &touch_chan[i]));
     }
     touch_channel_handle_t fault_chan = NULL;
-    TEST_ASSERT(touch_sensor_new_channel(touch, TOUCH_TOTAL_CHAN_NUM, &s_chan_cfg, &fault_chan) == ESP_ERR_INVALID_ARG);
+    TEST_ASSERT(touch_sensor_new_channel(touch, TOUCH_TOTAL_CHAN_NUM + TOUCH_MIN_CHAN_ID, &s_chan_cfg, &fault_chan) == ESP_ERR_INVALID_ARG);
     TEST_ASSERT(touch_sensor_new_channel(touch, TOUCH_MIN_CHAN_ID, &s_chan_cfg, &fault_chan) == ESP_ERR_INVALID_STATE);
 
     TEST_ESP_OK(touch_sensor_enable(touch));
-    TEST_ASSERT(touch_sensor_del_channel(touch_chan[TOUCH_MIN_CHAN_ID]) == ESP_ERR_INVALID_STATE);
+    TEST_ASSERT(touch_sensor_del_channel(touch_chan[0]) == ESP_ERR_INVALID_STATE);
     TEST_ESP_OK(touch_sensor_disable(touch));
 
     TEST_ASSERT(touch_sensor_del_controller(touch) == ESP_ERR_INVALID_STATE);
 
-    for (int i = TOUCH_MIN_CHAN_ID; i <= TOUCH_MAX_CHAN_ID; i++) {
+    for (int i = 0; i < TOUCH_TOTAL_CHAN_NUM; i++) {
         TEST_ESP_OK(touch_sensor_del_channel(touch_chan[i]));
     }
     TEST_ESP_OK(touch_sensor_del_controller(touch));

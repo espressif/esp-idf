@@ -30,7 +30,7 @@ extern "C" {
 /* Helper macros */
 #define TOUCH_NULL_POINTER_CHECK(p)     ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, TAG, "input parameter '"#p"' is NULL")
 #define TOUCH_NULL_POINTER_CHECK_ISR(p) ESP_RETURN_ON_FALSE_ISR((p), ESP_ERR_INVALID_ARG, TAG, "input parameter '"#p"' is NULL")
-#define FOR_EACH_TOUCH_CHANNEL(i)       for (int i = 0; i < SOC_TOUCH_SENSOR_NUM; i++)
+#define FOR_EACH_TOUCH_CHANNEL(i)       for (int i = 0; i < TOUCH_TOTAL_CHAN_NUM; i++)
 #define TOUCH_IRAM_CHECK(cb)            (!(cb) || esp_ptr_in_iram(cb))
 
 /* IRAM safe caps */
@@ -87,6 +87,7 @@ struct touch_sensor_s {
     touch_channel_handle_t  ch[SOC_TOUCH_SENSOR_NUM];   /*!< Touch sensor channel handles, will be NULL if the channel is not registered */
     uint32_t                chan_mask;                  /*!< Enabled channel mask, corresponding bit will be set if the channel is registered */
     uint32_t                src_freq_hz;                /*!< Source clock frequency */
+    uint32_t                interval_freq_hz;           /*!< Frequency of the interval clock */
     intr_handle_t           intr_handle;                /*!< Interrupt handle */
     touch_event_callbacks_t cbs;                        /*!< Event callbacks */
     touch_channel_handle_t  deep_slp_chan;              /*!< The configured channel for depp sleep, will be NULL if not enable the deep sleep */

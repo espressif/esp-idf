@@ -64,9 +64,12 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
     touch_base_event_data_t data;
     touch_ll_get_active_channel_mask(&data.status_mask);
     uint32_t curr_chan = touch_ll_get_current_meas_channel();
+    if (curr_chan == 0) {
+        return;
+    }
     /* It actually won't be out of range in the real environment, but limit the range to pass the coverity check */
-    curr_chan = curr_chan >= SOC_TOUCH_SENSOR_NUM ? SOC_TOUCH_SENSOR_NUM - 1 : curr_chan;
-    data.chan = g_touch->ch[curr_chan];
+    uint32_t curr_chan_offset = (curr_chan >= SOC_TOUCH_SENSOR_NUM ? SOC_TOUCH_SENSOR_NUM - 1 : curr_chan) - TOUCH_MIN_CHAN_ID;
+    data.chan = g_touch->ch[curr_chan_offset];
     /* If the channel is not registered, return directly */
     if (!data.chan) {
         return;
@@ -164,12 +167,16 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
         ESP_RETURN_ON_FALSE(sens_handle->src_freq_hz, ESP_FAIL, TAG, "Failed to get RTC_FAST clock frequency");
         ESP_LOGD(TAG, "touch rtc clock source: RTC_FAST, frequency: %"PRIu32" Hz", sens_handle->src_freq_hz);
     }
+    if (!sens_handle->interval_freq_hz) {
+        ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RTC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sens_handle->interval_freq_hz),
+                            TAG, "get interval clock frequency failed");
+    }
 
     uint32_t src_freq_mhz = sens_handle->src_freq_hz / 1000000;
     hal_cfg->power_on_wait_ticks = (uint32_t)sens_cfg->power_on_wait_us * src_freq_mhz;
     hal_cfg->power_on_wait_ticks = hal_cfg->power_on_wait_ticks > TOUCH_LL_PAD_MEASURE_WAIT_MAX ?
                                    TOUCH_LL_PAD_MEASURE_WAIT_MAX : hal_cfg->power_on_wait_ticks;
-    hal_cfg->meas_interval_ticks = (uint32_t)(sens_cfg->meas_interval_us * src_freq_mhz);
+    hal_cfg->meas_interval_ticks = (uint32_t)(sens_cfg->meas_interval_us * sens_handle->interval_freq_hz / 1000000);
     hal_cfg->timeout_ticks = (uint32_t)sens_cfg->max_meas_time_us * src_freq_mhz;
     ESP_RETURN_ON_FALSE(hal_cfg->timeout_ticks <= TOUCH_LL_TIMEOUT_MAX, ESP_ERR_INVALID_ARG, TAG,
                         "max_meas_time_ms should within %"PRIu32" ms", TOUCH_LL_TIMEOUT_MAX / (sens_handle->src_freq_hz / 1000));
