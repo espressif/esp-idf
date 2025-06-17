@@ -29,6 +29,7 @@ typedef enum {
     ETM_TRIG_PERIPH_TSENS,    /*!< ETM trigger source: Temperature Sensor */
     ETM_TRIG_PERIPH_I2S,      /*!< ETM trigger source: I2S */
     ETM_TRIG_PERIPH_LP_CORE,  /*!< ETM trigger source: Low-Power Core */
+    ETM_TRIG_PERIPH_MODEM,    /*!< ETM trigger source: Modem */
 } etm_trigger_peripheral_t;
 
 /**
