@@ -216,5 +216,12 @@ uint32_t btc_get_ble_status(void)
     }
     #endif
 
+    #if SMP_INCLUDED == TRUE
+    extern uint8_t smp_get_state(void);
+    if (smp_get_state()) {
+        status |= BIT(BTC_BLE_STATUS_SMP_STATE);
+    }
+    #endif
+
     return status;
 }
