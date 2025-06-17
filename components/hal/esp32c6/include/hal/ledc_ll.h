@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -579,13 +579,12 @@ static inline void ledc_ll_set_sig_out_en(ledc_dev_t *hw, ledc_mode_t speed_mode
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
  * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param duty_start The duty start
  *
  * @return None
  */
-static inline void ledc_ll_set_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, bool duty_start)
+static inline void ledc_ll_set_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num)
 {
-    hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start = duty_start;
+    hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start = 1;
 }
 
 /**
