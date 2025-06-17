@@ -263,11 +263,10 @@ void ledc_hal_ls_channel_update(ledc_hal_context_t *hal, ledc_channel_t channel_
  *
  * @param hal Context of the HAL layer
  * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
- * @param duty_start The duty start
  *
  * @return None
  */
-void ledc_hal_set_duty_start(ledc_hal_context_t *hal, ledc_channel_t channel_num, bool duty_start);
+void ledc_hal_set_duty_start(ledc_hal_context_t *hal, ledc_channel_t channel_num);
 
 /**
  * @brief Set LEDC the integer part of duty value
