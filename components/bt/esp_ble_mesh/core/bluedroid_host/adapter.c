@@ -667,7 +667,7 @@ int bt_le_ext_adv_start(const uint8_t inst_id,
         interval >>= 1;
         interval += (bt_mesh_get_rand() % (interval + 1));
 
-        BT_INFO("%u->%u", param->interval_min, interval);
+        BT_DBG("%u->%u", param->interval_min, interval);
     }
 #endif
 
@@ -2153,8 +2153,10 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
         for (i = 0; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
             if (bt_mesh_gattc_info[i].conn.handle == handle) {
                 if (bt_mesh_gattc_info[i].wr_desc_done == false) {
-                    BT_DBG("Receive notification before finishing to write ccc");
+                    BT_WARN("Receive notification before finishing to write ccc");
+#if !CONFIG_BLE_MESH_BQB_TEST
                     return;
+#endif
                 }
 
                 conn = &bt_mesh_gattc_info[i].conn;

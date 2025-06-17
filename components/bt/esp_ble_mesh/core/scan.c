@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,13 +102,14 @@ int bt_mesh_unprov_dev_info_query(uint8_t uuid[16], uint8_t addr[6],
 {
     uint8_t idx = 0;
     uint8_t cnt = 0;
+    uint8_t pair_num = unprov_dev_info_fifo.pair_num;
 
-    if (uuid == NULL || addr == NULL) {
+    if (uuid == NULL && addr == NULL) {
         BT_WARN("No available information to query");
         return -1;
     }
 
-    while (cnt < unprov_dev_info_fifo.pair_num) {
+    while (cnt < pair_num) {
         idx = (cnt + unprov_dev_info_fifo.start_idx) % BLE_MESH_STORE_UNPROV_INFO_MAX_NUM;
         if (query_type & BLE_MESH_STORE_UNPROV_INFO_QUERY_TYPE_UUID) {
             if (!memcmp(unprov_dev_info_fifo.info[idx].addr, addr, 6)) {
@@ -134,7 +135,7 @@ int bt_mesh_unprov_dev_info_query(uint8_t uuid[16], uint8_t addr[6],
         cnt++;
     }
 
-    if (cnt == unprov_dev_info_fifo.pair_num) {
+    if (cnt == pair_num) {
         return -1;
     }
 
