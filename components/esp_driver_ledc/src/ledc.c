@@ -20,6 +20,7 @@
 #include "clk_ctrl_os.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/periph_ctrl.h"
+#include "driver/gpio.h"
 #include "esp_private/gpio.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/esp_gpio_reserve.h"
@@ -258,13 +259,6 @@ static esp_err_t ledc_set_timer_params(ledc_mode_t speed_mode, ledc_timer_t time
     ledc_ls_timer_update(speed_mode, timer_sel);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
-}
-
-// Deprecated public API
-esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution,
-                         ledc_clk_src_t clk_src)
-{
-    return ledc_set_timer_params(speed_mode, timer_sel, clock_divider, duty_resolution, clk_src);
 }
 
 static IRAM_ATTR esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel_t channel, int hpoint_val,

@@ -9,25 +9,9 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "hal/ledc_types.h"
-#include "driver/gpio.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if SOC_LEDC_SUPPORT_APB_CLOCK
-/**
- * @brief Frequency of one of the LEDC peripheral clock sources, APB_CLK
- * @note  This macro should have no use in your application, we keep it here only for backward compatible
- */
-#define LEDC_APB_CLK_HZ _Pragma ("GCC warning \"'LEDC_APB_CLK_HZ' macro is deprecated\"") (APB_CLK_FREQ)
-#endif
-#if SOC_LEDC_SUPPORT_REF_TICK
-/**
- * @brief Frequency of one of the LEDC peripheral clock sources, REF_TICK
- * @note  This macro should have no use in your application, we keep it here only for backward compatible
- */
-#define LEDC_REF_CLK_HZ _Pragma ("GCC warning \"'LEDC_REF_CLK_HZ' macro is deprecated\"") (REF_CLK_FREQ)
 #endif
 
 #define LEDC_ERR_DUTY           (0xFFFFFFFF)
@@ -348,27 +332,6 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
  *     - ESP_ERR_NOT_FOUND Failed to find available interrupt source
  */
 esp_err_t ledc_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags, ledc_isr_handle_t *handle);
-
-/**
- * @brief Configure LEDC timer settings
- *
- * This function does not take care of whether the chosen clock source is enabled or not, also does not handle the clock source
- * to meet channel sleep mode choice.
- *
- * If the chosen clock source is a new clock source to the LEDC timer, please use `ledc_timer_config`;
- * If the clock source is kept to be the same, but frequency needs to be updated, please use `ledc_set_freq`.
- *
- * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param timer_sel  Timer index (0-3), there are 4 timers in LEDC module
- * @param clock_divider Timer clock divide value, the timer clock is divided from the selected clock source
- * @param duty_resolution Resolution of duty setting in number of bits. The range is [1, SOC_LEDC_TIMER_BIT_WIDTH]
- * @param clk_src Select LEDC source clock.
- *
- * @return
- *     - (-1) Parameter error
- *     - Other Current LEDC duty
- */
-esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution, ledc_clk_src_t clk_src) __attribute__((deprecated("Please use ledc_timer_config() or ledc_set_freq()")));
 
 /**
  * @brief Reset LEDC timer

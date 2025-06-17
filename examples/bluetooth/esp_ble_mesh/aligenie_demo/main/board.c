@@ -1,7 +1,7 @@
 /*
  * AliGenie - Example
  *
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -45,12 +45,12 @@ static void board_led_init(void)
     lightbulb_config_t config = {
         .type = DRIVER_ESP_PWM,
         .driver_conf.pwm.freq_hz = 4000,
-        .capability.enable_fades = true,
-        .capability.fades_ms = CONFIG_LIGHT_FADE_PERIOD_MS,
+        .capability.enable_fade = true,
+        .capability.fade_time_ms = CONFIG_LIGHT_FADE_PERIOD_MS,
         .capability.enable_lowpower = false,
-        .capability.enable_mix_cct = false,
+        .capability.enable_hardware_cct = false,
         .capability.enable_status_storage = false,
-        .capability.mode_mask = COLOR_MODE,
+        .capability.led_beads = LED_BEADS_3CH_RGB,
         .capability.storage_cb = NULL,
         .capability.sync_change_brightness_value = true,
         .io_conf.pwm_io.red = CONFIG_LIGHT_GPIO_RED,

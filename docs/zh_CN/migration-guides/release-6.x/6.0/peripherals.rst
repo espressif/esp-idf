@@ -49,6 +49,15 @@ GPIO
 
 :func:`gpio_iomux_in` 和 :func:`gpio_iomux_out` 已被 :func:`gpio_iomux_input` 和 :func:`gpio_iomux_output` 函数取代， 并移至 ``esp_private/gpio.h`` 头文件中作为仅供内部使用的私有 API。
 
+LEDC
+----
+
+- :func:`ledc_timer_set` 已被移除。请使用 :func:`ledc_timer_config` 或 :func:`ledc_set_freq` 代替。
+
+- ``LEDC_APB_CLK_HZ`` 和 ``LEDC_REF_CLK_HZ`` 已被移除。
+
+- esp_driver_gpio 不再作为 esp_driver_ledc 的公共依赖组件。
+
 I2C
 ---
 

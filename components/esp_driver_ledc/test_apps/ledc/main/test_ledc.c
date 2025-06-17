@@ -14,14 +14,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "soc/gpio_periph.h"
-#include "soc/io_mux_reg.h"
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "driver/ledc.h"
 #include "soc/ledc_struct.h"
 #include "esp_clk_tree.h"
 #include "test_ledc_utils.h"
+#include "driver/gpio.h"
 
 static void fade_setup(void)
 {

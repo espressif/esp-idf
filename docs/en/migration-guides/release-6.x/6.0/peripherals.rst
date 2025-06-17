@@ -49,6 +49,15 @@ GPIO
 
 :func:`gpio_iomux_in` and :func:`gpio_iomux_out` have been replaced by :func:`gpio_iomux_input` and :func:`gpio_iomux_output`, and have been moved to ``esp_private/gpio.h`` header file as private APIs for internal use only.
 
+LEDC
+----
+
+- :func:`ledc_timer_set` has been removed. Use :func:`ledc_timer_config` or :func:`ledc_set_freq` instead.
+
+- ``LEDC_APB_CLK_HZ`` and ``LEDC_REF_CLK_HZ`` have been removed.
+
+- Removed esp_driver_gpio as a public required component from esp_driver_ledc.
+
 I2C
 ---
 

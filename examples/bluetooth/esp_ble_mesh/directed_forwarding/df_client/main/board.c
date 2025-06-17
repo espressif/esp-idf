@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,10 +61,10 @@ static void board_led_init(void)
         .type = DRIVER_WS2812,
         .driver_conf.ws2812.led_num = 3,
         .driver_conf.ws2812.ctrl_io = 8,
-        .capability.enable_fades = true,
-        .capability.fades_ms = 800,
+        .capability.enable_fade = true,
+        .capability.fade_time_ms = 800,
         .capability.enable_status_storage = false,
-        .capability.mode_mask = COLOR_MODE,
+        .capability.led_beads = LED_BEADS_3CH_RGB,
         .capability.storage_cb = NULL,
         .external_limit = NULL,
         .gamma_conf = NULL,
