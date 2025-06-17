@@ -725,7 +725,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
 static void _ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
     ledc_hal_set_sig_out_en(&(p_ledc_obj[speed_mode]->ledc_hal), channel, true);
-    ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel, true);
+    ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel);
     ledc_ls_channel_update(speed_mode, channel);
 }
 
@@ -748,7 +748,6 @@ esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idl
     portENTER_CRITICAL_SAFE(&ledc_spinlock);
     ledc_hal_set_idle_level(&(p_ledc_obj[speed_mode]->ledc_hal), channel, idle_level);
     ledc_hal_set_sig_out_en(&(p_ledc_obj[speed_mode]->ledc_hal), channel, false);
-    ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel, false);
     ledc_ls_channel_update(speed_mode, channel);
     portEXIT_CRITICAL_SAFE(&ledc_spinlock);
     return ESP_OK;
@@ -1011,7 +1010,7 @@ static void IRAM_ATTR ledc_fade_isr(void *arg)
                                  cycle,
                                  scale);
                 s_ledc_fade_rec[speed_mode][channel]->fsm = LEDC_FSM_HW_FADE;
-                ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel, true);
+                ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel);
                 ledc_ls_channel_update(speed_mode, channel);
             }
             portEXIT_CRITICAL_ISR(&ledc_spinlock);
