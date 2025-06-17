@@ -143,15 +143,15 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
 
     adc_oneshot_hal_init(&(unit->hal), &config);
 
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-    //To enable the APB_SARADC periph if needed
-    _lock_acquire(&s_ctx.mutex);
-    s_ctx.apb_periph_ref_cnts++;
-    if (s_ctx.apb_periph_ref_cnts == 1) {
-        adc_apb_periph_claim();
+    if (ADC_LL_NEED_APB_PERIPH_CLAIM(unit->unit_id)) {
+        //To enable the APB_SARADC periph if needed
+        _lock_acquire(&s_ctx.mutex);
+        s_ctx.apb_periph_ref_cnts++;
+        if (s_ctx.apb_periph_ref_cnts == 1) {
+            adc_apb_periph_claim();
+        }
+        _lock_release(&s_ctx.mutex);
     }
-    _lock_release(&s_ctx.mutex);
-#endif
 
     if (init_config->ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_acquire();
@@ -286,18 +286,19 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
 #endif
         ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal.clk_src), false));
     }
-    free(handle);
 
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-    //To free the APB_SARADC periph if needed
-    _lock_acquire(&s_ctx.mutex);
-    s_ctx.apb_periph_ref_cnts--;
-    assert(s_ctx.apb_periph_ref_cnts >= 0);
-    if (s_ctx.apb_periph_ref_cnts == 0) {
-        adc_apb_periph_free();
+    if (ADC_LL_NEED_APB_PERIPH_CLAIM(handle->unit_id)) {
+        //To free the APB_SARADC periph if needed
+        _lock_acquire(&s_ctx.mutex);
+        s_ctx.apb_periph_ref_cnts--;
+        assert(s_ctx.apb_periph_ref_cnts >= 0);
+        if (s_ctx.apb_periph_ref_cnts == 0) {
+            adc_apb_periph_free();
+        }
+        _lock_release(&s_ctx.mutex);
     }
-    _lock_release(&s_ctx.mutex);
-#endif
+
+    free(handle);
 
     return ESP_OK;
 }
