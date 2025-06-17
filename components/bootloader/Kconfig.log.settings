@@ -21,6 +21,7 @@ menu "Settings"
         config BOOTLOADER_LOG_MODE_BINARY
             bool "Binary Log Mode"
             select BOOTLOADER_LOG_MODE_BINARY_EN
+            depends on BOOTLOADER_LOG_VERSION_2
             help
                 Enables binary logging with host-side format string expansion. In this mode, the
                 format argument of ESP_LOGx, ESP_EARLY_LOG, and ESP_DRAM_LOG macros is stored in a
