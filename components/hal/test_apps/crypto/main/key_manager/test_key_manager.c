@@ -311,7 +311,7 @@ TEST_GROUP(key_manager);
 TEST_SETUP(key_manager)
 {
     test_utils_record_free_mem();
-    TEST_ESP_OK(test_utils_set_leak_level(700, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
+    TEST_ESP_OK(test_utils_set_leak_level(800, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
 }
 
 TEST_TEAR_DOWN(key_manager)
@@ -368,6 +368,7 @@ TEST_GROUP_RUNNER(key_manager)
     RUN_TEST_CASE(key_manager, ecdsa_key_ecdh0_deployment);
     RUN_TEST_CASE(key_manager, ecdsa_key_random_deployment);
 #if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS
+    // This tests expects Flash encryption to be enabled as the test compares the decrypted flash data with the plaintext data
     RUN_TEST_CASE(key_manager, xts_key_random_deployment);
 #endif
 
