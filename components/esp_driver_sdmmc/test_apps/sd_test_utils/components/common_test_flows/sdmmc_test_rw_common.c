@@ -216,6 +216,7 @@ void sdmmc_test_rw_highprio_task(sdmmc_card_t* card)
 
     xSemaphoreGive(args.stop);
     xSemaphoreTake(args.done, portMAX_DELAY);
+    vTaskDelay(1);
     vSemaphoreDelete(args.stop);
     vSemaphoreDelete(args.done);
 }
