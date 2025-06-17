@@ -147,7 +147,7 @@ void esp_startup_start_app_other_cores(void)
 static const char* MAIN_TAG = "main_task";
 
 #if !CONFIG_FREERTOS_UNICORE
-static volatile bool s_other_cpu_startup_done[2];
+static volatile bool s_other_cpu_startup_done[2] = {false, false};
 static bool other_cpu_startup_idle_hook_cb(void)
 {
     s_other_cpu_startup_done[xPortGetCoreID()] = true;
@@ -162,7 +162,7 @@ static void main_task(void* args)
     // Wait for FreeRTOS initialization to finish on other core, before replacing its startup stack
     esp_register_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, 0);
     esp_register_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, 1);
-    while (!s_other_cpu_startup_done) {
+    while (!s_other_cpu_startup_done[!xPortGetCoreID()]) {
         ;
     }
     esp_deregister_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, 0);
