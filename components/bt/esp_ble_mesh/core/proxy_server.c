@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -168,6 +168,11 @@ static void proxy_sar_timeout(struct k_work *work)
 
     net_buf_simple_reset(&client->buf);
     bt_mesh_gatts_disconnect(client->conn, 0x13);
+}
+
+void bt_mesh_proxy_server_adv_flag_set(bool enable)
+{
+    proxy_adv_enabled = enable;
 }
 
 #if CONFIG_BLE_MESH_GATT_PROXY_SERVER
@@ -853,7 +858,9 @@ static void proxy_connected(struct bt_mesh_conn *conn, uint8_t err)
     conn_count++;
 
     /* Since we use ADV_OPT_ONE_TIME */
-    proxy_adv_enabled = false;
+#if !CONFIG_BLE_MESH_USE_BLE_50
+    bt_mesh_proxy_server_adv_flag_set(false);
+#endif
 
 #if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_RX
     /* Before re-enabling advertising, stop advertising
@@ -1498,7 +1505,7 @@ static int node_id_adv(struct bt_mesh_subnet *sub)
         return err;
     }
 
-    proxy_adv_enabled = true;
+    bt_mesh_proxy_server_adv_flag_set(true);
 
     return 0;
 }
@@ -1529,7 +1536,7 @@ static int net_id_adv(struct bt_mesh_subnet *sub)
         return err;
     }
 
-    proxy_adv_enabled = true;
+    bt_mesh_proxy_server_adv_flag_set(true);
 
     return 0;
 }
@@ -1592,7 +1599,7 @@ static int private_node_id_adv(struct bt_mesh_subnet *sub)
         return err;
     }
 
-    proxy_adv_enabled = true;
+    bt_mesh_proxy_server_adv_flag_set(true);
 
     return 0;
 }
@@ -1636,7 +1643,7 @@ static int private_net_id_adv(struct bt_mesh_subnet *sub)
         return err;
     }
 
-    proxy_adv_enabled = true;
+    bt_mesh_proxy_server_adv_flag_set(true);
 
     return 0;
 }
@@ -1902,7 +1909,7 @@ int32_t bt_mesh_proxy_server_adv_start(void)
                             prov_sd, prov_sd_len) == 0) {
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 
-            proxy_adv_enabled = true;
+            bt_mesh_proxy_server_adv_flag_set(true);
 
             /* Advertise 60 seconds using fast interval */
             if (prov_fast_adv) {
@@ -1959,7 +1966,7 @@ int bt_mesh_proxy_server_adv_stop(void)
         return -EINVAL;
     }
 
-    proxy_adv_enabled = false;
+    bt_mesh_proxy_server_adv_flag_set(false);
     return 0;
 }
 
@@ -2022,7 +2029,7 @@ int bt_mesh_proxy_server_deinit(void)
     proxy_adv_inst = BLE_MESH_ADV_INS_UNUSED;
 #endif
 
-    proxy_adv_enabled = false;
+    bt_mesh_proxy_server_adv_flag_set(false);
     gatt_svc = MESH_GATT_NONE;
 
 #if CONFIG_BLE_MESH_GATT_PROXY_SERVER
