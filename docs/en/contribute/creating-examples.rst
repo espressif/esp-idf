@@ -30,6 +30,6 @@ Checklist before submitting a new example:
 * All code in the example is well structured and commented.
 * Any unnecessary code (old debugging logs, commented-out code, etc.) is removed from the example.
 * Options in the example (like network names, addresses, etc) are not hard-coded. Use configuration items if possible, or otherwise declare macros or constants.
-* Configuration items are provided in a ``KConfig.projbuild`` file with a menu named "Example Configuration". See existing example projects to see how this is done.
+* Configuration items are provided in a ``Kconfig.projbuild`` file with a menu named "Example Configuration". See existing example projects to see how this is done.
 * All original example code has a license header saying it is "in the public domain / CC0", and a warranty disclaimer clause. Alternatively, the example is licensed under Apache License 2.0. See existing examples for headers to adapt from.
 * Any adapted or third party example code has the original license header on it. This code must be licensed compatible with Apache License 2.0.
