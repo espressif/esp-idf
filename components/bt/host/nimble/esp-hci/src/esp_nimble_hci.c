@@ -73,7 +73,7 @@ void esp_vhci_host_send_packet_wrapper(uint8_t *data, uint16_t len)
     bt_hci_log_record_hci_data(data[0], &data[1], len - 1);
 #endif
 #if (CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
-    ble_log_spi_out_write_with_ts(BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM, data, len);
+    ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM, data, len);
 #endif // (CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
     esp_vhci_host_send_packet(data, len);
 }
@@ -227,7 +227,7 @@ static int dummy_host_rcv_pkt(uint8_t *data, uint16_t len)
 static int host_rcv_pkt(uint8_t *data, uint16_t len)
 {
 #if (CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
-    ble_log_spi_out_write_with_ts(BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM, data, len);
+    ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM, data, len);
 #endif // (CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
 
     bt_record_hci_data(data, len);
