@@ -232,6 +232,90 @@ static int spi_out_le_audio_log_init(void);
 static void spi_out_le_audio_log_deinit(void);
 #endif // SPI_OUT_LE_AUDIO_ENABLED
 
+// Private templates
+#define IF_1(...) __VA_ARGS__
+#define IF_0(...)
+
+#define LOG_MODULE_INIT_FLAG(ID)        (ID##_log_inited)
+#define LOG_MODULE_CB(ID)               (ID##_log_cb)
+#define LOG_MODULE_MUTEX(ID)            (ID##_log_mutex)
+#define LOG_MODULE_STR_BUF(ID)          (ID##_log_str_buf)
+#define LOG_MODULE_INIT(ID)             (spi_out_##ID##_log_init)
+#define LOG_MODULE_DEINIT(ID)           (spi_out_##ID##_log_deinit)
+#define LOG_MODULE_FLUSH(ID)            (spi_out_##ID##_log_flush)
+
+#define DECLARE_LOG_MODULE(ID, TYPE, BUF_SIZE, USE_MUTEX, USE_STR)                  \
+    static bool LOG_MODULE_INIT_FLAG(ID) = false;                                   \
+    static spi_out_log_cb_t *LOG_MODULE_CB(ID) = NULL;                              \
+    IF_##USE_MUTEX(static SemaphoreHandle_t LOG_MODULE_MUTEX(ID) = NULL;)           \
+    IF_##USE_STR(static uint8_t *LOG_MODULE_STR_BUF(ID) = NULL;)                    \
+                                                                                    \
+    static int LOG_MODULE_INIT(ID)(void);                                           \
+    static void LOG_MODULE_DEINIT(ID)(void);                                        \
+    static void LOG_MODULE_FLUSH(ID)(void);                                         \
+                                                                                    \
+    static int LOG_MODULE_INIT(ID)(void) {                                          \
+        if (LOG_MODULE_INIT_FLAG(ID)) {                                             \
+            return 0;                                                               \
+        }                                                                           \
+        IF_##USE_MUTEX(                                                             \
+            LOG_MODULE_MUTEX(ID) = xSemaphoreCreateMutex();                         \
+            if (!LOG_MODULE_MUTEX(ID)) {                                            \
+                goto failed;                                                        \
+            }                                                                       \
+        )                                                                           \
+        IF_##USE_STR(                                                               \
+            LOG_MODULE_STR_BUF(ID) = (uint8_t *)SPI_OUT_MALLOC(SPI_OUT_LOG_STR_BUF_SIZE);   \
+            if (!LOG_MODULE_STR_BUF(ID)) {                                          \
+                goto failed;                                                        \
+            }                                                                       \
+        )                                                                           \
+        if (spi_out_log_cb_init(&LOG_MODULE_CB(ID), BUF_SIZE, TYPE) != 0) {         \
+            goto failed;                                                            \
+        }                                                                           \
+        LOG_MODULE_INIT_FLAG(ID) = true;                                            \
+        return 0;                                                                   \
+    failed:                                                                         \
+        LOG_MODULE_DEINIT(ID)();                                                    \
+        return -1;                                                                  \
+    }                                                                               \
+    static void LOG_MODULE_DEINIT(ID)(void) {                                       \
+        LOG_MODULE_INIT_FLAG(ID) = false;                                           \
+        IF_##USE_MUTEX(                                                             \
+            if (!LOG_MODULE_MUTEX(ID)) {                                            \
+                return;                                                             \
+            }                                                                       \
+            xSemaphoreTake(LOG_MODULE_MUTEX(ID), portMAX_DELAY);                    \
+        )                                                                           \
+        IF_##USE_STR(                                                               \
+            if (LOG_MODULE_STR_BUF(ID)) {                                           \
+                free(LOG_MODULE_STR_BUF(ID));                                       \
+                LOG_MODULE_STR_BUF(ID) = NULL;                                      \
+            }                                                                       \
+        )                                                                           \
+        spi_out_log_cb_deinit(&LOG_MODULE_CB(ID));                                  \
+                                                                                    \
+        IF_##USE_MUTEX(                                                             \
+            xSemaphoreGive(LOG_MODULE_MUTEX(ID));                                   \
+            vSemaphoreDelete(LOG_MODULE_MUTEX(ID));                                 \
+            LOG_MODULE_MUTEX(ID) = NULL;                                            \
+        )                                                                           \
+    }                                                                               \
+    static void LOG_MODULE_FLUSH(ID)(void) {                                        \
+        if (!LOG_MODULE_INIT_FLAG(ID)) {                                            \
+            return;                                                                 \
+        }                                                                           \
+        IF_##USE_MUTEX(                                                             \
+            xSemaphoreTake(LOG_MODULE_MUTEX(ID), portMAX_DELAY);                    \
+        )                                                                           \
+        spi_out_log_cb_write_loss(LOG_MODULE_CB(ID));                               \
+        spi_out_log_cb_flush_trans(LOG_MODULE_CB(ID));                              \
+        spi_out_log_cb_append_trans(LOG_MODULE_CB(ID));                             \
+        IF_##USE_MUTEX(                                                             \
+            xSemaphoreGive(LOG_MODULE_MUTEX(ID));                                   \
+        )                                                                           \
+    }                                                                               \
+
 // Private functions
 static int spi_out_init_trans(spi_out_trans_cb_t **trans_cb, uint16_t buf_size)
 {
