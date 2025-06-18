@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,18 +9,20 @@
  * It furthermore provides macros to define and initialize an optional spinlock
  * if the used chip is a multi-core chip. If a single-core chip is used, just disabling interrupts
  * is sufficient to guarantee consecutive, non-interrupted execution of a critical section.
- * Hence, the spinlock is unneccessary and will be automatically ommitted by the macros.
+ * Hence, the spinlock is unnecessary and will be automatically omitted by the macros.
  */
 #pragma once
 
+#if !NON_OS_BUILD
 #include "freertos/FreeRTOS.h"
+#endif
 #include "spinlock.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32P4
+#if (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32P4) && !NON_OS_BUILD
 /**
  * This macro also helps users switching between spinlock declarations/definitions for multi-/single core environments
  * if the macros below aren't sufficient.
@@ -207,7 +209,7 @@ typedef spinlock_t esp_os_spinlock_t;
  * @brief Enter a critical section, i.e., a section that will not be interrupted by any other task or interrupt.
  *
  * On multi-core systems, this will disable interrupts and take the spinlock \c lock. On single core systems, a
- * spinlock is unncessary, hence \c lock is ignored and interrupts are disabled only.
+ * spinlock is unnecessary, hence \c lock is ignored and interrupts are disabled only.
  *
  * @note This macro MUST be used together with any of the initialization macros, e.g.
  *       DEFINE_CRIT_SECTION_LOCK_STATIC. If not, there may be unused variables.
@@ -236,7 +238,7 @@ typedef spinlock_t esp_os_spinlock_t;
  * @brief Exit a critical section.
  *
  * On multi-core systems, this will enable interrupts and release the spinlock \c lock. On single core systems, a
- * spinlock is unncessary, hence \c lock is ignored and interrupts are enabled only.
+ * spinlock is unnecessary, hence \c lock is ignored and interrupts are enabled only.
  *
  * @note This macro MUST be used together with any of the initialization macros, e.g.
  *       DEFINE_CRIT_SECTION_LOCK_STATIC. If not, there may be unused variables.
@@ -265,7 +267,7 @@ typedef spinlock_t esp_os_spinlock_t;
  * @brief Enter a critical section while from ISR.
  *
  * On multi-core systems, this will disable interrupts and take the spinlock \c lock. On single core systems, a
- * spinlock is unncessary, hence \c lock is ignored and interrupts are disabled only.
+ * spinlock is unnecessary, hence \c lock is ignored and interrupts are disabled only.
  *
  * @note This macro MUST be used together with any of the initialization macros, e.g.
  *       DEFINE_CRIT_SECTION_LOCK_STATIC. If not, there may be unused variables.
@@ -294,7 +296,7 @@ typedef spinlock_t esp_os_spinlock_t;
  * @brief Exit a critical section after entering from ISR.
  *
  * On multi-core systems, this will enable interrupts and release the spinlock \c lock. On single core systems, a
- * spinlock is unncessary, hence \c lock is ignored and interrupts are enabled only.
+ * spinlock is unnecessary, hence \c lock is ignored and interrupts are enabled only.
  *
  * @note This macro MUST be used together with any of the initialization macros, e.g.
  *       DEFINE_CRIT_SECTION_LOCK_STATIC. If not, there may be unused variables.
@@ -324,7 +326,7 @@ typedef spinlock_t esp_os_spinlock_t;
  *        an ISR or not and enter the critical section accordingly.
  *
  * On multi-core systems, this will disable interrupts and take the spinlock \c lock. On single core systems, a
- * spinlock is unncessary, hence \c lock is ignored and interrupts are disabled only.
+ * spinlock is unnecessary, hence \c lock is ignored and interrupts are disabled only.
  *
  * @note This macro MUST be used together with any of the initialization macros, e.g.
  *       DEFINE_CRIT_SECTION_LOCK_STATIC. If not, there may be unused variables.
@@ -353,7 +355,7 @@ typedef spinlock_t esp_os_spinlock_t;
  * @brief Exit a critical section after entering via esp_os_enter_critical_safe.
  *
  * On multi-core systems, this will enable interrupts and release the spinlock \c lock. On single core systems, a
- * spinlock is unncessary, hence \c lock is ignored and interrupts are enabled only.
+ * spinlock is unnecessary, hence \c lock is ignored and interrupts are enabled only.
  *
  * @note This macro MUST be used together with any of the initialization macros, e.g.
  *       DEFINE_CRIT_SECTION_LOCK_STATIC. If not, there may be unused variables.

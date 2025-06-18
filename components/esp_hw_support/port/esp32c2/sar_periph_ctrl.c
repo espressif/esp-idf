@@ -72,7 +72,7 @@ void sar_periph_ctrl_pwdet_power_release(void)
     s_pwdet_power_on_cnt--;
     /* Sanity check */
     if (s_pwdet_power_on_cnt < 0) {
-        esp_os_exit_critical(&rtc_spinlock);
+        esp_os_exit_critical_safe(&rtc_spinlock);
         ESP_LOGE(TAG, "%s called, but s_pwdet_power_on_cnt == 0", __func__);
         abort();
     } else if (s_pwdet_power_on_cnt == 0) {
