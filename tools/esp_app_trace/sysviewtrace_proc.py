@@ -7,7 +7,6 @@
 # Trace data can be provided in multiple trace files (one per CPU). After processing phase
 # script prints report for every type of trace data stream which was found.
 #
-
 import argparse
 import json
 import logging
@@ -50,16 +49,13 @@ def split_segger_multicore_file(file_path):
             header = f.read(200)
             header_str = header.decode('utf-8', errors='ignore')
 
-            core0_offset = None
             core1_offset = None
             for line in header_str.split('\n'):
-                if '; Offset Core0' in line:
-                    core0_offset = int(line.strip().split()[-1])
-                elif '; Offset Core1' in line:
+                if '; Offset Core1' in line:
                     core1_offset = int(line.strip().split()[-1])
 
-            if core0_offset is None or core1_offset is None:
-                logging.error('Failed to parse core offsets')
+            if core1_offset is None:
+                logging.error('Failed to parse core1 offset')
                 return None, None
 
             # Read the entire file
@@ -258,12 +254,11 @@ def main():
             proc.print_report()
         proc.cleanup()
 
-        if len(temp_files) > 0:
-            for file in temp_files:
-                try:
-                    os.remove(file)
-                except Exception as e:
-                    logging.warning('Failed to remove temporary file %s: %s', file, e)
+        for file in temp_files:
+            try:
+                os.remove(file)
+            except Exception as e:
+                logging.warning('Failed to remove temporary file %s: %s', file, e)
 
 
 if __name__ == '__main__':
