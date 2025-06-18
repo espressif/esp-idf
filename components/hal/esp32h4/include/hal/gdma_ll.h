@@ -25,12 +25,14 @@ static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
 /**
  * @brief Reset the DMA module
  */
-static inline void gdma_ll_reset_register(int group_id)
+static inline void _gdma_ll_reset_register(int group_id)
 {
     (void)group_id;
     PCR.gdma_conf.gdma_rst_en = 1;
     PCR.gdma_conf.gdma_rst_en = 0;
 }
+
+#define gdma_ll_reset_register(...) _gdma_ll_reset_register(__VA_ARGS__)
 
 #ifdef __cplusplus
 }

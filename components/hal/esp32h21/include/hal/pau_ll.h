@@ -14,8 +14,10 @@
 #include "soc/pau_reg.h"
 #include "soc/pau_struct.h"
 #include "soc/pcr_struct.h"
+#include "soc/lp_aon_struct.h"
 #include "hal/pau_types.h"
 #include "hal/assert.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,14 +49,9 @@ static inline void pau_ll_set_regdma_entry_link_backup_direction(pau_dev_t *dev,
     dev->regdma_conf.to_mem = to_mem ? 1 : 0;
 }
 
-static inline void pau_ll_set_regdma_entry_link_backup_start_enable(pau_dev_t *dev)
+static inline void pau_ll_set_regdma_entry_link_backup_start_enable(pau_dev_t *dev, bool enable)
 {
-    dev->regdma_conf.start = 1;
-}
-
-static inline void pau_ll_set_regdma_entry_link_backup_start_disable(pau_dev_t *dev)
-{
-    dev->regdma_conf.start = 0;
+    dev->regdma_conf.start = enable;
 }
 
 static inline void pau_ll_set_regdma_select_wifimac_link(pau_dev_t *dev)
@@ -107,14 +104,9 @@ static inline uint32_t pau_ll_get_regdma_intr_status(pau_dev_t *dev)
     return dev->int_st.val;
 }
 
-static inline void pau_ll_set_regdma_backup_done_intr_enable(pau_dev_t *dev)
+static inline void pau_ll_set_regdma_backup_done_intr_enable(pau_dev_t *dev, bool enable)
 {
-    dev->int_ena.done_int_ena = 1;
-}
-
-static inline void pau_ll_set_regdma_backup_done_intr_disable(pau_dev_t *dev)
-{
-    dev->int_ena.done_int_ena = 0;
+    dev->int_ena.done_int_ena = enable;
 }
 
 static inline void pau_ll_set_regdma_backup_error_intr_enable(pau_dev_t *dev)
