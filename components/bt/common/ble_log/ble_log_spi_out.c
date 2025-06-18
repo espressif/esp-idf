@@ -30,6 +30,8 @@
 #define SPI_OUT_HOST_BUF_SIZE                   CONFIG_BT_BLE_LOG_SPI_OUT_HOST_BUF_SIZE
 #define SPI_OUT_HCI_ENABLED                     CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
 #define SPI_OUT_HCI_BUF_SIZE                    CONFIG_BT_BLE_LOG_SPI_OUT_HCI_BUF_SIZE
+#define SPI_OUT_MESH_ENABLED                    CONFIG_BT_BLE_LOG_SPI_OUT_MESH_ENABLED
+#define SPI_OUT_MESH_BUF_SIZE                   CONFIG_BT_BLE_LOG_SPI_OUT_MESH_BUF_SIZE
 
 // Private defines
 #define BLE_LOG_TAG                             "BLE_LOG"
@@ -76,11 +78,18 @@
 #define SPI_OUT_HCI_QUEUE_SIZE                  (0)
 #endif // SPI_OUT_HCI_ENABLED
 
+#if SPI_OUT_MESH_ENABLED
+#define SPI_OUT_MESH_QUEUE_SIZE                 (SPI_OUT_PING_PONG_BUF_CNT)
+#else
+#define SPI_OUT_MESH_QUEUE_SIZE                 (0)
+#endif // SPI_OUT_MESH_ENABLED
+
 #define SPI_OUT_SPI_MASTER_QUEUE_SIZE           (SPI_OUT_UL_QUEUE_SIZE +\
                                                  SPI_OUT_LL_QUEUE_SIZE +\
                                                  SPI_OUT_LE_AUDIO_QUEUE_SIZE +\
                                                  SPI_OUT_HOST_QUEUE_SIZE +\
-                                                 SPI_OUT_HCI_QUEUE_SIZE)
+                                                 SPI_OUT_HCI_QUEUE_SIZE +\
+                                                 SPI_OUT_MESH_QUEUE_SIZE)
 
 // Private typedefs
 typedef struct {
@@ -134,6 +143,7 @@ enum {
     LOG_CB_TYPE_LE_AUDIO,
     LOG_CB_TYPE_HOST,
     LOG_CB_TYPE_HCI,
+    LOG_CB_TYPE_MESH,
 };
 
 enum {
@@ -341,6 +351,10 @@ DECLARE_LOG_MODULE(host, LOG_CB_TYPE_HOST, SPI_OUT_HOST_BUF_SIZE, 0, 1)
 #if SPI_OUT_HCI_ENABLED
 DECLARE_LOG_MODULE(hci, LOG_CB_TYPE_HCI, SPI_OUT_HCI_BUF_SIZE, 0, 0)
 #endif // SPI_OUT_HCI_ENABLED
+
+#if SPI_OUT_MESH_ENABLED
+DECLARE_LOG_MODULE(mesh, LOG_CB_TYPE_MESH, SPI_OUT_MESH_BUF_SIZE, 0, 1)
+#endif // SPI_OUT_MESH_ENABLED
 
 // Private functions
 static int spi_out_init_trans(spi_out_trans_cb_t **trans_cb, uint16_t buf_size)
@@ -617,6 +631,10 @@ static void spi_out_log_flush(void)
 #if SPI_OUT_HCI_ENABLED
     LOG_MODULE_FLUSH(hci)();
 #endif // SPI_OUT_HCI_ENABLED
+
+#if SPI_OUT_MESH_ENABLED
+    LOG_MODULE_FLUSH(mesh)();
+#endif // SPI_OUT_MESH_ENABLED
 }
 
 #if SPI_OUT_FLUSH_TIMER_ENABLED
@@ -942,6 +960,12 @@ int ble_log_spi_out_init(void)
     }
 #endif // SPI_OUT_HCI_ENABLED
 
+#if SPI_OUT_MESH_ENABLED
+    if (LOG_MODULE_INIT(mesh)() != 0) {
+        goto mesh_init_failed;
+    }
+#endif // SPI_OUT_MESH_ENABLED
+
 #if SPI_OUT_FLUSH_TIMER_ENABLED
     esp_timer_create_args_t timer_args = {
         .callback = (esp_timer_cb_t)esp_timer_cb_log_flush,
@@ -966,6 +990,10 @@ int ble_log_spi_out_init(void)
 #if SPI_OUT_FLUSH_TIMER_ENABLED
 timer_init_failed:
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
+#if SPI_OUT_MESH_ENABLED
+    LOG_MODULE_DEINIT(mesh)();
+mesh_init_failed:
+#endif // SPI_OUT_MESH_ENABLED
 #if SPI_OUT_HCI_ENABLED
     LOG_MODULE_DEINIT(hci)();
 hci_init_failed:
@@ -1025,6 +1053,10 @@ void ble_log_spi_out_deinit(void)
 #if SPI_OUT_TS_SYNC_ENABLED
     spi_out_ts_sync_deinit();
 #endif // SPI_OUT_TS_SYNC_ENABLED
+
+#if SPI_OUT_MESH_ENABLED
+    LOG_MODULE_DEINIT(mesh)();
+#endif // SPI_OUT_MESH_ENABLED
 
 #if SPI_OUT_HCI_ENABLED
     LOG_MODULE_DEINIT(hci)();
@@ -1221,6 +1253,14 @@ void ble_log_spi_out_dump_all(void)
     }
 #endif // SPI_OUT_HCI_ENABLED
 
+#if SPI_OUT_MESH_ENABLED
+    if (LOG_MODULE_INIT_FLAG(mesh)) {
+        esp_rom_printf("[MESH_LOG_DUMP_START:\n");
+        spi_out_log_cb_dump(LOG_MODULE_CB(mesh));
+        esp_rom_printf("\n:MESH_LOG_DUMP_END]\n\n");
+    }
+#endif // SPI_OUT_MESH_ENABLED
+
     portEXIT_CRITICAL_SAFE(&spinlock);
 }
 
@@ -1316,4 +1356,34 @@ int ble_log_spi_out_hci_write(uint8_t source, const uint8_t *addr, uint16_t len)
     return 0;
 }
 #endif // SPI_OUT_HCI_ENABLED
+
+#if SPI_OUT_MESH_ENABLED
+int ble_log_spi_out_mesh_write(const char *prefix, const char *format, ...)
+{
+    if (!LOG_MODULE_INIT_FLAG(mesh) || !prefix || !format) {
+        return -1;
+    }
+
+    // Copy prefix to string buffer
+    int prefix_len = strlen(prefix);
+    if (prefix_len >= SPI_OUT_LOG_STR_BUF_SIZE) {
+        return -1;
+    }
+    memcpy(LOG_MODULE_STR_BUF(mesh), prefix, prefix_len);
+
+    // Write string buffer
+    va_list args;
+    va_start(args, format);
+    int total_len = spi_out_write_str(LOG_MODULE_STR_BUF(mesh), format, args, prefix_len);
+    va_end(args);
+    if (total_len == 0) {
+        return -1;
+    }
+
+    // Write log control block buffer
+    spi_out_write_hex(LOG_MODULE_CB(mesh), BLE_LOG_SPI_OUT_SOURCE_MESH,
+                      LOG_MODULE_STR_BUF(mesh), (uint16_t)total_len, true);
+    return 0;
+}
+#endif // SPI_OUT_MESH_ENABLED
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
