@@ -28,6 +28,7 @@
 
 #define ESP_PARTITION_HASH_LEN 32 /* SHA-256 digest length */
 #define IS_FIELD_SET(rev_full) (((rev_full) != 65535) && ((rev_full) != 0))
+#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 static const char* TAG = "boot_comm";
 
@@ -264,7 +265,10 @@ rtc_retain_mem_t* bootloader_common_get_rtc_retain_mem(void)
 #if ESP_ROM_HAS_LP_ROM
     #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_LOW)
 #else
-    #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t))
+    /* Since the structure containing the retain_mem_t is aligned on 8 by the linker, make sure we align this
+     * structure size here too */
+    #define RETAIN_MEM_SIZE     ALIGN_UP(sizeof(rtc_retain_mem_t), 8)
+    #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - RETAIN_MEM_SIZE)
 #endif //ESP_ROM_HAS_LP_ROM
     static rtc_retain_mem_t *const s_bootloader_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
     return s_bootloader_retain_mem;
