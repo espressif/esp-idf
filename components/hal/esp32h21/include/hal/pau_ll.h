@@ -129,12 +129,12 @@ static inline void pau_ll_set_regdma_backup_error_intr_disable(pau_dev_t *dev)
 
 static inline void pau_ll_clear_regdma_backup_done_intr_state(pau_dev_t *dev)
 {
-    dev->int_clr.done_int_clr = 1;
+    dev->int_clr.val = 0x1;
 }
 
 static inline void pau_ll_clear_regdma_backup_error_intr_state(pau_dev_t *dev)
 {
-    dev->int_clr.error_int_clr = 1;
+    dev->int_clr.val = 0x2;
 }
 
 /**
