@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 
 void pau_hal_set_regdma_entry_link_addr(pau_hal_context_t *hal, pau_regdma_link_addr_t *link_addr)
 {
-    lp_aon_ll_set_regdma_link_addr((uint32_t)(*link_addr)[0]);
+    pau_ll_set_regdma_link_addr((uint32_t)(*link_addr)[0]);
 }
 
 void IRAM_ATTR pau_hal_start_regdma_modem_link(pau_hal_context_t *hal, bool backup_or_restore)
@@ -59,20 +59,20 @@ void IRAM_ATTR pau_hal_stop_regdma_extra_link(pau_hal_context_t *hal)
 void pau_hal_regdma_link_count_config(pau_hal_context_t *hal, int count)
 {
     HAL_ASSERT(count > 0);
-    lp_aon_ll_set_regdma_link_count(count - 1);
+    pau_ll_set_regdma_link_count(count - 1);
 }
 #endif
 
 void pau_hal_set_regdma_work_timeout(pau_hal_context_t *hal, uint32_t loop_num, uint32_t time)
 {
     HAL_ASSERT(loop_num > 0 && time > 0);
-    lp_aon_ll_set_regdma_link_loop_threshold(loop_num);
-    lp_aon_ll_set_regdma_link_reg_access_tout_threshold(time);
+    pau_ll_set_regdma_link_loop_threshold(loop_num);
+    pau_ll_set_regdma_link_reg_access_tout_threshold(time);
 }
 
 void pau_hal_set_regdma_wait_timeout(pau_hal_context_t *hal, int count, int interval)
 {
     HAL_ASSERT(count > 0 && interval > 0);
-    lp_aon_ll_set_regdma_link_wait_retry_count(count);
-    lp_aon_ll_set_regdma_link_wait_read_interval(interval);
+    pau_ll_set_regdma_link_wait_retry_count(count);
+    pau_ll_set_regdma_link_wait_read_interval(interval);
 }
