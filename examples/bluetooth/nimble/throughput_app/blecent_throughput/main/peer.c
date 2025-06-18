@@ -12,6 +12,11 @@
 static void *peer_svc_mem;
 static struct os_mempool peer_svc_pool;
 
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+static void *peer_incl_svc_mem;
+static struct os_mempool peer_incl_svc_pool;
+#endif
+
 static void *peer_chr_mem;
 static struct os_mempool peer_chr_pool;
 
@@ -44,7 +49,13 @@ static int
 peer_dsc_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
                 uint16_t chr_val_handle, const struct ble_gatt_dsc *dsc,
                 void *arg);
-
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+static int
+peer_inc_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
+                const struct ble_gatt_incl_svc *service, void *arg);
+static void
+peer_disc_incs(struct peer *peer);
+#endif
 struct peer *
 peer_find(uint16_t conn_handle)
 {
@@ -420,6 +431,193 @@ peer_disc_chrs(struct peer *peer)
     peer_disc_dscs(peer);
 }
 
+#if (MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES))
+static struct peer_incl_svc *
+peer_incl_svc_find_prev(const struct peer_svc *svc, uint16_t incl_svc_handle)
+{
+    struct peer_incl_svc *prev;
+    struct peer_incl_svc *incl_svc;
+
+    prev = NULL;
+    SLIST_FOREACH(incl_svc, &svc->incl_svc, next) {
+        if (incl_svc->svc.handle >= incl_svc_handle) {
+            break;
+        }
+
+        prev = incl_svc;
+    }
+
+    return prev;
+}
+
+static struct peer_incl_svc *
+peer_incl_svc_find(const struct peer_svc *svc, uint16_t incl_svc_handle,
+              struct peer_incl_svc **out_prev)
+{
+    struct peer_incl_svc *prev;
+    struct peer_incl_svc *incl_svc;
+
+    prev = peer_incl_svc_find_prev(svc, incl_svc_handle);
+    if (prev == NULL) {
+        incl_svc = SLIST_FIRST(&svc->incl_svc);
+    } else {
+        incl_svc = SLIST_NEXT(prev, next);
+    }
+
+    if (incl_svc != NULL && incl_svc->svc.handle != incl_svc_handle) {
+        incl_svc = NULL;
+    }
+
+    if (out_prev != NULL) {
+        *out_prev = prev;
+    }
+    return incl_svc;
+}
+
+static void
+peer_incl_svc_delete(struct peer_incl_svc *incl_svc)
+{
+    os_memblock_put(&peer_incl_svc_pool, incl_svc);
+}
+
+static int
+peer_inc_add(struct peer *peer,  uint16_t svc_start_handle,
+             const struct ble_gatt_incl_svc *gatt_incl_svc)
+{
+    struct peer_incl_svc *incl_svc;
+    struct peer_incl_svc *incl_svc_prev;
+    struct peer_svc *cur_svc;
+    struct peer_svc *svc;
+    struct peer_svc *prev;
+
+    svc = peer_svc_find(peer, gatt_incl_svc->start_handle, &prev);
+
+    if (!svc) {
+        /* secondary service */
+        svc = os_memblock_get(&peer_svc_pool);
+        if (svc == NULL) {
+            /* out of memory */
+            return BLE_HS_ENOMEM;
+        }
+
+        memset(svc, 0, sizeof *svc);
+        svc->svc.start_handle = gatt_incl_svc->start_handle;
+        svc->svc.end_handle = gatt_incl_svc->end_handle;
+        memcpy(&svc->svc.uuid, &gatt_incl_svc->uuid, sizeof(ble_uuid_any_t));
+
+        SLIST_INIT(&svc->chrs);
+        SLIST_INIT(&svc->incl_svc);
+
+        if (prev == NULL) {
+            SLIST_INSERT_HEAD(&peer->svcs, svc, next);
+        } else {
+            SLIST_INSERT_AFTER(prev, svc, next);
+        }
+    }
+
+    /* Including the services into inlucding list */
+
+    cur_svc = peer_svc_find_range(peer, gatt_incl_svc->handle);
+
+    if (cur_svc == NULL) {
+    /* Can't find service for discovered included service; this shouldn't
+     * happen.
+     */
+        assert(0);
+        return BLE_HS_EUNKNOWN;
+    }
+
+    incl_svc = peer_incl_svc_find(cur_svc, gatt_incl_svc->handle, &incl_svc_prev);
+    if (incl_svc != NULL) {
+        /* Already discovered */
+        return 0;
+    }
+
+    incl_svc = os_memblock_get(&peer_incl_svc_pool);
+    if (incl_svc == NULL) {
+        return BLE_HS_ENOMEM;
+    }
+
+    incl_svc->svc = *gatt_incl_svc;
+
+    if (incl_svc_prev == NULL) {
+        SLIST_INSERT_HEAD(&cur_svc->incl_svc, incl_svc, next);
+    } else {
+        SLIST_INSERT_AFTER(incl_svc_prev, incl_svc, next);
+    }
+
+    BLE_HS_LOG(DEBUG, "Inc Service added with handle = %d", gatt_incl_svc->handle);
+
+    return 0;
+}
+
+
+static int
+peer_inc_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
+                const struct ble_gatt_incl_svc *service, void *arg)
+{
+    struct peer *peer;
+    int rc;
+
+    peer = arg;
+    assert(peer->conn_handle == conn_handle);
+
+    switch (error->status) {
+    case 0:
+        rc = peer_inc_add(peer, peer->cur_svc->svc.start_handle, service);
+        break;
+
+    case BLE_HS_EDONE:
+        peer_disc_incs(peer);
+        rc = 0;
+        break;
+
+    default:
+        rc = error->status;
+        break;
+    }
+
+    if (rc != 0) {
+        /* Error; abort discovery. */
+        peer_disc_complete(peer, rc);
+    }
+
+    return rc;
+}
+
+static void
+peer_disc_incs(struct peer *peer)
+{
+    struct peer_svc *svc;
+    int rc;
+
+    if (peer->cur_svc == NULL) {
+        peer->cur_svc = SLIST_FIRST(&peer->svcs);
+    } else {
+        peer->cur_svc = SLIST_NEXT(peer->cur_svc, next);
+        if (peer->cur_svc == NULL) {
+            if (peer->disc_prev_chr_val > 0) {
+                peer_disc_chrs(peer);
+                return;
+            }
+        }
+    }
+
+    svc = peer->cur_svc;
+    if (svc != NULL && !peer_svc_is_empty(svc)) {
+        rc = ble_gattc_find_inc_svcs(peer->conn_handle,
+                                     svc->svc.start_handle,
+                                     svc->svc.end_handle,
+                                     peer_inc_disced, peer);
+        if (rc != 0) {
+            peer_disc_chrs(peer);
+        }
+    } else {
+        peer_disc_chrs(peer);
+    }
+}
+#endif
+
 int
 peer_svc_is_empty(const struct peer_svc *svc)
 {
@@ -576,6 +774,14 @@ peer_svc_delete(struct peer_svc *svc)
 {
     struct peer_chr *chr;
 
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+    struct peer_incl_svc *incl_svc;
+
+    while ((incl_svc = SLIST_FIRST(&svc->incl_svc)) != NULL) {
+        SLIST_REMOVE_HEAD(&svc->incl_svc, next);
+        peer_incl_svc_delete(incl_svc);
+    }
+#endif
     while ((chr = SLIST_FIRST(&svc->chrs)) != NULL) {
         SLIST_REMOVE_HEAD(&svc->chrs, next);
         peer_chr_delete(chr);
@@ -600,10 +806,16 @@ peer_svc_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
         break;
 
     case BLE_HS_EDONE:
-        /* All services discovered; start discovering characteristics. */
+        /* All services discovered; start discovering incs.*/
+#if (MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES))
+        peer->cur_svc = NULL;
+        peer_disc_incs(peer);
+#else
+       /* All services discovered; start discovering characteristics. */
         if (peer->disc_prev_chr_val > 0) {
             peer_disc_chrs(peer);
         }
+#endif
         rc = 0;
         break;
 
@@ -711,6 +923,11 @@ peer_free_mem(void)
     free(peer_svc_mem);
     peer_svc_mem = NULL;
 
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+    free(peer_incl_svc_mem);
+    peer_incl_svc_mem = NULL;
+#endif
+
     free(peer_chr_mem);
     peer_chr_mem = NULL;
 
@@ -718,8 +935,13 @@ peer_free_mem(void)
     peer_dsc_mem = NULL;
 }
 
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+int
+peer_init(int max_peers, int max_svcs, int max_incl_svcs, int max_chrs, int max_dscs)
+#else
 int
 peer_init(int max_peers, int max_svcs, int max_chrs, int max_dscs)
+#endif
 {
     int rc;
 
@@ -756,6 +978,23 @@ peer_init(int max_peers, int max_svcs, int max_chrs, int max_dscs)
         goto err;
     }
 
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+    peer_incl_svc_mem = malloc(
+                          OS_MEMPOOL_BYTES(max_incl_svcs, sizeof(struct peer_incl_svc)));
+
+    if (peer_incl_svc_mem == NULL) {
+        rc = BLE_HS_ENOMEM;
+        goto err;
+    }
+
+    rc = os_mempool_init(&peer_incl_svc_pool, max_incl_svcs,
+                          sizeof(struct peer_incl_svc), peer_incl_svc_mem,
+                          "peer_incl_svc_pool");
+    if (rc != 0) {
+        rc = BLE_HS_EOS;
+        goto err;
+    }
+#endif
     peer_chr_mem = malloc(
                        OS_MEMPOOL_BYTES(max_chrs, sizeof (struct peer_chr)));
     if (peer_chr_mem == NULL) {
