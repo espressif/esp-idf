@@ -14,6 +14,7 @@ ignores:
   - "components/hal/adc_hal.c"
   - "components/hal/adc_oneshot_hal.c"
   - "components/hal/apm_hal.c"
+  - "components/hal/cache_hal.c"
   - "components/hal/ecdsa_hal.c"
   - "components/hal/emac_hal.c"
   - "components/hal/mmu_hal.c"

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,7 +47,7 @@ __subdf3 = 0x4fc008ac;
  Group libgcc
 ***************************************/
 
-/* Not part of the orginal ROM interface, but RVFP versions cannot work with float-abi */
+/* Not part of the original ROM interface, but RVFP versions cannot work with float-abi */
 __fixsfdi = 0x4fc007ac;
 __fixunssfdi = 0x4fc007b4;
 
