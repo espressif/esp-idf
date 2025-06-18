@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1092,7 +1092,6 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
         tx_handle->dma.curr_ptr = (void *)tx_handle->dma.desc[0]->buf;
         tx_handle->dma.rw_pos = 0;
     }
-    lldesc_t *desc_ptr = (lldesc_t *)tx_handle->dma.curr_ptr;
 
     /* Loop until no bytes in source buff remain or the descriptors are full */
     while (remain_bytes) {
@@ -1109,24 +1108,11 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
             break;
         }
         /* Load the data from the last loaded position */
-        memcpy((uint8_t *)(desc_ptr->buf + tx_handle->dma.rw_pos), data_ptr, bytes_can_load);
+        memcpy((uint8_t *)(tx_handle->dma.curr_ptr + tx_handle->dma.rw_pos), data_ptr, bytes_can_load);
         data_ptr += bytes_can_load;             // Move forward the data pointer
         total_loaded_bytes += bytes_can_load;   // Add to the total loaded bytes
         remain_bytes -= bytes_can_load;         // Update the remaining bytes to be loaded
         tx_handle->dma.rw_pos += bytes_can_load;   // Move forward the dma buffer position
-        /* When the current position reach the end of the dma buffer */
-        if (tx_handle->dma.rw_pos == tx_handle->dma.buf_size) {
-            /* If the next descriptor is not the first descriptor, keep load to the first descriptor
-             * otherwise all descriptor has been loaded, break directly, the dma buffer position
-             * will remain at the end of the last dma buffer */
-            if (desc_ptr->empty != (uint32_t)tx_handle->dma.desc[0]) {
-                desc_ptr = (lldesc_t *)desc_ptr->empty;
-                tx_handle->dma.curr_ptr =  (void *)desc_ptr;
-                tx_handle->dma.rw_pos = 0;
-            } else {
-                break;
-            }
-        }
     }
     *bytes_loaded = total_loaded_bytes;
 
