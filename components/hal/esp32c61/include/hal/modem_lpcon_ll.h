@@ -146,7 +146,7 @@ static inline void modem_lpcon_ll_set_clk_modem_aon_force(modem_lpcon_dev_t *hw,
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_select_modem_32k_clock_source(modem_lpcon_dev_t *hw, uint32_t src)
+static inline void modem_lpcon_ll_select_modem_32k_clock_source(modem_lpcon_dev_t *hw, modem_clock_32k_clk_src_t src)
 {
     hw->modem_32k_clk_conf.clk_modem_32k_sel = src;
 }
