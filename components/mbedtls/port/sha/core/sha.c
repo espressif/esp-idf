@@ -102,6 +102,12 @@ void esp_sha_release_hardware(void)
     esp_crypto_sha_aes_lock_release();
 }
 
+void esp_sha_set_mode(esp_sha_type sha_type)
+{
+    sha_hal_wait_idle();
+    sha_hal_set_mode(sha_type);
+}
+
 void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_block)
 {
     sha_hal_hash_block(sha_type, data_block, block_length(sha_type) / 4, is_first_block);
@@ -284,7 +290,7 @@ static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, u
         return -1;
     }
 
-    sha_hal_hash_dma(sha_type, num_blks, is_first_block);
+    sha_hal_hash_dma(num_blks, is_first_block);
 
     sha_hal_wait_idle();
 

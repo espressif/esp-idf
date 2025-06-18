@@ -202,6 +202,11 @@ int __wrap_esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_
     return esp_tee_service_call(4, SS_ESP_SHA_BLOCK, sha_type, data_block, is_first_block);
 }
 
+void __wrap_esp_sha_set_mode(esp_sha_type sha_type)
+{
+    esp_tee_service_call(2, SS_ESP_SHA_SET_MODE, sha_type);
+}
+
 void __wrap_esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state)
 {
     esp_tee_service_call(3, SS_ESP_SHA_READ_DIGEST_STATE, sha_type, digest_state);

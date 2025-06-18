@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,11 @@ typedef enum {
     SHA1 = 0,
     SHA2_224,
     SHA2_256,
+    SHA2_384,
+    SHA2_512,
+    SHA2_512224,
+    SHA2_512256,
+    SHA2_512T,
     SHA_TYPE_MAX
 } SHA_TYPE;
 
