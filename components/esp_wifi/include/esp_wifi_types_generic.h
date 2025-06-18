@@ -246,6 +246,7 @@ typedef struct {
     wifi_scan_channel_bitmap_t channel_bitmap;         /**< Channel bitmap for setting specific channels to be scanned.
                                                             Please note that the 'channel' parameter above needs to be set to 0 to allow scanning by bitmap.
                                                             Also, note that only allowed channels configured by wifi_country_t can be scanned. */
+    bool coex_background_scan;                         /**< Enable it to scan return home channel under coexist */
 } wifi_scan_config_t;
 
 /**
@@ -1116,6 +1117,9 @@ typedef enum {
     WIFI_EVENT_AP_WRONG_PASSWORD,        /**< a station tried to connect with wrong password */
 
     WIFI_EVENT_STA_BEACON_OFFSET_UNSTABLE,  /**< Station sampled beacon offset unstable */
+    WIFI_EVENT_DPP_URI_READY,            /**< DPP URI is ready through Bootstrapping */
+    WIFI_EVENT_DPP_CFG_RECVD,            /**< Config received via DPP Authentication */
+    WIFI_EVENT_DPP_FAILED,               /**< DPP failed */
     WIFI_EVENT_MAX,                      /**< Invalid Wi-Fi event ID */
 } wifi_event_t;
 
@@ -1519,6 +1523,22 @@ typedef wifi_tx_info_t esp_80211_tx_info_t;
 typedef struct {
     float beacon_success_rate;                  /**< Received beacon success rate */
 } wifi_event_sta_beacon_offset_unstable_t;
+
+/** Argument structure for WIFI_EVENT_DPP_URI_READY event */
+typedef struct {
+    uint32_t uri_data_len;       /**< URI data length including null termination */
+    char uri[];                  /**< URI data */
+} wifi_event_dpp_uri_ready_t;
+
+/** Argument structure for WIFI_EVENT_DPP_CFG_RECVD event */
+typedef struct {
+    wifi_config_t wifi_cfg;                  /**< Received WIFI config in DPP */
+} wifi_event_dpp_config_received_t;
+
+/** Argument structure for WIFI_EVENT_DPP_FAIL event */
+typedef struct {
+    int failure_reason;                      /**< Failure reason */
+} wifi_event_dpp_failed_t;
 
 #ifdef __cplusplus
 }

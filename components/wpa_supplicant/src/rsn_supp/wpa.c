@@ -110,6 +110,12 @@ wifi_cipher_type_t cipher_type_map_supp_to_public(unsigned wpa_cipher)
     case WPA_CIPHER_AES_128_CMAC:
         return WIFI_CIPHER_TYPE_AES_CMAC128;
 
+    case WPA_CIPHER_BIP_GMAC_128:
+        return WIFI_CIPHER_TYPE_AES_GMAC128;
+
+    case WPA_CIPHER_BIP_GMAC_256:
+        return WIFI_CIPHER_TYPE_AES_GMAC256;
+
     case WPA_CIPHER_SMS4:
         return WIFI_CIPHER_TYPE_SMS4;
 

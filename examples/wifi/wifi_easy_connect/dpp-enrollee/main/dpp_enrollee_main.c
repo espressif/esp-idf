@@ -54,56 +54,60 @@ static EventGroupHandle_t s_dpp_event_group;
 static void event_handler(void *arg, esp_event_base_t event_base,
                           int32_t event_id, void *event_data)
 {
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        ESP_ERROR_CHECK(esp_supp_dpp_start_listen());
-        ESP_LOGI(TAG, "Started listening for DPP Authentication");
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        if (s_retry_num < WIFI_MAX_RETRY_NUM) {
-            esp_wifi_connect();
-            s_retry_num++;
-            ESP_LOGI(TAG, "retry to connect to the AP");
-        } else {
-            xEventGroupSetBits(s_dpp_event_group, DPP_CONNECT_FAIL_BIT);
-        }
-        ESP_LOGI(TAG, "connect to the AP fail");
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
+    if (event_base == WIFI_EVENT) {
+        switch (event_id) {
+        case WIFI_EVENT_STA_START:
+            ESP_ERROR_CHECK(esp_supp_dpp_start_listen());
+            ESP_LOGI(TAG, "Started listening for DPP Authentication");
+            break;
+        case WIFI_EVENT_STA_DISCONNECTED:
+            if (s_retry_num < WIFI_MAX_RETRY_NUM) {
+                esp_wifi_connect();
+                s_retry_num++;
+                ESP_LOGI(TAG, "Disconnect event, retry to connect to the AP");
+            } else {
+                xEventGroupSetBits(s_dpp_event_group, DPP_CONNECT_FAIL_BIT);
+            }
+            break;
+        case WIFI_EVENT_STA_CONNECTED:
 	    ESP_LOGI(TAG, "Successfully connected to the AP ssid : %s ", s_dpp_wifi_config.sta.ssid);
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+            break;
+        case WIFI_EVENT_DPP_URI_READY:
+            wifi_event_dpp_uri_ready_t *uri_data = event_data;
+            if (uri_data != NULL) {
+                esp_qrcode_config_t cfg = ESP_QRCODE_CONFIG_DEFAULT();
+
+                ESP_LOGI(TAG, "Scan below QR Code to configure the enrollee:");
+                esp_qrcode_generate(&cfg, (const char *)uri_data->uri);
+            }
+            break;
+        case WIFI_EVENT_DPP_CFG_RECVD:
+            wifi_event_dpp_config_received_t *config = event_data;
+            memcpy(&s_dpp_wifi_config, &config->wifi_cfg, sizeof(s_dpp_wifi_config));
+            s_retry_num = 0;
+            esp_wifi_set_config(ESP_IF_WIFI_STA, &s_dpp_wifi_config);
+            esp_wifi_connect();
+            break;
+        case WIFI_EVENT_DPP_FAILED:
+            wifi_event_dpp_failed_t *dpp_failure = event_data;
+            if (s_retry_num < 5) {
+                ESP_LOGI(TAG, "DPP Auth failed (Reason: %s), retry...", esp_err_to_name((int)dpp_failure->failure_reason));
+                ESP_ERROR_CHECK(esp_supp_dpp_start_listen());
+                s_retry_num++;
+            } else {
+                xEventGroupSetBits(s_dpp_event_group, DPP_AUTH_FAIL_BIT);
+            }
+
+            break;
+        default:
+            break;
+        }
+    }
+    if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *) event_data;
         ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
         xEventGroupSetBits(s_dpp_event_group, DPP_CONNECTED_BIT);
-    }
-}
-
-void dpp_enrollee_event_cb(esp_supp_dpp_event_t event, void *data)
-{
-    switch (event) {
-    case ESP_SUPP_DPP_URI_READY:
-        if (data != NULL) {
-            esp_qrcode_config_t cfg = ESP_QRCODE_CONFIG_DEFAULT();
-
-            ESP_LOGI(TAG, "Scan below QR Code to configure the enrollee:");
-            esp_qrcode_generate(&cfg, (const char *)data);
-        }
-        break;
-    case ESP_SUPP_DPP_CFG_RECVD:
-        memcpy(&s_dpp_wifi_config, data, sizeof(s_dpp_wifi_config));
-        s_retry_num = 0;
-        esp_wifi_set_config(ESP_IF_WIFI_STA, &s_dpp_wifi_config);
-        esp_wifi_connect();
-        break;
-    case ESP_SUPP_DPP_FAIL:
-        if (s_retry_num < 5) {
-            ESP_LOGI(TAG, "DPP Auth failed (Reason: %s), retry...", esp_err_to_name((int)data));
-            ESP_ERROR_CHECK(esp_supp_dpp_start_listen());
-            s_retry_num++;
-        } else {
-            xEventGroupSetBits(s_dpp_event_group, DPP_AUTH_FAIL_BIT);
-        }
-        break;
-    default:
-        break;
     }
 }
 
@@ -157,7 +161,7 @@ void dpp_enrollee_init(void)
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_supp_dpp_init(dpp_enrollee_event_cb));
+    ESP_ERROR_CHECK(esp_supp_dpp_init(NULL));
     ESP_ERROR_CHECK(dpp_enrollee_bootstrap());
     ESP_ERROR_CHECK(esp_wifi_start());
 
@@ -172,8 +176,6 @@ void dpp_enrollee_init(void)
     /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
      * happened. */
     if (bits & DPP_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",
-                 s_dpp_wifi_config.sta.ssid, s_dpp_wifi_config.sta.password);
     } else if (bits & DPP_CONNECT_FAIL_BIT) {
         ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
                  s_dpp_wifi_config.sta.ssid, s_dpp_wifi_config.sta.password);
