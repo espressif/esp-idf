@@ -8,4 +8,4 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 idf_build_set_property(MINIMAL_BUILD ON)
 project(mqtt_websocket_secure)
 
-target_add_binary_data(mqtt_websocket_secure.elf "main/mqtt_eclipseprojects_io.pem" TEXT)
+target_add_binary_data(${PROJECT_NAME}.elf "main/mqtt_eclipseprojects_io.pem" TEXT)
