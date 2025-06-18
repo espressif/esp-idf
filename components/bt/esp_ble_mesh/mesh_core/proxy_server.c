@@ -1059,7 +1059,7 @@ static int proxy_segment_and_send(struct bt_mesh_conn *conn, uint8_t type,
     net_buf_simple_pull(msg, mtu);
 
     while (msg->len) {
-        if (msg->len + 1 < mtu) {
+        if (msg->len + 1 <= mtu) {
             net_buf_simple_push_u8(msg, PDU_HDR(SAR_LAST, type));
             proxy_send(conn, msg->data, msg->len);
             break;
