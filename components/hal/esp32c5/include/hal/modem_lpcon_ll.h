@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -267,12 +267,6 @@ __attribute__((always_inline))
 static inline void modem_lpcon_ll_set_pwr_tick_target(modem_lpcon_dev_t *hw, uint32_t val)
 {
     hw->tick_conf.modem_pwr_tick_target = val;
-}
-
-__attribute__((always_inline))
-static inline uint32_t modem_lpcon_ll_get_date(modem_lpcon_dev_t *hw)
-{
-    return hw->date.val;
 }
 
 __attribute__((always_inline))
