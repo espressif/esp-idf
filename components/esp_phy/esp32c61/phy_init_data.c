@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,24 +19,24 @@ const char __attribute__((section(".rodata"))) phy_init_magic_pre[] = PHY_INIT_M
 const esp_phy_init_data_t phy_init_data= { {
         0x1,
         0x0,
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x54),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x54),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x50),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x50),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x50),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x4c),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x50),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x34),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x34),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x50),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x4c),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x48),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x44),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x3C),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x3C),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x3C),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x4c),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x4c),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x30),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x30),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x28),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x24),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x24),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x24),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x4c),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x4c),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x2c),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x2c),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x48),
         0x0,
         0x00,
         0x00,

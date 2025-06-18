@@ -235,21 +235,43 @@ typedef struct {
      */
     uint32_t mu_bw[3];
     uint32_t mu_sigb_dump;
+#if CONFIG_IDF_TARGET_ESP32C5
     uint32_t vht;
     uint32_t vht_noeb;
     uint32_t vht_stbc;
     uint32_t vht_txbf;
     uint32_t vht_retry;
+#endif
     uint32_t rx_isr;
     uint32_t rx_nblks;
     uint32_t rx_ndpa;
     uint32_t rx_reset_rxbase_cnt;
     uint32_t rx_base_null_cnt;
+#if CONFIG_IDF_TARGET_ESP32C5
     uint32_t vht_mu[64][4];
     uint32_t vht_mu_noeb;
     uint32_t vht_mu_stbc;
     uint32_t vht_mu_retry[64][4];
     uint16_t vht_mu_mcs[64][4][12];
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32C61
+    int8_t min_legacy_rssi;
+    int8_t max_legacy_rssi;
+    float avg_legacy_rssi;
+
+    int8_t min_data_rssi;
+    int8_t max_data_rssi;
+    float avg_data_rssi;
+
+    int8_t min_mu_legacy_rssi;
+    int8_t max_mu_legacy_rssi;
+    float avg_mu_legacy_rssi;
+
+    int8_t min_mu_data_rssi;
+    int8_t max_mu_data_rssi;
+    float avg_mu_data_rssi;
+#endif
 } esp_test_rx_statistics_t; //140 bytes
 
 #else
