@@ -15,6 +15,11 @@
 #include "sdkconfig.h"
 #include "ld.common"
 
+#if CONFIG_ESP32P4_REV_MIN_200
+#define SRAM_START       0x4FF00000 + CONFIG_CACHE_L2_CACHE_SIZE
+#define SRAM_END         0x4FFAEFC0  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_SIZE        SRAM_END - SRAM_START
+#else
 #define SRAM_LOW_START     0x4FF00000
 #define SRAM_LOW_END       0x4FF2CBD0  /* 2nd stage bootloader iram_loader_seg start address */
 #define SRAM_LOW_SIZE      SRAM_LOW_END - SRAM_LOW_START
@@ -25,6 +30,7 @@
 #define SRAM_HIGH_START    0x4FF40000
 #define SRAM_HIGH_SIZE     0x80000 - CONFIG_CACHE_L2_CACHE_SIZE
 #define SRAM_HIGH_END      SRAM_HIGH_START + SRAM_HIGH_SIZE
+#endif
 
 #define IDROM_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 10)
 
@@ -65,9 +71,12 @@ MEMORY
    * Shared data RAM, excluding memory reserved for ROM bss/data/stack.
    * Enabling Bluetooth & Trace Memory features in menuconfig will decrease the amount of RAM available.
    */
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
   sram_low (RWX) :                 org = SRAM_LOW_START, len = SRAM_LOW_SIZE
-
   sram_high (RW) :                org = SRAM_HIGH_START, len = SRAM_HIGH_SIZE
+#else
+  sram_seg (RWX) :                 org = SRAM_START, len = SRAM_SIZE
+#endif
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 #if CONFIG_SPIRAM_RODATA

@@ -101,7 +101,12 @@ if(target STREQUAL "linux")
         target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-integer-overflow -Wno-shift-count-overflow)
     endif()
 else()
-    target_linker_script(${COMPONENT_LIB} INTERFACE "${target_folder}/${ld_folder}/${target}.rom.ld")
+    # TODO: IDF-13410. Update to (CONFIG_ESP32P4_REV_MIN_FULL GREATER_EQUAL 200) when chip efuse is correct.
+    if(CONFIG_ESP32P4_REV_MIN_200)
+        target_linker_script(${COMPONENT_LIB} INTERFACE "${target_folder}/${ld_folder}/${target}.rom.eco5.ld")
+    else()
+        target_linker_script(${COMPONENT_LIB} INTERFACE "${target_folder}/${ld_folder}/${target}.rom.ld")
+    endif()
     rom_linker_script("api")
     if(NOT CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY)
         if(target STREQUAL "esp32s3" OR target STREQUAL "esp32c3")
@@ -110,9 +115,17 @@ else()
     endif()
 
     if(CONFIG_COMPILER_FLOAT_LIB_FROM_GCCLIB)
-        rom_linker_script("libgcc")
+        if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410
+            rom_linker_script("eco5.libgcc")
+        else()
+            rom_linker_script("libgcc")
+        endif()
     else()
-        rom_linker_script("rvfp")
+        if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410.
+            rom_linker_script("eco5.rvfp")
+        else()
+            rom_linker_script("rvfp")
+        endif()
     endif()
 endif()
 
@@ -148,6 +161,18 @@ if(BOOTLOADER_BUILD)
             rom_linker_script("newlib-funcs")
         else()
             rom_linker_script("newlib")
+        endif()
+    endif()
+
+    if(CONFIG_ESP_ROM_HAS_NEWLIB)
+        if(target STREQUAL "esp32" OR target STREQUAL "esp32s2")
+            rom_linker_script("newlib-funcs")
+        else()
+            if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410
+                rom_linker_script("eco5.newlib")
+            else()
+                rom_linker_script("newlib")
+            endif()
         endif()
     endif()
 
@@ -284,7 +309,11 @@ else() # Regular app build
 
     if(CONFIG_ESP_ROM_HAS_NEWLIB AND NOT target STREQUAL "esp32" AND NOT target STREQUAL "esp32s2")
         # ESP32 and S2 are a bit different, keep them as special cases in the target specific include section
-        rom_linker_script("newlib")
+        if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410
+            rom_linker_script("eco5.newlib")
+        else()
+            rom_linker_script("newlib")
+        endif()
 
         if(CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT AND CONFIG_NEWLIB_NANO_FORMAT)
             if(NOT CONFIG_ESP_ROM_HAS_NEWLIB_32BIT_TIME AND NOT CONFIG_ESP_ROM_HAS_NEWLIB_NANO_PRINTF_FLOAT_BUG)

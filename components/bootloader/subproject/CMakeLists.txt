@@ -65,6 +65,11 @@ idf_build_set_property(EXTRA_COMPONENT_EXCLUDE_DIRS "${EXTRA_COMPONENT_EXCLUDE_D
 idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${common_req}")
 idf_build_set_property(__OUTPUT_SDKCONFIG 0)
 project(bootloader)
+if(CONFIG_ESP32P4_REV_MIN_200)
+    target_linker_script("__idf_main" INTERFACE "${LD_DEFAULT_PATH}/bootloader.rev2.ld")
+else()
+    target_linker_script("__idf_main" INTERFACE "${LD_DEFAULT_PATH}/bootloader.ld")
+endif()
 
 idf_build_set_property(COMPILE_DEFINITIONS "BOOTLOADER_BUILD=1" APPEND)
 idf_build_set_property(COMPILE_DEFINITIONS "NON_OS_BUILD=1" APPEND)

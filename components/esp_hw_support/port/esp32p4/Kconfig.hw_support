@@ -1,3 +1,14 @@
+comment "NOTE! Support of ESP32-P4 rev. <2.0 and >=2.0 is mutually exclusive"
+comment "Read the help text of the option below for explanation"
+
+config ESP32P4_SELECTS_REV_LESS_V2
+    bool "Select ESP32-P4 revisions <2.0 (No >=2.x Support)"
+    default y
+    help
+        Select this option to support ESP32-P4 revisions 0.x and 1.x.
+        Revision 2.0 and revisions less than 2.0 have huge hardware difference.
+        Revisions higher than 2.0 (included) is not compatible with 0.x and 1.x.
+
 choice ESP32P4_REV_MIN
     prompt "Minimum Supported ESP32-P4 Revision"
     default ESP32P4_REV_MIN_1
@@ -10,11 +21,18 @@ choice ESP32P4_REV_MIN
         this will also help to reduce binary size.
 
     config ESP32P4_REV_MIN_0
+        depends on ESP32P4_SELECTS_REV_LESS_V2
         bool "Rev v0.0"
     config ESP32P4_REV_MIN_1
+        depends on ESP32P4_SELECTS_REV_LESS_V2
         bool "Rev v0.1"
     config ESP32P4_REV_MIN_100
+        depends on ESP32P4_SELECTS_REV_LESS_V2
         bool "Rev v1.0"
+    config ESP32P4_REV_MIN_200
+        bool "Rev v2.0"
+        depends on !ESP32P4_SELECTS_REV_LESS_V2
+        select ESPTOOLPY_NO_STUB if (IDF_ENV_FPGA || IDF_ENV_BRINGUP)
 endchoice
 
 config ESP32P4_REV_MIN_FULL
@@ -22,6 +40,7 @@ config ESP32P4_REV_MIN_FULL
     default 0 if ESP32P4_REV_MIN_0
     default 1 if ESP32P4_REV_MIN_1
     default 100 if ESP32P4_REV_MIN_100
+    default 0 if ESP32P4_REV_MIN_200  # TODO: IDF-13410. To be updated to 200 when chip efuse is burnt
 
 config ESP_REV_MIN_FULL
     int
@@ -31,7 +50,7 @@ config ESP_REV_MIN_FULL
     # MAX Revision
     #
 
-    comment "Maximum Supported ESP32-P4 Revision (Rev v1.99)"
+    comment "Maximum Supported ESP32-P4 Revision (Rev v2.99)"
     # Maximum revision that IDF supports.
     # It can not be changed by user.
     # Only Espressif can change it when a new version will be supported in IDF.
@@ -39,7 +58,7 @@ config ESP_REV_MIN_FULL
 
 config ESP32P4_REV_MAX_FULL
     int
-    default 199
+    default 199 #TODO: IDF-13574
     # keep in sync the "Maximum Supported Revision" description with this value
 
 config ESP_REV_MAX_FULL
