@@ -503,6 +503,12 @@ examples/peripherals/touch_sensor/touch_sens_sleep:
   depends_components:
     - esp_driver_touch_sens
 
+examples/peripherals/twai/cybergear:
+  disable:
+    - if: SOC_TWAI_SUPPORTED != 1
+  depends_components:
+    - esp_driver_twai
+
 examples/peripherals/twai/twai_error_recovery:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
