@@ -118,7 +118,7 @@ The following binary size optimizations apply to a particular component or a fun
     ADC
     @@@
 
-    - Disabling ADC calibration features :ref:`CONFIG_ADC_CAL_EFUSE_TP_ENABLE`, :ref:`CONFIG_ADC_CAL_EFUSE_VREF_ENABLE`, :ref:`CONFIG_ADC_CAL_LUT_ENABLE` will save a small amount of binary size if ADC driver is used, at expense of accuracy.
+    - Disabling ADC calibration features :ref:`CONFIG_ADC_CALI_EFUSE_TP_ENABLE`, :ref:`CONFIG_ADC_CALI_EFUSE_VREF_ENABLE`, :ref:`CONFIG_ADC_CALI_LUT_ENABLE` will save a small amount of binary size if ADC driver is used, at expense of accuracy.
 
 .. only:: SOC_BT_SUPPORTED
 

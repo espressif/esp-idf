@@ -15,6 +15,9 @@ RTC Subsystem Control
 
 RTC control APIs have been moved from ``driver/rtc_cntl.h`` to ``esp_private/rtc_ctrl.h``.
 
+
+.. _deprecate_adc_driver:
+
 ADC
 ---
 
@@ -30,7 +33,7 @@ The ADC continuous mode driver has been moved from ``driver`` component to ``esp
 
 - The include path has been changed from ``driver/adc.h`` to ``esp_adc/adc_continuous.h``.
 
-Attempting to use the legacy include path ``driver/adc.h`` of either driver triggers the build warning below by default. However, the warning can be suppressed by enabling the :ref:`CONFIG_ADC_SUPPRESS_DEPRECATE_WARN` Kconfig option.
+Attempting to use the legacy include path ``driver/adc.h`` of either driver triggers the build warning below by default.
 
 .. code-block:: text
 
@@ -45,7 +48,7 @@ The ADC calibration driver has been redesigned.
 
 Legacy driver is still available by including ``esp_adc_cal.h``. However, if users still would like to use the include path of the legacy driver, users should add ``esp_adc`` component to the list of component requirements in CMakeLists.txt.
 
-Attempting to use the legacy include path ``esp_adc_cal.h`` triggers the build warning below by default. However, the warning can be suppressed by enabling the :ref:`CONFIG_ADC_CALI_SUPPRESS_DEPRECATE_WARN` Kconfig option.
+Attempting to use the legacy include path ``esp_adc_cal.h`` triggers the build warning below by default.
 
 .. code-block:: text
 

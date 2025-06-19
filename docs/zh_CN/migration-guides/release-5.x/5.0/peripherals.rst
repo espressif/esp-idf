@@ -15,6 +15,8 @@ RTC 子系统控制
 
 RTC 控制 API 已经从 ``driver/rtc_cntl.h`` 移动到了 ``esp_private/rtc_ctrl.h``。
 
+.. _deprecate_adc_driver:
+
 ADC
 -----------------
 
@@ -30,7 +32,7 @@ ADC 单次模式的驱动已更新。
 
 - 头文件引用路径由 ``driver/adc.h`` 更新为 ``esp_adc/adc_continuous.h``。
 
-但是，引用两种模式的旧版路径 ``driver/adc.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_ADC_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
+但是，引用两种模式的旧版路径 ``driver/adc.h`` 会默认触发如下编译警告。
 
 .. code-block:: text
 
@@ -45,7 +47,7 @@ ADC 校准驱动已更新。
 
 旧版驱动仍然可用，其头文件引用路径为 ``esp_adc_cal.h``。如果用户要使用旧版路径，需要将组件 ``esp_adc`` 添加到文件 CMakeLists.txt 的组件需求表中。
 
-默认情况下，引用路径 ``esp_adc_cal.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_ADC_CALI_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
+默认情况下，引用路径 ``esp_adc_cal.h`` 会默认触发如下编译警告。
 
 .. code-block:: text
 

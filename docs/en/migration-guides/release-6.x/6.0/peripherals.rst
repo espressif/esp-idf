@@ -11,6 +11,12 @@ All drivers' ``io_loop_back`` configuration have been removed
 
 Different driver objects can share the same GPIO number, enabling more complex functionalities. For example, you can bind the TX and RX channels of the RMT peripheral to the same GPIO to simulate 1-Wire bus read and write timing. In previous versions, you needed to configure the ``io_loop_back`` setting in the driver to achieve this "loopback" functionality. Now, this configuration has been removed. Simply configuring the same GPIO number in different drivers will achieve the same functionality.
 
+ADC
+---
+
+The legacy ADC driver ``driver/adc.h`` is deprecated since version 5.0 (see :ref:`deprecate_adc_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_adc`, and the header file path is ``esp_adc/adc_oneshot.h``, ``esp_adc/adc_continuous.h``, ``esp_adc/adc_cali.h`` and ``esp_adc/adc_cali_scheme.h``.
+
+
 RMT
 ---
 
@@ -65,7 +71,8 @@ The legacy timer group driver ``driver/timer.h`` is deprecated since version 5.0
     Legacy I2S Driver is Removed
     ------------------------------------
 
-    The legacy i2s driver ``driver/i2s.h`` is deprecated since version 5.0 (see :ref:`deprecate_i2s_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_i2s`, and the header file path is ``driver/i2s_std.h``, ``driver/i2s_pdm.h`` and ``driver/i2s_tdm.h``.
+    - The legacy i2s driver ``driver/i2s.h`` is deprecated since version 5.0 (see :ref:`deprecate_i2s_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_i2s`, and the header file path is ``driver/i2s_std.h``, ``driver/i2s_pdm.h`` and ``driver/i2s_tdm.h``.
+    - API ``i2s_set_adc_mode``,  ``i2s_adc_enable`` and ``i2s_adc_disable`` are deprecated since version 5.0. Starting from version 6.0, these APIs are completely removed.
 
 .. only:: SOC_PCNT_SUPPORTED
 
