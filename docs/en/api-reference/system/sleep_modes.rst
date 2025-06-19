@@ -273,7 +273,7 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
     ULP Coprocessor Wakeup
     ^^^^^^^^^^^^^^^^^^^^^^
 
-    ULP coprocessor can run while the chip is in sleep mode, and may be used to poll sensors, monitor ADC or other sensor values, and wake up the chip when a specific event is detected. ULP coprocessor is part of the RTC peripherals power domain, and it runs the program stored in RTC SLOW memory. RTC SLOW memory will be powered on during sleep if this wakeup mode is requested. RTC peripherals will be automatically powered on before ULP coprocessor starts running the program; once the program stops running, RTC peripherals are automatically powered down again.
+    ULP coprocessor can run while the chip is in sleep mode, and may be used to poll sensors, monitor ADC or GPIO states, and wake up the chip when a specific event is detected. ULP coprocessor is part of the RTC peripherals power domain, and it runs the program stored in RTC SLOW memory. RTC SLOW memory will be powered on during sleep if this wakeup mode is requested. RTC peripherals will be automatically powered on before ULP coprocessor starts running the program; once the program stops running, RTC peripherals are automatically powered down again.
 
     .. only:: esp32
 

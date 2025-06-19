@@ -20,8 +20,6 @@ api-reference/storage/mass_mfg.rst
 api-reference/storage/fatfsgen.rst
 api-reference/storage/index.rst
 api-reference/storage/nvs_partition_parse.rst
-api-reference/peripherals/touch_pad.rst
-api-reference/peripherals/index.rst
 api-reference/peripherals/ecdsa.rst
 api-reference/network/esp_openthread.rst
 api-reference/network/esp_dpp.rst
@@ -32,7 +30,6 @@ api-reference/network/esp_nan.rst
 api-reference/network/esp_wifi.rst
 api-reference/network/index.rst
 api-reference/system/sleep_modes.rst
-api-reference/system/async_memcpy.rst
 api-reference/system/power_management.rst
 api-reference/system/inc/power_management_esp32c5.rst
 api-reference/index.rst
