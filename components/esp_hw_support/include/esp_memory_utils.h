@@ -278,6 +278,10 @@ inline static bool esp_ptr_internal(const void *p) {
     bool r;
     r = ((intptr_t)p >= SOC_MEM_INTERNAL_LOW && (intptr_t)p < SOC_MEM_INTERNAL_HIGH);
 
+#if SOC_MEM_TCM_SUPPORTED
+    r |= esp_ptr_in_tcm(p);
+#endif
+
 #if SOC_RTC_SLOW_MEM_SUPPORTED
     r |= ((intptr_t)p >= SOC_RTC_DATA_LOW && (intptr_t)p < SOC_RTC_DATA_HIGH);
 #endif
