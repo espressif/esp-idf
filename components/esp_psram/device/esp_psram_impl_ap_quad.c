@@ -19,6 +19,8 @@
 #include "esp_quad_psram_defs_ap.h"
 #include "soc/soc_caps.h"
 
+#define AP_HEX_PSRAM_REF_DATA              0x5a6b7c8d
+
 static const char* TAG = "quad_psram";
 
 static uint32_t s_psram_size = 0;   //this stands for physical psram size in bytes
@@ -175,6 +177,42 @@ static void psram_set_cs_timing(void)
 #endif
 }
 
+/**
+ * Check if PSRAM is connected by write and read
+ */
+static esp_err_t s_check_psram_connected(int spi_num)
+{
+    uint32_t addr = 0x0;
+    uint32_t ref_data = AP_HEX_PSRAM_REF_DATA;
+    uint32_t exp_data = 0;
+    int data_bit_len = 32;
+
+    //write
+    psram_exec_cmd(spi_num, PSRAM_HAL_CMD_SPI,
+                   PSRAM_QUAD_WRITE, PSRAM_QUAD_CMD_LENGTH,
+                   addr, PSRAM_QUAD_ADDR_LENGTH,
+                   0,
+                   (uint8_t *)&ref_data, data_bit_len,
+                   NULL, 0,
+                   PSRAM_LL_CS_SEL,
+                   false);
+
+    //read MR4 and MR8
+    psram_exec_cmd(spi_num, PSRAM_HAL_CMD_SPI,
+                   PSRAM_QUAD_READ, PSRAM_QUAD_CMD_LENGTH,
+                   addr, PSRAM_QUAD_ADDR_LENGTH,
+                   0,
+                   NULL, 0,
+                   (uint8_t *)&exp_data, data_bit_len,
+                   PSRAM_LL_CS_SEL,
+                   false);
+
+    ESP_EARLY_LOGW(TAG, "exp_data: 0x%08x", exp_data);
+    ESP_EARLY_LOGW(TAG, "ref_data: 0x%08x", ref_data);
+
+    return (exp_data == ref_data ? ESP_OK : ESP_FAIL);
+}
+
 #if CONFIG_SPIRAM_ECC_ENABLE
 static void s_mspi_ecc_show_info(void)
 {
@@ -319,6 +357,12 @@ esp_err_t esp_psram_impl_enable(void)
 
     //We use SPI1 to init PSRAM
     psram_disable_qio_mode(PSRAM_CTRLR_LL_MSPI_ID_1);
+
+    if (s_check_psram_connected(PSRAM_CTRLR_LL_MSPI_ID_1) != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "PSRAM chip is not connected, or wrong PSRAM line mode");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     psram_read_id(PSRAM_CTRLR_LL_MSPI_ID_1, (uint8_t *)&psram_id, PSRAM_QUAD_ID_BITS_NUM);
     if (!PSRAM_QUAD_IS_VALID(psram_id)) {
         /* 16Mbit psram ID read error workaround:
@@ -327,8 +371,7 @@ esp_err_t esp_psram_impl_enable(void)
          */
         psram_read_id(PSRAM_CTRLR_LL_MSPI_ID_1, (uint8_t *)&psram_id, PSRAM_QUAD_ID_BITS_NUM);
         if (!PSRAM_QUAD_IS_VALID(psram_id)) {
-            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x, PSRAM chip not found or not supported, or wrong PSRAM line mode", (uint32_t)psram_id);
-            return ESP_ERR_NOT_SUPPORTED;
+            ESP_EARLY_LOGW(TAG, "PSRAM ID read error: 0x%08x, fallback to use default driver pattern", (uint32_t)psram_id);
         }
     }
     ESP_EARLY_LOGV(TAG, "MFID: 0x%x", PSRAM_QUAD_MFID(psram_id));
