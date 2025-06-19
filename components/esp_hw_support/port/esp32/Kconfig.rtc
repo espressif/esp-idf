@@ -85,6 +85,24 @@ config RTC_CLK_CAL_CYCLES
             In case more value will help improve the definition of the launch of the crystal.
             If the crystal could not start, it will be switched to internal RC.
 
+config RTC_CLK_SLEEP_CAL_CYCLES
+    int "Number of cycles to calibrate RTC_SLOW_CLK before sleep"
+    default 10
+    range 0 1000
+    help
+        Just before entering light/deep sleep, a small calibration is done
+        on the RTC_SLOW_CLK. Having a calibrated RTC_SLOW_CLK is required
+        in order to proper measure time while in sleep modes and allow proper
+        wake up from timers.
+        This option defaults to 10 cycles (around 300us) but can be lowered
+        down to 0 to avoid calibration, and take the previous one as valid.
+        It can be particularly useful when the RTC_SLOW_CLK calibration is
+        done by the APP code using various external sources like NTP
+        and comparing the long term drift of the clock, or when using a very
+        stable external oscillator.
+        It can also be interesting for reducing power usage in APPs that are
+        constantly entering light sleep.
+
 config RTC_XTAL_CAL_RETRY
     int "Number of attempts to repeat 32k XTAL calibration"
     default 1
