@@ -1,8 +1,7 @@
 .pre_check_template:
   stage: pre_check
   image: $ESP_ENV_IMAGE
-  tags:
-    - host_test
+  tags: [build, shiny]
   dependencies: # set dependencies to null to avoid missing artifacts issue
 
 check_version:
