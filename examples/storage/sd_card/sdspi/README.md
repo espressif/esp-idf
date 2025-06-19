@@ -160,7 +160,7 @@ Check you board documentation/schematics for appropriate procedure.
 
 An attempt to download a new firmware under this conditions may also result in the board's serial port disappearing from your PC device list - rebooting your computer should fix the issue. After your device is back, use
 
-`esptool --port PORT --before no_reset --baud 115200 --chip esp32 erase_flash`
+`esptool.py --port PORT --before no_reset --baud 115200 --chip esp32 erase_flash`
 
 to erase your board's flash, then flash the firmware again.
 
