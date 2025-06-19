@@ -1724,9 +1724,11 @@ void btc_avrc_get_profile_status(esp_avrc_profile_status_t *param)
         if (btc_avrc_ct_init_p()) {
             param->avrc_ct_inited = true;
         }
+#if BTC_AV_CA_INCLUDED
         if (btc_rc_cb.rc_cover_art_connected) {
             param->ct_cover_art_conn_num++;
         }
+#endif
     }
 }
 
