@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_pmu.h"
+#include "esp_private/critical_section.h"
 #include "esp_sleep.h"
 #include "hal/efuse_hal.h"
 #include "hal/clk_tree_ll.h"
@@ -187,10 +188,10 @@ esp_err_t modem_clock_domain_clk_gate_enable(modem_clock_domain_t domain, pmu_hp
         return ESP_ERR_INVALID_ARG;
     }
 
-    portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    esp_os_enter_critical_safe(&MODEM_CLOCK_instance()->lock);
     uint32_t code = modem_clock_hal_get_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain);
     modem_clock_hal_set_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain, (code & ~BIT(mode)));
-    portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    esp_os_exit_critical_safe(&MODEM_CLOCK_instance()->lock);
     return ESP_OK;
 }
 
@@ -203,10 +204,10 @@ esp_err_t modem_clock_domain_clk_gate_disable(modem_clock_domain_t domain, pmu_h
         return ESP_ERR_INVALID_ARG;
     }
 
-    portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    esp_os_enter_critical_safe(&MODEM_CLOCK_instance()->lock);
     uint32_t code = modem_clock_hal_get_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain);
     modem_clock_hal_set_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain, (code | BIT(mode)));
-    portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    esp_os_exit_critical_safe(&MODEM_CLOCK_instance()->lock);
     return ESP_OK;
 }
 #endif // #if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
@@ -214,7 +215,7 @@ esp_err_t modem_clock_domain_clk_gate_disable(modem_clock_domain_t domain, pmu_h
 static void IRAM_ATTR modem_clock_device_enable(modem_clock_context_t *ctx, uint32_t dev_map)
 {
     int16_t refs = 0;
-    portENTER_CRITICAL_SAFE(&ctx->lock);
+    esp_os_enter_critical_safe(&ctx->lock);
     for (int i = 0; dev_map; dev_map >>= 1, i++) {
         if (dev_map & BIT(0)) {
             refs = ctx->dev[i].refs++;
@@ -223,14 +224,14 @@ static void IRAM_ATTR modem_clock_device_enable(modem_clock_context_t *ctx, uint
             }
         }
     }
-    portEXIT_CRITICAL_SAFE(&ctx->lock);
+    esp_os_exit_critical_safe(&ctx->lock);
     assert(refs >= 0);
 }
 
 static void IRAM_ATTR modem_clock_device_disable(modem_clock_context_t *ctx, uint32_t dev_map)
 {
     int16_t refs = 0;
-    portENTER_CRITICAL_SAFE(&ctx->lock);
+    esp_os_enter_critical_safe(&ctx->lock);
     for (int i = 0; dev_map; dev_map >>= 1, i++) {
         if (dev_map & BIT(0)) {
             refs = --ctx->dev[i].refs;
@@ -239,14 +240,14 @@ static void IRAM_ATTR modem_clock_device_disable(modem_clock_context_t *ctx, uin
             }
         }
     }
-    portEXIT_CRITICAL_SAFE(&ctx->lock);
+    esp_os_exit_critical_safe(&ctx->lock);
     assert(refs >= 0);
 }
 
 void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
 {
-    modem_clock_context_t *ctx = MODEM_CLOCK_instance();
-    portENTER_CRITICAL_SAFE(&ctx->lock);
+    __attribute__((unused)) modem_clock_context_t *ctx = MODEM_CLOCK_instance();
+    esp_os_enter_critical_safe(&ctx->lock);
     switch (module)
     {
 #if SOC_WIFI_SUPPORTED
@@ -271,7 +272,7 @@ void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
         default:
             assert(0);
     }
-    portEXIT_CRITICAL_SAFE(&ctx->lock);
+    esp_os_exit_critical_safe(&ctx->lock);
 }
 
 #define WIFI_CLOCK_DEPS         (BIT(MODEM_CLOCK_WIFI_MAC) | BIT(MODEM_CLOCK_WIFI_BB) | BIT(MODEM_CLOCK_COEXIST))
@@ -335,12 +336,12 @@ static const DRAM_ATTR uint32_t initial_gating_mode[MODEM_CLOCK_DOMAIN_MAX] = {
 #if !CONFIG_IDF_TARGET_ESP32H2  //TODO: PM-92
 static IRAM_ATTR void modem_clock_module_icg_map_init_all(void)
 {
-    portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    esp_os_enter_critical_safe(&MODEM_CLOCK_instance()->lock);
     for (int domain = 0; domain < MODEM_CLOCK_DOMAIN_MAX; domain++) {
         uint32_t code = modem_clock_hal_get_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain);
         modem_clock_hal_set_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain, initial_gating_mode[domain] | code);
     }
-    portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    esp_os_exit_critical_safe(&MODEM_CLOCK_instance()->lock);
 }
 #endif
 
@@ -375,7 +376,7 @@ void modem_clock_deselect_all_module_lp_clock_source(void)
 void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpclk_src_t src, uint32_t divider)
 {
     assert(IS_MODEM_MODULE(module));
-    portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    esp_os_enter_critical_safe(&MODEM_CLOCK_instance()->lock);
     switch (module)
     {
 #if SOC_WIFI_SUPPORTED
@@ -439,7 +440,7 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
     modem_clock_lpclk_src_t last_src = MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN];
 #endif
     MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN] = src;
-    portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    esp_os_exit_critical_safe(&MODEM_CLOCK_instance()->lock);
 
 #if SOC_LIGHT_SLEEP_SUPPORTED
     /* The power domain of the low-power clock source required by the modem
@@ -468,7 +469,7 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
 void modem_clock_deselect_lp_clock_source(periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
-    portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    esp_os_enter_critical_safe(&MODEM_CLOCK_instance()->lock);
 #if SOC_LIGHT_SLEEP_SUPPORTED
     modem_clock_lpclk_src_t last_src = MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN];
 #endif
@@ -504,7 +505,7 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
     default:
         break;
     }
-    portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    esp_os_exit_critical_safe(&MODEM_CLOCK_instance()->lock);
 
 #if SOC_LIGHT_SLEEP_SUPPORTED
     esp_sleep_pd_domain_t pd_domain = (esp_sleep_pd_domain_t) (

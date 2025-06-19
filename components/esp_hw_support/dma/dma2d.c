@@ -17,6 +17,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/critical_section.h"
 #include "dma2d_priv.h"
 #include "esp_private/dma2d.h"
 #include "hal/dma2d_hal.h"
@@ -142,9 +143,9 @@ static bool acquire_free_channels_for_trans(dma2d_group_t *dma2d_group, const dm
 
             // Record its bundled TX channels, to be freed in the isr
             dma2d_rx_channel_t *rx_chan = dma2d_group->rx_chans[channel_id];
-            portENTER_CRITICAL_SAFE(&rx_chan->base.spinlock);
+            esp_os_enter_critical_safe(&rx_chan->base.spinlock);
             rx_chan->bundled_tx_channel_mask = bundled_tx_channel_mask;
-            portEXIT_CRITICAL_SAFE(&rx_chan->base.spinlock);
+            esp_os_exit_critical_safe(&rx_chan->base.spinlock);
         } else {
             found = false;
             goto revert;
@@ -175,7 +176,7 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
     uint32_t tx_periph_sel_id_mask = 0;
     uint32_t rx_periph_sel_id_mask = 0;
     // Disable RX channel interrupt
-    portENTER_CRITICAL_SAFE(&rx_chan->base.spinlock);
+    esp_os_enter_critical_safe(&rx_chan->base.spinlock);
     dma2d_ll_rx_enable_interrupt(group->hal.dev, channel_id, UINT32_MAX, false);
     // Reset RX channel event related pointers and flags
     rx_chan->on_recv_eof = NULL;
@@ -187,14 +188,14 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
     // Record its periph_sel_id
     assert(rx_chan->base.status.periph_sel_id != -1);
     rx_periph_sel_id_mask |= (1 << rx_chan->base.status.periph_sel_id);
-    portEXIT_CRITICAL_SAFE(&rx_chan->base.spinlock);
+    esp_os_exit_critical_safe(&rx_chan->base.spinlock);
     // For every bundled TX channels:
     while (rx_chan->bundled_tx_channel_mask) {
         uint32_t nbit = __builtin_ffs(rx_chan->bundled_tx_channel_mask) - 1;
         rx_chan->bundled_tx_channel_mask &= ~(1 << nbit);
         dma2d_tx_channel_t *tx_chan = group->tx_chans[nbit];
         // Disable TX channel interrupt
-        portENTER_CRITICAL_SAFE(&tx_chan->base.spinlock);
+        esp_os_enter_critical_safe(&tx_chan->base.spinlock);
         dma2d_ll_tx_enable_interrupt(group->hal.dev, nbit, UINT32_MAX, false);
         // Reset TX channel event related pointers
         tx_chan->on_desc_done = NULL;
@@ -205,7 +206,7 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
         // Record its periph_sel_id
         assert(tx_chan->base.status.periph_sel_id != -1);
         tx_periph_sel_id_mask |= (1 << tx_chan->base.status.periph_sel_id);
-        portEXIT_CRITICAL_SAFE(&tx_chan->base.spinlock);
+        esp_os_exit_critical_safe(&tx_chan->base.spinlock);
     }
     // Channel functionality flags will be reset and assigned new values inside `acquire_free_channels_for_trans`
     // Channel reset will always be done at `dma2d_connect` (i.e. when the channel is selected for a new transaction)
@@ -215,7 +216,7 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
     const dma2d_trans_config_t *next_trans = NULL;
     dma2d_trans_channel_info_t channel_handle_array[DMA2D_MAX_CHANNEL_NUM_PER_TRANSACTION];
 
-    portENTER_CRITICAL_SAFE(&group->spinlock);
+    esp_os_enter_critical_safe(&group->spinlock);
     // Release channels
     group->tx_channel_free_mask |= bundled_tx_channel_mask;
     group->rx_channel_free_mask |= (1 << channel_id);
@@ -233,7 +234,7 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
     if (channels_found) {
         TAILQ_REMOVE(&group->pending_trans_tailq, next_trans_elm, entry);
     }
-    portEXIT_CRITICAL_SAFE(&group->spinlock);
+    esp_os_exit_critical_safe(&group->spinlock);
 
     if (channels_found) {
         // If the transaction can be processed, let consumer handle the transaction
@@ -549,7 +550,7 @@ esp_err_t dma2d_connect(dma2d_channel_handle_t dma2d_chan, const dma2d_trigger_t
         periph_m2m_free_id_mask = &group->rx_periph_m2m_free_id_mask;
         periph_m2m_available_id_mask = DMA2D_LL_RX_CHANNEL_PERIPH_M2M_AVAILABLE_ID_MASK;
     }
-    portENTER_CRITICAL_SAFE(&group->spinlock);
+    esp_os_enter_critical_safe(&group->spinlock);
     if (trig_periph->periph == DMA2D_TRIG_PERIPH_M2M) {
         if (peri_sel_id == -1) {
             // Unspecified periph_sel_id, decide by the driver
@@ -565,10 +566,10 @@ esp_err_t dma2d_connect(dma2d_channel_handle_t dma2d_chan, const dma2d_trigger_t
         dma2d_chan->status.periph_sel_id = peri_sel_id;
         *periph_m2m_free_id_mask &= ~(1 << peri_sel_id); // acquire m2m periph_sel_id
     }
-    portEXIT_CRITICAL_SAFE(&group->spinlock);
+    esp_os_exit_critical_safe(&group->spinlock);
     ESP_GOTO_ON_FALSE_ISR(peri_sel_id >= 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid periph_sel_id");
 
-    portENTER_CRITICAL_SAFE(&dma2d_chan->spinlock);
+    esp_os_enter_critical_safe(&dma2d_chan->spinlock);
     if (dma2d_chan->direction == DMA2D_CHANNEL_DIRECTION_TX) {
         dma2d_ll_tx_stop(group->hal.dev, channel_id);
         dma2d_hal_tx_reset_channel(&group->hal, channel_id);
@@ -619,7 +620,7 @@ esp_err_t dma2d_connect(dma2d_channel_handle_t dma2d_chan, const dma2d_trigger_t
         dma2d_ll_rx_enable_interrupt(group->hal.dev, channel_id, UINT32_MAX, false); // disable all interrupt events
         dma2d_ll_rx_clear_interrupt_status(group->hal.dev, channel_id, UINT32_MAX); // clear all pending events
     }
-    portEXIT_CRITICAL_SAFE(&dma2d_chan->spinlock);
+    esp_os_exit_critical_safe(&dma2d_chan->spinlock);
 
 err:
     return ret;
@@ -647,14 +648,14 @@ esp_err_t dma2d_register_tx_event_callbacks(dma2d_channel_handle_t dma2d_chan, d
 
     // Enable/Disable 2D-DMA interrupt events for the TX channel
     uint32_t mask = 0;
-    portENTER_CRITICAL_SAFE(&tx_chan->base.spinlock);
+    esp_os_enter_critical_safe(&tx_chan->base.spinlock);
     if (cbs->on_desc_done) {
         tx_chan->on_desc_done = cbs->on_desc_done;
         mask |= DMA2D_LL_EVENT_TX_DONE;
     }
     tx_chan->user_data = user_data;
     dma2d_ll_tx_enable_interrupt(group->hal.dev, tx_chan->base.channel_id, mask, true);
-    portEXIT_CRITICAL_SAFE(&tx_chan->base.spinlock);
+    esp_os_exit_critical_safe(&tx_chan->base.spinlock);
 
 err:
     return ret;
@@ -685,7 +686,7 @@ esp_err_t dma2d_register_rx_event_callbacks(dma2d_channel_handle_t dma2d_chan, d
 
     // Enable/Disable 2D-DMA interrupt events for the RX channel
     uint32_t mask = 0;
-    portENTER_CRITICAL_SAFE(&rx_chan->base.spinlock);
+    esp_os_enter_critical_safe(&rx_chan->base.spinlock);
     if (cbs->on_recv_eof) {
         rx_chan->on_recv_eof = cbs->on_recv_eof;
         mask |= DMA2D_LL_EVENT_RX_SUC_EOF;
@@ -701,7 +702,7 @@ esp_err_t dma2d_register_rx_event_callbacks(dma2d_channel_handle_t dma2d_chan, d
     rx_chan->user_data = user_data;
     dma2d_ll_rx_enable_interrupt(group->hal.dev, rx_chan->base.channel_id, mask, true);
 
-    portEXIT_CRITICAL_SAFE(&rx_chan->base.spinlock);
+    esp_os_exit_critical_safe(&rx_chan->base.spinlock);
 
 err:
     return ret;
@@ -792,13 +793,13 @@ esp_err_t dma2d_reset(dma2d_channel_handle_t dma2d_chan)
     dma2d_group_t *group = dma2d_chan->group;
     int channel_id = dma2d_chan->channel_id;
 
-    portENTER_CRITICAL_SAFE(&dma2d_chan->spinlock);
+    esp_os_enter_critical_safe(&dma2d_chan->spinlock);
     if (dma2d_chan->direction == DMA2D_CHANNEL_DIRECTION_TX) {
         dma2d_hal_tx_reset_channel(&group->hal, channel_id);
     } else {
         dma2d_hal_rx_reset_channel(&group->hal, channel_id);
     }
-    portEXIT_CRITICAL_SAFE(&dma2d_chan->spinlock);
+    esp_os_exit_critical_safe(&dma2d_chan->spinlock);
 
     return ESP_OK;
 }
@@ -931,7 +932,7 @@ esp_err_t dma2d_enqueue(dma2d_pool_handle_t dma2d_pool, const dma2d_trans_config
     trans_placeholder->desc = trans_desc;
     dma2d_trans_channel_info_t channel_handle_array[DMA2D_MAX_CHANNEL_NUM_PER_TRANSACTION];
 
-    portENTER_CRITICAL_SAFE(&dma2d_group->spinlock);
+    esp_os_enter_critical_safe(&dma2d_group->spinlock);
     bool enqueue = !acquire_free_channels_for_trans(dma2d_group, trans_desc, channel_handle_array);
     if (enqueue) {
         if (!trans_desc->specified_tx_channel_mask && !trans_desc->specified_rx_channel_mask) {
@@ -940,7 +941,7 @@ esp_err_t dma2d_enqueue(dma2d_pool_handle_t dma2d_pool, const dma2d_trans_config
             TAILQ_INSERT_HEAD(&dma2d_group->pending_trans_tailq, trans_placeholder, entry);
         }
     }
-    portEXIT_CRITICAL_SAFE(&dma2d_group->spinlock);
+    esp_os_exit_critical_safe(&dma2d_group->spinlock);
     if (!enqueue) {
         // Free channels available, start transaction immediately
         // Store the acquired rx_chan into trans_placeholder (dma2d_trans_t) in case upper driver later need it to call `dma2d_force_end`
@@ -968,7 +969,7 @@ esp_err_t dma2d_force_end(dma2d_trans_t *trans, bool *need_yield)
 
     bool in_flight = false;
     // We judge whether the transaction is in-flight by checking the RX channel it uses is being occupied or free
-    portENTER_CRITICAL_SAFE(&group->spinlock);
+    esp_os_enter_critical_safe(&group->spinlock);
     if (!(group->rx_channel_free_mask & (1 << trans->rx_chan->channel_id))) {
         in_flight = true;
         dma2d_ll_rx_enable_interrupt(group->hal.dev, trans->rx_chan->channel_id, UINT32_MAX, false);
@@ -976,7 +977,7 @@ esp_err_t dma2d_force_end(dma2d_trans_t *trans, bool *need_yield)
         // 1. when TX or RX is transferring data (channel not in idle state)
         // 2. TX successfully passed data to the module, but module cannot process the data, so RX has no data to delivery (RX channel in idle state)
     }
-    portEXIT_CRITICAL_SAFE(&group->spinlock);
+    esp_os_exit_critical_safe(&group->spinlock);
     ESP_RETURN_ON_FALSE_ISR(in_flight, ESP_ERR_INVALID_STATE, TAG, "transaction not in-flight");
 
     dma2d_rx_channel_t *rx_chan = group->rx_chans[trans->rx_chan->channel_id];

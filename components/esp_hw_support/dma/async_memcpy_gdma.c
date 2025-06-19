@@ -18,6 +18,7 @@
 #include "esp_private/gdma.h"
 #include "esp_private/gdma_link.h"
 #include "esp_private/esp_dma_utils.h"
+#include "esp_private/critical_section.h"
 #include "esp_memory_utils.h"
 #include "esp_cache.h"
 #include "esp_async_memcpy.h"
@@ -237,12 +238,12 @@ static esp_err_t mcp_gdma_del(async_memcpy_context_t *ctx)
 static async_memcpy_transaction_t *try_pop_trans_from_ready_queue(async_memcpy_gdma_context_t *mcp_gdma)
 {
     async_memcpy_transaction_t *trans = NULL;
-    portENTER_CRITICAL_SAFE(&mcp_gdma->spin_lock);
+    esp_os_enter_critical_safe(&mcp_gdma->spin_lock);
     trans = STAILQ_FIRST(&mcp_gdma->ready_queue_head);
     if (trans) {
         STAILQ_REMOVE_HEAD(&mcp_gdma->ready_queue_head, ready_queue_entry);
     }
-    portEXIT_CRITICAL_SAFE(&mcp_gdma->spin_lock);
+    esp_os_exit_critical_safe(&mcp_gdma->spin_lock);
     return trans;
 }
 
@@ -270,12 +271,12 @@ static void try_start_pending_transaction(async_memcpy_gdma_context_t *mcp_gdma)
 static async_memcpy_transaction_t *try_pop_trans_from_idle_queue(async_memcpy_gdma_context_t *mcp_gdma)
 {
     async_memcpy_transaction_t *trans = NULL;
-    portENTER_CRITICAL_SAFE(&mcp_gdma->spin_lock);
+    esp_os_enter_critical_safe(&mcp_gdma->spin_lock);
     trans = STAILQ_FIRST(&mcp_gdma->idle_queue_head);
     if (trans) {
         STAILQ_REMOVE_HEAD(&mcp_gdma->idle_queue_head, idle_queue_entry);
     }
-    portEXIT_CRITICAL_SAFE(&mcp_gdma->spin_lock);
+    esp_os_exit_critical_safe(&mcp_gdma->spin_lock);
     return trans;
 }
 
@@ -413,10 +414,10 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     trans->cb = cb_isr;
     trans->cb_args = cb_args;
 
-    portENTER_CRITICAL(&mcp_gdma->spin_lock);
+    esp_os_enter_critical(&mcp_gdma->spin_lock);
     // insert the trans to ready queue
     STAILQ_INSERT_TAIL(&mcp_gdma->ready_queue_head, trans, ready_queue_entry);
-    portEXIT_CRITICAL(&mcp_gdma->spin_lock);
+    esp_os_exit_critical(&mcp_gdma->spin_lock);
 
     // check driver state, if there's no running transaction, start a new one
     try_start_pending_transaction(mcp_gdma);
@@ -426,9 +427,9 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
 err:
     if (trans) {
         // return back the trans to idle queue
-        portENTER_CRITICAL(&mcp_gdma->spin_lock);
+        esp_os_enter_critical(&mcp_gdma->spin_lock);
         STAILQ_INSERT_TAIL(&mcp_gdma->idle_queue_head, trans, idle_queue_entry);
-        portEXIT_CRITICAL(&mcp_gdma->spin_lock);
+        esp_os_exit_critical(&mcp_gdma->spin_lock);
     }
     return ret;
 }
@@ -456,10 +457,10 @@ static bool mcp_gdma_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_
         }
         trans->cb = NULL;
 
-        portENTER_CRITICAL_ISR(&mcp_gdma->spin_lock);
+        esp_os_enter_critical_isr(&mcp_gdma->spin_lock);
         // insert the trans object to the idle queue
         STAILQ_INSERT_TAIL(&mcp_gdma->idle_queue_head, trans, idle_queue_entry);
-        portEXIT_CRITICAL_ISR(&mcp_gdma->spin_lock);
+        esp_os_exit_critical_isr(&mcp_gdma->spin_lock);
 
         atomic_store(&mcp_gdma->fsm, MCP_FSM_IDLE);
     }

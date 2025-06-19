@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@
 #include "esp_memory_utils.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/dw_gdma.h"
+#include "esp_private/critical_section.h"
 #include "hal/dw_gdma_hal.h"
 #include "hal/dw_gdma_ll.h"
 #include "hal/cache_hal.h"
@@ -176,7 +177,7 @@ static esp_err_t channel_register_to_group(dw_gdma_channel_t *chan)
         group = dw_gdma_acquire_group_handle(i);
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group(%d)", i);
         // loop to search free channel in the group
-        portENTER_CRITICAL(&group->spinlock);
+        esp_os_enter_critical(&group->spinlock);
         for (int j = 0; j < DW_GDMA_LL_CHANNELS_PER_GROUP; j++) {
             if (group->channels[j] == NULL) {
                 group->channels[j] = chan;
@@ -184,7 +185,7 @@ static esp_err_t channel_register_to_group(dw_gdma_channel_t *chan)
                 break;
             }
         }
-        portEXIT_CRITICAL(&group->spinlock);
+        esp_os_exit_critical(&group->spinlock);
         if (chan_id < 0) {
             dw_gdma_release_group_handle(group);
         } else {
@@ -201,9 +202,9 @@ static void channel_unregister_from_group(dw_gdma_channel_t *chan)
 {
     dw_gdma_group_t *group = chan->group;
     int chan_id = chan->chan_id;
-    portENTER_CRITICAL(&group->spinlock);
+    esp_os_enter_critical(&group->spinlock);
     group->channels[chan_id] = NULL;
-    portEXIT_CRITICAL(&group->spinlock);
+    esp_os_exit_critical(&group->spinlock);
     // channel has a reference on group, release it now
     dw_gdma_release_group_handle(group);
 }
@@ -250,13 +251,13 @@ esp_err_t dw_gdma_new_channel(const dw_gdma_channel_alloc_config_t *config, dw_g
 
     // all channels in the same group should use the same interrupt priority
     bool intr_priority_conflict = false;
-    portENTER_CRITICAL(&group->spinlock);
+    esp_os_enter_critical(&group->spinlock);
     if (group->intr_priority == -1) {
         group->intr_priority = config->intr_priority;
     } else if (config->intr_priority != 0) {
         intr_priority_conflict = (group->intr_priority != config->intr_priority);
     }
-    portEXIT_CRITICAL(&group->spinlock);
+    esp_os_exit_critical(&group->spinlock);
     ESP_GOTO_ON_FALSE(!intr_priority_conflict, ESP_ERR_INVALID_STATE, err, TAG, "intr_priority conflict, already is %d but attempt to %d", group->intr_priority, config->intr_priority);
 
     // basic initialization
@@ -349,9 +350,9 @@ esp_err_t dw_gdma_channel_lock(dw_gdma_channel_handle_t chan, dw_gdma_lock_level
     int chan_id = chan->chan_id;
 
     // the lock control bit is located in a cfg register, with other configuration bits
-    portENTER_CRITICAL(&chan->spinlock);
+    esp_os_enter_critical(&chan->spinlock);
     dw_gdma_ll_channel_lock(hal->dev, chan_id, level);
-    portEXIT_CRITICAL(&chan->spinlock);
+    esp_os_exit_critical(&chan->spinlock);
     return ESP_OK;
 }
 
@@ -362,9 +363,9 @@ esp_err_t dw_gdma_channel_unlock(dw_gdma_channel_handle_t chan)
     int chan_id = chan->chan_id;
 
     // the lock control bit is located in a cfg register, with other configuration bits
-    portENTER_CRITICAL(&chan->spinlock);
+    esp_os_enter_critical(&chan->spinlock);
     dw_gdma_ll_channel_unlock(hal->dev, chan_id);
-    portEXIT_CRITICAL(&chan->spinlock);
+    esp_os_exit_critical(&chan->spinlock);
     return ESP_OK;
 }
 

@@ -14,6 +14,7 @@
 #include "soc/soc_caps.h"
 #include "hal/ldo_ll.h"
 #include "esp_ldo_regulator.h"
+#include "esp_private/critical_section.h"
 
 static const char *TAG = "ldo";
 
@@ -55,7 +56,7 @@ esp_err_t esp_ldo_acquire_channel(const esp_ldo_channel_config_t *config, esp_ld
 
     bool check_adjustable_constraint_valid = true;
     bool check_voltage_constraint_valid = true;
-    portENTER_CRITICAL(&s_spinlock);
+    esp_os_enter_critical(&s_spinlock);
     if (config->flags.adjustable) {
         // the user wants to adjust it
         // but the channel is marked as not adjustable
@@ -101,7 +102,7 @@ esp_err_t esp_ldo_acquire_channel(const esp_ldo_channel_config_t *config, esp_ld
         channel->flags.adjustable = config->flags.adjustable;
         channel->chan_id = config->chan_id;
     }
-    portEXIT_CRITICAL(&s_spinlock);
+    esp_os_exit_critical(&s_spinlock);
 
     ESP_RETURN_ON_FALSE(check_voltage_constraint_valid, ESP_ERR_INVALID_ARG, TAG,
                         "can't change the voltage for a non-adjustable channel, expect:%dmV, current:%dmV",
@@ -121,7 +122,7 @@ esp_err_t esp_ldo_release_channel(esp_ldo_channel_handle_t chan)
     int unit_id = LDO_ID2UNIT(chan->chan_id);
 
     bool is_valid_state = true;
-    portENTER_CRITICAL(&s_spinlock);
+    esp_os_enter_critical(&s_spinlock);
     if (chan->ref_cnt <= 0) {
         is_valid_state = false;
     } else {
@@ -135,7 +136,7 @@ esp_err_t esp_ldo_release_channel(esp_ldo_channel_handle_t chan)
             chan->chan_id = -1;
         }
     }
-    portEXIT_CRITICAL(&s_spinlock);
+    esp_os_exit_critical(&s_spinlock);
 
     ESP_RETURN_ON_FALSE(is_valid_state, ESP_ERR_INVALID_STATE, TAG, "LDO channel released too many times");
 

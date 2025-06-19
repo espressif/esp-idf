@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include "esp_async_memcpy_priv.h"
 #include "esp_private/gdma_link.h"
 #include "esp_private/esp_dma_utils.h"
+#include "esp_private/critical_section.h"
 #include "hal/cp_dma_hal.h"
 #include "hal/cp_dma_ll.h"
 
@@ -147,12 +148,12 @@ static esp_err_t mcp_cpdma_del(async_memcpy_context_t *ctx)
 static async_memcpy_transaction_t *try_pop_trans_from_ready_queue(async_memcpy_cpdma_context_t *mcp_dma)
 {
     async_memcpy_transaction_t *trans = NULL;
-    portENTER_CRITICAL_SAFE(&mcp_dma->spin_lock);
+    esp_os_enter_critical_safe(&mcp_dma->spin_lock);
     trans = STAILQ_FIRST(&mcp_dma->ready_queue_head);
     if (trans) {
         STAILQ_REMOVE_HEAD(&mcp_dma->ready_queue_head, ready_queue_entry);
     }
-    portEXIT_CRITICAL_SAFE(&mcp_dma->spin_lock);
+    esp_os_exit_critical_safe(&mcp_dma->spin_lock);
     return trans;
 }
 
@@ -182,12 +183,12 @@ static void try_start_pending_transaction(async_memcpy_cpdma_context_t *mcp_dma)
 static async_memcpy_transaction_t *try_pop_trans_from_idle_queue(async_memcpy_cpdma_context_t *mcp_dma)
 {
     async_memcpy_transaction_t *trans = NULL;
-    portENTER_CRITICAL_SAFE(&mcp_dma->spin_lock);
+    esp_os_enter_critical_safe(&mcp_dma->spin_lock);
     trans = STAILQ_FIRST(&mcp_dma->idle_queue_head);
     if (trans) {
         STAILQ_REMOVE_HEAD(&mcp_dma->idle_queue_head, idle_queue_entry);
     }
-    portEXIT_CRITICAL_SAFE(&mcp_dma->spin_lock);
+    esp_os_exit_critical_safe(&mcp_dma->spin_lock);
     return trans;
 }
 
@@ -266,10 +267,10 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
     trans->cb = cb_isr;
     trans->cb_args = cb_args;
 
-    portENTER_CRITICAL(&mcp_dma->spin_lock);
+    esp_os_enter_critical(&mcp_dma->spin_lock);
     // insert the trans to ready queue
     STAILQ_INSERT_TAIL(&mcp_dma->ready_queue_head, trans, ready_queue_entry);
-    portEXIT_CRITICAL(&mcp_dma->spin_lock);
+    esp_os_exit_critical(&mcp_dma->spin_lock);
 
     // check driver state, if there's no running transaction, start a new one
     try_start_pending_transaction(mcp_dma);
@@ -279,9 +280,9 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
 err:
     if (trans) {
         // return back the trans to idle queue
-        portENTER_CRITICAL(&mcp_dma->spin_lock);
+        esp_os_enter_critical(&mcp_dma->spin_lock);
         STAILQ_INSERT_TAIL(&mcp_dma->idle_queue_head, trans, idle_queue_entry);
-        portEXIT_CRITICAL(&mcp_dma->spin_lock);
+        esp_os_exit_critical(&mcp_dma->spin_lock);
     }
     return ret;
 }
@@ -311,10 +312,10 @@ static void mcp_default_isr_handler(void *args)
             }
             trans->cb = NULL;
 
-            portENTER_CRITICAL_ISR(&mcp_dma->spin_lock);
+            esp_os_enter_critical_isr(&mcp_dma->spin_lock);
             // insert the trans object to the idle queue
             STAILQ_INSERT_TAIL(&mcp_dma->idle_queue_head, trans, idle_queue_entry);
-            portEXIT_CRITICAL_ISR(&mcp_dma->spin_lock);
+            esp_os_exit_critical_isr(&mcp_dma->spin_lock);
 
             atomic_store(&mcp_dma->fsm, MCP_FSM_IDLE);
         }

@@ -23,6 +23,7 @@
 #include "esp_private/sleep_event.h"
 #include "esp_private/system_internal.h"
 #include "esp_private/io_mux.h"
+#include "esp_private/critical_section.h"
 #include "esp_log.h"
 #include "esp_newlib.h"
 #include "esp_timer.h"
@@ -318,7 +319,7 @@ static bool s_light_sleep_wakeup = false;
 
 /* Updating RTC_MEMORY_CRC_REG register via set_rtc_memory_crc()
    is not thread-safe, so we need to disable interrupts before going to deep sleep. */
-static portMUX_TYPE spinlock_rtc_deep_sleep = portMUX_INITIALIZER_UNLOCKED;
+static portMUX_TYPE __attribute__((unused)) spinlock_rtc_deep_sleep = portMUX_INITIALIZER_UNLOCKED;
 
 static const char *TAG = "sleep";
 static RTC_FAST_ATTR int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 };
@@ -326,9 +327,9 @@ static RTC_FAST_ATTR int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 
 
 void esp_sleep_overhead_out_time_refresh(void)
 {
-    portENTER_CRITICAL(&s_config.lock);
+    esp_os_enter_critical(&s_config.lock);
     s_config.overhead_out_need_remeasure = true;
-    portEXIT_CRITICAL(&s_config.lock);
+    esp_os_exit_critical(&s_config.lock);
 }
 
 static uint32_t get_power_down_flags(void);
@@ -474,28 +475,28 @@ esp_err_t esp_deep_sleep_try(uint64_t time_in_us)
 
 static esp_err_t s_sleep_hook_register(esp_deep_sleep_cb_t new_cb, esp_deep_sleep_cb_t s_cb_array[MAX_DSLP_HOOKS])
 {
-    portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
+    esp_os_enter_critical(&spinlock_rtc_deep_sleep);
     for (int n = 0; n < MAX_DSLP_HOOKS; n++) {
         if (s_cb_array[n]==NULL || s_cb_array[n]==new_cb) {
             s_cb_array[n]=new_cb;
-            portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
+            esp_os_exit_critical(&spinlock_rtc_deep_sleep);
             return ESP_OK;
         }
     }
-    portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
+    esp_os_exit_critical(&spinlock_rtc_deep_sleep);
     ESP_LOGE(TAG, "Registered deepsleep callbacks exceeds MAX_DSLP_HOOKS");
     return ESP_ERR_NO_MEM;
 }
 
 static void s_sleep_hook_deregister(esp_deep_sleep_cb_t old_cb, esp_deep_sleep_cb_t s_cb_array[MAX_DSLP_HOOKS])
 {
-    portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
+    esp_os_enter_critical(&spinlock_rtc_deep_sleep);
     for (int n = 0; n < MAX_DSLP_HOOKS; n++) {
         if(s_cb_array[n] == old_cb) {
             s_cb_array[n] = NULL;
         }
     }
-    portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
+    esp_os_exit_critical(&spinlock_rtc_deep_sleep);
 }
 
 esp_err_t esp_deep_sleep_register_hook(esp_deep_sleep_cb_t new_dslp_cb)
@@ -1223,7 +1224,7 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     /* Disable interrupts and stall another core in case another task writes
      * to RTC memory while we calculate RTC memory CRC.
      */
-    portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
+    esp_os_enter_critical(&spinlock_rtc_deep_sleep);
     esp_ipc_isr_stall_other_cpu();
     esp_ipc_isr_stall_pause();
 
@@ -1294,7 +1295,7 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     // Never returns here, except that the sleep is rejected.
     esp_ipc_isr_stall_resume();
     esp_ipc_isr_release_other_cpu();
-    portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
+    esp_os_exit_critical(&spinlock_rtc_deep_sleep);
     return err;
 }
 
@@ -1392,7 +1393,7 @@ esp_err_t esp_light_sleep_start(void)
     timerret = esp_task_wdt_stop();
 #endif // CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
 
-    portENTER_CRITICAL(&s_config.lock);
+    esp_os_enter_critical(&s_config.lock);
     /*
     Note: We are about to stall the other CPU via the esp_ipc_isr_stall_other_cpu(). However, there is a chance of
     deadlock if after stalling the other CPU, we attempt to take spinlocks already held by the other CPU that is.
@@ -1643,7 +1644,7 @@ esp_err_t esp_light_sleep_start(void)
         s_config.overhead_out_need_remeasure = false;
     }
 
-    portEXIT_CRITICAL(&s_config.lock);
+    esp_os_exit_critical(&s_config.lock);
     return err;
 }
 
@@ -1745,10 +1746,10 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
         return ESP_ERR_INVALID_ARG;
     }
 #endif
-    portENTER_CRITICAL(&s_config.lock);
+    esp_os_enter_critical(&s_config.lock);
     s_config.wakeup_triggers |= RTC_TIMER_TRIG_EN;
     s_config.sleep_duration = time_in_us;
-    portEXIT_CRITICAL(&s_config.lock);
+    esp_os_exit_critical(&s_config.lock);
     return ESP_OK;
 }
 
@@ -2335,7 +2336,7 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
     if (domain >= ESP_PD_DOMAIN_MAX || option > ESP_PD_OPTION_AUTO) {
         return ESP_ERR_INVALID_ARG;
     }
-    portENTER_CRITICAL_SAFE(&s_config.lock);
+    esp_os_enter_critical_safe(&s_config.lock);
 
     int refs = (option == ESP_PD_OPTION_ON)  ? s_config.domain[domain].refs++ \
              : (option == ESP_PD_OPTION_OFF) ? --s_config.domain[domain].refs \
@@ -2343,7 +2344,7 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
     if (refs == 0) {
         s_config.domain[domain].pd_option = option;
     }
-    portEXIT_CRITICAL_SAFE(&s_config.lock);
+    esp_os_exit_critical_safe(&s_config.lock);
     assert(refs >= 0);
     return ESP_OK;
 }
@@ -2354,14 +2355,14 @@ esp_err_t esp_sleep_sub_mode_config(esp_sleep_sub_mode_t mode, bool activate)
         return ESP_ERR_INVALID_ARG;
     }
 
-    portENTER_CRITICAL_SAFE(&s_config.lock);
+    esp_os_enter_critical_safe(&s_config.lock);
     if (activate) {
         s_sleep_sub_mode_ref_cnt[mode]++;
     } else {
         s_sleep_sub_mode_ref_cnt[mode]--;
     }
     assert(s_sleep_sub_mode_ref_cnt[mode] >= 0);
-    portEXIT_CRITICAL_SAFE(&s_config.lock);
+    esp_os_exit_critical_safe(&s_config.lock);
     return ESP_OK;
 }
 
@@ -2371,9 +2372,9 @@ esp_err_t esp_sleep_sub_mode_force_disable(esp_sleep_sub_mode_t mode)
         return ESP_ERR_INVALID_ARG;
     }
 
-    portENTER_CRITICAL_SAFE(&s_config.lock);
+    esp_os_enter_critical_safe(&s_config.lock);
     s_sleep_sub_mode_ref_cnt[mode] = 0;
-    portEXIT_CRITICAL_SAFE(&s_config.lock);
+    esp_os_exit_critical_safe(&s_config.lock);
     return ESP_OK;
 }
 
@@ -2406,11 +2407,11 @@ esp_err_t esp_sleep_clock_config(esp_sleep_clock_t clock, esp_sleep_clock_option
     }
 
     int __attribute__((unused)) refs;
-    portENTER_CRITICAL_SAFE(&s_config.lock);
+    esp_os_enter_critical_safe(&s_config.lock);
     refs = (option == ESP_SLEEP_CLOCK_OPTION_UNGATE) ? s_config.clock_icg_refs[clock]++ \
          : (option == ESP_SLEEP_CLOCK_OPTION_GATE)   ? --s_config.clock_icg_refs[clock] \
          : s_config.clock_icg_refs[clock];
-    portEXIT_CRITICAL_SAFE(&s_config.lock);
+    esp_os_exit_critical_safe(&s_config.lock);
     assert(refs >= 0);
     return ESP_OK;
 }

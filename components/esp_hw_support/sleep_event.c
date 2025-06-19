@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "esp_private/sleep_event.h"
-
+#include "esp_private/critical_section.h"
 #include "esp_sleep.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -31,12 +31,12 @@ esp_err_t esp_sleep_register_event_callback(esp_sleep_event_cb_index_t event_id,
         return ESP_ERR_NO_MEM; /* Memory allocation failed */
     }
 
-    portENTER_CRITICAL(&s_sleep_event_mutex);
+    esp_os_enter_critical(&s_sleep_event_mutex);
     esp_sleep_event_cb_config_t **current_ptr = &(g_sleep_event_cbs_config.sleep_event_cb_config[event_id]);
     while (*current_ptr != NULL) {
         if (((*current_ptr)->cb) == (event_cb_conf->cb)) {
             free(new_config);
-            portEXIT_CRITICAL(&s_sleep_event_mutex);
+            esp_os_exit_critical(&s_sleep_event_mutex);
             return ESP_FAIL;
         }
         current_ptr = &((*current_ptr)->next);
@@ -48,7 +48,7 @@ esp_err_t esp_sleep_register_event_callback(esp_sleep_event_cb_index_t event_id,
     }
     new_config->next = *current_ptr;
     *current_ptr = new_config;
-    portEXIT_CRITICAL(&s_sleep_event_mutex);
+    esp_os_exit_critical(&s_sleep_event_mutex);
     return ESP_OK;
 }
 
@@ -56,7 +56,7 @@ esp_err_t esp_sleep_unregister_event_callback(esp_sleep_event_cb_index_t event_i
     if (cb == NULL || event_id >= SLEEP_EVENT_CB_INDEX_NUM) {
         return ESP_ERR_INVALID_ARG;
     }
-    portENTER_CRITICAL(&s_sleep_event_mutex);
+    esp_os_enter_critical(&s_sleep_event_mutex);
     esp_sleep_event_cb_config_t **current_ptr = &(g_sleep_event_cbs_config.sleep_event_cb_config[event_id]);
     while (*current_ptr != NULL) {
         if (((*current_ptr)->cb) == cb) {
@@ -67,7 +67,7 @@ esp_err_t esp_sleep_unregister_event_callback(esp_sleep_event_cb_index_t event_i
         }
         current_ptr = &((*current_ptr)->next);
     }
-    portEXIT_CRITICAL(&s_sleep_event_mutex);
+    esp_os_exit_critical(&s_sleep_event_mutex);
     return ESP_OK;
 }
 #endif

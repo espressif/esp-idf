@@ -26,7 +26,8 @@ endif()
 if(BOOTLOADER_BUILD OR esp_tee_build)
         # "_esp_error_check_failed()" requires spi_flash module
         # Bootloader relies on some Kconfig options defined in esp_system.
-        idf_component_register(SRCS "${srcs}" REQUIRES spi_flash)
+        idf_component_register(SRCS "${srcs}" REQUIRES spi_flash
+                               INCLUDE_DIRS include)
 else()
     list(APPEND srcs "crosscore_int.c"
             "esp_ipc.c"

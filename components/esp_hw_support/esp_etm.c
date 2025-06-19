@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/etm_interface.h"
 #include "esp_private/sleep_retention.h"
+#include "esp_private/critical_section.h"
 
 #define ETM_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
 
@@ -195,7 +196,7 @@ static esp_err_t etm_chan_register_to_group(esp_etm_channel_t *chan)
         group = etm_acquire_group_handle(i);
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", i);
         // loop to search free channel in the group
-        portENTER_CRITICAL(&group->spinlock);
+        esp_os_enter_critical(&group->spinlock);
         for (int j = 0; j < SOC_ETM_CHANNELS_PER_GROUP; j++) {
             if (!group->chans[j]) {
                 chan_id = j;
@@ -203,7 +204,7 @@ static esp_err_t etm_chan_register_to_group(esp_etm_channel_t *chan)
                 break;
             }
         }
-        portEXIT_CRITICAL(&group->spinlock);
+        esp_os_exit_critical(&group->spinlock);
         if (chan_id < 0) {
             etm_release_group_handle(group);
             group = NULL;
@@ -221,9 +222,9 @@ static void etm_chan_unregister_from_group(esp_etm_channel_t *chan)
 {
     etm_group_t *group = chan->group;
     int chan_id = chan->chan_id;
-    portENTER_CRITICAL(&group->spinlock);
+    esp_os_enter_critical(&group->spinlock);
     group->chans[chan_id] = NULL;
-    portEXIT_CRITICAL(&group->spinlock);
+    esp_os_exit_critical(&group->spinlock);
     // channel has a reference on group, release it now
     etm_release_group_handle(group);
 }
@@ -362,7 +363,7 @@ esp_err_t esp_etm_dump(FILE *out_stream)
         etm_hal_context_t *hal = &group->hal;
         for (int j = 0; j < SOC_ETM_CHANNELS_PER_GROUP; j++) {
             bool print_line = true;
-            portENTER_CRITICAL(&group->spinlock);
+            esp_os_enter_critical(&group->spinlock);
             etm_chan = group->chans[j];
             if (etm_ll_is_channel_enabled(hal->regs, j)) {
                 if (!etm_chan) {
@@ -383,7 +384,7 @@ esp_err_t esp_etm_dump(FILE *out_stream)
                     print_line = false;
                 }
             }
-            portEXIT_CRITICAL(&group->spinlock);
+            esp_os_exit_critical(&group->spinlock);
             if (print_line) {
                 fputs(line, out_stream);
             }

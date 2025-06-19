@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@
 #include "esp_intr_alloc.h"
 #include "sys/lock.h"
 #include "esp_private/rtc_ctrl.h"
+#include "esp_private/critical_section.h"
 #include "esp_attr.h"
 
 
@@ -60,29 +61,29 @@ typedef struct rtc_isr_handler_ {
 
 static DRAM_ATTR SLIST_HEAD(rtc_isr_handler_list_, rtc_isr_handler_) s_rtc_isr_handler_list =
         SLIST_HEAD_INITIALIZER(s_rtc_isr_handler_list);
-static DRAM_ATTR portMUX_TYPE s_rtc_isr_handler_list_lock = portMUX_INITIALIZER_UNLOCKED;
+static DRAM_ATTR portMUX_TYPE __attribute__((unused)) s_rtc_isr_handler_list_lock = portMUX_INITIALIZER_UNLOCKED;
 static intr_handle_t s_rtc_isr_handle;
 
 IRAM_ATTR static void rtc_isr(void* arg)
 {
     uint32_t status = REG_READ(RTC_CNTL_INT_ST_REG);
     rtc_isr_handler_t* it;
-    portENTER_CRITICAL_ISR(&s_rtc_isr_handler_list_lock);
+    esp_os_enter_critical_isr(&s_rtc_isr_handler_list_lock);
     SLIST_FOREACH(it, &s_rtc_isr_handler_list, next) {
         if (it->mask & status) {
-            portEXIT_CRITICAL_ISR(&s_rtc_isr_handler_list_lock);
+            esp_os_exit_critical_isr(&s_rtc_isr_handler_list_lock);
             (*it->handler)(it->handler_arg);
-            portENTER_CRITICAL_ISR(&s_rtc_isr_handler_list_lock);
+            esp_os_enter_critical_isr(&s_rtc_isr_handler_list_lock);
         }
     }
-    portEXIT_CRITICAL_ISR(&s_rtc_isr_handler_list_lock);
+    esp_os_exit_critical_isr(&s_rtc_isr_handler_list_lock);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, status);
 }
 
 static esp_err_t rtc_isr_ensure_installed(void)
 {
     esp_err_t err = ESP_OK;
-    portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);
+    esp_os_enter_critical(&s_rtc_isr_handler_list_lock);
     if (s_rtc_isr_handle) {
         goto out;
     }
@@ -95,7 +96,7 @@ static esp_err_t rtc_isr_ensure_installed(void)
     }
     rtc_isr_cpu = esp_intr_get_cpu(s_rtc_isr_handle);
 out:
-    portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
+    esp_os_exit_critical(&s_rtc_isr_handler_list_lock);
     return err;
 }
 #endif // SOC_LP_PERIPH_SHARE_INTERRUPT TODO: IDF-8008
@@ -119,14 +120,14 @@ esp_err_t rtc_isr_register(intr_handler_t handler, void* handler_arg, uint32_t r
     item->handler_arg = handler_arg;
     item->mask = rtc_intr_mask;
     item->flags = flags;
-    portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);
+    esp_os_enter_critical(&s_rtc_isr_handler_list_lock);
     if (flags & RTC_INTR_FLAG_IRAM) {
         s_rtc_isr_noniram_hook(rtc_intr_mask);
     } else {
         s_rtc_isr_noniram_hook_relieve(rtc_intr_mask);
     }
     SLIST_INSERT_HEAD(&s_rtc_isr_handler_list, item, next);
-    portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
+    esp_os_exit_critical(&s_rtc_isr_handler_list_lock);
     return ESP_OK;
 #endif
 }
@@ -140,7 +141,7 @@ esp_err_t rtc_isr_deregister(intr_handler_t handler, void* handler_arg)
     rtc_isr_handler_t* it;
     rtc_isr_handler_t* prev = NULL;
     bool found = false;
-    portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);
+    esp_os_enter_critical(&s_rtc_isr_handler_list_lock);
     SLIST_FOREACH(it, &s_rtc_isr_handler_list, next) {
         if (it->handler == handler && it->handler_arg == handler_arg) {
             if (it == SLIST_FIRST(&s_rtc_isr_handler_list)) {
@@ -157,7 +158,7 @@ esp_err_t rtc_isr_deregister(intr_handler_t handler, void* handler_arg)
         }
         prev = it;
     }
-    portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
+    esp_os_exit_critical(&s_rtc_isr_handler_list_lock);
     return found ? ESP_OK : ESP_ERR_INVALID_STATE;
 #endif
 }
