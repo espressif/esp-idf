@@ -18,7 +18,7 @@
 
 #define RTCIO_RCC_ATOMIC()  PERIPH_RCC_ATOMIC()
 
-static portMUX_TYPE s_io_mux_spinlock = portMUX_INITIALIZER_UNLOCKED;
+static __attribute__((unused)) portMUX_TYPE s_io_mux_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static soc_module_clk_t s_io_mux_clk_src = 0; // by default, the clock source is not set explicitly by any consumer (e.g. SDM, Filter)
 
 #if CONFIG_ULP_COPROC_ENABLED

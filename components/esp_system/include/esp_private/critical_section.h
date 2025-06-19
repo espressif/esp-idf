@@ -22,7 +22,12 @@
 extern "C" {
 #endif
 
-#if (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32P4) && !NON_OS_BUILD
+/**
+ * In theory, OS_SPINLOCK should only be defined in a multi-core environment, because critical-section-related
+ * functions there take a lock as a parameter. In practice, since the Xtensa FreeRTOS port layer is the same
+ * for the ESP32, S3, and S2, the latter also requires a parameter in its critical-section-related functions.
+ */
+#if (!CONFIG_FREERTOS_UNICORE || CONFIG_IDF_TARGET_ARCH_XTENSA) && !NON_OS_BUILD
 /**
  * This macro also helps users switching between spinlock declarations/definitions for multi-/single core environments
  * if the macros below aren't sufficient.
