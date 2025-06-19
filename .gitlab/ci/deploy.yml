@@ -64,5 +64,5 @@ deploy_update_SHA_in_esp-dockerfiles:
     - chmod +x create_MR_in_esp_dockerfile.sh
     - ./create_MR_in_esp_dockerfile.sh
   environment:
-    name: eploy_update_SHA_in_esp-dockerfiles_production
+    name: deploy_update_SHA_in_esp-dockerfiles_production
     deployment_tier: production

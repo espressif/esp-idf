@@ -58,7 +58,7 @@
 check_readme_links:
   extends:
     - .pre_check_template
-  tags: ["build", "amd64", "internet"]
+  tags: ["amd64", "brew"]
   allow_failure: true
   rules:
     - <<: *if-protected-check
