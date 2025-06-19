@@ -25,6 +25,8 @@ extern "C" {
 #define ADC_LL_EVENT_ADC1_ONESHOT_DONE    (1 << 0)
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    (1 << 1)
 
+#define ADC_LL_NEED_APB_PERIPH_CLAIM(ADC_UNIT)      (0)
+
 /*---------------------------------------------------------------
                     Oneshot
 ---------------------------------------------------------------*/

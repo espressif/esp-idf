@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "hal/adc_hal_common.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "soc/adc_periph.h"
+#include "hal/adc_ll.h"
 
 static const char *TAG = "adc_common";
 
@@ -57,10 +58,13 @@ esp_err_t adc_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int * con
 ---------------------------------------------------------------*/
 static __attribute__((constructor)) void adc_hw_calibration(void)
 {
-    adc_apb_periph_claim();
     ANALOG_CLOCK_ENABLE();
     //Calculate all ICode
     for (int i = 0; i < SOC_ADC_PERIPH_NUM; i++) {
+        if (ADC_LL_NEED_APB_PERIPH_CLAIM(i)) {
+            adc_apb_periph_claim();
+        }
+
         adc_hal_calibration_init(i);
         for (int j = 0; j < SOC_ADC_ATTEN_NUM; j++) {
             /**
@@ -74,6 +78,9 @@ static __attribute__((constructor)) void adc_hw_calibration(void)
                 adc_load_hw_calibration_chan_compens(i, k, j);
             }
 #endif
+        }
+        if (ADC_LL_NEED_APB_PERIPH_CLAIM(i)) {
+            adc_apb_periph_free();
         }
     }
     ANALOG_CLOCK_DISABLE();
