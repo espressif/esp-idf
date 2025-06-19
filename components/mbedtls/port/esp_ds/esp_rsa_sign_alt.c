@@ -444,12 +444,20 @@ int esp_ds_rsa_sign( void *ctx,
     esp_err_t ds_r;
     int ret = -1;
 
-    mbedtls_rsa_context *pk = (mbedtls_rsa_context *)ctx;
+    /* This check is done to keep the compatibility with the previous versions of the API
+     * which allows NULL ctx. If ctx is NULL, then the default padding
+     * MBEDTLS_RSA_PKCS_V15 is used.
+     */
+    int padding = MBEDTLS_RSA_PKCS_V15;
+    if (ctx != NULL) {
+        mbedtls_rsa_context *rsa_ctx = (mbedtls_rsa_context *)ctx;
+        padding = rsa_ctx->MBEDTLS_PRIVATE(padding);
+    }
 
     const size_t data_len = s_ds_data->rsa_length + 1;
     const size_t sig_len = data_len * FACTOR_KEYLEN_IN_BYTES;
 
-    if (pk->MBEDTLS_PRIVATE(padding) == MBEDTLS_RSA_PKCS_V21) {
+    if (padding == MBEDTLS_RSA_PKCS_V21) {
 #ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
         if ((ret = (rsa_rsassa_pkcs1_v21_encode(f_rng, p_rng ,md_alg, hashlen, hash, sig_len, sig ))) != 0) {
             ESP_LOGE(TAG, "Error in pkcs1_v21 encoding, returned %d", ret);
