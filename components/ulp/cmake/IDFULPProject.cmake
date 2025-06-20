@@ -104,8 +104,8 @@ function(ulp_apply_default_sources ulp_app_name)
                                                         "${IDF_PATH}/components/ulp/ulp_riscv/shared/include"
                                                         "${IDF_PATH}/components/riscv/include")
         target_link_options(${ulp_app_name} PRIVATE SHELL:-T ${IDF_PATH}/components/ulp/ld/${IDF_TARGET}.peripherals.ld)
-        target_compile_definitions(${ulp_app_name} PRIVATE IS_ULP_COCPU)
-        target_compile_definitions(${ulp_app_name} PRIVATE ULP_RISCV_REGISTER_OPS)
+        target_compile_definitions(${ulp_app_name} PRIVATE IS_ULP_COCPU=1)
+        target_compile_definitions(${ulp_app_name} PRIVATE ULP_RISCV_REGISTER_OPS=1)
 
     elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
         list(APPEND ULP_S_SOURCES
@@ -156,7 +156,7 @@ function(ulp_apply_default_sources ulp_app_name)
         target_sources(${ulp_app_name} PRIVATE ${ULP_S_SOURCES})
         target_include_directories(${ulp_app_name} PRIVATE "${IDF_PATH}/components/ulp/lp_core/lp_core/include"
                                                         "${IDF_PATH}/components/ulp/lp_core/shared/include")
-        target_compile_definitions(${ulp_app_name} PRIVATE IS_ULP_COCPU)
+        target_compile_definitions(${ulp_app_name} PRIVATE IS_ULP_COCPU=1)
 
     else()
         foreach(ulp_s_source ${ULP_S_SOURCES})
