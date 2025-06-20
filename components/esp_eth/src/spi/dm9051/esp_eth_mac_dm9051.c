@@ -400,6 +400,11 @@ static esp_err_t dm9051_setup_default(emac_dm9051_t *emac)
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_MLEDCR, MLEDCR_MOD3 | MLEDCR_LED_TYPE_01), err, TAG, "write DM9051_MLEDCR failed");
     /* Enable packet length filter of broadcast packet */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_BCASTCR, 0xc0), err, TAG, "write DM9051_BCASTCR failed");
+    /* Enable 802.3az Energy Efficient Ethernet (EEE) */
+    uint8_t eee_out = 0;
+    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_EEE_OUT, &eee_out), err, TAG, "read DM9051_EEE_OUT failed");
+    eee_out |= EEE_EN;
+    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_EEE_OUT, eee_out), err, TAG, "write DM9051_EEE_OUT failed");
     return ESP_OK;
 err:
     return ret;
