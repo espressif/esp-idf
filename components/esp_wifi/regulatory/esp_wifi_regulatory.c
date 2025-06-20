@@ -89,6 +89,7 @@ typedef enum {
 
 const wifi_regdomain_t regdomain_table[WIFI_MAX_SUPPORT_COUNTRY_NUM] = {
     {"01", ESP_WIFI_REGULATORY_TYPE_DEFAULT},
+    {"EU", ESP_WIFI_REGULATORY_TYPE_CE},
     {"AD", ESP_WIFI_REGULATORY_TYPE_CE},
     {"AE", ESP_WIFI_REGULATORY_TYPE_IFETEL},
     {"AF", ESP_WIFI_REGULATORY_TYPE_AF},
@@ -1067,6 +1068,7 @@ typedef enum {
 
 const wifi_regdomain_t regdomain_table[WIFI_MAX_SUPPORT_COUNTRY_NUM] = {
     {"01", ESP_WIFI_REGULATORY_TYPE_DEFAULT},
+    {"EU", ESP_WIFI_REGULATORY_TYPE_CE},
     {"AD", ESP_WIFI_REGULATORY_TYPE_CE},
     {"AE", ESP_WIFI_REGULATORY_TYPE_CE},
     {"AF", ESP_WIFI_REGULATORY_TYPE_CE},

@@ -1467,7 +1467,7 @@ typedef struct {
     bool dcm;                                /**< Using dcm rate to send frame */
 } wifi_tx_rate_config_t;
 
-#define WIFI_MAX_SUPPORT_COUNTRY_NUM 175 /**< max number of supported countries */
+#define WIFI_MAX_SUPPORT_COUNTRY_NUM 176 /**< max number of supported countries */
 #ifdef CONFIG_SOC_WIFI_SUPPORT_5G
 #define WIFI_MAX_REGULATORY_RULE_NUM  7 /**< max number of regulatory rules */
 #else
