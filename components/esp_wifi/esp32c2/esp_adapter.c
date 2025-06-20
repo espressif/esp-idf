@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -496,7 +496,7 @@ static int coex_register_start_cb_wrapper(int (* cb)(void))
 
 static int coex_schm_process_restart_wrapper(void)
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     return coex_schm_process_restart();
 #else
     return 0;
@@ -505,7 +505,7 @@ static int coex_schm_process_restart_wrapper(void)
 
 static int coex_schm_register_cb_wrapper(int type, int(*cb)(int))
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     return coex_schm_register_callback(type, cb);
 #else
     return 0;
