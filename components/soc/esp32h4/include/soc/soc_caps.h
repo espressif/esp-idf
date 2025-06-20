@@ -64,6 +64,7 @@
 // #define SOC_ECC_SUPPORTED               1    // TODO: [ESP32H4] IDF-12264
 #define SOC_FLASH_ENC_SUPPORTED         1       // TODO: [ESP32H4] IDF-12261
 // #define SOC_SECURE_BOOT_SUPPORTED       1    // TODO: [ESP32H4] IDF-12262
+#define SOC_MODEM_CLOCK_SUPPORTED       1
 
 // #define SOC_BOD_SUPPORTED               1    // TODO: [ESP32H4] IDF-12295
 // #define SOC_APM_SUPPORTED               1    // TODO: [ESP32H4] IDF-12256

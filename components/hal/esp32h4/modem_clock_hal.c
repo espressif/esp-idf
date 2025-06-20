@@ -1,10 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The HAL layer for MODEM CLOCK (ESP32-H2 specific part)
+// The HAL layer for MODEM CLOCK (ESP32-H4 specific part)
 #include <stdbool.h>
 #include "esp_attr.h"
 #include "soc/soc.h"
@@ -34,7 +34,7 @@ void modem_clock_hal_set_ble_rtc_timer_divisor_value(modem_clock_hal_context_t *
 
 void modem_clock_hal_enable_ble_rtc_timer_clock(modem_clock_hal_context_t *hal, bool enable)
 {
-    // No clock gate on ESP32-H2
+    // No clock gate on ESP32-H4
 }
 
 void modem_clock_hal_deselect_all_ble_rtc_timer_lpclk_source(modem_clock_hal_context_t *hal)

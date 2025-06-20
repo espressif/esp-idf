@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer for ESP32-H21 MODEM LPCON register operations
+// The LL layer for ESP32-H4 MODEM LPCON register operations
 
 #pragma once
 
@@ -70,19 +70,12 @@ static inline void modem_lpcon_ll_enable_coex_clock(modem_lpcon_dev_t *hw, bool 
 __attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_fe_mem_clock(modem_lpcon_dev_t *hw, bool en)
 {
-    hw->clk_conf.clk_fe_mem_en = en;
 }
 
 __attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_coex_force_clock(modem_lpcon_dev_t *hw, bool en)
 {
     hw->clk_conf_force_on.clk_coex_fo = en;
-}
-
-__attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_fe_mem_force_clock(modem_lpcon_dev_t *hw, bool en)
-{
-    hw->clk_conf_force_on.clk_fe_mem_fo = en;
 }
 
 __attribute__((always_inline))
