@@ -35,7 +35,7 @@
 工具安装目录
 ----------------------------
 
-``IDF_TOOLS_PATH`` 环境变量指定下载及安装工具的位置。若未设置该变量，Linux 和 macOS 系统的默认下载安装位置为 ``HOME/.espressif``，Windows 系统的默认下载安装位置为 ``%USER_PROFILE%\.espressif``。
+``IDF_TOOLS_PATH`` 环境变量指定下载及安装工具的位置。若未设置该变量，Linux 和 macOS 系统的默认下载安装位置为 ``$HOME/.espressif``，Windows 系统的默认下载安装位置为 ``%USER_PROFILE%\.espressif``。
 
 在 ``IDF_TOOLS_PATH`` 目录下，工具安装脚本会创建以下子目录和文件：
 
@@ -60,6 +60,7 @@ GitHub 资源镜像
 
 .. note:: 目前，乐鑫下载服务器不会镜像 GitHub 上的所有内容，只镜像部分发布版本的附件资源文件及源文件。
 
+.. _idf-tools-py:
 
 ``idf_tools.py`` 脚本
 ---------------------------------------
@@ -119,7 +120,7 @@ ESP-IDF 随附的 :idf_file:`tools/idf_tools.py` 脚本具备以下功能：
 
 * ``check``：检查每个工具是否在系统路径和 ``IDF_TOOLS_PATH`` 中可用。
 
-* ``install-python-env``：在 ``${IDF_TOOLS_PATH}/python_env`` 目录或直接在 ``IDF_PYTHON_ENV_PATH`` 环境变量设置的目录中创建 Python 虚拟环境，并在其中安装所需的 Python 软件包。
+* ``install-python-env``：在 ``${IDF_TOOLS_PATH}/python_env`` 目录或直接在 ``IDF_PYTHON_ENV_PATH`` 环境变量设置的目录中创建 Python 虚拟环境，并在其中安装所需的 Python 软件包。若虚拟环境已存在，系统将根据 ``espidf.constraints.*.txt`` 文件中的约束条件，将环境内的软件包更新至最新兼容版本。
 
   * 参数 ``--features`` 为可选项，用于指定要添加或删除的功能列表，功能之间用逗号分隔。
 
