@@ -43,6 +43,10 @@ config SOC_MODEM_CLOCK_SUPPORTED
     bool
     default y
 
+config SOC_PAU_SUPPORTED
+    bool
+    default y
+
 config SOC_WDT_SUPPORTED
     bool
     default y
@@ -530,6 +534,14 @@ config SOC_PM_SUPPORT_RTC_PERIPH_PD
 config SOC_PM_PAU_LINK_NUM
     int
     default 4
+
+config SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
+    bool
+    default y
+
+config SOC_PM_RETENTION_MODULE_NUM
+    int
+    default 32
 
 config SOC_MODEM_CLOCK_IS_INDEPENDENT
     bool

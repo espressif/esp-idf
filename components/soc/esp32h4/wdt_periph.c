@@ -7,7 +7,7 @@
 #include "soc/wdt_periph.h"
 #include "soc/soc_caps.h"
 
-#if SOC_PAU_SUPPORTED
+#if SOC_PAU_SUPPORTED && SOC_MWDT_SUPPORT_SLEEP_RETENTION
 
 #define N_REGS_TGWDT          6 // TIMG_WDTCONFIG0_REG ... TIMG_WDTCONFIG5_REG & TIMG_INT_ENA_TIMERS_REG
 
