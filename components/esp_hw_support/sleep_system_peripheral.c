@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,6 +121,16 @@ esp_err_t sleep_pau_retention_init(void)
 }
 #endif
 
+#if CONFIG_ESP_ENABLE_PVT
+esp_err_t sleep_pvt_retention_init(void)
+{
+    esp_err_t err = sleep_retention_entries_create(pvt_regs_retention, ARRAY_SIZE(pvt_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_LOW, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PVT) retention");
+    ESP_LOGI(TAG, "PVT sleep retention initialization");
+    return ESP_OK;
+}
+#endif
+
 static __attribute__((unused)) esp_err_t sleep_sys_periph_retention_init(void *arg)
 {
     esp_err_t err;
@@ -152,6 +162,11 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_retention_init(void *a
     if(err) goto error;
 #if SOC_PAU_IN_TOP_DOMAIN
     err = sleep_pau_retention_init();
+    if(err) goto error;
+#endif
+#if CONFIG_ESP_ENABLE_PVT
+    err = sleep_pvt_retention_init();
+    if(err) goto error;
 #endif
 
 error:

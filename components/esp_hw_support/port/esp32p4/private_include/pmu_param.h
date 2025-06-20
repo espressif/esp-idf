@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,7 @@ extern "C" {
 
 #define HP_CALI_ACTIVE_DCM_VSET_DEFAULT     27 // For DCDC, about 1.25v
 #define HP_CALI_ACTIVE_DBIAS_DEFAULT        24 // For HP regulator
-#define LP_CALI_DBIAS                       29 // For LP regulator
+#define LP_CALI_ACTIVE_DBIAS_DEFAULT        29 // For LP regulator
 
 // FOR  XTAL FORCE PU IN SLEEP
 #define PMU_PD_CUR_SLEEP_ON    0
@@ -52,6 +52,9 @@ extern "C" {
 
 #define PMU_DBG_ATTEN_DEEPSLEEP_DEFAULT 12
 #define PMU_LP_DBIAS_DEEPSLEEP_0V7      23
+
+uint32_t get_act_hp_dbias(void);
+uint32_t get_act_lp_dbias(void);
 
 typedef struct {
     pmu_hp_dig_power_reg_t  dig_power;
