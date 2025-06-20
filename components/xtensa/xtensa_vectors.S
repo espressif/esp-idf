@@ -212,8 +212,8 @@
     /* Get mask of pending, enabled interrupts at this level into a2. */
 
 .L_xt_user_int_\level :
-    rsr     a2, INTENABLE
-    rsr     a3, INTERRUPT
+    rsr     a2, XT_REG_INTENABLE
+    rsr     a3, XT_REG_INTERRUPT
     movi    a4, \mask
     and     a2, a2, a3
     and     a2, a2, a4
@@ -229,7 +229,7 @@
     */
     #ifdef XT_DEBUG_BACKTRACE
     #ifndef __XTENSA_CALL0_ABI__
-    rsr     a0, EXCSAVE_1 + \level - 1      /* Get exception frame pointer stored in EXCSAVE_x */
+    rsr     a0, XT_REG_EXCSAVE_1 + \level - 1      /* Get exception frame pointer stored in EXCSAVE_x */
     l32i    a3, a0, XT_STK_A0               /* Copy pre-exception a0 (return address) */
     s32e    a3, a1, -16
     l32i    a3, a0, XT_STK_A1               /* Copy pre-exception a1 (stack pointer) */
@@ -238,7 +238,7 @@
        Also need to change current frame's return address to point to pre-exception's
        last run instruction.
      */
-    rsr     a0, EPC_1 + \level - 1          /* return address */
+    rsr     a0, XT_REG_EPC_1 + \level - 1   /* return address */
     movi    a4, 0xC0000000                  /* constant with top 2 bits set (call size) */
     or      a0, a0, a4                      /* set top 2 bits */
     addx2   a0, a4, a0                      /* clear top bit -- simulating call4 size   */
@@ -294,10 +294,10 @@
 
     #ifdef XT_RTOS_TIMER_INT
     movi    a3, XT_TIMER_INTEN              /* a3 = timer interrupt bit */
-    wsr     a4, INTCLEAR                    /* clear sw or edge-triggered interrupt */
+    wsr     a4, XT_REG_INTCLEAR                    /* clear sw or edge-triggered interrupt */
     beq     a3, a4, 7f                      /* if timer interrupt then skip table */
     #else
-    wsr     a4, INTCLEAR                    /* clear sw or edge-triggered interrupt */
+    wsr     a4, XT_REG_INTCLEAR             /* clear sw or edge-triggered interrupt */
     #endif // XT_RTOS_TIMER_INT
 
     find_ms_setbit a3, a4, a3, 0            /* a3 = interrupt number */
@@ -437,7 +437,7 @@ Debug Exception.
     .align      4
     .global     xt_debugexception
 _DebugExceptionVector:
-    wsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL    /* preserve a0 */
+    wsr     a0, XT_REG_EXCSAVE+XCHAL_DEBUGLEVEL    /* preserve a0 */
     J   xt_debugexception            /* load exception handler */
 
     .end        literal_prefix
@@ -460,21 +460,21 @@ _xt_debugexception:
     bnez    a0, 1f
 #endif
 
-    rsr     a0, DEBUGCAUSE
+    rsr     a0, XT_REG_DEBUGCAUSE
     extui   a0, a0, XT_DEBUGCAUSE_DI, 1
     bnez    a0, _xt_debug_di_exc
 1:
 #endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
 
     movi    a0,PANIC_RSN_DEBUGEXCEPTION
-    wsr     a0,EXCCAUSE
+    wsr     a0,XT_REG_EXCCAUSE
     /* _xt_panic assumes a level 1 exception. As we're
        crashing anyhow, copy EPC & EXCSAVE from DEBUGLEVEL
        to level 1. */
-    rsr     a0,(EPC + XCHAL_DEBUGLEVEL)
-    wsr     a0,EPC_1
-    rsr     a0,(EXCSAVE + XCHAL_DEBUGLEVEL)
-    wsr     a0,EXCSAVE_1
+    rsr     a0,(XT_REG_EPC + XCHAL_DEBUGLEVEL)
+    wsr     a0,XT_REG_EPC_1
+    rsr     a0,(XT_REG_EXCSAVE + XCHAL_DEBUGLEVEL)
+    wsr     a0,XT_REG_EXCSAVE_1
 #if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
     J   _xt_panic_gdbstub                   /* For gdbstub we make jump */
 #else
@@ -539,7 +539,7 @@ _xt_debug_di_exc:
     .endr
     bnez    a0, 1b
 
-    rsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL
+    rsr     a0, XT_REG_EXCSAVE+XCHAL_DEBUGLEVEL
     rfi     XCHAL_DEBUGLEVEL
 #endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
 #endif // XCHAL_HAVE_DEBUG
@@ -564,7 +564,7 @@ _DoubleExceptionVector:
     break   1, 4                            /* unhandled double exception */
     #endif
     movi    a0,PANIC_RSN_DOUBLEEXCEPTION
-    wsr     a0,EXCCAUSE
+    wsr     a0,XT_REG_EXCCAUSE
     call0   _xt_panic                       /* does not return */
     rfde                                    /* make a0 point here not later */
 
@@ -585,7 +585,7 @@ Kernel Exception (including Level 1 Interrupt from kernel mode).
 
 _KernelExceptionVector:
 
-    wsr     a0, EXCSAVE_1                   /* preserve a0 */
+    wsr     a0, XT_REG_EXCSAVE_1            /* preserve a0 */
     call0   _xt_kernel_exc                  /* kernel exception handler */
     /* never returns here - call0 is used as a jump (see note at top) */
 
@@ -599,7 +599,7 @@ _xt_kernel_exc:
     break   1, 0                            /* unhandled kernel exception */
     #endif
     movi    a0,PANIC_RSN_KERNELEXCEPTION
-    wsr     a0,EXCCAUSE
+    wsr     a0,XT_REG_EXCCAUSE
     call0   _xt_panic                       /* does not return */
     rfe                                     /* make a0 point here not there */
 
@@ -618,7 +618,7 @@ User Exception (including Level 1 Interrupt from user mode).
 
 _UserExceptionVector:
 
-    wsr     a0, EXCSAVE_1                   /* preserve a0 */
+    wsr     a0, XT_REG_EXCSAVE_1            /* preserve a0 */
     call0   _xt_user_exc                    /* user exception handler */
     /* never returns here - call0 is used as a jump (see note at top) */
 
@@ -686,7 +686,7 @@ _call_alignment_handler:
 _xt_user_exc:
 
     /* If level 1 interrupt then jump to the dispatcher */
-    rsr     a0, EXCCAUSE
+    rsr     a0, XT_REG_EXCCAUSE
     bnei    a0, EXCCAUSE_LEVEL1INTERRUPT, _xt_handle_exc
     j       _xt_lowint1
 _xt_handle_exc:
@@ -722,11 +722,11 @@ _xt_handle_exc:
     #if XCHAL_HAVE_WINDOWED
     s32e    a0, sp, -12                     /* for debug backtrace */
     #endif
-    rsr     a0, PS                          /* save interruptee's PS */
+    rsr     a0, XT_REG_PS                   /* save interruptee's PS */
     s32i    a0, sp, XT_STK_PS
-    rsr     a0, EPC_1                       /* save interruptee's PC */
+    rsr     a0, XT_REG_EPC_1                /* save interruptee's PC */
     s32i    a0, sp, XT_STK_PC
-    rsr     a0, EXCSAVE_1                   /* save interruptee's a0 */
+    rsr     a0, XT_REG_EXCSAVE_1            /* save interruptee's a0 */
     s32i    a0, sp, XT_STK_A0
     #if XCHAL_HAVE_WINDOWED
     s32e    a0, sp, -16                     /* for debug backtrace */
@@ -736,9 +736,9 @@ _xt_handle_exc:
     call0   _xt_context_save
 
     /* Save exc cause and vaddr into exception frame */
-    rsr     a0, EXCCAUSE
+    rsr     a0, XT_REG_EXCCAUSE
     s32i    a0, sp, XT_STK_EXCCAUSE
-    rsr     a0, EXCVADDR
+    rsr     a0, XT_REG_EXCVADDR
     s32i    a0, sp, XT_STK_EXCVADDR
 
     /* Set up PS for C, re-enable debug and NMI interrupts, and clear EXCM. */
@@ -747,7 +747,7 @@ _xt_handle_exc:
     #else
     movi    a0, PS_INTLEVEL(XCHAL_DEBUGLEVEL - 2) | PS_UM | PS_WOE
     #endif
-    wsr     a0, PS
+    wsr     a0, XT_REG_PS
 
     /*
         Create pseudo base save area. At this point, sp is still pointing to the
@@ -759,7 +759,7 @@ _xt_handle_exc:
     s32e    a3, sp, -16
     l32i    a3, sp, XT_STK_A1               /* Copy pre-exception a1 (stack pointer) */
     s32e    a3, sp, -12
-    rsr     a0, EPC_1                       /* return address for debug backtrace */
+    rsr     a0, XT_REG_EPC_1                /* return address for debug backtrace */
     movi    a5, 0xC0000000                  /* constant with top 2 bits set (call size) */
     rsync                                   /* wait for WSR.PS to complete */
     or      a0, a0, a5                      /* set top 2 bits */
@@ -769,7 +769,7 @@ _xt_handle_exc:
     #endif
     #endif
 
-    rsr     a2, EXCCAUSE                    /* recover exc cause */
+    rsr     a2, XT_REG_EXCCAUSE             /* recover exc cause */
 
     #ifdef XT_INTEXC_HOOKS
     /*
@@ -792,7 +792,7 @@ _xt_handle_exc:
 1:
     #endif
 
-    rsr     a2, EXCCAUSE                    /* recover exc cause */
+    rsr     a2, XT_REG_EXCCAUSE             /* recover exc cause */
     movi    a3, _xt_exception_table
     get_percpu_entry_for a2, a4
     addx4   a4, a2, a3                      /* a4 = address of exception table entry */
@@ -810,9 +810,9 @@ _xt_handle_exc:
     /* Restore context and return */
     call0   _xt_context_restore
     l32i    a0, sp, XT_STK_PS               /* retrieve interruptee's PS */
-    wsr     a0, PS
+    wsr     a0, XT_REG_PS
     l32i    a0, sp, XT_STK_PC               /* retrieve interruptee's PC */
-    wsr     a0, EPC_1
+    wsr     a0, XT_REG_EPC_1
     l32i    a0, sp, XT_STK_A0               /* retrieve interruptee's A0 */
     l32i    sp, sp, XT_STK_A1               /* remove exception frame */
     rsync                                   /* ensure PS and EPC written */
@@ -831,9 +831,9 @@ _xt_handle_exc:
     .align      4
 _xt_user_exit:
     l32i    a0, sp, XT_STK_PS               /* retrieve interruptee's PS */
-    wsr     a0, PS
+    wsr     a0, XT_REG_PS
     l32i    a0, sp, XT_STK_PC               /* retrieve interruptee's PC */
-    wsr     a0, EPC_1
+    wsr     a0, XT_REG_EPC_1
     l32i    a0, sp, XT_STK_A0               /* retrieve interruptee's A0 */
     l32i    sp, sp, XT_STK_A1               /* remove interrupt stack frame */
     rsync                                   /* ensure PS and EPC written */
@@ -884,18 +884,18 @@ _xt_syscall_exc:
     If it's at the end of a zero-overhead loop and it's not on the last
     iteration, decrement loop counter and skip to beginning of loop.
     */
-    rsr     a2, EPC_1                       /* a2 = PC of 'syscall' */
+    rsr     a2, XT_REG_EPC_1                /* a2 = PC of 'syscall' */
     addi    a3, a2, 3                       /* ++PC                 */
     #if XCHAL_HAVE_LOOPS
-    rsr     a0, LEND                        /* if (PC == LEND       */
+    rsr     a0, XT_REG_LEND                 /* if (PC == LEND       */
     bne     a3, a0, 1f
-    rsr     a0, LCOUNT                      /*     && LCOUNT != 0)  */
+    rsr     a0, XT_REG_LCOUNT               /*     && LCOUNT != 0)  */
     beqz    a0, 1f                          /* {                    */
     addi    a0, a0, -1                      /*   --LCOUNT           */
-    rsr     a3, LBEG                        /*   PC = LBEG          */
-    wsr     a0, LCOUNT                      /* }                    */
+    rsr     a3, XT_REG_LBEG                 /*   PC = LBEG          */
+    wsr     a0, XT_REG_LCOUNT               /* }                    */
     #endif
-1:  wsr     a3, EPC_1                       /* update PC            */
+1:  wsr     a3, XT_REG_EPC_1                /* update PC            */
 
     /* Restore interruptee's context and return from exception. */
     #ifdef __XTENSA_CALL0_ABI__
@@ -908,7 +908,7 @@ _xt_syscall_exc:
     #endif
     movi    a0, -1
     movnez  a2, a0, a2                      /* return -1 if not syscall 0 */
-    rsr     a0, EXCSAVE_1
+    rsr     a0, XT_REG_EXCSAVE_1
     rfe
 
 /*
@@ -996,11 +996,11 @@ _xt_coproc_exc:
     #if XCHAL_HAVE_WINDOWED
     s32e    a0, sp, -12                     /* for debug backtrace */
     #endif
-    rsr     a0, PS                          /* save interruptee's PS */
+    rsr     a0, XT_REG_PS                   /* save interruptee's PS */
     s32i    a0, sp, XT_STK_PS
-    rsr     a0, EPC_1                       /* save interruptee's PC */
+    rsr     a0, XT_REG_EPC_1                /* save interruptee's PC */
     s32i    a0, sp, XT_STK_PC
-    rsr     a0, EXCSAVE_1                   /* save interruptee's a0 */
+    rsr     a0, XT_REG_EXCSAVE_1            /* save interruptee's a0 */
     s32i    a0, sp, XT_STK_A0
     #if XCHAL_HAVE_WINDOWED
     s32e    a0, sp, -16                     /* for debug backtrace */
@@ -1008,7 +1008,7 @@ _xt_coproc_exc:
     movi    a0, _xt_user_exit               /* save exit point for dispatch */
     s32i    a0, sp, XT_STK_EXIT
 
-    rsr     a0, EXCCAUSE
+    rsr     a0, XT_REG_EXCCAUSE
     s32i    a5, sp, XT_STK_A5               /* save a5 */
     addi    a5, a0, -EXCCAUSE_CP0_DISABLED  /* a5 = CP index */
 
@@ -1035,12 +1035,12 @@ _xt_coproc_exc:
 
     /* Enable the co-processor's bit in CPENABLE. */
     movi    a0, _xt_coproc_mask
-    rsr     a4, CPENABLE                    /* a4 = CPENABLE */
+    rsr     a4, XT_REG_CPENABLE             /* a4 = CPENABLE */
     addx4   a0, a5, a0                      /* a0 = &_xt_coproc_mask[n] */
     l32i    a0, a0, 0                       /* a0 = (n << 16) | (1 << n) */
     extui   a2, a0, 0, 16                   /* coprocessor bitmask portion */
     or      a4, a4, a2                      /* a4 = CPENABLE | (1 << n) */
-    wsr     a4, CPENABLE
+    wsr     a4, XT_REG_CPENABLE
 
     /* Grab the xt_coproc_owner_sa owner array for current core */
     getcoreid a3                            /* a3 = current core ID */
@@ -1181,7 +1181,7 @@ _xt_coproc_exc:
     /* Co-processor exception occurred outside a thread (not supported). */
 .L_xt_coproc_invalid:
     movi    a0,PANIC_RSN_COPROCEXCEPTION
-    wsr     a0,EXCCAUSE
+    wsr     a0,XT_REG_EXCCAUSE
     call0   _xt_panic                       /* not in a thread (invalid) */
     /* never returns */
 
@@ -1203,11 +1203,11 @@ _xt_lowint1:
     mov     a0, sp                          /* sp == a1 */
     addi    sp, sp, -XT_STK_FRMSZ           /* allocate interrupt stack frame */
     s32i    a0, sp, XT_STK_A1               /* save pre-interrupt SP */
-    rsr     a0, PS                          /* save interruptee's PS */
+    rsr     a0, XT_REG_PS                   /* save interruptee's PS */
     s32i    a0, sp, XT_STK_PS
-    rsr     a0, EPC_1                       /* save interruptee's PC */
+    rsr     a0, XT_REG_EPC_1                /* save interruptee's PC */
     s32i    a0, sp, XT_STK_PC
-    rsr     a0, EXCSAVE_1                   /* save interruptee's a0 */
+    rsr     a0, XT_REG_EXCSAVE_1            /* save interruptee's a0 */
     s32i    a0, sp, XT_STK_A0
     movi    a0, _xt_user_exit               /* save exit point for dispatch */
     s32i    a0, sp, XT_STK_EXIT
@@ -1217,7 +1217,7 @@ _xt_lowint1:
     #ifdef XT_DEBUG_BACKTRACE
     #ifndef __XTENSA_CALL0_ABI__
     mov     a0, sp
-    wsr     a0, EXCSAVE_1
+    wsr     a0, XT_REG_EXCSAVE_1
     #endif
     #endif
 
@@ -1232,7 +1232,7 @@ _xt_lowint1:
     #else
     movi    a0, PS_INTLEVEL(1) | PS_UM | PS_WOE
     #endif
-    wsr     a0, PS
+    wsr     a0, XT_REG_PS
     rsync
 
     /* OK to call C code at this point, dispatch user ISRs */
@@ -1279,7 +1279,7 @@ _xt_lowint1:
     .type       _Level2Vector,@function
     .align      4
 _Level2Vector:
-    wsr     a0, EXCSAVE_2                   /* preserve a0 */
+    wsr     a0, XT_REG_EXCSAVE_2            /* preserve a0 */
     call0   _xt_medint2                     /* load interrupt handler */
     /* never returns here - call0 is used as a jump (see note at top) */
 
@@ -1292,11 +1292,11 @@ _xt_medint2:
     mov     a0, sp                          /* sp == a1 */
     addi    sp, sp, -XT_STK_FRMSZ           /* allocate interrupt stack frame */
     s32i    a0, sp, XT_STK_A1               /* save pre-interrupt SP */
-    rsr     a0, EPS_2                       /* save interruptee's PS */
+    rsr     a0, XT_REG_EPS_2                /* save interruptee's PS */
     s32i    a0, sp, XT_STK_PS
-    rsr     a0, EPC_2                       /* save interruptee's PC */
+    rsr     a0, XT_REG_EPC_2                /* save interruptee's PC */
     s32i    a0, sp, XT_STK_PC
-    rsr     a0, EXCSAVE_2                   /* save interruptee's a0 */
+    rsr     a0, XT_REG_EXCSAVE_2            /* save interruptee's a0 */
     s32i    a0, sp, XT_STK_A0
     movi    a0, _xt_medint2_exit            /* save exit point for dispatch */
     s32i    a0, sp, XT_STK_EXIT
@@ -1306,7 +1306,7 @@ _xt_medint2:
     #ifdef XT_DEBUG_BACKTRACE
     #ifndef __XTENSA_CALL0_ABI__
     mov     a0, sp
-    wsr     a0, EXCSAVE_2
+    wsr     a0, XT_REG_EXCSAVE_2
     #endif
     #endif
 
@@ -1321,7 +1321,7 @@ _xt_medint2:
     #else
     movi    a0, PS_INTLEVEL(2) | PS_UM | PS_WOE
     #endif
-    wsr     a0, PS
+    wsr     a0, XT_REG_PS
     rsync
 
     /* OK to call C code at this point, dispatch user ISRs */
@@ -1341,9 +1341,9 @@ _xt_medint2:
 _xt_medint2_exit:
     /* Restore only level-specific regs (the rest were already restored) */
     l32i    a0, sp, XT_STK_PS               /* retrieve interruptee's PS */
-    wsr     a0, EPS_2
+    wsr     a0, XT_REG_EPS_2
     l32i    a0, sp, XT_STK_PC               /* retrieve interruptee's PC */
-    wsr     a0, EPC_2
+    wsr     a0, XT_REG_EPC_2
     l32i    a0, sp, XT_STK_A0               /* retrieve interruptee's A0 */
     l32i    sp, sp, XT_STK_A1               /* remove interrupt stack frame */
     rsync                                   /* ensure EPS and EPC written */
@@ -1359,7 +1359,7 @@ _xt_medint2_exit:
     .type       _Level3Vector,@function
     .align      4
 _Level3Vector:
-    wsr     a0, EXCSAVE_3                   /* preserve a0 */
+    wsr     a0, XT_REG_EXCSAVE_3            /* preserve a0 */
     call0   _xt_medint3                     /* load interrupt handler */
     /* never returns here - call0 is used as a jump (see note at top) */
 
@@ -1372,11 +1372,11 @@ _xt_medint3:
     mov     a0, sp                          /* sp == a1 */
     addi    sp, sp, -XT_STK_FRMSZ           /* allocate interrupt stack frame */
     s32i    a0, sp, XT_STK_A1               /* save pre-interrupt SP */
-    rsr     a0, EPS_3                       /* save interruptee's PS */
+    rsr     a0, XT_REG_EPS_3                /* save interruptee's PS */
     s32i    a0, sp, XT_STK_PS
-    rsr     a0, EPC_3                       /* save interruptee's PC */
+    rsr     a0, XT_REG_EPC_3                /* save interruptee's PC */
     s32i    a0, sp, XT_STK_PC
-    rsr     a0, EXCSAVE_3                   /* save interruptee's a0 */
+    rsr     a0, XT_REG_EXCSAVE_3            /* save interruptee's a0 */
     s32i    a0, sp, XT_STK_A0
     movi    a0, _xt_medint3_exit            /* save exit point for dispatch */
     s32i    a0, sp, XT_STK_EXIT
@@ -1386,7 +1386,7 @@ _xt_medint3:
     #ifdef XT_DEBUG_BACKTRACE
     #ifndef __XTENSA_CALL0_ABI__
     mov     a0, sp
-    wsr     a0, EXCSAVE_3
+    wsr     a0, XT_REG_EXCSAVE_3
     #endif
     #endif
 
@@ -1401,7 +1401,7 @@ _xt_medint3:
     #else
     movi    a0, PS_INTLEVEL(3) | PS_UM | PS_WOE
     #endif
-    wsr     a0, PS
+    wsr     a0, XT_REG_PS
     rsync
 
     /* OK to call C code at this point, dispatch user ISRs */
@@ -1421,9 +1421,9 @@ _xt_medint3:
 _xt_medint3_exit:
     /* Restore only level-specific regs (the rest were already restored) */
     l32i    a0, sp, XT_STK_PS               /* retrieve interruptee's PS */
-    wsr     a0, EPS_3
+    wsr     a0, XT_REG_EPS_3
     l32i    a0, sp, XT_STK_PC               /* retrieve interruptee's PC */
-    wsr     a0, EPC_3
+    wsr     a0, XT_REG_EPC_3
     l32i    a0, sp, XT_STK_A0               /* retrieve interruptee's A0 */
     l32i    sp, sp, XT_STK_A1               /* remove interrupt stack frame */
     rsync                                   /* ensure EPS and EPC written */
@@ -1803,7 +1803,7 @@ _xt_highint3:
     .global     xt_highint4
     .align      4
 _Level4Vector:
-    wsr     a0, EXCSAVE_4                   /* preserve a0 */
+    wsr     a0, XT_REG_EXCSAVE_4            /* preserve a0 */
     call0   xt_highint4                     /* load interrupt handler */
     /* never returns here - call0 is used as a jump (see note at top) */
 
@@ -1833,7 +1833,7 @@ _xt_highint4:
 
     .align  4
 .L_xt_highint4_exit:
-    rsr     a0, EXCSAVE_4                   /* restore a0 */
+    rsr     a0, XT_REG_EXCSAVE_4            /* restore a0 */
     rfi     4
 
 #endif  /* Level 4 */
@@ -1847,7 +1847,7 @@ _xt_highint4:
     .global     xt_highint5
     .align      4
 _Level5Vector:
-    wsr     a0, EXCSAVE_5                   /* preserve a0 */
+    wsr     a0, XT_REG_EXCSAVE_5           /* preserve a0 */
     call0   xt_highint5                    /* load interrupt handler */
     /* never returns here - call0 is used as a jump (see note at top) */
 
@@ -1877,7 +1877,7 @@ _xt_highint5:
 
     .align  4
 .L_xt_highint5_exit:
-    rsr     a0, EXCSAVE_5                   /* restore a0 */
+    rsr     a0, XT_REG_EXCSAVE_5            /* restore a0 */
     rfi     5
 
 #endif  /* Level 5 */
@@ -1935,7 +1935,7 @@ _xt_highint6:
     .global     xt_nmi
     .align      4
 _NMIExceptionVector:
-    wsr     a0, EXCSAVE + XCHAL_NMILEVEL   /* preserve a0 */
+    wsr     a0, XT_REG_EXCSAVE + XCHAL_NMILEVEL   /* preserve a0 */
     call0   xt_nmi                         /* load interrupt handler */
     /* never returns here - call0 is used as a jump (see note at top) */
 
@@ -1965,7 +1965,7 @@ _xt_nmi:
 
     .align  4
 .L_xt_nmi_exit:
-    rsr     a0, EXCSAVE + XCHAL_NMILEVEL    /* restore a0 */
+    rsr     a0, XT_REG_EXCSAVE + XCHAL_NMILEVEL    /* restore a0 */
     rfi     XCHAL_NMILEVEL
 
 #endif  /* NMI */
@@ -2072,15 +2072,15 @@ The code is optimized to avoid unaligned branches and minimize cache misses.
     .global _xt_alloca_exc
 _xt_alloca_exc:
 
-    rsr     a0, WINDOWBASE  /* grab WINDOWBASE before rotw changes it */
+    rsr     a0, XT_REG_WINDOWBASE  /* grab WINDOWBASE before rotw changes it */
     rotw    -1              /* WINDOWBASE goes to a4, new a0-a3 are scratch */
-    rsr     a2, PS
+    rsr     a2, XT_REG_PS
     extui   a3, a2, XCHAL_PS_OWB_SHIFT, XCHAL_PS_OWB_BITS
     xor     a3, a3, a4      /* bits changed from old to current windowbase */
-    rsr     a4, EXCSAVE_1   /* restore original a0 (now in a4) */
+    rsr     a4, XT_REG_EXCSAVE_1   /* restore original a0 (now in a4) */
     slli    a3, a3, XCHAL_PS_OWB_SHIFT
     xor     a2, a2, a3      /* flip changed bits in old window base */
-    wsr     a2, PS          /* update PS.OWB to new window base */
+    wsr     a2, XT_REG_PS   /* update PS.OWB to new window base */
     rsync
 
     bbci.l a4, 31, _WindowUnderflow4

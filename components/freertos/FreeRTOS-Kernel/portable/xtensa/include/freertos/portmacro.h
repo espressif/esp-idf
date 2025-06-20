@@ -604,7 +604,7 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
     uint32_t ps_reg = 0;
 
     //Get the current value of PS (processor status) register
-    RSR(PS, ps_reg);
+    RSR(XT_REG_PS, ps_reg);
 
     /*
      * intlevel = (ps_reg & 0xf);

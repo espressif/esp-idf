@@ -11,7 +11,7 @@
 #include "soc/soc_caps.h"
 
 #include "xt_instr_macros.h"
-#include "xtensa/config/specreg.h"
+#include "xtensa/config/xt_specreg.h"
 #include "xtensa/config/extreg.h"
 #include "esp_bit_defs.h"
 #include "esp_attr.h"
