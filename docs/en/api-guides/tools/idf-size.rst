@@ -12,25 +12,32 @@ This output provides a summary of the statically-allocated memory for different 
 .. code-block:: bash
 
     $ idf.py size
-                                 Memory Type Usage Summary
+                                     Memory Type Usage Summary
     ┏━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
     ┃ Memory Type/Section   ┃ Used [bytes] ┃ Used [%] ┃ Remain [bytes] ┃ Total [bytes] ┃
     ┡━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
-    │ Flash Code            │        80666 │     2.41 │        3261638 │       3342304 │
-    │    .text              │        80666 │     2.41 │                │               │
-    │ IRAM                  │        51835 │    39.55 │          79237 │        131072 │
-    │    .text              │        50807 │    38.76 │                │               │
-    │    .vectors           │         1027 │     0.78 │                │               │
-    │ Flash Data            │        38224 │     0.91 │        4156048 │       4194272 │
-    │    .rodata            │        37968 │     0.91 │                │               │
-    │    .appdesc           │          256 │     0.01 │                │               │
-    │ DRAM                  │        11236 │     6.22 │         169500 │        180736 │
-    │    .data              │         8988 │     4.97 │                │               │
-    │    .bss               │         2248 │     1.24 │                │               │
+    │ Flash Code            │        64442 │          │                │               │
+    │    .text              │        64442 │          │                │               │
+    │ IRAM                  │        51711 │    39.45 │          79361 │        131072 │
+    │    .text              │        50683 │    38.67 │                │               │
+    │    .vectors           │         1028 │     0.78 │                │               │
+    │ Flash Data            │        30208 │          │                │               │
+    │    .rodata            │        29952 │          │                │               │
+    │    .appdesc           │          256 │          │                │               │
+    │ DRAM                  │        10716 │     5.93 │         170020 │        180736 │
+    │    .data              │         8564 │     4.74 │                │               │
+    │    .bss               │         2152 │     1.19 │                │               │
+    │ RTC FAST              │           32 │     0.39 │           8160 │          8192 │
+    │    .force_fast        │           32 │     0.39 │                │               │
     │ RTC SLOW              │           24 │     0.29 │           8168 │          8192 │
     │    .rtc_slow_reserved │           24 │     0.29 │                │               │
     └───────────────────────┴──────────────┴──────────┴────────────────┴───────────────┘
-    Total image size: 179712 bytes (.bin may be padded larger)
+    Total image size: 154957 bytes (.bin may be padded larger)
+    Note: The reported total sizes may be smaller than those in the technical reference
+    manual due to reserved memory and application configuration. The total flash size
+    available for the application is not included by default, as it cannot be reliably
+    determined due to the presence of other data like the bootloader, partition table,
+    and application partition size.
 
 Espressif chips include various :doc:`/api-guides/memory-types`, which are detailed in the `Technical Reference Manual (TRM) <{IDF_TARGET_TRM_EN_URL}>`__. These memory types are listed in the ``Memory Type`` column, along with the ELF ``Sections`` that are loaded into each type. The ``Used`` columns display the memory usage for each specific memory type or section. The ``Remain`` column indicates the remaining available memory for the specified memory type. The ``Total`` column shows the total available memory for that memory type, based on the memory region sizes defined in the linker script that map into the memory type.
 
