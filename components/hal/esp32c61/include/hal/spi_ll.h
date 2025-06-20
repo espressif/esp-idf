@@ -719,7 +719,7 @@ static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active)
  */
 static inline void spi_ll_master_set_rx_timing_mode(spi_dev_t *hw, spi_sampling_point_t sample_point)
 {
-    //This is not supported
+    hw->clock.clk_edge_sel = (sample_point == SPI_SAMPLING_POINT_PHASE_1);
 }
 
 /**
@@ -727,7 +727,7 @@ static inline void spi_ll_master_set_rx_timing_mode(spi_dev_t *hw, spi_sampling_
  */
 static inline bool spi_ll_master_is_rx_std_sample_supported(void)
 {
-    return false;
+    return true;
 }
 
 /**
