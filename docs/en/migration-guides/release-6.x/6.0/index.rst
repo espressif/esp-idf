@@ -10,3 +10,4 @@ Migration from 5.5 to 6.0
     peripherals
     security
     tools
+    system

@@ -7,7 +7,7 @@
 #include <string.h>
 #include "esp_gdbstub_common.h"
 #include "soc/soc_memory_layout.h"
-#include "xtensa/config/specreg.h"
+#include "xtensa/config/xt_specreg.h"
 #include "sdkconfig.h"
 #include "esp_cpu.h"
 #include "esp_ipc_isr.h"
@@ -35,8 +35,8 @@ static void update_regfile_common(esp_gdbstub_gdb_regfile_t *dst)
     }
     dst->windowbase = 0;
     dst->windowstart = 0x1;
-    RSR(CONFIGID0, dst->configid0);
-    RSR(CONFIGID1, dst->configid1);
+    RSR(XT_REG_CONFIGID0, dst->configid0);
+    RSR(XT_REG_CONFIGID1, dst->configid1);
 }
 
 #if XCHAL_HAVE_FP
@@ -111,7 +111,7 @@ void esp_gdbstub_frame_to_regfile(const esp_gdbstub_frame_t *frame, esp_gdbstub_
     current_tcb_ptr = pxCurrentTCBs[esp_cpu_get_core_id()];
 #endif
     uint32_t cp_enabled;
-    RSR(CPENABLE, cp_enabled);
+    RSR(XT_REG_CPENABLE, cp_enabled);
 
     // Check if the co-processor is enabled
     if (cp_enabled) {
@@ -182,7 +182,7 @@ void esp_gdbstub_tcb_frame_to_regfile(dummy_tcb_t *tcb, esp_gdbstub_gdb_regfile_
 #endif
 
     uint32_t cp_enabled;
-    RSR(CPENABLE, cp_enabled);
+    RSR(XT_REG_CPENABLE, cp_enabled);
 
     void *current_tcb_ptr = tcb;
     uint32_t *current_fpu_ptr = NULL;
@@ -309,8 +309,8 @@ void esp_gdbstub_stall_other_cpus_end(void)
  * */
 void esp_gdbstub_clear_step(void)
 {
-    WSR(ICOUNT, 0);
-    WSR(ICOUNTLEVEL, 0);
+    WSR(XT_REG_ICOUNT, 0);
+    WSR(XT_REG_ICOUNTLEVEL, 0);
 }
 
 /** @brief GDB do step
@@ -326,8 +326,8 @@ void esp_gdbstub_do_step( esp_gdbstub_frame_t *frame)
     level &= 0x7;
     level += 1;
 
-    WSR(ICOUNTLEVEL, level);
-    WSR(ICOUNT, -2);
+    WSR(XT_REG_ICOUNTLEVEL, level);
+    WSR(XT_REG_ICOUNT, -2);
 }
 
 /** @brief GDB trigger other CPU
@@ -364,7 +364,7 @@ void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, ui
 #if XCHAL_HAVE_FP
     void  *ptr1;
     uint32_t cp_enabled;
-    RSR(CPENABLE, cp_enabled);
+    RSR(XT_REG_CPENABLE, cp_enabled);
     if (cp_enabled != 0) {
         if (reg_index == 87) {
             asm volatile ("lsi f0, %0, 0" :: "a" (ptr0));

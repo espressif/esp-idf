@@ -22,9 +22,9 @@ _xt_panic_gdbstub:
     s32i    a0, sp, XT_STK_EXIT
     s32i    a0, sp, XT_STK_A0
 
-    rsr     a0, PS                          /* save interruptee's PS */
+    rsr     a0, XT_REG_PS                   /* save interruptee's PS */
     s32i    a0, sp, XT_STK_PS
-    rsr     a0, EPC_1                       /* save interruptee's PC */
+    rsr     a0, XT_REG_EPC_1                /* save interruptee's PC */
     s32i    a0, sp, XT_STK_PC
     call0   _xt_context_save                /* Save full context*/
     addi     a7, sp, XT_STK_FRMSZ
@@ -33,29 +33,29 @@ _xt_panic_gdbstub:
     s32i    a13, sp, XT_STK_A13
 
     /* Save exc cause and vaddr into exception frame */
-    rsr     a0, EXCCAUSE
+    rsr     a0, XT_REG_EXCCAUSE
     s32i    a0, sp, XT_STK_EXCCAUSE
-    rsr     a0, EXCVADDR
+    rsr     a0, XT_REG_EXCVADDR
     s32i    a0, sp, XT_STK_EXCVADDR
 
     /* _xt_context_save seems to save the current a0, but we need the interuptees a0. Fix this. */
-    rsr     a0, EXCSAVE_1                   /* save interruptee's a0 */
+    rsr     a0, XT_REG_EXCSAVE_1            /* save interruptee's a0 */
 
     /* Set up PS for C, disable all interrupts except NMI and debug, and clear EXCM. */
     movi    a0, PS_INTLEVEL(5) | PS_UM | PS_WOE
-    wsr     a0, PS
+    wsr     a0, XT_REG_PS
 
     //Call gdbstub handler
 
-    rsr     a0,(EPC + XCHAL_DEBUGLEVEL)
+    rsr     a0,(XT_REG_EPC + XCHAL_DEBUGLEVEL)
     s32i    a0, sp, XT_STK_PC
     mov     a6, sp
-    rsr     a9, EPS_6
+    rsr     a9, XT_REG_EPS_6
     s32i    a9, sp, XT_STK_PS   // store PS to the ps place
     movi    a11, gdbstub_handle_debug_int
     callx4  a11                          /* Call interrupt handler */
     l32i    a0, sp, XT_STK_PC
-    wsr     a0,(EPC + XCHAL_DEBUGLEVEL)
+    wsr     a0,(XT_REG_EPC + XCHAL_DEBUGLEVEL)
     call0   _xt_context_restore         /* Restore full context*/
     l32i    a12, sp, XT_STK_A12
     l32i    a13, sp, XT_STK_A13

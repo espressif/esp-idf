@@ -57,17 +57,17 @@ xt_highint4:
     wsr     a0, CCOMPARE2
 
     /* Enable Timer 2 interrupt */
-    rsr     a0, INTENABLE
+    rsr     a0, XT_REG_INTENABLE
     extui   a0, a0, 16, 1
     bnez    a0, 1f
     movi    a0, 0
-    xsr     a0, INTENABLE     /* disable all interrupts */
+    xsr     a0, XT_REG_INTENABLE     /* disable all interrupts */
     /* And a0 with (1 << 16) for Timer 2 interrupt mask */
     addmi   a0, a0, (1<<14)
     addmi   a0, a0, (1<<14)
     addmi   a0, a0, (1<<14)
     addmi   a0, a0, (1<<14)
-    wsr     a0, INTENABLE    /* Enable Timer 2 */
+    wsr     a0, XT_REG_INTENABLE    /* Enable Timer 2 */
 1:
 #endif
 
@@ -76,37 +76,37 @@ xt_highint4:
     s32i    a1, a0, 4
     s32i    a2, a0, 8
     s32i    a3, a0, 12
-    rsr     a2, EXCSAVE_4  /* holds the value of a0 */
+    rsr     a2, XT_REG_EXCSAVE_4  /* holds the value of a0 */
     s32i    a2, a0, 0
 
     /* Save special registers */
     addi    a0, a0, SPECREG_OFFSET
-    rsr     a2, WINDOWBASE
+    rsr     a2, XT_REG_WINDOWBASE
     s32i    a2, a0, 0
-    rsr     a2, WINDOWSTART
+    rsr     a2, XT_REG_WINDOWSTART
     s32i    a2, a0, 4
-    rsr     a2, SAR
+    rsr     a2, XT_REG_SAR
     s32i    a2, a0, 8
-    rsr     a2, LBEG
+    rsr     a2, XT_REG_LBEG
     s32i    a2, a0, 12
-    rsr     a2, LEND
+    rsr     a2, XT_REG_LEND
     s32i    a2, a0, 16
-    rsr     a2, LCOUNT
+    rsr     a2, XT_REG_LCOUNT
     s32i    a2, a0, 20
     rsr     a2, EPC1
     s32i    a2, a0, 24
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     movi    a0, 0
-    xsr     a0, INTENABLE     /* disable all interrupts */
+    xsr     a0, XT_REG_INTENABLE     /* disable all interrupts */
     movi    a2, ~(1<<16)
     and     a0, a2, a0
-    wsr     a0, INTENABLE
+    wsr     a0, XT_REG_INTENABLE
 #endif
 
     /* disable exception mode, window overflow */
     movi    a0, PS_INTLEVEL(5) | PS_EXCM
-    wsr     a0, PS
+    wsr     a0, XT_REG_PS
     rsync
 
     /* Save the remaining physical registers.
@@ -153,12 +153,12 @@ xt_highint4:
     /* a0 still points to _l4_save_ctx */
 
     /* Can clear WINDOWSTART now, all registers are saved */
-    rsr     a2, WINDOWBASE
+    rsr     a2, XT_REG_WINDOWBASE
     /* WINDOWSTART = (1 << WINDOWBASE) */
     movi    a3, 1
     ssl     a2
     sll     a3, a3
-    wsr     a3, WINDOWSTART
+    wsr     a3, XT_REG_WINDOWSTART
 
 _highint4_stack_switch:
     movi    a0, 0
@@ -169,7 +169,7 @@ _highint4_stack_switch:
 
     /* Set up PS for C, disable all interrupts except NMI and debug, and clear EXCM. */
     movi    a6, PS_INTLEVEL(4) | PS_UM | PS_WOE
-    wsr     a6, PS
+    wsr     a6, XT_REG_PS
     rsync
 
     /* Call C handler */
@@ -180,7 +180,7 @@ _highint4_stack_switch:
 
     /* Done with C handler; re-enable exception mode, disabling window overflow */
     movi    a2, PS_INTLEVEL(5) | PS_EXCM    /* TOCHECK */
-    wsr     a2, PS
+    wsr     a2, XT_REG_PS
     rsync
 
     /* Restore the special registers.
@@ -188,13 +188,13 @@ _highint4_stack_switch:
      */
     movi    a0, _l4_save_ctx + SPECREG_OFFSET
     l32i    a2, a0, 8
-    wsr     a2, SAR
+    wsr     a2, XT_REG_SAR
     l32i    a2, a0, 12
-    wsr     a2, LBEG
+    wsr     a2, XT_REG_LBEG
     l32i    a2, a0, 16
-    wsr     a2, LEND
+    wsr     a2, XT_REG_LEND
     l32i    a2, a0, 20
-    wsr     a2, LCOUNT
+    wsr     a2, XT_REG_LCOUNT
     l32i    a2, a0, 24
     wsr     a2, EPC1
 
@@ -247,12 +247,12 @@ _highint4_stack_switch:
     movi    a0, _l4_save_ctx
 
     l32i    a2, a0, SPECREG_OFFSET + 4
-    wsr     a2, WINDOWSTART
+    wsr     a2, XT_REG_WINDOWSTART
 
     l32i    a1, a0, 4
     l32i    a2, a0, 8
     l32i    a3, a0, 12
-    rsr     a0, EXCSAVE_4  /* holds the value of a0 before the interrupt handler */
+    rsr     a0, XT_REG_EXCSAVE_4  /* holds the value of a0 before the interrupt handler */
 
     /* Return from the interrupt, restoring PS from EPS_4 */
     rfi     4

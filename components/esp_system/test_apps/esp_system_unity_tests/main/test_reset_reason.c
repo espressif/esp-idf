@@ -326,7 +326,7 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
 #ifndef CONFIG_FREERTOS_UNICORE
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
 #include "xt_instr_macros.h"
-#include "xtensa/config/specreg.h"
+#include "xtensa/config/xt_specreg.h"
 
 static int size_stack = 1024 * 4;
 static StackType_t *start_addr_stack;
@@ -335,8 +335,8 @@ static int fibonacci(int n, void* func(void))
 {
     int tmp1 = n, tmp2 = n;
     uint32_t base, start;
-    RSR(WINDOWBASE, base);
-    RSR(WINDOWSTART, start);
+    RSR(XT_REG_WINDOWBASE, base);
+    RSR(XT_REG_WINDOWSTART, start);
     printf("WINDOWBASE = %-2"PRIi32"   WINDOWSTART = 0x%"PRIx32"\n", base, start);
     if (n <= 1) {
         StackType_t *last_addr_stack = esp_cpu_get_sp();
