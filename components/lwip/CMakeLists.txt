@@ -1,4 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
+set(srcs "")
 
 if(CONFIG_LWIP_ENABLE)
     if(NOT ${target} STREQUAL "linux")
