@@ -1162,7 +1162,7 @@ menu "Security features"
                 It is also possible to enable secure download mode at runtime by calling
                 esp_efuse_enable_rom_secure_download_mode()
 
-                Note: Secure Download mode is not available for ESP32 (includes revisions till ECO3).
+                Note: Secure Download mode is not available for ESP32.
 
         config SECURE_INSECURE_ALLOW_DL_MODE
             bool "UART ROM download mode (Enabled (not recommended))"
