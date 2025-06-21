@@ -14,7 +14,7 @@ extern "C" {
 /** CPU_APM_REGION_FILTER_EN_REG register
  *  Region filter enable register
  */
-#define CPU_APM_REGION_FILTER_EN_REG (DR_REG_CPU_BASE + 0x0)
+#define CPU_APM_REGION_FILTER_EN_REG (DR_REG_CPU_APM_REG_BASE + 0x0)
 /** CPU_APM_REGION_FILTER_EN : R/W; bitpos: [7:0]; default: 1;
  *  Configure bit $n (0-7) to enable region $n.
  *  0: disable
@@ -28,7 +28,7 @@ extern "C" {
 /** CPU_APM_REGION0_ADDR_START_REG register
  *  Region address register
  */
-#define CPU_APM_REGION0_ADDR_START_REG (DR_REG_CPU_BASE + 0x4)
+#define CPU_APM_REGION0_ADDR_START_REG (DR_REG_CPU_APM_REG_BASE + 0x4)
 /** CPU_APM_REGION0_ADDR_START_L : HRO; bitpos: [11:0]; default: 0;
  *  Low 12 bit, start address of region 0.
  */
@@ -54,7 +54,7 @@ extern "C" {
 /** CPU_APM_REGION0_ADDR_END_REG register
  *  Region address register
  */
-#define CPU_APM_REGION0_ADDR_END_REG (DR_REG_CPU_BASE + 0x8)
+#define CPU_APM_REGION0_ADDR_END_REG (DR_REG_CPU_APM_REG_BASE + 0x8)
 /** CPU_APM_REGION0_ADDR_END_L : HRO; bitpos: [11:0]; default: 4095;
  *  Low 12 bit, end address of region 0.
  */
@@ -80,7 +80,7 @@ extern "C" {
 /** CPU_APM_REGION0_ATTR_REG register
  *  Region access authority attribute register
  */
-#define CPU_APM_REGION0_ATTR_REG (DR_REG_CPU_BASE + 0xc)
+#define CPU_APM_REGION0_ATTR_REG (DR_REG_CPU_APM_REG_BASE + 0xc)
 /** CPU_APM_REGION0_R0_X : R/W; bitpos: [0]; default: 0;
  *  Configures the execution authority of REE_MODE 0 in region 0.
  */
@@ -155,7 +155,7 @@ extern "C" {
 /** CPU_APM_REGION1_ADDR_START_REG register
  *  Region address register
  */
-#define CPU_APM_REGION1_ADDR_START_REG (DR_REG_CPU_BASE + 0x10)
+#define CPU_APM_REGION1_ADDR_START_REG (DR_REG_CPU_APM_REG_BASE + 0x10)
 /** CPU_APM_REGION1_ADDR_START_L : HRO; bitpos: [11:0]; default: 0;
  *  Low 12 bit, start address of region 1.
  */
@@ -181,7 +181,7 @@ extern "C" {
 /** CPU_APM_REGION1_ADDR_END_REG register
  *  Region address register
  */
-#define CPU_APM_REGION1_ADDR_END_REG (DR_REG_CPU_BASE + 0x14)
+#define CPU_APM_REGION1_ADDR_END_REG (DR_REG_CPU_APM_REG_BASE + 0x14)
 /** CPU_APM_REGION1_ADDR_END_L : HRO; bitpos: [11:0]; default: 4095;
  *  Low 12 bit, end address of region 1.
  */
@@ -207,7 +207,7 @@ extern "C" {
 /** CPU_APM_REGION1_ATTR_REG register
  *  Region access authority attribute register
  */
-#define CPU_APM_REGION1_ATTR_REG (DR_REG_CPU_BASE + 0x18)
+#define CPU_APM_REGION1_ATTR_REG (DR_REG_CPU_APM_REG_BASE + 0x18)
 /** CPU_APM_REGION1_R0_X : R/W; bitpos: [0]; default: 0;
  *  Configures the execution authority of REE_MODE 0 in region 1.
  */
@@ -282,7 +282,7 @@ extern "C" {
 /** CPU_APM_REGION2_ADDR_START_REG register
  *  Region address register
  */
-#define CPU_APM_REGION2_ADDR_START_REG (DR_REG_CPU_BASE + 0x1c)
+#define CPU_APM_REGION2_ADDR_START_REG (DR_REG_CPU_APM_REG_BASE + 0x1c)
 /** CPU_APM_REGION2_ADDR_START_L : HRO; bitpos: [11:0]; default: 0;
  *  Low 12 bit, start address of region 2.
  */
@@ -308,7 +308,7 @@ extern "C" {
 /** CPU_APM_REGION2_ADDR_END_REG register
  *  Region address register
  */
-#define CPU_APM_REGION2_ADDR_END_REG (DR_REG_CPU_BASE + 0x20)
+#define CPU_APM_REGION2_ADDR_END_REG (DR_REG_CPU_APM_REG_BASE + 0x20)
 /** CPU_APM_REGION2_ADDR_END_L : HRO; bitpos: [11:0]; default: 4095;
  *  Low 12 bit, end address of region 2.
  */
@@ -334,7 +334,7 @@ extern "C" {
 /** CPU_APM_REGION2_ATTR_REG register
  *  Region access authority attribute register
  */
-#define CPU_APM_REGION2_ATTR_REG (DR_REG_CPU_BASE + 0x24)
+#define CPU_APM_REGION2_ATTR_REG (DR_REG_CPU_APM_REG_BASE + 0x24)
 /** CPU_APM_REGION2_R0_X : R/W; bitpos: [0]; default: 0;
  *  Configures the execution authority of REE_MODE 0 in region 2.
  */
@@ -409,7 +409,7 @@ extern "C" {
 /** CPU_APM_REGION3_ADDR_START_REG register
  *  Region address register
  */
-#define CPU_APM_REGION3_ADDR_START_REG (DR_REG_CPU_BASE + 0x28)
+#define CPU_APM_REGION3_ADDR_START_REG (DR_REG_CPU_APM_REG_BASE + 0x28)
 /** CPU_APM_REGION3_ADDR_START_L : HRO; bitpos: [11:0]; default: 0;
  *  Low 12 bit, start address of region 3.
  */
@@ -435,7 +435,7 @@ extern "C" {
 /** CPU_APM_REGION3_ADDR_END_REG register
  *  Region address register
  */
-#define CPU_APM_REGION3_ADDR_END_REG (DR_REG_CPU_BASE + 0x2c)
+#define CPU_APM_REGION3_ADDR_END_REG (DR_REG_CPU_APM_REG_BASE + 0x2c)
 /** CPU_APM_REGION3_ADDR_END_L : HRO; bitpos: [11:0]; default: 4095;
  *  Low 12 bit, end address of region 3.
  */
@@ -461,7 +461,7 @@ extern "C" {
 /** CPU_APM_REGION3_ATTR_REG register
  *  Region access authority attribute register
  */
-#define CPU_APM_REGION3_ATTR_REG (DR_REG_CPU_BASE + 0x30)
+#define CPU_APM_REGION3_ATTR_REG (DR_REG_CPU_APM_REG_BASE + 0x30)
 /** CPU_APM_REGION3_R0_X : R/W; bitpos: [0]; default: 0;
  *  Configures the execution authority of REE_MODE 0 in region 3.
  */
@@ -536,7 +536,7 @@ extern "C" {
 /** CPU_APM_REGION4_ADDR_START_REG register
  *  Region address register
  */
-#define CPU_APM_REGION4_ADDR_START_REG (DR_REG_CPU_BASE + 0x34)
+#define CPU_APM_REGION4_ADDR_START_REG (DR_REG_CPU_APM_REG_BASE + 0x34)
 /** CPU_APM_REGION4_ADDR_START_L : HRO; bitpos: [11:0]; default: 0;
  *  Low 12 bit, start address of region 4.
  */
@@ -562,7 +562,7 @@ extern "C" {
 /** CPU_APM_REGION4_ADDR_END_REG register
  *  Region address register
  */
-#define CPU_APM_REGION4_ADDR_END_REG (DR_REG_CPU_BASE + 0x38)
+#define CPU_APM_REGION4_ADDR_END_REG (DR_REG_CPU_APM_REG_BASE + 0x38)
 /** CPU_APM_REGION4_ADDR_END_L : HRO; bitpos: [11:0]; default: 4095;
  *  Low 12 bit, end address of region 4.
  */
@@ -588,7 +588,7 @@ extern "C" {
 /** CPU_APM_REGION4_ATTR_REG register
  *  Region access authority attribute register
  */
-#define CPU_APM_REGION4_ATTR_REG (DR_REG_CPU_BASE + 0x3c)
+#define CPU_APM_REGION4_ATTR_REG (DR_REG_CPU_APM_REG_BASE + 0x3c)
 /** CPU_APM_REGION4_R0_X : R/W; bitpos: [0]; default: 0;
  *  Configures the execution authority of REE_MODE 0 in region 4.
  */
@@ -663,7 +663,7 @@ extern "C" {
 /** CPU_APM_REGION5_ADDR_START_REG register
  *  Region address register
  */
-#define CPU_APM_REGION5_ADDR_START_REG (DR_REG_CPU_BASE + 0x40)
+#define CPU_APM_REGION5_ADDR_START_REG (DR_REG_CPU_APM_REG_BASE + 0x40)
 /** CPU_APM_REGION5_ADDR_START_L : HRO; bitpos: [11:0]; default: 0;
  *  Low 12 bit, start address of region 5.
  */
@@ -689,7 +689,7 @@ extern "C" {
 /** CPU_APM_REGION5_ADDR_END_REG register
  *  Region address register
  */
-#define CPU_APM_REGION5_ADDR_END_REG (DR_REG_CPU_BASE + 0x44)
+#define CPU_APM_REGION5_ADDR_END_REG (DR_REG_CPU_APM_REG_BASE + 0x44)
 /** CPU_APM_REGION5_ADDR_END_L : HRO; bitpos: [11:0]; default: 4095;
  *  Low 12 bit, end address of region 5.
  */
@@ -715,7 +715,7 @@ extern "C" {
 /** CPU_APM_REGION5_ATTR_REG register
  *  Region access authority attribute register
  */
-#define CPU_APM_REGION5_ATTR_REG (DR_REG_CPU_BASE + 0x48)
+#define CPU_APM_REGION5_ATTR_REG (DR_REG_CPU_APM_REG_BASE + 0x48)
 /** CPU_APM_REGION5_R0_X : R/W; bitpos: [0]; default: 0;
  *  Configures the execution authority of REE_MODE 0 in region 5.
  */
@@ -790,7 +790,7 @@ extern "C" {
 /** CPU_APM_REGION6_ADDR_START_REG register
  *  Region address register
  */
-#define CPU_APM_REGION6_ADDR_START_REG (DR_REG_CPU_BASE + 0x4c)
+#define CPU_APM_REGION6_ADDR_START_REG (DR_REG_CPU_APM_REG_BASE + 0x4c)
 /** CPU_APM_REGION6_ADDR_START_L : HRO; bitpos: [11:0]; default: 0;
  *  Low 12 bit, start address of region 6.
  */
@@ -816,7 +816,7 @@ extern "C" {
 /** CPU_APM_REGION6_ADDR_END_REG register
  *  Region address register
  */
-#define CPU_APM_REGION6_ADDR_END_REG (DR_REG_CPU_BASE + 0x50)
+#define CPU_APM_REGION6_ADDR_END_REG (DR_REG_CPU_APM_REG_BASE + 0x50)
 /** CPU_APM_REGION6_ADDR_END_L : HRO; bitpos: [11:0]; default: 4095;
  *  Low 12 bit, end address of region 6.
  */
@@ -842,7 +842,7 @@ extern "C" {
 /** CPU_APM_REGION6_ATTR_REG register
  *  Region access authority attribute register
  */
-#define CPU_APM_REGION6_ATTR_REG (DR_REG_CPU_BASE + 0x54)
+#define CPU_APM_REGION6_ATTR_REG (DR_REG_CPU_APM_REG_BASE + 0x54)
 /** CPU_APM_REGION6_R0_X : R/W; bitpos: [0]; default: 0;
  *  Configures the execution authority of REE_MODE 0 in region 6.
  */
@@ -917,7 +917,7 @@ extern "C" {
 /** CPU_APM_REGION7_ADDR_START_REG register
  *  Region address register
  */
-#define CPU_APM_REGION7_ADDR_START_REG (DR_REG_CPU_BASE + 0x58)
+#define CPU_APM_REGION7_ADDR_START_REG (DR_REG_CPU_APM_REG_BASE + 0x58)
 /** CPU_APM_REGION7_ADDR_START_L : HRO; bitpos: [11:0]; default: 0;
  *  Low 12 bit, start address of region 7.
  */
@@ -943,7 +943,7 @@ extern "C" {
 /** CPU_APM_REGION7_ADDR_END_REG register
  *  Region address register
  */
-#define CPU_APM_REGION7_ADDR_END_REG (DR_REG_CPU_BASE + 0x5c)
+#define CPU_APM_REGION7_ADDR_END_REG (DR_REG_CPU_APM_REG_BASE + 0x5c)
 /** CPU_APM_REGION7_ADDR_END_L : HRO; bitpos: [11:0]; default: 4095;
  *  Low 12 bit, end address of region 7.
  */
@@ -969,7 +969,7 @@ extern "C" {
 /** CPU_APM_REGION7_ATTR_REG register
  *  Region access authority attribute register
  */
-#define CPU_APM_REGION7_ATTR_REG (DR_REG_CPU_BASE + 0x60)
+#define CPU_APM_REGION7_ATTR_REG (DR_REG_CPU_APM_REG_BASE + 0x60)
 /** CPU_APM_REGION7_R0_X : R/W; bitpos: [0]; default: 0;
  *  Configures the execution authority of REE_MODE 0 in region 7.
  */
@@ -1044,7 +1044,7 @@ extern "C" {
 /** CPU_APM_FUNC_CTRL_REG register
  *  APM function control register
  */
-#define CPU_APM_FUNC_CTRL_REG (DR_REG_CPU_BASE + 0xc4)
+#define CPU_APM_FUNC_CTRL_REG (DR_REG_CPU_APM_REG_BASE + 0xc4)
 /** CPU_APM_M0_FUNC_EN : R/W; bitpos: [0]; default: 1;
  *  PMS M0 function enable
  */
@@ -1063,7 +1063,7 @@ extern "C" {
 /** CPU_APM_M0_STATUS_REG register
  *  M0 status register
  */
-#define CPU_APM_M0_STATUS_REG (DR_REG_CPU_BASE + 0xc8)
+#define CPU_APM_M0_STATUS_REG (DR_REG_CPU_APM_REG_BASE + 0xc8)
 /** CPU_APM_M0_EXCEPTION_STATUS : RO; bitpos: [1:0]; default: 0;
  *  Represents exception status.
  *  bit0: 1 represents authority_exception
@@ -1077,7 +1077,7 @@ extern "C" {
 /** CPU_APM_M0_STATUS_CLR_REG register
  *  M0 status clear register
  */
-#define CPU_APM_M0_STATUS_CLR_REG (DR_REG_CPU_BASE + 0xcc)
+#define CPU_APM_M0_STATUS_CLR_REG (DR_REG_CPU_APM_REG_BASE + 0xcc)
 /** CPU_APM_M0_EXCEPTION_STATUS_CLR : WT; bitpos: [0]; default: 0;
  *  Configures to clear exception status.
  */
@@ -1089,7 +1089,7 @@ extern "C" {
 /** CPU_APM_M0_EXCEPTION_INFO0_REG register
  *  M0 exception_info0 register
  */
-#define CPU_APM_M0_EXCEPTION_INFO0_REG (DR_REG_CPU_BASE + 0xd0)
+#define CPU_APM_M0_EXCEPTION_INFO0_REG (DR_REG_CPU_APM_REG_BASE + 0xd0)
 /** CPU_APM_M0_EXCEPTION_REGION : RO; bitpos: [15:0]; default: 0;
  *  Represents exception region.
  */
@@ -1115,7 +1115,7 @@ extern "C" {
 /** CPU_APM_M0_EXCEPTION_INFO1_REG register
  *  M0 exception_info1 register
  */
-#define CPU_APM_M0_EXCEPTION_INFO1_REG (DR_REG_CPU_BASE + 0xd4)
+#define CPU_APM_M0_EXCEPTION_INFO1_REG (DR_REG_CPU_APM_REG_BASE + 0xd4)
 /** CPU_APM_M0_EXCEPTION_ADDR : RO; bitpos: [31:0]; default: 0;
  *  Represents exception addr.
  */
@@ -1127,7 +1127,7 @@ extern "C" {
 /** CPU_APM_M1_STATUS_REG register
  *  M1 status register
  */
-#define CPU_APM_M1_STATUS_REG (DR_REG_CPU_BASE + 0xd8)
+#define CPU_APM_M1_STATUS_REG (DR_REG_CPU_APM_REG_BASE + 0xd8)
 /** CPU_APM_M1_EXCEPTION_STATUS : RO; bitpos: [1:0]; default: 0;
  *  Represents exception status.
  *  bit0: 1 represents authority_exception
@@ -1141,7 +1141,7 @@ extern "C" {
 /** CPU_APM_M1_STATUS_CLR_REG register
  *  M1 status clear register
  */
-#define CPU_APM_M1_STATUS_CLR_REG (DR_REG_CPU_BASE + 0xdc)
+#define CPU_APM_M1_STATUS_CLR_REG (DR_REG_CPU_APM_REG_BASE + 0xdc)
 /** CPU_APM_M1_EXCEPTION_STATUS_CLR : WT; bitpos: [0]; default: 0;
  *  Configures to clear exception status.
  */
@@ -1153,7 +1153,7 @@ extern "C" {
 /** CPU_APM_M1_EXCEPTION_INFO0_REG register
  *  M1 exception_info0 register
  */
-#define CPU_APM_M1_EXCEPTION_INFO0_REG (DR_REG_CPU_BASE + 0xe0)
+#define CPU_APM_M1_EXCEPTION_INFO0_REG (DR_REG_CPU_APM_REG_BASE + 0xe0)
 /** CPU_APM_M1_EXCEPTION_REGION : RO; bitpos: [15:0]; default: 0;
  *  Represents exception region.
  */
@@ -1179,7 +1179,7 @@ extern "C" {
 /** CPU_APM_M1_EXCEPTION_INFO1_REG register
  *  M1 exception_info1 register
  */
-#define CPU_APM_M1_EXCEPTION_INFO1_REG (DR_REG_CPU_BASE + 0xe4)
+#define CPU_APM_M1_EXCEPTION_INFO1_REG (DR_REG_CPU_APM_REG_BASE + 0xe4)
 /** CPU_APM_M1_EXCEPTION_ADDR : RO; bitpos: [31:0]; default: 0;
  *  Represents exception addr.
  */
@@ -1191,7 +1191,7 @@ extern "C" {
 /** CPU_APM_INT_EN_REG register
  *  APM interrupt enable register
  */
-#define CPU_APM_INT_EN_REG (DR_REG_CPU_BASE + 0x118)
+#define CPU_APM_INT_EN_REG (DR_REG_CPU_APM_REG_BASE + 0x118)
 /** CPU_APM_M0_APM_INT_EN : R/W; bitpos: [0]; default: 0;
  *  Configures to enable APM M0 interrupt.
  *  0: disable
@@ -1214,7 +1214,7 @@ extern "C" {
 /** CPU_APM_CLOCK_GATE_REG register
  *  Clock gating register
  */
-#define CPU_APM_CLOCK_GATE_REG (DR_REG_CPU_BASE + 0x7f8)
+#define CPU_APM_CLOCK_GATE_REG (DR_REG_CPU_APM_REG_BASE + 0x7f8)
 /** CPU_APM_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Configures whether to keep the clock always on.
  *  0: enable automatic clock gating
@@ -1228,7 +1228,7 @@ extern "C" {
 /** CPU_APM_DATE_REG register
  *  Version control register
  */
-#define CPU_APM_DATE_REG (DR_REG_CPU_BASE + 0x7fc)
+#define CPU_APM_DATE_REG (DR_REG_CPU_APM_REG_BASE + 0x7fc)
 /** CPU_APM_DATE : R/W; bitpos: [27:0]; default: 37823248;
  *  Version control register.
  */

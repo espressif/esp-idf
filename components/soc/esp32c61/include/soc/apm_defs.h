@@ -15,9 +15,11 @@ extern "C" {
 /* Number of paths for each supported APM controller */
 #define APM_CTRL_HP_APM_PATH_NUM    (4)
 #define APM_CTRL_LP_APM_PATH_NUM    (1)
+#define APM_CTRL_CPU_APM_PATH_NUM   (2)
 /* Number of regions for each supported APM controller */
 #define APM_CTRL_HP_APM_REGION_NUM  (16)
 #define APM_CTRL_LP_APM_REGION_NUM  (4)
+#define APM_CTRL_CPU_APM_REGION_NUM (8)
 
 /* Register offset for TEE mode control */
 #define APM_TEE_MODE_CTRL_OFFSET        (0x04)
