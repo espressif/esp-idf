@@ -272,6 +272,10 @@ static esp_err_t get_part_digest(const esp_partition_pos_t *pos, esp_att_part_di
 
     part_digest->type = ESP_ATT_DIGEST_TYPE_SHA256;
     size_t digest_len = digest_type_to_len(part_digest->type);
+
+    if (metadata.image_len < digest_len) {
+        return ESP_ERR_INVALID_SIZE;
+    }
     size_t image_len = metadata.image_len - digest_len;
 
     uint8_t *digest = calloc(digest_len, sizeof(uint8_t));
