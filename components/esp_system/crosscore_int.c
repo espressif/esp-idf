@@ -5,7 +5,7 @@
  */
 #include "sdkconfig.h"
 #include <stdint.h>
-#include "esp_attr.h"
+#include "esp_private/esp_system_attr.h"
 #include "esp_err.h"
 #include "esp_cpu.h"
 #include "esp_intr_alloc.h"
@@ -34,12 +34,12 @@ static volatile uint32_t reason[CONFIG_FREERTOS_NUMBER_OF_CORES];
 ToDo: There is a small chance the CPU already has yielded when this ISR is serviced. In that case, it's running the intended task but
 the ISR will cause it to switch _away_ from it. portYIELD_FROM_ISR will probably just schedule the task again, but have to check that.
 */
-static inline void IRAM_ATTR esp_crosscore_isr_handle_yield(void)
+static inline void ESP_SYSTEM_IRAM_ATTR esp_crosscore_isr_handle_yield(void)
 {
     portYIELD_FROM_ISR();
 }
 
-static void IRAM_ATTR esp_crosscore_isr(void *arg)
+static void ESP_SYSTEM_IRAM_ATTR esp_crosscore_isr(void *arg)
 {
     uint32_t my_reason_val;
     //A pointer to the correct reason array item is passed to this ISR.
@@ -93,19 +93,23 @@ void esp_crosscore_int_init(void)
     reason[esp_cpu_get_core_id()] = 0;
     portEXIT_CRITICAL(&reason_spinlock);
     esp_err_t err __attribute__((unused)) = ESP_OK;
+    int flags = 0;
+#if CONFIG_ESP_SYSTEM_IN_IRAM
+    flags |= ESP_INTR_FLAG_IRAM;
+#endif
 #if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
     if (esp_cpu_get_core_id() == 0) {
-        err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
+        err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_0_SOURCE, flags, esp_crosscore_isr, (void*)&reason[0], NULL);
     } else {
-        err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_1_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[1], NULL);
+        err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_1_SOURCE, flags, esp_crosscore_isr, (void*)&reason[1], NULL);
     }
 #else
-    err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
+    err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_0_SOURCE, flags, esp_crosscore_isr, (void*)&reason[0], NULL);
 #endif
     ESP_ERROR_CHECK(err);
 }
 
-static void IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask)
+static void ESP_SYSTEM_IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask)
 {
     assert(core_id < CONFIG_FREERTOS_NUMBER_OF_CORES);
     //Mark the reason we interrupt the other CPU
@@ -116,28 +120,28 @@ static void IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask)
     crosscore_int_ll_trigger_interrupt(core_id);
 }
 
-void IRAM_ATTR esp_crosscore_int_send_yield(int core_id)
+void ESP_SYSTEM_IRAM_ATTR esp_crosscore_int_send_yield(int core_id)
 {
     esp_crosscore_int_send(core_id, REASON_YIELD);
 }
 
-void IRAM_ATTR esp_crosscore_int_send_freq_switch(int core_id)
+void ESP_SYSTEM_IRAM_ATTR esp_crosscore_int_send_freq_switch(int core_id)
 {
     esp_crosscore_int_send(core_id, REASON_FREQ_SWITCH);
 }
 
-void IRAM_ATTR esp_crosscore_int_send_gdb_call(int core_id)
+void ESP_SYSTEM_IRAM_ATTR esp_crosscore_int_send_gdb_call(int core_id)
 {
     esp_crosscore_int_send(core_id, REASON_GDB_CALL);
 }
 
-void IRAM_ATTR esp_crosscore_int_send_print_backtrace(int core_id)
+void ESP_SYSTEM_IRAM_ATTR esp_crosscore_int_send_print_backtrace(int core_id)
 {
     esp_crosscore_int_send(core_id, REASON_PRINT_BACKTRACE);
 }
 
 #if CONFIG_ESP_TASK_WDT_EN
-void IRAM_ATTR esp_crosscore_int_send_twdt_abort(int core_id)
+void ESP_SYSTEM_IRAM_ATTR esp_crosscore_int_send_twdt_abort(int core_id)
 {
     esp_crosscore_int_send(core_id, REASON_TWDT_ABORT);
 }

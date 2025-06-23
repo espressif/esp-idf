@@ -6,6 +6,7 @@
 
 #include "sdkconfig.h"
 #include <string.h>
+#include "esp_private/esp_system_attr.h"
 #include "esp_private/panic_internal.h"
 #include "esp_memory_utils.h"
 #include "riscv/libunwind-riscv.h"
@@ -52,7 +53,7 @@ static inline bool esp_fp_ptr_is_data(void* ptr)
  *
  * @returns Number of entries filled in the array.
  */
-uint32_t IRAM_ATTR esp_fp_get_callers(uint32_t frame, void** callers, void** stacks, uint32_t depth)
+uint32_t ESP_SYSTEM_IRAM_ATTR esp_fp_get_callers(uint32_t frame, void** callers, void** stacks, uint32_t depth)
 {
     uint32_t written = 0;
     uint32_t pc = 0;

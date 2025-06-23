@@ -21,7 +21,7 @@
 
 // used only by ESP32 panic handler
 #ifdef CONFIG_IDF_TARGET_ESP32
-void IRAM_ATTR esp_restart_noos_dig(void)
+void esp_restart_noos_dig(void)
 {
     // In case any of the calls below results in re-enabling of interrupts
     // (for example, by entering a critical section), disable all the

@@ -328,7 +328,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 }
 
 // Workaround for bootloader not calibrated well issue.
-// Placed in IRAM because disabling BBPLL may influence the cache
+// Placed in IRAM because disabling BBPLL may influence the cache.
 static void IRAM_ATTR NOINLINE_ATTR recalib_bbpll(void)
 {
     rtc_cpu_freq_config_t old_config;

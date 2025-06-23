@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_attr.h"
+#include "esp_private/esp_system_attr.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -33,7 +33,7 @@ static void *s_callback_arg;
 
 static portMUX_TYPE s_xt_wdt_lock = portMUX_INITIALIZER_UNLOCKED;
 
-static IRAM_ATTR void rtc_xt_wdt_default_isr_handler(void *arg)
+static ESP_SYSTEM_IRAM_ATTR void rtc_xt_wdt_default_isr_handler(void *arg)
 {
     ESP_EARLY_LOGE(TAG, "XTAL32K watchdog timer got triggered");
 

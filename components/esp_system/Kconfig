@@ -9,6 +9,25 @@ menu "ESP System Settings"
 
     orsource "./port/soc/$IDF_TARGET/Kconfig.tracemem"
 
+    config ESP_SYSTEM_IN_IRAM
+        bool "Place system functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+        help
+            The following system functions will be placed in IRAM if this option is enabled:
+            - system startup
+            - system time
+            - system error
+            - system restart
+            - system crosscore
+            - system debug
+            - system APB backup DMA lock
+            - system application tick hook
+            - Unified Behavior Sanitizer (UBSAN) hook
+            - Interrupt watchdog handler
+            - XTAL32K watchdog timer
+            - USB CDC functions for the esp_rom_printf (if ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF=y)
+            - IPC and IPC ISR
+
     choice ESP_SYSTEM_PANIC
         prompt "Panic handler behaviour"
         default ESP_SYSTEM_PANIC_PRINT_REBOOT
@@ -635,6 +654,11 @@ endmenu  # ESP System Settings
 
 menu "IPC (Inter-Processor Call)"
 
+    config ESP_IPC_ENABLE
+        bool
+        default y
+        depends on !ESP_SYSTEM_SINGLE_CORE_MODE || APPTRACE_GCOV_ENABLE
+
     config ESP_IPC_TASK_STACK_SIZE
         int "Inter-Processor Call (IPC) task stack size"
         range 512 65536 if !APPTRACE_ENABLE
@@ -651,7 +675,7 @@ menu "IPC (Inter-Processor Call)"
     config ESP_IPC_USES_CALLERS_PRIORITY
         bool "IPC runs at caller's priority"
         default y
-        depends on !FREERTOS_UNICORE
+        depends on ESP_IPC_ENABLE
         help
             If this option is not enabled then the IPC task will keep behavior same as prior to that of ESP-IDF v4.0,
             hence IPC task will run at (configMAX_PRIORITIES - 1) priority.
