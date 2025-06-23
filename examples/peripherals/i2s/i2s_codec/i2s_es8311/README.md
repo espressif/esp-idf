@@ -59,11 +59,11 @@ Note: Since ESP32-C3 & ESP32-H2 board does not have GPIO 16/17, you can use othe
 
 ### Dependency
 
-This example is based on [es8311 component](https://components.espressif.com/component/espressif/es8311)
+This example is based on [esp_codec_dev component](https://components.espressif.com/components/espressif/esp_codec_dev)
 
-The component can be installed by [IDF Component Manager](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html). This example already includes it. If you want to install [es8311 component](https://components.espressif.com/components/espressif/es8311) separately in your project, you can input the following command:
+The component can be installed by [IDF Component Manager](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html). This example already includes it. If you want to install [esp_codec_dev component](https://components.espressif.com/components/espressif/esp_codec_dev) separately in your project, you can input the following command:
 ```
-idf.py add-dependency "espressif/es8311^1.0.0"
+idf.py add-dependency "espressif/esp_codec_dev^1.3.4"
 ```
 
 If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other projects with managed components, the component manager will search for the required components online and download them into the `managed_components` folder.
