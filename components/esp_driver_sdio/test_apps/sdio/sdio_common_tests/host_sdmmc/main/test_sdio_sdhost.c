@@ -203,7 +203,7 @@ TEST_CASE("SDIO_SDMMC: test register", "[sdio]")
 /*---------------------------------------------------------------
                 SDMMC_SDIO: test reset
 ---------------------------------------------------------------*/
-TEST_CASE("SDIO_SDMMC: test reset", "[sdio]")
+static void test_reset(void)
 {
     essl_handle_t handle = NULL;
     test_sdio_param_t test_param = {
@@ -241,6 +241,16 @@ TEST_CASE("SDIO_SDMMC: test reset", "[sdio]")
 
     s_send_finish_test(handle);
     s_master_deinit();
+}
+
+TEST_CASE("SDIO_SDMMC: test reset", "[sdio]")
+{
+    test_reset();
+}
+
+TEST_CASE("SDIO_SDMMC: test reset hw", "[sdio]")
+{
+    test_reset();
 }
 
 /*---------------------------------------------------------------
