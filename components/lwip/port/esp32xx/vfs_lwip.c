@@ -10,6 +10,7 @@
 #include <sys/errno.h>
 #include <sys/lock.h>
 #include <sys/fcntl.h>
+#include <sys/select.h>
 #include "esp_attr.h"
 #include "esp_vfs.h"
 #include "sdkconfig.h"
@@ -21,6 +22,8 @@
 #endif
 
 _Static_assert(MAX_FDS >= CONFIG_LWIP_MAX_SOCKETS, "MAX_FDS < CONFIG_LWIP_MAX_SOCKETS");
+_Static_assert(FD_SETSIZE >= CONFIG_LWIP_MAX_SOCKETS, "FD_SETSIZE < CONFIG_LWIP_MAX_SOCKETS");
+_Static_assert(LWIP_SOCKET_OFFSET >= 6, "Not enough room for esp_vfs_console (LWIP_SOCKET_OFFSET < 6)");
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
 
