@@ -2,8 +2,7 @@
   extends: .rules:test:host_test
   stage: host_test
   image: $ESP_ENV_IMAGE
-  tags:
-    - host_test
+  tags: [build, shiny]
   dependencies: # set dependencies to null to avoid missing artifacts issue
   # run host_test jobs immediately, only after upload cache
   needs:
@@ -384,8 +383,6 @@ test_idf_pytest_plugin:
   extends:
     - .host_test_template
     - .rules:patterns:idf-pytest-plugin
-  variables:
-    SUBMODULES_TO_FETCH: "none"
   artifacts:
     reports:
       junit: XUNIT_RESULT.xml

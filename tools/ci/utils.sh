@@ -36,7 +36,7 @@ function add_doc_server_ssh_keys() {
 
 function fetch_submodules() {
   section_start "fetch_submodules" "Fetching submodules..."
-  python "${SUBMODULE_FETCH_TOOL}" -s "${SUBMODULES_TO_FETCH}"
+  git submodule update --init --depth 1 --force
   section_end "fetch_submodules"
 }
 

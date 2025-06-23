@@ -11,9 +11,7 @@ check_submodule_sync:
   tags: [ brew, github_sync ]
   retry: 2
   variables:
-    # for brew runners, we always set GIT_STRATEGY to fetch
-    GIT_STRATEGY: fetch
-    SUBMODULES_TO_FETCH: "none"
+    GIT_STRATEGY: fetch  # use brew local mirror first
     PUBLIC_IDF_URL: "https://github.com/espressif/esp-idf.git"
   dependencies: []
   script:
@@ -36,10 +34,8 @@ push_to_github:
     - check_submodule_sync
   tags: [ brew, github_sync ]
   variables:
-    # for brew runners, we always set GIT_STRATEGY to fetch
-    GIT_STRATEGY: fetch
-    # github also need full record of commits
-    GIT_DEPTH: 0
+    GIT_STRATEGY: fetch  # use brew local mirror first
+    GIT_DEPTH: 0  # github needs full record of commits
   script:
     - add_github_ssh_keys
     - git remote remove github &>/dev/null || true
@@ -58,11 +54,11 @@ deploy_update_SHA_in_esp-dockerfiles:
   dependencies: []
   variables:
     GIT_DEPTH: 2
-  tags: [ shiny, build ]
+  tags: [build, shiny]
   script:
     - 'curl --header "PRIVATE-TOKEN: ${ESPCI_SCRIPTS_TOKEN}" -o create_MR_in_esp_dockerfile.sh $GITLAB_HTTP_SERVER/api/v4/projects/1260/repository/files/create_MR_in_esp_dockerfile%2Fcreate_MR_in_esp_dockerfile.sh/raw\?ref\=master'
     - chmod +x create_MR_in_esp_dockerfile.sh
     - ./create_MR_in_esp_dockerfile.sh
   environment:
-    name: eploy_update_SHA_in_esp-dockerfiles_production
+    name: deploy_update_SHA_in_esp-dockerfiles_production
     deployment_tier: production

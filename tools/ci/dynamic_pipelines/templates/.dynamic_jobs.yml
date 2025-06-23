@@ -50,7 +50,6 @@
   stage: target_test
   timeout: 1 hour
   variables:
-    SUBMODULES_TO_FETCH: "none"
     # set while generating the pipeline
     PYTEST_NODES: ""
     TARGET_SELECTOR: ""

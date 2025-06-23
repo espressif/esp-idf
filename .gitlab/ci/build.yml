@@ -3,10 +3,7 @@
   extends:
     - .after_script:build:ccache-show-stats:upload-failed-job-logs
   image: $ESP_ENV_IMAGE
-  tags:
-    - build
-    # build only on shiny servers since shiny storage server is at the same location
-    - shiny
+  tags: [build, shiny]
   variables:
     # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
     IDF_CCACHE_ENABLE: "1"
