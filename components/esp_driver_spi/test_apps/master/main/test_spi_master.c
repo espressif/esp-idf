@@ -175,7 +175,7 @@ TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
 #if !SOC_CLK_TREE_SUPPORTED
             time_tolerance *= 2;    //cpu is executing too slow before clock supported
 #endif
-            printf("real_freq %dk predict_cost %d real_cost_us %d diff %d tolerance %d us\n", real_freq_khz, trans_cost_us_predict, trans_cost, (trans_cost - trans_cost_us_predict), time_tolerance);
+            printf("exp_freq %dk real_freq %dk predict_cost %d real_cost_us %d diff %d tolerance %d us\n", devcfg.clock_speed_hz / 1000, real_freq_khz, trans_cost_us_predict, trans_cost, (trans_cost - trans_cost_us_predict), time_tolerance);
 
             TEST_ASSERT_LESS_THAN_UINT32(time_tolerance, abs(trans_cost - trans_cost_us_predict));
             TEST_ESP_OK(spi_bus_remove_device(handle));
