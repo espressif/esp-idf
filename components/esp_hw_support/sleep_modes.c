@@ -2391,6 +2391,9 @@ int32_t* esp_sleep_sub_mode_dump_config(FILE *stream) {
                                 [ESP_SLEEP_DIG_USE_XTAL_MODE]           = "ESP_SLEEP_DIG_USE_XTAL_MODE",
                                 [ESP_SLEEP_LP_USE_XTAL_MODE]            = "ESP_SLEEP_LP_USE_XTAL_MODE",
                                 [ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE]   = "ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE",
+#if CONFIG_IDF_TARGET_ESP32
+                                [ESP_SLEEP_ANALOG_LOW_POWER_MODE]       = "ESP_SLEEP_ANALOG_LOW_POWER_MODE",
+#endif
                             }[mode],
                             s_sleep_sub_mode_ref_cnt[mode] ? "ENABLED" : "DISABLED",
                             s_sleep_sub_mode_ref_cnt[mode]);
@@ -2670,6 +2673,12 @@ static SLEEP_FN_ATTR uint32_t get_sleep_flags(uint32_t sleep_flags, bool deepsle
     }
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_ANALOG_LOW_POWER_MODE]) {
+        sleep_flags |= RTC_SLEEP_WITH_LOWPOWER_ANALOG;
+    }
+#endif
+
 #ifdef CONFIG_ESP_SLEEP_RTC_BUS_ISO_WORKAROUND
     if (!deepsleep) {
         sleep_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
@@ -2732,6 +2741,13 @@ esp_deep_sleep_disable_rom_logging(void)
 {
     rtc_suppress_rom_log();
 }
+
+#if CONFIG_IDF_TARGET_ESP32
+void esp_sleep_enable_lowpower_analog_mode(bool enable)
+{
+    esp_sleep_sub_mode_config(ESP_SLEEP_ANALOG_LOW_POWER_MODE, enable);
+}
+#endif
 
 __attribute__((deprecated("Please use esp_sleep_sub_mode_config instead"))) void esp_sleep_periph_use_8m(bool use_or_not)
 {

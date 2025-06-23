@@ -163,6 +163,10 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
         esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, true);
 #endif
     }
+#if CONFIG_IDF_TARGET_ESP32
+    // SAR will be used in monitor state, forcibly disable analog lowpower mode to keep system functionality.
+    esp_sleep_sub_mode_force_disable(ESP_SLEEP_ANALOG_LOW_POWER_MODE);
+#endif
 
     ESP_LOGD(TAG, "new adc unit%"PRId32" is created", unit->unit_id);
     *ret_unit = unit;

@@ -508,6 +508,7 @@ typedef struct rtc_sleep_config_s {
     uint32_t dig_dbias_slp : 3;         //!< set bias for digital domain, in sleep mode
     uint32_t rtc_dbias_wak : 3;         //!< set bias for RTC domain, in active mode
     uint32_t rtc_dbias_slp : 3;         //!< set bias for RTC domain, in sleep mode
+    uint32_t dbias_follow_8m : 1;       //!< raise voltage if RTC 8MCLK is enabled
     uint32_t lslp_meminf_pd : 1;        //!< remove all peripheral force power up flags
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
     uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
@@ -527,6 +528,9 @@ typedef struct rtc_sleep_config_s {
 #define RTC_SLEEP_PD_INT_8M             BIT(8)  //!< Power down Internal 8M oscillator
 
 //These flags are not power domains, but will affect some sleep parameters
+#if CONFIG_IDF_TARGET_ESP32
+#define RTC_SLEEP_WITH_LOWPOWER_ANALOG  BIT(15) //!< Setting analog low power mode in esp32 monitor state, in which analog-related peripherals(ADC, TOUCH) is not used.
+#endif
 #define RTC_SLEEP_DIG_USE_8M            BIT(16)
 #define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(17)
 #define RTC_SLEEP_NO_ULTRA_LOW          BIT(18) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature

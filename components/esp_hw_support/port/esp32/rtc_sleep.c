@@ -116,6 +116,13 @@ void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_
         out_config->rtc_dbias_slp = !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 : RTC_CNTL_DBIAS_0V90;
         out_config->dbg_atten_slp = RTC_CNTL_DBG_ATTEN_NODROP;
     }
+
+    if (sleep_flags & RTC_SLEEP_WITH_LOWPOWER_ANALOG) {
+        out_config->dbias_follow_8m = 0;
+    } else {
+        // make sure voltage is raised when RTC 8MCLK is enabled
+        out_config->dbias_follow_8m = 1;
+    }
 }
 
 void rtc_sleep_init(rtc_sleep_config_t cfg)
@@ -219,6 +226,16 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         REG_SET_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU);
     } else {
         REG_CLR_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU);
+    }
+
+    if (cfg.dbias_follow_8m) {
+        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_CORE_FOLW_8M);
+        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FOLW_8M);
+        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_SLEEP_FOLW_8M);
+    } else {
+        CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_CORE_FOLW_8M);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FOLW_8M);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_SLEEP_FOLW_8M);
     }
 
     /* enable VDDSDIO control by state machine */
