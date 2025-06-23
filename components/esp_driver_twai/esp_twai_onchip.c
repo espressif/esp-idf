@@ -320,6 +320,8 @@ static esp_err_t _node_delete(twai_node_handle_t node)
     _node_release_io(twai_ctx);
     twai_hal_deinit(twai_ctx->hal);
     _twai_rcc_clock_ctrl(twai_ctx->ctrlr_id, false);
+    // curr_clk_src must not NULL as we already set to Default in twai_new_node_onchip
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(twai_ctx->curr_clk_src, false), TAG, "disable clock source failed");
     _node_destroy(twai_ctx);
     return ESP_OK;
 }
@@ -349,6 +351,30 @@ static esp_err_t _node_check_timing_valid(twai_onchip_ctx_t *twai_ctx, const twa
     ESP_RETURN_ON_FALSE((timing->tseg_1 >= TWAI_LL_TSEG1_MIN) && (timing->tseg_1 <= TWAI_LL_TSEG1_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg1");
     ESP_RETURN_ON_FALSE((timing->tseg_2 >= TWAI_LL_TSEG2_MIN) && (timing->tseg_2 <= TWAI_LL_TSEG2_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg_2");
     ESP_RETURN_ON_FALSE((timing->sjw >= 1) && (timing->sjw <= TWAI_LL_SJW_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid swj");
+    return ESP_OK;
+}
+
+static esp_err_t _node_set_clock_source(twai_node_handle_t node, twai_clock_source_t clock_src)
+{
+    twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
+    if (clock_src != twai_ctx->curr_clk_src) {
+        // Order of operations is important here.
+        // First enable and switch to the new clock source, then disable the old one.
+        // To ensure the clock to controller is continuous.
+        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(clock_src, true), TAG, "enable clock source failed");
+        _twai_rcc_clock_sel(twai_ctx->ctrlr_id, clock_src);
+        if (twai_ctx->curr_clk_src) {
+            // Disable previous clock source
+            esp_err_t err = esp_clk_tree_enable_src(twai_ctx->curr_clk_src, false);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "disable previous clock source failed, err: %d", err);
+                esp_clk_tree_enable_src(clock_src, false);
+                return err;
+            }
+        }
+        twai_ctx->curr_clk_src = clock_src;
+        ESP_LOGD(TAG, "set clock source to %d", clock_src);
+    }
     return ESP_OK;
 }
 
@@ -383,13 +409,7 @@ static esp_err_t _node_set_bit_timing(twai_node_handle_t node, const twai_timing
     }
 #endif
 
-    if (new_clock_src != twai_ctx->curr_clk_src) {
-        // TODO: IDF-13144
-        ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(new_clock_src), true));
-        twai_ctx->curr_clk_src = new_clock_src;
-        _twai_rcc_clock_sel(twai_ctx->ctrlr_id, new_clock_src);
-    }
-    return ESP_OK;
+    return _node_set_clock_source(node, new_clock_src);
 }
 
 static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_source_t clk_src, const twai_timing_basic_config_t *timing, const twai_timing_basic_config_t *timing_fd)
@@ -617,6 +637,8 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     ESP_GOTO_ON_ERROR(esp_intr_alloc(twai_periph_signals[ctrlr_id].irq_id, intr_flags, _node_isr_main, (void *)node, &node->intr_hdl),
                       err, TAG, "Alloc interrupt failed");
 
+    // Set default clock source first
+    ESP_RETURN_ON_ERROR(_node_set_clock_source(&node->api_base, TWAI_CLK_SRC_DEFAULT), TAG, "enable default clock source failed");
     // Enable bus clock and reset controller
     _twai_rcc_clock_ctrl(ctrlr_id, true);
     // Initialize HAL and configure register defaults.
