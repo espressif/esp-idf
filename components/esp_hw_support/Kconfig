@@ -296,6 +296,15 @@ menu "Hardware Settings"
             RC32K (it cannot operate below -40 degrees Celsius),
             please avoid using it whenever possible
 
+    config ESP_ENABLE_PVT
+        bool "Auto adjust hp & lp voltage using pvt function (MUST ENABLE FOR MP)"
+        depends on SOC_PMU_PVT_SUPPORTED
+        default y
+        help
+            If enabled, hp & lp voltage can be auto adjust by PVT characteristic.
+            Otherwise, internal voltage will be set to fix dbias.
+            This is a must for stable mass production. Disable for debugging only.
+
     config ESP_INTR_IN_IRAM
         bool "Place esp_intr_alloc functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
         default y
