@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -591,7 +591,7 @@ TEST_CASE("nvs api tests", "[nvs]")
     nvs_handle_t handle_2;
     TEST_ESP_OK(nvs_open("namespace2", NVS_READWRITE, &handle_2));
     TEST_ESP_OK(nvs_set_i32(handle_2, "foo", 0x3456789a));
-    const char *str = "value 0123456789abcdef0123456789abcdef";
+    char str[] = "value 0123456789abcdef0123456789abcdef";
     TEST_ESP_OK(nvs_set_str(handle_2, "key", str));
 
     int32_t v1;
@@ -602,7 +602,7 @@ TEST_CASE("nvs api tests", "[nvs]")
     TEST_ESP_OK(nvs_get_i32(handle_2, "foo", &v2));
     CHECK(0x3456789a == v2);
 
-    char buf[strlen(str) + 1];
+    char buf[sizeof(str)];
     size_t buf_len = sizeof(buf);
 
     size_t buf_len_needed;
@@ -1171,12 +1171,13 @@ public:
                     blobBufLen = largeBlobLen ;
 
                 }
-                uint8_t buf[blobBufLen];
+                uint8_t* buf = new uint8_t[blobBufLen];
                 memset(buf, 0, blobBufLen);
 
                 size_t len = blobBufLen;
                 auto err = nvs_get_blob(handle, keys[index], buf, &len);
                 if (err == ESP_ERR_FLASH_OP_FAIL) {
+                    delete [] buf;
                     return err;
                 }
                 if (!written[index]) {
@@ -1185,6 +1186,7 @@ public:
                     REQUIRE(err == ESP_OK);
                     REQUIRE(memcmp(buf, reinterpret_cast<const uint8_t *>(values[index]), blobBufLen) == 0);
                 }
+                delete [] buf;
                 break;
             }
 
@@ -1265,7 +1267,7 @@ public:
                 } else {
                     blobBufLen = largeBlobLen ;
                 }
-                uint8_t buf[blobBufLen];
+                uint8_t* buf = new uint8_t[blobBufLen];
                 memset(buf, 0, blobBufLen);
                 size_t blobLen = gen() % blobBufLen;
                 std::generate_n(buf, blobLen, [&]() -> uint8_t {
@@ -1274,16 +1276,19 @@ public:
 
                 auto err = nvs_set_blob(handle, keys[index], buf, blobLen);
                 if (err == ESP_ERR_FLASH_OP_FAIL) {
+                    delete [] buf;
                     return err;
                 }
                 if (err == ESP_ERR_NVS_REMOVE_FAILED) {
                     written[index] = true;
                     memcpy(reinterpret_cast<uint8_t *>(values[index]), buf, blobBufLen);
+                    delete [] buf;
                     return ESP_ERR_FLASH_OP_FAIL;
                 }
                 REQUIRE(err == ESP_OK);
                 written[index] = true;
                 memcpy(reinterpret_cast<char *>(values[index]), buf, blobBufLen);
+                delete [] buf;
                 break;
             }
 
