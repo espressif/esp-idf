@@ -43,13 +43,13 @@
 
 "build:macos":
   labels:
-    - build
+#    - build
     - macos
     - macos_test  # for backward compatibility
-  patterns:
-    - build_system
-    - build_macos
-    - downloadable-tools
+#  patterns:
+#    - build_system
+#    - build_macos
+#    - downloadable-tools
 
 # ---------------------------
 # Add patterns to build rules

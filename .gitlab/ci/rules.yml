@@ -357,15 +357,8 @@
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected-check
-    - <<: *if-label-build
     - <<: *if-label-macos
     - <<: *if-label-macos_test
-    - <<: *if-dev-push
-      changes: *patterns-build_macos
-    - <<: *if-dev-push
-      changes: *patterns-build_system
-    - <<: *if-dev-push
-      changes: *patterns-downloadable-tools
 
 .rules:build:target_test:
   rules:
