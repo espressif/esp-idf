@@ -15,7 +15,6 @@ check_version:
     # need a full clone to get the latest tag
     # the --shallow-since=$(git log -1 --format=%as $LATEST_GIT_TAG) option is not accurate
     GIT_STRATEGY: fetch
-    SUBMODULES_TO_FETCH: "none"
     GIT_DEPTH: 0
   script:
     - export IDF_PATH=$PWD
@@ -33,8 +32,6 @@ check_blobs:
   extends:
     - .pre_check_template
     - .rules:build:check
-  variables:
-    SUBMODULES_TO_FETCH: "components/esp_wifi/lib;components/esp_phy/lib;components/esp_coex/lib"
   script:
     # Check if Wi-Fi library header files match between IDF and the version used when compiling the libraries
     - IDF_TARGET=esp32 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
@@ -107,7 +104,6 @@ check_version_tag:
     # need a full clone to get the latest tag
     # the --shallow-since=$(git log -1 --format=%as $LATEST_GIT_TAG) option is not accurate
     GIT_STRATEGY: fetch
-    SUBMODULES_TO_FETCH: "none"
     GIT_DEPTH: 0
   script:
     - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || (echo "ESP-IDF versions must be annotated tags." && exit 1)
@@ -210,13 +206,12 @@ baseline_manifest_sha:
     when: always
 
 redundant_pass_job:
-  stage: pre_check
+  extends:
+    - .pre_check_template
   tags: [shiny, fast_run]
-  image: $ESP_ENV_IMAGE
-  dependencies: null
-  before_script: []
   cache: []
-  extends: []
+  variables:
+    GIT_STRATEGY: none
+  before_script: []
   script:
     - echo "This job is redundant to ensure the 'retry_failed_jobs' job can exist and not be skipped"
-  when: always

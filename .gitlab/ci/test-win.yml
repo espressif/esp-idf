@@ -3,8 +3,7 @@
   extends: .rules:test:host_test
   stage: host_test
   image: $ESP_ENV_IMAGE
-  tags:
-    - windows-build
+  tags: [windows-build, brew]
   dependencies: # set dependencies to null to avoid missing artifacts issue
   # run host_test jobs immediately, only after upload cache
   needs:
@@ -14,6 +13,8 @@
     - job: upload-submodules-cache
       optional: true
       artifacts: false
+  variables:
+    GIT_STRATEGY: fetch  # use brew local mirror first
   before_script: []
   after_script: []
 
@@ -60,7 +61,7 @@ test_tools_win:
     - python -m pip install jsonschema
     - .\install.ps1 --enable-ci --enable-pytest
     - .\export.ps1
-    - python "${SUBMODULE_FETCH_TOOL}" -s "all"
+    - git submodule update --init
     - cd ${IDF_PATH}/tools/test_idf_py
     - pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml
     - pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml
@@ -78,7 +79,7 @@ test_tools_win:
   script:
     - .\install.ps1 --enable-ci --enable-pytest
     - . .\export.ps1
-    - python "${SUBMODULE_FETCH_TOOL}" -s "all"
+    - git submodule update --init
     - cd ${IDF_PATH}\tools\test_build_system
     - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml
 
@@ -88,8 +89,7 @@ pytest_build_system_win:
     - .rules:labels:windows_pytest_build_system
   parallel: 2
   needs: []
-  tags:
-    - windows-build
+  tags: [windows-build, brew]
   artifacts:
     paths:
       - XUNIT_RESULT.xml

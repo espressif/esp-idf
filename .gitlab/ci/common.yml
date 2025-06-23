@@ -30,25 +30,14 @@ variables:
   # - set GIT_STRATEGY: "clone" to shiny runners
   # - set GIT_STRATEGY: "fetch" to brew runners
   GIT_STRATEGY: clone
-  # we will download archive for each submodule instead of clone.
-  # we don't do "recursive" when fetch submodule as they're not used in CI now.
-  GIT_SUBMODULE_STRATEGY: none
-  # since we're using merged-result pipelines, the last commit should work for most cases
   GIT_DEPTH: 1
-  # --no-recurse-submodules: we use cache for submodules
+  GIT_SUBMODULE_STRATEGY: none  # here we use cache for submodules, so we don't need to fetch them every time
+  # since we're using merged-result pipelines, the last commit should work for most cases
   # --prune --prune-tags: in case remote branch or tag is force pushed
   GIT_FETCH_EXTRA_FLAGS: "--no-recurse-submodules --prune --prune-tags"
   # we're using .cache folder for caches
   GIT_CLEAN_FLAGS: -ffdx -e .cache/
   LATEST_GIT_TAG: v6.0-dev
-
-  SUBMODULE_FETCH_TOOL: "tools/ci/ci_fetch_submodule.py"
-  # by default we will fetch all submodules
-  # jobs can overwrite this variable to only fetch submodules they required
-  # set to "none" if don't need to fetch submodules
-  SUBMODULES_TO_FETCH: "all"
-  # tell build system do not check submodule update as we download archive instead of clone
-  IDF_SKIP_CHECK_SUBMODULES: 1
 
   IDF_PATH: "$CI_PROJECT_DIR"
   V: "0"
@@ -392,11 +381,9 @@ default:
       paths:
         - .cache/pip
       policy: pull
-    - key: submodule-cache-${LATEST_GIT_TAG}
-      fallback_keys:
-        - submodule-cache
+    - key: git-submodule-cache-${LATEST_GIT_TAG}
       paths:
-        - .cache/submodule_archives
+        - .git/modules
       policy: pull
   before_script:
     - *common-before_scripts
