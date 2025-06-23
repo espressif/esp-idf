@@ -130,6 +130,13 @@ The legacy timer group driver ``driver/timer.h`` is deprecated since version 5.0
 
     The legacy PCNT driver ``driver/pcnt.h`` is deprecated since version 5.0 (see :ref:`deprecate_pcnt_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_pcnt`, and the header file path is ``driver/pulse_cnt.h``.
 
+.. only:: SOC_RMT_SUPPORTED
+
+    Legacy RMT Driver is Removed
+    -------------------------------
+
+    The legacy RMT driver ``driver/rmt.h`` is deprecated since version 5.0 (see :ref:`deprecate_rmt_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_rmt`, and the header file path is ``driver/rmt_tx.h``, ``driver/rmt_rx.h`` and ``driver/rmt_encoder.h``.
+
 GDMA
 ----
 

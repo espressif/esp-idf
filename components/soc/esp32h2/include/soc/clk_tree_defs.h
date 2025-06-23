@@ -215,14 +215,6 @@ typedef enum {
     RMT_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as the default choice */
 } soc_periph_rmt_clk_src_t;
 
-/**
- * @brief Type of RMT clock source, reserved for the legacy RMT driver
- */
-typedef enum {
-    RMT_BASECLK_XTAL = SOC_MOD_CLK_XTAL,    /*!< RMT source clock is XTAL */
-    RMT_BASECLK_DEFAULT = SOC_MOD_CLK_XTAL, /*!< RMT source clock default choice is XTAL */
-} soc_periph_rmt_clk_src_legacy_t;
-
 //////////////////////////////////////////////////PCNT//////////////////////////////////////////////////////////////////
 
 /**

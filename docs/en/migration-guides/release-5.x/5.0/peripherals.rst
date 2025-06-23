@@ -315,12 +315,14 @@ LEDC
 
 .. only:: SOC_RMT_SUPPORTED
 
-    RMT Driver
-    ----------
+    .. _deprecate_rmt_legacy_driver:
+
+    Legacy RMT Driver is Deprecated
+    -------------------------------
 
     RMT driver has been redesigned (see :doc:`RMT transceiver <../../../api-reference/peripherals/rmt>`), which aims to unify and extend the usage of RMT peripheral.
 
-    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/rmt.h``. However, including ``driver/rmt.h`` triggers the build warning below by default. The warning can be suppressed by the Kconfig option :ref:`CONFIG_RMT_SUPPRESS_DEPRECATE_WARN`.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/rmt.h``. However, including ``driver/rmt.h`` triggers the build warning below by default. The warning can be suppressed by the Kconfig option ``CONFIG_RMT_SUPPRESS_DEPRECATE_WARN``.
 
     .. code-block:: text
 

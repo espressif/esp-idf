@@ -539,6 +539,9 @@
         -
             re_variables: ['driver/sigmadelta.h']
             hint_variables: ['legacy Sigma-Delta', 'driver/sdm.h', 'esp_driver_sdm']
+        -
+            re_variables: ['driver/rmt.h']
+            hint_variables: ['legacy RMT', 'driver/rmt_tx.h, driver/rmt_rx.h, driver/rmt_encoder.h', 'esp_driver_rmt']
 
 -
     re: undefined reference to `i3c_new_master_bus'
