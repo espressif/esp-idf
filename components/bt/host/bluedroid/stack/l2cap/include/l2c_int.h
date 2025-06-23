@@ -379,6 +379,11 @@ typedef struct t_l2c_linkcb {
     BOOLEAN             in_use;                     /* TRUE when in use, FALSE when not */
     tL2C_LINK_STATE     link_state;
     BOOLEAN             is_aux;                     /* This variable used for BLE 5.0 or higher version when do auxiliary connection */
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    BOOLEAN is_pawr_synced;
+    UINT8 adv_handle;
+    UINT8 subevent;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
     TIMER_LIST_ENT      timer_entry;                /* Timer list entry for timeout evt */
     UINT16              handle;                     /* The handle used with LM          */
 

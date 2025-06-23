@@ -1020,6 +1020,10 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
         }
 
         tHCI_CreatExtConn aux_conn = {0};
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+        aux_conn.adv_handle = p_lcb->adv_handle;
+        aux_conn.subevent = p_lcb->subevent;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
         aux_conn.filter_policy = FALSE;
         aux_conn.own_addr_type = own_addr_type;
         aux_conn.peer_addr_type = peer_addr_type;
@@ -1041,9 +1045,19 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
         memcpy (l2cb.ble_connecting_bda, p_lcb->remote_bd_addr, BD_ADDR_LEN);
         btu_start_timer (&p_lcb->timer_entry, BTU_TTYPE_L2CAP_LINK, link_timeout);
         btm_ble_set_conn_st (BLE_DIR_CONN);
-        if(!btsnd_hcic_ble_create_ext_conn(&aux_conn)) {
-            l2cu_release_lcb (p_lcb);
-            L2CAP_TRACE_ERROR("initiate Aux connection failed, no resources");
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+        if (p_lcb->is_pawr_synced) {
+            if(!btsnd_hcic_ble_create_ext_conn_v2(&aux_conn)) {
+                l2cu_release_lcb (p_lcb);
+                L2CAP_TRACE_ERROR("initiate pawr sync connection failed, no resources");
+            }
+        } else
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
+        {
+            if(!btsnd_hcic_ble_create_ext_conn(&aux_conn)) {
+                l2cu_release_lcb (p_lcb);
+                L2CAP_TRACE_ERROR("initiate Aux connection failed, no resources");
+            }
         }
 #else
     L2CAP_TRACE_ERROR("BLE 5.0 not support!\n");
