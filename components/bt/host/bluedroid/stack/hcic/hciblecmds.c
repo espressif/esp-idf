@@ -1703,6 +1703,82 @@ BOOLEAN btsnd_hcic_ble_create_ext_conn(tHCI_CreatExtConn *p_conn)
 
 }
 
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+BOOLEAN btsnd_hcic_ble_create_ext_conn_v2(tHCI_CreatExtConn *p_conn)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+    tHCI_ExtConnParams *params;
+    HCI_TRACE_EVENT("%s", __func__);
+    uint8_t size = HCIC_PARAM_SIZE_EXT_CONN_CREATE_BASE + 2;
+
+    if (p_conn->init_phy_mask & 0x01) {
+        size += sizeof(tHCI_ExtConnParams);
+    }
+
+    if (p_conn->init_phy_mask & 0x02) {
+        size += sizeof(tHCI_ExtConnParams);
+    }
+
+    if (p_conn->init_phy_mask & 0x04) {
+        size += sizeof(tHCI_ExtConnParams);
+    }
+
+    HCIC_BLE_CMD_CREATED(p, pp,  size);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_EXT_CREATE_CONN_V2);
+    UINT8_TO_STREAM(pp, size);
+    UINT8_TO_STREAM(pp, p_conn->adv_handle);
+    UINT8_TO_STREAM(pp, p_conn->subevent);
+    UINT8_TO_STREAM(pp, p_conn->filter_policy);
+    UINT8_TO_STREAM(pp, p_conn->filter_policy);
+    UINT8_TO_STREAM(pp, p_conn->own_addr_type);
+    UINT8_TO_STREAM(pp, p_conn->peer_addr_type);
+    BDADDR_TO_STREAM(pp, p_conn->peer_addr);
+    UINT8_TO_STREAM(pp, p_conn->init_phy_mask);
+
+    if (p_conn->init_phy_mask & 0x01) {
+        params = &p_conn->params[0];
+        UINT16_TO_STREAM(pp, params->scan_interval);
+        UINT16_TO_STREAM(pp, params->scan_window);
+        UINT16_TO_STREAM(pp, params->conn_interval_min);
+        UINT16_TO_STREAM(pp, params->conn_interval_max);
+        UINT16_TO_STREAM(pp, params->conn_latency);
+        UINT16_TO_STREAM(pp, params->sup_timeout);
+        UINT16_TO_STREAM(pp, params->min_ce_len ? params->min_ce_len : BLE_CE_LEN_MIN);
+        UINT16_TO_STREAM(pp, params->max_ce_len ? params->max_ce_len : BLE_CE_LEN_MIN);
+    }
+
+    if (p_conn->init_phy_mask & 0x02) {
+        params = &p_conn->params[1];
+        UINT16_TO_STREAM(pp, params->scan_interval);
+        UINT16_TO_STREAM(pp, params->scan_window);
+        UINT16_TO_STREAM(pp, params->conn_interval_min);
+        UINT16_TO_STREAM(pp, params->conn_interval_max);
+        UINT16_TO_STREAM(pp, params->conn_latency);
+        UINT16_TO_STREAM(pp, params->sup_timeout);
+        UINT16_TO_STREAM(pp, params->min_ce_len ? params->min_ce_len : BLE_CE_LEN_MIN);
+        UINT16_TO_STREAM(pp, params->max_ce_len ? params->max_ce_len : BLE_CE_LEN_MIN);
+    }
+
+    if (p_conn->init_phy_mask & 0x04) {
+        params = &p_conn->params[2];
+        UINT16_TO_STREAM(pp, params->scan_interval);
+        UINT16_TO_STREAM(pp, params->scan_window);
+        UINT16_TO_STREAM(pp, params->conn_interval_min);
+        UINT16_TO_STREAM(pp, params->conn_interval_max);
+        UINT16_TO_STREAM(pp, params->conn_latency);
+        UINT16_TO_STREAM(pp, params->sup_timeout);
+        UINT16_TO_STREAM(pp, params->min_ce_len ? params->min_ce_len : BLE_CE_LEN_MIN);
+        UINT16_TO_STREAM(pp, params->max_ce_len ? params->max_ce_len : BLE_CE_LEN_MIN);
+    }
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return TRUE;
+
+}
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
+
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 BOOLEAN btsnd_hcic_ble_periodic_adv_create_sync(UINT8 option, UINT8 adv_sid,
                                                                        UINT8 adv_addr_type, BD_ADDR adv_addr,
