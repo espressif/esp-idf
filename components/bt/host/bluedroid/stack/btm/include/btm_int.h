@@ -702,6 +702,9 @@ struct tBTM_SEC_DEV_REC{
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     tBTM_EXT_CONN_PARAMS ext_conn_params;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+    BOOLEAN is_pawr_synced;
+    UINT8   adv_handle;
+    UINT8   subevent;
 #endif
 
 // btla-specific ++

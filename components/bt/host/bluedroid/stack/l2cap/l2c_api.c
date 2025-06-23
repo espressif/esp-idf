@@ -1649,7 +1649,8 @@ BOOLEAN  L2CA_RegisterFixedChannel (UINT16 fixed_cid, tL2CAP_FIXED_CHNL_REG *p_f
 **  Return value:   TRUE if connection started
 **
 *******************************************************************************/
-BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR rem_bda, tBLE_ADDR_TYPE bd_addr_type, BOOLEAN is_aux)
+BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR rem_bda, tBLE_ADDR_TYPE bd_addr_type, BOOLEAN is_aux,
+                                BOOLEAN is_pawr_synced, UINT8 adv_handle, UINT8 subevent)
 {
     tL2C_LCB *p_lcb;
     tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
@@ -1738,6 +1739,11 @@ BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR rem_bda, tBLE_ADDR_TYPE
 #if (BLE_INCLUDED == TRUE)
     p_lcb->is_aux = is_aux;
     p_lcb->open_addr_type = bd_addr_type;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    p_lcb->is_pawr_synced = is_pawr_synced;
+    p_lcb->adv_handle = adv_handle;
+    p_lcb->subevent = subevent;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 #endif
     if (!l2cu_create_conn(p_lcb, transport)) {
         L2CAP_TRACE_WARNING ("%s() - create_conn failed", __func__);

@@ -947,6 +947,10 @@ typedef struct {
 } tHCI_ExtConnParams;
 
 typedef struct {
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    UINT8 adv_handle;
+    UINT8 subevent;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
     UINT8 filter_policy;
     UINT8 own_addr_type;
     UINT8 peer_addr_type;
@@ -1031,6 +1035,10 @@ UINT8 btsnd_hcic_ble_ext_scan_enable(UINT8 enable, UINT8 filter_dups,
 
 
 BOOLEAN btsnd_hcic_ble_create_ext_conn(tHCI_CreatExtConn *p_conn);
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+BOOLEAN btsnd_hcic_ble_create_ext_conn_v2(tHCI_CreatExtConn *p_conn);
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 
 BOOLEAN btsnd_hcic_ble_periodic_adv_create_sync(UINT8 filter_policy, UINT8 adv_sid,
                                                                        UINT8 adv_addr_type, BD_ADDR adv_addr,

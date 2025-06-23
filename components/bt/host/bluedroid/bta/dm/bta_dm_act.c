@@ -6951,7 +6951,7 @@ void btm_dm_start_gatt_discovery (BD_ADDR bd_addr)
     } else {
         //TODO need to add addr_type in future
         BTA_GATTC_Enh_Open(bta_dm_search_cb.client_if, bd_addr, BLE_ADDR_UNKNOWN_TYPE, TRUE,
-            BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE, 0, NULL, NULL, NULL);
+            BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE, false, 0xFF, 0xFF, 0, NULL, NULL, NULL);
 
     }
 }
