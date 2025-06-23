@@ -144,6 +144,7 @@ void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if)
 *******************************************************************************/
 void BTA_GATTC_Enh_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE remote_addr_type,
                         BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport, BOOLEAN is_aux, tBTA_ADDR_TYPE own_addr_type,
+                        BOOLEAN is_pawr_synced, UINT8 adv_handle, UINT8 subevent,
                         UINT8 phy_mask, tBTA_BLE_CONN_PARAMS *phy_1m_conn_params, tBTA_BLE_CONN_PARAMS *phy_2m_conn_params,
                         tBTA_BLE_CONN_PARAMS *phy_coded_conn_params)
 {
@@ -156,6 +157,11 @@ void BTA_GATTC_Enh_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_T
         p_buf->is_direct = is_direct;
         p_buf->transport = transport;
         p_buf->is_aux = is_aux;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+        p_buf->is_pawr_synced = is_pawr_synced;
+        p_buf->adv_handle = adv_handle;
+        p_buf->subevent = subevent;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
         p_buf->remote_addr_type = remote_addr_type;
         p_buf->own_addr_type = own_addr_type;
         p_buf->phy_mask = phy_mask;
