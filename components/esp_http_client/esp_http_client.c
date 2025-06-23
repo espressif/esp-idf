@@ -34,6 +34,8 @@ static const char *TAG = "HTTP_CLIENT";
 
 ESP_STATIC_ASSERT((int)ESP_HTTP_CLIENT_TLS_VER_ANY == (int)ESP_TLS_VER_ANY, "Enum mismatch in esp_http_client and esp-tls");
 ESP_STATIC_ASSERT((int)ESP_HTTP_CLIENT_TLS_VER_MAX <= (int)ESP_TLS_VER_TLS_MAX, "HTTP client supported TLS is not supported in esp-tls");
+ESP_STATIC_ASSERT((int)HTTP_TLS_DYN_BUF_RX_STATIC == (int)ESP_TLS_DYN_BUF_RX_STATIC, "Enum mismatch in esp_http_client and esp-tls");
+ESP_STATIC_ASSERT((int)HTTP_TLS_DYN_BUF_STRATEGY_MAX <= (int)ESP_TLS_DYN_BUF_STRATEGY_MAX, "HTTP client supported TLS is not supported in esp-tls");
 
 #if CONFIG_ESP_HTTP_CLIENT_EVENT_POST_TIMEOUT == -1
 #define ESP_HTTP_CLIENT_EVENT_POST_TIMEOUT portMAX_DELAY
@@ -793,6 +795,14 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
         }
     }
     esp_transport_ssl_set_tls_version(ssl, config->tls_version);
+
+#if CONFIG_MBEDTLS_DYNAMIC_BUFFER
+    /* When tls_dyn_buf_strategy is 0, mbedTLS dynamic buffer allocation uses default behavior.
+     * No need to call esp_transport_ssl_set_esp_tls_dyn_buf_strategy() in this case */
+    if (config->tls_dyn_buf_strategy != 0 && config->tls_dyn_buf_strategy < HTTP_TLS_DYN_BUF_STRATEGY_MAX) {
+        esp_transport_ssl_set_esp_tls_dyn_buf_strategy(ssl, config->tls_dyn_buf_strategy);
+    }
+#endif
 
 #if CONFIG_ESP_TLS_USE_SECURE_ELEMENT
     if (config->use_secure_element) {
