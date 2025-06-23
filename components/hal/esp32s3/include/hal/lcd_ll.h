@@ -723,6 +723,12 @@ static inline void lcd_ll_enable_interrupt(lcd_cam_dev_t *dev, uint32_t mask, bo
         dev->lc_dma_int_ena.val &= ~(mask & 0x03);
     }
 }
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define lcd_ll_enable_interrupt(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lcd_ll_enable_interrupt(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Get interrupt status value

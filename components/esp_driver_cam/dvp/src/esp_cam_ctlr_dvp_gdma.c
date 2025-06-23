@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,23 @@
 #include "esp_cache.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_cam_ctlr_dvp_dma.h"
+#include "esp_memory_utils.h"
 
 #define ALIGN_UP_BY(num, align)             (((num) + ((align) - 1)) & ~((align) - 1))
+
+#if defined(SOC_GDMA_TRIG_PERIPH_CAM0_BUS) && (SOC_GDMA_TRIG_PERIPH_CAM0_BUS == SOC_GDMA_BUS_AHB)
+#define DVP_GDMA_NEW_CHANNEL            gdma_new_ahb_channel
+#define DVP_GDMA_DESC_ALLOC_CAPS        (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
+#elif defined(SOC_GDMA_TRIG_PERIPH_CAM0_BUS) && (SOC_GDMA_TRIG_PERIPH_CAM0_BUS == SOC_GDMA_BUS_AXI)
+#define DVP_GDMA_NEW_CHANNEL            gdma_new_axi_channel
+#if CONFIG_SPIRAM
+#define DVP_GDMA_DESC_ALLOC_CAPS        (MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA)
+#else
+#define DVP_GDMA_DESC_ALLOC_CAPS        (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
+#endif
+#else
+#error "Unsupported GDMA bus type for DVP"
+#endif
 
 static const char *TAG = "dvp_gdma";
 
@@ -72,9 +87,9 @@ esp_err_t esp_cam_ctlr_dvp_dma_init(esp_cam_ctlr_dvp_dma_t *dma, uint32_t burst_
 #endif
     };
 
-    ESP_RETURN_ON_ERROR(esp_cache_get_alignment(MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA, &alignment_size), TAG, "failed to get cache alignment");
+    ESP_RETURN_ON_ERROR(esp_cache_get_alignment(DVP_GDMA_DESC_ALLOC_CAPS, &alignment_size), TAG, "failed to get cache alignment");
 
-    ESP_RETURN_ON_ERROR(gdma_new_axi_channel(&rx_alloc_config, &dma->dma_chan), TAG, "new channel failed");
+    ESP_RETURN_ON_ERROR(DVP_GDMA_NEW_CHANNEL(&rx_alloc_config, &dma->dma_chan), TAG, "new channel failed");
 
     ESP_GOTO_ON_ERROR(gdma_connect(dma->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_CAM, 0)), fail0, TAG, "connect failed");
 
@@ -90,17 +105,21 @@ esp_err_t esp_cam_ctlr_dvp_dma_init(esp_cam_ctlr_dvp_dma_t *dma, uint32_t burst_
         .access_ext_mem = true,
     };
     ESP_GOTO_ON_ERROR(gdma_config_transfer(dma->dma_chan, &transfer_config), fail1, TAG, "set trans ability failed");
+    size_t int_mem_align = 0;
+    size_t ext_mem_align = 0;
+    gdma_get_alignment_constraints(dma->dma_chan, &int_mem_align, &ext_mem_align);
 
     dma->desc_count = size / ESP_CAM_CTLR_DVP_DMA_DESC_BUFFER_MAX_SIZE;
     if (size % ESP_CAM_CTLR_DVP_DMA_DESC_BUFFER_MAX_SIZE) {
         dma->desc_count++;
     }
     dma->size = size;
-
-    ESP_LOGD(TAG, "alignment: 0x%x\n", alignment_size);
+    alignment_size = (alignment_size == 0) ? 1 : alignment_size;
     dma->desc_size = ALIGN_UP_BY(dma->desc_count * sizeof(esp_cam_ctlr_dvp_dma_desc_t), alignment_size);
 
-    dma->desc = heap_caps_aligned_alloc(alignment_size, dma->desc_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    ESP_LOGD(TAG, "alignment_size: %d, dma->desc_count: %d, dma->desc_size: %d", alignment_size, dma->desc_count, dma->desc_size);
+    dma->desc = heap_caps_aligned_alloc(alignment_size, dma->desc_size, DVP_GDMA_DESC_ALLOC_CAPS);
+
     ESP_GOTO_ON_FALSE(dma->desc, ESP_ERR_NO_MEM, fail1, TAG, "no mem for DVP DMA descriptor");
 
     return ESP_OK;
@@ -144,15 +163,15 @@ esp_err_t esp_cam_ctlr_dvp_dma_deinit(esp_cam_ctlr_dvp_dma_t *dma)
  */
 esp_err_t IRAM_ATTR esp_cam_ctlr_dvp_dma_start(esp_cam_ctlr_dvp_dma_t *dma, uint8_t *buffer, size_t size)
 {
-    esp_err_t ret;
-
     ESP_RETURN_ON_FALSE_ISR(dma, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE_ISR(dma->size >= size, ESP_ERR_INVALID_ARG, TAG, "input buffer size is out of range");
 
     esp_cam_ctlr_dvp_config_dma_desc(dma->desc, buffer, size);
 
-    ret = esp_cache_msync(dma->desc, dma->desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
-    assert(ret == ESP_OK);
+    if (esp_ptr_external_ram(dma->desc)) {
+        esp_err_t ret = esp_cache_msync(dma->desc, dma->desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+        assert(ret == ESP_OK);
+    }
 
     return gdma_start(dma->dma_chan, (intptr_t)dma->desc);
 }
