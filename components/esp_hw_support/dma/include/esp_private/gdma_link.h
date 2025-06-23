@@ -176,6 +176,24 @@ esp_err_t gdma_link_get_owner(gdma_link_list_handle_t list, int item_index, gdma
  */
 size_t gdma_link_count_buffer_size_till_eof(gdma_link_list_handle_t list, int start_item_index);
 
+/**
+ * @brief Get the buffer of a DMA link list item
+ *
+ * @param[in] list Link list handle, allocated by `gdma_new_link_list`
+ * @param[in] item_index Index of the link list item
+ * @return Buffer of the link list item
+ */
+void* gdma_link_get_buffer(gdma_link_list_handle_t list, int item_index);
+
+/**
+ * @brief Get the length of the buffer of a DMA link list item
+ *
+ * @param[in] list Link list handle, allocated by `gdma_new_link_list`
+ * @param[in] item_index Index of the link list item
+ * @return Length of the buffer of the link list item
+ */
+size_t gdma_link_get_length(gdma_link_list_handle_t list, int item_index);
+
 #ifdef __cplusplus
 }
 #endif

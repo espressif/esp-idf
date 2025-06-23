@@ -174,6 +174,7 @@ When the TX unit generates events such as transmission done, it will notify the 
 For the event callbacks supported by the TX unit, refer to :cpp:type:`parlio_tx_event_callbacks_t`:
 
 - :cpp:member:`parlio_tx_event_callbacks_t::on_trans_done` Sets the callback function for the "transmission complete" event, with the function prototype declared as :cpp:type:`parlio_tx_done_callback_t`.
+- :cpp:member:`parlio_tx_event_callbacks_t::on_buffer_switched` Sets the callback function for the "buffer switch" event, with the function prototype declared as :cpp:type:`parlio_tx_buffer_switched_callback_t`.
 
 Resource Recycling
 ^^^^^^^^^^^^^^^^^^
@@ -307,7 +308,7 @@ The waveform of the external clock input is shown below:
 
     .. note::
 
-        If you need to modify the transmission payload after enabling infinite loop transmission, you can configure :cpp:member:`parlio_transmit_config_t::flags::loop_transmission` and call :cpp:func:`parlio_tx_unit_transmit` again with a new payload buffer. The driver will switch to the new buffer after the old buffer is completely transmitted. Therefore, users need to maintain two buffers to avoid data inconsistency caused by premature modification or recycling of the old buffer.
+        If you need to modify the transmission payload after enabling infinite loop transmission, you can configure :cpp:member:`parlio_transmit_config_t::flags::loop_transmission` and call :cpp:func:`parlio_tx_unit_transmit` again with a new payload buffer. The driver will switch to the new buffer after the old buffer is completely transmitted. You can register :cpp:member:`parlio_tx_event_callbacks_t::on_buffer_switched` to set the callback function for the "buffer switch" event, and need to maintain two buffers to avoid data inconsistency caused by premature modification or recycling of the old buffer.
 
 .. only:: SOC_BITSCRAMBLER_SUPPORTED
 
