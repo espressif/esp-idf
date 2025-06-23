@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,8 +8,10 @@
 #include "esp_check.h"
 #include "esp_vfs_fat.h"
 #include "driver/i2s_tdm.h"
-#include "driver/i2c.h"
-#include "es7210.h"
+#include "driver/i2c_master.h"
+#include "esp_codec_dev_defaults.h"
+#include "esp_codec_dev.h"
+#include "esp_codec_dev_vol.h"
 #include "format_wav.h"
 
 #if CONFIG_IDF_TARGET_ESP32S3 // ESP32-S3-Korvo-1 pin out
@@ -67,7 +69,6 @@
 #endif
 
 /* I2S configurations */
-#define EXAMPLE_I2S_TDM_FORMAT     (ES7210_I2S_FMT_I2S)
 #define EXAMPLE_I2S_CHAN_NUM       (4)
 #define EXAMPLE_I2S_SAMPLE_RATE    (48000)
 #define EXAMPLE_I2S_MCLK_MULTIPLE  (I2S_MCLK_MULTIPLE_256)
@@ -76,10 +77,8 @@
 
 /* ES7210 configurations */
 #define EXAMPLE_ES7210_I2C_ADDR    (0x40)
-#define EXAMPLE_ES7210_I2C_CLK     (100000)
-#define EXAMPLE_ES7210_MIC_GAIN    (ES7210_MIC_GAIN_30DB)
-#define EXAMPLE_ES7210_MIC_BIAS    (ES7210_MIC_BIAS_2V87)
-#define EXAMPLE_ES7210_ADC_VOLUME  (0)
+#define EXAMPLE_ES7210_MIC_GAIN    (30)  // 30db
+#define EXAMPLE_ES7210_MIC_SELECTED (ES7120_SEL_MIC1 | ES7120_SEL_MIC2 | ES7120_SEL_MIC3 | ES7120_SEL_MIC4)
 
 /* SD card & recording configurations */
 #define EXAMPLE_RECORD_TIME_SEC    (10)
@@ -97,15 +96,11 @@ static i2s_chan_handle_t es7210_i2s_init(void)
 
     ESP_LOGI(TAG, "Configure I2S receive channel to TDM mode");
     i2s_tdm_config_t i2s_tdm_rx_conf = {
-#if EXAMPLE_I2S_FORMAT == ES7210_I2S_FMT_I2S
-        .slot_cfg = I2S_TDM_PHILIPS_SLOT_DEFAULT_CONFIG(EXAMPLE_I2S_SAMPLE_BITS, I2S_SLOT_MODE_STEREO, EXAMPLE_I2S_TDM_SLOT_MASK),
-#elif EXAMPLE_I2S_FORMAT == ES7210_I2S_FMT_LJ
-        .slot_cfg = I2S_TDM_MSB_SLOT_DEFAULT_CONFIG(EXAMPLE_I2S_SAMPLE_BITS, I2S_SLOT_MODE_STEREO, EXAMPLE_I2S_TDM_SLOT_MASK),
-#elif EXAMPLE_I2S_FORMAT == ES7210_I2S_FMT_DSP_A
-        .slot_cfg = I2S_TDM_PCM_SHORT_SLOT_DEFAULT_CONFIG(EXAMPLE_I2S_SAMPLE_BITS, I2S_SLOT_MODE_STEREO, EXAMPLE_I2S_TDM_SLOT_MASK),
-#elif EXAMPLE_I2S_FORMAT == ES7210_I2S_FMT_DSP_B
-        .slot_cfg = I2S_TDM_PCM_LONG_SLOT_DEFAULT_CONFIG(EXAMPLE_I2S_SAMPLE_BITS, I2S_SLOT_MODE_STEREO, EXAMPLE_I2S_TDM_SLOT_MASK),
-#endif
+        // es7210 driver is default to use philips format in esp_codec_dev component
+        .slot_cfg = I2S_TDM_PHILIPS_SLOT_DEFAULT_CONFIG(
+            EXAMPLE_I2S_SAMPLE_BITS,
+            I2S_SLOT_MODE_STEREO,
+            EXAMPLE_I2S_TDM_SLOT_MASK),
         .clk_cfg  = {
             .clk_src = I2S_CLK_SRC_DEFAULT,
             .sample_rate_hz = EXAMPLE_I2S_SAMPLE_RATE,
@@ -173,40 +168,81 @@ sdmmc_card_t * mount_sdcard(void)
     return sdmmc_card;
 }
 
-static void es7210_codec_init(void)
+static esp_codec_dev_handle_t es7210_codec_init(i2s_chan_handle_t i2s_rx_chan)
 {
     ESP_LOGI(TAG, "Init I2C used to configure ES7210");
-    i2c_config_t i2c_conf = {
+    /* Initialize I2C peripheral */
+    i2c_master_bus_handle_t i2c_bus_handle = NULL;
+    i2c_master_bus_config_t i2c_mst_cfg = {
+        .i2c_port = EXAMPLE_I2C_NUM,
         .sda_io_num = EXAMPLE_I2C_SDA_IO,
         .scl_io_num = EXAMPLE_I2C_SCL_IO,
-        .mode = I2C_MODE_MASTER,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = EXAMPLE_ES7210_I2C_CLK,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,
+        /* Pull-up internally for no external pull-up case.
+        Suggest to use external pull-up to ensure a strong enough pull-up. */
+        .flags.enable_internal_pullup = true,
     };
-    ESP_ERROR_CHECK(i2c_param_config(EXAMPLE_I2C_NUM, &i2c_conf));
-    ESP_ERROR_CHECK(i2c_driver_install(EXAMPLE_I2C_NUM, i2c_conf.mode, 0, 0, 0));
+    ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_cfg, &i2c_bus_handle));
 
-    /* Create ES7210 device handle */
-    es7210_dev_handle_t es7210_handle = NULL;
-    es7210_i2c_config_t es7210_i2c_conf = {
-        .i2c_port = EXAMPLE_I2C_NUM,
-        .i2c_addr = EXAMPLE_ES7210_I2C_ADDR
+    /* Create control interface with I2C bus handle */
+    audio_codec_i2c_cfg_t i2c_cfg = {
+        .port = EXAMPLE_I2C_NUM,
+        .addr = ES7210_CODEC_DEFAULT_ADDR,
+        .bus_handle = i2c_bus_handle,
     };
-    ESP_ERROR_CHECK(es7210_new_codec(&es7210_i2c_conf, &es7210_handle));
+    const audio_codec_ctrl_if_t *ctrl_if = audio_codec_new_i2c_ctrl(&i2c_cfg);
+    assert(ctrl_if);
 
+    /* Create data interface with I2S bus handle */
+    audio_codec_i2s_cfg_t i2s_cfg = {
+        .port = EXAMPLE_I2S_NUM,
+        .rx_handle = i2s_rx_chan,
+        .tx_handle = NULL,
+    };
+    const audio_codec_data_if_t *data_if = audio_codec_new_i2s_data(&i2s_cfg);
+    assert(data_if);
+
+    /* Create ES7210 interface handle */
     ESP_LOGI(TAG, "Configure ES7210 codec parameters");
-    es7210_codec_config_t codec_conf = {
-        .i2s_format = EXAMPLE_I2S_TDM_FORMAT,
-        .mclk_ratio = EXAMPLE_I2S_MCLK_MULTIPLE,
-        .sample_rate_hz = EXAMPLE_I2S_SAMPLE_RATE,
-        .bit_width = (es7210_i2s_bits_t)EXAMPLE_I2S_SAMPLE_BITS,
-        .mic_bias = EXAMPLE_ES7210_MIC_BIAS,
-        .mic_gain = EXAMPLE_ES7210_MIC_GAIN,
-        .flags.tdm_enable = true
+    es7210_codec_cfg_t es7210_cfg = {
+        .ctrl_if = ctrl_if,
+        .master_mode = false,
+        .mic_selected = EXAMPLE_ES7210_MIC_SELECTED,
+        .mclk_src = ES7210_MCLK_FROM_PAD,
+        .mclk_div = EXAMPLE_I2S_MCLK_MULTIPLE,
     };
-    ESP_ERROR_CHECK(es7210_config_codec(es7210_handle, &codec_conf));
-    ESP_ERROR_CHECK(es7210_config_volume(es7210_handle, EXAMPLE_ES7210_ADC_VOLUME));
+    const audio_codec_if_t *es7210_if = es7210_codec_new(&es7210_cfg);
+    assert(es7210_if);
+
+    /* Create the top codec handle with ES7210 interface handle and data interface */
+    esp_codec_dev_cfg_t dev_cfg = {
+        .dev_type = ESP_CODEC_DEV_TYPE_IN,
+        .codec_if = es7210_if,
+        .data_if = data_if,
+    };
+    esp_codec_dev_handle_t codec_handle = esp_codec_dev_new(&dev_cfg);
+    assert(codec_handle);
+
+    /* Specify the sample configurations and open the device */
+    esp_codec_dev_sample_info_t sample_cfg = {
+        .bits_per_sample = EXAMPLE_I2S_SAMPLE_BITS,
+        .channel = EXAMPLE_I2S_CHAN_NUM,
+        .channel_mask = EXAMPLE_ES7210_MIC_SELECTED,
+        .sample_rate = EXAMPLE_I2S_SAMPLE_RATE,
+    };
+    if (esp_codec_dev_open(codec_handle, &sample_cfg) != ESP_CODEC_DEV_OK) {
+        ESP_LOGE(TAG, "Open codec device failed");
+        assert(false);
+    }
+
+    /* Set the initial gain */
+    if (esp_codec_dev_set_in_gain(codec_handle, EXAMPLE_ES7210_MIC_GAIN) != ESP_CODEC_DEV_OK) {
+        ESP_LOGE(TAG, "set input gain failed");
+        assert(false);
+    }
+
+    return codec_handle;
 }
 
 static esp_err_t record_wav(i2s_chan_handle_t i2s_rx_chan)
@@ -231,7 +267,6 @@ static esp_err_t record_wav(i2s_chan_handle_t i2s_rx_chan)
     /* Start recording */
     size_t wav_written = 0;
     static int16_t i2s_readraw_buff[4096];
-    ESP_GOTO_ON_ERROR(i2s_channel_enable(i2s_rx_chan), err, TAG, "error while starting i2s rx channel");
     while (wav_written < wav_size) {
         if (wav_written % byte_rate < sizeof(i2s_readraw_buff)) {
             ESP_LOGI(TAG, "Recording: %"PRIu32"/%ds", wav_written / byte_rate + 1, (int)EXAMPLE_RECORD_TIME_SEC);
@@ -247,7 +282,6 @@ static esp_err_t record_wav(i2s_chan_handle_t i2s_rx_chan)
     }
 
 err:
-    i2s_channel_disable(i2s_rx_chan);
     ESP_LOGI(TAG, "Recording done! Flushing file buffer");
     fclose(f);
 
@@ -259,13 +293,15 @@ void app_main(void)
     /* Init I2C bus to configure ES7210 and I2S bus to receive audio data from ES7210 */
     i2s_chan_handle_t i2s_rx_chan = es7210_i2s_init();
     /* Create ES7210 device handle and configure codec parameters */
-    es7210_codec_init();
+    esp_codec_dev_handle_t codec_handle = es7210_codec_init(i2s_rx_chan);
     /* Mount SD card, the recorded audio file will be saved into it */
     sdmmc_card_t *sdmmc_card = mount_sdcard();
     /* Start to record wav audio */
     esp_err_t err = record_wav(i2s_rx_chan);
     /* Unmount SD card */
     esp_vfs_fat_sdcard_unmount(EXAMPLE_SD_MOUNT_POINT, sdmmc_card);
+    /* Close codec device */
+    esp_codec_dev_close(codec_handle);
     if (err == ESP_OK) {
         ESP_LOGI(TAG, "Audio was successfully recorded into "EXAMPLE_RECORD_FILE_PATH
                  ". You can now remove the SD card safely");
