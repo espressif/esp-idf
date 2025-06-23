@@ -901,7 +901,7 @@ menu "BLE Services"
             Enable HeartRate Service support
 
     menuconfig BT_NIMBLE_HID_SERVICE
-        bool "HID service"
+        bool "Human Interface Device service"
         default n
         help
             Enable HID service support
@@ -933,7 +933,7 @@ menu "BLE Services"
             Enable/Disable notifications on BAS Battery Level Characteristic
 
     menuconfig BT_NIMBLE_DIS_SERVICE
-        bool "DIS service"
+        bool "Device Information Service"
         default y
         help
             Enable DIS service support
@@ -1078,7 +1078,6 @@ menu "BLE Services"
         default 0 if BT_NIMBLE_SVC_GAP_CAR_NOT_SUPP
         default 1 if BT_NIMBLE_SVC_GAP_CAR_SUPP
 
-
     menu "GAP device name write permissions"
         depends on BT_NIMBLE_GAP_SERVICE
         config BT_NIMBLE_SVC_GAP_NAME_WRITE
@@ -1109,7 +1108,7 @@ menu "BLE Services"
                 Enable write with authorisation permission (BLE_GATT_CHR_F_WRITE_AUTHOR)
     endmenu
 
-    menu "PPCP settings"
+    menu "Peripheral Preferred Connection Parameters (PPCP) settings"
         depends on BT_NIMBLE_GAP_SERVICE
         config BT_NIMBLE_SVC_GAP_PPCP_MAX_CONN_INTERVAL
             int "PPCP Connection Interval Max (Unit: 1.25 ms)"
