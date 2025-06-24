@@ -25,6 +25,8 @@
 
 ESP_HW_LOG_ATTR_TAG(TAG, "pmu_sleep");
 
+static bool s_pmu_sleep_regdma_backup_enabled;
+
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
 
@@ -51,17 +53,23 @@ uint32_t get_slp_lp_dbias(void)
 
 void pmu_sleep_enable_regdma_backup(void)
 {
-    assert(PMU_instance()->hal);
-    /* entry 0, 1, 2 is used by pmu HP_SLEEP and HP_ACTIVE, HP_SLEEP
-        * and HP_MODEM or HP_MODEM and HP_ACTIVE states switching,
-        * respectively. entry 3 is reserved, not used yet! */
-    pmu_hal_hp_set_sleep_active_backup_enable(PMU_instance()->hal);
+    if (!s_pmu_sleep_regdma_backup_enabled){
+        assert(PMU_instance()->hal);
+        /* entry 0, 1, 2 is used by pmu HP_SLEEP and HP_ACTIVE, HP_SLEEP
+            * and HP_MODEM or HP_MODEM and HP_ACTIVE states switching,
+            * respectively. entry 3 is reserved, not used yet! */
+        pmu_hal_hp_set_sleep_active_backup_enable(PMU_instance()->hal);
+        s_pmu_sleep_regdma_backup_enabled = true;
+    }
 }
 
 void pmu_sleep_disable_regdma_backup(void)
 {
-    assert(PMU_instance()->hal);
-    pmu_hal_hp_set_sleep_active_backup_disable(PMU_instance()->hal);
+    if (s_pmu_sleep_regdma_backup_enabled) {
+        assert(PMU_instance()->hal);
+        pmu_hal_hp_set_sleep_active_backup_disable(PMU_instance()->hal);
+        s_pmu_sleep_regdma_backup_enabled = false;
+    }
 }
 
 uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t sleep_flags, soc_rtc_slow_clk_src_t slowclk_src, uint32_t slowclk_period, uint32_t fastclk_period)

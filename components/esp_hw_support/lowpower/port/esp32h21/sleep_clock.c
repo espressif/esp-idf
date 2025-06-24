@@ -30,9 +30,8 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
         [5] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(5),   I2C_ANA_MST_ANA_CONF0_REG,      I2C_MST_BBPLL_STOP_FORCE_HIGH,  I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
         /* Clock configuration retention */
         [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(6),   DR_REG_PCR_BASE,                DR_REG_PCR_BASE,                N_REGS_PCR(),                   0, 0), .owner = ENTRY(0) | ENTRY(2) },
-        [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(7),   PCR_RESET_EVENT_BYPASS_REG,     PCR_RESET_EVENT_BYPASS_REG,     1,                              0, 0), .owner = ENTRY(0) | ENTRY(2) },
-        [8] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(8),   PCR_BUS_CLK_UPDATE_REG,         PCR_BUS_CLOCK_UPDATE,           PCR_BUS_CLOCK_UPDATE_M,         1, 0), .owner = ENTRY(0) | ENTRY(2) },
-        [9] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(9),   PCR_BUS_CLK_UPDATE_REG,         0x0,                            PCR_BUS_CLOCK_UPDATE_M,         1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [7] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(7),   PCR_BUS_CLK_UPDATE_REG,         PCR_BUS_CLOCK_UPDATE,           PCR_BUS_CLOCK_UPDATE_M,         1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [8] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(8),   PCR_BUS_CLK_UPDATE_REG,         0x0,                            PCR_BUS_CLOCK_UPDATE_M,         1, 0), .owner = ENTRY(0) | ENTRY(2) },
     };
 
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
@@ -77,7 +76,7 @@ bool clock_domain_pd_allowed(void)
      * necessary to check the state of CLOCK_MODEM to determine MODEM domain on
      * or off. The clock and reset of digital peripherals are managed through
      * PCR, with TOP domain similar to MODEM domain. */
-    sleep_retention_module_bitmap_t modem_clk_dep_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
+    __attribute__((unused)) sleep_retention_module_bitmap_t modem_clk_dep_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
 #if SOC_BT_SUPPORTED
     modem_clk_dep_modules.bitmap[SLEEP_RETENTION_MODULE_BLE_MAC >> 5] |= BIT(SLEEP_RETENTION_MODULE_BLE_MAC % 32);
     modem_clk_dep_modules.bitmap[SLEEP_RETENTION_MODULE_BT_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_BT_BB % 32);

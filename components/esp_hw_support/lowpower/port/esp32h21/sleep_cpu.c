@@ -23,6 +23,7 @@
 #include "soc/soc_caps.h"
 #include "soc/cache_reg.h"
 #include "soc/intpri_reg.h"
+#include "soc/plic_reg.h"
 #include "soc/rtc_periph.h"
 #include "esp_private/esp_pmu.h"
 #include "esp_private/sleep_cpu.h"
@@ -57,6 +58,7 @@ typedef struct {
         RvCoreCriticalSleepFrame *critical_frame;
         RvCoreNonCriticalSleepFrame *non_critical_frame;
         cpu_domain_dev_sleep_frame_t *intpri_frame;
+        cpu_domain_dev_sleep_frame_t *plic_frame;
         cpu_domain_dev_sleep_frame_t *cache_config_frame;
     } retent;
 } sleep_cpu_retention_t;
@@ -119,6 +121,17 @@ static inline void * cpu_domain_cache_config_sleep_frame_alloc_and_init(void)
     return cpu_domain_dev_sleep_frame_alloc_and_init(regions, sizeof(regions) / sizeof(regions[0]));
 }
 
+static inline void * cpu_domain_plic_sleep_frame_alloc_and_init(void)
+{
+    const static cpu_domain_dev_regs_region_t regions[] = {
+        { .start = PLIC_MXINT_ENABLE_REG, .end = PLIC_MXINT_CLAIM_REG + 4 },
+        { .start = PLIC_MXINT_CONF_REG,   .end = PLIC_MXINT_CONF_REG + 4  },
+        { .start = PLIC_UXINT_ENABLE_REG, .end = PLIC_UXINT_CLAIM_REG + 4 },
+        { .start = PLIC_UXINT_CONF_REG,   .end = PLIC_UXINT_CONF_REG + 4  }
+    };
+    return cpu_domain_dev_sleep_frame_alloc_and_init(regions, sizeof(regions) / sizeof(regions[0]));
+}
+
 static esp_err_t esp_sleep_cpu_retention_init_impl(void)
 {
     if (s_cpu_retention.retent.critical_frame == NULL) {
@@ -150,6 +163,13 @@ static esp_err_t esp_sleep_cpu_retention_init_impl(void)
         }
         s_cpu_retention.retent.cache_config_frame = (cpu_domain_dev_sleep_frame_t *)frame;
     }
+    if (s_cpu_retention.retent.plic_frame == NULL) {
+        void *frame = cpu_domain_plic_sleep_frame_alloc_and_init();
+        if (frame == NULL) {
+            goto err;
+        }
+        s_cpu_retention.retent.plic_frame = (cpu_domain_dev_sleep_frame_t *)frame;
+    }
     return ESP_OK;
 err:
     esp_sleep_cpu_retention_deinit();
@@ -174,6 +194,10 @@ static esp_err_t esp_sleep_cpu_retention_deinit_impl(void)
     if (s_cpu_retention.retent.cache_config_frame) {
         heap_caps_free((void *)s_cpu_retention.retent.cache_config_frame);
         s_cpu_retention.retent.cache_config_frame = NULL;
+    }
+    if (s_cpu_retention.retent.plic_frame) {
+        heap_caps_free((void *)s_cpu_retention.retent.plic_frame);
+        s_cpu_retention.retent.plic_frame = NULL;
     }
     return ESP_OK;
 }
@@ -437,6 +461,7 @@ esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uin
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CPU_TO_MEM_START, (void *)0);
     uint32_t mstatus = save_mstatus_and_disable_global_int();
 
+    cpu_domain_dev_regs_save(s_cpu_retention.retent.plic_frame);
     cpu_domain_dev_regs_save(s_cpu_retention.retent.intpri_frame);
     cpu_domain_dev_regs_save(s_cpu_retention.retent.cache_config_frame);
     RvCoreNonCriticalSleepFrame *frame = rv_core_noncritical_regs_save();
@@ -455,6 +480,7 @@ esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uin
     rv_core_noncritical_regs_restore(frame);
     cpu_domain_dev_regs_restore(s_cpu_retention.retent.cache_config_frame);
     cpu_domain_dev_regs_restore(s_cpu_retention.retent.intpri_frame);
+    cpu_domain_dev_regs_restore(s_cpu_retention.retent.plic_frame);
     restore_mstatus(mstatus);
     return err;
 }
@@ -472,9 +498,10 @@ esp_err_t esp_sleep_cpu_retention_deinit(void)
 bool cpu_domain_pd_allowed(void)
 {
     return (s_cpu_retention.retent.critical_frame != NULL) && \
-         (s_cpu_retention.retent.non_critical_frame != NULL) && \
-         (s_cpu_retention.retent.intpri_frame != NULL) && \
-         (s_cpu_retention.retent.cache_config_frame != NULL);
+        (s_cpu_retention.retent.non_critical_frame != NULL) && \
+        (s_cpu_retention.retent.intpri_frame != NULL) && \
+        (s_cpu_retention.retent.cache_config_frame != NULL) && \
+        (s_cpu_retention.retent.plic_frame != NULL);
 }
 
 esp_err_t sleep_cpu_configure(bool light_sleep_enable)
