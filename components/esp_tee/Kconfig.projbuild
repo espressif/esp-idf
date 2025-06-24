@@ -3,7 +3,6 @@ menu "ESP-TEE (Trusted Execution Environment)"
 
     config SECURE_ENABLE_TEE
         bool "Enable the ESP-TEE framework"
-        select ESP_SYSTEM_MEMPROT_FEATURE_VIA_TEE
         help
             This configuration enables the Trusted Execution Environment (TEE) feature.
 
