@@ -150,6 +150,7 @@ typedef enum {
     HOST_CONNECTION_MODE_CLI_USB,        /*!< CLI USB connection to the host */
     HOST_CONNECTION_MODE_RCP_UART,       /*!< RCP UART connection to the host */
     HOST_CONNECTION_MODE_RCP_SPI,        /*!< RCP SPI connection to the host */
+    HOST_CONNECTION_MODE_RCP_USB,       /*!<  RCP USB Serial JTAG connection to the host */
     HOST_CONNECTION_MODE_MAX,            /*!< Using for parameter check */
 } esp_openthread_host_connection_mode_t;
 
