@@ -622,37 +622,40 @@ static bool uart_try_set_iomux_pin(uart_port_t uart_num, int io_num, uint32_t id
     return true;
 }
 
-static void uart_release_pin(uart_port_t uart_num)
+static void uart_release_pin(uart_port_t uart_num, bool release_tx, bool release_rx, bool release_rts, bool release_cts)
 {
     if (uart_num >= UART_NUM_MAX) {
         return;
     }
-    if (uart_context[uart_num].tx_io_num >= 0) {
+    if (release_tx && uart_context[uart_num].tx_io_num >= 0) {
         gpio_ll_output_disable(&GPIO, uart_context[uart_num].tx_io_num);
 #if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
         gpio_sleep_sel_en(uart_context[uart_num].tx_io_num); // re-enable the switch to the sleep configuration to save power consumption
 #endif
+
+        uart_context[uart_num].tx_io_num = -1;
     }
 
-    if (uart_context[uart_num].rx_io_num >= 0) {
+    if (release_rx && uart_context[uart_num].rx_io_num >= 0) {
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), false);
 #if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
         gpio_sleep_sel_en(uart_context[uart_num].rx_io_num); // re-enable the switch to the sleep configuration to save power consumption
 #endif
+
+        uart_context[uart_num].rx_io_num = -1;
     }
 
-    if (uart_context[uart_num].rts_io_num >= 0) {
+    if (release_rts && uart_context[uart_num].rts_io_num >= 0) {
         gpio_ll_output_disable(&GPIO, uart_context[uart_num].rts_io_num);
+
+        uart_context[uart_num].rts_io_num = -1;
     }
 
-    if (uart_context[uart_num].cts_io_num >= 0) {
+    if (release_cts && uart_context[uart_num].cts_io_num >= 0) {
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_CTS_PIN_IDX), false);
-    }
 
-    uart_context[uart_num].tx_io_num = -1;
-    uart_context[uart_num].rx_io_num = -1;
-    uart_context[uart_num].rts_io_num = -1;
-    uart_context[uart_num].cts_io_num = -1;
+        uart_context[uart_num].cts_io_num = -1;
+    }
 }
 
 esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num)
@@ -665,7 +668,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     ESP_RETURN_ON_FALSE((cts_io_num < 0 || (GPIO_IS_VALID_GPIO(cts_io_num))), ESP_FAIL, UART_TAG, "cts_io_num error");
 
     // First, release previously configured IOs if there is
-    uart_release_pin(uart_num);
+    uart_release_pin(uart_num, (tx_io_num >= 0), (rx_io_num >= 0), (rts_io_num >= 0), (cts_io_num >= 0));
 
     // Since an IO cannot route peripheral signals via IOMUX and GPIO matrix at the same time,
     // if tx and rx share the same IO, both signals need to be route to IOs through GPIO matrix
@@ -1699,7 +1702,7 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
         return ESP_OK;
     }
 
-    uart_release_pin(uart_num);
+    uart_release_pin(uart_num, true, true, true, true);
 
     esp_intr_free(p_uart_obj[uart_num]->intr_handle);
     uart_disable_rx_intr(uart_num);
