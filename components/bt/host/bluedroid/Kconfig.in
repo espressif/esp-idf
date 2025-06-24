@@ -1303,7 +1303,7 @@ config BT_BLE_50_EXTEND_ADV_EN
 
 config BT_BLE_50_PERIODIC_ADV_EN
     bool "Enable BLE periodic advertising"
-    depends on BT_BLE_50_FEATURES_SUPPORTED
+    depends on BT_BLE_50_EXTEND_ADV_EN
     default y
     help
         This enables BLE periodic advertising
@@ -1317,7 +1317,7 @@ config BT_BLE_50_EXTEND_SCAN_EN
 
 config BT_BLE_50_EXTEND_SYNC_EN
     bool "Enable BLE periodic advertising sync"
-    depends on BT_BLE_50_FEATURES_SUPPORTED
+    depends on BT_BLE_50_EXTEND_SCAN_EN
     default y
     help
         This enables BLE periodic advertising sync
@@ -1331,21 +1331,21 @@ config BT_BLE_50_DTM_TEST_EN
 
 config BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER
     bool "Enable BLE periodic advertising sync transfer feature"
-    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_ESP_NIMBLE_CONTROLLER) || BT_CONTROLLER_DISABLED)) # NOERROR
+    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_PERIODIC_ADV_EN && ((BT_CONTROLLER_ENABLED && SOC_ESP_NIMBLE_CONTROLLER) || BT_CONTROLLER_DISABLED)) # NOERROR
     default n
     help
         This enables BLE periodic advertising sync transfer feature
 
 config BT_BLE_FEAT_PERIODIC_ADV_ENH
     bool "Enable periodic adv enhancements(adi support)"
-    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_ESP_NIMBLE_CONTROLLER) || BT_CONTROLLER_DISABLED)) # NOERROR
+    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_PERIODIC_ADV_EN && ((BT_CONTROLLER_ENABLED && SOC_ESP_NIMBLE_CONTROLLER) || BT_CONTROLLER_DISABLED)) # NOERROR
     default n
     help
         Enable the periodic advertising enhancements
 
 config BT_BLE_FEAT_CREATE_SYNC_ENH
     bool "Enable create sync enhancements(reporting disable and duplicate filtering enable support)"
-    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_ESP_NIMBLE_CONTROLLER) || BT_CONTROLLER_DISABLED)) # NOERROR
+    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_EXTEND_SYNC_EN && ((BT_CONTROLLER_ENABLED && SOC_ESP_NIMBLE_CONTROLLER) || BT_CONTROLLER_DISABLED)) # NOERROR
     default n
     help
         Enable the create sync enhancements
