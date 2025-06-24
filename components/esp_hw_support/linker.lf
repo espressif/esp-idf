@@ -25,6 +25,8 @@ entries:
     if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
         pmu_init (noflash)
         pmu_param (noflash)
+    if SOC_PMU_PVT_SUPPORTED = y:
+        pmu_pvt (noflash)
     if SOC_USB_SERIAL_JTAG_SUPPORTED = y:
         sleep_console (noflash)
     if SOC_USB_OTG_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD = y:

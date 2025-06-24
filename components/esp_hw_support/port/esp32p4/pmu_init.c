@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,8 @@
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_dig_reg.h"
 #include "regi2c_ctrl.h"
+#include "esp_rom_sys.h"
+#include "soc/rtc.h"
 
 static __attribute__((unused)) const char *TAG = "pmu_init";
 
@@ -194,4 +196,10 @@ void pmu_init(void)
     pmu_hp_system_init_default(PMU_instance());
     pmu_lp_system_init_default(PMU_instance());
     pmu_power_domain_force_default(PMU_instance());
+#if CONFIG_ESP_ENABLE_PVT
+    pvt_auto_dbias_init();
+    pvt_func_enable(true);
+    // For PVT func taking effect, need delay.
+    esp_rom_delay_us(1000);
+#endif
 }

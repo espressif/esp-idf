@@ -73,6 +73,7 @@
 #define SOC_BOD_SUPPORTED               1
 #define SOC_APM_SUPPORTED               1
 #define SOC_PMU_SUPPORTED               1
+#define SOC_PMU_PVT_SUPPORTED           1
 #define SOC_DCDC_SUPPORTED              1
 #define SOC_PAU_SUPPORTED               1     //TODO: IDF-7531
 #define SOC_LP_TIMER_SUPPORTED          1

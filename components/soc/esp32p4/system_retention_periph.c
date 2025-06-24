@@ -23,6 +23,7 @@
 #include "soc/timer_periph.h"
 #include "soc/uart_reg.h"
 #include "esp32p4/rom/cache.h"
+#include "soc/pvt_reg.h"
 
 /* Interrupt Matrix Registers Context */
 #define N_REGS_INTR_CORE0()    (((INTERRUPT_CORE0_CLOCK_GATE_REG - DR_REG_INTERRUPT_CORE0_BASE) / 4) + 1)
@@ -202,3 +203,10 @@ const regdma_entries_config_t pau_regs_retention[] = {
     [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PAU_LINK(0x0),  DR_REG_PAU_BASE,               DR_REG_PAU_BASE,    N_REGS_PAU(),       0, 0), .owner = ENTRY(0) },  /* pau */
 };
 _Static_assert(ARRAY_SIZE(pau_regs_retention) == HP_SYSTEM_RETENTION_LINK_LEN, "Inconsistent PAU retention link length definitions");
+
+/* PVT Registers Context */
+#define N_REGS_PVT    (((PVT_COMB_PD_SITE3_UNIT0_VT1_CONF2_REG - DR_REG_PVT_MONITOR_BASE) / 4) + 1)
+const regdma_entries_config_t pvt_regs_retention[] = {
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PVT_LINK(0x00), DR_REG_PVT_MONITOR_BASE, DR_REG_PVT_MONITOR_BASE, N_REGS_PVT, 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+};
+_Static_assert(ARRAY_SIZE(pvt_regs_retention) == PVT_RETENTION_LINK_LEN, "Inconsistent PVT retention link length definitions");
