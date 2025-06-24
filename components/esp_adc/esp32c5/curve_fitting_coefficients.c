@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,10 +28,10 @@
 const static uint64_t adc1_error_coef_atten[COEFF_VERSION_NUM][COEFF_GROUP_NUM][TERM_MAX][2] = {
     /* Coefficients of calibration version 1 */
     {
-        {{2941017829027464,     1e16}, {7368674918527,   1e16}, {0, 0}},   //atten0
-        {{3224276125615327,     1e16}, {5325658467636,   1e16}, {0, 0}},   //atten1
-        {{3307554632960901,    1e16}, {409244304226,    1e15}, {0, 0}},   //atten2
-        {{1463642578413965,    1e15}, {3349642363147,   1e15}, {11676836451, 1e16}},   //atten3
+        {{2941017829027464,     1e16}, {7368674918527,   1e16}, {0, 1}},   //atten0
+        {{3224276125615327,     1e16}, {5325658467636,   1e16}, {0, 1}},   //atten1
+        {{3307554632960901,     1e16}, {409244304226,    1e15}, {0, 1}},   //atten2
+        {{1463642578413965,     1e15}, {3349642363147,   1e15}, {11676836451, 1e16}},   //atten3
     },
 };
 
@@ -41,9 +41,9 @@ const static uint64_t adc1_error_coef_atten[COEFF_VERSION_NUM][COEFF_GROUP_NUM][
 const static int32_t adc1_error_sign[COEFF_VERSION_NUM][COEFF_GROUP_NUM][TERM_MAX] = {
     /* Coefficient sign of calibration version 1 */
     {
-        {1,  -1,  0}, //atten0
-        {1,  -1,  0}, //atten1
-        {1,  -1,  0}, //atten2
+        {-1,  1,  1}, //atten0
+        {-1,  1,  1}, //atten1
+        {-1,  1,  1}, //atten2
         {1,  -1,  1}, //atten3
     },
 };
@@ -54,7 +54,7 @@ void curve_fitting_get_second_step_coeff(const adc_cali_curve_fitting_config_t *
     assert((adc_calib_ver >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
            (adc_calib_ver <= ESP_EFUSE_ADC_CALIB_VER_MAX));
 
-    ctx->term_num = 2;
+    ctx->term_num = 3;
     ctx->coeff = adc1_error_coef_atten[VER2IDX(adc_calib_ver)][config->atten];
     ctx->sign = adc1_error_sign[VER2IDX(adc_calib_ver)][config->atten];
 }
