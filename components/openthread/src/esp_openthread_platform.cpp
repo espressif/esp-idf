@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,6 +104,12 @@ static esp_err_t esp_openthread_host_interface_init(const esp_openthread_platfor
     case HOST_CONNECTION_MODE_RCP_UART:
         ESP_RETURN_ON_ERROR(esp_openthread_host_rcp_uart_init(config), OT_PLAT_LOG_TAG,
                           "esp_openthread_host_rcp_uart_init failed");
+        break;
+#endif
+#if CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG
+    case HOST_CONNECTION_MODE_RCP_USB:
+        ESP_RETURN_ON_ERROR(esp_openthread_host_rcp_usb_init(config), OT_PLAT_LOG_TAG,
+                          "esp_openthread_host_rcp_usb_init failed");
         break;
 #endif
 #if CONFIG_OPENTHREAD_CONSOLE_TYPE_UART
