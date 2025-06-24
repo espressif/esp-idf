@@ -214,8 +214,13 @@ ISP_DOCS = ['api-reference/peripherals/isp.rst']
 
 DSLP_STUB_DOCS = ['api-guides/deep-sleep-stub.rst']
 
-ADC_DOCS = ['api-reference/peripherals/adc_oneshot.rst', 'api-reference/peripherals/adc_calibration.rst']
-ADC_DMA_DOCS = ['api-reference/peripherals/adc_continuous.rst']
+ADC_DOCS = [
+    'api-reference/peripherals/adc/index.rst',
+    'api-reference/peripherals/adc/adc_oneshot.rst',
+    'api-reference/peripherals/adc/adc_calibration.rst',
+]
+
+ADC_DMA_DOCS = ['api-reference/peripherals/adc/adc_continuous.rst']
 
 ANA_CMPR_DOCS = ['api-reference/peripherals/ana_cmpr.rst']
 

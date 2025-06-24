@@ -3,14 +3,12 @@ Analog to Digital Converter (ADC) Continuous Mode Driver
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h2="one", esp32c5="one", esp32c61="one"}
-
 Introduction
 ------------
 
 The Analog to Digital Converter is integrated on the chip and is capable of measuring analog signals from specific analog IO pads. Additionally, the Direct Memory Access (DMA) functionality is utilized to efficiently retrieve ADC conversion results.
 
-{IDF_TARGET_NAME} has {IDF_TARGET_ADC_NUM} ADC unit(s), which can be used in scenarios like:
+{IDF_TARGET_NAME} has {IDF_TARGET_SOC_ADC_PERIPH_NUM} ADC unit(s), which can be used in scenarios like:
 
 - Generate one-shot ADC conversion result
 - Generate continuous ADC conversion results

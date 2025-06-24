@@ -199,7 +199,7 @@ The {IDF_TARGET_NAME} ADC is sensitive to noise, leading to large discrepancies 
 
 .. only:: esp32
 
-    .. figure:: ../../../_static/diagrams/adc/adc-noise-graph.jpg
+    .. figure:: ../../../../_static/diagrams/adc/adc-noise-graph.jpg
         :align: center
         :alt: ADC noise mitigation
 

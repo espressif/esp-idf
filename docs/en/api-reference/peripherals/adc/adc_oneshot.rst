@@ -8,7 +8,7 @@ Introduction
 
 The Analog to Digital Converter is integrated on the chip and is capable of measuring analog signals from specific analog IO pins.
 
-{IDF_TARGET_NAME} has {SOC_ADC_PERIPH_NUM} ADC unit(s), which can be used in scenario(s) like:
+{IDF_TARGET_NAME} has {IDF_TARGET_SOC_ADC_PERIPH_NUM} ADC unit(s), which can be used in scenario(s) like:
 
 .. list::
 
@@ -194,10 +194,9 @@ Thread Safety
 - :cpp:func:`adc_oneshot_new_unit`
 - :cpp:func:`adc_oneshot_config_channel`
 - :cpp:func:`adc_oneshot_read`
+- :cpp:func:`adc_oneshot_del_unit`
 
 Above functions are guaranteed to be thread-safe. Therefore, you can call them from different RTOS tasks without protection by extra locks.
-
-- :cpp:func:`adc_oneshot_del_unit` is not thread-safe. Besides, concurrently calling this function may result in failures of the above thread-safe APIs.
 
 
 .. _adc-oneshot-kconfig-options:
@@ -217,5 +216,4 @@ Application Examples
 API Reference
 -------------
 
-.. include-build-file:: inc/adc_types.inc
 .. include-build-file:: inc/adc_oneshot.inc

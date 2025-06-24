@@ -6,9 +6,7 @@
 .. toctree::
     :maxdepth: 1
 
-    :SOC_ADC_SUPPORTED: adc_oneshot
-    :SOC_ADC_DMA_SUPPORTED: adc_continuous
-    :SOC_ADC_SUPPORTED: adc_calibration
+    :SOC_ADC_SUPPORTED: adc/index
     :SOC_ANA_CMPR_SUPPORTED: ana_cmpr
     :SOC_BITSCRAMBLER_SUPPORTED: bitscrambler
     :SOC_CLK_TREE_SUPPORTED: clk_tree
