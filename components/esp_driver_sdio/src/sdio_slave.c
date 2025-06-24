@@ -456,6 +456,13 @@ esp_err_t sdio_slave_reset(void)
     return err;
 }
 
+esp_err_t sdio_slave_reset_hw(void)
+{
+    sdio_slave_hw_deinit();
+    sdio_slave_hw_init(&context.config);
+    return sdio_slave_reset();
+}
+
 void sdio_slave_stop(void)
 {
     sdio_slave_hal_set_ioready(context.hal, false);

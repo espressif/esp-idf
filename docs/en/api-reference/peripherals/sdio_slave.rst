@@ -276,6 +276,16 @@ There are several ways to use the ``arg`` in the queue parameter:
 
        For more about this, see :example:`peripherals/sdio`.
 
+Reset SDIO
+^^^^^^^^^^^^
+
+Calling ``sdio_slave_reset`` can reset PKT_LEN (Packet length accumulator value) and TOKEN1 (Receiving buffers accumulated number) at the SDIO slave driver software level to resynchronize the transmit and receive counts with the host.
+
+If there is a usage scenario where the ESP chip remains powered on but the HOST is powered off. During the power-off period of the HOST, some unknown signals may be generated on the SDIO signal line, causing the SDIO hardware state machine to be abnormal. The HOST restarts and executes the card identification process, and the ESP will not respond normally. In this case, consider calling ``sdio_slave_reset_hw`` to reset the SDIO hardware.
+
+.. note::
+
+  Reset the SDIO hardware. The interrupt enable status and shared register values ​​will be lost. You may need to call ``sdio_slave_set_host_intena`` and ``sdio_slave_write_reg`` to set them.
 
 Application Example
 -------------------

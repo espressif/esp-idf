@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -92,9 +92,19 @@ void sdio_slave_stop(void);
 
 /** Clear the data still in the driver, as well as reset the PKT_LEN and TOKEN1 counting.
  *
- * @return always return ESP_OK.
+ * @return
+ *  - ESP_ERR_INVALID_STATE if already started.
+ *  - ESP_OK otherwise.
  */
 esp_err_t sdio_slave_reset(void);
+
+/** Reset sdio hardware, and clear the data still in the driver, as well as reset the PKT_LEN and TOKEN1 counting.
+ *
+ * @return
+ *  - ESP_ERR_INVALID_STATE if already started.
+ *  - ESP_OK otherwise.
+ */
+esp_err_t sdio_slave_reset_hw(void);
 
 /*---------------------------------------------------------------------------
  *                  Receive
@@ -220,7 +230,7 @@ esp_err_t sdio_slave_transmit(uint8_t* addr, size_t len);
 /*---------------------------------------------------------------------------
  *                  Host
  *--------------------------------------------------------------------------*/
-/** Read the spi slave register shared with host.
+/** Read the sdio slave register shared with host.
  *
  * @param pos register address, 0-27 or 32-63.
  *
@@ -230,7 +240,7 @@ esp_err_t sdio_slave_transmit(uint8_t* addr, size_t len);
  */
 uint8_t sdio_slave_read_reg(int pos);
 
-/** Write the spi slave register shared with host.
+/** Write the sdio slave register shared with host.
  *
  * @param pos register address, 0-11, 14-15, 18-19, 24-27 and 32-63, other address are reserved.
  * @param reg the value to write.
