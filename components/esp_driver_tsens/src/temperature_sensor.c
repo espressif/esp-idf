@@ -65,9 +65,18 @@ static esp_err_t temperature_sensor_choose_best_range(temperature_sensor_handle_
     for (int i = 0 ; i < TEMPERATURE_SENSOR_ATTR_RANGE_NUM; i++) {
         if ((tsens_config->range_min >= s_tsens_attribute_copy[i].range_min) && (tsens_config->range_max <= s_tsens_attribute_copy[i].range_max)) {
             tsens->tsens_attribute = &s_tsens_attribute_copy[i];
+            int original_idx = -1;
+            for (int j = 0; j < TEMPERATURE_SENSOR_ATTR_RANGE_NUM; j++) {
+                if (temperature_sensor_attributes[j].reg_val == s_tsens_attribute_copy[i].reg_val) {
+                    original_idx = j;
+                    break;
+                }
+            }
+            if (original_idx != -1) {
+                temp_sensor_sync_tsens_idx(original_idx);
+            }
             break;
         }
-        temp_sensor_sync_tsens_idx(i);
     }
     ESP_RETURN_ON_FALSE(tsens->tsens_attribute != NULL, ESP_ERR_INVALID_ARG, TAG, "Out of testing range");
     return ESP_OK;
@@ -165,6 +174,8 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
              tsens->tsens_attribute->range_min,
              tsens->tsens_attribute->range_max,
              tsens->tsens_attribute->error_max);
+
+    printf("tsens->tsens_attribute->reg_val: %d\n", tsens->tsens_attribute->reg_val);
 
     temperature_sensor_ll_set_range(tsens->tsens_attribute->reg_val);
 

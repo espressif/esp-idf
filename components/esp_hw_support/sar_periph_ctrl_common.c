@@ -9,6 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_private/sar_periph_ctrl.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 
 #if SOC_TEMP_SENSOR_SUPPORTED
 #include "hal/temperature_sensor_ll.h"
@@ -40,17 +41,22 @@ static const char *TAG_TSENS = "temperature_sensor";
 # define SAR_PERIPH_CTRL_COMMON_FN_ATTR
 #endif
 
+#define TSENS_LINE_REGRESSION_US (200)
+
 static int s_record_min = INT_NOT_USED;
 static int s_record_max = INT_NOT_USED;
 static int s_temperature_sensor_power_cnt;
+static bool s_first_temp_read = false;
 
 static uint8_t s_tsens_idx = 2; // Index for temperature attribute, set 2(middle) as default value
+static int64_t timer1 = 0;
 
 void temperature_sensor_power_acquire(void)
 {
     esp_os_enter_critical(&rtc_spinlock);
     s_temperature_sensor_power_cnt++;
     if (s_temperature_sensor_power_cnt == 1) {
+        s_first_temp_read = true;
         regi2c_saradc_enable();
 #if !SOC_TSENS_IS_INDEPENDENT_FROM_ADC
         adc_apb_periph_claim();
@@ -60,6 +66,9 @@ void temperature_sensor_power_acquire(void)
             temperature_sensor_ll_reset_module();
         }
         temperature_sensor_ll_enable(true);
+        // Set the range as recorded.
+        temperature_sensor_ll_set_range(temperature_sensor_attributes[s_tsens_idx].reg_val);
+        timer1 = esp_timer_get_time();
     }
     esp_os_exit_critical(&rtc_spinlock);
 }
@@ -100,6 +109,18 @@ void temp_sensor_sync_tsens_idx(int tsens_idx)
 int16_t temp_sensor_get_raw_value(bool *range_changed)
 {
     esp_os_enter_critical(&rtc_spinlock);
+
+    // When this is the first time reading a value, check whether the time here minus the
+    // initialization time is greater than 200 microseconds (the time for linear regression).
+    // If it is less than 200 microseconds, continue waiting here.
+    if (s_first_temp_read == true) {
+        int64_t timer2 = esp_timer_get_time();
+        int64_t diff = timer2 - timer1;
+        if (diff < TSENS_LINE_REGRESSION_US) {
+            esp_rom_delay_us(TSENS_LINE_REGRESSION_US - diff);
+        }
+        s_first_temp_read = false;
+    }
 
     int degree = temperature_sensor_get_raw_value();
     uint8_t temperature_dac;
