@@ -66,9 +66,12 @@ esp_err_t sdmmc_io_reset(sdmmc_card_t* card)
 {
     uint8_t sdio_reset = CCCR_CTL_RES;
     esp_err_t err = sdmmc_io_rw_direct(card, 0, SD_IO_CCCR_CTL, SD_ARG_CMD52_WRITE, &sdio_reset);
-    if (err == ESP_ERR_TIMEOUT || (host_is_spi(card) && err == ESP_ERR_NOT_SUPPORTED)) {
+    if (err == ESP_ERR_TIMEOUT || (host_is_spi(card) && err == ESP_ERR_NOT_SUPPORTED) || err == ESP_ERR_INVALID_CRC) {
         /* Non-IO cards are allowed to time out (in SD mode) or
          * return "invalid command" error (in SPI mode).
+         * CRC errors are also allowed as the card may be in a state where
+         * CRC is enabled from a previous session, especially after ESP32 restart
+         * without power cycling the SD card.
          */
     } else if (err == ESP_ERR_NOT_FOUND) {
         ESP_LOGD(TAG, "%s: card not present", __func__);
