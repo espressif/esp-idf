@@ -153,14 +153,29 @@ If none of our chip series meet your needs, please contact `customer support tea
             |supported|
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
-      - |unsupported|
-      - |unsupported|
-      - |unsupported|
+      - .. only:: esp32h2
+
+            |experimental|
+        .. only:: not esp32h2
+
+            |unsupported|
+      - .. only:: esp32h2
+
+            |experimental|
+        .. only:: not esp32h2
+
+            |unsupported|
+      - .. only:: esp32h2
+
+            |experimental|
+        .. only:: not esp32h2
+
+            |unsupported|
     * -
       - GATT Caching
       - |NA|
       - |experimental|
-      - |experimental|
+      - |developing202512|
     * -
       - Randomized Advertising Channel Indexing
       - |unsupported|
@@ -204,7 +219,12 @@ If none of our chip series meet your needs, please contact `customer support tea
         .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5 or esp32c61
 
             |experimental|
-      - |unsupported|
+      - .. only:: esp32 or esp32c2
+
+            |unsupported|
+        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5 or esp31c61
+
+            |experimental|
       - .. only:: esp32 or esp32c2
 
             |unsupported|
@@ -239,7 +259,12 @@ If none of our chip series meet your needs, please contact `customer support tea
         .. only:: esp32c3 or esp32s3
 
             |experimental|
-      - |unsupported|
+      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+
+            |unsupported|
+        .. only:: esp32c3 or esp32s3
+
+            |experimental|
       - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
             |unsupported|
@@ -274,7 +299,12 @@ If none of our chip series meet your needs, please contact `customer support tea
         .. only:: esp32c3 or esp32s3
 
             |experimental|
-      - |unsupported|
+      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp31c61
+
+            |unsupported|
+        .. only:: esp32c3 or esp32s3
+
+            |developing202512|
       - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp31c61
 
             |unsupported|
@@ -284,7 +314,7 @@ If none of our chip series meet your needs, please contact `customer support tea
     * -
       - Encrypted Advertising Data
       - |NA|
-      - |unsupported|
+      - |developing202512|
       - |experimental|
     * -
       - LE GATT Security Levels Characteristic
