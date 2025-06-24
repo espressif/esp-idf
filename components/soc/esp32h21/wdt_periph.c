@@ -6,6 +6,7 @@
 
 #include "soc/wdt_periph.h"
 
+#if SOC_PAU_SUPPORTED && SOC_MWDT_SUPPORT_SLEEP_RETENTION
 #define N_REGS_TGWDT          6 // TIMG_WDTCONFIG0_REG ... TIMG_WDTCONFIG5_REG & TIMG_INT_ENA_TIMERS_REG
 
 static const regdma_entries_config_t tg0_wdt_regs_retention[] = {
@@ -30,3 +31,4 @@ const tg_reg_ctx_link_t tg_wdt_regs_retention[2] = {
     [0] = {tg0_wdt_regs_retention, ARRAY_SIZE(tg0_wdt_regs_retention)},
     [1] = {tg1_wdt_regs_retention, ARRAY_SIZE(tg1_wdt_regs_retention)},
 };
+#endif
