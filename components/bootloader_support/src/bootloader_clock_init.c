@@ -130,7 +130,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     CLEAR_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SOC_SLEEP_REJECT_INT_ENA);                                  /* SLP_WAKEUP */
     // SET CLR
     SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_SUPER_WDT_INT_CLR);                                        /* SWD */
-    SET_PERI_REG_MASK(LP_ANA_LP_INT_CLR_REG, LP_ANA_BOD_MODE0_LP_INT_CLR);                                  /* BROWN_OUT */
+    // SET_PERI_REG_MASK(LP_ANA_LP_INT_CLR_REG, LP_ANA_BOD_MODE0_LP_INT_CLR);                               /* BROWN_OUT */ // TODO： workaround for FIB chip, uncomment on MP version.
     SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_LP_WDT_INT_CLR);                                           /* WDT */
     SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_WAKEUP_INT_CLR);                                          /* SLP_REJECT */
     SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_SLEEP_REJECT_INT_CLR);

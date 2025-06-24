@@ -194,6 +194,7 @@ static void pmu_hp_system_init_default(pmu_context_t *ctx)
 {
     assert(ctx);
     for (pmu_hp_mode_t mode = PMU_MODE_HP_ACTIVE; mode < PMU_MODE_HP_MAX; mode++) {
+        if (mode == PMU_MODE_HP_MODEM) continue;
         pmu_hp_system_analog_param_t analog = {};
         pmu_hp_system_param_t param = {.analog = &analog};
 
@@ -247,12 +248,9 @@ void pmu_init()
 
     pmu_hp_system_init_default(PMU_instance());
     pmu_lp_system_init_default(PMU_instance());
+    pmu_ll_dcm_ctrl_ccm_sw_en(&PMU, true);
 
     pmu_power_domain_force_default(PMU_instance());
-
-    // default ccm mode
-    REG_SET_FIELD(PMU_DCM_CTRL_REG, PMU_DCDC_CCM_SW_EN, 1);
-    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCDC_CCM_ENB, 0);
 
 #if !CONFIG_IDF_ENV_FPGA
     // TODO: IDF-11548

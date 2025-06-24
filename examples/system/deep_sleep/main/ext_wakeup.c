@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,7 +8,7 @@
 #include "esp_sleep.h"
 #include "sdkconfig.h"
 #include "driver/rtc_io.h"
-
+#include "driver/gpio.h"
 
 #if CONFIG_EXAMPLE_EXT0_WAKEUP
 #if CONFIG_IDF_TARGET_ESP32
@@ -48,7 +48,7 @@ void example_deep_sleep_register_ext1_wakeup(void)
 
     /* If there are no external pull-up/downs, tie wakeup pins to inactive level with internal pull-up/downs via RTC IO
      * during deepsleep. However, RTC IO relies on the RTC_PERIPH power domain. Keeping this power domain on will
-     * increase some power comsumption. However, if we turn off the RTC_PERIPH domain or if certain chips lack the RTC_PERIPH
+     * increase some power consumption. However, if we turn off the RTC_PERIPH domain or if certain chips lack the RTC_PERIPH
      * domain, we will use the HOLD feature to maintain the pull-up and pull-down on the pins during sleep.*/
 #if CONFIG_EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED

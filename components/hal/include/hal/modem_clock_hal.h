@@ -24,7 +24,7 @@ typedef struct {
     modem_lpcon_dev_t  *lpcon_dev;
 } modem_clock_hal_context_t;
 
-#if !SOC_IS(ESP32H2) //TODO: PM-92
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
 void modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain, uint32_t bitmap);
 uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain);
 #endif

@@ -714,6 +714,11 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_digital_power_up_wait_cycle(pmu_dev_t *
     return hw->power.wait_timer0.powerup_timer;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_dcm_ctrl_ccm_sw_en(pmu_dev_t *hw, bool enable)
+{
+    hw->dcm_ctrl.dcdc_ccm_sw_en = enable;
+}
+
 #ifdef __cplusplus
 }
 #endif
