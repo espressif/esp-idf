@@ -207,8 +207,8 @@ static esp_err_t s_check_psram_connected(int spi_num)
                    PSRAM_LL_CS_SEL,
                    false);
 
-    ESP_EARLY_LOGW(TAG, "exp_data: 0x%08x", exp_data);
-    ESP_EARLY_LOGW(TAG, "ref_data: 0x%08x", ref_data);
+    ESP_EARLY_LOGD(TAG, "exp_data: 0x%08x", exp_data);
+    ESP_EARLY_LOGD(TAG, "ref_data: 0x%08x", ref_data);
 
     return (exp_data == ref_data ? ESP_OK : ESP_FAIL);
 }
