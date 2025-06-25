@@ -500,16 +500,40 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
             if (select(tls->sockfd + 1, &tls->rset, &tls->wset, NULL,
                        cfg->timeout_ms>0 ? &tv : NULL) == 0) {
                 ESP_LOGD(TAG, "select() timed out");
-                return 0;
-            }
-            if (FD_ISSET(tls->sockfd, &tls->rset) || FD_ISSET(tls->sockfd, &tls->wset)) {
-                int error;
+                int error = 0;
                 socklen_t len = sizeof(error);
                 /* pending error check */
                 if (getsockopt(tls->sockfd, SOL_SOCKET, SO_ERROR, &error, &len) < 0) {
-                    ESP_LOGD(TAG, "Non blocking connect failed");
+                    ESP_LOGE(TAG, "Non blocking connect failed with errno=%d", errno);
                     ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
                     ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED);
+                    tls->conn_state = ESP_TLS_FAIL;
+                    return -1;
+                }
+                else if (error) {
+                    ESP_LOGE(TAG, "Non blocking connect failed with error=%d", error);
+                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, error);
+                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT);
+                    tls->conn_state = ESP_TLS_FAIL;
+                    return -1;
+                }
+                return 0;
+            }
+            if (FD_ISSET(tls->sockfd, &tls->rset) || FD_ISSET(tls->sockfd, &tls->wset)) {
+                int error = 0;
+                socklen_t len = sizeof(error);
+                /* pending error check */
+                if (getsockopt(tls->sockfd, SOL_SOCKET, SO_ERROR, &error, &len) < 0) {
+                    ESP_LOGD(TAG, "Non blocking connect failed with errno=%d", errno);
+                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
+                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED);
+                    tls->conn_state = ESP_TLS_FAIL;
+                    return -1;
+                }
+                else if (error) {
+                    ESP_LOGE(TAG, "Non blocking connect failed with error=%d", error);
+                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, error);
+                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT);
                     tls->conn_state = ESP_TLS_FAIL;
                     return -1;
                 }
