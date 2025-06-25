@@ -391,14 +391,16 @@ LCD
 
 .. only:: SOC_MCPWM_SUPPORTED
 
-    MCPWM
-    -----
+    .. _deprecate_mcpwm_legacy_driver:
+
+    Legacy MCPWM Driver is Deprecated
+    ---------------------------------
 
     MCPWM driver was redesigned (see :doc:`MCPWM <../../../api-reference/peripherals/mcpwm>`), meanwhile, the legacy driver is deprecated.
 
     The new driver's aim is to make each MCPWM submodule independent to each other, and give the freedom of resource connection back to users.
 
-    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/mcpwm.h``. However, using legacy driver triggers the build warning below by default. This warning can be suppressed by the Kconfig option :ref:`CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN`.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/mcpwm.h``. However, using legacy driver triggers the build warning below by default. This warning can be suppressed by the Kconfig option ``CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN``.
 
     .. code-block:: text
 

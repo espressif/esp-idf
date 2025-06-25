@@ -21,19 +21,28 @@ RMT
 
 :cpp:type:`rmt_tx_channel_config_t` 配置结构体中的 ``io_od_mode`` 已经被移除。如果想要使用开漏模式，你需要手动调用 GPIO 驱动中的 :func:`gpio_od_enable` 函数。
 
-MCPWM
------
+.. only:: SOC_MCPWM_SUPPORTED
 
-:cpp:type:`mcpwm_generator_config_t` 配置结构体中的 ``io_od_mode`` 已经被移除。如果想要使用开漏模式，你需要手动调用 GPIO 驱动中的 :func:`gpio_od_enable` 函数。
+    MCPWM
+    -----
 
-以下配置结构体中的 ``pull_up`` 和 ``pull_down`` 成员已经被移除，你需要手动调用 GPIO 驱动中的 :func:`gpio_set_pull_mode` 函数来配置 IO 上拉和下拉电阻：
+    :cpp:type:`mcpwm_generator_config_t` 配置结构体中的 ``io_od_mode`` 已经被移除。如果想要使用开漏模式，你需要手动调用 GPIO 驱动中的 :func:`gpio_od_enable` 函数。
 
-.. list::
+    以下配置结构体中的 ``pull_up`` 和 ``pull_down`` 成员已经被移除，你需要手动调用 GPIO 驱动中的 :func:`gpio_set_pull_mode` 函数来配置 IO 上拉和下拉电阻：
 
-    - :cpp:type:`mcpwm_generator_config_t`
-    - :cpp:type:`mcpwm_gpio_fault_config_t`
-    - :cpp:type:`mcpwm_gpio_sync_src_config_t`
-    - :cpp:type:`mcpwm_capture_channel_config_t`
+    .. list::
+
+        - :cpp:type:`mcpwm_generator_config_t`
+        - :cpp:type:`mcpwm_gpio_fault_config_t`
+        - :cpp:type:`mcpwm_gpio_sync_src_config_t`
+        - :cpp:type:`mcpwm_capture_channel_config_t`
+
+    默认的 MCPWM 群组时钟分频器已改为 1。这样，你就可以获得比以前更高的默认分辨率。
+
+    旧版 MCPWM 驱动被移除
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        旧版的 MCPWM 驱动 ``driver/mcpwm.h`` 在 5.0 的版本中就已经被弃用（请参考 :ref:`deprecate_mcpwm_legacy_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_driver_mcpwm` 组件中，头文件引用路径为 ``driver/mcpwm_prelude``。
 
 GPIO
 ----

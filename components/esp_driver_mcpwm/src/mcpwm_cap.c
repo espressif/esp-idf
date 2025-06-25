@@ -413,6 +413,13 @@ esp_err_t mcpwm_capture_channel_trigger_soft_catch(mcpwm_cap_channel_handle_t ca
     return ESP_OK;
 }
 
+esp_err_t mcpwm_capture_get_latched_value(mcpwm_cap_channel_handle_t cap_channel, uint32_t *value)
+{
+    ESP_RETURN_ON_FALSE(cap_channel && value, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *value = mcpwm_ll_capture_get_value(cap_channel->cap_timer->group->hal.dev, cap_channel->cap_chan_id);
+    return ESP_OK;
+}
+
 esp_err_t mcpwm_capture_timer_set_phase_on_sync(mcpwm_cap_timer_handle_t cap_timer, const mcpwm_capture_timer_sync_phase_config_t *config)
 {
     ESP_RETURN_ON_FALSE(cap_timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");

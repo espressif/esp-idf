@@ -390,14 +390,16 @@ LCD
 
 .. only:: SOC_MCPWM_SUPPORTED
 
-    MCPWM
-    -----
+    .. _deprecate_mcpwm_legacy_driver:
+
+    旧版 MCPWM 驱动已弃用
+    -----------------------------------
 
     MCPWM 驱动已更新（详见 :doc:`MCPWM <../../../api-reference/peripherals/mcpwm>`）。同时，旧版驱动已被弃用。
 
     新驱动中，每个 MCPWM 子模块相互独立，用户可以自由进行资源连接。
 
-    尽管我们推荐使用新的驱动 API，旧版驱动仍然可用，其引用路径为 ``driver/mcpwm.h``。但是，使用旧版驱动会默认触发如下编译警告，可以通过配置 Kconfig 选项 :ref:`CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN` 来关闭该警告。
+    尽管我们推荐使用新的驱动 API，旧版驱动仍然可用，其引用路径为 ``driver/mcpwm.h``。但是，使用旧版驱动会默认触发如下编译警告，可以通过配置 Kconfig 选项 ``CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN`` 来关闭该警告。
 
     .. code-block:: text
 

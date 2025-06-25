@@ -8,12 +8,6 @@ components/driver/test_apps/legacy_i2c_driver:
       temporary: false
       reason: disable target test for legacy i2c driver.
 
-components/driver/test_apps/legacy_mcpwm_driver:
-  disable:
-    - if: SOC_MCPWM_SUPPORTED != 1
-  depends_filepatterns:
-    - components/driver/deprecated/**/*mcpwm*
-
 components/driver/test_apps/legacy_rmt_driver:
   disable:
     - if: SOC_RMT_SUPPORTED != 1

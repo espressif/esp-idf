@@ -960,6 +960,11 @@ Trigger a Software Capture Event
 
 Sometimes, the software also wants to trigger a "fake" capture event. The :cpp:func:`mcpwm_capture_channel_trigger_soft_catch` is provided for that purpose. Please note that, even though it is a "fake" capture event, it can still cause an interrupt, thus your capture event callback function gets invoked as well.
 
+Get the Last Captured Value
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you don't want to process the captured value in the capture event callback function, but want to process it in other places, you can call :cpp:func:`mcpwm_capture_get_latched_value` to get the last captured value.
+
 .. only:: SOC_MCPWM_SUPPORT_ETM
 
     .. _mcpwm-etm-event-and-task:

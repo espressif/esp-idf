@@ -512,3 +512,6 @@
         -
             re_variables: ['driver/adc.h']
             hint_variables: ['legacy ADC', 'esp_adc/adc_oneshot.h, esp_adc/adc_continuous.h, esp_adc/adc_cali.h, esp_adc/adc_cali_scheme.h', 'esp_adc']
+        -
+            re_variables: ['driver/mcpwm.h']
+            hint_variables: ['legacy MCPWM', 'driver/mcpwm_prelude', 'esp_driver_mcpwm']
