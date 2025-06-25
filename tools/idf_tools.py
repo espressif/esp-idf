@@ -3476,7 +3476,12 @@ def main(argv: List[str]) -> None:
             )
 
     install_python_env = subparsers.add_parser(
-        'install-python-env', help=('Create Python virtual environment and install the required Python packages')
+        'install-python-env',
+        help=(
+            'Create a Python virtual environment and install the required Python packages. '
+            'If the virtual environment already exists, update all Python packages to the latest '
+            'versions compatible with the current ESP-IDF version.'
+        ),
     )
     install_python_env.add_argument(
         '--reinstall', help='Discard the previously installed environment', action='store_true'

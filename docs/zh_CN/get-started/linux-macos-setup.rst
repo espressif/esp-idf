@@ -277,18 +277,29 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 .. include:: linux-macos-start-project.rst
 .. include:: start-project.rst
 
-建议：更新 ESP-IDF
-======================
+.. _get-started-update-esp-idf:
+
+ESP-IDF 环境更新：升级 ESP-IDF 与 Python 软件包
+===================================================
 
 乐鑫会不时推出新版本的 ESP-IDF，修复 bug 或提供新的功能。请注意，ESP-IDF 的每个主要版本和次要版本都有相应的支持期限。支持期限满后，版本停止更新维护，用户可将项目升级到最新的 ESP-IDF 版本。更多关于支持期限的信息，请参考 :doc:`ESP-IDF 版本 <../versions>`。
 
 因此，在使用时，也应注意更新本地版本。最简单的方法是：直接删除本地的 ``esp-idf`` 文件夹，然后按照 :ref:`get-started-get-esp-idf` 中的指示，重新完成克隆。
 
-另一种方法是仅更新变更的部分，具体方式请前往 :ref:`更新 ESP-IDF <updating>` 章节查看。具体更新步骤会根据使用的 ESP-IDF 版本有所不同。
+另一种方法是仅更新变更的部分，具体方式请参阅 :ref:`更新 ESP-IDF <updating>` 章节。
 
-注意，更新完成后，请再次运行安装脚本，以防新版 ESP-IDF 所需的工具也有所更新。具体请参考 :ref:`get-started-set-up-tools`。
+为确保工具版本符合新 ESP-IDF 的要求，在更新 ESP-IDF 版本后，请在 ``$IDF_PATH`` 目录下重新运行 ``./install.sh`` 脚本。详细说明请参阅 :ref:`get-started-set-up-tools`。
 
-一旦重新安装好工具，请使用导出脚本更新环境，具体请参考 :ref:`get-started-set-up-env`。
+所有新工具安装完成后，请参考 :ref:`get-started-set-up-env`，运行导出脚本并进入 ESP-IDF 开发环境。
+
+ESP-IDF 环境更新：只升级 Python 软件包
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ESP-IDF 的部分功能并非直接包含在主代码库中，而是由 ``esp-idf-monitor``、``esptool`` 等 Python 软件包提供。这些软件包由安装脚本自动部署在 ESP-IDF 环境中，无需升级 ESP-IDF 即可更新，只需重新运行安装脚本（在 ``$IDF_PATH`` 目录下执行 ``./install.sh``）。若 ESP-IDF 环境已存在，则该脚本会在保持 ESP-IDF 版本不变的前提下，将所有 Python 软件包更新至与当前 ESP-IDF 版本兼容的最新版本。
+
+.. note::
+
+    高级用户如需更灵活地控制更新流程，可参考 :ref:`idf-tools-py` 工具及 ``install-python-env`` 命令。此命令被安装脚本调用，专门用于创建或更新 ESP-IDF 环境。
 
 相关文档
 =================
