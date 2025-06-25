@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <stdatomic.h>
+#include <time.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -381,4 +382,96 @@ TEST_CASE("trywrlock lock statically initialized lock", "[pthread][rwlock]")
 
     TEST_ASSERT_EQUAL_INT(pthread_rwlock_unlock(&rwlock), 0);
     TEST_ASSERT_EQUAL_INT(pthread_rwlock_destroy(&rwlock), 0);
+}
+
+static struct timespec get_abstime_ms(int ms)
+{
+    struct timespec ts;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    ts.tv_sec = tv.tv_sec + ms / 1000;
+    ts.tv_nsec = (tv.tv_usec * 1000) + (ms % 1000) * 1000000;
+    if (ts.tv_nsec >= 1000000000) {
+        ts.tv_sec += 1;
+        ts.tv_nsec -= 1000000000;
+    }
+    return ts;
+}
+
+TEST_CASE("pthread_rwlock_timedrdlock invalid params", "[pthread][rwlock][timed]")
+{
+    struct timespec ts = get_abstime_ms(100);
+    TEST_ASSERT_EQUAL_INT(EINVAL, pthread_rwlock_timedrdlock(NULL, &ts));
+
+    pthread_rwlock_t rwlock = 0;
+    TEST_ASSERT_EQUAL_INT(EINVAL, pthread_rwlock_timedrdlock(&rwlock, &ts));
+
+    ts.tv_nsec = 1000000000;  // invalid nanoseconds
+    pthread_rwlock_t rwlock2;
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_init(&rwlock2, NULL));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_wrlock(&rwlock2));
+    TEST_ASSERT_EQUAL_INT(EINVAL, pthread_rwlock_timedrdlock(&rwlock2, &ts));  // invalid nanoseconds
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_unlock(&rwlock2));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_destroy(&rwlock2));
+}
+
+TEST_CASE("pthread_rwlock_timedwrlock invalid params", "[pthread][rwlock][timed]")
+{
+    struct timespec ts = get_abstime_ms(100);
+    TEST_ASSERT_EQUAL_INT(EINVAL, pthread_rwlock_timedwrlock(NULL, &ts));
+
+    pthread_rwlock_t rwlock = 0;
+    TEST_ASSERT_EQUAL_INT(EINVAL, pthread_rwlock_timedwrlock(&rwlock, &ts));
+
+    ts.tv_nsec = -1;  // invalid nanoseconds
+    pthread_rwlock_t rwlock2;
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_init(&rwlock2, NULL));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_timedwrlock(&rwlock2, &ts));
+    TEST_ASSERT_EQUAL_INT(EINVAL, pthread_rwlock_timedwrlock(&rwlock2, &ts));  // invalid nanoseconds
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_unlock(&rwlock2));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_destroy(&rwlock2));
+}
+
+TEST_CASE("pthread_rwlock_timedrdlock succeeds immediately", "[pthread][rwlock][timed]")
+{
+    pthread_rwlock_t rwlock;
+    struct timespec ts = get_abstime_ms(200);
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_init(&rwlock, NULL));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_timedrdlock(&rwlock, &ts));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_unlock(&rwlock));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_destroy(&rwlock));
+}
+
+TEST_CASE("pthread_rwlock_timedwrlock succeeds immediately", "[pthread][rwlock][timed]")
+{
+    pthread_rwlock_t rwlock;
+    struct timespec ts = get_abstime_ms(200);
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_init(&rwlock, NULL));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_timedwrlock(&rwlock, &ts));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_unlock(&rwlock));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_destroy(&rwlock));
+}
+
+TEST_CASE("pthread_rwlock_timedrdlock times out if writer holds lock", "[pthread][rwlock][timed]")
+{
+    pthread_rwlock_t rwlock;
+    pthread_rwlock_init(&rwlock, NULL);
+
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_wrlock(&rwlock));
+    struct timespec ts = get_abstime_ms(100);
+    TEST_ASSERT_EQUAL_INT(ETIMEDOUT, pthread_rwlock_timedrdlock(&rwlock, &ts));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_unlock(&rwlock));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_destroy(&rwlock));
+}
+
+TEST_CASE("pthread_rwlock_timedwrlock times out if reader holds lock", "[pthread][rwlock][timed]")
+{
+    pthread_rwlock_t rwlock;
+    pthread_rwlock_init(&rwlock, NULL);
+
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_rdlock(&rwlock));
+    struct timespec ts = get_abstime_ms(100);
+    TEST_ASSERT_EQUAL_INT(ETIMEDOUT, pthread_rwlock_timedwrlock(&rwlock, &ts));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_unlock(&rwlock));
+    TEST_ASSERT_EQUAL_INT(0, pthread_rwlock_destroy(&rwlock));
 }
