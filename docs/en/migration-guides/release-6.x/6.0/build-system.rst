@@ -28,16 +28,16 @@ If you encounter an orphan section error during linking, you can resolve it usin
 Change in Global Constructor Order
 ----------------------------------
 
-Initially, global constructors were executed using the internal `do_global_ctors()` function. This approach was used to support Xtensa targets, which emit `.ctors.*` sections ordered in **descending** order.
+Initially, global constructors were executed using the internal ``do_global_ctors()``` function. This approach was used to support Xtensa targets, which emit ``.ctors.*`` sections ordered in **descending** order.
 
-On RISC-V targets, the toolchain emits `.init_array.*` sections, which follow a standard **ascending** order. While priority constructors in `.init_array.*` were correctly processed, the non-priority `.init_array` section was previously handled in **descending** order and matched the Xtensa `.ctors` behavior.
+On RISC-V targets, the toolchain emits ``.init_array.*`` sections, which follow a standard **ascending** order. While priority constructors in ``.init_array.*`` were correctly processed, the non-priority ``.init_array`` section was previously handled in **descending** order and matched the Xtensa ``.ctors`` behavior.
 
-Starting from ESP-IDF v6.0, the startup code uses `__libc_init_array()`, consistent with standard toolchain behavior. This function processes both priority and non-priority constructors in **ascending** order.
+Starting from ESP-IDF v6.0, the startup code uses ``__libc_init_array()``, consistent with standard toolchain behavior. This function processes both priority and non-priority constructors in **ascending** order.
 
 To support this behavior, the following breaking changes were introduced:
 
-  - On Xtensa targets `.ctors.*` entries are now converted to ascending order to ensure compatibility with `__libc_init_array()`.
-  - The processing order of non-priority `.init_array` and legacy `.ctors` sections was changed from **descending** to **ascending**.
+- On Xtensa targets ``.ctors.*`` entries are now converted to ascending order to ensure compatibility with ``__libc_init_array()``.
+- The processing order of non-priority ``.init_array`` and legacy ``.ctors`` sections was changed from **descending** to **ascending**.
 
 These changes align ESP-IDF with toolchain expectations and improve consistency across supported architectures.
 
@@ -48,7 +48,7 @@ Update Constructor Registration Logic
 
 In some cases, data structures were built assuming that constructors run in reverse order. To preserve the original behavior, update the registration logic to insert new items at the tail instead of the head.
 
-Example (from `components/unity/unity_runner.c`):
+Example (from ``components/unity/unity_runner.c``):
 
 .. code-block:: diff
 
@@ -66,11 +66,11 @@ Example (from `components/unity/unity_runner.c`):
 Use Constructor Priorities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To explicitly control constructor order, use the `constructor()` function attribute with a numeric priority:
+To explicitly control constructor order, use the ``constructor()`` function attribute with a numeric priority:
 
 .. code-block:: c
 
     __attribute__((constructor(PRIO)))
     void foo(void);
 
-Replace `PRIO` with an integer value. Lower values are executed earlier. This is the preferred method when specific ordering is required.
+Replace ``PRIO`` with an integer value. Lower values are executed earlier. This is the preferred method when specific ordering is required.
