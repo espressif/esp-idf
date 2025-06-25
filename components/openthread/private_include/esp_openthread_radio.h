@@ -84,6 +84,27 @@ void esp_openthread_set_coex_config(esp_ieee802154_coex_config_t config);
  *
  */
 esp_ieee802154_coex_config_t esp_openthread_get_coex_config(void);
+
+/**
+ * @brief This function updates the TREL fds and timeouts to the main loop.
+ *
+ * @param[inout]    mainloop    The main loop context.
+ *
+ */
+void esp_openthread_trel_update(esp_openthread_mainloop_context_t *mainloop);
+
+/**
+ * @brief This function performs the OpenThread TREL process.
+ *
+ * @param[in]    instance   The OpenThread instance.
+ * @param[in]    mainloop   The main loop context.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failure
+ *
+ */
+esp_err_t esp_openthread_trel_process(otInstance *aInstance, const esp_openthread_mainloop_context_t *mainloop);
 #endif
 
 #ifdef __cplusplus
