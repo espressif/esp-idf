@@ -39,6 +39,14 @@ variables:
   GIT_CLEAN_FLAGS: -ffdx -e .cache/
   LATEST_GIT_TAG: v6.0-dev
 
+  SUBMODULE_FETCH_TOOL: "tools/ci/ci_fetch_submodule.py"
+  # by default we will fetch all submodules
+  # jobs can overwrite this variable to only fetch submodules they required
+  # set to "none" if don't need to fetch submodules
+  SUBMODULES_TO_FETCH: "all"
+  # tell build system do not check submodule update as we download archive instead of clone
+  IDF_SKIP_CHECK_SUBMODULES: 1
+
   IDF_PATH: "$CI_PROJECT_DIR"
   V: "0"
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
@@ -381,9 +389,11 @@ default:
       paths:
         - .cache/pip
       policy: pull
-    - key: git-submodule-cache-${LATEST_GIT_TAG}
+    - key: submodule-cache-${LATEST_GIT_TAG}
+      fallback_keys:
+        - submodule-cache
       paths:
-        - .git/modules
+        - .cache/submodule_archives
       policy: pull
   before_script:
     - *common-before_scripts

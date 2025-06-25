@@ -35,14 +35,14 @@ upload-submodules-cache:
     - $GEO
     - cache
   cache:
-    key: git-submodule-cache-${LATEST_GIT_TAG}
+    key: submodule-cache-${LATEST_GIT_TAG}
     paths:
-      - .git/modules
+      - .cache/submodule_archives
     policy: push
   script:
     # use the default gitlab server
     - unset LOCAL_GITLAB_HTTPS_HOST
-    - rm -rf .git/modules  # clear old submodules
+    - rm -rf .cache/submodule_archives  # clear old submodule archives
     - add_gitlab_ssh_keys
     - fetch_submodules
   parallel:

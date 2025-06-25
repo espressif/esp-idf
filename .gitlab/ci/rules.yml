@@ -249,9 +249,6 @@
       changes: *patterns-submodule
     - <<: *if-label-upload_cache
       when: manual
-    - <<: *if-dev-push
-      changes:
-        - .gitlab/ci/upload_cache.yml
 
 ### Patterns ###
 .rules:patterns:clang_tidy:
