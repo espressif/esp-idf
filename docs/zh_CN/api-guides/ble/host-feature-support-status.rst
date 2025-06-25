@@ -72,8 +72,8 @@ ESP 主机主要功能支持状态
       - |supported|
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
-      - |unsupported|
-      - |developing202412|
+      - |experimental|
+      - |experimental|
     * -
       - GATT Caching
       - |experimental|
@@ -88,44 +88,44 @@ ESP 主机主要功能支持状态
       - |supported|
     * - .. centered:: |5.2|
       - LE Isochronous Channels (BIS/CIS)
-      - |unsupported|
-      - |unsupported|
+      - |experimental|
+      - |developing202512|
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE Power Control
-      - |unsupported|
-      - |supported|
+      - |experimental|
+      - |experimental|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
       - |supported|
       - |supported|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
-      - |unsupported|
-      - |supported|
+      - |experimental|
+      - |experimental|
     * -
       - LE Channel Classification
       - |supported|
       - |supported|
     * - .. centered:: |5.4|
       - Advertising Coding Selection
-      - |unsupported|
+      - |developing202512|
       - |supported|
     * -
       - Encrypted Advertising Data
-      - |unsupported|
+      - |developing202512|
       - |experimental|
     * -
       - LE GATT Security Levels Characteristic
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - Periodic Advertising with Responses
-      - |unsupported|
-      - |developing202412|
+      - |developing202512|
+      - |experimental|
 
 .. [1]
    如果想了解支持功能的 Bluetooth SIG 认证状态，
@@ -138,7 +138,7 @@ ESP 主机主要功能支持状态
 
 .. |supported| image:: ../../../_static/ble/feature_status/supported.svg
    :class: align-center
-.. |developing202412| image:: ../../../_static/ble/feature_status/developing202412.svg
+.. |developing202512| image:: ../../../_static/ble/feature_status/developing202512.svg
    :class: align-center
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
    :class: align-center

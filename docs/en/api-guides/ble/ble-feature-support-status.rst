@@ -153,9 +153,24 @@ If none of our chip series meet your needs, please contact `customer support tea
             |supported|
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
-      - |unsupported|
-      - |unsupported|
-      - |unsupported|
+      - .. only:: esp32h2
+
+            |experimental|
+        .. only:: not esp32h2
+
+            |unsupported|
+      - .. only:: esp32h2
+
+            |experimental|
+        .. only:: not esp32h2
+
+            |unsupported|
+      - .. only:: esp32h2
+
+            |experimental|
+        .. only:: not esp32h2
+
+            |unsupported|
     * -
       - GATT Caching
       - |NA|
@@ -171,19 +186,19 @@ If none of our chip series meet your needs, please contact `customer support tea
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5
+        .. only:: esp32c6 or esp32h2 or esp32c2
 
             |experimental|
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5
+        .. only:: esp32c6 or esp32h2 or esp32c2
 
             |experimental|
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5
+        .. only:: esp32c6 or esp32h2 or esp32c2
 
             |experimental|
     * - .. centered:: |5.2|
@@ -195,20 +210,25 @@ If none of our chip series meet your needs, please contact `customer support tea
       - Enhanced Attribute Protocol
       - |NA|
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE Power Control
       - .. only:: esp32 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5
+        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3
 
             |experimental|
-      - |unsupported|
       - .. only:: esp32 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5
+        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3
+
+            |experimental|
+      - .. only:: esp32 or esp32c2
+
+            |unsupported|
+        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3
 
             |experimental|
     * - .. centered:: |5.3|
@@ -216,31 +236,36 @@ If none of our chip series meet your needs, please contact `customer support tea
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5
+        .. only:: esp32c6 or esp32c2 or esp32h2
 
             |supported|
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5
+        .. only:: esp32c6 or esp32c2 or esp32h2
 
            |supported|
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5
+        .. only:: esp32c6 or esp32c2 or esp32h2
 
             |supported|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5
+      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2
 
             |unsupported|
         .. only:: esp32c3 or esp32s3
 
             |experimental|
-      - |unsupported|
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5
+      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2
+
+            |unsupported|
+        .. only:: esp32c3 or esp32s3
+
+            |experimental|
+      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2
 
             |unsupported|
         .. only:: esp32c3 or esp32s3
@@ -251,31 +276,36 @@ If none of our chip series meet your needs, please contact `customer support tea
       - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c5
+        .. only:: esp32c6 or esp32h2
 
             |experimental|
       - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c5
+        .. only:: esp32c6 or esp32h2
 
             |experimental|
       - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c5
+        .. only:: esp32c6 or esp32h2
 
             |experimental|
     * - .. centered:: |5.4|
       - Advertising Coding Selection
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5
+      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2
 
             |unsupported|
         .. only:: esp32c3 or esp32s3
 
             |experimental|
-      - |unsupported|
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5
+      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2
+
+            |unsupported|
+        .. only:: esp32c3 or esp32s3
+
+            |developing202512|
+      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2
 
             |unsupported|
         .. only:: esp32c3 or esp32s3
@@ -284,13 +314,13 @@ If none of our chip series meet your needs, please contact `customer support tea
     * -
       - Encrypted Advertising Data
       - |NA|
-      - |unsupported|
+      - |developing202512|
       - |experimental|
     * -
       - LE GATT Security Levels Characteristic
       - |NA|
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - Periodic Advertising with Responses
       - |unsupported|
@@ -313,7 +343,7 @@ You are encouraged to consult with our `customer support team <https://www.espre
 .. |supported| image:: ../../../_static/ble/feature_status/supported.svg
    :class: align-center
    :width: 65px
-.. |developing202412| image:: ../../../_static/ble/feature_status/developing202412.svg
+.. |developing202512| image:: ../../../_static/ble/feature_status/developing202512.svg
    :class: align-center
    :width: 120px
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
