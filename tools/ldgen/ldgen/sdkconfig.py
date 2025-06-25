@@ -1,15 +1,21 @@
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 
-import kconfiglib
+# In newer esp-idf-kconfig versions, kconfiglib module is renamed to esp_kconfiglib
+# Order is important here, as we want to use esp_kconfiglib if available
+try:
+    import esp_kconfiglib as kconfiglib
+except ImportError:
+    import kconfiglib
 
 
 class SDKConfig:
     """
     Evaluates conditional expressions based on the build's sdkconfig and Kconfig files.
     """
+
     def __init__(self, kconfig_file, sdkconfig_file):
         self.config = kconfiglib.Kconfig(kconfig_file)
         self.config.load_config(sdkconfig_file)
