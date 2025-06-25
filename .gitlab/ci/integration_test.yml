@@ -36,6 +36,7 @@ gen_integration_pipeline:
   cache: []
   tags: [fast_run, shiny]
   variables:
+    SUBMODULES_TO_FETCH: "none"
     GIT_LFS_SKIP_SMUDGE: 1
   needs:
     - job: fast_template_app

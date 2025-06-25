@@ -24,9 +24,9 @@ check_pre_commit_upload_cache:
       paths:
         - .cache/pre-commit
       policy: pull-push
-    - key: git-submodule-cache-${LATEST_GIT_TAG}
+    - key: submodule-cache-${LATEST_GIT_TAG}
       paths:
-        - .git/modules
+        - .cache/submodule_archives
       policy: pull
 
 check_pre_commit:
@@ -41,9 +41,9 @@ check_pre_commit:
       paths:
         - .cache/pre-commit
       policy: pull
-    - key: git-submodule-cache-${LATEST_GIT_TAG}
+    - key: submodule-cache-${LATEST_GIT_TAG}
       paths:
-        - .git/modules
+        - .cache/submodule_archives
       policy: pull
 
 check_powershell:
@@ -74,7 +74,7 @@ check_powershell:
       paths:
         - .cache/pre-commit
       policy: pull
-    - key: git-submodule-cache-${LATEST_GIT_TAG}
+    - key: submodule-cache-${LATEST_GIT_TAG}
       paths:
-        - .git/modules
+        - .cache/submodule_archives
       policy: pull

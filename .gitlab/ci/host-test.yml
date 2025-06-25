@@ -383,6 +383,8 @@ test_idf_pytest_plugin:
   extends:
     - .host_test_template
     - .rules:patterns:idf-pytest-plugin
+  variables:
+    SUBMODULES_TO_FETCH: "none"
   artifacts:
     reports:
       junit: XUNIT_RESULT.xml
