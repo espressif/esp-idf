@@ -93,15 +93,6 @@ extern "C" {
 // #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
 // #define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
 
-// /*
-// The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
-// storing in efuse
-// */
-// #define K_RTC_MID_MUL10000 215
-// #define K_DIG_MID_MUL10000 213
-// #define V_RTC_MID_MUL10000  10800
-// #define V_DIG_MID_MUL10000  10860
-
 /**
  * @brief CPU clock configuration structure
  */
@@ -113,9 +104,6 @@ typedef struct rtc_cpu_freq_config_s {
 } rtc_cpu_freq_config_t;
 
 #define RTC_CLK_CAL_FRACT  19  //!< Number of fractional bits in values returned by rtc_clk_cal
-
-#define RTC_VDDSDIO_TIEH_1_8V 0 //!< TIEH field value for 1.8V VDDSDIO
-#define RTC_VDDSDIO_TIEH_3_3V 1 //!< TIEH field value for 3.3V VDDSDIO
 
 /**
  * @brief Clock source to be calibrated using rtc_clk_cal function
@@ -151,7 +139,7 @@ typedef struct {
  */
 #define RTC_CLK_CONFIG_DEFAULT() { \
     .xtal_freq = CONFIG_XTAL_FREQ, \
-    .cpu_freq_mhz = 64, \
+    .cpu_freq_mhz = CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ, \
     .fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST, \
     .slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, \
     .clk_rtc_clk_div = 0, \

@@ -322,31 +322,27 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
 {
     soc_cpu_clk_src_t source = clk_ll_cpu_get_src();
     uint32_t source_freq_mhz;
-    uint32_t div = clk_ll_cpu_get_divider(); // div = freq of SOC_ROOT_CLK / freq of CPU_CLK
-    uint32_t freq_mhz;
     switch (source) {
     case SOC_CPU_CLK_SRC_XTAL: {
         source_freq_mhz = (uint32_t)rtc_clk_xtal_freq_get();
-        freq_mhz = source_freq_mhz / div;
         break;
     }
     case SOC_CPU_CLK_SRC_PLL: {
         source_freq_mhz = clk_ll_bbpll_get_freq_mhz();
-        freq_mhz = source_freq_mhz / div;
         break;
     }
     case SOC_CPU_CLK_SRC_RC_FAST:
         source_freq_mhz = 20;
-        freq_mhz = source_freq_mhz / div;
         break;
     case SOC_CPU_CLK_SRC_XTAL_X2:
         source_freq_mhz = clk_ll_xtal_x2_get_freq_mhz();
-        freq_mhz = source_freq_mhz / div;
         break;
     default:
         ESP_HW_LOGE(TAG, "unsupported frequency configuration");
         abort();
     }
+    uint32_t div = clk_ll_cpu_get_divider();
+    uint32_t freq_mhz = source_freq_mhz / div; // freq of CPU_CLK = freq of SOC_ROOT_CLK / cpu_div
     *out_config = (rtc_cpu_freq_config_t) {
         .source = source,
         .source_freq_mhz = source_freq_mhz,

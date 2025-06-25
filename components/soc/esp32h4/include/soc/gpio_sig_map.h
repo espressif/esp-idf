@@ -6,7 +6,7 @@
 
 #pragma once
 
-#define TIMER_IN_IDX                            0   // TODO: [ESP32H4] IDF-12499  need check
+#define TIMER_IN_IDX                            0
 #define LEDC_LS_SIG_OUT0_IDX                    0
 #define LEDC_LS_SIG_OUT1_IDX                    1
 #define LEDC_LS_SIG_OUT2_IDX                    2

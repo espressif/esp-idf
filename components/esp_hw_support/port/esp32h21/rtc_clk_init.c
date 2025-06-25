@@ -16,7 +16,6 @@
 #include "soc/lp_clkrst_reg.h"
 #include "soc/regi2c_pmu.h"
 #include "esp_hw_log.h"
-#include "sdkconfig.h"
 #include "hal/clk_tree_ll.h"
 #include "soc/pmu_reg.h"
 #include "pmu_param.h"

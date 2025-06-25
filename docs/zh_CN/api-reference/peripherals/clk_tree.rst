@@ -3,15 +3,15 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_RC_FAST_VAGUE_FREQ: default="17.5", esp32="8", esp32s2="8", esp32h2="8", esp32h21="20"}
+{IDF_TARGET_RC_FAST_VAGUE_FREQ: default="17.5", esp32="8", esp32s2="8", esp32h2="8", esp32h21="20", esp32h4="20"}
 
-{IDF_TARGET_RC_FAST_ADJUSTED_FREQ: default="17.5", esp32="8.5", esp32s2="8.5", esp32h2="8.5", esp32h21="20"}
+{IDF_TARGET_RC_FAST_ADJUSTED_FREQ: default="17.5", esp32="8.5", esp32s2="8.5", esp32h2="8.5", esp32h21="20", esp32h4="20"}
 
-{IDF_TARGET_XTAL_FREQ: default="40", esp32="2 ~ 40", esp32c2="40/26", esp32h2="32", esp32c5="48", esp32h21="32"}
+{IDF_TARGET_XTAL_FREQ: default="40", esp32="2 ~ 40", esp32c2="40/26", esp32h2="32", esp32c5="48", esp32h21="32", esp32h4="32"}
 
-{IDF_TARGET_RC_SLOW_VAGUE_FREQ: default="136", esp32="150", esp32s2="90", esp32h21="600"}
+{IDF_TARGET_RC_SLOW_VAGUE_FREQ: default="136", esp32="150", esp32s2="90", esp32h21="600", esp32h4="600"}
 
-{IDF_TARGET_OSC_SLOW_PIN: default="GPIO0", esp32c2="pin0（时钟信号频率不超过 136 kHz 时）", "esp32c6="GPIO0", esp32h2="GPIO13", esp32h21="GPIO11"}
+{IDF_TARGET_OSC_SLOW_PIN: default="GPIO0", esp32c2="pin0（时钟信号频率不超过 136 kHz 时）", "esp32c6="GPIO0", esp32h2="GPIO13", esp32h21="GPIO11", esp32h4="GPIO5"}
 
 {IDF_TARGET_NAME} 的时钟子系统用于从一系列根时钟中提取并分配系统/模块时钟。时钟树驱动程序负责维护系统时钟的基本功能，并管理模块时钟间的复杂关系。
 

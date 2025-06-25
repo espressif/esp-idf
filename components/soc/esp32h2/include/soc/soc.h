@@ -134,13 +134,9 @@
 //}}
 
 //Periheral Clock {{
-#define  APB_CLK_FREQ_ROM                            ( 32*1000000 )
-#define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
-#define  CPU_CLK_FREQ_MHZ_BTLD                       (64)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
 #define  APB_CLK_FREQ                                ( 32*1000000 )
 #define  MODEM_REQUIRED_MIN_APB_CLK_FREQ             ( 32*1000000 )
 #define  REF_CLK_FREQ                                ( 1000000 )
-#define  XTAL_CLK_FREQ                               (32*1000000)
 //}}
 
 /* Overall memory map */

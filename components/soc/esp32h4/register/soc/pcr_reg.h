@@ -1992,21 +1992,6 @@ extern "C" {
  *  SYSCLK configuration register
  */
 #define PCR_SYSCLK_CONF_REG (DR_REG_PCR_BASE + 0x114)
-/** PCR_LS_DIV_NUM : HRO; bitpos: [7:0]; default: 0;
- *  clk_hproot is div1 of low-speed clock-source if clck-source is a low-speed
- *  clock-source such as XTAL/FOSC.
- */
-#define PCR_LS_DIV_NUM    0x000000FFU
-#define PCR_LS_DIV_NUM_M  (PCR_LS_DIV_NUM_V << PCR_LS_DIV_NUM_S)
-#define PCR_LS_DIV_NUM_V  0x000000FFU
-#define PCR_LS_DIV_NUM_S  0
-/** PCR_HS_DIV_NUM : HRO; bitpos: [15:8]; default: 2;
- *  clk_hproot is div3 of SPLL if the clock-source is high-speed clock SPLL.
- */
-#define PCR_HS_DIV_NUM    0x000000FFU
-#define PCR_HS_DIV_NUM_M  (PCR_HS_DIV_NUM_V << PCR_HS_DIV_NUM_S)
-#define PCR_HS_DIV_NUM_V  0x000000FFU
-#define PCR_HS_DIV_NUM_S  8
 /** PCR_SOC_CLK_SEL : R/W; bitpos: [17:16]; default: 0;
  *  Configures to select the clock source of HP_ROOT_CLK.
  *  0 (default): XTAL_CLK
@@ -2267,16 +2252,18 @@ extern "C" {
 #define PCR_TIMG_CALI_CLK_SEL_S  0
 /** PCR_TIMG_SECURE_CLK_SEL : R/W; bitpos: [7:4]; default: 7;
  *  Configures the clock source for the TIMG_SECURE_CLK.
- *  0 (default):CPU_CLK
- *  1: AHB_CLK
- *  2: APB_CLK
- *  3: sec function clock
- *  4: mspi function clock
- *  5: iomux function clock
- *  6: parl io rx function clock
- *  7: parl io tx function clock
- *  8: spi2 function clock
+ *  0: EXT_IO_CLK
+ *  1: CPU_CLK
+ *  2: AHB_CLK
+ *  3: APB_CLK
+ *  4: sec function clock
+ *  5: mspi function clock
+ *  6: iomux function clock
+ *  7: parl io rx function clock
+ *  8: parl io tx function clock
  *  9: spi3 function clock
+ *  10: spi2 function clock
+ *  11: RC_FAST_CLK
  */
 #define PCR_TIMG_SECURE_CLK_SEL    0x0000000FU
 #define PCR_TIMG_SECURE_CLK_SEL_M  (PCR_TIMG_SECURE_CLK_SEL_V << PCR_TIMG_SECURE_CLK_SEL_S)

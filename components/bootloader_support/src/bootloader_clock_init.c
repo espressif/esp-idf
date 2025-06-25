@@ -34,7 +34,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     esp_rom_output_tx_wait_idle(0);
 
     /* Set CPU to a higher certain frequency. Keep other clocks unmodified. */
-    int cpu_freq_mhz = CPU_CLK_FREQ_MHZ_BTLD;
+    int cpu_freq_mhz = CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ;
 
 #if CONFIG_IDF_TARGET_ESP32
     /* On ESP32 rev 0, switching to 80/160 MHz if clock was previously set to
@@ -57,7 +57,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
         // RTC_SLOW clock source will be switched according to Kconfig selection at application startup
         clk_cfg.slow_clk_src = rtc_clk_slow_src_get();
         if (clk_cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_INVALID) {
-            clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+            clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_DEFAULT;
         }
 
         // Use RTC_FAST clock source sel register field's default value, XTAL_DIV, for 2nd stage bootloader

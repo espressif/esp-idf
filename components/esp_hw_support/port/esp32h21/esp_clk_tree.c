@@ -110,8 +110,9 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
 {
     switch (clk_src) {
     case SOC_MOD_CLK_XTAL_X2_F64M:
-        //  later, here should handle ref count for PLL_F64M clock gating, then also handle XTAL_X2 circuit enable/disable
+        // later, here should handle ref count for XTAL_X2_F64M clock gating, then also handle XTAL_X2 circuit enable/disable
         esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_XTAL_X2, enable);
+        break;
     default:
         break;
     }
