@@ -367,7 +367,6 @@ if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
         mbedtls_ssl_handshake_server_step
         mbedtls_ssl_read
         mbedtls_ssl_write
-        mbedtls_ssl_session_reset
         mbedtls_ssl_free
         mbedtls_ssl_setup
         mbedtls_ssl_send_alert_message
