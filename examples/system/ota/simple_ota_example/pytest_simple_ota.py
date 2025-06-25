@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import multiprocessing
@@ -6,12 +6,14 @@ import os
 import ssl
 import subprocess
 import sys
+from typing import Any
 from typing import Optional
 from typing import Tuple
 
 import pexpect
 import pytest
 from pytest_embedded import Dut
+
 
 try:
     from common_test_methods import get_env_config_variable, get_host_ip4_by_dest_ip
@@ -128,6 +130,20 @@ def calc_all_sha256(dut: Dut) -> Tuple[str, str]:
     sha256_app = dut.app.get_sha256(app_path)
 
     return str(sha256_bootloader), str(sha256_app)
+
+
+def setting_connection(dut: Dut, env_name: Optional[str] = None) -> Any:
+    if env_name is not None and dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        dut.expect('Please input ssid password:')
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut.write(f'{ap_ssid} {ap_password}')
+    try:
+        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+        print(f'Connected to AP/Ethernet with IP: {ip_address}')
+    except pexpect.exceptions.TIMEOUT:
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
+    return get_host_ip4_by_dest_ip(ip_address)
 
 
 @pytest.mark.esp32
@@ -385,6 +401,39 @@ def test_examples_protocol_simple_ota_example_tls1_3(dut: Dut) -> None:
         dut.expect('OTA example app_main start', timeout=10)
     finally:
         tls1_3_server.kill()
+
+
+@pytest.mark.esp32
+@pytest.mark.ethernet_ota
+@pytest.mark.parametrize('config', ['tls1_2_dynamic',], indirect=True)
+def test_examples_protocol_simple_ota_example_tls1_2_dynamic(dut: Dut) -> None:
+    """
+    steps: |
+      1. join AP/Ethernet
+      2. Fetch OTA image over HTTPS
+      3. Reboot with the new OTA image
+    """
+    sha256_bootloader, sha256_app = calc_all_sha256(dut)
+    # Start server
+    thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, '0.0.0.0', 8001))
+    thread1.daemon = True
+    thread1.start()
+    try:
+        # start test
+        dut.expect(f'Loaded app from partition at offset 0x10000', timeout=30)
+        check_sha256(sha256_bootloader, str(dut.expect(r'SHA-256 for bootloader:\s+([a-f0-9]){64}')[0]))
+        check_sha256(sha256_app, str(dut.expect(r'SHA-256 for current firmware:\s+([a-f0-9]){64}')[0]))
+
+        host_ip = setting_connection(dut)
+
+        dut.expect('Starting OTA example task', timeout=30)
+        dut.write(f'https://{host_ip}:8001/simple_ota.bin')
+        dut.expect('OTA Succeed, Rebooting...', timeout=120)
+        # after reboot
+        dut.expect(f'Loaded app from partition at offset 0x110000', timeout=30)
+        dut.expect('OTA example app_main start', timeout=10)
+    finally:
+        thread1.terminate()
 
 
 if __name__ == '__main__':

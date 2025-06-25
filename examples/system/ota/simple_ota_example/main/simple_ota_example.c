@@ -101,6 +101,12 @@ void simple_ota_example_task(void *pvParameter)
 #ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_BIND_IF
         .if_name = &ifr,
 #endif
+#if CONFIG_EXAMPLE_TLS_DYN_BUF_RX_STATIC
+        /* This part applies static buffer strategy for rx dynamic buffer.
+         * This is to avoid frequent allocation and deallocation of dynamic buffer.
+         */
+        .tls_dyn_buf_strategy = HTTP_TLS_DYN_BUF_RX_STATIC,
+#endif /* CONFIG_EXAMPLE_TLS_DYN_BUF_RX_STATIC */
     };
 
 #ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
