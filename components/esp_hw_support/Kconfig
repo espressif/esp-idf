@@ -372,4 +372,12 @@ menu "Hardware Settings"
     config ESP_SPI_BUS_LOCK_FUNCS_IN_IRAM
         bool
         default n
+
+    config ESP_ECDSA_ENABLE_P192_CURVE
+        bool "Enable ECDSA 192-curve operations"
+        depends on SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+        default N
+        help
+            By default, only the 256-bit curve operations are allowed. If this configuration is enabled,
+            it will set the eFuse to allow ECDSA operations using both the 192-bit and 256-bit curves
 endmenu
