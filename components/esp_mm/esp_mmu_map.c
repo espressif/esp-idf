@@ -533,7 +533,9 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
          */
         const uint32_t new_paddr_offset = paddr_start - mem_block->paddr_start;
         *out_ptr = (void *)mem_block->vaddr_start + new_paddr_offset;
-        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_STATE, err, TAG, "paddr block is mapped already, vaddr_start: %p, size: 0x%x", (void *)mem_block->vaddr_start, mem_block->size);
+        ESP_LOGD(TAG, "paddr block is mapped already, vaddr_start: %p, size: 0x%x", (void *)mem_block->vaddr_start, mem_block->size);
+        ret = ESP_ERR_INVALID_STATE;
+        goto err;
     }
 
     if (!allow_overlap && is_overlapped) {
