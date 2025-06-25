@@ -1855,7 +1855,7 @@ esp_err_t esp_sleep_enable_touchpad_wakeup(void)
 
 int esp_sleep_get_touchpad_wakeup_status(void)
 {
-    if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_TOUCHPAD) {
+    if (!(esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_TOUCHPAD))) {
         return -1;
     }
     uint32_t chan_num;
@@ -2080,7 +2080,7 @@ static void ext1_wakeup_prepare(void)
 
 uint64_t esp_sleep_get_ext1_wakeup_status(void)
 {
-    if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_EXT1) {
+    if (!(esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_EXT1))) {
         return 0;
     }
     uint32_t status = rtc_hal_ext1_get_wakeup_status();
@@ -2104,7 +2104,7 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
 uint64_t esp_sleep_get_gpio_wakeup_status(void)
 {
-    if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_GPIO) {
+    if (!(esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_GPIO))) {
         return 0;
     }
     return rtc_hal_gpio_get_wakeup_status();

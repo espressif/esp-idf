@@ -199,16 +199,13 @@ static void enter_sleep_and_send_respond(void)
     printf("sleep duration: %lld\n", t_after_us - t_before_us);
 
     /* Determine the reason for uart wakeup */
-    switch (esp_sleep_get_wakeup_cause()) {
-    case ESP_SLEEP_WAKEUP_UART:
+    if (esp_sleep_get_wakeup_causes() & (BIT(ESP_SLEEP_WAKEUP_UART + SLAVE_UART_NUM))) {
         /* Hang-up for a while to switch and execute the uart task
-            * Otherwise the chip may fall sleep again before running uart task */
+         * Otherwise the chip may fall sleep again before running uart task */
         vTaskDelay(1);
         uart_write_bytes(SLAVE_UART_NUM, "Wakeup OK!", 11);
-        break;
-    default:
+    } else {
         uart_write_bytes(SLAVE_UART_NUM, "Wakeup failed!", 15);
-        break;
     }
 
     /* Wait for uart write finish */

@@ -880,7 +880,7 @@ TEST_CASE("GPIO_light_sleep_wake_up_test", "[gpio][ignore]")
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     esp_light_sleep_start();
     printf("Waked up from light sleep\n");
-    TEST_ASSERT(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_GPIO);
+    TEST_ASSERT(esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_GPIO));
 }
 #endif
 

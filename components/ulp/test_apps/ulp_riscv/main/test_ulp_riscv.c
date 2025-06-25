@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -196,7 +196,7 @@ TEST_CASE("ULP-RISC-V can be loaded with and run multiple firmwares", "[ulp]")
     TEST_ASSERT(ulp_riscv_is_running(&ulp_riscv_counter));
 }
 
-TEST_CASE("ULP-RISC-V can be reloaded with a good fimware after a crash", "[ulp]")
+TEST_CASE("ULP-RISC-V can be reloaded with a good firmware after a crash", "[ulp]")
 {
     /* Load ULP RISC-V firmware and start the ULP RISC-V Coprocessor */
     load_and_start_ulp_firmware(ulp_main_bin_start, ulp_main_bin_length);
@@ -218,8 +218,7 @@ TEST_CASE("ULP-RISC-V can be reloaded with a good fimware after a crash", "[ulp]
     esp_light_sleep_start();
 
     /* Verify that main CPU wakes up by a COCPU trap signal trigger */
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-    TEST_ASSERT(cause == ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG);
+    TEST_ASSERT(esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG));
 
     printf("Resetting the ULP\n");
     ulp_riscv_reset();
@@ -312,7 +311,7 @@ static void do_ulp_wakeup_deepsleep(riscv_test_commands_t ulp_cmd, bool rtc_peri
 
 static void check_reset_reason_ulp_wakeup(void)
 {
-    TEST_ASSERT_EQUAL(ESP_SLEEP_WAKEUP_ULP, esp_sleep_get_wakeup_cause());
+    TEST_ASSERT_EQUAL(BIT(ESP_SLEEP_WAKEUP_ULP), esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP));
 }
 
 static void do_ulp_wakeup_after_long_delay_deepsleep(void)

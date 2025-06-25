@@ -24,16 +24,20 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_pm_configure(&pm_config));
 #endif
 
-    if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT) {
-#if CONFIG_ESP_VBAT_USE_RECHARGEABLE_BATTERY
-        printf("Wake up from VBAT low power\n");
-#else
-        printf("Wake up from VBAT brownout\n");
-#endif
-    } else if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER) {
-        printf("Wake up from Timer\n");
-    } else {
+    uint32_t causes = esp_sleep_get_wakeup_causes();
+    if (causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
         printf("Not a deep sleep reset\n");
+    } else {
+        if (causes & BIT(ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT)) {
+#if CONFIG_ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            printf("Wake up from VBAT low power\n");
+#else
+            printf("Wake up from VBAT brownout\n");
+#endif
+        }
+        if (causes & BIT(ESP_SLEEP_WAKEUP_TIMER)) {
+            printf("Wake up from Timer\n");
+        }
     }
 
     esp_err_t sleep_result;

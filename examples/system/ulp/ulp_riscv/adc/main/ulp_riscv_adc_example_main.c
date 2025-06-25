@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -37,16 +37,16 @@ void app_main(void)
     */
     vTaskDelay(pdMS_TO_TICKS(1000));
 
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+    uint32_t causes = esp_sleep_get_wakeup_causes();
 
     /* not a wakeup from ULP, load the firmware */
-    if ((cause != ESP_SLEEP_WAKEUP_ULP) && (cause != ESP_SLEEP_WAKEUP_TIMER)) {
-        printf("Not a ULP-RISC-V wakeup (cause = %d), initializing it! \n", cause);
+    if (!(causes & (BIT(ESP_SLEEP_WAKEUP_ULP) | BIT(ESP_SLEEP_WAKEUP_TIMER)))) {
+        printf("Not a ULP-RISC-V wakeup (causes = %lx), initializing it! \n", causes);
         init_ulp_program();
     }
 
     /* ULP Risc-V read and detected a temperature above the limit */
-    if (cause == ESP_SLEEP_WAKEUP_ULP) {
+    if (causes & BIT(ESP_SLEEP_WAKEUP_ULP)) {
         printf("ULP-RISC-V woke up the main CPU\n");
         printf("Threshold: high = %"PRIu32"\n", ulp_adc_threshold);
         printf("Value = %"PRIu32" was above threshold\n", ulp_wakeup_result);

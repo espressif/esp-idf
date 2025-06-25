@@ -338,8 +338,7 @@ bool te_is_touch_dsleep_wakeup(void)
     if (reset_reason != RESET_REASON_CORE_DEEP_SLEEP) {
         return false;
     }
-    esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
-    return wakeup_reason == ESP_SLEEP_WAKEUP_TOUCHPAD;
+    return !!(esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_TOUCHPAD));
 }
 
 touch_pad_t te_get_sleep_channel(void)
