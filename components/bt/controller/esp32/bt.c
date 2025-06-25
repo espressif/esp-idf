@@ -252,6 +252,7 @@ extern uint32_t _bt_controller_data_end;
 extern void config_bt_funcs_reset(void);
 extern void config_ble_funcs_reset(void);
 extern void config_btdm_funcs_reset(void);
+extern void btdm_aa_check_enhance_enable(void);
 
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 extern void bt_stack_enableSecCtrlVsCmd(bool en);
@@ -1850,6 +1851,10 @@ static void patch_apply(void)
 
 #ifndef CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY
     config_ble_funcs_reset();
+#endif
+
+#if BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED
+    btdm_aa_check_enhance_enable();
 #endif
 }
 
