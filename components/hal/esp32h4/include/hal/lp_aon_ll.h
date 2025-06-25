@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer for ESP32-H21 LP_AON register operations
+// The LL layer for ESP32-H4 LP_AON register operations
 
 #pragma once
 
@@ -12,7 +12,7 @@
 #include "soc/soc.h"
 #include "soc/lp_aon_struct.h"
 #include "hal/misc.h"
-#include "esp32h21/rom/rtc.h"
+#include "esp32h4/rom/rtc.h"
 
 
 #ifdef __cplusplus
@@ -26,7 +26,7 @@ extern "C" {
  */
 static inline  uint32_t lp_aon_ll_ext1_get_wakeup_status(void)
 {
-    return HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_status);
+    return HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl1, aon_ext_wakeup_status);
 }
 
 /**
@@ -34,7 +34,7 @@ static inline  uint32_t lp_aon_ll_ext1_get_wakeup_status(void)
  */
 static inline void lp_aon_ll_ext1_clear_wakeup_status(void)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_status_clr, 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl1, aon_ext_wakeup_status_clr, 1);
 }
 
 /**
@@ -47,14 +47,21 @@ static inline void lp_aon_ll_ext1_clear_wakeup_status(void)
  */
 static inline void lp_aon_ll_ext1_set_wakeup_pins(uint32_t io_mask, uint32_t level_mask)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_sel, io_mask);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_lv, level_mask);
+    uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_sel);
+    wakeup_sel_mask |= io_mask;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_sel, wakeup_sel_mask);
+
+    uint32_t wakeup_level_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_lv);
+    wakeup_level_mask |= io_mask & level_mask;
+    wakeup_level_mask &= ~(io_mask & ~level_mask);
+
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_lv, wakeup_level_mask);
 }
 
 /**
  * @brief Clear all ext1 wakup-source setting
  */
-static inline void lp_aon_ll_ext1_clear_wakeup_pins(void)
+static inline  void lp_aon_ll_ext1_clear_wakeup_pins(void)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_sel, 0);
 }
@@ -64,7 +71,7 @@ static inline void lp_aon_ll_ext1_clear_wakeup_pins(void)
  * @return  The lower 8 bits of the returned value are the bitmap of
  *          the wakeup source status, bit 0~7 corresponds to LP_IO 0~7
  */
-static inline uint32_t lp_aon_ll_ext1_get_wakeup_pins(void)
+static inline  uint32_t lp_aon_ll_ext1_get_wakeup_pins(void)
 {
     return HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_sel);
 }
@@ -75,14 +82,23 @@ static inline uint32_t lp_aon_ll_ext1_get_wakeup_pins(void)
  *         Set the flag to inform
  * @param true: deepsleep      false: lightsleep
  */
-static inline void lp_aon_ll_inform_wakeup_type(bool dslp)
+static inline  void lp_aon_ll_inform_wakeup_type(bool dslp)
 {
     if (dslp) {
-        REG_SET_BIT(RTC_SLEEP_MODE_REG, BIT(0));    /* Tell rom to run deep sleep wake stub */
+        REG_SET_BIT(SLEEP_MODE_REG, BIT(0));    /* Tell rom to run deep sleep wake stub */
 
     } else {
-        REG_CLR_BIT(RTC_SLEEP_MODE_REG, BIT(0));    /* Tell rom to run light sleep wake stub */
+        REG_CLR_BIT(SLEEP_MODE_REG, BIT(0));    /* Tell rom to run light sleep wake stub */
     }
+}
+
+/**
+ * @brief Set the maximum number of linked lists supported by REGDMA
+ * @param count: the maximum number of regdma link
+ */
+static inline void pau_ll_set_regdma_link_count(int count)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg0, aon_branch_link_length_aon, count);
 }
 
 #ifdef __cplusplus

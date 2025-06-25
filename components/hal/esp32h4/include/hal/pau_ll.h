@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer for ESP32-H21 PAU(Power Assist Unit) register operations
+// The LL layer for ESP32-H4 PAU(Power Assist Unit) register operations
 
 #pragma once
 
@@ -15,6 +15,7 @@
 #include "soc/pau_struct.h"
 #include "soc/pcr_struct.h"
 #include "soc/lp_aon_struct.h"
+#include "soc/lp_aon_reg.h"
 #include "hal/pau_types.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
@@ -36,7 +37,7 @@ static inline void pau_ll_enable_bus_clock(bool enable)
 
 static inline uint32_t pau_ll_get_regdma_backup_flow_error(pau_dev_t *dev)
 {
-    return dev->regdma_conf.flow_err;
+    return LP_AON.backup_dma_cfg0.aon_regdma_error;
 }
 
 static inline void pau_ll_select_regdma_entry_link(pau_dev_t *dev, int link)
@@ -54,29 +55,38 @@ static inline void pau_ll_set_regdma_entry_link_backup_start_enable(pau_dev_t *d
     dev->regdma_conf.start = enable;
 }
 
-static inline void pau_ll_set_regdma_select_wifimac_link(pau_dev_t *dev)
+static inline void pau_ll_set_regdma_link0_addr(pau_dev_t *dev, void *link_addr)
 {
-    dev->regdma_conf.sel_mac = 1;
+    LP_AON.backup_dma_cfg2.aon_link_addr_aon = (uint32_t)link_addr;
 }
 
-static inline void pau_ll_set_regdma_deselect_wifimac_link(pau_dev_t *dev)
+static inline void pau_ll_set_regdma_timeout_link_backup_wait(pau_dev_t *dev, uint32_t thres)
 {
-    dev->regdma_conf.sel_mac = 0;
+    REG_SET_FIELD(LP_AON_BACKUP_DMA_CFG1_REG, LP_AON_LINK_BACKUP_TOUT_THRES_AON, thres);
 }
 
-static inline void pau_ll_set_regdma_wifimac_link_backup_direction(pau_dev_t *dev, bool to_mem)
+static inline void pau_ll_set_regdma_timeout_read_interval(pau_dev_t *dev, uint32_t thres)
 {
-    dev->regdma_conf.to_mem_mac = to_mem ? 1 : 0;
+    REG_SET_FIELD(LP_AON_BACKUP_DMA_CFG0_REG, LP_AON_READ_INTERVAL_AON, thres);
 }
 
-static inline void pau_ll_set_regdma_wifimac_link_backup_start_enable(pau_dev_t *dev)
+static inline void pau_ll_set_regdma_timeout_burst_limit(pau_dev_t *dev, uint32_t thres)
 {
-    dev->regdma_conf.start_mac = 1;
+    REG_SET_FIELD(LP_AON_BACKUP_DMA_CFG0_REG, LP_AON_BURST_LIMIT_AON, thres);
+}
+static inline void pau_ll_set_regdma_timeout_max_link_work(pau_dev_t *dev, uint32_t thres)
+{
+    REG_SET_FIELD(LP_AON_BACKUP_DMA_CFG1_REG, LP_AON_LINK_WORK_TOUT_THRES_AON, thres);
 }
 
-static inline void pau_ll_set_regdma_wifimac_link_backup_start_disable(pau_dev_t *dev)
+static inline void pau_ll_set_regdma_timeout_read_mode_try_time(pau_dev_t *dev, uint32_t thres)
 {
-    dev->regdma_conf.start_mac = 0;
+    REG_SET_FIELD(LP_AON_BACKUP_DMA_CFG1_REG, LP_AON_LINK_WAIT_TOUT_THRES_AON, thres);
+}
+
+static inline void pau_ll_set_regdma_branch_max_link(pau_dev_t *dev, uint32_t max_link_len)
+{
+    REG_SET_FIELD(LP_AON_BACKUP_DMA_CFG1_REG, LP_AON_BRANCH_LINK_LENGTH_AON, max_link_len);
 }
 
 static inline uint32_t pau_ll_get_regdma_current_link_addr(pau_dev_t *dev)
@@ -109,14 +119,9 @@ static inline void pau_ll_set_regdma_backup_done_intr_enable(pau_dev_t *dev, boo
     dev->int_ena.done_int_ena = enable;
 }
 
-static inline void pau_ll_set_regdma_backup_error_intr_enable(pau_dev_t *dev)
+static inline void pau_ll_set_regdma_backup_error_intr_enable(pau_dev_t *dev, bool enable)
 {
-    dev->int_ena.error_int_ena = 1;
-}
-
-static inline void pau_ll_set_regdma_backup_error_intr_disable(pau_dev_t *dev)
-{
-    dev->int_ena.error_int_ena = 0;
+    dev->int_ena.error_int_ena = enable;
 }
 
 static inline void pau_ll_clear_regdma_backup_done_intr_state(pau_dev_t *dev)
@@ -129,13 +134,53 @@ static inline void pau_ll_clear_regdma_backup_error_intr_state(pau_dev_t *dev)
     dev->int_clr.val = 0x2;
 }
 
-/**
- * @brief Set the maximum number of linked lists supported by REGDMA
- * @param count: the maximum number of regdma link
- */
-static inline void pau_ll_set_regdma_link_count(int count)
+static inline void pau_ll_arbiter_auto_retry_enable(pau_dev_t *dev, bool ena)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg0, aon_branch_link_length_aon, count);
+    dev->regdma_conf.sw_retry_en = ena;
+}
+
+static inline void pau_ll_arbiter_fix_priority_enable(pau_dev_t *dev, bool ena)
+{
+    dev->regdma_conf.fix_pri_en = ena;
+}
+
+/**
+ * arbiter result coding:
+ * 1: mac_req
+ * 2: pmu_req
+ * 3: sw_req
+ * 4: etm0_req
+ * 5: etm1_req
+ * 6: etm2_req
+ * 7: etm3_req
+*/
+static inline uint32_t pau_ll_arbiter_get_start_result(pau_dev_t *dev)
+{
+    return dev->regdma_grant_result.grant_start_result;
+}
+
+static inline uint32_t pau_ll_arbiter_get_done_result(pau_dev_t *dev)
+{
+    return dev->regdma_grant_result.grant_done_result;
+}
+
+static inline void pau_ll_arbiter_clr_result_flag(pau_dev_t *dev)
+{
+    dev->regdma_grant_result.grant_result_clr = 1;
+}
+
+static inline bool pau_ll_is_busy(pau_dev_t *dev)
+{
+    return dev->regdma_conf.paudma_busy;
+}
+
+/**
+ * @brief Set the regdma_link_addr
+ * @param addr: the addr of regdma_link
+ */
+static inline void pau_ll_set_regdma_link_addr(uint32_t addr)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg2, aon_link_addr_aon, addr);
 }
 
 /**
@@ -156,15 +201,6 @@ static inline void pau_ll_set_regdma_link_loop_threshold(int count)
 static inline void pau_ll_set_regdma_link_reg_access_tout_threshold(int count)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg1, aon_link_backup_tout_thres_aon, count);
-}
-
-/**
- * @brief Set the regdma_link_addr
- * @param addr: the addr of regdma_link
- */
-static inline void pau_ll_set_regdma_link_addr(uint32_t addr)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg2, aon_link_addr_aon, addr);
 }
 
 static inline void pau_ll_set_regdma_link_wait_retry_count(int count)

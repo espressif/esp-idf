@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -83,54 +83,6 @@ static inline void lp_aon_ll_inform_wakeup_type(bool dslp)
     } else {
         REG_CLR_BIT(RTC_SLEEP_MODE_REG, BIT(0));    /* Tell rom to run light sleep wake stub */
     }
-}
-
-/**
- * @brief Set the maximum number of linked lists supported by REGDMA
- * @param count: the maximum number of regdma link
- */
-static inline void lp_aon_ll_set_regdma_link_count(int count)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg0, branch_link_length_aon, count);
-}
-
-/**
- * @brief Set the maximum number of times a single linked list can run for REGDMA. If a linked list continuously reads in a loop
- *        for some reason and the execution count exceeds this configured number, a timeout will be triggered.
- * @param count: the maximum number of loop
- */
-static inline void lp_aon_ll_set_regdma_link_loop_threshold(int count)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg1, link_work_tout_thres_aon, count);
-}
-
-/**
- * @brief Set the timeout duration for accessing registers. If REGDMA encounters bus-related issues while accessing
- *        registers and gets stuck on the bus, a timeout will be triggered.
- * @param count: the maximum number of time
- */
-static inline void lp_aon_ll_set_regdma_link_reg_access_tout_threshold(int count)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg1, link_backup_tout_thres_aon, count);
-}
-
-/**
- * @brief Set the regdma_link_addr
- * @param addr: the addr of regdma_link
- */
-static inline void lp_aon_ll_set_regdma_link_addr(uint32_t addr)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg2, link_addr_aon, addr);
-}
-
-static inline void lp_aon_ll_set_regdma_link_wait_retry_count(int count)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg1, link_wait_tout_thres_aon, count);
-}
-
-static inline void lp_aon_ll_set_regdma_link_wait_read_interval(int interval)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg0, read_interval_aon, interval);
 }
 
 #ifdef __cplusplus
