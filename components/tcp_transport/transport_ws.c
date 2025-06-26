@@ -209,6 +209,9 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     transport_ws_t *ws = esp_transport_get_context_data(t);
     const char delimiter[] = "\r\n\r\n";
 
+    free(ws->redir_host);
+    ws->redir_host = NULL;
+
     if (esp_transport_connect(ws->parent, host, port, timeout_ms) < 0) {
         ESP_LOGE(TAG, "Error connecting to host %s:%d", host, port);
         return -1;
@@ -328,11 +331,12 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         ESP_LOGE(TAG, "HTTP upgrade failed");
         return -1;
     } else if (WS_HTTP_TEMPORARY_REDIRECT(ws->http_status_code) || WS_HTTP_PERMANENT_REDIRECT(ws->http_status_code)) {
-        ws->redir_host = get_http_header(ws->buffer, "Location:");
-        if (ws->redir_host == NULL) {
+        char * redir_host = get_http_header(ws->buffer, "Location:");
+        if (redir_host == NULL) {
             ESP_LOGE(TAG, "Location header not found");
             return -1;
         }
+        ws->redir_host = strdup(redir_host);
         return ws->http_status_code;
     }
 
@@ -371,7 +375,6 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         } else {
 #ifdef CONFIG_WS_DYNAMIC_BUFFER
             free(ws->buffer);
-            ws->redir_host = NULL;
             ws->buffer = NULL;
 #endif
             ws->buffer_len = 0;
@@ -713,6 +716,7 @@ static esp_err_t ws_destroy(esp_transport_handle_t t)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
     free(ws->buffer);
+    free(ws->redir_host);
     free(ws->path);
     free(ws->sub_protocol);
     free(ws->user_agent);
