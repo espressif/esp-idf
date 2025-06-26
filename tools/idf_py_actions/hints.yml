@@ -416,6 +416,10 @@
             hint_variables: ['ESP_HF_CME_MEMEORY_FAILURE', 'ESP_HF_CME_MEMORY_FAILURE ']
 
 -
+    re: "error: 'USBPHY_\\w+' undeclared"
+    hint: "USBPHY_* pin definitions from <soc/usb_pins.h> have been removed.\nTo use an external USB PHY, wire it to any GPIOs and declare those pin mappings in your application to match your hardware."
+
+-
     re: "intr_alloc: No free interrupt inputs for [_\\w]+ interrupt"
     hint: "For troubleshooting instructions related to interrupt allocation, run 'idf.py docs -sp api-reference/system/intr_alloc.html'"
 
