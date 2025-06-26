@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdatomic.h>
 #include "esp_openthread_radio.h"
 
 #include "esp_err.h"
@@ -13,6 +12,7 @@
 #include "esp_ieee802154.h"
 #include "esp_ieee802154_types.h"
 #include "esp_mac.h"
+#include "esp_openthread_common.h"
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_platform.h"
 #include "esp_openthread_types.h"
@@ -51,12 +51,6 @@ typedef struct {
     uint8_t length;
     uint8_t psdu[OT_RADIO_FRAME_MAX_SIZE];
 } esp_openthread_radio_tx_psdu;
-
-typedef struct {
-    uint8_t head;
-    uint8_t tail;
-    atomic_uint_fast8_t used;
-} esp_openthread_circular_queue_info_t;
 
 static otRadioFrame s_transmit_frame;
 
