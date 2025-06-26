@@ -11,6 +11,7 @@
 const twai_controller_signal_conn_t twai_controller_periph_signals = {
     .controllers = {
         [0] = {
+            .module_name = "TWAI0",
             .module = PERIPH_TWAI0_MODULE,
             .irq_id = ETS_TWAI0_INTR_SOURCE,
             .tx_sig = TWAI0_TX_PAD_OUT_IDX,
@@ -20,6 +21,7 @@ const twai_controller_signal_conn_t twai_controller_periph_signals = {
             .stand_by_sig = TWAI0_STANDBY_PAD_OUT_IDX,
         },
         [1] = {
+            .module_name = "TWAI1",
             .module = PERIPH_TWAI1_MODULE,
             .irq_id = ETS_TWAI1_INTR_SOURCE,
             .tx_sig = TWAI1_TX_PAD_OUT_IDX,
@@ -29,6 +31,7 @@ const twai_controller_signal_conn_t twai_controller_periph_signals = {
             .stand_by_sig = TWAI1_STANDBY_PAD_OUT_IDX,
         },
         [2] = {
+            .module_name = "TWAI2",
             .module = PERIPH_TWAI2_MODULE,
             .irq_id = ETS_TWAI2_INTR_SOURCE,
             .tx_sig = TWAI2_TX_PAD_OUT_IDX,

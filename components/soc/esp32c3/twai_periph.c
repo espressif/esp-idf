@@ -10,6 +10,7 @@
 const twai_controller_signal_conn_t twai_controller_periph_signals = {
     .controllers = {
         [0] = {
+            .module_name = "TWAI0",
             .module = PERIPH_TWAI_MODULE,
             .irq_id = ETS_TWAI_INTR_SOURCE,
             .tx_sig = TWAI_TX_IDX,

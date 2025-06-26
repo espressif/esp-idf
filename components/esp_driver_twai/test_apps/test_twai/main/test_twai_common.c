@@ -26,7 +26,7 @@
 
 static IRAM_ATTR bool test_driver_install_rx_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx)
 {
-    twai_frame_t rx_frame;
+    twai_frame_t rx_frame = {0};
     if (ESP_OK == twai_node_receive_from_isr(handle, &rx_frame)) {
         ESP_EARLY_LOGI("Recv ", "id 0x%lx rtr %d", rx_frame.header.id, rx_frame.header.rtr);
     }
@@ -89,7 +89,7 @@ TEST_CASE("twai install uninstall (loopback)", "[twai]")
         TEST_ESP_OK(twai_node_enable(node_hdl[SOC_TWAI_CONTROLLER_NUM]));
         tx_frame.header.id = 0x100;
         TEST_ESP_OK(twai_node_transmit(node_hdl[SOC_TWAI_CONTROLLER_NUM], &tx_frame, 0));
-        twai_frame_t rx_frame;
+        twai_frame_t rx_frame = {0};
         printf("Test receive from task\n");
         TEST_ESP_ERR(ESP_ERR_INVALID_STATE, twai_node_receive_from_isr(node_hdl[SOC_TWAI_CONTROLLER_NUM], &rx_frame));
 
