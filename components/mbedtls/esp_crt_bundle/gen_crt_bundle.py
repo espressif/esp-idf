@@ -8,7 +8,7 @@
 # The bundle will have the format: number of certificates; crt 1 subject name length; crt 1 public key length;
 # crt 1 subject name; crt 1 public key; crt 2...
 #
-# SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import csv
@@ -16,17 +16,32 @@ import os
 import re
 import struct
 import sys
+import warnings
 
 DEFAULT_CERT_BUNDLE_MAX_CERTS = 200
+
+# Ignore warning about non-positive serial numbers in certificates
+# Some CA certificates from the certificate bundle contain zero as serial number
+# Please see https://github.com/pyca/cryptography/issues/12948 for more details
+warnings.filterwarnings(
+    'ignore',
+    message=(
+        r"Parsed a serial number which wasn't positive \(i.e., it was negative or zero\), "
+        'which is disallowed by RFC 5280. '
+        'Loading this certificate will cause an exception in a future release of cryptography.'
+    ),
+)
 
 try:
     from cryptography import x509
     from cryptography.hazmat.backends import default_backend
     from cryptography.hazmat.primitives import serialization
 except ImportError:
-    print('The cryptography package is not installed.'
-          'Please refer to the Get Started section of the ESP-IDF Programming Guide for '
-          'setting up the required packages.')
+    print(
+        'The cryptography package is not installed.'
+        'Please refer to the Get Started section of the ESP-IDF Programming Guide for '
+        'setting up the required packages.'
+    )
     raise
 
 ca_bundle_bin_file = 'x509_crt_bundle'
@@ -35,13 +50,13 @@ quiet = False
 
 
 def status(msg):
-    """ Print status message to stderr """
+    """Print status message to stderr"""
     if not quiet:
         critical(msg)
 
 
 def critical(msg):
-    """ Print critical message to stderr """
+    """Print critical message to stderr"""
     sys.stderr.write('gen_crt_bundle.py: ')
     sys.stderr.write(msg)
     sys.stderr.write('\n')
@@ -53,7 +68,6 @@ class CertificateBundle:
         self.compressed_crts = []
 
     def add_from_path(self, crts_path):
-
         found = False
         for file_path in os.listdir(crts_path):
             found |= self.add_from_file(os.path.join(crts_path, file_path))
@@ -84,7 +98,7 @@ class CertificateBundle:
         return False
 
     def add_from_pem(self, crt_str):
-        """ A single PEM file may have multiple certificates """
+        """A single PEM file may have multiple certificates"""
 
         crt = ''
         count = 0
@@ -113,9 +127,11 @@ class CertificateBundle:
 
     def create_bundle(self, max_certs=DEFAULT_CERT_BUNDLE_MAX_CERTS):
         if max_certs < len(self.certificates):
-            critical(f'No. of certs in the certificate bundle = {len(self.certificates)} exceeds\n \
+            critical(
+                f'No. of certs in the certificate bundle = {len(self.certificates)} exceeds\n \
                     Max allowed certificates in the certificate bundle = {max_certs} \
-                    Please update the menuconfig option with appropriate value')
+                    Please update the menuconfig option with appropriate value'
+            )
             raise ValueError
 
         # Sort certificates in order to do binary search when looking up certificates
@@ -130,7 +146,9 @@ class CertificateBundle:
         for crt in self.certificates:
             """ Read the public key as DER format """
             pub_key = crt.public_key()
-            pub_key_der = pub_key.public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
+            pub_key_der = pub_key.public_bytes(
+                serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo
+            )
 
             """ Read the subject name as DER format """
             sub_name_der = crt.subject.public_bytes(default_backend())
@@ -152,7 +170,6 @@ class CertificateBundle:
         return bundle
 
     def add_with_filter(self, crts_path, filter_path):
-
         filter_set = set()
         with open(filter_path, 'r', encoding='utf-8') as f:
             csv_reader = csv.reader(f, delimiter=',')
@@ -189,12 +206,26 @@ def main():
     parser = argparse.ArgumentParser(description='ESP-IDF x509 certificate bundle utility')
 
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
-    parser.add_argument('--input', '-i', nargs='+', required=True,
-                        help='Paths to the custom certificate folders or files to parse, parses all .pem or .der files')
-    parser.add_argument('--filter', '-f', help='Path to CSV-file where the second columns contains the name of the certificates \
-                        that should be included from cacrt_all.pem')
-    parser.add_argument('--max-certs', '-m', help='Maximum number of certificates allowed in the certificate bundle',
-                        type=int, default=DEFAULT_CERT_BUNDLE_MAX_CERTS)
+    parser.add_argument(
+        '--input',
+        '-i',
+        nargs='+',
+        required=True,
+        help='Paths to the custom certificate folders or files to parse, parses all .pem or .der files',
+    )
+    parser.add_argument(
+        '--filter',
+        '-f',
+        help='Path to CSV-file where the second columns contains the name of the certificates \
+                        that should be included from cacrt_all.pem',
+    )
+    parser.add_argument(
+        '--max-certs',
+        '-m',
+        help='Maximum number of certificates allowed in the certificate bundle',
+        type=int,
+        default=DEFAULT_CERT_BUNDLE_MAX_CERTS,
+    )
 
     args = parser.parse_args()
 
