@@ -42,8 +42,8 @@ components/esp_hw_support/test_apps/rtc_power_modes:
 
 components/esp_hw_support/test_apps/sleep_retention:
   enable:
-    - if: SOC_PAU_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1 and CONFIG_NAME != "xip_psram"
-    - if: SOC_PAU_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1 and (SOC_SPIRAM_XIP_SUPPORTED == 1 and CONFIG_NAME == "xip_psram")
+    - if: SOC_PAU_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1 and SOC_PM_CPU_RETENTION_BY_SW == 1 and CONFIG_NAME != "xip_psram"
+    - if: SOC_PAU_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1 and SOC_PM_CPU_RETENTION_BY_SW == 1 and (SOC_SPIRAM_XIP_SUPPORTED == 1 and CONFIG_NAME == "xip_psram")
 
 components/esp_hw_support/test_apps/vad_wakeup:
   disable:

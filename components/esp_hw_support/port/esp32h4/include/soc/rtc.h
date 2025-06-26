@@ -45,6 +45,7 @@ extern "C" {
  * The functions are loosely split into the following groups:
  * - rtc_clk: clock switching, calibration
  * - rtc_time: reading RTC counter, conversion between counter values and time
+ * - rtc_sleep: entry into sleep modes
  */
 
 #define MHZ (1000000)
@@ -122,7 +123,6 @@ typedef struct rtc_cpu_freq_config_s {
 #define RTC_VDDSDIO_TIEH_1_8V 0 //!< TIEH field value for 1.8V VDDSDIO
 #define RTC_VDDSDIO_TIEH_3_3V 1 //!< TIEH field value for 3.3V VDDSDIO
 
-
 /**
  * @brief Clock source to be calibrated using rtc_clk_cal function
  *
@@ -158,8 +158,8 @@ typedef struct {
  * Default initializer for rtc_clk_config_t
  */
 #define RTC_CLK_CONFIG_DEFAULT() { \
-    .xtal_freq = SOC_XTAL_FREQ_32M, \
-    .cpu_freq_mhz = 80, \
+    .xtal_freq = CONFIG_XTAL_FREQ, \
+    .cpu_freq_mhz = 96, \
     .fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST, \
     .slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, \
     .clk_rtc_clk_div = 0, \

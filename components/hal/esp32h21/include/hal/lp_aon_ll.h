@@ -34,7 +34,7 @@ static inline  uint32_t lp_aon_ll_ext1_get_wakeup_status(void)
  */
 static inline void lp_aon_ll_ext1_clear_wakeup_status(void)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_status_clr, 1);
+    LP_AON.ext_wakeup_cntl.aon_ext_wakeup_status_clr = 1;
 }
 
 /**

@@ -116,6 +116,10 @@
 #include "esp32h21/rom/rtc.h"
 #include "esp32h21/rom/cache.h"
 #include "hal/gpio_ll.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rom/rtc.h"
+#include "esp32h4/rom/cache.h"
+#include "hal/gpio_ll.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/rtc.h"
 #include "hal/gpio_ll.h"
@@ -188,6 +192,9 @@
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
 #elif CONFIG_IDF_TARGET_ESP32H21
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
+#elif CONFIG_IDF_TARGET_ESP32H4
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
 #elif CONFIG_IDF_TARGET_ESP32P4
@@ -746,10 +753,12 @@ static SLEEP_FN_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool 
     pvt_func_enable(false);
 #endif
 
+#if SOC_ADC_SUPPORTED
     if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE] == 0) {
         // TODO: IDF-7370
         sar_periph_ctrl_power_disable();
     }
+#endif
 }
 
 /**
@@ -780,9 +789,11 @@ static SLEEP_FN_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
         sleep_usb_otg_phy_restore();
     }
 #endif
+#if SOC_ADC_SUPPORTED
     if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE] == 0) {
         sar_periph_ctrl_power_enable();
     }
+#endif
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
 #endif
