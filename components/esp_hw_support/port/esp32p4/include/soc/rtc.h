@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -94,6 +94,36 @@ set sleep_init default param
 #define RTC_CNTL_PD_CUR_SLEEP_ON  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
 #define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
+
+#if CONFIG_ESP_ENABLE_PVT
+
+#define PVT_CHANNEL0_SEL    49
+#define PVT_CHANNEL1_SEL    53
+#define PVT_CHANNEL0_CFG    0x13e80
+#define PVT_CHANNEL1_CFG    0x13e80
+#define PVT_CHANNEL2_CFG    0x10000
+#define PVT_CMD0            0x24
+#define PVT_CMD1            0x5
+#define PVT_CMD2            0x427
+#define PVT_TARGET          0x7d00
+#define PVT_CLK_DIV         1
+#define PVT_EDG_MODE        1
+#define PVT_DELAY_NUM_HIGH  164
+#define PVT_DELAY_NUM_LOW   157
+
+/**
+ * @brief Initialize PVT related parameters
+ */
+void pvt_auto_dbias_init(void);
+
+/**
+ * @brief Enable or disable PVT functions
+ *
+ * @param enable  true to enable, false to disable
+ */
+void pvt_func_enable(bool enable);
+
+#endif //#if CONFIG_ESP_ENABLE_PVT
 
 /*
 The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
