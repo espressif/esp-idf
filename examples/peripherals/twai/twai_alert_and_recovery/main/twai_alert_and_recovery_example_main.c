@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -60,15 +60,15 @@ static SemaphoreHandle_t ctrl_task_sem;
 static bool trigger_tx_error = false;
 
 /* --------------------------- Tasks and Functions -------------------------- */
-extern const twai_controller_signal_conn_t twai_controller_periph_signals;
+extern const twai_signal_conn_t twai_periph_signals[SOC_TWAI_CONTROLLER_NUM];
 static void invert_tx_bits(bool enable)
 {
     if (enable) {
         //Inverts output of TX to trigger errors
-        esp_rom_gpio_connect_out_signal(TX_GPIO_NUM, twai_controller_periph_signals.controllers[0].tx_sig, true, false);
+        esp_rom_gpio_connect_out_signal(TX_GPIO_NUM, twai_periph_signals[0].tx_sig, true, false);
     } else {
         //Returns TX to default settings
-        esp_rom_gpio_connect_out_signal(TX_GPIO_NUM, twai_controller_periph_signals.controllers[0].tx_sig, false, false);
+        esp_rom_gpio_connect_out_signal(TX_GPIO_NUM, twai_periph_signals[0].tx_sig, false, false);
     }
 }
 

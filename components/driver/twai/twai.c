@@ -308,24 +308,24 @@ static void twai_configure_gpio(twai_obj_t *p_obj)
     //Set RX pin
     gpio_func_sel(p_obj->rx_io, PIN_FUNC_GPIO);
     gpio_input_enable(p_obj->rx_io);
-    esp_rom_gpio_connect_in_signal(p_obj->rx_io, twai_controller_periph_signals.controllers[controller_id].rx_sig, false);
+    esp_rom_gpio_connect_in_signal(p_obj->rx_io, twai_periph_signals[controller_id].rx_sig, false);
 
     //Set TX pin
     gpio_func_sel(p_obj->tx_io, PIN_FUNC_GPIO);
-    esp_rom_gpio_connect_out_signal(p_obj->tx_io, twai_controller_periph_signals.controllers[controller_id].tx_sig, false, false);
+    esp_rom_gpio_connect_out_signal(p_obj->tx_io, twai_periph_signals[controller_id].tx_sig, false, false);
 
     //Configure output clock pin (Optional)
     if (GPIO_IS_VALID_OUTPUT_GPIO(p_obj->clkout_io)) {
         gpio_mask |= BIT64(p_obj->clkout_io);
         gpio_func_sel(p_obj->clkout_io, PIN_FUNC_GPIO);
-        esp_rom_gpio_connect_out_signal(p_obj->clkout_io, twai_controller_periph_signals.controllers[controller_id].clk_out_sig, false, false);
+        esp_rom_gpio_connect_out_signal(p_obj->clkout_io, twai_periph_signals[controller_id].clk_out_sig, false, false);
     }
 
     //Configure bus status pin (Optional)
     if (GPIO_IS_VALID_OUTPUT_GPIO(p_obj->bus_off_io)) {
         gpio_mask |= BIT64(p_obj->bus_off_io);
         gpio_func_sel(p_obj->bus_off_io, PIN_FUNC_GPIO);
-        esp_rom_gpio_connect_out_signal(p_obj->bus_off_io, twai_controller_periph_signals.controllers[controller_id].bus_off_sig, false, false);
+        esp_rom_gpio_connect_out_signal(p_obj->bus_off_io, twai_periph_signals[controller_id].bus_off_sig, false, false);
     }
 
     uint64_t busy_mask = esp_gpio_reserve(gpio_mask);
@@ -343,7 +343,7 @@ static void twai_release_gpio(twai_obj_t *p_obj)
     assert(GPIO_IS_VALID_OUTPUT_GPIO(p_obj->tx_io));    //coverity check
     uint64_t gpio_mask = BIT64(p_obj->tx_io);
 
-    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, twai_controller_periph_signals.controllers[p_obj->controller_id].rx_sig, false);
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, twai_periph_signals[p_obj->controller_id].rx_sig, false);
     gpio_output_disable(p_obj->tx_io);
     if (GPIO_IS_VALID_OUTPUT_GPIO(p_obj->clkout_io)) {
         gpio_mask |= BIT64(p_obj->clkout_io);
@@ -413,7 +413,7 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
         goto err;
     }
     //Allocate interrupt
-    ret = esp_intr_alloc(twai_controller_periph_signals.controllers[controller_id].irq_id,
+    ret = esp_intr_alloc(twai_periph_signals[controller_id].irq_id,
                          g_config->intr_flags | ESP_INTR_FLAG_INTRDISABLED,
                          twai_intr_handler_main,
                          p_obj,

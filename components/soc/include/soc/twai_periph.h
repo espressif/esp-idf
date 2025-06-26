@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,22 +21,19 @@ extern "C" {
 #if SOC_TWAI_SUPPORTED
 
 typedef struct {
-    struct {
-        const periph_module_t module;  // peripheral module
-        const char *module_name;       // peripheral name
-        const int irq_id;              // interrupt source ID
+    const char *module_name;       // peripheral name
+    const int irq_id;              // interrupt source ID
 #if SOC_TWAI_SUPPORT_TIMESTAMP
-        const int timer_irq_id;
+    const int timer_irq_id;
 #endif
-        const int tx_sig;              // TX signal ID in GPIO matrix
-        const int rx_sig;              // RX signal ID in GPIO matrix
-        const int clk_out_sig;         // CLK_OUT signal ID in GPIO matrix
-        const int bus_off_sig;         // BUS_OFF status signal ID in GPIO matrix
-        const int stand_by_sig;        // STAND_BY signal ID in GPIO matrix
-    } controllers[SOC_TWAI_CONTROLLER_NUM];
-} twai_controller_signal_conn_t;
+    const int tx_sig;              // TX signal ID in GPIO matrix
+    const int rx_sig;              // RX signal ID in GPIO matrix
+    const int clk_out_sig;         // CLK_OUT signal ID in GPIO matrix
+    const int bus_off_sig;         // BUS_OFF status signal ID in GPIO matrix
+    const int stand_by_sig;        // STAND_BY signal ID in GPIO matrix
+} twai_signal_conn_t;
 
-extern const twai_controller_signal_conn_t twai_controller_periph_signals;
+extern const twai_signal_conn_t twai_periph_signals[SOC_TWAI_CONTROLLER_NUM];
 
 #if SOC_PAU_SUPPORTED
 typedef struct {

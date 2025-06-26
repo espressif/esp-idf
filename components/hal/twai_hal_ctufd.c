@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sys/param.h>
 #include "hal/twai_hal.h"
 #include "hal/twaifd_ll.h"
 
@@ -118,17 +119,24 @@ void twai_hal_format_frame(const twai_hal_trans_desc_t *trans_desc, twai_hal_fra
 {
     const twai_frame_header_t *header = trans_desc->frame.header;
     int final_dlc = (header->dlc) ? header->dlc : twaifd_len2dlc(trans_desc->frame.buffer_len);
-    int data_len = (header->dlc) ? twaifd_dlc2len(header->dlc) : trans_desc->frame.buffer_len;
     twaifd_ll_format_frame_header(header, final_dlc, frame);
-    twaifd_ll_format_frame_data(trans_desc->frame.buffer, data_len, frame);
+    if (!header->rtr) {
+        int data_len = (header->dlc) ? twaifd_dlc2len(header->dlc) : trans_desc->frame.buffer_len;
+        data_len = (header->fdf) ? MIN(data_len, TWAIFD_FRAME_MAX_LEN) : MIN(data_len, TWAI_FRAME_MAX_LEN);
+        twaifd_ll_format_frame_data(trans_desc->frame.buffer, data_len, frame);
+    }
 }
 
 void twai_hal_parse_frame(const twai_hal_frame_t *frame, twai_frame_header_t *header, uint8_t *buffer, uint8_t buffer_len)
 {
     twaifd_ll_parse_frame_header(frame, header);
-    int frame_data_len = twaifd_dlc2len(header->dlc);
-    uint8_t final_len = (frame_data_len < buffer_len) ? frame_data_len : buffer_len;
-    twaifd_ll_parse_frame_data(frame, buffer, final_len);
+    if (!header->rtr) {
+        int frame_data_len = twaifd_dlc2len(header->dlc);
+        // limit data_len for twai classic non-iso mode.
+        frame_data_len = (header->fdf) ? MIN(frame_data_len, TWAIFD_FRAME_MAX_LEN) : MIN(frame_data_len, TWAI_FRAME_MAX_LEN);
+        uint8_t final_len = MIN(frame_data_len, buffer_len);
+        twaifd_ll_parse_frame_data(frame, buffer, final_len);
+    }
 }
 
 void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_frame_t *tx_frame, uint8_t buffer_idx)

@@ -523,7 +523,7 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, DATA
   2 .bss          00000000  00000000  00000000  00000034  2**0
                   ALLOC
-  3 .rodata.twai_controller_periph_signals 0000001c  00000000  00000000  00000034  2**2
+  3 .rodata.twai_periph_signals 0000001c  00000000  00000000  00000034  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
   4 .debug_info   00000396  00000000  00000000  00000050  2**0
                   CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
