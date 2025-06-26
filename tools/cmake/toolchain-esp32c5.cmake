@@ -9,10 +9,10 @@ set(_CMAKE_TOOLCHAIN_PREFIX riscv32-esp-elf-)
 
 set(_CMAKE_TOOLCHAIN_COMMON_FLAGS "-march=rv32imac_zicsr_zifencei_zaamo_zalrsc")
 
-remove_duplicated_flags("${_CMAKE_TOOLCHAIN_COMMON_FLAGS} ${CMAKE_C_FLAGS}" UNIQ_CMAKE_C_FLAGS)
+remove_duplicated_flags("${_CMAKE_TOOLCHAIN_COMMON_FLAGS} -mtune=esp-base ${CMAKE_C_FLAGS}" UNIQ_CMAKE_C_FLAGS)
 set(CMAKE_C_FLAGS "${UNIQ_CMAKE_C_FLAGS}" CACHE STRING "C Compiler Base Flags" FORCE)
 
-remove_duplicated_flags("${_CMAKE_TOOLCHAIN_COMMON_FLAGS} ${CMAKE_CXX_FLAGS}" UNIQ_CMAKE_CXX_FLAGS)
+remove_duplicated_flags("${_CMAKE_TOOLCHAIN_COMMON_FLAGS} -mtune=esp-base ${CMAKE_CXX_FLAGS}" UNIQ_CMAKE_CXX_FLAGS)
 set(CMAKE_CXX_FLAGS "${UNIQ_CMAKE_CXX_FLAGS}" CACHE STRING "C++ Compiler Base Flags" FORCE)
 
 remove_duplicated_flags("${_CMAKE_TOOLCHAIN_COMMON_FLAGS} ${CMAKE_ASM_FLAGS}" UNIQ_CMAKE_ASM_FLAGS)

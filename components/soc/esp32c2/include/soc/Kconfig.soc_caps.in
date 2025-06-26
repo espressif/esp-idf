@@ -263,10 +263,6 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
-config SOC_CPU_MISALIGNED_ACCESS_ON_PMP_MISMATCH_ISSUE
-    bool
-    default y
-
 config SOC_ECC_SUPPORT_POINT_VERIFY_QUIRK
     bool
     default y
