@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -171,6 +171,12 @@ esp_err_t httpd_register_uri_handler(httpd_handle_t handle,
             hd->hd_calls[i]->handle_ws_control_frames = uri_handler->handle_ws_control_frames;
             if (uri_handler->supported_subprotocol) {
                 hd->hd_calls[i]->supported_subprotocol = strdup(uri_handler->supported_subprotocol);
+                if (hd->hd_calls[i]->supported_subprotocol == NULL) {
+                    /* Failed to allocate memory */
+                    free((void *)hd->hd_calls[i]->uri);
+                    free(hd->hd_calls[i]);
+                    return ESP_ERR_HTTPD_ALLOC_MEM;
+                }
             } else {
                 hd->hd_calls[i]->supported_subprotocol = NULL;
             }
