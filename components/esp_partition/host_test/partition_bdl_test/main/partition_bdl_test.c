@@ -1,0 +1,137 @@
+/*
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Linux host partition API test
+ */
+
+#include <string.h>
+#include <unistd.h>
+#include "esp_partition.h"
+#include "esp_private/partition_linux.h"
+#include "unity.h"
+#include "unity_fixture.h"
+
+const char *TAG = "partition_bdl_test";
+
+TEST_GROUP(partition_bdl);
+
+TEST_SETUP(partition_bdl)
+{
+}
+
+TEST_TEAR_DOWN(partition_bdl)
+{
+}
+
+/* Test all the basic Block Device Layer APIs working correctly over emulated esp_partition instance.
+ * NOR flash behavior expected.
+ * */
+TEST(partition_bdl, test_partition_bdl_ops)
+{
+    //get the block-device interface instance
+    esp_blockdev_handle_t part_blockdev = NULL;
+    TEST_ESP_OK(esp_partition_get_blockdev(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage1", &part_blockdev));
+
+    const size_t data_size = 256;
+    uint8_t test_data[data_size];
+    const off_t target_addr = 3*4*1024;
+    uint8_t data_buffer[data_size];
+    memset((void*)data_buffer, 0, data_size);
+
+    //erase the first sector data from the blockdev and check it's really wiped
+    TEST_ESP_OK(part_blockdev->erase(part_blockdev, target_addr, part_blockdev->geometry.erase_size));
+    memset((void*)test_data, 0xFF, data_size); //erased NOR flash sector contains only 1s
+
+    TEST_ESP_OK(part_blockdev->read(part_blockdev, data_buffer, sizeof(data_buffer), target_addr, data_size));
+    TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer, data_size));
+
+    //write to the blockdev
+    memset((void*)test_data, 'A', data_size);
+    TEST_ESP_OK(part_blockdev->write(part_blockdev, test_data, target_addr, data_size));
+
+    //read from the blockdev the data written before
+    TEST_ESP_OK(part_blockdev->read(part_blockdev, data_buffer, sizeof(data_buffer), target_addr, data_size));
+    TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer, data_size));
+
+    //release the BDL object - nothing to check here, the BDL memory is just freed
+    esp_partition_release_blockdev(part_blockdev);
+}
+
+/* Test parallel access to two independent partitions through BDL interface.
+ * Use both 'esp_partition_t' and type-subtype-label BDL getters.
+ * NOR flash behavior expected.
+ * */
+TEST(partition_bdl, test_two_partitions_bdl_ops)
+{
+    //get the block-device interface instance for partition 'storage1'
+    esp_blockdev_handle_t part_blockdev_1 = NULL;
+    TEST_ESP_OK(esp_partition_get_blockdev(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage1", &part_blockdev_1));
+
+    //get pointer to esp_partition_t object for partition 'storage2'
+    esp_partition_iterator_t iter = esp_partition_find(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage2");
+    TEST_ASSERT_NOT_NULL(iter);
+    esp_partition_t *part = (esp_partition_t*)esp_partition_get(iter);
+    TEST_ASSERT_NOT_NULL(part);
+    esp_partition_iterator_release(iter);
+
+    esp_blockdev_handle_t part_blockdev_2 = NULL;
+    TEST_ESP_OK(esp_partition_ptr_get_blockdev(part, &part_blockdev_2));
+
+    //erase & write & read data on both partitions in parallel
+    const size_t data_size = 256;
+    uint8_t test_data[data_size];
+    const off_t target_addr = 3*4*1024;
+    uint8_t data_buffer_1[data_size];
+    uint8_t data_buffer_2[data_size];
+    memset((void*)data_buffer_1, 0, data_size);
+    memset((void*)data_buffer_2, 0, data_size);
+
+    //erase the first sector data from the blockdev and check it's really wiped
+    TEST_ESP_OK(part_blockdev_1->erase(part_blockdev_1, target_addr, part_blockdev_1->geometry.erase_size));
+    TEST_ESP_OK(part_blockdev_2->erase(part_blockdev_2, target_addr, part_blockdev_2->geometry.erase_size));
+    memset((void*)test_data, 0xFF, data_size); //erased NOR flash sector contains only 1s
+
+    TEST_ESP_OK(part_blockdev_1->read(part_blockdev_1, data_buffer_1, sizeof(data_buffer_1), target_addr, data_size));
+    TEST_ESP_OK(part_blockdev_2->read(part_blockdev_2, data_buffer_2, sizeof(data_buffer_2), target_addr, data_size));
+    TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer_1, data_size));
+    TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer_2, data_size));
+
+    //write to the blockdev 1
+    memset((void*)test_data, 'A', data_size);
+    TEST_ESP_OK(part_blockdev_1->write(part_blockdev_1, test_data, target_addr, data_size));
+
+    //read the data written before from the blockdev 1
+    TEST_ESP_OK(part_blockdev_1->read(part_blockdev_1, data_buffer_1, sizeof(data_buffer_1), target_addr, data_size));
+    TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer_1, data_size));
+
+    //write to the blockdev 2
+    memset((void*)test_data, 'B', data_size);
+    TEST_ESP_OK(part_blockdev_2->write(part_blockdev_2, test_data, target_addr, data_size));
+
+    //read the data written before from the blockdev 2
+    TEST_ESP_OK(part_blockdev_2->read(part_blockdev_2, data_buffer_2, sizeof(data_buffer_2), target_addr, data_size));
+    TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer_2, data_size));
+
+    //release the BDL object - nothing to check here, the BDL memory is just freed
+    esp_partition_release_blockdev(part_blockdev_1);
+    esp_partition_release_blockdev(part_blockdev_2);
+}
+
+TEST_GROUP_RUNNER(partition_bdl)
+{
+    RUN_TEST_CASE(partition_bdl, test_partition_bdl_ops);
+    RUN_TEST_CASE(partition_bdl, test_two_partitions_bdl_ops);
+}
+
+static void run_all_tests(void)
+{
+    RUN_TEST_GROUP(partition_bdl);
+}
+
+int main(int argc, char **argv)
+{
+    UNITY_MAIN_FUNC(run_all_tests);
+    return 0;
+}

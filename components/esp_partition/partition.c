@@ -67,6 +67,12 @@ typedef struct esp_partition_iterator_opaque_ {
     esp_partition_t *info;                          // pointer to info (it is redundant, but makes code more readable)
 } esp_partition_iterator_opaque_t;
 
+typedef struct {
+    esp_blockdev_t blockdev;
+    const esp_partition_t *partition;
+} esp_partition_bdl_t;
+
+
 static SLIST_HEAD(partition_list_head_, partition_list_item_) s_partition_list = SLIST_HEAD_INITIALIZER(s_partition_list);
 static _lock_t s_partition_list_lock;
 
@@ -546,6 +552,7 @@ esp_err_t esp_partition_deregister_external(const esp_partition_t *partition)
                 result = ESP_ERR_INVALID_ARG;
                 break;
             }
+            //remove the external partition record
             SLIST_REMOVE(&s_partition_list, it, partition_list_item_, next);
             free(it);
             result = ESP_OK;
@@ -626,4 +633,105 @@ esp_err_t esp_partition_copy(const esp_partition_t* dest_part, uint32_t dest_off
         remaining_size -= chunk_size;
     }
     return error;
+}
+
+/* *************************************************************************************
+ * Block Device Layer interface
+ * *************************************************************************************/
+
+static esp_err_t esp_partition_blockdev_read(esp_blockdev_handle_t dev_handle, uint8_t* dst_buf, size_t dst_buf_size, uint64_t src_addr, size_t data_read_len)
+{
+    //the simplest boundary check. Should be replaced by auxiliary geometry mapping function
+    if (src_addr % dev_handle->geometry.read_size != 0 || data_read_len % dev_handle->geometry.read_size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    if (dst_buf_size > data_read_len) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    const esp_partition_t* partition = ((esp_partition_bdl_t*)dev_handle)->partition;
+    assert(partition != NULL);
+
+    esp_err_t res = esp_partition_read(partition, src_addr, dst_buf, data_read_len);
+    ESP_LOGV(TAG, "esp_partition_read - src_addr=0x%.16" PRIx64 ", size=0x%08" PRIx32 ", result=0x%08x", src_addr, (uint32_t)data_read_len, res);
+
+    return res;
+}
+
+static esp_err_t esp_partition_blockdev_write(esp_blockdev_handle_t dev_handle, const uint8_t* src_buf, uint64_t dst_addr, size_t data_write_len)
+{
+    //the simplest boundary check. Should be replaced by auxiliary geometry mapping function
+    if (dst_addr % dev_handle->geometry.write_size != 0 || data_write_len % dev_handle->geometry.write_size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    const esp_partition_t* partition = ((esp_partition_bdl_t*)dev_handle)->partition;
+    assert(partition != NULL);
+
+    esp_err_t res = esp_partition_write(partition, dst_addr, src_buf, data_write_len);
+    ESP_LOGV(TAG, "esp_partition_write - dst_addr=0x%.16" PRIx64 ", size=0x%08" PRIx32 ", result=0x%08x", dst_addr, (uint32_t)data_write_len, res);
+
+    return res;
+}
+
+static esp_err_t esp_partition_blockdev_erase(esp_blockdev_handle_t dev_handle, uint64_t start_addr, size_t erase_len)
+{
+    //the simplest boundary check. Should be replaced by auxiliary geometry mapping function
+    if (start_addr % dev_handle->geometry.erase_size != 0 || erase_len % dev_handle->geometry.erase_size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    const esp_partition_t* partition = ((esp_partition_bdl_t*)dev_handle)->partition;
+    assert(partition != NULL);
+
+    esp_err_t res = esp_partition_erase_range(partition, start_addr, erase_len);
+    ESP_LOGV(TAG, "esp_partition_blockdev_erase - src_addr=0x%.16" PRIx64 ", size=0x%08" PRIx32 ", result=0x%08x", start_addr, (uint32_t)erase_len, res);
+
+    return res;
+}
+
+esp_err_t esp_partition_ptr_get_blockdev(const esp_partition_t* partition, esp_blockdev_handle_t *out_bdl_handle_ptr)
+{
+    esp_partition_bdl_t *out = calloc(1, sizeof(esp_partition_bdl_t));
+    if (out == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    //! the flags should be read from the bottom device - TBD (required for NAND flash etc)
+    ESP_BLOCKDEV_FLAGS_INST_CONFIG_DEFAULT(out->blockdev.device_flags);
+
+    out->blockdev.read = &esp_partition_blockdev_read;
+    out->blockdev.write = &esp_partition_blockdev_write;
+    out->blockdev.erase = &esp_partition_blockdev_erase;
+    out->blockdev.geometry.disk_size = partition->size;
+    out->blockdev.geometry.write_size = 1;
+    out->blockdev.geometry.read_size = 1;
+    out->blockdev.geometry.erase_size = partition->erase_size;
+    out->blockdev.geometry.recommended_write_size = 1;
+    out->blockdev.geometry.recommended_read_size = 1;
+    out->blockdev.geometry.recommended_erase_size = partition->erase_size;
+    out->partition = partition;
+
+    *out_bdl_handle_ptr = (esp_blockdev_handle_t)out;
+
+    return ESP_OK;
+}
+
+esp_err_t esp_partition_get_blockdev(const esp_partition_type_t type, const esp_partition_subtype_t subtype, const char *label, esp_blockdev_handle_t *out_bdl_handle_ptr)
+{
+    esp_partition_iterator_t it = esp_partition_find(type, subtype, label);
+    if (it == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    esp_err_t res = esp_partition_ptr_get_blockdev(it->info, out_bdl_handle_ptr);
+    esp_partition_iterator_release(it);
+
+    return res;
+}
+
+void esp_partition_release_blockdev(esp_blockdev_handle_t dev_handle)
+{
+    free((esp_partition_bdl_t*)dev_handle);
 }
