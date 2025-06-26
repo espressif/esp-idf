@@ -76,6 +76,14 @@ esp_netif_t *esp_openthread_get_backbone_netif(void);
  */
 esp_err_t esp_openthread_set_meshcop_instance_name(const char *instance_name);
 
+/**
+ * @brief   Gets the meshcop(e) instance name.
+ *
+ * @return      The instance name.
+ *
+ */
+const char* esp_openthread_get_meshcop_instance_name(void);
+
 #ifdef __cplusplus
 }
 #endif
