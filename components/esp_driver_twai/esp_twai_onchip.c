@@ -636,7 +636,13 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     // Configure GPIO
     ESP_GOTO_ON_ERROR(_node_config_io(node, node_config), err, TAG, "gpio config failed");
 #if CONFIG_PM_ENABLE
+#if SOC_TWAI_CLK_SUPPORT_APB
+    // DFS can change APB frequency. So add lock to prevent sleep and APB freq from changing
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, twai_controller_periph_signals.controllers[ctrlr_id].module_name, &node->pm_lock), err, TAG, "init power manager failed");
+#else // XTAL
+    // XTAL freq can be closed in light sleep, so we need to create a lock to prevent light sleep
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, twai_controller_periph_signals.controllers[ctrlr_id].module_name, &node->pm_lock), err, TAG, "init power manager failed");
+#endif //SOC_TWAI_CLK_SUPPORT_APB
 #endif //CONFIG_PM_ENABLE
 
     node->api_base.enable = _node_enable;
