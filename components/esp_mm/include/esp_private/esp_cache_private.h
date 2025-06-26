@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "esp_err.h"
 #include "esp_bit_defs.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +27,20 @@ extern "C" {
  * @brief Memory is capable to be accessed by DMA
  */
 #define ESP_CACHE_MALLOC_FLAG_DMA          BIT(1)
+
+#if SOC_CACHE_FREEZE_SUPPORTED
+/**
+ * @brief Freeze external memory cache and disable non-iram interrupts
+ *
+ * @note This API will enter a critical section, you will need to call `esp_cache_unfreeze_caches_enable_interrupts` to exit it.
+ */
+void esp_cache_freeze_caches_disable_interrupts(void);
+
+/**
+ * @brief Unfreeze external memory cache and re-enable non-iram interrupts
+ */
+void esp_cache_unfreeze_caches_enable_interrupts(void);
+#endif
 
 /**
  * @brief Helper function for malloc a cache aligned data memory buffer
