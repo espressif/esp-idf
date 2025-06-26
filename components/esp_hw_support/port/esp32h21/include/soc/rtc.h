@@ -109,15 +109,14 @@ typedef struct rtc_cpu_freq_config_s {
  * @brief Clock source to be calibrated using rtc_clk_cal function
  *
  * @note On previous targets, the enum values somehow reflects the register field values of TIMG_RTC_CALI_CLK_SEL
- *       However, this is not true on ESP32H21. The conversion to register field values is explicitly done in
- *       rtc_clk_cal_internal
+ *       However, this is not true on ESP32H21. The conversion to register field values is explicitly done internally
  */
 typedef enum {
     RTC_CAL_RTC_MUX = -1,                                  //!< Currently selected RTC_SLOW_CLK
-    RTC_CAL_RC_SLOW = SOC_RTC_SLOW_CLK_SRC_RC_SLOW,        //!< Internal 600kHz RC oscillator
-    RTC_CAL_32K_XTAL = SOC_RTC_SLOW_CLK_SRC_XTAL32K,       //!< External 32kHz XTAL, as one type of 32k clock
-    RTC_CAL_32K_OSC_SLOW = SOC_RTC_SLOW_CLK_SRC_OSC_SLOW,  //!< External slow clock signal input by lp_pad_gpiox, as one type of 32k clock
-    RTC_CAL_RC_FAST                                        //!< Internal 20MHz RC oscillator
+    RTC_CAL_RC_SLOW = CLK_CAL_RC_SLOW,                     //!< Internal 600kHz RC oscillator
+    RTC_CAL_32K_XTAL = CLK_CAL_32K_XTAL,                   //!< External 32kHz XTAL, as one type of 32k clock
+    RTC_CAL_32K_OSC_SLOW = CLK_CAL_32K_OSC_SLOW,           //!< External slow clock signal input by gpio11, as one type of 32k clock
+    RTC_CAL_RC_FAST = CLK_CAL_RC_FAST,                     //!< Internal 20MHz RC oscillator
 } rtc_cal_sel_t;
 
 /**
@@ -141,8 +140,8 @@ typedef struct {
     .xtal_freq = CONFIG_XTAL_FREQ, \
     .cpu_freq_mhz = CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ, \
     .fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST, \
-    .slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, \
-    .clk_rtc_clk_div = 0, \
+    .slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4, \
+    .clk_rtc_clk_div = 3, \
     .clk_8m_clk_div = 0, \
     .slow_clk_dcap = RTC_CNTL_SCK_DCAP_DEFAULT, \
     .clk_8m_dfreq = RTC_CNTL_CK8M_DFREQ_DEFAULT, \

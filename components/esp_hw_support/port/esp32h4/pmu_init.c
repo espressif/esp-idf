@@ -16,6 +16,7 @@
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_dcdc.h"
 #include "regi2c_ctrl.h"
+#include "esp_rom_sys.h"
 
 static __attribute__((unused)) const char *TAG = "pmu_init";
 
@@ -249,4 +250,11 @@ void pmu_init(void)
     // close rfpll to decrease mslp_cur
     REG_SET_FIELD(PMU_RF_PWC_REG, PMU_XPD_FORCE_RFPLL, 1);
     REG_SET_FIELD(PMU_RF_PWC_REG, PMU_XPD_RFPLL, 0);
+
+#if !CONFIG_IDF_ENV_FPGA
+    // TODO: IDF-12313
+    // if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
+    //     esp_ocode_calib_init();
+    // }
+#endif
 }

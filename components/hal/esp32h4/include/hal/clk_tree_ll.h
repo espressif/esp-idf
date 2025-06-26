@@ -615,7 +615,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider
 }
 
 /**
- * @brief Set RC_SLOW_CLK divider
+ * @brief Set RC_SLOW_CLK divider. The output from the divider is passed into rtc_slow_clk MUX.
  *
  * @param divider Divider of RC_SLOW_CLK. Fixed the divider to 4 on the target.
  */

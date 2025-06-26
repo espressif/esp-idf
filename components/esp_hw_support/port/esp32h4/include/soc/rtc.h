@@ -115,7 +115,7 @@ typedef enum {
     RTC_CAL_RTC_MUX = -1,                                  //!< Currently selected RTC_SLOW_CLK
     RTC_CAL_RC_SLOW = CLK_CAL_RC_SLOW,                     //!< Internal 600kHz RC oscillator
     RTC_CAL_32K_XTAL = CLK_CAL_32K_XTAL,                   //!< External 32kHz XTAL, as one type of 32k clock
-    RTC_CAL_32K_OSC_SLOW = CLK_CAL_32K_OSC_SLOW,           //!< External slow clock signal input by lp_pad_gpio0, as one type of 32k clock
+    RTC_CAL_32K_OSC_SLOW = CLK_CAL_32K_OSC_SLOW,           //!< External slow clock signal input by gpio5, as one type of 32k clock
     RTC_CAL_RC_FAST = CLK_CAL_RC_FAST,                     //!< Internal 20MHz RC oscillator
 } rtc_cal_sel_t;
 

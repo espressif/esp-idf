@@ -88,12 +88,12 @@ typedef enum {
  * @note Enum values are matched with the register field values on purpose
  */
 typedef enum {
-    SOC_RTC_SLOW_CLK_SRC_RC_SLOW = 0,      /*!< Select RC_SLOW_CLK as RTC_SLOW_CLK source */
+    SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4 = 0,   /*!< Select RC_SLOW_D4_CLK as RTC_SLOW_CLK source */
     SOC_RTC_SLOW_CLK_SRC_XTAL32K = 1,      /*!< Select XTAL32K_CLK as RTC_SLOW_CLK source */
     SOC_RTC_SLOW_CLK_SRC_OSC_SLOW = 3,     /*!< Select OSC_SLOW_CLK (external slow clock) as RTC_SLOW_CLK source */
     SOC_RTC_SLOW_CLK_SRC_INVALID,          /*!< Invalid RTC_SLOW_CLK source */
 
-    SOC_RTC_SLOW_CLK_SRC_DEFAULT = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, /*!< RC_SLOW_CLK is the default clock source for RTC_SLOW_CLK */
+    SOC_RTC_SLOW_CLK_SRC_DEFAULT = SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4, /*!< RC_SLOW_CLK is the default clock source for RTC_SLOW_CLK */
 } soc_rtc_slow_clk_src_t;
 
 /**
@@ -313,6 +313,17 @@ typedef enum {
     FLASH_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL_X2_F64M,   /*!< Select PLL_F64M as the default clock choice */
     FLASH_CLK_SRC_ROM_DEFAULT = SOC_MOD_CLK_XTAL,       /*!< Select XTAL as ROM default clock source */
 } soc_periph_flash_clk_src_t;
+
+////////////////////////////////////////////RTC CALIBRATION///////////////////////////////////////////////////////////
+/**
+ * @brief Clock frequency calibration source selection
+ */
+typedef enum {
+    CLK_CAL_RC_SLOW = 0,                             /*!< Select to calibrate RC_SLOW_CLK */
+    CLK_CAL_32K_XTAL,                                /*!< Select to calibrate XTAL32K_CLK */
+    CLK_CAL_32K_OSC_SLOW,                            /*!< Select to calibrate OSC_SLOW_CLK (external slow clock) */
+    CLK_CAL_RC_FAST,                                 /*!< Select to calibrate RC_FAST_CLK */
+} soc_clk_calibration_clk_src_t;
 
 #ifdef __cplusplus
 }

@@ -57,10 +57,10 @@ __attribute__((weak)) void esp_clk_init(void)
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
     // WDT uses a SLOW_CLK clock source. After a function select_rtc_slow_clk a frequency of this source can changed.
-    // If the frequency changes from 600kHz to 32kHz, then the timeout set for the WDT will increase 18.75 times.
+    // If the frequency changes from 150kHz to 32kHz, then the timeout set for the WDT will increase 4.6 times.
     // Therefore, for the time of frequency change, set a new lower timeout value (2 sec).
     // This prevents excessive delay before resetting in case the supply voltage is drawdown.
-    // (If frequency is changed from 600kHz to 32kHz then WDT timeout will increased to 2 sec * 600/32 = 37.5 sec).
+    // (If frequency is changed from 150kHz to 32kHz then WDT timeout will increased to 2 sec * 150/32 = 9.375 sec).
 
     wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
 
@@ -78,7 +78,7 @@ __attribute__((weak)) void esp_clk_init(void)
 #elif defined(CONFIG_RTC_CLK_SRC_EXT_OSC)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_OSC_SLOW);
 #else
-    select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
+    select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4);
 #endif
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
@@ -145,8 +145,8 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
                     if (retry_32k_xtal-- > 0) {
                         continue;
                     }
-                    ESP_EARLY_LOGW(TAG, "32 kHz clock not found, switching to internal 600 kHz oscillator");
-                    rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+                    ESP_EARLY_LOGW(TAG, "32 kHz clock not found, switching to internal 150 kHz oscillator");
+                    rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4;
                 }
             }
         }

@@ -106,7 +106,7 @@ soc_rtc_slow_clk_src_t rtc_clk_slow_src_get(void)
 uint32_t rtc_clk_slow_freq_get_hz(void)
 {
     switch (rtc_clk_slow_src_get()) {
-    case SOC_RTC_SLOW_CLK_SRC_RC_SLOW: return SOC_CLK_RC_SLOW_FREQ_APPROX;
+    case SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4: return SOC_CLK_RC_SLOW_FREQ_APPROX / 4;
     case SOC_RTC_SLOW_CLK_SRC_XTAL32K: return SOC_CLK_XTAL32K_FREQ_APPROX;
     case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW: return SOC_CLK_OSC_SLOW_FREQ_APPROX;
     default: return 0;
