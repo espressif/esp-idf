@@ -155,3 +155,76 @@ Deep-sleep 唤醒存根
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
     - :example:`system/deep_sleep_wake_stub` 演示如何使用 {IDF_TARGET_NAME} 上的深度睡眠唤醒存根，以便在唤醒后立即执行一些任务（唤醒存根代码），然后再返回睡眠状态。
+
+测量从 Deep-sleep 唤醒到唤醒存根执行的时间
+---------------------------------------------------
+
+在某些低功耗场景下，开发者可能希望测量 {IDF_TARGET_NAME} 芯片从 Deep-sleep 唤醒到执行唤醒存根所需的时间。
+
+本节介绍了两种测量该唤醒时长的方法。
+
+方法一：使用 CPU 周期计数器估算
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+该方法利用 CPU 的内部周期计数器来估算唤醒时间。在存根函数（类型为 `esp_deep_sleep_wake_stub_fn_t`）的开头，读取当前的 CPU 周期计数，并根据运行的 CPU 频率将其转换为时间。
+
+参考示例：:example:`system/deep_sleep_wake_stub`。
+
+运行示例后，你将看到类似如下的日志：
+
+.. code-block:: bash
+
+    Enabling timer wakeup, 10s
+    Entering deep sleep
+    ESP-ROM:esp32c3-api1-20210207
+    Build:Feb  7 2021
+    rst:0x5 (DSLEEP),boot:0xc (SPI_FAST_FLASH_BOOT)
+    wake stub: wakeup count is 1, wakeup cause is 8, wakeup cost 12734 us
+    wake stub: going to deep sleep
+    ESP-ROM:esp32c3-api1-20210207
+    Build:Feb  7 2021
+    rst:0x5 (DSLEEP),boot:0xc (SPI_FAST_FLASH_BOOT)
+
+其中 ``wakeup cost 12734 us`` 表示从 Deep-sleep 唤醒到唤醒存根执行之间的时间。
+
+方法一的优点：
+
+- 不需要外部硬件。
+- 实现简单。
+
+方法一的局限性：
+
+- 测量的时长可能包含部分初始化流程。
+- 不适用于超高精度的时序分析。
+
+方法二：使用 GPIO 管脚和逻辑分析仪
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+你可以使用一个 GPIO 管脚作为唤醒源，另一个 GPIO 管脚用于指示唤醒存根开始执行。通过在逻辑分析仪上观察这些 GPIO 的电平变化，可以准确测量从唤醒到存根执行的时间。
+
+例如，在下图中，GPIO4 作为唤醒源，GPIO5 用于指示唤醒存根开始执行。GPIO4 和 GPIO5 的高电平之间的时长即为从唤醒到存根执行的时间。
+
+.. figure:: ../../_static/deep-sleep-stub-logic-analyzer-result.png
+    :align: center
+    :alt: 从唤醒到存根执行的时间
+    :width: 100%
+
+    从唤醒到存根执行的时间
+
+其中 ``2.657ms`` 表示从 Deep-sleep 唤醒到唤醒存根执行之间的时间。
+
+方法二的优点：
+
+- 精度高。
+- 适用于验证硬件时序行为。
+
+方法二的局限性：
+
+- 需要外部设备（逻辑分析仪或示波器）。
+- 在定制板上可能需要测试引脚布线。
+
+建议
+^^^^^^
+
+- 对于快速估算或纯软件测试，方法一已足够。
+- 对于精确验证和硬件级时序分析，推荐使用方法二。

@@ -155,3 +155,76 @@ Application Examples
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
     - :example:`system/deep_sleep_wake_stub` demonstrates how to use the Deep-sleep wake stub on {IDF_TARGET_NAME} to quickly perform some tasks (the wake stub code) immediately after wake-up before going back to sleep.
+
+Measure Time from Deep-sleep Wake-up to Wake Stub Execution
+-------------------------------------------------------------
+
+In certain low-power scenarios, you may want to measure the time it takes for an {IDF_TARGET_NAME} chip to wake up from Deep-sleep to executing the wake stub function.
+
+This section describes two methods for measuring this wake-up duration.
+
+Method 1: Estimate Using CPU Cycle Count
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This method uses the CPU's internal cycle counter to estimate the wake-up time. At the beginning of the stub (with the function type of `esp_deep_sleep_wake_stub_fn_t`), the current CPU cycle count is read and converted into time based on the running CPU frequency.
+
+Reference example: :example:`system/deep_sleep_wake_stub`.
+
+After running the example, you will see a log similar to:
+
+.. code-block:: bash
+
+    Enabling timer wakeup, 10s
+    Entering deep sleep
+    ESP-ROM:esp32c3-api1-20210207
+    Build:Feb  7 2021
+    rst:0x5 (DSLEEP),boot:0xc (SPI_FAST_FLASH_BOOT)
+    wake stub: wakeup count is 1, wakeup cause is 8, wakeup cost 12734 us
+    wake stub: going to deep sleep
+    ESP-ROM:esp32c3-api1-20210207
+    Build:Feb  7 2021
+    rst:0x5 (DSLEEP),boot:0xc (SPI_FAST_FLASH_BOOT)
+
+The ``wakeup cost 12734 us`` is time between Deep-sleep wake-up and wake stub execution.
+
+Advantages:
+
+- Requires no external hardware.
+- Easy to implement.
+
+Limitations:
+
+- The measured duration may include part of the initialization flow.
+- Not suitable for ultra-precise timing analysis.
+
+Method 2: Use GPIO pins and Logic Analyzer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can use one GPIO pin as the wake-up source and another GPIO pin to indicate when the wake stub begins execution. By observing the timing between these GPIO transitions on a logic analyzer, you can obtain an accurate measurement of the time from wake-up to stub execution.
+
+For example, in the screenshot below, GPIO4 functions as the wake-up source, and GPIO5 indicates when the wake stub begins execution. The timing between the high level of GPIO4 and GPIO5 is the time from wake-up to stub execution.
+
+.. figure:: ../../_static/deep-sleep-stub-logic-analyzer-result.png
+    :align: center
+    :alt: Time from Wake-up to Stub Execution
+    :width: 100%
+
+    Time from Wake-up to Stub Execution
+
+The ``2.657ms`` is time between Deep-sleep wake-up and wake stub execution.
+
+Advantages:
+
+- High accuracy.
+- Useful for validating hardware timing behavior.
+
+Limitations:
+
+- Requires external equipment (logic analyzer or oscilloscope).
+- May require test pin wiring on custom boards.
+
+Recommendation
+^^^^^^^^^^^^^^^^
+
+- For quick estimation or software-only testing, Method 1 is sufficient.
+- For precise validation and hardware-level timing, Method 2 is recommended.
