@@ -37,6 +37,7 @@
 #define SPI_OUT_PACKET_LOSS_FRAME_SIZE          (6)
 #define SPI_OUT_TRANS_ITVL_MIN_US               (30)
 #define SPI_OUT_UL_LOG_STR_BUF_SIZE             (100)
+#define SPI_OUT_MALLOC(size)                    heap_caps_malloc(size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 
 #if SPI_OUT_TS_SYNC_ENABLED
 #define SPI_OUT_TS_SYNC_TIMEOUT                 (1000 * 1000)
@@ -233,13 +234,13 @@ static void spi_out_le_audio_log_deinit(void);
 static int spi_out_init_trans(spi_out_trans_cb_t **trans_cb, uint16_t buf_size)
 {
     // Memory allocations
-    *trans_cb = (spi_out_trans_cb_t *)malloc(sizeof(spi_out_trans_cb_t));
+    *trans_cb = (spi_out_trans_cb_t *)SPI_OUT_MALLOC(sizeof(spi_out_trans_cb_t));
     if (!(*trans_cb)) {
         return -1;
     }
     memset(*trans_cb, 0, sizeof(spi_out_trans_cb_t));
 
-    uint8_t *buf = (uint8_t *)spi_bus_dma_memory_alloc(SPI_OUT_BUS, (size_t)buf_size, 0);
+    uint8_t *buf = (uint8_t *)SPI_OUT_MALLOC((size_t)buf_size);
     if (!buf) {
         free(*trans_cb);
         *trans_cb = NULL;
@@ -311,7 +312,7 @@ recycle:
 static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size, uint8_t type)
 {
     // Initialize log control block
-    *log_cb = (spi_out_log_cb_t *)malloc(sizeof(spi_out_log_cb_t));
+    *log_cb = (spi_out_log_cb_t *)SPI_OUT_MALLOC(sizeof(spi_out_log_cb_t));
     if (!(*log_cb)) {
         ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control block!");
         return -1;
@@ -427,7 +428,7 @@ IRAM_ATTR static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8
 
     memcpy(buf, (const uint8_t *)&head, SPI_OUT_FRAME_HEAD_LEN);
     memcpy(buf + SPI_OUT_FRAME_HEAD_LEN, addr, len);
-    if (len_append) {
+    if (len_append && addr_append) {
         memcpy(buf + SPI_OUT_FRAME_HEAD_LEN + len, addr_append, len_append);
     }
     memcpy(buf + SPI_OUT_FRAME_HEAD_LEN + total_length, &checksum, SPI_OUT_FRAME_TAIL_LEN);
@@ -520,7 +521,7 @@ static int spi_out_ul_log_init(void)
     }
 
     // Initialize string buffer
-    ul_log_str_buf = (uint8_t *)malloc(SPI_OUT_UL_LOG_STR_BUF_SIZE);
+    ul_log_str_buf = (uint8_t *)SPI_OUT_MALLOC(SPI_OUT_UL_LOG_STR_BUF_SIZE);
     if (!ul_log_str_buf) {
         ESP_LOGE(BLE_LOG_TAG, "Failed to initialize string buffer for upper layer task log!");
         goto str_buf_init_failed;
