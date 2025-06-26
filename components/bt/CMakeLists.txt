@@ -1022,3 +1022,14 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
                                 "${CMAKE_CURRENT_LIST_DIR}/host/bluedroid/btc/profile/std/gap/btc_gap_ble.c"
                                 PROPERTIES COMPILE_FLAGS "${jump_table_opts}")
 endif()
+
+if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER 15.0)
+    if(CONFIG_BT_BLUEDROID_ENABLED)
+        set_source_files_properties("host/bluedroid/device/controller.c"
+                                    PROPERTIES COMPILE_FLAGS "-Wno-unterminated-string-initialization")
+    endif()
+    if(CONFIG_BT_NIMBLE_ENABLED AND CONFIG_BT_NIMBLE_MESH)
+        set_source_files_properties("host/nimble/nimble/nimble/host/mesh/src/prov.c"
+                                    PROPERTIES COMPILE_FLAGS "-Wno-unterminated-string-initialization")
+    endif()
+endif()

@@ -161,6 +161,13 @@ extern "C" {
 // Forces to not inline function
 #define NOINLINE_ATTR __attribute__((noinline))
 
+#if !defined(__clang__) && __GNUC__ >= 15
+// Marks a character array as not null-terminated to avoid string-related optimizations or warnings
+#define NONSTRING_ATTR __attribute__ ((nonstring))
+#else
+#define NONSTRING_ATTR
+#endif
+
 // This allows using enum as flags in C++
 // Format: FLAG_ATTR(flag_enum_t)
 #ifdef __cplusplus

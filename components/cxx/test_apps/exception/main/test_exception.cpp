@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,12 +13,10 @@
    - 88 bytes are allocated by pthread_setspecific() to init internal lock
    - some more memory...
    */
-#if CONFIG_IDF_TARGET_ESP32
-#define LEAKS (300)
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define LEAKS (800)
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define LEAKS (700)
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C61 || CONFIG_IDF_TARGET_ESP32P4
+#define LEAKS (128)  /* real: 72 */
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
+#define LEAKS (448)  /* real: 396 */
 #else
 #error "unknown target in CXX tests, can't set leaks threshold"
 #endif

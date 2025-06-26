@@ -335,7 +335,7 @@ esp_err_t esp_crt_bundle_attach(void *conf)
     esp_err_t ret = ESP_OK;
     // If no bundle has been set by the user then use the bundle embedded in the binary
     if (s_crt_bundle == NULL) {
-        ret = esp_crt_bundle_init(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
+        ret = esp_crt_bundle_init(x509_crt_imported_bundle_bin_start, (uintptr_t)x509_crt_imported_bundle_bin_end - (uintptr_t)x509_crt_imported_bundle_bin_start);
     }
 
     if (unlikely(ret != ESP_OK)) {

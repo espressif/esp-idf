@@ -38,20 +38,23 @@ if(CONFIG_STDATOMIC_S32C1I_SPIRAM_WORKAROUND)
 endif()
 
 if(CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS)
-    list(APPEND srcs
-         "src/string/memcmp.c"
-         "src/string/memmove.c"
-         "src/string/strncmp.c"
-         "src/string/strncpy.c"
-         "src/port/riscv/memcpy.c"
-         "src/port/riscv/strcpy.c"
-         "src/port/riscv/strcmp.S")
-    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_memcmp_impl")
-    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_memmove_impl")
-    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strncmp_impl")
-    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strncpy_impl")
-    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strcpy_impl")
-    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strcmp_impl")
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+        # TODO IDF-13089: remove this block and modify src/newlib.lf when clang was upgraded
+        list(APPEND srcs
+             "src/string/memcmp.c"
+             "src/string/memmove.c"
+             "src/string/strncmp.c"
+             "src/string/strncpy.c"
+             "src/port/riscv/memcpy.c"
+             "src/port/riscv/strcpy.c"
+             "src/port/riscv/strcmp.S")
+        list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_memcmp_impl")
+        list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_memmove_impl")
+        list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strncmp_impl")
+        list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strncpy_impl")
+        list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strcpy_impl")
+        list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strcmp_impl")
+    endif()
 endif()
 
 if(CONFIG_LIBC_NEWLIB)
@@ -69,12 +72,10 @@ endif()
 set(ldfragments "")
 list(APPEND ldfragments "src/newlib.lf" "src/system_libs.lf")
 
-if(CONFIG_SPIRAM_CACHE_WORKAROUND)
-    if(CONFIG_LIBC_NEWLIB)
-        list(APPEND ldfragments src/esp32-spiram-rom-functions-c.lf)
-    else()
-        list(APPEND ldfragments src/picolibc/esp32-spiram-rom-functions-c.lf)
-    endif()
+if(CONFIG_LIBC_NEWLIB)
+    list(APPEND ldfragments src/libc.lf)
+else()
+    list(APPEND ldfragments src/picolibc/libc.lf)
 endif()
 
 idf_component_register(SRCS "${srcs}"

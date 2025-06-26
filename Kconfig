@@ -610,6 +610,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 Enable this option if use GCC 14 or newer, and want to disable warnings which don't appear with
                 GCC 13.
 
+        config COMPILER_DISABLE_GCC15_WARNINGS
+            bool "Disable new warnings introduced in GCC 15"
+            default "n"
+            help
+                Enable this option if use GCC 15 or newer, and want to disable warnings which don't appear with
+                GCC 14.
+
         config COMPILER_DUMP_RTL_FILES
             bool "Dump RTL files during compilation"
             help

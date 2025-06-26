@@ -22,6 +22,7 @@
  *  BTC.
  *
  ******************************************************************************/
+#include "esp_attr.h"
 #include "string.h"
 #include "common/bt_target.h"
 #include "stack/a2d_api.h"
@@ -66,7 +67,7 @@
 #define BTA_AV_CO_SBC_MAX_BITPOOL  53
 
 /* SCMS-T protect info */
-const UINT8 bta_av_co_cp_scmst[BTA_AV_CP_INFO_LEN] = "\x02\x02\x00";
+const UINT8 bta_av_co_cp_scmst[BTA_AV_CP_INFO_LEN] =  { 2, 2, 0 };
 
 /* SBC SRC codec capabilities */
 const tA2D_SBC_CIE bta_av_co_sbc_caps = {

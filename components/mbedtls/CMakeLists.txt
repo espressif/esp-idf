@@ -347,6 +347,11 @@ foreach(target ${mbedtls_targets})
     endif()
 endforeach()
 
+if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER 15.0)
+    target_compile_options(mbedtls PRIVATE "-Wno-unterminated-string-initialization")
+endif()
+
+
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
     set(WRAP_FUNCTIONS
         mbedtls_ssl_write_client_hello

@@ -9,21 +9,21 @@ configurations = ['noexcept', 'exceptions_rtti']
 
 @pytest.mark.generic
 @pytest.mark.parametrize('config', configurations, indirect=True)
-@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32c61', 'esp32p4'], indirect=['target'])
 def test_cxx_static_init_non_pod(dut: Dut) -> None:
     dut.run_all_single_board_cases(name=['can use static initializers for non-POD types'])
 
 
 @pytest.mark.generic
 @pytest.mark.parametrize('config', configurations, indirect=True)
-@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32c61', 'esp32p4'], indirect=['target'])
 def test_cxx_misc(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='misc')
 
 
 @pytest.mark.generic
 @pytest.mark.parametrize('config', configurations, indirect=True)
-@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32c61', 'esp32p4'], indirect=['target'])
 def test_cxx_stack_smash(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"stack smashing protection CXX"')

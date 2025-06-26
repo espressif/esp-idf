@@ -28,7 +28,7 @@ static __attribute__((unused)) const char s_lvl_name[ESP_LOG_MAX] = {
     'V',  // VERBOSE
 };
 
-static __attribute__((unused)) const char s_lvl_color[ESP_LOG_MAX][8] = {
+static __attribute__((unused)) const char s_lvl_color[ESP_LOG_MAX][9] = {
     "\0",                                               // NONE
     LOG_ANSI_COLOR_REGULAR(LOG_ANSI_COLOR_RED)"\0",     // ERROR
     LOG_ANSI_COLOR_REGULAR(LOG_ANSI_COLOR_YELLOW)"\0",  // WARNING

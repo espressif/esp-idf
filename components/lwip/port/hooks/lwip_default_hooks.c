@@ -11,7 +11,9 @@
 #include "esp_log.h"
 #include <string.h>
 
+#ifndef __weak
 #define __weak __attribute__((weak))
+#endif
 
 /**
  * Default lwip behavior is to silence LWIP_ERROR() if LWIP_DEBUG is not set.

@@ -7,6 +7,7 @@
 #ifndef PHY_INIT_DATA_H
 #define PHY_INIT_DATA_H /* don't use #pragma once here, we compile this file sometimes */
 #include <stdint.h>
+#include "esp_attr.h"
 #include "esp_phy_init.h"
 #include "sdkconfig.h"
 
@@ -52,7 +53,7 @@ typedef struct {
  * @brief Country corresponds to PHY init data type structure
  */
 typedef struct {
-    char cc[PHY_COUNTRY_CODE_LEN];
+    NONSTRING_ATTR char cc[PHY_COUNTRY_CODE_LEN];
     uint8_t type;
 } phy_country_to_bin_type_t;
 #endif

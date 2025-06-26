@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 #include "soc/pmu_reg.h"
 #ifdef __cplusplus

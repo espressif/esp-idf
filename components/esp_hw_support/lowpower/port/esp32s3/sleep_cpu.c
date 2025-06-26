@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -119,11 +119,11 @@ static esp_err_t esp_sleep_tagmem_pd_low_init(void)
     if (s_tag_mem->link_addr == NULL) {
         extern char _stext[], _etext[];
         uint32_t code_start = (uint32_t)_stext;
-        uint32_t code_size = (uint32_t)(_etext - _stext);
+        uint32_t code_size = (uint32_t)((uintptr_t)_etext - (uintptr_t)_stext);
 #if !(CONFIG_SPIRAM && CONFIG_SOC_PM_SUPPORT_TAGMEM_PD)
         extern char _rodata_start[], _rodata_reserved_end[];
         uint32_t data_start = (uint32_t)_rodata_start;
-        uint32_t data_size = (uint32_t)(_rodata_reserved_end - _rodata_start);
+        uint32_t data_size = (uint32_t)((uintptr_t)_rodata_reserved_end - (uintptr_t)_rodata_start);
 #else
         uint32_t data_start = SOC_DROM_LOW;
         uint32_t data_size = SOC_EXTRAM_DATA_SIZE;

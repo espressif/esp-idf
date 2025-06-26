@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -73,11 +73,11 @@ void rom_usb_cdc_set_descriptor_patch(void)
 void usb_dev_deinit(void)
 {
     extern char rom_usb_dev, rom_usb_dev_end;
-    memset((void *) &rom_usb_dev, 0, &rom_usb_dev_end - &rom_usb_dev);
+    memset((void *) &rom_usb_dev, 0, (uintptr_t)&rom_usb_dev_end - (uintptr_t)&rom_usb_dev);
 }
 
 void usb_dw_ctrl_deinit(void)
 {
     extern char rom_usb_dw_ctrl, rom_usb_dw_ctrl_end;
-    memset((void *) &rom_usb_dw_ctrl, 0, &rom_usb_dw_ctrl_end - &rom_usb_dw_ctrl);
+    memset((void *) &rom_usb_dw_ctrl, 0, (uintptr_t)&rom_usb_dw_ctrl_end - (uintptr_t)&rom_usb_dw_ctrl);
 }

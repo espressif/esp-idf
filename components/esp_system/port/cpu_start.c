@@ -417,26 +417,26 @@ FORCE_INLINE_ATTR IRAM_ATTR void get_reset_reason(soc_reset_reason_t *rst_reas)
 FORCE_INLINE_ATTR IRAM_ATTR void init_bss(const soc_reset_reason_t *rst_reas)
 {
 #if SOC_MEM_NON_CONTIGUOUS_SRAM
-    memset(&_bss_start_low, 0, (&_bss_end_low - &_bss_start_low) * sizeof(_bss_start_low));
-    memset(&_bss_start_high, 0, (&_bss_end_high - &_bss_start_high) * sizeof(_bss_start_high));
+    memset(&_bss_start_low, 0, (uintptr_t)&_bss_end_low - (uintptr_t)&_bss_start_low);
+    memset(&_bss_start_high, 0, (uintptr_t)&_bss_end_high - (uintptr_t)&_bss_start_high);
 #else
-    memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
+    memset(&_bss_start, 0, (uintptr_t)&_bss_end - (uintptr_t)&_bss_start);
 #endif // SOC_MEM_NON_CONTIGUOUS_SRAM
 
 #if CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
     // Clear Bluetooth bss
-    memset(&_bss_bt_start, 0, (&_bss_bt_end - &_bss_bt_start) * sizeof(_bss_bt_start));
+    memset(&_bss_bt_start, 0, (uintptr_t)&_bss_bt_end - (uintptr_t)&_bss_bt_start);
 #endif // CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
 
 #if defined(CONFIG_IDF_TARGET_ESP32) && defined(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
     // Clear IRAM BSS
-    memset(&_iram_bss_start, 0, (&_iram_bss_end - &_iram_bss_start) * sizeof(_iram_bss_start));
+    memset(&_iram_bss_start, 0, (uintptr_t)&_iram_bss_end - (uintptr_t)&_iram_bss_start);
 #endif
 
 #if SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED
     /* Unless waking from deep sleep (implying RTC memory is intact), clear RTC bss */
     if (rst_reas[0] != RESET_REASON_CORE_DEEP_SLEEP) {
-        memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
+        memset(&_rtc_bss_start, 0, (uintptr_t)&_rtc_bss_end - (uintptr_t)&_rtc_bss_start);
     }
 #endif
 }

@@ -6,7 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32c61', 'esp32p4'], indirect=['target'])
 def test_cxx_noexcept_out_of_range(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('1')
@@ -15,7 +15,7 @@ def test_cxx_noexcept_out_of_range(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32c61', 'esp32p4'], indirect=['target'])
 def test_cxx_noexcept_bad_alloc(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('2')

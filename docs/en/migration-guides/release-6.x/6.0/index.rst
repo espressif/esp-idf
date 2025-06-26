@@ -11,3 +11,4 @@ Migration from 5.5 to 6.0
     security
     tools
     system
+    toolchain
