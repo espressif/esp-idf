@@ -324,6 +324,11 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         size_t header_sec_websocket_accept_len = strlen(header_sec_websocket_accept);
         if (line_len >= header_sec_websocket_accept_len && !strncasecmp(header_cursor, header_sec_websocket_accept, header_sec_websocket_accept_len)) {
             ESP_LOGD(TAG, "found server-key");
+            if(server_key || server_key_len){
+                // RFC6455: The |Sec-WebSocket-Accept| header MUST NOT appear more than once in an HTTP response.
+                ESP_LOGE(TAG, "Multiple Sec-WebSocket-Accept headers");
+                return -1;
+            }
             server_key = header_cursor + header_sec_websocket_accept_len;
             server_key_len = line_len - header_sec_websocket_accept_len;
         }
