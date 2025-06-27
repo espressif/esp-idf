@@ -27,7 +27,7 @@ else()
 
     # Override regi2c implementation in ROM
     if(CONFIG_ESP_ROM_HAS_REGI2C_BUG OR CONFIG_ESP_ROM_WITHOUT_REGI2C)
-        if(target STREQUAL "esp32c6" OR target STREQUAL "esp32c5" OR target STREQUAL "esp32h4")
+        if(target STREQUAL "esp32c6" OR target STREQUAL "esp32c5")
             list(APPEND sources "patches/esp_rom_hp_regi2c_${target}.c")
         else()
             list(APPEND sources "patches/esp_rom_regi2c_${target}.c")

@@ -28,8 +28,8 @@
 #include "bootloader_flash_config.h"
 #include "bootloader_mem.h"
 #include "esp_private/regi2c_ctrl.h"
-#include "soc/regi2c_lp_bias.h"
-#include "soc/regi2c_bias.h"
+// #include "soc/regi2c_lp_bias.h"
+// #include "soc/regi2c_bias.h"
 #include "soc/hp_system_reg.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
@@ -110,12 +110,12 @@ void spi_flash_extra_dummy_set(uint8_t spi_num, uint8_t extra_dummy)
  */
 static inline void bootloader_hardware_init(void)
 {
+    // TODO: IDF-12285 RF disable?
 
-    // TODO: [ESP32H4] IDF-12315
-    ESP_EARLY_LOGE(TAG, "Analog i2c mst clk enable skipped!\n");
     /* Enable analog i2c master clock */
-    // SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
-    // SET_PERI_REG_MASK(MODEM_LPCON_I2C_MST_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_SEL_160M);
+    _regi2c_ctrl_ll_master_enable_clock(true); // keep ana i2c mst clock always enabled in bootloader
+    regi2c_ctrl_ll_master_force_enable_clock(true); // TODO: IDF-12285 Remove this?
+    regi2c_ctrl_ll_master_configure_clock();
 }
 
 static inline void bootloader_ana_reset_config(void)
