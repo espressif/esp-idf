@@ -721,7 +721,40 @@ def ensure_build_directory(
     _set_build_context(args)
 
 
-def merge_action_lists(*action_lists: dict) -> dict:
+def merge_action_lists(*action_lists: dict, custom_actions: dict[str, Any] | None = None) -> dict:
+    """
+    Merge multiple action lists into a single dictionary.
+
+    External action lists (via custom_actions) come from outside components or
+    user-defined extensions:
+    - Any duplicate with an existing action or option will trigger a warning,
+      and external definitions will not override defaults.
+
+    *action_lists: Actions that comes from official ESP-IDF development
+    custom_actions: Actions that comes from external extensions
+    """
+
+    def _get_all_action_identifiers(actions_dict: dict[str, Any]) -> set[str]:
+        """Extract all action names and their aliases as a single set."""
+        return {name for name in actions_dict.keys()} | {
+            alias for action in actions_dict.values() for alias in action.get('aliases', [])
+        }
+
+    def _check_action_conflicts(name: str, action: dict[str, Any], existing_identifiers: set[str]) -> None:
+        """Check if an action name or its aliases conflict with existing identifiers.
+        Raises UserWarning if conflicts are found.
+        """
+        if name in existing_identifiers:
+            raise UserWarning(f"Action '{name}' already defined")
+
+        aliases = action.get('aliases', [])
+        conflicting_aliases = set(aliases) & existing_identifiers
+        if conflicting_aliases:
+            raise UserWarning(
+                f"Action '{name}' has aliases {list(conflicting_aliases)} "
+                'that conflict with existing actions or aliases'
+            )
+
     merged_actions: dict = {
         'global_options': [],
         'actions': {},
@@ -731,6 +764,33 @@ def merge_action_lists(*action_lists: dict) -> dict:
         merged_actions['global_options'].extend(action_list.get('global_options', []))
         merged_actions['actions'].update(action_list.get('actions', {}))
         merged_actions['global_action_callbacks'].extend(action_list.get('global_action_callbacks', []))
+
+    if not custom_actions:
+        return merged_actions
+
+    existing_identifiers = _get_all_action_identifiers(merged_actions['actions'])
+    for name, action in custom_actions.get('actions', {}).items():
+        try:
+            _check_action_conflicts(name, action, existing_identifiers)
+            merged_actions['actions'][name] = action
+            existing_identifiers.add(name)
+            existing_identifiers.update(action.get('aliases', []))
+        except UserWarning as e:
+            yellow_print(f'WARNING: {e}. External action will not be added.')
+
+    for new_opt in custom_actions.get('global_options', []):
+        if any(
+            set(new_opt.get('names', [])) & set(existing.get('names', []))
+            for existing in merged_actions['global_options']
+        ):
+            yellow_print(
+                f'WARNING: Global option {new_opt["names"]} already defined. External option will not be added.'
+            )
+        else:
+            merged_actions['global_options'].append(new_opt)
+
+    merged_actions['global_action_callbacks'].extend(custom_actions.get('global_action_callbacks', []))
+
     return merged_actions
 
 

@@ -882,7 +882,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
         extension_func = load_cli_extension_from_dir(ext_dir)
         if extension_func:
             try:
-                all_actions = merge_action_lists(all_actions, extension_func(all_actions, project_dir))
+                all_actions = merge_action_lists(all_actions, custom_actions=extension_func(all_actions, project_dir))
             except Exception as e:
                 print_warning(f'WARNING: Cannot load directory extension from "{ext_dir}": {e}')
             else:
@@ -893,7 +893,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
     entry_point_extensions = load_cli_extensions_from_entry_points()
     for name, extension_func in entry_point_extensions:
         try:
-            all_actions = merge_action_lists(all_actions, extension_func(all_actions, project_dir))
+            all_actions = merge_action_lists(all_actions, custom_actions=extension_func(all_actions, project_dir))
         except Exception as e:
             print_warning(f'WARNING: Cannot load entry point extension "{name}": {e}')
 
