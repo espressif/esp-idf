@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,6 +90,12 @@ typedef enum {
    ESP_TLS_VER_TLS_1_3 = 0x2,   /* (D)TLS 1.3 */
    ESP_TLS_VER_TLS_MAX,         /* to indicate max */
 } esp_tls_proto_ver_t;
+
+typedef enum {
+    ESP_TLS_DYN_BUF_RX_STATIC = 1,    /*!< Strategy to disable dynamic RX buffer allocations and convert to static allocation post-handshake, reducing memory fragmentation */
+    ESP_TLS_DYN_BUF_STRATEGY_MAX,     /*!< to indicate max */
+} esp_tls_dyn_buf_strategy_t;
+
 
 /**
  * @brief      ESP-TLS configuration parameters
@@ -211,6 +217,11 @@ typedef struct esp_tls_cfg {
     const int *ciphersuites_list;           /*!< Pointer to a zero-terminated array of IANA identifiers of TLS ciphersuites.
                                                 Please check the list validity by esp_tls_get_ciphersuites_list() API */
     esp_tls_proto_ver_t tls_version;        /*!< TLS protocol version of the connection, e.g., TLS 1.2, TLS 1.3 (default - no preference) */
+
+#if CONFIG_MBEDTLS_DYNAMIC_BUFFER
+    esp_tls_dyn_buf_strategy_t esp_tls_dyn_buf_strategy; /*!< ESP-TLS dynamic buffer strategy */
+#endif
+
 } esp_tls_cfg_t;
 
 #if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
@@ -464,7 +475,7 @@ int esp_tls_conn_http_new_async(const char *url, const esp_tls_cfg_t *cfg, esp_t
  *             - >=0  if write operation was successful, the return value is the number
  *                   of bytes actually written to the TLS/SSL connection.
  *             - <0  if write operation was not successful, because either an
- *                   error occured or an action must be taken by the calling process.
+ *                   error occurred or an action must be taken by the calling process.
  *             - ESP_TLS_ERR_SSL_WANT_READ/
  *               ESP_TLS_ERR_SSL_WANT_WRITE.
  *                  if the handshake is incomplete and waiting for data to be available for reading.
@@ -485,7 +496,7 @@ ssize_t esp_tls_conn_write(esp_tls_t *tls, const void *data, size_t datalen);
  *             -  0  if read operation was not successful. The underlying
  *                   connection was closed.
  *             - <0  if read operation was not successful, because either an
- *                   error occured or an action must be taken by the calling process.
+ *                   error occurred or an action must be taken by the calling process.
  */
 ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t datalen);
 
@@ -537,7 +548,7 @@ esp_err_t esp_tls_get_conn_sockfd(esp_tls_t *tls, int *sockfd);
  *
  * @param[in]   sockfd       sockfd value to set.
  *
- * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated withthe provided value
+ * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated with the provided value
  *             - ESP_ERR_INVALID_ARG if (tls == NULL || sockfd < 0)
  */
 esp_err_t esp_tls_set_conn_sockfd(esp_tls_t *tls, int sockfd);
@@ -549,7 +560,7 @@ esp_err_t esp_tls_set_conn_sockfd(esp_tls_t *tls, int sockfd);
  *
  * @param[out]   conn_state   pointer to the connection state value.
  *
- * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated withthe provided value
+ * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated with the provided value
  *             - ESP_ERR_INVALID_ARG (Invalid arguments)
  */
 esp_err_t esp_tls_get_conn_state(esp_tls_t *tls, esp_tls_conn_state_t *conn_state);
@@ -561,7 +572,7 @@ esp_err_t esp_tls_get_conn_state(esp_tls_t *tls, esp_tls_conn_state_t *conn_stat
  *
  * @param[in]   conn_state   connection state value to set.
  *
- * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated withthe provided value
+ * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated with the provided value
  *             - ESP_ERR_INVALID_ARG (Invalid arguments)
  */
 esp_err_t esp_tls_set_conn_state(esp_tls_t *tls, esp_tls_conn_state_t conn_state);
@@ -586,7 +597,7 @@ void *esp_tls_get_ssl_context(esp_tls_t *tls);
  *
  * @return
  *             - ESP_OK             if creating global CA store was successful.
- *             - ESP_ERR_NO_MEM     if an error occured when allocating the mbedTLS resources.
+ *             - ESP_ERR_NO_MEM     if an error occurred when allocating the mbedTLS resources.
  */
 esp_err_t esp_tls_init_global_ca_store(void);
 
@@ -605,7 +616,7 @@ esp_err_t esp_tls_init_global_ca_store(void);
  *
  * @return
  *             - ESP_OK  if adding certificates was successful.
- *             - Other   if an error occured or an action must be taken by the calling process.
+ *             - Other   if an error occurred or an action must be taken by the calling process.
  */
 esp_err_t esp_tls_set_global_ca_store(const unsigned char *cacert_pem_buf, const unsigned int cacert_pem_bytes);
 
