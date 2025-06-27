@@ -345,7 +345,7 @@ uint32_t get_act_hp_dbias(void)
             hp_cali_dbias = 31;
         }
     } else {
-        ESP_HW_LOGW(TAG, "hp_cali_dbias not burnt in efuse, use default.");
+        ESP_HW_LOGD(TAG, "hp_cali_dbias not burnt in efuse, use default.");
     }
     return hp_cali_dbias;
 }
@@ -367,7 +367,7 @@ uint32_t get_act_lp_dbias(void)
             lp_cali_dbias = 31;
         }
     } else {
-        ESP_HW_LOGW(TAG, "lp_cali_dbias not burnt in efuse, use default.");
+        ESP_HW_LOGD(TAG, "lp_cali_dbias not burnt in efuse, use default.");
     }
     return lp_cali_dbias;
 }
