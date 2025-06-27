@@ -820,6 +820,8 @@ static esp_err_t esp_client_enable_fn(void *arg)
     }
 #endif
     g_wpa_config_changed = true;
+    /* Enable opportunistic key caching support */
+    esp_wifi_set_okc_support(true);
     return ESP_OK;
 }
 
@@ -854,6 +856,51 @@ esp_err_t esp_wifi_sta_enterprise_enable(void)
     return ret;
 }
 
+static void eap_globals_reset(void)
+{
+    g_wpa_anonymous_identity = NULL;
+    g_wpa_anonymous_identity_len = 0;
+
+    g_wpa_username = NULL;
+    g_wpa_username_len = 0;
+
+    g_wpa_client_cert = NULL;
+    g_wpa_client_cert_len = 0;
+
+    g_wpa_private_key = NULL;
+    g_wpa_private_key_len = 0;
+
+    g_wpa_private_key_passwd = NULL;
+    g_wpa_private_key_passwd_len = 0;
+
+    g_wpa_ca_cert = NULL;
+    g_wpa_ca_cert_len = 0;
+
+    g_wpa_password = NULL;
+    g_wpa_password_len = 0;
+
+    g_wpa_new_password = NULL;
+    g_wpa_new_password_len = 0;
+
+    g_wpa_ttls_phase2_type = NULL;
+    g_wpa_phase1_options = NULL;
+
+    g_wpa_pac_file = NULL;
+    g_wpa_pac_file_len = 0;
+
+    g_wpa_suiteb_certification = false;
+
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+    g_wpa_default_cert_bundle = false;
+    esp_crt_bundle_attach_fn = NULL;
+#endif
+
+#ifndef CONFIG_TLS_INTERNAL_CLIENT
+    g_wpa_domain_match = NULL;
+#endif
+    g_eap_method_mask = 0;
+}
+
 static esp_err_t eap_client_disable_fn(void *param)
 {
     struct wpa_sm *sm = &gWpaSm;
@@ -864,6 +911,7 @@ static esp_err_t eap_client_disable_fn(void *param)
         eap_peer_sm_deinit();
     }
 
+    eap_globals_reset();
 #ifdef EAP_PEER_METHOD
     eap_peer_unregister_methods();
 #endif
@@ -882,6 +930,7 @@ esp_err_t esp_wifi_sta_enterprise_disable(void)
 
     if (wpa2_is_disabled()) {
         wpa_printf(MSG_INFO, "EAP: already disabled");
+        eap_globals_reset();
         wpa2_api_unlock();
         return ESP_OK;
     }
@@ -1260,4 +1309,16 @@ esp_err_t esp_eap_client_set_domain_name(const char *domain_name)
 
     return ESP_OK;
 #endif
+}
+
+esp_err_t esp_eap_client_set_eap_methods(esp_eap_method_t methods)
+{
+    const esp_eap_method_t supported_methods = EAP_TYPE_TLS | EAP_TYPE_TTLS | EAP_TYPE_PEAP | EAP_TYPE_FAST;
+
+    if ((methods & ~supported_methods) != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    g_eap_method_mask = methods;
+    return ESP_OK;
 }
