@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -12,43 +12,34 @@ extern "C" {
 #endif
 
 /** CACHE_L1_CACHE_CTRL_REG register
- *  L1 data Cache(L1-Cache) control register
+ *  L1 data cache (L1 cache) control register
  */
 #define CACHE_L1_CACHE_CTRL_REG (DR_REG_CACHE_BASE + 0x4)
 /** CACHE_L1_CACHE_SHUT_BUS0 : R/W; bitpos: [0]; default: 0;
- *  The bit is used to disable core bus0 access L1-Cache, 0: enable, 1: disable
+ *  Configures whether to disable BUS0 to access the L1 cache.
+ *  0: Enable
+ *  1: Disable
  */
 #define CACHE_L1_CACHE_SHUT_BUS0    (BIT(0))
 #define CACHE_L1_CACHE_SHUT_BUS0_M  (CACHE_L1_CACHE_SHUT_BUS0_V << CACHE_L1_CACHE_SHUT_BUS0_S)
 #define CACHE_L1_CACHE_SHUT_BUS0_V  0x00000001U
 #define CACHE_L1_CACHE_SHUT_BUS0_S  0
 /** CACHE_L1_CACHE_SHUT_BUS1 : R/W; bitpos: [1]; default: 0;
- *  The bit is used to disable core bus1 access L1-Cache, 0: enable, 1: disable
+ *  Configures whether to disable BUS1 to access the L1 cache.
+ *  0: Enable
+ *  1: Disable
  */
 #define CACHE_L1_CACHE_SHUT_BUS1    (BIT(1))
 #define CACHE_L1_CACHE_SHUT_BUS1_M  (CACHE_L1_CACHE_SHUT_BUS1_V << CACHE_L1_CACHE_SHUT_BUS1_S)
 #define CACHE_L1_CACHE_SHUT_BUS1_V  0x00000001U
 #define CACHE_L1_CACHE_SHUT_BUS1_S  1
 
-/** CACHE_L1_BYPASS_CACHE_CONF_REG register
- *  Bypass Cache configure register
- */
-#define CACHE_L1_BYPASS_CACHE_CONF_REG (DR_REG_CACHE_BASE + 0x8)
-/** CACHE_BYPASS_L1_CACHE_EN : R/W; bitpos: [4]; default: 0;
- *  The bit is used to enable bypass L1-Cache. 0: disable bypass, 1: enable bypass.
- */
-#define CACHE_BYPASS_L1_CACHE_EN    (BIT(4))
-#define CACHE_BYPASS_L1_CACHE_EN_M  (CACHE_BYPASS_L1_CACHE_EN_V << CACHE_BYPASS_L1_CACHE_EN_S)
-#define CACHE_BYPASS_L1_CACHE_EN_V  0x00000001U
-#define CACHE_BYPASS_L1_CACHE_EN_S  4
-
 /** CACHE_L1_CACHE_CACHESIZE_CONF_REG register
- *  L1 data Cache CacheSize mode configure register
+ *  Cache size register
  */
 #define CACHE_L1_CACHE_CACHESIZE_CONF_REG (DR_REG_CACHE_BASE + 0x20)
-/** CACHE_L1_CACHE_CACHESIZE_16K : HRO; bitpos: [6]; default: 1;
- *  The field is used to configure cachesize of L1-Cache as 16k bytes. This field and
- *  all other fields within this register is onehot.
+/** CACHE_L1_CACHE_CACHESIZE_16K : RO; bitpos: [6]; default: 1;
+ *  Represents the cache size is 16 KB.
  */
 #define CACHE_L1_CACHE_CACHESIZE_16K    (BIT(6))
 #define CACHE_L1_CACHE_CACHESIZE_16K_M  (CACHE_L1_CACHE_CACHESIZE_16K_V << CACHE_L1_CACHE_CACHESIZE_16K_S)
@@ -56,12 +47,11 @@ extern "C" {
 #define CACHE_L1_CACHE_CACHESIZE_16K_S  6
 
 /** CACHE_L1_CACHE_BLOCKSIZE_CONF_REG register
- *  L1 data Cache BlockSize mode configure register
+ *  Cache block size register
  */
 #define CACHE_L1_CACHE_BLOCKSIZE_CONF_REG (DR_REG_CACHE_BASE + 0x24)
-/** CACHE_L1_CACHE_BLOCKSIZE_32 : HRO; bitpos: [2]; default: 1;
- *  The field is used to configureblocksize of L1-Cache as 32 bytes. This field and all
- *  other fields within this register is onehot.
+/** CACHE_L1_CACHE_BLOCKSIZE_32 : RO; bitpos: [2]; default: 1;
+ *  Represents the cache block size is 32 bytes.
  */
 #define CACHE_L1_CACHE_BLOCKSIZE_32    (BIT(2))
 #define CACHE_L1_CACHE_BLOCKSIZE_32_M  (CACHE_L1_CACHE_BLOCKSIZE_32_V << CACHE_L1_CACHE_BLOCKSIZE_32_S)
@@ -69,11 +59,13 @@ extern "C" {
 #define CACHE_L1_CACHE_BLOCKSIZE_32_S  2
 
 /** CACHE_L1_CACHE_WRAP_AROUND_CTRL_REG register
- *  Cache wrap around control register
+ *  Cache critical word first control register
  */
 #define CACHE_L1_CACHE_WRAP_AROUND_CTRL_REG (DR_REG_CACHE_BASE + 0x28)
 /** CACHE_L1_CACHE_WRAP : R/W; bitpos: [4]; default: 0;
- *  Set this bit as 1 to enable L1-Cache wrap around mode.
+ *  Configures whether to enable the critical word first mode for the L1 cache.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_CACHE_WRAP    (BIT(4))
 #define CACHE_L1_CACHE_WRAP_M  (CACHE_L1_CACHE_WRAP_V << CACHE_L1_CACHE_WRAP_S)
@@ -81,11 +73,13 @@ extern "C" {
 #define CACHE_L1_CACHE_WRAP_S  4
 
 /** CACHE_L1_CACHE_MISS_ACCESS_CTRL_REG register
- *  Cache wrap around control register
+ *  Early start configuration register
  */
 #define CACHE_L1_CACHE_MISS_ACCESS_CTRL_REG (DR_REG_CACHE_BASE + 0x2c)
 /** CACHE_L1_CACHE_MISS_DISABLE_ACCESS : R/W; bitpos: [4]; default: 0;
- *  Set this bit as 1 to disable early restart of L1-Cache
+ *  Configure whether to disable the early start function of L1 cache.
+ *  0: Enable
+ *  1: Disable
  */
 #define CACHE_L1_CACHE_MISS_DISABLE_ACCESS    (BIT(4))
 #define CACHE_L1_CACHE_MISS_DISABLE_ACCESS_M  (CACHE_L1_CACHE_MISS_DISABLE_ACCESS_V << CACHE_L1_CACHE_MISS_DISABLE_ACCESS_S)
@@ -93,28 +87,34 @@ extern "C" {
 #define CACHE_L1_CACHE_MISS_DISABLE_ACCESS_S  4
 
 /** CACHE_L1_CACHE_FREEZE_CTRL_REG register
- *  Cache Freeze control register
+ *  Cache freeze control register
  */
 #define CACHE_L1_CACHE_FREEZE_CTRL_REG (DR_REG_CACHE_BASE + 0x30)
 /** CACHE_L1_CACHE_FREEZE_EN : R/W; bitpos: [16]; default: 0;
- *  The bit is used to enable freeze operation on L1-Cache. It can be cleared by
+ *  Configures whether to enable freeze operation in the L1 cache. It can be cleared by
  *  software.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_CACHE_FREEZE_EN    (BIT(16))
 #define CACHE_L1_CACHE_FREEZE_EN_M  (CACHE_L1_CACHE_FREEZE_EN_V << CACHE_L1_CACHE_FREEZE_EN_S)
 #define CACHE_L1_CACHE_FREEZE_EN_V  0x00000001U
 #define CACHE_L1_CACHE_FREEZE_EN_S  16
 /** CACHE_L1_CACHE_FREEZE_MODE : R/W; bitpos: [17]; default: 0;
- *  The bit is used to configure mode of freeze operation L1-Cache. 0: a miss-access
- *  will not stuck. 1: a miss-access will stuck.
+ *  Configures the freeze mode in the L1 cache.
+ *  0: If a read hits, the data is returned; if a write hits, the cache is updated; if
+ *  a miss occurs, the access is not responded to.
+ *  1: All accesses are responded to directly; for reads, zero is returned, and for
+ *  writes, the cache is not updated.
  */
 #define CACHE_L1_CACHE_FREEZE_MODE    (BIT(17))
 #define CACHE_L1_CACHE_FREEZE_MODE_M  (CACHE_L1_CACHE_FREEZE_MODE_V << CACHE_L1_CACHE_FREEZE_MODE_S)
 #define CACHE_L1_CACHE_FREEZE_MODE_V  0x00000001U
 #define CACHE_L1_CACHE_FREEZE_MODE_S  17
 /** CACHE_L1_CACHE_FREEZE_DONE : RO; bitpos: [18]; default: 0;
- *  The bit is used to indicate whether freeze operation on L1-Cache is finished or
- *  not. 0: not finished. 1: finished.
+ *  Represents whether the freeze operation in L1 cache is finished.
+ *  0: Not finished
+ *  1: Finished
  */
 #define CACHE_L1_CACHE_FREEZE_DONE    (BIT(18))
 #define CACHE_L1_CACHE_FREEZE_DONE_M  (CACHE_L1_CACHE_FREEZE_DONE_V << CACHE_L1_CACHE_FREEZE_DONE_S)
@@ -122,20 +122,23 @@ extern "C" {
 #define CACHE_L1_CACHE_FREEZE_DONE_S  18
 
 /** CACHE_L1_CACHE_DATA_MEM_ACS_CONF_REG register
- *  Cache data memory access configure register
+ *  Cache data memory access configuration register
  */
 #define CACHE_L1_CACHE_DATA_MEM_ACS_CONF_REG (DR_REG_CACHE_BASE + 0x34)
 /** CACHE_L1_CACHE_DATA_MEM_RD_EN : R/W; bitpos: [16]; default: 0;
- *  The bit is used to enable config-bus read L1-Cache data memoryory. 0: disable, 1:
- *  enable.
+ *  Configures whether to enable the configuration bus to read the L1 cache data memory.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_CACHE_DATA_MEM_RD_EN    (BIT(16))
 #define CACHE_L1_CACHE_DATA_MEM_RD_EN_M  (CACHE_L1_CACHE_DATA_MEM_RD_EN_V << CACHE_L1_CACHE_DATA_MEM_RD_EN_S)
 #define CACHE_L1_CACHE_DATA_MEM_RD_EN_V  0x00000001U
 #define CACHE_L1_CACHE_DATA_MEM_RD_EN_S  16
 /** CACHE_L1_CACHE_DATA_MEM_WR_EN : R/W; bitpos: [17]; default: 0;
- *  The bit is used to enable config-bus write L1-Cache data memoryory. 0: disable, 1:
- *  enable.
+ *  Configures whether to enable the configuration bus to write the L1 cache data
+ *  memory.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_CACHE_DATA_MEM_WR_EN    (BIT(17))
 #define CACHE_L1_CACHE_DATA_MEM_WR_EN_M  (CACHE_L1_CACHE_DATA_MEM_WR_EN_V << CACHE_L1_CACHE_DATA_MEM_WR_EN_S)
@@ -143,20 +146,22 @@ extern "C" {
 #define CACHE_L1_CACHE_DATA_MEM_WR_EN_S  17
 
 /** CACHE_L1_CACHE_TAG_MEM_ACS_CONF_REG register
- *  Cache tag memory access configure register
+ *  Cache tag memory access configuration register
  */
 #define CACHE_L1_CACHE_TAG_MEM_ACS_CONF_REG (DR_REG_CACHE_BASE + 0x38)
 /** CACHE_L1_CACHE_TAG_MEM_RD_EN : R/W; bitpos: [16]; default: 0;
- *  The bit is used to enable config-bus read L1-Cache tag memoryory. 0: disable, 1:
- *  enable.
+ *  Configures whether to enable the configuration bus to read the L1 cache tag memory.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_CACHE_TAG_MEM_RD_EN    (BIT(16))
 #define CACHE_L1_CACHE_TAG_MEM_RD_EN_M  (CACHE_L1_CACHE_TAG_MEM_RD_EN_V << CACHE_L1_CACHE_TAG_MEM_RD_EN_S)
 #define CACHE_L1_CACHE_TAG_MEM_RD_EN_V  0x00000001U
 #define CACHE_L1_CACHE_TAG_MEM_RD_EN_S  16
 /** CACHE_L1_CACHE_TAG_MEM_WR_EN : R/W; bitpos: [17]; default: 0;
- *  The bit is used to enable config-bus write L1-Cache tag memoryory. 0: disable, 1:
- *  enable.
+ *  Configures whether to enable the configuration bus to write the L1 cache tag memory.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_CACHE_TAG_MEM_WR_EN    (BIT(17))
 #define CACHE_L1_CACHE_TAG_MEM_WR_EN_M  (CACHE_L1_CACHE_TAG_MEM_WR_EN_V << CACHE_L1_CACHE_TAG_MEM_WR_EN_S)
@@ -164,38 +169,36 @@ extern "C" {
 #define CACHE_L1_CACHE_TAG_MEM_WR_EN_S  17
 
 /** CACHE_L1_CACHE_PRELOCK_CONF_REG register
- *  L1 data Cache prelock configure register
+ *  L1 cache prelocking configuration register
  */
 #define CACHE_L1_CACHE_PRELOCK_CONF_REG (DR_REG_CACHE_BASE + 0x7c)
 /** CACHE_L1_CACHE_PRELOCK_SCT0_EN : R/W; bitpos: [0]; default: 0;
- *  The bit is used to enable the first section of prelock function on L1-Cache.
+ *  Configures whether to enable the prelocking function in Section 0 of the L1 cache.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_CACHE_PRELOCK_SCT0_EN    (BIT(0))
 #define CACHE_L1_CACHE_PRELOCK_SCT0_EN_M  (CACHE_L1_CACHE_PRELOCK_SCT0_EN_V << CACHE_L1_CACHE_PRELOCK_SCT0_EN_S)
 #define CACHE_L1_CACHE_PRELOCK_SCT0_EN_V  0x00000001U
 #define CACHE_L1_CACHE_PRELOCK_SCT0_EN_S  0
 /** CACHE_L1_CACHE_PRELOCK_SCT1_EN : R/W; bitpos: [1]; default: 0;
- *  The bit is used to enable the second section of prelock function on L1-Cache.
+ *  Configures whether to enable the prelocking function in Section 1 of the L1 cache.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_CACHE_PRELOCK_SCT1_EN    (BIT(1))
 #define CACHE_L1_CACHE_PRELOCK_SCT1_EN_M  (CACHE_L1_CACHE_PRELOCK_SCT1_EN_V << CACHE_L1_CACHE_PRELOCK_SCT1_EN_S)
 #define CACHE_L1_CACHE_PRELOCK_SCT1_EN_V  0x00000001U
 #define CACHE_L1_CACHE_PRELOCK_SCT1_EN_S  1
-/** CACHE_L1_CACHE_PRELOCK_RGID : R/W; bitpos: [5:2]; default: 0;
- *  The bit is used to set  the gid of l1 Cache prelock.
- */
-#define CACHE_L1_CACHE_PRELOCK_RGID    0x0000000FU
-#define CACHE_L1_CACHE_PRELOCK_RGID_M  (CACHE_L1_CACHE_PRELOCK_RGID_V << CACHE_L1_CACHE_PRELOCK_RGID_S)
-#define CACHE_L1_CACHE_PRELOCK_RGID_V  0x0000000FU
-#define CACHE_L1_CACHE_PRELOCK_RGID_S  2
 
 /** CACHE_L1_CACHE_PRELOCK_SCT0_ADDR_REG register
- *  L1 data Cache prelock section0 address configure register
+ *  L1 cache prelocking Section 0 address configuration register
  */
 #define CACHE_L1_CACHE_PRELOCK_SCT0_ADDR_REG (DR_REG_CACHE_BASE + 0x80)
 /** CACHE_L1_CACHE_PRELOCK_SCT0_ADDR : R/W; bitpos: [31:0]; default: 0;
- *  Those bits are used to configure the start address of the first section of prelock
- *  on L1-Cache, which should be used together with L1_Cache_PRELOCK_SCT0_SIZE_REG
+ *  Configures the starting virtual address of Section 0 for prelocking in the L1
+ *  cache. This field should be configured together with
+ *  CACHE_L1_CACHE_PRELOCK_SCT0_SIZE.
  */
 #define CACHE_L1_CACHE_PRELOCK_SCT0_ADDR    0xFFFFFFFFU
 #define CACHE_L1_CACHE_PRELOCK_SCT0_ADDR_M  (CACHE_L1_CACHE_PRELOCK_SCT0_ADDR_V << CACHE_L1_CACHE_PRELOCK_SCT0_ADDR_S)
@@ -203,12 +206,13 @@ extern "C" {
 #define CACHE_L1_CACHE_PRELOCK_SCT0_ADDR_S  0
 
 /** CACHE_L1_CACHE_PRELOCK_SCT1_ADDR_REG register
- *  L1 data Cache prelock section1 address configure register
+ *  L1 cache prelocking Section 1 address configuration register
  */
 #define CACHE_L1_CACHE_PRELOCK_SCT1_ADDR_REG (DR_REG_CACHE_BASE + 0x84)
 /** CACHE_L1_CACHE_PRELOCK_SCT1_ADDR : R/W; bitpos: [31:0]; default: 0;
- *  Those bits are used to configure the start address of the second section of prelock
- *  on L1-Cache, which should be used together with L1_Cache_PRELOCK_SCT1_SIZE_REG
+ *  Configures the starting virtual address of Section 1 for prelocking in the L1
+ *  cache. This field should be configured together with
+ *  CACHE_L1_CACHE_PRELOCK_SCT1_SIZE.
  */
 #define CACHE_L1_CACHE_PRELOCK_SCT1_ADDR    0xFFFFFFFFU
 #define CACHE_L1_CACHE_PRELOCK_SCT1_ADDR_M  (CACHE_L1_CACHE_PRELOCK_SCT1_ADDR_V << CACHE_L1_CACHE_PRELOCK_SCT1_ADDR_S)
@@ -216,20 +220,20 @@ extern "C" {
 #define CACHE_L1_CACHE_PRELOCK_SCT1_ADDR_S  0
 
 /** CACHE_L1_CACHE_PRELOCK_SCT_SIZE_REG register
- *  L1 data Cache prelock section size configure register
+ *  L1 cache prelocking section size configuration register
  */
 #define CACHE_L1_CACHE_PRELOCK_SCT_SIZE_REG (DR_REG_CACHE_BASE + 0x88)
 /** CACHE_L1_CACHE_PRELOCK_SCT0_SIZE : R/W; bitpos: [13:0]; default: 16383;
- *  Those bits are used to configure the size of the first section of prelock on
- *  L1-Cache, which should be used together with L1_Cache_PRELOCK_SCT0_ADDR_REG
+ *  Configures the size of Section 0 for prelocking in the L1 cache. This field should
+ *  be configured together with CACHE_L1_CACHE_PRELOCK_SCT0_ADDR_REG.
  */
 #define CACHE_L1_CACHE_PRELOCK_SCT0_SIZE    0x00003FFFU
 #define CACHE_L1_CACHE_PRELOCK_SCT0_SIZE_M  (CACHE_L1_CACHE_PRELOCK_SCT0_SIZE_V << CACHE_L1_CACHE_PRELOCK_SCT0_SIZE_S)
 #define CACHE_L1_CACHE_PRELOCK_SCT0_SIZE_V  0x00003FFFU
 #define CACHE_L1_CACHE_PRELOCK_SCT0_SIZE_S  0
 /** CACHE_L1_CACHE_PRELOCK_SCT1_SIZE : R/W; bitpos: [29:16]; default: 16383;
- *  Those bits are used to configure the size of the second section of prelock on
- *  L1-Cache, which should be used together with L1_Cache_PRELOCK_SCT1_ADDR_REG
+ *  Configures the size of Section 1 for prelocking in the L1 cache. This field should
+ *  be configured together with CACHE_L1_CACHE_PRELOCK_SCT1_ADDR_REG.
  */
 #define CACHE_L1_CACHE_PRELOCK_SCT1_SIZE    0x00003FFFU
 #define CACHE_L1_CACHE_PRELOCK_SCT1_SIZE_M  (CACHE_L1_CACHE_PRELOCK_SCT1_SIZE_V << CACHE_L1_CACHE_PRELOCK_SCT1_SIZE_S)
@@ -237,53 +241,48 @@ extern "C" {
 #define CACHE_L1_CACHE_PRELOCK_SCT1_SIZE_S  16
 
 /** CACHE_LOCK_CTRL_REG register
- *  Lock-class (manual lock) operation control register
+ *  Locking operation control register
  */
 #define CACHE_LOCK_CTRL_REG (DR_REG_CACHE_BASE + 0x8c)
 /** CACHE_LOCK_ENA : R/W/SC; bitpos: [0]; default: 0;
- *  The bit is used to enable lock operation. It will be cleared by hardware after lock
- *  operation done. Note that (1) this bit and unlock_ena bit are mutually exclusive,
- *  that is, those bits can not be set to 1 at the same time. (2) lock operation can be
- *  applied on LL1-ICache, L1-Cache and L2-Cache.
+ *  Configures whether to enable lock operation. It will be cleared by hardware after
+ *  the locking operation is done.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_LOCK_ENA    (BIT(0))
 #define CACHE_LOCK_ENA_M  (CACHE_LOCK_ENA_V << CACHE_LOCK_ENA_S)
 #define CACHE_LOCK_ENA_V  0x00000001U
 #define CACHE_LOCK_ENA_S  0
 /** CACHE_UNLOCK_ENA : R/W/SC; bitpos: [1]; default: 0;
- *  The bit is used to enable unlock operation. It will be cleared by hardware after
- *  unlock operation done. Note that (1) this bit and lock_ena bit are mutually
- *  exclusive, that is, those bits can not be set to 1 at the same time. (2) unlock
- *  operation can be applied on L1-ICache, L1-Cache and L2-Cache.
+ *  Configures whether to enable unlock operation. It will be cleared by hardware after
+ *  the unlocking operation is done.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_UNLOCK_ENA    (BIT(1))
 #define CACHE_UNLOCK_ENA_M  (CACHE_UNLOCK_ENA_V << CACHE_UNLOCK_ENA_S)
 #define CACHE_UNLOCK_ENA_V  0x00000001U
 #define CACHE_UNLOCK_ENA_S  1
 /** CACHE_LOCK_DONE : RO; bitpos: [2]; default: 1;
- *  The bit is used to indicate whether unlock/lock operation is finished or not. 0:
- *  not finished. 1: finished.
+ *  Represents whether the unlocking or the locking operation is finished.
+ *  0: Not finished
+ *  1: Finished
  */
 #define CACHE_LOCK_DONE    (BIT(2))
 #define CACHE_LOCK_DONE_M  (CACHE_LOCK_DONE_V << CACHE_LOCK_DONE_S)
 #define CACHE_LOCK_DONE_V  0x00000001U
 #define CACHE_LOCK_DONE_S  2
-/** CACHE_LOCK_RGID : R/W; bitpos: [6:3]; default: 0;
- *  The bit is used to set  the gid of cache lock/unlock.
- */
-#define CACHE_LOCK_RGID    0x0000000FU
-#define CACHE_LOCK_RGID_M  (CACHE_LOCK_RGID_V << CACHE_LOCK_RGID_S)
-#define CACHE_LOCK_RGID_V  0x0000000FU
-#define CACHE_LOCK_RGID_S  3
 
 /** CACHE_LOCK_MAP_REG register
- *  Lock (manual lock) map configure register
+ *  Locking map configuration register
  */
 #define CACHE_LOCK_MAP_REG (DR_REG_CACHE_BASE + 0x90)
 /** CACHE_LOCK_MAP : R/W; bitpos: [5:0]; default: 0;
- *  Those bits are used to indicate which caches in the two-level cache structure will
- *  apply this lock/unlock operation. [0]: L1-ICache0, [1]: L1-ICache1, [2]:
- *  L1-ICache2, [3]: L1-ICache3, [4]: L1-Cache, [5]: L2-Cache.
+ *  Configures which level of cache in the two-level cache structure to perform the
+ *  locking or the unlocking operation.
+ *  Bit 4: Write 1 to this bit to select the L1 cache
+ *  Other bits: reserved
  */
 #define CACHE_LOCK_MAP    0x0000003FU
 #define CACHE_LOCK_MAP_M  (CACHE_LOCK_MAP_V << CACHE_LOCK_MAP_S)
@@ -291,12 +290,12 @@ extern "C" {
 #define CACHE_LOCK_MAP_S  0
 
 /** CACHE_LOCK_ADDR_REG register
- *  Lock (manual lock) address configure register
+ *  Locking address configuration register
  */
 #define CACHE_LOCK_ADDR_REG (DR_REG_CACHE_BASE + 0x94)
 /** CACHE_LOCK_ADDR : R/W; bitpos: [31:0]; default: 0;
- *  Those bits are used to configure the start address of the lock/unlock operation,
- *  which should be used together with CACHE_LOCK_SIZE_REG
+ *  Configures the starting virtual address for the locking or unlocking operation.
+ *  This field should be configured together with CACHE_LOCK_SIZE_REG.
  */
 #define CACHE_LOCK_ADDR    0xFFFFFFFFU
 #define CACHE_LOCK_ADDR_M  (CACHE_LOCK_ADDR_V << CACHE_LOCK_ADDR_S)
@@ -304,12 +303,12 @@ extern "C" {
 #define CACHE_LOCK_ADDR_S  0
 
 /** CACHE_LOCK_SIZE_REG register
- *  Lock (manual lock) size configure register
+ *  Locking size configuration register
  */
 #define CACHE_LOCK_SIZE_REG (DR_REG_CACHE_BASE + 0x98)
 /** CACHE_LOCK_SIZE : R/W; bitpos: [15:0]; default: 0;
- *  Those bits are used to configure the size of the lock/unlock operation, which
- *  should be used together with CACHE_LOCK_ADDR_REG
+ *  Configures the size for the locking or unlocking operation. This field should be
+ *  configured together with CACHE_LOCK_ADDR_REG.
  */
 #define CACHE_LOCK_SIZE    0x0000FFFFU
 #define CACHE_LOCK_SIZE_M  (CACHE_LOCK_SIZE_V << CACHE_LOCK_SIZE_S)
@@ -317,74 +316,38 @@ extern "C" {
 #define CACHE_LOCK_SIZE_S  0
 
 /** CACHE_SYNC_CTRL_REG register
- *  Sync-class operation control register
+ *  Sync operation control register
  */
 #define CACHE_SYNC_CTRL_REG (DR_REG_CACHE_BASE + 0x9c)
-/** CACHE_INVALIDATE_ENA : R/W/SC; bitpos: [0]; default: 1;
- *  The bit is used to enable invalidate operation. It will be cleared by hardware
- *  after invalidate operation done. Note that this bit and the other sync-bits
- *  (clean_ena, writeback_ena, writeback_invalidate_ena) are mutually exclusive, that
- *  is, those bits can not be set to 1 at the same time.
+/** CACHE_INVALIDATE_ENA : R/W; bitpos: [0]; default: 1;
+ *  Configures whether to enable the invalidatation operation. It will be cleared by
+ *  hardware after the operation is done.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_INVALIDATE_ENA    (BIT(0))
 #define CACHE_INVALIDATE_ENA_M  (CACHE_INVALIDATE_ENA_V << CACHE_INVALIDATE_ENA_S)
 #define CACHE_INVALIDATE_ENA_V  0x00000001U
 #define CACHE_INVALIDATE_ENA_S  0
-/** CACHE_CLEAN_ENA : R/W/SC; bitpos: [1]; default: 0;
- *  The bit is used to enable clean operation. It will be cleared by hardware after
- *  clean operation done. Note that this bit and the other sync-bits (invalidate_ena,
- *  writeback_ena, writeback_invalidate_ena) are mutually exclusive, that is, those
- *  bits can not be set to 1 at the same time.
- */
-#define CACHE_CLEAN_ENA    (BIT(1))
-#define CACHE_CLEAN_ENA_M  (CACHE_CLEAN_ENA_V << CACHE_CLEAN_ENA_S)
-#define CACHE_CLEAN_ENA_V  0x00000001U
-#define CACHE_CLEAN_ENA_S  1
-/** CACHE_WRITEBACK_ENA : R/W/SC; bitpos: [2]; default: 0;
- *  The bit is used to enable writeback operation. It will be cleared by hardware after
- *  writeback operation done. Note that this bit and the other sync-bits
- *  (invalidate_ena, clean_ena, writeback_invalidate_ena) are mutually exclusive, that
- *  is, those bits can not be set to 1 at the same time.
- */
-#define CACHE_WRITEBACK_ENA    (BIT(2))
-#define CACHE_WRITEBACK_ENA_M  (CACHE_WRITEBACK_ENA_V << CACHE_WRITEBACK_ENA_S)
-#define CACHE_WRITEBACK_ENA_V  0x00000001U
-#define CACHE_WRITEBACK_ENA_S  2
-/** CACHE_WRITEBACK_INVALIDATE_ENA : R/W/SC; bitpos: [3]; default: 0;
- *  The bit is used to enable writeback-invalidate operation. It will be cleared by
- *  hardware after writeback-invalidate operation done. Note that this bit and the
- *  other sync-bits (invalidate_ena, clean_ena, writeback_ena) are mutually exclusive,
- *  that is, those bits can not be set to 1 at the same time.
- */
-#define CACHE_WRITEBACK_INVALIDATE_ENA    (BIT(3))
-#define CACHE_WRITEBACK_INVALIDATE_ENA_M  (CACHE_WRITEBACK_INVALIDATE_ENA_V << CACHE_WRITEBACK_INVALIDATE_ENA_S)
-#define CACHE_WRITEBACK_INVALIDATE_ENA_V  0x00000001U
-#define CACHE_WRITEBACK_INVALIDATE_ENA_S  3
 /** CACHE_SYNC_DONE : RO; bitpos: [4]; default: 0;
- *  The bit is used to indicate whether sync operation (invalidate, clean, writeback,
- *  writeback_invalidate) is finished or not. 0: not finished. 1: finished.
+ *  Represents whether the synchronization operation is finished.
+ *  0: Not finished
+ *  1: Finished
  */
 #define CACHE_SYNC_DONE    (BIT(4))
 #define CACHE_SYNC_DONE_M  (CACHE_SYNC_DONE_V << CACHE_SYNC_DONE_S)
 #define CACHE_SYNC_DONE_V  0x00000001U
 #define CACHE_SYNC_DONE_S  4
-/** CACHE_SYNC_RGID : R/W; bitpos: [8:5]; default: 0;
- *  The bit is used to set  the gid of cache sync operation (invalidate, clean,
- *  writeback, writeback_invalidate)
- */
-#define CACHE_SYNC_RGID    0x0000000FU
-#define CACHE_SYNC_RGID_M  (CACHE_SYNC_RGID_V << CACHE_SYNC_RGID_S)
-#define CACHE_SYNC_RGID_V  0x0000000FU
-#define CACHE_SYNC_RGID_S  5
 
 /** CACHE_SYNC_MAP_REG register
- *  Sync map configure register
+ *  Sync map configuration register
  */
 #define CACHE_SYNC_MAP_REG (DR_REG_CACHE_BASE + 0xa0)
 /** CACHE_SYNC_MAP : R/W; bitpos: [5:0]; default: 31;
- *  Those bits are used to indicate which caches in the two-level cache structure will
- *  apply the sync operation. [0]: L1-ICache0, [1]: L1-ICache1, [2]: L1-ICache2, [3]:
- *  L1-ICache3, [4]: L1-Cache, [5]: L2-Cache.
+ *  Configures which caches in the two-level cache structure will apply the sync
+ *  operation.
+ *  Bit 4: Write 1 to this bit to select the L1 cache
+ *  Other bits: Reserved
  */
 #define CACHE_SYNC_MAP    0x0000003FU
 #define CACHE_SYNC_MAP_M  (CACHE_SYNC_MAP_V << CACHE_SYNC_MAP_S)
@@ -392,12 +355,12 @@ extern "C" {
 #define CACHE_SYNC_MAP_S  0
 
 /** CACHE_SYNC_ADDR_REG register
- *  Sync address configure register
+ *  Sync address configuration register
  */
 #define CACHE_SYNC_ADDR_REG (DR_REG_CACHE_BASE + 0xa4)
 /** CACHE_SYNC_ADDR : R/W; bitpos: [31:0]; default: 0;
- *  Those bits are used to configure the start address of the sync operation, which
- *  should be used together with CACHE_SYNC_SIZE_REG
+ *  Configures the starting virtual address for the synchronization operation. This
+ *  field should be configured together with CACHE_SYNC_SIZE_REG.
  */
 #define CACHE_SYNC_ADDR    0xFFFFFFFFU
 #define CACHE_SYNC_ADDR_M  (CACHE_SYNC_ADDR_V << CACHE_SYNC_ADDR_S)
@@ -405,12 +368,12 @@ extern "C" {
 #define CACHE_SYNC_ADDR_S  0
 
 /** CACHE_SYNC_SIZE_REG register
- *  Sync size configure register
+ *  Sync size configuration register
  */
 #define CACHE_SYNC_SIZE_REG (DR_REG_CACHE_BASE + 0xa8)
 /** CACHE_SYNC_SIZE : R/W; bitpos: [23:0]; default: 0;
- *  Those bits are used to configure the size of the sync operation, which should be
- *  used together with CACHE_SYNC_ADDR_REG
+ *  Configures the size for the synchronization operation. This field should be
+ *  configured together with CACHE_SYNC_ADDR_REG.
  */
 #define CACHE_SYNC_SIZE    0x00FFFFFFU
 #define CACHE_SYNC_SIZE_M  (CACHE_SYNC_SIZE_V << CACHE_SYNC_SIZE_S)
@@ -418,48 +381,46 @@ extern "C" {
 #define CACHE_SYNC_SIZE_S  0
 
 /** CACHE_L1_CACHE_PRELOAD_CTRL_REG register
- *  L1 data Cache  preload-operation control register
+ *  L1 cache preloading operation control register
  */
 #define CACHE_L1_CACHE_PRELOAD_CTRL_REG (DR_REG_CACHE_BASE + 0xdc)
 /** CACHE_L1_CACHE_PRELOAD_ENA : R/W/SC; bitpos: [0]; default: 0;
- *  The bit is used to enable preload operation on L1-Cache. It will be cleared by
- *  hardware automatically after preload operation is done.
+ *  Configures whether to enable the preloading operation in the L1 cache. It will be
+ *  cleared by hardware automatically after the preloading operation is done.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_CACHE_PRELOAD_ENA    (BIT(0))
 #define CACHE_L1_CACHE_PRELOAD_ENA_M  (CACHE_L1_CACHE_PRELOAD_ENA_V << CACHE_L1_CACHE_PRELOAD_ENA_S)
 #define CACHE_L1_CACHE_PRELOAD_ENA_V  0x00000001U
 #define CACHE_L1_CACHE_PRELOAD_ENA_S  0
 /** CACHE_L1_CACHE_PRELOAD_DONE : RO; bitpos: [1]; default: 1;
- *  The bit is used to indicate whether preload operation is finished or not. 0: not
- *  finished. 1: finished.
+ *  Represents whether the preloading operation is finished.
+ *  0: Not finished
+ *  1: Finished
  */
 #define CACHE_L1_CACHE_PRELOAD_DONE    (BIT(1))
 #define CACHE_L1_CACHE_PRELOAD_DONE_M  (CACHE_L1_CACHE_PRELOAD_DONE_V << CACHE_L1_CACHE_PRELOAD_DONE_S)
 #define CACHE_L1_CACHE_PRELOAD_DONE_V  0x00000001U
 #define CACHE_L1_CACHE_PRELOAD_DONE_S  1
 /** CACHE_L1_CACHE_PRELOAD_ORDER : R/W; bitpos: [2]; default: 0;
- *  The bit is used to configure the direction of preload operation. 0: ascending, 1:
- *  descending.
+ *  Configures the direction of the preloading operation.
+ *  0: Ascending
+ *  1: Descending
  */
 #define CACHE_L1_CACHE_PRELOAD_ORDER    (BIT(2))
 #define CACHE_L1_CACHE_PRELOAD_ORDER_M  (CACHE_L1_CACHE_PRELOAD_ORDER_V << CACHE_L1_CACHE_PRELOAD_ORDER_S)
 #define CACHE_L1_CACHE_PRELOAD_ORDER_V  0x00000001U
 #define CACHE_L1_CACHE_PRELOAD_ORDER_S  2
-/** CACHE_L1_CACHE_PRELOAD_RGID : R/W; bitpos: [6:3]; default: 0;
- *  The bit is used to set  the gid of l1 Cache preload.
- */
-#define CACHE_L1_CACHE_PRELOAD_RGID    0x0000000FU
-#define CACHE_L1_CACHE_PRELOAD_RGID_M  (CACHE_L1_CACHE_PRELOAD_RGID_V << CACHE_L1_CACHE_PRELOAD_RGID_S)
-#define CACHE_L1_CACHE_PRELOAD_RGID_V  0x0000000FU
-#define CACHE_L1_CACHE_PRELOAD_RGID_S  3
 
 /** CACHE_L1_CACHE_PRELOAD_ADDR_REG register
- *  L1 data Cache  preload address configure register
+ *  L1 cache preloading address configuration register
  */
 #define CACHE_L1_CACHE_PRELOAD_ADDR_REG (DR_REG_CACHE_BASE + 0xe0)
 /** CACHE_L1_CACHE_PRELOAD_ADDR : R/W; bitpos: [31:0]; default: 0;
- *  Those bits are used to configure the start address of preload on L1-Cache, which
- *  should be used together with L1_Cache_PRELOAD_SIZE_REG
+ *  Configures the starting virtual address for the preloading operation in the L1
+ *  cache. This field should be configured together with
+ *  CACHE_L1_CACHE_PRELOAD_SIZE_REG.
  */
 #define CACHE_L1_CACHE_PRELOAD_ADDR    0xFFFFFFFFU
 #define CACHE_L1_CACHE_PRELOAD_ADDR_M  (CACHE_L1_CACHE_PRELOAD_ADDR_V << CACHE_L1_CACHE_PRELOAD_ADDR_S)
@@ -467,12 +428,12 @@ extern "C" {
 #define CACHE_L1_CACHE_PRELOAD_ADDR_S  0
 
 /** CACHE_L1_CACHE_PRELOAD_SIZE_REG register
- *  L1 data Cache  preload size configure register
+ *  L1 cache preloading size configuration register
  */
 #define CACHE_L1_CACHE_PRELOAD_SIZE_REG (DR_REG_CACHE_BASE + 0xe4)
 /** CACHE_L1_CACHE_PRELOAD_SIZE : R/W; bitpos: [23:0]; default: 0;
- *  Those bits are used to configure the size of the first section of prelock on
- *  L1-Cache, which should be used together with L1_Cache_PRELOAD_ADDR_REG
+ *  Configures the size of Section 0 for the preloading operation in the L1 cache. This
+ *  field should be configured together with CACHE_L1_CACHE_PRELOAD_ADDR_REG.
  */
 #define CACHE_L1_CACHE_PRELOAD_SIZE    0x00FFFFFFU
 #define CACHE_L1_CACHE_PRELOAD_SIZE_M  (CACHE_L1_CACHE_PRELOAD_SIZE_V << CACHE_L1_CACHE_PRELOAD_SIZE_S)
@@ -480,85 +441,75 @@ extern "C" {
 #define CACHE_L1_CACHE_PRELOAD_SIZE_S  0
 
 /** CACHE_L1_CACHE_AUTOLOAD_CTRL_REG register
- *  L1 data Cache autoload-operation control register
+ *  L1 cache autoloading operation control register
  */
 #define CACHE_L1_CACHE_AUTOLOAD_CTRL_REG (DR_REG_CACHE_BASE + 0x138)
 /** CACHE_L1_CACHE_AUTOLOAD_ENA : R/W; bitpos: [0]; default: 0;
- *  The bit is used to enable and disable autoload operation on L1-Cache.  1: enable,
- *  0: disable.
+ *  Configures whether to enable the autoloading operation in the L1 cache.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_CACHE_AUTOLOAD_ENA    (BIT(0))
 #define CACHE_L1_CACHE_AUTOLOAD_ENA_M  (CACHE_L1_CACHE_AUTOLOAD_ENA_V << CACHE_L1_CACHE_AUTOLOAD_ENA_S)
 #define CACHE_L1_CACHE_AUTOLOAD_ENA_V  0x00000001U
 #define CACHE_L1_CACHE_AUTOLOAD_ENA_S  0
 /** CACHE_L1_CACHE_AUTOLOAD_DONE : RO; bitpos: [1]; default: 1;
- *  The bit is used to indicate whether autoload operation on L1-Cache is finished or
- *  not. 0: not finished. 1: finished.
+ *  Represents whether the autoloading operation in the L1 cache is finished.
+ *  0: Not finished
+ *  1: Finished
  */
 #define CACHE_L1_CACHE_AUTOLOAD_DONE    (BIT(1))
 #define CACHE_L1_CACHE_AUTOLOAD_DONE_M  (CACHE_L1_CACHE_AUTOLOAD_DONE_V << CACHE_L1_CACHE_AUTOLOAD_DONE_S)
 #define CACHE_L1_CACHE_AUTOLOAD_DONE_V  0x00000001U
 #define CACHE_L1_CACHE_AUTOLOAD_DONE_S  1
 /** CACHE_L1_CACHE_AUTOLOAD_ORDER : R/W; bitpos: [2]; default: 0;
- *  The bit is used to configure the direction of autoload operation on L1-Cache. 0:
- *  ascending. 1: descending.
+ *  Configures the direction of the autoloading operation in the L1 cache.
+ *  0: Ascending
+ *  1: Descending
  */
 #define CACHE_L1_CACHE_AUTOLOAD_ORDER    (BIT(2))
 #define CACHE_L1_CACHE_AUTOLOAD_ORDER_M  (CACHE_L1_CACHE_AUTOLOAD_ORDER_V << CACHE_L1_CACHE_AUTOLOAD_ORDER_S)
 #define CACHE_L1_CACHE_AUTOLOAD_ORDER_V  0x00000001U
 #define CACHE_L1_CACHE_AUTOLOAD_ORDER_S  2
 /** CACHE_L1_CACHE_AUTOLOAD_TRIGGER_MODE : R/W; bitpos: [4:3]; default: 0;
- *  The field is used to configure trigger mode of autoload operation on L1-Cache. 0/3:
- *  miss-trigger, 1: hit-trigger, 2: miss-hit-trigger.
+ *  Configures the trigger mode of the autoloading operation in the L1 cache.
+ *  0/3: Triggered by misses
+ *  1: Triggered by hits
+ *  2: Triggered by misses or hits
  */
 #define CACHE_L1_CACHE_AUTOLOAD_TRIGGER_MODE    0x00000003U
 #define CACHE_L1_CACHE_AUTOLOAD_TRIGGER_MODE_M  (CACHE_L1_CACHE_AUTOLOAD_TRIGGER_MODE_V << CACHE_L1_CACHE_AUTOLOAD_TRIGGER_MODE_S)
 #define CACHE_L1_CACHE_AUTOLOAD_TRIGGER_MODE_V  0x00000003U
 #define CACHE_L1_CACHE_AUTOLOAD_TRIGGER_MODE_S  3
 /** CACHE_L1_CACHE_AUTOLOAD_SCT0_ENA : R/W; bitpos: [8]; default: 0;
- *  The bit is used to enable the first section for autoload operation on L1-Cache.
+ *  Configures whether to enable Section 0 for the autoloading operation in the L1
+ *  cache.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_CACHE_AUTOLOAD_SCT0_ENA    (BIT(8))
 #define CACHE_L1_CACHE_AUTOLOAD_SCT0_ENA_M  (CACHE_L1_CACHE_AUTOLOAD_SCT0_ENA_V << CACHE_L1_CACHE_AUTOLOAD_SCT0_ENA_S)
 #define CACHE_L1_CACHE_AUTOLOAD_SCT0_ENA_V  0x00000001U
 #define CACHE_L1_CACHE_AUTOLOAD_SCT0_ENA_S  8
 /** CACHE_L1_CACHE_AUTOLOAD_SCT1_ENA : R/W; bitpos: [9]; default: 0;
- *  The bit is used to enable the second section for autoload operation on L1-Cache.
+ *  Configures whether to enable Section 1 for the autoloading operation in the L1
+ *  cache.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_CACHE_AUTOLOAD_SCT1_ENA    (BIT(9))
 #define CACHE_L1_CACHE_AUTOLOAD_SCT1_ENA_M  (CACHE_L1_CACHE_AUTOLOAD_SCT1_ENA_V << CACHE_L1_CACHE_AUTOLOAD_SCT1_ENA_S)
 #define CACHE_L1_CACHE_AUTOLOAD_SCT1_ENA_V  0x00000001U
 #define CACHE_L1_CACHE_AUTOLOAD_SCT1_ENA_S  9
-/** CACHE_L1_CACHE_AUTOLOAD_SCT2_ENA : R/W; bitpos: [10]; default: 0;
- *  The bit is used to enable the third section for autoload operation on L1-Cache.
- */
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_ENA    (BIT(10))
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_ENA_M  (CACHE_L1_CACHE_AUTOLOAD_SCT2_ENA_V << CACHE_L1_CACHE_AUTOLOAD_SCT2_ENA_S)
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_ENA_V  0x00000001U
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_ENA_S  10
-/** CACHE_L1_CACHE_AUTOLOAD_SCT3_ENA : R/W; bitpos: [11]; default: 0;
- *  The bit is used to enable the fourth section for autoload operation on L1-Cache.
- */
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_ENA    (BIT(11))
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_ENA_M  (CACHE_L1_CACHE_AUTOLOAD_SCT3_ENA_V << CACHE_L1_CACHE_AUTOLOAD_SCT3_ENA_S)
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_ENA_V  0x00000001U
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_ENA_S  11
-/** CACHE_L1_CACHE_AUTOLOAD_RGID : R/W; bitpos: [15:12]; default: 0;
- *  The bit is used to set  the gid of l1 Cache autoload.
- */
-#define CACHE_L1_CACHE_AUTOLOAD_RGID    0x0000000FU
-#define CACHE_L1_CACHE_AUTOLOAD_RGID_M  (CACHE_L1_CACHE_AUTOLOAD_RGID_V << CACHE_L1_CACHE_AUTOLOAD_RGID_S)
-#define CACHE_L1_CACHE_AUTOLOAD_RGID_V  0x0000000FU
-#define CACHE_L1_CACHE_AUTOLOAD_RGID_S  12
 
 /** CACHE_L1_CACHE_AUTOLOAD_SCT0_ADDR_REG register
- *  L1 data Cache autoload section 0 address configure register
+ *  L1 cache autoloading Section 0 address configuration register
  */
 #define CACHE_L1_CACHE_AUTOLOAD_SCT0_ADDR_REG (DR_REG_CACHE_BASE + 0x13c)
 /** CACHE_L1_CACHE_AUTOLOAD_SCT0_ADDR : R/W; bitpos: [31:0]; default: 0;
- *  Those bits are used to configure the start address of the first section for
- *  autoload operation on L1-Cache. Note that it should be used together with
- *  L1_Cache_AUTOLOAD_SCT0_SIZE and L1_Cache_AUTOLOAD_SCT0_ENA.
+ *  Configures the starting virtual address of Section 0 for the autoloading operation
+ *  in the L1 cache. Note that it should be used together with
+ *  CACHE_L1_CACHE_AUTOLOAD_SCT0_SIZE and CACHE_L1_CACHE_AUTOLOAD_SCT0_ENA.
  */
 #define CACHE_L1_CACHE_AUTOLOAD_SCT0_ADDR    0xFFFFFFFFU
 #define CACHE_L1_CACHE_AUTOLOAD_SCT0_ADDR_M  (CACHE_L1_CACHE_AUTOLOAD_SCT0_ADDR_V << CACHE_L1_CACHE_AUTOLOAD_SCT0_ADDR_S)
@@ -566,13 +517,13 @@ extern "C" {
 #define CACHE_L1_CACHE_AUTOLOAD_SCT0_ADDR_S  0
 
 /** CACHE_L1_CACHE_AUTOLOAD_SCT0_SIZE_REG register
- *  L1 data Cache autoload section 0 size configure register
+ *  L1 cache autoloading Section 0 size configuration register
  */
 #define CACHE_L1_CACHE_AUTOLOAD_SCT0_SIZE_REG (DR_REG_CACHE_BASE + 0x140)
 /** CACHE_L1_CACHE_AUTOLOAD_SCT0_SIZE : R/W; bitpos: [23:0]; default: 0;
- *  Those bits are used to configure the size of the first section for autoload
- *  operation on L1-Cache. Note that it should be used together with
- *  L1_Cache_AUTOLOAD_SCT0_ADDR and L1_Cache_AUTOLOAD_SCT0_ENA.
+ *  Configures the size of Section 0 for the autoloading operation in the L1 cache.
+ *  Note that it should be used together with CACHE_L1_CACHE_AUTOLOAD_SCT0_ADDR and
+ *  CACHE_L1_CACHE_AUTOLOAD_SCT0_ENA.
  */
 #define CACHE_L1_CACHE_AUTOLOAD_SCT0_SIZE    0x00FFFFFFU
 #define CACHE_L1_CACHE_AUTOLOAD_SCT0_SIZE_M  (CACHE_L1_CACHE_AUTOLOAD_SCT0_SIZE_V << CACHE_L1_CACHE_AUTOLOAD_SCT0_SIZE_S)
@@ -580,13 +531,13 @@ extern "C" {
 #define CACHE_L1_CACHE_AUTOLOAD_SCT0_SIZE_S  0
 
 /** CACHE_L1_CACHE_AUTOLOAD_SCT1_ADDR_REG register
- *  L1 data Cache autoload section 1 address configure register
+ *  L1 cache autoloading Section 1 address configuration register
  */
 #define CACHE_L1_CACHE_AUTOLOAD_SCT1_ADDR_REG (DR_REG_CACHE_BASE + 0x144)
 /** CACHE_L1_CACHE_AUTOLOAD_SCT1_ADDR : R/W; bitpos: [31:0]; default: 0;
- *  Those bits are used to configure the start address of the second section for
- *  autoload operation on L1-Cache. Note that it should be used together with
- *  L1_Cache_AUTOLOAD_SCT1_SIZE and L1_Cache_AUTOLOAD_SCT1_ENA.
+ *  Configures the starting virtual address of Section 1 for the autoloading operation
+ *  in the L1 cache. Note that it should be used together with
+ *  CACHE_L1_CACHE_AUTOLOAD_SCT1_SIZE and CACHE_L1_CACHE_AUTOLOAD_SCT1_ENA.
  */
 #define CACHE_L1_CACHE_AUTOLOAD_SCT1_ADDR    0xFFFFFFFFU
 #define CACHE_L1_CACHE_AUTOLOAD_SCT1_ADDR_M  (CACHE_L1_CACHE_AUTOLOAD_SCT1_ADDR_V << CACHE_L1_CACHE_AUTOLOAD_SCT1_ADDR_S)
@@ -594,90 +545,32 @@ extern "C" {
 #define CACHE_L1_CACHE_AUTOLOAD_SCT1_ADDR_S  0
 
 /** CACHE_L1_CACHE_AUTOLOAD_SCT1_SIZE_REG register
- *  L1 data Cache autoload section 1 size configure register
+ *  L1 cache autoloading Section 1 size configuration register
  */
 #define CACHE_L1_CACHE_AUTOLOAD_SCT1_SIZE_REG (DR_REG_CACHE_BASE + 0x148)
 /** CACHE_L1_CACHE_AUTOLOAD_SCT1_SIZE : R/W; bitpos: [23:0]; default: 0;
- *  Those bits are used to configure the size of the second section for autoload
- *  operation on L1-Cache. Note that it should be used together with
- *  L1_Cache_AUTOLOAD_SCT1_ADDR and L1_Cache_AUTOLOAD_SCT1_ENA.
+ *  Configures the size of Section 1 for the autoloading operation in the L1 cache.
+ *  Note that it should be used together with CACHE_L1_CACHE_AUTOLOAD_SCT1_ADDR and
+ *  CACHE_L1_CACHE_AUTOLOAD_SCT1_ENA.
  */
 #define CACHE_L1_CACHE_AUTOLOAD_SCT1_SIZE    0x00FFFFFFU
 #define CACHE_L1_CACHE_AUTOLOAD_SCT1_SIZE_M  (CACHE_L1_CACHE_AUTOLOAD_SCT1_SIZE_V << CACHE_L1_CACHE_AUTOLOAD_SCT1_SIZE_S)
 #define CACHE_L1_CACHE_AUTOLOAD_SCT1_SIZE_V  0x00FFFFFFU
 #define CACHE_L1_CACHE_AUTOLOAD_SCT1_SIZE_S  0
 
-/** CACHE_L1_CACHE_AUTOLOAD_SCT2_ADDR_REG register
- *  L1 data Cache autoload section 2 address configure register
- */
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_ADDR_REG (DR_REG_CACHE_BASE + 0x14c)
-/** CACHE_L1_CACHE_AUTOLOAD_SCT2_ADDR : R/W; bitpos: [31:0]; default: 0;
- *  Those bits are used to configure the start address of the third section for
- *  autoload operation on L1-Cache. Note that it should be used together with
- *  L1_Cache_AUTOLOAD_SCT2_SIZE and L1_Cache_AUTOLOAD_SCT2_ENA.
- */
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_ADDR    0xFFFFFFFFU
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_ADDR_M  (CACHE_L1_CACHE_AUTOLOAD_SCT2_ADDR_V << CACHE_L1_CACHE_AUTOLOAD_SCT2_ADDR_S)
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_ADDR_V  0xFFFFFFFFU
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_ADDR_S  0
-
-/** CACHE_L1_CACHE_AUTOLOAD_SCT2_SIZE_REG register
- *  L1 data Cache autoload section 2 size configure register
- */
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_SIZE_REG (DR_REG_CACHE_BASE + 0x150)
-/** CACHE_L1_CACHE_AUTOLOAD_SCT2_SIZE : R/W; bitpos: [23:0]; default: 0;
- *  Those bits are used to configure the size of the third section for autoload
- *  operation on L1-Cache. Note that it should be used together with
- *  L1_Cache_AUTOLOAD_SCT2_ADDR and L1_Cache_AUTOLOAD_SCT2_ENA.
- */
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_SIZE    0x00FFFFFFU
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_SIZE_M  (CACHE_L1_CACHE_AUTOLOAD_SCT2_SIZE_V << CACHE_L1_CACHE_AUTOLOAD_SCT2_SIZE_S)
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_SIZE_V  0x00FFFFFFU
-#define CACHE_L1_CACHE_AUTOLOAD_SCT2_SIZE_S  0
-
-/** CACHE_L1_CACHE_AUTOLOAD_SCT3_ADDR_REG register
- *  L1 data Cache autoload section 1 address configure register
- */
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_ADDR_REG (DR_REG_CACHE_BASE + 0x154)
-/** CACHE_L1_CACHE_AUTOLOAD_SCT3_ADDR : R/W; bitpos: [31:0]; default: 0;
- *  Those bits are used to configure the start address of the fourth section for
- *  autoload operation on L1-Cache. Note that it should be used together with
- *  L1_Cache_AUTOLOAD_SCT3_SIZE and L1_Cache_AUTOLOAD_SCT3_ENA.
- */
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_ADDR    0xFFFFFFFFU
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_ADDR_M  (CACHE_L1_CACHE_AUTOLOAD_SCT3_ADDR_V << CACHE_L1_CACHE_AUTOLOAD_SCT3_ADDR_S)
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_ADDR_V  0xFFFFFFFFU
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_ADDR_S  0
-
-/** CACHE_L1_CACHE_AUTOLOAD_SCT3_SIZE_REG register
- *  L1 data Cache autoload section 1 size configure register
- */
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_SIZE_REG (DR_REG_CACHE_BASE + 0x158)
-/** CACHE_L1_CACHE_AUTOLOAD_SCT3_SIZE : R/W; bitpos: [23:0]; default: 0;
- *  Those bits are used to configure the size of the fourth section for autoload
- *  operation on L1-Cache. Note that it should be used together with
- *  L1_Cache_AUTOLOAD_SCT3_ADDR and L1_Cache_AUTOLOAD_SCT3_ENA.
- */
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_SIZE    0x00FFFFFFU
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_SIZE_M  (CACHE_L1_CACHE_AUTOLOAD_SCT3_SIZE_V << CACHE_L1_CACHE_AUTOLOAD_SCT3_SIZE_S)
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_SIZE_V  0x00FFFFFFU
-#define CACHE_L1_CACHE_AUTOLOAD_SCT3_SIZE_S  0
-
 /** CACHE_L1_CACHE_ACS_CNT_INT_ENA_REG register
- *  Cache Access Counter Interrupt enable register
+ *  Cache access counter interrupt enable register
  */
 #define CACHE_L1_CACHE_ACS_CNT_INT_ENA_REG (DR_REG_CACHE_BASE + 0x15c)
 /** CACHE_L1_BUS0_OVF_INT_ENA : R/W; bitpos: [4]; default: 0;
- *  The bit is used to enable interrupt of one of counters overflow that occurs in
- *  L1-Cache due to bus0 accesses L1-Cache.
+ *  Write 1 to enable L1_BUS0_OVF_INT.
  */
 #define CACHE_L1_BUS0_OVF_INT_ENA    (BIT(4))
 #define CACHE_L1_BUS0_OVF_INT_ENA_M  (CACHE_L1_BUS0_OVF_INT_ENA_V << CACHE_L1_BUS0_OVF_INT_ENA_S)
 #define CACHE_L1_BUS0_OVF_INT_ENA_V  0x00000001U
 #define CACHE_L1_BUS0_OVF_INT_ENA_S  4
 /** CACHE_L1_BUS1_OVF_INT_ENA : R/W; bitpos: [5]; default: 0;
- *  The bit is used to enable interrupt of one of counters overflow that occurs in
- *  L1-Cache due to bus1 accesses L1-Cache.
+ *  Write 1 to enable L1_BUS1_OVF_INT.
  */
 #define CACHE_L1_BUS1_OVF_INT_ENA    (BIT(5))
 #define CACHE_L1_BUS1_OVF_INT_ENA_M  (CACHE_L1_BUS1_OVF_INT_ENA_V << CACHE_L1_BUS1_OVF_INT_ENA_S)
@@ -685,28 +578,18 @@ extern "C" {
 #define CACHE_L1_BUS1_OVF_INT_ENA_S  5
 
 /** CACHE_L1_CACHE_ACS_CNT_INT_CLR_REG register
- *  Cache Access Counter Interrupt clear register
+ *  Cache access counter interrupt clear register
  */
 #define CACHE_L1_CACHE_ACS_CNT_INT_CLR_REG (DR_REG_CACHE_BASE + 0x160)
-/** CACHE_L1_IBUS0_OVF_INT_CLR : WT; bitpos: [0]; default: 0;
- *  The bit is used to clear counters overflow interrupt and counters in L1-ICache0 due
- *  to bus0 accesses L1-ICache0.
- */
-#define CACHE_L1_IBUS0_OVF_INT_CLR    (BIT(0))
-#define CACHE_L1_IBUS0_OVF_INT_CLR_M  (CACHE_L1_IBUS0_OVF_INT_CLR_V << CACHE_L1_IBUS0_OVF_INT_CLR_S)
-#define CACHE_L1_IBUS0_OVF_INT_CLR_V  0x00000001U
-#define CACHE_L1_IBUS0_OVF_INT_CLR_S  0
 /** CACHE_L1_BUS0_OVF_INT_CLR : WT; bitpos: [4]; default: 0;
- *  The bit is used to clear counters overflow interrupt and counters in L1-Cache due
- *  to bus0 accesses L1-Cache.
+ *  Write 1 to clear L1_BUS0_OVF_INT.
  */
 #define CACHE_L1_BUS0_OVF_INT_CLR    (BIT(4))
 #define CACHE_L1_BUS0_OVF_INT_CLR_M  (CACHE_L1_BUS0_OVF_INT_CLR_V << CACHE_L1_BUS0_OVF_INT_CLR_S)
 #define CACHE_L1_BUS0_OVF_INT_CLR_V  0x00000001U
 #define CACHE_L1_BUS0_OVF_INT_CLR_S  4
 /** CACHE_L1_BUS1_OVF_INT_CLR : WT; bitpos: [5]; default: 0;
- *  The bit is used to clear counters overflow interrupt and counters in L1-Cache due
- *  to bus1 accesses L1-Cache.
+ *  Write 1 to clear L1_BUS1_OVF_INT.
  */
 #define CACHE_L1_BUS1_OVF_INT_CLR    (BIT(5))
 #define CACHE_L1_BUS1_OVF_INT_CLR_M  (CACHE_L1_BUS1_OVF_INT_CLR_V << CACHE_L1_BUS1_OVF_INT_CLR_S)
@@ -714,28 +597,18 @@ extern "C" {
 #define CACHE_L1_BUS1_OVF_INT_CLR_S  5
 
 /** CACHE_L1_CACHE_ACS_CNT_INT_RAW_REG register
- *  Cache Access Counter Interrupt raw register
+ *  Cache access counter interrupt raw register
  */
 #define CACHE_L1_CACHE_ACS_CNT_INT_RAW_REG (DR_REG_CACHE_BASE + 0x164)
-/** CACHE_L1_IBUS0_OVF_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
- *  The raw bit of the interrupt of one of counters overflow that occurs in L1-ICache0
- *  due to bus0 accesses L1-ICache0.
- */
-#define CACHE_L1_IBUS0_OVF_INT_RAW    (BIT(0))
-#define CACHE_L1_IBUS0_OVF_INT_RAW_M  (CACHE_L1_IBUS0_OVF_INT_RAW_V << CACHE_L1_IBUS0_OVF_INT_RAW_S)
-#define CACHE_L1_IBUS0_OVF_INT_RAW_V  0x00000001U
-#define CACHE_L1_IBUS0_OVF_INT_RAW_S  0
 /** CACHE_L1_BUS0_OVF_INT_RAW : R/WTC/SS; bitpos: [4]; default: 0;
- *  The raw bit of the interrupt of one of counters overflow that occurs in L1-Cache
- *  due to bus0 accesses L1-Cache.
+ *  The raw interrupt status of L1_BUS0_OVF_INT.
  */
 #define CACHE_L1_BUS0_OVF_INT_RAW    (BIT(4))
 #define CACHE_L1_BUS0_OVF_INT_RAW_M  (CACHE_L1_BUS0_OVF_INT_RAW_V << CACHE_L1_BUS0_OVF_INT_RAW_S)
 #define CACHE_L1_BUS0_OVF_INT_RAW_V  0x00000001U
 #define CACHE_L1_BUS0_OVF_INT_RAW_S  4
 /** CACHE_L1_BUS1_OVF_INT_RAW : R/WTC/SS; bitpos: [5]; default: 0;
- *  The raw bit of the interrupt of one of counters overflow that occurs in L1-Cache
- *  due to bus1 accesses L1-Cache.
+ *  The raw interrupt status of L1_BUS1_OVF_INT.
  */
 #define CACHE_L1_BUS1_OVF_INT_RAW    (BIT(5))
 #define CACHE_L1_BUS1_OVF_INT_RAW_M  (CACHE_L1_BUS1_OVF_INT_RAW_V << CACHE_L1_BUS1_OVF_INT_RAW_S)
@@ -743,20 +616,18 @@ extern "C" {
 #define CACHE_L1_BUS1_OVF_INT_RAW_S  5
 
 /** CACHE_L1_CACHE_ACS_CNT_INT_ST_REG register
- *  Cache Access Counter Interrupt status register
+ *  Cache access counter interrupt status register
  */
 #define CACHE_L1_CACHE_ACS_CNT_INT_ST_REG (DR_REG_CACHE_BASE + 0x168)
 /** CACHE_L1_BUS0_OVF_INT_ST : RO; bitpos: [4]; default: 0;
- *  The bit indicates the interrupt status of one of counters overflow that occurs in
- *  L1-Cache due to bus0 accesses L1-Cache.
+ *  The masked interrupt status of L1_BUS0_OVF_INT.
  */
 #define CACHE_L1_BUS0_OVF_INT_ST    (BIT(4))
 #define CACHE_L1_BUS0_OVF_INT_ST_M  (CACHE_L1_BUS0_OVF_INT_ST_V << CACHE_L1_BUS0_OVF_INT_ST_S)
 #define CACHE_L1_BUS0_OVF_INT_ST_V  0x00000001U
 #define CACHE_L1_BUS0_OVF_INT_ST_S  4
 /** CACHE_L1_BUS1_OVF_INT_ST : RO; bitpos: [5]; default: 0;
- *  The bit indicates the interrupt status of one of counters overflow that occurs in
- *  L1-Cache due to bus1 accesses L1-Cache.
+ *  The masked interrupt status of L1_BUS1_OVF_INT.
  */
 #define CACHE_L1_BUS1_OVF_INT_ST    (BIT(5))
 #define CACHE_L1_BUS1_OVF_INT_ST_M  (CACHE_L1_BUS1_OVF_INT_ST_V << CACHE_L1_BUS1_OVF_INT_ST_S)
@@ -764,12 +635,14 @@ extern "C" {
 #define CACHE_L1_BUS1_OVF_INT_ST_S  5
 
 /** CACHE_L1_CACHE_ACS_FAIL_CTRL_REG register
- *  Cache Access Fail Configuration register
+ *  Cache access failure mode configuration register
  */
 #define CACHE_L1_CACHE_ACS_FAIL_CTRL_REG (DR_REG_CACHE_BASE + 0x16c)
 /** CACHE_L1_CACHE_ACS_FAIL_CHECK_MODE : R/W; bitpos: [4]; default: 0;
- *  The bit is used to configure l1 Cache access fail check mode. 0: the access fail is
- *  not propagated to the request, 1: the access fail is propagated to the request
+ *  Configures whether to propagate the error that occurs during access to lower-level
+ *  memory to higher-level access.
+ *  0: Not propagate
+ *  1: Propagate
  */
 #define CACHE_L1_CACHE_ACS_FAIL_CHECK_MODE    (BIT(4))
 #define CACHE_L1_CACHE_ACS_FAIL_CHECK_MODE_M  (CACHE_L1_CACHE_ACS_FAIL_CHECK_MODE_V << CACHE_L1_CACHE_ACS_FAIL_CHECK_MODE_S)
@@ -777,12 +650,11 @@ extern "C" {
 #define CACHE_L1_CACHE_ACS_FAIL_CHECK_MODE_S  4
 
 /** CACHE_L1_CACHE_ACS_FAIL_INT_ENA_REG register
- *  Cache Access Fail Interrupt enable register
+ *  Cache access failed interrupt enable register
  */
 #define CACHE_L1_CACHE_ACS_FAIL_INT_ENA_REG (DR_REG_CACHE_BASE + 0x170)
 /** CACHE_L1_CACHE_FAIL_INT_ENA : R/W; bitpos: [4]; default: 0;
- *  The bit is used to enable interrupt of access fail that occurs in L1-Cache due to
- *  cpu accesses L1-Cache.
+ *  Write 1 to enable L1_CACHE_FAIL_INT.
  */
 #define CACHE_L1_CACHE_FAIL_INT_ENA    (BIT(4))
 #define CACHE_L1_CACHE_FAIL_INT_ENA_M  (CACHE_L1_CACHE_FAIL_INT_ENA_V << CACHE_L1_CACHE_FAIL_INT_ENA_S)
@@ -790,12 +662,11 @@ extern "C" {
 #define CACHE_L1_CACHE_FAIL_INT_ENA_S  4
 
 /** CACHE_L1_CACHE_ACS_FAIL_INT_CLR_REG register
- *  L1-Cache Access Fail Interrupt clear register
+ *  L1 cache access failed interrupt clear register
  */
 #define CACHE_L1_CACHE_ACS_FAIL_INT_CLR_REG (DR_REG_CACHE_BASE + 0x174)
 /** CACHE_L1_CACHE_FAIL_INT_CLR : WT; bitpos: [4]; default: 0;
- *  The bit is used to clear interrupt of access fail that occurs in L1-Cache due to
- *  cpu accesses L1-Cache.
+ *  Write 1 to clear L1_CACHE_FAIL_INT.
  */
 #define CACHE_L1_CACHE_FAIL_INT_CLR    (BIT(4))
 #define CACHE_L1_CACHE_FAIL_INT_CLR_M  (CACHE_L1_CACHE_FAIL_INT_CLR_V << CACHE_L1_CACHE_FAIL_INT_CLR_S)
@@ -803,11 +674,11 @@ extern "C" {
 #define CACHE_L1_CACHE_FAIL_INT_CLR_S  4
 
 /** CACHE_L1_CACHE_ACS_FAIL_INT_RAW_REG register
- *  Cache Access Fail Interrupt raw register
+ *  Cache access failed interrupt raw register
  */
 #define CACHE_L1_CACHE_ACS_FAIL_INT_RAW_REG (DR_REG_CACHE_BASE + 0x178)
 /** CACHE_L1_CACHE_FAIL_INT_RAW : R/WTC/SS; bitpos: [4]; default: 0;
- *  The raw bit of the interrupt of access fail that occurs in L1-Cache.
+ *  The raw interrupt status of L1_CACHE_FAIL_INT.
  */
 #define CACHE_L1_CACHE_FAIL_INT_RAW    (BIT(4))
 #define CACHE_L1_CACHE_FAIL_INT_RAW_M  (CACHE_L1_CACHE_FAIL_INT_RAW_V << CACHE_L1_CACHE_FAIL_INT_RAW_S)
@@ -815,12 +686,11 @@ extern "C" {
 #define CACHE_L1_CACHE_FAIL_INT_RAW_S  4
 
 /** CACHE_L1_CACHE_ACS_FAIL_INT_ST_REG register
- *  Cache Access Fail Interrupt status register
+ *  Cache access failed interrupt status register
  */
 #define CACHE_L1_CACHE_ACS_FAIL_INT_ST_REG (DR_REG_CACHE_BASE + 0x17c)
 /** CACHE_L1_CACHE_FAIL_INT_ST : RO; bitpos: [4]; default: 0;
- *  The bit indicates the interrupt status of access fail that occurs in L1-Cache due
- *  to cpu accesses L1-Cache.
+ *  The masked interrupt status of L1_CACHE_FAIL_INT.
  */
 #define CACHE_L1_CACHE_FAIL_INT_ST    (BIT(4))
 #define CACHE_L1_CACHE_FAIL_INT_ST_M  (CACHE_L1_CACHE_FAIL_INT_ST_V << CACHE_L1_CACHE_FAIL_INT_ST_S)
@@ -828,32 +698,40 @@ extern "C" {
 #define CACHE_L1_CACHE_FAIL_INT_ST_S  4
 
 /** CACHE_L1_CACHE_ACS_CNT_CTRL_REG register
- *  Cache Access Counter enable and clear register
+ *  Cache access counter enable and clear register
  */
 #define CACHE_L1_CACHE_ACS_CNT_CTRL_REG (DR_REG_CACHE_BASE + 0x180)
 /** CACHE_L1_BUS0_CNT_ENA : R/W; bitpos: [4]; default: 0;
- *  The bit is used to enable dbus0 counter in L1-Cache.
+ *  Configures whether to enable the BUS0 counters in the L1 cache.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_BUS0_CNT_ENA    (BIT(4))
 #define CACHE_L1_BUS0_CNT_ENA_M  (CACHE_L1_BUS0_CNT_ENA_V << CACHE_L1_BUS0_CNT_ENA_S)
 #define CACHE_L1_BUS0_CNT_ENA_V  0x00000001U
 #define CACHE_L1_BUS0_CNT_ENA_S  4
 /** CACHE_L1_BUS1_CNT_ENA : R/W; bitpos: [5]; default: 0;
- *  The bit is used to enable dbus1 counter in L1-Cache.
+ *  Configures whether to enable the BUS1 counters in the L1 cache.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_BUS1_CNT_ENA    (BIT(5))
 #define CACHE_L1_BUS1_CNT_ENA_M  (CACHE_L1_BUS1_CNT_ENA_V << CACHE_L1_BUS1_CNT_ENA_S)
 #define CACHE_L1_BUS1_CNT_ENA_V  0x00000001U
 #define CACHE_L1_BUS1_CNT_ENA_S  5
 /** CACHE_L1_BUS0_CNT_CLR : WT; bitpos: [20]; default: 0;
- *  The bit is used to clear dbus0 counter in L1-Cache.
+ *  Configures whether to clear the BUS0 counters in the L1 cache.
+ *  0: Not clear
+ *  1: Clear
  */
 #define CACHE_L1_BUS0_CNT_CLR    (BIT(20))
 #define CACHE_L1_BUS0_CNT_CLR_M  (CACHE_L1_BUS0_CNT_CLR_V << CACHE_L1_BUS0_CNT_CLR_S)
 #define CACHE_L1_BUS0_CNT_CLR_V  0x00000001U
 #define CACHE_L1_BUS0_CNT_CLR_S  20
 /** CACHE_L1_BUS1_CNT_CLR : WT; bitpos: [21]; default: 0;
- *  The bit is used to clear dbus1 counter in L1-Cache.
+ *  Configures whether to clear the BUS1 counters in the L1 cache.
+ *  0: Not clear
+ *  1: Clear
  */
 #define CACHE_L1_BUS1_CNT_CLR    (BIT(21))
 #define CACHE_L1_BUS1_CNT_CLR_M  (CACHE_L1_BUS1_CNT_CLR_V << CACHE_L1_BUS1_CNT_CLR_S)
@@ -861,11 +739,11 @@ extern "C" {
 #define CACHE_L1_BUS1_CNT_CLR_S  21
 
 /** CACHE_L1_BUS0_ACS_HIT_CNT_REG register
- *  L1-Cache bus0 Hit-Access Counter register
+ *  L1 cache BUS1 hit-access counter register
  */
 #define CACHE_L1_BUS0_ACS_HIT_CNT_REG (DR_REG_CACHE_BASE + 0x1c4)
 /** CACHE_L1_BUS0_HIT_CNT : RO; bitpos: [31:0]; default: 0;
- *  The register records the number of hits when bus0 accesses L1-Cache.
+ *  Represents the number of hits when BUS0 accesses the L1 cache.
  */
 #define CACHE_L1_BUS0_HIT_CNT    0xFFFFFFFFU
 #define CACHE_L1_BUS0_HIT_CNT_M  (CACHE_L1_BUS0_HIT_CNT_V << CACHE_L1_BUS0_HIT_CNT_S)
@@ -873,11 +751,11 @@ extern "C" {
 #define CACHE_L1_BUS0_HIT_CNT_S  0
 
 /** CACHE_L1_BUS0_ACS_MISS_CNT_REG register
- *  L1-Cache bus0 Miss-Access Counter register
+ *  L1 cache BUS0 missed-access counter register
  */
 #define CACHE_L1_BUS0_ACS_MISS_CNT_REG (DR_REG_CACHE_BASE + 0x1c8)
 /** CACHE_L1_BUS0_MISS_CNT : RO; bitpos: [31:0]; default: 0;
- *  The register records the number of missing when bus0 accesses L1-Cache.
+ *  Represents the number of misses when BUS0 accesses the L1 cache.
  */
 #define CACHE_L1_BUS0_MISS_CNT    0xFFFFFFFFU
 #define CACHE_L1_BUS0_MISS_CNT_M  (CACHE_L1_BUS0_MISS_CNT_V << CACHE_L1_BUS0_MISS_CNT_S)
@@ -885,11 +763,11 @@ extern "C" {
 #define CACHE_L1_BUS0_MISS_CNT_S  0
 
 /** CACHE_L1_BUS0_ACS_CONFLICT_CNT_REG register
- *  L1-Cache bus0 Conflict-Access Counter register
+ *  L1 cache BUS0 conflicting-access counter register
  */
 #define CACHE_L1_BUS0_ACS_CONFLICT_CNT_REG (DR_REG_CACHE_BASE + 0x1cc)
 /** CACHE_L1_BUS0_CONFLICT_CNT : RO; bitpos: [31:0]; default: 0;
- *  The register records the number of access-conflicts when bus0 accesses L1-Cache.
+ *  Represents the number of access conflicts when BUS0 accesses the L1 cache.
  */
 #define CACHE_L1_BUS0_CONFLICT_CNT    0xFFFFFFFFU
 #define CACHE_L1_BUS0_CONFLICT_CNT_M  (CACHE_L1_BUS0_CONFLICT_CNT_V << CACHE_L1_BUS0_CONFLICT_CNT_S)
@@ -897,36 +775,24 @@ extern "C" {
 #define CACHE_L1_BUS0_CONFLICT_CNT_S  0
 
 /** CACHE_L1_BUS0_ACS_NXTLVL_RD_CNT_REG register
- *  L1-Cache bus0 Next-Level-Access Counter register
+ *  L1 cache BUS0 next-level-access counter register
  */
 #define CACHE_L1_BUS0_ACS_NXTLVL_RD_CNT_REG (DR_REG_CACHE_BASE + 0x1d0)
 /** CACHE_L1_BUS0_NXTLVL_RD_CNT : RO; bitpos: [31:0]; default: 0;
- *  The register records the number of times that L1-Cache accesses L2-Cache due to
- *  bus0 accessing L1-Cache.
+ *  Represents the number of times the L1 cache accesses the next-level module due to
+ *  BUS0 access.
  */
 #define CACHE_L1_BUS0_NXTLVL_RD_CNT    0xFFFFFFFFU
 #define CACHE_L1_BUS0_NXTLVL_RD_CNT_M  (CACHE_L1_BUS0_NXTLVL_RD_CNT_V << CACHE_L1_BUS0_NXTLVL_RD_CNT_S)
 #define CACHE_L1_BUS0_NXTLVL_RD_CNT_V  0xFFFFFFFFU
 #define CACHE_L1_BUS0_NXTLVL_RD_CNT_S  0
 
-/** CACHE_L1_BUS0_ACS_NXTLVL_WR_CNT_REG register
- *  L1-Cache bus0 WB-Access Counter register
- */
-#define CACHE_L1_BUS0_ACS_NXTLVL_WR_CNT_REG (DR_REG_CACHE_BASE + 0x1d4)
-/** CACHE_L1_BUS0_NXTLVL_WR_CNT : RO; bitpos: [31:0]; default: 0;
- *  The register records the number of write back when bus0 accesses L1-Cache.
- */
-#define CACHE_L1_BUS0_NXTLVL_WR_CNT    0xFFFFFFFFU
-#define CACHE_L1_BUS0_NXTLVL_WR_CNT_M  (CACHE_L1_BUS0_NXTLVL_WR_CNT_V << CACHE_L1_BUS0_NXTLVL_WR_CNT_S)
-#define CACHE_L1_BUS0_NXTLVL_WR_CNT_V  0xFFFFFFFFU
-#define CACHE_L1_BUS0_NXTLVL_WR_CNT_S  0
-
 /** CACHE_L1_BUS1_ACS_HIT_CNT_REG register
- *  L1-Cache bus1 Hit-Access Counter register
+ *  L1 cache BUS1 hit-access counter register
  */
 #define CACHE_L1_BUS1_ACS_HIT_CNT_REG (DR_REG_CACHE_BASE + 0x1d8)
 /** CACHE_L1_BUS1_HIT_CNT : RO; bitpos: [31:0]; default: 0;
- *  The register records the number of hits when bus1 accesses L1-Cache.
+ *  Represents the number of hits when BUS1 accesses the L1 cache.
  */
 #define CACHE_L1_BUS1_HIT_CNT    0xFFFFFFFFU
 #define CACHE_L1_BUS1_HIT_CNT_M  (CACHE_L1_BUS1_HIT_CNT_V << CACHE_L1_BUS1_HIT_CNT_S)
@@ -934,11 +800,11 @@ extern "C" {
 #define CACHE_L1_BUS1_HIT_CNT_S  0
 
 /** CACHE_L1_BUS1_ACS_MISS_CNT_REG register
- *  L1-Cache bus1 Miss-Access Counter register
+ *  L1 cache BUS1 missed-access counter register
  */
 #define CACHE_L1_BUS1_ACS_MISS_CNT_REG (DR_REG_CACHE_BASE + 0x1dc)
 /** CACHE_L1_BUS1_MISS_CNT : RO; bitpos: [31:0]; default: 0;
- *  The register records the number of missing when bus1 accesses L1-Cache.
+ *  Represents the number of misses when BUS1 accesses the L1 cache.
  */
 #define CACHE_L1_BUS1_MISS_CNT    0xFFFFFFFFU
 #define CACHE_L1_BUS1_MISS_CNT_M  (CACHE_L1_BUS1_MISS_CNT_V << CACHE_L1_BUS1_MISS_CNT_S)
@@ -946,11 +812,11 @@ extern "C" {
 #define CACHE_L1_BUS1_MISS_CNT_S  0
 
 /** CACHE_L1_BUS1_ACS_CONFLICT_CNT_REG register
- *  L1-Cache bus1 Conflict-Access Counter register
+ *  L1 cache BUS1 conflicting-access counter register
  */
 #define CACHE_L1_BUS1_ACS_CONFLICT_CNT_REG (DR_REG_CACHE_BASE + 0x1e0)
 /** CACHE_L1_BUS1_CONFLICT_CNT : RO; bitpos: [31:0]; default: 0;
- *  The register records the number of access-conflicts when bus1 accesses L1-Cache.
+ *  Represents the number of access conflicts when BUS1 accesses the L1 cache.
  */
 #define CACHE_L1_BUS1_CONFLICT_CNT    0xFFFFFFFFU
 #define CACHE_L1_BUS1_CONFLICT_CNT_M  (CACHE_L1_BUS1_CONFLICT_CNT_V << CACHE_L1_BUS1_CONFLICT_CNT_S)
@@ -958,12 +824,12 @@ extern "C" {
 #define CACHE_L1_BUS1_CONFLICT_CNT_S  0
 
 /** CACHE_L1_BUS1_ACS_NXTLVL_RD_CNT_REG register
- *  L1-Cache bus1 Next-Level-Access Counter register
+ *  L1 cache BUS1 next-level-access counter register
  */
 #define CACHE_L1_BUS1_ACS_NXTLVL_RD_CNT_REG (DR_REG_CACHE_BASE + 0x1e4)
 /** CACHE_L1_BUS1_NXTLVL_RD_CNT : RO; bitpos: [31:0]; default: 0;
- *  The register records the number of times that L1-Cache accesses L2-Cache due to
- *  bus1 accessing L1-Cache.
+ *  Indicates the number of times the L1 cache accesses the next-level module due to
+ *  BUS1 access.
  */
 #define CACHE_L1_BUS1_NXTLVL_RD_CNT    0xFFFFFFFFU
 #define CACHE_L1_BUS1_NXTLVL_RD_CNT_M  (CACHE_L1_BUS1_NXTLVL_RD_CNT_V << CACHE_L1_BUS1_NXTLVL_RD_CNT_S)
@@ -982,31 +848,38 @@ extern "C" {
 #define CACHE_L1_BUS1_NXTLVL_WR_CNT_V  0xFFFFFFFFU
 #define CACHE_L1_BUS1_NXTLVL_WR_CNT_S  0
 
-/** CACHE_L1_DCACHE_ACS_FAIL_ID_ATTR_REG register
+/** CACHE_L1_CACHE_ACS_FAIL_ID_ATTR_REG register
  *  L1-Cache Access Fail ID/attribution information register
  */
-#define CACHE_L1_DCACHE_ACS_FAIL_ID_ATTR_REG (DR_REG_CACHE_BASE + 0x234)
+#define CACHE_L1_CACHE_ACS_FAIL_ID_ATTR_REG (DR_REG_CACHE_BASE + 0x234)
 /** CACHE_L1_CACHE_FAIL_ID : RO; bitpos: [15:0]; default: 0;
- *  The register records the ID of fail-access when cache accesses L1-Cache.
+ *  Represents the ID of the failed access to the L1 cache.
+ *  Bit 4: BUS0
+ *  Bit 5: BUS1
+ *  Others: reserved
  */
 #define CACHE_L1_CACHE_FAIL_ID    0x0000FFFFU
 #define CACHE_L1_CACHE_FAIL_ID_M  (CACHE_L1_CACHE_FAIL_ID_V << CACHE_L1_CACHE_FAIL_ID_S)
 #define CACHE_L1_CACHE_FAIL_ID_V  0x0000FFFFU
 #define CACHE_L1_CACHE_FAIL_ID_S  0
 /** CACHE_L1_CACHE_FAIL_ATTR : RO; bitpos: [31:16]; default: 0;
- *  The register records the attribution of fail-access when cache accesses L1-Cache.
+ *  Represents the attribute of the failed access to the L1 cache.
+ *  Bit 0: Fetching instructions
+ *  Bit 1: Reading data
+ *  Bit 7: non-cacheable
+ *  Others: reserved
  */
 #define CACHE_L1_CACHE_FAIL_ATTR    0x0000FFFFU
 #define CACHE_L1_CACHE_FAIL_ATTR_M  (CACHE_L1_CACHE_FAIL_ATTR_V << CACHE_L1_CACHE_FAIL_ATTR_S)
 #define CACHE_L1_CACHE_FAIL_ATTR_V  0x0000FFFFU
 #define CACHE_L1_CACHE_FAIL_ATTR_S  16
 
-/** CACHE_L1_DCACHE_ACS_FAIL_ADDR_REG register
- *  L1-Cache Access Fail Address information register
+/** CACHE_L1_CACHE_ACS_FAIL_ADDR_REG register
+ *  L1 cache access failed address information register
  */
-#define CACHE_L1_DCACHE_ACS_FAIL_ADDR_REG (DR_REG_CACHE_BASE + 0x238)
+#define CACHE_L1_CACHE_ACS_FAIL_ADDR_REG (DR_REG_CACHE_BASE + 0x238)
 /** CACHE_L1_CACHE_FAIL_ADDR : RO; bitpos: [31:0]; default: 0;
- *  The register records the address of fail-access when cache accesses L1-Cache.
+ *  Represents the address of the failed access to the L1 cache.
  */
 #define CACHE_L1_CACHE_FAIL_ADDR    0xFFFFFFFFU
 #define CACHE_L1_CACHE_FAIL_ADDR_M  (CACHE_L1_CACHE_FAIL_ADDR_V << CACHE_L1_CACHE_FAIL_ADDR_S)
@@ -1014,33 +887,32 @@ extern "C" {
 #define CACHE_L1_CACHE_FAIL_ADDR_S  0
 
 /** CACHE_L1_CACHE_SYNC_PRELOAD_INT_ENA_REG register
- *  L1-Cache Access Fail Interrupt enable register
+ *  Sync and preloading operation interrupt enable register
  */
 #define CACHE_L1_CACHE_SYNC_PRELOAD_INT_ENA_REG (DR_REG_CACHE_BASE + 0x23c)
 /** CACHE_L1_CACHE_PLD_DONE_INT_ENA : R/W; bitpos: [4]; default: 0;
- *  The bit is used to enable interrupt of L1-Cache preload-operation. If preload
- *  operation is done, interrupt occurs.
+ *  Write 1 to enable L1_CACHE_PLD_DONE_INT.
  */
 #define CACHE_L1_CACHE_PLD_DONE_INT_ENA    (BIT(4))
 #define CACHE_L1_CACHE_PLD_DONE_INT_ENA_M  (CACHE_L1_CACHE_PLD_DONE_INT_ENA_V << CACHE_L1_CACHE_PLD_DONE_INT_ENA_S)
 #define CACHE_L1_CACHE_PLD_DONE_INT_ENA_V  0x00000001U
 #define CACHE_L1_CACHE_PLD_DONE_INT_ENA_S  4
 /** CACHE_SYNC_DONE_INT_ENA : R/W; bitpos: [6]; default: 0;
- *  The bit is used to enable interrupt of Cache sync-operation done.
+ *  Write 1 to enable CACHE_SYNC_DONE_INT.
  */
 #define CACHE_SYNC_DONE_INT_ENA    (BIT(6))
 #define CACHE_SYNC_DONE_INT_ENA_M  (CACHE_SYNC_DONE_INT_ENA_V << CACHE_SYNC_DONE_INT_ENA_S)
 #define CACHE_SYNC_DONE_INT_ENA_V  0x00000001U
 #define CACHE_SYNC_DONE_INT_ENA_S  6
 /** CACHE_L1_CACHE_PLD_ERR_INT_ENA : R/W; bitpos: [11]; default: 0;
- *  The bit is used to enable interrupt of L1-Cache preload-operation error.
+ *  Write 1 to enable CACHE_PLD_ERR_INT.
  */
 #define CACHE_L1_CACHE_PLD_ERR_INT_ENA    (BIT(11))
 #define CACHE_L1_CACHE_PLD_ERR_INT_ENA_M  (CACHE_L1_CACHE_PLD_ERR_INT_ENA_V << CACHE_L1_CACHE_PLD_ERR_INT_ENA_S)
 #define CACHE_L1_CACHE_PLD_ERR_INT_ENA_V  0x00000001U
 #define CACHE_L1_CACHE_PLD_ERR_INT_ENA_S  11
 /** CACHE_SYNC_ERR_INT_ENA : R/W; bitpos: [13]; default: 0;
- *  The bit is used to enable interrupt of Cache sync-operation error.
+ *  Write 1 to enable CACHE_SYNC_ERR_INT.
  */
 #define CACHE_SYNC_ERR_INT_ENA    (BIT(13))
 #define CACHE_SYNC_ERR_INT_ENA_M  (CACHE_SYNC_ERR_INT_ENA_V << CACHE_SYNC_ERR_INT_ENA_S)
@@ -1048,34 +920,32 @@ extern "C" {
 #define CACHE_SYNC_ERR_INT_ENA_S  13
 
 /** CACHE_L1_CACHE_SYNC_PRELOAD_INT_CLR_REG register
- *  Sync Preload operation Interrupt clear register
+ *  Sync and preloading operation interrupt clear register
  */
 #define CACHE_L1_CACHE_SYNC_PRELOAD_INT_CLR_REG (DR_REG_CACHE_BASE + 0x240)
 /** CACHE_L1_CACHE_PLD_DONE_INT_CLR : WT; bitpos: [4]; default: 0;
- *  The bit is used to clear interrupt that occurs only when L1-Cache preload-operation
- *  is done.
+ *  Write 1 to clear L1_CACHE_PLD_DONE_INT.
  */
 #define CACHE_L1_CACHE_PLD_DONE_INT_CLR    (BIT(4))
 #define CACHE_L1_CACHE_PLD_DONE_INT_CLR_M  (CACHE_L1_CACHE_PLD_DONE_INT_CLR_V << CACHE_L1_CACHE_PLD_DONE_INT_CLR_S)
 #define CACHE_L1_CACHE_PLD_DONE_INT_CLR_V  0x00000001U
 #define CACHE_L1_CACHE_PLD_DONE_INT_CLR_S  4
 /** CACHE_SYNC_DONE_INT_CLR : WT; bitpos: [6]; default: 0;
- *  The bit is used to clear interrupt that occurs only when Cache sync-operation is
- *  done.
+ *  Write 1 to clear CACHE_SYNC_DONE_INT.
  */
 #define CACHE_SYNC_DONE_INT_CLR    (BIT(6))
 #define CACHE_SYNC_DONE_INT_CLR_M  (CACHE_SYNC_DONE_INT_CLR_V << CACHE_SYNC_DONE_INT_CLR_S)
 #define CACHE_SYNC_DONE_INT_CLR_V  0x00000001U
 #define CACHE_SYNC_DONE_INT_CLR_S  6
 /** CACHE_L1_CACHE_PLD_ERR_INT_CLR : WT; bitpos: [11]; default: 0;
- *  The bit is used to clear interrupt of L1-Cache preload-operation error.
+ *  Write 1 to clear L1_CACHE_PLD_ERR_INT.
  */
 #define CACHE_L1_CACHE_PLD_ERR_INT_CLR    (BIT(11))
 #define CACHE_L1_CACHE_PLD_ERR_INT_CLR_M  (CACHE_L1_CACHE_PLD_ERR_INT_CLR_V << CACHE_L1_CACHE_PLD_ERR_INT_CLR_S)
 #define CACHE_L1_CACHE_PLD_ERR_INT_CLR_V  0x00000001U
 #define CACHE_L1_CACHE_PLD_ERR_INT_CLR_S  11
 /** CACHE_SYNC_ERR_INT_CLR : WT; bitpos: [13]; default: 0;
- *  The bit is used to clear interrupt of Cache sync-operation error.
+ *  Write 1 to clear CACHE_SYNC_ERR_INT.
  */
 #define CACHE_SYNC_ERR_INT_CLR    (BIT(13))
 #define CACHE_SYNC_ERR_INT_CLR_M  (CACHE_SYNC_ERR_INT_CLR_V << CACHE_SYNC_ERR_INT_CLR_S)
@@ -1083,35 +953,32 @@ extern "C" {
 #define CACHE_SYNC_ERR_INT_CLR_S  13
 
 /** CACHE_L1_CACHE_SYNC_PRELOAD_INT_RAW_REG register
- *  Sync Preload operation Interrupt raw register
+ *  Sync and preloading operation interrupt raw register
  */
 #define CACHE_L1_CACHE_SYNC_PRELOAD_INT_RAW_REG (DR_REG_CACHE_BASE + 0x244)
 /** CACHE_L1_CACHE_PLD_DONE_INT_RAW : R/WTC/SS; bitpos: [4]; default: 0;
- *  The raw bit of the interrupt that occurs only when L1-Cache preload-operation is
- *  done.
+ *  The raw interrupt status of L1_CACHE_PLD_DONE_INT.
  */
 #define CACHE_L1_CACHE_PLD_DONE_INT_RAW    (BIT(4))
 #define CACHE_L1_CACHE_PLD_DONE_INT_RAW_M  (CACHE_L1_CACHE_PLD_DONE_INT_RAW_V << CACHE_L1_CACHE_PLD_DONE_INT_RAW_S)
 #define CACHE_L1_CACHE_PLD_DONE_INT_RAW_V  0x00000001U
 #define CACHE_L1_CACHE_PLD_DONE_INT_RAW_S  4
 /** CACHE_SYNC_DONE_INT_RAW : R/WTC/SS; bitpos: [6]; default: 0;
- *  The raw bit of the interrupt that occurs only when Cache sync-operation is done.
+ *  The raw interrupt status of CACHE_SYNC_DONE_INT.
  */
 #define CACHE_SYNC_DONE_INT_RAW    (BIT(6))
 #define CACHE_SYNC_DONE_INT_RAW_M  (CACHE_SYNC_DONE_INT_RAW_V << CACHE_SYNC_DONE_INT_RAW_S)
 #define CACHE_SYNC_DONE_INT_RAW_V  0x00000001U
 #define CACHE_SYNC_DONE_INT_RAW_S  6
 /** CACHE_L1_CACHE_PLD_ERR_INT_RAW : R/WTC/SS; bitpos: [11]; default: 0;
- *  The raw bit of the interrupt that occurs only when L1-Cache preload-operation error
- *  occurs.
+ *  The raw interrupt status of L1_CACHE_PLD_ERR_INT.
  */
 #define CACHE_L1_CACHE_PLD_ERR_INT_RAW    (BIT(11))
 #define CACHE_L1_CACHE_PLD_ERR_INT_RAW_M  (CACHE_L1_CACHE_PLD_ERR_INT_RAW_V << CACHE_L1_CACHE_PLD_ERR_INT_RAW_S)
 #define CACHE_L1_CACHE_PLD_ERR_INT_RAW_V  0x00000001U
 #define CACHE_L1_CACHE_PLD_ERR_INT_RAW_S  11
 /** CACHE_SYNC_ERR_INT_RAW : R/WTC/SS; bitpos: [13]; default: 0;
- *  The raw bit of the interrupt that occurs only when Cache sync-operation error
- *  occurs.
+ *  The raw interrupt status of CACHE_SYNC_ERR_INT.
  */
 #define CACHE_SYNC_ERR_INT_RAW    (BIT(13))
 #define CACHE_SYNC_ERR_INT_RAW_M  (CACHE_SYNC_ERR_INT_RAW_V << CACHE_SYNC_ERR_INT_RAW_S)
@@ -1119,34 +986,32 @@ extern "C" {
 #define CACHE_SYNC_ERR_INT_RAW_S  13
 
 /** CACHE_L1_CACHE_SYNC_PRELOAD_INT_ST_REG register
- *  L1-Cache Access Fail Interrupt status register
+ *  Sync and preloading operation interrupt status register
  */
 #define CACHE_L1_CACHE_SYNC_PRELOAD_INT_ST_REG (DR_REG_CACHE_BASE + 0x248)
 /** CACHE_L1_CACHE_PLD_DONE_INT_ST : RO; bitpos: [4]; default: 0;
- *  The bit indicates the status of the interrupt that occurs only when L1-Cache
- *  preload-operation is done.
+ *  The masked interrupt status of L1_CACHE_PLD_DONE_INT.
  */
 #define CACHE_L1_CACHE_PLD_DONE_INT_ST    (BIT(4))
 #define CACHE_L1_CACHE_PLD_DONE_INT_ST_M  (CACHE_L1_CACHE_PLD_DONE_INT_ST_V << CACHE_L1_CACHE_PLD_DONE_INT_ST_S)
 #define CACHE_L1_CACHE_PLD_DONE_INT_ST_V  0x00000001U
 #define CACHE_L1_CACHE_PLD_DONE_INT_ST_S  4
 /** CACHE_SYNC_DONE_INT_ST : RO; bitpos: [6]; default: 0;
- *  The bit indicates the status of the interrupt that occurs only when Cache
- *  sync-operation is done.
+ *  The masked interrupt status of CACHE_SYNC_DONE_INT.
  */
 #define CACHE_SYNC_DONE_INT_ST    (BIT(6))
 #define CACHE_SYNC_DONE_INT_ST_M  (CACHE_SYNC_DONE_INT_ST_V << CACHE_SYNC_DONE_INT_ST_S)
 #define CACHE_SYNC_DONE_INT_ST_V  0x00000001U
 #define CACHE_SYNC_DONE_INT_ST_S  6
 /** CACHE_L1_CACHE_PLD_ERR_INT_ST : RO; bitpos: [11]; default: 0;
- *  The bit indicates the status of the interrupt of L1-Cache preload-operation error.
+ *  The masked interrupt status of L1_CACHE_PLD_ERR_INT.
  */
 #define CACHE_L1_CACHE_PLD_ERR_INT_ST    (BIT(11))
 #define CACHE_L1_CACHE_PLD_ERR_INT_ST_M  (CACHE_L1_CACHE_PLD_ERR_INT_ST_V << CACHE_L1_CACHE_PLD_ERR_INT_ST_S)
 #define CACHE_L1_CACHE_PLD_ERR_INT_ST_V  0x00000001U
 #define CACHE_L1_CACHE_PLD_ERR_INT_ST_S  11
 /** CACHE_SYNC_ERR_INT_ST : RO; bitpos: [13]; default: 0;
- *  The bit indicates the status of the interrupt of Cache sync-operation error.
+ *  The masked interrupt status of CACHE_SYNC_ERR_INT.
  */
 #define CACHE_SYNC_ERR_INT_ST    (BIT(13))
 #define CACHE_SYNC_ERR_INT_ST_M  (CACHE_SYNC_ERR_INT_ST_V << CACHE_SYNC_ERR_INT_ST_S)
@@ -1154,19 +1019,24 @@ extern "C" {
 #define CACHE_SYNC_ERR_INT_ST_S  13
 
 /** CACHE_L1_CACHE_SYNC_PRELOAD_EXCEPTION_REG register
- *  Cache Sync/Preload Operation exception register
+ *  Cache sync and preloading operation exception register
  */
 #define CACHE_L1_CACHE_SYNC_PRELOAD_EXCEPTION_REG (DR_REG_CACHE_BASE + 0x24c)
 /** CACHE_L1_CACHE_PLD_ERR_CODE : RO; bitpos: [9:8]; default: 0;
- *  The value 2 is Only available which means preload size is error in L1-Cache.
+ *  Represents the error code for the failed preloading operation.
+ *  2: The preloading size in the L1 cache is wrong
+ *  Other values: reserved
  */
 #define CACHE_L1_CACHE_PLD_ERR_CODE    0x00000003U
 #define CACHE_L1_CACHE_PLD_ERR_CODE_M  (CACHE_L1_CACHE_PLD_ERR_CODE_V << CACHE_L1_CACHE_PLD_ERR_CODE_S)
 #define CACHE_L1_CACHE_PLD_ERR_CODE_V  0x00000003U
 #define CACHE_L1_CACHE_PLD_ERR_CODE_S  8
 /** CACHE_SYNC_ERR_CODE : RO; bitpos: [13:12]; default: 0;
- *  The values 0-2 are available which means sync map, command conflict and size are
- *  error in Cache System.
+ *  Represents the error code for the failed synchronization operation.
+ *  0: Incorrect synchronization map
+ *  1: Synchronization command conflict
+ *  2: Incorrect synchronization size
+ *  3: Reserved
  */
 #define CACHE_SYNC_ERR_CODE    0x00000003U
 #define CACHE_SYNC_ERR_CODE_M  (CACHE_SYNC_ERR_CODE_V << CACHE_SYNC_ERR_CODE_S)
@@ -1174,12 +1044,15 @@ extern "C" {
 #define CACHE_SYNC_ERR_CODE_S  12
 
 /** CACHE_L1_CACHE_SYNC_RST_CTRL_REG register
- *  Cache Sync Reset control register
+ *  Cache sync reset control register
  */
 #define CACHE_L1_CACHE_SYNC_RST_CTRL_REG (DR_REG_CACHE_BASE + 0x250)
 /** CACHE_L1_CACHE_SYNC_RST : R/W; bitpos: [4]; default: 0;
- *  set this bit to reset sync-logic inside L1-Cache. Recommend that this should only
- *  be used to initialize sync-logic when some fatal error of sync-logic occurs.
+ *  Configures whether to reset the synchronization logic inside the L1 cache.
+ *  0: Not reset
+ *  1: Reset
+ *  It is recommended that this field should only be used when a fatal error of the
+ *  synchronization logic occurs.
  */
 #define CACHE_L1_CACHE_SYNC_RST    (BIT(4))
 #define CACHE_L1_CACHE_SYNC_RST_M  (CACHE_L1_CACHE_SYNC_RST_V << CACHE_L1_CACHE_SYNC_RST_S)
@@ -1187,13 +1060,15 @@ extern "C" {
 #define CACHE_L1_CACHE_SYNC_RST_S  4
 
 /** CACHE_L1_CACHE_PRELOAD_RST_CTRL_REG register
- *  Cache Preload Reset control register
+ *  Cache preloading reset control register
  */
 #define CACHE_L1_CACHE_PRELOAD_RST_CTRL_REG (DR_REG_CACHE_BASE + 0x254)
 /** CACHE_L1_CACHE_PLD_RST : R/W; bitpos: [4]; default: 0;
- *  set this bit to reset preload-logic inside L1-Cache. Recommend that this should
- *  only be used to initialize preload-logic when some fatal error of preload-logic
- *  occurs.
+ *  Configures whether to reset the preloading logic inside the L1 cache.
+ *  0: Not reset
+ *  1: Reset
+ *  It is recommended that this field should only be used when a fatal error of the
+ *  preloading logic occurs.
  */
 #define CACHE_L1_CACHE_PLD_RST    (BIT(4))
 #define CACHE_L1_CACHE_PLD_RST_M  (CACHE_L1_CACHE_PLD_RST_V << CACHE_L1_CACHE_PLD_RST_S)
@@ -1201,47 +1076,38 @@ extern "C" {
 #define CACHE_L1_CACHE_PLD_RST_S  4
 
 /** CACHE_L1_CACHE_AUTOLOAD_BUF_CLR_CTRL_REG register
- *  Cache Autoload buffer clear control register
+ *  Cache autoloading buffer clear control register
  */
 #define CACHE_L1_CACHE_AUTOLOAD_BUF_CLR_CTRL_REG (DR_REG_CACHE_BASE + 0x258)
 /** CACHE_L1_CACHE_ALD_BUF_CLR : R/W; bitpos: [4]; default: 0;
- *  set this bit to clear autoload-buffer inside L1-Cache. If this bit is active,
- *  autoload will not work in L1-Cache. This bit should not be active when autoload
- *  works in L1-Cache.
+ *  Configures whether to clear the autoloading buffer inside the L1 cache.
+ *  0: Not clear the buffer. Recommended when autoloading of L1 cache is used.
+ *  1: Clear the buffer. Once set, autoloading of L1 cache will stop working.
  */
 #define CACHE_L1_CACHE_ALD_BUF_CLR    (BIT(4))
 #define CACHE_L1_CACHE_ALD_BUF_CLR_M  (CACHE_L1_CACHE_ALD_BUF_CLR_V << CACHE_L1_CACHE_ALD_BUF_CLR_S)
 #define CACHE_L1_CACHE_ALD_BUF_CLR_V  0x00000001U
 #define CACHE_L1_CACHE_ALD_BUF_CLR_S  4
 
-/** CACHE_L1_UNALLOCATE_BUFFER_CLEAR_REG register
- *  Unallocate request buffer clear registers
- */
-#define CACHE_L1_UNALLOCATE_BUFFER_CLEAR_REG (DR_REG_CACHE_BASE + 0x25c)
-/** CACHE_L1_CACHE_UNALLOC_CLR : R/W; bitpos: [4]; default: 0;
- *  The bit is used to clear the unallocate request buffer of l1 Cache where the
- *  unallocate request is responded but not completed.
- */
-#define CACHE_L1_CACHE_UNALLOC_CLR    (BIT(4))
-#define CACHE_L1_CACHE_UNALLOC_CLR_M  (CACHE_L1_CACHE_UNALLOC_CLR_V << CACHE_L1_CACHE_UNALLOC_CLR_S)
-#define CACHE_L1_CACHE_UNALLOC_CLR_V  0x00000001U
-#define CACHE_L1_CACHE_UNALLOC_CLR_S  4
-
 /** CACHE_L1_CACHE_OBJECT_CTRL_REG register
- *  Cache Tag and Data memory Object control register
+ *  Cache tag and data memory object control register
  */
 #define CACHE_L1_CACHE_OBJECT_CTRL_REG (DR_REG_CACHE_BASE + 0x260)
 /** CACHE_L1_CACHE_TAG_OBJECT : R/W; bitpos: [4]; default: 0;
- *  Set this bit to set L1-Cache tag memory as object. This bit should be onehot with
- *  the others fields inside this register.
+ *  Configures whether to set the L1 cache tag memory as an object.
+ *  0: Not set
+ *  1: Set
+ *  This field should be one-hot with the other fields inside this register.
  */
 #define CACHE_L1_CACHE_TAG_OBJECT    (BIT(4))
 #define CACHE_L1_CACHE_TAG_OBJECT_M  (CACHE_L1_CACHE_TAG_OBJECT_V << CACHE_L1_CACHE_TAG_OBJECT_S)
 #define CACHE_L1_CACHE_TAG_OBJECT_V  0x00000001U
 #define CACHE_L1_CACHE_TAG_OBJECT_S  4
 /** CACHE_L1_CACHE_MEM_OBJECT : R/W; bitpos: [10]; default: 0;
- *  Set this bit to set L1-Cache data memory as object. This bit should be onehot with
- *  the others fields inside this register.
+ *  Configures whether to set the L1 cache data memory as an object.
+ *  0: Not set
+ *  1: Set
+ *  This field should be one-hot with the other fields inside this register.
  */
 #define CACHE_L1_CACHE_MEM_OBJECT    (BIT(10))
 #define CACHE_L1_CACHE_MEM_OBJECT_M  (CACHE_L1_CACHE_MEM_OBJECT_V << CACHE_L1_CACHE_MEM_OBJECT_S)
@@ -1249,12 +1115,13 @@ extern "C" {
 #define CACHE_L1_CACHE_MEM_OBJECT_S  10
 
 /** CACHE_L1_CACHE_WAY_OBJECT_REG register
- *  Cache Tag and Data memory way register
+ *  Cache tag and data memory way register
  */
 #define CACHE_L1_CACHE_WAY_OBJECT_REG (DR_REG_CACHE_BASE + 0x264)
 /** CACHE_L1_CACHE_WAY_OBJECT : R/W; bitpos: [2:0]; default: 0;
- *  Set this bits to select which way of the tag-object will be accessed. 0: way0, 1:
- *  way1, 2: way2, 3: way3, ?, 7: way7.
+ *  Configures which way in the tag memory or the data memory to access.
+ *  0: Way 0
+ *  1: Way 1
  */
 #define CACHE_L1_CACHE_WAY_OBJECT    0x00000007U
 #define CACHE_L1_CACHE_WAY_OBJECT_M  (CACHE_L1_CACHE_WAY_OBJECT_V << CACHE_L1_CACHE_WAY_OBJECT_S)
@@ -1266,8 +1133,8 @@ extern "C" {
  */
 #define CACHE_L1_CACHE_ADDR_REG (DR_REG_CACHE_BASE + 0x268)
 /** CACHE_L1_CACHE_ADDR : R/W; bitpos: [31:0]; default: 1073741824;
- *  Those bits stores the address which will decide where inside the specified tag
- *  memory object will be accessed.
+ *  Configures the virtual address that decides where inside the tag memory or data
+ *  memory will be accessed.
  */
 #define CACHE_L1_CACHE_ADDR    0xFFFFFFFFU
 #define CACHE_L1_CACHE_ADDR_M  (CACHE_L1_CACHE_ADDR_V << CACHE_L1_CACHE_ADDR_S)
@@ -1275,36 +1142,27 @@ extern "C" {
 #define CACHE_L1_CACHE_ADDR_S  0
 
 /** CACHE_L1_CACHE_DEBUG_BUS_REG register
- *  Cache Tag/data memory content register
+ *  Cache tag and data memory content register
  */
 #define CACHE_L1_CACHE_DEBUG_BUS_REG (DR_REG_CACHE_BASE + 0x26c)
 /** CACHE_L1_CACHE_DEBUG_BUS : R/W; bitpos: [31:0]; default: 620;
- *  This is a constant place where we can write data to or read data from the tag/data
- *  memory on the specified cache.
+ *  Configures the data to write to or the data to read from the tag memory or the data
+ *  memory.
  */
 #define CACHE_L1_CACHE_DEBUG_BUS    0xFFFFFFFFU
 #define CACHE_L1_CACHE_DEBUG_BUS_M  (CACHE_L1_CACHE_DEBUG_BUS_V << CACHE_L1_CACHE_DEBUG_BUS_S)
 #define CACHE_L1_CACHE_DEBUG_BUS_V  0xFFFFFFFFU
 #define CACHE_L1_CACHE_DEBUG_BUS_S  0
 
-/** CACHE_CLOCK_GATE_REG register
- *  Clock gate control register
- */
-#define CACHE_CLOCK_GATE_REG (DR_REG_CACHE_BASE + 0x3d4)
-/** CACHE_CLK_EN : R/W; bitpos: [0]; default: 0;
- *  The bit is used to enable clock gate when access all registers in this module.
- */
-#define CACHE_CLK_EN    (BIT(0))
-#define CACHE_CLK_EN_M  (CACHE_CLK_EN_V << CACHE_CLK_EN_S)
-#define CACHE_CLK_EN_V  0x00000001U
-#define CACHE_CLK_EN_S  0
-
 /** CACHE_TRACE_ENA_REG register
  *  Clock gate control register
  */
 #define CACHE_TRACE_ENA_REG (DR_REG_CACHE_BASE + 0x3d8)
 /** CACHE_L1_CACHE_TRACE_ENA : R/W; bitpos: [0]; default: 0;
- *  The bit is used to enable L1-Cache trace for the performance counter and fail tracer
+ *  Configures whether to enable the L1 cache trace for the performance counter and
+ *  failure tracer.
+ *  0: Disable
+ *  1: Enable
  */
 #define CACHE_L1_CACHE_TRACE_ENA    (BIT(0))
 #define CACHE_L1_CACHE_TRACE_ENA_M  (CACHE_L1_CACHE_TRACE_ENA_V << CACHE_L1_CACHE_TRACE_ENA_S)
@@ -1316,8 +1174,8 @@ extern "C" {
  */
 #define CACHE_DATE_REG (DR_REG_CACHE_BASE + 0x3fc)
 /** CACHE_DATE : R/W; bitpos: [27:0]; default: 37782016;
- *  version control register. Note that this default value stored is the latest date
- *  when the hardware logic was updated.
+ *  Version control register. Note that the default value is the latest date when the
+ *  hardware logic was updated.
  */
 #define CACHE_DATE    0x0FFFFFFFU
 #define CACHE_DATE_M  (CACHE_DATE_V << CACHE_DATE_S)
