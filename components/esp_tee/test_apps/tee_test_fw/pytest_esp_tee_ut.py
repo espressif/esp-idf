@@ -21,7 +21,7 @@ CONFIG_DEFAULT = [
 
 CONFIG_OTA = [
     # 'config, target, skip_autoflash, markers',
-    ('ota', target, 'y', (pytest.mark.host_test,))
+    ('ota', target, 'y', (pytest.mark.generic,))
     for target in SUPPORTED_TARGETS
 ]
 
