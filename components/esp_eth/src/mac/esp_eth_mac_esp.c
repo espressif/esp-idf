@@ -3,12 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
 #include <stdarg.h>
 #include <inttypes.h>
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/sleep_retention.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -28,6 +30,7 @@
 #include "freertos/semphr.h"
 #include "hal/emac_hal.h"
 #include "soc/soc.h"
+#include "soc/emac_periph.h"
 #include "clk_ctrl_os.h"
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
@@ -56,6 +59,8 @@ static const char *TAG = "esp.emac";
 #define EMAC_IF_RCC_ATOMIC()
 #endif
 
+#define EMAC_USE_RETENTION_LINK (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_EMAC_SUPPORT_SLEEP_RETENTION)
+
 typedef struct {
     esp_eth_mac_t parent;
     esp_eth_mediator_t *eth;
@@ -68,7 +73,6 @@ typedef struct {
     uint32_t free_rx_descriptor;
     uint32_t flow_control_high_water_mark;
     uint32_t flow_control_low_water_mark;
-    uint8_t addr[ETH_ADDR_LEN];
     bool flow_ctrl_enabled; // indicates whether the user want to do flow control
     bool do_flow_ctrl;  // indicates whether we need to do software flow control
     bool use_pll;  // Only use (A/M)PLL in EMAC_DATA_INTERFACE_RMII && EMAC_CLK_OUT
@@ -91,6 +95,55 @@ static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, emac_
 static void emac_esp_free_driver_obj(emac_esp32_t *emac);
 static esp_err_t emac_esp32_start(esp_eth_mac_t *mac);
 static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac);
+
+#if EMAC_USE_RETENTION_LINK
+static esp_err_t emac_create_sleep_retention_link_cb(void *arg)
+{
+    esp_err_t err = sleep_retention_entries_create(emac_reg_retention_info.entry_array,
+                                                   emac_reg_retention_info.array_size,
+                                                   REGDMA_LINK_PRI_EMAC, emac_reg_retention_info.module_id);
+    return err;
+}
+
+// TODO rename to emac_esp
+static esp_err_t emac_create_retention_module(emac_esp32_t *emac)
+{
+    esp_err_t ret = ESP_OK;
+    sleep_retention_module_t module = emac_reg_retention_info.module_id;
+    if (sleep_retention_is_module_inited(module) && !sleep_retention_is_module_created(module)) {
+        if ((ret = sleep_retention_module_allocate(module)) != ESP_OK) {
+            ESP_LOGW(TAG, "create retention link failed on EMAC, power domain won't be turned off during sleep");
+        }
+    }
+    return ret;
+}
+
+static void emac_esp_enable_emac_start_on_wakeup(emac_esp32_t *emac)
+{
+    void *emac_start_link;
+    for (int i = 0; i < EMAC_REGDMA_LINK_EMAC_START_CNT; i++) {
+        emac_start_link = sleep_retention_find_link_by_id(emac_reg_retention_info.entry_array[EMAC_REGDMA_LINK_EMAC_START_BEGIN + i].config.id);
+        regdma_link_set_skip_flag(emac_start_link, 1, 0);
+    }
+}
+
+static void emac_esp_disable_emac_start_on_wakeup(emac_esp32_t *emac)
+{
+    void *emac_start_link;
+    for (int i = 0; i < EMAC_REGDMA_LINK_EMAC_START_CNT; i++) {
+        emac_start_link = sleep_retention_find_link_by_id(emac_reg_retention_info.entry_array[EMAC_REGDMA_LINK_EMAC_START_BEGIN + i].config.id);
+        regdma_link_set_skip_flag(emac_start_link, 1, 1);
+    }
+}
+
+static void emac_free_retention_module(emac_esp32_t *emac)
+{
+    sleep_retention_module_t module = emac_reg_retention_info.module_id;
+    if (sleep_retention_is_module_created(module)) {
+        sleep_retention_module_free(module);
+    }
+}
+#endif // EMAC_USE_RETENTION_LINK
 
 static esp_err_t emac_esp32_lock_multi_reg(emac_esp32_t *emac)
 {
@@ -162,8 +215,7 @@ static esp_err_t emac_esp32_set_addr(esp_eth_mac_t *mac, uint8_t *addr)
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    memcpy(emac->addr, addr, 6);
-    emac_hal_set_address(&emac->hal, emac->addr);
+    emac_hal_set_address(&emac->hal, addr);
     return ESP_OK;
 err:
     return ret;
@@ -174,7 +226,7 @@ static esp_err_t emac_esp32_get_addr(esp_eth_mac_t *mac, uint8_t *addr)
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    memcpy(addr, emac->addr, 6);
+    emac_hal_get_address(&emac->hal, addr);
     return ESP_OK;
 err:
     return ret;
@@ -298,6 +350,15 @@ static esp_err_t emac_esp32_set_peer_pause_ability(esp_eth_mac_t *mac, uint32_t 
     return ESP_OK;
 }
 
+static void emac_esp_dump_hal_registers(emac_esp32_t *emac)
+{
+    ESP_LOG_BUFFER_HEXDUMP("DMA", emac->hal.dma_regs, sizeof(emac_dma_dev_t), ESP_LOG_INFO);
+    ESP_LOG_BUFFER_HEXDUMP("MAC", emac->hal.mac_regs, sizeof(emac_mac_dev_t), ESP_LOG_INFO);
+#ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
+    ESP_LOG_BUFFER_HEXDUMP("PTP", emac->hal.ptp_regs, sizeof(emac_ptp_dev_t), ESP_LOG_INFO);
+#endif // SOC_EMAC_IEEE1588V2_SUPPORTED
+}
+
 esp_err_t emac_esp_custom_ioctl(esp_eth_mac_t *mac, int cmd, void *data)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
@@ -365,10 +426,10 @@ esp_err_t emac_esp_custom_ioctl(esp_eth_mac_t *mac, int cmd, void *data)
         break;
     }
     case ETH_MAC_ESP_CMD_ENABLE_TS4ALL: {
-	ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP enable TS for all invalid argument, cant' be NULL");
-	bool enable = *(bool *)data;
-	ESP_RETURN_ON_ERROR(emac_hal_ptp_enable_ts4all(&emac->hal, enable), TAG, "failed to enable timestamping for all frames");
-	break;
+        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP enable TS for all invalid argument, cant' be NULL");
+        bool enable = *(bool *)data;
+        ESP_RETURN_ON_ERROR(emac_hal_ptp_enable_ts4all(&emac->hal, enable), TAG, "failed to enable timestamping for all frames");
+        break;
     }
 #else
     case ETH_MAC_ESP_CMD_PTP_ENABLE:
@@ -388,6 +449,9 @@ esp_err_t emac_esp_custom_ioctl(esp_eth_mac_t *mac, int cmd, void *data)
     case ETH_MAC_ESP_CMD_CLEAR_TDES0_CFG_BITS:
         ESP_RETURN_ON_FALSE(data != NULL, ESP_ERR_INVALID_ARG, TAG, "cannot clear DMA tx desc flag with null");
         emac_esp_dma_clear_tdes0_ctrl_bits(emac->emac_dma_hndl, *(uint32_t *)data);
+        break;
+    case ETH_MAC_ESP_CMD_DUMP_REGS:
+        emac_esp_dump_hal_registers(emac);
         break;
     default:
         ESP_RETURN_ON_ERROR(ESP_ERR_INVALID_ARG, TAG, "unknown io command: %i", cmd);
@@ -561,12 +625,16 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     emac_hal_dma_config_t dma_config = { .dma_burst_len = emac->dma_burst_len };
     emac_hal_init_dma_default(&emac->hal, &dma_config);
     /* get emac address from efuse */
-    ESP_GOTO_ON_ERROR(esp_read_mac(emac->addr, ESP_MAC_ETH), err, TAG, "fetch ethernet mac address failed");
+    uint8_t addr[ETH_ADDR_LEN];
+    ESP_GOTO_ON_ERROR(esp_read_mac(addr, ESP_MAC_ETH), err, TAG, "fetch ethernet mac address failed");
     /* set MAC address to emac register */
-    emac_hal_set_address(&emac->hal, emac->addr);
+    emac_hal_set_address(&emac->hal, addr);
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_acquire(emac->pm_lock);
 #endif
+#if EMAC_USE_RETENTION_LINK
+    emac_create_retention_module(emac);
+#endif // EMAC_USE_RETENTION_LINK
     return ESP_OK;
 
 err:
@@ -581,6 +649,9 @@ static esp_err_t emac_esp32_deinit(esp_eth_mac_t *mac)
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_release(emac->pm_lock);
 #endif
+#if EMAC_USE_RETENTION_LINK
+    emac_free_retention_module(emac);
+#endif // EMAC_USE_RETENTION_LINK
     emac_hal_stop(&emac->hal);
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     return ESP_OK;
@@ -591,6 +662,9 @@ static esp_err_t emac_esp32_start(esp_eth_mac_t *mac)
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     /* reset descriptor chain */
     emac_esp_dma_reset(emac->emac_dma_hndl);
+#if EMAC_USE_RETENTION_LINK
+    emac_esp_enable_emac_start_on_wakeup(emac);
+#endif // EMAC_USE_RETENTION_LINK
     emac_hal_start(&emac->hal);
     return ESP_OK;
 }
@@ -600,6 +674,9 @@ static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac)
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     esp_err_t ret = ESP_OK;
     int32_t to = 0;
+#if EMAC_USE_RETENTION_LINK
+    emac_esp_disable_emac_start_on_wakeup(emac);
+#endif // EMAC_USE_RETENTION_LINK
     do {
         if ((ret = emac_hal_stop(&emac->hal)) == ESP_OK) {
             break;
@@ -689,6 +766,12 @@ static void emac_esp_free_driver_obj(emac_esp32_t *emac)
             esp_pm_lock_delete(emac->pm_lock);
         }
 #endif // CONFIG_PM_ENABLE
+#if EMAC_USE_RETENTION_LINK
+    sleep_retention_module_t module = emac_reg_retention_info.module_id;
+    if (sleep_retention_is_module_inited(module)) {
+        sleep_retention_module_deinit(module);
+    }
+#endif // EMAC_USE_RETENTION_LINK
 
         emac_esp_del_dma(emac->emac_dma_hndl);
 
@@ -707,12 +790,29 @@ static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, emac_
     }
     ESP_GOTO_ON_FALSE(emac, ESP_ERR_NO_MEM, err, TAG, "no mem for esp emac object");
 
-    ESP_GOTO_ON_ERROR(emac_esp_new_dma(NULL, &emac->emac_dma_hndl), err, TAG, "create EMAC DMA object failed");
-
     /* alloc PM lock */
 #ifdef CONFIG_PM_ENABLE
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "emac_esp32", &emac->pm_lock), err, TAG, "create pm lock failed");
 #endif
+
+#if EMAC_USE_RETENTION_LINK
+    sleep_retention_module_t module = emac_reg_retention_info.module_id;
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = {
+            .create = {
+                .handle = emac_create_sleep_retention_link_cb,
+                .arg = (void *)emac
+            },
+        },
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+    };
+    if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+        // even though the sleep retention module init failed, EMAC driver should still work, so just warning here
+        ESP_LOGW(TAG, "init sleep retention failed on EMAC, power domain may be turned off during sleep");
+    }
+#endif // EMAC_USE_RETENTION_LINK
+
+    ESP_GOTO_ON_ERROR(emac_esp_new_dma(NULL, &emac->emac_dma_hndl), err, TAG, "create EMAC DMA object failed");
 
     emac->multi_reg_mutex = xSemaphoreCreateMutex();
     ESP_GOTO_ON_FALSE(emac->multi_reg_mutex, ESP_ERR_NO_MEM, err, TAG, "failed to create multiple register access mutex");

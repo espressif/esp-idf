@@ -782,6 +782,7 @@
 #define SOC_EMAC_IEEE1588V2_SUPPORTED              (1)      /*!< EMAC Supports IEEE1588v2 time stamping */
 #define SOC_EMAC_USE_MULTI_IO_MUX                  (1)      /*!< Multiple GPIO pad options exist to connect EMAC signal via IO_MUX */
 #define SOC_EMAC_MII_USE_GPIO_MATRIX               (1)      /*!< EMAC MII signals are connected to GPIO pads via GPIO Matrix */
+#define SOC_EMAC_SUPPORT_SLEEP_RETENTION           (1)      /*!< EMAC supports register backup/restore in sleep mode */
 
 /*--------------------------- JPEG --------------------------------*/
 #define SOC_JPEG_CODEC_SUPPORTED                  (1)

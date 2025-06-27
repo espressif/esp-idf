@@ -4,10 +4,10 @@ import contextlib
 import logging
 import os
 import socket
+from collections.abc import Iterator
 from multiprocessing import Pipe
 from multiprocessing import Process
 from multiprocessing import connection
-from typing import Iterator
 
 import pytest
 from pytest_embedded_idf import IdfDut
@@ -18,7 +18,7 @@ from scapy.all import raw
 ETH_TYPE = 0x3300
 
 
-class EthTestIntf(object):
+class EthTestIntf:
     def __init__(self, eth_type: int, my_if: str = ''):
         self.target_if = ''
         self.eth_type = eth_type
@@ -449,3 +449,17 @@ def test_esp_eth_dm9051(dut: IdfDut) -> None:
     ethernet_l2_test(dut)
     dut.serial.hard_reset()
     ethernet_heap_alloc_test(dut)
+
+
+# ----------- EMAC Sleep Retention -----------
+@pytest.mark.eth_ip101
+@pytest.mark.parametrize(
+    'config',
+    [
+        'emac_sleep_retention',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_emac_sleep_retention(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='sleep_retention', timeout=120)

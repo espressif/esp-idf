@@ -361,6 +361,22 @@ static inline uint32_t emac_ll_read_debug_reg(emac_mac_dev_t *mac_regs)
     return mac_regs->emacdebug.val;
 }
 
+/* pmt_csr */
+static inline void emac_ll_power_down_enable(emac_mac_dev_t *mac_regs, bool enable)
+{
+    mac_regs->pmt_csr.pwrdwn = enable;
+}
+
+static inline void emac_ll_magic_packet_enable(emac_mac_dev_t *mac_regs, bool enable)
+{
+    mac_regs->pmt_csr.mgkpkten = enable;
+}
+
+static inline bool emac_ll_get_magic_packet_received(emac_mac_dev_t *mac_regs)
+{
+    return mac_regs->pmt_csr.mgkprcvd;
+}
+
 /* emacmiidata */
 static inline void emac_ll_set_phy_data(emac_mac_dev_t *mac_regs, uint32_t data)
 {
@@ -377,6 +393,16 @@ static inline void emac_ll_set_addr(emac_mac_dev_t *mac_regs, const uint8_t *add
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(mac_regs->emacaddr0high, address0_hi, (addr[5] << 8) | addr[4]);
     mac_regs->emacaddr0low = (addr[3] << 24) | (addr[2] << 16) | (addr[1] << 8) | (addr[0]);
+}
+
+static inline void emac_ll_get_addr(emac_mac_dev_t *mac_regs, uint8_t *addr)
+{
+    addr[0] = mac_regs->emacaddr0low & 0xFF;
+    addr[1] = (mac_regs->emacaddr0low >> 8) & 0xFF;
+    addr[2] = (mac_regs->emacaddr0low >> 16) & 0xFF;
+    addr[3] = (mac_regs->emacaddr0low >> 24) & 0xFF;
+    addr[4] = mac_regs->emacaddr0high.address0_hi & 0xFF;
+    addr[5] = (mac_regs->emacaddr0high.address0_hi >> 8) & 0xFF;
 }
 
 /* emacaddrN */
@@ -396,12 +422,12 @@ static inline bool emac_ll_get_addr_filter(emac_mac_dev_t *mac_regs, uint8_t add
     addr_num = addr_num - 1; // MAC Address1 is located at emacaddr[0]
     if (mac_regs->emacaddr[addr_num].emacaddrhigh.address_enable) {
         if (mac_addr != NULL) {
-            *(&mac_addr[0]) = mac_regs->emacaddr[addr_num].emacaddrlow & 0xFF;
-            *(&mac_addr[1]) = (mac_regs->emacaddr[addr_num].emacaddrlow >> 8) & 0xFF;
-            *(&mac_addr[2]) = (mac_regs->emacaddr[addr_num].emacaddrlow >> 16) & 0xFF;
-            *(&mac_addr[3]) = (mac_regs->emacaddr[addr_num].emacaddrlow >> 24) & 0xFF;
-            *(&mac_addr[4]) = mac_regs->emacaddr[addr_num].emacaddrhigh.mac_address_hi & 0xFF;
-            *(&mac_addr[5]) = (mac_regs->emacaddr[addr_num].emacaddrhigh.mac_address_hi >> 8) & 0xFF;
+            mac_addr[0] = mac_regs->emacaddr[addr_num].emacaddrlow & 0xFF;
+            mac_addr[1] = (mac_regs->emacaddr[addr_num].emacaddrlow >> 8) & 0xFF;
+            mac_addr[2] = (mac_regs->emacaddr[addr_num].emacaddrlow >> 16) & 0xFF;
+            mac_addr[3] = (mac_regs->emacaddr[addr_num].emacaddrlow >> 24) & 0xFF;
+            mac_addr[4] = mac_regs->emacaddr[addr_num].emacaddrhigh.mac_address_hi & 0xFF;
+            mac_addr[5] = (mac_regs->emacaddr[addr_num].emacaddrhigh.mac_address_hi >> 8) & 0xFF;
         }
         if (mask != NULL) {
             *mask = mac_regs->emacaddr[addr_num].emacaddrhigh.mask_byte_control;

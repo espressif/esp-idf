@@ -127,8 +127,13 @@ extern "C" {
 #define EMAC_LL_INTR_ABNORMAL_SUMMARY_ENABLE            0x00008000U
 #define EMAC_LL_INTR_NORMAL_SUMMARY_ENABLE              0x00010000U
 
-/* Enable needed interrupts (recv/recv_buf_unavailabal/normal must be enabled to make eth work) */
+/* EMAC interrupt enable (referring to emacintmask register in emac_mac_struct.h)*/
+#define EMAC_LL_MAC_INTR_LOW_POWER_IDLE_ENABLE         0x00000400U
+#define EMAC_LL_MAC_INTR_POWER_MANAGEMENT_MOD_ENABLE   0x00000008U
+
+/* Enable needed DMA interrupts (recv/recv_buf_unavailabal/normal must be enabled to make eth work) */
 #define EMAC_LL_CONFIG_ENABLE_INTR_MASK    (EMAC_LL_INTR_RECEIVE_ENABLE | EMAC_LL_INTR_NORMAL_SUMMARY_ENABLE)
+
 
 /* Maximum number of MAC address to be filtered */
 #define EMAC_LL_MAX_MAC_ADDR_NUM 8
@@ -385,6 +390,22 @@ static inline uint32_t emac_ll_read_debug_reg(emac_mac_dev_t *mac_regs)
     return mac_regs->emacdebug.val;
 }
 
+/* pmt_csr */
+static inline void emac_ll_power_down_enable(emac_mac_dev_t *mac_regs, bool enable)
+{
+    mac_regs->pmt_csr.pwrdwn = enable;
+}
+
+static inline void emac_ll_magic_packet_enable(emac_mac_dev_t *mac_regs, bool enable)
+{
+    mac_regs->pmt_csr.mgkpkten = enable;
+}
+
+static inline bool emac_ll_get_magic_packet_received(emac_mac_dev_t *mac_regs)
+{
+    return mac_regs->pmt_csr.mgkprcvd;
+}
+
 /* emacmiidata */
 static inline void emac_ll_set_phy_data(emac_mac_dev_t *mac_regs, uint32_t data)
 {
@@ -401,6 +422,16 @@ static inline void emac_ll_set_addr(emac_mac_dev_t *mac_regs, const uint8_t *add
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(mac_regs->emacaddr0high, address0_hi, (addr[5] << 8) | addr[4]);
     mac_regs->emacaddr0low = (addr[3] << 24) | (addr[2] << 16) | (addr[1] << 8) | (addr[0]);
+}
+
+static inline void emac_ll_get_addr(emac_mac_dev_t *mac_regs, uint8_t *addr)
+{
+    addr[0] = mac_regs->emacaddr0low & 0xFF;
+    addr[1] = (mac_regs->emacaddr0low >> 8) & 0xFF;
+    addr[2] = (mac_regs->emacaddr0low >> 16) & 0xFF;
+    addr[3] = (mac_regs->emacaddr0low >> 24) & 0xFF;
+    addr[4] = mac_regs->emacaddr0high.address0_hi & 0xFF;
+    addr[5] = (mac_regs->emacaddr0high.address0_hi >> 8) & 0xFF;
 }
 
 /* emacaddrN */
@@ -420,12 +451,12 @@ static inline bool emac_ll_get_addr_filter(emac_mac_dev_t *mac_regs, uint8_t add
     addr_num = addr_num - 1; // MAC Address1 is located at emacaddr[0]
     if (mac_regs->emacaddr[addr_num].emacaddrhigh.address_enable) {
         if (mac_addr != NULL) {
-            *(&mac_addr[0]) = mac_regs->emacaddr[addr_num].emacaddrlow & 0xFF;
-            *(&mac_addr[1]) = (mac_regs->emacaddr[addr_num].emacaddrlow >> 8) & 0xFF;
-            *(&mac_addr[2]) = (mac_regs->emacaddr[addr_num].emacaddrlow >> 16) & 0xFF;
-            *(&mac_addr[3]) = (mac_regs->emacaddr[addr_num].emacaddrlow >> 24) & 0xFF;
-            *(&mac_addr[4]) = mac_regs->emacaddr[addr_num].emacaddrhigh.mac_address_hi & 0xFF;
-            *(&mac_addr[5]) = (mac_regs->emacaddr[addr_num].emacaddrhigh.mac_address_hi >> 8) & 0xFF;
+            mac_addr[0] = mac_regs->emacaddr[addr_num].emacaddrlow & 0xFF;
+            mac_addr[1] = (mac_regs->emacaddr[addr_num].emacaddrlow >> 8) & 0xFF;
+            mac_addr[2] = (mac_regs->emacaddr[addr_num].emacaddrlow >> 16) & 0xFF;
+            mac_addr[3] = (mac_regs->emacaddr[addr_num].emacaddrlow >> 24) & 0xFF;
+            mac_addr[4] = mac_regs->emacaddr[addr_num].emacaddrhigh.mac_address_hi & 0xFF;
+            mac_addr[5] = (mac_regs->emacaddr[addr_num].emacaddrhigh.mac_address_hi >> 8) & 0xFF;
         }
         if (mask != NULL) {
             *mask = mac_regs->emacaddr[addr_num].emacaddrhigh.mask_byte_control;
@@ -444,6 +475,21 @@ static inline void emac_ll_rm_addr_filter(emac_mac_dev_t *mac_regs, uint8_t addr
     mac_regs->emacaddr[addr_num].emacaddrhigh.address_enable = 0;
     HAL_FORCE_MODIFY_U32_REG_FIELD(mac_regs->emacaddr[addr_num].emacaddrhigh, mac_address_hi, 0);
     mac_regs->emacaddr[addr_num].emacaddrlow = 0;
+}
+
+/* emacintmask */
+static inline void emac_ll_enable_corresponding_emac_intr(emac_mac_dev_t *mac_regs, uint32_t mask)
+{
+    uint32_t temp_mask = mac_regs->emacintmask.val;
+    temp_mask &= ~mask;
+    mac_regs->emacintmask.val = temp_mask;
+}
+
+static inline void emac_ll_disable_corresponding_emac_intr(emac_mac_dev_t *mac_regs, uint32_t mask)
+{
+    uint32_t temp_mask = mac_regs->emacintmask.val;
+    temp_mask |= mask;
+    mac_regs->emacintmask.val = temp_mask;
 }
 
 /*************** End of mac regs operation *********************/

@@ -152,6 +152,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             :SOC_TWAI_SUPPORT_SLEEP_RETENTION: - All TWAIs
             :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
             :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
+            :SOC_EMAC_SUPPORT_SLEEP_RETENTION: - EMAC
 
         一些外设尚未支持睡眠上下文恢复，或者寄存器丢失后根本无法恢复。即使外设下电功能被启用，它们也会阻止外设下电的发生：
 

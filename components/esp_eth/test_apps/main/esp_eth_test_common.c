@@ -106,6 +106,7 @@ esp_eth_phy_t *phy_init(eth_phy_config_t *phy_config)
 {
     esp_eth_phy_t *phy = NULL;
     eth_phy_config_t phy_config_default = ETH_PHY_DEFAULT_CONFIG();
+    phy_config_default.reset_gpio_num = CONFIG_TARGET_ETH_PHY_RESET_GPIO;
     if (phy_config == NULL) {
         phy_config = &phy_config_default;
     }
