@@ -1165,15 +1165,16 @@ esp_err_t static httpd_cookie_key_value(const char *cookie_str, const char *key,
 
         /* Copy value to the caller's buffer. */
         size_t copy_len = MIN(val_len, *val_size - 1);
+
+        /* Save actual Cookie value size (including terminating null) */
+        *val_size = val_len + 1;
+
         /* If buffer length is smaller than needed, return truncation error */
         if (copy_len < val_len) {
             return ESP_ERR_HTTPD_RESULT_TRUNC;
         }
         memcpy(val, val_ptr, copy_len);
         val[copy_len] = '\0';
-
-        /* Save actual Cookie value size (including terminating null) */
-        *val_size = copy_len + 1;
 
         return ESP_OK;
     }
