@@ -602,13 +602,16 @@ peer_disc_incs(struct peer *peer)
             }
         }
     }
-
     svc = peer->cur_svc;
-    rc = ble_gattc_find_inc_svcs(peer->conn_handle,
-                                 svc->svc.start_handle,
-                                 svc->svc.end_handle,
-                                 peer_inc_disced, peer);
-    if (rc != 0) {
+    if (svc != NULL && !peer_svc_is_empty(svc)) {
+        rc = ble_gattc_find_inc_svcs(peer->conn_handle,
+                                     svc->svc.start_handle,
+                                     svc->svc.end_handle,
+                                     peer_inc_disced, peer);
+        if (rc != 0) {
+            peer_disc_chrs(peer);
+        }
+    } else {
         peer_disc_chrs(peer);
     }
 }
