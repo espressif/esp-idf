@@ -106,7 +106,7 @@ esp_err_t esp_task_wdt_impl_timer_allocate(const esp_task_wdt_config_t *config,
     }
 
     if (ret == ESP_OK) {
-        esp_intr_alloc(TWDT_INTR_SOURCE, 0, callback, NULL, &ctx->intr_handle);
+        ret = esp_intr_alloc(TWDT_INTR_SOURCE, 0, callback, NULL, &ctx->intr_handle);
     }
 
     if (ret == ESP_OK) {
