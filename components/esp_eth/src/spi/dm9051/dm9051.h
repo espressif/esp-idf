@@ -131,6 +131,8 @@ extern "C" {
 #define TCSCR_TCPCSE (1 << 1) // TCP CheckSum Generation
 #define TCSCR_IPCSE (1 << 0)  // IPv4 CheckSum Generation
 
+#define EEE_EN (1 << 7)  // EEE Enable
+
 #define MPTRCR_RST_TX (1 << 1) // Reset TX Memory Pointer
 #define MPTRCR_RST_RX (1 << 0) // Reset RX Memory Pointer
 
