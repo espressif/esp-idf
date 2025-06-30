@@ -249,7 +249,7 @@ int  wpa_eapol_key_send(struct wpa_sm *sm, const u8 *kck, size_t kck_len,
                    MAC2STR(dest));
         }
 #else
-        return ret;
+        goto out;
 #endif
     }
     if (key_mic &&
@@ -263,8 +263,13 @@ int  wpa_eapol_key_send(struct wpa_sm *sm, const u8 *kck, size_t kck_len,
     wpa_hexdump_key(MSG_DEBUG, "WPA: KCK", kck, kck_len);
     wpa_hexdump(MSG_DEBUG, "WPA: Derived Key MIC", key_mic, wpa_mic_len(sm->key_mgmt, sm->pmk_len));
     wpa_hexdump(MSG_MSGDUMP, "WPA: TX EAPOL-Key", msg, msg_len);
-    return wpa_sm_ether_send(sm, dest, proto, msg, msg_len);
+    ret = wpa_sm_ether_send(sm, dest, proto, msg, msg_len);
 out:
+#ifdef ESP_SUPPLICANT
+    wpa_sm_free_eapol(msg);
+#else
+    os_free(msg);
+#endif
     return ret;
 }
 
@@ -338,7 +343,6 @@ static void wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise)
            error, pairwise, sm->ptk_set, (unsigned long) rlen);
     wpa_eapol_key_send(sm, sm->ptk.kck, sm->ptk.kck_len, ver, wpa_sm_get_auth_addr(sm),
                        ETH_P_EAPOL, rbuf, rlen, key_mic);
-    wpa_sm_free_eapol(rbuf);
 }
 
 static void wpa_sm_pmksa_free_cb(struct rsn_pmksa_cache_entry *entry,
@@ -680,11 +684,8 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
 
     wpa_printf(MSG_DEBUG, "WPA Send EAPOL-Key 2/4");
 
-    wpa_eapol_key_send(sm, ptk->kck, ptk->kck_len, ver, dst, ETH_P_EAPOL,
+    return wpa_eapol_key_send(sm, ptk->kck, ptk->kck_len, ver, dst, ETH_P_EAPOL,
                rbuf, rlen, key_mic);
-    wpa_sm_free_eapol(rbuf);
-
-    return 0;
 }
 
 static int wpa_derive_ptk(struct wpa_sm *sm, const unsigned char *src_addr,
@@ -1353,11 +1354,8 @@ static int wpa_supplicant_send_4_of_4(struct wpa_sm *sm, const unsigned char *ds
         WPA_PUT_BE16(reply->key_data_length, 0);
 
     wpa_printf(MSG_DEBUG, "WPA Send EAPOL-Key 4/4");
-    wpa_eapol_key_send(sm, ptk->kck, ptk->kck_len, ver, dst, ETH_P_EAPOL,
+    return wpa_eapol_key_send(sm, ptk->kck, ptk->kck_len, ver, dst, ETH_P_EAPOL,
                rbuf, rlen, key_mic);
-    wpa_sm_free_eapol(rbuf);
-
-    return 0;
 }
 
 static void wpa_sm_set_seq(struct wpa_sm *sm, struct wpa_eapol_key *key, u8 isptk)
@@ -1869,11 +1867,8 @@ static int wpa_supplicant_send_2_of_2(struct wpa_sm *sm,
 
     wpa_printf(MSG_DEBUG, "WPA Send 2/2 Group key");
 
-    wpa_eapol_key_send(sm, sm->ptk.kck, sm->ptk.kck_len, ver, sm->bssid, ETH_P_EAPOL,
+    return wpa_eapol_key_send(sm, sm->ptk.kck, sm->ptk.kck_len, ver, sm->bssid, ETH_P_EAPOL,
                rbuf, rlen, key_mic);
-    wpa_sm_free_eapol(rbuf);
-
-    return 0;
 }
 
 static void wpa_supplicant_process_1_of_2(struct wpa_sm *sm,
