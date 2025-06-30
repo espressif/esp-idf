@@ -236,6 +236,15 @@ static int http_on_url(http_parser *parser, const char *at, size_t length)
 
 static int http_on_status(http_parser *parser, const char *at, size_t length)
 {
+    esp_http_client_handle_t client = parser->data;
+    ESP_LOGD(TAG, "http_on_status");
+
+    /* Store the status code in the response structure */
+    client->response->status_code = parser->status_code;
+
+    http_dispatch_event(client, HTTP_EVENT_ON_STATUS_CODE, &client->response->status_code, sizeof(int));
+    http_dispatch_event_to_event_loop(HTTP_EVENT_ON_STATUS_CODE, &client, sizeof(esp_http_client_handle_t));
+
     return 0;
 }
 

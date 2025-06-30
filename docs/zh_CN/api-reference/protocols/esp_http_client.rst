@@ -131,6 +131,7 @@ ESP HTTP 客户端诊断信息
     - HTTP_EVENT_HEADERS_SENT       :   ``esp_http_client_handle_t``
     - HTTP_EVENT_ON_HEADER          :   ``esp_http_client_handle_t``
     - HTTP_EVENT_ON_HEADERS_COMPLETE:   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_STATUS_CODE     :   ``esp_http_client_handle_t``
     - HTTP_EVENT_ON_DATA            :   ``esp_http_client_on_data_t``
     - HTTP_EVENT_ON_FINISH          :   ``esp_http_client_handle_t``
     - HTTP_EVENT_DISCONNECTED       :   ``esp_http_client_handle_t``
