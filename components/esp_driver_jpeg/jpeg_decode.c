@@ -245,6 +245,10 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     ret = esp_cache_msync((void*)decoder_engine->header_info->buffer_offset, decoder_engine->header_info->buffer_left, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     assert(ret == ESP_OK);
 
+    // Before 2DDMA starts, invalidate cache ahead of time.
+    ret = esp_cache_msync((void*)decoder_engine->decoded_buf, outbuf_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    assert(ret == ESP_OK);
+
     ESP_GOTO_ON_ERROR(dma2d_enqueue(decoder_engine->dma2d_group_handle, &trans_desc, decoder_engine->trans_desc), err2, TAG, "enqueue dma2d failed");
     bool need_yield;
     // Blocking for JPEG decode transaction finishes.
