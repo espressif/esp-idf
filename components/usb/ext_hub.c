@@ -312,13 +312,32 @@ static bool _device_set_actions(ext_hub_dev_t *ext_hub_dev, uint32_t action_flag
 
 static esp_err_t device_enable_int_ep(ext_hub_dev_t *ext_hub_dev)
 {
-    ESP_LOGD(EXT_HUB_TAG, "[%d] Enable EP IN", ext_hub_dev->constant.dev_addr);
-    esp_err_t ret = usbh_ep_enqueue_urb(ext_hub_dev->constant.ep_in_hdl, ext_hub_dev->constant.in_urb);
-    if (ret != ESP_OK) {
-        ESP_LOGE(EXT_HUB_TAG, "[%d] Failed to submit in urb: %s", ext_hub_dev->constant.dev_addr, esp_err_to_name(ret));
-        device_error(ext_hub_dev);
+    bool call_proc_req_cb = false;
+    bool is_active = true;
+    ESP_LOGD(EXT_HUB_TAG, "[%d] Device ports handle complete", ext_hub_dev->constant.dev_addr);
+
+    // Check if the device should be released
+    EXT_HUB_ENTER_CRITICAL();
+    if (ext_hub_dev->dynamic.flags.waiting_release) {
+        is_active = false;
+        call_proc_req_cb = _device_set_actions(ext_hub_dev, DEV_ACTION_RELEASE);
     }
-    return ret;
+    EXT_HUB_EXIT_CRITICAL();
+
+    if (is_active) {
+        ESP_LOGD(EXT_HUB_TAG, "[%d] Enable IN EP", ext_hub_dev->constant.dev_addr);
+        esp_err_t ret = usbh_ep_enqueue_urb(ext_hub_dev->constant.ep_in_hdl, ext_hub_dev->constant.in_urb);
+        if (ret != ESP_OK) {
+            ESP_LOGE(EXT_HUB_TAG, "[%d] Failed to submit in urb: %s", ext_hub_dev->constant.dev_addr, esp_err_to_name(ret));
+            device_error(ext_hub_dev);
+        }
+        return ret;
+    }
+
+    if (call_proc_req_cb) {
+        p_ext_hub_driver->constant.proc_req_cb(false, p_ext_hub_driver->constant.proc_req_cb_arg);
+    }
+    return ESP_OK;
 }
 
 static void device_has_changed(ext_hub_dev_t *ext_hub_dev)
@@ -420,7 +439,6 @@ static esp_err_t device_port_free(ext_hub_dev_t *ext_hub_dev, uint8_t port_idx)
     EXT_HUB_CHECK(ext_hub_dev->constant.ports[port_idx] != NULL, ESP_ERR_INVALID_STATE);
 
     bool call_proc_req_cb = false;
-    bool all_ports_freed = false;
 
     assert(ext_hub_dev->single_thread.maxchild != 0);
     assert(p_ext_hub_driver->constant.port_driver);
@@ -435,24 +453,10 @@ static esp_err_t device_port_free(ext_hub_dev_t *ext_hub_dev, uint8_t port_idx)
     ext_hub_dev->single_thread.maxchild--;
 
     EXT_HUB_ENTER_CRITICAL();
-    if (ext_hub_dev->dynamic.flags.is_gone) {
-        all_ports_freed = (ext_hub_dev->single_thread.maxchild == 0);
-
-        if (all_ports_freed) {
-            ext_hub_dev->dynamic.flags.waiting_children = 0;
-            ext_hub_dev->dynamic.flags.waiting_free = 1;
-            call_proc_req_cb = _device_set_actions(ext_hub_dev, DEV_ACTION_FREE);
-        } else {
-            ext_hub_dev->dynamic.flags.waiting_children = 1;
-        }
+    if (ext_hub_dev->dynamic.flags.waiting_free && ext_hub_dev->single_thread.maxchild == 0) {
+        call_proc_req_cb = _device_set_actions(ext_hub_dev, DEV_ACTION_FREE);
     }
     EXT_HUB_EXIT_CRITICAL();
-
-    // Close the device if all children were freed
-    if (all_ports_freed) {
-        ESP_LOGD(EXT_HUB_TAG, "[%d] Release USBH device object", ext_hub_dev->constant.dev_addr);
-        ESP_ERROR_CHECK(usbh_dev_close(ext_hub_dev->constant.dev_hdl));
-    }
 
     if (call_proc_req_cb) {
         p_ext_hub_driver->constant.proc_req_cb(false, p_ext_hub_driver->constant.proc_req_cb_arg);
@@ -463,34 +467,38 @@ exit:
     return ret;
 }
 
-static esp_err_t device_release_ports(ext_hub_dev_t *ext_hub_dev)
+static esp_err_t device_release_port(ext_hub_dev_t *ext_hub_dev, uint8_t port_idx)
 {
-    esp_err_t ret = ESP_OK;
-    // Mark all ports as gone
-    for (uint8_t i = 0; i < ext_hub_dev->constant.hub_desc->bNbrPorts; i++) {
-        // Only for ports, that were created
-        if (ext_hub_dev->constant.ports[i] != NULL) {
-            // Mark port as gone
-            ret = p_ext_hub_driver->constant.port_driver->gone(ext_hub_dev->constant.ports[i]);
-            if (ret == ESP_OK) {
-                // Port doesn't have a device and can be recycled right now
-                ESP_ERROR_CHECK(device_port_free(ext_hub_dev, i));
-            } else if (ret == ESP_ERR_NOT_FINISHED) {
-                // Port has a device and will be recycled after USBH device will be released by all clients and freed
-                ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Port is gone", ext_hub_dev->constant.dev_addr, i + 1);
-                // Not an error case, but it's good to notify this with the error message
-                // TODO: IDF-12173 remove the error, instead set up the flag and verify the flag while recycle
-                ret = ESP_OK;
-            } else {
-                ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Unable to mark port as gone: %s",
-                         ext_hub_dev->constant.dev_addr, i + 1, esp_err_to_name(ret));
-                return ret;
-            }
-        } else {
-            ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Port was not created", ext_hub_dev->constant.dev_addr, i + 1);
-        }
+    assert(ext_hub_dev->constant.ports[port_idx] != NULL);
+    assert(ext_hub_dev->single_thread.maxchild != 0);
+    assert(p_ext_hub_driver->constant.port_driver);
+
+    // Mark port as gone
+    esp_err_t ret = p_ext_hub_driver->constant.port_driver->gone(ext_hub_dev->constant.ports[port_idx]);
+    if (ret == ESP_OK) {
+        // Port doesn't have a device and can be freed right now
+        ESP_ERROR_CHECK(device_port_free(ext_hub_dev, port_idx));
+    } else if (ret == ESP_ERR_NOT_FINISHED) {
+        // Port has a device and will be freed on recycle
+        EXT_HUB_ENTER_CRITICAL();
+        ext_hub_dev->dynamic.flags.waiting_children = 1;
+        EXT_HUB_EXIT_CRITICAL();
+        ret = ESP_OK;
+    } else {
+        ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Unable to mark port as gone: %s",
+                 ext_hub_dev->constant.dev_addr, port_idx + 1, esp_err_to_name(ret));
+        return ret;
     }
+
     return ret;
+}
+
+static void device_release_ports(ext_hub_dev_t *ext_hub_dev)
+{
+    assert(ext_hub_dev->constant.hub_desc->bNbrPorts); // Sanity check
+    for (uint8_t i = 0; i < ext_hub_dev->constant.hub_desc->bNbrPorts; i++) {
+        ESP_ERROR_CHECK(device_release_port(ext_hub_dev, i));
+    }
 }
 
 static void device_release(ext_hub_dev_t *ext_hub_dev)
@@ -498,36 +506,21 @@ static void device_release(ext_hub_dev_t *ext_hub_dev)
     ESP_LOGD(EXT_HUB_TAG, "[%d] Device release", ext_hub_dev->constant.dev_addr);
 
     EXT_HUB_ENTER_CRITICAL();
-    assert(ext_hub_dev->dynamic.flags.waiting_release); // Device should waiting the release
-    ext_hub_dev->dynamic.flags.is_gone = 1;
+    assert(ext_hub_dev->dynamic.flags.waiting_release); // Sanity check
     ext_hub_dev->dynamic.flags.waiting_release = 0;
+    ext_hub_dev->dynamic.flags.waiting_free = 1;
     EXT_HUB_EXIT_CRITICAL();
 
-    // Release IN EP
-    ESP_ERROR_CHECK(usbh_ep_command(ext_hub_dev->constant.ep_in_hdl, USBH_EP_CMD_HALT));
-
     switch (ext_hub_dev->single_thread.state) {
-    case EXT_HUB_STATE_ATTACHED:
-        // Device has no configured ports, release the USBH device object
-        ESP_LOGD(EXT_HUB_TAG, "[%d] Release USBH device object", ext_hub_dev->constant.dev_addr);
-        ESP_ERROR_CHECK(usbh_dev_close(ext_hub_dev->constant.dev_hdl));
-        break;
     case EXT_HUB_STATE_CONFIGURED:
     case EXT_HUB_STATE_SUSPENDED:
         assert(ext_hub_dev->constant.hub_desc != NULL); // Device should have a Hub descriptor
         assert(p_ext_hub_driver->constant.port_driver); // Port driver should be available
-
-        // Release ports if device has them
-        if (ext_hub_dev->constant.hub_desc->bNbrPorts) {
-            ESP_ERROR_CHECK(device_release_ports(ext_hub_dev));
-        }
+        device_release_ports(ext_hub_dev);
         break;
     default:
-        // Should never occur
-        abort();
         break;
     }
-
     ext_hub_dev->single_thread.state = EXT_HUB_STATE_RELEASED;
 }
 
@@ -771,6 +764,9 @@ static void device_free(ext_hub_dev_t *ext_hub_dev)
     TAILQ_REMOVE(&p_ext_hub_driver->dynamic.ext_hubs_tailq, ext_hub_dev, dynamic.tailq_entry);
     EXT_HUB_EXIT_CRITICAL();
 
+    ESP_ERROR_CHECK(usbh_ep_free(ext_hub_dev->constant.ep_in_hdl));
+    ESP_ERROR_CHECK(usbh_dev_close(ext_hub_dev->constant.dev_hdl));
+
     if (ext_hub_dev->constant.hub_desc) {
         heap_caps_free(ext_hub_dev->constant.hub_desc);
     }
@@ -778,10 +774,8 @@ static void device_free(ext_hub_dev_t *ext_hub_dev)
         heap_caps_free(ext_hub_dev->constant.ports);
     }
 
-    ESP_ERROR_CHECK(usbh_ep_free(ext_hub_dev->constant.ep_in_hdl));
     urb_free(ext_hub_dev->constant.ctrl_urb);
     urb_free(ext_hub_dev->constant.in_urb);
-
     heap_caps_free(ext_hub_dev);
 }
 
@@ -1070,6 +1064,11 @@ static bool device_set_next_stage(ext_hub_dev_t *ext_hub_dev, bool last_stage_pa
         } else {
             // Terminal stages, move to IDLE
             next_stage = EXT_HUB_STAGE_IDLE;
+            EXT_HUB_ENTER_CRITICAL();
+            if (ext_hub_dev->dynamic.flags.waiting_release) {
+                call_proc_req_cb = _device_set_actions(ext_hub_dev, DEV_ACTION_RELEASE);
+            }
+            EXT_HUB_EXIT_CRITICAL();
         }
         ext_hub_dev->single_thread.stage = next_stage;
         call_proc_req_cb = stage_need_process(next_stage);
@@ -1387,6 +1386,7 @@ esp_err_t ext_hub_dev_gone(uint8_t dev_addr)
     ESP_LOGD(EXT_HUB_TAG, "[%d] Device gone", ext_hub_dev->constant.dev_addr);
 
     EXT_HUB_ENTER_CRITICAL();
+    ext_hub_dev->dynamic.flags.is_gone = 1;
     if (ext_hub_dev->dynamic.flags.waiting_release ||
             ext_hub_dev->dynamic.flags.waiting_children) {
         EXT_HUB_EXIT_CRITICAL();
@@ -1396,7 +1396,7 @@ esp_err_t ext_hub_dev_gone(uint8_t dev_addr)
     }
 
     if ((ext_hub_dev->single_thread.maxchild == 0) && !ext_hub_dev->dynamic.flags.in_pending_list) {
-        // Not in pending list and doesn't have any children
+        // Not in pending list and doesn't have any children release and free right away
         ext_hub_dev->dynamic.flags.waiting_free = 1;
         ext_hub_dev->dynamic.flags.waiting_release = 1;
         call_proc_req_cb = _device_set_actions(ext_hub_dev, DEV_ACTION_RELEASE |
@@ -1420,10 +1420,9 @@ exit:
     return ret;
 }
 
-esp_err_t ext_hub_all_free(void)
+void ext_hub_mark_all_free(void)
 {
     bool call_proc_req_cb = false;
-    bool wait_for_free = false;
 
     EXT_HUB_ENTER_CRITICAL();
     for (int i = 0; i < 2; i++) {
@@ -1438,9 +1437,13 @@ esp_err_t ext_hub_all_free(void)
         while (hub_curr != NULL) {
             hub_next = TAILQ_NEXT(hub_curr, dynamic.tailq_entry);
             hub_curr->dynamic.flags.waiting_release = 1;
-            call_proc_req_cb = _device_set_actions(hub_curr, DEV_ACTION_RELEASE);
-            // At least one hub should be released
-            wait_for_free = true;
+            uint32_t action_flags = DEV_ACTION_EP1_FLUSH | DEV_ACTION_EP1_DEQUEUE;
+            // If device in the IDLE stage, add the release action
+            // otherwise, device will be released when the stage changed to IDLE
+            if (hub_curr->single_thread.stage == EXT_HUB_STAGE_IDLE) {
+                action_flags |= DEV_ACTION_RELEASE;
+            }
+            call_proc_req_cb = _device_set_actions(hub_curr, action_flags);
             hub_curr = hub_next;
         }
     }
@@ -1449,8 +1452,6 @@ esp_err_t ext_hub_all_free(void)
     if (call_proc_req_cb) {
         p_ext_hub_driver->constant.proc_req_cb(false, p_ext_hub_driver->constant.proc_req_cb_arg);
     }
-
-    return (wait_for_free) ? ESP_ERR_NOT_FINISHED : ESP_OK;
 }
 
 esp_err_t ext_hub_status_handle_complete(ext_hub_handle_t ext_hub_hdl)
@@ -1575,66 +1576,30 @@ esp_err_t ext_hub_port_recycle(ext_hub_handle_t ext_hub_hdl, uint8_t port_num)
     EXT_HUB_CHECK(ext_hub_hdl != NULL, ESP_ERR_INVALID_ARG);
     ext_hub_dev_t *ext_hub_dev = (ext_hub_dev_t *)ext_hub_hdl;
 
-    esp_err_t ret;
     uint8_t port_idx = port_num - 1;
-    bool free_port = false;
     bool release_port = false;
-
     EXT_HUB_CHECK(port_idx < ext_hub_dev->constant.hub_desc->bNbrPorts, ESP_ERR_INVALID_SIZE);
     EXT_HUB_CHECK(p_ext_hub_driver->constant.port_driver != NULL, ESP_ERR_NOT_SUPPORTED);
     EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED ||
                   ext_hub_dev->single_thread.state == EXT_HUB_STATE_RELEASED, ESP_ERR_INVALID_STATE);
 
     EXT_HUB_ENTER_CRITICAL();
-    if (ext_hub_dev->dynamic.flags.waiting_release) {
+    if (ext_hub_dev->dynamic.flags.waiting_release ||
+            ext_hub_dev->dynamic.flags.waiting_children) {
         release_port = true;
-    } else if (ext_hub_dev->dynamic.flags.waiting_children) {
-        assert(ext_hub_dev->dynamic.flags.waiting_release == 0); // Device should be already released
-        assert(ext_hub_dev->dynamic.flags.is_gone == 1);         // Device should be gone by now
-        free_port = true;
     }
     EXT_HUB_EXIT_CRITICAL();
 
-    if (!release_port && !free_port) {
+    esp_err_t ret;
+    if (release_port) {
+        ret = device_release_port(ext_hub_dev, port_idx);
+    } else {
         // Parent still present, recycle the port
         ret = p_ext_hub_driver->constant.port_driver->recycle(ext_hub_dev->constant.ports[port_idx]);
         if (ret != ESP_OK) {
             ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Unable to recycle the port: %s", ext_hub_dev->constant.dev_addr, port_num, esp_err_to_name(ret));
-            goto exit;
-        }
-    } else {
-        if (release_port) {
-            // Notify the port that parent is not available anymore and port should be recycled then freed
-            ret = p_ext_hub_driver->constant.port_driver->gone(ext_hub_dev->constant.ports[port_idx]);
-            if (ret == ESP_OK) {
-                ESP_LOGD(EXT_HUB_TAG, "[%d:%d] Port doesn't have a device and can be freed right now",
-                         ext_hub_dev->constant.dev_addr,
-                         port_num);
-                assert(free_port == false);
-                free_port = true;
-            } else if (ret == ESP_ERR_NOT_FINISHED) {
-                // Port has a device and will be recycled after USBH device will be released by all clients and freed
-                ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Port is gone",
-                         ext_hub_dev->constant.dev_addr,
-                         port_num);
-                // Logically, recycling logic are finished for the Hub Driver, return ESP_OK to free the node
-                assert(free_port == false);
-            } else {
-                ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Unable to mark port as gone: %s",
-                         ext_hub_dev->constant.dev_addr, port_num, esp_err_to_name(ret));
-            }
-        }
-
-        if (free_port) {
-            ret = device_port_free(ext_hub_dev, port_idx);
-            if (ret != ESP_OK) {
-                goto exit;
-            }
         }
     }
-
-    ret = ESP_OK;
-exit:
     return ret;
 }
 
