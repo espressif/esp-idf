@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -518,6 +518,17 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
 #endif
         break;
     }
+    /* when avrcp controller init or deinit completed, this event comes */
+    case ESP_AVRC_CT_PROF_STATE_EVT: {
+        if (ESP_AVRC_INIT_SUCCESS == rc->avrc_ct_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP CT STATE: Init Complete");
+        } else if (ESP_AVRC_DEINIT_SUCCESS == rc->avrc_ct_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP CT STATE: Deinit Complete");
+        } else {
+            ESP_LOGE(BT_RC_CT_TAG, "AVRCP CT STATE error: %d", rc->avrc_ct_init_stat.state);
+        }
+        break;
+    }
     /* others */
     default:
         ESP_LOGE(BT_RC_CT_TAG, "%s unhandled event: %d", __func__, event);
@@ -571,6 +582,17 @@ static void bt_av_hdl_avrc_tg_evt(uint16_t event, void *p_param)
     /* when feature of remote device indicated, this event comes */
     case ESP_AVRC_TG_REMOTE_FEATURES_EVT: {
         ESP_LOGI(BT_RC_TG_TAG, "AVRC remote features: %"PRIx32", CT features: %x", rc->rmt_feats.feat_mask, rc->rmt_feats.ct_feat_flag);
+        break;
+    }
+    /* when avrcp target init or deinit completed, this event comes */
+    case ESP_AVRC_TG_PROF_STATE_EVT: {
+        if (ESP_AVRC_INIT_SUCCESS == rc->avrc_tg_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP TG STATE: Init Complete");
+        } else if (ESP_AVRC_DEINIT_SUCCESS == rc->avrc_tg_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP TG STATE: Deinit Complete");
+        } else {
+            ESP_LOGE(BT_RC_CT_TAG, "AVRCP TG STATE error: %d", rc->avrc_tg_init_stat.state);
+        }
         break;
     }
     /* others */
@@ -633,7 +655,8 @@ void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param
     case ESP_AVRC_CT_REMOTE_FEATURES_EVT:
     case ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT:
     case ESP_AVRC_CT_COVER_ART_STATE_EVT:
-    case ESP_AVRC_CT_COVER_ART_DATA_EVT: {
+    case ESP_AVRC_CT_COVER_ART_DATA_EVT:
+    case ESP_AVRC_CT_PROF_STATE_EVT: {
         bt_app_work_dispatch(bt_av_hdl_avrc_ct_evt, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL);
         break;
     }
@@ -652,6 +675,7 @@ void bt_app_rc_tg_cb(esp_avrc_tg_cb_event_t event, esp_avrc_tg_cb_param_t *param
     case ESP_AVRC_TG_SET_ABSOLUTE_VOLUME_CMD_EVT:
     case ESP_AVRC_TG_REGISTER_NOTIFICATION_EVT:
     case ESP_AVRC_TG_SET_PLAYER_APP_VALUE_EVT:
+    case ESP_AVRC_TG_PROF_STATE_EVT:
         bt_app_work_dispatch(bt_av_hdl_avrc_tg_evt, event, param, sizeof(esp_avrc_tg_cb_param_t), NULL);
         break;
     default:
