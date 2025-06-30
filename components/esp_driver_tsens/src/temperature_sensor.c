@@ -175,8 +175,6 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
              tsens->tsens_attribute->range_max,
              tsens->tsens_attribute->error_max);
 
-    printf("tsens->tsens_attribute->reg_val: %d\n", tsens->tsens_attribute->reg_val);
-
     temperature_sensor_ll_set_range(tsens->tsens_attribute->reg_val);
 
     tsens->fsm = TEMP_SENSOR_FSM_INIT;
