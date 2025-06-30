@@ -196,6 +196,12 @@ menu "OpenThread"
                     select GPIO_CTRL_FUNC_IN_IRAM
                     help
                         Select this to enable SPI connection to host.
+
+                config OPENTHREAD_RCP_USB_SERIAL_JTAG
+                    depends on ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG && !OPENTHREAD_CONSOLE_TYPE_USB_SERIAL_JTAG
+                    bool "USB RCP"
+                    help
+                        Select this to enable connection to host over USB JTAG serial.
             endchoice
 
             config OPENTHREAD_NCP_VENDOR_HOOK

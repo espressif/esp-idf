@@ -13,11 +13,11 @@
 #include "esp_coex_i154.h"
 #endif
 
-#if CONFIG_OPENTHREAD_RCP_UART
+#if (CONFIG_OPENTHREAD_RCP_UART || CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG)
 #include "utils/uart.h"
 #endif
 
-#if CONFIG_OPENTHREAD_RCP_UART
+#if (CONFIG_OPENTHREAD_RCP_UART || CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG)
 extern "C" {
     static int NcpSend(const uint8_t *aBuf, uint16_t aBufLength)
     {
