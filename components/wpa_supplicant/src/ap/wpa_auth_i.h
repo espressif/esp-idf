@@ -195,7 +195,7 @@ struct wpa_authenticator {
 
 
 int wpa_write_rsn_ie(struct wpa_auth_config *conf, u8 *buf, size_t len,
-		     const u8 *pmkid);
+		     const u8 *pmkid, int group_mgmt_cipher);
 int wpa_write_rsnxe(struct wpa_auth_config *conf, u8 *buf, size_t len);
 void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
 		      struct wpa_state_machine *sm, int key_info,
