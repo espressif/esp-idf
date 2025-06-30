@@ -121,130 +121,130 @@ extern "C" {
 #define FUNC_XTAL_32K_P_GPIO0_0                                            0
 #define FUNC_XTAL_32K_P_GPIO0                                              1
 
-#define PERIPHS_IO_MUX_XTAL_32K_N_U                  (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_XTAL_32K_N_U                  (REG_IO_MUX_BASE + 0x4)
 #define FUNC_XTAL_32K_N_GPIO1_0                                            0
 #define FUNC_XTAL_32K_N_GPIO1                                              1
 
-#define PERIPHS_IO_MUX_GPIO2_U                       (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_GPIO2_U                       (REG_IO_MUX_BASE + 0x8)
 #define FUNC_GPIO2_GPIO2_0                                                 0
 #define FUNC_GPIO2_GPIO2                                                   1
 #define FUNC_GPIO2_FSPIQ                                                   2
 
 // Strapping: Boot Mode select 0/SDIO input strapping
-#define PERIPHS_IO_MUX_MTMS_U                        (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_MTMS_U                        (REG_IO_MUX_BASE + 0xc)
 #define FUNC_MTMS_MTMS                                                     0
 #define FUNC_MTMS_GPIO3                                                    1
 #define FUNC_MTMS_FSPIHD                                                   2
 
 // Strapping: Boot Mode select 1/SDIO output strapping
-#define PERIPHS_IO_MUX_MTDI_U                        (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_MTDI_U                        (REG_IO_MUX_BASE + 0x10)
 #define FUNC_MTDI_MTDI                                                     0
 #define FUNC_MTDI_GPIO4                                                    1
 #define FUNC_MTDI_FSPIWP                                                   2
 
-#define PERIPHS_IO_MUX_MTCK_U                        (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_MTCK_U                        (REG_IO_MUX_BASE + 0x14)
 #define FUNC_MTCK_MTCK                                                     0
 #define FUNC_MTCK_GPIO5                                                    1
 
-#define PERIPHS_IO_MUX_MTDO_U                        (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_MTDO_U                        (REG_IO_MUX_BASE + 0x18)
 #define FUNC_MTDO_MTDO                                                     0
 #define FUNC_MTDO_GPIO6                                                    1
 #define FUNC_MTDO_FSPICLK                                                  2
 
 // Strapping: JTAG select
-#define PERIPHS_IO_MUX_GPIO7_U                       (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_GPIO7_U                       (REG_IO_MUX_BASE + 0x1c)
 #define FUNC_GPIO7_GPIO7_0                                                 0
 #define FUNC_GPIO7_GPIO7                                                   1
 #define FUNC_GPIO7_FSPID                                                   2
 
 // Strapping: Boot Mode select 2
-#define PERIPHS_IO_MUX_GPIO8_U                       (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_GPIO8_U                       (REG_IO_MUX_BASE + 0x20)
 #define FUNC_GPIO8_GPIO8_0                                                 0
 #define FUNC_GPIO8_GPIO8                                                   1
 #define FUNC_GPIO8_FSPICS0                                                 2
 
 // Strapping: Boot Mode select 3
-#define PERIPHS_IO_MUX_GPIO9_U                       (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_GPIO9_U                       (REG_IO_MUX_BASE + 0x24)
 #define FUNC_GPIO9_GPIO9_0                                                 0
 #define FUNC_GPIO9_GPIO9                                                   1
 
-#define PERIPHS_IO_MUX_U0RXD_U                       (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_U0RXD_U                       (REG_IO_MUX_BASE + 0x28)
 #define FUNC_U0RXD_U0RXD                                                   0
 #define FUNC_U0RXD_GPIO10                                                  1
 
-#define PERIPHS_IO_MUX_U0TXD_U                       (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_U0TXD_U                       (REG_IO_MUX_BASE + 0x2c)
 #define FUNC_U0TXD_U0TXD                                                   0
 #define FUNC_U0TXD_GPIO11                                                  1
 
-#define PERIPHS_IO_MUX_GPIO12_U                      (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_GPIO12_U                      (REG_IO_MUX_BASE + 0x30)
 #define FUNC_GPIO12_GPIO12_0                                               0
 #define FUNC_GPIO12_GPIO12                                                 1
 
-#define PERIPHS_IO_MUX_GPIO13_U                      (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_GPIO13_U                      (REG_IO_MUX_BASE + 0x34)
 #define FUNC_GPIO13_GPIO13_0                                               0
 #define FUNC_GPIO13_GPIO13                                                 1
 
-#define PERIPHS_IO_MUX_SPICS1_U                      (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_SPICS1_U                      (REG_IO_MUX_BASE + 0x38)
 #define FUNC_SPICS1_SPICS1                                                 0
 #define FUNC_SPICS1_GPIO14                                                 1
 
-#define PERIPHS_IO_MUX_SPICS0_U                      (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_SPICS0_U                      (REG_IO_MUX_BASE + 0x3c)
 #define FUNC_SPICS0_SPICS0                                                 0
 #define FUNC_SPICS0_GPIO15                                                 1
 
-#define PERIPHS_IO_MUX_SPIQ_U                        (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_SPIQ_U                        (REG_IO_MUX_BASE + 0x40)
 #define FUNC_SPIQ_SPIQ                                                     0
 #define FUNC_SPIQ_GPIO16                                                   1
 
-#define PERIPHS_IO_MUX_SPIWP_U                       (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_SPIWP_U                       (REG_IO_MUX_BASE + 0x44)
 #define FUNC_SPIWP_SPIWP                                                   0
 #define FUNC_SPIWP_GPIO17                                                  1
 
-#define PERIPHS_IO_MUX_VDD_SPI_U                     (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_VDD_SPI_U                     (REG_IO_MUX_BASE + 0x48)
 #define FUNC_VDD_SPI_GPIO18_0                                              0
 #define FUNC_VDD_SPI_GPIO18                                                1
 
-#define PERIPHS_IO_MUX_SPIHD_U                       (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_SPIHD_U                       (REG_IO_MUX_BASE + 0x4c)
 #define FUNC_SPIHD_SPIHD                                                   0
 #define FUNC_SPIHD_GPIO19                                                  1
 
-#define PERIPHS_IO_MUX_SPICLK_U                      (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_SPICLK_U                      (REG_IO_MUX_BASE + 0x50)
 #define FUNC_SPICLK_SPICLK                                                 0
 #define FUNC_SPICLK_GPIO20                                                 1
 
-#define PERIPHS_IO_MUX_SPID_U                        (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_SPID_U                        (REG_IO_MUX_BASE + 0x54)
 #define FUNC_SPID_SPID                                                     0
 #define FUNC_SPID_GPIO21                                                   1
 
-#define PERIPHS_IO_MUX_SDIO_DATA2_U                  (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_SDIO_DATA2_U                  (REG_IO_MUX_BASE + 0x58)
 #define FUNC_SDIO_DATA2_SDIO_DATA2                                         0
 #define FUNC_SDIO_DATA2_GPIO22                                             1
 
-#define PERIPHS_IO_MUX_SDIO_DATA3_U                  (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_SDIO_DATA3_U                  (REG_IO_MUX_BASE + 0x5c)
 #define FUNC_SDIO_DATA3_SDIO_DATA3                                         0
 #define FUNC_SDIO_DATA3_GPIO23                                             1
 
-#define PERIPHS_IO_MUX_GPIO24_U                      (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_GPIO24_U                      (REG_IO_MUX_BASE + 0x60)
 #define FUNC_GPIO24_GPIO24_0                                               0
 #define FUNC_GPIO24_GPIO24                                                 1
 
-#define PERIPHS_IO_MUX_SDIO_CMD_U                    (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_SDIO_CMD_U                    (REG_IO_MUX_BASE + 0x64)
 #define FUNC_SDIO_CMD_SDIO_CMD                                             0
 #define FUNC_SDIO_CMD_GPIO25                                               1
 
-#define PERIPHS_IO_MUX_SDIO_CLK_U                    (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_SDIO_CLK_U                    (REG_IO_MUX_BASE + 0x68)
 #define FUNC_SDIO_CLK_SDIO_CLK                                             0
 #define FUNC_SDIO_CLK_GPIO26                                               1
 
-#define PERIPHS_IO_MUX_SDIO_DATA0_U                  (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_SDIO_DATA0_U                  (REG_IO_MUX_BASE + 0x6c)
 #define FUNC_SDIO_DATA0_SDIO_DATA0                                         0
 #define FUNC_SDIO_DATA0_GPIO27                                             1
 
-#define PERIPHS_IO_MUX_SDIO_DATA1_U                  (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_SDIO_DATA1_U                  (REG_IO_MUX_BASE + 0x70)
 #define FUNC_SDIO_DATA1_SDIO_DATA1                                         0
 #define FUNC_SDIO_DATA1_GPIO28                                             1
 
-#define PERIPHS_IO_MUX_GPIO29_U                      (REG_IO_MUX_BASE + 0x0)
+#define PERIPHS_IO_MUX_GPIO29_U                      (REG_IO_MUX_BASE + 0x74)
 #define FUNC_GPIO29_GPIO29_0                                               0
 #define FUNC_GPIO29_GPIO29                                                 1
 
