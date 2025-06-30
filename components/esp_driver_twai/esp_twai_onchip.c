@@ -6,6 +6,7 @@
 
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
+#include "soc/gpio_sig_map.h"
 #include "esp_private/twai_interface.h"
 #include "esp_private/twai_utils.h"
 #include "twai_private.h"
@@ -127,27 +128,25 @@ static esp_err_t _node_config_io(twai_onchip_ctx_t *node, const twai_onchip_node
     uint64_t reserve_mask = BIT64(node_config->io_cfg.tx);
 
     // Set RX pin
-    gpio_input_enable(node_config->io_cfg.rx);
     gpio_set_pull_mode(node_config->io_cfg.rx, GPIO_PULLUP_ONLY);    // pullup to avoid noise if no connection to transceiver
-    gpio_func_sel(node_config->io_cfg.rx, PIN_FUNC_GPIO);
-    esp_rom_gpio_connect_in_signal(node_config->io_cfg.rx, twai_controller_periph_signals.controllers[node->ctrlr_id].rx_sig, false);
+    gpio_matrix_input(node_config->io_cfg.rx, twai_periph_signals[node->ctrlr_id].rx_sig, false);
 
     // Set TX pin
-    gpio_func_sel(node_config->io_cfg.tx, PIN_FUNC_GPIO);
-    esp_rom_gpio_connect_out_signal(node_config->io_cfg.tx, twai_controller_periph_signals.controllers[node->ctrlr_id].tx_sig, false, false);
+    // If enable_listen_only, disconnect twai signal, and output high to avoid any influence to bus
+    gpio_set_level(node_config->io_cfg.tx, 1);
+    int tx_sig = (node_config->flags.enable_listen_only) ? SIG_GPIO_OUT_IDX : twai_periph_signals[node->ctrlr_id].tx_sig;
+    gpio_matrix_output(node_config->io_cfg.tx, tx_sig, false, false);
 
     //Configure output clock pin (Optional)
     if (GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.quanta_clk_out)) {
         reserve_mask |= BIT64(node_config->io_cfg.quanta_clk_out);
-        gpio_func_sel(node_config->io_cfg.quanta_clk_out, PIN_FUNC_GPIO);
-        esp_rom_gpio_connect_out_signal(node_config->io_cfg.quanta_clk_out, twai_controller_periph_signals.controllers[node->ctrlr_id].clk_out_sig, false, false);
+        gpio_matrix_output(node_config->io_cfg.quanta_clk_out, twai_periph_signals[node->ctrlr_id].clk_out_sig, false, false);
     }
 
     //Configure bus status pin (Optional)
     if (GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.bus_off_indicator)) {
         reserve_mask |= BIT64(node_config->io_cfg.bus_off_indicator);
-        gpio_func_sel(node_config->io_cfg.bus_off_indicator, PIN_FUNC_GPIO);
-        esp_rom_gpio_connect_out_signal(node_config->io_cfg.bus_off_indicator, twai_controller_periph_signals.controllers[node->ctrlr_id].bus_off_sig, false, false);
+        gpio_matrix_output(node_config->io_cfg.bus_off_indicator, twai_periph_signals[node->ctrlr_id].bus_off_sig, false, false);
     }
 
     node->gpio_reserved = reserve_mask;
@@ -163,7 +162,7 @@ static esp_err_t _node_config_io(twai_onchip_ctx_t *node, const twai_onchip_node
 
 static void _node_release_io(twai_onchip_ctx_t *node)
 {
-    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, twai_controller_periph_signals.controllers[node->ctrlr_id].rx_sig, false);
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, twai_periph_signals[node->ctrlr_id].rx_sig, false);
     esp_gpio_revoke(node->gpio_reserved);
     for (; node->gpio_reserved > 0;) {
         uint8_t pos = __builtin_ctzll(node->gpio_reserved);
@@ -321,6 +320,8 @@ static esp_err_t _node_delete(twai_node_handle_t node)
     _node_release_io(twai_ctx);
     twai_hal_deinit(twai_ctx->hal);
     _twai_rcc_clock_ctrl(twai_ctx->ctrlr_id, false);
+    // curr_clk_src must not NULL as we already set to Default in twai_new_node_onchip
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(twai_ctx->curr_clk_src, false), TAG, "disable clock source failed");
     _node_destroy(twai_ctx);
     return ESP_OK;
 }
@@ -350,6 +351,30 @@ static esp_err_t _node_check_timing_valid(twai_onchip_ctx_t *twai_ctx, const twa
     ESP_RETURN_ON_FALSE((timing->tseg_1 >= TWAI_LL_TSEG1_MIN) && (timing->tseg_1 <= TWAI_LL_TSEG1_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg1");
     ESP_RETURN_ON_FALSE((timing->tseg_2 >= TWAI_LL_TSEG2_MIN) && (timing->tseg_2 <= TWAI_LL_TSEG2_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg_2");
     ESP_RETURN_ON_FALSE((timing->sjw >= 1) && (timing->sjw <= TWAI_LL_SJW_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid swj");
+    return ESP_OK;
+}
+
+static esp_err_t _node_set_clock_source(twai_node_handle_t node, twai_clock_source_t clock_src)
+{
+    twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
+    if (clock_src != twai_ctx->curr_clk_src) {
+        // Order of operations is important here.
+        // First enable and switch to the new clock source, then disable the old one.
+        // To ensure the clock to controller is continuous.
+        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(clock_src, true), TAG, "enable clock source failed");
+        _twai_rcc_clock_sel(twai_ctx->ctrlr_id, clock_src);
+        if (twai_ctx->curr_clk_src) {
+            // Disable previous clock source
+            esp_err_t err = esp_clk_tree_enable_src(twai_ctx->curr_clk_src, false);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "disable previous clock source failed, err: %d", err);
+                esp_clk_tree_enable_src(clock_src, false);
+                return err;
+            }
+        }
+        twai_ctx->curr_clk_src = clock_src;
+        ESP_LOGD(TAG, "set clock source to %d", clock_src);
+    }
     return ESP_OK;
 }
 
@@ -384,13 +409,7 @@ static esp_err_t _node_set_bit_timing(twai_node_handle_t node, const twai_timing
     }
 #endif
 
-    if (new_clock_src != twai_ctx->curr_clk_src) {
-        // TODO: IDF-13144
-        ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(new_clock_src), true));
-        twai_ctx->curr_clk_src = new_clock_src;
-        _twai_rcc_clock_sel(twai_ctx->ctrlr_id, new_clock_src);
-    }
-    return ESP_OK;
+    return _node_set_clock_source(node, new_clock_src);
 }
 
 static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_source_t clk_src, const twai_timing_basic_config_t *timing, const twai_timing_basic_config_t *timing_fd)
@@ -615,9 +634,11 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     ESP_GOTO_ON_FALSE(node->tx_mount_queue, ESP_ERR_NO_MEM, err, TAG, "no_mem");
     uint32_t intr_flags = TWAI_INTR_ALLOC_FLAGS;
     intr_flags |= (node_config->intr_priority > 0) ? BIT(node_config->intr_priority) : ESP_INTR_FLAG_LOWMED;
-    ESP_GOTO_ON_ERROR(esp_intr_alloc(twai_controller_periph_signals.controllers[ctrlr_id].irq_id, intr_flags, _node_isr_main, (void *)node, &node->intr_hdl),
+    ESP_GOTO_ON_ERROR(esp_intr_alloc(twai_periph_signals[ctrlr_id].irq_id, intr_flags, _node_isr_main, (void *)node, &node->intr_hdl),
                       err, TAG, "Alloc interrupt failed");
 
+    // Set default clock source first
+    ESP_RETURN_ON_ERROR(_node_set_clock_source(&node->api_base, TWAI_CLK_SRC_DEFAULT), TAG, "enable default clock source failed");
     // Enable bus clock and reset controller
     _twai_rcc_clock_ctrl(ctrlr_id, true);
     // Initialize HAL and configure register defaults.
@@ -638,10 +659,10 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
 #if CONFIG_PM_ENABLE
 #if SOC_TWAI_CLK_SUPPORT_APB
     // DFS can change APB frequency. So add lock to prevent sleep and APB freq from changing
-    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, twai_controller_periph_signals.controllers[ctrlr_id].module_name, &node->pm_lock), err, TAG, "init power manager failed");
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, twai_periph_signals[ctrlr_id].module_name, &node->pm_lock), err, TAG, "init power manager failed");
 #else // XTAL
     // XTAL freq can be closed in light sleep, so we need to create a lock to prevent light sleep
-    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, twai_controller_periph_signals.controllers[ctrlr_id].module_name, &node->pm_lock), err, TAG, "init power manager failed");
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, twai_periph_signals[ctrlr_id].module_name, &node->pm_lock), err, TAG, "init power manager failed");
 #endif //SOC_TWAI_CLK_SUPPORT_APB
 #endif //CONFIG_PM_ENABLE
 

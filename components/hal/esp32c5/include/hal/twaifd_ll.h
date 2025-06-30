@@ -165,7 +165,7 @@ static inline void twaifd_ll_set_mode(twaifd_dev_t *hw, bool listen_only, bool s
 
     twaifd_mode_settings_reg_t opmode = {.val = hw->mode_settings.val};
     opmode.stm = self_test;
-    opmode.bmm = listen_only;
+    (void)listen_only; // listen only is not available in this chip, see "CTU FD 2v5 errata 0v2 issue 5"
     opmode.ilbp = loopback;
 
     hw->mode_settings.val = opmode.val;

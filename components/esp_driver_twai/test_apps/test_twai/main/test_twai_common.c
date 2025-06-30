@@ -12,6 +12,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
+#include "esp_clk_tree.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
@@ -26,7 +27,7 @@
 
 static IRAM_ATTR bool test_driver_install_rx_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx)
 {
-    twai_frame_t rx_frame;
+    twai_frame_t rx_frame = {0};
     if (ESP_OK == twai_node_receive_from_isr(handle, &rx_frame)) {
         ESP_EARLY_LOGI("Recv ", "id 0x%lx rtr %d", rx_frame.header.id, rx_frame.header.rtr);
     }
@@ -89,7 +90,7 @@ TEST_CASE("twai install uninstall (loopback)", "[twai]")
         TEST_ESP_OK(twai_node_enable(node_hdl[SOC_TWAI_CONTROLLER_NUM]));
         tx_frame.header.id = 0x100;
         TEST_ESP_OK(twai_node_transmit(node_hdl[SOC_TWAI_CONTROLLER_NUM], &tx_frame, 0));
-        twai_frame_t rx_frame;
+        twai_frame_t rx_frame = {0};
         printf("Test receive from task\n");
         TEST_ESP_ERR(ESP_ERR_INVALID_STATE, twai_node_receive_from_isr(node_hdl[SOC_TWAI_CONTROLLER_NUM], &rx_frame));
 
@@ -115,6 +116,7 @@ static void test_twai_baudrate_correctness(twai_clock_source_t clk_src, uint32_t
     };
     TEST_ESP_OK(twai_new_node_onchip(&node_config, &twai_node));
     TEST_ESP_OK(twai_node_enable(twai_node));
+    printf("TWAI driver installed @ %ld Hz\n", test_bitrate);
 
     // We use the UART baudrate detection submodule to measure the TWAI baudrate
     uart_bitrate_detect_config_t detect_config = {
@@ -148,8 +150,13 @@ static void test_twai_baudrate_correctness(twai_clock_source_t clk_src, uint32_t
 TEST_CASE("twai baudrate measurement", "[twai]")
 {
     twai_clock_source_t twai_available_clk_srcs[] = SOC_TWAI_CLKS;
+    uint32_t source_freq = 0;
     for (size_t i = 0; i < sizeof(twai_available_clk_srcs) / sizeof(twai_available_clk_srcs[0]); i++) {
+        TEST_ESP_OK(esp_clk_tree_src_get_freq_hz(twai_available_clk_srcs[i], ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &source_freq));
+        printf("Test clock source %d frequency: %ld Hz\n", twai_available_clk_srcs[i], source_freq);
         test_twai_baudrate_correctness(twai_available_clk_srcs[i], 200000);
+
+        test_twai_baudrate_correctness(twai_available_clk_srcs[i], 1000000);
     }
 }
 
