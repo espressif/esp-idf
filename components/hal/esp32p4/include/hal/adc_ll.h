@@ -352,13 +352,14 @@ static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t patt
     uint8_t offset = (pattern_index % 4) * 6;
     adc_ll_digi_pattern_table_t pattern = {0};
 
-    pattern.val = (table.atten & 0x3) | ((table.channel & 0xF) << 2);
     if (table.unit == ADC_UNIT_1){
+        pattern.val = (table.atten & 0x3) | ((table.channel & 0xF) << 2);
         tab = ADC.sar1_patt_tab[index].sar1_patt_tab;               //Read old register value
         tab &= (~(0xFC0000 >> offset));                             //Clear old data
         tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;    //Fill in the new data
         ADC.sar1_patt_tab[index].sar1_patt_tab = tab;               //Write back
     } else {
+        pattern.val = (table.atten & 0x3) | (((table.channel + 2) & 0xF) << 2);
         tab = ADC.sar2_patt_tab[index].sar2_patt_tab;               //Read old register value
         tab &= (~(0xFC0000 >> offset));                             //clear old data
         tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;    //Fill in the new data
