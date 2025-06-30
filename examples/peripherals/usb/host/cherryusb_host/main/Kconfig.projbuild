@@ -1,0 +1,12 @@
+menu "Example Configuration"
+
+    config EXAMPLE_HAL_USE_ESP32_S3_USB_OTG
+        bool "Use dev kit ESP32-S3-USB-OTG"
+        depends on IDF_TARGET_ESP32S3
+        default y
+
+    config EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
+        bool "Perform init deinit of cherryusb stack in a loop"
+        default n
+
+endmenu
