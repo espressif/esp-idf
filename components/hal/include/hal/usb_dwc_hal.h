@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,15 +28,6 @@ extern "C" {
 // ------------------------------------------------ Macros and Types ---------------------------------------------------
 
 // ----------------------- Configs -------------------------
-
-/**
- * @brief Possible FIFO biases
- */
-typedef enum {
-    USB_HAL_FIFO_BIAS_DEFAULT,           /**< Default (balanced) FIFO sizes */
-    USB_HAL_FIFO_BIAS_RX,                /**< Bigger RX FIFO for IN transfers */
-    USB_HAL_FIFO_BIAS_PTX,               /**< Bigger periodic TX FIFO for ISOC OUT transfers */
-} usb_hal_fifo_bias_t;
 
 /**
  * @brief MPS limits based on FIFO configuration
@@ -261,20 +252,35 @@ void usb_dwc_hal_deinit(usb_dwc_hal_context_t *hal);
 void usb_dwc_hal_core_soft_reset(usb_dwc_hal_context_t *hal);
 
 /**
- * @brief Set FIFO bias
+ * @brief Check if FIFO configuration is valid
  *
- * This function will set the sizes of each of the FIFOs (RX FIFO, Non-periodic TX FIFO, Periodic TX FIFO) and must be
- * called at least once before allocating the channel. Based on the type of endpoints (and the endpoints' MPS), there
- * may be situations where this function may need to be called again to resize the FIFOs. If resizing FIFOs dynamically,
- * it is the user's responsibility to ensure there are no active channels when this function is called.
+ * This function checks that the sum of FIFO sizes does not exceed available space.
+ * It does not modify hardware state and is safe to call from HAL or upper layers.
  *
- * @note After a port reset, the FIFO size registers will reset to their default values, so this function must be called
- *       again post reset.
- *
- * @param[in] hal       Context of the HAL layer
- * @param[in] fifo_bias FIFO bias configuration
+ * @param[in] hal     Pointer to HAL context (must be initialized)
+ * @param[in] config  Pointer to FIFO config to validate
+ * @return true if config is valid, false otherwise
  */
-void usb_dwc_hal_set_fifo_bias(usb_dwc_hal_context_t *hal, const usb_hal_fifo_bias_t fifo_bias);
+bool usb_dwc_hal_fifo_config_is_valid(const usb_dwc_hal_context_t *hal, const usb_dwc_hal_fifo_config_t *config);
+
+
+/**
+ * @brief Set the FIFO sizes of the USB-DWC core
+ *
+ * This function programs the FIFO sizing registers (RX FIFO, Non-Periodic TX FIFO,
+ * and Periodic TX FIFO) based on the provided configuration. It must be called
+ * during USB initialization, before any channels are allocated or transfers started.
+ *
+ * The sum of all FIFO sizes must not exceed the hardware-defined limit
+ * (see HWCFG3.DfifoDepth and EPINFO_CTL).
+ *
+ * @note This function must be called exactly once during initialization and after
+ *       each USB port reset. It is typically used internally by the USB Host stack.
+ *
+ * @param[inout] hal     Pointer to the HAL context
+ * @param[in]    config  Pointer to the FIFO configuration to apply (must be valid)
+ */
+void usb_dwc_hal_set_fifo_config(usb_dwc_hal_context_t *hal, const usb_dwc_hal_fifo_config_t *config);
 
 /**
  * @brief Get MPS limits

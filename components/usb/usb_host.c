@@ -487,9 +487,26 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     }
 
     // Install HCD
+    // Prepare HCD configuration
+    hcd_fifo_settings_t user_fifo_config;
     hcd_config_t hcd_config = {
-        .intr_flags = config->intr_flags
+        .intr_flags = config->intr_flags,
+        .fifo_config = NULL, // Default: use bias strategy from Kconfig
     };
+
+    // Check if user has provided a custom FIFO configuration
+    if (config->fifo_settings_custom.rx_fifo_lines != 0 ||
+            config->fifo_settings_custom.nptx_fifo_lines != 0 ||
+            config->fifo_settings_custom.ptx_fifo_lines != 0) {
+
+        // Populate user FIFO configuration with provided values
+        user_fifo_config.rx_fifo_lines = config->fifo_settings_custom.rx_fifo_lines;
+        user_fifo_config.nptx_fifo_lines = config->fifo_settings_custom.nptx_fifo_lines;
+        user_fifo_config.ptx_fifo_lines = config->fifo_settings_custom.ptx_fifo_lines;
+
+        // Pass custom configuration to HCD
+        hcd_config.fifo_config = &user_fifo_config;
+    }
     ret = hcd_install(&hcd_config);
     if (ret != ESP_OK) {
         ESP_LOGE(USB_HOST_TAG, "HCD install error: %s", esp_err_to_name(ret));

@@ -111,6 +111,16 @@ typedef struct {
     int intr_flags;                             /**< Interrupt flags for the underlying ISR used by the USB Host stack */
     usb_host_enum_filter_cb_t enum_filter_cb;   /**< Enumeration filter callback. Enable CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
                                                      to use this feature. Set to NULL otherwise. */
+    struct {
+        uint32_t nptx_fifo_lines; /**< Required: Number of non-periodic TX FIFO lines.
+                                       Must be > 0 to enable custom configuration. */
+        uint32_t ptx_fifo_lines;  /**< Optional: Number of periodic TX FIFO lines.
+                                       Can be 0 if periodic TX endpoints are not used. */
+        uint32_t rx_fifo_lines;   /**< Required: Number of RX FIFO lines.
+                                       Must be > 0 to enable custom configuration. */
+    } fifo_settings_custom;       /**< Optional custom FIFO configuration (advanced use).
+                                       RX and NPTX must be > 0. If all fields are zero,
+                                       a default configuration will be selected based on Kconfig bias. */
 } usb_host_config_t;
 
 /**

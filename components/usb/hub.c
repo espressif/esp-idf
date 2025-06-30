@@ -561,7 +561,6 @@ esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
 
     // Install HCD port
     hcd_port_config_t port_config = {
-        .fifo_bias = HUB_ROOT_HCD_PORT_FIFO_BIAS,
         .callback = root_port_callback,
         .callback_arg = NULL,
         .context = NULL,
