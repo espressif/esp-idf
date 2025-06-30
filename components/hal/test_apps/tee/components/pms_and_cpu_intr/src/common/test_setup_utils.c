@@ -38,8 +38,8 @@
 /***************************** Utility - LP_CPU  *****************************/
 
 #if CONFIG_ULP_COPROC_ENABLED
-extern const uint8_t ulp_lp_core_main_bin_start[] asm("_binary_ulp_lp_core_pms_bin_start");
-extern const uint8_t ulp_lp_core_main_bin_end[]   asm("_binary_ulp_lp_core_pms_bin_end");
+extern const uint8_t ulp_lp_core_main_bin_start[] asm("_binary_ulp_lp_core_pms_and_cpu_intr_bin_start");
+extern const uint8_t ulp_lp_core_main_bin_end[]   asm("_binary_ulp_lp_core_pms_and_cpu_intr_bin_end");
 
 void test_boot_lp_cpu(void)
 {
@@ -226,8 +226,9 @@ void test_gdma_wait_done(void)
 
 /***************************** Miscellaneous *****************************/
 
-IRAM_ATTR void test_delay_us(uint32_t us)
+IRAM_ATTR void test_delay_ms(uint32_t ms)
 {
+    uint32_t us = ms * 1000U;
 #if SOC_CPU_HAS_CSR_PC
     esp_rom_delay_us(us);
 #else

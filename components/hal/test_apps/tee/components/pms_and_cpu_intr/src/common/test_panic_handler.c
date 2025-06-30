@@ -51,10 +51,16 @@ void test_panicHandler(RvExcFrame *frame, int exccause)
     }
 
     if (mcause == MCAUSE_ILLEGAL_INSTRUCTION) {
-        frame->mepc = frame->ra;
+        uint32_t mscratch = RV_READ_CSR(mscratch);
+        /* Check if panic is from the interrupt or PMS related test-cases */
+        if (mscratch == 0xDEADC0DE) {
+            frame->mepc += 0x04U;
+            RV_WRITE_CSR(mscratch, 0x00U);
+        } else {
+            frame->mepc = frame->ra;
+        }
         return;
     }
-
     /* PERI_APM access fault */
 #if SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL
     if (regs->mtval >= SOC_PERIPHERAL_LOW && regs->mtval < SOC_PERIPHERAL_HIGH) {

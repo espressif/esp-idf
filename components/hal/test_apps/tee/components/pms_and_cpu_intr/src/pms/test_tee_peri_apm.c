@@ -20,7 +20,6 @@
 
 #include "test_pms_priv.h"
 #include "test_pms_params.h"
-#include "test_peri_apm_reg.h"
 
 #include "unity.h"
 
@@ -114,7 +113,7 @@ IRAM_ATTR static void hp_cpu_peri_addr_rw(uint32_t peri_addr, uint32_t attr)
     RV_WRITE_CSR(uscratch, 0x00);
 
     reg_write(peri_addr, TEST_VAL);
-    test_delay_us(10000);
+    test_delay_ms(10);
 
     bool can_write = (attr & APM_PERM_W);
     if (!can_write) {
@@ -125,7 +124,7 @@ IRAM_ATTR static void hp_cpu_peri_addr_rw(uint32_t peri_addr, uint32_t attr)
 
     volatile uint32_t val = reg_read(peri_addr);
     (void)val;
-    test_delay_us(10000);
+    test_delay_ms(10);
 
     bool can_read = (attr & APM_PERM_R);
     if (!can_read) {
@@ -142,7 +141,7 @@ IRAM_ATTR static void lp_cpu_peri_addr_rw(uint32_t peri_addr, uint32_t attr)
     SEND_EXCP(0);
     SEND_MSG(MSG_SLAVE_WRITE);
     SEND_ADDR(peri_addr);
-    test_delay_us(10000);
+    test_delay_ms(10);
 
     bool can_write = (attr & APM_PERM_W);
     if (!can_write) {
@@ -154,7 +153,7 @@ IRAM_ATTR static void lp_cpu_peri_addr_rw(uint32_t peri_addr, uint32_t attr)
     SEND_EXCP(0);
     SEND_MSG(MSG_SLAVE_READ);
     SEND_ADDR(peri_addr);
-    test_delay_us(10000);
+    test_delay_ms(10);
 
     bool can_read = (attr & APM_PERM_R);
     if (!can_read) {

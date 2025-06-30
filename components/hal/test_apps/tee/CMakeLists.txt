@@ -6,7 +6,7 @@ set(COMPONENTS main)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
-project(test_tee_apm)
+project(test_tee_pms_cpu_intr)
 
 include($ENV{IDF_PATH}/tools/ci/check_register_rw_half_word.cmake)
 message(STATUS "Checking tee/apm registers are not read-write by half-word")
