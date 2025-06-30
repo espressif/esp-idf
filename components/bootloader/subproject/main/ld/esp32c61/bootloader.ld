@@ -277,6 +277,9 @@ SECTIONS
    */
   .noload 0 (INFO) :
   {
+    /* Reserve first 4 bytes as zero for vars pointed to NULL */
+    . = 0;
+    LONG(0);
     _noload_keep_in_elf_start = ABSOLUTE(.);
     KEEP(*(.noload_keep_in_elf .noload_keep_in_elf.*))
     _noload_keep_in_elf_end = ABSOLUTE(.);

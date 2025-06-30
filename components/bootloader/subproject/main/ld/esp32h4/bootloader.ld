@@ -269,6 +269,20 @@ SECTIONS
    * And so forth...
    */
   /DISCARD/ : { *(.rela.*) }
+
+  /**
+   * This section is not included in the binary image; it is only present in the ELF file.
+   * It is used to keep certain symbols in the ELF file.
+   */
+  .noload 0 (INFO) :
+  {
+    /* Reserve first 4 bytes as zero for vars pointed to NULL */
+    . = 0;
+    LONG(0);
+    _noload_keep_in_elf_start = ABSOLUTE(.);
+    KEEP(*(.noload_keep_in_elf .noload_keep_in_elf.*))
+    _noload_keep_in_elf_end = ABSOLUTE(.);
+  }
 }
 
 /**
