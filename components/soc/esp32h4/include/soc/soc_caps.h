@@ -75,6 +75,7 @@
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1
 // #define SOC_LP_I2C_SUPPORTED            1    // TODO: [ESP32H4] IDF-12449
 // #define SOC_ULP_LP_UART_SUPPORTED       1    // TODO: [ESP32H4] IDF-12445 IDF-12451
+#define SOC_REG_I2C_SUPPORTED           1
 // #define SOC_CLK_TREE_SUPPORTED          1    // TODO: [ESP32H4] IDF-12285
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1    // TODO: [ESP32H4] IDF-12310
 #define SOC_WDT_SUPPORTED               1

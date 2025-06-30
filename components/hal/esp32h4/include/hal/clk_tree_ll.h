@@ -295,37 +295,37 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_freq_mhz(uint
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32_t pll_freq_mhz, uint32_t xtal_freq_mhz)
 {
-    HAL_ASSERT(pll_freq_mhz == CLK_LL_PLL_96M_FREQ_MHZ);
-    uint8_t div_ref;
-    uint8_t div7_0;
-    uint8_t dr1;
-    uint8_t dr3;
-    uint8_t dchgp;
-    uint8_t dcur;
-    uint8_t dbias;
+    // HAL_ASSERT(pll_freq_mhz == CLK_LL_PLL_96M_FREQ_MHZ);
+    // uint8_t div_ref;
+    // uint8_t div7_0;
+    // uint8_t dr1;
+    // uint8_t dr3;
+    // uint8_t dchgp;
+    // uint8_t dcur;
+    // uint8_t dbias;
 
-    /* Configure 480M PLL */
-    switch (xtal_freq_mhz) {
-    case SOC_XTAL_FREQ_32M:
-    default:
-        div_ref = 0;
-        div7_0 = 8;
-        dr1 = 0;
-        dr3 = 0;
-        dchgp = 5;
-        dcur = 3;
-        dbias = 2;
-        break;
-    }
-    uint8_t i2c_bbpll_lref  = (dchgp << I2C_BBPLL_OC_DCHGP_LSB) | (div_ref);
-    uint8_t i2c_bbpll_div_7_0 = div7_0;
-    uint8_t i2c_bbpll_dcur = (1 << I2C_BBPLL_OC_DLREF_SEL_LSB ) | (3 << I2C_BBPLL_OC_DHREF_SEL_LSB) | dcur;
-    REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_REF_DIV, i2c_bbpll_lref);
-    REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_DIV_7_0, i2c_bbpll_div_7_0);
-    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DR1, dr1);
-    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DR3, dr3);
-    REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_DCUR, i2c_bbpll_dcur);
-    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_VCO_DBIAS, dbias);
+    // /* Configure 480M PLL */
+    // switch (xtal_freq_mhz) {
+    // case SOC_XTAL_FREQ_32M:
+    // default:
+    //     div_ref = 0;
+    //     div7_0 = 8;
+    //     dr1 = 0;
+    //     dr3 = 0;
+    //     dchgp = 5;
+    //     dcur = 3;
+    //     dbias = 2;
+    //     break;
+    // }
+    // uint8_t i2c_bbpll_lref  = (dchgp << I2C_BBPLL_OC_DCHGP_LSB) | (div_ref);
+    // uint8_t i2c_bbpll_div_7_0 = div7_0;
+    // uint8_t i2c_bbpll_dcur = (1 << I2C_BBPLL_OC_DLREF_SEL_LSB ) | (3 << I2C_BBPLL_OC_DHREF_SEL_LSB) | dcur;
+    // REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_REF_DIV, i2c_bbpll_lref);
+    // REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_DIV_7_0, i2c_bbpll_div_7_0);
+    // REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DR1, dr1);
+    // REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DR3, dr3);
+    // REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_DCUR, i2c_bbpll_dcur);
+    // REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_VCO_DBIAS, dbias);
 }
 
 /**

@@ -47,6 +47,10 @@ config SOC_PAU_SUPPORTED
     bool
     default y
 
+config SOC_REG_I2C_SUPPORTED
+    bool
+    default y
+
 config SOC_WDT_SUPPORTED
     bool
     default y

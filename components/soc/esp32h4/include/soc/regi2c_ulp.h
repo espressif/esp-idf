@@ -7,7 +7,7 @@
 #pragma once
 
 /**
- * @file regi2c_lp_bias.h
+ * @file regi2c_ulp.h
  * @brief Register definitions for analog to calibrate o_code for getting a more precise voltage.
  *
  * This file lists register fields of low power dbais, located on an internal configuration
@@ -30,10 +30,6 @@
 #define I2C_ULP_IR_FORCE_XPD_IPH_MSB 4
 #define I2C_ULP_IR_FORCE_XPD_IPH_LSB 4
 
-#define I2C_ULP_IR_DISABLE_WATCHDOG_CK 0
-#define I2C_ULP_IR_DISABLE_WATCHDOG_CK_MSB 6
-#define I2C_ULP_IR_DISABLE_WATCHDOG_CK_LSB 6
-
 #define I2C_ULP_O_DONE_FLAG 3
 #define I2C_ULP_O_DONE_FLAG_MSB 0
 #define I2C_ULP_O_DONE_FLAG_LSB 0
@@ -47,8 +43,8 @@
 #define I2C_ULP_OCODE_LSB 0
 
 #define I2C_ULP_IR_FORCE_CODE 5
-#define I2C_ULP_IR_FORCE_CODE_MSB 6
-#define I2C_ULP_IR_FORCE_CODE_LSB 6
+#define I2C_ULP_IR_FORCE_CODE_MSB 3
+#define I2C_ULP_IR_FORCE_CODE_LSB 3
 
 #define I2C_ULP_EXT_CODE 6
 #define I2C_ULP_EXT_CODE_MSB 7
