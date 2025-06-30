@@ -60,10 +60,20 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     set(GENERATE_CERT_BUNDLEPY ${python} ${COMPONENT_DIR}/esp_crt_bundle/gen_crt_bundle.py)
 
     if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL)
-        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_all.pem ${DEFAULT_CRT_DIR}/cacrt_local.pem)
+        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_all.pem)
     elseif(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN)
-        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_all.pem ${DEFAULT_CRT_DIR}/cacrt_local.pem)
+        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_all.pem)
         list(APPEND args --filter ${DEFAULT_CRT_DIR}/cmn_crt_authorities.csv)
+    endif()
+
+    # Currently cacrt_local.pem contains deprecated certificates that are still required for certain certificate chains.
+    # These chains may include cross-signed certificates, but the final certificate in the chain is deprecated.
+    # When cross-signed verification is enabled (CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY),
+    # the cross-signed certificate should be sufficient for verification, and the deprecated root is not needed.
+    # Therefore, cacrt_local.pem is only appended if cross-signed verification is not enabled.
+    if((CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL OR CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN)
+        AND NOT CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY)
+        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_local.pem)
     endif()
 
     # Add deprecated root certs if enabled. This config is not visible if the default cert

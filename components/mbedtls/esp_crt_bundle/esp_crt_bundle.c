@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,8 @@
 #include "mbedtls/pk.h"
 #include "mbedtls/oid.h"
 #include "mbedtls/asn1.h"
+
+#include "sdkconfig.h"
 
 /*
     Format of certificate bundle:
@@ -54,7 +56,9 @@ static const char *TAG = "esp-x509-crt-bundle";
 
 /* a dummy certificate so that
  * cacert_ptr passes non-NULL check during handshake */
+#if !defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY)
 static const mbedtls_x509_crt s_dummy_crt;
+#endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY
 
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
@@ -330,6 +334,118 @@ static esp_err_t esp_crt_bundle_init(const uint8_t* const x509_bundle, const siz
     }
 }
 
+#if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY)
+static int esp_crt_copy_asn1(const mbedtls_asn1_named_data *src, mbedtls_asn1_named_data *dst)
+{
+    if (src == NULL || dst == NULL) {
+        return -1;
+    }
+
+    dst->oid.tag = src->oid.tag;
+    dst->oid.len = src->oid.len;
+    dst->oid.p = calloc(1, src->oid.len);
+    if (dst->oid.p == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory for OID");
+        return -1;
+    }
+    memcpy(dst->oid.p, src->oid.p, src->oid.len);
+    dst->val.tag = src->val.tag;
+    dst->val.len = src->val.len;
+    dst->val.p = calloc(1, src->val.len);
+    if (dst->val.p == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory for value");
+        free(dst->oid.p);
+        return -1;
+    }
+    memcpy(dst->val.p, src->val.p, src->val.len);
+    return 0;
+}
+
+static int esp_crt_ca_cb_callback(void *ctx, mbedtls_x509_crt const *child, mbedtls_x509_crt **candidate_cas)
+{
+    if (unlikely(s_crt_bundle == NULL)) {
+        ESP_LOGE(TAG, "No certificates in bundle");
+        return MBEDTLS_ERR_X509_FATAL_ERROR;
+    }
+
+    ESP_LOGD(TAG, "%" PRIu16 " certificates in bundle", (uint16_t)esp_crt_get_certcount(s_crt_bundle));
+
+    cert_t cert = esp_crt_find_cert(child->issuer_raw.p, child->issuer_raw.len);
+
+    if (likely(cert == NULL)) {
+        *candidate_cas = NULL;
+        return 0;
+    }
+    // If we found a matching certificate, we need to allocate a new
+    // mbedtls_x509_crt structure and copy the certificate data into it.
+    mbedtls_x509_crt *new_cert = calloc(1, sizeof(mbedtls_x509_crt));
+    if (unlikely(new_cert == NULL)) {
+        ESP_LOGE(TAG, "Failed to allocate memory for new certificate");
+        return MBEDTLS_ERR_X509_ALLOC_FAILED;
+    }
+    mbedtls_x509_crt_init(new_cert);
+
+    new_cert->MBEDTLS_PRIVATE(ca_istrue) = true;
+    new_cert->version = 3;
+
+    const uint8_t *cert_name = esp_crt_get_name(cert);
+    uint16_t cert_name_len = esp_crt_get_name_len(cert);
+    new_cert->subject_raw.tag = MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE;
+    new_cert->subject_raw.len = cert_name_len;
+    new_cert->subject_raw.p = calloc(1, cert_name_len);
+    if (new_cert->subject_raw.p == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory for subject");
+        mbedtls_x509_crt_free(new_cert);
+        free(new_cert);
+        return MBEDTLS_ERR_X509_ALLOC_FAILED;
+    }
+    memcpy(new_cert->subject_raw.p, cert_name, cert_name_len);
+
+    const uint8_t *cert_key = esp_crt_get_key(cert);
+    uint16_t cert_key_len = esp_crt_get_key_len(cert);
+    // Set the public key in the new certificate
+    mbedtls_pk_init(&new_cert->pk);
+    int ret = mbedtls_pk_parse_subpubkey((unsigned char **)&cert_key, cert_key + cert_key_len, &new_cert->pk);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Failed to parse public key from certificate: %d", ret);
+        mbedtls_x509_crt_free(new_cert);
+        free(new_cert);
+        return ret;
+    }
+
+    // Loop through the child->issuer and copy the values to the new certificate
+    const mbedtls_asn1_named_data *child_issuer = &child->issuer;
+    mbedtls_asn1_named_data *parent_subject = &new_cert->subject;
+    while (child_issuer != NULL) {
+        if (esp_crt_copy_asn1(child_issuer, parent_subject) != 0) {
+            ESP_LOGE(TAG, "Failed to copy ASN.1 data");
+            mbedtls_x509_crt_free(new_cert);
+            free(new_cert);
+            return MBEDTLS_ERR_X509_ALLOC_FAILED;
+        }
+        child_issuer = child_issuer->next;
+        if (child_issuer == NULL) {
+            break;
+        }
+
+        if (parent_subject->next == NULL) {
+            parent_subject->next = calloc(1, sizeof(mbedtls_asn1_named_data));
+            if (parent_subject->next == NULL) {
+                ESP_LOGE(TAG, "Failed to allocate memory for next issuer");
+                mbedtls_x509_crt_free(new_cert);
+                free(new_cert);
+                return MBEDTLS_ERR_X509_ALLOC_FAILED;
+            }
+            parent_subject = parent_subject->next;
+        }
+    }
+
+    // Set the parsed certificate as the candidate CA
+    *candidate_cas = new_cert;
+    return 0;
+}
+#endif /* CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY */
+
 esp_err_t esp_crt_bundle_attach(void *conf)
 {
     esp_err_t ret = ESP_OK;
@@ -349,8 +465,12 @@ esp_err_t esp_crt_bundle_attach(void *conf)
          * cacert_ptr passes non-NULL check during handshake
          */
         mbedtls_ssl_config *ssl_conf = (mbedtls_ssl_config *)conf;
-        mbedtls_ssl_conf_ca_chain(ssl_conf, (mbedtls_x509_crt*)&s_dummy_crt, NULL);
         mbedtls_ssl_conf_verify(ssl_conf, esp_crt_verify_callback, NULL);
+#if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY)
+        mbedtls_ssl_conf_ca_cb(ssl_conf, esp_crt_ca_cb_callback, NULL);
+#else
+        mbedtls_ssl_conf_ca_chain(ssl_conf, (mbedtls_x509_crt*)&s_dummy_crt, NULL);
+#endif /* CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY */
     }
 
     return ret;
@@ -371,5 +491,9 @@ esp_err_t esp_crt_bundle_set(const uint8_t *x509_bundle, size_t bundle_size)
 
 bool esp_crt_bundle_in_use(const mbedtls_x509_crt* ca_chain)
 {
+#if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY)
+    return false; // Cross-signed verification does not use the dummy certificate
+#else
     return ((ca_chain == &s_dummy_crt) ? true : false);
+#endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY
 }
