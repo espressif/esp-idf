@@ -56,13 +56,13 @@ size_t mmu_psram_get_text_segment_length(void);
 void mmu_psram_get_instruction_alignment_gap_info(uint32_t *gap_start, uint32_t *gap_size);
 
 /**
- * @brief Check if the pointer is in the instruction alignment gap
+ * @brief Check if the pointer is in the xip psram instruction region
  *
  * @param[in] p Pointer to check
  *
- * @return true if the pointer is in the instruction alignment gap, false otherwise
+ * @return true if the pointer is in the instruction region, false otherwise
  */
-bool mmu_psram_check_ptr_addr_in_instruction_alignment_gap(const void *p);
+bool mmu_psram_check_ptr_addr_in_xip_psram_instruction_region(const void *p);
 
 /**
  * @brief Copy Flash texts to PSRAM
@@ -101,13 +101,13 @@ size_t mmu_psram_get_rodata_segment_length(void);
 esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page);
 
 /**
- * @brief Check if the pointer is in the rodata alignment gap
+ * @brief Check if the pointer is in the xip psram rodata region
  *
  * @param[in] p Pointer to check
  *
- * @return true if the pointer is in the rodata alignment gap, false otherwise
+ * @return true if the pointer is in the rodata region, false otherwise
  */
-bool mmu_psram_check_ptr_addr_in_rodata_alignment_gap(const void *p);
+bool mmu_psram_check_ptr_addr_in_xip_psram_rodata_region(const void *p);
 #endif  //#if CONFIG_SPIRAM_RODATA
 
 /*----------------------------------------------------------------------------
