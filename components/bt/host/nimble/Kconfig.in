@@ -781,6 +781,12 @@ config BT_NIMBLE_GATT_CACHING_DISABLE_AUTO
     help
         When client receives ATT out-of-sync error message, it will not automatically start the discovery procedure
         to correct the invalid cache.
+config BT_NIMBLE_GATT_CACHING_ASSOC_ENABLE
+    bool "Enable association-based GATT caching"
+    depends on BT_NIMBLE_GATT_CACHING
+    default n
+    help
+        Enable this option to use associated address caching instead of performing service discovery.
 
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"
