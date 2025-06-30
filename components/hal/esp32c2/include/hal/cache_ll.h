@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -147,6 +147,32 @@ __attribute__((always_inline))
 static inline void cache_ll_invalidate_addr(uint32_t cache_level, cache_type_t type, uint32_t cache_id, uint32_t vaddr, uint32_t size)
 {
     Cache_Invalidate_Addr(vaddr, size);
+}
+
+/**
+ * @brief Freeze Cache
+ *
+ * @param cache_level  level of the cache
+ * @param type         see `cache_type_t`
+ * @param cache_id     id of the cache in this type and level
+ */
+__attribute__((always_inline))
+static inline void cache_ll_freeze_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
+    Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
+}
+
+/**
+ * @brief Unfreeze Cache
+ *
+ * @param cache_level  level of the cache
+ * @param type         see `cache_type_t`
+ * @param cache_id     id of the cache in this type and level
+ */
+__attribute__((always_inline))
+static inline void cache_ll_unfreeze_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
+    Cache_Freeze_ICache_Disable();
 }
 
 /**
