@@ -759,6 +759,13 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/src/ble_eatt.c"
                 )
 
+            if(CONFIG_BT_NIMBLE_ISO)
+                list(APPEND srcs
+                            "host/nimble/nimble/nimble/host/src/ble_hs_iso_hci.c"
+                            "host/nimble/nimble/nimble/host/src/ble_hs_iso.c"
+                )
+            endif()
+
             if(CONFIG_BT_CONTROLLER_DISABLED AND CONFIG_BT_NIMBLE_TRANSPORT_UART)
                 list(APPEND srcs
                         "host/nimble/nimble/nimble/transport/uart_ll/src/hci_uart.c"
