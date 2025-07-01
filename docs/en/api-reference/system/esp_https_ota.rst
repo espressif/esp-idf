@@ -74,6 +74,8 @@ To perform OTA upgrades with pre-encrypted firmware, please enable :ref:`CONFIG_
 
 Example that performs OTA upgrade with pre-encrypted firmware: :example:`system/ota/pre_encrypted_ota`.
 
+Pre-encrypted firmware is a completely independent scheme from :doc:`../../security/flash-encryption`. Primary reasons for this are as follows:
+
  * Flash encryption scheme depends on the flash offset and generates different ciphertext for different flash offset. And hence it becomes difficult to manage different OTA update images based on the partition slots like ``ota_0``, ``ota_1`` etc.
 
  * Even for devices where flash encryption is not enabled, it could be requirement that firmware image over OTA is still encrypted in nature.
