@@ -26,12 +26,16 @@
 #define SPI_OUT_FLUSH_TIMEOUT_US                (CONFIG_BT_BLE_LOG_SPI_OUT_FLUSH_TIMEOUT * 1000)
 #define SPI_OUT_LE_AUDIO_ENABLED                CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
 #define SPI_OUT_LE_AUDIO_BUF_SIZE               CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_BUF_SIZE
+#define SPI_OUT_LE_AUDIO_TASK_CNT               CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_TASK_CNT
 #define SPI_OUT_HOST_ENABLED                    CONFIG_BT_BLE_LOG_SPI_OUT_HOST_ENABLED
 #define SPI_OUT_HOST_BUF_SIZE                   CONFIG_BT_BLE_LOG_SPI_OUT_HOST_BUF_SIZE
+#define SPI_OUT_HOST_TASK_CNT                   CONFIG_BT_BLE_LOG_SPI_OUT_HOST_TASK_CNT
 #define SPI_OUT_HCI_ENABLED                     CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
 #define SPI_OUT_HCI_BUF_SIZE                    CONFIG_BT_BLE_LOG_SPI_OUT_HCI_BUF_SIZE
+#define SPI_OUT_HCI_TASK_CNT                    CONFIG_BT_BLE_LOG_SPI_OUT_HCI_TASK_CNT
 #define SPI_OUT_MESH_ENABLED                    CONFIG_BT_BLE_LOG_SPI_OUT_MESH_ENABLED
 #define SPI_OUT_MESH_BUF_SIZE                   CONFIG_BT_BLE_LOG_SPI_OUT_MESH_BUF_SIZE
+#define SPI_OUT_MESH_TASK_CNT                   CONFIG_BT_BLE_LOG_SPI_OUT_MESH_TASK_CNT
 
 // Private defines
 #define BLE_LOG_TAG                             "BLE_LOG"
@@ -111,6 +115,12 @@ typedef struct {
 } spi_out_log_cb_t;
 
 typedef struct {
+    TaskHandle_t task_handle;
+    spi_out_log_cb_t *log_cb;
+    uint8_t *str_buf;
+} task_map_t;
+
+typedef struct {
     uint16_t length;
     uint8_t source;
     uint8_t frame_sn;
@@ -137,9 +147,7 @@ enum {
 
 enum {
     LOG_CB_TYPE_UL = 0,
-    LOG_CB_TYPE_LL_TASK,
-    LOG_CB_TYPE_LL_ISR,
-    LOG_CB_TYPE_LL_HCI,
+    LOG_CB_TYPE_LL,
     LOG_CB_TYPE_LE_AUDIO,
     LOG_CB_TYPE_HOST,
     LOG_CB_TYPE_HCI,
@@ -199,7 +207,7 @@ static void spi_out_deinit_trans(spi_out_trans_cb_t **trans_cb);
 static void spi_out_tx_done_cb(spi_transaction_t *ret_trans);
 static inline void spi_out_append_trans(spi_out_trans_cb_t *trans_cb);
 
-static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size, uint8_t type);
+static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size, uint8_t type, uint8_t idx);
 static void spi_out_log_cb_deinit(spi_out_log_cb_t **log_cb);
 static inline bool spi_out_log_cb_check_trans(spi_out_log_cb_t *log_cb, uint16_t len, bool *need_append);
 static inline void spi_out_log_cb_append_trans(spi_out_log_cb_t *log_cb);
@@ -209,6 +217,8 @@ static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, 
                                  bool with_checksum);
 static void spi_out_log_cb_write_loss(spi_out_log_cb_t *log_cb);
 static void spi_out_log_cb_dump(spi_out_log_cb_t *log_cb);
+static bool spi_out_get_task_mapping(task_map_t *map, size_t num,
+                                     spi_out_log_cb_t **log_cb, uint8_t **str_buf);
 static void spi_out_log_flush(void);
 
 static void spi_out_write_hex(spi_out_log_cb_t *log_cb, uint8_t source,
@@ -259,18 +269,34 @@ static void esp_timer_cb_ts_sync(void);
 #define IF_0(...)
 
 #define LOG_MODULE_INIT_FLAG(ID)        (ID##_log_inited)
-#define LOG_MODULE_CB(ID)               (ID##_log_cb)
+#define LOG_MODULE_CB_ARR(ID)           (ID##_log_cb)
+#define LOG_MODULE_CB_CNT(ID)           (ID##_log_cb_cnt)
+#define LOG_MODULE_CB(ID, IDX)          (ID##_log_cb[IDX])
+#define LOG_MODULE_TASK_MAP(ID)         (ID##_task_map)
 #define LOG_MODULE_MUTEX(ID)            (ID##_log_mutex)
-#define LOG_MODULE_STR_BUF(ID)          (ID##_log_str_buf)
+#define LOG_MODULE_STR_BUF_ARR(ID)      (ID##_log_str_buf)
+#define LOG_MODULE_STR_BUF(ID, IDX)     (ID##_log_str_buf[IDX])
 #define LOG_MODULE_INIT(ID)             (spi_out_##ID##_log_init)
 #define LOG_MODULE_DEINIT(ID)           (spi_out_##ID##_log_deinit)
 #define LOG_MODULE_FLUSH(ID)            (spi_out_##ID##_log_flush)
+#define LOG_MODULE_DUMP(ID)                                                         \
+    do {                                                                            \
+        if (LOG_MODULE_INIT_FLAG(ID)) {                                             \
+            esp_rom_printf("[DUMP_START:\n");                                       \
+            for (int i = 0; i < LOG_MODULE_CB_CNT(ID); i++) {                       \
+                spi_out_log_cb_dump(LOG_MODULE_CB(ID, i));                          \
+            }                                                                       \
+            esp_rom_printf("\n:DUMP_END]\n");                                       \
+        }                                                                           \
+    } while (0)
 
-#define DECLARE_LOG_MODULE(ID, TYPE, BUF_SIZE, USE_MUTEX, USE_STR)                  \
+#define DECLARE_LOG_MODULE(ID, TYPE, BUF_SIZE, NUM_CB, USE_MUTEX, USE_STR)          \
     static bool LOG_MODULE_INIT_FLAG(ID) = false;                                   \
-    static spi_out_log_cb_t *LOG_MODULE_CB(ID) = NULL;                              \
+    static spi_out_log_cb_t *LOG_MODULE_CB_ARR(ID)[NUM_CB] = { NULL };              \
+    static const size_t LOG_MODULE_CB_CNT(ID) = (NUM_CB);                           \
+    static task_map_t LOG_MODULE_TASK_MAP(ID)[NUM_CB] = {0};                        \
     IF_##USE_MUTEX(static SemaphoreHandle_t LOG_MODULE_MUTEX(ID) = NULL;)           \
-    IF_##USE_STR(static uint8_t *LOG_MODULE_STR_BUF(ID) = NULL;)                    \
+    IF_##USE_STR(static uint8_t *LOG_MODULE_STR_BUF_ARR(ID)[NUM_CB] = {0};)         \
                                                                                     \
     static int LOG_MODULE_INIT(ID)(void);                                           \
     static void LOG_MODULE_DEINIT(ID)(void);                                        \
@@ -287,13 +313,22 @@ static void esp_timer_cb_ts_sync(void);
             }                                                                       \
         )                                                                           \
         IF_##USE_STR(                                                               \
-            LOG_MODULE_STR_BUF(ID) = (uint8_t *)SPI_OUT_MALLOC(SPI_OUT_LOG_STR_BUF_SIZE);   \
-            if (!LOG_MODULE_STR_BUF(ID)) {                                          \
-                goto failed;                                                        \
+            for (size_t i = 0; i < LOG_MODULE_CB_CNT(ID); i++) {                    \
+                LOG_MODULE_STR_BUF(ID, i) = (uint8_t *)SPI_OUT_MALLOC(              \
+                    SPI_OUT_LOG_STR_BUF_SIZE                                        \
+                );                                                                  \
+                if (!LOG_MODULE_STR_BUF(ID, i)) {                                   \
+                    goto failed;                                                    \
+                }                                                                   \
+                LOG_MODULE_TASK_MAP(ID)[i].str_buf = LOG_MODULE_STR_BUF(ID, i);     \
             }                                                                       \
         )                                                                           \
-        if (spi_out_log_cb_init(&LOG_MODULE_CB(ID), BUF_SIZE, TYPE) != 0) {         \
-            goto failed;                                                            \
+        for (size_t i = 0; i < LOG_MODULE_CB_CNT(ID); i++) {                        \
+            if (spi_out_log_cb_init(&LOG_MODULE_CB(ID, i), BUF_SIZE, TYPE, i) != 0) \
+            {                                                                       \
+                goto failed;                                                        \
+            }                                                                       \
+            LOG_MODULE_TASK_MAP(ID)[i].log_cb = LOG_MODULE_CB(ID, i);               \
         }                                                                           \
         LOG_MODULE_INIT_FLAG(ID) = true;                                            \
         return 0;                                                                   \
@@ -310,13 +345,20 @@ static void esp_timer_cb_ts_sync(void);
             xSemaphoreTake(LOG_MODULE_MUTEX(ID), portMAX_DELAY);                    \
         )                                                                           \
         IF_##USE_STR(                                                               \
-            if (LOG_MODULE_STR_BUF(ID)) {                                           \
-                free(LOG_MODULE_STR_BUF(ID));                                       \
-                LOG_MODULE_STR_BUF(ID) = NULL;                                      \
+            for (size_t i = 0; i < LOG_MODULE_CB_CNT(ID); i++) {                    \
+                if (LOG_MODULE_STR_BUF(ID, i)) {                                    \
+                    free(LOG_MODULE_STR_BUF(ID, i));                                \
+                    LOG_MODULE_STR_BUF(ID, i) = NULL;                               \
+                }                                                                   \
             }                                                                       \
         )                                                                           \
-        spi_out_log_cb_deinit(&LOG_MODULE_CB(ID));                                  \
-                                                                                    \
+        for (size_t i = 0; i < LOG_MODULE_CB_CNT(ID); i++) {                        \
+            spi_out_log_cb_deinit(&LOG_MODULE_CB(ID, i));                           \
+            LOG_MODULE_CB(ID, i) = NULL;                                            \
+        }                                                                           \
+        for (size_t i = 0; i < LOG_MODULE_CB_CNT(ID); i++) {                        \
+            memset(&LOG_MODULE_TASK_MAP(ID)[i], 0, sizeof(task_map_t));             \
+        }                                                                           \
         IF_##USE_MUTEX(                                                             \
             xSemaphoreGive(LOG_MODULE_MUTEX(ID));                                   \
             vSemaphoreDelete(LOG_MODULE_MUTEX(ID));                                 \
@@ -330,30 +372,36 @@ static void esp_timer_cb_ts_sync(void);
         IF_##USE_MUTEX(                                                             \
             xSemaphoreTake(LOG_MODULE_MUTEX(ID), portMAX_DELAY);                    \
         )                                                                           \
-        spi_out_log_cb_write_loss(LOG_MODULE_CB(ID));                               \
-        spi_out_log_cb_flush_trans(LOG_MODULE_CB(ID));                              \
-        spi_out_log_cb_append_trans(LOG_MODULE_CB(ID));                             \
+        for (size_t i = 0; i < LOG_MODULE_CB_CNT(ID); ++i) {                        \
+            spi_out_log_cb_write_loss(LOG_MODULE_CB(ID, i));                        \
+            spi_out_log_cb_flush_trans(LOG_MODULE_CB(ID, i));                       \
+            spi_out_log_cb_append_trans(LOG_MODULE_CB(ID, i));                      \
+        }                                                                           \
         IF_##USE_MUTEX(                                                             \
             xSemaphoreGive(LOG_MODULE_MUTEX(ID));                                   \
         )                                                                           \
-    }                                                                               \
+    }
 
-DECLARE_LOG_MODULE(ul, LOG_CB_TYPE_UL, SPI_OUT_UL_TASK_BUF_SIZE, 1, 1)
+DECLARE_LOG_MODULE(ul, LOG_CB_TYPE_UL, SPI_OUT_UL_TASK_BUF_SIZE, 1, 1, 1)
 
 #if SPI_OUT_LE_AUDIO_ENABLED
-DECLARE_LOG_MODULE(le_audio, LOG_CB_TYPE_LE_AUDIO, SPI_OUT_LE_AUDIO_BUF_SIZE, 0, 0)
+DECLARE_LOG_MODULE(le_audio, LOG_CB_TYPE_LE_AUDIO, SPI_OUT_LE_AUDIO_BUF_SIZE,
+                   SPI_OUT_LE_AUDIO_TASK_CNT, 0, 0)
 #endif // SPI_OUT_LE_AUDIO_ENABLED
 
 #if SPI_OUT_HOST_ENABLED
-DECLARE_LOG_MODULE(host, LOG_CB_TYPE_HOST, SPI_OUT_HOST_BUF_SIZE, 0, 1)
+DECLARE_LOG_MODULE(host, LOG_CB_TYPE_HOST, SPI_OUT_HOST_BUF_SIZE,
+                   SPI_OUT_HOST_TASK_CNT, 0, 1)
 #endif // SPI_OUT_HOST_ENABLED
 
 #if SPI_OUT_HCI_ENABLED
-DECLARE_LOG_MODULE(hci, LOG_CB_TYPE_HCI, SPI_OUT_HCI_BUF_SIZE, 0, 0)
+DECLARE_LOG_MODULE(hci, LOG_CB_TYPE_HCI, SPI_OUT_HCI_BUF_SIZE,
+                   SPI_OUT_HCI_TASK_CNT, 0, 0)
 #endif // SPI_OUT_HCI_ENABLED
 
 #if SPI_OUT_MESH_ENABLED
-DECLARE_LOG_MODULE(mesh, LOG_CB_TYPE_MESH, SPI_OUT_MESH_BUF_SIZE, 0, 1)
+DECLARE_LOG_MODULE(mesh, LOG_CB_TYPE_MESH, SPI_OUT_MESH_BUF_SIZE,
+                  SPI_OUT_MESH_TASK_CNT, 0, 1)
 #endif // SPI_OUT_MESH_ENABLED
 
 // Private functions
@@ -436,7 +484,7 @@ recycle:
     return;
 }
 
-static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size, uint8_t type)
+static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size, uint8_t type, uint8_t idx)
 {
     // Initialize log control block
     *log_cb = (spi_out_log_cb_t *)SPI_OUT_MALLOC(sizeof(spi_out_log_cb_t));
@@ -455,7 +503,7 @@ static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size, uin
         return -1;
     }
 
-    (*log_cb)->type = type;
+    (*log_cb)->type = (type << 4) | (idx);
     return 0;
 }
 
@@ -607,6 +655,67 @@ static void spi_out_log_cb_dump(spi_out_log_cb_t *log_cb)
     }
 }
 
+static void spi_out_update_task_mapping(int idx, void *ptr)
+{
+    // It is a must to clear task handle after task deletion
+    task_map_t *entry = (task_map_t *)ptr;
+    entry->task_handle = NULL;
+}
+
+static bool spi_out_get_task_mapping(task_map_t *map, size_t num,
+                                     spi_out_log_cb_t **log_cb, uint8_t **str_buf)
+{
+    if (!map || !log_cb) {
+        return false;
+    }
+
+    // Shall not be called in ISR
+    TaskHandle_t handle = xTaskGetCurrentTaskHandle();
+    if (!handle) {
+        return false;
+    }
+
+    // Check if the given task handle is already in map
+    for (size_t i = 0; i < num; i++) {
+        task_map_t *entry = &map[i];
+        if (entry->task_handle == handle) {
+            *log_cb = entry->log_cb;
+            if (str_buf) {
+                *str_buf = entry->str_buf;
+            }
+            return true;
+        }
+    }
+
+    // Task handle not in map, try to allocate free slot
+    bool ret = false;
+    portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
+    portENTER_CRITICAL_SAFE(&spinlock);
+    for (size_t i = 0; i < num; i++) {
+        task_map_t *entry = &map[i];
+        if (entry->task_handle == NULL) {
+            vTaskSetThreadLocalStoragePointerAndDelCallback(
+                NULL, 0, (void *)entry, spi_out_update_task_mapping
+            );
+            entry->task_handle = handle;
+            *log_cb = entry->log_cb;
+            if (str_buf) {
+                *str_buf = entry->str_buf;
+            }
+            ret = true;
+            break;
+        }
+    }
+    portEXIT_CRITICAL_SAFE(&spinlock);
+
+    if (!ret) {
+        // Shall not be here in normal case
+        const char *task_name = pcTaskGetName(NULL);
+        esp_rom_printf("@EW: Failed to assign slot in task map for task %s\n", task_name);
+    }
+    return ret;
+}
+
 static void spi_out_log_flush(void)
 {
     LOG_MODULE_FLUSH(ul)();
@@ -687,13 +796,13 @@ static int spi_out_ll_log_init(void)
     }
 
     // Initialize log control blocks for controller task & ISR logs
-    if (spi_out_log_cb_init(&ll_task_log_cb, SPI_OUT_LL_TASK_BUF_SIZE, LOG_CB_TYPE_LL_TASK) != 0) {
+    if (spi_out_log_cb_init(&ll_task_log_cb, SPI_OUT_LL_TASK_BUF_SIZE, LOG_CB_TYPE_LL, 0) != 0) {
         goto task_log_cb_init_failed;
     }
-    if (spi_out_log_cb_init(&ll_isr_log_cb, SPI_OUT_LL_ISR_BUF_SIZE, LOG_CB_TYPE_LL_ISR) != 0) {
+    if (spi_out_log_cb_init(&ll_isr_log_cb, SPI_OUT_LL_ISR_BUF_SIZE, LOG_CB_TYPE_LL, 1) != 0) {
         goto isr_log_cb_init_failed;
     }
-    if (spi_out_log_cb_init(&ll_hci_log_cb, SPI_OUT_LL_HCI_BUF_SIZE, LOG_CB_TYPE_LL_HCI) != 0) {
+    if (spi_out_log_cb_init(&ll_hci_log_cb, SPI_OUT_LL_HCI_BUF_SIZE, LOG_CB_TYPE_LL, 2) != 0) {
         goto hci_log_cb_init_failed;
     }
 
@@ -1175,7 +1284,7 @@ int ble_log_spi_out_write(uint8_t source, const uint8_t *addr, uint16_t len)
     }
 
     xSemaphoreTake(LOG_MODULE_MUTEX(ul), portMAX_DELAY);
-    spi_out_write_hex(LOG_MODULE_CB(ul), source, addr, len, false);
+    spi_out_write_hex(LOG_MODULE_CB(ul, 0), source, addr, len, false);
     xSemaphoreGive(LOG_MODULE_MUTEX(ul));
     return 0;
 }
@@ -1191,59 +1300,30 @@ void ble_log_spi_out_dump_all(void)
 
 #if SPI_OUT_LL_ENABLED
     if (ll_log_inited) {
-        // Dump lower layer log buffer
-        esp_rom_printf("[LL_ISR_LOG_DUMP_START:\n");
+        esp_rom_printf("[DUMP_START:\n");
         spi_out_log_cb_dump(ll_isr_log_cb);
-        esp_rom_printf("\n:LL_ISR_LOG_DUMP_END]\n\n");
-
-        esp_rom_printf("[LL_TASK_LOG_DUMP_START:\n");
         spi_out_log_cb_dump(ll_task_log_cb);
-        esp_rom_printf("\n:LL_TASK_LOG_DUMP_END]\n\n");
-
-        esp_rom_printf("[LL_HCI_LOG_DUMP_START:\n");
         spi_out_log_cb_dump(ll_hci_log_cb);
-        esp_rom_printf("\n:LL_HCI_LOG_DUMP_END]\n\n");
+        esp_rom_printf("\n:DUMP_END]\n\n");
     }
 #endif // SPI_OUT_LL_ENABLED
 
-    if (LOG_MODULE_INIT_FLAG(ul)) {
-        // Dump upper layer log buffer
-        esp_rom_printf("[UL_LOG_DUMP_START:\n");
-        spi_out_log_cb_dump(LOG_MODULE_CB(ul));
-        esp_rom_printf("\n:UL_LOG_DUMP_END]\n\n");
-    }
+    LOG_MODULE_DUMP(ul);
 
 #if SPI_OUT_LE_AUDIO_ENABLED
-    if (LOG_MODULE_INIT_FLAG(le_audio)) {
-        esp_rom_printf("[LE_AUDIO_LOG_DUMP_START:\n");
-        spi_out_log_cb_dump(LOG_MODULE_CB(le_audio));
-        esp_rom_printf("\n:LE_AUDIO_LOG_DUMP_END]\n\n");
-    }
+    LOG_MODULE_DUMP(le_audio);
 #endif // SPI_OUT_LE_AUDIO_ENABLED
 
-
 #if SPI_OUT_HOST_ENABLED
-    if (LOG_MODULE_INIT_FLAG(host)) {
-        esp_rom_printf("[HOST_LOG_DUMP_START:\n");
-        spi_out_log_cb_dump(LOG_MODULE_CB(host));
-        esp_rom_printf("\n:HOST_LOG_DUMP_END]\n\n");
-    }
+    LOG_MODULE_DUMP(host);
 #endif // SPI_OUT_HOST_ENABLED
 
 #if SPI_OUT_HCI_ENABLED
-    if (LOG_MODULE_INIT_FLAG(hci)) {
-        esp_rom_printf("[HCI_LOG_DUMP_START:\n");
-        spi_out_log_cb_dump(LOG_MODULE_CB(hci));
-        esp_rom_printf("\n:HCI_LOG_DUMP_END]\n\n");
-    }
+    LOG_MODULE_DUMP(hci);
 #endif // SPI_OUT_HCI_ENABLED
 
 #if SPI_OUT_MESH_ENABLED
-    if (LOG_MODULE_INIT_FLAG(mesh)) {
-        esp_rom_printf("[MESH_LOG_DUMP_START:\n");
-        spi_out_log_cb_dump(LOG_MODULE_CB(mesh));
-        esp_rom_printf("\n:MESH_LOG_DUMP_END]\n\n");
-    }
+    LOG_MODULE_DUMP(mesh);
 #endif // SPI_OUT_MESH_ENABLED
 
     portEXIT_CRITICAL_SAFE(&spinlock);
@@ -1280,15 +1360,21 @@ IRAM_ATTR void ble_log_spi_out_le_audio_write(const uint8_t *addr, uint16_t len)
         return;
     }
 
+    spi_out_log_cb_t *log_cb;
+    if (!spi_out_get_task_mapping(LOG_MODULE_TASK_MAP(le_audio),
+                                  LOG_MODULE_CB_CNT(le_audio), &log_cb, NULL)) {
+        return;
+    }
+
     bool need_append;
-    if (spi_out_log_cb_check_trans(LOG_MODULE_CB(le_audio), len, &need_append)) {
-        need_append |= spi_out_log_cb_write(LOG_MODULE_CB(le_audio), addr, len, NULL, 0,
+    if (spi_out_log_cb_check_trans(log_cb, len, &need_append)) {
+        need_append |= spi_out_log_cb_write(log_cb, addr, len, NULL, 0,
                                             BLE_LOG_SPI_OUT_SOURCE_LE_AUDIO, false);
     }
     if (need_append) {
-        spi_out_log_cb_append_trans(LOG_MODULE_CB(le_audio));
+        spi_out_log_cb_append_trans(log_cb);
     }
-    spi_out_log_cb_write_loss(LOG_MODULE_CB(le_audio));
+    spi_out_log_cb_write_loss(log_cb);
     return;
 }
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
@@ -1300,25 +1386,31 @@ int ble_log_spi_out_host_write(uint8_t source, const char *prefix, const char *f
         return -1;
     }
 
+    spi_out_log_cb_t *log_cb;
+    uint8_t *str_buf;
+    if (!spi_out_get_task_mapping(LOG_MODULE_TASK_MAP(host),
+                                  LOG_MODULE_CB_CNT(host), &log_cb, &str_buf)) {
+        return -1;
+    }
+
     // Copy prefix to string buffer
     int prefix_len = strlen(prefix);
     if (prefix_len >= SPI_OUT_LOG_STR_BUF_SIZE) {
         return -1;
     }
-    memcpy(LOG_MODULE_STR_BUF(host), prefix, prefix_len);
+    memcpy(str_buf, prefix, prefix_len);
 
     // Write string buffer
     va_list args;
     va_start(args, format);
-    int total_len = spi_out_write_str(LOG_MODULE_STR_BUF(host), format, args, prefix_len);
+    int total_len = spi_out_write_str(str_buf, format, args, prefix_len);
     va_end(args);
     if (total_len == 0) {
         return -1;
     }
 
     // Write log control block buffer
-    spi_out_write_hex(LOG_MODULE_CB(host), source,
-                      LOG_MODULE_STR_BUF(host), (uint16_t)total_len, true);
+    spi_out_write_hex(log_cb, source, str_buf, (uint16_t)total_len, true);
     return 0;
 }
 #endif // SPI_OUT_HOST_ENABLED
@@ -1336,7 +1428,12 @@ int ble_log_spi_out_hci_write(uint8_t source, const uint8_t *addr, uint16_t len)
 #endif // SPI_OUT_LL_ENABLED
     }
     if (source == BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM) {
-        spi_out_write_hex(LOG_MODULE_CB(hci), source, addr, len, true);
+        spi_out_log_cb_t *log_cb;
+        if (!spi_out_get_task_mapping(LOG_MODULE_TASK_MAP(hci),
+                                      LOG_MODULE_CB_CNT(hci), &log_cb, NULL)) {
+            return -1;
+        }
+        spi_out_write_hex(log_cb, source, addr, len, true);
     }
     return 0;
 }
@@ -1349,25 +1446,31 @@ int ble_log_spi_out_mesh_write(const char *prefix, const char *format, ...)
         return -1;
     }
 
+    spi_out_log_cb_t *log_cb;
+    uint8_t *str_buf;
+    if (!spi_out_get_task_mapping(LOG_MODULE_TASK_MAP(mesh),
+                                  LOG_MODULE_CB_CNT(mesh), &log_cb, &str_buf)) {
+        return -1;
+    }
+
     // Copy prefix to string buffer
     int prefix_len = strlen(prefix);
     if (prefix_len >= SPI_OUT_LOG_STR_BUF_SIZE) {
         return -1;
     }
-    memcpy(LOG_MODULE_STR_BUF(mesh), prefix, prefix_len);
+    memcpy(str_buf, prefix, prefix_len);
 
     // Write string buffer
     va_list args;
     va_start(args, format);
-    int total_len = spi_out_write_str(LOG_MODULE_STR_BUF(mesh), format, args, prefix_len);
+    int total_len = spi_out_write_str(str_buf, format, args, prefix_len);
     va_end(args);
     if (total_len == 0) {
         return -1;
     }
 
     // Write log control block buffer
-    spi_out_write_hex(LOG_MODULE_CB(mesh), BLE_LOG_SPI_OUT_SOURCE_MESH,
-                      LOG_MODULE_STR_BUF(mesh), (uint16_t)total_len, true);
+    spi_out_write_hex(log_cb, BLE_LOG_SPI_OUT_SOURCE_MESH, str_buf, (uint16_t)total_len, true);
     return 0;
 }
 #endif // SPI_OUT_MESH_ENABLED

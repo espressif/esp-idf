@@ -35,6 +35,13 @@ config BT_BLE_LOG_SPI_OUT_HCI_BUF_SIZE
         SPI transaction buffer size for HCI logs.
         There will be 2 SPI DMA buffers with the same size.
 
+config BT_BLE_LOG_SPI_OUT_HCI_TASK_CNT
+    int "HCI task count"
+    depends on BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+    default 1
+    help
+        HCI task count
+
 config BT_BLE_LOG_SPI_OUT_HOST_ENABLED
     bool "Enable Host log output to SPI"
     depends on BT_BLE_LOG_SPI_OUT_ENABLED
@@ -50,6 +57,13 @@ config BT_BLE_LOG_SPI_OUT_HOST_BUF_SIZE
     help
         SPI transaction buffer size for host logs.
         There will be 2 SPI DMA buffers with the same size.
+
+config BT_BLE_LOG_SPI_OUT_HOST_TASK_CNT
+    int "Host task count"
+    depends on BT_BLE_LOG_SPI_OUT_HOST_ENABLED
+    default 2
+    help
+        Host task count.
 
 config BT_BLE_LOG_SPI_OUT_LL_ENABLED
     bool "Enable Controller log output to SPI"
@@ -155,6 +169,13 @@ config BT_BLE_LOG_SPI_OUT_LE_AUDIO_BUF_SIZE
         SPI transaction buffer size for LE Audio logs.
         There will be 2 SPI DMA buffers with the same size.
 
+config BT_BLE_LOG_SPI_OUT_LE_AUDIO_TASK_CNT
+    int "LE audio task count"
+    depends on BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
+    default 1
+    help
+        LE audio task count
+
 config BT_BLE_LOG_SPI_OUT_MESH_ENABLED
     bool "Enable BLE mesh log output to SPI"
     depends on BT_BLE_LOG_SPI_OUT_ENABLED
@@ -169,3 +190,10 @@ config BT_BLE_LOG_SPI_OUT_MESH_BUF_SIZE
     help
         SPI transaction buffer size for BLE mesh logs.
         There will be 2 SPI DMA buffers with the same size.
+
+config BT_BLE_LOG_SPI_OUT_MESH_TASK_CNT
+    int "Mesh task count"
+    depends on BT_BLE_LOG_SPI_OUT_MESH_ENABLED
+    default 3
+    help
+        Mesh task count
