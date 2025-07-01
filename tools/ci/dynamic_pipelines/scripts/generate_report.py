@@ -8,6 +8,7 @@ import typing as t
 
 import __init__  # noqa: F401 # inject the system path
 from idf_build_apps import json_list_files_to_apps
+from idf_ci import GitlabEnvVars
 from idf_ci_local.app import enrich_apps_with_metrics_info
 
 from dynamic_pipelines.report import BuildReportGenerator
@@ -115,6 +116,10 @@ def generate_target_test_report(args: argparse.Namespace) -> None:
         test_cases=test_cases,
     )
     report_generator.post_report()
+
+    if GitlabEnvVars().IDF_CI_IS_DEBUG_PIPELINE:
+        print('Debug pipeline detected, exit non-zero to fail the pipeline in order to block merge')
+        exit(30)
 
 
 def generate_jobs_report(args: argparse.Namespace) -> None:
