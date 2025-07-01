@@ -15,9 +15,11 @@ extern "C" {
 #endif
 
 #if ESP_LOG_MODE_BINARY_EN
+#define ESP_LOG_ATTR                    NOLOAD_ATTR
 #define ESP_LOG_ATTR_STR(str)           (__builtin_constant_p(str) ? ESP_LOG_NOLOAD_STR(str) : str)
 #define ESP_LOG_ATTR_DRAM_STR(str)      ESP_LOG_NOLOAD_STR(str)
 #else
+#define ESP_LOG_ATTR
 #define ESP_LOG_ATTR_STR(str)           (str)
 #define ESP_LOG_ATTR_DRAM_STR(str)      DRAM_STR(str)
 #endif
