@@ -365,20 +365,50 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
 
     if (https_ota_handle->partial_http_download) {
         esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_HEAD);
+
         err = esp_http_client_perform(https_ota_handle->http_client);
         if (err == ESP_OK) {
             int status = esp_http_client_get_status_code(https_ota_handle->http_client);
             if (status != HttpStatus_Ok) {
-                ESP_LOGE(TAG, "Received incorrect http status %d", status);
-                err = ESP_FAIL;
-                goto http_cleanup;
+                // If server doesn't support HEAD request, we need to get image length from GET request
+                // using Range header
+                esp_http_client_set_header(https_ota_handle->http_client, "Range", "bytes=0-0");
+                esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_GET);
+
+                err = esp_http_client_perform(https_ota_handle->http_client);
+                if (err == ESP_OK) {
+                    status = esp_http_client_get_status_code(https_ota_handle->http_client);
+                    if (status != HttpStatus_Ok && status != HttpStatus_PartialContent) {
+                        ESP_LOGE(TAG, "Received incorrect http status %d", status);
+                        err = ESP_FAIL;
+                        goto http_cleanup;
+                    }
+                } else {
+                    ESP_LOGE(TAG, "ESP HTTP client perform failed: %d", err);
+                    goto http_cleanup;
+                }
+                esp_http_client_set_header(https_ota_handle->http_client, "Range", NULL);
+
+                if (status == HttpStatus_Ok) {
+                    // If server responds with 200 OK, we can get image length from content-length header
+                    https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
+                } else {
+                    // If server responds with 206 Partial Content, we can get image length from content-range header
+                    https_ota_handle->image_length = esp_http_client_get_content_range(https_ota_handle->http_client);
+                }
+            } else {
+                https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
             }
         } else {
             ESP_LOGE(TAG, "ESP HTTP client perform failed: %d", err);
             goto http_cleanup;
         }
 
-        https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
+        if (https_ota_handle->image_length == -1) {
+            ESP_LOGE(TAG, "Failed to get image length from http response");
+            err = ESP_FAIL;
+            goto http_cleanup;
+        }
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
         /* In case of pre ecnrypted OTA, actual image size of OTA binary includes header size
          * which stored in variable enc_img_header_size */

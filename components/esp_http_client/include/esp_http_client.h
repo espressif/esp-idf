@@ -232,6 +232,7 @@ typedef struct {
 typedef enum {
     /* 2xx - Success */
     HttpStatus_Ok                = 200,
+    HttpStatus_PartialContent    = 206,
 
     /* 3xx - Redirection */
     HttpStatus_MultipleChoices   = 300,
@@ -641,6 +642,19 @@ int esp_http_client_get_status_code(esp_http_client_handle_t client);
  *     - Content-Length value as bytes
  */
 int64_t esp_http_client_get_content_length(esp_http_client_handle_t client);
+
+/**
+ * @brief      Get http response content range (from header Content-Range)
+ *             The returned value is valid only if this function is invoked after
+ *             a successful call to `esp_http_client_perform`.
+ *             Content-Range is set to -1 if parsing fails or if the Content-Range header is not present.
+ *
+ * @param[in]  client  The esp_http_client handle
+ *
+ * @return
+ *     - Content-Range value as bytes
+ */
+int64_t esp_http_client_get_content_range(esp_http_client_handle_t client);
 
 /**
  * @brief      Close http connection, still kept all http request resources

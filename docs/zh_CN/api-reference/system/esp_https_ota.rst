@@ -47,6 +47,9 @@ ESP HTTPS OTA 升级
 
 mbedTLS Rx buffer 的默认大小为 16 KB，但如果将 ``partial_http_download`` 的 ``max_http_request_size`` 设置为 4 KB，便能将 mbedTLS Rx 的 buffer 减小到 4 KB。使用这一配置方式预计可以节省约 12 KB 内存。
 
+.. note::
+    如果服务器使用分块传输编码，则无法进行部分下载，因为无法预先获知总内容长度。
+
 OTA 恢复
 --------
 

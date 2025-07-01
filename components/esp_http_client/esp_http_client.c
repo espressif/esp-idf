@@ -67,6 +67,7 @@ typedef struct {
     int64_t             data_process;   /*!< data processed */
     int                 method;         /*!< http method */
     bool                is_chunked;
+    int64_t             content_range;  /*!< content range */
 } esp_http_data_t;
 
 typedef struct {
@@ -269,7 +270,29 @@ static int http_on_header_value(http_parser *parser, const char *at, size_t leng
     if (client->current_header_key == NULL) {
         return 0;
     }
-    if (strcasecmp(client->current_header_key, "Location") == 0) {
+    if (strcasecmp(client->current_header_key, "Content-Range") == 0) {
+        HTTP_RET_ON_FALSE_DBG(http_utils_append_string(&client->current_header_value, at, length), -1, TAG, "Failed to append string");
+
+        int64_t total_size = -1;
+        client->response->content_range = -1;
+        char *slash_pos = strchr(client->current_header_value, '/');
+
+        if (slash_pos) {
+            if (slash_pos[1] == '*') {
+                ESP_LOGE(TAG, "Content-Range header has unknown total size (bytes A-B/*)");
+            } else {
+                char *endptr;
+                total_size = strtol(slash_pos + 1, &endptr, 10);
+                if (total_size > 0 && *endptr == '\0') {
+                    client->response->content_range = total_size;
+                } else {
+                    ESP_LOGE(TAG, "Failed to extract total size from Content-Range");
+                }
+            }
+        } else {
+            ESP_LOGE(TAG, "Invalid Content-Range format (missing '/')");
+        }
+    } else if (strcasecmp(client->current_header_key, "Location") == 0) {
         HTTP_RET_ON_FALSE_DBG(http_utils_append_string(&client->location, at, length), -1, TAG, "Failed to append string");
     } else if (strcasecmp(client->current_header_key, "Transfer-Encoding") == 0
                && memcmp(at, "chunked", length) == 0) {
@@ -1815,6 +1838,11 @@ int esp_http_client_get_status_code(esp_http_client_handle_t client)
 int64_t esp_http_client_get_content_length(esp_http_client_handle_t client)
 {
     return client->response->content_length;
+}
+
+int64_t esp_http_client_get_content_range(esp_http_client_handle_t client)
+{
+    return client->response->content_range;
 }
 
 bool esp_http_client_is_chunked_response(esp_http_client_handle_t client)
