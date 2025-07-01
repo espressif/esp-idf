@@ -130,6 +130,14 @@ menu "OpenThread"
                 default 12390
                 help
                     Configure the port number of TREL service.
+
+            config OPENTHREAD_TREL_BUFFER_SIZE
+                int "The receive buffer size of openthread trel"
+                depends on OPENTHREAD_RADIO_TREL
+                range 10 255
+                default 50
+                help
+                    Configure the receive buffer size of TREL service.
         endmenu
 
         menu "Thread 15.4 Radio Link"
