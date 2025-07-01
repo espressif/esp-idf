@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -52,7 +52,7 @@
             .tx_pin = OPENTHREAD_RCP_UART_TX_PIN,               \
         },                                                      \
     }
-#else // CONFIG_OPENTHREAD_RCP_SPI
+#elif CONFIG_OPENTHREAD_RCP_SPI // CONFIG_OPENTHREAD_RCP_SPI
 #define ESP_OPENTHREAD_DEFAULT_HOST_CONFIG()                    \
     {                                                           \
         .host_connection_mode = HOST_CONNECTION_MODE_RCP_SPI,   \
@@ -74,6 +74,12 @@
             },                                                  \
             .intr_pin = 9,                                      \
         },                                                      \
+    }
+#else // CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG
+#define ESP_OPENTHREAD_DEFAULT_HOST_CONFIG()                        \
+    {                                                               \
+        .host_connection_mode = HOST_CONNECTION_MODE_RCP_USB,       \
+        .host_usb_config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT(), \
     }
 #endif
 
