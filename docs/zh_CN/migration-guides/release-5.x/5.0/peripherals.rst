@@ -90,15 +90,17 @@ GPIO
 
 .. only:: SOC_SDM_SUPPORTED
 
-    Sigma-Delta 调制器
-    ---------------------------------
+    .. _deprecate_sdm_legacy_driver:
+
+    旧版 Sigma-Delta 调制器驱动已被弃用
+    --------------------------------------------------
 
     Sigma-Delta 调制器的驱动现已更新为 :doc:`SDM <../../../api-reference/peripherals/sdm>`。
 
     - 新驱动中实现了工厂模式，SDM 通道都位于内部通道池中，因此用户无需手动将 SDM 通道配置到 GPIO 管脚。
     - SDM 通道会被自动分配。
 
-    尽管我们推荐用户使用新的驱动 API，旧版驱动仍然可用，位于头文件引用路径 ``driver/sigmadelta.h`` 中。但是，引用 ``driver/sigmadelta.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_SDM_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
+    尽管我们推荐用户使用新的驱动 API，旧版驱动仍然可用，位于头文件引用路径 ``driver/sigmadelta.h`` 中。但是，引用 ``driver/sigmadelta.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 ``CONFIG_SDM_SUPPRESS_DEPRECATE_WARN`` 关闭该警告。
 
     .. code-block:: text
 
@@ -121,43 +123,41 @@ GPIO
     - 更新前，通道配置由通道分配在 :cpp:func:`sdm_new_channel` 完成。在新驱动中，只有 ``density`` 可在运行时由 :cpp:func:`sdm_channel_set_pulse_density` 更新。其他参数如 ``gpio number``、 ``prescale`` 只能在通道分配时进行设置。
     - 在进行下一步通道操作前，用户应通过调用 :cpp:func:`sdm_channel_enable` 提前 **使能** 该通道。该函数有助于管理一些系统级服务，如 **电源管理**。
 
-    .. _deprecate_gptimer_legacy_driver:
-
-.. only:: not SOC_SDM_SUPPORTED
+.. only:: SOC_GPTIMER_SUPPORTED
 
     .. _deprecate_gptimer_legacy_driver:
 
-旧版定时器组驱动被弃用
-----------------------
+    旧版定时器组驱动被弃用
+    ----------------------
 
-为统一和简化通用定时器的使用，定时器组驱动已更新为 :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`。
+    为统一和简化通用定时器的使用，定时器组驱动已更新为 :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`。
 
-尽管我们推荐使用新的驱动 API， 旧版驱动仍然可用，其头文件引用路径为 ``driver/timer.h``。但是，引用 ``driver/timer.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 ``CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`` 关闭该警告。
+    尽管我们推荐使用新的驱动 API， 旧版驱动仍然可用，其头文件引用路径为 ``driver/timer.h``。但是，引用 ``driver/timer.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 ``CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`` 关闭该警告。
 
-.. code-block:: text
+    .. code-block:: text
 
-    legacy timer group driver is deprecated, please migrate to driver/gptimer.h
+        legacy timer group driver is deprecated, please migrate to driver/gptimer.h
 
-概念和使用方法上的主要更新如下所示：
+    概念和使用方法上的主要更新如下所示：
 
-主要概念更新
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    主要概念更新
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
--  用于识别定时器的 ``timer_group_t`` 和 ``timer_idx_t`` 已被删除。在新驱动中，定时器用参数 :cpp:type:`gptimer_handle_t` 表示。
--  更新后，定时器的时钟源由 :cpp:type:`gptimer_clock_source_t` 定义，之前的时钟源参数 ``timer_src_clk_t`` 不再使用。
--  更新后，定时器计数方向由 :cpp:type:`gptimer_count_direction_t` 定义，之前的计数方向参数 ``timer_count_dir_t`` 不再使用。
--  更新后，仅支持电平触发的中断， ``timer_intr_t`` 和 ``timer_intr_mode_t`` 不再使用。
--  更新后，通过设置标志位 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm`， 可以使能自动加载。 ``timer_autoreload_t`` 不再使用。
+    -  用于识别定时器的 ``timer_group_t`` 和 ``timer_idx_t`` 已被删除。在新驱动中，定时器用参数 :cpp:type:`gptimer_handle_t` 表示。
+    -  更新后，定时器的时钟源由 :cpp:type:`gptimer_clock_source_t` 定义，之前的时钟源参数 ``timer_src_clk_t`` 不再使用。
+    -  更新后，定时器计数方向由 :cpp:type:`gptimer_count_direction_t` 定义，之前的计数方向参数 ``timer_count_dir_t`` 不再使用。
+    -  更新后，仅支持电平触发的中断， ``timer_intr_t`` 和 ``timer_intr_mode_t`` 不再使用。
+    -  更新后，通过设置标志位 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm`， 可以使能自动加载。 ``timer_autoreload_t`` 不再使用。
 
-主要使用方法更新
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    主要使用方法更新
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
--  更新后，通过从 :cpp:func:`gptimer_new_timer` 创建定时器示例可以初始化定时器。用户可以在 :cpp:type:`gptimer_config_t` 进行一些基本设置，如时钟源，分辨率和计数方向。请注意，无需在驱动安装阶段进行报警事件的特殊设置。
--  更新后，报警事件在 :cpp:func:`gptimer_set_alarm_action` 中进行设置，参数在 :cpp:type:`gptimer_alarm_config_t` 中进行设置。
--  更新后，通过 :cpp:func:`gptimer_set_raw_count` 设置计数数值，通过 :cpp:func:`gptimer_get_raw_count` 获取计数数值。驱动不会自动将原始数据同步到 UTC 时间戳。由于定时器的分辨率已知，用户可以自行转换数据。
--  更新后，如果 :cpp:member:`gptimer_event_callbacks_t::on_alarm` 被设置为有效的回调函数，驱动程序也会安装中断服务。在回调函数中，用户无需配置底层寄存器，如用于“清除中断状态”，“重新使能事件”的寄存器等。因此， ``timer_group_get_intr_status_in_isr`` 与 ``timer_group_get_auto_reload_in_isr`` 这些函数不再使用。
--  更新后，当报警事件发生时，为更新报警配置，用户可以在中断回调中调用 :cpp:func:`gptimer_set_alarm_action`，这样报警事件会被重新使能。
--  更新后，如果用户将 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` 设置为 true，报警事件将会一直被驱动程序使能。
+    -  更新后，通过从 :cpp:func:`gptimer_new_timer` 创建定时器示例可以初始化定时器。用户可以在 :cpp:type:`gptimer_config_t` 进行一些基本设置，如时钟源，分辨率和计数方向。请注意，无需在驱动安装阶段进行报警事件的特殊设置。
+    -  更新后，报警事件在 :cpp:func:`gptimer_set_alarm_action` 中进行设置，参数在 :cpp:type:`gptimer_alarm_config_t` 中进行设置。
+    -  更新后，通过 :cpp:func:`gptimer_set_raw_count` 设置计数数值，通过 :cpp:func:`gptimer_get_raw_count` 获取计数数值。驱动不会自动将原始数据同步到 UTC 时间戳。由于定时器的分辨率已知，用户可以自行转换数据。
+    -  更新后，如果 :cpp:member:`gptimer_event_callbacks_t::on_alarm` 被设置为有效的回调函数，驱动程序也会安装中断服务。在回调函数中，用户无需配置底层寄存器，如用于“清除中断状态”，“重新使能事件”的寄存器等。因此， ``timer_group_get_intr_status_in_isr`` 与 ``timer_group_get_auto_reload_in_isr`` 这些函数不再使用。
+    -  更新后，当报警事件发生时，为更新报警配置，用户可以在中断回调中调用 :cpp:func:`gptimer_set_alarm_action`，这样报警事件会被重新使能。
+    -  更新后，如果用户将 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` 设置为 true，报警事件将会一直被驱动程序使能。
 
 UART
 ------------
