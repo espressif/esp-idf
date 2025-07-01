@@ -16,7 +16,7 @@
 
 #include "secure_boot_signature_priv.h"
 
-static const char *TAG = "secure_boot_v2_ecdsa";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2_ecdsa");
 
 #define ECDSA_INTEGER_LEN 32
 

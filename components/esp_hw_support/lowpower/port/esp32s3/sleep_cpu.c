@@ -26,7 +26,7 @@
 #include "hal/rtc_hal.h"
 #include "esp32s3/rom/cache.h"
 
-static __attribute__((unused)) const char *TAG = "sleep";
+ESP_LOG_ATTR_TAG(TAG, "sleep");
 
 typedef struct {
     uint32_t start;

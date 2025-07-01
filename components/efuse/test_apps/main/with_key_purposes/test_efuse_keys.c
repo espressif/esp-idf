@@ -16,7 +16,7 @@
 #include "esp_efuse_utility.h"
 #include "sdkconfig.h"
 
-__attribute__((unused)) static const char* TAG = "efuse_key_test";
+ESP_LOG_ATTR_TAG(TAG, "efuse_key_test");
 
 
 #ifdef CONFIG_EFUSE_VIRTUAL

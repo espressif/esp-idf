@@ -12,7 +12,7 @@
 #include "hal/gpio_ll.h"
 #include "hal/log.h"
 
-static const char *CLK_HAL_TAG = "clk_hal";
+HAL_LOG_ATTR_TAG(CLK_HAL_TAG, "clk_hal");
 
 uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
 {

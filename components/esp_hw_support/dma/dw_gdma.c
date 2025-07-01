@@ -32,7 +32,7 @@
 #include "hal/cache_ll.h"
 #include "esp_cache.h"
 
-static const char *TAG = "dw-gdma";
+ESP_LOG_ATTR_TAG(TAG, "dw-gdma");
 
 #if !SOC_RCC_IS_INDEPENDENT
 // Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section

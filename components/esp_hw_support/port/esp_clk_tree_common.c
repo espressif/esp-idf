@@ -14,7 +14,7 @@
 #include "sdkconfig.h"
 #include "esp_hw_log.h"
 
-static const char *TAG = "esp_clk_tree_common";
+ESP_HW_LOG_ATTR_TAG(TAG, "esp_clk_tree_common");
 
 typedef struct esp_clk_tree_calibrated_freq_t esp_clk_tree_calibrated_freq_t;
 

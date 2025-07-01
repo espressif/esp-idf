@@ -15,7 +15,7 @@
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
-static __attribute__((unused)) const char *TAG = "flash_encrypt";
+ESP_LOG_ATTR_TAG(TAG, "flash_encrypt");
 
 esp_err_t esp_flash_encryption_enable_secure_features(void)
 {

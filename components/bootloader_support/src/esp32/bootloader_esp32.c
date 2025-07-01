@@ -37,7 +37,7 @@
 #include "esp_rom_spiflash.h"
 #include "esp_efuse.h"
 
-static const char *TAG = "boot.esp32";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32");
 
 #if !CONFIG_APP_BUILD_TYPE_RAM
 static void bootloader_reset_mmu(void)
@@ -91,7 +91,7 @@ static void wdt_reset_info_dump(int cpu)
 {
     uint32_t inst = 0, pid = 0, stat = 0, data = 0, pc = 0,
              lsstat = 0, lsaddr = 0, lsdata = 0, dstat = 0;
-    const char *cpu_name = cpu ? "APP" : "PRO";
+    const char *cpu_name = cpu ? ESP_LOG_ATTR_STR("APP") : ESP_LOG_ATTR_STR("PRO");
 
     if (cpu == 0) {
         stat = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_STATUS_REG);

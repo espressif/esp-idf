@@ -17,7 +17,7 @@
 
 static portMUX_TYPE __attribute__((unused)) mux = portMUX_INITIALIZER_UNLOCKED;
 
-static DRAM_ATTR __attribute__((unused)) const char *TAG = "REGI2C";
+ESP_HW_LOG_ATTR_TAG_DRAM(TAG, "REGI2C");
 
 uint8_t regi2c_ctrl_read_reg(uint8_t block, uint8_t host_id, uint8_t reg_add)
 {

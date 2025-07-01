@@ -54,7 +54,7 @@
 
 #if CONFIG_ESP_INT_WDT
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
-static const char* TAG = "int_wdt";
+ESP_LOG_ATTR_TAG(TAG, "int_wdt");
 static esp_err_t sleep_int_wdt_retention_init(void *arg)
 {
     uint32_t group_id = *(uint32_t *)arg;

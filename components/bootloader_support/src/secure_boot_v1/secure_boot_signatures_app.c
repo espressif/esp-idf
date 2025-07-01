@@ -21,7 +21,7 @@
 #include <sys/param.h>
 
 #ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
-static const char *TAG = "secure_boot_v1";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot_v1");
 
 extern const uint8_t signature_verification_key_start[] asm("_binary_signature_verification_key_bin_start");
 extern const uint8_t signature_verification_key_end[] asm("_binary_signature_verification_key_bin_end");

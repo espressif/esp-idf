@@ -19,7 +19,7 @@
 
 #define APB_CYCLE_NS   (1000*1000*1000LL/APB_CLK_FREQ)
 
-static const char *TAG = "flash_hal";
+HAL_LOG_ATTR_TAG(TAG, "flash_hal");
 
 static uint32_t get_flash_clock_divider(const spi_flash_hal_config_t *cfg)
 {

@@ -24,7 +24,7 @@
 #define WR_DIS_CRYPT_CNT ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT
 #endif
 
-static const char *TAG = "flash_encrypt";
+ESP_LOG_ATTR_TAG(TAG, "flash_encrypt");
 #ifndef BOOTLOADER_BUILD
 
 void esp_flash_encryption_init_checks()

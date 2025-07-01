@@ -25,7 +25,7 @@
 #include "hal/cp_dma_hal.h"
 #include "hal/cp_dma_ll.h"
 
-static const char *TAG = "async_mcp.cpdma";
+ESP_LOG_ATTR_TAG(TAG, "async_mcp.cpdma");
 
 #define MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
 

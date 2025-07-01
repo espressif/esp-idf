@@ -21,7 +21,7 @@
 #include "bootloader_flash_override.h"
 
 
-static const char *TAG = "qio_mode";
+ESP_LOG_ATTR_TAG(TAG, "qio_mode");
 
 /* Array of known flash chips and data to enable Quad I/O mode
 

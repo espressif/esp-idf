@@ -23,7 +23,7 @@
 #include "esp_private/sar_periph_ctrl.h"
 #endif
 
-static const char *TAG = "rtc_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_init");
 
 static void set_ocode_by_efuse(int calib_version);
 static void calibrate_ocode(void);

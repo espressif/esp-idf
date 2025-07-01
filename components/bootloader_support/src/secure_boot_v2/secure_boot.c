@@ -28,7 +28,7 @@ extern esp_image_metadata_t tee_data;
 #endif
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-static const char *TAG = "secure_boot_v2";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2");
 
 /* A signature block is valid when it has correct magic byte, crc and image digest. */
 static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *block, int block_num, const uint8_t *image_digest)

@@ -70,7 +70,7 @@ static esp_usb_console_cb_t s_tx_cb;
 static void *s_cb_arg;
 static esp_timer_handle_t s_restart_timer;
 
-static const char* TAG = "usb_console";
+ESP_LOG_ATTR_TAG(TAG, "usb_console");
 
 /* This lock is used for two purposes:
  * - To protect functions which write something to USB, e.g. esp_usb_console_write_buf.

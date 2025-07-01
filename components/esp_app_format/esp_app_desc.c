@@ -16,7 +16,7 @@
 #if !CONFIG_IDF_TARGET_LINUX && !ESP_TEE_BUILD
 #include "esp_private/startup_internal.h"
 
-static const char *TAG = "app_init";
+ESP_LOG_ATTR_TAG(TAG, "app_init");
 #endif
 
 // Application version info

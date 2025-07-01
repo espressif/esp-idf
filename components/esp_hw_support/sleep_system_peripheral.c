@@ -20,7 +20,7 @@
 #include "esp_private/startup_internal.h"
 #include "esp_private/sleep_retention.h"
 
-static __attribute__((unused)) const char *TAG = "sleep_sys_periph";
+ESP_LOG_ATTR_TAG(TAG, "sleep_sys_periph");
 
 static __attribute__((unused)) esp_err_t sleep_sys_periph_intr_matrix_retention_init(void *arg)
 {

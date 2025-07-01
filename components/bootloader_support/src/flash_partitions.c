@@ -9,7 +9,7 @@
 #include "esp_rom_md5.h"
 #include "esp_rom_spiflash.h"
 
-static const char *TAG = "flash_parts";
+ESP_LOG_ATTR_TAG(TAG, "flash_parts");
 
 esp_err_t esp_partition_table_verify(const esp_partition_info_t *partition_table, bool log_errors, int *num_partitions)
 {

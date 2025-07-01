@@ -17,7 +17,7 @@
 #include "hal/cache_ll.h"
 #include "esp_cache.h"
 
-static const char *TAG = "gdma-link";
+ESP_LOG_ATTR_TAG(TAG, "gdma-link");
 
 #if SOC_NON_CACHEABLE_OFFSET
 #define GDMA_CACHE_ADDR_TO_NON_CACHE_ADDR(addr) ((addr) + SOC_NON_CACHEABLE_OFFSET)

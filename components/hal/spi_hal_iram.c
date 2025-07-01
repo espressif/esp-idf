@@ -14,8 +14,7 @@
 #include "soc/ext_mem_defs.h"
 #include "soc/soc_caps.h"
 
-/* The tag may be unused if log level is set to NONE  */
-static __attribute__((unused)) char SPI_HAL_TAG[] = "spi_hal";
+HAL_LOG_ATTR_TAG(SPI_HAL_TAG, "spi_hal");
 
 void spi_hal_setup_device(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev)
 {

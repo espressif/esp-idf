@@ -39,7 +39,7 @@
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
 
-static const char *TAG = "boot.esp32s2";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32s2");
 
 static void wdt_reset_cpu0_info_enable(void)
 {

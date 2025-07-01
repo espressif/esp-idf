@@ -14,6 +14,8 @@
 #if __has_include("esp_log.h")
 
 #include "esp_log.h"
+#define HAL_LOG_ATTR_TAG(tag, str)      ESP_LOG_ATTR_TAG(tag, str)
+#define HAL_LOG_ATTR_TAG_DRAM(tag, str) ESP_LOG_ATTR_TAG_DRAM(tag, str)
 
 #define HAL_LOGE(...)    ESP_LOGE(__VA_ARGS__)
 #define HAL_LOGW(...)    ESP_LOGW(__VA_ARGS__)
@@ -38,6 +40,8 @@
 #define HAL_LOG_DEBUG   4
 #define HAL_LOG_VERBOSE 5
 
+#define HAL_LOG_ATTR_TAG(tag, str)      static __attribute__((unused)) const char *tag = str
+#define HAL_LOG_ATTR_TAG_DRAM(tag, str) static __attribute__((unused)) DRAM_ATTR const char tag[] = str
 
 #if CONFIG_HAL_LOG_LEVEL >= HAL_LOG_ERROR
     #define HAL_LOGE(tag, fmt, ...) esp_rom_printf("%s(err): " fmt, tag, ##__VA_ARGS__)

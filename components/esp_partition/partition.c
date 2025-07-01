@@ -70,7 +70,7 @@ typedef struct esp_partition_iterator_opaque_ {
 static SLIST_HEAD(partition_list_head_, partition_list_item_) s_partition_list = SLIST_HEAD_INITIALIZER(s_partition_list);
 static _lock_t s_partition_list_lock;
 
-static const char *TAG = "partition";
+ESP_LOG_ATTR_TAG(TAG, "partition");
 
 static bool is_partition_encrypted(bool encryption_config, esp_partition_type_t type, esp_partition_subtype_t subtype)
 {

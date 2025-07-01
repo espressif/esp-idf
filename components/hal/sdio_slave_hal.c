@@ -23,8 +23,7 @@
     return ret_val;\
 } }while (0)
 
-/* The tag may be unused if log level is set to NONE  */
-static const __attribute__((unused)) char TAG[] = "SDIO_HAL";
+HAL_LOG_ATTR_TAG(TAG, "SDIO_HAL");
 
 static esp_err_t init_send_queue(sdio_slave_context_t *hal);
 

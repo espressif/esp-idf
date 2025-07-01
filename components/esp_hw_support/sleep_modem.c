@@ -26,7 +26,7 @@
 #include "esp_pau.h"
 #endif
 
-static __attribute__((unused)) const char *TAG = "sleep_modem";
+ESP_LOG_ATTR_TAG(TAG, "sleep_modem");
 
 #if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
 static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_freq_mhz);

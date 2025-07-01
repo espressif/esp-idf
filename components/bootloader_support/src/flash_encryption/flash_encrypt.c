@@ -39,7 +39,7 @@
  * and if required encrypt the partitions in flash memory
  */
 
-static const char *TAG = "flash_encrypt";
+ESP_LOG_ATTR_TAG(TAG, "flash_encrypt");
 
 /* Static functions for stages of flash encryption */
 static esp_err_t encrypt_bootloader(void);

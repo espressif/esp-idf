@@ -9,6 +9,8 @@
 
 #define ETM_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
 
+ESP_LOG_ATTR_TAG(TAG, "gdma");
+
 typedef struct gdma_etm_task_t {
     esp_etm_task_t base;
     gdma_channel_t *chan;

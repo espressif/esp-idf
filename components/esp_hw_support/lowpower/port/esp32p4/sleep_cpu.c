@@ -44,7 +44,7 @@ static TCM_DRAM_ATTR smp_retention_state_t s_smp_retention_state[portNUM_PROCESS
 #endif
 
 
-static __attribute__((unused)) const char *TAG = "sleep";
+ESP_LOG_ATTR_TAG(TAG, "sleep");
 
 static TCM_DRAM_ATTR __attribute__((unused)) sleep_cpu_retention_t s_cpu_retention;
 

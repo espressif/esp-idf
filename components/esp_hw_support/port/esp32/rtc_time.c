@@ -14,7 +14,7 @@
 #include "esp_hw_log.h"
 #include "esp_private/periph_ctrl.h"
 
-static const char *TAG = "rtc_time";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_time");
 
 /* Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
  * This feature counts the number of XTAL clock cycles within a given number of

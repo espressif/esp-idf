@@ -11,6 +11,8 @@
 
 #define MHZ (1000 * 1000)
 
+HAL_LOG_ATTR_TAG(TAG, "csi_hal");
+
 void s_mipi_csi_hal_phy_write_register(mipi_csi_hal_context_t *hal, uint8_t reg_addr, uint8_t reg_val)
 {
     mipi_csi_phy_ll_write_clock(hal->host_dev, 0, false);
@@ -47,7 +49,7 @@ void mipi_csi_hal_init(mipi_csi_hal_context_t *hal, const mipi_csi_hal_config_t 
         }
     }
     s_mipi_csi_hal_phy_write_register(hal, 0x44, hs_freq_sel << 1);
-    HAL_LOGD("csi_hal", "CSI-DPHY lane_rate: %d Hz, hs_freq: 0x%x, lane_num: 0x%x", csi_lane_rate, hs_freq_sel, config->lanes_num);
+    HAL_LOGD(TAG, "CSI-DPHY lane_rate: %d Hz, hs_freq: 0x%x, lane_num: 0x%x", csi_lane_rate, hs_freq_sel, config->lanes_num);
     mipi_csi_phy_ll_enable_shutdown_input(hal->host_dev, false);
     mipi_csi_phy_ll_enable_reset_output(hal->host_dev, false);
     mipi_csi_host_ll_enable_reset_output(hal->host_dev, false);

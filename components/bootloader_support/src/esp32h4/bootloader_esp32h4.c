@@ -39,7 +39,7 @@
 #include "hal/efuse_hal.h"
 #include "hal/lpwdt_ll.h"
 
-static const char *TAG = "boot.esp32h4";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32h4");
 
 // TODO: [ESP32H4] support core1 bus monitor IDF-12592
 static void wdt_reset_cpu0_info_enable(void)

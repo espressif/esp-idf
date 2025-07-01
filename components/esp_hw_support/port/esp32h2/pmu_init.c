@@ -17,8 +17,9 @@
 #include "soc/regi2c_pmu.h"
 #include "soc/regi2c_bias.h"
 #include "regi2c_ctrl.h"
+#include "esp_hw_log.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_init");
 
 typedef struct {
     const pmu_hp_system_power_param_t     *power;

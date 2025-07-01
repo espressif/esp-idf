@@ -27,7 +27,7 @@
 #include "hal/cache_ll.h"
 #include "hal/gdma_ll.h"
 
-static const char *TAG = "async_mcp.gdma";
+ESP_LOG_ATTR_TAG(TAG, "async_mcp.gdma");
 
 #define MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
 

@@ -12,7 +12,7 @@
 #include "esp_random.h"
 #include "esp_log.h"
 
-static const char *TAG = "RANDOM";
+ESP_LOG_ATTR_TAG(TAG, "RANDOM");
 
 ssize_t getrandom(void *buf, size_t buflen, unsigned int flags)
 {

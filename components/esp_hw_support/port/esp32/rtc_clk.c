@@ -40,7 +40,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz);
 // Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
 static uint32_t s_cur_pll_freq;
 
-static const char* TAG = "rtc_clk";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 
 static void rtc_clk_32k_enable_common(clk_ll_xtal32k_enable_mode_t mode)
 {

@@ -36,7 +36,7 @@ static inline uint32_t time_get_us_by_ccount(uint32_t counter)
 #define NOT_CHECK_ACK_VALUE  (0)
 #define CHECK_ACK_VALUE      (1)
 
-static const char *TAG = "hal-i2c";
+ESP_LOG_ATTR_TAG(TAG, "hal-i2c");
 
 // If Reset and Clock Control is independent, we need this macro to avoid concurrency issue
 #if !SOC_RCC_IS_INDEPENDENT

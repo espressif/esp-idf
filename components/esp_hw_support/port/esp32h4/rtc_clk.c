@@ -22,7 +22,7 @@
 #include "esp_private/sleep_event.h"
 #include "esp_private/esp_clk_tree_common.h"
 
-static const char *TAG = "rtc_clk";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 
 // Current PLL frequency, in 96MHz. Zero if PLL is not enabled.
 static int s_cur_pll_freq;

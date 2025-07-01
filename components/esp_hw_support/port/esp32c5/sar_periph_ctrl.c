@@ -23,7 +23,7 @@
 #include "esp_private/critical_section.h"
 #include "hal/sar_ctrl_ll.h"
 
-static const char *TAG = "sar_periph_ctrl";
+ESP_LOG_ATTR_TAG(TAG, "sar_periph_ctrl");
 extern portMUX_TYPE rtc_spinlock;
 
 void sar_periph_ctrl_init(void)

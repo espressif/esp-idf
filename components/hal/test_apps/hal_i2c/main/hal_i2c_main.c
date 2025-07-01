@@ -17,7 +17,7 @@
 #define TIMEOUT_MS   (20)
 static const uint8_t slave_address = 0x50;
 
-static const char *TAG = "hal_i2c_main";
+ESP_LOG_ATTR_TAG(TAG, "hal_i2c_main");
 
 void app_main(void)
 {

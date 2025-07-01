@@ -29,7 +29,7 @@
 #include "sys/queue.h"
 
 #if !SOC_LP_PERIPH_SHARE_INTERRUPT // TODO: IDF-8008
-static const char *TAG = "rtc_module";
+ESP_LOG_ATTR_TAG(TAG, "rtc_module");
 #endif
 
 // rtc_spinlock is used by other peripheral drivers

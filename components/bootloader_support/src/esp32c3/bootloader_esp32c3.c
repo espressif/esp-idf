@@ -44,7 +44,7 @@
 #include "hal/rwdt_ll.h"
 #include "hal/brownout_ll.h"
 
-static const char *TAG = "boot.esp32c3";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32c3");
 
 static void wdt_reset_cpu0_info_enable(void)
 {

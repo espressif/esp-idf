@@ -27,7 +27,7 @@
 #include "hal/ecdsa_ll.h"
 #endif /* SOC_ECDSA_SUPPORTED */
 
-static __attribute__((unused)) const char *TAG = "efuse";
+ESP_LOG_ATTR_TAG(TAG, "efuse");
 
 #ifdef CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD
 #define APP_SEC_VER_SIZE_EFUSE_FIELD CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD

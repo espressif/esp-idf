@@ -39,7 +39,7 @@
 #define ETM_RCC_ATOMIC()
 #endif
 
-#define TAG "etm"
+ESP_LOG_ATTR_TAG(TAG, "etm");
 
 typedef struct etm_platform_t etm_platform_t;
 typedef struct etm_group_t etm_group_t;

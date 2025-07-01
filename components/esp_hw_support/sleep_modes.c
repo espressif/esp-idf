@@ -325,7 +325,7 @@ static bool s_light_sleep_wakeup = false;
    is not thread-safe, so we need to disable interrupts before going to deep sleep. */
 static portMUX_TYPE __attribute__((unused)) spinlock_rtc_deep_sleep = portMUX_INITIALIZER_UNLOCKED;
 
-static const char *TAG = "sleep";
+ESP_LOG_ATTR_TAG(TAG, "sleep");
 
 /* APP core of esp32 can't access to RTC FAST MEMORY, do not define it with RTC_IRAM_ATTR */
 RTC_SLOW_ATTR static int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 };

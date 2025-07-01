@@ -26,7 +26,7 @@
 static soc_xtal_freq_t rtc_clk_xtal_freq_estimate(void);
 extern void rtc_clk_cpu_freq_to_xtal(int freq, int div);
 
-static const char* TAG = "rtc_clk_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {

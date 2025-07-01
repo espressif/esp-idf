@@ -726,7 +726,7 @@ void * regdma_find_prev_module_link_tail(void *link, void *tail, int entry, int 
     return NULL;
 }
 
-static __attribute__((unused)) const char *TAG = "regdma_link";
+ESP_LOG_ATTR_TAG(TAG, "regdma_link");
 static const char* s_link_mode_str[] = { "CONTINUOUS", "ADDR_MAP", "WRITE", "WAIT" };
 static const char* s_boolean_str[] = { "false", "true" };
 

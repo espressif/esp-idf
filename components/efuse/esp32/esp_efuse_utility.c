@@ -13,7 +13,7 @@
 #include "sdkconfig.h"
 #include <sys/param.h>
 
-static const char *TAG = "efuse";
+ESP_LOG_ATTR_TAG(TAG, "efuse");
 
 #ifdef CONFIG_EFUSE_VIRTUAL
 extern uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
@@ -220,7 +220,7 @@ static void read_r_data(esp_efuse_block_t num_block, uint32_t* buf_r_data)
     }
 }
 
-// This function just checkes that given data for blocks will not rise a coding issue during the burn operation.
+// This function just checks that given data for blocks will not rise a coding issue during the burn operation.
 // Encoded data will be set during the burn operation.
 esp_err_t esp_efuse_utility_apply_new_coding_scheme()
 {

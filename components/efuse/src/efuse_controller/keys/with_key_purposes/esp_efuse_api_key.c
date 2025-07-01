@@ -18,7 +18,7 @@
  * This special field is called key_purpose.
  */
 
-const static char *TAG = "efuse";
+ESP_LOG_ATTR_TAG(TAG, "efuse");
 
 /**
  * @brief Keys and their attributes are packed into a structure
