@@ -722,12 +722,14 @@ static bool uart_try_set_iomux_pin(uart_port_t uart_num, int io_num, uint32_t id
     return true;
 }
 
-static void uart_release_pin(uart_port_t uart_num)
+static void uart_release_pin(uart_port_t uart_num, bool release_tx, bool release_rx, bool release_rts, bool release_cts)
 {
     if (uart_num >= UART_NUM_MAX) {
         return;
     }
-    if (uart_context[uart_num].tx_io_num >= 0) {
+
+    uint32_t released_io_mask = 0;
+    if (release_tx && uart_context[uart_num].tx_io_num >= 0) {
         gpio_output_disable(uart_context[uart_num].tx_io_num);
 #if (SOC_UART_LP_NUM >= 1)
         if (!(uart_num < SOC_UART_HP_NUM)) {
@@ -737,9 +739,12 @@ static void uart_release_pin(uart_port_t uart_num)
 #if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
         gpio_sleep_sel_en(uart_context[uart_num].tx_io_num); // re-enable the switch to the sleep configuration to save power consumption
 #endif
+
+        released_io_mask |= BIT64(uart_context[uart_num].tx_io_num);
+        uart_context[uart_num].tx_io_num = -1;
     }
 
-    if (uart_context[uart_num].rx_io_num >= 0) {
+    if (release_rx && uart_context[uart_num].rx_io_num >= 0) {
         if (uart_num < SOC_UART_HP_NUM) {
             esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), false);
         }
@@ -754,18 +759,24 @@ static void uart_release_pin(uart_port_t uart_num)
 #if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
         gpio_sleep_sel_en(uart_context[uart_num].rx_io_num); // re-enable the switch to the sleep configuration to save power consumption
 #endif
+
+        released_io_mask |= BIT64(uart_context[uart_num].rx_io_num);
+        uart_context[uart_num].rx_io_num = -1;
     }
 
-    if (uart_context[uart_num].rts_io_num >= 0) {
+    if (release_rts && uart_context[uart_num].rts_io_num >= 0) {
         gpio_output_disable(uart_context[uart_num].rts_io_num);
 #if (SOC_UART_LP_NUM >= 1)
         if (!(uart_num < SOC_UART_HP_NUM)) {
             rtc_gpio_deinit(uart_context[uart_num].rts_io_num);
         }
 #endif
+
+        released_io_mask |= BIT64(uart_context[uart_num].rts_io_num);
+        uart_context[uart_num].rts_io_num = -1;
     }
 
-    if (uart_context[uart_num].cts_io_num >= 0) {
+    if (release_cts && uart_context[uart_num].cts_io_num >= 0) {
         if (uart_num < SOC_UART_HP_NUM) {
             esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_CTS_PIN_IDX), false);
         }
@@ -777,15 +788,13 @@ static void uart_release_pin(uart_port_t uart_num)
             rtc_gpio_deinit(uart_context[uart_num].cts_io_num);
         }
 #endif
+
+        released_io_mask |= BIT64(uart_context[uart_num].cts_io_num);
+        uart_context[uart_num].cts_io_num = -1;
     }
 
-    esp_gpio_revoke(uart_context[uart_num].io_reserved_mask);
-
-    uart_context[uart_num].tx_io_num = -1;
-    uart_context[uart_num].rx_io_num = -1;
-    uart_context[uart_num].rts_io_num = -1;
-    uart_context[uart_num].cts_io_num = -1;
-    uart_context[uart_num].io_reserved_mask = 0;
+    esp_gpio_revoke(uart_context[uart_num].io_reserved_mask & released_io_mask);
+    uart_context[uart_num].io_reserved_mask &= ~released_io_mask;
 }
 
 esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num)
@@ -820,7 +829,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
 #endif
 
     // First, release previously configured IOs if there is
-    uart_release_pin(uart_num);
+    uart_release_pin(uart_num, (tx_io_num >= 0), (rx_io_num >= 0), (rts_io_num >= 0), (cts_io_num >= 0));
 
     // Potential IO reserved mask
     uint64_t io_reserve_mask = 0;
@@ -1899,7 +1908,7 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
         return ESP_OK;
     }
 
-    uart_release_pin(uart_num);
+    uart_release_pin(uart_num, true, true, true, true);
 
     esp_intr_free(p_uart_obj[uart_num]->intr_handle);
     uart_disable_rx_intr(uart_num);
@@ -2178,7 +2187,7 @@ esp_err_t uart_detect_bitrate_stop(uart_port_t uart_num, bool deinit, uart_bitra
     }
 
     if (deinit) { // release the port
-        uart_release_pin(uart_num);
+        uart_release_pin(uart_num, true, true, true, true);
         ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false), UART_TAG, "clock source disable failed");
 #if SOC_UART_SUPPORT_RTC_CLK
         if (src_clk == (soc_module_clk_t)UART_SCLK_RTC) {
