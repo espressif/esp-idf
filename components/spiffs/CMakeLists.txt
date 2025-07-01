@@ -9,7 +9,7 @@ set(original_srcs "spiffs/src/spiffs_cache.c"
 list(APPEND srcs "spiffs_api.c" ${original_srcs})
 
 if(NOT ${target} STREQUAL "linux")
-    list(APPEND pr bootloader_support esptool_py vfs)
+    list(APPEND pr bootloader_support vfs esptool_py)
     list(APPEND srcs "esp_spiffs.c")
 endif()
 

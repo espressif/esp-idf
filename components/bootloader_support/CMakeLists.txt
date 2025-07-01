@@ -28,7 +28,7 @@ if(esp_tee_build)
 
     idf_component_register(SRCS ${tee_srcs}
                            INCLUDE_DIRS ${tee_inc_dirs}
-                           PRIV_REQUIRES efuse esp_app_format)
+                           PRIV_REQUIRES efuse esp_app_format esptool_py)
     return()
 endif()
 
@@ -72,7 +72,7 @@ endif()
 if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
     set(include_dirs "include" "bootloader_flash/include"
         "private_include")
-    set(priv_requires micro-ecc spi_flash efuse esp_bootloader_format esp_app_format)
+    set(priv_requires micro-ecc spi_flash efuse esp_bootloader_format esp_app_format esptool_py)
     list(APPEND srcs
     "src/bootloader_init.c"
     "src/bootloader_clock_loader.c"
@@ -89,7 +89,7 @@ else()
     set(include_dirs "include" "bootloader_flash/include")
     set(priv_include_dirs "private_include")
     # heap is required for `heap_memory_layout.h` header
-    set(priv_requires spi_flash mbedtls efuse heap esp_bootloader_format esp_app_format)
+    set(priv_requires spi_flash mbedtls efuse heap esp_bootloader_format esp_app_format esptool_py)
 endif()
 
 if(BOOTLOADER_BUILD)
