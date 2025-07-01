@@ -15,7 +15,6 @@ RTC Subsystem Control
 
 RTC control APIs have been moved from ``driver/rtc_cntl.h`` to ``esp_private/rtc_ctrl.h``.
 
-
 .. _deprecate_adc_driver:
 
 ADC
