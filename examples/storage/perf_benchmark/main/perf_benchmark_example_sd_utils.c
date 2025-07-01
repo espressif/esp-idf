@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -31,11 +31,11 @@ sdspi_device_config_t slot_config_g;
 #endif // CONFIG_EXAMPLE_USE_SDSPI
 
 #ifdef CONFIG_EXAMPLE_USE_SDMMC
-void init_sd_config(sdmmc_host_t *out_host, sdmmc_slot_config_t *out_slot_config, int freq_khz) {
+void init_sd_config(sdmmc_host_t *out_host, sdmmc_slot_config_t *out_slot_config, int freq_khz)
 #else // CONFIG_EXAMPLE_USE_SDMMC
-void init_sd_config(sdmmc_host_t *out_host, sdspi_device_config_t *out_slot_config, int freq_khz) {
+void init_sd_config(sdmmc_host_t *out_host, sdspi_device_config_t *out_slot_config, int freq_khz)
 #endif // CONFIG_EXAMPLE_USE_SDSPI
-
+{
     // For SoCs where the SD power can be supplied both via an internal or external (e.g. on-board LDO) power supply.
     // When using specific IO pins (which can be used for ultra high-speed SDMMC) to connect to the SD card
     // and the internal LDO power supply, we need to initialize the power supply first.
@@ -66,7 +66,9 @@ void init_sd_config(sdmmc_host_t *out_host, sdspi_device_config_t *out_slot_conf
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
 
     // Set bus width to use:
-    #ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
+    #ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_8
+        slot_config.width = 8;
+    #elif CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
         slot_config.width = 4;
     #else
         slot_config.width = 1;
@@ -78,11 +80,17 @@ void init_sd_config(sdmmc_host_t *out_host, sdspi_device_config_t *out_slot_conf
         slot_config.clk = CONFIG_EXAMPLE_PIN_CLK;
         slot_config.cmd = CONFIG_EXAMPLE_PIN_CMD;
         slot_config.d0 = CONFIG_EXAMPLE_PIN_D0;
-        #ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
+        #if CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4 || CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_8
             slot_config.d1 = CONFIG_EXAMPLE_PIN_D1;
             slot_config.d2 = CONFIG_EXAMPLE_PIN_D2;
             slot_config.d3 = CONFIG_EXAMPLE_PIN_D3;
-        #endif  // CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
+        #endif  // CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4 || CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_8
+        #ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_8
+            slot_config.d4 = CONFIG_EXAMPLE_PIN_D4;
+            slot_config.d5 = CONFIG_EXAMPLE_PIN_D5;
+            slot_config.d6 = CONFIG_EXAMPLE_PIN_D6;
+            slot_config.d7 = CONFIG_EXAMPLE_PIN_D7;
+        #endif  // CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_8
     #endif  // CONFIG_SOC_SDMMC_USE_GPIO_MATRIX
 
     // Enable internal pullups on enabled pins. The internal pullups
@@ -120,7 +128,8 @@ void init_sd_config(sdmmc_host_t *out_host, sdspi_device_config_t *out_slot_conf
     *out_slot_config = slot_config;
 }
 
-esp_err_t init_sd_card(sdmmc_card_t **out_card) {
+esp_err_t init_sd_card(sdmmc_card_t **out_card)
+{
     esp_err_t ret = ESP_OK;
     sdmmc_card_t* card = (sdmmc_card_t *)malloc(sizeof(sdmmc_card_t));
     if (card == NULL) {
@@ -155,24 +164,14 @@ esp_err_t init_sd_card(sdmmc_card_t **out_card) {
     return ret;
 }
 
-void deinit_sd_card(sdmmc_card_t **card) {
+void deinit_sd_card(sdmmc_card_t **card)
+{
 // Unmount SD card
 #ifdef CONFIG_EXAMPLE_USE_SDMMC
     sdmmc_host_deinit();
 #else // CONFIG_EXAMPLE_USE_SDMMC
     sdspi_host_deinit();
 #endif // CONFIG_EXAMPLE_USE_SDSPI
-
-    // Deinitialize the power control driver if it was used
-#if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
-    sd_pwr_ctrl_handle_t pwr_ctrl_handle = (*card)->host.pwr_ctrl_handle;
-    esp_err_t ret = sd_pwr_ctrl_del_on_chip_ldo(pwr_ctrl_handle);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to delete the on-chip LDO power control driver");
-        ESP_ERROR_CHECK(ret);
-    }
-    pwr_ctrl_handle = NULL;
-#endif
 
     free(*card);
     *card = NULL;

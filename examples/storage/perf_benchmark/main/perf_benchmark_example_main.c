@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -22,6 +22,9 @@
 #include "esp_vfs_fat.h"
 #include "esp_spiffs.h"
 #include "wear_levelling.h"
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
+#endif
 
 #include "esp_littlefs.h"
 
@@ -90,6 +93,16 @@ void app_main(void)
 #ifdef CONFIG_EXAMPLE_TEST_SD_CARD_LITTLEFS
     test_sd_littlefs();
 #endif // CONFIG_EXAMPLE_TEST_SD_CARD_LITTLEFS
+
+    // Deinitialize the power control driver if it was used
+#if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+    esp_err_t ret = sd_pwr_ctrl_del_on_chip_ldo(host_g.pwr_ctrl_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to delete the on-chip LDO power control driver");
+        ESP_ERROR_CHECK(ret);
+    }
+    host_g.pwr_ctrl_handle = NULL;
+#endif
 
 #endif // CONFIG_EXAMPLE_TEST_SD_CARD
 }

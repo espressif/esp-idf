@@ -91,6 +91,11 @@ sd_host_slot_handle_t sdmmc_get_slot_handle(int slot_id)
     return slot_id == 0 ? s_slot0 : s_slot1;
 }
 
+static sd_host_slot_handle_t* sdmmc_get_slot_handle_ptr(int slot_id)
+{
+    return slot_id == 0 ? &s_slot0 : &s_slot1;
+}
+
 esp_err_t sdmmc_host_is_slot_set_to_uhs1(int slot, bool *is_uhs1)
 {
     SLOT_CHECK(slot);
@@ -145,8 +150,9 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
 esp_err_t sdmmc_host_deinit_slot(int slot)
 {
     esp_err_t ret = ESP_FAIL;
-    sd_host_slot_handle_t hdl = sdmmc_get_slot_handle(slot);
-    ESP_RETURN_ON_ERROR(sd_host_remove_slot(hdl), TAG, "failed to remove slot");
+    sd_host_slot_handle_t* hdl = sdmmc_get_slot_handle_ptr(slot);
+    ESP_RETURN_ON_ERROR(sd_host_remove_slot(*hdl), TAG, "failed to remove slot");
+    *hdl = NULL;
 
     ret = sd_host_del_controller(s_ctlr);
     //for backward compatibility, return ESP_OK when only slot is removed and host is still there
@@ -160,11 +166,13 @@ esp_err_t sdmmc_host_deinit_slot(int slot)
 esp_err_t sdmmc_host_deinit(void)
 {
     esp_err_t ret = ESP_FAIL;
-    sd_host_slot_handle_t hdl[2] = {s_slot0, s_slot1};
+    sd_host_slot_handle_t* hdl_ptrs[2] = {&s_slot0, &s_slot1};
     for (int i = 0; i < 2; i++) {
-        if (hdl[i]) {
-            ret = sd_host_remove_slot(hdl[i]);
+        sd_host_slot_handle_t hdl = *hdl_ptrs[i];
+        if (hdl) {
+            ret = sd_host_remove_slot(hdl);
             ESP_RETURN_ON_ERROR(ret, TAG, "failed to remove slot%d", i);
+            *hdl_ptrs[i] = NULL;
         }
     }
     ESP_RETURN_ON_ERROR(sd_host_del_controller(s_ctlr), TAG, "failed to delete controller");

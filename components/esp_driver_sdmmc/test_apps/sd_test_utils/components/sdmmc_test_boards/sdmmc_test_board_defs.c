@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -373,6 +373,88 @@ static const sdmmc_test_board_info_t s_board_info = {
             .unused_pin = CONFIG_SDMMC_BOARD_CUSTOM_UNUSED,
         }
     },
+};
+
+#elif CONFIG_SDMMC_BOARD_ESP32P4_EMMC_TEST
+
+#define SD_TEST_BOARD_EN_GPIO  23
+#define SD_TEST_BOARD_EN_LEVEL 0
+// Pin pulled down to discharge VDD_SDIO capacitors. CMD pin used here.
+#define SD_TEST_BOARD_DISCHARGE_GPIO 19
+#define SD_TEST_BOARD_PWR_RST_DELAY_MS  100
+#define SD_TEST_BOARD_PWR_ON_DELAY_MS   100
+
+static void card_power_set_esp32p4_emmc(bool en)
+{
+    if (en) {
+        /* power off to make sure the card is reset */
+        gpio_reset_pin(SD_TEST_BOARD_EN_GPIO);
+        gpio_set_direction(SD_TEST_BOARD_EN_GPIO, GPIO_MODE_OUTPUT);
+        gpio_set_level(SD_TEST_BOARD_EN_GPIO, !SD_TEST_BOARD_EN_LEVEL);
+        /* discharge capacitors on VDD_SDIO */
+        gpio_reset_pin(SD_TEST_BOARD_DISCHARGE_GPIO);
+        gpio_set_direction(SD_TEST_BOARD_DISCHARGE_GPIO, GPIO_MODE_OUTPUT);
+        gpio_set_level(SD_TEST_BOARD_DISCHARGE_GPIO, 0);
+        usleep(SD_TEST_BOARD_PWR_RST_DELAY_MS * 1000);
+        /* power on */
+        gpio_reset_pin(SD_TEST_BOARD_DISCHARGE_GPIO);
+        gpio_set_level(SD_TEST_BOARD_EN_GPIO, SD_TEST_BOARD_EN_LEVEL);
+        usleep(SD_TEST_BOARD_PWR_ON_DELAY_MS * 1000);
+    } else {
+        /* power off the card */
+        gpio_set_level(SD_TEST_BOARD_EN_GPIO, !SD_TEST_BOARD_EN_LEVEL);
+        gpio_set_direction(SD_TEST_BOARD_EN_GPIO, GPIO_MODE_INPUT);
+        /* discharge capacitors on VDD_SDIO */
+        gpio_reset_pin(SD_TEST_BOARD_DISCHARGE_GPIO);
+        gpio_set_direction(SD_TEST_BOARD_DISCHARGE_GPIO, GPIO_MODE_OUTPUT);
+        gpio_set_level(SD_TEST_BOARD_DISCHARGE_GPIO, 0);
+        usleep(SD_TEST_BOARD_PWR_RST_DELAY_MS * 1000);
+        /* reset the pin but leaving it floating so that VDD_SDIO won't be charged again */
+        gpio_reset_pin(SD_TEST_BOARD_DISCHARGE_GPIO);
+        gpio_pullup_dis(SD_TEST_BOARD_DISCHARGE_GPIO);
+    }
+}
+
+static const sdmmc_test_board_info_t s_board_info = {
+    .name = "ESP32-P4 eMMC test board v1",
+    .slot = {
+        {
+            .slot_exists = true,
+            .is_emmc = true,
+            .bus_width = 8,
+            .clk = 43,
+            .cmd_mosi = 44,
+            .d0_miso = 39,
+            .d1 = 40,
+            .d2 = 41,
+            .d3_cs = 42,
+            .d4 = 45,
+            .d5 = 46,
+            .d6 = 47,
+            .d7 = 48,
+            .cd = GPIO_NUM_NC,
+            .wp = GPIO_NUM_NC,
+            .unused_pin = 54,
+        },
+        {
+            .slot_exists = true,
+            .bus_width = 4,
+            .clk = 18,
+            .cmd_mosi = 19,
+            .d0_miso = 14,
+            .d1 = 15,
+            .d2 = 16,
+            .d3_cs = 17,
+            .d4 = GPIO_NUM_NC,
+            .d5 = GPIO_NUM_NC,
+            .d6 = GPIO_NUM_NC,
+            .d7 = GPIO_NUM_NC,
+            .cd = 22,
+            .wp = GPIO_NUM_NC,
+            .unused_pin = 54,
+        }
+    },
+    .card_power_set = card_power_set_esp32p4_emmc
 };
 
 #elif CONFIG_SDMMC_BOARD_ESP32C5_BREAKOUT
