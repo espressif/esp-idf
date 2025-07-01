@@ -707,12 +707,6 @@ static bool spi_out_get_task_mapping(task_map_t *map, size_t num,
         }
     }
     portEXIT_CRITICAL_SAFE(&spinlock);
-
-    if (!ret) {
-        // Shall not be here in normal case
-        const char *task_name = pcTaskGetName(NULL);
-        esp_rom_printf("@EW: Failed to assign slot in task map for task %s\n", task_name);
-    }
     return ret;
 }
 
@@ -1388,9 +1382,14 @@ int ble_log_spi_out_host_write(uint8_t source, const char *prefix, const char *f
 
     spi_out_log_cb_t *log_cb;
     uint8_t *str_buf;
+    bool fallback = false;
     if (!spi_out_get_task_mapping(LOG_MODULE_TASK_MAP(host),
                                   LOG_MODULE_CB_CNT(host), &log_cb, &str_buf)) {
-        return -1;
+        // NimBLE workaround
+        fallback = true;
+        xSemaphoreTake(LOG_MODULE_MUTEX(ul), portMAX_DELAY);
+        log_cb = LOG_MODULE_CB(ul, 0);
+        str_buf = LOG_MODULE_STR_BUF(ul, 0);
     }
 
     // Copy prefix to string buffer
@@ -1411,6 +1410,10 @@ int ble_log_spi_out_host_write(uint8_t source, const char *prefix, const char *f
 
     // Write log control block buffer
     spi_out_write_hex(log_cb, source, str_buf, (uint16_t)total_len, true);
+
+    if (fallback) {
+        xSemaphoreGive(LOG_MODULE_MUTEX(ul));
+    }
     return 0;
 }
 #endif // SPI_OUT_HOST_ENABLED
@@ -1429,11 +1432,18 @@ int ble_log_spi_out_hci_write(uint8_t source, const uint8_t *addr, uint16_t len)
     }
     if (source == BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM) {
         spi_out_log_cb_t *log_cb;
+        bool fallback = false;
         if (!spi_out_get_task_mapping(LOG_MODULE_TASK_MAP(hci),
                                       LOG_MODULE_CB_CNT(hci), &log_cb, NULL)) {
-            return -1;
+            // NimBLE workaround
+            fallback = true;
+            xSemaphoreTake(LOG_MODULE_MUTEX(ul), portMAX_DELAY);
+            log_cb = LOG_MODULE_CB(ul, 0);
         }
         spi_out_write_hex(log_cb, source, addr, len, true);
+        if (fallback) {
+            xSemaphoreGive(LOG_MODULE_MUTEX(ul));
+        }
     }
     return 0;
 }
