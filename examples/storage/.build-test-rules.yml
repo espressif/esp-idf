@@ -15,10 +15,6 @@ examples/storage/emmc:
   enable:
     - if: IDF_TARGET in ["esp32s3", "esp32p4"]
       reason: only support on esp32s3 and esp32p4
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners
 
 examples/storage/partition_api/partition_find:
   depends_components:
