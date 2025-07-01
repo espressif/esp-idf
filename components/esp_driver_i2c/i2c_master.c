@@ -14,7 +14,7 @@
 #if CONFIG_I2C_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
 // Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #endif
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
@@ -156,7 +156,7 @@ static void s_i2c_err_log_print(i2c_master_event_t event, bool bypass_nack_log)
     }
     if (bypass_nack_log != true) {
         if (event == I2C_EVENT_NACK) {
-            ESP_LOGE(TAG, "I2C transaction unexpected nack detected");
+            ESP_LOGD(TAG, "I2C transaction unexpected nack detected");
         }
     }
 }
@@ -506,7 +506,7 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
         }
 
         if (atomic_load(&i2c_master->status) == I2C_STATUS_ACK_ERROR) {
-            ESP_LOGE(TAG, "I2C hardware NACK detected");
+            ESP_LOGD(TAG, "I2C hardware NACK detected");
             const i2c_ll_hw_cmd_t hw_stop_cmd = {
                 .op_code = I2C_LL_CMD_STOP,
             };
@@ -945,7 +945,10 @@ static esp_err_t s_i2c_synchronous_transaction(i2c_master_dev_handle_t i2c_dev, 
     i2c_dev->master_bus->trans_finish = false;
     i2c_dev->master_bus->queue_trans = false;
     i2c_dev->master_bus->ack_check_disable = i2c_dev->ack_check_disable;
-    ESP_GOTO_ON_ERROR(s_i2c_transaction_start(i2c_dev, timeout_ms), err, TAG, "I2C transaction failed");
+    ret = s_i2c_transaction_start(i2c_dev, timeout_ms);
+    if (ret != ESP_OK) {
+        goto err;
+    }
     xSemaphoreGive(i2c_dev->master_bus->bus_lock_mux);
     return ret;
 
@@ -958,9 +961,6 @@ err:
 
 esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_master_bus_handle_t *ret_bus_handle)
 {
-#if CONFIG_I2C_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     i2c_master_bus_t *i2c_master = NULL;
     i2c_port_num_t i2c_port_num = bus_config->i2c_port;
@@ -1197,6 +1197,7 @@ esp_err_t i2c_master_multi_buffer_transmit(i2c_master_dev_handle_t i2c_dev, i2c_
     ESP_RETURN_ON_FALSE(array_size <= (SOC_I2C_CMD_REG_NUM - 2), ESP_ERR_INVALID_ARG, TAG, "i2c command list cannot contain so many commands");
     ESP_RETURN_ON_FALSE(buffer_info_array != NULL, ESP_ERR_INVALID_ARG, TAG, "buffer info array is empty");
 
+    esp_err_t ret = ESP_OK;
     size_t op_index = 0;
     i2c_operation_t i2c_ops[SOC_I2C_CMD_REG_NUM] = {};
     i2c_ops[op_index++].hw_cmd.op_code = I2C_LL_CMD_RESTART;
@@ -1214,11 +1215,11 @@ esp_err_t i2c_master_multi_buffer_transmit(i2c_master_dev_handle_t i2c_dev, i2c_
 
     i2c_ops[op_index++].hw_cmd.op_code = I2C_LL_CMD_STOP;
     if (i2c_dev->master_bus->async_trans == false) {
-        ESP_RETURN_ON_ERROR(s_i2c_synchronous_transaction(i2c_dev, i2c_ops, op_index, xfer_timeout_ms), TAG, "I2C transaction failed");
+        ret = s_i2c_synchronous_transaction(i2c_dev, i2c_ops, op_index, xfer_timeout_ms);
     } else {
-        ESP_RETURN_ON_ERROR(s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, op_index, xfer_timeout_ms), TAG, "I2C transaction failed");
+        ret = s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, op_index, xfer_timeout_ms);
     }
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t i2c_master_transmit(i2c_master_dev_handle_t i2c_dev, const uint8_t *write_buffer, size_t write_size, int xfer_timeout_ms)
@@ -1238,6 +1239,7 @@ esp_err_t i2c_master_transmit_receive(i2c_master_dev_handle_t i2c_dev, const uin
     ESP_RETURN_ON_FALSE((write_buffer != NULL) && (write_size > 0), ESP_ERR_INVALID_ARG, TAG, "i2c transmit buffer or size invalid");
     ESP_RETURN_ON_FALSE((read_buffer != NULL) && (read_size > 0), ESP_ERR_INVALID_ARG, TAG, "i2c receive buffer or size invalid");
 
+    esp_err_t ret = ESP_OK;
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
         {.hw_cmd = I2C_TRANS_WRITE_COMMAND(i2c_dev->ack_check_disable ? false : true), .data = (uint8_t *)write_buffer, .total_bytes = write_size},
@@ -1248,17 +1250,18 @@ esp_err_t i2c_master_transmit_receive(i2c_master_dev_handle_t i2c_dev, const uin
     };
 
     if (i2c_dev->master_bus->async_trans == false) {
-        ESP_RETURN_ON_ERROR(s_i2c_synchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms), TAG, "I2C transaction failed");
+        ret = s_i2c_synchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms);
     } else {
-        ESP_RETURN_ON_ERROR(s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms), TAG, "I2C transaction failed");
+        ret = s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms);
     }
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buffer, size_t read_size, int xfer_timeout_ms)
 {
     ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
     ESP_RETURN_ON_FALSE((read_buffer != NULL) && (read_size > 0), ESP_ERR_INVALID_ARG, TAG, "i2c receive buffer or size invalid");
+    esp_err_t ret = ESP_OK;
 
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
@@ -1268,11 +1271,11 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
     };
 
     if (i2c_dev->master_bus->async_trans == false) {
-        ESP_RETURN_ON_ERROR(s_i2c_synchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms), TAG, "I2C transaction failed");
+        ret = s_i2c_synchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms);
     } else {
-        ESP_RETURN_ON_ERROR(s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms), TAG, "I2C transaction failed");
+        ret = s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms);
     }
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address, int xfer_timeout_ms)
@@ -1365,6 +1368,7 @@ esp_err_t i2c_master_execute_defined_operations(i2c_master_dev_handle_t i2c_dev,
     ESP_RETURN_ON_FALSE(i2c_operation != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c operation pointer is invalid");
     ESP_RETURN_ON_FALSE(operation_list_num <= (SOC_I2C_CMD_REG_NUM), ESP_ERR_INVALID_ARG, TAG, "i2c command list cannot contain so many commands");
 
+    esp_err_t ret = ESP_OK;
     i2c_operation_t i2c_ops[operation_list_num];
     memset(i2c_ops, 0, sizeof(i2c_ops));
     for (int i = 0; i < operation_list_num; i++) {
@@ -1401,11 +1405,11 @@ esp_err_t i2c_master_execute_defined_operations(i2c_master_dev_handle_t i2c_dev,
     }
 
     if (i2c_dev->master_bus->async_trans == false) {
-        ESP_RETURN_ON_ERROR(s_i2c_synchronous_transaction(i2c_dev, i2c_ops, operation_list_num, xfer_timeout_ms), TAG, "I2C transaction failed");
+        ret = s_i2c_synchronous_transaction(i2c_dev, i2c_ops, operation_list_num, xfer_timeout_ms);
     } else {
-        ESP_RETURN_ON_ERROR(s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, operation_list_num, xfer_timeout_ms), TAG, "I2C transaction failed");
+        ret = s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, operation_list_num, xfer_timeout_ms);
     }
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t i2c_master_register_event_callbacks(i2c_master_dev_handle_t i2c_dev, const i2c_master_event_callbacks_t *cbs, void *user_data)
@@ -1448,3 +1452,11 @@ esp_err_t i2c_master_bus_wait_all_done(i2c_master_bus_handle_t bus_handle, int t
     return ESP_OK;
 
 }
+
+#if CONFIG_I2C_ENABLE_DEBUG_LOG
+__attribute__((constructor))
+static void i2c_master_override_default_log_level(void)
+{
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+}
+#endif
