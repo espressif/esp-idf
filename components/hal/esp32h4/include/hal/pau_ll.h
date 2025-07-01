@@ -84,11 +84,6 @@ static inline void pau_ll_set_regdma_timeout_read_mode_try_time(pau_dev_t *dev, 
     REG_SET_FIELD(LP_AON_BACKUP_DMA_CFG1_REG, LP_AON_LINK_WAIT_TOUT_THRES_AON, thres);
 }
 
-static inline void pau_ll_set_regdma_branch_max_link(pau_dev_t *dev, uint32_t max_link_len)
-{
-    REG_SET_FIELD(LP_AON_BACKUP_DMA_CFG1_REG, LP_AON_BRANCH_LINK_LENGTH_AON, max_link_len);
-}
-
 static inline uint32_t pau_ll_get_regdma_current_link_addr(pau_dev_t *dev)
 {
     return dev->regdma_current_link_addr.val;
@@ -175,12 +170,12 @@ static inline bool pau_ll_is_busy(pau_dev_t *dev)
 }
 
 /**
- * @brief Set the regdma_link_addr
- * @param addr: the addr of regdma_link
+ * @brief Set the maximum number of linked lists supported by REGDMA
+ * @param count: the maximum number of regdma link
  */
-static inline void pau_ll_set_regdma_link_addr(uint32_t addr)
+static inline void pau_ll_set_regdma_link_count(int count)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg2, aon_link_addr_aon, addr);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg0, aon_branch_link_length_aon, count);
 }
 
 /**
@@ -201,6 +196,15 @@ static inline void pau_ll_set_regdma_link_loop_threshold(int count)
 static inline void pau_ll_set_regdma_link_reg_access_tout_threshold(int count)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg1, aon_link_backup_tout_thres_aon, count);
+}
+
+/**
+ * @brief Set the regdma_link_addr
+ * @param addr: the addr of regdma_link
+ */
+static inline void pau_ll_set_regdma_link_addr(uint32_t addr)
+{
+    LP_AON.backup_dma_cfg2.aon_link_addr_aon = addr;
 }
 
 static inline void pau_ll_set_regdma_link_wait_retry_count(int count)

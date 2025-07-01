@@ -14,7 +14,7 @@ extern "C" {
 /** LP_CLKRST_LP_CLK_CONF_REG register
  *  Configures the root clk of LP system
  */
-#define LP_CLKRST_LP_CLK_CONF_REG (DR_REG_LP_BASE + 0x0)
+#define LP_CLKRST_LP_CLK_CONF_REG (DR_REG_LP_CLKRST_BASE + 0x0)
 /** LP_CLKRST_SLOW_CLK_SEL : R/W; bitpos: [1:0]; default: 0;
  *  Configures the source of LP_SLOW_CLK.
  *  0: RC_SLOW_CLK
@@ -46,7 +46,7 @@ extern "C" {
 /** LP_CLKRST_LP_CLK_PO_EN_REG register
  *  Configures the clk gate to pad
  */
-#define LP_CLKRST_LP_CLK_PO_EN_REG (DR_REG_LP_BASE + 0x4)
+#define LP_CLKRST_LP_CLK_PO_EN_REG (DR_REG_LP_CLKRST_BASE + 0x4)
 /** LP_CLKRST_AON_SLOW_OEN : R/W; bitpos: [0]; default: 1;
  *  Configures the clock gate to pad of the LP_DYN_SLOW_CLK.
  *  0: Disable the clk pass clock gate
@@ -150,7 +150,7 @@ extern "C" {
 /** LP_CLKRST_LP_CLK_EN_REG register
  *  Configure LP root clk source gate
  */
-#define LP_CLKRST_LP_CLK_EN_REG (DR_REG_LP_BASE + 0x8)
+#define LP_CLKRST_LP_CLK_EN_REG (DR_REG_LP_CLKRST_BASE + 0x8)
 /** LP_CLKRST_RTC_BLE_TIMER_APB_GATE : R/W; bitpos: [27]; default: 1;
  *  Configures the clock gate to RTC_BLE_TIMER_APB_CLK
  *  0: Invalid. The clock gate controlled
@@ -200,7 +200,7 @@ extern "C" {
 /** LP_CLKRST_LP_RST_EN_REG register
  *  Configures the peri of LP system software reset
  */
-#define LP_CLKRST_LP_RST_EN_REG (DR_REG_LP_BASE + 0xc)
+#define LP_CLKRST_LP_RST_EN_REG (DR_REG_LP_CLKRST_BASE + 0xc)
 /** LP_CLKRST_HUK_RESET_EN : R/W; bitpos: [25]; default: 0;
  *  Configures whether or not to reset  HUK
  *  0: Invalid.No effect
@@ -268,7 +268,7 @@ extern "C" {
 /** LP_CLKRST_RESET_CORE0_CAUSE_REG register
  *  Represents the reset cause
  */
-#define LP_CLKRST_RESET_CORE0_CAUSE_REG (DR_REG_LP_BASE + 0x10)
+#define LP_CLKRST_RESET_CORE0_CAUSE_REG (DR_REG_LP_CLKRST_BASE + 0x10)
 /** LP_CLKRST_CORE0_RESET_CAUSE : RO; bitpos: [4:0]; default: 0;
  *  Represents the reset cause
  */
@@ -310,7 +310,7 @@ extern "C" {
 /** LP_CLKRST_RESET_CORE1_CAUSE_REG register
  *  Represents the reset cause
  */
-#define LP_CLKRST_RESET_CORE1_CAUSE_REG (DR_REG_LP_BASE + 0x14)
+#define LP_CLKRST_RESET_CORE1_CAUSE_REG (DR_REG_LP_CLKRST_BASE + 0x14)
 /** LP_CLKRST_CORE1_RESET_CAUSE : RO; bitpos: [4:0]; default: 0;
  *  Represents the reset cause
  */
@@ -352,7 +352,7 @@ extern "C" {
 /** LP_CLKRST_CPU_CORE0_RESET_REG register
  *  Configures CPU reset
  */
-#define LP_CLKRST_CPU_CORE0_RESET_REG (DR_REG_LP_BASE + 0x18)
+#define LP_CLKRST_CPU_CORE0_RESET_REG (DR_REG_LP_CLKRST_BASE + 0x18)
 /** LP_CLKRST_HPCORE0_LOCKUP_RESET_EN : R/W; bitpos: [21]; default: 1;
  *  configure the hpcore0 luckup reset enable
  *  0: disable
@@ -400,7 +400,7 @@ extern "C" {
 /** LP_CLKRST_CPU_CORE1_RESET_REG register
  *  Configures CPU reset
  */
-#define LP_CLKRST_CPU_CORE1_RESET_REG (DR_REG_LP_BASE + 0x1c)
+#define LP_CLKRST_CPU_CORE1_RESET_REG (DR_REG_LP_CLKRST_BASE + 0x1c)
 /** LP_CLKRST_HPCORE1_LOCKUP_RESET_EN : R/W; bitpos: [21]; default: 1;
  *  configure the hpcore0 luckup reset enable
  *  0: disable
@@ -448,7 +448,7 @@ extern "C" {
 /** LP_CLKRST_FOSC_CNTL_REG register
  *  Configures the RC_FAST_CLK frequency
  */
-#define LP_CLKRST_FOSC_CNTL_REG (DR_REG_LP_BASE + 0x20)
+#define LP_CLKRST_FOSC_CNTL_REG (DR_REG_LP_CLKRST_BASE + 0x20)
 /** LP_CLKRST_FOSC_DFREQ : R/W; bitpos: [31:22]; default: 547;
  *  Configures the RC_FAST_CLK frequency,the clock frequency will increase with this
  *  field
@@ -461,7 +461,7 @@ extern "C" {
 /** LP_CLKRST_SOSC_CNTL_REG register
  *  Configures the RC_SLOW_CLK frequency
  */
-#define LP_CLKRST_SOSC_CNTL_REG (DR_REG_LP_BASE + 0x24)
+#define LP_CLKRST_SOSC_CNTL_REG (DR_REG_LP_CLKRST_BASE + 0x24)
 /** LP_CLKRST_SLOW_DFREQ : R/W; bitpos: [31:26]; default: 10;
  *  Configures the RC_SLOW_CLK frequency,the clock frequency will increase with this
  *  field
@@ -474,7 +474,7 @@ extern "C" {
 /** LP_CLKRST_RC32K_CNTL_REG register
  *  Configures the RC32K_CLK frequency
  */
-#define LP_CLKRST_RC32K_CNTL_REG (DR_REG_LP_BASE + 0x28)
+#define LP_CLKRST_RC32K_CNTL_REG (DR_REG_LP_CLKRST_BASE + 0x28)
 /** LP_CLKRST_RC32K_DFREQ : R/W; bitpos: [31:22]; default: 172;
  *  Configures the RC32K_CLK frequency, the clock frequency will increase with this
  *  field
@@ -487,7 +487,7 @@ extern "C" {
 /** LP_CLKRST_CLK_TO_HP_REG register
  *  Configures the clk gate of LP clk to HP system
  */
-#define LP_CLKRST_CLK_TO_HP_REG (DR_REG_LP_BASE + 0x2c)
+#define LP_CLKRST_CLK_TO_HP_REG (DR_REG_LP_CLKRST_BASE + 0x2c)
 /** LP_CLKRST_CLK_PWR_FOSC_EN : R/W; bitpos: [25]; default: 1;
  *  Configures the clock gate to modem of the fosc clk.
  *  0: Disable the clk pass clock gate
@@ -546,7 +546,7 @@ extern "C" {
 /** LP_CLKRST_LPMEM_FORCE_REG register
  *  Configures the LP_MEM clk gate force parameter
  */
-#define LP_CLKRST_LPMEM_FORCE_REG (DR_REG_LP_BASE + 0x30)
+#define LP_CLKRST_LPMEM_FORCE_REG (DR_REG_LP_CLKRST_BASE + 0x30)
 /** LP_CLKRST_LPMEM_CLK_FORCE_ON : R/W; bitpos: [31]; default: 0;
  *  Configures whether ot not force open the clock gate of LP MEM
  *  0: Invalid. The clock gate controlled by hardware FSM
@@ -560,7 +560,7 @@ extern "C" {
 /** LP_CLKRST_XTAL32K_REG register
  *  Configures the XTAL32K parameter
  */
-#define LP_CLKRST_XTAL32K_REG (DR_REG_LP_BASE + 0x34)
+#define LP_CLKRST_XTAL32K_REG (DR_REG_LP_CLKRST_BASE + 0x34)
 /** LP_CLKRST_RTC_SEL_POWER_XTAL32K : R/W; bitpos: [21]; default: 0;
  *  need_des
  */
@@ -600,7 +600,7 @@ extern "C" {
 /** LP_CLKRST_CALI0_REG register
  *  need_des
  */
-#define LP_CLKRST_CALI0_REG (DR_REG_LP_BASE + 0x38)
+#define LP_CLKRST_CALI0_REG (DR_REG_LP_CLKRST_BASE + 0x38)
 /** LP_CLKRST_LP_CALI_DIV_CYCLE : R/W; bitpos: [7:0]; default: 1;
  *  need_des
  */
@@ -640,7 +640,7 @@ extern "C" {
 /** LP_CLKRST_CALI1_REG register
  *  need_des
  */
-#define LP_CLKRST_CALI1_REG (DR_REG_LP_BASE + 0x3c)
+#define LP_CLKRST_CALI1_REG (DR_REG_LP_CLKRST_BASE + 0x3c)
 /** LP_CLKRST_LP_CALI_DIV_NUMERATOR : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -659,7 +659,7 @@ extern "C" {
 /** LP_CLKRST_CALI2_REG register
  *  need_des
  */
-#define LP_CLKRST_CALI2_REG (DR_REG_LP_BASE + 0x40)
+#define LP_CLKRST_CALI2_REG (DR_REG_LP_CLKRST_BASE + 0x40)
 /** LP_CLKRST_LP_CALI_DIV_WAIT_PWR_GOOD : R/W; bitpos: [8:0]; default: 255;
  *  need_des
  */
@@ -685,7 +685,7 @@ extern "C" {
 /** LP_CLKRST_LPPERI_REG register
  *  need_des
  */
-#define LP_CLKRST_LPPERI_REG (DR_REG_LP_BASE + 0x44)
+#define LP_CLKRST_LPPERI_REG (DR_REG_LP_CLKRST_BASE + 0x44)
 /** LP_CLKRST_HUK_CLK_SEL : R/W; bitpos: [11]; default: 1;
  *  Configures the source clk of HUK
  *  0: 0: RC_FAST_CLK
@@ -741,7 +741,7 @@ extern "C" {
 /** LP_CLKRST_DATE_REG register
  *  Version control register
  */
-#define LP_CLKRST_DATE_REG (DR_REG_LP_BASE + 0x3fc)
+#define LP_CLKRST_DATE_REG (DR_REG_LP_CLKRST_BASE + 0x3fc)
 /** LP_CLKRST_CLKRST_DATE : R/W; bitpos: [30:0]; default: 37818640;
  *  Version control register
  */

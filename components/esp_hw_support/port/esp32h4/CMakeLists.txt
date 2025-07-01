@@ -5,7 +5,7 @@ set(srcs "rtc_clk.c"
 
 if(CONFIG_SOC_PMU_SUPPORTED)
     list(APPEND srcs
-                "rtc_clk_init.c"
+                # "rtc_clk_init.c" //TODO: IDF-12313
                 "pmu_param.c"
                 "pmu_init.c"
                 "pmu_sleep.c"

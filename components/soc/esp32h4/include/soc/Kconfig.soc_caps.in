@@ -43,7 +43,15 @@ config SOC_MODEM_CLOCK_SUPPORTED
     bool
     default y
 
+config SOC_PMU_SUPPORTED
+    bool
+    default y
+
 config SOC_PAU_SUPPORTED
+    bool
+    default y
+
+config SOC_LP_TIMER_SUPPORTED
     bool
     default y
 
@@ -315,6 +323,14 @@ config SOC_SYSTIMER_ALARM_MISS_COMPENSATE
     bool
     default y
 
+config SOC_LP_TIMER_BIT_WIDTH_LO
+    int
+    default 32
+
+config SOC_LP_TIMER_BIT_WIDTH_HI
+    int
+    default 16
+
 config SOC_TIMER_GROUPS
     int
     default 2
@@ -475,15 +491,7 @@ config SOC_PHY_DIG_REGS_MEM_SIZE
     int
     default 21
 
-config SOC_PM_SUPPORT_BEACON_WAKEUP
-    bool
-    default y
-
 config SOC_PM_SUPPORT_BT_WAKEUP
-    bool
-    default y
-
-config SOC_PM_SUPPORT_EXT1_WAKEUP
     bool
     default y
 
@@ -492,10 +500,6 @@ config SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
     default y
 
 config SOC_PM_SUPPORT_TOUCH_WAKEUP
-    bool
-    default y
-
-config SOC_PM_SUPPORT_CPU_PD
     bool
     default y
 
@@ -516,10 +520,6 @@ config SOC_PM_SUPPORT_RC_FAST_PD
     default y
 
 config SOC_PM_SUPPORT_VDDSDIO_PD
-    bool
-    default y
-
-config SOC_PM_SUPPORT_TOP_PD
     bool
     default y
 
