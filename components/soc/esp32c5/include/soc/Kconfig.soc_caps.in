@@ -239,6 +239,14 @@ config SOC_RNG_SUPPORTED
     bool
     default y
 
+config SOC_KEY_MANAGER_SUPPORTED
+    bool
+    default y
+
+config SOC_HUK_SUPPORTED
+    bool
+    default y
+
 config SOC_MODEM_CLOCK_SUPPORTED
     bool
     default y
@@ -1399,11 +1407,27 @@ config SOC_EFUSE_ECDSA_KEY_P384
     bool
     default y
 
+config SOC_HUK_MEM_NEEDS_RECHARGE
+    bool
+    default y
+
+config SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
+    bool
+    default y
+
 config SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
     bool
     default y
 
 config SOC_KEY_MANAGER_FE_KEY_DEPLOY
+    bool
+    default y
+
+config SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
+    bool
+    default y
+
+config SOC_KEY_MANAGER_DS_KEY_DEPLOY
     bool
     default y
 

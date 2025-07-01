@@ -1839,6 +1839,10 @@ config SOC_EFUSE_ECDSA_KEY
     bool
     default y
 
+config SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
+    bool
+    default y
+
 config SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
     bool
     default y

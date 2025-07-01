@@ -80,7 +80,10 @@ void esp_crypto_mpi_enable_periph_clk(bool enable)
     MPI_RCC_ATOMIC() {
         mpi_ll_enable_bus_clock(enable);
         if (enable) {
+            mpi_ll_power_up();
             mpi_ll_reset_register();
+        } else {
+            mpi_ll_power_down();
         }
     }
 }
@@ -141,9 +144,12 @@ void esp_crypto_ecdsa_enable_periph_clk(bool enable)
 void esp_crypto_key_mgr_enable_periph_clk(bool enable)
 {
     KEY_MANAGER_RCC_ATOMIC() {
+        key_mgr_ll_power_up();
         key_mgr_ll_enable_bus_clock(enable);
         key_mgr_ll_enable_peripheral_clock(enable);
-        key_mgr_ll_reset_register();
+        if (enable) {
+            key_mgr_ll_reset_register();
+        }
     }
 }
 #endif

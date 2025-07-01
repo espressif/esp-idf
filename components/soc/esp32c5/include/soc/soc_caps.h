@@ -76,8 +76,8 @@
 #define SOC_SPI_FLASH_SUPPORTED         1     // TODO: [ESP32C5] IDF-8715
 #define SOC_ECDSA_SUPPORTED             1
 #define SOC_RNG_SUPPORTED               1
-// #define SOC_KEY_MANAGER_SUPPORTED       1  // TODO: [ESP32C5] IDF-8621
-// #define SOC_HUK_SUPPORTED               1  // TODO: [ESP32C5] IDF-8617
+#define SOC_KEY_MANAGER_SUPPORTED       1
+#define SOC_HUK_SUPPORTED               1
 #define SOC_MODEM_CLOCK_SUPPORTED       1
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
 #define SOC_DEEP_SLEEP_SUPPORTED        1
@@ -540,9 +540,15 @@
 #define SOC_EFUSE_ECDSA_KEY_P192 1
 #define SOC_EFUSE_ECDSA_KEY_P384 1
 
+/*-------------------------- HUK CAPS----------------------------*/
+#define SOC_HUK_MEM_NEEDS_RECHARGE 1
+
 /*-------------------------- Key Manager CAPS----------------------------*/
-#define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY    1 /*!< Key manager responsible to deploy ECDSA key */
-#define SOC_KEY_MANAGER_FE_KEY_DEPLOY       1 /*!< Key manager responsible to deploy Flash Encryption key */
+#define SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT  1 /*!< Key manager supports key deployment */
+#define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY        1 /*!< Key manager responsible to deploy ECDSA key */
+#define SOC_KEY_MANAGER_FE_KEY_DEPLOY           1 /*!< Key manager responsible to deploy Flash Encryption key */
+#define SOC_KEY_MANAGER_HMAC_KEY_DEPLOY         1 /*!< Key manager responsible to deploy HMAC key */
+#define SOC_KEY_MANAGER_DS_KEY_DEPLOY           1 /*!< Key manager responsible to deploy DS key */
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1
