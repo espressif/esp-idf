@@ -644,6 +644,7 @@ int esp_http_client_get_status_code(esp_http_client_handle_t client);
  */
 int64_t esp_http_client_get_content_length(esp_http_client_handle_t client);
 
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_GET_CONTENT_RANGE || __DOXYGEN__
 /**
  * @brief      Get http response content range (from header Content-Range)
  *             The returned value is valid only if this function is invoked after
@@ -656,6 +657,7 @@ int64_t esp_http_client_get_content_length(esp_http_client_handle_t client);
  *     - Content-Range value as bytes
  */
 int64_t esp_http_client_get_content_range(esp_http_client_handle_t client);
+#endif
 
 /**
  * @brief      Close http connection, still kept all http request resources

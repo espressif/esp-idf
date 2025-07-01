@@ -29,6 +29,12 @@ menu "ESP HTTP client"
             This option will enable injection of a custom tcp_transport handle, so the http operation
             will be performed on top of the user defined transport abstraction (if configured)
 
+    config ESP_HTTP_CLIENT_ENABLE_GET_CONTENT_RANGE
+        bool "Enable content range functionality"
+        default n
+        help
+            This enables use of content range header in esp_http_client component.
+
     config ESP_HTTP_CLIENT_EVENT_POST_TIMEOUT
         int "Time in millisecond to wait for posting event"
         default 2000

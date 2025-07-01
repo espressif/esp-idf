@@ -31,6 +31,7 @@ menu "Example Configuration"
     config EXAMPLE_ENABLE_PARTIAL_HTTP_DOWNLOAD
         bool "Enable partial HTTP download"
         default n
+        select ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
         select ESP_TLS_CLIENT_SESSION_TICKETS
         help
             This enables use of Range header in esp_https_ota component.
