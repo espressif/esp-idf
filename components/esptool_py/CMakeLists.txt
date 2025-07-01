@@ -15,13 +15,7 @@ idf_component_register(REQUIRES bootloader PRIV_REQUIRES partition_table)
 if(NOT BOOTLOADER_BUILD)
     idf_build_get_property(build_dir BUILD_DIR)
 
-    if(CONFIG_APP_BUILD_GENERATE_BINARIES)
-        partition_table_get_partition_info(app_partition_offset "--partition-boot-default" "offset")
-        esptool_py_custom_target(app-flash app "app")
 
-        esptool_py_flash_target_image(app-flash app "${app_partition_offset}" "${build_dir}/${PROJECT_BIN}")
-        esptool_py_flash_target_image(flash app "${app_partition_offset}" "${build_dir}/${PROJECT_BIN}")
-    endif()
 
     # If anti-rollback option is set then factory partition should not be in Partition Table.
     # In this case, should be used the partition table with two ota app without the factory.

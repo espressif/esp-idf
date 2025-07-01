@@ -50,7 +50,9 @@ else()
             add_custom_target(blank_tee_ota_data ALL DEPENDS ${blank_tee_otadata_file})
 
             add_dependencies(flash blank_tee_ota_data)
-            add_dependencies(encrypted-flash blank_tee_ota_data)
+            if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+                add_dependencies(encrypted-flash blank_tee_ota_data)
+            endif()
 
             partition_table_get_partition_info(tee_otadata_part
                 "--partition-type data --partition-subtype tee_ota" "name")

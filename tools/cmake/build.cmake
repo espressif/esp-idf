@@ -470,6 +470,22 @@ macro(__build_process_project_includes)
 endmacro()
 
 #
+# Add placeholder flash targets to the build.
+# This is used by components to declare dependencies on the flash target.
+#
+macro(__build_create_flash_targets)
+    if(NOT TARGET flash)
+        add_custom_target(flash)
+    endif()
+
+    # When flash encryption is enabled, a corresponding 'encrypted-flash' target will be created.
+    idf_build_get_config(encrypted_flash_enabled CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+    if(encrypted_flash_enabled AND NOT TARGET encrypted-flash)
+        add_custom_target(encrypted-flash)
+    endif()
+endmacro()
+
+#
 # Utility macro for setting default property value if argument is not specified
 # for idf_build_process().
 #
@@ -713,6 +729,13 @@ macro(idf_build_process target)
         set(ESP_PLATFORM 1)
         idf_build_set_property(COMPILE_DEFINITIONS "ESP_PLATFORM" APPEND)
 
+        # Create flash targets early so components can attach images to them.
+        # These targets will be appended with actual esptool.py command later
+        # in the build process when __idf_build_setup_flash_targets() is called.
+        if(NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD AND NOT "${target}" STREQUAL "linux")
+            __build_create_flash_targets()
+        endif()
+
         # Perform component processing (inclusion of project_include.cmake, adding component
         # subdirectories, creating library targets, linking libraries, etc.)
         __build_process_project_includes()
@@ -752,6 +775,39 @@ function(idf_build_executable elf)
 
     # Add dependency of the build target to the executable
     add_dependencies(${elf} __idf_build_target)
+
+    # Set up esptool_py flash targets
+    # This must be done after the executable properties are set but before the function exits
+    # so that all components have had a chance to add their images to the phony flash targets
+    idf_build_get_property(bootloader_build BOOTLOADER_BUILD)
+    idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+    idf_build_get_property(target IDF_TARGET)
+
+    if(NOT bootloader_build AND NOT esp_tee_build AND NOT "${target}" STREQUAL "linux")
+        # Check if esptool_py component is available before calling its functions
+        if(TARGET idf::esptool_py)
+            # The following block is placed here to ensure that the application binary is added to the 'flash'
+            # target's properties *before* __esptool_py_setup_main_flash_target is called.
+            # This is because __esptool_py_setup_main_flash_target copies properties from the 'flash'
+            # target to an internal '_flash_impl' target, from which the final 'flash_args' file is generated.
+            # If the app target is not added to the 'flash' target *before* the properties are copied,
+            # the app binary will be missing from the final 'flash_args' file.
+            #
+            # Set up app-flash and flash targets. The app-flash target is specifically for flashing
+            # just the application, while the flash target is for flashing the entire system.
+            if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+                idf_build_get_property(build_dir BUILD_DIR)
+                idf_build_get_property(project_bin PROJECT_BIN)
+                partition_table_get_partition_info(app_partition_offset "--partition-boot-default" "offset")
+                esptool_py_custom_target(app-flash app "app")
+
+                esptool_py_flash_target_image(app-flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
+                esptool_py_flash_target_image(flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
+            endif()
+
+            __esptool_py_setup_main_flash_target()
+        endif()
+    endif()
 endfunction()
 
 # idf_build_get_config
