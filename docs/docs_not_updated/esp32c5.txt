@@ -33,5 +33,4 @@ api-reference/system/sleep_modes.rst
 api-reference/system/power_management.rst
 api-reference/system/inc/power_management_esp32c5.rst
 api-reference/index.rst
-api-reference/protocols/esp_serial_slave_link.rst
 api-reference/protocols/esp_crt_bundle.rst

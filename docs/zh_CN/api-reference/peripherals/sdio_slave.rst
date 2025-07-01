@@ -149,11 +149,11 @@ SDIO 从机驱动程序的相关术语如下：
 与 ESP SDIO 从机通信
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-在使用主机初始化 SDIO 从机时，应遵循标准 SDIO 初始化流程（请参阅 `SDIO 简化规范 <https://www.sdcard.org/downloads/pls/pdf/?p=PartE1_SDIO_Simplified_Specification_Ver3.00.jpg&f=PartE1_SDIO_Simplified_Specification_Ver3.00.pdf&e=EN_SSE1>`_ 的第 3.1.2 节），简化版流程可参考 :ref:`esp_slave_init`。
+在使用主机初始化 SDIO 从机时，应遵循标准 SDIO 初始化流程（请参阅 `SDIO 简化规范 <https://www.sdcard.org/downloads/pls/pdf/?p=PartE1_SDIO_Simplified_Specification_Ver3.00.jpg&f=PartE1_SDIO_Simplified_Specification_Ver3.00.pdf&e=EN_SSE1>`_ 的第 3.1.2 节），简化版流程可参考 `ESP SDIO Slave 初始化 <https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/sdio_slave_protocol.html#esp-sdio-slave-initialization>`_ 。
 
-此外，在通过 CMD52/CMD53 访问到 Function 1 这一机制的基础上，还存在一个仅适用于 {IDF_TARGET_NAME} 的上层通信协议。该特定通信协议中，主机和从机通过 CMD52/CMD53 命令进行数据交换和通信。更多详情，请参阅 :ref:`esp_slave_protocol_layer`。
+此外，在通过 CMD52/CMD53 访问到 Function 1 这一机制的基础上，还存在一个仅适用于 {IDF_TARGET_NAME} 的上层通信协议。该特定通信协议中，主机和从机通过 CMD52/CMD53 命令进行数据交换和通信。更多详情，请参阅 `ESP SDIO 从机协议 <https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/sdio_slave_protocol.html#esp-sdio-slave-protocol>`_ 。
 
-组件 :doc:`/api-reference/protocols/esp_serial_slave_link` 也支持 {IDF_TARGET_NAME} 主机与 {IDF_TARGET_NAME} SDIO 从机通信。在开发主机应用程序时，请参阅 :example:`peripherals/sdio` 中的示例。
+组件 `ESSL <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_ 也支持 {IDF_TARGET_NAME} 主机与 {IDF_TARGET_NAME} SDIO 从机通信。在开发主机应用程序时，请参阅 :example:`peripherals/sdio` 中的示例。
 
 
 .. _interrupts:

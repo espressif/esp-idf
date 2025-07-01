@@ -1,2 +1,3 @@
 dependencies:
   ccomp_timer: "^1.0.0"
+  espressif/esp_serial_slave_link: "^1.1.0"

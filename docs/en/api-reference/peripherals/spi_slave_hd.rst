@@ -13,7 +13,7 @@ When conducting an SPI transaction, transactions can be classified into several 
 Protocol
 ^^^^^^^^
 
-About the details of how master should communicate with the SPI Slave, see :doc:`/api-reference/protocols/esp_spi_slave_protocol`.
+About the details of how master should communicate with the SPI Slave, see `ESP SPI Slave HD Protocol <https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/spi_slave_hd_protocol.html#spi-slave-hd-half-duplex-protocol>`_.
 
 Through these different transactions, the slave provides these services to the master:
 

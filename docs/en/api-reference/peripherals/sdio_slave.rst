@@ -149,11 +149,11 @@ The SDIO slave driver uses the following terms:
 Communication with ESP SDIO Slave
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The host should initialize the {IDF_TARGET_NAME} SDIO slave according to the standard SDIO initialization process (Sector 3.1.2 of `SDIO Simplified Specification <https://www.sdcard.org/downloads/pls/pdf/?p=PartE1_SDIO_Simplified_Specification_Ver3.00.jpg&f=PartE1_SDIO_Simplified_Specification_Ver3.00.pdf&e=EN_SSE1>`_), which is described briefly in :ref:`esp_slave_init`.
+The host should initialize the {IDF_TARGET_NAME} SDIO slave according to the standard SDIO initialization process (Sector 3.1.2 of `SDIO Simplified Specification <https://www.sdcard.org/downloads/pls/pdf/?p=PartE1_SDIO_Simplified_Specification_Ver3.00.jpg&f=PartE1_SDIO_Simplified_Specification_Ver3.00.pdf&e=EN_SSE1>`_), which is described briefly in `ESP SDIO Slave Initialization <https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/sdio_slave_protocol.html#esp-sdio-slave-initialization>`_.
 
-Furthermore, there is an {IDF_TARGET_NAME}-specific upper-level communication protocol built upon the foundation of CMD52/CMD53 to Function 1. Within this particular communication protocol, the master and slave engage in data exchange and communication through the utilization of CMD52/CMD53 commands. For more detailed information, please consult the :ref:`esp_slave_protocol_layer` section.
+Furthermore, there is an {IDF_TARGET_NAME}-specific upper-level communication protocol built upon the foundation of CMD52/CMD53 to Function 1. Within this particular communication protocol, the master and slave engage in data exchange and communication through the utilization of CMD52/CMD53 commands. For more detailed information, please consult the `ESP SDIO Slave Protocol <https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/sdio_slave_protocol.html#esp-sdio-slave-protocol>`_ section.
 
-There is also a component :doc:`/api-reference/protocols/esp_serial_slave_link` designed for {IDF_TARGET_NAME} master to communicate with {IDF_TARGET_NAME} SDIO slave. See example :example:`peripherals/sdio` when programming your host.
+There is also a component `ESSL <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_ designed for {IDF_TARGET_NAME} master to communicate with {IDF_TARGET_NAME} SDIO slave. See example :example:`peripherals/sdio` when programming your host.
 
 
 .. _interrupts:

@@ -109,9 +109,9 @@ Using API with SD Memory Cards
 
     If you want the application to wait until the SDIO interrupt occurs, use :cpp:func:`sdmmc_io_wait_int`.
 
-    .. only:: esp32
+    .. only:: SOC_SDMMC_HOST_SUPPORTED and SOC_SDIO_SLAVE_SUPPORTED
 
-        There is a component ESSL (ESP Serial Slave Link) to use if you are communicating with an ESP32 SDIO slave. See :doc:`/api-reference/protocols/esp_serial_slave_link` and example :example:`peripherals/sdio/host`.
+        There is a component `ESSL <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_ (ESP Serial Slave Link) to use if you are communicating with an ESP32 SDIO slave. See example :example:`peripherals/sdio/host`.
 
     Combo (Memory + IO) Cards
     ^^^^^^^^^^^^^^^^^^^^^^^^^

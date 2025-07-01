@@ -73,6 +73,9 @@ api-guides/event-handling                       api-reference/system/esp_event
 
 api-reference/network/tcpip_adapter             migration-guides/tcpip-adapter
 api-reference/system/system                     api-reference/system/misc_system_api
+api-reference/protocols/esp_spi_slave_protocol  "https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/spi_slave_hd_protocol.html"
+api-reference/protocols/esp_sdio_slave_protocol "https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/sdio_slave_protocol.html"
+api-reference/protocols/esp_serial_slave_link   "https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/index.html"
 
 # Driver-NG refactor
 api-reference/peripherals/timer                 api-reference/peripherals/gptimer
