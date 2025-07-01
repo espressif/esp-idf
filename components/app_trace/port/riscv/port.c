@@ -50,7 +50,7 @@ static uint8_t *esp_apptrace_riscv_down_buffer_get(esp_apptrace_riscv_data_t *hw
 static esp_err_t esp_apptrace_riscv_down_buffer_put(esp_apptrace_riscv_data_t *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo);
 static bool esp_apptrace_riscv_host_is_connected(esp_apptrace_riscv_data_t *hw_data);
 static esp_err_t esp_apptrace_riscv_buffer_swap_start(uint32_t curr_block_id);
-static esp_err_t esp_apptrace_riscv_buffer_swap(uint32_t new_block_id);
+static esp_err_t esp_apptrace_riscv_buffer_swap(uint32_t new_block_id, uint32_t prev_block_len);
 static esp_err_t esp_apptrace_riscv_buffer_swap_end(uint32_t new_block_id, uint32_t prev_block_len);
 static bool esp_apptrace_riscv_host_data_pending(void);
 
@@ -353,7 +353,7 @@ static esp_err_t esp_apptrace_riscv_buffer_swap_end(uint32_t new_block_id, uint3
     return ESP_OK;
 }
 
-static esp_err_t esp_apptrace_riscv_buffer_swap(uint32_t new_block_id)
+static esp_err_t esp_apptrace_riscv_buffer_swap(uint32_t new_block_id, uint32_t prev_block_len)
 {
     /* do nothing */
     return ESP_OK;
