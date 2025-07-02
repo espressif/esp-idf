@@ -147,7 +147,7 @@ esp_err_t esp_cache_aligned_malloc_prefer(size_t size, void **out_ptr, size_t *a
     *out_ptr = NULL;
 
     while (flag_nums--) {
-        flags = va_arg(argp, uint32_t);
+        flags = va_arg(argp, int);
         ret = esp_cache_aligned_malloc_internal(size, flags, out_ptr, actual_size);
         if (ret == ESP_OK) {
             break;
@@ -201,8 +201,6 @@ esp_err_t esp_cache_aligned_calloc_prefer(size_t n, size_t size, void **out_ptr,
         if (ret == ESP_OK) {
             memset(ptr, 0, size_bytes);
             *out_ptr = ptr;
-
-            arg = va_arg(argp, int);
             break;
         }
 
