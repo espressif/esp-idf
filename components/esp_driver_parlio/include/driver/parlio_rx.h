@@ -158,9 +158,7 @@ typedef struct {
     parlio_bit_pack_order_t bit_pack_order;         /*!< Set how we pack the bits into one bytes, set 1 to pack the bits into a byte from LSB,
                                                          otherwise from MSB */
     uint32_t                eof_data_len;           /*!< Set the data length to trigger the End Of Frame (EOF, i.e. transaction done)
-                                                         interrupt, if the data length is set to `0`, that mean the EOF will only triggers
-                                                         when the end pulse detected, please ensure there is an end pulse for a frame and
-                                                         `parlio_rx_pulse_delimiter_config_t::has_end_pulse` flag is set */
+                                                         interrupt, if the data length is set to `0`, that mean the EOF will only triggers */
     uint32_t                timeout_ticks;          /*!< The number of APB clock ticks to trigger timeout interrupt. Set 0 to disable the receive timeout interrupt
                                                          The timeout counter starts when soft delimiter is stopped but the data is still not enough for EOF. */
 } parlio_rx_soft_delimiter_config_t;

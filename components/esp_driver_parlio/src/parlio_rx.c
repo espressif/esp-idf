@@ -1008,6 +1008,8 @@ esp_err_t parlio_rx_unit_receive_from_isr(parlio_rx_unit_handle_t rx_unit,
     PARLIO_RX_CHECK_ISR(rx_unit && payload && recv_cfg, ESP_ERR_INVALID_ARG);
     PARLIO_RX_CHECK_ISR(recv_cfg->delimiter, ESP_ERR_INVALID_ARG);
     PARLIO_RX_CHECK_ISR(payload_size <= rx_unit->max_recv_size, ESP_ERR_INVALID_ARG);
+    // Can only be called from ISR
+    PARLIO_RX_CHECK_ISR(xPortInIsrContext() == pdTRUE, ESP_ERR_INVALID_STATE);
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     uint32_t alignment = rx_unit->base.group->dma_align;
     PARLIO_RX_CHECK_ISR(payload_size % alignment == 0, ESP_ERR_INVALID_ARG);
@@ -1052,7 +1054,14 @@ esp_err_t parlio_rx_unit_receive_from_isr(parlio_rx_unit_handle_t rx_unit,
     };
     rx_unit->usr_recv_buf = payload;
 
-    return xQueueSendFromISR(rx_unit->trans_que, &transaction, hp_task_woken) == pdTRUE ? ESP_OK : ESP_FAIL;
+    /* Send the transaction to the queue */
+    BaseType_t _hp_task_woken = 0;
+    BaseType_t ret = xQueueSendFromISR(rx_unit->trans_que, &transaction, &_hp_task_woken);
+    if (hp_task_woken) {
+        *hp_task_woken = _hp_task_woken != 0;
+    }
+
+    return ret == pdTRUE ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t parlio_rx_unit_wait_all_done(parlio_rx_unit_handle_t rx_unit, int timeout_ms)
