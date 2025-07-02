@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -590,4 +590,280 @@ TEST_CASE("parallel_rx_unit_receive_timeout_test", "[parlio_rx]")
     TEST_ESP_OK(parlio_del_rx_unit(rx_unit));
     TEST_ESP_OK(gpio_reset_pin(TEST_VALID_GPIO));
     free(payload);
+}
+
+typedef struct {
+    uint32_t partial_recv_cnt;
+    uint32_t recv_done_cnt;
+    uint32_t timeout_cnt;
+    uint32_t isr_send_cnt;
+    uint32_t isr_send_success_cnt;
+    parlio_rx_unit_handle_t rx_unit;
+    parlio_rx_delimiter_handle_t delimiter;
+    uint8_t *isr_payload;
+    size_t isr_payload_size;
+    bool enable_isr_send;
+} test_isr_data_t;
+
+TEST_PARLIO_CALLBACK_ATTR
+static bool test_parlio_rx_isr_done_callback(parlio_rx_unit_handle_t rx_unit, const parlio_rx_event_data_t *edata, void *user_data)
+{
+    bool hp_task_woken = false;
+    test_isr_data_t *test_data = (test_isr_data_t *)user_data;
+    test_data->recv_done_cnt++;
+
+    // Call parlio_rx_unit_receive_from_isr in ISR context to queue new receive transactions
+    if (test_data->enable_isr_send && test_data->isr_send_cnt < 3) {
+        test_data->isr_send_cnt++;
+
+        parlio_receive_config_t recv_config = {
+            .delimiter = test_data->delimiter,
+            .flags.partial_rx_en = false,
+        };
+
+        esp_err_t ret = parlio_rx_unit_receive_from_isr(test_data->rx_unit,
+                                                        test_data->isr_payload,
+                                                        test_data->isr_payload_size,
+                                                        &recv_config,
+                                                        &hp_task_woken);
+        if (ret == ESP_OK) {
+            test_data->isr_send_success_cnt++;
+        }
+    }
+
+    return hp_task_woken;
+}
+
+TEST_PARLIO_CALLBACK_ATTR
+static bool test_parlio_rx_isr_partial_recv_callback(parlio_rx_unit_handle_t rx_unit, const parlio_rx_event_data_t *edata, void *user_data)
+{
+    test_isr_data_t *test_data = (test_isr_data_t *)user_data;
+    test_data->partial_recv_cnt++;
+    return false;
+}
+
+TEST_CASE("parallel_rx_unit_receive_isr_test", "[parlio_rx]")
+{
+    parlio_rx_unit_handle_t rx_unit = NULL;
+    parlio_rx_delimiter_handle_t deli = NULL;
+
+    // Create RX unit
+    parlio_rx_unit_config_t config = TEST_DEFAULT_UNIT_CONFIG(PARLIO_CLK_SRC_DEFAULT, 1000000);
+    config.flags.free_clk = 1;
+    TEST_ESP_OK(parlio_new_rx_unit(&config, &rx_unit));
+
+    // Create soft delimiter
+    parlio_rx_soft_delimiter_config_t sft_deli_cfg = {
+        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .eof_data_len = 1024,  // Use smaller data length for testing convenience
+        .timeout_ticks = 0,
+    };
+    TEST_ESP_OK(parlio_new_rx_soft_delimiter(&sft_deli_cfg, &deli));
+
+    // Prepare test data structure
+    test_isr_data_t test_data = {
+        .partial_recv_cnt = 0,
+        .recv_done_cnt = 0,
+        .timeout_cnt = 0,
+        .isr_send_cnt = 0,
+        .isr_send_success_cnt = 0,
+        .rx_unit = rx_unit,
+        .delimiter = deli,
+        .enable_isr_send = false,
+    };
+
+    // Allocate DMA compatible buffers
+    uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    alignment = alignment < 4 ? 4 : alignment;
+    size_t payload_size = ALIGN_UP(1024, alignment);
+
+    uint8_t *payload1 = heap_caps_aligned_calloc(alignment, 1, payload_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
+    uint8_t *payload2 = heap_caps_aligned_calloc(alignment, 1, payload_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
+    TEST_ASSERT(payload1 && payload2);
+
+    test_data.isr_payload = payload2;
+    test_data.isr_payload_size = payload_size;
+
+    // Register callback functions
+    parlio_rx_event_callbacks_t cbs = {
+        .on_partial_receive = test_parlio_rx_isr_partial_recv_callback,
+        .on_receive_done = test_parlio_rx_isr_done_callback,
+    };
+    TEST_ESP_OK(parlio_rx_unit_register_event_callbacks(rx_unit, &cbs, &test_data));
+    TEST_ESP_OK(parlio_rx_unit_enable(rx_unit, true));
+
+    printf("Testing basic ISR receive functionality...\n");
+
+    // Start soft delimiter
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, true));
+
+    // Send first transaction
+    parlio_receive_config_t recv_config = {
+        .delimiter = deli,
+        .flags.partial_rx_en = false,
+    };
+    TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload1, payload_size, &recv_config));
+
+    // Wait for first transaction to complete
+    TEST_ESP_OK(parlio_rx_unit_wait_all_done(rx_unit, 5000));
+
+    // Verify first transaction completed
+    TEST_ASSERT_EQUAL_UINT32(1, test_data.recv_done_cnt);
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT32(1, test_data.partial_recv_cnt);
+
+    // Reset counters and enable ISR sending
+    memset(&test_data, 0, sizeof(test_isr_data_t));
+    test_data.rx_unit = rx_unit;
+    test_data.delimiter = deli;
+    test_data.isr_payload = payload2;
+    test_data.isr_payload_size = payload_size;
+    test_data.enable_isr_send = true;
+
+    printf("Testing queuing new transactions in ISR callback...\n");
+
+    // Send initial transaction, which will trigger ISR sending in callback
+    TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload1, payload_size, &recv_config));
+
+    // Wait for all transactions to complete (including transactions queued in ISR)
+    TEST_ESP_OK(parlio_rx_unit_wait_all_done(rx_unit, 10000));
+
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, false));
+
+    printf("ISR send_cnt: %"PRIu32", success_cnt: %"PRIu32"\n",
+           test_data.isr_send_cnt, test_data.isr_send_success_cnt);
+    printf("recv_done_cnt: %"PRIu32", partial_recv_cnt: %"PRIu32"\n",
+           test_data.recv_done_cnt, test_data.partial_recv_cnt);
+
+    // Verify ISR sending functionality
+    TEST_ASSERT_GREATER_THAN_UINT32(0, test_data.isr_send_cnt);
+    TEST_ASSERT_EQUAL_UINT32(test_data.isr_send_cnt, test_data.isr_send_success_cnt);
+
+    // Verify total receive done count = 1 (initial) + ISR success send count
+    TEST_ASSERT_EQUAL_UINT32(1 + test_data.isr_send_success_cnt, test_data.recv_done_cnt);
+
+    // Verify partial receive count should be at least equal to receive done count
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT32(test_data.recv_done_cnt, test_data.partial_recv_cnt);
+
+    printf("Test completed: ISR receive functionality works\n");
+
+    // Clean up resources
+    TEST_ESP_OK(parlio_rx_unit_disable(rx_unit));
+    TEST_ESP_OK(parlio_del_rx_delimiter(deli));
+    TEST_ESP_OK(parlio_del_rx_unit(rx_unit));
+    free(payload1);
+    free(payload2);
+}
+
+TEST_PARLIO_CALLBACK_ATTR
+static bool test_parlio_rx_isr_partial_recv_callback2(parlio_rx_unit_handle_t rx_unit, const parlio_rx_event_data_t *edata, void *user_data)
+{
+    bool hp_task_woken = false;
+    test_isr_data_t *test_data = (test_isr_data_t *)user_data;
+    if (test_data->isr_send_success_cnt == 0) {
+        parlio_receive_config_t recv_config = {
+            .delimiter = test_data->delimiter,
+            .flags.partial_rx_en = true,
+            .flags.indirect_mount = true,
+        };
+
+        esp_err_t ret = parlio_rx_unit_receive_from_isr(test_data->rx_unit,
+                                                        test_data->isr_payload,
+                                                        test_data->isr_payload_size,
+                                                        &recv_config,
+                                                        &hp_task_woken);
+        if (ret == ESP_OK) {
+            test_data->isr_send_success_cnt++;
+        }
+    }
+    test_data->partial_recv_cnt++;
+    return hp_task_woken;
+}
+
+TEST_CASE("parallel_rx_unit_infinite_transaction_switch_test", "[parlio_rx]")
+{
+    parlio_rx_unit_handle_t rx_unit = NULL;
+    parlio_rx_delimiter_handle_t deli = NULL;
+
+    // Create RX unit
+    parlio_rx_unit_config_t config = TEST_DEFAULT_UNIT_CONFIG(PARLIO_CLK_SRC_DEFAULT, 1000000);
+    config.flags.free_clk = 1;
+    TEST_ESP_OK(parlio_new_rx_unit(&config, &rx_unit));
+
+    // Create soft delimiter
+    parlio_rx_soft_delimiter_config_t sft_deli_cfg = {
+        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .eof_data_len = 1024,  // Use smaller data length for testing convenience
+        .timeout_ticks = 0,
+    };
+    TEST_ESP_OK(parlio_new_rx_soft_delimiter(&sft_deli_cfg, &deli));
+
+    // Prepare test data structure
+    test_isr_data_t test_data = {
+        .partial_recv_cnt = 0,
+        .recv_done_cnt = 0,
+        .timeout_cnt = 0,
+        .isr_send_cnt = 0,
+        .isr_send_success_cnt = 0,
+        .rx_unit = rx_unit,
+        .delimiter = deli,
+        .enable_isr_send = false,
+    };
+
+    // Allocate DMA compatible buffers
+    uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    alignment = alignment < 4 ? 4 : alignment;
+    size_t payload_size = ALIGN_UP(1024, alignment);
+
+    uint8_t *payload1 = heap_caps_aligned_calloc(alignment, 1, payload_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
+    uint8_t *payload2 = heap_caps_aligned_calloc(alignment, 1, payload_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
+    TEST_ASSERT(payload1 && payload2);
+
+    test_data.isr_payload = payload2;
+    test_data.isr_payload_size = payload_size;
+
+    // Register callback functions
+    parlio_rx_event_callbacks_t cbs = {
+        .on_partial_receive = test_parlio_rx_isr_partial_recv_callback2,
+    };
+    TEST_ESP_OK(parlio_rx_unit_register_event_callbacks(rx_unit, &cbs, &test_data));
+
+    TEST_ESP_OK(parlio_rx_unit_enable(rx_unit, true));
+
+    printf("Testing basic ISR receive functionality...\n");
+
+    // Start soft delimiter
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, true));
+
+    // Send first transaction
+    parlio_receive_config_t recv_config = {
+        .delimiter = deli,
+        .flags.partial_rx_en = true,
+        .flags.indirect_mount = true,
+    };
+    TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload1, payload_size, &recv_config));
+
+    // Wait for first transaction to complete
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    // Verify first transaction completed
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT32(1, test_data.partial_recv_cnt);
+    TEST_ASSERT_EQUAL_UINT32(1, test_data.isr_send_success_cnt);
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, false));
+
+    TEST_ESP_OK(parlio_rx_unit_disable(rx_unit));
+    test_data.partial_recv_cnt = 0;
+    test_data.isr_send_success_cnt = 0;
+    // Do not reset queue, so the last transaction can be resumed after enable
+    TEST_ESP_OK(parlio_rx_unit_enable(rx_unit, false));
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, true));
+    vTaskDelay(pdMS_TO_TICKS(100));
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, false));
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT32(1, test_data.partial_recv_cnt);
+    TEST_ASSERT_EQUAL_UINT32(1, test_data.isr_send_success_cnt);
+
+    TEST_ESP_OK(parlio_rx_unit_disable(rx_unit));
+    TEST_ESP_OK(parlio_del_rx_delimiter(deli));
+    TEST_ESP_OK(parlio_del_rx_unit(rx_unit));
+    free(payload1);
+    free(payload2);
 }
