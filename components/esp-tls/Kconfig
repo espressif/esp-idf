@@ -114,4 +114,12 @@ menu "ESP-TLS"
             Enable a fuller set of OCSP checks: checking revocation status of intermediate certificates,
             optional fallbacks to CRLs, etc.
 
+    config ESP_TLS_DYN_BUF_STRATEGY_SUPPORTED
+        bool
+        default y
+        help
+            Enable support for dynamic buffer strategy for ESP-TLS. This is the hidden config option kept
+            for external components like OTA, to find out whether the dynamic buffer strategy is supported
+            for particular ESP-IDF version.
+
 endmenu
