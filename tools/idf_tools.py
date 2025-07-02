@@ -2886,12 +2886,8 @@ def action_install_python_env(args):  # type: ignore
             install_legacy_python_virtualenv(idf_python_env_path)
 
     env_copy = os.environ.copy()
-    if env_copy.get('PIP_USER') == 'yes':
-        warn(
-            'Found PIP_USER="yes" in the environment. '
-            'Disabling PIP_USER in this shell to install packages into a virtual environment.'
-        )
-        env_copy['PIP_USER'] = 'no'
+    # Enforce disabling possible pip 'user' option to prevent installation error with virtual environment
+    env_copy['PIP_USER'] = 'no'
 
     constraint_file = get_constraints(idf_version) if use_constraints else None
 
