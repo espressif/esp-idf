@@ -400,6 +400,7 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
 .. list::
 
     - :example:`peripherals/twai/twai_error_recovery` 演示了总线错误上报，节点状态变化等事件信息，以及如何从离线状态恢复节点并重新进行通信。
+    - :example:`peripherals/twai/twai_network` 通过发送、监听， 2 个不同角色的节点，演示了如何使用驱动程序进行单次的和大量的数据发送，以及配置过滤器以接收这些数据。
 
 API 参考
 --------
