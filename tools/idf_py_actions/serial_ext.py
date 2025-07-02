@@ -515,7 +515,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if args.port:
             efuse_args += ['-p', args.port]
         elif not args.port and not extra_args['virt']:  # if --virt, no port will be found and it would cause error
-            efuse_args += ['-p', get_default_serial_port()]
+            raise FatalError(
+                'Error: Port is required for espefuse. '
+                'Please specify the port with the --port argument.'
+            )
         efuse_args += ['--chip', _get_project_desc(ctx, args)['target']]
         if extra_args['virt']:
             efuse_args += ['--virt']
@@ -712,7 +715,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     },
                     {
                         'names': ['--flash-crypt-conf'],
-                        'help': ('Override FLASH_CRYPT_CONF efuse value (default is 0XF).'),
+                        'help': ('Override FLASH_CRYPT_CONF eFuse value (default is 0XF).'),
                     },
                 ],
                 'arguments': [
