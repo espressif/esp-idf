@@ -29,7 +29,7 @@ if(NOT non_os_build)
                      "rtc_module.c"
                      "regi2c_ctrl.c"
                      "esp_gpio_reserve.c"
-                     "sar_periph_ctrl_common.c"
+                     "sar_tsens_ctrl.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/esp_clk_tree.c"
                      "dma/esp_dma_utils.c"

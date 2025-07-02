@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,13 +84,6 @@ void temperature_sensor_power_release(void);
  * @return temperature sensor value.
  */
 int16_t temp_sensor_get_raw_value(bool *range_changed);
-
-/**
- * @brief Synchronize the tsens_idx between sar_periph and driver
- *
- * @param tsens_idx index value of temperature sensor attribute
- */
-void temp_sensor_sync_tsens_idx(int tsens_idx);
 
 /**
  * @brief Enable SAR power when system wakes up

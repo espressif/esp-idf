@@ -26,6 +26,7 @@
 #include "temperature_sensor_private.h"
 #include "hal/temperature_sensor_ll.h"
 #include "soc/temperature_sensor_periph.h"
+#include "hal/temperature_sensor_hal.h"
 #include "esp_memory_utils.h"
 #include "esp_private/sar_periph_ctrl.h"
 #include "esp_sleep.h"
@@ -73,7 +74,7 @@ static esp_err_t temperature_sensor_choose_best_range(temperature_sensor_handle_
                 }
             }
             if (original_idx != -1) {
-                temp_sensor_sync_tsens_idx(original_idx);
+                temperature_sensor_hal_sync_tsens_idx(original_idx);
             }
             break;
         }
