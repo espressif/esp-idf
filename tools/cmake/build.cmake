@@ -848,6 +848,42 @@ function(idf_build_executable elf)
             # Setup the main flash target and dependencies
             __esptool_py_setup_main_flash_target()
 
+            # Generate flasher_args.json for tools that need it. The variables below are used
+            # in configuring the template flasher_args.json.in.
+            # Some of the variables (flash mode, size, frequency) are set as esptool_py component's properties.
+
+            idf_build_get_property(target IDF_TARGET)
+            set(ESPTOOLPY_CHIP "${target}")
+            set(ESPTOOLPY_BEFORE "${CONFIG_ESPTOOLPY_BEFORE}")
+            set(ESPTOOLPY_AFTER  "${CONFIG_ESPTOOLPY_AFTER}")
+            if(CONFIG_ESPTOOLPY_NO_STUB)
+                set(ESPTOOLPY_WITH_STUB false)
+            else()
+                set(ESPTOOLPY_WITH_STUB true)
+            endif()
+
+            if(CONFIG_SECURE_BOOT OR CONFIG_SECURE_FLASH_ENC_ENABLED)
+                # If security enabled then override post flash option
+                set(ESPTOOLPY_AFTER "no_reset")
+            endif()
+
+            idf_component_get_property(ESPFLASHMODE esptool_py ESPFLASHMODE)
+            idf_component_get_property(ESPFLASHFREQ esptool_py ESPFLASHFREQ)
+            idf_component_get_property(ESPFLASHSIZE esptool_py ESPFLASHSIZE)
+            idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
+
+            # Generate flasher args files
+            file(READ "${esptool_py_dir}/flasher_args.json.in" flasher_args_content)
+            string(CONFIGURE "${flasher_args_content}" flasher_args_content)
+
+            # We need to create a flasher_args.json.in to create the final flasher_args.json
+            # because CMake only resolves generator expressions in the file_generate command
+            # with the INPUT keyword during the generation phase.
+            file_generate("${build_dir}/flasher_args.json.in"
+                         CONTENT "${flasher_args_content}")
+            file_generate("${build_dir}/flasher_args.json"
+                         INPUT "${build_dir}/flasher_args.json.in")
+
             # Create the following post-build targets after __idf_build_binary() is called to ensure that the
             # app target is available.
 
