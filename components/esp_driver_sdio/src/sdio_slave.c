@@ -327,6 +327,7 @@ static void recover_pin(int pin, int sdio_func)
     gpio_io_config_t io_cfg = {};
     esp_err_t ret = gpio_get_io_config(pin, &io_cfg);
     assert(ret == ESP_OK);
+    (void)ret;
 
     if (io_cfg.fun_sel == sdio_func) {
         gpio_set_direction(pin, GPIO_MODE_INPUT);

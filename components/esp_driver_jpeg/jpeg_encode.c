@@ -506,6 +506,7 @@ static void s_cfg_desc(jpeg_encoder_handle_t encoder_engine, dma2d_descriptor_t 
     dsc->next       = next_dsc;
     esp_err_t ret = esp_cache_msync((void*)dsc, encoder_engine->dma_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
     assert(ret == ESP_OK);
+    (void)ret;
 }
 
 static void s_jpeg_enc_config_picture_color_space(jpeg_encoder_handle_t encoder_engine)

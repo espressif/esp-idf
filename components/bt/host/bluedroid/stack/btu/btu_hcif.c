@@ -1748,6 +1748,7 @@ static void btu_hcif_command_status_evt_on_task(BT_HDR *event)
     // check the HCI command integrity: opcode
     hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(hack->command);
     assert(metadata->opcode == opcode);
+    (void)metadata;
 
     HCI_FREE_CMD_BUF(hack->command);
     osi_free(event);

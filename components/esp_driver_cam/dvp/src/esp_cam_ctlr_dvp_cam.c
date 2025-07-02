@@ -233,6 +233,8 @@ static uint32_t IRAM_ATTR esp_cam_ctlr_dvp_get_recved_size(esp_cam_ctlr_dvp_cam_
     if (esp_ptr_external_ram(rx_buffer)) {
         esp_err_t ret = esp_cache_msync(rx_buffer, recv_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
+
     }
 
     if (ctlr->pic_format_jpeg) {

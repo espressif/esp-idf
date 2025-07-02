@@ -722,6 +722,7 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
             // invalidate priv_trans.buffer_to_rcv anyway, only user provide aligned buffer can rcv correct data in post_cb
             esp_err_t ret = esp_cache_msync((void *)host->cur_trans.rx_buffer, buffer_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
             assert(ret == ESP_OK);
+            (void)ret;
         }
 #endif
         if (host->cfg.post_trans_cb) {

@@ -975,6 +975,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
                 // invalidate priv_trans.buffer_to_rcv anyway, only user provide aligned buffer can rcv correct data in post_cb
                 esp_err_t ret = esp_cache_msync((void *)host->cur_trans_buf.buffer_to_rcv, buffer_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
                 assert(ret == ESP_OK);
+                (void)ret;
             }
 #endif
         }
@@ -1201,6 +1202,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         esp_err_t ret = esp_cache_msync((void *)send_ptr, tx_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         assert(ret == ESP_OK);
+        (void)ret;
 #endif
     }
 
@@ -1219,6 +1221,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans
         // do invalid here to hold on cache status to avoid hardware auto write back during dma transaction
         esp_err_t ret = esp_cache_msync((void *)rcv_ptr, rx_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
 #endif
     }
     priv_desc->buffer_to_send = send_ptr;

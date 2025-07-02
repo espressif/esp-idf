@@ -201,6 +201,7 @@ size_t sdmmc_host_get_slot_width(int slot)
     sd_host_slot_info_t info = {};
     esp_err_t ret = sd_host_slot_get_info(hdl, &info);
     assert(ret == ESP_OK);
+    (void)ret;
 
     return info.width;
 }

@@ -956,6 +956,7 @@ esp_err_t usb_host_client_handle_events(usb_host_client_handle_t client_hdl, Tic
             usb_host_client_event_msg_t event_msg;
             BaseType_t queue_ret = xQueueReceive(client_obj->constant.event_msg_queue, &event_msg, 0);
             assert(queue_ret == pdTRUE);
+            (void)queue_ret;
             client_obj->constant.event_callback(&event_msg, client_obj->constant.callback_arg);
         }
 
