@@ -156,7 +156,7 @@ static void do_ulp_wakeup_deepsleep(lp_core_test_commands_t ulp_cmd)
 
 static void check_reset_reason_ulp_wakeup(void)
 {
-    TEST_ASSERT_EQUAL(ESP_SLEEP_WAKEUP_ULP, esp_sleep_get_wakeup_cause());
+    TEST_ASSERT_EQUAL(BIT(ESP_SLEEP_WAKEUP_ULP), esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP));
 }
 
 static void do_ulp_wakeup_after_short_delay_deepsleep(void)
@@ -213,7 +213,7 @@ static void check_reset_reason_and_sleep_duration(void)
     struct timeval tv_stop = {};
     gettimeofday(&tv_stop, NULL);
 
-    TEST_ASSERT_EQUAL(ESP_SLEEP_WAKEUP_ULP, esp_sleep_get_wakeup_cause());
+    TEST_ASSERT_EQUAL(BIT(ESP_SLEEP_WAKEUP_ULP), esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP));
 
     int64_t sleep_duration = (tv_stop.tv_sec - tv_start.tv_sec) * 1000 + (tv_stop.tv_usec - tv_start.tv_usec) / 1000;
     int64_t expected_sleep_duration_ms = ulp_counter_wakeup_limit * LP_TIMER_TEST_SLEEP_DURATION_US / 1000;

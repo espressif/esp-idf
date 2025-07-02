@@ -154,9 +154,9 @@ void app_main(void)
     */
     vTaskDelay(pdMS_TO_TICKS(1000));
 
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+    uint32_t causes = esp_sleep_get_wakeup_causes();
     /* Woke up by LP core, i.e., wake up the main CPU in the LP program */
-    if (cause == ESP_SLEEP_WAKEUP_ULP) {
+    if (causes & BIT(ESP_SLEEP_WAKEUP_ULP)) {
         printf("LP core woke up the main CPU\n");
         // We can access the LP core global variable by adding `ulp_` prefix
         uint32_t touch_data = ulp_touch_data;
@@ -169,7 +169,7 @@ void app_main(void)
     }
     /* Woke up by other source, like power_on */
     else {
-        printf("Not an LP core wakeup. Cause = %d\n", cause);
+        printf("Not an LP core wakeup. Causes = %lx\n", causes);
         printf("Initializing...\n");
 
         /* Initialize Touch sensor from the main processor */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,17 +59,7 @@ static void test_lightsleep(bool force_rtc_periph)
         /* Enter sleep mode */
         esp_light_sleep_start();
 
-        /* Determine wake up reason */
-        const char* wakeup_reason;
-        switch (esp_sleep_get_wakeup_cause()) {
-            case ESP_SLEEP_WAKEUP_TIMER:
-                wakeup_reason = "timer";
-                break;
-            default:
-                wakeup_reason = "other";
-                break;
-        }
-        printf("Returned from light sleep, reason: %s\n", wakeup_reason);
+        printf("Returned from light sleep, reason: %s\n", (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_TIMER)) ? "timer" : "other");
         vTaskDelay(1000/portTICK_PERIOD_MS);
     }
 }

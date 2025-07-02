@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -115,20 +115,17 @@ static void ot_deep_sleep_init(void)
     struct timeval now;
     gettimeofday(&now, NULL);
     int sleep_time_ms = (now.tv_sec - s_sleep_enter_time.tv_sec) * 1000 + (now.tv_usec - s_sleep_enter_time.tv_usec) / 1000;
-    esp_sleep_wakeup_cause_t wake_up_cause = esp_sleep_get_wakeup_cause();
-    switch (wake_up_cause) {
-    case ESP_SLEEP_WAKEUP_TIMER: {
-        ESP_LOGI(TAG, "Wake up from timer. Time spent in deep sleep and boot: %dms", sleep_time_ms);
-        break;
-    }
-    case ESP_SLEEP_WAKEUP_EXT1: {
-        ESP_LOGI(TAG, "Wake up from GPIO. Time spent in deep sleep and boot: %dms", sleep_time_ms);
-        break;
-    }
-    case ESP_SLEEP_WAKEUP_UNDEFINED:
-    default:
+
+    uint32_t wake_up_causes = esp_sleep_get_wakeup_causes();
+    if (wake_up_causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
         ESP_LOGI(TAG, "Not a deep sleep reset");
-        break;
+    } else {
+        if(wake_up_causes & BIT(ESP_SLEEP_WAKEUP_TIMER)) {
+            ESP_LOGI(TAG, "Wake up from timer. Time spent in deep sleep and boot: %dms", sleep_time_ms);
+        }
+        if(wake_up_causes & BIT(ESP_SLEEP_WAKEUP_EXT1)) {
+            ESP_LOGI(TAG, "Wake up from GPIO. Time spent in deep sleep and boot: %dms", sleep_time_ms);
+        }
     }
 
     // Set the methods of how to wake up:

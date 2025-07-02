@@ -156,7 +156,7 @@ void example_prepare_sleep(void)
         /* Enter the light sleep */
         esp_light_sleep_start();
         /* Keep executing the code after waking up from the light sleep */
-        if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TOUCHPAD) {
+        if (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_TOUCHPAD)) {
             ESP_LOGI(TAG, "Wake up by touch\n");
         } else {
             ESP_LOGE(TAG, "Wake up by other source\n");
@@ -180,7 +180,7 @@ void app_main(void)
 {
 #if CONFIG_EXAMPLE_TOUCH_DEEP_SLEEP_WAKEUP
     /* Printing the log if the chip is waken up from deepsleep by the touchpad */
-    if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TOUCHPAD) {
+    if (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_TOUCHPAD)) {
         ESP_LOGI(TAG, "Wake up by touch\n");
     }
 #endif  // CONFIG_EXAMPLE_TOUCH_DEEP_SLEEP_WAKEUP

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
 */
@@ -313,23 +313,22 @@ static int light_sleep(int argc, char **argv)
     fflush(stdout);
     uart_wait_tx_idle_polling(CONFIG_ESP_CONSOLE_UART_NUM);
     esp_light_sleep_start();
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-    const char *cause_str;
-    switch (cause) {
-    case ESP_SLEEP_WAKEUP_GPIO:
-        cause_str = "GPIO";
-        break;
-    case ESP_SLEEP_WAKEUP_UART:
-        cause_str = "UART";
-        break;
-    case ESP_SLEEP_WAKEUP_TIMER:
-        cause_str = "timer";
-        break;
-    default:
-        cause_str = "unknown";
-        printf("%d\n", cause);
+
+    uint32_t causes = esp_sleep_get_wakeup_causes();
+    if (causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
+        ESP_LOGI(TAG, "Woke up from: unknown");
+        printf("%lx\n", causes);
+        return 0;
     }
-    ESP_LOGI(TAG, "Woke up from: %s", cause_str);
+    if (causes & BIT(ESP_SLEEP_WAKEUP_GPIO)) {
+        ESP_LOGI(TAG, "Woke up from: GPIO");
+    }
+    if (causes & BIT(ESP_SLEEP_WAKEUP_UART)) {
+        ESP_LOGI(TAG, "Woke up from: UART");
+    }
+    if (causes & BIT(ESP_SLEEP_WAKEUP_TIMER)) {
+        ESP_LOGI(TAG, "Woke up from: timer");
+    }
     return 0;
 }
 

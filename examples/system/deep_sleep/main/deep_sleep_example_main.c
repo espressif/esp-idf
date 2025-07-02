@@ -59,14 +59,15 @@ static void deep_sleep_task(void *args)
     gettimeofday(&now, NULL);
     int sleep_time_ms = (now.tv_sec - sleep_enter_time.tv_sec) * 1000 + (now.tv_usec - sleep_enter_time.tv_usec) / 1000;
 
-    switch (esp_sleep_get_wakeup_cause()) {
-        case ESP_SLEEP_WAKEUP_TIMER: {
+    uint32_t causes = esp_sleep_get_wakeup_causes();
+    if (causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
+        printf("Not a deep sleep reset\n");
+    } else {
+        if (causes & BIT(ESP_SLEEP_WAKEUP_TIMER)) {
             printf("Wake up from timer. Time spent in deep sleep: %dms\n", sleep_time_ms);
-            break;
         }
-
 #if CONFIG_EXAMPLE_GPIO_WAKEUP
-        case ESP_SLEEP_WAKEUP_GPIO: {
+        if (causes & BIT(ESP_SLEEP_WAKEUP_GPIO)) {
             uint64_t wakeup_pin_mask = esp_sleep_get_gpio_wakeup_status();
             if (wakeup_pin_mask != 0) {
                 int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
@@ -74,19 +75,15 @@ static void deep_sleep_task(void *args)
             } else {
                 printf("Wake up from GPIO\n");
             }
-            break;
         }
 #endif //CONFIG_EXAMPLE_GPIO_WAKEUP
-
 #if CONFIG_EXAMPLE_EXT0_WAKEUP
-        case ESP_SLEEP_WAKEUP_EXT0: {
+        if (causes & BIT(ESP_SLEEP_WAKEUP_EXT0)) {
             printf("Wake up from ext0\n");
-            break;
         }
 #endif // CONFIG_EXAMPLE_EXT0_WAKEUP
-
 #ifdef CONFIG_EXAMPLE_EXT1_WAKEUP
-        case ESP_SLEEP_WAKEUP_EXT1: {
+        if (causes & BIT(ESP_SLEEP_WAKEUP_EXT1)) {
             uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
             if (wakeup_pin_mask != 0) {
                 int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
@@ -94,13 +91,8 @@ static void deep_sleep_task(void *args)
             } else {
                 printf("Wake up from GPIO\n");
             }
-            break;
         }
 #endif // CONFIG_EXAMPLE_EXT1_WAKEUP
-
-        case ESP_SLEEP_WAKEUP_UNDEFINED:
-        default:
-            printf("Not a deep sleep reset\n");
     }
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);

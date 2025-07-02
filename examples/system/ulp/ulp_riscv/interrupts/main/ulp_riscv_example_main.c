@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -26,15 +26,8 @@ static void init_ulp_program(void);
 
 void app_main(void)
 {
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-    /* not a wakeup from ULP, load the firmware */
-    if (cause != ESP_SLEEP_WAKEUP_ULP) {
-        printf("Not a ULP RISC-V wakeup, initializing it! \n");
-        init_ulp_program();
-    }
-
-    /* ULP RISC-V handled an interrupt on GPIO#0 */
-    if (cause == ESP_SLEEP_WAKEUP_ULP) {
+    if (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP)) {
+        /* ULP RISC-V handled an interrupt on GPIO#0 */
         printf("ULP RISC-V woke up the main CPU! \n");
         if (ulp_wake_by_sw) {
             printf("ULP RISC-V SW Interrupt triggered %lu times.\r\n", ulp_sw_int_cnt);
@@ -43,6 +36,10 @@ void app_main(void)
             printf("ULP RISC-V GPIO Interrupt triggered.\r\n");
             ulp_wake_by_gpio = 0;
         }
+    } else {
+        /* not a wakeup from ULP, load the firmware */
+        printf("Not a ULP RISC-V wakeup, initializing it! \n");
+        init_ulp_program();
     }
 
     /* Go back to sleep, only the ULP RISC-V will run */

@@ -105,21 +105,23 @@ typedef enum {
  * @brief Sleep wakeup cause
  */
 typedef enum {
-    ESP_SLEEP_WAKEUP_UNDEFINED,    //!< In case of deep sleep, reset was not caused by exit from deep sleep
-    ESP_SLEEP_WAKEUP_ALL,          //!< Not a wakeup cause, used to disable all wakeup sources with esp_sleep_disable_wakeup_source
-    ESP_SLEEP_WAKEUP_EXT0,         //!< Wakeup caused by external signal using RTC_IO
-    ESP_SLEEP_WAKEUP_EXT1,         //!< Wakeup caused by external signal using RTC_CNTL
-    ESP_SLEEP_WAKEUP_TIMER,        //!< Wakeup caused by timer
-    ESP_SLEEP_WAKEUP_TOUCHPAD,     //!< Wakeup caused by touchpad
-    ESP_SLEEP_WAKEUP_ULP,          //!< Wakeup caused by ULP program
-    ESP_SLEEP_WAKEUP_GPIO,         //!< Wakeup caused by GPIO (light sleep only on ESP32, S2 and S3)
-    ESP_SLEEP_WAKEUP_UART,         //!< Wakeup caused by UART (light sleep only)
+    ESP_SLEEP_WAKEUP_UNDEFINED,         //!< In case of deep sleep, reset was not caused by exit from deep sleep
+    ESP_SLEEP_WAKEUP_ALL,               //!< Not a wakeup cause, used to disable all wakeup sources with esp_sleep_disable_wakeup_source
+    ESP_SLEEP_WAKEUP_EXT0,              //!< Wakeup caused by external signal using RTC_IO
+    ESP_SLEEP_WAKEUP_EXT1,              //!< Wakeup caused by external signal using RTC_CNTL
+    ESP_SLEEP_WAKEUP_TIMER,             //!< Wakeup caused by timer
+    ESP_SLEEP_WAKEUP_TOUCHPAD,          //!< Wakeup caused by touchpad
+    ESP_SLEEP_WAKEUP_ULP,               //!< Wakeup caused by ULP program
+    ESP_SLEEP_WAKEUP_GPIO,              //!< Wakeup caused by GPIO (light sleep only on ESP32, S2 and S3)
+    ESP_SLEEP_WAKEUP_UART,              //!< Wakeup caused by UART0 (light sleep only)
+    ESP_SLEEP_WAKEUP_UART1,             //!< Wakeup caused by UART1 (light sleep only)
+    ESP_SLEEP_WAKEUP_UART2,             //!< Wakeup caused by UART2 (light sleep only)
     ESP_SLEEP_WAKEUP_WIFI,              //!< Wakeup caused by WIFI (light sleep only)
     ESP_SLEEP_WAKEUP_COCPU,             //!< Wakeup caused by COCPU int
     ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG,   //!< Wakeup caused by COCPU crash
-    ESP_SLEEP_WAKEUP_BT,           //!< Wakeup caused by BT (light sleep only)
-    ESP_SLEEP_WAKEUP_VAD,          //!< Wakeup caused by VAD
-    ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT, //!< Wakeup caused by VDD_BAT under voltage.
+    ESP_SLEEP_WAKEUP_BT,                //!< Wakeup caused by BT (light sleep only)
+    ESP_SLEEP_WAKEUP_VAD,               //!< Wakeup caused by VAD
+    ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT,   //!< Wakeup caused by VDD_BAT under voltage.
 } esp_sleep_source_t;
 
 /**
@@ -691,10 +693,20 @@ void esp_deep_sleep_deregister_hook(esp_deep_sleep_cb_t old_dslp_cb);
 /**
  * @brief Get the wakeup source which caused wakeup from sleep
  *
+ * @note !!! This API will only return one wakeup source. If multiple wakeup sources
+ *       wake up at the same time, the wakeup source information may be lost.
+ *
  * @return cause of wake up from last sleep (deep sleep or light sleep)
  */
-esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void);
+esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
+__attribute__((deprecated("use esp_sleep_get_wakeup_causes instead")));
 
+/**
+ * @brief Get all wakeup sources bitmap which caused wakeup from sleep.
+ *
+ * @return The bitmap of the wakeup sources of the last wakeup from sleep. (deep sleep or light sleep)
+ */
+uint32_t esp_sleep_get_wakeup_causes(void);
 
 /**
  * @brief Default stub to run on wake from deep sleep.

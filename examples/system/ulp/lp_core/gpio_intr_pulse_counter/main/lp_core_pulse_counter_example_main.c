@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -47,14 +47,13 @@ void app_main(void)
 
     printf("ULP will wake up processor after every %d pulses\n", CONFIG_EXAMPLE_PULSE_COUNT_WAKEUP_LIMIT);
 
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
     /* not a wakeup from ULP, load the firmware */
-    if (cause != ESP_SLEEP_WAKEUP_ULP) {
-        printf("Not a ULP wakeup, initializing it! \n");
-        init_ulp_program();
-    } else {
+    if (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP)) {
         printf("ULP woke up the main CPU!\n");
         printf("Pulse count: %"PRIu32"\n", ulp_pulse_count);
+    } else {
+        printf("Not a ULP wakeup, initializing it! \n");
+        init_ulp_program();
     }
 
     /* Go back to sleep, only the ULP will run */

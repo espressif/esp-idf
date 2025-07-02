@@ -362,8 +362,13 @@ static int process_get_wakeup_cause(int argc, char **argv)
         return 1;
     }
 
-    switch (esp_sleep_get_wakeup_cause()) {
-    case ESP_SLEEP_WAKEUP_EXT1: {
+    uint32_t causes = esp_sleep_get_wakeup_causes();
+    if (causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
+        printf("Wakeup cause err\n");
+        return 0;
+    }
+
+    if (causes & BIT(ESP_SLEEP_WAKEUP_EXT1)) {
 #if SOC_PM_SUPPORT_EXT1_WAKEUP && SOC_RTCIO_PIN_COUNT > 0
         uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
         if (wakeup_pin_mask != 0) {
@@ -374,9 +379,9 @@ static int process_get_wakeup_cause(int argc, char **argv)
         {
             printf("Wake up from EXT1 triggered, but unknown wake-up IO\n");
         }
-        break;
     }
-    case ESP_SLEEP_WAKEUP_GPIO: {
+
+    if (causes & BIT(ESP_SLEEP_WAKEUP_GPIO)) {
         if (esp_reset_reason() == ESP_RST_DEEPSLEEP) {
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
             uint64_t wakeup_pin_mask = esp_sleep_get_gpio_wakeup_status();
@@ -409,11 +414,6 @@ static int process_get_wakeup_cause(int argc, char **argv)
             gpio_ll_clear_intr_status(&GPIO, 0xFFFFFFFF);
             gpio_ll_clear_intr_status_high(&GPIO, 0xFFFFFFFF);
         }
-        break;
-    }
-    default: {
-        printf("Wakeup cause err\n");
-    }
     }
     return 0;
 }
