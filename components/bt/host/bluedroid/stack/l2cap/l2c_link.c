@@ -1084,7 +1084,9 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
 	        p_lcb_cur = list_node(p_node);
 		if (p_lcb_cur == p_lcb) {
 		    p_node = list_next(p_node);
-		    p_lcb = list_node(p_node);
+		    if (p_node) {
+		        p_lcb = list_node(p_node);
+		    }
 		    break;
 		}
 	    }
