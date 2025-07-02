@@ -153,6 +153,7 @@ if(NOT BOOTLOADER_BUILD)
 endif()
 
 if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME))
+    idf_component_get_property(espsecure_py_cmd esptool_py ESPSECUREPY_CMD)
     if(BOOTLOADER_BUILD)
         # Whether CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES or not, we need verification key to embed
         # in the library.
@@ -165,7 +166,7 @@ if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE
                 "signature_verification_key.bin"
                 ABSOLUTE BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
             add_custom_command(OUTPUT "${secure_boot_verification_key}"
-                COMMAND ${ESPSECUREPY}
+                COMMAND ${espsecure_py_cmd}
                 extract_public_key --keyfile "${secure_boot_signing_key}"
                 "${secure_boot_verification_key}"
                 DEPENDS ${secure_boot_signing_key}
@@ -193,7 +194,7 @@ if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE
                 ABSOLUTE BASE_DIR "${project_dir}")
 
             add_custom_command(OUTPUT "${secure_boot_verification_key}"
-                COMMAND ${ESPSECUREPY}
+                COMMAND ${espsecure_py_cmd}
                 extract_public_key --keyfile "${secure_boot_signing_key}"
                 "${secure_boot_verification_key}"
                 WORKING_DIRECTORY ${project_dir}

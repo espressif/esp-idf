@@ -948,9 +948,10 @@ macro(project project_name)
     # Add uf2 related targets
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(python PYTHON)
+    idf_build_get_property(target IDF_TARGET)
 
     set(UF2_ARGS --json "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json")
-    set(UF2_CMD ${python} "${idf_path}/tools/mkuf2.py" write --chip ${chip_model})
+    set(UF2_CMD ${python} "${idf_path}/tools/mkuf2.py" write --chip ${target})
 
     add_custom_target(uf2
         COMMAND ${CMAKE_COMMAND}

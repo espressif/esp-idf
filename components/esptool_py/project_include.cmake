@@ -1,20 +1,5 @@
 # esptool_py component project_include.cmake
 
-# Many of these are read when generating flash_app_args & flash_project_args
-idf_build_get_property(target IDF_TARGET)
-idf_build_get_property(python PYTHON)
-idf_build_get_property(idf_path IDF_PATH)
-
-idf_build_get_property(non_os_build NON_OS_BUILD)
-
-set(chip_model ${target})
-
-set(ESPTOOLPY ${python} "$ENV{ESPTOOL_WRAPPER}" "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${chip_model})
-set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
-set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
-set(ESPMONITOR ${python} -m esp_idf_monitor)
-set(ESPTOOLPY_CHIP "${chip_model}")
-
 # esptool_py_partition_needs_encryption
 #
 # @brief Determine if a partition needs to be encrypted when flash encryption is enabled.
