@@ -399,7 +399,7 @@ Application Examples
 
 .. list::
 
-    - Temporary no.
+    - :example:`peripherals/twai/twai_error_recovery` demonstrates how to recover nodes from the bus-off state and resume communication, as well as bus error reporting, node state changes, and other event information.
 
 API Reference
 -------------

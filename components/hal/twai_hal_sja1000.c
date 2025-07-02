@@ -202,8 +202,9 @@ static inline uint32_t twai_hal_decode_interrupt(twai_hal_context_t *hal_ctx)
     //Error Warning Interrupt set whenever Error or Bus Status bit changes
     if (interrupts & TWAI_LL_INTR_EI) {
         if (status & TWAI_LL_STATUS_BS) {       //Currently in BUS OFF state
-            if (status & TWAI_LL_STATUS_ES) {    //EWL is exceeded, thus must have entered BUS OFF
-                TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_BUS_OFF);
+            if (status & TWAI_LL_STATUS_ES) {   //EWL is exceeded, thus must have entered BUS OFF
+                //The last error which trigger bus_off, hardware no longer fire TWAI_HAL_EVENT_BUS_ERR, but error reason still need to be read/clear and report
+                TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_BUS_OFF | TWAI_HAL_EVENT_BUS_ERR);
                 TWAI_HAL_SET_BITS(state_flags, TWAI_HAL_STATE_FLAG_BUS_OFF);
                 //Any TX would have been halted by entering bus off. Reset its flag
                 TWAI_HAL_CLEAR_BITS(state_flags, TWAI_HAL_STATE_FLAG_RUNNING | TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED);
