@@ -845,6 +845,9 @@ function(idf_build_executable elf)
             esptool_py_flash_target_image(app-flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
             esptool_py_flash_target_image(flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
 
+            # Setup utility targets such as monitor, erase_flash, merge-bin
+            __esptool_py_setup_utility_targets()
+
             # Setup the main flash target and dependencies
             __esptool_py_setup_main_flash_target()
 

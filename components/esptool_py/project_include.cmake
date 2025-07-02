@@ -1,5 +1,5 @@
-# Set some global esptool.py variables
-#
+# esptool_py component project_include.cmake
+
 # Many of these are read when generating flash_app_args & flash_project_args
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(python PYTHON)
@@ -14,192 +14,6 @@ set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 set(ESPMONITOR ${python} -m esp_idf_monitor)
 set(ESPTOOLPY_CHIP "${chip_model}")
-
-if(NOT CONFIG_APP_BUILD_TYPE_RAM AND CONFIG_APP_BUILD_GENERATE_BINARIES)
-    if(CONFIG_BOOTLOADER_FLASH_DC_AWARE)
-    # When set flash frequency to 120M, must keep 1st bootloader work under ``DOUT`` mode
-    # because on some flash chips, 120M will modify the status register,
-    # which will make ROM won't work.
-    # This change intends to be for esptool only and the bootloader should keep use
-    # ``DOUT`` mode.
-        set(ESPFLASHMODE "dout")
-        message("Note: HPM is enabled for the flash, force the ROM bootloader into DOUT mode for stable boot on")
-    else()
-        set(ESPFLASHMODE ${CONFIG_ESPTOOLPY_FLASHMODE})
-    endif()
-    set(ESPFLASHFREQ ${CONFIG_ESPTOOLPY_FLASHFREQ})
-    set(ESPFLASHSIZE ${CONFIG_ESPTOOLPY_FLASHSIZE})
-
-
-    set(esptool_elf2image_args
-        --flash_mode ${ESPFLASHMODE}
-        --flash_freq ${ESPFLASHFREQ}
-        --flash_size ${ESPFLASHSIZE}
-        )
-
-    if(BOOTLOADER_BUILD AND CONFIG_SECURE_BOOT_V2_ENABLED)
-        # The bootloader binary needs to be 4KB aligned in order to append a secure boot V2 signature block.
-        # If CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES is NOT set, the bootloader
-        # image generated is not 4KB aligned for external HSM to sign it readily.
-        # Following esptool option --pad-to-size 4KB generates a 4K aligned bootloader image.
-        # In case of signing during build, espsecure.py "sign_data" operation handles the 4K alignment of the image.
-        if(NOT CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-            list(APPEND esptool_elf2image_args --pad-to-size 4KB)
-        endif()
-    endif()
-
-    set(MMU_PAGE_SIZE ${CONFIG_MMU_PAGE_MODE})
-
-    if(NOT BOOTLOADER_BUILD)
-        list(APPEND esptool_elf2image_args --elf-sha256-offset 0xb0)
-        # For chips that support configurable MMU page size feature
-        # If page size is configured to values other than the default "64KB" in menuconfig,
-        # then we need to pass the actual size to flash-mmu-page-size arg
-        if(NOT MMU_PAGE_SIZE STREQUAL "64KB")
-            list(APPEND esptool_elf2image_args --flash-mmu-page-size ${MMU_PAGE_SIZE})
-        endif()
-    endif()
-
-    if(NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND
-        NOT BOOTLOADER_BUILD)
-        if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
-            list(APPEND esptool_elf2image_args --secure-pad)
-        elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
-            list(APPEND esptool_elf2image_args --secure-pad-v2)
-        endif()
-    endif()
-
-    if(CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE)
-        # Set ESPFLASHSIZE to 'detect' *after* esptool_elf2image_args are generated,
-        # as elf2image can't have 'detect' as an option...
-        set(ESPFLASHSIZE detect)
-    endif()
-
-    if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
-        set(ESPFLASHSIZE keep)
-    endif()
-endif()
-
-# We still set "--min-rev" to keep the app compatible with older bootloaders where this field is controlled.
-if(CONFIG_IDF_TARGET_ESP32)
-    # for this chip min_rev is major revision
-    math(EXPR min_rev "${CONFIG_ESP_REV_MIN_FULL} / 100")
-endif()
-if(CONFIG_IDF_TARGET_ESP32C3)
-    # for this chip min_rev is minor revision
-    math(EXPR min_rev "${CONFIG_ESP_REV_MIN_FULL} % 100")
-endif()
-
-if(min_rev)
-    list(APPEND esptool_elf2image_args --min-rev ${min_rev})
-endif()
-
-list(APPEND esptool_elf2image_args --min-rev-full ${CONFIG_ESP_REV_MIN_FULL})
-list(APPEND esptool_elf2image_args --max-rev-full ${CONFIG_ESP_REV_MAX_FULL})
-
-if(CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE)
-    # Set ESPFLASHSIZE to 'detect' *after* esptool_elf2image_args are generated,
-    # as elf2image can't have 'detect' as an option...
-    set(ESPFLASHSIZE detect)
-endif()
-
-if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
-    set(ESPFLASHSIZE keep)
-endif()
-
-idf_build_get_property(build_dir BUILD_DIR)
-
-idf_build_get_property(elf_name EXECUTABLE_NAME GENERATOR_EXPRESSION)
-idf_build_get_property(elf EXECUTABLE GENERATOR_EXPRESSION)
-
-
-add_custom_target(erase_flash
-    COMMAND ${CMAKE_COMMAND}
-    -D "IDF_PATH=${idf_path}"
-    -D "SERIAL_TOOL=${ESPTOOLPY}"
-    -D "SERIAL_TOOL_ARGS=erase_flash"
-    -P run_serial_tool.cmake
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-    USES_TERMINAL
-    VERBATIM
-    )
-
-set(MERGE_BIN_ARGS merge_bin)
-if(DEFINED ENV{ESP_MERGE_BIN_OUTPUT})
-    list(APPEND MERGE_BIN_ARGS "-o" "$ENV{ESP_MERGE_BIN_OUTPUT}")
-else()
-    if(DEFINED ENV{ESP_MERGE_BIN_FORMAT} AND "$ENV{ESP_MERGE_BIN_FORMAT}" STREQUAL "hex")
-        list(APPEND MERGE_BIN_ARGS "-o" "${CMAKE_CURRENT_BINARY_DIR}/merged-binary.hex")
-    else()
-        list(APPEND MERGE_BIN_ARGS "-o" "${CMAKE_CURRENT_BINARY_DIR}/merged-binary.bin")
-    endif()
-endif()
-
-if(DEFINED ENV{ESP_MERGE_BIN_FORMAT})
-    list(APPEND MERGE_BIN_ARGS "-f" "$ENV{ESP_MERGE_BIN_FORMAT}")
-endif()
-
-list(APPEND MERGE_BIN_ARGS "@${CMAKE_CURRENT_BINARY_DIR}/flash_args")
-
-add_custom_target(merge-bin
-    COMMAND ${CMAKE_COMMAND}
-    -D "IDF_PATH=${idf_path}"
-    -D "SERIAL_TOOL=${ESPTOOLPY}"
-    -D "SERIAL_TOOL_ARGS=${MERGE_BIN_ARGS}"
-    -D "WORKING_DIRECTORY=${CMAKE_CURRENT_BINARY_DIR}"
-    -P run_serial_tool.cmake
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-    DEPENDS gen_project_binary bootloader
-    USES_TERMINAL
-    VERBATIM
-    )
-
-set(MONITOR_ARGS "")
-
-list(APPEND MONITOR_ARGS "--toolchain-prefix;${_CMAKE_TOOLCHAIN_PREFIX};")
-
-if(CONFIG_ESP_COREDUMP_DECODE)
-list(APPEND MONITOR_ARGS "--decode-coredumps;${CONFIG_ESP_COREDUMP_DECODE};")
-endif()
-
-list(APPEND MONITOR_ARGS "--target;${target};")
-
-list(APPEND MONITOR_ARGS "--revision;${CONFIG_ESP_REV_MIN_FULL};")
-
-if(CONFIG_IDF_TARGET_ARCH_RISCV)
-    list(APPEND MONITOR_ARGS "--decode-panic;backtrace;")
-endif()
-
-list(APPEND MONITOR_ARGS "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>")
-
-add_custom_target(monitor
-    COMMAND ${CMAKE_COMMAND}
-    -D "IDF_PATH=${idf_path}"
-    -D "SERIAL_TOOL=${ESPMONITOR}"
-    -D "SERIAL_TOOL_ARGS=${MONITOR_ARGS}"
-    -D "WORKING_DIRECTORY=${build_dir}"
-    -P run_serial_tool.cmake
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-    USES_TERMINAL
-    VERBATIM
-    )
-
-set(esptool_flash_main_args "--before=${CONFIG_ESPTOOLPY_BEFORE}")
-
-if(CONFIG_SECURE_BOOT OR CONFIG_SECURE_FLASH_ENC_ENABLED)
-    # If security enabled then override post flash option
-    list(APPEND esptool_flash_main_args "--after=no_reset")
-else()
-    list(APPEND esptool_flash_main_args "--after=${CONFIG_ESPTOOLPY_AFTER}")
-endif()
-
-if(CONFIG_ESPTOOLPY_NO_STUB)
-    list(APPEND esptool_flash_main_args "--no-stub")
-endif()
-
-idf_component_set_property(esptool_py FLASH_ARGS "${esptool_flash_main_args}")
-idf_component_set_property(esptool_py FLASH_SUB_ARGS "--flash_mode ${ESPFLASHMODE} --flash_freq ${ESPFLASHFREQ} \
---flash_size ${ESPFLASHSIZE}")
 
 # esptool_py_partition_needs_encryption
 #
@@ -847,6 +661,94 @@ function(__idf_build_secure_binary UNSIGNED_BIN_FILENAME SIGNED_BIN_FILENAME TAR
                 ${build_dir}/${UNSIGNED_BIN_FILENAME}"
             VERBATIM)
     endif()
+endfunction()
+
+# __esptool_py_setup_utility_targets
+#
+# @brief Sets up common utility targets like `erase_flash`, `merge-bin`, and `monitor`
+#
+function(__esptool_py_setup_utility_targets)
+    __ensure_esptool_py_setup()
+
+    idf_build_get_property(build_dir BUILD_DIR)
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(python PYTHON)
+    idf_build_get_property(target IDF_TARGET)
+    idf_build_get_property(elf_name EXECUTABLE_NAME GENERATOR_EXPRESSION)
+    idf_build_get_property(elf EXECUTABLE GENERATOR_EXPRESSION)
+    idf_component_get_property(esptool_py_cmd esptool_py ESPTOOLPY_CMD)
+    idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
+
+    add_custom_target(erase_flash
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_PATH=${idf_path}"
+        -D "SERIAL_TOOL=${esptool_py_cmd}"
+        -D "SERIAL_TOOL_ARGS=erase_flash"
+        -P run_serial_tool.cmake
+        WORKING_DIRECTORY ${esptool_py_dir}
+        USES_TERMINAL
+        VERBATIM
+        )
+
+    set(MERGE_BIN_ARGS merge_bin)
+    if(DEFINED ENV{ESP_MERGE_BIN_OUTPUT})
+        list(APPEND MERGE_BIN_ARGS "-o" "$ENV{ESP_MERGE_BIN_OUTPUT}")
+    else()
+        if(DEFINED ENV{ESP_MERGE_BIN_FORMAT} AND "$ENV{ESP_MERGE_BIN_FORMAT}" STREQUAL "hex")
+            list(APPEND MERGE_BIN_ARGS "-o" "${CMAKE_CURRENT_BINARY_DIR}/merged-binary.hex")
+        else()
+            list(APPEND MERGE_BIN_ARGS "-o" "${CMAKE_CURRENT_BINARY_DIR}/merged-binary.bin")
+        endif()
+    endif()
+
+    if(DEFINED ENV{ESP_MERGE_BIN_FORMAT})
+        list(APPEND MERGE_BIN_ARGS "-f" "$ENV{ESP_MERGE_BIN_FORMAT}")
+    endif()
+
+    list(APPEND MERGE_BIN_ARGS "@${CMAKE_CURRENT_BINARY_DIR}/flash_args")
+
+    add_custom_target(merge-bin
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_PATH=${idf_path}"
+        -D "SERIAL_TOOL=${esptool_py_cmd}"
+        -D "SERIAL_TOOL_ARGS=${MERGE_BIN_ARGS}"
+        -D "WORKING_DIRECTORY=${CMAKE_CURRENT_BINARY_DIR}"
+        -P run_serial_tool.cmake
+        WORKING_DIRECTORY ${esptool_py_dir}
+        DEPENDS gen_project_binary bootloader
+        USES_TERMINAL
+        VERBATIM
+        )
+
+    set(MONITOR_ARGS "")
+
+    list(APPEND MONITOR_ARGS "--toolchain-prefix;${_CMAKE_TOOLCHAIN_PREFIX};")
+
+    if(CONFIG_ESP_COREDUMP_DECODE)
+    list(APPEND MONITOR_ARGS "--decode-coredumps;${CONFIG_ESP_COREDUMP_DECODE};")
+    endif()
+
+    list(APPEND MONITOR_ARGS "--target;${target};")
+
+    list(APPEND MONITOR_ARGS "--revision;${CONFIG_ESP_REV_MIN_FULL};")
+
+    if(CONFIG_IDF_TARGET_ARCH_RISCV)
+        list(APPEND MONITOR_ARGS "--decode-panic;backtrace;")
+    endif()
+
+    list(APPEND MONITOR_ARGS "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>")
+
+    add_custom_target(monitor
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_PATH=${idf_path}"
+        -D "SERIAL_TOOL=${python} -m esp_idf_monitor"
+        -D "SERIAL_TOOL_ARGS=${MONITOR_ARGS}"
+        -D "WORKING_DIRECTORY=${build_dir}"
+        -P run_serial_tool.cmake
+        WORKING_DIRECTORY ${esptool_py_dir}
+        USES_TERMINAL
+        VERBATIM
+        )
 endfunction()
 
 # __esptool_py_setup_main_flash_target
