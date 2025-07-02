@@ -186,7 +186,7 @@ uint32_t btc_get_ble_status(void)
     #endif
     #endif
 
-    #if (BLE_50_FEATURE_SUPPORT == TRUE)
+    #if (BLE_50_EXTEND_ADV_EN == TRUE)
     // Number of active extended advertsing
     extern uint8_t btm_ble_ext_adv_active_count(void);
     if (btm_ble_ext_adv_active_count()) {
