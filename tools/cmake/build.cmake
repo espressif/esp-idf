@@ -783,9 +783,51 @@ function(idf_build_executable elf)
     idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
     idf_build_get_property(target IDF_TARGET)
 
-    if(NOT bootloader_build AND NOT esp_tee_build AND NOT "${target}" STREQUAL "linux")
-        # Check if esptool_py component is available before calling its functions
-        if(TARGET idf::esptool_py)
+    # This is the main orchestrator for generating binaries and flash targets
+    # It is responsible for -
+    #  - Setting up the binary generation targets
+    #  - Setting up the signed binary generation targets
+    #  - Setting up the main 'flash' target
+    #  - Setting up the app-flash and flash targets
+    #  - Setting up the app_check_size target
+    #
+    # Note: We need to wrap this code in a if(NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD) block
+    #       because the bootloader and esp_tee subprojects also call our overridden project()
+    #       macro.
+    #
+    # Note: We need to have this block here instead of in project.cmake because
+    #       idf_build_executable() is called directly when ESP-IDF is compiled
+    #       as a library (idf_as_lib).
+    if(NOT bootloader_build AND NOT esp_tee_build)
+        # All of the following logic for generating binaries and flash targets
+        # depends on the esptool_py component. For some builds (such as those
+        # that are built for the linux target), this component may not be included.
+        # We must guard these calls to ensure they only run when esptool_py is part
+        # of the build. We also only do this if CONFIG_APP_BUILD_GENERATE_BINARIES is set.
+        if(TARGET idf::esptool_py AND CONFIG_APP_BUILD_GENERATE_BINARIES)
+            # Determine the output filename for the binary.
+            idf_build_get_property(elf_name EXECUTABLE_NAME GENERATOR_EXPRESSION)
+            idf_build_get_property(non_os_build NON_OS_BUILD)
+
+            set(project_bin "${elf_name}.bin")
+            if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT non_os_build)
+                set(project_bin_unsigned "${elf_name}-unsigned.bin")
+            else()
+                set(project_bin_unsigned "${project_bin}")
+            endif()
+
+            idf_build_set_property(PROJECT_BIN "${project_bin}")
+
+            # Create the binary file generation target for the main project
+            set(target_name "gen_${CMAKE_PROJECT_NAME}_binary")
+            __idf_build_binary("${project_bin_unsigned}" "${target_name}")
+
+            # Generate the signed binary file generation target for the main project
+            if(NOT non_os_build AND CONFIG_SECURE_SIGNED_APPS)
+                set(signed_target_name "gen_signed_${CMAKE_PROJECT_NAME}_binary")
+                __idf_build_secure_binary("${project_bin_unsigned}" "${project_bin}" "${signed_target_name}")
+            endif()
+
             # The following block is placed here to ensure that the application binary is added to the 'flash'
             # target's properties *before* __esptool_py_setup_main_flash_target is called.
             # This is because __esptool_py_setup_main_flash_target copies properties from the 'flash'
@@ -795,19 +837,42 @@ function(idf_build_executable elf)
             #
             # Set up app-flash and flash targets. The app-flash target is specifically for flashing
             # just the application, while the flash target is for flashing the entire system.
-            if(CONFIG_APP_BUILD_GENERATE_BINARIES)
-                idf_build_get_property(build_dir BUILD_DIR)
-                idf_build_get_property(project_bin PROJECT_BIN)
-                partition_table_get_partition_info(app_partition_offset "--partition-boot-default" "offset")
-                esptool_py_custom_target(app-flash app "app")
+            idf_build_get_property(build_dir BUILD_DIR)
+            idf_build_get_property(project_bin PROJECT_BIN)
+            partition_table_get_partition_info(app_partition_offset "--partition-boot-default" "offset")
+            esptool_py_custom_target(app-flash app "app")
 
-                esptool_py_flash_target_image(app-flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
-                esptool_py_flash_target_image(flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
+            esptool_py_flash_target_image(app-flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
+            esptool_py_flash_target_image(flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
+
+            # Setup the main flash target and dependencies
+            __esptool_py_setup_main_flash_target()
+
+            # Create the following post-build targets after __idf_build_binary() is called to ensure that the
+            # app target is available.
+
+            # If anti-rollback option is set then factory partition should not be in Partition Table.
+            # In this case, should be used the partition table with two ota app without the factory.
+            partition_table_get_partition_info(factory_offset
+                            "--partition-type app --partition-subtype factory" "offset")
+            partition_table_get_partition_info(test_offset "--partition-type app --partition-subtype test" "offset")
+            if(CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK AND (factory_offset OR test_offset))
+                fail_at_build_time(check_table_contents "\
+                ERROR: Anti-rollback option is enabled. Partition table should \
+                consist of two ota app without factory or test partitions.")
+                add_dependencies(app check_table_contents)
             endif()
 
-            __esptool_py_setup_main_flash_target()
-        endif()
-    endif()
+            if(CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
+                # Generate app_check_size_command target to check the app size against the partition table parameters
+                partition_table_add_check_size_target(app_check_size
+                    DEPENDS gen_project_binary
+                    BINARY_PATH "${build_dir}/${project_bin}"
+                    PARTITION_TYPE app)
+                add_dependencies(app app_check_size)
+            endif()
+        endif() # if(TARGET idf::esptool_py AND CONFIG_APP_BUILD_GENERATE_BINARIES)
+    endif() # if(NOT bootloader_build AND NOT esp_tee_build)
 endfunction()
 
 # idf_build_get_config

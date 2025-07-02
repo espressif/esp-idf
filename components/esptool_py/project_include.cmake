@@ -112,79 +112,6 @@ idf_build_get_property(build_dir BUILD_DIR)
 idf_build_get_property(elf_name EXECUTABLE_NAME GENERATOR_EXPRESSION)
 idf_build_get_property(elf EXECUTABLE GENERATOR_EXPRESSION)
 
-if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT non_os_build)
-    set(unsigned_project_binary "${elf_name}-unsigned.bin")
-else()
-    set(unsigned_project_binary "${elf_name}.bin")
-endif()
-
-set(PROJECT_BIN "${elf_name}.bin")
-
-#
-# Add 'app.bin' target - generates with elf2image
-#
-if(CONFIG_APP_BUILD_GENERATE_BINARIES)
-    add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
-        COMMAND ${ESPTOOLPY} elf2image ${esptool_elf2image_args}
-            -o "${build_dir}/${unsigned_project_binary}" "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
-        COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
-        COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
-        DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
-        VERBATIM
-        WORKING_DIRECTORY ${build_dir}
-        COMMENT "Generating binary image from built executable"
-        )
-    add_custom_target(gen_project_binary DEPENDS "${build_dir}/.bin_timestamp")
-endif()
-
-set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    APPEND PROPERTY ADDITIONAL_CLEAN_FILES
-    "${build_dir}/${unsigned_project_binary}"
-    )
-
-if(CONFIG_APP_BUILD_GENERATE_BINARIES)
-    add_custom_target(app ALL DEPENDS gen_project_binary)
-endif()
-
-if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
-    set(secure_boot_version "1")
-elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
-    set(secure_boot_version "2")
-endif()
-
-if(NOT non_os_build AND CONFIG_SECURE_SIGNED_APPS)
-    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-        # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
-        get_filename_component(secure_boot_signing_key "${CONFIG_SECURE_BOOT_SIGNING_KEY}"
-            ABSOLUTE BASE_DIR "${project_dir}")
-        add_custom_command(OUTPUT "${build_dir}/.signed_bin_timestamp"
-            COMMAND ${ESPSECUREPY} sign_data --version ${secure_boot_version} --keyfile ${secure_boot_signing_key}
-                -o "${build_dir}/${PROJECT_BIN}" "${build_dir}/${unsigned_project_binary}"
-            COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${PROJECT_BIN}"
-                                    "from ${build_dir}/${unsigned_project_binary}"
-            COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${PROJECT_BIN}" > "${build_dir}/.signed_bin_timestamp"
-            DEPENDS "${build_dir}/.bin_timestamp"
-            VERBATIM
-            COMMENT "Generating signed binary image"
-            )
-        add_custom_target(gen_signed_project_binary DEPENDS "${build_dir}/.signed_bin_timestamp")
-        add_dependencies(gen_project_binary gen_signed_project_binary)
-
-        set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            APPEND PROPERTY ADDITIONAL_CLEAN_FILES
-            "${build_dir}/${PROJECT_BIN}"
-            )
-    else()
-        string(REPLACE ";" " " espsecurepy "${ESPSECUREPY}")
-        add_custom_command(TARGET app POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E echo
-                "App built but not signed. Sign app before flashing"
-            COMMAND ${CMAKE_COMMAND} -E echo
-                "\t${espsecurepy} sign_data --keyfile KEYFILE --version ${secure_boot_version} \
-                ${build_dir}/${PROJECT_BIN}"
-            VERBATIM)
-    endif()
-endif()
 
 add_custom_target(erase_flash
     COMMAND ${CMAKE_COMMAND}
@@ -780,6 +707,147 @@ function(__ensure_esptool_py_setup)
     endif()
 endfunction()
 
+
+# __idf_build_binary
+#
+# @brief Sets up the primary target for generating a .bin file from an .elf file.
+#
+# This function creates the custom command and target required to generate a
+# project binary (`.bin`) file from the final `.elf` executable. It uses `esptool.py
+# elf2image` to perform the conversion and manages dependencies to ensure the
+# binary is regenerated whenever the ELF file changes.
+#
+# @param[in] OUTPUT_BIN_FILENAME The name of the output binary file to generate.
+# @param[in] TARGET_NAME         The unique name for the custom target that
+#                                generates the binary.
+function(__idf_build_binary OUTPUT_BIN_FILENAME TARGET_NAME)
+    __ensure_esptool_py_setup()
+
+    idf_build_get_property(build_dir BUILD_DIR)
+    idf_build_get_property(elf EXECUTABLE GENERATOR_EXPRESSION)
+    idf_component_get_property(esptool_py_cmd esptool_py ESPTOOLPY_CMD)
+
+    # Get esptool.py arguments for elf2image target
+    idf_component_get_property(esptool_elf2image_args esptool_py ESPTOOL_PY_ELF2IMAGE_ARGS)
+
+    # Create a custom command and target to generate binary from elf file
+    add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
+        COMMAND ${esptool_py_cmd} elf2image ${esptool_elf2image_args}
+            -o "${build_dir}/${OUTPUT_BIN_FILENAME}" "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
+        COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${OUTPUT_BIN_FILENAME}"
+        COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${OUTPUT_BIN_FILENAME}" > "${build_dir}/.bin_timestamp"
+        DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
+        VERBATIM
+        WORKING_DIRECTORY ${build_dir}
+        COMMENT "Generating binary image from built executable"
+        )
+    # Create a custom target to generate the binary file
+    add_custom_target(${TARGET_NAME} DEPENDS "${build_dir}/.bin_timestamp")
+
+    # We need to create a gen_project_binary target for backward compatibility
+    # since many other components depend on it. Add the new target as a dependency
+    # to the gen_project_binary target.
+    if(NOT TARGET gen_project_binary)
+        add_custom_target(gen_project_binary DEPENDS ${TARGET_NAME})
+    else()
+        add_dependencies(gen_project_binary ${TARGET_NAME})
+    endif()
+
+    # Add an 'app' alias that is part of the default build
+    if(NOT TARGET app)
+        add_custom_target(app ALL DEPENDS gen_project_binary)
+    else()
+        add_dependencies(app gen_project_binary)
+    endif()
+
+    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        APPEND PROPERTY ADDITIONAL_CLEAN_FILES
+        "${build_dir}/${OUTPUT_BIN_FILENAME}"
+        )
+endfunction()
+
+# __idf_build_secure_binary
+#
+# @brief Sets up targets for generating a signed binary for Secure Boot.
+#
+# If Secure Boot is enabled, this function adds a custom command to sign the
+# previously generated application binary using `espsecure.py`. It creates a
+# target that depends on the unsigned binary and produces a signed one, which
+# is required for the bootloader to authenticate the application.
+#
+# @param[in] UNSIGNED_BIN_FILENAME The name of the unsigned input binary file.
+# @param[in] SIGNED_BIN_FILENAME   The name of the signed output binary file.
+# @param[in] TARGET_NAME           The unique name for the custom target that
+#                                  generates the signed binary.
+# @param[in, optional] KEYFILE     Path to the keyfile for signing.
+# @param[in, optional] COMMENT     Custom message to display during build.
+function(__idf_build_secure_binary UNSIGNED_BIN_FILENAME SIGNED_BIN_FILENAME TARGET_NAME)
+    cmake_parse_arguments(arg "" "KEYFILE;COMMENT" "" ${ARGN})
+
+    __ensure_esptool_py_setup()
+
+    idf_build_get_property(build_dir BUILD_DIR)
+    idf_component_get_property(espsecure_py_cmd esptool_py ESPSECUREPY_CMD)
+
+    if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+        set(secure_boot_version "1")
+    elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
+        set(secure_boot_version "2")
+    endif()
+
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        if(arg_KEYFILE)
+            # If a keyfile is provided, use it for signing.
+            set(secure_boot_signing_key "${arg_KEYFILE}")
+        else()
+            # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
+            idf_build_get_property(project_dir PROJECT_DIR)
+            get_filename_component(secure_boot_signing_key "${CONFIG_SECURE_BOOT_SIGNING_KEY}"
+                ABSOLUTE BASE_DIR "${project_dir}")
+        endif()
+
+        if(arg_COMMENT)
+            set(comment_text "${arg_COMMENT}")
+        else()
+            set(comment_text "Generating signed binary image")
+        endif()
+
+        add_custom_command(OUTPUT "${build_dir}/.signed_bin_timestamp"
+            COMMAND ${espsecure_py_cmd} sign_data
+                --version ${secure_boot_version} --keyfile "${secure_boot_signing_key}"
+                -o "${build_dir}/${SIGNED_BIN_FILENAME}" "${build_dir}/${UNSIGNED_BIN_FILENAME}"
+            COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${SIGNED_BIN_FILENAME}"
+                                    "from ${build_dir}/${UNSIGNED_BIN_FILENAME}"
+            COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${SIGNED_BIN_FILENAME}"
+                                                                    > "${build_dir}/.signed_bin_timestamp"
+            DEPENDS "${build_dir}/.bin_timestamp"
+            VERBATIM
+            COMMENT "${comment_text}"
+            )
+        add_custom_target(${TARGET_NAME} DEPENDS "${build_dir}/.signed_bin_timestamp")
+
+        # Add the new target as a dependency to the gen_project_binary target.
+        if(NOT TARGET gen_project_binary)
+            add_custom_target(gen_project_binary DEPENDS ${TARGET_NAME})
+        else()
+            add_dependencies(gen_project_binary ${TARGET_NAME})
+        endif()
+
+        set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            APPEND PROPERTY ADDITIONAL_CLEAN_FILES
+            "${build_dir}/${SIGNED_BIN_FILENAME}"
+            )
+    else()
+        string(REPLACE ";" " " espsecurepy "${espsecure_py_cmd}")
+        add_custom_command(TARGET app POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo
+                "App built but not signed. Sign app before flashing"
+            COMMAND ${CMAKE_COMMAND} -E echo
+                "\t${espsecurepy} sign_data --keyfile KEYFILE --version ${secure_boot_version} \
+                ${build_dir}/${UNSIGNED_BIN_FILENAME}"
+            VERBATIM)
+    endif()
+endfunction()
 
 # __esptool_py_setup_main_flash_target
 #

@@ -51,37 +51,51 @@ idf_build_set_property(COMPILE_DEFINITIONS "ESP_TEE_BUILD=1" APPEND)
 idf_build_set_property(COMPILE_DEFINITIONS "NON_OS_BUILD=1" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-fno-stack-protector" APPEND)
 
-if(CONFIG_SECURE_BOOT_V2_ENABLED)
-    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-        get_filename_component(secure_boot_signing_key
-            "${SECURE_BOOT_SIGNING_KEY}" ABSOLUTE BASE_DIR "${project_dir}")
+# Set up the TEE binary generation targets
+set(project_bin "esp_tee.bin")
+if(CONFIG_SECURE_BOOT_V2_ENABLED AND CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+    set(esp_tee_unsigned_bin "esp_tee-unsigned.bin")
+else()
+    set(esp_tee_unsigned_bin "${project_bin}")
+endif()
 
-        if(NOT EXISTS "${secure_boot_signing_key}")
-        message(FATAL_ERROR
-            "Secure Boot Signing Key Not found."
-            "\nGenerate the Secure Boot V2 RSA-PSS 3072 Key."
-            "\nTo generate one, you can use this command:"
-            "\n\t${espsecurepy} generate_signing_key --version 2 ${SECURE_BOOT_SIGNING_KEY}")
+# Set the final binary name as a project property.
+idf_build_set_property(PROJECT_BIN "${project_bin}")
+
+# Generate the unsigned binary from the ELF file.
+if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+    set(target_name "gen_esp_tee_binary")
+    __idf_build_binary("${esp_tee_unsigned_bin}" "${target_name}")
+endif()
+
+idf_component_get_property(espsecure_py_cmd esptool_py ESPSECUREPY_CMD)
+
+# If secure boot is enabled, generate the signed binary from the unsigned one.
+if(CONFIG_SECURE_BOOT_V2_ENABLED)
+    set(target_name "gen_signed_esp_tee_binary")
+
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        # The SECURE_BOOT_SIGNING_KEY is passed in from the parent build and
+        # is already an absolute path.
+        if(NOT EXISTS "${SECURE_BOOT_SIGNING_KEY}")
+            message(FATAL_ERROR
+                "Secure Boot Signing Key Not found."
+                "\nGenerate the Secure Boot V2 RSA-PSS 3072 Key."
+                "\nTo generate one, you can use this command:"
+                "\n\t${espsecure_py_cmd} generate_signing_key --version 2 your_key.pem"
+            )
         endif()
 
-        set(esp_tee_unsigned_bin "esp_tee-unsigned.bin")
-        add_custom_command(OUTPUT ".signed_bin_timestamp"
-            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/${PROJECT_BIN}"
-            "${CMAKE_BINARY_DIR}/${esp_tee_unsigned_bin}"
-            COMMAND ${ESPSECUREPY} sign_data --version 2 --keyfile "${secure_boot_signing_key}"
-            -o "${CMAKE_BINARY_DIR}/${PROJECT_BIN}" "${CMAKE_BINARY_DIR}/${esp_tee_unsigned_bin}"
-            COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${PROJECT_BIN}"
-            "from ${CMAKE_BINARY_DIR}/${esp_tee_unsigned_bin}"
-            COMMAND ${CMAKE_COMMAND} -E md5sum "${CMAKE_BINARY_DIR}/${PROJECT_BIN}"
-            > "${CMAKE_BINARY_DIR}/.signed_bin_timestamp"
-            DEPENDS "${build_dir}/.bin_timestamp"
-            VERBATIM
-            COMMENT "Generated the signed TEE")
+        set(comment "Generated the signed TEE")
+        set(key_arg KEYFILE "${SECURE_BOOT_SIGNING_KEY}")
     else()
-        add_custom_command(OUTPUT ".signed_bin_timestamp"
-        VERBATIM
-        COMMENT "TEE generated but not signed")
+        # If we are not building signed binaries, we don't pass a key.
+        set(comment "TEE generated but not signed")
+        set(key_arg "")
     endif()
 
-    add_custom_target(gen_signed_esp_tee ALL DEPENDS "${build_dir}/.signed_bin_timestamp")
+    __idf_build_secure_binary("${esp_tee_unsigned_bin}" "${project_bin}" "${target_name}"
+        COMMENT "${comment}"
+        ${key_arg}
+    )
 endif()
