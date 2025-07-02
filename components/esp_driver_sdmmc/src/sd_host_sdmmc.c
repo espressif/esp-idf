@@ -94,7 +94,7 @@ esp_err_t sd_host_create_sdmmc_controller(const sd_host_sdmmc_cfg_t *config, sd_
 
     ESP_LOGD(TAG, "size: %d, alignment: %d", sizeof(sdmmc_desc_t), alignment);
     ctlr->dma_desc_num = config->dma_desc_num ? config->dma_desc_num : SD_HOST_SDMMC_DMA_DESC_CNT;
-    ctlr->dma_desc = heap_caps_aligned_calloc(alignment, 1, sizeof(sdmmc_desc_t) * ctlr->dma_desc_num, SD_HOST_SDMMC_MEM_ALLOC_CAPS);
+    ctlr->dma_desc = heap_caps_aligned_calloc(alignment, 1, sizeof(sdmmc_desc_t) * ctlr->dma_desc_num, SD_HOST_SDMMC_DMA_ALLOC_CAPS);
     ESP_LOGD(TAG, "ctlr->dma_desc addr: %p", ctlr->dma_desc);
     ESP_RETURN_ON_FALSE(ctlr->dma_desc, ESP_ERR_NO_MEM, TAG, "no mem for dma descriptors");
 

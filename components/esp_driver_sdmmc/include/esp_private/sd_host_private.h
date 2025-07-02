@@ -32,21 +32,27 @@ extern "C" {
 
 #if SOC_SDMMC_HOST_SUPPORTED
 #if CONFIG_SD_HOST_SDMMC_ISR_CACHE_SAFE
-#define SD_HOST_SDMMC_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#define SD_HOST_SDMMC_MEM_ALLOC_CAPS         (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
-#define SD_HOST_SDMMC_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
+#define SD_HOST_SDMMC_MEM_ALLOC_CAPS         MALLOC_CAP_DEFAULT
+#endif
+
+#if SOC_SDMMC_PSRAM_DMA_CAPABLE
+#define SD_HOST_SDMMC_DMA_ALLOC_CAPS         MALLOC_CAP_DEFAULT
+#else
+#define SD_HOST_SDMMC_DMA_ALLOC_CAPS         (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #endif
 
 #if !SOC_RCC_IS_INDEPENDENT
 // Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define SD_HOST_SDMMC_RCC_ATOMIC()        PERIPH_RCC_ATOMIC()
+#define SD_HOST_SDMMC_RCC_ATOMIC()           PERIPH_RCC_ATOMIC()
 #else
 #define SD_HOST_SDMMC_RCC_ATOMIC()
 #endif
 
 #if SOC_PERIPH_CLK_CTRL_SHARED
 // Clock source and related clock settings are mixing with other peripherals, so we need to use a critical section
-#define SD_HOST_SDMMC_CLK_SRC_ATOMIC()    PERIPH_RCC_ATOMIC()
+#define SD_HOST_SDMMC_CLK_SRC_ATOMIC()       PERIPH_RCC_ATOMIC()
 #else
 #define SD_HOST_SDMMC_CLK_SRC_ATOMIC()
 #endif
