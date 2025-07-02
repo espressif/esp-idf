@@ -199,7 +199,7 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
 
 .. only:: esp32
 
-    .. figure:: ../../../_static/diagrams/adc/adc-noise-graph.jpg
+    .. figure:: ../../../../_static/diagrams/adc/adc-noise-graph.jpg
         :align: center
         :alt: ADC 噪声抑制
 

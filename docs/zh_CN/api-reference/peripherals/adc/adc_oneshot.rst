@@ -8,7 +8,7 @@
 
 模数转换器集成于芯片，支持测量特定模拟 IO 管脚的模拟信号。
 
-{IDF_TARGET_NAME} 有 {SOC_ADC_PERIPH_NUM} 个 ADC 单元，可以在以下场景使用：
+{IDF_TARGET_NAME} 有 {IDF_TARGET_SOC_ADC_PERIPH_NUM} 个 ADC 单元，可以在以下场景使用：
 
 .. list::
 
@@ -194,10 +194,9 @@ flash 写入/擦除、OTA 等原因都可能导致 cache 禁用，此时，默�
 - :cpp:func:`adc_oneshot_new_unit`
 - :cpp:func:`adc_oneshot_config_channel`
 - :cpp:func:`adc_oneshot_read`
+- :cpp:func:`adc_oneshot_del_unit`
 
 上述函数均为线程安全，使用时，可以直接从不同的 RTOS 任务中调用以上函数，无需额外锁保护。
-
-- :cpp:func:`adc_oneshot_del_unit` 非线程安全。此外，与上文中线程安全的函数一起调用该函数时，可能导致线程安全函数的调用出错。
 
 
 .. _adc-oneshot-kconfig-options:
@@ -217,5 +216,4 @@ Kconfig 选项
 API 参考
 -------------
 
-.. include-build-file:: inc/adc_types.inc
 .. include-build-file:: inc/adc_oneshot.inc

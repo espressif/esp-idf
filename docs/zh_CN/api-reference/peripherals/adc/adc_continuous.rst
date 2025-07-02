@@ -3,14 +3,12 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_ADC_NUM:default="两", esp32c2="一", esp32c6="一", esp32h2="一", esp32c5="一", esp32c61="一"}
-
 简介
 ------------
 
 {IDF_TARGET_NAME} 芯片集成了模数转换器 (ADC)，支持测量特定模拟 IO 管脚的模拟信号。此外，ADC 还支持直接内存访问 (DMA) 功能，高效获取 ADC 转换结果。
 
-{IDF_TARGET_NAME} 具有 {IDF_TARGET_ADC_NUM} 个 ADC 单元，可应用于以下场景：
+{IDF_TARGET_NAME} 具有 {IDF_TARGET_SOC_ADC_PERIPH_NUM} 个 ADC 单元，可应用于以下场景：
 
 - 生成单次 ADC 转换结果
 - 生成连续 ADC 转换结果

@@ -27,6 +27,10 @@ api-reference/storage/spi_flash                 api-reference/peripherals/spi_fl
 api-reference/storage/spi_flash_concurrency     api-reference/peripherals/spi_flash/spi_flash_concurrency
 api-reference/storage/spi_flash_override_driver api-reference/peripherals/spi_flash/spi_flash_override_driver
 api-reference/storage/spi_flash_optional_feature    api-reference/peripherals/spi_flash/spi_flash_optional_feature
+api-reference/peripherals/adc_oneshot     /api-reference/peripherals/adc/adc_oneshot
+api-reference/peripherals/adc_continuous     api-reference/peripherals/adc/adc_continuous
+api-reference/peripherals/adc_calibration     api-reference/peripherals/adc/adc_calibration
+api-reference/peripherals/adc     api-reference/peripherals/adc/index
 
 
 get-started/idf-monitor                         api-guides/tools/idf-monitor
