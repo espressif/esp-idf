@@ -136,7 +136,7 @@ static esp_err_t esp_cam_ctlr_dvp_config_input_gpio(int pin, int signal, bool in
 static IRAM_ATTR esp_err_t esp_cam_ctlr_dvp_start_trans(esp_cam_ctlr_dvp_cam_t *ctlr)
 {
     bool buffer_ready = false;
-    esp_cam_ctlr_trans_t trans;
+    esp_cam_ctlr_trans_t trans = {0};
 
     if (ctlr->cur_buf) {
         ctlr->cur_buf = NULL;
@@ -149,7 +149,9 @@ static IRAM_ATTR esp_err_t esp_cam_ctlr_dvp_start_trans(esp_cam_ctlr_dvp_cam_t *
         if (trans.buffer) {
             buffer_ready = true;
         }
-    } else if (!ctlr->bk_buffer_dis) {
+    }
+
+    if (!buffer_ready && !ctlr->bk_buffer_dis) {
         trans.buffer = ctlr->backup_buffer;
         trans.buflen = ctlr->fb_size_in_bytes;
         buffer_ready = true;
