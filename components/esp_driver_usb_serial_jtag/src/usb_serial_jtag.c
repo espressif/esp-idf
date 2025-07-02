@@ -256,3 +256,33 @@ esp_err_t usb_serial_jtag_driver_uninstall(void)
     p_usb_serial_jtag_obj = NULL;
     return ESP_OK;
 }
+
+bool usb_serial_jtag_is_driver_installed(void)
+{
+    return (p_usb_serial_jtag_obj != NULL);
+}
+
+size_t usb_serial_jtag_get_read_bytes_available(void)
+{
+    // sign the the driver is read ready is that data is waiting in the RX ringbuffer
+    UBaseType_t bytes_available = 0;
+    if (usb_serial_jtag_is_driver_installed()) {
+        vRingbufferGetInfo(p_usb_serial_jtag_obj->rx_ring_buf, NULL, NULL, NULL, NULL, &bytes_available);
+        if (bytes_available <= 0) {
+            return 0;
+        }
+    }
+
+    return (size_t)bytes_available;
+}
+
+bool usb_serial_jtag_read_ready(void)
+{
+    return usb_serial_jtag_get_read_bytes_available() != 0;
+}
+
+bool usb_serial_jtag_write_ready(void)
+{
+    // sign that the driver is write ready is that the TX ring buffer is not full
+    return (xRingbufferGetCurFreeSize(p_usb_serial_jtag_obj->tx_ring_buf) > 0);
+}

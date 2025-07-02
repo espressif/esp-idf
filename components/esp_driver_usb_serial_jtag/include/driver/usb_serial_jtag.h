@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,6 +95,34 @@ esp_err_t usb_serial_jtag_driver_uninstall(void);
  * @return True if USJ is connected, false otherwise
  */
 bool usb_serial_jtag_is_connected(void);
+
+/**
+ * @brief Get information whether the USB serial JTAG driver is installed or not
+ *
+ * @return True if driver is installed and False if driver not installed
+ */
+bool usb_serial_jtag_is_driver_installed(void);
+
+/**
+ * @brief Return the number of bytes available for reading
+ *
+ * @return the number of bytes available for reading in the buffer
+ */
+size_t usb_serial_jtag_get_read_bytes_available(void);
+
+/**
+ * @brief Return the readiness status of the driver for read operation
+ *
+ * @return true if driver read ready, false if not
+ */
+bool usb_serial_jtag_read_ready(void);
+
+/**
+ * @brief Return the readiness status of the driver for write operation
+ *
+ * @return true if driver is write ready, false if not
+ */
+bool usb_serial_jtag_write_ready(void);
 
 #ifdef __cplusplus
 }
