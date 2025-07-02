@@ -1457,7 +1457,6 @@ static int wifi_station_wps_init(const esp_wps_config_t *config)
     }
 
     sm = gWpsSm;
-    esp_wifi_disconnect();
     esp_wifi_get_macaddr_internal(WIFI_IF_STA, sm->ownaddr);
     os_memcpy(gWpaSm.own_addr, sm->ownaddr, ETH_ALEN);
 
@@ -1733,6 +1732,7 @@ int wifi_station_wps_start(void)
         sm->wps->wps->dh_pubkey = sm->wps->dh_pubkey_e;
         sm->wps->wps->rf_band_cb = wps_rf_band_cb;
         sm->wps->dh_privkey = NULL;
+        esp_wifi_disconnect();
         wifi_wps_scan(NULL, NULL);
         break;
     case WPS_STATUS_SCANNING:
