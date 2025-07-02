@@ -534,6 +534,8 @@
 
 #define SOC_PM_PAU_LINK_NUM             (4)
 
+#define SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED    (1)
+
 #define SOC_PM_RETENTION_MODULE_NUM         (32)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/

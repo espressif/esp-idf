@@ -1797,7 +1797,11 @@ AP 睡眠
 
  - 在 `Interval` 开始时，将会给出 `WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START`_ 事件，由于 `Window` 将在此时开始，可以在此事件内布置发包动作。
 
- - 在连接状态下，`Interval` 开始的时间点将会与 TBTT 时间点对齐。
+ - 在连接状态下，`Interval` 开始的时间点将会与 TBTT 时间点对齐。可以通过将非连接模块的接收端和发送端连接在同一路由器下，并在 `WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START`_ 事件内进行发包，以同步非连接模块的传输窗口，达到提高接收端收包成功率的效果。
+
+ .. only:: esp32
+
+    在 ESP32 上，TBTT 时间点会受到 DFS(Dynamic Frequency Scaling) 的干扰，如果想要在 ESP32 上通过 TBTT 同步非连接模块的传输窗口，需要禁用 DFS。
 
 **Window**
 

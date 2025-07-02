@@ -975,6 +975,10 @@ config SOC_PM_PAU_LINK_NUM
     int
     default 4
 
+config SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED
+    bool
+    default y
+
 config SOC_PM_RETENTION_MODULE_NUM
     int
     default 32

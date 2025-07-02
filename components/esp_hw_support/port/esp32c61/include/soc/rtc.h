@@ -495,6 +495,14 @@ typedef soc_xtal_freq_t rtc_xtal_freq_t;
 #define rtc_clk_fast_freq_set(fast_freq) rtc_clk_fast_src_set(fast_freq)
 #define rtc_clk_fast_freq_get() rtc_clk_fast_src_get()
 
+/**
+ * @brief Calculate the slow clock period value by slow clock frequency
+ *
+ * @param freq_hz Frequency of the slow clock in Hz
+ * @return Fixed point value of slow clock period in microseconds
+ */
+uint32_t rtc_clk_freq_to_period(uint32_t freq_hz);
+
 #ifdef __cplusplus
 }
 #endif
