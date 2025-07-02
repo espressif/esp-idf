@@ -52,13 +52,7 @@ menu "ESP NETIF Adapter"
             Enable if esp_netif_transmit() and esp_netif_receive() should generate events. This can be useful
             to blink data traffic indication lights.
 
-    config ESP_NETIF_RECEIVE_REPORT_ERRORS
-        bool "Use esp_err_t to report errors from esp_netif_receive"
-        default n
-        help
-            Enable if esp_netif_receive() should return error code. This is useful to inform upper layers
-            that packet input to TCP/IP stack failed, so the upper layers could implement flow control.
-            This option is disabled by default due to backward compatibility and will be enabled in v6.0 (IDF-7194)
+
 
     config ESP_NETIF_L2_TAP
         bool "Enable netif L2 TAP support"
