@@ -10,6 +10,6 @@ endif()
 
 idf_component_register(
     SRCS ${srcs}
-    PRIV_REQUIRES esp_driver_twai esp_timer esp_driver_uart esp_psram
+    PRIV_REQUIRES esp_driver_twai esp_timer esp_driver_uart esp_psram esp_driver_gpio
     WHOLE_ARCHIVE
 )
