@@ -129,7 +129,7 @@ void app_main(void)
 #if CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
     HANDLE_TEST(test_name, test_panic_print_backtrace);
 #endif
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
     HANDLE_TEST(test_name, test_setup_coredump_summary);
     HANDLE_TEST(test_name, test_coredump_summary);
 #endif

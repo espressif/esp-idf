@@ -93,3 +93,10 @@ The following deprecated FreeRTOS functions have been removed in ESP-IDF v6.0:
 **Deprecated Functions**
 
 The function :cpp:func:`pxTaskGetStackStart` has been deprecated. Use :cpp:func:`xTaskGetStackStart` instead for improved type safety.
+
+Core Dump
+---------
+
+Binary data format has been dropped. `CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN` is no longer supported. Elf is now the default data format.
+
+CRC data integrity check has been dropped. `ESP_COREDUMP_CHECKSUM_CRC32` is no longer supported. SHA256 is now the default checksum algorithm.

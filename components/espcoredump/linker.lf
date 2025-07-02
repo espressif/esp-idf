@@ -42,8 +42,6 @@ entries:
         core_dump_common (noflash)
         core_dump_port (noflash)
         core_dump_elf (noflash)
-        core_dump_binary (noflash)
-        core_dump_crc (noflash)
         # ESP32 uses mbedtls for the sha and mbedtls is in the flash
         if IDF_TARGET_ESP32 = n:
             core_dump_sha (noflash)

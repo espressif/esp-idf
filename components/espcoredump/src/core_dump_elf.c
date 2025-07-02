@@ -15,11 +15,9 @@
 #include "hal/efuse_hal.h"
 #include "esp_task_wdt.h"
 
-#ifdef CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
 #include <sys/param.h>      // for the MIN macro
 #include "esp_app_desc.h"
 #include "esp_memory_utils.h"
-#endif
 
 #define ELF_CLASS ELFCLASS32
 
@@ -91,14 +89,10 @@ typedef struct {
 
 // Represents lightweight implementation to save core dump data into ELF formatted binary
 
-#if CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
-
 #ifdef ALIGN_UP
 #undef ALIGN_UP
 #endif
 #define ALIGN_UP(x, a) (((x) + (a) - 1) & ~((a) - 1))
-
-esp_err_t esp_core_dump_store(void) __attribute__((alias("esp_core_dump_write_elf")));
 
 // Builds elf header and check all data offsets
 static int elf_write_file_header(core_dump_elf_t *self, uint32_t seg_count)
@@ -761,7 +755,7 @@ static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self)
     return tot_len;
 }
 
-static esp_err_t esp_core_dump_write_elf(void)
+esp_err_t esp_core_dump_write_elf(void)
 {
     core_dump_elf_t self = { 0 };
     core_dump_header_t dump_hdr = { 0 };
@@ -802,9 +796,6 @@ static esp_err_t esp_core_dump_write_elf(void)
     // Write core dump header
     dump_hdr.data_len = tot_len;
     dump_hdr.version = esp_core_dump_elf_version();
-    dump_hdr.tasks_num = 0; // unused in ELF format
-    dump_hdr.tcb_sz = 0; // unused in ELF format
-    dump_hdr.mem_segs_num = 0; // unused in ELF format
     dump_hdr.chip_rev = efuse_hal_chip_revision();
     err = esp_core_dump_write_data(&self.write_data, &dump_hdr, sizeof(core_dump_header_t));
     if (err != ESP_OK) {
@@ -1030,5 +1021,3 @@ esp_err_t esp_core_dump_get_summary(esp_core_dump_summary_t *summary)
 }
 
 #endif // CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
-
-#endif //CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
