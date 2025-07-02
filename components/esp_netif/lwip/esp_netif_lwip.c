@@ -1934,11 +1934,11 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
     if (esp_netif && esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
 #if ESP_DHCPS
         // if DHCP server configured to set DNS in dhcps API
-        if (type != ESP_NETIF_DNS_MAIN) {
+        if (type >= ESP_NETIF_DNS_FALLBACK) {
             ESP_LOGD(TAG, "set dns invalid type");
             return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
         } else {
-            dhcps_dns_setserver(esp_netif->dhcps, &lwip_ip);
+            dhcps_dns_setserver_by_type(esp_netif->dhcps, &lwip_ip, (dns_type_t)type);
         }
 #else
         LOG_NETIF_DISABLED_AND_DO("DHCP Server", return ESP_ERR_NOT_SUPPORTED);
@@ -1997,7 +1997,7 @@ static esp_err_t esp_netif_get_dns_info_api(esp_netif_api_msg_t *msg)
     if (esp_netif && esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
 #if ESP_DHCPS
         ip4_addr_t dns_ip;
-        dhcps_dns_getserver(esp_netif->dhcps, &dns_ip);
+        dhcps_dns_getserver_by_type(esp_netif->dhcps, &dns_ip, (dns_type_t)type);
         memcpy(&dns->ip.u_addr.ip4, &dns_ip, sizeof(ip4_addr_t));
         dns->ip.type = ESP_IPADDR_TYPE_V4;
 #else

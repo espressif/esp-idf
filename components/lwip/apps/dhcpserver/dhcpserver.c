@@ -125,7 +125,7 @@ struct dhcps_t {
     struct netif *dhcps_netif;
     ip4_addr_t broadcast_dhcps;
     ip4_addr_t server_address;
-    ip4_addr_t dns_server;
+    ip4_addr_t dns_server[DNS_TYPE_MAX];
     ip4_addr_t client_address;
     ip4_addr_t client_address_plus;
     ip4_addr_t dhcps_mask;
@@ -154,7 +154,10 @@ dhcps_t *dhcps_new(void)
         return NULL;
     }
     dhcps->dhcps_netif = NULL;
-    dhcps->dns_server.addr = 0;
+
+    for (int i = 0; i < DNS_TYPE_MAX; i++) {
+        dhcps->dns_server[i].addr = 0;
+    }
 #ifdef USE_CLASS_B_NET
     dhcps->dhcps_mask.addr = PP_HTONL(LWIP_MAKEU32(255, 240, 0, 0));
 #else
@@ -191,6 +194,18 @@ static void get_ip_info(struct netif * netif, ip_info_t *ip_info)
         ip4_addr_set(&ip_info->netmask, ip_2_ip4(&netif->netmask));
         ip4_addr_set(&ip_info->gw, ip_2_ip4(&netif->gw));
     }
+}
+
+static inline u8_t* dhcps_option_ip(u8_t *optptr, const ip4_addr_t *ip)
+{
+    LWIP_ASSERT("dhcps_option_ip: optptr must not be NULL", (optptr != NULL));
+    LWIP_ASSERT("dhcps_option_ip: ip must not be NULL", (ip != NULL));
+
+    *optptr++ = ip4_addr1(ip);
+    *optptr++ = ip4_addr2(ip);
+    *optptr++ = ip4_addr3(ip);
+    *optptr++ = ip4_addr4(ip);
+    return optptr;
 }
 
 /******************************************************************************
@@ -408,10 +423,7 @@ static u8_t *add_offer_options(dhcps_t *dhcps, u8_t *optptr)
 
     *optptr++ = DHCP_OPTION_SUBNET_MASK;
     *optptr++ = 4;
-    *optptr++ = ip4_addr1(&dhcps->dhcps_mask);
-    *optptr++ = ip4_addr2(&dhcps->dhcps_mask);
-    *optptr++ = ip4_addr3(&dhcps->dhcps_mask);
-    *optptr++ = ip4_addr4(&dhcps->dhcps_mask);
+    optptr = dhcps_option_ip(optptr, &dhcps->dhcps_mask);
 
     *optptr++ = DHCP_OPTION_LEASE_TIME;
     *optptr++ = 4;
@@ -422,10 +434,7 @@ static u8_t *add_offer_options(dhcps_t *dhcps, u8_t *optptr)
 
     *optptr++ = DHCP_OPTION_SERVER_ID;
     *optptr++ = 4;
-    *optptr++ = ip4_addr1(&ipadd);
-    *optptr++ = ip4_addr2(&ipadd);
-    *optptr++ = ip4_addr3(&ipadd);
-    *optptr++ = ip4_addr4(&ipadd);
+    optptr = dhcps_option_ip(optptr, &ipadd);
 
     if (dhcps_router_enabled(dhcps->dhcps_offer)) {
         ip_info_t if_ip = { 0 };
@@ -436,34 +445,37 @@ static u8_t *add_offer_options(dhcps_t *dhcps, u8_t *optptr)
         if (!ip4_addr_isany_val(*gw_ip)) {
             *optptr++ = DHCP_OPTION_ROUTER;
             *optptr++ = 4;
-            *optptr++ = ip4_addr1(gw_ip);
-            *optptr++ = ip4_addr2(gw_ip);
-            *optptr++ = ip4_addr3(gw_ip);
-            *optptr++ = ip4_addr4(gw_ip);
+            optptr = dhcps_option_ip(optptr, gw_ip);
         }
     }
 
-    *optptr++ = DHCP_OPTION_DNS_SERVER;
-    *optptr++ = 4;
+    // In order of preference
     if (dhcps_dns_enabled(dhcps->dhcps_dns)) {
-        *optptr++ = ip4_addr1(&dhcps->dns_server);
-        *optptr++ = ip4_addr2(&dhcps->dns_server);
-        *optptr++ = ip4_addr3(&dhcps->dns_server);
-        *optptr++ = ip4_addr4(&dhcps->dns_server);
-    }else {
-        *optptr++ = ip4_addr1(&ipadd);
-        *optptr++ = ip4_addr2(&ipadd);
-        *optptr++ = ip4_addr3(&ipadd);
-        *optptr++ = ip4_addr4(&ipadd);
+        uint8_t size = 4;
+
+        if (dhcps->dns_server[DNS_TYPE_BACKUP].addr) {
+            size += 4;
+        }
+
+        *optptr++ = DHCP_OPTION_DNS_SERVER;
+        *optptr++ = size;
+        optptr = dhcps_option_ip(optptr, &dhcps->dns_server[DNS_TYPE_MAIN]);
+
+        if (dhcps->dns_server[DNS_TYPE_BACKUP].addr) {
+            optptr = dhcps_option_ip(optptr, &dhcps->dns_server[DNS_TYPE_BACKUP]);
+        }
+#ifdef CONFIG_LWIP_DHCPS_ADD_DNS
+    } else {
+        *optptr++ = DHCP_OPTION_DNS_SERVER;
+        *optptr++ = 4;
+        optptr = dhcps_option_ip(optptr, &ipadd);
+#endif /* CONFIG_LWIP_DHCPS_ADD_DNS */
     }
 
     ip4_addr_t broadcast_addr = { .addr = (ipadd.addr & dhcps->dhcps_mask.addr) | ~dhcps->dhcps_mask.addr };
     *optptr++ = DHCP_OPTION_BROADCAST_ADDRESS;
     *optptr++ = 4;
-    *optptr++ = ip4_addr1(&broadcast_addr);
-    *optptr++ = ip4_addr2(&broadcast_addr);
-    *optptr++ = ip4_addr3(&broadcast_addr);
-    *optptr++ = ip4_addr4(&broadcast_addr);
+    optptr = dhcps_option_ip(optptr, &broadcast_addr);
 
     *optptr++ = DHCP_OPTION_INTERFACE_MTU;
     *optptr++ = 2;
@@ -1516,36 +1528,71 @@ bool dhcp_search_ip_on_mac(dhcps_t *dhcps, u8_t *mac, ip4_addr_t *ip)
 }
 
 /******************************************************************************
- * FunctionName : dhcps_dns_setserver
- * Description  : set DNS server address for dhcpserver
+ * FunctionName : dhcps_dns_setserver_by_type
+ * Description  : Set the DNS server address for dhcpserver with a specific type
  * Parameters   : dnsserver -- The DNS server address
- * Returns      : ERR_ARG if invalid handle, ERR_OK on success
+ *                type      -- The DNS type
+ * Returns      : ERR_ARG if invalid handle, ERR_VAL if invalid type, ERR_OK on success
 *******************************************************************************/
-err_t dhcps_dns_setserver(dhcps_t *dhcps, const ip_addr_t *dnsserver)
+err_t dhcps_dns_setserver_by_type(dhcps_t *dhcps, const ip_addr_t *dnsserver, dns_type_t type)
 {
     if (dhcps == NULL) {
         return ERR_ARG;
     }
+
+    if (type >= DNS_TYPE_MAX) {
+        return ERR_VAL;
+    }
+
     if (dnsserver != NULL) {
-        dhcps->dns_server = *(ip_2_ip4(dnsserver));
+        dhcps->dns_server[type] = *(ip_2_ip4(dnsserver));
     } else {
-        dhcps->dns_server = *(ip_2_ip4(IP_ADDR_ANY));
+        dhcps->dns_server[type] = *(ip_2_ip4(IP_ADDR_ANY));
     }
     return ERR_OK;
 }
 
 /******************************************************************************
- * FunctionName : dhcps_dns_getserver
- * Description  : get DNS server address for dhcpserver
- * Parameters   : none
- * Returns      : ip4_addr_t
+ * FunctionName : dhcps_dns_setserver
+ * Description  : Set the main DNS server address for dhcpserver
+ * Parameters   : dnsserver -- The DNS server address
+ * Returns      : ERR_ARG if invalid handle, ERR_VAL if invalid type, ERR_OK on success
+*******************************************************************************/
+err_t dhcps_dns_setserver(dhcps_t *dhcps, const ip_addr_t *dnsserver)
+{
+    return dhcps_dns_setserver_by_type(dhcps, dnsserver, DNS_TYPE_MAIN);
+}
+
+/******************************************************************************
+ * FunctionName : dhcps_dns_getserver_by_type
+ * Description  : Get the DNS server address for dhcpserver
+ * Parameters   : dnsserver -- The DNS server address
+ *                type      -- The DNS type
+ * Returns      : ERR_ARG if invalid handle, ERR_VAL if invalid type, ERR_OK on success
+*******************************************************************************/
+err_t dhcps_dns_getserver_by_type(dhcps_t *dhcps, ip4_addr_t *dnsserver, dns_type_t type)
+{
+    if ((dhcps == NULL) || (dnsserver == NULL)) {
+        return ERR_ARG;
+    }
+
+    if (type >= DNS_TYPE_MAX) {
+        return ERR_VAL;
+    }
+
+    *dnsserver = dhcps->dns_server[type];
+    return ERR_OK;
+}
+
+/******************************************************************************
+ * FunctionName : dhcps_dns_getserver_by_type
+ * Description  : Get the main DNS server address for dhcpserver
+ * Parameters   : dnsserver -- The DNS server address
+ * Returns      : ERR_ARG if invalid handle, ERR_VAL if invalid type, ERR_OK on success
 *******************************************************************************/
 err_t dhcps_dns_getserver(dhcps_t *dhcps, ip4_addr_t *dnsserver)
 {
-    if (dhcps) {
-        *dnsserver = dhcps->dns_server;
-        return ERR_OK;
-    }
-    return ERR_ARG;
+    return dhcps_dns_getserver_by_type(dhcps, dnsserver, DNS_TYPE_MAIN);
 }
+
 #endif // ESP_DHCPS
