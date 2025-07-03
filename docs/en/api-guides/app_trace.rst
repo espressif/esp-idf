@@ -115,9 +115,13 @@ In general, users should decide what type of data should be transferred in every
         size_t sz = sizeof(buf);
 
         /* config down buffer */
-        esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
+        esp_err_t res = esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_JTAG, down_buf, sizeof(down_buf));
+        if (res != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to config down buffer!");
+            return res;
+        }
         /* check for incoming data and read them if any */
-        esp_err_t res = esp_apptrace_read(ESP_APPTRACE_DEST_JTAG, buf, &sz, 0/*do not wait*/);
+        res = esp_apptrace_read(ESP_APPTRACE_DEST_JTAG, buf, &sz, 0/*do not wait*/);
         if (res != ESP_OK) {
             ESP_LOGE(TAG, "Failed to read data from host!");
             return res;
@@ -138,7 +142,11 @@ In general, users should decide what type of data should be transferred in every
         size_t sz = 32;
 
         /* config down buffer */
-        esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
+        esp_err_t res = esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_JTAG, down_buf, sizeof(down_buf));
+        if (res != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to config down buffer!");
+            return res;
+        }
         char *ptr = (char *)esp_apptrace_down_buffer_get(ESP_APPTRACE_DEST_JTAG, &sz, 100/*tmo in us*/);
         if (ptr == NULL) {
             ESP_LOGE(TAG, "Failed to get buffer!");
@@ -150,7 +158,7 @@ In general, users should decide what type of data should be transferred in every
         } else {
             printf("No data");
         }
-        esp_err_t res = esp_apptrace_down_buffer_put(ESP_APPTRACE_DEST_JTAG, ptr, 100/*tmo in us*/);
+        res = esp_apptrace_down_buffer_put(ESP_APPTRACE_DEST_JTAG, ptr, 100/*tmo in us*/);
         if (res != ESP_OK) {
             /* in case of error host tracing tool (e.g., OpenOCD) will report incomplete user buffer */
             ESP_LOGE(TAG, "Failed to put buffer!");

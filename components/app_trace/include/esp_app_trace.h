@@ -17,7 +17,7 @@ extern "C" {
 /**
  * Application trace data destinations bits.
  */
- typedef enum {
+typedef enum {
     ESP_APPTRACE_DEST_JTAG,                         ///< JTAG destination
     ESP_APPTRACE_DEST_UART,                         ///< UART destination
     ESP_APPTRACE_DEST_MAX,
@@ -37,10 +37,13 @@ esp_err_t esp_apptrace_init(void);
  *        @note Needs to be called before attempting to receive any data using esp_apptrace_down_buffer_get and esp_apptrace_read.
  *              This function does not protect internal data by lock.
  *
+ * @param dest Indicates HW interface to configure.
  * @param buf Address of buffer to use for down channel (host to target) data.
  * @param size Size of the buffer.
+ *
+ * @return ESP_OK on success, otherwise see esp_err_t
  */
-void esp_apptrace_down_buffer_config(uint8_t *buf, uint32_t size);
+esp_err_t esp_apptrace_down_buffer_config(esp_apptrace_dest_t dest, uint8_t *buf, uint32_t size);
 
 /**
  * @brief Allocates buffer for trace data.

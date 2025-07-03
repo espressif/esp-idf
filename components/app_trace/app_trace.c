@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -80,31 +80,30 @@ ESP_SYSTEM_INIT_FN(esp_apptrace_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CORES, 115)
     return esp_apptrace_init();
 }
 
-void esp_apptrace_down_buffer_config(uint8_t *buf, uint32_t size)
+esp_err_t esp_apptrace_down_buffer_config(esp_apptrace_dest_t dest, uint8_t *buf, uint32_t size)
 {
     esp_apptrace_channel_t *ch;
 
+    if (dest >= ESP_APPTRACE_DEST_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (buf == NULL || size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if (!s_inited) {
-        return;
+        return ESP_ERR_INVALID_STATE;
     }
-    // currently down buffer is supported for JTAG interface only
-    // TODO: one more argument should be added to this function to specify HW interface: JTAG, UART0 etc
-    ch = &s_trace_channels[ESP_APPTRACE_DEST_JTAG];
-    if (ch->hw != NULL) {
-        if (ch->hw->down_buffer_config != NULL) {
-            ch->hw->down_buffer_config(ch->hw_data, buf, size);
-        }
-    } else {
-        ESP_APPTRACE_LOGD("Trace destination for JTAG not supported!");
+
+    ch = &s_trace_channels[dest];
+    if (ch->hw == NULL) {
+        ESP_APPTRACE_LOGE("Trace destination %d not supported!", dest);
+        return ESP_FAIL;
     }
-    ch = &s_trace_channels[ESP_APPTRACE_DEST_UART];
-    if (ch->hw != NULL) {
-        if (ch->hw->down_buffer_config != NULL) {
-            ch->hw->down_buffer_config(ch->hw_data, buf, size);
-        }
-    } else {
-        ESP_APPTRACE_LOGD("Trace destination for UART not supported!");
+    if (ch->hw->down_buffer_config != NULL) {
+        ch->hw->down_buffer_config(ch->hw_data, buf, size);
     }
+
+    return ESP_OK;
 }
 
 uint8_t *esp_apptrace_down_buffer_get(esp_apptrace_dest_t dest, uint32_t *size, uint32_t user_tmo)

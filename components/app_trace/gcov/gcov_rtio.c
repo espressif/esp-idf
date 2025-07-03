@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,7 +46,12 @@ void gcov_dump_task(void *pvParameter)
         goto gcov_exit;
     }
     ESP_EARLY_LOGV(TAG, "Config apptrace down buf");
-    esp_apptrace_down_buffer_config(down_buf, ESP_GCOV_DOWN_BUF_SIZE);
+    esp_err_t res = esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_JTAG, down_buf, ESP_GCOV_DOWN_BUF_SIZE);
+    if (res != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to config apptrace down buf (%d)!", res);
+        dump_result = res;
+        goto gcov_exit;
+    }
     ESP_EARLY_LOGV(TAG, "Dump data...");
     __gcov_dump();
     // reset dump status to allow incremental data accumulation

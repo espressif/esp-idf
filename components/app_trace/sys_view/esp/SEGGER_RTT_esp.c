@@ -288,8 +288,7 @@ int SEGGER_RTT_ConfigUpBuffer(unsigned BufferIndex, const char* sName, void* pBu
 */
 int SEGGER_RTT_ConfigDownBuffer(unsigned BufferIndex, const char* sName, void* pBuffer, unsigned BufferSize, unsigned Flags)
 {
-    esp_apptrace_down_buffer_config(s_down_buf, sizeof(s_down_buf));
-    return 0;
+    return esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_SYSVIEW, s_down_buf, sizeof(s_down_buf));
 }
 
 /*************************** Init hook ****************************
