@@ -313,3 +313,22 @@ build_child_pipeline:
       - artifact: build_child_pipeline.yml
         job: generate_build_child_pipeline
     strategy: depend
+
+generate_disabled_apps_report:
+  extends:
+    - .build_template
+  tags: [fast_run, shiny]
+  dependencies: # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - pipeline_variables
+    - job: baseline_manifest_sha
+      optional: true
+  artifacts:
+    paths:
+      - disabled_report.html
+    expire_in: 1 week
+    when: always
+  script:
+    - pip install dominate idf-build-apps>=2.12.0
+    - run_cmd python tools/ci/gen_disabled_report.py --output disabled_report.html --verbose --enable-preview-targets
+    - echo "Report generated at https://${CI_PAGES_HOSTNAME}:${CI_SERVER_PORT}/-/esp-idf/-/jobs/${CI_JOB_ID}/artifacts/disabled_report.html"
