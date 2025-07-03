@@ -721,7 +721,7 @@ config BT_LE_CCA_RSSI_THRESH
     int "CCA RSSI threshold value"
     depends on BT_LE_TX_CCA_ENABLED
     range 20 100
-    default 20
+    default 65
     help
         Power threshold of CCA in unit of -1 dBm.
 

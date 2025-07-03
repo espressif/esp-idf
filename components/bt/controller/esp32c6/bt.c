@@ -1744,7 +1744,7 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
 #endif // CONFIG_BT_LE_DEBUG_REMAIN_SCENE_ENABLED
 
 int IRAM_ATTR
-ble_capture_info_user_handler(uint8_t type, uint32_t reason)
+ble_capture_info_user_handler(uint8_t type, uint32_t reason, uint32_t param1, uint32_t param2)
 {
     int i;
 
