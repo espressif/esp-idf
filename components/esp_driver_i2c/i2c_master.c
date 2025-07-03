@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/param.h>
 #include <sys/lock.h>
+#include "esp_rom_sys.h"
 #include "sdkconfig.h"
 #include "esp_types.h"
 #include "esp_attr.h"
@@ -291,14 +292,62 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
 
     i2c_master->contains_read = true;
 #if !SOC_I2C_STOP_INDEPENDENT
+    /*
+     * If the remaining bytes is less than the hardware fifo length - 1,
+     * it means the read command can be sent out in one time.
+     * So, we set the status to I2C_STATUS_READ_ALL.
+     */
     if (remaining_bytes < I2C_FIFO_LEN(i2c_master->base->port_num) - 1) {
+        atomic_store(&i2c_master->status, I2C_STATUS_READ_ALL);
         if (i2c_operation->hw_cmd.ack_val == I2C_ACK_VAL) {
             if (remaining_bytes != 0) {
-                i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
-                i2c_master->read_len_static = i2c_master->rx_cnt;
-                i2c_master->cmd_idx++;
+                // If the next transaction is a read command, and the ack value is I2C_ACK_VAL,
+                // that means we have multi read jobs. We send out this read command first.
+                // Otherwise, we can mix with other commands, like stop.
+                i2c_operation_t next_transaction = i2c_master->i2c_trans.ops[i2c_master->trans_idx + 1];
+                if (next_transaction.hw_cmd.op_code == I2C_LL_CMD_READ && next_transaction.hw_cmd.ack_val == I2C_ACK_VAL) {
+                    portENTER_CRITICAL_SAFE(&handle->spinlock);
+                    i2c_master->read_len_static = i2c_master->rx_cnt;
+                    i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
+                    i2c_ll_master_write_cmd_reg(hal->dev, hw_end_cmd, i2c_master->cmd_idx + 1);
+                    i2c_master->cmd_idx = 0;
+                    i2c_master->read_buf_pos = i2c_master->trans_idx;
+                    i2c_master->trans_idx++;
+                    i2c_master->i2c_trans.cmd_count--;
+                    portEXIT_CRITICAL_SAFE(&handle->spinlock);
+                    if (i2c_master->async_trans == false) {
+                        i2c_hal_master_trans_start(hal);
+                    } else {
+                        i2c_master->async_break = true;
+                    }
+                } else {
+                    portENTER_CRITICAL_SAFE(&handle->spinlock);
+                    i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
+                    i2c_master->read_len_static = i2c_master->rx_cnt;
+                    i2c_master->cmd_idx++;
+                    i2c_master->read_buf_pos = i2c_master->trans_idx;
+                    i2c_master->trans_idx++;
+                    i2c_master->i2c_trans.cmd_count--;
+                    portEXIT_CRITICAL_SAFE(&handle->spinlock);
+                    if (i2c_master->async_trans == false) {
+                        if (xPortInIsrContext()) {
+                            xSemaphoreGiveFromISR(i2c_master->cmd_semphr, do_yield);
+                        } else {
+                            xSemaphoreGive(i2c_master->cmd_semphr);
+                        }
+                    }
+                }
+            } else {
+                i2c_master->trans_idx++;
+                i2c_master->i2c_trans.cmd_count--;
+                if (i2c_master->async_trans == false) {
+                    if (xPortInIsrContext()) {
+                        xSemaphoreGiveFromISR(i2c_master->cmd_semphr, do_yield);
+                    } else {
+                        xSemaphoreGive(i2c_master->cmd_semphr);
+                    }
+                }
             }
-            i2c_master->read_buf_pos = i2c_master->trans_idx;
         } else {
             i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
             // If the read position has not been marked, that means the transaction doesn't contain read-ack
@@ -309,19 +358,20 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
                 i2c_master->read_len_static = i2c_master->rx_cnt;
             }
             i2c_master->cmd_idx++;
-        }
-        i2c_master->trans_idx++;
-        i2c_master->i2c_trans.cmd_count--;
-        if (i2c_master->async_trans == false) {
-            if (xPortInIsrContext()) {
-                xSemaphoreGiveFromISR(i2c_master->cmd_semphr, do_yield);
-            } else {
-                xSemaphoreGive(i2c_master->cmd_semphr);
+            i2c_master->trans_idx++;
+            i2c_master->i2c_trans.cmd_count--;
+            if (i2c_master->async_trans == false) {
+                if (xPortInIsrContext()) {
+                    xSemaphoreGiveFromISR(i2c_master->cmd_semphr, do_yield);
+                } else {
+                    xSemaphoreGive(i2c_master->cmd_semphr);
+                }
             }
         }
     } else {
         atomic_store(&i2c_master->status, I2C_STATUS_READ);
         portENTER_CRITICAL_SAFE(&handle->spinlock);
+        i2c_master->read_buf_pos = i2c_master->trans_idx;
         i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
         i2c_ll_master_write_cmd_reg(hal->dev, hw_end_cmd, i2c_master->cmd_idx + 1);
         if (i2c_master->async_trans == false) {
@@ -342,6 +392,7 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
             i2c_master->i2c_trans.cmd_count--;
         }
     }
+    i2c_master->read_buf_pos = i2c_master->trans_idx;
     i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
     i2c_ll_master_write_cmd_reg(hal->dev, hw_end_cmd, i2c_master->cmd_idx + 1);
     portEXIT_CRITICAL_SAFE(&handle->spinlock);
@@ -672,7 +723,7 @@ I2C_MASTER_ISR_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_ma
     i2c_hal_context_t *hal = &i2c_master->base->hal;
 
     if (atomic_load(&i2c_master->status) == I2C_STATUS_READ) {
-        i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->trans_idx];
+        i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->read_buf_pos];
         portENTER_CRITICAL_ISR(&i2c_master->base->spinlock);
         i2c_ll_read_rxfifo(hal->dev, i2c_operation->data + i2c_operation->bytes_used, i2c_master->rx_cnt);
         /* rx_cnt bytes have just been read, increment the number of bytes used from the buffer */
@@ -686,6 +737,7 @@ I2C_MASTER_ISR_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_ma
             i2c_master->read_buf_pos = i2c_master->trans_idx;
             i2c_master->trans_idx++;
             i2c_operation->bytes_used = 0;
+            i2c_master->read_len_static = 0;
         }
         portEXIT_CRITICAL_ISR(&i2c_master->base->spinlock);
     }
@@ -695,10 +747,11 @@ I2C_MASTER_ISR_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_ma
         portENTER_CRITICAL_ISR(&i2c_master->base->spinlock);
         i2c_ll_read_rxfifo(hal->dev, i2c_operation->data + i2c_operation->bytes_used, i2c_master->read_len_static);
         // If the read command only contain nack marker, no read it for the second time.
-        if (i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data) {
+        if (i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data && i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].hw_cmd.ack_val == I2C_NACK_VAL) {
             i2c_ll_read_rxfifo(hal->dev, i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data, 1);
         }
         i2c_master->w_r_size = i2c_master->read_len_static + 1;
+        i2c_master->read_len_static = 0;
         i2c_master->contains_read = false;
         portEXIT_CRITICAL_ISR(&i2c_master->base->spinlock);
     }
