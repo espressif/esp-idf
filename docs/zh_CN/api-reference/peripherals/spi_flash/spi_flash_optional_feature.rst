@@ -164,17 +164,21 @@ QSPI flash 芯片的 32 位地址支持
 
     .. important::
 
-        上述超过 16 MB 内存的 flash 区域只能用于 ``数据保存``，如文件系统。
+        上述超过 16 MB 内存的 flash 区域可用于数据存储，例如使用文件系统。
 
         将数据或指令映射到 32 位物理地址空间（以便由 CPU 访问）需要 MMU 的支持。但 {IDF_TARGET_NAME} 并不支持此功能。目前只有 ESP32-S3 和 ESP32-P4 支持此功能。
 
 .. only:: SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
 
-    默认情况下，上述超过 16 MB 内存的 flash 区域可用于 ``数据保存``，如文件系统。
+    默认情况下，上述超过 16 MB 内存的 flash 区域可用于数据存储，例如使用文件系统。
 
-    此外，要将数据或指令映射到 32 位物理地址空间（以便由 CPU 访问），请启用配置 ``IDF_EXPERIMENTAL_FEATURES`` 和 ``BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH``。
+    *实验性功能*：如需在超过 16 MB 的四线 flash 区域实现完整支持（包括代码执行和数据访问），请启用以下实验性配置选项：
+    - :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES`
+    - :ref:`CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH`
 
-    请注意，此选项为实验性选项，无法在所有 flash 芯片上稳定使用，详情请咨询 `乐鑫商务部 <https://www.espressif.com/zh-hans/contact-us/sales-questions>`_。
+    请注意，此选项为实验性功能，无法在所有四线 flash 芯片上稳定使用。详情请咨询 `乐鑫商务部 <https://www.espressif.com/zh-hans/contact-us/sales-questions>`_。
+
+    对于八线 flash 芯片，如果启用了 :ref:`CONFIG_ESPTOOLPY_OCT_FLASH`，则该功能默认启用。
 
 .. _oct-flash-doc:
 
