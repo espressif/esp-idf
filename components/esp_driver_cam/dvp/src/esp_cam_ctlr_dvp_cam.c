@@ -45,14 +45,16 @@
 
 #define ALIGN_UP_BY(num, align) ((align) == 0 ? (num) : (((num) + ((align) - 1)) & ~((align) - 1)))
 
-#define DVP_CAM_CONFIG_INPUT_PIN(pin, sig, inv)                 \
-{                                                               \
-    ret = esp_cam_ctlr_dvp_config_input_gpio(pin, sig, inv);    \
-    if (ret != ESP_OK) {                                        \
-        ESP_LOGE(TAG, "failed to configure pin=%d sig=%d",      \
-                 pin, sig);                                     \
-        return ret;                                             \
-    }                                                           \
+#define DVP_CAM_CONFIG_INPUT_PIN(pin, sig, inv)                     \
+{                                                                   \
+    if (pin != GPIO_NUM_NC) {                                       \
+        ret = esp_cam_ctlr_dvp_config_input_gpio(pin, sig, inv);    \
+        if (ret != ESP_OK) {                                        \
+            ESP_LOGE(TAG, "failed to configure pin=%d sig=%d",      \
+                    pin, sig);                                      \
+            return ret;                                             \
+        }                                                           \
+    }                                                               \
 }
 
 typedef struct dvp_platform {
@@ -358,7 +360,7 @@ esp_err_t esp_cam_ctlr_dvp_init(int ctlr_id, cam_clock_source_t clk_src, const e
 }
 
 /**
- * @brief ESP CAM DVP output hardware clock
+ * @brief ESP CAM DVP output hardware clock, the function "esp_cam_ctlr_dvp_init" should be called first
  *
  * @param ctlr_id   CAM DVP controller ID
  * @param clk_src   CAM DVP clock source
@@ -381,13 +383,52 @@ esp_err_t esp_cam_ctlr_dvp_output_clock(int ctlr_id, cam_clock_source_t clk_src,
 
     if ((src_clk_hz % xclk_freq) == 0) {
         DVP_CAM_CLK_ATOMIC() {
+            // The camera sensors require precision without frequency and duty cycle jitter,
+            // so the fractional divisor can't be used.
             cam_ll_set_group_clock_coeff(ctlr_id, src_clk_hz / xclk_freq, 0, 0);
         };
 
         ret = ESP_OK;
+    } else {
+        ESP_LOGE(TAG, "calculated frequency divider is not integer so clock isn't changed");
     }
 
     return ret;
+}
+
+/**
+ * @brief Initialize ESP CAM DVP clock pin (other DVP GPIO pins excluded the clock pins will not be initialized)
+ *        and hardware clock, then output clock signal with given frequency
+ *
+ * @note The function is implemented based on "esp_cam_ctlr_dvp_init" and "esp_cam_ctlr_dvp_output_clock",
+ *       so calling "esp_cam_ctlr_dvp_init" and "esp_cam_ctlr_dvp_output_clock" is not required
+ *
+ * @param ctlr_id DVP controller ID
+ * @param pin     DVP clock pin
+ * @param clk_src DVP clock source
+ * @param xclk_freq DVP clock frequency
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - Others if failed
+ */
+esp_err_t esp_cam_ctlr_dvp_start_clock(int ctlr_id, gpio_num_t pin, cam_clock_source_t clk_src, uint32_t xclk_freq)
+{
+    esp_cam_ctlr_dvp_pin_config_t pin_config = {0};
+
+    pin_config.data_width = CAM_CTLR_DATA_WIDTH_8;
+    pin_config.vsync_io = GPIO_NUM_NC;
+    pin_config.de_io = GPIO_NUM_NC;
+    pin_config.pclk_io = GPIO_NUM_NC;
+    for (int i = 0; i < CAM_DVP_DATA_SIG_NUM; i++) {
+        pin_config.data_io[i] = GPIO_NUM_NC;
+    }
+    pin_config.xclk_io = pin;
+
+    ESP_RETURN_ON_ERROR(esp_cam_ctlr_dvp_init(ctlr_id, clk_src, &pin_config), TAG, "failed to initialize DVP controller");
+    ESP_RETURN_ON_ERROR(esp_cam_ctlr_dvp_output_clock(ctlr_id, clk_src, xclk_freq), TAG, "failed to output clock");
+
+    return ESP_OK;
 }
 
 /**
