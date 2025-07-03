@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,24 +19,24 @@ const char __attribute__((section(".rodata"))) phy_init_magic_pre[] = PHY_INIT_M
 const esp_phy_init_data_t phy_init_data= { {
         0x1,
         0x0,
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x54),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x54),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x50),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x50),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x50),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x4c),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x50),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x34),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x34),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x50),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x4c),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x48),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x44),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x3C),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x3C),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x3C),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x4c),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x4c),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x30),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x30),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x28),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x24),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x24),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x24),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x4c),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x4c),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x2c),
-        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x2c),
+        LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x48),
         0x0,
         0x00,
         0x00,
@@ -157,14 +157,15 @@ static const char* TAG = "phy_sleep";
 
 static esp_err_t sleep_retention_wifi_bb_init(void *arg)
 {
-    #define N_REGS_WIFI_AGC()       (121)
-    #define N_REGS_WIFI_TX()        (14)
-    #define N_REGS_WIFI_NRX()       (136)
-    #define N_REGS_WIFI_BB()        (53)
+    #define N_REGS_WIFI_AGC()       (130)
+    #define N_REGS_WIFI_TX()        (30)
+    #define N_REGS_WIFI_NRX()       (145)
+    #define N_REGS_WIFI_BB()        (82)
     #define N_REGS_WIFI_BRX()       (39)
-    #define N_REGS_WIFI_FE_COEX()   (58)
-    #define N_REGS_WIFI_FE_DATA()   (41)
-    #define N_REGS_WIFI_FE_CTRL()   (87)
+    #define N_REGS_WIFI_FE_COEX()   (21)
+    #define N_REGS_WIFI_FE_DATA()   (34)
+    #define N_REGS_WIFI_FE_CTRL()   (56)
+    #define N_REGS_WIFI_FE_WIFI()   (21)
 
     const static sleep_retention_entries_config_t bb_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b00, 0x600a7000, 0x600a7000, N_REGS_WIFI_AGC(),     0, 0), .owner = BIT(0) | BIT(1) }, /* AGC */
@@ -175,6 +176,7 @@ static esp_err_t sleep_retention_wifi_bb_init(void *arg)
         [5] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b06, 0x600a8000, 0x600a8000, N_REGS_WIFI_BRX(),     0, 0), .owner = BIT(0) | BIT(1) }, /* BRX */
         [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b07, 0x600a0400, 0x600a0400, N_REGS_WIFI_FE_DATA(), 0, 0), .owner = BIT(0) | BIT(1) }, /* FE DATA */
         [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b08, 0x600a0800, 0x600a0800, N_REGS_WIFI_FE_CTRL(), 0, 0), .owner = BIT(0) | BIT(1) }, /* FE CTRL */
+        [8] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b09, 0x600a0c00, 0x600a0c00, N_REGS_WIFI_FE_WIFI(), 0, 0), .owner = BIT(0) | BIT(1) }  /* FE WiFi DATA */
     };
     esp_err_t err = sleep_retention_entries_create(bb_regs_retention, ARRAY_SIZE(bb_regs_retention), 3, SLEEP_RETENTION_MODULE_WIFI_BB);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for modem (%s) retention", "WiFi BB");

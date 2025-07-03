@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -202,66 +202,69 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
 }
 
 #define PMU_HP_ACTIVE_ANALOG_CONFIG_DEFAULT() { \
-    .bias = {                   \
-        .xpd_bias        = 1,   \
-        .dbg_atten       = 0x0, \
-        .pd_cur          = 0,   \
-        .bias_sleep      = 0    \
+    .bias = {                         \
+        .xpd_bias              = 1,   \
+        .dbg_atten             = 0x0, \
+        .pd_cur                = 0,   \
+        .bias_sleep            = 0    \
     }, \
-    .regulator0 = {             \
-        .lp_dbias_vol    = 0xd, \
-        .hp_dbias_vol    = 0x1c,\
-        .dbias_sel       = 1,   \
-        .dbias_init      = 1,   \
-        .slp_mem_xpd     = 0,   \
-        .slp_logic_xpd   = 0,   \
-        .xpd             = 1,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
-        .dbias           = HP_CALI_DBIAS_DEFAULT \
+    .regulator0 = {                   \
+        .slp_connect_en_active = 1,   \
+        .lp_dbias_vol          = 0xd, \
+        .hp_dbias_vol          = 0x1c,\
+        .dbias_sel             = 1,   \
+        .dbias_init_active     = 1,   \
+        .slp_mem_xpd           = 0,   \
+        .slp_logic_xpd         = 0,   \
+        .xpd                   = 1,   \
+        .slp_mem_dbias         = 0,   \
+        .slp_logic_dbias       = 0,   \
+        .dbias                 = HP_CALI_DBIAS_DEFAULT \
     }, \
-    .regulator1 = {             \
-        .drv_b           = 0x0 \
+    .regulator1 = {                   \
+        .drv_b                 = 0x0  \
     } \
 }
 
 #define PMU_HP_MODEM_ANALOG_CONFIG_DEFAULT() { \
-    .bias = {                   \
-        .xpd_bias        = 0,   \
-        .dbg_atten       = 0x0, \
-        .pd_cur          = 0,   \
-        .bias_sleep      = 0    \
+    .bias = {                       \
+        .xpd_bias             = 0,  \
+        .dbg_atten            = 0x0,\
+        .pd_cur               = 0,  \
+        .bias_sleep           = 0   \
     }, \
-    .regulator0 = {             \
-        .slp_mem_xpd     = 0,   \
-        .slp_logic_xpd   = 0,   \
-        .xpd             = 1,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
-        .dbias           = HP_CALI_DBIAS_DEFAULT \
+    .regulator0 = {                 \
+        .slp_connect_en_modem = 1,  \
+        .slp_mem_xpd          = 0,  \
+        .slp_logic_xpd        = 0,  \
+        .xpd                  = 1,  \
+        .slp_mem_dbias        = 0,  \
+        .slp_logic_dbias      = 0,  \
+        .dbias                = HP_CALI_DBIAS_DEFAULT \
     }, \
-    .regulator1 = {             \
-        .drv_b           = 0x0 \
+    .regulator1 = {                 \
+        .drv_b                = 0x0 \
     } \
 }
 
 #define PMU_HP_SLEEP_ANALOG_CONFIG_DEFAULT() { \
-    .bias = {                   \
-        .xpd_bias        = 0,   \
-        .dbg_atten       = 0x0, \
-        .pd_cur          = 0,   \
-        .bias_sleep      = 0    \
+    .bias = {                       \
+        .xpd_bias             = 0,  \
+        .dbg_atten            = 0x0,\
+        .pd_cur               = 0,  \
+        .bias_sleep           = 0   \
     }, \
-    .regulator0 = {             \
-        .slp_mem_xpd     = 0,   \
-        .slp_logic_xpd   = 0,   \
-        .xpd             = 1,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
-        .dbias           = 1 \
+    .regulator0 = {                 \
+        .slp_connect_en_sleep = 1,  \
+        .slp_mem_xpd          = 0,  \
+        .slp_logic_xpd        = 0,  \
+        .xpd                  = 1,  \
+        .slp_mem_dbias        = 0,  \
+        .slp_logic_dbias      = 0,  \
+        .dbias                = 1   \
     }, \
-    .regulator1 = {             \
-        .drv_b           = 0x0 \
+    .regulator1 = {                 \
+        .drv_b                = 0x0 \
     } \
 }
 

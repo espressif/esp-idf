@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,24 +18,24 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
 {
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
         /* Enable i2c master clock */
-        [0] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(0), MODEM_LPCON_CLK_CONF_REG,   MODEM_LPCON_CLK_I2C_MST_EN,     MODEM_LPCON_CLK_I2C_MST_EN_M,   1, 0), .owner = ENTRY(0) },
+        [0] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(0),  MODEM_LPCON_CLK_CONF_REG,     MODEM_LPCON_CLK_I2C_MST_EN,     MODEM_LPCON_CLK_I2C_MST_EN_M,   1, 0), .owner = ENTRY(0) },
         /* Start BBPLL self-calibration */
-        [1] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(1), I2C_ANA_MST_ANA_CONF0_REG,  0,                              I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
-        [2] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(2), I2C_ANA_MST_ANA_CONF0_REG,  I2C_MST_BBPLL_STOP_FORCE_LOW,   I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
+        [1] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(1),  I2C_ANA_MST_ANA_CONF0_REG,    0,                              I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
+        [2] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(2),  I2C_ANA_MST_ANA_CONF0_REG,    I2C_MST_BBPLL_STOP_FORCE_LOW,   I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
         /* Wait calibration done */
-        [3] = { .config = REGDMA_LINK_WAIT_INIT    (REGDMA_PCR_LINK(3), I2C_ANA_MST_ANA_CONF0_REG,  I2C_MST_BBPLL_CAL_DONE,         I2C_MST_BBPLL_CAL_DONE,         1, 0), .owner = ENTRY(0) },
+        [3] = { .config = REGDMA_LINK_WAIT_INIT (REGDMA_PCR_LINK(3),  I2C_ANA_MST_ANA_CONF0_REG,    I2C_MST_BBPLL_CAL_DONE,         I2C_MST_BBPLL_CAL_DONE,         1, 0), .owner = ENTRY(0) },
         /* Stop BBPLL self-calibration */
-        [4] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(4), I2C_ANA_MST_ANA_CONF0_REG,  0,                              I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
-        [5] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(5), I2C_ANA_MST_ANA_CONF0_REG,  I2C_MST_BBPLL_STOP_FORCE_HIGH,  I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
+        [4] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(4),  I2C_ANA_MST_ANA_CONF0_REG,    0,                              I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
+        [5] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(5),  I2C_ANA_MST_ANA_CONF0_REG,    I2C_MST_BBPLL_STOP_FORCE_HIGH,  I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
         /* Clock configuration retention */
-        [6] = { .config = REGDMA_LINK_WAIT_INIT    (REGDMA_PCR_LINK(6), PMU_CLK_STATE0_REG,         PMU_STABLE_XPD_BBPLL_STATE,     PMU_STABLE_XPD_BBPLL_STATE_M,   1, 0),  .owner = ENTRY(0)},             /* Wait PMU_WAIT_XTL_STABLE done */
-        [7] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(7), PCR_AHB_FREQ_CONF_REG,      0,                              PCR_AHB_DIV_NUM,                1, 0),  .owner = ENTRY(0) | ENTRY(1) }, /* Set AHB bus frequency to XTAL frequency */
-        [8] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(8), PCR_BUS_CLK_UPDATE_REG,     1,                              PCR_BUS_CLOCK_UPDATE,           1, 0),  .owner = ENTRY(0) | ENTRY(1) },
+        [6] = { .config = REGDMA_LINK_WAIT_INIT (REGDMA_PCR_LINK(6),  PMU_CLK_STATE0_REG,           PMU_STABLE_XPD_BBPLL_STATE,     PMU_STABLE_XPD_BBPLL_STATE_M,   1, 0), .owner = ENTRY(0) },             /* Wait PMU_WAIT_XTL_STABLE done */
+        [7] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(7),  PCR_AHB_FREQ_CONF_REG,        0,                              PCR_AHB_DIV_NUM,                1, 0), .owner = ENTRY(0) | ENTRY(1) }, /* Set AHB bus frequency to XTAL frequency */
+        [8] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(8),  PCR_BUS_CLK_UPDATE_REG,       1,                              PCR_BUS_CLOCK_UPDATE,           1, 0), .owner = ENTRY(0) | ENTRY(1) },
+        [9] = {.config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(9),  LP_ANA_POWER_GLITCH_CNTL_REG, 0,                              LP_ANA_POWER_GLITCH_RESET_ENA_M,0, 1), .owner = ENTRY(0) | ENTRY(1)}, /* Disable power glitch detector on sleep backup */
+        [10] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(10), LP_ANA_POWER_GLITCH_CNTL_REG, 0xF,                            LP_ANA_POWER_GLITCH_RESET_ENA_M,1, 0), .owner = ENTRY(0) | ENTRY(1)}, /* Enable power glitch detector on wakeup restore */
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-        [9] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(9), DR_REG_PCR_BASE,            DR_REG_PCR_BASE,    63,     0, 0, 0xfd73ffff, 0xfdffffff, 0xe001, 0x0), .owner = ENTRY(0) | ENTRY(1) },
+        [11] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(11), DR_REG_PCR_BASE,            DR_REG_PCR_BASE,    63,     0, 0, 0xfd73ffff, 0xfdffffff, 0xe001, 0x0), .owner = ENTRY(0) | ENTRY(1) },
 #endif
-        [10] = {.config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(10), LP_ANA_POWER_GLITCH_CNTL_REG,      0,                      LP_ANA_POWER_GLITCH_RESET_ENA_M, 0, 1),  .owner = ENTRY(0) | ENTRY(1)}, /* Disable power glitch detector on sleep backup */
-        [11] = {.config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(11), LP_ANA_POWER_GLITCH_CNTL_REG,      0xF,                    LP_ANA_POWER_GLITCH_RESET_ENA_M, 1, 0),  .owner = ENTRY(0) | ENTRY(1)}, /* Enable power glitch detector on wakeup restore */
     };
 
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
