@@ -1,3 +1,7 @@
+# Include additional cmake files for specific functionalities
+include("${CMAKE_CURRENT_LIST_DIR}/flash_targets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/post_build_validation.cmake")
+
 # idf_build_get_property
 #
 # @brief Retrieve the value of the specified property related to ESP-IDF build.
@@ -776,18 +780,11 @@ function(idf_build_executable elf)
     # Add dependency of the build target to the executable
     add_dependencies(${elf} __idf_build_target)
 
-    # Set up esptool_py flash targets
-    # This must be done after the executable properties are set but before the function exits
-    # so that all components have had a chance to add their images to the phony flash targets
-    idf_build_get_property(bootloader_build BOOTLOADER_BUILD)
-    idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
-    idf_build_get_property(target IDF_TARGET)
-
     # This is the main orchestrator for generating binaries and flash targets
     # It is responsible for -
     #  - Setting up the binary generation targets
     #  - Setting up the signed binary generation targets
-    #  - Setting up the main 'flash' target
+    #  - Setting up the main 'flash' target and generating flasher_args.json
     #  - Setting up the app-flash and flash targets
     #  - Setting up the app_check_size target
     #
@@ -798,6 +795,10 @@ function(idf_build_executable elf)
     # Note: We need to have this block here instead of in project.cmake because
     #       idf_build_executable() is called directly when ESP-IDF is compiled
     #       as a library (idf_as_lib).
+
+    idf_build_get_property(bootloader_build BOOTLOADER_BUILD)
+    idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+
     if(NOT bootloader_build AND NOT esp_tee_build)
         # All of the following logic for generating binaries and flash targets
         # depends on the esptool_py component. For some builds (such as those
@@ -828,88 +829,14 @@ function(idf_build_executable elf)
                 __idf_build_secure_binary("${project_bin_unsigned}" "${project_bin}" "${signed_target_name}")
             endif()
 
-            # The following block is placed here to ensure that the application binary is added to the 'flash'
-            # target's properties *before* __esptool_py_setup_main_flash_target is called.
-            # This is because __esptool_py_setup_main_flash_target copies properties from the 'flash'
-            # target to an internal '_flash_impl' target, from which the final 'flash_args' file is generated.
-            # If the app target is not added to the 'flash' target *before* the properties are copied,
-            # the app binary will be missing from the final 'flash_args' file.
-            #
-            # Set up app-flash and flash targets. The app-flash target is specifically for flashing
-            # just the application, while the flash target is for flashing the entire system.
-            idf_build_get_property(build_dir BUILD_DIR)
-            idf_build_get_property(project_bin PROJECT_BIN)
-            partition_table_get_partition_info(app_partition_offset "--partition-boot-default" "offset")
-            esptool_py_custom_target(app-flash app "app")
-
-            esptool_py_flash_target_image(app-flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
-            esptool_py_flash_target_image(flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
+            # Setup flash targets and flash configuration
+            __idf_build_setup_flash_targets()
 
             # Setup utility targets such as monitor, erase_flash, merge-bin
             __esptool_py_setup_utility_targets()
 
-            # Setup the main flash target and dependencies
-            __esptool_py_setup_main_flash_target()
-
-            # Generate flasher_args.json for tools that need it. The variables below are used
-            # in configuring the template flasher_args.json.in.
-            # Some of the variables (flash mode, size, frequency) are set as esptool_py component's properties.
-
-            idf_build_get_property(target IDF_TARGET)
-            set(ESPTOOLPY_CHIP "${target}")
-            set(ESPTOOLPY_BEFORE "${CONFIG_ESPTOOLPY_BEFORE}")
-            set(ESPTOOLPY_AFTER  "${CONFIG_ESPTOOLPY_AFTER}")
-            if(CONFIG_ESPTOOLPY_NO_STUB)
-                set(ESPTOOLPY_WITH_STUB false)
-            else()
-                set(ESPTOOLPY_WITH_STUB true)
-            endif()
-
-            if(CONFIG_SECURE_BOOT OR CONFIG_SECURE_FLASH_ENC_ENABLED)
-                # If security enabled then override post flash option
-                set(ESPTOOLPY_AFTER "no_reset")
-            endif()
-
-            idf_component_get_property(ESPFLASHMODE esptool_py ESPFLASHMODE)
-            idf_component_get_property(ESPFLASHFREQ esptool_py ESPFLASHFREQ)
-            idf_component_get_property(ESPFLASHSIZE esptool_py ESPFLASHSIZE)
-            idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
-
-            # Generate flasher args files
-            file(READ "${esptool_py_dir}/flasher_args.json.in" flasher_args_content)
-            string(CONFIGURE "${flasher_args_content}" flasher_args_content)
-
-            # We need to create a flasher_args.json.in to create the final flasher_args.json
-            # because CMake only resolves generator expressions in the file_generate command
-            # with the INPUT keyword during the generation phase.
-            file_generate("${build_dir}/flasher_args.json.in"
-                         CONTENT "${flasher_args_content}")
-            file_generate("${build_dir}/flasher_args.json"
-                         INPUT "${build_dir}/flasher_args.json.in")
-
-            # Create the following post-build targets after __idf_build_binary() is called to ensure that the
-            # app target is available.
-
-            # If anti-rollback option is set then factory partition should not be in Partition Table.
-            # In this case, should be used the partition table with two ota app without the factory.
-            partition_table_get_partition_info(factory_offset
-                            "--partition-type app --partition-subtype factory" "offset")
-            partition_table_get_partition_info(test_offset "--partition-type app --partition-subtype test" "offset")
-            if(CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK AND (factory_offset OR test_offset))
-                fail_at_build_time(check_table_contents "\
-                ERROR: Anti-rollback option is enabled. Partition table should \
-                consist of two ota app without factory or test partitions.")
-                add_dependencies(app check_table_contents)
-            endif()
-
-            if(CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
-                # Generate app_check_size_command target to check the app size against the partition table parameters
-                partition_table_add_check_size_target(app_check_size
-                    DEPENDS gen_project_binary
-                    BINARY_PATH "${build_dir}/${project_bin}"
-                    PARTITION_TYPE app)
-                add_dependencies(app app_check_size)
-            endif()
+            # Setup post-build validation checks
+            __idf_build_setup_post_build_validation()
         endif() # if(TARGET idf::esptool_py AND CONFIG_APP_BUILD_GENERATE_BINARIES)
     endif() # if(NOT bootloader_build AND NOT esp_tee_build)
 endfunction()
