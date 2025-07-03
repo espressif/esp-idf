@@ -228,6 +228,29 @@ bool bootloader_common_get_rtc_retain_mem_factory_reset_state(void)
     return false;
 }
 
+void bootloader_common_set_rtc_retain_mem_factory_reset_request(void)
+{
+    if (!is_retain_mem_valid()) {
+        bootloader_common_reset_rtc_retain_mem();
+    }
+    bootloader_common_get_rtc_retain_mem()->flags.factory_reset_request = true;
+    update_rtc_retain_mem_crc();
+}
+
+bool bootloader_common_get_and_clear_rtc_retain_mem_factory_reset_request(void)
+{
+    rtc_retain_mem_t* rtc_retain_mem = bootloader_common_get_rtc_retain_mem();
+    if (is_retain_mem_valid()) {
+        bool factory_reset_request = rtc_retain_mem->flags.factory_reset_request;
+        if (factory_reset_request == true) {
+            rtc_retain_mem->flags.factory_reset_request = false;
+            update_rtc_retain_mem_crc();
+        }
+        return factory_reset_request;
+    }
+    return false;
+}
+
 esp_partition_pos_t* bootloader_common_get_rtc_retain_mem_partition(void)
 {
     if (is_retain_mem_valid()) {
