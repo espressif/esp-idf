@@ -136,6 +136,7 @@ void esp_cpu_configure_region_protection(void)
     _Static_assert(SOC_CPU_SUBSYSTEM_LOW < SOC_CPU_SUBSYSTEM_HIGH, "Invalid CPU subsystem region");
 
     // 2. I/D-ROM
+#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT && !BOOTLOADER_BUILD
     const uint32_t drom_start = (uint32_t) (ets_rom_layout_p->drom_start);
     if ((drom_start & (SOC_CPU_PMP_REGION_GRANULARITY - 1)) == 0) {
         // We can skip configuring the PMP entry for the [SOC_IROM_MASK_LOW - drom_start]
@@ -144,9 +145,11 @@ void esp_cpu_configure_region_protection(void)
         // the region as cacheable. Thus, we save on one PMP entry.
         PMP_ENTRY_SET(1, drom_start, NONE);
         PMP_ENTRY_SET(2, SOC_DROM_MASK_HIGH, PMP_TOR | R);
-    } else {
+    } else
+#endif
+    {
         PMP_ENTRY_SET(1, SOC_IROM_MASK_LOW, NONE);
-        PMP_ENTRY_SET(2, SOC_IROM_MASK_HIGH, PMP_TOR | RX);
+        PMP_ENTRY_SET(2, SOC_IROM_MASK_HIGH, PMP_TOR | CONDITIONAL_RX);
         _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I/D-ROM region");
     }
 

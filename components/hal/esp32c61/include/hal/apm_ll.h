@@ -14,6 +14,8 @@
 #include "soc/hp_apm_struct.h"
 #include "soc/lp_apm_reg.h"
 #include "soc/lp_apm_struct.h"
+#include "soc/cpu_apm_reg.h"
+#include "soc/cpu_apm_struct.h"
 
 #include "soc/pcr_reg.h"
 #include "soc/interrupts.h"
@@ -446,6 +448,195 @@ static inline int apm_ll_lp_apm_get_ctrl_intr_src(apm_ctrl_access_path_t path)
 {
     (void)path;
     return ETS_LP_APM_M0_INTR_SOURCE;
+}
+
+/**
+ * @brief Enable/disable controller filter for specific path in CPU-APM
+ *
+ * @param path Access path
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_cpu_apm_enable_ctrl_filter(apm_ctrl_access_path_t path, bool enable)
+{
+    if (enable) {
+        REG_SET_BIT(CPU_APM_FUNC_CTRL_REG, BIT(path));
+    } else {
+        REG_CLR_BIT(CPU_APM_FUNC_CTRL_REG, BIT(path));
+    }
+}
+
+/**
+ * @brief Enable/disable all controller filters in CPU-APM
+ *
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_cpu_apm_enable_ctrl_filter_all(bool enable)
+{
+    REG_WRITE(CPU_APM_FUNC_CTRL_REG, enable ? UINT32_MAX : 0);
+}
+
+/**
+ * @brief Enable/disable region filter in CPU-APM
+ *
+ * @param regn_num Region number
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_cpu_apm_enable_region_filter(uint32_t regn_num, bool enable)
+{
+    if (enable) {
+        REG_SET_BIT(CPU_APM_REGION_FILTER_EN_REG, BIT(regn_num));
+    } else {
+        REG_CLR_BIT(CPU_APM_REGION_FILTER_EN_REG, BIT(regn_num));
+    }
+}
+
+/**
+ * @brief Set region start address in CPU-APM
+ *
+ * @param regn_num Region number
+ * @param addr Start address
+ */
+static inline void apm_ll_cpu_apm_set_region_start_addr(uint32_t regn_num, uint32_t addr)
+{
+    REG_WRITE(CPU_APM_REGION0_ADDR_START_REG + APM_REGION_ADDR_OFFSET * regn_num, addr);
+}
+
+/**
+ * @brief Set region end address in CPU-APM
+ *
+ * @param regn_num Region number
+ * @param addr End address
+ */
+static inline void apm_ll_cpu_apm_set_region_end_addr(uint32_t regn_num, uint32_t addr)
+{
+    REG_WRITE(CPU_APM_REGION0_ADDR_END_REG + APM_REGION_ADDR_OFFSET * regn_num, addr);
+}
+
+/**
+ * @brief Set security mode region attributes in CPU-APM
+ *
+ * @param regn_num Region number
+ * @param mode Security mode
+ * @param regn_pms Region PMS attributes
+ */
+static inline void apm_ll_cpu_apm_set_sec_mode_region_attr(uint32_t regn_num, apm_security_mode_t mode, uint32_t regn_pms)
+{
+    uint32_t reg = CPU_APM_REGION0_ATTR_REG + APM_REGION_ATTR_OFFSET * regn_num;
+    uint32_t val = REG_READ(reg);
+    val &= ~APM_REGION_PMS_MASK(mode);
+    val |= APM_REGION_PMS_FIELD(mode, regn_pms);
+    REG_WRITE(reg, val);
+}
+
+/**
+ * @brief Lock security mode region attributes in CPU-APM
+ *
+ * @param regn_num Region number
+ */
+static inline void apm_ll_cpu_apm_lock_sec_mode_region_attr(uint32_t regn_num)
+{
+    REG_SET_BIT(CPU_APM_REGION0_ATTR_REG + APM_REGION_ATTR_OFFSET * regn_num, APM_REGION_LOCK_BIT);
+}
+
+/**
+ * @brief Get exception data (regn, master, security mode) from CPU-APM
+ *
+ * @param path Access path
+ * @return Exception data
+ */
+static inline uint32_t apm_ll_cpu_apm_get_excp_data(apm_ctrl_access_path_t path)
+{
+    return REG_READ(CPU_APM_M0_EXCEPTION_INFO0_REG + APM_EXCP_INFO_OFFSET * path);
+}
+
+/**
+ * @brief Get exception status from CPU-APM
+ *
+ * @param path Access path
+ * @return Exception type
+ */
+static inline uint32_t apm_ll_cpu_apm_get_excp_type(apm_ctrl_access_path_t path)
+{
+    return REG_READ(CPU_APM_M0_STATUS_REG + APM_EXCP_INFO_OFFSET * path);
+}
+
+/**
+ * @brief Get exception address from CPU-APM
+ *
+ * @param path Access path
+ * @return Exception address
+ */
+static inline uint32_t apm_ll_cpu_apm_get_excp_addr(apm_ctrl_access_path_t path)
+{
+    return REG_READ(CPU_APM_M0_EXCEPTION_INFO1_REG + APM_EXCP_INFO_OFFSET * path);
+}
+
+/**
+ * @brief Get exception information from CPU-APM
+ *
+ * @param path Access path
+ * @param info Pointer to store exception information
+ */
+static inline void apm_ll_cpu_apm_get_excp_info(apm_ctrl_access_path_t path, apm_ctrl_exception_info_t *info)
+{
+    cpu_apm_m0_exception_info0_reg_t reg;
+    reg.val = apm_ll_cpu_apm_get_excp_data(path);
+    info->regn = reg.apm_m0_exception_region;
+    info->mode = reg.apm_m0_exception_mode;
+    info->id   = reg.apm_m0_exception_id;
+
+    info->type = apm_ll_cpu_apm_get_excp_type(path);
+    info->addr = apm_ll_cpu_apm_get_excp_addr(path);
+}
+
+/**
+ * @brief Clear controller exception status in CPU-APM
+ *
+ * @param path Access path
+ */
+static inline void apm_ll_cpu_apm_clear_ctrl_excp_status(apm_ctrl_access_path_t path)
+{
+    REG_SET_BIT(CPU_APM_M0_STATUS_CLR_REG + APM_EXCP_INFO_OFFSET * path, APM_EXCP_STATUS_CLR_BIT);
+}
+
+/**
+ * @brief Enable/disable controller interrupt in CPU-APM
+ *
+ * @param path Access path
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_cpu_apm_enable_ctrl_intr(apm_ctrl_access_path_t path, bool enable)
+{
+    if (enable) {
+        REG_SET_BIT(CPU_APM_INT_EN_REG, BIT(path));
+    } else {
+        REG_CLR_BIT(CPU_APM_INT_EN_REG, BIT(path));
+    }
+}
+
+/**
+ * @brief Enable/disable controller clock gating in CPU-APM
+ *
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_cpu_apm_enable_ctrl_clk_gating(bool enable)
+{
+    if (enable) {
+        REG_CLR_BIT(CPU_APM_CLOCK_GATE_REG, CPU_APM_CLK_EN);
+    } else {
+        REG_SET_BIT(CPU_APM_CLOCK_GATE_REG, CPU_APM_CLK_EN);
+    }
+}
+
+/**
+ * @brief Get controller interrupt source number from CPU-APM
+ *
+ * @param path Access path
+ * @return Interrupt source number
+ */
+static inline int apm_ll_cpu_apm_get_ctrl_intr_src(apm_ctrl_access_path_t path)
+{
+    return ETS_CPU_APM_M0_INTR_SOURCE + path;
 }
 
 /**

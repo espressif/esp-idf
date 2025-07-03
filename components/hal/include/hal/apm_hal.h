@@ -254,6 +254,33 @@ void apm_hal_enable_ctrl_filter_all(bool enable);
 void apm_hal_enable_region_filter(apm_ctrl_module_t ctrl_mod, uint32_t regn_num, bool enable);
 
 /**
+ * @brief Set the start address for the given region
+ *
+ * @param ctrl_mod APM controller module
+ * @param regn_num Region number
+ * @param addr Address
+ */
+void apm_hal_set_region_start_addr(apm_ctrl_module_t ctrl_mod, uint32_t regn_num, uint32_t addr);
+
+/**
+ * @brief Set the end address for the given region
+ *
+ * @param ctrl_mod APM controller module
+ * @param regn_num Region number
+ * @param addr Address
+ */
+void apm_hal_set_region_end_addr(apm_ctrl_module_t ctrl_mod, uint32_t regn_num, uint32_t addr);
+
+/**
+ * @brief Set the permissions for the specified security mode for the given region
+ *
+ * @param ctrl_mod APM controller module
+ * @param regn_num Region number
+ * @param mode Security mode
+ */
+void apm_hal_set_sec_mode_region_attr(apm_ctrl_module_t ctrl_mod, uint32_t regn_num, apm_security_mode_t mode, uint32_t regn_pms);
+
+/**
  * @brief Set region filter configuration
  *
  * @param ctrl_mod APM controller module

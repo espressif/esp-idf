@@ -218,9 +218,84 @@ void apm_hal_enable_region_filter(apm_ctrl_module_t ctrl_mod, uint32_t regn_num,
     }
 }
 
+void apm_hal_set_region_start_addr(apm_ctrl_module_t ctrl_mod, uint32_t regn_num, uint32_t addr)
+{
+    switch (ctrl_mod) {
+        case APM_CTRL_HP_APM:
+            apm_ll_hp_apm_set_region_start_addr(regn_num, addr);
+            break;
+#if SOC_APM_LP_APM0_SUPPORTED
+        case APM_CTRL_LP_APM0:
+            apm_ll_lp_apm0_set_region_start_addr(regn_num, addr);
+            break;
+#endif
+        case APM_CTRL_LP_APM:
+            apm_ll_lp_apm_set_region_start_addr(regn_num, addr);
+            break;
+#if SOC_APM_CPU_APM_SUPPORTED
+        case APM_CTRL_CPU_APM:
+            apm_ll_cpu_apm_set_region_start_addr(regn_num, addr);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void apm_hal_set_region_end_addr(apm_ctrl_module_t ctrl_mod, uint32_t regn_num, uint32_t addr)
+{
+    switch (ctrl_mod) {
+        case APM_CTRL_HP_APM:
+            apm_ll_hp_apm_set_region_end_addr(regn_num, addr);
+            break;
+#if SOC_APM_LP_APM0_SUPPORTED
+        case APM_CTRL_LP_APM0:
+            apm_ll_lp_apm0_set_region_end_addr(regn_num, addr);
+            break;
+#endif
+        case APM_CTRL_LP_APM:
+            apm_ll_lp_apm_set_region_end_addr(regn_num, addr);
+            break;
+#if SOC_APM_CPU_APM_SUPPORTED
+        case APM_CTRL_CPU_APM:
+            apm_ll_cpu_apm_set_region_end_addr(regn_num, addr);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void apm_hal_set_sec_mode_region_attr(apm_ctrl_module_t ctrl_mod, uint32_t regn_num, apm_security_mode_t mode, uint32_t regn_pms)
+{
+    HAL_ASSERT(mode != APM_SEC_MODE_TEE);
+
+    switch (ctrl_mod) {
+        case APM_CTRL_HP_APM:
+            apm_ll_hp_apm_set_sec_mode_region_attr(regn_num, mode, regn_pms);
+            break;
+#if SOC_APM_LP_APM0_SUPPORTED
+        case APM_CTRL_LP_APM0:
+            apm_ll_lp_apm0_set_sec_mode_region_attr(regn_num, mode, regn_pms);
+            break;
+#endif
+        case APM_CTRL_LP_APM:
+            apm_ll_lp_apm_set_sec_mode_region_attr(regn_num, mode, regn_pms);
+            break;
+#if SOC_APM_CPU_APM_SUPPORTED
+        case APM_CTRL_CPU_APM:
+            apm_ll_cpu_apm_set_sec_mode_region_attr(regn_num, mode, regn_pms);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
 void apm_hal_set_region_filter_cfg(apm_ctrl_module_t ctrl_mod, apm_security_mode_t mode, const apm_hal_ctrl_region_cfg_t *regn_cfg)
 {
     HAL_ASSERT(regn_cfg);
+    HAL_ASSERT(mode != APM_SEC_MODE_TEE);
 
     switch (ctrl_mod) {
         case APM_CTRL_HP_APM:
