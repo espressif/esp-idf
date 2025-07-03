@@ -26,11 +26,6 @@ if(CONFIG_SOC_RMT_SUPPORTED)
     list(APPEND srcs "deprecated/rmt_legacy.c")
 endif()
 
-# Sigma-Delta Modulation legacy driver
-if(CONFIG_SOC_SDM_SUPPORTED)
-    list(APPEND srcs "deprecated/sigma_delta_legacy.c")
-endif()
-
 # Touch Sensor related source files
 if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
     if(CONFIG_SOC_TOUCH_SENSOR_VERSION LESS 3)

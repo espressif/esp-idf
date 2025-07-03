@@ -519,3 +519,6 @@
         -
             re_variables: ['driver/mcpwm.h']
             hint_variables: ['legacy MCPWM', 'driver/mcpwm_prelude', 'esp_driver_mcpwm']
+        -
+            re_variables: ['driver/sigmadelta.h']
+            hint_variables: ['legacy Sigma-Delta', 'driver/sdm.h', 'esp_driver_sdm']

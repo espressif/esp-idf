@@ -115,3 +115,10 @@ SDMMC
     ------------------------------------
 
     旧版的温度传感器驱动 ``driver/temp_sensor.h`` 在 5.1 的版本中就已经被弃用（请参考 :ref:`deprecate_tsens_legacy_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_driver_tsens` 组件中，头文件引用路径为 ``driver/temperature_sensor.h``。
+
+.. only:: SOC_SDM_SUPPORTED
+
+    旧版 Sigma-Delta 调制器驱动被移除
+    ---------------------------------
+
+    旧版的 Sigma-Delta 调制器驱动 ``driver/sigmadelta.h`` 在 5.0 的版本中就已经被弃用（请参考 :ref:`deprecate_sdm_legacy_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_driver_sdm` 组件中，头文件引用路径为 ``driver/sdm.h``。

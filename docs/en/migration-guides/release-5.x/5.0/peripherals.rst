@@ -91,15 +91,17 @@ GPIO
 
 .. only:: SOC_SDM_SUPPORTED
 
-    Sigma-Delta Modulator
-    ---------------------
+    .. _deprecate_sdm_legacy_driver:
+
+    Legacy Sigma-Delta Modulator Driver is Deprecated
+    -------------------------------------------------
 
     The Sigma-Delta Modulator driver has been redesigned into :doc:`SDM <../../../api-reference/peripherals/sdm>`.
 
     - The new driver implements a factory pattern, where the SDM channels are managed in a pool internally, thus users do not have to fix a SDM channel to a GPIO manually.
     - All SDM channels can be allocated dynamically.
 
-    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/sigmadelta.h``. However, by default, including ``driver/sigmadelta.h`` triggers the build warning below. The warning can be suppressed by Kconfig option :ref:`CONFIG_SDM_SUPPRESS_DEPRECATE_WARN`.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/sigmadelta.h``. However, by default, including ``driver/sigmadelta.h`` triggers the build warning below. The warning can be suppressed by Kconfig option ``CONFIG_SDM_SUPPRESS_DEPRECATE_WARN``.
 
     .. code-block:: text
 
@@ -122,43 +124,41 @@ GPIO
     - Channel configuration was done by channel allocation, in :cpp:func:`sdm_new_channel`. In the new driver, only the ``density`` can be changed at runtime, by :cpp:func:`sdm_channel_set_pulse_density`. Other parameters like ``gpio number`` and ``prescale`` are only allowed to set during channel allocation.
     - Before further channel operations, users should **enable** the channel in advance, by calling :cpp:func:`sdm_channel_enable`. This function helps to manage some system level services, like **Power Management**.
 
-    .. _deprecate_gptimer_legacy_driver:
-
-.. only:: not SOC_SDM_SUPPORTED
+.. only:: SOC_GPTIMER_SUPPORTED
 
     .. _deprecate_gptimer_legacy_driver:
 
-Legacy Timer Group Driver is Deprecated
----------------------------------------
+    Legacy Timer Group Driver is Deprecated
+    ---------------------------------------
 
-Timer Group driver has been redesigned into :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer.
+    Timer Group driver has been redesigned into :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer.
 
-Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` triggers the build warning below. The warning can be suppressed by the Kconfig option ``CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN``.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` triggers the build warning below. The warning can be suppressed by the Kconfig option ``CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN``.
 
-.. code-block:: text
+    .. code-block:: text
 
-    legacy timer group driver is deprecated, please migrate to driver/gptimer.h
+        legacy timer group driver is deprecated, please migrate to driver/gptimer.h
 
-The major breaking changes in concept and usage are listed as follows:
+    The major breaking changes in concept and usage are listed as follows:
 
-Breaking Changes in Concepts
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    Breaking Changes in Concepts
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
--  ``timer_group_t`` and ``timer_idx_t`` which used to identify the hardware timer are removed from user's code. In the new driver, a timer is represented by :cpp:type:`gptimer_handle_t`.
--  Definition of timer clock source is moved to :cpp:type:`gptimer_clock_source_t`, the previous ``timer_src_clk_t`` is not used.
--  Definition of timer count direction is moved to :cpp:type:`gptimer_count_direction_t`, the previous ``timer_count_dir_t`` is not used.
--  Only level interrupt is supported, ``timer_intr_t`` and ``timer_intr_mode_t`` are not used.
--  Auto-reload is enabled by set the :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` flag. ``timer_autoreload_t`` is not used.
+    -  ``timer_group_t`` and ``timer_idx_t`` which used to identify the hardware timer are removed from user's code. In the new driver, a timer is represented by :cpp:type:`gptimer_handle_t`.
+    -  Definition of timer clock source is moved to :cpp:type:`gptimer_clock_source_t`, the previous ``timer_src_clk_t`` is not used.
+    -  Definition of timer count direction is moved to :cpp:type:`gptimer_count_direction_t`, the previous ``timer_count_dir_t`` is not used.
+    -  Only level interrupt is supported, ``timer_intr_t`` and ``timer_intr_mode_t`` are not used.
+    -  Auto-reload is enabled by set the :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` flag. ``timer_autoreload_t`` is not used.
 
-Breaking Changes in Usage
-^^^^^^^^^^^^^^^^^^^^^^^^^
+    Breaking Changes in Usage
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
 
--  Timer initialization is done by creating a timer instance from :cpp:func:`gptimer_new_timer`. Basic configurations like clock source, resolution and direction should be set in :cpp:type:`gptimer_config_t`. Note that, specific configurations of alarm events are not needed during the installation stage of the driver.
--  Alarm event is configured by :cpp:func:`gptimer_set_alarm_action`, with parameters set in the :cpp:type:`gptimer_alarm_config_t`.
--  Setting and getting count value are done by :cpp:func:`gptimer_set_raw_count` and :cpp:func:`gptimer_get_raw_count`. The driver does not help convert the raw value into UTC time-stamp. Instead, the conversion should be done from user's side as the timer resolution is also known to the user.
--  The driver will install the interrupt service as well if :cpp:member:`gptimer_event_callbacks_t::on_alarm` is set to a valid callback function. In the callback, users do not have to deal with the low level registers (like "clear interrupt status", "re-enable alarm event" and so on). So functions like ``timer_group_get_intr_status_in_isr`` and ``timer_group_get_auto_reload_in_isr`` are not used anymore.
--  To update the alarm configurations when alarm event happens, one can call :cpp:func:`gptimer_set_alarm_action` in the interrupt callback, then the alarm will be re-enabled again.
--  Alarm will always be re-enabled by the driver if :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` is set to true.
+    -  Timer initialization is done by creating a timer instance from :cpp:func:`gptimer_new_timer`. Basic configurations like clock source, resolution and direction should be set in :cpp:type:`gptimer_config_t`. Note that, specific configurations of alarm events are not needed during the installation stage of the driver.
+    -  Alarm event is configured by :cpp:func:`gptimer_set_alarm_action`, with parameters set in the :cpp:type:`gptimer_alarm_config_t`.
+    -  Setting and getting count value are done by :cpp:func:`gptimer_set_raw_count` and :cpp:func:`gptimer_get_raw_count`. The driver does not help convert the raw value into UTC time-stamp. Instead, the conversion should be done from user's side as the timer resolution is also known to the user.
+    -  The driver will install the interrupt service as well if :cpp:member:`gptimer_event_callbacks_t::on_alarm` is set to a valid callback function. In the callback, users do not have to deal with the low level registers (like "clear interrupt status", "re-enable alarm event" and so on). So functions like ``timer_group_get_intr_status_in_isr`` and ``timer_group_get_auto_reload_in_isr`` are not used anymore.
+    -  To update the alarm configurations when alarm event happens, one can call :cpp:func:`gptimer_set_alarm_action` in the interrupt callback, then the alarm will be re-enabled again.
+    -  Alarm will always be re-enabled by the driver if :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` is set to true.
 
 UART
 ----
