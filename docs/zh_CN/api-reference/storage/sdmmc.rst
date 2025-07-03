@@ -109,9 +109,9 @@ SD/SDIO/MMC 驱动支持 SD 存储器、SDIO 卡和 eMMC 芯片。这是一个�
 
     如果需要应用程序保持等待直至发生 SDIO 中断，请使用 :cpp:func:`sdmmc_io_wait_int` 函数。
 
-    .. only:: esp32
+    .. only:: SOC_SDMMC_HOST_SUPPORTED and SOC_SDIO_SLAVE_SUPPORTED
 
-        如果需要与 ESP32 的 SDIO 从设备通信，请使用 ESSL 组件（ESP 串行从设备链接）。请参阅 :doc:`/api-reference/protocols/esp_serial_slave_link` 和示例 :example:`peripherals/sdio/host`。
+        如果需要与 ESP32 的 SDIO 从设备通信，请使用 `ESSL <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_ 组件（ESP 串行从设备链接）。请参阅示例 :example:`peripherals/sdio/host`。
 
     复合卡（存储 + IO）
     ^^^^^^^^^^^^^^^^^^^^^^^^^

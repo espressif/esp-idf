@@ -13,7 +13,7 @@ SPI 从机半双工模式
 协议
 ^^^^^^^^
 
-有关主设备与 SPI 从机通信的详细信息，请参阅 :doc:`/api-reference/protocols/esp_spi_slave_protocol`。
+有关主设备与 SPI 从机通信的详细信息，请参阅 `ESP SPI 从机半双工协议 <https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/spi_slave_hd_protocol.html#spi-slave-hd-half-duplex-protocol>`_ 。
 
 通过不同类型的事务，从设备为主设备提供以下服务：
 

@@ -105,8 +105,6 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     list(APPEND compile_options "-Wno-char-subscripts")
     # Clang seems to notice format string issues which GCC doesn't.
     list(APPEND compile_options "-Wno-format-security")
-    # Logic bug in essl component
-    list(APPEND compile_options "-Wno-tautological-overlap-compare")
     # Some pointer checks in mDNS component check addresses which can't be NULL
     list(APPEND compile_options "-Wno-tautological-pointer-compare")
     # Similar to the above, in tcp_transport

@@ -77,9 +77,7 @@ api-reference/system/mm.rst
 api-reference/error-codes.rst
 api-reference/index.rst
 api-reference/protocols/icmp_echo.rst
-api-reference/protocols/esp_serial_slave_link.rst
 api-reference/protocols/mqtt.rst
-api-reference/protocols/esp_sdio_slave_protocol.rst
 api-reference/protocols/modbus.rst
 api-reference/protocols/mdns.rst
 api-reference/protocols/index.rst
