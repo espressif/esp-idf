@@ -157,7 +157,7 @@ function(target_linker_script target deptype scriptfiles)
         # https://cmake.org/cmake/help/latest/command/target_link_options.html#option-de-duplication
         target_link_options("${target}" "${deptype}" "SHELL:-T ${scriptname}")
 
-        # Note: In ESP-IDF, most targets are libraries and libary LINK_DEPENDS don't propagate to
+        # Note: In ESP-IDF, most targets are libraries and library LINK_DEPENDS don't propagate to
         # executable(s) the library is linked to. Since CMake 3.13, INTERFACE_LINK_DEPENDS is
         # available to solve this. However, when GNU Make generator is used, this property also
         # propagates INTERFACE_LINK_DEPENDS dependencies to other static libraries.
@@ -225,7 +225,7 @@ endfunction()
 # fail_target
 #
 # Creates a phony target which fails when invoked. This is used when the necessary conditions
-# for a target are not met, such as configuration. Rather than ommitting the target altogether,
+# for a target are not met, such as configuration. Rather than omitting the target altogether,
 # we fail execution with a helpful message.
 function(fail_target target_name message_line0)
     idf_build_get_property(idf_path IDF_PATH)
@@ -303,7 +303,7 @@ function(add_prebuilt_library target_name lib_path)
     get_filename_component(lib_path "${lib_path}"
                 ABSOLUTE BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
-    add_library(${target_name} STATIC IMPORTED)
+    add_library(${target_name} STATIC IMPORTED GLOBAL)
     set_property(TARGET ${target_name} PROPERTY IMPORTED_LOCATION ${lib_path})
 
     foreach(req ${__REQUIRES})
@@ -354,7 +354,7 @@ endfunction()
 
 # add_deprecated_target_alias
 #
-# Creates an alias for exising target and shows deprectation warning
+# Creates an alias for existing target and shows deprecation warning
 function(add_deprecated_target_alias old_target new_target)
     add_custom_target(${old_target}
      # `COMMAND` is important to print the `COMMENT` message at the end of the target action.

@@ -135,16 +135,14 @@ function(__ldgen_create_target exe_target)
             # Here we have two cases:
             #
             # 1. ${lib} is actually a target, but the target is outside the current scope.
-            #    This is the case for imported library targets (such as those added by
-            #    add_prebuilt_library), since by default imported targets are not
-            #    visible outside the directory where they are defined, unless they are
-            #    marked as GLOBAL.
-            #    This case covers many (but not all) of IDF's prebuilt libraries.
+            #    This is the case for imported library targets which are not defined as GLOBAL.
+            #    Libraries added using `add_prebuilt_library` are marked as GLOBAL, so they should
+            #    be handled in the if block above.
             #
             # 2. ${lib} is the name of a library, which the linker can find in its built-in
             #    or specified search paths.
-            #    This is the case for toolchain libraries (m, c, gcc, stdc++) as well
-            #    as for some prebuilt libraries which have been added using `-lname -Lpath`
+            #    This is the case for toolchain libraries (m, c, gcc, stdc++), as well as
+            #    any prebuilt libraries which may have been added using `-lname -Lpath`
             #    style flags.
             #
             # If we can successfully find the absolute path of each such library, this
