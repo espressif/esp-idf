@@ -137,27 +137,23 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs,
 #endif
 
     /* Maintain timeouts in order of increasing time */
+    ELOOP_LOCK();
     dl_list_for_each(tmp, &eloop.timeout, struct eloop_timeout, list) {
         if (os_reltime_before(&timeout->time, &tmp->time)) {
-            ELOOP_LOCK();
             dl_list_add(tmp->list.prev, &timeout->list);
-            ELOOP_UNLOCK();
             goto run;
         }
 #ifdef ELOOP_DEBUG
         count++;
 #endif
     }
-    ELOOP_LOCK();
     dl_list_add_tail(&eloop.timeout, &timeout->list);
-    ELOOP_UNLOCK();
 
 run:
 #ifdef ELOOP_DEBUG
     wpa_printf(MSG_DEBUG, "ELOOP: Added one timer from %s:%d to call %p, current order=%d",
                timeout->func_name, line, timeout->handler, count);
 #endif
-    ELOOP_LOCK();
     os_timer_disarm(&eloop.eloop_timer);
     os_timer_arm(&eloop.eloop_timer, 0, 0);
     ELOOP_UNLOCK();
@@ -227,27 +223,23 @@ int eloop_register_timeout_blocking(eloop_blocking_timeout_handler handler,
     }
     timeout->sync_semph = eloop.eloop_semph;
     /* Maintain timeouts in order of increasing time */
+    ELOOP_LOCK();
     dl_list_for_each(tmp, &eloop.timeout, struct eloop_timeout, list) {
         if (os_reltime_before(&timeout->time, &tmp->time)) {
-            ELOOP_LOCK();
             dl_list_add(tmp->list.prev, &timeout->list);
-            ELOOP_UNLOCK();
             goto run;
         }
 #ifdef ELOOP_DEBUG
         count++;
 #endif
     }
-    ELOOP_LOCK();
     dl_list_add_tail(&eloop.timeout, &timeout->list);
-    ELOOP_UNLOCK();
 
 run:
 #ifdef ELOOP_DEBUG
     wpa_printf(MSG_DEBUG, "ELOOP: Added one blocking timer from %s:%d to call %p, current order=%d",
                timeout->func_name, line, timeout->handler, count);
 #endif
-    ELOOP_LOCK();
     os_timer_disarm(&eloop.eloop_timer);
     os_timer_arm(&eloop.eloop_timer, 0, 0);
     ELOOP_UNLOCK();
@@ -447,8 +439,10 @@ void eloop_run(void)
     while (!dl_list_empty(&eloop.timeout)) {
         struct eloop_timeout *timeout;
 
+        ELOOP_LOCK();
         timeout = dl_list_first(&eloop.timeout, struct eloop_timeout,
                                 list);
+        ELOOP_UNLOCK();
         if (timeout) {
             os_get_reltime(&now);
             if (os_reltime_before(&now, &timeout->time)) {
