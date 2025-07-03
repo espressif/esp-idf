@@ -25,7 +25,8 @@ typedef int i2c_port_num_t;
  * @brief Enumeration for I2C fsm status.
  */
 typedef enum {
-    I2C_STATUS_READ,      /*!< read status for current master command */
+    I2C_STATUS_READ,      /*!< read status for current master command, but just partial read, not all data is read is this status */
+    I2C_STATUS_READ_ALL,  /*!< read status for current master command, all data is read is this status */
     I2C_STATUS_WRITE,     /*!< write status for current master command */
     I2C_STATUS_START,     /*!< Start status for current master command */
     I2C_STATUS_STOP,      /*!< stop status for current master command */
