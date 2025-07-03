@@ -34,9 +34,6 @@ menu "Bootloader config"
             bool "Debug (-Og)"
         config BOOTLOADER_COMPILER_OPTIMIZATION_PERF
             bool "Optimize for performance (-O2)"
-        config BOOTLOADER_COMPILER_OPTIMIZATION_NONE
-            bool "Debug without optimization (-O0) (Deprecated, will be removed in IDF v6.0)"
-            depends on IDF_TARGET_ARCH_XTENSA || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2
 
     endchoice
 
