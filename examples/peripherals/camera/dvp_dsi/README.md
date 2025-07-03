@@ -15,8 +15,8 @@ The subsections below give only absolutely necessary information. For full steps
 
 ### Hardware Required
 
-- OV2640 / SC030IOT camera sensor, or other camera sensors with DVP port that can output raw format color data
-- EK79007 or ILI9881C LCD screen
+- OV2640 camera sensor, or other camera sensors with DVP port that can output RGB565 format color data
+- EK79007 LCD screen
 - ESP32P4 devkit
 
 **Note:** For EK79007 you will need to connect following pins:
@@ -129,21 +129,23 @@ To exit the serial monitor, use `Ctrl` + `]`.
 If you see the following console output, your example should be running correctly:
 
 ```
-I (1509) main_task: Calling app_main()
-I (1509) ek79007: version: 1.0.1
-I (1549) ov2640: Detected Camera sensor PID=0x26
-I (1549) sensor_init: fmt[0].name:DVP_8bit_20Minput_RGB565_640x480_6fps
-I (1549) sensor_init: fmt[1].name:DVP_8bit_20Minput_YUV422_640x480_6fps
-I (1549) sensor_init: fmt[2].name:DVP_8bit_20Minput_JPEG_640x480_25fps
-I (1559) sensor_init: fmt[3].name:DVP_8bit_20Minput_RGB565_240x240_25fps
-I (1569) sensor_init: fmt[4].name:DVP_8bit_20Minput_YUV422_240x240_25fps
-I (1569) sensor_init: fmt[5].name:DVP_8bit_20Minput_JPEG_320x240_50fps
-I (1579) sensor_init: fmt[6].name:DVP_8bit_20Minput_JPEG_1280x720_12fps
-I (1589) sensor_init: fmt[7].name:DVP_8bit_20Minput_JPEG_1600x1200_12fps
-I (1589) sensor_init: fmt[8].name:DVP_8bit_20Minput_RAW8_800x640_15fps
-I (1599) sensor_init: fmt[9].name:DVP_8bit_20Minput_RAW8_800x800_15fps
-I (1609) sensor_init: fmt[10].name:DVP_8bit_20Minput_RAW8_1024x600_15fps
-I (2609) sensor_init: Format in use:DVP_8bit_20Minput_RAW8_1024x600_15fps
+I (1481) main_task: Calling app_main()
+I (1481) ek79007: version: 1.0.2
+I (1701) ov2640: Detected Camera sensor PID=0x26
+I (1701) sensor_init: fmt[0].name:DVP_8bit_20Minput_RGB565_640x480_6fps
+I (1701) sensor_init: fmt[1].name:DVP_8bit_20Minput_YUV422_640x480_6fps
+I (1711) sensor_init: fmt[2].name:DVP_8bit_20Minput_JPEG_640x480_25fps
+I (1711) sensor_init: fmt[3].name:DVP_8bit_20Minput_RGB565_240x240_25fps
+I (1721) sensor_init: fmt[4].name:DVP_8bit_20Minput_YUV422_240x240_25fps
+I (1721) sensor_init: fmt[5].name:DVP_8bit_20Minput_JPEG_320x240_50fps
+I (1731) sensor_init: fmt[6].name:DVP_8bit_20Minput_JPEG_1280x720_12fps
+I (1741) sensor_init: fmt[7].name:DVP_8bit_20Minput_JPEG_1600x1200_12fps
+I (1741) sensor_init: fmt[8].name:DVP_8bit_20Minput_RAW8_800x640_30fps
+I (1751) sensor_init: fmt[9].name:DVP_8bit_20Minput_RAW8_800x640_15fps
+I (1761) sensor_init: fmt[10].name:DVP_8bit_20Minput_RAW8_800x800_15fps
+I (1761) sensor_init: fmt[11].name:DVP_8bit_20Minput_RAW8_1024x600_15fps
+I (8291) sensor_init: Format in use:DVP_8bit_20Minput_RGB565_640x480_6fps
+
 ```
 
 
