@@ -166,6 +166,12 @@ menu "PHY"
                 high interference, enable this option will sacrifice Wi-Fi OFDM receive performance.
                 But to guarantee 11b receive performance serves as a bottom line in this case.
 
+        config ESP_PHY_PLL_TRACK_PERIOD_MS
+            int "Set the period of the pll track"
+            default 1000
+            help
+                Set the period of the pll track.
+
         config ESP_PHY_PLL_TRACK_DEBUG
             bool "Enable pll track logging"
             default n
@@ -185,6 +191,21 @@ menu "PHY"
                 Select this option to place frequently called PHY library functions in IRAM.
                 When this option is disabled, more than 1.1Kbytes of IRAM memory will be saved,
                 but PHY performance will be reduced. This config only affect esp32c2 now.
+
+        menuconfig ESP_PHY_DEBUG
+            bool "Enable PHY Debug"
+            default n
+            help
+                Enabling this option allows different kinds of phy debugging features.
+
+        config ESP_PHY_DISABLE_PLL_TRACK
+            bool "Disable phy pll track(only for experimental)"
+            depends on ESP_PHY_DEBUG
+            default n
+            help
+                Disable pll track. This configuration option is used for experimental.
+                PLL track helps the PHY module adapt to temperature changes, ensuring stable performance.
+                When pll enabled, the ESP PHY module will periodically track and adjust PLL parameters.
 
     endif
 endmenu  # PHY
