@@ -187,7 +187,7 @@ endif()
 
 if(CONFIG_IDF_TARGET_ESP32H4)
     list(REMOVE_ITEM srcs
-        "sleep_modes.c"
+        # "sleep_modes.c"
         "sleep_gpio.c" # TODO: [ESP32H4] IDF-12279, IDF-12281
     )
 endif()
