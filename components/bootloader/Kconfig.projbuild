@@ -145,70 +145,96 @@ menu "Bootloader config"
             bool "1.9V"
     endchoice
 
-    config BOOTLOADER_FACTORY_RESET
-        bool "GPIO triggers factory reset"
-        default n
-        select BOOTLOADER_RESERVE_RTC_MEM if SOC_RTC_FAST_MEM_SUPPORTED
-        help
-            Allows to reset the device to factory settings:
-            - clear one or more data partitions;
-            - boot from "factory" partition.
-            The factory reset will occur if there is a GPIO input held at the configured level while
-            device starts up. See settings below.
 
-    config BOOTLOADER_NUM_PIN_FACTORY_RESET
-        int "Number of the GPIO input for factory reset"
-        depends on BOOTLOADER_FACTORY_RESET
-        range 0 39 if IDF_TARGET_ESP32
-        range 0 46 if IDF_TARGET_ESP32S2
-        range 0 48 if IDF_TARGET_ESP32S3
-        range 0 20 if IDF_TARGET_ESP32C2
-        range 0 21 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C61
-        range 0 28 if IDF_TARGET_ESP32C5
-        range 0 30 if IDF_TARGET_ESP32C6
-        range 0 27 if IDF_TARGET_ESP32H2
-        range 0 54 if IDF_TARGET_ESP32P4
-        default 4
-        help
-            The selected GPIO will be configured as an input with internal pull-up enabled. To trigger a factory
-            reset, this GPIO must be held high or low (as configured) on startup.
+    menu "Factory reset"
+        config BOOTLOADER_FACTORY_RESET_ENABLE
+            bool
+            default n
+            help
+                Allows to reset the device to factory settings:
+                - clear one or more data partitions;
+                - boot from "factory" partition.
 
-            Note that on some SoCs not all pins have an internal pull-up and certain pins are already
-            used by ROM bootloader as bootstrapping. Refer to the technical reference manual for further
-            details on the selected SoC.
+        config BOOTLOADER_FACTORY_RESET_REQUEST_FROM_APP
+            bool "App request triggers factory reset"
+            default n
+            depends on SOC_RTC_FAST_MEM_SUPPORTED
+            select BOOTLOADER_FACTORY_RESET_ENABLE
+            select BOOTLOADER_RESERVE_RTC_MEM if SOC_RTC_FAST_MEM_SUPPORTED
+            help
+                This option enables performing a factory reset by a request from the app, which may include:
+                - clear one or more data partitions;
+                - reset to boot from "factory" partition.
 
-    choice BOOTLOADER_FACTORY_RESET_PIN_LEVEL
-        bool "Factory reset GPIO level"
-        depends on BOOTLOADER_FACTORY_RESET
-        default BOOTLOADER_FACTORY_RESET_PIN_LOW
-        help
-            Pin level for factory reset, can be triggered on low or high.
+                The app can request a factory reset by calling the function
+                `bootloader_common_set_rtc_retain_mem_factory_reset_request`.
+                This stores the request in RTC memory, allowing the bootloader
+                to perform the factory reset on next boot, provided power is preserved.
 
-        config BOOTLOADER_FACTORY_RESET_PIN_LOW
-            bool "Reset on GPIO low"
 
-        config BOOTLOADER_FACTORY_RESET_PIN_HIGH
-            bool "Reset on GPIO high"
-    endchoice
+        config BOOTLOADER_FACTORY_RESET_GPIO
+            bool "GPIO triggers factory reset"
+            default y
+            select BOOTLOADER_FACTORY_RESET_ENABLE
+            help
+                This option enables performing a factory reset by long holding a GPIO input, which may include:
+                - clear one or more data partitions;
+                - reset to boot from "factory" partition.
 
-    config BOOTLOADER_OTA_DATA_ERASE
-        bool "Clear OTA data on factory reset (select factory partition)"
-        depends on BOOTLOADER_FACTORY_RESET
-        help
-            The device will boot from "factory" partition (or OTA slot 0 if no factory partition is present) after a
-            factory reset.
+        config BOOTLOADER_NUM_PIN_FACTORY_RESET
+            int "Number of the GPIO input for factory reset"
+            depends on BOOTLOADER_FACTORY_RESET_GPIO
+            range 0 39 if IDF_TARGET_ESP32
+            range 0 46 if IDF_TARGET_ESP32S2
+            range 0 48 if IDF_TARGET_ESP32S3
+            range 0 20 if IDF_TARGET_ESP32C2
+            range 0 21 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C61
+            range 0 28 if IDF_TARGET_ESP32C5
+            range 0 30 if IDF_TARGET_ESP32C6
+            range 0 27 if IDF_TARGET_ESP32H2
+            range 0 54 if IDF_TARGET_ESP32P4
+            default 4
+            help
+                The selected GPIO will be configured as an input with internal pull-up enabled. To trigger a factory
+                reset, this GPIO must be held high or low (as configured) on startup.
 
-    config BOOTLOADER_DATA_FACTORY_RESET
-        string "Comma-separated names of partitions to clear on factory reset"
-        depends on BOOTLOADER_FACTORY_RESET
-        default "nvs"
-        help
-            Allows customers to select which data partitions will be erased while factory reset.
+                Note that on some SoCs not all pins have an internal pull-up and certain pins are already
+                used by ROM bootloader as bootstrapping. Refer to the technical reference manual for further
+                details on the selected SoC.
 
-            Specify the names of partitions as a comma-delimited with optional spaces for readability. (Like this:
-            "nvs, phy_init, ...")
-            Make sure that the name specified in the partition table and here are the same.
-            Partitions of type "app" cannot be specified here.
+        choice BOOTLOADER_FACTORY_RESET_PIN_LEVEL
+            bool "Factory reset GPIO level"
+            depends on BOOTLOADER_FACTORY_RESET_GPIO
+            default BOOTLOADER_FACTORY_RESET_PIN_LOW
+            help
+                Pin level for factory reset, can be triggered on low or high.
+
+            config BOOTLOADER_FACTORY_RESET_PIN_LOW
+                bool "Reset on GPIO low"
+
+            config BOOTLOADER_FACTORY_RESET_PIN_HIGH
+                bool "Reset on GPIO high"
+        endchoice
+
+        config BOOTLOADER_OTA_DATA_ERASE
+            bool "Clear OTA data on factory reset (select factory partition)"
+            depends on BOOTLOADER_FACTORY_RESET_ENABLE
+            help
+                The device will boot from "factory" partition (or OTA slot 0 if no factory partition is present) after
+                a factory reset.
+
+        config BOOTLOADER_DATA_FACTORY_RESET
+            string "Comma-separated names of partitions to clear on factory reset"
+            depends on BOOTLOADER_FACTORY_RESET_ENABLE
+            default "nvs"
+            help
+                Allows customers to select which data partitions will be erased while factory reset.
+
+                Specify the names of partitions as a comma-delimited with optional spaces for readability. (Like this:
+                "nvs, phy_init, ...")
+                Make sure that the name specified in the partition table and here are the same.
+                Partitions of type "app" cannot be specified here.
+    endmenu
 
     config BOOTLOADER_APP_TEST
         bool "GPIO triggers boot from test app partition"
@@ -258,7 +284,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_HOLD_TIME_GPIO
         int "Hold time of GPIO for reset/test mode (seconds)"
-        depends on BOOTLOADER_FACTORY_RESET || BOOTLOADER_APP_TEST
+        depends on BOOTLOADER_FACTORY_RESET_GPIO || BOOTLOADER_APP_TEST
         default 5
         help
             The GPIO must be held low continuously for this period of time after reset

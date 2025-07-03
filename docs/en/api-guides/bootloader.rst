@@ -68,8 +68,6 @@ Factory Reset
 
 Sometimes it is desirable to have a way for the device to fall back to a known-good state, in case of some problem with an update.
 
-To roll back to the original "factory" device configuration and clear any user settings, configure the config item :ref:`CONFIG_BOOTLOADER_FACTORY_RESET` in the bootloader.
-
 The factory reset mechanism allows the device to be factory reset in two ways:
 
 - Clear one or more data partitions. The :ref:`CONFIG_BOOTLOADER_DATA_FACTORY_RESET` option allows users to specify which data partitions will be erased when the factory reset is executed.
@@ -82,16 +80,7 @@ The factory reset mechanism allows the device to be factory reset in two ways:
 
 Either or both of these configuration options can be enabled independently.
 
-In addition, the following configuration options control the reset condition:
-
-- :ref:`CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET`- The input GPIO number used to trigger a factory reset. This GPIO must be pulled low or high (configurable) on reset to trigger this.
-
-- :ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO`- this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
-
-- :ref:`CONFIG_BOOTLOADER_FACTORY_RESET_PIN_LEVEL` - configure whether a factory reset should trigger on a high or low level of the GPIO. If the GPIO has an internal pullup then this is enabled before the pin is sampled, consult the {IDF_TARGET_NAME} datasheet for details on pin internal pullups.
-
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
-
     If an application needs to know if the factory reset has occurred, users can call the function :cpp:func:`bootloader_common_get_rtc_retain_mem_factory_reset_state`.
 
     - If the status is read as true, the function will return the status, indicating that the factory reset has occurred. The function then resets the status to false for subsequent factory reset judgement.
@@ -102,6 +91,25 @@ In addition, the following configuration options control the reset condition:
 .. only:: not SOC_RTC_FAST_MEM_SUPPORTED
 
     Sometimes an application needs to know if the factory reset has occurred. The {IDF_TARGET_NAME} chip does not have RTC FAST memory, so there is no API to detect it. Instead, there is a workaround: you need an NVS partition that will be erased by the bootloader if factory reset occurs (add this partition to :ref:`CONFIG_BOOTLOADER_DATA_FACTORY_RESET`). In this NVS partition, create a "factory_reset_state" token that will be increased in the application. If the "factory_reset_state" is 0 then the factory reset has occurred.
+
+.. only:: SOC_RTC_FAST_MEM_SUPPORTED
+    App Requested Factory Reset
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Application requested factory resets are enabled by config item :ref:`CONFIG_BOOTLOADER_FACTORY_RESET_REQUEST_FROM_APP`.
+
+    Once enabled, an application can request a factory reset by calling the function :cpp:func:`bootloader_common_set_rtc_retain_mem_factory_reset_request`. This function sets a status in RTC FAST memory that indicates a factory reset should be performed on the next boot. Note that this flag will not be retained across power cycles, so it is necessary to reboot using :cpp:func:`esp_restart`.
+
+GPIO Long Hold Factory Reset
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- :ref:`CONFIG_BOOTLOADER_FACTORY_RESET_GPIO` - enables the factory reset by GPIO functionality in the bootloader.
+
+- :ref:`CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET`- the input GPIO number used to trigger a factory reset. This GPIO must be pulled low or high (configurable) on reset to trigger this.
+
+- :ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO`- this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
+
+- :ref:`CONFIG_BOOTLOADER_FACTORY_RESET_PIN_LEVEL` - configure whether a factory reset should trigger on a high or low level of the GPIO. If the GPIO has an internal pullup then this is enabled before the pin is sampled, consult the {IDF_TARGET_NAME} datasheet for details on pin internal pullups.
 
 .. _bootloader_boot_from_test_firmware:
 
