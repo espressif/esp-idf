@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -280,8 +280,13 @@ esp_err_t wifi_prov_mgr_init(wifi_prov_mgr_config_t config);
  * If provisioning service is  still active when this API is called,
  * it first stops the service, hence emitting WIFI_PROV_END, and
  * then performs the de-initialization
+ *
+ * @return
+ *  - ESP_OK         : Success
+ *  - ESP_FAIL       : Failed to post event WIFI_PROV_DEINIT or WIFI_PROV_END
+ *  - ESP_ERR_NO_MEM : Out of memory (as may be returned by esp_event_post)
  */
-void wifi_prov_mgr_deinit(void);
+esp_err_t wifi_prov_mgr_deinit(void);
 
 /**
  * @brief   Checks if device is provisioned

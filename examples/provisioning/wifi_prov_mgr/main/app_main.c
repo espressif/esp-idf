@@ -147,7 +147,10 @@ static void event_handler(void* arg, esp_event_base_t event_base,
                 break;
             case WIFI_PROV_END:
                 /* De-initialize manager once provisioning is finished */
-                wifi_prov_mgr_deinit();
+                esp_err_t err = wifi_prov_mgr_deinit();
+                if (err != ESP_OK) {
+                    ESP_LOGE(TAG, "Failed to de-initialize provisioning manager: %s", esp_err_to_name(err));
+                }
                 break;
             default:
                 break;
@@ -520,7 +523,7 @@ void app_main(void)
 
         /* We don't need the manager as device is already provisioned,
          * so let's release it's resources */
-        wifi_prov_mgr_deinit();
+        ESP_ERROR_CHECK(wifi_prov_mgr_deinit());
 
         ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
         /* Start Wi-Fi station */

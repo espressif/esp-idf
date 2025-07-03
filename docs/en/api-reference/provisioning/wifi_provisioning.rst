@@ -76,10 +76,14 @@ The configuration structure :cpp:type:`wifi_prov_mgr_config_t` has a few fields 
                     case WIFI_PROV_CRED_SUCCESS:
                         ESP_LOGI(TAG, "Provisioning successful");
                         break;
-                    case WIFI_PROV_END:
+                    case WIFI_PROV_END: {
                         /* De-initialize manager once provisioning is finished */
-                        wifi_prov_mgr_deinit();
+                        esp_err_t err = wifi_prov_mgr_deinit();
+                        if (err != ESP_OK) {
+                            ESP_LOGE(TAG, "Failed to de-initialize provisioning manager: %s", esp_err_to_name(err));
+                        }
                         break;
+                    }
                     default:
                         break;
                 }

@@ -78,7 +78,10 @@ Wi-Fi 配网
                         break;
                     case WIFI_PROV_END:
                         /*配网完成后，反初始化管理器。*/
-                        wifi_prov_mgr_deinit();
+                        esp_err_t err = wifi_prov_mgr_deinit();
+                        if (err != ESP_OK) {
+                            ESP_LOGE(TAG, "Failed to de-initialize provisioning manager: %s", esp_err_to_name(err));
+                        }
                         break;
                     default:
                         break;
@@ -172,7 +175,7 @@ Wi-Fi 配网
         {
             if (event_base == WIFI_PROV_EVENT && event_id == WIFI_PROV_END) {
                 /* 配网完成后反初始化管理器 */
-                wifi_prov_mgr_deinit();
+                ESP_ERROR_CHECK( wifi_prov_mgr_deinit() );
             }
         }
 
