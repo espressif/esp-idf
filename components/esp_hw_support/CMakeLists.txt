@@ -172,10 +172,16 @@ else()
     list(APPEND priv_requires "esp_system")
 endif()
 
-set(public_include_dirs "include" "include/soc" "include/soc/${target}"
+set(public_include_dirs "include" "include/soc"
                         "dma/include" "ldo/include" "debug_probe/include"
                         "mspi_timing_tuning/include" "mspi_timing_tuning/tuning_scheme_impl/include"
                         "power_supply/include")
+
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/include/soc/${target}")
+    list(APPEND public_include_dirs
+        "include/soc/${target}"
+    )
+endif()
 
 if(CONFIG_IDF_TARGET_ESP32H4)
     list(REMOVE_ITEM srcs
