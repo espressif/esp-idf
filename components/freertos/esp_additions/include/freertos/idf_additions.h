@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -627,32 +627,6 @@ void vStreamBufferGenericDeleteWithCaps( StreamBufferHandle_t xStreamBuffer,
     void vEventGroupDeleteWithCaps( EventGroupHandle_t xEventGroup );
 
 #endif /* configSUPPORT_STATIC_ALLOCATION == 1 */
-
-
-/* --------------------------------------------------- Deprecated ------------------------------------------------------
- * Deprecated IDF FreeRTOS API additions.
- * Todo: Remove in v6.0 (IDF-8499)
- * ------------------------------------------------------------------------------------------------------------------ */
-
-/** @cond */
-static inline __attribute__( ( always_inline, deprecated( "This function is deprecated and will be removed in ESP-IDF 6.0. Please use xTaskGetCoreID() instead." ) ) )
-BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
-{
-    return xTaskGetCoreID( xTask );
-}
-
-static inline __attribute__( ( always_inline, deprecated( "This function is deprecated and will be removed in ESP-IDF 6.0. Please use xTaskGetIdleTaskHandleForCore() instead." ) ) )
-TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID )
-{
-    return xTaskGetIdleTaskHandleForCore( xCoreID );
-}
-
-static inline __attribute__( ( always_inline, deprecated( "This function is deprecated and will be removed in ESP-IDF 6.0. Please use xTaskGetCurrentTaskHandleForCore() instead." ) ) )
-TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID )
-{
-    return xTaskGetCurrentTaskHandleForCore( xCoreID );
-}
-/** @endcond */
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus

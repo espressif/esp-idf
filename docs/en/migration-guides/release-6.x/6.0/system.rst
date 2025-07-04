@@ -56,3 +56,12 @@ App Trace
 ----------
 
 Removed extra data buffering option. `CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX` is no longer supported.
+
+FreeRTOS
+--------
+
+The following deprecated FreeRTOS functions have been removed in ESP-IDF v6.0:
+
+- :cpp:func:`xTaskGetAffinity` - Use :cpp:func:`xTaskGetCoreID` instead
+- :cpp:func:`xTaskGetIdleTaskHandleForCPU` - Use :cpp:func:`xTaskGetIdleTaskHandleForCore` instead
+- :cpp:func:`xTaskGetCurrentTaskHandleForCPU` - Use :cpp:func:`xTaskGetCurrentTaskHandleForCore` instead

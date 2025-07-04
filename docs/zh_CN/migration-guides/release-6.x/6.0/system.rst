@@ -36,3 +36,12 @@ Xtensa 特殊寄存器头文件已更新，使用新的命名约定。旧的 ``s
     if (causes & BIT(ESP_SLEEP_WAKEUP_TIMER)) {
         handle_timer_wakeup();
     }
+
+FreeRTOS
+--------
+
+以下已弃用的 FreeRTOS 函数已在 ESP-IDF v6.0 中移除：
+
+- :cpp:func:`xTaskGetAffinity` - 请使用 :cpp:func:`xTaskGetCoreID` 替代
+- :cpp:func:`xTaskGetIdleTaskHandleForCPU` - 请使用 :cpp:func:`xTaskGetIdleTaskHandleForCore` 替代
+- :cpp:func:`xTaskGetCurrentTaskHandleForCPU` - 请使用 :cpp:func:`xTaskGetCurrentTaskHandleForCore` 替代
