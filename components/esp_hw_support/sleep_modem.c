@@ -153,7 +153,7 @@ esp_err_t sleep_modem_wifi_modem_state_init(void)
 
     void *link = NULL;
     if (s_sleep_modem.wifi.phy_link == NULL) {
-        err = sleep_modem_state_phy_link_init(&link);
+        err = sleep_phy_link_init(&link);
         if (err == ESP_OK) {
             s_sleep_modem.wifi.phy_link = link;
             s_sleep_modem.wifi.flags = 0;
@@ -165,7 +165,7 @@ esp_err_t sleep_modem_wifi_modem_state_init(void)
 __attribute__((unused)) void sleep_modem_wifi_modem_state_deinit(void)
 {
     if (s_sleep_modem.wifi.phy_link) {
-        sleep_modem_state_phy_link_deinit(s_sleep_modem.wifi.phy_link);
+        sleep_phy_link_deinit(s_sleep_modem.wifi.phy_link);
         s_sleep_modem.wifi.phy_link = NULL;
         s_sleep_modem.wifi.flags = 0;
     }
@@ -173,9 +173,9 @@ __attribute__((unused)) void sleep_modem_wifi_modem_state_deinit(void)
 
 void IRAM_ATTR sleep_modem_wifi_do_phy_retention(bool restore, bool wifimac_link_is_sel)
 {
-    sleep_modem_state_phy_link_config(s_sleep_modem.wifi.phy_link, 1);
+    sleep_phy_link_config(s_sleep_modem.wifi.phy_link, 1);
     sleep_retention_do_phy_retention(!restore, wifimac_link_is_sel);
-    sleep_modem_state_phy_link_config(s_sleep_modem.wifi.phy_link, 0);
+    sleep_phy_link_config(s_sleep_modem.wifi.phy_link, 0);
     if (!restore) {
         s_sleep_modem.wifi.modem_state_phy_done = 1;
     }
