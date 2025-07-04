@@ -37,6 +37,13 @@ typedef struct {
 #define KEYBOARD_ENTER_MAIN_CHAR    '\r'
 /* When set to 1 pressing ENTER will be extending with LineFeed during serial debug output */
 #define KEYBOARD_ENTER_LF_EXTEND    1
+/* When set to 1, numbers entered from the numeric keypad while ALT is pressed will be escaped */
+#define KEYBOARD_ENTER_ALT_ESCAPE   1
+
+#if KEYBOARD_ENTER_ALT_ESCAPE
+static bool escaping = false;
+static unsigned char escap_hex = 0;
+#endif
 
 /**
  * @brief Scancode to ascii table
@@ -140,6 +147,25 @@ static inline bool hid_keyboard_is_modifier_shift(uint8_t modifier)
     return false;
 }
 
+#if KEYBOARD_ENTER_ALT_ESCAPE
+/**
+ * @brief HID Keyboard modifier verification for capitalization application (right or left alt)
+ *
+ * @param[in] modifier
+ * @return true  Modifier was pressed (left or right alt)
+ * @return false Modifier was not pressed (left or right alt)
+ *
+ */
+static inline bool hid_keyboard_is_modifier_alt(uint8_t modifier)
+{
+    if (((modifier & HID_MODIFIER_LALT) == HID_MODIFIER_LALT) ||
+            ((modifier & HID_MODIFIER_RALT) == HID_MODIFIER_RALT)) {
+        return true;
+    }
+    return false;
+}
+#endif
+
 /**
  * @brief HID Keyboard get char symbol from key code
  *
@@ -155,6 +181,18 @@ static inline bool hid_keyboard_get_char(uint8_t modifier,
                                          unsigned char *key_char)
 {
     uint8_t mod = (hid_keyboard_is_modifier_shift(modifier)) ? 1 : 0;
+
+#if KEYBOARD_ENTER_ALT_ESCAPE
+    if (escaping) {
+        if ((key_code >= HID_KBD_USAGE_KPD1) && (key_code <= HID_KBD_USAGE_KPD0)) {
+            if (key_code == HID_KBD_USAGE_KPD0) {
+                key_code = HID_KBD_USAGE_KPD1 - 1;
+            }
+            escap_hex = escap_hex * 10 + (key_code - (HID_KBD_USAGE_KPD1 - 1));
+        }
+        return false;
+    }
+#endif
 
     if ((key_code >= HID_KBD_USAGE_A) && (key_code <= HID_KBD_USAGE_QUESTION)) {
         *key_char = keycode2ascii[key_code][mod];
@@ -232,6 +270,20 @@ static void usbh_hid_keyboard_report_callback(void *arg, int nbytes)
     }
     static uint8_t prev_keys[sizeof(kb_report->key)] = { 0 };
     key_event_t key_event;
+
+#if KEYBOARD_ENTER_ALT_ESCAPE
+    if (hid_keyboard_is_modifier_alt(kb_report->modifier)) {
+        if (escaping == false) {
+            escaping = true;
+            escap_hex = 0;
+        }
+    } else {
+        if (escaping && escap_hex > 0) {
+            escaping = false;
+            hid_keyboard_print_char(escap_hex);
+        }
+    }
+#endif
 
     for (int i = 0; i < sizeof(kb_report->key); i++) {
 
