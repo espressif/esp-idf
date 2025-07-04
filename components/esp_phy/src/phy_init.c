@@ -68,7 +68,7 @@ extern wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb;
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
 extern void pm_mac_modem_clear_rf_power_state(void);
 extern bool pm_mac_modem_rf_already_enabled(void);
-#if SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC
+#if SOC_PM_PAU_REGDMA_LINK_IDX_PHY
 extern bool pm_get_wifimac_regdma_link_selection(void);
 #endif
 #endif
@@ -345,7 +345,7 @@ void esp_phy_enable(esp_phy_modem_t modem)
             bool wifimac_link_is_sel = false;
             if (!pm_mac_modem_rf_already_enabled()) {
                 if (sleep_modem_wifi_modem_state_enabled() && sleep_modem_wifi_modem_link_done()) {
-#if SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC && SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
+#if SOC_PM_PAU_REGDMA_LINK_IDX_PHY && SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
 /*
  * A race exists between SoC wakeup and modem state sleep. After modem initiates sleep,
  * SoC may wake up before REGDMA completes RF close, leaving mac_modem_sleep_flag uncleared
@@ -425,7 +425,7 @@ void esp_phy_disable(esp_phy_modem_t modem)
         pm_mac_modem_clear_rf_power_state();
         if (sleep_modem_wifi_modem_state_enabled()) {
             bool wifimac_link_is_sel = false;
-#if SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC && SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
+#if SOC_PM_PAU_REGDMA_LINK_IDX_PHY && SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
             wifimac_link_is_sel = pm_get_wifimac_regdma_link_selection();
 #endif
             sleep_modem_wifi_do_phy_retention(false, wifimac_link_is_sel);
