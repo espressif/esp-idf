@@ -40,8 +40,14 @@ Xtensa 特殊寄存器头文件已更新，使用新的命名约定。旧的 ``s
 FreeRTOS
 --------
 
+**已移除的函数**
+
 以下已弃用的 FreeRTOS 函数已在 ESP-IDF v6.0 中移除：
 
 - :cpp:func:`xTaskGetAffinity` - 请使用 :cpp:func:`xTaskGetCoreID` 替代
 - :cpp:func:`xTaskGetIdleTaskHandleForCPU` - 请使用 :cpp:func:`xTaskGetIdleTaskHandleForCore` 替代
 - :cpp:func:`xTaskGetCurrentTaskHandleForCPU` - 请使用 :cpp:func:`xTaskGetCurrentTaskHandleForCore` 替代
+
+**已弃用的函数**
+
+函数 :cpp:func:`pxTaskGetStackStart` 已被弃用。请使用 :cpp:func:`xTaskGetStackStart` 替代以提高类型安全性。

@@ -547,15 +547,18 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
 #endif /* ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
 /*-----------------------------------------------------------*/
 
-uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
+StackType_t * xTaskGetStackStart( TaskHandle_t xTask )
 {
     TCB_t * pxTCB;
-    uint8_t * uxReturn;
 
     pxTCB = prvGetTCBFromHandle( xTask );
-    uxReturn = ( uint8_t * ) pxTCB->pxStack;
+    return pxTCB->pxStack;
+}
+/*----------------------------------------------------------*/
 
-    return uxReturn;
+uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
+{
+    return (uint8_t *)xTaskGetStackStart( xTask );
 }
 /*----------------------------------------------------------*/
 

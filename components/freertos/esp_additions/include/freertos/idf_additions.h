@@ -195,14 +195,12 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask );
  * Returns the lowest stack memory address, regardless of whether the stack
  * grows up or down.
  *
- * [refactor-todo] Change return type to StackType_t (IDF-8158)
- *
  * @param xTask Handle of the task associated with the stack returned.
  * Set xTask to NULL to return the stack of the calling task.
  *
  * @return A pointer to the start of the stack.
  */
-uint8_t * pxTaskGetStackStart( TaskHandle_t xTask );
+StackType_t * xTaskGetStackStart( TaskHandle_t xTask );
 
 /* --------------------------------------------- TLSP Deletion Callbacks -------------------------------------------- */
 
@@ -627,6 +625,16 @@ void vStreamBufferGenericDeleteWithCaps( StreamBufferHandle_t xStreamBuffer,
     void vEventGroupDeleteWithCaps( EventGroupHandle_t xEventGroup );
 
 #endif /* configSUPPORT_STATIC_ALLOCATION == 1 */
+
+/* --------------------------------------------------- Deprecated ------------------------------------------------------
+ * Deprecated IDF FreeRTOS API additions.
+ * Todo: Remove in v7.0 (IDF-13569)
+ * ------------------------------------------------------------------------------------------------------------------ */
+/** @cond */
+
+uint8_t * pxTaskGetStackStart( TaskHandle_t xTask ) __attribute__((deprecated("Use xTaskGetStackStart() for improved type safety")));
+
+/** @endcond */
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus
