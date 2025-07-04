@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 set(ESP_TEE_VERSION_MAJOR 1)
 set(ESP_TEE_VERSION_MINOR 0)

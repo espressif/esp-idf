@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 # Executes a espefuse.py command and returns a cleaned log
 function(espefuse_cmd cmd output_log)

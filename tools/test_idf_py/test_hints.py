@@ -64,7 +64,7 @@ class TestHintModuleComponentRequirements(unittest.TestCase):
         self.projectdir = self.tmpdirpath / 'project'
         self.projectdir.mkdir(parents=True)
         (self.projectdir / 'CMakeLists.txt').write_text(
-            'cmake_minimum_required(VERSION 3.16)\ninclude($ENV{IDF_PATH}/tools/cmake/project.cmake)\nproject(foo)'
+            'cmake_minimum_required(VERSION 3.22)\ninclude($ENV{IDF_PATH}/tools/cmake/project.cmake)\nproject(foo)'
         )
 
         maindir = self.projectdir / 'main'
@@ -138,7 +138,7 @@ class TestNestedModuleComponentRequirements(unittest.TestCase):
         self.projectdir = maindir / 'project'
         self.projectdir.mkdir(parents=True)
         (self.projectdir / 'CMakeLists.txt').write_text(
-            'cmake_minimum_required(VERSION 3.16)\n'
+            'cmake_minimum_required(VERSION 3.22)\n'
             f'set(EXTRA_COMPONENT_DIRS "{components.as_posix()}")\n'
             'set(COMPONENTS main)\n'
             'include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n'
@@ -175,7 +175,7 @@ class TestTrimmedModuleComponentRequirements(unittest.TestCase):
         self.projectdir = self.tmpdirpath / 'project'
         self.projectdir.mkdir(parents=True)
         (self.projectdir / 'CMakeLists.txt').write_text(
-            'cmake_minimum_required(VERSION 3.16)\n'
+            'cmake_minimum_required(VERSION 3.22)\n'
             'set(COMPONENTS main)\n'
             'include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n'
             'project(foo)'

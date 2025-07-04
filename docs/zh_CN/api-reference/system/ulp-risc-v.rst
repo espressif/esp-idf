@@ -71,7 +71,7 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
 
 .. code-block:: cmake
 
-    cmake_minimum_required(VERSION 3.16)
+    cmake_minimum_required(VERSION 3.22)
 
     # 项目/目标名称由主项目传递，允许 IDF 依赖此目标
     # 将二进制文件嵌入到主应用程序中

@@ -68,7 +68,7 @@ ULP LP 内核代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
 .. code-block:: cmake
 
-    cmake_minimum_required(VERSION 3.16)
+    cmake_minimum_required(VERSION 3.22)
 
     # 项目/目标名称由主项目传递，允许 IDF 依赖此目标
     # 将二进制文件嵌入到主应用程序中

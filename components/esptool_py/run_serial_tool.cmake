@@ -4,7 +4,7 @@
 #
 # It is recommended to NOT USE this CMake script if you have the option of
 # running the tool directly. This script exists only for use inside CMake builds.
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 if(NOT IDF_PATH)
     message(FATAL_ERROR "IDF_PATH not set.")

@@ -37,7 +37,7 @@ test_cli_installer_win:
   script:
     # Tools must be downloaded for testing
     #                                                                     cmake@version that is supported
-    - python ${IDF_PATH}\tools\idf_tools.py download required qemu-riscv32 qemu-xtensa cmake cmake@3.16.3
+    - python ${IDF_PATH}\tools\idf_tools.py download required qemu-riscv32 qemu-xtensa cmake cmake@3.22.1
     - cd ${IDF_PATH}\tools\test_idf_tools
     - python -m pip install jsonschema
     - python .\test_idf_tools.py
