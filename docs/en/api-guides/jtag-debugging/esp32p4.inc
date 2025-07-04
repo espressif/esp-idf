@@ -107,7 +107,7 @@
       - ESP32-P4 target configuration file. Can be used together with one of the ``interface/`` configuration files.
     * - ``interface/esp_usb_jtag.cfg``
       - JTAG adapter configuration file for ESP32-P4.
-    * - ``interface/ftdi/esp32p4_ftdi.cfg``
+    * - ``interface/ftdi/esp_ftdi.cfg``
       - JTAG adapter configuration file for ESP-Prog boards.
 
 ---
