@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,25 +80,25 @@ void sleep_modem_mac_bb_power_up_prepare(void);
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 
 /**
- * @brief The retention action in the modem state of WiFi PHY module
+ * @brief The retention action in the modem state of PHY module
  *
  * @param restore  true for restore the PHY context, false for backup the PHY context
  */
-void sleep_modem_wifi_do_phy_retention(bool restore);
+void sleep_modem_do_phy_retention(bool restore);
 
 /**
  * @brief Get WiFi modem state
  *
  * @return true or false for WiFi modem state is enabled or disabled
  */
-bool sleep_modem_wifi_modem_state_enabled(void);
+bool sleep_modem_modem_state_enabled(void);
 
 /**
  * @brief Get WiFi modem link done state
  *
  * @return true or false for WiFi modem link can be used to enable RF by REGDMA or can not be used
  */
-bool sleep_modem_wifi_modem_link_done(void);
+bool sleep_modem_modem_link_done(void);
 
 #endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
 
@@ -200,21 +200,21 @@ void esp_pm_unregister_light_sleep_default_params_config_callback(void);
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 /**
- * @brief Init Wi-Fi modem state.
+ * @brief Init phy link.
  *
- * This function init wifi modem state.
+ * This function init phy link.
   * @return
   *   - ESP_OK on success
   *   - ESP_ERR_NO_MEM if no memory for link
  */
-esp_err_t sleep_modem_wifi_modem_state_init(void);
+esp_err_t sleep_modem_phy_init(void);
 
 /**
- * @brief  Deinit Wi-Fi modem state.
+ * @brief  Deinit phy link.
  *
- * This function deinit wifi modem state.
+ * This function deinit phy link.
  */
-void sleep_modem_wifi_modem_state_deinit(void);
+void sleep_modem_phy_deinit(void);
 
 /**
  * @brief Function to check Wi-Fi modem state to skip light sleep.
