@@ -319,7 +319,7 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
     key_mgr_hal_read_public_info(key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     ESP_LOG_BUFFER_HEX_LEVEL("KEY_RECOVERY_INFO", key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE, ESP_LOG_DEBUG);
 
-    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1 || config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
+    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
         if (!key_mgr_hal_is_key_deployment_valid(config->key_config->key_type)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
             heap_caps_free(key_recovery_info);
@@ -649,7 +649,7 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
 
     ESP_LOGD(TAG, "HUK deployed is valid");
 
-    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1 || config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
+    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
         if (!key_mgr_hal_is_key_deployment_valid(config->key_config->key_type)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
             heap_caps_free(key_recovery_info);
@@ -814,7 +814,7 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
     key_mgr_hal_read_public_info(key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     ESP_LOG_BUFFER_HEX_LEVEL("KEY_MGR KEY INFO", key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE, ESP_LOG_DEBUG);
 
-    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1 || config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
+    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
         if (!key_mgr_hal_is_key_deployment_valid(config->key_config->key_type)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
             heap_caps_free(key_recovery_info);
