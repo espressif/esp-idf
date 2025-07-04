@@ -96,7 +96,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 
 static void initialise_wifi(void)
 {
-    esp_eap_method_t eap_methods = ESP_EAP_TYPE_NONE;
+    esp_eap_method_t eap_methods = ESP_EAP_TYPE_ALL;
 #ifdef SERVER_CERT_VALIDATION_ENABLED
     unsigned int ca_pem_bytes = ca_pem_end - ca_pem_start;
 #endif /* SERVER_CERT_VALIDATION_ENABLED */

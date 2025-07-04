@@ -37,7 +37,8 @@ typedef enum {
     ESP_EAP_TYPE_TLS     = (1 << 0), /*!< EAP-TLS method */
     ESP_EAP_TYPE_TTLS    = (1 << 1), /*!< EAP-TTLS method */
     ESP_EAP_TYPE_PEAP    = (1 << 2), /*!< EAP-PEAP method */
-    ESP_EAP_TYPE_FAST    = (1 << 3)  /*!< EAP-FAST method */
+    ESP_EAP_TYPE_FAST    = (1 << 3),  /*!< EAP-FAST method */
+    ESP_EAP_TYPE_ALL     = (ESP_EAP_TYPE_TLS | ESP_EAP_TYPE_TTLS | ESP_EAP_TYPE_PEAP | ESP_EAP_TYPE_FAST), /*!< All supported EAP methods */
 } esp_eap_method_t;
 
 /**
@@ -370,8 +371,7 @@ esp_err_t esp_eap_client_set_domain_name(const char *domain_name);
  *     - ESP_ERR_INVALID_ARG if none of the methods are valid
  *
  * @note
- * If this API is not called or `EAP_TYPE_NONE` is passed, EAP methods will be dynamically
- * selected at runtime based on configuration from other `esp_eap_client_*` APIs.
+ * If this API is not called, all supported EAP methods will be considered.
  * If one or more methods are set using this API, only the specified methods will be considered.
  */
 esp_err_t esp_eap_client_set_eap_methods(esp_eap_method_t methods);
