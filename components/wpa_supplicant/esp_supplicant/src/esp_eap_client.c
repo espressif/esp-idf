@@ -820,8 +820,6 @@ static esp_err_t esp_client_enable_fn(void *arg)
     }
 #endif
     g_wpa_config_changed = true;
-    /* Enable opportunistic key caching support */
-    esp_wifi_set_okc_support(true);
     return ESP_OK;
 }
 
@@ -858,9 +856,11 @@ esp_err_t esp_wifi_sta_enterprise_enable(void)
 
 static void eap_globals_reset(void)
 {
+    os_free(g_wpa_anonymous_identity);
     g_wpa_anonymous_identity = NULL;
     g_wpa_anonymous_identity_len = 0;
 
+    os_free(g_wpa_username);
     g_wpa_username = NULL;
     g_wpa_username_len = 0;
 
@@ -876,15 +876,19 @@ static void eap_globals_reset(void)
     g_wpa_ca_cert = NULL;
     g_wpa_ca_cert_len = 0;
 
+    os_free(g_wpa_password);
     g_wpa_password = NULL;
     g_wpa_password_len = 0;
 
+    os_free(g_wpa_new_password);
     g_wpa_new_password = NULL;
     g_wpa_new_password_len = 0;
 
     g_wpa_ttls_phase2_type = NULL;
+    os_free(g_wpa_phase1_options);
     g_wpa_phase1_options = NULL;
 
+    os_free(g_wpa_pac_file);
     g_wpa_pac_file = NULL;
     g_wpa_pac_file_len = 0;
 
@@ -896,9 +900,10 @@ static void eap_globals_reset(void)
 #endif
 
 #ifndef CONFIG_TLS_INTERNAL_CLIENT
+    os_free(g_wpa_domain_match);
     g_wpa_domain_match = NULL;
 #endif
-    g_eap_method_mask = 0;
+    g_eap_method_mask = ESP_EAP_TYPE_ALL;
 }
 
 static esp_err_t eap_client_disable_fn(void *param)
@@ -1313,9 +1318,8 @@ esp_err_t esp_eap_client_set_domain_name(const char *domain_name)
 
 esp_err_t esp_eap_client_set_eap_methods(esp_eap_method_t methods)
 {
-    const esp_eap_method_t supported_methods = EAP_TYPE_TLS | EAP_TYPE_TTLS | EAP_TYPE_PEAP | EAP_TYPE_FAST;
 
-    if ((methods & ~supported_methods) != 0) {
+    if ((methods & ~ESP_EAP_TYPE_ALL) != 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
