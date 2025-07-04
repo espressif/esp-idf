@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,10 @@
 
 ESP_LOG_ATTR_TAG(TAG, "sleep");
 
+static DRAM_ATTR struct{
+    void *skip_link[4];
+} s_phy_skip_links;
+
 #if SOC_PM_PAU_REGDMA_LINK_IDX_PHY
 
 typedef struct {
@@ -48,6 +52,9 @@ typedef struct {
 static esp_err_t sleep_phy_retention_init(void *arg)
 {
     #define PHY_ENTRY() (BIT(SOC_PM_PAU_REGDMA_LINK_IDX_PHY))
+    const int skip_idx_list[] = {
+        REGDMA_PHY_LINK(0x0b), REGDMA_PHY_LINK(0x15), REGDMA_PHY_LINK(0x16), REGDMA_PHY_LINK(0x17)
+    };
 
     static sleep_retention_entries_config_t phy_modem_config[] = {
         [0]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x00), MODEM_LPCON_CLK_CONF_REG,         MODEM_LPCON_CLK_I2C_MST_EN, MODEM_LPCON_CLK_I2C_MST_EN_M, 1, 0), .owner = PHY_ENTRY() }, /* I2C MST enable */
@@ -92,6 +99,10 @@ static esp_err_t sleep_phy_retention_init(void *arg)
     phy_modem_config[15].config.write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
     esp_err_t err = sleep_retention_entries_create(phy_modem_config, ARRAY_SIZE(phy_modem_config), 7, SLEEP_RETENTION_MODULE_MODEM_PHY);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate modem phy link");
+    for (int i = 0; i < ARRAY_SIZE(skip_idx_list); i++) {
+        s_phy_skip_links.skip_link[i] = sleep_retention_find_link_by_id(skip_idx_list[i]);
+        assert(s_phy_skip_links.skip_link[i] != NULL);
+    }
     return ESP_OK;
 }
 #endif
@@ -151,6 +162,13 @@ esp_err_t sleep_phy_link_deinit(void *link_head)
     }
 #endif
     return err;
+}
+
+void sleep_phy_skip_wifi_reg(bool skip)
+{
+    for (int i = 0; i < ARRAY_SIZE(s_phy_skip_links.skip_link); i++) {
+        regdma_link_set_skip_flag(s_phy_skip_links.skip_link[i], skip, skip);
+    }
 }
 
 #endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */

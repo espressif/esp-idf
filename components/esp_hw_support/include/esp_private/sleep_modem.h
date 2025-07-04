@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -254,6 +254,13 @@ esp_err_t sleep_phy_link_deinit(void *link_head);
  * @param flags A bitmap to indicate the PHY link regdma description configuration flag
  */
 void sleep_phy_link_config(void *link_context, uint32_t flags);
+
+/**
+ * @brief Function to skip the retention entries involving Wi-Fi registers
+ *
+ * @param skip
+ */
+void sleep_phy_skip_wifi_reg(bool skip);
 #endif
 
 #ifdef __cplusplus

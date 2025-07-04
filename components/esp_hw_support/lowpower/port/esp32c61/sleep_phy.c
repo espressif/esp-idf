@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,10 +38,17 @@ typedef struct {
 #define DESC_IDX_I2C_MST_DIS (1)
     void *regdma_desc[DESC_IDX_I2C_MST_DIS + 1];
 } sleep_phy_link_context_t;
+static DRAM_ATTR struct{
+    void *skip_link[8];
+} s_phy_skip_links;
 
 esp_err_t sleep_phy_link_init(void **link_head)
 {
     esp_err_t err = ESP_OK;
+    const int skip_idx_list[] = {
+        REGDMA_PHY_LINK(0x0f), REGDMA_PHY_LINK(0x1b), REGDMA_PHY_LINK(0x1c), REGDMA_PHY_LINK(0x1d), REGDMA_PHY_LINK(0x1e),
+        REGDMA_PHY_LINK(0x1f), REGDMA_PHY_LINK(0x20), REGDMA_PHY_LINK(0x21),
+    };
 
 #if SOC_PM_PAU_REGDMA_LINK_MODEM
     static regdma_link_config_t phy_modem_config[] = {
@@ -99,9 +106,17 @@ esp_err_t sleep_phy_link_init(void **link_head)
     phy_modem_config[19].write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
 
     void *link = NULL;
+    uint8_t skip_idx = 0;
     for (int i = ARRAY_SIZE(phy_modem_config) - 1; (err == ESP_OK) && (i >= 0); i--) {
         void *next = regdma_link_init_safe(&phy_modem_config[i], false, 0, link);
         if (next) {
+            for (int idx = 0; idx < ARRAY_SIZE(skip_idx_list); idx ++) {
+                if (skip_idx_list[idx] == phy_modem_config[i].id) {
+                    s_phy_skip_links.skip_link[skip_idx] = next;
+                    skip_idx ++;
+                    break;
+                }
+            }
             link = next;
         } else {
             regdma_link_destroy(link, 0);
@@ -150,6 +165,13 @@ esp_err_t sleep_phy_link_deinit(void *link_head)
     regdma_link_destroy(((sleep_modem_state_phy_link_context_t *)link_head)->link_head, 0);
 #endif
     return ESP_OK;
+}
+
+void sleep_phy_skip_wifi_reg(bool skip)
+{
+    for (int i = 0; i < ARRAY_SIZE(s_phy_skip_links.skip_link); i++) {
+        regdma_link_set_skip_flag(s_phy_skip_links.skip_link[i], skip, skip);
+    }
 }
 
 #endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
