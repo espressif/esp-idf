@@ -85,6 +85,7 @@ static esp_err_t s_isp_dvp_start(esp_cam_ctlr_handle_t handle);
 static esp_err_t s_isp_dvp_stop(esp_cam_ctlr_handle_t handle);
 static esp_err_t s_isp_dvp_receive(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, uint32_t timeout_ms);
 static bool s_dvp_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_gdma_trans_done_event_data_t *event_data, void *user_data);
+static void *s_isp_dvp_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_t buf_caps);
 
 esp_err_t esp_cam_new_isp_dvp_ctlr(isp_proc_handle_t isp_proc, const esp_cam_ctlr_isp_dvp_cfg_t *ctlr_config, esp_cam_ctlr_handle_t *ret_handle)
 {
@@ -200,6 +201,7 @@ esp_err_t esp_cam_new_isp_dvp_ctlr(isp_proc_handle_t isp_proc, const esp_cam_ctl
     cam_ctlr->register_event_callbacks = s_isp_dvp_register_event_callbacks;
     cam_ctlr->get_internal_buffer = s_isp_dvp_get_frame_buffer;
     cam_ctlr->get_buffer_len = s_isp_dvp_get_frame_buffer_length;
+    cam_ctlr->alloc_buffer = s_isp_dvp_alloc_buffer;
     *ret_handle = cam_ctlr;
 
     return ESP_OK;
@@ -593,4 +595,24 @@ static esp_err_t s_isp_declaim_dvp_controller(isp_dvp_controller_t *dvp_ctlr)
     _lock_release(&s_ctx.mutex);
 
     return ESP_OK;
+}
+
+static void *s_isp_dvp_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_t buf_caps)
+{
+    isp_dvp_controller_t *dvp_ctlr = __containerof(handle, isp_dvp_controller_t, base);
+
+    if (!dvp_ctlr) {
+        ESP_LOGE(TAG, "invalid argument: handle is null");
+        return NULL;
+    }
+
+    void *buffer = heap_caps_calloc(1, size, buf_caps);
+    if (!buffer) {
+        ESP_LOGE(TAG, "failed to allocate buffer");
+        return NULL;
+    }
+
+    ESP_LOGD(TAG, "Allocated camera buffer: %p, size: %zu", buffer, size);
+
+    return buffer;
 }

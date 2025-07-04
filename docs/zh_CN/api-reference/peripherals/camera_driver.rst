@@ -112,6 +112,8 @@
 
     如果指定了 :cpp:type:`esp_cam_ctlr_dvp_config_t` 中的配置，就可以调用 :cpp:func:`esp_cam_new_dvp_ctlr` 来分配和初始化 DVP 摄像头控制器句柄。如果函数运行正确，将返回一个 DVP 摄像头控制器句柄。请参考以下代码。
 
+    在调用 :cpp:func:`esp_cam_new_dvp_ctlr` 之后，需要分配符合对齐约束的摄像头缓冲区，或调用 :cpp:func:`esp_cam_ctlr_alloc_buffer` 来自动分配。
+
     .. code:: c
 
         esp_cam_ctlr_handle_t cam_handle = NULL;

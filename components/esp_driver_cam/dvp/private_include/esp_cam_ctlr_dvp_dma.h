@@ -29,6 +29,8 @@ typedef struct esp_cam_ctlr_dvp_dma {
     esp_cam_ctlr_dvp_dma_desc_t *desc;              /*!< DVP DMA description buffer */
     size_t desc_count;                              /*!< DVP DMA description count */
     size_t desc_size;                               /*!< DVP DMA description buffer size in byte */
+    size_t int_mem_align;                           /*!< DVP DMA internal memory alignment */
+    size_t ext_mem_align;                           /*!< DVP DMA external memory alignment */
 } esp_cam_ctlr_dvp_dma_t;
 
 /**

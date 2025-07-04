@@ -105,9 +105,8 @@ esp_err_t esp_cam_ctlr_dvp_dma_init(esp_cam_ctlr_dvp_dma_t *dma, uint32_t burst_
         .access_ext_mem = true,
     };
     ESP_GOTO_ON_ERROR(gdma_config_transfer(dma->dma_chan, &transfer_config), fail1, TAG, "set trans ability failed");
-    size_t int_mem_align = 0;
-    size_t ext_mem_align = 0;
-    gdma_get_alignment_constraints(dma->dma_chan, &int_mem_align, &ext_mem_align);
+
+    gdma_get_alignment_constraints(dma->dma_chan, &dma->int_mem_align, &dma->ext_mem_align);
 
     dma->desc_count = size / ESP_CAM_CTLR_DVP_DMA_DESC_BUFFER_MAX_SIZE;
     if (size % ESP_CAM_CTLR_DVP_DMA_DESC_BUFFER_MAX_SIZE) {
