@@ -1573,3 +1573,10 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
 
 #endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
 #endif // (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)
+
+#if CONFIG_BT_LE_MEM_CHECK_ENABLED
+void ble_memory_count_limit_set(uint16_t count_limit)
+{
+    bt_osi_mem_count_limit_set(count_limit);
+}
+#endif // CONFIG_BT_LE_MEM_CHECK_ENABLED
