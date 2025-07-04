@@ -565,75 +565,75 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "cdd7fb352605cee3ae53b0e18b5929b642900e33d6b0173e19f6d4f2067ebf16",
-            "size": 53635506,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-linux-x86_64.tar.gz"
+            "sha256": "585ae9e013107bc8e7c7c9ce872cbdcbdff569e675b07ef57aacfb88c886faac",
+            "size": 55509479,
+            "url": "https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-linux-x86_64.tar.gz"
           },
           "linux-arm64": {
-            "sha256": "d18f50f01b001303d21f53c6c16ff12ee3aa45df5da1899c2fe95be7426aa026",
-            "size": 54889935,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-linux-aarch64.tar.gz"
+            "sha256": "391da1544ef50ac31300841caaf11db4de3976cdc4468643272e44b3f4644713",
+            "size": 56811927,
+            "url": "https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-linux-aarch64.tar.gz"
           },
           "linux-armel": {
-            "sha256": "446650c69ea74817a770f96446c162bb7ad24ffecaacb35fcd4845ec7d3c9099",
-            "size": 17035042,
-            "url": "https://dl.espressif.com/dl/cmake/cmake-3.30.2-Linux-armv7l.tar.gz"
+            "sha256": "ee80bd9c5a310928eb89c9d28c6867a497c9b146e271ede8383e31426b930e15",
+            "size": 24050923,
+            "url": "https://dl.espressif.com/dl/cmake/cmake-4.0.3-Linux-armv7l.tar.gz"
           },
           "linux-armhf": {
-            "sha256": "446650c69ea74817a770f96446c162bb7ad24ffecaacb35fcd4845ec7d3c9099",
-            "size": 17035042,
-            "url": "https://dl.espressif.com/dl/cmake/cmake-3.30.2-Linux-armv7l.tar.gz"
+            "sha256": "ee80bd9c5a310928eb89c9d28c6867a497c9b146e271ede8383e31426b930e15",
+            "size": 24050923,
+            "url": "https://dl.espressif.com/dl/cmake/cmake-4.0.3-Linux-armv7l.tar.gz"
           },
           "macos": {
-            "sha256": "c6fdda745f9ce69bca048e91955c7d043ba905d6388a62e0ff52b681ac17183c",
-            "size": 79199037,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-macos-universal.tar.gz"
+            "sha256": "4e85de4daf1c3e82d7dc6b8ba5683972944b466343aeb9c327a742437bb3ce9a",
+            "size": 80058792,
+            "url": "https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-macos-universal.tar.gz"
           },
           "macos-arm64": {
-            "sha256": "c6fdda745f9ce69bca048e91955c7d043ba905d6388a62e0ff52b681ac17183c",
-            "size": 79199037,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-macos-universal.tar.gz"
+            "sha256": "4e85de4daf1c3e82d7dc6b8ba5683972944b466343aeb9c327a742437bb3ce9a",
+            "size": 80058792,
+            "url": "https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-macos-universal.tar.gz"
           },
-          "name": "3.30.2",
+          "name": "4.0.3",
           "status": "recommended",
           "win32": {
-            "sha256": "48bf4b3dc2d668c578e0884cac7878e146b036ca6b5ce4f8b5572f861b004c25",
-            "size": 45404613,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-windows-x86_64.zip"
+            "sha256": "b59a31dfbfa376a4aaea9ff560ff2b29f78ee5f9fb15447fc71ae7bf9fea9379",
+            "size": 47717299,
+            "url": "https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-windows-x86_64.zip"
           },
           "win64": {
-            "sha256": "48bf4b3dc2d668c578e0884cac7878e146b036ca6b5ce4f8b5572f861b004c25",
-            "size": 45404613,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-windows-x86_64.zip"
+            "sha256": "b59a31dfbfa376a4aaea9ff560ff2b29f78ee5f9fb15447fc71ae7bf9fea9379",
+            "size": 47717299,
+            "url": "https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-windows-x86_64.zip"
           }
         },
         {
           "linux-amd64": {
-            "sha256": "3e15dadfec8d54eda39c2f266fc1e571c1b88bf32f9d221c8a039b07234206fa",
-            "size": 39509848,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.3/cmake-3.16.3-Linux-x86_64.tar.gz"
+            "sha256": "73565c72355c6652e9db149249af36bcab44d9d478c5546fd926e69ad6b43640",
+            "size": 45345904,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-linux-x86_64.tar.gz"
           },
           "macos": {
-            "sha256": "655d6ed41a1c276676ca6a1ec381c179d394420c489f2d39b3cf2ef26bfae799",
-            "size": 35799298,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.3/cmake-3.16.3-Darwin-x86_64.tar.gz"
+            "sha256": "9ba46ce69d524f5bcdf98076a6b01f727604fb31cf9005ec03dea1cf16da9514",
+            "size": 70155147,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-macos-universal.tar.gz"
           },
           "macos-arm64": {
-            "sha256": "655d6ed41a1c276676ca6a1ec381c179d394420c489f2d39b3cf2ef26bfae799",
-            "size": 35799298,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.3/cmake-3.16.3-Darwin-x86_64.tar.gz"
+            "sha256": "9ba46ce69d524f5bcdf98076a6b01f727604fb31cf9005ec03dea1cf16da9514",
+            "size": 70155147,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-macos-universal.tar.gz"
           },
-          "name": "3.16.3",
+          "name": "3.22.1",
           "status": "supported",
           "win32": {
-            "sha256": "4b1370b3252acda0850d26c75e9bc6b8e019daaa7978a19f5d8dc008450d3548",
-            "size": 32807681,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.3/cmake-3.16.3-win64-x64.zip"
+            "sha256": "35fbbb7d9ffa491834bbc79cdfefc6c360088a3c9bf55c29d111a5afa04cdca3",
+            "size": 38552249,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-windows-x86_64.zip"
           },
           "win64": {
-            "sha256": "4b1370b3252acda0850d26c75e9bc6b8e019daaa7978a19f5d8dc008450d3548",
-            "size": 32807681,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.3/cmake-3.16.3-win64-x64.zip"
+            "sha256": "35fbbb7d9ffa491834bbc79cdfefc6c360088a3c9bf55c29d111a5afa04cdca3",
+            "size": 38552249,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-windows-x86_64.zip"
           }
         }
       ]
