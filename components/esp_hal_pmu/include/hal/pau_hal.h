@@ -37,7 +37,7 @@ typedef struct {
 void pau_hal_set_regdma_entry_link_addr(pau_hal_context_t *hal, pau_regdma_link_addr_t *link_addr);
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
-#if SOC_PM_PAU_REGDMA_LINK_WIFIMAC
+#if SOC_PM_PAU_REGDMA_LINK_MODEM
 /**
  * @brief Set regdma modem link address
  *

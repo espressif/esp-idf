@@ -42,14 +42,14 @@ typedef struct {
 #define DESC_IDX_I2C_MST_SEL (1)
 #define DESC_IDX_I2C_MST_DIS (2)
     void *regdma_desc[DESC_IDX_I2C_MST_DIS + 1];
-} sleep_modem_state_phy_link_context_t;
+} sleep_phy_link_context_t;
 
-esp_err_t sleep_modem_state_phy_link_init(void **link_head)
+esp_err_t sleep_phy_link_init(void **link_head)
 {
     esp_err_t err = ESP_OK;
 
-#if SOC_PM_PAU_REGDMA_LINK_WIFIMAC
-    static const regdma_link_config_t wifi_modem_config_template[] = {
+#if SOC_PM_PAU_REGDMA_LINK_MODEM
+    static const regdma_link_config_t phy_modem_config_template[] = {
         [0] = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_FE_LINK(0), MODEM_FE_DATA_BASE, MODEM_FE_DATA_BASE, 41, 0, 0),
         [1] = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_FE_LINK(1), MODEM_FE_CTRL_BASE, MODEM_FE_CTRL_BASE, 87, 0, 0),
 
@@ -101,19 +101,19 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
         [37] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x23), PMU_SLP_WAKEUP_CNTL7_REG,         0x200000,                  0xffff0000, 1, 0),
         [38] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x24), PMU_SLP_WAKEUP_CNTL7_REG,         0x9730000,                 0xffff0000, 0, 1)
     };
-    regdma_link_config_t *wifi_modem_config = malloc(sizeof(wifi_modem_config_template));
-    if (wifi_modem_config == NULL) {
+    regdma_link_config_t *phy_modem_config = malloc(sizeof(phy_modem_config_template));
+    if (phy_modem_config == NULL) {
         return ESP_ERR_NO_MEM;
     }
-    memcpy(wifi_modem_config, wifi_modem_config_template, sizeof(wifi_modem_config_template));
+    memcpy(phy_modem_config, phy_modem_config_template, sizeof(phy_modem_config_template));
 
     extern uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
-    wifi_modem_config[7].write_wait.value  = phy_ana_i2c_master_burst_rf_onoff(true);
-    wifi_modem_config[22].write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
+    phy_modem_config[7].write_wait.value  = phy_ana_i2c_master_burst_rf_onoff(true);
+    phy_modem_config[22].write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
 
     void *link = NULL;
-    for (int i = ARRAY_SIZE(wifi_modem_config_template) - 1; (err == ESP_OK) && (i >= 0); i--) {
-        void *next = regdma_link_init_safe(&wifi_modem_config[i], false, 0, link);
+    for (int i = ARRAY_SIZE(phy_modem_config_template) - 1; (err == ESP_OK) && (i >= 0); i--) {
+        void *next = regdma_link_init_safe(&phy_modem_config[i], false, 0, link);
         if (next) {
             link = next;
         } else {
@@ -121,12 +121,12 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
             err = ESP_ERR_NO_MEM;
         }
     }
-    free(wifi_modem_config);
+    free(phy_modem_config);
     if (err == ESP_OK) {
         pau_regdma_set_modem_link_addr(link);
 
         const int id_array[] = { REGDMA_PHY_LINK(0x00), REGDMA_PHY_LINK(0x01), REGDMA_PHY_LINK(0x1b) };
-        static DRAM_ATTR sleep_modem_state_phy_link_context_t phy_link_context;
+        static DRAM_ATTR sleep_phy_link_context_t phy_link_context;
 
         for (int i = 0; (err == ESP_OK) && (i < ARRAY_SIZE(phy_link_context.regdma_desc)); i++) {
             void *desc = regdma_find_link_by_id(link, 0, id_array[i]);
@@ -145,9 +145,9 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
     return err;
 }
 
-void IRAM_ATTR sleep_modem_state_phy_link_config(void *link_context, uint32_t flags)
+void IRAM_ATTR sleep_phy_link_config(void *link_context, uint32_t flags)
 {
-    sleep_modem_state_phy_link_context_t *phy_link_context = (sleep_modem_state_phy_link_context_t *)link_context;
+    sleep_phy_link_context_t *phy_link_context = (sleep_phy_link_context_t *)link_context;
 
     if (flags & BIT(0)) {
         regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_I2C_MST_ENA], true, true);
@@ -160,9 +160,9 @@ void IRAM_ATTR sleep_modem_state_phy_link_config(void *link_context, uint32_t fl
     }
 }
 
-esp_err_t sleep_modem_state_phy_link_deinit(void *link_head)
+esp_err_t sleep_phy_link_deinit(void *link_head)
 {
-#if SOC_PM_PAU_REGDMA_LINK_WIFIMAC
+#if SOC_PM_PAU_REGDMA_LINK_MODEM
     regdma_link_destroy(((sleep_modem_state_phy_link_context_t *)link_head)->link_head, 0);
 #endif
     return ESP_OK;
