@@ -368,8 +368,8 @@ menu "mbedTLS"
                 config keeps expired, retracted certificates in the bundle and it may
                 pose a security risk.
 
-                - Deprecated cert list may grow based based on sync with upstream bundle
-                - Deprecated certs would be be removed in ESP-IDF (next) major release
+                - Deprecated cert list may grow based on sync with upstream bundle
+                - Deprecated certs would be removed in ESP-IDF (next) major release
 
         config MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS
             int "Maximum no of certificates allowed in certificate bundle"
