@@ -82,17 +82,17 @@ OTA 恢复
 设计
 ^^^^
 
-* 该方案需首先生成一个唯一的 RSA-3072 公钥—私钥对。公钥保留在 OTA 更新服务器上，用于加密，而私钥作为设备的一部分，例如内嵌于固件中，用于解密。
-* 预加密固件使用 AES-GCM 密钥进行加密，并将该密钥（及其配置参数）作为标头附加到镜像中。
-* 此外，AES-GCM 密钥使用 RSA 公钥进行加密，生成的镜像会托管到 OTA 更新服务器上。
-* 在设备端，首先使用可用的 RSA 私钥解密镜像标头，从而获取 AES-GCM 密钥。
-* 最后，使用 AES-GCM 密钥（和配置参数）解密镜像内容，并将其写入 flash。
+预加密固件是一种 **传输安全方案**，用于确保固件镜像在从 OTA 服务器传输到设备的过程中始终处于加密状态（与底层传输安全无关）。这种方案与 :doc:`../../security/flash-encryption` 在多个关键方面有所不同：
 
-整个工作流程由外部组件 `esp_encrypted_image <https://github.com/espressif/idf-extra-components/blob/master/esp_encrypted_img>`_ 管理，并通过解密回调 (:cpp:member:`esp_https_ota_config_t::decrypt_cb`) 机制插入到 OTA 更新框架中。
+* **密钥管理**：使用外部管理的加密密钥，而不是每个设备内部生成的唯一密钥
+* **独立于 flash 偏移**：无论固件烧录在哪个 flash 分区（``ota_0``、``ota_1`` 等），生成的密文内容一致
+* **传输保护**：在固件传输过程中提供加密保护，不涉及设备本地存储安全
 
-.. note::
+**重要安全提示**：预加密固件本身不提供设备级安全保护。固件被接收后在设备上解密，并按设备的 flash 加密配置存储。如需设备级安全措施，需另外启用 flash 加密功能。
 
-    该支持方案基于 RSA-3072，必须使用平台安全功能保护设备端的私钥。
+该功能由 `esp_encrypted_img <https://github.com/espressif/idf-extra-components/tree/master/esp_encrypted_img>`_ 组件实现，该组件通过解密回调 (:cpp:member:`esp_https_ota_config_t::decrypt_cb`) 机制集成在 OTA 更新框架中。
+
+有关镜像格式、密钥生成及实现细节的详细信息，请参阅 `esp_encrypted_img 组件文档 <https://github.com/espressif/idf-extra-components/tree/master/esp_encrypted_img>`_。
 
 OTA 系统事件
 -----------------

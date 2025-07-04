@@ -82,17 +82,17 @@ Pre-encrypted firmware distribution ensures that the firmware image stays encryp
 Design
 ^^^^^^
 
-* This scheme requires a unique RSA-3072 public-private key pair to be generated first. The public key stays on the OTA update server for encryption purpose and the private key is part of the device (e.g., embedded in firmware) for decryption purpose.
-* Pre-encrypted firmware is encrypted using AES-GCM key which is then appended to the image as header (along with config parameters).
-* Further the AES-GCM key gets encrypted using RSA public key and the resultant image gets hosted on the OTA update server.
-* On the device side, first the AES-GCM key is retrieved by decrypting the image header using RSA private key available to the device.
-* Finally, the contents of the image are decrypted using AES-GCM key (and config parameters) and written to the flash storage.
+Pre-encrypted firmware is a **transport security scheme** that ensures firmware images remain encrypted **in transit** from the OTA server to the device (irrespective of the underlying transport security). This approach differs from :doc:`../../security/flash-encryption` in several key ways:
 
-This whole workflow is managed by an external component `esp_encrypted_image <https://github.com/espressif/idf-extra-components/blob/master/esp_encrypted_img>`_ and it gets plugged into the OTA update framework through decryption callback (:cpp:member:`esp_https_ota_config_t::decrypt_cb`) mechanism.
+* **Key Management**: Uses externally managed encryption keys rather than per-device unique keys generated internally
+* **Flash Offset Independence**: Generates consistent ciphertext regardless of flash partition location (``ota_0``, ``ota_1``, etc.)
+* **Transport Protection**: Provides encryption protection during firmware distribution, not device-level storage security
 
-.. note::
+**Important Security Note**: Pre-encrypted firmware does not provide device-level security on its own. Once received, the firmware is decrypted on the device and stored according to the device's flash encryption configuration. For device-level security, flash encryption must be separately enabled.
 
-    The supported scheme is based on RSA-3072 and the private key on device side must be protected using platform security features.
+This process is managed by the `esp_encrypted_img <https://github.com/espressif/idf-extra-components/tree/master/esp_encrypted_img>`_ component, which integrates with the OTA update framework via the decryption callback (:cpp:member:`esp_https_ota_config_t::decrypt_cb`).
+
+For detailed information on the image format, key generation, and implementation details, refer to the `esp_encrypted_img component documentation <https://github.com/espressif/idf-extra-components/tree/master/esp_encrypted_img>`_.
 
 OTA System Events
 -----------------
