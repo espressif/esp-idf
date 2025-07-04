@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -136,59 +136,59 @@ typedef struct sleep_modem_config {
         void    *phy_link;
         union {
             struct {
-                uint32_t modem_state_phy_done: 1;
+                uint32_t phy_link_done: 1;
                 uint32_t reserved: 31;
             };
             uint32_t flags;
         };
-    } wifi;
+    };
 } sleep_modem_config_t;
 
-static sleep_modem_config_t s_sleep_modem = { .wifi.phy_link = NULL, .wifi.flags = 0 };
+static sleep_modem_config_t s_sleep_modem = { .phy_link = NULL, .flags = 0 };
 
 
-esp_err_t sleep_modem_wifi_modem_state_init(void)
+esp_err_t sleep_modem_phy_init(void)
 {
     esp_err_t err = ESP_OK;
 
     void *link = NULL;
-    if (s_sleep_modem.wifi.phy_link == NULL) {
+    if (s_sleep_modem.phy_link == NULL) {
         err = sleep_phy_link_init(&link);
         if (err == ESP_OK) {
-            s_sleep_modem.wifi.phy_link = link;
-            s_sleep_modem.wifi.flags = 0;
+            s_sleep_modem.phy_link = link;
+            s_sleep_modem.flags = 0;
         }
     }
     return err;
 }
 
-__attribute__((unused)) void sleep_modem_wifi_modem_state_deinit(void)
+__attribute__((unused)) void sleep_modem_phy_deinit(void)
 {
-    if (s_sleep_modem.wifi.phy_link) {
-        sleep_phy_link_deinit(s_sleep_modem.wifi.phy_link);
-        s_sleep_modem.wifi.phy_link = NULL;
-        s_sleep_modem.wifi.flags = 0;
+    if (s_sleep_modem.phy_link) {
+        sleep_phy_link_deinit(s_sleep_modem.phy_link);
+        s_sleep_modem.phy_link = NULL;
+        s_sleep_modem.flags = 0;
     }
 }
 
-void IRAM_ATTR sleep_modem_wifi_do_phy_retention(bool restore, bool wifimac_link_is_sel)
+void IRAM_ATTR sleep_modem_do_phy_retention(bool restore, bool wifimac_link_is_sel)
 {
-    sleep_phy_link_config(s_sleep_modem.wifi.phy_link, 1);
+    sleep_phy_link_config(s_sleep_modem.phy_link, 1);
     sleep_retention_do_phy_retention(!restore, wifimac_link_is_sel);
-    sleep_phy_link_config(s_sleep_modem.wifi.phy_link, 0);
+    sleep_phy_link_config(s_sleep_modem.phy_link, 0);
     if (!restore) {
-        s_sleep_modem.wifi.modem_state_phy_done = 1;
+        s_sleep_modem.phy_link_done = 1;
     }
 }
 
-inline __attribute__((always_inline)) bool sleep_modem_wifi_modem_state_enabled(void)
+inline __attribute__((always_inline)) bool sleep_modem_phy_link_enabled(void)
 {
-    return (s_sleep_modem.wifi.phy_link != NULL);
+    return (s_sleep_modem.phy_link != NULL);
 }
 
-inline __attribute__((always_inline)) bool sleep_modem_wifi_modem_link_done(void)
+inline __attribute__((always_inline)) bool sleep_modem_phy_link_done(void)
 {
-    return (s_sleep_modem.wifi.modem_state_phy_done == 1);
+    return (s_sleep_modem.phy_link_done == 1);
 }
 
 #endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
@@ -229,7 +229,7 @@ uint32_t sleep_modem_reject_triggers(void)
 {
     uint32_t reject_triggers = 0;
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
-    reject_triggers = (s_sleep_modem.wifi.phy_link != NULL) ? PMU_MODEM_WAKEUP_PROTECT : 0;
+    reject_triggers = (s_sleep_modem.phy_link != NULL) ? PMU_MODEM_WAKEUP_PROTECT : 0;
 #endif
     return reject_triggers;
 }
@@ -241,7 +241,7 @@ bool IRAM_ATTR sleep_modem_wifi_modem_state_skip_light_sleep(void)
     /* To block the system from entering sleep before modem link done. In light
      * sleep mode, the system may switch to modem state, which will cause
      * hardware to fail to enable RF */
-    skip = sleep_modem_wifi_modem_state_enabled() && !sleep_modem_wifi_modem_link_done();
+    skip = sleep_modem_phy_link_enabled() && !sleep_modem_phy_link_done();
 #endif
     return skip;
 }
