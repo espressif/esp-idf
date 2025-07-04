@@ -26,11 +26,13 @@ extern "C" {
 void pau_regdma_set_entry_link_addr(pau_regdma_link_addr_t *link_entries);
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_PAU_REGDMA_LINK_MODEM
 /**
  * @brief Set the address of WiFi MAC REGDMA Link in modem state
  * @param link_addr linked lists address
  */
 void pau_regdma_set_modem_link_addr(void *link_addr);
+#endif // SOC_PM_PAU_REGDMA_LINK_MODEM
 
 /**
  * @brief Software trigger regdma to perform modem link backup

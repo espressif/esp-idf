@@ -228,7 +228,7 @@ void sleep_modem_wifi_modem_state_deinit(void);
 bool sleep_modem_wifi_modem_state_skip_light_sleep(void);
 
 /**
- * @brief Function to initialize and create the modem state phy link
+ * @brief Function to initialize and create the phy link
  * @param link_head the pointer that point to the head of the created phy link
  * @return
  *   - ESP_OK on success
@@ -236,24 +236,24 @@ bool sleep_modem_wifi_modem_state_skip_light_sleep(void);
  *   - ESP_ERR_INVALID_ARG if value is out of range
  *   - ESP_ERR_INVALID_STATE if the phy module retention state is invalid
  */
-esp_err_t sleep_modem_state_phy_link_init(void **link_head);
+esp_err_t sleep_phy_link_init(void **link_head);
 
 /**
- * @brief Function to destroy and de-initialize modem state phy link
+ * @brief Function to destroy and de-initialize phy link
  * @param link_head the phy link head will be destroyed
  * @return
  *   - ESP_OK on success
  *   - ESP_ERR_INVALID_ARG if value is out of range
  *   - ESP_ERR_INVALID_STATE if the phy module retention state is invalid
  */
-esp_err_t sleep_modem_state_phy_link_deinit(void *link_head);
+esp_err_t sleep_phy_link_deinit(void *link_head);
 
 /**
  * @brief Function to configure PHY link regdma description at runtime
  * @param link_context PHY link regdma description conteoxt pointer
  * @param flags A bitmap to indicate the PHY link regdma description configuration flag
  */
-void sleep_modem_state_phy_link_config(void *link_context, uint32_t flags);
+void sleep_phy_link_config(void *link_context, uint32_t flags);
 #endif
 
 #ifdef __cplusplus

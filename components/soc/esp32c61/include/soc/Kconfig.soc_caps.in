@@ -1059,7 +1059,7 @@ config SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR
     bool
     default y
 
-config SOC_PM_PAU_REGDMA_LINK_WIFIMAC
+config SOC_PM_PAU_REGDMA_LINK_MODEM
     bool
     default y
 

@@ -62,7 +62,7 @@ void pau_regdma_set_entry_link_addr(pau_regdma_link_addr_t *link_entries)
 }
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
-#if SOC_PM_PAU_REGDMA_LINK_WIFIMAC
+#if SOC_PM_PAU_REGDMA_LINK_MODEM
 void pau_regdma_set_modem_link_addr(void *link_addr)
 {
     pau_hal_set_regdma_modem_link_addr(PAU_instance()->hal, link_addr);

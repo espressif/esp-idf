@@ -37,14 +37,14 @@ typedef struct {
 #define DESC_IDX_I2C_MST_ENA (0)
 #define DESC_IDX_I2C_MST_DIS (1)
     void *regdma_desc[DESC_IDX_I2C_MST_DIS + 1];
-} sleep_modem_state_phy_link_context_t;
+} sleep_phy_link_context_t;
 
-esp_err_t sleep_modem_state_phy_link_init(void **link_head)
+esp_err_t sleep_phy_link_init(void **link_head)
 {
     esp_err_t err = ESP_OK;
 
-#if SOC_PM_PAU_REGDMA_LINK_WIFIMAC
-    static regdma_link_config_t wifi_modem_config[] = {
+#if SOC_PM_PAU_REGDMA_LINK_MODEM
+    static regdma_link_config_t phy_modem_config[] = {
         [0]  = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x00), MODEM_LPCON_CLK_CONF_REG,         MODEM_LPCON_CLK_I2C_MST_EN,        MODEM_LPCON_CLK_I2C_MST_EN_M,       1, 0), /* I2C MST enable */
 
         /* PMU or software to trigger enable RF PHY */
@@ -71,7 +71,7 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
         /* PMU or software to trigger disable RF PHY */
         [16] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x10), FECOEX_AGC_CONF_REG,              FECOEX_AGC_DIS,            0x20000000, 0, 1),
         [17] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x11), MODEM_SYSCON_WIFI_BB_CFG_REG,     0,                         0x2,        0, 1),
-        [18] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x12), FECOEX_SET_FREQ_SET_CHAN_REG,     0,                         0x4000,     0, 1),
+        [18] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x12), FECOEX_SET_FREQ_SET_CHAN_REG,     0,                         0x20000,     0, 1),
         [19] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x13), I2C_ANA_MST_I2C_BURST_CONF_REG,   0,                         0xffffffff, 0, 1),
         [20] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x14), PMU_DATE_REG,                     ~I2C_ANA_MST_BURST_DONE,   0x1,        0, 1),
         [21] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x15), PMU_DATE_REG,                     ~I2C_ANA_MST_BURST_DONE,   0x1,        0, 1),
@@ -95,12 +95,12 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
         [35] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x23), PMU_SLP_WAKEUP_CNTL7_REG,         0x9730000,                 0xffff0000, 0, 1)
     };
     extern uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
-    wifi_modem_config[4].write_wait.value  = phy_ana_i2c_master_burst_rf_onoff(true);
-    wifi_modem_config[19].write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
+    phy_modem_config[4].write_wait.value  = phy_ana_i2c_master_burst_rf_onoff(true);
+    phy_modem_config[19].write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
 
     void *link = NULL;
-    for (int i = ARRAY_SIZE(wifi_modem_config) - 1; (err == ESP_OK) && (i >= 0); i--) {
-        void *next = regdma_link_init_safe(&wifi_modem_config[i], false, 0, link);
+    for (int i = ARRAY_SIZE(phy_modem_config) - 1; (err == ESP_OK) && (i >= 0); i--) {
+        void *next = regdma_link_init_safe(&phy_modem_config[i], false, 0, link);
         if (next) {
             link = next;
         } else {
@@ -112,7 +112,7 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
         pau_regdma_set_modem_link_addr(link);
 
         const int id_array[] = { REGDMA_PHY_LINK(0x00), REGDMA_PHY_LINK(0x1a) };
-        static DRAM_ATTR sleep_modem_state_phy_link_context_t phy_link_context;
+        static DRAM_ATTR sleep_phy_link_context_t phy_link_context;
 
         for (int i = 0; (err == ESP_OK) && (i < ARRAY_SIZE(phy_link_context.regdma_desc)); i++) {
             void *desc = regdma_find_link_by_id(link, 0, id_array[i]);
@@ -131,9 +131,9 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
     return err;
 }
 
-void IRAM_ATTR sleep_modem_state_phy_link_config(void *link_context, uint32_t flags)
+void IRAM_ATTR sleep_phy_link_config(void *link_context, uint32_t flags)
 {
-    sleep_modem_state_phy_link_context_t *phy_link_context = (sleep_modem_state_phy_link_context_t *)link_context;
+    sleep_phy_link_context_t *phy_link_context = (sleep_phy_link_context_t *)link_context;
 
     if (flags & BIT(0)) {
         regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_I2C_MST_ENA], true, true);
@@ -144,9 +144,9 @@ void IRAM_ATTR sleep_modem_state_phy_link_config(void *link_context, uint32_t fl
     }
 }
 
-esp_err_t sleep_modem_state_phy_link_deinit(void *link_head)
+esp_err_t sleep_phy_link_deinit(void *link_head)
 {
-#if SOC_PM_PAU_REGDMA_LINK_WIFIMAC
+#if SOC_PM_PAU_REGDMA_LINK_MODEM
     regdma_link_destroy(((sleep_modem_state_phy_link_context_t *)link_head)->link_head, 0);
 #endif
     return ESP_OK;
