@@ -1553,7 +1553,7 @@ void smp_fast_conn_param(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         }
         /* Disable L2CAP connection parameter updates while bonding since
         some peripherals are not able to revert to fast connection parameters
-        during the start of service discovery. Connection paramter updates
+        during the start of service discovery. Connection parameter updates
         get enabled again once service discovery completes. */
         #if (BT_MULTI_CONNECTION_ENBALE == FALSE)
         L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, FALSE);
@@ -1648,6 +1648,8 @@ void smp_process_local_nonce(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             /* slave calculates and sends local commitment */
             smp_calculate_local_commitment(p_cb);
             smp_send_commitment(p_cb, NULL);
+            /* Ensure the connection is still active */
+            if (smp_get_state() == SMP_STATE_IDLE) return;
             /* slave has to wait for peer nonce */
             smp_set_state(SMP_STATE_WAIT_NONCE);
         } else { /* i.e. master */
@@ -1658,6 +1660,8 @@ void smp_process_local_nonce(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                                 p_cb->selected_association_model);
                 p_cb->flags &= ~SMP_PAIR_FLAG_HAVE_PEER_COMM;
                 smp_send_rand(p_cb, NULL);
+                /* Ensure the connection is still active */
+                if (smp_get_state() == SMP_STATE_IDLE) return;
                 smp_set_state(SMP_STATE_WAIT_NONCE);
             }
         }
@@ -1672,6 +1676,8 @@ void smp_process_local_nonce(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             if (p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_COMM) {
                 /* master commitment is already received */
                 smp_send_commitment(p_cb, NULL);
+                /* Ensure the connection is still active */
+                if (smp_get_state() == SMP_STATE_IDLE) return;
                 smp_set_state(SMP_STATE_WAIT_NONCE);
             }
         }
@@ -1679,6 +1685,8 @@ void smp_process_local_nonce(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     case SMP_MODEL_SEC_CONN_OOB:
         if (p_cb->role == HCI_ROLE_MASTER) {
             smp_send_rand(p_cb, NULL);
+            /* Ensure the connection is still active */
+            if (smp_get_state() == SMP_STATE_IDLE) return;
         }
 
         smp_set_state(SMP_STATE_WAIT_NONCE);
@@ -2002,7 +2010,7 @@ void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable)
     SMP_TRACE_DEBUG("%s encr_enable=%d\n", __func__, encr_enable);
 
     if (memcmp(&smp_cb.pairing_bda[0], bda, BD_ADDR_LEN) == 0) {
-        /* encryption completed with STK, remmeber the key size now, could be overwite
+        /* encryption completed with STK, remember the key size now, could be overwrite
         *  when key exchange happens                                        */
         if (p_cb->loc_enc_size != 0 && encr_enable) {
             /* update the link encryption key size if a SMP pairing just performed */
