@@ -369,13 +369,13 @@ esp_err_t esp_apptrace_membufs_flush_nolock(esp_apptrace_membufs_proto_data_t *p
     }
     // switch  block while size of data (including that in pending buffer) is more than min size
     while (ESP_APPTRACE_INBLOCK_MARKER(proto) > min_sz) {
-        ESP_APPTRACE_LOGD("Try to flush %" PRIu32 " bytes. Wait until block switch for %" PRIi64 " us", ESP_APPTRACE_INBLOCK_MARKER(proto), tmo->tmo);
+        ESP_APPTRACE_LOGD("Try to flush %" PRIu32 " bytes", ESP_APPTRACE_INBLOCK_MARKER(proto));
         res = esp_apptrace_membufs_swap_waitus(proto, tmo);
         if (res != ESP_OK) {
-            if (tmo->tmo != ESP_APPTRACE_TMO_INFINITE)
-                ESP_APPTRACE_LOGW("Failed to switch to another block in %lld us!", tmo->tmo);
+            if (res == ESP_ERR_TIMEOUT)
+                ESP_APPTRACE_LOGW("Failed to switch to another block in %" PRIi32 " us!", (int32_t)tmo->elapsed);
             else
-                ESP_APPTRACE_LOGE("Failed to switch to another block in %lld us!", tmo->tmo);
+                ESP_APPTRACE_LOGE("Failed to switch to another block, res: %d", res);
             return res;
         }
     }
