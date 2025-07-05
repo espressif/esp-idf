@@ -233,9 +233,21 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
     // 40MHz with PLL_F160M or PLL_F240M clock source. This is a special case, has to handle separately.
     if (xtal_freq == SOC_XTAL_FREQ_48M && freq_mhz == 40) {
         real_freq_mhz = freq_mhz;
-        source = SOC_CPU_CLK_SRC_PLL_F160M;
-        source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
-        divider = 4;
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 101)) {
+#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240
+            source = SOC_CPU_CLK_SRC_PLL_F240M;
+            source_freq_mhz = CLK_LL_PLL_240M_FREQ_MHZ;
+            divider = 6;
+#else
+            source = SOC_CPU_CLK_SRC_PLL_F160M;
+            source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
+            divider = 4;
+#endif
+        } else {
+            source = SOC_CPU_CLK_SRC_PLL_F160M;
+            source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
+            divider = 4;
+        }
     } else if (freq_mhz <= xtal_freq && freq_mhz != 0) {
         divider = xtal_freq / freq_mhz;
         real_freq_mhz = (xtal_freq + divider / 2) / divider; /* round */
@@ -258,12 +270,18 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
         divider = 1;
     } else if (freq_mhz == 80) {
         real_freq_mhz = freq_mhz;
-        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 101)) {
             /* ESP32C5 has a root clock ICG issue when switching SOC_CPU_CLK_SRC from PLL_F160M to PLL_F240M
              * For detailed information, refer to IDF-11064 */
+#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240
             source = SOC_CPU_CLK_SRC_PLL_F240M;
             source_freq_mhz = CLK_LL_PLL_240M_FREQ_MHZ;
             divider = 3;
+#else
+            source = SOC_CPU_CLK_SRC_PLL_F160M;
+            source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
+            divider = 2;
+#endif
         } else {
             source = SOC_CPU_CLK_SRC_PLL_F160M;
             source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
@@ -393,8 +411,22 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
 
 void rtc_clk_cpu_freq_to_pll_and_pll_lock_release(int cpu_freq_mhz)
 {
-    // TODO: IDF-8641 CPU_MAX_FREQ don't know what to do... pll_240 or pll_160...
-    rtc_clk_cpu_freq_to_pll_240_mhz(cpu_freq_mhz);
+    //                          IDF-11064
+    if (cpu_freq_mhz == 240) {
+        rtc_clk_cpu_freq_to_pll_240_mhz(cpu_freq_mhz);
+    } else if (cpu_freq_mhz == 160) {
+        rtc_clk_cpu_freq_to_pll_160_mhz(cpu_freq_mhz);
+    } else {// cpu_freq_mhz is 80
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 101)) {// (use 240mhz pll if max cpu freq is 240MHz)
+#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240
+            rtc_clk_cpu_freq_to_pll_240_mhz(cpu_freq_mhz);
+#else
+            rtc_clk_cpu_freq_to_pll_160_mhz(cpu_freq_mhz);
+#endif
+        } else {// (fixed for chip rev. >= ECO3)
+            rtc_clk_cpu_freq_to_pll_160_mhz(cpu_freq_mhz);
+        }
+    }
     clk_ll_cpu_clk_src_lock_release();
 }
 
