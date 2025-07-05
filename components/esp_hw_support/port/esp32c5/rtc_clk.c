@@ -412,10 +412,20 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
 void rtc_clk_cpu_freq_to_pll_and_pll_lock_release(int cpu_freq_mhz)
 {
     //                          IDF-11064
-    if (cpu_freq_mhz == 240 || (cpu_freq_mhz == 80 && !ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1))) {
+    if (cpu_freq_mhz == 240) {
         rtc_clk_cpu_freq_to_pll_240_mhz(cpu_freq_mhz);
-    } else { // cpu_freq_mhz is 160 or 80 (fixed for chip rev. >= ECO1)
+    } else if (cpu_freq_mhz == 160) {
         rtc_clk_cpu_freq_to_pll_160_mhz(cpu_freq_mhz);
+    } else {// cpu_freq_mhz is 80
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 101)) {// (use 240mhz pll if max cpu freq is 240MHz)
+#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240
+            rtc_clk_cpu_freq_to_pll_240_mhz(cpu_freq_mhz);
+#else
+            rtc_clk_cpu_freq_to_pll_160_mhz(cpu_freq_mhz);
+#endif
+        } else {// (fixed for chip rev. >= ECO3)
+            rtc_clk_cpu_freq_to_pll_160_mhz(cpu_freq_mhz);
+        }
     }
     clk_ll_cpu_clk_src_lock_release();
 }
