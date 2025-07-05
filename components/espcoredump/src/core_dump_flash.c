@@ -476,7 +476,7 @@ esp_err_t esp_core_dump_partition_and_size_get(const esp_partition_t **partition
     /* Verify that the size read from the flash is not corrupted. */
     if (core_size == 0xFFFFFFFF) {
         ESP_COREDUMP_LOGD("Blank core dump partition!");
-        return ESP_ERR_INVALID_SIZE;
+        return ESP_ERR_NOT_FOUND;
     }
 
     if ((core_size < sizeof(uint32_t)) || (core_size > core_part->size)) {
