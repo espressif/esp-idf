@@ -106,16 +106,7 @@
 // Data which are transffered from host to target are also prepended with a header. Down channel data header is simple and consists of one two bytes field
 // containing length of host data following the header.
 
-// 4.3 Data Buffering
-// ------------------
-
-// It takes some time for the host to read TRAX memory block via JTAG. In streaming mode it can happen that target has filled its TRAX block, but host
-// has not completed reading of the previous one yet. So in this case time critical tracing calls (which can not be delayed for too long time due to
-// the lack of free memory in TRAX block) can be dropped. To avoid such scenarios tracing module implements data buffering. Buffered data will be sent
-// to the host later when TRAX block switch occurs. The maximum size of the buffered data is controlled by menuconfig option
-// CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX.
-
-// 4.4 Target Connection/Disconnection
+// 4.3 Target Connection/Disconnection
 // -----------------------------------
 
 // When host is going to start tracing in streaming mode it needs to put both ESP32 cores into initial state when 'host connected' bit is set
