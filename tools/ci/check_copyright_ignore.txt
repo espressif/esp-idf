@@ -958,7 +958,6 @@ examples/wifi/wps/main/wps.c
 tools/ble/lib_ble_client.py
 tools/ble/lib_gap.py
 tools/ble/lib_gatt.py
-tools/catch/catch.hpp
 tools/ldgen/samples/template.ld
 tools/ldgen/test/data/linker_script.ld
 tools/test_apps/build_system/embed_test/main/test_main.c

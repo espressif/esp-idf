@@ -1,6 +1,5 @@
 tools/ble/**/*
 tools/bt/**/*
-tools/catch/**/*
 tools/check_term.py
 tools/ci/*exclude*.txt
 tools/ci/astyle-rules.yml

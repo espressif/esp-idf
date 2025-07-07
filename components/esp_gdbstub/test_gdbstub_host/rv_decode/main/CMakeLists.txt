@@ -5,7 +5,6 @@ idf_component_register(SRCS
                             "../../../private_include"
                             "../../../include"
                             "../../../src/port/riscv/include"
-                            "../../../../../tools/catch"
                             "../../../../esp_hw_support/include"
                             "../../../../soc/esp32c3/include"
                             "../../../../esp_common/include"

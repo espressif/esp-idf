@@ -134,8 +134,6 @@ components_not_formatted_permanent:
     - "/components/console/argtable3/"
     # Linenoise (upstream source code)
     - "/components/console/linenoise/"
-    # Catch (upstream source code)
-    - "/tools/catch/catch.hpp"
     # FreeRTOS kernel files (upstream source code)
     - "/components/freertos/FreeRTOS-Kernel/"
     - "/components/freertos/FreeRTOS-Kernel-SMP/"
