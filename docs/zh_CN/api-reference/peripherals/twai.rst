@@ -90,6 +90,12 @@ TWAI 是一种适用于汽车和工业应用的高可靠性的多主机实时串
     - :cpp:member:`twai_onchip_node_config_t::flags::enable_listen_only` 配置为监听模式，节点只接收，不发送任何显性位，包括 ACK 和错误帧。
     - :cpp:member:`twai_onchip_node_config_t::flags::no_receive_rtr` 使用过滤器时是否同时过滤掉符合 ID 规则的远程帧。
 
+.. only:: esp32c5
+
+    .. note::
+
+        注意： ESP32C5 的监听模式在总线上有多个节点相互发送 ACK 信号时无法正常工作。一种替代方案是使用本身支持监听模式的收发器（例如 TJA1145），并结合启用自测模式。
+
 函数 :cpp:func:`twai_node_enable` 将启动 TWAI 控制器，此时 TWAI 控制器就连接到了总线，可以向总线发送报文。如果收到了总线上其他节点发送的报文，或者检测到了总线错误，也将产生相应事件。
 
 与之对应的函数是 :cpp:func:`twai_node_disable`，该函数将立即停止节点工作并与总线断开，正在进行的传输将被中止。当下次重新启动时，如果发送队列中有未完成的任务，驱动将立即发起新的传输。
@@ -202,7 +208,7 @@ TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主
 .. code:: c
 
     twai_timing_advanced_config_t timing_cfg = {
-        .brp = 8,  // 预分频为 8，时间量子 80M/8=1M
+        .brp = 8,  // 预分频为 8，时间量子 80M/8=10M
         .prop_seg = 10,
         .tseg_1 = 4,
         .tseg_2 = 5,
@@ -227,7 +233,7 @@ TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主
 
 TWAI 控制器硬件可以根据 ID 对报文进行过滤，从而减少软硬件开销使节点更加高效。过滤掉报文的节点 **不会接收到该报文，但仍会应答**。
 
-{IDF_TARGET_NAME} 包含 {IDF_TARGET_CONFIG_SOC_TWAI_MASK_FILTER_NUM} 个掩码过滤器，报文通过任意一个过滤器即能收到改报文。典型的 TWAI 掩码过滤器通过 ID 和 MASK 配置，其中：
+{IDF_TARGET_NAME} 包含 {IDF_TARGET_CONFIG_SOC_TWAI_MASK_FILTER_NUM} 个掩码过滤器，报文通过任意一个过滤器即能收到该报文。典型的 TWAI 掩码过滤器通过 ID 和 MASK 配置，其中：
 
 - ID 表示期望接收的报文的标准11位或扩展29位ID。
 - MASK 表示对ID的过滤规则：
@@ -254,7 +260,7 @@ TWAI 控制器硬件可以根据 ID 对报文进行过滤，从而减少软硬�
     双过滤器模式
     """"""""""""
 
-    {IDF_TARGET_NAME} 支持双过滤器模式，可将硬件配置为并列的两个独立的 16 位掩码过滤器，支持接收更多 ID，但当配置为过滤 29 位扩展ID时，每个过滤器只能过滤其ID的高 16 位，剩余13位不做过滤。以下代码展示了如何借助 :cpp:func:`twai_make_dual_filter` 配置双过滤器模式。
+    {IDF_TARGET_NAME} 支持双过滤器模式，可将硬件配置为并列的两个独立的 16 位掩码过滤器，支持接收更多 ID。但注意，使用双过滤器模式过滤 29 位扩展ID时，每个过滤器只能过滤其ID的高 16 位，剩余13位不做过滤。以下代码展示了如何借助 :cpp:func:`twai_make_dual_filter` 配置双过滤器模式。
 
     .. code:: c
 

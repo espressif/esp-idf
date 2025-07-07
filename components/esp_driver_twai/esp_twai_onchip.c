@@ -6,7 +6,6 @@
 
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
-#include "soc/gpio_sig_map.h"
 #include "esp_private/twai_interface.h"
 #include "esp_private/twai_utils.h"
 #include "twai_private.h"
@@ -125,17 +124,14 @@ static esp_err_t _node_config_io(twai_onchip_ctx_t *node, const twai_onchip_node
 {
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.tx), ESP_ERR_INVALID_ARG, TAG, "Invalid tx gpio num");
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(node_config->io_cfg.rx), ESP_ERR_INVALID_ARG, TAG, "Invalid rx gpio num");
-    uint64_t reserve_mask = BIT64(node_config->io_cfg.tx);
 
     // Set RX pin
     gpio_set_pull_mode(node_config->io_cfg.rx, GPIO_PULLUP_ONLY);    // pullup to avoid noise if no connection to transceiver
     gpio_matrix_input(node_config->io_cfg.rx, twai_periph_signals[node->ctrlr_id].rx_sig, false);
 
     // Set TX pin
-    // If enable_listen_only, disconnect twai signal, and output high to avoid any influence to bus
-    gpio_set_level(node_config->io_cfg.tx, 1);
-    int tx_sig = (node_config->flags.enable_listen_only) ? SIG_GPIO_OUT_IDX : twai_periph_signals[node->ctrlr_id].tx_sig;
-    gpio_matrix_output(node_config->io_cfg.tx, tx_sig, false, false);
+    uint64_t reserve_mask = BIT64(node_config->io_cfg.tx);
+    gpio_matrix_output(node_config->io_cfg.tx, twai_periph_signals[node->ctrlr_id].tx_sig, false, false);
 
     //Configure output clock pin (Optional)
     if (GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.quanta_clk_out)) {
@@ -519,7 +515,7 @@ static esp_err_t _node_config_mask_filter(twai_node_handle_t node, uint8_t filte
     // FD targets don't support Dual filter
     ESP_RETURN_ON_FALSE(!mask_cfg->dual_filter, ESP_ERR_NOT_SUPPORTED, TAG, "The target don't support Dual Filter");
 #endif
-    ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "config filter must when node stopped");
+    ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "filter config must do when node stopped");
 
     twai_hal_configure_filter(twai_ctx->hal, filter_id, mask_cfg);
     return ESP_OK;
@@ -532,7 +528,7 @@ static esp_err_t _node_config_range_filter(twai_node_handle_t node, uint8_t filt
     ESP_RETURN_ON_FALSE(filter_id < SOC_TWAI_RANGE_FILTER_NUM, ESP_ERR_INVALID_ARG, TAG, "Invalid range filter id %d", filter_id);
     ESP_RETURN_ON_FALSE((range_cfg->range_low > range_cfg->range_high) || range_cfg->is_ext || !(range_cfg->range_high & ~TWAI_STD_ID_MASK), \
                         ESP_ERR_INVALID_ARG, TAG, "std_id only (is_ext=0) but valid low/high id larger than 11 bits");
-    ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "config filter must when node stopped");
+    ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "filter config must do when node stopped");
 
     twai_hal_configure_range_filter(twai_ctx->hal, filter_id, range_cfg);
     return ESP_OK;
@@ -651,6 +647,13 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
         .enable_self_test = node_config->flags.enable_self_test,
         .enable_loopback = node_config->flags.enable_loopback,
     };
+#if CONFIG_IDF_TARGET_ESP32C5
+    // ESP32C5 has a bug that the listen only mode don't work when there are other nodes sending ACK each other
+    // See IDF-13059 for more details
+    if (node_config->flags.enable_listen_only) {
+        ESP_LOGW(TAG, "Listen only mode for ESP32C5 may not work properly when there are more than 2 nodes on the bus that are sending ACKs to each other");
+    }
+#endif
     ESP_GOTO_ON_FALSE(twai_hal_init(node->hal, &hal_config), ESP_ERR_INVALID_STATE, err, TAG, "hardware not in reset state");
     // Configure bus timing
     ESP_GOTO_ON_ERROR(_node_calc_set_bit_timing(&node->api_base, node_config->clk_src, &node_config->bit_timing, &node_config->data_timing), err, TAG, "bitrate error");
