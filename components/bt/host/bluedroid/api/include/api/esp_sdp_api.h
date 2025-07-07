@@ -225,6 +225,7 @@ typedef union {
      */
     struct sdp_remove_record_evt_param {
         esp_sdp_status_t status; /*!< Status */
+        int record_handle;       /*!< SDP record handle */
     } remove_record;             /*!< SDP callback param of ESP_SDP_REMOVE_RECORD_COMP_EVT */
 
 } esp_sdp_cb_param_t;
