@@ -1037,7 +1037,8 @@ void app_main(void)
         return;
     }
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         ESP_LOGE(COEX_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;

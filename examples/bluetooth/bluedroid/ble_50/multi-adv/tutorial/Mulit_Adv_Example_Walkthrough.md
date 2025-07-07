@@ -66,7 +66,8 @@ void app_main(void)
         return;
     }
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         ESP_LOGE(LOG_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
@@ -145,7 +146,7 @@ There are four Bluetooth modes supported:
 After the initialization of the BT controller, the Bluedroid stack, which includes the common definitions and APIs for both BT Classic and BLE, is initialized and enabled by using:
 
 ```c
-ret = esp_bluedroid_init();
+ret = esp_bluedroid_init_with_cfg(&cfg);
 ret = esp_bluedroid_enable();
 ```
 The Bluetooth stack is up and running at this point in the program flow, however the functionality of the application has not been defined yet. The functionality is defined by reacting to events

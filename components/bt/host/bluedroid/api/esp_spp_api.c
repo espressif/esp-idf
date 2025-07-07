@@ -32,18 +32,6 @@ esp_err_t esp_spp_register_callback(esp_spp_cb_t callback)
     return ESP_OK;
 }
 
-
-esp_err_t esp_spp_init(esp_spp_mode_t mode)
-{
-    esp_spp_cfg_t bt_spp_cfg = {
-        .mode = mode,
-        .enable_l2cap_ertm = true,
-        .tx_buffer_size = ESP_SPP_MAX_TX_BUFFER_SIZE,
-    };
-
-    return esp_spp_enhanced_init(&bt_spp_cfg);
-}
-
 esp_err_t esp_spp_enhanced_init(const esp_spp_cfg_t *cfg)
 {
     btc_msg_t msg;

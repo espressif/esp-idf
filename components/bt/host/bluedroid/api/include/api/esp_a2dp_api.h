@@ -141,11 +141,6 @@ typedef struct {
 #define ESP_A2D_CIE_LEN_M24          (6)
 #define ESP_A2D_CIE_LEN_ATRAC        (7)
     union {
-        uint8_t sbc[ESP_A2D_CIE_LEN_SBC] __attribute__((deprecated));       /*!< SBC codec capabilities, deprecated, use sbc_info instead */
-        uint8_t m12[ESP_A2D_CIE_LEN_M12] __attribute__((deprecated));       /*!< MPEG-1,2 audio codec capabilities, deprecated, use m12_info instead */
-        uint8_t m24[ESP_A2D_CIE_LEN_M24] __attribute__((deprecated));       /*!< MPEG-2, 4 AAC audio codec capabilities, deprecated, use m24_info instead */
-        uint8_t atrac[ESP_A2D_CIE_LEN_ATRAC] __attribute__((deprecated));   /*!< ATRAC family codec capabilities, deprecated, use atrac_info instead */
-
         esp_a2d_cie_sbc_t   sbc_info;          /*!< SBC codec capabilities */
         esp_a2d_cie_m12_t   m12_info;          /*!< MPEG-1,2 audio codec capabilities */
         esp_a2d_cie_m24_t   m24_info;          /*!< MPEG-2, 4 AAC audio codec capabilities */
@@ -177,8 +172,6 @@ typedef enum {
 typedef enum {
     ESP_A2D_AUDIO_STATE_SUSPEND = 0,           /*!< audio stream datapath suspended by remote device */
     ESP_A2D_AUDIO_STATE_STARTED,               /*!< audio stream datapath started */
-    ESP_A2D_AUDIO_STATE_STOPPED = ESP_A2D_AUDIO_STATE_SUSPEND,          /*!< @note Deprecated */
-    ESP_A2D_AUDIO_STATE_REMOTE_SUSPEND = ESP_A2D_AUDIO_STATE_SUSPEND,   /*!< @note Deprecated */
 } esp_a2d_audio_state_t;
 
 /**
@@ -198,7 +191,6 @@ typedef enum {
     ESP_A2D_MEDIA_CTRL_CHECK_SRC_RDY,          /*!< check whether AVDTP is connected, only used in A2DP source */
     ESP_A2D_MEDIA_CTRL_START,                  /*!< command to set up media transmission channel */
     ESP_A2D_MEDIA_CTRL_SUSPEND,                /*!< command to suspend media transmission  */
-    ESP_A2D_MEDIA_CTRL_STOP,                   /*!< @note Deprecated, Please use ESP_A2D_MEDIA_CTRL_SUSPEND */
 } esp_a2d_media_ctrl_t;
 
 /**
