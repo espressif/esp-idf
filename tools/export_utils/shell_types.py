@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import base64
 import getpass
 import os
 import re
@@ -33,7 +34,15 @@ class Shell:
         self.new_esp_idf_env = new_esp_idf_env
 
         try:
-            self.tmp_dir_path = Path(gettempdir()) / ('esp_idf_activate_' + getpass.getuser())
+            username = getpass.getuser()
+            username_safe = (
+                # If username contains special characters, base64-encode it
+                base64.urlsafe_b64encode(username.encode('utf-8')).decode('ascii').rstrip('=')
+                # Find characters that are not ASCII alphanumeric, dot, or dash
+                if re.search(r'[^\w.-]', username, flags=re.ASCII)
+                else username
+            )
+            self.tmp_dir_path = Path(gettempdir()) / f'esp_idf_activate_{username_safe}'
         except Exception as e:
             self.tmp_dir_path = Path(gettempdir()) / 'esp_idf_activate'
             warn(f'Failed to get username with error: {e}. Using default temporary directory {self.tmp_dir_path}.')
