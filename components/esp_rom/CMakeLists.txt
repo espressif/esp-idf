@@ -315,7 +315,7 @@ else() # Regular app build
             rom_linker_script("newlib")
         endif()
 
-        if(CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT AND CONFIG_LIBC_NEWLIB AND CONFIG_NEWLIB_NANO_FORMAT)
+        if(CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT AND CONFIG_LIBC_NEWLIB AND CONFIG_LIBC_NEWLIB_NANO_FORMAT)
             if(NOT CONFIG_ESP_ROM_HAS_NEWLIB_32BIT_TIME AND NOT CONFIG_ESP_ROM_HAS_NEWLIB_NANO_PRINTF_FLOAT_BUG)
                 # Newlib-nano functions contains time_t related functions
                 # and cannot be used if they were compiled with 32 bit time_t
@@ -323,7 +323,7 @@ else() # Regular app build
             endif()
         endif()
 
-        if(CONFIG_ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT AND CONFIG_LIBC_NEWLIB AND NOT CONFIG_NEWLIB_NANO_FORMAT)
+        if(CONFIG_ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT AND CONFIG_LIBC_NEWLIB AND NOT CONFIG_LIBC_NEWLIB_NANO_FORMAT)
             rom_linker_script("newlib-normal")
         endif()
     endif()

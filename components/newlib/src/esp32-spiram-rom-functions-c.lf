@@ -10,7 +10,7 @@
 
 [mapping:libc]
 archive:
-  if NEWLIB_NANO_FORMAT = y:
+  if LIBC_NEWLIB_NANO_FORMAT = y:
     libc_nano.a
   else:
     libc.a
