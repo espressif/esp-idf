@@ -112,6 +112,8 @@ Camera controller driver can be implemented in one of following ways:
 
     If :cpp:type:`esp_cam_ctlr_lcd_cam_cfg_t` is specified, users can call :cpp:func:`esp_cam_new_lcd_cam_ctlr` to allocate and initialize a DVP camera controller handle. This function will return an DVP camera controller handle if it runs correctly. You can take following code as reference.
 
+    After calling :cpp:func:`esp_cam_new_dvp_ctlr`, you should allocate a camera buffer that meets the alignment constraints, or call :cpp:func:`esp_cam_ctlr_alloc_buffer` to automatically allocate.
+
     .. code:: c
 
         esp_cam_ctlr_handle_t cam_handle = NULL;
