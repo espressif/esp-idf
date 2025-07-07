@@ -90,13 +90,6 @@ TEST_CASE("LEDC channel config wrong channel", "[ledc]")
     TEST_ASSERT(ledc_channel_config(&ledc_ch_config) == ESP_ERR_INVALID_ARG);
 }
 
-TEST_CASE("LEDC channel config wrong interrupt type", "[ledc]")
-{
-    ledc_channel_config_t ledc_ch_config = initialize_channel_config();
-    ledc_ch_config.intr_type = 2;
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, ledc_channel_config(&ledc_ch_config));
-}
-
 TEST_CASE("LEDC wrong timer", "[ledc]")
 {
     ledc_channel_config_t ledc_ch_config = initialize_channel_config();

@@ -58,6 +58,10 @@ LEDC
 
 - Removed esp_driver_gpio as a public required component from esp_driver_ledc.
 
+- :func:`ledc_isr_register` has been deprecated. LEDC interrupt handling is implemented by driver itself, please only register event callbacks if necessary.
+
+- :cpp:member:`ledc_channel_config_t::intr_type` has been deprecated. `LEDC_INTR_FADE_END` interrupt enable / disable control is handled by the driver internally. Users can still register a callback for this interrupt by :cpp:func:`ledc_cb_register`.
+
 I2C
 ---
 

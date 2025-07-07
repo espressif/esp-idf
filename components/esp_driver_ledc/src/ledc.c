@@ -826,7 +826,6 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     int gpio_num = ledc_conf->gpio_num;
     uint32_t ledc_channel = ledc_conf->channel;
     uint32_t timer_select = ledc_conf->timer_sel;
-    uint32_t intr_type = ledc_conf->intr_type;
     uint32_t duty = ledc_conf->duty;
     uint32_t hpoint = ledc_conf->hpoint;
     bool output_invert = ledc_conf->flags.output_invert;
@@ -834,7 +833,6 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "gpio_num");
     LEDC_ARG_CHECK(timer_select < LEDC_TIMER_MAX, "timer_select");
-    LEDC_ARG_CHECK(intr_type < LEDC_INTR_MAX, "intr_type");
     LEDC_ARG_CHECK(ledc_conf->sleep_mode < LEDC_SLEEP_MODE_INVALID, "sleep_mode");
 #if !SOC_LEDC_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(ledc_conf->sleep_mode != LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD, ESP_ERR_NOT_SUPPORTED, LEDC_TAG, "register back up is not supported");
@@ -875,10 +873,6 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     ledc_update_duty(speed_mode, ledc_channel);
     /*bind the channel with the timer*/
     ledc_bind_channel_timer(speed_mode, ledc_channel, timer_select);
-    /*set interrupt type*/
-    portENTER_CRITICAL(&ledc_spinlock);
-    ledc_enable_intr_type(speed_mode, ledc_channel, intr_type);
-    portEXIT_CRITICAL(&ledc_spinlock);
     ESP_LOGD(LEDC_TAG, "LEDC_PWM CHANNEL %"PRIu32"|GPIO %02u|Duty %04"PRIu32"|Time %"PRIu32,
              ledc_channel, gpio_num, duty, timer_select);
     /*set LEDC signal in gpio matrix*/
@@ -1527,7 +1521,7 @@ esp_err_t ledc_fade_func_install(int intr_alloc_flags)
 {
     LEDC_CHECK(s_ledc_fade_isr_handle == NULL, "fade function already installed", ESP_ERR_INVALID_STATE);
     //OR intr_alloc_flags with ESP_INTR_FLAG_IRAM because the fade isr is in IRAM
-    return ledc_isr_register(ledc_fade_isr, NULL, intr_alloc_flags | ESP_INTR_FLAG_IRAM, &s_ledc_fade_isr_handle);
+    return esp_intr_alloc(ETS_LEDC_INTR_SOURCE, intr_alloc_flags | ESP_INTR_FLAG_IRAM, ledc_fade_isr, NULL, &s_ledc_fade_isr_handle);
 }
 
 void ledc_fade_func_uninstall(void)
