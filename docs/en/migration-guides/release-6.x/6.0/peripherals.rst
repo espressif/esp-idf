@@ -16,7 +16,6 @@ ADC
 
 The legacy ADC driver ``driver/adc.h`` is deprecated since version 5.0 (see :ref:`deprecate_adc_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_adc`, and the header file path is ``esp_adc/adc_oneshot.h``, ``esp_adc/adc_continuous.h``, ``esp_adc/adc_cali.h`` and ``esp_adc/adc_cali_scheme.h``.
 
-
 RMT
 ---
 
