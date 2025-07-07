@@ -23,3 +23,10 @@ On Linux or MacOS, you can use Python 3.11 or 3.12 and gdbgui version 0.15.2.0.
 Please be aware that these recommendations may change over time and for an up-to-date list of issues refer to `the official issue tracker <https://github.com/cs01/gdbgui/issues>`_.
 
 We recommend to use ``idf.py gdb`` instead of ``idf.py gdbgui``, or debug in Eclipse/Vscode if you encounter an issue with the installation.
+
+``idf.py efuse*`` Commands Require Port
+---------------------------------------
+
+All commands with eFuse functionality now require a serial port to be specified. This was done to prevent accidental use of the wrong port, as these operations are irreversible.
+
+For all ``idf.py efuse*`` commands, you now need to specify the serial port with the ``--port`` argument (or ``ESPPORT`` environment variable). If the port is not specified, the command will fail with an error message.
