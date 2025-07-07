@@ -107,7 +107,7 @@ list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_init_funcs")
 list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_init_funcs")
 target_link_libraries(${COMPONENT_LIB} INTERFACE "${EXTRA_LINK_FLAGS}")
 
-if(CONFIG_NEWLIB_NANO_FORMAT)
+if(CONFIG_LIBC_NEWLIB_NANO_FORMAT)
     if(CMAKE_C_COMPILER_ID MATCHES "Clang")
         set(libc_dir_cmd ${CMAKE_C_COMPILER})
         string(REPLACE " " ";" cflags_list ${CMAKE_C_FLAGS})
