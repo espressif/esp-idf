@@ -724,6 +724,47 @@ static esp_err_t esp_cam_ctlr_get_dvp_cam_frame_buffer_len(esp_cam_ctlr_handle_t
 }
 
 /**
+ * @brief Allocate aligned camera buffer for ESP CAM DVP controller
+ *
+ * @note This function must be called after esp_cam_new_dvp_ctlr
+ *
+ * @param handle            ESP CAM controller handle
+ * @param size              Buffer size in bytes
+ * @param buf_caps          Buffer allocation capabilities (e.g., MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA)
+ *
+ * @return
+ *        - Buffer pointer on success
+ *        - NULL on failure
+ */
+static void *esp_cam_ctlr_dvp_cam_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_t buf_caps)
+{
+    esp_cam_ctlr_dvp_cam_t *ctlr = (esp_cam_ctlr_dvp_cam_t *)handle;
+
+    if (!ctlr) {
+        ESP_LOGE(TAG, "invalid argument: handle is null");
+        return NULL;
+    }
+
+    size_t alignment = 1;
+
+    if (buf_caps & MALLOC_CAP_SPIRAM) {
+        alignment = ctlr->dma.ext_mem_align;
+    } else {
+        alignment = ctlr->dma.int_mem_align;
+    }
+
+    void *buffer = heap_caps_aligned_calloc(alignment, 1, size, buf_caps);
+    if (!buffer) {
+        ESP_LOGE(TAG, "failed to allocate buffer");
+        return NULL;
+    }
+
+    ESP_LOGD(TAG, "Allocated aligned camera buffer: %p, size: %zu, alignment: %zu", buffer, size, alignment);
+
+    return buffer;
+}
+
+/**
  * @brief New ESP CAM DVP controller
  *
  * @param config      DVP controller configurations
@@ -812,6 +853,7 @@ esp_err_t esp_cam_new_dvp_ctlr(const esp_cam_ctlr_dvp_config_t *config, esp_cam_
     ctlr->base.register_event_callbacks = esp_cam_ctlr_dvp_cam_register_event_callbacks;
     ctlr->base.get_internal_buffer = esp_cam_ctlr_dvp_cam_get_internal_buffer;
     ctlr->base.get_buffer_len = esp_cam_ctlr_get_dvp_cam_frame_buffer_len;
+    ctlr->base.alloc_buffer = esp_cam_ctlr_dvp_cam_alloc_buffer;
 
     *ret_handle = &ctlr->base;
 
