@@ -130,8 +130,8 @@ s_trans_id = 0x3fcdfac4;
  ***************************************/
 
 /* Functions */
-coex_core_event_duration_get = 0x40002178;
-coex_core_timer_idx_get = 0x4000218c;
+/* coex_core_event_duration_get = 0x40002178; */
+/* coex_core_timer_idx_get = 0x4000218c; */
 coex_hw_timer_tick_get = 0x400021b8;
 
 
