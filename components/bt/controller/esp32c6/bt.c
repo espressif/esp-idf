@@ -45,8 +45,8 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "bt_osi_mem.h"
 
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_private/sleep_modem.h"
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_private/sleep_retention.h"
 #include "esp_private/pm_impl.h"
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
@@ -1121,7 +1121,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     modem_clock_module_mac_reset(PERIPH_BT_MODULE);
     /* Select slow clock source for BT momdule */
     ble_rtc_clk_init(cfg);
-    esp_phy_modem_init();
+    esp_phy_modem_init(SLEEP_MODEM_BT);
 
     if (ble_osi_coex_funcs_register((struct osi_coex_funcs_t *)&s_osi_coex_funcs_ro) != 0) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "osi coex funcs reg failed");
@@ -1219,7 +1219,7 @@ modem_deint:
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     esp_bt_controller_log_deinit();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    esp_phy_modem_deinit();
+    esp_phy_modem_deinit(SLEEP_MODEM_BT);
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
     modem_clock_module_disable(PERIPH_BT_MODULE);
 
@@ -1244,7 +1244,7 @@ esp_err_t esp_bt_controller_deinit(void)
 
     os_msys_deinit();
 
-    esp_phy_modem_deinit();
+    esp_phy_modem_deinit(SLEEP_MODEM_BT);
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
     modem_clock_module_disable(PERIPH_BT_MODULE);
 

@@ -495,7 +495,7 @@ void esp_wifi_bt_power_domain_off(void)
 #endif // SOC_PM_SUPPORT_MODEM_PD || SOC_PM_SUPPORT_WIFI_PD
 }
 
-void esp_phy_modem_init(void)
+void esp_phy_modem_init(uint8_t modem)
 {
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     _lock_acquire(&s_phy_access_lock);
@@ -506,17 +506,21 @@ void esp_phy_modem_init(void)
     }
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
-    sleep_modem_phy_init();
+    sleep_modem_phy_init(modem);
 #endif // CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     _lock_release(&s_phy_access_lock);
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
 }
 
-void esp_phy_modem_deinit(void)
+void esp_phy_modem_deinit(uint8_t modem)
 {
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     _lock_acquire(&s_phy_access_lock);
 
+    if (s_phy_modem_init_ref == 0) {
+        _lock_release(&s_phy_access_lock);
+        return;
+    }
     s_phy_modem_init_ref--;
     if (s_phy_modem_init_ref == 0) {
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
@@ -530,10 +534,10 @@ void esp_phy_modem_deinit(void)
         phy_init_flag();
 #endif // CONFIG_IDF_TARGET_ESP32C3
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
-        sleep_modem_phy_deinit();
-#endif // CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     }
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    sleep_modem_phy_deinit(modem);
+#endif // SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     _lock_release(&s_phy_access_lock);
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
 }

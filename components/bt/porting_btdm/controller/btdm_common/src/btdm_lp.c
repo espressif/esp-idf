@@ -19,9 +19,9 @@
 #include "esp_pm.h"
 #endif
 
+#include "esp_private/sleep_modem.h"
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_private/pm_impl.h"
-#include "esp_private/sleep_modem.h"
 #include "esp_private/sleep_retention.h"
 #endif
 #include "soc/rtc.h"
@@ -391,7 +391,9 @@ btdm_lp_reset(bool enable_stage)
 #if CONFIG_PM_ENABLE
         esp_pm_lock_acquire(s_pm_lock);
 #endif // CONFIG_PM_ENABLE
-
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+        esp_phy_modem_init(SLEEP_MODEM_BT);
+#endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
         esp_phy_enable(PHY_MODEM_BT);
 #if CONFIG_IDF_TARGET_ESP32H4
         // TODO: Need to be deleted.
@@ -404,6 +406,9 @@ btdm_lp_reset(bool enable_stage)
         esp_btbb_disable();
         if (s_bt_active) {
             esp_phy_disable(PHY_MODEM_BT);
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+            esp_phy_modem_deinit(SLEEP_MODEM_BT);
+#endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 #if CONFIG_PM_ENABLE
             esp_pm_lock_release(s_pm_lock);
 #endif // CONFIG_PM_ENABLE
