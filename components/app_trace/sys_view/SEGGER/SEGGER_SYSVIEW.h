@@ -3,14 +3,14 @@
  *
  * SPDX-License-Identifier: BSD-1-Clause
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
  */
 /*********************************************************************
 *                    SEGGER Microcontroller GmbH                     *
 *                        The Embedded Experts                        *
 **********************************************************************
 *                                                                    *
-*            (c) 1995 - 2021 SEGGER Microcontroller GmbH             *
+*            (c) 1995 - 2024 SEGGER Microcontroller GmbH             *
 *                                                                    *
 *       www.segger.com     Support: support@segger.com               *
 *                                                                    *
@@ -49,13 +49,13 @@
 *                                                                    *
 **********************************************************************
 *                                                                    *
-*       SystemView version: 3.42                                    *
+*       SystemView version: 3.56                                    *
 *                                                                    *
 **********************************************************************
 -------------------------- END-OF-HEADER -----------------------------
 File    : SEGGER_SYSVIEW.h
 Purpose : System visualization API.
-Revision: $Rev: 28237 $
+Revision: $Rev: 28768 $
 */
 
 #ifndef SEGGER_SYSVIEW_H
@@ -123,7 +123,7 @@ extern "C" {
 #define   SYSVIEW_EVTID_TIMER_EXIT        20
 #define   SYSVIEW_EVTID_STACK_INFO        21
 #define   SYSVIEW_EVTID_MODULEDESC        22
-
+#define   SYSVIEW_EVTID_DATA_SAMPLE       23
 #define   SYSVIEW_EVTID_INIT              24
 #define   SYSVIEW_EVTID_NAME_RESOURCE     25
 #define   SYSVIEW_EVTID_PRINT_FORMATTED   26
@@ -135,12 +135,13 @@ extern "C" {
 //
 // SystemView extended events. Sent with ID 31.
 //
-#define   SYSVIEW_EVTID_EX_MARK            0
-#define   SYSVIEW_EVTID_EX_NAME_MARKER     1
-#define   SYSVIEW_EVTID_EX_HEAP_DEFINE     2
-#define   SYSVIEW_EVTID_EX_HEAP_ALLOC      3
-#define   SYSVIEW_EVTID_EX_HEAP_ALLOC_EX   4
-#define   SYSVIEW_EVTID_EX_HEAP_FREE       5
+#define   SYSVIEW_EVTID_EX_MARK           0
+#define   SYSVIEW_EVTID_EX_NAME_MARKER    1
+#define   SYSVIEW_EVTID_EX_HEAP_DEFINE    2
+#define   SYSVIEW_EVTID_EX_HEAP_ALLOC     3
+#define   SYSVIEW_EVTID_EX_HEAP_ALLOC_EX  4
+#define   SYSVIEW_EVTID_EX_HEAP_FREE      5
+#define   SYSVIEW_EVTID_EX_REGISTER_DATA  6
 //
 // Event masks to disable/enable events
 //
@@ -167,7 +168,7 @@ extern "C" {
 #define   SYSVIEW_EVTMASK_TIMER_EXIT        (1 << SYSVIEW_EVTID_TIMER_EXIT)
 #define   SYSVIEW_EVTMASK_STACK_INFO        (1 << SYSVIEW_EVTID_STACK_INFO)
 #define   SYSVIEW_EVTMASK_MODULEDESC        (1 << SYSVIEW_EVTID_MODULEDESC)
-
+#define   SYSVIEW_EVTMASK_DATA_SAMPLE       (1 << SYSVIEW_EVTID_DATA_SAMPLE)
 #define   SYSVIEW_EVTMASK_INIT              (1 << SYSVIEW_EVTID_INIT)
 #define   SYSVIEW_EVTMASK_NAME_RESOURCE     (1 << SYSVIEW_EVTID_NAME_RESOURCE)
 #define   SYSVIEW_EVTMASK_PRINT_FORMATTED   (1 << SYSVIEW_EVTID_PRINT_FORMATTED)
@@ -202,7 +203,41 @@ typedef struct {
   U32          Prio;
   U32          StackBase;
   U32          StackSize;
+  U32          StackUsage;
 } SEGGER_SYSVIEW_TASKINFO;
+
+typedef struct {
+  U32          TaskID;
+  U32          StackBase;
+  U32          StackSize;
+  U32          StackUsage;
+} SEGGER_SYSVIEW_STACKINFO;
+
+typedef struct {
+  U32          ID;
+  union {
+    U32*   pU32_Value;
+    I32*   pI32_Value;
+    float* pFloat_Value;
+  };
+} SEGGER_SYSVIEW_DATA_SAMPLE;
+
+typedef enum {
+  SEGGER_SYSVIEW_TYPE_U32   = 0,
+  SEGGER_SYSVIEW_TYPE_I32   = 1,
+  SEGGER_SYSVIEW_TYPE_FLOAT = 2
+} SEGGER_SYSVIEW_DATA_TYPE;
+
+typedef struct {
+  U32                           ID;
+  SEGGER_SYSVIEW_DATA_TYPE      DataType;
+  I32                           Offset;
+  I32                           RangeMin;
+  I32                           RangeMax;
+  float                         ScalingFactor;
+  const char*                   sName;
+  const char*                   sUnit;
+}  SEGGER_SYSVIEW_DATA_REGISTER;
 
 typedef struct SEGGER_SYSVIEW_MODULE_STRUCT SEGGER_SYSVIEW_MODULE;
 
@@ -247,8 +282,8 @@ EXTERN unsigned int SEGGER_SYSVIEW_InterruptId;
 */
 
 typedef struct {
-  U64  (*pfGetTime)      (void);
-  void (*pfSendTaskList) (void);
+  U64  (*pfGetTime)               (void);
+  void (*pfSendTaskList)          (void);
 } SEGGER_SYSVIEW_OS_API;
 
 /*********************************************************************
@@ -262,9 +297,13 @@ void SEGGER_SYSVIEW_Stop                          (void);
 void SEGGER_SYSVIEW_GetSysDesc                    (void);
 void SEGGER_SYSVIEW_SendTaskList                  (void);
 void SEGGER_SYSVIEW_SendTaskInfo                  (const SEGGER_SYSVIEW_TASKINFO* pInfo);
+void SEGGER_SYSVIEW_SendStackInfo                 (const SEGGER_SYSVIEW_STACKINFO* pInfo);
 void SEGGER_SYSVIEW_SendSysDesc                   (const char* sSysDesc);
 int  SEGGER_SYSVIEW_IsStarted                     (void);
 int  SEGGER_SYSVIEW_GetChannelID                  (void);
+
+void  SEGGER_SYSVIEW_SampleData                   (const SEGGER_SYSVIEW_DATA_SAMPLE *pInfo);
+
 // Checks whether tracing has been started
 U8 SEGGER_SYSVIEW_Started(void);
 
@@ -311,6 +350,7 @@ void SEGGER_SYSVIEW_HeapAllocEx                   (void* pHeap, void* pUserData,
 void SEGGER_SYSVIEW_HeapFree                      (void* pHeap, void* pUserData);
 
 void SEGGER_SYSVIEW_NameResource                  (U32 ResourceId, const char* sName);
+void SEGGER_SYSVIEW_RegisterData                  ( SEGGER_SYSVIEW_DATA_REGISTER* pInfo);
 
 int  SEGGER_SYSVIEW_SendPacket                    (U8* pPacket, U8* pPayloadEnd, unsigned int EventId);
 
@@ -341,13 +381,21 @@ void SEGGER_SYSVIEW_SendNumModules                (void);
 */
 #ifndef SEGGER_SYSVIEW_EXCLUDE_PRINTF // Define in project to avoid warnings about variable parameter list
 void SEGGER_SYSVIEW_PrintfHostEx                  (const char* s, U32 Options, ...);
+void SEGGER_SYSVIEW_VPrintfHostEx                 (const char* s, U32 Options, va_list* pParamList);
 void SEGGER_SYSVIEW_PrintfTargetEx                (const char* s, U32 Options, ...);
+void SEGGER_SYSVIEW_VPrintfTargetEx               (const char* s, U32 Options, va_list* pParamList);
 void SEGGER_SYSVIEW_PrintfHost                    (const char* s, ...);
+void SEGGER_SYSVIEW_VPrintfHost                   (const char* s, va_list* pParamList);
 void SEGGER_SYSVIEW_PrintfTarget                  (const char* s, ...);
+void SEGGER_SYSVIEW_VPrintfTarget                 (const char* s, va_list* pParamList);
 void SEGGER_SYSVIEW_WarnfHost                     (const char* s, ...);
+void SEGGER_SYSVIEW_VWarnfHost                    (const char* s, va_list* pParamList);
 void SEGGER_SYSVIEW_WarnfTarget                   (const char* s, ...);
+void SEGGER_SYSVIEW_VWarnfTarget                  (const char* s, va_list* pParamList);
 void SEGGER_SYSVIEW_ErrorfHost                    (const char* s, ...);
+void SEGGER_SYSVIEW_VErrorfHost                   (const char* s, va_list* pParamList);
 void SEGGER_SYSVIEW_ErrorfTarget                  (const char* s, ...);
+void SEGGER_SYSVIEW_VErrorfTarget                 (const char* s, va_list* pParamList);
 #endif
 
 void SEGGER_SYSVIEW_Print                         (const char* s);

@@ -3,14 +3,14 @@
  *
  * SPDX-License-Identifier: BSD-1-Clause
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
  */
 /*********************************************************************
 *                    SEGGER Microcontroller GmbH                     *
 *                        The Embedded Experts                        *
 **********************************************************************
 *                                                                    *
-*            (c) 1995 - 2021 SEGGER Microcontroller GmbH             *
+*            (c) 1995 - 2024 SEGGER Microcontroller GmbH             *
 *                                                                    *
 *       www.segger.com     Support: support@segger.com               *
 *                                                                    *
@@ -49,7 +49,7 @@
 *                                                                    *
 **********************************************************************
 *                                                                    *
-*       SystemView version: 3.42                                    *
+*       SystemView version: 3.56                                    *
 *                                                                    *
 **********************************************************************
 -------------------------- END-OF-HEADER -----------------------------
@@ -71,6 +71,8 @@ Revision: $Rev: 26230 $
 
 #include "SEGGER_SYSVIEW_Conf.h"
 #include "SEGGER_RTT_Conf.h"
+
+#include "esp_assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -370,12 +372,14 @@ extern "C" {
   #define SEGGER_SYSVIEW_MAX_STRING_LEN           128
 #endif
 
+ESP_STATIC_ASSERT(SEGGER_SYSVIEW_MAX_STRING_LEN < 255, "SEGGER Sysview string length must be less than 255.");
+
 /*********************************************************************
 *
 *       Define: SEGGER_SYSVIEW_SUPPORT_LONG_ID
 *
 *  Description
-*    It set, support enconding Evend Ids longer than 14 bit.
+*    It set, support encoding Evend Ids longer than 14 bit.
 *  Default
 *    1
 */
@@ -388,7 +392,7 @@ extern "C" {
 *       Define: SEGGER_SYSVIEW_SUPPORT_LONG_DATA
 *
 *  Description
-*    It set, support enconding event data longer than 14 bit.
+*    It set, support encoding event data longer than 14 bit.
 *  Default
 *    0
 */
@@ -517,7 +521,7 @@ extern "C" {
 *       Define: SEGGER_SYSVIEW_SYNC_PERIOD_SHIFT
 *
 *  Description
-*    Configure how frequently syncronization is sent in post-mortem
+*    Configure how frequently synchronization is sent in post-mortem
 *    mode.
 *  Default
 *    8: (1 << 8) = Every 256 Events.
