@@ -26,6 +26,10 @@
 #define SPI_OUT_FLUSH_TIMEOUT_US                (CONFIG_BT_BLE_LOG_SPI_OUT_FLUSH_TIMEOUT * 1000)
 #define SPI_OUT_LE_AUDIO_ENABLED                CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
 #define SPI_OUT_LE_AUDIO_BUF_SIZE               CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_BUF_SIZE
+#define SPI_OUT_HOST_ENABLED                    CONFIG_BT_BLE_LOG_SPI_OUT_HOST_ENABLED
+#define SPI_OUT_HOST_BUF_SIZE                   CONFIG_BT_BLE_LOG_SPI_OUT_HOST_BUF_SIZE
+#define SPI_OUT_HCI_ENABLED                     CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#define SPI_OUT_HCI_BUF_SIZE                    CONFIG_BT_BLE_LOG_SPI_OUT_HCI_BUF_SIZE
 
 // Private defines
 #define BLE_LOG_TAG                             "BLE_LOG"
@@ -60,9 +64,23 @@
 #define SPI_OUT_LE_AUDIO_QUEUE_SIZE             (0)
 #endif // SPI_OUT_LE_AUDIO_ENABLED
 
+#if SPI_OUT_HOST_ENABLED
+#define SPI_OUT_HOST_QUEUE_SIZE                 (SPI_OUT_PING_PONG_BUF_CNT)
+#else
+#define SPI_OUT_HOST_QUEUE_SIZE                 (0)
+#endif // SPI_OUT_HOST_ENABLED
+
+#if SPI_OUT_HCI_ENABLED
+#define SPI_OUT_HCI_QUEUE_SIZE                  (SPI_OUT_PING_PONG_BUF_CNT)
+#else
+#define SPI_OUT_HCI_QUEUE_SIZE                  (0)
+#endif // SPI_OUT_HCI_ENABLED
+
 #define SPI_OUT_SPI_MASTER_QUEUE_SIZE           (SPI_OUT_UL_QUEUE_SIZE +\
                                                  SPI_OUT_LL_QUEUE_SIZE +\
-                                                 SPI_OUT_LE_AUDIO_QUEUE_SIZE)
+                                                 SPI_OUT_LE_AUDIO_QUEUE_SIZE +\
+                                                 SPI_OUT_HOST_QUEUE_SIZE +\
+                                                 SPI_OUT_HCI_QUEUE_SIZE)
 
 // Private typedefs
 typedef struct {
@@ -114,6 +132,8 @@ enum {
     LOG_CB_TYPE_LL_ISR,
     LOG_CB_TYPE_LL_HCI,
     LOG_CB_TYPE_LE_AUDIO,
+    LOG_CB_TYPE_HOST,
+    LOG_CB_TYPE_HCI,
 };
 
 enum {
@@ -123,6 +143,7 @@ enum {
     LL_LOG_FLAG_ISR,
     LL_LOG_FLAG_HCI,
     LL_LOG_FLAG_RAW,
+    LL_LOG_FLAG_HCI_UPSTREAM,
 };
 
 enum {
@@ -180,10 +201,9 @@ static void spi_out_log_cb_write_loss(spi_out_log_cb_t *log_cb);
 static void spi_out_log_cb_dump(spi_out_log_cb_t *log_cb);
 static void spi_out_log_flush(void);
 
-static inline spi_out_log_cb_t *spi_out_get_log_cb(uint8_t source);
-static inline uint8_t *spi_out_get_str_buf(uint8_t source);
-static void spi_out_log_write(uint8_t source, const uint8_t *addr, uint16_t len, bool with_ts);
-static bool spi_out_log_printf(uint8_t source, const char *format, va_list args, int offset);
+static void spi_out_write_hex(spi_out_log_cb_t *log_cb, uint8_t source,
+                              const uint8_t *addr, uint16_t len, bool with_ts);
+static int spi_out_write_str(uint8_t *str_buf, const char *format, va_list args, int offset);
 
 #if SPI_OUT_LL_ENABLED
 static int spi_out_ll_log_init(void);
@@ -313,6 +333,14 @@ DECLARE_LOG_MODULE(ul, LOG_CB_TYPE_UL, SPI_OUT_UL_TASK_BUF_SIZE, 1, 1)
 #if SPI_OUT_LE_AUDIO_ENABLED
 DECLARE_LOG_MODULE(le_audio, LOG_CB_TYPE_LE_AUDIO, SPI_OUT_LE_AUDIO_BUF_SIZE, 0, 0)
 #endif // SPI_OUT_LE_AUDIO_ENABLED
+
+#if SPI_OUT_HOST_ENABLED
+DECLARE_LOG_MODULE(host, LOG_CB_TYPE_HOST, SPI_OUT_HOST_BUF_SIZE, 0, 1)
+#endif // SPI_OUT_HOST_ENABLED
+
+#if SPI_OUT_HCI_ENABLED
+DECLARE_LOG_MODULE(hci, LOG_CB_TYPE_HCI, SPI_OUT_HCI_BUF_SIZE, 0, 0)
+#endif // SPI_OUT_HCI_ENABLED
 
 // Private functions
 static int spi_out_init_trans(spi_out_trans_cb_t **trans_cb, uint16_t buf_size)
@@ -581,6 +609,14 @@ static void spi_out_log_flush(void)
 #if SPI_OUT_LE_AUDIO_ENABLED
     LOG_MODULE_FLUSH(le_audio)();
 #endif // SPI_OUT_LE_AUDIO_ENABLED
+
+#if SPI_OUT_HOST_ENABLED
+    LOG_MODULE_FLUSH(host)();
+#endif // SPI_OUT_HOST_ENABLED
+
+#if SPI_OUT_HCI_ENABLED
+    LOG_MODULE_FLUSH(hci)();
+#endif // SPI_OUT_HCI_ENABLED
 }
 
 #if SPI_OUT_FLUSH_TIMER_ENABLED
@@ -592,31 +628,11 @@ static void esp_timer_cb_log_flush(void)
 }
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
-static inline spi_out_log_cb_t *spi_out_get_log_cb(uint8_t source)
-{
-    spi_out_log_cb_t *log_cb;
-    switch (source) {
-    default:
-        log_cb = LOG_MODULE_CB(ul);
-    }
-    return log_cb;
-}
-
-static inline uint8_t *spi_out_get_str_buf(uint8_t source)
-{
-    uint8_t *str_buf;
-    switch (source) {
-    default:
-        str_buf = LOG_MODULE_STR_BUF(ul);
-    }
-    return str_buf;
-}
-
-static void spi_out_log_write(uint8_t source, const uint8_t *addr, uint16_t len, bool with_ts)
+static void spi_out_write_hex(spi_out_log_cb_t *log_cb, uint8_t source,
+                              const uint8_t *addr, uint16_t len, bool with_ts)
 {
     uint16_t total_len = with_ts? (len + sizeof(uint32_t)): len;
     bool need_append;
-    spi_out_log_cb_t *log_cb = spi_out_get_log_cb(source);
     if (spi_out_log_cb_check_trans(log_cb, total_len, &need_append)) {
         if (with_ts) {
             uint32_t os_ts = pdTICKS_TO_MS(xTaskGetTickCount());
@@ -632,24 +648,19 @@ static void spi_out_log_write(uint8_t source, const uint8_t *addr, uint16_t len,
     spi_out_log_cb_write_loss(log_cb);
 }
 
-static bool spi_out_log_printf(uint8_t source, const char *format, va_list args, int offset)
+static int spi_out_write_str(uint8_t *str_buf, const char *format, va_list args, int offset)
 {
-    uint8_t *str_buf = spi_out_get_str_buf(source);
-    int len = vsnprintf((char *)(str_buf + offset),
-                        SPI_OUT_LOG_STR_BUF_SIZE - offset, format, args);
+    int len = vsnprintf((char *)(str_buf + offset), SPI_OUT_LOG_STR_BUF_SIZE - offset, format, args);
     if (len < 0) {
-        return false;
+        return 0;
     }
     len += offset;
 
-    // Truncate string if overflowed
     if (len >= SPI_OUT_LOG_STR_BUF_SIZE) {
         len = SPI_OUT_LOG_STR_BUF_SIZE - 1;
         str_buf[len] = '\0';
     }
-
-    spi_out_log_write(source, str_buf, len, true);
-    return true;
+    return len;
 }
 
 #if SPI_OUT_LL_ENABLED
@@ -919,6 +930,18 @@ int ble_log_spi_out_init(void)
     }
 #endif // SPI_OUT_LE_AUDIO_ENABLED
 
+#if SPI_OUT_HOST_ENABLED
+    if (LOG_MODULE_INIT(host)() != 0) {
+        goto host_init_failed;
+    }
+#endif // SPI_OUT_HOST_ENABLED
+
+#if SPI_OUT_HCI_ENABLED
+    if (LOG_MODULE_INIT(hci)() != 0) {
+        goto hci_init_failed;
+    }
+#endif // SPI_OUT_HCI_ENABLED
+
 #if SPI_OUT_FLUSH_TIMER_ENABLED
     esp_timer_create_args_t timer_args = {
         .callback = (esp_timer_cb_t)esp_timer_cb_log_flush,
@@ -943,6 +966,14 @@ int ble_log_spi_out_init(void)
 #if SPI_OUT_FLUSH_TIMER_ENABLED
 timer_init_failed:
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
+#if SPI_OUT_HCI_ENABLED
+    LOG_MODULE_DEINIT(hci)();
+hci_init_failed:
+#endif // SPI_OUT_HCI_ENABLED
+#if SPI_OUT_HOST_ENABLED
+    LOG_MODULE_DEINIT(host)();
+host_init_failed:
+#endif // SPI_OUT_HOST_ENABLED
 #if SPI_OUT_LE_AUDIO_ENABLED
     LOG_MODULE_DEINIT(le_audio)();
 le_audio_init_failed:
@@ -994,6 +1025,14 @@ void ble_log_spi_out_deinit(void)
 #if SPI_OUT_TS_SYNC_ENABLED
     spi_out_ts_sync_deinit();
 #endif // SPI_OUT_TS_SYNC_ENABLED
+
+#if SPI_OUT_HCI_ENABLED
+    LOG_MODULE_DEINIT(hci)();
+#endif // SPI_OUT_HCI_ENABLED
+
+#if SPI_OUT_HOST_ENABLED
+    LOG_MODULE_DEINIT(host)();
+#endif // SPI_OUT_HOST_ENABLED
 
 #if SPI_OUT_LE_AUDIO_ENABLED
     LOG_MODULE_DEINIT(le_audio)();
@@ -1056,6 +1095,9 @@ IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint3
     } else if (flag & BIT(LL_LOG_FLAG_HCI)) {
         log_cb = ll_hci_log_cb;
         source = BLE_LOG_SPI_OUT_SOURCE_LL_HCI;
+    } else if (flag & BIT(LL_LOG_FLAG_HCI_UPSTREAM)) {
+        log_cb = ll_hci_log_cb;
+        source = BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM;
     } else {
         log_cb = ll_task_log_cb;
         source = BLE_LOG_SPI_OUT_SOURCE_ESP;
@@ -1116,77 +1158,7 @@ int ble_log_spi_out_write(uint8_t source, const uint8_t *addr, uint16_t len)
     }
 
     xSemaphoreTake(LOG_MODULE_MUTEX(ul), portMAX_DELAY);
-    spi_out_log_write(source, addr, len, false);
-    xSemaphoreGive(LOG_MODULE_MUTEX(ul));
-    return 0;
-}
-
-int ble_log_spi_out_printf(uint8_t source, const char *format, ...)
-{
-    if (!LOG_MODULE_INIT_FLAG(ul)) {
-        return -1;
-    }
-
-    if (!format) {
-        return -1;
-    }
-
-    // Get arguments
-    va_list args;
-    va_start(args, format);
-
-    va_list args_copy;
-    va_copy(args_copy, args);
-
-    xSemaphoreTake(LOG_MODULE_MUTEX(ul), portMAX_DELAY);
-    bool ret = spi_out_log_printf(source, format, args_copy, 0);
-    xSemaphoreGive(LOG_MODULE_MUTEX(ul));
-
-    va_end(args_copy);
-    va_end(args);
-    return ret? 0: -1;
-}
-
-int ble_log_spi_out_printf_enh(uint8_t source, uint8_t level, const char *tag, const char *format, ...)
-{
-    if (!LOG_MODULE_INIT_FLAG(ul)) {
-        return -1;
-    }
-
-    if (!tag || !format) {
-        return -1;
-    }
-
-    va_list args;
-    va_start(args, format);
-
-    va_list args_copy;
-    va_copy(args_copy, args);
-
-    // Create log prefix in the format: "[level][tag] "
-    bool ret = false;
-    xSemaphoreTake(LOG_MODULE_MUTEX(ul), portMAX_DELAY);
-    int prefix_len = snprintf((char *)LOG_MODULE_STR_BUF(ul), SPI_OUT_LOG_STR_BUF_SIZE,
-                              "[%d][%s]", level, tag? tag: "NULL");
-    if ((prefix_len < 0) || (prefix_len >= SPI_OUT_LOG_STR_BUF_SIZE)) {
-        goto exit;
-    }
-    ret = spi_out_log_printf(source, format, args_copy, prefix_len);
-exit:
-    xSemaphoreGive(LOG_MODULE_MUTEX(ul));
-    va_end(args_copy);
-    va_end(args);
-    return ret? 0: -1;
-}
-
-int ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t len)
-{
-    if (!LOG_MODULE_INIT_FLAG(ul)) {
-        return -1;
-    }
-
-    xSemaphoreTake(LOG_MODULE_MUTEX(ul), portMAX_DELAY);
-    spi_out_log_write(source, addr, len, true);
+    spi_out_write_hex(LOG_MODULE_CB(ul), source, addr, len, false);
     xSemaphoreGive(LOG_MODULE_MUTEX(ul));
     return 0;
 }
@@ -1231,6 +1203,23 @@ void ble_log_spi_out_dump_all(void)
         esp_rom_printf("\n:LE_AUDIO_LOG_DUMP_END]\n\n");
     }
 #endif // SPI_OUT_LE_AUDIO_ENABLED
+
+
+#if SPI_OUT_HOST_ENABLED
+    if (LOG_MODULE_INIT_FLAG(host)) {
+        esp_rom_printf("[HOST_LOG_DUMP_START:\n");
+        spi_out_log_cb_dump(LOG_MODULE_CB(host));
+        esp_rom_printf("\n:HOST_LOG_DUMP_END]\n\n");
+    }
+#endif // SPI_OUT_HOST_ENABLED
+
+#if SPI_OUT_HCI_ENABLED
+    if (LOG_MODULE_INIT_FLAG(hci)) {
+        esp_rom_printf("[HCI_LOG_DUMP_START:\n");
+        spi_out_log_cb_dump(LOG_MODULE_CB(hci));
+        esp_rom_printf("\n:HCI_LOG_DUMP_END]\n\n");
+    }
+#endif // SPI_OUT_HCI_ENABLED
 
     portEXIT_CRITICAL_SAFE(&spinlock);
 }
@@ -1278,4 +1267,53 @@ IRAM_ATTR void ble_log_spi_out_le_audio_write(const uint8_t *addr, uint16_t len)
     return;
 }
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
+
+#if SPI_OUT_HOST_ENABLED
+int ble_log_spi_out_host_write(uint8_t source, const char *prefix, const char *format, ...)
+{
+    if (!LOG_MODULE_INIT_FLAG(host) || !prefix || !format) {
+        return -1;
+    }
+
+    // Copy prefix to string buffer
+    int prefix_len = strlen(prefix);
+    if (prefix_len >= SPI_OUT_LOG_STR_BUF_SIZE) {
+        return -1;
+    }
+    memcpy(LOG_MODULE_STR_BUF(host), prefix, prefix_len);
+
+    // Write string buffer
+    va_list args;
+    va_start(args, format);
+    int total_len = spi_out_write_str(LOG_MODULE_STR_BUF(host), format, args, prefix_len);
+    va_end(args);
+    if (total_len == 0) {
+        return -1;
+    }
+
+    // Write log control block buffer
+    spi_out_write_hex(LOG_MODULE_CB(host), source,
+                      LOG_MODULE_STR_BUF(host), (uint16_t)total_len, true);
+    return 0;
+}
+#endif // SPI_OUT_HOST_ENABLED
+
+#if SPI_OUT_HCI_ENABLED
+int ble_log_spi_out_hci_write(uint8_t source, const uint8_t *addr, uint16_t len)
+{
+    if (!LOG_MODULE_INIT_FLAG(hci)) {
+        return -1;
+    }
+
+    if (source == BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM) {
+#if SPI_OUT_LL_ENABLED
+        ble_log_spi_out_ll_write(len, addr, 0, NULL, BIT(LL_LOG_FLAG_HCI_UPSTREAM));
+#endif // SPI_OUT_LL_ENABLED
+    }
+    if (source == BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM) {
+        spi_out_write_hex(LOG_MODULE_CB(hci), source, addr, len, true);
+    }
+    return 0;
+}
+#endif // SPI_OUT_HCI_ENABLED
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED

@@ -601,7 +601,7 @@ void bt_record_hci_data(uint8_t *data, uint16_t len)
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
 {
 #if (BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
-    ble_log_spi_out_write_with_ts(BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM, data, len);
+    ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM, data, len);
 #endif // (BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
     //Target has packet to host, malloc new buffer for packet
     BT_HDR *pkt = NULL;
