@@ -480,6 +480,8 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
                 if (l2cu_create_conn(p_lcb, BT_TRANSPORT_LE)) {
                     btm_acl_removed (p_lcb->remote_bd_addr, BT_TRANSPORT_LE);
                     lcb_is_free = FALSE;    /* still using this lcb */
+                } else {
+                    L2CAP_TRACE_ERROR("master retry connect failed");
                 }
             }
             #endif // (GATTC_CONNECT_RETRY_EN == TRUE)
@@ -489,7 +491,10 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
             if(btm_ble_inter_get() && p_lcb->link_role == HCI_ROLE_SLAVE) {
                 p_lcb->retry_create_con ++;
                 L2CAP_TRACE_DEBUG("slave restart extend adv, retry count %d reason 0x%x\n", p_lcb->retry_create_con, reason);
-                BTM_BleStartExtAdvRestart(handle);
+                tBTM_STATUS start_adv_status = BTM_BleStartExtAdvRestart(handle);
+                if (start_adv_status != BTM_SUCCESS) {
+                    L2CAP_TRACE_ERROR("slave restart extend adv failed (err 0x%x)", start_adv_status);
+                }
             }
             #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
             #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
@@ -499,7 +504,10 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
             if(!btm_ble_inter_get() && p_lcb->link_role == HCI_ROLE_SLAVE) {
                 p_lcb->retry_create_con ++;
                 L2CAP_TRACE_DEBUG("slave resatrt adv, retry count %d reason 0x%x\n", p_lcb->retry_create_con, reason);
-                btm_ble_start_adv();
+                tBTM_STATUS start_adv_status = btm_ble_start_adv();
+                if (start_adv_status != BTM_SUCCESS) {
+                    L2CAP_TRACE_ERROR("slave resatrt adv failed (err 0x%x)", start_adv_status);
+                }
             }
             #endif // #if (BLE_42_ADV_EN == TRUE)
             #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
