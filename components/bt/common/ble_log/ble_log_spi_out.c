@@ -36,7 +36,7 @@
 #define SPI_OUT_FRAME_OVERHEAD                  (8)
 #define SPI_OUT_PACKET_LOSS_FRAME_SIZE          (6)
 #define SPI_OUT_TRANS_ITVL_MIN_US               (30)
-#define SPI_OUT_UL_LOG_STR_BUF_SIZE             (100)
+#define SPI_OUT_LOG_STR_BUF_SIZE                (100)
 #define SPI_OUT_MALLOC(size)                    heap_caps_malloc(size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 
 #if SPI_OUT_TS_SYNC_ENABLED
@@ -137,11 +137,6 @@ static spi_device_handle_t spi_handle = NULL;
 static uint32_t last_tx_done_ts = 0;
 static uint32_t last_tx_done_os_ts = 0;
 
-static bool ul_log_inited = false;
-static SemaphoreHandle_t ul_log_mutex = NULL;
-static spi_out_log_cb_t *ul_log_cb = NULL;
-static uint8_t *ul_log_str_buf = NULL;
-
 #if SPI_OUT_LL_ENABLED
 static bool ll_log_inited = false;
 static spi_out_log_cb_t *ll_task_log_cb = NULL;
@@ -185,10 +180,10 @@ static void spi_out_log_cb_write_loss(spi_out_log_cb_t *log_cb);
 static void spi_out_log_cb_dump(spi_out_log_cb_t *log_cb);
 static void spi_out_log_flush(void);
 
-static int spi_out_ul_log_init(void);
-static void spi_out_ul_log_deinit(void);
-static void spi_out_ul_log_write(uint8_t source, const uint8_t *addr, uint16_t len, bool with_ts);
-static bool spi_out_ul_log_printf(uint8_t source, const char *format, va_list args, int offset);
+static inline spi_out_log_cb_t *spi_out_get_log_cb(uint8_t source);
+static inline uint8_t *spi_out_get_str_buf(uint8_t source);
+static void spi_out_log_write(uint8_t source, const uint8_t *addr, uint16_t len, bool with_ts);
+static bool spi_out_log_printf(uint8_t source, const char *format, va_list args, int offset);
 
 #if SPI_OUT_LL_ENABLED
 static int spi_out_ll_log_init(void);
@@ -312,6 +307,8 @@ static void esp_timer_cb_ts_sync(void);
             xSemaphoreGive(LOG_MODULE_MUTEX(ID));                                   \
         )                                                                           \
     }                                                                               \
+
+DECLARE_LOG_MODULE(ul, LOG_CB_TYPE_UL, SPI_OUT_UL_TASK_BUF_SIZE, 1, 1)
 
 #if SPI_OUT_LE_AUDIO_ENABLED
 DECLARE_LOG_MODULE(le_audio, LOG_CB_TYPE_LE_AUDIO, SPI_OUT_LE_AUDIO_BUF_SIZE, 0, 0)
@@ -572,11 +569,7 @@ static void spi_out_log_cb_dump(spi_out_log_cb_t *log_cb)
 
 static void spi_out_log_flush(void)
 {
-    // Flush ul log
-    xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    spi_out_log_cb_flush_trans(ul_log_cb);
-    spi_out_log_cb_append_trans(ul_log_cb);
-    xSemaphoreGive(ul_log_mutex);
+    LOG_MODULE_FLUSH(ul)();
 
 #if SPI_OUT_LL_ENABLED
     if (esp_bt_controller_get_status() >= ESP_BT_CONTROLLER_STATUS_INITED) {
@@ -599,105 +592,63 @@ static void esp_timer_cb_log_flush(void)
 }
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
-static int spi_out_ul_log_init(void)
+static inline spi_out_log_cb_t *spi_out_get_log_cb(uint8_t source)
 {
-    if (ul_log_inited) {
-        return 0;
+    spi_out_log_cb_t *log_cb;
+    switch (source) {
+    default:
+        log_cb = LOG_MODULE_CB(ul);
     }
-
-    // Initialize mutex
-    ul_log_mutex = xSemaphoreCreateMutex();
-    if (!ul_log_mutex) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to create mutex for upper layer task log!");
-        goto mutex_init_failed;
-    }
-
-    // Initialize string buffer
-    ul_log_str_buf = (uint8_t *)SPI_OUT_MALLOC(SPI_OUT_UL_LOG_STR_BUF_SIZE);
-    if (!ul_log_str_buf) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize string buffer for upper layer task log!");
-        goto str_buf_init_failed;
-    }
-
-    // Initialize log control block
-    if (spi_out_log_cb_init(&ul_log_cb, SPI_OUT_UL_TASK_BUF_SIZE, LOG_CB_TYPE_UL) != 0) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control blocks for upper layer task log!");
-        goto log_cb_init_failed;
-    }
-
-    // Initialization done
-    ESP_LOGI(BLE_LOG_TAG, "Succeeded to initialize upper layer task log!");
-    ul_log_inited = true;
-    return 0;
-
-log_cb_init_failed:
-    if (ul_log_str_buf) {
-        free(ul_log_str_buf);
-        ul_log_str_buf = NULL;
-    }
-str_buf_init_failed:
-    vSemaphoreDelete(ul_log_mutex);
-mutex_init_failed:
-    return -1;
+    return log_cb;
 }
 
-static void spi_out_ul_log_deinit(void)
+static inline uint8_t *spi_out_get_str_buf(uint8_t source)
 {
-    if (!ul_log_inited) {
-        return;
+    uint8_t *str_buf;
+    switch (source) {
+    default:
+        str_buf = LOG_MODULE_STR_BUF(ul);
     }
-    ul_log_inited = false;
-
-    xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    if (ul_log_str_buf) {
-        free(ul_log_str_buf);
-        ul_log_str_buf = NULL;
-    }
-    spi_out_log_cb_deinit(&ul_log_cb);
-    xSemaphoreGive(ul_log_mutex);
-
-    vSemaphoreDelete(ul_log_mutex);
-    ul_log_mutex = NULL;
-
-    ESP_LOGI(BLE_LOG_TAG, "Succeeded to deinitialize upper layer log!");
-    return;
+    return str_buf;
 }
 
-static void spi_out_ul_log_write(uint8_t source, const uint8_t *addr, uint16_t len, bool with_ts)
+static void spi_out_log_write(uint8_t source, const uint8_t *addr, uint16_t len, bool with_ts)
 {
     uint16_t total_len = with_ts? (len + sizeof(uint32_t)): len;
     bool need_append;
-    if (spi_out_log_cb_check_trans(ul_log_cb, total_len, &need_append)) {
+    spi_out_log_cb_t *log_cb = spi_out_get_log_cb(source);
+    if (spi_out_log_cb_check_trans(log_cb, total_len, &need_append)) {
         if (with_ts) {
             uint32_t os_ts = pdTICKS_TO_MS(xTaskGetTickCount());
-            need_append |= spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&os_ts,
+            need_append |= spi_out_log_cb_write(log_cb, (const uint8_t *)&os_ts,
                                                 sizeof(uint32_t), addr, len, source, true);
         } else {
-            need_append |= spi_out_log_cb_write(ul_log_cb, addr, len, NULL, 0, source, true);
+            need_append |= spi_out_log_cb_write(log_cb, addr, len, NULL, 0, source, true);
         }
     }
     if (need_append) {
-        spi_out_log_cb_append_trans(ul_log_cb);
+        spi_out_log_cb_append_trans(log_cb);
     }
-    spi_out_log_cb_write_loss(ul_log_cb);
+    spi_out_log_cb_write_loss(log_cb);
 }
 
-static bool spi_out_ul_log_printf(uint8_t source, const char *format, va_list args, int offset)
+static bool spi_out_log_printf(uint8_t source, const char *format, va_list args, int offset)
 {
-    int len = vsnprintf((char *)(ul_log_str_buf + offset),
-                        SPI_OUT_UL_LOG_STR_BUF_SIZE - offset, format, args);
+    uint8_t *str_buf = spi_out_get_str_buf(source);
+    int len = vsnprintf((char *)(str_buf + offset),
+                        SPI_OUT_LOG_STR_BUF_SIZE - offset, format, args);
     if (len < 0) {
         return false;
     }
     len += offset;
 
     // Truncate string if overflowed
-    if (len >= SPI_OUT_UL_LOG_STR_BUF_SIZE) {
-        len = SPI_OUT_UL_LOG_STR_BUF_SIZE - 1;
-        ul_log_str_buf[len] = '\0';
+    if (len >= SPI_OUT_LOG_STR_BUF_SIZE) {
+        len = SPI_OUT_LOG_STR_BUF_SIZE - 1;
+        str_buf[len] = '\0';
     }
 
-    spi_out_ul_log_write(source, ul_log_str_buf, len, true);
+    spi_out_log_write(source, str_buf, len, true);
     return true;
 }
 
@@ -754,6 +705,10 @@ static void spi_out_ll_log_deinit(void)
 // Context: LL task
 static void spi_out_ll_log_flush(void)
 {
+    if (!ll_log_inited) {
+        return;
+    }
+
     // Flush task log and hci log buffer
     spi_out_log_cb_flush_trans(ll_task_log_cb);
     spi_out_log_cb_flush_trans(ll_hci_log_cb);
@@ -942,7 +897,7 @@ int ble_log_spi_out_init(void)
         goto spi_device_add_failed;
     }
 
-    if (spi_out_ul_log_init() != 0) {
+    if (LOG_MODULE_INIT(ul)() != 0) {
         goto ul_log_init_failed;
     }
 
@@ -1000,7 +955,7 @@ ts_sync_init_failed:
     spi_out_ll_log_deinit();
 ll_log_init_failed:
 #endif // SPI_OUT_LL_ENABLED
-    spi_out_ul_log_deinit();
+    LOG_MODULE_DEINIT(ul)();
 ul_log_init_failed:
     spi_bus_remove_device(spi_handle);
     spi_handle = NULL;
@@ -1016,6 +971,10 @@ void ble_log_spi_out_deinit(void)
     if (!spi_out_inited) {
         return;
     }
+
+    // Reset init flag
+    spi_out_inited = false;
+    spi_out_enabled = false;
 
 #if SPI_OUT_FLUSH_TIMER_ENABLED
     esp_timer_stop(flush_timer);
@@ -1044,11 +1003,7 @@ void ble_log_spi_out_deinit(void)
     spi_out_ll_log_deinit();
 #endif // SPI_OUT_LL_ENABLED
 
-    spi_out_ul_log_deinit();
-
-    // Reset init flag
-    spi_out_inited = false;
-    spi_out_enabled = false;
+    LOG_MODULE_DEINIT(ul)();
 }
 
 #if SPI_OUT_TS_SYNC_ENABLED
@@ -1156,19 +1111,19 @@ IRAM_ATTR void ble_log_spi_out_ll_log_ev_proc(void)
 
 int ble_log_spi_out_write(uint8_t source, const uint8_t *addr, uint16_t len)
 {
-    if (!ul_log_inited) {
+    if (!LOG_MODULE_INIT_FLAG(ul)) {
         return -1;
     }
 
-    xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    spi_out_ul_log_write(source, addr, len, false);
-    xSemaphoreGive(ul_log_mutex);
+    xSemaphoreTake(LOG_MODULE_MUTEX(ul), portMAX_DELAY);
+    spi_out_log_write(source, addr, len, false);
+    xSemaphoreGive(LOG_MODULE_MUTEX(ul));
     return 0;
 }
 
 int ble_log_spi_out_printf(uint8_t source, const char *format, ...)
 {
-    if (!ul_log_inited) {
+    if (!LOG_MODULE_INIT_FLAG(ul)) {
         return -1;
     }
 
@@ -1183,9 +1138,9 @@ int ble_log_spi_out_printf(uint8_t source, const char *format, ...)
     va_list args_copy;
     va_copy(args_copy, args);
 
-    xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    bool ret = spi_out_ul_log_printf(source, format, args_copy, 0);
-    xSemaphoreGive(ul_log_mutex);
+    xSemaphoreTake(LOG_MODULE_MUTEX(ul), portMAX_DELAY);
+    bool ret = spi_out_log_printf(source, format, args_copy, 0);
+    xSemaphoreGive(LOG_MODULE_MUTEX(ul));
 
     va_end(args_copy);
     va_end(args);
@@ -1194,7 +1149,7 @@ int ble_log_spi_out_printf(uint8_t source, const char *format, ...)
 
 int ble_log_spi_out_printf_enh(uint8_t source, uint8_t level, const char *tag, const char *format, ...)
 {
-    if (!ul_log_inited) {
+    if (!LOG_MODULE_INIT_FLAG(ul)) {
         return -1;
     }
 
@@ -1210,15 +1165,15 @@ int ble_log_spi_out_printf_enh(uint8_t source, uint8_t level, const char *tag, c
 
     // Create log prefix in the format: "[level][tag] "
     bool ret = false;
-    xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    int prefix_len = snprintf((char *)ul_log_str_buf, SPI_OUT_UL_LOG_STR_BUF_SIZE,
+    xSemaphoreTake(LOG_MODULE_MUTEX(ul), portMAX_DELAY);
+    int prefix_len = snprintf((char *)LOG_MODULE_STR_BUF(ul), SPI_OUT_LOG_STR_BUF_SIZE,
                               "[%d][%s]", level, tag? tag: "NULL");
-    if ((prefix_len < 0) || (prefix_len >= SPI_OUT_UL_LOG_STR_BUF_SIZE)) {
+    if ((prefix_len < 0) || (prefix_len >= SPI_OUT_LOG_STR_BUF_SIZE)) {
         goto exit;
     }
-    ret = spi_out_ul_log_printf(source, format, args_copy, prefix_len);
+    ret = spi_out_log_printf(source, format, args_copy, prefix_len);
 exit:
-    xSemaphoreGive(ul_log_mutex);
+    xSemaphoreGive(LOG_MODULE_MUTEX(ul));
     va_end(args_copy);
     va_end(args);
     return ret? 0: -1;
@@ -1226,18 +1181,22 @@ exit:
 
 int ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t len)
 {
-    if (!ul_log_inited) {
+    if (!LOG_MODULE_INIT_FLAG(ul)) {
         return -1;
     }
 
-    xSemaphoreTake(ul_log_mutex, portMAX_DELAY);
-    spi_out_ul_log_write(source, addr, len, true);
-    xSemaphoreGive(ul_log_mutex);
+    xSemaphoreTake(LOG_MODULE_MUTEX(ul), portMAX_DELAY);
+    spi_out_log_write(source, addr, len, true);
+    xSemaphoreGive(LOG_MODULE_MUTEX(ul));
     return 0;
 }
 
 void ble_log_spi_out_dump_all(void)
 {
+    if (!spi_out_inited) {
+        return;
+    }
+
     portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL_SAFE(&spinlock);
 
@@ -1258,10 +1217,10 @@ void ble_log_spi_out_dump_all(void)
     }
 #endif // SPI_OUT_LL_ENABLED
 
-    if (ul_log_inited) {
+    if (LOG_MODULE_INIT_FLAG(ul)) {
         // Dump upper layer log buffer
         esp_rom_printf("[UL_LOG_DUMP_START:\n");
-        spi_out_log_cb_dump(ul_log_cb);
+        spi_out_log_cb_dump(LOG_MODULE_CB(ul));
         esp_rom_printf("\n:UL_LOG_DUMP_END]\n\n");
     }
 
@@ -1278,6 +1237,10 @@ void ble_log_spi_out_dump_all(void)
 
 void ble_log_spi_out_enable(bool enable)
 {
+    if (!spi_out_inited) {
+        return;
+    }
+
     spi_out_enabled = enable;
 
     if (!enable) {
