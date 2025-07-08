@@ -41,10 +41,6 @@
 #define BLE_LOG_TAG                             "BLE_LOG"
 #define SPI_OUT_BUS                             SPI2_HOST
 #define SPI_OUT_MAX_TRANSFER_SIZE               (10240)
-#define SPI_OUT_FRAME_HEAD_LEN                  (4)
-#define SPI_OUT_FRAME_TAIL_LEN                  (4)
-#define SPI_OUT_FRAME_OVERHEAD                  (8)
-#define SPI_OUT_PACKET_LOSS_FRAME_SIZE          (6)
 #define SPI_OUT_TRANS_ITVL_MIN_US               (30)
 #define SPI_OUT_LOG_STR_BUF_SIZE                (100)
 #define SPI_OUT_MALLOC(size)                    heap_caps_malloc(size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
@@ -108,10 +104,10 @@ typedef struct {
 typedef struct {
     spi_out_trans_cb_t *trans_cb[2];
     uint8_t trans_cb_idx;
-    uint8_t frame_sn;
+    uint8_t type;
     uint16_t lost_frame_cnt;
     uint32_t lost_bytes_cnt;
-    uint8_t type;
+    uint32_t frame_sn;
 } spi_out_log_cb_t;
 
 typedef struct {
@@ -123,7 +119,8 @@ typedef struct {
 typedef struct {
     uint16_t length;
     uint8_t source;
-    uint8_t frame_sn;
+    uint8_t type;
+    uint16_t frame_sn;
 } __attribute__((packed)) frame_head_t;
 
 typedef struct {
@@ -404,6 +401,12 @@ DECLARE_LOG_MODULE(mesh, LOG_CB_TYPE_MESH, SPI_OUT_MESH_BUF_SIZE,
                   SPI_OUT_MESH_TASK_CNT, 0, 1)
 #endif // SPI_OUT_MESH_ENABLED
 
+// Private macros
+#define SPI_OUT_FRAME_HEAD_LEN      (sizeof(frame_head_t))
+#define SPI_OUT_FRAME_TAIL_LEN      (sizeof(uint32_t))
+#define SPI_OUT_FRAME_OVERHEAD      (SPI_OUT_FRAME_HEAD_LEN + SPI_OUT_FRAME_TAIL_LEN)
+#define SPI_OUT_GET_FRAME_SN(VAR)   __atomic_fetch_add(VAR, 1, __ATOMIC_RELAXED)
+
 // Private functions
 static int spi_out_init_trans(spi_out_trans_cb_t **trans_cb, uint16_t buf_size)
 {
@@ -546,7 +549,6 @@ IRAM_ATTR static inline bool spi_out_log_cb_check_trans(spi_out_log_cb_t *log_cb
 failed:
     log_cb->lost_bytes_cnt += frame_len;
     log_cb->lost_frame_cnt++;
-    log_cb->frame_sn++;
     return false;
 }
 
@@ -587,27 +589,23 @@ IRAM_ATTR static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8
     frame_head_t head = {
         .length = total_length,
         .source = source,
-        .frame_sn = log_cb->frame_sn,
+        .type = log_cb->type,
+        .frame_sn = SPI_OUT_GET_FRAME_SN(&(log_cb->frame_sn)) & 0xFFFF,
     };
-    uint32_t checksum = 0;
-    if (with_checksum) {
-        for (int i = 0; i < len; i++) {
-            checksum += addr[i];
-        }
-        for (int i = 0; i < len_append; i++) {
-            checksum += addr_append[i];
-        }
-    }
 
     memcpy(buf, (const uint8_t *)&head, SPI_OUT_FRAME_HEAD_LEN);
     memcpy(buf + SPI_OUT_FRAME_HEAD_LEN, addr, len);
     if (len_append && addr_append) {
         memcpy(buf + SPI_OUT_FRAME_HEAD_LEN + len, addr_append, len_append);
     }
+
+    uint32_t checksum = 0;
+    for (int i = 0; i < SPI_OUT_FRAME_HEAD_LEN + total_length; i++) {
+        checksum += buf[i];
+    }
     memcpy(buf + SPI_OUT_FRAME_HEAD_LEN + total_length, &checksum, SPI_OUT_FRAME_TAIL_LEN);
 
     trans_cb->length += total_length + SPI_OUT_FRAME_OVERHEAD;
-    log_cb->frame_sn++;
     if ((trans_cb->buf_size - trans_cb->length) <= SPI_OUT_FRAME_OVERHEAD) {
         trans_cb->flag = TRANS_CB_FLAG_NEED_QUEUE;
         return true;
