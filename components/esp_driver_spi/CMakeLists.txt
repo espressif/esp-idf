@@ -27,6 +27,6 @@ idf_component_register(
     SRCS ${srcs}
     INCLUDE_DIRS ${public_include}
     REQUIRES esp_pm
-    PRIV_REQUIRES esp_timer esp_mm esp_driver_gpio
+    PRIV_REQUIRES esp_timer esp_mm esp_driver_gpio spi_flash esp_psram    #For CONFIG_SPIRAM_SPEED
     LDFRAGMENTS "linker.lf"
 )
