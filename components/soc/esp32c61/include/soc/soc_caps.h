@@ -161,10 +161,7 @@
 #define SOC_AHB_GDMA_SUPPORT_PSRAM 1
 #define SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION   1
 
-/*-------------------------- ETM CAPS --------------------------------------*/
-#define SOC_ETM_GROUPS                  1U  // Number of ETM groups
-#define SOC_ETM_CHANNELS_PER_GROUP      50  // Number of ETM channels in the group
-#define SOC_ETM_SUPPORT_SLEEP_RETENTION 1   // Support sleep retention
+#define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C61 has 1 GPIO peripheral

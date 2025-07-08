@@ -196,11 +196,6 @@
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 #define SOC_AHB_GDMA_SUPPORT_PSRAM 1
 
-/*-------------------------- ETM CAPS --------------------------------------*/
-#define SOC_ETM_GROUPS                  1U  // Number of ETM groups
-#define SOC_ETM_CHANNELS_PER_GROUP      50  // Number of ETM channels in the group
-#define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
-
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-H4 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                       1U
@@ -255,6 +250,7 @@
 // #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 #define SOC_SDM_SUPPORT_SLEEP_RETENTION 1
+#define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-H4 has 2 I2C

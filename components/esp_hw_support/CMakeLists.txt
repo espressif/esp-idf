@@ -5,7 +5,7 @@ idf_build_get_property(non_os_build NON_OS_BUILD)
 if(${target} STREQUAL "linux")
     idf_component_register(SRCS "port/linux/esp_random.c"
                                  "port/linux/chip_info.c"
-                           INCLUDE_DIRS "include")
+                           INCLUDE_DIRS "include" "etm/include")
     return()
 endif()
 
@@ -122,7 +122,7 @@ if(NOT non_os_build)
     endif()
 
     if(CONFIG_SOC_ETM_SUPPORTED)
-        list(APPEND srcs "esp_etm.c")
+        list(APPEND srcs "etm/esp_etm.c")
     endif()
 
     if(CONFIG_SOC_PAU_SUPPORTED)
@@ -175,7 +175,7 @@ else()
 endif()
 
 set(public_include_dirs "include" "include/soc"
-                        "dma/include" "ldo/include" "debug_probe/include"
+                        "dma/include" "ldo/include" "debug_probe/include" "etm/include"
                         "mspi_timing_tuning/include" "mspi_timing_tuning/tuning_scheme_impl/include"
                         "power_supply/include")
 

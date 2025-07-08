@@ -191,10 +191,6 @@
 // #define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule TODO: IDF-11604
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 
-/*-------------------------- ETM CAPS --------------------------------------*/
-#define SOC_ETM_GROUPS                  1U  // Number of ETM groups
-#define SOC_ETM_CHANNELS_PER_GROUP      50  // Number of ETM channels in the group
-
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-H21 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                           1U
@@ -234,6 +230,9 @@
 // #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1)
 // #define SOC_CLOCKOUT_HAS_SOURCE_GATE        (1)
 // #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
+
+#define SOC_SDM_SUPPORT_SLEEP_RETENTION 1
+#define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 /* No dedicated LP_IOMUX subsystem on ESP32-H21. LP functions are still supported

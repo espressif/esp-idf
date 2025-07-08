@@ -146,7 +146,6 @@ api-reference/peripherals/usb_host.rst
 api-reference/peripherals/camera_driver.rst
 api-reference/peripherals/adc_oneshot.rst
 api-reference/peripherals/twai.rst
-api-reference/peripherals/etm.rst
 api-reference/peripherals/sdspi_share.rst
 api-reference/peripherals/ana_cmpr.rst
 api-reference/peripherals/adc_continuous.rst
@@ -175,7 +174,6 @@ api-reference/peripherals/spi_flash/spi_flash_concurrency.rst
 api-reference/peripherals/spi_flash/spi_flash_override_driver.rst
 api-reference/peripherals/spi_flash/spi_flash_optional_feature.rst
 api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom.rst
-api-reference/peripherals/sdm.rst
 api-reference/peripherals/sdmmc_host.rst
 api-reference/peripherals/lcd/i80_lcd.rst
 api-reference/peripherals/lcd/index.rst

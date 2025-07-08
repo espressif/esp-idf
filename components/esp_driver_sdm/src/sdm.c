@@ -126,7 +126,7 @@ static sdm_group_t *sdm_acquire_group_handle(int group_id, sdm_clock_source_t cl
             group->clk_src = clk_src;
 
 #if SDM_USE_RETENTION_LINK
-            sleep_retention_module_t module = soc_sdm_retention_infos[group->group_id].module;
+            sleep_retention_module_t module = soc_sdm_retention_infos[group_id].module;
             sleep_retention_module_init_param_t init_param = {
                 .cbs = {
                     .create = {
@@ -138,7 +138,7 @@ static sdm_group_t *sdm_acquire_group_handle(int group_id, sdm_clock_source_t cl
             };
             // retention module init must be called BEFORE the hal init
             if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
-                ESP_LOGW(TAG, "init sleep retention failed on SDM Group%d, power domain may be turned off during sleep", group->group_id);
+                ESP_LOGW(TAG, "init sleep retention failed on SDM Group%d, power domain may be turned off during sleep", group_id);
             }
 #endif // SDM_USE_RETENTION_LINK
 
@@ -408,7 +408,7 @@ esp_err_t sdm_channel_set_pulse_density(sdm_channel_handle_t chan, int8_t densit
     bool valid_state = false;
     sdm_fsm_t expected_fsm = SDM_FSM_INIT;
     sdm_fsm_t restore_fsm = SDM_FSM_INIT;
-    // check if the channel is in INIT state, if so, change it to WAIT state
+    // this function can be called only when the channel is in init or enable state
     if (atomic_compare_exchange_strong(&chan->fsm, &expected_fsm, SDM_FSM_WAIT)) {
         valid_state = true;
         restore_fsm = SDM_FSM_INIT;
@@ -430,7 +430,8 @@ esp_err_t sdm_channel_set_pulse_density(sdm_channel_handle_t chan, int8_t densit
     sdm_ll_set_pulse_density(group->hal.dev, chan_id, density);
     portEXIT_CRITICAL_SAFE(&chan->spinlock);
 
-    atomic_store(&chan->fsm, restore_fsm); // restore the state
+    // restore the state
+    atomic_store(&chan->fsm, restore_fsm);
 
     return ESP_OK;
 }
