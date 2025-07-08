@@ -18,9 +18,7 @@
 #include "nvs.h"
 #include "deep_sleep_example.h"
 
-#if SOC_RTC_FAST_MEM_SUPPORTED
 RTC_SLOW_ATTR static struct timeval sleep_enter_time;
-#endif
 
 static void deep_sleep_task(void *args)
 {
