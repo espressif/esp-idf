@@ -37,6 +37,7 @@ extern "C" {
 #define CLK_LL_PLL_8M_FREQ_MHZ     (8)
 
 #define CLK_LL_PLL_80M_FREQ_MHZ    (80)
+#define CLK_LL_PLL_120M_FREQ_MHZ   (120)
 #define CLK_LL_PLL_160M_FREQ_MHZ   (160)
 #define CLK_LL_PLL_240M_FREQ_MHZ   (240)
 #define CLK_LL_PLL_SDIO_FREQ_MHZ   (200)

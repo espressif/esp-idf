@@ -77,6 +77,21 @@ FORCE_INLINE_ATTR void _clk_gate_ll_ref_160m_clk_en(bool enable)
     } while(0)
 
 /**
+ * Enable or disable the clock gate for ref_120m.
+ * @param  enable Enable / disable
+ */
+FORCE_INLINE_ATTR void _clk_gate_ll_ref_120m_clk_en(bool enable)
+{
+    HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_120m_clk_en = enable;
+}
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define clk_gate_ll_ref_120m_clk_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _clk_gate_ll_ref_120m_clk_en(__VA_ARGS__); \
+    } while(0)
+
+/**
  * Enable or disable the clock gate for ref_20m.
  * @param  enable Enable / disable
  */

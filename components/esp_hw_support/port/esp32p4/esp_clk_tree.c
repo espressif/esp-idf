@@ -38,6 +38,9 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
     case SOC_MOD_CLK_PLL_F80M:
         clk_src_freq = CLK_LL_PLL_80M_FREQ_MHZ * MHZ;
         break;
+    case SOC_MOD_CLK_PLL_F120M:
+        clk_src_freq = CLK_LL_PLL_120M_FREQ_MHZ * MHZ;
+        break;
     case SOC_MOD_CLK_PLL_F160M:
         clk_src_freq = CLK_LL_PLL_160M_FREQ_MHZ * MHZ;
         break;
@@ -125,6 +128,9 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
             break;
         case SOC_MOD_CLK_PLL_F80M:
             clk_gate_ll_ref_80m_clk_en(enable);
+            break;
+        case SOC_MOD_CLK_PLL_F120M:
+            clk_gate_ll_ref_120m_clk_en(enable);
             break;
         case SOC_MOD_CLK_PLL_F160M:
             clk_gate_ll_ref_160m_clk_en(enable);
