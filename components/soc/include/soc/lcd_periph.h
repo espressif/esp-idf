@@ -38,6 +38,7 @@ typedef struct {
         const int vsync_sig;
         const int pclk_sig;
         const int de_sig;
+        const int disp_sig;
     } panels[SOC_LCDCAM_RGB_NUM_PANELS];
 } lcd_rgb_signal_conn_t;
 
