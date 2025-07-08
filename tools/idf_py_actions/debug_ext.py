@@ -64,7 +64,7 @@ GDBINIT_CONNECT = '''
 set remotetimeout 10
 target remote :3333
 monitor reset halt
-flushregs
+maintenance flush register-cache
 thbreak app_main
 continue
 '''
