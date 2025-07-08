@@ -15,11 +15,11 @@
 extern "C" {
 #endif
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 #define SLEEP_MODEM_SKIP_I2C_MST_CLK_RETENTION    (BIT(0))
 #define SLEEP_MODEM_SKIP_WIFI_RETENTION           (BIT(1))
 #define SLEEP_MODEM_RESET_RETENTION               (0)
-#endif // SOC_PM_SUPPORT_PMU_MODEM_STATE
+#endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 typedef enum {
     SLEEP_MODEM_WIFI       = 1,
     SLEEP_MODEM_BT         = 2,
@@ -89,7 +89,7 @@ void sleep_modem_mac_bb_power_down_prepare(void);
 void sleep_modem_mac_bb_power_up_prepare(void);
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 
 /**
  * @brief The retention action in the modem state of PHY module
@@ -113,7 +113,7 @@ bool sleep_modem_phy_link_enabled(void);
  */
 bool sleep_modem_phy_link_done(void);
 
-#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
 
 /**
  * @brief Whether the current target allows Modem or the TOP power domain to be powered off during light sleep
@@ -211,7 +211,7 @@ void esp_pm_register_light_sleep_default_params_config_callback(update_light_sle
  */
 void esp_pm_unregister_light_sleep_default_params_config_callback(void);
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 /**
  * @brief Init phy link.
  *
@@ -279,7 +279,7 @@ esp_err_t sleep_phy_link_deinit(void *link_head);
  * @param flags A bitmap to indicate the PHY link regdma description configuration flag
  */
 void sleep_phy_link_config(void *link_context, uint32_t flags);
-#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
 
 #ifdef __cplusplus
 }

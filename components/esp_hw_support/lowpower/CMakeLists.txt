@@ -40,7 +40,7 @@ if((CONFIG_SOC_PM_SUPPORT_MODEM_PD OR CONFIG_SOC_PM_SUPPORT_TOP_PD) AND CONFIG_S
     list(APPEND srcs "port/${target}/sleep_clock.c")
 endif()
 
-if(CONFIG_SOC_PM_SUPPORT_PMU_MODEM_STATE)
+if(CONFIG_SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY)
     list(APPEND srcs "port/${target}/sleep_phy.c")
 endif()
 

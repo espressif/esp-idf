@@ -25,7 +25,7 @@ extern "C" {
  */
 void pau_regdma_set_entry_link_addr(pau_regdma_link_addr_t *link_entries);
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 #if SOC_PM_PAU_REGDMA_LINK_MODEM
 /**
  * @brief Set the address of WiFi MAC REGDMA Link in modem state
@@ -54,7 +54,6 @@ void pau_regdma_trigger_wifimac_link_backup(void);
  * @brief Software trigger REGDMA restore on WiFi MAC SEL link
  */
 void pau_regdma_trigger_wifimac_link_restore(void);
-#endif
 #endif
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
@@ -101,6 +100,7 @@ void pau_regdma_trigger_extra_link_restore(void);
  * @return The origin aon link bypass enable status
  */
 bool pau_regdma_enable_aon_link_entry(bool enable);
+#endif
 #endif
 
 #ifdef __cplusplus
