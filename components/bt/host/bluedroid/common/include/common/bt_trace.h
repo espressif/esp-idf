@@ -231,12 +231,14 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 }
 
 #define BTM_TRACE_API(fmt, args...) { \
-    ble_log_spi_out_printf_enh(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_BTM", fmt, ## args); \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_BTM"), fmt, ## args); \
     if (btm_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(BTM, API)) BT_PRINT_I("BT_BTM", fmt, ## args); \
 }
 
 #define BTM_TRACE_EVENT(fmt, args...) { \
-    ble_log_spi_out_printf_enh(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, BLE_LOG_SPI_OUT_LEVEL_DEBUG, "BT_BTM", fmt, ## args); \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_DEBUG, "BT_BTM"), fmt, ## args); \
     if (btm_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(BTM, EVENT)) BT_PRINT_D("BT_BTM", fmt, ## args); \
 }
 
@@ -267,7 +269,8 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 }
 
 #define L2CAP_TRACE_API(fmt, args...) { \
-    ble_log_spi_out_printf_enh(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_L2CAP", fmt, ## args); \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_L2CAP"), fmt, ## args); \
     if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(L2CAP, API)) BT_PRINT_I("BT_L2CAP", fmt, ## args); \
 }
 
@@ -318,7 +321,8 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 }
 
 #define GAP_TRACE_API(fmt, args...) { \
-    ble_log_spi_out_printf_enh(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_GAP", fmt, ## args); \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_GAP"), fmt, ## args); \
     if (gap_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(GAP, API)) BT_PRINT_I("BT_GAP", fmt, ## args); \
 }
 
@@ -420,7 +424,8 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 }
 
 #define GATT_TRACE_API(fmt, args...) { \
-    ble_log_spi_out_printf_enh(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_GATT", fmt, ## args); \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_GATT"), fmt, ## args); \
     if (gatt_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(GATT, API)) BT_PRINT_I("BT_GATT", fmt, ## args); \
 }
 
@@ -455,7 +460,8 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 }
 
 #define SMP_TRACE_API(fmt, args...) { \
-    ble_log_spi_out_printf_enh(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_SMP", fmt, ## args); \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_SMP"), fmt, ## args); \
     if (smp_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(SMP, API)) BT_PRINT_I("BT_SMP", fmt, ## args); \
 }
 
