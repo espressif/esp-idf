@@ -132,43 +132,68 @@ void IRAM_ATTR mac_bb_power_up_cb_execute(void)
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 
 typedef struct sleep_modem_config {
-    struct {
-        void    *phy_link;
-        union {
-            struct {
-                uint32_t phy_link_done: 1;
-                uint32_t reserved: 31;
-            };
-            uint32_t flags;
+    _lock_t phy_link_lock;
+    void    *phy_link;
+    union {
+        struct {
+            uint32_t phy_link_done: 1;
+            uint32_t modem_mask: SLEEP_MODEM_MAX_CNT;
+            uint32_t reserved: 27 - SLEEP_MODEM_MAX_CNT;
         };
+        uint32_t flags;
     };
 } sleep_modem_config_t;
 
-static sleep_modem_config_t s_sleep_modem = { .phy_link = NULL, .flags = 0 };
+sleep_modem_config_t s_sleep_modem = { .phy_link = NULL, .flags = 0 };
 
+bool IRAM_ATTR sleep_modem_wifi_modem_state_is_enabled(void)
+{
+    return !!(s_sleep_modem.modem_mask & SLEEP_MODEM_WIFI);
+}
 
-esp_err_t sleep_modem_phy_init(void)
+esp_err_t sleep_modem_phy_init(sleep_modem_type_t modem_mask)
 {
     esp_err_t err = ESP_OK;
-
     void *link = NULL;
-    if (s_sleep_modem.phy_link == NULL) {
-        err = sleep_phy_link_init(&link);
-        if (err == ESP_OK) {
-            s_sleep_modem.phy_link = link;
-            s_sleep_modem.flags = 0;
+
+    _lock_acquire(&s_sleep_modem.phy_link_lock);
+    if (s_sleep_modem.modem_mask & modem_mask) {
+        _lock_release(&s_sleep_modem.phy_link_lock);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!s_sleep_modem.modem_mask) {
+        s_sleep_modem.flags = 0;
+        if (!s_sleep_modem.phy_link) {
+            err = sleep_phy_link_init(&link);
+            if (err == ESP_OK) {
+                s_sleep_modem.phy_link = link;
+            } else {
+                _lock_release(&s_sleep_modem.phy_link_lock);
+                return err;
+            }
         }
     }
+    s_sleep_modem.modem_mask |= modem_mask;
+    _lock_release(&s_sleep_modem.phy_link_lock);
     return err;
 }
 
-__attribute__((unused)) void sleep_modem_phy_deinit(void)
+__attribute__((unused)) void sleep_modem_phy_deinit(sleep_modem_type_t modem_mask)
 {
-    if (s_sleep_modem.phy_link) {
+    _lock_acquire(&s_sleep_modem.phy_link_lock);
+    if (!(s_sleep_modem.modem_mask & modem_mask)) {
+        _lock_release(&s_sleep_modem.phy_link_lock);
+        return;
+    }
+
+    s_sleep_modem.modem_mask &= ~modem_mask;
+    if (s_sleep_modem.phy_link && !s_sleep_modem.modem_mask) {
         sleep_phy_link_deinit(s_sleep_modem.phy_link);
         s_sleep_modem.phy_link = NULL;
         s_sleep_modem.flags = 0;
     }
+    _lock_release(&s_sleep_modem.phy_link_lock);
 }
 
 void IRAM_ATTR sleep_modem_do_phy_retention(bool restore)
@@ -227,7 +252,7 @@ uint32_t IRAM_ATTR sleep_modem_reject_triggers(void)
     uint32_t reject_triggers = 0;
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
     reject_triggers = (s_sleep_modem.phy_link != NULL) ? BIT(16) : 0;
-#endif
+#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
     return reject_triggers;
 }
 
@@ -238,8 +263,8 @@ bool IRAM_ATTR sleep_modem_wifi_modem_state_skip_light_sleep(void)
     /* To block the system from entering sleep before modem link done. In light
      * sleep mode, the system may switch to modem state, which will cause
      * hardware to fail to enable RF */
-    skip = sleep_modem_phy_link_enabled() && !sleep_modem_phy_link_done();
-#endif
+    skip = sleep_modem_wifi_modem_state_is_enabled() && !sleep_modem_phy_link_done();
+#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
     return skip;
 }
 

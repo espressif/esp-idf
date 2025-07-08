@@ -47,6 +47,7 @@
 
 #include "esp_rom_sys.h"
 #include "hli_api.h"
+#include "esp_private/sleep_modem.h"
 
 #if CONFIG_BLE_LOG_ENABLED
 #include "ble_log.h"
@@ -1692,7 +1693,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     ESP_LOGI(BTDM_LOG_TAG, "BT controller compile version [%s]", btdm_controller_get_compile_version());
 
-    esp_phy_modem_init();
+    esp_phy_modem_init(SLEEP_MODEM_BT);
 
     esp_bt_power_domain_on();
 
@@ -1867,7 +1868,7 @@ static void bt_controller_deinit_internal(void)
 
     esp_bt_power_domain_off();
 
-    esp_phy_modem_deinit();
+    esp_phy_modem_deinit(SLEEP_MODEM_BT);
 }
 
 static void bt_controller_shutdown(void* arg)
