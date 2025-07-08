@@ -298,7 +298,7 @@ int esp_blufi_gatt_svr_deinit(void)
     return 0;
 }
 
-static int
+int
 esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
 {
     struct ble_gap_conn_desc desc;
@@ -331,7 +331,7 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
         }
         if (event->connect.status != 0) {
             /* Connection failed; resume advertising. */
-            esp_blufi_adv_start();
+           ((void(*)(void))arg)();
         }
         return 0;
     case BLE_GAP_EVENT_DISCONNECT:
@@ -366,7 +366,7 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_ADV_COMPLETE:
         ESP_LOGI(TAG, "advertise complete; reason=%d",
                  event->adv_complete.reason);
-        esp_blufi_adv_start();
+        ((void(*)(void))arg)();
         return 0;
 
     case BLE_GAP_EVENT_SUBSCRIBE:
@@ -461,7 +461,7 @@ void esp_blufi_adv_start(void)
     adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
     adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
     rc = ble_gap_adv_start(own_addr_type, NULL, BLE_HS_FOREVER,
-                           &adv_params, esp_blufi_gap_event, NULL);
+                           &adv_params, esp_blufi_gap_event, esp_blufi_adv_start);
     if (rc != 0) {
         ESP_LOGE(TAG, "error enabling advertisement; rc=%d", rc);
         return;
