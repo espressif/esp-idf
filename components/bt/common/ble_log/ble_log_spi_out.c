@@ -441,7 +441,6 @@ static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size, uin
     // Initialize log control block
     *log_cb = (spi_out_log_cb_t *)SPI_OUT_MALLOC(sizeof(spi_out_log_cb_t));
     if (!(*log_cb)) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control block!");
         return -1;
     }
     memset(*log_cb, 0, sizeof(spi_out_log_cb_t));
@@ -452,7 +451,6 @@ static int spi_out_log_cb_init(spi_out_log_cb_t **log_cb, uint16_t buf_size, uin
         ret |= spi_out_init_trans(&((*log_cb)->trans_cb[i]), buf_size);
     }
     if (ret != 0) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize SPI transactions!");
         spi_out_log_cb_deinit(log_cb);
         return -1;
     }
@@ -690,20 +688,16 @@ static int spi_out_ll_log_init(void)
 
     // Initialize log control blocks for controller task & ISR logs
     if (spi_out_log_cb_init(&ll_task_log_cb, SPI_OUT_LL_TASK_BUF_SIZE, LOG_CB_TYPE_LL_TASK) != 0) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control blocks for controller task!");
         goto task_log_cb_init_failed;
     }
     if (spi_out_log_cb_init(&ll_isr_log_cb, SPI_OUT_LL_ISR_BUF_SIZE, LOG_CB_TYPE_LL_ISR) != 0) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control blocks for controller ISR!");
         goto isr_log_cb_init_failed;
     }
     if (spi_out_log_cb_init(&ll_hci_log_cb, SPI_OUT_LL_HCI_BUF_SIZE, LOG_CB_TYPE_LL_HCI) != 0) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control blocks for controller ISR!");
         goto hci_log_cb_init_failed;
     }
 
     // Initialization done
-    ESP_LOGI(BLE_LOG_TAG, "Succeeded to initialize log control blocks for controller task & ISR!");
     ll_log_inited = true;
     return 0;
 
@@ -726,7 +720,6 @@ static void spi_out_ll_log_deinit(void)
     spi_out_log_cb_deinit(&ll_task_log_cb);
 
     // Deinitialization done
-    ESP_LOGI(BLE_LOG_TAG, "Succeeded to deinitialize controller log!");
     ll_log_inited = false;
     return;
 }
@@ -769,7 +762,6 @@ static int spi_out_ts_sync_init(void)
         .dispatch_method = ESP_TIMER_TASK
     };
     if (esp_timer_create(&timer_args, &ts_sync_timer) != ESP_OK) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize timestamp synchronizer timer!");
         goto timer_init_failed;
     }
 #endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
@@ -783,12 +775,10 @@ static int spi_out_ts_sync_init(void)
         .pull_up_en = 0
     };
     if (gpio_config(&io_conf) != ESP_OK) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize timestamp synchronizer IO!");
         goto gpio_init_failed;
     }
 
     // Initialization done
-    ESP_LOGI(BLE_LOG_TAG, "Succeeded to initialize timestamp synchronizer!");
     ts_sync_inited = true;
     return 0;
 
@@ -819,7 +809,6 @@ static void spi_out_ts_sync_deinit(void)
     gpio_reset_pin(SPI_OUT_SYNC_IO_NUM);
 
     // Deinitialization done
-    ESP_LOGI(BLE_LOG_TAG, "Succeeded to deinitialize timestamp synchronizer!");
     ts_sync_inited = false;
     return;
 }
@@ -918,11 +907,9 @@ int ble_log_spi_out_init(void)
         .flags = SPI_DEVICE_NO_RETURN_RESULT
     };
     if (spi_bus_initialize(SPI_OUT_BUS, &bus_config, SPI_DMA_CH_AUTO) != ESP_OK) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize SPI bus!");
         goto spi_bus_init_failed;
     }
     if (spi_bus_add_device(SPI_OUT_BUS, &dev_config, &spi_handle) != ESP_OK) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to add device to SPI bus!");
         goto spi_device_add_failed;
     }
 
@@ -972,13 +959,11 @@ int ble_log_spi_out_init(void)
         .dispatch_method = ESP_TIMER_TASK
     };
     if (esp_timer_create(&timer_args, &flush_timer) != ESP_OK) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize flush timer!");
         goto timer_init_failed;
     }
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
     // Initialization done
-    ESP_LOGI(BLE_LOG_TAG, "Succeeded to initialize BLE log SPI output interface!");
     spi_out_inited = true;
     spi_out_enabled = true;
 
