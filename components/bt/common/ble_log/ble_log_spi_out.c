@@ -40,7 +40,8 @@
 #define SPI_OUT_MALLOC(size)                    heap_caps_malloc(size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 
 #if SPI_OUT_TS_SYNC_ENABLED
-#define SPI_OUT_TS_SYNC_TIMEOUT                 (1000 * 1000)
+#define SPI_OUT_TS_SYNC_TIMEOUT_MS              (1000)
+#define SPI_OUT_TS_SYNC_TIMEOUT_US              (SPI_OUT_TS_SYNC_TIMEOUT_MS * 1000)
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
 // Queue size defines
@@ -90,7 +91,7 @@ typedef struct {
 typedef struct {
     uint8_t io_level;
     uint32_t lc_ts;
-    uint32_t esp_ts;
+    uint32_t os_ts;
 } __attribute__((packed)) ts_sync_data_t;
 
 // Private enums
@@ -127,6 +128,7 @@ static bool spi_out_inited = false;
 static bool spi_out_enabled = false;
 static spi_device_handle_t spi_handle = NULL;
 static uint32_t last_tx_done_ts = 0;
+static uint32_t last_tx_done_os_ts = 0;
 
 static bool ul_log_inited = false;
 static SemaphoreHandle_t ul_log_mutex = NULL;
@@ -217,7 +219,7 @@ extern uint32_t r_ble_lll_timer_current_tick_get(void);
 extern uint32_t r_os_cputime_get32(void);
 #define SPI_OUT_GET_LC_TIME r_os_cputime_get32()
 #else
-#define SPI_OUT_GET_LC_TIME 0
+#define SPI_OUT_GET_LC_TIME esp_timer_get_time()
 #endif
 
 #if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
@@ -272,6 +274,7 @@ static void spi_out_deinit_trans(spi_out_trans_cb_t **trans_cb)
 IRAM_ATTR static void spi_out_tx_done_cb(spi_transaction_t *ret_trans)
 {
     last_tx_done_ts = esp_timer_get_time();
+    last_tx_done_os_ts = pdTICKS_TO_MS(xTaskGetTickCountFromISR());
     spi_out_trans_cb_t *trans_cb = (spi_out_trans_cb_t *)ret_trans->user;
     trans_cb->length = 0;
     trans_cb->flag = TRANS_CB_FLAG_AVAILABLE;
@@ -577,8 +580,8 @@ static void spi_out_ul_log_write(uint8_t source, const uint8_t *addr, uint16_t l
     bool need_append;
     if (spi_out_log_cb_check_trans(ul_log_cb, total_len, &need_append)) {
         if (with_ts) {
-            uint32_t esp_ts = esp_timer_get_time();
-            need_append |= spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&esp_ts,
+            uint32_t os_ts = pdTICKS_TO_MS(xTaskGetTickCount());
+            need_append |= spi_out_log_cb_write(ul_log_cb, (const uint8_t *)&os_ts,
                                                 sizeof(uint32_t), addr, len, source, true);
         } else {
             need_append |= spi_out_log_cb_write(ul_log_cb, addr, len, NULL, 0, source, true);
@@ -757,7 +760,7 @@ static void spi_out_ts_sync_enable(bool enable)
         // Start timestamp sync timer
         if (ts_sync_timer) {
             if (!esp_timer_is_active(ts_sync_timer)) {
-                esp_timer_start_periodic(ts_sync_timer, SPI_OUT_TS_SYNC_TIMEOUT);
+                esp_timer_start_periodic(ts_sync_timer, SPI_OUT_TS_SYNC_TIMEOUT_US);
             }
         }
 #endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
@@ -793,8 +796,8 @@ static void spi_out_ts_sync_toggle(void)
     // Set sync IO level
     gpio_set_level(SPI_OUT_SYNC_IO_NUM, (uint32_t)ts_sync_data.io_level);
 
-    // Get ESP timestamp
-    ts_sync_data.esp_ts = esp_timer_get_time();
+    // Get OS timestamp
+    ts_sync_data.os_ts = pdTICKS_TO_MS(xTaskGetTickCountFromISR());
     portEXIT_CRITICAL(&spinlock);
     // Exit critical
 }
@@ -1058,7 +1061,7 @@ IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint3
 
 #if SPI_OUT_TS_SYNC_SLEEP_SUPPORT
             if (ts_sync_inited && ts_sync_enabled) {
-                if (last_tx_done_ts >= (SPI_OUT_TS_SYNC_TIMEOUT + ts_sync_data.esp_ts)) {
+                if (last_tx_done_os_ts >= (SPI_OUT_TS_SYNC_TIMEOUT_MS + ts_sync_data.os_ts)) {
                     if (spi_out_log_cb_check_trans(ll_task_log_cb, sizeof(ts_sync_data_t), &need_append)) {
                         spi_out_ts_sync_toggle();
                         spi_out_log_cb_write(ll_task_log_cb, (const uint8_t *)&ts_sync_data,
