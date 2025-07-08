@@ -395,16 +395,16 @@ static void rtc_clk_cpu_freq_to_8m(void)
 }
 
 #ifndef BOOTLOADER_BUILD
-static const DRAM_ATTR int16_t dfs_lact_conpensate_table[3][3] = {   \
+static const DRAM_ATTR int16_t dfs_lact_compensate_table[3][3] = {   \
 /* From / To 80     160     240*/   \
-/* 10  */   {138,   220,    18},    \
-/* 20  */   {128,   205,    -3579}, \
-/* 40  */   {34,    100,    0},     \
+/* 10  */   {78,    172,    -1},    \
+/* 20  */   {2,     105,    -90},   \
+/* 40  */   {-190,  -18,    -372},  \
 };
 
 __attribute__((weak)) IRAM_ATTR int16_t rtc_clk_get_lact_compensation_delay(uint32_t cur_freq, uint32_t tar_freq)
 {
-    return dfs_lact_conpensate_table[(cur_freq == 10) ? 0 : (cur_freq == 20) ? 1 : 2][(tar_freq == 80) ? 0 : (tar_freq == 160) ? 1 : 2];
+    return dfs_lact_compensate_table[(cur_freq == 10) ? 0 : (cur_freq == 20) ? 1 : 2][(tar_freq == 80) ? 0 : (tar_freq == 160) ? 1 : 2];
 }
 #endif
 
@@ -429,6 +429,12 @@ NOINLINE_ATTR static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     }
 #endif
     clk_ll_cpu_set_freq_mhz_from_pll(cpu_freq_mhz);
+    /* adjust ref_tick */
+    clk_ll_ref_tick_set_divider(SOC_CPU_CLK_SRC_PLL, cpu_freq_mhz);
+    /* switch clock source */
+    clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
+    rtc_clk_apb_freq_update(80 * MHZ);
+    esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
 #ifndef BOOTLOADER_BUILD
     if (cur_freq <= 40 && delay_cycle < 0) {
         for (int i = 0; i > delay_cycle; --i) {
@@ -437,12 +443,6 @@ NOINLINE_ATTR static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
         timer_ll_set_lact_clock_prescale(TIMER_LL_GET_HW(LACT_MODULE), 80 / LACT_TICKS_PER_US);
     }
 #endif
-    /* adjust ref_tick */
-    clk_ll_ref_tick_set_divider(SOC_CPU_CLK_SRC_PLL, cpu_freq_mhz);
-    /* switch clock source */
-    clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
-    rtc_clk_apb_freq_update(80 * MHZ);
-    esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
     rtc_clk_wait_for_slow_cycle();
     esp_rom_delay_us(30);
 }
