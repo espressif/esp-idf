@@ -599,6 +599,7 @@ menu "Controller debug log Options (Experimental)"
         depends on BT_CTRL_LE_LOG_EN
         depends on !BT_CTRL_LE_LOG_DUMP_ONLY
         select BT_BLE_LOG_SPI_OUT_ENABLED
+        select BT_BLE_LOG_SPI_OUT_LL_ENABLED
         default n
         help
             Output ble controller logs to SPI bus
