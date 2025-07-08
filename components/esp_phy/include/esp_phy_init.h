@@ -200,15 +200,18 @@ void esp_phy_load_cal_and_init(void);
 
 /**
  * @brief Initialize backup memory for Phy power up/down
+ *
+ * @param modem Modem calling phy retention
  */
-void esp_phy_modem_init(void);
+void esp_phy_modem_init(uint8_t modem);
 
 /**
  * @brief Deinitialize backup memory for Phy power up/down
  * Set phy_init_flag if all modems deinit on ESP32C3
+ *
+ * @param modem Modem calling phy retention
  */
-void esp_phy_modem_deinit(void);
-
+void esp_phy_modem_deinit(uint8_t modem);
 #if CONFIG_MAC_BB_PD
 /**
  * @brief Initialize backup memory for MAC and Baseband power up/down
