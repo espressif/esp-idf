@@ -355,21 +355,35 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     size_t mem_alignment = sizeof(rmt_symbol_word_t);
 
 #if SOC_RMT_SUPPORT_DMA
+    uint32_t int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     if (channel->dma_chan) {
-        // append the alignment requirement from the DMA
-        mem_alignment = MAX(mem_alignment, rx_chan->dma_int_mem_alignment);
         // [IDF-8997]: Currently we assume the user buffer is allocated from internal RAM, PSRAM is not supported yet.
         ESP_RETURN_ON_FALSE_ISR(esp_ptr_internal(buffer), ESP_ERR_INVALID_ARG, TAG, "user buffer not in the internal RAM");
-        size_t max_buf_sz_per_dma_node = ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, mem_alignment);
-        ESP_RETURN_ON_FALSE_ISR(buffer_size <= rx_chan->num_dma_nodes * max_buf_sz_per_dma_node,
-                                ESP_ERR_INVALID_ARG, TAG, "buffer size exceeds DMA capacity: %"PRIu32"", rx_chan->num_dma_nodes * max_buf_sz_per_dma_node);
+        // append the alignment requirement from the DMA and cache line size
+        mem_alignment = MAX(MAX(mem_alignment, rx_chan->dma_int_mem_alignment), int_mem_cache_line_size);
     }
 #endif // SOC_RMT_SUPPORT_DMA
 
-    // check buffer alignment
-    uint32_t align_check_mask = mem_alignment - 1;
-    ESP_RETURN_ON_FALSE_ISR(((((uintptr_t)buffer) & align_check_mask) == 0) && (((buffer_size) & align_check_mask) == 0), ESP_ERR_INVALID_ARG,
-                            TAG, "buffer address or size are not %"PRIu32 "bytes aligned", mem_alignment);
+    // Align the buffer address to mem_alignment
+    if ((((uintptr_t)buffer) & (mem_alignment - 1)) != 0) {
+        uintptr_t aligned_address = ALIGN_UP((uintptr_t)buffer, mem_alignment);
+        size_t offset = aligned_address - (uintptr_t)buffer;
+        ESP_RETURN_ON_FALSE_ISR(buffer_size > offset, ESP_ERR_INVALID_ARG, TAG, "buffer size is not aligned and is too small, please increase the buffer size");
+        ESP_EARLY_LOGD(TAG, "origin buffer %p not satisfy alignment %d, align buffer to %p", buffer, mem_alignment, aligned_address);
+        buffer = (uint8_t *)aligned_address;
+        buffer_size -= offset;
+    }
+    // Align the buffer size to mem_alignment
+    buffer_size = ALIGN_DOWN(buffer_size, mem_alignment);
+    ESP_RETURN_ON_FALSE_ISR(buffer_size > 0, ESP_ERR_INVALID_ARG, TAG, "buffer size is less than alignment: %"PRIu32", please increase the buffer size", mem_alignment);
+
+#if SOC_RMT_SUPPORT_DMA
+    if (channel->dma_chan) {
+        size_t max_buf_sz_per_dma_node = ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, mem_alignment);
+        ESP_RETURN_ON_FALSE_ISR(buffer_size <= rx_chan->num_dma_nodes * max_buf_sz_per_dma_node,
+                                ESP_ERR_INVALID_ARG, TAG, "buffer size exceeds DMA capacity: %"PRIu32", please increase the mem_block_symbols", rx_chan->num_dma_nodes * max_buf_sz_per_dma_node);
+    }
+#endif // SOC_RMT_SUPPORT_DMA
 
     rmt_group_t *group = channel->group;
     rmt_hal_context_t *hal = &group->hal;
@@ -398,7 +412,6 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 #if SOC_RMT_SUPPORT_DMA
     if (channel->dma_chan) {
         // invalidate the user buffer, in case cache auto-write back happens and breaks the data just written by the DMA
-        uint32_t int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
         if (int_mem_cache_line_size) {
             // this function will also check the alignment of the buffer and size, against the cache line size
             ESP_RETURN_ON_ERROR_ISR(esp_cache_msync(buffer, buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), TAG, "cache sync failed");
