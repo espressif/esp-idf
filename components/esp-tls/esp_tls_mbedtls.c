@@ -40,6 +40,7 @@ static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, const void *pki);
 #endif /* CONFIG_ESP_TLS_USE_SECURE_ELEMENT */
 
 #if defined(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
+#include <pk_wrap.h>
 #include "rsa_sign_alt.h"
 static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki);
 #endif /* CONFIG_ESP_TLS_USE_DS_PERIPHERAL */
@@ -471,6 +472,28 @@ void esp_mbedtls_cleanup(esp_tls_t *tls)
     tls->cacert_ptr = NULL;
     mbedtls_x509_crt_free(&tls->cacert);
     mbedtls_x509_crt_free(&tls->clientcert);
+
+#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
+    if (mbedtls_pk_get_type(&tls->clientkey) == MBEDTLS_PK_RSA_ALT) {
+        mbedtls_rsa_alt_context *rsa_alt = tls->clientkey.MBEDTLS_PRIVATE(pk_ctx);
+        if (rsa_alt && rsa_alt->key != NULL) {
+            mbedtls_rsa_free(rsa_alt->key);
+            mbedtls_free(rsa_alt->key);
+            rsa_alt->key = NULL;
+        }
+    }
+
+    // Similar cleanup for server key
+    if (mbedtls_pk_get_type(&tls->serverkey) == MBEDTLS_PK_RSA_ALT) {
+        mbedtls_rsa_alt_context *rsa_alt = tls->serverkey.MBEDTLS_PRIVATE(pk_ctx);
+        if (rsa_alt && rsa_alt->key != NULL) {
+            mbedtls_rsa_free(rsa_alt->key);
+            mbedtls_free(rsa_alt->key);
+            rsa_alt->key = NULL;
+        }
+    }
+#endif
+
     mbedtls_pk_free(&tls->clientkey);
     mbedtls_entropy_free(&tls->entropy);
     mbedtls_ssl_config_free(&tls->conf);
@@ -1273,12 +1296,18 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
 {
     int ret = -1;
     /* initialize the mbedtls pk context with rsa context */
-    mbedtls_rsa_context rsakey;
-    mbedtls_rsa_init(&rsakey);
-    if ((ret = mbedtls_pk_setup_rsa_alt(((const esp_tls_pki_t*)pki)->pk_key, &rsakey, NULL, esp_ds_rsa_sign,
+    mbedtls_rsa_context *rsakey = calloc(1, sizeof(mbedtls_rsa_context));
+    if (rsakey == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory for mbedtls_rsa_context");
+        return ESP_ERR_NO_MEM;
+    }
+    mbedtls_rsa_init(rsakey);
+    if ((ret = mbedtls_pk_setup_rsa_alt(((const esp_tls_pki_t*)pki)->pk_key, rsakey, NULL, esp_ds_rsa_sign,
                                         esp_ds_get_keylen )) != 0) {
         ESP_LOGE(TAG, "Error in mbedtls_pk_setup_rsa_alt, returned -0x%04X", -ret);
         mbedtls_print_error_msg(ret);
+        mbedtls_rsa_free(rsakey);
+        free(rsakey);
         ret = ESP_FAIL;
         goto exit;
     }
@@ -1289,7 +1318,6 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
     }
     ESP_LOGD(TAG, "DS peripheral params initialized.");
 exit:
-    mbedtls_rsa_free(&rsakey);
     return ret;
 }
 #endif /* CONFIG_ESP_TLS_USE_DS_PERIPHERAL */
