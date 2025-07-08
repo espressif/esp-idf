@@ -27,7 +27,6 @@
 #include "soc/soc_caps.h"
 #include "esp_clk_tree.h"
 #include "hal/dma_types.h"
-#include "driver/gpio.h"
 #include "esp_bit_defs.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/gdma.h"
@@ -763,36 +762,36 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *rgb_panel, const 
     lcd_ll_set_data_wire_width(rgb_panel->hal.dev, panel_config->data_width);
     // connect peripheral signals via GPIO matrix
     for (size_t i = 0; i < panel_config->data_width; i++) {
-        if (panel_config->data_gpio_nums[i] >= 0) {
+        if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->data_gpio_nums[i])) {
             gpio_matrix_output(panel_config->data_gpio_nums[i],
                                lcd_periph_rgb_signals.panels[panel_id].data_sigs[i], false, false);
             gpio_reserve_mask |= (1ULL << panel_config->data_gpio_nums[i]);
         }
     }
-    if (panel_config->hsync_gpio_num >= 0) {
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->hsync_gpio_num)) {
         gpio_matrix_output(panel_config->hsync_gpio_num,
                            lcd_periph_rgb_signals.panels[panel_id].hsync_sig, false, false);
         gpio_reserve_mask |= (1ULL << panel_config->hsync_gpio_num);
     }
-    if (panel_config->vsync_gpio_num >= 0) {
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->vsync_gpio_num)) {
         gpio_matrix_output(panel_config->vsync_gpio_num,
                            lcd_periph_rgb_signals.panels[panel_id].vsync_sig, false, false);
         gpio_reserve_mask |= (1ULL << panel_config->vsync_gpio_num);
     }
     // PCLK may not be necessary in some cases (i.e. VGA output)
-    if (panel_config->pclk_gpio_num >= 0) {
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->pclk_gpio_num)) {
         gpio_matrix_output(panel_config->pclk_gpio_num,
                            lcd_periph_rgb_signals.panels[panel_id].pclk_sig, false, false);
         gpio_reserve_mask |= (1ULL << panel_config->pclk_gpio_num);
     }
     // DE signal might not be necessary for some RGB LCD
-    if (panel_config->de_gpio_num >= 0) {
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->de_gpio_num)) {
         gpio_matrix_output(panel_config->de_gpio_num,
                            lcd_periph_rgb_signals.panels[panel_id].de_sig, false, false);
         gpio_reserve_mask |= (1ULL << panel_config->de_gpio_num);
     }
     // disp enable GPIO is optional, it is a general purpose output GPIO
-    if (panel_config->disp_gpio_num >= 0) {
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->disp_gpio_num)) {
         gpio_matrix_output(panel_config->disp_gpio_num,
                            lcd_periph_rgb_signals.panels[panel_id].disp_sig, false, false);
         gpio_reserve_mask |= (1ULL << panel_config->disp_gpio_num);
