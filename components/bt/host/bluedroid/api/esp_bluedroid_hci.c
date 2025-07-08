@@ -67,9 +67,9 @@ void hci_host_send_packet(uint8_t *data, uint16_t len)
 #if (BT_HCI_LOG_INCLUDED == TRUE)
     bt_hci_log_record_hci_data(data[0], &data[1], len - 1);
 #endif
-#if (BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
-    ble_log_spi_out_write_with_ts(BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM, data, len);
-#endif // (BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
+#if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+    ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM, data, len);
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
 #if (BT_CONTROLLER_INCLUDED == TRUE)
     esp_vhci_host_send_packet(data, len);
 #else /* BT_CONTROLLER_INCLUDED == TRUE */
