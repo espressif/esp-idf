@@ -341,9 +341,11 @@ void esp_phy_enable(esp_phy_modem_t modem)
 #endif
             s_is_phy_calibrated = true;
         } else {
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
             bool wifimac_link_is_sel = false;
             if (!pm_mac_modem_rf_already_enabled()) {
+#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP */
                 if (sleep_modem_phy_link_enabled() && sleep_modem_phy_link_done()) {
 #if SOC_PM_PAU_REGDMA_LINK_IDX_PHY && SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
 /*
@@ -362,12 +364,14 @@ void esp_phy_enable(esp_phy_modem_t modem)
                 } else {
                     phy_wakeup_init();
                 }
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
             } else {
                 phy_wakeup_from_modem_state_extra_init();
             }
+#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP */
 #else
             phy_wakeup_init();
-#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP */
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
 
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
             phy_digital_regs_load();
@@ -421,8 +425,10 @@ void esp_phy_disable(esp_phy_modem_t modem)
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
         phy_digital_regs_store();
 #endif
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
         pm_mac_modem_clear_rf_power_state();
+#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP */
         if (sleep_modem_phy_link_enabled()) {
              bool wifimac_link_is_sel = false;
 #if SOC_PM_PAU_REGDMA_LINK_IDX_PHY && SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
@@ -430,7 +436,7 @@ void esp_phy_disable(esp_phy_modem_t modem)
 #endif
             sleep_modem_do_phy_retention(false, wifimac_link_is_sel);
         } else
-#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP */
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
         {
             // Disable PHY and RF.
             phy_close_rf();

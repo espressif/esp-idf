@@ -573,6 +573,7 @@
 #define SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND (1)
 
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA           (1)
+#define SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY        (1)
 #define SOC_PM_SUPPORT_PMU_MODEM_STATE             (1)
 #define MAC_SUPPORT_PMU_MODEM_STATE                SOC_PM_SUPPORT_PMU_MODEM_STATE
 /* Since SOC APB and MODEM APB on ESP32-S31 are decoupled, XTAL can be used as SOC clock in modem state */
