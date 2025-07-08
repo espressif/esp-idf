@@ -180,6 +180,15 @@ examples/bluetooth/hci/controller_vhci_ble_adv:
 
 
 # config BT_NIMBLE_ENABLED does not depends on any soc cap
+examples/bluetooth/nimble/ble_ancs:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1
+      temporary: true
+      reason: the other targets are not tested yet
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+
 examples/bluetooth/nimble/ble_cte:
   <<: *bt_default_depends
   enable:
