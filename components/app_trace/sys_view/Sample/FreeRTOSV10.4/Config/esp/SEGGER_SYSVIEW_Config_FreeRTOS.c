@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-1-Clause
  *
- * SPDX-FileContributor: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2017-2025 Espressif Systems (Shanghai) CO LTD
  */
 /*********************************************************************
 *                    SEGGER Microcontroller GmbH                     *
@@ -84,11 +84,7 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 // The target device name
 #define SYSVIEW_DEVICE_NAME     CONFIG_IDF_TARGET
 // The target core name
-#if CONFIG_IDF_TARGET_ARCH_XTENSA
-#define SYSVIEW_CORE_NAME       "xtensa"
-#elif CONFIG_IDF_TARGET_ARCH_RISCV
-#define SYSVIEW_CORE_NAME       "riscv"
-#endif
+#define SYSVIEW_CORE_NAME       "core0" // In dual core, this will be renamed by OpenOCD as core1
 
 // Determine which timer to use as timestamp source
 #if CONFIG_APPTRACE_SV_TS_SOURCE_CCOUNT
