@@ -35,6 +35,7 @@
 #include "esp_private/esp_dma_utils.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/gpio.h"
+#include "esp_private/esp_gpio_reserve.h"
 #include "esp_psram.h"
 #include "esp_lcd_common.h"
 #include "esp_cache.h"
@@ -90,6 +91,7 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *rgb_panel, lcd_
 static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *rgb_panel);
 static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel);
 static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *rgb_panel, const esp_lcd_rgb_panel_config_t *panel_config);
+static void lcd_rgb_panel_release_gpio(esp_rgb_panel_t *rgb_panel);
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel);
 static void rgb_lcd_default_isr_handler(void *args);
 
@@ -102,7 +104,6 @@ struct esp_rgb_panel_t {
     size_t num_fbs;           // Number of frame buffers
     size_t output_bits_per_pixel; // Color depth seen from the output data line. Default to fb_bits_per_pixel, but can be changed by YUV-RGB conversion
     size_t dma_burst_size;  // DMA transfer burst size
-    int disp_gpio_num;     // Display control GPIO, which is used to perform action like "disp_off"
     intr_handle_t intr;    // LCD peripheral interrupt handle
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; // Power management lock
@@ -122,7 +123,13 @@ struct esp_rgb_panel_t {
     uint8_t bb_fb_index;  // Current frame buffer index which used by bounce buffer
     size_t int_mem_align;  // DMA buffer alignment for internal memory
     size_t ext_mem_align;  // DMA buffer alignment for external memory
+    int hsync_gpio_num;    // GPIO used for HSYNC signal
+    int vsync_gpio_num;    // GPIO used for VSYNC signal
+    int de_gpio_num;       // GPIO used for DE signal, set to -1 if it's not used
+    int pclk_gpio_num;     // GPIO used for PCLK signal, set to -1 if it's not used
+    int disp_gpio_num;     // GPIO used for display control signal, set to -1 if it's not used
     int data_gpio_nums[SOC_LCDCAM_RGB_DATA_WIDTH]; // GPIOs used for data lines, we keep these GPIOs for action like "invert_color"
+    uint64_t gpio_reserve_mask; // GPIOs reserved by this panel, used to revoke the GPIO reservation when the panel is deleted
     uint32_t src_clk_hz;   // Peripheral source clock resolution
     esp_lcd_rgb_timing_t timings;   // RGB timing parameters (e.g. pclk, sync pulse, porch width)
     int bounce_pos_px;              // Position in whatever source material is used for the bounce buffer, in pixels
@@ -198,6 +205,8 @@ static esp_err_t lcd_rgb_panel_alloc_frame_buffers(esp_rgb_panel_t *rgb_panel)
 
 static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
 {
+    // ensure the HW state machine is stopped
+    lcd_ll_stop(rgb_panel->hal.dev);
     LCD_CLOCK_SRC_ATOMIC() {
         lcd_ll_enable_clock(rgb_panel->hal.dev, false);
     }
@@ -209,6 +218,8 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
         }
         lcd_com_remove_device(LCD_COM_DEVICE_TYPE_RGB, rgb_panel->panel_id);
     }
+    // release the GPIOs
+    lcd_rgb_panel_release_gpio(rgb_panel);
     if (rgb_panel->dma_chan) {
         gdma_disconnect(rgb_panel->dma_chan);
         gdma_del_channel(rgb_panel->dma_chan);
@@ -356,10 +367,14 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     ESP_GOTO_ON_ERROR(ret, err, TAG, "configure GPIO failed");
     // fill other rgb panel runtime parameters
     memcpy(rgb_panel->data_gpio_nums, rgb_panel_config->data_gpio_nums, sizeof(rgb_panel->data_gpio_nums));
+    rgb_panel->disp_gpio_num = rgb_panel_config->disp_gpio_num;
+    rgb_panel->de_gpio_num = rgb_panel_config->de_gpio_num;
+    rgb_panel->hsync_gpio_num = rgb_panel_config->hsync_gpio_num;
+    rgb_panel->vsync_gpio_num = rgb_panel_config->vsync_gpio_num;
+    rgb_panel->pclk_gpio_num = rgb_panel_config->pclk_gpio_num;
     rgb_panel->timings = rgb_panel_config->timings;
     rgb_panel->data_width = rgb_panel_config->data_width;
     rgb_panel->output_bits_per_pixel = fb_bits_per_pixel; // by default, the output bpp is the same as the frame buffer bpp
-    rgb_panel->disp_gpio_num = rgb_panel_config->disp_gpio_num;
     rgb_panel->flags.disp_en_level = !rgb_panel_config->flags.disp_active_low;
     rgb_panel->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     // fill function table
@@ -742,45 +757,90 @@ static esp_err_t rgb_panel_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
 
 static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *rgb_panel, const esp_lcd_rgb_panel_config_t *panel_config)
 {
+    uint64_t gpio_reserve_mask = 0;
     int panel_id = rgb_panel->panel_id;
     // Set the number of output data lines
     lcd_ll_set_data_wire_width(rgb_panel->hal.dev, panel_config->data_width);
     // connect peripheral signals via GPIO matrix
     for (size_t i = 0; i < panel_config->data_width; i++) {
         if (panel_config->data_gpio_nums[i] >= 0) {
-            gpio_func_sel(panel_config->data_gpio_nums[i], PIN_FUNC_GPIO);
-            esp_rom_gpio_connect_out_signal(panel_config->data_gpio_nums[i],
-                                            lcd_periph_rgb_signals.panels[panel_id].data_sigs[i], false, false);
+            gpio_matrix_output(panel_config->data_gpio_nums[i],
+                               lcd_periph_rgb_signals.panels[panel_id].data_sigs[i], false, false);
+            gpio_reserve_mask |= (1 << panel_config->data_gpio_nums[i]);
         }
     }
     if (panel_config->hsync_gpio_num >= 0) {
-        gpio_func_sel(panel_config->hsync_gpio_num, PIN_FUNC_GPIO);
-        esp_rom_gpio_connect_out_signal(panel_config->hsync_gpio_num,
-                                        lcd_periph_rgb_signals.panels[panel_id].hsync_sig, false, false);
+        gpio_matrix_output(panel_config->hsync_gpio_num,
+                           lcd_periph_rgb_signals.panels[panel_id].hsync_sig, false, false);
+        gpio_reserve_mask |= (1 << panel_config->hsync_gpio_num);
     }
     if (panel_config->vsync_gpio_num >= 0) {
-        gpio_func_sel(panel_config->vsync_gpio_num, PIN_FUNC_GPIO);
-        esp_rom_gpio_connect_out_signal(panel_config->vsync_gpio_num,
-                                        lcd_periph_rgb_signals.panels[panel_id].vsync_sig, false, false);
+        gpio_matrix_output(panel_config->vsync_gpio_num,
+                           lcd_periph_rgb_signals.panels[panel_id].vsync_sig, false, false);
+        gpio_reserve_mask |= (1 << panel_config->vsync_gpio_num);
     }
     // PCLK may not be necessary in some cases (i.e. VGA output)
     if (panel_config->pclk_gpio_num >= 0) {
-        gpio_func_sel(panel_config->pclk_gpio_num, PIN_FUNC_GPIO);
-        esp_rom_gpio_connect_out_signal(panel_config->pclk_gpio_num,
-                                        lcd_periph_rgb_signals.panels[panel_id].pclk_sig, false, false);
+        gpio_matrix_output(panel_config->pclk_gpio_num,
+                           lcd_periph_rgb_signals.panels[panel_id].pclk_sig, false, false);
+        gpio_reserve_mask |= (1 << panel_config->pclk_gpio_num);
     }
     // DE signal might not be necessary for some RGB LCD
     if (panel_config->de_gpio_num >= 0) {
-        gpio_func_sel(panel_config->de_gpio_num, PIN_FUNC_GPIO);
-        esp_rom_gpio_connect_out_signal(panel_config->de_gpio_num,
-                                        lcd_periph_rgb_signals.panels[panel_id].de_sig, false, false);
+        gpio_matrix_output(panel_config->de_gpio_num,
+                           lcd_periph_rgb_signals.panels[panel_id].de_sig, false, false);
+        gpio_reserve_mask |= (1 << panel_config->de_gpio_num);
     }
     // disp enable GPIO is optional, it is a general purpose output GPIO
     if (panel_config->disp_gpio_num >= 0) {
-        gpio_func_sel(panel_config->disp_gpio_num, PIN_FUNC_GPIO);
-        gpio_output_enable(panel_config->disp_gpio_num);
+        gpio_matrix_output(panel_config->disp_gpio_num,
+                           lcd_periph_rgb_signals.panels[panel_id].disp_sig, false, false);
+        gpio_reserve_mask |= (1 << panel_config->disp_gpio_num);
     }
+
+    // reserve the GPIOs
+    uint64_t busy_mask = esp_gpio_reserve(gpio_reserve_mask);
+    uint64_t conflict_mask = busy_mask & gpio_reserve_mask;
+    for (; conflict_mask > 0;) {
+        uint8_t pos = __builtin_ctzll(conflict_mask);
+        conflict_mask &= ~(1ULL << pos);
+        ESP_LOGW(TAG, "GPIO %d is not usable, maybe is reserved by others", pos);
+    }
+
+    rgb_panel->gpio_reserve_mask = gpio_reserve_mask;
     return ESP_OK;
+}
+
+static void lcd_rgb_panel_release_gpio(esp_rgb_panel_t *rgb_panel)
+{
+    if (rgb_panel->gpio_reserve_mask) {
+        // disconnect the GPIOs from the LCD signals
+        for (size_t i = 0; i < rgb_panel->data_width; i++) {
+            if (rgb_panel->data_gpio_nums[i] >= 0) {
+                gpio_output_disable(rgb_panel->data_gpio_nums[i]);
+            }
+        }
+        if (rgb_panel->hsync_gpio_num >= 0) {
+            gpio_output_disable(rgb_panel->hsync_gpio_num);
+        }
+        if (rgb_panel->vsync_gpio_num >= 0) {
+            gpio_output_disable(rgb_panel->vsync_gpio_num);
+        }
+        // PCLK may not be necessary in some cases (i.e. VGA output)
+        if (rgb_panel->pclk_gpio_num >= 0) {
+            gpio_output_disable(rgb_panel->pclk_gpio_num);
+        }
+        // DE signal might not be necessary for some RGB LCD
+        if (rgb_panel->de_gpio_num >= 0) {
+            gpio_output_disable(rgb_panel->de_gpio_num);
+        }
+        // disp enable GPIO is optional, it is a general purpose output GPIO
+        if (rgb_panel->disp_gpio_num >= 0) {
+            gpio_output_disable(rgb_panel->disp_gpio_num);
+        }
+        // release the IOs so they can be used by others again
+        esp_gpio_revoke(rgb_panel->gpio_reserve_mask);
+    }
 }
 
 static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *rgb_panel, lcd_clock_source_t clk_src)
