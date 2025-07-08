@@ -39,7 +39,7 @@ extern "C" {
 #define ADC_LL_GET_LOW_THRES_MASK(monitor_id)     ((monitor_id == 0) ? APB_SARADC_APB_SARADC_THRES0_LOW_INT_ST_M : APB_SARADC_APB_SARADC_THRES1_LOW_INT_ST_M)
 
 #define ADC_LL_NEED_APB_PERIPH_CLAIM(ADC_UNIT)      (1)
-
+#define ADC_LL_ADC_FE_ON_MODEM_DOMAIN               (1)
 /*---------------------------------------------------------------
                     Oneshot
 ---------------------------------------------------------------*/

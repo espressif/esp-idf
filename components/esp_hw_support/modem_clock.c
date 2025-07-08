@@ -225,7 +225,6 @@ static void IRAM_ATTR modem_clock_device_enable(modem_clock_context_t *ctx, uint
         }
     }
     esp_os_exit_critical_safe(&ctx->lock);
-    assert(refs >= 0);
 }
 
 static void IRAM_ATTR modem_clock_device_disable(modem_clock_context_t *ctx, uint32_t dev_map)
