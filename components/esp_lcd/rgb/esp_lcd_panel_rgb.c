@@ -463,12 +463,14 @@ esp_err_t esp_lcd_rgb_panel_get_frame_buffer(esp_lcd_panel_handle_t panel, uint3
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     ESP_RETURN_ON_FALSE(fb_num && fb_num <= rgb_panel->num_fbs, ESP_ERR_INVALID_ARG, TAG, "invalid frame buffer number");
     void **fb_itor = fb0;
-    va_list args;
+    va_list args = {};
     va_start(args, fb0);
     for (int i = 0; i < fb_num; i++) {
         if (fb_itor) {
             *fb_itor = rgb_panel->fbs[i];
-            fb_itor = va_arg(args, void **);
+            if (i < fb_num - 1) {  /* Only get next arg if we're not at the last iteration */
+                fb_itor = va_arg(args, void **);
+            }
         }
     }
     va_end(args);
