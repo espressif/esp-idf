@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -640,13 +640,21 @@ static void SPI_SLAVE_ISR_ATTR s_spi_slave_dma_prepare_data(spi_dma_ctx_t *dma_c
 
         spi_dma_reset(dma_ctx->rx_dma_chan);
         spi_slave_hal_hw_prepare_rx(hal->hw);
-        spi_dma_start(dma_ctx->rx_dma_chan, dma_ctx->dmadesc_rx);
     }
     if (hal->tx_buffer) {
         spicommon_dma_desc_setup_link(dma_ctx->dmadesc_tx, hal->tx_buffer, (hal->bitlen + 7) / 8, false);
 
         spi_dma_reset(dma_ctx->tx_dma_chan);
         spi_slave_hal_hw_prepare_tx(hal->hw);
+    }
+}
+
+static void SPI_SLAVE_ISR_ATTR s_spi_slave_start_dma(spi_dma_ctx_t *dma_ctx, spi_slave_hal_context_t *hal)
+{
+    if (hal->rx_buffer) {
+        spi_dma_start(dma_ctx->rx_dma_chan, dma_ctx->dmadesc_rx);
+    }
+    if (hal->tx_buffer) {
         spi_dma_start(dma_ctx->tx_dma_chan, dma_ctx->dmadesc_tx);
     }
 }
@@ -774,9 +782,12 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
         spi_slave_hal_hw_reset(hal);
         s_spi_slave_prepare_data(host);
 
-        //The slave rx dma get disturbed by unexpected transaction. Only connect the CS when slave is ready.
+        //The slave rx dma get disturbed by unexpected transaction. Only connect the CS and start DMA when slave is ready.
         if (use_dma) {
+            // Note: order of restore_cs and s_spi_slave_start_dma is important
+            // restore_cs also bring potential glitch, should happen before start DMA
             restore_cs(host);
+            s_spi_slave_start_dma(host->dma_ctx, hal);
         }
 
         //Kick off transfer
