@@ -353,6 +353,15 @@ SPI 总线传输事务由五个阶段构成，详见下表（任意阶段均可�
 
 SPI 主机驱动程序的示例代码存放在 ESP-IDF 示例项目的 :example:`peripherals/spi_master` 目录下。
 
+.. only:: SOC_PSRAM_DMA_CAPABLE
+
+    使用 PSRAM 的传输事务
+    ^^^^^^^^^^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} 支持 GPSPI Master 通过 DMA 直接传输 PSRAM 存储的数据而不用内部额外的拷贝过程，在传输配置中添加 :c:macro:`SPI_TRANS_DMA_USE_PSRAM` 标志信号即可使用。使用 PSRAM 传输事务时，请注意以下几点：
+
+    1. 数据内存 **地址** 和 **传输长度** 都需要与 Cache 长度对齐，通常 Cache 长度为 16/32/64 字节。
+    2. 因为该功能与 MSPI 总线共享带宽，因此 GPSPI 传输带宽应小于 PSRAM 带宽，否则 **可能会丢失传输数据**。可通过在传输结束时检查 :c:macro:`SPI_TRANS_DMA_RX_FAIL` 和 :c:macro:`SPI_TRANS_DMA_TX_FAIL` 标志信号来判断传输是否发生了错误。
 
 传输数据小于 32 位的传输事务
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
