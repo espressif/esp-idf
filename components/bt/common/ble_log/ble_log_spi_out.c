@@ -54,8 +54,15 @@
 #define SPI_OUT_LL_QUEUE_SIZE                   (0)
 #endif // SPI_OUT_LL_ENABLED
 
+#if SPI_OUT_LE_AUDIO_ENABLED
+#define SPI_OUT_LE_AUDIO_QUEUE_SIZE             (SPI_OUT_PING_PONG_BUF_CNT)
+#else
+#define SPI_OUT_LE_AUDIO_QUEUE_SIZE             (0)
+#endif // SPI_OUT_LE_AUDIO_ENABLED
+
 #define SPI_OUT_SPI_MASTER_QUEUE_SIZE           (SPI_OUT_UL_QUEUE_SIZE +\
-                                                 SPI_OUT_LL_QUEUE_SIZE)
+                                                 SPI_OUT_LL_QUEUE_SIZE +\
+                                                 SPI_OUT_LE_AUDIO_QUEUE_SIZE)
 
 // Private typedefs
 typedef struct {
@@ -157,11 +164,6 @@ static esp_timer_handle_t ts_sync_timer = NULL;
 static esp_timer_handle_t flush_timer = NULL;
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
-#if SPI_OUT_LE_AUDIO_ENABLED
-static bool le_audio_log_inited = false;
-static spi_out_log_cb_t *le_audio_log_cb = NULL;
-#endif // SPI_OUT_LE_AUDIO_ENABLED
-
 // Extern function declarations
 extern void esp_panic_handler_feed_wdts(void);
 
@@ -226,11 +228,6 @@ extern uint32_t r_os_cputime_get32(void);
 static void esp_timer_cb_ts_sync(void);
 #endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 #endif // SPI_OUT_TS_SYNC_ENABLED
-
-#if SPI_OUT_LE_AUDIO_ENABLED
-static int spi_out_le_audio_log_init(void);
-static void spi_out_le_audio_log_deinit(void);
-#endif // SPI_OUT_LE_AUDIO_ENABLED
 
 // Private templates
 #define IF_1(...) __VA_ARGS__
@@ -315,6 +312,10 @@ static void spi_out_le_audio_log_deinit(void);
             xSemaphoreGive(LOG_MODULE_MUTEX(ID));                                   \
         )                                                                           \
     }                                                                               \
+
+#if SPI_OUT_LE_AUDIO_ENABLED
+DECLARE_LOG_MODULE(le_audio, LOG_CB_TYPE_LE_AUDIO, SPI_OUT_LE_AUDIO_BUF_SIZE, 0, 0)
+#endif // SPI_OUT_LE_AUDIO_ENABLED
 
 // Private functions
 static int spi_out_init_trans(spi_out_trans_cb_t **trans_cb, uint16_t buf_size)
@@ -583,6 +584,10 @@ static void spi_out_log_flush(void)
         SPI_OUT_LL_PUT_EV;
     }
 #endif // SPI_OUT_LL_ENABLED
+
+#if SPI_OUT_LE_AUDIO_ENABLED
+    LOG_MODULE_FLUSH(le_audio)();
+#endif // SPI_OUT_LE_AUDIO_ENABLED
 }
 
 #if SPI_OUT_FLUSH_TIMER_ENABLED
@@ -899,40 +904,6 @@ static void esp_timer_cb_ts_sync(void)
 #endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
-#if SPI_OUT_LE_AUDIO_ENABLED
-static int spi_out_le_audio_log_init(void)
-{
-    if (le_audio_log_inited) {
-        return 0;
-    }
-
-    // Initialize log control blocks for controller task & ISR logs
-    if (spi_out_log_cb_init(&le_audio_log_cb, SPI_OUT_LE_AUDIO_BUF_SIZE, LOG_CB_TYPE_LE_AUDIO) != 0) {
-        ESP_LOGE(BLE_LOG_TAG, "Failed to initialize log control blocks for LE audio!");
-        return -1;
-    }
-
-    // Initialization done
-    ESP_LOGI(BLE_LOG_TAG, "Succeeded to initialize log control blocks for LE Audio!");
-    le_audio_log_inited = true;
-    return 0;
-}
-
-static void spi_out_le_audio_log_deinit(void)
-{
-    if (!le_audio_log_inited) {
-        return;
-    }
-
-    spi_out_log_cb_deinit(&le_audio_log_cb);
-
-    // Deinitialization done
-    ESP_LOGI(BLE_LOG_TAG, "Succeeded to deinitialize LE audio log!");
-    le_audio_log_inited = false;
-    return;
-}
-#endif // SPI_OUT_LE_AUDIO_ENABLED
-
 // Public functions
 int ble_log_spi_out_init(void)
 {
@@ -988,7 +959,7 @@ int ble_log_spi_out_init(void)
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
 #if SPI_OUT_LE_AUDIO_ENABLED
-    if (spi_out_le_audio_log_init() != 0) {
+    if (LOG_MODULE_INIT(le_audio)() != 0) {
         goto le_audio_init_failed;
     }
 #endif // SPI_OUT_LE_AUDIO_ENABLED
@@ -1018,7 +989,7 @@ int ble_log_spi_out_init(void)
 timer_init_failed:
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
 #if SPI_OUT_LE_AUDIO_ENABLED
-    spi_out_le_audio_log_deinit();
+    LOG_MODULE_DEINIT(le_audio)();
 le_audio_init_failed:
 #endif // SPI_OUT_LE_AUDIO_ENABLED
 #if SPI_OUT_TS_SYNC_ENABLED
@@ -1064,6 +1035,10 @@ void ble_log_spi_out_deinit(void)
 #if SPI_OUT_TS_SYNC_ENABLED
     spi_out_ts_sync_deinit();
 #endif // SPI_OUT_TS_SYNC_ENABLED
+
+#if SPI_OUT_LE_AUDIO_ENABLED
+    LOG_MODULE_DEINIT(le_audio)();
+#endif // SPI_OUT_LE_AUDIO_ENABLED
 
 #if SPI_OUT_LL_ENABLED
     spi_out_ll_log_deinit();
@@ -1289,6 +1264,15 @@ void ble_log_spi_out_dump_all(void)
         spi_out_log_cb_dump(ul_log_cb);
         esp_rom_printf("\n:UL_LOG_DUMP_END]\n\n");
     }
+
+#if SPI_OUT_LE_AUDIO_ENABLED
+    if (LOG_MODULE_INIT_FLAG(le_audio)) {
+        esp_rom_printf("[LE_AUDIO_LOG_DUMP_START:\n");
+        spi_out_log_cb_dump(LOG_MODULE_CB(le_audio));
+        esp_rom_printf("\n:LE_AUDIO_LOG_DUMP_END]\n\n");
+    }
+#endif // SPI_OUT_LE_AUDIO_ENABLED
+
     portEXIT_CRITICAL_SAFE(&spinlock);
 }
 
@@ -1315,19 +1299,19 @@ void ble_log_spi_out_flush(void)
 #if CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
 IRAM_ATTR void ble_log_spi_out_le_audio_write(const uint8_t *addr, uint16_t len)
 {
-    if (!le_audio_log_inited) {
+    if (!LOG_MODULE_INIT_FLAG(le_audio)) {
         return;
     }
 
     bool need_append;
-    if (spi_out_log_cb_check_trans(le_audio_log_cb, len, &need_append)) {
-        need_append |= spi_out_log_cb_write(le_audio_log_cb, addr, len, NULL, 0,
+    if (spi_out_log_cb_check_trans(LOG_MODULE_CB(le_audio), len, &need_append)) {
+        need_append |= spi_out_log_cb_write(LOG_MODULE_CB(le_audio), addr, len, NULL, 0,
                                             BLE_LOG_SPI_OUT_SOURCE_LE_AUDIO, false);
     }
     if (need_append) {
-        spi_out_log_cb_append_trans(le_audio_log_cb);
+        spi_out_log_cb_append_trans(LOG_MODULE_CB(le_audio));
     }
-    spi_out_log_cb_write_loss(le_audio_log_cb);
+    spi_out_log_cb_write_loss(LOG_MODULE_CB(le_audio));
     return;
 }
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
