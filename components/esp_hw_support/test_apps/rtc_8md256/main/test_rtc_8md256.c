@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include "esp_sleep.h"
 #include "unity.h"
 #include "unity_test_utils.h"
@@ -37,6 +38,30 @@ TEST_CASE("Can use 8MD256 as RTC clock source in deepsleep", "[pm]")
 {
     test_deepsleep(false);
 }
+
+static void check_reset_reason_deep_sleep(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+}
+
+static void enter_deepsleep_by_core1(void *args)
+{
+    do {
+        test_deepsleep(false);
+    } while (1);
+}
+
+static void request_core1_do_deepsleep(void)
+{
+    fflush(stdout);
+    fsync(fileno(stdout));
+    xTaskCreatePinnedToCore(enter_deepsleep_by_core1, "deep_sleep_task", 4096, NULL, 6, NULL, 1);
+    while(1);
+}
+
+TEST_CASE_MULTIPLE_STAGES("Can use 8MD256 as RTC clock source in deepsleep (enter sleep by core1)", "[pm]",
+                            request_core1_do_deepsleep,
+                            check_reset_reason_deep_sleep);
 
 static void test_lightsleep(bool force_rtc_periph)
 {
