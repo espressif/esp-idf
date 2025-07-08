@@ -129,7 +129,7 @@ void mac_bb_power_up_cb_execute(void)
 
 #endif ///CONFIG_MAC_BB_PD
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 
 typedef struct sleep_modem_config {
     _lock_t phy_link_lock;
@@ -216,7 +216,7 @@ inline __attribute__((always_inline)) bool sleep_modem_phy_link_done(void)
     return (s_sleep_modem.phy_link_done == 1);
 }
 
-#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
 
 bool modem_domain_pd_allowed(void)
 {
