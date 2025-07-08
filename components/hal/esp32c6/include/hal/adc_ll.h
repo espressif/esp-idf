@@ -35,6 +35,8 @@ extern "C" {
 #define ADC_LL_EVENT_THRES0_LOW           BIT(27)
 #define ADC_LL_EVENT_THRES1_LOW           BIT(26)
 
+#define ADC_LL_ADC_FE_ON_MODEM_DOMAIN               (1)
+
 /*---------------------------------------------------------------
                     Oneshot
 ---------------------------------------------------------------*/
