@@ -61,7 +61,7 @@ void pau_regdma_set_entry_link_addr(pau_regdma_link_addr_t *link_entries)
     pau_hal_set_regdma_entry_link_addr(PAU_instance()->hal, link_entries);
 }
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 #if SOC_PM_PAU_REGDMA_LINK_MODEM
 void pau_regdma_set_modem_link_addr(void *link_addr)
 {
@@ -80,6 +80,7 @@ void IRAM_ATTR pau_regdma_trigger_modem_link_restore(void)
     pau_hal_start_regdma_modem_link(PAU_instance()->hal, false);
     pau_hal_stop_regdma_modem_link(PAU_instance()->hal);
 }
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
 
 #if SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
 void IRAM_ATTR pau_regdma_trigger_wifimac_link_backup(void)
@@ -93,7 +94,6 @@ void IRAM_ATTR pau_regdma_trigger_wifimac_link_restore(void)
     pau_hal_start_regdma_wifimac_link(PAU_instance()->hal, false);
     pau_hal_stop_regdma_wifimac_link(PAU_instance()->hal);
 }
-#endif
 #endif
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA

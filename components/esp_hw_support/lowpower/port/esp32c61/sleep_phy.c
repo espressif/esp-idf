@@ -16,7 +16,7 @@
 #include "esp_private/sleep_modem.h"
 #include "esp_private/sleep_retention.h"
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 
 #define SARADC_TSENS_REG                (0x6000e058)
 #define SARADC_TSENS_PU                 (BIT(22))
@@ -174,4 +174,4 @@ void sleep_phy_skip_wifi_reg(bool skip)
     }
 }
 
-#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
