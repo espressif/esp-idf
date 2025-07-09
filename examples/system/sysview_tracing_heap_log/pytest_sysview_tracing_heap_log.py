@@ -33,15 +33,18 @@ def _test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: st
                 f_w.write(line)
 
     dut.expect_exact('example: Ready for OpenOCD connection', timeout=5)
-    with openocd_dut.run(), open(gdb_logfile, 'w') as gdb_log, pexpect.spawn(
-        f'idf.py -B {dut.app.binary_path} gdb --batch -x {gdbinit}',
-        timeout=60,
-        logfile=gdb_log,
-        encoding='utf-8',
-        codec_errors='ignore',
-    ) as p:
-        # Wait for sysview files to be generated
-        p.expect_exact('Tracing is STOPPED')
+    with openocd_dut.run() as oocd:
+        if dut.target == 'esp32p4':
+            oocd.write('esp appimage_offset 0x20000')
+        with open(gdb_logfile, 'w') as gdb_log, pexpect.spawn(
+            f'idf.py -B {dut.app.binary_path} gdb --batch -x {gdbinit}',
+            timeout=60,
+            logfile=gdb_log,
+            encoding='utf-8',
+            codec_errors='ignore',
+        ) as p:
+            # Wait for sysview files to be generated
+            p.expect_exact('Tracing is STOPPED')
 
     # Process sysview trace logs
     command = [os.path.join(idf_path, 'tools', 'esp_app_trace', 'sysviewtrace_proc.py'), '-p'] + trace_log
