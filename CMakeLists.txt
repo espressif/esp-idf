@@ -29,8 +29,6 @@ if(BOOTLOADER_BUILD)
         if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND NOT CONFIG_IDF_TARGET_LINUX)
             list(APPEND compile_options "-fno-shrink-wrap")  # Disable shrink-wrapping to reduce binary size
         endif()
-    elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_NONE)
-        list(APPEND compile_options "-O0")
     elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_PERF)
         list(APPEND compile_options "-O2")
     endif()
