@@ -22,8 +22,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32H4] IDF-12307 inherit from verify code, need check
-
 /**
  * @brief Naming conventions: RESET_REASON_{reset level}_{reset reason}
  * @note refer to TRM: <Reset and Clock> chapter
@@ -43,10 +41,12 @@ typedef enum {
     RESET_REASON_SYS_RTC_WDT     = 0x10, // RTC watch dog resets digital core and rtc module
     RESET_REASON_CPU0_MWDT1      = 0x11, // Main watch dog 1 resets CPU 0
     RESET_REASON_SYS_SUPER_WDT   = 0x12, // Super watch dog resets the digital core and rtc module
+    RESET_REASON_CORE_PWR_GLITCH = 0x13, // Glitch on power resets the digital core and rtc module
     RESET_REASON_CORE_EFUSE_CRC  = 0x14, // eFuse CRC error resets the digital core (hp system)
     RESET_REASON_CORE_USB_UART   = 0x15, // USB UART resets the digital core (hp system)
     RESET_REASON_CORE_USB_JTAG   = 0x16, // USB JTAG resets the digital core (hp system)
     RESET_REASON_CPU0_JTAG       = 0x18, // JTAG resets the CPU 0
+    RESET_REASON_CPU_LOCKUP      = 0x19, // Triggered when the CPU enters lockup (exception inside the exception handler would cause this)
 } soc_reset_reason_t;
 
 #ifdef __cplusplus
