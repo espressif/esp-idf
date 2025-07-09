@@ -387,6 +387,104 @@ static void slave_write_buffer_test_single_byte(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master read slave test single byte", "[i2c][test_env=generic_multi_device][timeout=150]", master_read_slave_test_single_byte, slave_write_buffer_test_single_byte);
 
+static void master_read_slave_test_with_multi_read_job(void)
+{
+    uint8_t data_rd[DATA_LENGTH] = {0};
+    i2c_master_bus_config_t i2c_mst_config = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = TEST_I2C_PORT,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_master_bus_handle_t bus_handle;
+    TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
+
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = I2C_DEVICE_ADDRESS_NOT_USED,
+        .scl_speed_hz = 100000,
+        .scl_wait_us = 20000,
+    };
+
+    i2c_master_dev_handle_t dev_handle;
+    TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
+
+    unity_wait_for_signal("i2c slave init finish");
+
+    uint8_t read_address = (ESP_SLAVE_ADDR << 1 | 1);
+
+    i2c_operation_job_t i2c_ops[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = true, .data = (uint8_t *) &read_address, .total_bytes = 1 } },
+        { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_ACK_VAL, .data = data_rd, .total_bytes = 1 }},
+        { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_ACK_VAL, .data = data_rd + 1, .total_bytes = 1 }},
+        { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_NACK_VAL, .data = data_rd + 2, .total_bytes = 1 }},
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+    i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), 1000);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    TEST_ASSERT(data_rd[0] == 6);
+    TEST_ASSERT(data_rd[1] == 8);
+    TEST_ASSERT(data_rd[2] == 10);
+    unity_send_signal("ready to delete master read test");
+
+    TEST_ESP_OK(i2c_master_bus_rm_device(dev_handle));
+    TEST_ESP_OK(i2c_del_master_bus(bus_handle));
+}
+
+static void slave_write_buffer_test_single_byte_for_multi_read_job(void)
+{
+    i2c_slave_dev_handle_t handle;
+    uint8_t data_wr[DATA_LENGTH];
+    event_queue = xQueueCreate(2, sizeof(i2c_slave_event_t));
+    assert(event_queue);
+
+    i2c_slave_config_t i2c_slv_config = {
+        .i2c_port = TEST_I2C_PORT,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .scl_io_num = I2C_SLAVE_SCL_IO,
+        .sda_io_num = I2C_SLAVE_SDA_IO,
+        .slave_addr = ESP_SLAVE_ADDR,
+        .send_buf_depth = DATA_LENGTH,
+        .receive_buf_depth = DATA_LENGTH,
+        .flags.enable_internal_pullup = true,
+    };
+
+    TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &handle));
+
+    i2c_slave_event_callbacks_t cbs = {
+        .on_receive = i2c_slave_receive_cb,
+        .on_request = i2c_slave_request_cb,
+    };
+
+    TEST_ESP_OK(i2c_slave_register_event_callbacks(handle, &cbs, NULL));
+
+    unity_send_signal("i2c slave init finish");
+
+    data_wr[0] = 6;
+    data_wr[1] = 8;
+    data_wr[2] = 10;
+
+    i2c_slave_event_t evt;
+    uint32_t write_len;
+    while (true) {
+        if (xQueueReceive(event_queue, &evt, portMAX_DELAY) == pdTRUE) {
+            if (evt == I2C_SLAVE_EVT_TX) {
+                TEST_ESP_OK(i2c_slave_write(handle, data_wr, 3, &write_len, 1000));
+                break;
+            }
+        }
+    }
+
+    unity_wait_for_signal("ready to delete master read test");
+    vQueueDelete(event_queue);
+    TEST_ESP_OK(i2c_del_slave_device(handle));
+}
+
+TEST_CASE_MULTIPLE_DEVICES("I2C master read slave test single byte 2", "[i2c][test_env=generic_multi_device][timeout=150]", master_read_slave_test_with_multi_read_job, slave_write_buffer_test_single_byte_for_multi_read_job);
+
 static void i2c_slave_repeat_read(void)
 {
     unity_wait_for_signal("i2c master init first");
