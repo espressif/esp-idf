@@ -10,6 +10,7 @@
 #include "bt_common.h"
 #include "osi/mutex.h"
 #include "esp_attr.h"
+#include "esp_timer.h"
 
 #if (BT_HCI_LOG_INCLUDED == TRUE)
 #define BT_HCI_LOG_PRINT_TAG                     (1)
@@ -208,6 +209,8 @@ esp_err_t IRAM_ATTR bt_hci_log_record_data(bt_hci_log_t *p_hci_log_ctl, char *st
 {
     osi_mutex_t mutex_lock;
     uint8_t *g_hci_log_buffer;
+    int64_t ts;
+    uint8_t *temp_buf;
 
     if (!p_hci_log_ctl->p_hci_log_buffer) {
         return ESP_FAIL;
@@ -218,6 +221,16 @@ esp_err_t IRAM_ATTR bt_hci_log_record_data(bt_hci_log_t *p_hci_log_ctl, char *st
     if (!g_hci_log_buffer) {
         return ESP_FAIL;
     }
+
+    ts = esp_timer_get_time();
+
+    temp_buf = (uint8_t *)malloc(data_len + 8);
+    memset(temp_buf, 0x0, data_len + 8);
+
+    memcpy(temp_buf, &ts, 8);
+    memcpy(temp_buf + 8, data, data_len);
+
+    data_len += 8;
 
     mutex_lock = p_hci_log_ctl->mutex_lock;
     osi_mutex_lock(&mutex_lock, OSI_MUTEX_MAX_TIMEOUT);
@@ -250,7 +263,7 @@ esp_err_t IRAM_ATTR bt_hci_log_record_data(bt_hci_log_t *p_hci_log_ctl, char *st
         bt_hci_log_record_string(p_hci_log_ctl, str);
     }
 
-    bt_hci_log_record_hex(p_hci_log_ctl, data, data_len);
+    bt_hci_log_record_hex(p_hci_log_ctl, temp_buf, data_len);
 
     g_hci_log_buffer[p_hci_log_ctl->log_record_in] = '\n';
 
@@ -265,6 +278,8 @@ esp_err_t IRAM_ATTR bt_hci_log_record_data(bt_hci_log_t *p_hci_log_ctl, char *st
     p_hci_log_ctl->index ++;
 
     osi_mutex_unlock(&mutex_lock);
+
+    free(temp_buf);
 
     return ESP_OK;
 }
