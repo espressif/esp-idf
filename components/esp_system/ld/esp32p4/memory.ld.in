@@ -71,11 +71,11 @@ MEMORY
    * Shared data RAM, excluding memory reserved for ROM bss/data/stack.
    * Enabling Bluetooth & Trace Memory features in menuconfig will decrease the amount of RAM available.
    */
-#if CONFIG_ESP32P4_REV_MIN_200 // TODO: IDF-13410
-  sram_seg (RWX) :                 org = SRAM_START, len = SRAM_SIZE
-#else
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
   sram_low (RWX) :                 org = SRAM_LOW_START, len = SRAM_LOW_SIZE
   sram_high (RW) :                org = SRAM_HIGH_START, len = SRAM_HIGH_SIZE
+#else
+  sram_seg (RWX) :                 org = SRAM_START, len = SRAM_SIZE
 #endif
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS

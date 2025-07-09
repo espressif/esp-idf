@@ -122,18 +122,13 @@
 #include "esp_private/startup_internal.h"
 #include "esp_private/system_internal.h"
 
-// TODO: IDF-13410. Update to (CONFIG_ESP32P4_REV_MIN_FULL GREATER_EQUAL 200) when chip efuse is correct.
-#if SOC_MEM_NON_CONTIGUOUS_SRAM || (CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_ESP32P4_REV_MIN_200)
-#define MEM_NON_CONTIGUOUS_SRAM    1
-#endif
-
-#if MEM_NON_CONTIGUOUS_SRAM
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
 extern int _bss_start_low, _bss_start_high;
 extern int _bss_end_low, _bss_end_high;
 #else
 extern int _bss_start;
 extern int _bss_end;
-#endif // MEM_NON_CONTIGUOUS_SRAM
+#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V2
 extern int _rtc_bss_start;
 extern int _rtc_bss_end;
 #if CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
@@ -421,12 +416,12 @@ FORCE_INLINE_ATTR IRAM_ATTR void get_reset_reason(soc_reset_reason_t *rst_reas)
 
 FORCE_INLINE_ATTR IRAM_ATTR void init_bss(const soc_reset_reason_t *rst_reas)
 {
-#if MEM_NON_CONTIGUOUS_SRAM
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
     memset(&_bss_start_low, 0, (uintptr_t)&_bss_end_low - (uintptr_t)&_bss_start_low);
     memset(&_bss_start_high, 0, (uintptr_t)&_bss_end_high - (uintptr_t)&_bss_start_high);
 #else
     memset(&_bss_start, 0, (uintptr_t)&_bss_end - (uintptr_t)&_bss_start);
-#endif // MEM_NON_CONTIGUOUS_SRAM
+#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V2
 
 #if CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
     // Clear Bluetooth bss

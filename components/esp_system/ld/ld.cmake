@@ -49,7 +49,7 @@ target_linker_script(${COMPONENT_LIB} INTERFACE "${ld_out_path}")
 
 # Generate sections.ld.in and pass it through linker script generator
 if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410
-    preprocess_linker_file("sections.eco5.ld.in" "sections.ld.in" ld_out_path)
+    preprocess_linker_file("sections.rev2.ld.in" "sections.ld.in" ld_out_path)
 else()
     preprocess_linker_file("sections.ld.in" "sections.ld.in" ld_out_path)
 endif()

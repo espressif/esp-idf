@@ -151,9 +151,8 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 endif()
 
-# Since P4 ECO5, the SRAM is contiguous
-# TODO: IDF-13410. Update to (CONFIG_ESP32P4_REV_MIN_FULL GREATER_EQUAL 200) when chip efuse is correct.
-if(CONFIG_SOC_MEM_NON_CONTIGUOUS_SRAM OR (CONFIG_IDF_TARGET_ESP32P4 AND NOT CONFIG_ESP32P4_REV_MIN_200))
+# For P4, since P4 REV2, the SRAM is contiguous
+if(CONFIG_ESP32P4_SELECTS_REV_LESS_V2)
     target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--enable-non-contiguous-regions")
 endif()
 

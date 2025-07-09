@@ -287,38 +287,38 @@ SECTIONS
 /**
  *  Appendix: Memory Usage of ROM bootloader
  *
- * 0x4ff296b8 ------------------> _dram0_0_start
- *            |               |
- *            |               |
- *            |               |   1. Large buffers that are only used in certain boot modes, see shared_buffers.h
- *            |               |
- *            |               |
- * 0x4ff3afc0 ------------------> __stack_sentry
- *            |               |
- *            |               |   2. Startup pro cpu stack (freed when IDF app is running)
- *            |               |
- * 0x4ff3cfc0 ------------------> __stack (pro cpu)
- *            |               |
- *            |               |      Startup app cpu stack
- *            |               |
- * 0x4ff3efc0 ------------------> __stack_app (app cpu)
- *            |               |
- *            |               |
- *            |               |   3. Shared memory only used in startup code or nonos/early boot*
- *            |               |      (can be freed when IDF runs)
- *            |               |
- *            |               |
- * 0x4ff3fba4 ------------------> _dram0_rtos_reserved_start
- *            |               |
- *            |               |
- *            |               |   4. Shared memory used in startup code and when IDF runs
- *            |               |
- *            |               |
- * 0x4ff3ff94 ------------------> _dram0_rtos_reserved_end
- *            |               |
- * 0x4ff3ffc8 ------------------> _data_start_interface
- *            |               |
- *            |               |   5. End of DRAM is the 'interface' data with constant addresses (ECO compatible)
- *            |               |
- * 0x4ff40000 ------------------> _data_end_interface
+ *  0x4ffa96b8 ------------------> _dram0_0_start
+ *          |               |
+ *          |               |
+ *          |               |   1. Large buffers that are only used in certain boot modes, see shared_buffers.h
+ *          |               |
+ *          |               |
+ * 0x4ffbafc0 ------------------> __stack_sentry
+ *          |               |
+ *          |               |   2. Startup pro cpu stack (freed when IDF app is running)
+ *          |               |
+ * 0x4ffbcfc0 ------------------> __stack (pro cpu)
+ *          |               |
+ *          |               |      Startup app cpu stack
+ *          |               |
+ * 0x4ffbefc0 ------------------> __stack_app (app cpu)
+ *          |               |
+ *          |               |
+ *          |               |   3. Shared memory only used in startup code or nonos/early boot*
+ *          |               |      (can be freed when IDF runs)
+ *          |               |
+ *          |               |
+ * 0x4ffbfbb0 ------------------> _dram0_rtos_reserved_start
+ *          |               |
+ *          |               |
+ *          |               |   4. Shared memory used in startup code and when IDF runs
+ *          |               |
+ *          |               |
+ * 0x4ffbffa4 ------------------> _dram0_rtos_reserved_end
+ *          |               |
+ * 0x4ffbffc8 ------------------> _data_start_interface
+ *          |               |
+ *          |               |   5. End of DRAM is the 'interface' data with constant addresses (ECO compatible)
+ *          |               |
+ * 0x4ffc0000 ------------------> _data_end_interface
  */
