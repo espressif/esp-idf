@@ -13,6 +13,82 @@
 #include "hal/modem_clock_types.h"
 #include "hal/assert.h"
 
+typedef enum {
+    MODEM_CLOCK_XTAL32K_CODE = 0,
+    MODEM_CLOCK_RC32K_CODE   = 1,
+    MODEM_CLOCK_EXT32K_CODE  = 2
+} modem_clock_32k_clk_src_code_t;
+
+void IRAM_ATTR modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain, uint32_t bitmap)
+{
+    HAL_ASSERT(domain < MODEM_CLOCK_DOMAIN_MAX);
+    switch (domain)
+    {
+    case MODEM_CLOCK_DOMAIN_MODEM_APB:
+        modem_syscon_ll_set_modem_apb_icg_bitmap(hal->syscon_dev, bitmap);
+        break;
+    case MODEM_CLOCK_DOMAIN_MODEM_PERIPH:
+        modem_syscon_ll_set_modem_periph_icg_bitmap(hal->syscon_dev, bitmap);
+        break;
+    case MODEM_CLOCK_DOMAIN_BT:
+        modem_syscon_ll_set_bt_icg_bitmap(hal->syscon_dev, bitmap);
+        break;
+    case MODEM_CLOCK_DOMAIN_MODEM_FE:
+        modem_syscon_ll_set_fe_icg_bitmap(hal->syscon_dev, bitmap);
+        break;
+    case MODEM_CLOCK_DOMAIN_IEEE802154:
+        modem_syscon_ll_set_ieee802154_icg_bitmap(hal->syscon_dev, bitmap);
+        break;
+    case MODEM_CLOCK_DOMAIN_LP_APB:
+        modem_lpcon_ll_set_lp_apb_icg_bitmap(hal->lpcon_dev, bitmap);
+        break;
+    case MODEM_CLOCK_DOMAIN_I2C_MASTER:
+        modem_lpcon_ll_set_i2c_master_icg_bitmap(hal->lpcon_dev, bitmap);
+        break;
+    case MODEM_CLOCK_DOMAIN_COEX:
+        modem_lpcon_ll_set_coex_icg_bitmap(hal->lpcon_dev, bitmap);
+        break;
+    case MODEM_CLOCK_DOMAIN_WIFIPWR:
+        modem_lpcon_ll_set_wifipwr_icg_bitmap(hal->lpcon_dev, bitmap);
+        break;
+    default:
+        HAL_ASSERT(0);
+    }
+}
+
+uint32_t IRAM_ATTR modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain)
+{
+    HAL_ASSERT(domain < MODEM_CLOCK_DOMAIN_MAX);
+    uint32_t bitmap = 0;
+    switch (domain)
+    {
+    case MODEM_CLOCK_DOMAIN_MODEM_APB:
+        bitmap = modem_syscon_ll_get_modem_apb_icg_bitmap(hal->syscon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_MODEM_PERIPH:
+        bitmap = modem_syscon_ll_get_modem_periph_icg_bitmap(hal->syscon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_BT:
+        bitmap = modem_syscon_ll_get_bt_icg_bitmap(hal->syscon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_MODEM_FE:
+        bitmap = modem_syscon_ll_get_fe_icg_bitmap(hal->syscon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_IEEE802154:
+        bitmap = modem_syscon_ll_get_ieee802154_icg_bitmap(hal->syscon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_LP_APB:
+        bitmap = modem_lpcon_ll_get_lp_apb_icg_bitmap(hal->lpcon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_I2C_MASTER:
+        bitmap = modem_lpcon_ll_get_i2c_master_icg_bitmap(hal->lpcon_dev);
+        break;
+    default:
+        HAL_ASSERT(0);
+    }
+    return bitmap;
+}
+
 void IRAM_ATTR modem_clock_hal_enable_modem_common_fe_clock(modem_clock_hal_context_t *hal, bool enable)
 {
     modem_syscon_ll_enable_fe_apb_clock(hal->syscon_dev, enable);

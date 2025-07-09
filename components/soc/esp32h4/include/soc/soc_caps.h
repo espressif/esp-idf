@@ -517,7 +517,7 @@
 // #define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
 #define SOC_PM_SUPPORT_TOUCH_WAKEUP     (1)
 #define SOC_PM_SUPPORT_CPU_PD           (1)
-// #define SOC_PM_SUPPORT_MODEM_PD         (1)
+#define SOC_PM_SUPPORT_MODEM_PD         (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
@@ -532,8 +532,8 @@
 // #define MAC_SUPPORT_PMU_MODEM_STATE     SOC_PM_SUPPORT_PMU_MODEM_STATE
 
 #define SOC_PM_CPU_RETENTION_BY_SW          (1)
-// #define SOC_PM_MODEM_RETENTION_BY_REGDMA    (1)
-// #define SOC_PM_RETENTION_HAS_CLOCK_BUG      (1)
+#define SOC_PM_MODEM_RETENTION_BY_REGDMA    (1)
+// #define SOC_PM_RETENTION_SW_TRIGGER_REGDMA  (1)  /*!< In esp32H2, regdma will power off when entering sleep */
 
 #define SOC_PM_PAU_LINK_NUM                 (4)
 #define SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE (1)
