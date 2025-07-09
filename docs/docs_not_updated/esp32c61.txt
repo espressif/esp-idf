@@ -56,7 +56,6 @@ api-reference/error-codes.rst
 api-reference/index.rst
 api-reference/protocols/icmp_echo.rst
 api-reference/protocols/mqtt.rst
-api-reference/protocols/modbus.rst
 api-reference/protocols/mdns.rst
 api-reference/protocols/index.rst
 api-reference/protocols/asio.rst

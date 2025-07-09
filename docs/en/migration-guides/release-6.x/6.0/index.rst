@@ -9,6 +9,7 @@ Migration from 5.5 to 6.0
     build-system
     peripherals
     provisioning
+    protocols
     security
     tools
     system

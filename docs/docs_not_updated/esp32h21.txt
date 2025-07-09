@@ -83,7 +83,6 @@ api-reference/protocols/esp_crt_bundle.rst
 api-reference/protocols/mdns.rst
 api-reference/protocols/asio.rst
 api-reference/protocols/mbedtls.rst
-api-reference/protocols/modbus.rst
 api-reference/protocols/icmp_echo.rst
 api-reference/protocols/esp_https_server.rst
 api-reference/protocols/esp_local_ctrl.rst
