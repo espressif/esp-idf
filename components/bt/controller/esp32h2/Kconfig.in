@@ -441,6 +441,12 @@ menu "Controller debug features"
     config BT_LE_PTR_CHECK_ENABLED
         bool "Enable boundary check for internal memory"
         default n
+
+    config BT_LE_MEM_CHECK_ENABLED
+        bool "Enable memory allocation check"
+        default n
+        help
+            Used in internal tests only. Enable the memory allocation check.
 endmenu
 
 config BT_LE_LL_RESOLV_LIST_SIZE
