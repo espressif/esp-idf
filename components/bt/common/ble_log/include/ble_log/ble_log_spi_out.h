@@ -61,5 +61,4 @@ void ble_log_spi_out_le_audio_write(const uint8_t *addr, uint16_t len);
 int ble_log_spi_out_host_write(uint8_t source, const char *prefix, const char *format, ...);
 int ble_log_spi_out_hci_write(uint8_t source, const uint8_t *addr, uint16_t len);
 int ble_log_spi_out_mesh_write(const char *prefix, const char *format, ...);
-
 #endif // __BT_SPI_OUT_H__
