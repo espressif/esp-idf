@@ -51,9 +51,9 @@ static inline void _mspi_timing_ll_set_flash_clk_src(uint32_t mspi_id, soc_perip
     case FLASH_CLK_SRC_RC_FAST:
         PCR.mspi_conf.mspi_clk_sel = 1;
         break;
-    case FLASH_CLK_SRC_PLL_F64M:
-        PCR.mspi_conf.mspi_clk_sel = 2;
-        break;
+    // case FLASH_CLK_SRC_PLL_F64M:
+    //     PCR.mspi_conf.mspi_clk_sel = 2;
+    //     break;
     case FLASH_CLK_SRC_PLL_F48M:
         PCR.mspi_conf.mspi_clk_sel = 3;
         break;
