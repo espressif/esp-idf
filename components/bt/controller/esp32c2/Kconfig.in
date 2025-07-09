@@ -281,94 +281,103 @@ config BT_LE_CONTROLLER_TASK_STACK_SIZE
     help
         This configures stack size of NimBLE controller task
 
-menuconfig BT_LE_CONTROLLER_LOG_ENABLED
-    bool "Controller log enable"
-    default n
-    help
-        Enable controller log
+menu "Controller debug features"
+    menuconfig BT_LE_CONTROLLER_LOG_ENABLED
+        bool "Controller log enable"
+        default n
+        help
+            Enable controller log
 
-config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
-    bool "enable controller log module"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default y
-    help
-            Enable controller log module
+    config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+        bool "enable controller log module"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        default y
+        help
+                Enable controller log module
 
-config BT_LE_CONTROLLER_LOG_HCI_ENABLED
-    bool "enable HCI log module"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default y
-    help
-            Enable hci log module
+    config BT_LE_CONTROLLER_LOG_HCI_ENABLED
+        bool "enable HCI log module"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        default y
+        help
+                Enable hci log module
 
-config BT_LE_CONTROLLER_LOG_DUMP_ONLY
-    bool "Controller log dump mode only"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default y
-    help
-            Only operate in dump mode
+    config BT_LE_CONTROLLER_LOG_DUMP_ONLY
+        bool "Controller log dump mode only"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        default y
+        help
+                Only operate in dump mode
 
-config BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
-    bool "Output ble controller logs to SPI bus (Experimental)"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
-    select BT_BLE_LOG_SPI_OUT_ENABLED
-    default n
-    help
-        Output ble controller logs to SPI bus
+    config BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+        bool "Output ble controller logs to SPI bus (Experimental)"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+        select BT_BLE_LOG_SPI_OUT_ENABLED
+        default n
+        help
+            Output ble controller logs to SPI bus
 
-config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-    bool "Store ble controller logs to flash(Experimental)"
-    depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default n
-    help
-            Store ble controller logs to flash memory.
+    config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+        bool "Store ble controller logs to flash(Experimental)"
+        depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        default n
+        help
+                Store ble controller logs to flash memory.
 
-config BT_LE_CONTROLLER_LOG_PARTITION_SIZE
-    int "size of ble controller log partition(Multiples of 4K)"
-    depends on BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-    default 65536
-    help
-            The size of ble controller log partition shall be a multiples of 4K.
-            The name of log partition shall be "bt_ctrl_log".
-            The partition type shall be ESP_PARTITION_TYPE_DATA.
-            The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
+    config BT_LE_CONTROLLER_LOG_PARTITION_SIZE
+        int "size of ble controller log partition(Multiples of 4K)"
+        depends on BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+        default 65536
+        help
+                The size of ble controller log partition shall be a multiples of 4K.
+                The name of log partition shall be "bt_ctrl_log".
+                The partition type shall be ESP_PARTITION_TYPE_DATA.
+                The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
 
-config BT_LE_LOG_CTRL_BUF1_SIZE
-    int "size of the first BLE controller LOG buffer"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default 4096
-    help
-            Configure the size of the first BLE controller LOG buffer.
+    config BT_LE_LOG_CTRL_BUF1_SIZE
+        int "size of the first BLE controller LOG buffer"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        default 4096
+        help
+                Configure the size of the first BLE controller LOG buffer.
 
-config BT_LE_LOG_CTRL_BUF2_SIZE
-    int "size of the second BLE controller LOG buffer"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default 1024
-    help
-            Configure the size of the second BLE controller LOG buffer.
+    config BT_LE_LOG_CTRL_BUF2_SIZE
+        int "size of the second BLE controller LOG buffer"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        default 1024
+        help
+                Configure the size of the second BLE controller LOG buffer.
 
-config BT_LE_LOG_HCI_BUF_SIZE
-    int "size of the BLE HCI LOG buffer"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default 4096
-    help
-            Configure the size of the BLE HCI LOG buffer.
+    config BT_LE_LOG_HCI_BUF_SIZE
+        int "size of the BLE HCI LOG buffer"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        default 4096
+        help
+                Configure the size of the BLE HCI LOG buffer.
 
-config BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
-    bool "Enable wrap panic handler"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default n
-    help
-        Wrap esp_panic_handler to get controller logs when PC pointer exception crashes.
+    config BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
+        bool "Enable wrap panic handler"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        default n
+        help
+            Wrap esp_panic_handler to get controller logs when PC pointer exception crashes.
 
-config BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
-    bool "Enable esp_task_wdt_isr_user_handler implementation"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default n
-    help
-        Implement esp_task_wdt_isr_user_handler to get controller logs when task wdt issue is triggered.
+    config BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
+        bool "Enable esp_task_wdt_isr_user_handler implementation"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        default n
+        help
+            Implement esp_task_wdt_isr_user_handler to get controller logs when task wdt issue is triggered.
+
+    config BT_LE_MEM_CHECK_ENABLED
+        bool "Enable memory allocation check"
+        default n
+        help
+            Used in internal tests only. Enable the memory allocation check.
+endmenu
+
 config BT_LE_LL_RESOLV_LIST_SIZE
     int "BLE LL Resolving list size"
     range 1 5
