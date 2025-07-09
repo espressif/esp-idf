@@ -52,7 +52,8 @@ typedef struct {
     union {
         struct {
             uint8_t factory_reset_state         : 1;  /* True when Factory reset has occurred */
-            uint8_t reserve                     : 7;  /* Reserve */
+            uint8_t factory_reset_request       : 1;  /* True when Factory reset is requested */
+            uint8_t reserve                     : 6;  /* Reserve */
         };
         uint8_t val;
     } flags;

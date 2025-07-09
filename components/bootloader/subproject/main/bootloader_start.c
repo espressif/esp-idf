@@ -86,20 +86,38 @@ static int selected_boot_partition(const bootloader_state_t *bs)
         return boot_index; // Unrecoverable failure (not due to corrupt ota data or bad partition contents)
     }
     if (esp_rom_get_reset_reason(0) != RESET_REASON_CORE_DEEP_SLEEP) {
-        // Factory firmware.
-#ifdef CONFIG_BOOTLOADER_FACTORY_RESET
+#ifdef CONFIG_BOOTLOADER_FACTORY_RESET_ENABLE
+        bool factory_reset = false;
+
+#ifdef CONFIG_BOOTLOADER_FACTORY_RESET_REQUEST_FROM_APP
+        // Check if factory reset is requested by the app.
+        if (bootloader_common_get_and_clear_rtc_retain_mem_factory_reset_request()) {
+            ESP_LOGW(TAG, "Factory reset requested by app");
+            factory_reset = true;
+        }
+#endif
+
+#ifdef CONFIG_BOOTLOADER_FACTORY_RESET_GPIO
         bool reset_level = false;
 #if CONFIG_BOOTLOADER_FACTORY_RESET_PIN_HIGH
         reset_level = true;
 #endif
+
+        // Check if factory reset is requested by GPIO long hold.
         if (bootloader_common_check_long_hold_gpio_level(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET, CONFIG_BOOTLOADER_HOLD_TIME_GPIO, reset_level) == GPIO_LONG_HOLD) {
-            ESP_LOGI(TAG, "Detect a condition of the factory reset");
+            ESP_LOGW(TAG, "Factory reset requested by GPIO long hold");
+            factory_reset = true;
+        }
+#endif // CONFIG_BOOTLOADER_FACTORY_RESET_GPIO
+
+        if (factory_reset) {
+            ESP_LOGW(TAG, "Detect a condition of the factory reset");
             bool ota_data_erase = false;
 #ifdef CONFIG_BOOTLOADER_OTA_DATA_ERASE
             ota_data_erase = true;
 #endif
             const char *list_erase = CONFIG_BOOTLOADER_DATA_FACTORY_RESET;
-            ESP_LOGI(TAG, "Data partitions to erase: %s", list_erase);
+            ESP_LOGW(TAG, "Data partitions to erase: %s", list_erase);
             if (bootloader_common_erase_part_type_data(list_erase, ota_data_erase) == false) {
                 ESP_LOGE(TAG, "Not all partitions were erased");
             }
@@ -108,7 +126,7 @@ static int selected_boot_partition(const bootloader_state_t *bs)
 #endif
             return bootloader_utility_get_selected_boot_partition(bs);
         }
-#endif // CONFIG_BOOTLOADER_FACTORY_RESET
+#endif // CONFIG_BOOTLOADER_FACTORY_RESET_ENABLE
         // TEST firmware.
 #ifdef CONFIG_BOOTLOADER_APP_TEST
         bool app_test_level = false;

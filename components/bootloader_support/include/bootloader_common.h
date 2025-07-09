@@ -266,7 +266,7 @@ uint16_t bootloader_common_get_rtc_retain_mem_reboot_counter(void);
 /**
  * @brief Returns True if Factory reset has happened
  *
- * Reset the status after reading it.
+ * Resets the status after reading it.
  *
  * @return True: Factory reset has happened
  *         False: No Factory reset
@@ -277,6 +277,21 @@ bool bootloader_common_get_rtc_retain_mem_factory_reset_state(void);
  * @brief Sets Factory reset status
  */
 void bootloader_common_set_rtc_retain_mem_factory_reset_state(void);
+
+/**
+ * @brief Returns True if Factory reset was requested
+ *
+ * Resets the request status after reading it.
+ *
+ * @return True: Factory reset was requested
+ *         False: No Factory reset requested
+ */
+bool bootloader_common_get_and_clear_rtc_retain_mem_factory_reset_request(void);
+
+/**
+ * @brief Sets Factory reset request status
+ */
+void bootloader_common_set_rtc_retain_mem_factory_reset_request(void);
 
 /**
  * @brief Returns rtc_retain_mem
