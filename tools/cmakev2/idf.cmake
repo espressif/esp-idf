@@ -9,6 +9,10 @@ cmake_minimum_required(VERSION 3.22)
 # included.
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}" ${CMAKE_MODULE_PATH})
 
+# The version.cmake file, which contains the IDF_VERSION variables, is the only
+# file included from the cmakev1 build system.
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/version.cmake)
+
 include(component)
 include(build)
 
@@ -152,7 +156,6 @@ __init_components()
 Many of the following things are already implemented in PoC !38337, but they
 need to be reviewed.
 
-* Set IDF version.
 * Set and check python interpreter.
 * Set build target.
 * Set the toolchain before invoking project().

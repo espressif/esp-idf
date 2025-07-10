@@ -65,6 +65,19 @@ function(test_component_priority)
     __dump_component_properties("${component_name}")
 endfunction()
 
+# Test that IDF_VERSION is set
+function(test_idf_version)
+    if(NOT DEFINED IDF_VERSION_MAJOR OR
+       NOT DEFINED IDF_VERSION_MINOR OR
+       NOT DEFINED IDF_VERSION_PATCH OR
+       NOT DEFINED ENV{IDF_VERSION})
+        idf_die("IDF_VERSION not set")
+   endif()
+endfunction()
+
 # Run tests
 test_dump_properties()
 test_component_priority()
+test_idf_version()
+
+message("ALL TESTS PASSED")
