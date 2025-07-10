@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+#define MMU_LL_FLASH_MMU_ID                 0
+#define MMU_LL_PSRAM_MMU_ID                 0
 #define MMU_LL_END_DROM_ENTRY_VADDR         (SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_MMU_PAGE_SIZE)
 #define MMU_LL_END_DROM_ENTRY_ID            (SOC_MMU_ENTRY_NUM - 1)
 
