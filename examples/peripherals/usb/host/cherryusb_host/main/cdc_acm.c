@@ -7,7 +7,6 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 
@@ -111,10 +110,12 @@ static void serial_in_cb(void *arg, int nbytes)
             esp_rom_printf("%c", data[i]);
         } else {
             esp_rom_printf("[%02x]", data[i]);
+            if (data[i] == '\n') {
+                esp_rom_printf("\n");
+            }
         }
     }
 
-    esp_rom_printf("\r");
     serial_start_in(serial);
 }
 

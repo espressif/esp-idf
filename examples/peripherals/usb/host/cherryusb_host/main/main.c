@@ -10,7 +10,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 
-#if EXAMPLE_HAL_USE_ESP32_S3_USB_OTG
+#if CONFIG_EXAMPLE_HAL_USE_ESP32_S3_USB_OTG
 #include "driver/gpio.h"
 #define BOOST_EN 13
 #define DEV_VBUS_EN 12
@@ -25,7 +25,7 @@ static char *TAG = "HOST";
 
 void app_main(void)
 {
-#if EXAMPLE_HAL_USE_ESP32_S3_USB_OTG
+#if CONFIG_EXAMPLE_HAL_USE_ESP32_S3_USB_OTG
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
@@ -40,13 +40,13 @@ void app_main(void)
     gpio_set_level(USB_SEL, 1);
 #endif
 
-#if EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
+#if CONFIG_EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
 reinit:
 #endif
     usbh_initialize(0, ESP_USBH_BASE);
     ESP_LOGI(TAG, "Init usb");
 
-#if EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
+#if CONFIG_EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
     for (int i = 10; i >= 0; i--) {
         ESP_LOGW(TAG, "Deinit usb after %d seconds...", i);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
