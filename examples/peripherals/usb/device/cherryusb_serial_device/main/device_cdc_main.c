@@ -422,13 +422,13 @@ void cdc_acm_task(void *arg)
 
 void app_main(void)
 {
-#if EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
+#if CONFIG_EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
 reinit :
 #endif
 
     xTaskCreatePinnedToCore(&cdc_acm_task, "cdc_acm_task", 1024 * 3, NULL, 10, &s_task_handle, 0);
 
-#if EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
+#if CONFIG_EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
     for (int i = 10; i >= 0; i--) {
         ESP_LOGW(TAG, "Deinit usb after %d seconds...", i);
         vTaskDelay(1000 / portTICK_PERIOD_MS);

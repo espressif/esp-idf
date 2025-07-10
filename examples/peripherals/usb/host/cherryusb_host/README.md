@@ -5,7 +5,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example demonstrates how to use the CherryUSB host driver. Currently, this example supports communication with HID devices (such as Keyboard and Mouse) and serial port devices (such as CDC_ACM, CH34x, CP210x, PL2303, FTDI FT23x/FT423x devices).
+This example demonstrates how to use the CherryUSB host driver. Currently, this example supports communication with HID devices (such as Keyboard and Mouse), serial port devices (such as CDC_ACM, CH34x, CP210x, PL2303, FTDI FT23x/FT423x devices) and MSC (Mass Storage Class).
 
 ## How to use example
 

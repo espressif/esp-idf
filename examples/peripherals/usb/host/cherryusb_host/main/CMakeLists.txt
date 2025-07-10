@@ -9,8 +9,13 @@ if(CONFIG_CHERRYUSB_HOST_CDC_ACM OR CONFIG_CHERRYUSB_HOST_FTDI OR CONFIG_CHERRYU
     list(APPEND srcs "cdc_acm.c")
 endif()
 
+if(CONFIG_CHERRYUSB_HOST_MSC)
+    list(APPEND srcs "msc.c")
+endif()
+
 idf_component_register(SRCS ${srcs}
     INCLUDE_DIRS "."
+    PRIV_REQUIRES esp_timer fatfs
 )
 
 if(CONFIG_CHERRYUSB_HOST_HID)
@@ -41,4 +46,9 @@ endif()
 if(CONFIG_CHERRYUSB_HOST_PL2303)
     # Make sure the definitions in hid.c are linked correctly
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u usbh_pl2303_run_real")
+endif()
+
+if(CONFIG_CHERRYUSB_HOST_MSC)
+    # Make sure the definitions in hid.c are linked correctly
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u usbh_msc_run_real")
 endif()
