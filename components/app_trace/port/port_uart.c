@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,6 @@
 #include "hal/uart_ll.h"
 #include "string.h"
 #include "driver/gpio.h"
-
 
 #define APPTRACE_DEST_UART (CONFIG_APPTRACE_DEST_UART0 | CONFIG_APPTRACE_DEST_UART1 | CONFIG_APPTRACE_DEST_UART2)
 
@@ -59,7 +58,7 @@ const static char *TAG = "esp_apptrace_uart";
 
 esp_apptrace_hw_t *esp_apptrace_uart_hw_get(int num, void **data)
 {
-    ESP_LOGD(TAG,"esp_apptrace_uart_hw_get - %i", num);
+    ESP_LOGD(TAG, "esp_apptrace_uart_hw_get - %i", num);
 #if APPTRACE_DEST_UART
     static esp_apptrace_uart_data_t s_uart_hw_data = {
     };
@@ -69,7 +68,7 @@ esp_apptrace_hw_t *esp_apptrace_uart_hw_get(int num, void **data)
         .put_up_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_uart_up_buffer_put,
         .flush_up_buffer_nolock = (esp_err_t (*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_uart_flush_nolock,
         .flush_up_buffer = (esp_err_t (*)(void *, esp_apptrace_tmo_t *))esp_apptrace_uart_flush,
-        .down_buffer_config = (void (*)(void *, uint8_t *, uint32_t ))esp_apptrace_uart_down_buffer_config,
+        .down_buffer_config = (void (*)(void *, uint8_t *, uint32_t))esp_apptrace_uart_down_buffer_config,
         .get_down_buffer = (uint8_t *(*)(void *, uint32_t *, esp_apptrace_tmo_t *))esp_apptrace_uart_down_buffer_get,
         .put_down_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_uart_down_buffer_put,
         .host_is_connected = (bool (*)(void *))esp_apptrace_uart_host_is_connected,
@@ -109,7 +108,6 @@ static inline void esp_apptrace_uart_hw_init(void)
     ESP_APPTRACE_LOGI("Initialized UART on CPU%d", esp_cpu_get_core_id());
 }
 
-
 /*****************************************************************************************/
 /***************************** Apptrace HW iface *****************************************/
 /*****************************************************************************************/
@@ -128,9 +126,8 @@ static esp_err_t esp_apptrace_send_uart_data(esp_apptrace_uart_data_t *hw_data, 
         len_free = out_position - hw_data->tx_data_buff_in;
     }
     int check_len = APP_TRACE_MAX_TX_BUFF_UART - hw_data->tx_data_buff_in;
-    if (size <= len_free)
-    {
-        if ( check_len >= size) {
+    if (size <= len_free) {
+        if (check_len >= size) {
             memcpy(&hw_data->tx_data_buff[hw_data->tx_data_buff_in], data, size);
             hw_data->tx_data_buff_in += size;
         } else {
@@ -183,13 +180,11 @@ static void esp_apptrace_send_uart_tx_task(void *arg)
     while (1) {
         send_buff_data(hw_data, &tmo);
         vTaskDelay(10);
-        if (hw_data->circular_buff_overflow == true)
-        {
+        if (hw_data->circular_buff_overflow == true) {
             hw_data->circular_buff_overflow = false;
             ESP_LOGE(TAG, "Buffer overflow. Please increase UART baudrate, or increase UART TX ring buffer size in menuconfig.");
         }
-        if (hw_data->message_buff_overflow == true)
-        {
+        if (hw_data->message_buff_overflow == true) {
             hw_data->message_buff_overflow = false;
             ESP_LOGE(TAG, "Message size more then message buffer!");
         }
@@ -202,15 +197,14 @@ static esp_err_t esp_apptrace_uart_init(esp_apptrace_uart_data_t *hw_data)
 {
     int core_id = esp_cpu_get_core_id();
     if (core_id == 0) {
-        hw_data->tx_data_buff = (uint8_t *)heap_caps_malloc(APP_TRACE_MAX_TX_BUFF_UART, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-        if (hw_data->tx_data_buff == NULL){
+        hw_data->tx_data_buff = (uint8_t *)heap_caps_malloc(APP_TRACE_MAX_TX_BUFF_UART, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        if (hw_data->tx_data_buff == NULL) {
             return ESP_ERR_NO_MEM;
         }
         hw_data->tx_data_buff_in = 0;
         hw_data->tx_data_buff_out = 0;
-        hw_data->tx_msg_buff =  (uint8_t *)heap_caps_malloc(APP_TRACE_MAX_TX_MSG_UART, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-        if (hw_data->tx_msg_buff == NULL)
-        {
+        hw_data->tx_msg_buff = (uint8_t *)heap_caps_malloc(APP_TRACE_MAX_TX_MSG_UART, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        if (hw_data->tx_msg_buff == NULL) {
             return ESP_ERR_NO_MEM;
         }
         hw_data->tx_msg_buff_size = 0;
@@ -222,8 +216,9 @@ static esp_err_t esp_apptrace_uart_init(esp_apptrace_uart_data_t *hw_data)
 
         int source_clk = UART_SCLK_DEFAULT;
 #if SOC_UART_LP_NUM > 0
-        if (hw_data->port_num >= SOC_UART_HP_NUM)
+        if (hw_data->port_num >= SOC_UART_HP_NUM) {
             source_clk = LP_UART_SCLK_DEFAULT;
+        }
 #endif
 
         const uart_config_t uart_config = {
@@ -244,7 +239,9 @@ static esp_err_t esp_apptrace_uart_init(esp_apptrace_uart_data_t *hw_data)
         assert((err == ESP_OK) && "Not possible to configure UART RX/TX pins. Please check and change menuconfig parameters!");
 
         int uart_prio = CONFIG_APPTRACE_UART_TASK_PRIO;
-        if (uart_prio >= (configMAX_PRIORITIES-1)) uart_prio = configMAX_PRIORITIES - 1;
+        if (uart_prio >= (configMAX_PRIORITIES - 1)) {
+            uart_prio = configMAX_PRIORITIES - 1;
+        }
         err = xTaskCreate(esp_apptrace_send_uart_tx_task, "app_trace_uart_tx_task", 2500, hw_data, uart_prio, NULL);
         assert((err == pdPASS) && "Not possible to configure UART. Not possible to create task!");
 
@@ -266,8 +263,7 @@ static uint8_t *esp_apptrace_uart_up_buffer_get(esp_apptrace_uart_data_t *hw_dat
         hw_data->message_buff_overflow = true;
         return NULL;
     }
-    if (hw_data->tx_msg_buff_size != 0)
-    {
+    if (hw_data->tx_msg_buff_size != 0) {
         // A previous message was not sent.
         return NULL;
     }
@@ -296,7 +292,7 @@ static esp_err_t esp_apptrace_uart_up_buffer_put(esp_apptrace_uart_data_t *hw_da
 static void esp_apptrace_uart_down_buffer_config(esp_apptrace_uart_data_t *hw_data, uint8_t *buf, uint32_t size)
 {
     hw_data->down_buffer = (uint8_t *)malloc(size);
-    if (hw_data->down_buffer == NULL){
+    if (hw_data->down_buffer == NULL) {
         assert(false && "Failed to allocate apptrace uart down buffer!");
     }
     hw_data->down_buffer_size = size;
@@ -323,7 +319,7 @@ static uint8_t *esp_apptrace_uart_down_buffer_get(esp_apptrace_uart_data_t *hw_d
         }
         *size = uart_fifolen;
         ptr = hw_data->down_buffer;
-        *size =uart_read_bytes(hw_data->port_num, ptr, uart_fifolen, 0);
+        *size = uart_read_bytes(hw_data->port_num, ptr, uart_fifolen, 0);
     }
 
     if (esp_apptrace_uart_unlock(hw_data) != ESP_OK) {

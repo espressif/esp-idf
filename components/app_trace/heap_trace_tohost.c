@@ -33,7 +33,7 @@ esp_err_t heap_trace_init_tohost(void)
 esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
 {
 #if CONFIG_APPTRACE_SV_ENABLE
-    esp_err_t ret = esp_sysview_heap_trace_start((uint32_t)-1);
+    esp_err_t ret = esp_sysview_heap_trace_start((uint32_t) -1);
     if (ret != ESP_OK) {
         return ret;
     }

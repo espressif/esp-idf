@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -152,7 +152,7 @@ void *esp_apptrace_fopen(esp_apptrace_dest_t dest, const char *path, const char 
     cmd_args.mode_len = strlen(mode) + 1;
 
     esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FOPEN, esp_apptrace_fopen_args_prepare,
-                        &cmd_args, cmd_args.path_len+cmd_args.mode_len);
+                                               &cmd_args, cmd_args.path_len + cmd_args.mode_len);
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
         return NULL;
@@ -182,7 +182,7 @@ int esp_apptrace_fclose(esp_apptrace_dest_t dest, void *stream)
 
     cmd_args.file = stream;
     esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FCLOSE, esp_apptrace_fclose_args_prepare,
-                        &cmd_args, sizeof(cmd_args));
+                                               &cmd_args, sizeof(cmd_args));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
         return EOF;
@@ -211,7 +211,7 @@ size_t esp_apptrace_fwrite(esp_apptrace_dest_t dest, const void *ptr, size_t siz
 {
     esp_apptrace_fwrite_args_t cmd_args;
 
-    ESP_EARLY_LOGV(TAG, "esp_apptrace_fwrite f %p l %d", stream, size*nmemb);
+    ESP_EARLY_LOGV(TAG, "esp_apptrace_fwrite f %p l %d", stream, size * nmemb);
 
     if (ptr == NULL) {
         return 0;
@@ -221,7 +221,7 @@ size_t esp_apptrace_fwrite(esp_apptrace_dest_t dest, const void *ptr, size_t siz
     cmd_args.size = size * nmemb;
     cmd_args.file = stream;
     esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FWRITE, esp_apptrace_fwrite_args_prepare,
-                        &cmd_args, sizeof(cmd_args.file)+cmd_args.size);
+                                               &cmd_args, sizeof(cmd_args.file) + cmd_args.size);
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
         return 0;
@@ -253,7 +253,7 @@ size_t esp_apptrace_fread(esp_apptrace_dest_t dest, void *ptr, size_t size, size
 {
     esp_apptrace_fread_args_t cmd_args;
 
-    ESP_EARLY_LOGV(TAG, "esp_apptrace_fread f %p l %d", stream, size*nmemb);
+    ESP_EARLY_LOGV(TAG, "esp_apptrace_fread f %p l %d", stream, size * nmemb);
 
     if (ptr == NULL) {
         return 0;
@@ -262,7 +262,7 @@ size_t esp_apptrace_fread(esp_apptrace_dest_t dest, void *ptr, size_t size, size
     cmd_args.size = size * nmemb;
     cmd_args.file = stream;
     esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FREAD, esp_apptrace_fread_args_prepare,
-                        &cmd_args, sizeof(cmd_args));
+                                               &cmd_args, sizeof(cmd_args));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
         return 0;
@@ -288,7 +288,7 @@ size_t esp_apptrace_fread(esp_apptrace_dest_t dest, void *ptr, size_t size, size
      *      fread(buf, 1 ,size, file);
      * So, total read bytes count returns
      */
-    return resp/size; // return the number of items read
+    return resp / size; // return the number of items read
 }
 
 static void esp_apptrace_fseek_args_prepare(uint8_t *buf, void *priv)
@@ -310,7 +310,7 @@ int esp_apptrace_fseek(esp_apptrace_dest_t dest, void *stream, long offset, int 
     cmd_args.offset = offset;
     cmd_args.whence = whence;
     esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FSEEK, esp_apptrace_fseek_args_prepare,
-                        &cmd_args, sizeof(cmd_args));
+                                               &cmd_args, sizeof(cmd_args));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
         return -1;
@@ -340,7 +340,7 @@ int esp_apptrace_ftell(esp_apptrace_dest_t dest, void *stream)
 
     cmd_args.file = stream;
     esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FTELL, esp_apptrace_ftell_args_prepare,
-                        &cmd_args, sizeof(cmd_args));
+                                               &cmd_args, sizeof(cmd_args));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
         return -1;
@@ -380,7 +380,7 @@ int esp_apptrace_feof(esp_apptrace_dest_t dest, void *stream)
 
     cmd_args.file = stream;
     esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FEOF, esp_apptrace_feof_args_prepare,
-                        &cmd_args, sizeof(cmd_args));
+                                               &cmd_args, sizeof(cmd_args));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
         return EOF;

@@ -106,16 +106,7 @@
 // Data which are transffered from host to target are also prepended with a header. Down channel data header is simple and consists of one two bytes field
 // containing length of host data following the header.
 
-// 4.3 Data Buffering
-// ------------------
-
-// It takes some time for the host to read TRAX memory block via JTAG. In streaming mode it can happen that target has filled its TRAX block, but host
-// has not completed reading of the previous one yet. So in this case time critical tracing calls (which can not be delayed for too long time due to
-// the lack of free memory in TRAX block) can be dropped. To avoid such scenarios tracing module implements data buffering. Buffered data will be sent
-// to the host later when TRAX block switch occurs. The maximum size of the buffered data is controlled by menuconfig option
-// CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX.
-
-// 4.4 Target Connection/Disconnection
+// 4.3 Target Connection/Disconnection
 // -----------------------------------
 
 // When host is going to start tracing in streaming mode it needs to put both ESP32 cores into initial state when 'host connected' bit is set
@@ -197,7 +188,6 @@ typedef struct {
     esp_apptrace_membufs_proto_data_t   membufs;
 } esp_apptrace_trax_data_t;
 
-
 static esp_err_t esp_apptrace_trax_init(esp_apptrace_trax_data_t *hw_data);
 static esp_err_t esp_apptrace_trax_flush(esp_apptrace_trax_data_t *hw_data, esp_apptrace_tmo_t *tmo);
 static esp_err_t esp_apptrace_trax_flush_nolock(esp_apptrace_trax_data_t *hw_data, uint32_t min_sz, esp_apptrace_tmo_t *tmo);
@@ -211,7 +201,6 @@ static esp_err_t esp_apptrace_trax_buffer_swap_start(uint32_t curr_block_id);
 static esp_err_t esp_apptrace_trax_buffer_swap(uint32_t new_block_id, uint32_t prev_block_len);
 static esp_err_t esp_apptrace_trax_buffer_swap_end(uint32_t new_block_id, uint32_t prev_block_len);
 static bool esp_apptrace_trax_host_data_pending(void);
-
 
 const static char *TAG = "esp_apptrace";
 
@@ -240,7 +229,7 @@ esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
         .put_up_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_trax_up_buffer_put,
         .flush_up_buffer_nolock = (esp_err_t (*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_trax_flush_nolock,
         .flush_up_buffer = (esp_err_t (*)(void *, esp_apptrace_tmo_t *))esp_apptrace_trax_flush,
-        .down_buffer_config = (void (*)(void *, uint8_t *, uint32_t ))esp_apptrace_trax_down_buffer_config,
+        .down_buffer_config = (void (*)(void *, uint8_t *, uint32_t))esp_apptrace_trax_down_buffer_config,
         .get_down_buffer = (uint8_t *(*)(void *, uint32_t *, esp_apptrace_tmo_t *))esp_apptrace_trax_down_buffer_get,
         .put_down_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_trax_down_buffer_put,
         .host_is_connected = (bool (*)(void *))esp_apptrace_trax_host_is_connected,
@@ -291,13 +280,13 @@ static inline void esp_apptrace_trax_select_memory_block(int block_num)
 #if CONFIG_IDF_TARGET_ESP32
     DPORT_WRITE_PERI_REG(DPORT_TRACEMEM_MUX_MODE_REG, block_num ? TRACEMEM_MUX_BLK0_ONLY : TRACEMEM_MUX_BLK1_ONLY);
 #elif CONFIG_IDF_TARGET_ESP32S2
-    WRITE_PERI_REG(DPORT_PMS_OCCUPY_3_REG, block_num ? BIT(TRACEMEM_MUX_BLK0_NUM-4) : BIT(TRACEMEM_MUX_BLK1_NUM-4));
+    WRITE_PERI_REG(DPORT_PMS_OCCUPY_3_REG, block_num ? BIT(TRACEMEM_MUX_BLK0_NUM - 4) : BIT(TRACEMEM_MUX_BLK1_NUM - 4));
 #elif CONFIG_IDF_TARGET_ESP32S3
     // select memory block to be exposed to the TRAX module (accessed by host)
     uint32_t block_bits = block_num ? TRACEMEM_CORE0_MUX_BLK_BITS(TRACEMEM_MUX_BLK0_NUM)
-                        : TRACEMEM_CORE0_MUX_BLK_BITS(TRACEMEM_MUX_BLK1_NUM);
+                          : TRACEMEM_CORE0_MUX_BLK_BITS(TRACEMEM_MUX_BLK1_NUM);
     block_bits |= block_num ? TRACEMEM_CORE1_MUX_BLK_BITS(TRACEMEM_MUX_BLK0_NUM)
-                        : TRACEMEM_CORE1_MUX_BLK_BITS(TRACEMEM_MUX_BLK1_NUM);
+                  : TRACEMEM_CORE1_MUX_BLK_BITS(TRACEMEM_MUX_BLK1_NUM);
     ESP_EARLY_LOGV(TAG, "Select block %d @ %p (bits 0x%" PRIx32 ")", block_num, s_trax_blocks[block_num], block_bits);
     DPORT_WRITE_PERI_REG(SENSITIVE_INTERNAL_SRAM_USAGE_2_REG, block_bits);
 #endif
@@ -306,11 +295,11 @@ static inline void esp_apptrace_trax_select_memory_block(int block_num)
 static inline void esp_apptrace_trax_memory_enable(void)
 {
 #if CONFIG_IDF_TARGET_ESP32
-        /* Enable trace memory on PRO CPU */
-        DPORT_WRITE_PERI_REG(DPORT_PRO_TRACEMEM_ENA_REG, DPORT_PRO_TRACEMEM_ENA_M);
+    /* Enable trace memory on PRO CPU */
+    DPORT_WRITE_PERI_REG(DPORT_PRO_TRACEMEM_ENA_REG, DPORT_PRO_TRACEMEM_ENA_M);
 #if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE == 0
-        /* Enable trace memory on APP CPU */
-        DPORT_WRITE_PERI_REG(DPORT_APP_TRACEMEM_ENA_REG, DPORT_APP_TRACEMEM_ENA_M);
+    /* Enable trace memory on APP CPU */
+    DPORT_WRITE_PERI_REG(DPORT_APP_TRACEMEM_ENA_REG, DPORT_APP_TRACEMEM_ENA_M);
 #endif
 #endif
 }
@@ -491,7 +480,7 @@ static __attribute__((noinline)) void esp_apptrace_trax_buffer_swap_unlock(void)
     eri_write(ESP_APPTRACE_TRAX_STAT_REG, 0x0);
     // TODO: currently host sets breakpoint, use break instruction to stop;
     // it will allow to use ESP_APPTRACE_TRAX_STAT_REG for other purposes
-    asm volatile (
+    asm volatile(
         "    .global     __esp_apptrace_trax_eri_updated\n"
         "__esp_apptrace_trax_eri_updated:\n"); // host will set bp here to resolve collision at streaming start
 }
@@ -509,8 +498,8 @@ static esp_err_t esp_apptrace_trax_buffer_swap_start(uint32_t curr_block_id)
         uint32_t host_to_read = ESP_APPTRACE_TRAX_BLOCK_LEN_GET(ctrl_reg);
         if (host_to_read != 0 || acked_block != (curr_block_id & ESP_APPTRACE_TRAX_BLOCK_ID_MSK)) {
             ESP_APPTRACE_LOGD("HC[%d]: Can not switch %" PRIx32 " %" PRIu32 " %" PRIx32 " %" PRIx32 "/%" PRIx32,
-                esp_cpu_get_core_id(), ctrl_reg, host_to_read, acked_block,
-                curr_block_id & ESP_APPTRACE_TRAX_BLOCK_ID_MSK, curr_block_id);
+                              esp_cpu_get_core_id(), ctrl_reg, host_to_read, acked_block,
+                              curr_block_id & ESP_APPTRACE_TRAX_BLOCK_ID_MSK, curr_block_id);
             res = ESP_ERR_NO_MEM;
             goto _on_err;
         }

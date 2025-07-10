@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,12 +38,6 @@ typedef struct {
     esp_apptrace_membufs_proto_hw_t *       hw;
     volatile esp_apptrace_membufs_state_t   state;       // state
     esp_apptrace_mem_block_t                blocks[2];   // memory blocks
-#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > 0
-    // ring buffer control struct for pending user blocks
-    esp_apptrace_rb_t                   rb_pend;
-    // storage for pending user blocks
-    uint8_t                             pending_data[CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX + 1];
-#endif
     // ring buffer control struct for data from host (down buffer)
     esp_apptrace_rb_t                       rb_down;
 } esp_apptrace_membufs_proto_data_t;

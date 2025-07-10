@@ -43,3 +43,8 @@ Bootloader
 ----------
 
 Removed option for compiling bootloader with no optimization level (-O0, `CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_NONE`). On most targets it was no longer possible to compile the bootloader with -O0, as IRAM sections would overflow. For debugging purposes, it is recommended to use the -Og (:ref:`CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG<CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG>`) optimization level instead. This provides a good balance between optimization and debuggability.
+
+App Trace
+----------
+
+Removed extra data buffering option. `CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX` is no longer supported.

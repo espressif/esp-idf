@@ -191,15 +191,6 @@ menu "Application Level Tracing"
         help
             Size of the memory buffer for trace data in bytes.
 
-    config APPTRACE_PENDING_DATA_SIZE_MAX
-        int "Size of the pending data buffer"
-        depends on APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE
-        default 0
-        help
-            Size of the buffer for events in bytes. It is useful for buffering events from
-            the time critical code (scheduler, ISRs etc). If this parameter is 0 then
-            events will be discarded when main HW buffer is full.
-
     menu "FreeRTOS SystemView Tracing"
         depends on APPTRACE_ENABLE
         config APPTRACE_SV_ENABLE
