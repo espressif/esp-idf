@@ -139,14 +139,14 @@ Each of the above functions has a ``_get_`` counterpart to check the currently s
 Set Communication Pins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After setting communication parameters, configure the physical GPIO pins to which the other UART device will be connected. For this, call the function :cpp:func:`uart_set_pin` and specify the GPIO pin numbers to which the driver should route the TX, RX, RTS, and CTS signals. If you want to keep a currently allocated pin number for a specific signal, pass the macro :c:macro:`UART_PIN_NO_CHANGE`.
+After setting communication parameters, configure the physical GPIO pins to which the other UART device will be connected. For this, call the function :cpp:func:`uart_set_pin` and specify the GPIO pin numbers to which the driver should route the TX, RX, RTS, CTS, DTR, and DSR signals. If you want to keep a currently allocated pin number for a specific signal, pass the macro :c:macro:`UART_PIN_NO_CHANGE`.
 
 The same macro :c:macro:`UART_PIN_NO_CHANGE` should be specified for pins that will not be used.
 
 .. code-block:: c
 
-  // Set UART pins(TX: IO4, RX: IO5, RTS: IO18, CTS: IO19)
-  ESP_ERROR_CHECK(uart_set_pin({IDF_TARGET_UART_EXAMPLE_PORT}, 4, 5, 18, 19));
+  // Set UART pins(TX: IO4, RX: IO5, RTS: IO18, CTS: IO19, DTR: UNUSED, DSR: UNUSED)
+  ESP_ERROR_CHECK(uart_set_pin({IDF_TARGET_UART_EXAMPLE_PORT}, 4, 5, 18, 19, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
 
 .. _uart-api-running-uart-communication:
@@ -327,11 +327,15 @@ The {IDF_TARGET_NAME}'s RS485 UART hardware can detect signal collisions during 
 
 The collision detection feature allows handling collisions when their interrupts are activated and triggered. The interrupts ``UART_RS485_FRM_ERR_INT`` and ``UART_RS485_PARITY_ERR_INT`` can be used with the collision detection feature to control frame errors and parity bit errors accordingly in RS485 mode. This functionality is supported in the UART driver and can be used by selecting the :cpp:enumerator:`UART_MODE_RS485_APP_CTRL` mode (see the function :cpp:func:`uart_set_mode`).
 
-The collision detection feature can work with circuit A and circuit C (see Section `Interface Connection Options`_). In the case of using circuit A or B, the RTS pin connected to the DE pin of the bus driver should be controlled by the user application. Use the function :cpp:func:`uart_get_collision_flag` to check if the collision detection flag has been raised.
+The collision detection feature can work with circuit A and circuit C (see Section `Interface Connection Options`_). Use the function :cpp:func:`uart_get_collision_flag` to check if the collision detection flag has been raised. In the case of using circuit A or B, either DTR or RTS pin can be connected to the DE/~RE pin of the transceiver module to achieve half-duplex communication.
 
-The {IDF_TARGET_NAME} UART controllers themselves do not support half-duplex communication as they cannot provide automatic control of the RTS pin connected to the RE/DE input of RS485 bus driver. However, half-duplex communication can be achieved via software control of the RTS pin by the UART driver. This can be enabled by selecting the :cpp:enumerator:`UART_MODE_RS485_HALF_DUPLEX` mode when calling :cpp:func:`uart_set_mode`.
+The RS485 half-duplex communication mode is supported by the UART driver and can be activated by selecting the :cpp:enumerator:`UART_MODE_RS485_HALF_DUPLEX` mode calling :cpp:func:`uart_set_mode`. The DTR line is automatically controlled by the hardware directly under RS485 half-duplex mode, while the RTS line is software-controlled by the UART driver. Once the host starts writing data to the TX FIFO buffer, the UART driver automatically asserts the RTS pin (logic 1); once the last bit of the data has been transmitted, the driver de-asserts the RTS pin (logic 0). To use this mode, the software would have to disable the hardware flow control function. Since the switching is made in the interrupt handler, comparing to DTR line, some latency is expected on RTS line.
 
-Once the host starts writing data to the TX FIFO buffer, the UART driver automatically asserts the RTS pin (logic 1); once the last bit of the data has been transmitted, the driver de-asserts the RTS pin (logic 0). To use this mode, the software would have to disable the hardware flow control function. This mode works with all the used circuits shown below.
+.. only:: esp32
+
+    .. note::
+
+        On {IDF_TARGET_NAME}, DTR signal is only available on UART0. For other UART ports, you can only connect RTS signal to the DE/~RE pin of the transceiver module.
 
 
 Interface Connection Options
@@ -358,7 +362,7 @@ Circuit A: Collision Detection Circuit
                     |              B|----------<> B
          TXD ------>| D    ADM483   |
  ESP                |               |     RS485 bus side
-         RTS ------>| DE            |
+     DTR/RTS ------>| DE            |
                     |              A|----------<> A
                +----| /RE           |
                |    +-------x-------+
@@ -381,7 +385,7 @@ Circuit B: Manual Switching Transmitter/Receiver Without Collision Detection
                     |              B|-----------<> B
          TXD ------>| D    ADM483   |
  ESP                |               |     RS485 bus side
-         RTS --+--->| DE            |
+     DTR/RTS --+--->| DE            |
                |    |              A|-----------<> A
                +----| /RE           |
                     +-------x-------+

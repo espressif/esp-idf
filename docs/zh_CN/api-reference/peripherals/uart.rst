@@ -139,14 +139,14 @@ UART 驱动程序函数通过 :cpp:type:`uart_port_t` 识别不同的 UART 控�
 设置通信管脚
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-通信参数设置完成后，可以配置其他 UART 设备连接的 GPIO 管脚。调用函数 :cpp:func:`uart_set_pin`，指定配置 Tx、Rx、RTS 和 CTS 信号的 GPIO 管脚编号。如要为特定信号保留当前分配的管脚编号，可传递宏 :c:macro:`UART_PIN_NO_CHANGE`。
+通信参数设置完成后，可以配置其他 UART 设备连接的 GPIO 管脚。调用函数 :cpp:func:`uart_set_pin`，指定配置 Tx、Rx、RTS、CTS、DTR 和 DSR 信号的 GPIO 管脚编号。如要为特定信号保留当前分配的管脚编号，可传递宏 :c:macro:`UART_PIN_NO_CHANGE`。
 
 请为不使用的管脚都指定为宏 :c:macro:`UART_PIN_NO_CHANGE`。
 
 .. code-block:: c
 
-  // Set UART pins(TX: IO4, RX: IO5, RTS: IO18, CTS: IO19)
-  ESP_ERROR_CHECK(uart_set_pin({IDF_TARGET_UART_EXAMPLE_PORT}, 4, 5, 18, 19));
+  // Set UART pins(TX: IO4, RX: IO5, RTS: IO18, CTS: IO19, DTR: UNUSED, DSR: UNUSED)
+  ESP_ERROR_CHECK(uart_set_pin({IDF_TARGET_UART_EXAMPLE_PORT}, 4, 5, 18, 19, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
 
 .. _uart-api-running-uart-communication:
@@ -327,11 +327,15 @@ RS485 特定通信模式简介
 
 冲突检测功能允许在激活和触发中断时处理冲突。中断 ``UART_RS485_FRM_ERR_INT`` 和 ``UART_RS485_PARITY_ERR_INT`` 可与冲突检测功能一起使用，在 RS485 模式下分别控制帧错误和奇偶校验位错误。UART 驱动程序支持此功能，通过选择 :cpp:enumerator:`UART_MODE_RS485_APP_CTRL` 模式可以使用（参考函数 :cpp:func:`uart_set_mode`）。
 
-冲突检测功能可与电路 A 和电路 C 一起使用（参考章节 `接口连接选项`_）。在使用电路 A 或 B 时，连接到总线驱动 DE 管脚的 RTS 管脚应由用户应用程序控制。调用函数 :cpp:func:`uart_get_collision_flag` 能够查看是否触发冲突检测标志。
+冲突检测功能可与电路 A 和电路 C 一起使用（参考章节 `接口连接选项`_）。调用函数 :cpp:func:`uart_get_collision_flag` 能够查看是否触发冲突检测标志。在使用电路 A 或 B 时，DTR 或 RTS 管脚可以连接到收发器芯片的 DE/~RE 管脚，以实现半双工通信。
 
-{IDF_TARGET_NAME} UART 控制器本身不支持半双工通信，因其无法自动控制连接到 RS485 总线驱动 RE/DE 输入的 RTS 管脚。然而，半双工通信能够通过 UART 驱动程序对 RTS 管脚的软件控制来实现，调用 :cpp:func:`uart_set_mode` 并选择 :cpp:enumerator:`UART_MODE_RS485_HALF_DUPLEX` 模式能够启用这一功能。
+UART 驱动支持通过向 :cpp:func:`uart_set_mode` 函数传入 :cpp:enumerator:`UART_MODE_RS485_HALF_DUPLEX` 来启用 RS485 半双工通信模式。DTR 信号在 RS485 模式下由硬件直接控制，而 RTS 信号由 UART 驱动程序控制。当主机开始向 Tx FIFO 缓冲区写入数据时，UART 驱动程序会自动置位 RTS 信号（逻辑 1）；最后一位数据传输完成后，驱动程序就会取消置位 RTS 信号（逻辑 0）。要使用此模式，软件必须禁用硬件流控功能。由于切换是在中断处理程序中进行的，因此 RTS 线上会相对 DTR 线有一定延迟。
 
-主机开始向 Tx FIFO 缓冲区写入数据时，UART 驱动程序会自动置位 RTS 管脚（逻辑 1）；最后一位数据传输完成后，驱动程序就会取消置位 RTS 管脚（逻辑 0）。要使用此模式，软件必须禁用硬件流控功能。此模式适用于下文所有已用电路。
+.. only:: esp32
+
+    .. note::
+
+        ESP32 的 DTR 信号仅在 UART0 上可用。对于其他 UART 端口，只能将 RTS 信号连接到收发器芯片的 DE/~RE 管脚。
 
 
 接口连接选项
@@ -358,7 +362,7 @@ RS485 特定通信模式简介
                     |              B|----------<> B
          TXD ------>| D    ADM483   |
  ESP                |               |     RS485 bus side
-         RTS ------>| DE            |
+     DTR/RTS ------>| DE            |
                     |              A|----------<> A
                +----| /RE           |
                |    +-------x-------+
@@ -381,7 +385,7 @@ RS485 特定通信模式简介
                     |              B|-----------<> B
          TXD ------>| D    ADM483   |
  ESP                |               |     RS485 bus side
-         RTS --+--->| DE            |
+     DTR/RTS --+--->| DE            |
                |    |              A|-----------<> A
                +----| /RE           |
                     +-------x-------+

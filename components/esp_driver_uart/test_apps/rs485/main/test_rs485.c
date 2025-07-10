@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,22 +12,30 @@
 #include "driver/uart.h"            // for the uart driver access
 #include "esp_log.h"
 #include "esp_random.h"             // for uint32_t esp_random()
+#include "sdkconfig.h"
 
 #define UART_NUM1       (UART_NUM_1)
 #define UART_BAUD_RATE  (115200 * 10)
 #define BUF_SIZE        (512)
+
+#if CONFIG_IDF_TARGET_ESP32
 #define UART1_RX_PIN    (22)
 #define UART1_TX_PIN    (23)
-
-// RTS for RS485 Half-Duplex Mode manages DE/~RE
-#define UART1_RTS_PIN   (18)
+// For RS485 Half-Duplex Mode manages DE/~RE
+#define RS485_DE_PIN    (18)    // For ESP32, let's use RTS signal to control DE/~RE pin
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define UART1_RX_PIN    (4)
+#define UART1_TX_PIN    (5)
+// For RS485 Half-Duplex Mode manages DE/~RE
+#define RS485_DE_PIN    (12)    // For ESP32H2, let's use DTR signal to control DE/~RE pin
+#endif
 
 // Number of packets to be send during test
 #define PACKETS_NUMBER  (30)
 
 // Wait timeout for uart driver
 #define PACKET_READ_TICS        (2000 / portTICK_PERIOD_MS)
-// This is for workarond to avoid master-slave synchronization issues
+// This is for workaround to avoid master-slave synchronization issues
 // when slave gets the "Master_started" signal with delay ~2-3 seconds
 #define TEST_ALLOW_PROC_FAIL    (10)
 #define TEST_CHECK_PROC_FAIL(fails, threshold) TEST_ASSERT((fails * 100 / PACKETS_NUMBER) <= threshold)
@@ -166,7 +174,11 @@ static void rs485_init(void)
     // Configure UART1 parameters
     TEST_ESP_OK(uart_param_config(UART_NUM1, &uart_config));
     // Set UART1 pins
-    TEST_ESP_OK(uart_set_pin(UART_NUM1, UART1_TX_PIN, UART1_RX_PIN, UART1_RTS_PIN, UART_PIN_NO_CHANGE));
+#if CONFIG_IDF_TARGET_ESP32
+    TEST_ESP_OK(uart_set_pin(UART_NUM1, UART1_TX_PIN, UART1_RX_PIN, RS485_DE_PIN, UART_PIN_NO_CHANGE));
+#elif CONFIG_IDF_TARGET_ESP32H2
+    TEST_ESP_OK(uart_set_pin(UART_NUM1, UART1_TX_PIN, UART1_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, RS485_DE_PIN, UART_PIN_NO_CHANGE));
+#endif
     // Install UART driver (we don't need an event queue here)
     TEST_ESP_OK(uart_driver_install(UART_NUM1, BUF_SIZE * 2, 0, 0, NULL, 0));
     // Setup rs485 half duplex mode
@@ -285,4 +297,4 @@ static void rs485_master(void)
  * correctness of RS485 interface channel communication. It requires
  * RS485 bus driver hardware to be connected to boards.
 */
-TEST_CASE_MULTIPLE_DEVICES("RS485 half duplex uart multiple devices test.", "[RS485][test_env=UT_T2_RS485]", rs485_master, rs485_slave);
+TEST_CASE_MULTIPLE_DEVICES("RS485 half duplex uart multiple devices test.", "[RS485]", rs485_master, rs485_slave);

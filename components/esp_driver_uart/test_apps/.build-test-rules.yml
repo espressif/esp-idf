@@ -7,7 +7,7 @@ components/esp_driver_uart/test_apps/rs485:
       temporary: true
       reason: not support yet # TODO: [ESP32H4] IDF-12398
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET not in ["esp32", "esp32h2"]
       temporary: true
       reason: lack of runners
   depends_components:

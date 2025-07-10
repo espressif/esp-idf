@@ -30,7 +30,7 @@ static void __attribute__((unused)) release_default_console_io(void)
 {
     // Default console is UART0 with TX and RX on their IOMUX pins
     gpio_ll_output_disable(&GPIO, U0TXD_GPIO_NUM);
-    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(UART_NUM_0, SOC_UART_RX_PIN_IDX), 0);
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(UART_NUM_0, SOC_UART_PERIPH_SIGNAL_RX), 0);
 }
 
 #ifdef CONFIG_ESP_CONSOLE_NONE
@@ -72,8 +72,8 @@ void bootloader_console_init(void)
             uart_rx_gpio != U0RXD_GPIO_NUM) {
         release_default_console_io();
         // Route GPIO signals to/from pins
-        const uint32_t tx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX);
-        const uint32_t rx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX);
+        const uint32_t tx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_TX);
+        const uint32_t rx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_RX);
         gpio_ll_func_sel(&GPIO, uart_rx_gpio, PIN_FUNC_GPIO);
         gpio_ll_input_enable(&GPIO, uart_rx_gpio);
         esp_rom_gpio_pad_pullup_only(uart_rx_gpio);
