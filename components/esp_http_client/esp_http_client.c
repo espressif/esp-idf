@@ -1731,7 +1731,7 @@ int esp_http_client_write(esp_http_client_handle_t client, const char *buffer, i
 
 esp_err_t esp_http_client_close(esp_http_client_handle_t client)
 {
-    if (client->state >= HTTP_STATE_INIT) {
+    if (client->state > HTTP_STATE_INIT) {
         http_dispatch_event(client, HTTP_EVENT_DISCONNECTED, esp_transport_get_error_handle(client->transport), 0);
         http_dispatch_event_to_event_loop(HTTP_EVENT_DISCONNECTED, &client, sizeof(esp_http_client_handle_t));
         client->state = HTTP_STATE_INIT;
