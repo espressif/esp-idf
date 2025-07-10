@@ -31,13 +31,15 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
     #undef N_REGS_PCR
 }
 
-#if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
+#if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE || SOC_PM_MODEM_CLK_RETENTION_WORKROUND
 esp_err_t sleep_clock_modem_retention_init(void *arg)
 {
     #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_RF2_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
+    #define N_REGS_LPCON()  (((MODEM_LPCON_MEM_CONF_REG - MODEM_LPCON_TEST_CONF_REG) / 4) + 1)
 
     const static sleep_retention_entries_config_t modem_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMSYSCON_LINK(0), MODEM_SYSCON_TEST_CONF_REG, MODEM_SYSCON_TEST_CONF_REG, N_REGS_SYSCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
+        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMLPCON_LINK(0),  MODEM_LPCON_TEST_CONF_REG, MODEM_LPCON_TEST_CONF_REG, N_REGS_LPCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) } /* MODEM LPCON */
     };
 
     esp_err_t err = sleep_retention_entries_create(modem_regs_retention, ARRAY_SIZE(modem_regs_retention), REGDMA_LINK_PRI_MODEM_CLK, SLEEP_RETENTION_MODULE_CLOCK_MODEM);
@@ -45,6 +47,7 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
     ESP_LOGI(TAG, "Modem Power, Clock and Reset sleep retention initialization");
     return ESP_OK;
 
+    #undef N_REGS_LPCON
     #undef N_REGS_SYSCON
 }
 #endif
@@ -60,7 +63,7 @@ bool clock_domain_pd_allowed(void)
      * necessary to check the state of CLOCK_MODEM to determine MODEM domain on
      * or off. The clock and reset of digital peripherals are managed through
      * PCR, with TOP domain similar to MODEM domain. */
-    sleep_retention_module_bitmap_t modem_clk_dep_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
+    __attribute__((unused)) sleep_retention_module_bitmap_t modem_clk_dep_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
 #if SOC_BT_SUPPORTED
     modem_clk_dep_modules.bitmap[SLEEP_RETENTION_MODULE_BLE_MAC >> 5] |= BIT(SLEEP_RETENTION_MODULE_BLE_MAC % 32);
     modem_clk_dep_modules.bitmap[SLEEP_RETENTION_MODULE_BT_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_BT_BB % 32);
@@ -83,7 +86,9 @@ bool clock_domain_pd_allowed(void)
         mask.bitmap[SLEEP_RETENTION_MODULE_CLOCK_MODEM >> 5] |= BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM % 32);
     }
 #endif
-
+#if SOC_PM_MODEM_CLK_RETENTION_WORKROUND
+    mask.bitmap[SLEEP_RETENTION_MODULE_CLOCK_MODEM >> 5] |= BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM % 32);
+#endif
     const sleep_retention_module_bitmap_t clock_domain_inited_modules = sleep_retention_module_bitmap_and(inited_modules, mask);
     const sleep_retention_module_bitmap_t clock_domain_created_modules = sleep_retention_module_bitmap_and(created_modules, mask);
     return sleep_retention_module_bitmap_eq(clock_domain_inited_modules, clock_domain_created_modules);
@@ -97,12 +102,21 @@ ESP_SYSTEM_INIT_FN(sleep_clock_startup_init, SECONDARY, BIT(0), 106)
     };
     sleep_retention_module_init(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM, &init_param);
 
-#if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
+#if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE || SOC_PM_MODEM_CLK_RETENTION_WORKROUND
     init_param = (sleep_retention_module_init_param_t) {
         .cbs       = { .create = { .handle = sleep_clock_modem_retention_init, .arg = NULL } },
+#if !SOC_PM_MODEM_CLK_RETENTION_WORKROUND
         .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE
+#endif
     };
     sleep_retention_module_init(SLEEP_RETENTION_MODULE_CLOCK_MODEM, &init_param);
 #endif
+#if SOC_PM_MODEM_CLK_RETENTION_WORKROUND
+    if (sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_CLOCK_MODEM) != ESP_OK) {
+        // even though the modem clock retention module create failed, sleep process can be executed without pd the modem domain, so just warning here
+        ESP_LOGW(TAG, "create retention link failed on modem clock, modem power domain won't be turned off during sleep");
+    }
+#endif
+
     return ESP_OK;
 }

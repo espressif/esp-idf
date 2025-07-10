@@ -533,7 +533,7 @@
 
 #define SOC_PM_CPU_RETENTION_BY_SW          (1)
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA    (1)
-// #define SOC_PM_RETENTION_SW_TRIGGER_REGDMA  (1)  /*!< In esp32H2, regdma will power off when entering sleep */
+#define SOC_PM_MODEM_CLK_RETENTION_WORKROUND (1)  /*!< In esp32H4, i2c lpcon is placed in modem domain*/
 
 #define SOC_PM_PAU_LINK_NUM                 (4)
 #define SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE (1)
