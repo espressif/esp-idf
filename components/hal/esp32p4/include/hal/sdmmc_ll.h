@@ -207,7 +207,7 @@ static inline void sdmmc_ll_enable_sdio_pll(sdmmc_dev_t *hw, bool en)
  * @brief Select SDMMC clock source
  *
  * @param hw       hardware instance address
- * @param clk_src  clock source, see valid sources in type `soc_periph_psram_clk_src_t`
+ * @param clk_src  clock source, see valid sources in type `soc_periph_sdmmc_clk_src_t`
  */
 static inline void sdmmc_ll_select_clk_source(sdmmc_dev_t *hw, soc_periph_sdmmc_clk_src_t clk_src)
 {

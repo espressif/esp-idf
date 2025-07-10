@@ -531,6 +531,107 @@ extern "C" {
 #define SPI_CLOSE_AXI_INF_EN_V  0x00000001U
 #define SPI_CLOSE_AXI_INF_EN_S  31
 
+/** SPI_MEM_CACHE_SCTRL_REG register
+ *  SPI0 external RAM control register
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define SPI_MEM_CACHE_SCTRL_REG(i) (REG_SPI_MEM_BASE(i) + 0x40)
+/** SPI_MEM_CACHE_USR_SADDR_4BYTE : HRO; bitpos: [0]; default: 0;
+ *  For SPI0, In the external RAM mode, cache read flash with 4 bytes command, 1:
+ *  enable, 0:disable.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_CACHE_USR_SADDR_4BYTE    (BIT(0))
+#define SPI_MEM_CACHE_USR_SADDR_4BYTE_M  (SPI_MEM_CACHE_USR_SADDR_4BYTE_V << SPI_MEM_CACHE_USR_SADDR_4BYTE_S)
+#define SPI_MEM_CACHE_USR_SADDR_4BYTE_V  0x00000001U
+#define SPI_MEM_CACHE_USR_SADDR_4BYTE_S  0
+/** SPI_MEM_USR_SRAM_DIO : HRO; bitpos: [1]; default: 0;
+ *  For SPI0, In the external RAM mode, spi dual I/O mode enable, 1: enable, 0:disable
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_USR_SRAM_DIO    (BIT(1))
+#define SPI_MEM_USR_SRAM_DIO_M  (SPI_MEM_USR_SRAM_DIO_V << SPI_MEM_USR_SRAM_DIO_S)
+#define SPI_MEM_USR_SRAM_DIO_V  0x00000001U
+#define SPI_MEM_USR_SRAM_DIO_S  1
+/** SPI_MEM_USR_SRAM_QIO : HRO; bitpos: [2]; default: 0;
+ *  For SPI0, In the external RAM mode, spi quad I/O mode enable, 1: enable, 0:disable
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_USR_SRAM_QIO    (BIT(2))
+#define SPI_MEM_USR_SRAM_QIO_M  (SPI_MEM_USR_SRAM_QIO_V << SPI_MEM_USR_SRAM_QIO_S)
+#define SPI_MEM_USR_SRAM_QIO_V  0x00000001U
+#define SPI_MEM_USR_SRAM_QIO_S  2
+/** SPI_MEM_USR_WR_SRAM_DUMMY : HRO; bitpos: [3]; default: 0;
+ *  For SPI0, In the external RAM mode, it is the enable bit of dummy phase for write
+ *  operations.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_USR_WR_SRAM_DUMMY    (BIT(3))
+#define SPI_MEM_USR_WR_SRAM_DUMMY_M  (SPI_MEM_USR_WR_SRAM_DUMMY_V << SPI_MEM_USR_WR_SRAM_DUMMY_S)
+#define SPI_MEM_USR_WR_SRAM_DUMMY_V  0x00000001U
+#define SPI_MEM_USR_WR_SRAM_DUMMY_S  3
+/** SPI_MEM_USR_RD_SRAM_DUMMY : HRO; bitpos: [4]; default: 1;
+ *  For SPI0, In the external RAM mode, it is the enable bit of dummy phase for read
+ *  operations.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_USR_RD_SRAM_DUMMY    (BIT(4))
+#define SPI_MEM_USR_RD_SRAM_DUMMY_M  (SPI_MEM_USR_RD_SRAM_DUMMY_V << SPI_MEM_USR_RD_SRAM_DUMMY_S)
+#define SPI_MEM_USR_RD_SRAM_DUMMY_V  0x00000001U
+#define SPI_MEM_USR_RD_SRAM_DUMMY_S  4
+/** SPI_MEM_CACHE_SRAM_USR_RCMD : HRO; bitpos: [5]; default: 1;
+ *  For SPI0, In the external RAM mode cache read external RAM for user define command.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_CACHE_SRAM_USR_RCMD    (BIT(5))
+#define SPI_MEM_CACHE_SRAM_USR_RCMD_M  (SPI_MEM_CACHE_SRAM_USR_RCMD_V << SPI_MEM_CACHE_SRAM_USR_RCMD_S)
+#define SPI_MEM_CACHE_SRAM_USR_RCMD_V  0x00000001U
+#define SPI_MEM_CACHE_SRAM_USR_RCMD_S  5
+/** SPI_MEM_SRAM_RDUMMY_CYCLELEN : HRO; bitpos: [11:6]; default: 1;
+ *  For SPI0, In the external RAM mode, it is the length in bits of read dummy phase.
+ *  The register value shall be (bit_num-1).
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_SRAM_RDUMMY_CYCLELEN    0x0000003FU
+#define SPI_MEM_SRAM_RDUMMY_CYCLELEN_M  (SPI_MEM_SRAM_RDUMMY_CYCLELEN_V << SPI_MEM_SRAM_RDUMMY_CYCLELEN_S)
+#define SPI_MEM_SRAM_RDUMMY_CYCLELEN_V  0x0000003FU
+#define SPI_MEM_SRAM_RDUMMY_CYCLELEN_S  6
+/** SPI_MEM_SRAM_ADDR_BITLEN : HRO; bitpos: [19:14]; default: 23;
+ *  For SPI0, In the external RAM mode, it is the length in bits of address phase. The
+ *  register value shall be (bit_num-1).
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_SRAM_ADDR_BITLEN    0x0000003FU
+#define SPI_MEM_SRAM_ADDR_BITLEN_M  (SPI_MEM_SRAM_ADDR_BITLEN_V << SPI_MEM_SRAM_ADDR_BITLEN_S)
+#define SPI_MEM_SRAM_ADDR_BITLEN_V  0x0000003FU
+#define SPI_MEM_SRAM_ADDR_BITLEN_S  14
+/** SPI_MEM_CACHE_SRAM_USR_WCMD : HRO; bitpos: [20]; default: 1;
+ *  For SPI0, In the external RAM mode cache write sram for user define command
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_CACHE_SRAM_USR_WCMD    (BIT(20))
+#define SPI_MEM_CACHE_SRAM_USR_WCMD_M  (SPI_MEM_CACHE_SRAM_USR_WCMD_V << SPI_MEM_CACHE_SRAM_USR_WCMD_S)
+#define SPI_MEM_CACHE_SRAM_USR_WCMD_V  0x00000001U
+#define SPI_MEM_CACHE_SRAM_USR_WCMD_S  20
+/** SPI_MEM_SRAM_OCT : HRO; bitpos: [21]; default: 0;
+ *  reserved
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_SRAM_OCT    (BIT(21))
+#define SPI_MEM_SRAM_OCT_M  (SPI_MEM_SRAM_OCT_V << SPI_MEM_SRAM_OCT_S)
+#define SPI_MEM_SRAM_OCT_V  0x00000001U
+#define SPI_MEM_SRAM_OCT_S  21
+/** SPI_MEM_SRAM_WDUMMY_CYCLELEN : HRO; bitpos: [27:22]; default: 1;
+ *  For SPI0, In the external RAM mode, it is the length in bits of write dummy phase.
+ *  The register value shall be (bit_num-1).
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_SRAM_WDUMMY_CYCLELEN    0x0000003FU
+#define SPI_MEM_SRAM_WDUMMY_CYCLELEN_M  (SPI_MEM_SRAM_WDUMMY_CYCLELEN_V << SPI_MEM_SRAM_WDUMMY_CYCLELEN_S)
+#define SPI_MEM_SRAM_WDUMMY_CYCLELEN_V  0x0000003FU
+#define SPI_MEM_SRAM_WDUMMY_CYCLELEN_S  22
+
 /** SPI_MEM_SRAM_CMD_REG register
  *  SPI0 external RAM mode control register
  */

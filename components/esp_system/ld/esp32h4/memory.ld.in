@@ -64,6 +64,11 @@ MEMORY
   /* (See irom_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
+  /**
+   * `extern_ram_seg` and `drom_seg` / `irom_seg` share the same bus and the address region.
+   * A dummy section is used to avoid overlap. See `.ext_ram.dummy` in `sections.ld.in`
+   */
+  extern_ram_seg(RWX) :        org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
 }
 
 /* Heap ends at top of sram_seg */

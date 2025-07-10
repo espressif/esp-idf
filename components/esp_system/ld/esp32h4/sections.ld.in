@@ -306,6 +306,45 @@ SECTIONS
     ALIGNED_SYMBOL(16, _heap_start)
   } > sram_seg
 
+  /* External RAM */
+  /**
+   * This section is required to skip flash sections, because `extern_ram_seg`
+   * and `drom_seg` / `irom_seg` are on the same bus when app build use flash sections
+   */
+  .ext_ram.dummy (NOLOAD):
+  {
+    . = ORIGIN(extern_ram_seg);
+    . = . + (_rodata_reserved_end - _flash_rodata_dummy_start);
+    . = ALIGN (_esp_mmu_page_size);
+  } > extern_ram_seg
+
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
+  .ext_ram.bss (NOLOAD) :
+  {
+    _ext_ram_bss_start = ABSOLUTE(.);
+
+    mapping[extern_ram]
+
+    ALIGNED_SYMBOL(4, _ext_ram_bss_end)
+  } > extern_ram_seg
+#endif  //CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+  /**
+   * This section holds data that won't be initialised when startup.
+   * This section locates in External RAM region.
+   */
+  .ext_ram_noinit (NOLOAD) :
+  {
+    _ext_ram_noinit_start = ABSOLUTE(.);
+
+    *(.ext_ram_noinit*)
+
+    ALIGNED_SYMBOL(4, _ext_ram_noinit_end)
+  } > extern_ram_seg
+#endif //CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+
 #include "elf_misc.ld.in"
 }
 

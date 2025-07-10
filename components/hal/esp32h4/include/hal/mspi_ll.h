@@ -32,9 +32,6 @@
 extern "C" {
 #endif
 
-//Timing tuning not applied, and flash has its own clock source. Can change flash clock source
-#define MSPI_TIMING_LL_FLASH_CLK_SRC_CHANGEABLE       1
-
 /************************** MSPI pll clock configurations **************************/
 /*
  * @brief Select FLASH clock source

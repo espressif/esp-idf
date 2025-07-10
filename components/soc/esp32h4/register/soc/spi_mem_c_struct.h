@@ -323,6 +323,25 @@ typedef union {
     uint32_t val;
 } spi_mem_c_cache_fctrl_reg_t;
 
+typedef union {
+    struct {
+        uint32_t usr_saddr_4byte               :    1;  /*For SPI0, In the external RAM mode, cache read flash with 4 bytes command, 1: enable, 0:disable.*/
+        uint32_t mem_usr_sram_dio                  :    1;  /*For SPI0, In the external RAM mode, spi dual I/O mode enable, 1: enable, 0:disable*/
+        uint32_t mem_usr_sram_qio                  :    1;  /*For SPI0, In the external RAM mode, spi quad I/O mode enable, 1: enable, 0:disable*/
+        uint32_t usr_wr_sram_dummy             :    1;  /*For SPI0, In the external RAM mode, it is the enable bit of dummy phase for write operations.*/
+        uint32_t mem_usr_rd_sram_dummy             :    1;  /*For SPI0, In the external RAM mode, it is the enable bit of dummy phase for read operations.*/
+        uint32_t mem_cache_sram_usr_rcmd                 :    1;  /*For SPI0, In the external RAM mode cache read external RAM for user define command.*/
+        uint32_t mem_sram_rdummy_cyclelen          :    6;  /*For SPI0, In the external RAM mode, it is the length in bits of read dummy phase. The register value shall be (bit_num-1).*/
+        uint32_t reserved12                    :    2;  /*reserved*/
+        uint32_t mem_sram_addr_bitlen              :    6;  /*For SPI0, In the external RAM mode, it is the length in bits of address phase. The register value shall be (bit_num-1).*/
+        uint32_t mem_cache_sram_usr_wcmd                 :    1;  /*For SPI0, In the external RAM mode cache write sram for user define command*/
+        uint32_t sram_oct                      :    1;  /*reserved*/
+        uint32_t sram_wdummy_cyclelen          :    6;  /*For SPI0, In the external RAM mode, it is the length in bits of write dummy phase. The register value shall be (bit_num-1).*/
+        uint32_t reserved28                    :    4;  /*reserved*/
+    };
+    uint32_t val;
+} spi_mem_c_cache_sctrl_reg_t;
+
 /** Type of ddr register
  *  SPI0 flash DDR mode control register
  */
@@ -436,6 +455,38 @@ typedef union {
     };
     uint32_t val;
 } spi_mem_c_clock_reg_t;
+
+/** Type of mem_sram_clk register
+ *  SPI0 external RAM clock control register
+ */
+typedef union {
+    struct {
+        /** mem_sclkcnt_l : HRO; bitpos: [7:0]; default: 3;
+         *  For SPI0 external RAM  interface, it must be equal to spi_mem_c_clkcnt_N.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t mem_sclkcnt_l:8;
+        /** mem_sclkcnt_h : HRO; bitpos: [15:8]; default: 1;
+         *  For SPI0 external RAM  interface, it must be floor((spi_mem_c_clkcnt_N+1)/2-1).
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t mem_sclkcnt_h:8;
+        /** mem_sclkcnt_n : HRO; bitpos: [23:16]; default: 3;
+         *  For SPI0 external RAM  interface, it is the divider of spi_mem_c_clk. So spi_mem_c_clk
+         *  frequency is system/(spi_mem_c_clkcnt_N+1)
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t mem_sclkcnt_n:8;
+        uint32_t reserved_24:7;
+        /** mem_sclk_equ_sysclk : HRO; bitpos: [31]; default: 0;
+         *  For SPI0 external RAM  interface, 1: spi_mem_c_clk is equal to system 0: spi_mem_c_clk
+         *  is divided from system clock.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t mem_sclk_equ_sysclk:1;
+    };
+    uint32_t val;
+} spi_mem_c_sram_clk_reg_t;
 
 /** Type of clock_gate register
  *  SPI0 clock gate register
@@ -564,6 +615,135 @@ typedef union {
     };
     uint32_t val;
 } spi_mem_c_sram_cmd_reg_t;
+
+/** Type of mem_sram_drd_cmd register
+ *  SPI0 external RAM DDR read command control register
+ */
+typedef union {
+    struct {
+        /** mem_cache_sram_usr_rd_cmd_value : HRO; bitpos: [15:0]; default: 0;
+         *  For SPI0,When cache mode is enable it is the read command value of command phase
+         *  for sram.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t mem_cache_sram_usr_rd_cmd_value:16;
+        uint32_t reserved_16:12;
+        /** mem_cache_sram_usr_rd_cmd_bitlen : HRO; bitpos: [31:28]; default: 0;
+         *  For SPI0,When cache mode is enable it is the length in bits of command phase for
+         *  sram. The register value shall be (bit_num-1).
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t mem_cache_sram_usr_rd_cmd_bitlen:4;
+    };
+    uint32_t val;
+} spi_mem_c_sram_drd_cmd_reg_t;
+
+/** Type of mem_sram_dwr_cmd register
+ *  SPI0 external RAM DDR write command control register
+ */
+typedef union {
+    struct {
+        /** mem_cache_sram_usr_wr_cmd_value : HRO; bitpos: [15:0]; default: 0;
+         *  For SPI0,When cache mode is enable it is the write command value of command phase
+         *  for sram.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t mem_cache_sram_usr_wr_cmd_value:16;
+        uint32_t reserved_16:12;
+        /** mem_cache_sram_usr_wr_cmd_bitlen : HRO; bitpos: [31:28]; default: 0;
+         *  For SPI0,When cache mode is enable it is the in bits of command phase  for sram.
+         *  The register value shall be (bit_num-1).
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t mem_cache_sram_usr_wr_cmd_bitlen:4;
+    };
+    uint32_t val;
+} spi_mem_c_sram_dwr_cmd_reg_t;
+
+/** Type of smem_ddr register
+ *  SPI0 external RAM DDR mode control register
+ */
+typedef union {
+    struct {
+        /** smem_ddr_en : HRO; bitpos: [0]; default: 0;
+         *  1: in DDR mode,  0 in SDR mode
+         */
+        uint32_t smem_ddr_en:1;
+        /** smem_var_dummy : HRO; bitpos: [1]; default: 0;
+         *  Set the bit to enable variable dummy cycle in spi DDR mode.
+         */
+        uint32_t smem_var_dummy:1;
+        /** smem_ddr_rdat_swp : HRO; bitpos: [2]; default: 0;
+         *  Set the bit to reorder rx data of the word in spi DDR mode.
+         */
+        uint32_t smem_ddr_rdat_swp:1;
+        /** smem_ddr_wdat_swp : HRO; bitpos: [3]; default: 0;
+         *  Set the bit to reorder tx data of the word in spi DDR mode.
+         */
+        uint32_t smem_ddr_wdat_swp:1;
+        /** smem_ddr_cmd_dis : HRO; bitpos: [4]; default: 0;
+         *  the bit is used to disable dual edge in command phase when DDR mode.
+         */
+        uint32_t smem_ddr_cmd_dis:1;
+        /** smem_outminbytelen : HRO; bitpos: [11:5]; default: 1;
+         *  It is the minimum output data length in the DDR psram.
+         */
+        uint32_t smem_outminbytelen:7;
+        /** smem_tx_ddr_msk_en : HRO; bitpos: [12]; default: 1;
+         *  Set this bit to mask the first or the last byte in SPI0 ECC DDR write mode, when
+         *  accesses to external RAM.
+         */
+        uint32_t smem_tx_ddr_msk_en:1;
+        /** smem_rx_ddr_msk_en : HRO; bitpos: [13]; default: 1;
+         *  Set this bit to mask the first or the last byte in SPI0 ECC DDR read mode, when
+         *  accesses to external RAM.
+         */
+        uint32_t smem_rx_ddr_msk_en:1;
+        /** smem_usr_ddr_dqs_thd : HRO; bitpos: [20:14]; default: 0;
+         *  The delay number of data strobe which from memory based on SPI clock.
+         */
+        uint32_t smem_usr_ddr_dqs_thd:7;
+        /** smem_ddr_dqs_loop : HRO; bitpos: [21]; default: 0;
+         *  1: Do not need the input of SPI_DQS signal, SPI0 starts to receive data when
+         *  spi0_slv_st is in spi_mem_c_DIN state. It is used when there is no SPI_DQS signal or
+         *  SPI_DQS signal is not stable. 0: SPI0 starts to store data at the positive and
+         *  negative edge of SPI_DQS.
+         */
+        uint32_t smem_ddr_dqs_loop:1;
+        uint32_t reserved_22:2;
+        /** smem_clk_diff_en : HRO; bitpos: [24]; default: 0;
+         *  Set this bit to enable the differential SPI_CLK#.
+         */
+        uint32_t smem_clk_diff_en:1;
+        uint32_t reserved_25:1;
+        /** smem_dqs_ca_in : HRO; bitpos: [26]; default: 0;
+         *  Set this bit to enable the input of SPI_DQS signal in SPI phases of CMD and ADDR.
+         */
+        uint32_t smem_dqs_ca_in:1;
+        /** smem_hyperbus_dummy_2x : HRO; bitpos: [27]; default: 0;
+         *  Set this bit to enable the vary dummy function in SPI HyperBus mode, when SPI0
+         *  accesses flash or SPI1 accesses flash or sram.
+         */
+        uint32_t smem_hyperbus_dummy_2x:1;
+        /** smem_clk_diff_inv : HRO; bitpos: [28]; default: 0;
+         *  Set this bit to invert SPI_DIFF when accesses to external RAM. .
+         */
+        uint32_t smem_clk_diff_inv:1;
+        /** smem_octa_ram_addr : HRO; bitpos: [29]; default: 0;
+         *  Set this bit to enable octa_ram address out when accesses to external RAM, which
+         *  means ADDR_OUT[31:0] = {spi_usr_addr_value[25:4], 6'd0, spi_usr_addr_value[3:1],
+         *  1'b0}.
+         */
+        uint32_t smem_octa_ram_addr:1;
+        /** smem_hyperbus_ca : HRO; bitpos: [30]; default: 0;
+         *  Set this bit to enable HyperRAM address out when accesses to external RAM, which
+         *  means ADDR_OUT[31:0] = {spi_usr_addr_value[19:4], 13'd0, spi_usr_addr_value[3:1]}.
+         */
+        uint32_t smem_hyperbus_ca:1;
+        uint32_t reserved_31:1;
+    };
+    uint32_t val;
+} spi_smem_c_ddr_reg_t;
 
 /** Type of smem_ddr register
  *  SPI0 external RAM DDR mode control register
@@ -2523,9 +2703,11 @@ typedef struct {
     volatile spi_mem_c_misc_reg_t misc;
     uint32_t reserved_038;
     volatile spi_mem_c_cache_fctrl_reg_t cache_fctrl;
-    uint32_t reserved_040;
+    volatile spi_mem_c_cache_sctrl_reg_t mem_cache_sctrl;
     volatile spi_mem_c_sram_cmd_reg_t sram_cmd;
-    uint32_t reserved_048[3];
+    volatile spi_mem_c_sram_drd_cmd_reg_t mem_sram_drd_cmd;
+    volatile spi_mem_c_sram_dwr_cmd_reg_t mem_sram_dwr_cmd;
+    volatile spi_mem_c_sram_clk_reg_t mem_sram_clk;
     volatile spi_mem_c_fsm_reg_t fsm;
     uint32_t reserved_058[26];
     volatile spi_mem_c_int_ena_reg_t int_ena;
