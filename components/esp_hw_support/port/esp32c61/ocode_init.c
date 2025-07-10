@@ -14,8 +14,6 @@
 #include "esp_private/regi2c_ctrl.h"
 #include "esp_hw_log.h"
 
-// TODO: IDF-9303
-
 static const char *TAG = "ocode_init";
 
 static void set_ocode_by_efuse(int ocode_scheme_ver)

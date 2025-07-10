@@ -641,6 +641,47 @@ static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t c
 /*---------------------------------------------------------------
                     Calibration
 ---------------------------------------------------------------*/
+
+/* ADC calibration code. */
+/**
+ * @brief Set common calibration configuration. Should be shared with other parts (PWDET).
+ */
+__attribute__((always_inline))
+static inline void adc_ll_calibration_init(adc_unit_t adc_n)
+{
+    (void)adc_n;
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 1);
+}
+
+/**
+ * Configure the registers for ADC calibration. You need to call the ``adc_ll_calibration_finish`` interface to resume after calibration.
+ *
+ * @note  Different ADC units and different attenuation options use different calibration data (initial data).
+ *
+ * @param adc_n ADC index number.
+ * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
+ *                     false: Use IO external voltage as calibration voltage.
+ */
+static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, bool internal_gnd)
+{
+    /* Enable/disable internal connect GND (for calibration). */
+    if (internal_gnd) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
+    }
+}
+
+/**
+ * Resume register status after calibration.
+ *
+ * @param adc_n ADC index number.
+ */
+static inline void adc_ll_calibration_finish(adc_unit_t adc_n)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
+}
+
 /**
  * Set the calibration result to ADC.
  *
