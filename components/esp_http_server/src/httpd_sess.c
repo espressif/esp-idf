@@ -146,6 +146,7 @@ static void httpd_sess_close(void *arg)
     }
     sock_db->lru_socket = false;
     struct httpd_data *hd = (struct httpd_data *) sock_db->handle;
+    hd->http_server_state = HTTP_SERVER_EVENT_DISCONNECTED;
     httpd_sess_delete(hd, sock_db);
 }
 
@@ -374,6 +375,7 @@ void httpd_sess_delete(struct httpd_data *hd, struct sock_db *session)
     } else {
         close(session->fd);
     }
+    hd->http_server_state = HTTP_SERVER_EVENT_DISCONNECTED;
     esp_http_server_dispatch_event(HTTP_SERVER_EVENT_DISCONNECTED, &session->fd, sizeof(int));
 
     // clear all contexts
