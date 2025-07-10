@@ -219,9 +219,9 @@ static uint16_t transmit_data(serial_data_type_t type,
 #if (BT_HCI_LOG_INCLUDED == TRUE)
         bt_hci_log_record_hci_data(data[0], &data[1], length - 1);
 #endif
-#if (CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
-    ble_log_spi_out_write_with_ts(BLE_LOG_SPI_OUT_SOURCE_NIMBLE, data, length);
-#endif // (CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
+#if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+    ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM, data, length);
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
     // TX Data to target
     esp_vhci_host_send_packet(data, length);
 
@@ -569,9 +569,9 @@ void bt_record_hci_data(uint8_t *data, uint16_t len)
 
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
 {
-#if (BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
-    ble_log_spi_out_write_with_ts(BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM, data, len);
-#endif // (BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
+#if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+    ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM, data, len);
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
     //Target has packet to host, malloc new buffer for packet
     BT_HDR *pkt = NULL;
     pkt_linked_item_t *linked_pkt = NULL;
