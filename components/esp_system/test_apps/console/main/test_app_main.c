@@ -8,7 +8,7 @@
 #include <string.h>
 #include "sdkconfig.h"
 
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 
 #include "hal/uart_ll.h"

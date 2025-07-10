@@ -28,7 +28,7 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 #include "spi_flash_mmap.h"
 #include "esp_attr.h"

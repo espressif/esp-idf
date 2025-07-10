@@ -17,7 +17,7 @@
 #include "soc/regi2c_pmu.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "hal/clk_tree_ll.h"
 #include "soc/pmu_reg.h"
 #include "pmu_param.h"

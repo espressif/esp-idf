@@ -5,11 +5,11 @@
  */
 
 #include <stddef.h>
-
+#include "esp_attr.h"
 #include "soc/soc_caps.h"
 #include "esp_macros.h"
 #include "esp_rom_sys.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
 #include "riscv/csr.h"
 #include "riscv/rvruntime-frames.h"

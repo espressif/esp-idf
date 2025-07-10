@@ -19,7 +19,7 @@
 
 #include "esp_log.h"
 #include "esp_rom_sys.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
 static const char *TAG = "fpga_clk";
 

@@ -22,7 +22,7 @@
 #include "driver/uart.h"
 #include "unity.h"
 #include "test_utils.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
 #include "soc/dport_reg.h"

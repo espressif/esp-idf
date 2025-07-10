@@ -16,7 +16,7 @@
 #include "esp_private/esp_pmu.h"
 #include "soc/ledc_periph.h"
 #include "esp_private/sleep_retention.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
 // Note. Test cases in this file cannot run one after another without reset
 

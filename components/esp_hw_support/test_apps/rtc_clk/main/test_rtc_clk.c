@@ -19,7 +19,7 @@
 #include "freertos/task.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "test_utils.h"
 #include "esp_random.h"
 #include "esp_sleep.h"

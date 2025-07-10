@@ -5,7 +5,7 @@
  */
 #include "esp_system_console.h"
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_usb_serial.h"
 #include "esp_rom_caps.h"
 

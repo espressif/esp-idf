@@ -9,7 +9,7 @@
 #include "esp_attr.h"
 #include "esp_macros.h"
 #include "esp_rom_sys.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "rom/cache.h"
 
 #include "riscv/rv_utils.h"

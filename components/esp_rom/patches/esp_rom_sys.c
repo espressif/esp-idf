@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include "soc/soc_caps.h"
 #include "esp_rom_caps.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "rom/ets_sys.h"
 #include "sdkconfig.h"
 

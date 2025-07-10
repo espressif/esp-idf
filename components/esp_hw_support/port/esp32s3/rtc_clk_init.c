@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp32s3/rom/rtc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"

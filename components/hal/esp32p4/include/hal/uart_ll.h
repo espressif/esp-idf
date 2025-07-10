@@ -106,6 +106,7 @@ FORCE_INLINE_ATTR void lp_uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *sou
     case 1:
         *source_clk = (soc_module_clk_t)LP_UART_SCLK_XTAL_D2;
         break;
+    // TODO: IDF-9581
     // case 2:
     //     *source_clk = (soc_module_clk_t)LP_UART_SCLK_LP_PLL;
     //     break;
@@ -528,7 +529,7 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
  *
  * @return True if baud-rate set successfully; False if baud-rate requested cannot be achieved
  */
-FORCE_INLINE_ATTR bool uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t sclk_freq)
+FORCE_INLINE_ATTR bool _uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t sclk_freq)
 {
     if ((hw) == &LP_UART) {
         abort(); // need to call lp_uart_ll_set_baudrate()
@@ -567,10 +568,16 @@ FORCE_INLINE_ATTR bool uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint3
     uart_ll_update(hw);
     return true;
 }
-#if !BOOTLOADER_BUILD
+
 //HP_SYS_CLKRST.peri_clk_ctrlxxx are shared registers, so this function must be used in an atomic way
-#define uart_ll_set_baudrate(...) uart_ll_set_baudrate(__VA_ARGS__); (void)__DECLARE_RCC_ATOMIC_ENV
-#endif
+#define uart_ll_set_baudrate(...) ({                \
+    (void)__DECLARE_RCC_ATOMIC_ENV;                 \
+    int _temp;                                      \
+    do {                                            \
+        _temp = _uart_ll_set_baudrate(__VA_ARGS__); \
+    } while(0);                                     \
+    _temp;                                          \
+})
 
 /**
  * @brief  Get the current baud-rate.

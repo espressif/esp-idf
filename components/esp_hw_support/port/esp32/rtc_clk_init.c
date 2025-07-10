@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include "esp32/rom/rtc.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"

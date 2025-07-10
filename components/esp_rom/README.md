@@ -60,7 +60,7 @@ As ROM functions are unique to each target, features are as well. For example, E
 │   ├── esp_rom_gpio.h
 │   ├── esp_rom_md5.h
 │   ├── esp_rom_sys.h
-│   ├── esp_rom_uart.h
+│   ├── esp_rom_serial_output.h
 │   └── ... // other ROM wrapper api files
 ├── Kconfig.projbuild
 ├── linker.lf

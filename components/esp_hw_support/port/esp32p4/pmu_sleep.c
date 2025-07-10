@@ -34,7 +34,7 @@
 #include "esp_private/esp_pmu.h"
 #include "pmu_param.h"
 #include "esp_rom_sys.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "hal/efuse_hal.h"
 #if CONFIG_SPIRAM
 #include "hal/ldo_ll.h"

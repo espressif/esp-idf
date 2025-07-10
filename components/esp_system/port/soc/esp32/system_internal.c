@@ -12,7 +12,7 @@
 #include "esp_log.h"
 #include "esp_ipc_isr.h"
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "soc/dport_reg.h"
 #include "soc/gpio_periph.h"
 #include "soc/efuse_periph.h"
@@ -22,6 +22,7 @@
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
 #include "hal/wdt_hal.h"
+#include "hal/uart_ll.h"
 #include "soc/soc_memory_layout.h"
 #include "esp_private/cache_err_int.h"
 

@@ -13,7 +13,7 @@
 #include "esp_log.h"
 #include "esp_rom_sys.h"
 #include "riscv/rv_utils.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "soc/soc_caps.h"
 #include "soc/gpio_reg.h"
 #include "esp_cpu.h"

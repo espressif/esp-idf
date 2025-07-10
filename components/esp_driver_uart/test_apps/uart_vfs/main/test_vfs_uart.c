@@ -12,7 +12,7 @@
 #include <sys/errno.h>
 #include <unistd.h>
 #include "unity.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"

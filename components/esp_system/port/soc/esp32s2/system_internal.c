@@ -12,7 +12,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp32s2/rom/cache.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "soc/dport_reg.h"
 #include "soc/gpio_reg.h"
 #include "soc/timer_group_reg.h"
@@ -22,6 +22,7 @@
 #include "soc/syscon_reg.h"
 #include "soc/rtc_periph.h"
 #include "hal/wdt_hal.h"
+#include "hal/uart_ll.h"
 #include "soc/soc_memory_layout.h"
 
 #include "esp32s2/rom/rtc.h"
