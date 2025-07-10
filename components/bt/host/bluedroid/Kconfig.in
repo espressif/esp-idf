@@ -1210,9 +1210,13 @@ menu "BT DEBUG LOG LEVEL"
 endmenu #BT DEBUG LOG LEVEL
 
 config BT_ACL_CONNECTIONS
-    int "BT/BLE MAX ACL CONNECTIONS(1~9)"
+    int "BT/BLE MAX ACL CONNECTIONS"
     depends on BT_BLUEDROID_ENABLED
-    range 1 9
+    range 1 2 if IDF_TARGET_ESP32C2
+    range 1 9 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+    range 1 15 if IDF_TARGET_ESP32H2
+    range 1 50
+    default 2 if IDF_TARGET_ESP32C2
     default 4
     help
         Maximum BT/BLE connection count. The ESP32-C3/S3 chip supports a maximum of 10 instances,
