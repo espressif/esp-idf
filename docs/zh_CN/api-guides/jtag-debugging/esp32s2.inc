@@ -92,7 +92,7 @@
       - ESP32-S2 目标配置文件，可以和某个 ``interface/`` 下的配置文件一同使用
     * - ``interface/ftdi/esp32s2_kaluga_v1.cfg``
       - 适用于 ESP32-S2-Kaluga-1 开发板的 JTAG 适配器配置文件
-    * - ``interface/ftdi/esp32_devkitj_v1.cfg``
+    * - ``interface/ftdi/esp_ftdi.cfg``
       - 适用于 ESP-Prog 板的 JTAG 适配器配置文件
 
 ---

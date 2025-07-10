@@ -101,7 +101,7 @@
       - ESP32-S3 target configuration file. Can be used together with one of the ``interface/`` configuration files.
     * - ``interface/ftdi/esp_usb_jtag.cfg``
       - JTAG adapter configuration file for ESP32-S3 builtin USB JTAG.
-    * - ``interface/ftdi/esp32_devkitj_v1.cfg``
+    * - ``interface/ftdi/esp_ftdi.cfg``
       - JTAG adapter configuration file for ESP-Prog debug adapter board.
 
 ---
