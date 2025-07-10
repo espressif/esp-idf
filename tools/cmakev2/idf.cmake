@@ -49,6 +49,50 @@ function(__init_idf_path)
 endfunction()
 
 #[[
+   __init_python()
+
+   Determine Python interpreter, either from the PYTHON CMake cache variable
+   or environmental variable or default it to "python".
+
+   If the PYTHON_DEPS_CHECKED CMake cache variable is not set, check if all
+   Python packages dependencies are satisfied. For instance, if a tool calling
+   CMake has already performed this check, it doesn't need to be repeated.
+
+   Set the global PYTHON variable, environment variable and build property.
+#]]
+function(__init_python)
+    __get_default_value(VARIABLE PYTHON
+                        DEFAULT "python"
+                        OUTPUT python)
+    file(TO_CMAKE_PATH ${python} python)
+
+    idf_build_set_property(PYTHON "${python}")
+    set(PYTHON "${python}" PARENT_SCOPE)
+
+    if(PYTHON_DEPS_CHECKED)
+        idf_dbg("Python dependencies have already been verified.")
+        return()
+    endif()
+
+    idf_build_get_property(idf_path IDF_PATH)
+
+    idf_msg("Checking Python dependencies...")
+    execute_process(
+        COMMAND "${python}" "${idf_path}/tools/idf_tools.py" "check-python-dependencies"
+        RESULT_VARIABLE result
+    )
+    if(result EQUAL 1)
+        # The function check_python_dependencies returns an error code of 1 if
+        # it fails.
+        idf_die("Some Python dependencies must be installed. Check above message for details.")
+    elseif(NOT result EQUAL 0)
+        # This means that check_python_dependencies.py failed to run entirely,
+        # and the result should be an error message.
+        idf_die("Failed to run Python dependency check. Python: ${python}, Error: ${result}")
+    endif()
+endfunction()
+
+#[[
    __init_components()
 
    Search for possible component directories categorized by their source, which
@@ -62,7 +106,8 @@ endfunction()
 
    :COMPONENT_DIRS: If set, component directories are searched exclusively in
                     the paths provided in ``COMPONENT_DIRS``.
-   :EXTRA_COMPONENT_DIRS: Includes extra paths to search if `COMPONENT_DIRS` is not specified.
+   :EXTRA_COMPONENT_DIRS: Includes extra paths to search if ``COMPONENT_DIRS``
+                          is not specified.
    :EXTRA_COMPONENT_EXCLUDE_DIRS: List of paths to exclude from searching the
                                   component directories.
 
@@ -148,6 +193,9 @@ idf_build_set_property(PREFIX "idf")
 # well as a build property.
 __init_idf_path()
 
+# Determine the Python interpreter and check package dependencies if necessary.
+__init_python()
+
 # Discover and initialize components.
 __init_components()
 
@@ -156,7 +204,6 @@ __init_components()
 Many of the following things are already implemented in PoC !38337, but they
 need to be reviewed.
 
-* Set and check python interpreter.
 * Set build target.
 * Set the toolchain before invoking project().
 * Enable ccache if requested and available.

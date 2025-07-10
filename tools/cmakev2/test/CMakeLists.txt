@@ -75,9 +75,17 @@ function(test_idf_version)
    endif()
 endfunction()
 
+# Test that Python interpreter is set
+function(test_python)
+    if(NOT DEFINED PYTHON OR "${PYTHON}" STREQUAL "")
+        idf_die("PYTHON variable not defined or empty")
+   endif()
+endfunction()
+
 # Run tests
 test_dump_properties()
 test_component_priority()
 test_idf_version()
+test_python()
 
 message("ALL TESTS PASSED")
