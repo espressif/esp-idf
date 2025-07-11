@@ -28,8 +28,11 @@ from idf_py_actions.tools import PropertyDict
 from idf_py_actions.tools import TargetChoice
 from idf_py_actions.tools import ensure_build_directory
 from idf_py_actions.tools import generate_hints
+from idf_py_actions.tools import get_build_directory_from_preset
+from idf_py_actions.tools import get_cmake_preset
 from idf_py_actions.tools import get_target
 from idf_py_actions.tools import idf_version
+from idf_py_actions.tools import load_cmake_presets
 from idf_py_actions.tools import merge_action_lists
 from idf_py_actions.tools import run_target
 from idf_py_actions.tools import yellow_print
@@ -263,9 +266,36 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
                 'Setting the build directory to the project directory is not supported. Suggest dropping '
                 "--build-dir option, the default is a 'build' subdirectory inside the project directory."
             )
+
+        # CMake presets have to be initialized once the project directory is known
+        # but before falling back to the default build directory
+        initialize_cmake_presets(args)
+
         if args.build_dir is None:
             args.build_dir = os.path.join(args.project_dir, 'build')
         args.build_dir = os.path.realpath(args.build_dir)
+
+    def initialize_cmake_presets(args: PropertyDict) -> None:
+        # Load the CMake presets from the project directory and determine the preset name to use.
+        load_cmake_presets(args.project_dir, args.preset)
+        # Get the selected CMake configuration preset, if any
+        preset_info = get_cmake_preset()
+        if preset_info:
+            # If the preset specifies a build directory, use it
+            build_dir_from_preset = get_build_directory_from_preset()
+            if build_dir_from_preset:
+                if args.build_dir:
+                    raise FatalError(
+                        'Build directory specified both in CMake preset and on the command line. This is not supported.'
+                    )
+                if not os.path.isabs(build_dir_from_preset):
+                    build_dir_from_preset = os.path.join(args.project_dir, build_dir_from_preset)
+                # Store the build directory back into the args object, the rest of idf.py will look for it there
+                args.build_dir = build_dir_from_preset
+            else:
+                yellow_print(
+                    f'Warning: preset {preset_info["name"]} doesn\'t specify the build directory ("binaryDir")'
+                )
 
     def idf_version_callback(ctx: Context, param: str, value: str) -> None:
         if not value or ctx.resilient_parsing:
@@ -385,6 +415,12 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
                 'names': ['-B', '--build-dir'],
                 'help': 'Build directory.',
                 'type': click.Path(),
+                'default': None,
+            },
+            {
+                'names': ['--preset'],
+                'help': 'Configuration preset to use (defined in CMakePresets.json or CMakeUserPresets.json)',
+                'envvar': 'IDF_PRESET',
                 'default': None,
             },
             {
