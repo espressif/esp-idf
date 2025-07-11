@@ -371,9 +371,9 @@ menu "LWIP"
 
     config LWIP_DHCP_OPTIONS_LEN
         int "DHCP total option length"
-        default 68 if LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
-        default 108 if !LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
-        range 68 255
+        default 69 if LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
+        default 109 if !LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
+        range 69 255
         depends on LWIP_IPV4
         help
             Set total length of outgoing DHCP option msg. Generally bigger value means it can carry more
