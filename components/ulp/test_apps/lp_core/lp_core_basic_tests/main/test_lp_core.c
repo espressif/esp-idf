@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -131,8 +131,7 @@ TEST_CASE("Test LP core delay", "[lp_core]")
 #define LP_TIMER_TEST_DURATION_S        (5)
 #define LP_TIMER_TEST_SLEEP_DURATION_US (20000)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
-#if SOC_DEEP_SLEEP_SUPPORTED && CONFIG_RTC_FAST_CLK_SRC_RC_FAST
+#if SOC_DEEP_SLEEP_SUPPORTED
 
 static void do_ulp_wakeup_deepsleep(lp_core_test_commands_t ulp_cmd)
 {
@@ -229,8 +228,7 @@ TEST_CASE_MULTIPLE_STAGES("LP Timer can wakeup lp core periodically during deep 
                           do_ulp_wakeup_with_lp_timer_deepsleep,
                           check_reset_reason_and_sleep_duration);
 
-#endif //#if SOC_DEEP_SLEEP_SUPPORTED && CONFIG_RTC_FAST_CLK_SRC_RC_FAST
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
+#endif //#if SOC_DEEP_SLEEP_SUPPORTED
 
 TEST_CASE("LP Timer can wakeup lp core periodically", "[lp_core]")
 {
