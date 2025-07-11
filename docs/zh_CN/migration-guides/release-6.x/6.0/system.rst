@@ -116,6 +116,20 @@ FreeRTOS
 
 为了减少 IRAM 的使用，`esp_ringbuf` 函数的默认位置已从 IRAM 更改为 Flash。因此，``CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`` 选项已被移除。此举可节省大量 IRAM，但可能会对性能造成轻微影响。对于性能要求严苛的应用程序，可通过启用新增的 :ref:`CONFIG_RINGBUF_IN_IRAM` 选项来恢复之前的行为。
 
+Log
+---
+
+**已移除的函数**
+
+以下已弃用的 Log 函数已在 ESP-IDF v6.0 中移除：
+
+- :cpp:func:`esp_log_buffer_hex` – 请使用 :cpp:func:`ESP_LOG_BUFFER_HEX` 替代。
+- :cpp:func:`esp_log_buffer_char` – 请使用 :cpp:func:`ESP_LOG_BUFFER_CHAR` 替代。
+
+**已移除的头文件**
+
+- ``esp_log_internal.h`` – 请使用 ``esp_log_buffer.h`` 替代。
+
 核心转储
 --------
 
