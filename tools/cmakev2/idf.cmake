@@ -128,6 +128,77 @@ function(__init_sdkconfig_files)
 endfunction()
 
 #[[
+   __init_idf_target()
+
+   Determine the IDF_TARGET value from the IDF_TARGET environment variable, the
+   CMake cache variable, or the sdkconfig files. If none of these are set,
+   use the default esp32 target. Ensure there are no inconsistencies in the
+   IDF_TARGET values set in different locations.
+
+   Set the IDF_TARGET as a global variable, in the CMake cache, as an
+   environment variable, and as a build property.
+#]]
+function(__init_idf_target)
+    set(sdkconfig_target "")
+    set(target "")
+    set(sdkconfig_file "")
+
+    idf_build_get_property(sdkconfig SDKCONFIG)
+    idf_build_get_property(sdkconfig_defaults SDKCONFIG_DEFAULTS)
+
+    foreach(config ${sdkconfig} ${sdkconfig_defaults})
+        idf_dbg("Searching for target in '${config}'")
+        __get_sdkconfig_option(OPTION CONFIG_IDF_TARGET
+                               SDKCONFIG "${config}"
+                               OUTPUT sdkconfig_target)
+        if(sdkconfig_target)
+            set(sdkconfig_file "${config}")
+            break()
+        endif()
+    endforeach()
+
+    __get_default_value(VARIABLE IDF_TARGET
+                        DEFAULT NOTFOUND
+                        OUTPUT target)
+
+    if(NOT target)
+        if(sdkconfig_target)
+            idf_msg("IDF_TARGET is not set, guessed '${sdkconfig_target}' "
+                    "from sdkconfig '${sdkconfig_file}'")
+            set(target "${sdkconfig_target}")
+        else()
+            idf_msg("IDF_TARGET not set, using default target: esp32")
+            set(target "esp32")
+        endif()
+    endif()
+
+    # Verify that the chosen target aligns with the CMake cache.
+    set(cache_target $CACHE{IDF_TARGET})
+    if(cache_target)
+        if(NOT "${cache_target}" STREQUAL "${target}")
+            idf_die("IDF_TARGET '${cache_target}' in CMake cache does not match "
+                    "currently selected IDF_TARGET '${target}'. "
+                    "To change the target, clear the build directory and sdkconfig file, "
+                    "and build the project again.")
+        endif()
+    endif()
+
+    # Verify that the chosen target aligns with the sdkconfig.
+    if(sdkconfig_target)
+        if(NOT "${sdkconfig_target}" STREQUAL "${target}")
+            idf_die("Target '${sdkconfig_target}' in sdkconfig '${sdkconfig_file}' "
+                    "does not match currently selected IDF_TARGET '${target}'. "
+                    "To change the target, clear the build directory and sdkconfig file, "
+                    "and build the project again.")
+        endif()
+    endif()
+
+    idf_build_set_property(IDF_TARGET "${target}")
+    set(ENV{IDF_TARGET} ${target})
+    set(IDF_TARGET ${target} CACHE STRING "IDF Build Target")
+endfunction()
+
+#[[
    __init_components()
 
    Search for possible component directories categorized by their source, which
@@ -234,6 +305,9 @@ __init_python()
 # Set SDKCONFIG and SDKCONFIG_DEFAULTS build properties.
 __init_sdkconfig_files()
 
+# Set IDF_TARGET.
+__init_idf_target()
+
 # Discover and initialize components.
 __init_components()
 
@@ -242,7 +316,6 @@ __init_components()
 Many of the following things are already implemented in PoC !38337, but they
 need to be reviewed.
 
-* Set build target.
 * Set the toolchain before invoking project().
 * Enable ccache if requested and available.
 * Generate initial sdkconfig for component manager.
