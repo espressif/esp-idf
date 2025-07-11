@@ -163,3 +163,50 @@ function(__get_absolute_paths)
 
     set(${ARG_OUTPUT} "${absolute_paths}" PARENT_SCOPE)
 endfunction()
+
+#[[
+   __get_default_value(VARIABLE <variable>
+                       DEFAULT <value>)
+                       OUTPUT <result>)
+
+   :VARIABLE[in]: The name of the variable for which to obtain its default
+                  value.
+   :DEFAULT[in]: Default variable value.
+   :OUTPUT[out]: Variable to store the default value of ``<variable>``.
+
+   Set the ``<result>`` to the value of ``<variable>`` based on the following
+   order of precedence, with the first having the highest precedence.
+
+   1. environmental variable
+   2. CMake cache variable
+   3. ``<value>`` as specified with the ``DEFAULT`` option
+#]]
+function(__get_default_value)
+    set(options)
+    set(one_value VARIABLE DEFAULT OUTPUT)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_VARIABLE)
+        idf_die("VARIABLE option is required")
+    endif()
+
+    if(NOT DEFINED ARG_OUTPUT)
+        idf_die("OUTPUT option is required")
+    endif()
+
+    if(NOT DEFINED ARG_DEFAULT)
+        set(ARG_DEFAULT "")
+    endif()
+
+
+    if(DEFINED ENV{${ARG_VARIABLE}})
+        set(value "$ENV{${ARG_VARIABLE}}")
+    elseif(DEFINED CACHE{${ARG_VARIABLE}})
+        set(value "$CACHE{${ARG_VARIABLE}}")
+    else()
+        set(value "${ARG_DEFAULT}")
+    endif()
+
+    set(${ARG_OUTPUT} "${value}" PARENT_SCOPE)
+endfunction()
