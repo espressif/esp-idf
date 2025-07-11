@@ -23,6 +23,7 @@
 #include "soc/uart_reg.h"
 #include "hal/wdt_hal.h"
 #include "hal/spimem_flash_ll.h"
+#include "hal/uart_ll.h"
 #include "esp_private/cache_err_int.h"
 #include "esp_private/mspi_timing_tuning.h"
 
@@ -73,6 +74,10 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
     CLEAR_PERI_REG_MASK(PCR_HMAC_CONF_REG, PCR_HMAC_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_RSA_CONF_REG, PCR_RSA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_SHA_CONF_REG, PCR_SHA_RST_EN);
+
+    // UART's sclk is controlled in the PCR register and does not reset with the UART module. The ROM missed enabling
+    // it when initializing the ROM UART. If it is not turned on, it will trigger LP_WDT in the ROM.
+    uart_ll_sclk_enable(&UART0);
 }
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this
