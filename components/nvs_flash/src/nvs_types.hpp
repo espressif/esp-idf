@@ -13,6 +13,7 @@
 #include "nvs_handle.hpp"
 #include "compressed_enum_table.hpp"
 #include "string.h"
+#include "nvs_constants.h"
 
 namespace nvs
 {
@@ -115,5 +116,7 @@ public:
     bool checkHeaderConsistency(const uint8_t entryIndex) const;
 };
 
+// Safeguard for Item size
+static_assert(sizeof(Item) == NVS_CONST_ENTRY_SIZE, "Item size must be 32 bytes");
 
 } // namespace nvs

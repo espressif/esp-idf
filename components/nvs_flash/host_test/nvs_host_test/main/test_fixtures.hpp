@@ -29,7 +29,7 @@ public:
         esp_partition.erase_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
         esp_partition.type = ESP_PARTITION_TYPE_DATA;
         esp_partition.subtype = ESP_PARTITION_SUBTYPE_DATA_NVS;
-        strncpy(esp_partition.label, partition_name, PART_NAME_MAX_SIZE);
+        strncpy(esp_partition.label, partition_name, NVS_PART_NAME_MAX_SIZE);
         p_part = new (std::nothrow) nvs::NVSPartition(&esp_partition);
         REQUIRE(p_part != nullptr);
     }
@@ -186,7 +186,7 @@ public:
         esp_partition2.erase_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
         esp_partition2.type = ESP_PARTITION_TYPE_DATA;
         esp_partition2.subtype = ESP_PARTITION_SUBTYPE_DATA_NVS;
-        strncpy(esp_partition2.label, partition_name2, PART_NAME_MAX_SIZE);
+        strncpy(esp_partition2.label, partition_name2, NVS_PART_NAME_MAX_SIZE);
         p_part2 = new (std::nothrow) nvs::NVSPartition(&esp_partition2);
         REQUIRE(p_part2 != nullptr);
     }

@@ -7,16 +7,9 @@
 
 #include "nvs.h"
 #include "nvs_types.hpp"
-#include <cstdint>
-#include <type_traits>
-#include <cstring>
-#include <algorithm>
-#include "compressed_enum_table.hpp"
 #include "intrusive_list.h"
 #include "nvs_item_hash_list.hpp"
-#include "nvs_memory_management.hpp"
 #include "partition.hpp"
-#include "nvs_constants.h"
 
 namespace nvs
 {
@@ -33,7 +26,7 @@ public:
     static const uint32_t ESB_WRITTEN = NVS_CONST_ESB_WRITTEN;
     static const uint32_t ESB_ERASED = NVS_CONST_ESB_ERASED;
 
-    static const uint32_t SEC_SIZE;
+    static const uint32_t SEC_SIZE = NVS_CONST_PAGE_SIZE;
 
     static const size_t ENTRY_SIZE  = NVS_CONST_ENTRY_SIZE;
     static const size_t ENTRY_COUNT = NVS_CONST_ENTRY_COUNT;
