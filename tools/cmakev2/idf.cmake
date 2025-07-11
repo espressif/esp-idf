@@ -93,6 +93,41 @@ function(__init_python)
 endfunction()
 
 #[[
+   __init_sdkconfig_files()
+
+   Set the SDKCONFIG and SDKCONFIG_DEFAULTS build properties using environment
+   variables, CMake cache variables, or default values.
+#]]
+function(__init_sdkconfig_files)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
+        set(sdkconfig_defaults "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
+    else()
+        set(sdkconfig_defaults "")
+    endif()
+
+    __get_default_value(VARIABLE SDKCONFIG
+                        DEFAULT "${CMAKE_SOURCE_DIR}/sdkconfig"
+                        OUTPUT sdkconfig)
+    __get_default_value(VARIABLE SDKCONFIG_DEFAULTS
+                        DEFAULT "${sdkconfig_defaults}"
+                        OUTPUT sdkconfig_defaults)
+
+    __get_absolute_paths(PATHS "${sdkconfig}" OUTPUT sdkconfig)
+    __get_absolute_paths(PATHS "${sdkconfig_defaults}" OUTPUT sdkconfig_defaults)
+
+    set(sdkconfig_defaults_checked "")
+    foreach(sdkconfig_default ${sdkconfig_defaults})
+        if(NOT EXISTS "${sdkconfig_default}")
+            idf_die("SDKCONFIG_DEFAULTS '${sdkconfig_default}' does not exist.")
+        endif()
+        list(APPEND sdkconfig_defaults_checked ${sdkconfig_default})
+    endforeach()
+
+    idf_build_set_property(SDKCONFIG "${sdkconfig}")
+    idf_build_set_property(SDKCONFIG_DEFAULTS "${sdkconfig_defaults_checked}")
+endfunction()
+
+#[[
    __init_components()
 
    Search for possible component directories categorized by their source, which
@@ -195,6 +230,9 @@ __init_idf_path()
 
 # Determine the Python interpreter and check package dependencies if necessary.
 __init_python()
+
+# Set SDKCONFIG and SDKCONFIG_DEFAULTS build properties.
+__init_sdkconfig_files()
 
 # Discover and initialize components.
 __init_components()
