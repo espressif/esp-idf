@@ -1693,3 +1693,10 @@ ble_capture_info_user_handler(uint8_t type, uint32_t reason, uint32_t param1, ui
     }
     return 0;
 }
+
+#if CONFIG_BT_LE_MEM_CHECK_ENABLED
+void ble_memory_count_limit_set(uint16_t count_limit)
+{
+    bt_osi_mem_count_limit_set(count_limit);
+}
+#endif // CONFIG_BT_LE_MEM_CHECK_ENABLED
