@@ -264,6 +264,7 @@ menu "Hardware Settings"
     config ESP_BRINGUP_BYPASS_CPU_CLK_SETTING
         bool
         default y if !SOC_CLK_TREE_SUPPORTED
+        default y if ESP32P4_REV_MIN_200 # TODO: IDF-13574
         default n
         help
             This option is only used for new chip bringup, when
@@ -273,6 +274,7 @@ menu "Hardware Settings"
     config ESP_BRINGUP_BYPASS_RANDOM_SETTING
         bool
         default y if !SOC_RNG_SUPPORTED
+        default y if ESP32P4_REV_MIN_200 # TODO: IDF-13574
         default n
         help
             This option is only used for new chip bringup, when

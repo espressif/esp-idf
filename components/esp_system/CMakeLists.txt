@@ -151,7 +151,8 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 endif()
 
-if(CONFIG_SOC_MEM_NON_CONTIGUOUS_SRAM)
+# For P4, since P4 REV2, the SRAM is contiguous
+if(CONFIG_ESP32P4_SELECTS_REV_LESS_V2)
     target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--enable-non-contiguous-regions")
 endif()
 

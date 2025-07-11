@@ -46,7 +46,7 @@ extern "C" {
 #define MTVT_CSR    0x307
 
 
-#if CONFIG_IDF_TARGET_ESP32P4
+#if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V2
 
 /**
  * The ESP32-P4 and the beta version of the ESP32-C5 implement a non-standard version of the CLIC:
@@ -56,9 +56,9 @@ extern "C" {
 #define INTTHRESH_STANDARD  0
 #define MINTSTATUS_CSR      0x346
 
-#elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61 || CONFIG_IDF_TARGET_ESP32H4
+#elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61 || CONFIG_IDF_TARGET_ESP32H4 || !CONFIG_ESP32P4_SELECTS_REV_LESS_V2
 
-/* The ESP32-C5 (MP), C61 and H4 use the standard CLIC specification, for example, it defines the mintthresh CSR */
+/* The ESP32-C5 (MP), C61, H4 and P4 (since REV2) use the standard CLIC specification, for example, it defines the mintthresh CSR */
 #define INTTHRESH_STANDARD  1
 #define MINTSTATUS_CSR      0xFB1
 #define MINTTHRESH_CSR      0x347

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,8 +74,19 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 /**
  * Register the shared buffer area of the last memory block into the heap during heap initialization
  */
-#define APP_USABLE_DIRAM_END    (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE) // 0x4ff3cfc0 - 0x2000 = 0x4ff3afc0
-#define STARTUP_DATA_SIZE      (SOC_DRAM_HIGH - CONFIG_CACHE_L2_CACHE_SIZE - APP_USABLE_DIRAM_END) // 0x4ffc0000 - 0x20000/0x40000/0x80000 - 0x4ff3afc0 = 0x65040 / 0x45040 / 0x5040
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#define ROM_STACK_START         (SOC_ROM_STACK_START)
+#define APP_USABLE_DIRAM_END    (ROM_STACK_START - SOC_ROM_STACK_SIZE) // 0x4ff3cfc0 - 0x2000 = 0x4ff3afc0
+#define STARTUP_DATA_SIZE       (SOC_DRAM_HIGH - CONFIG_CACHE_L2_CACHE_SIZE - APP_USABLE_DIRAM_END) // 0x4ffc0000 - 0x20000/0x40000/0x80000 - 0x4ff3afc0 = 0x65040 / 0x45040 / 0x5040
+#define SOC_DRAM_USABLE_LOW     (SOC_DRAM_LOW)
+#define SOC_IRAM_USABLE_LOW     (SOC_IRAM_LOW)
+#else
+#define ROM_STACK_START         (SOC_ROM_STACK_START_REV2)
+#define APP_USABLE_DIRAM_END    (ROM_STACK_START - SOC_ROM_STACK_SIZE) // 0x4ffbcfc0 - 0x2000 = 0x4ffbafc0
+#define STARTUP_DATA_SIZE       (SOC_DRAM_HIGH - APP_USABLE_DIRAM_END) // 0x4ffc0000 - 0x4ffbafc0 = 0x65040 / 0x45040 / 0x5040
+#define SOC_DRAM_USABLE_LOW     (SOC_DRAM_LOW + CONFIG_CACHE_L2_CACHE_SIZE)
+#define SOC_IRAM_USABLE_LOW     (SOC_IRAM_LOW + CONFIG_CACHE_L2_CACHE_SIZE)
+#endif
 
 #if CONFIG_ULP_COPROC_ENABLED
 #define APP_USABLE_LP_RAM_SIZE  0x8000 - LP_ROM_DRAM_SIZE
@@ -85,20 +96,23 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 
 const soc_memory_region_t soc_memory_regions[] = {
 #ifdef CONFIG_SPIRAM
-    { SOC_EXTRAM_LOW,       SOC_EXTRAM_SIZE,                        SOC_MEMORY_TYPE_SPIRAM, 0,                      false}, //PSRAM, if available
+    { SOC_EXTRAM_LOW,       SOC_EXTRAM_SIZE,                               SOC_MEMORY_TYPE_SPIRAM, 0,                      false}, //PSRAM, if available
 #endif
-    { SOC_DRAM_LOW,         APP_USABLE_DIRAM_END - SOC_DRAM_LOW,    SOC_MEMORY_TYPE_L2MEM,  SOC_IRAM_LOW,           false},
-    { APP_USABLE_DIRAM_END, STARTUP_DATA_SIZE,                      SOC_MEMORY_TYPE_L2MEM,  APP_USABLE_DIRAM_END,   true},
+    { SOC_DRAM_USABLE_LOW,  APP_USABLE_DIRAM_END - SOC_DRAM_USABLE_LOW,    SOC_MEMORY_TYPE_L2MEM,  SOC_IRAM_USABLE_LOW,    false},
+    { APP_USABLE_DIRAM_END, STARTUP_DATA_SIZE,                             SOC_MEMORY_TYPE_L2MEM,  APP_USABLE_DIRAM_END,   true},
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { 0x50108000,           APP_USABLE_LP_RAM_SIZE,                 SOC_MEMORY_TYPE_RTCRAM, 0,                      false}, //LPRAM
+    { 0x50108000,           APP_USABLE_LP_RAM_SIZE,                        SOC_MEMORY_TYPE_RTCRAM, 0,                      false}, //LPRAM
 #endif
-    { 0x30100000,           0x2000,                                 SOC_MEMORY_TYPE_TCM,    0,                      false},
+    { 0x30100000,           0x2000,                                        SOC_MEMORY_TYPE_TCM,    0,                      false},
 };
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
 
-
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
 extern int _data_start_low, _data_start_high, _heap_start_low, _heap_start_high, _iram_start, _iram_end, _rtc_force_slow_end;
+#else
+extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_slow_end;
+#endif
 extern int _tcm_text_start, _tcm_data_end;
 extern int _rtc_reserved_start, _rtc_reserved_end;
 extern int _rtc_ulp_memory_start;
@@ -110,8 +124,12 @@ extern int _rtc_ulp_memory_start;
  */
 
 // Static data region. DRAM used by data+bss and possibly rodata
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start_low, (intptr_t)&_heap_start_low, dram_data_low);
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start_high, (intptr_t)&_heap_start_high, dram_data_high);
+#else
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_data_high)
+#endif
 
 // Target has a shared D/IRAM virtual address, no need to calculate I_D_OFFSET like previous chips
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_end, iram_code);

@@ -60,7 +60,7 @@ static void s_prepare_reserved_regions(soc_reserved_region_t *reserved, size_t c
     /* Get the ROM layout to find which part of DRAM is reserved */
     const ets_rom_layout_t *layout = ets_rom_layout_p;
     reserved[0].start = (intptr_t)layout->dram0_rtos_reserved_start;
-#ifdef SOC_DIRAM_ROM_RESERVE_HIGH
+#if SOC_DIRAM_ROM_RESERVE_HIGH && CONFIG_ESP32P4_SELECTS_REV_LESS_V2
     reserved[0].end = SOC_DIRAM_ROM_RESERVE_HIGH;
 #else
     reserved[0].end = SOC_DIRAM_DRAM_HIGH;

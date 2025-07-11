@@ -387,6 +387,11 @@ err:
 }
 
 #ifdef BOOTLOADER_BUILD
+#if CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#define ROM_STACK_START         (SOC_ROM_STACK_START_REV2)
+#else
+#define ROM_STACK_START         (SOC_ROM_STACK_START)
+#endif
 /* Check the region load_addr - load_end doesn't overlap any memory used by the bootloader, registers, or other invalid memory
  */
 static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_t load_end, bool print_error, bool no_recurse)
@@ -406,7 +411,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
     if (esp_ptr_in_dram(load_addr_p) && esp_ptr_in_dram(load_inclusive_end_p)) { /* Writing to DRAM */
         /* Check if we're clobbering the stack */
         intptr_t sp = (intptr_t)esp_cpu_get_sp();
-        if (bootloader_util_regions_overlap(sp - STACK_LOAD_HEADROOM, SOC_ROM_STACK_START,
+        if (bootloader_util_regions_overlap(sp - STACK_LOAD_HEADROOM, ROM_STACK_START,
                                            load_addr, load_end)) {
             reason = "overlaps bootloader stack";
             goto invalid;
