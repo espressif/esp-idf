@@ -210,3 +210,53 @@ function(__get_default_value)
 
     set(${ARG_OUTPUT} "${value}" PARENT_SCOPE)
 endfunction()
+
+#[[
+   __get_config_option(OPTION <option>
+                       SDKCONFIG <path>)
+                       OUTPUT <variable>)
+
+   :OPTION[in]: Option name in sdkconfig to obtain the value of.
+   :SDKCONFIG[in]: Sdkconfig file path.
+   :OUTPUT[out]: Variable to store the value of sdkconfig ``<option>``.
+
+   Search for the ``<option>`` in the sdkconfig file specified by ``<path>`` and store
+   its value in ``<variable>``. If the option is not found, return ``NOTFOUND``.
+#]]
+function(__get_sdkconfig_option)
+    set(options)
+    set(one_value OPTION SDKCONFIG OUTPUT)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_OPTION)
+        idf_die("OPTION option is required")
+    endif()
+
+    if(NOT DEFINED ARG_SDKCONFIG)
+        idf_die("SDKCONFIG option is required")
+    endif()
+
+    if(NOT DEFINED ARG_OUTPUT)
+        idf_die("OUTPUT option is required")
+    endif()
+
+    set(value NOTFOUND)
+
+    if(NOT EXISTS "${ARG_SDKCONFIG}")
+        set(${ARG_OUTPUT} "${value}" PARENT_SCOPE)
+        return()
+    endif()
+
+    file(STRINGS "${ARG_SDKCONFIG}" lines)
+    foreach(line ${lines})
+        if(NOT "${line}" MATCHES "^${ARG_OPTION}=\"[^\"]+\"$")
+            continue()
+        endif()
+
+        string(REGEX REPLACE "${ARG_OPTION}=\"([^\"]+)\"" "\\1" value "${line}")
+        break()
+    endforeach()
+
+    set(${ARG_OUTPUT} "${value}" PARENT_SCOPE)
+endfunction()
