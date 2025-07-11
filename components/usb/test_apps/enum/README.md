@@ -213,7 +213,7 @@ When all the hardware have been configured and prepared, the Test can be run via
 
 The description is provided, assuming that the test is run under Linux and Host board has a /dev/ttyACM0 path, Mocked Device has a /dev/ttyUSB0 path, and we are in the esp-idf root folder.
 
-To run the pytest, esp-idf must be installed and configured with ```--enable-pytest```.
+To run the pytest, esp-idf must be installed and configured with `--enable-ci`.
 
 ### Prepare Host
 

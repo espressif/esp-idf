@@ -67,7 +67,6 @@ tools/ci/check_requirement_files.py
 tools/ci/check_rules_components_patterns.py
 tools/ci/check_soc_headers_leak.py
 tools/ci/check_soc_struct_headers.py
-tools/ci/check_test_files.py
 tools/ci/check_tools_files_patterns.py
 tools/ci/check_type_comments.py
 tools/ci/checkout_project_ref.py

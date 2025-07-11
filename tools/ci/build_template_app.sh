@@ -54,30 +54,23 @@ build_stage2() {
     # Override EXTRA_CFLAGS and EXTRA_CXXFLAGS in the environment
     export EXTRA_CFLAGS=${PEDANTIC_CFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
     export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
-    python -m idf_build_apps build -v \
+    idf-build-apps build \
         -p ${TEMPLATE_APP_PATH} \
-        -t all \
         ${CONFIG_STR} \
         --work-dir ${BUILD_PATH}/cmake \
         --build-dir ${BUILD_DIR} \
         --build-log ${BUILD_LOG_CMAKE} \
-        --size-file size.json \
-        --keep-going \
-        --collect-size-info size_info.txt \
         --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4 esp32c61 esp32h21 esp32h4
 }
 
 build_stage1() {
     CONFIG_STR=$(get_config_str sdkconfig.ci2.*=)
-    python -m idf_build_apps build -v \
+    idf-build-apps build \
         -p ${TEMPLATE_APP_PATH} \
-        -t all \
         ${CONFIG_STR} \
         --work-dir ${BUILD_PATH}/cmake \
         --build-dir ${BUILD_DIR} \
         --build-log ${BUILD_LOG_CMAKE} \
-        --size-file size.json \
-        --collect-size-info size_info.txt \
         --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4 esp32c61 esp32h21 esp32h4
 }
 

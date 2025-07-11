@@ -250,76 +250,9 @@ We're using the latest version of [idf-build-apps][idf-build-apps]. Please refer
 In ESP-IDF CI, there's a few more special rules are additionally supported to disable the check app dependencies feature:
 
 - Add MR labels `BUILD_AND_TEST_ALL_APPS`
+- Pipeline variable `IDF_CI_SELECT_ALL_PYTEST_CASES=1`
 - Run in protected branches
 
 ## Upload/Download Artifacts to Internal Minio Server
 
-### Users Without Access to Minio
-
-If you don't have access to the internal Minio server, you can still download the artifacts from the shared link in the job log.
-
-The log will look like this:
-
-```shell
-Pipeline ID    : 587355
-Job name       : build_clang_test_apps_esp32
-Job ID         : 40272275
-Created archive file: 40272275.zip, uploading as 587355/build_dir_without_map_and_elf_files/build_clang_test_apps_esp32/40272275.zip
-Please download the archive file includes build_dir_without_map_and_elf_files from [INTERNAL_URL]
-```
-
-### Users With Access to Minio
-
-#### Env Vars for Minio
-
-Minio takes these env vars to connect to the server:
-
-- `IDF_S3_SERVER`
-- `IDF_S3_ACCESS_KEY`
-- `IDF_S3_SECRET_KEY`
-- `IDF_S3_BUCKET`
-
-#### Artifacts Types and File Patterns
-
-The artifacts types and corresponding file patterns are defined in tools/ci/artifacts_handler.py, inside `ArtifactType` and `TYPE_PATTERNS_DICT`.
-
-#### Upload
-
-```shell
-python tools/ci/artifacts_handler.py upload
-```
-
- will upload the files that match the file patterns to minio object storage with name:
-
-`<pipeline_id>/<artifact_type>/<job_name>/<job_id>.zip`
-
-For example, job 39043328 will upload these four files:
-
-- `575500/map_and_elf_files/build_pytest_examples_esp32/39043328.zip`
-- `575500/build_dir_without_map_and_elf_files/build_pytest_examples_esp32/39043328.zip`
-- `575500/logs/build_pytest_examples_esp32/39043328.zip`
-- `575500/size_reports/build_pytest_examples_esp32/39043328.zip`
-
-#### Download
-
-You may run
-
-```shell
-python tools/ci/artifacts_handler.py download --pipeline_id <pipeline_id>
-```
-
-to download all files of the pipeline, or
-
-```shell
-python tools/ci/artifacts_handler.py download --pipeline_id <pipeline_id> --job_name <job_name_or_pattern>
-```
-
-to download all files with the specified job name or pattern, or
-
-```shell
-python tools/ci/artifacts_handler.py download --pipeline_id <pipeline_id> --job_name <job_name_or_pattern> --type <artifact_type> <artifact_type> ...
-```
-
-to download all files with the specified job name or pattern and artifact type(s).
-
-You may check all detailed documentation with `python tools/ci/artifacts_handler.py download -h`
+Please refer to the documentation [here](https://docs.espressif.com/projects/idf-ci/en/latest/guides/cli.html)

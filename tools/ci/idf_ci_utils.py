@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # internal use only for CI
 # some CI related util functions
@@ -9,7 +9,6 @@ import subprocess
 import sys
 import typing as t
 from functools import cached_property
-from pathlib import Path
 
 IDF_PATH: str = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -231,18 +230,6 @@ class GitlabYmlConfig:
 
         self.config[name] = self._merge_dict(d, original_d)
         return self.config[name]  # type: ignore
-
-
-def get_all_manifest_files() -> t.List[str]:
-    paths: t.List[str] = []
-
-    for p in Path(IDF_PATH).glob('**/.build-test-rules.yml'):
-        if 'managed_components' in p.parts:
-            continue
-
-        paths.append(str(p))
-
-    return paths
 
 
 def sanitize_job_name(name: str) -> str:

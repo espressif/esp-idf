@@ -33,13 +33,13 @@ On the host side, ESP-IDF employs the pytest framework (alongside certain pytest
 Installation
 ============
 
-All basic dependencies could be installed by running the ESP-IDF install script with the ``--enable-pytest`` argument:
+All basic dependencies could be installed by running the ESP-IDF install script with the ``--enable-ci`` argument:
 
 .. code-block:: bash
 
-    $ install.sh --enable-pytest
+    $ install.sh --enable-ci
 
-Additional test script specific dependencies could be installed separately by running the ESP-IDF install script with the ``--enable-pytest-specific`` argument:
+Additional test script specific dependencies could be installed separately by running the ESP-IDF install script with the ``--enable-test-specific`` argument:
 
 .. code-block:: bash
 
@@ -91,32 +91,23 @@ Getting Started
 
 .. code-block:: python
 
-    @pytest.mark.esp32
-    @pytest.mark.esp32s2
+    @pytest.mark.parametrize('target', [
+        'esp32',
+        'esp32s2',
+    ], indirect=True)
     @pytest.mark.generic
     def test_hello_world(dut) -> None:
         dut.expect('Hello world!')
 
 This is a simple test script that could run with the ESP-IDF getting-started example :example:`get-started/hello_world`.
 
-First two lines are the target markers:
+In this test script, the ``@pytest.mark.parametrize`` decorator is used to parameterize the test case. The ``target`` parameter is a special parameter that indicates the target board type. The ``indirect=True`` argument indicates that this parameter is pre-calculated before other fixtures.
 
-* The ``@pytest.mark.esp32`` is a marker that indicates that this test case should be run on the ESP32.
-* The ``@pytest.mark.esp32s2`` is a marker that indicates that this test case should be run on the ESP32-S2.
-
-.. note::
-
-    If the test case can be run on all targets officially supported by ESP-IDF (call ``idf.py --list-targets`` for more details), you can use a special marker ``supported_targets`` to apply all of them in one line.
-
-    We also supports ``preview_targets`` and ``all_targets`` as special target markers (call ``idf.py --list-targets --preview`` for a full targets list including preview targets).
-
-Next, we have the environment marker:
-
-* The ``@pytest.mark.generic`` is a marker that indicates that this test case should be run on the ``generic`` board type.
+Next is the environment marker. The ``@pytest.mark.generic`` marker indicates that this test case should run on the generic board type.
 
 .. note::
 
-    For the detailed explanation of the environment markers, please refer to :idf_file:`ENV_MARKERS definition <tools/ci/idf_pytest/constants.py>`
+    For the detailed explanation of the environment markers, please refer to :idf_file:`env_markers definition <pytest.ini>`
 
 Finally, we have the test function. With a ``dut`` fixture. In single-dut test cases, the ``dut`` fixture is an instance of ``IdfDut`` class, for multi-dut test cases, it is a tuple of ``IdfDut`` instances. For more details regarding the ``IdfDut`` class, please refer to `pytest-embedded IdfDut API reference <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.dut.IdfDut>`__.
 
@@ -142,8 +133,10 @@ If the test case needs to run all supported targets with these two sdkconfig fil
 
 .. code-block:: python
 
-    @pytest.mark.esp32
-    @pytest.mark.esp32s2
+    @pytest.mark.parametrize('target', [
+        'esp32',                            # <-- run with esp32 target
+        'esp32s2',                          # <-- run with esp32s2 target
+    ], indirect=True)
     @pytest.mark.parametrize('config', [    # <-- parameterize the sdkconfig file
         'foo',                              # <-- run with sdkconfig.ci.foo
         'bar',                              # <-- run with sdkconfig.ci.bar
@@ -180,17 +173,6 @@ The test case ID is used to identify the test case in the JUnit report.
 
     Nearly all the CLI options of pytest-embedded supports parameterization. To see all supported CLI options, you may run ``pytest --help`` and check the ``embedded-...`` sections for vanilla pytest-embedded ones, and the ``idf`` sections for ESP-IDF specific ones.
 
-.. note::
-
-    The target markers, like ``@pytest.mark.esp32`` and ``@pytest.mark.esp32s2``, are actually syntactic sugar for parameterization. In fact they are defined as:
-
-    .. code-block:: python
-
-        @pytest.mark.parametrize('target', [
-            'esp32',
-            'esp32s2',
-        ], indirect=True)
-
 Same App With Different sdkconfig Files, Different Targets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -198,9 +180,9 @@ For some test cases, you may need to run the same app with different sdkconfig f
 
 .. code-block:: python
 
-    @pytest.mark.parametrize('config', [
-        pytest.param('foo', marks=[pytest.mark.esp32]),
-        pytest.param('bar', marks=[pytest.mark.esp32s2]),
+    @pytest.mark.parametrize('config, target', [
+        pytest.param('foo', 'esp32'),
+        pytest.param('bar', 'esp32s2'),
     ], indirect=True)
 
 Now this test function would be replicated to 2 test cases (represented as test case IDs):
@@ -260,40 +242,6 @@ After setting the param ``count`` to 2, all the fixtures are changed into tuples
 .. note::
 
     For detailed multi-dut parametrization documentation, please refer to `pytest-embedded Multi-DUT documentation <https://docs.espressif.com/projects/pytest-embedded/en/latest/key_concepts.html#multi-duts>`__.
-
-.. warning::
-
-    In some test scripts, you may see target markers like ``@pytest.mark.esp32`` and ``@pytest.mark.esp32s2`` used together with multi-DUT test cases. This is deprecated and should be replaced with the ``target`` parametrization.
-
-    For example,
-
-    .. code-block:: python
-
-        @pytest.mark.esp32
-        @pytest.mark.esp32s2
-        @pytest.mark.parametrize('count', [
-            2,
-        ], indirect=True)
-        def test_hello_world(dut) -> None:
-            dut[0].expect('Hello world!')
-            dut[1].expect('Hello world!')
-
-    should be replaced with:
-
-    .. code-block:: python
-
-        @pytest.mark.parametrize('count', [
-            2,
-        ], indirect=True)
-        @pytest.mark.parametrize('target', [
-            'esp32',
-            'esp32s2',
-        ], indirect=True)
-        def test_hello_world(dut) -> None:
-            dut[0].expect('Hello world!')
-            dut[1].expect('Hello world!')
-
-    This could help avoid the ambiguity of the target markers when multi-DUT test cases are using different type of targets.
 
 Multi-Target Tests with Different Apps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -494,7 +442,7 @@ First you need to install ESP-IDF with additional Python requirements:
 .. code-block:: shell
 
     $ cd $IDF_PATH
-    $ bash install.sh --enable-ci --enable-pytest
+    $ bash install.sh --enable-ci
     $ . ./export.sh
 
 Build Directories
@@ -544,7 +492,7 @@ If you want to build and test with all sdkconfig files at the same time, you sho
 .. code-block:: shell
 
     $ cd $IDF_PATH/examples/system/console/basic
-    $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32 -v --pytest-apps
+    $ idf-ci build run --target esp32 --only-test-related
     $ pytest --target esp32
 
 The app with ``sdkconfig.ci.history`` will be built in ``build_esp32_history``, and the app with ``sdkconfig.ci.nohistory`` will be built in ``build_esp32_nohistory``. ``pytest --target esp32`` will run tests on both apps.
@@ -580,8 +528,8 @@ Of course we can build the required binaries manually, but we can also use our C
 .. code-block:: shell
 
     $ cd $IDF_PATH/examples/openthread
-    $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target all -v --pytest-apps -k test_thread_connect
-    $ pytest --target esp32c6,esp32h2,esp32s3 -k test_thread_connect
+    $ idf-ci build run --only-test-related -k test_thread_connect
+    $ pytest -k test_thread_connect
 
 .. important::
 
@@ -697,9 +645,7 @@ This marker means that the test case could still be run locally with ``pytest --
 Add New Markers
 ---------------
 
-We are using two types of custom markers, target markers which indicate that the test cases should support this target, and env markers which indicate that the test cases should be assigned to runners with these tags in CI.
-
-You can add new markers by adding one line under the :idf_file:`conftest.py`. If it is a target marker, it should be added into ``TARGET_MARKERS``. If it is a marker that specifies a type of test environment, it should be added into ``ENV_MARKERS``. The syntax should be: ``<marker_name>: <marker_description>``.
+You can add new markers by adding one line under the :idf_file:`pytest.ini`. If it is a marker that specifies a type of test environment, it should be added into ``env_markers`` section. Otherwise it should be added into ``markers`` section. The syntax should be: ``<marker_name>: <marker_description>``.
 
 Skip Auto Flash Binary
 ----------------------

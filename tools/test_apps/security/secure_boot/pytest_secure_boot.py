@@ -7,6 +7,7 @@ import zlib
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+
 # To prepare a runner for these tests,
 # 1. Connect an FPGA with C3 image
 # 2. Use a COM port for programming and export it as ESPPORT
@@ -93,16 +94,17 @@ def test_examples_security_secure_boot(dut: Dut) -> None:
 # Correctly signed bootloader + correctly signed app should work
 @pytest.mark.host_test
 @pytest.mark.qemu
-@pytest.mark.esp32c3
 @pytest.mark.parametrize(
     'qemu_extra_args',
     [
-        f'-drive file={os.path.join(os.path.dirname(__file__), "test", "esp32c3_efuses.bin")},if=none,format=raw,id=efuse '
+        f'-drive file={os.path.join(os.path.dirname(__file__), "test", "esp32c3_efuses.bin")},'
+        f'if=none,format=raw,id=efuse '
         '-global driver=nvram.esp32c3.efuse,property=drive,value=efuse '
         '-global driver=timer.esp32c3.timg,property=wdt_disable,value=true',
     ],
     indirect=True,
 )
+@pytest.mark.parametrize('target', ['esp32c3'], indirect=True)
 @pytest.mark.parametrize('config', ['qemu'], indirect=True)
 def test_examples_security_secure_boot_qemu(dut: Dut) -> None:
     try:

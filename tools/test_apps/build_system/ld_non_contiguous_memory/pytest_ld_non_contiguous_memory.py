@@ -4,8 +4,6 @@ import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
-TEST_APP_IN_FLASH = [pytest.param('app_in_flash', marks=pytest.mark.esp32p4)]
-
 
 @pytest.mark.generic
 @idf_parametrize('config', ['app_in_flash'], indirect=['config'])

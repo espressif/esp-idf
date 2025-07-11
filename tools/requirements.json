@@ -8,12 +8,6 @@
             "requirement_path": "tools/requirements/requirements.core.txt"
         },
         {
-            "name": "pytest",
-            "description": "Packages for CI with pytest",
-            "optional": true,
-            "requirement_path": "tools/requirements/requirements.pytest.txt"
-        },
-        {
             "name": "test-specific",
             "description": "Packages for specific test scripts",
             "optional": true,

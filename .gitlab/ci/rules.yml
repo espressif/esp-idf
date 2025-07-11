@@ -53,7 +53,6 @@
   - "tools/ci/ignore_build_warnings.txt"
   - "tools/ci/test_build_system*.sh"
   - "tools/ci/test_build_system*.py"
-  - "tools/ci/ci_build_apps.py"
   - "tools/test_build_system/**/*"
 
 .patterns-build_system_win: &patterns-build_system_win
@@ -163,10 +162,6 @@
   - "components/bt/esp_ble_mesh/lib/lib"
   - ".gitmodules"
 
-.patterns-idf-pytest-plugin: &patterns-idf-pytest-plugin
-  - "tools/ci/idf_pytest/**/*"
-  - "tools/ci/dynamic_pipelines/tests/**/*"
-
 ##############
 # if anchors #
 ##############
@@ -265,12 +260,6 @@
 #      changes: *patterns-python-files
 #    - <<: *if-dev-push
 #      changes: *patterns-sonarqube-files
-
-.rules:patterns:idf-pytest-plugin:
-  rules:
-    - <<: *if-protected-check
-    - <<: *if-dev-push
-      changes: *patterns-idf-pytest-plugin
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # DO NOT place comments or maintain any code from this line

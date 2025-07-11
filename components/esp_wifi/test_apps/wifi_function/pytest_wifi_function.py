@@ -3,7 +3,6 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
-# @pytest.mark.esp32c2  # esp32c2 are using xtal_26mhz
 
 
 @pytest.mark.generic

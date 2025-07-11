@@ -21,7 +21,7 @@
     - pipeline_variables
   artifacts:
     paths:
-      # The other artifacts patterns are defined under tools/ci/artifacts_handler.py
+      # The other artifacts patterns are defined under .idf_ci.toml
       # Now we're uploading/downloading the binary files from our internal storage server
       #
       # keep the log file to help debug
@@ -34,19 +34,16 @@
   variables:
     IDF_TOOLCHAIN: clang
     TEST_BUILD_OPTS_EXTRA: ""
-    TEST_DIR: tools/test_apps/system/clang_build_test
-    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
+    - run_cmd idf-build-apps build
+      -p tools/test_apps/system/clang_build_test
       -t $IDF_TARGET
-      --copy-sdkconfig
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
       $TEST_BUILD_OPTS_EXTRA
-    - python tools/ci/artifacts_handler.py upload
 
 ######################
 # build_template_app #
@@ -105,7 +102,7 @@ gcc_static_analyzer:
     ANALYZING_APP: "examples/get-started/hello_world"
   script:
     - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
-    - python -m idf_build_apps build -v -p ${ANALYZING_APP} -t all
+    - idf-build-apps build -p ${ANALYZING_APP}
 
 ########################################
 # Clang Build Apps Without Tests Cases #
@@ -208,7 +205,7 @@ build_clang_test_apps_esp32p4:
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - cd ${IDF_PATH}/tools/test_build_system
-    - python ${IDF_PATH}/tools/ci/get_known_failure_cases_file.py
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - pytest
       --cleanup-idf-copy
       --parallel-count ${CI_NODE_TOTAL:-1}
@@ -293,11 +290,7 @@ generate_build_child_pipeline:
       - non_test_related_apps.txt
     expire_in: 1 week
     when: always
-  variables:
-    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
-    # requires basic pytest dependencies
-    - run_cmd bash install.sh --enable-pytest
     - run_cmd python tools/ci/dynamic_pipelines/scripts/generate_build_child_pipeline.py
 
 build_child_pipeline:
@@ -309,12 +302,9 @@ build_child_pipeline:
     - pipeline_variables
     - generate_build_child_pipeline
   variables:
-    IS_MR_PIPELINE: $IS_MR_PIPELINE
     MR_MODIFIED_COMPONENTS: $MR_MODIFIED_COMPONENTS
     MR_MODIFIED_FILES: $MR_MODIFIED_FILES
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
-    BUILD_AND_TEST_ALL_APPS: $BUILD_AND_TEST_ALL_APPS
-    REPORT_EXIT_CODE: $REPORT_EXIT_CODE
   # https://gitlab.com/gitlab-org/gitlab/-/issues/214340
   inherit:
     variables: false

@@ -120,7 +120,7 @@ variables:
   source tools/ci/configure_ci_environment.sh
 
   # add extra python packages
-  export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/esp_app_trace:$IDF_PATH/components/partition_table:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
+  export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci:$IDF_PATH/tools/esp_app_trace:$IDF_PATH/components/partition_table:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
 
 .setup_tools_and_idf_python_venv: &setup_tools_and_idf_python_venv |
   # must use after setup_tools_except_target_test
@@ -145,23 +145,19 @@ variables:
     export IDF_PIP_WHEELS_URL=""
   fi
 
+  # install.sh
   if [[ "${CI_JOB_STAGE}" != "target_test" ]]; then
     section_start "running_install_sh" "Running install.sh"
     if [[ "${CI_JOB_STAGE}" == "build_doc" ]]; then
       run_cmd bash install.sh --enable-ci --enable-docs
-    elif [[ "${CI_JOB_STAGE}" == "build" ]]; then
-      run_cmd bash install.sh --enable-ci
     else
-      if ! echo "${CI_JOB_NAME}" | egrep ".*pytest.*"; then
-        run_cmd bash install.sh --enable-ci
-      else
-        run_cmd bash install.sh --enable-ci --enable-pytest --enable-test-specific
-      fi
+      run_cmd bash install.sh --enable-ci
     fi
     section_end "running_install_sh"
   else
-    section_start "install_python_env" "Install Python environment"
-    run_cmd python tools/idf_tools.py install-python-env --features ci,pytest,test-specific
+    section_start "install_python_env" "Install Python environment, skip required tools check"
+    run_cmd python tools/idf_tools.py install-python-env --features ci,test-specific
+    export IDF_SKIP_TOOLS_CHECK=1
     section_end "install_python_env"
   fi
 
@@ -176,11 +172,6 @@ variables:
     $IDF_PATH/tools/idf_tools.py --non-interactive install esp-clang
   fi
 
-  if [[ "${CI_JOB_STAGE}" == "target_test" ]]; then
-    section_start "IDF_SKIP_TOOLS_CHECK" "Skip required tools check"
-    export IDF_SKIP_TOOLS_CHECK=1
-    section_end "IDF_SKIP_TOOLS_CHECK"
-  fi
   section_start "source_export" "Source export.sh"
   source ./export.sh
   section_end "source_export"
@@ -226,7 +217,7 @@ variables:
 
 .upload_failed_job_log_artifacts: &upload_failed_job_log_artifacts |
   if [ $CI_JOB_STATUS = "failed" ]; then
-    python tools/ci/artifacts_handler.py upload --type logs
+    run_cmd idf-ci gitlab upload-artifacts --type log
   fi
 
 .before_script:minimal:
@@ -268,11 +259,17 @@ variables:
 
 .after_script:build:ccache-show-stats:
   after_script:
+    - source tools/ci/utils.sh
+    - section_start "ccache_show_stats" "Show ccache statistics"
     - *show_ccache_statistics
+    - section_end "ccache_show_stats"
 
 .after_script:build:ccache-show-stats:upload-failed-job-logs:
   after_script:
+    - source tools/ci/utils.sh
+    - section_start "ccache_show_stats" "Show ccache statistics"
     - *show_ccache_statistics
+    - section_end "ccache_show_stats"
     - *upload_failed_job_log_artifacts
 
 ##############################

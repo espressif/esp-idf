@@ -116,21 +116,9 @@ check_test_scripts_build_test_rules:
   extends:
     - .pre_check_template
     - .before_script:build
-  variables:
-    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
     # requires basic pytest dependencies
-    - run_cmd bash install.sh --enable-pytest
     - python tools/ci/check_build_test_rules.py check-test-scripts examples/ tools/test_apps components
-
-check_configure_ci_environment_parsing:
-  extends:
-    - .pre_check_template
-    - .before_script:build
-    - .rules:build
-  script:
-    - cd tools/ci
-    - python -m unittest ci_build_apps.py
 
 pipeline_variables:
   extends:
@@ -141,11 +129,10 @@ pipeline_variables:
     # MODIFIED_FILES is a list of files that changed, could be used everywhere
     - MODIFIED_FILES=$(echo "$GIT_DIFF_OUTPUT" | xargs)
     - echo "MODIFIED_FILES=$MODIFIED_FILES" >> pipeline.env
-    - echo "REPORT_EXIT_CODE=0" >> pipeline.env
     # MR_MODIFIED_FILES and MR_MODIFIED_COMPONENTS are semicolon separated lists that is used in MR only
     # for non MR pipeline, these are empty lists
     - |
-      if [ $IS_MR_PIPELINE == "0" ]; then
+      if [ -z "$CI_MERGE_REQUEST_IID" ]; then
         echo "MR_MODIFIED_FILES=\"\"" >> pipeline.env
         echo "MR_MODIFIED_COMPONENTS=\"\"" >> pipeline.env
       else
@@ -155,20 +142,11 @@ pipeline_variables:
         MR_MODIFIED_COMPONENTS=$(run_cmd python tools/ci/ci_get_mr_info.py components --modified-files $MODIFIED_FILES | tr '\n' ';')
         echo "MR_MODIFIED_COMPONENTS=\"$MR_MODIFIED_COMPONENTS\"" >> pipeline.env
       fi
-    - |
-      if echo "$CI_MERGE_REQUEST_LABELS" | egrep "(^|,)BUILD_AND_TEST_ALL_APPS(,|$)"; then
-        echo "BUILD_AND_TEST_ALL_APPS=1" >> pipeline.env
-      fi
-    # run full pipeline if testing constraint branch
-    - |
-      if [ -n "$CI_PYTHON_CONSTRAINT_BRANCH" ]; then
-        echo "BUILD_AND_TEST_ALL_APPS=1" >> pipeline.env
-      fi
     - echo "OOCD_DISTRO_URL_ARMHF=$OOCD_DISTRO_URL_ARMHF" >> pipeline.env
     - echo "OOCD_DISTRO_URL_ARM64=$OOCD_DISTRO_URL_ARM64" >> pipeline.env
-    - python tools/ci/ci_process_description.py
+    - run_cmd idf-ci gitlab pipeline-variables >> pipeline.env
     - cat pipeline.env
-    - python tools/ci/artifacts_handler.py upload --type modified_files_and_components_report
+    - run_cmd idf-ci gitlab upload-artifacts --type env
   artifacts:
     reports:
       dotenv: pipeline.env

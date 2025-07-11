@@ -9,14 +9,11 @@ import re
 import typing as t
 from textwrap import dedent
 
-import yaml
-from artifacts_handler import ArtifactType
 from gitlab import GitlabUpdateError
 from gitlab_api import Gitlab
-from idf_build_apps import App
 from idf_build_apps.constants import BuildStatus
 from idf_ci_local.app import AppWithMetricsInfo
-from idf_ci_local.uploader import AppUploader
+from idf_ci_utils import idf_relpath
 from prettytable import PrettyTable
 
 from .constants import BINARY_SIZE_METRIC_NAME
@@ -29,7 +26,6 @@ from .constants import RETRY_JOB_PICTURE_LINK
 from .constants import RETRY_JOB_PICTURE_PATH
 from .constants import RETRY_JOB_TITLE
 from .constants import SIZE_DIFFERENCE_BYTES_THRESHOLD
-from .constants import TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
 from .constants import TOP_N_APPS_BY_SIZE_DIFF
 from .models import GitlabJob
 from .models import TestCase
@@ -45,7 +41,17 @@ from .utils import load_known_failure_cases
 class ReportGenerator:
     REGEX_PATTERN = r'#### {}\n[\s\S]*?(?=\n#### |$)'
 
-    def __init__(self, project_id: int, mr_iid: int, pipeline_id: int, job_id: int, commit_id: str, *, title: str):
+    def __init__(
+        self,
+        project_id: int,
+        mr_iid: int,
+        pipeline_id: int,
+        job_id: int,
+        commit_id: str,
+        local_commit_id: str,
+        *,
+        title: str,
+    ):
         gl_project = Gitlab(project_id).project
         if mr_iid is not None:
             self.mr = gl_project.mergerequests.get(mr_iid)
@@ -54,6 +60,7 @@ class ReportGenerator:
         self.pipeline_id = pipeline_id
         self.job_id = job_id
         self.commit_id = commit_id
+        self.local_commit_id = local_commit_id
 
         self.title = title
         self.output_filepath = self.title.lower().replace(' ', '_') + '.html'
@@ -61,11 +68,7 @@ class ReportGenerator:
 
     @property
     def get_commit_summary(self) -> str:
-        """Return a formatted commit summary string."""
-        return (
-            f'with CI commit SHA: {self.commit_id[:8]}, '
-            f'local commit SHA: {os.getenv("CI_MERGE_REQUEST_SOURCE_BRANCH_SHA", "")[:8]}'
-        )
+        return f'with CI commit SHA: {self.commit_id[:8]}, local commit SHA: {self.local_commit_id[:8]}'
 
     @staticmethod
     def get_download_link_for_url(url: str) -> str:
@@ -89,7 +92,7 @@ class ReportGenerator:
         with open(output_filepath, 'w') as file:
             file.write(report_str)
 
-        # for example, {URL}/-/esp-idf/-/jobs/{id}/artifacts/list_job_84.txt
+        # for example, {URL}/-/esp-idf/-/jobs/{id}/artifacts/app_info_84.txt
         # CI_PAGES_URL is {URL}/esp-idf, which missed one `-`
         report_url: str = get_artifacts_url(job_id, output_filepath)
         return report_url
@@ -344,14 +347,13 @@ class BuildReportGenerator(ReportGenerator):
         pipeline_id: int,
         job_id: int,
         commit_id: str,
+        local_commit_id: str,
         *,
         title: str = 'Build Report',
-        apps: t.List[App],
-    ):
-        super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, title=title)
+        apps: t.List[AppWithMetricsInfo],
+    ) -> None:
+        super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, local_commit_id, title=title)
         self.apps = apps
-        self._uploader = AppUploader(self.pipeline_id)
-        self.apps_presigned_url_filepath = TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
         self.report_titles_map = {
             'failed_apps': 'Failed Apps',
             'built_test_related_apps': 'Built Apps - Test Related',
@@ -363,7 +365,6 @@ class BuildReportGenerator(ReportGenerator):
         self.failed_apps_report_file = 'failed_apps.html'
         self.built_apps_report_file = 'built_apps.html'
         self.skipped_apps_report_file = 'skipped_apps.html'
-        self.app_presigned_urls_dict: t.Dict[str, t.Dict[str, str]] = {}
 
     @staticmethod
     def custom_sort(item: AppWithMetricsInfo) -> t.Tuple[int, t.Any]:
@@ -461,19 +462,13 @@ class BuildReportGenerator(ReportGenerator):
         sections = []
 
         if new_test_related_apps:
-            for app in new_test_related_apps:
-                for artifact_type in [ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES, ArtifactType.MAP_AND_ELF_FILES]:
-                    url = self._uploader.get_app_presigned_url(app, artifact_type)
-                    self.app_presigned_urls_dict.setdefault(app.build_path, {})[artifact_type.value] = url
-
             new_test_related_apps_table_section = self.create_table_section(
                 title=self.report_titles_map['new_test_related_apps'],
                 items=new_test_related_apps,
                 headers=[
                     'App Dir',
                     'Build Dir',
-                    'Bin Files with Build Log (without map and elf)',
-                    'Map and Elf Files',
+                    'Download Command',
                     'Your Branch App Size',
                 ],
                 row_attrs=[
@@ -481,31 +476,17 @@ class BuildReportGenerator(ReportGenerator):
                     'build_dir',
                 ],
                 value_functions=[
-                    ('Your Branch App Size', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].source_value)),
+                    ('Your Branch App Size', lambda _app: str(_app.metrics[BINARY_SIZE_METRIC_NAME].source_value)),
                     (
-                        'Bin Files with Build Log (without map and elf)',
-                        lambda app: self.get_download_link_for_url(
-                            self.app_presigned_urls_dict[app.build_path][
-                                ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES.value
-                            ]
-                        ),
-                    ),
-                    (
-                        'Map and Elf Files',
-                        lambda app: self.get_download_link_for_url(
-                            self.app_presigned_urls_dict[app.build_path][ArtifactType.MAP_AND_ELF_FILES.value]
-                        ),
+                        'Download Command',
+                        lambda _app: f'idf-ci gitlab download-artifacts --pipeline-id {self.pipeline_id} '
+                        f'{idf_relpath(_app.build_path)}',
                     ),
                 ],
             )
             sections.extend(new_test_related_apps_table_section)
 
         if built_test_related_apps:
-            for app in built_test_related_apps:
-                for artifact_type in [ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES, ArtifactType.MAP_AND_ELF_FILES]:
-                    url = self._uploader.get_app_presigned_url(app, artifact_type)
-                    self.app_presigned_urls_dict.setdefault(app.build_path, {})[artifact_type.value] = url
-
             built_test_related_apps = self._sort_items(
                 built_test_related_apps,
                 key='metrics.binary_size.difference_percentage',
@@ -519,8 +500,7 @@ class BuildReportGenerator(ReportGenerator):
                 headers=[
                     'App Dir',
                     'Build Dir',
-                    'Bin Files with Build Log (without map and elf)',
-                    'Map and Elf Files',
+                    'Download Command',
                     'Your Branch App Size',
                     'Target Branch App Size',
                     'Size Diff',
@@ -536,18 +516,9 @@ class BuildReportGenerator(ReportGenerator):
                     ('Size Diff', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].difference)),
                     ('Size Diff, %', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].difference_percentage)),
                     (
-                        'Bin Files with Build Log (without map and elf)',
-                        lambda app: self.get_download_link_for_url(
-                            self.app_presigned_urls_dict[app.build_path][
-                                ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES.value
-                            ]
-                        ),
-                    ),
-                    (
-                        'Map and Elf Files',
-                        lambda app: self.get_download_link_for_url(
-                            self.app_presigned_urls_dict[app.build_path][ArtifactType.MAP_AND_ELF_FILES.value]
-                        ),
+                        'Download Command',
+                        lambda _app: f'idf-ci gitlab download-artifacts --pipeline-id {self.pipeline_id} '
+                        f'{idf_relpath(_app.build_path)}',
                     ),
                 ],
             )
@@ -560,7 +531,7 @@ class BuildReportGenerator(ReportGenerator):
                 headers=[
                     'App Dir',
                     'Build Dir',
-                    'Build Log',
+                    'Download Command',
                     'Your Branch App Size',
                 ],
                 row_attrs=[
@@ -568,13 +539,12 @@ class BuildReportGenerator(ReportGenerator):
                     'build_dir',
                 ],
                 value_functions=[
-                    ('Your Branch App Size', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].source_value)),
                     (
-                        'Build Log',
-                        lambda app: self.get_download_link_for_url(
-                            self._uploader.get_app_presigned_url(app, ArtifactType.LOGS)
-                        ),
+                        'Download Command',
+                        lambda _app: f'idf-ci gitlab download-artifacts --pipeline-id {self.pipeline_id} '
+                        f'{idf_relpath(_app.build_path)}',
                     ),
+                    ('Your Branch App Size', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].source_value)),
                 ],
             )
             sections.extend(new_non_test_related_apps_table_section)
@@ -592,7 +562,7 @@ class BuildReportGenerator(ReportGenerator):
                 headers=[
                     'App Dir',
                     'Build Dir',
-                    'Build Log',
+                    'Download Command',
                     'Your Branch App Size',
                     'Target Branch App Size',
                     'Size Diff',
@@ -608,10 +578,9 @@ class BuildReportGenerator(ReportGenerator):
                     ('Size Diff', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].difference)),
                     ('Size Diff, %', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].difference_percentage)),
                     (
-                        'Build Log',
-                        lambda app: self.get_download_link_for_url(
-                            self._uploader.get_app_presigned_url(app, ArtifactType.LOGS)
-                        ),
+                        'Download Command',
+                        lambda _app: f'idf-ci gitlab download-artifacts --pipeline-id {self.pipeline_id} '
+                        f'{idf_relpath(_app.build_path)}',
                     ),
                 ],
             )
@@ -646,11 +615,6 @@ class BuildReportGenerator(ReportGenerator):
 
         self.additional_info += self._generate_top_n_apps_by_size_table()
 
-        # also generate a yaml file that includes the apps and the presigned urls
-        # for helping debugging locally
-        with open(self.apps_presigned_url_filepath, 'w') as fw:
-            yaml.dump(self.app_presigned_urls_dict, fw)
-
         return sections
 
     def get_failed_apps_report_parts(self) -> t.List[str]:
@@ -661,14 +625,13 @@ class BuildReportGenerator(ReportGenerator):
         failed_apps_table_section = self.create_table_section(
             title=self.report_titles_map['failed_apps'],
             items=failed_apps,
-            headers=['App Dir', 'Build Dir', 'Failed Reason', 'Build Log'],
+            headers=['App Dir', 'Build Dir', 'Failed Reason', 'Download Command'],
             row_attrs=['app_dir', 'build_dir', 'build_comment'],
             value_functions=[
                 (
-                    'Build Log',
-                    lambda app: self.get_download_link_for_url(
-                        self._uploader.get_app_presigned_url(app, ArtifactType.LOGS)
-                    ),
+                    'Download Command',
+                    lambda _app: f'idf-ci gitlab download-artifacts --pipeline-id {self.pipeline_id} '
+                    f'{idf_relpath(_app.build_path)}',
                 ),
             ],
         )
@@ -690,16 +653,8 @@ class BuildReportGenerator(ReportGenerator):
         skipped_apps_table_section = self.create_table_section(
             title=self.report_titles_map['skipped_apps'],
             items=skipped_apps,
-            headers=['App Dir', 'Build Dir', 'Skipped Reason', 'Build Log'],
+            headers=['App Dir', 'Build Dir', 'Skipped Reason'],
             row_attrs=['app_dir', 'build_dir', 'build_comment'],
-            value_functions=[
-                (
-                    'Build Log',
-                    lambda app: self.get_download_link_for_url(
-                        self._uploader.get_app_presigned_url(app, ArtifactType.LOGS)
-                    ),
-                ),
-            ],
         )
         skipped_apps_report_url = self.write_report_to_file(
             self.generate_html_report(''.join(skipped_apps_table_section)),
@@ -734,11 +689,12 @@ class TargetTestReportGenerator(ReportGenerator):
         pipeline_id: int,
         job_id: int,
         commit_id: str,
+        local_commit_id: str,
         *,
         title: str = 'Target Test Report',
         test_cases: t.List[TestCase],
-    ):
-        super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, title=title)
+    ) -> None:
+        super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, local_commit_id, title=title)
 
         self.test_cases = test_cases
         self._known_failure_cases_set = None
@@ -975,11 +931,12 @@ class JobReportGenerator(ReportGenerator):
         pipeline_id: int,
         job_id: int,
         commit_id: str,
+        local_commit_id: str,
         *,
         title: str = 'Job Report',
         jobs: t.List[GitlabJob],
     ):
-        super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, title=title)
+        super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, local_commit_id, title=title)
         self.jobs = jobs
         self.report_titles_map = {
             'failed_jobs': 'Failed Jobs (Excludes "integration_test" and "target_test" jobs)',

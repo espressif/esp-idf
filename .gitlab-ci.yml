@@ -8,11 +8,9 @@ workflow:
     - if: $CI_OPEN_MERGE_REQUESTS != null
       variables:
         PIPELINE_COMMIT_SHA: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
-        IS_MR_PIPELINE: 1
     - if: $CI_OPEN_MERGE_REQUESTS == null
       variables:
         PIPELINE_COMMIT_SHA: $CI_COMMIT_SHA
-        IS_MR_PIPELINE: 0
     - when: always
 
 # Place the default settings in `.gitlab/ci/common.yml` instead

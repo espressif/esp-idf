@@ -4,6 +4,10 @@ tools/test_apps/security/secure_boot:
   disable:
     - if: IDF_ENV_FPGA != 1 and CONFIG_NAME != "qemu"
       reason: the test can only run on an FPGA as efuses need to be reset during the test.
+  disable_test:
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c6", "esp32h2", "esp32s2", "esp32c61", "esp32p4", "esp32s3"]
+      temporary: true
+      reason: Can't use Kconfig option IDF_ENV_FPGA in `disable`. IDFCI-2992
 
 tools/test_apps/security/signed_app_no_secure_boot:
   enable:

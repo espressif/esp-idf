@@ -60,7 +60,7 @@ test_tools_win:
     PYTHONPATH: "$PYTHONPATH;$IDF_PATH\\tools;$IDF_PATH\\tools\\esp_app_trace;$IDF_PATH\\components\\partition_table;$IDF_PATH\\tools\\ci\\python_packages"
   script:
     - python -m pip install jsonschema
-    - .\install.ps1 --enable-ci --enable-pytest
+    - .\install.ps1 --enable-ci
     - .\export.ps1
     - python "${SUBMODULE_FETCH_TOOL}" -s "all"
     - cd ${IDF_PATH}/tools/test_idf_py
@@ -78,7 +78,7 @@ test_tools_win:
   after_script: []
   timeout: 4 hours
   script:
-    - .\install.ps1 --enable-ci --enable-pytest
+    - .\install.ps1 --enable-ci
     - . .\export.ps1
     - python "${SUBMODULE_FETCH_TOOL}" -s "all"
     - cd ${IDF_PATH}\tools\test_build_system

@@ -16,13 +16,13 @@
 
 ```bash
 cd $IDF_PATH
-bash install.sh --enable-ci --enable-pytest
+bash install.sh --enable-ci
 . ./export.sh
 ```
 
 - For example, to execute the TEE test suite for ESP32-C6 with all the available `sdkconfig` files, run the following steps. The required test applications will be built and flashed automatically onto the DUT by the `pytest` framework.
 
 ```bash
-python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32c6 -v --pytest-apps
+idf-ci build run --target esp32c6 --only-test-related
 pytest --target esp32c6
 ```
