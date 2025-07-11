@@ -14,7 +14,7 @@ extern "C" {
 /** LP_GPIO_OUT_REG register
  *  LP_GPIO output register
  */
-#define LP_GPIO_OUT_REG (DR_REG_LP_BASE + 0x4)
+#define LP_GPIO_OUT_REG (DR_REG_LP_GPIO_BASE + 0x4)
 /** LP_GPIO_OUT_DATA_ORIG : R/W/WTC; bitpos: [5:0]; default: 0;
  *  Configures the output value of LP_GPIO0 ~ 5 output in simple LP_GPIO output mode.
  *  0: Low level
@@ -30,7 +30,7 @@ extern "C" {
 /** LP_GPIO_OUT_W1TS_REG register
  *  LP_GPIO output set register
  */
-#define LP_GPIO_OUT_W1TS_REG (DR_REG_LP_BASE + 0x8)
+#define LP_GPIO_OUT_W1TS_REG (DR_REG_LP_GPIO_BASE + 0x8)
 /** LP_GPIO_OUT_W1TS : WT; bitpos: [5:0]; default: 0;
  *  Configures whether or not to set the output register LP_GPIO_OUT_REG of LP_GPIO0 ~
  *  LP_GPIO5.
@@ -47,7 +47,7 @@ extern "C" {
 /** LP_GPIO_OUT_W1TC_REG register
  *  LP_GPIO output clear register
  */
-#define LP_GPIO_OUT_W1TC_REG (DR_REG_LP_BASE + 0xc)
+#define LP_GPIO_OUT_W1TC_REG (DR_REG_LP_GPIO_BASE + 0xc)
 /** LP_GPIO_OUT_W1TC : WT; bitpos: [5:0]; default: 0;
  *  Configures whether or not to clear the output register LP_GPIO_OUT_REG of LP_GPIO0
  *  ~ LP_GPIO5 output.
@@ -64,7 +64,7 @@ extern "C" {
 /** LP_GPIO_ENABLE_REG register
  *  LP_GPIO output enable register
  */
-#define LP_GPIO_ENABLE_REG (DR_REG_LP_BASE + 0x10)
+#define LP_GPIO_ENABLE_REG (DR_REG_LP_GPIO_BASE + 0x10)
 /** LP_GPIO_ENABLE_DATA : R/W/WTC; bitpos: [5:0]; default: 0;
  *  Configures whether or not to enable the output of LP_GPIO0 ~ LP_GPIO5.
  *  0: Not enable
@@ -79,7 +79,7 @@ extern "C" {
 /** LP_GPIO_ENABLE_W1TS_REG register
  *  LP_GPIO output enable set register
  */
-#define LP_GPIO_ENABLE_W1TS_REG (DR_REG_LP_BASE + 0x14)
+#define LP_GPIO_ENABLE_W1TS_REG (DR_REG_LP_GPIO_BASE + 0x14)
 /** LP_GPIO_ENABLE_W1TS : WT; bitpos: [5:0]; default: 0;
  *  Configures whether or not to set the output enable register LP_GPIO_ENABLE_REG of
  *  LP_GPIO0 ~ LP_GPIO5.
@@ -96,7 +96,7 @@ extern "C" {
 /** LP_GPIO_ENABLE_W1TC_REG register
  *  LP_GPIO output enable clear register
  */
-#define LP_GPIO_ENABLE_W1TC_REG (DR_REG_LP_BASE + 0x18)
+#define LP_GPIO_ENABLE_W1TC_REG (DR_REG_LP_GPIO_BASE + 0x18)
 /** LP_GPIO_ENABLE_W1TC : WT; bitpos: [5:0]; default: 0;
  *  Configures whether or not to clear the output enable register LP_GPIO_ENABLE_REG of
  *  LP_GPIO0 ~ LP_GPIO5.
@@ -113,7 +113,7 @@ extern "C" {
 /** LP_GPIO_IN_REG register
  *  LP_GPIO input register
  */
-#define LP_GPIO_IN_REG (DR_REG_LP_BASE + 0x1c)
+#define LP_GPIO_IN_REG (DR_REG_LP_GPIO_BASE + 0x1c)
 /** LP_GPIO_IN_DATA_NEXT : RO; bitpos: [5:0]; default: 0;
  *  Represents the input value of LP_GPIO0 ~ LP_GPIO5. Each bit represents a pin input
  *  value:
@@ -129,7 +129,7 @@ extern "C" {
 /** LP_GPIO_STATUS_REG register
  *  LP_GPIO interrupt status register
  */
-#define LP_GPIO_STATUS_REG (DR_REG_LP_BASE + 0x20)
+#define LP_GPIO_STATUS_REG (DR_REG_LP_GPIO_BASE + 0x20)
 /** LP_GPIO_STATUS_INTERRUPT : R/W/WTC; bitpos: [5:0]; default: 0;
  *  The interrupt status of LP_GPIO0 ~ LP_GPIO5, can be configured by the software.
  *
@@ -150,7 +150,7 @@ extern "C" {
 /** LP_GPIO_STATUS_W1TS_REG register
  *  LP_GPIO interrupt status set register
  */
-#define LP_GPIO_STATUS_W1TS_REG (DR_REG_LP_BASE + 0x24)
+#define LP_GPIO_STATUS_W1TS_REG (DR_REG_LP_GPIO_BASE + 0x24)
 /** LP_GPIO_STATUS_W1TS : WT; bitpos: [5:0]; default: 0;
  *  Configures whether or not to set the interrupt status register
  *  LP_GPIO_STATUS_INTERRUPT of LP_GPIO0 ~ LP_GPIO5.
@@ -168,7 +168,7 @@ extern "C" {
 /** LP_GPIO_STATUS_W1TC_REG register
  *  LP_GPIO interrupt status clear register
  */
-#define LP_GPIO_STATUS_W1TC_REG (DR_REG_LP_BASE + 0x28)
+#define LP_GPIO_STATUS_W1TC_REG (DR_REG_LP_GPIO_BASE + 0x28)
 /** LP_GPIO_STATUS_W1TC : WT; bitpos: [5:0]; default: 0;
  *  Configures whether or not to clear the interrupt status register
  *  LP_GPIO_STATUS_INTERRUPT of LP_GPIO0 ~ LP_GPIO5.
@@ -186,7 +186,7 @@ extern "C" {
 /** LP_GPIO_STATUS_NEXT_REG register
  *  LP_GPIO interrupt source register
  */
-#define LP_GPIO_STATUS_NEXT_REG (DR_REG_LP_BASE + 0x2c)
+#define LP_GPIO_STATUS_NEXT_REG (DR_REG_LP_GPIO_BASE + 0x2c)
 /** LP_GPIO_STATUS_INTERRUPT_NEXT : RO; bitpos: [5:0]; default: 0;
  *  Represents the interrupt source signal of LP_GPIO0 ~ LP_GPIO5.
  *  Bit0 ~ bit24 are corresponding to LP_GPIO0 ~ LP_GPIO5. Bitxx ~ bitxx is invalid.
@@ -204,7 +204,7 @@ extern "C" {
 /** LP_GPIO_PIN0_REG register
  *  LP_GPIO0 configuration register
  */
-#define LP_GPIO_PIN0_REG (DR_REG_LP_BASE + 0x30)
+#define LP_GPIO_PIN0_REG (DR_REG_LP_GPIO_BASE + 0x30)
 /** LP_GPIO_PIN0_SYNC2_BYPASS : R/W; bitpos: [1:0]; default: 0;
  *  Configures whether or not to synchronize LP_GPIO input data on either edge of LP IO
  *  MUX operating clock for the second-level synchronization.
@@ -272,7 +272,7 @@ extern "C" {
 /** LP_GPIO_PIN1_REG register
  *  LP_GPIO1 configuration register
  */
-#define LP_GPIO_PIN1_REG (DR_REG_LP_BASE + 0x34)
+#define LP_GPIO_PIN1_REG (DR_REG_LP_GPIO_BASE + 0x34)
 /** LP_GPIO_PIN1_SYNC2_BYPASS : R/W; bitpos: [1:0]; default: 0;
  *  Configures whether or not to synchronize LP_GPIO input data on either edge of LP IO
  *  MUX operating clock for the second-level synchronization.
@@ -340,7 +340,7 @@ extern "C" {
 /** LP_GPIO_PIN2_REG register
  *  LP_GPIO2 configuration register
  */
-#define LP_GPIO_PIN2_REG (DR_REG_LP_BASE + 0x38)
+#define LP_GPIO_PIN2_REG (DR_REG_LP_GPIO_BASE + 0x38)
 /** LP_GPIO_PIN2_SYNC2_BYPASS : R/W; bitpos: [1:0]; default: 0;
  *  Configures whether or not to synchronize LP_GPIO input data on either edge of LP IO
  *  MUX operating clock for the second-level synchronization.
@@ -408,7 +408,7 @@ extern "C" {
 /** LP_GPIO_PIN3_REG register
  *  LP_GPIO3 configuration register
  */
-#define LP_GPIO_PIN3_REG (DR_REG_LP_BASE + 0x3c)
+#define LP_GPIO_PIN3_REG (DR_REG_LP_GPIO_BASE + 0x3c)
 /** LP_GPIO_PIN3_SYNC2_BYPASS : R/W; bitpos: [1:0]; default: 0;
  *  Configures whether or not to synchronize LP_GPIO input data on either edge of LP IO
  *  MUX operating clock for the second-level synchronization.
@@ -476,7 +476,7 @@ extern "C" {
 /** LP_GPIO_PIN4_REG register
  *  LP_GPIO4 configuration register
  */
-#define LP_GPIO_PIN4_REG (DR_REG_LP_BASE + 0x40)
+#define LP_GPIO_PIN4_REG (DR_REG_LP_GPIO_BASE + 0x40)
 /** LP_GPIO_PIN4_SYNC2_BYPASS : R/W; bitpos: [1:0]; default: 0;
  *  Configures whether or not to synchronize LP_GPIO input data on either edge of LP IO
  *  MUX operating clock for the second-level synchronization.
@@ -544,7 +544,7 @@ extern "C" {
 /** LP_GPIO_PIN5_REG register
  *  LP_GPIO5 configuration register
  */
-#define LP_GPIO_PIN5_REG (DR_REG_LP_BASE + 0x44)
+#define LP_GPIO_PIN5_REG (DR_REG_LP_GPIO_BASE + 0x44)
 /** LP_GPIO_PIN5_SYNC2_BYPASS : R/W; bitpos: [1:0]; default: 0;
  *  Configures whether or not to synchronize LP_GPIO input data on either edge of LP IO
  *  MUX operating clock for the second-level synchronization.
@@ -612,7 +612,7 @@ extern "C" {
 /** LP_GPIO_FUNC0_OUT_SEL_CFG_REG register
  *  Configuration register for LP_GPIO0 output
  */
-#define LP_GPIO_FUNC0_OUT_SEL_CFG_REG (DR_REG_LP_BASE + 0x2b0)
+#define LP_GPIO_FUNC0_OUT_SEL_CFG_REG (DR_REG_LP_GPIO_BASE + 0x2b0)
 /** LP_GPIO_FUNC0_OUT_INV_SEL : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to invert the output value.
  *  0: Not invert
@@ -635,7 +635,7 @@ extern "C" {
 /** LP_GPIO_FUNC1_OUT_SEL_CFG_REG register
  *  Configuration register for LP_GPIO1 output
  */
-#define LP_GPIO_FUNC1_OUT_SEL_CFG_REG (DR_REG_LP_BASE + 0x2b4)
+#define LP_GPIO_FUNC1_OUT_SEL_CFG_REG (DR_REG_LP_GPIO_BASE + 0x2b4)
 /** LP_GPIO_FUNC1_OUT_INV_SEL : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to invert the output value.
  *  0: Not invert
@@ -658,7 +658,7 @@ extern "C" {
 /** LP_GPIO_FUNC2_OUT_SEL_CFG_REG register
  *  Configuration register for LP_GPIO2 output
  */
-#define LP_GPIO_FUNC2_OUT_SEL_CFG_REG (DR_REG_LP_BASE + 0x2b8)
+#define LP_GPIO_FUNC2_OUT_SEL_CFG_REG (DR_REG_LP_GPIO_BASE + 0x2b8)
 /** LP_GPIO_FUNC2_OUT_INV_SEL : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to invert the output value.
  *  0: Not invert
@@ -681,7 +681,7 @@ extern "C" {
 /** LP_GPIO_FUNC3_OUT_SEL_CFG_REG register
  *  Configuration register for LP_GPIO3 output
  */
-#define LP_GPIO_FUNC3_OUT_SEL_CFG_REG (DR_REG_LP_BASE + 0x2bc)
+#define LP_GPIO_FUNC3_OUT_SEL_CFG_REG (DR_REG_LP_GPIO_BASE + 0x2bc)
 /** LP_GPIO_FUNC3_OUT_INV_SEL : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to invert the output value.
  *  0: Not invert
@@ -704,7 +704,7 @@ extern "C" {
 /** LP_GPIO_FUNC4_OUT_SEL_CFG_REG register
  *  Configuration register for LP_GPIO4 output
  */
-#define LP_GPIO_FUNC4_OUT_SEL_CFG_REG (DR_REG_LP_BASE + 0x2c0)
+#define LP_GPIO_FUNC4_OUT_SEL_CFG_REG (DR_REG_LP_GPIO_BASE + 0x2c0)
 /** LP_GPIO_FUNC4_OUT_INV_SEL : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to invert the output value.
  *  0: Not invert
@@ -727,7 +727,7 @@ extern "C" {
 /** LP_GPIO_FUNC5_OUT_SEL_CFG_REG register
  *  Configuration register for LP_GPIO5 output
  */
-#define LP_GPIO_FUNC5_OUT_SEL_CFG_REG (DR_REG_LP_BASE + 0x2c4)
+#define LP_GPIO_FUNC5_OUT_SEL_CFG_REG (DR_REG_LP_GPIO_BASE + 0x2c4)
 /** LP_GPIO_FUNC5_OUT_INV_SEL : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to invert the output value.
  *  0: Not invert
@@ -750,7 +750,7 @@ extern "C" {
 /** LP_GPIO_CLOCK_GATE_REG register
  *  LP_GPIO clock gate register
  */
-#define LP_GPIO_CLOCK_GATE_REG (DR_REG_LP_BASE + 0x3f8)
+#define LP_GPIO_CLOCK_GATE_REG (DR_REG_LP_GPIO_BASE + 0x3f8)
 /** LP_GPIO_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Configures whether or not to enable clock gate.
  *  0: Not enable
@@ -764,7 +764,7 @@ extern "C" {
 /** LP_GPIO_DATE_REG register
  *  LP_GPIO version register
  */
-#define LP_GPIO_DATE_REG (DR_REG_LP_BASE + 0x3fc)
+#define LP_GPIO_DATE_REG (DR_REG_LP_GPIO_BASE + 0x3fc)
 /** LP_GPIO_DATE : R/W; bitpos: [27:0]; default: 37769744;
  *  Version control register.
  */

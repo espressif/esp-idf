@@ -14,7 +14,7 @@ extern "C" {
 /** LP_TIMER_TAR0_LOW_REG register
  *  RTC timer threshold low bits register0
  */
-#define LP_TIMER_TAR0_LOW_REG (DR_REG_LP_BASE + 0x0)
+#define LP_TIMER_TAR0_LOW_REG (DR_REG_LP_TIMER_BASE + 0x0)
 /** LP_TIMER_MAIN_TIMER_TAR_LOW0 : R/W; bitpos: [31:0]; default: 0;
  *  Configures the lower 32 bits of the trigger threshold for the RTC timer compare0.
  */
@@ -26,7 +26,7 @@ extern "C" {
 /** LP_TIMER_TAR0_HIGH_REG register
  *  RTC timer enable register0
  */
-#define LP_TIMER_TAR0_HIGH_REG (DR_REG_LP_BASE + 0x4)
+#define LP_TIMER_TAR0_HIGH_REG (DR_REG_LP_TIMER_BASE + 0x4)
 /** LP_TIMER_MAIN_TIMER_TAR_HIGH0 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the higher 16 bits of the trigger threshold for the RTC timer compare0
  */
@@ -47,7 +47,7 @@ extern "C" {
 /** LP_TIMER_TAR1_LOW_REG register
  *  RTC timer threshold low bits register1
  */
-#define LP_TIMER_TAR1_LOW_REG (DR_REG_LP_BASE + 0x8)
+#define LP_TIMER_TAR1_LOW_REG (DR_REG_LP_TIMER_BASE + 0x8)
 /** LP_TIMER_MAIN_TIMER_TAR_LOW1 : R/W; bitpos: [31:0]; default: 0;
  *  Configures the lower 32 bits of the trigger threshold for the RTC timer compare1.
  */
@@ -59,7 +59,7 @@ extern "C" {
 /** LP_TIMER_TAR1_HIGH_REG register
  *  RTC timer threshold high bits register0
  */
-#define LP_TIMER_TAR1_HIGH_REG (DR_REG_LP_BASE + 0xc)
+#define LP_TIMER_TAR1_HIGH_REG (DR_REG_LP_TIMER_BASE + 0xc)
 /** LP_TIMER_MAIN_TIMER_TAR_HIGH1 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the higher 16 bits of the trigger threshold for the RTC timer compare1
  */
@@ -80,7 +80,7 @@ extern "C" {
 /** LP_TIMER_UPDATE_REG register
  *  RTC timer update control register
  */
-#define LP_TIMER_UPDATE_REG (DR_REG_LP_BASE + 0x10)
+#define LP_TIMER_UPDATE_REG (DR_REG_LP_TIMER_BASE + 0x10)
 /** LP_TIMER_MAIN_TIMER_UPDATE : WT; bitpos: [27]; default: 0;
  *  Triggers timer by software
  */
@@ -123,7 +123,7 @@ extern "C" {
 /** LP_TIMER_MAIN_BUF0_LOW_REG register
  *  RTC timer buffer0 low bits register
  */
-#define LP_TIMER_MAIN_BUF0_LOW_REG (DR_REG_LP_BASE + 0x14)
+#define LP_TIMER_MAIN_BUF0_LOW_REG (DR_REG_LP_TIMER_BASE + 0x14)
 /** LP_TIMER_MAIN_TIMER_BUF0_LOW : RO; bitpos: [31:0]; default: 0;
  *  RTC timer buffer0 low bits register
  */
@@ -135,7 +135,7 @@ extern "C" {
 /** LP_TIMER_MAIN_BUF0_HIGH_REG register
  *  RTC timer buffer0 high bits register
  */
-#define LP_TIMER_MAIN_BUF0_HIGH_REG (DR_REG_LP_BASE + 0x18)
+#define LP_TIMER_MAIN_BUF0_HIGH_REG (DR_REG_LP_TIMER_BASE + 0x18)
 /** LP_TIMER_MAIN_TIMER_BUF0_HIGH : RO; bitpos: [15:0]; default: 0;
  *  RTC timer buffer0 high bits register
  */
@@ -147,7 +147,7 @@ extern "C" {
 /** LP_TIMER_MAIN_BUF1_LOW_REG register
  *  RTC timer buffer1 low bits register
  */
-#define LP_TIMER_MAIN_BUF1_LOW_REG (DR_REG_LP_BASE + 0x1c)
+#define LP_TIMER_MAIN_BUF1_LOW_REG (DR_REG_LP_TIMER_BASE + 0x1c)
 /** LP_TIMER_MAIN_TIMER_BUF1_LOW : RO; bitpos: [31:0]; default: 0;
  *  RTC timer buffer1 low bits register
  */
@@ -159,7 +159,7 @@ extern "C" {
 /** LP_TIMER_MAIN_BUF1_HIGH_REG register
  *  RTC timer buffer1 high bits register
  */
-#define LP_TIMER_MAIN_BUF1_HIGH_REG (DR_REG_LP_BASE + 0x20)
+#define LP_TIMER_MAIN_BUF1_HIGH_REG (DR_REG_LP_TIMER_BASE + 0x20)
 /** LP_TIMER_MAIN_TIMER_BUF1_HIGH : RO; bitpos: [15:0]; default: 0;
  *  RTC timer buffer1 high bits register
  */
@@ -171,7 +171,7 @@ extern "C" {
 /** LP_TIMER_INT_RAW_REG register
  *  RTC timer interrupt raw register
  */
-#define LP_TIMER_INT_RAW_REG (DR_REG_LP_BASE + 0x28)
+#define LP_TIMER_INT_RAW_REG (DR_REG_LP_TIMER_BASE + 0x28)
 /** LP_TIMER_OVERFLOW_RAW : R/WTC/SS; bitpos: [30]; default: 0;
  *  Triggered when counter register of RTC main timer overflow.
  */
@@ -190,7 +190,7 @@ extern "C" {
 /** LP_TIMER_INT_ST_REG register
  *  RTC timer interrupt status register
  */
-#define LP_TIMER_INT_ST_REG (DR_REG_LP_BASE + 0x2c)
+#define LP_TIMER_INT_ST_REG (DR_REG_LP_TIMER_BASE + 0x2c)
 /** LP_TIMER_OVERFLOW_ST : RO; bitpos: [30]; default: 0;
  *  Status of RTC main timer overflow interrupt .
  */
@@ -209,7 +209,7 @@ extern "C" {
 /** LP_TIMER_INT_ENA_REG register
  *  RTC timer interrupt enable register
  */
-#define LP_TIMER_INT_ENA_REG (DR_REG_LP_BASE + 0x30)
+#define LP_TIMER_INT_ENA_REG (DR_REG_LP_TIMER_BASE + 0x30)
 /** LP_TIMER_OVERFLOW_ENA : R/W; bitpos: [30]; default: 0;
  *  Enable the RTC main timer overflow interrupt..
  *  0 : Disable
@@ -232,7 +232,7 @@ extern "C" {
 /** LP_TIMER_INT_CLR_REG register
  *  RTC timer interrupt clear register
  */
-#define LP_TIMER_INT_CLR_REG (DR_REG_LP_BASE + 0x34)
+#define LP_TIMER_INT_CLR_REG (DR_REG_LP_TIMER_BASE + 0x34)
 /** LP_TIMER_OVERFLOW_CLR : WT; bitpos: [30]; default: 0;
  *  Clear the RTC main timer overflow raw interrupt..
  */
@@ -251,7 +251,7 @@ extern "C" {
 /** LP_TIMER_LP_INT_RAW_REG register
  *  RTC timer interrupt raw register(For ULP)
  */
-#define LP_TIMER_LP_INT_RAW_REG (DR_REG_LP_BASE + 0x38)
+#define LP_TIMER_LP_INT_RAW_REG (DR_REG_LP_TIMER_BASE + 0x38)
 /** LP_TIMER_MAIN_TIMER_OVERFLOW_LP_INT_RAW : R/WTC/SS; bitpos: [30]; default: 0;
  *  Triggered when counter register of RTC main timer overflow
  */
@@ -270,7 +270,7 @@ extern "C" {
 /** LP_TIMER_LP_INT_ST_REG register
  *  RTC timer interrupt status register(For ULP)
  */
-#define LP_TIMER_LP_INT_ST_REG (DR_REG_LP_BASE + 0x3c)
+#define LP_TIMER_LP_INT_ST_REG (DR_REG_LP_TIMER_BASE + 0x3c)
 /** LP_TIMER_MAIN_TIMER_OVERFLOW_LP_INT_ST : RO; bitpos: [30]; default: 0;
  *  Status of RTC main timer overflow interrupt .
  */
@@ -289,7 +289,7 @@ extern "C" {
 /** LP_TIMER_LP_INT_ENA_REG register
  *  RTC timer interrupt enable register(For ULP)
  */
-#define LP_TIMER_LP_INT_ENA_REG (DR_REG_LP_BASE + 0x40)
+#define LP_TIMER_LP_INT_ENA_REG (DR_REG_LP_TIMER_BASE + 0x40)
 /** LP_TIMER_MAIN_TIMER_OVERFLOW_LP_INT_ENA : R/W; bitpos: [30]; default: 0;
  *  Enable the RTC main timer overflow interrupt..
  *  0 : Disable
@@ -312,7 +312,7 @@ extern "C" {
 /** LP_TIMER_LP_INT_CLR_REG register
  *  RTC timer interrupt clear register(For ULP)
  */
-#define LP_TIMER_LP_INT_CLR_REG (DR_REG_LP_BASE + 0x44)
+#define LP_TIMER_LP_INT_CLR_REG (DR_REG_LP_TIMER_BASE + 0x44)
 /** LP_TIMER_MAIN_TIMER_OVERFLOW_LP_INT_CLR : WT; bitpos: [30]; default: 0;
  *  Clear the RTC main timer overflow clear interrupt..
  */
@@ -331,7 +331,7 @@ extern "C" {
 /** LP_TIMER_DATE_REG register
  *  Date register
  */
-#define LP_TIMER_DATE_REG (DR_REG_LP_BASE + 0x3fc)
+#define LP_TIMER_DATE_REG (DR_REG_LP_TIMER_BASE + 0x3fc)
 /** LP_TIMER_DATE : R/W; bitpos: [30:0]; default: 36769936;
  *  Version data
  */

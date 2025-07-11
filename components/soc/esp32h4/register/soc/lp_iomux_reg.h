@@ -14,7 +14,7 @@ extern "C" {
 /** LP_IO_MUX_GPIO0_REG register
  *  LP IO MUX configuration register for LP_GPIO0
  */
-#define LP_IO_MUX_GPIO0_REG (DR_REG_LP_BASE + 0x0)
+#define LP_IO_MUX_GPIO0_REG (DR_REG_LP_IO_MUX_BASE + 0x0)
 /** LP_IO_MUX_GPIO0_MCU_OE : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable the output of LP_GPIO0 in sleep mode.
  *  0: Disable
@@ -151,7 +151,7 @@ extern "C" {
 /** LP_IO_MUX_GPIO1_REG register
  *  LP IO MUX configuration register for LP_GPIO1
  */
-#define LP_IO_MUX_GPIO1_REG (DR_REG_LP_BASE + 0x4)
+#define LP_IO_MUX_GPIO1_REG (DR_REG_LP_IO_MUX_BASE + 0x4)
 /** LP_IO_MUX_GPIO1_MCU_OE : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable the output of LP_GPIO1 in sleep mode.
  *  0: Disable
@@ -288,7 +288,7 @@ extern "C" {
 /** LP_IO_MUX_GPIO2_REG register
  *  LP IO MUX configuration register for LP_GPIO2
  */
-#define LP_IO_MUX_GPIO2_REG (DR_REG_LP_BASE + 0x8)
+#define LP_IO_MUX_GPIO2_REG (DR_REG_LP_IO_MUX_BASE + 0x8)
 /** LP_IO_MUX_GPIO2_MCU_OE : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable the output of LP_GPIO2 in sleep mode.
  *  0: Disable
@@ -425,7 +425,7 @@ extern "C" {
 /** LP_IO_MUX_GPIO3_REG register
  *  LP IO MUX configuration register for LP_GPIO3
  */
-#define LP_IO_MUX_GPIO3_REG (DR_REG_LP_BASE + 0xc)
+#define LP_IO_MUX_GPIO3_REG (DR_REG_LP_IO_MUX_BASE + 0xc)
 /** LP_IO_MUX_GPIO3_MCU_OE : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable the output of LP_GPIO3 in sleep mode.
  *  0: Disable
@@ -562,7 +562,7 @@ extern "C" {
 /** LP_IO_MUX_GPIO4_REG register
  *  LP IO MUX configuration register for LP_GPIO4
  */
-#define LP_IO_MUX_GPIO4_REG (DR_REG_LP_BASE + 0x10)
+#define LP_IO_MUX_GPIO4_REG (DR_REG_LP_IO_MUX_BASE + 0x10)
 /** LP_IO_MUX_GPIO4_MCU_OE : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable the output of LP_GPIO4 in sleep mode.
  *  0: Disable
@@ -699,7 +699,7 @@ extern "C" {
 /** LP_IO_MUX_GPIO5_REG register
  *  LP IO MUX configuration register for LP_GPIO5
  */
-#define LP_IO_MUX_GPIO5_REG (DR_REG_LP_BASE + 0x14)
+#define LP_IO_MUX_GPIO5_REG (DR_REG_LP_IO_MUX_BASE + 0x14)
 /** LP_IO_MUX_GPIO5_MCU_OE : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable the output of LP_GPIO5 in sleep mode.
  *  0: Disable
@@ -836,7 +836,7 @@ extern "C" {
 /** LP_IO_MUX_DATE_REG register
  *  Version control register
  */
-#define LP_IO_MUX_DATE_REG (DR_REG_LP_BASE + 0x1fc)
+#define LP_IO_MUX_DATE_REG (DR_REG_LP_IO_MUX_BASE + 0x1fc)
 /** LP_IO_MUX_REG_DATE : R/W; bitpos: [27:0]; default: 37769744;
  *  Version control register
  */
