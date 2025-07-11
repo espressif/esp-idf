@@ -61,6 +61,18 @@ ECDSA 密钥可以通过 ``idf.py`` 脚本在外部编程。以下是关于编�
         // writing key failed, maybe written already
     }
 
+
+.. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+
+    ECDSA 曲线配置
+    -----------------
+
+    {IDF_TARGET_NAME} 的 ECDSA 外设支持 ECDSA-P192 和 ECDSA-P256 两种曲线操作。但从 {IDF_TARGET_NAME} 版本 1.2 开始，默认仅启用 ECDSA-P256 操作。可以通过以下配置项启用 ECDSA-P192 操作：
+
+    - :ref:`CONFIG_ESP_ECDSA_ENABLE_P192_CURVE` 启用对 ECDSA-P192 曲线操作的支持，使设备可以同时执行 192 位和 256 位的 ECDSA 曲线操作。但请注意，如果 eFuse 写保护期间已永久禁用 ECDSA-P192 操作，则启用该配置项也无法重新启用该功能。
+
+    - :cpp:func:`esp_efuse_enable_ecdsa_p192_curve_mode()` 可用于以编程方式启用 ECDSA-P192 曲线操作。它会向 eFuse 写入相应值，从而使设备支持 P-192 和 P-256 曲线操作。但请注意，若对应的 eFuse 区域已被写保护，则此 API 将调用失败。
+
 .. only:: SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
 
     生成确定性签名

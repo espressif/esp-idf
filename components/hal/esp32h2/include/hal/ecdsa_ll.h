@@ -212,6 +212,26 @@ static inline void ecdsa_ll_set_z_mode(ecdsa_ll_sha_mode_t mode)
 }
 
 /**
+ * @brief Set the signature generation type of ECDSA operation
+ *
+ * @param type Type of the ECDSA signature
+ */
+static inline void ecdsa_ll_set_k_type(ecdsa_sign_type_t type)
+{
+    switch (type) {
+        case ECDSA_K_TYPE_TRNG:
+            REG_CLR_BIT(ECDSA_CONF_REG, ECDSA_DETERMINISTIC_K);
+            break;
+        case ECDSA_K_TYPE_DETERMINISITIC:
+            REG_SET_BIT(ECDSA_CONF_REG, ECDSA_DETERMINISTIC_K);
+            break;
+        default:
+            HAL_ASSERT(false && "Unsupported K type");
+            break;
+    }
+}
+
+/**
  * @brief Set the stage of ECDSA operation
  *
  * @param stage Stage of operation
@@ -376,6 +396,26 @@ static inline void ecdsa_ll_read_param(ecdsa_ll_param_t param, uint8_t *buf, uin
 static inline int ecdsa_ll_get_operation_result(void)
 {
     return REG_GET_BIT(ECDSA_RESULT_REG, ECDSA_OPERATION_RESULT);
+}
+
+/**
+ * @brief Check if the ECDSA curves configuration is supported
+ * The ECDSA curves configuration is only avliable in chip version
+ * above 1.2 in ESP32-H2
+ */
+static inline bool ecdsa_ll_is_configurable_curve_supported(void)
+{
+    return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
+}
+
+/**
+ * @brief Check if the ECDSA deterministic mode is supported
+ * The ECDSA deterministic mode is only available in chip version
+ * above 1.2 in ESP32-H2
+ */
+static inline bool ecdsa_ll_is_deterministic_mode_supported(void)
+{
+    return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
 }
 
 #ifdef __cplusplus
