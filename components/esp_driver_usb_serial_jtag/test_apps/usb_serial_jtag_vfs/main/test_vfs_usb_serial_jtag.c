@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,11 +22,6 @@
 #include "esp_clk_tree.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
-
-struct task_arg_t {
-    FILE* stream;
-    SemaphoreHandle_t done;
-};
 
 static int read_bytes_with_select(FILE *stream, void *buf, size_t buf_len, struct timeval tv)
 {
@@ -74,7 +69,7 @@ static int read_bytes_with_select(FILE *stream, void *buf, size_t buf_len, struc
  * write calls. At the end of the test, the variable is check to make sure the select returned
  * for each of the write calls.
  */
-TEST_CASE("test select read, write and timeout", "[usb_serial_jtag]")
+TEST_CASE("test select read, write and timeout", "[usb_serial_jtag vfs]")
 {
     struct timeval tv;
     tv.tv_sec = 1;
@@ -127,4 +122,87 @@ TEST_CASE("test select read, write and timeout", "[usb_serial_jtag]")
 
     usb_serial_jtag_vfs_use_nonblocking();
     usb_serial_jtag_driver_uninstall();
+}
+
+/* Test that the read function does not return prematurely when receiving a new line character
+ */
+TEST_CASE("read does not return on new line character", "[usb serial jtag vfs]")
+{
+    // Send a string with length less than the read requested length
+    const char in_buffer[] = "!(@*#&(!*@&#((SDasdkjhad\nce"; // read should not early return on \n
+    const size_t in_buffer_len = sizeof(in_buffer);
+
+    const size_t out_buffer_len = in_buffer_len - 1; // don't compare the null character at the end of in_buffer string
+    char out_buffer[out_buffer_len] = {};
+
+    usb_serial_jtag_driver_config_t usj_config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&usj_config));
+    usb_serial_jtag_vfs_use_driver();
+
+    usb_serial_jtag_vfs_set_rx_line_endings(ESP_LINE_ENDINGS_LF);
+    usb_serial_jtag_vfs_set_tx_line_endings(ESP_LINE_ENDINGS_LF);
+
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+
+    // trigger the test environment to send the test message
+    char ready_msg[] = "ready to receive\n";
+    write(fileno(stdout), ready_msg, sizeof(ready_msg));
+
+    // wait for the string to be sent and buffered
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    char *out_buffer_ptr = out_buffer;
+    size_t bytes_read = 0;
+    do {
+        int nread = read(STDIN_FILENO, out_buffer_ptr, out_buffer_len);
+        printf("%d\n", nread);
+        if (nread > 0) {
+            out_buffer_ptr += nread;
+            bytes_read += nread;
+        }
+    } while (bytes_read < in_buffer_len);
+
+    // string compare
+    for (size_t i = 0; i < out_buffer_len; i++) {
+        TEST_ASSERT_EQUAL(in_buffer[i], out_buffer[i]);
+    }
+
+    usb_serial_jtag_vfs_use_nonblocking();
+    fcntl(STDIN_FILENO, F_SETFL, flags);
+    usb_serial_jtag_vfs_set_rx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    usb_serial_jtag_vfs_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    ESP_ERROR_CHECK(usb_serial_jtag_driver_uninstall());
+    vTaskDelay(2);  // wait for tasks to exit
+}
+
+TEST_CASE("blocking read returns with available data", "[usb serial jtag vfs]")
+{
+    const size_t out_buffer_len = 32;
+    char out_buffer[out_buffer_len] = {};
+
+    usb_serial_jtag_driver_config_t usj_config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&usj_config));
+    usb_serial_jtag_vfs_use_driver();
+
+    usb_serial_jtag_vfs_set_rx_line_endings(ESP_LINE_ENDINGS_LF);
+    usb_serial_jtag_vfs_set_tx_line_endings(ESP_LINE_ENDINGS_LF);
+
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags & (~O_NONBLOCK));
+
+    // trigger the test environment to send the test message
+    char ready_msg[] = "ready to receive\n";
+    write(fileno(stdout), ready_msg, sizeof(ready_msg));
+
+    const int nread = read(STDIN_FILENO, out_buffer, out_buffer_len);
+    TEST_ASSERT(nread > 0);
+    TEST_ASSERT(nread < out_buffer_len);
+
+    usb_serial_jtag_vfs_use_nonblocking();
+    fcntl(STDIN_FILENO, F_SETFL, flags);
+    usb_serial_jtag_vfs_set_rx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    usb_serial_jtag_vfs_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    ESP_ERROR_CHECK(usb_serial_jtag_driver_uninstall());
+    vTaskDelay(2);  // wait for tasks to exit
 }
