@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
 #include <catch2/catch_test_macros.hpp>
 #include "nvs.hpp"
 #include "nvs_partition_manager.hpp"

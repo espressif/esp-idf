@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "esp_partition.h"
+
 #include "nvs_partition_manager.hpp"
 #include "nvs_partition_lookup.hpp"
 #include "nvs_internal.h"
@@ -27,15 +27,12 @@ NVSPartitionManager* NVSPartitionManager::get_instance()
     return instance;
 }
 
-#ifdef ESP_PLATFORM
 esp_err_t NVSPartitionManager::init_partition(const char *partition_label)
 {
     if (strlen(partition_label) > NVS_PART_NAME_MAX_SIZE) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    uint32_t size;
-    const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
     Storage* mStorage;
 
     mStorage = lookup_storage_from_name(partition_label);
@@ -43,16 +40,19 @@ esp_err_t NVSPartitionManager::init_partition(const char *partition_label)
         return ESP_OK;
     }
 
-    NVS_ASSERT_OR_RETURN(sec_size != 0, ESP_FAIL);
-
-    NVSPartition *p = nullptr;
+    Partition *p = nullptr;
     esp_err_t result = partition_lookup::lookup_nvs_partition(partition_label, &p);
+
+    if (result != ESP_OK) {
+        return result;
+    }
+
+    uint32_t size = p->get_size();
+    uint32_t sec_size = NVS_CONST_PAGE_SIZE;
 
     if (result != ESP_OK) {
         goto error;
     }
-
-    size = p->get_size();
 
     result = init_custom(p, 0, size / sec_size);
     if (result != ESP_OK) {
@@ -67,7 +67,6 @@ error:
     delete p;
     return result;
 }
-#endif // ESP_PLATFORM
 
 esp_err_t NVSPartitionManager::init_custom(Partition *partition, uint32_t baseSector, uint32_t sectorCount)
 {
@@ -117,7 +116,7 @@ esp_err_t NVSPartitionManager::secure_init_partition(const char *part_name, nvs_
         return ESP_OK;
     }
 
-    NVSPartition *p;
+    Partition *p;
     esp_err_t result;
     if (cfg != nullptr) {
         result = partition_lookup::lookup_nvs_encrypted_partition(part_name, cfg, &p);
@@ -130,7 +129,7 @@ esp_err_t NVSPartitionManager::secure_init_partition(const char *part_name, nvs_
     }
 
     uint32_t size = p->get_size();
-    const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+    uint32_t sec_size = NVS_CONST_PAGE_SIZE;
 
     result = init_custom(p, 0, size / sec_size);
     if (result != ESP_OK) {
@@ -165,7 +164,7 @@ esp_err_t NVSPartitionManager::deinit_partition(const char *partition_label)
 
     for (auto it = nvs_partition_list.begin(); it != nvs_partition_list.end(); ++it) {
         if (strcmp(it->get_partition_name(), partition_label) == 0) {
-            NVSPartition *p = it;
+            Partition *p = it;
             nvs_partition_list.erase(it);
             delete p;
             break;
