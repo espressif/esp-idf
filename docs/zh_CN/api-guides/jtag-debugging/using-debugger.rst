@@ -23,20 +23,20 @@
 
 作为一款集成开发环境 (IDE)，Eclipse 提供了一套强大的工具，用于开发和调试软件应用程序。对于 ESP-IDF 应用程序，`IDF Eclipse 插件 <https://github.com/espressif/idf-eclipse-plugin>`_ 提供了两种调试方式:
 
-1.  `ESP-IDF GDB OpenOCD 调试 <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_
+1.  `ESP-IDF GDB OpenOCD 调试 <https://docs.espressif.com/projects/espressif-ide/en/latest/openocddebugging.html>`_
 2.  GDB 硬件调试
 
 默认情况下，Eclipse 通过 GDB 硬件调试插件支持 OpenOCD 调试。该调试方式需要从命令行启动 OpenOCD 服务器，并在 Eclipse 中配置 GDB 客户端，整个过程耗时且容易出错。
 
 为了使调试过程更加容易，`IDF Eclipse 插件 <https://github.com/espressif/idf-eclipse-plugin>`_ 提供了定制的 ESP-IDF GDB OpenOCD 调试功能，支持在 Eclipse 内部配置好 OpenOCD 服务器和 GDB 客户端。该插件已经设置好所有必需的配置参数，点击一个按钮即可开始调试。
 
-因此，建议通过 `IDF Eclipse 插件 <https://github.com/espressif/idf-eclipse-plugin>`_ 进行 `ESP-IDF GDB OpenOCD 调试 <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`__。
+因此，建议通过 `IDF Eclipse 插件 <https://github.com/espressif/idf-eclipse-plugin>`_ 进行 `ESP-IDF GDB OpenOCD 调试 <https://docs.espressif.com/projects/espressif-ide/en/latest/openocddebugging.html>`__。
 
 **GDB 硬件调试**
 
 .. note::
 
-    只有在无法使用 `ESP-IDF GDB OpenOCD 调试 <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_ 的情况下，才建议使用 GDB 硬件调试。
+    只有在无法使用 `ESP-IDF GDB OpenOCD 调试 <https://docs.espressif.com/projects/espressif-ide/en/latest/openocddebugging.html>`_ 的情况下，才建议使用 GDB 硬件调试。
 
 首先，打开 Eclipse，选择 ``Help`` > ``Install New Software`` 来安装 ``GDB Hardware Debugging`` 插件。
 
