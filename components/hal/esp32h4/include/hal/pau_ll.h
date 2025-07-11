@@ -84,6 +84,11 @@ static inline void pau_ll_set_regdma_timeout_read_mode_try_time(pau_dev_t *dev, 
     REG_SET_FIELD(LP_AON_BACKUP_DMA_CFG1_REG, LP_AON_LINK_WAIT_TOUT_THRES_AON, thres);
 }
 
+static inline void pau_ll_set_regdma_branch_max_link(pau_dev_t *dev, uint32_t max_link_len)
+{
+    REG_SET_FIELD(LP_AON_BACKUP_DMA_CFG1_REG, LP_AON_BRANCH_LINK_LENGTH_AON, max_link_len);
+}
+
 static inline uint32_t pau_ll_get_regdma_current_link_addr(pau_dev_t *dev)
 {
     return dev->regdma_current_link_addr.val;

@@ -77,6 +77,12 @@ FORCE_INLINE_ATTR void lp_timer_ll_lp_alarm_intr_enable(lp_timer_dev_t *dev, boo
     dev->lp_int_ena.main_timer_lp_int_ena = enable;
 }
 
+/* Record the start and finish times for one-time regdma work */
+FORCE_INLINE_ATTR void lp_timer_ll_record_regdma_work_time_enable(lp_timer_dev_t *dev, bool en)
+{
+    dev->update.main_timer_regdma_work = en;
+}
+
 #ifdef __cplusplus
 }
 #endif
