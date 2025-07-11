@@ -928,6 +928,7 @@ esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
     _clear_auth_data(client);
     free(client->auth_data);
     free(client->current_header_key);
+    free(client->current_header_value);
     free(client->location);
     free(client->auth_header);
     free(client);
