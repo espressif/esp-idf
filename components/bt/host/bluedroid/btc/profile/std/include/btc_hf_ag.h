@@ -209,7 +209,6 @@ typedef union
 /* BTC-AG control block to map bdaddr to BTA handle */
 typedef struct
 {
-    bool                               initialized;
     UINT16                             handle;
     UINT16                             sync_conn_hdl;
     bt_bdaddr_t                        connected_bda;
@@ -227,16 +226,16 @@ typedef struct
 
 typedef struct
 {
+    bool                               initialized;
     int                                hf_idx;
-    UINT32                             btc_hf_features;
-    btc_hf_cb_t                        btc_hf_cb;
+    btc_hf_cb_t                       *btc_hf_cb;
     esp_hf_incoming_data_cb_t          btc_hf_incoming_data_cb;
     esp_hf_outgoing_data_cb_t          btc_hf_outgoing_data_cb;
 } hf_local_param_t;
 
 #if HFP_DYNAMIC_MEMORY == TRUE
 extern hf_local_param_t *hf_local_param_ptr;
-#define hf_local_param (hf_local_param_ptr)
+#define hf_local_param (*hf_local_param_ptr)
 #endif
 
 /*******************************************************************************
