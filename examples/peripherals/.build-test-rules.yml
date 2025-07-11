@@ -594,6 +594,8 @@ examples/peripherals/usb/host:
     - components/soc/include/soc/usb*.h
     - components/soc/esp32*/include/soc/usb_dwc_*.h
     - components/soc/esp32*/include/soc/usb_wrap_*.h
+    - components/esp_hw_support/usb_phy/usb_phy.c
+    - components/esp_hw_support/include/esp_private/usb_phy.h
     - examples/peripherals/usb/host/**/*
 
 examples/peripherals/usb_serial_jtag/usb_serial_jtag_echo:

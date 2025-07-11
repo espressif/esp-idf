@@ -3,6 +3,9 @@
 message(STATUS "building ESP HW SUPPORT MOCKS")
 
 idf_component_get_property(original_esp_hw_support_dir esp_hw_support COMPONENT_OVERRIDEN_DIR)
+if(NOT original_esp_hw_support_dir)
+    idf_component_get_property(original_esp_hw_support_dir esp_hw_support COMPONENT_DIR)
+endif()
 
 idf_component_mock(INCLUDE_DIRS "${original_esp_hw_support_dir}/include"
                    MOCK_HEADER_FILES ${original_esp_hw_support_dir}/include/esp_mac.h

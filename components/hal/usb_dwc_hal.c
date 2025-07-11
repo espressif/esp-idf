@@ -10,7 +10,7 @@
 #include <stdlib.h> // For abort()
 #include "sdkconfig.h"
 #include "soc/chip_revision.h"
-#include "soc/usb_dwc_periph.h"
+#include "soc/usb_periph.h"
 #include "hal/usb_dwc_hal.h"
 #include "hal/usb_dwc_ll.h"
 #include "hal/efuse_hal.h"

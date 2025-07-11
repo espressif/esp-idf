@@ -18,7 +18,7 @@
 #include "esp_log.h"
 
 #include "soc/soc_caps.h"
-#include "soc/usb_dwc_periph.h"
+#include "soc/usb_periph.h"
 #include "hal/usb_dwc_hal.h"
 #include "hcd.h"
 #include "usb_private.h"

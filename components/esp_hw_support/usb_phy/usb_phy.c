@@ -12,13 +12,20 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/usb_phy.h"
 #include "esp_private/critical_section.h"
-#include "soc/usb_dwc_periph.h"
+#include "soc/usb_periph.h"
+#include "hal/gpio_types.h"
 #include "hal/usb_serial_jtag_hal.h"
 #include "hal/usb_wrap_hal.h"
 #include "hal/usb_utmi_hal.h"
-#include "esp_rom_gpio.h"
-#include "driver/gpio.h"
+#include "hal/gpio_ll.h"
 #include "soc/soc_caps.h"
+
+/// Check whether it is a valid GPIO number
+#define GPIO_IS_VALID_GPIO(gpio_num)        ((gpio_num >= 0) && \
+                                              (((1ULL << (gpio_num)) & SOC_GPIO_VALID_GPIO_MASK) != 0))
+/// Check whether it can be a valid GPIO number of output mode
+#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) ((gpio_num >= 0) && \
+                                              (((1ULL << (gpio_num)) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0))
 
 #if SOC_USB_UTMI_PHY_NO_POWER_OFF_ISO
 #include "esp_private/sleep_usb.h"
@@ -65,27 +72,27 @@ DEFINE_CRIT_SECTION_LOCK_STATIC(phy_spinlock);
 #define PHY_ENTER_CRITICAL()           esp_os_enter_critical(&phy_spinlock)
 #define PHY_EXIT_CRITICAL()            esp_os_exit_critical(&phy_spinlock)
 
-static esp_err_t phy_configure_pin_input(int gpio_pin, int signal_idx)
+static esp_err_t phy_configure_pin_input(const int gpio_pin, const int signal_idx)
 {
     if (gpio_pin != GPIO_NUM_NC) {
         ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(gpio_pin),
                             ESP_ERR_INVALID_ARG, USBPHY_TAG, "io_num argument is invalid");
-        esp_rom_gpio_pad_select_gpio(gpio_pin);
-        esp_rom_gpio_connect_in_signal(gpio_pin, signal_idx, false);
-        gpio_input_enable(gpio_pin);
-        esp_rom_gpio_pad_unhold(gpio_pin);
+        gpio_ll_func_sel(GPIO_LL_GET_HW(0), gpio_pin, PIN_FUNC_GPIO);
+        gpio_ll_set_input_signal_matrix_source(GPIO_LL_GET_HW(0), signal_idx, gpio_pin, false);
+        gpio_ll_input_enable(GPIO_LL_GET_HW(0), gpio_pin);
+        gpio_ll_hold_dis(GPIO_LL_GET_HW(0), gpio_pin);
     }
     return ESP_OK;
 }
 
-static esp_err_t phy_configure_pin_output(int gpio_pin, int signal_idx)
+static esp_err_t phy_configure_pin_output(const int gpio_pin, const int signal_idx)
 {
     if (gpio_pin != GPIO_NUM_NC) {
         ESP_RETURN_ON_FALSE(GPIO_IS_VALID_OUTPUT_GPIO(gpio_pin),
                             ESP_ERR_INVALID_ARG, USBPHY_TAG, "io_num argument is invalid");
-        esp_rom_gpio_pad_select_gpio(gpio_pin);
-        esp_rom_gpio_connect_out_signal(gpio_pin, signal_idx, false, false);
-        esp_rom_gpio_pad_unhold(gpio_pin);
+        gpio_ll_func_sel(GPIO_LL_GET_HW(0), gpio_pin, PIN_FUNC_GPIO);
+        gpio_ll_set_output_signal_matrix_source(GPIO_LL_GET_HW(0), gpio_pin, signal_idx, false);
+        gpio_ll_hold_dis(GPIO_LL_GET_HW(0), gpio_pin);
     }
     return ESP_OK;
 }
@@ -151,10 +158,10 @@ esp_err_t usb_phy_otg_set_mode(usb_phy_handle_t handle, usb_otg_mode_t mode)
     const usb_otg_signal_conn_t *otg_sig = usb_dwc_info.controllers[otg11_index].otg_signals;
     assert(otg_sig);
     if (mode == USB_OTG_MODE_HOST) {
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, otg_sig->iddig, false);     // connected connector is A side
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, otg_sig->bvalid, false);
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,  otg_sig->vbusvalid, false);  // receiving a valid Vbus from host
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,  otg_sig->avalid, false);     // HIGH to force USB host mode
+        gpio_ll_set_input_signal_matrix_source(GPIO_LL_GET_HW(0), otg_sig->iddig, GPIO_MATRIX_CONST_ZERO_INPUT, false);     // connected connector is A side
+        gpio_ll_set_input_signal_matrix_source(GPIO_LL_GET_HW(0), otg_sig->bvalid, GPIO_MATRIX_CONST_ZERO_INPUT, false);
+        gpio_ll_set_input_signal_matrix_source(GPIO_LL_GET_HW(0), otg_sig->vbusvalid, GPIO_MATRIX_CONST_ONE_INPUT, false);  // receiving a valid Vbus from host
+        gpio_ll_set_input_signal_matrix_source(GPIO_LL_GET_HW(0), otg_sig->avalid, GPIO_MATRIX_CONST_ONE_INPUT, false);     // HIGH to force USB host mode
         if (handle->target == USB_PHY_TARGET_INT) {
             // Configure pull resistors for host
             usb_wrap_pull_override_vals_t vals = {
@@ -166,88 +173,13 @@ esp_err_t usb_phy_otg_set_mode(usb_phy_handle_t handle, usb_otg_mode_t mode)
             usb_wrap_hal_phy_enable_pull_override(&handle->wrap_hal, &vals);
         }
     } else if (mode == USB_OTG_MODE_DEVICE) {
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,  otg_sig->iddig, false);      // connected connector is mini-B side
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,  otg_sig->bvalid, false);     // HIGH to force USB device mode
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,  otg_sig->vbusvalid, false);  // receiving a valid Vbus from device
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, otg_sig->avalid, false);
+        gpio_ll_set_input_signal_matrix_source(GPIO_LL_GET_HW(0), otg_sig->iddig, GPIO_MATRIX_CONST_ONE_INPUT, false);      // connected connector is mini-B side
+        gpio_ll_set_input_signal_matrix_source(GPIO_LL_GET_HW(0), otg_sig->bvalid, GPIO_MATRIX_CONST_ONE_INPUT, false);     // HIGH to force USB device mode
+        gpio_ll_set_input_signal_matrix_source(GPIO_LL_GET_HW(0), otg_sig->vbusvalid, GPIO_MATRIX_CONST_ONE_INPUT, false);  // receiving a valid Vbus from device
+        gpio_ll_set_input_signal_matrix_source(GPIO_LL_GET_HW(0), otg_sig->avalid, GPIO_MATRIX_CONST_ZERO_INPUT, false);
     }
 
     return ESP_OK;
-}
-
-esp_err_t usb_phy_otg_dev_set_speed(usb_phy_handle_t handle, usb_phy_speed_t speed)
-{
-    ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, USBPHY_TAG, "handle argument is invalid");
-    ESP_RETURN_ON_FALSE(speed < USB_PHY_SPEED_MAX, ESP_ERR_INVALID_ARG, USBPHY_TAG, "speed argument is invalid");
-    ESP_RETURN_ON_FALSE((handle->target == USB_PHY_TARGET_UTMI) == (speed == USB_PHY_SPEED_HIGH), ESP_ERR_NOT_SUPPORTED, USBPHY_TAG, "UTMI can be HighSpeed only"); // This is our software limitation
-
-    // Keeping this here for backward compatibility
-    // No need to configure anything neither for UTMI PHY nor for USB FSLS PHY
-    return ESP_OK;
-}
-
-esp_err_t usb_phy_action(usb_phy_handle_t handle, usb_phy_action_t action)
-{
-    ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, USBPHY_TAG, "handle argument is invalid");
-    ESP_RETURN_ON_FALSE(handle->target != USB_PHY_TARGET_UTMI, ESP_ERR_NOT_SUPPORTED, USBPHY_TAG, "Operation not supported on UTMI PHY");
-    ESP_RETURN_ON_FALSE(action < USB_PHY_ACTION_MAX, ESP_ERR_INVALID_ARG, USBPHY_TAG, "action argument is invalid");
-    ESP_RETURN_ON_FALSE((action == USB_PHY_ACTION_HOST_ALLOW_CONN && handle->controller == USB_PHY_CTRL_OTG) ||
-                        (action == USB_PHY_ACTION_HOST_FORCE_DISCONN && handle->controller == USB_PHY_CTRL_OTG),
-                        ESP_ERR_INVALID_ARG, USBPHY_TAG, "wrong target for the action");
-
-    esp_err_t ret = ESP_OK;
-    const usb_fsls_serial_signal_conn_t *fsls_sig = usb_dwc_info.controllers[otg11_index].fsls_signals;
-    assert(fsls_sig);
-
-    switch (action) {
-    case USB_PHY_ACTION_HOST_ALLOW_CONN:
-        if (handle->target == USB_PHY_TARGET_INT) {
-            usb_wrap_hal_phy_enable_test_mode(&handle->wrap_hal, false);
-        } else {
-            if (!handle->iopins) {
-                ret = ESP_FAIL;
-                ESP_LOGE(USBPHY_TAG, "no I/O pins provided for connection");
-                break;
-            }
-            /*
-            Allow for connections on the external PHY by connecting the VP and VM signals to the external PHY.
-            */
-            esp_rom_gpio_connect_in_signal(handle->iopins->vp_io_num, fsls_sig->rx_dp, false);
-            esp_rom_gpio_connect_in_signal(handle->iopins->vm_io_num, fsls_sig->rx_dm, false);
-        }
-        break;
-
-    case USB_PHY_ACTION_HOST_FORCE_DISCONN:
-        if (handle->target == USB_PHY_TARGET_INT) {
-            /*
-            We mimic a disconnect by enabling the internal PHY's test mode,
-            then forcing the output_enable to HIGH. This will cause the received
-            VP and VM to be zero, thus mimicking a disconnection.
-            */
-            const usb_wrap_test_mode_vals_t vals = {
-                .tx_enable_n = true,
-                .tx_dp = false,
-                .tx_dm = false,
-                .rx_dp = false,
-                .rx_dm = false,
-                .rx_rcv = false,
-            };
-            usb_wrap_hal_phy_test_mode_set_signals(&handle->wrap_hal, &vals);
-            usb_wrap_hal_phy_enable_test_mode(&handle->wrap_hal, true);
-        } else {
-            /*
-            Disable connections on the external PHY by connecting the VP and VM signals to the constant LOW signal.
-            */
-            esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, fsls_sig->rx_dp, false);
-            esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, fsls_sig->rx_dm, false);
-        }
-        break;
-
-    default:
-        break;
-    }
-
-    return ret;
 }
 
 static esp_err_t usb_phy_install(void)
@@ -369,8 +301,8 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
     // For FSLS PHY that shares pads with GPIO peripheral, we must set drive capability to 3 (40mA)
     if (phy_target == USB_PHY_TARGET_INT) {
         assert(usb_dwc_info.controllers[otg11_index].internal_phy_io);
-        gpio_set_drive_capability(usb_dwc_info.controllers[otg11_index].internal_phy_io->dm, GPIO_DRIVE_CAP_3);
-        gpio_set_drive_capability(usb_dwc_info.controllers[otg11_index].internal_phy_io->dp, GPIO_DRIVE_CAP_3);
+        gpio_ll_set_drive_capability(GPIO_LL_GET_HW(0), usb_dwc_info.controllers[otg11_index].internal_phy_io->dm, GPIO_DRIVE_CAP_3);
+        gpio_ll_set_drive_capability(GPIO_LL_GET_HW(0), usb_dwc_info.controllers[otg11_index].internal_phy_io->dp, GPIO_DRIVE_CAP_3);
     }
 
     *handle_ret = (usb_phy_handle_t) phy_context;

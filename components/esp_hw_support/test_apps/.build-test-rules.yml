@@ -45,6 +45,21 @@ components/esp_hw_support/test_apps/sleep_retention:
     - if: SOC_PAU_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1 and SOC_PM_CPU_RETENTION_BY_SW == 1 and CONFIG_NAME != "xip_psram"
     - if: SOC_PAU_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1 and SOC_PM_CPU_RETENTION_BY_SW == 1 and (SOC_SPIRAM_XIP_SUPPORTED == 1 and CONFIG_NAME == "xip_psram")
 
+components/esp_hw_support/test_apps/usb_phy:
+  enable:
+    - if: SOC_USB_OTG_SUPPORTED == 1
+  depends_components:
+    - usb
+  depends_filepatterns:
+    - components/hal/usb*.c
+    - components/hal/include/hal/usb*.h
+    - components/hal/esp32*/include/hal/usb*.h
+    - components/soc/esp32*/usb*.c
+    - components/soc/include/soc/usb*.h
+    - components/soc/esp32*/include/soc/usb_dwc_*.h
+    - components/soc/esp32*/include/soc/usb_wrap_*.h
+    - components/esp_hw_support/**/usb_phy.*
+
 components/esp_hw_support/test_apps/vad_wakeup:
   disable:
     - if: SOC_LP_VAD_SUPPORTED != 1
