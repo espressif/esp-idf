@@ -446,6 +446,10 @@ uint32_t esp_bt_get_lpclk_freq(void);
 
 void esp_bt_set_lpclk_freq(uint32_t clk_freq);
 
+#if CONFIG_BT_LE_MEM_CHECK_ENABLED
+void ble_memory_count_limit_set(uint16_t count_limit);
+#endif // CONFIG_BT_LE_MEM_CHECK_ENABLED
+
 #ifdef __cplusplus
 }
 #endif

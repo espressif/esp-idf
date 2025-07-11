@@ -19,3 +19,7 @@ void *bt_osi_mem_malloc_internal(size_t size);
 void *bt_osi_mem_calloc_internal(size_t n, size_t size);
 
 void bt_osi_mem_free(void *ptr);
+
+#if CONFIG_BT_LE_MEM_CHECK_ENABLED
+void bt_osi_mem_count_limit_set(uint16_t count_limit);
+#endif // CONFIG_BT_LE_MEM_CHECK_ENABLED
