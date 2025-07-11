@@ -17,8 +17,8 @@ uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
         return clk_ll_bbpll_get_freq_mhz();
     case SOC_CPU_CLK_SRC_RC_FAST:
         return SOC_CLK_RC_FAST_FREQ_APPROX / MHZ;
-    case SOC_CPU_CLK_SRC_XTAL_X2:
-        return clk_ll_xtal_x2_get_freq_mhz();
+    // case SOC_CPU_CLK_SRC_XTAL_X2:
+    //     return clk_ll_xtal_x2_get_freq_mhz();
     default:
         // Unknown CPU_CLK mux input
         HAL_ASSERT(false);
@@ -46,8 +46,8 @@ uint32_t clk_hal_apb_get_freq_hz(void)
 uint32_t clk_hal_lp_slow_get_freq_hz(void)
 {
     switch (clk_ll_rtc_slow_get_src()) {
-    case SOC_RTC_SLOW_CLK_SRC_RC_SLOW:
-        return SOC_CLK_RC_SLOW_FREQ_APPROX;
+    case SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4:
+        return SOC_CLK_RC_SLOW_FREQ_APPROX / 4;
     case SOC_RTC_SLOW_CLK_SRC_XTAL32K:
         return SOC_CLK_XTAL32K_FREQ_APPROX;
     case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW:

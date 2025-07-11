@@ -14,6 +14,9 @@
 #include "hal/pmu_hal.h"
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
+#include "soc/regi2c_dcdc.h"
+#include "regi2c_ctrl.h"
+#include "esp_rom_sys.h"
 
 static __attribute__((unused)) const char *TAG = "pmu_init";
 
@@ -227,21 +230,31 @@ static void pmu_lp_system_init_default(pmu_context_t *ctx)
 
 void pmu_init(void)
 {
-#if 0 // TODO: IDF-12313
-    /* Peripheral reg i2c power up */
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFTX_I2C);
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFRX_I2C);
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFPLL);
-
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_RTC_DREG, 1);
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_DIG_DREG, 1);
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_RTC_REG, 0);
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_DIG_REG, 0);
-#endif
+    /* No peripheral reg i2c power up required on the target */
 
     pmu_hp_system_init_default(PMU_instance());
     pmu_lp_system_init_default(PMU_instance());
 
     pmu_power_domain_force_default(PMU_instance());
+
+    // default ccm mode
+    REG_SET_FIELD(PMU_DCM_CTRL_REG, PMU_DCDC_CCM_SW_EN, 1);
+    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCDC_CCM_ENB, 0);
+#if !CONFIG_IDF_ENV_FPGA
+    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_CCM_DREG0, 24);
+    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_CCM_PCUR_LIMIT0, 4);
+    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_VCM_PCUR_LIMIT0, 1);
+    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_XPD_TRX, 0);
+#endif
+
+    // close rfpll to decrease mslp_cur
+    REG_SET_FIELD(PMU_RF_PWC_REG, PMU_XPD_FORCE_RFPLL, 1);
+    REG_SET_FIELD(PMU_RF_PWC_REG, PMU_XPD_RFPLL, 0);
+
+#if !CONFIG_IDF_ENV_FPGA
+    // TODO: IDF-12313
+    // if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
+    //     esp_ocode_calib_init();
+    // }
+#endif
 }

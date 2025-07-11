@@ -1679,15 +1679,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ls_div_num : HRO; bitpos: [7:0]; default: 0;
-         *  clk_hproot is div1 of low-speed clock-source if clck-source is a low-speed
-         *  clock-source such as XTAL/FOSC.
-         */
-        uint32_t ls_div_num:8;
-        /** hs_div_num : HRO; bitpos: [15:8]; default: 2;
-         *  clk_hproot is div3 of SPLL if the clock-source is high-speed clock SPLL.
-         */
-        uint32_t hs_div_num:8;
+        uint32_t reserved_0:16;
         /** soc_clk_sel : R/W; bitpos: [17:16]; default: 0;
          *  Configures to select the clock source of HP_ROOT_CLK.
          *  0 (default): XTAL_CLK
@@ -1891,16 +1883,18 @@ typedef union {
         uint32_t reserved_3:1;
         /** timg_secure_clk_sel : R/W; bitpos: [7:4]; default: 7;
          *  Configures the clock source for the TIMG_SECURE_CLK.
-         *  0 (default):CPU_CLK
-         *  1: AHB_CLK
-         *  2: APB_CLK
-         *  3: sec function clock
-         *  4: mspi function clock
-         *  5: iomux function clock
-         *  6: parl io rx function clock
-         *  7: parl io tx function clock
-         *  8: spi2 function clock
+         *  0: EXT_IO_CLK
+         *  1: CPU_CLK
+         *  2: AHB_CLK
+         *  3: APB_CLK
+         *  4: sec function clock
+         *  5: mspi function clock
+         *  6: iomux function clock
+         *  7: parl io rx function clock
+         *  8: parl io tx function clock
          *  9: spi3 function clock
+         *  10: spi2 function clock
+         *  11: RC_FAST_CLK
          */
         uint32_t timg_secure_clk_sel:4;
         /** timg_secure_clk_div_num : R/W; bitpos: [15:8]; default: 7;

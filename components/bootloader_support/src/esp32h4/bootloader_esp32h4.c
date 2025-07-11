@@ -13,11 +13,9 @@
 #include "esp_rom_efuse.h"
 #include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
-#include "esp_rom_spiflash.h"
 #include "soc/gpio_sig_map.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
-#include "soc/spi_periph.h"
 #include "soc/cache_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/pcr_reg.h"
@@ -28,8 +26,6 @@
 #include "bootloader_flash_config.h"
 #include "bootloader_mem.h"
 #include "esp_private/regi2c_ctrl.h"
-// #include "soc/regi2c_lp_bias.h"
-// #include "soc/regi2c_bias.h"
 #include "soc/hp_system_reg.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
@@ -83,39 +79,18 @@ static void bootloader_super_wdt_auto_feed(void)
     REG_WRITE(LP_WDT_SWD_WPROTECT_REG, 0);
 }
 
-void spi_flash_din_num_set(uint8_t spi_num, uint8_t din_num)
-{
-    uint32_t reg_val = (REG_READ(SPI_MEM_DIN_NUM_REG(spi_num)) & (~(SPI_MEM_DIN0_NUM_M | SPI_MEM_DIN1_NUM_M | SPI_MEM_DIN2_NUM_M | SPI_MEM_DIN3_NUM_M | SPI_MEM_DIN4_NUM_M | SPI_MEM_DIN5_NUM_M | SPI_MEM_DIN6_NUM_M | SPI_MEM_DIN7_NUM_M | SPI_MEM_DINS_NUM_M)))
-        | (din_num << SPI_MEM_DIN0_NUM_S) | (din_num << SPI_MEM_DIN1_NUM_S) | (din_num << SPI_MEM_DIN2_NUM_S) | (din_num << SPI_MEM_DIN3_NUM_S)
-        | (din_num << SPI_MEM_DIN4_NUM_S) | (din_num << SPI_MEM_DIN5_NUM_S) | (din_num << SPI_MEM_DIN6_NUM_S) | (din_num << SPI_MEM_DIN7_NUM_S) | (din_num << SPI_MEM_DINS_NUM_S);
-    REG_WRITE(SPI_MEM_DIN_NUM_REG(spi_num), reg_val);
-    REG_SET_BIT(SPI_MEM_TIMING_CALI_REG(spi_num), SPI_MEM_TIMING_CALI_UPDATE);
-}
-
-void spi_flash_extra_dummy_set(uint8_t spi_num, uint8_t extra_dummy)
-{
-    rom_spiflash_legacy_data->dummy_len_plus[spi_num] = extra_dummy;
-}
-
-/*
- * din mode     din_num      dummy
-    1           0            1
-    0           0            0
-    1           0            2
-    0           0            1
-    1           0            3
-    0           0            2
-    1           0            4
-    0           0            3
- */
 static inline void bootloader_hardware_init(void)
 {
-    // TODO: IDF-12285 RF disable?
+    /* Disable RF pll by default */
+    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFPLL);
+    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_FORCE_RFPLL);
 
+#if !CONFIG_IDF_ENV_FPGA
     /* Enable analog i2c master clock */
     _regi2c_ctrl_ll_master_enable_clock(true); // keep ana i2c mst clock always enabled in bootloader
-    regi2c_ctrl_ll_master_force_enable_clock(true); // TODO: IDF-12285 Remove this?
+    regi2c_ctrl_ll_master_force_enable_clock(true); // TODO: IDF-12313 Remove this?
     regi2c_ctrl_ll_master_configure_clock();
+#endif
 }
 
 static inline void bootloader_ana_reset_config(void)

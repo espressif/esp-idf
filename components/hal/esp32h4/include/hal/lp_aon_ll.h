@@ -85,10 +85,10 @@ static inline  uint32_t lp_aon_ll_ext1_get_wakeup_pins(void)
 static inline  void lp_aon_ll_inform_wakeup_type(bool dslp)
 {
     if (dslp) {
-        REG_SET_BIT(SLEEP_MODE_REG, BIT(0));    /* Tell rom to run deep sleep wake stub */
+        REG_SET_BIT(RTC_SLEEP_MODE_REG, BIT(0));    /* Tell rom to run deep sleep wake stub */
 
     } else {
-        REG_CLR_BIT(SLEEP_MODE_REG, BIT(0));    /* Tell rom to run light sleep wake stub */
+        REG_CLR_BIT(RTC_SLEEP_MODE_REG, BIT(0));    /* Tell rom to run light sleep wake stub */
     }
 }
 #ifdef __cplusplus

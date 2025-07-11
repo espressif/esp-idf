@@ -15,6 +15,10 @@
 #define I2C_DCDC    0x6D
 #define I2C_DCDC_HOSTID 0
 
+#define I2C_DCDC_XPD_TRX                1
+#define I2C_DCDC_XPD_TRX_MSB            7
+#define I2C_DCDC_XPD_TRX_LSB            7
+
 #define I2C_DCDC_CCM_DREG0               7
 #define I2C_DCDC_CCM_DREG0_MSB           4
 #define I2C_DCDC_CCM_DREG0_LSB           0

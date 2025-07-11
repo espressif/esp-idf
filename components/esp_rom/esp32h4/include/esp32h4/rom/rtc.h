@@ -8,8 +8,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 #include "esp_assert.h"
-
 #include "soc/soc.h"
 #include "soc/lp_aon_reg.h"
 #include "soc/reset_reasons.h"
@@ -17,8 +17,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-//TODO: [ESP32H4] IDF-12313 inherit from verification branch, need check
 
 /** \defgroup rtc_apis, rtc registers and memory related apis
   * @brief rtc apis
@@ -44,29 +42,35 @@ extern "C" {
   *
   *************************************************************************************
   *     RTC store registers     usage
-  *     LP_AON_STORE0_REG       Reserved
+  *     LP_AON_STORE0_REG       RTC fix us, high 32 bits
   *     LP_AON_STORE1_REG       RTC_SLOW_CLK calibration value
   *     LP_AON_STORE2_REG       Boot time, low word
   *     LP_AON_STORE3_REG       Boot time, high word
-  *     LP_AON_STORE4_REG       External XTAL frequency
+  *     LP_AON_STORE4_REG       Status of whether to disable LOG from ROM at bit[0]
   *     LP_AON_STORE5_REG       FAST_RTC_MEMORY_LENGTH
   *     LP_AON_STORE6_REG       FAST_RTC_MEMORY_ENTRY
-  *     LP_AON_STORE7_REG       FAST_RTC_MEMORY_CRC
+  *     LP_AON_STORE7_REG       RTC fix us, low 32 bits
   *     LP_AON_STORE8_REG       Store light sleep wake stub addr
   *     LP_AON_STORE9_REG       Store the sleep mode at bit[0]  (0:light sleep 1:deep sleep)
   *************************************************************************************
+  *
+  * Since esp32h4 does not support RTC mem, so use LP_AON store regs to record rtc time:
+  *
+  * |------------------------|----------------------------------------|
+  * |   LP_AON_STORE0_REG    |   LP_AON_STORE7_REG                    |
+  * |   rtc_fix_us(MSB)      |   rtc_fix_us(LSB)                      |
+  * |------------------------|----------------------------------------|
   */
 #define RTC_FIX_US_HIGH_REG                 LP_AON_STORE0_REG
 #define RTC_SLOW_CLK_CAL_REG                LP_AON_STORE1_REG
 #define RTC_BOOT_TIME_LOW_REG               LP_AON_STORE2_REG
 #define RTC_BOOT_TIME_HIGH_REG              LP_AON_STORE3_REG
-#define RTC_XTAL_FREQ_REG                   LP_AON_STORE4_REG
 #define RTC_ENTRY_LENGTH_REG                LP_AON_STORE5_REG
 #define RTC_ENTRY_ADDR_REG                  LP_AON_STORE6_REG
 #define RTC_RESET_CAUSE_REG                 LP_AON_STORE6_REG
 #define RTC_FIX_US_LOW_REG                  LP_AON_STORE7_REG
-#define LIGHT_SLEEP_WAKE_STUB_ADDR_REG      LP_AON_STORE8_REG
-#define SLEEP_MODE_REG                      LP_AON_STORE9_REG
+#define RTC_SLEEP_WAKE_STUB_ADDR_REG        LP_AON_STORE8_REG
+#define RTC_SLEEP_MODE_REG                  LP_AON_STORE9_REG
 
 #define RTC_DISABLE_ROM_LOG ((1 << 0) | (1 << 16)) //!< Disable logging from the ROM code.
 
@@ -215,7 +219,7 @@ void esp_rom_set_rtc_wake_addr(esp_rom_wake_func_t entry_addr, size_t length);
 static inline void rtc_suppress_rom_log(void)
 {
     /* To disable logging in the ROM, only the least significant bit of the register is used,
-     * but since this register is also used to store the frequency of the main crystal (RTC_XTAL_FREQ_REG),
+     * but this register was also used to store the frequency of the main crystal (RTC_XTAL_FREQ_REG) on old targets,
      * you need to write to this register in the same format.
      * Namely, the upper 16 bits and lower should be the same.
      */

@@ -6,13 +6,7 @@
 
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
-#include "soc/rtc.h"
 #include "hal/assert.h"
-#include "hal/log.h"
-
-//TODO: [ESP32H4] IDF-12285 inherited from verification branch, need check
-
-static const char *CLK_HAL_TAG = "clk_hal";
 
 uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
 {
@@ -23,6 +17,8 @@ uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
         return clk_ll_bbpll_get_freq_mhz();
     case SOC_CPU_CLK_SRC_RC_FAST:
         return SOC_CLK_RC_FAST_FREQ_APPROX / MHZ;
+    // case SOC_CPU_CLK_SRC_XTAL_X2:
+    //     return clk_ll_xtal_x2_get_freq_mhz();
     default:
         // Unknown CPU_CLK mux input
         HAL_ASSERT(false);
@@ -33,15 +29,12 @@ uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
 uint32_t clk_hal_cpu_get_freq_hz(void)
 {
     soc_cpu_clk_src_t source = clk_ll_cpu_get_src();
-    uint32_t divider = (source == SOC_CPU_CLK_SRC_PLL) ? clk_ll_cpu_get_hs_divider() : clk_ll_cpu_get_ls_divider();
-    return clk_hal_soc_root_get_freq_mhz(source) * MHZ / divider;
+    return clk_hal_soc_root_get_freq_mhz(source) * MHZ / clk_ll_cpu_get_divider();
 }
 
 uint32_t clk_hal_ahb_get_freq_hz(void)
 {
-    soc_cpu_clk_src_t source = clk_ll_cpu_get_src();
-    uint32_t divider = (source == SOC_CPU_CLK_SRC_PLL) ? clk_ll_ahb_get_hs_divider() : clk_ll_ahb_get_ls_divider();
-    return clk_hal_soc_root_get_freq_mhz(source) * MHZ / divider;
+    return clk_hal_cpu_get_freq_hz() / clk_ll_ahb_get_divider();
 }
 
 uint32_t clk_hal_apb_get_freq_hz(void)
@@ -52,14 +45,12 @@ uint32_t clk_hal_apb_get_freq_hz(void)
 uint32_t clk_hal_lp_slow_get_freq_hz(void)
 {
     switch (clk_ll_rtc_slow_get_src()) {
-    case SOC_RTC_SLOW_CLK_SRC_RC_SLOW:
-        return SOC_CLK_RC_SLOW_FREQ_APPROX;
+    case SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4:
+        return SOC_CLK_RC_SLOW_FREQ_APPROX / 4;
     case SOC_RTC_SLOW_CLK_SRC_XTAL32K:
         return SOC_CLK_XTAL32K_FREQ_APPROX;
     case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW:
         return SOC_CLK_OSC_SLOW_FREQ_APPROX;
-    case SOC_RTC_SLOW_CLK_SRC_RC32K:
-        return SOC_CLK_RC32K_FREQ_APPROX;
     default:
         // Unknown RTC_SLOW_CLK mux input
         HAL_ASSERT(false);
@@ -69,10 +60,7 @@ uint32_t clk_hal_lp_slow_get_freq_hz(void)
 
 uint32_t clk_hal_xtal_get_freq_mhz(void)
 {
-    uint32_t freq = clk_ll_xtal_load_freq_mhz();
-    if (freq == 0) {
-        HAL_LOGW(CLK_HAL_TAG, "invalid SOC_XTAL_FREQ_32M value, assume 32MHz");
-        return (uint32_t)SOC_XTAL_FREQ_32M;
-    }
+    uint32_t freq = clk_ll_xtal_get_freq_mhz();
+    HAL_ASSERT(freq == SOC_XTAL_FREQ_32M);
     return freq;
 }

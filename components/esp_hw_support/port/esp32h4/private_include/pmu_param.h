@@ -16,8 +16,8 @@
 extern "C" {
 #endif
 
-#define HP_CALI_DBIAS_DEFAULT   25
-#define LP_CALI_DBIAS_DEFAULT   26
+#define HP_CALI_DBIAS_DEFAULT   0
+#define LP_CALI_DBIAS_DEFAULT   0
 
 // FOR  XTAL FORCE PU IN SLEEP
 #define PMU_PD_CUR_SLEEP_ON    0

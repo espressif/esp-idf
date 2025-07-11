@@ -249,6 +249,10 @@ void pmu_init()
 
     pmu_power_domain_force_default(PMU_instance());
 
+    // default ccm mode
+    REG_SET_FIELD(PMU_DCM_CTRL_REG, PMU_DCDC_CCM_SW_EN, 1);
+    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCDC_CCM_ENB, 0);
+
 #if !CONFIG_IDF_ENV_FPGA
     // TODO: IDF-11548
     // if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {

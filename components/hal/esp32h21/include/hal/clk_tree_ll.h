@@ -18,6 +18,7 @@
 #include "hal/log.h"
 #include "esp32h21/rom/rtc.h"
 #include "hal/misc.h"
+#include "soc/timer_group_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,7 +27,7 @@ extern "C" {
 #define MHZ                 (1000000)
 
 #define CLK_LL_PLL_48M_FREQ_MHZ   (48)
-#define CLK_LL_PLL_64M_FREQ_MHZ   (64)
+// #define CLK_LL_PLL_64M_FREQ_MHZ   (64)
 #define CLK_LL_PLL_96M_FREQ_MHZ   (96)
 
 #define CLK_LL_XTAL32K_CONFIG_DEFAULT() { \
@@ -78,26 +79,26 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_disable(void)
     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_BBPLL_ICG);
 }
 
-/**
- * @brief Power up XTAL_X2 circuit
- */
-static inline __attribute__((always_inline)) void clk_ll_xtal_x2_enable(void)
-{
-    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
-    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2);
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
-}
+// /**
+//  * @brief Power up XTAL_X2 circuit
+//  */
+// static inline __attribute__((always_inline)) void clk_ll_xtal_x2_enable(void)
+// {
+//     CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
+//     CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
+//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2);
+//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
+// }
 
-/**
- * @brief Power down XTAL_X2 circuit
- */
-static inline __attribute__((always_inline)) void clk_ll_xtal_x2_disable(void)
-{
-    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2 | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
-}
+// /**
+//  * @brief Power down XTAL_X2 circuit
+//  */
+// static inline __attribute__((always_inline)) void clk_ll_xtal_x2_disable(void)
+// {
+//     CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2 | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
+//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
+//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
+// }
 
 /**
  * @brief Enable the 32kHz crystal oscillator
@@ -276,15 +277,15 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DLREF_SEL, oc_dlref_sel);
 }
 
-/**
- * @brief Get XTAL_X2_CLK frequency
- *
- * @return XTAL_X2 clock frequency, in MHz
- */
-static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_x2_get_freq_mhz(void)
-{
-    return SOC_XTAL_FREQ_32M * 2;
-}
+// /**
+//  * @brief Get XTAL_X2_CLK frequency
+//  *
+//  * @return XTAL_X2 clock frequency, in MHz
+//  */
+// static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_x2_get_freq_mhz(void)
+// {
+//     return SOC_XTAL_FREQ_32M * 2;
+// }
 
 /**
  * @brief To enable the change of soc_clk_sel, cpu_div_num, and ahb_div_num
@@ -312,9 +313,9 @@ static inline __attribute__((always_inline)) void clk_ll_cpu_set_src(soc_cpu_clk
     case SOC_CPU_CLK_SRC_RC_FAST:
         PCR.sysclk_conf.soc_clk_sel = 2;
         break;
-    case SOC_CPU_CLK_SRC_XTAL_X2:
-        PCR.sysclk_conf.soc_clk_sel = 3;
-        break;
+    // case SOC_CPU_CLK_SRC_XTAL_X2:
+    //     PCR.sysclk_conf.soc_clk_sel = 3;
+    //     break;
     default:
         // Unsupported CPU_CLK mux input sel
         abort();
@@ -336,8 +337,8 @@ static inline __attribute__((always_inline)) soc_cpu_clk_src_t clk_ll_cpu_get_sr
         return SOC_CPU_CLK_SRC_PLL;
     case 2:
         return SOC_CPU_CLK_SRC_RC_FAST;
-    case 3:
-        return SOC_CPU_CLK_SRC_XTAL_X2;
+    // case 3:
+    //     return SOC_CPU_CLK_SRC_XTAL_X2;
     default:
         // Invalid SOC_CLK_SEL value
         return SOC_CPU_CLK_SRC_INVALID;
@@ -410,40 +411,40 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(voi
 }
 
 /**
- * @brief Select the calibration 32kHz clock source for timergroup0
+ * @brief Select the calibration clock source for timergroup0
  *
- * @param in_sel One of the 32kHz clock sources (XTAL32K_CLK, OSC_SLOW_CLK)
+ * @param clk_sel One of the clock sources in soc_clk_calibration_clk_src_t
  */
-static inline __attribute__((always_inline)) void clk_ll_32k_calibration_set_target(soc_rtc_slow_clk_src_t in_sel)
+static inline __attribute__((always_inline)) void clk_ll_calibration_set_target(soc_clk_calibration_clk_src_t clk_sel)
 {
-    switch (in_sel) {
-    case SOC_RTC_SLOW_CLK_SRC_XTAL32K:
-        PCR.ctrl_32k_conf.clk_32k_sel = 1;
+    int timg_cali_clk_sel = -1;
+    int clk_32k_sel = -1;
+
+    switch (clk_sel) {
+    case CLK_CAL_32K_XTAL:
+        timg_cali_clk_sel = 2;
+        clk_32k_sel = 1;
         break;
-    case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW:
-        PCR.ctrl_32k_conf.clk_32k_sel = 2;
+    case CLK_CAL_32K_OSC_SLOW:
+        timg_cali_clk_sel = 2;
+        clk_32k_sel = 2;
+        break;
+    case CLK_CAL_RC_SLOW:
+        timg_cali_clk_sel = 0;
+        break;
+    case CLK_CAL_RC_FAST:
+        timg_cali_clk_sel = 1;
         break;
     default:
-        // Unsupported 32K_SEL mux input
+        // Unsupported CLK_CAL mux input
         abort();
     }
-}
 
-/**
- * @brief Get the calibration 32kHz clock source for timergroup0
- *
- * @return soc_rtc_slow_clk_src_t Currently selected calibration 32kHz clock (one of the 32kHz clocks)
- */
-static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_32k_calibration_get_target(void)
-{
-    uint32_t clk_sel = PCR.ctrl_32k_conf.clk_32k_sel;
-    switch (clk_sel) {
-    case 1:
-        return SOC_RTC_SLOW_CLK_SRC_XTAL32K;
-    case 2:
-        return SOC_RTC_SLOW_CLK_SRC_OSC_SLOW;
-    default:
-        return SOC_RTC_SLOW_CLK_SRC_INVALID;
+    if (timg_cali_clk_sel >= 0) {
+        TIMERG0.rtccalicfg.rtc_cali_clk_sel = timg_cali_clk_sel;
+    }
+    if (clk_32k_sel >= 0) {
+        PCR.ctrl_32k_conf.clk_32k_sel = clk_32k_sel;
     }
 }
 
@@ -455,7 +456,7 @@ static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_32k_c
 static inline __attribute__((always_inline)) void clk_ll_rtc_slow_set_src(soc_rtc_slow_clk_src_t in_sel)
 {
     switch (in_sel) {
-    case SOC_RTC_SLOW_CLK_SRC_RC_SLOW:
+    case SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4:
         LP_CLKRST.lp_clk_conf.clkrst_slow_clk_sel = 0;
         break;
     case SOC_RTC_SLOW_CLK_SRC_XTAL32K:
@@ -480,7 +481,7 @@ static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_rtc_s
     uint32_t clk_sel = LP_CLKRST.lp_clk_conf.clkrst_slow_clk_sel;
     switch (clk_sel) {
     case 0:
-        return SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+        return SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4;
     case 1:
         return SOC_RTC_SLOW_CLK_SRC_XTAL32K;
     case 3:
@@ -559,14 +560,14 @@ static inline void clk_ll_rc_fast_tick_conf(void)
 }
 
 /**
- * @brief Set RC_SLOW_CLK divider
+ * @brief Set RC_SLOW_CLK divider. The output from the divider is passed into rtc_slow_clk MUX.
  *
- * @param divider Divider of RC_SLOW_CLK. Usually this divider is set to 1 (reg. value is 0) in bootloader stage.
+ * @param divider Divider of RC_SLOW_CLK. Fixed the divider to 4 on the target.
  */
 static inline __attribute__((always_inline)) void clk_ll_rc_slow_set_divider(uint32_t divider)
 {
-    // No divider on the target
-    HAL_ASSERT(divider == 1);
+    // Register not exposed
+    HAL_ASSERT(divider == 4);
 }
 
 /************************** LP STORAGE REGISTER STORE/LOAD **************************/

@@ -27,36 +27,30 @@ __attribute__((unused)) static const char *TAG = "rtc_time";
 #define RTC_SLOW_CLK_32K_CAL_TIMEOUT_THRES(cycles)   (cycles << 12)
 #define RTC_FAST_CLK_20M_CAL_TIMEOUT_THRES(cycles)   (TIMG_RTC_CALI_TIMEOUT_THRES_V) // Just use the max timeout thres value
 
-/* On ESP32H21, TIMG_RTC_CALI_CLK_SEL can config to 0, 1, 2, 3
- * 0 or 3: calibrate RC_SLOW clock
- * 1: calibrate RC_FAST clock
- * 2: calibrate 32K clock, which 32k depends on reg_32k_sel: 1: External 32 kHz XTAL, 2: External 32kHz clock input by gpio11
- */
-#define TIMG_RTC_CALI_CLK_SEL_RC_SLOW 0
-#define TIMG_RTC_CALI_CLK_SEL_RC_FAST 1
-#define TIMG_RTC_CALI_CLK_SEL_32K     2
-
 static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
     assert(slowclk_cycles < TIMG_RTC_CALI_MAX_V);
 
-    uint32_t cali_clk_sel = 0;
     soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
-    soc_rtc_slow_clk_src_t old_32k_cal_clk_sel = clk_ll_32k_calibration_get_target();
+    soc_clk_calibration_clk_src_t cali_clk_sel = (soc_clk_calibration_clk_src_t)cal_clk;
     if (cal_clk == RTC_CAL_RTC_MUX) {
-        cal_clk = (rtc_cal_sel_t)slow_clk_src;
-    }
-    if (cal_clk == RTC_CAL_RC_FAST) {
-        cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_RC_FAST;
-    } else if (cal_clk == RTC_CAL_RC_SLOW) {
-        cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_RC_SLOW;
-    } else {
-        cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_32K;
-        clk_ll_32k_calibration_set_target((soc_rtc_slow_clk_src_t)cal_clk);
+        switch (slow_clk_src) {
+        case SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4:
+            cali_clk_sel = CLK_CAL_RC_SLOW;
+            break;
+        case SOC_RTC_SLOW_CLK_SRC_XTAL32K:
+            cali_clk_sel = CLK_CAL_32K_XTAL;
+            break;
+        case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW:
+            cali_clk_sel = CLK_CAL_32K_OSC_SLOW;
+            break;
+        default:
+            ESP_EARLY_LOGE(TAG, "clock not supported to be calibrated");
+            return 0; // Invalid RTC_SLOW_CLK source
+        }
     }
 
-
-    /* Enable requested clock (150k clock is always on) */
+    /* Enable requested clock (rc_slow clock is always on) */
     // All clocks on/off takes time to be stable, so we shouldn't frequently enable/disable the clock
     // Only enable if originally was disabled, and set back to the disable state after calibration is done
     // If the clock is already on, then do nothing
@@ -90,8 +84,8 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     }
 
     /* Prepare calibration */
-    REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, cali_clk_sel);
-    if (cali_clk_sel == TIMG_RTC_CALI_CLK_SEL_RC_FAST) {
+    clk_ll_calibration_set_target(cali_clk_sel);
+    if (cali_clk_sel == CLK_CAL_RC_FAST) {
         clk_ll_rc_fast_tick_conf();
     }
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING);
@@ -100,10 +94,10 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
 
     /* Set timeout reg and expect time delay*/
     uint32_t expected_freq;
-    if (cali_clk_sel == TIMG_RTC_CALI_CLK_SEL_32K) {
+    if (cali_clk_sel == CLK_CAL_32K_XTAL || cali_clk_sel == CLK_CAL_32K_OSC_SLOW) {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_32K_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = SOC_CLK_XTAL32K_FREQ_APPROX;
-    } else if (cali_clk_sel == TIMG_RTC_CALI_CLK_SEL_RC_FAST) {
+    } else if (cali_clk_sel == CLK_CAL_RC_FAST) {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_FAST_CLK_20M_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = SOC_CLK_RC_FAST_FREQ_APPROX >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
     } else {
@@ -150,9 +144,9 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         }
     }
 
-    // Always set back the calibration 32kHz clock selection
-    if (old_32k_cal_clk_sel != SOC_RTC_SLOW_CLK_SRC_INVALID) {
-        clk_ll_32k_calibration_set_target(old_32k_cal_clk_sel);
+    if (cal_clk == RTC_CAL_RTC_MUX && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4) {
+        // calibration was done on RC_SLOW clock, but rtc_slow_clk src is RC_SLOW_D4, so we need to multiply the cal_val by 4
+        cal_val *= 4;
     }
 
     return cal_val;

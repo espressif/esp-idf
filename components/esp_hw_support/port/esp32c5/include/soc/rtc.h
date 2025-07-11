@@ -147,7 +147,7 @@ typedef struct {
  */
 #define RTC_CLK_CONFIG_DEFAULT() { \
     .xtal_freq = CONFIG_XTAL_FREQ, \
-    .cpu_freq_mhz = 80, \
+    .cpu_freq_mhz = CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ, \
     .fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST, \
     .slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, \
     .clk_rtc_clk_div = 0, \
