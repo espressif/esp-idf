@@ -141,7 +141,7 @@ extern void esp_panic_handler_feed_wdts(void);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 extern int ble_controller_deinit(void);
 extern int ble_controller_enable(uint8_t mode);
-extern int ble_controller_disable(void);
+extern void ble_controller_disable(void);
 extern int esp_register_ext_funcs (struct ext_funcs_t *);
 extern void esp_unregister_ext_funcs (void);
 extern int esp_ble_ll_set_public_addr(const uint8_t *addr);
@@ -1077,9 +1077,9 @@ esp_err_t esp_bt_controller_disable(void)
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
         return ESP_FAIL;
     }
-    if (ble_controller_disable() != 0) {
-        return ESP_FAIL;
-    }
+    ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
+
+    ble_controller_disable();
     ble_stack_disable();
     if (s_ble_active) {
         esp_phy_disable(PHY_MODEM_BT);
@@ -1091,7 +1091,6 @@ esp_err_t esp_bt_controller_disable(void)
 #if CONFIG_SW_COEXIST_ENABLE
     coex_disable();
 #endif
-    ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     return ESP_OK;
 }
 
