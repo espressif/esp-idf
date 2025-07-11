@@ -271,7 +271,9 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
 endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-    list(APPEND compile_options "-fno-use-cxa-atexit")
+    list(APPEND compile_options "-fno-use-cxa-atexit")  # TODO IDF-10934
+else()
+    list(APPEND cxx_compile_options "-fuse-cxa-atexit")
 endif()
 
 if(COMPILER_RT_LIB_NAME)
