@@ -147,12 +147,12 @@ function(__get_absolute_paths)
     set(multi_value PATHS)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
-    if(NOT DEFINED ARG_PATHS)
-        idf_die("PATHS option is required")
-    endif()
-
     if(NOT DEFINED ARG_OUTPUT)
         idf_die("OUTPUT option is required")
+    endif()
+
+    if(NOT DEFINED ARG_PATHS)
+        set(ARG_PATHS "")
     endif()
 
     set(absolute_paths "")

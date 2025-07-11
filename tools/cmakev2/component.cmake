@@ -106,12 +106,8 @@ function(__get_component_paths)
         idf_die("OUTPUT option is required")
     endif()
 
-    set(include_paths "")
-    set(exclude_paths "")
     __get_absolute_paths(PATHS "${ARG_PATHS}" OUTPUT include_paths)
-    if(DEFINED ARG_EXCLUDE_PATHS)
-        __get_absolute_paths(PATHS "${ARG_EXCLUDE_PATHS}" OUTPUT exclude_paths)
-    endif()
+    __get_absolute_paths(PATHS "${ARG_EXCLUDE_PATHS}" OUTPUT exclude_paths)
 
     if(ARG_CHECK)
         foreach(path IN LISTS include_paths)
