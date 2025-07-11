@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#define DR_REG_INTERRUPT_BASE(i)             (DR_REG_INTMTX0_BASE + (i) * 0x1000)
+
 /** INTERRUPT_CORE0_WIFI_MAC_INTR_MAP_REG register
  *  WIFI_MAC_INTR mapping register
  */
