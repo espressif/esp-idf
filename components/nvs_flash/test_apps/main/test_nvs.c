@@ -136,7 +136,8 @@ TEST_CASE("flash erase deinitializes initialized partition", "[nvs]")
 }
 
 #ifndef CONFIG_NVS_ENCRYPTION
-// NOTE: `nvs_flash_init_partition_ptr` does not support NVS encryption
+#ifndef CONFIG_NVS_BDL_STACK
+// NOTE: `nvs_flash_init_partition_ptr` does not support NVS encryption nor BDL stack
 TEST_CASE("nvs_flash_init_partition_ptr() works correctly", "[nvs]")
 {
     // First, open and write to partition using normal initialization
@@ -165,6 +166,7 @@ TEST_CASE("nvs_flash_init_partition_ptr() works correctly", "[nvs]")
 
     nvs_flash_deinit();
 }
+#endif // !CONFIG_NVS_BDL_STACK
 
 #ifdef CONFIG_SOC_HMAC_SUPPORTED
 TEST_CASE("test nvs encryption with HMAC-based scheme without toggling any config options", "[nvs_encr_hmac]")

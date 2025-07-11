@@ -6,9 +6,7 @@
 #pragma once
 
 #include "nvs_handle_simple.hpp"
-#include "nvs_storage.hpp"
-#include "nvs_partition.hpp"
-#include "nvs_memory_management.hpp"
+#include "partition.hpp"
 #include "nvs_flash.h"
 
 namespace nvs {
@@ -44,7 +42,7 @@ protected:
 
     intrusive_list<nvs::Storage> nvs_storage_list;
 
-    intrusive_list<nvs::NVSPartition> nvs_partition_list;
+    intrusive_list<nvs::Partition> nvs_partition_list;
 };
 
 } // nvs
