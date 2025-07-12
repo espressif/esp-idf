@@ -199,6 +199,67 @@ function(__init_idf_target)
 endfunction()
 
 #[[
+   __init_toolchain()
+
+   Determine the IDF_TOOLCHAIN value from the IDF_TOOLCHAIN environment
+   variable or the CMake cache variable. If none of these are set, use the
+   default gcc toolchain. Ensure there are no inconsistencies in the
+   IDF_TOOLCHAIN values set in different locations. Also ensure that the
+   CMAKE_TOOLCHAIN_FILE is set to the correct file according to the current
+   IDF_TARGET.
+
+   Set the IDF_TOOLCHAIN and IDF_TOOLCHAIN_FILE build properties. Also,
+   configure the IDF_TOOLCHAIN CMake cache variable and set the
+   CMAKE_TOOLCHAIN_FILE global variable.
+#]]
+function(__init_toolchain)
+    set(cache_toolchain $CACHE{IDF_TOOLCHAIN})
+    set(cache_toolchain_file $CACHE{CMAKE_TOOLCHAIN_FILE})
+
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(idf_target IDF_TARGET)
+
+    __get_default_value(VARIABLE IDF_TOOLCHAIN
+                        DEFAULT gcc
+                        OUTPUT toolchain)
+    if(cache_toolchain)
+        if(NOT "${cache_toolchain}" STREQUAL "${toolchain}")
+            idf_die("IDF_TOOLCHAIN '${cache_toolchain}' in CMake cache does not match "
+                    "currently selected IDF_TOOLCHAIN '${toolchain}'. To change "
+                    "the toolchain, clear the build directory and sdkconfig file, "
+                    "and build the project again.")
+        endif()
+    endif()
+
+    if("${toolchain}" STREQUAL "clang")
+        set(toolchain_type "clang-")
+    endif()
+
+    # Check that the selected target is consistent with the toolchain file in
+    # the CMake cache.
+    if(cache_toolchain_file)
+        string(FIND "${cache_toolchain_file}" "-${toolchain_type}${idf_target}.cmake" found)
+        if(${found} EQUAL -1)
+            get_filename_component(cache_toolchain_file_stem "${cache_toolchain_file}" NAME_WE)
+            idf_die("CMAKE_TOOLCHAIN_FILE '${cache_toolchain_file_stem}' "
+                    "does not match currently selected IDF_TARGET '${idf_target}'. "
+                    "To change the target, clear the build directory and sdkconfig file, "
+                    "and build the project again.")
+        endif()
+    endif()
+
+    set(toolchain_file "${idf_path}/tools/cmake/toolchain-${toolchain_type}${idf_target}.cmake")
+    if(NOT EXISTS ${toolchain_file})
+        idf_die("Toolchain file ${toolchain_file} not found")
+    endif()
+
+    set(IDF_TOOLCHAIN ${toolchain} CACHE STRING "IDF Build Toolchain Type")
+    set(CMAKE_TOOLCHAIN_FILE "${toolchain_file}" PARENT_SCOPE)
+    idf_build_set_property(IDF_TOOLCHAIN "${toolchain}")
+    idf_build_set_property(IDF_TOOLCHAIN_FILE "${toolchain_file}")
+endfunction()
+
+#[[
    __init_components()
 
    Search for possible component directories categorized by their source, which
@@ -308,6 +369,9 @@ __init_sdkconfig_files()
 # Set IDF_TARGET.
 __init_idf_target()
 
+# Set IDF_TOOLCHAIN, IDF_TOOLCHAIN_FILE and CMAKE_TOOLCHAIN_FILE.
+__init_toolchain()
+
 # Discover and initialize components.
 __init_components()
 
@@ -316,7 +380,6 @@ __init_components()
 Many of the following things are already implemented in PoC !38337, but they
 need to be reviewed.
 
-* Set the toolchain before invoking project().
 * Enable ccache if requested and available.
 * Generate initial sdkconfig for component manager.
 * Call component manager with initial sdkconfig to download requested components
