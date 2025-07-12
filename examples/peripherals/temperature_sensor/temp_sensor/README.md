@@ -15,6 +15,8 @@ The conversion relationship is the first two columns of the table below. Among t
 |     3     |   1    |     -30 ~ 50     |
 |     4     |   2    |     -40 ~ 20     |
 
+> **Note**: The temperature sensor is integrated directly into the chip. The sensor is designed primarily to measure the internal temperature of the chip, and its readings can be affected by factors such as the microcontroller's clock frequency, I/O load, and the external environment. 
+
 ## How to use example
 
 Before project configuration and build, be sure to set the correct chip target using `idf.py set-target <chip_name>`.
