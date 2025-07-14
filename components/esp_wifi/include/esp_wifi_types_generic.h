@@ -95,8 +95,6 @@ typedef enum {
     WIFI_AUTH_WAPI_PSK,         /**< Authenticate mode : WAPI_PSK */
     WIFI_AUTH_OWE,              /**< Authenticate mode : OWE */
     WIFI_AUTH_WPA3_ENT_192,     /**< Authenticate mode : WPA3_ENT_SUITE_B_192_BIT */
-    WIFI_AUTH_WPA3_EXT_PSK,     /**< This authentication mode will yield same result as WIFI_AUTH_WPA3_PSK and not recommended to be used. It will be deprecated in future, please use WIFI_AUTH_WPA3_PSK instead. */
-    WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE, /**< This authentication mode will yield same result as WIFI_AUTH_WPA3_PSK and not recommended to be used. It will be deprecated in future, please use WIFI_AUTH_WPA3_PSK instead.*/
     WIFI_AUTH_DPP,              /**< Authenticate mode : DPP */
     WIFI_AUTH_WPA3_ENTERPRISE,  /**< Authenticate mode : WPA3-Enterprise Only Mode */
     WIFI_AUTH_WPA2_WPA3_ENTERPRISE, /**< Authenticate mode : WPA3-Enterprise Transition Mode */
@@ -1446,7 +1444,6 @@ typedef struct {
   * @brief Argument structure for WIFI_EVENT_STA_NEIGHBOR_REP event
   */
 typedef struct {
-    uint8_t report[ESP_WIFI_MAX_NEIGHBOR_REP_LEN];  /**< Neighbor Report received from the AP (will be deprecated in next major release, use n_report instead)*/
     uint16_t report_len;                            /**< Length of the report*/
     uint8_t n_report[];                             /**< Neighbor Report received from the AP*/
 } wifi_event_neighbor_report_t;

@@ -284,25 +284,6 @@ esp_err_t esp_now_del_peer(const uint8_t *peer_addr);
 esp_err_t esp_now_mod_peer(const esp_now_peer_info_t *peer);
 
 /**
-  * @brief      Config ESPNOW rate of specified interface
-  *
-  * @deprecated please use esp_now_set_peer_rate_config() instead.
-  *
-  * @attention  1. This API should be called after esp_wifi_start().
-  * @attention  2. This API only work when not use Wi-Fi 6 and esp_now_set_peer_rate_config() not called.
-  *
-  * @param      ifx  Interface to be configured.
-  * @param      rate Phy rate to be configured.
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - others: failed
-  */
-esp_err_t esp_wifi_config_espnow_rate(wifi_interface_t ifx, wifi_phy_rate_t rate)
-__attribute__((deprecated("This API can be only used when rate is non-HE rate, \
-                                please use esp_now_set_peer_rate_config if you want full support of the rate.")));
-
-/**
   * @brief      Set ESPNOW rate config for each peer
   *
   * @attention  1. This API should be called after esp_wifi_start() and esp_now_init().

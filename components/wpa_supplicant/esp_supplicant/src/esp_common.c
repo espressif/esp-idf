@@ -397,7 +397,6 @@ void neighbor_report_recvd_cb(void *ctx, const uint8_t *report, size_t report_le
         return;
     }
 
-    os_memcpy(neighbor_report_event->report, report, ESP_WIFI_MAX_NEIGHBOR_REP_LEN);
     os_memcpy(neighbor_report_event->n_report, report, report_len);
     neighbor_report_event->report_len = report_len;
     esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP, neighbor_report_event, sizeof(wifi_event_neighbor_report_t) + report_len, 0);
