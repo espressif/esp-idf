@@ -142,7 +142,6 @@ api-reference/peripherals/sdio_slave.rst
 api-reference/peripherals/bitscrambler.rst
 api-reference/peripherals/temp_sensor.rst
 api-reference/peripherals/usb_device.rst
-api-reference/peripherals/i2c.rst
 api-reference/peripherals/jpeg.rst
 api-reference/peripherals/mcpwm.rst
 api-reference/peripherals/usb_host.rst
@@ -153,7 +152,6 @@ api-reference/peripherals/twai.rst
 api-reference/peripherals/etm.rst
 api-reference/peripherals/sdspi_share.rst
 api-reference/peripherals/ana_cmpr.rst
-api-reference/peripherals/i2c_slave_v1.rst
 api-reference/peripherals/adc_continuous.rst
 api-reference/peripherals/hmac.rst
 api-reference/peripherals/uart.rst
@@ -188,7 +186,6 @@ api-reference/peripherals/sdmmc_host.rst
 api-reference/peripherals/lcd/i80_lcd.rst
 api-reference/peripherals/lcd/index.rst
 api-reference/peripherals/lcd/dsi_lcd.rst
-api-reference/peripherals/lcd/i2c_lcd.rst
 api-reference/peripherals/lcd/spi_lcd.rst
 api-reference/peripherals/lcd/rgb_lcd.rst
 api-reference/peripherals/lcd/parl_lcd.rst

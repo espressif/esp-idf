@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+#define DR_REG_I2C_BASE(i)                         (DR_REG_I2C0_BASE + (i) * 0x1000)
+
 /** I2C_SCL_LOW_PERIOD_REG register
  *  Configures the low level width of the SCL
  *  Clock
