@@ -11,7 +11,6 @@
 #include <stddef.h>
 #include "sdkconfig.h"
 #include "esp_event_base.h"
-#include "esp_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,12 +34,12 @@ typedef enum {
   * @brief Wi-Fi interface type
   */
 typedef enum {
-    WIFI_IF_STA = ESP_IF_WIFI_STA,    /**< Station interface */
-    WIFI_IF_AP  = ESP_IF_WIFI_AP,     /**< Soft-AP interface */
+    WIFI_IF_STA,    /**< Station interface */
+    WIFI_IF_AP,     /**< Soft-AP interface */
 #if CONFIG_SOC_WIFI_NAN_SUPPORT || !CONFIG_SOC_WIFI_ENABLED
-    WIFI_IF_NAN = ESP_IF_WIFI_NAN,    /**< NAN interface */
+    WIFI_IF_NAN,    /**< NAN interface */
 #endif
-    WIFI_IF_MAX                       /**< Maximum number of interfaces */
+    WIFI_IF_MAX     /**< Maximum number of interfaces */
 } wifi_interface_t;
 
 typedef enum {
