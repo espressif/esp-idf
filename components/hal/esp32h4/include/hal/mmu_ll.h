@@ -304,7 +304,9 @@ static inline bool mmu_ll_check_entry_valid(uint32_t mmu_id, uint32_t entry_id)
 static inline mmu_target_t mmu_ll_get_entry_target(uint32_t mmu_id, uint32_t entry_id)
 {
     (void)mmu_id;
-    return MMU_TARGET_FLASH0;
+    mmu_target_t target = ((REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0)) & SOC_MMU_ACCESS_SPIRAM) == 0) ? MMU_TARGET_FLASH0 : MMU_TARGET_PSRAM0;
+    return target;
+
 }
 
 /**
