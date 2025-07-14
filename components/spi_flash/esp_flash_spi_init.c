@@ -8,7 +8,6 @@
 #include "esp_flash.h"
 #include "memspi_host_driver.h"
 #include "esp_flash_spi_init.h"
-#include "driver/gpio.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_efuse.h"
 #include "esp_log.h"

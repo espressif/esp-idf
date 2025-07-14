@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import argparse
 import logging
@@ -6,13 +6,30 @@ from typing import Dict
 from typing import List
 from typing import Tuple
 
-g1_g0_components = ['hal', 'cxx', 'newlib', 'freertos', 'esp_hw_support', 'heap', 'log', 'soc', 'esp_rom',
-                    'esp_common', 'esp_system', 'xtensa', 'riscv', 'spi_flash', 'esp_mm']
+g1_g0_components = [
+    'hal',
+    'cxx',
+    'newlib',
+    'freertos',
+    'esp_hw_support',
+    'heap',
+    'log',
+    'soc',
+    'esp_rom',
+    'esp_common',
+    'esp_system',
+    'xtensa',
+    'riscv',
+    'spi_flash',
+    'esp_mm',
+]
 
-expected_dep_violations = {'esp_system': ['esp_timer', 'bootloader_support', 'esp_pm'],
-                           'spi_flash': ['bootloader_support', 'app_update', 'esp_driver_gpio'],
-                           'esp_hw_support': ['efuse', 'bootloader_support', 'esp_driver_gpio', 'esp_timer', 'esp_pm', 'esp_security'],
-                           'cxx': ['pthread']}
+expected_dep_violations = {
+    'esp_system': ['esp_timer', 'bootloader_support', 'esp_pm'],
+    'spi_flash': ['bootloader_support'],
+    'esp_hw_support': ['efuse', 'bootloader_support', 'esp_driver_gpio', 'esp_timer', 'esp_pm', 'esp_security'],
+    'cxx': ['pthread'],
+}
 
 
 def parse_dependencies(file_path: str) -> Tuple[Dict[str, List[str]], List[str]]:
@@ -25,7 +42,7 @@ def parse_dependencies(file_path: str) -> Tuple[Dict[str, List[str]], List[str]]
             if line:
                 parts = line.split(' -> ')
 
-                if (len(parts) >= 2):
+                if len(parts) >= 2:
                     source = parts[0]
                     target = parts[1].split()[0]  # Extracting the target component
                     logging.debug(f'Parsed dependency: {source} -> {target}')
@@ -48,7 +65,9 @@ def parse_dependencies(file_path: str) -> Tuple[Dict[str, List[str]], List[str]]
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Check G1 dependencies')
-    parser.add_argument('--component_deps_file', required=True, type=str, help='The path to the component_deps.dot file')
+    parser.add_argument(
+        '--component_deps_file', required=True, type=str, help='The path to the component_deps.dot file'
+    )
 
     args = parser.parse_args()
 
