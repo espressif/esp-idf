@@ -381,32 +381,6 @@ bool esp_rrm_is_rrm_supported_connection(void)
 
     return true;
 }
-/*This function has been deprecated in favour of esp_rrm_send_neighbor_report_request*/
-int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
-                                      void *cb_ctx)
-{
-    struct wpa_supplicant *wpa_s = &g_wpa_supp;
-    struct wpa_ssid_value wpa_ssid = {0};
-    struct wifi_ssid *ssid;
-
-    if (!wpa_s->current_bss) {
-        wpa_printf(MSG_ERROR, "STA not associated, return");
-        return -2;
-    }
-
-    if (!(wpa_s->rrm_ie[0] & WLAN_RRM_CAPS_NEIGHBOR_REPORT)) {
-        wpa_printf(MSG_ERROR,
-                   "RRM: No network support for Neighbor Report.");
-        return -1;
-    }
-
-    ssid = esp_wifi_sta_get_prof_ssid_internal();
-
-    os_memcpy(wpa_ssid.ssid, ssid->ssid, ssid->len);
-    wpa_ssid.ssid_len = ssid->len;
-
-    return wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, cb, cb_ctx);
-}
 
 void neighbor_report_recvd_cb(void *ctx, const uint8_t *report, size_t report_len)
 {
@@ -819,12 +793,6 @@ bool esp_rrm_is_rrm_supported_connection(void)
 }
 
 int esp_rrm_send_neighbor_report_request(void)
-{
-    return -1;
-}
-
-int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
-                                      void *cb_ctx)
 {
     return -1;
 }
