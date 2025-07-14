@@ -44,6 +44,20 @@ A secure element (ATECC608) can be also used for the underlying TLS connection i
         .use_secure_element = true,
     };
 
+Use ECDSA Peripheral for TLS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ECDSA peripheral can be used for the underlying TLS connection in the HTTP client connection. Please refer to the **ECDSA Peripheral with ESP-TLS** section in the :doc:`ESP-TLS documentation </api-reference/protocols/esp_tls>` for more details. The HTTP client can be configured to use ECDSA peripheral as follows:
+
+.. code-block:: c
+
+    esp_http_client_config_t cfg = {
+        /* other configurations options */
+        .use_ecdsa_peripheral = true,
+        .ecdsa_key_efuse_blk = /* efuse block with ecdsa private key */,
+        .ecdsa_curve = ESP_TLS_ECDSA_CURVE_SECP256R1,  // or ESP_TLS_ECDSA_CURVE_SECP384R1
+    };
+
 
 HTTPS Request
 -------------

@@ -156,6 +156,9 @@ It is possible to set authentication parameters through the :cpp:class:`authenti
  * :cpp:member:`certificate <esp_mqtt_client_config_t::credentials_t::authentication_t::certificate>` and :cpp:member:`key <esp_mqtt_client_config_t::credentials_t::authentication_t::key>`: mutual authentication with TLS, and both can be provided in PEM or DER format
  * :cpp:member:`use_secure_element <esp_mqtt_client_config_t::credentials_t::authentication_t::use_secure_element>`: use secure element (ATECC608A) interfaced to ESP32 series
  * :cpp:member:`ds_data <esp_mqtt_client_config_t::credentials_t::authentication_t::ds_data>`: use Digital Signature Peripheral available in some Espressif devices
+ * :cpp:member:`use_ecdsa_peripheral <esp_mqtt_client_config_t::credentials_t::authentication_t::use_ecdsa_peripheral>`: use ECDSA Peripheral available in some Espressif devices
+ * :cpp:member:`ecdsa_key_efuse_blk <esp_mqtt_client_config_t::credentials_t::authentication_t::ecdsa_key_efuse_blk>`: eFuse block containing ECDSA private key
+ * :cpp:member:`ecdsa_curve <esp_mqtt_client_config_t::credentials_t::authentication_t::ecdsa_curve>`: ECDSA curve to use (ESP_TLS_ECDSA_CURVE_SECP256R1 or ESP_TLS_ECDSA_CURVE_SECP384R1)
 
 Session
 ^^^^^^^^^^^

@@ -103,6 +103,9 @@ struct httpd_ssl_config {
     /*!< The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. The macro is defined in esp_tls.h */
     uint8_t ecdsa_key_efuse_blk;
 
+    /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
+    esp_tls_ecdsa_curve_t ecdsa_curve;
+
     /** Transport Mode (default secure) */
     httpd_ssl_transport_mode_t transport_mode;
 
@@ -186,6 +189,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .prvtkey_len = 0,                             \
     .use_ecdsa_peripheral = false,                \
     .ecdsa_key_efuse_blk = 0,                     \
+    .ecdsa_curve = ESP_TLS_ECDSA_CURVE_SECP256R1, \
     .transport_mode = HTTPD_SSL_TRANSPORT_SECURE, \
     .port_secure = 443,                           \
     .port_insecure = 80,                          \
