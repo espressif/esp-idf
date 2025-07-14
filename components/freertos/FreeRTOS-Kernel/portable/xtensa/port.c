@@ -458,7 +458,7 @@ void vPortAssertIfInISR(void)
     configASSERT(xPortInIsrContext() == 0);
 }
 
-BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
+BaseType_t xPortInterruptedFromISRContext(void)
 {
     return (port_interruptNesting[xPortGetCoreID()] != 0);
 }

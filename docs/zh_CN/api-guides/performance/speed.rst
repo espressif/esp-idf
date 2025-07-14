@@ -156,6 +156,8 @@
 
     -  针对不需要放置在 IRAM 中的单个源文件，可以重新启用跳转表优化。这将提高大型 ``switch cases`` 代码中的热路径性能。关于如何在编译单个源文件时添加 -fjump-tables -ftree-switch-conversion 选项，参见 :ref:`component_build_control` 。
 
+    - 许多 ESP-IDF 组件和驱动程序提供配置选项，将性能关键函数放置在 IRAM 中以减少延迟并提高速度。这些选项通常具有类似 ``CONFIG_*_IN_IRAM``、``CONFIG_*_ISR_IN_IRAM`` 或 ``CONFIG_*_IRAM_OPT`` 的名称。一些示例包括 :ref:`CONFIG_FREERTOS_IN_IRAM` 用于 FreeRTOS 函数，:ref:`CONFIG_ESP_WIFI_IRAM_OPT` 用于 Wi-Fi 操作，:ref:`CONFIG_UART_ISR_IN_IRAM` 用于 UART 中断处理，:ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 用于 SPI 操作。这些选项以 IRAM 使用量换取速度，因此应根据应用程序的性能要求和可用 IRAM 空间有选择地使用。
+
 减少启动时间
 ----------------------------
 

@@ -179,7 +179,7 @@ IRAM 优化
 
 .. list::
 
-    - 启用 :ref:`CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`。只要没有从 ISR 中错误地调用这些函数，就可以在所有配置中安全启用此选项。
+    - 如果启用了 :ref:`CONFIG_FREERTOS_IN_IRAM`，可以禁用它以将 FreeRTOS 函数放置在 Flash 中而不是 IRAM 中。默认情况下，FreeRTOS 函数已经被放置在 Flash 中以节省 IRAM。
     - 启用 :ref:`CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`。只要没有从 ISR 中错误地调用这些函数，就可以在所有配置中安全启用此选项。
     - 启用 :ref:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`。如果从 IRAM 中的中断上下文中使用 ISR ringbuf 函数，例如启用了 :ref:`CONFIG_UART_ISR_IN_IRAM`，则无法安全使用此选项。在此情况下，安装 ESP-IDF 相关驱动程序时，将在运行时报错。
     :SOC_WIFI_SUPPORTED: - 禁用 Wi-Fi 选项 :ref:`CONFIG_ESP_WIFI_IRAM_OPT` 和/或 :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` 会释放可用 IRAM，但会牺牲部分 Wi-Fi 性能。

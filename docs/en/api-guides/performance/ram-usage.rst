@@ -179,7 +179,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 
 .. list::
 
-    - Enable :ref:`CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`. Provided these functions are not incorrectly used from ISRs, this option is safe to enable in all configurations.
+    - Disable :ref:`CONFIG_FREERTOS_IN_IRAM` if enabled to place FreeRTOS functions in Flash instead of IRAM. By default, FreeRTOS functions are already placed in Flash to save IRAM.
     - Enable :ref:`CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`. Provided these functions are not incorrectly used from ISRs, this option is safe to enable in all configurations.
     - Enable :ref:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`. This option is not safe to use if the ISR ringbuf functions are used from an IRAM interrupt context, e.g., if :ref:`CONFIG_UART_ISR_IN_IRAM` is enabled. For the ESP-IDF drivers where this is the case, you can get an error at run-time when installing the driver in question.
     :SOC_WIFI_SUPPORTED: - Disabling Wi-Fi options :ref:`CONFIG_ESP_WIFI_IRAM_OPT` and/or :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` options frees available IRAM at the cost of Wi-Fi performance.

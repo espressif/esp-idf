@@ -355,7 +355,7 @@ void vPortExitCritical(portMUX_TYPE *lock);
 
 // ---------------------- Yielding -------------------------
 
-static inline bool IRAM_ATTR xPortCanYield(void)
+static inline bool xPortCanYield(void)
 {
     uint32_t ps_reg = 0;
 

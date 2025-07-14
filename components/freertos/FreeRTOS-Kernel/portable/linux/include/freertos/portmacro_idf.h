@@ -43,7 +43,7 @@ void vPortYieldOtherCore(BaseType_t coreid);
  * @note dummy function for freertos simulator, always returns 0.
  @ return BaseType_t 0
  */
-static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
+static inline BaseType_t xPortGetCoreID(void)
 {
     return (BaseType_t) 0;
 }

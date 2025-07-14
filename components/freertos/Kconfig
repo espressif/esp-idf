@@ -556,16 +556,19 @@ menu "FreeRTOS"
                     the maximum frequency of 240MHz, it will overflow in approximately 17 seconds.
         endchoice # FREERTOS_RUN_TIME_STATS_CLK
 
-        config FREERTOS_PLACE_FUNCTIONS_INTO_FLASH
-            bool "Place FreeRTOS functions into Flash"
+        config FREERTOS_IN_IRAM
+            bool "Place FreeRTOS functions in IRAM"
             default n
             help
-                When enabled the selected Non-ISR FreeRTOS functions will be placed into Flash memory instead of IRAM.
-                This saves up to 8KB of IRAM depending on which functions are used.
+                Place FreeRTOS functions in IRAM for better performance.
+                By default, FreeRTOS functions are placed in Flash to save IRAM.
+                Enable this option if you need maximum performance for FreeRTOS operations.
+
+                Note: This option increases IRAM usage.
 
         config FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH
             bool "Place FreeRTOS functions called from ISR context into Flash"
-            depends on SPI_FLASH_AUTO_SUSPEND && FREERTOS_PLACE_FUNCTIONS_INTO_FLASH
+            depends on SPI_FLASH_AUTO_SUSPEND
             default n
             help
                 When enabled additional FreeRTOS functions which maybe called from an ISR context are
@@ -659,9 +662,4 @@ menu "FreeRTOS"
         default 1 if FREERTOS_UNICORE
         default 2 if !FREERTOS_UNICORE
 
-    config FREERTOS_IN_IRAM
-        # Invisible option enabled by default to place all freertos functions in internal RAM
-        # Todo: See linker.lf (IDF-12695)
-        bool
-        default y
 endmenu # FreeRTOS

@@ -84,7 +84,7 @@ portMUX_TYPE port_xISRLock = portMUX_INITIALIZER_UNLOCKED;
 
 // --------------------- Interrupts ------------------------
 
-BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
+BaseType_t xPortInterruptedFromISRContext(void)
 {
     return (port_interruptNesting[xPortGetCoreID()] != 0);
 }

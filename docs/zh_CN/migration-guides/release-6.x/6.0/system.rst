@@ -96,6 +96,12 @@ FreeRTOS
 
 函数 :cpp:func:`pxTaskGetStackStart` 已弃用。请使用 :cpp:func:`xTaskGetStackStart` 替代以提高类型安全性。
 
+**内存布局**
+
+为了减少 IRAM 的使用，大多数 FreeRTOS 函数的默认位置已从 IRAM 更改为 Flash。因此，``CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`` 选项已被移除。此举可节省大量 IRAM，但可能会对性能造成轻微影响。对于性能要求严苛的应用程序，可通过启用新增的 :ref:`CONFIG_FREERTOS_IN_IRAM` 选项来恢复之前的行为。
+在决定是否启用 ``CONFIG_FREERTOS_IN_IRAM`` 时，建议进行性能测试以测量对特定用例的实际影响。Flash 和 IRAM 配置之间的性能差异可能因 Flash 缓存效率、API 使用模式和系统负载而异。
+在 ``components/freertos/test_apps/freertos/performance/test_freertos_api_performance.c`` 中提供了基准性能测试，用于测量常用 FreeRTOS API 的执行时间。此测试可帮助您评估内存布局对目标硬件和应用程序要求的性能影响。
+
 核心转储
 --------
 

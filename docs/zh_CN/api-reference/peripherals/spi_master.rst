@@ -612,7 +612,7 @@ GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_interface_con
 
 .. note::
 
-    SPI 驱动是基于 FreeRTOS 的 API 实现的，在使用 :ref:`CONFIG_SPI_MASTER_IN_IRAM` 时，不得启用 :ref:`CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`。
+    SPI 驱动是基于 FreeRTOS 的 API 实现的，在使用 :ref:`CONFIG_SPI_MASTER_IN_IRAM` 时，应启用 :ref:`CONFIG_FREERTOS_IN_IRAM`。
 
 单个中断传输事务传输 n 字节的总成本为 **20+8n/Fspi[MHz]** [µs]，故传输速度为 **n/(20+8n/Fspi)**。8 MHz 时钟速度的传输速度见下表。
 
