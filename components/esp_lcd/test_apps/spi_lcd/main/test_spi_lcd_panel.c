@@ -66,7 +66,6 @@ void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lc
     };
 #if SOC_SPI_SUPPORT_OCT
     if (oct_mode) {
-        io_config.flags.octal_mode = 1;
         io_config.spi_mode = 3;
     }
 #endif

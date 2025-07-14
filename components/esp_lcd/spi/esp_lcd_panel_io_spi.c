@@ -18,6 +18,7 @@
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
+#include "esp_private/spi_common_internal.h"
 #include "hal/gpio_ll.h"
 #include "hal/gpio_hal.h"
 #include "esp_log.h"
@@ -100,11 +101,17 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
         gpio_output_enable(io_config->dc_gpio_num);
     }
 
+    const spi_bus_attr_t* bus_attr = spi_bus_get_attr((spi_host_device_t)bus);
+    uint32_t flags = bus_attr->bus_cfg.flags;
+    if ((flags & SPICOMMON_BUSFLAG_QUAD) == SPICOMMON_BUSFLAG_QUAD) {
+        spi_panel_io->flags.quad_mode = 1;
+    } else if ((flags & SPICOMMON_BUSFLAG_OCTAL) == SPICOMMON_BUSFLAG_OCTAL) {
+        spi_panel_io->flags.octal_mode = 1;
+    }
+
     spi_panel_io->flags.dc_cmd_level = io_config->flags.dc_high_on_cmd;
     spi_panel_io->flags.dc_data_level = !io_config->flags.dc_low_on_data;
     spi_panel_io->flags.dc_param_level = !io_config->flags.dc_low_on_param;
-    spi_panel_io->flags.octal_mode = io_config->flags.octal_mode;
-    spi_panel_io->flags.quad_mode = io_config->flags.quad_mode;
     spi_panel_io->on_color_trans_done = io_config->on_color_trans_done;
     spi_panel_io->user_ctx = io_config->user_ctx;
     spi_panel_io->lcd_cmd_bits = io_config->lcd_cmd_bits;

@@ -31,6 +31,7 @@ api-reference/peripherals/adc_oneshot     /api-reference/peripherals/adc/adc_one
 api-reference/peripherals/adc_continuous     api-reference/peripherals/adc/adc_continuous
 api-reference/peripherals/adc_calibration     api-reference/peripherals/adc/adc_calibration
 api-reference/peripherals/adc     api-reference/peripherals/adc/index
+api-reference/peripherals/lcd     api-reference/peripherals/lcd/index
 
 
 get-started/idf-monitor                         api-guides/tools/idf-monitor
