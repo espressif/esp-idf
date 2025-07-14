@@ -12,7 +12,7 @@
 #include "driver/gpio_etm.h"
 #include "driver/gpio.h"
 
-TEST_CASE("gpio_etm_self_trigger", "[etm]")
+TEST_CASE("gpio_etm_self_trigger", "[gpio_etm]")
 {
     // GPIO any edge  ---> EMT channel ---> GPIO toggle
     const uint32_t input_gpio = 0;
@@ -91,7 +91,7 @@ TEST_CASE("gpio_etm_self_trigger", "[etm]")
     TEST_ESP_OK(esp_etm_del_channel(etm_channel_a));
 }
 
-TEST_CASE("gpio_etm_self_trigger_multi_action", "[etm]")
+TEST_CASE("gpio_etm_self_trigger_multi_action", "[gpio_etm]")
 {
     // GPIO 0 pos edge event ---> GPIO 1 set level task
     // GPIO 2 pos edge event ---> GPIO 1 clear level task
