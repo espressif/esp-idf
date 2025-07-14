@@ -37,13 +37,11 @@ typedef enum dpp_bootstrap_type {
   *
   *        Starts DPP Supplicant and initializes related Data Structures.
   *
-  * @param evt_cb (Deprecated) Callback function to receive DPP related events
-  *
   * return
   *    - ESP_OK: Success
   *    - ESP_FAIL: Failure
   */
-esp_err_t esp_supp_dpp_init(void *ctx);
+esp_err_t esp_supp_dpp_init(void);
 
 /**
   * @brief De-initialize DPP Supplicant

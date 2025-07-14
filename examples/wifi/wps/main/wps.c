@@ -58,7 +58,7 @@ static void wps_restart(void)
 {
     ESP_ERROR_CHECK(esp_wifi_wps_disable());
     ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
-    ESP_ERROR_CHECK(esp_wifi_wps_start(0));
+    ESP_ERROR_CHECK(esp_wifi_wps_start());
 }
 
 static void handle_wps_success(void *event_data)
@@ -172,7 +172,7 @@ static void start_wps(void)
     ESP_LOGI(TAG, "start wps...");
 
     ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
-    ESP_ERROR_CHECK(esp_wifi_wps_start(0));
+    ESP_ERROR_CHECK(esp_wifi_wps_start());
 }
 
 void app_main(void)

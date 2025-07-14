@@ -161,7 +161,7 @@ void dpp_enrollee_init(void)
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_supp_dpp_init(NULL));
+    ESP_ERROR_CHECK(esp_supp_dpp_init());
     ESP_ERROR_CHECK(dpp_enrollee_bootstrap());
     ESP_ERROR_CHECK(esp_wifi_start());
 

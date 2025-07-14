@@ -1060,7 +1060,7 @@ init_fail:
 
 }
 
-esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
+esp_err_t esp_supp_dpp_init(void)
 {
     esp_err_t ret = ESP_OK;
 
