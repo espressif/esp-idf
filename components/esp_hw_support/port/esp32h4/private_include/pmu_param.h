@@ -527,8 +527,8 @@ typedef struct pmu_sleep_machine_constant {
     .lp = {                                     \
         .min_slp_time_us                = 450,  \
         .wakeup_wait_cycle              = 4,    \
-        .analog_wait_time_us            = 400,  \
-        .xtal_wait_stable_time_us       = 2000, \
+        .analog_wait_time_us            = 130,  \
+        .xtal_wait_stable_time_us       = 160,  \
         .clk_switch_cycle               = 1,    \
         .clk_power_on_wait_cycle        = 1,    \
         .isolate_wait_time_us           = 1,    \
@@ -540,18 +540,18 @@ typedef struct pmu_sleep_machine_constant {
         .min_slp_time_us                = 450,  \
         .clock_domain_sync_time_us      = 150,  \
         .system_dfs_up_work_time_us     = 124,  \
-        .analog_wait_time_us            = 800,  \
+        .analog_wait_time_us            = 2200, \
         .isolate_wait_time_us           = 1,    \
         .reset_wait_time_us             = 1,    \
         .power_supply_wait_time_us      = 2,    \
         .power_up_wait_time_us          = 2,    \
         .regdma_s2m_work_time_us        = 172,  \
-        .regdma_s2a_work_time_us        = 480,  \
+        .regdma_s2a_work_time_us        = 280,  \
         .regdma_m2a_work_time_us        = 278,  \
-        .regdma_a2s_work_time_us        = 382,  \
+        .regdma_a2s_work_time_us        = 220,  \
         .regdma_rf_on_work_time_us      = 70,   \
         .regdma_rf_off_work_time_us     = 23,   \
-        .xtal_wait_stable_time_us       = 2000, \
+        .xtal_wait_stable_time_us       = 160,  \
         .pll_wait_stable_time_us        = 1     \
     }                                           \
 }
