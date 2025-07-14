@@ -97,6 +97,14 @@ void esp_transport_ssl_set_client_cert_data(esp_transport_handle_t t, const char
  * @param[in]  efuse_blk. The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. The macro is defined in esp_tls.h
  */
 void esp_transport_ssl_set_client_key_ecdsa_peripheral(esp_transport_handle_t t, uint8_t ecdsa_efuse_blk);
+
+/**
+ * @brief      Set ECDSA curve for SSL client when using ECDSA peripheral.
+ *
+ * @param      t            ssl transport
+ * @param[in]  curve        ECDSA curve to use
+ */
+void esp_transport_ssl_set_ecdsa_curve(esp_transport_handle_t t, esp_tls_ecdsa_curve_t curve);
 #endif
 
 /**

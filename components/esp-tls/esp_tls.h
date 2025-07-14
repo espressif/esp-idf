@@ -112,6 +112,13 @@ typedef enum {
     ESP_TLS_DYN_BUF_STRATEGY_MAX,     /*!< to indicate max */
 } esp_tls_dyn_buf_strategy_t;
 
+/**
+ * @brief ECDSA curve options for TLS connections
+ */
+typedef enum {
+    ESP_TLS_ECDSA_CURVE_SECP256R1 = 0,   /*!< Use SECP256R1 curve */
+    ESP_TLS_ECDSA_CURVE_SECP384R1,       /*!< Use SECP384R1 curve */
+} esp_tls_ecdsa_curve_t;
 
 /**
  * @brief      ESP-TLS configuration parameters
@@ -186,6 +193,8 @@ typedef struct esp_tls_cfg {
     bool use_ecdsa_peripheral;              /*!< Use the ECDSA peripheral for the private key operations */
 
     uint8_t ecdsa_key_efuse_blk;            /*!< The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. */
+
+    esp_tls_ecdsa_curve_t ecdsa_curve;      /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
 
     bool non_block;                         /*!< Configure non-blocking mode. If set to true the
                                                  underneath socket will be configured in non
@@ -330,6 +339,8 @@ typedef struct esp_tls_cfg_server {
     bool use_ecdsa_peripheral;                  /*!< Use ECDSA peripheral to use private key */
 
     uint8_t ecdsa_key_efuse_blk;                /*!< The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. */
+
+    esp_tls_ecdsa_curve_t ecdsa_curve;          /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
 
     bool use_secure_element;                    /*!< Enable this option to use secure element or
                                                  atecc608a chip */

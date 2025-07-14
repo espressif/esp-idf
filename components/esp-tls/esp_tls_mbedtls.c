@@ -51,78 +51,6 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki);
 static const char *TAG = "esp-tls-mbedtls";
 static mbedtls_x509_crt *global_cacert = NULL;
 
-#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
-/**
- * @brief Determine the ECDSA curve group ID based on the efuse block's key purpose
- *
- * This function reads the key purpose from the specified efuse block and returns the appropriate
- * ECDSA curve group ID. It handles both curve-specific key purposes (when SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES
- * is defined) and generic ECDSA key purpose.
- *
- * For SECP384R1 curve, it checks both high and low key blocks when supported.
- * For SECP192R1 and SECP256R1 curves, it checks the single block.
- * For generic ECDSA key purpose, it defaults to SECP256R1.
- *
- * @param[in] efuse_blk The efuse block(s) to check (can be combined for 384-bit keys)
- *
- * @return
- *      - MBEDTLS_ECP_DP_SECP192R1 if block has P192 key purpose
- *      - MBEDTLS_ECP_DP_SECP256R1 if block has P256 key purpose or generic ECDSA key purpose
- *      - MBEDTLS_ECP_DP_SECP384R1 if blocks have P384 key purposes
- *      - MBEDTLS_ECP_DP_NONE if block has invalid or unsupported key purpose
- */
-static mbedtls_ecp_group_id esp_tls_get_curve_from_efuse_block(uint8_t efuse_blk)
-{
-#if SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES
-    esp_efuse_purpose_t key_purpose;
-
-    // For P384, we need to check both blocks
-    if (efuse_blk > 0xF) { // Combined blocks for P384
-#if SOC_ECDSA_SUPPORT_CURVE_P384
-        int high_blk, low_blk;
-        MBEDTLS_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, high_blk, low_blk);
-
-        esp_efuse_purpose_t high_purpose = esp_efuse_get_key_purpose((esp_efuse_block_t)high_blk);
-        esp_efuse_purpose_t low_purpose = esp_efuse_get_key_purpose((esp_efuse_block_t)low_blk);
-
-        if (low_purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L && high_purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H) {
-            return MBEDTLS_ECP_DP_SECP384R1;
-        }
-
-        // If we reach here, the key purposes don't match P384 requirements
-        ESP_LOGE(TAG, "Efuse blocks %d,%d have invalid P384 key purposes: low=%d, high=%d",
-                low_blk, high_blk, low_purpose, high_purpose);
-        return MBEDTLS_ECP_DP_NONE;
-#else
-        // P384 not supported but combined blocks provided
-        ESP_LOGE(TAG, "P384 curve not supported but combined efuse blocks provided: %d", efuse_blk);
-        return MBEDTLS_ECP_DP_NONE;
-#endif
-    } else { // Single block for P192 or P256
-        key_purpose = esp_efuse_get_key_purpose((esp_efuse_block_t)efuse_blk);
-        switch (key_purpose) {
-            case ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P192:
-                return MBEDTLS_ECP_DP_SECP192R1;
-            case ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P256:
-                return MBEDTLS_ECP_DP_SECP256R1;
-            default:
-                ESP_LOGE(TAG, "Efuse block %d has unsupported key purpose %d", efuse_blk, key_purpose);
-                return MBEDTLS_ECP_DP_NONE;
-        }
-    }
-#else /* SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES */
-    // For generic ECDSA key purpose, default to P256
-    esp_efuse_purpose_t key_purpose = esp_efuse_get_key_purpose((esp_efuse_block_t)efuse_blk);
-    if (key_purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY) {
-        return MBEDTLS_ECP_DP_SECP256R1;
-    }
-#endif  /* !SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES */
-
-    ESP_LOGE(TAG, "Efuse block %d has invalid key purpose", efuse_blk);
-    return MBEDTLS_ECP_DP_NONE;
-}
-#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN */
-
 #if CONFIG_NEWLIB_NANO_FORMAT
 #define NEWLIB_NANO_SSIZE_T_COMPAT_FORMAT           "X"
 #define NEWLIB_NANO_SIZE_T_COMPAT_FORMAT            PRIu32
@@ -131,6 +59,34 @@ static mbedtls_ecp_group_id esp_tls_get_curve_from_efuse_block(uint8_t efuse_blk
 #define NEWLIB_NANO_SSIZE_T_COMPAT_FORMAT           "zX"
 #define NEWLIB_NANO_SIZE_T_COMPAT_FORMAT            "zu"
 #define NEWLIB_NANO_SIZE_T_COMPAT_CAST(size_t_var)  size_t_var
+#endif
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+/**
+ * @brief Convert ESP-TLS ECDSA curve enum to mbedTLS group ID
+ * @param curve ESP-TLS ECDSA curve enum value
+ * @param grp_id Pointer to store the converted mbedTLS group ID
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on invalid curve
+ */
+static esp_err_t esp_tls_ecdsa_curve_to_mbedtls_group_id(esp_tls_ecdsa_curve_t curve, mbedtls_ecp_group_id *grp_id)
+{
+    if (grp_id == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    switch (curve) {
+        case ESP_TLS_ECDSA_CURVE_SECP256R1:
+            *grp_id = MBEDTLS_ECP_DP_SECP256R1;
+            break;
+        case ESP_TLS_ECDSA_CURVE_SECP384R1:
+            *grp_id = MBEDTLS_ECP_DP_SECP384R1;
+            break;
+        default:
+            ESP_LOGE(TAG, "Invalid ECDSA curve specified: %d", curve);
+            return ESP_ERR_INVALID_ARG;
+    }
+    return ESP_OK;
+}
 #endif
 
 /* This function shall return the error message when appropriate log level has been set, otherwise this function shall do nothing */
@@ -641,11 +597,11 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
 #endif
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
         if (tls->use_ecdsa_peripheral) {
-            // Determine the curve group ID based on the efuse block's key purpose
-            mbedtls_ecp_group_id grp_id = esp_tls_get_curve_from_efuse_block(tls->ecdsa_efuse_blk);
-            if (grp_id == MBEDTLS_ECP_DP_NONE) {
-                ESP_LOGE(TAG, "Failed to determine curve group ID from efuse block %d", tls->ecdsa_efuse_blk);
-                return ESP_ERR_INVALID_ARG;
+            // Determine the curve group ID based on user preference
+            mbedtls_ecp_group_id grp_id;
+            esp_err_t esp_ret = esp_tls_ecdsa_curve_to_mbedtls_group_id(tls->ecdsa_curve, &grp_id);
+            if (esp_ret != ESP_OK) {
+                return esp_ret;
             }
 
             esp_ecdsa_pk_conf_t conf = {
@@ -838,6 +794,7 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
         tls->use_ecdsa_peripheral = cfg->use_ecdsa_peripheral;
         tls->ecdsa_efuse_blk = cfg->ecdsa_key_efuse_blk;
+        tls->ecdsa_curve = cfg->ecdsa_curve;
         esp_tls_pki_t pki = {
             .public_cert = &tls->servercert,
             .pk_key = &tls->serverkey,
@@ -1085,6 +1042,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
         tls->use_ecdsa_peripheral = cfg->use_ecdsa_peripheral;
         tls->ecdsa_efuse_blk = cfg->ecdsa_key_efuse_blk;
+        tls->ecdsa_curve = cfg->ecdsa_curve;
         esp_tls_pki_t pki = {
             .public_cert = &tls->clientcert,
             .pk_key = &tls->clientkey,
@@ -1101,10 +1059,10 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             return esp_ret;
         }
 
-        mbedtls_ecp_group_id grp_id = esp_tls_get_curve_from_efuse_block(tls->ecdsa_efuse_blk);
-        if (grp_id == MBEDTLS_ECP_DP_NONE) {
-            ESP_LOGE(TAG, "Failed to determine curve group ID from efuse block %d", tls->ecdsa_efuse_blk);
-            return ESP_ERR_INVALID_ARG;
+        mbedtls_ecp_group_id grp_id;
+        esp_ret = esp_tls_ecdsa_curve_to_mbedtls_group_id(tls->ecdsa_curve, &grp_id);
+        if (esp_ret != ESP_OK) {
+            return esp_ret;
         }
 
         // Create dynamic ciphersuite array based on curve

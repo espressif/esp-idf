@@ -886,6 +886,8 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
     if (config->use_ecdsa_peripheral) {
         esp_transport_ssl_set_client_key_ecdsa_peripheral(ssl, config->ecdsa_key_efuse_blk);
+        // Set the ECDSA curve
+        esp_transport_ssl_set_ecdsa_curve(ssl, config->ecdsa_curve);
     }
 #endif
     if (config->client_key_password && config->client_key_password_len > 0) {

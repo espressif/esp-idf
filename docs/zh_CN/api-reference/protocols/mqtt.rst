@@ -156,6 +156,9 @@ ESP-MQTT 库将始终重新传输未确认的 QoS 1 和 2 发布消息，以避�
  * * :cpp:member:`certificate <esp_mqtt_client_config_t::credentials_t::authentication_t::certificate>` 和 :cpp:member:`key <esp_mqtt_client_config_t::credentials_t::authentication_t::key>`：进行双向 TLS 身份验证，PEM 或 DER 格式均可
  * :cpp:member:`use_secure_element <esp_mqtt_client_config_t::credentials_t::authentication_t::use_secure_element>`：使用 ESP32 系列中的安全元素 (ATECC608A)
  * :cpp:member:`ds_data <esp_mqtt_client_config_t::credentials_t::authentication_t::ds_data>`：使用某些乐鑫设备的数字签名外设
+ * :cpp:member:`use_ecdsa_peripheral <esp_mqtt_client_config_t::credentials_t::authentication_t::use_ecdsa_peripheral>`：使用某些乐鑫设备中可用的 ECDSA 外设
+ * :cpp:member:`ecdsa_key_efuse_blk <esp_mqtt_client_config_t::credentials_t::authentication_t::ecdsa_key_efuse_blk>`：包含 ECDSA 私钥的 eFuse 块
+ * :cpp:member:`ecdsa_curve <esp_mqtt_client_config_t::credentials_t::authentication_t::ecdsa_curve>`：要使用的 ECDSA 曲线（ESP_TLS_ECDSA_CURVE_SECP256R1 或 ESP_TLS_ECDSA_CURVE_SECP384R1）
 
 会话
 ^^^^^^^^^^^^

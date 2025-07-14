@@ -11,6 +11,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include <sys/socket.h>
+#include "esp_tls.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -177,6 +178,7 @@ typedef struct {
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
     bool                        use_ecdsa_peripheral;       /*!< Use ECDSA peripheral to use private key. */
     uint8_t                     ecdsa_key_efuse_blk;        /*!< The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. The macro is defined in esp_tls.h */
+    esp_tls_ecdsa_curve_t       ecdsa_curve;                /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
 #endif
     const char                  *user_agent;         /*!< The User Agent string to send with HTTP requests */
     esp_http_client_method_t    method;                   /*!< HTTP Method */
