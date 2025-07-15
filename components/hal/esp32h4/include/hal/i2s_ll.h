@@ -60,7 +60,7 @@ extern "C" {
                                          [I2S_DIR_RX - 1] = {  \
                                              [I2S_ETM_TASK_START] = I2S0_TASK_START_RX, \
                                              [I2S_ETM_TASK_STOP] = I2S0_TASK_STOP_RX, \
-                                             [I2S_ETM_TASK_SYNC_CHECK] = I2S0_TASK_SYNC_CHECK, \
+                                             [I2S_ETM_TASK_SYNC_CHECK] = -1, \
                                             },  \
                                         [I2S_DIR_TX - 1] = {  \
                                             [I2S_ETM_TASK_START] = I2S0_TASK_START_TX, \
@@ -1243,6 +1243,113 @@ __attribute__((always_inline))
 static inline uint32_t i2s_ll_tx_get_bclk_sync_count(i2s_dev_t *hw)
 {
     return hw->bck_cnt.tx_bck_cnt;
+}
+
+/**
+ * @brief Enable TX FIFO synchronization hardware mode
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ * @param enable Set true to enable hardware mode
+ */
+__attribute__((always_inline))
+static inline void i2s_ll_tx_enable_hw_fifo_sync(i2s_dev_t *hw, bool enable)
+{
+    hw->hw_sync_conf.tx_hw_sync_en = enable;
+}
+
+/**
+ * @brief Get TX FIFO synchronization difference count value
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ * @return
+ *      fifo count value
+ */
+__attribute__((always_inline))
+static inline uint32_t i2s_ll_tx_get_fifo_sync_diff_count(i2s_dev_t *hw)
+{
+    return hw->cnt_diff.tx_cnt_diff;
+}
+
+/**
+ * @brief  Reset TX FIFO synchronization difference counter
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ */
+__attribute__((always_inline))
+static inline void i2s_ll_tx_reset_fifo_sync_diff_counter(i2s_dev_t *hw)
+{
+    hw->cnt_diff.tx_cnt_diff_rst = 1;
+    hw->cnt_diff.tx_cnt_diff_rst = 0;
+}
+
+/**
+ * @brief Set TX FIFO synchronization difference counter software threshold
+ * @note  It determines the up threshold that the hardware synchronize the data automatically.
+ *            - If diff_count <= sw_threshold, the hardware will synchronize the data automatically.
+ *            - If diff_count > sw_threshold, the automatic synchronization is not proper for this case,
+ *              interrupt will be triggered to let the software decide how to handle this case.
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ * @param thresh The threshold that send
+ */
+__attribute__((always_inline))
+static inline void i2s_ll_tx_set_fifo_sync_diff_conter_sw_threshold(i2s_dev_t *hw, uint32_t thresh)
+{
+    hw->sync_sw_thres.tx_cnt_diff_sw_thres = thresh;
+}
+
+/**
+ * @brief Set TX FIFO synchronization difference counter hardware threshold
+ * @note  It determines the down threshold that the hardware synchronize the data automatically.
+ *        - If diff_count < hw_threshold, synchronization check pass, do nothing
+ *        - If diff_count >= hw_threshold, the hardware will synchronize the data automatically.
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ * @param thresh The threshold that send
+ */
+__attribute__((always_inline))
+static inline void i2s_ll_tx_set_fifo_sync_diff_conter_hw_threshold(i2s_dev_t *hw, uint32_t thresh)
+{
+    hw->sync_hw_thres.tx_cnt_diff_hw_thres = thresh;
+}
+
+/**
+ * @brief Set TX FIFO synchronization hardware data supplementation mode
+ * @note  It determines the supplementation data when the actual sent data is less than the `diff_count - threshold`
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ * @param mode  Data supplementation mode
+ *              - 0: Supplement the last data
+ *              - 1: Supplement the data configured in `hw_sync_data` reg
+ */
+__attribute__((always_inline))
+static inline void i2s_ll_tx_set_hw_fifo_sync_suppl_mode(i2s_dev_t *hw, uint32_t mode)
+{
+    hw->hw_sync_conf.tx_hw_sync_suppl_mode = mode;
+}
+
+/**
+ * @brief Set TX FIFO synchronization hardware supplementation data when `tx_hw_sync_suppl_mode` is 1
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ * @param data  Data to be supplemented when `tx_hw_sync_suppl_mode` is 1
+ */
+__attribute__((always_inline))
+static inline void i2s_ll_tx_set_hw_fifo_sync_static_suppl_data(i2s_dev_t *hw, uint32_t data)
+{
+    hw->hw_sync_data.tx_hw_sync_suppl_data = data;
+}
+
+/**
+ * @brief Set the TX ETM synchronization ideal count
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param ideal_cnt The ideal FIFO count when I2S_ETM_TASK_SYNC_CHECK triggered.
+ */
+__attribute__((always_inline))
+static inline void i2s_ll_tx_set_etm_sync_ideal_cnt(i2s_dev_t *hw, uint32_t ideal_cnt)
+{
+    hw->ideal_cnt.tx_ideal_cnt = ideal_cnt;
 }
 
 /**

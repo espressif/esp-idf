@@ -47,6 +47,7 @@
 
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
+#include "esp_private/i2s_sync.h"
 #include "driver/i2s_common.h"
 #include "i2s_private.h"
 
@@ -1483,3 +1484,46 @@ void i2s_sync_reset_fifo_count(i2s_chan_handle_t tx_handle)
     i2s_ll_tx_reset_fifo_sync_counter(tx_handle->controller->hal.dev);
 }
 #endif  // SOC_I2S_SUPPORTS_TX_SYNC_CNT
+
+#if SOC_I2S_SUPPORTS_ETM_SYNC
+uint32_t i2s_sync_get_fifo_sync_diff_count(i2s_chan_handle_t tx_handle)
+{
+    return i2s_ll_tx_get_fifo_sync_diff_count(tx_handle->controller->hal.dev);
+}
+
+void i2s_sync_reset_fifo_sync_diff_count(i2s_chan_handle_t tx_handle)
+{
+    i2s_ll_tx_reset_fifo_sync_diff_counter(tx_handle->controller->hal.dev);
+}
+
+esp_err_t i2s_sync_enable_hw_fifo_sync(i2s_chan_handle_t tx_handle, bool enable)
+{
+    if (tx_handle->dir == I2S_DIR_RX) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    i2s_ll_tx_enable_hw_fifo_sync(tx_handle->controller->hal.dev, enable);
+    return ESP_OK;
+}
+
+esp_err_t i2s_sync_config_hw_fifo_sync(i2s_chan_handle_t tx_handle, const i2s_sync_fifo_sync_config_t *config)
+{
+    if (!(tx_handle && config)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (tx_handle->dir == I2S_DIR_RX) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (config->sw_high_thresh < config->hw_low_thresh) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    i2s_ll_tx_set_etm_sync_ideal_cnt(tx_handle->controller->hal.dev, config->ideal_cnt);
+    i2s_ll_tx_set_fifo_sync_diff_conter_sw_threshold(tx_handle->controller->hal.dev, config->sw_high_thresh);
+    i2s_ll_tx_set_fifo_sync_diff_conter_hw_threshold(tx_handle->controller->hal.dev, config->hw_low_thresh);
+    i2s_ll_tx_set_hw_fifo_sync_suppl_mode(tx_handle->controller->hal.dev, (uint32_t)config->suppl_mode);
+    if (config->suppl_mode == I2S_SYNC_SUPPL_MODE_STATIC_DATA) {
+        i2s_ll_tx_set_hw_fifo_sync_static_suppl_data(tx_handle->controller->hal.dev, config->suppl_data);
+    }
+    return ESP_OK;
+}
+#endif
