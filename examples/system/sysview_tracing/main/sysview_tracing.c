@@ -134,6 +134,8 @@ static void example_task(void *p)
 
 void app_main(void)
 {
+    ESP_LOGI(TAG, "Ready for OpenOCD connection");
+
     static example_event_data_t event_data[CONFIG_FREERTOS_NUMBER_OF_CORES];
 
 #if CONFIG_APPTRACE_SV_ENABLE && CONFIG_USE_CUSTOM_EVENT_ID
