@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -541,6 +541,15 @@ void regdma_link_set_write_wait_content(void *link, uint32_t value, uint32_t mas
                 write_wait->body.mask = mask;
             }
         }
+    }
+}
+
+void regdma_link_set_skip_flag(void *link, bool skip_backup, bool skip_restore)
+{
+    if (link) {
+        regdma_link_head_t *head = &REGDMA_LINK_HEAD(link);
+        head->skip_b = skip_backup;
+        head->skip_r = skip_restore;
     }
 }
 
