@@ -417,6 +417,20 @@ menu "LWIP"
                 Enabling this option allows DHCP server to support temporary static ARP entries
                 for DHCP Client. This will help the DHCP server to send the DHCP OFFER and DHCP ACK using IP unicast.
 
+        config LWIP_DHCPS_ADD_DNS
+            bool "Always add DNS option in DHCP responses"
+            default y
+            depends on LWIP_DHCPS
+            help
+                This allows the DNS option to be optional in the DHCP offers,
+                depending on the server's runtime configuration.
+                When enabled, the DHCP server will always add the DNS option to DHCP responses.
+                If a DNS server is not explicitly configured, the server's IP address will be used
+                as the fallback for the DNS option.
+                When disabled, the DHCP server will only include the DNS option in responses
+                if a DNS server has been explicitly configured.
+                This option will be removed in IDF v6.x
+
     endmenu # DHCPS
 
     menuconfig LWIP_AUTOIP
