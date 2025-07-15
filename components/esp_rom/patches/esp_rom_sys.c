@@ -7,10 +7,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 #include "soc/soc_caps.h"
 #include "esp_rom_caps.h"
 #include "esp_rom_serial_output.h"
 #include "rom/ets_sys.h"
+#include "esp_rom_sys.h"
 #include "sdkconfig.h"
 
 #if !ESP_ROM_HAS_OUTPUT_PUTC_FUNC
@@ -114,3 +116,46 @@ uint32_t esp_rom_get_bootloader_offset(void)
     return offset_of_active_bootloader;
 }
 #endif // SOC_RECOVERY_BOOTLOADER_SUPPORTED
+
+#if ESP_ROM_DELAY_US_PATCH && !NON_OS_BUILD
+#if CONFIG_ESP32C5_REV_MIN_FULL <= 100 || CONFIG_ESP32C61_REV_MIN_FULL <= 100
+
+#include "riscv/rv_utils.h"
+
+extern const ets_ops *ets_ops_table_ptr;
+
+struct ets_ops ets_ops_patch_table_ptr;
+
+/*
+ * NOTE: Workaround for ROM delay API in ESP32-C5 (<=ECO2) and ESP32-C61 (<=ECO3):
+ *
+ * The ROM implementation of `ets_delay_us` uses the `mcycle` CSR to get CPU cycle count.
+ * This CSR is accessible only in M-mode and when the ROM API is called from U-mode,
+ * accessing `mcycle` causes an illegal instruction fault.
+ *
+ * This issue has been fixed in later ECO revisions of both SoCs.
+ */
+void ets_delay_us(uint32_t us)
+{
+    uint32_t start = rv_utils_get_cycle_count();
+    uint32_t end = us * esp_rom_get_cpu_ticks_per_us();
+
+    while ((rv_utils_get_cycle_count() - start) < end) {
+        /* busy-wait loop for delay */
+    }
+}
+
+void __attribute__((constructor)) ets_ops_set_rom_patches(void)
+{
+    /* Copy ROM default function table into our patch table */
+    memcpy(&ets_ops_patch_table_ptr, ets_ops_table_ptr, sizeof(struct ets_ops));
+
+    /* Replace the ROM's delay function with the patched version */
+    ets_ops_patch_table_ptr.ets_delay_us = ets_delay_us;
+
+    /* Redirect ROM calls to use the patched function table */
+    ets_ops_table_ptr = &ets_ops_patch_table_ptr;
+}
+
+#endif // CONFIG_ESP32C5_REV_MIN_100 || CONFIG_ESP32C61_REV_MIN_100
+#endif // ESP_ROM_DELAY_US_PATCH && CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
