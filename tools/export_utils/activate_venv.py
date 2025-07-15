@@ -134,7 +134,8 @@ def detect_shell(args: Any) -> str:
             break
         current_pid = parent_pid
 
-    return detected_shell_name
+    # On Windows shell names are case-insensitive, but ESP-IDF defines them in lowercase
+    return detected_shell_name.lower() if sys.platform == 'win32' else detected_shell_name
 
 
 @status_message('Detecting outdated tools in system', rv_on_ok=True)
