@@ -1,10 +1,11 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import collections
 import multiprocessing
 import os
 import platform
-from typing import Dict, Union
+from typing import Dict
+from typing import Union
 
 GENERATORS: Dict[str, Union[str, Dict, list]] = collections.OrderedDict([
     # - command: build command line
@@ -35,7 +36,7 @@ URL_TO_DOC = 'https://docs.espressif.com/projects/esp-idf'
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2']
 PREVIEW_TARGETS = ['linux']
 
-OPENOCD_TAGET_CONFIG_DEFAULT = '-f interface/ftdi/esp32_devkitj_v1.cfg -f target/{target}.cfg'
+OPENOCD_TAGET_CONFIG_DEFAULT = '-f interface/ftdi/esp_ftdi.cfg -f target/{target}.cfg'
 OPENOCD_TAGET_CONFIG: Dict[str, str] = {
     'esp32': '-f board/esp32-wrover-kit-3.3v.cfg',
     'esp32s2': '-f board/esp32s2-kaluga-1.cfg',
