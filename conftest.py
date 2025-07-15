@@ -146,6 +146,10 @@ PRESIGNED_JSON = 'presigned.json'
 def app_downloader(
     pipeline_id: t.Optional[str],
 ) -> t.Optional[AppDownloader]:
+    if commit_sha := os.getenv('PIPELINE_COMMIT_SHA'):
+        logging.debug('pipeline commit sha from CI env is %s', commit_sha)
+        return AppDownloader(commit_sha, None)
+
     if not pipeline_id:
         return None
 
