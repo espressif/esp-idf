@@ -17,7 +17,7 @@ if(CONFIG_SOC_I2C_SUPPORT_SLAVE AND CONFIG_SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE)
         list(APPEND srcs "test_lp_i2c.c")
     endif()
 
-    if(CONFIG_SOC_I2C_SUPPORT_SLEEP_RETENTION)
+    if(CONFIG_SOC_I2C_SUPPORT_SLEEP_RETENTION AND CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
        list(APPEND srcs "test_i2c_sleep_retention.c")
     endif()
 
