@@ -26,7 +26,7 @@ def test_twai_self(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='twai-loop-back')
 
 
-@pytest.fixture(name='socket_can', scope='module')
+@pytest.fixture(name='socket_can')
 def fixture_create_socket_can() -> Bus:
     # Set up the socket CAN with the bitrate
     start_command = 'sudo ip link set can0 up type can bitrate 250000 restart-ms 100'

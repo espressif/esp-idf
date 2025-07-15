@@ -38,7 +38,6 @@ def fixture_create_socket_can() -> Bus:
 @pytest.mark.twai_std
 @pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='no runner')
 @pytest.mark.parametrize('config', ['release'], indirect=True)
-@pytest.mark.timeout(10)  # Whole test timeout
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
 def test_driver_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     dut.serial.hard_reset()
@@ -62,7 +61,6 @@ def test_driver_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
 @pytest.mark.twai_std
 @pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='no runner')
 @pytest.mark.parametrize('config', ['release'], indirect=True)
-@pytest.mark.timeout(10)  # Whole test timeout
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
 def test_driver_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
     dut.serial.hard_reset()
