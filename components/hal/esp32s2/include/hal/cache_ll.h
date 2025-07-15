@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -461,8 +461,6 @@ __attribute__((always_inline))
 #endif
 static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
-    (void)cache_id;
-
     cache_bus_mask_t mask = (cache_bus_mask_t)0;
     uint32_t vaddr_end = vaddr_start + len - 1;
     if (vaddr_start >= SOC_IRAM1_ADDRESS_LOW) {
@@ -502,15 +500,15 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
 /**
  * Enable the Cache Buses
  *
- * @param cache_id    cache ID (when l1 cache is per core)
+ * @param bus_id      bus ID
  * @param mask        To know which buses should be enabled
  */
 #if !BOOTLOADER_BUILD
 __attribute__((always_inline))
 #endif
-static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_enable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
-    (void)cache_id;
+    (void)bus_id;
 
     uint32_t ibus_mask = 0;
     ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? EXTMEM_PRO_ICACHE_MASK_IRAM0 : 0);
@@ -528,13 +526,13 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
 /**
  * Disable the Cache Buses
  *
- * @param cache_id    cache ID (when l1 cache is per core)
+ * @param bus_id      bus ID
  * @param mask        To know which buses should be disabled
  */
 __attribute__((always_inline))
-static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_disable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
-    (void)cache_id;
+    (void)bus_id;
 
     uint32_t ibus_mask = 0;
     ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? EXTMEM_PRO_ICACHE_MASK_IRAM0 : 0);

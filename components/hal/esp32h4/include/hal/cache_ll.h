@@ -213,8 +213,6 @@ static inline void cache_ll_l1_enable_dcache(uint32_t cache_id, bool data_autolo
 __attribute__((always_inline))
 static inline void cache_ll_enable_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id, bool inst_autoload_en, bool data_autoload_en)
 {
-    HAL_ASSERT(cache_level == 1 || cache_level == 2);
-
     if (cache_level == 1) {
         switch (type) {
         case CACHE_TYPE_INSTRUCTION:
@@ -276,8 +274,6 @@ static inline void cache_ll_l1_suspend_dcache(uint32_t cache_id)
 __attribute__((always_inline))
 static inline void cache_ll_suspend_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
-    HAL_ASSERT(cache_level == 1 || cache_level == 2);
-
     if (cache_level == 1) {
         switch (type) {
         case CACHE_TYPE_INSTRUCTION:
@@ -708,16 +704,15 @@ static inline uint32_t cache_ll_get_line_size(uint32_t cache_level, cache_type_t
  * External virtual address can only be accessed when the involved cache buses are enabled.
  * This API is to get the cache buses where the memory region (from `vaddr_start` to `vaddr_start + len`) reside.
  *
- * @param bus_id            bus ID
+ * @param cache_id          cache ID (when l1 cache is per core)
  * @param vaddr_start       virtual address start
  * @param len               vaddr length
  */
 #if !BOOTLOADER_BUILD
 __attribute__((always_inline))
 #endif
-static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t bus_id, uint32_t vaddr_start, uint32_t len)
+static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
-    HAL_ASSERT(bus_id <= CACHE_LL_ID_ALL);
     cache_bus_mask_t mask = (cache_bus_mask_t)0;
 
     uint32_t vaddr_end = vaddr_start + len - 1;
@@ -734,20 +729,19 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t bus_id, uint32_t vad
 /**
  * Enable the Cache Buses
  *
- * @param cache_id    cache ID (when l1 cache is per core)
+ * @param bus_id      bus ID
  * @param mask        To know which buses should be enabled
  */
 #if !BOOTLOADER_BUILD
 __attribute__((always_inline))
 #endif
-static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_enable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
-    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     //On esp32h4, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
     uint32_t ibus_mask = 0;
-    if (cache_id == 0) {
+    if (bus_id == 0) {
         ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? CACHE_L1_ICACHE_SHUT_IBUS0 : 0);
     } else {
         ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? CACHE_L1_ICACHE_SHUT_IBUS1 : 0);
@@ -755,7 +749,7 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
     REG_CLR_BIT(CACHE_L1_ICACHE_CTRL_REG, ibus_mask);
 
     uint32_t dbus_mask = 0;
-    if (cache_id == 1) {
+    if (bus_id == 1) {
         dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? CACHE_L1_DCACHE_SHUT_DBUS0 : 0);
     } else {
         dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? CACHE_L1_DCACHE_SHUT_DBUS1 : 0);
@@ -766,18 +760,17 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
 /**
  * Disable the Cache Buses
  *
- * @param cache_id    cache ID (when l1 cache is per core)
+ * @param bus_id      bus ID
  * @param mask        To know which buses should be disabled
  */
 __attribute__((always_inline))
-static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_disable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
-    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     //On esp32h4, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2| CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
     uint32_t ibus_mask = 0;
-    if (cache_id == 0) {
+    if (bus_id == 0) {
         ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? CACHE_L1_ICACHE_SHUT_IBUS0 : 0);
     } else {
         ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? CACHE_L1_ICACHE_SHUT_IBUS1 : 0);
@@ -785,7 +778,7 @@ static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t m
     REG_SET_BIT(CACHE_L1_ICACHE_CTRL_REG, ibus_mask);
 
     uint32_t dbus_mask = 0;
-    if (cache_id == 1) {
+    if (bus_id == 1) {
         dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? CACHE_L1_DCACHE_SHUT_DBUS0 : 0);
     } else {
         dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? CACHE_L1_DCACHE_SHUT_DBUS1 : 0);
