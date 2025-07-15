@@ -142,7 +142,7 @@ def dut_start_secure_app(dut: Dut) -> None:
     dut.serial.app_flash(os.path.join(dut.app.binary_path, 'secure_boot.bin'))
 
 
-def test_examples_security_secure_boot(dut: Dut) -> None:
+def _examples_security_secure_boot(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
     dut.serial.reset_efuses()
@@ -151,14 +151,16 @@ def test_examples_security_secure_boot(dut: Dut) -> None:
 
 # Test secure boot flow.
 # Correctly signed bootloader + correctly signed app should work
+@pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS_SECURE_BOOT_RSA, indirect=['config', 'target'])
 def test_examples_security_secure_boot_rsa(dut: Dut) -> None:
-    test_examples_security_secure_boot(dut)
+    _examples_security_secure_boot(dut)
 
 
+@pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS_SECURE_BOOT_ECDSA, indirect=['config', 'target'])
 def test_examples_security_secure_boot_ecdsa(dut: Dut) -> None:
-    test_examples_security_secure_boot(dut)
+    _examples_security_secure_boot(dut)
 
 
 # Test secure boot flow.
@@ -192,7 +194,7 @@ def test_examples_security_secure_boot_qemu(dut: Dut) -> None:
             efuse_file.write(bytearray.fromhex(esp32c3_efuses))
 
 
-def test_examples_security_secure_boot_key_combo(dut: Dut) -> None:
+def _examples_security_secure_boot_key_combo(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
     efuse_secure_boot_key_digests = dut.app.sdkconfig.get('SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS')
@@ -213,9 +215,10 @@ def test_examples_security_secure_boot_key_combo(dut: Dut) -> None:
 # Increasing the test timeout to 1200s as the test runs for 18 iterations
 # and thus the default 600s timeout is not sufficient
 @pytest.mark.timeout(1200)
+@pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS_SECURE_BOOT_RSA, indirect=['config', 'target'])
 def test_examples_security_secure_boot_key_combo_rsa(dut: Dut) -> None:
-    test_examples_security_secure_boot_key_combo(dut)
+    _examples_security_secure_boot_key_combo(dut)
 
 
 # Test efuse key index and key block combination.
@@ -223,12 +226,13 @@ def test_examples_security_secure_boot_key_combo_rsa(dut: Dut) -> None:
 # Increasing the test timeout to 1200s as the test runs for 18 iterations
 # and thus the default 600s timeout is not sufficient
 @pytest.mark.timeout(1200)
+@pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS_SECURE_BOOT_ECDSA, indirect=['config', 'target'])
 def test_examples_security_secure_boot_key_combo_ecdsa(dut: Dut) -> None:
-    test_examples_security_secure_boot_key_combo(dut)
+    _examples_security_secure_boot_key_combo(dut)
 
 
-def test_examples_security_secure_boot_key_revoke(dut: Dut) -> None:
+def _examples_security_secure_boot_key_revoke(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
     efuse_secure_boot_key_digests = dut.app.sdkconfig.get('SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS')
@@ -247,16 +251,18 @@ def test_examples_security_secure_boot_key_revoke(dut: Dut) -> None:
 
 # Test secure boot key revoke.
 # If a key is revoked, bootloader signed with that key should fail verification
+@pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS_SECURE_BOOT_RSA, indirect=['config', 'target'])
 def test_examples_security_secure_boot_key_revoke_rsa(dut: Dut) -> None:
-    test_examples_security_secure_boot_key_revoke(dut)
+    _examples_security_secure_boot_key_revoke(dut)
 
 
 # Test secure boot key revoke.
 # If a key is revoked, bootloader signed with that key should fail verification
+@pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS_SECURE_BOOT_ECDSA, indirect=['config', 'target'])
 def test_examples_security_secure_boot_key_revoke_ecdsa(dut: Dut) -> None:
-    test_examples_security_secure_boot_key_revoke(dut)
+    _examples_security_secure_boot_key_revoke(dut)
 
 
 def get_signature_type_size(dut: Dut, signature_type: int) -> int:
@@ -277,7 +283,7 @@ def get_signature_type_size(dut: Dut, signature_type: int) -> int:
     return signature_type_size
 
 
-def test_examples_security_secure_boot_corrupt_bl_sig(dut: Dut, signature_type: int) -> None:
+def _examples_security_secure_boot_corrupt_bl_sig(dut: Dut, signature_type: int) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
 
@@ -313,9 +319,10 @@ def test_examples_security_secure_boot_corrupt_bl_sig(dut: Dut, signature_type: 
 @pytest.mark.timeout(18000)
 # Increasing the test timeout to 18000s as the test runs for 384 iterations
 # and thus the default 600s timeout is not sufficient
+@pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS_SECURE_BOOT_RSA, indirect=['config', 'target'])
 def test_examples_security_secure_boot_corrupt_bl_sig_rsa(dut: Dut) -> None:
-    test_examples_security_secure_boot_corrupt_bl_sig(dut, signature_type=SIGNATURE_TYPE_RSA)
+    _examples_security_secure_boot_corrupt_bl_sig(dut, signature_type=SIGNATURE_TYPE_RSA)
 
 
 # Test bootloader signature corruption.
@@ -323,12 +330,13 @@ def test_examples_security_secure_boot_corrupt_bl_sig_rsa(dut: Dut) -> None:
 @pytest.mark.timeout(18000)
 # Increasing the test timeout to 18000s as the test runs for 384 iterations
 # and thus the default 600s timeout is not sufficient
+@pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS_SECURE_BOOT_ECDSA, indirect=['config', 'target'])
 def test_examples_security_secure_boot_corrupt_bl_sig_ecdsa(dut: Dut) -> None:
-    test_examples_security_secure_boot_corrupt_bl_sig(dut, signature_type=SIGNATURE_TYPE_ECDSA)
+    _examples_security_secure_boot_corrupt_bl_sig(dut, signature_type=SIGNATURE_TYPE_ECDSA)
 
 
-def test_examples_security_secure_boot_corrupt_app_sig(dut: Dut, signature_type: int) -> None:
+def _examples_security_secure_boot_corrupt_app_sig(dut: Dut, signature_type: int) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
 
@@ -382,9 +390,10 @@ def test_examples_security_secure_boot_corrupt_app_sig(dut: Dut, signature_type:
 @pytest.mark.timeout(18000)
 # Increasing the test timeout to 18000s as the test runs for 385 iterations
 # and thus the default 600s timeout is not sufficient
+@pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS_SECURE_BOOT_RSA, indirect=['config', 'target'])
 def test_examples_security_secure_boot_corrupt_app_sig_rsa(dut: Dut) -> None:
-    test_examples_security_secure_boot_corrupt_app_sig(dut, signature_type=SIGNATURE_TYPE_RSA)
+    _examples_security_secure_boot_corrupt_app_sig(dut, signature_type=SIGNATURE_TYPE_RSA)
 
 
 # Test app signature corruption.
@@ -392,6 +401,7 @@ def test_examples_security_secure_boot_corrupt_app_sig_rsa(dut: Dut) -> None:
 @pytest.mark.timeout(18000)
 # Increasing the test timeout to 18000s as the test runs for 385 iterations
 # and thus the default 600s timeout is not sufficient
+@pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS_SECURE_BOOT_ECDSA, indirect=['config', 'target'])
 def test_examples_security_secure_boot_corrupt_app_sig_ecdsa(dut: Dut) -> None:
-    test_examples_security_secure_boot_corrupt_app_sig(dut, signature_type=SIGNATURE_TYPE_ECDSA)
+    _examples_security_secure_boot_corrupt_app_sig(dut, signature_type=SIGNATURE_TYPE_ECDSA)
