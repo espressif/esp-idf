@@ -428,7 +428,7 @@ static inline bool rtcio_ll_wakeup_is_enabled(int rtcio_num)
 /**
  * @brief Get the rtc io interrupt status
  *
- * @return  bit 0~7 corresponding to 0 ~ SOC_RTCIO_PIN_COUNT.
+ * @return  bit 0~6 corresponding to 0 ~ SOC_RTCIO_PIN_COUNT.
  */
 static inline  uint32_t rtcio_ll_get_interrupt_status(void)
 {

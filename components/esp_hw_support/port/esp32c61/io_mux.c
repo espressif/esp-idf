@@ -16,9 +16,6 @@
 static portMUX_TYPE __attribute__((unused)) s_io_mux_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static soc_module_clk_t s_io_mux_clk_src = 0; // by default, the clock source is not set explicitly by any consumer (e.g. SDM, Filter)
 
-#if CONFIG_ULP_COPROC_ENABLED
-RTC_DATA_ATTR
-#endif
 static rtc_io_status_t s_rtc_io_status = {
     .rtc_io_enabled_cnt = { 0 },
     .rtc_io_using_mask = 0

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,6 +110,7 @@ const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     GPIO_NUM_6,    //GPIO6
     GPIO_NUM_7,    //GPIO7
 };
+#define TEST_RTCIO_INTR_PIN_INDEX       5 // IO5
 #define TEST_RTCIO_DEEP_SLEEP_PIN_INDEX 5 // IO5
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define TEST_GPIO_PIN_COUNT 8
@@ -123,6 +124,7 @@ const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     GPIO_NUM_13,   //GPIO13
     GPIO_NUM_14,   //GPIO14
 };
+#define TEST_RTCIO_INTR_PIN_INDEX       5 // IO12
 #define TEST_RTCIO_DEEP_SLEEP_PIN_INDEX 5 // IO12
 #elif CONFIG_IDF_TARGET_ESP32P4
 // Has no input-only rtcio pins, all pins support pull-up/down
@@ -146,6 +148,7 @@ const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     GPIO_NUM_14,   //GPIO14
     GPIO_NUM_15,   //GPIO15
 };
+#define TEST_RTCIO_INTR_PIN_INDEX       2 // IO2
 #elif CONFIG_IDF_TARGET_ESP32C61 || CONFIG_IDF_TARGET_ESP32C5
 // Has no input-only rtcio pins, all pins support pull-up/down
 #define RTCIO_SUPPORT_PU_PD(num)    1
@@ -159,7 +162,22 @@ const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     GPIO_NUM_5,    //GPIO5
     GPIO_NUM_6,    //GPIO6
 };
+#define TEST_RTCIO_INTR_PIN_INDEX       6 // IO6
 #define TEST_RTCIO_DEEP_SLEEP_PIN_INDEX 6 // IO6
+#elif CONFIG_IDF_TARGET_ESP32H4
+// Has no input-only rtcio pins, all pins support pull-up/down
+#define RTCIO_SUPPORT_PU_PD(num)    1
+#define TEST_GPIO_PIN_COUNT 6
+const int s_test_map[TEST_GPIO_PIN_COUNT] = {
+    GPIO_NUM_0,    //GPIO0
+    GPIO_NUM_1,    //GPIO1
+    GPIO_NUM_2,    //GPIO2
+    GPIO_NUM_3,    //GPIO3
+    GPIO_NUM_4,    //GPIO4
+    GPIO_NUM_5,    //GPIO5
+};
+#define TEST_RTCIO_INTR_PIN_INDEX       2 // IO2
+#define TEST_RTCIO_DEEP_SLEEP_PIN_INDEX 2 // IO2
 #endif
 
 #ifdef __cplusplus
