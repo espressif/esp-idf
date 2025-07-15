@@ -885,7 +885,6 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
     while(1) {
         char c;
         int nread;
-        char seq[3];
 
         /**
          * To determine whether the user is pasting data or typing itself, we
@@ -974,14 +973,18 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
         case CTRL_N:    /* ctrl-n */
             linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_NEXT);
             break;
-        case ESC:    /* escape sequence */
-            /* Read the next two bytes representing the escape sequence. */
-            if (read(in_fd, seq, 2) < 2) {
-                break;
+        case ESC: {     /* escape sequence */
+            char seq[3];
+            int r = read(in_fd, seq, 1);
+            if (r != 1) {
+                return -1;
             }
-
             /* ESC [ sequences. */
             if (seq[0] == '[') {
+                int r = read(in_fd, seq + 1, 1);
+                if (r != 1) {
+                    return -1;
+                }
                 if (seq[1] >= '0' && seq[1] <= '9') {
                     /* Extended escape, read additional byte. */
                     if (read(in_fd, seq+2, 1) == -1) {
@@ -1020,6 +1023,10 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
 
             /* ESC O sequences. */
             else if (seq[0] == 'O') {
+                int r = read(in_fd, seq + 1, 1);
+                if (r != 1) {
+                    return -1;
+                }
                 switch(seq[1]) {
                 case 'H': /* Home */
                     linenoiseEditMoveHome(&l);
@@ -1030,6 +1037,7 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
                 }
             }
             break;
+        }
         default:
             if (linenoiseEditInsert(&l,c)) return -1;
             break;
