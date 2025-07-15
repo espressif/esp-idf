@@ -35,3 +35,4 @@
 #define ESP_ROM_HAS_OUTPUT_PUTC_FUNC        (1) // ROM has esp_rom_output_putc (or ets_write_char_uart)
 #define ESP_ROM_CLIC_INT_THRESH_PATCH       (1) // ROM version of esprv_intc_int_set_threshold incorrectly assumes lowest MINTTHRESH is 0x1F, should be 0xF
 #define ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY  (1) // ROM mem/str functions are not optimized well for misaligned memory access.
+#define ESP_ROM_DELAY_US_PATCH              (1) // ROM ets_delay_us needs patch for U-mode operation
