@@ -92,6 +92,13 @@ The following deprecated FreeRTOS functions have been removed in ESP-IDF v6.0:
 - :cpp:func:`xTaskGetIdleTaskHandleForCPU` – Use :cpp:func:`xTaskGetIdleTaskHandleForCore` instead.
 - :cpp:func:`xTaskGetCurrentTaskHandleForCPU` – Use :cpp:func:`xTaskGetCurrentTaskHandleForCore` instead.
 
+The following compatibility functions have been removed in ESP-IDF v6.0. These functions were maintained for backward compatibility with previous ESP-IDF versions as they were changed to either macros or separate functions in FreeRTOS. This compatibility has been removed.
+
+- :cpp:func:`xQueueGenericReceive` - Use :cpp:func:`xQueueReceive`, :cpp:func:`xQueuePeek`, or :cpp:func:`xQueueSemaphoreTake` instead, depending on your use case.
+- :cpp:func:`vTaskDelayUntil` - Use :cpp:func:`xTaskDelayUntil` instead
+- :cpp:func:`ulTaskNotifyTake` - Use the macro ``ulTaskNotifyTake`` instead
+- :cpp:func:`xTaskNotifyWait` - Use the macro ``xTaskNotifyWait`` instead
+
 **Deprecated Functions**
 
 The function :cpp:func:`pxTaskGetStackStart` has been deprecated. Use :cpp:func:`xTaskGetStackStart` instead for improved type safety.

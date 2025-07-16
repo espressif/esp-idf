@@ -526,3 +526,20 @@
 -
     re: undefined reference to `i3c_new_master_bus'
     hint: "The I3C master driver is not fully supported in IDF. To use this driver please enable `IDF_EXPERIMENTAL_FEATURES`"
+
+-
+    re: "error: implicit declaration of function '{}'"
+    hint: "The FreeRTOS compatibility function '{}' has been removed in ESP-IDF v6.0. Please use {} instead."
+    variables:
+        -
+            re_variables: ['xQueueGenericReceive']
+            hint_variables: ['xQueueGenericReceive', 'xQueueReceive(), xQueuePeek(), or xQueueSemaphoreTake() depending on your use case']
+        -
+            re_variables: ['vTaskDelayUntil']
+            hint_variables: ['vTaskDelayUntil', 'xTaskDelayUntil']
+        -
+            re_variables: ['ulTaskNotifyTake']
+            hint_variables: ['ulTaskNotifyTake', 'the macro ulTaskNotifyTake']
+        -
+            re_variables: ['xTaskNotifyWait']
+            hint_variables: ['xTaskNotifyWait', 'the macro xTaskNotifyWait']
