@@ -7,10 +7,12 @@ import random
 import re
 import secrets
 import subprocess
+import sys
 import threading
 import time
 from typing import Tuple
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import ot_ci_function as ocf
 import pexpect
 import pytest
