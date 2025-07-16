@@ -74,7 +74,7 @@
 #define SOC_PMU_SUPPORTED               1    // TODO: [ESP32H4] IDF-12286
 #define SOC_PAU_SUPPORTED               1
 #define SOC_LP_TIMER_SUPPORTED          1
-// #define SOC_LP_AON_SUPPORTED            1
+#define SOC_LP_AON_SUPPORTED            1
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1
 // #define SOC_LP_I2C_SUPPORTED            1    // TODO: [ESP32H4] IDF-12449
 // #define SOC_ULP_LP_UART_SUPPORTED       1    // TODO: [ESP32H4] IDF-12445 IDF-12451
@@ -513,8 +513,8 @@
 // TODO: IDF-12286 (inherit from verify code, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
 // #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-// #define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
-// #define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
+#define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
+#define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
 #define SOC_PM_SUPPORT_TOUCH_WAKEUP     (1)
 #define SOC_PM_SUPPORT_CPU_PD           (1)
 #define SOC_PM_SUPPORT_MODEM_PD         (1)
