@@ -26,7 +26,6 @@ import signal
 import time
 import typing as t
 from copy import deepcopy
-from telnetlib import Telnet
 from urllib.parse import quote
 
 import common_test_methods  # noqa: F401
@@ -48,6 +47,7 @@ from pytest_embedded.utils import to_bytes
 from pytest_embedded.utils import to_str
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.unity_tester import CaseTester
+from pytest_embedded_jtag._telnetlib.telnetlib import Telnet  # python 3.13 removed telnetlib, use this instead
 
 
 ############
