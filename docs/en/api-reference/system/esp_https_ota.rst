@@ -74,6 +74,28 @@ To perform OTA upgrades with pre-encrypted firmware, please enable :ref:`CONFIG_
 
 Example that performs OTA upgrade with pre-encrypted firmware: :example:`system/ota/pre_encrypted_ota`.
 
+Pre-encrypted firmware is a completely independent scheme from :doc:`../../security/flash-encryption`. Primary reasons for this are as follows:
+
+ * Flash encryption scheme depends on the flash offset and generates different ciphertext for different flash offset. And hence it becomes difficult to manage different OTA update images based on the partition slots like ``ota_0``, ``ota_1`` etc.
+
+ * Even for devices where flash encryption is not enabled, it could be requirement that firmware image over OTA is still encrypted in nature.
+
+Pre-encrypted firmware distribution ensures that the firmware image stays encrypted **in transit** from the server to the device (irrespective of the underlying transport security). First the pre-encrypted software layer will decrypt the firmware (received over network) on device and then re-encrypt the contents using platform flash encryption (if enabled) before writing to flash.
+
+Design
+^^^^^^
+
+Pre-encrypted firmware is a **transport security scheme** that ensures firmware images remain encrypted **in transit** from the OTA server to the device (irrespective of the underlying transport security). This approach differs from :doc:`../../security/flash-encryption` in several key ways:
+
+* **Key Management**: Uses externally managed encryption keys rather than per-device unique keys generated internally
+* **Flash Offset Independence**: Generates consistent ciphertext regardless of flash partition location (``ota_0``, ``ota_1``, etc.)
+* **Transport Protection**: Provides encryption protection during firmware distribution, not device-level storage security
+
+**Important Security Note**: Pre-encrypted firmware does not provide device-level security on its own. Once received, the firmware is decrypted on the device and stored according to the device's flash encryption configuration. For device-level security, flash encryption must be separately enabled.
+
+This process is managed by the `esp_encrypted_img <https://github.com/espressif/idf-extra-components/tree/master/esp_encrypted_img>`_ component, which integrates with the OTA update framework via the decryption callback (:cpp:member:`esp_https_ota_config_t::decrypt_cb`).
+
+For detailed information on the image format, key generation, and implementation details, refer to the `esp_encrypted_img component documentation <https://github.com/espressif/idf-extra-components/tree/master/esp_encrypted_img>`_.
 
 OTA System Events
 -----------------

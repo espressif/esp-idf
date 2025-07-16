@@ -74,6 +74,28 @@ mbedTLS Rx buffer 的默认大小为 16 KB，但如果将 ``partial_http_downloa
 
 如需查看使用预加密固件进行 OTA 升级的示例，请前往 :example:`system/ota/pre_encrypted_ota`。
 
+预加密固件完全独立于 :doc:`../../security/flash-encryption` 方案，主要原因如下：
+
+ * flash 加密方案依赖 flash 偏移，会基于不同的 flash 偏移量生成不同的密文，因此根据分区槽（如 ``ota_0``、``ota_1`` 等）来管理不同的 OTA 更新镜像较为困难。
+
+ * 即使设备未启用 flash 加密，仍可能要求进行 OTA 的固件镜像保持加密。
+
+无论底层传输安全性如何，预加密固件的分发都能确保固件镜像在从服务器到设备的**传输过程中**保持加密状态。首先，预加密软件层在设备上通过网络接收并解密固件，然后使用平台 flash 加密（如果已启用）重新加密内容，最后写入 flash。
+
+设计
+^^^^
+
+预加密固件是一种 **传输安全方案**，用于确保固件镜像在从 OTA 服务器传输到设备的过程中始终处于加密状态（与底层传输安全无关）。这种方案与 :doc:`../../security/flash-encryption` 在多个关键方面有所不同：
+
+* **密钥管理**：使用外部管理的加密密钥，而不是每个设备内部生成的唯一密钥
+* **独立于 flash 偏移**：无论固件烧录在哪个 flash 分区（``ota_0``、``ota_1`` 等），生成的密文内容一致
+* **传输保护**：在固件传输过程中提供加密保护，不涉及设备本地存储安全
+
+**重要安全提示**：预加密固件本身不提供设备级安全保护。固件被接收后在设备上解密，并按设备的 flash 加密配置存储。如需设备级安全措施，需另外启用 flash 加密功能。
+
+该功能由 `esp_encrypted_img <https://github.com/espressif/idf-extra-components/tree/master/esp_encrypted_img>`_ 组件实现，该组件通过解密回调 (:cpp:member:`esp_https_ota_config_t::decrypt_cb`) 机制集成在 OTA 更新框架中。
+
+有关镜像格式、密钥生成及实现细节的详细信息，请参阅 `esp_encrypted_img 组件文档 <https://github.com/espressif/idf-extra-components/tree/master/esp_encrypted_img>`_。
 
 OTA 系统事件
 -----------------
