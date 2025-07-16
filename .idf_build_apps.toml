@@ -21,13 +21,12 @@ ignore_warning_files = [
 
 build_dir = "build_@t_@w"
 build_log_filename = "build_log.txt"
-size_json_filename = "size.json"
+size_json_filename = "size_${CI_JOB_ID}.json"
 
 verbose = 1  # INFO
 
 # collect
 collect_app_info_filename = "app_info_${CI_JOB_NAME_SLUG}.txt"
-collect_size_info_filename = "size_info_${CI_JOB_NAME_SLUG}.txt"  # TODO remove this file when ci-dashboard is ready
 junitxml = "build_summary_${CI_JOB_NAME_SLUG}.xml"
 
 # manifest

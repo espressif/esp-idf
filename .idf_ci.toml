@@ -74,7 +74,7 @@ patterns = [
 bucket = "idf-artifacts"
 patterns = [
     '**/build*/build_log.txt',
-    '**/build*/size.json',
+    '**/build*/size*.json',
 ]
 
 [gitlab.artifacts.s3.junit]
