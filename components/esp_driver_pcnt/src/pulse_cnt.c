@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -451,10 +451,32 @@ esp_err_t pcnt_unit_get_count(pcnt_unit_handle_t unit, int *value)
     pcnt_group_t *group = NULL;
     ESP_RETURN_ON_FALSE_ISR(unit && value, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     group = unit->group;
+    int temp_value = 0;
 
     // the accum_value is also accessed by the ISR, so adding a critical section
     portENTER_CRITICAL_SAFE(&unit->spinlock);
-    *value = pcnt_ll_get_count(group->hal.dev, unit->unit_id) + unit->accum_value;
+    temp_value = pcnt_ll_get_count(group->hal.dev, unit->unit_id) ;
+    // Check for pending overflow interrupts that haven't been processed yet
+    // Add compensation to get accurate count
+    if (unit->flags.accum_count) {
+        uint32_t intr_status = pcnt_ll_get_intr_status(group->hal.dev);
+        if (intr_status & PCNT_LL_UNIT_WATCH_EVENT(unit->unit_id)) {
+            uint32_t event_status = pcnt_ll_get_event_status(group->hal.dev, unit->unit_id);
+
+            // TODO: DIG-683
+            // Note, the overflow may be triggered between `pcnt_ll_get_count` and `pcnt_ll_get_event_status`
+            // In this case, we don't want to do the compensation.
+            // so we should check the count value is greater(less) than the low(high) limit / 2 to filter this case.
+            // This workaround is only valid for the case that the counter won't overflow twice between `pcnt_ll_get_count()` and `pcnt_ll_get_intr_status()`
+            if (event_status & BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT) && temp_value >= unit->low_limit / 2) {
+                temp_value += unit->low_limit;
+            } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT) && temp_value <= unit->high_limit / 2) {
+                temp_value += unit->high_limit;
+            }
+        }
+    }
+
+    *value = temp_value + unit->accum_value;
     portEXIT_CRITICAL_SAFE(&unit->spinlock);
 
     return ESP_OK;
@@ -824,24 +846,26 @@ IRAM_ATTR static void pcnt_default_isr(void *args)
 
     uint32_t intr_status = pcnt_ll_get_intr_status(group->hal.dev);
     if (intr_status & PCNT_LL_UNIT_WATCH_EVENT(unit_id)) {
+        // event status word contains information about the real watch event type
+        uint32_t event_status = pcnt_ll_get_event_status(group->hal.dev, unit_id);
+
+        // clear interrupt status and update accum_value atomically
+        portENTER_CRITICAL_ISR(&unit->spinlock);
         pcnt_ll_clear_intr_status(group->hal.dev, PCNT_LL_UNIT_WATCH_EVENT(unit_id));
 
-        // points watcher event
-        uint32_t event_status = pcnt_ll_get_event_status(group->hal.dev, unit_id);
-        // iter on each event_id
+        if (unit->flags.accum_count) {
+            if (event_status & BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT)) {
+                unit->accum_value += unit->low_limit;
+            } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT)) {
+                unit->accum_value += unit->high_limit;
+            }
+        }
+        portEXIT_CRITICAL_ISR(&unit->spinlock);
+
+        // using while loop so that we don't miss any event
         while (event_status) {
             int event_id = __builtin_ffs(event_status) - 1;
             event_status &= (event_status - 1); // clear the right most bit
-
-            portENTER_CRITICAL_ISR(&unit->spinlock);
-            if (unit->flags.accum_count) {
-                if (event_id == PCNT_LL_WATCH_EVENT_LOW_LIMIT) {
-                    unit->accum_value += unit->low_limit;
-                } else if (event_id == PCNT_LL_WATCH_EVENT_HIGH_LIMIT) {
-                    unit->accum_value += unit->high_limit;
-                }
-            }
-            portEXIT_CRITICAL_ISR(&unit->spinlock);
 
             // invoked user registered callback
             if (on_reach) {
