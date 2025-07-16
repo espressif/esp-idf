@@ -16,7 +16,7 @@ extern "C" {
 #include "hal/apm_ll.h"
 #include "hal/apm_types.h"
 
-#if CONFIG_IDF_TARGET_ESP32P4
+#if SOC_IS(ESP32P4)
 
 /**
  * @brief DMA configurable region configuration data.
@@ -360,11 +360,11 @@ void apm_hal_enable_reset_event_bypass(bool enable);
  */
 void apm_hal_enable_ctrl_clk_gating(apm_ctrl_module_t ctrl_mod, bool enable);
 
-#endif //CONFIG_IDF_TARGET_ESP32P4
+#endif //SOC_IS(ESP32P4)
 
 #elif SOC_APM_CTRL_FILTER_SUPPORTED //!SOC_APM_SUPPORTED
 
-#if CONFIG_IDF_TARGET_ESP32H4
+#if SOC_IS(ESP32H4)
 #include "soc/hp_apm_reg.h"
 #define apm_hal_enable_ctrl_filter_all(en) \
     REG_WRITE(HP_APM_FUNC_CTRL_REG, en ? 0xFFFFFFFF : 0);

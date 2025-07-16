@@ -9,7 +9,7 @@
 #pragma once
 
 #include "soc/soc_caps.h"
-#include "sdkconfig.h"
+
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT && SOC_MODEM_CLOCK_SUPPORTED
 #include "hal/modem_syscon_ll.h"
 #include "hal/modem_lpcon_ll.h"
@@ -24,7 +24,7 @@ typedef struct {
     modem_lpcon_dev_t  *lpcon_dev;
 } modem_clock_hal_context_t;
 
-#if !CONFIG_IDF_TARGET_ESP32H2 //TODO: PM-92
+#if !SOC_IS(ESP32H2) //TODO: PM-92
 void modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain, uint32_t bitmap);
 uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain);
 #endif

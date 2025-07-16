@@ -6,19 +6,19 @@
 
 // The HAL layer for SHA
 
+#include <stdlib.h>
+#include <stdio.h>
 #include "hal/sha_hal.h"
 #include "hal/sha_types.h"
 #include "hal/sha_ll.h"
-#include "soc/soc_caps.h"
-#include <stdlib.h>
-#include <stdio.h>
+#include "soc/soc_caps_full.h"
 
 
 #define SHA1_STATE_LEN_WORDS    (160 / 32)
 #define SHA256_STATE_LEN_WORDS  (256 / 32)
 #define SHA512_STATE_LEN_WORDS  (512 / 32)
 
-#if CONFIG_IDF_TARGET_ESP32
+#if SOC_IS(ESP32)
 
 /* Return state size (in words) for a given SHA type */
 inline static size_t state_length(esp_sha_type type)

@@ -13,7 +13,6 @@
 
 #include <stddef.h>
 #include <stdbool.h>
-#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/twai_types.h"
 

@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
+#include "soc/soc_caps_full.h"
 
 /* ---------------------------- Init and Config ----------------------------- */
 
@@ -18,7 +19,7 @@ void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescale
     if (wdt_inst == WDT_MWDT0) {
         hal->mwdt_dev = &TIMERG0;
     }
-#if SOC_TIMER_GROUPS >= 2
+#if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
     else if (wdt_inst == WDT_MWDT1) {
         hal->mwdt_dev = &TIMERG1;
     }
@@ -37,7 +38,7 @@ void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescale
         rwdt_ll_disable_stage(hal->rwdt_dev, WDT_STAGE1);
         rwdt_ll_disable_stage(hal->rwdt_dev, WDT_STAGE2);
         rwdt_ll_disable_stage(hal->rwdt_dev, WDT_STAGE3);
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if SOC_IS(ESP32)
         //Enable or disable level interrupt. Edge interrupt is always disabled.
         rwdt_ll_set_edge_intr(hal->rwdt_dev, false);
         rwdt_ll_set_level_intr(hal->rwdt_dev, enable_intr);
@@ -67,7 +68,7 @@ void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescale
         mwdt_ll_disable_stage(hal->mwdt_dev, 1);
         mwdt_ll_disable_stage(hal->mwdt_dev, 2);
         mwdt_ll_disable_stage(hal->mwdt_dev, 3);
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if SOC_IS(ESP32) || SOC_IS(ESP32S2) || SOC_IS(ESP32S3)
         //Enable or disable level interrupt. Edge interrupt is always disabled.
         mwdt_ll_set_edge_intr(hal->mwdt_dev, false);
         mwdt_ll_set_level_intr(hal->mwdt_dev, enable_intr);

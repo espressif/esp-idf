@@ -5,12 +5,13 @@
  */
 
 #include <stdbool.h>
+#include "soc/soc_caps.h"
 #include "hal/assert.h"
 #include "hal/apm_hal.h"
 #include "hal/apm_ll.h"
 #include "hal/log.h"
 
-#if CONFIG_IDF_TARGET_ESP32P4
+#if SOC_IS(ESP32P4)
 void apm_hal_hp_peri_access_enable(apm_ll_master_id_t master_id, apm_ll_hp_peri_t hp_peri,
                                      apm_ll_secure_mode_t sec_mode, bool enable)
 {
@@ -523,4 +524,4 @@ void apm_hal_enable_ctrl_clk_gating(apm_ctrl_module_t ctrl_mod, bool enable)
     }
 }
 
-#endif //CONFIG_IDF_TARGET_ESP32P4
+#endif //SOC_IS(ESP32P4)

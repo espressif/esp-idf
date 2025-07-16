@@ -8,7 +8,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_bit_defs.h"
 #include "soc/soc_caps.h"
@@ -128,7 +127,7 @@ typedef enum {
 #define TOUCH_PAD_THRESHOLD_MAX             (0xFFFF)    /*!< If set touch threshold max value, The touch sensor can't be in touched status */
 #endif
 
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if SOC_IS(ESP32)
 
 #define TOUCH_PAD_SLEEP_CYCLE_DEFAULT   (0x1000)  /*!<The timer frequency is RTC_SLOW_CLK (can be 150k or 32k depending on the options), max value is 0xffff */
 #define TOUCH_PAD_MEASURE_CYCLE_DEFAULT (0x7fff)  /*!<The timer frequency is 8Mhz, the max value is 0x7fff */
@@ -136,9 +135,9 @@ typedef enum {
 #define TOUCH_TRIGGER_MODE_DEFAULT      (TOUCH_TRIGGER_BELOW)   /*!<Interrupts can be triggered if sensor value gets below or above threshold */
 #define TOUCH_TRIGGER_SOURCE_DEFAULT    (TOUCH_TRIGGER_SOURCE_SET1)  /*!<The wakeup trigger source can be SET1 or both SET1 and SET2 */
 
-#endif // CONFIG_IDF_TARGET ESP32
+#endif // SOC_IS(ESP32)
 
-#if !CONFIG_IDF_TARGET_ESP32
+#if !SOC_IS(ESP32)
 /**
  * Excessive total time will slow down the touch response.
  * Too small measurement time will not be sampled enough, resulting in inaccurate measurements.
@@ -301,7 +300,7 @@ typedef struct {
     bool en_proximity;              /*!<enable proximity function for sleep pad */
 } touch_pad_sleep_channel_t;
 
-#endif // !CONFIG_IDF_TARGET_ESP32
+#endif // !SOC_IS(ESP32)
 
 #ifdef __cplusplus
 }

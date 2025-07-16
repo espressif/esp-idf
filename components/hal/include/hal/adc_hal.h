@@ -19,12 +19,12 @@
 #include "hal/gdma_ll.h"
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32S2
+#if SOC_IS(ESP32S2)
 //ADC utilises SPI3 DMA on ESP32S2
 #include "hal/spi_ll.h"
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32
+#if SOC_IS(ESP32)
 //ADC utilises I2S0 DMA on ESP32
 #include "hal/i2s_ll.h"
 #endif
@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32
+#if SOC_IS(ESP32)
 #define ADC_HAL_DMA_I2S_HOST    0
 #endif
 

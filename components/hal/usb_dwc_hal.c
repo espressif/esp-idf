@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <string.h> // For memset()
 #include <stdlib.h> // For abort()
-#include "sdkconfig.h"
+#include "soc/soc_caps_full.h"
 #include "soc/chip_revision.h"
 #include "soc/usb_periph.h"
 #include "hal/usb_dwc_hal.h"
@@ -87,7 +87,7 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
     //GAHBCFG register
     usb_dwc_ll_gahbcfg_en_dma_mode(hal->dev);
     int hbstlen = 0;    //Use AHB burst SINGLE by default
-#if CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP32S2_REV_MIN_FULL < 100
+#if SOC_IS(ESP32S2)
     /*
     Hardware errata workaround for the ESP32-S2 ECO0 (see ESP32-S2 Errata Document section 4.0 for full details).
 
@@ -105,7 +105,7 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
     if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100)) {
         hbstlen = 1;    //Set AHB burst to INCR to workaround hardware errata
     }
-#endif //CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP32S2_REV_MIN_FULL < 100
+#endif // SOC_IS(ESP32S2)
     usb_dwc_ll_gahbcfg_set_hbstlen(hal->dev, hbstlen);  //Set AHB burst mode
     //GUSBCFG register
     usb_dwc_ll_gusbcfg_dis_hnp_cap(hal->dev);       //Disable HNP
