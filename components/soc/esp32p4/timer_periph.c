@@ -6,30 +6,30 @@
 
 #include "soc/timer_periph.h"
 
-const timer_group_signal_conn_t timer_group_periph_signals = {
-    .groups = {
+const soc_timg_gptimer_signal_desc_t soc_timg_gptimer_signals[2][2] = {
+    [0] = {
         [0] = {
-            .module_name = {
-                [0] = "TIMG0T0",
-                [1] = "TIMG0T1",
-            },
-            .module = PERIPH_TIMG0_MODULE,
-            .timer_irq_id = {
-                [0] = ETS_TG0_T0_INTR_SOURCE,
-                [1] = ETS_TG0_T1_INTR_SOURCE,
-            }
+            .module_name = "TIMG0T0",
+            .parent_module = PERIPH_TIMG0_MODULE,
+            .irq_id = ETS_TG0_T0_INTR_SOURCE,
         },
         [1] = {
-            .module_name = {
-                [0] = "TIMG1T0",
-                [1] = "TIMG1T1",
-            },
-            .module = PERIPH_TIMG1_MODULE,
-            .timer_irq_id = {
-                [0] = ETS_TG1_T0_INTR_SOURCE,
-                [1] = ETS_TG1_T1_INTR_SOURCE,
-            }
-        }
+            .module_name = "TIMG0T1",
+            .parent_module = PERIPH_TIMG0_MODULE,
+            .irq_id = ETS_TG0_T1_INTR_SOURCE,
+        },
+    },
+    [1] = {
+        [0] = {
+            .module_name = "TIMG1T0",
+            .parent_module = PERIPH_TIMG1_MODULE,
+            .irq_id = ETS_TG1_T0_INTR_SOURCE,
+        },
+        [1] = {
+            .module_name = "TIMG1T1",
+            .parent_module = PERIPH_TIMG1_MODULE,
+            .irq_id = ETS_TG1_T1_INTR_SOURCE,
+        },
     }
 };
 
@@ -213,7 +213,7 @@ const regdma_entries_config_t tg1_timer1_regdma_entries[] = {
     },
 };
 
-const tg_timer_reg_retention_info_t tg_timer_reg_retention_info[SOC_TIMER_GROUPS][SOC_TIMER_GROUP_TIMERS_PER_GROUP] = {
+const soc_timg_gptimer_retention_desc_t soc_timg_gptimer_retention_infos[2][2] = {
     [0] = {
         [0] = {
             .module = SLEEP_RETENTION_MODULE_TG0_TIMER0,

@@ -17,9 +17,9 @@ static esp_err_t gptimer_create_sleep_retention_link_cb(void *timer)
 {
     int group_id = ((gptimer_t *)timer)->group->group_id;
     int timer_id = ((gptimer_t *)timer)->timer_id;
-    esp_err_t err = sleep_retention_entries_create(tg_timer_reg_retention_info[group_id][timer_id].regdma_entry_array,
-                                                   tg_timer_reg_retention_info[group_id][timer_id].array_size,
-                                                   REGDMA_LINK_PRI_GPTIMER, tg_timer_reg_retention_info[group_id][timer_id].module);
+    esp_err_t err = sleep_retention_entries_create(soc_timg_gptimer_retention_infos[group_id][timer_id].regdma_entry_array,
+                                                   soc_timg_gptimer_retention_infos[group_id][timer_id].array_size,
+                                                   REGDMA_LINK_PRI_GPTIMER, soc_timg_gptimer_retention_infos[group_id][timer_id].module);
     return err;
 }
 
@@ -27,7 +27,7 @@ static void gptimer_create_retention_module(gptimer_t *timer)
 {
     int group_id = timer->group->group_id;
     int timer_id = timer->timer_id;
-    sleep_retention_module_t module = tg_timer_reg_retention_info[group_id][timer_id].module;
+    sleep_retention_module_t module = soc_timg_gptimer_retention_infos[group_id][timer_id].module;
     if (sleep_retention_is_module_inited(module) && !sleep_retention_is_module_created(module)) {
         if (sleep_retention_module_allocate(module) != ESP_OK) {
             // even though the sleep retention module create failed, GPTimer driver should still work, so just warning here
@@ -41,12 +41,12 @@ static esp_err_t gptimer_register_to_group(gptimer_t *timer)
 {
     gptimer_group_t *group = NULL;
     int timer_id = -1;
-    for (int i = 0; i < SOC_TIMER_GROUPS; i++) {
+    for (int i = 0; i < SOC_TIMG_ATTR(INST_NUM); i++) {
         group = gptimer_acquire_group_handle(i);
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", i);
         // loop to search free timer in the group
         portENTER_CRITICAL(&group->spinlock);
-        for (int j = 0; j < SOC_TIMER_GROUP_TIMERS_PER_GROUP; j++) {
+        for (int j = 0; j < SOC_GPTIMER_ATTR(TIMERS_PER_TIMG); j++) {
             if (!group->timers[j]) {
                 timer_id = j;
                 group->timers[j] = timer;
@@ -65,7 +65,7 @@ static esp_err_t gptimer_register_to_group(gptimer_t *timer)
     ESP_RETURN_ON_FALSE(timer_id != -1, ESP_ERR_NOT_FOUND, TAG, "no free timer");
 
 #if GPTIMER_USE_RETENTION_LINK
-    sleep_retention_module_t module = tg_timer_reg_retention_info[group->group_id][timer_id].module;
+    sleep_retention_module_t module = soc_timg_gptimer_retention_infos[group->group_id][timer_id].module;
     sleep_retention_module_init_param_t init_param = {
         .cbs = {
             .create = {
@@ -93,7 +93,7 @@ static void gptimer_unregister_from_group(gptimer_t *timer)
     portEXIT_CRITICAL(&group->spinlock);
 
 #if GPTIMER_USE_RETENTION_LINK
-    sleep_retention_module_t module = tg_timer_reg_retention_info[group->group_id][timer_id].module;
+    sleep_retention_module_t module = soc_timg_gptimer_retention_infos[group->group_id][timer_id].module;
     if (sleep_retention_is_module_created(module)) {
         sleep_retention_module_free(module);
     }
@@ -209,11 +209,11 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
     ESP_RETURN_ON_ERROR(gptimer_destroy(timer), TAG, "destroy gptimer failed");
 
     switch (clk_src) {
-#if SOC_TIMER_GROUP_SUPPORT_RC_FAST
+#if TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
     case GPTIMER_CLK_SRC_RC_FAST:
         periph_rtc_dig_clk8m_disable();
         break;
-#endif // SOC_TIMER_GROUP_SUPPORT_RC_FAST
+#endif // TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
     default:
         break;
     }
@@ -288,7 +288,7 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
         if (timer->intr_priority) {
             isr_flags |= 1 << (timer->intr_priority);
         }
-        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(timer_group_periph_signals.groups[group_id].timer_irq_id[timer_id], isr_flags,
+        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(soc_timg_gptimer_signals[group_id][timer_id].irq_id, isr_flags,
                                                       (uint32_t)timer_ll_get_intr_status_reg(timer->hal.dev), TIMER_LL_EVENT_ALARM(timer_id),
                                                       gptimer_default_isr, timer, &timer->intr), TAG, "install interrupt service failed");
     }

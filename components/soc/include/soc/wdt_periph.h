@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include "soc/timer_group_reg.h"
 #include "soc/timer_group_struct.h"
-#include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 #include "soc/periph_defs.h"
 #include "soc/regdma.h"
 
@@ -26,7 +26,7 @@ typedef struct {
     uint32_t link_num;
 } tg_reg_ctx_link_t;
 
-extern const tg_reg_ctx_link_t tg_wdt_regs_retention[SOC_TIMER_GROUPS];
+extern const tg_reg_ctx_link_t tg_wdt_regs_retention[SOC_MODULE_ATTR(TIMG, INST_NUM)];
 #endif // SOC_MWDT_SUPPORT_SLEEP_RETENTION
 
 #ifdef __cplusplus

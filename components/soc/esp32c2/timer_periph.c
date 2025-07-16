@@ -1,21 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/timer_periph.h"
 
-const timer_group_signal_conn_t timer_group_periph_signals = {
-    .groups = {
+const soc_timg_gptimer_signal_desc_t soc_timg_gptimer_signals[1][1] = {
+    [0] = {
         [0] = {
-            .module_name = {
-                [0] = "TIMG0T0",
-            },
-            .module = PERIPH_TIMG0_MODULE,
-            .timer_irq_id = {
-                [0] = ETS_TG0_T0_LEVEL_INTR_SOURCE,
-            }
+            .module_name = "TIMG0T0",
+            .parent_module = PERIPH_TIMG0_MODULE,
+            .irq_id = ETS_TG0_T0_LEVEL_INTR_SOURCE,
         },
     }
 };
