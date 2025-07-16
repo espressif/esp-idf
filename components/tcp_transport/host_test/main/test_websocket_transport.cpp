@@ -220,7 +220,6 @@ TEST_CASE("WebSocket Transport Connection", "[success]")
                                       "Sec-WebSocket-Accept:\r\n"
                                       "\r\n";
         REQUIRE(std::string(response_header_buffer.data()) == expected_header);
-
         char buffer[WS_BUFFER_SIZE];
         int read_len = 0;
         int partial_read;
@@ -245,12 +244,18 @@ TEST_CASE("WebSocket Transport Connection", "[success]")
         esp_crypto_base64_encode_ExpectAnyArgsAndReturn(0);
         mock_destroy_ExpectAnyArgsAndReturn(ESP_OK);
 
+        // Create a marker to check that the value after the end of the response header buffer is not overwritten
+        std::string expected_full_header = make_response();
+        char marker = static_cast<char>(~expected_full_header[ws_config.response_headers_len]);
+        response_header_buffer[ws_config.response_headers_len] = marker;
+
         REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
 
         // Verify the response header was stored correctly. it must contain only ten bytes and be null terminated
-        std::string expected_header = "HTTP/1.1 1\0";
+        std::string expected_header = "HTTP/1.1 \0";
 
         REQUIRE(std::string(response_header_buffer.data()) == expected_header);
+        REQUIRE(response_header_buffer[ws_config.response_headers_len] == marker);
     }
 }
 
