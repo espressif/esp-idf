@@ -936,11 +936,10 @@ def test_rtc_fast_reg1_execute_violation(dut: PanicTestDut, test_func_name: str)
 
 
 @pytest.mark.generic
-@pytest.mark.skipif(
-    'config.getvalue("target") in ["esp32c5", "esp32c6", "esp32h2", "esp32p4", "esp32h21"]',
-    reason='Not a violation condition, no PMS peripheral case',
+@pytest.mark.temp_skip(
+    targets=['esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32h21'],
+    reason='Not a violation condition, no PMS peripheral cases',
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_RTC_FAST_MEM, indirect=['config', 'target'])
 def test_rtc_fast_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
