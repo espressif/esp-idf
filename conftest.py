@@ -300,13 +300,19 @@ def build_dir(
     """
     # download from minio on CI
     case: PytestCase = request.node.stash[IDF_CI_PYTEST_CASE_KEY]
-    if app_downloader:
+    if 'skip_app_downloader' in case.all_markers:
+        logging.debug('skip_app_downloader marker found, skip downloading app')
+        downloader = None
+    else:
+        downloader = app_downloader
+
+    if downloader:
         # somehow hardcoded...
         app_build_path = os.path.join(idf_relpath(app_path), f'build_{target}_{config}')
         if requires_elf_or_map(case):
-            app_downloader.download_app(app_build_path)
+            downloader.download_app(app_build_path)
         else:
-            app_downloader.download_app(app_build_path, 'flash')
+            downloader.download_app(app_build_path, 'flash')
         check_dirs = [f'build_{target}_{config}']
     else:
         check_dirs = []
