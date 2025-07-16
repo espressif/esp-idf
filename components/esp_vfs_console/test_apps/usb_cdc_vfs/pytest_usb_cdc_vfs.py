@@ -13,9 +13,10 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@pytest.mark.parametrize('test_message', ['test123456789!@#%^&*'])
 @idf_parametrize('target', ['esp32s3'], indirect=['target'])
-def test_usb_cdc_vfs_default(dut: Dut, test_message: str) -> None:
+def test_usb_cdc_vfs_default(dut: Dut) -> None:
+    test_message = 'test123456789!@#%^&*'
+
     # test run: test_usb_cdc_select
     dut.expect_exact('test_usb_cdc_select', timeout=2)
     dut.expect_exact('select timed out', timeout=2)
