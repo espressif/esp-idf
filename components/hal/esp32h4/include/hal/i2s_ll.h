@@ -60,12 +60,12 @@ extern "C" {
                                          [I2S_DIR_RX - 1] = {  \
                                              [I2S_ETM_TASK_START] = I2S0_TASK_START_RX, \
                                              [I2S_ETM_TASK_STOP] = I2S0_TASK_STOP_RX, \
-                                             [I2S_ETM_TASK_SYNC_CHECK] = -1, \
+                                             [I2S_ETM_TASK_SYNC_FIFO] = -1, \
                                             },  \
                                         [I2S_DIR_TX - 1] = {  \
                                             [I2S_ETM_TASK_START] = I2S0_TASK_START_TX, \
                                             [I2S_ETM_TASK_STOP] = I2S0_TASK_STOP_TX, \
-                                            [I2S_ETM_TASK_SYNC_CHECK] = I2S0_TASK_SYNC_CHECK, \
+                                            [I2S_ETM_TASK_SYNC_FIFO] = I2S0_TASK_SYNC_CHECK, \
                                          }}}[i2s_port][(chan_dir) - 1][task]
 #define I2S_LL_ETM_MAX_THRESH_NUM       (0x3FFFUL)
 
@@ -1344,7 +1344,7 @@ static inline void i2s_ll_tx_set_hw_fifo_sync_static_suppl_data(i2s_dev_t *hw, u
  * @brief Set the TX ETM synchronization ideal count
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param ideal_cnt The ideal FIFO count when I2S_ETM_TASK_SYNC_CHECK triggered.
+ * @param ideal_cnt The ideal FIFO count when I2S_ETM_TASK_SYNC_FIFO triggered.
  */
 __attribute__((always_inline))
 static inline void i2s_ll_tx_set_etm_sync_ideal_cnt(i2s_dev_t *hw, uint32_t ideal_cnt)

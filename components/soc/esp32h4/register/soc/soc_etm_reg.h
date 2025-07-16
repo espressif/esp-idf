@@ -14,7 +14,7 @@ extern "C" {
 /** SOC_ETM_CH_ENA_AD0_REG register
  *  Channel enable status register
  */
-#define SOC_ETM_CH_ENA_AD0_REG (DR_REG_SOC_BASE + 0x0)
+#define SOC_ETM_CH_ENA_AD0_REG (DR_REG_SOC_ETM_BASE + 0x0)
 /** SOC_ETM_CH_ENABLED0 : R/WTC/WTS; bitpos: [0]; default: 0;
  *  Represents ch0 enable status.
  *  0: Disable
@@ -307,7 +307,7 @@ extern "C" {
 /** SOC_ETM_CH_ENA_AD0_SET_REG register
  *  Channel enable set register
  */
-#define SOC_ETM_CH_ENA_AD0_SET_REG (DR_REG_SOC_BASE + 0x4)
+#define SOC_ETM_CH_ENA_AD0_SET_REG (DR_REG_SOC_ETM_BASE + 0x4)
 /** SOC_ETM_CH_ENABLE0 : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to enable ch0.
  *  0: Invalid, No effect
@@ -600,7 +600,7 @@ extern "C" {
 /** SOC_ETM_CH_ENA_AD0_CLR_REG register
  *  Channel enable clear register
  */
-#define SOC_ETM_CH_ENA_AD0_CLR_REG (DR_REG_SOC_BASE + 0x8)
+#define SOC_ETM_CH_ENA_AD0_CLR_REG (DR_REG_SOC_ETM_BASE + 0x8)
 /** SOC_ETM_CH_DISABLE0 : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear ch0 enable.
  *  0: Invalid, No effect
@@ -893,7 +893,7 @@ extern "C" {
 /** SOC_ETM_CH_ENA_AD1_REG register
  *  Channel enable status register
  */
-#define SOC_ETM_CH_ENA_AD1_REG (DR_REG_SOC_BASE + 0xc)
+#define SOC_ETM_CH_ENA_AD1_REG (DR_REG_SOC_ETM_BASE + 0xc)
 /** SOC_ETM_CH_ENABLED32 : R/WTC/WTS; bitpos: [0]; default: 0;
  *  Represents ch32 enable status.
  *  0: Disable
@@ -1060,7 +1060,7 @@ extern "C" {
 /** SOC_ETM_CH_ENA_AD1_SET_REG register
  *  Channel enable set register
  */
-#define SOC_ETM_CH_ENA_AD1_SET_REG (DR_REG_SOC_BASE + 0x10)
+#define SOC_ETM_CH_ENA_AD1_SET_REG (DR_REG_SOC_ETM_BASE + 0x10)
 /** SOC_ETM_CH_ENABLE32 : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to enable ch32.
  *  0: Invalid, No effect
@@ -1227,7 +1227,7 @@ extern "C" {
 /** SOC_ETM_CH_ENA_AD1_CLR_REG register
  *  Channel enable clear register
  */
-#define SOC_ETM_CH_ENA_AD1_CLR_REG (DR_REG_SOC_BASE + 0x14)
+#define SOC_ETM_CH_ENA_AD1_CLR_REG (DR_REG_SOC_ETM_BASE + 0x14)
 /** SOC_ETM_CH_DISABLE32 : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear ch32 enable.
  *  0: Invalid, No effect
@@ -1394,7 +1394,7 @@ extern "C" {
 /** SOC_ETM_CH0_EVT_ID_REG register
  *  Channel0 event id register
  */
-#define SOC_ETM_CH0_EVT_ID_REG (DR_REG_SOC_BASE + 0x18)
+#define SOC_ETM_CH0_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x18)
 /** SOC_ETM_CH0_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch0_evt_id
  */
@@ -1406,7 +1406,7 @@ extern "C" {
 /** SOC_ETM_CH0_TASK_ID_REG register
  *  Channel0 task id register
  */
-#define SOC_ETM_CH0_TASK_ID_REG (DR_REG_SOC_BASE + 0x1c)
+#define SOC_ETM_CH0_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x1c)
 /** SOC_ETM_CH0_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch0_task_id
  */
@@ -1418,7 +1418,7 @@ extern "C" {
 /** SOC_ETM_CH1_EVT_ID_REG register
  *  Channel1 event id register
  */
-#define SOC_ETM_CH1_EVT_ID_REG (DR_REG_SOC_BASE + 0x20)
+#define SOC_ETM_CH1_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x20)
 /** SOC_ETM_CH1_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch1_evt_id
  */
@@ -1430,7 +1430,7 @@ extern "C" {
 /** SOC_ETM_CH1_TASK_ID_REG register
  *  Channel1 task id register
  */
-#define SOC_ETM_CH1_TASK_ID_REG (DR_REG_SOC_BASE + 0x24)
+#define SOC_ETM_CH1_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x24)
 /** SOC_ETM_CH1_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch1_task_id
  */
@@ -1442,7 +1442,7 @@ extern "C" {
 /** SOC_ETM_CH2_EVT_ID_REG register
  *  Channel2 event id register
  */
-#define SOC_ETM_CH2_EVT_ID_REG (DR_REG_SOC_BASE + 0x28)
+#define SOC_ETM_CH2_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x28)
 /** SOC_ETM_CH2_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch2_evt_id
  */
@@ -1454,7 +1454,7 @@ extern "C" {
 /** SOC_ETM_CH2_TASK_ID_REG register
  *  Channel2 task id register
  */
-#define SOC_ETM_CH2_TASK_ID_REG (DR_REG_SOC_BASE + 0x2c)
+#define SOC_ETM_CH2_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x2c)
 /** SOC_ETM_CH2_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch2_task_id
  */
@@ -1466,7 +1466,7 @@ extern "C" {
 /** SOC_ETM_CH3_EVT_ID_REG register
  *  Channel3 event id register
  */
-#define SOC_ETM_CH3_EVT_ID_REG (DR_REG_SOC_BASE + 0x30)
+#define SOC_ETM_CH3_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x30)
 /** SOC_ETM_CH3_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch3_evt_id
  */
@@ -1478,7 +1478,7 @@ extern "C" {
 /** SOC_ETM_CH3_TASK_ID_REG register
  *  Channel3 task id register
  */
-#define SOC_ETM_CH3_TASK_ID_REG (DR_REG_SOC_BASE + 0x34)
+#define SOC_ETM_CH3_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x34)
 /** SOC_ETM_CH3_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch3_task_id
  */
@@ -1490,7 +1490,7 @@ extern "C" {
 /** SOC_ETM_CH4_EVT_ID_REG register
  *  Channel4 event id register
  */
-#define SOC_ETM_CH4_EVT_ID_REG (DR_REG_SOC_BASE + 0x38)
+#define SOC_ETM_CH4_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x38)
 /** SOC_ETM_CH4_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch4_evt_id
  */
@@ -1502,7 +1502,7 @@ extern "C" {
 /** SOC_ETM_CH4_TASK_ID_REG register
  *  Channel4 task id register
  */
-#define SOC_ETM_CH4_TASK_ID_REG (DR_REG_SOC_BASE + 0x3c)
+#define SOC_ETM_CH4_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x3c)
 /** SOC_ETM_CH4_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch4_task_id
  */
@@ -1514,7 +1514,7 @@ extern "C" {
 /** SOC_ETM_CH5_EVT_ID_REG register
  *  Channel5 event id register
  */
-#define SOC_ETM_CH5_EVT_ID_REG (DR_REG_SOC_BASE + 0x40)
+#define SOC_ETM_CH5_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x40)
 /** SOC_ETM_CH5_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch5_evt_id
  */
@@ -1526,7 +1526,7 @@ extern "C" {
 /** SOC_ETM_CH5_TASK_ID_REG register
  *  Channel5 task id register
  */
-#define SOC_ETM_CH5_TASK_ID_REG (DR_REG_SOC_BASE + 0x44)
+#define SOC_ETM_CH5_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x44)
 /** SOC_ETM_CH5_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch5_task_id
  */
@@ -1538,7 +1538,7 @@ extern "C" {
 /** SOC_ETM_CH6_EVT_ID_REG register
  *  Channel6 event id register
  */
-#define SOC_ETM_CH6_EVT_ID_REG (DR_REG_SOC_BASE + 0x48)
+#define SOC_ETM_CH6_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x48)
 /** SOC_ETM_CH6_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch6_evt_id
  */
@@ -1550,7 +1550,7 @@ extern "C" {
 /** SOC_ETM_CH6_TASK_ID_REG register
  *  Channel6 task id register
  */
-#define SOC_ETM_CH6_TASK_ID_REG (DR_REG_SOC_BASE + 0x4c)
+#define SOC_ETM_CH6_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x4c)
 /** SOC_ETM_CH6_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch6_task_id
  */
@@ -1562,7 +1562,7 @@ extern "C" {
 /** SOC_ETM_CH7_EVT_ID_REG register
  *  Channel7 event id register
  */
-#define SOC_ETM_CH7_EVT_ID_REG (DR_REG_SOC_BASE + 0x50)
+#define SOC_ETM_CH7_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x50)
 /** SOC_ETM_CH7_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch7_evt_id
  */
@@ -1574,7 +1574,7 @@ extern "C" {
 /** SOC_ETM_CH7_TASK_ID_REG register
  *  Channel7 task id register
  */
-#define SOC_ETM_CH7_TASK_ID_REG (DR_REG_SOC_BASE + 0x54)
+#define SOC_ETM_CH7_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x54)
 /** SOC_ETM_CH7_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch7_task_id
  */
@@ -1586,7 +1586,7 @@ extern "C" {
 /** SOC_ETM_CH8_EVT_ID_REG register
  *  Channel8 event id register
  */
-#define SOC_ETM_CH8_EVT_ID_REG (DR_REG_SOC_BASE + 0x58)
+#define SOC_ETM_CH8_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x58)
 /** SOC_ETM_CH8_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch8_evt_id
  */
@@ -1598,7 +1598,7 @@ extern "C" {
 /** SOC_ETM_CH8_TASK_ID_REG register
  *  Channel8 task id register
  */
-#define SOC_ETM_CH8_TASK_ID_REG (DR_REG_SOC_BASE + 0x5c)
+#define SOC_ETM_CH8_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x5c)
 /** SOC_ETM_CH8_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch8_task_id
  */
@@ -1610,7 +1610,7 @@ extern "C" {
 /** SOC_ETM_CH9_EVT_ID_REG register
  *  Channel9 event id register
  */
-#define SOC_ETM_CH9_EVT_ID_REG (DR_REG_SOC_BASE + 0x60)
+#define SOC_ETM_CH9_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x60)
 /** SOC_ETM_CH9_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch9_evt_id
  */
@@ -1622,7 +1622,7 @@ extern "C" {
 /** SOC_ETM_CH9_TASK_ID_REG register
  *  Channel9 task id register
  */
-#define SOC_ETM_CH9_TASK_ID_REG (DR_REG_SOC_BASE + 0x64)
+#define SOC_ETM_CH9_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x64)
 /** SOC_ETM_CH9_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch9_task_id
  */
@@ -1634,7 +1634,7 @@ extern "C" {
 /** SOC_ETM_CH10_EVT_ID_REG register
  *  Channel10 event id register
  */
-#define SOC_ETM_CH10_EVT_ID_REG (DR_REG_SOC_BASE + 0x68)
+#define SOC_ETM_CH10_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x68)
 /** SOC_ETM_CH10_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch10_evt_id
  */
@@ -1646,7 +1646,7 @@ extern "C" {
 /** SOC_ETM_CH10_TASK_ID_REG register
  *  Channel10 task id register
  */
-#define SOC_ETM_CH10_TASK_ID_REG (DR_REG_SOC_BASE + 0x6c)
+#define SOC_ETM_CH10_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x6c)
 /** SOC_ETM_CH10_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch10_task_id
  */
@@ -1658,7 +1658,7 @@ extern "C" {
 /** SOC_ETM_CH11_EVT_ID_REG register
  *  Channel11 event id register
  */
-#define SOC_ETM_CH11_EVT_ID_REG (DR_REG_SOC_BASE + 0x70)
+#define SOC_ETM_CH11_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x70)
 /** SOC_ETM_CH11_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch11_evt_id
  */
@@ -1670,7 +1670,7 @@ extern "C" {
 /** SOC_ETM_CH11_TASK_ID_REG register
  *  Channel11 task id register
  */
-#define SOC_ETM_CH11_TASK_ID_REG (DR_REG_SOC_BASE + 0x74)
+#define SOC_ETM_CH11_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x74)
 /** SOC_ETM_CH11_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch11_task_id
  */
@@ -1682,7 +1682,7 @@ extern "C" {
 /** SOC_ETM_CH12_EVT_ID_REG register
  *  Channel12 event id register
  */
-#define SOC_ETM_CH12_EVT_ID_REG (DR_REG_SOC_BASE + 0x78)
+#define SOC_ETM_CH12_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x78)
 /** SOC_ETM_CH12_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch12_evt_id
  */
@@ -1694,7 +1694,7 @@ extern "C" {
 /** SOC_ETM_CH12_TASK_ID_REG register
  *  Channel12 task id register
  */
-#define SOC_ETM_CH12_TASK_ID_REG (DR_REG_SOC_BASE + 0x7c)
+#define SOC_ETM_CH12_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x7c)
 /** SOC_ETM_CH12_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch12_task_id
  */
@@ -1706,7 +1706,7 @@ extern "C" {
 /** SOC_ETM_CH13_EVT_ID_REG register
  *  Channel13 event id register
  */
-#define SOC_ETM_CH13_EVT_ID_REG (DR_REG_SOC_BASE + 0x80)
+#define SOC_ETM_CH13_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x80)
 /** SOC_ETM_CH13_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch13_evt_id
  */
@@ -1718,7 +1718,7 @@ extern "C" {
 /** SOC_ETM_CH13_TASK_ID_REG register
  *  Channel13 task id register
  */
-#define SOC_ETM_CH13_TASK_ID_REG (DR_REG_SOC_BASE + 0x84)
+#define SOC_ETM_CH13_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x84)
 /** SOC_ETM_CH13_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch13_task_id
  */
@@ -1730,7 +1730,7 @@ extern "C" {
 /** SOC_ETM_CH14_EVT_ID_REG register
  *  Channel14 event id register
  */
-#define SOC_ETM_CH14_EVT_ID_REG (DR_REG_SOC_BASE + 0x88)
+#define SOC_ETM_CH14_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x88)
 /** SOC_ETM_CH14_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch14_evt_id
  */
@@ -1742,7 +1742,7 @@ extern "C" {
 /** SOC_ETM_CH14_TASK_ID_REG register
  *  Channel14 task id register
  */
-#define SOC_ETM_CH14_TASK_ID_REG (DR_REG_SOC_BASE + 0x8c)
+#define SOC_ETM_CH14_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x8c)
 /** SOC_ETM_CH14_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch14_task_id
  */
@@ -1754,7 +1754,7 @@ extern "C" {
 /** SOC_ETM_CH15_EVT_ID_REG register
  *  Channel15 event id register
  */
-#define SOC_ETM_CH15_EVT_ID_REG (DR_REG_SOC_BASE + 0x90)
+#define SOC_ETM_CH15_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x90)
 /** SOC_ETM_CH15_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch15_evt_id
  */
@@ -1766,7 +1766,7 @@ extern "C" {
 /** SOC_ETM_CH15_TASK_ID_REG register
  *  Channel15 task id register
  */
-#define SOC_ETM_CH15_TASK_ID_REG (DR_REG_SOC_BASE + 0x94)
+#define SOC_ETM_CH15_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x94)
 /** SOC_ETM_CH15_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch15_task_id
  */
@@ -1778,7 +1778,7 @@ extern "C" {
 /** SOC_ETM_CH16_EVT_ID_REG register
  *  Channel16 event id register
  */
-#define SOC_ETM_CH16_EVT_ID_REG (DR_REG_SOC_BASE + 0x98)
+#define SOC_ETM_CH16_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x98)
 /** SOC_ETM_CH16_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch16_evt_id
  */
@@ -1790,7 +1790,7 @@ extern "C" {
 /** SOC_ETM_CH16_TASK_ID_REG register
  *  Channel16 task id register
  */
-#define SOC_ETM_CH16_TASK_ID_REG (DR_REG_SOC_BASE + 0x9c)
+#define SOC_ETM_CH16_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x9c)
 /** SOC_ETM_CH16_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch16_task_id
  */
@@ -1802,7 +1802,7 @@ extern "C" {
 /** SOC_ETM_CH17_EVT_ID_REG register
  *  Channel17 event id register
  */
-#define SOC_ETM_CH17_EVT_ID_REG (DR_REG_SOC_BASE + 0xa0)
+#define SOC_ETM_CH17_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xa0)
 /** SOC_ETM_CH17_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch17_evt_id
  */
@@ -1814,7 +1814,7 @@ extern "C" {
 /** SOC_ETM_CH17_TASK_ID_REG register
  *  Channel17 task id register
  */
-#define SOC_ETM_CH17_TASK_ID_REG (DR_REG_SOC_BASE + 0xa4)
+#define SOC_ETM_CH17_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xa4)
 /** SOC_ETM_CH17_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch17_task_id
  */
@@ -1826,7 +1826,7 @@ extern "C" {
 /** SOC_ETM_CH18_EVT_ID_REG register
  *  Channel18 event id register
  */
-#define SOC_ETM_CH18_EVT_ID_REG (DR_REG_SOC_BASE + 0xa8)
+#define SOC_ETM_CH18_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xa8)
 /** SOC_ETM_CH18_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch18_evt_id
  */
@@ -1838,7 +1838,7 @@ extern "C" {
 /** SOC_ETM_CH18_TASK_ID_REG register
  *  Channel18 task id register
  */
-#define SOC_ETM_CH18_TASK_ID_REG (DR_REG_SOC_BASE + 0xac)
+#define SOC_ETM_CH18_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xac)
 /** SOC_ETM_CH18_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch18_task_id
  */
@@ -1850,7 +1850,7 @@ extern "C" {
 /** SOC_ETM_CH19_EVT_ID_REG register
  *  Channel19 event id register
  */
-#define SOC_ETM_CH19_EVT_ID_REG (DR_REG_SOC_BASE + 0xb0)
+#define SOC_ETM_CH19_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xb0)
 /** SOC_ETM_CH19_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch19_evt_id
  */
@@ -1862,7 +1862,7 @@ extern "C" {
 /** SOC_ETM_CH19_TASK_ID_REG register
  *  Channel19 task id register
  */
-#define SOC_ETM_CH19_TASK_ID_REG (DR_REG_SOC_BASE + 0xb4)
+#define SOC_ETM_CH19_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xb4)
 /** SOC_ETM_CH19_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch19_task_id
  */
@@ -1874,7 +1874,7 @@ extern "C" {
 /** SOC_ETM_CH20_EVT_ID_REG register
  *  Channel20 event id register
  */
-#define SOC_ETM_CH20_EVT_ID_REG (DR_REG_SOC_BASE + 0xb8)
+#define SOC_ETM_CH20_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xb8)
 /** SOC_ETM_CH20_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch20_evt_id
  */
@@ -1886,7 +1886,7 @@ extern "C" {
 /** SOC_ETM_CH20_TASK_ID_REG register
  *  Channel20 task id register
  */
-#define SOC_ETM_CH20_TASK_ID_REG (DR_REG_SOC_BASE + 0xbc)
+#define SOC_ETM_CH20_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xbc)
 /** SOC_ETM_CH20_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch20_task_id
  */
@@ -1898,7 +1898,7 @@ extern "C" {
 /** SOC_ETM_CH21_EVT_ID_REG register
  *  Channel21 event id register
  */
-#define SOC_ETM_CH21_EVT_ID_REG (DR_REG_SOC_BASE + 0xc0)
+#define SOC_ETM_CH21_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xc0)
 /** SOC_ETM_CH21_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch21_evt_id
  */
@@ -1910,7 +1910,7 @@ extern "C" {
 /** SOC_ETM_CH21_TASK_ID_REG register
  *  Channel21 task id register
  */
-#define SOC_ETM_CH21_TASK_ID_REG (DR_REG_SOC_BASE + 0xc4)
+#define SOC_ETM_CH21_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xc4)
 /** SOC_ETM_CH21_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch21_task_id
  */
@@ -1922,7 +1922,7 @@ extern "C" {
 /** SOC_ETM_CH22_EVT_ID_REG register
  *  Channel22 event id register
  */
-#define SOC_ETM_CH22_EVT_ID_REG (DR_REG_SOC_BASE + 0xc8)
+#define SOC_ETM_CH22_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xc8)
 /** SOC_ETM_CH22_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch22_evt_id
  */
@@ -1934,7 +1934,7 @@ extern "C" {
 /** SOC_ETM_CH22_TASK_ID_REG register
  *  Channel22 task id register
  */
-#define SOC_ETM_CH22_TASK_ID_REG (DR_REG_SOC_BASE + 0xcc)
+#define SOC_ETM_CH22_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xcc)
 /** SOC_ETM_CH22_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch22_task_id
  */
@@ -1946,7 +1946,7 @@ extern "C" {
 /** SOC_ETM_CH23_EVT_ID_REG register
  *  Channel23 event id register
  */
-#define SOC_ETM_CH23_EVT_ID_REG (DR_REG_SOC_BASE + 0xd0)
+#define SOC_ETM_CH23_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xd0)
 /** SOC_ETM_CH23_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch23_evt_id
  */
@@ -1958,7 +1958,7 @@ extern "C" {
 /** SOC_ETM_CH23_TASK_ID_REG register
  *  Channel23 task id register
  */
-#define SOC_ETM_CH23_TASK_ID_REG (DR_REG_SOC_BASE + 0xd4)
+#define SOC_ETM_CH23_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xd4)
 /** SOC_ETM_CH23_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch23_task_id
  */
@@ -1970,7 +1970,7 @@ extern "C" {
 /** SOC_ETM_CH24_EVT_ID_REG register
  *  Channel24 event id register
  */
-#define SOC_ETM_CH24_EVT_ID_REG (DR_REG_SOC_BASE + 0xd8)
+#define SOC_ETM_CH24_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xd8)
 /** SOC_ETM_CH24_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch24_evt_id
  */
@@ -1982,7 +1982,7 @@ extern "C" {
 /** SOC_ETM_CH24_TASK_ID_REG register
  *  Channel24 task id register
  */
-#define SOC_ETM_CH24_TASK_ID_REG (DR_REG_SOC_BASE + 0xdc)
+#define SOC_ETM_CH24_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xdc)
 /** SOC_ETM_CH24_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch24_task_id
  */
@@ -1994,7 +1994,7 @@ extern "C" {
 /** SOC_ETM_CH25_EVT_ID_REG register
  *  Channel25 event id register
  */
-#define SOC_ETM_CH25_EVT_ID_REG (DR_REG_SOC_BASE + 0xe0)
+#define SOC_ETM_CH25_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xe0)
 /** SOC_ETM_CH25_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch25_evt_id
  */
@@ -2006,7 +2006,7 @@ extern "C" {
 /** SOC_ETM_CH25_TASK_ID_REG register
  *  Channel25 task id register
  */
-#define SOC_ETM_CH25_TASK_ID_REG (DR_REG_SOC_BASE + 0xe4)
+#define SOC_ETM_CH25_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xe4)
 /** SOC_ETM_CH25_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch25_task_id
  */
@@ -2018,7 +2018,7 @@ extern "C" {
 /** SOC_ETM_CH26_EVT_ID_REG register
  *  Channel26 event id register
  */
-#define SOC_ETM_CH26_EVT_ID_REG (DR_REG_SOC_BASE + 0xe8)
+#define SOC_ETM_CH26_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xe8)
 /** SOC_ETM_CH26_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch26_evt_id
  */
@@ -2030,7 +2030,7 @@ extern "C" {
 /** SOC_ETM_CH26_TASK_ID_REG register
  *  Channel26 task id register
  */
-#define SOC_ETM_CH26_TASK_ID_REG (DR_REG_SOC_BASE + 0xec)
+#define SOC_ETM_CH26_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xec)
 /** SOC_ETM_CH26_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch26_task_id
  */
@@ -2042,7 +2042,7 @@ extern "C" {
 /** SOC_ETM_CH27_EVT_ID_REG register
  *  Channel27 event id register
  */
-#define SOC_ETM_CH27_EVT_ID_REG (DR_REG_SOC_BASE + 0xf0)
+#define SOC_ETM_CH27_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xf0)
 /** SOC_ETM_CH27_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch27_evt_id
  */
@@ -2054,7 +2054,7 @@ extern "C" {
 /** SOC_ETM_CH27_TASK_ID_REG register
  *  Channel27 task id register
  */
-#define SOC_ETM_CH27_TASK_ID_REG (DR_REG_SOC_BASE + 0xf4)
+#define SOC_ETM_CH27_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xf4)
 /** SOC_ETM_CH27_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch27_task_id
  */
@@ -2066,7 +2066,7 @@ extern "C" {
 /** SOC_ETM_CH28_EVT_ID_REG register
  *  Channel28 event id register
  */
-#define SOC_ETM_CH28_EVT_ID_REG (DR_REG_SOC_BASE + 0xf8)
+#define SOC_ETM_CH28_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0xf8)
 /** SOC_ETM_CH28_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch28_evt_id
  */
@@ -2078,7 +2078,7 @@ extern "C" {
 /** SOC_ETM_CH28_TASK_ID_REG register
  *  Channel28 task id register
  */
-#define SOC_ETM_CH28_TASK_ID_REG (DR_REG_SOC_BASE + 0xfc)
+#define SOC_ETM_CH28_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0xfc)
 /** SOC_ETM_CH28_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch28_task_id
  */
@@ -2090,7 +2090,7 @@ extern "C" {
 /** SOC_ETM_CH29_EVT_ID_REG register
  *  Channel29 event id register
  */
-#define SOC_ETM_CH29_EVT_ID_REG (DR_REG_SOC_BASE + 0x100)
+#define SOC_ETM_CH29_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x100)
 /** SOC_ETM_CH29_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch29_evt_id
  */
@@ -2102,7 +2102,7 @@ extern "C" {
 /** SOC_ETM_CH29_TASK_ID_REG register
  *  Channel29 task id register
  */
-#define SOC_ETM_CH29_TASK_ID_REG (DR_REG_SOC_BASE + 0x104)
+#define SOC_ETM_CH29_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x104)
 /** SOC_ETM_CH29_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch29_task_id
  */
@@ -2114,7 +2114,7 @@ extern "C" {
 /** SOC_ETM_CH30_EVT_ID_REG register
  *  Channel30 event id register
  */
-#define SOC_ETM_CH30_EVT_ID_REG (DR_REG_SOC_BASE + 0x108)
+#define SOC_ETM_CH30_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x108)
 /** SOC_ETM_CH30_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch30_evt_id
  */
@@ -2126,7 +2126,7 @@ extern "C" {
 /** SOC_ETM_CH30_TASK_ID_REG register
  *  Channel30 task id register
  */
-#define SOC_ETM_CH30_TASK_ID_REG (DR_REG_SOC_BASE + 0x10c)
+#define SOC_ETM_CH30_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x10c)
 /** SOC_ETM_CH30_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch30_task_id
  */
@@ -2138,7 +2138,7 @@ extern "C" {
 /** SOC_ETM_CH31_EVT_ID_REG register
  *  Channel31 event id register
  */
-#define SOC_ETM_CH31_EVT_ID_REG (DR_REG_SOC_BASE + 0x110)
+#define SOC_ETM_CH31_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x110)
 /** SOC_ETM_CH31_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch31_evt_id
  */
@@ -2150,7 +2150,7 @@ extern "C" {
 /** SOC_ETM_CH31_TASK_ID_REG register
  *  Channel31 task id register
  */
-#define SOC_ETM_CH31_TASK_ID_REG (DR_REG_SOC_BASE + 0x114)
+#define SOC_ETM_CH31_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x114)
 /** SOC_ETM_CH31_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch31_task_id
  */
@@ -2162,7 +2162,7 @@ extern "C" {
 /** SOC_ETM_CH32_EVT_ID_REG register
  *  Channel32 event id register
  */
-#define SOC_ETM_CH32_EVT_ID_REG (DR_REG_SOC_BASE + 0x118)
+#define SOC_ETM_CH32_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x118)
 /** SOC_ETM_CH32_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch32_evt_id
  */
@@ -2174,7 +2174,7 @@ extern "C" {
 /** SOC_ETM_CH32_TASK_ID_REG register
  *  Channel32 task id register
  */
-#define SOC_ETM_CH32_TASK_ID_REG (DR_REG_SOC_BASE + 0x11c)
+#define SOC_ETM_CH32_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x11c)
 /** SOC_ETM_CH32_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch32_task_id
  */
@@ -2186,7 +2186,7 @@ extern "C" {
 /** SOC_ETM_CH33_EVT_ID_REG register
  *  Channel33 event id register
  */
-#define SOC_ETM_CH33_EVT_ID_REG (DR_REG_SOC_BASE + 0x120)
+#define SOC_ETM_CH33_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x120)
 /** SOC_ETM_CH33_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch33_evt_id
  */
@@ -2198,7 +2198,7 @@ extern "C" {
 /** SOC_ETM_CH33_TASK_ID_REG register
  *  Channel33 task id register
  */
-#define SOC_ETM_CH33_TASK_ID_REG (DR_REG_SOC_BASE + 0x124)
+#define SOC_ETM_CH33_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x124)
 /** SOC_ETM_CH33_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch33_task_id
  */
@@ -2210,7 +2210,7 @@ extern "C" {
 /** SOC_ETM_CH34_EVT_ID_REG register
  *  Channel34 event id register
  */
-#define SOC_ETM_CH34_EVT_ID_REG (DR_REG_SOC_BASE + 0x128)
+#define SOC_ETM_CH34_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x128)
 /** SOC_ETM_CH34_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch34_evt_id
  */
@@ -2222,7 +2222,7 @@ extern "C" {
 /** SOC_ETM_CH34_TASK_ID_REG register
  *  Channel34 task id register
  */
-#define SOC_ETM_CH34_TASK_ID_REG (DR_REG_SOC_BASE + 0x12c)
+#define SOC_ETM_CH34_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x12c)
 /** SOC_ETM_CH34_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch34_task_id
  */
@@ -2234,7 +2234,7 @@ extern "C" {
 /** SOC_ETM_CH35_EVT_ID_REG register
  *  Channel35 event id register
  */
-#define SOC_ETM_CH35_EVT_ID_REG (DR_REG_SOC_BASE + 0x130)
+#define SOC_ETM_CH35_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x130)
 /** SOC_ETM_CH35_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch35_evt_id
  */
@@ -2246,7 +2246,7 @@ extern "C" {
 /** SOC_ETM_CH35_TASK_ID_REG register
  *  Channel35 task id register
  */
-#define SOC_ETM_CH35_TASK_ID_REG (DR_REG_SOC_BASE + 0x134)
+#define SOC_ETM_CH35_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x134)
 /** SOC_ETM_CH35_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch35_task_id
  */
@@ -2258,7 +2258,7 @@ extern "C" {
 /** SOC_ETM_CH36_EVT_ID_REG register
  *  Channel36 event id register
  */
-#define SOC_ETM_CH36_EVT_ID_REG (DR_REG_SOC_BASE + 0x138)
+#define SOC_ETM_CH36_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x138)
 /** SOC_ETM_CH36_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch36_evt_id
  */
@@ -2270,7 +2270,7 @@ extern "C" {
 /** SOC_ETM_CH36_TASK_ID_REG register
  *  Channel36 task id register
  */
-#define SOC_ETM_CH36_TASK_ID_REG (DR_REG_SOC_BASE + 0x13c)
+#define SOC_ETM_CH36_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x13c)
 /** SOC_ETM_CH36_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch36_task_id
  */
@@ -2282,7 +2282,7 @@ extern "C" {
 /** SOC_ETM_CH37_EVT_ID_REG register
  *  Channel37 event id register
  */
-#define SOC_ETM_CH37_EVT_ID_REG (DR_REG_SOC_BASE + 0x140)
+#define SOC_ETM_CH37_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x140)
 /** SOC_ETM_CH37_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch37_evt_id
  */
@@ -2294,7 +2294,7 @@ extern "C" {
 /** SOC_ETM_CH37_TASK_ID_REG register
  *  Channel37 task id register
  */
-#define SOC_ETM_CH37_TASK_ID_REG (DR_REG_SOC_BASE + 0x144)
+#define SOC_ETM_CH37_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x144)
 /** SOC_ETM_CH37_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch37_task_id
  */
@@ -2306,7 +2306,7 @@ extern "C" {
 /** SOC_ETM_CH38_EVT_ID_REG register
  *  Channel38 event id register
  */
-#define SOC_ETM_CH38_EVT_ID_REG (DR_REG_SOC_BASE + 0x148)
+#define SOC_ETM_CH38_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x148)
 /** SOC_ETM_CH38_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch38_evt_id
  */
@@ -2318,7 +2318,7 @@ extern "C" {
 /** SOC_ETM_CH38_TASK_ID_REG register
  *  Channel38 task id register
  */
-#define SOC_ETM_CH38_TASK_ID_REG (DR_REG_SOC_BASE + 0x14c)
+#define SOC_ETM_CH38_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x14c)
 /** SOC_ETM_CH38_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch38_task_id
  */
@@ -2330,7 +2330,7 @@ extern "C" {
 /** SOC_ETM_CH39_EVT_ID_REG register
  *  Channel39 event id register
  */
-#define SOC_ETM_CH39_EVT_ID_REG (DR_REG_SOC_BASE + 0x150)
+#define SOC_ETM_CH39_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x150)
 /** SOC_ETM_CH39_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch39_evt_id
  */
@@ -2342,7 +2342,7 @@ extern "C" {
 /** SOC_ETM_CH39_TASK_ID_REG register
  *  Channel39 task id register
  */
-#define SOC_ETM_CH39_TASK_ID_REG (DR_REG_SOC_BASE + 0x154)
+#define SOC_ETM_CH39_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x154)
 /** SOC_ETM_CH39_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch39_task_id
  */
@@ -2354,7 +2354,7 @@ extern "C" {
 /** SOC_ETM_CH40_EVT_ID_REG register
  *  Channel40 event id register
  */
-#define SOC_ETM_CH40_EVT_ID_REG (DR_REG_SOC_BASE + 0x158)
+#define SOC_ETM_CH40_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x158)
 /** SOC_ETM_CH40_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch40_evt_id
  */
@@ -2366,7 +2366,7 @@ extern "C" {
 /** SOC_ETM_CH40_TASK_ID_REG register
  *  Channel40 task id register
  */
-#define SOC_ETM_CH40_TASK_ID_REG (DR_REG_SOC_BASE + 0x15c)
+#define SOC_ETM_CH40_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x15c)
 /** SOC_ETM_CH40_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch40_task_id
  */
@@ -2378,7 +2378,7 @@ extern "C" {
 /** SOC_ETM_CH41_EVT_ID_REG register
  *  Channel41 event id register
  */
-#define SOC_ETM_CH41_EVT_ID_REG (DR_REG_SOC_BASE + 0x160)
+#define SOC_ETM_CH41_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x160)
 /** SOC_ETM_CH41_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch41_evt_id
  */
@@ -2390,7 +2390,7 @@ extern "C" {
 /** SOC_ETM_CH41_TASK_ID_REG register
  *  Channel41 task id register
  */
-#define SOC_ETM_CH41_TASK_ID_REG (DR_REG_SOC_BASE + 0x164)
+#define SOC_ETM_CH41_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x164)
 /** SOC_ETM_CH41_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch41_task_id
  */
@@ -2402,7 +2402,7 @@ extern "C" {
 /** SOC_ETM_CH42_EVT_ID_REG register
  *  Channel42 event id register
  */
-#define SOC_ETM_CH42_EVT_ID_REG (DR_REG_SOC_BASE + 0x168)
+#define SOC_ETM_CH42_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x168)
 /** SOC_ETM_CH42_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch42_evt_id
  */
@@ -2414,7 +2414,7 @@ extern "C" {
 /** SOC_ETM_CH42_TASK_ID_REG register
  *  Channel42 task id register
  */
-#define SOC_ETM_CH42_TASK_ID_REG (DR_REG_SOC_BASE + 0x16c)
+#define SOC_ETM_CH42_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x16c)
 /** SOC_ETM_CH42_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch42_task_id
  */
@@ -2426,7 +2426,7 @@ extern "C" {
 /** SOC_ETM_CH43_EVT_ID_REG register
  *  Channel43 event id register
  */
-#define SOC_ETM_CH43_EVT_ID_REG (DR_REG_SOC_BASE + 0x170)
+#define SOC_ETM_CH43_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x170)
 /** SOC_ETM_CH43_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch43_evt_id
  */
@@ -2438,7 +2438,7 @@ extern "C" {
 /** SOC_ETM_CH43_TASK_ID_REG register
  *  Channel43 task id register
  */
-#define SOC_ETM_CH43_TASK_ID_REG (DR_REG_SOC_BASE + 0x174)
+#define SOC_ETM_CH43_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x174)
 /** SOC_ETM_CH43_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch43_task_id
  */
@@ -2450,7 +2450,7 @@ extern "C" {
 /** SOC_ETM_CH44_EVT_ID_REG register
  *  Channel44 event id register
  */
-#define SOC_ETM_CH44_EVT_ID_REG (DR_REG_SOC_BASE + 0x178)
+#define SOC_ETM_CH44_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x178)
 /** SOC_ETM_CH44_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch44_evt_id
  */
@@ -2462,7 +2462,7 @@ extern "C" {
 /** SOC_ETM_CH44_TASK_ID_REG register
  *  Channel44 task id register
  */
-#define SOC_ETM_CH44_TASK_ID_REG (DR_REG_SOC_BASE + 0x17c)
+#define SOC_ETM_CH44_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x17c)
 /** SOC_ETM_CH44_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch44_task_id
  */
@@ -2474,7 +2474,7 @@ extern "C" {
 /** SOC_ETM_CH45_EVT_ID_REG register
  *  Channel45 event id register
  */
-#define SOC_ETM_CH45_EVT_ID_REG (DR_REG_SOC_BASE + 0x180)
+#define SOC_ETM_CH45_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x180)
 /** SOC_ETM_CH45_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch45_evt_id
  */
@@ -2486,7 +2486,7 @@ extern "C" {
 /** SOC_ETM_CH45_TASK_ID_REG register
  *  Channel45 task id register
  */
-#define SOC_ETM_CH45_TASK_ID_REG (DR_REG_SOC_BASE + 0x184)
+#define SOC_ETM_CH45_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x184)
 /** SOC_ETM_CH45_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch45_task_id
  */
@@ -2498,7 +2498,7 @@ extern "C" {
 /** SOC_ETM_CH46_EVT_ID_REG register
  *  Channel46 event id register
  */
-#define SOC_ETM_CH46_EVT_ID_REG (DR_REG_SOC_BASE + 0x188)
+#define SOC_ETM_CH46_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x188)
 /** SOC_ETM_CH46_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch46_evt_id
  */
@@ -2510,7 +2510,7 @@ extern "C" {
 /** SOC_ETM_CH46_TASK_ID_REG register
  *  Channel46 task id register
  */
-#define SOC_ETM_CH46_TASK_ID_REG (DR_REG_SOC_BASE + 0x18c)
+#define SOC_ETM_CH46_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x18c)
 /** SOC_ETM_CH46_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch46_task_id
  */
@@ -2522,7 +2522,7 @@ extern "C" {
 /** SOC_ETM_CH47_EVT_ID_REG register
  *  Channel47 event id register
  */
-#define SOC_ETM_CH47_EVT_ID_REG (DR_REG_SOC_BASE + 0x190)
+#define SOC_ETM_CH47_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x190)
 /** SOC_ETM_CH47_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch47_evt_id
  */
@@ -2534,7 +2534,7 @@ extern "C" {
 /** SOC_ETM_CH47_TASK_ID_REG register
  *  Channel47 task id register
  */
-#define SOC_ETM_CH47_TASK_ID_REG (DR_REG_SOC_BASE + 0x194)
+#define SOC_ETM_CH47_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x194)
 /** SOC_ETM_CH47_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch47_task_id
  */
@@ -2546,7 +2546,7 @@ extern "C" {
 /** SOC_ETM_CH48_EVT_ID_REG register
  *  Channel48 event id register
  */
-#define SOC_ETM_CH48_EVT_ID_REG (DR_REG_SOC_BASE + 0x198)
+#define SOC_ETM_CH48_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x198)
 /** SOC_ETM_CH48_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch48_evt_id
  */
@@ -2558,7 +2558,7 @@ extern "C" {
 /** SOC_ETM_CH48_TASK_ID_REG register
  *  Channel48 task id register
  */
-#define SOC_ETM_CH48_TASK_ID_REG (DR_REG_SOC_BASE + 0x19c)
+#define SOC_ETM_CH48_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x19c)
 /** SOC_ETM_CH48_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch48_task_id
  */
@@ -2570,7 +2570,7 @@ extern "C" {
 /** SOC_ETM_CH49_EVT_ID_REG register
  *  Channel49 event id register
  */
-#define SOC_ETM_CH49_EVT_ID_REG (DR_REG_SOC_BASE + 0x1a0)
+#define SOC_ETM_CH49_EVT_ID_REG (DR_REG_SOC_ETM_BASE + 0x1a0)
 /** SOC_ETM_CH49_EVT_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch49_evt_id
  */
@@ -2582,7 +2582,7 @@ extern "C" {
 /** SOC_ETM_CH49_TASK_ID_REG register
  *  Channel49 task id register
  */
-#define SOC_ETM_CH49_TASK_ID_REG (DR_REG_SOC_BASE + 0x1a4)
+#define SOC_ETM_CH49_TASK_ID_REG (DR_REG_SOC_ETM_BASE + 0x1a4)
 /** SOC_ETM_CH49_TASK_ID : R/W; bitpos: [7:0]; default: 0;
  *  Configures ch49_task_id
  */
@@ -2594,7 +2594,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST0_REG register
  *  Events trigger status register
  */
-#define SOC_ETM_EVT_ST0_REG (DR_REG_SOC_BASE + 0x1a8)
+#define SOC_ETM_EVT_ST0_REG (DR_REG_SOC_ETM_BASE + 0x1a8)
 /** SOC_ETM_GPIO_EVT_CH0_RISE_EDGE_ST : R/WTC/SS; bitpos: [0]; default: 0;
  *  Represents GPIO_evt_ch0_rise_edge trigger status.
  *  0: Not triggered
@@ -2887,7 +2887,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST0_CLR_REG register
  *  Events trigger status clear register
  */
-#define SOC_ETM_EVT_ST0_CLR_REG (DR_REG_SOC_BASE + 0x1ac)
+#define SOC_ETM_EVT_ST0_CLR_REG (DR_REG_SOC_ETM_BASE + 0x1ac)
 /** SOC_ETM_GPIO_EVT_CH0_RISE_EDGE_ST_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear GPIO_evt_ch0_rise_edge trigger status.
  *  0: Invalid, No effect
@@ -3180,7 +3180,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST1_REG register
  *  Events trigger status register
  */
-#define SOC_ETM_EVT_ST1_REG (DR_REG_SOC_BASE + 0x1b0)
+#define SOC_ETM_EVT_ST1_REG (DR_REG_SOC_ETM_BASE + 0x1b0)
 /** SOC_ETM_LEDC_EVT_DUTY_CHNG_END_CH6_ST : R/WTC/SS; bitpos: [0]; default: 0;
  *  Represents LEDC_evt_duty_chng_end_ch6 trigger status.
  *  0: Not triggered
@@ -3473,7 +3473,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST1_CLR_REG register
  *  Events trigger status clear register
  */
-#define SOC_ETM_EVT_ST1_CLR_REG (DR_REG_SOC_BASE + 0x1b4)
+#define SOC_ETM_EVT_ST1_CLR_REG (DR_REG_SOC_ETM_BASE + 0x1b4)
 /** SOC_ETM_LEDC_EVT_DUTY_CHNG_END_CH6_ST_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear LEDC_evt_duty_chng_end_ch6 trigger status.
  *  0: Invalid, No effect
@@ -3766,7 +3766,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST2_REG register
  *  Events trigger status register
  */
-#define SOC_ETM_EVT_ST2_REG (DR_REG_SOC_BASE + 0x1b8)
+#define SOC_ETM_EVT_ST2_REG (DR_REG_SOC_ETM_BASE + 0x1b8)
 /** SOC_ETM_MCPWM0_EVT_OP0_TEA_ST : R/WTC/SS; bitpos: [0]; default: 0;
  *  Represents MCPWM0_evt_op0_tea trigger status.
  *  0: Not triggered
@@ -4059,7 +4059,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST2_CLR_REG register
  *  Events trigger status clear register
  */
-#define SOC_ETM_EVT_ST2_CLR_REG (DR_REG_SOC_BASE + 0x1bc)
+#define SOC_ETM_EVT_ST2_CLR_REG (DR_REG_SOC_ETM_BASE + 0x1bc)
 /** SOC_ETM_MCPWM0_EVT_OP0_TEA_ST_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear MCPWM0_evt_op0_tea trigger status.
  *  0: Invalid, No effect
@@ -4352,7 +4352,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST3_REG register
  *  Events trigger status register
  */
-#define SOC_ETM_EVT_ST3_REG (DR_REG_SOC_BASE + 0x1c0)
+#define SOC_ETM_EVT_ST3_REG (DR_REG_SOC_ETM_BASE + 0x1c0)
 /** SOC_ETM_MCPWM1_EVT_TIMER2_TEZ_ST : R/WTC/SS; bitpos: [0]; default: 0;
  *  Represents MCPWM1_evt_timer2_tez trigger status.
  *  0: Not triggered
@@ -4645,7 +4645,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST3_CLR_REG register
  *  Events trigger status clear register
  */
-#define SOC_ETM_EVT_ST3_CLR_REG (DR_REG_SOC_BASE + 0x1c4)
+#define SOC_ETM_EVT_ST3_CLR_REG (DR_REG_SOC_ETM_BASE + 0x1c4)
 /** SOC_ETM_MCPWM1_EVT_TIMER2_TEZ_ST_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear MCPWM1_evt_timer2_tez trigger status.
  *  0: Invalid, No effect
@@ -4938,7 +4938,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST4_REG register
  *  Events trigger status register
  */
-#define SOC_ETM_EVT_ST4_REG (DR_REG_SOC_BASE + 0x1c8)
+#define SOC_ETM_EVT_ST4_REG (DR_REG_SOC_ETM_BASE + 0x1c8)
 /** SOC_ETM_ADC_EVT_EQ_ABOVE_THRESH0_ST : R/WTC/SS; bitpos: [0]; default: 0;
  *  Represents ADC_evt_eq_above_thresh0 trigger status.
  *  0: Not triggered
@@ -5231,7 +5231,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST4_CLR_REG register
  *  Events trigger status clear register
  */
-#define SOC_ETM_EVT_ST4_CLR_REG (DR_REG_SOC_BASE + 0x1cc)
+#define SOC_ETM_EVT_ST4_CLR_REG (DR_REG_SOC_ETM_BASE + 0x1cc)
 /** SOC_ETM_ADC_EVT_EQ_ABOVE_THRESH0_ST_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear ADC_evt_eq_above_thresh0 trigger status.
  *  0: Invalid, No effect
@@ -5524,7 +5524,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST5_REG register
  *  Events trigger status register
  */
-#define SOC_ETM_EVT_ST5_REG (DR_REG_SOC_BASE + 0x1d0)
+#define SOC_ETM_EVT_ST5_REG (DR_REG_SOC_ETM_BASE + 0x1d0)
 /** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST : R/WTC/SS; bitpos: [0]; default: 0;
  *  Represents GDMA_evt_in_suc_eof_ch1 trigger status.
  *  0: Not triggered
@@ -5817,7 +5817,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST5_CLR_REG register
  *  Events trigger status clear register
  */
-#define SOC_ETM_EVT_ST5_CLR_REG (DR_REG_SOC_BASE + 0x1d4)
+#define SOC_ETM_EVT_ST5_CLR_REG (DR_REG_SOC_ETM_BASE + 0x1d4)
 /** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear GDMA_evt_in_suc_eof_ch1 trigger status.
  *  0: Invalid, No effect
@@ -6110,7 +6110,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST6_REG register
  *  Events trigger status register
  */
-#define SOC_ETM_EVT_ST6_REG (DR_REG_SOC_BASE + 0x1d8)
+#define SOC_ETM_EVT_ST6_REG (DR_REG_SOC_ETM_BASE + 0x1d8)
 /** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH3_ST : R/WTC/SS; bitpos: [0]; default: 0;
  *  Represents GDMA_evt_out_fifo_empty_ch3 trigger status.
  *  0: Not triggered
@@ -6277,7 +6277,7 @@ extern "C" {
 /** SOC_ETM_EVT_ST6_CLR_REG register
  *  Events trigger status clear register
  */
-#define SOC_ETM_EVT_ST6_CLR_REG (DR_REG_SOC_BASE + 0x1dc)
+#define SOC_ETM_EVT_ST6_CLR_REG (DR_REG_SOC_ETM_BASE + 0x1dc)
 /** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH3_ST_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear GDMA_evt_out_fifo_empty_ch3 trigger status.
  *  0: Invalid, No effect
@@ -6444,7 +6444,7 @@ extern "C" {
 /** SOC_ETM_TASK_ST0_REG register
  *  Tasks trigger status register
  */
-#define SOC_ETM_TASK_ST0_REG (DR_REG_SOC_BASE + 0x1e0)
+#define SOC_ETM_TASK_ST0_REG (DR_REG_SOC_ETM_BASE + 0x1e0)
 /** SOC_ETM_GPIO_TASK_CH0_SET_ST : R/WTC/SS; bitpos: [0]; default: 0;
  *  Represents GPIO_task_ch0_set trigger status.
  *  0: Not triggered
@@ -6737,7 +6737,7 @@ extern "C" {
 /** SOC_ETM_TASK_ST0_CLR_REG register
  *  Tasks trigger status clear register
  */
-#define SOC_ETM_TASK_ST0_CLR_REG (DR_REG_SOC_BASE + 0x1e4)
+#define SOC_ETM_TASK_ST0_CLR_REG (DR_REG_SOC_ETM_BASE + 0x1e4)
 /** SOC_ETM_GPIO_TASK_CH0_SET_ST_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear GPIO_task_ch0_set trigger status.
  *  0: Invalid, No effect
@@ -7030,7 +7030,7 @@ extern "C" {
 /** SOC_ETM_TASK_ST1_REG register
  *  Tasks trigger status register
  */
-#define SOC_ETM_TASK_ST1_REG (DR_REG_SOC_BASE + 0x1e8)
+#define SOC_ETM_TASK_ST1_REG (DR_REG_SOC_ETM_BASE + 0x1e8)
 /** SOC_ETM_LEDC_TASK_DUTY_SCALE_UPDATE_CH4_ST : R/WTC/SS; bitpos: [0]; default: 0;
  *  Represents LEDC_task_duty_scale_update_ch4 trigger status.
  *  0: Not triggered
@@ -7323,7 +7323,7 @@ extern "C" {
 /** SOC_ETM_TASK_ST1_CLR_REG register
  *  Tasks trigger status clear register
  */
-#define SOC_ETM_TASK_ST1_CLR_REG (DR_REG_SOC_BASE + 0x1ec)
+#define SOC_ETM_TASK_ST1_CLR_REG (DR_REG_SOC_ETM_BASE + 0x1ec)
 /** SOC_ETM_LEDC_TASK_DUTY_SCALE_UPDATE_CH4_ST_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear LEDC_task_duty_scale_update_ch4 trigger status.
  *  0: Invalid, No effect
@@ -7616,7 +7616,7 @@ extern "C" {
 /** SOC_ETM_TASK_ST2_REG register
  *  Tasks trigger status register
  */
-#define SOC_ETM_TASK_ST2_REG (DR_REG_SOC_BASE + 0x1f0)
+#define SOC_ETM_TASK_ST2_REG (DR_REG_SOC_ETM_BASE + 0x1f0)
 /** SOC_ETM_LEDC_TASK_TIMER0_PAUSE_ST : R/WTC/SS; bitpos: [0]; default: 0;
  *  Represents LEDC_task_timer0_pause trigger status.
  *  0: Not triggered
@@ -7909,7 +7909,7 @@ extern "C" {
 /** SOC_ETM_TASK_ST2_CLR_REG register
  *  Tasks trigger status clear register
  */
-#define SOC_ETM_TASK_ST2_CLR_REG (DR_REG_SOC_BASE + 0x1f4)
+#define SOC_ETM_TASK_ST2_CLR_REG (DR_REG_SOC_ETM_BASE + 0x1f4)
 /** SOC_ETM_LEDC_TASK_TIMER0_PAUSE_ST_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear LEDC_task_timer0_pause trigger status.
  *  0: Invalid, No effect
@@ -8202,7 +8202,7 @@ extern "C" {
 /** SOC_ETM_TASK_ST3_REG register
  *  Tasks trigger status register
  */
-#define SOC_ETM_TASK_ST3_REG (DR_REG_SOC_BASE + 0x1f8)
+#define SOC_ETM_TASK_ST3_REG (DR_REG_SOC_ETM_BASE + 0x1f8)
 /** SOC_ETM_TG0_TASK_CNT_CAP_TIMER0_ST : R/WTC/SS; bitpos: [0]; default: 0;
  *  Represents TG0_task_cnt_cap_timer0 trigger status.
  *  0: Not triggered
@@ -8495,7 +8495,7 @@ extern "C" {
 /** SOC_ETM_TASK_ST3_CLR_REG register
  *  Tasks trigger status clear register
  */
-#define SOC_ETM_TASK_ST3_CLR_REG (DR_REG_SOC_BASE + 0x1fc)
+#define SOC_ETM_TASK_ST3_CLR_REG (DR_REG_SOC_ETM_BASE + 0x1fc)
 /** SOC_ETM_TG0_TASK_CNT_CAP_TIMER0_ST_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear TG0_task_cnt_cap_timer0 trigger status.
  *  0: Invalid, No effect
@@ -8788,7 +8788,7 @@ extern "C" {
 /** SOC_ETM_TASK_ST4_REG register
  *  Tasks trigger status register
  */
-#define SOC_ETM_TASK_ST4_REG (DR_REG_SOC_BASE + 0x200)
+#define SOC_ETM_TASK_ST4_REG (DR_REG_SOC_ETM_BASE + 0x200)
 /** SOC_ETM_MCPWM1_TASK_CMPR1_B_UP_ST : R/WTC/SS; bitpos: [0]; default: 0;
  *  Represents MCPWM1_task_cmpr1_b_up trigger status.
  *  0: Not triggered
@@ -9081,7 +9081,7 @@ extern "C" {
 /** SOC_ETM_TASK_ST4_CLR_REG register
  *  Tasks trigger status clear register
  */
-#define SOC_ETM_TASK_ST4_CLR_REG (DR_REG_SOC_BASE + 0x204)
+#define SOC_ETM_TASK_ST4_CLR_REG (DR_REG_SOC_ETM_BASE + 0x204)
 /** SOC_ETM_MCPWM1_TASK_CMPR1_B_UP_ST_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear MCPWM1_task_cmpr1_b_up trigger status.
  *  0: Invalid, No effect
@@ -9374,7 +9374,7 @@ extern "C" {
 /** SOC_ETM_TASK_ST5_REG register
  *  Tasks trigger status register
  */
-#define SOC_ETM_TASK_ST5_REG (DR_REG_SOC_BASE + 0x208)
+#define SOC_ETM_TASK_ST5_REG (DR_REG_SOC_ETM_BASE + 0x208)
 /** SOC_ETM_I2S0_TASK_SYNC_CHECK_ST : R/WTC/SS; bitpos: [0]; default: 0;
  *  Represents I2S0_task_sync_check trigger status.
  *  0: Not triggered
@@ -9586,7 +9586,7 @@ extern "C" {
 /** SOC_ETM_TASK_ST5_CLR_REG register
  *  Tasks trigger status clear register
  */
-#define SOC_ETM_TASK_ST5_CLR_REG (DR_REG_SOC_BASE + 0x20c)
+#define SOC_ETM_TASK_ST5_CLR_REG (DR_REG_SOC_ETM_BASE + 0x20c)
 /** SOC_ETM_I2S0_TASK_SYNC_CHECK_ST_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear I2S0_task_sync_check trigger status.
  *  0: Invalid, No effect
@@ -9798,7 +9798,7 @@ extern "C" {
 /** SOC_ETM_CLK_EN_REG register
  *  ETM clock enable register
  */
-#define SOC_ETM_CLK_EN_REG (DR_REG_SOC_BASE + 0x210)
+#define SOC_ETM_CLK_EN_REG (DR_REG_SOC_ETM_BASE + 0x210)
 /** SOC_ETM_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to open register clock gate.
  *  0: Open the clock gate only when application writes registers
@@ -9812,7 +9812,7 @@ extern "C" {
 /** SOC_ETM_DATE_REG register
  *  ETM date register
  */
-#define SOC_ETM_DATE_REG (DR_REG_SOC_BASE + 0x214)
+#define SOC_ETM_DATE_REG (DR_REG_SOC_ETM_BASE + 0x214)
 /** SOC_ETM_DATE : R/W; bitpos: [27:0]; default: 37777745;
  *  Configures the version.
  */

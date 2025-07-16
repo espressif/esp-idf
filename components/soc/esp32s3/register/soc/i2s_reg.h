@@ -1,16 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_I2S_REG_H_
-#define _SOC_I2S_REG_H_
-
+#pragma once
 
 #include "soc/soc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define REG_I2S_BASE( i )       (DR_REG_I2S_BASE + (i) * 0x1E000)
 
 #define I2S_INT_RAW_REG(i)          (REG_I2S_BASE(i) + 0xC)
 /* I2S_TX_HUNG_INT_RAW : RO/WTC/SS ;bitpos:[3] ;default: 1'b0 ; */
@@ -1092,7 +1093,3 @@ when counter value >= 88000/2^i2s_lc_fifo_timeout_shift.*/
 #ifdef __cplusplus
 }
 #endif
-
-
-
-#endif /*_SOC_I2S_REG_H_ */

@@ -1,16 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_I2S_REG_H_
-#define _SOC_I2S_REG_H_
+#pragma once
 
+#include "soc/soc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc/soc.h"
+
+#define REG_I2S_BASE( i )       (DR_REG_I2S_BASE)
+
 #define I2S_CONF_REG(i)          (REG_I2S_BASE(i) + 0x0008)
 /* I2S_RX_RESET_ST : RO ;bitpos:[29] ;default: 1'b0 ; */
 /*description: */
@@ -1378,7 +1380,3 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-
-
-#endif /*_SOC_I2S_REG_H_ */

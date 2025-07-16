@@ -21,6 +21,7 @@
 
 #include <stdint.h>
 #include "driver/i2s_types.h"
+#include "esp_err.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +32,7 @@ extern "C" {
 /**
  * @brief Get the counter number of BCLK ticks
  * @note  The BCLK tick count reflects the real data that have sent on line
- * @note  It will be reset automatically when `I2S_ETM_TASK_SYNC_CHECK` is triggered
+ * @note  It will be reset automatically when `I2S_ETM_TASK_SYNC_FIFO` is triggered
  *
  * @param[in] tx_handle The I2S tx channel handle
  * @return
@@ -44,7 +45,7 @@ uint32_t i2s_sync_get_bclk_count(i2s_chan_handle_t tx_handle);
  * @note  The FIFO count reflects how many slots have processed
  *        Normally, fifo_cnt = slot_bit_width * bclk_cnt
  *        If fifo_cnt < slot_bit_width * bclk_cnt, that means some data are still stuck in the I2S controller
- * @note  It will be reset automatically when `I2S_ETM_TASK_SYNC_CHECK` is triggered
+ * @note  It will be reset automatically when `I2S_ETM_TASK_SYNC_FIFO` is triggered
  *
  * @param[in] tx_handle The I2S tx channel handle
  * @return
@@ -68,7 +69,7 @@ void i2s_sync_reset_fifo_count(i2s_chan_handle_t tx_handle);
 
 #endif  // SOC_I2S_SUPPORTS_TX_SYNC_CNT
 
-#if SOC_I2S_SUPPORTS_ETM_SYNC
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
 /**
  * @brief I2S hardware FIFO synchronization supplement mode
  * @note  When the FIFO sync difference count is out of threshold, the hardware will supplement data automatically

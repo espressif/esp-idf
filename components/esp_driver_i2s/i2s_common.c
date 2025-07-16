@@ -575,7 +575,7 @@ uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz)
 }
 
 #if SOC_GDMA_SUPPORTED
-static bool IRAM_ATTR i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static bool i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     i2s_chan_handle_t handle = (i2s_chan_handle_t)user_data;
     BaseType_t need_yield1 = 0;
@@ -606,7 +606,7 @@ static bool IRAM_ATTR i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_e
     return need_yield1 | need_yield2 | user_need_yield;
 }
 
-static bool IRAM_ATTR i2s_dma_tx_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static bool i2s_dma_tx_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     i2s_chan_handle_t handle = (i2s_chan_handle_t)user_data;
     BaseType_t need_yield1 = 0;
@@ -653,7 +653,7 @@ static bool IRAM_ATTR i2s_dma_tx_callback(gdma_channel_handle_t dma_chan, gdma_e
 
 #else
 
-static void IRAM_ATTR i2s_dma_rx_callback(void *arg)
+static void i2s_dma_rx_callback(void *arg)
 {
     BaseType_t need_yield1 = 0;
     BaseType_t need_yield2 = 0;
@@ -691,7 +691,7 @@ static void IRAM_ATTR i2s_dma_rx_callback(void *arg)
     }
 }
 
-static void IRAM_ATTR i2s_dma_tx_callback(void *arg)
+static void i2s_dma_tx_callback(void *arg)
 {
     BaseType_t need_yield1 = 0;
     BaseType_t need_yield2 = 0;
@@ -1485,7 +1485,7 @@ void i2s_sync_reset_fifo_count(i2s_chan_handle_t tx_handle)
 }
 #endif  // SOC_I2S_SUPPORTS_TX_SYNC_CNT
 
-#if SOC_I2S_SUPPORTS_ETM_SYNC
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
 uint32_t i2s_sync_get_fifo_sync_diff_count(i2s_chan_handle_t tx_handle)
 {
     return i2s_ll_tx_get_fifo_sync_diff_count(tx_handle->controller->hal.dev);
