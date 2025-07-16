@@ -118,5 +118,5 @@ ESP-IDF 中的示例使用 :doc:`/api-reference/protocols/esp_tls`，为访问�
 在 ``Component Config -> mbedTLS`` 中，有多个 Mbed TLS 功能默认为启用状态。如果不需要这些功能，可将其禁用以减小固件大小。要了解更多信息，请参考 :ref:`Minimizing Binary Size <minimizing_binary_mbedtls>` 文档。
 
 
-.. _`API Reference`: https://mbed-tls.readthedocs.io/projects/api/en/v3.6.3/
+.. _`API Reference`: https://mbed-tls.readthedocs.io/projects/api/en/v3.6.4/
 .. _`Knowledge Base`: https://mbed-tls.readthedocs.io/en/latest/kb/
