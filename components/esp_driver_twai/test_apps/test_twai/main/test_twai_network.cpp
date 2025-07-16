@@ -54,6 +54,7 @@ TEST_CASE("twai_listen_only", "[twai_net]")
     while (!rx_msg_cnt) {
         vTaskDelay(1);
     }
+    TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, 0));   // test wait after only receive
     ESP_LOGI("Test", "receive with id 0x%lx", rx_frame.header.id);
     ESP_LOG_BUFFER_HEX("Data", rx_frame.buffer, twaifd_dlc2len(rx_frame.header.dlc));
     TEST_ASSERT_EQUAL_HEX(0x6688, rx_frame.header.id);

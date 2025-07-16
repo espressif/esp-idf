@@ -32,7 +32,7 @@ static void test_random_trans_generator(twai_node_handle_t node_hdl, uint32_t tr
         tx_msg.header.fdf = !!(tx_cnt % 5);
         tx_msg.buffer_len = tx_msg.header.fdf ? (tx_cnt % TWAIFD_FRAME_MAX_LEN) : (tx_cnt % TWAI_FRAME_MAX_LEN);
         TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_msg, 0));
-        vTaskDelay(8);  //as async transaction, waiting trans done
+        TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, -1));
     }
 }
 
@@ -179,9 +179,7 @@ TEST_CASE("twai fd transmit time (loopback)", "[twai]")
         }
 
         //waiting pkg receive finish
-        while (rx_frame.buffer < recv_pkg_ptr + TEST_TRANS_TIME_BUF_LEN) {
-            vTaskDelay(1);
-        }
+        TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, -1));
         time2 = esp_timer_get_time();
         free(tx_msgs);
 

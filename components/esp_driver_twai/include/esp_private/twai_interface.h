@@ -92,6 +92,18 @@ struct twai_node_base {
     esp_err_t (*transmit)(struct twai_node_base *node, const twai_frame_t *frame, int timeout);
 
     /**
+     * @brief Wait for the TWAI node to finish transmitting
+     *
+     * @param[in] node Pointer to the TWAI node base
+     * @param[in] timeout Timeout in milliseconds
+     * @return esp_err_t
+     *      - ESP_OK: Success
+     *      - ESP_ERR_TIMEOUT: Waiting timeout
+     *      - ESP_ERR_INVALID_STATE: Node is not enabled or already in bus-off state
+     */
+    esp_err_t (*transmit_wait_done)(struct twai_node_base *node, int timeout);
+
+    /**
      * @brief Receive a TWAI frame through the ISR callback
      *
      * @param[in] node Pointer to the TWAI node base

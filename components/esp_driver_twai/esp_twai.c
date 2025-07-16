@@ -65,7 +65,7 @@ uint32_t twai_node_timing_calc_param(const uint32_t source_freq, const twai_timi
 esp_err_t twai_node_enable(twai_node_handle_t node)
 {
     ESP_RETURN_ON_FALSE(node, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null handle");
-    ESP_RETURN_ON_FALSE(node->enable, ESP_ERR_NOT_SUPPORTED, TAG, "enable func null");
+    ESP_RETURN_ON_FALSE(node->enable, ESP_ERR_NOT_SUPPORTED, TAG, "enable is not supported");
 
     return node->enable(node);
 }
@@ -73,7 +73,7 @@ esp_err_t twai_node_enable(twai_node_handle_t node)
 esp_err_t twai_node_disable(twai_node_handle_t node)
 {
     ESP_RETURN_ON_FALSE(node, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null handle");
-    ESP_RETURN_ON_FALSE(node->disable, ESP_ERR_NOT_SUPPORTED, TAG, "disable func null");
+    ESP_RETURN_ON_FALSE(node->disable, ESP_ERR_NOT_SUPPORTED, TAG, "disable is not supported");
 
     return node->disable(node);
 }
@@ -81,7 +81,7 @@ esp_err_t twai_node_disable(twai_node_handle_t node)
 esp_err_t twai_node_delete(twai_node_handle_t node)
 {
     ESP_RETURN_ON_FALSE(node, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null handle");
-    ESP_RETURN_ON_FALSE(node->del, ESP_ERR_NOT_SUPPORTED, TAG, "delete func null");
+    ESP_RETURN_ON_FALSE(node->del, ESP_ERR_NOT_SUPPORTED, TAG, "delete is not supported");
 
     return node->del(node);
 }
@@ -89,7 +89,7 @@ esp_err_t twai_node_delete(twai_node_handle_t node)
 esp_err_t twai_node_config_mask_filter(twai_node_handle_t node, uint8_t filter_id, const twai_mask_filter_config_t *mask_cfg)
 {
     ESP_RETURN_ON_FALSE(node && mask_cfg, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null");
-    ESP_RETURN_ON_FALSE(node->config_mask_filter, ESP_ERR_NOT_SUPPORTED, TAG, "config_mask_filter func null");
+    ESP_RETURN_ON_FALSE(node->config_mask_filter, ESP_ERR_NOT_SUPPORTED, TAG, "config_mask_filter is not supported");
 
     return node->config_mask_filter(node, filter_id, mask_cfg);
 }
@@ -97,7 +97,7 @@ esp_err_t twai_node_config_mask_filter(twai_node_handle_t node, uint8_t filter_i
 esp_err_t twai_node_config_range_filter(twai_node_handle_t node, uint8_t filter_id, const twai_range_filter_config_t *range_cfg)
 {
     ESP_RETURN_ON_FALSE(node && range_cfg, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null");
-    ESP_RETURN_ON_FALSE(node->config_range_filter, ESP_ERR_NOT_SUPPORTED, TAG, "config_range_filter func null");
+    ESP_RETURN_ON_FALSE(node->config_range_filter, ESP_ERR_NOT_SUPPORTED, TAG, "config_range_filter is not supported");
 
     return node->config_range_filter(node, filter_id, range_cfg);
 }
@@ -105,7 +105,7 @@ esp_err_t twai_node_config_range_filter(twai_node_handle_t node, uint8_t filter_
 esp_err_t twai_node_reconfig_timing(twai_node_handle_t node, const twai_timing_advanced_config_t *bit_timing, const twai_timing_advanced_config_t *data_timing)
 {
     ESP_RETURN_ON_FALSE(node && (bit_timing || data_timing), ESP_ERR_INVALID_ARG, TAG, "invalid argument: null");
-    ESP_RETURN_ON_FALSE(node->reconfig_timing, ESP_ERR_NOT_SUPPORTED, TAG, "reconfig_timing func null");
+    ESP_RETURN_ON_FALSE(node->reconfig_timing, ESP_ERR_NOT_SUPPORTED, TAG, "reconfig_timing is not supported");
 
     return node->reconfig_timing(node, bit_timing, data_timing);
 }
@@ -113,7 +113,7 @@ esp_err_t twai_node_reconfig_timing(twai_node_handle_t node, const twai_timing_a
 esp_err_t twai_node_register_event_callbacks(twai_node_handle_t node, const twai_event_callbacks_t *cbs, void *user_data)
 {
     ESP_RETURN_ON_FALSE(node && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null");
-    ESP_RETURN_ON_FALSE(node->register_cbs, ESP_ERR_NOT_SUPPORTED, TAG, "register_cbs func null");
+    ESP_RETURN_ON_FALSE(node->register_cbs, ESP_ERR_NOT_SUPPORTED, TAG, "register_cbs is not supported");
 
     return node->register_cbs(node, cbs, user_data);
 }
@@ -121,7 +121,7 @@ esp_err_t twai_node_register_event_callbacks(twai_node_handle_t node, const twai
 esp_err_t twai_node_recover(twai_node_handle_t node)
 {
     ESP_RETURN_ON_FALSE(node, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null handle");
-    ESP_RETURN_ON_FALSE(node->recover, ESP_ERR_NOT_SUPPORTED, TAG, "recover func null");
+    ESP_RETURN_ON_FALSE(node->recover, ESP_ERR_NOT_SUPPORTED, TAG, "recover is not supported");
 
     return node->recover(node);
 }
@@ -129,7 +129,7 @@ esp_err_t twai_node_recover(twai_node_handle_t node)
 esp_err_t twai_node_get_info(twai_node_handle_t node, twai_node_status_t *status_ret, twai_node_record_t *statistics_ret)
 {
     ESP_RETURN_ON_FALSE(node, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null handle");
-    ESP_RETURN_ON_FALSE(node->get_info, ESP_ERR_NOT_SUPPORTED, TAG, "get_info func null");
+    ESP_RETURN_ON_FALSE(node->get_info, ESP_ERR_NOT_SUPPORTED, TAG, "get_info is not supported");
 
     return node->get_info(node, status_ret, statistics_ret);
 }
@@ -137,16 +137,24 @@ esp_err_t twai_node_get_info(twai_node_handle_t node, twai_node_status_t *status
 esp_err_t twai_node_transmit(twai_node_handle_t node, const twai_frame_t *frame, int timeout_ms)
 {
     ESP_RETURN_ON_FALSE(node && frame, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null");
-    ESP_RETURN_ON_FALSE(node->transmit, ESP_ERR_NOT_SUPPORTED, TAG, "transmit func null");
+    ESP_RETURN_ON_FALSE(node->transmit, ESP_ERR_NOT_SUPPORTED, TAG, "transmit is not supported");
 
     return node->transmit(node, frame, timeout_ms);
+}
+
+esp_err_t twai_node_transmit_wait_all_done(twai_node_handle_t node, int timeout_ms)
+{
+    ESP_RETURN_ON_FALSE(node, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null handle");
+    ESP_RETURN_ON_FALSE(node->transmit_wait_done, ESP_ERR_NOT_SUPPORTED, TAG, "transmit_wait_done is not supported");
+
+    return node->transmit_wait_done(node, timeout_ms);
 }
 
 esp_err_t twai_node_receive_from_isr(twai_node_handle_t node, twai_frame_t *rx_frame)
 {
     ESP_RETURN_ON_FALSE_ISR(node && rx_frame, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null");
     ESP_RETURN_ON_FALSE_ISR((rx_frame->buffer_len == 0) || esp_ptr_in_dram(rx_frame->buffer) || esp_ptr_external_ram(rx_frame->buffer), ESP_ERR_INVALID_ARG, TAG, "invalid 'rx_frame->buffer' pointer or buffer_len");
-    ESP_RETURN_ON_FALSE_ISR(node->receive_isr, ESP_ERR_NOT_SUPPORTED, TAG, "receive func null");
+    ESP_RETURN_ON_FALSE_ISR(node->receive_isr, ESP_ERR_NOT_SUPPORTED, TAG, "receive is not supported");
 
     return node->receive_isr(node, rx_frame);
 }

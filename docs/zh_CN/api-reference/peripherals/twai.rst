@@ -120,6 +120,7 @@ TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主
         .buffer_len = sizeof(send_buff),    // 发送数据的长度
     };
     ESP_ERROR_CHECK(twai_node_transmit(node_hdl, &tx_msg, 0));  // 超时为0，队列满则直接返回超时
+    ESP_ERROR_CHECK(twai_node_transmit_wait_all_done(node_hdl, -1));  // 等待发送完成
 
 其中 :cpp:member:`twai_frame_t::header::id` 指示了该文的 ID 为 0x01。报文的 ID 通常用于表示报文在应用中的类型，并在发送过程中起到总线竞争仲裁的作用，其数值越小，在总线上的优先级越高。:cpp:member:`twai_frame_t::buffer` 则指向要发送数据所在的内存地址，并由 :cpp:member:`twai_frame_t::buffer_len` 给出数据长度。
 
