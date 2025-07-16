@@ -19,7 +19,6 @@ import signal
 import sys
 import time
 from copy import deepcopy
-from telnetlib import Telnet
 from typing import Any
 from typing import Callable
 from typing import Optional
@@ -34,6 +33,7 @@ from pytest_embedded.utils import to_bytes
 from pytest_embedded.utils import to_str
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.unity_tester import CaseTester
+from pytest_embedded_jtag._telnetlib.telnetlib import Telnet  # python 3.13 removed telnetlib, use this instead
 
 try:
     from idf_ci_utils import IDF_PATH
