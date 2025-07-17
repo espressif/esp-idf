@@ -137,6 +137,7 @@ if(CONFIG_BT_ENABLED)
          "common/osi/semaphore.c"
          "porting/mem/bt_osi_mem.c"
          "common/ble_log/ble_log_spi_out.c"
+         "common/ble_log/ble_log_uhci_out.c"
          )
 
     # Host Bluedroid
@@ -945,6 +946,11 @@ if(CONFIG_BT_ENABLED)
     elseif(CONFIG_BT_CONTROLLER_ENABLED)
         if(CONFIG_BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE)
             target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=esp_panic_handler")
+        endif()
+        if(CONFIG_BT_BLE_LOG_UHCI_OUT_ENABLED)
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_tx_chars")
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes")
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes_with_break")
         endif()
         if(CONFIG_IDF_TARGET_ESP32C6)
             add_prebuilt_library(libble_app
