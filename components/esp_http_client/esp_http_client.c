@@ -349,11 +349,14 @@ static int http_on_body(http_parser *parser, const char *at, size_t length)
             ESP_LOGD(TAG, "Body received in fetch header state, %p, %zu", at, length);
             esp_http_buffer_t *res_buffer = client->response->buffer;
             assert(res_buffer->orig_raw_data == res_buffer->raw_data);
-            res_buffer->orig_raw_data = (char *)realloc(res_buffer->orig_raw_data, res_buffer->raw_len + length);
-            if (!res_buffer->orig_raw_data) {
+            char *tmp = (char *)realloc(res_buffer->orig_raw_data, res_buffer->raw_len + length);
+            if (tmp == NULL) {
                 ESP_LOGE(TAG, "Failed to allocate memory for storing decoded data");
+                free(res_buffer->orig_raw_data);
+                res_buffer->orig_raw_data = NULL;
                 return -1;
             }
+            res_buffer->orig_raw_data = tmp;
             memcpy(res_buffer->orig_raw_data + res_buffer->raw_len, at, length);
             res_buffer->raw_data = res_buffer->orig_raw_data;
         }
