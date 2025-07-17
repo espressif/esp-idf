@@ -116,7 +116,7 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
         return NULL;
     }
 
-#if !(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT)
+#if CONFIG_HEAP_HAS_EXEC_HEAP
     const bool exec_in_caps = caps & MALLOC_CAP_EXEC;
     if (exec_in_caps) {
         //MALLOC_CAP_EXEC forces an alloc from IRAM. There is a region which has both this as well as the following

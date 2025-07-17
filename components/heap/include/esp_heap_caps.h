@@ -26,7 +26,7 @@ extern "C" {
 /**
  * @brief Flags to indicate the capabilities of the various memory systems
  */
-#if !(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT)
+#if CONFIG_HEAP_HAS_EXEC_HEAP
 #define MALLOC_CAP_EXEC             (1<<0)  ///< Memory must be able to run executable code
 #endif
 #define MALLOC_CAP_32BIT            (1<<1)  ///< Memory must allow for aligned 32-bit data accesses

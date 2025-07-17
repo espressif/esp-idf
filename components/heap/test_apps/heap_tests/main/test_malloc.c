@@ -154,7 +154,7 @@ TEST_CASE("alloc overflows should all fail", "[heap]")
     /* will overflow when the size is rounded up to word align it */
     TEST_ASSERT_NULL(heap_caps_malloc(SIZE_MAX-1, MALLOC_CAP_32BIT));
 
-#if !(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT)
+#if CONFIG_HEAP_HAS_EXEC_HEAP
     TEST_ASSERT_NULL(heap_caps_malloc(SIZE_MAX-1, MALLOC_CAP_EXEC));
 #endif
 }
