@@ -65,8 +65,22 @@ def skipped_targets(item: Function) -> t.Set[str]:
 
         return set(to_list(temp_marker.kwargs['targets']))
 
-    temp_skip_ci_targets = _get_temp_markers_disabled_targets('temp_skip_ci')
-    temp_skip_targets = _get_temp_markers_disabled_targets('temp_skip')
+    _count = IdfLocalPlugin.get_param(item, 'count', 1)
+
+    def normalize_targets(target: str) -> str:
+        targets = target.split(',')
+        if len(targets) == 1:
+            return ','.join(targets * _count)
+        if len(targets) != _count:
+            raise ValueError(
+                f"Invalid target format: '{target}'. "
+                f'Expected a single target or exactly {_count} values separated by commas.'
+                f'len({targets}) != {_count}'
+            )
+        return target
+
+    temp_skip_ci_targets = set(normalize_targets(_t) for _t in _get_temp_markers_disabled_targets('temp_skip_ci'))
+    temp_skip_targets = set(normalize_targets(_t) for _t in _get_temp_markers_disabled_targets('temp_skip'))
 
     # in CI we skip the union of `temp_skip` and `temp_skip_ci`
     if os.getenv('CI_JOB_ID'):
