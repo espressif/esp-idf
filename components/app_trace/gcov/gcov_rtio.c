@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,14 +46,19 @@ void gcov_dump_task(void *pvParameter)
         goto gcov_exit;
     }
     ESP_EARLY_LOGV(TAG, "Config apptrace down buf");
-    esp_apptrace_down_buffer_config(down_buf, ESP_GCOV_DOWN_BUF_SIZE);
+    esp_err_t res = esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_JTAG, down_buf, ESP_GCOV_DOWN_BUF_SIZE);
+    if (res != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to config apptrace down buf (%d)!", res);
+        dump_result = res;
+        goto gcov_exit;
+    }
     ESP_EARLY_LOGV(TAG, "Dump data...");
     __gcov_dump();
     // reset dump status to allow incremental data accumulation
     __gcov_reset();
     free(down_buf);
     ESP_EARLY_LOGV(TAG, "Finish file transfer session");
-    dump_result = esp_apptrace_fstop(ESP_APPTRACE_DEST_TRAX);
+    dump_result = esp_apptrace_fstop(ESP_APPTRACE_DEST_JTAG);
     if (dump_result != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send files transfer stop cmd (%d)!", dump_result);
     }
@@ -119,7 +124,7 @@ void esp_gcov_dump(void)
 {
     ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
 
-    while (!esp_apptrace_host_is_connected(ESP_APPTRACE_DEST_TRAX)) {
+    while (!esp_apptrace_host_is_connected(ESP_APPTRACE_DEST_JTAG)) {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
@@ -134,7 +139,7 @@ void esp_gcov_dump(void)
 void *gcov_rtio_fopen(const char *path, const char *mode)
 {
     ESP_EARLY_LOGV(TAG, "%s '%s' '%s'", __FUNCTION__, path, mode);
-    void *f = esp_apptrace_fopen(ESP_APPTRACE_DEST_TRAX, path, mode);
+    void *f = esp_apptrace_fopen(ESP_APPTRACE_DEST_JTAG, path, mode);
     ESP_EARLY_LOGV(TAG, "%s ret %p", __FUNCTION__, f);
     return f;
 }
@@ -142,13 +147,13 @@ void *gcov_rtio_fopen(const char *path, const char *mode)
 int gcov_rtio_fclose(void *stream)
 {
     ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
-    return esp_apptrace_fclose(ESP_APPTRACE_DEST_TRAX, stream);
+    return esp_apptrace_fclose(ESP_APPTRACE_DEST_JTAG, stream);
 }
 
 size_t gcov_rtio_fread(void *ptr, size_t size, size_t nmemb, void *stream)
 {
     ESP_EARLY_LOGV(TAG, "%s read %u", __FUNCTION__, size * nmemb);
-    size_t sz = esp_apptrace_fread(ESP_APPTRACE_DEST_TRAX, ptr, size, nmemb, stream);
+    size_t sz = esp_apptrace_fread(ESP_APPTRACE_DEST_JTAG, ptr, size, nmemb, stream);
     ESP_EARLY_LOGV(TAG, "%s actually read %u", __FUNCTION__, sz);
     return sz;
 }
@@ -156,26 +161,26 @@ size_t gcov_rtio_fread(void *ptr, size_t size, size_t nmemb, void *stream)
 size_t gcov_rtio_fwrite(const void *ptr, size_t size, size_t nmemb, void *stream)
 {
     ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
-    return esp_apptrace_fwrite(ESP_APPTRACE_DEST_TRAX, ptr, size, nmemb, stream);
+    return esp_apptrace_fwrite(ESP_APPTRACE_DEST_JTAG, ptr, size, nmemb, stream);
 }
 
 int gcov_rtio_fseek(void *stream, long offset, int whence)
 {
-    int ret = esp_apptrace_fseek(ESP_APPTRACE_DEST_TRAX, stream, offset, whence);
+    int ret = esp_apptrace_fseek(ESP_APPTRACE_DEST_JTAG, stream, offset, whence);
     ESP_EARLY_LOGV(TAG, "%s(%p %ld %d) = %d", __FUNCTION__, stream, offset, whence, ret);
     return ret;
 }
 
 long gcov_rtio_ftell(void *stream)
 {
-    long ret = esp_apptrace_ftell(ESP_APPTRACE_DEST_TRAX, stream);
+    long ret = esp_apptrace_ftell(ESP_APPTRACE_DEST_JTAG, stream);
     ESP_EARLY_LOGV(TAG, "%s(%p) = %ld", __FUNCTION__, stream, ret);
     return ret;
 }
 
 int gcov_rtio_feof(void *stream)
 {
-    int ret = esp_apptrace_feof(ESP_APPTRACE_DEST_TRAX, stream);
+    int ret = esp_apptrace_feof(ESP_APPTRACE_DEST_JTAG, stream);
     ESP_EARLY_LOGV(TAG, "%s(%p) = %d", __FUNCTION__, stream, ret);
     return ret;
 }

@@ -8,7 +8,7 @@ menu "Application Level Tracing"
 
         config APPTRACE_DEST_JTAG
             bool "JTAG"
-            select APPTRACE_DEST_TRAX if IDF_TARGET_ARCH_XTENSA
+            select APPTRACE_TRAX_ENABLE if IDF_TARGET_ARCH_XTENSA
             select APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE
             select APPTRACE_ENABLE
 
@@ -135,7 +135,7 @@ menu "Application Level Tracing"
             UART task priority. In case of high events rate,
             this parameter could be changed up to (configMAX_PRIORITIES-1).
 
-    config APPTRACE_DEST_TRAX
+    config APPTRACE_TRAX_ENABLE
         bool
         depends on IDF_TARGET_ARCH_XTENSA && !ESP32_TRAX && !ESP32S2_TRAX && !ESP32S3_TRAX
         select ESP32_MEMMAP_TRACEMEM
@@ -186,7 +186,7 @@ menu "Application Level Tracing"
 
     config APPTRACE_BUF_SIZE
         int "Size of the apptrace buffer"
-        depends on APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE && !APPTRACE_DEST_TRAX
+        depends on APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE && !APPTRACE_TRAX_ENABLE
         default 16384
         help
             Size of the memory buffer for trace data in bytes.

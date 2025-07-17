@@ -57,8 +57,27 @@ The deprecated ``soc_memory_types.h`` header file has been removed. Please inclu
 
 App Trace
 ----------
-
 Removed extra data buffering option. `CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX` is no longer supported.
+
+Removed deprecated `ESP_APPTRACE_DEST_TRAX` enum value. Use `ESP_APPTRACE_DEST_JTAG` instead.
+
+The :cpp:func:`esp_apptrace_down_buffer_config` function now requires a destination parameter and returns an error code for proper error handling.
+
+Old Version:
+
+.. code-block:: c
+
+    esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
+
+Update to:
+
+.. code-block:: c
+
+    esp_err_t res = esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_JTAG, down_buf, sizeof(down_buf));
+    if (res != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to config down buffer!");
+        return res;
+    }
 
 FreeRTOS
 --------
