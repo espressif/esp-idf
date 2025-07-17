@@ -10,6 +10,7 @@ project(rgb_lcd_panel_test)
 target_add_binary_data(rgb_lcd_panel_test.elf "resources/pictures/hello.yuv" BINARY)
 target_add_binary_data(rgb_lcd_panel_test.elf "resources/pictures/world.yuv" BINARY)
 
+idf_build_get_property(elf EXECUTABLE)
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
     add_custom_target(check_test_app_sections ALL
                       COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py

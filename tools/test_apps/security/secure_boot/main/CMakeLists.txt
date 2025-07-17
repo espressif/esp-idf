@@ -9,13 +9,16 @@ idf_component_register(SRCS "${main_src}" INCLUDE_DIRS ".")
 target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 
 if(CONFIG_EXAMPLE_TARGET_QEMU)
+    set(PROJECT_BIN "${CMAKE_PROJECT_NAME}")
     set(bootloader_unsigned_bin "bootloader-unsigned.bin")
     set(app_unsigned_bin "${PROJECT_BIN}-unsigned.bin")
+
+    idf_component_get_property(espsecure_py_cmd esptool_py ESPSECUREPY_CMD)
 
     add_custom_target(sign_bootloader ALL
         COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/bootloader/bootloader.bin"
         "${CMAKE_BINARY_DIR}/bootloader/${bootloader_unsigned_bin}"
-        COMMAND ${ESPSECUREPY} sign_data --version 2 --keyfile
+        COMMAND ${espsecure_py_cmd} sign_data --version 2 --keyfile
         ${PROJECT_DIR}/test/secure_boot_signing_key0.pem
         ${PROJECT_DIR}/test/secure_boot_signing_key1.pem
         ${PROJECT_DIR}/test/secure_boot_signing_key2.pem
@@ -29,14 +32,13 @@ if(CONFIG_EXAMPLE_TARGET_QEMU)
     add_dependencies(sign_bootloader bootloader)
 
     add_custom_target(sign_app ALL
-        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/${PROJECT_BIN}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/${PROJECT_BIN}.bin"
         "${CMAKE_BINARY_DIR}/${app_unsigned_bin}"
-        COMMAND ${ESPSECUREPY} sign_data --version 2 --keyfile
+        COMMAND ${espsecure_py_cmd} sign_data --version 2 --keyfile
         ${PROJECT_DIR}/test/secure_boot_signing_key1.pem
-        -o "${CMAKE_BINARY_DIR}/${PROJECT_BIN}"
+        -o "${CMAKE_BINARY_DIR}/${PROJECT_BIN}.bin"
         "${CMAKE_BINARY_DIR}/${app_unsigned_bin}"
-        COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${CMAKE_BINARY_DIR}/${PROJECT_BIN}"
-        "from ${CMAKE_BINARY_DIR}/${app_unsigned_bin}"
+        COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${CMAKE_BINARY_DIR}/${PROJECT_BIN}.bin"
         VERBATIM
         COMMENT "Generated the test-specific signed application")
 

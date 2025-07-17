@@ -1,3 +1,7 @@
+# Include additional cmake files for specific functionalities
+include("${CMAKE_CURRENT_LIST_DIR}/flash_targets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/post_build_validation.cmake")
+
 # idf_build_get_property
 #
 # @brief Retrieve the value of the specified property related to ESP-IDF build.
@@ -470,6 +474,22 @@ macro(__build_process_project_includes)
 endmacro()
 
 #
+# Add placeholder flash targets to the build.
+# This is used by components to declare dependencies on the flash target.
+#
+macro(__build_create_flash_targets)
+    if(NOT TARGET flash)
+        add_custom_target(flash)
+    endif()
+
+    # When flash encryption is enabled, a corresponding 'encrypted-flash' target will be created.
+    idf_build_get_config(encrypted_flash_enabled CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+    if(encrypted_flash_enabled AND NOT TARGET encrypted-flash)
+        add_custom_target(encrypted-flash)
+    endif()
+endmacro()
+
+#
 # Utility macro for setting default property value if argument is not specified
 # for idf_build_process().
 #
@@ -713,6 +733,13 @@ macro(idf_build_process target)
         set(ESP_PLATFORM 1)
         idf_build_set_property(COMPILE_DEFINITIONS "ESP_PLATFORM" APPEND)
 
+        # Create flash targets early so components can attach images to them.
+        # These targets will be appended with actual esptool.py command later
+        # in the build process when __idf_build_setup_flash_targets() is called.
+        if(NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD AND NOT "${target}" STREQUAL "linux")
+            __build_create_flash_targets()
+        endif()
+
         # Perform component processing (inclusion of project_include.cmake, adding component
         # subdirectories, creating library targets, linking libraries, etc.)
         __build_process_project_includes()
@@ -752,6 +779,66 @@ function(idf_build_executable elf)
 
     # Add dependency of the build target to the executable
     add_dependencies(${elf} __idf_build_target)
+
+    # This is the main orchestrator for generating binaries and flash targets
+    # It is responsible for -
+    #  - Setting up the binary generation targets
+    #  - Setting up the signed binary generation targets
+    #  - Setting up the main 'flash' target and generating flasher_args.json
+    #  - Setting up the app-flash and flash targets
+    #  - Setting up the app_check_size target
+    #
+    # Note: We need to wrap this code in a if(NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD) block
+    #       because the bootloader and esp_tee subprojects also call our overridden project()
+    #       macro.
+    #
+    # Note: We need to have this block here instead of in project.cmake because
+    #       idf_build_executable() is called directly when ESP-IDF is compiled
+    #       as a library (idf_as_lib).
+
+    idf_build_get_property(bootloader_build BOOTLOADER_BUILD)
+    idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+
+    if(NOT bootloader_build AND NOT esp_tee_build)
+        # All of the following logic for generating binaries and flash targets
+        # depends on the esptool_py component. For some builds (such as those
+        # that are built for the linux target), this component may not be included.
+        # We must guard these calls to ensure they only run when esptool_py is part
+        # of the build. We also only do this if CONFIG_APP_BUILD_GENERATE_BINARIES is set.
+        if(TARGET idf::esptool_py AND CONFIG_APP_BUILD_GENERATE_BINARIES)
+            # Determine the output filename for the binary.
+            idf_build_get_property(elf_name EXECUTABLE_NAME GENERATOR_EXPRESSION)
+            idf_build_get_property(non_os_build NON_OS_BUILD)
+
+            set(project_bin "${elf_name}.bin")
+            if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT non_os_build)
+                set(project_bin_unsigned "${elf_name}-unsigned.bin")
+            else()
+                set(project_bin_unsigned "${project_bin}")
+            endif()
+
+            idf_build_set_property(PROJECT_BIN "${project_bin}")
+
+            # Create the binary file generation target for the main project
+            set(target_name "gen_${CMAKE_PROJECT_NAME}_binary")
+            __idf_build_binary("${project_bin_unsigned}" "${target_name}")
+
+            # Generate the signed binary file generation target for the main project
+            if(NOT non_os_build AND CONFIG_SECURE_SIGNED_APPS)
+                set(signed_target_name "gen_signed_${CMAKE_PROJECT_NAME}_binary")
+                __idf_build_secure_binary("${project_bin_unsigned}" "${project_bin}" "${signed_target_name}")
+            endif()
+
+            # Setup flash targets and flash configuration
+            __idf_build_setup_flash_targets()
+
+            # Setup utility targets such as monitor, erase_flash, merge-bin
+            __esptool_py_setup_utility_targets()
+
+            # Setup post-build validation checks
+            __idf_build_setup_post_build_validation()
+        endif() # if(TARGET idf::esptool_py AND CONFIG_APP_BUILD_GENERATE_BINARIES)
+    endif() # if(NOT bootloader_build AND NOT esp_tee_build)
 endfunction()
 
 # idf_build_get_config

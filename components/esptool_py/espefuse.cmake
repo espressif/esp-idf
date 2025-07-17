@@ -2,6 +2,18 @@ cmake_minimum_required(VERSION 3.16)
 
 # Executes a espefuse.py command and returns a cleaned log
 function(espefuse_cmd cmd output_log)
+    # espefuse_cmd can be called from a project's CMakeLists.txt file, which
+    # can invoke this function in CMake scripting mode (-P). If that is the case,
+    # we do not have access to convenience functions like idf_component_get_property.
+    # In scripting mode, the path to espefuse.py must be passed in via the
+    # 'ESPEFUSEPY' variable using the -D flag.
+    #
+    # When called during the normal build configuration phase, 'ESPEFUSEPY' is not
+    # defined as a variable, and we must fetch it from the esptool_py component's
+    # properties.
+    if(NOT DEFINED ESPEFUSEPY)
+        idf_component_get_property(ESPEFUSEPY esptool_py ESPEFUSEPY_CMD)
+    endif()
     set(SERIAL_TOOL ${ESPEFUSEPY})
     if(${ESPEFUSEPY_OFFLINE})
         set(VIRT_OPTION "--virt")

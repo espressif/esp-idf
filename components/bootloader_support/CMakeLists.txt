@@ -28,7 +28,7 @@ if(esp_tee_build)
 
     idf_component_register(SRCS ${tee_srcs}
                            INCLUDE_DIRS ${tee_inc_dirs}
-                           PRIV_REQUIRES efuse esp_app_format)
+                           PRIV_REQUIRES efuse esp_app_format esptool_py)
     return()
 endif()
 
@@ -72,7 +72,7 @@ endif()
 if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
     set(include_dirs "include" "bootloader_flash/include"
         "private_include")
-    set(priv_requires micro-ecc spi_flash efuse esp_bootloader_format esp_app_format)
+    set(priv_requires micro-ecc spi_flash efuse esp_bootloader_format esp_app_format esptool_py)
     list(APPEND srcs
     "src/bootloader_init.c"
     "src/bootloader_clock_loader.c"
@@ -89,7 +89,7 @@ else()
     set(include_dirs "include" "bootloader_flash/include")
     set(priv_include_dirs "private_include")
     # heap is required for `heap_memory_layout.h` header
-    set(priv_requires spi_flash mbedtls efuse heap esp_bootloader_format esp_app_format)
+    set(priv_requires spi_flash mbedtls efuse heap esp_bootloader_format esp_app_format esptool_py)
 endif()
 
 if(BOOTLOADER_BUILD)
@@ -153,6 +153,7 @@ if(NOT BOOTLOADER_BUILD)
 endif()
 
 if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME))
+    idf_component_get_property(espsecure_py_cmd esptool_py ESPSECUREPY_CMD)
     if(BOOTLOADER_BUILD)
         # Whether CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES or not, we need verification key to embed
         # in the library.
@@ -165,7 +166,7 @@ if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE
                 "signature_verification_key.bin"
                 ABSOLUTE BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
             add_custom_command(OUTPUT "${secure_boot_verification_key}"
-                COMMAND ${ESPSECUREPY}
+                COMMAND ${espsecure_py_cmd}
                 extract_public_key --keyfile "${secure_boot_signing_key}"
                 "${secure_boot_verification_key}"
                 DEPENDS ${secure_boot_signing_key}
@@ -193,7 +194,7 @@ if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE
                 ABSOLUTE BASE_DIR "${project_dir}")
 
             add_custom_command(OUTPUT "${secure_boot_verification_key}"
-                COMMAND ${ESPSECUREPY}
+                COMMAND ${espsecure_py_cmd}
                 extract_public_key --keyfile "${secure_boot_signing_key}"
                 "${secure_boot_verification_key}"
                 WORKING_DIRECTORY ${project_dir}

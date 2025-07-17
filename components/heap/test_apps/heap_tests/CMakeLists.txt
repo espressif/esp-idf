@@ -9,6 +9,7 @@ set(COMPONENTS main)
 
 project(test_heap)
 
+idf_build_get_property(elf EXECUTABLE)
 string(JOIN "," ignore_refs
     heap_caps_*/__func__*
     tlsf_*/__func__*

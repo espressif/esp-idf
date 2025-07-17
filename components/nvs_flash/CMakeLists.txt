@@ -63,7 +63,7 @@ else()
     if(${target} STREQUAL "linux")
         set(priv_requires spi_flash)
     else()
-        set(priv_requires spi_flash newlib)
+        set(priv_requires spi_flash newlib esptool_py)
     endif()
 
     idf_component_register(SRCS "${srcs}"
