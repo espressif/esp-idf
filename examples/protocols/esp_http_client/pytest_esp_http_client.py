@@ -109,9 +109,6 @@ def test_examples_protocol_esp_http_client_dynamic_buffer(dut: Dut) -> None:
 
 
 @pytest.mark.host_test
-# Currently we are just testing the build for esp_http_client on Linux target. So skipping the test run.
-# Later we will enable the test run for Linux target as well.
-@pytest.mark.skipif('config.getvalue("target") == "linux"', reason='Do not run on Linux')
 @pytest.mark.parametrize(
     'config',
     [
@@ -121,5 +118,11 @@ def test_examples_protocol_esp_http_client_dynamic_buffer(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['linux'], indirect=['target'])
-def test_examples_protocol_esp_http_client_linux(dut: Dut) -> None:
+def test_examples_protocol_esp_http_client_linux(target: str, dut: Dut) -> None:
+    if target == 'linux':
+        pytest.skip(
+            'Currently we are just testing the build for esp_http_client on Linux target. '
+            'So skipping the test run. Later we will enable the test run for Linux target as well.'
+        )
+
     dut.expect('Finish http example', timeout=60)

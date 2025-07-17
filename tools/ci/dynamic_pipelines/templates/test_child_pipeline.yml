@@ -47,7 +47,11 @@ generate_pytest_child_pipeline:
     - build
     - shiny
   needs:
-    - build_test_related_apps  # won't work if the parallel count exceeds 100, now it's around 50
+    - job: build_test_related_apps
+      optional: true
+    - job: build_non_test_related_apps  # make sure all build jobs are passed
+      optional: true
+      artifacts: false
     - pipeline: $PARENT_PIPELINE_ID
       job: pipeline_variables
   artifacts:

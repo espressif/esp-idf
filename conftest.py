@@ -26,7 +26,6 @@ import signal
 import time
 import typing as t
 from copy import deepcopy
-from telnetlib import Telnet
 from urllib.parse import quote
 
 import common_test_methods  # noqa: F401
@@ -48,6 +47,7 @@ from pytest_embedded.utils import to_bytes
 from pytest_embedded.utils import to_str
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.unity_tester import CaseTester
+from pytest_embedded_jtag._telnetlib.telnetlib import Telnet  # python 3.13 removed telnetlib, use this instead
 
 
 ############
@@ -300,13 +300,19 @@ def build_dir(
     """
     # download from minio on CI
     case: PytestCase = request.node.stash[IDF_CI_PYTEST_CASE_KEY]
-    if app_downloader:
+    if 'skip_app_downloader' in case.all_markers:
+        logging.debug('skip_app_downloader marker found, skip downloading app')
+        downloader = None
+    else:
+        downloader = app_downloader
+
+    if downloader:
         # somehow hardcoded...
         app_build_path = os.path.join(idf_relpath(app_path), f'build_{target}_{config}')
         if requires_elf_or_map(case):
-            app_downloader.download_app(app_build_path)
+            downloader.download_app(app_build_path)
         else:
-            app_downloader.download_app(app_build_path, 'flash')
+            downloader.download_app(app_build_path, 'flash')
         check_dirs = [f'build_{target}_{config}']
     else:
         check_dirs = []

@@ -150,6 +150,9 @@ class IdfLocalPlugin:
             if 'esp32c2' in case.targets and 'xtal_26mhz' not in case.all_markers:
                 item.add_marker('xtal_40mhz')
 
+            if 'host_test' in case.all_markers:
+                item.add_marker('skip_app_downloader')  # host_test jobs will build the apps itself
+
     def pytest_custom_test_case_name(self, item: Function) -> str:
         return item.funcargs.get('test_case_name', item.nodeid)  # type: ignore
 

@@ -51,6 +51,8 @@
 /.github/workflows/                   @esp-idf-codeowners/ci
 /.gitlab-ci.yml                       @esp-idf-codeowners/ci
 /.gitlab/ci/                          @esp-idf-codeowners/ci
+/.idf_build_apps.toml                 @esp-idf-codeowners/ci
+/.idf_ci.toml                         @esp-idf-codeowners/ci
 /.pre-commit-config.yaml              @esp-idf-codeowners/ci
 /.readthedocs.yml                     @esp-idf-codeowners/docs
 /.vale.ini                            @esp-idf-codeowners/docs
