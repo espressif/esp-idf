@@ -27,6 +27,7 @@ typedef struct {
      */
     int cs_id;
     int freq_mhz;                   ///< The frequency of flash chip(MHZ)
+    spi_clock_source_t clock_source;///< Select SPI clock source, `SPI_CLK_SRC_DEFAULT` by default.
 } esp_flash_spi_device_config_t;
 
 /**
