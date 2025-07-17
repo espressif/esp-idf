@@ -870,8 +870,6 @@ examples/protocols/http_server/advanced_tests/main/tests.c
 examples/protocols/http_server/async_handlers/main/main.c
 examples/protocols/http_server/captive_portal/main/main.c
 examples/protocols/http_server/persistent_sockets/main/main.c
-examples/protocols/http_server/restful_server/main/esp_rest_main.c
-examples/protocols/http_server/restful_server/main/rest_server.c
 examples/protocols/http_server/simple/main/main.c
 examples/protocols/http_server/ws_echo_server/main/ws_echo_server.c
 examples/protocols/https_server/simple/main/main.c

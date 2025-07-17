@@ -106,7 +106,7 @@ Asynchronous Handlers
 RESTful API
 -----------
 
-:example:`protocols/http_server/restful_server` demonstrates how to implement a RESTful API server and HTTP server, with a frontend browser UI, and designs several APIs to fetch resources, using mDNS to parse the domain name, and deploying the webpage to host PC via semihost technology or to SPI flash or SD Card.
+:example:`protocols/http_server/restful_server` demonstrates how to implement a RESTful API server and web server, with a modern frontend UI, and designs several APIs to fetch resources, using mDNS to parse the domain name, and deploying the webpage to SPI flash.
 
 URI Handlers
 ------------
