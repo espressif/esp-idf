@@ -15,7 +15,7 @@
 #include "esp_private/uart_share_hw_ctrl.h"
 
 #include "driver/uart.h"
-#include "soc/uart_channel.h"
+#include "soc/uart_pins.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -41,7 +41,7 @@ static void console_none_print(void)
 
     ESP_ERROR_CHECK(uart_driver_install(CONSOLE_UART_NUM, 256, 0, 0, NULL, 0));
     ESP_ERROR_CHECK(uart_param_config(CONSOLE_UART_NUM, &uart_config));
-    ESP_ERROR_CHECK(uart_set_pin(CONSOLE_UART_NUM, UART_NUM_0_TXD_DIRECT_GPIO_NUM, UART_NUM_0_RXD_DIRECT_GPIO_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+    ESP_ERROR_CHECK(uart_set_pin(CONSOLE_UART_NUM, U0TXD_GPIO_NUM, U0RXD_GPIO_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
     // Configure a temporary buffer for the incoming data
     uint8_t data[] = "This message will be printed even with CONFIG_ESP_CONSOLE_NONE\r\n";

@@ -22,7 +22,7 @@
 #include "hal/gpio_hal.h"
 #include "hal/rtc_io_hal.h"
 #include "soc/rtc_io_periph.h"
-#include "soc/uart_channel.h"
+#include "soc/uart_pins.h"
 
 #include "hal/rtc_hal.h"
 
@@ -93,11 +93,11 @@ void esp_sleep_enable_gpio_switch(bool enable)
         if (GPIO_IS_VALID_GPIO(gpio_num)) {
 #if CONFIG_ESP_CONSOLE_UART
 #if CONFIG_ESP_CONSOLE_UART_CUSTOM
-            const int uart_tx_gpio = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : UART_NUM_0_TXD_DIRECT_GPIO_NUM;
-            const int uart_rx_gpio = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : UART_NUM_0_RXD_DIRECT_GPIO_NUM;
+            const int uart_tx_gpio = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : U0TXD_GPIO_NUM;
+            const int uart_rx_gpio = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : U0RXD_GPIO_NUM;
             if ((gpio_num == uart_tx_gpio) || (gpio_num == uart_rx_gpio)) {
 #else
-            if ((gpio_num == UART_NUM_0_TXD_DIRECT_GPIO_NUM) || (gpio_num == UART_NUM_0_RXD_DIRECT_GPIO_NUM)) {
+            if ((gpio_num == U0TXD_GPIO_NUM) || (gpio_num == U0RXD_GPIO_NUM)) {
 #endif
                 gpio_sleep_sel_dis(gpio_num);
                 continue;
