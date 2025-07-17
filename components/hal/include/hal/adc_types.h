@@ -7,7 +7,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
 #include "esp_attr.h"
@@ -159,7 +158,7 @@ typedef enum {
 /*---------------------------------------------------------------
                     Output Format
 ---------------------------------------------------------------*/
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+#if SOC_IS(ESP32) || SOC_IS(ESP32S2)
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.
@@ -184,7 +183,7 @@ typedef struct {
     };
 } adc_digi_output_data_t;
 
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
+#elif SOC_IS(ESP32C3) || SOC_IS(ESP32C2)
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.
@@ -204,7 +203,7 @@ typedef struct {
     };
 } adc_digi_output_data_t;
 
-#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32P4
+#elif SOC_IS(ESP32S3) || SOC_IS(ESP32P4)
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.
@@ -224,7 +223,7 @@ typedef struct {
     };
 } adc_digi_output_data_t;
 
-#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
+#elif SOC_IS(ESP32C6) || SOC_IS(ESP32H2) || SOC_IS(ESP32C5) || SOC_IS(ESP32C61)
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.

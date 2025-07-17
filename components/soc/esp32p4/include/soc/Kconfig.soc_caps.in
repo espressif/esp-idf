@@ -1563,10 +1563,6 @@ config SOC_SPI_SUPPORT_CLK_RC_FAST
     bool
     default y
 
-config SOC_SPI_SUPPORT_CLK_SPLL
-    bool
-    default y
-
 config SOC_MSPI_HAS_INDEPENT_IOMUX
     bool
     default y
@@ -1578,10 +1574,6 @@ config SOC_MEMSPI_IS_INDEPENDENT
 config SOC_SPI_MAX_PRE_DIVIDER
     int
     default 16
-
-config SOC_LP_SPI_PERIPH_NUM
-    bool
-    default y
 
 config SOC_LP_SPI_MAXIMUM_BUFFER_SIZE
     int
@@ -1651,10 +1643,6 @@ config SOC_MEMSPI_SRC_FREQ_120M_SUPPORTED
     bool
     default y
 
-config SOC_MEMSPI_FLASH_PSRAM_INDEPENDENT
-    bool
-    default y
-
 config SOC_SYSTIMER_COUNTER_NUM
     int
     default 2
@@ -1698,30 +1686,6 @@ config SOC_LP_TIMER_BIT_WIDTH_LO
 config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
-
-config SOC_TIMER_GROUPS
-    int
-    default 2
-
-config SOC_TIMER_GROUP_TIMERS_PER_GROUP
-    int
-    default 2
-
-config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
-    int
-    default 54
-
-config SOC_TIMER_GROUP_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_TIMER_GROUP_SUPPORT_RC_FAST
-    bool
-    default y
-
-config SOC_TIMER_GROUP_TOTAL_TIMERS
-    int
-    default 4
 
 config SOC_TIMER_SUPPORT_ETM
     bool
@@ -2075,10 +2039,6 @@ config SOC_PM_RETENTION_MODULE_NUM
     int
     default 64
 
-config SOC_PSRAM_VDD_POWER_MPLL
-    bool
-    default y
-
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y
@@ -2112,10 +2072,6 @@ config SOC_CLK_LP_FAST_SUPPORT_XTAL
     default y
 
 config SOC_PERIPH_CLK_CTRL_SHARED
-    bool
-    default y
-
-config SOC_TEMPERATURE_SENSOR_LP_PLL_SUPPORT
     bool
     default y
 
@@ -2183,23 +2139,11 @@ config SOC_I3C_MASTER_PERIPH_NUM
     bool
     default y
 
-config SOC_I3C_MASTER_ADDRESS_TABLE_NUM
-    int
-    default 12
-
-config SOC_I3C_MASTER_COMMAND_TABLE_NUM
-    int
-    default 12
-
 config SOC_LP_CORE_SUPPORT_ETM
     bool
     default y
 
 config SOC_LP_CORE_SUPPORT_LP_ADC
-    bool
-    default y
-
-config SOC_LP_CORE_SUPPORT_LP_VAD
     bool
     default y
 

@@ -14,7 +14,7 @@
 // Set the maximum log level for gptimer driver
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #endif
-#include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -69,7 +69,7 @@ typedef struct gptimer_t gptimer_t;
 typedef struct gptimer_group_t {
     int group_id;
     portMUX_TYPE spinlock; // to protect per-group register level concurrent access
-    gptimer_t *timers[SOC_TIMER_GROUP_TIMERS_PER_GROUP];
+    gptimer_t *timers[SOC_GPTIMER_ATTR(TIMERS_PER_TIMG)];
 } gptimer_group_t;
 
 typedef enum {

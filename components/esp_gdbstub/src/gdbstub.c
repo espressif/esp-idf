@@ -120,10 +120,10 @@ static wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
 static bool rtc_wdt_ctx_enabled = false;
 static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
 static bool wdt0_context_enabled = false;
-#if SOC_TIMER_GROUPS >= 2
+#if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
 static wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
 static bool wdt1_context_enabled = false;
-#endif // SOC_TIMER_GROUPS
+#endif // SOC_MODULE_ATTR(TIMG, INST_NUM)
 
 /**
  * Disable all enabled WDTs
@@ -131,7 +131,7 @@ static bool wdt1_context_enabled = false;
 static inline void disable_all_wdts(void)
 {
     wdt0_context_enabled = wdt_hal_is_enabled(&wdt0_context);
-    #if SOC_TIMER_GROUPS >= 2
+    #if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
     wdt1_context_enabled = wdt_hal_is_enabled(&wdt1_context);
     #endif
     rtc_wdt_ctx_enabled = wdt_hal_is_enabled(&rtc_wdt_ctx);
@@ -144,7 +144,7 @@ static inline void disable_all_wdts(void)
         wdt_hal_write_protect_enable(&wdt0_context);
     }
 
-    #if SOC_TIMER_GROUPS >= 2
+    #if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
     /* Interrupt WDT is the Main Watchdog Timer of Timer Group 1 */
     if (true == wdt1_context_enabled) {
         wdt_hal_write_protect_disable(&wdt1_context);
@@ -152,7 +152,7 @@ static inline void disable_all_wdts(void)
         wdt_hal_feed(&wdt1_context);
         wdt_hal_write_protect_enable(&wdt1_context);
     }
-    #endif // SOC_TIMER_GROUPS >= 2
+    #endif // SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
 
     if (true == rtc_wdt_ctx_enabled) {
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
@@ -173,14 +173,14 @@ static inline void enable_all_wdts(void)
         wdt_hal_enable(&wdt0_context);
         wdt_hal_write_protect_enable(&wdt0_context);
     }
-    #if SOC_TIMER_GROUPS >= 2
+    #if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
     /* Interrupt WDT is the Main Watchdog Timer of Timer Group 1 */
     if (false == wdt1_context_enabled) {
         wdt_hal_write_protect_disable(&wdt1_context);
         wdt_hal_enable(&wdt1_context);
         wdt_hal_write_protect_enable(&wdt1_context);
     }
-    #endif // SOC_TIMER_GROUPS >= 2
+    #endif // SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
 
     if (false == rtc_wdt_ctx_enabled) {
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);

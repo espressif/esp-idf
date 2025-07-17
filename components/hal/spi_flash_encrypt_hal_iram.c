@@ -12,12 +12,12 @@
 void spi_flash_encryption_hal_enable(void)
 {
     spi_flash_encrypt_ll_enable();
-#if CONFIG_IDF_TARGET_ESP32S2
+#if SOC_IS(ESP32S2)
     spi_flash_encrypt_ll_aes_accelerator_enable();
-#endif //CONFIG_IDF_TARGET_ESP32S2
-#if !CONFIG_IDF_TARGET_ESP32
+#endif //SOC_IS(ESP32S2)
+#if !SOC_IS(ESP32)
     spi_flash_encrypt_ll_type(FLASH_ENCRYPTION_MANU);
-#endif // !CONFIG_IDF_TARGET_ESP32
+#endif // !SOC_IS(ESP32)
 }
 
 void spi_flash_encryption_hal_disable(void)
@@ -27,9 +27,9 @@ void spi_flash_encryption_hal_disable(void)
 
 void spi_flash_encryption_hal_prepare(uint32_t address, const uint32_t* buffer, uint32_t size)
 {
-#if !CONFIG_IDF_TARGET_ESP32
+#if !SOC_IS(ESP32)
     spi_flash_encrypt_ll_buffer_length(size);
-#endif // !CONFIG_IDF_TARGET_ESP32
+#endif // !SOC_IS(ESP32)
     spi_flash_encrypt_ll_address_save(address);
     spi_flash_encrypt_ll_plaintext_save(address, buffer, size);
     spi_flash_encrypt_ll_calculate_start();

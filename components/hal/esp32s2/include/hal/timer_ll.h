@@ -22,7 +22,12 @@ extern "C" {
 
 // Get timer group register base address with giving group number
 #define TIMER_LL_GET_HW(group_id) ((group_id == 0) ? (&TIMERG0) : (&TIMERG1))
+
+// Get alarm interrupt mask with the given timer ID
 #define TIMER_LL_EVENT_ALARM(timer_id) (1 << (timer_id))
+
+// Support APB as function clock
+#define TIMER_LL_FUNC_CLOCK_SUPPORT_APB 1
 
 /**
  * @brief Enable the bus clock for timer group module

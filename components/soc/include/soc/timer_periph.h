@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,39 +7,42 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 #include "soc/timer_group_reg.h"
 #include "soc/timer_group_struct.h"
-#include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 #include "soc/periph_defs.h"
 #include "soc/regdma.h"
 
-#if SOC_PAU_SUPPORTED
+#if SOC_HAS(PAU)
 #include "soc/retention_periph_defs.h"
-#endif // SOC_PAU_SUPPORTED
+#endif // SOC_HAS(PAU)
+
+// helper macros to access module attributes
+#define SOC_TIMG_ATTR(_attr)    SOC_MODULE_ATTR(TIMG, _attr)
+#define SOC_GPTIMER_ATTR(_attr) SOC_MODULE_ATTR(GPTIMER, _attr)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct {
-    struct {
-        const char *module_name[SOC_TIMER_GROUP_TIMERS_PER_GROUP];
-        const periph_module_t module; // Peripheral module
-        const int timer_irq_id[SOC_TIMER_GROUP_TIMERS_PER_GROUP]; // interrupt source ID
-    } groups[SOC_TIMER_GROUPS];
-} timer_group_signal_conn_t;
+    const char *module_name;              // Module name
+    const periph_module_t parent_module;  // GPTimer is a submodule under the timer group
+    const int irq_id;                     // interrupt source ID
+} soc_timg_gptimer_signal_desc_t;
 
-extern const timer_group_signal_conn_t timer_group_periph_signals;
+extern const soc_timg_gptimer_signal_desc_t soc_timg_gptimer_signals[SOC_TIMG_ATTR(INST_NUM)][SOC_GPTIMER_ATTR(TIMERS_PER_TIMG)];
 
-#if SOC_PAU_SUPPORTED && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#if SOC_HAS(PAU)
 typedef struct {
-    const periph_retention_module_t module;
-    const regdma_entries_config_t *regdma_entry_array;
-    uint32_t array_size;
-} tg_timer_reg_retention_info_t;
+    const periph_retention_module_t module;             // ID of the GPTimer as a retention module
+    const regdma_entries_config_t *regdma_entry_array;  // Array of regdma entries for retention
+    const size_t array_size;                            // Size of the regdma_entry_array
+} soc_timg_gptimer_retention_desc_t;
 
-extern const tg_timer_reg_retention_info_t tg_timer_reg_retention_info[SOC_TIMER_GROUPS][SOC_TIMER_GROUP_TIMERS_PER_GROUP];
-#endif // SOC_TIMER_SUPPORT_SLEEP_RETENTION
+extern const soc_timg_gptimer_retention_desc_t soc_timg_gptimer_retention_infos[SOC_TIMG_ATTR(INST_NUM)][SOC_GPTIMER_ATTR(TIMERS_PER_TIMG)];
+#endif // SOC_HAS(PAU)
 
 #ifdef __cplusplus
 }

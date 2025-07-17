@@ -21,6 +21,12 @@
 
 #pragma once
 
+#if __has_include("soc/soc_caps_eval.h")
+#include "soc/soc_caps_eval.h"
+#endif
+
+#define _SOC_CAPS_TARGET_IS_HOST 1 // [gen_soc_caps:ignore]
+
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_EFUSE_SUPPORTED                 (1)
 #define SOC_EFUSE_KEY_PURPOSE_FIELD         (1)

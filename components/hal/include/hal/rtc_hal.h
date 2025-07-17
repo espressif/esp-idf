@@ -9,9 +9,8 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 #include "hal/gpio_types.h"
-#include "sdkconfig.h"
 
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if SOC_IS(ESP32) || SOC_IS(ESP32C2) || SOC_IS(ESP32C3) || SOC_IS(ESP32S2) || SOC_IS(ESP32S3)
 #include "hal/rtc_cntl_ll.h"
 #endif
 

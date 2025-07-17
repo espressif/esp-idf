@@ -16,6 +16,12 @@
 
 #pragma once
 
+#if __has_include("soc/soc_caps_eval.h")
+#include "soc/soc_caps_eval.h"
+#endif
+
+#define _SOC_CAPS_TARGET_IS_ESP32H2 1 // [gen_soc_caps:ignore]
+
 #ifdef __has_include
 #  if __has_include("sdkconfig.h")
 #    include "sdkconfig.h"
@@ -472,12 +478,6 @@
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
-#define SOC_TIMER_GROUPS                  (2)
-#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1U)
-#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
-#define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
-#define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
-#define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 #define SOC_TIMER_SUPPORT_ETM             (1)
 #define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
 
