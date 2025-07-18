@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1006,7 +1006,7 @@ static inline uint32_t cache_ll_get_line_size(uint32_t cache_level, cache_type_t
  * @param len               vaddr length
  */
 __attribute__((always_inline))
-static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
+static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t bus_id, uint32_t vaddr_start, uint32_t len)
 {
     return (cache_bus_mask_t)(CACHE_LL_DEFAULT_IBUS_MASK | CACHE_LL_DEFAULT_DBUS_MASK);
 }
@@ -1018,7 +1018,7 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
  * @param mask        To know which buses should be enabled
  */
 __attribute__((always_inline))
-static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_enable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
     //not used, for compatibility
 }
@@ -1030,7 +1030,7 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
  * @param mask        To know which buses should be disabled
  */
 __attribute__((always_inline))
-static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_disable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
     //not used, for compatibility
 }
@@ -1038,14 +1038,13 @@ static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t m
 /**
  * @brief Get the buses of a particular cache that are mapped to a virtual address range
  *
- * @param cache_id          cache ID
+ * @param cache_id          cache ID (when l1 cache is per core)
  * @param vaddr_start       virtual address start
  * @param len               vaddr length
  */
 __attribute__((always_inline))
 static inline cache_bus_mask_t cache_ll_l2_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
-    (void)cache_id;
     cache_bus_mask_t mask = (cache_bus_mask_t)0;
 
     uint32_t vaddr_end = vaddr_start + len - 1;
