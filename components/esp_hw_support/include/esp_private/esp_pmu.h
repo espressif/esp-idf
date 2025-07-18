@@ -12,6 +12,7 @@
 #include <stdlib.h>
 
 #include "soc/soc_caps.h"
+#include "soc/clk_tree_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -204,18 +205,20 @@ bool pmu_sleep_pll_already_enabled(void);
  * @brief Calculate the hardware time overhead during sleep to compensate for sleep time
  *
  * @param pd_flags flags indicates the power domain that will be powered down
+ * @param slowclk_src slow clock source of pmu
  * @param slowclk_period re-calibrated slow clock period
  * @param fastclk_period re-calibrated fast clock period
  *
  * @return hardware time overhead in us
  */
-uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period);
+uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, soc_rtc_slow_clk_src_t slowclk_src, uint32_t slowclk_period, uint32_t fastclk_period);
 
 /**
  * @brief Get default sleep configuration
  * @param config pmu_sleep_config instance
  * @param pd_flags flags indicates the power domain that will be powered down
  * @param adjustment total software and hardware time overhead
+ * @param slowclk_src slow clock source of pmu
  * @param slowclk_period re-calibrated slow clock period in microseconds,
  *                       Q13.19 fixed point format
  * @param fastclk_period re-calibrated fast clock period in microseconds,
@@ -224,7 +227,7 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_pe
 
  * @return hardware time overhead in us
  */
-const pmu_sleep_config_t* pmu_sleep_config_default(pmu_sleep_config_t *config, uint32_t pd_flags, uint32_t adjustment, uint32_t slowclk_period, uint32_t fastclk_period, bool dslp);
+const pmu_sleep_config_t* pmu_sleep_config_default(pmu_sleep_config_t *config, uint32_t pd_flags, uint32_t adjustment, soc_rtc_slow_clk_src_t slowclk_src, uint32_t slowclk_period, uint32_t fastclk_period, bool dslp);
 
 /**
  * @brief Prepare the chip to enter sleep mode

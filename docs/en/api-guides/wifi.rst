@@ -1824,7 +1824,11 @@ At the start of `Interval` time, RF, PHY, BB would be turned on and kept for `Wi
 
  - Event `WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START`_ would be posted at the start of `Interval`. Since `Window` also starts at that moment, its recommended to TX in that event.
 
- - At connected state, the start of `Interval` would be aligned with TBTT.
+ - At connected state, the start of `Interval` would be aligned with TBTT. To improve the packet reception success rate in connectionless modules, the sender and receiver can be connected to the same AP, and packets can be transmitted within the event `WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START`_. This synchronization helps align the connectionless modules transmission window.
+
+ .. only:: esp32
+
+    On the ESP32, TBTT timing is affected by DFS(Dynamic Frequency Scaling). To synchronize the connectionless modules transmission window using TBTT on the ESP32, DFS must be disabled.
 
 **Window**
 
