@@ -28,8 +28,6 @@
 #include "soc/pcr_struct.h"
 #include "esp_rom_sys.h"
 
-//TODO: [ESP32H4] IDF-12388 inherited from verification branch, need check
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -522,11 +520,8 @@ static inline void spimem_flash_ll_set_mosi_bitlen(spi_mem_dev_t *dev, uint32_t 
 static inline void spimem_flash_ll_set_command(spi_mem_dev_t *dev, uint32_t command, uint32_t bitlen)
 {
     dev->user.usr_command = 1;
-    typeof(dev->user2) user2 = {
-        .usr_command_value = command,
-        .usr_command_bitlen = (bitlen - 1),
-    };
-    dev->user2.val = user2.val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user2, usr_command_value, command);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user2, usr_command_bitlen, (bitlen - 1));
 }
 
 /**
@@ -561,7 +556,7 @@ static inline void spimem_flash_ll_set_addr_bitlen(spi_mem_dev_t *dev, uint32_t 
 static inline void spimem_flash_ll_set_extra_address(spi_mem_dev_t *dev, uint32_t extra_addr)
 {
     dev->cache_fctrl.usr_addr_4byte = 0;
-    dev->rd_status.wb_mode = extra_addr;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->rd_status, wb_mode, extra_addr);
 }
 
 /**
@@ -607,12 +602,12 @@ static inline void spimem_flash_ll_set_dummy(spi_mem_dev_t *dev, uint32_t dummy_
  */
 static inline void spimem_flash_ll_set_hold(spi_mem_dev_t *dev, uint32_t hold_n)
 {
-    //TODO: [ESP32H4] IDF-12388
+    //not supported on esp32h4
 }
 
 static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_setup_time)
 {
-    //TODO: [ESP32H4] IDF-12388
+    //not supported on esp32h4
 }
 
 /**
@@ -625,7 +620,24 @@ static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_
  */
 static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
 {
-    return 64;
+    uint8_t clock_val = 0;
+    switch (PCR.mspi_clk_conf.mspi_func_clk_sel) {
+    case 0:
+        clock_val = 48;
+        break;
+    case 1:
+        clock_val = 8;
+        break;
+    case 2:
+        clock_val = 64;
+        break;
+    case 3:
+        clock_val = 48;
+        break;
+    default:
+        HAL_ASSERT(false);
+    }
+    return clock_val;
 }
 
 /**

@@ -603,14 +603,12 @@ static inline void spimem_flash_ll_set_dummy(spi_mem_dev_t *dev, uint32_t dummy_
  */
 static inline void spimem_flash_ll_set_hold(spi_mem_dev_t *dev, uint32_t hold_n)
 {
-    // dev->ctrl2.cs_hold_time = hold_n - 1;
-    // dev->user.cs_hold = (hold_n > 0? 1: 0);
+    // not supported on esp32h21
 }
 
 static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_setup_time)
 {
-    // dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
-    // dev->ctrl2.cs_setup_time = cs_setup_time - 1;
+    // not supported on esp32h21
 }
 
 /**
@@ -626,7 +624,7 @@ static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
     uint8_t clock_val = 0;
     switch (PCR.mspi_conf.mspi_clk_sel) {
     case 0:
-        clock_val = 32;
+        clock_val = 48;
         break;
     case 1:
         clock_val = 8;
@@ -635,7 +633,7 @@ static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
         clock_val = 64;
         break;
     case 3:
-        clock_val = 32;
+        clock_val = 48;
         break;
     default:
         HAL_ASSERT(false);
