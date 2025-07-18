@@ -9,6 +9,7 @@ import sys
 import textwrap
 from datetime import datetime
 from datetime import timedelta
+from importlib.metadata import version as importlib_version
 from pathlib import Path
 from subprocess import run
 from tempfile import NamedTemporaryFile
@@ -19,7 +20,6 @@ from typing import List
 from typing import TextIO
 from typing import Union
 
-import click
 from console_output import debug
 from console_output import status_message
 from console_output import warn
@@ -122,7 +122,7 @@ class UnixShell(Shell):
         print(f'. {self.script_file_path}')
 
     def click_ver(self) -> int:
-        return int(click.__version__.split('.')[0])
+        return int(importlib_version('click').split('.')[0])
 
 
 class BashShell(UnixShell):
