@@ -162,19 +162,33 @@ static void ble_hci_rx_acl(uint8_t *data, uint16_t len)
     struct os_mbuf *m = NULL;
     int rc;
     int sr;
+
+    int retry_count = 1;
+
     if (len < BLE_HCI_DATA_HDR_SZ || len > MYNEWT_VAL(BLE_TRANSPORT_ACL_SIZE)) {
         return;
     }
 
-    do {
+
+   do {
         m = ble_transport_alloc_acl_from_ll();
 
         if (!m) {
-            esp_rom_printf("Failed to allocate buffer, retrying ");
-	    /* Give some time to free buffer and try again */
-	    vTaskDelay(1);
+            if (retry_count % 5) {
+                esp_rom_printf("ACL buf alloc failed %d times\n", retry_count);
+                esp_rom_printf("Free ACL mbufs: %d\n", os_msys_num_free());
+            }
+
+            vTaskDelay(1);
+            retry_count++;
+
+            if (retry_count >= 30) {
+		esp_rom_printf("MBUF alloc stuck");
+                return;
+            }
 	}
-    }while(!m);
+    } while (!m);
+
 
     if ((rc = os_mbuf_append(m, data, len)) != 0) {
         esp_rom_printf("%s failed to os_mbuf_append; rc = %d", __func__, rc);
