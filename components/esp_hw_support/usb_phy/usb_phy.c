@@ -20,13 +20,6 @@
 #include "hal/gpio_ll.h"
 #include "soc/soc_caps.h"
 
-/// Check whether it is a valid GPIO number
-#define GPIO_IS_VALID_GPIO(gpio_num)        ((gpio_num >= 0) && \
-                                              (((1ULL << (gpio_num)) & SOC_GPIO_VALID_GPIO_MASK) != 0))
-/// Check whether it can be a valid GPIO number of output mode
-#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) ((gpio_num >= 0) && \
-                                              (((1ULL << (gpio_num)) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0))
-
 #if SOC_USB_UTMI_PHY_NO_POWER_OFF_ISO
 #include "esp_private/sleep_usb.h"
 #include "esp_sleep.h"
