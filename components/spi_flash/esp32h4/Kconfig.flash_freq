@@ -5,6 +5,4 @@ choice ESPTOOLPY_FLASHFREQ
         bool "48 MHz"
     config ESPTOOLPY_FLASHFREQ_24M
         bool "24 MHz"
-    config ESPTOOLPY_FLASHFREQ_12M
-        bool "12 MHz"
 endchoice

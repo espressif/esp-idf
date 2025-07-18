@@ -73,6 +73,7 @@ esp_err_t spi_flash_chip_gd_detect_size(esp_flash_t *chip, uint32_t *size)
 #define FLASH_SIZE_MASK     0xFF
 #define GD25Q_PRODUCT_ID    0x4000
 #define GD25LQ_PRODUCT_ID   0x6000
+#define GD25UF_PRODUCT_ID   0x8300
 
 #define WRSR_16B_REQUIRED(chip_id) (((chip_id) & FLASH_ID_MASK) == GD25LQ_PRODUCT_ID || \
                                     ((chip_id) & FLASH_SIZE_MASK) <= 0x15)
@@ -88,7 +89,7 @@ esp_err_t spi_flash_chip_gd_probe(esp_flash_t *chip, uint32_t flash_id)
     }
 
     uint32_t product_id = flash_id & FLASH_ID_MASK;
-    if (product_id != GD25Q_PRODUCT_ID && product_id != GD25LQ_PRODUCT_ID) {
+    if (product_id != GD25Q_PRODUCT_ID && product_id != GD25LQ_PRODUCT_ID && product_id != GD25UF_PRODUCT_ID) {
         return ESP_ERR_NOT_FOUND;
     }
 
