@@ -101,7 +101,7 @@ end
 
 __main
 
-set click_version (python -c 'import click; print(click.__version__.split(".")[0])')
+set click_version (python -c 'from importlib.metadata import version as importlib_version; print(importlib_version('click').split(".")[0])')
 if test $click_version -lt 8
     eval (env _IDF.PY_COMPLETE=source_fish idf.py)
 else

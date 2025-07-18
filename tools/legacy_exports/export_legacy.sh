@@ -209,7 +209,7 @@ __cleanup() {
 
 
 __enable_autocomplete() {
-    click_version="$(python -c 'import click; print(click.__version__.split(".")[0])')"
+    click_version="$(python -c 'from importlib.metadata import version as importlib_version; print(importlib_version('click').split(".")[0])')"
     if [ "${click_version}" -lt 8 ]
     then
         SOURCE_ZSH=source_zsh
