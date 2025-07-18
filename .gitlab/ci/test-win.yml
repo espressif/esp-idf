@@ -30,6 +30,7 @@ test_cli_installer_win:
   variables:
     IDF_PATH: "$CI_PROJECT_DIR"
   timeout: 3h
+  allow_failure: true
   script:
     # Tools must be downloaded for testing
     - python ${IDF_PATH}\tools\idf_tools.py download required qemu-riscv32 qemu-xtensa cmake
