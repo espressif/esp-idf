@@ -48,7 +48,8 @@ Removed option for compiling bootloader with no optimization level (-O0, `CONFIG
 Time
 ----
 
-The deprecated ``{IDF_TARGET_NAME}/rtc.h`` header file has been removed. Please include the replacement ``esp_rtc_time.h`` instead.
+- The deprecated ``{IDF_TARGET_NAME}/rtc.h`` header file has been removed. Please include the replacement ``esp_rtc_time.h`` instead.
+- The deprecated ``RTC_CLK_SRC_INT_RC32K`` menuconfig option has been removed. Internal RC32K clock is unstable at extreme temperatures, please don't use this clock as the RTC slow clock source.
 
 HW-Support
 ----------
