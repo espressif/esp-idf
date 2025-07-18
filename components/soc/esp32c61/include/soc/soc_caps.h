@@ -64,7 +64,7 @@
 #define SOC_MODEM_CLOCK_SUPPORTED       1
 #define SOC_REG_I2C_SUPPORTED           1
 #define SOC_ETM_SUPPORTED               1
-//  \#define SOC_SDIO_SLAVE_SUPPORTED        0
+#define SOC_SDIO_SLAVE_SUPPORTED        1
 #define SOC_PAU_SUPPORTED               1
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
 #define SOC_DEEP_SLEEP_SUPPORTED        1
