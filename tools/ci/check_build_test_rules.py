@@ -2,8 +2,6 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
-import difflib
-import inspect
 import os
 import re
 import sys
@@ -12,8 +10,13 @@ from collections import defaultdict
 from pathlib import Path
 
 import yaml
+from idf_build_apps import App
+from idf_build_apps import find_apps
+from idf_build_apps.constants import SUPPORTED_TARGETS
 from idf_ci_utils import IDF_PATH
 from idf_ci_utils import idf_relpath
+from rich.console import Console
+from rich.table import Table
 
 # | Supported Target | ... |
 # | ---------------- | --- |
@@ -38,119 +41,123 @@ USUAL_TO_FORMAL = {
 FORMAL_TO_USUAL = {v: k for k, v in USUAL_TO_FORMAL.items()}
 
 
-def diff_lists(
-    list1: t.List[str], list2: t.List[str], title1: str, title2: str, excluded: t.Optional[t.List[str]] = None
+def print_diff_table(
+    list1: list[str], list2: list[str], title1: str, title2: str, excluded: t.Optional[list[str]] = None
 ) -> None:
-    """
-    Compare two lists and print the differences.
-    """
-    diff = difflib.ndiff(list1, list2)
-    if not diff:
+    left_set = set(list1)
+    right_set = set(list2)
+
+    if left_set == right_set:
         return
 
-    print(f'Difference between {title1} and {title2}:')
-    for line in diff:
-        last_part = line.split(' ', 1)[-1]
-        if excluded and last_part in excluded:
-            print(line + ' ' + '(excluded)')
+    all_items = sorted(left_set.union(right_set))
+    left_column = []
+    right_column = []
+
+    for item in all_items:
+        if item in left_set and item not in right_set:
+            if excluded and item in excluded:
+                left_column.append(f'[red]{item}[/red] (excluded)')
+            else:
+                left_column.append(f'[red]{item}[/red]')
+            right_column.append('')
+        elif item in right_set and item not in left_set:
+            if excluded and item in excluded:
+                right_column.append(f'[green]{item}[/green] (excluded)')
+            else:
+                right_column.append(f'[green]{item}[/green]')
+            left_column.append('')
         else:
-            print(line)
+            left_column.append(item)
+            right_column.append(item)
+
+    table = Table(show_header=True, header_style='bold magenta')
+    table.add_column(title1.strip(), justify='left')
+    table.add_column(title2.strip(), justify='left')
+
+    for l_col, r_col in zip(left_column, right_column):
+        table.add_row(l_col, r_col)
+
+    console = Console()
+    console.print(table)
 
 
-def check_readme(
-    paths: t.List[str],
-    exclude_dirs: t.Optional[t.List[str]] = None,
-    extra_default_build_targets: t.Optional[t.List[str]] = None,
-) -> None:
-    from idf_build_apps import App
-    from idf_build_apps import find_apps
-    from idf_build_apps.constants import SUPPORTED_TARGETS
+def get_readme_path(app_dir: str) -> t.Optional[str]:
+    readme_path = os.path.join(app_dir, 'README.md')
 
-    def get_readme_path(_app_dir: str) -> t.Optional[str]:
-        _readme_path = os.path.join(_app_dir, 'README.md')
+    if not os.path.isfile(readme_path):
+        readme_path = os.path.join(app_dir, '..', 'README.md')
 
-        if not os.path.isfile(_readme_path):
-            _readme_path = os.path.join(_app_dir, '..', 'README.md')
+        if not os.path.isfile(readme_path):
+            readme_path = None  # type: ignore
 
-            if not os.path.isfile(_readme_path):
-                _readme_path = None  # type: ignore
+    return readme_path
 
-        return _readme_path
 
-    def _generate_new_support_table_str(_app_dir: str, _manifest_supported_targets: t.List[str]) -> str:
-        # extra space here
-        table_headers = [f'{USUAL_TO_FORMAL[target]}' for target in _manifest_supported_targets]
-        table_headers = ['Supported Targets'] + table_headers
+def generate_new_support_table(targets: list[str]) -> str:
+    # extra space here
+    table_headers = [f'{USUAL_TO_FORMAL[target]}' for target in targets]
+    table_headers = ['Supported Targets'] + table_headers
 
-        res = '| ' + ' | '.join(table_headers) + ' |\n'
-        res += '| ' + ' | '.join(['-' * len(item) for item in table_headers]) + ' |'
+    res = '| ' + ' | '.join(table_headers) + ' |\n'
+    res += '| ' + ' | '.join(['-' * len(item) for item in table_headers]) + ' |'
 
-        return res
+    return res
 
-    def _parse_existing_support_table_str(_app_dir: str) -> t.Tuple[t.Optional[str], t.List[str]]:
-        _readme_path = get_readme_path(_app_dir)
-        if not _readme_path:
-            return None, SUPPORTED_TARGETS
 
-        with open(_readme_path, encoding='utf8') as _fr:
-            _readme_str = _fr.read()
+def parse_existing_table(app_dir: str) -> t.Tuple[t.Optional[str], list[str]]:
+    readme_path = get_readme_path(app_dir)
+    if not readme_path:
+        return None, SUPPORTED_TARGETS
 
-        support_string = SUPPORTED_TARGETS_TABLE_REGEX.findall(_readme_str)
-        if not support_string:
-            return None, SUPPORTED_TARGETS
+    with open(readme_path, encoding='utf8') as _fr:
+        readme_str = _fr.read()
 
-        # old style
-        parts = [part.strip() for part in support_string[0].split('\n', 1)[0].split('|') if part.strip()]
-        return support_string[0].strip(), [FORMAL_TO_USUAL[part] for part in parts[1:] if part in FORMAL_TO_USUAL]
+    support_string = SUPPORTED_TARGETS_TABLE_REGEX.findall(readme_str)
+    if not support_string:
+        return None, SUPPORTED_TARGETS
 
-    def check_enable_build(
-        _app_dir: str, _manifest_supported_targets: t.List[str], _old_supported_targets: t.List[str]
-    ) -> bool:
-        if _manifest_supported_targets == sorted(_old_supported_targets):
-            return True
+    # old style
+    parts = [part.strip() for part in support_string[0].split('\n', 1)[0].split('|') if part.strip()]
+    return support_string[0].strip(), [FORMAL_TO_USUAL[part] for part in parts[1:] if part in FORMAL_TO_USUAL]
 
-        _readme_path = get_readme_path(_app_dir)
-        diff_lists(
-            sorted(_manifest_supported_targets),
-            sorted(_old_supported_targets),
-            'manifest-enabled targets',
-            f'supported targets table in {_readme_path}',
-        )
-        print(
-            inspect.cleandoc(
-                f"""
-            To enable/disable build targets, please modify your manifest file:
-                {App.MANIFEST.most_suitable_rule(app_dir).by_manifest_file}
 
-            Please refer to https://docs.espressif.com/projects/idf-build-apps/en/latest/references/manifest.html#enable-disable-rules
-            for more details.
-            """
-            )
-        )
-
-        return False
-
+def get_grouped_apps(
+    paths: list[str],
+    exclude_dirs: t.Optional[list[str]] = None,
+    extra_targets: t.Optional[list[str]] = None,
+) -> t.Dict[str, t.List[App]]:
     apps = sorted(
         find_apps(
             paths,
             'all',
             exclude_list=exclude_dirs or [],
-            default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
+            default_build_targets=SUPPORTED_TARGETS + (extra_targets or []),
         )
     )
-    exit_code = 0
-    apps_grouped: t.Dict[str, t.List[App]] = defaultdict(list)
+
+    grouped_apps: t.Dict[str, t.List[App]] = defaultdict(list)
     for app in apps:
-        apps_grouped[app.app_dir].append(app)
+        grouped_apps[app.app_dir].append(app)
 
-    for app_dir in apps_grouped:
-        replace_str, old_supported_targets = _parse_existing_support_table_str(app_dir)
+    return grouped_apps
 
-        # manifest defined ones
-        manifest_defined_targets = sorted(
+
+def check_readme(
+    paths: list[str],
+    exclude_dirs: t.Optional[list[str]] = None,
+    *,
+    extra_targets: t.Optional[list[str]] = None,
+) -> None:
+    grouped_apps = get_grouped_apps(paths, exclude_dirs, extra_targets)
+    exit_code = 0
+
+    for app_dir, apps in grouped_apps.items():
+        old_table, old_targets = parse_existing_table(app_dir)
+        manifest_targets = sorted(
             {
                 target
-                for app in apps_grouped[app_dir]
+                for app in apps
                 for target in (
                     App.MANIFEST.enable_build_targets(app_dir)
                     + App.MANIFEST.enable_build_targets(app_dir, config_name=app.config_name)
@@ -158,157 +165,134 @@ def check_readme(
             }
         )
 
-        success = check_enable_build(app_dir, manifest_defined_targets, old_supported_targets)
-        if not success:
-            print(f'check_enable_build failed for app: {app_dir}')
-            print('-' * 80)
+        if sorted(manifest_targets) != sorted(old_targets):
+            print(f'Build target MISMATCH!!!: {app_dir}')
+            print_diff_table(manifest_targets, old_targets, 'Manifest', 'README')
+            print(f'Corresponding manifest file: {App.MANIFEST.most_suitable_rule(app_dir).by_manifest_file}')
             exit_code = 1
 
         readme_path = get_readme_path(app_dir)
-        new_readme_str = _generate_new_support_table_str(app_dir, manifest_defined_targets)
+        new_table = generate_new_support_table(manifest_targets)
         # no readme, create a new file
         if not readme_path:
             with open(os.path.join(app_dir, 'README.md'), 'w') as fw:
-                fw.write(new_readme_str + '\n')
-            print(f'Added new README file: {os.path.join(app_dir, "README.md")}')
-            print('-' * 80)
+                fw.write(new_table + '\n')
+            print(f'Auto-fixing: Added new README: {os.path.join(app_dir, "README.md")}')
             exit_code = 1
         # has old table, but different string
-        elif replace_str and replace_str != new_readme_str:
+        elif old_table and old_table != new_table:
             with open(readme_path) as fr:
                 readme_str = fr.read()
 
             with open(readme_path, 'w') as fw:
-                fw.write(readme_str.replace(replace_str, new_readme_str))
-                print(f'Modified README file: {readme_path}')
-            print('-' * 80)
+                fw.write(readme_str.replace(old_table, new_table))
+            print(f'Auto-fixing: Updated README: {readme_path}')
             exit_code = 1
         # does not have old table
-        elif not replace_str:
+        elif not old_table:
             with open(readme_path) as fr:
                 readme_str = fr.read()
 
             with open(readme_path, 'w') as fw:
-                fw.write(new_readme_str + '\n\n' + readme_str)  # extra new line
-
-            print(f'Modified README file: {readme_path}')
-            print('-' * 80)
+                fw.write(new_table + '\n\n' + readme_str)  # extra new line
+            print(f'Auto-fixing: Modified README: {readme_path}')
             exit_code = 1
 
+        if exit_code != 0:
+            print('')  # extra new line for readability
+
+    if exit_code != 0:
+        print('Related documentation:')
+        print(
+            '\t- https://docs.espressif.com/projects/idf-build-apps/en/latest/references/manifest.html#enable-disable-rules'
+        )
     sys.exit(exit_code)
 
 
-def check_test_scripts(
-    paths: t.List[str],
-    exclude_dirs: t.Optional[t.List[str]] = None,
-    bypass_check_test_targets: t.Optional[t.List[str]] = None,
-    extra_default_build_targets: t.Optional[t.List[str]] = None,
-) -> None:
-    from idf_build_apps import App
-    from idf_build_apps import find_apps
-    from idf_build_apps.constants import SUPPORTED_TARGETS
+def get_grouped_cases(paths: list[str]) -> t.Dict[str, t.Dict[str, t.Set[str]]]:
+    """
+    return something like this:
+    {
+         app_dir: {
+             'script_paths': {'path/to/script1', 'path/to/script2'},
+             'targets': {'esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c2', 'linux'},
+         }
+    }
+    """
     from idf_ci import get_pytest_cases
-
-    # takes long time, run only in CI
-    # dict:
-    # {
-    #      app_dir: {
-    #          'script_paths': {'path/to/script1', 'path/to/script2'},
-    #          'targets': {'esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c2', 'linux'},
-    #      }
-    # }
-    def check_enable_test(
-        _app_dir: str,
-        _manifest_verified_targets: t.List[str],
-        _pytest_app_dir_targets_dict: t.Dict[str, t.Dict[str, t.Set[str]]],
-    ) -> bool:
-        if _app_dir in _pytest_app_dir_targets_dict:
-            test_script_paths = _pytest_app_dir_targets_dict[_app_dir]['script_paths']
-            actual_verified_targets = sorted(set(_pytest_app_dir_targets_dict[_app_dir]['targets']))
-        else:
-            return True  # no test case
-
-        if _manifest_verified_targets == actual_verified_targets:
-            return True
-        elif not (set(_manifest_verified_targets) - set(actual_verified_targets + (bypass_check_test_targets or []))):
-            return True
-
-        _title2 = 'pytest enabled targets in test scripts: \n'
-        for script_path in test_script_paths:
-            _title2 += f'  - {script_path}\n'
-
-        diff_lists(
-            _manifest_verified_targets,
-            actual_verified_targets,
-            'manifest-enabled targets',
-            _title2.rstrip(),
-            excluded=bypass_check_test_targets or [],
-        )
-        print(
-            inspect.cleandoc(
-                f"""
-            To enable/disable test targets, please modify your manifest file:
-                {App.MANIFEST.most_suitable_rule(app_dir).by_manifest_file}
-
-            To understand how to enable/disable test targets, please refer to:
-            https://docs.espressif.com/projects/pytest-embedded/en/latest/usages/markers.html#idf-parametrize
-
-            """
-            )
-        )
-        return False
-
-    apps = sorted(
-        find_apps(
-            paths,
-            'all',
-            exclude_list=exclude_dirs or [],
-            default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
-        )
-    )
-    apps_grouped: t.Dict[str, t.List[App]] = defaultdict(list)
-    for app in apps:
-        apps_grouped[app.app_dir].append(app)
-
-    exit_code = 0
 
     pytest_cases = get_pytest_cases(
         paths=paths,
         marker_expr=None,  # don't filter host_test
     )
 
-    pytest_app_dir_targets_dict = {}
+    grouped_cases = {}
     for case in pytest_cases:
         for pytest_app in case.apps:
             app_dir = idf_relpath(pytest_app.path)
-            if app_dir not in pytest_app_dir_targets_dict:
-                pytest_app_dir_targets_dict[app_dir] = {
+            if app_dir not in grouped_cases:
+                grouped_cases[app_dir] = {
                     'script_paths': {case.path},
                     'targets': {pytest_app.target},
                 }
             else:
-                pytest_app_dir_targets_dict[app_dir]['script_paths'].add(case.path)
-                pytest_app_dir_targets_dict[app_dir]['targets'].add(pytest_app.target)
+                grouped_cases[app_dir]['script_paths'].add(case.path)
+                grouped_cases[app_dir]['targets'].add(pytest_app.target)
 
-    for app_dir in apps_grouped:
+    return grouped_cases
+
+
+def check_test_scripts(
+    paths: list[str],
+    exclude_dirs: t.Optional[list[str]] = None,
+    *,
+    extra_targets: t.Optional[list[str]] = None,
+    bypass_targets: t.Optional[list[str]] = None,
+) -> None:
+    # takes long time, run only in CI
+    grouped_apps = get_grouped_apps(paths, exclude_dirs, extra_targets)
+    grouped_cases = get_grouped_cases(paths)
+    exit_code = 0
+
+    for app_dir, apps in grouped_apps.items():
+        if app_dir not in grouped_cases:
+            continue
+
         # manifest defined ones
-        manifest_defined_targets = sorted(
+        manifest_targets = sorted(
             {
                 target
-                for app in apps_grouped[app_dir]
+                for app in apps
                 for target in (
                     App.MANIFEST.enable_test_targets(app_dir)
                     + App.MANIFEST.enable_test_targets(app_dir, config_name=app.config_name)
                 )
             }
         )
+        actual_targets = sorted(grouped_cases[app_dir]['targets'])
 
-        success = check_enable_test(app_dir, manifest_defined_targets, pytest_app_dir_targets_dict)
-        if not success:
-            print(f'check_enable_test failed for app: {app_dir}')
-            print('-' * 80)
-            exit_code = 1
+        if manifest_targets == actual_targets:
             continue
+        if not (set(manifest_targets) - set(actual_targets + (bypass_targets or []))):
+            continue
+
+        print(f'Test target MISMATCH!!!: {app_dir}')
+        print_diff_table(manifest_targets, actual_targets, 'Manifest', 'Test Scripts', bypass_targets)
+        print(f'Corresponding manifest file: {App.MANIFEST.most_suitable_rule(app_dir).by_manifest_file}')
+        print('Corresponding test scripts:')
+        for script_path in grouped_cases[app_dir]['script_paths']:
+            print('  - ' + script_path)
+        exit_code = 1
+        print('')  # extra new line for readability
+
+    if exit_code != 0:
+        print('Related documentation:')
+        print(
+            '\t- https://docs.espressif.com/projects/idf-build-apps/en/latest/references/manifest.html#enable-disable-rules'
+        )
+        print(
+            '\t- https://docs.espressif.com/projects/esp-idf/en/latest/esp32/contribute/esp-idf-tests-with-pytest.html'
+        )
 
     sys.exit(exit_code)
 
@@ -320,30 +304,24 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='ESP-IDF apps build/test checker')
     action = parser.add_subparsers(dest='action')
 
-    _check_readme = action.add_parser('check-readmes')
-    _check_readme.add_argument('paths', nargs='+', help='check under paths')
-    _check_readme.add_argument(
+    readme_parser = action.add_parser('check-readmes')
+    readme_parser.add_argument('paths', nargs='+', help='check under paths')
+    readme_parser.add_argument(
         '-c',
         '--config',
         default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'default-build-test-rules.yml'),
-        help='default build test rules config file',
+        help='config file',
     )
 
-    _check_test_scripts = action.add_parser('check-test-scripts')
-    _check_test_scripts.add_argument('paths', nargs='+', help='check under paths')
-    _check_test_scripts.add_argument(
+    test_parser = action.add_parser('check-test-scripts')
+    test_parser.add_argument('paths', nargs='+', help='check under paths')
+    test_parser.add_argument(
         '-c',
         '--config',
         default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'default-build-test-rules.yml'),
-        help='default build test rules config file',
+        help='config file',
     )
-
-    _check_exist = action.add_parser('check-exist')
-
     arg = parser.parse_args()
-
-    # Since this script is executed from the pre-commit hook environment, make sure IDF_PATH is set
-    os.environ['IDF_PATH'] = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
     check_dirs = set()
 
@@ -373,30 +351,34 @@ if __name__ == '__main__':
     else:
         _exclude_dirs = [os.path.join(IDF_PATH, 'tools', 'templates', 'sample_project')]
 
-    extra_default_build_targets_list: t.List[str] = []
-    bypass_check_test_targets_list: t.List[str] = []
+    _extra_targets: list[str] = []
+    _bypass_targets: list[str] = []
     if arg.config:
         with open(arg.config) as fr:
             configs = yaml.safe_load(fr)
 
         if configs:
-            extra_default_build_targets_list = configs.get('extra_default_build_targets') or []
-            bypass_check_test_targets_list = configs.get('bypass_check_test_targets') or []
+            _extra_targets = configs.get('extra_default_build_targets') or []
+            _bypass_targets = configs.get('bypass_check_test_targets') or []
+
+    os.environ.update(
+        {
+            'IDF_PATH': IDF_PATH,
+            'INCLUDE_NIGHTLY_RUN': '1',
+            'NIGHTLY_RUN': '1',
+        }
+    )
 
     if arg.action == 'check-readmes':
-        os.environ['INCLUDE_NIGHTLY_RUN'] = '1'
-        os.environ['NIGHTLY_RUN'] = '1'
         check_readme(
             list(check_dirs),
-            exclude_dirs=_exclude_dirs,
-            extra_default_build_targets=extra_default_build_targets_list,
+            _exclude_dirs,
+            extra_targets=_extra_targets,
         )
     elif arg.action == 'check-test-scripts':
-        os.environ['INCLUDE_NIGHTLY_RUN'] = '1'
-        os.environ['NIGHTLY_RUN'] = '1'
         check_test_scripts(
             list(check_dirs),
-            exclude_dirs=_exclude_dirs,
-            bypass_check_test_targets=bypass_check_test_targets_list,
-            extra_default_build_targets=extra_default_build_targets_list,
+            _exclude_dirs,
+            extra_targets=_extra_targets,
+            bypass_targets=_bypass_targets,
         )
