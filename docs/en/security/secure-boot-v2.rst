@@ -15,11 +15,13 @@ Secure Boot v2
 
 {IDF_TARGET_ECO_VERSION:default="", esp32="(v3.0 onwards)", esp32c3="(v0.3 onwards)"}
 
-{IDF_TARGET_RSA_TIME:default="", esp32c5="about 3.6 ms", esp32c6="about 2.7 ms", esp32h2="about 4.5 ms", esp32p4="about 2.4 ms"}
+{IDF_TARGET_RSA_TIME:default="", esp32c5="about 12.1 ms", esp32c6="about 10.2 ms", esp32h2="about 18.3 ms", esp32p4="about 14.8 ms"}
 
-{IDF_TARGET_ECDSA_P256_TIME:default="", esp32c5="about 1.6 ms", esp32c6="about 21.5 ms", esp32h2="about 36 ms", esp32p4="about 10.3 ms"}
+{IDF_TARGET_ECDSA_P256_TIME:default="", esp32c5="about 5.6 ms", esp32c6="about 83.9 ms", esp32h2="about 76.2 ms", esp32p4="about 61.1 ms"}
 
-{IDF_TARGET_ECDSA_P384_TIME:default="", esp32c5="about 6.2 ms"}
+{IDF_TARGET_ECDSA_P384_TIME:default="", esp32c5="about 20.6 ms"}
+
+{IDF_TARGET_ROM_CPU_FREQ:default="", esp32c5="48 MHz", esp32c6="40 MHz", esp32h2="32 MHz", esp32p4="40 MHz"}
 
 {IDF_TARGET_CPU_FREQ:default="", esp32c5="240 MHz", esp32c6="160 MHz", esp32h2="96 MHz", esp32p4="360 MHz"}
 
@@ -142,10 +144,10 @@ The Secure Boot v2 process follows these steps:
 
 .. only:: SOC_SECURE_BOOT_V2_RSA and SOC_SECURE_BOOT_V2_ECC
 
-   .. _secure-boot-v2-scheme-selection::
+   .. _secure-boot-v2-scheme-selection:
 
    Secure Boot v2 Scheme Selection
-   -------------------------------
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
    {IDF_TARGET_NAME} has a provision to choose between the RSA scheme and the ECDSA scheme. Only one scheme can be used per device.
 
@@ -166,13 +168,13 @@ The Secure Boot v2 process follows these steps:
             - **CPU Frequency**
           * - RSA-3072
             - {IDF_TARGET_RSA_TIME}
-            - {IDF_TARGET_CPU_FREQ}
+            - {IDF_TARGET_ROM_CPU_FREQ}
           * - ECDSA-P256
             - {IDF_TARGET_ECDSA_P256_TIME}
-            - {IDF_TARGET_CPU_FREQ}
+            - {IDF_TARGET_ROM_CPU_FREQ}
           * - ECDSA-P384
             - {IDF_TARGET_ECDSA_P384_TIME}
-            - {IDF_TARGET_CPU_FREQ}
+            - {IDF_TARGET_ROM_CPU_FREQ}
 
    .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
 
@@ -185,12 +187,12 @@ The Secure Boot v2 process follows these steps:
             - **CPU Frequency**
           * - RSA-3072
             - {IDF_TARGET_RSA_TIME}
-            - {IDF_TARGET_CPU_FREQ}
+            - {IDF_TARGET_ROM_CPU_FREQ}
           * - ECDSA-P256
             - {IDF_TARGET_ECDSA_P256_TIME}
-            - {IDF_TARGET_CPU_FREQ}
+            - {IDF_TARGET_ROM_CPU_FREQ}
 
-   The above table compares the time taken to verify a signature in a particular scheme. It does not indicate the boot-up time.
+   The above table compares the time taken for the first-stage bootloader to just verify the signature of the bootloader image in a particular scheme. It does not indicate the boot-up time. Also, note that the CPU frequency is lower because it is the frequency of the CPU when the first-stage bootloader is running.
 
 
 .. _signature-block-format:
@@ -717,7 +719,7 @@ Secure Boot Best Practices
 
         If Secure Boot V2 is configured using the ECDSA P-384 signature scheme, all signing keys used must be ECDSA-P384 keys. Using keys with different elliptic curves (e.g., P-192 or P-256) alongside P-384 is not supported and will cause signature verification to fail during boot.
 
-    .. _secure-boot-v2-key-revocation::
+    .. _secure-boot-v2-key-revocation:
 
     Key Revocation
     --------------
