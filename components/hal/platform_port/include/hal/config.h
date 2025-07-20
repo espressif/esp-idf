@@ -33,6 +33,12 @@ extern "C" {
  */
 #define HAL_CONFIG_SPI_FLASH_USE_ROM_API CONFIG_SPI_FLASH_ROM_IMPL
 
+/**
+ * @brief Enable this to use constant-time ECDSA signature generation.
+ *        This provides enhanced security against timing attacks.
+ */
+#define HAL_CONFIG_ECDSA_GEN_SIG_CM CONFIG_HAL_ECDSA_GEN_SIG_CM
+
 #ifdef __cplusplus
 }
 #endif
