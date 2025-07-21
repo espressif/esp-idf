@@ -24,6 +24,7 @@ PROVIDE ( LEDC                = 0x6001B000 );
 PROVIDE ( TWAI0               = 0x6001C000 );
 PROVIDE ( USB_SERIAL_JTAG     = 0x6001D000 );
 PROVIDE ( RMT                 = 0x6001E000 );
+PROVIDE ( RMTMEM              = 0x6001E400 );
 PROVIDE ( AHB_DMA             = 0x6001F000 );
 PROVIDE ( PAU                 = 0x60020000 );
 PROVIDE ( SOC_ETM             = 0x60021000 );

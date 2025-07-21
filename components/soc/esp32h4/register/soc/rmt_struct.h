@@ -778,13 +778,13 @@ typedef union {
 } rmt_date_reg_t;
 
 
-typedef struct {
+typedef struct rmt_dev_t {
     volatile rmt_chndata_reg_t chndata[4];
     volatile rmt_chnconf0_reg_t chnconf0[2];
-    volatile rmt_chmconf0_reg_t ch2conf0;
-    volatile rmt_chmconf1_reg_t ch2conf1;
-    volatile rmt_chmconf0_reg_t ch3conf0;
-    volatile rmt_chmconf1_reg_t ch3conf1;
+    volatile struct {
+        rmt_chmconf0_reg_t conf0;
+        rmt_chmconf1_reg_t conf1;
+    } chmconf[2];
     volatile rmt_chnstatus_reg_t chnstatus[2];
     volatile rmt_chmstatus_reg_t chmstatus[2];
     volatile rmt_int_raw_reg_t int_raw;

@@ -708,7 +708,7 @@ TEST_CASE("rmt tx gpio switch test", "[rmt]")
     printf("install tx channel\r\n");
     rmt_channel_handle_t tx_channel = NULL;
     TEST_ESP_OK(rmt_new_tx_channel(&tx_channel_cfg, &tx_channel));
-    printf("install bytes encoder\r\n");
+    printf("install copy encoder\r\n");
     rmt_encoder_handle_t copy_encoder = NULL;
     rmt_copy_encoder_config_t copy_encoder_config = {};
     TEST_ESP_OK(rmt_new_copy_encoder(&copy_encoder_config, &copy_encoder));

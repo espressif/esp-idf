@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -156,7 +156,7 @@ static void rmt_module_disable(void)
 {
     RMT_ENTER_CRITICAL();
     if (rmt_contex.rmt_module_enabled == true) {
-        rmt_ll_mem_force_power_off(rmt_contex.hal.regs);
+        rmt_ll_mem_force_low_power(rmt_contex.hal.regs);
         RMT_RCC_ATOMIC() {
             rmt_ll_enable_bus_clock(0, false);
         }
@@ -257,7 +257,7 @@ esp_err_t rmt_set_mem_pd(rmt_channel_t channel, bool pd_en)
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
     if (pd_en) {
-        rmt_ll_mem_force_power_off(rmt_contex.hal.regs);
+        rmt_ll_mem_force_low_power(rmt_contex.hal.regs);
     } else {
         rmt_ll_mem_power_by_pmu(rmt_contex.hal.regs);
     }

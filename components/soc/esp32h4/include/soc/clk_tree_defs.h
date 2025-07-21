@@ -199,6 +199,30 @@ typedef enum {
     TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_PLL_F48M,      /*!< Timer group clock source default choice is PLL_F48M */
 } soc_periph_tg_clk_src_legacy_t;
 
+//////////////////////////////////////////////////RMT///////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of RMT
+ */
+#define SOC_RMT_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+
+/**
+ * @brief Type of RMT clock source
+ */
+typedef enum {
+    RMT_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,   /*!< Select RC_FAST as the source clock */
+    RMT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
+    RMT_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,      /*!< Select XTAL as the default choice */
+} soc_periph_rmt_clk_src_t;
+
+/**
+ * @brief Type of RMT clock source, reserved for the legacy RMT driver
+ */
+typedef enum {
+    RMT_BASECLK_XTAL = SOC_MOD_CLK_XTAL,    /*!< RMT source clock is XTAL */
+    RMT_BASECLK_DEFAULT = SOC_MOD_CLK_XTAL, /*!< RMT source clock default choice is XTAL */
+} soc_periph_rmt_clk_src_legacy_t;
+
 ///////////////////////////////////////////////////UART/////////////////////////////////////////////////////////////////
 
 /**
