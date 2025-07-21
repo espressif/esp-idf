@@ -45,7 +45,7 @@ def test_lp_vad(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='lp_vad')
 
 
-# TODO: Enable LP I2C test for esp32p4 (IDF-9407)
+# TODO: Support LP I2C test for esp32p4 (IDF-9581)
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize(
@@ -57,9 +57,7 @@ def test_lp_vad(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_lp_core_multi_device(case_tester) -> None:  # type: ignore
-    for case in case_tester.test_menu:
-        if case.attributes.get('test_env', 'generic_multi_device') == 'generic_multi_device':
-            case_tester.run_multi_dev_case(case=case, reset=True)
+    case_tester.run_all_multi_dev_cases(reset=True)
 
 
 @pytest.mark.generic_multi_device

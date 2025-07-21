@@ -34,21 +34,13 @@ def test_ledc_psram(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(reset=True)
 
 
-@pytest.mark.temp_skip_ci(
-    targets=['esp32s3', 'esp32c61'], reason='s3 multi device runner has no psram, c61 lack of runner IDF-10949'
-)
+@pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='s3 multi device runner has no psram')
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize(
     'count, config',
     [
-        (
-            2,
-            'iram_safe',
-        ),
-        (
-            2,
-            'release',
-        ),
+        (2, 'iram_safe'),
+        (2, 'release'),
     ],
     indirect=True,
 )
