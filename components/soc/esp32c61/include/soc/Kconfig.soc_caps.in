@@ -155,6 +155,10 @@ config SOC_ETM_SUPPORTED
     bool
     default y
 
+config SOC_SDIO_SLAVE_SUPPORTED
+    bool
+    default y
+
 config SOC_PAU_SUPPORTED
     bool
     default y
