@@ -28,22 +28,6 @@
 extern "C" {
 #endif
 
-
-/**
- * @brief Macro to combine two key blocks into a single integer
- * @note Least significant 4 bits stores block number of the low key block, and the next 4 more significant bits store the high key block number.
- */
-#define ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS(blk_high, blk_low) (((blk_high) << 4) | (blk_low))
-
-/**
- * @brief Macro to extract high and low key block numbers from a combined integer
- * @note Extracts high block from bits 4-7 and low block from bits 0-3
- */
-#define ESP_TLS_ECDSA_EXTRACT_KEY_BLOCKS(combined_blk, blk_high, blk_low) do { \
-    (blk_high) = ((combined_blk) >> 4) & 0xF; \
-    (blk_low) = (combined_blk) & 0xF; \
-} while(0)
-
 /**
  *  @brief ESP-TLS Connection State
  */
@@ -117,7 +101,10 @@ typedef enum {
  */
 typedef enum {
     ESP_TLS_ECDSA_CURVE_SECP256R1 = 0,   /*!< Use SECP256R1 curve */
+#if SOC_ECDSA_SUPPORT_CURVE_P384
     ESP_TLS_ECDSA_CURVE_SECP384R1,       /*!< Use SECP384R1 curve */
+#endif
+    ESP_TLS_ECDSA_CURVE_MAX,            /*!< to indicate max */
 } esp_tls_ecdsa_curve_t;
 
 /**
@@ -192,7 +179,9 @@ typedef struct esp_tls_cfg {
 
     bool use_ecdsa_peripheral;              /*!< Use the ECDSA peripheral for the private key operations */
 
-    uint8_t ecdsa_key_efuse_blk;            /*!< The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. */
+    uint8_t ecdsa_key_efuse_blk;            /*!< The efuse block where ECDSA key is stored. For SECP384R1 curve, if two blocks are used, set this to the low block and use ecdsa_key_efuse_blk_high for the high block. */
+
+    uint8_t ecdsa_key_efuse_blk_high;       /*!< The high efuse block for ECDSA key (used only for SECP384R1 curve). If not set (0), only ecdsa_key_efuse_blk is used. */
 
     esp_tls_ecdsa_curve_t ecdsa_curve;      /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
 
@@ -338,7 +327,9 @@ typedef struct esp_tls_cfg_server {
 
     bool use_ecdsa_peripheral;                  /*!< Use ECDSA peripheral to use private key */
 
-    uint8_t ecdsa_key_efuse_blk;                /*!< The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. */
+    uint8_t ecdsa_key_efuse_blk;                /*!< The efuse block where ECDSA key is stored. For SECP384R1 curve, if two blocks are used, set this to the low block and use ecdsa_key_efuse_blk_high for the high block. */
+
+    uint8_t ecdsa_key_efuse_blk_high;           /*!< The high efuse block for ECDSA key (used only for SECP384R1 curve). If not set (0), only ecdsa_key_efuse_blk is used. */
 
     esp_tls_ecdsa_curve_t ecdsa_curve;          /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
 

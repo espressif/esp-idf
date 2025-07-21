@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,10 +100,13 @@ struct httpd_ssl_config {
     /** Use ECDSA peripheral to use private key */
     bool use_ecdsa_peripheral;
 
-    /*!< The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. The macro is defined in esp_tls.h */
+    /** The efuse block where ECDSA key is stored. For SECP384R1 curve, if two blocks are used, set this to the low block and use ecdsa_key_efuse_blk_high for the high block. */
     uint8_t ecdsa_key_efuse_blk;
 
-    /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
+    /** The high efuse block for ECDSA key (used only for SECP384R1 curve). If not set (0), only ecdsa_key_efuse_blk is used. */
+    uint8_t ecdsa_key_efuse_blk_high;
+
+    /** ECDSA curve to use (SECP256R1 or SECP384R1) */
     esp_tls_ecdsa_curve_t ecdsa_curve;
 
     /** Transport Mode (default secure) */
@@ -189,6 +192,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .prvtkey_len = 0,                             \
     .use_ecdsa_peripheral = false,                \
     .ecdsa_key_efuse_blk = 0,                     \
+    .ecdsa_key_efuse_blk_high = 0,                \
     .ecdsa_curve = ESP_TLS_ECDSA_CURVE_SECP256R1, \
     .transport_mode = HTTPD_SSL_TRANSPORT_SECURE, \
     .port_secure = 443,                           \

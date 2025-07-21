@@ -1,5 +1,5 @@
 if(NOT ${IDF_TARGET} STREQUAL "linux")
-    set(req lwip esp_event esp-tls)
+    set(req lwip esp_event)
 else()
     set(req linux esp_event)
 endif()

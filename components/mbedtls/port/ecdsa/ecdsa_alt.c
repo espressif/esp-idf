@@ -152,60 +152,44 @@ static void esp_ecdsa_release_hardware(void)
  */
 static int esp_ecdsa_validate_efuse_block(mbedtls_ecp_group_id grp_id, int efuse_blk)
 {
+    int low_blk = efuse_blk;
+    esp_efuse_purpose_t expected_key_purpose_low;
 #if SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES
-    esp_efuse_purpose_t expected_purpose;
-    esp_efuse_purpose_t actual_purpose;
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    int high_blk;
+    HAL_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, high_blk, low_blk);
+    esp_efuse_purpose_t expected_key_purpose_high;
+#endif
 
     switch (grp_id) {
         case MBEDTLS_ECP_DP_SECP192R1:
-            expected_purpose = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P192;
-            actual_purpose = esp_efuse_get_key_purpose((esp_efuse_block_t)efuse_blk);
-            if (actual_purpose != expected_purpose) {
-                ESP_LOGE(TAG, "Efuse block %d has purpose %d, expected %d", efuse_blk, actual_purpose, expected_purpose);
-                return MBEDTLS_ERR_ECP_INVALID_KEY;
-            }
+            expected_key_purpose_low = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P192;
             break;
         case MBEDTLS_ECP_DP_SECP256R1:
-            expected_purpose = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P256;
-            actual_purpose = esp_efuse_get_key_purpose((esp_efuse_block_t)efuse_blk);
-            if (actual_purpose != expected_purpose) {
-                ESP_LOGE(TAG, "Efuse block %d has purpose %d, expected %d", efuse_blk, actual_purpose, expected_purpose);
-                return MBEDTLS_ERR_ECP_INVALID_KEY;
-            }
+            expected_key_purpose_low = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P256;
             break;
 #if SOC_ECDSA_SUPPORT_CURVE_P384
         case MBEDTLS_ECP_DP_SECP384R1:
-            int high_blk, low_blk;
-            MBEDTLS_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, high_blk, low_blk);
-            // For P384, we need to check both blocks
-            esp_efuse_purpose_t high_purpose = esp_efuse_get_key_purpose((esp_efuse_block_t)high_blk);
-            esp_efuse_purpose_t low_purpose = esp_efuse_get_key_purpose((esp_efuse_block_t)low_blk);
-
-            if (high_purpose != ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H) {
-                ESP_LOGE(TAG, "Efuse block %d has purpose %d, expected P384_H (%d)",
-                        high_blk, high_purpose, ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H);
-                return MBEDTLS_ERR_ECP_INVALID_KEY;
-            }
-            if (low_purpose != ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L) {
-                ESP_LOGE(TAG, "Efuse block %d has purpose %d, expected P384_L (%d)",
-                        low_blk, low_purpose, ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L);
-                return MBEDTLS_ERR_ECP_INVALID_KEY;
-            }
+            expected_key_purpose_low = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L;
+            expected_key_purpose_high = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H;
             break;
 #endif
         default:
-            ESP_LOGE(TAG, "Invalid ECDSA curve id");
+            ESP_LOGE(TAG, "Unsupported ECDSA curve ID: %d", grp_id);
             return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 #else /* SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES */
-    // For generic ECDSA key purpose, validate the single block (efuse_blk)
-    esp_efuse_purpose_t actual_purpose = esp_efuse_get_key_purpose((esp_efuse_block_t)efuse_blk);
-    if (actual_purpose != ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY) {
-        ESP_LOGE(TAG, "Efuse block %d has purpose %d, expected ECDSA_KEY (%d)",
-                efuse_blk, actual_purpose, ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY);
+    expected_key_purpose_low = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY;
+#endif  /* !SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES */
+
+    if (expected_key_purpose_low != esp_efuse_get_key_purpose((esp_efuse_block_t)low_blk)
+#if SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES && SOC_ECDSA_SUPPORT_CURVE_P384
+        || expected_key_purpose_high != esp_efuse_get_key_purpose((esp_efuse_block_t)high_blk)
+#endif
+    ) {
+        ESP_LOGE(TAG, "Key burned in efuse has incorrect purpose");
         return MBEDTLS_ERR_ECP_INVALID_KEY;
     }
-#endif  /* !SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES */
 
     return 0;
 }
@@ -228,7 +212,7 @@ int esp_ecdsa_load_pubkey(mbedtls_ecp_keypair *keypair, int efuse_blk)
     bool use_km_key = (efuse_blk == USE_ECDSA_KEY_FROM_KEY_MANAGER)? true: false;
     if (!use_km_key) {
         int high_blk, low_blk;
-        MBEDTLS_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, high_blk, low_blk);
+        HAL_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, high_blk, low_blk);
 
         if (!is_efuse_blk_valid(high_blk, low_blk)) {
             ESP_LOGE(TAG, "Invalid efuse block selected");
@@ -343,7 +327,7 @@ int esp_ecdsa_privkey_load_mpi(mbedtls_mpi *key, int efuse_blk)
     bool use_km_key = (efuse_blk == USE_ECDSA_KEY_FROM_KEY_MANAGER)? true: false;
     if (!use_km_key) {
         int high_blk, low_blk;
-        MBEDTLS_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, high_blk, low_blk);
+        HAL_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, high_blk, low_blk);
 
         if (!is_efuse_blk_valid(high_blk, low_blk)) {
             ESP_LOGE(TAG, "Invalid efuse block selected");
@@ -384,7 +368,7 @@ int esp_ecdsa_privkey_load_pk_context(mbedtls_pk_context *key_ctx, int efuse_blk
     bool use_km_key = (efuse_blk == USE_ECDSA_KEY_FROM_KEY_MANAGER)? true: false;
     if (!use_km_key) {
         int high_blk, low_blk;
-        MBEDTLS_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, high_blk, low_blk);
+        HAL_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, high_blk, low_blk);
 
         if (!is_efuse_blk_valid(high_blk, low_blk)) {
             ESP_LOGE(TAG, "Invalid efuse block selected");

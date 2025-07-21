@@ -19,7 +19,7 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_INCLUDE_DIRS "private_include"
                     # mbedtls is public requirements because esp_tls.h
                     # includes mbedtls header files.
-                    REQUIRES mbedtls efuse
+                    REQUIRES mbedtls
                     PRIV_REQUIRES ${priv_req})
 
 if(CONFIG_ESP_TLS_USING_WOLFSSL)

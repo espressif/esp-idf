@@ -29,46 +29,27 @@ On {IDF_TARGET_NAME}, the ECDSA module works with a secret key burnt into an eFu
 ECDSA Key Storage
 ^^^^^^^^^^^^^^^^^
 
-ECDSA private keys are stored in eFuse key blocks. The number of key blocks required depends on the curve size:
+.. only:: SOC_ECDSA_SUPPORT_CURVE_P384
 
-- **P-192 and P-256 curves**: Require one eFuse key block (256 bits)
-- **P-384 curve**: Requires two eFuse key blocks (512 bits total)
+    ECDSA private keys are stored in eFuse key blocks. The number of key blocks required depends on the curve size:
 
-When using the P-384 curve or any other curves that require two key blocks, you must use the appropriate macro to combine the block numbers into a single integer that the ECDSA peripheral can understand:
+    - **P-256 curve**: Require one eFuse key block (256 bits)
+    - **P-384 curve**: Requires two eFuse key blocks (512 bits total)
 
-- **For mbedTLS applications**: Use :c:macro:`MBEDTLS_ECDSA_COMBINE_KEY_BLOCKS` macro (defined in ``ecdsa/ecdsa_alt.h``)
-- **For HAL applications**: Use :c:macro:`HAL_ECDSA_COMBINE_KEY_BLOCKS` macro (defined in ``hal/ecdsa_types.h``)
-- **For ESP-TLS applications**: Use :c:macro:`ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS` macro (defined in ``esp_tls.h``)
+    For curves requiring two key blocks (like P-384), configure the following fields:
 
-You can also extract the individual block numbers using the corresponding extract macro:
+    - Set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` to the low block number
+    - Set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` to the high block number
 
-- **For mbedTLS applications**: Use :c:macro:`MBEDTLS_ECDSA_EXTRACT_KEY_BLOCKS` macro
-- **For HAL applications**: Use :c:macro:`HAL_ECDSA_EXTRACT_KEY_BLOCKS` macro
-- **For ESP-TLS applications**: Use :c:macro:`ESP_TLS_ECDSA_EXTRACT_KEY_BLOCKS` macro
+    For single-block curves (like P-256), only set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` and leave :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` as 0 or unassigned.
 
-Here is an example of how to use these macros:
+.. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
 
-.. code-block:: c
+    ECDSA private keys are stored in eFuse key blocks. One eFuse key block (256 bits) is required for P-256 curve.
 
-    #include "ecdsa/ecdsa_alt.h"
+    Configure the following field:
 
-    // Example: Using P-384 curve which requires two key blocks
-    // Assuming you want to use key blocks 4 and 5
-    uint8_t block_low = 4;   // Lower key block
-    uint8_t block_high = 5;  // Higher key block
-
-    // Combine the two block numbers into a single integer
-    // Note: First parameter is high block, second parameter is low block
-    uint16_t combined_blocks = MBEDTLS_ECDSA_COMBINE_KEY_BLOCKS(block_high, block_low);
-
-    // Use the combined_blocks value in your ECDSA operations
-    // This value can be passed to mbedTLS ECDSA functions
-
-    // To extract the individual block numbers later
-    uint8_t extracted_block_low, extracted_block_high;
-    MBEDTLS_ECDSA_EXTRACT_KEY_BLOCKS(combined_blocks, &extracted_block_high, &extracted_block_low);
-
-    // extracted_block_low will be 4, extracted_block_high will be 5
+    - Set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` to the block number and leave :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` as 0 or unassigned.
 
 ECDSA key can be programmed externally through ``idf.py`` script. Here is an example of how to program the ECDSA key:
 

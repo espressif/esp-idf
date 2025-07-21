@@ -23,8 +23,6 @@
 #include "mbedtls/esp_mbedtls_dynamic.h"
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
 #include "mbedtls/ecp.h"
-#include "esp_efuse.h"
-#include "esp_efuse_chip.h"
 #include "ecdsa/ecdsa_alt.h"
 #endif
 
@@ -61,7 +59,7 @@ static mbedtls_x509_crt *global_cacert = NULL;
 #define NEWLIB_NANO_SIZE_T_COMPAT_CAST(size_t_var)  size_t_var
 #endif
 
-#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
 /**
  * @brief Convert ESP-TLS ECDSA curve enum to mbedTLS group ID
  * @param curve ESP-TLS ECDSA curve enum value
@@ -70,10 +68,6 @@ static mbedtls_x509_crt *global_cacert = NULL;
  */
 static esp_err_t esp_tls_ecdsa_curve_to_mbedtls_group_id(esp_tls_ecdsa_curve_t curve, mbedtls_ecp_group_id *grp_id)
 {
-    if (grp_id == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
     switch (curve) {
         case ESP_TLS_ECDSA_CURVE_SECP256R1:
             *grp_id = MBEDTLS_ECP_DP_SECP256R1;
@@ -82,7 +76,6 @@ static esp_err_t esp_tls_ecdsa_curve_to_mbedtls_group_id(esp_tls_ecdsa_curve_t c
             *grp_id = MBEDTLS_ECP_DP_SECP384R1;
             break;
         default:
-            ESP_LOGE(TAG, "Invalid ECDSA curve specified: %d", curve);
             return ESP_ERR_INVALID_ARG;
     }
     return ESP_OK;
@@ -793,7 +786,11 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
     }  else if (cfg->use_ecdsa_peripheral) {
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
         tls->use_ecdsa_peripheral = cfg->use_ecdsa_peripheral;
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+        tls->ecdsa_efuse_blk = HAL_ECDSA_COMBINE_KEY_BLOCKS(cfg->ecdsa_key_efuse_blk_high, cfg->ecdsa_key_efuse_blk);
+#else
         tls->ecdsa_efuse_blk = cfg->ecdsa_key_efuse_blk;
+#endif
         tls->ecdsa_curve = cfg->ecdsa_curve;
         esp_tls_pki_t pki = {
             .public_cert = &tls->servercert,
@@ -1041,7 +1038,11 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
     } else if (cfg->use_ecdsa_peripheral) {
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
         tls->use_ecdsa_peripheral = cfg->use_ecdsa_peripheral;
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+        tls->ecdsa_efuse_blk = HAL_ECDSA_COMBINE_KEY_BLOCKS(cfg->ecdsa_key_efuse_blk_high, cfg->ecdsa_key_efuse_blk);
+#else
         tls->ecdsa_efuse_blk = cfg->ecdsa_key_efuse_blk;
+#endif
         tls->ecdsa_curve = cfg->ecdsa_curve;
         esp_tls_pki_t pki = {
             .public_cert = &tls->clientcert,
@@ -1069,6 +1070,12 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         static int ecdsa_peripheral_supported_ciphersuites[4] = {0}; // Max 4 elements
         int ciphersuite_count = 0;
 
+        if (grp_id == MBEDTLS_ECP_DP_SECP384R1) {
+            ecdsa_peripheral_supported_ciphersuites[ciphersuite_count++] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384;
+        } else {
+            ecdsa_peripheral_supported_ciphersuites[ciphersuite_count++] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256;
+        }
+
 #if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
         if (grp_id == MBEDTLS_ECP_DP_SECP384R1) {
             ecdsa_peripheral_supported_ciphersuites[ciphersuite_count++] = MBEDTLS_TLS1_3_AES_256_GCM_SHA384;
@@ -1076,11 +1083,6 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             ecdsa_peripheral_supported_ciphersuites[ciphersuite_count++] = MBEDTLS_TLS1_3_AES_128_GCM_SHA256;
         }
 #endif
-        if (grp_id == MBEDTLS_ECP_DP_SECP384R1) {
-            ecdsa_peripheral_supported_ciphersuites[ciphersuite_count++] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384;
-        } else {
-            ecdsa_peripheral_supported_ciphersuites[ciphersuite_count++] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256;
-        }
 
         ESP_LOGD(TAG, "Set the ciphersuites list");
         mbedtls_ssl_conf_ciphersuites(&tls->conf, ecdsa_peripheral_supported_ciphersuites);

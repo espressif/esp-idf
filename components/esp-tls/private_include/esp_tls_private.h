@@ -15,7 +15,6 @@
 #include <fcntl.h>
 #include "esp_err.h"
 #include "esp_tls_errors.h"
-#include "esp_tls.h"
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
 #include "mbedtls/platform.h"
 #include "mbedtls/net_sockets.h"

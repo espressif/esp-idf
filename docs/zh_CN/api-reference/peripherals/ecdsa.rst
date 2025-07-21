@@ -29,46 +29,27 @@ ECDSA 外设可以为 TLS 双向身份验证等用例建立 **安全设备身份
 ECDSA 密钥存储
 ^^^^^^^^^^^^^^
 
-ECDSA 私钥存储在 eFuse 密钥块中。所需的密钥块数量取决于曲线大小：
+.. only:: SOC_ECDSA_SUPPORT_CURVE_P384
 
-- **P-192 和 P-256 曲线**：需要一个 eFuse 密钥块（256 位）
-- **P-384 曲线**：需要两个 eFuse 密钥块（总共 512 位）
+    ECDSA 私钥存储在 eFuse 密钥块中。所需的密钥块数量取决于曲线大小：
 
-使用 P-384 曲线或其他需要两个密钥块的曲线时，必须使用相应的宏将两个密钥块编号组合为一个整数，以便 ECDSA 外设能够识别：
+    - **P-256 曲线**：需要一个 eFuse 密钥块（256 位）
+    - **P-384 曲线**：需要两个 eFuse 密钥块（总共 512 位）
 
-- **对于 mbedTLS 应用程序**：使用 :c:macro:`MBEDTLS_ECDSA_COMBINE_KEY_BLOCKS` 宏（定义在 ``ecdsa/ecdsa_alt.h`` 中）
-- **对于 HAL 应用程序**：使用 :c:macro:`HAL_ECDSA_COMBINE_KEY_BLOCKS` 宏（定义在 ``hal/ecdsa_types.h`` 中）
-- **对于 ESP-TLS 应用程序**：使用 :c:macro:`ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS` 宏（定义在 ``esp_tls.h`` 中）
+    对于需要两个密钥块的曲线（如 P-384），配置以下字段：
 
-你还可以使用相应的提取宏来获取各个密钥块编号：
+    - 将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` 设置为低块号
+    - 将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` 设置为高块号
 
-- **对于 mbedTLS 应用程序**：使用 :c:macro:`MBEDTLS_ECDSA_EXTRACT_KEY_BLOCKS` 宏
-- **对于 HAL 应用程序**：使用 :c:macro:`HAL_ECDSA_EXTRACT_KEY_BLOCKS` 宏
-- **对于 ESP-TLS 应用程序**：使用 :c:macro:`ESP_TLS_ECDSA_EXTRACT_KEY_BLOCKS` 宏
+    对于单块曲线（如 P-256），只需设置 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk`，将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` 保持为 0 或不赋值。
 
-以下是使用这些宏的示例：
+.. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
 
-.. code-block:: c
+    ECDSA 私钥存储在 eFuse 密钥块中。一个 eFuse 密钥块（256 位）是 P-256 曲线所需的。
 
-    #include "ecdsa/ecdsa_alt.h"
+    配置以下字段：
 
-    // 示例：使用需要两个密钥块的 P-384 曲线
-    // 假设要使用密钥块 4 和 5
-    uint8_t block_low = 4;   // 较低编号的密钥块
-    uint8_t block_high = 5;  // 较高编号的密钥块
-
-    // 将两个密钥块编号组合成一个整数
-    // 注意：第一个参数是高位块，第二个参数是低位块
-    uint16_t combined_blocks = MBEDTLS_ECDSA_COMBINE_KEY_BLOCKS(block_high, block_low);
-
-    // 在 ECDSA 操作中使用 combined_blocks 值
-    // 此值可以传递给 mbedTLS ECDSA 函数
-
-    // 之后提取各个密钥块编号
-    uint8_t extracted_block_low, extracted_block_high;
-    MBEDTLS_ECDSA_EXTRACT_KEY_BLOCKS(combined_blocks, &extracted_block_high, &extracted_block_low);
-
-    // extracted_block_low 的值为 4，extracted_block_high 的值为 5
+    - 将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` 设置为块号，将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` 保持为 0 或不赋值。
 
 ECDSA 密钥可以通过 ``idf.py`` 脚本在外部编程。以下是关于编程 ECDSA 密钥的示例：
 

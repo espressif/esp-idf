@@ -11,7 +11,6 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include <sys/socket.h>
-#include "esp_tls.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -97,6 +96,17 @@ typedef enum {
 typedef esp_err_t (*http_event_handle_cb)(esp_http_client_event_t *evt);
 
 /**
+ * @brief ECDSA curve options for TLS connections
+ */
+typedef enum {
+    ESP_HTTP_CLIENT_ECDSA_CURVE_SECP256R1 = 0,   /*!< Use SECP256R1 curve */
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    ESP_HTTP_CLIENT_ECDSA_CURVE_SECP384R1,       /*!< Use SECP384R1 curve */
+#endif
+    ESP_HTTP_CLIENT_ECDSA_CURVE_MAX,            /*!< to indicate max */
+} esp_http_client_ecdsa_curve_t;
+
+/**
  * @brief HTTP method
  */
 typedef enum {
@@ -177,8 +187,9 @@ typedef struct {
     esp_http_client_proto_ver_t tls_version;         /*!< TLS protocol version of the connection, e.g., TLS 1.2, TLS 1.3 (default - no preference) */
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
     bool                        use_ecdsa_peripheral;       /*!< Use ECDSA peripheral to use private key. */
-    uint8_t                     ecdsa_key_efuse_blk;        /*!< The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro ESP_TLS_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. The macro is defined in esp_tls.h */
-    esp_tls_ecdsa_curve_t       ecdsa_curve;                /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
+    uint8_t                     ecdsa_key_efuse_blk;        /*!< The efuse block where ECDSA key is stored. For SECP384R1 curve, if two blocks are used, set this to the low block and use ecdsa_key_efuse_blk_high for the high block. */
+    uint8_t                     ecdsa_key_efuse_blk_high;   /*!< The high efuse block for ECDSA key (used only for SECP384R1 curve). If not set (0), only ecdsa_key_efuse_blk is used. */
+    esp_http_client_ecdsa_curve_t       ecdsa_curve;        /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
 #endif
     const char                  *user_agent;         /*!< The User Agent string to send with HTTP requests */
     esp_http_client_method_t    method;                   /*!< HTTP Method */
