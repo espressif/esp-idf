@@ -808,6 +808,11 @@ esp_err_t esp_wifi_beacon_offset_configure(wifi_beacon_offset_config_t *config);
  */
 void pm_beacon_offset_funcs_empty_init(void);
 
+/**
+ * @brief This API is not context safe and enable easy fragment just for internal test only.
+ */
+void esp_wifi_enable_easy_fragment(bool enable);
+
 #ifdef __cplusplus
 }
 #endif
