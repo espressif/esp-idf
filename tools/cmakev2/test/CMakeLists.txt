@@ -24,41 +24,41 @@ function(test_component_priority)
 
     # Check that idf component is between discovered components.
     __get_component_interface(COMPONENT "${component_name}"
-                              OUTPUT component_interface)
-    if("${component_interface}" STREQUAL "NOTFOUND")
-        idf_die("Component '${component_name}' not found")
-    endif()
+    OUTPUT component_interface)
+if("${component_interface}" STREQUAL "NOTFOUND")
+    idf_die("Component '${component_name}' not found")
+endif()
 
-    # Check that idf component has "idf_components" as source.
-    idf_component_get_property(component_source
-                               ${component_interface}
-                               COMPONENT_SOURCE)
-    if(NOT "${component_source}" STREQUAL "idf_components")
-        idf_die("Unexpected idf component '${component_name}' source '${component_source}'")
-    endif()
+# Check that idf component has "idf_components" as source.
+idf_component_get_property(component_source
+    ${component_interface}
+    COMPONENT_SOURCE)
+if(NOT "${component_source}" STREQUAL "idf_components")
+    idf_die("Unexpected idf component '${component_name}' source '${component_source}'")
+endif()
 
-    # Create fake component with same name as idf component.
-    set(component_dir "${CMAKE_CURRENT_BINARY_DIR}/${component_name}")
-    file(MAKE_DIRECTORY "${component_dir}")
-    file(TOUCH "${component_dir}/CMakeLists.txt")
+# Create fake component with same name as idf component.
+set(component_dir "${CMAKE_CURRENT_BINARY_DIR}/${component_name}")
+file(MAKE_DIRECTORY "${component_dir}")
+file(TOUCH "${component_dir}/CMakeLists.txt")
 
-    # Initialize fake component with higher "project_components" priority.
-    idf_build_get_property(component_prefix PREFIX)
-    __init_component(DIRECTORY "${component_dir}"
-                     PREFIX "${component_prefix}"
-                     SOURCE "project_components")
+# Initialize fake component with higher "project_components" priority.
+idf_build_get_property(component_prefix PREFIX)
+__init_component(DIRECTORY "${component_dir}"
+PREFIX "${component_prefix}"
+SOURCE "project_components")
 
     # Check that the idf component was replaced with fake component.
     idf_component_get_property(component_source
-                               ${component_interface}
-                               COMPONENT_SOURCE)
+        ${component_interface}
+        COMPONENT_SOURCE)
     if(NOT "${component_source}" STREQUAL "project_components")
         idf_die("Unexpected fake component '${component_name}' source '${component_source}'")
     endif()
 
     idf_component_get_property(component_dir
-                               ${component_interface}
-                               COMPONENT_DIR)
+        ${component_interface}
+        COMPONENT_DIR)
     if(NOT "${component_dir}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}/${component_name}")
         idf_die("Unexpected fake component '${component_name}' directory '${component_dir}'")
     endif()
@@ -68,18 +68,36 @@ endfunction()
 # Test that IDF_VERSION is set
 function(test_idf_version)
     if(NOT DEFINED IDF_VERSION_MAJOR OR
-       NOT DEFINED IDF_VERSION_MINOR OR
-       NOT DEFINED IDF_VERSION_PATCH OR
-       NOT DEFINED ENV{IDF_VERSION})
+            NOT DEFINED IDF_VERSION_MINOR OR
+            NOT DEFINED IDF_VERSION_PATCH OR
+            NOT DEFINED ENV{IDF_VERSION})
         idf_die("IDF_VERSION not set")
-   endif()
+    endif()
 endfunction()
 
 # Test that Python interpreter is set
 function(test_python)
     if(NOT DEFINED PYTHON OR "${PYTHON}" STREQUAL "")
         idf_die("PYTHON variable not defined or empty")
-   endif()
+    endif()
+endfunction()
+
+# Test that toolchain is properly set
+function(test_toolchain)
+    if(NOT IDF_TOOLCHAIN)
+        idf_die("IDF_TOOLCHAIN variable not defined or empty")
+    endif()
+    if(NOT CMAKE_TOOLCHAIN_FILE)
+        idf_die("CMAKE_TOOLCHAIN_FILE variable not defined or empty")
+    endif()
+    idf_build_get_property(toolchain IDF_TOOLCHAIN)
+    if(NOT toolchain)
+        idf_die("IDF_TOOLCHAIN build property not set")
+    endif()
+    idf_build_get_property(toolchain_file IDF_TOOLCHAIN_FILE)
+    if(NOT toolchain_file)
+        idf_die("IDF_TOOLCHAIN_FILE build property not set")
+    endif()
 endfunction()
 
 # Run tests
@@ -87,5 +105,6 @@ test_dump_properties()
 test_component_priority()
 test_idf_version()
 test_python()
+test_toolchain()
 
 message("ALL TESTS PASSED")
