@@ -200,7 +200,6 @@ Limitations
 -----------
 
 - Linker script generator does not support function level placements for functions with C++ linkage.
-- Various section attributes (such as ``IRAM_ATTR``) are ignored when used with template functions.
 - Vtables are placed into Flash and are not accessible when the flash cache is disabled. Therefore, virtual function calls should be avoided in :ref:`iram-safe-interrupt-handlers`. Placement of Vtables cannot be adjusted using the linker script generator, yet.
 
 
