@@ -194,7 +194,7 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of RMT
  */
-#define SOC_RMT_CLKS {/*SOC_MOD_CLK_PLL_F80M, SOC_MOD_CLK_RC_FAST,*/ SOC_MOD_CLK_XTAL}
+#define SOC_RMT_CLKS {SOC_MOD_CLK_PLL_F80M, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL}
 
 /**
  * @brief Type of RMT clock source
