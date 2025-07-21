@@ -6,8 +6,7 @@ set(TEST_CRTS "crts/server_cert_chain.pem"
               "crts/correct_sig_crt_esp32_com.pem")
 
 idf_component_register(
-                SRCS "app_main.c"
-                    # SRC_DIRS "."
+                    SRC_DIRS "."
                     PRIV_INCLUDE_DIRS "."
                     PRIV_REQUIRES efuse cmock test_utils mbedtls esp_timer unity spi_flash esp_psram esp_security
                     EMBED_TXTFILES ${TEST_CRTS}

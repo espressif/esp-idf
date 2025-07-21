@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include "esp_system.h"
 #include "esp_task_wdt.h"
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/rsa.h"
 #include "mbedtls/pk.h"
 #include "mbedtls/x509_crt.h"
@@ -508,13 +509,13 @@ static void rsa_key_operations(int keysize, bool check_performance, bool generat
 
         switch(keysize) {
         case 4096:
-            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_4096_buf, sizeof(privkey_4096_buf), NULL, 0, myrand, NULL);
+            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_4096_buf, sizeof(privkey_4096_buf), NULL, 0);
             break;
         case 3072:
-            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_3072_buf, sizeof(privkey_3072_buf), NULL, 0, myrand, NULL);
+            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_3072_buf, sizeof(privkey_3072_buf), NULL, 0);
             break;
         case 2048:
-            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_2048_buf, sizeof(privkey_2048_buf), NULL, 0, myrand, NULL);
+            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_2048_buf, sizeof(privkey_2048_buf), NULL, 0);
             break;
         default:
             TEST_FAIL_MESSAGE("unsupported keysize, pass generate_new_rsa=true or update test");

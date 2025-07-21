@@ -11,8 +11,7 @@
 #include "btc/btc_task.h"
 #include "osi/alarm.h"
 
-#include "mbedtls/aes.h"
-#include "mbedtls/ecp.h"
+#include "psa/crypto.h"
 
 #include "host/ble_hs.h"
 #include "host/ble_uuid.h"
@@ -2665,39 +2664,29 @@ const uint8_t *bt_mesh_pub_key_get(void)
 
 bool bt_mesh_check_public_key(const uint8_t key[64])
 {
-    struct mbedtls_ecp_point pt = {0};
-    mbedtls_ecp_group grp = {0};
-    bool rc = false;
+    psa_status_t status = PSA_SUCCESS;
 
     uint8_t pub[65] = {0};
     /* Hardcoded first byte of pub key for MBEDTLS_ECP_PF_UNCOMPRESSED */
     pub[0] = 0x04;
     memcpy(&pub[1], key, 64);
 
-    /* Initialize the required structures here */
-    mbedtls_ecp_point_init(&pt);
-    mbedtls_ecp_group_init(&grp);
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id = 0;
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_VERIFY_HASH);
+    psa_set_key_algorithm(&attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_bits(&attributes, 256);
 
-    /* Below 3 steps are to validate public key on curve secp256r1 */
-    if (mbedtls_ecp_group_load(&grp, MBEDTLS_ECP_DP_SECP256R1) != 0) {
-        goto exit;
+    status = psa_import_key(&attributes, pub, sizeof(pub), &key_id);
+    if (status != PSA_SUCCESS) {
+        BT_ERR("Failed to import public key, status: %d", status);
+        return false;
     }
+    psa_reset_key_attributes(&attributes);
+    psa_destroy_key(key_id);
 
-    if (mbedtls_ecp_point_read_binary(&grp, &pt, pub, 65) != 0) {
-        goto exit;
-    }
-
-    if (mbedtls_ecp_check_pubkey(&grp, &pt) != 0) {
-        goto exit;
-    }
-
-    rc = true;
-
-exit:
-    mbedtls_ecp_point_free(&pt);
-    mbedtls_ecp_group_free(&grp);
-    return rc;
-
+    return true;
 }
 
 int ble_sm_alg_gen_dhkey(uint8_t *peer_pub_key_x, uint8_t *peer_pub_key_y,
@@ -2719,26 +2708,46 @@ int bt_mesh_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
     BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
 
 #if CONFIG_MBEDTLS_HARDWARE_AES
-    mbedtls_aes_context ctx = {0};
-
-    mbedtls_aes_init(&ctx);
-
     sys_memcpy_swap(tmp, key, 16);
+    psa_status_t status;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id = 0;
+    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
+    psa_algorithm_t alg = PSA_ALG_ECB_NO_PADDING;
+    psa_set_key_algorithm(&attributes, alg);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&attributes, 128);
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
 
-    if (mbedtls_aes_setkey_enc(&ctx, tmp, 128) != 0) {
-        mbedtls_aes_free(&ctx);
+    status = psa_import_key(&attributes, tmp, 16, &key_id);
+    if (status != PSA_SUCCESS) {
+        BT_ERR("psa_import_key failed with status %d", status);
+        return -EINVAL;
+    }
+    psa_reset_key_attributes(&attributes);
+
+    status = psa_cipher_encrypt_setup(&operation, key_id, alg);
+    if (status != PSA_SUCCESS) {
+        BT_ERR("psa_cipher_encrypt_setup failed with status %d", status);
+        psa_destroy_key(key_id);
+        return -EINVAL;
+    }
+    size_t output_length = 0;
+    status = psa_cipher_update(&operation, plaintext, 16, enc_data, 16, &output_length);
+    if (status != PSA_SUCCESS || output_length != 16) {
+        BT_ERR("psa_cipher_update failed with status %d", status);
+        psa_cipher_abort(&operation);
+        psa_destroy_key(key_id);
         return -EINVAL;
     }
 
-    sys_memcpy_swap(tmp, plaintext, 16);
-
-    if (mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT,
-                              tmp, enc_data) != 0) {
-        mbedtls_aes_free(&ctx);
+    status = psa_cipher_finish(&operation, enc_data + output_length, 16 - output_length, &output_length);
+    if (status != PSA_SUCCESS) {
+        BT_ERR("psa_cipher_finish failed with status %d", status);
         return -EINVAL;
     }
 
-    mbedtls_aes_free(&ctx);
+    psa_destroy_key(key_id);
 #else /* CONFIG_MBEDTLS_HARDWARE_AES */
     struct tc_aes_key_sched_struct s = {0};
 
@@ -2768,22 +2777,45 @@ int bt_mesh_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
     BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
 
 #if CONFIG_MBEDTLS_HARDWARE_AES
-    mbedtls_aes_context ctx = {0};
+    psa_status_t status;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id = 0;
+    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
+    psa_algorithm_t alg = PSA_ALG_ECB_NO_PADDING;
+    psa_set_key_algorithm(&attributes, alg);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&attributes, 128);
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
 
-    mbedtls_aes_init(&ctx);
-
-    if (mbedtls_aes_setkey_enc(&ctx, key, 128) != 0) {
-        mbedtls_aes_free(&ctx);
+    status = psa_import_key(&attributes, key, 16, &key_id);
+    if (status != PSA_SUCCESS) {
+        BT_ERR("psa_import_key failed with status %d", status);
         return -EINVAL;
     }
 
-    if (mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT,
-                              plaintext, enc_data) != 0) {
-        mbedtls_aes_free(&ctx);
+    status = psa_cipher_encrypt_setup(&operation, key_id, alg);
+    if (status != PSA_SUCCESS) {
+        BT_ERR("psa_cipher_encrypt_setup failed with status %d", status);
+        psa_destroy_key(key_id);
+        return -EINVAL;
+    }
+    size_t output_length = 0;
+    status = psa_cipher_update(&operation, plaintext, 16, enc_data, 16, &output_length);
+    if (status != PSA_SUCCESS || output_length != 16) {
+        BT_ERR("psa_cipher_update failed with status %d", status);
+        psa_cipher_abort(&operation);
+        psa_destroy_key(key_id);
         return -EINVAL;
     }
 
-    mbedtls_aes_free(&ctx);
+    status = psa_cipher_finish(&operation, enc_data + output_length, 16 - output_length, &output_length);
+    if (status != PSA_SUCCESS) {
+        BT_ERR("psa_cipher_finish failed with status %d", status);
+        psa_destroy_key(key_id);
+        return -EINVAL;
+    }
+
+    psa_destroy_key(key_id);
 #else /* CONFIG_MBEDTLS_HARDWARE_AES */
     struct tc_aes_key_sched_struct s = {0};
 

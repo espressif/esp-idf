@@ -150,9 +150,9 @@ get_target_property(src_tls mbedtls SOURCES)
     list(REMOVE_ITEM src_tls ssl_ciphersuites.c ssl_cli.c ssl_tls.c)
 set_property(TARGET mbedtls PROPERTY SOURCES ${src_tls})
 
-get_target_property(src_crypto tfpsacrypto SOURCES)
-list(REMOVE_ITEM src_crypto cipher_wrap.c ecdsa.c ecp.c ecp_curves.c oid.c pk_wrap.c)
-set_property(TARGET mbedcrypto PROPERTY SOURCES ${src_crypto})
+# get_target_property(src_crypto tfpsacrypto SOURCES)
+# list(REMOVE_ITEM src_crypto cipher_wrap.c ecdsa.c ecp.c ecp_curves.c oid.c pk_wrap.c)
+# set_property(TARGET mbedcrypto PROPERTY SOURCES ${src_crypto})
 
 get_target_property(src_x509 mbedx509 SOURCES)
 list(REMOVE_ITEM src_x509 x509_crt.c)
@@ -182,7 +182,7 @@ endif()
 # While updating to MbedTLS release/v3.4.0, building mbedtls/library/psa_crypto.c
 # clang produces an unreachable-code warning.
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-    target_compile_options(mbedcrypto PRIVATE "-Wno-unreachable-code")
+    target_compile_options(tfpsacrypto PRIVATE "-Wno-unreachable-code")
 endif()
 
 # net_sockets.c should only be compiled if BSD socket functions are available.
@@ -201,9 +201,9 @@ endif()
 # Add port files to mbedtls targets
 target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
 
-# if(NOT ${IDF_TARGET} STREQUAL "linux")
-#     target_link_libraries(mbedcrypto PRIVATE idf::esp_security)
-# endif()
+if(NOT ${IDF_TARGET} STREQUAL "linux")
+    target_link_libraries(tfpsacrypto PRIVATE idf::esp_security)
+endif()
 
 # Choose peripheral type
 
@@ -223,16 +223,16 @@ if(CONFIG_SOC_AES_SUPPORTED)
     endif()
 endif()
 
-# if(SHA_PERIPHERAL_TYPE STREQUAL "core")
-#     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/core/include")
+if(SHA_PERIPHERAL_TYPE STREQUAL "core")
+    target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/sha/core/include")
 
-#     if(CONFIG_SOC_SHA_GDMA)
-#         set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_gdma_impl.c")
-#     elseif(CONFIG_SOC_SHA_CRYPTO_DMA)
-#         set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_crypto_dma_impl.c")
-#     endif()
-#     target_sources(mbedcrypto PRIVATE  "${SHA_CORE_SRCS}")
-# endif()
+    if(CONFIG_SOC_SHA_GDMA)
+        set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_gdma_impl.c")
+    elseif(CONFIG_SOC_SHA_CRYPTO_DMA)
+        set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_crypto_dma_impl.c")
+    endif()
+    target_sources(tfpsacrypto PRIVATE  "${SHA_CORE_SRCS}")
+endif()
 
 # if(AES_PERIPHERAL_TYPE STREQUAL "dma")
 #     if(NOT CONFIG_SOC_AES_GDMA)
@@ -247,15 +247,15 @@ endif()
 #     target_sources(mbedcrypto PRIVATE  "${AES_DMA_SRCS}")
 # endif()
 
-# if((SHA_PERIPHERAL_TYPE STREQUAL "core" AND CONFIG_SOC_SHA_SUPPORT_DMA) OR AES_PERIPHERAL_TYPE STREQUAL "dma")
-#     target_link_libraries(mbedcrypto PRIVATE idf::esp_mm)
-#     if(CONFIG_SOC_SHA_GDMA OR CONFIG_SOC_AES_GDMA)
-#         if(CONFIG_SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT)
-#             target_link_libraries(mbedcrypto PRIVATE idf::bootloader_support)
-#         endif()
-#         target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/crypto_shared_gdma/esp_crypto_shared_gdma.c")
-#     endif()
-# endif()
+if((SHA_PERIPHERAL_TYPE STREQUAL "core" AND CONFIG_SOC_SHA_SUPPORT_DMA) OR AES_PERIPHERAL_TYPE STREQUAL "dma")
+    target_link_libraries(tfpsacrypto PRIVATE idf::esp_mm)
+    if(CONFIG_SOC_SHA_GDMA OR CONFIG_SOC_AES_GDMA)
+        if(CONFIG_SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT)
+            target_link_libraries(tfpsacrypto PRIVATE idf::bootloader_support)
+        endif()
+        target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/crypto_shared_gdma/esp_crypto_shared_gdma.c")
+    endif()
+endif()
 
 # if(NOT ${IDF_TARGET} STREQUAL "linux")
 #     target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c")
@@ -264,26 +264,26 @@ endif()
 #                                   "${COMPONENT_DIR}/port/esp_timing.c"
 # )
 
-# if(CONFIG_SOC_AES_SUPPORTED)
-#     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/include")
-#     target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
-#                                   "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
-#                                   "${COMPONENT_DIR}/port/aes/${AES_PERIPHERAL_TYPE}/esp_aes.c"
-#     )
-# endif()
-
-# if(CONFIG_SOC_SHA_SUPPORTED)
-#     target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/esp_sha.c"
-#                                     "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
-#     )
-# endif()
-
-if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
-target_sources(mbedcrypto PRIVATE
-                "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c"
-                "${COMPONENT_DIR}/port/esp_ds/esp_rsa_dec_alt.c"
-                "${COMPONENT_DIR}/port/esp_ds/esp_ds_common.c")
+if(CONFIG_SOC_AES_SUPPORTED)
+    target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/aes/include")
+    target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
+                                  "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
+                                  "${COMPONENT_DIR}/port/aes/${AES_PERIPHERAL_TYPE}/esp_aes.c"
+    )
 endif()
+
+if(CONFIG_SOC_SHA_SUPPORTED)
+    target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/sha/esp_sha.c"
+                                    "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
+    )
+endif()
+
+# if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
+# target_sources(mbedcrypto PRIVATE
+#                 "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c"
+#                 "${COMPONENT_DIR}/port/esp_ds/esp_rsa_dec_alt.c"
+#                 "${COMPONENT_DIR}/port/esp_ds/esp_ds_common.c")
+# endif()
 # # CONFIG_ESP_TLS_USE_DS_PERIPHERAL can be enabled only for the supported targets.
 # if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
 #     target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c")
@@ -300,10 +300,10 @@ endif()
 #
 # The other port-specific files don't override internal mbedTLS functions, they just add new functions.
 
-# if(CONFIG_MBEDTLS_HARDWARE_MPI)
-#     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/bignum/esp_bignum.c"
-#                                        "${COMPONENT_DIR}/port/bignum/bignum_alt.c")
-# endif()
+if(CONFIG_MBEDTLS_HARDWARE_MPI)
+    target_sources(tfpsacrypto PRIVATE  "${COMPONENT_DIR}/port/bignum/esp_bignum.c"
+                                       "${COMPONENT_DIR}/port/bignum/bignum_alt.c")
+endif()
 
 # if(CONFIG_MBEDTLS_HARDWARE_SHA)
 #     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/esp_sha1.c"
@@ -368,8 +368,10 @@ endif()
 #     target_link_libraries(${COMPONENT_LIB} PRIVATE "-u mbedtls_rom_osi_functions_init")
 # endif()
 
+set(TF_PSA_CRYPTO_CONFIG_FILE "mbedtls/esp_config.h" CACHE STRING "Path to the PSA Crypto configuration file")
 foreach(target ${mbedtls_targets})
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")
+    set_config_files_compile_definitions(${target})
     if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10087
         target_compile_options(${target} PRIVATE "-fno-analyzer")
     endif()
@@ -379,6 +381,31 @@ foreach(target ${mbedtls_targets})
         target_compile_options(${target} PRIVATE "-O2")
     endif()
 endforeach()
+target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
+
+if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    # Apply -fno-analyzer to all targets in mbedTLS subdirectory
+    get_property(all_mbedtls_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/mbedtls PROPERTY BUILDSYSTEM_TARGETS)
+    foreach(target ${all_mbedtls_targets})
+        if(TARGET ${target})
+            # Check if target has sources or is a compilable target type
+            get_target_property(target_sources ${target} SOURCES)
+            get_target_property(target_type ${target} TYPE)
+
+            if(target_sources OR
+               target_type STREQUAL "STATIC_LIBRARY" OR
+               target_type STREQUAL "SHARED_LIBRARY" OR
+               target_type STREQUAL "MODULE_LIBRARY" OR
+               target_type STREQUAL "OBJECT_LIBRARY" OR
+               target_type STREQUAL "EXECUTABLE")
+                message(STATUS "Applying -fno-analyzer to target: ${target}")
+                target_compile_options(${target} PRIVATE "-fno-analyzer")
+            else()
+                message(STATUS "Skipping non-compilable target: ${target} (type: ${target_type})")
+            endif()
+        endif()
+    endforeach()
+endif()
 
 if(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SIZE)
     target_compile_options(${COMPONENT_LIB} PRIVATE "-Os")

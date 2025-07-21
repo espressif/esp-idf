@@ -9,7 +9,7 @@
 #include <sdkconfig.h>
 
 #if CONFIG_IDF_TARGET_ESP32
-
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "esp_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

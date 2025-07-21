@@ -28,7 +28,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "bignum_impl.h"
 
 #include "mbedtls/bignum.h"
@@ -463,7 +463,6 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
 {
     int ret;
 #if defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
-    /* Try hardware API first and then fallback to software */
     ret = esp_mpi_exp_mod( X, A, E, N, _RR );
     if( ret == MBEDTLS_ERR_MPI_NOT_ACCEPTABLE ) {
         ret = mbedtls_mpi_exp_mod_soft( X, A, E, N, _RR );

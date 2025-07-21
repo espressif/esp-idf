@@ -16,6 +16,7 @@
 #include <mbedtls/error.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
+#include "psa/crypto.h"
 
 #include <protocomm_security.h>
 #include <protocomm_security2.h>
@@ -65,7 +66,9 @@ typedef struct session {
     uint16_t session_key_len;
     uint8_t iv[AES_GCM_IV_SIZE];
     /* mbedtls context data for AES-GCM */
-    mbedtls_gcm_context ctx_gcm;
+    // mbedtls_gcm_context ctx_gcm;
+    psa_cipher_operation_t ctx_gcm;
+    psa_key_id_t key_id;
     esp_srp_handle_t *srp_hd;
 } session_t;
 
@@ -215,7 +218,6 @@ static esp_err_t handle_session_command1(session_t *cur_session,
 {
     ESP_LOGD(TAG, "Request to handle setup1_command");
     Sec2Payload *in = (Sec2Payload *) req->sec2;
-    int mbed_err = -0x0001;
 
     if (cur_session->state != SESSION_STATE_CMD1) {
         ESP_LOGE(TAG, "Invalid state of session %d (expected %d)", SESSION_STATE_CMD1, cur_session->state);
@@ -242,24 +244,11 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     }
     hexdump("Device proof", device_proof, CLIENT_PROOF_LEN);
 
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
-
-    mbedtls_entropy_init(&entropy);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
-
-    int ret;
-    ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed to seed random number generator");
-        free(device_proof);
-        return ESP_FAIL;
-    }
-
     aes_gcm_iv_t *iv = (aes_gcm_iv_t *) cur_session->iv;
-    ret = mbedtls_ctr_drbg_random(&ctr_drbg, iv->session_id, SESSION_ID_LEN);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed to generate random number");
+    psa_status_t status;
+    status = psa_generate_random(iv->session_id, SESSION_ID_LEN);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_generate_random failed with status=%d", status);
         free(device_proof);
         return ESP_FAIL;
     }
@@ -269,15 +258,29 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     hexdump("Initialization vector", (char *)cur_session->iv, AES_GCM_IV_SIZE);
 
     /* Initialize crypto context */
-    mbedtls_gcm_init(&cur_session->ctx_gcm);
-
-    mbed_err = mbedtls_gcm_setkey(&cur_session->ctx_gcm, MBEDTLS_CIPHER_ID_AES, (unsigned char *)cur_session->session_key, AES_GCM_KEY_LEN);
-    if (mbed_err != 0) {
-        ESP_LOGE(TAG, "Failure at mbedtls_gcm_setkey_enc with error code : -0x%x", -mbed_err);
+    cur_session->ctx_gcm = (psa_cipher_operation_t) {0};
+    psa_algorithm_t alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, AES_GCM_TAG_LEN);
+    psa_key_id_t key_id = 0;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&key_attributes, AES_GCM_KEY_LEN);
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT);
+    psa_set_key_algorithm(&key_attributes, alg);
+    psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+    status = psa_import_key(&key_attributes, (uint8_t *)cur_session->session_key, cur_session->session_key_len, &key_id);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_import_key failed with status=%d", status);
         free(device_proof);
-        mbedtls_gcm_free(&cur_session->ctx_gcm);
         return ESP_FAIL;
     }
+
+    status = psa_cipher_encrypt_setup(&cur_session->ctx_gcm, key_id, alg);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_cipher_encrypt_setup failed with status=%d", status);
+        free(device_proof);
+        return ESP_FAIL;
+    }
+    cur_session->key_id = key_id;
 
     Sec2Payload *out = (Sec2Payload *) malloc(sizeof(Sec2Payload));
     S2SessionResp1 *out_resp = (S2SessionResp1 *) malloc(sizeof(S2SessionResp1));
@@ -286,7 +289,9 @@ static esp_err_t handle_session_command1(session_t *cur_session,
         free(device_proof);
         free(out);
         free(out_resp);
-        mbedtls_gcm_free(&cur_session->ctx_gcm);
+        psa_cipher_abort(&cur_session->ctx_gcm);
+        psa_destroy_key(key_id);
+        // mbedtls_gcm_free(&cur_session->ctx_gcm);
         return ESP_ERR_NO_MEM;
     }
 
@@ -391,7 +396,14 @@ static esp_err_t sec2_close_session(protocomm_security_handle_t handle, uint32_t
 
     if (cur_session->state == SESSION_STATE_DONE) {
         /* Free GCM context data */
-        mbedtls_gcm_free(&cur_session->ctx_gcm);
+        // mbedtls_gcm_free(&cur_session->ctx_gcm);
+        psa_status_t status = psa_cipher_abort(&cur_session->ctx_gcm);
+        if (status != PSA_SUCCESS) {
+            ESP_LOGE(TAG, "psa_cipher_abort failed with status=%d", status);
+            return ESP_FAIL;
+        }
+        psa_destroy_key(cur_session->key_id);
+        cur_session->key_id = 0;
     }
 
     free(cur_session->username);
@@ -482,13 +494,41 @@ static esp_err_t sec2_encrypt(protocomm_security_handle_t handle,
     }
     uint8_t gcm_tag[AES_GCM_TAG_LEN];
 
-    int ret = mbedtls_gcm_crypt_and_tag(&cur_session->ctx_gcm, MBEDTLS_GCM_ENCRYPT, inlen, cur_session->iv,
-                                        AES_GCM_IV_SIZE, NULL, 0, inbuf,
-                                        *outbuf, AES_GCM_TAG_LEN, gcm_tag);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed at mbedtls_gcm_crypt_and_tag with error code : %d", ret);
+    psa_status_t status;
+    status = psa_cipher_set_iv(&cur_session->ctx_gcm, cur_session->iv, AES_GCM_IV_SIZE);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_cipher_set_iv failed with status=%d", status);
+        free(*outbuf);
         return ESP_FAIL;
     }
+
+    size_t out_len = 0;
+    status = psa_cipher_update(&cur_session->ctx_gcm, inbuf, inlen, *outbuf, *outlen , &out_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_cipher_update failed with status=%d", status);
+        free(*outbuf);
+        return ESP_FAIL;
+    }
+
+    if (out_len != inlen) {
+        ESP_LOGE(TAG, "psa_cipher_update output length mismatch: expected %zd, got %zu", inlen, out_len);
+        free(*outbuf);
+        return ESP_FAIL;
+    }
+
+    status = psa_cipher_finish(&cur_session->ctx_gcm, gcm_tag, AES_GCM_TAG_LEN, &out_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_cipher_finish failed with status=%d", status);
+        free(*outbuf);
+        return ESP_FAIL;
+    }
+
+    if (out_len != AES_GCM_TAG_LEN) {
+        ESP_LOGE(TAG, "psa_cipher_finish output length mismatch: expected %d, got %zu", AES_GCM_TAG_LEN, out_len);
+        free(*outbuf);
+        return ESP_FAIL;
+    }
+
     memcpy(*outbuf + inlen, gcm_tag, AES_GCM_TAG_LEN);
 
     /* Increment counter value for next operation */
@@ -531,11 +571,46 @@ static esp_err_t sec2_decrypt(protocomm_security_handle_t handle,
         return ESP_ERR_NO_MEM;
     }
 
-    int ret = mbedtls_gcm_auth_decrypt(&cur_session->ctx_gcm, inlen - AES_GCM_TAG_LEN, cur_session->iv,
-                                       AES_GCM_IV_SIZE, NULL, 0, inbuf + (inlen - AES_GCM_TAG_LEN), AES_GCM_TAG_LEN, inbuf, *outbuf);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed at mbedtls_gcm_auth_decrypt : %d", ret);
+    psa_status_t status;
+    status = psa_cipher_set_iv(&cur_session->ctx_gcm, cur_session->iv, AES_GCM_IV_SIZE);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_cipher_set_iv failed with status=%d", status);
+        free(*outbuf);
         return ESP_FAIL;
+    }
+
+    size_t out_len = 0;
+    status = psa_cipher_update(&cur_session->ctx_gcm, inbuf, inlen - AES_GCM_TAG_LEN, *outbuf, *outlen, &out_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_cipher_update failed with status=%d", status);
+        free(*outbuf);
+        return ESP_FAIL;
+    }
+
+    if (out_len != *outlen) {
+        ESP_LOGE(TAG, "psa_cipher_update output length mismatch: expected %zd, got %zu", *outlen, out_len);
+        free(*outbuf);
+        return ESP_FAIL;
+    }
+
+    uint8_t gcm_tag[AES_GCM_TAG_LEN];
+    memcpy(gcm_tag, inbuf + (inlen - AES_GCM_TAG_LEN), AES_GCM_TAG_LEN);
+    status = psa_cipher_finish(&cur_session->ctx_gcm, gcm_tag, AES_GCM_TAG_LEN, &out_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_cipher_finish failed with status=%d", status);
+        free(*outbuf);
+        return ESP_FAIL;
+    }
+
+    if (out_len != 0) {
+        ESP_LOGE(TAG, "psa_cipher_finish output length mismatch: expected 0, got %zu", out_len);
+        free(*outbuf);
+        return ESP_FAIL;
+    }
+
+    if (*outbuf == NULL) {
+        ESP_LOGE(TAG, "Output buffer is NULL");
+        return ESP_ERR_INVALID_ARG;
     }
 
     /* Increment counter value for next operation */

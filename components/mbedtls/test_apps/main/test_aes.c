@@ -5,6 +5,8 @@
  */
 /* mbedTLS AES test
 */
+
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>

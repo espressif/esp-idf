@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2019-2025 Espressif Systems (Shanghai) CO LTD
  */
 #include <string.h>
 #include "esp_err.h"
@@ -15,7 +15,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/x509.h"
@@ -115,7 +115,7 @@ esp_err_t server_setup(mbedtls_endpoint_t *server)
     }
 
     ret =  mbedtls_pk_parse_key( &server->pkey, (const unsigned char *)server_pk_start,
-                                 server_pk_end - server_pk_start, NULL, 0, myrand, NULL );
+                                 server_pk_end - server_pk_start, NULL, 0);
     if ( ret != 0 ) {
         ESP_LOGE(TAG, "mbedtls_pk_parse_key returned %d", ret );
         return ESP_FAIL;
@@ -144,7 +144,7 @@ esp_err_t server_setup(mbedtls_endpoint_t *server)
         return ESP_FAIL;
     }
 
-    mbedtls_ssl_conf_rng( &server->conf, mbedtls_ctr_drbg_random, &server->ctr_drbg );
+    // mbedtls_ssl_conf_rng( &server->conf, mbedtls_ctr_drbg_random, &server->ctr_drbg );
 
     if (( ret = mbedtls_ssl_conf_own_cert( &server->conf, &server->cert, &server->pkey ) ) != 0 ) {
         ESP_LOGE(TAG, "mbedtls_ssl_conf_own_cert returned %d", ret );
@@ -251,7 +251,7 @@ esp_err_t client_setup(mbedtls_endpoint_t *client)
         ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
         return ESP_FAIL;
     }
-    mbedtls_ssl_conf_rng(&client->conf, mbedtls_ctr_drbg_random, &client->ctr_drbg);
+    // mbedtls_ssl_conf_rng(&client->conf, mbedtls_ctr_drbg_random, &client->ctr_drbg);
 
     if ((ret = mbedtls_ssl_setup(&client->ssl, &client->conf)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x", -ret);
@@ -266,26 +266,25 @@ void client_task(void *pvParameters)
     SemaphoreHandle_t *client_signal_sem = (SemaphoreHandle_t *) pvParameters;
     int ret = ESP_FAIL;
 
-    mbedtls_endpoint_t client;
     esp_crt_validate_res_t res = ESP_CRT_VALIDATE_UNKNOWN;
 
-    if (client_setup(&client) != ESP_OK) {
+    if (client_setup(client) != ESP_OK) {
         ESP_LOGE(TAG, "SSL client setup failed");
         goto exit;
     }
 
     /* Test with default crt bundle that does not contain the ca crt */
     ESP_LOGI(TAG, "Connecting to %s:%s...", SERVER_ADDRESS, SERVER_PORT);
-    if ((ret = mbedtls_net_connect(&client.client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
+    if ((ret = mbedtls_net_connect(&client->client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
         ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
         goto exit;
     }
 
     ESP_LOGI(TAG, "Connected.");
-    mbedtls_ssl_set_bio(&client.ssl, &client.client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
+    mbedtls_ssl_set_bio(&client->ssl, &client->client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
     ESP_LOGI(TAG, "Performing the SSL/TLS handshake with bundle that is missing the server root certificate");
-    while ( ( ret = mbedtls_ssl_handshake( &client.ssl ) ) != 0 ) {
+    while ( ( ret = mbedtls_ssl_handshake( &client->ssl ) ) != 0 ) {
         if ( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE ) {
             printf( "mbedtls_ssl_handshake failed with -0x%x\n", -ret );
             break;
@@ -293,7 +292,7 @@ void client_task(void *pvParameters)
     }
 
     ESP_LOGI(TAG, "Verifying peer X.509 certificate for bundle ...");
-    ret  = mbedtls_ssl_get_verify_result(&client.ssl);
+    ret  = mbedtls_ssl_get_verify_result(&client->ssl);
 
     res = (ret == 0) ? ESP_CRT_VALIDATE_OK : ESP_CRT_VALIDATE_FAIL;
 
@@ -305,25 +304,27 @@ void client_task(void *pvParameters)
     TEST_ASSERT_EQUAL(ESP_CRT_VALIDATE_FAIL, res);
 
     // Reset session before new connection
-    mbedtls_ssl_close_notify(&client.ssl);
-    mbedtls_ssl_session_reset(&client.ssl);
-    mbedtls_net_free( &client.client_fd);
+    mbedtls_ssl_close_notify(&client->ssl);
+    mbedtls_ssl_session_reset(&client->ssl);
+    mbedtls_net_free( &client->client_fd);
 
     /* Test with bundle that does contain the CA crt */
-    esp_crt_bundle_attach(&client.conf);
+    esp_crt_bundle_attach(&client->conf);
     esp_crt_bundle_set(server_cert_bundle_start, server_cert_bundle_end - server_cert_bundle_start);
 
     ESP_LOGI(TAG, "Connecting to %s:%s...", SERVER_ADDRESS, SERVER_PORT);
-    if ((ret = mbedtls_net_connect(&client.client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
+    if ((ret = mbedtls_net_connect(&client->client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
         ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
         goto exit;
     }
 
     ESP_LOGI(TAG, "Connected.");
-    mbedtls_ssl_set_bio(&client.ssl, &client.client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
+    mbedtls_ssl_set_bio(&client->ssl, &client->client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
+    size_t available_before_handshake = uxTaskGetStackHighWaterMark(NULL);
+    ESP_LOGI(TAG, "Available stack before handshake: %d", available_before_handshake);
     ESP_LOGI(TAG, "Performing the SSL/TLS handshake with bundle that is missing the server root certificate");
-    while ( ( ret = mbedtls_ssl_handshake( &client.ssl ) ) != 0 ) {
+    while ( ( ret = mbedtls_ssl_handshake( &client->ssl ) ) != 0 ) {
         if ( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE ) {
             printf( "mbedtls_ssl_handshake failed with -0x%x\n", -ret );
             break;
@@ -331,7 +332,7 @@ void client_task(void *pvParameters)
     }
 
     ESP_LOGI(TAG, "Verifying peer X.509 certificate for bundle ...");
-    ret  = mbedtls_ssl_get_verify_result(&client.ssl);
+    ret  = mbedtls_ssl_get_verify_result(&client->ssl);
 
     res = (ret == 0) ? ESP_CRT_VALIDATE_OK : ESP_CRT_VALIDATE_FAIL;
 
@@ -343,16 +344,16 @@ void client_task(void *pvParameters)
     TEST_ASSERT_EQUAL(ESP_CRT_VALIDATE_OK, res);
 
     // Reset session before new connection
-    mbedtls_ssl_close_notify(&client.ssl);
-    mbedtls_ssl_session_reset(&client.ssl);
-    mbedtls_net_free( &client.client_fd);
+    mbedtls_ssl_close_notify(&client->ssl);
+    mbedtls_ssl_session_reset(&client->ssl);
+    mbedtls_net_free( &client->client_fd);
 
 
 exit:
-    mbedtls_ssl_close_notify(&client.ssl);
-    mbedtls_ssl_session_reset(&client.ssl);
-    esp_crt_bundle_detach(&client.conf);
-    endpoint_teardown(&client);
+    mbedtls_ssl_close_notify(&client->ssl);
+    mbedtls_ssl_session_reset(&client->ssl);
+    esp_crt_bundle_detach(&client->conf);
+    endpoint_teardown(client);
     xSemaphoreGive(*client_signal_sem);
     vTaskSuspend(NULL);
 }

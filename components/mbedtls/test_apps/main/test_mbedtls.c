@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <esp_system.h>
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/sha1.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/sha512.h"

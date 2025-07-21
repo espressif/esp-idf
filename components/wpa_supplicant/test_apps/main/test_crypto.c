@@ -14,7 +14,7 @@
 #include "utils/includes.h"
 #include "crypto/crypto.h"
 #include "crypto/aes_wrap.h"
-
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/ecp.h"
 #include "mbedtls/pk.h"
 #include "test_utils.h"

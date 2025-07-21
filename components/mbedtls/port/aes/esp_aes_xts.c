@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/lock.h>
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/aes.h"
 
 #include "aes/esp_aes.h"
@@ -124,7 +125,7 @@ int esp_aes_xts_setkey_dec( esp_aes_xts_context *ctx,
     return esp_aes_setkey( &ctx->crypt, key1, key1bits );
 }
 
-/* Endianess with 64 bits values */
+/* Endianness with 64 bits values */
 #ifndef GET_UINT64_LE
 #define GET_UINT64_LE(n,b,i)                            \
 {                                                       \
@@ -158,7 +159,7 @@ int esp_aes_xts_setkey_dec( esp_aes_xts_context *ctx,
  *
  * This function multiplies a field element by x in the polynomial field
  * representation. It uses 64-bit word operations to gain speed but compensates
- * for machine endianess and hence works correctly on both big and little
+ * for machine endianness and hence works correctly on both big and little
  * endian machines.
  */
 static void esp_gf128mul_x_ble( unsigned char r[16],
@@ -254,7 +255,7 @@ int esp_aes_crypt_xts( esp_aes_xts_context *ctx,
         unsigned char *prev_output = output - 16;
 
         /* Copy ciphertext bytes from the previous block to our output for each
-         * byte of cyphertext we won't steal. At the same time, copy the
+         * byte of ciphertext we won't steal. At the same time, copy the
          * remainder of the input for this final round (since the loop bounds
          * are the same). */
         for ( i = 0; i < leftover; i++ ) {

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <esp_system.h>
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/aes.h"
 #include "mbedtls/sha256.h"
 #include "unity.h"
