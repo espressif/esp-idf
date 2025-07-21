@@ -375,7 +375,7 @@ TEST_CASE("mbedtls ECDSA signature generation on SECP256R1", "[mbedtls][efuse_ke
 #ifdef SOC_ECDSA_SUPPORT_CURVE_P384
 TEST_CASE("mbedtls ECDSA signature generation on SECP384R1", "[mbedtls][efuse_key]")
 {
-    uint8_t efuse_key_block = MBEDTLS_ECDSA_COMBINE_KEY_BLOCKS(SECP384R1_EFUSE_BLOCK_HIGH, SECP384R1_EFUSE_BLOCK_LOW);
+    uint8_t efuse_key_block = HAL_ECDSA_COMBINE_KEY_BLOCKS(SECP384R1_EFUSE_BLOCK_HIGH, SECP384R1_EFUSE_BLOCK_LOW);
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, false, efuse_key_block);
 }
 #endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
@@ -444,7 +444,7 @@ TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP256R1", "[mbe
 #ifdef SOC_ECDSA_SUPPORT_CURVE_P384
 TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP384R1", "[mbedtls][efuse_key]")
 {
-    uint8_t efuse_key_block = MBEDTLS_ECDSA_COMBINE_KEY_BLOCKS(SECP384R1_EFUSE_BLOCK_HIGH, SECP384R1_EFUSE_BLOCK_LOW);
+    uint8_t efuse_key_block = HAL_ECDSA_COMBINE_KEY_BLOCKS(SECP384R1_EFUSE_BLOCK_HIGH, SECP384R1_EFUSE_BLOCK_LOW);
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, true, efuse_key_block);
 }
 #endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
@@ -532,7 +532,7 @@ TEST_CASE("mbedtls ECDSA export public key on SECP256R1", "[mbedtls][efuse_key]"
 #ifdef SOC_ECDSA_SUPPORT_CURVE_P384
 TEST_CASE("mbedtls ECDSA export public key on SECP384R1", "[mbedtls][efuse_key]")
 {
-    uint8_t efuse_key_block = MBEDTLS_ECDSA_COMBINE_KEY_BLOCKS(SECP384R1_EFUSE_BLOCK_HIGH, SECP384R1_EFUSE_BLOCK_LOW);
+    uint8_t efuse_key_block = HAL_ECDSA_COMBINE_KEY_BLOCKS(SECP384R1_EFUSE_BLOCK_HIGH, SECP384R1_EFUSE_BLOCK_LOW);
     test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP384R1, ecdsa384_pub_x, ecdsa384_pub_y, efuse_key_block);
 }
 #endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */

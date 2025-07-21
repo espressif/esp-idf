@@ -50,7 +50,7 @@ typedef enum {
 
 /**
  * @brief Macro to combine two key blocks into a single integer
- * @note Least significant 4 bits stores block number of the low key block, and the next 4 more significant bits store the high key block number.
+ * @note Least significant 4 bits stores block number of the low key block, and the next 4 bits store the high key block number.
  */
 #define HAL_ECDSA_COMBINE_KEY_BLOCKS(blk_high, blk_low) (((blk_high) << 4) | (blk_low))
 

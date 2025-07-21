@@ -54,8 +54,9 @@ ECDSA 外设可用于 HTTP 客户端连接中的底层 TLS 连接。详细内容
     esp_http_client_config_t cfg = {
         /* other configurations options */
         .use_ecdsa_peripheral = true,
-        .ecdsa_key_efuse_blk = /* 存储 ECDSA 私钥的 eFuse 块 */,
-        .ecdsa_curve = ESP_TLS_ECDSA_CURVE_SECP256R1,  // 或 ESP_TLS_ECDSA_CURVE_SECP384R1
+        .ecdsa_key_efuse_blk = 4,    // ECDSA 密钥的低 eFuse 块
+        .ecdsa_key_efuse_blk_high = 5,   // ECDSA 密钥的高 eFuse 块（仅 SECP384R1）
+        .ecdsa_curve = ESP_TLS_ECDSA_CURVE_SECP384R1, // 设置为 ESP_TLS_ECDSA_CURVE_SECP256R1 以使用 SECP256R1 曲线
     };
 
 
