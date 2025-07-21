@@ -45,10 +45,23 @@ Alternatively, manually create a log file containing HCI data in the expected fo
 
 ### **Running the Script**
 
+Timestamp information is now included as part of the dump. The log looks like below, where
+the first 8 bytes contains timestamp information:
+
+00 C:49 ed 01 00 00 00 00 00 03 0c 00
+01 E:8e f0 01 00 00 00 00 00 0e 04 05 03 0c 00
+
+If timestamp information is not present, then same log would look like:
+
+00 C:03 0c 00
+01 E:0e 04 05 03 0c 00
+
+The script takes "--has-ts" parameter, if output log has timestamp information
+
 To parse the logs and generate a BTSnoop file, run:
 
 ```bash
-python bt_hci_to_btsnoop.py -p <input_log_file> -o <output_tag>
+python bt_hci_to_btsnoop.py -p <input_log_file> -o <output_tag> [--has-ts]
 ```
 
 #### **Parameters**
