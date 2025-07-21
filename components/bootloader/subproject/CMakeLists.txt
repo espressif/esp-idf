@@ -194,7 +194,7 @@ if(CONFIG_SECURE_BOOT_V2_ENABLED)
 endif()
 
 if(CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH)
-    add_custom_command(TARGET bootloader.elf POST_BUILD
+    add_custom_command(TARGET gen_project_binary POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo
             "=============================================================================="
         COMMAND ${CMAKE_COMMAND} -E echo
@@ -207,7 +207,7 @@ if(CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH)
             "* IMPORTANT: After first boot, BOOTLOADER CANNOT BE RE-FLASHED on same device"
         VERBATIM)
 elseif(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
-    add_custom_command(TARGET bootloader.elf POST_BUILD
+    add_custom_command(TARGET gen_bootloader_digest_bin POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo
             "=============================================================================="
         COMMAND ${CMAKE_COMMAND} -E echo
@@ -234,14 +234,13 @@ elseif(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
             "* After first boot, only re-flashes of this kind (with same key) will be accepted."
         COMMAND ${CMAKE_COMMAND} -E echo
             "* Not recommended to reuse the same secure boot keyfile on multiple production devices."
-        DEPENDS gen_secure_bootloader_key gen_bootloader_digest_bin
         VERBATIM)
 elseif(
         CONFIG_SECURE_BOOT_V2_ENABLED AND
         (CONFIG_SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS GREATER 1) AND
         NOT CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT
     )
-    add_custom_command(TARGET bootloader.elf POST_BUILD
+    add_custom_command(TARGET gen_signed_bootloader POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo
         "=============================================================================="
     COMMAND ${CMAKE_COMMAND} -E echo
@@ -257,21 +256,17 @@ elseif(
         "\t${esptoolpy_write_flash} ${BOOTLOADER_OFFSET} ${CMAKE_BINARY_DIR}/bootloader.bin"
     COMMAND ${CMAKE_COMMAND} -E echo
         "=============================================================================="
-    DEPENDS gen_signed_bootloader
     VERBATIM)
 elseif(CONFIG_SECURE_BOOT_V2_ENABLED AND NOT CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT)
-    add_custom_command(TARGET bootloader.elf POST_BUILD
+    add_custom_command(TARGET gen_signed_bootloader POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo
         "=============================================================================="
     COMMAND ${CMAKE_COMMAND} -E echo
         "Bootloader built. Secure boot enabled, so bootloader not flashed automatically."
     COMMAND ${CMAKE_COMMAND} -E echo
-        "Secure boot enabled, so bootloader not flashed automatically."
-    COMMAND ${CMAKE_COMMAND} -E echo
         "\t${esptoolpy_write_flash} ${BOOTLOADER_OFFSET} ${CMAKE_BINARY_DIR}/bootloader.bin"
     COMMAND ${CMAKE_COMMAND} -E echo
         "=============================================================================="
-    DEPENDS gen_signed_bootloader
     VERBATIM)
 endif()
 
