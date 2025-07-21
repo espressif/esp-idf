@@ -92,8 +92,12 @@ idf_build_set_property(PROJECT_BIN "${PROJECT_BIN}")
 
 # Generate the unsigned binary from the ELF file.
 if(CONFIG_APP_BUILD_GENERATE_BINARIES)
-    set(target_name "gen_bootloader_binary")
-    __idf_build_binary("${bootloader_unsigned_bin}" "${target_name}")
+    set(binary_target_name "gen_bootloader_binary")
+    __idf_build_binary("${bootloader_unsigned_bin}" "${binary_target_name}")
+else()
+    # If we are not building binaries, we don't need to create targets that depend on the
+    # bootloader binary.
+    return()
 endif()
 
 idf_component_get_property(main_args esptool_py FLASH_ARGS)
@@ -165,7 +169,7 @@ endif()
 
 # If secure boot is enabled, generate the signed binary from the unsigned one.
 if(CONFIG_SECURE_BOOT_V2_ENABLED)
-    set(target_name "gen_signed_bootloader")
+    set(signed_target_name "gen_signed_bootloader")
 
     if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
         # The SECURE_BOOT_SIGNING_KEY is passed in from the parent build and
@@ -181,13 +185,17 @@ if(CONFIG_SECURE_BOOT_V2_ENABLED)
 
         set(comment "Generated the signed Bootloader")
         set(key_arg KEYFILE "${SECURE_BOOT_SIGNING_KEY}")
+        # Post-build commands should be attached to the signed binary target.
+        set(post_build_target ${signed_target_name})
     else()
         # If we are not building signed binaries, we don't pass a key.
         set(comment "Bootloader generated but not signed")
         set(key_arg "")
+        # Post-build commands should be attached to the unsigned binary target.
+        set(post_build_target ${binary_target_name})
     endif()
 
-    __idf_build_secure_binary("${bootloader_unsigned_bin}" "${PROJECT_BIN}" "${target_name}"
+    __idf_build_secure_binary("${bootloader_unsigned_bin}" "${PROJECT_BIN}" "${signed_target_name}"
         COMMENT "${comment}"
         ${key_arg}
     )
@@ -240,7 +248,7 @@ elseif(
         (CONFIG_SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS GREATER 1) AND
         NOT CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT
     )
-    add_custom_command(TARGET gen_signed_bootloader POST_BUILD
+    add_custom_command(TARGET ${post_build_target} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo
         "=============================================================================="
     COMMAND ${CMAKE_COMMAND} -E echo
@@ -258,7 +266,7 @@ elseif(
         "=============================================================================="
     VERBATIM)
 elseif(CONFIG_SECURE_BOOT_V2_ENABLED AND NOT CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT)
-    add_custom_command(TARGET gen_signed_bootloader POST_BUILD
+    add_custom_command(TARGET ${post_build_target} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo
         "=============================================================================="
     COMMAND ${CMAKE_COMMAND} -E echo
