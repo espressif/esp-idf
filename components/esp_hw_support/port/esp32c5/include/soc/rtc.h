@@ -116,16 +116,14 @@ typedef struct rtc_cpu_freq_config_s {
 
 /**
  * @brief Clock source to be calibrated using rtc_clk_cal function
- *
- * @note On ESP32C5, the enum values somehow reflects the register field values of PCR_32K_SEL.
  */
 typedef enum {
-    RTC_CAL_RTC_MUX = -1,       //!< Currently selected RTC_SLOW_CLK
-    RTC_CAL_32K_XTAL = 1,       //!< External 32kHz XTAL, as one type of 32k clock
-    RTC_CAL_32K_OSC_SLOW = 2,   //!< External slow clock signal input by lp_pad_gpio0, as one type of 32k clock
-    RTC_CAL_RC_SLOW = 3,        //!< Internal 150kHz RC oscillator
-    RTC_CAL_RC_FAST = 4,        //!< Internal 20MHz RC oscillator
-    RTC_CAL_INVALID_CLK,        //!< Clock not available to calibrate
+    RTC_CAL_RTC_MUX = -1,                          //!< Currently selected RTC_SLOW_CLK
+    RTC_CAL_32K_XTAL = CLK_CAL_32K_XTAL,           //!< External 32kHz XTAL, as one type of 32k clock
+    RTC_CAL_32K_OSC_SLOW = CLK_CAL_32K_OSC_SLOW,   //!< External slow clock signal input by lp_pad_gpio0, as one type of 32k clock
+    RTC_CAL_RC_SLOW = CLK_CAL_RC_SLOW,             //!< Internal 150kHz RC oscillator
+    RTC_CAL_RC_FAST = CLK_CAL_RC_FAST,             //!< Internal 20MHz RC oscillator
+    RTC_CAL_INVALID_CLK,                           //!< Clock not available to calibrate
 } rtc_cal_sel_t;
 
 /**

@@ -18,21 +18,27 @@
 
 __attribute__((unused)) static const char *TAG = "rtc_time";
 
-/* Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
- * This feature counts the number of XTAL clock cycles within a given number of
- * RTC_SLOW_CLK cycles.
- */
-
 #define RTC_SLOW_CLK_600K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
 #define RTC_SLOW_CLK_32K_CAL_TIMEOUT_THRES(cycles)   (cycles << 12)
 #define RTC_FAST_CLK_20M_CAL_TIMEOUT_THRES(cycles)   (TIMG_RTC_CALI_TIMEOUT_THRES_V) // Just use the max timeout thres value
 
+/**
+ * @brief Clock calibration function used by rtc_clk_cal
+ *
+ * Calibration of clock frequency is performed using a special feature of TIMG0.
+ * This feature counts the number of XTAL clock cycles within a given number of
+ * clock cycles.
+ *
+ * @param cal_clk which clock to calibrate
+ * @param slowclk_cycles number of slow clock cycles to count
+ * @return number of XTAL clock cycles within the given number of slow clock cycles
+ */
 static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
     assert(slowclk_cycles < TIMG_RTC_CALI_MAX_V);
 
     soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
-    soc_clk_calibration_clk_src_t cali_clk_sel = (soc_clk_calibration_clk_src_t)cal_clk;
+    soc_timg0_calibration_clk_src_t cali_clk_sel = (soc_timg0_calibration_clk_src_t)cal_clk;
     if (cal_clk == RTC_CAL_RTC_MUX) {
         switch (slow_clk_src) {
         case SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4:
@@ -55,13 +61,13 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     // Only enable if originally was disabled, and set back to the disable state after calibration is done
     // If the clock is already on, then do nothing
     bool dig_32k_xtal_enabled = clk_ll_xtal32k_digi_is_enabled();
-    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
+    if (cali_clk_sel == CLK_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
             clk_ll_xtal32k_digi_enable();
     }
 
     bool rc_fast_enabled = clk_ll_rc_fast_is_enabled();
     bool dig_rc_fast_enabled = clk_ll_rc_fast_digi_is_enabled();
-    if (cal_clk == RTC_CAL_RC_FAST) {
+    if (cali_clk_sel == CLK_CAL_RC_FAST) {
         if (!rc_fast_enabled) {
             rtc_clk_8m_enable(true);
         }
@@ -118,7 +124,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
 
             /* The Fosc CLK of calibration circuit is divided by a factor, k.
                So we need to multiply the frequency of the FOSC by k times. */
-            if (cal_clk == RTC_CAL_RC_FAST) {
+            if (cali_clk_sel == CLK_CAL_RC_FAST) {
                 cal_val = cal_val >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
             }
             break;
@@ -131,11 +137,11 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
 
     /* if dig_32k_xtal was originally off and enabled due to calibration, then set back to off state */
-    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
+    if (cali_clk_sel == CLK_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
         clk_ll_xtal32k_digi_disable();
     }
 
-    if (cal_clk == RTC_CAL_RC_FAST) {
+    if (cali_clk_sel == CLK_CAL_RC_FAST) {
         if (!dig_rc_fast_enabled) {
             rtc_dig_clk8m_disable();
         }

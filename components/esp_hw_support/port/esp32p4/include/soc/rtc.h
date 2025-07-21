@@ -151,24 +151,22 @@ typedef struct rtc_cpu_freq_config_s {
 
 /**
  * @brief Clock source to be calibrated using rtc_clk_cal function
- *
- * @note On ESP32P4, the enum values somehow reflects the register field values of HP_SYS_CLKRST_REG_TIMERGRP0_TGRT_CLK_SRC_SEL.
  */
 typedef enum {
-    RTC_CAL_RTC_MUX = -1,       //!< Currently selected RTC_SLOW_CLK
-    RTC_CAL_MPLL = 0,           //!< 500MHz MSPI_PLL_CLK
-    RTC_CAL_SPLL = 1,           //!< 480MHz SYS_PLL_CLK
-    RTC_CAL_CPLL = 2,           //!< 400MHz CPU_PLL_CLK
-    RTC_CAL_APLL = 3,           //!< AUDIO_PLL_CLK
-    RTC_CAL_SDIO_PLL0 = 4,      //!< SDIO_PLL0_CLK
-    RTC_CAL_SDIO_PLL1 = 5,      //!< SDIO_PLL1_CLK
-    RTC_CAL_SDIO_PLL2 = 6,      //!< SDIO_PLL2_CLK
-    RTC_CAL_RC_FAST = 7,        //!< Internal 20MHz RC oscillator
-    RTC_CAL_RC_SLOW = 8,        //!< Internal 150kHz RC oscillator
-    RTC_CAL_RC32K = 9,          //!< Internal 32kHz RC oscillator, as one type of 32k clock
-    RTC_CAL_32K_XTAL = 10,      //!< External 32kHz XTAL, as one type of 32k clock
-    RTC_CAL_LP_PLL = 11,        //!< 8MHz LP_PLL_CLK
-    RTC_CAL_INVALID_CLK,        //!< Clock not available to calibrate
+    RTC_CAL_RTC_MUX = -1,                   //!< Currently selected RTC_SLOW_CLK
+    RTC_CAL_MPLL = CLK_CAL_MPLL,            //!< 500MHz MSPI_PLL_CLK
+    RTC_CAL_SPLL = CLK_CAL_SPLL,            //!< 480MHz SYS_PLL_CLK
+    RTC_CAL_CPLL = CLK_CAL_CPLL,            //!< 400MHz CPU_PLL_CLK
+    RTC_CAL_APLL = CLK_CAL_APLL,            //!< AUDIO_PLL_CLK
+    RTC_CAL_SDIO_PLL0 = CLK_CAL_SDIO_PLL0,  //!< SDIO_PLL0_CLK
+    RTC_CAL_SDIO_PLL1 = CLK_CAL_SDIO_PLL1,  //!< SDIO_PLL1_CLK
+    RTC_CAL_SDIO_PLL2 = CLK_CAL_SDIO_PLL2,  //!< SDIO_PLL2_CLK
+    RTC_CAL_RC_FAST = CLK_CAL_RC_FAST,      //!< Internal 20MHz RC oscillator
+    RTC_CAL_RC_SLOW = CLK_CAL_RC_SLOW,      //!< Internal 150kHz RC oscillator
+    RTC_CAL_RC32K = CLK_CAL_RC32K,          //!< Internal 32kHz RC oscillator, as one type of 32k clock
+    RTC_CAL_32K_XTAL = CLK_CAL_32K_XTAL,    //!< External 32kHz XTAL, as one type of 32k clock
+    RTC_CAL_LP_PLL = CLK_CAL_LP_PLL,        //!< 8MHz LP_PLL_CLK
+    RTC_CAL_INVALID_CLK,                    //!< Clock not available to calibrate
 } rtc_cal_sel_t;
 
 /**
@@ -390,26 +388,6 @@ void rtc_clk_cpu_freq_set_xtal(void);
  * @return The calculated APB frequency value, in Hz.
  */
 uint32_t rtc_clk_apb_freq_get(void);
-
-/**
- * @brief Clock calibration function used by rtc_clk_cal
- *
- * Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
- * This feature counts the number of XTAL clock cycles within a given number of
- * RTC_SLOW_CLK cycles.
- *
- * Slow clock calibration feature has two modes of operation: one-off and cycling.
- * In cycling mode (which is enabled by default on SoC reset), counting of XTAL
- * cycles within RTC_SLOW_CLK cycle is done continuously. Cycling mode is enabled
- * using TIMG_RTC_CALI_START_CYCLING bit. In one-off mode counting is performed
- * once, and TIMG_RTC_CALI_RDY bit is set when counting is done. One-off mode is
- * enabled using TIMG_RTC_CALI_START bit.
- *
- * @param cal_clk which clock to calibrate
- * @param slowclk_cycles number of slow clock cycles to count
- * @return number of XTAL clock cycles within the given number of slow clock cycles
- */
-uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
 
 /**
  * @brief Measure RTC slow clock's period, based on main XTAL frequency

@@ -797,6 +797,25 @@ typedef enum {
     CLKOUT_SIG_INVALID  = 0xFF,
 } soc_clkout_sig_id_t;
 
+////////////////////////////////////////////RTC CALIBRATION///////////////////////////////////////////////////////////
+/**
+ * @brief Clock frequency calibration source selection
+ */
+typedef enum {
+    CLK_CAL_MPLL = 0,                                /*!< Select to calibrate MPLL_CLK */
+    CLK_CAL_SPLL,                                    /*!< Select to calibrate SPLL_CLK */
+    CLK_CAL_CPLL,                                    /*!< Select to calibrate CPLL_CLK */
+    CLK_CAL_APLL,                                    /*!< Select to calibrate APLL_CLK */
+    CLK_CAL_SDIO_PLL0,                               /*!< Select to calibrate SDIO_PLL0_CLK */
+    CLK_CAL_SDIO_PLL1,                               /*!< Select to calibrate SDIO_PLL1_CLK */
+    CLK_CAL_SDIO_PLL2,                               /*!< Select to calibrate SDIO_PLL2_CLK */
+    CLK_CAL_RC_FAST,                                 /*!< Select to calibrate RC_FAST_CLK */
+    CLK_CAL_RC_SLOW,                                 /*!< Select to calibrate RC_SLOW_CLK */
+    CLK_CAL_RC32K,                                   /*!< Select to calibrate RC32K_CLK */
+    CLK_CAL_32K_XTAL,                                /*!< Select to calibrate XTAL32K_CLK */
+    CLK_CAL_LP_PLL,                                  /*!< Select to calibrate LP_PLL_CLK */
+} soc_timg0_calibration_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif

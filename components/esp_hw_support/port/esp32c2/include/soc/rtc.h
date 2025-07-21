@@ -159,12 +159,10 @@ typedef struct rtc_cpu_freq_config_s {
  * @brief Clock source to be calibrated using rtc_clk_cal function
  */
 typedef enum {
-    RTC_CAL_RTC_MUX = 0,       //!< Currently selected RTC SLOW_CLK
-    RTC_CAL_8MD256 = 1,        //!< Internal 8 MHz RC oscillator, divided by 256
-    RTC_CAL_32K_OSC_SLOW = 2,  //!< External 32.768 KHz CLK
-
-    // deprecated name
-    RTC_CAL_EXT_32K __attribute__((deprecated)) = RTC_CAL_32K_OSC_SLOW,
+    RTC_CAL_RTC_MUX = -1,                         //!< Currently selected RTC SLOW_CLK
+    RTC_CAL_8MD256 = CLK_CAL_RC_FAST_D256,        //!< Internal 17.5 MHz RC oscillator, divided by 256
+    RTC_CAL_32K_OSC_SLOW = CLK_CAL_32K_OSC_SLOW,  //!< External 32 kHz CLK
+    RTC_CAL_INTERNAL_OSC = CLK_CAL_RC_SLOW,       //!< Internal 150 kHz RC oscillator
 } rtc_cal_sel_t;
 
 /**
@@ -408,8 +406,6 @@ void rtc_clk_apb_freq_update(uint32_t apb_freq);
  * @return The APB frequency value as last set via rtc_clk_apb_freq_update(), in Hz.
  */
 uint32_t rtc_clk_apb_freq_get(void);
-
-uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
 
 /**
  * @brief Measure RTC slow clock's period, based on main XTAL frequency

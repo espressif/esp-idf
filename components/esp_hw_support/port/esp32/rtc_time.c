@@ -37,30 +37,32 @@ static const char *TAG = "rtc_time";
 static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
     assert(slowclk_cycles < 32767);
-    /* Enable requested clock (150k clock is always on) */
+    soc_timg0_calibration_clk_src_t cali_clk_sel = (soc_timg0_calibration_clk_src_t)cal_clk;
+
+    /* Enable requested clock (rtc slow clock is always on) */
     bool dig_32k_xtal_enabled = clk_ll_xtal32k_digi_is_enabled();
-    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
+    if (cali_clk_sel == CLK_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
         clk_ll_xtal32k_digi_enable();
     }
 
     bool rc_fast_enabled = clk_ll_rc_fast_is_enabled();
     bool rc_fast_d256_enabled = clk_ll_rc_fast_d256_is_enabled();
-    if (cal_clk == RTC_CAL_8MD256) {
+    if (cali_clk_sel == CLK_CAL_RC_FAST_D256) {
         rtc_clk_8m_enable(true, true);
         clk_ll_rc_fast_d256_digi_enable();
     }
     /* Prepare calibration */
-    REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, cal_clk);
+    clk_ll_calibration_set_target(cali_clk_sel);
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING);
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_MAX, slowclk_cycles);
     /* Figure out how long to wait for calibration to finish */
     uint32_t expected_freq;
     soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
-    if (cal_clk == RTC_CAL_32K_XTAL ||
-            (cal_clk == RTC_CAL_RTC_MUX && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)) {
+    if (cali_clk_sel == CLK_CAL_32K_XTAL ||
+            (cali_clk_sel == CLK_CAL_RTC_SLOW && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)) {
         expected_freq = SOC_CLK_XTAL32K_FREQ_APPROX; /* standard 32k XTAL */
-    } else if (cal_clk == RTC_CAL_8MD256 ||
-               (cal_clk == RTC_CAL_RTC_MUX && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256)) {
+    } else if (cali_clk_sel == CLK_CAL_RC_FAST_D256 ||
+               (cali_clk_sel == CLK_CAL_RTC_SLOW && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256)) {
         expected_freq = SOC_CLK_RC_FAST_D256_FREQ_APPROX;
     } else {
         expected_freq = SOC_CLK_RC_SLOW_FREQ_APPROX; /* 150k internal oscillator */
@@ -94,11 +96,11 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     }
 
     /* if dig_32k_xtal was originally off and enabled due to calibration, then set back to off state */
-    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
+    if (cali_clk_sel == CLK_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
         clk_ll_xtal32k_digi_disable();
     }
 
-    if (cal_clk == RTC_CAL_8MD256) {
+    if (cali_clk_sel == CLK_CAL_RC_FAST_D256) {
         clk_ll_rc_fast_d256_digi_disable();
         rtc_clk_8m_enable(rc_fast_enabled, rc_fast_d256_enabled);
     }

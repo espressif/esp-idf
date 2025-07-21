@@ -20,27 +20,6 @@
 
 __attribute__((unused)) static const char *TAG = "rtc_time";
 
-/* Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
- * This feature counts the number of XTAL clock cycles within a given number of
- * RTC_SLOW_CLK cycles.
- *
- * Slow clock calibration feature has two modes of operation: one-off and cycling.
- * In cycling mode (which is enabled by default on SoC reset), counting of XTAL
- * cycles within RTC_SLOW_CLK cycle is done continuously. Cycling mode is enabled
- * using TIMG_RTC_CALI_START_CYCLING bit. In one-off mode counting is performed
- * once, and TIMG_RTC_CALI_RDY bit is set when counting is done. One-off mode is
- * enabled using TIMG_RTC_CALI_START bit.
- */
-
-/* On ESP32C6, TIMG_RTC_CALI_CLK_SEL can config to 0, 1, 2, 3
- * 0 or 3: calibrate RC_SLOW clock
- * 1: calibrate RC_FAST clock
- * 2: calibrate 32K clock, which 32k depends on reg_32k_sel: 0: Internal 32 kHz RC oscillator, 1: External 32 kHz XTAL, 2: External 32kHz clock input by lp_pad_gpio0
- */
-#define TIMG_RTC_CALI_CLK_SEL_RC_SLOW 0
-#define TIMG_RTC_CALI_CLK_SEL_RC_FAST 1
-#define TIMG_RTC_CALI_CLK_SEL_32K     2
-
 /**
  * @brief Clock calibration function used by rtc_clk_cal
  *
@@ -63,34 +42,32 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
 {
     assert(slowclk_cycles < TIMG_RTC_CALI_MAX_V);
 
-    uint32_t cali_clk_sel = 0;
-    soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
-    soc_rtc_slow_clk_src_t old_32k_cal_clk_sel = clk_ll_32k_calibration_get_target();
     if (cal_clk == RTC_CAL_RTC_MUX) {
-        cal_clk = (rtc_cal_sel_t)slow_clk_src;
+        soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
+        if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) {
+            cal_clk = RTC_CAL_RC_SLOW;
+        } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+            cal_clk = RTC_CAL_32K_OSC_SLOW;
+        } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+            cal_clk = RTC_CAL_32K_XTAL;
+        } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
+            cal_clk = RTC_CAL_RC32K;
+        }
     }
-    if (cal_clk == RTC_CAL_RC_FAST) {
-        cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_RC_FAST;
-    } else if (cal_clk == RTC_CAL_RC_SLOW) {
-        cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_RC_SLOW;
-    } else {
-        cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_32K;
-        clk_ll_32k_calibration_set_target((soc_rtc_slow_clk_src_t)cal_clk);
-    }
-
+    soc_timg0_calibration_clk_src_t cali_clk_sel = (soc_timg0_calibration_clk_src_t)cal_clk;
 
     /* Enable requested clock (150k clock is always on) */
     // All clocks on/off takes time to be stable, so we shouldn't frequently enable/disable the clock
     // Only enable if originally was disabled, and set back to the disable state after calibration is done
     // If the clock is already on, then do nothing
     bool dig_32k_xtal_enabled = clk_ll_xtal32k_digi_is_enabled();
-    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
-            clk_ll_xtal32k_digi_enable();
+    if (cali_clk_sel == CLK_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
+        clk_ll_xtal32k_digi_enable();
     }
 
     bool rc_fast_enabled = clk_ll_rc_fast_is_enabled();
     bool dig_rc_fast_enabled = clk_ll_rc_fast_digi_is_enabled();
-    if (cal_clk == RTC_CAL_RC_FAST) {
+    if (cali_clk_sel == CLK_CAL_RC_FAST) {
         if (!rc_fast_enabled) {
             rtc_clk_8m_enable(true);
         }
@@ -101,7 +78,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
 
     bool rc32k_enabled = clk_ll_rc32k_is_enabled();
     bool dig_rc32k_enabled = clk_ll_rc32k_digi_is_enabled();
-    if (cal_clk == RTC_CAL_RC32K) {
+    if (cali_clk_sel == CLK_CAL_RC32K) {
         if (!rc32k_enabled) {
             rtc_clk_rc32k_enable(true);
         }
@@ -124,8 +101,8 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     }
 
     /* Prepare calibration */
-    REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, cali_clk_sel);
-    if (cali_clk_sel == TIMG_RTC_CALI_CLK_SEL_RC_FAST) {
+    clk_ll_calibration_set_target(cali_clk_sel);
+    if (cali_clk_sel == CLK_CAL_RC_FAST) {
         clk_ll_rc_fast_tick_conf();
     }
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING);
@@ -134,10 +111,10 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
 
     /* Set timeout reg and expect time delay*/
     uint32_t expected_freq;
-    if (cali_clk_sel == TIMG_RTC_CALI_CLK_SEL_32K) {
+    if (cali_clk_sel == CLK_CAL_32K_XTAL || cali_clk_sel == CLK_CAL_32K_OSC_SLOW || cali_clk_sel == CLK_CAL_RC32K) {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_32K_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = SOC_CLK_XTAL32K_FREQ_APPROX;
-    } else if (cali_clk_sel == TIMG_RTC_CALI_CLK_SEL_RC_FAST) {
+    } else if (cali_clk_sel == CLK_CAL_RC_FAST) {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_FAST_CLK_20M_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = SOC_CLK_RC_FAST_FREQ_APPROX;
         if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
@@ -165,7 +142,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
               And the 32-divider belongs to REF_TICK module, so we need to enable its clock during
               calibration. */
             if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
-                if (cal_clk == RTC_CAL_RC_FAST) {
+                if (cali_clk_sel == CLK_CAL_RC_FAST) {
                     cal_val = cal_val >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
                     CLEAR_PERI_REG_MASK(PCR_CTRL_TICK_CONF_REG, PCR_TICK_ENABLE);
                 }
@@ -180,11 +157,11 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
 
     /* if dig_32k_xtal was originally off and enabled due to calibration, then set back to off state */
-    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
+    if (cali_clk_sel == CLK_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
         clk_ll_xtal32k_digi_disable();
     }
 
-    if (cal_clk == RTC_CAL_RC_FAST) {
+    if (cali_clk_sel == CLK_CAL_RC_FAST) {
         if (!dig_rc_fast_enabled) {
             rtc_dig_clk8m_disable();
         }
@@ -193,18 +170,13 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         }
     }
 
-    if (cal_clk == RTC_CAL_RC32K) {
+    if (cali_clk_sel == CLK_CAL_RC32K) {
         if (!dig_rc32k_enabled) {
             clk_ll_rc32k_digi_disable();
         }
         if (!rc32k_enabled) {
             rtc_clk_rc32k_enable(false);
         }
-    }
-
-    // Always set back the calibration 32kHz clock selection
-    if (old_32k_cal_clk_sel != SOC_RTC_SLOW_CLK_SRC_INVALID) {
-        clk_ll_32k_calibration_set_target(old_32k_cal_clk_sel);
     }
 
     return cal_val;

@@ -396,6 +396,17 @@ typedef enum {
     CLKOUT_SIG_RC_SLOW          = 0x19, /*!< RC slow clock, depends on the RTC_CLK_SRC configuration */
 } soc_clkout_sig_id_t;
 
+////////////////////////////////////////////RTC CALIBRATION///////////////////////////////////////////////////////////
+/**
+ * @brief Clock frequency calibration source selection
+ */
+typedef enum {
+    CLK_CAL_RC_SLOW = 0,                             /*!< Select to calibrate RC_SLOW_CLK */
+    CLK_CAL_32K_XTAL,                                /*!< Select to calibrate XTAL32K_CLK */
+    CLK_CAL_32K_OSC_SLOW,                            /*!< Select to calibrate OSC_SLOW_CLK (external slow clock) */
+    CLK_CAL_RC_FAST,                                 /*!< Select to calibrate RC_FAST_CLK */
+} soc_timg0_calibration_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif

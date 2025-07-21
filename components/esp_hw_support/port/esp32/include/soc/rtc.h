@@ -93,9 +93,9 @@ typedef struct rtc_cpu_freq_config_s {
  * @brief Clock source to be calibrated using rtc_clk_cal function
  */
 typedef enum {
-    RTC_CAL_RTC_MUX = 0,       //!< Currently selected RTC SLOW_CLK
-    RTC_CAL_8MD256 = 1,        //!< Internal 8 MHz RC oscillator, divided by 256
-    RTC_CAL_32K_XTAL = 2       //!< External 32 kHz XTAL
+    RTC_CAL_RTC_MUX = CLK_CAL_RTC_SLOW,         //!< Currently selected RTC SLOW_CLK
+    RTC_CAL_8MD256 = CLK_CAL_RC_FAST_D256,      //!< Internal 8 MHz RC oscillator, divided by 256
+    RTC_CAL_32K_XTAL = CLK_CAL_32K_XTAL,        //!< External 32 kHz XTAL
 } rtc_cal_sel_t;
 
 /**

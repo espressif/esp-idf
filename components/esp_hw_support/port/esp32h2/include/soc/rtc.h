@@ -125,18 +125,14 @@ typedef struct rtc_cpu_freq_config_s {
 
 /**
  * @brief Clock source to be calibrated using rtc_clk_cal function
- *
- * @note On previous targets, the enum values somehow reflects the register field values of TIMG_RTC_CALI_CLK_SEL
- *       However, this is not true on ESP32H2. The conversion to register field values is explicitly done in
- *       rtc_clk_cal_internal
  */
 typedef enum {
     RTC_CAL_RTC_MUX = -1,                                  //!< Currently selected RTC_SLOW_CLK
-    RTC_CAL_RC_SLOW = SOC_RTC_SLOW_CLK_SRC_RC_SLOW,        //!< Internal 150kHz RC oscillator
-    RTC_CAL_RC32K = SOC_RTC_SLOW_CLK_SRC_RC32K,            //!< Internal 32kHz RC oscillator, as one type of 32k clock
-    RTC_CAL_32K_XTAL = SOC_RTC_SLOW_CLK_SRC_XTAL32K,       //!< External 32kHz XTAL, as one type of 32k clock
-    RTC_CAL_32K_OSC_SLOW = SOC_RTC_SLOW_CLK_SRC_OSC_SLOW,  //!< External slow clock signal input by lp_pad_gpiox, as one type of 32k clock
-    RTC_CAL_RC_FAST                                        //!< Internal 8MHz RC oscillator
+    RTC_CAL_RC_SLOW = CLK_CAL_RC_SLOW,                     //!< Internal 150kHz RC oscillator
+    RTC_CAL_RC32K = CLK_CAL_RC32K,                         //!< Internal 32kHz RC oscillator
+    RTC_CAL_32K_XTAL = CLK_CAL_32K_XTAL,                   //!< External 32kHz XTAL
+    RTC_CAL_32K_OSC_SLOW = CLK_CAL_32K_OSC_SLOW,           //!< External slow clock signal input by lp_pad_gpiox
+    RTC_CAL_RC_FAST = CLK_CAL_RC_FAST,                     //!< Internal 8MHz RC oscillator
 } rtc_cal_sel_t;
 
 /**

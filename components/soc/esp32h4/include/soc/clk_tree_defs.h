@@ -306,7 +306,7 @@ typedef enum {
     CLK_CAL_GPSPI3_MST,                              /*!< Select to calibrate GPSPI3_MST_CLK */
     CLK_CAL_GPSPI2_MST,                              /*!< Select to calibrate GPSPI2_MST_CLK */
     CLK_CAL_EXT_IO,                                  /*!< Select to calibrate an external clock from an IO */
-} soc_clk_calibration_clk_src_t;
+} soc_timg0_calibration_clk_src_t;
 /////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////
 
 /**

@@ -422,9 +422,9 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(voi
 /**
  * @brief Select the calibration clock source for timergroup0
  *
- * @param clk_sel One of the clock sources in soc_clk_calibration_clk_src_t
+ * @param clk_sel One of the clock sources in soc_timg0_calibration_clk_src_t
  */
-static inline __attribute__((always_inline)) void clk_ll_calibration_set_target(soc_clk_calibration_clk_src_t clk_sel)
+static inline __attribute__((always_inline)) void clk_ll_calibration_set_target(soc_timg0_calibration_clk_src_t clk_sel)
 {
     int timg_cali_clk_sel = -1;
     int timg_secure_clk_sel = -1;
