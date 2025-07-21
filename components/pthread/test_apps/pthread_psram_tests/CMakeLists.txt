@@ -8,6 +8,6 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 set(COMPONENTS main esp_psram)
 
-list(APPEND EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/tools/unit-test-app/components")   # For test_utils component
+list(APPEND EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/tools/test_apps/components")   # For test_utils component
 
 project(pthread_psram_tests)

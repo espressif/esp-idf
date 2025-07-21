@@ -7,4 +7,4 @@ dependencies:
   tee_sec_storage:
     path: ${IDF_PATH}/components/esp_tee/subproject/components/tee_sec_storage
   test_utils:
-    path: ${IDF_PATH}/tools/unit-test-app/components/test_utils
+    path: ${IDF_PATH}/tools/test_apps/components/test_utils
