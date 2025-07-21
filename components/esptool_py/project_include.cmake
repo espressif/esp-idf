@@ -638,9 +638,14 @@ function(__idf_build_secure_binary UNSIGNED_BIN_FILENAME SIGNED_BIN_FILENAME TAR
             )
     else()
         string(REPLACE ";" " " espsecurepy "${espsecure_py_cmd}")
+        if(arg_COMMENT)
+            set(comment_text "${arg_COMMENT}")
+        else()
+            set(comment_text "App built but not signed. Sign app before flashing.")
+        endif()
         add_custom_command(TARGET app POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo
-                "App built but not signed. Sign app before flashing"
+                "${comment_text}"
             COMMAND ${CMAKE_COMMAND} -E echo
                 "\t${espsecurepy} sign_data --keyfile KEYFILE --version ${secure_boot_version} \
                 ${build_dir}/${UNSIGNED_BIN_FILENAME}"
