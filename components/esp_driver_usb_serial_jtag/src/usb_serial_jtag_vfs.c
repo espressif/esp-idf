@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -226,40 +226,69 @@ static void usb_serial_jtag_return_char(int fd, int c)
 
 static ssize_t usb_serial_jtag_read(int fd, void* data, size_t size)
 {
+    assert(fd == USJ_LOCAL_FD);
     char *data_c = (char *) data;
     size_t received = 0;
+    size_t available_size = 0;
+    int c = NONE; // store the read char
     _lock_acquire_recursive(&s_ctx.read_lock);
-    while (received < size) {
-        int c = usb_serial_jtag_read_char(fd);
-        if (c == '\r') {
-            if (s_ctx.rx_mode == ESP_LINE_ENDINGS_CR) {
-                c = '\n';
-            } else if (s_ctx.rx_mode == ESP_LINE_ENDINGS_CRLF) {
-                /* look ahead */
-                int c2 = usb_serial_jtag_read_char(fd);
-                if (c2 == NONE) {
-                    /* could not look ahead, put the current character back */
-                    usb_serial_jtag_return_char(fd, c);
-                    break;
-                }
-                if (c2 == '\n') {
-                    /* this was \r\n sequence. discard \r, return \n */
+
+    // if blocking read, wait for data to  be available
+    if (!s_ctx.non_blocking) {
+        c = usb_serial_jtag_read_char(fd);
+    }
+
+    // find the actual fetch size
+    available_size += usb_serial_jtag_get_read_bytes_available();
+    if (c != NONE) {
+        available_size++;
+    }
+    if (s_ctx.peek_char != NONE) {
+        available_size++;
+    }
+    size_t fetch_size = MIN(available_size, size);
+
+    if (fetch_size > 0) {
+        do {
+            if (c == NONE) { // for non-O_NONBLOCK mode, there is already a pre-fetched char
+                c = usb_serial_jtag_read_char(fd);
+            }
+            assert(c != NONE);
+
+            if (c == '\r') {
+                if (s_ctx.rx_mode == ESP_LINE_ENDINGS_CR) {
                     c = '\n';
-                } else {
-                    /* \r followed by something else. put the second char back,
-                     * it will be processed on next iteration. return \r now.
-                     */
-                    usb_serial_jtag_return_char(fd, c2);
+                } else if (s_ctx.rx_mode == ESP_LINE_ENDINGS_CRLF) {
+                    /* look ahead */
+                    int c2 = usb_serial_jtag_read_char(fd);
+                    fetch_size--;
+                    if (c2 == NONE) {
+                        /* could not look ahead, put the current character back */
+                        usb_serial_jtag_return_char(fd, c);
+                        c = NONE;
+                        break;
+                    }
+                    if (c2 == '\n') {
+                        /* this was \r\n sequence. discard \r, return \n */
+                        c = '\n';
+                    } else {
+                        /* \r followed by something else. put the second char back,
+                         * it will be processed on next iteration. return \r now.
+                         */
+                        usb_serial_jtag_return_char(fd, c2);
+                        fetch_size++;
+                    }
                 }
             }
-        } else if (c == NONE) {
-            break;
-        }
-        data_c[received] = (char) c;
-        ++received;
-        if (c == '\n') {
-            break;
-        }
+
+            data_c[received] = (char) c;
+            ++received;
+            c = NONE;
+        } while (received < fetch_size);
+    }
+
+    if (c != NONE) { // fetched, but not used
+        usb_serial_jtag_return_char(fd, c);
     }
     _lock_release_recursive(&s_ctx.read_lock);
     if (received > 0) {
@@ -455,7 +484,7 @@ static esp_err_t usb_serial_jtag_start_select(int nfds, fd_set *readfds, fd_set 
     bool trigger_select = false;
 
     // check if the select should return instantly if the bus is read ready
-    if (FD_ISSET(USJ_LOCAL_FD, &args->readfds_orig) && usb_serial_jtag_read_ready()) {
+    if (FD_ISSET(USJ_LOCAL_FD, &args->readfds_orig) && (usb_serial_jtag_get_read_bytes_available() > 0)) {
         // signal immediately when data is buffered
         FD_SET(USJ_LOCAL_FD, readfds);
         trigger_select = true;
