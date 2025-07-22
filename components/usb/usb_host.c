@@ -17,9 +17,11 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "esp_private/critical_section.h"
+#include "soc/usb_dwc_periph.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
+#include "esp_bit_defs.h"
 #include "hub.h"
 #include "enum.h"
 #include "usbh.h"
@@ -466,16 +468,26 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     - Hub
     */
 
+    // For backward compatibility accept 0 too
+    const unsigned peripheral_map = config->peripheral_map == 0 ? BIT0 : config->peripheral_map;
+
     // Install USB PHY (if necessary). USB PHY driver will also enable the underlying Host Controller
     if (!config->skip_phy_setup) {
+        bool init_utmi_phy = false; // Default value for Linux simulation
+
+#if SOC_USB_OTG_SUPPORTED // In case we run on a real target, select the PHY from usb_dwc_info description structure
+        // Right now we support only one peripheral, can be extended in future
+        int peripheral_index = 0;
+        if (peripheral_map & BIT1) {
+            peripheral_index = 1;
+        }
+        init_utmi_phy = (usb_dwc_info.controllers[peripheral_index].supported_phys == USB_PHY_INST_UTMI_0);
+#endif // SOC_USB_OTG_SUPPORTED
+
         // Host Library defaults to internal PHY
         usb_phy_config_t phy_config = {
             .controller = USB_PHY_CTRL_OTG,
-#if CONFIG_IDF_TARGET_ESP32P4 // ESP32-P4 has 2 USB-DWC peripherals, each with its dedicated PHY. We support HS+UTMI only ATM.
-            .target = USB_PHY_TARGET_UTMI,
-#else
-            .target = USB_PHY_TARGET_INT,
-#endif
+            .target = init_utmi_phy ? USB_PHY_TARGET_UTMI : USB_PHY_TARGET_INT,
             .otg_mode = USB_OTG_MODE_HOST,
             .otg_speed = USB_PHY_SPEED_UNDEFINED,   // In Host mode, the speed is determined by the connected device
             .ext_io_conf = NULL,
@@ -493,6 +505,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     hcd_fifo_settings_t user_fifo_config;
     hcd_config_t hcd_config = {
         .intr_flags = config->intr_flags,
+        .peripheral_map = peripheral_map,
         .fifo_config = NULL, // Default: use bias strategy from Kconfig
     };
 
@@ -547,6 +560,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
 
     // Install Hub
     hub_config_t hub_config = {
+        .port_map = peripheral_map, // Each USB-OTG peripheral maps to a root port
         .proc_req_cb = proc_req_callback,
         .proc_req_cb_arg = NULL,
         .event_cb = hub_event_callback,
