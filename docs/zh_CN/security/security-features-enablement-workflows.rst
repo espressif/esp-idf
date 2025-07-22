@@ -406,7 +406,13 @@ flash 加密指南
 
             bashespsecure.py generate_signing_key --version 2 --scheme ecdsa256 secure_boot_signing_key.pem
 
-        将上述命令中的方案更改为 ``ecdsa192``，可生成 ecdsa192 私钥。
+        .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
+
+           将上述命令中的方案更改为 ``ecdsa192``，可生成 ecdsa192 私钥。
+
+        .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+           将上述命令中的方案更改为 ``ecdsa384`` 或 ``ecdsa192``，可生成 ecdsa384 或 ecdsa192 私钥。
 
     .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
@@ -466,6 +472,15 @@ flash 加密指南
 
             espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse SECURE_BOOT_EN
 
+    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+        如果启用了带有 ECDSA-P384 签名方案的 Secure Boot v2，则必须使用 SHA-384 来计算镜像的摘要。因此，需要烧录以下 eFuse：
+
+        .. code:: bash
+
+            espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse SECURE_BOOT_SHA384_EN
+
+
 5. 烧录相关 eFuse
 
     A) 烧录安全 eFuse
@@ -485,7 +500,8 @@ flash 加密指南
         :SOC_EFUSE_DIS_USB_JTAG: - ``DIS_USB_JTAG``：禁止从 USB 切换到 JTAG。
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``：永久禁用 JTAG。
         :SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS: - ``SECURE_BOOT_AGGRESSIVE_REVOKE``：主动吊销密钥摘要。详请请参阅 :ref:`secure-boot-v2-aggressive-key-revocation`。
-        :SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED: - ``WR_DIS_ECDSA_CURVE_MODE``：禁用 ECDSA 曲线模式。
+        :SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED: - ``WR_DIS_ECDSA_CURVE_MODE``：禁止写入 ECDSA 曲线模式。
+        :SOC_ECDSA_SUPPORT_CURVE_P384: - ``WR_DIS_SECURE_BOOT_SHA384_EN``：禁止写入 SHA-384 Secure Boot 的 SHA-384 eFuse 位。
 
     运行以下命令烧录相应的 eFuse：
 

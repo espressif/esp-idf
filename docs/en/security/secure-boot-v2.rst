@@ -157,13 +157,13 @@ The Secure Boot v2 process follows these steps:
 
    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
 
-      {IDF_TARGET_NAME} also supports Secure Boot V2 with the ECDSA signature scheme using the P-384 curve. This provides stronger security than both ECDSA-P256 and RSA-3072, but at the cost of increased signature verification time. Therefore, for use cases that require higher security strength, Secure Boot V2 should be enabled with the ECDSA P-384 signature scheme.
+      {IDF_TARGET_NAME} also supports Secure Boot v2 with the ECDSA signature scheme using the P-384 curve. This provides stronger security than both ECDSA-P256 and RSA-3072, but at the cost of increased signature verification time. Therefore, for use cases that require higher security strength, Secure Boot v2 should be enabled with the ECDSA P-384 signature scheme.
 
-      .. list-table:: Comparison between signature verification time
+      .. list-table:: Comparison Between Signature Verification Time
           :widths: 10 10 20
           :header-rows: 1
 
-          * - **Verification scheme**
+          * - **Verification Scheme**
             - **Time**
             - **CPU Frequency**
           * - RSA-3072
@@ -178,11 +178,11 @@ The Secure Boot v2 process follows these steps:
 
    .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
 
-      .. list-table:: Comparison between signature verification time
+      .. list-table:: Comparison Between Signature Verification Time
           :widths: 10 10 20
           :header-rows: 1
 
-          * - **Verification scheme**
+          * - **Verification Scheme**
             - **Time**
             - **CPU Frequency**
           * - RSA-3072
@@ -192,7 +192,7 @@ The Secure Boot v2 process follows these steps:
             - {IDF_TARGET_ECDSA_P256_TIME}
             - {IDF_TARGET_ROM_CPU_FREQ}
 
-   The above table compares the time taken for the first-stage bootloader to just verify the signature of the bootloader image in a particular scheme. It does not indicate the boot-up time. Also, note that the CPU frequency is lower because it is the frequency of the CPU when the first-stage bootloader is running.
+   The above table compares the time taken for the first stage (ROM) bootloader to just verify the signature of the bootloader image in a particular scheme. It does not indicate the boot-up time. Also, note that the CPU frequency is lower because it is the frequency of the CPU when the first stage (ROM) bootloader is running.
 
 
 .. _signature-block-format:
@@ -717,7 +717,7 @@ Secure Boot Best Practices
 
       .. note::
 
-        If Secure Boot V2 is configured using the ECDSA P-384 signature scheme, all signing keys used must be ECDSA-P384 keys. Using keys with different elliptic curves (e.g., P-192 or P-256) alongside P-384 is not supported and will cause signature verification to fail during boot.
+        If Secure Boot v2 is configured using the ECDSA P-384 signature scheme, all signing keys used must be ECDSA-P384 keys. Using keys with different elliptic curves (e.g., P-192 or P-256) alongside P-384 is not supported and will cause signature verification to fail during boot.
 
     .. _secure-boot-v2-key-revocation:
 
