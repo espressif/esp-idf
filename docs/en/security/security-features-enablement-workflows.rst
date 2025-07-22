@@ -500,8 +500,8 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
         :SOC_EFUSE_DIS_USB_JTAG: - ``DIS_USB_JTAG``: Disable USB switch to JTAG.
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``: Disable JTAG permanently.
         :SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS: - ``SECURE_BOOT_AGGRESSIVE_REVOKE``: Aggressive revocation of key digests, see :ref:`secure-boot-v2-aggressive-key-revocation` for more details.
-        :SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED: - ``WR_DIS_ECDSA_CURVE_MODE``: Write disable ECDSA curve mode.
-        :SOC_ECDSA_SUPPORT_CURVE_P384: - ``WR_DIS_SECURE_BOOT_SHA384_EN``: Disallow writing to the secure boot using SHA-384 efuse bit.
+        :SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED: - ``WR_DIS_ECDSA_CURVE_MODE``: Disable writing to the ECDSA curve mode eFuse bit.
+        :SOC_ECDSA_SUPPORT_CURVE_P384: - ``WR_DIS_SECURE_BOOT_SHA384_EN``: Disable writing to the SHA-384 secure boot eFuse bit.
 
     The respective eFuses can be burned by running:
 
