@@ -1022,11 +1022,15 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
         case ESC: {     /* escape sequence */
             /* ESC [ sequences. */
             char seq[3];
-            int r = read_func(in_fd, seq, 2);
-            if (r != 2) {
+            int r = read_func(in_fd, seq, 1);
+            if (r != 1) {
                 return -1;
             }
             if (seq[0] == '[') {
+                int r = read_func(in_fd, seq + 1, 1);
+                if (r != 1) {
+                    return -1;
+                }
                 if (seq[1] >= '0' && seq[1] <= '9') {
                     /* Extended escape, read additional byte. */
                     r = read_func(in_fd, seq + 2, 1);
@@ -1065,6 +1069,10 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
             }
             /* ESC O sequences. */
             else if (seq[0] == 'O') {
+                int r = read_func(in_fd, seq + 1, 1);
+                if (r != 1) {
+                    return -1;
+                }
                 switch(seq[1]) {
                 case 'H': /* Home */
                     linenoiseEditMoveHome(&l);
