@@ -118,3 +118,27 @@ OTA Updates
 The partial download functionality in ESP HTTPS OTA has been moved under a configuration option in order to reduce the memory footprint if partial download is not used.
 
 To use partial download features in your OTA applications, you need to enable the component-level configuration :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``).
+
+Gcov
+----
+
+The gcov component has been moved to a separate repository. `esp_gcov <https://components.espressif.com/components/espressif/esp_gcov>`_  is now a managed component.
+
+**Component Dependency**
+
+Projects using gcov functionality must now add the esp_gcov component as a dependency in their ``idf_component.yml`` manifest file:
+
+.. code-block:: yaml
+
+    dependencies:
+      espressif/esp_gcov: ^1
+
+**Configuration Changes**
+
+The gcov configuration options have moved from the Application Level Tracing menu to a dedicated ``GNU Code Coverage`` menu section.
+
+The ``CONFIG_APPTRACE_GCOV_ENABLE`` option has been renamed to ``CONFIG_ESP_GCOV_ENABLE``.
+
+**Header File Changes**
+
+For the gcov functionality, include the ``esp_gcov.h`` header file instead of ``esp_app_trace.h``.

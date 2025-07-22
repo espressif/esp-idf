@@ -662,8 +662,7 @@ menu "IPC (Inter-Processor Call)"
 
     config ESP_IPC_ENABLE
         bool
-        default y
-        depends on !ESP_SYSTEM_SINGLE_CORE_MODE || APPTRACE_GCOV_ENABLE
+        default y if !ESP_SYSTEM_SINGLE_CORE_MODE
 
     config ESP_IPC_TASK_STACK_SIZE
         int "Inter-Processor Call (IPC) task stack size"

@@ -111,3 +111,27 @@ FreeRTOS
 CRC 数据完整性检查已被弃用。`ESP_COREDUMP_CHECKSUM_CRC32` 表示该功能已完全删除，不再可用。现在默认的校验和算法为 SHA256。
 
 函数 :cpp:func:`esp_core_dump_partition_and_size_get()` 现在对空白（已擦除）分区返回 `ESP_ERR_NOT_FOUND`，而不是 `ESP_ERR_INVALID_SIZE`。
+
+Gcov
+----
+
+gcov 组件已移至独立仓库。`esp_gcov <https://components.espressif.com/components/espressif/esp_gcov>`_ 现为托管组件。
+
+**组件依赖**
+
+使用 gcov 功能的项目现在必须在 ``idf_component.yml`` 清单文件中添加 esp_gcov 组件作为依赖项：
+
+.. code-block:: yaml
+
+    dependencies:
+      espressif/esp_gcov: ^1
+
+**配置更改**
+
+gcov 配置选项现在归类在 ``GNU Code Coverage`` 菜单下。
+
+``CONFIG_APPTRACE_GCOV_ENABLE`` 选项已重命名为 ``CONFIG_ESP_GCOV_ENABLE``。
+
+**头文件更改**
+
+对于 gcov 功能，请改用 ``esp_gcov.h`` 头文件替代原有的 ``esp_app_trace.h``。
