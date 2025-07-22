@@ -1144,6 +1144,24 @@
 #endif
 
 /**
+ * \def MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+ *
+ * When this option is enabled, the client and server can extract additional
+ * shared symmetric keys after an SSL handshake using the function
+ * mbedtls_ssl_export_keying_material().
+ *
+ * The process for deriving the keys is specified in RFC 5705 for TLS 1.2 and
+ * in RFC 8446, Section 7.5, for TLS 1.3.
+ *
+ * Comment this macro to disable mbedtls_ssl_export_keying_material().
+ */
+#ifdef CONFIG_MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+#define MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+#else
+#undef MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+#endif
+
+/**
  * \def MBEDTLS_SSL_CBC_RECORD_SPLITTING
  *
  * Enable 1/n-1 record splitting for CBC mode in SSLv3 and TLS 1.0.
