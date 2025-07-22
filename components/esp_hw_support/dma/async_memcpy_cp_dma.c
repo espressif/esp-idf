@@ -233,7 +233,7 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
             .length = n,
             .flags = {
                 .mark_eof = true,   // mark the last item as EOF, so the RX channel can also received an EOF list item
-                .mark_final = true, // using singly list, so terminate the link here
+                .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
             }
         }
     };
@@ -257,7 +257,7 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
             .length = n,
             .flags = {
                 .mark_eof = false,  // EOF is set by TX side
-                .mark_final = true, // using singly list, so terminate the link here
+                .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
             }
         }
     };
