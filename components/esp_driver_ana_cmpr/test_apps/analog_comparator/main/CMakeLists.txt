@@ -13,5 +13,5 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS "."
-                       PRIV_REQUIRES unity esp_driver_gpio esp_driver_ana_cmpr esp_driver_gptimer esp_pm
+                       PRIV_REQUIRES unity esp_driver_gpio esp_driver_ana_cmpr esp_driver_gptimer esp_pm esp_psram
                        WHOLE_ARCHIVE)

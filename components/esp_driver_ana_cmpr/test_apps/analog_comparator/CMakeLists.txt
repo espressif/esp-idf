@@ -14,7 +14,7 @@ if(CONFIG_COMPILER_DUMP_RTL_FILES)
                       --elf-file ${CMAKE_BINARY_DIR}/test_ana_cmpr.elf
                       find-refs
                       --from-sections=.iram0.text
-                      --to-sections=.flash.text
+                      --to-sections=.flash.text,.flash.rodata
                       --exit-code
                       DEPENDS ${elf}
                       )

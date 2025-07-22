@@ -32,7 +32,14 @@ struct ana_cmpr_t {
 
 /* Helper macros */
 #define ANA_CMPR_NULL_POINTER_CHECK(p)      ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, TAG, "input parameter '" #p "' is NULL")
-#define ANA_CMPR_NULL_POINTER_CHECK_ISR(p)  ESP_RETURN_ON_FALSE_ISR((p), ESP_ERR_INVALID_ARG, TAG, "input parameter '" #p "' is NULL")
+#define ANA_CMPR_NULL_POINTER_CHECK_SAFE(p) \
+do {                                        \
+    if (unlikely(!(p))) {                   \
+        ESP_EARLY_LOGE(TAG, "input parameter '" #p "' is NULL");  \
+        return ESP_ERR_INVALID_ARG;         \
+    }                                       \
+} while(0)
+
 #define ANA_CMPR_UNIT_CHECK(unit)           ESP_RETURN_ON_FALSE((unit) >= 0 && (unit) < SOC_ANA_CMPR_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid unit number")
 
 /* Global static object of the Analog Comparator unit */
@@ -190,10 +197,12 @@ esp_err_t ana_cmpr_del_unit(ana_cmpr_handle_t cmpr)
 
 esp_err_t ana_cmpr_set_internal_reference(ana_cmpr_handle_t cmpr, const ana_cmpr_internal_ref_config_t *ref_cfg)
 {
-    ANA_CMPR_NULL_POINTER_CHECK_ISR(cmpr);
-    ANA_CMPR_NULL_POINTER_CHECK_ISR(ref_cfg);
-    ESP_RETURN_ON_FALSE_ISR(cmpr->ref_src == ANA_CMPR_REF_SRC_INTERNAL, ESP_ERR_INVALID_STATE,
-                            TAG, "the reference voltage does not come from internal");
+    ANA_CMPR_NULL_POINTER_CHECK_SAFE(cmpr);
+    ANA_CMPR_NULL_POINTER_CHECK_SAFE(ref_cfg);
+    if (unlikely(cmpr->ref_src != ANA_CMPR_REF_SRC_INTERNAL)) {
+        ESP_EARLY_LOGE(TAG, "the reference voltage does not come from internal");
+        return ESP_ERR_INVALID_STATE;
+    }
 
     // the underlying register may be accessed by different threads at the same time, so use spin lock to protect it
     portENTER_CRITICAL_SAFE(&s_spinlock);
@@ -205,8 +214,8 @@ esp_err_t ana_cmpr_set_internal_reference(ana_cmpr_handle_t cmpr, const ana_cmpr
 
 esp_err_t ana_cmpr_set_debounce(ana_cmpr_handle_t cmpr, const ana_cmpr_debounce_config_t *dbc_cfg)
 {
-    ANA_CMPR_NULL_POINTER_CHECK_ISR(cmpr);
-    ANA_CMPR_NULL_POINTER_CHECK_ISR(dbc_cfg);
+    ANA_CMPR_NULL_POINTER_CHECK_SAFE(cmpr);
+    ANA_CMPR_NULL_POINTER_CHECK_SAFE(dbc_cfg);
 
     /* Transfer the time to clock cycles */
     uint32_t wait_cycle = dbc_cfg->wait_us * (cmpr->src_clk_freq_hz / 1000000);
@@ -227,9 +236,11 @@ esp_err_t ana_cmpr_set_cross_type(ana_cmpr_handle_t cmpr, ana_cmpr_cross_type_t 
     (void)cross_type;
     return ESP_ERR_NOT_SUPPORTED;
 #else
-    ANA_CMPR_NULL_POINTER_CHECK_ISR(cmpr);
-    ESP_RETURN_ON_FALSE_ISR(cross_type >= ANA_CMPR_CROSS_DISABLE && cross_type <= ANA_CMPR_CROSS_ANY,
-                            ESP_ERR_INVALID_ARG, TAG, "invalid cross type");
+    ANA_CMPR_NULL_POINTER_CHECK_SAFE(cmpr);
+    if (unlikely(cross_type < ANA_CMPR_CROSS_DISABLE || cross_type > ANA_CMPR_CROSS_ANY)) {
+        ESP_EARLY_LOGE(TAG, "invalid cross type");
+        return ESP_ERR_INVALID_ARG;
+    }
 
     portENTER_CRITICAL_SAFE(&s_spinlock);
     analog_cmpr_ll_set_intr_cross_type(cmpr->dev, cross_type);
