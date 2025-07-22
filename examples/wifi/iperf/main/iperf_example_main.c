@@ -84,11 +84,21 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( ret );
 
-    /* initialise wifi */
-    app_wifi_initialise_config_t config = APP_WIFI_CONFIG_DEFAULT();
-    config.storage = WIFI_STORAGE_RAM;
-    config.ps_type = WIFI_PS_NONE;
-    app_initialise_wifi(&config);
+    /*
+    NOTE(#15855): wifi_cmd_initialize_wifi is a basic function to start wifi, set handlers and set wifi-cmd status.
+    For advanced usage, please refer to wifi_cmd.h or the document of wifi-cmd component: https://components.espressif.com/components/esp-qa/wifi-cmd
+
+    example:
+        wifi_cmd_wifi_init();
+        my_function();  // <---- more configs before wifi start
+        wifi_cmd_wifi_start();
+
+    Please note that some wifi commands such as "wifi start/restart" may not work as expected if "wifi_cmd_initialize_wifi" was not used.
+    */
+    /* initialise wifi and set wifi-cmd status */
+    wifi_cmd_initialize_wifi(NULL);
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_MU_STATS
     esp_wifi_enable_rx_statistics(true, true);
@@ -119,10 +129,13 @@ void app_main(void)
 
     /* Register commands */
     register_system();
-    app_register_all_wifi_commands();
+    /* From wifi-cmd */
+    wifi_cmd_register_all();
+    /* From iperf-cmd */
     app_register_iperf_commands();
-    ping_cmd_register_ping();
     app_register_iperf_hook_func(iperf_hook_show_wifi_stats);
+    /* From ping-cmd */
+    ping_cmd_register_ping();
 
 
     printf("\n ==================================================\n");
