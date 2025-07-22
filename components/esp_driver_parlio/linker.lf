@@ -14,6 +14,7 @@ entries:
         parlio_rx: parlio_rx_default_desc_done_callback (noflash)
         parlio_rx: parlio_rx_mount_transaction_buffer (noflash)
         parlio_rx: parlio_rx_set_delimiter_config (noflash)
+        parlio_rx: parlio_rx_unit_receive_from_isr (noflash)
 
 [mapping:parlio_driver_gdma_link]
 archive: libesp_hw_support.a
@@ -25,3 +26,9 @@ entries:
 
         if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION = y:
             gdma_link: gdma_link_get_buffer (noflash)
+
+[mapping:parlio_driver_soc_periph]
+archive: libsoc.a
+entries:
+    if PARLIO_RX_ISR_HANDLER_IN_IRAM = y:
+        parlio_periph: parlio_periph_signals  (noflash)

@@ -73,7 +73,7 @@ typedef struct parlio_rx_unit_t {
     size_t                          desc_size;              /*!< DMA descriptors total size */
     parlio_dma_desc_t               **dma_descs;            /*!< DMA descriptor array pointer */
     parlio_dma_desc_t               *curr_desc;             /*!< The pointer of the current descriptor */
-    void                            *usr_recv_buf;          /*!< The pointe to the user's receiving buffer */
+    void                            *usr_recv_buf;          /*!< The point to the user's receiving buffer */
     /* Infinite transaction specific */
     void                            *dma_buf;               /*!< Additional internal DMA buffer only for infinite transactions */
 
@@ -115,7 +115,8 @@ typedef struct parlio_rx_delimiter_t {
     } flags;
 } parlio_rx_delimiter_t;
 
-#define PRALIO_RX_MOUNT_SIZE_CALC(total_size, div, align)    ((((total_size) / (align)) / (div)) * (align))
+#define PARLIO_RX_MOUNT_SIZE_CALC(total_size, div, align)    ((((total_size) / (align)) / (div)) * (align))
+#define PARLIO_RX_CHECK_ISR(condition, err)                  if (!(condition)) { return err; }
 
 static portMUX_TYPE s_rx_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
 
@@ -150,11 +151,11 @@ size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parli
         size_t rest_size = trans->size - offset;
 
         if (rest_size >= 2 * PARLIO_MAX_ALIGNED_DMA_BUF_SIZE) {
-            mount_size = PRALIO_RX_MOUNT_SIZE_CALC(trans->size, desc_num, alignment);
+            mount_size = PARLIO_RX_MOUNT_SIZE_CALC(trans->size, desc_num, alignment);
         } else if (rest_size <= PARLIO_MAX_ALIGNED_DMA_BUF_SIZE) {
-            mount_size = (desc_num == 2) && (i == 0) ? PRALIO_RX_MOUNT_SIZE_CALC(rest_size, 2, alignment) : rest_size;
+            mount_size = (desc_num == 2) && (i == 0) ? PARLIO_RX_MOUNT_SIZE_CALC(rest_size, 2, alignment) : rest_size;
         } else {
-            mount_size = PRALIO_RX_MOUNT_SIZE_CALC(rest_size, 2, alignment);
+            mount_size = PARLIO_RX_MOUNT_SIZE_CALC(rest_size, 2, alignment);
         }
         p_desc[i]->buffer = (void *)((uint8_t *)trans->payload + offset);
         p_desc[i]->dw0.size = mount_size;
@@ -716,6 +717,10 @@ esp_err_t parlio_rx_unit_enable(parlio_rx_unit_handle_t rx_unit, bool reset_queu
     } else if (xQueueReceive(rx_unit->trans_que, &trans, 0) == pdTRUE) {
         // The semaphore always supposed to be taken successfully
         assert(xSemaphoreTake(rx_unit->trans_sem, 0) == pdTRUE);
+        if (trans.flags.indirect_mount && trans.flags.infinite && rx_unit->dma_buf == NULL) {
+            rx_unit->dma_buf = heap_caps_aligned_calloc(rx_unit->base.group->dma_align, 1, trans.size, PARLIO_DMA_MEM_ALLOC_CAPS);
+            ESP_GOTO_ON_FALSE(rx_unit->dma_buf, ESP_ERR_NO_MEM, err, TAG, "No memory for the internal DMA buffer");
+        }
         if (rx_unit->cfg.flags.free_clk) {
             PARLIO_CLOCK_SRC_ATOMIC() {
                 parlio_ll_rx_enable_clock(hal->regs, false);
@@ -992,6 +997,71 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
     esp_err_t ret = parlio_rx_unit_do_transaction(rx_unit, &transaction);
     xSemaphoreGive(rx_unit->mutex);
     return ret;
+}
+
+esp_err_t parlio_rx_unit_receive_from_isr(parlio_rx_unit_handle_t rx_unit,
+                                          void *payload,
+                                          size_t payload_size,
+                                          const parlio_receive_config_t* recv_cfg,
+                                          bool *hp_task_woken)
+{
+    PARLIO_RX_CHECK_ISR(rx_unit && payload && recv_cfg, ESP_ERR_INVALID_ARG);
+    PARLIO_RX_CHECK_ISR(recv_cfg->delimiter, ESP_ERR_INVALID_ARG);
+    PARLIO_RX_CHECK_ISR(payload_size <= rx_unit->max_recv_size, ESP_ERR_INVALID_ARG);
+    // Can only be called from ISR
+    PARLIO_RX_CHECK_ISR(xPortInIsrContext() == pdTRUE, ESP_ERR_INVALID_STATE);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    uint32_t alignment = rx_unit->base.group->dma_align;
+    PARLIO_RX_CHECK_ISR(payload_size % alignment == 0, ESP_ERR_INVALID_ARG);
+    if (recv_cfg->flags.partial_rx_en) {
+        PARLIO_RX_CHECK_ISR(payload_size >= 2 * alignment, ESP_ERR_INVALID_ARG);
+    }
+#endif
+#if CONFIG_PARLIO_RX_ISR_CACHE_SAFE
+    PARLIO_RX_CHECK_ISR(esp_ptr_internal(payload), ESP_ERR_INVALID_ARG);
+#else
+    PARLIO_RX_CHECK_ISR(recv_cfg->flags.indirect_mount || esp_ptr_internal(payload), ESP_ERR_INVALID_ARG);
+#endif
+    if (recv_cfg->delimiter->eof_data_len) {
+        PARLIO_RX_CHECK_ISR(payload_size >= recv_cfg->delimiter->eof_data_len, ESP_ERR_INVALID_ARG);
+    }
+    if (recv_cfg->delimiter->mode != PARLIO_RX_SOFT_MODE) {
+        PARLIO_RX_CHECK_ISR(rx_unit->cfg.valid_gpio_num >= 0, ESP_ERR_INVALID_ARG);
+        /* Check if the valid_sig_line_id is equal or greater than data width, otherwise valid_sig_line_id is conflict with data signal.
+         * Specifically, level or pulse delimiter requires one data line as valid signal, so these two delimiters can't support PARLIO_RX_UNIT_MAX_DATA_WIDTH */
+        PARLIO_RX_CHECK_ISR(recv_cfg->delimiter->valid_sig_line_id >= rx_unit->cfg.data_width, ESP_ERR_INVALID_ARG);
+        /* Assign the signal here to ensure iram safe */
+        recv_cfg->delimiter->valid_sig = parlio_periph_signals.groups[rx_unit->base.group->group_id].
+                                         rx_units[rx_unit->base.unit_id].
+                                         data_sigs[recv_cfg->delimiter->valid_sig_line_id];
+    }
+    void *p_buffer = payload;
+
+    if (recv_cfg->flags.partial_rx_en && recv_cfg->flags.indirect_mount) {
+        /* The internal DMA buffer should be allocated before calling this function */
+        PARLIO_RX_CHECK_ISR(rx_unit->dma_buf, ESP_ERR_INVALID_STATE);
+        p_buffer = rx_unit->dma_buf;
+    }
+
+    /* Create the transaction */
+    parlio_rx_transaction_t transaction = {
+        .delimiter = recv_cfg->delimiter,
+        .payload = p_buffer,
+        .size = payload_size,
+        .recv_bytes = 0,
+        .flags.infinite = recv_cfg->flags.partial_rx_en,
+        .flags.indirect_mount = recv_cfg->flags.indirect_mount,
+    };
+    rx_unit->usr_recv_buf = payload;
+
+    /* Send the transaction to the queue */
+    BaseType_t _hp_task_woken = 0;
+    BaseType_t ret = xQueueSendFromISR(rx_unit->trans_que, &transaction, &_hp_task_woken);
+    if (hp_task_woken) {
+        *hp_task_woken = _hp_task_woken != 0;
+    }
+
+    return ret == pdTRUE ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t parlio_rx_unit_wait_all_done(parlio_rx_unit_handle_t rx_unit, int timeout_ms)

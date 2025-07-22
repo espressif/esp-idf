@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -158,10 +158,9 @@ typedef struct {
     parlio_bit_pack_order_t bit_pack_order;         /*!< Set how we pack the bits into one bytes, set 1 to pack the bits into a byte from LSB,
                                                          otherwise from MSB */
     uint32_t                eof_data_len;           /*!< Set the data length to trigger the End Of Frame (EOF, i.e. transaction done)
-                                                         interrupt, if the data length is set to `0`, that mean the EOF will only triggers
-                                                         when the end pulse detected, please ensure there is an end pulse for a frame and
-                                                         `parlio_rx_pulse_delimiter_config_t::has_end_pulse` flag is set */
-    uint32_t                timeout_ticks;          /*!< The number of APB clock ticks to trigger timeout interrupt. Set 0 to disable the receive timeout interrupt */
+                                                         interrupt, if the data length is set to `0`, that mean the EOF will only triggers */
+    uint32_t                timeout_ticks;          /*!< The number of APB clock ticks to trigger timeout interrupt. Set 0 to disable the receive timeout interrupt
+                                                         The timeout counter starts when soft delimiter is stopped but the data is still not enough for EOF. */
 } parlio_rx_soft_delimiter_config_t;
 
 /**
@@ -269,6 +268,29 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
                                  void *payload,
                                  size_t payload_size,
                                  const parlio_receive_config_t* recv_cfg);
+
+/**
+ * @brief Receive data by Parallel IO RX unit in ISR context (e.g. inside a callback function)
+ * @note  This function should only be called in ISR context, and the callback function should not block.
+ * @note  The payload buffer should be accessible in ISR context.
+ *        The payload buffer will be sent to the tail of the transaction queue.
+ *
+ * @param[in]  rx_unit       Parallel IO RX unit handle that created by `parlio_new_rx_unit`
+ * @param[in]  payload       The payload buffer pointer
+ * @param[in]  payload_size  The size of the payload buffer, in bytes.
+ * @param[in]  recv_cfg      The configuration of this receive transaction
+ * @param[out] hp_task_woken Whether the high priority task is woken (Optional, set NULL if not needed)
+ * @return
+ *      - ESP_OK: success to queue the transaction
+ *      - ESP_FAIL: failed to queue the transaction since the queue is full
+ *      - ESP_ERR_INVALID_ARG: invalid arguments, some conditions are not met
+ *      - ESP_ERR_INVALID_STATE: invalid state
+ */
+esp_err_t parlio_rx_unit_receive_from_isr(parlio_rx_unit_handle_t rx_unit,
+                                          void *payload,
+                                          size_t payload_size,
+                                          const parlio_receive_config_t* recv_cfg,
+                                          bool *hp_task_woken);
 
 /**
  * @brief Wait for all pending RX transactions done
