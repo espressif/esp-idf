@@ -72,7 +72,7 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |supported|
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
-      - |developing202512|
+      - |experimental|
       - |experimental|
     * -
       - GATT Caching
@@ -88,7 +88,7 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |supported|
     * - .. centered:: |5.2|
       - LE Isochronous Channels (BIS/CIS)
-      - |developing202512|
+      - |experimental|
       - |developing202512|
     * -
       - Enhanced Attribute Protocol
@@ -96,16 +96,16 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |experimental|
     * -
       - LE Power Control
-      - |developing202512|
-      - |supported|
+      - |experimental|
+      - |experimental|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
       - |supported|
       - |supported|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
-      - |developing202512|
-      - |supported|
+      - |experimental|
+      - |experimental|
     * -
       - LE Channel Classification
       - |supported|
