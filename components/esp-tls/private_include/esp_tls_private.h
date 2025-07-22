@@ -98,6 +98,10 @@ struct esp_tls {
 
     esp_tls_error_handle_t error_handle;                                        /*!< handle to error descriptor */
 
+#if CONFIG_MBEDTLS_DYNAMIC_BUFFER
+    esp_tls_dyn_buf_strategy_t esp_tls_dyn_buf_strategy;                        /*!< ESP-TLS dynamic buffer strategy */
+#endif
+
 };
 
 // Function pointer for the server configuration API

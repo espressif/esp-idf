@@ -51,4 +51,13 @@ menu "Example Configuration"
             help
                 Select ethernet interface to pass the OTA data.
     endchoice
+
+    config EXAMPLE_TLS_DYN_BUF_RX_STATIC
+        bool "Use static rx buffer for dynamic buffer after TLS handshake"
+        depends on MBEDTLS_DYNAMIC_BUFFER
+        default n
+        help
+            This converts the dynamic RX buffer to static allocation after the TLS handshake
+            is complete. This reduces memory fragmentation by avoiding repeated dynamic
+            allocations during data transfer.
 endmenu

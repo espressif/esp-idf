@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,6 +90,12 @@ typedef enum {
    ESP_TLS_VER_TLS_1_3 = 0x2,   /* (D)TLS 1.3 */
    ESP_TLS_VER_TLS_MAX,         /* to indicate max */
 } esp_tls_proto_ver_t;
+
+typedef enum {
+    ESP_TLS_DYN_BUF_RX_STATIC = 1,    /*!< Strategy to disable dynamic RX buffer allocations and convert to static allocation post-handshake, reducing memory fragmentation */
+    ESP_TLS_DYN_BUF_STRATEGY_MAX,     /*!< to indicate max */
+} esp_tls_dyn_buf_strategy_t;
+
 
 /**
  * @brief      ESP-TLS configuration parameters
@@ -213,6 +219,11 @@ typedef struct esp_tls_cfg {
     const int *ciphersuites_list;           /*!< Pointer to a zero-terminated array of IANA identifiers of TLS ciphersuites.
                                                 Please check the list validity by esp_tls_get_ciphersuites_list() API */
     esp_tls_proto_ver_t tls_version;        /*!< TLS protocol version of the connection, e.g., TLS 1.2, TLS 1.3 (default - no preference) */
+
+#if CONFIG_MBEDTLS_DYNAMIC_BUFFER
+    esp_tls_dyn_buf_strategy_t esp_tls_dyn_buf_strategy; /*!< ESP-TLS dynamic buffer strategy */
+#endif
+
 } esp_tls_cfg_t;
 
 #if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)

@@ -18,6 +18,17 @@
 
 #define TX_IDLE_BUFFER_SIZE (MBEDTLS_SSL_HEADER_LEN + CACHE_BUFFER_SIZE)
 
+#define ESP_MBEDTLS_RETURN_IF_RX_BUF_STATIC(ssl) \
+    do { \
+        if (ssl->MBEDTLS_PRIVATE(in_buf)) { \
+            esp_mbedtls_ssl_buf_states state = esp_mbedtls_get_buf_state(ssl->MBEDTLS_PRIVATE(in_buf)); \
+            if (state == ESP_MBEDTLS_SSL_BUF_STATIC) { \
+                return 0; \
+            } \
+        } \
+    } while(0)
+
+
 static const char *TAG = "Dynamic Impl";
 
 static void esp_mbedtls_set_buf_state(unsigned char *buf, esp_mbedtls_ssl_buf_states state)
@@ -138,6 +149,29 @@ static void init_rx_buffer(mbedtls_ssl_context *ssl, unsigned char *buf)
     ssl->MBEDTLS_PRIVATE(in_msgtype) = 0;
     ssl->MBEDTLS_PRIVATE(in_msglen) = 0;
     ssl->MBEDTLS_PRIVATE(in_left) = 0;
+}
+
+esp_err_t esp_mbedtls_dynamic_set_rx_buf_static(mbedtls_ssl_context *ssl)
+{
+    unsigned char cache_buf[16];
+    memcpy(cache_buf, ssl->MBEDTLS_PRIVATE(in_buf), 16);
+    esp_mbedtls_reset_free_rx_buffer(ssl);
+
+    struct esp_mbedtls_ssl_buf *esp_buf;
+    int buffer_len = tx_buffer_len(ssl, MBEDTLS_SSL_IN_BUFFER_LEN);
+    esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + buffer_len);
+    if (!esp_buf) {
+        ESP_LOGE(TAG, "rx buf alloc(%d bytes) failed", SSL_BUF_HEAD_OFFSET_SIZE + buffer_len);
+        return ESP_ERR_NO_MEM;
+    }
+    esp_mbedtls_init_ssl_buf(esp_buf, buffer_len);
+    init_rx_buffer(ssl, esp_buf->buf);
+
+    memcpy(ssl->MBEDTLS_PRIVATE(in_ctr), cache_buf, 8);
+    memcpy(ssl->MBEDTLS_PRIVATE(in_iv), cache_buf + 8, 8);
+    esp_mbedtls_set_buf_state(ssl->MBEDTLS_PRIVATE(in_buf), ESP_MBEDTLS_SSL_BUF_STATIC);
+    return ESP_OK;
+
 }
 
 static int esp_mbedtls_alloc_tx_buf(mbedtls_ssl_context *ssl, int len)
@@ -324,6 +358,12 @@ exit:
 
 int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
 {
+    /*
+     * If RX buffer is set to static mode, this macro will return early
+     * and skip dynamic buffer allocation logic below
+     */
+    ESP_MBEDTLS_RETURN_IF_RX_BUF_STATIC(ssl);
+
     int cached = 0;
     int ret = 0;
     int buffer_len;
@@ -405,6 +445,12 @@ exit:
 
 int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl)
 {
+    /*
+     * If RX buffer is set to static mode, this macro will return early
+     * and skip dynamic buffer free logic below
+     */
+    ESP_MBEDTLS_RETURN_IF_RX_BUF_STATIC(ssl);
+
     int ret = 0;
     unsigned char buf[16];
     struct esp_mbedtls_ssl_buf *esp_buf;

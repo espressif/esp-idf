@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,8 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 
+#include "mbedtls/esp_mbedtls_dynamic.h"
+
 #define TRACE_CHECK(_fn, _state) \
 ({ \
     ESP_LOGV(TAG, "%d " _state " to do \"%s\"", __LINE__, # _fn); \
@@ -48,8 +50,9 @@
 })
 
 typedef enum {
-    ESP_MBEDTLS_SSL_BUF_CACHED,
+    ESP_MBEDTLS_SSL_BUF_CACHED = 0,
     ESP_MBEDTLS_SSL_BUF_NO_CACHED,
+    ESP_MBEDTLS_SSL_BUF_STATIC,
 } esp_mbedtls_ssl_buf_states;
 
 struct esp_mbedtls_ssl_buf {
