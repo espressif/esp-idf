@@ -200,10 +200,16 @@ static void do_secondary_init(void)
 static void start_cpu0_default(void)
 {
     // Initialize core components and services.
+    // Operations that needs the cache to be disabled have to be done here.
     do_core_init();
 
     // Execute constructors.
     do_global_ctors();
+
+    /* ----------------------------------Separator-----------------------------
+     * After this stage, other CPU start running with the cache, however the scheduler (and ipc service) is not available.
+     * Don't touch the cache/MMU until the OS is up.
+     */
 
     // Execute init functions of other components; blocks
     // until all cores finish (when !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE).
