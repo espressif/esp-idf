@@ -57,6 +57,17 @@ esp_err_t gdma_new_link_list(const gdma_link_list_config_t *config, gdma_link_li
 esp_err_t gdma_del_link_list(gdma_link_list_handle_t list);
 
 /**
+ * @brief Types for the next node of the final item in the DMA link list
+ *
+ */
+typedef enum {
+    GDMA_FINAL_LINK_TO_DEFAULT = 0,     /*!< The next node is linked to the default next item in the link list */
+    GDMA_FINAL_LINK_TO_NULL = 1,       /*!< The next node is linked to the final item in the link list */
+    GDMA_FINAL_LINK_TO_HEAD = 2,        /*!< The next node is linked to the head item in the link list */
+    GDMA_FINAL_LINK_TO_START = 3,       /*!< The next node is linked to the start item in the link list */
+} gdma_final_node_link_type_t;
+
+/**
  * @brief DMA buffer mount configurations
  */
 typedef struct {
@@ -68,10 +79,7 @@ typedef struct {
                                      Note, an "EOF" descriptor can be interrupted differently by peripheral.
                                      But it doesn't mean to terminate a DMA link (use `mark_final` instead).
                                      EOF link list item can also trigger an interrupt. */
-        uint32_t mark_final: 1; /*!< Whether to terminate the DMA link list at this item.
-                                     Note, DMA engine will stop at this item and trigger an interrupt.
-                                     If `mark_final` is not set, this list item will point to the next item, and
-                                     wrap around to the head item if it's the last one in the list. */
+        gdma_final_node_link_type_t mark_final: 2; /*!< The next node of the final item in the link list */
         uint32_t bypass_buffer_align_check: 1; /*!< Whether to bypass the buffer alignment check.
                                                     Only enable it when you know what you are doing. */
     } flags; //!< Flags for buffer mount configurations

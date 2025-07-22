@@ -500,7 +500,7 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
         .length = trans_desc->data_length,
         .flags = {
             .mark_eof = true,
-            .mark_final = true, // singly link list, mark final descriptor
+            .mark_final = GDMA_FINAL_LINK_TO_NULL, // singly link list, mark final descriptor
         }
     };
     gdma_link_mount_buffers(bus->dma_link, 0, &mount_config, 1, NULL);
@@ -821,7 +821,7 @@ IRAM_ATTR static void i80_lcd_default_isr_handler(void *args)
                     .length = trans_desc->data_length,
                     .flags = {
                         .mark_eof = true,
-                        .mark_final = true, // singly link list, mark final descriptor
+                        .mark_final = GDMA_FINAL_LINK_TO_NULL, // singly link list, mark final descriptor
                     }
                 };
                 gdma_link_mount_buffers(bus->dma_link, 0, &mount_config, 1, NULL);
