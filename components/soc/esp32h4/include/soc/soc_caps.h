@@ -407,16 +407,12 @@
 
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)
-// #define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1) // TODO: [ESP32H4] IDF-12290
+#define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1)
 #define SOC_SPI_MEM_SUPPORT_AUTO_RESUME                   (1)
 #define SOC_SPI_MEM_SUPPORT_IDLE_INTR                     (1)
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 #define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
-
-#define SOC_MEMSPI_SRC_FREQ_64M_SUPPORTED         1
-#define SOC_MEMSPI_SRC_FREQ_32M_SUPPORTED         1
-#define SOC_MEMSPI_SRC_FREQ_16M_SUPPORTED         1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units

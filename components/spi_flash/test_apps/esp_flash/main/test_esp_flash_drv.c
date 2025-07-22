@@ -597,7 +597,9 @@ TEST_CASE_MULTI_FLASH_IGNORE("Test esp_flash_write can toggle QE bit", test_togg
 
 // This table could be chip specific in the future.
 #if CONFIG_IDF_TARGET_ESP32C2
-uint8_t flash_frequency_table[5] = {5, 10, 20, 40};
+uint8_t flash_frequency_table[4] = {5, 10, 20, 40};
+#elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32H21 || CONFIG_IDF_TARGET_ESP32H4
+uint8_t flash_frequency_table[4] = {6, 12, 24, 48};
 #else
 uint8_t flash_frequency_table[6] = {5, 10, 20, 26, 40, 80};
 #endif

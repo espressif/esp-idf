@@ -603,14 +603,12 @@ static inline void spimem_flash_ll_set_dummy(spi_mem_dev_t *dev, uint32_t dummy_
  */
 static inline void spimem_flash_ll_set_hold(spi_mem_dev_t *dev, uint32_t hold_n)
 {
-    // dev->ctrl2.cs_hold_time = hold_n - 1;
-    // dev->user.cs_hold = (hold_n > 0? 1: 0);
+    // not supported on esp32h21
 }
 
 static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_setup_time)
 {
-    // dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
-    // dev->ctrl2.cs_setup_time = cs_setup_time - 1;
+    // not supported on esp32h21
 }
 
 /**
@@ -626,7 +624,7 @@ static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
     uint8_t clock_val = 0;
     switch (PCR.mspi_conf.mspi_clk_sel) {
     case 0:
-        clock_val = 32;
+        clock_val = 48;
         break;
     case 1:
         clock_val = 8;
@@ -635,7 +633,7 @@ static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
         clock_val = 64;
         break;
     case 3:
-        clock_val = 32;
+        clock_val = 48;
         break;
     default:
         HAL_ASSERT(false);
@@ -725,6 +723,79 @@ static inline void spimem_flash_ll_set_common_command_register_info(spi_mem_dev_
     dev->user.val = user_reg;
     dev->user1.val = user1_reg;
     dev->user2.val = user2_reg;
+}
+
+
+#define SPIMEM_FLASH_LL_SUSPEND_END_INTR  SPI_MEM_PES_END_INT_ENA_M
+#define SPIMEM_FLASH_LL_INTERRUPT_SOURCE  ETS_MSPI_INTR_SOURCE
+
+/**
+ * @brief Get the address of the interrupt status register.
+ *
+ * This function returns a pointer to the interrupt status register of the SPI memory device.
+ *
+ * @param[in] dev Pointer to the SPI memory device structure.
+ * @return volatile void* Pointer to the interrupt status register.
+ */
+static inline volatile void *spimem_flash_ll_get_interrupt_status_reg(spi_mem_dev_t *dev)
+{
+    return &dev->int_st;
+}
+
+/**
+ * @brief Clear specific interrupt status bits.
+ *
+ * This function clears the specified interrupt bits in the interrupt clear register of the SPI memory device.
+ *
+ * @param[in] dev Pointer to the SPI memory device structure.
+ * @param[in] mask Bitmask specifying which interrupt bits to clear.
+ */
+__attribute__((always_inline))
+static inline void spimem_flash_ll_clear_intr_mask(spi_mem_dev_t *dev, uint32_t mask)
+{
+    dev->int_clr.val = mask;
+}
+
+/**
+ * @brief Enable specific interrupt bits.
+ *
+ * This function enables the specified interrupts in the interrupt enable register of the SPI memory device.
+ *
+ * @param[in] dev Pointer to the SPI memory device structure.
+ * @param[in] mask Bitmask specifying which interrupt bits to enable.
+ */
+__attribute__((always_inline))
+static inline void spimem_flash_ll_enable_intr_mask(spi_mem_dev_t *dev, uint32_t mask)
+{
+    dev->int_ena.val |= mask;
+}
+
+/**
+ * @brief Disable specific interrupt bits.
+ *
+ * This function disables the specified interrupts in the interrupt enable register of the SPI memory device.
+ *
+ * @param[in] dev Pointer to the SPI memory device structure.
+ * @param[in] mask Bitmask specifying which interrupt bits to disable.
+ */
+__attribute__((always_inline))
+static inline void spimem_flash_ll_disable_intr_mask(spi_mem_dev_t *dev, uint32_t mask)
+{
+    dev->int_ena.val &= (~mask);
+}
+
+/**
+ * @brief Get the current interrupt status.
+ *
+ * This function retrieves the current interrupt status from the interrupt status register of the SPI memory device.
+ *
+ * @param[in] dev Pointer to the SPI memory device structure.
+ * @param[out] intr_status Pointer to a variable where the interrupt status will be stored.
+ */
+__attribute__((always_inline))
+static inline void spimem_flash_ll_get_intr_mask(spi_mem_dev_t *dev, uint32_t *intr_status)
+{
+    *intr_status = dev->int_st.val;
 }
 
 #ifdef __cplusplus

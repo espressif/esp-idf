@@ -23,6 +23,7 @@
 #include "esp_flash.h"
 #include "hal/gpio_hal.h"
 #include "rom/cache.h"
+#include "hal/cache_ll.h"
 
 #include "test_utils.h"
 
@@ -77,6 +78,8 @@ static bool IRAM_ATTR gptimer_alarm_suspend_cb(gptimer_handle_t timer, const gpt
 #endif
 #if CONFIG_IDF_TARGET_ESP32P4
     Cache_Invalidate_All(CACHE_MAP_L2_CACHE);
+#elif CONFIG_IDF_TARGET_ESP32H4
+    cache_ll_invalidate_all(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL);
 #elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
     Cache_Invalidate_All();
 #else

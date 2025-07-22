@@ -46,7 +46,23 @@ __attribute__((always_inline))
 static inline void _mspi_timing_ll_set_flash_clk_src(uint32_t mspi_id, soc_periph_flash_clk_src_t clk_src)
 {
     HAL_ASSERT(mspi_id == 0);
-    // TODO [ESP32H4]
+    switch (clk_src) {
+    case FLASH_CLK_SRC_XTAL:
+        PCR.mspi_clk_conf.mspi_func_clk_sel = 0;
+        break;
+    case FLASH_CLK_SRC_RC_FAST:
+        PCR.mspi_clk_conf.mspi_func_clk_sel = 1;
+        break;
+    // case FLASH_CLK_SRC_PLL_F64M:
+    //     PCR.mspi_clk_conf.mspi_func_clk_sel = 2;
+    //     break;
+    // TODO: [ESP32H4] IDF-13632, support 64M
+    case FLASH_CLK_SRC_PLL_F48M:
+        PCR.mspi_clk_conf.mspi_func_clk_sel = 3;
+        break;
+    default:
+        HAL_ASSERT(false);
+    }
 }
 
 #ifdef __cplusplus

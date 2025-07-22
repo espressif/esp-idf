@@ -125,16 +125,10 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
     const char *str;
     switch (bootloader_hdr->spi_speed) {
     case ESP_IMAGE_SPI_SPEED_DIV_2:
-        str = "32MHz";
-        break;
-    case ESP_IMAGE_SPI_SPEED_DIV_3:
-        str = "21.3MHz";
-        break;
-    case ESP_IMAGE_SPI_SPEED_DIV_4:
-        str = "16MHz";
+        str = "24MHz";
         break;
     case ESP_IMAGE_SPI_SPEED_DIV_1:
-        str = "64MHz";
+        str = "48MHz";
         break;
     default:
         str = "16MHz";

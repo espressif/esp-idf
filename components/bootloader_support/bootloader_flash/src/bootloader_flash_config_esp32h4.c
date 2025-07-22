@@ -25,6 +25,7 @@
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/mspi_ll.h"
 
 static const char *TAG = "boot.esp32h4";
 
@@ -84,6 +85,16 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
     esp_rom_gpio_pad_set_drv(wp_gpio_num, drv);
 }
 
+static void IRAM_ATTR bootloader_mspi_clock_init(void)
+{
+    // // To raise the MSPI clock to 64MHz, needs to enable the 64MHz clock source, which is XTAL_X2_CLK
+    // // (FPGA image fixed MSPI0/1 clock to 64MHz)
+    // clk_ll_xtal_x2_enable();
+    // _mspi_timing_ll_set_flash_clk_src(0, FLASH_CLK_SRC_PLL_F64M);
+    // IDF-13632
+    _mspi_timing_ll_set_flash_clk_src(0, FLASH_CLK_SRC_PLL_F48M);
+}
+
 static void update_flash_config(const esp_image_header_t *bootloader_hdr)
 {
     uint32_t size;
@@ -121,16 +132,16 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
     const char *str;
     switch (bootloader_hdr->spi_speed) {
     case ESP_IMAGE_SPI_SPEED_DIV_2:
-        str = "32MHz";
+        str = "24MHz";
         break;
     case ESP_IMAGE_SPI_SPEED_DIV_4:
-        str = "16MHz";
+        str = "12MHz";
         break;
     case ESP_IMAGE_SPI_SPEED_DIV_1:
-        str = "64MHz";
+        str = "48MHz";
         break;
     default:
-        str = "16MHz";
+        str = "12MHz";
         break;
     }
     ESP_EARLY_LOGI(TAG, "SPI Speed      : %s", str);
@@ -185,6 +196,7 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
 
 static void IRAM_ATTR bootloader_init_flash_configure(void)
 {
+    bootloader_mspi_clock_init();
     bootloader_configure_spi_pins(1);
     bootloader_flash_cs_timing_config();
 }
@@ -267,6 +279,7 @@ void bootloader_flash_hardware_init(void)
     bootloader_configure_spi_pins(1);
     bootloader_flash_set_spi_mode(&hdr);
     bootloader_flash_clock_config(&hdr);
+    bootloader_mspi_clock_init();
     bootloader_flash_cs_timing_config();
 
     bootloader_spi_flash_resume();
