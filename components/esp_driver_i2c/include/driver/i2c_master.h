@@ -90,7 +90,7 @@ typedef struct {
  * @brief I2C master transmit buffer information structure
  */
 typedef struct {
-    uint8_t *write_buffer;               /*!< Pointer to buffer to be written. */
+    const uint8_t *write_buffer;         /*!< Pointer to buffer to be written. */
     size_t buffer_size;                  /*!< Size of data to be written. */
 } i2c_master_transmit_multi_buffer_info_t;
 
