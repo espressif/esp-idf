@@ -105,7 +105,7 @@ void pmu_sleep_disable_regdma_backup(void)
     }
 }
 
-uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period)
+uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, soc_rtc_slow_clk_src_t slowclk_src, uint32_t slowclk_period, uint32_t fastclk_period)
 {
     const pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
 
@@ -147,8 +147,20 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_pe
      *                     |                           wake-up delay                          |
      */
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    int min_slp_time_adjustment_us = 0;
+#if SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED
+    if (slowclk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) {
+        const uint32_t slowclk_period_fixed = rtc_clk_freq_to_period(SOC_CLK_RC_SLOW_FREQ_APPROX);
+        const int min_slp_cycle_fixed = rtc_time_us_to_slowclk(mc->hp.min_slp_time_us, slowclk_period_fixed);
+        const int min_slp_cycle_calib = rtc_time_us_to_slowclk(mc->hp.min_slp_time_us, slowclk_period);
+        const int min_slp_cycle_diff = (min_slp_cycle_calib > min_slp_cycle_fixed) ? \
+                       (min_slp_cycle_calib - min_slp_cycle_fixed) : (min_slp_cycle_fixed - min_slp_cycle_calib);
+        const int min_slp_time_diff = rtc_time_slowclk_to_us(min_slp_cycle_diff, slowclk_period_fixed);
+        min_slp_time_adjustment_us = (min_slp_cycle_calib > min_slp_cycle_fixed) ? min_slp_time_diff : -min_slp_time_diff;
+    }
+#endif
     const int rf_on_protect_time_us = mc->hp.regdma_rf_on_work_time_us;
-    const int total_hw_wait_time_us = lp_hw_wait_time_us + hp_hw_wait_time_us + mc->hp.clock_domain_sync_time_us;
+    const int total_hw_wait_time_us = lp_hw_wait_time_us + hp_hw_wait_time_us + mc->hp.clock_domain_sync_time_us + min_slp_time_adjustment_us;
 #else
     const int rf_on_protect_time_us = 0;
     const int total_hw_wait_time_us = lp_hw_wait_time_us + hp_hw_wait_time_us;
@@ -163,24 +175,31 @@ static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
         pmu_sleep_power_config_t *power, /* We'll use the runtime power parameter to determine some hardware parameters */
         const uint32_t pd_flags,
         const uint32_t adjustment,
+        soc_rtc_slow_clk_src_t slowclk_src,
         const uint32_t slowclk_period,
         const uint32_t fastclk_period
     )
 {
     const pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
 
-    param->hp_sys.min_slp_slow_clk_cycle          = rtc_time_us_to_slowclk(mc->hp.min_slp_time_us, slowclk_period);
+#if (SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED && SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP)
+    const uint32_t slowclk_period_fixed = (slowclk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) ? rtc_clk_freq_to_period(SOC_CLK_RC_SLOW_FREQ_APPROX) : slowclk_period;
+#else
+    const uint32_t slowclk_period_fixed = slowclk_period;
+#endif
+
+    param->hp_sys.min_slp_slow_clk_cycle          = rtc_time_us_to_slowclk(mc->hp.min_slp_time_us, slowclk_period_fixed);
     param->hp_sys.analog_wait_target_cycle        = rtc_time_us_to_fastclk(mc->hp.analog_wait_time_us, fastclk_period);
     param->hp_sys.digital_power_supply_wait_cycle = rtc_time_us_to_fastclk(mc->hp.power_supply_wait_time_us, fastclk_period);
     param->hp_sys.digital_power_up_wait_cycle     = rtc_time_us_to_fastclk(mc->hp.power_up_wait_time_us, fastclk_period);
     param->hp_sys.pll_stable_wait_cycle           = rtc_time_us_to_fastclk(mc->hp.pll_wait_stable_time_us, fastclk_period);
 
-    const int hw_wait_time_us = pmu_sleep_calculate_hw_wait_time(pd_flags, slowclk_period, fastclk_period);
+    const int hw_wait_time_us = pmu_sleep_calculate_hw_wait_time(pd_flags, slowclk_src, slowclk_period, fastclk_period);
     const int modem_state_skip_time_us = mc->hp.regdma_m2a_work_time_us + mc->hp.system_dfs_up_work_time_us + mc->lp.min_slp_time_us;
     const int modem_wakeup_wait_time_us = adjustment - hw_wait_time_us + modem_state_skip_time_us + mc->hp.regdma_rf_on_work_time_us;
     param->hp_sys.modem_wakeup_wait_cycle         = rtc_time_us_to_fastclk(modem_wakeup_wait_time_us, fastclk_period);
 
-    param->lp_sys.min_slp_slow_clk_cycle          = rtc_time_us_to_slowclk(mc->lp.min_slp_time_us, slowclk_period);
+    param->lp_sys.min_slp_slow_clk_cycle          = rtc_time_us_to_slowclk(mc->lp.min_slp_time_us, slowclk_period_fixed);
     param->lp_sys.analog_wait_target_cycle        = rtc_time_us_to_slowclk(mc->lp.analog_wait_time_us, slowclk_period);
     param->lp_sys.digital_power_supply_wait_cycle = rtc_time_us_to_fastclk(mc->lp.power_supply_wait_time_us, fastclk_period);
     param->lp_sys.digital_power_up_wait_cycle     = rtc_time_us_to_fastclk(mc->lp.power_up_wait_time_us, fastclk_period);
@@ -197,6 +216,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         pmu_sleep_config_t *config,
         uint32_t pd_flags,
         uint32_t adjustment,
+        soc_rtc_slow_clk_src_t slowclk_src,
         uint32_t slowclk_period,
         uint32_t fastclk_period,
         bool dslp
@@ -207,7 +227,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
     config->power = power_default;
 
     pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(pd_flags);
-    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, pd_flags, adjustment, slowclk_period, fastclk_period);
+    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, pd_flags, adjustment, slowclk_src, slowclk_period, fastclk_period);
 
     if (dslp) {
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);

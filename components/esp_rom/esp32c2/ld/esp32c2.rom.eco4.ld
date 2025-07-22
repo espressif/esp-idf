@@ -58,7 +58,7 @@ ppTxFragmentProc = 0x40001e08;
 esf_buf_setup = 0x40001e0c;
 hal_crypto_set_key_entry = 0x40001e18;
 pm_start = 0x40001e34;
-pm_stop = 0x40001e38;
+/*pm_stop = 0x40001e38;*/
 hal_set_sta_tbtt = 0x40001e4c;
 //pm_update_next_tbtt = 0x40001e50;
 pm_set_sleep_type = 0x40001e54;
@@ -203,7 +203,7 @@ pm_beacon_offset_init = 0x400030b0;
 pm_beacon_offset_deinit = 0x400030b4;
 pm_get_tbtt_count = 0x400030b8;
 pm_coex_schm_overall_period_get = 0x400030bc;
-pm_coex_pwr_update = 0x400030c0;
+//pm_coex_pwr_update = 0x400030c0;
 /* Data (.data, .bss, .rodata) */
 s_pm_beacon_offset_ptr = 0x3fcdfa64;
 s_pm_beacon_offset_config_ptr = 0x3fcdfa60;
