@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+#define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE + (i) * 0x1000)
+
 /** I2S_INT_RAW_REG register
  *  I2S interrupt raw register, valid in level.
  */

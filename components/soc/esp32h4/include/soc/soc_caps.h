@@ -41,7 +41,7 @@
 // #define SOC_PCNT_SUPPORTED              1    // TODO: [ESP32H4] IDF-12338
 // #define SOC_MCPWM_SUPPORTED             1    // TODO: [ESP32H4] IDF-12380
 // #define SOC_TWAI_SUPPORTED              1    // TODO: [ESP32H4] IDF-12352
-// #define SOC_ETM_SUPPORTED               1    // TODO: [ESP32H4] IDF-12355
+#define SOC_ETM_SUPPORTED               1
 // #define SOC_PARLIO_SUPPORTED            1    // TODO: [ESP32H4] IDF-12345 IDF-12347
 // #define SOC_BT_SUPPORTED                1
 // #define SOC_IEEE802154_SUPPORTED        1
@@ -54,7 +54,7 @@
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1       // TODO: [ESP32H4] IDF-12268
 #define SOC_EFUSE_SUPPORTED             1       // TODO: [ESP32H4] IDF-12268
 // #define SOC_RTC_MEM_SUPPORTED           1    // TODO: [ESP32H4] IDF-12313
-// #define SOC_I2S_SUPPORTED               1    // TODO: [ESP32H4] IDF-12385
+#define SOC_I2S_SUPPORTED               1
 // #define SOC_RMT_SUPPORTED               1    // TODO: [ESP32H4] IDF-12402
 // #define SOC_SDM_SUPPORTED               1    // TODO: [ESP32H4] IDF-12348
 // #define SOC_GPSPI_SUPPORTED             1    // TODO: [ESP32H4] IDF-12362 IDF-12364 IDF-12366
@@ -191,13 +191,14 @@
 #define SOC_AHB_GDMA_VERSION                2
 #define SOC_GDMA_NUM_GROUPS_MAX             1U
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX        5
-// #define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule  TODO: [ESP32H4] IDF-12383
+#define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 #define SOC_AHB_GDMA_SUPPORT_PSRAM 1
 
 /*-------------------------- ETM CAPS --------------------------------------*/
-// #define SOC_ETM_GROUPS                  1U  // Number of ETM groups
-// #define SOC_ETM_CHANNELS_PER_GROUP      50  // Number of ETM channels in the group
+#define SOC_ETM_GROUPS                  1U  // Number of ETM groups
+#define SOC_ETM_CHANNELS_PER_GROUP      50  // Number of ETM channels in the group
+#define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-H4 has 1 GPIO peripheral
@@ -212,9 +213,9 @@
 // #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM    8  // TODO: [ESP32H4] IDF-12391
 
 // GPIO peripheral has the ETM extension
-// #define SOC_GPIO_SUPPORT_ETM          1  // TODO: [ESP32H4] IDF-12394
-// #define SOC_GPIO_ETM_EVENTS_PER_GROUP 8
-// #define SOC_GPIO_ETM_TASKS_PER_GROUP  8
+#define SOC_GPIO_SUPPORT_ETM          1
+#define SOC_GPIO_ETM_EVENTS_PER_GROUP 8
+#define SOC_GPIO_ETM_TASKS_PER_GROUP  8
 
 // Target has the full LP IO subsystem
 // On ESP32-H4, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
@@ -268,15 +269,25 @@
 #define SOC_I2C_SUPPORT_SLEEP_RETENTION (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-// #define SOC_I2S_NUM                 (1U)
-// #define SOC_I2S_HW_VERSION_2        (1)
-// #define SOC_I2S_SUPPORTS_XTAL       (1)
-// #define SOC_I2S_SUPPORTS_PLL_F160M  (1)
-// #define SOC_I2S_SUPPORTS_PCM        (1)
-// #define SOC_I2S_SUPPORTS_PDM        (1)
-// #define SOC_I2S_SUPPORTS_PDM_TX     (1)
-// #define SOC_I2S_PDM_MAX_TX_LINES    (2)
-// #define SOC_I2S_SUPPORTS_TDM        (1)
+#define SOC_I2S_NUM                 (1U)
+#define SOC_I2S_HW_VERSION_2        (1)
+#define SOC_I2S_SUPPORTS_ETM        (1)
+#define SOC_I2S_SUPPORTS_XTAL       (1)
+#define SOC_I2S_SUPPORTS_PLL_F96M   (1)
+#define SOC_I2S_SUPPORTS_PLL_F64M   (1)
+#define SOC_I2S_SUPPORTS_PCM        (1)
+#define SOC_I2S_SUPPORTS_PDM        (1)
+#define SOC_I2S_SUPPORTS_PDM_TX     (1)     // Support to output raw PDM format data
+#define SOC_I2S_SUPPORTS_PCM2PDM    (1)     // Support to write PCM format but output PDM format data with the help of PCM to PDM filter
+#define SOC_I2S_SUPPORTS_PDM_RX     (1)     // Support to input raw PDM format data
+#define SOC_I2S_SUPPORTS_TX_SYNC_CNT (1)
+#define SOC_I2S_SUPPORTS_TX_FIFO_SYNC (1)
+#define SOC_I2S_PDM_MAX_TX_LINES    (2)
+#define SOC_I2S_PDM_MAX_RX_LINES    (1U)
+#define SOC_I2S_SUPPORTS_TDM        (1)
+#define SOC_I2S_TDM_FULL_DATA_WIDTH (1)  /*!< No limitation to data bit width when using multiple slots */
+
+#define SOC_I2S_SUPPORT_SLEEP_RETENTION       1  /*!< The sleep retention feature can help back up I2S registers before sleep */
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 // #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
@@ -423,7 +434,7 @@
 #define SOC_SYSTIMER_SUPPORT_RC_FAST        1  // Systimer can use RC_FAST clock source
 #define SOC_SYSTIMER_INT_LEVEL              1  // Systimer peripheral uses level interrupt
 #define SOC_SYSTIMER_ALARM_MISS_COMPENSATE  1  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
-// #define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
+#define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
 
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
@@ -431,6 +442,7 @@
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 // #define SOC_TIMER_SUPPORT_ETM             (1)     // TODO: [ESP32H4] IDF-12355
+#define SOC_TIMER_SUPPORT_ETM             (1)
 #define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/

@@ -233,6 +233,9 @@ typedef enum {
 typedef enum {
     I2S_ETM_TASK_START,     /*!< Start the I2S channel */
     I2S_ETM_TASK_STOP,      /*!< Stop the I2S channel */
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+    I2S_ETM_TASK_SYNC_FIFO, /*!< Check the I2S TX channel sync status */
+#endif
     I2S_ETM_TASK_MAX,       /*!< Maximum number of tasks */
 } i2s_etm_task_type_t;
 

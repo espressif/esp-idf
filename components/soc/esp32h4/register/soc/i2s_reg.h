@@ -11,10 +11,12 @@
 extern "C" {
 #endif
 
+#define REG_I2S_BASE(i)                         (DR_REG_I2S0_BASE)                        // only one I2S on H4
+
 /** I2S_INT_RAW_REG register
  *  I2S interrupt raw register, valid in level.
  */
-#define I2S_INT_RAW_REG (DR_REG_I2S_BASE + 0xc)
+#define I2S_INT_RAW_REG(i) (REG_I2S_BASE(i) + 0xc)
 /** I2S_RX_DONE_INT_RAW : RO/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt status bit  for the i2s_rx_done_int interrupt
  */
@@ -54,7 +56,7 @@ extern "C" {
 /** I2S_INT_ST_REG register
  *  I2S interrupt status register.
  */
-#define I2S_INT_ST_REG (DR_REG_I2S_BASE + 0x10)
+#define I2S_INT_ST_REG(i) (REG_I2S_BASE(i) + 0x10)
 /** I2S_RX_DONE_INT_ST : RO; bitpos: [0]; default: 0;
  *  The masked interrupt status bit  for the i2s_rx_done_int interrupt
  */
@@ -94,7 +96,7 @@ extern "C" {
 /** I2S_INT_ENA_REG register
  *  I2S interrupt enable register.
  */
-#define I2S_INT_ENA_REG (DR_REG_I2S_BASE + 0x14)
+#define I2S_INT_ENA_REG(i) (REG_I2S_BASE(i) + 0x14)
 /** I2S_RX_DONE_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit  for the i2s_rx_done_int interrupt
  */
@@ -134,7 +136,7 @@ extern "C" {
 /** I2S_INT_CLR_REG register
  *  I2S interrupt clear register.
  */
-#define I2S_INT_CLR_REG (DR_REG_I2S_BASE + 0x18)
+#define I2S_INT_CLR_REG(i) (REG_I2S_BASE(i) + 0x18)
 /** I2S_RX_DONE_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the i2s_rx_done_int interrupt
  */
@@ -174,7 +176,7 @@ extern "C" {
 /** I2S_RX_CONF_REG register
  *  I2S RX configure register
  */
-#define I2S_RX_CONF_REG (DR_REG_I2S_BASE + 0x20)
+#define I2S_RX_CONF_REG(i) (REG_I2S_BASE(i) + 0x20)
 /** I2S_RX_RESET : WT; bitpos: [0]; default: 0;
  *  Set this bit to reset receiver
  */
@@ -326,7 +328,7 @@ extern "C" {
 /** I2S_TX_CONF_REG register
  *  I2S TX configure register
  */
-#define I2S_TX_CONF_REG (DR_REG_I2S_BASE + 0x24)
+#define I2S_TX_CONF_REG(i) (REG_I2S_BASE(i) + 0x24)
 /** I2S_TX_RESET : WT; bitpos: [0]; default: 0;
  *  Set this bit to reset transmitter
  */
@@ -502,7 +504,7 @@ extern "C" {
 /** I2S_RX_CONF1_REG register
  *  I2S RX configure register 1
  */
-#define I2S_RX_CONF1_REG (DR_REG_I2S_BASE + 0x28)
+#define I2S_RX_CONF1_REG(i) (REG_I2S_BASE(i) + 0x28)
 /** I2S_RX_TDM_WS_WIDTH : R/W; bitpos: [8:0]; default: 0;
  *  The width of rx_ws_out at idle level in TDM mode is (I2S_RX_TDM_WS_WIDTH[8:0] +1) *
  *  T_bck
@@ -539,7 +541,7 @@ extern "C" {
 /** I2S_TX_CONF1_REG register
  *  I2S TX configure register 1
  */
-#define I2S_TX_CONF1_REG (DR_REG_I2S_BASE + 0x2c)
+#define I2S_TX_CONF1_REG(i) (REG_I2S_BASE(i) + 0x2c)
 /** I2S_TX_TDM_WS_WIDTH : R/W; bitpos: [8:0]; default: 0;
  *  The width of tx_ws_out at idle level in TDM mode is (I2S_TX_TDM_WS_WIDTH[8:0] +1) *
  *  T_bck
@@ -573,177 +575,10 @@ extern "C" {
 #define I2S_TX_TDM_CHAN_BITS_V  0x0000001FU
 #define I2S_TX_TDM_CHAN_BITS_S  27
 
-/** I2S_RX_RECOMB_CTRL_REG register
- *  I2S RX configure register 1
- */
-#define I2S_RX_RECOMB_CTRL_REG (DR_REG_I2S_BASE + 0x30)
-/** I2S_RX_RECOMB_EN : R/W; bitpos: [0]; default: 0;
- *  Set this bit to enable i2s rx data recombination.
- */
-#define I2S_RX_RECOMB_EN    (BIT(0))
-#define I2S_RX_RECOMB_EN_M  (I2S_RX_RECOMB_EN_V << I2S_RX_RECOMB_EN_S)
-#define I2S_RX_RECOMB_EN_V  0x00000001U
-#define I2S_RX_RECOMB_EN_S  0
-/** I2S_RX_RECOMB_EXT_CH_NUM : R/W; bitpos: [2:1]; default: 0;
- *  The channel number that i2s will extract the data into.
- */
-#define I2S_RX_RECOMB_EXT_CH_NUM    0x00000003U
-#define I2S_RX_RECOMB_EXT_CH_NUM_M  (I2S_RX_RECOMB_EXT_CH_NUM_V << I2S_RX_RECOMB_EXT_CH_NUM_S)
-#define I2S_RX_RECOMB_EXT_CH_NUM_V  0x00000003U
-#define I2S_RX_RECOMB_EXT_CH_NUM_S  1
-/** I2S_RX_RECOMB_UPDATE : WT; bitpos: [31]; default: 0;
- *  Set this bit to update i2s data recombination configuration, must be performed
- *  after changing the config of any recombined-dma-channel.
- */
-#define I2S_RX_RECOMB_UPDATE    (BIT(31))
-#define I2S_RX_RECOMB_UPDATE_M  (I2S_RX_RECOMB_UPDATE_V << I2S_RX_RECOMB_UPDATE_S)
-#define I2S_RX_RECOMB_UPDATE_V  0x00000001U
-#define I2S_RX_RECOMB_UPDATE_S  31
-
-/** I2S_RX_RECOMB_DMA_CH0_REG register
- *  I2S RX recombined-dma-channel configuration register
- */
-#define I2S_RX_RECOMB_DMA_CH0_REG (DR_REG_I2S_BASE + 0x34)
-/** I2S_RX_RECOMB_DMA_CH0_VALID : R/W; bitpos: [0]; default: 0;
- *  Set this bit to enable the adc-dma-channel.
- */
-#define I2S_RX_RECOMB_DMA_CH0_VALID    (BIT(0))
-#define I2S_RX_RECOMB_DMA_CH0_VALID_M  (I2S_RX_RECOMB_DMA_CH0_VALID_V << I2S_RX_RECOMB_DMA_CH0_VALID_S)
-#define I2S_RX_RECOMB_DMA_CH0_VALID_V  0x00000001U
-#define I2S_RX_RECOMB_DMA_CH0_VALID_S  0
-/** I2S_RX_RECOMB_DMA_CH0_STYLE : R/W; bitpos: [4:1]; default: 0;
- *  Set this field to set the recombined-dma-channel style. If choose to use i2s
- *  extracted ch 1&3 in 4 channels, the style should be: 6'b1010.
- */
-#define I2S_RX_RECOMB_DMA_CH0_STYLE    0x0000000FU
-#define I2S_RX_RECOMB_DMA_CH0_STYLE_M  (I2S_RX_RECOMB_DMA_CH0_STYLE_V << I2S_RX_RECOMB_DMA_CH0_STYLE_S)
-#define I2S_RX_RECOMB_DMA_CH0_STYLE_V  0x0000000FU
-#define I2S_RX_RECOMB_DMA_CH0_STYLE_S  1
-/** I2S_RX_RECOMB_DMA_CH0_ORDER : R/W; bitpos: [12:5]; default: 0;
- *  Set this field to set the recombined-dma-channel order. If choose to use the order
- *  ch3 -> ch1, the order should be: 8'd7 = {2'd0,2'd0,2'd1,2'd3}.
- */
-#define I2S_RX_RECOMB_DMA_CH0_ORDER    0x000000FFU
-#define I2S_RX_RECOMB_DMA_CH0_ORDER_M  (I2S_RX_RECOMB_DMA_CH0_ORDER_V << I2S_RX_RECOMB_DMA_CH0_ORDER_S)
-#define I2S_RX_RECOMB_DMA_CH0_ORDER_V  0x000000FFU
-#define I2S_RX_RECOMB_DMA_CH0_ORDER_S  5
-/** I2S_RX_RECOMB_DMA_CH0_EOF_NUM : R/W; bitpos: [28:13]; default: 0;
- *  Set this field to set the receive eof byte length of the recombined-dma-channel.
- */
-#define I2S_RX_RECOMB_DMA_CH0_EOF_NUM    0x0000FFFFU
-#define I2S_RX_RECOMB_DMA_CH0_EOF_NUM_M  (I2S_RX_RECOMB_DMA_CH0_EOF_NUM_V << I2S_RX_RECOMB_DMA_CH0_EOF_NUM_S)
-#define I2S_RX_RECOMB_DMA_CH0_EOF_NUM_V  0x0000FFFFU
-#define I2S_RX_RECOMB_DMA_CH0_EOF_NUM_S  13
-
-/** I2S_RX_RECOMB_DMA_CH1_REG register
- *  I2S RX recombined-dma-channel configuration register
- */
-#define I2S_RX_RECOMB_DMA_CH1_REG (DR_REG_I2S_BASE + 0x38)
-/** I2S_RX_RECOMB_DMA_CH1_VALID : R/W; bitpos: [0]; default: 0;
- *  Set this bit to enable the adc-dma-channel.
- */
-#define I2S_RX_RECOMB_DMA_CH1_VALID    (BIT(0))
-#define I2S_RX_RECOMB_DMA_CH1_VALID_M  (I2S_RX_RECOMB_DMA_CH1_VALID_V << I2S_RX_RECOMB_DMA_CH1_VALID_S)
-#define I2S_RX_RECOMB_DMA_CH1_VALID_V  0x00000001U
-#define I2S_RX_RECOMB_DMA_CH1_VALID_S  0
-/** I2S_RX_RECOMB_DMA_CH1_STYLE : R/W; bitpos: [4:1]; default: 0;
- *  Set this field to set the recombined-dma-channel style. If choose to use i2s
- *  extracted ch 1&3 in 4 channels, the style should be: 6'b1010.
- */
-#define I2S_RX_RECOMB_DMA_CH1_STYLE    0x0000000FU
-#define I2S_RX_RECOMB_DMA_CH1_STYLE_M  (I2S_RX_RECOMB_DMA_CH1_STYLE_V << I2S_RX_RECOMB_DMA_CH1_STYLE_S)
-#define I2S_RX_RECOMB_DMA_CH1_STYLE_V  0x0000000FU
-#define I2S_RX_RECOMB_DMA_CH1_STYLE_S  1
-/** I2S_RX_RECOMB_DMA_CH1_ORDER : R/W; bitpos: [12:5]; default: 0;
- *  Set this field to set the recombined-dma-channel order. If choose to use the order
- *  ch3 -> ch1, the order should be: 8'd7 = {2'd0,2'd0,2'd1,2'd3}.
- */
-#define I2S_RX_RECOMB_DMA_CH1_ORDER    0x000000FFU
-#define I2S_RX_RECOMB_DMA_CH1_ORDER_M  (I2S_RX_RECOMB_DMA_CH1_ORDER_V << I2S_RX_RECOMB_DMA_CH1_ORDER_S)
-#define I2S_RX_RECOMB_DMA_CH1_ORDER_V  0x000000FFU
-#define I2S_RX_RECOMB_DMA_CH1_ORDER_S  5
-/** I2S_RX_RECOMB_DMA_CH1_EOF_NUM : R/W; bitpos: [28:13]; default: 0;
- *  Set this field to set the receive eof byte length of the recombined-dma-channel.
- */
-#define I2S_RX_RECOMB_DMA_CH1_EOF_NUM    0x0000FFFFU
-#define I2S_RX_RECOMB_DMA_CH1_EOF_NUM_M  (I2S_RX_RECOMB_DMA_CH1_EOF_NUM_V << I2S_RX_RECOMB_DMA_CH1_EOF_NUM_S)
-#define I2S_RX_RECOMB_DMA_CH1_EOF_NUM_V  0x0000FFFFU
-#define I2S_RX_RECOMB_DMA_CH1_EOF_NUM_S  13
-
-/** I2S_RX_RECOMB_DMA_CH2_REG register
- *  I2S RX recombined-dma-channel configuration register
- */
-#define I2S_RX_RECOMB_DMA_CH2_REG (DR_REG_I2S_BASE + 0x3c)
-/** I2S_RX_RECOMB_DMA_CH2_VALID : R/W; bitpos: [0]; default: 0;
- *  Set this bit to enable the adc-dma-channel.
- */
-#define I2S_RX_RECOMB_DMA_CH2_VALID    (BIT(0))
-#define I2S_RX_RECOMB_DMA_CH2_VALID_M  (I2S_RX_RECOMB_DMA_CH2_VALID_V << I2S_RX_RECOMB_DMA_CH2_VALID_S)
-#define I2S_RX_RECOMB_DMA_CH2_VALID_V  0x00000001U
-#define I2S_RX_RECOMB_DMA_CH2_VALID_S  0
-/** I2S_RX_RECOMB_DMA_CH2_STYLE : R/W; bitpos: [4:1]; default: 0;
- *  Set this field to set the recombined-dma-channel style. If choose to use i2s
- *  extracted ch 1&3 in 4 channels, the style should be: 6'b1010.
- */
-#define I2S_RX_RECOMB_DMA_CH2_STYLE    0x0000000FU
-#define I2S_RX_RECOMB_DMA_CH2_STYLE_M  (I2S_RX_RECOMB_DMA_CH2_STYLE_V << I2S_RX_RECOMB_DMA_CH2_STYLE_S)
-#define I2S_RX_RECOMB_DMA_CH2_STYLE_V  0x0000000FU
-#define I2S_RX_RECOMB_DMA_CH2_STYLE_S  1
-/** I2S_RX_RECOMB_DMA_CH2_ORDER : R/W; bitpos: [12:5]; default: 0;
- *  Set this field to set the recombined-dma-channel order. If choose to use the order
- *  ch3 -> ch1, the order should be: 8'd7 = {2'd0,2'd0,2'd1,2'd3}.
- */
-#define I2S_RX_RECOMB_DMA_CH2_ORDER    0x000000FFU
-#define I2S_RX_RECOMB_DMA_CH2_ORDER_M  (I2S_RX_RECOMB_DMA_CH2_ORDER_V << I2S_RX_RECOMB_DMA_CH2_ORDER_S)
-#define I2S_RX_RECOMB_DMA_CH2_ORDER_V  0x000000FFU
-#define I2S_RX_RECOMB_DMA_CH2_ORDER_S  5
-/** I2S_RX_RECOMB_DMA_CH2_EOF_NUM : R/W; bitpos: [28:13]; default: 0;
- *  Set this field to set the receive eof byte length of the recombined-dma-channel.
- */
-#define I2S_RX_RECOMB_DMA_CH2_EOF_NUM    0x0000FFFFU
-#define I2S_RX_RECOMB_DMA_CH2_EOF_NUM_M  (I2S_RX_RECOMB_DMA_CH2_EOF_NUM_V << I2S_RX_RECOMB_DMA_CH2_EOF_NUM_S)
-#define I2S_RX_RECOMB_DMA_CH2_EOF_NUM_V  0x0000FFFFU
-#define I2S_RX_RECOMB_DMA_CH2_EOF_NUM_S  13
-
-/** I2S_RX_RECOMB_DMA_CH3_REG register
- *  I2S RX recombined-dma-channel configuration register
- */
-#define I2S_RX_RECOMB_DMA_CH3_REG (DR_REG_I2S_BASE + 0x40)
-/** I2S_RX_RECOMB_DMA_CH3_VALID : R/W; bitpos: [0]; default: 0;
- *  Set this bit to enable the adc-dma-channel.
- */
-#define I2S_RX_RECOMB_DMA_CH3_VALID    (BIT(0))
-#define I2S_RX_RECOMB_DMA_CH3_VALID_M  (I2S_RX_RECOMB_DMA_CH3_VALID_V << I2S_RX_RECOMB_DMA_CH3_VALID_S)
-#define I2S_RX_RECOMB_DMA_CH3_VALID_V  0x00000001U
-#define I2S_RX_RECOMB_DMA_CH3_VALID_S  0
-/** I2S_RX_RECOMB_DMA_CH3_STYLE : R/W; bitpos: [4:1]; default: 0;
- *  Set this field to set the recombined-dma-channel style. If choose to use i2s
- *  extracted ch 1&3 in 4 channels, the style should be: 6'b1010.
- */
-#define I2S_RX_RECOMB_DMA_CH3_STYLE    0x0000000FU
-#define I2S_RX_RECOMB_DMA_CH3_STYLE_M  (I2S_RX_RECOMB_DMA_CH3_STYLE_V << I2S_RX_RECOMB_DMA_CH3_STYLE_S)
-#define I2S_RX_RECOMB_DMA_CH3_STYLE_V  0x0000000FU
-#define I2S_RX_RECOMB_DMA_CH3_STYLE_S  1
-/** I2S_RX_RECOMB_DMA_CH3_ORDER : R/W; bitpos: [12:5]; default: 0;
- *  Set this field to set the recombined-dma-channel order. If choose to use the order
- *  ch3 -> ch1, the order should be: 8'd7 = {2'd0,2'd0,2'd1,2'd3}.
- */
-#define I2S_RX_RECOMB_DMA_CH3_ORDER    0x000000FFU
-#define I2S_RX_RECOMB_DMA_CH3_ORDER_M  (I2S_RX_RECOMB_DMA_CH3_ORDER_V << I2S_RX_RECOMB_DMA_CH3_ORDER_S)
-#define I2S_RX_RECOMB_DMA_CH3_ORDER_V  0x000000FFU
-#define I2S_RX_RECOMB_DMA_CH3_ORDER_S  5
-/** I2S_RX_RECOMB_DMA_CH3_EOF_NUM : R/W; bitpos: [28:13]; default: 0;
- *  Set this field to set the receive eof byte length of the recombined-dma-channel.
- */
-#define I2S_RX_RECOMB_DMA_CH3_EOF_NUM    0x0000FFFFU
-#define I2S_RX_RECOMB_DMA_CH3_EOF_NUM_M  (I2S_RX_RECOMB_DMA_CH3_EOF_NUM_V << I2S_RX_RECOMB_DMA_CH3_EOF_NUM_S)
-#define I2S_RX_RECOMB_DMA_CH3_EOF_NUM_V  0x0000FFFFU
-#define I2S_RX_RECOMB_DMA_CH3_EOF_NUM_S  13
-
 /** I2S_TX_PCM2PDM_CONF_REG register
  *  I2S TX PCM2PDM configuration register
  */
-#define I2S_TX_PCM2PDM_CONF_REG (DR_REG_I2S_BASE + 0x44)
+#define I2S_TX_PCM2PDM_CONF_REG(i) (REG_I2S_BASE(i) + 0x44)
 /** I2S_TX_PDM_SINC_OSR2 : R/W; bitpos: [4:1]; default: 2;
  *  I2S TX PDM OSR2 value
  */
@@ -825,7 +660,7 @@ extern "C" {
 /** I2S_TX_PCM2PDM_CONF1_REG register
  *  I2S TX PCM2PDM configuration register
  */
-#define I2S_TX_PCM2PDM_CONF1_REG (DR_REG_I2S_BASE + 0x48)
+#define I2S_TX_PCM2PDM_CONF1_REG(i) (REG_I2S_BASE(i) + 0x48)
 /** I2S_TX_PDM_FP : R/W; bitpos: [9:0]; default: 960;
  *  I2S TX PDM Fp
  */
@@ -857,60 +692,10 @@ extern "C" {
 #define I2S_TX_IIR_HP_MULT12_0_V  0x00000007U
 #define I2S_TX_IIR_HP_MULT12_0_S  23
 
-/** I2S_RX_PDM2PCM_CONF_REG register
- *  I2S RX configure register
- */
-#define I2S_RX_PDM2PCM_CONF_REG (DR_REG_I2S_BASE + 0x4c)
-/** I2S_RX_PDM2PCM_EN : R/W; bitpos: [19]; default: 0;
- *  1: Enable PDM2PCM RX mode. 0: DIsable.
- */
-#define I2S_RX_PDM2PCM_EN    (BIT(19))
-#define I2S_RX_PDM2PCM_EN_M  (I2S_RX_PDM2PCM_EN_V << I2S_RX_PDM2PCM_EN_S)
-#define I2S_RX_PDM2PCM_EN_V  0x00000001U
-#define I2S_RX_PDM2PCM_EN_S  19
-/** I2S_RX_PDM_SINC_DSR_16_EN : R/W; bitpos: [20]; default: 0;
- *  Configure the down sampling rate of PDM RX filter group1 module. 1: The  down
- *  sampling rate is 128. 0: down sampling rate is 64.
- */
-#define I2S_RX_PDM_SINC_DSR_16_EN    (BIT(20))
-#define I2S_RX_PDM_SINC_DSR_16_EN_M  (I2S_RX_PDM_SINC_DSR_16_EN_V << I2S_RX_PDM_SINC_DSR_16_EN_S)
-#define I2S_RX_PDM_SINC_DSR_16_EN_V  0x00000001U
-#define I2S_RX_PDM_SINC_DSR_16_EN_S  20
-/** I2S_RX_PDM2PCM_AMPLIFY_NUM : R/W; bitpos: [24:21]; default: 1;
- *  Configure PDM RX amplify number.
- */
-#define I2S_RX_PDM2PCM_AMPLIFY_NUM    0x0000000FU
-#define I2S_RX_PDM2PCM_AMPLIFY_NUM_M  (I2S_RX_PDM2PCM_AMPLIFY_NUM_V << I2S_RX_PDM2PCM_AMPLIFY_NUM_S)
-#define I2S_RX_PDM2PCM_AMPLIFY_NUM_V  0x0000000FU
-#define I2S_RX_PDM2PCM_AMPLIFY_NUM_S  21
-/** I2S_RX_PDM_HP_BYPASS : R/W; bitpos: [25]; default: 0;
- *  I2S PDM RX bypass hp filter or not.
- */
-#define I2S_RX_PDM_HP_BYPASS    (BIT(25))
-#define I2S_RX_PDM_HP_BYPASS_M  (I2S_RX_PDM_HP_BYPASS_V << I2S_RX_PDM_HP_BYPASS_S)
-#define I2S_RX_PDM_HP_BYPASS_V  0x00000001U
-#define I2S_RX_PDM_HP_BYPASS_S  25
-/** I2S_RX_IIR_HP_MULT12_5 : R/W; bitpos: [28:26]; default: 6;
- *  The fourth parameter of PDM RX IIR_HP filter stage 2 is (504 +
- *  LP_I2S_RX_IIR_HP_MULT12_5[2:0])
- */
-#define I2S_RX_IIR_HP_MULT12_5    0x00000007U
-#define I2S_RX_IIR_HP_MULT12_5_M  (I2S_RX_IIR_HP_MULT12_5_V << I2S_RX_IIR_HP_MULT12_5_S)
-#define I2S_RX_IIR_HP_MULT12_5_V  0x00000007U
-#define I2S_RX_IIR_HP_MULT12_5_S  26
-/** I2S_RX_IIR_HP_MULT12_0 : R/W; bitpos: [31:29]; default: 7;
- *  The fourth parameter of PDM RX IIR_HP filter stage 1 is (504 +
- *  LP_I2S_RX_IIR_HP_MULT12_0[2:0])
- */
-#define I2S_RX_IIR_HP_MULT12_0    0x00000007U
-#define I2S_RX_IIR_HP_MULT12_0_M  (I2S_RX_IIR_HP_MULT12_0_V << I2S_RX_IIR_HP_MULT12_0_S)
-#define I2S_RX_IIR_HP_MULT12_0_V  0x00000007U
-#define I2S_RX_IIR_HP_MULT12_0_S  29
-
 /** I2S_RX_TDM_CTRL_REG register
  *  I2S TX TDM mode control register
  */
-#define I2S_RX_TDM_CTRL_REG (DR_REG_I2S_BASE + 0x50)
+#define I2S_RX_TDM_CTRL_REG(i) (REG_I2S_BASE(i) + 0x50)
 /** I2S_RX_TDM_PDM_CHAN0_EN : R/W; bitpos: [0]; default: 1;
  *  1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable, just
  *  input 0 in this channel.
@@ -1050,7 +835,7 @@ extern "C" {
 /** I2S_TX_TDM_CTRL_REG register
  *  I2S TX TDM mode control register
  */
-#define I2S_TX_TDM_CTRL_REG (DR_REG_I2S_BASE + 0x54)
+#define I2S_TX_TDM_CTRL_REG(i) (REG_I2S_BASE(i) + 0x54)
 /** I2S_TX_TDM_CHAN0_EN : R/W; bitpos: [0]; default: 1;
  *  1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output
  *  0 in this channel.
@@ -1199,7 +984,7 @@ extern "C" {
 /** I2S_RX_TIMING_REG register
  *  I2S RX timing control register
  */
-#define I2S_RX_TIMING_REG (DR_REG_I2S_BASE + 0x58)
+#define I2S_RX_TIMING_REG(i) (REG_I2S_BASE(i) + 0x58)
 /** I2S_RX_SD_IN_DM : R/W; bitpos: [1:0]; default: 0;
  *  The delay mode of I2S Rx SD input signal. 0: bypass. 1: delay by pos edge.  2:
  *  delay by neg edge. 3: not used.
@@ -1268,7 +1053,7 @@ extern "C" {
 /** I2S_TX_TIMING_REG register
  *  I2S TX timing control register
  */
-#define I2S_TX_TIMING_REG (DR_REG_I2S_BASE + 0x5c)
+#define I2S_TX_TIMING_REG(i) (REG_I2S_BASE(i) + 0x5c)
 /** I2S_TX_SD_OUT_DM : R/W; bitpos: [1:0]; default: 0;
  *  The delay mode of I2S TX SD output signal. 0: bypass. 1: delay by pos edge.  2:
  *  delay by neg edge. 3: not used.
@@ -1321,7 +1106,7 @@ extern "C" {
 /** I2S_LC_HUNG_CONF_REG register
  *  I2S HUNG configure register.
  */
-#define I2S_LC_HUNG_CONF_REG (DR_REG_I2S_BASE + 0x60)
+#define I2S_LC_HUNG_CONF_REG(i) (REG_I2S_BASE(i) + 0x60)
 /** I2S_LC_FIFO_TIMEOUT : R/W; bitpos: [7:0]; default: 16;
  *  the i2s_tx_hung_int interrupt or the i2s_rx_hung_int interrupt will be triggered
  *  when fifo hung counter is equal to this value
@@ -1349,7 +1134,7 @@ extern "C" {
 /** I2S_RXEOF_NUM_REG register
  *  I2S RX data number control register.
  */
-#define I2S_RXEOF_NUM_REG (DR_REG_I2S_BASE + 0x64)
+#define I2S_RXEOF_NUM_REG(i) (REG_I2S_BASE(i) + 0x64)
 /** I2S_RX_EOF_NUM : R/W; bitpos: [15:0]; default: 64;
  *  The receive data bit length is (I2S_RX_BITS_MOD[4:0] + 1) * (REG_RX_EOF_NUM[15:0])
  *  . It will trigger in_suc_eof interrupt in the configured DMA RX channel.
@@ -1362,7 +1147,7 @@ extern "C" {
 /** I2S_CONF_SIGLE_DATA_REG register
  *  I2S signal data register
  */
-#define I2S_CONF_SIGLE_DATA_REG (DR_REG_I2S_BASE + 0x68)
+#define I2S_CONF_SIGLE_DATA_REG(i) (REG_I2S_BASE(i) + 0x68)
 /** I2S_SINGLE_DATA : R/W; bitpos: [31:0]; default: 0;
  *  The configured constant channel data to be sent out.
  */
@@ -1374,7 +1159,7 @@ extern "C" {
 /** I2S_STATE_REG register
  *  I2S TX status register
  */
-#define I2S_STATE_REG (DR_REG_I2S_BASE + 0x6c)
+#define I2S_STATE_REG(i) (REG_I2S_BASE(i) + 0x6c)
 /** I2S_TX_IDLE : RO; bitpos: [0]; default: 1;
  *  1: i2s_tx is idle state. 0: i2s_tx is working.
  */
@@ -1386,7 +1171,7 @@ extern "C" {
 /** I2S_ETM_CONF_REG register
  *  I2S ETM configure register
  */
-#define I2S_ETM_CONF_REG (DR_REG_I2S_BASE + 0x70)
+#define I2S_ETM_CONF_REG(i) (REG_I2S_BASE(i) + 0x70)
 /** I2S_ETM_TX_SEND_WORD_NUM : R/W; bitpos: [13:0]; default: 64;
  *  I2S ETM send x words event. When sending word number of
  *  reg_etm_tx_send_word_num[13:0], i2s will trigger an etm event.
@@ -1407,7 +1192,7 @@ extern "C" {
 /** I2S_IDEAL_CNT_REG register
  *  I2S sync counter register
  */
-#define I2S_IDEAL_CNT_REG (DR_REG_I2S_BASE + 0x74)
+#define I2S_IDEAL_CNT_REG(i) (REG_I2S_BASE(i) + 0x74)
 /** I2S_TX_IDEAL_CNT : R/W; bitpos: [30:0]; default: 0;
  *  tx fifo counter ideal value.
  */
@@ -1419,7 +1204,7 @@ extern "C" {
 /** I2S_FIFO_CNT_REG register
  *  I2S sync counter register
  */
-#define I2S_FIFO_CNT_REG (DR_REG_I2S_BASE + 0x78)
+#define I2S_FIFO_CNT_REG(i) (REG_I2S_BASE(i) + 0x78)
 /** I2S_TX_FIFO_CNT : RO; bitpos: [30:0]; default: 0;
  *  tx fifo counter value.
  */
@@ -1438,7 +1223,7 @@ extern "C" {
 /** I2S_BCK_CNT_REG register
  *  I2S sync counter register
  */
-#define I2S_BCK_CNT_REG (DR_REG_I2S_BASE + 0x7c)
+#define I2S_BCK_CNT_REG(i) (REG_I2S_BASE(i) + 0x7c)
 /** I2S_TX_BCK_CNT : RO; bitpos: [30:0]; default: 0;
  *  tx bck counter value.
  */
@@ -1457,7 +1242,7 @@ extern "C" {
 /** I2S_CNT_DIFF_REG register
  *  I2S sync counter register
  */
-#define I2S_CNT_DIFF_REG (DR_REG_I2S_BASE + 0x80)
+#define I2S_CNT_DIFF_REG(i) (REG_I2S_BASE(i) + 0x80)
 /** I2S_TX_CNT_DIFF : RO; bitpos: [30:0]; default: 0;
  *  tx bck counter value.
  */
@@ -1476,7 +1261,7 @@ extern "C" {
 /** I2S_SYNC_SW_THRES_REG register
  *  I2S sync counter register
  */
-#define I2S_SYNC_SW_THRES_REG (DR_REG_I2S_BASE + 0x84)
+#define I2S_SYNC_SW_THRES_REG(i) (REG_I2S_BASE(i) + 0x84)
 /** I2S_TX_CNT_DIFF_SW_THRES : R/W; bitpos: [30:0]; default: 0;
  *  tx fifo counter difference software threshold value, when difference larger than
  *  this threshold, interrupt will occur and hardware sync will not be executed.
@@ -1489,7 +1274,7 @@ extern "C" {
 /** I2S_SYNC_HW_THRES_REG register
  *  I2S sync counter register
  */
-#define I2S_SYNC_HW_THRES_REG (DR_REG_I2S_BASE + 0x88)
+#define I2S_SYNC_HW_THRES_REG(i) (REG_I2S_BASE(i) + 0x88)
 /** I2S_TX_CNT_DIFF_HW_THRES : R/W; bitpos: [30:0]; default: 0;
  *  tx fifo counter difference hardware threshold value, which means that only when
  *  difference larger than this threshold will hardware start hardware sync.
@@ -1502,7 +1287,7 @@ extern "C" {
 /** I2S_HW_SYNC_CONF_REG register
  *  I2S TX hardware sync function configuration register
  */
-#define I2S_HW_SYNC_CONF_REG (DR_REG_I2S_BASE + 0x8c)
+#define I2S_HW_SYNC_CONF_REG(i) (REG_I2S_BASE(i) + 0x8c)
 /** I2S_TX_HW_SYNC_EN : R/W; bitpos: [0]; default: 0;
  *  Configure whether enable i2s tx hardware sync function. 1: Enable. 0: Disable
  */
@@ -1522,7 +1307,7 @@ extern "C" {
 /** I2S_HW_SYNC_DATA_REG register
  *  I2S TX hardware sync function configuration register
  */
-#define I2S_HW_SYNC_DATA_REG (DR_REG_I2S_BASE + 0x90)
+#define I2S_HW_SYNC_DATA_REG(i) (REG_I2S_BASE(i) + 0x90)
 /** I2S_TX_HW_SYNC_SUPPL_DATA : R/W; bitpos: [31:0]; default: 0;
  *  Configure the i2s tx hardware sync supplementation data when
  *  I2S_TX_HW_SYNC_SUPPL_MODE is 1.
@@ -1535,7 +1320,7 @@ extern "C" {
 /** I2S_CLK_GATE_REG register
  *  Clock gate register
  */
-#define I2S_CLK_GATE_REG (DR_REG_I2S_BASE + 0xf8)
+#define I2S_CLK_GATE_REG(i) (REG_I2S_BASE(i) + 0xf8)
 /** I2S_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  set this bit to enable clock gate
  */
@@ -1547,7 +1332,7 @@ extern "C" {
 /** I2S_DATE_REG register
  *  Version control register
  */
-#define I2S_DATE_REG (DR_REG_I2S_BASE + 0xfc)
+#define I2S_DATE_REG(i) (REG_I2S_BASE(i) + 0xfc)
 /** I2S_DATE : R/W; bitpos: [27:0]; default: 37818432;
  *  I2S version control register
  */

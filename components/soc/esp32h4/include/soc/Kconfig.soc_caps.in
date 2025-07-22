@@ -19,6 +19,10 @@ config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
+config SOC_ETM_SUPPORTED
+    bool
+    default y
+
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -28,6 +32,10 @@ config SOC_EFUSE_KEY_PURPOSE_FIELD
     default y
 
 config SOC_EFUSE_SUPPORTED
+    bool
+    default y
+
+config SOC_I2S_SUPPORTED
     bool
     default y
 
@@ -207,11 +215,27 @@ config SOC_GDMA_PAIRS_PER_GROUP_MAX
     int
     default 5
 
+config SOC_GDMA_SUPPORT_ETM
+    bool
+    default y
+
 config SOC_GDMA_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
 config SOC_AHB_GDMA_SUPPORT_PSRAM
+    bool
+    default y
+
+config SOC_ETM_GROUPS
+    int
+    default 1
+
+config SOC_ETM_CHANNELS_PER_GROUP
+    int
+    default 50
+
+config SOC_ETM_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -230,6 +254,18 @@ config SOC_GPIO_IN_RANGE_MAX
 config SOC_GPIO_OUT_RANGE_MAX
     int
     default 39
+
+config SOC_GPIO_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_GPIO_ETM_EVENTS_PER_GROUP
+    int
+    default 8
+
+config SOC_GPIO_ETM_TASKS_PER_GROUP
+    int
+    default 8
 
 config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
@@ -296,6 +332,78 @@ config SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
     default y
 
 config SOC_I2C_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_I2S_NUM
+    int
+    default 1
+
+config SOC_I2S_HW_VERSION_2
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_ETM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_XTAL
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PLL_F96M
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PLL_F64M
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PCM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM_TX
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PCM2PDM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM_RX
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_TX_SYNC_CNT
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+    bool
+    default y
+
+config SOC_I2S_PDM_MAX_TX_LINES
+    int
+    default 2
+
+config SOC_I2S_PDM_MAX_RX_LINES
+    int
+    default 1
+
+config SOC_I2S_SUPPORTS_TDM
+    bool
+    default y
+
+config SOC_I2S_TDM_FULL_DATA_WIDTH
+    bool
+    default y
+
+config SOC_I2S_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -391,6 +499,10 @@ config SOC_SYSTIMER_ALARM_MISS_COMPENSATE
     bool
     default y
 
+config SOC_SYSTIMER_SUPPORT_ETM
+    bool
+    default y
+
 config SOC_LP_TIMER_BIT_WIDTH_LO
     int
     default 32
@@ -398,6 +510,10 @@ config SOC_LP_TIMER_BIT_WIDTH_LO
 config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
+
+config SOC_TIMER_SUPPORT_ETM
+    bool
+    default y
 
 config SOC_TIMER_SUPPORT_SLEEP_RETENTION
     bool
