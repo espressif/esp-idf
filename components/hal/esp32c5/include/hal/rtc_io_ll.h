@@ -115,7 +115,7 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
  */
 static inline void rtcio_ll_output_enable(int rtcio_num)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.enable_w1ts, out_enable_w1ts, BIT(rtcio_num));
+    LP_GPIO.enable_w1ts.val = BIT(rtcio_num);
 }
 
 /**
@@ -125,7 +125,7 @@ static inline void rtcio_ll_output_enable(int rtcio_num)
  */
 static inline void rtcio_ll_output_disable(int rtcio_num)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.enable_w1tc, out_enable_w1tc, BIT(rtcio_num));
+    LP_GPIO.enable_w1tc.val = BIT(rtcio_num);
 }
 
 /**
@@ -137,9 +137,9 @@ static inline void rtcio_ll_output_disable(int rtcio_num)
 static inline void rtcio_ll_set_level(int rtcio_num, uint32_t level)
 {
     if (level) {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.out_w1ts, out_data_w1ts, BIT(rtcio_num));
+        LP_GPIO.out_w1ts.val = BIT(rtcio_num);
     } else {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.out_w1tc, out_data_w1tc, BIT(rtcio_num));
+        LP_GPIO.out_w1tc.val = BIT(rtcio_num);
     }
 }
 
@@ -450,7 +450,7 @@ static inline  uint32_t rtcio_ll_get_interrupt_status(void)
  */
 static inline  void rtcio_ll_clear_interrupt_status(void)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.status_w1tc, status_intr_w1tc, 0xff);
+    LP_GPIO.status_w1tc.val = 0xFF;
 }
 
 #ifdef __cplusplus
