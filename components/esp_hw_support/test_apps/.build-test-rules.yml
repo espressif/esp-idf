@@ -50,5 +50,9 @@ components/esp_hw_support/test_apps/vad_wakeup:
     - if: SOC_LP_VAD_SUPPORTED != 1
 
 components/esp_hw_support/test_apps/wakeup_tests:
-  disable:
-    - if: IDF_TARGET in ["esp32c5", "esp32p4", "linux", "esp32c61", "esp32h21", "esp32h4"]   # TODO: PM-337
+  enable:
+    - if: SOC_DEEP_SLEEP_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32c61", "esp32h21", "esp32h4"]
+      temporary: true
+      reason: lack of runners
