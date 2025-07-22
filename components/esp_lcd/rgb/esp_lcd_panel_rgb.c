@@ -1019,7 +1019,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
             mount_cfgs[i].buffer = rgb_panel->bounce_buffer[i];
             mount_cfgs[i].buffer_alignment = buffer_alignment;
             mount_cfgs[i].length = rgb_panel->bb_size;
-            mount_cfgs[i].flags.mark_eof = true; // we use the DMA EOF interrupt to copy the frame buffer (partially) to the bounce buffer
+            mount_cfgs[i].flags.mark_eof = GDMA_FINAL_LINK_TO_NULL; // we use the DMA EOF interrupt to copy the frame buffer (partially) to the bounce buffer
         }
         ESP_RETURN_ON_ERROR(gdma_link_mount_buffers(rgb_panel->dma_bb_link, 0, mount_cfgs, RGB_LCD_PANEL_BOUNCE_BUF_NUM, NULL),
                             TAG, "mount DMA bounce buffers failed");
@@ -1058,7 +1058,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
         gdma_buffer_mount_config_t mount_cfg = {
             .length = rgb_panel->fb_size,
             .flags = {
-                .mark_final = rgb_panel->flags.stream_mode ? false : true,
+                .mark_final = rgb_panel->flags.stream_mode ? GDMA_FINAL_LINK_TO_DEFAULT : GDMA_FINAL_LINK_TO_NULL,
                 .mark_eof = true,
             },
         };

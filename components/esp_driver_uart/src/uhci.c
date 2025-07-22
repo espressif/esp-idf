@@ -273,7 +273,7 @@ static void uhci_do_transmit(uhci_controller_handle_t uhci_ctrl, uhci_transactio
         .length = trans->buffer_size,
         .flags = {
             .mark_eof = true,
-            .mark_final = true,
+            .mark_final = GDMA_FINAL_LINK_TO_NULL,
         }
     };
 
@@ -338,7 +338,7 @@ esp_err_t uhci_receive(uhci_controller_handle_t uhci_ctrl, uint8_t *read_buffer,
             .buffer_alignment = buffer_alignment,
             .length = uhci_ctrl->rx_dir.buffer_size_per_desc_node[i],
             .flags = {
-                .mark_final = false,
+                .mark_final = GDMA_FINAL_LINK_TO_DEFAULT,
             }
         };
         ESP_LOGD(TAG, "The DMA node %d has %d byte", i, uhci_ctrl->rx_dir.buffer_size_per_desc_node[i]);
