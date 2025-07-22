@@ -16,6 +16,8 @@ This example demonstrates how to use I2S TDM mode to record 4 MICs connected to 
 | ES7210_I2S_FMT_DSP_A |    PCM short format    |
 | ES7210_I2S_FMT_DSP_B |    PCM long format     |
 
+In this example, we use `esp_codec_dev` dependency which contains the `es7210` driver. This driver uses `ES7210_I2S_FMT_I2S` format by default.
+
 Recorded voice will be saved to SD card in `wav` format, and can be played or processed on PC.
 
 ## How to Use Example
@@ -31,11 +33,11 @@ All the GPIO used in this example can be changed according to your board, by mac
 
 ### Dependency
 
-This example is based on [es7210 component](https://components.espressif.com/component/espressif/es7210)
+This example is based on [esp_codec_dev component](https://components.espressif.com/components/espressif/esp_codec_dev)
 
-The component can be installed by esp component manager. Since this example already installed it, no need to re-installed it again, but if you want to install this component in your own project, you can input the following command:
+The component can be installed by [IDF Component Manager](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html). This example already includes it. If you want to install [esp_codec_dev component](https://components.espressif.com/components/espressif/esp_codec_dev) separately in your project, you can input the following command:
 ```
-idf.py add-dependency espressif/es7210^1.0.0
+idf.py add-dependency "espressif/esp_codec_dev^1.3.4"
 ```
 
 If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other projects with managed components, the component manager will search for the required components online and download them into the `managed_components` folder.
@@ -46,11 +48,8 @@ If the dependency is added, you can check `idf_component.yml` for more detail. W
 ```
 idf.py set-target TARGET
 ```
-* Change value of `EXAMPLE_I2S_FORMAT` to check I2S driver's functionality on different I2S formats.
-* Change `EXAMPLE_ES7210_MIC_GAIN` and `EXAMPLE_ES7210_MIC_BIAS` according your MIC's specs if needed.
-* Change `EXAMPLE_ES7210_ADC_VOLUME` if recorded voice is too loud or too quite.
 
-Note: it's better to adjust `EXAMPLE_ES7210_MIC_GAIN` first. If adjusting MIC gain doesn't meet your demand, you can then adjust `EXAMPLE_ES7210_ADC_VOLUME`. That is to say, it's better to adjust analog gain than digital gain.
+The configuration macros are defined at the beginning of `main/i2s_es7210_record_example.c`, you can change the configuration macros according to your needs.
 
 ### Build and Flash
 
