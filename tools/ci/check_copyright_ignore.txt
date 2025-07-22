@@ -520,7 +520,6 @@ components/soc/esp32/include/soc/reset_reasons.h
 components/soc/esp32/include/soc/sdmmc_pins.h
 components/soc/esp32/include/soc/soc_pins.h
 components/soc/esp32/include/soc/soc_ulp.h
-components/soc/esp32/include/soc/touch_sensor_channel.h
 components/soc/esp32/include/soc/uart_pins.h
 components/soc/esp32/include/soc/wdev_reg.h
 components/soc/esp32/ledc_periph.c
@@ -533,7 +532,6 @@ components/soc/esp32s2/include/soc/gpio_sig_map.h
 components/soc/esp32s2/include/soc/memprot_defs.h
 components/soc/esp32s2/include/soc/nrx_reg.h
 components/soc/esp32s2/include/soc/soc_ulp.h
-components/soc/esp32s2/include/soc/touch_sensor_channel.h
 components/soc/esp32s2/include/soc/touch_sensor_pins.h
 components/soc/esp32s2/include/soc/uart_pins.h
 components/soc/esp32s2/include/soc/wdev_reg.h
@@ -825,6 +823,7 @@ examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/include/ge
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/include/genie_slist.h
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/include/genie_timer.h
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/include/genie_util.h
+examples/bluetooth/nimble/ble_ancs/main/main.c
 examples/bluetooth/nimble/blecent/main/blecent.h
 examples/bluetooth/nimble/blecent/main/main.c
 examples/bluetooth/nimble/blecsc/main/blecsc_sens.h

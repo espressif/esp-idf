@@ -227,6 +227,10 @@ config SOC_PMU_SUPPORTED
     bool
     default y
 
+config SOC_PMU_PVT_SUPPORTED
+    bool
+    default y
+
 config SOC_DCDC_SUPPORTED
     bool
     default y
@@ -1696,6 +1700,14 @@ config SOC_TOUCH_SENSOR_VERSION
     default 3
 
 config SOC_TOUCH_SENSOR_NUM
+    int
+    default 14
+
+config SOC_TOUCH_MIN_CHAN_ID
+    int
+    default 1
+
+config SOC_TOUCH_MAX_CHAN_ID
     int
     default 14
 

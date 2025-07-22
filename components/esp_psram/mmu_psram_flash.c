@@ -33,6 +33,7 @@
 #endif
 
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+#define ALIGN_DOWN_BY(num, align) ((num) & (~((align) - 1)))
 
 /*----------------------------------------------------------------------------
                     Part 1 APIs (See @Backgrounds on top of this file)
@@ -44,10 +45,22 @@ const static char *TAG = "mmu_psram";
 //TODO IDF-4387
 static uint32_t page0_mapped = 0;
 static uint32_t page0_page = INVALID_PHY_PAGE;
+
+/**
+ * If using `int`, then for CLANG, with enabled optimization when inlined function is provided with the address of external symbol, the two least bits of the constant used inside that function get cleared.
+ * Optimizer assumes that address of external symbol should be aligned to 4-bytes and therefore aligns constant value used for bitwise AND operation with that address.
+ *
+ * This means `extern int _instruction_reserved_start;` can be unaligned to 4 bytes, whereas using `char` can solve this issue.
+ *
+ * As we only use these symbol address, we declare them as `char` here
+ */
+extern char _instruction_reserved_start;
+extern char _instruction_reserved_end;
+extern char _rodata_reserved_start;
+extern char _rodata_reserved_end;
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-extern char _instruction_reserved_end;
 #define INSTRUCTION_ALIGNMENT_GAP_START ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, 4)
 #define INSTRUCTION_ALIGNMENT_GAP_END ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE)
 
@@ -71,11 +84,12 @@ void mmu_psram_get_instruction_alignment_gap_info(uint32_t *gap_start, uint32_t 
     *gap_end = INSTRUCTION_ALIGNMENT_GAP_END;
 }
 
-bool IRAM_ATTR mmu_psram_check_ptr_addr_in_instruction_alignment_gap(const void *p)
+bool mmu_psram_check_ptr_addr_in_xip_psram_instruction_region(const void *p)
 {
-    if ((intptr_t)p >= INSTRUCTION_ALIGNMENT_GAP_START && (intptr_t)p < INSTRUCTION_ALIGNMENT_GAP_END) {
+    if ((intptr_t)p >= ALIGN_DOWN_BY((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE) && (intptr_t)p < ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE)) {
         return true;
     }
+
     return false;
 }
 
@@ -116,7 +130,6 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 
 #if CONFIG_SPIRAM_RODATA
-extern char _rodata_reserved_end;
 #define RODATA_ALIGNMENT_GAP_START ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, 4)
 #define RODATA_ALIGNMENT_GAP_END ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE)
 
@@ -142,11 +155,12 @@ void mmu_psram_get_rodata_alignment_gap_info(uint32_t *gap_start, uint32_t *gap_
     *gap_end = RODATA_ALIGNMENT_GAP_END;
 }
 
-bool IRAM_ATTR mmu_psram_check_ptr_addr_in_rodata_alignment_gap(const void *p)
+bool mmu_psram_check_ptr_addr_in_xip_psram_rodata_region(const void *p)
 {
-    if ((intptr_t)p >= RODATA_ALIGNMENT_GAP_START && (intptr_t)p < RODATA_ALIGNMENT_GAP_END) {
+    if ((intptr_t)p >= ALIGN_DOWN_BY((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE) && (intptr_t)p < ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE)) {
         return true;
     }
+
     return false;
 }
 
@@ -192,19 +206,6 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
 /*----------------------------------------------------------------------------
                     Part 2 APIs (See @Backgrounds on top of this file)
 -------------------------------------------------------------------------------*/
-/**
- * If using `int`, then for CLANG, with enabled optimization when inlined function is provided with the address of external symbol, the two least bits of the constant used inside that function get cleared.
- * Optimizer assumes that address of external symbol should be aligned to 4-bytes and therefore aligns constant value used for bitwise AND operation with that address.
- *
- * This means `extern int _instruction_reserved_start;` can be unaligned to 4 bytes, whereas using `char` can solve this issue.
- *
- * As we only use these symbol address, we declare them as `char` here
- */
-extern char _instruction_reserved_start;
-extern char _instruction_reserved_end;
-extern char _rodata_reserved_start;
-extern char _rodata_reserved_end;
-
 //------------------------------------Copy Flash .text to PSRAM-------------------------------------//
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 static uint32_t instruction_in_spiram;

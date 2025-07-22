@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -138,6 +138,11 @@ typedef enum {
     HTTP_ADDR_TYPE_INET6 = AF_INET6,        /**< IPv6 address family. */
 } esp_http_client_addr_type_t;
 
+typedef enum {
+    HTTP_TLS_DYN_BUF_RX_STATIC = 1,     /*!< Strategy to disable dynamic RX buffer allocations and convert to static allocation post-handshake, reducing memory fragmentation */
+    HTTP_TLS_DYN_BUF_STRATEGY_MAX,      /*!< to indicate max */
+} esp_http_client_tls_dyn_buf_strategy_t;
+
 /**
  * @brief HTTP configuration
  */
@@ -200,6 +205,10 @@ typedef struct {
     struct esp_transport_item_t *transport;
 #endif
     esp_http_client_addr_type_t addr_type;  /*!< Address type used in http client configurations */
+
+#if CONFIG_MBEDTLS_DYNAMIC_BUFFER
+    esp_http_client_tls_dyn_buf_strategy_t tls_dyn_buf_strategy; /*!< TLS dynamic buffer strategy */
+#endif
 } esp_http_client_config_t;
 
 /**

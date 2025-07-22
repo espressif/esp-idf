@@ -22,7 +22,7 @@ menu "Test App Configuration"
             Enabling this option includes HMAC Peripheral related test cases in the build for supported targets.
 
     config CRYPTO_TEST_APP_ENABLE_ECDSA_TESTS
-        depends on !CRYPTO_TEST_APP_ENABLE_HMAC_TESTS
+        depends on SOC_ECDSA_SUPPORTED && !CRYPTO_TEST_APP_ENABLE_HMAC_TESTS
         bool "Enable ECDSA Peripheral test cases"
         default n
         help

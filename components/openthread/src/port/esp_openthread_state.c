@@ -10,7 +10,9 @@
 #include <esp_check.h>
 #include <esp_event.h>
 #include <esp_log.h>
+#include <esp_openthread_border_router.h>
 #include <esp_openthread_dns64.h>
+#include <esp_openthread_meshcop_mdns.h>
 #include <esp_openthread_netif_glue_priv.h>
 #include <esp_openthread_radio.h>
 #include <esp_openthread_state.h>
@@ -18,6 +20,19 @@
 #include <openthread/thread.h>
 
 #define TAG "OT_STATE"
+
+#if CONFIG_OPENTHREAD_BORDER_ROUTER
+static void handle_ot_border_router_state_changed(otInstance* instance)
+{
+    otDeviceRole role = otThreadGetDeviceRole(esp_openthread_get_instance());
+
+    if (role == OT_DEVICE_ROLE_CHILD || role == OT_DEVICE_ROLE_ROUTER || role == OT_DEVICE_ROLE_LEADER) {
+        esp_openthread_publish_meshcop_mdns(esp_openthread_get_meshcop_instance_name());
+    } else {
+        esp_openthread_remove_meshcop_mdns();
+    }
+}
+#endif
 
 static void handle_ot_netif_state_change(otInstance* instance)
 {
@@ -122,6 +137,12 @@ static void ot_state_change_callback(otChangedFlags changed_flags, void* ctx)
     if (!instance) {
         return;
     }
+
+#if CONFIG_OPENTHREAD_BORDER_ROUTER
+    if (changed_flags & ESP_OPENTHREAD_BORDER_ROUTER_FLAG_OF_INTEREST) {
+        handle_ot_border_router_state_changed(instance);
+    }
+#endif
 
     if (changed_flags & OT_CHANGED_THREAD_ROLE) {
         handle_ot_role_change(instance);

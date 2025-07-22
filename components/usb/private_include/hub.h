@@ -60,6 +60,7 @@ typedef void (*hub_event_cb_t)(hub_event_data_t *event_data, void *arg);
  * @brief Hub driver configuration
  */
 typedef struct {
+    unsigned port_map;                              /**< Bitmap of root ports to enable */
     usb_proc_req_cb_t proc_req_cb;                  /**< Processing request callback */
     void *proc_req_cb_arg;                          /**< Processing request callback argument */
     hub_event_cb_t event_cb;                        /**< Hub event callback */
@@ -205,7 +206,7 @@ esp_err_t hub_port_disable(usb_device_handle_t parent_dev_hdl, uint8_t parent_po
  *    - ESP_OK: New device added successfully
  *    - ESP_ERR_INVALID_STATE: Hub driver is not in a correct state
  */
-esp_err_t hub_notify_new_dev(uint8_t dev_addr);
+esp_err_t hub_dev_new(uint8_t dev_addr);
 
 /**
  * @brief Notify Hub driver that device has been removed
@@ -221,7 +222,7 @@ esp_err_t hub_notify_new_dev(uint8_t dev_addr);
  *    - ESP_OK: A device removed successfully
  *    - ESP_ERR_INVALID_STATE: Hub driver is not in a correct state
  */
-esp_err_t hub_notify_dev_gone(uint8_t dev_addr);
+esp_err_t hub_dev_gone(uint8_t dev_addr);
 
 #if ENABLE_USB_HUBS
 /**

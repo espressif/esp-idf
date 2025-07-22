@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -146,6 +146,18 @@ uint32_t btc_get_ble_status(void)
         status |= BIT(BTC_BLE_STATUS_CONN);
     }
 
+    // Number of active ACL connection
+    extern uint8_t btm_ble_acl_active_count(void);
+    if (btm_ble_acl_active_count()) {
+        status |= BIT(BTC_BLE_STATUS_CONN);
+    }
+
+    // Number of active L2C plcb
+    extern uint8_t l2cu_ble_plcb_active_count(void);
+    if (l2cu_ble_plcb_active_count()) {
+        status |= BIT(BTC_BLE_STATUS_CONN);
+    }
+
     // Address resolve status
     extern uint8_t btm_get_ble_addr_resolve_disable_status(void);
     if (btm_get_ble_addr_resolve_disable_status()) {
@@ -174,25 +186,13 @@ uint32_t btc_get_ble_status(void)
     #endif
     #endif
 
-    #if (BLE_50_FEATURE_SUPPORT == TRUE)
+    #if (BLE_50_EXTEND_ADV_EN == TRUE)
     // Number of active extended advertsing
     extern uint8_t btm_ble_ext_adv_active_count(void);
     if (btm_ble_ext_adv_active_count()) {
         status |= BIT(BTC_BLE_STATUS_EXT_ADV);
     }
     #endif
-
-    // Number of active ACL connection
-    extern uint8_t btm_acl_active_count(void);
-    if (btm_acl_active_count()) {
-        status |= BIT(BTC_BLE_STATUS_CONN);
-    }
-
-    // Number of active L2C plcb
-    extern uint8_t l2cu_plcb_active_count(void);
-    if (l2cu_plcb_active_count()) {
-        status |= BIT(BTC_BLE_STATUS_CONN);
-    }
 
     #if (GATTC_INCLUDED == TRUE)
     // Number of registered GATTC APP
@@ -213,6 +213,13 @@ uint32_t btc_get_ble_status(void)
     extern uint8_t bta_gatts_srvc_active_count(void);
     if (bta_gatts_srvc_active_count()) {
         status |= BIT(BTC_BLE_STATUS_GATTS_SRVC);
+    }
+    #endif
+
+    #if SMP_INCLUDED == TRUE
+    extern uint8_t smp_get_state(void);
+    if (smp_get_state()) {
+        status |= BIT(BTC_BLE_STATUS_SMP_STATE);
     }
     #endif
 

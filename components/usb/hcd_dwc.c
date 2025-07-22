@@ -43,7 +43,7 @@
 #define CTRL_EP_MAX_MPS_LS                      8   // Largest Maximum Packet Size for Low Speed control endpoints
 #define CTRL_EP_MAX_MPS_HSFS                    64  // Largest Maximum Packet Size for High & Full Speed control endpoints
 
-#define NUM_PORTS                               1   // The controller only has one port.
+#define NUM_PORTS                               SOC_USB_OTG_PERIPH_NUM   // Each peripheral is a root port
 
 // ----------------------- Configs -------------------------
 
@@ -108,7 +108,6 @@ DEFINE_CRIT_SECTION_LOCK_STATIC(hcd_lock);
  * For other SOCs this is no-operation
  */
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-#define ALIGN_UP_BY(num, align)                     (((num) + ((align) - 1)) & ~((align) - 1))
 #define CACHE_SYNC_FRAME_LIST(frame_list)           cache_sync_frame_list(frame_list)
 #define CACHE_SYNC_XFER_DESCRIPTOR_LIST_M2C(buffer) cache_sync_xfer_descriptor_list(buffer, true)
 #define CACHE_SYNC_XFER_DESCRIPTOR_LIST_C2M(buffer) cache_sync_xfer_descriptor_list(buffer, false)
@@ -250,22 +249,22 @@ struct port_obj {
         uint32_t val;
     } flags;
     bool initialized;
-    // FIFO biasing related
-    usb_hal_fifo_bias_t fifo_bias;                  // Bias is saved so it can be reconfigured upon reset
+    // FIFO related
+    usb_dwc_hal_fifo_config_t fifo_config;          // FIFO config to be applied at HAL level
     // Port callback and context
     hcd_port_callback_t callback;
     void *callback_arg;
     SemaphoreHandle_t port_mux;
     void *context;
+    intr_handle_t isr_hdl;       // Interrupt handle for this root port (USB-OTG peripheral)
 };
 
 /**
  * @brief Object representing the HCD
  */
 typedef struct {
-    // Ports (Hardware only has one)
-    port_t *port_obj;
-    intr_handle_t isr_hdl;
+    // Ports: Each peripheral is a root port
+    port_t *port_obj[NUM_PORTS];
 } hcd_obj_t;
 
 static hcd_obj_t *s_hcd_obj = NULL;     // Note: "s_" is for the static pointer
@@ -553,6 +552,23 @@ static bool _port_check_all_pipes_halted(port_t *port);
 static bool _port_debounce(port_t *port);
 
 /**
+ * @brief Convert user-provided FIFO configuration to HAL format
+ *
+ * This function validates and converts a user-defined FIFO configuration
+ * (provided via `hcd_config_t.fifo_config`) into the format expected by the HAL.
+ * It ensures that both RX FIFO and Non-Periodic TX FIFO sizes are non-zero.
+ *
+ * @param[in]  src Pointer to user-defined FIFO settings (HCD format)
+ * @param[out] dst Pointer to HAL-compatible FIFO configuration structure
+ *
+ * @return
+ *      - ESP_OK: Conversion successful and values copied
+ *      - ESP_ERR_INVALID_SIZE: Either RX FIFO or Non-Periodic TX FIFO is zero
+ */
+
+static esp_err_t convert_fifo_config_to_hal_config(const hcd_fifo_settings_t *src, usb_dwc_hal_fifo_config_t *dst);
+
+/**
  * @brief Power ON the port
  *
  * @param port Port object
@@ -738,16 +754,6 @@ static usb_speed_t get_usb_port_speed(usb_dwc_speed_t priv)
     case USB_DWC_SPEED_LOW: return USB_SPEED_LOW;
     case USB_DWC_SPEED_FULL: return USB_SPEED_FULL;
     case USB_DWC_SPEED_HIGH: return USB_SPEED_HIGH;
-    default: abort();
-    }
-}
-
-static usb_hal_fifo_bias_t get_hal_fifo_bias(hcd_port_fifo_bias_t public)
-{
-    switch (public) {
-    case HCD_PORT_FIFO_BIAS_BALANCED: return USB_HAL_FIFO_BIAS_DEFAULT;
-    case HCD_PORT_FIFO_BIAS_RX: return USB_HAL_FIFO_BIAS_RX;
-    case HCD_PORT_FIFO_BIAS_PTX: return USB_HAL_FIFO_BIAS_PTX;
     default: abort();
     }
 }
@@ -952,6 +958,46 @@ static void intr_hdlr_main(void *arg)
     }
 }
 
+// ----------------------- FIFO Config -------------------------
+
+/**
+ * @brief Calculate default FIFO configuration based on bias preference
+ *
+ * This function calculates the FIFO configuration (RX, non-periodic TX, and periodic TX)
+ * according to the selected bias mode from Kconfig:
+ *
+ * - CONFIG_USB_HOST_HW_BUFFER_BIAS_IN: Prioritize RX FIFO space, useful for IN-heavy traffic.
+ * - CONFIG_USB_HOST_HW_BUFFER_BIAS_PERIODIC_OUT: Prioritize periodic TX FIFO, suitable for periodic OUT transfers.
+ * - USB_HOST_HW_BUFFER_BIAS_BALANCED: Balanced configuration between RX and both TX FIFOs.
+ *
+ * @param[inout] port Pointer to the port object whose fifo_config will be filled
+ * @param[in] hal Pointer to an initialized HAL context providing hardware FIFO limits
+ */
+static void  _calculate_fifo_from_bias(port_t *port, const usb_dwc_hal_context_t *hal)
+{
+    const int otg_dfifo_depth = hal->constant_config.hsphy_type ? 1024 : 256;
+    const uint16_t fifo_size_lines = hal->constant_config.fifo_size;
+
+#if CONFIG_USB_HOST_HW_BUFFER_BIAS_IN
+    // Prioritize RX FIFO (best for IN-heavy workloads)
+    port->fifo_config.nptx_fifo_lines = otg_dfifo_depth / 16;
+    port->fifo_config.ptx_fifo_lines = otg_dfifo_depth / 8;
+    port->fifo_config.rx_fifo_lines = fifo_size_lines - port->fifo_config.ptx_fifo_lines - port->fifo_config.nptx_fifo_lines;
+
+#elif CONFIG_USB_HOST_HW_BUFFER_BIAS_PERIODIC_OUT
+    // Prioritize periodic TX FIFO (useful for high throughput periodic endpoints)
+    port->fifo_config.rx_fifo_lines = otg_dfifo_depth / 8 + 2; // 2 extra lines are allocated for status information. See USB-OTG Programming Guide, chapter 2.1.2.1
+    port->fifo_config.nptx_fifo_lines = otg_dfifo_depth / 16;
+    port->fifo_config.ptx_fifo_lines = fifo_size_lines - port->fifo_config.nptx_fifo_lines - port->fifo_config.rx_fifo_lines;
+
+#else // USB_HOST_HW_BUFFER_BIAS_BALANCED
+    // Balanced configuration (default)
+    port->fifo_config.nptx_fifo_lines = otg_dfifo_depth / 4;
+    port->fifo_config.ptx_fifo_lines = otg_dfifo_depth / 8;
+    port->fifo_config.rx_fifo_lines = fifo_size_lines - port->fifo_config.ptx_fifo_lines - port->fifo_config.nptx_fifo_lines;
+#endif
+}
+
 // --------------------------------------------- Host Controller Driver ------------------------------------------------
 
 static port_t *port_obj_alloc(void)
@@ -994,43 +1040,66 @@ esp_err_t hcd_install(const hcd_config_t *config)
     HCD_CHECK_FROM_CRIT(s_hcd_obj == NULL, ESP_ERR_INVALID_STATE);
     HCD_EXIT_CRITICAL();
 
+    // Check if peripheral_map does not have bits set outside of valid range. Valid bits are BIT0 - BIT(NUM_PORTS - 1)
+    HCD_CHECK((config->peripheral_map != 0) && (config->peripheral_map < BIT(NUM_PORTS)), ESP_ERR_INVALID_ARG);
+
     esp_err_t err_ret;
+
     // Allocate memory for the driver object
     hcd_obj_t *p_hcd_obj_dmy = calloc(1, sizeof(hcd_obj_t));
     if (p_hcd_obj_dmy == NULL) {
         return ESP_ERR_NO_MEM;
     }
-    // Allocate each port object (the hardware currently only has one port)
-    p_hcd_obj_dmy->port_obj = port_obj_alloc();
-    if (p_hcd_obj_dmy->port_obj == NULL) {
-        err_ret = ESP_ERR_NO_MEM;
-        goto port_alloc_err;
+
+    // Allocate each port object
+    for (int i = 0; i < NUM_PORTS; i++) {
+        if (BIT(i) & config->peripheral_map) {
+            p_hcd_obj_dmy->port_obj[i] = port_obj_alloc();
+            if (p_hcd_obj_dmy->port_obj[i] == NULL) {
+                err_ret = ESP_ERR_NO_MEM;
+                goto clean_up;
+            }
+            // Allocate interrupt
+            const int irq_index = usb_dwc_info.controllers[i].irq;
+            err_ret = esp_intr_alloc(irq_index,
+                                     config->intr_flags | ESP_INTR_FLAG_INTRDISABLED,  // The interrupt must be disabled until the port is initialized
+                                     intr_hdlr_main,
+                                     (void *)p_hcd_obj_dmy->port_obj[i],
+                                     &p_hcd_obj_dmy->port_obj[i]->isr_hdl);
+            if (err_ret != ESP_OK) {
+                ESP_LOGE(HCD_DWC_TAG, "Interrupt alloc error: %s", esp_err_to_name(err_ret));
+                goto clean_up;
+            }
+
+            // Apply custom FIFO config if provided
+            if (config->fifo_config != NULL) {
+                // Convert and validate user-provided config
+                err_ret = convert_fifo_config_to_hal_config(config->fifo_config, &p_hcd_obj_dmy->port_obj[i]->fifo_config);
+                if (err_ret != ESP_OK) {
+                    goto clean_up;
+                }
+            }
+        }
     }
-    // Allocate interrupt
-    err_ret = esp_intr_alloc(usb_dwc_info.controllers[0].irq,
-                             config->intr_flags | ESP_INTR_FLAG_INTRDISABLED,  // The interrupt must be disabled until the port is initialized
-                             intr_hdlr_main,
-                             (void *)p_hcd_obj_dmy->port_obj,
-                             &p_hcd_obj_dmy->isr_hdl);
-    if (err_ret != ESP_OK) {
-        ESP_LOGE(HCD_DWC_TAG, "Interrupt alloc error: %s", esp_err_to_name(err_ret));
-        goto intr_alloc_err;
-    }
+
     HCD_ENTER_CRITICAL();
     if (s_hcd_obj != NULL) {
         HCD_EXIT_CRITICAL();
         err_ret = ESP_ERR_INVALID_STATE;
-        goto assign_err;
+        goto clean_up;
     }
     s_hcd_obj = p_hcd_obj_dmy;
     HCD_EXIT_CRITICAL();
     return ESP_OK;
 
-assign_err:
-    esp_intr_free(p_hcd_obj_dmy->isr_hdl);
-intr_alloc_err:
-    port_obj_free(p_hcd_obj_dmy->port_obj);
-port_alloc_err:
+clean_up:
+    // Free resources
+    for (int i = 0; i < NUM_PORTS; i++) {
+        if (p_hcd_obj_dmy->port_obj[i]) {
+            esp_intr_free(p_hcd_obj_dmy->port_obj[i]->isr_hdl);
+            port_obj_free(p_hcd_obj_dmy->port_obj[i]);
+        }
+    }
     free(p_hcd_obj_dmy);
     return err_ret;
 }
@@ -1038,8 +1107,14 @@ port_alloc_err:
 esp_err_t hcd_uninstall(void)
 {
     HCD_ENTER_CRITICAL();
-    // Check that all ports have been disabled (there's only one port)
-    if (s_hcd_obj == NULL || s_hcd_obj->port_obj->initialized) {
+    // Check that all ports have been disabled
+    bool all_ports_disabled = true;
+    for (int i = 0; i < NUM_PORTS; i++) {
+        if (s_hcd_obj->port_obj[i]) {
+            all_ports_disabled = all_ports_disabled && !(s_hcd_obj->port_obj[i]->initialized);
+        }
+    }
+    if (s_hcd_obj == NULL || !all_ports_disabled) {
         HCD_EXIT_CRITICAL();
         return ESP_ERR_INVALID_STATE;
     }
@@ -1048,8 +1123,12 @@ esp_err_t hcd_uninstall(void)
     HCD_EXIT_CRITICAL();
 
     // Free resources
-    port_obj_free(p_hcd_obj_dmy->port_obj);
-    esp_intr_free(p_hcd_obj_dmy->isr_hdl);
+    for (int i = 0; i < NUM_PORTS; i++) {
+        if (p_hcd_obj_dmy->port_obj[i]) {
+            esp_intr_free(p_hcd_obj_dmy->port_obj[i]->isr_hdl);
+            port_obj_free(p_hcd_obj_dmy->port_obj[i]);
+        }
+    }
     free(p_hcd_obj_dmy);
     return ESP_OK;
 }
@@ -1096,6 +1175,34 @@ static bool _port_debounce(port_t *port)
     // Disable debounce lock
     usb_dwc_hal_disable_debounce_lock(port->hal);
     return is_connected;
+}
+
+static esp_err_t convert_fifo_config_to_hal_config(const hcd_fifo_settings_t *src, usb_dwc_hal_fifo_config_t *dst)
+{
+    // Check at least RX and NPTX are non-zero
+    if (src->rx_fifo_lines == 0 || src->nptx_fifo_lines == 0) {
+        ESP_LOGE(HCD_DWC_TAG, "RX and Non-Periodic TX FIFO must be > 0");
+        return ESP_ERR_INVALID_SIZE;
+    }
+    // Assign valid values
+    dst->rx_fifo_lines   = src->rx_fifo_lines;
+    dst->nptx_fifo_lines = src->nptx_fifo_lines;
+    dst->ptx_fifo_lines  = src->ptx_fifo_lines; // OK even if zero
+
+    return ESP_OK;
+}
+
+/**
+ * @brief Check if the FIFO config is marked to use bias-based default values.
+ *
+ * If all FIFO line sizes are zero, the configuration is considered uninitialized,
+ * and default values will be calculated based on bias settings.
+ */
+static inline bool _is_fifo_config_by_bias(const usb_dwc_hal_fifo_config_t *cfg)
+{
+    return (cfg->rx_fifo_lines == 0 &&
+            cfg->nptx_fifo_lines == 0 &&
+            cfg->ptx_fifo_lines == 0);
 }
 
 // ---------------------- Commands -------------------------
@@ -1175,8 +1282,16 @@ static esp_err_t _port_cmd_reset(port_t *port)
         goto bailout;
     }
 
-    // Reinitialize port registers.
-    usb_dwc_hal_set_fifo_bias(port->hal, port->fifo_bias);  // Set FIFO biases
+    // Reinitialize port registers
+    if (!usb_dwc_hal_fifo_config_is_valid(port->hal, &port->fifo_config)) {
+        HCD_EXIT_CRITICAL();
+        ret = ESP_ERR_INVALID_SIZE;
+        ESP_LOGE(HCD_DWC_TAG, "Invalid FIFO config");
+        HCD_ENTER_CRITICAL();
+        goto bailout;
+    }
+    usb_dwc_hal_set_fifo_config(port->hal, &port->fifo_config);// Apply FIFO settings
+
     usb_dwc_hal_port_set_frame_list(port->hal, port->frame_list, FRAME_LIST_LEN);   // Set periodic frame list
     usb_dwc_hal_port_periodic_enable(port->hal);    // Enable periodic scheduling
 
@@ -1274,31 +1389,44 @@ exit:
 
 esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, hcd_port_handle_t *port_hdl)
 {
-    HCD_CHECK(port_number > 0 && port_config != NULL && port_hdl != NULL, ESP_ERR_INVALID_ARG);
-    HCD_CHECK(port_number <= NUM_PORTS, ESP_ERR_NOT_FOUND);
+    HCD_CHECK(port_number >= 0 && port_config != NULL && port_hdl != NULL, ESP_ERR_INVALID_ARG);
+    HCD_CHECK(port_number < NUM_PORTS, ESP_ERR_NOT_FOUND);
 
     HCD_ENTER_CRITICAL();
-    HCD_CHECK_FROM_CRIT(s_hcd_obj != NULL && !s_hcd_obj->port_obj->initialized, ESP_ERR_INVALID_STATE);
+    HCD_CHECK_FROM_CRIT(s_hcd_obj != NULL && !s_hcd_obj->port_obj[port_number]->initialized, ESP_ERR_INVALID_STATE);
     // Port object memory and resources (such as the mutex) already be allocated. Just need to initialize necessary fields only
-    port_t *port_obj = s_hcd_obj->port_obj;
+    port_t *port_obj = s_hcd_obj->port_obj[port_number];
     TAILQ_INIT(&port_obj->pipes_idle_tailq);
     TAILQ_INIT(&port_obj->pipes_active_tailq);
     port_obj->state = HCD_PORT_STATE_NOT_POWERED;
     port_obj->last_event = HCD_PORT_EVENT_NONE;
-    port_obj->fifo_bias = get_hal_fifo_bias(port_config->fifo_bias);
     port_obj->callback = port_config->callback;
     port_obj->callback_arg = port_config->callback_arg;
     port_obj->context = port_config->context;
-    usb_dwc_hal_init(port_obj->hal, 0);
+
+    // USB-HAL's size is dependent on its configuration, namely on number of channels in the configuration
+    // We must first initialize the HAL, to get the number of channels and then allocate memory for the channels
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // False positive
+    usb_dwc_hal_init(port_obj->hal, port_number);
     port_obj->hal->channels.hdls = calloc(port_obj->hal->constant_config.chan_num_total, sizeof(usb_dwc_hal_chan_t*));
     HCD_CHECK_FROM_CRIT(port_obj->hal->channels.hdls != NULL, ESP_ERR_NO_MEM);
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
+
     port_obj->initialized = true;
-    // Clear the frame list. We set the frame list register and enable periodic scheduling after a successful reset
+    // Clear the frame list. We will set the frame list register and enable periodic scheduling after a successful reset
     memset(port_obj->frame_list, 0, FRAME_LIST_LEN * sizeof(uint32_t));
-    esp_intr_enable(s_hcd_obj->isr_hdl);
+    // If FIFO config is zeroed -> calculate from bias
+    if (_is_fifo_config_by_bias(&port_obj->fifo_config)) {
+        // Calculate default FIFO sizes based on Kconfig bias settings
+        _calculate_fifo_from_bias(port_obj, port_obj->hal);
+    }
+    esp_intr_enable(port_obj->isr_hdl);
     *port_hdl = (hcd_port_handle_t)port_obj;
     HCD_EXIT_CRITICAL();
-
+    ESP_LOGD(HCD_DWC_TAG, "FIFO config lines: RX=%" PRIu32 ", PTX=%" PRIu32 ", NPTX=%" PRIu32,
+             port_obj->fifo_config.rx_fifo_lines,
+             port_obj->fifo_config.ptx_fifo_lines,
+             port_obj->fifo_config.nptx_fifo_lines);
     vTaskDelay(pdMS_TO_TICKS(INIT_DELAY_MS));    // Need a short delay before host mode takes effect
     return ESP_OK;
 }
@@ -1314,7 +1442,7 @@ esp_err_t hcd_port_deinit(hcd_port_handle_t port_hdl)
                         && port->task_waiting_port_notif == NULL,
                         ESP_ERR_INVALID_STATE);
     port->initialized = false;
-    esp_intr_disable(s_hcd_obj->isr_hdl);
+    esp_intr_disable(port->isr_hdl);
     free(port->hal->channels.hdls);
     usb_dwc_hal_deinit(port->hal);
     HCD_EXIT_CRITICAL();
@@ -1430,7 +1558,7 @@ esp_err_t hcd_port_recover(hcd_port_handle_t port_hdl)
                         ESP_ERR_INVALID_STATE);
 
     // We are about to do a soft reset on the peripheral. Disable the peripheral throughout
-    esp_intr_disable(s_hcd_obj->isr_hdl);
+    esp_intr_disable(port->isr_hdl);
     usb_dwc_hal_core_soft_reset(port->hal);
     port->state = HCD_PORT_STATE_NOT_POWERED;
     port->last_event = HCD_PORT_EVENT_NONE;
@@ -1438,7 +1566,7 @@ esp_err_t hcd_port_recover(hcd_port_handle_t port_hdl)
 
     // Clear the frame list. We set the frame list register and enable periodic scheduling after a successful reset
     memset(port->frame_list, 0, FRAME_LIST_LEN * sizeof(uint32_t));
-    esp_intr_enable(s_hcd_obj->isr_hdl);
+    esp_intr_enable(port->isr_hdl);
     HCD_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -1450,28 +1578,6 @@ void *hcd_port_get_context(hcd_port_handle_t port_hdl)
     HCD_ENTER_CRITICAL();
     ret = port->context;
     HCD_EXIT_CRITICAL();
-    return ret;
-}
-
-esp_err_t hcd_port_set_fifo_bias(hcd_port_handle_t port_hdl, hcd_port_fifo_bias_t bias)
-{
-    esp_err_t ret;
-    usb_hal_fifo_bias_t hal_bias = get_hal_fifo_bias(bias);
-
-    // Configure the new FIFO sizes and store the pointers
-    port_t *port = (port_t *)port_hdl;
-    xSemaphoreTake(port->port_mux, portMAX_DELAY);
-    HCD_ENTER_CRITICAL();
-    // Check that port is in the correct state to update FIFO sizes
-    if (port->initialized && !port->flags.event_pending && port->num_pipes_idle == 0 && port->num_pipes_queued == 0) {
-        usb_dwc_hal_set_fifo_bias(port->hal, hal_bias);
-        port->fifo_bias = hal_bias;
-        ret = ESP_OK;
-    } else {
-        ret = ESP_ERR_INVALID_STATE;
-    }
-    HCD_EXIT_CRITICAL();
-    xSemaphoreGive(port->port_mux);
     return ret;
 }
 

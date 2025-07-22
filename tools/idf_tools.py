@@ -1008,14 +1008,37 @@ class IDFTool(object):
 
     def get_preferred_installed_version(self) -> Optional[str]:
         """
-        Get the preferred installed version of the tool. If more versions installed, return the highest.
+        Get the preferred installed version of the tool.
+        If more versions installed, return recommended version if exists, otherwise return the highest supported version
         """
-        recommended_versions = [k for k in self.versions_installed
-                                if self.versions[k].status == IDFToolVersion.STATUS_RECOMMENDED
-                                and self.versions[k].compatible_with_platform(self._platform)]
-        assert len(recommended_versions) <= 1
-        if recommended_versions:
-            return recommended_versions[0]
+
+        try:
+            self.find_installed_versions()
+        except ToolBinaryError:
+            pass
+
+        if self.get_recommended_version() in self.versions_installed:
+            return self.get_recommended_version()
+
+        supported_installed_versions = [
+            k
+            for k in self.versions_installed
+            if self.versions[k].status == IDFToolVersion.STATUS_SUPPORTED
+            and self.versions[k].compatible_with_platform(self._platform)
+        ]
+        sorted_supported_installed_versions = sorted(
+            supported_installed_versions, key=lambda x: self.versions[x], reverse=True
+        )
+        if sorted_supported_installed_versions:
+            warn(
+                ''.join(
+                    [
+                        f'Using supported version {sorted_supported_installed_versions[0]} for tool {self.name} ',
+                        f'as recommended version {self.get_recommended_version()} is not installed.',
+                    ]
+                )
+            )
+            return sorted_supported_installed_versions[0]
         return None
 
     def find_installed_versions(self) -> None:
@@ -1062,8 +1085,7 @@ class IDFTool(object):
             else:
                 if ver_str != version:
                     warn(f'tool {self.name} version {version} is installed, but has reported version {ver_str}')
-                else:
-                    self.versions_installed.append(version)
+                self.versions_installed.append(version)
         if tool_error:
             raise ToolBinaryError
 
@@ -1442,6 +1464,25 @@ class IDFRecord:
         features.add('core')
         self._features = list(features)
 
+    def check_feature_requirements_files(self) -> None:
+        """
+        Check if feature requirements files exist.
+        If not, remove the feature from the features list.
+        """
+        features_to_remove: Tuple[str, ...] = ()
+        for feature in self._features:
+            if not os.path.isfile(feature_to_requirements_path(feature)):
+                info(
+                    '\n'.join(
+                        [
+                            f"Feature file '{feature_to_requirements_path(feature)}' does not exist.",
+                            f'Removing feature {feature}',
+                        ]
+                    )
+                )
+                features_to_remove += (feature,)
+        self.update_features(remove=features_to_remove)
+
     @property
     def targets(self) -> List[str]:
         return self._targets
@@ -1739,6 +1780,9 @@ def expand_tools_arg(tools_spec: List[str], overall_tools: OrderedDict, targets:
 
     # Filtering by ESP_targets
     tools = [k for k in tools if overall_tools[k].is_supported_for_any_of_targets(targets)]
+
+    # Processing specific version of tool - defined with '@'
+    tools.extend([tool_pattern for tool_pattern in tools_spec if '@' in tool_pattern])
     return tools
 
 
@@ -1802,6 +1846,7 @@ def process_and_check_features(idf_env_obj: IDFEnv, features_str: str) -> List[s
         raise SystemExit(1)
 
     idf_env_obj.get_active_idf_record().update_features(tuple(new_features), tuple(remove_features))
+    idf_env_obj.get_active_idf_record().check_feature_requirements_files()
     return idf_env_obj.get_active_idf_record().features
 
 
@@ -2078,10 +2123,6 @@ def process_tool(
     tool_export_paths: List[str] = []
     tool_export_vars: Dict[str, str] = {}
 
-    try:
-        tool.find_installed_versions()
-    except ToolBinaryError:
-        pass
     recommended_version_to_use = tool.get_preferred_installed_version()
 
     if not tool.is_executable and recommended_version_to_use:
@@ -2645,9 +2686,8 @@ def action_install_python_env(args):  # type: ignore
             install_legacy_python_virtualenv(idf_python_env_path)
 
     env_copy = os.environ.copy()
-    if env_copy.get('PIP_USER')  == 'yes':
-        warn('Found PIP_USER="yes" in the environment. Disabling PIP_USER in this shell to install packages into a virtual environment.')
-        env_copy['PIP_USER'] = 'no'
+    # Enforce disabling possible pip 'user' option to prevent installation error with virtual environment
+    env_copy['PIP_USER'] = 'no'
 
     constraint_file = get_constraints(idf_version) if use_constraints else None
 
@@ -2892,8 +2932,10 @@ def action_uninstall(args: Any) -> None:
     for tool in installed_tools:
         tool_versions = os.listdir(os.path.join(tools_path, tool)) if os.path.isdir(os.path.join(tools_path, tool)) else []
         try:
-            unused_versions = ([x for x in tool_versions if x != tools_info[tool].get_recommended_version()])
-        except KeyError:  # When tool that is not supported by tools_info (tools.json) anymore, remove the whole tool file
+            unused_versions = [x for x in tool_versions if x != tools_info[tool].get_preferred_installed_version()]
+        except (
+            KeyError
+        ):  # When tool that is not supported by tools_info (tools.json) anymore, remove the whole tool file
             unused_versions = ['']
         if unused_versions:
             unused_tools_versions[tool] = unused_versions
@@ -2938,7 +2980,7 @@ def action_uninstall(args: Any) -> None:
                 tool_name, tool_version = tool_spec.split('@', 1)
             tool_obj = tools_info_for_platform[tool_name]
             if tool_version is None:
-                tool_version = tool_obj.get_recommended_version()
+                tool_version = tool_obj.get_preferred_installed_version()
             # mypy-checks
             if tool_version is not None:
                 archive_version = tool_obj.versions[tool_version].get_download_for_platform(CURRENT_PLATFORM)

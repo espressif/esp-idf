@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -137,27 +137,37 @@ typedef bool (*hcd_port_callback_t)(hcd_port_handle_t port_hdl, hcd_port_event_t
  */
 typedef bool (*hcd_pipe_callback_t)(hcd_pipe_handle_t pipe_hdl, hcd_pipe_event_t pipe_event, void *user_arg, bool in_isr);
 
-typedef enum {
-    HCD_PORT_FIFO_BIAS_BALANCED,    /**< Balanced FIFO sizing for RX, Non-periodic TX, and periodic TX */
-    HCD_PORT_FIFO_BIAS_RX,          /**< Bias towards a large RX FIFO */
-    HCD_PORT_FIFO_BIAS_PTX,         /**< Bias towards periodic TX FIFO */
-} hcd_port_fifo_bias_t;
-
+/**
+ * @brief Optional user-defined FIFO configuration (used internally by HCD)
+ *
+ * This structure is filled by the USB Host layer if the user provides
+ * custom FIFO values. All values must be greater than zero to activate
+ * the configuration. If NULL is passed, HCD will use the default
+ * configuration based on the Kconfig bias.
+ */
+typedef struct {
+    uint32_t nptx_fifo_lines; /**< Number of non-periodic TX FIFO lines */
+    uint32_t ptx_fifo_lines;  /**< Number of periodic TX FIFO lines */
+    uint32_t rx_fifo_lines;   /**< Number of RX FIFO lines */
+} hcd_fifo_settings_t;
 /**
  * @brief HCD configuration structure
  */
 typedef struct {
     int intr_flags;                         /**< Interrupt flags for HCD interrupt */
+    const hcd_fifo_settings_t *fifo_config; /**< Optional pointer to custom FIFO config.
+                                                 If NULL, default configuration is used. */
+    unsigned peripheral_map;                /**< Bit map of USB-OTG peripherals that belong to HCD. Set to zero to use default */
 } hcd_config_t;
 
 /**
  * @brief Port configuration structure
  */
 typedef struct {
-    hcd_port_fifo_bias_t fifo_bias;         /**< HCD port internal FIFO biasing */
     hcd_port_callback_t callback;           /**< HCD port event callback */
     void *callback_arg;                     /**< User argument for HCD port callback */
     void *context;                          /**< Context variable used to associate the port with upper layer object */
+    unsigned peripheral_idx;                /**< Index of USB peripheral this port belongs to. Index numbers are defined in USB_DWC_LL_GET_HW */
 } hcd_port_config_t;
 
 /**
@@ -216,8 +226,6 @@ esp_err_t hcd_uninstall(void);
  * @brief Initialize a particular port of the HCD
  *
  * After a port is initialized, it will be put into the HCD_PORT_STATE_NOT_POWERED state.
- *
- * @note The host controller only has one port, thus the only valid port_number is 1
  *
  * @param[in] port_number Port number
  * @param[in] port_config Port configuration
@@ -339,23 +347,6 @@ esp_err_t hcd_port_recover(hcd_port_handle_t port_hdl);
  *    - void* Context variable
  */
 void *hcd_port_get_context(hcd_port_handle_t port_hdl);
-
-/**
- * @brief Set the bias of the HCD port's internal FIFO
- *
- * @note This function can only be called when the following conditions are met:
- *  - Port is initialized
- *  - Port does not have any pending events
- *  - Port does not have any allocated pipes
- *
- * @param[in] port_hdl Port handle
- * @param[in] bias Fifo bias
- *
- * @return
- *    - ESP_OK FIFO sizing successfully set
- *    - ESP_ERR_INVALID_STATE Incorrect state for FIFO sizes to be set
- */
-esp_err_t hcd_port_set_fifo_bias(hcd_port_handle_t port_hdl, hcd_port_fifo_bias_t bias);
 
 // --------------------------------------------------- HCD Pipes -------------------------------------------------------
 

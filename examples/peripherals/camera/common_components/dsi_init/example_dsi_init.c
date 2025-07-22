@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "esp_lcd_ek79007.h"
 #include "example_dsi_init.h"
 #include "example_dsi_init_config.h"
+#include "sdkconfig.h"
 
 void example_dsi_resource_alloc(esp_lcd_dsi_bus_handle_t *mipi_dsi_bus, esp_lcd_panel_io_handle_t *mipi_dbi_io, esp_lcd_panel_handle_t *mipi_dpi_panel, void **frame_buffer)
 {
@@ -47,6 +48,9 @@ void example_dsi_resource_alloc(esp_lcd_dsi_bus_handle_t *mipi_dsi_bus, esp_lcd_
             .vsync_pulse_width = EXAMPLE_MIPI_DSI_IMAGE_VSYNC,
             .vsync_front_porch = EXAMPLE_MIPI_DSI_IMAGE_VFP,
         },
+#if CONFIG_EXAMPLE_MIPI_DSI_DISP_USE_DMA2D
+        .flags.use_dma2d = true,
+#endif
     };
 
 #if CONFIG_EXAMPLE_LCD_PATTERN_ILI9881C

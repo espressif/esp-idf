@@ -44,6 +44,13 @@ menu "OpenThread"
             default y
             help
                 Select this option to enable Command-Line Interface in OpenThread.
+
+        config OPENTHREAD_CONSOLE_COMMAND_PREFIX
+            string "The prefix of the openthread CLI command registered on the esp console"
+            default "ot"
+            help
+                A prefix string used before a Thread CLI command, allowing the ESP console to identify
+                it and delegate the remaining command to the OpenThread callback for processing.
     endmenu
 
     menu "Thread Core Features"
@@ -130,6 +137,14 @@ menu "OpenThread"
                 default 12390
                 help
                     Configure the port number of TREL service.
+
+            config OPENTHREAD_TREL_BUFFER_SIZE
+                int "The receive buffer size of openthread trel"
+                depends on OPENTHREAD_RADIO_TREL
+                range 10 255
+                default 50
+                help
+                    Configure the receive buffer size of TREL service.
         endmenu
 
         menu "Thread 15.4 Radio Link"
@@ -181,6 +196,12 @@ menu "OpenThread"
                     select GPIO_CTRL_FUNC_IN_IRAM
                     help
                         Select this to enable SPI connection to host.
+
+                config OPENTHREAD_RCP_USB_SERIAL_JTAG
+                    depends on ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG && !OPENTHREAD_CONSOLE_TYPE_USB_SERIAL_JTAG
+                    bool "USB RCP"
+                    help
+                        Select this to enable connection to host over USB JTAG serial.
             endchoice
 
             config OPENTHREAD_NCP_VENDOR_HOOK
@@ -320,8 +341,8 @@ menu "OpenThread"
 
         config OPENTHREAD_RX_ON_WHEN_IDLE
             bool "Enable OpenThread radio capability rx on when idle"
-            default y if !ESP_COEX_SW_COEXIST_ENABLE
-            default n if ESP_COEX_SW_COEXIST_ENABLE
+            default y if !ESP_COEX_SW_COEXIST_ENABLE && !ESP_COEX_EXTERNAL_COEXIST_ENABLE
+            default n if ESP_COEX_SW_COEXIST_ENABLE || ESP_COEX_EXTERNAL_COEXIST_ENABLE
             help
                 Select this option to enable OpenThread radio capability rx on when idle.
                 Do not support this feature when SW coexistence is enabled.
@@ -343,7 +364,7 @@ menu "OpenThread"
                 RSS to its current parent every periodically and starts a parent search process if the average
                 RSS is below OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD. This feature is always enabled for FTDs.
         menu "Parent Search Configurations"
-            depends on OPENTHREAD_PARENT_SEARCH_MTD
+            depends on OPENTHREAD_PARENT_SEARCH_MTD || OPENTHREAD_FTD
             config OPENTHREAD_PARENT_SEARCH_CHECK_INTERVAL_MINS
                 int "The interval in minutes for a child to check the trigger condition to perform a parent search"
                 default 9
@@ -353,6 +374,12 @@ menu "OpenThread"
             config OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
                 int "The RSS threshold used to trigger a parent search"
                 default -65
+            config OPENTHREAD_PARENT_SEARCH_RESELECT_TIMEOUT_MINS
+                int "The parent reselect timeout duration in minutes used on FTD child devices"
+                default 90
+            config OPENTHREAD_PARENT_SEARCH_RSS_MARGIN
+                int "The RSS margin over the current parent RSS used on FTD child devices"
+                default 7
         endmenu
 
         menu "Thread Memory Allocation"

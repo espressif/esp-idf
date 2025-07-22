@@ -92,6 +92,35 @@ Notification sent successfully
 ## Note
 * NVS support is not yet integrated to bonding. So, for now, bonding is not persistent across reboot.
 
+The following configuration flags can be adjusted to significantly reduce RAM usage in your ESP-IDF project while retaining basic BLE functionality.
+----------------------------------------------------------------------------------------------
+| Config Option                                    || Old → New Value || RAM Saved (Bytes)   |
+|--------------------------------------------------||------------------||--------------------|
+| CONFIG_BT_NIMBLE_SM_SC                           || y → n            || 2016               |
+| CONFIG_BT_NIMBLE_LL_CFG_FEAT_LE_ENCRYPTION       || y → n            || 32                 |
+| CONFIG_BT_NIMBLE_GATT_MAX_PROCS                  || 4 → 2            || 112                |
+| CONFIG_BT_NIMBLE_MAX_CONNECTIONS                 || 3 → 1            || 480                |
+| CONFIG_BT_NIMBLE_MAX_BONDS                       || 3 → 1            || 448                |
+| CONFIG_BT_NIMBLE_MAX_CCCDS                       || 8 → 1            || 112                |
+| CONFIG_BT_NIMBLE_ENABLE_CONN_REATTEMPT           || y → n            || 256                |
+| CONFIG_BT_NIMBLE_TRANSPORT_EVT_COUNT             || 30 → 15          || 240                |
+| CONFIG_BT_NIMBLE_SECURITY_ENABLE                 || y → n            || 2048               |
+| CONFIG_SPI_FLASH_ROM_IMPL                        || n → y            || 9804               |
+| CONFIG_SPI_FLASH_SUPPORT_ISSI_CHIP               || y → n            || 8                  |
+| CONFIG_SPI_FLASH_SUPPORT_MXIC_CHIP               || y → n            || 132                |
+| CONFIG_SPI_FLASH_SUPPORT_GD_CHIP                 || y → n            || 640                |
+| CONFIG_SPI_FLASH_SUPPORT_WINBOND_CHIP            || y → n            || 0                  |
+| CONFIG_SPI_FLASH_SUPPORT_BOYA_CHIP               || y → n            || 132                |
+| CONFIG_SPI_FLASH_SUPPORT_TH_CHIP                 || y → n            || 128                |
+| CONFIG_SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE     || y → n            || 696                |
+| CONFIG_VFS_SUPPORT_TERMIOS                       || y → n            || 424                |
+| CONFIG_VFS_SUPPORT_IO                            || y → n            || 3000               |
+| CONFIG_COMPILER_OPTIMIZATION_SIZE                || n → y            || 8912               |
+| CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE  || n → y            || 8456               |
+| CONFIG_ESP_COEX_SW_COEXIST_ENABLE                || y → n            || 896                |
+| CONFIG_LOG_DEFAULT_LEVEL_NONE                    || n → y            || 2568               |
+----------------------------------------------------------------------------------------------
+
 ## Troubleshooting
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

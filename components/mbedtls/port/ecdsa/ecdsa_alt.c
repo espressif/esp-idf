@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -337,9 +337,9 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
 
     bool process_again = false;
 
-#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
-    uint16_t deterministic_loop_number = 1;
-#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+#if !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+    uint16_t deterministic_loop_number __attribute__((unused)) = 1;
+#endif /* !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
 
     do {
         ecdsa_hal_config_t conf = {
@@ -347,10 +347,12 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
             .curve = curve,
             .sha_mode = ECDSA_Z_USER_PROVIDED,
             .sign_type = k_type,
-#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
-            .loop_number = deterministic_loop_number++,
-#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
         };
+#if !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+        if (ecdsa_ll_is_deterministic_mode_supported()) {
+            conf.loop_number = deterministic_loop_number++;
+        }
+#endif /* !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
 
         if (use_km_key) {
             conf.use_km_key = 1;
@@ -375,8 +377,8 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
                         || !memcmp(r_le, zeroes, len)
                         || !memcmp(s_le, zeroes, len);
 
-#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
-        if (k_type == ECDSA_K_TYPE_DETERMINISITIC) {
+#if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+        if (ecdsa_ll_is_deterministic_mode_supported() && k_type == ECDSA_K_TYPE_DETERMINISITIC) {
             process_again |= !ecdsa_hal_det_signature_k_check();
         }
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
@@ -472,12 +474,18 @@ int __wrap_mbedtls_ecdsa_sign_det_ext(mbedtls_ecp_group *grp, mbedtls_mpi *r,
     /*
      * Check `d` whether it contains the hardware key
      */
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
     if (d->MBEDTLS_PRIVATE(s) == ECDSA_KEY_MAGIC) {
-        // Use hardware ECDSA peripheral
-        return esp_ecdsa_sign(grp, r, s, d, buf, blen, ECDSA_K_TYPE_DETERMINISITIC);
-    } else  {
-        return __real_mbedtls_ecdsa_sign_det_ext(grp, r, s, d, buf, blen, md_alg, f_rng_blind, p_rng_blind);
+        if (ecdsa_ll_is_deterministic_mode_supported()) {
+            // Use hardware ECDSA peripheral
+            return esp_ecdsa_sign(grp, r, s, d, buf, blen, ECDSA_K_TYPE_DETERMINISITIC);
+        } else {
+            return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+        }
     }
+#endif
+    // Fallback to software implementation
+    return __real_mbedtls_ecdsa_sign_det_ext(grp, r, s, d, buf, blen, md_alg, f_rng_blind, p_rng_blind);
 }
 
 extern int __real_mbedtls_ecdsa_sign_det_restartable(mbedtls_ecp_group *grp,
@@ -507,12 +515,18 @@ int __wrap_mbedtls_ecdsa_sign_det_restartable(mbedtls_ecp_group *grp,
     /*
      * Check `d` whether it contains the hardware key
      */
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
     if (d->MBEDTLS_PRIVATE(s) == ECDSA_KEY_MAGIC) {
-        // Use hardware ECDSA peripheral
-        return esp_ecdsa_sign(grp, r, s, d, buf, blen, ECDSA_K_TYPE_DETERMINISITIC);
-    } else  {
-        return __real_mbedtls_ecdsa_sign_det_restartable(grp, r, s, d, buf, blen, md_alg, f_rng_blind, p_rng_blind, NULL);
+        if (ecdsa_ll_is_deterministic_mode_supported()) {
+            // Use hardware ECDSA peripheral
+            return esp_ecdsa_sign(grp, r, s, d, buf, blen, ECDSA_K_TYPE_DETERMINISITIC);
+        } else {
+            return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+        }
     }
+#endif
+    // Fallback to software implementation
+    return __real_mbedtls_ecdsa_sign_det_ext(grp, r, s, d, buf, blen, md_alg, f_rng_blind, p_rng_blind);
 }
 
 #endif  /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
@@ -582,15 +596,22 @@ int __wrap_mbedtls_ecdsa_write_signature_restartable(mbedtls_ecdsa_context *ctx,
     mbedtls_mpi_init(&r);
     mbedtls_mpi_init(&s);
 
+    ecdsa_sign_type_t k_type = ECDSA_K_TYPE_TRNG;
+#if defined(SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE) && defined(CONFIG_MBEDTLS_ECDSA_DETERMINISTIC)
+    if (ecdsa_ll_is_deterministic_mode_supported()) {
+        k_type = ECDSA_K_TYPE_DETERMINISITIC;
+    }
+#endif
+
     /*
      * Check `d` whether it contains the hardware key
      */
     if (ctx->MBEDTLS_PRIVATE(d).MBEDTLS_PRIVATE(s) == ECDSA_KEY_MAGIC) {
         // Use hardware ECDSA peripheral
 #if defined(SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE) && defined(CONFIG_MBEDTLS_ECDSA_DETERMINISTIC)
-        MBEDTLS_MPI_CHK(esp_ecdsa_sign(&ctx->MBEDTLS_PRIVATE(grp), &r, &s, &ctx->MBEDTLS_PRIVATE(d), hash, hlen, ECDSA_K_TYPE_DETERMINISITIC));
+        MBEDTLS_MPI_CHK(esp_ecdsa_sign(&ctx->MBEDTLS_PRIVATE(grp), &r, &s, &ctx->MBEDTLS_PRIVATE(d), hash, hlen, k_type));
 #else
-        MBEDTLS_MPI_CHK(esp_ecdsa_sign(&ctx->MBEDTLS_PRIVATE(grp), &r, &s, &ctx->MBEDTLS_PRIVATE(d), hash, hlen, ECDSA_K_TYPE_TRNG));
+        MBEDTLS_MPI_CHK(esp_ecdsa_sign(&ctx->MBEDTLS_PRIVATE(grp), &r, &s, &ctx->MBEDTLS_PRIVATE(d), hash, hlen, k_type));
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
     }
 
@@ -712,7 +733,9 @@ int __wrap_mbedtls_ecdsa_verify_restartable(mbedtls_ecp_group *grp,
                          const mbedtls_mpi *s,
                          mbedtls_ecdsa_restart_ctx *rs_ctx)
 {
-    if ((grp->id == MBEDTLS_ECP_DP_SECP192R1 || grp->id == MBEDTLS_ECP_DP_SECP256R1) && blen == ECDSA_SHA_LEN) {
+    if (((grp->id == MBEDTLS_ECP_DP_SECP192R1 && esp_efuse_is_ecdsa_p192_curve_supported())
+        || (grp->id == MBEDTLS_ECP_DP_SECP256R1 && esp_efuse_is_ecdsa_p256_curve_supported()))
+        && blen == ECDSA_SHA_LEN) {
         return esp_ecdsa_verify(grp, buf, blen, Q, r, s);
     } else {
         return __real_mbedtls_ecdsa_verify_restartable(grp, buf, blen, Q, r, s, rs_ctx);

@@ -11,6 +11,7 @@
 #include <sys/queue.h>
 #include "esp_err.h"
 #include "esp_heap_caps.h"
+#include "esp_bit_defs.h"
 #include "esp_private/critical_section.h"
 #include "esp_log.h"
 #include "usb_private.h"
@@ -26,8 +27,6 @@
 Implementation of the HUB driver that only supports the Root Hub with a single port. Therefore, we currently don't
 implement the bare minimum to control the root HCD port.
 */
-
-#define HUB_ROOT_PORT_NUM                           1  // HCD only supports one port
 
 #ifdef CONFIG_USB_HOST_HW_BUFFER_BIAS_IN
 #define HUB_ROOT_HCD_PORT_FIFO_BIAS                 HCD_PORT_FIFO_BIAS_RX
@@ -60,7 +59,6 @@ typedef enum {
     ROOT_PORT_STATE_POWERED,        /**< Root port is powered, device is not connected */
     ROOT_PORT_STATE_DISABLED,       /**< A device is connected but is disabled (i.e., not reset, no SOFs are sent) */
     ROOT_PORT_STATE_ENABLED,        /**< A device is connected, port has been reset, SOFs are sent */
-    ROOT_PORT_STATE_RECOVERY,       /**< Root port encountered an error and needs to be recovered */
 } root_port_state_t;
 
 /**
@@ -561,13 +559,19 @@ esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
 
     // Install HCD port
     hcd_port_config_t port_config = {
-        .fifo_bias = HUB_ROOT_HCD_PORT_FIFO_BIAS,
         .callback = root_port_callback,
         .callback_arg = NULL,
         .context = NULL,
     };
     hcd_port_handle_t root_port_hdl;
-    ret = hcd_port_init(HUB_ROOT_PORT_NUM, &port_config, &root_port_hdl);
+
+    // Right now we support only one root port, can be extended in future
+    int root_port_index = 0;
+    if (hub_config->port_map & BIT1) {
+        root_port_index = 1;
+    }
+
+    ret = hcd_port_init(root_port_index, &port_config, &root_port_hdl);
     if (ret != ESP_OK) {
         ESP_LOGE(HUB_DRIVER_TAG, "HCD Port init error: %s", esp_err_to_name(ret));
         goto err;
@@ -767,7 +771,7 @@ esp_err_t hub_port_disable(usb_device_handle_t parent_dev_hdl, uint8_t parent_po
     return ret;
 }
 
-esp_err_t hub_notify_new_dev(uint8_t dev_addr)
+esp_err_t hub_dev_new(uint8_t dev_addr)
 {
     HUB_DRIVER_ENTER_CRITICAL();
     HUB_DRIVER_CHECK_FROM_CRIT(p_hub_driver_obj != NULL, ESP_ERR_INVALID_STATE);
@@ -790,15 +794,15 @@ esp_err_t hub_notify_new_dev(uint8_t dev_addr)
             }
         }
         // Close device
-        usbh_dev_close(dev_hdl);
+        ESP_ERROR_CHECK(usbh_dev_close(dev_hdl));
     }
-    // Logic should not stop the flow, so no error to return
-    ret = ESP_OK;
+    // Nothing to do, while Hubs support is not enabled
+    ret = ESP_ERR_NOT_SUPPORTED;
 #endif // ENABLE_USB_HUBS
     return ret;
 }
 
-esp_err_t hub_notify_dev_gone(uint8_t dev_addr)
+esp_err_t hub_dev_gone(uint8_t dev_addr)
 {
     HUB_DRIVER_ENTER_CRITICAL();
     HUB_DRIVER_CHECK_FROM_CRIT(p_hub_driver_obj != NULL, ESP_ERR_INVALID_STATE);
@@ -809,7 +813,7 @@ esp_err_t hub_notify_dev_gone(uint8_t dev_addr)
     ret = ext_hub_dev_gone(dev_addr);
 #else
     // Nothing to do, while Hubs support is not enabled
-    ret = ESP_OK;
+    ret = ESP_ERR_NOT_SUPPORTED;
 #endif // ENABLE_USB_HUBS
     return ret;
 }
@@ -821,7 +825,9 @@ esp_err_t hub_notify_all_free(void)
     HUB_DRIVER_CHECK_FROM_CRIT(p_hub_driver_obj != NULL, ESP_ERR_INVALID_STATE);
     HUB_DRIVER_EXIT_CRITICAL();
 
-    return ext_hub_all_free();
+    ext_hub_mark_all_free();
+
+    return ESP_OK;
 }
 #endif // ENABLE_USB_HUBS
 

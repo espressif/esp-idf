@@ -613,6 +613,7 @@ tBTM_STATUS BTM_BleStartExtAdvRestart(uint8_t con_handle)
     }
 
     if((index >= MAX_BLE_ADV_INSTANCE) || (!adv_record[index].invalid)) {
+        BTM_TRACE_WARNING("%s failed to find extend adv, adv_handle %u con_handle %u", __func__, index, con_handle);
         return BTM_WRONG_MODE;
     }
 
@@ -1254,7 +1255,7 @@ void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params)
     }
 
     // adv terminated due to connection, save the adv handle and connection handle
-    if(params->completed_event == 0x00) {
+    if(params->status == 0x00) {
         adv_record[params->adv_handle].ter_con_handle = params->conn_handle;
     } else {
         adv_record[params->adv_handle].ter_con_handle = INVALID_VALUE;

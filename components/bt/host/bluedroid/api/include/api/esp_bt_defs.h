@@ -282,8 +282,11 @@ typedef enum {
 
 /// white list address type
 typedef enum {
-    BLE_WL_ADDR_TYPE_PUBLIC        = 0x00,
-    BLE_WL_ADDR_TYPE_RANDOM        = 0x01,
+    BLE_WL_ADDR_TYPE_PUBLIC        = 0x00,  /*!< Public Device Address */
+    BLE_WL_ADDR_TYPE_RANDOM        = 0x01,  /*!< Random Device Address */
+#if (CONFIG_BT_BLE_50_FEATURES_SUPPORTED)
+    BLE_WL_ADDR_TYPE_ANONYMOUS     = 0xFF,  /*!< Devices sending anonymous advertisements, use to enable anonymous advertising report for scanning */
+#endif // (CONFIG_BT_BLE_50_FEATURES_SUPPORTED)
 } esp_ble_wl_addr_type_t;
 
 /// Used to exchange the encryption key in the init key & response key

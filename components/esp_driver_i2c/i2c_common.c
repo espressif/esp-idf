@@ -27,6 +27,7 @@
 #include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
 #include "esp_private/gpio.h"
+#include "esp_private/esp_gpio_reserve.h"
 #if SOC_LP_I2C_SUPPORTED
 #include "hal/rtc_io_ll.h"
 #include "driver/rtc_io.h"
@@ -318,6 +319,17 @@ static esp_err_t s_hp_i2c_pins_config(i2c_bus_handle_t handle)
 {
     int port_id = handle->port_num;
 
+    // reserve the GPIO output path, because we don't expect another peripheral to signal to the same GPIO
+    uint64_t old_gpio_rsv_mask = esp_gpio_reserve(BIT64(handle->sda_num) | BIT64(handle->scl_num));
+    // check if the GPIO is already used by others
+    if (old_gpio_rsv_mask & BIT64(handle->sda_num)) {
+        ESP_LOGW(TAG, "GPIO %d is not usable, maybe conflict with others", handle->sda_num);
+    }
+    // check if the GPIO is already used by others
+    if (old_gpio_rsv_mask & BIT64(handle->scl_num)) {
+        ESP_LOGW(TAG, "GPIO %d is not usable, maybe conflict with others", handle->scl_num);
+    }
+
     // SDA pin configurations
     ESP_RETURN_ON_ERROR(gpio_set_level(handle->sda_num, 1), TAG, "i2c sda pin set level failed");
     gpio_input_enable(handle->sda_num);
@@ -355,6 +367,17 @@ static esp_err_t s_lp_i2c_pins_config(i2c_bus_handle_t handle)
 {
     ESP_RETURN_ON_ERROR(!rtc_gpio_is_valid_gpio(handle->sda_num), TAG, "LP I2C SDA GPIO invalid");
     ESP_RETURN_ON_ERROR(!rtc_gpio_is_valid_gpio(handle->scl_num), TAG, "LP I2C SCL GPIO invalid");
+
+    // reserve the GPIO output path, because we don't expect another peripheral to signal to the same GPIO
+    uint64_t old_gpio_rsv_mask = esp_gpio_reserve(BIT64(handle->sda_num) | BIT64(handle->scl_num));
+    // check if the GPIO is already used by others
+    if (old_gpio_rsv_mask & BIT64(handle->sda_num)) {
+        ESP_LOGW(TAG, "GPIO %d is not usable, maybe conflict with others", handle->sda_num);
+    }
+    // check if the GPIO is already used by others
+    if (old_gpio_rsv_mask & BIT64(handle->scl_num)) {
+        ESP_LOGW(TAG, "GPIO %d is not usable, maybe conflict with others", handle->scl_num);
+    }
 
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
     /* Verify that the SDA and SCL line belong to the LP IO Mux I2C function group */
@@ -417,6 +440,9 @@ esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle)
 esp_err_t i2c_common_deinit_pins(i2c_bus_handle_t handle)
 {
     int port_id = handle->port_num;
+
+    esp_gpio_revoke(BIT64(handle->sda_num));
+    esp_gpio_revoke(BIT64(handle->scl_num));
 
     if (handle->is_lp_i2c == false) {
         ESP_RETURN_ON_ERROR(gpio_output_disable(handle->sda_num), TAG, "disable i2c pins failed");

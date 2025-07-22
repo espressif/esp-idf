@@ -90,3 +90,16 @@ def test_mbedtls_ecdsa_sign(dut: Dut) -> None:
 )
 def test_mbedtls_rom_impl_esp32c2(dut: Dut) -> None:
     dut.run_all_single_board_cases()
+
+
+@pytest.mark.esp32s3
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'ds_rsa',
+    ],
+    indirect=True,
+)
+def test_mbedtls_ds_rsa(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='ds_rsa')

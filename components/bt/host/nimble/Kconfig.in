@@ -750,9 +750,11 @@ config BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
         Enable this option to include *included services* (e.g., services referenced by other services)
         in the GATT database cache. Disabling this will skip caching of included service entries.
 config BT_NIMBLE_INCL_SVC_DISCOVERY
-    bool "Enable Included service discovery"
-    default y if BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
-    default n
+    bool
+    default y if BT_NIMBLE_GATT_CACHING && BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
+    default n if BT_NIMBLE_GATT_CACHING && !BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
+    default n if !BT_NIMBLE_GATT_CACHING
+    prompt "Enable Included service discovery" if !BT_NIMBLE_GATT_CACHING
     help
         Enable this option to start discovery for included service.
 config BT_NIMBLE_GATT_CACHING_MAX_CONNS
@@ -898,7 +900,7 @@ menu "BLE Services"
             Enable HeartRate Service support
 
     menuconfig BT_NIMBLE_HID_SERVICE
-        bool "HID service"
+        bool "Human Interface Device service"
         default n
         help
             Enable HID service support
@@ -930,10 +932,10 @@ menu "BLE Services"
             Enable/Disable notifications on BAS Battery Level Characteristic
 
     menuconfig BT_NIMBLE_DIS_SERVICE
-        bool "DIS service"
+        bool "Device Information Service"
         default y
         help
-            Enable DIS service support
+            Enable Device Information service support
 
     config BT_NIMBLE_SVC_DIS_MANUFACTURER_NAME
         depends on BT_NIMBLE_DIS_SERVICE
@@ -1075,7 +1077,6 @@ menu "BLE Services"
         default 0 if BT_NIMBLE_SVC_GAP_CAR_NOT_SUPP
         default 1 if BT_NIMBLE_SVC_GAP_CAR_SUPP
 
-
     menu "GAP device name write permissions"
         depends on BT_NIMBLE_GAP_SERVICE
         config BT_NIMBLE_SVC_GAP_NAME_WRITE
@@ -1106,7 +1107,7 @@ menu "BLE Services"
                 Enable write with authorisation permission (BLE_GATT_CHR_F_WRITE_AUTHOR)
     endmenu
 
-    menu "PPCP settings"
+    menu "Peripheral Preferred Connection Parameters (PPCP) settings"
         depends on BT_NIMBLE_GAP_SERVICE
         config BT_NIMBLE_SVC_GAP_PPCP_MAX_CONN_INTERVAL
             int "PPCP Connection Interval Max (Unit: 1.25 ms)"
@@ -1231,6 +1232,15 @@ config BT_NIMBLE_GATTC_PROC_PREEMPTION_PROTECT
         When BLE and Wireless protocol/IEEE 802.15.4 operate in coexistence, BLE preemption
         can disrupt the GATT context,causing the service discovery callback to not be invoked.
         A temporary list is maintained to preserve the GATT context and use it in case of preemption.
+
+config BT_NIMBLE_GATTC_AUTO_PAIR
+    bool "Automatically pair upon receiving service request failure"
+    depends on BT_NIMBLE_ENABLED
+    default n
+    help
+        If enabled, when a service request (e.g. read, write) to a server fails, and the ATT
+        error suggests insufficient security, then the central will initiate pairing and retry
+        the service request.
 
 menu "Host-controller Transport"
     config BT_NIMBLE_TRANSPORT_UART

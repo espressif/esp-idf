@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,6 +61,15 @@ void esp_transport_ssl_crt_bundle_attach(esp_transport_handle_t t, esp_err_t ((*
  */
 void esp_transport_ssl_enable_global_ca_store(esp_transport_handle_t t);
 
+#if CONFIG_MBEDTLS_DYNAMIC_BUFFER
+/**
+ * @brief      Set ESP-TLS dynamic buffer strategy for ESP-TLS connection
+ *
+ * @param      t    ssl transport
+ * @param[in]  strategy      ESP-TLS dynamic buffer strategy
+ */
+void esp_transport_ssl_set_esp_tls_dyn_buf_strategy(esp_transport_handle_t t, esp_tls_dyn_buf_strategy_t strategy);
+#endif
 /**
  * @brief      Set TLS protocol version for ESP-TLS connection
  *

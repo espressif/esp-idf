@@ -45,6 +45,8 @@
 #define OCT_PSRAM_PAGE_SIZE             2       //2 for 1024B
 #define OCT_PSRAM_ECC_ENABLE_MASK       BIT(8)
 
+#define OCT_PSRAM_REF_DATA              0x5a6b7c8d
+
 typedef struct {
     union {
         struct {
@@ -222,6 +224,44 @@ static void s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *out_reg)
                               false);
 }
 
+/**
+ * Check if PSRAM is connected by write and read
+ */
+static esp_err_t s_check_psram_connected(int spi_num)
+{
+    esp_rom_spiflash_read_mode_t mode = ESP_ROM_SPIFLASH_OPI_DTR_MODE;
+    int cmd_len = OCT_PSRAM_WR_CMD_BITLEN;
+    uint32_t addr = 0x0;
+    int addr_bit_len = OCT_PSRAM_ADDR_BITLEN;
+    uint32_t ref_data = OCT_PSRAM_REF_DATA;
+    uint32_t exp_data = 0;
+    int data_bit_len = 32;
+
+    //write
+    esp_rom_opiflash_exec_cmd(spi_num, mode,
+                              OPI_PSRAM_SYNC_WRITE, cmd_len,
+                              addr, addr_bit_len,
+                              OCT_PSRAM_WR_DUMMY_BITLEN,
+                              (uint8_t *)&ref_data, data_bit_len,
+                              NULL, 0,
+                              BIT(1),
+                              false);
+    //read
+    esp_rom_opiflash_exec_cmd(spi_num, mode,
+                              OPI_PSRAM_SYNC_READ, cmd_len,
+                              addr, addr_bit_len,
+                              OCT_PSRAM_RD_DUMMY_BITLEN,
+                              NULL, 0,
+                              (uint8_t *)&exp_data, data_bit_len,
+                              BIT(1),
+                              false);
+
+    ESP_EARLY_LOGD(TAG, "exp_data: 0x%08x", exp_data);
+    ESP_EARLY_LOGD(TAG, "ref_data: 0x%08x", ref_data);
+
+    return (exp_data == ref_data ? ESP_OK : ESP_FAIL);
+}
+
 static void s_print_psram_info(opi_psram_mode_reg_t *reg_val)
 {
     ESP_EARLY_LOGI(TAG, "vendor id    : 0x%02x (%s)", reg_val->mr1.vendor_id, reg_val->mr1.vendor_id == 0x0d ? "AP" : (reg_val->mr1.vendor_id == 0x1a ? "UnilC" : "UNKNOWN"));
@@ -316,12 +356,17 @@ esp_err_t esp_psram_impl_enable(void)
     mode_reg.mr8.bl = 3;
     mode_reg.mr8.bt = 0;
     s_init_psram_mode_reg(1, &mode_reg);
-    //Print PSRAM info
-    s_get_psram_mode_reg(1, &mode_reg);
-    if (mode_reg.mr1.vendor_id != OCT_PSRAM_VENDOR_ID_AP && mode_reg.mr1.vendor_id != OCT_PSRAM_VENDOR_ID_UNILC) {
-        ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x, PSRAM chip not found or not supported, or wrong PSRAM line mode", mode_reg.mr1.vendor_id);
+
+    if (s_check_psram_connected(1) != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "PSRAM chip is not connected, or wrong PSRAM line mode");
         return ESP_ERR_NOT_SUPPORTED;
     }
+
+    s_get_psram_mode_reg(1, &mode_reg);
+    if (mode_reg.mr1.vendor_id != OCT_PSRAM_VENDOR_ID_AP && mode_reg.mr1.vendor_id != OCT_PSRAM_VENDOR_ID_UNILC) {
+        ESP_EARLY_LOGW(TAG, "PSRAM ID read error: 0x%08x, fallback to use default driver pattern", mode_reg.mr1.vendor_id);
+    }
+
     s_print_psram_info(&mode_reg);
     s_psram_size = mode_reg.mr2.density == 0x1 ? PSRAM_SIZE_4MB  :
                    mode_reg.mr2.density == 0X3 ? PSRAM_SIZE_8MB  :

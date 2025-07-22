@@ -19,6 +19,7 @@ check_submodule_sync:
   dependencies: []
   script:
     - git submodule deinit --force .
+    - rm -rf .git/modules  # remove all the cached metadata
     # setting the default remote URL to the public one, to resolve relative location URLs
     - git config remote.origin.url ${PUBLIC_IDF_URL}
     # check if all submodules are correctly synced to public repository

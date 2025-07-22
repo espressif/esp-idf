@@ -17,9 +17,11 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "esp_private/critical_section.h"
+#include "soc/usb_dwc_periph.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
+#include "esp_bit_defs.h"
 #include "hub.h"
 #include "enum.h"
 #include "usbh.h"
@@ -221,7 +223,7 @@ static bool _unblock_lib(bool in_isr)
     return yield;
 }
 
-static inline bool _is_internal_client(void *client)
+static inline bool is_internal_client(void *client)
 {
     if (p_host_lib_obj->constant.enum_client && (client == p_host_lib_obj->constant.enum_client)) {
         return true;
@@ -295,7 +297,7 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         assert(event_data->ctrl_xfer_data.urb != NULL);
         assert(event_data->ctrl_xfer_data.urb->usb_host_client != NULL);
         // Redistribute completed control transfers to the clients that submitted them
-        if (_is_internal_client(event_data->ctrl_xfer_data.urb->usb_host_client)) {
+        if (is_internal_client(event_data->ctrl_xfer_data.urb->usb_host_client)) {
             // Simply call the transfer callback
             event_data->ctrl_xfer_data.urb->transfer.callback(&event_data->ctrl_xfer_data.urb->transfer);
         } else {
@@ -309,10 +311,11 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         break;
     }
     case USBH_EVENT_NEW_DEV: {
-        // Internal client
-        hub_notify_new_dev(event_data->new_dev_data.dev_addr);
-        // External clients
-        // Prepare a NEW_DEV client event message, the send it to all clients
+        if (hub_dev_new(event_data->new_dev_data.dev_addr) == ESP_OK) {
+            // Device is a hub, we do not need to propagate the event to the clients
+            break;
+        }
+        // Prepare a NEW_DEV client event message, and send it to all clients
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_NEW_DEV,
             .new_dev.address = event_data->new_dev_data.dev_addr,
@@ -321,10 +324,11 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         break;
     }
     case USBH_EVENT_DEV_GONE: {
-        // Internal client
-        hub_notify_dev_gone(event_data->new_dev_data.dev_addr);
-        // External clients
-        // Prepare event msg, send only to clients that have opened the device
+        if (hub_dev_gone(event_data->new_dev_data.dev_addr) == ESP_OK) {
+            // Device is a hub, we do not need to propagate the event to the clients
+            break;
+        }
+        // Prepare a DEV GONE event, send only to clients that have opened the device
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_DEV_GONE,
             .dev_gone.dev_hdl = event_data->dev_gone_data.dev_hdl,
@@ -464,16 +468,26 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     - Hub
     */
 
+    // For backward compatibility accept 0 too
+    const unsigned peripheral_map = config->peripheral_map == 0 ? BIT0 : config->peripheral_map;
+
     // Install USB PHY (if necessary). USB PHY driver will also enable the underlying Host Controller
     if (!config->skip_phy_setup) {
+        bool init_utmi_phy = false; // Default value for Linux simulation
+
+#if SOC_USB_OTG_SUPPORTED // In case we run on a real target, select the PHY from usb_dwc_info description structure
+        // Right now we support only one peripheral, can be extended in future
+        int peripheral_index = 0;
+        if (peripheral_map & BIT1) {
+            peripheral_index = 1;
+        }
+        init_utmi_phy = (usb_dwc_info.controllers[peripheral_index].supported_phys == USB_PHY_INST_UTMI_0);
+#endif // SOC_USB_OTG_SUPPORTED
+
         // Host Library defaults to internal PHY
         usb_phy_config_t phy_config = {
             .controller = USB_PHY_CTRL_OTG,
-#if CONFIG_IDF_TARGET_ESP32P4 // ESP32-P4 has 2 USB-DWC peripherals, each with its dedicated PHY. We support HS+UTMI only ATM.
-            .target = USB_PHY_TARGET_UTMI,
-#else
-            .target = USB_PHY_TARGET_INT,
-#endif
+            .target = init_utmi_phy ? USB_PHY_TARGET_UTMI : USB_PHY_TARGET_INT,
             .otg_mode = USB_OTG_MODE_HOST,
             .otg_speed = USB_PHY_SPEED_UNDEFINED,   // In Host mode, the speed is determined by the connected device
             .ext_io_conf = NULL,
@@ -487,9 +501,27 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     }
 
     // Install HCD
+    // Prepare HCD configuration
+    hcd_fifo_settings_t user_fifo_config;
     hcd_config_t hcd_config = {
-        .intr_flags = config->intr_flags
+        .intr_flags = config->intr_flags,
+        .peripheral_map = peripheral_map,
+        .fifo_config = NULL, // Default: use bias strategy from Kconfig
     };
+
+    // Check if user has provided a custom FIFO configuration
+    if (config->fifo_settings_custom.rx_fifo_lines != 0 ||
+            config->fifo_settings_custom.nptx_fifo_lines != 0 ||
+            config->fifo_settings_custom.ptx_fifo_lines != 0) {
+
+        // Populate user FIFO configuration with provided values
+        user_fifo_config.rx_fifo_lines = config->fifo_settings_custom.rx_fifo_lines;
+        user_fifo_config.nptx_fifo_lines = config->fifo_settings_custom.nptx_fifo_lines;
+        user_fifo_config.ptx_fifo_lines = config->fifo_settings_custom.ptx_fifo_lines;
+
+        // Pass custom configuration to HCD
+        hcd_config.fifo_config = &user_fifo_config;
+    }
     ret = hcd_install(&hcd_config);
     if (ret != ESP_OK) {
         ESP_LOGE(USB_HOST_TAG, "HCD install error: %s", esp_err_to_name(ret));
@@ -528,6 +560,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
 
     // Install Hub
     hub_config_t hub_config = {
+        .port_map = peripheral_map, // Each USB-OTG peripheral maps to a root port
         .proc_req_cb = proc_req_callback,
         .proc_req_cb_arg = NULL,
         .event_cb = hub_event_callback,

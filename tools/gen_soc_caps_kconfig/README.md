@@ -19,3 +19,5 @@ Defines that are 0 or 1 will automatically be interpreted as Booleans. If it's n
 
 
 The script is not able to evaluate expressions, e.g X*Y. If you need a variable to be available in kconfig it needs to be a simple assignment expression.
+
+If some `#define` statement should be excluded from being converted into config option, use `// [gen_soc_caps:ignore]` pragma.
