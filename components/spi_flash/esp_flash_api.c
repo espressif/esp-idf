@@ -557,9 +557,6 @@ esp_err_t esp_flash_get_physical_size(esp_flash_t *chip, uint32_t *flash_size)
 
 #ifndef CONFIG_SPI_FLASH_ROM_IMPL
 
-/* Return true if regions 'a' and 'b' overlap at all, based on their start offsets and lengths. */
-inline static IRAM_ATTR bool regions_overlap(uint32_t a_start, uint32_t a_len,uint32_t b_start, uint32_t b_len);
-
 esp_err_t esp_flash_get_size(esp_flash_t *chip, uint32_t *out_size)
 {
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
@@ -590,7 +587,21 @@ esp_err_t esp_flash_erase_chip(esp_flash_t *chip)
     err = esp_flash_erase_region(chip, 0, size);
     return err;
 }
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL
 
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
+inline static IRAM_ATTR bool regions_overlap(uint32_t a_start, uint32_t a_len,uint32_t b_start, uint32_t b_len)
+{
+    uint32_t a_end = a_start + a_len;
+    uint32_t b_end = b_start + b_len;
+    return (a_end > b_start && b_end > a_start);
+}
+
+/* ROM and patch information
+ * Latest: Fixed region check escape
+ * V2: Fixed size == 0 bug.
+ * V1 (ESP_ROM_HAS_ERASE_0_REGION_BUG): Added to ROM
+ */
 esp_err_t esp_flash_erase_region(esp_flash_t *chip, uint32_t start, uint32_t len)
 {
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
@@ -606,7 +617,7 @@ esp_err_t esp_flash_erase_region(esp_flash_t *chip, uint32_t start, uint32_t len
     if (sector_size == 0 || (block_erase_size % sector_size) != 0) {
         return ESP_ERR_FLASH_NOT_INITIALISED;
     }
-    if (start > chip->size || start + len > chip->size) {
+    if (start > chip->size || len > chip->size - start) {
         return ESP_ERR_INVALID_ARG;
     }
     if ((start % chip->chip_drv->sector_size) != 0 || (len % chip->chip_drv->sector_size) != 0) {
@@ -701,26 +712,45 @@ esp_err_t esp_flash_erase_region(esp_flash_t *chip, uint32_t start, uint32_t len
 
     return rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, start, len);
 }
-
-#endif // !CONFIG_SPI_FLASH_ROM_IMPL
-
-#if defined(CONFIG_SPI_FLASH_ROM_IMPL) && ESP_ROM_HAS_ERASE_0_REGION_BUG
-
-/* ROM esp_flash_erase_region implementation doesn't handle 0 erase size correctly.
+#else //!CONFIG_SPI_FLASH_ROM_IMPL
+extern esp_err_t rom_esp_flash_erase_region(esp_flash_t *chip, uint32_t start, uint32_t len);
+#   if ESP_ROM_HAS_ERASE_0_REGION_BUG
+// Usel ROM impl v1 but workaround ESP_ROM_HAS_ERASE_0_REGION_BUG and region check escape.
+/* ROM V1 esp_flash_erase_region implementation doesn't handle 0 erase size correctly.
  * Check the size and call ROM function instead of overriding it completely.
- * The behavior is slightly different from esp_flash_erase_region above, thought:
+ * The behavior is slightly different from latest esp_flash_erase_region above, thought:
  * here the check for 0 size is done first, but in esp_flash_erase_region the check is
  * done after the other arguments are checked.
  */
-extern esp_err_t rom_esp_flash_erase_region(esp_flash_t *chip, uint32_t start, uint32_t len);
 esp_err_t esp_flash_erase_region(esp_flash_t *chip, uint32_t start, uint32_t len)
 {
+    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
+    if (err != ESP_OK) {
+        return err;
+    }
     if (len == 0) {
         return ESP_OK;
     }
+    if (len > chip->size - start) {
+        return ESP_ERR_INVALID_ARG;
+    }
     return rom_esp_flash_erase_region(chip, start, len);
 }
-#endif // defined(CONFIG_SPI_FLASH_ROM_IMPL) && ESP_ROM_HAS_ERASE_0_REGION_BUG
+#   else
+// Usel ROM impl v2 but workaround region check escape.
+esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, uint32_t len)
+{
+    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
+    if (err != ESP_OK) {
+        return err;
+    }
+    if (len > chip->size - start) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    return rom_esp_flash_erase_region(chip, start, len);
+}
+#   endif // ESP_ROM_HAS_ERASE_0_REGION_BUG
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL
 
 #ifndef CONFIG_SPI_FLASH_ROM_IMPL
 
@@ -925,7 +955,10 @@ esp_err_t esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t address, uint
     COUNTER_STOP(read);
     return err;
 }
+#endif  //!CONFIG_SPI_FLASH_ROM_IMPL
 
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
+//This checking is available only when !CONFIG_SPI_FLASH_ROM_IMPL
 #if CONFIG_SPI_FLASH_WARN_SETTING_ZERO_TO_ONE
 static esp_err_t s_check_setting_zero_to_one(esp_flash_t *chip, uint32_t verify_address, uint32_t remain_verify_len, const uint32_t *to_write_buf, bool is_encrypted)
 {
@@ -965,6 +998,7 @@ static esp_err_t s_check_setting_zero_to_one(esp_flash_t *chip, uint32_t verify_
 }
 #endif  //#if CONFIG_SPI_FLASH_WARN_SETTING_ZERO_TO_ONE
 
+//This checking is available only when !CONFIG_SPI_FLASH_ROM_IMPL
 #if CONFIG_SPI_FLASH_VERIFY_WRITE
 static esp_err_t s_verify_write(esp_flash_t *chip, uint32_t verify_address, uint32_t remain_verify_len, const uint32_t *expected_buf, bool is_encrypted)
 {
@@ -1003,6 +1037,13 @@ static esp_err_t s_verify_write(esp_flash_t *chip, uint32_t verify_address, uint
 }
 #endif //#if CONFIG_SPI_FLASH_VERIFY_WRITE
 
+/* ROM and patch information
+ * Latest:
+    - Provide debugging utils (CONFIG_SPI_FLASH_WARN_SETTING_ZERO_TO_ONE, CONFIG_SPI_FLASH_VERIFY_WRITE)
+    - Fixed region check escape
+ * V1: added to ROM
+ */
+//When use the ROM impl, can't use these debugging utils.
 esp_err_t esp_flash_write(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length)
 {
     esp_err_t ret = ESP_FAIL;
@@ -1014,7 +1055,7 @@ esp_err_t esp_flash_write(esp_flash_t *chip, const void *buffer, uint32_t addres
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
     VERIFY_CHIP_OP(write);
     CHECK_WRITE_ADDRESS(chip, address, length);
-    if (buffer == NULL || address > chip->size || address+length > chip->size) {
+    if (buffer == NULL || address > chip->size || length > chip->size - address) {
         return ESP_ERR_INVALID_ARG;
     }
     if (length == 0) {
@@ -1124,14 +1165,23 @@ restore_cache:
 
     return err;
 }
-
-inline static bool regions_overlap(uint32_t a_start, uint32_t a_len,uint32_t b_start, uint32_t b_len)
+#else
+extern esp_err_t rom_esp_flash_write(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length);
+// Usel ROM impl v1 but workaround region check escape.
+esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length)
 {
-    uint32_t a_end = a_start + a_len;
-    uint32_t b_end = b_start + b_len;
-    return (a_end > b_start && b_end > a_start);
+    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
+    if (err != ESP_OK) {
+        return err;
+    }
+    if (length > chip->size - address) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    return rom_esp_flash_write(chip, buffer, address, length);
 }
+#endif //!CONFIG_SPI_FLASH_ROM_IMPL
 
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
 esp_err_t esp_flash_read_encrypted(esp_flash_t *chip, uint32_t address, void *out_buffer, uint32_t length)
 {
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
@@ -1198,9 +1248,8 @@ esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe)
 }
 #endif //CONFIG_SPI_FLASH_ROM_IMPL
 
-#if !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV
-// use `esp_flash_write_encrypted` ROM version not in C3 and S3
-
+#if !(CONFIG_SPI_FLASH_ROM_IMPL && !ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV)
+// use `esp_flash_write_encrypted` ROM version on chips later than C3 and S3
 FORCE_INLINE_ATTR esp_err_t s_encryption_write_lock(esp_flash_t *chip) {
 #if CONFIG_IDF_TARGET_ESP32S2
     esp_crypto_dma_lock_acquire();
@@ -1216,6 +1265,14 @@ FORCE_INLINE_ATTR esp_err_t s_encryption_write_unlock(esp_flash_t *chip) {
     return err;
 }
 
+/* ROM and patch information
+ * Latest:
+    - Provide debugging utils (CONFIG_SPI_FLASH_WARN_SETTING_ZERO_TO_ONE, CONFIG_SPI_FLASH_VERIFY_WRITE)
+    - Fixed region check escape
+ * V2: Bug fixed
+ * V1 (ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV): added to ROM but has bug
+ */
+//When use the ROM impl, can't use these debugging utils.
 esp_err_t esp_flash_write_encrypted(esp_flash_t *chip, uint32_t address, const void *buffer, uint32_t length)
 {
     esp_err_t ret = ESP_FAIL;
@@ -1232,7 +1289,7 @@ esp_err_t esp_flash_write_encrypted(esp_flash_t *chip, uint32_t address, const v
     }
     CHECK_WRITE_ADDRESS(chip, address, length);
 
-    if (buffer == NULL || address + length > chip->size) {
+    if (buffer == NULL || address > chip->size || length > chip->size - address) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1435,8 +1492,21 @@ restore_cache:
 
     return err;
 }
-
-#endif // !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV
+#else
+extern esp_err_t rom_esp_flash_write_encrypted(esp_flash_t *chip, uint32_t address, const void *buffer, uint32_t length);
+// Usel ROM impl v2 but workaround region check escape.
+esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t address, const void *buffer, uint32_t length)
+{
+    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
+    if (err != ESP_OK) {
+        return err;
+    }
+    if (length > chip->size - address) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    return rom_esp_flash_write_encrypted(chip, address, buffer, length);
+}
+#endif // !(CONFIG_SPI_FLASH_ROM_IMPL && !ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV)
 
 //init suspend mode cmd, uses internal.
 esp_err_t esp_flash_suspend_cmd_init(esp_flash_t* chip)
