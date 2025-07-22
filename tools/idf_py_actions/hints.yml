@@ -522,3 +522,7 @@
         -
             re_variables: ['driver/sigmadelta.h']
             hint_variables: ['legacy Sigma-Delta', 'driver/sdm.h', 'esp_driver_sdm']
+
+-
+    re: undefined reference to `i3c_new_master_bus'
+    hint: "The I3C master driver is not fully supported in IDF. To use this driver please enable `IDF_EXPERIMENTAL_FEATURES`"

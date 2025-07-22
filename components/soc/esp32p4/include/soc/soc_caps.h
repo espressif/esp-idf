@@ -801,6 +801,8 @@
 
 /*--------------------------- I3C ---------------------------------*/
 #define SOC_I3C_MASTER_PERIPH_NUM                   (1)
+#define SOC_I3C_MASTER_ADDRESS_TABLE_NUM            (12)
+#define SOC_I3C_MASTER_COMMAND_TABLE_NUM            (12)
 
 /*------------------------------------- ULP CAPS -------------------------------------*/
 #define SOC_LP_CORE_SUPPORT_ETM                     (1) /*!< LP Core supports ETM */

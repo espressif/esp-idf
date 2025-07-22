@@ -221,6 +221,17 @@ typedef enum {
 } i3c_master_ll_mode_t;
 
 /**
+ * @brief I2C under I3C master speed mode
+ *
+ * This enumeration defines the speed modes for an I3C master.
+ * It can either operate in the I3C protocol mode or be backward-compatible with I2C devices.
+ */
+typedef enum {
+    I3C_MASTER_LL_I2C_FAST_MODE = 0, ///< I3C works under I2C fast mode
+    I3C_MASTER_LL_I2C_FAST_MODE_PLUS = 1, ///< I3C works under I2C fast mode plus
+} i3c_master_ll_i2c_speed_mode_t;
+
+/**
  * @brief I3C Device address descriptor
  *
  * This structure represents a single entry in the I3C master address table.
@@ -296,8 +307,19 @@ typedef enum {
 static inline void i3c_master_ll_set_source_clk(i3c_mst_dev_t *hw, i3c_master_clock_source_t src_clk)
 {
     (void)hw; // Suppress unused parameter warning
-    // src_clk : (1) for PLL_F160M, (0) for XTAL
-    HP_SYS_CLKRST.peri_clk_ctrl119.reg_i3c_mst_clk_src_sel = (src_clk == I3C_MASTER_CLK_SRC_PLL_F160M) ? 1 : 0;
+    switch (src_clk) {
+    case I3C_MASTER_CLK_SRC_XTAL:
+        HP_SYS_CLKRST.peri_clk_ctrl119.reg_i3c_mst_clk_src_sel = 0;
+        break;
+    case I3C_MASTER_CLK_SRC_PLL_F160M:
+        HP_SYS_CLKRST.peri_clk_ctrl119.reg_i3c_mst_clk_src_sel = 1;
+        break;
+    case I3C_MASTER_CLK_SRC_PLL_F120M:
+        HP_SYS_CLKRST.peri_clk_ctrl119.reg_i3c_mst_clk_src_sel = 2;
+        break;
+    default:
+        HAL_ASSERT(false);
+    }
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -438,13 +460,14 @@ static inline void i3c_master_ll_set_i2c_fast_mode_timing(i3c_mst_dev_t *hw, uin
 }
 
 /**
- * @brief Set the fast+ mode timing for I2C master
+ * @brief Set the fast mode+ timing for I2C master
+ *
  * @param hw I3C master hardware instance
  * @param clock_source_freq Clock source frequency
  * @param scl_freq SCL frequency
  */
 __attribute__((always_inline))
-static inline void i3c_master_ll_set_i2c_fast_plus_mode_timing(i3c_mst_dev_t *hw, uint32_t clock_source_freq, uint32_t scl_freq)
+static inline void i3c_master_ll_set_i2c_fast_mode_plus_timing(i3c_mst_dev_t *hw, uint32_t clock_source_freq, uint32_t scl_freq)
 {
     uint32_t period_cnt = clock_source_freq / scl_freq / 2;
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->scl_i2c_fmp_time, reg_i2c_fmp_high_period, (period_cnt - 1));

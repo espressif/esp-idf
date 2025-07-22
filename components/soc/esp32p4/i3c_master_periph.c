@@ -13,6 +13,7 @@
 */
 const i3c_master_signal_conn_t i3c_master_periph_signal[SOC_I3C_MASTER_PERIPH_NUM] = {
     {
+        .module_name = "I3C_MASTER",
         .sda_out_sig = I3C_MST_SDA_PAD_OUT_IDX,
         .sda_in_sig = I3C_MST_SDA_PAD_IN_IDX,
         .scl_out_sig = I3C_MST_SCL_PAD_OUT_IDX,

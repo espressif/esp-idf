@@ -16,6 +16,7 @@ extern "C" {
 #if SOC_I3C_MASTER_SUPPORTED
 
 typedef struct {
+    const char *module_name;       // peripheral name
     const uint8_t sda_out_sig;
     const uint8_t sda_in_sig;
     const uint8_t scl_out_sig;

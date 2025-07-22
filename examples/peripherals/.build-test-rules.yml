@@ -178,6 +178,12 @@ examples/peripherals/i2s/i2s_recorder:
     - esp_driver_spi
     - esp_driver_i2s
 
+examples/peripherals/i3c/i3c_i2c_basic:
+  disable:
+    - if: SOC_I3C_MASTER_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i3c
+
 examples/peripherals/isp/multi_pipelines:
   disable:
     - if: SOC_MIPI_CSI_SUPPORTED != 1
