@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -498,8 +498,9 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 
 /*-------------------------- APM CAPS ----------------------------------------*/
-#define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */
-#define SOC_APM_LP_APM0_SUPPORTED       1 /*!< Support for LP APM0 control filter */
+#define SOC_APM_CTRL_FILTER_SUPPORTED         1 /*!< Support for APM control filter */
+#define SOC_APM_LP_APM0_SUPPORTED             1 /*!< Support for LP APM0 control filter */
+#define SOC_APM_SUPPORT_LP_TEE_CTRL           1 /*!< Support for LP TEE controller */
 
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
 #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1

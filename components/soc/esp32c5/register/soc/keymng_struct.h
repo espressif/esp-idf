@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -202,9 +202,10 @@ typedef union {
          */
         uint32_t kgen_mode:3;
         /** key_purpose : R/W; bitpos: [6:3]; default: 0;
-         *  Set this field to choose the key purpose. 1: ecdsa_key 2: flash_256_1_key. 3:
-         *  flash_256_2_key. 4: flash_128_key. 6: hmac_key. 7: ds_key. 8: psram_256_1_key. 9:
-         *  psram_256_2_key. 10: psram_128_key. Others: reserved.
+         *  Set this field to choose the key purpose. 1: ecdsa_key_192. 2: ecdsa_key_256. 3:
+         *  flash_256_1_key. 4: flash_256_2_key. 5: flash_128_key. 6: hmac_key. 7: ds_key. 8:
+         *  psram_256_1_key. 9: psram_256_2_key. 10: psram_128_key. 11: ecdsa_key_384_l. 12:
+         *  ecdsa_key_384_h. Others: reserved.
          */
         uint32_t key_purpose:4;
         uint32_t reserved_7:25;
@@ -270,32 +271,42 @@ typedef union {
  */
 typedef union {
     struct {
-        /** key_ecdsa_vld : RO; bitpos: [0]; default: 0;
-         *  The status bit for key_ecdsa.   1: The key has been deployed correctly. 0: The key
-         *  has not been deployed yet.
+        /** key_ecdsa_192_vld : RO; bitpos: [0]; default: 0;
+         *  The status bit for key_ecdsa_192.   1: The key has been deployed correctly. 0: The
+         *  key has not been deployed yet.
          */
-        uint32_t key_ecdsa_vld:1;
-        /** key_flash_vld : RO; bitpos: [1]; default: 0;
+        uint32_t key_ecdsa_192_vld:1;
+        /** key_ecdsa_256_vld : RO; bitpos: [1]; default: 0;
+         *  The status bit for key_ecdsa_256.   1: The key has been deployed correctly. 0: The
+         *  key has not been deployed yet.
+         */
+        uint32_t key_ecdsa_256_vld:1;
+        /** key_flash_vld : RO; bitpos: [2]; default: 0;
          *  The status bit for key_flash.     1: The key has been deployed correctly. 0: The
          *  key has not been deployed yet.
          */
         uint32_t key_flash_vld:1;
-        /** key_hmac_vld : RO; bitpos: [2]; default: 0;
+        /** key_hmac_vld : RO; bitpos: [3]; default: 0;
          *  The status bit for key_hmac.    1: The key has been deployed correctly. 0: The key
          *  has not been deployed yet.
          */
         uint32_t key_hmac_vld:1;
-        /** key_ds_vld : RO; bitpos: [3]; default: 0;
+        /** key_ds_vld : RO; bitpos: [4]; default: 0;
          *  The status bit for key_ds.         1: The key has been deployed correctly. 0: The
          *  key has not been deployed yet.
          */
         uint32_t key_ds_vld:1;
-        /** key_psram_vld : RO; bitpos: [4]; default: 0;
+        /** key_psram_vld : RO; bitpos: [5]; default: 0;
          *  The status bit for key_psram.   1: The key has been deployed correctly. 0: The key
          *  has not been deployed yet.
          */
         uint32_t key_psram_vld:1;
-        uint32_t reserved_5:27;
+        /** key_ecdsa_384_vld : RO; bitpos: [6]; default: 0;
+         *  The status bit for key_ecdsa_384.   1: The key has been deployed correctly. 0: The
+         *  key has not been deployed yet.
+         */
+        uint32_t key_ecdsa_384_vld:1;
+        uint32_t reserved_7:25;
     };
     uint32_t val;
 } keymng_key_vld_reg_t;
@@ -321,7 +332,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 36774224;
+        /** date : R/W; bitpos: [27:0]; default: 37781824;
          *  Key Manager version control register.
          */
         uint32_t date:28;
@@ -338,7 +349,7 @@ typedef struct {
     volatile keymng_int_st_reg_t int_st;
     volatile keymng_int_ena_reg_t int_ena;
     volatile keymng_int_clr_reg_t int_clr;
-    volatile keymng_static_reg_t static_cfg;
+    volatile keymng_static_reg_t static_conf;
     volatile keymng_lock_reg_t lock;
     volatile keymng_conf_reg_t conf;
     volatile keymng_start_reg_t start;

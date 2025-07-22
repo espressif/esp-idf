@@ -376,7 +376,7 @@
 #define SOC_PARLIO_RX_CLK_SUPPORT_GATING     1  /*!< Support gating RX clock */
 #define SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT     1  /*!< Support output RX clock to a GPIO */
 #define SOC_PARLIO_TRANS_BIT_ALIGN           1  /*!< Support bit alignment in transaction */
-#define SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION 1  /*!< Support loop transmission. Only avliable in chip version above 1.2 */
+#define SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION 1  /*!< Support loop transmission. Note, 1 data-width loop transmission only avliable in chip version above 1.2 */
 #define SOC_PARLIO_SUPPORT_SLEEP_RETENTION   1  /*!< Support back up registers before sleep */
 #define SOC_PARLIO_SUPPORT_SPI_LCD           1  /*!< Support to drive SPI interfaced LCD */
 

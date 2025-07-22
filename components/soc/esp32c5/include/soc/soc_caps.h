@@ -76,12 +76,13 @@
 #define SOC_SPI_FLASH_SUPPORTED         1     // TODO: [ESP32C5] IDF-8715
 #define SOC_ECDSA_SUPPORTED             1
 #define SOC_RNG_SUPPORTED               1
-// #define SOC_KEY_MANAGER_SUPPORTED       1  // TODO: [ESP32C5] IDF-8621
-// #define SOC_HUK_SUPPORTED               1  // TODO: [ESP32C5] IDF-8617
+#define SOC_KEY_MANAGER_SUPPORTED       1
+#define SOC_HUK_SUPPORTED               1
 #define SOC_MODEM_CLOCK_SUPPORTED       1
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
 #define SOC_DEEP_SLEEP_SUPPORTED        1
 #define SOC_PM_SUPPORTED                1
+#define SOC_CLOCK_TREE_MANAGEMENT_SUPPORTED 1
 
 #define SOC_SPIRAM_SUPPORTED            1
 #define SOC_BT_SUPPORTED                1
@@ -390,6 +391,7 @@
 #define SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT     1  /*!< Support output RX clock to a GPIO */
 #define SOC_PARLIO_TRANS_BIT_ALIGN           1  /*!< Support bit alignment in transaction */
 #define SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION 1  /*!< Support loop transmission */
+#define SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA   1   /*!< Support to treat DMA EOF as TX unit EOF */
 #define SOC_PARLIO_SUPPORT_SLEEP_RETENTION   1   /*!< Support back up registers before sleep */
 #define SOC_PARLIO_SUPPORT_SPI_LCD           1   /*!< Support to drive SPI interfaced LCD */
 #define SOC_PARLIO_SUPPORT_I80_LCD           1   /*!< Support to drive I80 interfaced LCD */
@@ -478,6 +480,7 @@
 #define SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL   (1)
 #define SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP          (1)
 #define SOC_SPI_MEM_SUPPORT_TIMING_TUNING                 (1)
+#define SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR        (1)
 #define SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY            (1)
 
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1
@@ -536,9 +539,15 @@
 #define SOC_EFUSE_ECDSA_KEY_P192 1
 #define SOC_EFUSE_ECDSA_KEY_P384 1
 
+/*-------------------------- HUK CAPS----------------------------*/
+#define SOC_HUK_MEM_NEEDS_RECHARGE 1
+
 /*-------------------------- Key Manager CAPS----------------------------*/
-#define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY    1 /*!< Key manager responsible to deploy ECDSA key */
-#define SOC_KEY_MANAGER_FE_KEY_DEPLOY       1 /*!< Key manager responsible to deploy Flash Encryption key */
+#define SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT  1 /*!< Key manager supports key deployment */
+#define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY        1 /*!< Key manager responsible to deploy ECDSA key */
+#define SOC_KEY_MANAGER_FE_KEY_DEPLOY           1 /*!< Key manager responsible to deploy Flash Encryption key */
+#define SOC_KEY_MANAGER_HMAC_KEY_DEPLOY         1 /*!< Key manager responsible to deploy HMAC key */
+#define SOC_KEY_MANAGER_DS_KEY_DEPLOY           1 /*!< Key manager responsible to deploy DS key */
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1
@@ -560,14 +569,17 @@
 
 /*------------------------Bootloader CAPS---------------------------------*/
 /* Support Recovery Bootloader */
-#define SOC_RECOVERY_BOOTLOADER_SUPPORTED             (0)
+#define SOC_RECOVERY_BOOTLOADER_SUPPORTED             (1)
 /* Support Anti-rollback */
-#define SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED        (0)
+#define SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED        (1)
 
 /*-------------------------- APM CAPS-----------------------------------------*/
-#define SOC_APM_CTRL_FILTER_SUPPORTED        1 /*!< Support for APM control filter */
-#define SOC_APM_LP_APM0_SUPPORTED            1 /*!< Support for LP APM0 control filter */
-#define SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL 1 /*!< Support for TEE controller per-peripheral access control */
+#define SOC_APM_CTRL_FILTER_SUPPORTED         1    /*!< Support for APM control filter */
+#define SOC_APM_LP_APM0_SUPPORTED             1    /*!< Support for LP APM0 control filter */
+#define SOC_APM_CPU_APM_SUPPORTED             1    /*!< Support for CPU APM control filter */
+#define SOC_APM_SUPPORT_LP_TEE_CTRL           1    /*!< Support for LP TEE controller */
+#define SOC_APM_SUPPORT_CTRL_CFG_LOCK         1    /*!< Support for APM controller configuration lock */
+#define SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL  1    /*!< Support for TEE controller per-peripheral access control */
 
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
 #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1

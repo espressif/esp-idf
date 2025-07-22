@@ -15,7 +15,7 @@ Feature Supported by ESP-IDF but Not in Chip-ROM
 .. list::
 
     - Octal flash chip support. See :ref:`oct-flash-doc` for details.
-    - 32-bit-address support for GD25Q256. Note that this feature is an optional feature, please do read :ref:`32-bit-flash-doc` for details.
+    - 32-bit-address support on flash chips. Note that this feature is an optional feature, please do read :ref:`32-bit-flash-doc` for details.
     - TH flash chip support.
     - Kconfig option :ref:`CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED`.
     - :ref:`CONFIG_SPI_FLASH_VERIFY_WRITE`, enabling this option helps you detect bad writing.

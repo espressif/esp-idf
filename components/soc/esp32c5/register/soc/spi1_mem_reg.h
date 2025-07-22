@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -328,13 +328,21 @@ extern "C" {
 #define SPI_MEM_CLK_MODE_V  0x00000003U
 #define SPI_MEM_CLK_MODE_S  0
 /** SPI_MEM_CS_HOLD_DLY_RES : R/W; bitpos: [11:2]; default: 1023;
- *  After RES/DP/HPM command is sent, SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 512)
- *  SPI_CLK cycles.
+ *  After RES/DP/HPM/PES command is sent, SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] *
+ *  128) SPI_CLK cycles.
  */
 #define SPI_MEM_CS_HOLD_DLY_RES    0x000003FFU
 #define SPI_MEM_CS_HOLD_DLY_RES_M  (SPI_MEM_CS_HOLD_DLY_RES_V << SPI_MEM_CS_HOLD_DLY_RES_S)
 #define SPI_MEM_CS_HOLD_DLY_RES_V  0x000003FFU
 #define SPI_MEM_CS_HOLD_DLY_RES_S  2
+/** SPI_MEM_CS_HOLD_DLY_PER : R/W; bitpos: [21:12]; default: 1023;
+ *  After PER command is sent, SPI1 waits (SPI_MEM_CS_HOLD_DLY_PER[9:0] * 128) SPI_CLK
+ *  cycles.
+ */
+#define SPI_MEM_CS_HOLD_DLY_PER    0x000003FFU
+#define SPI_MEM_CS_HOLD_DLY_PER_M  (SPI_MEM_CS_HOLD_DLY_PER_V << SPI_MEM_CS_HOLD_DLY_PER_S)
+#define SPI_MEM_CS_HOLD_DLY_PER_V  0x000003FFU
+#define SPI_MEM_CS_HOLD_DLY_PER_S  12
 
 /** SPI_MEM_CTRL2_REG(i) register
  *  SPI1 control2 register.

@@ -14,16 +14,20 @@
 #include "esp_err.h"
 #include "hal/efuse_hal.h"
 
-#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY || SOC_KEY_MANAGER_FE_KEY_DEPLOY
-#include "hal/key_mgr_ll.h"
+#if SOC_HUK_MEM_NEEDS_RECHARGE
+#include "hal/huk_hal.h"
 #endif
+
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
+#include "hal/key_mgr_ll.h"
+#endif /* SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT */
 
 __attribute__((unused)) static const char *TAG = "esp_security";
 
 static void esp_key_mgr_init(void)
 {
     // The following code initializes the key manager.
-#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY || SOC_KEY_MANAGER_FE_KEY_DEPLOY
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
     // Enable key manager clock
     // Using ll APIs which do not require critical section
     _key_mgr_ll_enable_bus_clock(true);
@@ -31,7 +35,7 @@ static void esp_key_mgr_init(void)
     _key_mgr_ll_reset_register();
     while (key_mgr_ll_get_state() != ESP_KEY_MGR_STATE_IDLE) {
     };
-#endif /* SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY || SOC_KEY_MANAGER_FE_KEY_DEPLOY */
+#endif /* SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT */
 }
 
 ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)

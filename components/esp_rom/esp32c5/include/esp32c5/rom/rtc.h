@@ -58,6 +58,7 @@ extern "C" {
 #define RTC_SLOW_CLK_CAL_REG                LP_AON_STORE1_REG
 #define RTC_BOOT_TIME_LOW_REG               LP_AON_STORE2_REG
 #define RTC_BOOT_TIME_HIGH_REG              LP_AON_STORE3_REG
+#define RTC_CLK_SRC_REF_CNT_ARRAY_REG       LP_AON_STORE4_REG
 #define RTC_ENTRY_LENGTH_REG                LP_AON_STORE5_REG
 #define RTC_ENTRY_ADDR_REG                  LP_AON_STORE6_REG
 #define RTC_RESET_CAUSE_REG                 LP_AON_STORE6_REG

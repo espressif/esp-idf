@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -154,6 +154,11 @@ void spi_flash_hal_setup_auto_suspend_mode(spi_flash_host_inst_t *host)
     // tsus = ceil(ctx->tsus_val * ctx->freq_mhz / spimem_flash_ll_get_tsus_unit_in_cycles);
     uint32_t tsus = (ctx->tsus_val * ctx->freq_mhz / spimem_flash_ll_get_tsus_unit_in_cycles(dev)) + ((ctx->tsus_val * ctx->freq_mhz) % spimem_flash_ll_get_tsus_unit_in_cycles(dev) != 0);
     spimem_flash_ll_set_sus_delay(dev, tsus);
+#if SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+    // trs = ceil(ctx->trs_val * ctx->freq_mhz / spimem_flash_ll_get_tsus_unit_in_cycles);
+    uint32_t trs = (ctx->trs_val * ctx->freq_mhz / spimem_flash_ll_get_tsus_unit_in_cycles(dev)) + ((ctx->trs_val * ctx->freq_mhz) % spimem_flash_ll_get_tsus_unit_in_cycles(dev) != 0);
+    spimem_flash_ll_set_rs_delay(dev, trs);
+#endif // SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
     // tshsl2 = ceil(SPI_FLASH_TSHSL2_SAFE_VAL_NS * spimem_flash_ll_get_source_freq_mhz() * 0.001);
     uint32_t tshsl2 = (SPI_FLASH_TSHSL2_SAFE_VAL_NS * spimem_flash_ll_get_source_freq_mhz() / 1000) + ((SPI_FLASH_TSHSL2_SAFE_VAL_NS * spimem_flash_ll_get_source_freq_mhz()) % 1000 != 0);
     spimem_flash_set_cs_hold_delay(dev, tshsl2);

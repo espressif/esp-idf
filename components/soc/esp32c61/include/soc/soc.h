@@ -22,9 +22,7 @@
 #define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE)                        // only one I2S on C61
 #define REG_TIMG_BASE(i)                        (DR_REG_TIMG0_BASE + (i) * 0x1000) // TIMERG0 and TIMERG1
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_MSPI0_BASE + (i) * 0x1000)        // SPIMEM0 and SPIMEM1
-#define REG_SPI_BASE(i)                         (((i)==2) ? (DR_REG_SPI2_BASE) : (0))    // only one GPSPI on C61
 #define REG_I2C_BASE(i)                         (DR_REG_I2C_EXT_BASE)                    // only one I2C on C61
-#define DR_REG_INTERRUPT_CORE0_BASE             DR_REG_INTMTX_BASE
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)

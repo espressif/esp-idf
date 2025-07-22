@@ -240,7 +240,7 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
 #endif // CONFIG_PM_ENABLE
 
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
     uint32_t real_div;
 #if SOC_RMT_CHANNEL_CLK_INDEPENDENT
     uint32_t periph_src_clk_hz = 0;

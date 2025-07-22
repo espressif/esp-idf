@@ -22,7 +22,7 @@ extern "C" {
 #define KEY_MGR_ASSIST_INFO_SIZE         64
 #define KEY_MGR_KEY_RECOVERY_INFO_SIZE   64
 
-#define KEY_MGR_HUK_INFO_SIZE            HUK_INFO_SIZE
+#define KEY_MGR_HUK_INFO_SIZE            HUK_INFO_LEN
 #define KEY_MGR_HUK_RISK_ALERT_LEVEL     HUK_RISK_ALERT_LEVEL
 
 /* AES deploy mode */

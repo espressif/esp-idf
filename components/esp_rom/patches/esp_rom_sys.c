@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,3 +103,14 @@ void esp_rom_set_cpu_ticks_per_us(uint32_t ticks_per_us)
 #endif
 }
 #endif // CONFIG_IDF_TARGET_ESP32
+
+#if SOC_RECOVERY_BOOTLOADER_SUPPORTED
+uint32_t esp_rom_get_bootloader_offset(void)
+{
+    static uint32_t offset_of_active_bootloader = UINT32_MAX;
+    if (offset_of_active_bootloader == UINT32_MAX) {
+        offset_of_active_bootloader = ets_get_bootloader_offset();
+    }
+    return offset_of_active_bootloader;
+}
+#endif // SOC_RECOVERY_BOOTLOADER_SUPPORTED

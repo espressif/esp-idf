@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -183,7 +183,7 @@ typedef union {
          */
         uint32_t rd_dis:7;
         /** dis_icache : RO; bitpos: [7]; default: 0;
-         *  Represents whether icache is disabled or enabled.\\ 1: disabled\\ 0: enabled\\
+         *  Represents whether cache is disabled.\\ 1: Disabled\\ 0: Enabled.\\
          */
         uint32_t dis_icache:1;
         /** dis_usb_jtag : RO; bitpos: [8]; default: 0;
@@ -223,16 +223,18 @@ typedef union {
          */
         uint32_t dis_download_manual_encrypt:1;
         /** usb_drefh : RO; bitpos: [16:15]; default: 0;
-         *  Represents the single-end input threshold vrefh, 1.76 V to 2 V with step of 80 mV.
+         *  Represents the single-end input threshold vrefh of USB_SERIAL_JTAG PHY, 1.76 V to 2
+         *  V with step of 80 mV.
          */
         uint32_t usb_drefh:2;
         /** usb_drefl : RO; bitpos: [18:17]; default: 0;
-         *  Represents the single-end input threshold vrefl, 1.76 V to 2 V with step of 80 mV.
+         *  Represents the single-end input threshold vrefl of USB_SERIAL_JTAG PHY, 1.76 V to 2
+         *  V with step of 80 mV.
          */
         uint32_t usb_drefl:2;
         /** usb_exchg_pins : RO; bitpos: [19]; default: 0;
-         *  Represents whether the D+ and D- pins is exchanged.\\ 1: exchanged\\ 0: not
-         *  exchanged\\
+         *  Represents whether the D+ and D- pins of USB_SERIAL_JTAG PHY is exchanged.\\ 1:
+         *  exchanged\\ 0: not exchanged\\
          */
         uint32_t usb_exchg_pins:1;
         /** vdd_spi_as_gpio : RO; bitpos: [20]; default: 0;
@@ -241,10 +243,8 @@ typedef union {
          */
         uint32_t vdd_spi_as_gpio:1;
         /** wdt_delay_sel : RO; bitpos: [22:21]; default: 0;
-         *  Represents the threshold level of the RTC watchdog STG0 timeout.\\ 0: Original
-         *  threshold configuration value of STG0 *2 \\1: Original threshold configuration
-         *  value of STG0 *4 \\2: Original threshold configuration value of STG0 *8 \\3:
-         *  Original threshold configuration value of STG0 *16 \\
+         *  lp wdt timeout threshold at startup = initial timeout value * (2 ^
+         *  (EFUSE_WDT_DELAY_SEL + 1))
          */
         uint32_t wdt_delay_sel:2;
         /** spi_boot_crypt_cnt : RO; bitpos: [25:23]; default: 0;
@@ -253,18 +253,18 @@ typedef union {
          */
         uint32_t spi_boot_crypt_cnt:3;
         /** secure_boot_key_revoke0 : RO; bitpos: [26]; default: 0;
-         *  Represents whether revoking first secure boot key is enabled or disabled.\\ 1:
-         *  enabled\\ 0: disabled\\
+         *  Represents whether revoking first secure boot key is enabled or disabled. 1.
+         *  Enable\\ 0: Disable.
          */
         uint32_t secure_boot_key_revoke0:1;
         /** secure_boot_key_revoke1 : RO; bitpos: [27]; default: 0;
-         *  Represents whether revoking second secure boot key is enabled or disabled.\\ 1:
-         *  enabled\\ 0: disabled\\
+         *  Represents whether revoking second secure boot key is enabled or disabled. 1.
+         *  Enable\\ 0: Disable.
          */
         uint32_t secure_boot_key_revoke1:1;
         /** secure_boot_key_revoke2 : RO; bitpos: [28]; default: 0;
-         *  Represents whether revoking third secure boot key is enabled or disabled.\\ 1:
-         *  enabled\\ 0: disabled\\
+         *  Represents whether revoking third secure boot key is enabled or disabled. 1.
+         *  Enable\\ 0: Disable.
          */
         uint32_t secure_boot_key_revoke2:1;
         /** rd_reserve_0_61 : RW; bitpos: [31:29]; default: 0;
@@ -309,12 +309,12 @@ typedef union {
          */
         uint32_t sec_dpa_level:2;
         /** secure_boot_en : RO; bitpos: [26]; default: 0;
-         *  Represents whether secure boot is enabled or disabled.\\ 1: enabled\\ 0: disabled\\
+         *  Represents whether secure boot is enabled or disabled. 1. Enable\\ 0: Disable.
          */
         uint32_t secure_boot_en:1;
         /** secure_boot_aggressive_revoke : RO; bitpos: [27]; default: 0;
-         *  Represents whether revoking aggressive secure boot is enabled or disabled.\\ 1:
-         *  enabled.\\ 0: disabled\\
+         *  Represents whether revoking aggressive secure boot is enabled or disabled. 1.
+         *  Enable\\ 0: Disable.
          */
         uint32_t secure_boot_aggressive_revoke:1;
         /** flash_tpuw : RO; bitpos: [31:28]; default: 0;
@@ -333,17 +333,16 @@ typedef union {
 typedef union {
     struct {
         /** dis_download_mode : RO; bitpos: [0]; default: 0;
-         *  Represents whether Download mode is disable or enable.\\ 1. Disable\\ 0: Enable\\
+         *  Represents whether Download mode is disable or enable. 1. Disable\\ 0: Enable.
          */
         uint32_t dis_download_mode:1;
         /** dis_direct_boot : RO; bitpos: [1]; default: 0;
-         *  Represents whether direct boot mode is disabled or enabled.\\ 1. Disable\\ 0:
-         *  Enable\\
+         *  Represents whether direct boot mode is disabled or enabled. 1. Disable\\ 0: Enable.
          */
         uint32_t dis_direct_boot:1;
         /** dis_usb_serial_jtag_rom_print : RO; bitpos: [2]; default: 0;
-         *  Represents whether print from USB-Serial-JTAG is disabled or enabled.\\ 1.
-         *  Disable\\ 0: Enable\\
+         *  Represents whether print from USB-Serial-JTAG is disabled or enabled. 1. Disable\\
+         *  0: Enable.
          */
         uint32_t dis_usb_serial_jtag_rom_print:1;
         /** dis_usb_serial_jtag_download_mode : RO; bitpos: [3]; default: 0;
@@ -352,8 +351,7 @@ typedef union {
          */
         uint32_t dis_usb_serial_jtag_download_mode:1;
         /** enable_security_download : RO; bitpos: [4]; default: 0;
-         *  Represents whether security download is enabled or disabled.\\ 1: Enable\\ 0:
-         *  Disable\\
+         *  Represents whether security download is enabled or disabled. 1: Enable\\ 0: Disable.
          */
         uint32_t enable_security_download:1;
         /** uart_print_control : RO; bitpos: [6:5]; default: 0;
@@ -374,32 +372,31 @@ typedef union {
          */
         uint32_t secure_boot_disable_fast_wake:1;
         /** hys_en_pad : RO; bitpos: [25]; default: 0;
-         *  Represents whether the hysteresis function of corresponding PAD is enabled.\\ 1:
-         *  enabled\\ 0:disabled\\
+         *  Set bits to enable hysteresis function of PAD0~27
          */
         uint32_t hys_en_pad:1;
         /** xts_dpa_clk_enable : RO; bitpos: [26]; default: 0;
-         *  Represents whether anti-dpa attack clock function is enabled.\\ 1. Enable\\ 0:
-         *  Disable\\
+         *  Represents whether xts-aes anti-dpa attack clock is enabled.\\ 1. Enable.\\ 0:
+         *  Disable.\\
          */
         uint32_t xts_dpa_clk_enable:1;
         /** xts_dpa_pseudo_level : RO; bitpos: [28:27]; default: 0;
-         *  Represents the anti-dpa attack pseudo function level.\\ 3:High\\ 2: Moderate\\ 1:
-         *  Low\\ 0: Decided by register configuration\\
+         *  Represents the pseudo round level of xts-aes anti-dpa attack.\\ 3: High.\\ 2:
+         *  Moderate 1. Low\\ 0: Disabled\\
          */
         uint32_t xts_dpa_pseudo_level:2;
         /** dis_wifi6 : RO; bitpos: [29]; default: 0;
-         *  Represents whether the WiFi 6 feature is enable or disable.\\ 1: WiFi 6 is
-         *  disable\\ 0: WiFi 6 is enabled.\\
+         *  Represents whether the WIFI6 feature is enable or disabled. 1: WIFI6 is disable, 0:
+         *  WIFI6 is enabled.
          */
         uint32_t dis_wifi6:1;
         /** ecdsa_disable_p192 : RO; bitpos: [30]; default: 0;
-         *  Represents whether to disable P192 curve in ECDSA.\\ 1: Disabled.\\ 0: Not disable.
+         *  Represents whether to disable P192 curve in ECDSA. 1: Disabled. 0: Not disabled.
          */
         uint32_t ecdsa_disable_p192:1;
         /** ecc_force_const_time : RO; bitpos: [31]; default: 0;
-         *  Represents whether to force ecc to use const-time calculation mode. \\ 1: Enable.
-         *  \\ 0: Disable.
+         *  Represents whether to force ecc to use const-time calculation mode. 1: Enable. 0:
+         *  Disable
          */
         uint32_t ecc_force_const_time:1;
     };
@@ -411,10 +408,31 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rd_repeat_data3 : RO; bitpos: [31:0]; default: 0;
-         *  Reserved.
+        /** bootloader_anti_rollback_secure_version : RO; bitpos: [3:0]; default: 0;
+         *  Represents the anti-rollback secure version of the 2nd stage bootloader used by the
+         *  ROM bootloader.
          */
-        uint32_t rd_repeat_data3:32;
+        uint32_t bootloader_anti_rollback_secure_version:4;
+        /** bootloader_anti_rollback_en : RO; bitpos: [4]; default: 0;
+         *  Represents whether the ani-rollback check for the 2nd stage bootloader is
+         *  enabled.\\1: Enabled\\0: Disabled\\
+         */
+        uint32_t bootloader_anti_rollback_en:1;
+        /** bootloader_anti_rollback_update_in_rom : RO; bitpos: [5]; default: 0;
+         *  Represents whether the ani-rollback SECURE_VERSION will be updated from the ROM
+         *  bootloader.\\1: Enable\\0: Disable\\
+         */
+        uint32_t bootloader_anti_rollback_update_in_rom:1;
+        /** recovery_bootloader_flash_sector : RO; bitpos: [17:6]; default: 0;
+         *  Represents the starting flash sector (flash sector size is 0x1000) of the recovery
+         *  bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF
+         *  - this feature is disabled.
+         */
+        uint32_t recovery_bootloader_flash_sector:12;
+        /** rd_reserve_0_146 : RW; bitpos: [31:18]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_146:14;
     };
     uint32_t val;
 } efuse_rd_repeat_data3_reg_t;
@@ -424,10 +442,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rd_repeat_data4 : RO; bitpos: [31:0]; default: 0;
+        /** rd_repeat_data4 : RO; bitpos: [23:0]; default: 0;
          *  Reserved.
          */
-        uint32_t rd_repeat_data4:32;
+        uint32_t rd_repeat_data4:24;
+        /** rd_reserve_0_184 : RW; bitpos: [31:24]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_184:8;
     };
     uint32_t val;
 } efuse_rd_repeat_data4_reg_t;
@@ -517,10 +539,10 @@ typedef union {
          *  Package version
          */
         uint32_t pkg_version:3;
-        /** reserved_1_93 : R; bitpos: [31:29]; default: 0;
-         *  reserved
+        /** active_hp_dbias : R; bitpos: [31:29]; default: 0;
+         *  Active HP DBIAS of fixed voltage
          */
-        uint32_t reserved_1_93:3;
+        uint32_t active_hp_dbias:3;
     };
     uint32_t val;
 } efuse_rd_mac_sys2_reg_t;
@@ -530,14 +552,38 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mac_reserved_2 : RO; bitpos: [17:0]; default: 0;
-         *  Reserved.
+        /** active_hp_dbias_1 : R; bitpos: [0]; default: 0;
+         *  Active HP DBIAS of fixed voltage
          */
-        uint32_t mac_reserved_2:18;
-        /** sys_data_part0_0 : RO; bitpos: [31:18]; default: 0;
-         *  Represents the first 14-bit of zeroth part of system data.
+        uint32_t active_hp_dbias_1:1;
+        /** active_lp_dbias : R; bitpos: [4:1]; default: 0;
+         *  Active LP DBIAS of fixed voltage
          */
-        uint32_t sys_data_part0_0:14;
+        uint32_t active_lp_dbias:4;
+        /** lslp_hp_dbg : R; bitpos: [6:5]; default: 0;
+         *  LSLP HP DBG of fixed voltage
+         */
+        uint32_t lslp_hp_dbg:2;
+        /** lslp_hp_dbias : R; bitpos: [10:7]; default: 0;
+         *  LSLP HP DBIAS of fixed voltage
+         */
+        uint32_t lslp_hp_dbias:4;
+        /** dslp_lp_dbg : R; bitpos: [14:11]; default: 0;
+         *  DSLP LP DBG of fixed voltage
+         */
+        uint32_t dslp_lp_dbg:4;
+        /** dslp_lp_dbias : R; bitpos: [19:15]; default: 0;
+         *  DSLP LP DBIAS of fixed voltage
+         */
+        uint32_t dslp_lp_dbias:5;
+        /** lp_hp_dbias_vol_gap : R; bitpos: [24:20]; default: 0;
+         *  DBIAS gap between LP and HP
+         */
+        uint32_t lp_hp_dbias_vol_gap:5;
+        /** reserved_1_121 : R; bitpos: [31:25]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_121:7;
     };
     uint32_t val;
 } efuse_rd_mac_sys3_reg_t;
@@ -1793,10 +1839,23 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rd_repeat_data_err3 : RO; bitpos: [31:0]; default: 0;
-         *  Reserved.
+        /** bootloader_anti_rollback_secure_version_err : RO; bitpos: [3:0]; default: 0;
+         *  Represents the programming error of EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION
          */
-        uint32_t rd_repeat_data_err3:32;
+        uint32_t bootloader_anti_rollback_secure_version_err:4;
+        /** bootloader_anti_rollback_en_err : RO; bitpos: [4]; default: 0;
+         *  Represents the programming error of EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN
+         */
+        uint32_t bootloader_anti_rollback_en_err:1;
+        /** bootloader_anti_rollback_update_in_rom_err : RO; bitpos: [5]; default: 0;
+         *  Represents the programming error of EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM
+         */
+        uint32_t bootloader_anti_rollback_update_in_rom_err:1;
+        /** recovery_bootloader_flash_sector_err : RO; bitpos: [17:6]; default: 0;
+         *  Represents the programming error of EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR
+         */
+        uint32_t recovery_bootloader_flash_sector_err:12;
+        uint32_t reserved_18:14;
     };
     uint32_t val;
 } efuse_rd_repeat_data_err3_reg_t;
@@ -1806,10 +1865,11 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rd_repeat_data_err4 : RO; bitpos: [31:0]; default: 0;
-         *  Reserved.
+        /** rd_repeat_data4_err : RO; bitpos: [23:0]; default: 0;
+         *  Represents the programming error of EFUSE_RD_REPEAT_DATA4
          */
-        uint32_t rd_repeat_data_err4:32;
+        uint32_t rd_repeat_data4_err:24;
+        uint32_t reserved_24:8;
     };
     uint32_t val;
 } efuse_rd_repeat_data_err4_reg_t;
@@ -1952,7 +2012,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 37753088;
+        /** date : R/W; bitpos: [27:0]; default: 38801520;
          *  Stores eFuse version.
          */
         uint32_t date:28;
@@ -2009,6 +2069,122 @@ typedef union {
     };
     uint32_t val;
 } efuse_conf_reg_t;
+
+/** Type of dac_conf register
+ *  Controls the eFuse programming voltage.
+ */
+typedef union {
+    struct {
+        /** dac_clk_div : R/W; bitpos: [7:0]; default: 23;
+         *  Controls the division factor of the rising clock of the programming voltage.
+         */
+        uint32_t dac_clk_div:8;
+        /** dac_clk_pad_sel : R/W; bitpos: [8]; default: 0;
+         *  Don't care.
+         */
+        uint32_t dac_clk_pad_sel:1;
+        /** dac_num : R/W; bitpos: [16:9]; default: 255;
+         *  Controls the rising period of the programming voltage.
+         */
+        uint32_t dac_num:8;
+        /** oe_clr : R/W; bitpos: [17]; default: 0;
+         *  Reduces the power supply of the programming voltage.
+         */
+        uint32_t oe_clr:1;
+        uint32_t reserved_18:14;
+    };
+    uint32_t val;
+} efuse_dac_conf_reg_t;
+
+/** Type of rd_tim_conf register
+ *  Configures read timing parameters.
+ */
+typedef union {
+    struct {
+        /** thr_a : R/W; bitpos: [7:0]; default: 1;
+         *  Configures the read hold time.
+         */
+        uint32_t thr_a:8;
+        /** trd : R/W; bitpos: [15:8]; default: 2;
+         *  Configures the read time.
+         */
+        uint32_t trd:8;
+        /** tsur_a : R/W; bitpos: [23:16]; default: 1;
+         *  Configures the read setup time.
+         */
+        uint32_t tsur_a:8;
+        /** read_init_num : R/W; bitpos: [31:24]; default: 18;
+         *  Configures the waiting time of reading eFuse memory.
+         */
+        uint32_t read_init_num:8;
+    };
+    uint32_t val;
+} efuse_rd_tim_conf_reg_t;
+
+/** Type of wr_tim_conf1 register
+ *  Configurarion register 1 of eFuse programming timing parameters.
+ */
+typedef union {
+    struct {
+        /** tsup_a : R/W; bitpos: [7:0]; default: 1;
+         *  Configures the programming setup time.
+         */
+        uint32_t tsup_a:8;
+        /** pwr_on_num : R/W; bitpos: [23:8]; default: 12288;
+         *  Configures the power up time for VDDQ.
+         */
+        uint32_t pwr_on_num:16;
+        /** thp_a : R/W; bitpos: [31:24]; default: 1;
+         *  Configures the programming hold time.
+         */
+        uint32_t thp_a:8;
+    };
+    uint32_t val;
+} efuse_wr_tim_conf1_reg_t;
+
+/** Type of wr_tim_conf2 register
+ *  Configurarion register 2 of eFuse programming timing parameters.
+ */
+typedef union {
+    struct {
+        /** pwr_off_num : R/W; bitpos: [15:0]; default: 400;
+         *  Configures the power outage time for VDDQ.
+         */
+        uint32_t pwr_off_num:16;
+        /** tpgm : R/W; bitpos: [31:16]; default: 200;
+         *  Configures the active programming time.
+         */
+        uint32_t tpgm:16;
+    };
+    uint32_t val;
+} efuse_wr_tim_conf2_reg_t;
+
+/** Type of wr_tim_conf0_rs_bypass register
+ *  Configurarion register0 of eFuse programming time parameters and rs bypass
+ *  operation.
+ */
+typedef union {
+    struct {
+        /** bypass_rs_correction : R/W; bitpos: [0]; default: 0;
+         *  Set this bit to bypass reed solomon correction step.
+         */
+        uint32_t bypass_rs_correction:1;
+        /** bypass_rs_blk_num : R/W; bitpos: [11:1]; default: 0;
+         *  Configures block number of programming twice operation.
+         */
+        uint32_t bypass_rs_blk_num:11;
+        /** update : WT; bitpos: [12]; default: 0;
+         *  Set this bit to update multi-bit register signals.
+         */
+        uint32_t update:1;
+        /** tpgm_inactive : R/W; bitpos: [20:13]; default: 1;
+         *  Configures the inactive programming time.
+         */
+        uint32_t tpgm_inactive:8;
+        uint32_t reserved_21:11;
+    };
+    uint32_t val;
+} efuse_wr_tim_conf0_rs_bypass_reg_t;
 
 
 /** Group: EFUSE Status Registers */
@@ -2156,124 +2332,6 @@ typedef union {
     };
     uint32_t val;
 } efuse_int_clr_reg_t;
-
-
-/** Group: EFUSE Configure Registers */
-/** Type of dac_conf register
- *  Controls the eFuse programming voltage.
- */
-typedef union {
-    struct {
-        /** dac_clk_div : R/W; bitpos: [7:0]; default: 23;
-         *  Controls the division factor of the rising clock of the programming voltage.
-         */
-        uint32_t dac_clk_div:8;
-        /** dac_clk_pad_sel : R/W; bitpos: [8]; default: 0;
-         *  Don't care.
-         */
-        uint32_t dac_clk_pad_sel:1;
-        /** dac_num : R/W; bitpos: [16:9]; default: 255;
-         *  Controls the rising period of the programming voltage.
-         */
-        uint32_t dac_num:8;
-        /** oe_clr : R/W; bitpos: [17]; default: 0;
-         *  Reduces the power supply of the programming voltage.
-         */
-        uint32_t oe_clr:1;
-        uint32_t reserved_18:14;
-    };
-    uint32_t val;
-} efuse_dac_conf_reg_t;
-
-/** Type of rd_tim_conf register
- *  Configures read timing parameters.
- */
-typedef union {
-    struct {
-        /** thr_a : R/W; bitpos: [7:0]; default: 1;
-         *  Configures the read hold time.
-         */
-        uint32_t thr_a:8;
-        /** trd : R/W; bitpos: [15:8]; default: 2;
-         *  Configures the read time.
-         */
-        uint32_t trd:8;
-        /** tsur_a : R/W; bitpos: [23:16]; default: 1;
-         *  Configures the read setup time.
-         */
-        uint32_t tsur_a:8;
-        /** read_init_num : R/W; bitpos: [31:24]; default: 18;
-         *  Configures the waiting time of reading eFuse memory.
-         */
-        uint32_t read_init_num:8;
-    };
-    uint32_t val;
-} efuse_rd_tim_conf_reg_t;
-
-/** Type of wr_tim_conf1 register
- *  Configurarion register 1 of eFuse programming timing parameters.
- */
-typedef union {
-    struct {
-        /** tsup_a : R/W; bitpos: [7:0]; default: 1;
-         *  Configures the programming setup time.
-         */
-        uint32_t tsup_a:8;
-        /** pwr_on_num : R/W; bitpos: [23:8]; default: 12288;
-         *  Configures the power up time for VDDQ.
-         */
-        uint32_t pwr_on_num:16;
-        /** thp_a : R/W; bitpos: [31:24]; default: 1;
-         *  Configures the programming hold time.
-         */
-        uint32_t thp_a:8;
-    };
-    uint32_t val;
-} efuse_wr_tim_conf1_reg_t;
-
-/** Type of wr_tim_conf2 register
- *  Configurarion register 2 of eFuse programming timing parameters.
- */
-typedef union {
-    struct {
-        /** pwr_off_num : R/W; bitpos: [15:0]; default: 400;
-         *  Configures the power outage time for VDDQ.
-         */
-        uint32_t pwr_off_num:16;
-        /** tpgm : R/W; bitpos: [31:16]; default: 200;
-         *  Configures the active programming time.
-         */
-        uint32_t tpgm:16;
-    };
-    uint32_t val;
-} efuse_wr_tim_conf2_reg_t;
-
-/** Type of wr_tim_conf0_rs_bypass register
- *  Configurarion register0 of eFuse programming time parameters and rs bypass
- *  operation.
- */
-typedef union {
-    struct {
-        /** bypass_rs_correction : R/W; bitpos: [0]; default: 0;
-         *  Set this bit to bypass reed solomon correction step.
-         */
-        uint32_t bypass_rs_correction:1;
-        /** bypass_rs_blk_num : R/W; bitpos: [11:1]; default: 0;
-         *  Configures block number of programming twice operation.
-         */
-        uint32_t bypass_rs_blk_num:11;
-        /** update : WT; bitpos: [12]; default: 0;
-         *  Set this bit to update multi-bit register signals.
-         */
-        uint32_t update:1;
-        /** tpgm_inactive : R/W; bitpos: [20:13]; default: 1;
-         *  Configures the inactive programming time.
-         */
-        uint32_t tpgm_inactive:8;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} efuse_wr_tim_conf0_rs_bypass_reg_t;
 
 
 /** Group: EFUSE_APB2OTP Block0 Write Disable Data */
@@ -2889,6 +2947,19 @@ typedef union {
     };
     uint32_t val;
 } efuse_apb2otp_blk2_w11_reg_t;
+
+/** Type of apb2otp_blk10_w11 register
+ *  eFuse apb2otp block10 data register11.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block10_w11 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block10 word11 data.
+         */
+        uint32_t apb2otp_block10_w11:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk10_w11_reg_t;
 
 
 /** Group: EFUSE_APB2OTP Block3 Word1 Data */
@@ -4194,21 +4265,6 @@ typedef union {
     };
     uint32_t val;
 } efuse_apb2otp_blk10_w10_reg_t;
-
-
-/** Group: EFUSE_APB2OTP Block2 Word11 Data */
-/** Type of apb2otp_blk10_w11 register
- *  eFuse apb2otp block10 data register11.
- */
-typedef union {
-    struct {
-        /** apb2otp_block10_w11 : RO; bitpos: [31:0]; default: 0;
-         *  Otp block10 word11 data.
-         */
-        uint32_t apb2otp_block10_w11:32;
-    };
-    uint32_t val;
-} efuse_apb2otp_blk10_w11_reg_t;
 
 
 /** Group: EFUSE_APB2OTP Function Enable Signal */

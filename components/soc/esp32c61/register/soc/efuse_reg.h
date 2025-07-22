@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -169,7 +169,7 @@ extern "C" {
 #define EFUSE_RD_DIS_V  0x0000007FU
 #define EFUSE_RD_DIS_S  0
 /** EFUSE_DIS_ICACHE : RO; bitpos: [7]; default: 0;
- *  Represents whether icache is disabled or enabled.\\ 1: disabled\\ 0: enabled\\
+ *  Represents whether cache is disabled.\\ 1: Disabled\\ 0: Enabled.\\
  */
 #define EFUSE_DIS_ICACHE    (BIT(7))
 #define EFUSE_DIS_ICACHE_M  (EFUSE_DIS_ICACHE_V << EFUSE_DIS_ICACHE_S)
@@ -233,22 +233,24 @@ extern "C" {
 #define EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_V  0x00000001U
 #define EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_S  14
 /** EFUSE_USB_DREFH : RO; bitpos: [16:15]; default: 0;
- *  Represents the single-end input threshold vrefh, 1.76 V to 2 V with step of 80 mV.
+ *  Represents the single-end input threshold vrefh of USB_SERIAL_JTAG PHY, 1.76 V to 2
+ *  V with step of 80 mV.
  */
 #define EFUSE_USB_DREFH    0x00000003U
 #define EFUSE_USB_DREFH_M  (EFUSE_USB_DREFH_V << EFUSE_USB_DREFH_S)
 #define EFUSE_USB_DREFH_V  0x00000003U
 #define EFUSE_USB_DREFH_S  15
 /** EFUSE_USB_DREFL : RO; bitpos: [18:17]; default: 0;
- *  Represents the single-end input threshold vrefl, 1.76 V to 2 V with step of 80 mV.
+ *  Represents the single-end input threshold vrefl of USB_SERIAL_JTAG PHY, 1.76 V to 2
+ *  V with step of 80 mV.
  */
 #define EFUSE_USB_DREFL    0x00000003U
 #define EFUSE_USB_DREFL_M  (EFUSE_USB_DREFL_V << EFUSE_USB_DREFL_S)
 #define EFUSE_USB_DREFL_V  0x00000003U
 #define EFUSE_USB_DREFL_S  17
 /** EFUSE_USB_EXCHG_PINS : RO; bitpos: [19]; default: 0;
- *  Represents whether the D+ and D- pins is exchanged.\\ 1: exchanged\\ 0: not
- *  exchanged\\
+ *  Represents whether the D+ and D- pins of USB_SERIAL_JTAG PHY is exchanged.\\ 1:
+ *  exchanged\\ 0: not exchanged\\
  */
 #define EFUSE_USB_EXCHG_PINS    (BIT(19))
 #define EFUSE_USB_EXCHG_PINS_M  (EFUSE_USB_EXCHG_PINS_V << EFUSE_USB_EXCHG_PINS_S)
@@ -263,10 +265,8 @@ extern "C" {
 #define EFUSE_VDD_SPI_AS_GPIO_V  0x00000001U
 #define EFUSE_VDD_SPI_AS_GPIO_S  20
 /** EFUSE_WDT_DELAY_SEL : RO; bitpos: [22:21]; default: 0;
- *  Represents the threshold level of the RTC watchdog STG0 timeout.\\ 0: Original
- *  threshold configuration value of STG0 *2 \\1: Original threshold configuration
- *  value of STG0 *4 \\2: Original threshold configuration value of STG0 *8 \\3:
- *  Original threshold configuration value of STG0 *16 \\
+ *  lp wdt timeout threshold at startup = initial timeout value * (2 ^
+ *  (EFUSE_WDT_DELAY_SEL + 1))
  */
 #define EFUSE_WDT_DELAY_SEL    0x00000003U
 #define EFUSE_WDT_DELAY_SEL_M  (EFUSE_WDT_DELAY_SEL_V << EFUSE_WDT_DELAY_SEL_S)
@@ -281,24 +281,24 @@ extern "C" {
 #define EFUSE_SPI_BOOT_CRYPT_CNT_V  0x00000007U
 #define EFUSE_SPI_BOOT_CRYPT_CNT_S  23
 /** EFUSE_SECURE_BOOT_KEY_REVOKE0 : RO; bitpos: [26]; default: 0;
- *  Represents whether revoking first secure boot key is enabled or disabled.\\ 1:
- *  enabled\\ 0: disabled\\
+ *  Represents whether revoking first secure boot key is enabled or disabled. 1.
+ *  Enable\\ 0: Disable.
  */
 #define EFUSE_SECURE_BOOT_KEY_REVOKE0    (BIT(26))
 #define EFUSE_SECURE_BOOT_KEY_REVOKE0_M  (EFUSE_SECURE_BOOT_KEY_REVOKE0_V << EFUSE_SECURE_BOOT_KEY_REVOKE0_S)
 #define EFUSE_SECURE_BOOT_KEY_REVOKE0_V  0x00000001U
 #define EFUSE_SECURE_BOOT_KEY_REVOKE0_S  26
 /** EFUSE_SECURE_BOOT_KEY_REVOKE1 : RO; bitpos: [27]; default: 0;
- *  Represents whether revoking second secure boot key is enabled or disabled.\\ 1:
- *  enabled\\ 0: disabled\\
+ *  Represents whether revoking second secure boot key is enabled or disabled. 1.
+ *  Enable\\ 0: Disable.
  */
 #define EFUSE_SECURE_BOOT_KEY_REVOKE1    (BIT(27))
 #define EFUSE_SECURE_BOOT_KEY_REVOKE1_M  (EFUSE_SECURE_BOOT_KEY_REVOKE1_V << EFUSE_SECURE_BOOT_KEY_REVOKE1_S)
 #define EFUSE_SECURE_BOOT_KEY_REVOKE1_V  0x00000001U
 #define EFUSE_SECURE_BOOT_KEY_REVOKE1_S  27
 /** EFUSE_SECURE_BOOT_KEY_REVOKE2 : RO; bitpos: [28]; default: 0;
- *  Represents whether revoking third secure boot key is enabled or disabled.\\ 1:
- *  enabled\\ 0: disabled\\
+ *  Represents whether revoking third secure boot key is enabled or disabled. 1.
+ *  Enable\\ 0: Disable.
  */
 #define EFUSE_SECURE_BOOT_KEY_REVOKE2    (BIT(28))
 #define EFUSE_SECURE_BOOT_KEY_REVOKE2_M  (EFUSE_SECURE_BOOT_KEY_REVOKE2_V << EFUSE_SECURE_BOOT_KEY_REVOKE2_S)
@@ -366,15 +366,15 @@ extern "C" {
 #define EFUSE_SEC_DPA_LEVEL_V  0x00000003U
 #define EFUSE_SEC_DPA_LEVEL_S  24
 /** EFUSE_SECURE_BOOT_EN : RO; bitpos: [26]; default: 0;
- *  Represents whether secure boot is enabled or disabled.\\ 1: enabled\\ 0: disabled\\
+ *  Represents whether secure boot is enabled or disabled. 1. Enable\\ 0: Disable.
  */
 #define EFUSE_SECURE_BOOT_EN    (BIT(26))
 #define EFUSE_SECURE_BOOT_EN_M  (EFUSE_SECURE_BOOT_EN_V << EFUSE_SECURE_BOOT_EN_S)
 #define EFUSE_SECURE_BOOT_EN_V  0x00000001U
 #define EFUSE_SECURE_BOOT_EN_S  26
 /** EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE : RO; bitpos: [27]; default: 0;
- *  Represents whether revoking aggressive secure boot is enabled or disabled.\\ 1:
- *  enabled.\\ 0: disabled\\
+ *  Represents whether revoking aggressive secure boot is enabled or disabled. 1.
+ *  Enable\\ 0: Disable.
  */
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE    (BIT(27))
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_M  (EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_V << EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_S)
@@ -395,23 +395,22 @@ extern "C" {
  */
 #define EFUSE_RD_REPEAT_DATA2_REG (DR_REG_EFUSE0_BASE + 0x38)
 /** EFUSE_DIS_DOWNLOAD_MODE : RO; bitpos: [0]; default: 0;
- *  Represents whether Download mode is disable or enable.\\ 1. Disable\\ 0: Enable\\
+ *  Represents whether Download mode is disable or enable. 1. Disable\\ 0: Enable.
  */
 #define EFUSE_DIS_DOWNLOAD_MODE    (BIT(0))
 #define EFUSE_DIS_DOWNLOAD_MODE_M  (EFUSE_DIS_DOWNLOAD_MODE_V << EFUSE_DIS_DOWNLOAD_MODE_S)
 #define EFUSE_DIS_DOWNLOAD_MODE_V  0x00000001U
 #define EFUSE_DIS_DOWNLOAD_MODE_S  0
 /** EFUSE_DIS_DIRECT_BOOT : RO; bitpos: [1]; default: 0;
- *  Represents whether direct boot mode is disabled or enabled.\\ 1. Disable\\ 0:
- *  Enable\\
+ *  Represents whether direct boot mode is disabled or enabled. 1. Disable\\ 0: Enable.
  */
 #define EFUSE_DIS_DIRECT_BOOT    (BIT(1))
 #define EFUSE_DIS_DIRECT_BOOT_M  (EFUSE_DIS_DIRECT_BOOT_V << EFUSE_DIS_DIRECT_BOOT_S)
 #define EFUSE_DIS_DIRECT_BOOT_V  0x00000001U
 #define EFUSE_DIS_DIRECT_BOOT_S  1
 /** EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT : RO; bitpos: [2]; default: 0;
- *  Represents whether print from USB-Serial-JTAG is disabled or enabled.\\ 1.
- *  Disable\\ 0: Enable\\
+ *  Represents whether print from USB-Serial-JTAG is disabled or enabled. 1. Disable\\
+ *  0: Enable.
  */
 #define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT    (BIT(2))
 #define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_M  (EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_V << EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_S)
@@ -426,8 +425,7 @@ extern "C" {
 #define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_V  0x00000001U
 #define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_S  3
 /** EFUSE_ENABLE_SECURITY_DOWNLOAD : RO; bitpos: [4]; default: 0;
- *  Represents whether security download is enabled or disabled.\\ 1: Enable\\ 0:
- *  Disable\\
+ *  Represents whether security download is enabled or disabled. 1: Enable\\ 0: Disable.
  */
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD    (BIT(4))
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD_M  (EFUSE_ENABLE_SECURITY_DOWNLOAD_V << EFUSE_ENABLE_SECURITY_DOWNLOAD_S)
@@ -463,47 +461,46 @@ extern "C" {
 #define EFUSE_SECURE_BOOT_DISABLE_FAST_WAKE_V  0x00000001U
 #define EFUSE_SECURE_BOOT_DISABLE_FAST_WAKE_S  24
 /** EFUSE_HYS_EN_PAD : RO; bitpos: [25]; default: 0;
- *  Represents whether the hysteresis function of corresponding PAD is enabled.\\ 1:
- *  enabled\\ 0:disabled\\
+ *  Set bits to enable hysteresis function of PAD0~27
  */
 #define EFUSE_HYS_EN_PAD    (BIT(25))
 #define EFUSE_HYS_EN_PAD_M  (EFUSE_HYS_EN_PAD_V << EFUSE_HYS_EN_PAD_S)
 #define EFUSE_HYS_EN_PAD_V  0x00000001U
 #define EFUSE_HYS_EN_PAD_S  25
 /** EFUSE_XTS_DPA_CLK_ENABLE : RO; bitpos: [26]; default: 0;
- *  Represents whether anti-dpa attack clock function is enabled.\\ 1. Enable\\ 0:
- *  Disable\\
+ *  Represents whether xts-aes anti-dpa attack clock is enabled.\\ 1. Enable.\\ 0:
+ *  Disable.\\
  */
 #define EFUSE_XTS_DPA_CLK_ENABLE    (BIT(26))
 #define EFUSE_XTS_DPA_CLK_ENABLE_M  (EFUSE_XTS_DPA_CLK_ENABLE_V << EFUSE_XTS_DPA_CLK_ENABLE_S)
 #define EFUSE_XTS_DPA_CLK_ENABLE_V  0x00000001U
 #define EFUSE_XTS_DPA_CLK_ENABLE_S  26
 /** EFUSE_XTS_DPA_PSEUDO_LEVEL : RO; bitpos: [28:27]; default: 0;
- *  Represents the anti-dpa attack pseudo function level.\\ 3:High\\ 2: Moderate\\ 1:
- *  Low\\ 0: Decided by register configuration\\
+ *  Represents the pseudo round level of xts-aes anti-dpa attack.\\ 3: High.\\ 2:
+ *  Moderate 1. Low\\ 0: Disabled\\
  */
 #define EFUSE_XTS_DPA_PSEUDO_LEVEL    0x00000003U
 #define EFUSE_XTS_DPA_PSEUDO_LEVEL_M  (EFUSE_XTS_DPA_PSEUDO_LEVEL_V << EFUSE_XTS_DPA_PSEUDO_LEVEL_S)
 #define EFUSE_XTS_DPA_PSEUDO_LEVEL_V  0x00000003U
 #define EFUSE_XTS_DPA_PSEUDO_LEVEL_S  27
 /** EFUSE_DIS_WIFI6 : RO; bitpos: [29]; default: 0;
- *  Represents whether the WiFi 6 feature is enable or disable.\\ 1: WiFi 6 is
- *  disable\\ 0: WiFi 6 is enabled.\\
+ *  Represents whether the WIFI6 feature is enable or disabled. 1: WIFI6 is disable, 0:
+ *  WIFI6 is enabled.
  */
 #define EFUSE_DIS_WIFI6    (BIT(29))
 #define EFUSE_DIS_WIFI6_M  (EFUSE_DIS_WIFI6_V << EFUSE_DIS_WIFI6_S)
 #define EFUSE_DIS_WIFI6_V  0x00000001U
 #define EFUSE_DIS_WIFI6_S  29
 /** EFUSE_ECDSA_DISABLE_P192 : RO; bitpos: [30]; default: 0;
- *  Represents whether to disable P192 curve in ECDSA.\\ 1: Disabled.\\ 0: Not disable.
+ *  Represents whether to disable P192 curve in ECDSA. 1: Disabled. 0: Not disabled.
  */
 #define EFUSE_ECDSA_DISABLE_P192    (BIT(30))
 #define EFUSE_ECDSA_DISABLE_P192_M  (EFUSE_ECDSA_DISABLE_P192_V << EFUSE_ECDSA_DISABLE_P192_S)
 #define EFUSE_ECDSA_DISABLE_P192_V  0x00000001U
 #define EFUSE_ECDSA_DISABLE_P192_S  30
 /** EFUSE_ECC_FORCE_CONST_TIME : RO; bitpos: [31]; default: 0;
- *  Represents whether to force ecc to use const-time calculation mode. \\ 1: Enable.
- *  \\ 0: Disable.
+ *  Represents whether to force ecc to use const-time calculation mode. 1: Enable. 0:
+ *  Disable
  */
 #define EFUSE_ECC_FORCE_CONST_TIME    (BIT(31))
 #define EFUSE_ECC_FORCE_CONST_TIME_M  (EFUSE_ECC_FORCE_CONST_TIME_V << EFUSE_ECC_FORCE_CONST_TIME_S)
@@ -514,25 +511,65 @@ extern "C" {
  *  Represents rd_repeat_data
  */
 #define EFUSE_RD_REPEAT_DATA3_REG (DR_REG_EFUSE0_BASE + 0x3c)
-/** EFUSE_RD_REPEAT_DATA3 : RO; bitpos: [31:0]; default: 0;
- *  Reserved.
+/** EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION : RO; bitpos: [3:0]; default: 0;
+ *  Represents the anti-rollback secure version of the 2nd stage bootloader used by the
+ *  ROM bootloader.
  */
-#define EFUSE_RD_REPEAT_DATA3    0xFFFFFFFFU
-#define EFUSE_RD_REPEAT_DATA3_M  (EFUSE_RD_REPEAT_DATA3_V << EFUSE_RD_REPEAT_DATA3_S)
-#define EFUSE_RD_REPEAT_DATA3_V  0xFFFFFFFFU
-#define EFUSE_RD_REPEAT_DATA3_S  0
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION    0x0000000FU
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_M  (EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_V << EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_S)
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_V  0x0000000FU
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_S  0
+/** EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN : RO; bitpos: [4]; default: 0;
+ *  Represents whether the ani-rollback check for the 2nd stage bootloader is
+ *  enabled.\\1: Enabled\\0: Disabled\\
+ */
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN    (BIT(4))
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN_M  (EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN_V << EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN_S)
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN_V  0x00000001U
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN_S  4
+/** EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM : RO; bitpos: [5]; default: 0;
+ *  Represents whether the ani-rollback SECURE_VERSION will be updated from the ROM
+ *  bootloader.\\1: Enable\\0: Disable\\
+ */
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM    (BIT(5))
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM_M  (EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM_V << EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM_S)
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM_V  0x00000001U
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM_S  5
+/** EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR : RO; bitpos: [17:6]; default: 0;
+ *  Represents the starting flash sector (flash sector size is 0x1000) of the recovery
+ *  bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF
+ *  - this feature is disabled.
+ */
+#define EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR    0x00000FFFU
+#define EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_M  (EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_V << EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_S)
+#define EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_V  0x00000FFFU
+#define EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_S  6
+/** EFUSE_RD_RESERVE_0_146 : RW; bitpos: [31:18]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_146    0x00003FFFU
+#define EFUSE_RD_RESERVE_0_146_M  (EFUSE_RD_RESERVE_0_146_V << EFUSE_RD_RESERVE_0_146_S)
+#define EFUSE_RD_RESERVE_0_146_V  0x00003FFFU
+#define EFUSE_RD_RESERVE_0_146_S  18
 
 /** EFUSE_RD_REPEAT_DATA4_REG register
  *  Represents rd_repeat_data
  */
 #define EFUSE_RD_REPEAT_DATA4_REG (DR_REG_EFUSE0_BASE + 0x40)
-/** EFUSE_RD_REPEAT_DATA4 : RO; bitpos: [31:0]; default: 0;
+/** EFUSE_RD_REPEAT_DATA4 : RO; bitpos: [23:0]; default: 0;
  *  Reserved.
  */
-#define EFUSE_RD_REPEAT_DATA4    0xFFFFFFFFU
+#define EFUSE_RD_REPEAT_DATA4    0x00FFFFFFU
 #define EFUSE_RD_REPEAT_DATA4_M  (EFUSE_RD_REPEAT_DATA4_V << EFUSE_RD_REPEAT_DATA4_S)
-#define EFUSE_RD_REPEAT_DATA4_V  0xFFFFFFFFU
+#define EFUSE_RD_REPEAT_DATA4_V  0x00FFFFFFU
 #define EFUSE_RD_REPEAT_DATA4_S  0
+/** EFUSE_RD_RESERVE_0_184 : RW; bitpos: [31:24]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_184    0x000000FFU
+#define EFUSE_RD_RESERVE_0_184_M  (EFUSE_RD_RESERVE_0_184_V << EFUSE_RD_RESERVE_0_184_S)
+#define EFUSE_RD_RESERVE_0_184_V  0x000000FFU
+#define EFUSE_RD_RESERVE_0_184_S  24
 
 /** EFUSE_RD_MAC_SYS0_REG register
  *  Represents rd_mac_sys
@@ -653,32 +690,74 @@ extern "C" {
 #define EFUSE_PKG_VERSION_M  (EFUSE_PKG_VERSION_V << EFUSE_PKG_VERSION_S)
 #define EFUSE_PKG_VERSION_V  0x00000007U
 #define EFUSE_PKG_VERSION_S  26
-/** EFUSE_RESERVED_1_93 : R; bitpos: [31:29]; default: 0;
- *  reserved
+/** EFUSE_ACTIVE_HP_DBIAS : R; bitpos: [31:29]; default: 0;
+ *  Active HP DBIAS of fixed voltage
  */
-#define EFUSE_RESERVED_1_93    0x00000007U
-#define EFUSE_RESERVED_1_93_M  (EFUSE_RESERVED_1_93_V << EFUSE_RESERVED_1_93_S)
-#define EFUSE_RESERVED_1_93_V  0x00000007U
-#define EFUSE_RESERVED_1_93_S  29
+#define EFUSE_ACTIVE_HP_DBIAS    0x00000007U
+#define EFUSE_ACTIVE_HP_DBIAS_M  (EFUSE_ACTIVE_HP_DBIAS_V << EFUSE_ACTIVE_HP_DBIAS_S)
+#define EFUSE_ACTIVE_HP_DBIAS_V  0x00000007U
+#define EFUSE_ACTIVE_HP_DBIAS_S  29
 
 /** EFUSE_RD_MAC_SYS3_REG register
  *  Represents rd_mac_sys
  */
 #define EFUSE_RD_MAC_SYS3_REG (DR_REG_EFUSE0_BASE + 0x50)
-/** EFUSE_MAC_RESERVED_2 : RO; bitpos: [17:0]; default: 0;
- *  Reserved.
+/** EFUSE_ACTIVE_HP_DBIAS_1 : R; bitpos: [0]; default: 0;
+ *  Active HP DBIAS of fixed voltage
  */
-#define EFUSE_MAC_RESERVED_2    0x0003FFFFU
-#define EFUSE_MAC_RESERVED_2_M  (EFUSE_MAC_RESERVED_2_V << EFUSE_MAC_RESERVED_2_S)
-#define EFUSE_MAC_RESERVED_2_V  0x0003FFFFU
-#define EFUSE_MAC_RESERVED_2_S  0
-/** EFUSE_SYS_DATA_PART0_0 : RO; bitpos: [31:18]; default: 0;
- *  Represents the first 14-bit of zeroth part of system data.
+#define EFUSE_ACTIVE_HP_DBIAS_1    (BIT(0))
+#define EFUSE_ACTIVE_HP_DBIAS_1_M  (EFUSE_ACTIVE_HP_DBIAS_1_V << EFUSE_ACTIVE_HP_DBIAS_1_S)
+#define EFUSE_ACTIVE_HP_DBIAS_1_V  0x00000001U
+#define EFUSE_ACTIVE_HP_DBIAS_1_S  0
+/** EFUSE_ACTIVE_LP_DBIAS : R; bitpos: [4:1]; default: 0;
+ *  Active LP DBIAS of fixed voltage
  */
-#define EFUSE_SYS_DATA_PART0_0    0x00003FFFU
-#define EFUSE_SYS_DATA_PART0_0_M  (EFUSE_SYS_DATA_PART0_0_V << EFUSE_SYS_DATA_PART0_0_S)
-#define EFUSE_SYS_DATA_PART0_0_V  0x00003FFFU
-#define EFUSE_SYS_DATA_PART0_0_S  18
+#define EFUSE_ACTIVE_LP_DBIAS    0x0000000FU
+#define EFUSE_ACTIVE_LP_DBIAS_M  (EFUSE_ACTIVE_LP_DBIAS_V << EFUSE_ACTIVE_LP_DBIAS_S)
+#define EFUSE_ACTIVE_LP_DBIAS_V  0x0000000FU
+#define EFUSE_ACTIVE_LP_DBIAS_S  1
+/** EFUSE_LSLP_HP_DBG : R; bitpos: [6:5]; default: 0;
+ *  LSLP HP DBG of fixed voltage
+ */
+#define EFUSE_LSLP_HP_DBG    0x00000003U
+#define EFUSE_LSLP_HP_DBG_M  (EFUSE_LSLP_HP_DBG_V << EFUSE_LSLP_HP_DBG_S)
+#define EFUSE_LSLP_HP_DBG_V  0x00000003U
+#define EFUSE_LSLP_HP_DBG_S  5
+/** EFUSE_LSLP_HP_DBIAS : R; bitpos: [10:7]; default: 0;
+ *  LSLP HP DBIAS of fixed voltage
+ */
+#define EFUSE_LSLP_HP_DBIAS    0x0000000FU
+#define EFUSE_LSLP_HP_DBIAS_M  (EFUSE_LSLP_HP_DBIAS_V << EFUSE_LSLP_HP_DBIAS_S)
+#define EFUSE_LSLP_HP_DBIAS_V  0x0000000FU
+#define EFUSE_LSLP_HP_DBIAS_S  7
+/** EFUSE_DSLP_LP_DBG : R; bitpos: [14:11]; default: 0;
+ *  DSLP LP DBG of fixed voltage
+ */
+#define EFUSE_DSLP_LP_DBG    0x0000000FU
+#define EFUSE_DSLP_LP_DBG_M  (EFUSE_DSLP_LP_DBG_V << EFUSE_DSLP_LP_DBG_S)
+#define EFUSE_DSLP_LP_DBG_V  0x0000000FU
+#define EFUSE_DSLP_LP_DBG_S  11
+/** EFUSE_DSLP_LP_DBIAS : R; bitpos: [19:15]; default: 0;
+ *  DSLP LP DBIAS of fixed voltage
+ */
+#define EFUSE_DSLP_LP_DBIAS    0x0000001FU
+#define EFUSE_DSLP_LP_DBIAS_M  (EFUSE_DSLP_LP_DBIAS_V << EFUSE_DSLP_LP_DBIAS_S)
+#define EFUSE_DSLP_LP_DBIAS_V  0x0000001FU
+#define EFUSE_DSLP_LP_DBIAS_S  15
+/** EFUSE_LP_HP_DBIAS_VOL_GAP : R; bitpos: [24:20]; default: 0;
+ *  DBIAS gap between LP and HP
+ */
+#define EFUSE_LP_HP_DBIAS_VOL_GAP    0x0000001FU
+#define EFUSE_LP_HP_DBIAS_VOL_GAP_M  (EFUSE_LP_HP_DBIAS_VOL_GAP_V << EFUSE_LP_HP_DBIAS_VOL_GAP_S)
+#define EFUSE_LP_HP_DBIAS_VOL_GAP_V  0x0000001FU
+#define EFUSE_LP_HP_DBIAS_VOL_GAP_S  20
+/** EFUSE_RESERVED_1_121 : R; bitpos: [31:25]; default: 0;
+ *  reserved
+ */
+#define EFUSE_RESERVED_1_121    0x0000007FU
+#define EFUSE_RESERVED_1_121_M  (EFUSE_RESERVED_1_121_V << EFUSE_RESERVED_1_121_S)
+#define EFUSE_RESERVED_1_121_V  0x0000007FU
+#define EFUSE_RESERVED_1_121_S  25
 
 /** EFUSE_RD_MAC_SYS4_REG register
  *  Represents rd_mac_sys
@@ -2000,25 +2079,46 @@ extern "C" {
  *  Represents rd_repeat_data_err
  */
 #define EFUSE_RD_REPEAT_DATA_ERR3_REG (DR_REG_EFUSE0_BASE + 0x188)
-/** EFUSE_RD_REPEAT_DATA_ERR3 : RO; bitpos: [31:0]; default: 0;
- *  Reserved.
+/** EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_ERR : RO; bitpos: [3:0]; default: 0;
+ *  Represents the programming error of EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION
  */
-#define EFUSE_RD_REPEAT_DATA_ERR3    0xFFFFFFFFU
-#define EFUSE_RD_REPEAT_DATA_ERR3_M  (EFUSE_RD_REPEAT_DATA_ERR3_V << EFUSE_RD_REPEAT_DATA_ERR3_S)
-#define EFUSE_RD_REPEAT_DATA_ERR3_V  0xFFFFFFFFU
-#define EFUSE_RD_REPEAT_DATA_ERR3_S  0
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_ERR    0x0000000FU
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_ERR_M  (EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_ERR_V << EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_ERR_S)
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_ERR_V  0x0000000FU
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_ERR_S  0
+/** EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN_ERR : RO; bitpos: [4]; default: 0;
+ *  Represents the programming error of EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN
+ */
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN_ERR    (BIT(4))
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN_ERR_M  (EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN_ERR_V << EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN_ERR_S)
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN_ERR_V  0x00000001U
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN_ERR_S  4
+/** EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM_ERR : RO; bitpos: [5]; default: 0;
+ *  Represents the programming error of EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM
+ */
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM_ERR    (BIT(5))
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM_ERR_M  (EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM_ERR_V << EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM_ERR_S)
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM_ERR_V  0x00000001U
+#define EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM_ERR_S  5
+/** EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_ERR : RO; bitpos: [17:6]; default: 0;
+ *  Represents the programming error of EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR
+ */
+#define EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_ERR    0x00000FFFU
+#define EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_ERR_M  (EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_ERR_V << EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_ERR_S)
+#define EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_ERR_V  0x00000FFFU
+#define EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_ERR_S  6
 
 /** EFUSE_RD_REPEAT_DATA_ERR4_REG register
  *  Represents rd_repeat_data_err
  */
 #define EFUSE_RD_REPEAT_DATA_ERR4_REG (DR_REG_EFUSE0_BASE + 0x18c)
-/** EFUSE_RD_REPEAT_DATA_ERR4 : RO; bitpos: [31:0]; default: 0;
- *  Reserved.
+/** EFUSE_RD_REPEAT_DATA4_ERR : RO; bitpos: [23:0]; default: 0;
+ *  Represents the programming error of EFUSE_RD_REPEAT_DATA4
  */
-#define EFUSE_RD_REPEAT_DATA_ERR4    0xFFFFFFFFU
-#define EFUSE_RD_REPEAT_DATA_ERR4_M  (EFUSE_RD_REPEAT_DATA_ERR4_V << EFUSE_RD_REPEAT_DATA_ERR4_S)
-#define EFUSE_RD_REPEAT_DATA_ERR4_V  0xFFFFFFFFU
-#define EFUSE_RD_REPEAT_DATA_ERR4_S  0
+#define EFUSE_RD_REPEAT_DATA4_ERR    0x00FFFFFFU
+#define EFUSE_RD_REPEAT_DATA4_ERR_M  (EFUSE_RD_REPEAT_DATA4_ERR_V << EFUSE_RD_REPEAT_DATA4_ERR_S)
+#define EFUSE_RD_REPEAT_DATA4_ERR_V  0x00FFFFFFU
+#define EFUSE_RD_REPEAT_DATA4_ERR_S  0
 
 /** EFUSE_RD_RS_DATA_ERR0_REG register
  *  Represents rd_rs_data_err
@@ -2204,7 +2304,7 @@ extern "C" {
  *  eFuse version register.
  */
 #define EFUSE_DATE_REG (DR_REG_EFUSE0_BASE + 0x198)
-/** EFUSE_DATE : R/W; bitpos: [27:0]; default: 37753088;
+/** EFUSE_DATE : R/W; bitpos: [27:0]; default: 38801520;
  *  Stores eFuse version.
  */
 #define EFUSE_DATE    0x0FFFFFFFU

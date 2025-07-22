@@ -156,6 +156,9 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
     if (init_config->ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_acquire();
     } else {
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)(unit->hal.clk_src), true), err, TAG, "clock source enable failed");
+#endif
 #if SOC_LIGHT_SLEEP_SUPPORTED || SOC_DEEP_SLEEP_SUPPORTED
         esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, true);
 #endif
@@ -189,9 +192,6 @@ esp_err_t adc_oneshot_config_channel(adc_oneshot_unit_handle_t handle, adc_chann
     portENTER_CRITICAL(&rtc_spinlock);
     adc_oneshot_hal_channel_config(hal, &cfg, channel);
     if (handle->ulp_mode) {
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-        esp_clk_tree_enable_src((soc_module_clk_t)(hal->clk_src), true);
-#endif
         adc_oneshot_hal_setup(hal, channel);
     }
     portEXIT_CRITICAL(&rtc_spinlock);
@@ -210,7 +210,7 @@ esp_err_t adc_oneshot_read(adc_oneshot_unit_handle_t handle, adc_channel_t chan,
     portENTER_CRITICAL(&rtc_spinlock);
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-    esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal.clk_src), true);
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal.clk_src), true));
 #endif
     ANALOG_CLOCK_ENABLE();
     adc_oneshot_hal_setup(&(handle->hal), chan);
@@ -222,6 +222,9 @@ esp_err_t adc_oneshot_read(adc_oneshot_unit_handle_t handle, adc_channel_t chan,
     bool valid = false;
     valid = adc_oneshot_hal_convert(&(handle->hal), out_raw);
     ANALOG_CLOCK_DISABLE();
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal.clk_src), false));
+#endif
 
     portEXIT_CRITICAL(&rtc_spinlock);
     adc_lock_release(handle->unit_id);
@@ -238,7 +241,7 @@ esp_err_t adc_oneshot_read_isr(adc_oneshot_unit_handle_t handle, adc_channel_t c
     portENTER_CRITICAL_SAFE(&rtc_spinlock);
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-    esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal.clk_src), true);
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal.clk_src), true));
 #endif
     ANALOG_CLOCK_ENABLE();
     adc_oneshot_hal_setup(&(handle->hal), chan);
@@ -249,6 +252,9 @@ esp_err_t adc_oneshot_read_isr(adc_oneshot_unit_handle_t handle, adc_channel_t c
 #endif
     adc_oneshot_hal_convert(&(handle->hal), out_raw);
     ANALOG_CLOCK_DISABLE();
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal.clk_src), false));
+#endif
 
     portEXIT_CRITICAL_SAFE(&rtc_spinlock);
 
@@ -271,7 +277,6 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
     _lock_release(&s_ctx.mutex);
 
     ESP_LOGD(TAG, "adc unit%"PRId32" is deleted", handle->unit_id);
-    free(handle);
 
     if (ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_release();
@@ -279,7 +284,9 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
 #if SOC_LIGHT_SLEEP_SUPPORTED || SOC_DEEP_SLEEP_SUPPORTED
         esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, false);
 #endif
+        ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal.clk_src), false));
     }
+    free(handle);
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     //To free the APB_SARADC periph if needed

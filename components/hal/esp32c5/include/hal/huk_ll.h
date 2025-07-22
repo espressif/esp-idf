@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,8 @@
 #include "hal/huk_types.h"
 #include "soc/huk_reg.h"
 #include "soc/soc_caps.h"
+#include "soc/lp_aon_reg.h"
+#include "esp_rom_sys.h"    // HUK memory recharge workaround
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,6 +103,20 @@ static inline esp_huk_state_t huk_ll_get_state(void)
 static inline esp_huk_gen_status_t huk_ll_get_gen_status(void)
 {
     return (esp_huk_gen_status_t) REG_GET_FIELD(HUK_STATUS_REG, HUK_STATUS);
+}
+
+
+static inline void __attribute__((always_inline)) huk_ll_recharge_huk_memory(void)
+{
+    REG_CLR_BIT(LP_AON_MEM_CTRL_REG, LP_AON_HUK_MEM_FORCE_PD);
+
+    REG_CLR_BIT(LP_AON_PUF_MEM_SW_REG, LP_AON_PUF_MEM_SW);
+    REG_SET_BIT(LP_AON_PUF_MEM_DISCHARGE_REG, LP_AON_PUF_MEM_DISCHARGE);
+    esp_rom_delay_us(100000);
+
+    REG_CLR_BIT(LP_AON_PUF_MEM_DISCHARGE_REG, LP_AON_PUF_MEM_DISCHARGE);
+    REG_SET_BIT(LP_AON_PUF_MEM_SW_REG, LP_AON_PUF_MEM_SW);
+    esp_rom_delay_us(100000);
 }
 
 /**

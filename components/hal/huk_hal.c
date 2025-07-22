@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "hal/log.h"
 #include "rom/km.h"
 #include "esp_err.h"
+#include "soc/soc_caps.h"
 
 esp_huk_state_t huk_hal_get_state(void)
 {
@@ -28,11 +29,11 @@ static void inline huk_hal_wait_for_state(esp_huk_state_t state)
 
 esp_err_t huk_hal_configure(const esp_huk_mode_t huk_mode, uint8_t *huk_info_buf)
 {
-    if (esp_rom_km_huk_conf(huk_mode, huk_info_buf) == ETS_OK) {
-        return ESP_OK;
-    } else {
+    if (esp_rom_km_huk_conf(huk_mode, huk_info_buf) != ETS_OK) {
         return ESP_FAIL;
     }
+
+    return ESP_OK;
 }
 
 uint8_t huk_hal_get_risk_level(void)
@@ -44,3 +45,10 @@ uint32_t huk_hal_get_date_info(void)
 {
     return huk_ll_get_date_info();
 }
+
+#if SOC_HUK_MEM_NEEDS_RECHARGE
+void huk_hal_recharge_huk_memory(void)
+{
+    huk_ll_recharge_huk_memory();
+}
+#endif

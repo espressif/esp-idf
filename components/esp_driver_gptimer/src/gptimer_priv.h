@@ -28,6 +28,7 @@
 #include "hal/timer_hal.h"
 #include "hal/timer_ll.h"
 #include "clk_ctrl_os.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_private/periph_ctrl.h"
 

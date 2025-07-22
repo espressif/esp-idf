@@ -328,7 +328,7 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     if (config->clk_src) {
         clk_src = config->clk_src;
     }
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true));
     GPTIMER_CLOCK_SRC_ATOMIC() {
         // although `clk_src` is of `timer_src_clk_t` type, but it's binary compatible with `gptimer_clock_source_t`,
         // as the underlying enum entries come from the same `soc_module_clk_t`
@@ -364,6 +364,7 @@ esp_err_t timer_deinit(timer_group_t group_num, timer_idx_t timer_num)
     GPTIMER_CLOCK_SRC_ATOMIC() {
         timer_ll_enable_clock(group_num, hal->timer_id, false);
     }
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)p_timer_obj[group_num][timer_num]->clk_src, false));
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
     timer_ll_enable_intr(hal->dev, TIMER_LL_EVENT_ALARM(timer_num), false);
     timer_ll_clear_intr_status(hal->dev, TIMER_LL_EVENT_ALARM(timer_num));

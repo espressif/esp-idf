@@ -10,7 +10,7 @@
 
 #include "esp_crypto_lock.h"
 #include "esp_efuse_chip.h"
-#include "esp_private/esp_crypto_lock_internal.h"
+#include "esp_crypto_periph_clk.h"
 #include "esp_random.h"
 #include "esp_err.h"
 #include "esp_efuse.h"
@@ -35,41 +35,20 @@ __attribute__((unused)) static const char * TAG = "crypto_test";
 
 static void ecdsa_enable_and_reset(void)
 {
-    ECDSA_RCC_ATOMIC() {
-        ecdsa_ll_enable_bus_clock(true);
-        ecdsa_ll_reset_register();
-    }
-
-    ECC_RCC_ATOMIC() {
-        ecc_ll_enable_bus_clock(true);
-        ecc_ll_power_up();
-        ecc_ll_reset_register();
-    }
-
+    esp_crypto_ecdsa_enable_periph_clk(true);
+    esp_crypto_ecc_enable_periph_clk(true);
 #ifdef SOC_ECDSA_USES_MPI
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(true);
-        mpi_ll_reset_register();
-    }
+    esp_crypto_mpi_enable_periph_clk(true);
 #endif
 }
 
 static void ecdsa_disable(void)
 {
 #ifdef SOC_ECDSA_USES_MPI
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(false);
-    }
+    esp_crypto_mpi_enable_periph_clk(false);
 #endif
-
-    ECC_RCC_ATOMIC() {
-        ecc_ll_enable_bus_clock(false);
-        ecc_ll_power_down();
-    }
-
-    ECDSA_RCC_ATOMIC() {
-        ecdsa_ll_enable_bus_clock(false);
-    }
+    esp_crypto_ecc_enable_periph_clk(false);
+    esp_crypto_ecdsa_enable_periph_clk(false);
 }
 
 static void ecc_be_to_le(const uint8_t* be_point, uint8_t *le_point, uint8_t len)

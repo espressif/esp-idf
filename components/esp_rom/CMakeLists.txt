@@ -67,10 +67,6 @@ if(CONFIG_ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG OR CONFIG_ESP_ROM_HAS_CACHE_WRITEBAC
     list(APPEND sources "patches/esp_rom_cache_esp32s2_esp32s3.c")
 endif()
 
-if(CONFIG_ESP_ROM_CACHE_WB_INVLD_LOW_RANGE)
-    list(APPEND sources "patches/esp_rom_cache_esp32c61.c")
-endif()
-
 if(CONFIG_ESP_ROM_HAS_CACHE_WRITEBACK_BUG)
     list(APPEND sources "patches/esp_rom_cache_writeback_esp32s3.S")
 endif()

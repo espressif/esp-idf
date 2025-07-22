@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -327,6 +327,25 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_reset_register(void)
 FORCE_INLINE_ATTR bool usb_serial_jtag_ll_module_is_enabled(void)
 {
     return (PCR.usb_device_conf.usb_device_clk_en && !PCR.usb_device_conf.usb_device_rst_en);
+}
+
+/* ---------------------------- USB MEM Control  ---------------------------- */
+/**
+ * @brief Power down the power USJ mem.
+ * @param clk_en True if power down the USJ mem.
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_set_mem_pd(bool pd)
+{
+    USB_SERIAL_JTAG.mem_conf.usb_mem_pd = pd;
+}
+
+/**
+ * @brief Enable the mem clock for USJ module
+ * @param clk_en True if enable the clock of USJ module mem.
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_mem_clock(bool clk_en)
+{
+    USB_SERIAL_JTAG.mem_conf.usb_mem_clk_en = clk_en;
 }
 
 #ifdef __cplusplus

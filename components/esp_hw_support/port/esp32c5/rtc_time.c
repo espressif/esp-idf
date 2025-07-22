@@ -64,7 +64,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
             rtc_dig_clk8m_enable();
         }
     }
-
+    clk_ll_enable_timergroup_rtc_calibration_clock(true);
     /* There may be another calibration process already running during we call this function,
      * so we should wait the last process is done.
      */
@@ -123,6 +123,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     }
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
 
+    clk_ll_enable_timergroup_rtc_calibration_clock(false);
     /* if dig_32k_xtal was originally off and enabled due to calibration, then set back to off state */
     if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
         clk_ll_xtal32k_digi_disable();

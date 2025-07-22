@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,7 @@ typedef union {
         uint32_t mem_slv_st:4;
         uint32_t reserved_8:10;
         /** mem_usr : HRO; bitpos: [18]; default: 0;
-         *  SPI0 USR_CMD start bit, only used when spi_mem_c_AXI_REQ_EN is cleared.  An operation
+         *  SPI0 USR_CMD start bit, only used when SPI_MEM_AXI_REQ_EN is cleared.  An operation
          *  will be triggered when the bit is set. The bit will be cleared once the operation
          *  done.1: enable 0: disable.
          */
@@ -47,8 +47,8 @@ typedef union {
     struct {
         /** mem_axi_err_addr : R/SS/WTC; bitpos: [28:0]; default: 0;
          *  This bits show the first AXI write/read invalid error or AXI write flash error
-         *  address. It is cleared by when spi_mem_c_AXI_WADDR_ERR_INT_CLR,
-         *  spi_mem_c_AXI_WR_FLASH_ERR_IN_CLR or spi_mem_c_AXI_RADDR_ERR_IN_CLR bit is set.
+         *  address. It is cleared by when SPI_MEM_AXI_WADDR_ERR_INT_CLR,
+         *  SPI_MEM_AXI_WR_FLASH_ERR_IN_CLR or SPI_MEM_AXI_RADDR_ERR_IN_CLR bit is set.
          */
         uint32_t mem_axi_err_addr:29;
         uint32_t reserved_29:3;
@@ -108,8 +108,8 @@ typedef union {
         uint32_t mem_fcmd_oct:1;
         uint32_t reserved_10:3;
         /** mem_fastrd_mode : R/W; bitpos: [13]; default: 1;
-         *  This bit enable the bits: spi_mem_c_FREAD_QIO, spi_mem_c_FREAD_DIO, spi_mem_c_FREAD_QOUT
-         *  and spi_mem_c_FREAD_DOUT. 1: enable 0: disable.
+         *  This bit enable the bits: SPI_MEM_FREAD_QIO, SPI_MEM_FREAD_DIO, SPI_MEM_FREAD_QOUT
+         *  and SPI_MEM_FREAD_DOUT. 1: enable 0: disable.
          */
         uint32_t mem_fastrd_mode:1;
         /** mem_fread_dual : R/W; bitpos: [14]; default: 0;
@@ -170,25 +170,20 @@ typedef union {
          *  SPI clock is always on.
          */
         uint32_t mem_clk_mode:2;
-        uint32_t reserved_2:19;
-        /** ar_size0_1_support_en : R/W; bitpos: [21]; default: 1;
+        uint32_t reserved_2:20;
+        /** ar_size0_1_support_en : R/W; bitpos: [22]; default: 1;
          *  1: MSPI supports ARSIZE 0~3. When ARSIZE =0~2, MSPI read address is 4*n and reply
          *  the real AXI read data back. 0: When ARSIZE 0~1, MSPI reply SLV_ERR.
          */
         uint32_t ar_size0_1_support_en:1;
-        /** aw_size0_1_support_en : R/W; bitpos: [22]; default: 1;
+        /** aw_size0_1_support_en : R/W; bitpos: [23]; default: 1;
          *  1: MSPI supports AWSIZE 0~3. 0: When AWSIZE 0~1, MSPI reply SLV_ERR.
          */
         uint32_t aw_size0_1_support_en:1;
-        /** axi_rdata_back_fast : R/W; bitpos: [23]; default: 1;
-         *  1: Reply AXI read data to AXI bus when one AXI read beat data is available. 0:
-         *  Reply AXI read data to AXI bus when all the read data is available.
-         */
-        uint32_t axi_rdata_back_fast:1;
         /** mem_rresp_ecc_err_en : R/W; bitpos: [24]; default: 0;
          *  1: RRESP is SLV_ERR when there is a ECC error in AXI read data. 0: RRESP is OKAY
          *  when there is a ECC error in AXI read data. The ECC error information is recorded
-         *  in spi_mem_c_ECC_ERR_ADDR_REG.
+         *  in SPI_MEM_ECC_ERR_ADDR_REG.
          */
         uint32_t mem_rresp_ecc_err_en:1;
         /** mem_ar_splice_en : R/W; bitpos: [25]; default: 0;
@@ -200,9 +195,9 @@ typedef union {
          */
         uint32_t mem_aw_splice_en:1;
         /** mem_ram0_en : HRO; bitpos: [27]; default: 1;
-         *  When spi_mem_c_DUAL_RAM_EN is 0 and spi_mem_c_RAM0_EN is 1, only EXT_RAM0 will be
-         *  accessed. When spi_mem_c_DUAL_RAM_EN is 0 and spi_mem_c_RAM0_EN is 0, only EXT_RAM1
-         *  will be accessed. When spi_mem_c_DUAL_RAM_EN is 1,  EXT_RAM0 and EXT_RAM1 will be
+         *  When SPI_MEM_DUAL_RAM_EN is 0 and SPI_MEM_RAM0_EN is 1, only EXT_RAM0 will be
+         *  accessed. When SPI_MEM_DUAL_RAM_EN is 0 and SPI_MEM_RAM0_EN is 0, only EXT_RAM1
+         *  will be accessed. When SPI_MEM_DUAL_RAM_EN is 1,  EXT_RAM0 and EXT_RAM1 will be
          *  accessed at the same time.
          */
         uint32_t mem_ram0_en:1;
@@ -238,16 +233,16 @@ typedef union {
     struct {
         /** mem_cs_setup_time : R/W; bitpos: [4:0]; default: 1;
          *  (cycles-1) of prepare phase by SPI Bus clock, this bits are combined with
-         *  spi_mem_c_CS_SETUP bit.
+         *  SPI_MEM_CS_SETUP bit.
          */
         uint32_t mem_cs_setup_time:5;
         /** mem_cs_hold_time : R/W; bitpos: [9:5]; default: 1;
          *  SPI CS signal is delayed to inactive by SPI bus clock, this bits are combined with
-         *  spi_mem_c_CS_HOLD bit.
+         *  SPI_MEM_CS_HOLD bit.
          */
         uint32_t mem_cs_hold_time:5;
         /** mem_ecc_cs_hold_time : R/W; bitpos: [12:10]; default: 3;
-         *  spi_mem_c_CS_HOLD_TIME + spi_mem_c_ECC_CS_HOLD_TIME is the SPI0 CS hold cycle in ECC
+         *  SPI_MEM_CS_HOLD_TIME + SPI_MEM_ECC_CS_HOLD_TIME is the SPI0 CS hold cycle in ECC
          *  mode when accessed flash.
          */
         uint32_t mem_ecc_cs_hold_time:3;
@@ -270,7 +265,7 @@ typedef union {
         uint32_t mem_split_trans_en:1;
         /** mem_cs_hold_delay : R/W; bitpos: [30:25]; default: 0;
          *  These bits are used to set the minimum CS high time tSHSL between SPI burst
-         *  transfer when accesses to flash. tSHSL is (spi_mem_c_CS_HOLD_DELAY[5:0] + 1) MSPI
+         *  transfer when accesses to flash. tSHSL is (SPI_MEM_CS_HOLD_DELAY[5:0] + 1) MSPI
          *  core clock cycles.
          */
         uint32_t mem_cs_hold_delay:6;
@@ -424,7 +419,7 @@ typedef union {
         uint32_t fmem_usr_ddr_dqs_thd:7;
         /** fmem_ddr_dqs_loop : R/W; bitpos: [21]; default: 0;
          *  1: Do not need the input of SPI_DQS signal, SPI0 starts to receive data when
-         *  spi0_slv_st is in spi_mem_c_DIN state. It is used when there is no SPI_DQS signal or
+         *  spi0_slv_st is in SPI_MEM_DIN state. It is used when there is no SPI_DQS signal or
          *  SPI_DQS signal is not stable. 0: SPI0 starts to store data at the positive and
          *  negative edge of SPI_DQS.
          */
@@ -471,16 +466,16 @@ typedef union {
 typedef union {
     struct {
         /** mem_clkcnt_l : R/W; bitpos: [7:0]; default: 3;
-         *  In the master mode it must be equal to spi_mem_c_clkcnt_N.
+         *  In the master mode it must be equal to SPI_MEM_CLKCNT_N.
          */
         uint32_t mem_clkcnt_l:8;
         /** mem_clkcnt_h : R/W; bitpos: [15:8]; default: 1;
-         *  In the master mode it must be floor((spi_mem_c_clkcnt_N+1)/2-1).
+         *  In the master mode it must be floor((SPI_MEM_CLKCNT_N+1)/2-1).
          */
         uint32_t mem_clkcnt_h:8;
         /** mem_clkcnt_n : R/W; bitpos: [23:16]; default: 3;
          *  In the master mode it is the divider of spi_mem_c_clk. So spi_mem_c_clk frequency is
-         *  system/(spi_mem_c_clkcnt_N+1)
+         *  system/(SPI_MEM_CLKCNT_N+1)
          */
         uint32_t mem_clkcnt_n:8;
         uint32_t reserved_24:7;
@@ -499,18 +494,18 @@ typedef union {
 typedef union {
     struct {
         /** mem_sclkcnt_l : R/W; bitpos: [7:0]; default: 3;
-         *  For SPI0 external RAM  interface, it must be equal to spi_mem_c_clkcnt_N.
+         *  For SPI0 external RAM  interface, it must be equal to SPI_MEM_SCLKCNT_N.
          *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sclkcnt_l:8;
         /** mem_sclkcnt_h : R/W; bitpos: [15:8]; default: 1;
-         *  For SPI0 external RAM  interface, it must be floor((spi_mem_c_clkcnt_N+1)/2-1).
+         *  For SPI0 external RAM  interface, it must be floor((SPI_MEM_SCLKCNT_N+1)/2-1).
          *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sclkcnt_h:8;
         /** mem_sclkcnt_n : R/W; bitpos: [23:16]; default: 3;
          *  For SPI0 external RAM  interface, it is the divider of spi_mem_c_clk. So spi_mem_c_clk
-         *  frequency is system/(spi_mem_c_clkcnt_N+1)
+         *  frequency is system/(SPI_MEM_SCLKCNT_N+1)
          *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sclkcnt_n:8;
@@ -534,7 +529,11 @@ typedef union {
          *  Register clock gate enable signal. 1: Enable. 0: Disable.
          */
         uint32_t clk_en:1;
-        uint32_t reserved_1:31;
+        /** mspi_clk_force_on : HRO; bitpos: [1]; default: 1;
+         *  MSPI lowpower function clock gate force on signal. 1: Enable. 0: Disable.
+         */
+        uint32_t mspi_clk_force_on:1;
+        uint32_t reserved_2:30;
     };
     uint32_t val;
 } spi_mem_c_clock_gate_reg_t;
@@ -557,7 +556,7 @@ typedef union {
         uint32_t mem_cs_setup:1;
         uint32_t reserved_8:1;
         /** mem_ck_out_edge : R/W; bitpos: [9]; default: 0;
-         *  The bit combined with spi_mem_c_CK_IDLE_EDGE bit to control SPI clock mode 0~3.
+         *  The bit combined with SPI_MEM_CK_IDLE_EDGE bit to control SPI clock mode 0~3.
          */
         uint32_t mem_ck_out_edge:1;
         uint32_t reserved_10:16;
@@ -933,7 +932,7 @@ typedef union {
         uint32_t smem_usr_ddr_dqs_thd:7;
         /** smem_ddr_dqs_loop : R/W; bitpos: [21]; default: 0;
          *  1: Do not need the input of SPI_DQS signal, SPI0 starts to receive data when
-         *  spi0_slv_st is in spi_mem_c_DIN state. It is used when there is no SPI_DQS signal or
+         *  spi0_slv_st is in SPI_MEM_DIN state. It is used when there is no SPI_DQS signal or
          *  SPI_DQS signal is not stable. 0: SPI0 starts to store data at the positive and
          *  negative edge of SPI_DQS.
          */
@@ -998,7 +997,7 @@ typedef union {
          */
         uint32_t smem_cs_hold_time:5;
         /** smem_ecc_cs_hold_time : R/W; bitpos: [14:12]; default: 3;
-         *  spi_smem_c_CS_HOLD_TIME + spi_smem_c_ECC_CS_HOLD_TIME is the SPI0 and SPI1 CS hold
+         *  SPI_SMEM_CS_HOLD_TIME + SPI_SMEM_ECC_CS_HOLD_TIME is the SPI0 and SPI1 CS hold
          *  cycles in ECC mode when accessed external RAM.
          */
         uint32_t smem_ecc_cs_hold_time:3;
@@ -1015,7 +1014,7 @@ typedef union {
         uint32_t reserved_17:8;
         /** smem_cs_hold_delay : R/W; bitpos: [30:25]; default: 0;
          *  These bits are used to set the minimum CS high time tSHSL between SPI burst
-         *  transfer when accesses to external RAM. tSHSL is (spi_smem_c_CS_HOLD_DELAY[5:0] + 1)
+         *  transfer when accesses to external RAM. tSHSL is (SPI_SMEM_CS_HOLD_DELAY[5:0] + 1)
          *  MSPI core clock cycles.
          */
         uint32_t smem_cs_hold_delay:6;
@@ -1037,19 +1036,19 @@ typedef union {
 typedef union {
     struct {
         uint32_t reserved_0:7;
-        /** mem_lock_delay_time : R/W; bitpos: [11:7]; default: 4;
+        /** mem_lock_delay_time : R/W; bitpos: [18:7]; default: 4;
          *  The lock delay time of SPI0/1 arbiter by spi0_slv_st, after PER is sent by SPI1.
          */
-        uint32_t mem_lock_delay_time:5;
-        /** mem_flash_lock_en : R/W; bitpos: [12]; default: 0;
+        uint32_t mem_lock_delay_time:12;
+        /** mem_flash_lock_en : R/W; bitpos: [19]; default: 0;
          *  The lock enable for FLASH to lock spi0 trans req.1: Enable. 0: Disable.
          */
         uint32_t mem_flash_lock_en:1;
-        /** mem_sram_lock_en : R/W; bitpos: [13]; default: 0;
+        /** mem_sram_lock_en : R/W; bitpos: [20]; default: 0;
          *  The lock enable for external RAM to lock spi0 trans req.1: Enable. 0: Disable.
          */
         uint32_t mem_sram_lock_en:1;
-        uint32_t reserved_14:18;
+        uint32_t reserved_21:11;
     };
     uint32_t val;
 } spi_mem_c_fsm_reg_t;
@@ -1063,48 +1062,48 @@ typedef union {
     struct {
         uint32_t reserved_0:3;
         /** mem_slv_st_end_int_ena : R/W; bitpos: [3]; default: 0;
-         *  The enable bit for spi_mem_c_SLV_ST_END_INT interrupt.
+         *  The enable bit for SPI_MEM_SLV_ST_END_INT interrupt.
          */
         uint32_t mem_slv_st_end_int_ena:1;
         /** mem_mst_st_end_int_ena : R/W; bitpos: [4]; default: 0;
-         *  The enable bit for spi_mem_c_MST_ST_END_INT interrupt.
+         *  The enable bit for SPI_MEM_MST_ST_END_INT interrupt.
          */
         uint32_t mem_mst_st_end_int_ena:1;
         /** mem_ecc_err_int_ena : R/W; bitpos: [5]; default: 0;
-         *  The enable bit for spi_mem_c_ECC_ERR_INT interrupt.
+         *  The enable bit for SPI_MEM_ECC_ERR_INT interrupt.
          */
         uint32_t mem_ecc_err_int_ena:1;
         /** mem_pms_reject_int_ena : R/W; bitpos: [6]; default: 0;
-         *  The enable bit for spi_mem_c_PMS_REJECT_INT interrupt.
+         *  The enable bit for SPI_MEM_PMS_REJECT_INT interrupt.
          */
         uint32_t mem_pms_reject_int_ena:1;
         /** mem_axi_raddr_err_int_ena : R/W; bitpos: [7]; default: 0;
-         *  The enable bit for spi_mem_c_AXI_RADDR_ERR_INT interrupt.
+         *  The enable bit for SPI_MEM_AXI_RADDR_ERR_INT interrupt.
          */
         uint32_t mem_axi_raddr_err_int_ena:1;
         /** mem_axi_wr_flash_err_int_ena : R/W; bitpos: [8]; default: 0;
-         *  The enable bit for spi_mem_c_AXI_WR_FALSH_ERR_INT interrupt.
+         *  The enable bit for SPI_MEM_AXI_WR_FALSH_ERR_INT interrupt.
          */
         uint32_t mem_axi_wr_flash_err_int_ena:1;
         /** mem_axi_waddr_err_int__ena : R/W; bitpos: [9]; default: 0;
-         *  The enable bit for spi_mem_c_AXI_WADDR_ERR_INT interrupt.
+         *  The enable bit for SPI_MEM_AXI_WADDR_ERR_INT interrupt.
          */
         uint32_t mem_axi_waddr_err_int__ena:1;
         uint32_t reserved_10:18;
         /** mem_dqs0_afifo_ovf_int_ena : R/W; bitpos: [28]; default: 0;
-         *  The enable bit for spi_mem_c_DQS0_AFIFO_OVF_INT interrupt.
+         *  The enable bit for SPI_MEM_DQS0_AFIFO_OVF_INT interrupt.
          */
         uint32_t mem_dqs0_afifo_ovf_int_ena:1;
         /** mem_dqs1_afifo_ovf_int_ena : R/W; bitpos: [29]; default: 0;
-         *  The enable bit for spi_mem_c_DQS1_AFIFO_OVF_INT interrupt.
+         *  The enable bit for SPI_MEM_DQS1_AFIFO_OVF_INT interrupt.
          */
         uint32_t mem_dqs1_afifo_ovf_int_ena:1;
         /** mem_bus_fifo1_udf_int_ena : R/W; bitpos: [30]; default: 0;
-         *  The enable bit for spi_mem_c_BUS_FIFO1_UDF_INT interrupt.
+         *  The enable bit for SPI_MEM_BUS_FIFO1_UDF_INT interrupt.
          */
         uint32_t mem_bus_fifo1_udf_int_ena:1;
         /** mem_bus_fifo0_udf_int_ena : R/W; bitpos: [31]; default: 0;
-         *  The enable bit for spi_mem_c_BUS_FIFO0_UDF_INT interrupt.
+         *  The enable bit for SPI_MEM_BUS_FIFO0_UDF_INT interrupt.
          */
         uint32_t mem_bus_fifo0_udf_int_ena:1;
     };
@@ -1118,48 +1117,48 @@ typedef union {
     struct {
         uint32_t reserved_0:3;
         /** mem_slv_st_end_int_clr : WT; bitpos: [3]; default: 0;
-         *  The clear bit for spi_mem_c_SLV_ST_END_INT interrupt.
+         *  The clear bit for SPI_MEM_SLV_ST_END_INT interrupt.
          */
         uint32_t mem_slv_st_end_int_clr:1;
         /** mem_mst_st_end_int_clr : WT; bitpos: [4]; default: 0;
-         *  The clear bit for spi_mem_c_MST_ST_END_INT interrupt.
+         *  The clear bit for SPI_MEM_MST_ST_END_INT interrupt.
          */
         uint32_t mem_mst_st_end_int_clr:1;
         /** mem_ecc_err_int_clr : WT; bitpos: [5]; default: 0;
-         *  The clear bit for spi_mem_c_ECC_ERR_INT interrupt.
+         *  The clear bit for SPI_MEM_ECC_ERR_INT interrupt.
          */
         uint32_t mem_ecc_err_int_clr:1;
         /** mem_pms_reject_int_clr : WT; bitpos: [6]; default: 0;
-         *  The clear bit for spi_mem_c_PMS_REJECT_INT interrupt.
+         *  The clear bit for SPI_MEM_PMS_REJECT_INT interrupt.
          */
         uint32_t mem_pms_reject_int_clr:1;
         /** mem_axi_raddr_err_int_clr : WT; bitpos: [7]; default: 0;
-         *  The clear bit for spi_mem_c_AXI_RADDR_ERR_INT interrupt.
+         *  The clear bit for SPI_MEM_AXI_RADDR_ERR_INT interrupt.
          */
         uint32_t mem_axi_raddr_err_int_clr:1;
         /** mem_axi_wr_flash_err_int_clr : WT; bitpos: [8]; default: 0;
-         *  The clear bit for spi_mem_c_AXI_WR_FALSH_ERR_INT interrupt.
+         *  The clear bit for SPI_MEM_AXI_WR_FALSH_ERR_INT interrupt.
          */
         uint32_t mem_axi_wr_flash_err_int_clr:1;
         /** mem_axi_waddr_err_int_clr : WT; bitpos: [9]; default: 0;
-         *  The clear bit for spi_mem_c_AXI_WADDR_ERR_INT interrupt.
+         *  The clear bit for SPI_MEM_AXI_WADDR_ERR_INT interrupt.
          */
         uint32_t mem_axi_waddr_err_int_clr:1;
         uint32_t reserved_10:18;
         /** mem_dqs0_afifo_ovf_int_clr : WT; bitpos: [28]; default: 0;
-         *  The clear bit for spi_mem_c_DQS0_AFIFO_OVF_INT interrupt.
+         *  The clear bit for SPI_MEM_DQS0_AFIFO_OVF_INT interrupt.
          */
         uint32_t mem_dqs0_afifo_ovf_int_clr:1;
         /** mem_dqs1_afifo_ovf_int_clr : WT; bitpos: [29]; default: 0;
-         *  The clear bit for spi_mem_c_DQS1_AFIFO_OVF_INT interrupt.
+         *  The clear bit for SPI_MEM_DQS1_AFIFO_OVF_INT interrupt.
          */
         uint32_t mem_dqs1_afifo_ovf_int_clr:1;
         /** mem_bus_fifo1_udf_int_clr : WT; bitpos: [30]; default: 0;
-         *  The clear bit for spi_mem_c_BUS_FIFO1_UDF_INT interrupt.
+         *  The clear bit for SPI_MEM_BUS_FIFO1_UDF_INT interrupt.
          */
         uint32_t mem_bus_fifo1_udf_int_clr:1;
         /** mem_bus_fifo0_udf_int_clr : WT; bitpos: [31]; default: 0;
-         *  The clear bit for spi_mem_c_BUS_FIFO0_UDF_INT interrupt.
+         *  The clear bit for SPI_MEM_BUS_FIFO0_UDF_INT interrupt.
          */
         uint32_t mem_bus_fifo0_udf_int_clr:1;
     };
@@ -1173,67 +1172,67 @@ typedef union {
     struct {
         uint32_t reserved_0:3;
         /** mem_slv_st_end_int_raw : R/WTC/SS; bitpos: [3]; default: 0;
-         *  The raw bit for spi_mem_c_SLV_ST_END_INT interrupt. 1: Triggered when spi0_slv_st is
+         *  The raw bit for SPI_MEM_SLV_ST_END_INT interrupt. 1: Triggered when spi0_slv_st is
          *  changed from non idle state to idle state. It means that SPI_CS raises high. 0:
          *  Others
          */
         uint32_t mem_slv_st_end_int_raw:1;
         /** mem_mst_st_end_int_raw : R/WTC/SS; bitpos: [4]; default: 0;
-         *  The raw bit for spi_mem_c_MST_ST_END_INT interrupt. 1: Triggered when spi0_mst_st is
+         *  The raw bit for SPI_MEM_MST_ST_END_INT interrupt. 1: Triggered when spi0_mst_st is
          *  changed from non idle state to idle state. 0: Others.
          */
         uint32_t mem_mst_st_end_int_raw:1;
         /** mem_ecc_err_int_raw : R/WTC/SS; bitpos: [5]; default: 0;
-         *  The raw bit for spi_mem_c_ECC_ERR_INT interrupt. When spi_fmem_c_ECC_ERR_INT_EN is set
-         *  and  spi_smem_c_ECC_ERR_INT_EN is cleared, this bit is triggered when the error times
-         *  of SPI0/1 ECC read flash are equal or bigger than spi_mem_c_ECC_ERR_INT_NUM. When
-         *  spi_fmem_c_ECC_ERR_INT_EN is cleared and  spi_smem_c_ECC_ERR_INT_EN is set, this bit is
+         *  The raw bit for SPI_MEM_ECC_ERR_INT interrupt. When SPI_FMEM_ECC_ERR_INT_EN is set
+         *  and  SPI_SMEM_ECC_ERR_INT_EN is cleared, this bit is triggered when the error times
+         *  of SPI0/1 ECC read flash are equal or bigger than SPI_MEM_ECC_ERR_INT_NUM. When
+         *  SPI_FMEM_ECC_ERR_INT_EN is cleared and  SPI_SMEM_ECC_ERR_INT_EN is set, this bit is
          *  triggered when the error times of SPI0/1 ECC read external RAM are equal or bigger
-         *  than spi_mem_c_ECC_ERR_INT_NUM. When spi_fmem_c_ECC_ERR_INT_EN and
-         *  spi_smem_c_ECC_ERR_INT_EN are set, this bit is triggered when the total error times
+         *  than SPI_MEM_ECC_ERR_INT_NUM. When SPI_FMEM_ECC_ERR_INT_EN and
+         *  SPI_SMEM_ECC_ERR_INT_EN are set, this bit is triggered when the total error times
          *  of SPI0/1 ECC read external RAM and flash are equal or bigger than
-         *  spi_mem_c_ECC_ERR_INT_NUM. When spi_fmem_c_ECC_ERR_INT_EN and  spi_smem_c_ECC_ERR_INT_EN
+         *  SPI_MEM_ECC_ERR_INT_NUM. When SPI_FMEM_ECC_ERR_INT_EN and  SPI_SMEM_ECC_ERR_INT_EN
          *  are cleared, this bit will not be triggered.
          */
         uint32_t mem_ecc_err_int_raw:1;
         /** mem_pms_reject_int_raw : R/WTC/SS; bitpos: [6]; default: 0;
-         *  The raw bit for spi_mem_c_PMS_REJECT_INT interrupt. 1: Triggered when SPI1 access is
+         *  The raw bit for SPI_MEM_PMS_REJECT_INT interrupt. 1: Triggered when SPI1 access is
          *  rejected. 0: Others.
          */
         uint32_t mem_pms_reject_int_raw:1;
         /** mem_axi_raddr_err_int_raw : R/WTC/SS; bitpos: [7]; default: 0;
-         *  The raw bit for spi_mem_c_AXI_RADDR_ERR_INT interrupt. 1: Triggered when AXI read
+         *  The raw bit for SPI_MEM_AXI_RADDR_ERR_INT interrupt. 1: Triggered when AXI read
          *  address is invalid by compared to MMU configuration. 0: Others.
          */
         uint32_t mem_axi_raddr_err_int_raw:1;
         /** mem_axi_wr_flash_err_int_raw : R/WTC/SS; bitpos: [8]; default: 0;
-         *  The raw bit for spi_mem_c_AXI_WR_FALSH_ERR_INT interrupt. 1: Triggered when AXI write
+         *  The raw bit for SPI_MEM_AXI_WR_FALSH_ERR_INT interrupt. 1: Triggered when AXI write
          *  flash request is received. 0: Others.
          */
         uint32_t mem_axi_wr_flash_err_int_raw:1;
         /** mem_axi_waddr_err_int_raw : R/WTC/SS; bitpos: [9]; default: 0;
-         *  The raw bit for spi_mem_c_AXI_WADDR_ERR_INT interrupt. 1: Triggered when AXI write
+         *  The raw bit for SPI_MEM_AXI_WADDR_ERR_INT interrupt. 1: Triggered when AXI write
          *  address is invalid by compared to MMU configuration. 0: Others.
          */
         uint32_t mem_axi_waddr_err_int_raw:1;
         uint32_t reserved_10:18;
         /** mem_dqs0_afifo_ovf_int_raw : R/WTC/SS; bitpos: [28]; default: 0;
-         *  The raw bit for spi_mem_c_DQS0_AFIFO_OVF_INT interrupt. 1: Triggered when the AFIFO
+         *  The raw bit for SPI_MEM_DQS0_AFIFO_OVF_INT interrupt. 1: Triggered when the AFIFO
          *  connected to SPI_DQS1 is overflow.
          */
         uint32_t mem_dqs0_afifo_ovf_int_raw:1;
         /** mem_dqs1_afifo_ovf_int_raw : R/WTC/SS; bitpos: [29]; default: 0;
-         *  The raw bit for spi_mem_c_DQS1_AFIFO_OVF_INT interrupt. 1: Triggered when the AFIFO
+         *  The raw bit for SPI_MEM_DQS1_AFIFO_OVF_INT interrupt. 1: Triggered when the AFIFO
          *  connected to SPI_DQS is overflow.
          */
         uint32_t mem_dqs1_afifo_ovf_int_raw:1;
         /** mem_bus_fifo1_udf_int_raw : R/WTC/SS; bitpos: [30]; default: 0;
-         *  The raw bit for spi_mem_c_BUS_FIFO1_UDF_INT interrupt. 1: Triggered when BUS1 FIFO is
+         *  The raw bit for SPI_MEM_BUS_FIFO1_UDF_INT interrupt. 1: Triggered when BUS1 FIFO is
          *  underflow.
          */
         uint32_t mem_bus_fifo1_udf_int_raw:1;
         /** mem_bus_fifo0_udf_int_raw : R/WTC/SS; bitpos: [31]; default: 0;
-         *  The raw bit for spi_mem_c_BUS_FIFO0_UDF_INT interrupt. 1: Triggered when BUS0 FIFO is
+         *  The raw bit for SPI_MEM_BUS_FIFO0_UDF_INT interrupt. 1: Triggered when BUS0 FIFO is
          *  underflow.
          */
         uint32_t mem_bus_fifo0_udf_int_raw:1;
@@ -1248,48 +1247,48 @@ typedef union {
     struct {
         uint32_t reserved_0:3;
         /** mem_slv_st_end_int_st : RO; bitpos: [3]; default: 0;
-         *  The status bit for spi_mem_c_SLV_ST_END_INT interrupt.
+         *  The status bit for SPI_MEM_SLV_ST_END_INT interrupt.
          */
         uint32_t mem_slv_st_end_int_st:1;
         /** mem_mst_st_end_int_st : RO; bitpos: [4]; default: 0;
-         *  The status bit for spi_mem_c_MST_ST_END_INT interrupt.
+         *  The status bit for SPI_MEM_MST_ST_END_INT interrupt.
          */
         uint32_t mem_mst_st_end_int_st:1;
         /** mem_ecc_err_int_st : RO; bitpos: [5]; default: 0;
-         *  The status bit for spi_mem_c_ECC_ERR_INT interrupt.
+         *  The status bit for SPI_MEM_ECC_ERR_INT interrupt.
          */
         uint32_t mem_ecc_err_int_st:1;
         /** mem_pms_reject_int_st : RO; bitpos: [6]; default: 0;
-         *  The status bit for spi_mem_c_PMS_REJECT_INT interrupt.
+         *  The status bit for SPI_MEM_PMS_REJECT_INT interrupt.
          */
         uint32_t mem_pms_reject_int_st:1;
         /** mem_axi_raddr_err_int_st : RO; bitpos: [7]; default: 0;
-         *  The enable bit for spi_mem_c_AXI_RADDR_ERR_INT interrupt.
+         *  The enable bit for SPI_MEM_AXI_RADDR_ERR_INT interrupt.
          */
         uint32_t mem_axi_raddr_err_int_st:1;
         /** mem_axi_wr_flash_err_int_st : RO; bitpos: [8]; default: 0;
-         *  The enable bit for spi_mem_c_AXI_WR_FALSH_ERR_INT interrupt.
+         *  The enable bit for SPI_MEM_AXI_WR_FALSH_ERR_INT interrupt.
          */
         uint32_t mem_axi_wr_flash_err_int_st:1;
         /** mem_axi_waddr_err_int_st : RO; bitpos: [9]; default: 0;
-         *  The enable bit for spi_mem_c_AXI_WADDR_ERR_INT interrupt.
+         *  The enable bit for SPI_MEM_AXI_WADDR_ERR_INT interrupt.
          */
         uint32_t mem_axi_waddr_err_int_st:1;
         uint32_t reserved_10:18;
         /** mem_dqs0_afifo_ovf_int_st : RO; bitpos: [28]; default: 0;
-         *  The status bit for spi_mem_c_DQS0_AFIFO_OVF_INT interrupt.
+         *  The status bit for SPI_MEM_DQS0_AFIFO_OVF_INT interrupt.
          */
         uint32_t mem_dqs0_afifo_ovf_int_st:1;
         /** mem_dqs1_afifo_ovf_int_st : RO; bitpos: [29]; default: 0;
-         *  The status bit for spi_mem_c_DQS1_AFIFO_OVF_INT interrupt.
+         *  The status bit for SPI_MEM_DQS1_AFIFO_OVF_INT interrupt.
          */
         uint32_t mem_dqs1_afifo_ovf_int_st:1;
         /** mem_bus_fifo1_udf_int_st : RO; bitpos: [30]; default: 0;
-         *  The status bit for spi_mem_c_BUS_FIFO1_UDF_INT interrupt.
+         *  The status bit for SPI_MEM_BUS_FIFO1_UDF_INT interrupt.
          */
         uint32_t mem_bus_fifo1_udf_int_st:1;
         /** mem_bus_fifo0_udf_int_st : RO; bitpos: [31]; default: 0;
-         *  The status bit for spi_mem_c_BUS_FIFO0_UDF_INT interrupt.
+         *  The status bit for SPI_MEM_BUS_FIFO0_UDF_INT interrupt.
          */
         uint32_t mem_bus_fifo0_udf_int_st:1;
     };
@@ -1313,8 +1312,8 @@ typedef union {
         uint32_t fmem_pmsn_wr_attr:1;
         /** fmem_pmsn_ecc : R/W; bitpos: [2]; default: 0;
          *  SPI1 flash PMS section n ECC mode, 1: enable ECC mode. 0: Disable it. The flash PMS
-         *  section n is configured by registers spi_fmem_c_PMSn_ADDR_REG and
-         *  spi_fmem_c_PMSn_SIZE_REG.
+         *  section n is configured by registers SPI_FMEM_PMSn_ADDR_REG and
+         *  SPI_FMEM_PMSn_SIZE_REG.
          */
         uint32_t fmem_pmsn_ecc:1;
         uint32_t reserved_3:29;
@@ -1342,8 +1341,8 @@ typedef union {
 typedef union {
     struct {
         /** fmem_pmsn_size : R/W; bitpos: [16:0]; default: 4096;
-         *  SPI1 flash PMS section n address region is (spi_fmem_c_PMSn_ADDR_S,
-         *  spi_fmem_c_PMSn_ADDR_S + spi_fmem_c_PMSn_SIZE)
+         *  SPI1 flash PMS section n address region is (SPI_FMEM_PMSn_ADDR_S,
+         *  SPI_FMEM_PMSn_ADDR_S + SPI_FMEM_PMSn_SIZE)
          */
         uint32_t fmem_pmsn_size:17;
         uint32_t reserved_17:15;
@@ -1366,8 +1365,8 @@ typedef union {
         uint32_t smem_pmsn_wr_attr:1;
         /** smem_pmsn_ecc : R/W; bitpos: [2]; default: 0;
          *  SPI1 external RAM PMS section n ECC mode, 1: enable ECC mode. 0: Disable it. The
-         *  external RAM PMS section n is configured by registers spi_smem_c_PMSn_ADDR_REG and
-         *  spi_smem_c_PMSn_SIZE_REG.
+         *  external RAM PMS section n is configured by registers SPI_SMEM_PMSn_ADDR_REG and
+         *  SPI_SMEM_PMSn_SIZE_REG.
          */
         uint32_t smem_pmsn_ecc:1;
         uint32_t reserved_3:29;
@@ -1395,8 +1394,8 @@ typedef union {
 typedef union {
     struct {
         /** smem_pmsn_size : R/W; bitpos: [16:0]; default: 4096;
-         *  SPI1 external RAM PMS section n address region is (spi_smem_c_PMSn_ADDR_S,
-         *  spi_smem_c_PMSn_ADDR_S + spi_smem_c_PMSn_SIZE)
+         *  SPI1 external RAM PMS section n address region is (SPI_SMEM_PMSn_ADDR_S,
+         *  SPI_SMEM_PMSn_ADDR_S + SPI_SMEM_PMSn_SIZE)
          */
         uint32_t smem_pmsn_size:17;
         uint32_t reserved_17:15;
@@ -1416,22 +1415,22 @@ typedef union {
         uint32_t mem_pm_en:1;
         /** mem_pms_ld : R/SS/WTC; bitpos: [28]; default: 0;
          *  1: SPI1 write access error. 0: No write access error. It is cleared by when
-         *  spi_mem_c_PMS_REJECT_INT_CLR bit is set.
+         *  SPI_MEM_PMS_REJECT_INT_CLR bit is set.
          */
         uint32_t mem_pms_ld:1;
         /** mem_pms_st : R/SS/WTC; bitpos: [29]; default: 0;
          *  1: SPI1 read access error. 0: No read access error. It is cleared by when
-         *  spi_mem_c_PMS_REJECT_INT_CLR bit is set.
+         *  SPI_MEM_PMS_REJECT_INT_CLR bit is set.
          */
         uint32_t mem_pms_st:1;
         /** mem_pms_multi_hit : R/SS/WTC; bitpos: [30]; default: 0;
          *  1: SPI1 access is rejected because of address miss. 0: No address miss error. It is
-         *  cleared by when  spi_mem_c_PMS_REJECT_INT_CLR bit is set.
+         *  cleared by when  SPI_MEM_PMS_REJECT_INT_CLR bit is set.
          */
         uint32_t mem_pms_multi_hit:1;
         /** mem_pms_ivd : R/SS/WTC; bitpos: [31]; default: 0;
          *  1: SPI1 access is rejected because of address multi-hit. 0: No address multi-hit
-         *  error. It is cleared by when  spi_mem_c_PMS_REJECT_INT_CLR bit is set.
+         *  error. It is cleared by when  SPI_MEM_PMS_REJECT_INT_CLR bit is set.
          */
         uint32_t mem_pms_ivd:1;
     };
@@ -1445,7 +1444,7 @@ typedef union {
     struct {
         /** mem_reject_addr : R/SS/WTC; bitpos: [28:0]; default: 0;
          *  This bits show the first SPI1 access error address. It is cleared by when
-         *  spi_mem_c_PMS_REJECT_INT_CLR bit is set.
+         *  SPI_MEM_PMS_REJECT_INT_CLR bit is set.
          */
         uint32_t mem_reject_addr:29;
         uint32_t reserved_29:3;
@@ -1463,11 +1462,11 @@ typedef union {
         uint32_t reserved_0:5;
         /** mem_ecc_err_cnt : R/SS/WTC; bitpos: [10:5]; default: 0;
          *  This bits show the error times of MSPI ECC read. It is cleared by when
-         *  spi_mem_c_ECC_ERR_INT_CLR bit is set.
+         *  SPI_MEM_ECC_ERR_INT_CLR bit is set.
          */
         uint32_t mem_ecc_err_cnt:6;
         /** fmem_ecc_err_int_num : R/W; bitpos: [16:11]; default: 10;
-         *  Set the error times of MSPI ECC read to generate MSPI spi_mem_c_ECC_ERR_INT interrupt.
+         *  Set the error times of MSPI ECC read to generate MSPI SPI_MEM_ECC_ERR_INT interrupt.
          */
         uint32_t fmem_ecc_err_int_num:6;
         /** fmem_ecc_err_int_en : R/W; bitpos: [17]; default: 0;
@@ -1492,9 +1491,9 @@ typedef union {
         uint32_t mem_usr_ecc_addr_en:1;
         uint32_t reserved_23:1;
         /** mem_ecc_continue_record_err_en : R/W; bitpos: [24]; default: 1;
-         *  1: The error information in spi_mem_c_ECC_ERR_BITS and spi_mem_c_ECC_ERR_ADDR is
-         *  updated when there is an ECC error. 0: spi_mem_c_ECC_ERR_BITS and
-         *  spi_mem_c_ECC_ERR_ADDR record the first ECC error information.
+         *  1: The error information in SPI_MEM_ECC_ERR_BITS and SPI_MEM_ECC_ERR_ADDR is
+         *  updated when there is an ECC error. 0: SPI_MEM_ECC_ERR_BITS and
+         *  SPI_MEM_ECC_ERR_ADDR record the first ECC error information.
          */
         uint32_t mem_ecc_continue_record_err_en:1;
         /** mem_ecc_err_bits : R/SS/WTC; bitpos: [31:25]; default: 0;
@@ -1513,7 +1512,7 @@ typedef union {
     struct {
         /** mem_ecc_err_addr : R/SS/WTC; bitpos: [28:0]; default: 0;
          *  This bits show the first MSPI ECC error address. It is cleared by when
-         *  spi_mem_c_ECC_ERR_INT_CLR bit is set.
+         *  SPI_MEM_ECC_ERR_INT_CLR bit is set.
          */
         uint32_t mem_ecc_err_addr:29;
         uint32_t reserved_29:3;
@@ -1895,17 +1894,27 @@ typedef union {
          */
         uint32_t smem_dll_timing_cali:1;
         uint32_t reserved_6:1;
-        /** smem_dqs0_270_sel : R/W; bitpos: [8:7]; default: 1;
+        /** smem_dqs0_270_sel : HRO; bitpos: [8:7]; default: 1;
          *  Set these bits to delay dqs signal & invert delayed signal for DLL timing adjust.
          *  2'd0: 0.5ns, 2'd1: 1.0ns, 2'd2: 1.5ns 2'd3: 2.0ns.
          */
         uint32_t smem_dqs0_270_sel:2;
-        /** smem_dqs0_90_sel : R/W; bitpos: [10:9]; default: 1;
+        /** smem_dqs0_90_sel : HRO; bitpos: [10:9]; default: 1;
          *  Set these bits to delay dqs signal for DLL timing adjust. 2'd0: 0.5ns, 2'd1: 1.0ns,
          *  2'd2: 1.5ns 2'd3: 2.0ns.
          */
         uint32_t smem_dqs0_90_sel:2;
-        uint32_t reserved_11:21;
+        /** smem_dqs1_270_sel : HRO; bitpos: [12:11]; default: 1;
+         *  Set these bits to delay dqs signal & invert delayed signal for DLL timing adjust.
+         *  2'd0: 0.5ns, 2'd1: 1.0ns, 2'd2: 1.5ns 2'd3: 2.0ns.
+         */
+        uint32_t smem_dqs1_270_sel:2;
+        /** smem_dqs1_90_sel : HRO; bitpos: [14:13]; default: 1;
+         *  Set these bits to delay dqs signal for DLL timing adjust. 2'd0: 0.5ns, 2'd1: 1.0ns,
+         *  2'd2: 1.5ns 2'd3: 2.0ns.
+         */
+        uint32_t smem_dqs1_90_sel:2;
+        uint32_t reserved_15:17;
     };
     uint32_t val;
 } spi_smem_c_timing_cali_reg_t;
@@ -2330,8 +2339,8 @@ typedef union {
          */
         uint32_t mem_nand_flash_seq_hd_index:15;
         /** mem_nand_flash_seq_usr_trig : HRO; bitpos: [16]; default: 0;
-         *  NAND FLASH spi seq user trigger configure register. spi_mem_c_NAND_FLASH_SEQ_USR_TRIG
-         *  is corresponds to spi_mem_c_NAND_FLASH_SEQ_HD_INDEX[14:10].1: enable 0: disable.
+         *  NAND FLASH spi seq user trigger configure register. SPI_MEM_NAND_FLASH_SEQ_USR_TRIG
+         *  is corresponds to SPI_MEM_NAND_FLASH_SEQ_HD_INDEX[14:10].1: enable 0: disable.
          */
         uint32_t mem_nand_flash_seq_usr_trig:1;
         /** mem_nand_flash_lut_en : HRO; bitpos: [17]; default: 0;
@@ -2339,7 +2348,7 @@ typedef union {
          */
         uint32_t mem_nand_flash_lut_en:1;
         /** mem_nand_flash_seq_usr_wend : HRO; bitpos: [18]; default: 0;
-         *  Used with spi_mem_c_NAND_FLASH_SEQ_USR_TRIG to indicate the last page program ,and to
+         *  Used with SPI_MEM_NAND_FLASH_SEQ_USR_TRIG to indicate the last page program ,and to
          *  execute page execute. 1: write end 0: write in a page size.
          */
         uint32_t mem_nand_flash_seq_usr_wend:1;
@@ -2384,22 +2393,22 @@ typedef union {
     struct {
         /** mem_nand_flash_sr_din0 : RO; bitpos: [7:0]; default: 0;
          *  spi read state register data to this register for SPI SEQ need.
-         *  spi_mem_c_NAND_FLASH_SR_DIN0_REG corresponds to spi_mem_c_NAND_FLASH_SR_ADDR0_REG.
+         *  SPI_MEM_NAND_FLASH_SR_DIN0_REG corresponds to SPI_MEM_NAND_FLASH_SR_ADDR0_REG.
          */
         uint32_t mem_nand_flash_sr_din0:8;
         /** mem_nand_flash_sr_din1 : RO; bitpos: [15:8]; default: 0;
          *  spi read state register data to this register for SPI SEQ need.
-         *  spi_mem_c_NAND_FLASH_SR_DIN0_REG corresponds to spi_mem_c_NAND_FLASH_SR_ADDR0_REG.
+         *  SPI_MEM_NAND_FLASH_SR_DIN0_REG corresponds to SPI_MEM_NAND_FLASH_SR_ADDR0_REG.
          */
         uint32_t mem_nand_flash_sr_din1:8;
         /** mem_nand_flash_sr_din2 : RO; bitpos: [23:16]; default: 0;
          *  spi read state register data to this register for SPI SEQ need.
-         *  spi_mem_c_NAND_FLASH_SR_DIN0_REG corresponds to spi_mem_c_NAND_FLASH_SR_ADDR0_REG.
+         *  SPI_MEM_NAND_FLASH_SR_DIN0_REG corresponds to SPI_MEM_NAND_FLASH_SR_ADDR0_REG.
          */
         uint32_t mem_nand_flash_sr_din2:8;
         /** mem_nand_flash_sr_din3 : RO; bitpos: [31:24]; default: 0;
          *  spi read state register data to this register for SPI SEQ need.
-         *  spi_mem_c_NAND_FLASH_SR_DIN0_REG corresponds to spi_mem_c_NAND_FLASH_SR_ADDR0_REG.
+         *  SPI_MEM_NAND_FLASH_SR_DIN0_REG corresponds to SPI_MEM_NAND_FLASH_SR_ADDR0_REG.
          */
         uint32_t mem_nand_flash_sr_din3:8;
     };
@@ -2492,7 +2501,7 @@ typedef union {
         /** mem_nand_flash_lut_bus_en0 : HRO; bitpos: [30]; default: 0;
          *  MSPI NAND FLASH config spi_bus_en at cmd lut address 0,SPI could use DUAL/QUAD mode
          *  while enable, SPI could use SINGLE mode while disable.1:Enable. 0:Disable.(Note
-         *  these registers are described to indicate the spi_mem_c_NAND_FLASH_CMD_LUT0_REG's
+         *  these registers are described to indicate the SPI_MEM_NAND_FLASH_CMD_LUT0_REG's
          *  field. The number of CMD LUT entries can be defined by the user, but cannot exceed
          *  16 )
          */
@@ -2518,12 +2527,12 @@ typedef union {
         uint32_t mem_nand_flash_sr_chk_en0:1;
         /** mem_nand_flash_din_index0 : HRO; bitpos: [5:2]; default: 0;
          *  MSPI NAND FLASH config din_index at spi seq index 0.  Use with
-         *  spi_mem_c_NAND_FLASH_CFG_DATA
+         *  SPI_MEM_NAND_FLASH_CFG_DATA
          */
         uint32_t mem_nand_flash_din_index0:4;
         /** mem_nand_flash_addr_index0 : HRO; bitpos: [9:6]; default: 0;
          *  MSPI NAND FLASH config addr_index at spi seq index 0.  Use with
-         *  spi_mem_c_NAND_FLASH_SR_ADDR
+         *  SPI_MEM_NAND_FLASH_SR_ADDR
          */
         uint32_t mem_nand_flash_addr_index0:4;
         /** mem_nand_flash_req_or_cfg0 : HRO; bitpos: [10]; default: 0;
@@ -2534,7 +2543,7 @@ typedef union {
         /** mem_nand_flash_cmd_index0 : HRO; bitpos: [14:11]; default: 0;
          *  MSPI NAND FLASH config spi_cmd_index at spi seq index 0. Use to find SPI command in
          *  CMD LUT.(Note these registers are described to indicate the
-         *  spi_mem_c_NAND_FLASH_SPI_SEQ_REG' fieldd The number of CMD LUT entries can be defined
+         *  SPI_MEM_NAND_FLASH_SPI_SEQ_REG' fieldd The number of CMD LUT entries can be defined
          *  by the user, but cannot exceed 16 )
          */
         uint32_t mem_nand_flash_cmd_index0:4;
@@ -2730,16 +2739,16 @@ typedef union {
          *  Set this bit to enable mmu-memory clock force on
          */
         uint32_t mmu_mem_force_on:1;
-        /** mmu_mem_force_pd : R/W; bitpos: [1]; default: 1;
+        /** mmu_mem_force_pd : R/W; bitpos: [1]; default: 0;
          *  Set this bit to force mmu-memory powerdown
          */
         uint32_t mmu_mem_force_pd:1;
-        /** mmu_mem_force_pu : R/W; bitpos: [2]; default: 0;
+        /** mmu_mem_force_pu : R/W; bitpos: [2]; default: 1;
          *  Set this bit to force mmu-memory powerup, in this case, the power should also be
          *  controlled by rtc.
          */
         uint32_t mmu_mem_force_pu:1;
-        /** mmu_page_size : HRO; bitpos: [4:3]; default: 0;
+        /** mmu_page_size : R/W; bitpos: [4:3]; default: 0;
          *  0: Max page size , 1: Max page size/2 , 2: Max page size/4, 3: Max page size/8
          */
         uint32_t mmu_page_size:2;
@@ -2859,7 +2868,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mem_date : R/W; bitpos: [27:0]; default: 36774400;
+        /** mem_date : R/W; bitpos: [27:0]; default: 37822512;
          *  SPI0 register version.
          */
         uint32_t mem_date:28;

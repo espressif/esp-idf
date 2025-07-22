@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -290,31 +290,17 @@ extern "C" {
 #define LP_AON_USB_RESET_DISABLE_V  0x00000001U
 #define LP_AON_USB_RESET_DISABLE_S  31
 
-/** LP_AON_LPBUS_REG register
+/** LP_AON_SDIO_ACTIVE_REG register
  *  need_des
  */
-#define LP_AON_LPBUS_REG (DR_REG_LP_AON_BASE + 0x48)
-/** LP_AON_FAST_MEM_WPULSE : R/W; bitpos: [18:16]; default: 0;
- *  This field controls fast memory WPULSE parameter.
+#define LP_AON_SDIO_ACTIVE_REG (DR_REG_LP_AON_BASE + 0x4c)
+/** LP_AON_SDIO_ACT_DNUM : R/W; bitpos: [31:22]; default: 10;
+ *  need_des
  */
-#define LP_AON_FAST_MEM_WPULSE    0x00000007U
-#define LP_AON_FAST_MEM_WPULSE_M  (LP_AON_FAST_MEM_WPULSE_V << LP_AON_FAST_MEM_WPULSE_S)
-#define LP_AON_FAST_MEM_WPULSE_V  0x00000007U
-#define LP_AON_FAST_MEM_WPULSE_S  16
-/** LP_AON_FAST_MEM_WA : R/W; bitpos: [21:19]; default: 4;
- *  This field controls fast memory WA parameter.
- */
-#define LP_AON_FAST_MEM_WA    0x00000007U
-#define LP_AON_FAST_MEM_WA_M  (LP_AON_FAST_MEM_WA_V << LP_AON_FAST_MEM_WA_S)
-#define LP_AON_FAST_MEM_WA_V  0x00000007U
-#define LP_AON_FAST_MEM_WA_S  19
-/** LP_AON_FAST_MEM_RA : R/W; bitpos: [23:22]; default: 0;
- *  This field controls fast memory RA parameter.
- */
-#define LP_AON_FAST_MEM_RA    0x00000003U
-#define LP_AON_FAST_MEM_RA_M  (LP_AON_FAST_MEM_RA_V << LP_AON_FAST_MEM_RA_S)
-#define LP_AON_FAST_MEM_RA_V  0x00000003U
-#define LP_AON_FAST_MEM_RA_S  22
+#define LP_AON_SDIO_ACT_DNUM    0x000003FFU
+#define LP_AON_SDIO_ACT_DNUM_M  (LP_AON_SDIO_ACT_DNUM_V << LP_AON_SDIO_ACT_DNUM_S)
+#define LP_AON_SDIO_ACT_DNUM_V  0x000003FFU
+#define LP_AON_SDIO_ACT_DNUM_S  22
 
 /** LP_AON_LPCORE_REG register
  *  need_des
@@ -439,7 +425,7 @@ extern "C" {
  *  need_des
  */
 #define LP_AON_DATE_REG (DR_REG_LP_AON_BASE + 0x3fc)
-/** LP_AON_DATE : R/W; bitpos: [30:0]; default: 36766272;
+/** LP_AON_DATE : R/W; bitpos: [30:0]; default: 37823232;
  *  need_des
  */
 #define LP_AON_DATE    0x7FFFFFFFU

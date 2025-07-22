@@ -163,6 +163,17 @@ ESP_SYSTEM_INIT_FN(init_coexist, SECONDARY, BIT(0), 204)
 }
 #endif // CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 
+#if SOC_RECOVERY_BOOTLOADER_SUPPORTED
+ESP_SYSTEM_INIT_FN(init_bootloader_offset, SECONDARY, BIT(0), 205)
+{
+    // The bootloader offset variable in ROM is stored in a memory that will be reclaimed by heap component.
+    // Reading it before the heap is initialized helps to preserve the value.
+    volatile int bootloader_offset = esp_rom_get_bootloader_offset();
+    (void)bootloader_offset;
+    return ESP_OK;
+}
+#endif // SOC_RECOVERY_BOOTLOADER_SUPPORTED
+
 #ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
 ESP_SYSTEM_INIT_FN(init_disable_rtc_wdt, SECONDARY, BIT(0), 999)
 {

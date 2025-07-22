@@ -283,3 +283,27 @@ size_t gdma_link_count_buffer_size_till_eof(gdma_link_list_handle_t list, int st
     }
     return buf_size;
 }
+
+void *gdma_link_get_buffer(gdma_link_list_handle_t list, int item_index)
+{
+    if (!list) {
+        return NULL;
+    }
+    int num_items = list->num_items;
+    // ensure the item_index is between 0 and `num_items - 1`
+    item_index = (item_index % num_items + num_items) % num_items;
+    gdma_link_list_item_t *lli = (gdma_link_list_item_t *)(list->items_nc + item_index * list->item_size);
+    return lli->buffer;
+}
+
+size_t gdma_link_get_length(gdma_link_list_handle_t list, int item_index)
+{
+    if (!list) {
+        return 0;
+    }
+    int num_items = list->num_items;
+    // ensure the item_index is between 0 and `num_items - 1`
+    item_index = (item_index % num_items + num_items) % num_items;
+    gdma_link_list_item_t *lli = (gdma_link_list_item_t *)(list->items_nc + item_index * list->item_size);
+    return lli->dw0.length;
+}

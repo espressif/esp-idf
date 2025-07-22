@@ -14,7 +14,6 @@ extra_default_build_targets:
 
 bypass_check_test_targets:
   - esp32h21
-  - esp32c61
   - esp32h4
   - esp32c5
 
