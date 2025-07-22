@@ -19,10 +19,12 @@ esp_err_t esp_openthread_sleep_init(void)
 {
     esp_err_t err = ESP_OK;
 
-    err = esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "ieee802154", &s_pm_lock);
+    // Here we use APB_MAX because modem requires MODEM_REQUIRED_MIN_APB_CLK_FREQ.
+    // No need for CPU_MAX to reduce current consumption during Rx window.
+    err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "ot_sleep", &s_pm_lock);
     if (err == ESP_OK) {
         esp_pm_lock_acquire(s_pm_lock);
-        ESP_LOGI(TAG, "Enable ieee802154 light sleep, the wake up source is ESP timer");
+        ESP_LOGI(TAG, "Enable OpenThread light sleep, the wake up source is ESP timer");
     } else {
         if (s_pm_lock != NULL) {
             esp_pm_lock_delete(s_pm_lock);
