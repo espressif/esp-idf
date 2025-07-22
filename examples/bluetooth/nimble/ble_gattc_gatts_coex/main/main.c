@@ -549,9 +549,11 @@ void app_main(void)
     nimble_port_init();
 
     ble_hs_cfg.sync_cb = on_sync;
-
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+    peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64, 64);
+#else
     peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
-
+#endif
     ble_svc_gap_init();
     ble_svc_gatt_init();
     ble_svc_ans_init();
