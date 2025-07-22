@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,11 @@
 #include "soc/pmu_icg_mapping.h"
 #include "esp_private/esp_pmu.h"
 #include "soc/clk_tree_defs.h"
+#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
+#include "esp_hw_log.h"
+
+static __attribute__((unused)) const char *TAG = "pmu_param";
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))
@@ -322,4 +327,47 @@ const pmu_lp_system_analog_param_t * pmu_lp_system_analog_param_default(pmu_lp_m
     };
     assert(mode < ARRAY_SIZE(lp_analog));
     return &lp_analog[mode];
+}
+
+uint32_t get_act_hp_dbias(void)
+{
+    /* hp_cali_dbias is read from efuse to ensure that the hp_active_voltage is close to 1.15V
+    */
+    uint32_t hp_cali_dbias = HP_CALI_ACTIVE_DBIAS_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    uint32_t hp_cali_dbias_efuse = 0;
+    if (blk_version >= 2) {
+        hp_cali_dbias_efuse = efuse_ll_get_active_hp_dbias();
+    }
+    if (hp_cali_dbias_efuse > 0) {
+        hp_cali_dbias = hp_cali_dbias_efuse + 16;
+        if (hp_cali_dbias > 31) {
+            hp_cali_dbias = 31;
+        }
+    } else {
+        ESP_HW_LOGW(TAG, "hp_cali_dbias not burnt in efuse, use default.");
+    }
+    return hp_cali_dbias;
+}
+
+uint32_t get_act_lp_dbias(void)
+{
+    /* lp_cali_dbias is read from efuse to ensure that the lp_active_voltage is close to 1.15V
+    */
+    uint32_t lp_cali_dbias = LP_CALI_ACTIVE_DBIAS_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    uint32_t lp_cali_dbias_efuse = 0;
+    if (blk_version >= 2) {
+        lp_cali_dbias_efuse = efuse_ll_get_active_lp_dbias();
+    }
+    if (lp_cali_dbias_efuse > 0) {
+        //efuse dbias need to add 4 to near to dcdc voltage
+        lp_cali_dbias = lp_cali_dbias_efuse + 16 + 4;
+        if (lp_cali_dbias > 31) {
+            lp_cali_dbias = 31;
+        }
+    } else {
+        ESP_HW_LOGW(TAG, "lp_cali_dbias not burnt in efuse, use default.");
+    }
+    return lp_cali_dbias;
 }

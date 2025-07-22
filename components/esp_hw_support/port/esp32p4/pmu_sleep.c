@@ -201,7 +201,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
             analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
             analog_default.lp_sys[LP(SLEEP)].analog.dbg_atten = PMU_DBG_ATTEN_ACTIVE_DEFAULT;
 #if !CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
-            analog_default.lp_sys[LP(SLEEP)].analog.dbias = LP_CALI_DBIAS;
+            analog_default.lp_sys[LP(SLEEP)].analog.dbias = LP_CALI_ACTIVE_DBIAS_DEFAULT;
 #endif
         }
 
