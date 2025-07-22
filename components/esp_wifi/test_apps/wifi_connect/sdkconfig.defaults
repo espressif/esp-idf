@@ -2,3 +2,4 @@
 # ignore task watchdog triggered by unity_run_menu
 CONFIG_ESP_TASK_WDT_EN=n
 CONFIG_ESP_WIFI_BSS_MAX_IDLE_SUPPORT=y
+CONFIG_FREERTOS_HZ=1000
