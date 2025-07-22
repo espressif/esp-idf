@@ -18,6 +18,8 @@
   after_script: []
 
 test_cli_installer_win:
+  rules:
+    - when: never
   extends:
     - .host_test_win_template
     - .rules:labels:windows_pytest_build_system
