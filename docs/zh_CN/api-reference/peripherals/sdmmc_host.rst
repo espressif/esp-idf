@@ -67,7 +67,7 @@ SDMMC 主机驱动
         卡槽 0 使用的管脚 (``HS1_*``) 既用于连接主机上的 SD 卡插槽，也用于连接 ESP32-WROOM 和 ESP32-WROVER 模组中的 SPI flash 芯片，但这些管脚不能同时用于 SD 卡与 SPI flash。如需使用卡槽 0，请将 SPI flash 连接到其他管脚，并根据需要配置 eFuse。
 
 
-.. only:: SOC_SDMMC_USE_GPIO_MATRIX
+.. only:: esp32s3
 
     卡槽 :c:macro:`SDMMC_HOST_SLOT_0` 和 :c:macro:`SDMMC_HOST_SLOT_1` 都支持 1、4、8 线的 SD 接口，这些卡槽通过 GPIO 交换矩阵连接到 {IDF_TARGET_NAME} 的 GPIO，即每个 SD 卡信号都可以使用任意 GPIO 连接。
 
