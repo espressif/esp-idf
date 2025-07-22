@@ -10,8 +10,9 @@
 
 .. list::
 
-    : SOC_MIPI_CSI_SUPPORTED : - MIPI 摄像头串行接口 (CSI)
-    : SOC_ISP_DVP_SUPPORTED : - ISP 数字视频端口 (ISP DVP)
+    : SOC_MIPI_CSI_SUPPORTED : - MIPI 摄像头串行接口 (MIPI CSI)
+    : SOC_ISP_DVP_SUPPORTED : - ISP的DVP端口 (ISP DVP)
+    : SOC_LCDCAM_CAM_SUPPORTED : - LCD_CAM的DVP端口 (LCD_CAM DVP)
 
 摄像头控制器驱动程序是为上述硬件外设而设计的。
 
@@ -37,6 +38,14 @@
 
 安装摄像头控制器驱动程序
 ~~~~~~~~~~~~~~~~~~~~~~~~
+
+摄像头控制器驱动程序可以通过以下方式之一安装：
+
+.. list::
+
+    : SOC_MIPI_CSI_SUPPORTED : - :cpp:func:`esp_cam_new_csi_ctlr`
+    : SOC_ISP_DVP_SUPPORTED : - :cpp:func:`esp_cam_new_isp_dvp_ctlr`
+    : SOC_LCDCAM_CAM_SUPPORTED : - :cpp:func:`esp_cam_new_lcd_cam_ctlr`
 
 .. only:: SOC_MIPI_CSI_SUPPORTED
 
@@ -94,6 +103,48 @@
             .queue_items = 10,
         };
         ESP_ERROR_CHECK(esp_cam_new_isp_dvp_ctlr(isp_proc, &dvp_ctlr_config, &cam_handle));
+
+.. only:: SOC_LCDCAM_CAM_SUPPORTED
+
+    摄像头控制器驱动程序可以通过 LCD_CAM外设实现，需要应用 :cpp:type:`esp_cam_ctlr_dvp_config_t` 和 :cpp:type:`esp_cam_ctlr_dvp_pin_config_t` 指定的配置。
+
+    :cpp:member:`esp_cam_ctlr_dvp_config_t::exexternal_xtal`：使用外部生成的 xclk，或者使用驱动内部内部生成的 xclk。
+
+    如果指定了 :cpp:type:`esp_cam_ctlr_dvp_config_t` 中的配置，就可以调用 :cpp:func:`esp_cam_new_dvp_ctlr` 来分配和初始化 DVP 摄像头控制器句柄。如果函数运行正确，将返回一个 DVP 摄像头控制器句柄。请参考以下代码。
+
+    .. code:: c
+
+        esp_cam_ctlr_handle_t cam_handle = NULL;
+        esp_cam_ctlr_dvp_pin_config_t pin_cfg = {
+            .data_width = EXAMPLE_DVP_CAM_DATA_WIDTH,
+            .data_io = {
+                EXAMPLE_DVP_CAM_D0_IO,
+                EXAMPLE_DVP_CAM_D1_IO,
+                EXAMPLE_DVP_CAM_D2_IO,
+                EXAMPLE_DVP_CAM_D3_IO,
+                EXAMPLE_DVP_CAM_D4_IO,
+                EXAMPLE_DVP_CAM_D5_IO,
+                EXAMPLE_DVP_CAM_D6_IO,
+                EXAMPLE_DVP_CAM_D7_IO,
+            },
+            .vsync_io = EXAMPLE_DVP_CAM_VSYNC_IO,
+            .de_io = EXAMPLE_DVP_CAM_DE_IO,
+            .pclk_io = EXAMPLE_DVP_CAM_PCLK_IO,
+            .xclk_io = EXAMPLE_DVP_CAM_XCLK_IO, // Set XCLK pin to generate XCLK signal
+        };
+        esp_cam_ctlr_dvp_config_t dvp_config = {
+            .ctlr_id = 0,
+            .clk_src = CAM_CLK_SRC_DEFAULT,
+            .h_res = CONFIG_EXAMPLE_CAM_HRES,
+            .v_res = CONFIG_EXAMPLE_CAM_VRES,
+            .input_data_color_type = CAM_CTLR_COLOR_RGB565,
+            .dma_burst_size = 128,
+            .pin = &pin_cfg,
+            .bk_buffer_dis = 1,
+            .xclk_freq = EXAMPLE_DVP_CAM_XCLK_FREQ_HZ,
+        };
+
+        ESP_ERROR_CHECK(esp_cam_new_dvp_ctlr(&dvp_config, &cam_handle));
 
 卸载摄像头控制器驱动程序
 ~~~~~~~~~~~~~~~~~~~~~~~~
