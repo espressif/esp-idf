@@ -168,6 +168,10 @@ typedef esp_err_t (*parlio_tx_bs_disable_fn_t)(parlio_tx_unit_handle_t tx_unit);
 typedef struct parlio_tx_unit_t {
     struct parlio_unit_t base; // base unit
     size_t data_width;     // data width
+    gpio_num_t data_gpio_nums[SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH]; // data GPIO numbers
+    gpio_num_t valid_gpio_num;   // valid signal GPIO number
+    gpio_num_t clk_out_gpio_num; // output clock GPIO number
+    gpio_num_t clk_in_gpio_num;  // input clock GPIO number
     intr_handle_t intr;    // allocated interrupt handle
     esp_pm_lock_handle_t pm_lock;   // power management lock
     gdma_channel_handle_t dma_chan; // DMA channel
@@ -187,7 +191,9 @@ typedef struct parlio_tx_unit_t {
     parlio_tx_trans_desc_t *cur_trans; // points to current transaction
     uint32_t idle_value_mask;          // mask of idle value
     _Atomic parlio_tx_fsm_t fsm;       // Driver FSM state
+    _Atomic bool buffer_need_switch;   // whether the buffer need to be switched
     parlio_tx_done_callback_t on_trans_done; // callback function when the transmission is done
+    parlio_tx_buffer_switched_callback_t on_buffer_switched; // callback function when the buffer is switched in loop transmission
     void *user_data;                   // user data passed to the callback function
     bitscrambler_handle_t bs_handle;   // bitscrambler handle
     parlio_tx_bs_enable_fn_t bs_enable_fn;   // bitscrambler enable function

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -1336,18 +1336,6 @@ extern "C" {
 #define PMU_HP_SLEEP_LP_REGULATOR_DRV_B_V  0x0000000FU
 #define PMU_HP_SLEEP_LP_REGULATOR_DRV_B_S  28
 
-/** PMU_HP_SLEEP_LP_DCDC_RESERVE_REG register
- *  need_des
- */
-#define PMU_HP_SLEEP_LP_DCDC_RESERVE_REG (DR_REG_PMU_BASE + 0xa4)
-/** PMU_HP_SLEEP_LP_DCDC_RESERVE : WT; bitpos: [31:0]; default: 0;
- *  need_des
- */
-#define PMU_HP_SLEEP_LP_DCDC_RESERVE    0xFFFFFFFFU
-#define PMU_HP_SLEEP_LP_DCDC_RESERVE_M  (PMU_HP_SLEEP_LP_DCDC_RESERVE_V << PMU_HP_SLEEP_LP_DCDC_RESERVE_S)
-#define PMU_HP_SLEEP_LP_DCDC_RESERVE_V  0xFFFFFFFFU
-#define PMU_HP_SLEEP_LP_DCDC_RESERVE_S  0
-
 /** PMU_HP_SLEEP_LP_DIG_POWER_REG register
  *  need_des
  */
@@ -1399,18 +1387,6 @@ extern "C" {
 #define PMU_HP_SLEEP_PD_OSC_CLK_M  (PMU_HP_SLEEP_PD_OSC_CLK_V << PMU_HP_SLEEP_PD_OSC_CLK_S)
 #define PMU_HP_SLEEP_PD_OSC_CLK_V  0x00000001U
 #define PMU_HP_SLEEP_PD_OSC_CLK_S  31
-
-/** PMU_LP_SLEEP_LP_BIAS_RESERVE_REG register
- *  need_des
- */
-#define PMU_LP_SLEEP_LP_BIAS_RESERVE_REG (DR_REG_PMU_BASE + 0xb0)
-/** PMU_LP_SLEEP_LP_BIAS_RESERVE : WT; bitpos: [31:0]; default: 0;
- *  need_des
- */
-#define PMU_LP_SLEEP_LP_BIAS_RESERVE    0xFFFFFFFFU
-#define PMU_LP_SLEEP_LP_BIAS_RESERVE_M  (PMU_LP_SLEEP_LP_BIAS_RESERVE_V << PMU_LP_SLEEP_LP_BIAS_RESERVE_S)
-#define PMU_LP_SLEEP_LP_BIAS_RESERVE_V  0xFFFFFFFFU
-#define PMU_LP_SLEEP_LP_BIAS_RESERVE_S  0
 
 /** PMU_LP_SLEEP_LP_REGULATOR0_REG register
  *  need_des

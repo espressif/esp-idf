@@ -85,6 +85,13 @@ static void merge_two_pixels(lv_color16_t *upper_half, lv_color16_t *lower_half,
 
 extern void example_lvgl_demo_ui(lv_display_t *disp);
 
+static IRAM_ATTR bool example_notify_lvgl_flush_ready(parlio_tx_unit_handle_t tx_unit, const parlio_tx_buffer_switched_event_data_t *edata, void *user_ctx)
+{
+    lv_display_t *display = (lv_display_t *)user_ctx;
+    lv_display_flush_ready(display);
+    return false;
+}
+
 static void example_lvgl_flush_cb(lv_display_t *display, const lv_area_t *area, uint8_t *color_map)
 {
     static uint8_t buffer_idx = 0;
@@ -114,7 +121,6 @@ static void example_lvgl_flush_cb(lv_display_t *display, const lv_area_t *area, 
     parlio_tx_unit_transmit(tx_unit, s_frame_buffer[buffer_idx], (EXAMPLE_LED_MATRIX_V_RES / 2 * (EXAMPLE_LED_MATRIX_H_RES + EXAMPLE_GAP_CYCLE_PER_LINE)) * sizeof(uint16_t) * 8, &transmit_config);
     // switch to the next frame buffer
     buffer_idx ^= 0x01;
-    lv_display_flush_ready(display);
 }
 
 static IRAM_ATTR void timer_alarm_cb_lvgl_tick(void* arg)
@@ -187,6 +193,12 @@ void app_main(void)
     };
     lv_display_set_user_data(display, &user_ctx);
 
+    // register the callback to notify LVGL that the buffer is switched
+    parlio_tx_event_callbacks_t callbacks = {
+        .on_buffer_switched = example_notify_lvgl_flush_ready,
+    };
+    parlio_tx_unit_register_event_callbacks(tx_unit, &callbacks, display);
+
     ESP_LOGI(TAG, "Install LVGL tick timer");
     // increase the LVGL tick in the esp_timer alarm callback
     const esp_timer_create_args_t timer_args = {
@@ -200,6 +212,9 @@ void app_main(void)
     example_lvgl_demo_ui(display);
 
     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
+
+    // fake transmit, to trigger the buffer switchd event in the flush callback
+    parlio_tx_unit_transmit(tx_unit, s_frame_buffer[0], (EXAMPLE_LED_MATRIX_V_RES / 2 * (EXAMPLE_LED_MATRIX_H_RES + EXAMPLE_GAP_CYCLE_PER_LINE)) * sizeof(uint16_t) * 8, &transmit_config);
 
     uint32_t time_till_next_ms = 0;
     while (1) {

@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include "hal/apm_hal.h"
+#include "hal/apm_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,7 +15,7 @@ const char *esp_tee_apm_excp_mid_to_str(uint8_t mid);
 
 const char *esp_tee_apm_excp_type_to_str(uint8_t type);
 
-const char *esp_tee_apm_excp_ctrl_to_str(apm_ll_apm_ctrl_t apm_ctrl);
+const char *esp_tee_apm_excp_ctrl_to_str(apm_ctrl_module_t apm_ctrl);
 
 const char *esp_tee_apm_excp_mode_to_str(uint8_t mode);
 

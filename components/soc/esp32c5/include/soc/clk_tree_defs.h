@@ -62,16 +62,50 @@ typedef enum {
     SOC_ROOT_CLK_EXT_OSC_SLOW,         /*!< External slow clock signal at pin0 */
 } soc_root_clk_t;
 
+// Naming convention: SOC_MOD_CLK_{[upstream]clock_name}_[attr]
+// {[upstream]clock_name}: XTAL, (BB)PLL, etc.
+// [attr] - optional: FAST, SLOW, D<divider>, F<freq>
+/**
+ * @brief Supported clock sources for modules (CPU, peripherals, RTC, etc.)
+ *
+ * @note enum starts from 1, to save 0 for special purpose
+ */
+typedef enum {
+    // For CPU domain
+    SOC_MOD_CLK_CPU = 1,                       /*!< CPU_CLK can be sourced from XTAL, PLL, or RC_FAST by configuring soc_cpu_clk_src_t */
+    // For RTC domain
+    SOC_MOD_CLK_RTC_FAST,                      /*!< RTC_FAST_CLK can be sourced from XTAL_D2 or RC_FAST by configuring soc_rtc_fast_clk_src_t */
+    SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, or OSC_SLOW by configuring soc_rtc_slow_clk_src_t */
+    // For digital domain: peripherals, WIFI, BLE
+    SOC_MOD_CLK_PLL_F12M,                      /*!< PLL_F12M_CLK is derived from SPLL (clock gating + fixed divider of 40), it has a fixed frequency of 12MHz */
+    SOC_MOD_CLK_PLL_F20M,                      /*!< PLL_F20M_CLK is derived from SPLL (clock gating + fixed divider of 24), it has a fixed frequency of 20MHz */
+    SOC_MOD_CLK_PLL_F40M,                      /*!< PLL_F40M_CLK is derived from SPLL (clock gating + fixed divider of 12), it has a fixed frequency of 40MHz */
+    SOC_MOD_CLK_PLL_F48M,                      /*!< PLL_F48M_CLK is derived from SPLL (clock gating + fixed divider of 10), it has a fixed frequency of 48MHz */
+    SOC_MOD_CLK_PLL_F60M,                      /*!< PLL_F60M_CLK is derived from SPLL (clock gating + fixed divider of 8), it has a fixed frequency of 60MHz */
+    SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from SPLL (clock gating + fixed divider of 6), it has a fixed frequency of 80MHz */
+    SOC_MOD_CLK_PLL_F120M,                     /*!< PLL_F120M_CLK is derived from SPLL (clock gating + fixed divider of 4), it has a fixed frequency of 120MHz */
+    SOC_MOD_CLK_PLL_F160M,                     /*!< PLL_F160M_CLK is derived from SPLL (clock gating + fixed divider of 3), it has a fixed frequency of 160MHz */
+    SOC_MOD_CLK_MODEM_APB = SOC_MOD_CLK_PLL_F160M, /*!< Modem APB clock comes from the CLK_160M_REF */
+    SOC_MOD_CLK_PLL_F240M,                     /*!< PLL_F240M_CLK is derived from SPLL (clock gating + fixed divider of 2), it has a fixed frequency of 240MHz */
+    SOC_MOD_CLK_SPLL,                          /*!< SPLL is from the main XTAL oscillator frequency multipliers, it has a "fixed" frequency of 480MHz */
+    SOC_MOD_CLK_XTAL32K,                       /*!< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
+    SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 20MHz rc oscillator, passing a clock gating to the peripherals */
+    SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 48MHz crystal */
+    // For LP peripherals
+    SOC_MOD_CLK_XTAL_D2,                       /*!< XTAL_D2_CLK comes from the external 48MHz crystal, passing a div of 2 to the LP peripherals */
+    SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
+} soc_module_clk_t;
+
 /**
  * @brief CPU_CLK mux inputs, which are the supported clock sources for the CPU_CLK
  * @note Enum values are matched with the register field values on purpose
  */
 typedef enum {
-    SOC_CPU_CLK_SRC_XTAL = 0,              /*!< Select XTAL_CLK as CPU_CLK source */
-    SOC_CPU_CLK_SRC_RC_FAST = 1,           /*!< Select RC_FAST_CLK as CPU_CLK source */
-    SOC_CPU_CLK_SRC_PLL_F160M = 2,         /*!< Select PLL_F160M_CLK as CPU_CLK source (PLL_F160M_CLK is derived from SPLL (480MHz), which is the output of the main crystal oscillator frequency multiplier) */
-    SOC_CPU_CLK_SRC_PLL_F240M = 3,         /*!< Select PLL_F240M_CLK as CPU_CLK source (PLL_F240M_CLK is derived from SPLL (480MHz), which is the output of the main crystal oscillator frequency multiplier) */
-    SOC_CPU_CLK_SRC_INVALID,               /*!< Invalid CPU_CLK source */
+    SOC_CPU_CLK_SRC_XTAL        =   SOC_MOD_CLK_XTAL,       /*!< Select XTAL_CLK as CPU_CLK source */
+    SOC_CPU_CLK_SRC_RC_FAST     =   SOC_MOD_CLK_RC_FAST,    /*!< Select RC_FAST_CLK as CPU_CLK source */
+    SOC_CPU_CLK_SRC_PLL_F160M   =   SOC_MOD_CLK_PLL_F160M,  /*!< Select PLL_F160M_CLK as CPU_CLK source (PLL_F160M_CLK is derived from SPLL (480MHz), which is the output of the main crystal oscillator frequency multiplier) */
+    SOC_CPU_CLK_SRC_PLL_F240M   =   SOC_MOD_CLK_PLL_F240M,  /*!< Select PLL_F240M_CLK as CPU_CLK source (PLL_F240M_CLK is derived from SPLL (480MHz), which is the output of the main crystal oscillator frequency multiplier) */
+    SOC_CPU_CLK_SRC_INVALID     =   SOC_MOD_CLK_INVALID,    /*!< Invalid CPU_CLK source */
 } soc_cpu_clk_src_t;
 
 /**
@@ -108,34 +142,6 @@ typedef enum {
     SOC_XTAL_FREQ_40M = 40,                /*!< 40MHz XTAL */
     SOC_XTAL_FREQ_48M = 48,                /*!< 48MHz XTAL */
 } soc_xtal_freq_t;
-
-// Naming convention: SOC_MOD_CLK_{[upstream]clock_name}_[attr]
-// {[upstream]clock_name}: XTAL, (BB)PLL, etc.
-// [attr] - optional: FAST, SLOW, D<divider>, F<freq>
-/**
- * @brief Supported clock sources for modules (CPU, peripherals, RTC, etc.)
- *
- * @note enum starts from 1, to save 0 for special purpose
- */
-typedef enum {
-    // For CPU domain
-    SOC_MOD_CLK_CPU = 1,                       /*!< CPU_CLK can be sourced from XTAL, PLL, or RC_FAST by configuring soc_cpu_clk_src_t */
-    // For RTC domain
-    SOC_MOD_CLK_RTC_FAST,                      /*!< RTC_FAST_CLK can be sourced from XTAL_D2 or RC_FAST by configuring soc_rtc_fast_clk_src_t */
-    SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, or OSC_SLOW by configuring soc_rtc_slow_clk_src_t */
-    // For digital domain: peripherals, WIFI, BLE
-    SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from PLL (clock gating + fixed divider of 6), it has a fixed frequency of 80MHz */
-    SOC_MOD_CLK_PLL_F160M,                     /*!< PLL_F160M_CLK is derived from PLL (clock gating + fixed divider of 3), it has a fixed frequency of 160MHz */
-    SOC_MOD_CLK_PLL_F240M,                     /*!< PLL_F240M_CLK is derived from PLL (clock gating + fixed divider of 2), it has a fixed frequency of 240MHz */
-    SOC_MOD_CLK_SPLL,                          /*!< SPLL is from the main XTAL oscillator frequency multipliers, it has a "fixed" frequency of 480MHz */
-    SOC_MOD_CLK_XTAL32K,                       /*!< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
-    SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 20MHz rc oscillator, passing a clock gating to the peripherals */
-    SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 48MHz crystal */
-    // For LP peripherals
-    SOC_MOD_CLK_XTAL_D2,                       /*!< XTAL_D2_CLK comes from the external 48MHz crystal, passing a div of 2 to the LP peripherals */
-
-    SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
-} soc_module_clk_t;
 
 //////////////////////////////////////////////////SYSTIMER//////////////////////////////////////////////////////////////
 

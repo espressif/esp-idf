@@ -521,7 +521,7 @@ static esp_err_t emac_config_pll_clock(emac_esp32_t *emac)
         real_freq /= div;
     }
     // Enable 50MHz MPLL derived clock
-    esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F50M, true);
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F50M, true), TAG, "clock source enable failed");
 #endif
     // If the difference of real RMII CLK frequency is not within 50 ppm, i.e. 2500 Hz, the (A/M)PLL is unusable
     ESP_RETURN_ON_FALSE(abs((int)real_freq - (int)expt_freq) <= 2500,

@@ -109,6 +109,18 @@ menu "Main Flash configuration"
                 This config is used for setting Tsus parameter. Tsus means CS# high to next command after
                 suspend. You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
 
+        config SPI_FLASH_SUSPEND_TRS_VAL_US
+            int "SPI flash tRS value (refer to chapter AC CHARACTERISTICS)"
+            default 50
+            range 20 200
+            depends on SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+            help
+                This config is used for setting Trs parameter. Trs means CS Latency Between Resume And Next Suspend.
+                You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
+                For high-performance scenarios, some flash chips allow this set value to be smaller than the
+                given value in the datasheet without causing errors in the flash state machine.
+                When you have any related needs, please contact espressif business team.
+
         config SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND
             bool "Enable XMC-C series flash chip suspend feature anyway"
             default n
@@ -374,7 +386,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_ISSI_CHIP
             bool "ISSI"
-            default y if SPI_FLASH_VENDOR_ISSI_SUPPORTED
+            default y if SPI_FLASH_VENDOR_ISSI_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of ISSI chips if chip vendor not directly
@@ -383,7 +395,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_MXIC_CHIP
             bool "MXIC"
-            default y if SPI_FLASH_VENDOR_MXIC_SUPPORTED
+            default y if SPI_FLASH_VENDOR_MXIC_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of MXIC chips if chip vendor not directly
@@ -392,7 +404,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_GD_CHIP
             bool "GigaDevice"
-            default y if SPI_FLASH_VENDOR_GD_SUPPORTED
+            default y if SPI_FLASH_VENDOR_GD_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of GD (GigaDevice) chips if chip vendor not
@@ -406,7 +418,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_WINBOND_CHIP
             bool "Winbond"
-            default y if SPI_FLASH_VENDOR_WINBOND_SUPPORTED
+            default y if SPI_FLASH_VENDOR_WINBOND_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of Winbond chips if chip vendor not directly
@@ -416,7 +428,7 @@ menu "SPI Flash driver"
         config SPI_FLASH_SUPPORT_BOYA_CHIP
             bool "BOYA"
             # ESP32 doesn't usually use this chip, default n to save iram.
-            default y if SPI_FLASH_VENDOR_BOYA_SUPPORTED
+            default y if SPI_FLASH_VENDOR_BOYA_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of BOYA chips if chip vendor not directly
@@ -426,7 +438,7 @@ menu "SPI Flash driver"
         config SPI_FLASH_SUPPORT_TH_CHIP
             bool "TH"
             # ESP32 doesn't usually use this chip, default n to save iram.
-            default y if SPI_FLASH_VENDOR_TH_SUPPORTED
+            default y if SPI_FLASH_VENDOR_TH_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of TH chips if chip vendor not directly

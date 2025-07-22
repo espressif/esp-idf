@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -287,28 +287,19 @@ typedef union {
     uint32_t val;
 } lp_aon_usb_reg_t;
 
-/** Type of lpbus register
+/** Type of sdio_active register
  *  need_des
  */
 typedef union {
     struct {
-        uint32_t reserved_0:16;
-        /** fast_mem_wpulse : R/W; bitpos: [18:16]; default: 0;
-         *  This field controls fast memory WPULSE parameter.
+        uint32_t reserved_0:22;
+        /** sdio_act_dnum : R/W; bitpos: [31:22]; default: 10;
+         *  need_des
          */
-        uint32_t fast_mem_wpulse:3;
-        /** fast_mem_wa : R/W; bitpos: [21:19]; default: 4;
-         *  This field controls fast memory WA parameter.
-         */
-        uint32_t fast_mem_wa:3;
-        /** fast_mem_ra : R/W; bitpos: [23:22]; default: 0;
-         *  This field controls fast memory RA parameter.
-         */
-        uint32_t fast_mem_ra:2;
-        uint32_t reserved_24:8;
+        uint32_t sdio_act_dnum:10;
     };
     uint32_t val;
-} lp_aon_lpbus_reg_t;
+} lp_aon_sdio_active_reg_t;
 
 /** Type of lpcore register
  *  need_des
@@ -405,7 +396,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [30:0]; default: 36766272;
+        /** date : R/W; bitpos: [30:0]; default: 37823232;
          *  need_des
          */
         uint32_t date:31;
@@ -465,8 +456,8 @@ typedef struct {
     volatile lp_aon_io_mux_reg_t io_mux;
     volatile lp_aon_ext_wakeup_cntl_reg_t ext_wakeup_cntl;
     volatile lp_aon_usb_reg_t usb;
-    volatile lp_aon_lpbus_reg_t lpbus;
-    uint32_t reserved_04c;
+    uint32_t reserved_048;
+    volatile lp_aon_sdio_active_reg_t sdio_active;
     volatile lp_aon_lpcore_reg_t lpcore;
     volatile lp_aon_sar_cct_reg_t sar_cct;
     volatile lp_aon_modem_bus_reg_t modem_bus;

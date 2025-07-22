@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,4 +32,9 @@ const int rtc_io_num_map[SOC_GPIO_PIN_COUNT] = {
     -1,//GPIO22
     -1,//GPIO23
     -1,//GPIO24
+    -1,//GPIO25
+    -1,//GPIO26
+    -1,//GPIO27
+    -1,//GPIO28
+    -1,//GPIO29
 };

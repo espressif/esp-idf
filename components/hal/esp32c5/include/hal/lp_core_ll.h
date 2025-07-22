@@ -32,14 +32,14 @@ extern "C" {
  *
  * @param enable true to enable, false to disable
  */
-static inline void lp_core_ll_enable_bus_clock(bool enable)
+static inline void _lp_core_ll_enable_bus_clock(bool enable)
 {
     LPPERI.clk_en.lp_cpu_ck_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lp_core_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_core_ll_enable_bus_clock(__VA_ARGS__)
+#define lp_core_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _lp_core_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the lp_core module

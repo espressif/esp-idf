@@ -518,6 +518,22 @@ TEST_CASE("parallel tx unit use external non-free running clock", "[parlio_tx]")
 };
 
 #if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
+typedef struct {
+    uint32_t switch_count;
+    void *old_buffer_addr[5];
+    void *new_buffer_addr[5];
+} test_parlio_tx_buffer_switched_context_t;
+
+TEST_PARLIO_CALLBACK_ATTR
+static bool test_parlio_tx_buffer_switched_callback(parlio_tx_unit_handle_t tx_unit, const parlio_tx_buffer_switched_event_data_t *edata, void *user_ctx)
+{
+    test_parlio_tx_buffer_switched_context_t *context = (test_parlio_tx_buffer_switched_context_t *)user_ctx;
+    context->old_buffer_addr[context->switch_count] = edata->old_buffer_addr;
+    context->new_buffer_addr[context->switch_count] = edata->new_buffer_addr;
+    context->switch_count++;
+    return false;
+}
+
 TEST_CASE("parlio_tx_loop_transmission", "[parlio_tx]")
 {
     printf("install parlio tx unit\r\n");
@@ -545,6 +561,16 @@ TEST_CASE("parlio_tx_loop_transmission", "[parlio_tx]")
         .sample_edge = PARLIO_SAMPLE_EDGE_POS,
     };
     TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
+
+    printf("register trans_done event callback\r\n");
+    parlio_tx_event_callbacks_t cbs = {
+        .on_buffer_switched = test_parlio_tx_buffer_switched_callback,
+    };
+    test_parlio_tx_buffer_switched_context_t context = {
+        .switch_count = 0,
+    };
+    TEST_ESP_OK(parlio_tx_unit_register_event_callbacks(tx_unit, &cbs, &context));
+
     TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
 
     printf("send packets and check event is fired\r\n");
@@ -560,37 +586,48 @@ TEST_CASE("parlio_tx_loop_transmission", "[parlio_tx]")
         payload_loop2[i] = 255 - i;
         payload_oneshot[i] = i * 2 + 1;
     }
-    if (parlio_ll_tx_support_dma_eof(NULL)) { // for some chips, only support in particular ECO version
-        transmit_config.flags.loop_transmission = true;
-        int lopp_count = 3;
-        while (lopp_count--) {
-            TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload_loop1, 256 * sizeof(uint8_t) * 8, &transmit_config));
-            vTaskDelay(pdMS_TO_TICKS(10));
-            // Should be sent after the previous frame has been completely sent
-            TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload_loop2, 256 * sizeof(uint8_t) * 8, &transmit_config));
-            vTaskDelay(pdMS_TO_TICKS(10));
-        }
 
-        transmit_config.flags.loop_transmission = false;
-        // should be pending in queue
-        TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload_oneshot, 256 * sizeof(uint8_t) * 8, &transmit_config));
-        transmit_config.flags.loop_transmission = true;
-        // there is a oneshot trans in queue, should also be pending in queue
+    transmit_config.flags.loop_transmission = true;
+    int lopp_count = 3;
+    while (lopp_count--) {
         TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload_loop1, 256 * sizeof(uint8_t) * 8, &transmit_config));
-
-        TEST_ESP_ERR(ESP_ERR_TIMEOUT, parlio_tx_unit_wait_all_done(tx_unit, 50));
-
-        // stop infinite loop transmission
-        parlio_tx_unit_disable(tx_unit);
-        // We should see 1 oneshot frame and 1 loop transmission (both pending in queue)
-        parlio_tx_unit_enable(tx_unit);
-
         vTaskDelay(pdMS_TO_TICKS(10));
-        // stop the second infinite loop transmission
-        parlio_tx_unit_disable(tx_unit);
-        parlio_tx_unit_enable(tx_unit);
-    } else {
-        TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, parlio_tx_unit_transmit(tx_unit, payload_loop1, 256 * sizeof(uint8_t) * 8, &transmit_config));
+        // Should be sent after the previous frame has been completely sent
+        TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload_loop2, 256 * sizeof(uint8_t) * 8, &transmit_config));
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    transmit_config.flags.loop_transmission = false;
+    // should be pending in queue
+    TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload_oneshot, 256 * sizeof(uint8_t) * 8, &transmit_config));
+    transmit_config.flags.loop_transmission = true;
+    // there is a oneshot trans in queue, should also be pending in queue
+    TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload_loop1, 256 * sizeof(uint8_t) * 8, &transmit_config));
+
+    TEST_ESP_ERR(ESP_ERR_TIMEOUT, parlio_tx_unit_wait_all_done(tx_unit, 50));
+
+    // stop infinite loop transmission
+    parlio_tx_unit_disable(tx_unit);
+    // We should see 1 oneshot frame and 1 loop transmission (both pending in queue)
+    parlio_tx_unit_enable(tx_unit);
+
+    vTaskDelay(pdMS_TO_TICKS(10));
+    // stop the second infinite loop transmission
+    parlio_tx_unit_disable(tx_unit);
+    parlio_tx_unit_enable(tx_unit);
+
+    // total 5 switch events
+    TEST_ASSERT_EQUAL(5, context.switch_count);
+    for (int i = 0; i < context.switch_count; i++) {
+        void *old_buffer_addr = context.old_buffer_addr[i];
+        void *new_buffer_addr = context.new_buffer_addr[i];
+        if (i % 2 == 0) {
+            TEST_ASSERT_EQUAL(payload_loop1, old_buffer_addr);
+            TEST_ASSERT_EQUAL(payload_loop2, new_buffer_addr);
+        } else {
+            TEST_ASSERT_EQUAL(payload_loop2, old_buffer_addr);
+            TEST_ASSERT_EQUAL(payload_loop1, new_buffer_addr);
+        }
     }
 
     TEST_ESP_OK(parlio_tx_unit_wait_all_done(tx_unit, -1));
@@ -598,3 +635,51 @@ TEST_CASE("parlio_tx_loop_transmission", "[parlio_tx]")
     TEST_ESP_OK(parlio_del_tx_unit(tx_unit));
 }
 #endif  // SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
+
+#if SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+TEST_CASE("parlio_tx can transmit buffer larger than max_size decided by datalen_eof", "[parlio_tx]")
+{
+    printf("install parlio tx unit\r\n");
+    parlio_tx_unit_handle_t tx_unit = NULL;
+    parlio_tx_unit_config_t config = {
+        .clk_src = PARLIO_CLK_SRC_DEFAULT,
+        .data_width = 4,
+        .clk_in_gpio_num = -1,  // use internal clock source
+        .valid_gpio_num = TEST_VALID_GPIO, // generate the valid signal
+        .clk_out_gpio_num = TEST_CLK_GPIO,
+        .data_gpio_nums = {
+            TEST_DATA0_GPIO,
+            TEST_DATA1_GPIO,
+            TEST_DATA2_GPIO,
+            TEST_DATA3_GPIO,
+        },
+        .output_clk_freq_hz = 10 * 1000 * 1000,
+        .trans_queue_depth = 1,
+        .max_transfer_size = 100 * 1024,
+        .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
+        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .flags.clk_gate_en = true,
+    };
+
+    TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
+    TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
+
+    const size_t buffer_size = 100 * 1024; // 100KB, larger than the 65535 bytes limit
+    uint8_t *buffer = heap_caps_malloc(buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(buffer);
+    for (int i = 0; i < buffer_size; i++) {
+        buffer[i] = i;
+    }
+
+    parlio_transmit_config_t transmit_config = {
+        .idle_value = 0x00,
+    };
+
+    TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, buffer, buffer_size * 8, &transmit_config));
+    TEST_ESP_OK(parlio_tx_unit_wait_all_done(tx_unit, -1));
+
+    TEST_ESP_OK(parlio_tx_unit_disable(tx_unit));
+    TEST_ESP_OK(parlio_del_tx_unit(tx_unit));
+    free(buffer);
+}
+#endif // SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA

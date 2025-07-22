@@ -125,13 +125,13 @@ static void test_esp_partition_api_w(const esp_partition_t *part)
     TEST_ASSERT_NOT_NULL(part);
     uint8_t buf_w[128];
     memset(buf_w, 0xA5, sizeof(buf_w));
-    TEST_ESP_OK(esp_partition_write(part, 0x00, buf_w, sizeof(buf_w)));
+    TEST_ESP_ERR(ESP_FAIL, esp_partition_write(part, 0x00, buf_w, sizeof(buf_w)));
 }
 
 static void test_esp_partition_api_e(const esp_partition_t *part)
 {
     TEST_ASSERT_NOT_NULL(part);
-    TEST_ESP_OK(esp_partition_erase_range(part, 0x00, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_ERR(ESP_FAIL, esp_partition_erase_range(part, 0x00, SPI_FLASH_SEC_SIZE));
 }
 
 static void test_esp_partition_api(void)
@@ -229,12 +229,12 @@ static void test_esp_flash_api_w(uint32_t paddr)
 {
     uint8_t buf_w[128];
     memset(buf_w, 0xA5, sizeof(buf_w));
-    TEST_ESP_OK(esp_flash_write(NULL, buf_w, paddr, sizeof(buf_w)));
+    TEST_ESP_ERR(ESP_FAIL, esp_flash_write(NULL, buf_w, paddr, sizeof(buf_w)));
 }
 
 static void test_esp_flash_api_e(uint32_t paddr)
 {
-    TEST_ESP_OK(esp_flash_erase_region(NULL, paddr, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_ERR(ESP_FAIL, esp_flash_erase_region(NULL, paddr, SPI_FLASH_SEC_SIZE));
 }
 
 static void test_esp_flash_api(void)

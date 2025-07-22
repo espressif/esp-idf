@@ -239,6 +239,14 @@ config SOC_RNG_SUPPORTED
     bool
     default y
 
+config SOC_KEY_MANAGER_SUPPORTED
+    bool
+    default y
+
+config SOC_HUK_SUPPORTED
+    bool
+    default y
+
 config SOC_MODEM_CLOCK_SUPPORTED
     bool
     default y
@@ -252,6 +260,10 @@ config SOC_DEEP_SLEEP_SUPPORTED
     default y
 
 config SOC_PM_SUPPORTED
+    bool
+    default y
+
+config SOC_CLOCK_TREE_MANAGEMENT_SUPPORTED
     bool
     default y
 
@@ -1011,6 +1023,10 @@ config SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
     bool
     default y
 
+config SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+    bool
+    default y
+
 config SOC_PARLIO_SUPPORT_SLEEP_RETENTION
     bool
     default y
@@ -1219,6 +1235,10 @@ config SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     bool
     default y
 
+config SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+    bool
+    default y
+
 config SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
     bool
     default y
@@ -1383,11 +1403,27 @@ config SOC_EFUSE_ECDSA_KEY_P384
     bool
     default y
 
+config SOC_HUK_MEM_NEEDS_RECHARGE
+    bool
+    default y
+
+config SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
+    bool
+    default y
+
 config SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
     bool
     default y
 
 config SOC_KEY_MANAGER_FE_KEY_DEPLOY
+    bool
+    default y
+
+config SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
+    bool
+    default y
+
+config SOC_KEY_MANAGER_DS_KEY_DEPLOY
     bool
     default y
 
@@ -1441,17 +1477,29 @@ config SOC_PSRAM_ENCRYPTION_XTS_AES_256
 
 config SOC_RECOVERY_BOOTLOADER_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_APM_CTRL_FILTER_SUPPORTED
     bool
     default y
 
 config SOC_APM_LP_APM0_SUPPORTED
+    bool
+    default y
+
+config SOC_APM_CPU_APM_SUPPORTED
+    bool
+    default y
+
+config SOC_APM_SUPPORT_LP_TEE_CTRL
+    bool
+    default y
+
+config SOC_APM_SUPPORT_CTRL_CFG_LOCK
     bool
     default y
 

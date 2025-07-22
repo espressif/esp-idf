@@ -10,6 +10,10 @@ if(CONFIG_SOC_BITSCRAMBLER_SUPPORTED)
     list(APPEND srcs "test_parlio_bitscrambler.c")
 endif()
 
+if(CONFIG_PARLIO_TX_ISR_CACHE_SAFE)
+    list(APPEND srcs "test_parlio_tx_cache_safe.c")
+endif()
+
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
@@ -21,4 +25,6 @@ idf_component_register(SRCS ${srcs}
 if(CONFIG_SOC_BITSCRAMBLER_SUPPORTED)
     target_bitscrambler_add_src("test_parlio_tx_LSB_to_MSB.bsasm")
     target_bitscrambler_add_src("test_parlio_tx_multiply.bsasm")
+    target_bitscrambler_add_src("test_parlio_tx_in8_out32.bsasm")
+    target_bitscrambler_add_src("test_parlio_tx_in32_out8.bsasm")
 endif()

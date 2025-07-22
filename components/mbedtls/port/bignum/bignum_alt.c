@@ -24,8 +24,6 @@ void esp_mpi_enable_hardware_hw_op( void )
 
 void esp_mpi_disable_hardware_hw_op( void )
 {
-    mpi_hal_disable_hardware_hw_op();
-
     /* Disable RSA hardware */
     esp_crypto_mpi_enable_periph_clk(false);
 

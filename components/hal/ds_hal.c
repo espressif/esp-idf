@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include "hal/systimer_hal.h"
 #include "hal/ds_hal.h"
 #include "hal/ds_ll.h"
+#include "soc/soc_caps.h"
 
 void ds_hal_start(void)
 {
@@ -22,6 +23,13 @@ void ds_hal_configure_iv(const uint32_t *iv)
 {
     ds_ll_configure_iv(iv);
 }
+
+#if SOC_KEY_MANAGER_DS_KEY_DEPLOY
+void ds_hal_set_key_source(ds_key_source_t key_source)
+{
+    ds_ll_set_key_source(key_source);
+}
+#endif
 
 void ds_hal_write_message(const uint8_t *msg, size_t size)
 {

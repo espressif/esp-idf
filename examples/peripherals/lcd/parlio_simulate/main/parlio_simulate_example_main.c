@@ -126,7 +126,7 @@ void example_init_parlio_panel(esp_lcd_panel_io_handle_t *io_handle)
 #endif
         },
         .data_width = CONFIG_EXAMPLE_LCD_PARLIO_DATA_WIDTH,
-        .max_transfer_bytes = EXAMPLE_LCD_H_RES * 100 * sizeof(uint16_t),
+        .max_transfer_bytes = EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_DRAW_BUF_LINES * sizeof(uint16_t),
         .dma_burst_size = EXAMPLE_DMA_BURST_SIZE,
         .cs_gpio_num = EXAMPLE_PIN_NUM_CS,
         .pclk_hz = EXAMPLE_LCD_PIXEL_CLOCK_HZ,

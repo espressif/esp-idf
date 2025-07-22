@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,12 +71,9 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
 
 esp_err_t esp_flash_encryption_enable_key_mgr(void)
 {
-    // Enable and reset key manager
-    // To suppress build errors about spinlock's __DECLARE_RCC_ATOMIC_ENV
-    int __DECLARE_RCC_ATOMIC_ENV __attribute__ ((unused));
-    key_mgr_ll_enable_bus_clock(true);
-    key_mgr_ll_enable_peripheral_clock(true);
-    key_mgr_ll_reset_register();
+    _key_mgr_ll_enable_bus_clock(true);
+    _key_mgr_ll_enable_peripheral_clock(true);
+    _key_mgr_ll_reset_register();
 
     while (key_mgr_ll_get_state() != ESP_KEY_MGR_STATE_IDLE) {
     };

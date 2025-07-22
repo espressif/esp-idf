@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 #include "hal/wdt_hal.h"
 #include "hal/efuse_hal.h"
 #include "esp_bootloader_desc.h"
+#include "esp_rom_sys.h"
 
 static const char *TAG = "boot";
 
@@ -34,7 +35,12 @@ void bootloader_clear_bss_section(void)
 esp_err_t bootloader_read_bootloader_header(void)
 {
     /* load bootloader image header */
-    if (bootloader_flash_read(ESP_BOOTLOADER_OFFSET, &bootloader_image_hdr, sizeof(esp_image_header_t), true) != ESP_OK) {
+#if SOC_RECOVERY_BOOTLOADER_SUPPORTED
+    const uint32_t bootloader_flash_offset = esp_rom_get_bootloader_offset();
+#else
+    const uint32_t bootloader_flash_offset = ESP_PRIMARY_BOOTLOADER_OFFSET;
+#endif
+    if (bootloader_flash_read(bootloader_flash_offset, &bootloader_image_hdr, sizeof(esp_image_header_t), true) != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "failed to load bootloader image header!");
         return ESP_FAIL;
     }

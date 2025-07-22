@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,6 +76,14 @@ static inline ds_key_check_t ds_ll_key_error_source(void)
     } else {
         return DS_OTHER_WRONG;
     }
+}
+
+/**
+ * @brief Set the DS key source.
+ */
+static inline void ds_ll_set_key_source(ds_key_source_t key_source)
+{
+    REG_WRITE(DS_KEY_SOURCE_REG, key_source);
 }
 
 /**

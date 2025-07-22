@@ -17,6 +17,7 @@
 #include "esp_cpu.h"
 #endif
 
+#include "soc/soc_caps.h"
 #include "esp_ds.h"
 #include "esp_crypto_lock.h"
 #include "esp_crypto_periph_clk.h"
@@ -36,6 +37,10 @@
 #include "hal/hmac_ll.h"
 #include "hal/sha_ll.h"
 #endif /* !CONFIG_IDF_TARGET_ESP32S2 */
+
+#ifdef SOC_KEY_MANAGER_DS_KEY_DEPLOY
+#include "hal/key_mgr_hal.h"
+#endif
 
 /**
  * The vtask delay \c esp_ds_sign() is using while waiting for completion of the signing operation.
@@ -247,22 +252,16 @@ static void ds_acquire_enable(void)
 
     // We also enable SHA and HMAC here. SHA is used by HMAC, HMAC is used by DS.
     esp_crypto_hmac_enable_periph_clk(true);
-
     esp_crypto_sha_enable_periph_clk(true);
-
+    esp_crypto_mpi_enable_periph_clk(true);
     esp_crypto_ds_enable_periph_clk(true);
-
-    hmac_hal_start();
 }
 
 static void ds_disable_release(void)
 {
-    ds_hal_finish();
-
     esp_crypto_ds_enable_periph_clk(false);
-
+    esp_crypto_mpi_enable_periph_clk(false);
     esp_crypto_sha_enable_periph_clk(false);
-
     esp_crypto_hmac_enable_periph_clk(false);
 
     esp_crypto_ds_lock_release();
@@ -326,12 +325,24 @@ esp_err_t esp_ds_start_sign(const void *message,
 
     ds_acquire_enable();
 
-    // initiate hmac
-    uint32_t conf_error = hmac_hal_configure(HMAC_OUTPUT_DS, key_id);
-    if (conf_error) {
-        ds_disable_release();
-        return ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL;
+#if SOC_KEY_MANAGER_DS_KEY_DEPLOY
+    if (key_id == HMAC_KEY_KM) {
+        key_mgr_hal_set_key_usage(ESP_KEY_MGR_DS_KEY, ESP_KEY_MGR_USE_OWN_KEY);
+        ds_hal_set_key_source(DS_KEY_SOURCE_KEY_MGR);
+    } else {
+        key_mgr_hal_set_key_usage(ESP_KEY_MGR_DS_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+        ds_hal_set_key_source(DS_KEY_SOURCE_EFUSE);
+#endif
+        // initiate hmac
+        hmac_hal_start();
+        uint32_t conf_error = hmac_hal_configure(HMAC_OUTPUT_DS, key_id);
+        if (conf_error) {
+            ds_disable_release();
+            return ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL;
+        }
+#if SOC_KEY_MANAGER_DS_KEY_DEPLOY
     }
+#endif
 
     ds_hal_start();
 
@@ -339,6 +350,7 @@ esp_err_t esp_ds_start_sign(const void *message,
     int64_t start_time = get_time_us();
     while (ds_ll_busy() != 0) {
         if ((get_time_us() - start_time) > SOC_DS_KEY_CHECK_MAX_WAIT_US) {
+            ds_hal_finish();
             ds_disable_release();
             return ESP_ERR_HW_CRYPTO_DS_INVALID_KEY;
         }
@@ -348,6 +360,7 @@ esp_err_t esp_ds_start_sign(const void *message,
     *esp_ds_ctx = malloc(sizeof(esp_ds_context_t));
 #endif
     if (!*esp_ds_ctx) {
+        ds_hal_finish();
         ds_disable_release();
         return ESP_ERR_NO_MEM;
     }
@@ -398,6 +411,7 @@ esp_err_t esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx)
 #endif
 
     hmac_hal_clean();
+    ds_hal_finish();
 
     ds_disable_release();
 

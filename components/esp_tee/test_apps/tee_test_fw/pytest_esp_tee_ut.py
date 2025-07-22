@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import re
 from enum import Enum
 from typing import Dict
 from typing import Tuple
@@ -198,8 +199,18 @@ def expect_panic_rsn(dut: IdfDut, expected_rsn: str) -> None:
 
 def run_multiple_stages(dut: IdfDut, test_case_num: int, stages: int, api: TeeFlashAccessApi) -> None:
     expected_ops = {
-        TeeFlashAccessApi.ESP_PARTITION: ['read', 'program_page', 'program_page', 'erase_sector'],
-        TeeFlashAccessApi.ESP_FLASH: ['program_page', 'read', 'erase_sector', 'program_page'],
+        TeeFlashAccessApi.ESP_PARTITION: [
+            'read',
+            'program_page|common_command',
+            'program_page|common_command',
+            'erase_sector|common_command',
+        ],
+        TeeFlashAccessApi.ESP_FLASH: [
+            'program_page|common_command',
+            'read',
+            'erase_sector|common_command',
+            'program_page|common_command',
+        ],
     }
 
     flash_enc_enabled = dut.app.sdkconfig.get('SECURE_FLASH_ENC_ENABLED', True)
@@ -225,7 +236,7 @@ def run_multiple_stages(dut: IdfDut, test_case_num: int, stages: int, api: TeeFl
                         r'\[_ss_spi_flash_hal_(\w+)\] Illegal flash access at \s*(0x[0-9a-fA-F]+)', timeout=10
                     )
                     actual_op = match.group(1).decode()
-                    if actual_op != curr_op:
+                    if not re.fullmatch(curr_op, actual_op):
                         raise RuntimeError(f'Unexpected flash operation: {actual_op} (expected: {curr_op})')
             elif api == TeeFlashAccessApi.ESP_ROM_SPIFLASH:
                 expect_panic_rsn(dut, 'APM - Authority exception')

@@ -106,23 +106,18 @@ void tee_apm_violation_isr(void *arg)
     intptr_t exc_sp = RV_READ_CSR(mscratch);
     RvExcFrame *frame = (RvExcFrame *)exc_sp;
 
-    apm_ctrl_path_t *apm_excp_type = (apm_ctrl_path_t *)arg;
-    apm_ctrl_exception_info_t excp_info = {
-        .apm_path = {
-            .apm_ctrl = apm_excp_type->apm_ctrl,
-            .apm_m_path = apm_excp_type->apm_m_path,
-        }
-    };
+    apm_hal_ctrl_info_t *ctrl_info = (apm_hal_ctrl_info_t *)arg;
+    apm_ctrl_exception_info_t excp_info = {};
 
-    apm_hal_apm_ctrl_get_exception_info(&excp_info);
-    apm_hal_apm_ctrl_exception_clear(apm_excp_type);
+    apm_hal_get_exception_info(ctrl_info, &excp_info);
+    apm_hal_clear_exception_status(ctrl_info);
 
     int fault_core = esp_cpu_get_core_id();
-    panic_print_rsn((const void *)frame, fault_core, esp_tee_apm_excp_type_to_str(excp_info.excp_type));
+    panic_print_rsn((const void *)frame, fault_core, esp_tee_apm_excp_type_to_str(excp_info.type));
 
-    tee_panic_print("Access addr: 0x%x | Mode: %s\n", excp_info.excp_addr, esp_tee_apm_excp_mode_to_str(excp_info.excp_mode));
-    tee_panic_print("Module: %s | Path: %d\n", esp_tee_apm_excp_ctrl_to_str(excp_info.apm_path.apm_ctrl), excp_info.apm_path.apm_m_path);
-    tee_panic_print("Master: %s | Region: %d\n", esp_tee_apm_excp_mid_to_str(excp_info.excp_id), (excp_info.excp_regn == 0) ? 0 : (__builtin_ffs(excp_info.excp_regn) - 1));
+    tee_panic_print("Access addr: 0x%x | Mode: %s\n", excp_info.addr, esp_tee_apm_excp_mode_to_str(excp_info.mode));
+    tee_panic_print("Module: %s | Path: %d\n", esp_tee_apm_excp_ctrl_to_str(ctrl_info->ctrl_mod), ctrl_info->path);
+    tee_panic_print("Master: %s | Region: %d\n", esp_tee_apm_excp_mid_to_str(excp_info.id), (excp_info.regn == 0) ? 0 : (__builtin_ffs(excp_info.regn) - 1));
 
     panic_print_info((const void *)frame, fault_core);
     ESP_INFINITE_LOOP();

@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 0c453d200f282e320677c1ac46786658
+// md5_digest_table a89a21bde56c3936f31af16ba1de1fe3
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -599,10 +599,6 @@ static const esp_efuse_desc_t SEC_DPA_LEVEL[] = {
     {EFUSE_BLK0, 116, 2}, 	 // [] Represents the security level of anti-DPA attack. The level is adjusted by configuring the clock random frequency division mode.0: Security level is SEC\_DPA\_OFF1: Security level is SEC\_DPA\_LOW2: Security level is SEC\_DPA\_MIDDLE3: Security level is SEC\_DPA\_HIGHFor more information; please refer to Chapter \ref{mod:sysreg} \textit{\nameref{mod:sysreg}} > Section \ref{sec:sysreg-anti-dpa-attack-security-control} \textit{\nameref{sec:sysreg-anti-dpa-attack-security-control}}.,
 };
 
-static const esp_efuse_desc_t RECOVERY_BOOTLOADER_FLASH_SECTOR_HI[] = {
-    {EFUSE_BLK0, 118, 3}, 	 // [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled. (The high part of the field),
-};
-
 static const esp_efuse_desc_t SECURE_BOOT_EN[] = {
     {EFUSE_BLK0, 121, 1}, 	 // [] Represents whether Secure Boot is enabled.1: Enabled0: Disabled,
 };
@@ -691,8 +687,9 @@ static const esp_efuse_desc_t ECC_FORCE_CONST_TIME[] = {
     {EFUSE_BLK0, 173, 1}, 	 // [] Represents whether to force ECC to use constant-time mode for point multiplication calculation. 0: Not force1: Force,
 };
 
-static const esp_efuse_desc_t RECOVERY_BOOTLOADER_FLASH_SECTOR_LO[] = {
-    {EFUSE_BLK0, 174, 9}, 	 // [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled. (The low part of the field),
+static const esp_efuse_desc_t RECOVERY_BOOTLOADER_FLASH_SECTOR[] = {
+    {EFUSE_BLK0, 174, 9}, 	 // [] Low 9 bits. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled.,
+    {EFUSE_BLK0, 118, 3}, 	 // [] High 3 bits. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled.,
 };
 
 static const esp_efuse_desc_t MAC[] = {
@@ -1642,11 +1639,6 @@ const esp_efuse_desc_t* ESP_EFUSE_SEC_DPA_LEVEL[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_HI[] = {
-    &RECOVERY_BOOTLOADER_FLASH_SECTOR_HI[0],    		// [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled. (The high part of the field)
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_EN[] = {
     &SECURE_BOOT_EN[0],    		// [] Represents whether Secure Boot is enabled.1: Enabled0: Disabled
     NULL
@@ -1757,8 +1749,9 @@ const esp_efuse_desc_t* ESP_EFUSE_ECC_FORCE_CONST_TIME[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_LO[] = {
-    &RECOVERY_BOOTLOADER_FLASH_SECTOR_LO[0],    		// [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled. (The low part of the field)
+const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR[] = {
+    &RECOVERY_BOOTLOADER_FLASH_SECTOR[0],    		// [] Low 9 bits. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled.
+    &RECOVERY_BOOTLOADER_FLASH_SECTOR[1],    		// [] High 3 bits. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled.
     NULL
 };
 

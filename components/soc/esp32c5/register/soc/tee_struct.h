@@ -10,22 +10,24 @@
 extern "C" {
 #endif
 
-/** Group: Tee mode control register */
+/** Group: Configuration Registers */
 /** Type of mn_mode_ctrl register
- *  TEE mode control register
+ *  Security mode configuration register
  */
 typedef union {
     struct {
         /** mn_mode : R/W; bitpos: [1:0]; default: 0;
-         *  Configures Mn security level mode.
-         *  0: tee_mode
-         *  1: ree_mode0
-         *  2: ree_mode1
-         *  3: ree_mode2
+         *  Configures the security mode for master n.
+         *  0: TEE
+         *  1: REE0
+         *  2: REE1
+         *  3: REE2
          */
         uint32_t mn_mode:2;
         /** mn_lock : R/W; bitpos: [2]; default: 0;
-         *  Set 1 to lock m0 tee configuration
+         *  Configures whether to lock the value of TEE_Mn_MODE.
+         *  0: Do not lock
+         *  1: Lock
          */
         uint32_t mn_lock:1;
         uint32_t reserved_3:29;
@@ -34,9 +36,9 @@ typedef union {
 } tee_mn_mode_ctrl_reg_t;
 
 
-/** Group: read write control register */
+/** Group: Peripheral Read/Write Control Registers */
 /** Type of uart0_ctrl register
- *  uart0 read/write control register
+ *  UART0 read/write control register
  */
 typedef union {
     struct {
@@ -94,7 +96,7 @@ typedef union {
 } tee_uart0_ctrl_reg_t;
 
 /** Type of uart1_ctrl register
- *  uart1 read/write control register
+ *  UART1 read/write control register
  */
 typedef union {
     struct {
@@ -152,7 +154,7 @@ typedef union {
 } tee_uart1_ctrl_reg_t;
 
 /** Type of uhci0_ctrl register
- *  uhci0 read/write control register
+ *  UHCI read/write control register
  */
 typedef union {
     struct {
@@ -210,7 +212,7 @@ typedef union {
 } tee_uhci0_ctrl_reg_t;
 
 /** Type of i2c_ext0_ctrl register
- *  i2c_ext0 read/write control register
+ *  I2C read/write control register
  */
 typedef union {
     struct {
@@ -268,7 +270,7 @@ typedef union {
 } tee_i2c_ext0_ctrl_reg_t;
 
 /** Type of i2s_ctrl register
- *  i2s read/write control register
+ *  I2S read/write control register
  */
 typedef union {
     struct {
@@ -326,7 +328,7 @@ typedef union {
 } tee_i2s_ctrl_reg_t;
 
 /** Type of parl_io_ctrl register
- *  parl_io read/write control register
+ *  PARL_IO read/write control register
  */
 typedef union {
     struct {
@@ -384,7 +386,7 @@ typedef union {
 } tee_parl_io_ctrl_reg_t;
 
 /** Type of pwm_ctrl register
- *  pwm read/write control register
+ *  MCPWM read/write control register
  */
 typedef union {
     struct {
@@ -442,7 +444,7 @@ typedef union {
 } tee_pwm_ctrl_reg_t;
 
 /** Type of ledc_ctrl register
- *  ledc read/write control register
+ *  LEDC read/write control register
  */
 typedef union {
     struct {
@@ -499,124 +501,124 @@ typedef union {
     uint32_t val;
 } tee_ledc_ctrl_reg_t;
 
-/** Type of can0_ctrl register
- *  can read/write control register
+/** Type of twai0_ctrl register
+ *  TWAI0 read/write control register
  */
 typedef union {
     struct {
-        /** read_tee_can0 : R/W; bitpos: [0]; default: 1;
+        /** read_tee_twai0 : R/W; bitpos: [0]; default: 1;
          *  Configures can0 registers read permission in tee mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_tee_can0:1;
-        /** read_ree0_can0 : R/W; bitpos: [1]; default: 0;
+        uint32_t read_tee_twai0:1;
+        /** read_ree0_twai0 : R/W; bitpos: [1]; default: 0;
          *  Configures can0 registers read permission in ree0 mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_ree0_can0:1;
-        /** read_ree1_can0 : R/W; bitpos: [2]; default: 0;
+        uint32_t read_ree0_twai0:1;
+        /** read_ree1_twai0 : R/W; bitpos: [2]; default: 0;
          *  Configures can0 registers read permission in ree1 mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_ree1_can0:1;
-        /** read_ree2_can0 : R/W; bitpos: [3]; default: 0;
+        uint32_t read_ree1_twai0:1;
+        /** read_ree2_twai0 : R/W; bitpos: [3]; default: 0;
          *  Configures can0 registers read permission in ree2 mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_ree2_can0:1;
-        /** write_tee_can0 : R/W; bitpos: [4]; default: 1;
+        uint32_t read_ree2_twai0:1;
+        /** write_tee_twai0 : R/W; bitpos: [4]; default: 1;
          *  Configures can0 registers write permission in tee mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_tee_can0:1;
-        /** write_ree0_can0 : R/W; bitpos: [5]; default: 0;
+        uint32_t write_tee_twai0:1;
+        /** write_ree0_twai0 : R/W; bitpos: [5]; default: 0;
          *  Configures can0 registers write permission in ree0 mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_ree0_can0:1;
-        /** write_ree1_can0 : R/W; bitpos: [6]; default: 0;
+        uint32_t write_ree0_twai0:1;
+        /** write_ree1_twai0 : R/W; bitpos: [6]; default: 0;
          *  Configures can0 registers write permission in ree1 mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_ree1_can0:1;
-        /** write_ree2_can0 : R/W; bitpos: [7]; default: 0;
+        uint32_t write_ree1_twai0:1;
+        /** write_ree2_twai0 : R/W; bitpos: [7]; default: 0;
          *  Configures can0 registers write permission in ree2 mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_ree2_can0:1;
+        uint32_t write_ree2_twai0:1;
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} tee_can0_ctrl_reg_t;
+} tee_twai0_ctrl_reg_t;
 
-/** Type of usb_device_ctrl register
- *  usb_device read/write control register
+/** Type of usb_serial_jtag_ctrl register
+ *  USB_SERIAL_JTAG read/write control register
  */
 typedef union {
     struct {
-        /** read_tee_usb_device : R/W; bitpos: [0]; default: 1;
+        /** read_tee_usb_serial_jtag : R/W; bitpos: [0]; default: 1;
          *  Configures usb_device registers read permission in tee mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_tee_usb_device:1;
-        /** read_ree0_usb_device : R/W; bitpos: [1]; default: 0;
+        uint32_t read_tee_usb_serial_jtag:1;
+        /** read_ree0_usb_serial_jtag : R/W; bitpos: [1]; default: 0;
          *  Configures usb_device registers read permission in ree0 mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_ree0_usb_device:1;
-        /** read_ree1_usb_device : R/W; bitpos: [2]; default: 0;
+        uint32_t read_ree0_usb_serial_jtag:1;
+        /** read_ree1_usb_serial_jtag : R/W; bitpos: [2]; default: 0;
          *  Configures usb_device registers read permission in ree1 mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_ree1_usb_device:1;
-        /** read_ree2_usb_device : R/W; bitpos: [3]; default: 0;
+        uint32_t read_ree1_usb_serial_jtag:1;
+        /** read_ree2_usb_serial_jtag : R/W; bitpos: [3]; default: 0;
          *  Configures usb_device registers read permission in ree2 mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_ree2_usb_device:1;
-        /** write_tee_usb_device : R/W; bitpos: [4]; default: 1;
+        uint32_t read_ree2_usb_serial_jtag:1;
+        /** write_tee_usb_serial_jtag : R/W; bitpos: [4]; default: 1;
          *  Configures usb_device registers write permission in tee mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_tee_usb_device:1;
-        /** write_ree0_usb_device : R/W; bitpos: [5]; default: 0;
+        uint32_t write_tee_usb_serial_jtag:1;
+        /** write_ree0_usb_serial_jtag : R/W; bitpos: [5]; default: 0;
          *  Configures usb_device registers write permission in ree0 mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_ree0_usb_device:1;
-        /** write_ree1_usb_device : R/W; bitpos: [6]; default: 0;
+        uint32_t write_ree0_usb_serial_jtag:1;
+        /** write_ree1_usb_serial_jtag : R/W; bitpos: [6]; default: 0;
          *  Configures usb_device registers write permission in ree1 mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_ree1_usb_device:1;
-        /** write_ree2_usb_device : R/W; bitpos: [7]; default: 0;
+        uint32_t write_ree1_usb_serial_jtag:1;
+        /** write_ree2_usb_serial_jtag : R/W; bitpos: [7]; default: 0;
          *  Configures usb_device registers write permission in ree2 mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_ree2_usb_device:1;
+        uint32_t write_ree2_usb_serial_jtag:1;
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} tee_usb_device_ctrl_reg_t;
+} tee_usb_serial_jtag_ctrl_reg_t;
 
 /** Type of rmt_ctrl register
- *  rmt read/write control register
+ *  RMT read/write control register
  */
 typedef union {
     struct {
@@ -674,7 +676,7 @@ typedef union {
 } tee_rmt_ctrl_reg_t;
 
 /** Type of gdma_ctrl register
- *  gdma read/write control register
+ *  GDMA read/write control register
  */
 typedef union {
     struct {
@@ -731,66 +733,8 @@ typedef union {
     uint32_t val;
 } tee_gdma_ctrl_reg_t;
 
-/** Type of regdma_ctrl register
- *  regdma read/write control register
- */
-typedef union {
-    struct {
-        /** read_tee_regdma : R/W; bitpos: [0]; default: 1;
-         *  Configures regdma registers read permission in tee mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_tee_regdma:1;
-        /** read_ree0_regdma : R/W; bitpos: [1]; default: 0;
-         *  Configures regdma registers read permission in ree0 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree0_regdma:1;
-        /** read_ree1_regdma : R/W; bitpos: [2]; default: 0;
-         *  Configures regdma registers read permission in ree1 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree1_regdma:1;
-        /** read_ree2_regdma : R/W; bitpos: [3]; default: 0;
-         *  Configures regdma registers read permission in ree2 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree2_regdma:1;
-        /** write_tee_regdma : R/W; bitpos: [4]; default: 1;
-         *  Configures regdma registers write permission in tee mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_tee_regdma:1;
-        /** write_ree0_regdma : R/W; bitpos: [5]; default: 0;
-         *  Configures regdma registers write permission in ree0 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree0_regdma:1;
-        /** write_ree1_regdma : R/W; bitpos: [6]; default: 0;
-         *  Configures regdma registers write permission in ree1 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree1_regdma:1;
-        /** write_ree2_regdma : R/W; bitpos: [7]; default: 0;
-         *  Configures regdma registers write permission in ree2 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree2_regdma:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} tee_regdma_ctrl_reg_t;
-
 /** Type of etm_ctrl register
- *  etm read/write control register
+ *  SOC_ETM read/write control register
  */
 typedef union {
     struct {
@@ -848,7 +792,7 @@ typedef union {
 } tee_etm_ctrl_reg_t;
 
 /** Type of intmtx_ctrl register
- *  intmtx read/write control register
+ *  INTMTX read/write control register
  */
 typedef union {
     struct {
@@ -906,7 +850,7 @@ typedef union {
 } tee_intmtx_ctrl_reg_t;
 
 /** Type of apb_adc_ctrl register
- *  apb_adc read/write control register
+ *  SAR ADC read/write control register
  */
 typedef union {
     struct {
@@ -964,7 +908,7 @@ typedef union {
 } tee_apb_adc_ctrl_reg_t;
 
 /** Type of timergroup0_ctrl register
- *  timergroup0 read/write control register
+ *  TIMG0 read/write control register
  */
 typedef union {
     struct {
@@ -1022,7 +966,7 @@ typedef union {
 } tee_timergroup0_ctrl_reg_t;
 
 /** Type of timergroup1_ctrl register
- *  timergroup1 read/write control register
+ *  TIMG1 read/write control register
  */
 typedef union {
     struct {
@@ -1080,7 +1024,7 @@ typedef union {
 } tee_timergroup1_ctrl_reg_t;
 
 /** Type of systimer_ctrl register
- *  systimer read/write control register
+ *  SYSTIMER read/write control register
  */
 typedef union {
     struct {
@@ -1137,124 +1081,8 @@ typedef union {
     uint32_t val;
 } tee_systimer_ctrl_reg_t;
 
-/** Type of misc_ctrl register
- *  misc read/write control register
- */
-typedef union {
-    struct {
-        /** read_tee_misc : R/W; bitpos: [0]; default: 1;
-         *  Configures misc registers read permission in tee mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_tee_misc:1;
-        /** read_ree0_misc : R/W; bitpos: [1]; default: 0;
-         *  Configures misc registers read permission in ree0 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree0_misc:1;
-        /** read_ree1_misc : R/W; bitpos: [2]; default: 0;
-         *  Configures misc registers read permission in ree1 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree1_misc:1;
-        /** read_ree2_misc : R/W; bitpos: [3]; default: 0;
-         *  Configures misc registers read permission in ree2 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree2_misc:1;
-        /** write_tee_misc : R/W; bitpos: [4]; default: 1;
-         *  Configures misc registers write permission in tee mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_tee_misc:1;
-        /** write_ree0_misc : R/W; bitpos: [5]; default: 0;
-         *  Configures misc registers write permission in ree0 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree0_misc:1;
-        /** write_ree1_misc : R/W; bitpos: [6]; default: 0;
-         *  Configures misc registers write permission in ree1 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree1_misc:1;
-        /** write_ree2_misc : R/W; bitpos: [7]; default: 0;
-         *  Configures misc registers write permission in ree2 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree2_misc:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} tee_misc_ctrl_reg_t;
-
-/** Type of pvt_monitor_ctrl register
- *  pvt_monitor read/write control register
- */
-typedef union {
-    struct {
-        /** read_tee_pvt_monitor : R/W; bitpos: [0]; default: 1;
-         *  Configures pvt_monitor registers read permission in tee mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_tee_pvt_monitor:1;
-        /** read_ree0_pvt_monitor : R/W; bitpos: [1]; default: 0;
-         *  Configures pvt_monitor registers read permission in ree0 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree0_pvt_monitor:1;
-        /** read_ree1_pvt_monitor : R/W; bitpos: [2]; default: 0;
-         *  Configures pvt_monitor registers read permission in ree1 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree1_pvt_monitor:1;
-        /** read_ree2_pvt_monitor : R/W; bitpos: [3]; default: 0;
-         *  Configures pvt_monitor registers read permission in ree2 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree2_pvt_monitor:1;
-        /** write_tee_pvt_monitor : R/W; bitpos: [4]; default: 1;
-         *  Configures pvt_monitor registers write permission in tee mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_tee_pvt_monitor:1;
-        /** write_ree0_pvt_monitor : R/W; bitpos: [5]; default: 0;
-         *  Configures pvt_monitor registers write permission in ree0 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree0_pvt_monitor:1;
-        /** write_ree1_pvt_monitor : R/W; bitpos: [6]; default: 0;
-         *  Configures pvt_monitor registers write permission in ree1 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree1_pvt_monitor:1;
-        /** write_ree2_pvt_monitor : R/W; bitpos: [7]; default: 0;
-         *  Configures pvt_monitor registers write permission in ree2 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree2_pvt_monitor:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} tee_pvt_monitor_ctrl_reg_t;
-
 /** Type of pcnt_ctrl register
- *  pcnt read/write control register
+ *  PCNT read/write control register
  */
 typedef union {
     struct {
@@ -1312,7 +1140,7 @@ typedef union {
 } tee_pcnt_ctrl_reg_t;
 
 /** Type of iomux_ctrl register
- *  iomux read/write control register
+ *  IO MUX read/write control register
  */
 typedef union {
     struct {
@@ -1370,7 +1198,7 @@ typedef union {
 } tee_iomux_ctrl_reg_t;
 
 /** Type of psram_mem_monitor_ctrl register
- *  psram_mem_monitor read/write control register
+ *  PSRAM_MEM_MONITOR read/write control register
  */
 typedef union {
     struct {
@@ -1428,7 +1256,7 @@ typedef union {
 } tee_psram_mem_monitor_ctrl_reg_t;
 
 /** Type of mem_acs_monitor_ctrl register
- *  mem_acs_monitor read/write control register
+ *  TCM_MEM_MONITOR read/write control register
  */
 typedef union {
     struct {
@@ -1486,7 +1314,7 @@ typedef union {
 } tee_mem_acs_monitor_ctrl_reg_t;
 
 /** Type of hp_system_reg_ctrl register
- *  hp_system_reg read/write control register
+ *  HP_SYSREG read/write control register
  */
 typedef union {
     struct {
@@ -1544,7 +1372,7 @@ typedef union {
 } tee_hp_system_reg_ctrl_reg_t;
 
 /** Type of pcr_reg_ctrl register
- *  pcr_reg read/write control register
+ *  PCR read/write control register
  */
 typedef union {
     struct {
@@ -1602,7 +1430,7 @@ typedef union {
 } tee_pcr_reg_ctrl_reg_t;
 
 /** Type of mspi_ctrl register
- *  mspi read/write control register
+ *  SPI01 read/write control register
  */
 typedef union {
     struct {
@@ -1660,7 +1488,7 @@ typedef union {
 } tee_mspi_ctrl_reg_t;
 
 /** Type of hp_apm_ctrl register
- *  hp_apm read/write control register
+ *  HP_APM and LP_APM0 read/write control register
  */
 typedef union {
     struct {
@@ -1718,7 +1546,7 @@ typedef union {
 } tee_hp_apm_ctrl_reg_t;
 
 /** Type of cpu_apm_ctrl register
- *  cpu_apm read/write control register
+ *  CPU_APM_REG read/write control register
  */
 typedef union {
     struct {
@@ -1776,7 +1604,7 @@ typedef union {
 } tee_cpu_apm_ctrl_reg_t;
 
 /** Type of tee_ctrl register
- *  tee read/write control register
+ *  TEE read/write control register
  */
 typedef union {
     struct {
@@ -1834,7 +1662,8 @@ typedef union {
 } tee_tee_ctrl_reg_t;
 
 /** Type of crypt_ctrl register
- *  crypt read/write control register
+ *  CRYPT read/write control register, including security peripherals from AES to ECDSA
+ *  address range
  */
 typedef union {
     struct {
@@ -1892,7 +1721,7 @@ typedef union {
 } tee_crypt_ctrl_reg_t;
 
 /** Type of trace_ctrl register
- *  trace read/write control register
+ *  TRACE read/write control register
  */
 typedef union {
     struct {
@@ -1950,7 +1779,7 @@ typedef union {
 } tee_trace_ctrl_reg_t;
 
 /** Type of cpu_bus_monitor_ctrl register
- *  cpu_bus_monitor read/write control register
+ *  BUS_MONITOR read/write control register
  */
 typedef union {
     struct {
@@ -2008,7 +1837,7 @@ typedef union {
 } tee_cpu_bus_monitor_ctrl_reg_t;
 
 /** Type of intpri_reg_ctrl register
- *  intpri_reg read/write control register
+ *  INTPRI_REG read/write control register
  */
 typedef union {
     struct {
@@ -2065,182 +1894,66 @@ typedef union {
     uint32_t val;
 } tee_intpri_reg_ctrl_reg_t;
 
-/** Type of cache_cfg_ctrl register
- *  cache_cfg read/write control register
+/** Type of twai1_ctrl register
+ *  TWAI1 read/write control register
  */
 typedef union {
     struct {
-        /** read_tee_cache_cfg : R/W; bitpos: [0]; default: 1;
-         *  Configures cache_cfg registers read permission in tee mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_tee_cache_cfg:1;
-        /** read_ree0_cache_cfg : R/W; bitpos: [1]; default: 0;
-         *  Configures cache_cfg registers read permission in ree0 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree0_cache_cfg:1;
-        /** read_ree1_cache_cfg : R/W; bitpos: [2]; default: 0;
-         *  Configures cache_cfg registers read permission in ree1 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree1_cache_cfg:1;
-        /** read_ree2_cache_cfg : R/W; bitpos: [3]; default: 0;
-         *  Configures cache_cfg registers read permission in ree2 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree2_cache_cfg:1;
-        /** write_tee_cache_cfg : R/W; bitpos: [4]; default: 1;
-         *  Configures cache_cfg registers write permission in tee mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_tee_cache_cfg:1;
-        /** write_ree0_cache_cfg : R/W; bitpos: [5]; default: 0;
-         *  Configures cache_cfg registers write permission in ree0 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree0_cache_cfg:1;
-        /** write_ree1_cache_cfg : R/W; bitpos: [6]; default: 0;
-         *  Configures cache_cfg registers write permission in ree1 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree1_cache_cfg:1;
-        /** write_ree2_cache_cfg : R/W; bitpos: [7]; default: 0;
-         *  Configures cache_cfg registers write permission in ree2 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree2_cache_cfg:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} tee_cache_cfg_ctrl_reg_t;
-
-/** Type of modem_ctrl register
- *  modem read/write control register
- */
-typedef union {
-    struct {
-        /** read_tee_modem : R/W; bitpos: [0]; default: 1;
-         *  Configures modem registers read permission in tee mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_tee_modem:1;
-        /** read_ree0_modem : R/W; bitpos: [1]; default: 0;
-         *  Configures modem registers read permission in ree0 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree0_modem:1;
-        /** read_ree1_modem : R/W; bitpos: [2]; default: 0;
-         *  Configures modem registers read permission in ree1 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree1_modem:1;
-        /** read_ree2_modem : R/W; bitpos: [3]; default: 0;
-         *  Configures modem registers read permission in ree2 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree2_modem:1;
-        /** write_tee_modem : R/W; bitpos: [4]; default: 1;
-         *  Configures modem registers write permission in tee mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_tee_modem:1;
-        /** write_ree0_modem : R/W; bitpos: [5]; default: 0;
-         *  Configures modem registers write permission in ree0 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree0_modem:1;
-        /** write_ree1_modem : R/W; bitpos: [6]; default: 0;
-         *  Configures modem registers write permission in ree1 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree1_modem:1;
-        /** write_ree2_modem : R/W; bitpos: [7]; default: 0;
-         *  Configures modem registers write permission in ree2 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree2_modem:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} tee_modem_ctrl_reg_t;
-
-/** Type of can1_ctrl register
- *  can1 read/write control register
- */
-typedef union {
-    struct {
-        /** read_tee_can1 : R/W; bitpos: [0]; default: 1;
+        /** read_tee_twai1 : R/W; bitpos: [0]; default: 1;
          *  Configures can1 registers read permission in tee mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_tee_can1:1;
-        /** read_ree0_can1 : R/W; bitpos: [1]; default: 0;
+        uint32_t read_tee_twai1:1;
+        /** read_ree0_twai1 : R/W; bitpos: [1]; default: 0;
          *  Configures can1 registers read permission in ree0 mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_ree0_can1:1;
-        /** read_ree1_can1 : R/W; bitpos: [2]; default: 0;
+        uint32_t read_ree0_twai1:1;
+        /** read_ree1_twai1 : R/W; bitpos: [2]; default: 0;
          *  Configures can1 registers read permission in ree1 mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_ree1_can1:1;
-        /** read_ree2_can1 : R/W; bitpos: [3]; default: 0;
+        uint32_t read_ree1_twai1:1;
+        /** read_ree2_twai1 : R/W; bitpos: [3]; default: 0;
          *  Configures can1 registers read permission in ree2 mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_ree2_can1:1;
-        /** write_tee_can1 : R/W; bitpos: [4]; default: 1;
+        uint32_t read_ree2_twai1:1;
+        /** write_tee_twai1 : R/W; bitpos: [4]; default: 1;
          *  Configures can1 registers write permission in tee mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_tee_can1:1;
-        /** write_ree0_can1 : R/W; bitpos: [5]; default: 0;
+        uint32_t write_tee_twai1:1;
+        /** write_ree0_twai1 : R/W; bitpos: [5]; default: 0;
          *  Configures can1 registers write permission in ree0 mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_ree0_can1:1;
-        /** write_ree1_can1 : R/W; bitpos: [6]; default: 0;
+        uint32_t write_ree0_twai1:1;
+        /** write_ree1_twai1 : R/W; bitpos: [6]; default: 0;
          *  Configures can1 registers write permission in ree1 mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_ree1_can1:1;
-        /** write_ree2_can1 : R/W; bitpos: [7]; default: 0;
+        uint32_t write_ree1_twai1:1;
+        /** write_ree2_twai1 : R/W; bitpos: [7]; default: 0;
          *  Configures can1 registers write permission in ree2 mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_ree2_can1:1;
+        uint32_t write_ree2_twai1:1;
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} tee_can1_ctrl_reg_t;
+} tee_twai1_ctrl_reg_t;
 
 /** Type of spi2_ctrl register
- *  spi2 read/write control register
+ *  SPI2 read/write control register
  */
 typedef union {
     struct {
@@ -2298,7 +2011,7 @@ typedef union {
 } tee_spi2_ctrl_reg_t;
 
 /** Type of bs_ctrl register
- *  bs read/write control register
+ *  BITSCRAMBLER read/write control register
  */
 typedef union {
     struct {
@@ -2355,307 +2068,15 @@ typedef union {
     uint32_t val;
 } tee_bs_ctrl_reg_t;
 
-/** Type of km_ctrl register
- *  km read/write control register
- */
-typedef union {
-    struct {
-        /** read_tee_km : R/W; bitpos: [0]; default: 1;
-         *  Configures km registers read permission in tee mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_tee_km:1;
-        /** read_ree0_km : R/W; bitpos: [1]; default: 0;
-         *  Configures km registers read permission in ree0 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree0_km:1;
-        /** read_ree1_km : R/W; bitpos: [2]; default: 0;
-         *  Configures km registers read permission in ree1 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree1_km:1;
-        /** read_ree2_km : R/W; bitpos: [3]; default: 0;
-         *  Configures km registers read permission in ree2 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree2_km:1;
-        /** write_tee_km : R/W; bitpos: [4]; default: 1;
-         *  Configures km registers write permission in tee mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_tee_km:1;
-        /** write_ree0_km : R/W; bitpos: [5]; default: 0;
-         *  Configures km registers write permission in ree0 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree0_km:1;
-        /** write_ree1_km : R/W; bitpos: [6]; default: 0;
-         *  Configures km registers write permission in ree1 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree1_km:1;
-        /** write_ree2_km : R/W; bitpos: [7]; default: 0;
-         *  Configures km registers write permission in ree2 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree2_km:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} tee_km_ctrl_reg_t;
-
-/** Type of modem_pwr_ctrl register
- *  modem_pwr read/write control register
- */
-typedef union {
-    struct {
-        /** read_tee_modem_pwr : R/W; bitpos: [0]; default: 1;
-         *  Configures modem_pwr registers read permission in tee mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_tee_modem_pwr:1;
-        /** read_ree0_modem_pwr : R/W; bitpos: [1]; default: 0;
-         *  Configures modem_pwr registers read permission in ree0 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree0_modem_pwr:1;
-        /** read_ree1_modem_pwr : R/W; bitpos: [2]; default: 0;
-         *  Configures modem_pwr registers read permission in ree1 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree1_modem_pwr:1;
-        /** read_ree2_modem_pwr : R/W; bitpos: [3]; default: 0;
-         *  Configures modem_pwr registers read permission in ree2 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree2_modem_pwr:1;
-        /** write_tee_modem_pwr : R/W; bitpos: [4]; default: 1;
-         *  Configures modem_pwr registers write permission in tee mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_tee_modem_pwr:1;
-        /** write_ree0_modem_pwr : R/W; bitpos: [5]; default: 0;
-         *  Configures modem_pwr registers write permission in ree0 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree0_modem_pwr:1;
-        /** write_ree1_modem_pwr : R/W; bitpos: [6]; default: 0;
-         *  Configures modem_pwr registers write permission in ree1 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree1_modem_pwr:1;
-        /** write_ree2_modem_pwr : R/W; bitpos: [7]; default: 0;
-         *  Configures modem_pwr registers write permission in ree2 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree2_modem_pwr:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} tee_modem_pwr_ctrl_reg_t;
-
-/** Type of hinf_ctrl register
- *  hinf read/write control register
- */
-typedef union {
-    struct {
-        /** read_tee_hinf : R/W; bitpos: [0]; default: 1;
-         *  Configures hinf registers read permission in tee mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_tee_hinf:1;
-        /** read_ree0_hinf : R/W; bitpos: [1]; default: 0;
-         *  Configures hinf registers read permission in ree0 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree0_hinf:1;
-        /** read_ree1_hinf : R/W; bitpos: [2]; default: 0;
-         *  Configures hinf registers read permission in ree1 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree1_hinf:1;
-        /** read_ree2_hinf : R/W; bitpos: [3]; default: 0;
-         *  Configures hinf registers read permission in ree2 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree2_hinf:1;
-        /** write_tee_hinf : R/W; bitpos: [4]; default: 1;
-         *  Configures hinf registers write permission in tee mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_tee_hinf:1;
-        /** write_ree0_hinf : R/W; bitpos: [5]; default: 0;
-         *  Configures hinf registers write permission in ree0 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree0_hinf:1;
-        /** write_ree1_hinf : R/W; bitpos: [6]; default: 0;
-         *  Configures hinf registers write permission in ree1 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree1_hinf:1;
-        /** write_ree2_hinf : R/W; bitpos: [7]; default: 0;
-         *  Configures hinf registers write permission in ree2 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree2_hinf:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} tee_hinf_ctrl_reg_t;
-
-/** Type of slc_ctrl register
- *  slc read/write control register
- */
-typedef union {
-    struct {
-        /** read_tee_slc : R/W; bitpos: [0]; default: 1;
-         *  Configures slc registers read permission in tee mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_tee_slc:1;
-        /** read_ree0_slc : R/W; bitpos: [1]; default: 0;
-         *  Configures slc registers read permission in ree0 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree0_slc:1;
-        /** read_ree1_slc : R/W; bitpos: [2]; default: 0;
-         *  Configures slc registers read permission in ree1 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree1_slc:1;
-        /** read_ree2_slc : R/W; bitpos: [3]; default: 0;
-         *  Configures slc registers read permission in ree2 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree2_slc:1;
-        /** write_tee_slc : R/W; bitpos: [4]; default: 1;
-         *  Configures slc registers write permission in tee mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_tee_slc:1;
-        /** write_ree0_slc : R/W; bitpos: [5]; default: 0;
-         *  Configures slc registers write permission in ree0 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree0_slc:1;
-        /** write_ree1_slc : R/W; bitpos: [6]; default: 0;
-         *  Configures slc registers write permission in ree1 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree1_slc:1;
-        /** write_ree2_slc : R/W; bitpos: [7]; default: 0;
-         *  Configures slc registers write permission in ree2 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree2_slc:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} tee_slc_ctrl_reg_t;
-
-/** Type of slc_host_ctrl register
- *  slc_host read/write control register
- */
-typedef union {
-    struct {
-        /** read_tee_slc_host : R/W; bitpos: [0]; default: 1;
-         *  Configures slc_host registers read permission in tee mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_tee_slc_host:1;
-        /** read_ree0_slc_host : R/W; bitpos: [1]; default: 0;
-         *  Configures slc_host registers read permission in ree0 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree0_slc_host:1;
-        /** read_ree1_slc_host : R/W; bitpos: [2]; default: 0;
-         *  Configures slc_host registers read permission in ree1 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree1_slc_host:1;
-        /** read_ree2_slc_host : R/W; bitpos: [3]; default: 0;
-         *  Configures slc_host registers read permission in ree2 mode.
-         *  0: can not be read
-         *  1: can be read
-         */
-        uint32_t read_ree2_slc_host:1;
-        /** write_tee_slc_host : R/W; bitpos: [4]; default: 1;
-         *  Configures slc_host registers write permission in tee mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_tee_slc_host:1;
-        /** write_ree0_slc_host : R/W; bitpos: [5]; default: 0;
-         *  Configures slc_host registers write permission in ree0 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree0_slc_host:1;
-        /** write_ree1_slc_host : R/W; bitpos: [6]; default: 0;
-         *  Configures slc_host registers write permission in ree1 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree1_slc_host:1;
-        /** write_ree2_slc_host : R/W; bitpos: [7]; default: 0;
-         *  Configures slc_host registers write permission in ree2 mode.
-         *  0: can not be write
-         *  1: can be write
-         */
-        uint32_t write_ree2_slc_host:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} tee_slc_host_ctrl_reg_t;
-
-
-/** Group: config register */
 /** Type of bus_err_conf register
- *  Clock gating register
+ *  Error message return configuration register
  */
 typedef union {
     struct {
         /** bus_err_resp_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether return error response to cpu when access blocked
-         *  0: disable error response
-         *  1: enable error response
+         *  Configures whether to return error message to CPU when access is blocked.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t bus_err_resp_en:1;
         uint32_t reserved_1:31;
@@ -2672,8 +2093,8 @@ typedef union {
     struct {
         /** clk_en : R/W; bitpos: [0]; default: 1;
          *  Configures whether to keep the clock always on.
-         *  0: enable automatic clock gating
-         *  1: keep the clock always on
+         *  0: Enable automatic clock gating
+         *  1: Keep the clock always on
          */
         uint32_t clk_en:1;
         uint32_t reserved_1:31;
@@ -2682,14 +2103,14 @@ typedef union {
 } tee_clock_gate_reg_t;
 
 
-/** Group: Version control register */
+/** Group: Version Control Registers */
 /** Type of date register
  *  Version control register
  */
 typedef union {
     struct {
         /** date : R/W; bitpos: [27:0]; default: 37773824;
-         *  Version control register
+         *  Version control register.
          */
         uint32_t date:28;
         uint32_t reserved_28:4;
@@ -2711,11 +2132,11 @@ typedef struct {
     volatile tee_pwm_ctrl_reg_t pwm_ctrl;
     uint32_t reserved_0a8;
     volatile tee_ledc_ctrl_reg_t ledc_ctrl;
-    volatile tee_can0_ctrl_reg_t can0_ctrl;
-    volatile tee_usb_device_ctrl_reg_t usb_device_ctrl;
+    volatile tee_twai0_ctrl_reg_t twai0_ctrl;
+    volatile tee_usb_serial_jtag_ctrl_reg_t usb_serial_jtag_ctrl;
     volatile tee_rmt_ctrl_reg_t rmt_ctrl;
     volatile tee_gdma_ctrl_reg_t gdma_ctrl;
-    volatile tee_regdma_ctrl_reg_t regdma_ctrl;
+    uint32_t reserved_0c0;
     volatile tee_etm_ctrl_reg_t etm_ctrl;
     volatile tee_intmtx_ctrl_reg_t intmtx_ctrl;
     uint32_t reserved_0cc;
@@ -2723,9 +2144,7 @@ typedef struct {
     volatile tee_timergroup0_ctrl_reg_t timergroup0_ctrl;
     volatile tee_timergroup1_ctrl_reg_t timergroup1_ctrl;
     volatile tee_systimer_ctrl_reg_t systimer_ctrl;
-    volatile tee_misc_ctrl_reg_t misc_ctrl;
-    uint32_t reserved_0e4[3];
-    volatile tee_pvt_monitor_ctrl_reg_t pvt_monitor_ctrl;
+    uint32_t reserved_0e0[5];
     volatile tee_pcnt_ctrl_reg_t pcnt_ctrl;
     volatile tee_iomux_ctrl_reg_t iomux_ctrl;
     volatile tee_psram_mem_monitor_ctrl_reg_t psram_mem_monitor_ctrl;
@@ -2741,18 +2160,11 @@ typedef struct {
     uint32_t reserved_124;
     volatile tee_cpu_bus_monitor_ctrl_reg_t cpu_bus_monitor_ctrl;
     volatile tee_intpri_reg_ctrl_reg_t intpri_reg_ctrl;
-    volatile tee_cache_cfg_ctrl_reg_t cache_cfg_ctrl;
-    volatile tee_modem_ctrl_reg_t modem_ctrl;
-    volatile tee_can1_ctrl_reg_t can1_ctrl;
+    uint32_t reserved_130[2];
+    volatile tee_twai1_ctrl_reg_t twai1_ctrl;
     volatile tee_spi2_ctrl_reg_t spi2_ctrl;
     volatile tee_bs_ctrl_reg_t bs_ctrl;
-    volatile tee_km_ctrl_reg_t km_ctrl;
-    volatile tee_modem_pwr_ctrl_reg_t modem_pwr_ctrl;
-    volatile tee_hinf_ctrl_reg_t hinf_ctrl;
-    volatile tee_slc_ctrl_reg_t slc_ctrl;
-    uint32_t reserved_154;
-    volatile tee_slc_host_ctrl_reg_t slc_host_ctrl;
-    uint32_t reserved_15c[933];
+    uint32_t reserved_144[939];
     volatile tee_bus_err_conf_reg_t bus_err_conf;
     uint32_t reserved_ff4;
     volatile tee_clock_gate_reg_t clock_gate;

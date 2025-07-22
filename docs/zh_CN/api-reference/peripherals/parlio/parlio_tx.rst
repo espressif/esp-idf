@@ -174,6 +174,7 @@ TX 单元以比特为单位进行传输，且传输的比特长度必须配置�
 有关 TX 单元支持的事件回调，请参阅 :cpp:type:`parlio_tx_event_callbacks_t`：
 
 - :cpp:member:`parlio_tx_event_callbacks_t::on_trans_done` 为“发送完成”的事件设置回调函数，函数原型声明为 :cpp:type:`parlio_tx_done_callback_t`。
+- :cpp:member:`parlio_tx_event_callbacks_t::on_buffer_switched` 为“缓冲区切换”的事件设置回调函数，函数原型声明为 :cpp:type:`parlio_tx_buffer_switched_callback_t`。
 
 资源回收
 ^^^^^^^^
@@ -307,7 +308,7 @@ TX 单元可以选择各种不同的时钟源，其中外部时钟源较为特�
 
     .. note::
 
-        如果启用无限循环发送后需要修改发送内容，可以配置 :cpp:member:`parlio_transmit_config_t::flags::loop_transmission` 并再次调用 :cpp:func:`parlio_tx_unit_transmit` 传入新的 payload buffer，驱动会在旧 buffer 完整发送后，切换到新传入的 buffer。因此需要用户自行维护好两块buffer，避免旧 buffer 被提早修改或者回收导致产生数据不连贯的现象。
+        如果启用无限循环发送后需要修改发送内容，可以配置 :cpp:member:`parlio_transmit_config_t::flags::loop_transmission` 并再次调用 :cpp:func:`parlio_tx_unit_transmit` 传入新的 payload buffer，驱动会在旧 buffer 完整发送后，切换到新传入的 buffer。可以通过注册 :cpp:member:`parlio_tx_event_callbacks_t::on_buffer_switched` 为“缓冲区切换”的事件设置回调函数，用户需要自行维护好两块buffer，避免旧 buffer 被提早修改或者回收导致产生数据不连贯的现象。
 
 .. only:: SOC_BITSCRAMBLER_SUPPORTED
 
@@ -319,6 +320,12 @@ TX 单元可以选择各种不同的时钟源，其中外部时钟源较为特�
     我们可以通过编写 :doc:`比特调节器 </api-reference/peripherals/bitscrambler>` 汇编代码来控制 DMA 通路上的数据，进而实现一些简单的编码工作。相较于使用 CPU 做编码工作，比特调节器的性能更高，且不会占用 CPU 资源，但是受限于 BitScrambler 有限的指令存储器空间，它无法实现复杂的编码工作。
 
     编写好比特调节器程序后，通过调用 :cpp:func:`parlio_tx_unit_decorate_bitscrambler` 启用比特调节器。并在 :cpp:member:`parlio_transmit_config_t::bitscrambler_program` 配置本次传输使用比特调节器程序的二进制文件。不同的传输事务可以使用不同的比特调节器程序。该二进制文件必须符合比特调节器的汇编语言规范，并且在运行时会被加载到比特调节器的指令存储器中。如何编写并编译比特调节器程序请参考 :doc:`比特调节器编程指南 </api-reference/peripherals/bitscrambler>`。
+
+    .. only:: not SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+
+        .. note::
+
+            由于硬件限制，使用比特调节器生成的比特流与原本比特流相比，长度不能发生变化，否则可能会发生传输阻塞或数据丢失。
 
     :cpp:func:`parlio_tx_unit_decorate_bitscrambler` 和 :cpp:func:`parlio_tx_unit_undecorate_bitscrambler` 需要成对使用。在删除 TX 单元时，需要先调用 :cpp:func:`parlio_tx_unit_undecorate_bitscrambler` 移除比特调节器。
 

@@ -48,7 +48,7 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
     if (phy_clk_src == 0) {
         phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT;
     }
-    esp_clk_tree_enable_src((soc_module_clk_t)phy_clk_src, true);
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)phy_clk_src, true), err, TAG, "clock source enable failed");
     // enable the clock source for DSI PHY
     DSI_CLOCK_SRC_ATOMIC() {
         // set clock source for DSI PHY
