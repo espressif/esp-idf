@@ -329,6 +329,10 @@ The internal hardware counter will be cleared to zero automatically when it reac
 
     :cpp:func:`pcnt_unit_clear_count` resets the accumulated count value as well.
 
+.. note::
+
+    When enabling the count overflow compensation, it is recommended to use as large a high/low count limit as possible, as it can avoid frequent interrupt triggering, improve system performance, and avoid compensation failure due to multiple overflows.
+
 .. _pcnt-power-management:
 
 Power Management
