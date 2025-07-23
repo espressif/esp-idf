@@ -25,6 +25,7 @@
 #include "esp_private/mspi_timing_config.h"
 #include "esp_private/mspi_timing_by_mspi_delay.h"
 #include "mspi_timing_tuning_configs.h"
+#include "bootloader_flash.h"
 
 #define QPI_PSRAM_FAST_READ            0XEB
 #define QPI_PSRAM_WRITE                0X38
@@ -33,6 +34,33 @@
 const static char *TAG = "MSPI Timing";
 
 //-------------------------------------FLASH timing tuning register config-------------------------------------//
+void mspi_timing_get_flash_tuning_configs(mspi_timing_config_t *config)
+{
+#if MSPI_TIMING_FLASH_DTR_MODE
+#define FLASH_MODE  DTR_MODE
+#else //MSPI_TIMING_FLASH_STR_MODE
+#define FLASH_MODE  STR_MODE
+#endif
+
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M
+    *config = MSPI_TIMING_FLASH_GET_TUNING_CONFIG(MSPI_TIMING_CORE_CLOCK_MHZ, 80, FLASH_MODE);
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_120M
+    *config = MSPI_TIMING_FLASH_GET_TUNING_CONFIG(MSPI_TIMING_CORE_CLOCK_MHZ, 120, FLASH_MODE);
+#else
+    assert(false && "should never reach here");
+#endif
+
+#undef FLASH_MODE
+}
+
+void mspi_timing_flash_init(uint32_t flash_freq_mhz)
+{
+    mspi_timing_config_set_flash_clock(flash_freq_mhz, MSPI_TIMING_SPEED_MODE_NORMAL_PERF, true);
+
+    //Power on HCLK
+    mspi_timinng_ll_enable_flash_timing_adjust_clk(MSPI_TIMING_LL_MSPI_ID_0);
+}
+
 static void s_set_flash_din_mode_num(uint8_t mspi_id, uint8_t din_mode, uint8_t din_num)
 {
     mspi_timing_ll_set_flash_din_mode(mspi_id, din_mode);
@@ -42,6 +70,33 @@ static void s_set_flash_din_mode_num(uint8_t mspi_id, uint8_t din_mode, uint8_t 
 static void s_set_flash_extra_dummy(uint8_t mspi_id, uint8_t extra_dummy)
 {
     mspi_timing_ll_set_flash_extra_dummy(mspi_id, extra_dummy);
+}
+
+void mspi_timing_config_flash_set_tuning_regs(const void *configs, uint8_t id)
+{
+    const mspi_timing_tuning_param_t *params = &((mspi_timing_config_t *)configs)->tuning_config_table[id];
+    /**
+     * 1. SPI_MEM_DINx_MODE(1), SPI_MEM_DINx_NUM(1) are meaningless
+     *    SPI0 and SPI1 share the SPI_MEM_DINx_MODE(0), SPI_MEM_DINx_NUM(0) for FLASH timing tuning
+     * 2. We use SPI1 to get the best Flash timing tuning (mode and num) config
+     */
+    s_set_flash_din_mode_num(MSPI_TIMING_LL_MSPI_ID_0, params->spi_din_mode, params->spi_din_num);
+    s_set_flash_extra_dummy(MSPI_TIMING_LL_MSPI_ID_1, params->extra_dummy_len);
+}
+
+//-------------------------------------------FLASH Read/Write------------------------------------------//
+void mspi_timing_config_flash_read_data(uint8_t *buf, uint32_t addr, uint32_t len)
+{
+    if (bootloader_flash_is_octal_mode_enabled()) {
+        // note that in spi_flash_read API, there is a wait-idle stage, since flash can only be read in idle state.
+        // but after we change the timing settings, we might not read correct idle status via RDSR.
+        // so, here we should use a read API that won't check idle status.
+        mspi_timing_ll_clear_fifo(MSPI_TIMING_LL_MSPI_ID_1);
+        // to add opi read api here when octal flash is used
+        assert(false);
+    } else {
+        esp_rom_spiflash_read(addr, (uint32_t *)buf, len);
+    }
 }
 
 //-------------------------------------PSRAM timing tuning register config-------------------------------------//
@@ -218,7 +273,14 @@ static uint32_t s_select_best_tuning_config_str(const mspi_timing_config_t *conf
         //tuning is FAIL, select default point, and generate a warning
         best_point = configs->default_config_id;
         ESP_EARLY_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
-    } else {
+    }
+#if MSPI_TIMING_FLASH_CONSECUTIVE_LEN_MAX
+    else if (consecutive_length > MSPI_TIMING_FLASH_CONSECUTIVE_LEN_MAX) {
+        best_point = configs->default_config_id;
+        ESP_EARLY_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
+    }
+#endif
+    else {
         best_point = end - consecutive_length / 2;
         ESP_EARLY_LOGI(TAG, "tuning success, best point is index %"PRIu32"", best_point);
     }
@@ -360,9 +422,6 @@ uint32_t mspi_timing_config_get_flash_clock_reg(void)
 
 uint8_t mspi_timing_config_get_flash_extra_dummy(void)
 {
-#if MSPI_TIMING_FLASH_NEEDS_TUNING
-    return s_flash_best_timing_tuning_config.extra_dummy_len;
-#else
+    //use hw extra dummy
     return 0;
-#endif
 }
