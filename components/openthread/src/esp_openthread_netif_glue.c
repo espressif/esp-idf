@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,9 +106,13 @@ static void process_thread_address(const otIp6AddressInfo *address_info, bool is
         } else {
             ip_event_add_ip6_t add_addr;
             add_addr.addr = addr;
-            // if an address is not mesh local or link local, we set preferred for this address.
-            add_addr.preferred =
-                is_mesh_local_addr(address_info->mAddress) || is_link_local_addr(address_info->mAddress) ? 0 : 1;
+            // Only mark the address as preferred if
+            // it is marked preferred by OpenThread and it is neither a mesh-local nor a link-local address.
+            if (address_info->mPreferred == 0 || is_mesh_local_addr(address_info->mAddress) || is_link_local_addr(address_info->mAddress)) {
+                add_addr.preferred = 0;
+            } else {
+                add_addr.preferred = 1;
+            }
             if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_GOT_IP6, &add_addr, sizeof(add_addr), 0) != ESP_OK) {
                 ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to post OpenThread got ip6 address event");
             }
