@@ -22,12 +22,37 @@
 
 #include "unity.h"
 #include "ccomp_timer.h"
+#include "sdkconfig.h"
 
 #define BOOT_COUNT_NAMESPACE "boot_count"
 #define TEST_PART_LABEL      "custom"
 #define TEST_BUF_SZ          256
 
 #define ESP_TEE_SEC_STG_PART_LABEL "secure_storage"
+
+__attribute__((unused)) static const uint32_t mmu_op_fail_seq[8] = {[0 ... 7] = 0x0addbad0};
+
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+#define SOC_TEE_FLASH_OP_FAIL_FAULT 1
+#else
+#define SOC_TEE_FLASH_OP_FAIL_FAULT 0
+#endif
+
+#if SOC_TEE_FLASH_OP_FAIL_FAULT
+#define CHECK_MMU_OP_FAIL(ptr_) do {} while (0)
+#else
+#define CHECK_MMU_OP_FAIL(ptr_) \
+    do { \
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(mmu_op_fail_seq, (ptr_), 0x20); \
+        esp_restart(); \
+    } while (0)
+#endif
+
+#if SOC_TEE_FLASH_OP_FAIL_FAULT
+#define CHECK_FLASH_OP_FAIL(err) TEST_ESP_ERR(ESP_FAIL, err)
+#else
+#define CHECK_FLASH_OP_FAIL(err) do { (void)(err); esp_restart(); } while (0)
+#endif
 
 static const char *TAG = "test_esp_tee_flash_prot";
 
@@ -77,6 +102,7 @@ static void test_esp_partition_mmap_api(void)
         part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_TEE_0, NULL);
         TEST_ASSERT_NOT_NULL(part);
         TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, ESP_PARTITION_MMAP_DATA, &outptr, &out_handle));
+        CHECK_MMU_OP_FAIL(outptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, outptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");
         break;
@@ -84,6 +110,7 @@ static void test_esp_partition_mmap_api(void)
         part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_TEE_1, NULL);
         TEST_ASSERT_NOT_NULL(part);
         TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, ESP_PARTITION_MMAP_INST, &outptr, &out_handle));
+        CHECK_MMU_OP_FAIL(outptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, outptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");
         break;
@@ -91,6 +118,7 @@ static void test_esp_partition_mmap_api(void)
         part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_TEE_OTA, NULL);
         TEST_ASSERT_NOT_NULL(part);
         TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, ESP_PARTITION_MMAP_DATA, &outptr, &out_handle));
+        CHECK_MMU_OP_FAIL(outptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, outptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");
         break;
@@ -98,6 +126,7 @@ static void test_esp_partition_mmap_api(void)
         part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, ESP_TEE_SEC_STG_PART_LABEL);
         TEST_ASSERT_NOT_NULL(part);
         TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, ESP_PARTITION_MMAP_DATA, &outptr, &out_handle));
+        CHECK_MMU_OP_FAIL(outptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, outptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");
         break;
@@ -117,7 +146,8 @@ static void test_esp_partition_api_r(const esp_partition_t *part)
     TEST_ASSERT_NOT_NULL(part);
     uint8_t buf_r[128];
     memset(buf_r, 0x00, sizeof(buf_r));
-    TEST_ESP_ERR(ESP_FAIL, esp_partition_read(part, 0x00, buf_r, sizeof(buf_r)));
+    esp_err_t err = esp_partition_read(part, 0x00, buf_r, sizeof(buf_r));
+    CHECK_FLASH_OP_FAIL(err);
 }
 
 static void test_esp_partition_api_w(const esp_partition_t *part)
@@ -125,13 +155,15 @@ static void test_esp_partition_api_w(const esp_partition_t *part)
     TEST_ASSERT_NOT_NULL(part);
     uint8_t buf_w[128];
     memset(buf_w, 0xA5, sizeof(buf_w));
-    TEST_ESP_ERR(ESP_FAIL, esp_partition_write(part, 0x00, buf_w, sizeof(buf_w)));
+    esp_err_t err = esp_partition_write(part, 0x00, buf_w, sizeof(buf_w));
+    CHECK_FLASH_OP_FAIL(err);
 }
 
 static void test_esp_partition_api_e(const esp_partition_t *part)
 {
     TEST_ASSERT_NOT_NULL(part);
-    TEST_ESP_ERR(ESP_FAIL, esp_partition_erase_range(part, 0x00, SPI_FLASH_SEC_SIZE));
+    esp_err_t err = esp_partition_erase_range(part, 0x00, SPI_FLASH_SEC_SIZE);
+    CHECK_FLASH_OP_FAIL(err);
 }
 
 static void test_esp_partition_api(void)
@@ -188,6 +220,7 @@ static void test_spi_flash_mmap_api(void)
         part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_TEE_0, NULL);
         TEST_ASSERT_NOT_NULL(part);
         TEST_ESP_OK(spi_flash_mmap(part->address, part->size, SPI_FLASH_MMAP_DATA, &ptr, &handle));
+        CHECK_MMU_OP_FAIL(ptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, ptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");
         break;
@@ -195,6 +228,7 @@ static void test_spi_flash_mmap_api(void)
         part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_TEE_1, NULL);
         TEST_ASSERT_NOT_NULL(part);
         TEST_ESP_OK(spi_flash_mmap(part->address, part->size, SPI_FLASH_MMAP_INST, &ptr, &handle));
+        CHECK_MMU_OP_FAIL(ptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, ptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");
         break;
@@ -202,6 +236,7 @@ static void test_spi_flash_mmap_api(void)
         part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_TEE_OTA, NULL);
         TEST_ASSERT_NOT_NULL(part);
         TEST_ESP_OK(spi_flash_mmap(part->address, part->size, SPI_FLASH_MMAP_DATA, &ptr, &handle));
+        CHECK_MMU_OP_FAIL(ptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, ptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");
         break;
@@ -222,19 +257,22 @@ static void test_esp_flash_api_r(uint32_t paddr)
 {
     uint8_t buf_r[128];
     memset(buf_r, 0x00, sizeof(buf_r));
-    TEST_ESP_ERR(ESP_FAIL, esp_flash_read(NULL, buf_r, paddr, sizeof(buf_r)));
+    esp_err_t err = esp_flash_read(NULL, buf_r, paddr, sizeof(buf_r));
+    CHECK_FLASH_OP_FAIL(err);
 }
 
 static void test_esp_flash_api_w(uint32_t paddr)
 {
     uint8_t buf_w[128];
     memset(buf_w, 0xA5, sizeof(buf_w));
-    TEST_ESP_ERR(ESP_FAIL, esp_flash_write(NULL, buf_w, paddr, sizeof(buf_w)));
+    esp_err_t err = esp_flash_write(NULL, buf_w, paddr, sizeof(buf_w));
+    CHECK_FLASH_OP_FAIL(err);
 }
 
 static void test_esp_flash_api_e(uint32_t paddr)
 {
-    TEST_ESP_ERR(ESP_FAIL, esp_flash_erase_region(NULL, paddr, SPI_FLASH_SEC_SIZE));
+    esp_err_t err = esp_flash_erase_region(NULL, paddr, SPI_FLASH_SEC_SIZE);
+    CHECK_FLASH_OP_FAIL(err);
 }
 
 static void test_esp_flash_api(void)
