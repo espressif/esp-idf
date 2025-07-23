@@ -5,3 +5,4 @@ CONFIG_PARTITION_TABLE_CUSTOM=y
 # uses this offset for `esp_secure_cert` and hence this change aligns this example
 # to work on those modules.
 CONFIG_PARTITION_TABLE_OFFSET=0xC000
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
