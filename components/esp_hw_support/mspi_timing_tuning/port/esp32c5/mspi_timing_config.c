@@ -27,11 +27,13 @@ const static char *TAG = "MSPI Timing";
 //-------------------------------------MSPI Clock Setting-------------------------------------//
 static void s_mspi_flash_set_core_clock(uint8_t mspi_id, uint32_t core_clock_mhz)
 {
+    ESP_EARLY_LOGV(TAG, "flash core clock: %d", core_clock_mhz);
     mspi_timing_ll_set_core_clock(mspi_id, core_clock_mhz);
 }
 
 static void s_mspi_psram_set_core_clock(uint8_t mspi_id, uint32_t core_clock_mhz)
 {
+    ESP_EARLY_LOGV(TAG, "psram core clock: %d", core_clock_mhz);
     mspi_timing_ll_set_core_clock(mspi_id, core_clock_mhz);
 }
 
