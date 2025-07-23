@@ -76,6 +76,17 @@ esp_netif_t *esp_openthread_get_netif(void);
  */
 void esp_openthread_register_meshcop_e_handler(esp_event_handler_t handler, bool for_publish);
 
+/**
+ * @brief This function judges the target address is openthread mesh local or not.
+ *
+ * @param[in]    address   The address.
+ *
+ * @return
+ *      - True if the address is openthread mesh local, otherwise false
+ *
+ */
+bool is_openthread_internal_mesh_local_addr(const otIp6Address *address);
+
 #ifdef __cplusplus
 }
 #endif
