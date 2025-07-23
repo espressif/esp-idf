@@ -126,6 +126,10 @@ void *hostap_init(void)
         auth_conf->wpa_group = WPA_CIPHER_GCMP_256;
         auth_conf->wpa_pairwise = WPA_CIPHER_GCMP_256;
         auth_conf->rsn_pairwise = WPA_CIPHER_GCMP_256;
+    } else if (pairwise_cipher == WIFI_CIPHER_TYPE_GCMP) {
+        auth_conf->wpa_group = WPA_CIPHER_GCMP;
+        auth_conf->wpa_pairwise = WPA_CIPHER_GCMP;
+        auth_conf->rsn_pairwise = WPA_CIPHER_GCMP;
     } else {
         auth_conf->wpa_group = WPA_CIPHER_TKIP;
         auth_conf->wpa_pairwise = WPA_CIPHER_CCMP | WPA_CIPHER_TKIP;
