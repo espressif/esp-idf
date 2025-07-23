@@ -574,6 +574,7 @@ menu "Wi-Fi"
             bool "WiFi Aware"
             default n
             depends on SOC_WIFI_NAN_SUPPORT
+            select LWIP_IPV6
             help
                 Enable WiFi Aware (NAN) feature.
 
