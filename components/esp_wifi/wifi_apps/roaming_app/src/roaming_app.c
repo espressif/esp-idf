@@ -415,7 +415,7 @@ static void roaming_app_rssi_low_handler(void* arg, esp_event_base_t event_base,
 static void trigger_network_assisted_roam(void)
 {
 #if PERIODIC_RRM_MONITORING
-    if (g_roaming_app.config.rrm_monitor) {
+    if (g_roaming_app.current_bss.rrm_support) {
         ROAM_NEIGHBOR_LIST_LOCK();
     }
 #endif /*PERIODIC_RRM_MONITORING*/
@@ -423,7 +423,7 @@ static void trigger_network_assisted_roam(void)
         ESP_LOGD(ROAMING_TAG, "failed to send btm query");
     }
 #if PERIODIC_RRM_MONITORING
-    if (g_roaming_app.config.rrm_monitor) {
+    if (g_roaming_app.current_bss.rrm_support) {
         ROAM_NEIGHBOR_LIST_UNLOCK();
     }
 #endif /*PERIODIC_RRM_MONITORING*/
