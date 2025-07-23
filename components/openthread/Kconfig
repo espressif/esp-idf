@@ -44,6 +44,13 @@ menu "OpenThread"
             default y
             help
                 Select this option to enable Command-Line Interface in OpenThread.
+
+        config OPENTHREAD_CONSOLE_COMMAND_PREFIX
+            string "The prefix of the openthread CLI command registered on the esp console"
+            default "ot"
+            help
+                A prefix string used before a Thread CLI command, allowing the ESP console to identify
+                it and delegate the remaining command to the OpenThread callback for processing.
     endmenu
 
     menu "Thread Core Features"
@@ -130,6 +137,14 @@ menu "OpenThread"
                 default 12390
                 help
                     Configure the port number of TREL service.
+
+            config OPENTHREAD_TREL_BUFFER_SIZE
+                int "The receive buffer size of openthread trel"
+                depends on OPENTHREAD_RADIO_TREL
+                range 10 255
+                default 50
+                help
+                    Configure the receive buffer size of TREL service.
         endmenu
 
         menu "Thread 15.4 Radio Link"
