@@ -6,11 +6,9 @@ import json
 import logging
 import multiprocessing
 import os
-import socket
 import ssl
 import time
 from typing import Any
-from typing import Callable
 
 import pexpect
 import pytest
@@ -22,7 +20,6 @@ from ecdsa.keys import VerifyingKey
 from ecdsa.util import sigdecode_der
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
-from RangeHTTPServer import RangeRequestHandler
 
 TEST_MSG = 'hello world'
 
@@ -36,12 +33,12 @@ key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_certs/
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32c6'], indirect=['target'])
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_tee_cli_secure_storage(dut: Dut) -> None:
     # Dumping the REE binary size
     binary_file = os.path.join(dut.app.binary_path, 'tee_cli.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('tee_cli_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'tee_cli_bin_size : {bin_size // 1024}KB')
 
     # Starting the test
     dut.expect('ESP-TEE: Secure services demonstration', timeout=30)
@@ -122,12 +119,12 @@ def verify_att_token_signature(att_tk: str) -> Any:
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32c6'], indirect=['target'])
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_tee_cli_attestation(dut: Dut) -> None:
     # Dumping the REE binary size
     binary_file = os.path.join(dut.app.binary_path, 'tee_cli.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('tee_cli_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'tee_cli_bin_size : {bin_size // 1024}KB')
 
     # Starting the test
     dut.expect('ESP-TEE: Secure services demonstration', timeout=30)
@@ -149,41 +146,22 @@ def test_tee_cli_attestation(dut: Dut) -> None:
 #######################################
 
 
-def https_request_handler() -> Callable[..., http.server.BaseHTTPRequestHandler]:
-    """
-    Returns a request handler class that handles broken pipe exception
-    """
-
-    class RequestHandler(RangeRequestHandler):
-        def finish(self) -> None:
-            try:
-                if not self.wfile.closed:
-                    self.wfile.flush()
-                    self.wfile.close()
-            except socket.error:
-                pass
-            self.rfile.close()
-
-        def handle(self) -> None:
-            try:
-                RangeRequestHandler.handle(self)
-            except socket.error:
-                pass
-
-    return RequestHandler
-
-
 def start_https_server(ota_image_dir: str, server_ip: str, server_port: int) -> None:
     os.chdir(ota_image_dir)
-    requestHandler = https_request_handler()
-    httpd = http.server.HTTPServer((server_ip, server_port), requestHandler)
+    server_address = (server_ip, server_port)
 
-    httpd.socket = ssl.wrap_socket(httpd.socket, keyfile=key_file, certfile=server_file, server_side=True)
+    Handler = http.server.SimpleHTTPRequestHandler
+    httpd = http.server.HTTPServer(server_address, Handler)
+
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(certfile=server_file, keyfile=key_file)
+
+    httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
     httpd.serve_forever()
 
 
 @pytest.mark.wifi_high_traffic
-@idf_parametrize('target', ['esp32c6'], indirect=['target'])
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_tee_cli_secure_ota_wifi(dut: Dut) -> None:
     """
     This is a positive test case, which downloads complete binary file multiple number of times.
@@ -214,7 +192,7 @@ def test_tee_cli_secure_ota_wifi(dut: Dut) -> None:
 
             # Starting the test
             dut.expect('ESP-TEE: Secure services demonstration', timeout=30)
-            time.sleep(1)
+            time.sleep(2)
 
             # Connecting to Wi-Fi
             env_name = 'wifi_high_traffic'
@@ -225,7 +203,7 @@ def test_tee_cli_secure_ota_wifi(dut: Dut) -> None:
             # Fetch the DUT IP address
             try:
                 ip_address = dut.expect(r'got ip:(\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
-                print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
+                print(f'Connected to AP/Ethernet with IP: {ip_address}')
             except pexpect.exceptions.TIMEOUT:
                 raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
 
