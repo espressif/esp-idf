@@ -425,6 +425,35 @@ static inline uint32_t gpspi_flash_ll_calculate_clock_reg(uint8_t clkdiv)
     return div_parameter;
 }
 
+/**
+ * Set the clock source
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param clk_source Clock source to use
+ */
+static inline void gpspi_flash_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_source)
+{
+    switch (clk_source) {
+    case SPI_CLK_SRC_XTAL:
+        hw->clk_gate.mst_clk_sel = 0;
+        break;
+    default:
+        hw->clk_gate.mst_clk_sel = 1;
+        break;
+    }
+}
+
+/**
+ * Enable/disable SPI flash module clock
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param enable     true to enable, false to disable
+ */
+static inline void gpspi_flash_ll_enable_clock(spi_dev_t *hw, bool enable)
+{
+    hw->clk_gate.clk_en = enable;
+}
+
 #ifdef __cplusplus
 }
 #endif
