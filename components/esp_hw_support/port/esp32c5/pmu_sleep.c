@@ -239,10 +239,6 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
     )
 {
     pmu_sleep_power_config_t power_default = PMU_SLEEP_POWER_CONFIG_DEFAULT(sleep_flags);
-    config->power = power_default;
-
-    pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(sleep_flags);
-    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, sleep_flags, adjustment, slowclk_src, slowclk_period, fastclk_period);
 
     if (dslp) {
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
@@ -279,6 +275,20 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
 
         config->analog = analog_default;
     }
+
+    if (sleep_flags & RTC_SLEEP_XTAL_AS_RTC_FAST) {
+        // Keep XTAL on in HP_SLEEP state if it is the clock source of RTC_FAST
+        power_default.hp_sys.xtal.xpd_xtal = 1;
+        config->analog.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
+        config->analog.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
+        config->analog.hp_sys.analog.dbg_atten = 0;
+        config->analog.hp_sys.analog.dbias = get_act_hp_dbias();
+    }
+
+    config->power = power_default;
+    pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(sleep_flags);
+    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, sleep_flags, adjustment, slowclk_src, slowclk_period, fastclk_period);
+
     return config;
 }
 
