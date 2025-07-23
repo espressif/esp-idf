@@ -1278,12 +1278,12 @@ static void test_master_fd_dma(void)
                     .spics_io_num = PIN_NUM_CS,
                     .queue_size = 16,
                     .clock_speed_hz = s_spi_bus_freq[speed_level],
+                    .cs_ena_pretrans = 2,
                 };
 #if CONFIG_IDF_TARGET_ESP32
                 if (is_gpio && (s_spi_bus_freq[speed_level] >= 10 * 1000 * 1000)) {
                     continue;    //On esp32 with GPIO Matrix, clk freq <= 10MHz
                 }
-                devcfg.cs_ena_pretrans = 2;
                 devcfg.input_delay_ns = 12.5 * 2;
 #endif
                 TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
@@ -1393,12 +1393,12 @@ static void test_master_fd_no_dma(void)
                     .spics_io_num = PIN_NUM_CS,
                     .queue_size = 16,
                     .clock_speed_hz = s_spi_bus_freq[speed_level],
+                    .cs_ena_pretrans = 2,
                 };
 #if CONFIG_IDF_TARGET_ESP32
                 if (is_gpio && (s_spi_bus_freq[speed_level] >= 10 * 1000 * 1000)) {
                     continue;    //On esp32 with GPIO Matrix, clk freq <= 10MHz
                 }
-                devcfg.cs_ena_pretrans = 2,
                 devcfg.input_delay_ns = 12.5 * 2,
 #endif
                 TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
@@ -1508,6 +1508,7 @@ static void test_master_hd_dma(void)
                 spi_device_interface_config_t devcfg = {
                     .spics_io_num = PIN_NUM_CS,
                     .clock_speed_hz = s_spi_bus_freq[speed_level],
+                    .cs_ena_pretrans = 2,
                     .mode = mode,
                     .flags = SPI_DEVICE_HALFDUPLEX,
                     .command_bits = 8,
@@ -1616,6 +1617,7 @@ static void test_master_hd_no_dma(void)
                 spi_device_interface_config_t devcfg = {
                     .spics_io_num = PIN_NUM_CS,
                     .clock_speed_hz = s_spi_bus_freq[speed_level],
+                    .cs_ena_pretrans = 2,
                     .mode = mode,
                     .flags = SPI_DEVICE_HALFDUPLEX,
                     .command_bits = 8,
@@ -1739,10 +1741,10 @@ static void test_master_sio_dma(void)
                     .spics_io_num = PIN_NUM_CS,
                     .queue_size = 16,
                     .clock_speed_hz = s_spi_bus_freq[speed_level],
+                    .cs_ena_pretrans = 2,
                     .flags = SPI_DEVICE_HALFDUPLEX | SPI_DEVICE_3WIRE,
                 };
 #if CONFIG_IDF_TARGET_ESP32
-                devcfg.cs_ena_pretrans = 2;
                 devcfg.input_delay_ns = s_master_input_delay[speed_level];
 #endif
                 TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
@@ -1874,7 +1876,6 @@ static void test_master_sio_no_dma(void)
                     .flags = SPI_DEVICE_HALFDUPLEX | SPI_DEVICE_3WIRE,
                 };
 #if CONFIG_IDF_TARGET_ESP32
-                devcfg.cs_ena_pretrans = 2;
                 devcfg.input_delay_ns = s_master_input_delay[speed_level];
 #endif
                 TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));

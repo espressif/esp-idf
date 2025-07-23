@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 from pytest_embedded_idf.utils import idf_parametrize
-# If `test_env` is define, should not run on generic runner
 
 
 @pytest.mark.generic
@@ -18,7 +17,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 def test_master_single_dev(case_tester) -> None:  # type: ignore
     for case in case_tester.test_menu:
         if 'test_env' in case.attributes:
-            continue
+            continue  # If `test_env` is defined, should not run on generic runner
         case_tester.run_normal_case(case=case, reset=True)
 
 
@@ -39,9 +38,6 @@ def test_master_esp_flash(case_tester) -> None:  # type: ignore
             case_tester.run_normal_case(case=case, reset=True)
 
 
-# if `test_env` not defined, will run on `generic_multi_device` by default
-# TODO: [ESP32C61] IDF-10949
-@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='no multi-dev runner')
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize(
     'count, config',
@@ -54,6 +50,4 @@ def test_master_esp_flash(case_tester) -> None:  # type: ignore
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_master_multi_dev(case_tester) -> None:  # type: ignore
-    for case in case_tester.test_menu:
-        if case.attributes.get('test_env', 'generic_multi_device') == 'generic_multi_device':
-            case_tester.run_multi_dev_case(case=case, reset=True)
+    case_tester.run_all_multi_dev_cases(reset=True)
