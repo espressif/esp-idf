@@ -4,6 +4,7 @@ import argparse
 import os
 import re
 import struct
+import time
 
 
 def create_new_bt_snoop_file(filename: str) -> None:
@@ -36,7 +37,7 @@ def log_data_clean(data: str) -> str:
     return cleaned
 
 
-def parse_log(input_path: str, output_tag: str) -> None:
+def parse_log(input_path: str, output_tag: str, has_timestamp: bool = True) -> None:
     if not os.path.exists(input_path):
         print(f"Error: The file '{input_path}' does not exist.")
         return
@@ -53,10 +54,9 @@ def parse_log(input_path: str, output_tag: str) -> None:
                 if not line:
                     continue
                 parts = line.split()
-                if len(parts) < 10:
+                if len(parts) < 2:
                     continue
                 parts_wo_ln = parts[1:]
-                # Check for literal in the first token
                 literal = None
                 if ':' in parts_wo_ln[0]:
                     literal_part, sep, ts_byte = parts_wo_ln[0].partition(':')
@@ -66,16 +66,18 @@ def parse_log(input_path: str, output_tag: str) -> None:
                     else:
                         literal = None
                 if literal:
-                    # Parse timestamp
-                    try:
-                        timestamp_bytes = bytes(int(b, 16) for b in parts_wo_ln[1:9])
-                    except Exception:
-                        continue
-                    timestamp_us = int.from_bytes(timestamp_bytes, byteorder='little', signed=False)
-                    hci_data = ' '.join(parts_wo_ln[9:])
+                    if has_timestamp:
+                        try:
+                            timestamp_bytes = bytes(int(b, 16) for b in parts_wo_ln[1:9])
+                            timestamp_us = int.from_bytes(timestamp_bytes, byteorder='little', signed=False)
+                            hci_data = ' '.join(parts_wo_ln[9:])
+                        except Exception:
+                            continue
+                    else:
+                        timestamp_us = int(time.time() * 1e6)
+                        hci_data = ' '.join(parts_wo_ln[1:])
                     if not hci_data:
                         continue
-                    # Determine indicator and direction
                     if literal == 'C:':
                         hci_data = '01 ' + hci_data
                         direction = 0
@@ -93,13 +95,16 @@ def parse_log(input_path: str, output_tag: str) -> None:
                     append_hci_to_bt_snoop_file(output_file, direction, hci_data, timestamp_us)
                     parsed_num += 1
                 else:
-                    # No literal: treat as advertising report
-                    try:
-                        timestamp_bytes = bytes(int(b, 16) for b in parts[1:9])
-                    except Exception:
-                        continue
-                    timestamp_us = int.from_bytes(timestamp_bytes, byteorder='little', signed=False)
-                    adv_data = ' '.join(parts[9:])
+                    if has_timestamp:
+                        try:
+                            timestamp_bytes = bytes(int(b, 16) for b in parts[1:9])
+                            timestamp_us = int.from_bytes(timestamp_bytes, byteorder='little', signed=False)
+                            adv_data = ' '.join(parts[9:])
+                        except Exception:
+                            continue
+                    else:
+                        timestamp_us = int(time.time() * 1e6)
+                        adv_data = ' '.join(parts[1:])
                     if not adv_data:
                         continue
                     hci_data = '04 3e ' + adv_data
@@ -120,10 +125,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description='Log Parsing Tool')
     parser.add_argument('-p', '--path', required=True, help='Path to the input log file')
     parser.add_argument('-o', '--output', required=True, help='Name tag for the output file')
+    parser.add_argument(
+        '--has-ts',
+        action='store_true',
+        default=False,
+        help='Set this if the input file has timestamp bytes at the beginning (default: False)',
+    )
     args = parser.parse_args()
-    input_path = args.path
-    output_tag = args.output
-    parse_log(input_path, output_tag)
+    parse_log(args.path, args.output, has_timestamp=args.has_ts)
 
 
 if __name__ == '__main__':
