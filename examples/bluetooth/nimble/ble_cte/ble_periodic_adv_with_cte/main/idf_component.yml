@@ -1,0 +1,3 @@
+dependencies:
+  cte_config:
+    path: ${IDF_PATH}/examples/bluetooth/nimble/ble_cte/common_components/cte_config
