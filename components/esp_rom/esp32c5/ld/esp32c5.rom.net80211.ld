@@ -67,7 +67,7 @@ wifi_rf_phy_enable = 0x40000bcc;
 wifi_is_started = 0x40000bd0;
 /*sta_input = 0x40000bd4;*/
 sta_rx_eapol = 0x40000bd8;
-sta_reset_beacon_timeout = 0x40000bdc;
+//sta_reset_beacon_timeout = 0x40000bdc;
 sta_get_beacon_timeout = 0x40000be0;
 ampdu_process_multicast_address_qos_frame = 0x40000be4;
 /* Data (.data, .bss, .rodata) */
