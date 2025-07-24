@@ -145,9 +145,12 @@ ESP-IDF 二级引导加载程序位于 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_O
 引导加载程序大小
 ---------------------
 
-{IDF_TARGET_MAX_BOOTLOADER_SIZE:default = "64 KB (0x10000 bytes)", esp32 = "48 KB (0xC000 bytes)"}
-{IDF_TARGET_MAX_PARTITION_TABLE_OFFSET:default = "0x12000", esp32 = "0xE000"}
-.. Above is calculated as 0x1000 at start of flash + IDF_TARGET_MAX_BOOTLOADER_SIZE + 0x1000 signature sector
+{IDF_TARGET_MAX_BOOTLOADER_SIZE:default = "80 KB (0x14000 字节)", esp32 = "48 KB (0xC000 字节)", esp32s2, esp32s3, esp32c2, esp32c3, esp32c6, esp32h2, esp32h21, esp32p4 = "64 KB (0x10000 字节)"}
+{IDF_TARGET_MAX_PARTITION_TABLE_OFFSET:default = "0x11000", esp32 = "0xE000", esp32c5, esp32h4 = "0x17000", esp32c61 = "0x15000", esp32p4 = "0x13000"}
+.. Above is calculated as:
+    0x1000 at start of flash + IDF_TARGET_MAX_BOOTLOADER_SIZE + 0x1000 signature sector // for esp32
+    0x0 at start of flash + IDF_TARGET_MAX_BOOTLOADER_SIZE + 0x1000 signature sector // for esp32s2, esp32s3, esp32c2, esp32c3, esp32c6, esp32c61, esp32h2, esp32h21
+    0x2000 at start of flash + IDF_TARGET_MAX_BOOTLOADER_SIZE + 0x1000 signature sector // for Key Manager supported targets: esp32c5, esp32h4, esp32p4
 
 当需要启用额外的引导加载程序功能，包括 :doc:`/security/flash-encryption` 或安全启动，尤其是设置高级别 :ref:`CONFIG_BOOTLOADER_LOG_LEVEL` 时，监控引导加载程序 .bin 文件的大小变得非常重要。
 
