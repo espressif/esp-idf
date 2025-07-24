@@ -14,6 +14,8 @@ function(test_dump_properties)
     __dump_build_properties()
     idf_build_get_property(component_names COMPONENTS_DISCOVERED)
     __dump_component_properties("${component_names}")
+    idf_build_get_property(library_interfaces LIBRARY_INTERFACES)
+    __dump_library_properties("${library_interfaces}")
 endfunction()
 
 # Test component priority
@@ -100,11 +102,49 @@ function(test_toolchain)
     endif()
 endfunction()
 
+# Test idf_build_library
+function(test_idf_build_library)
+    # Create idflibtest with specific set of components and test that it
+    # contains them.
+    set(components app_trace app_update bootloader bootloader_support bt cmock)
+
+    set(idflib idflibtest)
+    idf_build_library(INTERFACE "${idflib}"
+                      COMPONENTS "${components}")
+
+    if(NOT TARGET "${idflib}")
+        idf_die("'${idflib}' not created")
+    endif()
+
+    idf_library_get_property(lib_components "${idflib}" LIBRARY_COMPONENTS)
+    if(NOT "${lib_components}" STREQUAL "${components}")
+        idf_die("Library '${idflib}' components '${lib_components}' do not match "
+                "expected components '${components}'")
+    endif()
+
+    # Create idflibtest2 without specifying COMPONENTS and test that it
+    # contains all discovered components.
+    set(idflib idflibtest2)
+    idf_build_library(INTERFACE "${idflib}")
+
+    if(NOT TARGET "${idflib}")
+        idf_die("'${idflib}' not created")
+    endif()
+
+    idf_library_get_property(lib_components "${idflib}" LIBRARY_COMPONENTS)
+    idf_build_get_property(component_names COMPONENTS_DISCOVERED)
+    if(NOT "${lib_components}" STREQUAL "${component_names}")
+        idf_die("Library '${idflib}' components '${lib_components}' do not match "
+                "COMPONENTS_DISCOVERED")
+    endif()
+endfunction()
+
 # Run tests
-test_dump_properties()
 test_component_priority()
 test_idf_version()
 test_python()
 test_toolchain()
+test_idf_build_library()
+test_dump_properties()
 
 message("ALL TESTS PASSED")
