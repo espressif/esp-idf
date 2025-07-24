@@ -105,7 +105,7 @@ static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx
                 // each node can generate the DMA eof interrupt, and the driver will do a ping-pong trick in the eof callback
                 .mark_eof = true,
                 // chain the descriptors into a ring, and will break it in `rmt_encode_eof()`
-                .mark_final = false,
+                .mark_final = GDMA_FINAL_LINK_TO_DEFAULT,
             }
         };
     }

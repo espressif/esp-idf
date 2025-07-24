@@ -33,7 +33,7 @@ static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void
             .length = per_block_size,
             .buffer_alignment = mem_alignment,
             .flags = {
-                .mark_final = false,
+                .mark_final = GDMA_FINAL_LINK_TO_DEFAULT,
             }
         };
     }
