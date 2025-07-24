@@ -360,3 +360,17 @@ function(__get_property)
 
     set(${ARG_OUTPUT} ${value} PARENT_SCOPE)
 endfunction()
+
+#[[
+   __dump_all_properties()
+
+   Dump all properties, including build properties, component properties, and
+   library properties.
+#]]
+function(__dump_all_properties)
+    __dump_build_properties()
+    idf_build_get_property(component_names COMPONENTS_DISCOVERED)
+    __dump_component_properties("${component_names}")
+    idf_build_get_property(library_interfaces LIBRARY_INTERFACES)
+    __dump_library_properties("${library_interfaces}")
+endfunction()

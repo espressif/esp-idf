@@ -9,15 +9,6 @@ include($ENV{IDF_PATH}/tools/cmakev2/idf.cmake)
 
 project(cmakev2 C)
 
-# Dump build and component properties
-function(test_dump_properties)
-    __dump_build_properties()
-    idf_build_get_property(component_names COMPONENTS_DISCOVERED)
-    __dump_component_properties("${component_names}")
-    idf_build_get_property(library_interfaces LIBRARY_INTERFACES)
-    __dump_library_properties("${library_interfaces}")
-endfunction()
-
 # Test component priority
 function(test_component_priority)
     # Set the idf component to be replaced with a testing component of higher
@@ -145,6 +136,6 @@ test_idf_version()
 test_python()
 test_toolchain()
 test_idf_build_library()
-test_dump_properties()
+__dump_all_properties()
 
 message("ALL TESTS PASSED")
