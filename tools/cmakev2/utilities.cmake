@@ -260,3 +260,103 @@ function(__get_sdkconfig_option)
 
     set(${ARG_OUTPUT} "${value}" PARENT_SCOPE)
 endfunction()
+
+#[[
+   __set_property(TARGET <target>
+                  PROPERTY <property>)
+                  PROPERTIES <properties>
+                  VALUE <value>
+                  APPEND)
+
+   :TARGET[in]: The target name to attach the property.
+   :PROPERTY[in]: Property name.
+   :PROPERTIES[in]: The target property containing list of properties.
+   :VALUE[in]: Property value.
+   :APPEND: Append the value to the property's current value instead of
+            replacing it.
+
+    Set the ``PROPERTY`` to ``VALUE`` for the ``TARGET``, and also record the
+    ``PROPERTY`` name in the list of all properties for the ``TARGET``. The
+    property name where all ``TARGET`` property names are stored is specified
+    by the ``PROPERTIES`` option. If ``APPEND`` is specified, the property will
+    be added rather than set.
+
+    Note: The cmake_parse_arguments function does not preserve empty arguments,
+    as explained in CMP0174. We do not verify if VALUE is defined because it
+    might have been passed as an empty string or list.
+
+    Note: The VALUE is treated as a multi-value because if a list is provided
+    as the value, CMake assigns only the first entry to the VALUE if parsed as
+    one-value. The remaining entries are stored in <prefix>_UNPARSED_ARGUMENTS.
+#]]
+function(__set_property)
+    set(options APPEND)
+    set(one_value TARGET PROPERTY PROPERTIES)
+    set(multi_value VALUE)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_TARGET)
+        idf_die("TARGET option is required")
+    endif()
+
+    if(NOT DEFINED ARG_PROPERTY)
+        idf_die("PROPERTY option is required")
+    endif()
+
+    if(NOT DEFINED ARG_PROPERTIES)
+        idf_die("PROPERTIES option is required")
+    endif()
+
+    get_property(properties TARGET ${ARG_TARGET} PROPERTY ${ARG_PROPERTIES})
+    if(NOT ARG_PROPERTY IN_LIST properties)
+        list(APPEND properties "${ARG_PROPERTY}")
+        set_property(TARGET ${ARG_TARGET} PROPERTY ${ARG_PROPERTIES} "${properties}")
+    endif()
+    if(ARG_APPEND)
+        set_property(TARGET ${ARG_TARGET} APPEND PROPERTY ${ARG_PROPERTY} "${ARG_VALUE}")
+    else()
+        set_property(TARGET ${ARG_TARGET} PROPERTY ${ARG_PROPERTY} "${ARG_VALUE}")
+    endif()
+endfunction()
+
+#[[
+   __get_property(TARGET <target>
+                  PROPERTY <property>)
+                  OUTPUT <variable>
+                  GENERATOR_EXPRESSION)
+
+   :TARGET[in]: The target from which to obtain the property value.
+   :PROPERTY[in]: Property name.
+   :OUTPUT[out]: Output variable to store the property value.
+   :GENERATOR_EXPRESSION: Obtain the generator expression for the property
+                          rather than the actual value.
+
+   Get the value of the specified ``PROPERTY`` from ``TARGET`` and store it in
+   the ``OUTPUT`` variable.
+#]]
+function(__get_property)
+    set(options GENERATOR_EXPRESSION)
+    set(one_value TARGET PROPERTY OUTPUT)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_TARGET)
+        idf_die("TARGET option is required")
+    endif()
+
+    if(NOT DEFINED ARG_PROPERTY)
+        idf_die("PROPERTY option is required")
+    endif()
+
+    if(NOT DEFINED ARG_OUTPUT)
+        idf_die("PROPERTIES option is required")
+    endif()
+
+    if(ARG_GENERATOR_EXPRESSION)
+        set(value "$<TARGET_PROPERTY:${ARG_TARGET},${ARG_PROPERTY}>")
+    else()
+        get_property(value TARGET ${ARG_TARGET} PROPERTY ${ARG_PROPERTY})
+    endif()
+
+    set(${ARG_OUTPUT} ${value} PARENT_SCOPE)
+endfunction()
