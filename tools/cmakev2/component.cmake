@@ -11,8 +11,9 @@ include(build)
 
    .. code-block:: cmake
 
-      idf_component_set_property(<property> <value> [APPEND])
+      idf_component_set_property(<component> <property> <value> [APPEND])
 
+   :component[in]: Component name, target, target alias or interface.
    :property[in]: Property name.
    :value[in]: Property value.
    :APPEND: Append the value to the property's current value instead of
@@ -46,9 +47,10 @@ endfunction()
 
    .. code-block:: cmake
 
-      idf_component_get_property(<variable> <property> [GENERATOR_EXPRESSION])
+      idf_component_get_property(<variable> <component> <property> [GENERATOR_EXPRESSION])
 
    :variable[out]: Variable to store the value in.
+   :component[in]: Component name, target, target alias or interface.
    :property[in]: Property name to get the value of.
    :GENERATOR_EXPRESSION: Obtain the generator expression for the property
                           rather than the actual value.
@@ -219,7 +221,7 @@ endfunction()
     __get_component_interface_or_die(COMPONENT <component>
                                      OUTPUT <variable>)
 
-   :COMPONENT[int]: Component name, target, target alias or interface.
+   :COMPONENT[in]: Component name, target, target alias or interface.
    :OUTPUT[out]: Output variable to store the component interface.
 
    A simple wrapper for ``__get_component_interface`` that aborts the build
