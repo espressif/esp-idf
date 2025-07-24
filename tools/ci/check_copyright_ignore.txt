@@ -504,7 +504,6 @@ components/spi_flash/include/spi_flash_chip_generic.h
 components/spi_flash/spi_flash_chip_boya.c
 components/spi_flash/spi_flash_chip_issi.c
 components/tcp_transport/include/esp_transport_ws.h
-components/vfs/include/esp_vfs_common.h
 components/wpa_supplicant/esp_supplicant/src/esp_wpa_err.h
 components/wpa_supplicant/include/utils/wpa_debug.h
 components/wpa_supplicant/include/utils/wpabuf.h

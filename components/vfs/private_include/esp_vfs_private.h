@@ -6,7 +6,6 @@
 
 #include "sdkconfig.h"
 #include "esp_vfs.h"
-#include "esp_vfs_common.h"
 #include <stddef.h>
 
 #ifdef __cplusplus

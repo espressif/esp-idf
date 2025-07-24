@@ -12,7 +12,7 @@ if(${target} STREQUAL "linux")
     list(APPEND srcs "esp_console_repl_linux.c")
 else()
     list(APPEND srcs "esp_console_repl_chip.c")
-    list(APPEND requires esp_vfs_console)
+    list(APPEND requires esp_stdio)
 endif()
 
 set(argtable_srcs argtable3/arg_cmd.c

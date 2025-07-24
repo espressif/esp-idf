@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@ extern "C" {
  *
  * This function is called from startup code to enable serial output
  */
-esp_err_t esp_vfs_console_register(void);
+esp_err_t esp_stdio_register(void);
 
 #ifdef __cplusplus
 }
