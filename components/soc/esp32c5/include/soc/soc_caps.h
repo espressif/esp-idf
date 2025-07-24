@@ -584,6 +584,10 @@
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
 #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1
 
+/*-------------------------- RNG CAPS ---------------------------------------*/
+#define SOC_RNG_BUF_CHAIN_ENTROPY_SOURCE 1
+#define SOC_RNG_RTC_TIMER_ENTROPY_SOURCE 1
+
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C5 has 3 UARTs (2 HP UART, and 1 LP UART)
 #define SOC_UART_NUM                       (3)
@@ -668,6 +672,7 @@
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (1)
+#define SOC_RNG_CLOCK_IS_INDEPENDENT              (1)
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 #define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< Support to connect an external oscillator, not a crystal */

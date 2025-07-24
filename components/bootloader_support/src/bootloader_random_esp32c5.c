@@ -9,6 +9,7 @@
 #include "hal/adc_ll.h"
 #include "hal/adc_types.h"
 #include "esp_private/regi2c_ctrl.h"
+#include "soc/lpperi_reg.h"
 
 void bootloader_random_enable(void)
 {
@@ -48,6 +49,9 @@ void bootloader_random_enable(void)
     adc_ll_digi_set_trigger_interval(200);
     adc_ll_digi_trigger_enable();
 
+    SET_PERI_REG_MASK(LPPERI_RNG_CFG_REG, LPPERI_RNG_SAMPLE_ENABLE);
+    REG_SET_FIELD(LPPERI_RNG_CFG_REG, LPPERI_RTC_TIMER_EN, 0x3);
+    SET_PERI_REG_MASK(LPPERI_RNG_CFG_REG, LPPERI_RNG_TIMER_EN);
 }
 
 void bootloader_random_disable(void)
