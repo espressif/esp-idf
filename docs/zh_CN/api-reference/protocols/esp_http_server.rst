@@ -106,7 +106,7 @@ ESP HTTP 服务器有各种事件，当特定事件发生时，:doc:`事件循�
 RESTful API
 -----------
 
-:example:`protocols/http_server/restful_server` 演示了如何实现 RESTful API 服务器和 HTTP 服务器，并结合前端浏览器 UI，设计了多个 API 来获取资源，使用 mDNS 解析域名，并通过半主机技术将网页部署到主机 PC、SPI flash 或 SD 卡上。
+:example:`protocols/http_server/restful_server` 演示了如何实现 RESTful API 服务器和网页服务器，设计了多个 API 服务端点，使用 mDNS 解析域名，以及将网页部署到 SPI flash 中。
 
 URI 处理程序
 ------------
