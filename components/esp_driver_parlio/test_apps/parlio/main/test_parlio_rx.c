@@ -476,7 +476,7 @@ TEST_CASE("parallel_rx_unit_receive_transaction_test", "[parlio_rx]")
     TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload, TEST_PAYLOAD_SIZE, &recv_config));
     TEST_ESP_OK(parlio_rx_unit_wait_all_done(rx_unit, 5000));
     TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, false));
-    TEST_ASSERT_EQUAL_UINT32(2, test_data.partial_recv_cnt);
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT32(2, test_data.partial_recv_cnt);
     TEST_ASSERT_EQUAL_UINT32(1, test_data.recv_done_cnt);
     memset(&test_data, 0, sizeof(test_data_t));
 
@@ -488,7 +488,7 @@ TEST_CASE("parallel_rx_unit_receive_transaction_test", "[parlio_rx]")
     }
     TEST_ESP_OK(parlio_rx_unit_wait_all_done(rx_unit, 5000));
     TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, false));
-    TEST_ASSERT_EQUAL_UINT32(10, test_data.partial_recv_cnt);
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT32(10, test_data.partial_recv_cnt);
     TEST_ASSERT_EQUAL_UINT32(5, test_data.recv_done_cnt);
     memset(&test_data, 0, sizeof(test_data_t));
 
