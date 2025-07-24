@@ -13,13 +13,7 @@
 #include "esp_efuse_chip.h"
 #include "esp_random.h"
 #include "spi_flash_mmap.h"
-#if SOC_HMAC_SUPPORTED
-#include "esp_hmac.h"
-#include "esp_hmac_pbkdf2.h"
-#else
-#include "mbedtls/md.h"
-#endif
-
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/aes.h"
 #include "mbedtls/gcm.h"
 #include "mbedtls/sha256.h"

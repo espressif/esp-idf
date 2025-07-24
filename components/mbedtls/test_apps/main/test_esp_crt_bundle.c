@@ -84,11 +84,11 @@ static volatile bool exit_flag;
 
 esp_err_t endpoint_teardown(mbedtls_endpoint_t *endpoint);
 
-static int myrand(void *rng_state, unsigned char *output, size_t len)
-{
-    size_t olen;
-    return mbedtls_hardware_poll(rng_state, output, len, &olen);
-}
+// static int myrand(void *rng_state, unsigned char *output, size_t len)
+// {
+//     size_t olen;
+//     return mbedtls_hardware_poll(rng_state, output, len, &olen);
+// }
 
 esp_err_t server_setup(mbedtls_endpoint_t *server)
 {
@@ -266,6 +266,7 @@ void client_task(void *pvParameters)
     SemaphoreHandle_t *client_signal_sem = (SemaphoreHandle_t *) pvParameters;
     int ret = ESP_FAIL;
 
+    mbedtls_endpoint_t *client = calloc(1, sizeof(mbedtls_endpoint_t));
     esp_crt_validate_res_t res = ESP_CRT_VALIDATE_UNKNOWN;
 
     if (client_setup(client) != ESP_OK) {
@@ -355,6 +356,7 @@ exit:
     esp_crt_bundle_detach(&client->conf);
     endpoint_teardown(client);
     xSemaphoreGive(*client_signal_sem);
+    free(client);
     vTaskSuspend(NULL);
 }
 

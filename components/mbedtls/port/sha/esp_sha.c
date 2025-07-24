@@ -30,95 +30,42 @@ static const char *TAG = "esp_sha";
 
 void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output)
 {
-    union {
-#if SOC_SHA_SUPPORT_SHA1
-        mbedtls_sha1_context sha1;
-#endif
-#if SOC_SHA_SUPPORT_SHA224 || SOC_SHA_SUPPORT_SHA256
-        mbedtls_sha256_context sha256;
-#endif
-#if SOC_SHA_SUPPORT_SHA384 || SOC_SHA_SUPPORT_SHA512
-        mbedtls_sha512_context sha512;
-#endif
-    } ctx;
-
     int ret __attribute__((unused));
     assert(input != NULL && output != NULL);
 
     psa_status_t status;
-    psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
     psa_algorithm_t alg = PSA_ALG_NONE;
 
 #if SOC_SHA_SUPPORT_SHA1
     if (sha_type == SHA1) {
         alg = PSA_ALG_SHA_1;
-
-        // mbedtls_sha1_init(&ctx.sha1);
-        // mbedtls_sha1_starts(&ctx.sha1);
-        // ret = mbedtls_sha1_update(&ctx.sha1, input, ilen);
-        // assert(ret == 0);
-        // ret = mbedtls_sha1_finish(&ctx.sha1, output);
-        // assert(ret == 0);
-        // mbedtls_sha1_free(&ctx.sha1);
-        // return;
     }
 #endif //SOC_SHA_SUPPORT_SHA1
 
 #if SOC_SHA_SUPPORT_SHA224
     if (sha_type == SHA2_224) {
         alg = PSA_ALG_SHA_224;
-        // mbedtls_sha256_init(&ctx.sha256);
-        // mbedtls_sha256_starts(&ctx.sha256, 1);
-        // ret = mbedtls_sha256_update(&ctx.sha256, input, ilen);
-        // assert(ret == 0);
-        // ret = mbedtls_sha256_finish(&ctx.sha256, output);
-        // assert(ret == 0);
-        // mbedtls_sha256_free(&ctx.sha256);
-        // return;
     }
 #endif //SOC_SHA_SUPPORT_SHA224
 
 #if SOC_SHA_SUPPORT_SHA256
     if (sha_type == SHA2_256) {
         alg = PSA_ALG_SHA_256;
-        // mbedtls_sha256_init(&ctx.sha256);
-        // mbedtls_sha256_starts(&ctx.sha256, 0);
-        // ret = mbedtls_sha256_update(&ctx.sha256, input, ilen);
-        // assert(ret == 0);
-        // ret = mbedtls_sha256_finish(&ctx.sha256, output);
-        // assert(ret == 0);
-        // mbedtls_sha256_free(&ctx.sha256);
-        // return;
     }
 #endif //SOC_SHA_SUPPORT_SHA256
 
 #if SOC_SHA_SUPPORT_SHA384
     if (sha_type == SHA2_384) {
         alg = PSA_ALG_SHA_384;
-        // mbedtls_sha512_init(&ctx.sha512);
-        // mbedtls_sha512_starts(&ctx.sha512, 1);
-        // ret = mbedtls_sha512_update(&ctx.sha512, input, ilen);
-        // assert(ret == 0);
-        // ret = mbedtls_sha512_finish(&ctx.sha512, output);
-        // assert(ret == 0);
-        // mbedtls_sha512_free(&ctx.sha512);
-        // return;
     }
 #endif //SOC_SHA_SUPPORT_SHA384
 
 #if SOC_SHA_SUPPORT_SHA512
     if (sha_type == SHA2_512) {
         alg = PSA_ALG_SHA_512;
-        // mbedtls_sha512_init(&ctx.sha512);
-        // mbedtls_sha512_starts(&ctx.sha512, 0);
-        // ret = mbedtls_sha512_update(&ctx.sha512, input, ilen);
-        // assert(ret == 0);
-        // ret = mbedtls_sha512_finish(&ctx.sha512, output);
-        // assert(ret == 0);
-        // mbedtls_sha512_free(&ctx.sha512);
-        // return;
     }
 #endif //SOC_SHA_SUPPORT_SHA512
+
     if (alg == PSA_ALG_NONE) {
         ESP_LOGE(TAG, "SHA type %d not supported", (int)sha_type);
         abort();

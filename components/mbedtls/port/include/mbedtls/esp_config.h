@@ -28,10 +28,13 @@
 #define MBEDTLS_ALLOW_PRIVATE_ACCESS
 
 #include "sdkconfig.h"
+#if (defined(MBEDTLS_MAJOR_VERSION) && (MBEDTLS_MAJOR_VERSION < 4))
 #include "mbedtls/mbedtls_config.h"
+#endif // MBEDTLS_MAJOR_VERSION < 4
 #include "soc/soc_caps.h"
 
-
+#define MBEDTLS_PLATFORM_GET_ENTROPY_ALT
+#define MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 
 /**
  * \def MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
@@ -561,6 +564,7 @@
 #define MBEDTLS_ECP_DP_SECP384R1_ENABLED
 #else
 #undef MBEDTLS_ECP_DP_SECP384R1_ENABLED
+#undef PSA_WANT_ECC_SECP_R1_384
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP521R1_ENABLED
 #define MBEDTLS_ECP_DP_SECP521R1_ENABLED
@@ -629,11 +633,11 @@
  *
  * Comment this macro to disable FIXED POINT curves optimisation.
  */
-// #ifdef CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM
-// #define MBEDTLS_ECP_FIXED_POINT_OPTIM 1
-// #else
-// #define MBEDTLS_ECP_FIXED_POINT_OPTIM 0
-// #endif
+#ifdef CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM
+#define MBEDTLS_ECP_FIXED_POINT_OPTIM 1
+#else
+#define MBEDTLS_ECP_FIXED_POINT_OPTIM 0
+#endif
 
 /**
  * \def MBEDTLS_ECDSA_DETERMINISTIC
@@ -2106,6 +2110,7 @@
 #define MBEDTLS_CAMELLIA_C
 #else
 #undef MBEDTLS_CAMELLIA_C
+#undef PSA_WANT_KEY_TYPE_CAMELLIA
 #endif
 
 /**
@@ -2595,6 +2600,7 @@
 #define MBEDTLS_MD5_C
 #else
 #undef MBEDTLS_MD5_C
+#undef PSA_WANT_ALG_MD5
 #endif
 
 /**
@@ -2869,6 +2875,7 @@
 #define MBEDTLS_RIPEMD160_C
 #else
 #undef MBEDTLS_RIPEMD160_C
+#undef PSA_WANT_ALG_RIPEMD160
 #endif
 
 /**
@@ -2916,6 +2923,7 @@
 #define MBEDTLS_SHA1_C
 #else
 #undef MBEDTLS_SHA1_C
+#undef PSA_WANT_ALG_SHA_1
 #endif
 /**
  * \def MBEDTLS_SHA224_C
@@ -2976,6 +2984,7 @@
 #define MBEDTLS_SHA384_C
 #else
 #undef MBEDTLS_SHA384_C
+#undef PSA_WANT_ALG_SHA_384
 #endif
 
 /**
@@ -2995,6 +3004,7 @@
 #define MBEDTLS_SHA512_C
 #else
 #undef MBEDTLS_SHA512_C
+#undef PSA_WANT_ALG_SHA_512
 #endif
 
 /**

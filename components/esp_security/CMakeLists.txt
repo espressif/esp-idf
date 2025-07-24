@@ -57,9 +57,9 @@ idf_component_register(SRCS ${srcs}
 
 if(NOT non_os_build)
     target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_security_init_include_impl")
-    if(CONFIG_MBEDTLS_PSA_CRYPTO_C)
+    # if(CONFIG_MBEDTLS_PSA_CRYPTO_C)
         idf_component_optional_requires(PRIVATE mbedtls)
-    endif()
+    # endif()
 elseif(esp_tee_build)
     target_link_libraries(${COMPONENT_LIB} PRIVATE idf::efuse)
 endif()

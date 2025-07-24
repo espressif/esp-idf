@@ -15,14 +15,14 @@
  *  http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
  */
 #include <string.h>
-
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "aes/esp_aes.h"
 #include "aes/esp_aes_gcm.h"
 #include "esp_aes_internal.h"
 #include "hal/aes_hal.h"
 
 #include "mbedtls/aes.h"
-#include "mbedtls/error.h"
+// #include "mbedtls/error.h"
 #include "mbedtls/gcm.h"
 
 #include "esp_heap_caps.h"
@@ -279,7 +279,7 @@ int esp_aes_gcm_setkey( esp_gcm_context *ctx,
 
 #if !SOC_AES_SUPPORT_AES_192
     if (keybits == 192) {
-        return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
+        return -1;
     }
 #endif
     if (keybits != 128 && keybits != 192 && keybits != 256) {

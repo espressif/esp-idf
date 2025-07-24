@@ -6,7 +6,7 @@
  */
 #ifndef MBEDTLS_ENTROPY_POLL_H
 #define MBEDTLS_ENTROPY_POLL_H
-#include "mbedtls/build_info.h"
+// #include "mbedtls/build_info.h"
 #include <stddef.h>
 #ifdef __cplusplus
 extern "C" {

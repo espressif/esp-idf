@@ -27,7 +27,7 @@ static void core_dump_sha256_start(core_dump_sha_ctx_t *sha_ctx)
 
 static void core_dump_sha256_update(core_dump_sha_ctx_t *sha_ctx, const void *data, size_t data_len)
 {
-#if CONFIG_MBEDTLS_HARDWARE_SHA
+#if ((CONFIG_MBEDTLS_HARDWARE_SHA) && (MBEDTLS_MAJOR_VERSION < 4))
     mbedtls_psa_hash_operation_t *op = &sha_ctx->ctx.MBEDTLS_PRIVATE(ctx).mbedtls_ctx;
     mbedtls_sha256_context *ctx = &op->MBEDTLS_PRIVATE(ctx).sha256;
     ctx->mode = ESP_MBEDTLS_SHA256_SOFTWARE;

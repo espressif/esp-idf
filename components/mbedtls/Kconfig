@@ -1411,7 +1411,7 @@ menu "mbedTLS"
     menu "Hardware Acceleration"
         config MBEDTLS_HARDWARE_ECDSA_VERIFY
             bool "Enable ECDSA signature verification using on-chip ECDSA peripheral"
-            default y
+            default n
             depends on SOC_ECDSA_SUPPORTED
             help
                 Enable hardware accelerated ECDSA peripheral to verify signature
@@ -1423,7 +1423,7 @@ menu "mbedTLS"
             config MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM
                 bool "Mask original ECDSA sign operation under dummy sign operations"
                 select HAL_ECDSA_GEN_SIG_CM
-                default y
+                default n
                 help
                     The ECDSA peripheral before ESP32-H2 v1.2 does not offer constant time ECDSA sign operation.
                     This time can be observed through power profiling of the device,
@@ -1436,7 +1436,7 @@ menu "mbedTLS"
 
             config MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
                 bool "Make ECDSA signature operation pseudo constant time for software"
-                default y
+                default n
                 help
                     This option adds a delay after the actual ECDSA signature operation
                     so that the entire operation appears to be constant  time for the software.
@@ -1466,12 +1466,12 @@ menu "mbedTLS"
 
         config MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
             bool "Enable ECDSA signing using TEE secure storage"
-            default y
+            default n
             depends on SECURE_ENABLE_TEE
 
         config MBEDTLS_HARDWARE_ECC
             bool "Enable hardware ECC acceleration"
-            default y
+            default n
             depends on SOC_ECC_SUPPORTED
             help
                 Enable hardware accelerated ECC point multiplication and point verification for points
@@ -1480,14 +1480,14 @@ menu "mbedTLS"
         config MBEDTLS_ECC_OTHER_CURVES_SOFT_FALLBACK
             bool "Fallback to software implementation for curves not supported in hardware"
             depends on MBEDTLS_HARDWARE_ECC
-            default y
+            default n
             help
                 Fallback to software implementation of ECC point multiplication and point verification
                 for curves not supported in hardware.
 
         config MBEDTLS_HARDWARE_SHA
             bool "Enable hardware SHA acceleration"
-            default y
+            default n
             depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST && SOC_SHA_SUPPORTED
             help
                 Enable hardware accelerated SHA1, SHA256, SHA384 & SHA512 in mbedTLS.
@@ -1503,7 +1503,7 @@ menu "mbedTLS"
 
         config MBEDTLS_HARDWARE_MPI
             bool "Enable hardware MPI (bignum) acceleration"
-            default y
+            default n
             depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST && SOC_MPI_SUPPORTED && MBEDTLS_BIGNUM_C
             help
                 Enable hardware accelerated multiple precision integer operations.
@@ -1527,7 +1527,7 @@ menu "mbedTLS"
         config MBEDTLS_MPI_USE_INTERRUPT
             bool "Use interrupt for MPI exp-mod operations"
             depends on !IDF_TARGET_ESP32 && MBEDTLS_HARDWARE_MPI
-            default y
+            default n
             help
                 Use an interrupt to coordinate long MPI operations.
 
@@ -1547,7 +1547,7 @@ menu "mbedTLS"
 
         config MBEDTLS_HARDWARE_AES
             bool "Enable hardware AES acceleration"
-            default y
+            default n
             depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST && SOC_AES_SUPPORTED
             help
                 Enable hardware accelerated AES encryption & decryption.
@@ -1558,7 +1558,7 @@ menu "mbedTLS"
         config MBEDTLS_HARDWARE_GCM
             bool "Enable partially hardware accelerated GCM"
             depends on SOC_AES_SUPPORT_GCM && MBEDTLS_HARDWARE_AES
-            default y
+            default n
             help
                 Enable partially hardware accelerated GCM. GHASH calculation is still done
                 in software.
@@ -1570,7 +1570,7 @@ menu "mbedTLS"
         config MBEDTLS_GCM_SUPPORT_NON_AES_CIPHER
             bool "Enable support for non-AES ciphers in GCM operation"
             depends on MBEDTLS_HARDWARE_AES
-            default y
+            default n
             help
                 Enable this config to support fallback to software definitions for a non-AES
                 cipher GCM operation as we support hardware acceleration only for AES cipher.
@@ -1593,7 +1593,7 @@ menu "mbedTLS"
         config MBEDTLS_AES_USE_INTERRUPT
             bool "Use interrupt for long AES operations"
             depends on !IDF_TARGET_ESP32 && MBEDTLS_HARDWARE_AES
-            default y
+            default n
             help
                 Use an interrupt to coordinate long AES operations.
 
@@ -1664,7 +1664,7 @@ menu "mbedTLS"
 
         config MBEDTLS_PK_RSA_ALT_SUPPORT
             bool "Enable RSA alt support"
-            default y
+            default n
             help
                 Support external private RSA keys (eg from a HSM) int the PK layer.
 

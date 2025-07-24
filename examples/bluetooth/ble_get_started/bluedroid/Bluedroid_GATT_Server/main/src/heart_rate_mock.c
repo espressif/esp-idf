@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 /* Includes */
-#include "common.h"
+// #include "common.h"
 #include "heart_rate.h"
 #include "esp_random.h"
 

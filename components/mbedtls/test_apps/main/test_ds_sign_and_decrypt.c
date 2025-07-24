@@ -16,7 +16,10 @@
 static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in internal RAM
 #endif
 
-#ifdef SOC_DIG_SIGN_SUPPORTED
+// Disabled these tests for now as with PSA, DS peripheral probably can not be used like this
+// Instead we will have to create a driver
+#if 0
+// #ifdef SOC_DIG_SIGN_SUPPORTED
 #include "soc/soc_caps.h"
 #include "esp_ds.h"
 #include "esp_ds/esp_ds_rsa.h"

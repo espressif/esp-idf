@@ -13,7 +13,7 @@
  *  http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
  */
 
-#include <mbedtls/build_info.h>
+// #include <mbedtls/build_info.h>
 
 #if defined(MBEDTLS_SHA256_C) && defined(MBEDTLS_SHA256_ALT)
 

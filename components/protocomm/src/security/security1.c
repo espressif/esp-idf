@@ -66,27 +66,21 @@ typedef struct session {
     uint8_t sym_key[PUBLIC_KEY_LEN];
     uint8_t rand[SZ_RANDOM];
 
+    /* Operation counter for CTR mode nonce */
+    uint32_t op_counter;
+
     /* mbedtls context data for AES */
     psa_cipher_operation_t ctx_aes;
     psa_key_id_t key_id;
+    psa_key_id_t key_id_sym;
     unsigned char stb[16];
     size_t nc_off;
 } session_t;
 
-static void flip_endian(uint8_t *data, size_t len)
-{
-    uint8_t swp_buf;
-    for (int i = 0; i < len/2; i++) {
-        swp_buf = data[i];
-        data[i] = data[len - i - 1];
-        data[len - i - 1] = swp_buf;
-    }
-}
-
 static void hexdump(const char *msg, uint8_t *buf, int len)
 {
-    ESP_LOGD(TAG, "%s:", msg);
-    ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, len, ESP_LOG_DEBUG);
+    ESP_LOGI(TAG, "%s:", msg);
+    ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, len, ESP_LOG_INFO);
 }
 
 static esp_err_t handle_session_command1(session_t *cur_session,
@@ -95,8 +89,6 @@ static esp_err_t handle_session_command1(session_t *cur_session,
 {
     ESP_LOGD(TAG, "Request to handle setup1_command");
     Sec1Payload *in = (Sec1Payload *) req->sec1;
-    uint8_t check_buf[PUBLIC_KEY_LEN];
-    // int mbed_err;
 
     if (cur_session->state != SESSION_STATE_CMD1) {
         ESP_LOGE(TAG, "Invalid state of session %d (expected %d)", SESSION_STATE_CMD1, cur_session->state);
@@ -106,46 +98,66 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     /* Initialize crypto context */
     memset(cur_session->stb, 0, sizeof(cur_session->stb));
     cur_session->nc_off = 0;
+    cur_session->op_counter = 0;
 
-    hexdump("Client verifier", in->sc1->client_verify_data.data,
+    hexdump("Data to decrypt", in->sc1->client_verify_data.data,
             in->sc1->client_verify_data.len);
+    hexdump("Symmetric key:", cur_session->sym_key, sizeof(cur_session->sym_key));
+    hexdump("Client rand", cur_session->rand,
+            sizeof(cur_session->rand));
 
     psa_status_t status;
     psa_key_id_t key_id = 0;
     psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_algorithm_t alg = PSA_ALG_CTR;
-    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DECRYPT | PSA_KEY_USAGE_ENCRYPT);
     psa_set_key_algorithm(&key_attributes, alg);
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
-    psa_set_key_bits(&key_attributes, 128);
+    psa_set_key_bits(&key_attributes, sizeof(cur_session->sym_key) * 8);
     status = psa_import_key(&key_attributes, cur_session->sym_key, sizeof(cur_session->sym_key), &key_id);
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "psa_import_key failed with status=%d", status);
         return ESP_FAIL;
     }
+    cur_session->key_id_sym = key_id;
     psa_reset_key_attributes(&key_attributes);
+    size_t output_len = 0;
+    size_t cipher_size = PSA_CIPHER_DECRYPT_OUTPUT_SIZE(PSA_KEY_TYPE_AES, alg, in->sc1->client_verify_data.len);
+    uint8_t check_buf[cipher_size];
+
+    cur_session->ctx_aes = psa_cipher_operation_init();
     status = psa_cipher_encrypt_setup(&cur_session->ctx_aes, key_id, alg);
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "psa_cipher_encrypt_setup failed with status=%d", status);
-        psa_destroy_key(key_id);
-        return ESP_FAIL;
-    }
-    size_t output_len = 0;
-    status = psa_cipher_encrypt(key_id, alg, in->sc1->client_verify_data.data,
-                                      in->sc1->client_verify_data.len, check_buf, sizeof(check_buf), &output_len);
-    if (status != PSA_SUCCESS || output_len != sizeof(check_buf)) {
-        ESP_LOGE(TAG, "psa_cipher_encrypt failed with status=%d", status);
         psa_cipher_abort(&cur_session->ctx_aes);
         psa_destroy_key(key_id);
         return ESP_FAIL;
     }
+    status = psa_cipher_set_iv(&cur_session->ctx_aes, cur_session->rand, sizeof(cur_session->rand));
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_cipher_set_iv failed with status=%d", status);
+        psa_cipher_abort(&cur_session->ctx_aes);
+        psa_destroy_key(key_id);
+        return ESP_FAIL;
+    }
+
+    status = psa_cipher_update(&cur_session->ctx_aes, in->sc1->client_verify_data.data,
+                                   in->sc1->client_verify_data.len, check_buf, sizeof(check_buf), &output_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_cipher_update failed with status=%d", status);
+        psa_cipher_abort(&cur_session->ctx_aes);
+        psa_destroy_key(key_id);
+        return ESP_FAIL;
+    }
+
     hexdump("Dec Client verifier", check_buf, sizeof(check_buf));
+
+    hexdump("Device pubkey", cur_session->device_pubkey, sizeof(cur_session->device_pubkey));
 
     /* constant time memcmp */
     if (mbedtls_ct_memcmp(check_buf, cur_session->device_pubkey,
                                  sizeof(cur_session->device_pubkey)) != 0) {
         ESP_LOGE(TAG, "Key mismatch. Close connection");
-        psa_cipher_abort(&cur_session->ctx_aes);
         psa_destroy_key(key_id);
         if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH, NULL, 0, portMAX_DELAY) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to post credential mismatch event");
@@ -174,15 +186,11 @@ static esp_err_t handle_session_command1(session_t *cur_session,
         return ESP_ERR_NO_MEM;
     }
 
-    status = psa_cipher_encrypt(key_id, alg, cur_session->client_pubkey,
-                                        PUBLIC_KEY_LEN, outbuf, PUBLIC_KEY_LEN, &output_len);
-    if (status != PSA_SUCCESS || output_len != PUBLIC_KEY_LEN) {
-        ESP_LOGE(TAG, "psa_cipher_encrypt failed with status=%d", status);
+    size_t outlen = 0;
+    status = psa_cipher_update(&cur_session->ctx_aes, cur_session->client_pubkey, sizeof(cur_session->client_pubkey), outbuf, PUBLIC_KEY_LEN, &outlen);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed at psa_cipher_update with error code : %d", status);
         free(outbuf);
-        free(out);
-        free(out_resp);
-        psa_cipher_abort(&cur_session->ctx_aes);
-        psa_destroy_key(key_id);
         return ESP_FAIL;
     }
 
@@ -202,7 +210,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
         ESP_LOGE(TAG, "Failed to post secure session setup success event");
     }
 
-    ESP_LOGD(TAG, "Secure session established successfully");
+    ESP_LOGI(TAG, "Secure session established successfully");
     return ESP_OK;
 }
 
@@ -231,22 +239,11 @@ static esp_err_t handle_session_command0(session_t *cur_session,
         return ESP_ERR_INVALID_ARG;
     }
 
-    mbedtls_ecdh_context     *ctx_server = malloc(sizeof(mbedtls_ecdh_context));
-    mbedtls_entropy_context  *entropy    = malloc(sizeof(mbedtls_entropy_context));
-    mbedtls_ctr_drbg_context *ctr_drbg   = malloc(sizeof(mbedtls_ctr_drbg_context));
-    if (!ctx_server || !entropy || !ctr_drbg) {
-        ESP_LOGE(TAG, "Failed to allocate memory for mbedtls context");
-        free(ctx_server);
-        free(entropy);
-        free(ctr_drbg);
-        return ESP_ERR_NO_MEM;
-    }
-
     psa_status_t status;
     psa_key_id_t key_id = 0;
     psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_MONTGOMERY));
-    psa_set_key_bits(&key_attributes, 256);
+    psa_set_key_bits(&key_attributes, 255);
     psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_EXPORT);
     psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDH);
@@ -259,7 +256,12 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     psa_reset_key_attributes(&key_attributes);
     size_t olen = 0;
 
-    flip_endian(cur_session->device_pubkey, PUBLIC_KEY_LEN);
+    status = psa_export_public_key(key_id, cur_session->device_pubkey, PUBLIC_KEY_LEN, &olen);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_export_public_key failed with status=%d", status);
+        psa_reset_key_attributes(&key_attributes);
+        return ESP_FAIL;
+    }
 
     memcpy(cur_session->client_pubkey, in->sc0->client_pubkey.data, PUBLIC_KEY_LEN);
 
@@ -283,43 +285,33 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     }
     cur_session->key_id = key_id;
 
-    flip_endian(cur_session->sym_key, PUBLIC_KEY_LEN);
-
     if (pop != NULL && pop->data != NULL && pop->len != 0) {
         ESP_LOGD(TAG, "Adding proof of possession");
         uint8_t sha_out[PUBLIC_KEY_LEN];
 
-        // mbed_err = mbedtls_sha256((const unsigned char *) pop->data, pop->len, sha_out, 0);
-        // if (mbed_err != 0) {
-        //     ESP_LOGE(TAG, "Failed at mbedtls_sha256_ret with error code : -0x%x", -mbed_err);
-        //     ret = ESP_FAIL;
-        //     goto exit_cmd0;
-        // }
-
-        psa_mac_operation_t mac_operation = PSA_MAC_OPERATION_INIT;
-        status = psa_mac_sign_setup(&mac_operation, key_id, PSA_ALG_SHA_256);
+        psa_hash_operation_t hash_operation = PSA_HASH_OPERATION_INIT;
+        status = psa_hash_setup(&hash_operation, PSA_ALG_SHA_256);
         if (status != PSA_SUCCESS) {
-            ESP_LOGE(TAG, "psa_mac_sign_setup failed with status=%d", status);
+            ESP_LOGE(TAG, "psa_hash_setup failed with status=%d", status);
             ret = ESP_FAIL;
             goto exit_cmd0;
         }
 
-        status = psa_mac_update(&mac_operation, pop->data, pop->len);
+        status = psa_hash_update(&hash_operation, pop->data, pop->len);
         if (status != PSA_SUCCESS) {
-            ESP_LOGE(TAG, "psa_mac_update failed with status=%d", status);
-            psa_mac_abort(&mac_operation);
+            ESP_LOGE(TAG, "psa_hash_update failed with status=%d", status);
+            psa_hash_abort(&hash_operation);
             ret = ESP_FAIL;
             goto exit_cmd0;
         }
 
-        status = psa_mac_sign_finish(&mac_operation, sha_out, sizeof(sha_out), &olen);
+        status = psa_hash_finish(&hash_operation, sha_out, sizeof(sha_out), &olen);
         if (status != PSA_SUCCESS || olen != sizeof(sha_out)) {
-            ESP_LOGE(TAG, "psa_mac_sign_finish failed with status=%d", status);
-            psa_mac_abort(&mac_operation);
+            ESP_LOGE(TAG, "psa_hash_finish failed with status=%d", status);
+            psa_hash_abort(&hash_operation);
             ret = ESP_FAIL;
             goto exit_cmd0;
         }
-
         for (int i = 0; i < PUBLIC_KEY_LEN; i++) {
             cur_session->sym_key[i] ^= sha_out[i];
         }
@@ -366,7 +358,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
 
     cur_session->state = SESSION_STATE_CMD1;
 
-    ESP_LOGD(TAG, "Session setup phase1 done");
+    ESP_LOGI(TAG, "Session setup phase1 done");
     ret = ESP_OK;
 
 exit_cmd0:
@@ -449,20 +441,24 @@ static esp_err_t sec1_close_session(protocomm_security_handle_t handle, uint32_t
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (cur_session->state == SESSION_STATE_DONE) {
+    // if (cur_session->state == SESSION_STATE_DONE) {
         /* Free AES context data */
-        // mbedtls_aes_free(&cur_session->ctx_aes);
-        psa_status_t status = psa_destroy_key(cur_session->id);
+        psa_status_t status = psa_destroy_key(cur_session->key_id);
         if (status != PSA_SUCCESS) {
             ESP_LOGE(TAG, "psa_destroy_key failed with status=%d", status);
-            return ESP_FAIL;
+            // return ESP_FAIL;
+        }
+        status = psa_destroy_key(cur_session->key_id_sym);
+        if (status != PSA_SUCCESS) {
+            ESP_LOGE(TAG, "psa_destroy_key failed with status=%d", status);
+            // return ESP_FAIL;
         }
         status = psa_cipher_abort(&cur_session->ctx_aes);
         if (status != PSA_SUCCESS) {
             ESP_LOGE(TAG, "psa_cipher_abort failed with status=%d", status);
-            return ESP_FAIL;
+            // return ESP_FAIL;
         }
-    }
+    // }
 
     memset(cur_session, 0, sizeof(session_t));
     cur_session->id = -1;
@@ -511,7 +507,7 @@ static esp_err_t sec1_cleanup(protocomm_security_handle_t handle)
     return ESP_OK;
 }
 
-static esp_err_t sec1_decrypt(protocomm_security_handle_t handle,
+static esp_err_t sec1_crypt(protocomm_security_handle_t handle,
                               uint32_t session_id,
                               const uint8_t *inbuf, ssize_t inlen,
                               uint8_t **outbuf, ssize_t *outlen)
@@ -538,17 +534,13 @@ static esp_err_t sec1_decrypt(protocomm_security_handle_t handle,
         return ESP_ERR_NO_MEM;
     }
 
-    psa_status_t status;
-    size_t output_len = 0;
-
-    psa_algorithm_t alg = PSA_ALG_CTR;
-    status = psa_cipher_decrypt(cur_session->key_id, alg, inbuf, inlen, *outbuf, *outlen, &output_len);
-    if (status != PSA_SUCCESS || output_len != *outlen) {
-        ESP_LOGE(TAG, "psa_cipher_decrypt failed with status=%d", status);
+    size_t out_len = 0;
+    psa_status_t status = psa_cipher_update(&cur_session->ctx_aes, inbuf, inlen, *outbuf, *outlen, &out_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_cipher_update failed with status=%d", status);
         free(*outbuf);
         return ESP_FAIL;
     }
-
     return ESP_OK;
 }
 
@@ -615,6 +607,6 @@ const protocomm_security_t protocomm_security1 = {
     .new_transport_session = sec1_new_session,
     .close_transport_session = sec1_close_session,
     .security_req_handler = sec1_req_handler,
-    .encrypt = sec1_decrypt, /* Encrypt == decrypt for AES-CTR */
-    .decrypt = sec1_decrypt,
+    .encrypt = sec1_crypt, /* Encrypt == decrypt for AES-CTR */
+    .decrypt = sec1_crypt,
 };

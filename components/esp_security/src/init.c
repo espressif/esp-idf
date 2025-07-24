@@ -13,10 +13,10 @@
 #include "esp_security_priv.h"
 #include "esp_err.h"
 #include "hal/efuse_hal.h"
-#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
+// #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
 #include "psa/crypto.h"
 #include "esp_random.h"
-#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_C */
+// #endif /* CONFIG_MBEDTLS_PSA_CRYPTO_C */
 
 #if SOC_HUK_MEM_NEEDS_RECHARGE
 #include "hal/huk_hal.h"
@@ -140,7 +140,7 @@ ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
     return err;
 }
 
-#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
+// #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
 int mbedtls_platform_get_entropy(unsigned char *output, size_t output_size,
                                  size_t *output_len, size_t *entropy_content)
 {
@@ -154,7 +154,7 @@ int mbedtls_platform_get_entropy(unsigned char *output, size_t output_size,
     *entropy_content = 8 * output_size;
     return 0;
 }
-#endif // CONFIG_MBEDTLS_PSA_CRYPTO_C
+// #endif // CONFIG_MBEDTLS_PSA_CRYPTO_C
 
 void esp_security_init_include_impl(void)
 {

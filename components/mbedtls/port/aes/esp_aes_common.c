@@ -15,6 +15,7 @@
  *  http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
  */
 #include "sdkconfig.h"
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "esp_aes_internal.h"
 #include "mbedtls/aes.h"
 #include "hal/aes_hal.h"
@@ -65,7 +66,7 @@ int esp_aes_setkey( esp_aes_context *ctx, const unsigned char *key,
 {
 #if !SOC_AES_SUPPORT_AES_192
     if (keybits == 192) {
-        return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
+        return -1;
     }
 #endif
     if (keybits != 128 && keybits != 192 && keybits != 256) {

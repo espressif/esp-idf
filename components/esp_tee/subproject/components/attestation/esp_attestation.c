@@ -14,7 +14,7 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "hal/efuse_hal.h"
-
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/sha256.h"
 
 #include "esp_attestation.h"

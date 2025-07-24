@@ -45,6 +45,9 @@ idf_component_register(SRCS "${mbedtls_srcs}"
     REQUIRES "${requires}"
     )
 
+# Add MBEDTLS_MAJOR_VERSION definition to the component library
+target_compile_definitions(${COMPONENT_LIB} INTERFACE MBEDTLS_MAJOR_VERSION=4)
+
 # Determine the type of mbedtls component library
 if(mbedtls_srcs STREQUAL "")
     # For no sources in component library we must use "INTERFACE"
@@ -137,6 +140,13 @@ if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
     include_directories("${COMPONENT_DIR}/port/mbedtls_rom")
 endif()
 
+# Set TF_PSA_CRYPTO_CONFIG_FILE before processing subdirectories to prevent override
+set(
+    TF_PSA_CRYPTO_USER_CONFIG_FILE "mbedtls/esp_config.h"
+    CACHE STRING "Path to the PSA Crypto configuration file"
+    FORCE
+)
+
 # Import mbedtls library targets
 add_subdirectory(mbedtls)
 
@@ -146,21 +156,26 @@ list(REMOVE_ITEM src_tls net_sockets.c)
 set_property(TARGET mbedtls PROPERTY SOURCES ${src_tls})
 
 if(CONFIG_MBEDTLS_SSL_PROTO_GMTSSL1_1)
-get_target_property(src_tls mbedtls SOURCES)
+    get_target_property(src_tls mbedtls SOURCES)
     list(REMOVE_ITEM src_tls ssl_ciphersuites.c ssl_cli.c ssl_tls.c)
-set_property(TARGET mbedtls PROPERTY SOURCES ${src_tls})
+    set_property(TARGET mbedtls PROPERTY SOURCES ${src_tls})
 
-# get_target_property(src_crypto tfpsacrypto SOURCES)
-# list(REMOVE_ITEM src_crypto cipher_wrap.c ecdsa.c ecp.c ecp_curves.c oid.c pk_wrap.c)
-# set_property(TARGET mbedcrypto PROPERTY SOURCES ${src_crypto})
+    message(STATUS "Setting up mbedtls")
 
-get_target_property(src_x509 mbedx509 SOURCES)
-list(REMOVE_ITEM src_x509 x509_crt.c)
-set_property(TARGET mbedx509 PROPERTY SOURCES ${src_x509})
+    # list(REMOVE_ITEM src_crypto sha512.c)
+    # list(REMOVE_ITEM src_crypto cipher_wrap.c ecdsa.c ecp.c ecp_curves.c oid.c pk_wrap.c)
+    # set_property(TARGET tfpsacrypto PROPERTY SOURCES ${src_crypto})
+
+    get_target_property(src_builtin builtin SOURCES)
+    message(STATUS "src_builtin: ${src_builtin}")
+
+    get_target_property(src_x509 mbedx509 SOURCES)
+    list(REMOVE_ITEM src_x509 x509_crt.c)
+    set_property(TARGET mbedx509 PROPERTY SOURCES ${src_x509})
 endif()
 
 # Core libraries from the mbedTLS project
-set(mbedtls_targets mbedtls mbedx509 tfpsacrypto)
+set(mbedtls_targets mbedtls mbedx509 tfpsacrypto builtin)
 # 3rd party libraries from the mbedTLS project
 list(APPEND mbedtls_targets everest p256m)
 
@@ -168,7 +183,7 @@ set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"
                            "${COMPONENT_DIR}/port/esp_platform_time.c")
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
-set(mbedtls_target_sources ${mbedtls_target_sources}
+    set(mbedtls_target_sources ${mbedtls_target_sources}
                            "${COMPONENT_DIR}/port/dynamic/esp_mbedtls_dynamic_impl.c"
                            "${COMPONENT_DIR}/port/dynamic/esp_ssl_cli.c"
                            "${COMPONENT_DIR}/port/dynamic/esp_ssl_srv.c"
@@ -176,7 +191,7 @@ set(mbedtls_target_sources ${mbedtls_target_sources}
 endif()
 
 if(${IDF_TARGET} STREQUAL "linux")
-set(mbedtls_target_sources ${mbedtls_target_sources} "${COMPONENT_DIR}/port/net_sockets.c")
+    set(mbedtls_target_sources ${mbedtls_target_sources} "${COMPONENT_DIR}/port/net_sockets.c")
 endif()
 
 # While updating to MbedTLS release/v3.4.0, building mbedtls/library/psa_crypto.c
@@ -203,6 +218,8 @@ target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     target_link_libraries(tfpsacrypto PRIVATE idf::esp_security)
+    target_link_libraries(builtin PRIVATE idf::esp_security)
+    # target_link_libraries(builtin PRIVATE idf::esp_security)
 endif()
 
 # Choose peripheral type
@@ -224,45 +241,48 @@ if(CONFIG_SOC_AES_SUPPORTED)
 endif()
 
 if(SHA_PERIPHERAL_TYPE STREQUAL "core")
-    target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/sha/core/include")
-
+    target_include_directories(builtin PRIVATE "${COMPONENT_DIR}/port/sha/core/include")
     if(CONFIG_SOC_SHA_GDMA)
         set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_gdma_impl.c")
     elseif(CONFIG_SOC_SHA_CRYPTO_DMA)
         set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_crypto_dma_impl.c")
     endif()
-    target_sources(tfpsacrypto PRIVATE  "${SHA_CORE_SRCS}")
+    target_sources(builtin PRIVATE  "${SHA_CORE_SRCS}")
 endif()
 
-# if(AES_PERIPHERAL_TYPE STREQUAL "dma")
-#     if(NOT CONFIG_SOC_AES_GDMA)
-#         set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_crypto_dma_impl.c")
-#     else()
-#         set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_gdma_impl.c")
-#     endif()
+if(AES_PERIPHERAL_TYPE STREQUAL "dma")
+    if(NOT CONFIG_SOC_AES_GDMA)
+        set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_crypto_dma_impl.c")
+    else()
+        set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_gdma_impl.c")
+    endif()
 
-#     list(APPEND AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_dma_core.c")
+    list(APPEND AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_dma_core.c")
 
-#     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/dma/include")
-#     target_sources(mbedcrypto PRIVATE  "${AES_DMA_SRCS}")
-# endif()
+    target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/aes/dma/include")
+    target_sources(tfpsacrypto PRIVATE "${AES_DMA_SRCS}")
+endif()
 
 if((SHA_PERIPHERAL_TYPE STREQUAL "core" AND CONFIG_SOC_SHA_SUPPORT_DMA) OR AES_PERIPHERAL_TYPE STREQUAL "dma")
     target_link_libraries(tfpsacrypto PRIVATE idf::esp_mm)
+    target_link_libraries(builtin PRIVATE idf::esp_mm)
     if(CONFIG_SOC_SHA_GDMA OR CONFIG_SOC_AES_GDMA)
         if(CONFIG_SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT)
             target_link_libraries(tfpsacrypto PRIVATE idf::bootloader_support)
+            target_link_libraries(builtin PRIVATE idf::bootloader_support)
         endif()
         target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/crypto_shared_gdma/esp_crypto_shared_gdma.c")
     endif()
 endif()
 
-# if(NOT ${IDF_TARGET} STREQUAL "linux")
-#     target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c")
-# endif()
-# target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_mem.c"
-#                                   "${COMPONENT_DIR}/port/esp_timing.c"
-# )
+if(NOT ${IDF_TARGET} STREQUAL "linux")
+    target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c")
+else()
+    target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/linux_hardware.c")
+endif()
+target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/esp_mem.c"
+                                  # "${COMPONENT_DIR}/port/esp_timing.c"
+)
 
 if(CONFIG_SOC_AES_SUPPORTED)
     target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/aes/include")
@@ -273,7 +293,7 @@ if(CONFIG_SOC_AES_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_SHA_SUPPORTED)
-    target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/sha/esp_sha.c"
+    target_sources(builtin PRIVATE "${COMPONENT_DIR}/port/sha/esp_sha.c"
                                     "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
     )
 endif()
@@ -306,14 +326,14 @@ if(CONFIG_MBEDTLS_HARDWARE_MPI)
 endif()
 
 # if(CONFIG_MBEDTLS_HARDWARE_SHA)
-#     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/esp_sha1.c"
+#     target_sources(tfpsacrypto PRIVATE  "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/esp_sha1.c"
 #                                        "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/esp_sha256.c"
 #                                        "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/esp_sha512.c"
 #     )
 # endif()
 
 # if(CONFIG_MBEDTLS_HARDWARE_GCM OR CONFIG_MBEDTLS_HARDWARE_AES)
-#     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/aes/esp_aes_gcm.c")
+#     target_sources(tfpsacrypto PRIVATE  "${COMPONENT_DIR}/port/aes/esp_aes_gcm.c")
 # endif()
 
 # if(CONFIG_MBEDTLS_HARDWARE_ECC)
@@ -368,10 +388,11 @@ endif()
 #     target_link_libraries(${COMPONENT_LIB} PRIVATE "-u mbedtls_rom_osi_functions_init")
 # endif()
 
-set(TF_PSA_CRYPTO_CONFIG_FILE "mbedtls/esp_config.h" CACHE STRING "Path to the PSA Crypto configuration file")
+message(STATUS "Setting up mbedtls configuration")
 foreach(target ${mbedtls_targets})
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")
     set_config_files_compile_definitions(${target})
+    target_compile_definitions(${target} PUBLIC MBEDTLS_MAJOR_VERSION=4)
     if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10087
         target_compile_options(${target} PRIVATE "-fno-analyzer")
     endif()
@@ -381,36 +402,16 @@ foreach(target ${mbedtls_targets})
         target_compile_options(${target} PRIVATE "-O2")
     endif()
 endforeach()
-target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
 
 if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    # Apply -fno-analyzer to all targets in mbedTLS subdirectory
-    get_property(all_mbedtls_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/mbedtls PROPERTY BUILDSYSTEM_TARGETS)
-    foreach(target ${all_mbedtls_targets})
-        if(TARGET ${target})
-            # Check if target has sources or is a compilable target type
-            get_target_property(target_sources ${target} SOURCES)
-            get_target_property(target_type ${target} TYPE)
-
-            if(target_sources OR
-               target_type STREQUAL "STATIC_LIBRARY" OR
-               target_type STREQUAL "SHARED_LIBRARY" OR
-               target_type STREQUAL "MODULE_LIBRARY" OR
-               target_type STREQUAL "OBJECT_LIBRARY" OR
-               target_type STREQUAL "EXECUTABLE")
-                message(STATUS "Applying -fno-analyzer to target: ${target}")
-                target_compile_options(${target} PRIVATE "-fno-analyzer")
-            else()
-                message(STATUS "Skipping non-compilable target: ${target} (type: ${target_type})")
-            endif()
-        endif()
-    endforeach()
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
+    target_compile_options(tfpsacrypto PRIVATE "-fno-analyzer")
 endif()
 
 if(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SIZE)
-    target_compile_options(${COMPONENT_LIB} PRIVATE "-Os")
+    target_compile_options(${COMPONENT_LIB} INTERFACE "-Os")
 elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SPEED)
-    target_compile_options(${COMPONENT_LIB} PRIVATE "-O2")
+    target_compile_options(${COMPONENT_LIB} INTERFACE "-O2")
 endif()
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
@@ -433,9 +434,9 @@ endif()
 
 # set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_LIBRARIES mbedtls)
 
-# if(CONFIG_PM_ENABLE)
-#     target_link_libraries(mbedcrypto PRIVATE idf::esp_pm)
-# endif()
+if(CONFIG_PM_ENABLE)
+    target_link_libraries(tfpsacrypto PRIVATE idf::esp_pm)
+endif()
 
 # if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
 #     target_link_libraries(mbedcrypto PRIVATE idf::efuse)
@@ -461,7 +462,91 @@ target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
 #     mbedcrypto_optional_deps(esp_timer idf::esp_timer)
 # endif()
 
-# Link esp-cryptoauthlib to mbedtls
+# # Link esp-cryptoauthlib to mbedtls
 # if(CONFIG_ATCA_MBEDTLS_ECDSA)
 #     mbedcrypto_optional_deps(espressif__esp-cryptoauthlib esp-cryptoauthlib)
 # endif()
+
+# Apply -fno-analyzer to ALL mbedTLS targets at the very end when all targets are created
+if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    message(STATUS "Applying -fno-analyzer to all mbedTLS targets...")
+
+    # Get all targets from all directories
+    get_property(
+        all_mbedtls_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/mbedtls PROPERTY BUILDSYSTEM_TARGETS
+    )
+    get_property(
+        drivers_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/mbedtls/tf-psa-crypto/drivers PROPERTY BUILDSYSTEM_TARGETS
+    )
+
+    message(STATUS "Found mbedtls targets: ${all_mbedtls_targets}")
+    message(STATUS "Found drivers targets: ${drivers_targets}")
+
+    # Get targets from nested driver subdirectories
+    foreach(subdir IN ITEMS builtin everest p256-m)
+        if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/mbedtls/tf-psa-crypto/drivers/${subdir})
+            get_property(
+                subdir_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/mbedtls/tf-psa-crypto/drivers/${subdir}
+                PROPERTY BUILDSYSTEM_TARGETS
+            )
+            message(STATUS "Found ${subdir} targets: ${subdir_targets}")
+            list(APPEND drivers_targets ${subdir_targets})
+        endif()
+    endforeach()
+
+    # Combine all target lists
+    set(all_targets ${all_mbedtls_targets} ${drivers_targets})
+    message(STATUS "All combined targets: ${all_targets}")
+
+    # Apply -fno-analyzer to each target
+    foreach(target ${all_targets})
+        if(TARGET ${target})
+            get_target_property(target_type ${target} TYPE)
+            if(target_type STREQUAL "STATIC_LIBRARY" OR
+               target_type STREQUAL "SHARED_LIBRARY" OR
+               target_type STREQUAL "MODULE_LIBRARY" OR
+               target_type STREQUAL "OBJECT_LIBRARY" OR
+               target_type STREQUAL "EXECUTABLE")
+                message(STATUS "Applying -fno-analyzer to target: ${target}")
+                target_compile_options(${target} PRIVATE "-fno-analyzer")
+            endif()
+        endif()
+    endforeach()
+
+    # Also check for any targets that might have been missed by using global target list
+    get_property(global_targets GLOBAL PROPERTY TARGETS)
+    set(mbedtls_global_targets "")
+    foreach(target ${global_targets})
+        if(TARGET ${target})
+            get_target_property(target_source_dir ${target} SOURCE_DIR)
+            if(target_source_dir)
+                # Check if target is from mbedtls directory or has mbedtls-related names
+                string(FIND "${target_source_dir}" "mbedtls" pos)
+                string(FIND "${target}" "mbedtls" name_pos)
+                string(FIND "${target}" "tfpsacrypto" tfpsa_pos)
+                # string(FIND "${target}" "everest" everest_pos)
+                # string(FIND "${target}" "p256m" p256m_pos)
+                string(FIND "${target}" "builtin" builtin_pos)
+                if(pos GREATER -1 OR name_pos GREATER -1 OR tfpsa_pos GREATER -1 OR builtin_pos GREATER -1)
+                    list(APPEND mbedtls_global_targets ${target})
+                    get_target_property(target_type ${target} TYPE)
+                    # Skip ALIAS targets as they don't have compile options
+                    if(NOT target_type STREQUAL "ALIAS" AND
+                       (target_type STREQUAL "STATIC_LIBRARY" OR
+                        target_type STREQUAL "SHARED_LIBRARY" OR
+                        target_type STREQUAL "MODULE_LIBRARY" OR
+                        target_type STREQUAL "OBJECT_LIBRARY" OR
+                        target_type STREQUAL "EXECUTABLE"))
+                        # Check if -fno-analyzer was already applied
+                        get_target_property(compile_options ${target} COMPILE_OPTIONS)
+                        if(NOT compile_options OR NOT "-fno-analyzer" IN_LIST compile_options)
+                            message(STATUS "Applying -fno-analyzer to missed target: ${target}")
+                            target_compile_options(${target} PRIVATE "-fno-analyzer")
+                        endif()
+                    endif()
+                endif()
+            endif()
+        endif()
+    endforeach()
+    message(STATUS "All mbedtls-related global targets: ${mbedtls_global_targets}")
+endif()

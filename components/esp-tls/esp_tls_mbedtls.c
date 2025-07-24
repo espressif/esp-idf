@@ -927,7 +927,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
 
 #if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
 #if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS || CONFIG_MBEDTLS_DYNAMIC_BUFFER
-    mbedtls_ssl_conf_tls13_enable_signal_new_session_tickets(&tls->conf, MBEDTLS_SSL_SESSION_TICKETS_ENABLED);
+    // mbedtls_ssl_conf_tls13_enable_signal_new_session_tickets(&tls->conf, MBEDTLS_SSL_SESSION_TICKETS_ENABLED);
 #endif
 #endif
 

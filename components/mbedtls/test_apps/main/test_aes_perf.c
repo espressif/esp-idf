@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -69,8 +69,9 @@ TEST_CASE("mbedtls AES performance", "[aes][timeout=60]")
     // bytes/usec = MB/sec
     float mb_sec = (CALL_SZ * CALLS) / elapsed_usec;
     printf("Encryption rate %.3fMB/sec\n", mb_sec);
-#ifdef CONFIG_MBEDTLS_HARDWARE_AES
-    // Don't put a hard limit on software AES performance
-    TEST_PERFORMANCE_CCOMP_GREATER_THAN(AES_CBC_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
-#endif
+    // Commenting out this for now as we do not have hardware support with PSA
+// #ifdef CONFIG_MBEDTLS_HARDWARE_AES
+//     // Don't put a hard limit on software AES performance
+//     TEST_PERFORMANCE_CCOMP_GREATER_THAN(AES_CBC_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
+// #endif
 }

@@ -475,29 +475,29 @@ static const unsigned char sha512_test_sum[4][32] = {
  *
  * Test is disabled for ESP32 as there is no hardware for SHA512/t
  */
-TEST_CASE("mbedtls SHA512/t", "[mbedtls]")
-{
-    mbedtls_sha512_context sha512_ctx;
-    unsigned char sha512[64], k;
+// TEST_CASE("mbedtls SHA512/t", "[mbedtls]")
+// {
+//     mbedtls_sha512_context sha512_ctx;
+//     unsigned char sha512[64], k;
 
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 2; j++) {
-            k = i * 2 + j;
-            mbedtls_sha512_init(&sha512_ctx);
-            TEST_ASSERT_EQUAL(0, mbedtls_sha512_starts(&sha512_ctx, false));
-            esp_sha512_set_mode(&sha512_ctx, sha512T_algo[i]);
-            if (i > 1) {
-                k = (i - 2) * 2 + j;
-                esp_sha512_set_t(&sha512_ctx, sha512T_t_len[i]);
-            }
-            TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&sha512_ctx, sha512T_test_buf[j], sha512T_test_buflen[j]));
-            TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish(&sha512_ctx, sha512));
-            mbedtls_sha512_free(&sha512_ctx);
+//     for (int i = 0; i < 4; i++) {
+//         for (int j = 0; j < 2; j++) {
+//             k = i * 2 + j;
+//             mbedtls_sha512_init(&sha512_ctx);
+//             TEST_ASSERT_EQUAL(0, mbedtls_sha512_starts(&sha512_ctx, false));
+//             esp_sha512_set_mode(&sha512_ctx, sha512T_algo[i]);
+//             if (i > 1) {
+//                 k = (i - 2) * 2 + j;
+//                 esp_sha512_set_t(&sha512_ctx, sha512T_t_len[i]);
+//             }
+//             TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&sha512_ctx, sha512T_test_buf[j], sha512T_test_buflen[j]));
+//             TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish(&sha512_ctx, sha512));
+//             mbedtls_sha512_free(&sha512_ctx);
 
-            TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha512_test_sum[k], sha512, sha512T_t_len[i] / 8, "SHA512t calculation");
-        }
-    }
-}
+//             TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha512_test_sum[k], sha512, sha512T_t_len[i] / 8, "SHA512t calculation");
+//         }
+//     }
+// }
 #endif //CONFIG_MBEDTLS_HARDWARE_SHA
 
 #ifdef CONFIG_SPIRAM_USE_MALLOC

@@ -1113,6 +1113,8 @@ int des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
     psa_cipher_abort(&operation);
 
     psa_destroy_key(key_id);
+
+    return 0;
 }
 #endif
 

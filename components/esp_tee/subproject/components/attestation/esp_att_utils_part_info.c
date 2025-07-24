@@ -37,7 +37,7 @@
 #include "esp32c6/rom/secure_boot.h"
 #endif
 #endif
-
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/sha256.h"
 
 #include "bootloader_flash_priv.h"

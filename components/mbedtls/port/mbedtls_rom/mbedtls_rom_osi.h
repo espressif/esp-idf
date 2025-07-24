@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stddef.h>
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/aes.h"
 #include "mbedtls/asn1.h"
 #include "mbedtls/asn1write.h"
