@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -137,6 +137,20 @@ void bootloader_debug_buffer(const void *buffer, size_t length, const char *labe
  * @return ESP_OK if secure boot digest is generated successfully.
  */
 esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest);
+
+/** @brief Generates the digest of the data between offset & offset+length.
+ *
+ * This function should be used when the size of the data is larger than 3.2MB.
+ * The MMU capacity is 3.2MB (50 pages - 64KB each). This function generates the SHA-384
+ * of the data in chunks of 3.2MB, considering the MMU capacity.
+ *
+ * @param[in]  flash_offset  Offset of the data in flash.
+ * @param[in]  len           Length of data in bytes.
+ * @param[out] digest        Pointer to buffer where the digest is written, if ESP_OK is returned.
+ *
+ * @return ESP_OK if secure boot digest is generated successfully.
+ */
+esp_err_t bootloader_sha384_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest);
 
 #ifdef __cplusplus
 }

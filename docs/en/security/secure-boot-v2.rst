@@ -5,21 +5,27 @@ Secure Boot v2
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6="RSA-PSS or ECDSA", esp32h2="RSA-PSS or ECDSA", esp32p4="RSA-PSS or ECDSA", esp32c5="RSA-PSS or ECDSA", esp32c61="ECDSA", esp32h21="RSA-PSS or ECDSA"}
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2, esp32c61="ECDSA", esp32c6, esp32h2, esp32p4, esp32c5, esp32h21="RSA-PSS or ECDSA"}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 or ECDSA-192", esp32c6="RSA-3072, ECDSA-256, or ECDSA-192", esp32h2="RSA-3072, ECDSA-256, or ECDSA-192", esp32p4="RSA-3072, ECDSA-256, or ECDSA-192", esp32c5="RSA-3072, ECDSA-256, or ECDSA-192", esp32c61="ECDSA-256 or ECDSA-192", esp32h21="RSA-3072, ECDSA-256, or ECDSA-192"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2, esp32c61="ECDSA-256 or ECDSA-192", esp32c6, esp32h2, esp32p4, esp32h21="RSA-3072, ECDSA-256, or ECDSA-192", esp32c5="RSA-3072, ECDSA-384, ECDSA-256, or ECDSA-192"}
 
-{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32h2="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32p4="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32c5="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32h21="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu."}
+{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6, esp32h2, esp32p4, esp32h21="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32c5="ECDSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu."}
+
+{IDF_TARGET_SBV2_SCHEME_RECOMMENDATION:default="RSA is recommended for use cases where fast boot-up time is required whereas ECDSA is recommended for use cases where shorter key length is required.", esp32c5="ECDSA is recommended for use cases where fast boot-up time and shorter key length is required."}
 
 {IDF_TARGET_ECO_VERSION:default="", esp32="(v3.0 onwards)", esp32c3="(v0.3 onwards)"}
 
-{IDF_TARGET_RSA_TIME:default="", esp32c6="about 2.7 ms", esp32h2="about 4.5 ms", esp32p4="about 2.4 ms"}
+{IDF_TARGET_RSA_TIME:default="", esp32c5="about 12.1 ms", esp32c6="about 10.2 ms", esp32h2="about 18.3 ms", esp32p4="about 14.8 ms"}
 
-{IDF_TARGET_ECDSA_TIME:default="", esp32c6="about 21.5 ms", esp32h2="about 36 ms", esp32p4="about 10.3 ms"}
+{IDF_TARGET_ECDSA_P256_TIME:default="", esp32c5="about 5.6 ms", esp32c6="about 83.9 ms", esp32h2="about 76.2 ms", esp32p4="about 61.1 ms"}
 
-{IDF_TARGET_CPU_FREQ:default="", esp32c6="160 MHz", esp32h2="96 MHz", esp32p4="360 MHz"}
+{IDF_TARGET_ECDSA_P384_TIME:default="", esp32c5="about 20.6 ms"}
 
-{IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2="ECDSA (v2)", esp32c5="ECDSA (v2)", esp32c61="ECDSA (v2)"}
+{IDF_TARGET_ROM_CPU_FREQ:default="", esp32c5="48 MHz", esp32c6="40 MHz", esp32h2="32 MHz", esp32p4="40 MHz"}
+
+{IDF_TARGET_CPU_FREQ:default="", esp32c5="240 MHz", esp32c6="160 MHz", esp32h2="96 MHz", esp32p4="360 MHz"}
+
+{IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2, esp32c61, esp32c5="ECDSA (v2)"}
 
 {IDF_TARGET_EFUSE_WR_DIS_RD_DIS:default="ESP_EFUSE_WR_DIS_RD_DIS", esp32="ESP_EFUSE_WR_DIS_EFUSE_RD_DISABLE"}
 
@@ -136,40 +142,65 @@ The Secure Boot v2 process follows these steps:
 7. The bootloader executes the verified application image.
 
 
+.. only:: SOC_SECURE_BOOT_V2_RSA and SOC_SECURE_BOOT_V2_ECC
+
+   .. _secure-boot-v2-scheme-selection:
+
+   Secure Boot v2 Scheme Selection
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+   {IDF_TARGET_NAME} has a provision to choose between the RSA scheme and the ECDSA scheme. Only one scheme can be used per device.
+
+   ECDSA provides similar security strength, compared to RSA, with shorter key lengths. Current estimates are that ECDSA with curve P-256 has an approximate equivalent strength to RSA with 3072-bit keys. However, ECDSA signature verification takes considerably more amount of time as compared to RSA signature verification.
+
+   {IDF_TARGET_SBV2_SCHEME_RECOMMENDATION}
+
+   .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+      {IDF_TARGET_NAME} also supports Secure Boot v2 with the ECDSA signature scheme using the P-384 curve. This provides stronger security than both ECDSA-P256 and RSA-3072, but at the cost of increased signature verification time. Therefore, for use cases that require higher security strength, Secure Boot v2 should be enabled with the ECDSA P-384 signature scheme.
+
+      .. list-table:: Comparison Between Signature Verification Time
+          :widths: 10 10 20
+          :header-rows: 1
+
+          * - **Verification Scheme**
+            - **Time**
+            - **CPU Frequency**
+          * - RSA-3072
+            - {IDF_TARGET_RSA_TIME}
+            - {IDF_TARGET_ROM_CPU_FREQ}
+          * - ECDSA-P256
+            - {IDF_TARGET_ECDSA_P256_TIME}
+            - {IDF_TARGET_ROM_CPU_FREQ}
+          * - ECDSA-P384
+            - {IDF_TARGET_ECDSA_P384_TIME}
+            - {IDF_TARGET_ROM_CPU_FREQ}
+
+   .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
+
+      .. list-table:: Comparison Between Signature Verification Time
+          :widths: 10 10 20
+          :header-rows: 1
+
+          * - **Verification Scheme**
+            - **Time**
+            - **CPU Frequency**
+          * - RSA-3072
+            - {IDF_TARGET_RSA_TIME}
+            - {IDF_TARGET_ROM_CPU_FREQ}
+          * - ECDSA-P256
+            - {IDF_TARGET_ECDSA_P256_TIME}
+            - {IDF_TARGET_ROM_CPU_FREQ}
+
+   The above table compares the time taken for the first stage (ROM) bootloader to just verify the signature of the bootloader image in a particular scheme. It does not indicate the boot-up time. Also, note that the CPU frequency is lower because it is the frequency of the CPU when the first stage (ROM) bootloader is running.
+
+
 .. _signature-block-format:
 
 Signature Block Format
 ----------------------
 
 The signature block starts on a 4 KB aligned boundary and has a flash sector of its own. The signature is calculated over all bytes in the image including the padding bytes, see :ref:`secure_padding`.
-
-.. only:: SOC_SECURE_BOOT_V2_RSA and SOC_SECURE_BOOT_V2_ECC
-
-    .. note::
-
-        {IDF_TARGET_NAME} has a provision to choose between the RSA scheme and the ECDSA scheme. Only one scheme can be used per device.
-
-        ECDSA provides similar security strength, compared to RSA, with shorter key lengths. Current estimates are that ECDSA with curve P-256 has an approximate equivalent strength to RSA with 3072-bit keys. However, ECDSA signature verification takes considerably more amount of time as compared to RSA signature verification.
-
-        RSA is recommended for use cases where fast boot-up time is required whereas ECDSA is recommended for use cases where shorter key length is required.
-
-        .. only:: not esp32p4 or not esp32c5
-
-            .. list-table:: Comparison between signature verification time
-                :widths: 10 10 20
-                :header-rows: 1
-
-                * - **Verification scheme**
-                  - **Time**
-                  - **CPU Frequency**
-                * - RSA-3072
-                  - {IDF_TARGET_RSA_TIME}
-                  - {IDF_TARGET_CPU_FREQ}
-                * - ECDSA-P256
-                  - {IDF_TARGET_ECDSA_TIME}
-                  - {IDF_TARGET_CPU_FREQ}
-
-            The above table compares the time taken to verify a signature in a particular scheme. It does not indicate the boot-up time.
 
 The content of each signature block is shown in the following table:
 
@@ -223,7 +254,7 @@ The content of each signature block is shown in the following table:
 
 .. only:: SOC_SECURE_BOOT_V2_ECC
 
-    .. list-table:: Content of an ECDSA Signature Block
+    .. list-table:: Content of an ECDSA-256 / ECDSA-192 Signature Block
         :widths: 10 10 40
         :header-rows: 1
 
@@ -260,6 +291,50 @@ The content of each signature block is shown in the following table:
         * - 1200
           - 16
           - Zero padding to length 1216 bytes.
+
+
+    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+        .. list-table:: Content of an ECDSA-384 Signature Block
+            :widths: 10 10 40
+            :header-rows: 1
+
+            * - **Offset**
+              - **Size (bytes)**
+              - **Description**
+            * - 0
+              - 1
+              - Magic byte.
+            * - 1
+              - 1
+              - Version number byte, currently 0x03.
+            * - 2
+              - 1
+              - SHA Version used for digest calculation when generating the signature (1 for SHA-384)
+            * - 3
+              - 1
+              - Padding bytes. Reserved, should be zero.
+            * - 4
+              - 48
+              - SHA-384 hash of only the image content, not including the signature block.
+            * - 52
+              - 1
+              - Curve ID. 3 for NIST384p curve
+            * - 53
+              - 96
+              - ECDSA Public key: 48-byte X coordinate followed by 48-byte Y coordinate.
+            * - 149
+              - 96
+              - ECDSA Signature result (section 5.3.2 of RFC6090) of the image content: 48-byte R component followed by-48 byte S component.
+            * - 245
+              - 951
+              - Reserved.
+            * - 1196
+              - 4
+              - CRC32 of the preceding 1196 bytes.
+            * - 1200
+              - 16
+              - Zero padding to length 1216 bytes.
 
 The remainder of the signature sector is erased flash (0xFF) which allows writing other signature blocks after the previous signature block.
 
@@ -357,6 +432,10 @@ eFuse Usage
 .. only:: not esp32
 
     - SECURE_BOOT_EN - Enables Secure Boot protection on boot.
+
+.. only:: SOC_SECURE_BOOT_V2_ECC and SOC_ECDSA_SUPPORT_CURVE_P384
+
+    - SECURE_BOOT_SHA384_EN - Enables SHA-384 digest calculation for Secure Boot signature verification.
 
 .. only:: SOC_EFUSE_KEY_PURPOSE_FIELD
 
@@ -489,6 +568,12 @@ The build system will prompt you with a command to generate a new signing key vi
 
 .. only:: SOC_SECURE_BOOT_V2_ECC
 
+  .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+    Select the ECDSA scheme by passing ``--version 2 --scheme ecdsa384``, ``--version 2 --scheme ecdsa256`` or ``--version 2 --scheme ecdsa192`` to generate corresponding ECDSA private key.
+
+  .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
+
     Select the ECDSA scheme by passing ``--version 2 --scheme ecdsa256`` or ``--version 2 --scheme ecdsa192`` to generate corresponding ECDSA private key.
 
 The strength of the signing key is proportional to (a) the random number source of the system, and (b) the correctness of the algorithm used. For production devices, we recommend generating signing keys from a system with a quality entropy source and using the best available {IDF_TARGET_SBV2_SCHEME} key generation utilities.
@@ -516,6 +601,14 @@ For example, to generate a signing key using the OpenSSL command line:
     .. code-block::
 
         openssl ecparam -name prime256v1 -genkey -noout -out my_secure_boot_signing_key.pem
+
+    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+        For the ECC NIST384p curve
+
+        .. code-block::
+
+            openssl ecparam -name secp384r1 -genkey -noout -out my_secure_boot_signing_key.pem
 
 Remember that the strength of the Secure Boot system depends on keeping the signing key private.
 
@@ -620,6 +713,12 @@ Secure Boot Best Practices
 
         espsecure.py signature_info_v2 datafile.bin
 
+    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+      .. note::
+
+        If Secure Boot v2 is configured using the ECDSA P-384 signature scheme, all signing keys used must be ECDSA-P384 keys. Using keys with different elliptic curves (e.g., P-192 or P-256) alongside P-384 is not supported and will cause signature verification to fail during boot.
+
     .. _secure-boot-v2-key-revocation:
 
     Key Revocation
@@ -710,6 +809,14 @@ It is preferred to use the ``idf.py`` tool to generate and verify signatures, bu
     .. code-block:: bash
 
         openssl dgst -sha256 -binary BINARY_FILE  > DIGEST_BINARY_FILE
+
+    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+        In case of ECDSA-P384 signature scheme, SHA-384 must be used to calculate the digest of the image.
+
+        .. code-block:: bash
+
+            openssl dgst -sha384 -binary BINARY_FILE  > DIGEST_BINARY_FILE
 
 2. Generate signature of the image using the above calculated digest.
 

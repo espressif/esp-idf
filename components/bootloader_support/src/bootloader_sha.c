@@ -29,15 +29,6 @@ bootloader_sha256_handle_t bootloader_sha256_start()
 void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data, size_t data_len)
 {
     assert(handle != NULL);
-
-#if !SOC_SECURE_BOOT_V2_ECC
-    /* For secure boot, the key field consists of 1 byte of curve identifier and 64 bytes of ECDSA public key.
-     * While verifying the signature block, we need to calculate the SHA of this key field which is of 65 bytes.
-     * ets_sha_update handles it cleanly so we can safely remove the check:
-     */
-    assert(data_len % 4 == 0);
-#endif /* SOC_SECURE_BOOT_V2_ECC */
-
     ets_sha_update(&ctx, data, data_len, false);
 }
 
@@ -51,6 +42,33 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
     }
     ets_sha_finish(&ctx, digest);
 }
+
+#if SOC_SHA_SUPPORT_SHA512
+bootloader_sha_handle_t bootloader_sha512_start(bool is384)
+{
+    // Enable SHA hardware
+    ets_sha_enable();
+    ets_sha_init(&ctx, is384 ? SHA2_384 : SHA2_512);
+    return &ctx; // Meaningless non-NULL value
+}
+
+void bootloader_sha512_data(bootloader_sha_handle_t handle, const void *data, size_t data_len)
+{
+    assert(handle != NULL);
+    ets_sha_update(&ctx, data, data_len, false);
+}
+
+void bootloader_sha512_finish(bootloader_sha_handle_t handle, uint8_t *digest)
+{
+    assert(handle != NULL);
+
+    if (digest == NULL) {
+        bzero(&ctx, sizeof(ctx));
+        return;
+    }
+    ets_sha_finish(&ctx, digest);
+}
+#endif /* SOC_SHA_SUPPORT_SHA512 */
 #else /* !CONFIG_IDF_TARGET_ESP32 */
 
 #include "soc/dport_reg.h"
@@ -162,6 +180,7 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
 
 #include "bootloader_flash_priv.h"
 #include <mbedtls/sha256.h>
+#include <mbedtls/sha512.h>
 
 bootloader_sha256_handle_t bootloader_sha256_start(void)
 {
@@ -199,4 +218,43 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
     free(handle);
     handle = NULL;
 }
+
+#if SOC_SHA_SUPPORT_SHA512
+bootloader_sha_handle_t bootloader_sha512_start(bool is384)
+{
+    mbedtls_sha512_context *ctx = (mbedtls_sha512_context *)malloc(sizeof(mbedtls_sha512_context));
+    if (!ctx) {
+        return NULL;
+    }
+    mbedtls_sha512_init(ctx);
+    int ret = mbedtls_sha512_starts(ctx, is384);
+    if (ret != 0) {
+        return NULL;
+    }
+    return ctx;
+}
+
+void bootloader_sha512_data(bootloader_sha_handle_t handle, const void *data, size_t data_len)
+{
+    assert(handle != NULL);
+    mbedtls_sha512_context *ctx = (mbedtls_sha512_context *)handle;
+    int ret = mbedtls_sha512_update(ctx, data, data_len);
+    assert(ret == 0);
+    (void)ret;
+}
+
+void bootloader_sha512_finish(bootloader_sha_handle_t handle, uint8_t *digest)
+{
+    assert(handle != NULL);
+    mbedtls_sha512_context *ctx = (mbedtls_sha512_context *)handle;
+    if (digest != NULL) {
+        int ret = mbedtls_sha512_finish(ctx, digest);
+        assert(ret == 0);
+        (void)ret;
+    }
+    mbedtls_sha512_free(ctx);
+    free(handle);
+    handle = NULL;
+}
+#endif /* SOC_SHA_SUPPORT_SHA512 */
 #endif /* !(NON_OS_BUILD || CONFIG_APP_BUILD_TYPE_RAM) */

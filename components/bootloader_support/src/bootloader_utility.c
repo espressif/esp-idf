@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,7 @@
 #include "hal/cache_types.h"
 #include "hal/cache_ll.h"
 #include "hal/cache_hal.h"
+#include "hal/sha_types.h"
 
 #include "esp_cpu.h"
 #include "esp_image_format.h"
@@ -1213,18 +1214,29 @@ void bootloader_debug_buffer(const void *buffer, size_t length, const char *labe
 #endif
 }
 
-esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest)
+static esp_err_t bootloader_sha_flash_contents(esp_sha_type type, uint32_t flash_offset, uint32_t len, uint8_t *digest)
 {
-
     if (digest == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
     /* Handling firmware images larger than MMU capacity */
     uint32_t mmu_free_pages_count = bootloader_mmap_get_free_pages();
-    bootloader_sha256_handle_t sha_handle = NULL;
+    bootloader_sha_handle_t sha_handle = NULL;
 
-    sha_handle = bootloader_sha256_start();
+    if (type == SHA2_256) {
+        sha_handle = bootloader_sha256_start();
+    } else
+    // Using SOC_ECDSA_SUPPORT_CURVE_P384 here so that there is no flash size impact in the case of existing targets like ESP32.
+#if SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384
+    if (type == SHA2_384) {
+        sha_handle = bootloader_sha512_start(true);
+    } else
+#endif /* SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384 */
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (sha_handle == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -1234,7 +1246,14 @@ esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, 
         uint32_t max_pages = (mmu_free_pages_count > mmu_page_offset) ? (mmu_free_pages_count - mmu_page_offset) : 0;
         if (max_pages == 0) {
             ESP_LOGE(TAG, "No free MMU pages are available");
-            bootloader_sha256_finish(sha_handle, NULL);
+            if (type == SHA2_256) {
+                bootloader_sha256_finish(sha_handle, NULL);
+            }
+#if SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384
+            else if (type == SHA2_384) {
+                bootloader_sha512_finish(sha_handle, NULL);
+            }
+#endif /* SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384 */
             return ESP_ERR_NO_MEM;
         }
         uint32_t max_image_len;
@@ -1245,15 +1264,51 @@ esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, 
 
         const void * image = bootloader_mmap(flash_offset, partial_image_len);
         if (image == NULL) {
-            bootloader_sha256_finish(sha_handle, NULL);
+            if (type == SHA2_256) {
+                bootloader_sha256_finish(sha_handle, NULL);
+            }
+#if SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384
+            else if (type == SHA2_384) {
+                bootloader_sha512_finish(sha_handle, NULL);
+            }
+#endif /* SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384 */
             return ESP_FAIL;
         }
-        bootloader_sha256_data(sha_handle, image, partial_image_len);
+
+        if (type == SHA2_256) {
+            bootloader_sha256_data(sha_handle, image, partial_image_len);
+        }
+#if SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384
+        else if (type == SHA2_384) {
+            bootloader_sha512_data(sha_handle, image, partial_image_len);
+        }
+#endif /* SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384 */
+
         bootloader_munmap(image);
 
         flash_offset += partial_image_len;
         len -= partial_image_len;
     }
-    bootloader_sha256_finish(sha_handle, digest);
+
+    if (type == SHA2_256) {
+        bootloader_sha256_finish(sha_handle, digest);
+    }
+#if SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384
+    else if (type == SHA2_384) {
+        bootloader_sha512_finish(sha_handle, digest);
+    }
+#endif /* SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384 */
     return ESP_OK;
 }
+
+esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest)
+{
+    return bootloader_sha_flash_contents(SHA2_256, flash_offset, len, digest);
+}
+
+#if SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384
+esp_err_t bootloader_sha384_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest)
+{
+    return bootloader_sha_flash_contents(SHA2_384, flash_offset, len, digest);
+}
+#endif /* SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384 */

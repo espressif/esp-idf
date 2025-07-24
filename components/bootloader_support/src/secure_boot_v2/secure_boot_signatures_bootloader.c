@@ -26,6 +26,7 @@ static const char* TAG = "secure_boot_v2";
 
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
+    esp_err_t err = ESP_FAIL;
     uint8_t digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
     uint8_t verified_digest[ESP_SECURE_BOOT_DIGEST_LEN] = { 0 }; /* Note: this function doesn't do any anti-FI checks on this buffer */
 
@@ -34,7 +35,12 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     ESP_LOGD(TAG, "verifying signature src_addr 0x%" PRIx32 " length 0x%" PRIx32, src_addr, length);
 
     /* Calculate digest of main image */
-    esp_err_t err = bootloader_sha256_flash_contents(src_addr, padded_length, digest);
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+    err = bootloader_sha384_flash_contents(src_addr, padded_length, digest);
+#else
+    err = bootloader_sha256_flash_contents(src_addr, padded_length, digest);
+#endif
+
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Digest calculation failed 0x%" PRIx32 ", 0x%" PRIx32, src_addr, padded_length);
         return err;
