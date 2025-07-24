@@ -27,16 +27,16 @@ function(idf_build_set_property property value)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
-    get_property(properties TARGET idf_build_properties PROPERTY BUILD_PROPERTIES)
-    if(NOT property IN_LIST properties)
-        list(APPEND properties "${property}")
-        set_property(TARGET idf_build_properties PROPERTY BUILD_PROPERTIES "${properties}")
-    endif()
+    set(append)
     if(ARG_APPEND)
-        set_property(TARGET idf_build_properties APPEND PROPERTY "${property}" "${value}")
-    else()
-        set_property(TARGET idf_build_properties PROPERTY "${property}" "${value}")
+        set(append APPEND)
     endif()
+
+    __set_property(TARGET idf_build_properties
+                   PROPERTY "${property}"
+                   PROPERTIES BUILD_PROPERTIES
+                   VALUE "${value}"
+                   ${append})
 endfunction()
 
 #[[api
@@ -62,11 +62,16 @@ function(idf_build_get_property variable property)
     if("${property}" STREQUAL BUILD_COMPONENTS)
         idf_die("Build property 'BUILD_COMPONENTS' is not supported")
     endif()
+
+    set(genexpr)
     if(ARG_GENERATOR_EXPRESSION)
-        set(value "$<TARGET_PROPERTY:idf_build_properties,${property}>")
-    else()
-        get_property(value TARGET idf_build_properties PROPERTY ${property})
+        set(genexpr GENERATOR_EXPRESSION)
     endif()
+
+    __get_property(TARGET idf_build_properties
+                   PROPERTY "${property}"
+                   OUTPUT value
+                   ${genexpr})
     set(${variable} ${value} PARENT_SCOPE)
 endfunction()
 

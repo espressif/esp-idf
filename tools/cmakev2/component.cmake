@@ -28,17 +28,17 @@ function(idf_component_set_property component property value)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
-    __get_component_interface_or_die(COMPONENT "${component}" OUTPUT component_interface)
-    get_property(properties TARGET ${component_interface} PROPERTY COMPONENT_PROPERTIES)
-    if(NOT property IN_LIST properties)
-        list(APPEND properties "${property}")
-        set_property(TARGET ${component_interface} PROPERTY COMPONENT_PROPERTIES "${properties}")
-    endif()
+    set(append)
     if(ARG_APPEND)
-        set_property(TARGET ${component_interface} APPEND PROPERTY ${property} "${value}")
-    else()
-        set_property(TARGET ${component_interface} PROPERTY ${property} "${value}")
+        set(append APPEND)
     endif()
+
+    __get_component_interface_or_die(COMPONENT "${component}" OUTPUT component_interface)
+    __set_property(TARGET "${component_interface}"
+                   PROPERTY "${property}"
+                   PROPERTIES COMPONENT_PROPERTIES
+                   VALUE "${value}"
+                   ${append})
 endfunction()
 
 #[[api
@@ -61,12 +61,16 @@ function(idf_component_get_property variable component property)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
-    __get_component_interface_or_die(COMPONENT "${component}" OUTPUT component_interface)
+    set(genexpr)
     if(ARG_GENERATOR_EXPRESSION)
-        set(value "$<TARGET_PROPERTY:${component_interface},${property}>")
-    else()
-        get_property(value TARGET ${component_interface} PROPERTY ${property})
+        set(genexpr GENERATOR_EXPRESSION)
     endif()
+
+    __get_component_interface_or_die(COMPONENT "${component}" OUTPUT component_interface)
+    __get_property(TARGET "${component_interface}"
+                   PROPERTY "${property}"
+                   OUTPUT value
+                   ${genexpr})
     set(${variable} ${value} PARENT_SCOPE)
 endfunction()
 
