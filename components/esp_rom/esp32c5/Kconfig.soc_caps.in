@@ -43,6 +43,10 @@ config ESP_ROM_HAS_HAL_SYSTIMER
     bool
     default y
 
+config ESP_ROM_SYSTIMER_INIT_PATCH
+    bool
+    default y
+
 config ESP_ROM_HAS_HEAP_TLSF
     bool
     default y

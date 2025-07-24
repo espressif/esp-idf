@@ -14,6 +14,7 @@
 #define ESP_ROM_GET_CLK_FREQ                (1) // Get clk frequency with rom function `ets_get_cpu_frequency`
 #define ESP_ROM_HAS_HAL_WDT                 (1) // ROM has the implementation of Watchdog HAL driver
 #define ESP_ROM_HAS_HAL_SYSTIMER            (1) // ROM has the implementation of Systimer HAL driver
+#define ESP_ROM_SYSTIMER_INIT_PATCH         (1) // ROM version initializes SYSTIMER without ETM
 #define ESP_ROM_HAS_HEAP_TLSF               (1) // ROM has the implementation of the tlsf and multi-heap library
 #define ESP_ROM_TLSF_CHECK_PATCH            (1) // ROM does not contain the patch of tlsf_check_pool()
 #define ESP_ROM_MULTI_HEAP_WALK_PATCH       (1) // ROM does not contain the patch of multi_heap_walk()
