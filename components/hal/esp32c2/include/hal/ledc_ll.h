@@ -458,13 +458,12 @@ static inline void ledc_ll_set_sig_out_en(ledc_dev_t *hw, ledc_mode_t speed_mode
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, high-speed mode or low-speed mode
  * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
- * @param duty_start The duty start
  *
  * @return None
  */
-static inline void ledc_ll_set_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, bool duty_start)
+static inline void ledc_ll_set_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num)
 {
-    hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start = duty_start;
+    hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start = 1;
 }
 
 /**

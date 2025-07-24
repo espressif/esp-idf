@@ -1,7 +1,7 @@
 /*
  * AliGenie - Example
  *
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -419,11 +419,10 @@ void user_genie_event_handle(genie_event_t event, void *p_arg)
         ESP_LOGI(TAG, "GENIE_EVT_RESET_BY_REPEAT_NOTIFY");
         lightbulb_set_switch(false);
         lightbulb_effect_config_t effect1 = {
-            .red = 0,
-            .green = 255,
-            .blue = 0,
-            .max_brightness = 100,
-            .min_brightness = 0,
+            .hue = 120,
+            .saturation = 100,
+            .max_value_brightness = 100,
+            .min_value_brightness = 0,
             .effect_cycle_ms = CONFIG_LIGHT_BLINK_PERIOD_MS,
             .effect_type = EFFECT_BLINK,
             .mode = WORK_COLOR,
@@ -435,11 +434,10 @@ void user_genie_event_handle(genie_event_t event, void *p_arg)
         ESP_LOGI(TAG, "GENIE_EVT_HW_RESET_START");
         lightbulb_set_switch(false);
         lightbulb_effect_config_t effect2 = {
-            .red = 0,
-            .green = 255,
-            .blue = 0,
-            .max_brightness = 100,
-            .min_brightness = 0,
+            .hue = 120,
+            .saturation = 100,
+            .max_value_brightness = 100,
+            .min_value_brightness = 0,
             .effect_cycle_ms = CONFIG_LIGHT_BLINK_PERIOD_MS,
             .effect_type = EFFECT_BLINK,
             .mode = WORK_COLOR,
@@ -1009,7 +1007,7 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
 #if GENIE_VENDOR_MODEL_VERSION == 0
 
 #elif GENIE_VENDOR_MODEL_VERSION == 1
-            // local bind AppKEY and Subcribe Group Address
+            // local bind AppKEY and Subscribe Group Address
             local_operation(param->value.state_change.appkey_add.app_idx);
             // genie mesh init
             genie_mesh_init();
@@ -1315,11 +1313,10 @@ static esp_err_t ble_mesh_init(void)
         ESP_LOGW(TAG, "node not provisioned");
         lightbulb_set_switch(false);
         lightbulb_effect_config_t effect3 = {
-            .red = 0,
-            .green = 255,
-            .blue = 0,
-            .max_brightness = 100,
-            .min_brightness = 0,
+            .hue = 120,
+            .saturation = 100,
+            .max_value_brightness = 100,
+            .min_value_brightness = 0,
             .effect_cycle_ms = CONFIG_LIGHT_BLINK_PERIOD_MS,
             .effect_type = EFFECT_BLINK,
             .mode = WORK_COLOR,

@@ -10,13 +10,12 @@ endif()
 if(${target} STREQUAL "linux")
     set(priv_requires "")
 else()
-    set(priv_requires esp_pm)
+    set(priv_requires esp_pm esp_driver_gpio)
 endif()
 
 idf_component_register(
     SRCS ${srcs}
     INCLUDE_DIRS ${public_include}
     PRIV_REQUIRES "${priv_requires}"
-    REQUIRES esp_driver_gpio    # IDF-11989: Remove this in IDF v6.0
     LDFRAGMENTS "linker.lf"
 )

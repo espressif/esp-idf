@@ -49,6 +49,19 @@ GPIO
 
 :func:`gpio_iomux_in` and :func:`gpio_iomux_out` have been replaced by :func:`gpio_iomux_input` and :func:`gpio_iomux_output`, and have been moved to ``esp_private/gpio.h`` header file as private APIs for internal use only.
 
+LEDC
+----
+
+- :func:`ledc_timer_set` has been removed. Use :func:`ledc_timer_config` or :func:`ledc_set_freq` instead.
+
+- ``LEDC_APB_CLK_HZ`` and ``LEDC_REF_CLK_HZ`` have been removed.
+
+- Removed esp_driver_gpio as a public required component from esp_driver_ledc.
+
+- :func:`ledc_isr_register` has been deprecated. LEDC interrupt handling is implemented by driver itself, please only register event callbacks if necessary.
+
+- :cpp:member:`ledc_channel_config_t::intr_type` has been deprecated. `LEDC_INTR_FADE_END` interrupt enable / disable control is handled by the driver internally. Users can still register a callback for this interrupt by :cpp:func:`ledc_cb_register`.
+
 I2C
 ---
 

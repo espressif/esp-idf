@@ -18,7 +18,6 @@ ledc_channel_config_t initialize_channel_config(void)
     config.gpio_num = PULSE_IO;
     config.speed_mode = TEST_SPEED_MODE;
     config.channel  = LEDC_CHANNEL_0;
-    config.intr_type = LEDC_INTR_DISABLE;
     config.timer_sel = LEDC_TIMER_0;
     config.duty = 4000;
     config.hpoint = 0;

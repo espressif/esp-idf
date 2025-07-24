@@ -332,14 +332,6 @@ There are several individual timer-specific functions that can be used to change
 The first function is called "behind the scenes" by :cpp:func:`ledc_timer_config` to provide a startup of a timer after it is configured.
 
 
-Use Interrupts
-^^^^^^^^^^^^^^
-
-When configuring an LEDC channel, one of the parameters selected within :cpp:type:`ledc_channel_config_t` is :cpp:type:`ledc_intr_type_t` which triggers an interrupt on fade completion.
-
-For registration of a handler to address this interrupt, call :cpp:func:`ledc_isr_register`.
-
-
 Power Management
 ----------------
 

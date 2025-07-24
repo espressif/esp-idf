@@ -332,14 +332,6 @@ LED PWM 控制器 API 有多种方式即时改变 PWM 频率：
 第一个定时器复位函数在函数 :cpp:func:`ledc_timer_config` 内部完成所有定时器配置后会被调用一次。
 
 
-使用中断
-^^^^^^^^^^^^^^
-
-配置 LED PWM 控制器通道时，可在 :cpp:type:`ledc_channel_config_t` 中选取参数 :cpp:type:`ledc_intr_type_t` ，在渐变完成时触发中断。
-
-要注册处理程序来处理中断，可调用函数 :cpp:func:`ledc_isr_register`。
-
-
 电源管理
 --------
 

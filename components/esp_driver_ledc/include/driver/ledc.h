@@ -9,25 +9,9 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "hal/ledc_types.h"
-#include "driver/gpio.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if SOC_LEDC_SUPPORT_APB_CLOCK
-/**
- * @brief Frequency of one of the LEDC peripheral clock sources, APB_CLK
- * @note  This macro should have no use in your application, we keep it here only for backward compatible
- */
-#define LEDC_APB_CLK_HZ _Pragma ("GCC warning \"'LEDC_APB_CLK_HZ' macro is deprecated\"") (APB_CLK_FREQ)
-#endif
-#if SOC_LEDC_SUPPORT_REF_TICK
-/**
- * @brief Frequency of one of the LEDC peripheral clock sources, REF_TICK
- * @note  This macro should have no use in your application, we keep it here only for backward compatible
- */
-#define LEDC_REF_CLK_HZ _Pragma ("GCC warning \"'LEDC_REF_CLK_HZ' macro is deprecated\"") (REF_CLK_FREQ)
 #endif
 
 #define LEDC_ERR_DUTY           (0xFFFFFFFF)
@@ -52,7 +36,7 @@ typedef struct {
     int gpio_num;                   /*!< the LEDC output gpio_num, if you want to use gpio16, gpio_num = 16 */
     ledc_mode_t speed_mode;         /*!< LEDC speed speed_mode, high-speed mode (only exists on esp32) or low-speed mode */
     ledc_channel_t channel;         /*!< LEDC channel (0 - LEDC_CHANNEL_MAX-1) */
-    ledc_intr_type_t intr_type;     /*!< configure interrupt, Fade interrupt enable  or Fade interrupt disable */
+    ledc_intr_type_t intr_type __attribute__((deprecated));     /*!< @deprecated, no need to explicitly configure interrupt, handled in the driver */
     ledc_timer_t timer_sel;         /*!< Select the timer source of channel (0 - LEDC_TIMER_MAX-1) */
     uint32_t duty;                  /*!< LEDC channel duty, the range of duty setting is [0, (2**duty_resolution)] */
     int hpoint;                     /*!< LEDC channel hpoint value, the range is [0, (2**duty_resolution)-1] */
@@ -347,28 +331,7 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_ERR_NOT_FOUND Failed to find available interrupt source
  */
-esp_err_t ledc_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags, ledc_isr_handle_t *handle);
-
-/**
- * @brief Configure LEDC timer settings
- *
- * This function does not take care of whether the chosen clock source is enabled or not, also does not handle the clock source
- * to meet channel sleep mode choice.
- *
- * If the chosen clock source is a new clock source to the LEDC timer, please use `ledc_timer_config`;
- * If the clock source is kept to be the same, but frequency needs to be updated, please use `ledc_set_freq`.
- *
- * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param timer_sel  Timer index (0-3), there are 4 timers in LEDC module
- * @param clock_divider Timer clock divide value, the timer clock is divided from the selected clock source
- * @param duty_resolution Resolution of duty setting in number of bits. The range is [1, SOC_LEDC_TIMER_BIT_WIDTH]
- * @param clk_src Select LEDC source clock.
- *
- * @return
- *     - (-1) Parameter error
- *     - Other Current LEDC duty
- */
-esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution, ledc_clk_src_t clk_src) __attribute__((deprecated("Please use ledc_timer_config() or ledc_set_freq()")));
+esp_err_t ledc_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags, ledc_isr_handle_t *handle) __attribute__((deprecated("LEDC interrupt handling is implemented by driver itself, please only register event callbacks if necessary")));
 
 /**
  * @brief Reset LEDC timer

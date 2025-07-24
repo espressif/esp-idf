@@ -14,14 +14,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "soc/gpio_periph.h"
-#include "soc/io_mux_reg.h"
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "driver/ledc.h"
 #include "soc/ledc_struct.h"
 #include "esp_clk_tree.h"
 #include "test_ledc_utils.h"
+#include "driver/gpio.h"
 
 static void fade_setup(void)
 {
@@ -91,13 +90,6 @@ TEST_CASE("LEDC channel config wrong channel", "[ledc]")
     TEST_ASSERT(ledc_channel_config(&ledc_ch_config) == ESP_ERR_INVALID_ARG);
 }
 
-TEST_CASE("LEDC channel config wrong interrupt type", "[ledc]")
-{
-    ledc_channel_config_t ledc_ch_config = initialize_channel_config();
-    ledc_ch_config.intr_type = 2;
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, ledc_channel_config(&ledc_ch_config));
-}
-
 TEST_CASE("LEDC wrong timer", "[ledc]")
 {
     ledc_channel_config_t ledc_ch_config = initialize_channel_config();
@@ -150,6 +142,12 @@ TEST_CASE("LEDC output idle level test", "[ledc]")
     TEST_ESP_OK(ledc_stop(test_speed_mode, LEDC_CHANNEL_0, !current_level));
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(!current_level, LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv);
+    // check real output level over some period
+    gpio_input_enable(PULSE_IO);
+    for (int i = 0; i < 40; i++) {
+        TEST_ASSERT_EQUAL_INT32(!current_level, gpio_get_level(PULSE_IO));
+        esp_rom_delay_us(50);
+    }
 }
 
 TEST_CASE("LEDC iterate over all channel and timer configs", "[ledc]")

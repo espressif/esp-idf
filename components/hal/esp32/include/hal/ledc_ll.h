@@ -481,13 +481,15 @@ static inline void ledc_ll_set_sig_out_en(ledc_dev_t *hw, ledc_mode_t speed_mode
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, high-speed mode or low-speed mode
  * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
- * @param duty_start The duty start
  *
  * @return None
  */
-static inline void ledc_ll_set_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, bool duty_start)
+static inline void ledc_ll_set_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num)
 {
-    hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start = duty_start;
+    // wait until the last duty change took effect (duty_start bit will be self-cleared when duty update or fade is done)
+    // this is necessary on ESP32 only, otherwise, internal logic might mess up (later targets with SOC_LEDC_SUPPORT_FADE_STOP allow to re-configure parameters while last update is still in progress)
+    while (hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start);
+    hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start = 1;
 }
 
 /**

@@ -49,6 +49,19 @@ GPIO
 
 :func:`gpio_iomux_in` 和 :func:`gpio_iomux_out` 已被 :func:`gpio_iomux_input` 和 :func:`gpio_iomux_output` 函数取代， 并移至 ``esp_private/gpio.h`` 头文件中作为仅供内部使用的私有 API。
 
+LEDC
+----
+
+- :func:`ledc_timer_set` 已被移除。请使用 :func:`ledc_timer_config` 或 :func:`ledc_set_freq` 代替。
+
+- ``LEDC_APB_CLK_HZ`` 和 ``LEDC_REF_CLK_HZ`` 已被移除。
+
+- esp_driver_gpio 不再作为 esp_driver_ledc 的公共依赖组件。
+
+- :func:`ledc_isr_register` 已被弃用。LEDC 中断处理由驱动内部实现，如果需要注册中断回调，仅需要注册事件回调即可。
+
+- :cpp:member:`ledc_channel_config_t::intr_type` 已被弃用。`LEDC_INTR_FADE_END` 中断使能/禁用控制由驱动内部处理。用户仍可以通过 :cpp:func:`ledc_cb_register` 注册该中断的回调。
+
 I2C
 ---
 
