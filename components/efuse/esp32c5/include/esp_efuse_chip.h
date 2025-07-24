@@ -81,7 +81,7 @@ typedef enum {
     ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P192 = 16,              /**< ECDSA private key (P192) */
     ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L = 17,            /**< ECDSA private key (P384) */
     ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H = 18,            /**< ECDSA private key (P384) */
-    ESP_EFUSE_KEY_PURPOSE_MAX,                              /**< MAX PURPOSE */
+    ESP_EFUSE_KEY_PURPOSE_MAX = 32,                         /**< MAX PURPOSE */
 } esp_efuse_purpose_t;
 
 #ifdef __cplusplus
