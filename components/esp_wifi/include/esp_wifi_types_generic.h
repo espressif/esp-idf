@@ -521,7 +521,7 @@ typedef enum {
   * @brief Configuration structure for BSS max idle
   */
 typedef struct {
-    uint16_t period;                /**< Sets BSS Max idle period (1 Unit = 1000TUs OR 1.024 Seconds). If there are no frames for this period from a STA, SoftAP will disassociate due to inactivity. Setting it to 0 disables the feature */
+    uint16_t period;                /**< Sets BSS Max idle period (1 Unit = 1000TUs OR 1.024 Seconds). If there are no frames for this period from a STA, SoftAP will disassociate due to inactivity. Setting it to 0 disables the feature. Minimum value will be 10 */
     bool protected_keep_alive;      /**< Requires clients to use protected keep alive frames for BSS Max Idle period */
 } wifi_bss_max_idle_config_t;
 
