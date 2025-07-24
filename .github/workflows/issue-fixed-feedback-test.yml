@@ -1,0 +1,24 @@
+name: Test Issue Fixed-in Comment
+
+on:
+  issues:
+    types: [closed]
+
+jobs:
+  test-post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fake table output
+        id: table
+        run: echo "::set-output name=md::**TEST TABLE**"
+      - name: Post test comment
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: `${{ steps.table.outputs.md }}\n\n*This is a test comment.*`
+            });
