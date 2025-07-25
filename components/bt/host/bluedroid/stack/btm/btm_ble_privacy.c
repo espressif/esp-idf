@@ -50,6 +50,9 @@
 #define BTM_BLE_META_READ_IRK_LEN       2
 #define BTM_BLE_META_ADD_WL_ATTR_LEN    9
 
+#if CONTROLLER_RPA_LIST_ENABLE && BLE_SMP_ID_RESET_ENABLE
+static bool is_deleting_zero_addr;
+#endif // CONTROLLER_RPA_LIST_ENABLE && BLE_SMP_ID_RESET_ENABLE
 /*******************************************************************************
 **         Functions implemented controller based privacy using Resolving List
 *******************************************************************************/
@@ -343,8 +346,21 @@ void btm_ble_remove_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
             btm_cb.ble_ctr_cb.resolving_list_avail_size++;
         }
     } else {
-        BTM_TRACE_ERROR("%s remove resolving list error 0x%x", __func__, status);
+#if CONTROLLER_RPA_LIST_ENABLE && BLE_SMP_ID_RESET_ENABLE
+        if (!is_deleting_zero_addr)
+#endif // CONTROLLER_RPA_LIST_ENABLE && BLE_SMP_ID_RESET_ENABLE
+        {
+            /* It's expected for some controllers to return error when deleting {0,0,0,0,0,0}, ignore that case */
+            BTM_TRACE_ERROR("%s remove resolving list error, status = 0x%02x", __func__, status);
+        }
     }
+
+#if CONTROLLER_RPA_LIST_ENABLE && BLE_SMP_ID_RESET_ENABLE
+    /* Clear zero address deletion flag regardless of outcome */
+    if (is_deleting_zero_addr) {
+        is_deleting_zero_addr = false;
+    }
+#endif // CONTROLLER_RPA_LIST_ENABLE && BLE_SMP_ID_RESET_ENABLE
 }
 
 /*******************************************************************************
@@ -1139,6 +1155,7 @@ void btm_ble_resolving_list_cleanup(void)
 
 }
 
+#if (CONTROLLER_RPA_LIST_ENABLE == TRUE)
 void btm_ble_add_default_entry_to_resolving_list(void)
 {
     /*
@@ -1151,9 +1168,17 @@ void btm_ble_add_default_entry_to_resolving_list(void)
     BD_ADDR peer_addr = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
     BT_OCTET16 peer_irk = {0x0};
 
+#if (BLE_SMP_ID_RESET_ENABLE == TRUE)
     // Remove the existing entry in resolving list When resetting the device identity
     btsnd_hcic_ble_rm_device_resolving_list(BLE_ADDR_PUBLIC, peer_addr);
 
+    is_deleting_zero_addr = true;
+
+    btm_ble_enq_resolving_list_pending(peer_addr, BTM_BLE_META_REMOVE_IRK_ENTRY);
+#endif // (BLE_SMP_ID_RESET_ENABLE == TRUE)
     btsnd_hcic_ble_add_device_resolving_list (BLE_ADDR_PUBLIC, peer_addr, peer_irk, btm_cb.devcb.id_keys.irk);
+
+    btm_ble_enq_resolving_list_pending(peer_addr, BTM_BLE_META_ADD_IRK_ENTRY);
 }
+#endif // (CONTROLLER_RPA_LIST_ENABLE == TRUE)
 #endif
