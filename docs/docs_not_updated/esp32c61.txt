@@ -40,7 +40,6 @@ api-reference/peripherals/dac.rst
 api-reference/peripherals/ppa.rst
 api-reference/peripherals/camera_driver.rst
 api-reference/peripherals/spi_features.rst
-api-reference/peripherals/sdio_slave.rst
 api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/lcd/i80_lcd.rst
 api-reference/peripherals/lcd/spi_lcd.rst
