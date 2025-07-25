@@ -184,8 +184,15 @@ config ESP_WIFI_ROAMING_RRM_MONITOR_THRESHOLD
         The RSSI threshold beyond which we start sending periodic neighbor report requests.
 
 menu "Blacklist Configuration"
+    config ESP_WIFI_ROAMING_BSSID_BLACKLIST
+        bool "Enable BSSID blacklisting"
+        default n
+        help
+            Enable this to blacklist BSSIDs.
+
     config ESP_WIFI_ROAMING_AUTO_BLACKLISTING
         bool "Enable automatic BSSID blacklisting"
+        depends on ESP_WIFI_ROAMING_BSSID_BLACKLIST
         default y
         help
             Enable this to automatically blacklist BSSIDs after multiple failed connection attempts.
@@ -205,4 +212,11 @@ menu "Blacklist Configuration"
         default 300
         help
             Time in seconds for which a BSSID remains in the blacklist.
+
+    config ESP_WIFI_ROAMING_MAX_CANDIDATES
+        int "Maximum number of roaming candidates"
+        range 1 10
+        default 5
+        help
+            Maximum number of roaming candidates to consider. This also defines the size of the blacklist.
 endmenu # "Blacklist Configuration"
