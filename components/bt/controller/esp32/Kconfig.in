@@ -459,6 +459,7 @@ config BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
 
 config BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
     bool "Enable enhanced Access Address check in CONNECT_IND"
+    depends on (BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM)
     default n
     help
         Enabling this option will add stricter verification of the Access Address in the CONNECT_IND PDU.
