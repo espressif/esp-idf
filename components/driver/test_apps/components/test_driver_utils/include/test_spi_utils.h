@@ -89,6 +89,7 @@
 #define WIRE_DELAY              12.5
 
 #else
+#define UNCONNECTED_PIN         8
 #define GPIO_DELAY              0
 #define ESP_SPI_SLAVE_TV        0
 #define WIRE_DELAY              12.5
