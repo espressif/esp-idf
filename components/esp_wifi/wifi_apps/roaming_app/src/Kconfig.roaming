@@ -219,4 +219,13 @@ menu "Blacklist Configuration"
         default 5
         help
             Maximum number of roaming candidates to consider. This also defines the size of the blacklist.
+
+    config ESP_WIFI_ROAMING_PREVENT_DOWNGRADE
+        bool "Prevent security downgrade when roaming"
+        default n
+        help
+            If the currently connected AP sends a "transition disable" bit,
+            this option will make the roaming logic ignore less secure APs.
+            This helps prevent security downgrades when roaming in a mixed
+            security environment (e.g., WPA2/WPA3).
 endmenu # "Blacklist Configuration"
