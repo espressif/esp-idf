@@ -146,7 +146,7 @@ static void cdcacm_return_char(int c)
 
 static ssize_t cdcacm_read(int fd, void *data, size_t size)
 {
-    assert(fd == USB_CDC_LOCAL_FD);
+    assert(fd == 0);
     char *data_c = (char *) data;
     ssize_t received = 0;
     _lock_acquire_recursive(&s_read_lock);
