@@ -86,7 +86,7 @@ esp_reset_reason_t esp_reset_reason(void)
 #define RST_REASON_SHIFT 16
 
 /* in IRAM, can be called from panic handler */
-void IRAM_ATTR esp_reset_reason_set_hint(esp_reset_reason_t hint)
+void esp_reset_reason_set_hint(esp_reset_reason_t hint)
 {
     assert((hint & (~RST_REASON_MASK)) == 0);
     uint32_t val = hint | (hint << RST_REASON_SHIFT) | RST_REASON_BIT;

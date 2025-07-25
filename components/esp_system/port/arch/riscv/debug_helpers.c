@@ -11,7 +11,7 @@
 #include "freertos/task.h"
 #include "esp_private/freertos_debug.h"
 #include "esp_err.h"
-#include "esp_attr.h"
+#include "esp_private/esp_system_attr.h"
 #include "esp_private/esp_cpu_internal.h"
 #include <string.h>
 
@@ -36,7 +36,7 @@ extern void panic_print_registers(const void *frame, int core);
     * exit this handler as fast as possible, then we will simply print
     * the interruptee's registers.
     */
-esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
+esp_err_t ESP_SYSTEM_IRAM_ATTR esp_backtrace_print(int depth)
 {
     (void)depth;
 
