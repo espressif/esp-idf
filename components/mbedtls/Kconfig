@@ -475,7 +475,7 @@ menu "mbedTLS"
 
     config MBEDTLS_GCM_SUPPORT_NON_AES_CIPHER
         bool "Enable support for non-AES ciphers in GCM operation"
-        depends on MBEDTLS_HARDWARE_AES
+        depends on MBEDTLS_HARDWARE_AES && MBEDTLS_GCM_C
         default y
         help
             Enable this config to support fallback to software definitions for a non-AES
