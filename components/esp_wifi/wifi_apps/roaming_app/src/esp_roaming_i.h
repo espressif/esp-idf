@@ -140,8 +140,7 @@ struct roaming_app {
         uint8_t bssid[ETH_ALEN];
         uint8_t failures;
         struct timeval timestamp;
-    };
-    struct blacklist_entry bssid_blacklist[CONFIG_ESP_WIFI_ROAMING_MAX_CANDIDATES];
+    } bssid_blacklist[CONFIG_ESP_WIFI_ROAMING_MAX_CANDIDATES];
     uint8_t bssid_blacklist_count;
 #endif
     bool allow_reconnect;

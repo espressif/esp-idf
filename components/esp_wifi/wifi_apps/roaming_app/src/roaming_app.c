@@ -184,23 +184,23 @@ static void roaming_app_disconnected_event_handler(void *ctx, void *data)
     if (disconn->reason == WIFI_REASON_CONNECTION_FAIL || disconn->reason == WIFI_REASON_AUTH_FAIL) {
         bool found = false;
         for (int i = 0; i < g_roaming_app.bssid_blacklist_count; i++) {
-            if (memcmp(g_roaming_app.bssid_blacklist[i].bssid, disconn->bssid, ETH_ALEN) == 0) {
+            if (memcmp(g_roaming_app.bssid_blacklist[i].bssid, g_roaming_app.current_bss.ap.bssid, ETH_ALEN) == 0) {
                 g_roaming_app.bssid_blacklist[i].failures++;
                 gettimeofday(&g_roaming_app.bssid_blacklist[i].timestamp, NULL);
-                ESP_LOGD(ROAMING_TAG, "BSSID " MACSTR " connection failures: %d", MAC2STR(disconn->bssid), g_roaming_app.bssid_blacklist[i].failures);
+                ESP_LOGD(ROAMING_TAG, "BSSID " MACSTR " connection failures: %d", MAC2STR(g_roaming_app.current_bss.ap.bssid), g_roaming_app.bssid_blacklist[i].failures);
                 if (g_roaming_app.bssid_blacklist[i].failures >= CONFIG_ESP_WIFI_ROAMING_MAX_CONN_FAILURES) {
-                    ESP_LOGI(ROAMING_TAG, "BSSID " MACSTR " blacklisted", MAC2STR(disconn->bssid));
+                    ESP_LOGI(ROAMING_TAG, "BSSID " MACSTR " blacklisted", MAC2STR(g_roaming_app.current_bss.ap.bssid));
                 }
                 found = true;
                 break;
             }
         }
         if (!found && g_roaming_app.bssid_blacklist_count < CONFIG_ESP_WIFI_ROAMING_MAX_CANDIDATES) {
-            memcpy(g_roaming_app.bssid_blacklist[g_roaming_app.bssid_blacklist_count].bssid, disconn->bssid, ETH_ALEN);
+            memcpy(g_roaming_app.bssid_blacklist[g_roaming_app.bssid_blacklist_count].bssid, g_roaming_app.current_bss.ap.bssid, ETH_ALEN);
             g_roaming_app.bssid_blacklist[g_roaming_app.bssid_blacklist_count].failures = 1;
             gettimeofday(&g_roaming_app.bssid_blacklist[g_roaming_app.bssid_blacklist_count].timestamp, NULL);
             g_roaming_app.bssid_blacklist_count++;
-            ESP_LOGD(ROAMING_TAG, "BSSID " MACSTR " added to blacklist tracking", MAC2STR(disconn->bssid));
+            ESP_LOGD(ROAMING_TAG, "BSSID " MACSTR " added to blacklist tracking", MAC2STR(g_roaming_app.current_bss.ap.bssid));
         }
     }
 #endif
@@ -609,17 +609,6 @@ static bool candidate_profile_match(wifi_ap_record_t candidate)
 {
     return candidate_security_match(candidate);
 }
-#if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
-static bool is_bssid_blacklisted(const uint8_t *bssid)
-{
-    for (int i = 0; i < g_roaming_app.bssid_blacklist_count; i++) {
-        if (memcmp(g_roaming_app.bssid_blacklist[i], bssid, ETH_ALEN) == 0) {
-            return true;
-        }
-    }
-    return false;
-}
-#endif
 
 #if CONFIG_ESP_WIFI_ROAMING_AUTO_BLACKLISTING
 static void remove_expired_blacklist_entries(void)
@@ -629,8 +618,9 @@ static void remove_expired_blacklist_entries(void)
     for (int i = 0; i < g_roaming_app.bssid_blacklist_count; i++) {
         if (time_diff_sec(&now, &g_roaming_app.bssid_blacklist[i].timestamp) > CONFIG_ESP_WIFI_ROAMING_BLACKLIST_TIMEOUT) {
             ESP_LOGI(ROAMING_TAG, "BSSID " MACSTR " removed from blacklist due to timeout", MAC2STR(g_roaming_app.bssid_blacklist[i].bssid));
-            for (int j = i; j < g_roaming_app.bssid_blacklist_count - 1; j++) {
-                g_roaming_app.bssid_blacklist[j] = g_roaming_app.bssid_blacklist[j + 1];
+            int remaining_entries = g_roaming_app.bssid_blacklist_count - i - 1;
+            if (remaining_entries > 0) {
+                memmove(&g_roaming_app.bssid_blacklist[i], &g_roaming_app.bssid_blacklist[i + 1], remaining_entries * sizeof(struct blacklist_entry));
             }
             g_roaming_app.bssid_blacklist_count--;
             i--; // Decrement i to recheck the current index
@@ -646,6 +636,13 @@ static bool is_bssid_blacklisted(const uint8_t *bssid)
     for (int i = 0; i < g_roaming_app.bssid_blacklist_count; i++) {
         if (memcmp(g_roaming_app.bssid_blacklist[i].bssid, bssid, ETH_ALEN) == 0 &&
             g_roaming_app.bssid_blacklist[i].failures >= CONFIG_ESP_WIFI_ROAMING_MAX_CONN_FAILURES) {
+            return true;
+        }
+    }
+#endif
+#if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
+    for (int i = 0; i < g_roaming_app.bssid_blacklist_count; i++) {
+        if (memcmp(g_roaming_app.bssid_blacklist[i].bssid, bssid, ETH_ALEN) == 0) {
             return true;
         }
     }
@@ -1025,17 +1022,19 @@ esp_err_t esp_wifi_blacklist_add(const uint8_t *bssid)
     if (!bssid) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (g_roaming_app.bssid_blacklist_count >= CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST_COUNT) {
+    if (g_roaming_app.bssid_blacklist_count >= CONFIG_ESP_WIFI_ROAMING_MAX_CANDIDATES) {
         ESP_LOGE(ROAMING_TAG, "Blacklist is full");
         return ESP_ERR_NO_MEM;
     }
     for (int i = 0; i < g_roaming_app.bssid_blacklist_count; i++) {
-        if (memcmp(g_roaming_app.bssid_blacklist[i], bssid, ETH_ALEN) == 0) {
+        if (memcmp(g_roaming_app.bssid_blacklist[i].bssid, bssid, ETH_ALEN) == 0) {
             ESP_LOGD(ROAMING_TAG, "BSSID " MACSTR " already in blacklist", MAC2STR(bssid));
             return ESP_OK; // Already blacklisted
         }
     }
-    memcpy(g_roaming_app.bssid_blacklist[g_roaming_app.bssid_blacklist_count], bssid, ETH_ALEN);
+    memcpy(g_roaming_app.bssid_blacklist[g_roaming_app.bssid_blacklist_count].bssid, bssid, ETH_ALEN);
+    g_roaming_app.bssid_blacklist[g_roaming_app.bssid_blacklist_count].failures = CONFIG_ESP_WIFI_ROAMING_MAX_CONN_FAILURES;
+    gettimeofday(&g_roaming_app.bssid_blacklist[g_roaming_app.bssid_blacklist_count].timestamp, NULL);
     g_roaming_app.bssid_blacklist_count++;
     ESP_LOGI(ROAMING_TAG, "BSSID " MACSTR " added to blacklist", MAC2STR(bssid));
     return ESP_OK;
@@ -1048,7 +1047,7 @@ esp_err_t esp_wifi_blacklist_remove(const uint8_t *bssid)
     }
     int found_index = -1;
     for (int i = 0; i < g_roaming_app.bssid_blacklist_count; i++) {
-        if (memcmp(g_roaming_app.bssid_blacklist[i], bssid, ETH_ALEN) == 0) {
+        if (memcmp(g_roaming_app.bssid_blacklist[i].bssid, bssid, ETH_ALEN) == 0) {
             found_index = i;
             break;
         }
@@ -1056,8 +1055,9 @@ esp_err_t esp_wifi_blacklist_remove(const uint8_t *bssid)
 
     if (found_index != -1) {
         // Shift elements to fill the gap
-        for (int i = found_index; i < g_roaming_app.bssid_blacklist_count - 1; i++) {
-            memcpy(g_roaming_app.bssid_blacklist[i], g_roaming_app.bssid_blacklist[i + 1], ETH_ALEN);
+        int remaining_entries = g_roaming_app.bssid_blacklist_count - found_index - 1;
+        if (remaining_entries > 0) {
+            memmove(&g_roaming_app.bssid_blacklist[found_index], &g_roaming_app.bssid_blacklist[found_index + 1], remaining_entries * sizeof(struct blacklist_entry));
         }
         g_roaming_app.bssid_blacklist_count--;
         ESP_LOGI(ROAMING_TAG, "BSSID " MACSTR " removed from blacklist", MAC2STR(bssid));
