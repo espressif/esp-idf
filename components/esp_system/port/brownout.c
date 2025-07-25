@@ -54,7 +54,7 @@ IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
     } else
 #endif // CONFIG_SPI_FLASH_BROWNOUT_RESET
     {
-        ESP_DRAM_LOGI(TAG, "Brownout detector was triggered\r\n\r\n");
+        ESP_DRAM_LOGE(TAG, "Brownout detector was triggered\r\n\r\n");
     }
 
     esp_rom_software_reset_system();
