@@ -96,4 +96,4 @@ void test_gdma_deinit(void);
 void test_gdma_m2m_transfer(uint8_t *src, uint8_t *dest, size_t size);
 void test_gdma_wait_done(void);
 
-void test_delay_us(uint32_t us);
+void test_delay_ms(uint32_t ms);

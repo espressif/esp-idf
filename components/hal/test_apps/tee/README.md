@@ -1,15 +1,21 @@
 | Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 |
 | ----------------- | -------- | -------- | --------- | -------- |
 
-# APM (Access Permission Management) Peripheral Test App
+# TEE (Trusted Execution Environment) Test Application
 
-This application validates region-based memory and peripheral access control via the APM (Access Permission Management) subsystem. It is primarily intended for bring-up and SoC-level functional testing.
+This application is designed to validate the key components of the **ESP-TEE** framework, with a focus on:
 
-Tests exercise various master-to-region accesses under different security modes (`TEE`, `REE0`, `REE1`, `REE2`). Outcomes are validated against expected APM behavior and known SoC-specific quirks.
+1. **Permission Management (PMS: TEE controller + APM module)**
+   - Region-based memory and peripheral access control using the TEE controller and the Access Permission Management (APM) module
+
+2. **Interrupts**
+   - Interrupt handling in Machine mode (M), User mode (U), and cross-mode contexts
+
+It is primarily intended for early bring-up and SoC-level functional validation.
 
 ---
 
-## Test Coverage
+## Test Coverage: PMS (TEE + APM module)
 
 ### TEE mode default access behavior
 
@@ -50,6 +56,13 @@ Validates region-based restrictions across modes using DMA transfers.
 Validates the per-peripheral access permissions for all security modes.
 
 ---
+
+## Test Coverage: Interrupts
+
+- **M-mode interrupts in M-mode**
+- **U-mode interrupts in U-mode**
+- **M-mode interrupts in U-mode**
+- **U-mode interrupts in M-mode**
 
 ## Target Extension Guide
 

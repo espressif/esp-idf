@@ -84,12 +84,12 @@ static void gdma_xmem_addr_rw(uint8_t *src, uint8_t *dest, size_t size, uint32_t
 #endif
 
     if (!test_attr) {
-        test_delay_us(10000);
+        test_delay_ms(10);
         TEST_ASSERT(apm_master_excp_flag[TEST_GDMA_APM_MASTER_ID]);
         test_gdma_wait_done();
     } else {
         test_gdma_wait_done();
-        test_delay_us(10000);
+        test_delay_ms(10);
         TEST_ASSERT_FALSE(apm_master_excp_flag[TEST_GDMA_APM_MASTER_ID]);
         TEST_ASSERT_EQUAL_HEX8_ARRAY(src, dest, size);
     }
@@ -202,7 +202,7 @@ static void hp_cpu_peri_addr_rw(uint32_t peri_addr, uint32_t attr)
     apm_master_excp_flag[APM_MASTER_HPCORE] = false;
 
     REG_WRITE(peri_addr, TEST_VAL);
-    test_delay_us(10000);
+    test_delay_ms(10);
 
     bool can_write = (attr & APM_PERM_W);
     TEST_ASSERT(apm_master_excp_flag[APM_MASTER_HPCORE] != can_write);
@@ -211,7 +211,7 @@ static void hp_cpu_peri_addr_rw(uint32_t peri_addr, uint32_t attr)
 
     volatile uint32_t val = REG_READ(peri_addr);
     (void)val;
-    test_delay_us(10000);
+    test_delay_ms(10);
 
     bool can_read = (attr & APM_PERM_R);
     TEST_ASSERT(apm_master_excp_flag[APM_MASTER_HPCORE] != can_read);
@@ -227,7 +227,7 @@ static void lp_cpu_peri_addr_rw(uint32_t peri_addr, uint32_t attr)
 
     SEND_MSG(MSG_SLAVE_WRITE);
     SEND_ADDR(peri_addr);
-    test_delay_us(10000);
+    test_delay_ms(10);
 
     bool can_write = (attr & APM_PERM_W);
     TEST_ASSERT(apm_master_excp_flag[APM_MASTER_LPCORE] != can_write);
@@ -236,7 +236,7 @@ static void lp_cpu_peri_addr_rw(uint32_t peri_addr, uint32_t attr)
 
     SEND_MSG(MSG_SLAVE_READ);
     SEND_ADDR(peri_addr);
-    test_delay_us(10000);
+    test_delay_ms(10);
 
     bool can_read = (attr & APM_PERM_R);
     TEST_ASSERT(apm_master_excp_flag[APM_MASTER_LPCORE] != can_read);
@@ -490,7 +490,7 @@ static void hp_cpu_xmem_addr_rw(uint32_t mem_addr, size_t size, uint32_t attr)
     for (uint32_t offs = 0; offs < num_words; offs += step) {
         addr[offs] = TEST_VAL;
         asm volatile ("nop");
-        test_delay_us(10000);
+        test_delay_ms(10);
 
         bool can_write = (attr & APM_PERM_W);
         TEST_ASSERT(apm_master_excp_flag[APM_MASTER_HPCORE] != can_write);
@@ -500,7 +500,7 @@ static void hp_cpu_xmem_addr_rw(uint32_t mem_addr, size_t size, uint32_t attr)
         uint32_t val = addr[offs];
         (void)val;
         asm volatile ("fence");
-        test_delay_us(10000);
+        test_delay_ms(10);
 
         bool can_read = (attr & APM_PERM_R);
         TEST_ASSERT(apm_master_excp_flag[APM_MASTER_HPCORE] != can_read);
@@ -520,7 +520,7 @@ static void hp_cpu_xmem_addr_x(uint32_t mem_addr, size_t size, uint32_t attr)
     void (*func_ptr)(void);
     func_ptr = (void(*)(void))(mem_addr);
     func_ptr();
-    test_delay_us(10000);
+    test_delay_ms(10);
 
     bool can_execute = attr & APM_PERM_X;
     TEST_ASSERT(apm_master_excp_flag[APM_MASTER_HPCORE] != can_execute);
@@ -538,7 +538,7 @@ static void lp_cpu_xmem_addr_rw(uint32_t mem_addr, size_t size, uint32_t attr)
     SEND_MSG(MSG_SLAVE_WRITE);
     SEND_ADDR(mem_addr);
     SEND_SIZE(sizeof(uint32_t));
-    test_delay_us(10000);
+    test_delay_ms(10);
 
     bool can_write = (attr & APM_PERM_W);
     TEST_ASSERT(apm_master_excp_flag[APM_MASTER_LPCORE] != can_write);
@@ -547,7 +547,7 @@ static void lp_cpu_xmem_addr_rw(uint32_t mem_addr, size_t size, uint32_t attr)
 
     SEND_MSG(MSG_SLAVE_READ);
     SEND_ADDR(mem_addr);
-    test_delay_us(10000);
+    test_delay_ms(10);
 
     bool can_read = (attr & APM_PERM_R);
     TEST_ASSERT(apm_master_excp_flag[APM_MASTER_LPCORE] != can_read);
@@ -564,7 +564,7 @@ static void lp_cpu_xmem_addr_x(uint32_t mem_addr, size_t size, uint32_t attr)
 
     SEND_MSG(MSG_SLAVE_EXEC);
     SEND_ADDR(mem_addr);
-    test_delay_us(10000);
+    test_delay_ms(10);
 
     bool can_execute = (attr & APM_PERM_X);
     TEST_ASSERT(apm_master_excp_flag[APM_MASTER_LPCORE] != can_execute);
