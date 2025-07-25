@@ -267,6 +267,62 @@ uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生�
 
 此命令将打印 ``otadata`` 分区的内容，该分区存储当前所选 OTA 应用程序分区的信息。有关 ``otadata`` 分区的更多信息，请参阅 :doc:`/api-reference/system/ota`。
 
+启动 MCP 服务器：``mcp-server``
+---------------------------------
+
+.. code-block:: bash
+
+  idf.py mcp-server
+
+此命令启动 MCP（模型上下文协议）服务器，用于 ESP-IDF 项目的 AI 集成。MCP 服务器提供工具和资源，允许 AI 助手通过标准化协议与您的 ESP-IDF 项目交互。
+
+MCP 服务器提供以下工具：
+
+- ``build_project``：使用指定目标构建 ESP-IDF 项目
+- ``set_target``：设置 ESP-IDF 目标（esp32、esp32s3、esp32c6 等）
+- ``flash_project``：将构建的项目烧录到连接的设备
+- ``monitor_serial``：启动串口监视器（在后台运行）
+- ``clean_project``：清理构建文件
+- ``menuconfig``：打开 menuconfig 界面（基于终端）
+
+MCP 服务器还提供以下资源：
+
+- ``project://config``：获取当前项目配置
+- ``project://status``：获取当前项目构建状态
+- ``project://devices``：获取已连接的 ESP 设备列表
+
+.. note::
+   MCP 服务器需要安装 ``mcp`` Python 包。使用以下命令安装：``pip install "mcp[cli]"`` 或 ``python -m pip install mcp``。
+
+将 ESP-IDF MCP 服务器添加到 IDE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Claude Desktop：**
+
+使用 Claude CLI 添加 ESP-IDF MCP 服务器：
+
+.. code-block:: bash
+
+  claude mcp add esp-idf python /path/to/esp-idf/tools/idf.py mcp-server --env IDF_PATH=/path/to/esp-idf
+
+**Cursor 和其他 IDE：**
+
+对于支持通过 JSON 配置 MCP 的 IDE（如 Cursor），请将以下内容添加到您的 MCP 设置中：
+
+.. code-block:: json
+
+  {
+    "mcpServers": {
+      "esp-idf": {
+        "command": "python",
+        "args": ["/path/to/esp-idf/tools/idf.py", "mcp-server"],
+        "env": {
+          "IDF_PATH": "/path/to/esp-idf"
+        }
+      }
+    }
+  }
+
 全局选项
 ==============
 
