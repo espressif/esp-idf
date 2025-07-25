@@ -367,6 +367,12 @@ tBTM_SEC_DEV_REC *btm_sec_alloc_dev (BD_ADDR bd_addr)
     }
     if (!new_entry_found) {
         p_dev_rec = btm_find_oldest_dev();
+#if (BLE_INCLUDED == TRUE) && (SMP_INCLUDED == TRUE)
+    // If device record exists and contains identity key, remove it from resolving list
+    if (p_dev_rec && (p_dev_rec->ble.key_type & SMP_SEC_KEY_TYPE_ID)) {
+        btm_ble_resolving_list_remove_dev(p_dev_rec);
+    }
+#endif // (BLE_INCLUDED == TRUE) && (SMP_INCLUDED == TRUE)
     } else {
         /* if the old device entry not present go with new entry */
         if (old_entry_found) {
