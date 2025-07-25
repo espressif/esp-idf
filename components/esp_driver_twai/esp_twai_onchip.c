@@ -317,6 +317,8 @@ static esp_err_t _node_delete(twai_node_handle_t node)
     _node_release_io(twai_ctx);
     twai_hal_deinit(twai_ctx->hal);
     _twai_rcc_clock_ctrl(twai_ctx->ctrlr_id, false);
+    // curr_clk_src must not NULL as we already set to Default in twai_new_node_onchip
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(twai_ctx->curr_clk_src, false), TAG, "disable clock source failed");
     _node_destroy(twai_ctx);
     return ESP_OK;
 }
@@ -346,6 +348,30 @@ static esp_err_t _node_check_timing_valid(twai_onchip_ctx_t *twai_ctx, const twa
     ESP_RETURN_ON_FALSE((timing->tseg_1 >= TWAI_LL_TSEG1_MIN) && (timing->tseg_1 <= TWAI_LL_TSEG1_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg1");
     ESP_RETURN_ON_FALSE((timing->tseg_2 >= TWAI_LL_TSEG2_MIN) && (timing->tseg_2 <= TWAI_LL_TSEG2_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg_2");
     ESP_RETURN_ON_FALSE((timing->sjw >= 1) && (timing->sjw <= TWAI_LL_SJW_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid swj");
+    return ESP_OK;
+}
+
+static esp_err_t _node_set_clock_source(twai_node_handle_t node, twai_clock_source_t clock_src)
+{
+    twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
+    if (clock_src != twai_ctx->curr_clk_src) {
+        // Order of operations is important here.
+        // First enable and switch to the new clock source, then disable the old one.
+        // To ensure the clock to controller is continuous.
+        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(clock_src, true), TAG, "enable clock source failed");
+        _twai_rcc_clock_sel(twai_ctx->ctrlr_id, clock_src);
+        if (twai_ctx->curr_clk_src) {
+            // Disable previous clock source
+            esp_err_t err = esp_clk_tree_enable_src(twai_ctx->curr_clk_src, false);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "disable previous clock source failed, err: %d", err);
+                esp_clk_tree_enable_src(clock_src, false);
+                return err;
+            }
+        }
+        twai_ctx->curr_clk_src = clock_src;
+        ESP_LOGD(TAG, "set clock source to %d", clock_src);
+    }
     return ESP_OK;
 }
 
@@ -380,13 +406,7 @@ static esp_err_t _node_set_bit_timing(twai_node_handle_t node, const twai_timing
     }
 #endif
 
-    if (new_clock_src != twai_ctx->curr_clk_src) {
-        // TODO: IDF-13144
-        ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(new_clock_src), true));
-        twai_ctx->curr_clk_src = new_clock_src;
-        _twai_rcc_clock_sel(twai_ctx->ctrlr_id, new_clock_src);
-    }
-    return ESP_OK;
+    return _node_set_clock_source(node, new_clock_src);
 }
 
 static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_source_t clk_src, const twai_timing_basic_config_t *timing, const twai_timing_basic_config_t *timing_fd)
@@ -496,7 +516,7 @@ static esp_err_t _node_config_mask_filter(twai_node_handle_t node, uint8_t filte
     // FD targets don't support Dual filter
     ESP_RETURN_ON_FALSE(!mask_cfg->dual_filter, ESP_ERR_NOT_SUPPORTED, TAG, "The target don't support Dual Filter");
 #endif
-    ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "config filter must when node stopped");
+    ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "filter config must do when node stopped");
 
     twai_hal_configure_filter(twai_ctx->hal, filter_id, mask_cfg);
     return ESP_OK;
@@ -509,7 +529,7 @@ static esp_err_t _node_config_range_filter(twai_node_handle_t node, uint8_t filt
     ESP_RETURN_ON_FALSE(filter_id < SOC_TWAI_RANGE_FILTER_NUM, ESP_ERR_INVALID_ARG, TAG, "Invalid range filter id %d", filter_id);
     ESP_RETURN_ON_FALSE((range_cfg->range_low > range_cfg->range_high) || range_cfg->is_ext || !(range_cfg->range_high & ~TWAI_STD_ID_MASK), \
                         ESP_ERR_INVALID_ARG, TAG, "std_id only (is_ext=0) but valid low/high id larger than 11 bits");
-    ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "config filter must when node stopped");
+    ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "filter config must do when node stopped");
 
     twai_hal_configure_range_filter(twai_ctx->hal, filter_id, range_cfg);
     return ESP_OK;
@@ -614,6 +634,8 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     ESP_GOTO_ON_ERROR(esp_intr_alloc(twai_controller_periph_signals.controllers[ctrlr_id].irq_id, intr_flags, _node_isr_main, (void *)node, &node->intr_hdl),
                       err, TAG, "Alloc interrupt failed");
 
+    // Set default clock source first
+    ESP_RETURN_ON_ERROR(_node_set_clock_source(&node->api_base, TWAI_CLK_SRC_DEFAULT), TAG, "enable default clock source failed");
     // Enable bus clock and reset controller
     _twai_rcc_clock_ctrl(ctrlr_id, true);
     // Initialize HAL and configure register defaults.
@@ -626,13 +648,26 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
         .enable_self_test = node_config->flags.enable_self_test,
         .enable_loopback = node_config->flags.enable_loopback,
     };
+#if CONFIG_IDF_TARGET_ESP32C5
+    // ESP32C5 has a bug that the listen only mode don't work when there are other nodes sending ACK each other
+    // See IDF-13059 for more details
+    if (node_config->flags.enable_listen_only) {
+        ESP_LOGW(TAG, "Listen only mode for ESP32C5 may not work properly when there are more than 2 nodes on the bus that are sending ACKs to each other");
+    }
+#endif
     ESP_GOTO_ON_FALSE(twai_hal_init(node->hal, &hal_config), ESP_ERR_INVALID_STATE, err, TAG, "hardware not in reset state");
     // Configure bus timing
     ESP_GOTO_ON_ERROR(_node_calc_set_bit_timing(&node->api_base, node_config->clk_src, &node_config->bit_timing, &node_config->data_timing), err, TAG, "bitrate error");
     // Configure GPIO
     ESP_GOTO_ON_ERROR(_node_config_io(node, node_config), err, TAG, "gpio config failed");
 #if CONFIG_PM_ENABLE
+#if SOC_TWAI_CLK_SUPPORT_APB
+    // DFS can change APB frequency. So add lock to prevent sleep and APB freq from changing
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, twai_controller_periph_signals.controllers[ctrlr_id].module_name, &node->pm_lock), err, TAG, "init power manager failed");
+#else // XTAL
+    // XTAL freq can be closed in light sleep, so we need to create a lock to prevent light sleep
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, twai_controller_periph_signals.controllers[ctrlr_id].module_name, &node->pm_lock), err, TAG, "init power manager failed");
+#endif //SOC_TWAI_CLK_SUPPORT_APB
 #endif //CONFIG_PM_ENABLE
 
     node->api_base.enable = _node_enable;

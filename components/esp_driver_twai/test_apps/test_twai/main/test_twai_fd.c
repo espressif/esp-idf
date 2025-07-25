@@ -60,7 +60,7 @@ static IRAM_ATTR bool test_range_filter_rx_done_cb(twai_node_handle_t handle, co
     return false;
 }
 
-TEST_CASE("twai range filter (loopback)", "[TWAI]")
+TEST_CASE("twai range filter (loopback)", "[twai]")
 {
     uint8_t test_ctrl[2];
     twai_node_handle_t node_hdl;
@@ -131,7 +131,7 @@ static IRAM_ATTR bool test_fd_trans_time_rx_cb(twai_node_handle_t handle, const 
     return false;
 }
 
-TEST_CASE("twai fd transmit time (loopback)", "[TWAI]")
+TEST_CASE("twai fd transmit time (loopback)", "[twai]")
 {
     // prepare test memory
     uint8_t *send_pkg_ptr = heap_caps_malloc(TEST_TRANS_TIME_BUF_LEN, MALLOC_CAP_8BIT);

@@ -145,6 +145,7 @@ esp_err_t twai_node_transmit(twai_node_handle_t node, const twai_frame_t *frame,
 esp_err_t twai_node_receive_from_isr(twai_node_handle_t node, twai_frame_t *rx_frame)
 {
     ESP_RETURN_ON_FALSE_ISR(node && rx_frame, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null");
+    ESP_RETURN_ON_FALSE_ISR((rx_frame->buffer_len == 0) || esp_ptr_in_dram(rx_frame->buffer) || esp_ptr_external_ram(rx_frame->buffer), ESP_ERR_INVALID_ARG, TAG, "invalid 'rx_frame->buffer' pointer or buffer_len");
     ESP_RETURN_ON_FALSE_ISR(node->receive_isr, ESP_ERR_NOT_SUPPORTED, TAG, "receive func null");
 
     return node->receive_isr(node, rx_frame);
