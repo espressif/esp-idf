@@ -48,6 +48,10 @@ typedef enum {
     RMT_LL_MEM_OWNER_HW = 1,
 } rmt_ll_mem_owner_t;
 
+typedef enum {
+    RMT_LL_MEM_LP_MODE_SHUT_DOWN,   // power down memory during low power stage
+} rmt_ll_mem_lp_mode_t;
+
 /**
  * @brief Enable the bus clock for RMT module
  *
@@ -73,18 +77,6 @@ static inline void rmt_ll_reset_register(int group_id)
 }
 
 /**
- * @brief Enable clock gate for register and memory
- *
- * @param dev Peripheral instance address
- * @param enable True to enable, False to disable
- */
-static inline void rmt_ll_enable_periph_clock(rmt_dev_t *dev, bool enable)
-{
-    dev->sys_conf.clk_en = enable; // register clock gating
-    dev->sys_conf.mem_clk_force_on = enable; // memory clock gating
-}
-
-/**
  * @brief Force power on the RMT memory block, regardless of the outside PMU logic
  *
  * @param dev Peripheral instance address
@@ -96,11 +88,11 @@ static inline void rmt_ll_mem_force_power_on(rmt_dev_t *dev)
 }
 
 /**
- * @brief Force power off the RMT memory block, regardless of the outside PMU logic
+ * @brief Force the RMT memory block into low power mode, regardless of the outside PMU logic
  *
  * @param dev Peripheral instance address
  */
-static inline void rmt_ll_mem_force_power_off(rmt_dev_t *dev)
+static inline void rmt_ll_mem_force_low_power(rmt_dev_t *dev)
 {
     PCR.rmt_pd_ctrl.rmt_mem_force_pd = 1;
     PCR.rmt_pd_ctrl.rmt_mem_force_pu = 0;
@@ -115,6 +107,18 @@ static inline void rmt_ll_mem_power_by_pmu(rmt_dev_t *dev)
 {
     PCR.rmt_pd_ctrl.rmt_mem_force_pd = 0;
     PCR.rmt_pd_ctrl.rmt_mem_force_pu = 0;
+}
+
+/**
+ * @brief Set low power mode for RMT memory block
+ *
+ * @param dev Peripheral instance address
+ * @param mode RMT memory low power mode in low power stage
+ */
+static inline void rmt_ll_mem_set_low_power_mode(rmt_dev_t *dev, rmt_ll_mem_lp_mode_t mode)
+{
+    (void)dev;
+    HAL_ASSERT(mode == RMT_LL_MEM_LP_MODE_SHUT_DOWN);
 }
 
 /**

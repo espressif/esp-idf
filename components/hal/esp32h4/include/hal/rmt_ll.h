@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,7 +49,10 @@ typedef enum {
 } rmt_ll_mem_owner_t;
 
 typedef enum {
-    RMT_LL_MEM_LP_MODE_SHUT_DOWN,   // power down memory during low power stage
+    RMT_LL_MEM_LP_MODE_DEEP_SLEEP,    // memory will enter deep sleep during low power stage, keep memory data
+    RMT_LL_MEM_LP_MODE_LIGHT_SLEEP,   // memory will enter light sleep during low power stage, keep memory data
+    RMT_LL_MEM_LP_MODE_SHUT_DOWN,     // memory will be powered down during low power stage
+    RMT_LL_MEM_LP_MODE_DISABLE,       // disable the low power stage
 } rmt_ll_mem_lp_mode_t;
 
 /**
@@ -83,8 +86,8 @@ static inline void rmt_ll_reset_register(int group_id)
  */
 static inline void rmt_ll_mem_force_power_on(rmt_dev_t *dev)
 {
-    dev->sys_conf.mem_force_pu = 1;
-    dev->sys_conf.mem_force_pd = 0;
+    PCR.rmt_mem_lp_ctrl.rmt_mem_force_ctrl = 1;
+    PCR.rmt_mem_lp_ctrl.rmt_mem_lp_en = 0;
 }
 
 /**
@@ -94,19 +97,20 @@ static inline void rmt_ll_mem_force_power_on(rmt_dev_t *dev)
  */
 static inline void rmt_ll_mem_force_low_power(rmt_dev_t *dev)
 {
-    dev->sys_conf.mem_force_pd = 1;
-    dev->sys_conf.mem_force_pu = 0;
+    PCR.rmt_mem_lp_ctrl.rmt_mem_force_ctrl = 1;
+    PCR.rmt_mem_lp_ctrl.rmt_mem_lp_en = 1;
 }
 
 /**
  * @brief Power control the RMT memory block by the outside PMU logic
  *
  * @param dev Peripheral instance address
+ * @param mode RMT memory low power mode in low power stage
  */
 static inline void rmt_ll_mem_power_by_pmu(rmt_dev_t *dev)
 {
-    dev->sys_conf.mem_force_pd = 0;
-    dev->sys_conf.mem_force_pu = 0;
+    PCR.rmt_mem_lp_ctrl.rmt_mem_force_ctrl = 0;
+    PCR.rmt_mem_lp_ctrl.rmt_mem_lp_en = 0;
 }
 
 /**
@@ -117,8 +121,7 @@ static inline void rmt_ll_mem_power_by_pmu(rmt_dev_t *dev)
  */
 static inline void rmt_ll_mem_set_low_power_mode(rmt_dev_t *dev, rmt_ll_mem_lp_mode_t mode)
 {
-    (void)dev;
-    HAL_ASSERT(mode == RMT_LL_MEM_LP_MODE_SHUT_DOWN);
+    PCR.rmt_mem_lp_ctrl.rmt_mem_lp_mode = mode;
 }
 
 /**
@@ -152,14 +155,11 @@ static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, 
     PCR.rmt_sclk_conf.rmt_sclk_div_a = divider_numerator;
     PCR.rmt_sclk_conf.rmt_sclk_div_b = divider_denominator;
     switch (src) {
-    case RMT_CLK_SRC_PLL_F80M:
+    case RMT_CLK_SRC_RC_FAST:
         PCR.rmt_sclk_conf.rmt_sclk_sel = 1;
         break;
-    case RMT_CLK_SRC_RC_FAST:
-        PCR.rmt_sclk_conf.rmt_sclk_sel = 2;
-        break;
     case RMT_CLK_SRC_XTAL:
-        PCR.rmt_sclk_conf.rmt_sclk_sel = 3;
+        PCR.rmt_sclk_conf.rmt_sclk_sel = 0;
         break;
     default:
         HAL_ASSERT(false);
@@ -618,7 +618,7 @@ static inline uint32_t rmt_ll_rx_get_memory_writer_offset(rmt_dev_t *dev, uint32
  */
 static inline void rmt_ll_rx_set_limit(rmt_dev_t *dev, uint32_t channel, uint32_t limit)
 {
-    dev->chm_rx_lim[channel].rmt_rx_lim_chm = limit;
+    dev->chm_rx_lim[channel].rx_lim_chm = limit;
 }
 
 /**
@@ -822,15 +822,12 @@ static inline bool rmt_ll_tx_is_loop_enabled(rmt_dev_t *dev, uint32_t channel)
 __attribute__((always_inline))
 static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint32_t channel)
 {
-    rmt_clock_source_t clk_src = RMT_CLK_SRC_PLL_F80M;
+    rmt_clock_source_t clk_src = RMT_CLK_SRC_XTAL;
     switch (PCR.rmt_sclk_conf.rmt_sclk_sel) {
     case 1:
-        clk_src = RMT_CLK_SRC_PLL_F80M;
-        break;
-    case 2:
         clk_src = RMT_CLK_SRC_RC_FAST;
         break;
-    case 3:
+    case 0:
         clk_src = RMT_CLK_SRC_XTAL;
         break;
     }
@@ -851,7 +848,7 @@ static inline uint32_t rmt_ll_tx_get_idle_level(rmt_dev_t *dev, uint32_t channel
 
 static inline bool rmt_ll_is_mem_force_powered_down(rmt_dev_t *dev)
 {
-    return dev->sys_conf.mem_force_pd;
+    return PCR.rmt_mem_lp_ctrl.rmt_mem_lp_en;
 }
 
 __attribute__((always_inline))
@@ -863,7 +860,7 @@ static inline uint32_t rmt_ll_rx_get_mem_owner(rmt_dev_t *dev, uint32_t channel)
 __attribute__((always_inline))
 static inline uint32_t rmt_ll_rx_get_limit(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->chm_rx_lim[channel].rmt_rx_lim_chm;
+    return dev->chm_rx_lim[channel].rx_lim_chm;
 }
 
 __attribute__((always_inline))
