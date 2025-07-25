@@ -1,10 +1,11 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import atexit
 import binascii
 import fnmatch
 import json
 import os
+import shlex
 import shutil
 import socket
 import subprocess
@@ -18,7 +19,10 @@ from typing import List
 from click.core import Context
 
 try:
-    from idf_py_actions.tools import PropertyDict, ensure_build_directory, red_print, yellow_print
+    from idf_py_actions.tools import PropertyDict
+    from idf_py_actions.tools import ensure_build_directory
+    from idf_py_actions.tools import red_print
+    from idf_py_actions.tools import yellow_print
 except ImportError:
     PropertyDict = Any
 
@@ -37,11 +41,12 @@ class QemuTarget:
     """
     Target-specific information related to QEMU.
     """
-    target: str     # chip name, e.g. esp32, esp32c3
+
+    target: str  # chip name, e.g. esp32, esp32c3
     qemu_prog: str  # name of the QEMU binary, e.g. qemu-system-xtensa
-    install_package: str    # name of the tools.json package from which to install the QEMU binary
-    qemu_args: str          # chip-specific arguments to pass to QEMU
-    default_efuse: bytes    # default efuse values for the target
+    install_package: str  # name of the tools.json package from which to install the QEMU binary
+    qemu_args: str  # chip-specific arguments to pass to QEMU
+    default_efuse: bytes  # default efuse values for the target
     boot_mode_arg: str = ''  # additional arguments to pass to QEMU when booting in download mode
     efuse_device: str = ''  # efuse device name, if different from the target nvram.{target}.efuse
 
@@ -60,10 +65,11 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
             '00000000000000000000000000800000000000000000100000000000000000000000000000000000'
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
-            '00000000'),
+            '00000000'
+        ),
         '-global driver=esp32.gpio,property=strap_mode,value=0x0f',
-        'nvram.esp32.efuse'),
-
+        'nvram.esp32.efuse',
+    ),
     'esp32c3': QemuTarget(
         'esp32c3',
         'qemu-system-riscv32',
@@ -96,10 +102,11 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
-            '000000000000000000000000000000000000000000000000'),
+            '000000000000000000000000000000000000000000000000'
+        ),
         '-global driver=esp32c3.gpio,property=strap_mode,value=0x02',
-        'nvram.esp32c3.efuse'),
-
+        'nvram.esp32c3.efuse',
+    ),
     'esp32s3': QemuTarget(
         'esp32s3',
         'qemu-system-xtensa',
@@ -132,9 +139,11 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
-            '000000000000000000000000000000000000000000000000'),
+            '000000000000000000000000000000000000000000000000'
+        ),
         '-global driver=esp32s3.gpio,property=strap_mode,value=0x07',
-        'nvram.esp32c3.efuse'),   # Not esp32s3, QEMU-201
+        'nvram.esp32c3.efuse',
+    ),  # Not esp32s3, QEMU-201
 }
 
 
@@ -142,6 +151,7 @@ class QemuTaskRunOptions:
     """
     Some options related to QEMU execution, which depend on the presence of other tasks: gdb and monitor.
     """
+
     def __init__(self) -> None:
         self.bg_mode = False
         self.wait_for_gdb = False
@@ -213,7 +223,16 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             project_desc = json.load(f)
         return project_desc
 
-    def qemu(action: str, ctx: Context, args: PropertyDict, qemu_extra_args: str, gdb: bool, graphics: bool, efuse_file: str, flash_file: str) -> None:
+    def qemu(
+        action: str,
+        ctx: Context,
+        args: PropertyDict,
+        qemu_extra_args: str,
+        gdb: bool,
+        graphics: bool,
+        efuse_file: str,
+        flash_file: str,
+    ) -> None:
         project_desc = _get_project_desc(args, ctx)
 
         # Determine the target and check if we have the necessary QEMU binary
@@ -223,9 +242,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             red_print(f'QEMU is not supported for target {target}')
             raise SystemExit(1)
         if not shutil.which(qemu_target_info.qemu_prog):
-            red_print(f'{qemu_target_info.qemu_prog} is not installed. Please install it using '
-                      f'"python $IDF_PATH/tools/idf_tools.py install {qemu_target_info.install_package}" '
-                      'or build it from source if the pre-built version is not available for your platform.')
+            red_print(
+                f'{qemu_target_info.qemu_prog} is not installed. Please install it using '
+                f'"python $IDF_PATH/tools/idf_tools.py install {qemu_target_info.install_package}" '
+                'or build it from source if the pre-built version is not available for your platform.'
+            )
             raise SystemExit(1)
 
         # Generate flash image and efuse image
@@ -237,14 +258,24 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 open(bin_path, 'rb').close()
                 yellow_print(f'Using provided flash image: {bin_path}')
             except FileNotFoundError:
-                red_print(f'The provided flash image file \"{bin_path}\" could not be found')
+                red_print(f'The provided flash image file "{bin_path}" could not be found')
                 raise SystemExit(1)
         else:
             bin_path = os.path.join(args.build_dir, 'qemu_flash.bin')
             yellow_print(f'Generating flash image: {bin_path}')
-            subprocess.check_call([
-                sys.executable, '-m', 'esptool', f'--chip={target}', 'merge_bin', f'--output={bin_path}',
-                f'--fill-flash-size={flash_size}', '@flash_args'], cwd=args.build_dir)
+            subprocess.check_call(
+                [
+                    sys.executable,
+                    '-m',
+                    'esptool',
+                    f'--chip={target}',
+                    'merge_bin',
+                    f'--output={bin_path}',
+                    f'--fill-flash-size={flash_size}',
+                    '@flash_args',
+                ],
+                cwd=args.build_dir,
+            )
 
         if efuse_file:
             efuse_bin_path = efuse_file
@@ -264,13 +295,17 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         # When boot mode is specified, the flash image is not required.
         if not options.boot_mode:
             qemu_args += [
-                '-drive', f'file={bin_path},if=mtd,format=raw',
+                '-drive',
+                f'file={bin_path},if=mtd,format=raw',
             ]
 
         qemu_args += [
-            '-drive', f'file={efuse_bin_path},if=none,format=raw,id=efuse',
-            '-global', f'driver={qemu_target_info.efuse_device},property=drive,value=efuse',
-            '-global', f'driver=timer.{target}.timg,property=wdt_disable,value=true',
+            '-drive',
+            f'file={efuse_bin_path},if=none,format=raw,id=efuse',
+            '-global',
+            f'driver={qemu_target_info.efuse_device},property=drive,value=efuse',
+            '-global',
+            f'driver=timer.{target}.timg,property=wdt_disable,value=true',
         ]
 
         if '-nic' not in qemu_extra_args:
@@ -278,9 +313,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         if options.wait_for_gdb or gdb:
             qemu_args += ['-gdb', f'tcp::{QEMU_PORT_GDB}', '-S']
-
-        if qemu_extra_args:
-            qemu_args += qemu_extra_args.split(' ')
 
         if graphics:
             qemu_args += ['-display', 'sdl']
@@ -293,6 +325,12 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         # Launch QEMU!
         if not options.bg_mode:
             qemu_args += ['-serial', 'mon:stdio']
+
+            # Adding qemu_extra_args at the end ensures the monitor is the
+            # primary serial port if another -serial argument is present.
+            if qemu_extra_args:
+                qemu_args += shlex.split(qemu_extra_args)
+
             yellow_print('Running qemu (fg): ' + ' '.join(qemu_args))
             subprocess.run(qemu_args)
         else:
@@ -301,14 +339,22 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             else:
                 qemu_args += ['-serial', f'tcp::{QEMU_PORT_SERIAL},server,nowait']
 
+            # Adding qemu_extra_args at the end ensures the monitor is the
+            # primary serial port if another -serial argument is present.
+            if qemu_extra_args:
+                qemu_args += shlex.split(qemu_extra_args)
+
             yellow_print('Running qemu (bg): ' + ' '.join(qemu_args))
-            qemu_proc = subprocess.Popen(qemu_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+            qemu_proc = subprocess.Popen(
+                qemu_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE
+            )
             wait_for_socket(QEMU_PORT_SERIAL)
 
             def cleanup_qemu() -> None:
                 if qemu_proc:
                     qemu_proc.terminate()
                     qemu_proc.wait()
+
             atexit.register(cleanup_qemu)
             if qemu_proc.poll() is not None:
                 yellow_print('QEMU exited with error')
@@ -337,9 +383,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     },
                     {
                         'names': ['-d', '--gdb'],
-                        'help': ('Wait for gdb to connect. '
-                                 'Use this option to run "idf.py qemu --gdb monitor" in one terminal window '
-                                 'and "idf.py gdb" in another. The program will start running when gdb connects.'),
+                        'help': (
+                            'Wait for gdb to connect. '
+                            'Use this option to run "idf.py qemu --gdb monitor" in one terminal window '
+                            'and "idf.py gdb" in another. The program will start running when gdb connects.'
+                        ),
                         'is_flag': True,
                         'default': False,
                     },
@@ -351,20 +399,24 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     },
                     {
                         'names': ['--efuse-file'],
-                        'help': ('File used to store efuse values. If not specified, qemu_efuse.bin file '
-                                 'in build directory is used.'),
+                        'help': (
+                            'File used to store efuse values. If not specified, qemu_efuse.bin file '
+                            'in build directory is used.'
+                        ),
                         'is_flag': False,
                         'default': '',
                     },
                     {
                         'names': ['--flash-file'],
-                        'help': ('File used as the qemu flash image. If not specified, qemu_flash.bin file '
-                                 'in build directory is used.'),
+                        'help': (
+                            'File used as the qemu flash image. If not specified, qemu_flash.bin file '
+                            'in build directory is used.'
+                        ),
                         'is_flag': False,
                         'default': '',
-                    }
-                ]
+                    },
+                ],
             }
-        }
+        },
     }
     return qemu_actions
