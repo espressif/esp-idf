@@ -2519,8 +2519,7 @@ tBTM_STATUS btm_remove_acl (BD_ADDR bd_addr, tBT_TRANSPORT transport)
     } else  /* otherwise can disconnect right away */
 #endif
     {
-        if (hci_handle != 0xFFFF && p_dev_rec &&
-                p_dev_rec->sec_state != BTM_SEC_STATE_DISCONNECTING) {
+        if (hci_handle != 0xFFFF && (( p_dev_rec && p_dev_rec->sec_state != BTM_SEC_STATE_DISCONNECTING) || (!p_dev_rec))) {
             if (!btsnd_hcic_disconnect (hci_handle, HCI_ERR_PEER_USER)) {
                 status = BTM_NO_RESOURCES;
             }
