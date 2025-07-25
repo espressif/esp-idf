@@ -8,9 +8,17 @@ jobs:
   test-post:
     runs-on: ubuntu-latest
     steps:
-      - name: Fake table output
+            - name: Build fixed-in table
         id: table
-        run: echo "::set-output name=md::**TEST TABLE**"
+        run: |
+          # 1. Extract the MR IID from the issue body (expects “MR IID: 12342”)
+          MR=$(echo "${{ github.event.issue.body }}" \
+                | grep -oE 'MR IID: *[0-9]+' \
+                | grep -oE '[0-9]+')
+          # 2. Run your lookup script to emit Markdown
+          MD=$(node tools/get_fix_info_cli.js --mr $MR --format markdown)
+          # 3. Expose that Markdown to the next step
+          echo "::set-output name=md::$MD"
       - name: Post test comment
         uses: actions/github-script@v6
         with:
@@ -20,5 +28,9 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.issue.number,
-              body: `${{ steps.table.outputs.md }}\n\n*This is a test comment.*`
+                            body: `${{ steps.table.outputs.md }}
+
+Was this issue resolved to your satisfaction?
+👍 **Yes – my issue was resolved**
+👎 **No – my issue was not resolved**
             });
