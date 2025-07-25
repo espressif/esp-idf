@@ -58,7 +58,7 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en
 // use efuse_hal_get_major_chip_version() to get major chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_major(void)
 {
-    return EFUSE.rd_mac_sys_2.wafer_version_major;
+    return (EFUSE.rd_mac_sys_2.wafer_version_major_hi << 2) | EFUSE.rd_mac_sys_2.wafer_version_major_lo;
 }
 
 // use efuse_hal_get_minor_chip_version() to get minor chip version
