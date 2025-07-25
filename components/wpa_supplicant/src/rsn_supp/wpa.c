@@ -1340,6 +1340,7 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
 
     if (ie.transition_disable) {
         wpa_supplicant_transition_disable(sm, ie.transition_disable[0]);
+	sm->transition_disable = ie.transition_disable[0];
     }
 
     if (sm->key_install && sm->key_info & WPA_KEY_INFO_INSTALL && sm->use_ext_key_id) {
@@ -1355,6 +1356,11 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
 
 failed:
     wpa_sm_deauthenticate(sm, WLAN_REASON_UNSPECIFIED);
+}
+
+u8 wpa_sm_get_transition_disable(struct wpa_sm *sm)
+{
+    return sm->transition_disable;
 }
 
 static int wpa_supplicant_activate_ptk(struct wpa_sm *sm)

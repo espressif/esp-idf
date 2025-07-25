@@ -605,8 +605,40 @@ static bool candidate_security_match(wifi_ap_record_t candidate)
     return false;
 }
 
+#include "esp_wpas_glue.h"
+
 static bool candidate_profile_match(wifi_ap_record_t candidate)
 {
+    u8 transition_disable = wpa_supplicant_get_transition_disable();
+
+#if CONFIG_ESP_WIFI_ROAMING_PREVENT_DOWNGRADE
+    if (transition_disable & TRANSITION_DISABLE_WPA3_PERSONAL) {
+        if (candidate.authmode == WIFI_AUTH_WPA2_PSK) {
+            return false;
+        }
+    }
+    if (transition_disable & TRANSITION_DISABLE_ENHANCED_OPEN) {
+        if (candidate.authmode == WIFI_AUTH_OPEN) {
+            return false;
+        }
+    }
+    if (transition_disable & TRANSITION_DISABLE_WPA3_ENTERPRISE) {
+        if (candidate.authmode == WIFI_AUTH_WPA2_ENTERPRISE) {
+            return false;
+        }
+    }
+#if TODO // application doesn't have a way to know SAE-PK enabled AP atm
+    if (transition_disable & TRANSITION_DISABLE_SAE_PK) {
+        /* This is a simplification. A more accurate check would involve
+         * parsing the candidate's RSN IE to see if it supports SAE-PK.
+         * For now, we reject all SAE APs if SAE-PK is enforced. */
+        if (candidate.authmode == WIFI_AUTH_WPA3_PSK) {
+            return false;
+        }
+    }
+#endif
+#endif
+
     return candidate_security_match(candidate);
 }
 

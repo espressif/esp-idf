@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,4 +35,6 @@ void wpa_supplicant_transition_disable(struct wpa_sm *sm, u8 bitmap);
 
 int hostapd_send_eapol(const u8 *source, const u8 *sta_addr,
                        const u8 *data, size_t data_len);
+
+u8 wpa_supplicant_get_transition_disable(void);
 #endif /* WPAS_GLUE_H */
