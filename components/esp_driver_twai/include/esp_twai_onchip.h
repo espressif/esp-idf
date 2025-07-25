@@ -55,7 +55,7 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
 
 /**
  * @brief Helper function to configure a dual 16-bit acceptance filter.
- * @note  For 29bits Extended IDs, ONLY high 16bits id/mask is used for eache filter.
+ * @note  For 29bits Extended IDs, ONLY high 16bits id/mask is used for each filter.
  *
  * @param id1     First ID to filter.
  * @param mask1   Mask for first ID.
@@ -86,6 +86,8 @@ static inline twai_mask_filter_config_t twai_make_dual_filter(uint16_t id1, uint
         .mask = is_ext ? (((mask1 & TWAI_EXT_ID_MASK) >> 13) << 16) | ((mask2 & TWAI_EXT_ID_MASK) >> 13) : \
         ((mask1 & TWAI_STD_ID_MASK) << 21) | ((mask2 & TWAI_STD_ID_MASK) << 5),
         .is_ext = is_ext,
+        .no_classic = false,
+        .no_fd = false,
         .dual_filter = true,
     };
     return dual_cfg;
