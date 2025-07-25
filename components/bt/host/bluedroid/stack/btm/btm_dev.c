@@ -674,6 +674,7 @@ tBTM_SEC_DEV_REC *btm_find_oldest_dev (void)
 
     /* All devices are paired; find the oldest */
     for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+        p_dev_rec = list_node(p_node);
         if ((p_dev_rec->sec_flags & BTM_SEC_IN_USE) == 0) {
             continue;
         }
