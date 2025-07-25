@@ -64,9 +64,9 @@ struct ETSEventTag {
 typedef void (*ETSTask)(ETSEvent *e);       /**< Type of the Task processor*/
 typedef void (* ets_idle_cb_t)(void *arg);  /**< Type of the system idle callback*/
 
-
-
-
+typedef struct ets_ops {
+  void (*ets_delay_us)(uint32_t us);
+} ets_ops;
 
 /**
   * @}

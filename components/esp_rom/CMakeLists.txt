@@ -388,6 +388,12 @@ else() # Regular app build
         endif()
     endif()
 
+    if(CONFIG_ESP_ROM_DELAY_US_PATCH AND
+        (CONFIG_ESP32C5_REV_MIN_FULL LESS_EQUAL 100 OR CONFIG_ESP32C61_REV_MIN_FULL LESS_EQUAL 100))
+        # Force the linker to include esp_rom_sys.c for ets_ops_set_rom_patches constructor
+        target_link_libraries(${COMPONENT_LIB} PRIVATE "-u ets_ops_set_rom_patches")
+    endif()
+
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=longjmp")
     endif()

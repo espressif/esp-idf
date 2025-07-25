@@ -104,7 +104,7 @@ FORCE_INLINE_ATTR void *rv_utils_get_sp(void)
 FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_get_cycle_count(void)
 {
 #if !SOC_CPU_HAS_CSR_PC
-    return RV_READ_CSR(mcycle);
+    return RV_READ_CSR(cycle);
 #else
     if (IS_PRV_M_MODE()) {
         return RV_READ_CSR(CSR_PCCR_MACHINE);
