@@ -351,3 +351,266 @@ function(__create_config_env_file env_path)
 
     idf_dbg("Created config environment file: ${env_path}")
 endfunction()
+
+# =============================================================================
+# KCONFIG OUTPUT GENERATION FUNCTIONS
+# =============================================================================
+
+#[[
+   __generate_kconfig_outputs()
+
+   Generate all Kconfig output files.
+   Generates: sdkconfig.h, sdkconfig.cmake, sdkconfig.json, kconfig_menus.json
+
+   Must be called after __setup_kconfig_environment().
+#]]
+function(__generate_kconfig_outputs)
+    # Get inputs from build properties
+    idf_build_get_property(sdkconfig SDKCONFIG)
+    idf_build_get_property(sdkconfig_defaults SDKCONFIG_DEFAULTS)
+    idf_msg("Project sdkconfig file ${sdkconfig}")
+
+    # Set up output paths
+    idf_build_get_property(config_dir CONFIG_DIR)
+    if(NOT config_dir)
+        idf_die("Kconfig directory not created. Call __init_kconfig() first.")
+    endif()
+
+    set(sdkconfig_header "${config_dir}/sdkconfig.h")
+    set(sdkconfig_cmake "${config_dir}/sdkconfig.cmake")
+    set(sdkconfig_json "${config_dir}/sdkconfig.json")
+    set(sdkconfig_json_menus "${config_dir}/kconfig_menus.json")
+
+    # Create and store base kconfgen command for this generation and target reuse
+    __create_base_kconfgen_command("${sdkconfig}" "${sdkconfig_defaults}")
+
+    # Generate Kconfig outputs using kconfgen
+    __run_kconfgen("${sdkconfig_header}" "${sdkconfig_cmake}" "${sdkconfig_json}" "${sdkconfig_json_menus}")
+
+    # Add the generated config header to build specifications
+    idf_build_set_property(INCLUDE_DIRECTORIES "${config_dir}" APPEND)
+
+    # Set up file dependencies for CMake reconfiguration
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${sdkconfig}")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${sdkconfig_header}")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${sdkconfig_cmake}")
+
+    # Add dependency on kconfgen tool
+    idf_build_get_property(idf_path IDF_PATH)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${idf_path}/tools/kconfig_new/confgen.py")
+
+    # Set up clean files
+    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
+                ADDITIONAL_CLEAN_FILES "${sdkconfig_header}" "${sdkconfig_cmake}")
+
+    # Store output paths in build properties
+    idf_build_set_property(__SDKCONFIG_HEADER "${sdkconfig_header}")
+    idf_build_set_property(__SDKCONFIG_CMAKE "${sdkconfig_cmake}")
+    idf_build_set_property(__SDKCONFIG_JSON "${sdkconfig_json}")
+    idf_build_set_property(__SDKCONFIG_JSON_MENUS "${sdkconfig_json_menus}")
+
+    idf_msg("Generated Kconfig outputs in ${config_dir}")
+endfunction()
+
+#[[
+   __create_base_kconfgen_command(sdkconfig sdkconfig_defaults)
+
+   Create the base kconfgen command and store it as a build property for reuse.
+
+   :sdkconfig[in]: Path to sdkconfig file.
+   :sdkconfig_defaults[in]: List of sdkconfig defaults files.
+#]]
+function(__create_base_kconfgen_command sdkconfig sdkconfig_defaults)
+    # Get all necessary properties for base command
+    idf_build_get_property(python PYTHON)
+    idf_build_get_property(root_kconfig __ROOT_KCONFIG)
+    idf_build_get_property(root_sdkconfig_rename __ROOT_SDKCONFIG_RENAME)
+    idf_build_get_property(config_env_path __CONFIG_ENV_PATH)
+    idf_build_get_property(target IDF_TARGET)
+
+    # Set up defaults arguments
+    set(defaults_args "")
+    if(sdkconfig_defaults)
+        foreach(default_file IN LISTS sdkconfig_defaults)
+            list(APPEND defaults_args "--defaults" "${default_file}")
+            if(EXISTS "${default_file}.${target}")
+                list(APPEND defaults_args "--defaults" "${default_file}.${target}")
+            endif()
+        endforeach()
+    endif()
+
+    # Create base kconfgen command
+    set(base_kconfgen_cmd ${python} -m kconfgen
+        --list-separator=semicolon
+        --kconfig "${root_kconfig}"
+        --sdkconfig-rename "${root_sdkconfig_rename}"
+        --config "${sdkconfig}"
+        ${defaults_args}
+        --env-file "${config_env_path}")
+
+    # Store base command as a build property
+    idf_build_set_property(__BASE_KCONFGEN_CMD "${base_kconfgen_cmd}")
+endfunction()
+
+#[[
+   __run_kconfgen(header_path cmake_path json_path menus_path)
+
+   Run kconfgen and generate all output files using the stored base command.
+   Assumes that the base command is already created by __create_base_kconfgen_command().
+
+   :header_path[in]: Path for sdkconfig.h output.
+   :cmake_path[in]: Path for sdkconfig.cmake output.
+   :json_path[in]: Path for sdkconfig.json output.
+   :menus_path[in]: Path for kconfig_menus.json output.
+#]]
+function(__run_kconfgen header_path cmake_path json_path menus_path)
+    idf_build_get_property(base_kconfgen_cmd __BASE_KCONFGEN_CMD)
+    idf_build_get_property(sdkconfig SDKCONFIG)
+
+    # Create full command with output file paths
+    set(kconfgen_cmd ${base_kconfgen_cmd}
+        --output header "${header_path}"
+        --output cmake "${cmake_path}"
+        --output json "${json_path}"
+        --output json_menus "${menus_path}"
+        --output config "${sdkconfig}"
+    )
+
+    idf_dbg("Running kconfgen: ${kconfgen_cmd}")
+    execute_process(
+        COMMAND ${kconfgen_cmd}
+        RESULT_VARIABLE kconfgen_result
+    )
+
+    if(kconfgen_result)
+        idf_die("Failed to run kconfgen: ${kconfgen_result}")
+    endif()
+endfunction()
+
+# =============================================================================
+# KCONFIG TARGETS FUNCTIONS
+# =============================================================================
+
+#[[
+   __create_kconfig_targets()
+
+   Create Kconfig related targets.
+   This function must be called after all kconfig processing is complete, including
+   the component manager. It creates the following targets:
+
+   - menuconfig
+   - confserver
+   - save-defconfig
+#]]
+function(__create_kconfig_targets)
+    # Create Kconfig targets
+    __create_menuconfig_target()
+    __create_confserver_target()
+    __create_save_defconfig_target()
+endfunction()
+
+#[[
+   __create_menuconfig_target()
+
+   Create menuconfig target.
+#]]
+function(__create_menuconfig_target)
+    idf_build_get_property(python PYTHON)
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(prepare_cmd __PREPARE_KCONFIG_CMD)
+    idf_build_get_property(kconfgen_cmd __BASE_KCONFGEN_CMD)
+    idf_build_get_property(sdkconfig SDKCONFIG)
+    idf_build_get_property(root_kconfig __ROOT_KCONFIG)
+    idf_build_get_property(build_dir BUILD_DIR)
+    idf_build_get_property(target IDF_TARGET)
+    idf_build_get_property(toolchain IDF_TOOLCHAIN)
+    idf_build_get_property(idf_init_version __IDF_INIT_VERSION)
+    idf_build_get_property(idf_env_fpga __IDF_ENV_FPGA)
+
+    # Set up kconfig source file paths
+    set(kconfigs_path "${build_dir}/kconfigs.in")
+    set(kconfigs_projbuild_path "${build_dir}/kconfigs_projbuild.in")
+
+    add_custom_target(menuconfig
+        # Prepare Kconfig source files
+        COMMAND ${prepare_cmd}
+        # Generate config with current settings
+        COMMAND ${kconfgen_cmd}
+        --env "IDF_TARGET=${target}"
+        --env "IDF_TOOLCHAIN=${toolchain}"
+        --env "IDF_ENV_FPGA=${idf_env_fpga}"
+        --env "IDF_INIT_VERSION=${idf_init_version}"
+        --dont-write-deprecated
+        --output config ${sdkconfig}
+        # Check terminal capabilities
+        COMMAND ${python} "${idf_path}/tools/check_term.py"
+        # Run menuconfig
+        COMMAND ${CMAKE_COMMAND} -E env
+        "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
+        "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
+        "KCONFIG_CONFIG=${sdkconfig}"
+        "IDF_TARGET=${target}"
+        "IDF_TOOLCHAIN=${toolchain}"
+        "IDF_ENV_FPGA=${idf_env_fpga}"
+        "IDF_INIT_VERSION=${idf_init_version}"
+        ${python} -m menuconfig "${root_kconfig}"
+        # Post-menuconfig: insert deprecated options for backward compatibility
+        COMMAND ${kconfgen_cmd}
+        --env "IDF_TARGET=${target}"
+        --env "IDF_TOOLCHAIN=${toolchain}"
+        --env "IDF_ENV_FPGA=${idf_env_fpga}"
+        --env "IDF_INIT_VERSION=${idf_init_version}"
+        --output config "${sdkconfig}"
+        USES_TERMINAL
+        COMMENT "Running menuconfig..."
+    )
+endfunction()
+
+#[[
+   __create_confserver_target()
+
+   Create confserver target.
+#]]
+function(__create_confserver_target)
+    idf_build_get_property(python PYTHON)
+    idf_build_get_property(prepare_cmd __PREPARE_KCONFIG_CMD)
+    idf_build_get_property(sdkconfig SDKCONFIG)
+    idf_build_get_property(root_kconfig __ROOT_KCONFIG)
+    idf_build_get_property(root_sdkconfig_rename __ROOT_SDKCONFIG_RENAME)
+    idf_build_get_property(config_env_path __CONFIG_ENV_PATH)
+
+    add_custom_target(confserver
+        # Prepare Kconfig source files
+        COMMAND ${prepare_cmd}
+        # Run confserver
+        COMMAND ${python} -m kconfserver
+        --env-file "${config_env_path}"
+        --kconfig "${root_kconfig}"
+        --sdkconfig-rename "${root_sdkconfig_rename}"
+        --config "${sdkconfig}"
+        VERBATIM
+        USES_TERMINAL
+        COMMENT "Running confserver..."
+    )
+endfunction()
+
+#[[
+   __create_save_defconfig_target()
+
+   Create save-defconfig target.
+#]]
+function(__create_save_defconfig_target)
+    idf_build_get_property(prepare_cmd __PREPARE_KCONFIG_CMD)
+    idf_build_get_property(kconfgen_cmd __BASE_KCONFGEN_CMD)
+
+    add_custom_target(save-defconfig
+        # Prepare Kconfig source files
+        COMMAND ${prepare_cmd}
+        # Generate save-defconfig
+        COMMAND ${kconfgen_cmd}
+        --dont-write-deprecated
+        --output savedefconfig "${CMAKE_SOURCE_DIR}/sdkconfig.defaults"
+        USES_TERMINAL
+        COMMENT "Saving defconfig..."
+    )
+endfunction()
