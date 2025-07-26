@@ -12,7 +12,10 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 
-#define I2C_SAR_ADC_INIT_CODE_VAL 2166
+#define I2C_SAR_ADC_INIT_CODE_VAL       2166
+#define ADC_RNG_CLKM_DIV_NUM            0
+#define ADC_RNG_CLKM_DIV_B              0
+#define ADC_RNG_CLKM_DIV_A              0
 
 void bootloader_random_enable(void)
 {
@@ -20,7 +23,7 @@ void bootloader_random_enable(void)
     _adc_ll_enable_bus_clock(true);
 
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_XTAL);
-    adc_ll_digi_controller_clk_div(0, 0, 0);
+    adc_ll_digi_controller_clk_div(ADC_RNG_CLKM_DIV_NUM, ADC_RNG_CLKM_DIV_B, ADC_RNG_CLKM_DIV_A);
 
     // some ADC sensor registers are in power group PERIF_I2C and need to be enabled via PMU
 #ifndef BOOTLOADER_BUILD
@@ -69,4 +72,6 @@ void bootloader_random_disable(void)
     ANALOG_CLOCK_DISABLE();
     adc_ll_digi_controller_clk_div(4, 0, 0);
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_XTAL);
+
+    adc_ll_set_controller(ADC_UNIT_1, ADC_LL_CTRL_ULP);
 }
