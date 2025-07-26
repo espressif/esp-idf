@@ -4,10 +4,6 @@ components/esp_adc/test_apps/adc:
   disable:
     - if: SOC_ADC_SUPPORTED != 1
     - if: CONFIG_NAME == "gdma_iram_safe" and IDF_TARGET in ["esp32", "esp32s2", "esp32c2"]
-  disable_test:
-    - if: IDF_TARGET == "esp32c61"
-      temporary: true
-      reason: not runners for ESP32C61 ADC
   depends_components:
     - esp_adc
     - esp_driver_gpio

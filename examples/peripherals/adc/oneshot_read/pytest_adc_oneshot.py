@@ -7,7 +7,9 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.adc
 @idf_parametrize(
-    'target', ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c5'], indirect=['target']
+    'target',
+    ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c5', 'esp32p4', 'esp32c61'],
+    indirect=['target'],
 )
 def test_adc_oneshot(dut: Dut) -> None:
     dut.expect(r'EXAMPLE: ADC1 Channel\[(\d+)\] Raw Data: (\d+)', timeout=5)
