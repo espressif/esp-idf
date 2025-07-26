@@ -15,6 +15,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/../cmake/version.cmake)
 
 include(component)
 include(build)
+include(kconfig)
 
 #[[
    __init_idf_path()
@@ -90,41 +91,6 @@ function(__init_python)
         # and the result should be an error message.
         idf_die("Failed to run Python dependency check. Python: ${python}, Error: ${result}")
     endif()
-endfunction()
-
-#[[
-   __init_sdkconfig_files()
-
-   Set the SDKCONFIG and SDKCONFIG_DEFAULTS build properties using environment
-   variables, CMake cache variables, or default values.
-#]]
-function(__init_sdkconfig_files)
-    if(EXISTS "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
-        set(sdkconfig_defaults "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
-    else()
-        set(sdkconfig_defaults "")
-    endif()
-
-    __get_default_value(VARIABLE SDKCONFIG
-                        DEFAULT "${CMAKE_SOURCE_DIR}/sdkconfig"
-                        OUTPUT sdkconfig)
-    __get_default_value(VARIABLE SDKCONFIG_DEFAULTS
-                        DEFAULT "${sdkconfig_defaults}"
-                        OUTPUT sdkconfig_defaults)
-
-    __get_absolute_paths(PATHS "${sdkconfig}" OUTPUT sdkconfig)
-    __get_absolute_paths(PATHS "${sdkconfig_defaults}" OUTPUT sdkconfig_defaults)
-
-    set(sdkconfig_defaults_checked "")
-    foreach(sdkconfig_default ${sdkconfig_defaults})
-        if(NOT EXISTS "${sdkconfig_default}")
-            idf_die("SDKCONFIG_DEFAULTS '${sdkconfig_default}' does not exist.")
-        endif()
-        list(APPEND sdkconfig_defaults_checked ${sdkconfig_default})
-    endforeach()
-
-    idf_build_set_property(SDKCONFIG "${sdkconfig}")
-    idf_build_set_property(SDKCONFIG_DEFAULTS "${sdkconfig_defaults_checked}")
 endfunction()
 
 #[[
@@ -356,6 +322,12 @@ add_library(idf_build_properties INTERFACE)
 # Set build system prefix for component targets.
 idf_build_set_property(PREFIX "idf")
 
+# Set project directory property.
+idf_build_set_property(PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+
+# Set build directory property.
+idf_build_set_property(BUILD_DIR "${CMAKE_BINARY_DIR}")
+
 # Initialize IDF_PATH and set it as a global and environmental variable, as
 # well as a build property.
 __init_idf_path()
@@ -363,8 +335,8 @@ __init_idf_path()
 # Determine the Python interpreter and check package dependencies if necessary.
 __init_python()
 
-# Set SDKCONFIG and SDKCONFIG_DEFAULTS build properties.
-__init_sdkconfig_files()
+# Initialize Kconfig system infrastructure.
+__init_kconfig()
 
 # Set IDF_TARGET.
 __init_idf_target()
@@ -374,6 +346,24 @@ __init_toolchain()
 
 # Discover and initialize components.
 __init_components()
+
+# Generate initial sdkconfig with discovered components.
+__generate_sdkconfig()
+
+# TODO: Invoke component manager with initial sdkconfig.
+# We need to re-collect and re-generate sdkconfig with managed components.
+# This will be done iteratively until the component manager resolves all sdkconfig
+# related dependencies.
+
+# Create Kconfig targets
+__create_kconfig_targets()
+
+# Include sdkconfig.cmake
+idf_build_get_property(sdkconfig_cmake __SDKCONFIG_CMAKE)
+if(NOT EXISTS "${sdkconfig_cmake}")
+    idf_die("sdkconfig.cmake file not found.")
+endif()
+include("${sdkconfig_cmake}")
 
 #[[ TODO
 
