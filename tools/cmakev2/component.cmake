@@ -5,6 +5,7 @@ include_guard(GLOBAL)
 
 include(utilities)
 include(build)
+include(kconfig)
 
 #[[api
 .. cmakev2:function:: idf_component_set_property
@@ -353,6 +354,11 @@ function(__init_component)
                 "for directory '${component_directory}'")
     endif()
 
+    # Collect Kconfig files from this component directory.
+    idf_build_get_property(target IDF_TARGET)
+    __collect_kconfig_files_from_directory("${component_directory}" "${target}"
+        component_kconfig component_projbuild component_rename)
+
     __get_component_interface(COMPONENT "${component_name}" OUTPUT existing_component_interface)
     if(NOT "${existing_component_interface}" STREQUAL "NOTFOUND")
         # A component with the same name is already initialized. Check if it
@@ -388,6 +394,11 @@ function(__init_component)
             idf_component_set_property("${component_name}" COMPONENT_DIR "${component_directory}")
             idf_component_set_property("${component_name}" COMPONENT_SOURCE "${component_source}")
             idf_component_set_property("${component_name}" COMPONENT_PRIORITY ${component_priority})
+
+            # Update component properties with new Kconfig files
+            idf_component_set_property("${component_name}" __KCONFIG "${component_kconfig}")
+            idf_component_set_property("${component_name}" __KCONFIG_PROJBUILD "${component_projbuild}")
+            idf_component_set_property("${component_name}" __SDKCONFIG_RENAME "${component_rename}")
         endif()
 
         return()
@@ -413,6 +424,11 @@ function(__init_component)
     idf_component_set_property("${component_name}" COMPONENT_SOURCE "${component_source}")
     idf_component_set_property("${component_name}" COMPONENT_INTERFACE "${component_interface}")
     idf_component_set_property("${component_name}" COMPONENT_PRIORITY ${component_priority})
+
+    # Set component properties for Kconfig files.
+    idf_component_set_property("${component_name}" __KCONFIG "${component_kconfig}")
+    idf_component_set_property("${component_name}" __KCONFIG_PROJBUILD "${component_projbuild}")
+    idf_component_set_property("${component_name}" __SDKCONFIG_RENAME "${component_rename}")
 endfunction()
 
 #[[

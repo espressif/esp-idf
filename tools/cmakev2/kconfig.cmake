@@ -91,3 +91,159 @@ function(__generate_sdkconfig)
 
     idf_msg("Generated sdkconfig configuration")
 endfunction()
+
+# =============================================================================
+# KCONFIG COLLECTION FUNCTIONS
+# =============================================================================
+
+#[[
+   __consolidate_component_kconfig_files()
+
+   Consolidate Kconfig files from discovered components into global build properties.
+   This scans the COMPONENTS_DISCOVERED build property and for each component,
+   retrieves its Kconfig files from component properties and adds them to the
+   global __KCONFIGS, __KCONFIG_PROJBUILDS, and __SDKCONFIG_RENAMES build properties.
+#]]
+function(__consolidate_component_kconfig_files)
+    idf_build_get_property(components_discovered COMPONENTS_DISCOVERED)
+    if(NOT components_discovered)
+        idf_die("No components discovered. This must be run after component discovery.")
+    endif()
+
+    # Clean the build properties before adding new ones. This ensures that
+    # we don't have duplicate Kconfig files in the build properties.
+    idf_build_set_property(__KCONFIGS "")
+    idf_build_set_property(__KCONFIG_PROJBUILDS "")
+    idf_build_set_property(__SDKCONFIG_RENAMES "")
+
+    # Iterate through all discovered components and consolidate their Kconfig files
+    foreach(component_name IN LISTS components_discovered)
+        # Get Kconfig files from component properties
+        idf_component_get_property(component_kconfig "${component_name}" __KCONFIG)
+        idf_component_get_property(component_projbuild "${component_name}" __KCONFIG_PROJBUILD)
+        idf_component_get_property(component_rename "${component_name}" __SDKCONFIG_RENAME)
+
+        # Check if component is included in build
+        # TODO: Review this integration hook: Component system sets COMPONENT_INCLUDED property
+        idf_component_get_property(component_included "${component_name}" COMPONENT_INCLUDED)
+
+        # Add to appropriate build properties based on component inclusion status
+        if(component_included)
+            if(component_kconfig)
+                idf_build_set_property(__KCONFIGS "${component_kconfig}" APPEND)
+            endif()
+            if(component_projbuild)
+                idf_build_set_property(__KCONFIG_PROJBUILDS "${component_projbuild}" APPEND)
+            endif()
+        else
+            if(component_kconfig)
+                idf_build_set_property(__KCONFIGS_EXCLUDED "${component_kconfig}" APPEND)
+            endif()
+            if(component_projbuild)
+                idf_build_set_property(__KCONFIGS_PROJBUILD_EXCLUDED "${component_projbuild}" APPEND)
+            endif()
+        endif()
+        if(component_rename)
+            idf_build_set_property(__SDKCONFIG_RENAMES "${component_rename}" APPEND)
+        endif()
+    endforeach()
+endfunction()
+
+#[[
+   __collect_kconfig_files_from_bootloader_components()
+
+   Collect Kconfig files from bootloader components and store them in build properties.
+   Bootloader components are located in the bootloader_components directory of the project.
+   This function only runs if the bootloader component is discovered.
+#]]
+function(__collect_kconfig_files_from_bootloader_components)
+    # Check if bootloader component is discovered - only then collect bootloader components
+    idf_build_get_property(components_discovered COMPONENTS_DISCOVERED)
+    if(NOT "bootloader" IN_LIST components_discovered)
+        return()
+    endif()
+
+    idf_build_get_property(idf_target IDF_TARGET)
+    idf_build_get_property(project_dir PROJECT_DIR)
+
+    # Find bootloader component directories
+    __get_component_paths(PATHS "${project_dir}/bootloader_components"
+                          OUTPUT bootloader_component_dirs)
+
+    foreach(bootloader_component_dir ${bootloader_component_dirs})
+        __collect_kconfig_files_from_directory("${bootloader_component_dir}" "${idf_target}"
+            bootloader_kconfig bootloader_projbuild bootloader_rename)
+
+        # Set build properties. Bootloader components are only evaluated for Kconfig files at this stage.
+        if(bootloader_kconfig)
+            idf_build_set_property(__KCONFIGS "${bootloader_kconfig}" APPEND)
+        endif()
+        if(bootloader_projbuild)
+            idf_build_set_property(__KCONFIG_PROJBUILDS "${bootloader_projbuild}" APPEND)
+        endif()
+        if(bootloader_rename)
+            idf_build_set_property(__SDKCONFIG_RENAMES "${bootloader_rename}" APPEND)
+        endif()
+    endforeach()
+endfunction()
+
+#[[
+   __collect_kconfig_files_from_directory(directory target out_kconfigs out_projbuilds out_renames)
+
+   Collect Kconfig files from a single directory.
+
+   :directory[in]: Path to the directory to collect Kconfig files from.
+   :target[in]: Target name for target-specific files.
+   :out_kconfigs[out]: List of Kconfig files.
+   :out_projbuilds[out]: List of projbuild files.
+   :out_renames[out]: List of rename files.
+#]]
+function(__collect_kconfig_files_from_directory directory target out_kconfigs out_projbuilds out_renames)
+    file(GLOB all_files "${directory}/*")
+
+    set(kconfig_files "")
+    set(projbuild_files "")
+    set(rename_files "")
+
+    foreach(file IN LISTS all_files)
+        get_filename_component(filename "${file}" NAME)
+        string(TOLOWER "${filename}" filename_lower)
+
+        # Check for Kconfig file
+        if(filename_lower STREQUAL "kconfig")
+            list(APPEND kconfig_files "${file}")
+            if(NOT filename STREQUAL "Kconfig")
+                idf_warn("${filename} should be named 'Kconfig' (uppercase K, rest lowercase).
+                 Full path to the file: ${file}")
+            endif()
+
+        # Check for Kconfig.projbuild file
+        elseif(filename_lower STREQUAL "kconfig.projbuild")
+            list(APPEND projbuild_files "${file}")
+            if(NOT filename STREQUAL "Kconfig.projbuild")
+                idf_warn("${filename} should be named 'Kconfig.projbuild' (uppercase K, rest lowercase).
+                 Full path to the file: ${file}")
+            endif()
+        endif()
+
+        # Check for sdkconfig.rename files
+        if(filename_lower STREQUAL "sdkconfig.rename")
+            list(APPEND rename_files "${file}")
+        endif()
+
+        # Look for target-specific sdkconfig.rename files
+        if(target)
+            if(filename_lower STREQUAL "sdkconfig.rename.${target}")
+                list(APPEND rename_files "${file}")
+            endif()
+        endif()
+    endforeach()
+
+    list(SORT kconfig_files)
+    list(SORT projbuild_files)
+    list(SORT rename_files)
+
+    set(${out_kconfigs} "${kconfig_files}" PARENT_SCOPE)
+    set(${out_projbuilds} "${projbuild_files}" PARENT_SCOPE)
+    set(${out_renames} "${rename_files}" PARENT_SCOPE)
+endfunction()

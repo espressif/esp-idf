@@ -355,8 +355,6 @@ __generate_sdkconfig()
 # This will be done iteratively until the component manager resolves all sdkconfig
 # related dependencies.
 
-# Create Kconfig targets
-__create_kconfig_targets()
 
 # Include sdkconfig.cmake
 idf_build_get_property(sdkconfig_cmake __SDKCONFIG_CMAKE)
