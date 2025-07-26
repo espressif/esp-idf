@@ -531,6 +531,19 @@ function(__create_menuconfig_target)
     set(kconfigs_path "${build_dir}/kconfigs.in")
     set(kconfigs_projbuild_path "${build_dir}/kconfigs_projbuild.in")
 
+    # Newer versions of esp-idf-kconfig renamed menuconfig to esp_menuconfig
+    # Order matters here, we want to use esp_menuconfig if it is available
+    execute_process(
+        COMMAND "${python}" -c "import esp_menuconfig"
+        RESULT_VARIABLE ESP_MENUCONFIG_AVAILABLE
+        OUTPUT_QUIET ERROR_QUIET
+    )
+    if(ESP_MENUCONFIG_AVAILABLE EQUAL 0)
+        set(MENUCONFIG_CMD "${python}" -m esp_menuconfig)
+    else()
+        set(MENUCONFIG_CMD "${python}" -m menuconfig)
+    endif()
+
     add_custom_target(menuconfig
         # Prepare Kconfig source files
         COMMAND ${prepare_cmd}
@@ -553,7 +566,7 @@ function(__create_menuconfig_target)
         "IDF_TOOLCHAIN=${toolchain}"
         "IDF_ENV_FPGA=${idf_env_fpga}"
         "IDF_INIT_VERSION=${idf_init_version}"
-        ${python} -m menuconfig "${root_kconfig}"
+        ${MENUCONFIG_CMD} "${root_kconfig}"
         # Post-menuconfig: insert deprecated options for backward compatibility
         COMMAND ${kconfgen_cmd}
         --env "IDF_TARGET=${target}"
