@@ -130,12 +130,38 @@ function(test_idf_build_library)
     endif()
 endfunction()
 
+function(test_kconfig)
+    # Check that kconfig output files were generated
+    idf_build_get_property(config_dir CONFIG_DIR)
+    set(output_files sdkconfig.h sdkconfig.cmake sdkconfig.json kconfig_menus.json)
+
+    foreach(file ${output_files})
+        set(file_path "${config_dir}/${file}")
+        if(NOT EXISTS "${file_path}")
+            idf_die("Missing kconfig output: ${file_path}")
+        endif()
+        file(SIZE "${file_path}" file_size)
+        if(file_size EQUAL 0)
+            idf_die("Empty kconfig output: ${file_path}")
+        endif()
+    endforeach()
+
+    # Check that kconfig targets were created
+    set(targets menuconfig confserver save-defconfig)
+    foreach(target ${targets})
+        if(NOT TARGET ${target})
+            idf_die("Missing kconfig target: ${target}")
+        endif()
+    endforeach()
+endfunction()
+
 # Run tests
 test_component_priority()
 test_idf_version()
 test_python()
 test_toolchain()
 test_idf_build_library()
+test_kconfig()
 __dump_all_properties()
 
 message("ALL TESTS PASSED")
