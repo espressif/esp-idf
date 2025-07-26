@@ -6,6 +6,22 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    ['cache_safe'],
+    indirect=True,
+)
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
 def test_dvp(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.octal_psram
+@pytest.mark.parametrize(
+    'config',
+    ['cache_safe'],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32s3'], indirect=['target'])
+def test_dvp_octal(dut: Dut) -> None:
     dut.run_all_single_board_cases()
