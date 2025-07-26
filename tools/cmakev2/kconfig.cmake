@@ -247,3 +247,107 @@ function(__collect_kconfig_files_from_directory directory target out_kconfigs ou
     set(${out_projbuilds} "${projbuild_files}" PARENT_SCOPE)
     set(${out_renames} "${rename_files}" PARENT_SCOPE)
 endfunction()
+
+# =============================================================================
+# KCONFIG ENVIRONMENT FUNCTIONS
+# =============================================================================
+
+#[[
+   __setup_kconfig_environment()
+
+   Setup the Kconfig environment for kconfgen.
+   This function creates the environment and prepares Kconfig source files.
+#]]
+function(__setup_kconfig_environment)
+    # Create the config.env file, which contains all environment variables for the python script
+    idf_build_get_property(build_dir BUILD_DIR)
+    set(config_env_path "${build_dir}/config.env")
+    __create_config_env_file("${config_env_path}")
+
+    # Store environment path in build properties (used by kconfgen)
+    idf_build_set_property(__CONFIG_ENV_PATH "${config_env_path}")
+
+    # Now prepare Kconfig source files using the prepare_kconfig_files.py script
+    idf_build_get_property(python PYTHON)
+    idf_build_get_property(idf_path IDF_PATH)
+    set(prepare_cmd ${python} "${idf_path}/tools/kconfig_new/prepare_kconfig_files.py"
+        --list-separator=semicolon
+        --env-file "${config_env_path}")
+
+    idf_build_set_property(__PREPARE_KCONFIG_CMD "${prepare_cmd}")
+
+    idf_dbg("Preparing Kconfig source files: ${prepare_cmd}")
+    execute_process(
+        COMMAND ${prepare_cmd}
+        RESULT_VARIABLE prepare_result
+    )
+
+    if(prepare_result)
+        idf_die("Failed to prepare Kconfig source files: ${prepare_result}")
+    endif()
+endfunction()
+
+
+
+#[[
+   __create_config_env_file(env_path)
+
+   Create config environment file for kconfgen.
+   This function gathers all necessary properties and creates the config.env file
+   used by the kconfgen Python script.
+
+   :env_path[in]: Path where to create the config.env file.
+#]]
+function(__create_config_env_file env_path)
+    # Get all necessary build properties
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(build_dir BUILD_DIR)
+    idf_build_get_property(kconfigs __KCONFIGS)
+    idf_build_get_property(projbuilds __KCONFIG_PROJBUILDS)
+    idf_build_get_property(renames __SDKCONFIG_RENAMES)
+    idf_build_get_property(target IDF_TARGET)
+    idf_build_get_property(toolchain IDF_TOOLCHAIN)
+    idf_build_get_property(sdkconfig SDKCONFIG)
+
+    # Define Kconfig source file paths
+    set(kconfigs_projbuild_path "${build_dir}/kconfigs_projbuild.in")
+    set(kconfigs_path "${build_dir}/kconfigs.in")
+
+    # Get IDF version info
+    __get_sdkconfig_option(OPTION CONFIG_IDF_INIT_VERSION
+                           SDKCONFIG "${sdkconfig}"
+                           OUTPUT idf_init_version)
+    if(NOT idf_init_version)
+        set(idf_init_version "$ENV{IDF_VERSION}")
+    endif()
+    set(ENV{IDF_INIT_VERSION} "${idf_init_version}")
+    idf_build_set_property(__IDF_INIT_VERSION "${idf_init_version}")
+
+    # Get IDF_ENV_FPGA from the environment
+    set(idf_env_fpga "$ENV{IDF_ENV_FPGA}")
+    if(NOT idf_env_fpga)
+        set(idf_env_fpga "")
+    endif()
+    idf_build_set_property(__IDF_ENV_FPGA "${idf_env_fpga}")
+
+    # Get the config.env.in template path
+    set(template_path "${idf_path}/tools/kconfig_new/config.env.in")
+    if(NOT EXISTS "${template_path}")
+        idf_die("Kconfig environment template file not found at ${template_path}")
+    endif()
+
+    # Set up variables for the config.env.in template
+    set(kconfigs "${kconfigs}")
+    set(kconfig_projbuilds "${projbuilds}")
+    set(sdkconfig_renames "${renames}")
+    set(idf_target "${target}")
+    set(idf_toolchain "${toolchain}")
+    set(idf_path "${idf_path}")
+    set(kconfigs_path "${kconfigs_path}")
+    set(kconfigs_projbuild_path "${kconfigs_projbuild_path}")
+
+    # Generate the config.env file from the config.env.in template
+    configure_file("${template_path}" "${env_path}")
+
+    idf_dbg("Created config environment file: ${env_path}")
+endfunction()
