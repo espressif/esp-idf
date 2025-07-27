@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -165,7 +165,7 @@ static uint8_t check_sum(uint8_t *addr, uint16_t count)
     }
 
     for(int i = 0; i < count; i++) {
-        sum = sum + addr[i];
+        sum += addr[i];
     }
 
     while (sum >> 8) {
@@ -307,6 +307,9 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                                          &count);
                     if (ret_status != ESP_GATT_OK){
                         ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_descr_by_char_handle error");
+                        free(descr_elem_result);
+                        descr_elem_result = NULL;
+                        break;
                     }
 
                     /* Every char has only one descriptor in our 'throughput_server' demo, so we use first 'descr_elem_result' */
@@ -326,6 +329,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
 
                     /* free descr_elem_result */
                     free(descr_elem_result);
+                    descr_elem_result = NULL;
                 }
             }
             else{
@@ -434,10 +438,13 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                                             param->ext_adv_report.params.adv_data_len,
                                             ESP_BLE_AD_TYPE_NAME_CMPL,
                                             &adv_name_len);
-        if (!connect && strlen(remote_device_name) == adv_name_len && strncmp((char *)adv_name, remote_device_name, adv_name_len) == 0) {
+        if (!connect && adv_name && (adv_name_len == sizeof(remote_device_name) - 1) && (memcmp(adv_name, remote_device_name, adv_name_len) == 0)) {
             ESP_LOGI(GATTC_TAG, "searched device %s", remote_device_name);
             connect = true;
-            esp_ble_gap_stop_ext_scan();
+            esp_err_t stop_ret = esp_ble_gap_stop_ext_scan();
+            if (stop_ret) {
+                ESP_LOGE(GATTC_TAG, "Failed to stop extended scan, err = %x", stop_ret);
+            }
             ESP_LOGI(GATTC_TAG, "Device found "ESP_BD_ADDR_STR"", ESP_BD_ADDR_HEX(param->ext_adv_report.params.addr));
             ESP_LOG_BUFFER_CHAR("Adv name", adv_name, adv_name_len);
             ESP_LOGI(GATTC_TAG, "Stop extend scan and create aux open, primary_phy %d secondary phy %d", param->ext_adv_report.params.primary_phy, param->ext_adv_report.params.secondly_phy);
@@ -518,7 +525,7 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 static void throughput_client_task(void *param)
 {
     vTaskDelay(2000 / portTICK_PERIOD_MS);
-    uint8_t sum = check_sum(write_data, sizeof(write_data) - 1);
+    uint8_t sum = check_sum(write_data, GATTC_WRITE_LEN - 1);
     write_data[GATTC_WRITE_LEN - 1] = sum;
 
     while(1) {
@@ -634,11 +641,6 @@ void app_main(void)
     if (local_mtu_ret){
         ESP_LOGE(GATTC_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
-    // The task is only created on the CPU core that Bluetooth is working on,
-    // preventing the sending task from using the un-updated Bluetooth state on another CPU.
-    xTaskCreatePinnedToCore(&throughput_client_task, "throughput_client_task", 4096, NULL, 10, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
-#endif
 
 #if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
     xTaskCreatePinnedToCore(&throughput_cal_task, "throughput_cal_task", 4096, NULL, 9, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
@@ -650,5 +652,8 @@ void app_main(void)
         ESP_LOGE(GATTC_TAG, "%s, init fail, the gattc semaphore create fail.", __func__);
         return;
     }
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+    // The task is only created on the CPU core that Bluetooth is working on,
+    // preventing the sending task from using the un-updated Bluetooth state on another CPU.
+    xTaskCreatePinnedToCore(&throughput_client_task, "throughput_client_task", 4096, NULL, 10, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
+#endif
 }
