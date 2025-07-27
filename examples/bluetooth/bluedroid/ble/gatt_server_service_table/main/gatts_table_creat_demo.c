@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -288,11 +288,12 @@ void example_prepare_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t 
         status = ESP_GATT_INVALID_ATTR_LEN;
     }
     if (status == ESP_GATT_OK && prepare_write_env->prepare_buf == NULL) {
-        prepare_write_env->prepare_buf = (uint8_t *)malloc(PREPARE_BUF_MAX_SIZE * sizeof(uint8_t));
-        prepare_write_env->prepare_len = 0;
+        prepare_write_env->prepare_buf = (uint8_t *)calloc(PREPARE_BUF_MAX_SIZE, sizeof(uint8_t));
         if (prepare_write_env->prepare_buf == NULL) {
             ESP_LOGE(GATTS_TABLE_TAG, "%s, Gatt_server prep no mem", __func__);
             status = ESP_GATT_NO_RESOURCES;
+        } else {
+            prepare_write_env->prepare_len = 0;
         }
     }
 
@@ -381,52 +382,69 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_READ_EVT");
        	    break;
         case ESP_GATTS_WRITE_EVT:
-            if (!param->write.is_prep){
-                // the data length of gattc write  must be less than GATTS_DEMO_CHAR_VAL_LEN_MAX.
-                ESP_LOGI(GATTS_TABLE_TAG, "GATT_WRITE_EVT, handle = %d, value len = %d, value :", param->write.handle, param->write.len);
+            if (!param->write.is_prep) {
+                // the data length of gattc write must be less than GATTS_DEMO_CHAR_VAL_LEN_MAX.
+                ESP_LOGI(GATTS_TABLE_TAG,
+                        "ESP_GATTS_WRITE_EVT, handle = %d, value len = %d, value :",
+                        param->write.handle, param->write.len);
                 ESP_LOG_BUFFER_HEX(GATTS_TABLE_TAG, param->write.value, param->write.len);
-                if (heart_rate_handle_table[IDX_CHAR_CFG_A] == param->write.handle && param->write.len == 2){
-                    uint16_t descr_value = param->write.value[1]<<8 | param->write.value[0];
-                    if (descr_value == 0x0001){
-                        ESP_LOGI(GATTS_TABLE_TAG, "notify enable");
-                        uint8_t notify_data[15];
-                        for (int i = 0; i < sizeof(notify_data); ++i)
-                        {
-                            notify_data[i] = i % 0xff;
+
+                // If this is the CCCD for Char A, validate len first
+                if (heart_rate_handle_table[IDX_CHAR_CFG_A] == param->write.handle) {
+
+                    if (param->write.len >= 2) {
+                        uint16_t descr_value =
+                            ((uint16_t)param->write.value[1] << 8) | param->write.value[0];
+
+                        if (descr_value == 0x0001) {
+                            ESP_LOGI(GATTS_TABLE_TAG, "notify enable");
+                            uint8_t notify_data[15];
+                            for (int i = 0; i < sizeof(notify_data); ++i) {
+                                notify_data[i] = i % 0xff;
+                            }
+                            size_t notify_len = sizeof(notify_data);  // or compute dynamically
+                            // size must be < negotiated MTU
+                            esp_ble_gatts_send_indicate(gatts_if,
+                                                        param->write.conn_id,
+                                                        heart_rate_handle_table[IDX_CHAR_VAL_A],
+                                                        notify_len,
+                                                        notify_data,
+                                                        false /* notify, not indicate */);
+                        } else if (descr_value == 0x0002) {
+                            ESP_LOGI(GATTS_TABLE_TAG, "indicate enable");
+                            uint8_t indicate_data[15];
+                            for (int i = 0; i < sizeof(indicate_data); ++i) {
+                                indicate_data[i] = i % 0xff;
+                            }
+                            size_t indicate_len = sizeof(indicate_data); // or compute dynamically
+                            esp_ble_gatts_send_indicate(gatts_if,
+                                                        param->write.conn_id,
+                                                        heart_rate_handle_table[IDX_CHAR_VAL_A],
+                                                        indicate_len,
+                                                        indicate_data,
+                                                        true /* indicate */);
+                        } else if (descr_value == 0x0000) {
+                            ESP_LOGI(GATTS_TABLE_TAG, "notify/indicate disable");
+                        } else {
+                            ESP_LOGE(GATTS_TABLE_TAG, "unknown descr value: 0x%04x", descr_value);
+                            ESP_LOG_BUFFER_HEX(GATTS_TABLE_TAG, param->write.value, param->write.len);
                         }
-                        //the size of notify_data[] need less than MTU size
-                        esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, heart_rate_handle_table[IDX_CHAR_VAL_A],
-                                                sizeof(notify_data), notify_data, false);
-                    }else if (descr_value == 0x0002){
-                        ESP_LOGI(GATTS_TABLE_TAG, "indicate enable");
-                        uint8_t indicate_data[15];
-                        for (int i = 0; i < sizeof(indicate_data); ++i)
-                        {
-                            indicate_data[i] = i % 0xff;
-                        }
-
-                        // if want to change the value in server database, call:
-                        // esp_ble_gatts_set_attr_value(heart_rate_handle_table[IDX_CHAR_VAL_A], sizeof(indicate_data), indicate_data);
-
-
-                        //the size of indicate_data[] need less than MTU size
-                        esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, heart_rate_handle_table[IDX_CHAR_VAL_A],
-                                            sizeof(indicate_data), indicate_data, true);
+                    } else {
+                        ESP_LOGE(GATTS_TABLE_TAG,
+                                "Invalid write length for CCCD: %d", param->write.len);
                     }
-                    else if (descr_value == 0x0000){
-                        ESP_LOGI(GATTS_TABLE_TAG, "notify/indicate disable ");
-                    }else{
-                        ESP_LOGE(GATTS_TABLE_TAG, "unknown descr value");
-                        ESP_LOG_BUFFER_HEX(GATTS_TABLE_TAG, param->write.value, param->write.len);
-                    }
+                }
 
+                // Send a response if requested
+                if (param->write.need_rsp) {
+                    esp_ble_gatts_send_response(gatts_if,
+                                                param->write.conn_id,
+                                                param->write.trans_id,
+                                                ESP_GATT_OK,
+                                                NULL);
                 }
-                /* send response when param->write.need_rsp is true*/
-                if (param->write.need_rsp){
-                    esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
-                }
-            }else{
-                /* handle prepare write */
+            } else {
+                // Handle prepare write
                 example_prepare_write_event_env(gatts_if, &prepare_write_env, param);
             }
       	    break;
@@ -455,7 +473,10 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             conn_params.min_int = 0x10;    // min_int = 0x10*1.25ms = 20ms
             conn_params.timeout = 400;    // timeout = 400*10ms = 4000ms
             //start sent the update connection parameters to the peer device.
-            esp_ble_gap_update_conn_params(&conn_params);
+            esp_err_t gap_ret = esp_ble_gap_update_conn_params(&conn_params);
+            if (gap_ret != ESP_OK) {
+                ESP_LOGE(GATTS_TABLE_TAG, "Failed to update connection params: %s", esp_err_to_name(gap_ret));
+            }
             break;
         case ESP_GATTS_DISCONNECT_EVT:
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_DISCONNECT_EVT, reason = 0x%x", param->disconnect.reason);
@@ -527,55 +548,58 @@ void app_main(void)
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
-    ESP_ERROR_CHECK( ret );
+    ESP_ERROR_CHECK(ret);
 
+    /* Release memory reserved for classic BT if only BLE is used */
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ret = esp_bt_controller_init(&bt_cfg);
-    if (ret) {
+    if (ret != ESP_OK) {
         ESP_LOGE(GATTS_TABLE_TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-    if (ret) {
+    if (ret != ESP_OK) {
         ESP_LOGE(GATTS_TABLE_TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     ret = esp_bluedroid_init();
-    if (ret) {
+    if (ret != ESP_OK) {
         ESP_LOGE(GATTS_TABLE_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     ret = esp_bluedroid_enable();
-    if (ret) {
+    if (ret != ESP_OK) {
         ESP_LOGE(GATTS_TABLE_TAG, "%s enable bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     ret = esp_ble_gatts_register_callback(gatts_event_handler);
-    if (ret){
-        ESP_LOGE(GATTS_TABLE_TAG, "gatts register error, error code = %x", ret);
+    if (ret != ESP_OK) {
+        ESP_LOGE(GATTS_TABLE_TAG, "GATTS register error: %s", esp_err_to_name(ret));
         return;
     }
 
     ret = esp_ble_gap_register_callback(gap_event_handler);
-    if (ret){
-        ESP_LOGE(GATTS_TABLE_TAG, "gap register error, error code = %x", ret);
+    if (ret != ESP_OK) {
+        ESP_LOGE(GATTS_TABLE_TAG, "GAP register error: %s", esp_err_to_name(ret));
         return;
     }
 
     ret = esp_ble_gatts_app_register(ESP_APP_ID);
-    if (ret){
-        ESP_LOGE(GATTS_TABLE_TAG, "gatts app register error, error code = %x", ret);
+    if (ret != ESP_OK) {
+        ESP_LOGE(GATTS_TABLE_TAG, "GATTS app register error: %s", esp_err_to_name(ret));
         return;
     }
 
-    esp_err_t local_mtu_ret = esp_ble_gatt_set_local_mtu(500);
-    if (local_mtu_ret){
-        ESP_LOGE(GATTS_TABLE_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
+    ret = esp_ble_gatt_set_local_mtu(500);
+    if (ret != ESP_OK) {
+        ESP_LOGE(GATTS_TABLE_TAG, "Set local MTU failed: %s", esp_err_to_name(ret));
+    } else {
+        ESP_LOGI(GATTS_TABLE_TAG, "Local MTU set to 500");
     }
 }
