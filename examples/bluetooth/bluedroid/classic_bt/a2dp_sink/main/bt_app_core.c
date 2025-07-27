@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,6 +20,15 @@
 #include "driver/i2s_std.h"
 #endif
 #include "freertos/ringbuf.h"
+
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32C3)
+static portMUX_TYPE s_ringbuf_mode_mux = portMUX_INITIALIZER_UNLOCKED;
+#define ENTER_CRITICAL()   portENTER_CRITICAL(&s_ringbuf_mode_mux)
+#define EXIT_CRITICAL()    portEXIT_CRITICAL(&s_ringbuf_mode_mux)
+#else
+#define ENTER_CRITICAL()   taskENTER_CRITICAL(NULL)
+#define EXIT_CRITICAL()    taskEXIT_CRITICAL(NULL)
+#endif
 
 
 #define RINGBUF_HIGHEST_WATER_LEVEL    (32 * 1024)
@@ -77,6 +86,10 @@ static bool bt_app_send_msg(bt_app_msg_t *msg)
     /* send the message to work queue */
     if (xQueueSend(s_bt_app_task_queue, msg, 10 / portTICK_PERIOD_MS) != pdTRUE) {
         ESP_LOGE(BT_APP_CORE_TAG, "%s xQueue send failed", __func__);
+        if (msg->param) {
+            free(msg->param);
+            msg->param = NULL;
+        }
         return false;
     }
     return true;
@@ -127,14 +140,16 @@ static void bt_i2s_task_handler(void *arg)
     size_t bytes_written = 0;
 
     for (;;) {
-        if (pdTRUE == xSemaphoreTake(s_i2s_write_semaphore, portMAX_DELAY)) {
+        if (pdTRUE == xSemaphoreTake(s_i2s_write_semaphore, pdMS_TO_TICKS(1000))) {
             for (;;) {
                 item_size = 0;
                 /* receive data from ringbuffer and write it to I2S DMA transmit buffer */
                 data = (uint8_t *)xRingbufferReceiveUpTo(s_ringbuf_i2s, &item_size, (TickType_t)pdMS_TO_TICKS(20), item_size_upto);
                 if (item_size == 0) {
                     ESP_LOGI(BT_APP_CORE_TAG, "ringbuffer underflowed! mode changed: RINGBUFFER_MODE_PREFETCHING");
+                    ENTER_CRITICAL();
                     ringbuffer_mode = RINGBUFFER_MODE_PREFETCHING;
+                    EXIT_CRITICAL();
                     break;
                 }
 
@@ -145,6 +160,8 @@ static void bt_i2s_task_handler(void *arg)
             #endif
                 vRingbufferReturnItem(s_ringbuf_i2s, (void *)data);
             }
+        } else {
+            ESP_LOGE(BT_APP_CORE_TAG, "Timeout waiting for I2S semaphore");
         }
     }
 }
@@ -201,7 +218,9 @@ void bt_app_task_shut_down(void)
 void bt_i2s_task_start_up(void)
 {
     ESP_LOGI(BT_APP_CORE_TAG, "ringbuffer data empty! mode changed: RINGBUFFER_MODE_PREFETCHING");
+    ENTER_CRITICAL();
     ringbuffer_mode = RINGBUFFER_MODE_PREFETCHING;
+    EXIT_CRITICAL();
     if ((s_i2s_write_semaphore = xSemaphoreCreateBinary()) == NULL) {
         ESP_LOGE(BT_APP_CORE_TAG, "%s, Semaphore create failed", __func__);
         return;
@@ -239,7 +258,9 @@ size_t write_ringbuf(const uint8_t *data, size_t size)
         vRingbufferGetInfo(s_ringbuf_i2s, NULL, NULL, NULL, NULL, &item_size);
         if (item_size <= RINGBUF_PREFETCH_WATER_LEVEL) {
             ESP_LOGI(BT_APP_CORE_TAG, "ringbuffer data decreased! mode changed: RINGBUFFER_MODE_PROCESSING");
+            ENTER_CRITICAL();
             ringbuffer_mode = RINGBUFFER_MODE_PROCESSING;
+            EXIT_CRITICAL();
         }
         return 0;
     }
@@ -248,16 +269,20 @@ size_t write_ringbuf(const uint8_t *data, size_t size)
 
     if (!done) {
         ESP_LOGW(BT_APP_CORE_TAG, "ringbuffer overflowed, ready to decrease data! mode changed: RINGBUFFER_MODE_DROPPING");
+        ENTER_CRITICAL();
         ringbuffer_mode = RINGBUFFER_MODE_DROPPING;
+        EXIT_CRITICAL();
     }
 
     if (ringbuffer_mode == RINGBUFFER_MODE_PREFETCHING) {
         vRingbufferGetInfo(s_ringbuf_i2s, NULL, NULL, NULL, NULL, &item_size);
         if (item_size >= RINGBUF_PREFETCH_WATER_LEVEL) {
             ESP_LOGI(BT_APP_CORE_TAG, "ringbuffer data increased! mode changed: RINGBUFFER_MODE_PROCESSING");
+            ENTER_CRITICAL();
             ringbuffer_mode = RINGBUFFER_MODE_PROCESSING;
+            EXIT_CRITICAL();
             if (pdFALSE == xSemaphoreGive(s_i2s_write_semaphore)) {
-                ESP_LOGE(BT_APP_CORE_TAG, "semphore give failed");
+                ESP_LOGE(BT_APP_CORE_TAG, "semaphore give failed");
             }
         }
     }
