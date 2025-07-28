@@ -342,7 +342,12 @@ BOOLEAN BTM_GetSecurityFlags (BD_ADDR bd_addr, UINT8 *p_sec_flags)
         *p_sec_flags = (UINT8) p_dev_rec->sec_flags;
         return (TRUE);
     }
-    BTM_TRACE_ERROR ("BTM_GetSecurityFlags false");
+
+    BTM_TRACE_ERROR("%s: BTM_GetSecurityFlags failed for device [%02X:%02X:%02X:%02X:%02X:%02X]",
+                    __func__,
+                    bd_addr[0], bd_addr[1], bd_addr[2],
+                    bd_addr[3], bd_addr[4], bd_addr[5]);
+
     return (FALSE);
 }
 
@@ -369,7 +374,12 @@ BOOLEAN BTM_GetSecurityFlagsByTransport (BD_ADDR bd_addr, UINT8 *p_sec_flags,
 
         return (TRUE);
     }
-    BTM_TRACE_ERROR ("BTM_GetSecurityFlags false\n");
+
+    BTM_TRACE_ERROR("%s: BTM_GetSecurityFlags failed for device [%02X:%02X:%02X:%02X:%02X:%02X]",
+                    __func__,
+                    bd_addr[0], bd_addr[1], bd_addr[2],
+                    bd_addr[3], bd_addr[4], bd_addr[5]);
+
     return (FALSE);
 }
 
