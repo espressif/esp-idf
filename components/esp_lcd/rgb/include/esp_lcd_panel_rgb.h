@@ -116,11 +116,6 @@ typedef esp_lcd_rgb_panel_general_cb_t esp_lcd_rgb_panel_vsync_cb_t;
  */
 typedef bool (*esp_lcd_rgb_panel_bounce_buf_fill_cb_t)(esp_lcd_panel_handle_t panel, void *bounce_buf, int pos_px, int len_bytes, void *user_ctx);
 
-/** @cond */
-/// for backward compatible
-typedef esp_lcd_rgb_panel_frame_buf_complete_cb_t esp_lcd_rgb_panel_bounce_buf_finish_cb_t __attribute__((deprecated("esp_lcd_rgb_panel_bounce_buf_finish_cb_t is deprecated, use esp_lcd_rgb_panel_frame_buf_complete_cb_t instead")));
-/** @endcond */
-
 /**
  * @brief Group of supported RGB LCD panel callbacks
  * @note The callbacks are all running under ISR environment
@@ -132,10 +127,7 @@ typedef struct {
                                                                       But doesn't mean the draw buffer finishes the refreshing to the screen. */
     esp_lcd_rgb_panel_vsync_cb_t on_vsync;                         /*!< VSYNC event callback */
     esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty;        /*!< Bounce buffer empty callback. */
-    union {
-        esp_lcd_rgb_panel_frame_buf_complete_cb_t on_bounce_frame_finish __attribute__((deprecated)); /*!< Bounce buffer finish callback. */
-        esp_lcd_rgb_panel_frame_buf_complete_cb_t on_frame_buf_complete;  /*!< A whole frame buffer was just sent to the LCD DMA */
-    };
+    esp_lcd_rgb_panel_frame_buf_complete_cb_t on_frame_buf_complete;  /*!< A whole frame buffer was just sent to the LCD DMA */
 } esp_lcd_rgb_panel_event_callbacks_t;
 
 /**
@@ -150,11 +142,7 @@ typedef struct {
     size_t num_fbs;               /*!< Number of screen-sized frame buffers that allocated by the driver. By default (set to either 0 or 1) only one frame buffer will be used. Maximum number of buffers are 3 */
     size_t bounce_buffer_size_px; /*!< If it's non-zero, the driver allocates two DRAM bounce buffers for DMA use.
                                        DMA fetching from DRAM bounce buffer is much faster than PSRAM frame buffer. */
-    size_t sram_trans_align __attribute__((deprecated)); /*!< Alignment of buffers (frame buffer or bounce buffer) that allocated in SRAM */
-    union {
-        size_t psram_trans_align __attribute__((deprecated)); /*!< Alignment of buffers (frame buffer) that allocated in PSRAM */
-        size_t dma_burst_size;    /*!< DMA burst size, in bytes */
-    };
+    size_t dma_burst_size;        /*!< DMA burst size, in bytes */
     gpio_num_t hsync_gpio_num;    /*!< GPIO used for HSYNC signal */
     gpio_num_t vsync_gpio_num;    /*!< GPIO used for VSYNC signal */
     gpio_num_t de_gpio_num;       /*!< GPIO used for DE signal, set to -1 if it's not used */

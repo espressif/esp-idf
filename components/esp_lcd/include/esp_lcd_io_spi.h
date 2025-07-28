@@ -35,8 +35,6 @@ typedef struct {
         unsigned int dc_high_on_cmd: 1;  /*!< If enabled, DC level = 1 indicates command transfer */
         unsigned int dc_low_on_data: 1;  /*!< If enabled, DC level = 0 indicates color data transfer */
         unsigned int dc_low_on_param: 1; /*!< If enabled, DC level = 0 indicates parameter transfer */
-        unsigned int octal_mode: 1 __attribute__((deprecated("This bitfield is deprecated"))); /*!< Deprecated, driver will detect the bus mode automatically */
-        unsigned int quad_mode: 1  __attribute__((deprecated("This bitfield is deprecated"))); /*!< Deprecated, driver will detect the bus mode automatically */
         unsigned int sio_mode: 1;        /*!< Read and write through a single data line (MOSI) */
         unsigned int lsb_first: 1;       /*!< transmit LSB bit first */
         unsigned int cs_high_active: 1;  /*!< CS line is high active */

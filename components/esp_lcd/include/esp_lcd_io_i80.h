@@ -29,11 +29,7 @@ typedef struct {
     gpio_num_t data_gpio_nums[ESP_LCD_I80_BUS_WIDTH_MAX]; /*!< GPIOs used for data lines */
     size_t bus_width;          /*!< Number of data lines, 8 or 16 */
     size_t max_transfer_bytes; /*!< Maximum transfer size, this determines the length of internal DMA link */
-    union {
-        size_t psram_trans_align __attribute__((deprecated)); /*!< DMA transfer alignment for data allocated from PSRAM */
-        size_t dma_burst_size;     /*!< DMA burst size, in bytes */
-    };
-    size_t sram_trans_align __attribute__((deprecated)); /*!< DMA transfer alignment for data allocated from SRAM */
+    size_t dma_burst_size;     /*!< DMA burst size, in bytes */
 } esp_lcd_i80_bus_config_t;
 
 /**
