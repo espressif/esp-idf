@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -22,7 +22,7 @@
 #include "esp_bt_device.h"
 #include "esp_gatt_common_api.h"
 
-#define APP_ID_PLACEHOLDER 0
+#define GATTS_APP_ID 0
 
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
@@ -41,7 +41,7 @@ static esp_ble_adv_params_t adv_params = {
 
 static uint8_t adv_raw_data[] = {
     0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
-    0x0F, ESP_BLE_AD_TYPE_NAME_CMPL, 'B', 'l', 'u', 'e', 'd', 'r', 'o', 'i', 'd', '_', 'C', 'o', 'n', 'n',
+    0x10, ESP_BLE_AD_TYPE_NAME_CMPL, 'B', 'l', 'u', 'e', 'd', 'r', 'o', 'i', 'd', '_', 'C', 'o', 'n', 'n',
     0x02, ESP_BLE_AD_TYPE_TX_PWR, 0x09,
 };
 
@@ -95,13 +95,13 @@ void app_main(void)
         return;
     }
 
-    ret = esp_ble_gatts_app_register(APP_ID_PLACEHOLDER);
+    ret = esp_ble_gatts_app_register(GATTS_APP_ID);
     if (ret) {
         ESP_LOGE(CONN_TAG, "%s gatts app register failed, error code = %x", __func__, ret);
         return;
     }
 
-    ret = esp_ble_gatt_set_local_mtu(500);
+    ret = esp_ble_gatt_set_local_mtu(247);
     if (ret) {
         ESP_LOGE(CONN_TAG, "set local  MTU failed, error code = %x", ret);
         return;
@@ -151,7 +151,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
     }
 }
 
-//because we only have one profile table in this demo, there is only one set of gatts evemt handler
+// Because we only have one profile table in this demo, there is only one set of GATT event handlers
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
     switch (event) {
@@ -162,8 +162,8 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         esp_ble_conn_update_params_t conn_params = {0};
         memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
         conn_params.latency = 0;
-        conn_params.max_int = 0x20;
-        conn_params.min_int = 0x10;
+        conn_params.min_int = 0x10;  // 20ms
+        conn_params.max_int = 0x20;  // 40ms
         conn_params.timeout = 400;
         ESP_LOGI(CONN_TAG, "Connected, conn_id %u, remote "ESP_BD_ADDR_STR"",
                 param->connect.conn_id, ESP_BD_ADDR_HEX(param->connect.remote_bda));
