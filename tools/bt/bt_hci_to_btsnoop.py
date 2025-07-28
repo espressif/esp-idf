@@ -129,7 +129,7 @@ def main() -> None:
         '--has-ts',
         action='store_true',
         default=False,
-        help='Set this if the input file has timestamp bytes at the beginning (default: False)',
+        help='Set this if the input file has timestamp information as part of packets (default: False)',
     )
     args = parser.parse_args()
     parse_log(args.path, args.output, has_timestamp=args.has_ts)
