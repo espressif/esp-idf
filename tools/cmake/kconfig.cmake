@@ -267,7 +267,20 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_set_property(SDKCONFIG_JSON_MENUS ${sdkconfig_json_menus})
     idf_build_set_property(CONFIG_DIR ${config_dir})
 
-    set(MENUCONFIG_CMD ${python} -m menuconfig)
+    # newer versions of esp-idf-kconfig renamed menuconfig to esp_menuconfig
+    # Order matters here, we want to use esp_menuconfig if it is available
+    execute_process(
+        COMMAND ${python} -c "import esp_menuconfig"
+        RESULT_VARIABLE ESP_MENUCONFIG_AVAILABLE
+        OUTPUT_QUIET ERROR_QUIET
+    )
+    if(ESP_MENUCONFIG_AVAILABLE EQUAL 0)
+        set(MENUCONFIG_CMD ${python} -m esp_menuconfig)
+    else()
+        set(MENUCONFIG_CMD ${python} -m menuconfig)
+    endif()
+
+
     set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
 
     if(NOT ${ARG_CREATE_MENUCONFIG_TARGET})
