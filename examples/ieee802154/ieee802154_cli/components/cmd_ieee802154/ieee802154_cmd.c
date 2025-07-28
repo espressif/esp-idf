@@ -773,6 +773,7 @@ static int process_rx(int argc, char **argv)
     if (rx_args.receive->count == 1) {
         if (rx_args.receive->ival[0] == 0) {
             esp_ieee802154_sleep();
+            esp_ieee802154_set_rx_when_idle(false);
             ESP_LOGI(TAG, "radio exit receive mode");
         } else if (rx_args.receive->ival[0] == 1) { // receive, non-blocking
             ESP_LOGI(TAG, "RX Start");
