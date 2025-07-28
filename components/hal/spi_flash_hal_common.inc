@@ -19,7 +19,6 @@
 #include "soc/soc_caps.h"
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
-#include "sdkconfig.h"
 
 #define ADDRESS_MASK_24BIT 0xFFFFFF
 #define COMPUTE_DUMMY_CYCLELEN(host, base)    ((base) + ((spi_flash_hal_context_t*)host)->extra_dummy)
@@ -141,7 +140,7 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
     gpspi_flash_ll_set_dummy_out(dev, (conf_required? 1: 0), 1);
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32P4
+#if SOC_IS(ESP32P4)
     // TODO: This is temporarily for ESP32P4-ECO0, please remove it when eco0 is not widly used. IDF-10019
     unsigned chip_version = efuse_hal_chip_revision();
     if (unlikely(!ESP_CHIP_REV_ABOVE(chip_version, 1))) {

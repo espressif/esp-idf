@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,9 +135,9 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
         data_out->auto_waiti_pes = cfg->auto_waiti_pes;
     }
 
-#if CONFIG_SPI_FLASH_SOFTWARE_RESUME
-    data_out->flags &= ~SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_RESUME;
-#endif
+    if (cfg->software_resume) {
+        data_out->flags &= ~SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_RESUME;
+    }
 
 #if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     if (cfg->octal_mode_en) {

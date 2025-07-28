@@ -541,6 +541,10 @@ esp_err_t esp_flash_init_default_chip(void)
     cfg.auto_waiti_pes = true;
     #endif
 
+    #if CONFIG_SPI_FLASH_AUTO_RESUME
+    cfg.software_resume = true;
+    #endif
+
     //the host is already initialized, only do init for the data and load it to the host
     esp_err_t err = memspi_host_init_pointers(&esp_flash_default_host, &cfg);
     if (err != ESP_OK) {

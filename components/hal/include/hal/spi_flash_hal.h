@@ -97,6 +97,7 @@ typedef struct {
     uint8_t tsus_val;     ///< Tsus value of suspend (us).
     uint8_t trs_val;     ///< Trs value of suspend (us)
     bool auto_waiti_pes;  ///< True for auto-wait idle after suspend command. False for using time delay.
+    bool software_resume;  ///< True for software resume, false for hardware resume.
 } spi_flash_hal_config_t;
 
 /**

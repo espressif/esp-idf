@@ -15,7 +15,6 @@ ignores:
   - "components/hal/cache_hal.c"
   - "components/hal/ecdsa_hal.c"
   - "components/hal/mmu_hal.c"
-  - "components/hal/spi_flash_hal.c"
   - "components/hal/twai_hal_sja1000.c"
   - "components/hal/esp32/gpio_hal_workaround.c"
   - "components/hal/esp32/include/hal/twai_ll.h"
