@@ -1,3 +1,5 @@
+.. _idf-docker-image:
+
 ********************
 IDF Docker 镜像
 ********************
@@ -14,7 +16,7 @@ IDF Docker 镜像 (``espressif/idf``) 为使用特定版本的 ESP-IDF 自动化
 该镜像包含以下内容：
 
 - 常见的实用工具，如 ``git``、``wget``、``curl`` 和 ``zip``。
-- Python 3.9 或更高版本。
+- Python 3.10 或更高版本。
 - 特定版本 ESP-IDF 的副本。有关版本信息，请参阅下文。该副本中设置了 ``IDF_PATH`` 环境变量，并指向容器中 ESP-IDF 的位置。
 - 构建特定版本 ESP-IDF 所需工具：CMake、Ninja、交叉编译器工具链等。
 - ESP-IDF 需要的所有 Python 软件包。这些软件包均已安装在虚拟环境中。

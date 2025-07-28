@@ -160,7 +160,7 @@ With some Linux distributions, you may get the error message similar to ``Could 
 Python Compatibility
 ~~~~~~~~~~~~~~~~~~~~
 
-ESP-IDF supports Python 3.9 or newer. It is recommended to upgrade your operating system to a recent version satisfying this requirement. Other options include the installation of Python from `sources <https://www.python.org/downloads/>`_ or the use of a Python version management system such as `pyenv <https://github.com/pyenv/pyenv>`_.
+ESP-IDF supports Python 3.10 or newer. It is recommended to upgrade your operating system to a recent version satisfying this requirement. Other options include the installation of Python from `sources <https://www.python.org/downloads/>`_ or the use of a Python version management system such as `pyenv <https://github.com/pyenv/pyenv>`_.
 
 .. only:: esp32 or esp32s2 or esp32s3
 

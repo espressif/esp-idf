@@ -228,7 +228,7 @@ pytest_build_system_macos:
     - macos
   parallel: 3
   variables:
-    PYENV_VERSION: "3.9"
+    PYENV_VERSION: "3.10"
     # CCACHE_DIR: "/cache/idf_ccache". On macOS, you cannot write to this folder due to insufficient permissions.
     CCACHE_DIR: "" # ccache will use "$HOME/Library/Caches/ccache".
     # Workaround for a bug in Parallels executor where CI_PROJECT_DIR is not an absolute path,

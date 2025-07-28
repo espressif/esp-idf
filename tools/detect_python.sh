@@ -8,11 +8,11 @@
 # 3. If required version of python is not found, script will fail
 
 OLDEST_PYTHON_SUPPORTED_MAJOR=3
-OLDEST_PYTHON_SUPPORTED_MINOR=9
+OLDEST_PYTHON_SUPPORTED_MINOR=10
 
 ESP_PYTHON=python
 
-for p_cmd in python3 python python3.9 python3.10 python3.11 python3.12 python3.13; do
+for p_cmd in python3 python python3.10 python3.11 python3.12 python3.13; do
     $p_cmd --version >/dev/null 2>&1 || continue
     echo "Checking \"$p_cmd\" ..."
 

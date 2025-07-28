@@ -20,15 +20,9 @@ except ImportError:
     )
     sys.exit(1)
 
-try:
-    from importlib.metadata import PackageNotFoundError
-    from importlib.metadata import requires as _requires
-    from importlib.metadata import version as _version
-except ImportError:
-    # compatibility for python <=3.7
-    from importlib_metadata import PackageNotFoundError  # type: ignore
-    from importlib_metadata import requires as _requires  # type: ignore
-    from importlib_metadata import version as _version  # type: ignore
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import requires as _requires
+from importlib.metadata import version as _version
 
 try:
     from typing import Set
