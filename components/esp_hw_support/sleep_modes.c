@@ -18,6 +18,7 @@
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/rtc_clk.h"
+#include "soc/rtc.h"
 #include "esp_private/sleep_event.h"
 #include "esp_private/system_internal.h"
 #include "esp_private/io_mux.h"
@@ -683,6 +684,9 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(bool deep_sleep, uint32_t pd_f
         regi2c_analog_cali_reg_read();
 #endif
     }
+#if CONFIG_ESP_ENABLE_PVT
+    pvt_func_enable(false);
+#endif
 
     if (!s_adc_tsen_enabled){
         // TODO: IDF-7370
@@ -695,6 +699,10 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(bool deep_sleep, uint32_t pd_f
  */
 FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t pd_flags)
 {
+#if CONFIG_ESP_ENABLE_PVT
+    pvt_func_enable(true);
+#endif
+
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     if (pd_flags & PMU_SLEEP_PD_TOP) {
         // There is no driver to manage the flashboot watchdog, and it is definitely be in off state when
