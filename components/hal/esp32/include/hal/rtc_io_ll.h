@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -73,7 +73,7 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
  */
 static inline void rtcio_ll_output_enable(int rtcio_num)
 {
-    RTCIO.enable_w1ts.w1ts = (1U << rtcio_num);
+    RTCIO.enable_w1ts.val = (1U << (rtcio_num + RTC_GPIO_ENABLE_W1TS_S));
 }
 
 /**
@@ -83,7 +83,7 @@ static inline void rtcio_ll_output_enable(int rtcio_num)
  */
 static inline void rtcio_ll_output_disable(int rtcio_num)
 {
-    RTCIO.enable_w1tc.w1tc = (1U << rtcio_num);
+    RTCIO.enable_w1tc.val = (1U << (rtcio_num + RTC_GPIO_ENABLE_W1TC_S));
 }
 
 /**
@@ -95,9 +95,9 @@ static inline void rtcio_ll_output_disable(int rtcio_num)
 static inline void rtcio_ll_set_level(int rtcio_num, uint32_t level)
 {
     if (level) {
-        RTCIO.out_w1ts.w1ts = (1U << rtcio_num);
+        RTCIO.out_w1ts.val = (1U << (rtcio_num + RTC_GPIO_OUT_DATA_W1TS_S));
     } else {
-        RTCIO.out_w1tc.w1tc = (1U << rtcio_num);
+        RTCIO.out_w1tc.val = (1U << (rtcio_num + RTC_GPIO_OUT_DATA_W1TC_S));
     }
 }
 

@@ -98,27 +98,27 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
 }
 
 /**
- * Enable rtcio output.
+ * @brief Enable rtcio output.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
 static inline void rtcio_ll_output_enable(int rtcio_num)
 {
-    LP_GPIO.enable_w1ts.enable_w1ts = BIT(rtcio_num);
+    LP_GPIO.enable_w1ts.val = BIT(rtcio_num);
 }
 
 /**
- * Disable rtcio output.
+ * @brief Disable rtcio output.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
 static inline void rtcio_ll_output_disable(int rtcio_num)
 {
-    LP_GPIO.enable_w1tc.enable_w1tc = BIT(rtcio_num);
+    LP_GPIO.enable_w1tc.val = BIT(rtcio_num);
 }
 
 /**
- * Set RTCIO output level.
+ * @brief Set RTCIO output level.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  * @param level 0: output low; ~0: output high.
@@ -126,14 +126,14 @@ static inline void rtcio_ll_output_disable(int rtcio_num)
 static inline void rtcio_ll_set_level(int rtcio_num, uint32_t level)
 {
     if (level) {
-        LP_GPIO.out_w1ts.out_w1ts = BIT(rtcio_num);
+        LP_GPIO.out_w1ts.val = BIT(rtcio_num);
     } else {
-        LP_GPIO.out_w1tc.out_w1tc = BIT(rtcio_num);
+        LP_GPIO.out_w1tc.val = BIT(rtcio_num);
     }
 }
 
 /**
- * Enable rtcio input.
+ * @brief Enable rtcio input.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
@@ -143,7 +143,7 @@ static inline void rtcio_ll_input_enable(int rtcio_num)
 }
 
 /**
- * Disable rtcio input.
+ * @brief Disable rtcio input.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
@@ -153,7 +153,7 @@ static inline void rtcio_ll_input_disable(int rtcio_num)
 }
 
 /**
- * Get RTCIO input level.
+ * @brief Get RTCIO input level.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  * @return 0: input low; ~0: input high.
@@ -197,7 +197,7 @@ static inline void rtcio_ll_output_mode_set(int rtcio_num, rtcio_ll_out_mode_t m
 }
 
 /**
- * RTC GPIO pullup enable.
+ * @brief RTC GPIO pullup enable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
@@ -208,7 +208,7 @@ static inline void rtcio_ll_pullup_enable(int rtcio_num)
 }
 
 /**
- * RTC GPIO pullup disable.
+ * @brief RTC GPIO pullup disable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
@@ -230,7 +230,7 @@ static inline bool rtcio_ll_is_pullup_enabled(int rtcio_num)
 }
 
 /**
- * RTC GPIO pulldown enable.
+ * @brief RTC GPIO pulldown enable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
@@ -241,7 +241,7 @@ static inline void rtcio_ll_pulldown_enable(int rtcio_num)
 }
 
 /**
- * RTC GPIO pulldown disable.
+ * @brief RTC GPIO pulldown disable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
@@ -263,7 +263,7 @@ static inline bool rtcio_ll_is_pulldown_enabled(int rtcio_num)
 }
 
 /**
- * Enable force hold function for an RTC IO pad.
+ * @brief Enable force hold function for an RTC IO pad.
  *
  * Enabling HOLD function will cause the pad to lock current status, such as,
  * input/output enable, input/output value, function, drive strength values.
@@ -278,7 +278,7 @@ static inline void rtcio_ll_force_hold_enable(int rtcio_num)
 }
 
 /**
- * Disable hold function on an RTC IO pad
+ * @brief Disable hold function on an RTC IO pad
  *
  * @note If disable the pad hold, the status of pad maybe changed in sleep mode.
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
@@ -289,7 +289,7 @@ static inline void rtcio_ll_force_hold_disable(int rtcio_num)
 }
 
 /**
- * Enable force hold function for all RTC IO pads
+ * @brief Enable force hold function for all RTC IO pads
  *
  * Enabling HOLD function will cause the pad to lock current status, such as,
  * input/output enable, input/output value, function, drive strength values.
@@ -302,7 +302,7 @@ static inline void rtcio_ll_force_hold_all(void)
 }
 
 /**
- * Disable hold function fon all RTC IO pads
+ * @brief Disable hold function fon all RTC IO pads
  *
  * @note If disable the pad hold, the status of pad maybe changed in sleep mode.
  */
@@ -312,7 +312,7 @@ static inline void rtcio_ll_force_unhold_all(void)
 }
 
 /**
- * Enable wakeup function and set wakeup type from light sleep or deep sleep for rtcio.
+ * @brief Enable wakeup function and set wakeup type from light sleep or deep sleep for rtcio.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  * @param type  Wakeup on high level or low level.
@@ -324,7 +324,7 @@ static inline void rtcio_ll_wakeup_enable(int rtcio_num, gpio_int_type_t type)
 }
 
 /**
- * Disable wakeup function from light sleep or deep sleep for rtcio.
+ * @brief Disable wakeup function from light sleep or deep sleep for rtcio.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
@@ -335,7 +335,7 @@ static inline void rtcio_ll_wakeup_disable(int rtcio_num)
 }
 
 /**
- * Enable interrupt function and set interrupt type
+ * @brief Enable interrupt function and set interrupt type
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  * @param type  Interrupt type on high level or low level.
@@ -353,7 +353,7 @@ static inline void rtcio_ll_intr_enable(int rtcio_num, gpio_int_type_t type)
 }
 
 /**
- * Enable rtc io output in deep sleep.
+ * @brief Enable rtc io output in deep sleep.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
@@ -363,7 +363,7 @@ static inline void rtcio_ll_enable_output_in_sleep(int rtcio_num)
 }
 
 /**
- * Disable rtc io output in deep sleep.
+ * @brief Disable rtc io output in deep sleep.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
@@ -373,7 +373,7 @@ static inline void rtcio_ll_disable_output_in_sleep(int rtcio_num)
 }
 
 /**
- * Enable rtc io input in deep sleep.
+ * @brief Enable rtc io input in deep sleep.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
@@ -383,7 +383,7 @@ static inline void rtcio_ll_enable_input_in_sleep(int rtcio_num)
 }
 
 /**
- * Disable rtc io input in deep sleep.
+ * @brief Disable rtc io input in deep sleep.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
@@ -393,7 +393,7 @@ static inline void rtcio_ll_disable_input_in_sleep(int rtcio_num)
 }
 
 /**
- * Enable rtc io keep another setting in deep sleep.
+ * @brief Enable rtc io keep another setting in deep sleep.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
@@ -403,7 +403,7 @@ static inline void rtcio_ll_enable_sleep_setting(int rtcio_num)
 }
 
 /**
- * Disable rtc io keep another setting in deep sleep. (Default)
+ * @brief Disable rtc io keep another setting in deep sleep. (Default)
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
@@ -427,7 +427,7 @@ static inline bool rtcio_ll_wakeup_is_enabled(int rtcio_num)
 /**
  * @brief Get the rtc io interrupt status
  *
- * @return  bit 0~7 corresponding to 0 ~ SOC_RTCIO_PIN_COUNT.
+ * @return  bit 0~6 corresponding to 0 ~ SOC_RTCIO_PIN_COUNT.
  */
 static inline uint32_t rtcio_ll_get_interrupt_status(void)
 {
@@ -439,7 +439,7 @@ static inline uint32_t rtcio_ll_get_interrupt_status(void)
  */
 static inline void rtcio_ll_clear_interrupt_status(void)
 {
-    LP_GPIO.status_w1tc.status_w1tc = 0x7F;
+    LP_GPIO.status_w1tc.val = 0x7F;
 }
 
 #ifdef __cplusplus
