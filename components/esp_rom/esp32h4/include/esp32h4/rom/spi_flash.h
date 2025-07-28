@@ -455,6 +455,124 @@ uint16_t esp_rom_spiflash_common_cmd(esp_rom_spiflash_common_cmd_t *cmd);
 
 extern const spiflash_legacy_funcs_t *rom_spiflash_legacy_funcs;
 
+typedef struct {
+    uint16_t cmd;                /*!< Command value */
+    uint16_t cmdBitLen;          /*!< Command byte length*/
+    uint32_t *addr;              /*!< Point to address value*/
+    uint32_t addrBitLen;         /*!< Address byte length*/
+    uint32_t *txData;            /*!< Point to send data buffer*/
+    uint32_t txDataBitLen;       /*!< Send data byte length.*/
+    uint32_t *rxData;            /*!< Point to receive data buffer*/
+    uint32_t rxDataBitLen;       /*!< Receive Data byte length.*/
+    uint32_t dummyBitLen;
+} esp_rom_spi_cmd_t;
+
+// Definition of MX25UM25645G Octa Flash
+// SPI status register
+#define ESP_ROM_SPIFLASH_BUSY_FLAG     BIT0
+#define ESP_ROM_SPIFLASH_WRENABLE_FLAG BIT1
+#define ESP_ROM_SPIFLASH_BP0           BIT2
+#define ESP_ROM_SPIFLASH_BP1           BIT3
+#define ESP_ROM_SPIFLASH_BP2           BIT4
+#define ESP_ROM_SPIFLASH_WR_PROTECT    (ESP_ROM_SPIFLASH_BP0|ESP_ROM_SPIFLASH_BP1|ESP_ROM_SPIFLASH_BP2)
+#define ESP_ROM_SPIFLASH_QE            BIT9
+
+#define FLASH_OP_MODE_RDCMD_DOUT       0x3B
+#define ESP_ROM_FLASH_SECTOR_SIZE      0x1000
+#define ESP_ROM_FLASH_BLOCK_SIZE_64K   0x10000
+#define ESP_ROM_FLASH_PAGE_SIZE        256
+
+// FLASH commands
+#define ROM_FLASH_CMD_RDID             0x9F
+#define ROM_FLASH_CMD_WRSR             0x01
+#define ROM_FLASH_CMD_WRSR2            0x31 /* Not all SPI flash uses this command */
+#define ROM_FLASH_CMD_WREN             0x06
+#define ROM_FLASH_CMD_WRDI             0x04
+#define ROM_FLASH_CMD_RDSR             0x05
+#define ROM_FLASH_CMD_RDSR2            0x35 /* Not all SPI flash uses this command */
+#define ROM_FLASH_CMD_ERASE_SEC        0x20
+#define ROM_FLASH_CMD_ERASE_BLK_32K    0x52
+#define ROM_FLASH_CMD_ERASE_BLK_64K    0xD8
+#define ROM_FLASH_CMD_OTPEN            0x3A /* Enable OTP mode, not all SPI flash uses this command */
+#define ROM_FLASH_CMD_RSTEN            0x66
+#define ROM_FLASH_CMD_RST              0x99
+
+#define ROM_FLASH_CMD_SE4B             0x21
+#define ROM_FLASH_CMD_SE4B_OCT         0xDE21
+#define ROM_FLASH_CMD_BE4B             0xDC
+#define ROM_FLASH_CMD_BE4B_OCT         0x23DC
+#define ROM_FLASH_CMD_RSTEN_OCT        0x9966
+#define ROM_FLASH_CMD_RST_OCT          0x6699
+
+#define ROM_FLASH_CMD_FSTRD4B_STR      0x13EC
+#define ROM_FLASH_CMD_FSTRD4B_DTR      0x11EE
+#define ROM_FLASH_CMD_FSTRD4B          0x0C
+#define ROM_FLASH_CMD_PP4B             0x12
+#define ROM_FLASH_CMD_PP4B_OCT         0xED12
+
+#define ROM_FLASH_CMD_RDID_OCT         0x609F
+#define ROM_FLASH_CMD_WREN_OCT         0xF906
+#define ROM_FLASH_CMD_RDSR_OCT         0xFA05
+#define ROM_FLASH_CMD_RDCR2            0x71
+#define ROM_FLASH_CMD_RDCR2_OCT        0x8E71
+#define ROM_FLASH_CMD_WRCR2            0x72
+#define ROM_FLASH_CMD_WRCR2_OCT        0x8D72
+
+// Definitions for GigaDevice GD25LX256E Flash
+#define ROM_FLASH_CMD_RDFSR_GD            0x70
+#define ROM_FLASH_CMD_RD_GD               0x03
+#define ROM_FLASH_CMD_RD4B_GD             0x13
+#define ROM_FLASH_CMD_FSTRD_GD            0x0B
+#define ROM_FLASH_CMD_FSTRD4B_GD          0x0C
+#define ROM_FLASH_CMD_FSTRD_OOUT_GD       0x8B
+#define ROM_FLASH_CMD_FSTRD4B_OOUT_GD     0x7C
+#define ROM_FLASH_CMD_FSTRD_OIOSTR_GD     0xCB
+#define ROM_FLASH_CMD_FSTRD4B_OIOSTR_GD   0xCC
+#define ROM_FLASH_CMD_FSTRD4B_OIODTR_GD   0xFD
+
+#define ROM_FLASH_CMD_PP_GD               0x02
+#define ROM_FLASH_CMD_PP4B_GD             0x12
+#define ROM_FLASH_CMD_PP_OOUT_GD          0x82
+#define ROM_FLASH_CMD_PP4B_OOUT_GD        0x84
+#define ROM_FLASH_CMD_PP_OIO_GD           0xC2
+#define ROM_FLASH_CMD_PP4B_OIOSTR_GD      0x8E
+
+#define ROM_FLASH_CMD_SE_GD               0x20
+#define ROM_FLASH_CMD_SE4B_GD             0x21
+#define ROM_FLASH_CMD_BE32K_GD            0x52
+#define ROM_FLASH_CMD_BE32K4B_GD          0x5C
+#define ROM_FLASH_CMD_BE64K_GD            0xD8
+#define ROM_FLASH_CMD_BE64K4B_GD          0xDC
+
+#define ROM_FLASH_CMD_EN4B_GD             0xB7
+#define ROM_FLASH_CMD_DIS4B_GD            0xE9
+
+// spi user mode command config
+/**
+ * @brief Config the spi user command
+ * @param spi_num spi port
+ * @param pcmd pointer to accept the spi command struct
+ */
+void esp_rom_spi_cmd_config(int spi_num, esp_rom_spi_cmd_t* pcmd);
+
+/**
+ * @brief Start a spi user command sequence
+ * @param spi_num spi port
+ * @param rx_buf buffer pointer to receive data
+ * @param rx_len receive data length in byte
+ * @param cs_en_mask decide which cs to use, 0 for cs0, 1 for cs1
+ * @param is_write_erase to indicate whether this is a write or erase operation, since the CPU would check permission
+ */
+void esp_rom_spi_cmd_start(int spi_num, uint8_t* rx_buf, uint16_t rx_len, uint8_t cs_en_mask, bool is_write_erase);
+
+// set SPI read/write mode
+/**
+ * @brief Set SPI operation mode
+ * @param spi_num spi port
+ * @param mode Flash Read Mode
+ */
+void esp_rom_spi_set_op_mode(int spi_num, esp_rom_spiflash_read_mode_t mode);
+
 #ifdef __cplusplus
 }
 #endif

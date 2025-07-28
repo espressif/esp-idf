@@ -9,7 +9,6 @@
 #include "esp_log.h"
 #include "esp_private/esp_psram_impl.h"
 #include "rom/spi_flash.h"
-#include "rom/opi_flash.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_efuse.h"
 #include "hal/gpio_hal.h"
@@ -294,7 +293,8 @@ static void s_config_psram_clock(bool init_state)
     } else {
         // This function can be extended if we have other psram frequency
 
-#if (CONFIG_SPIRAM_SPEED == 80)
+#if (CONFIG_SPIRAM_SPEED == 80) || (CONFIG_SPIRAM_SPEED == 48)
+        // IDF-13632, update 48M to 64M
         clock_conf = psram_ctrlr_ll_calculate_clock_reg(1);
 #elif (CONFIG_SPIRAM_SPEED == 40)
         clock_conf = psram_ctrlr_ll_calculate_clock_reg(2);

@@ -86,7 +86,7 @@
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1    // TODO: [ESP32H4] IDF-12310
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1       // TODO: [ESP32H4] IDF-12388
-// #define SOC_SPIRAM_SUPPORTED            1    // TODO: [ESP32H4] IDF-12351
+#define SOC_SPIRAM_SUPPORTED            1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_32M                        1
@@ -500,6 +500,10 @@
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
 #define SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE (1)
+
+/*-------------------------- SPIRAM CAPS -------------------------------------*/
+#define SOC_SPIRAM_XIP_SUPPORTED      1
+#define SOC_PSRAM_DMA_CAPABLE         1
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -27,7 +28,7 @@ def test_esp_common(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3', 'esp32p4', 'esp32c5'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1'), indirect=['target'])
 def test_esp_attr_psram_noinit(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
@@ -39,7 +40,7 @@ def test_esp_attr_psram_noinit(dut: Dut) -> None:
     ['psram_noinit'],
     indirect=True,
 )
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1'), indirect=['target'])
 def test_esp_attr_psram_noinit_multiple_stages(case_tester: Any) -> None:
     case_tester.run_all_multi_stage_cases()
 
@@ -53,7 +54,7 @@ def test_esp_attr_psram_noinit_multiple_stages(case_tester: Any) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3', 'esp32p4', 'esp32c5'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1'), indirect=['target'])
 def test_esp_attr_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
@@ -62,33 +63,9 @@ def test_esp_attr_psram(dut: Dut) -> None:
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
-    ['xip_psram_esp32s2'],
+    ['xip_psram'],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32s2'], indirect=['target'])
-def test_esp_attr_xip_psram_esp32s2(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
-
-
-# psram attr tests with xip_psram
-@pytest.mark.generic
-@pytest.mark.parametrize(
-    'config',
-    ['xip_psram_esp32s3'],
-    indirect=True,
-)
-@idf_parametrize('target', ['esp32s3'], indirect=['target'])
-def test_esp_attr_xip_psram_esp32s3(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
-
-
-# psram attr tests with xip_psram
-@pytest.mark.generic
-@pytest.mark.parametrize(
-    'config',
-    ['xip_psram_esp32p4'],
-    indirect=True,
-)
-@idf_parametrize('target', ['esp32p4'], indirect=['target'])
-def test_esp_attr_xip_psram_esp32p4(dut: Dut) -> None:
+@idf_parametrize('target', soc_filtered_targets('SOC_SPIRAM_XIP_SUPPORTED == 1'), indirect=['target'])
+def test_esp_attr_xip_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases()
