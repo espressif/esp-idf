@@ -43,7 +43,13 @@ void app_main(void)
 #if CONFIG_EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
 reinit:
 #endif
-    usbh_initialize(0, ESP_USBH_BASE);
+
+#if CONFIG_EXAMPLE_USB_HOST_RHPORT_HS
+    usbh_initialize(0, ESP_USB_HS0_BASE);
+#else
+    usbh_initialize(0, ESP_USB_FS0_BASE);
+#endif
+
     ESP_LOGI(TAG, "Init usb");
 
 #if CONFIG_EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
