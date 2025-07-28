@@ -55,10 +55,30 @@ Xtensa 特殊寄存器头文件已更新，使用新的命名约定。旧的 ``s
 
 已弃用的头文件 ``soc_memory_types.h`` 已被移除，请改用替代头文件 ``esp_memory_utils.h``。
 
-App Trace
+App 追踪
 ----------
 
 已移除额外数据缓冲选项。不再支持 `CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX` 配置项。
+
+已移除弃用的 `ESP_APPTRACE_DEST_TRAX` 枚举值。请改用 `ESP_APPTRACE_DEST_JTAG`。
+
+函数 :cpp:func:`esp_apptrace_down_buffer_config` 现在需要一个目标参数，并返回一个错误代码以便进行适当的错误处理。
+
+旧代码：
+
+.. code-block:: c
+
+    esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
+
+现在需要修改成：
+
+.. code-block:: c
+
+    esp_err_t res = esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_JTAG, down_buf, sizeof(down_buf));
+    if (res != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to config down buffer!");
+        return res;
+    }
 
 FreeRTOS
 --------
@@ -74,3 +94,12 @@ FreeRTOS
 **已弃用的函数**
 
 函数 :cpp:func:`pxTaskGetStackStart` 已弃用。请使用 :cpp:func:`xTaskGetStackStart` 替代以提高类型安全性。
+
+核心转储
+--------
+
+二进制数据格式已被弃用。`CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN` 表示该功能已完全删除，不再可用。现在默认的数据格式是 ELF。
+
+CRC 数据完整性检查已被弃用。`ESP_COREDUMP_CHECKSUM_CRC32` 表示该功能已完全删除，不再可用。现在默认的校验和算法为 SHA256。
+
+函数 :cpp:func:`esp_core_dump_partition_and_size_get()` 现在对空白（已擦除）分区返回 `ESP_ERR_NOT_FOUND`，而不是 `ESP_ERR_INVALID_SIZE`。

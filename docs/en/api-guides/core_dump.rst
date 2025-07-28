@@ -36,7 +36,7 @@ The :ref:`CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` option configures the number of tas
 Data Integrity Check
 ^^^^^^^^^^^^^^^^^^^^
 
-Core dump files include a SHA256 checksum, which can be used to verify the integrity of the core dump file and ensure it has not been corrupted. The SHA256 hash algorithm provides a high probability of detecting corruption, including multiple-bit errors.
+Core dump files include a SHA256 checksum that verifies the integrity of the file and ensure it has not been corrupted. The SHA256 hash algorithm provides a high probability of detecting corruption, including multiple-bit errors.
 
 Reserved Stack Size
 ^^^^^^^^^^^^^^^^^^^

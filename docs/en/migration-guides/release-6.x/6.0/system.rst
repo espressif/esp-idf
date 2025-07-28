@@ -57,6 +57,7 @@ The deprecated ``soc_memory_types.h`` header file has been removed. Please inclu
 
 App Trace
 ----------
+
 Removed extra data buffering option. `CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX` is no longer supported.
 
 Removed deprecated `ESP_APPTRACE_DEST_TRAX` enum value. Use `ESP_APPTRACE_DEST_JTAG` instead.
@@ -97,7 +98,7 @@ The function :cpp:func:`pxTaskGetStackStart` has been deprecated. Use :cpp:func:
 Core Dump
 ---------
 
-Binary data format has been dropped. `CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN` is no longer supported. Elf is now the default data format.
+Binary data format has been dropped. `CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN` is no longer supported. ELF is now the default data format.
 
 CRC data integrity check has been dropped. `ESP_COREDUMP_CHECKSUM_CRC32` is no longer supported. SHA256 is now the default checksum algorithm.
 
