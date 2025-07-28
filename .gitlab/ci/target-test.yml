@@ -155,6 +155,18 @@ pytest_examples_esp32s2_jtag:
     - .rules:test:example_test-esp32s2
   tags: [ esp32s2, jtag ]
 
+pytest_examples_esp32c6_usb_serial_jtag:
+  extends:
+    - .pytest_examples_dir_jtag_template
+    - .rules:test:example_test-esp32c6
+  tags: [ esp32c6, usb_serial_jtag ]
+
+pytest_examples_esp32h2_usb_serial_jtag:
+  extends:
+    - .pytest_examples_dir_jtag_template
+    - .rules:test:example_test-esp32h2
+  tags: [ esp32h2, usb_serial_jtag ]
+
 pytest_examples_esp32s3_generic:
   extends:
     - .pytest_examples_dir_template

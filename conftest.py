@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 # pylint: disable=W0621  # redefined-outer-name
-
 # This file is a pytest root configuration file and provide the following functionalities:
 # 1. Defines a few fixtures that could be used under the whole project.
 # 2. Defines a few hook functions.
@@ -12,22 +10,30 @@
 #
 # This is an experimental feature, and if you found any bug or have any question, please report to
 # https://github.com/espressif/pytest-embedded/issues
-
 import glob
 import json
 import logging
 import os
 import re
+import signal
 import sys
+import time
 from copy import deepcopy
-from typing import Callable, Optional
+from typing import Any
+from typing import Callable
+from typing import Optional
 
+import pexpect
 import pytest
 from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
-from pytest_embedded.plugin import multi_dut_argument, multi_dut_fixture
+from pytest_embedded.plugin import multi_dut_argument
+from pytest_embedded.plugin import multi_dut_fixture
+from pytest_embedded.utils import to_bytes
+from pytest_embedded.utils import to_str
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.unity_tester import CaseTester
+from pytest_embedded_jtag._telnetlib.telnetlib import Telnet  # python 3.13 removed telnetlib, use this instead
 
 try:
     from idf_ci_utils import IDF_PATH
@@ -92,6 +98,113 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
             filtered_params[k] = v  # not fixture ones
 
     return format_case_id(target, config, request.node.originalname, is_qemu=is_qemu, params=filtered_params)  # type: ignore
+
+
+class OpenOCD:
+    def __init__(self, dut: 'IdfDut'):
+        self.MAX_RETRIES = 3
+        self.RETRY_DELAY = 1
+        self.TELNET_PORT = 4444
+        self.dut = dut
+        self.telnet: Optional[Telnet] = None
+        self.log_file = os.path.join(self.dut.logdir, 'ocd.txt')
+        self.proc: Optional[pexpect.spawn] = None
+
+    def __enter__(self) -> 'OpenOCD':
+        return self
+
+    def __exit__(self, exception_type: Any, exception_value: Any, exception_traceback: Any) -> None:
+        self.kill()
+
+    def run(self) -> Optional['OpenOCD']:
+        desc_path = os.path.join(self.dut.app.binary_path, 'project_description.json')
+
+        try:
+            with open(desc_path, 'r') as f:
+                project_desc = json.load(f)
+        except FileNotFoundError:
+            logging.error('Project description file not found at %s', desc_path)
+            raise
+
+        openocd_scripts = os.getenv('OPENOCD_SCRIPTS')
+        if not openocd_scripts:
+            raise RuntimeError('OPENOCD_SCRIPTS environment variable is not set.')
+
+        debug_args = project_desc.get('debug_arguments_openocd')
+        if not debug_args:
+            raise KeyError("'debug_arguments_openocd' key is missing in project_description.json")
+
+        # For debug purposes, make the value '4'
+        ocd_env = os.environ.copy()
+        ocd_env['LIBUSB_DEBUG'] = '1'
+
+        for _ in range(1, self.MAX_RETRIES + 1):
+            try:
+                self.proc = pexpect.spawn(
+                    command='openocd',
+                    args=['-s', openocd_scripts] + debug_args.split(),
+                    timeout=5,
+                    encoding='utf-8',
+                    codec_errors='ignore',
+                    env=ocd_env,
+                )
+                if self.proc and self.proc.isalive():
+                    self.proc.expect_exact('Info : Listening on port 3333 for gdb connections', timeout=5)
+                    self.connect_telnet()
+                    self.write('log_output {}'.format(self.log_file))
+                    return self
+            except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT, ConnectionRefusedError) as e:
+                logging.error('Error running OpenOCD: %s', str(e))
+                self.kill()
+            time.sleep(self.RETRY_DELAY)
+
+        raise RuntimeError('Failed to run OpenOCD after %d attempts.', self.MAX_RETRIES)
+
+    def connect_telnet(self) -> None:
+        for attempt in range(1, self.MAX_RETRIES + 1):
+            try:
+                self.telnet = Telnet('127.0.0.1', self.TELNET_PORT, 5)
+                break
+            except ConnectionRefusedError as e:
+                logging.error('Error telnet connection: %s in attempt:%d', e, attempt)
+                time.sleep(1)
+        else:
+            raise ConnectionRefusedError
+
+    def write(self, s: str) -> Any:
+        if self.telnet is None:
+            logging.error('Telnet connection is not established.')
+            return ''
+        resp = self.telnet.read_very_eager()
+        self.telnet.write(to_bytes(s, '\n'))
+        resp += self.telnet.read_until(b'>')
+        return to_str(resp)
+
+    def apptrace_wait_stop(self, timeout: int = 30) -> None:
+        stopped = False
+        end_before = time.time() + timeout
+        while not stopped:
+            cmd_out = self.write('esp apptrace status')
+            for line in cmd_out.splitlines():
+                if line.startswith('Tracing is STOPPED.'):
+                    stopped = True
+                    break
+            if not stopped and time.time() > end_before:
+                raise pexpect.TIMEOUT('Failed to wait for apptrace stop!')
+            time.sleep(1)
+
+    def kill(self) -> None:
+        # Check if the process is still running
+        if self.proc and self.proc.isalive():
+            self.proc.terminate()
+            self.proc.kill(signal.SIGKILL)
+
+
+@pytest.fixture
+def openocd_dut(dut: IdfDut) -> OpenOCD:
+    if isinstance(dut, tuple):
+        raise ValueError('Multi-DUT support is not implemented yet')
+    return OpenOCD(dut)
 
 
 @pytest.fixture
@@ -314,7 +427,7 @@ def pytest_configure(config: Config) -> None:
                         print('Detected app: ', apps_list[-1])
                     else:
                         print(
-                            f'WARNING: app_info base dir {app_info_basedir} not recognizable in {app_info["app_dir"]}, skipping...'
+                            f'WARNING: app_info base dir {app_info_basedir} not recognizable in {app_info["app_dir"]}, skipping...'  # noqa: E713
                         )
                         continue
 
