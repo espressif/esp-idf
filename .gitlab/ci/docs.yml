@@ -157,11 +157,16 @@ build_docs_pdf:
   variables:
     DOCS_BUILD_DIR: "${IDF_PATH}/docs/_build/"
     PYTHONUNBUFFERED: 1
+    # ensure all tags are fetched, need to know the latest/stable tag for the docs
+    GIT_STRATEGY: clone
+    GIT_DEPTH: 0
   stage: test_deploy
   tags:
     - deploy
     - shiny
   script:
+    # ensure all tags are fetched, need to know the latest/stable tag for the docs
+    - git fetch --tags --prune
     - add_doc_server_ssh_keys $DOCS_DEPLOY_PRIVATEKEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
     - export GIT_VER=$(git describe --always ${PIPELINE_COMMIT_SHA} --)
     - deploy-docs
