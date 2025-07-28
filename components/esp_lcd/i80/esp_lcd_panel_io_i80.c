@@ -116,7 +116,7 @@ struct lcd_i80_trans_descriptor_t {
 struct lcd_panel_io_i80_t {
     esp_lcd_panel_io_t base;   // Base class of generic lcd panel io
     esp_lcd_i80_bus_t *bus;    // Which bus the device is attached to
-    int cs_gpio_num;           // GPIO used for CS line
+    gpio_num_t cs_gpio_num;    // GPIO used for CS line
     unsigned int pclk_hz;      // PCLK clock frequency
     size_t clock_prescale;     // Prescaler coefficient, determined by user's configured PCLK frequency
     QueueHandle_t trans_queue; // Transaction queue, transactions in this queue are pending for scheduler to dispatch

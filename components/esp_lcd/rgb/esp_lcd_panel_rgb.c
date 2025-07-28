@@ -123,12 +123,12 @@ struct esp_rgb_panel_t {
     uint8_t bb_fb_index;  // Current frame buffer index which used by bounce buffer
     size_t int_mem_align;  // DMA buffer alignment for internal memory
     size_t ext_mem_align;  // DMA buffer alignment for external memory
-    int hsync_gpio_num;    // GPIO used for HSYNC signal
-    int vsync_gpio_num;    // GPIO used for VSYNC signal
-    int de_gpio_num;       // GPIO used for DE signal, set to -1 if it's not used
-    int pclk_gpio_num;     // GPIO used for PCLK signal, set to -1 if it's not used
-    int disp_gpio_num;     // GPIO used for display control signal, set to -1 if it's not used
-    int data_gpio_nums[SOC_LCDCAM_RGB_DATA_WIDTH]; // GPIOs used for data lines, we keep these GPIOs for action like "invert_color"
+    gpio_num_t hsync_gpio_num;    // GPIO used for HSYNC signal
+    gpio_num_t vsync_gpio_num;    // GPIO used for VSYNC signal
+    gpio_num_t de_gpio_num;       // GPIO used for DE signal, set to -1 if it's not used
+    gpio_num_t pclk_gpio_num;     // GPIO used for PCLK signal, set to -1 if it's not used
+    gpio_num_t disp_gpio_num;     // GPIO used for display control signal, set to -1 if it's not used
+    gpio_num_t data_gpio_nums[SOC_LCDCAM_RGB_DATA_WIDTH]; // GPIOs used for data lines, we keep these GPIOs for action like "invert_color"
     uint64_t gpio_reserve_mask; // GPIOs reserved by this panel, used to revoke the GPIO reservation when the panel is deleted
     uint32_t src_clk_hz;   // Peripheral source clock resolution
     esp_lcd_rgb_timing_t timings;   // RGB timing parameters (e.g. pclk, sync pulse, porch width)
@@ -766,36 +766,36 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *rgb_panel, const 
         if (panel_config->data_gpio_nums[i] >= 0) {
             gpio_matrix_output(panel_config->data_gpio_nums[i],
                                lcd_periph_rgb_signals.panels[panel_id].data_sigs[i], false, false);
-            gpio_reserve_mask |= (1 << panel_config->data_gpio_nums[i]);
+            gpio_reserve_mask |= (1ULL << panel_config->data_gpio_nums[i]);
         }
     }
     if (panel_config->hsync_gpio_num >= 0) {
         gpio_matrix_output(panel_config->hsync_gpio_num,
                            lcd_periph_rgb_signals.panels[panel_id].hsync_sig, false, false);
-        gpio_reserve_mask |= (1 << panel_config->hsync_gpio_num);
+        gpio_reserve_mask |= (1ULL << panel_config->hsync_gpio_num);
     }
     if (panel_config->vsync_gpio_num >= 0) {
         gpio_matrix_output(panel_config->vsync_gpio_num,
                            lcd_periph_rgb_signals.panels[panel_id].vsync_sig, false, false);
-        gpio_reserve_mask |= (1 << panel_config->vsync_gpio_num);
+        gpio_reserve_mask |= (1ULL << panel_config->vsync_gpio_num);
     }
     // PCLK may not be necessary in some cases (i.e. VGA output)
     if (panel_config->pclk_gpio_num >= 0) {
         gpio_matrix_output(panel_config->pclk_gpio_num,
                            lcd_periph_rgb_signals.panels[panel_id].pclk_sig, false, false);
-        gpio_reserve_mask |= (1 << panel_config->pclk_gpio_num);
+        gpio_reserve_mask |= (1ULL << panel_config->pclk_gpio_num);
     }
     // DE signal might not be necessary for some RGB LCD
     if (panel_config->de_gpio_num >= 0) {
         gpio_matrix_output(panel_config->de_gpio_num,
                            lcd_periph_rgb_signals.panels[panel_id].de_sig, false, false);
-        gpio_reserve_mask |= (1 << panel_config->de_gpio_num);
+        gpio_reserve_mask |= (1ULL << panel_config->de_gpio_num);
     }
     // disp enable GPIO is optional, it is a general purpose output GPIO
     if (panel_config->disp_gpio_num >= 0) {
         gpio_matrix_output(panel_config->disp_gpio_num,
                            lcd_periph_rgb_signals.panels[panel_id].disp_sig, false, false);
-        gpio_reserve_mask |= (1 << panel_config->disp_gpio_num);
+        gpio_reserve_mask |= (1ULL << panel_config->disp_gpio_num);
     }
 
     // reserve the GPIOs

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include "esp_assert.h"
 #include "hal/lcd_types.h"
-#include "hal/mipi_dsi_types.h"
+#include "hal/gpio_types.h"
 #include "hal/color_types.h"
 
 #ifdef __cplusplus

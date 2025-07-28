@@ -46,7 +46,7 @@ static esp_err_t panel_st7789_sleep(esp_lcd_panel_t *panel, bool sleep);
 typedef struct {
     esp_lcd_panel_t base;
     esp_lcd_panel_io_handle_t io;
-    int reset_gpio_num;
+    gpio_num_t reset_gpio_num;
     bool reset_level;
     int x_gap;
     int y_gap;

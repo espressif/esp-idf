@@ -20,8 +20,8 @@ typedef int esp_lcd_spi_bus_handle_t;  /*!< Type of LCD SPI bus handle */
  * @brief Panel IO configuration structure, for SPI interface
  */
 typedef struct {
-    int cs_gpio_num; /*!< GPIO used for CS line */
-    int dc_gpio_num; /*!< GPIO used to select the D/C line, set this to -1 if the D/C line is not used */
+    gpio_num_t cs_gpio_num; /*!< GPIO used for CS line */
+    gpio_num_t dc_gpio_num; /*!< GPIO used to select the D/C line, set this to -1 if the D/C line is not used */
     int spi_mode;    /*!< Traditional SPI mode (0~3) */
     unsigned int pclk_hz;    /*!< Frequency of pixel clock */
     size_t trans_queue_depth; /*!< Size of internal transaction queue */

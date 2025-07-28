@@ -18,7 +18,6 @@ extern "C" {
  * @brief Configuration structure for panel device
  */
 typedef struct {
-    int reset_gpio_num; /*!< GPIO used to reset the LCD panel, set to -1 if it's not used */
     union {
         esp_lcd_color_space_t color_space;   /*!< @deprecated Set RGB color space, please use rgb_ele_order instead */
         lcd_color_rgb_endian_t rgb_endian;   /*!< @deprecated Set RGB data endian, please use rgb_ele_order instead */
@@ -26,6 +25,7 @@ typedef struct {
     };
     lcd_rgb_data_endian_t data_endian;         /*!< Set the data endian for color data larger than 1 byte */
     uint32_t bits_per_pixel;                   /*!< Color depth, in bpp */
+    gpio_num_t reset_gpio_num; /*!< GPIO used to reset the LCD panel, set to -1 if it's not used */
     struct {
         uint32_t reset_active_high: 1; /*!< Setting this if the panel reset is high level active */
     } flags;                           /*!< LCD panel config flags */
