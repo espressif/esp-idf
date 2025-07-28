@@ -346,8 +346,9 @@ static void usbh_hid_callback(void *arg, int nbytes)
 {
     struct usbh_hid *hid_class = (struct usbh_hid *)arg;
     hid_int_in_t *hid_intin = (hid_int_in_t *)hid_class->user_data;
-    hid_intin->is_active = false;
+
     if (nbytes <= 0) {
+        hid_intin->is_active = false;
         return;
     }
     uint8_t sub_class = hid_class->hport->config.intf[hid_class->intf].altsetting[0].intf_desc.bInterfaceSubClass;
@@ -362,6 +363,7 @@ static void usbh_hid_callback(void *arg, int nbytes)
         }
     }
     complete_cb(hid_intin->buffer, nbytes);
+    hid_intin->is_active = false;
 }
 
 static void intin_timer_cb(void *arg)
@@ -437,11 +439,8 @@ void usbh_hid_run(struct usbh_hid *hid_class)
 
     hid_class->user_data = hid_intin;
 
-    //周期间隔，低速、全速单位为1ms，高速和超高速是125us
-    ret = USBH_GET_URB_INTERVAL(hid_class->intin->bInterval, hid_class->hport->speed);
-    ret = (hid_class->hport->speed < USB_SPEED_HIGH) ? (ret * 1000) : (ret * 125);
+    esp_timer_start_periodic(hid_intin->timer, USBH_GET_URB_INTERVAL(hid_class->intin->bInterval, hid_class->hport->speed));
 
-    esp_timer_start_periodic(hid_intin->timer, ret);
     return;
 error:
     if (hid_intin->buffer) {
