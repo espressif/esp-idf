@@ -231,7 +231,7 @@ TEST_CASE("test fullduplex slave with only TX direction", "[spi]")
             t.tx_buffer = NULL;
             t.rx_buffer = master_rxbuf;
         }
-        spi_device_transmit(spi, (spi_transaction_t *)&t);
+        spi_device_transmit(spi, &t);
 
         //wait for end
         TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &out, portMAX_DELAY));

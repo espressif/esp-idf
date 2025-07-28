@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,8 +11,6 @@
 #include "hal/gpio_hal.h"
 #include "hal/spi_ll.h"
 #include "esp_rom_gpio.h"
-
-int test_freq_default[] = TEST_FREQ_DEFAULT();
 
 const char MASTER_TAG[] = "test_master";
 const char SLAVE_TAG[] = "test_slave";
@@ -33,15 +31,6 @@ DRAM_ATTR uint8_t spitest_slave_send[] = {
     0xaa, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0,
     0xda,
 };
-
-void spitest_def_param(void* arg)
-{
-    spitest_param_set_t *param_set = (spitest_param_set_t*)arg;
-    param_set->test_size = 8;
-    if (param_set->freq_list == NULL) {
-        param_set->freq_list = test_freq_default;
-    }
-}
 
 /**********************************************************************************
  * functions for slave task

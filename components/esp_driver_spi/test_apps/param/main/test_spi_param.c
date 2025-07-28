@@ -19,6 +19,27 @@
 #include "driver/spi_slave_hd.h"
 #endif
 
+//test low frequency, high frequency until freq limit for worst case (both GPIO)
+static int test_freq_default[] = {
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 100,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 50,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 16,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 7,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 3,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 2,
+    IDF_TARGET_MAX_SPI_CLK_FREQ,
+    0,
+};
+
+static void spitest_def_param(void* arg)
+{
+    spitest_param_set_t *param_set = (spitest_param_set_t*)arg;
+    param_set->test_size = 8;
+    if (param_set->freq_list == NULL) {
+        param_set->freq_list = test_freq_default;
+    }
+}
+
 #if (TEST_SPI_PERIPH_NUM >= 2)
 //These will only be enabled on chips with 2 or more SPI peripherals
 
@@ -337,16 +358,6 @@ TEST_SPI_LOCAL(TIMING, timing_pgroup)
 
 /************ Mode Test ***********************************************/
 #define FREQ_LIMIT_MODE 16 * 1000 * 1000
-static int test_freq_mode_local[] = {
-    1 * 1000 * 1000,
-    9 * 1000 * 1000, //maximum freq MISO stable before next latch edge
-    13 * 1000 * 1000,
-    16 * 1000 * 1000,
-    20 * 1000 * 1000,
-    26 * 1000 * 1000,
-    40 * 1000 * 1000,
-    0,
-};
 
 //signals are not fed to peripherals through iomux if the functions are not selected to iomux
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -377,7 +388,7 @@ static int test_freq_mode_local[] = {
 static spitest_param_set_t mode_pgroup[] = {
     {
         .pset_name = "Mode 0",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .master_limit = 13 * 1000 * 1000,
         .dup = FULL_DUPLEX,
         .mode = 0,
@@ -387,7 +398,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "Mode 1",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .freq_limit = 26 * 1000 * 1000,
         .master_limit = 13 * 1000 * 1000,
         .dup = FULL_DUPLEX,
@@ -398,7 +409,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "Mode 2",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .master_limit = 13 * 1000 * 1000,
         .dup = FULL_DUPLEX,
         .mode = 2,
@@ -408,7 +419,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "Mode 3",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .freq_limit = 26 * 1000 * 1000,
         .master_limit = 13 * 1000 * 1000,
         .dup = FULL_DUPLEX,
@@ -419,7 +430,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "Mode 0, DMA",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .master_limit = 13 * 1000 * 1000,
         .dup = FULL_DUPLEX,
         .mode = 0,
@@ -431,7 +442,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "Mode 1, DMA",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .freq_limit = 26 * 1000 * 1000,
         .master_limit = 13 * 1000 * 1000,
         .dup = FULL_DUPLEX,
@@ -444,7 +455,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "Mode 2, DMA",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .master_limit = 13 * 1000 * 1000,
         .dup = FULL_DUPLEX,
         .mode = 2,
@@ -456,7 +467,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "Mode 3, DMA",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .freq_limit = 26 * 1000 * 1000,
         .master_limit = 13 * 1000 * 1000,
         .dup = FULL_DUPLEX,
@@ -470,7 +481,7 @@ static spitest_param_set_t mode_pgroup[] = {
     /////////////////////////// MISO ////////////////////////////////////
     {
         .pset_name = "MISO, Mode 0",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .dup = HALF_DUPLEX_MISO,
         .mode = 0,
         .master_iomux = false,
@@ -479,7 +490,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "MISO, Mode 1",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .dup = HALF_DUPLEX_MISO,
         .mode = 1,
         .master_iomux = false,
@@ -488,7 +499,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "MISO, Mode 2",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .dup = HALF_DUPLEX_MISO,
         .mode = 2,
         .master_iomux = false,
@@ -497,7 +508,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "MISO, Mode 3",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .dup = HALF_DUPLEX_MISO,
         .mode = 3,
         .master_iomux = false,
@@ -506,7 +517,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "MISO, Mode 0, DMA",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .dup = HALF_DUPLEX_MISO,
         .mode = 0,
         .slave_dma_chan = SPI_DMA_CH_AUTO,
@@ -517,7 +528,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "MISO, Mode 1, DMA",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .dup = HALF_DUPLEX_MISO,
         .mode = 1,
         .slave_dma_chan = SPI_DMA_CH_AUTO,
@@ -528,7 +539,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "MISO, Mode 2, DMA",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .dup = HALF_DUPLEX_MISO,
         .mode = 2,
         .slave_dma_chan = SPI_DMA_CH_AUTO,
@@ -539,7 +550,7 @@ static spitest_param_set_t mode_pgroup[] = {
     },
     {
         .pset_name = "MISO, Mode 3, DMA",
-        .freq_list = test_freq_mode_local,
+        .freq_list = test_freq_default,
         .dup = HALF_DUPLEX_MISO,
         .mode = 3,
         .slave_dma_chan = SPI_DMA_CH_AUTO,
@@ -1047,19 +1058,6 @@ TEST_SPI_MASTER_SLAVE(TIMING, timing_conf, "")
 //Set to this input delay so that the master will read with delay until 7M
 #define DELAY_HCLK_UNTIL_7M    12.5*3
 
-static int test_freq_mode_ms[] = {
-    100 * 1000,
-    6 * 1000 * 1000,
-    7 * 1000 * 1000,
-    8 * 1000 * 1000, //maximum freq MISO stable before next latch edge
-    9 * 1000 * 1000, //maximum freq MISO stable before next latch edge
-    10 * 1000 * 1000,
-    11 * 1000 * 1000,
-    13 * 1000 * 1000,
-    16 * 1000 * 1000,
-    20 * 1000 * 1000,
-    0,
-};
 static int test_freq_20M_only[] = {
     20 * 1000 * 1000,
     0,
@@ -1069,7 +1067,7 @@ spitest_param_set_t mode_conf[] = {
     //non-DMA tests
     {
         .pset_name = "mode 0, no DMA",
-        .freq_list = test_freq_mode_ms,
+        .freq_list = test_freq_default,
         .master_limit = FREQ_LIMIT_MODE,
         .dup = FULL_DUPLEX,
         .master_iomux = true,
@@ -1079,7 +1077,7 @@ spitest_param_set_t mode_conf[] = {
     },
     {
         .pset_name = "mode 1, no DMA",
-        .freq_list = test_freq_mode_ms,
+        .freq_list = test_freq_default,
         .master_limit = FREQ_LIMIT_MODE,
         .dup = FULL_DUPLEX,
         .master_iomux = true,
@@ -1089,7 +1087,7 @@ spitest_param_set_t mode_conf[] = {
     },
     {
         .pset_name = "mode 2, no DMA",
-        .freq_list = test_freq_mode_ms,
+        .freq_list = test_freq_default,
         .master_limit = FREQ_LIMIT_MODE,
         .dup = FULL_DUPLEX,
         .master_iomux = true,
@@ -1099,7 +1097,7 @@ spitest_param_set_t mode_conf[] = {
     },
     {
         .pset_name = "mode 3, no DMA",
-        .freq_list = test_freq_mode_ms,
+        .freq_list = test_freq_default,
         .master_limit = FREQ_LIMIT_MODE,
         .dup = FULL_DUPLEX,
         .master_iomux = true,
@@ -1147,7 +1145,7 @@ spitest_param_set_t mode_conf[] = {
     //DMA tests
     {
         .pset_name = "mode 0, DMA",
-        .freq_list = test_freq_mode_ms,
+        .freq_list = test_freq_default,
         .master_limit = FREQ_LIMIT_MODE,
         .dup = FULL_DUPLEX,
         .master_iomux = true,
@@ -1160,7 +1158,7 @@ spitest_param_set_t mode_conf[] = {
     },
     {
         .pset_name = "mode 1, DMA",
-        .freq_list = test_freq_mode_ms,
+        .freq_list = test_freq_default,
         .master_limit = FREQ_LIMIT_MODE,
         .dup = FULL_DUPLEX,
         .master_iomux = true,
@@ -1173,7 +1171,7 @@ spitest_param_set_t mode_conf[] = {
     },
     {
         .pset_name = "mode 2, DMA",
-        .freq_list = test_freq_mode_ms,
+        .freq_list = test_freq_default,
         .master_limit = FREQ_LIMIT_MODE,
         .dup = FULL_DUPLEX,
         .master_iomux = true,
@@ -1186,7 +1184,7 @@ spitest_param_set_t mode_conf[] = {
     },
     {
         .pset_name = "mode 3, DMA",
-        .freq_list = test_freq_mode_ms,
+        .freq_list = test_freq_default,
         .master_limit = FREQ_LIMIT_MODE,
         .dup = FULL_DUPLEX,
         .master_iomux = true,

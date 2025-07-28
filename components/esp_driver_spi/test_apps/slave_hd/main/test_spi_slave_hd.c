@@ -19,6 +19,7 @@
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_pmu.h"
+#include "spi_performance.h"
 #include "esp_rom_gpio.h"
 
 #define TEST_BUFFER_SIZE    256     ///< buffer size of each wrdma buffer in fifo mode
@@ -433,6 +434,27 @@ static void test_hd_loop(const void* arg1, void* arg2)
     }
 }
 
+//test low frequency, high frequency until freq limit for worst case (both GPIO)
+static int test_freq_default[] = {
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 100,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 50,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 10,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 7,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 4,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 2,
+    IDF_TARGET_MAX_SPI_CLK_FREQ,
+    0,
+};
+
+static void spitest_def_param(void* arg)
+{
+    spitest_param_set_t *param_set = (spitest_param_set_t*)arg;
+    param_set->test_size = 8;
+    if (param_set->freq_list == NULL) {
+        param_set->freq_list = test_freq_default;
+    }
+}
+
 static const ptest_func_t hd_test_func = {
     .pre_test = test_hd_init,
     .post_test = test_hd_deinit,
@@ -446,9 +468,8 @@ static const ptest_func_t hd_test_func = {
 
 static int test_freq_hd[] = {
     500 * 1000,
-    10 * 1000 * 1000, //maximum freq MISO stable before next latch edge
-    20 * 1000 * 1000, //maximum freq MISO stable before next latch edge
-    // 40 * 1000 * 1000, //maximum freq MISO stable before next latch edge
+    10 * 1000 * 1000,               //maximum freq MISO stable before next latch edge
+    IDF_TARGET_MAX_SPI_CLK_FREQ,    //maximum freq MISO stable before next latch edge
     0,
 };
 

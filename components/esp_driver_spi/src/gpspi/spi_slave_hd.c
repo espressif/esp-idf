@@ -117,7 +117,7 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     SPIHD_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM) == 0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_SLAVE_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
 #endif
 
-    SPIHD_CHECK(spicommon_periph_claim(host_id, "slave_hd"), "host already in use", ESP_ERR_INVALID_STATE);
+    SPIHD_CHECK(ESP_OK == spicommon_bus_alloc(host_id, "slave_hd"), "host already in use", ESP_ERR_INVALID_STATE);
     // spi_slave_hd_slot_t contains atomic variable, memory must be allocated from internal memory
     spi_slave_hd_slot_t *host = heap_caps_calloc(1, sizeof(spi_slave_hd_slot_t), MALLOC_CAP_INTERNAL);
     if (host == NULL) {
@@ -351,7 +351,7 @@ esp_err_t spi_slave_hd_deinit(spi_host_device_t host_id)
 
     spicommon_bus_free_io_cfg(&host->bus_config, &host->gpio_reserve);
     spicommon_cs_free_io(host->cs_io_num, &host->gpio_reserve);
-    spicommon_periph_free(host_id);
+    spicommon_bus_free(host_id);
     free(host->dma_ctx->dmadesc_tx);
     free(host->dma_ctx->dmadesc_rx);
     free(host->hal.dmadesc_tx);
@@ -756,7 +756,7 @@ esp_err_t s_spi_slave_hd_append_txdma(spi_slave_hd_slot_t *host, uint8_t *data, 
     spi_slave_hd_hal_context_t *hal = &host->hal;
 
     //Check if there are enough available DMA descriptors for software to use
-    int num_required = (len + LLDESC_MAX_NUM_PER_DESC - 1) / LLDESC_MAX_NUM_PER_DESC;
+    int num_required = (len + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
     int available_desc_num = hal->dma_desc_num - hal->tx_used_desc_cnt;
     if (num_required > available_desc_num) {
         return ESP_ERR_INVALID_STATE;
@@ -797,7 +797,7 @@ esp_err_t s_spi_slave_hd_append_rxdma(spi_slave_hd_slot_t *host, uint8_t *data, 
     spi_slave_hd_hal_context_t *hal = &host->hal;
 
     //Check if there are enough available dma descriptors for software to use
-    int num_required = (len + LLDESC_MAX_NUM_PER_DESC - 1) / LLDESC_MAX_NUM_PER_DESC;
+    int num_required = (len + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
     int available_desc_num = hal->dma_desc_num - hal->rx_used_desc_cnt;
     if (num_required > available_desc_num) {
         return ESP_ERR_INVALID_STATE;
