@@ -51,7 +51,6 @@ generate_pytest_child_pipeline:
       optional: true
     - job: build_non_test_related_apps  # make sure all build jobs are passed
       optional: true
-      artifacts: false
     - pipeline: $PARENT_PIPELINE_ID
       job: pipeline_variables
   artifacts:
