@@ -35,6 +35,7 @@ extern "C" {
 #define I2S_DMA_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
 
 #define I2S_NULL_POINTER_CHECK(tag, p)          ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, tag, "input parameter '"#p"' is NULL")
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 /**
  * @brief i2s channel state for checking if the operation in under right driver state
