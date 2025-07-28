@@ -9,8 +9,8 @@ This example demonstrates how to use the CherryUSB host driver. Currently, this 
 
 ## How to use example
 
-If you need to enable support for FTDI, please enable the following configuration
-Run `idf.py menuconfig` and in `Component config → CherryUSB Configuration → Enable usb host mode → Enable usb ftdi driver` enable.
+By default, all drivers supported by the routine are enabled. If you need to trim or disable unnecessary drivers, please disable the corresponding driver configuration.
+Run `idf.py menuconfig` and in `Component config → CherryUSB Configuration → Enable usb host mode`, Uncheck the drivers you don’t need.
 
 ### Hardware Required
 * Development board with USB-OTG support

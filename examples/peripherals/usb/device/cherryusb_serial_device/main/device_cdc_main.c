@@ -46,10 +46,13 @@ static TaskHandle_t s_task_handle = NULL;
 /*!< config descriptor size */
 #define USB_CONFIG_SIZE (9 + CDC_ACM_DESCRIPTOR_LEN * 4)
 
+#define CDC_FS_MAX_MPS 64
+#define CDC_HS_MAX_MPS 512
+
 #ifdef CONFIG_USB_HS
-#define CDC_MAX_MPS 512
+#define CDC_MAX_MPS CDC_HS_MAX_MPS
 #else
-#define CDC_MAX_MPS 64
+#define CDC_MAX_MPS CDC_FS_MAX_MPS
 #endif
 
 typedef struct {
@@ -68,26 +71,42 @@ static ep_status_t s_ep_status[CDC_ACM_CHANNEL_NUM] = {
 #endif
 };
 
+#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+
+#define WRITE_BUFFER_SIZE ALIGN_UP(ALIGN_UP(2048, CDC_MAX_MPS), CONFIG_USB_ALIGN_SIZE)
+
 #if CONFIG_EXAMPLE_CHERRYUSB_SET_READ_BUFFER_SIZE_MPS
-#define READ_BUFFER_SIZE CDC_MAX_MPS
+#define READ_BUFFER_SIZE ALIGN_UP(CDC_MAX_MPS, CONFIG_USB_ALIGN_SIZE)
 #else
-#define READ_BUFFER_SIZE 2048
+#define READ_BUFFER_SIZE WRITE_BUFFER_SIZE
 #endif
+
+static uint32_t s_mps = CDC_MAX_MPS;
 static DRAM_DMA_ALIGNED_ATTR uint8_t read_buffer[CDC_ACM_CHANNEL_NUM][READ_BUFFER_SIZE];
-static DRAM_DMA_ALIGNED_ATTR uint8_t write_buffer[CDC_ACM_CHANNEL_NUM][2048];
+static DRAM_DMA_ALIGNED_ATTR uint8_t write_buffer[CDC_ACM_CHANNEL_NUM][WRITE_BUFFER_SIZE];
 
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
 static const uint8_t device_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0xEF, 0x02, 0x01, USBD_VID, USBD_PID, 0x0100, 0x01)
 };
 
-static const uint8_t config_descriptor[] = {
+static const uint8_t config_descriptor_fs[] = {
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, INTERFACES_NUM, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    CDC_ACM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, 0x02),
+    CDC_ACM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_FS_MAX_MPS, 0x02),
 #ifdef CONFIG_EXAMPLE_CHERRYUSB_CDC_ACM_TWO_CHANNEL
-    CDC_ACM_DESCRIPTOR_INIT(0x02, CDC_INT_EP1, CDC_OUT_EP1, CDC_IN_EP1, CDC_MAX_MPS, 0x02),
+    CDC_ACM_DESCRIPTOR_INIT(0x02, CDC_INT_EP1, CDC_OUT_EP1, CDC_IN_EP1, CDC_FS_MAX_MPS, 0x02),
 #endif
 };
+
+#ifdef CONFIG_USB_HS
+static const uint8_t config_descriptor_hs[] = {
+    USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, INTERFACES_NUM, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+    CDC_ACM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_HS_MAX_MPS, 0x02),
+#ifdef CONFIG_EXAMPLE_CHERRYUSB_CDC_ACM_TWO_CHANNEL
+    CDC_ACM_DESCRIPTOR_INIT(0x02, CDC_INT_EP1, CDC_OUT_EP1, CDC_IN_EP1, CDC_HS_MAX_MPS, 0x02),
+#endif
+};
+#endif
 
 static const uint8_t device_quality_descriptor[] = {
     ///////////////////////////////////////
@@ -122,7 +141,14 @@ static const uint8_t *device_descriptor_callback(uint8_t speed)
 
 static const uint8_t *config_descriptor_callback(uint8_t speed)
 {
-    return config_descriptor;
+#ifdef CONFIG_USB_HS
+    if (speed >= USB_SPEED_HIGH) {
+        s_mps = CDC_HS_MAX_MPS;
+        return config_descriptor_hs;
+    }
+    s_mps = CDC_FS_MAX_MPS;
+#endif
+    return config_descriptor_fs;
 }
 
 static const uint8_t *device_quality_descriptor_callback(uint8_t speed)
@@ -270,14 +296,22 @@ static void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
                 if (ep_status->write_len == 0) {
                     memcpy(write_buffer[i], read_buffer[i], nbytes);
                     ep_status->write_len = nbytes;
+#if CONFIG_EXAMPLE_CHERRYUSB_SET_READ_BUFFER_SIZE_MPS
+                    usbd_ep_start_read(0, ep, read_buffer[i], s_mps);
+#else
                     usbd_ep_start_read(0, ep, read_buffer[i], sizeof(read_buffer[0]));
+#endif
                 } else {
                     ep_status->read_len = nbytes;
                     ep_status->rx_busy_flag = false;
                 }
                 xTaskNotifyFromISR(s_task_handle, NOTIFY_EP_BIT, eSetBits, &HPTaskAwoken);
             } else {
-                usbd_ep_start_read(0, ep_status->rx_addr, read_buffer[i], sizeof(read_buffer[i]));
+#if CONFIG_EXAMPLE_CHERRYUSB_SET_READ_BUFFER_SIZE_MPS
+                usbd_ep_start_read(0, ep, read_buffer[i], s_mps);
+#else
+                usbd_ep_start_read(0, ep, read_buffer[i], sizeof(read_buffer[i]));
+#endif
             }
             break;
         }
@@ -291,7 +325,7 @@ static void usbd_cdc_acm_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     BaseType_t HPTaskAwoken = pdFALSE;
     ESP_EARLY_LOGI(TAG, "ep 0x%02X actual in len:%d", ep, nbytes);
-    if ((nbytes % CDC_MAX_MPS) == 0 && nbytes) {
+    if ((nbytes % s_mps) == 0 && nbytes) {
         usbd_ep_start_write(0, ep, NULL, 0);
     } else {
         for (size_t i = 0; i < CDC_ACM_CHANNEL_NUM; i++) {
@@ -354,7 +388,12 @@ static void cdc_acm_init(void)
     usbd_add_endpoint(0, &cdc_out_ep1);
     usbd_add_endpoint(0, &cdc_in_ep1);
 #endif
-    usbd_initialize(0, ESP_USBD_BASE, usbd_event_handler);
+
+#if CONFIG_EXAMPLE_USB_DEVICE_RHPORT_HS
+    usbd_initialize(0, ESP_USB_HS0_BASE, usbd_event_handler);
+#else
+    usbd_initialize(0, ESP_USB_FS0_BASE, usbd_event_handler);
+#endif
 }
 
 void usbd_cdc_acm_set_dtr(uint8_t busid, uint8_t intf, bool dtr)
@@ -389,7 +428,11 @@ void cdc_acm_task(void *arg)
 
                 ep_status->read_len = 0;
                 ep_status->rx_busy_flag = true;
+#if CONFIG_EXAMPLE_CHERRYUSB_SET_READ_BUFFER_SIZE_MPS
+                usbd_ep_start_read(0, ep_status->rx_addr, read_buffer[i], s_mps);
+#else
                 usbd_ep_start_read(0, ep_status->rx_addr, read_buffer[i], sizeof(read_buffer[0]));
+#endif
             }
         }
         for (size_t i = 0; i < sizeof(s_ep_status) / sizeof(s_ep_status[0]); i++) {
@@ -408,7 +451,11 @@ void cdc_acm_task(void *arg)
             if (ep_status->rx_busy_flag == false) {
                 if (ep_status->read_len == 0) {
                     ep_status->rx_busy_flag = true;
+#if CONFIG_EXAMPLE_CHERRYUSB_SET_READ_BUFFER_SIZE_MPS
+                    usbd_ep_start_read(0, ep_status->rx_addr, read_buffer[i], s_mps);
+#else
                     usbd_ep_start_read(0, ep_status->rx_addr, read_buffer[i], sizeof(read_buffer[i]));
+#endif
                 }
             }
         }
