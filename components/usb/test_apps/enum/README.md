@@ -51,7 +51,7 @@ The Mocked Device has a Final State Machine (FSM), which could be configured to 
 
 FSM is described in the **mock_dev_stage_t** structure and could be found in [mock_dev.h](main/mock_dev.h).
 
-Available stages: 
+Available stages:
 - Request Short Device Descriptor
 - Request Full Device Descriptor
 - Request Short Configuration Descriptor
@@ -165,7 +165,7 @@ TEST_CASE("enum::complete", "[mock_enum_device]")
                 }
             },
         };
-        
+
     // Test remained logic
 }
 ```
@@ -346,4 +346,3 @@ E (121120) USBH: Dev 33 EP 0 STALL
 E (121120) ENUM: Bad transfer status 4: CHECK_CONFIG
 E (121120) ENUM: [0:0] CHECK_CONFIG FAILED
 ```
-

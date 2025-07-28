@@ -27,7 +27,7 @@ The example is run in a loop so that it can demonstrate USB connection and recon
 ### USB Host Limitations
 
 #### ESP32-S2 & ESP32-S3
-The USB OTG peripheral on ESP32-S2 and ESP32-S3 in host mode supports **up to 8 bidirectional endpoints**. Each of these endpoints can be configured as either IN or OUT.  
+The USB OTG peripheral on ESP32-S2 and ESP32-S3 in host mode supports **up to 8 bidirectional endpoints**. Each of these endpoints can be configured as either IN or OUT.
 
 Since each USB Mass Storage Class (MSC) device typically requires **3 endpoints** (Control, BULK IN, and BULK OUT), and USB hubs also consume endpoints (Control, INTERRUPT IN), this limits the theoretical maximum number of connected MSC devices to **2**.
 

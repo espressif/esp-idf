@@ -128,7 +128,7 @@ In order to communicate events to the client of the HCD, the HCD does not attemp
 There are two types callbacks that the HCD offers:
 
 - Port callback will run whenever an event a port occurs. `hcd_port_handle_event()` should be called after a port event occurs.
-- A pipe callback on each pipe, that will run when a event occurs on a pipe. 
+- A pipe callback on each pipe, that will run when a event occurs on a pipe.
 
 The client of the HCD can also forego callbacks entirely and simply poll for port and pipe events using the `hcd_port_handle_event()` and `hcd_pipe_get_event()` respectively.
 

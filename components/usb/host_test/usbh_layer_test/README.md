@@ -13,7 +13,7 @@ This test directory uses freertos as a real component
 
 # Build
 
-Tests build regularly like an idf project. Currently only working on Linux machines. 
+Tests build regularly like an idf project. Currently only working on Linux machines.
 
 ```
 idf.py --preview set-target linux

@@ -72,7 +72,7 @@ void hub_child_quick_enum(hcd_pipe_handle_t ctrl_pipe, uint8_t dev_addr, uint8_t
  *
  * @return void* pointer to a Hub context
  */
-void* hub_get_context(void);
+void *hub_get_context(void);
 
 /**
  * @brief Get number of ports

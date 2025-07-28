@@ -78,7 +78,7 @@ struct ext_port_s {
         usb_device_handle_t parent_dev_hdl;     /**< Ports' parent device handle */
         uint8_t parent_dev_addr;                /**< Ports' parent device bus address */
         // Port related constant members
-        void* context;                          /**< Ports' parent External Hub handle */
+        void *context;                          /**< Ports' parent External Hub handle */
         uint8_t port_num;                       /**< Ports' parent External Hub Port number */
         int power_on_delay_ms;                  /**< Ports' Power on time to Power Good, ms */
     } constant;                                 /**< Constant members. Do not change after installation thus do not require a critical section or mutex */
@@ -181,7 +181,7 @@ static inline bool port_is_enabled(ext_port_t *ext_port)
  *    - true    Port connection changed
  *    - false   Port connection not changed
  */
-static inline bool port_has_changed_connection(ext_port_t * ext_port)
+static inline bool port_has_changed_connection(ext_port_t *ext_port)
 {
     return ext_port->status.wPortChange.C_PORT_CONNECTION ? true : false;
 }
@@ -230,7 +230,7 @@ static inline bool port_has_finished_reset(ext_port_t *ext_port)
  *    - ESP_ERR_NOT_SUPPORTED:  The request type is not supported by the External Hub Driver
  *    - ESP_OK:                 Status has been requested
  */
-static esp_err_t port_request_status(ext_port_t* ext_port)
+static esp_err_t port_request_status(ext_port_t *ext_port)
 {
     ext_port_parent_request_data_t data = {
         .type = EXT_PORT_PARENT_REQ_CONTROL,
@@ -469,7 +469,7 @@ static ext_port_t *get_port_from_pending_list(void)
  *    - ESP_ERR_NOT_FINISHED:   Unable to allocate the port object: parent device is not available
  *    - ESP_OK:                 Port object created successfully
  */
-static esp_err_t port_alloc(void* context, usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num, uint16_t port_delay_ms, ext_port_t **port_obj)
+static esp_err_t port_alloc(void *context, usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num, uint16_t port_delay_ms, ext_port_t **port_obj)
 {
     uint8_t parent_dev_addr = 0;
     EXT_PORT_CHECK(context != NULL && parent_dev_hdl != NULL, ESP_ERR_INVALID_ARG);
@@ -1247,7 +1247,7 @@ static esp_err_t port_gone(void *port_hdl)
  *    - ESP_ERR_INVALID_ARG:    The port handle can't be NULL
  *    - ESP_OK:                 Port action was requested
  */
-static esp_err_t port_get_status(void* port_hdl)
+static esp_err_t port_get_status(void *port_hdl)
 {
     EXT_PORT_CHECK(p_ext_port_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_PORT_CHECK(port_hdl != NULL, ESP_ERR_INVALID_ARG);
@@ -1269,7 +1269,7 @@ static esp_err_t port_get_status(void* port_hdl)
  *    - ESP_ERR_INVALID_ARG:    The port handle can't be NULL, the status data can't be NULL
  *    - ESP_OK:                 Port action was requested
  */
-static esp_err_t port_set_status(void* port_hdl, const usb_port_status_t *port_status)
+static esp_err_t port_set_status(void *port_hdl, const usb_port_status_t *port_status)
 {
     EXT_PORT_CHECK(p_ext_port_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_PORT_CHECK(port_hdl != NULL && port_status != NULL, ESP_ERR_INVALID_ARG);
@@ -1298,7 +1298,7 @@ static esp_err_t port_set_status(void* port_hdl, const usb_port_status_t *port_s
  *    - ESP_ERR_INVALID_ARG:    The port handle can't be NULL
  *    - ESP_OK:                 Port action was requested
  */
-static esp_err_t port_req_process(void* port_hdl)
+static esp_err_t port_req_process(void *port_hdl)
 {
     EXT_PORT_CHECK(p_ext_port_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_PORT_CHECK(port_hdl != NULL, ESP_ERR_INVALID_ARG);
@@ -1443,7 +1443,7 @@ const ext_port_driver_api_t *ext_port_get_driver(void)
     return &ext_port_driver;
 }
 
-void* ext_port_get_context(ext_port_hdl_t port_hdl)
+void *ext_port_get_context(ext_port_hdl_t port_hdl)
 {
     EXT_PORT_CHECK(p_ext_port_driver != NULL, NULL);
     ext_port_t *ext_port = (ext_port_t *)port_hdl;

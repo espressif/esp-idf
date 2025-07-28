@@ -37,25 +37,25 @@ Mouse
 X: 000883       Y: 000058       | |o|
 ```
 
-Where every keyboard key printed as char symbol if it is possible and a Hex value for any other key. 
+Where every keyboard key printed as char symbol if it is possible and a Hex value for any other key.
 
 #### Keyboard input data
 Keyboard input data starts with the word "Keyboard" and every pressed key is printed to the serial debug.
-Left or right Shift modifier is also supported. 
+Left or right Shift modifier is also supported.
 
 ```
 Keyboard
 Hello, ESP32 USB HID Keyboard is here!
 ```
 
-#### Mouse input data 
-Mouse input data starts with the word "Mouse" and has the following structure. 
+#### Mouse input data
+Mouse input data starts with the word "Mouse" and has the following structure.
 ```
 Mouse
 X: -00343   Y: 000183   | |o|
      |            |      | |
      |            |      | +- Right mouse button pressed status ("o" - pressed, " " - not pressed)
      |            |      +--- Left mouse button pressed status ("o" - pressed, " " - not pressed)
-     |            +---------- Y relative coordinate of the cursor 
-     +----------------------- X relative coordinate of the cursor 
+     |            +---------- Y relative coordinate of the cursor
+     +----------------------- X relative coordinate of the cursor
 ```

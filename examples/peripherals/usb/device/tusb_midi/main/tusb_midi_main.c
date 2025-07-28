@@ -42,7 +42,7 @@ enum usb_endpoints {
 /**
  * @brief String descriptor
  */
-static const char* s_str_desc[5] = {
+static const char *s_str_desc[5] = {
     // array of pointer to string descriptors
     (char[]){0x09, 0x04},  // 0: is supported language is English (0x0409)
     "TinyUSB",             // 1: Manufacturer

@@ -199,9 +199,9 @@ void hub_detach(void)
     test_hcd_wait_for_disconn(hub.root_port_hdl, true);
 }
 
-void* hub_get_context(void)
+void *hub_get_context(void)
 {
-    return (void*) &hub;
+    return (void *) &hub;
 }
 
 uint8_t hub_get_port_num(void)

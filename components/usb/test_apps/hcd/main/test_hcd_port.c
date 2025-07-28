@@ -33,7 +33,7 @@ Procedure:
 TEST_CASE("Test HCD port disconnect event, port enabled", "[port][low_speed][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl); // Trigger a connection
-    printf("Connected %s speed device \n", (char*[]) {
+    printf("Connected %s speed device \n", (char *[]) {
         "Low", "Full", "High"
     }[port_speed]);
     vTaskDelay(pdMS_TO_TICKS(100)); // Short delay send of SOF (for FS) or EOPs (for LS)

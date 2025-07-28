@@ -202,7 +202,7 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 }
 
 // Advanced
-uint8_t const * tud_descriptor_bos_cb(void)
+uint8_t const *tud_descriptor_bos_cb(void)
 {
     printf("\t <- BOS Descriptor request\n");
     return NULL;

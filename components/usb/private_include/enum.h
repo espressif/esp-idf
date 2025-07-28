@@ -29,7 +29,7 @@ extern "C" {
 /**
  * @brief Handle of enumeration control object
  */
-typedef struct enum_ctx_handle_s * enum_ctx_handle_t;
+typedef struct enum_ctx_handle_s *enum_ctx_handle_t;
 
 // ------------------------------ Events ---------------------------------------
 
