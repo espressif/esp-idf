@@ -457,8 +457,10 @@ esp_err_t gpio_reset_pin(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_intr_disable(gpio_num);
-    // for powersave reasons, the GPIO should not be floating, select pullup
-    gpio_pullup_en(gpio_num);
+    if (GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)) {
+        // for powersave reasons, the GPIO should not be floating, select pullup
+        gpio_pullup_en(gpio_num);
+    }
     gpio_pulldown_dis(gpio_num);
     gpio_input_disable(gpio_num);
     gpio_output_disable(gpio_num);
