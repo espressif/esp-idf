@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -178,6 +178,36 @@ STRUCT_END(RvHWLPSaveArea)
 
 #endif /* SOC_CPU_HAS_HWLOOP */
 
+
+#if SOC_CPU_HAS_DSP
+
+/* DSP coprocessor is considered coprocessor 1, just like the HWLP, make sure both are not present on the same target */
+#define DSP_COPROC_IDX      1
+
+#ifdef SOC_CPU_HAS_HWLOOP
+#error  "HWLP and DSP share the same coprocessor index!"
+#endif
+
+/**
+ * @brief DSP save area
+ */
+STRUCT_BEGIN
+STRUCT_FIELD (long, 4,  RV_DSP_XACC_L,   xacc_l)
+STRUCT_FIELD (long, 4,  RV_DSP_XACC_H,   xacc_h)
+STRUCT_FIELD (long, 4,  RV_DSP_SAR,      sar)
+STRUCT_FIELD (long, 4,  RV_DSP_STATUS,   status)
+STRUCT_END(RvDSPSaveArea)
+
+/* Redefine the coprocessor area size previously defined to 0 */
+#undef RV_COPROC1_SIZE
+
+#if defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)
+    #define RV_COPROC1_SIZE RvDSPSaveAreaSize
+#else
+    #define RV_COPROC1_SIZE sizeof(RvDSPSaveArea)
+#endif /* defined(_ASMLANGUAGE) || defined(__ASSEMBLER__) */
+
+#endif /* SOC_CPU_HAS_DSP */
 
 
 #if SOC_CPU_HAS_PIE

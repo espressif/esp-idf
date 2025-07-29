@@ -136,7 +136,11 @@ BaseType_t xPortStartScheduler(void)
 #if SOC_CPU_HAS_PIE
     /* Similarly, disable PIE */
     rv_utils_disable_pie();
-#endif /* SOC_CPU_HAS_FPU */
+#endif /* SOC_CPU_HAS_PIE */
+
+#if SOC_CPU_HAS_DSP
+    rv_utils_disable_dsp();
+#endif /* SOC_CPU_HAS_DSP */
 
 #if SOC_CPU_HAS_HWLOOP
     /* Initialize the Hardware loop feature */
