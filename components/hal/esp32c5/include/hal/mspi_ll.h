@@ -38,7 +38,6 @@ extern "C" {
 #define MSPI_LL_CORE_CLOCK_120_MHZ                    120
 #define MSPI_TIMING_LL_CORE_CLOCK_MHZ_DEFAULT         MSPI_LL_CORE_CLOCK_80_MHZ
 
-
 /*---------------------------------------------------------------
                             MSPI
 ---------------------------------------------------------------*/
@@ -58,6 +57,9 @@ static inline __attribute__((always_inline)) void mspi_timing_ll_set_core_clock(
             break;
         case 120:
             divider = 4;
+            break;
+        case 240:
+            divider = 2;
             break;
         default:
             HAL_ASSERT(false);
@@ -107,6 +109,19 @@ static inline uint32_t mspi_timing_ll_calculate_clock_reg(uint8_t clkdiv)
         div_parameter = ((clkdiv - 1) | (((clkdiv - 1) / 2 & 0xff) << 8 ) | (((clkdiv - 1) & 0xff) << 16));
     }
     return div_parameter;
+}
+
+/**
+ * Clear MSPI hw fifo
+ *
+ * @param mspi_id       SPI0 / SPI1
+ */
+__attribute__((always_inline))
+static inline void mspi_timing_ll_clear_fifo(uint8_t mspi_id)
+{
+    for (int i = 0; i < 16; i++) {
+        REG_WRITE(SPI_MEM_W0_REG(mspi_id) + i * 4, 0);
+    }
 }
 
 /*---------------------------------------------------------------
