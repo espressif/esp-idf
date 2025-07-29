@@ -24,14 +24,6 @@
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
 
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/memprot.h"
-#else
-#include "esp_memprot.h"
-#endif
-#endif
-
 #include "esp_private/panic_internal.h"
 #include "esp_private/panic_reason.h"
 
