@@ -797,25 +797,25 @@ typedef enum {
     CLKOUT_SIG_INVALID  = 0xFF,
 } soc_clkout_sig_id_t;
 
-////////////////////////////////////////////RTC CALIBRATION///////////////////////////////////////////////////////////
+//////////////////////////////////////CLOCK FREQUENCY CALCULATION////////////////////////////////////////////////////
 /**
- * @brief Clock frequency calibration source selection
+ * @brief Clock frequency calculation source selection
  */
 typedef enum {
-    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calibrate RTC_SLOW_CLK */
-    CLK_CAL_MPLL,                                    /*!< Select to calibrate MPLL_CLK */
-    CLK_CAL_SPLL,                                    /*!< Select to calibrate SPLL_CLK */
-    CLK_CAL_CPLL,                                    /*!< Select to calibrate CPLL_CLK */
-    CLK_CAL_APLL,                                    /*!< Select to calibrate APLL_CLK */
-    CLK_CAL_SDIO_PLL0,                               /*!< Select to calibrate SDIO_PLL0_CLK */
-    CLK_CAL_SDIO_PLL1,                               /*!< Select to calibrate SDIO_PLL1_CLK */
-    CLK_CAL_SDIO_PLL2,                               /*!< Select to calibrate SDIO_PLL2_CLK */
-    CLK_CAL_RC_FAST,                                 /*!< Select to calibrate RC_FAST_CLK */
-    CLK_CAL_RC_SLOW,                                 /*!< Select to calibrate RC_SLOW_CLK */
-    CLK_CAL_RC32K,                                   /*!< Select to calibrate RC32K_CLK */
-    CLK_CAL_32K_XTAL,                                /*!< Select to calibrate XTAL32K_CLK */
-    CLK_CAL_LP_PLL,                                  /*!< Select to calibrate LP_PLL_CLK */
-} soc_timg0_calibration_clk_src_t;
+    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calculate frequency of RTC_SLOW_CLK */
+    CLK_CAL_MPLL,                                    /*!< Select to calculate frequency of MPLL_CLK */
+    CLK_CAL_SPLL,                                    /*!< Select to calculate frequency of SPLL_CLK */
+    CLK_CAL_CPLL,                                    /*!< Select to calculate frequency of CPLL_CLK */
+    CLK_CAL_APLL,                                    /*!< Select to calculate frequency of APLL_CLK */
+    CLK_CAL_SDIO_PLL0,                               /*!< Select to calculate frequency of SDIO_PLL0_CLK */
+    CLK_CAL_SDIO_PLL1,                               /*!< Select to calculate frequency of SDIO_PLL1_CLK */
+    CLK_CAL_SDIO_PLL2,                               /*!< Select to calculate frequency of SDIO_PLL2_CLK */
+    CLK_CAL_RC_FAST,                                 /*!< Select to calculate frequency of RC_FAST_CLK */
+    CLK_CAL_RC_SLOW,                                 /*!< Select to calculate frequency of RC_SLOW_CLK */
+    CLK_CAL_RC32K,                                   /*!< Select to calculate frequency of RC32K_CLK */
+    CLK_CAL_32K_XTAL,                                /*!< Select to calculate frequency of XTAL32K_CLK */
+    CLK_CAL_LP_PLL,                                  /*!< Select to calculate frequency of LP_PLL_CLK */
+} soc_clk_freq_calculation_src_t;
 
 #ifdef __cplusplus
 }

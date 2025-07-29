@@ -62,6 +62,8 @@ LEDC
 
 - :cpp:member:`ledc_channel_config_t::intr_type` 已被弃用。`LEDC_INTR_FADE_END` 中断使能/禁用控制由驱动内部处理。用户仍可以通过 :cpp:func:`ledc_cb_register` 注册该中断的回调。
 
+- :cpp:enumerator:`soc_periph_ledc_clk_src_legacy_t::LEDC_USE_RTC8M_CLK` 已被移除。请使用 ``LEDC_USE_RC_FAST_CLK`` 代替。
+
 I2C
 ---
 

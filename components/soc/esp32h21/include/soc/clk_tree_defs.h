@@ -338,17 +338,17 @@ typedef enum {
     FLASH_CLK_SRC_ROM_DEFAULT = SOC_MOD_CLK_XTAL,       /*!< Select XTAL as ROM default clock source */
 } soc_periph_flash_clk_src_t;
 
-////////////////////////////////////////////RTC CALIBRATION///////////////////////////////////////////////////////////
+//////////////////////////////////////CLOCK FREQUENCY CALCULATION////////////////////////////////////////////////////
 /**
- * @brief Clock frequency calibration source selection
+ * @brief Clock frequency calculation source selection
  */
 typedef enum {
-    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calibrate RTC_SLOW_CLK */
-    CLK_CAL_RC_SLOW,                                 /*!< Select to calibrate RC_SLOW_CLK */
-    CLK_CAL_32K_XTAL,                                /*!< Select to calibrate XTAL32K_CLK */
-    CLK_CAL_32K_OSC_SLOW,                            /*!< Select to calibrate OSC_SLOW_CLK (external slow clock) */
-    CLK_CAL_RC_FAST,                                 /*!< Select to calibrate RC_FAST_CLK */
-} soc_timg0_calibration_clk_src_t;
+    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calculate frequency of RTC_SLOW_CLK */
+    CLK_CAL_RC_SLOW,                                 /*!< Select to calculate frequency of RC_SLOW_CLK */
+    CLK_CAL_32K_XTAL,                                /*!< Select to calculate frequency of XTAL32K_CLK */
+    CLK_CAL_32K_OSC_SLOW,                            /*!< Select to calculate frequency of OSC_SLOW_CLK (external slow clock) */
+    CLK_CAL_RC_FAST,                                 /*!< Select to calculate frequency of RC_FAST_CLK */
+} soc_clk_freq_calculation_src_t;
 
 #ifdef __cplusplus
 }

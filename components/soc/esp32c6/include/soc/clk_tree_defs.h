@@ -478,8 +478,6 @@ typedef enum {
     LEDC_USE_PLL_DIV_CLK = SOC_MOD_CLK_PLL_F80M,    /*!< Select PLL_F80M clock as the source clock */
     LEDC_USE_RC_FAST_CLK = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
     LEDC_USE_XTAL_CLK = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
-
-    LEDC_USE_RTC8M_CLK __attribute__((deprecated("please use 'LEDC_USE_RC_FAST_CLK' instead"))) = LEDC_USE_RC_FAST_CLK,   /*!< Alias of 'LEDC_USE_RC_FAST_CLK' */
 } soc_periph_ledc_clk_src_legacy_t;
 
 //////////////////////////////////////////////////PARLIO////////////////////////////////////////////////////////////////
@@ -516,18 +514,18 @@ typedef enum {
     CLKOUT_SIG_INVALID  = 0xFF,
 } soc_clkout_sig_id_t;
 
-////////////////////////////////////////////RTC CALIBRATION///////////////////////////////////////////////////////////
+//////////////////////////////////////CLOCK FREQUENCY CALCULATION////////////////////////////////////////////////////
 /**
- * @brief Clock frequency calibration source selection
+ * @brief Clock frequency calculation source selection
  */
 typedef enum {
-    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calibrate RTC_SLOW_CLK */
-    CLK_CAL_RC_SLOW,                                 /*!< Select to calibrate RC_SLOW_CLK */
-    CLK_CAL_RC32K,                                   /*!< Select to calibrate RC32K_CLK */
-    CLK_CAL_32K_XTAL,                                /*!< Select to calibrate XTAL32K_CLK */
-    CLK_CAL_32K_OSC_SLOW,                            /*!< Select to calibrate OSC_SLOW_CLK (external slow clock) */
-    CLK_CAL_RC_FAST,                                 /*!< Select to calibrate RC_FAST_CLK */
-} soc_timg0_calibration_clk_src_t;
+    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calculate frequency of RTC_SLOW_CLK */
+    CLK_CAL_RC_SLOW,                                 /*!< Select to calculate frequency of RC_SLOW_CLK */
+    CLK_CAL_RC32K,                                   /*!< Select to calculate frequency of RC32K_CLK */
+    CLK_CAL_32K_XTAL,                                /*!< Select to calculate frequency of XTAL32K_CLK */
+    CLK_CAL_32K_OSC_SLOW,                            /*!< Select to calculate frequency of OSC_SLOW_CLK (external slow clock) */
+    CLK_CAL_RC_FAST,                                 /*!< Select to calculate frequency of RC_FAST_CLK */
+} soc_clk_freq_calculation_src_t;
 
 #ifdef __cplusplus
 }

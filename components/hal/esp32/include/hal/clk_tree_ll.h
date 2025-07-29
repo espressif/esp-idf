@@ -704,11 +704,11 @@ static inline __attribute__((always_inline)) void clk_ll_ref_tick_set_divider(so
 }
 
 /**
- * @brief Select the calibration clock source for timergroup0
+ * @brief Select the frequency calculation clock source for timergroup0
  *
- * @param clk_sel One of the clock sources in soc_timg0_calibration_clk_src_t
+ * @param clk_sel One of the clock sources in soc_clk_freq_calculation_src_t
  */
-static inline __attribute__((always_inline)) void clk_ll_calibration_set_target(soc_timg0_calibration_clk_src_t clk_sel)
+static inline __attribute__((always_inline)) void clk_ll_freq_calulation_set_target(soc_clk_freq_calculation_src_t clk_sel)
 {
     switch (clk_sel) {
     case CLK_CAL_RTC_SLOW:

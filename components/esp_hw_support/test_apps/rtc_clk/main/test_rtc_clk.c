@@ -31,7 +31,7 @@
 
 #define CALIBRATE_ONE(cali_clk) calibrate_one(cali_clk, #cali_clk)
 
-static uint32_t calibrate_one(soc_timg0_calibration_clk_src_t cal_clk, const char* name)
+static uint32_t calibrate_one(soc_clk_freq_calculation_src_t cal_clk, const char* name)
 {
     const uint32_t cal_count = 1000;
     const float factor = (1 << 19) * 1000.0f;

@@ -726,11 +726,11 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_pll_f20m_get_divide
 }
 
 /**
- * @brief Select the calibration clock source for timergroup0
+ * @brief Select the frequency calculation clock source for timergroup0
  *
- * @param clk_sel One of the clock sources in soc_timg0_calibration_clk_src_t
+ * @param clk_sel One of the clock sources in soc_clk_freq_calculation_src_t
  */
-static inline __attribute__((always_inline)) void clk_ll_calibration_set_target(soc_timg0_calibration_clk_src_t clk_sel)
+static inline __attribute__((always_inline)) void clk_ll_freq_calulation_set_target(soc_clk_freq_calculation_src_t clk_sel)
 {
     int timg_cali_clk_sel = -1;
 
@@ -782,11 +782,11 @@ static inline __attribute__((always_inline)) void clk_ll_calibration_set_target(
 }
 
 /**
- * @brief Set a divider for the clock to be calibrated by timergroup0
+ * @brief Set a divider for the clock to be frequency calculated by timergroup0
  *
  * @param divider Divider. PRE_DIV_CNT = divider - 1.
  */
-static inline __attribute__((always_inline)) void clk_ll_calibration_set_divider(uint32_t divider)
+static inline __attribute__((always_inline)) void clk_ll_freq_calculation_set_divider(uint32_t divider)
 {
     HAL_ASSERT(divider >= 1);
     HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl21, reg_timergrp0_tgrt_clk_div_num, divider - 1);

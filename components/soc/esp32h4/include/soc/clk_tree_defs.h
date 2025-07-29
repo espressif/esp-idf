@@ -286,28 +286,28 @@ typedef enum {
     FLASH_CLK_SRC_ROM_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as ROM default clock source */
 } soc_periph_flash_clk_src_t;
 
-////////////////////////////////////////////RTC CALIBRATION///////////////////////////////////////////////////////////
+//////////////////////////////////////CLOCK FREQUENCY CALCULATION////////////////////////////////////////////////////
 /**
- * @brief Clock frequency calibration source selection
+ * @brief Clock frequency calculation source selection
  */
 typedef enum {
-    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calibrate RTC_SLOW_CLK */
-    CLK_CAL_RC_SLOW,                                 /*!< Select to calibrate RC_SLOW_CLK */
-    CLK_CAL_32K_XTAL,                                /*!< Select to calibrate XTAL32K_CLK */
-    CLK_CAL_32K_OSC_SLOW,                            /*!< Select to calibrate OSC_SLOW_CLK (external slow clock) */
-    CLK_CAL_RC_FAST,                                 /*!< Select to calibrate RC_FAST_CLK */
-    CLK_CAL_CPU,                                     /*!< Select to calibrate CPU_CLK */
-    CLK_CAL_AHB,                                     /*!< Select to calibrate AHB_CLK */
-    CLK_CAL_APB,                                     /*!< Select to calibrate APB_CLK */
-    CLK_CAL_SEC,                                     /*!< Select to calibrate SEC_CLK */
-    CLK_CAL_MSPI,                                    /*!< Select to calibrate MSPI_CLK */
-    CLK_CAL_IOMUX,                                   /*!< Select to calibrate IOMUX_CLK */
-    CLK_CAL_PARLIO_RX,                               /*!< Select to calibrate PARLIO_RX_CLK */
-    CLK_CAL_PARLIO_TX,                               /*!< Select to calibrate PARLIO_TX_CLK */
-    CLK_CAL_GPSPI3_MST,                              /*!< Select to calibrate GPSPI3_MST_CLK */
-    CLK_CAL_GPSPI2_MST,                              /*!< Select to calibrate GPSPI2_MST_CLK */
-    CLK_CAL_EXT_IO,                                  /*!< Select to calibrate an external clock from an IO */
-} soc_timg0_calibration_clk_src_t;
+    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calculate frequency of RTC_SLOW_CLK */
+    CLK_CAL_RC_SLOW,                                 /*!< Select to calculate frequency of RC_SLOW_CLK */
+    CLK_CAL_32K_XTAL,                                /*!< Select to calculate frequency of XTAL32K_CLK */
+    CLK_CAL_32K_OSC_SLOW,                            /*!< Select to calculate frequency of OSC_SLOW_CLK (external slow clock) */
+    CLK_CAL_RC_FAST,                                 /*!< Select to calculate frequency of RC_FAST_CLK */
+    CLK_CAL_CPU,                                     /*!< Select to calculate frequency of CPU_CLK */
+    CLK_CAL_AHB,                                     /*!< Select to calculate frequency of AHB_CLK */
+    CLK_CAL_APB,                                     /*!< Select to calculate frequency of APB_CLK */
+    CLK_CAL_SEC,                                     /*!< Select to calculate frequency of SEC_CLK */
+    CLK_CAL_MSPI,                                    /*!< Select to calculate frequency of MSPI_CLK */
+    CLK_CAL_IOMUX,                                   /*!< Select to calculate frequency of IOMUX_CLK */
+    CLK_CAL_PARLIO_RX,                               /*!< Select to calculate frequency of PARLIO_RX_CLK */
+    CLK_CAL_PARLIO_TX,                               /*!< Select to calculate frequency of PARLIO_TX_CLK */
+    CLK_CAL_GPSPI3_MST,                              /*!< Select to calculate frequency of GPSPI3_MST_CLK */
+    CLK_CAL_GPSPI2_MST,                              /*!< Select to calculate frequency of GPSPI2_MST_CLK */
+    CLK_CAL_EXT_IO,                                  /*!< Select to calculate frequency of an external clock from an IO */
+} soc_clk_freq_calculation_src_t;
 
 /////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////
 
