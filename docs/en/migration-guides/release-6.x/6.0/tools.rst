@@ -31,7 +31,6 @@ All commands with eFuse functionality now require a serial port to be specified.
 
 For all ``idf.py efuse*`` commands, you now need to specify the serial port with the ``--port`` argument (or ``ESPPORT`` environment variable). If the port is not specified, the command will fail with an error message.
 
-
 Python 3.9 Deprecation
 ----------------------
 
@@ -40,3 +39,8 @@ Python 3.9 is no longer supported. The minimum required Python version is now 3.
 Refer to the official `Python documentation <https://docs.python.org/3/using/index.html>`_ for instructions on upgrading Python for your operating system.
 
 For Linux users, it is recommended to upgrade to a newer version of your distribution that includes a supported Python version.
+
+Changes in Configuration Files Syntax
+-------------------------------------
+
+ESP-IDF v6 uses esp-idf-kconfig v3, which introduces several changes in the configuration (``Kconfig``) files. For the full list of changes, please refer to the `esp-idf-kconfig migration guide from v2.x to v3.x <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/developer-guide/migration-guide.html>`_.
