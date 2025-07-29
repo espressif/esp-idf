@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -11,11 +12,11 @@ from pytest_embedded_idf.utils import idf_parametrize
     [
         ('default', 'supported_targets'),
         ('pd_vddsdio', 'supported_targets'),
-        ('psram', 'esp32'),
-        ('psram', 'esp32p4'),
-        ('psram', 'esp32s2'),
-        ('psram', 'esp32s3'),
-        ('psram_with_pd_top', 'esp32p4'),
+        *(('psram', target) for target in soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1')),
+        *(
+            ('psram_with_pd_top', target)
+            for target in soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1 and SOC_PM_SUPPORT_TOP_PD == 1')
+        ),
         ('single_core_esp32', 'esp32'),
     ],
     indirect=['config', 'target'],

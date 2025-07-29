@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -43,11 +44,7 @@ def test_heap_in_flash(dut: Dut) -> None:
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'target',
-    [
-        'esp32',
-        'esp32s2',
-        'esp32s3',
-    ],
+    soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1'),
 )
 @pytest.mark.parametrize('config', ['psram', 'psram_all_ext'])
 def test_heap(dut: Dut) -> None:
