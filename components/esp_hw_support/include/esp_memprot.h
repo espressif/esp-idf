@@ -12,7 +12,7 @@
 #pragma once
 
 #include "sdkconfig.h"
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -167,7 +167,7 @@ esp_err_t esp_mprot_get_violate_byte_enables(const esp_mprot_mem_t mem_type, uin
 /**
  * @brief Convenient routine for setting the PMS defaults
  *
- * Called on system startup, depending on ESP_SYSTEM_MEMPROT_FEATURE Kconfig value
+ * Called on system startup, depending on ESP_SYSTEM_MEMPROT Kconfig value
  *
  * @param memp_config pointer to Memprot configuration structure (esp_memp_config_t). The structure si chip-specific,
  * for details and defaults see appropriate [target-chip]/soc_memprot_types.h
@@ -197,4 +197,4 @@ esp_err_t esp_mprot_dump_configuration(char **dump_info_string);
 }
 #endif
 
-#endif //CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#endif //CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS

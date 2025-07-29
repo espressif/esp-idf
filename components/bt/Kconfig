@@ -78,7 +78,7 @@ menu "Bluetooth"
             a large free heap region when esp_bt_mem_release is called, total saving ~21kB or more of IRAM.
             ESP32-C2 only 3 configurable PMP entries available, rest of them are hard-coded.
             We cannot split the memory into 3 different regions (IRAM, BLE-IRAM, DRAM).
-            So this option will disable the PMP (ESP_SYSTEM_PMP_IDRAM_SPLIT)
+            So this option will disable the memory protection scheme (ESP_SYSTEM_MEMPROT)
 
     menu "Common Options"
         source "$IDF_PATH/components/bt/common/Kconfig.in"

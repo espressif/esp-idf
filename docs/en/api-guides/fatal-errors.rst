@@ -423,7 +423,7 @@ In some situations, ESP-IDF will temporarily disable access to external SPI flas
     * writing to instruction RAM after the program is loaded
     * executing code from data RAM (areas used for heap and static .data and .bss)
 
-    Such operations are not necessary for most programs. Prohibiting such operations typically makes software vulnerabilities harder to exploit. Applications which rely on dynamic loading or self-modifying code may disable this protection using :ref:`CONFIG_ESP_SYSTEM_MEMPROT_FEATURE` Kconfig option.
+    Such operations are not necessary for most programs. Prohibiting such operations typically makes software vulnerabilities harder to exploit. Applications which rely on dynamic loading or self-modifying code may disable this protection using :ref:`CONFIG_ESP_SYSTEM_MEMPROT` Kconfig option.
 
     When the fault occurs, the panic handler reports the address of the fault and the type of memory access that caused it.
 

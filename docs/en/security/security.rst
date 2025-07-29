@@ -108,7 +108,7 @@ Flash Encryption Best Practices
 
     {IDF_TARGET_NAME} supports the **Memory Protection** scheme, either through architecture or special peripheral like PMS, which provides an ability to enforce and monitor permission attributes to memory and, in some cases, peripherals. ESP-IDF application startup code configures the permissions attributes like Read/Write access on data memories and Read/Execute access on instruction memories using the relevant peripheral. If there is any attempt made that breaks these permission attributes, e.g., a write operation to instruction memory region, then a violation interrupt is raised, and it results in system panic.
 
-    This feature depends on the config option :ref:`CONFIG_ESP_SYSTEM_MEMPROT_FEATURE` and it is kept enabled by default. Please note that the API for this feature is **private** and used exclusively by ESP-IDF code only.
+    This feature depends on the config option :ref:`CONFIG_ESP_SYSTEM_MEMPROT` and it is kept enabled by default. Please note that the API for this feature is **private** and used exclusively by ESP-IDF code only.
 
     .. note::
 

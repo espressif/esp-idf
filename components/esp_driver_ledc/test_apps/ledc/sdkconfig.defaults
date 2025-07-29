@@ -1,6 +1,6 @@
 CONFIG_FREERTOS_HZ=1000
 CONFIG_ESP_TASK_WDT_INIT=n
 # Disable memory protection, because "LEDC continue work after software reset" test case requires a cpu reset
-CONFIG_ESP_SYSTEM_MEMPROT_FEATURE=n
+CONFIG_ESP_SYSTEM_MEMPROT=n
 # primitives for checking sleep internal state
 CONFIG_ESP_SLEEP_DEBUG=y

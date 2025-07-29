@@ -1156,15 +1156,15 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 {
     esp_err_t ret = ESP_OK;
 
-#if CONFIG_BT_RELEASE_IRAM && CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+#if CONFIG_BT_RELEASE_IRAM && CONFIG_ESP_SYSTEM_MEMPROT
     /* Release Bluetooth text section and merge Bluetooth data, bss & text into a large free heap
      * region when esp_bt_mem_release is called, total saving ~21kB or more of IRAM. ESP32-C2 has
      * only 3 configurable PMP entries available, rest of them are hard-coded. We cannot split the
-     * memory into 3 different regions (IRAM, BLE-IRAM, DRAM). So `ESP_SYSTEM_PMP_IDRAM_SPLIT` needs
+     * memory into 3 different regions (IRAM, BLE-IRAM, DRAM). So `ESP_SYSTEM_MEMPROT` needs
      * to be disabled.
      */
-    #error "ESP_SYSTEM_PMP_IDRAM_SPLIT should be disabled to allow BT to be released"
-#endif // CONFIG_BT_RELEASE_IRAM && CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+    #error "ESP_SYSTEM_MEMPROT should be disabled to allow BT to be released"
+#endif // CONFIG_BT_RELEASE_IRAM && CONFIG_ESP_SYSTEM_MEMPROT
 
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         return ESP_ERR_INVALID_STATE;

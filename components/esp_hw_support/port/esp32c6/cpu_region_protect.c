@@ -90,12 +90,12 @@ void esp_cpu_configure_region_protection(void)
      *    - We cannot set the lock bit as we need to reconfigure it again for the application.
      *      We configure PMP to cover entire valid IRAM and DRAM range.
      *
-     * 2. Application build with CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT enabled
+     * 2. Application build with CONFIG_ESP_SYSTEM_MEMPROT enabled
      *    - We split the SRAM into IRAM and DRAM such that IRAM region cannot be written to
      *      and DRAM region cannot be executed. We use _iram_text_end and _data_start markers to set the boundaries.
      *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
      *
-     * 3. Application build with CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT disabled
+     * 3. Application build with CONFIG_ESP_SYSTEM_MEMPROT disabled
      *    - The IRAM-DRAM split is not enabled so we just need to ensure that access to only valid address ranges are successful
      *      so for that we set PMP to cover entire valid IRAM and DRAM region.
      *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
@@ -147,7 +147,7 @@ void esp_cpu_configure_region_protection(void)
         PMP_ENTRY_SET(3, pmpaddr3, PMP_NAPOT | RWX);
         _Static_assert(SOC_IRAM_LOW < SOC_IRAM_HIGH, "Invalid RAM region");
     } else {
-#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT && !BOOTLOADER_BUILD
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && !BOOTLOADER_BUILD
         extern int _iram_text_end;
         // 3. IRAM and DRAM
         /* Reset the corresponding PMP config because PMP_ENTRY_SET only sets the given bits
@@ -167,7 +167,7 @@ void esp_cpu_configure_region_protection(void)
 #endif
     }
 
-#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT && !BOOTLOADER_BUILD
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && !BOOTLOADER_BUILD
     extern int _instruction_reserved_end;
     extern int _rodata_reserved_end;
 
@@ -189,7 +189,7 @@ void esp_cpu_configure_region_protection(void)
 #endif
 
     // 5. LP memory
-#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT && !BOOTLOADER_BUILD
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && !BOOTLOADER_BUILD
     extern int _rtc_text_start;
     extern int _rtc_text_end;
     /* Reset the corresponding PMP config because PMP_ENTRY_SET only sets the given bits
@@ -202,7 +202,7 @@ void esp_cpu_configure_region_protection(void)
     PMP_ENTRY_SET(9, SOC_RTC_IRAM_LOW, NONE);
 
     // First part of LP mem is reserved for ULP coprocessor
-#if CONFIG_ESP_SYSTEM_PMP_LP_CORE_RESERVE_MEM_EXECUTABLE
+#if CONFIG_ESP_SYSTEM_MEMPROT_PMP_LP_CORE_RESERVE_MEM_EXEC
     PMP_ENTRY_SET(10, (int)&_rtc_text_start, PMP_TOR | RWX);
 #else
     PMP_ENTRY_SET(10, (int)&_rtc_text_start, PMP_TOR | RW);

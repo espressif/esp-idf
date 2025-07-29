@@ -14,7 +14,7 @@
 #include "esp_private/cache_err_int.h"
 #include "soc/timer_periph.h"
 
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS
 #include "esp_private/esp_memprot_internal.h"
 #include "esp_memprot.h"
 #endif
@@ -88,7 +88,7 @@ static inline void print_assist_debug_details(const void *frame)
  * Function called when a memory protection error occurs (PMS). It prints details such as the
  * explanation of why the panic occurred.
  */
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS
 
 static esp_memp_intr_source_t s_memp_intr = {MEMPROT_TYPE_INVALID, -1};
 
@@ -151,7 +151,7 @@ static inline void print_memprot_err_details(const void *frame __attribute__((un
 
     panic_print_str("\r\n");
 }
-#endif
+#endif //CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS
 
 static void panic_print_register_array(const char* names[], const uint32_t* regs, int size)
 {
@@ -256,13 +256,13 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
         info->details = print_assist_debug_details;
     }
 #endif
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS
     else if (frame->mcause == ETS_MEMPROT_ERR_INUM) {
         info->reason = "Memory protection fault";
         info->details = print_memprot_err_details;
         info->core = esp_mprot_get_active_intr(&s_memp_intr) == ESP_OK ? s_memp_intr.core : -1;
     }
-#endif
+#endif //CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS
 }
 
 void panic_arch_fill_info(void *frame, panic_info_t *info)
