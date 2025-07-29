@@ -74,7 +74,7 @@
 // #define SOC_PHY_SUPPORTED               1
 // #define SOC_PCNT_SUPPORTED              1    //TODO: [ESP32H21] IDF-11566
 // #define SOC_MCPWM_SUPPORTED             1    //TODO: [ESP32H21] IDF-11601
-// #define SOC_TWAI_SUPPORTED              1    //TODO: [ESP32H21] IDF-11574
+#define SOC_TWAI_SUPPORTED              1
 // #define SOC_ETM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11576
 // #define SOC_PARLIO_SUPPORTED            1    //TODO: [ESP32H21] IDF-11570, IDF-11572
 #define SOC_RMT_SUPPORTED               1
@@ -446,11 +446,13 @@
 #define SOC_MWDT_SUPPORT_SLEEP_RETENTION   (1)
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
-// #define SOC_TWAI_CONTROLLER_NUM         1UL
-// #define SOC_TWAI_CLK_SUPPORT_XTAL       1
-// #define SOC_TWAI_BRP_MIN                2
-// #define SOC_TWAI_BRP_MAX                32768
-// #define SOC_TWAI_SUPPORTS_RX_STATUS     1
+#define SOC_TWAI_CONTROLLER_NUM             1U
+#define SOC_TWAI_MASK_FILTER_NUM            1U
+#define SOC_TWAI_CLK_SUPPORT_XTAL           1
+#define SOC_TWAI_BRP_MIN                    2
+#define SOC_TWAI_BRP_MAX                    32768
+#define SOC_TWAI_SUPPORTS_RX_STATUS         1
+#define SOC_TWAI_SUPPORT_SLEEP_RETENTION    1
 
 /*-------------------------- eFuse CAPS----------------------------*/
 #define SOC_EFUSE_DIS_PAD_JTAG 1

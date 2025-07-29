@@ -134,6 +134,7 @@ TEST_CASE("twai_mode_ext_no_ack_250kbps", "[twai-loop-back]")
     }
 }
 
+#if SOC_LIGHT_SLEEP_SUPPORTED
 static void s_test_sleep_retention(bool allow_pd)
 {
     // Prepare a TOP PD sleep
@@ -220,3 +221,4 @@ TEST_CASE("twai_mode_ext_no_ack_250kbps with sleep retention (no pd)", "[twai-lo
 {
     s_test_sleep_retention(false);
 }
+#endif // SOC_LIGHT_SLEEP_SUPPORTED
