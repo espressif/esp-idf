@@ -56,7 +56,7 @@ esp_err_t esp_xt_wdt_init(const esp_xt_wdt_config_t *cfg)
 
     if (cfg->auto_backup_clk_enable) {
         /* Estimate frequency of internal RTC oscillator */
-        uint32_t rtc_clk_frequency_khz = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_INTERNAL_OSC, RTC_CLK_CAL_CYCLES)) / 1000;
+        uint32_t rtc_clk_frequency_khz = rtc_clk_freq_cal(rtc_clk_cal(CLK_CAL_RC_SLOW, RTC_CLK_CAL_CYCLES)) / 1000;
         ESP_LOGD(TAG, "Calibrating backup clock from rtc clock with frequency %"PRIu32, rtc_clk_frequency_khz);
 
         xt_wdt_hal_enable_backup_clk(&s_hal_ctx, rtc_clk_frequency_khz);

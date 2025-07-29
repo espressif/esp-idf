@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -190,16 +190,9 @@ static void calibrate_ocode(void)
     4. wait o-code calibration done flag(odone_flag & bg_odone_flag) or timeout;
     5. set cpu to old-config.
     */
-    soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
-    rtc_cal_sel_t cal_clk = RTC_CAL_RTC_MUX;
-    if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
-        cal_clk = RTC_CAL_32K_XTAL;
-    } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
-        cal_clk  = RTC_CAL_8MD256;
-    }
 
     uint64_t max_delay_time_us = 10000;
-    uint32_t slow_clk_period = rtc_clk_cal(cal_clk, 100);
+    uint32_t slow_clk_period = rtc_clk_cal(CLK_CAL_RTC_SLOW, 100);
     uint64_t max_delay_cycle = rtc_time_us_to_slowclk(max_delay_time_us, slow_clk_period);
     uint64_t cycle0 = rtc_time_get();
     uint64_t timeout_cycle = cycle0 + max_delay_cycle;

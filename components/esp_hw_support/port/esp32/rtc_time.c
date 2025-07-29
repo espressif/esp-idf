@@ -30,14 +30,13 @@ static const char *TAG = "rtc_time";
 
 /**
  * @brief Clock calibration function used by rtc_clk_cal and rtc_clk_cal_ratio
- * @param cal_clk which clock to calibrate
+ * @param cali_clk_sel which clock to calibrate
  * @param slowclk_cycles number of slow clock cycles to count. Max value is 32766.
  * @return number of XTAL clock cycles within the given number of slow clock cycles
  */
-static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+static uint32_t rtc_clk_cal_internal(soc_timg0_calibration_clk_src_t cali_clk_sel, uint32_t slowclk_cycles)
 {
     assert(slowclk_cycles < 32767);
-    soc_timg0_calibration_clk_src_t cali_clk_sel = (soc_timg0_calibration_clk_src_t)cal_clk;
 
     /* Enable requested clock (rtc slow clock is always on) */
     bool dig_32k_xtal_enabled = clk_ll_xtal32k_digi_is_enabled();
@@ -112,10 +111,10 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     return REG_GET_FIELD(TIMG_RTCCALICFG1_REG(0), TIMG_RTC_CALI_VALUE);
 }
 
-uint32_t rtc_clk_cal_ratio(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+uint32_t rtc_clk_cal_ratio(soc_timg0_calibration_clk_src_t cali_clk_sel, uint32_t slowclk_cycles)
 {
     assert(slowclk_cycles);
-    uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
+    uint64_t xtal_cycles = rtc_clk_cal_internal(cali_clk_sel, slowclk_cycles);
     uint64_t ratio_64 = ((xtal_cycles << RTC_CLK_CAL_FRACT)) / slowclk_cycles;
     uint32_t ratio = (uint32_t)(ratio_64 & UINT32_MAX);
     return ratio;
@@ -128,13 +127,13 @@ static inline bool rtc_clk_cal_32k_valid(uint32_t xtal_freq, uint32_t slowclk_cy
     return (actual_xtal_cycles >= (expected_xtal_cycles - delta)) && (actual_xtal_cycles <= (expected_xtal_cycles + delta));
 }
 
-uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+uint32_t rtc_clk_cal(soc_timg0_calibration_clk_src_t cali_clk_sel, uint32_t slowclk_cycles)
 {
     assert(slowclk_cycles);
     soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
-    uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
+    uint64_t xtal_cycles = rtc_clk_cal_internal(cali_clk_sel, slowclk_cycles);
 
-    if ((cal_clk == RTC_CAL_32K_XTAL) && !rtc_clk_cal_32k_valid((uint32_t)xtal_freq, slowclk_cycles, xtal_cycles)) {
+    if ((cali_clk_sel == CLK_CAL_32K_XTAL) && !rtc_clk_cal_32k_valid((uint32_t)xtal_freq, slowclk_cycles, xtal_cycles)) {
         return 0;
     }
 
@@ -167,7 +166,7 @@ void rtc_clk_wait_for_slow_cycle(void)
 {
     REG_CLR_BIT(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING | TIMG_RTC_CALI_START);
     REG_CLR_BIT(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_RDY);
-    REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, RTC_CAL_RTC_MUX);
+    REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, CLK_CAL_RTC_SLOW);
     /* Request to run calibration for 0 slow clock cycles.
      * RDY bit will be set on the nearest slow clock cycle.
      */

@@ -504,7 +504,8 @@ typedef enum {
  * @brief Clock frequency calibration source selection
  */
 typedef enum {
-    CLK_CAL_RC_SLOW = 0,                             /*!< Select to calibrate RC_SLOW_CLK */
+    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calibrate RTC_SLOW_CLK */
+    CLK_CAL_RC_SLOW,                                 /*!< Select to calibrate RC_SLOW_CLK */
     CLK_CAL_RC_FAST_D256,                            /*!< Select to calibrate RC_FAST_D256_CLK */
     CLK_CAL_32K_XTAL,                                /*!< Select to calibrate XTAL32K_CLK */
 } soc_timg0_calibration_clk_src_t;

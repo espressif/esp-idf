@@ -83,7 +83,7 @@ ULP 协处理器的时钟 ``RTC_FAST_CLK`` 通常来自内部的 8 MHz 振荡器
     #include "soc/rtc.h"
 
     // calibrate 8M/256 clock against XTAL, get 8M/256 clock period
-    uint32_t rtc_8md256_period = rtc_clk_cal(RTC_CAL_8MD256, 100);
+    uint32_t rtc_8md256_period = rtc_clk_cal(CLK_CAL_RC_FAST_D256, 100);
     uint32_t rtc_fast_freq_hz = 1000000ULL * (1 << RTC_CLK_CAL_FRACT) * 256 / rtc_8md256_period;
 
 ULP 协处理器在获取每个指令时需要一定的时钟周期，执行时同样需要一定的时钟周期，此周期数取决于具体的指令。下文详细列出了每个指令所需的执行时间信息。

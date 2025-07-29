@@ -29,17 +29,18 @@ __attribute__((unused)) static const char *TAG = "rtc_time";
  * This feature counts the number of XTAL clock cycles within a given number of
  * clock cycles.
  *
- * @param cal_clk which clock to calibrate
+ * @param cali_clk_sel which clock to calibrate
  * @param slowclk_cycles number of slow clock cycles to count
  * @return number of XTAL clock cycles within the given number of slow clock cycles
  */
-static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+static uint32_t rtc_clk_cal_internal(soc_timg0_calibration_clk_src_t cali_clk_sel, uint32_t slowclk_cycles)
 {
     assert(slowclk_cycles < TIMG_RTC_CALI_MAX_V);
 
+    bool is_cali_clk_rtc_slow = false;
     soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
-    soc_timg0_calibration_clk_src_t cali_clk_sel = (soc_timg0_calibration_clk_src_t)cal_clk;
-    if (cal_clk == RTC_CAL_RTC_MUX) {
+    if (cali_clk_sel == CLK_CAL_RTC_SLOW) {
+        is_cali_clk_rtc_slow = true;
         switch (slow_clk_src) {
         case SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4:
             cali_clk_sel = CLK_CAL_RC_SLOW;
@@ -150,7 +151,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         }
     }
 
-    if (cal_clk == RTC_CAL_RTC_MUX && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4) {
+    if (is_cali_clk_rtc_slow && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4) {
         // calibration was done on RC_SLOW clock, but rtc_slow_clk src is RC_SLOW_D4, so we need to multiply the cal_val by 4
         cal_val *= 4;
     }
@@ -165,20 +166,20 @@ static bool rtc_clk_cal_32k_valid(uint32_t xtal_freq, uint32_t slowclk_cycles, u
     return (actual_xtal_cycles >= (expected_xtal_cycles - delta)) && (actual_xtal_cycles <= (expected_xtal_cycles + delta));
 }
 
-uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+uint32_t rtc_clk_cal(soc_timg0_calibration_clk_src_t cali_clk_sel, uint32_t slowclk_cycles)
 {
     /* The Fosc CLK of calibration circuit is divided by a factor, k.
       So we need to divide the calibrate cycles of the FOSC by k to
       avoid excessive calibration time. */
-    if (cal_clk == RTC_CAL_RC_FAST) {
+    if (cali_clk_sel == CLK_CAL_RC_FAST) {
         slowclk_cycles = slowclk_cycles >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
     }
     assert(slowclk_cycles);
 
     soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
-    uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
+    uint64_t xtal_cycles = rtc_clk_cal_internal(cali_clk_sel, slowclk_cycles);
 
-    if (cal_clk == RTC_CAL_32K_XTAL && !rtc_clk_cal_32k_valid((uint32_t)xtal_freq, slowclk_cycles, xtal_cycles)) {
+    if (cali_clk_sel == CLK_CAL_32K_XTAL && !rtc_clk_cal_32k_valid((uint32_t)xtal_freq, slowclk_cycles, xtal_cycles)) {
         return 0;
     }
 

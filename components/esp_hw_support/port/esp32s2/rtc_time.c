@@ -132,23 +132,22 @@ static uint32_t rtc_clk_xtal_to_slowclk(uint64_t xtal_cycles, uint32_t slowclk_c
 
 /**
  * @brief Clock calibration function used by rtc_clk_cal and rtc_clk_cal_ratio
- * @param cal_clk which clock to calibrate
+ * @param cali_clk_sel which clock to calibrate
  * @param slowclk_cycles number of slow clock cycles to count
  * @return number of XTAL clock cycles within the given number of slow clock cycles
  */
-static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles, uint32_t cal_mode)
+static uint32_t rtc_clk_cal_internal(soc_timg0_calibration_clk_src_t cali_clk_sel, uint32_t slowclk_cycles, uint32_t cal_mode)
 {
-    if (cal_clk == RTC_CAL_RTC_MUX) {
+    if (cali_clk_sel == CLK_CAL_RTC_SLOW) {
         soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
         if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) {
-            cal_clk = RTC_CAL_INTERNAL_OSC;
+            cali_clk_sel = CLK_CAL_RC_SLOW;
         } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
-            cal_clk = RTC_CAL_32K_XTAL;
+            cali_clk_sel = CLK_CAL_32K_XTAL;
         } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
-            cal_clk = RTC_CAL_8MD256;
+            cali_clk_sel = CLK_CAL_RC_FAST_D256;
         }
     }
-    soc_timg0_calibration_clk_src_t cali_clk_sel = (soc_timg0_calibration_clk_src_t)cal_clk;
 
     /* Enable requested clock (90k clock is always on) */
     bool dig_32k_xtal_enabled = clk_ll_xtal32k_digi_is_enabled();
@@ -185,10 +184,10 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     return cal_val;
 }
 
-uint32_t rtc_clk_cal_ratio(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+uint32_t rtc_clk_cal_ratio(soc_timg0_calibration_clk_src_t cali_clk_sel, uint32_t slowclk_cycles)
 {
     assert(slowclk_cycles);
-    uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles, RTC_TIME_CAL_ONEOFF_MODE);
+    uint64_t xtal_cycles = rtc_clk_cal_internal(cali_clk_sel, slowclk_cycles, RTC_TIME_CAL_ONEOFF_MODE);
     uint64_t ratio_64 = ((xtal_cycles << RTC_CLK_CAL_FRACT)) / slowclk_cycles;
     uint32_t ratio = (uint32_t)(ratio_64 & UINT32_MAX);
     return ratio;
@@ -201,20 +200,20 @@ static inline bool rtc_clk_cal_32k_valid(uint32_t xtal_freq, uint32_t slowclk_cy
     return (actual_xtal_cycles >= (expected_xtal_cycles - delta)) && (actual_xtal_cycles <= (expected_xtal_cycles + delta));
 }
 
-uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+uint32_t rtc_clk_cal(soc_timg0_calibration_clk_src_t cali_clk_sel, uint32_t slowclk_cycles)
 {
-    uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles, RTC_TIME_CAL_ONEOFF_MODE);
+    uint64_t xtal_cycles = rtc_clk_cal_internal(cali_clk_sel, slowclk_cycles, RTC_TIME_CAL_ONEOFF_MODE);
 
-    if ((cal_clk == RTC_CAL_32K_XTAL) && !rtc_clk_cal_32k_valid((uint32_t)rtc_clk_xtal_freq_get(), slowclk_cycles, xtal_cycles)) {
+    if ((cali_clk_sel == CLK_CAL_32K_XTAL) && !rtc_clk_cal_32k_valid((uint32_t)rtc_clk_xtal_freq_get(), slowclk_cycles, xtal_cycles)) {
         return 0;
     }
 
     return rtc_clk_xtal_to_slowclk(xtal_cycles, slowclk_cycles);
 }
 
-uint32_t rtc_clk_cal_cycling(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+uint32_t rtc_clk_cal_cycling(soc_timg0_calibration_clk_src_t cali_clk_sel, uint32_t slowclk_cycles)
 {
-    uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles, RTC_TIME_CAL_CYCLING_MODE);
+    uint64_t xtal_cycles = rtc_clk_cal_internal(cali_clk_sel, slowclk_cycles, RTC_TIME_CAL_CYCLING_MODE);
     uint32_t period = rtc_clk_xtal_to_slowclk(xtal_cycles, slowclk_cycles);
     return period;
 }

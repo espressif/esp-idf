@@ -291,7 +291,8 @@ typedef enum {
  * @brief Clock frequency calibration source selection
  */
 typedef enum {
-    CLK_CAL_RC_SLOW = 0,                             /*!< Select to calibrate RC_SLOW_CLK */
+    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calibrate RTC_SLOW_CLK */
+    CLK_CAL_RC_SLOW,                                 /*!< Select to calibrate RC_SLOW_CLK */
     CLK_CAL_32K_XTAL,                                /*!< Select to calibrate XTAL32K_CLK */
     CLK_CAL_32K_OSC_SLOW,                            /*!< Select to calibrate OSC_SLOW_CLK (external slow clock) */
     CLK_CAL_RC_FAST,                                 /*!< Select to calibrate RC_FAST_CLK */
@@ -307,6 +308,7 @@ typedef enum {
     CLK_CAL_GPSPI2_MST,                              /*!< Select to calibrate GPSPI2_MST_CLK */
     CLK_CAL_EXT_IO,                                  /*!< Select to calibrate an external clock from an IO */
 } soc_timg0_calibration_clk_src_t;
+
 /////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////
 
 /**

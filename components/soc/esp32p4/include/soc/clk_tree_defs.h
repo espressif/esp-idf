@@ -802,7 +802,8 @@ typedef enum {
  * @brief Clock frequency calibration source selection
  */
 typedef enum {
-    CLK_CAL_MPLL = 0,                                /*!< Select to calibrate MPLL_CLK */
+    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calibrate RTC_SLOW_CLK */
+    CLK_CAL_MPLL,                                    /*!< Select to calibrate MPLL_CLK */
     CLK_CAL_SPLL,                                    /*!< Select to calibrate SPLL_CLK */
     CLK_CAL_CPLL,                                    /*!< Select to calibrate CPLL_CLK */
     CLK_CAL_APLL,                                    /*!< Select to calibrate APLL_CLK */

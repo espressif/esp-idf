@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,7 +59,7 @@ static uint32_t clk_tree_rtc_slow_calibration(uint32_t slowclk_cycles)
 {
     uint32_t cal_val = 0;
     if (slowclk_cycles > 0) {
-        cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, slowclk_cycles);
+        cal_val = rtc_clk_cal(CLK_CAL_RTC_SLOW, slowclk_cycles);
     } else {
         const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
         uint32_t source_approx_freq = clk_hal_lp_slow_get_freq_hz();
@@ -82,11 +82,11 @@ uint32_t esp_clk_tree_rc_fast_d256_get_freq_hz(esp_clk_tree_src_freq_precision_t
         return SOC_CLK_RC_FAST_D256_FREQ_APPROX;
     case ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED:
         if (!s_calibrated_freq.rc_fast_d256) {
-            s_calibrated_freq.rc_fast_d256 = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_8MD256, DEFAULT_32K_CLK_CAL_CYCLES));
+            s_calibrated_freq.rc_fast_d256 = rtc_clk_freq_cal(rtc_clk_cal(CLK_CAL_RC_FAST_D256, DEFAULT_32K_CLK_CAL_CYCLES));
         }
         return s_calibrated_freq.rc_fast_d256;
     case ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT:
-        s_calibrated_freq.rc_fast_d256 = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_8MD256, DEFAULT_32K_CLK_CAL_CYCLES));
+        s_calibrated_freq.rc_fast_d256 = rtc_clk_freq_cal(rtc_clk_cal(CLK_CAL_RC_FAST_D256, DEFAULT_32K_CLK_CAL_CYCLES));
         return s_calibrated_freq.rc_fast_d256;
     default:
         return 0;
@@ -102,11 +102,11 @@ uint32_t esp_clk_tree_xtal32k_get_freq_hz(esp_clk_tree_src_freq_precision_t prec
         return SOC_CLK_XTAL32K_FREQ_APPROX;
     case ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED:
         if (!s_calibrated_freq.xtal32k) {
-            s_calibrated_freq.xtal32k = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_32K_XTAL, DEFAULT_32K_CLK_CAL_CYCLES));
+            s_calibrated_freq.xtal32k = rtc_clk_freq_cal(rtc_clk_cal(CLK_CAL_32K_XTAL, DEFAULT_32K_CLK_CAL_CYCLES));
         }
         return s_calibrated_freq.xtal32k;
     case ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT:
-        s_calibrated_freq.xtal32k = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_32K_XTAL, DEFAULT_32K_CLK_CAL_CYCLES));
+        s_calibrated_freq.xtal32k = rtc_clk_freq_cal(rtc_clk_cal(CLK_CAL_32K_XTAL, DEFAULT_32K_CLK_CAL_CYCLES));
         return s_calibrated_freq.xtal32k;
     default:
         return 0;
@@ -122,11 +122,11 @@ uint32_t esp_clk_tree_osc_slow_get_freq_hz(esp_clk_tree_src_freq_precision_t pre
         return SOC_CLK_OSC_SLOW_FREQ_APPROX;
     case ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED:
         if (!s_calibrated_freq.osc_slow) {
-            s_calibrated_freq.osc_slow = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_32K_OSC_SLOW, DEFAULT_32K_CLK_CAL_CYCLES));
+            s_calibrated_freq.osc_slow = rtc_clk_freq_cal(rtc_clk_cal(CLK_CAL_32K_OSC_SLOW, DEFAULT_32K_CLK_CAL_CYCLES));
         }
         return s_calibrated_freq.osc_slow;
     case ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT:
-        s_calibrated_freq.osc_slow = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_32K_OSC_SLOW, DEFAULT_32K_CLK_CAL_CYCLES));
+        s_calibrated_freq.osc_slow = rtc_clk_freq_cal(rtc_clk_cal(CLK_CAL_32K_OSC_SLOW, DEFAULT_32K_CLK_CAL_CYCLES));
         return s_calibrated_freq.osc_slow;
     default:
         return 0;
@@ -161,7 +161,7 @@ uint32_t esp_clk_tree_rc_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t prec
 #else
     // Calibrate directly on the RC_FAST clock requires much more slow clock cycles to get an accurate freq value
     if (precision != ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED || !s_calibrated_freq.rc_fast) {
-        s_calibrated_freq.rc_fast = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_RC_FAST, DEFAULT_RC_FAST_CAL_CYCLES));
+        s_calibrated_freq.rc_fast = rtc_clk_freq_cal(rtc_clk_cal(CLK_CAL_RC_FAST, DEFAULT_RC_FAST_CAL_CYCLES));
     }
     return s_calibrated_freq.rc_fast;
 #endif //SOC_CLK_RC_FAST_D256_SUPPORTED
