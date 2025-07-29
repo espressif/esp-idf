@@ -122,16 +122,6 @@ The following drivers hold the ``ESP_PM_APB_FREQ_MAX`` lock while the driver is 
     :SOC_SDM_SUPPORTED: - **Sigma-delta**: between calls to :cpp:func:`sdm_channel_enable` and :cpp:func:`sdm_channel_disable`.
     :SOC_MCPWM_SUPPORTED: - **MCPWM**: between calls to :cpp:func:`mcpwm_timer_enable` and :cpp:func:`mcpwm_timer_disable`, as well as :cpp:func:`mcpwm_capture_timer_enable` and :cpp:func:`mcpwm_capture_timer_disable`.
 
-The following peripheral drivers are not aware of DFS yet. Applications need to acquire/release locks themselves, when necessary:
-
-.. list::
-
-    :SOC_PCNT_SUPPORTED: - The legacy PCNT driver
-    :SOC_SDM_SUPPORTED: - The legacy Sigma-delta driver
-    - The legacy timer group driver
-    :SOC_MCPWM_SUPPORTED: - The legacy MCPWM driver
-
-
 .. only:: SOC_PM_SUPPORT_TOP_PD
 
     Light-sleep Peripheral Power Down

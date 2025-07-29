@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,35 +70,3 @@ const pcnt_signal_conn_t pcnt_periph_signals = {
         }
     }
 };
-
-#if SOC_PCNT_SUPPORT_SLEEP_RETENTION
-/**
- * PCNT Registers to be saved during sleep retention
- * - Configuration registers, e.g.: PCNT_CTRL_REG, PCNT_U0_CONF0_REG, PCNT_U0_CONF1_REG, PCNT_U0_CONF2_REG, PCNT_U1_CONF0_REG...
- * - Step Configuration registers, e.g.: PCNT_U0_CHANGE_CONF_REG, PCNT_U1_CHANGE_CONF_REG, PCNT_U2_CHANGE_CONF_REG, PCNT_U3_CHANGE_CONF_REG
- * - Interrupt enable registers, e.g.: PCNT_INT_ENA_REG
-*/
-#define PCNT_RETENTION_REGS_CNT 18
-#define PCNT_RETENTION_REGS_BASE (DR_REG_PCNT_BASE + 0x0)
-static const uint32_t pcnt_regs_map[4] = {0x1f040fff, 0x0, 0x0, 0x0};
-static const regdma_entries_config_t pcnt_regs_retention[] = {
-    // backup stage: save configuration registers
-    // restore stage: restore the configuration registers
-    [0] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCNT_LINK(0x00), \
-                                            PCNT_RETENTION_REGS_BASE, PCNT_RETENTION_REGS_BASE, \
-                                            PCNT_RETENTION_REGS_CNT, 0, 0, \
-                                            pcnt_regs_map[0], pcnt_regs_map[1], \
-                                            pcnt_regs_map[2], pcnt_regs_map[3]), \
-        .owner = ENTRY(0)
-    }, \
-};
-
-const pcnt_reg_retention_info_t pcnt_reg_retention_info[SOC_PCNT_GROUPS] = {
-    [0] = {
-        .regdma_entry_array = pcnt_regs_retention,
-        .array_size = ARRAY_SIZE(pcnt_regs_retention),
-        .retention_module = SLEEP_RETENTION_MODULE_PCNT0
-    },
-};
-#endif // SOC_PCNT_SUPPORT_SLEEP_RETENTION

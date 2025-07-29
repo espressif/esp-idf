@@ -122,16 +122,6 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
     :SOC_SDM_SUPPORTED: - **Sigma-delta**：从调用 :cpp:func:`sdm_channel_enable` 至 :cpp:func:`sdm_channel_disable` 期间。
     :SOC_MCPWM_SUPPORTED: - **MCPWM**: 从调用 :cpp:func:`mcpwm_timer_enable` 至 :cpp:func:`mcpwm_timer_disable` 期间，以及调用 :cpp:func:`mcpwm_capture_timer_enable` 至 :cpp:func:`mcpwm_capture_timer_disable` 期间。
 
-以下外设驱动程序无法感知动态调频，应用程序需自己获取/释放管理锁：
-
-.. list::
-
-    :SOC_PCNT_SUPPORTED: - 旧版 PCNT 驱动
-    :SOC_SDM_SUPPORTED: - 旧版 Sigma-delta 驱动
-    - 旧版定时器驱动 (Timer Group)
-    :SOC_MCPWM_SUPPORTED: - 旧版 MCPWM 驱动
-
-
 .. only:: SOC_PM_SUPPORT_TOP_PD
 
     Light-sleep 外设下电
