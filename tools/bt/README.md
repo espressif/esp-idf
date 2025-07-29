@@ -48,15 +48,19 @@ Alternatively, manually create a log file containing HCI data in the expected fo
 Timestamp information is now included as part of the dump. The log looks like below, where
 the first 8 bytes contains timestamp information:
 
+```bash
 00 C:49 ed 01 00 00 00 00 00 03 0c 00
 01 E:8e f0 01 00 00 00 00 00 0e 04 05 03 0c 00
+```
 
 If timestamp information is not present, then same log would look like:
 
+```bash
 00 C:03 0c 00
 01 E:0e 04 05 03 0c 00
+```
 
-The script takes "--has-ts" parameter, if output log has timestamp information
+The script takes "--has-ts" parameter, if input log has timestamp information
 
 To parse the logs and generate a BTSnoop file, run:
 
@@ -67,10 +71,15 @@ python bt_hci_to_btsnoop.py -p <input_log_file> -o <output_tag> [--has-ts]
 #### **Parameters**
 - `-p` or `--path`: Path to the input log file (e.g., `all_log.txt`). Required.
 - `-o` or `--output`: A tag for the output file name. Required.
+- `--has-ts`: To indicate if log has timestamp information. Optional.
 
 #### **Example Command**
 ```bash
 python bt_hci_to_btsnoop.py -p /path/to/input_log.txt -o 123
+```
+OR
+```bash
+python bt_hci_to_btsnoop.py -p /path/to/input_log.txt -o 123 --has-ts
 ```
 
 This creates the file: `./parsed_logs/parsed_log_123.btsnoop.log`.
@@ -110,6 +119,8 @@ The parsed file will be saved as `parsed_log_<output_tag>.btsnoop.log` in the BT
 
 Below is an example of expected log entries:
 
+Without timestamp information:
+
 ```plaintext
 e6 C:35 0c 05 01 01 00 01 00
 e7 H:01 00 2a 00 26 00 04 00 12 2a 00 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 22
@@ -118,6 +129,15 @@ e9 D:01 20 05 00 01 00 04 00 13
 ea C:35 0c 05 01 01 00 01 00
 ```
 
+With timestamp information:
+
+```plaintext
+e6 C:1a f8 01 00 00 00 00 00 35 0c 05 01 01 00 01 00
+e7 H:d9 f8 01 00 00 00 00 00 01 00 2a 00 26 00 04 00 12 2a 00 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 22
+e8 E:58 f9 01 00 00 00 00 00 13 05 01 01 00 01 00
+e9 D:c0 f9 01 00 00 00 00 00 01 20 05 00 01 00 04 00 13
+ea C:2e fa 01 00 00 00 00 00 35 0c 05 01 01 00 01 00
+```
 ---
 
 ### **Notes**
