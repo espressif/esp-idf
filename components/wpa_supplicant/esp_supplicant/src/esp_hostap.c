@@ -22,6 +22,7 @@
 #include "esp_wps.h"
 #include "esp_wps_i.h"
 
+#include "rsn_supp/wpa.h"
 #include "ap/sta_info.h"
 #include "common/sae.h"
 #include "ap/ieee802_11.h"
@@ -37,6 +38,18 @@ struct hostapd_data *hostapd_get_hapd_data(void)
 {
     return global_hapd;
 }
+static bool authmode_has_wpa(uint8_t authmode)
+{
+    return (authmode == WIFI_AUTH_WPA_PSK || authmode == WIFI_AUTH_WPA_WPA2_PSK);
+}
+
+static bool authmode_has_rsn(uint8_t authmode)
+{
+    return (authmode == WIFI_AUTH_WPA2_PSK ||
+            authmode == WIFI_AUTH_WPA_WPA2_PSK ||
+            authmode == WIFI_AUTH_WPA3_PSK ||
+            authmode == WIFI_AUTH_WPA2_WPA3_PSK);
+}
 
 void *hostap_init(void)
 {
@@ -44,9 +57,12 @@ void *hostap_init(void)
     struct hostapd_data *hapd = NULL;
     struct wpa_auth_config *auth_conf;
     u16 spp_attrubute = 0;
-    u8 pairwise_cipher;
+    u16 pairwise_cipher;
     wifi_pmf_config_t pmf_cfg = {0};
     uint8_t authmode;
+    uint8_t sae_ext = 0;
+
+    sae_ext = esp_wifi_ap_get_sae_ext_config_internal();
 
     hapd = (struct hostapd_data *)os_zalloc(sizeof(struct hostapd_data));
 
@@ -71,31 +87,24 @@ void *hostap_init(void)
     auth_conf->sae_pwe = hapd->conf->sae_pwe;
 
     authmode = esp_wifi_ap_get_prof_authmode_internal();
-    if (authmode == WIFI_AUTH_WPA_PSK) {
-        auth_conf->wpa = WPA_PROTO_WPA;
+    if (authmode_has_wpa(authmode)) {
+        auth_conf->wpa |= WPA_PROTO_WPA;
     }
-    if (authmode == WIFI_AUTH_WPA2_PSK) {
-        auth_conf->wpa = WPA_PROTO_RSN;
+    if (authmode_has_rsn(authmode)) {
+        auth_conf->wpa |= WPA_PROTO_RSN;
     }
-    if (authmode == WIFI_AUTH_WPA_WPA2_PSK) {
-        auth_conf->wpa = WPA_PROTO_RSN | WPA_PROTO_WPA;
-    }
-    if (authmode == WIFI_AUTH_WPA3_PSK || authmode == WIFI_AUTH_WPA2_WPA3_PSK) {
-        auth_conf->wpa = WPA_PROTO_RSN;
-    }
-
     pairwise_cipher = esp_wifi_ap_get_prof_pairwise_cipher_internal();
 
 #ifdef CONFIG_IEEE80211W
     if((auth_conf->wpa & WPA_PROTO_RSN) == WPA_PROTO_RSN)
     {
         esp_wifi_get_pmf_config_internal(&pmf_cfg, WIFI_IF_AP);
-        if (pmf_cfg.required) {
+        /* Use cipher as CCMP if pmf is enabled and TKIP is set */
+        if (pmf_cfg.required && pairwise_cipher == WIFI_CIPHER_TYPE_TKIP) {
             pairwise_cipher = WIFI_CIPHER_TYPE_CCMP;
         }
     }
 #endif /* CONFIG_IEEE80211W */
-
     /* TKIP is compulsory in WPA Mode */
     if (auth_conf->wpa == WPA_PROTO_WPA && pairwise_cipher == WIFI_CIPHER_TYPE_CCMP) {
         pairwise_cipher = WIFI_CIPHER_TYPE_TKIP_CCMP;
@@ -108,6 +117,10 @@ void *hostap_init(void)
         auth_conf->wpa_group = WPA_CIPHER_CCMP;
         auth_conf->wpa_pairwise = WPA_CIPHER_CCMP;
         auth_conf->rsn_pairwise = WPA_CIPHER_CCMP;
+    } else if (pairwise_cipher == WIFI_CIPHER_TYPE_GCMP256) {
+        auth_conf->wpa_group = WPA_CIPHER_GCMP_256;
+        auth_conf->wpa_pairwise = WPA_CIPHER_GCMP_256;
+        auth_conf->rsn_pairwise = WPA_CIPHER_GCMP_256;
     } else {
         auth_conf->wpa_group = WPA_CIPHER_TKIP;
         auth_conf->wpa_pairwise = WPA_CIPHER_CCMP | WPA_CIPHER_TKIP;
@@ -128,7 +141,21 @@ void *hostap_init(void)
         auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_PSK;
         wpa_printf(MSG_DEBUG, "%s : pmf optional", __func__);
     }
-
+    if (auth_conf->ieee80211w != NO_MGMT_FRAME_PROTECTION) {
+        switch (pairwise_cipher) {
+        case WIFI_CIPHER_TYPE_CCMP:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
+            break;
+        case WIFI_CIPHER_TYPE_GCMP:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_BIP_GMAC_128;
+            break;
+        case WIFI_CIPHER_TYPE_GCMP256:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_BIP_GMAC_256;
+            break;
+        default:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
+        }
+    }
     if (authmode == WIFI_AUTH_WPA2_WPA3_PSK) {
         auth_conf->wpa_key_mgmt |= WPA_KEY_MGMT_SAE;
     }
@@ -136,8 +163,12 @@ void *hostap_init(void)
     if (authmode == WIFI_AUTH_WPA3_PSK) {
         auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_SAE;
     }
-#endif /* CONFIG_IEEE80211W */
+    if (authmode == WIFI_AUTH_WPA3_PSK && pairwise_cipher == WIFI_CIPHER_TYPE_GCMP256 && sae_ext) {
+        auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_SAE_EXT_KEY;
+    }
 
+#endif /* CONFIG_IEEE80211W */
+    esp_wifi_ap_set_group_mgmt_cipher_internal(cipher_type_map_supp_to_public(auth_conf->group_mgmt_cipher));
     spp_attrubute = esp_wifi_get_spp_attrubute_internal(WIFI_IF_AP);
     auth_conf->spp_sup.capable = ((spp_attrubute & WPA_CAPABILITY_SPP_CAPABLE) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_CAP_DISABLE);
     auth_conf->spp_sup.require = ((spp_attrubute & WPA_CAPABILITY_SPP_REQUIRED) ? SPP_AMSDU_REQ_ENABLE : SPP_AMSDU_REQ_DISABLE);
@@ -172,9 +203,6 @@ void *hostap_init(void)
 #ifdef CONFIG_SAE
     auth_conf->sae_require_mfp = 1;
 #endif /* CONFIG_SAE */
-
-    //TODO change it when AP support GCMP-PSK
-    auth_conf->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
 
     hapd->conf->ap_max_inactivity = 5 * 60;
     hostapd_setup_wpa_psk(hapd->conf);
@@ -372,7 +400,6 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
     if (!sta || !bssid || !wpa_ie) {
         return false;
     }
-
     if (hapd) {
         if (hapd->wpa_auth->conf.wpa) {
             if (sta->wpa_sm) {
@@ -388,10 +415,10 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
             }
 
             res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len);
-
 #ifdef CONFIG_SAE
             if (wpa_auth_uses_sae(sta->wpa_sm) && sta->sae &&
                     sta->sae->state == SAE_ACCEPTED) {
+                sta->wpa_sm->pmk_len = sta->sae->pmk_len;
                 wpa_auth_add_sae_pmkid(sta->wpa_sm, sta->sae->pmkid);
             }
 #endif /* CONFIG_SAE */
