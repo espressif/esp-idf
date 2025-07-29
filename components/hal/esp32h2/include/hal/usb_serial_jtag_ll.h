@@ -189,7 +189,7 @@ static inline void usb_serial_jtag_ll_txfifo_flush(void)
  *
  * @param enable Enable USJ JTAG bridge
  */
-FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_set_jtag_bridge(bool enable)
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_jtag_bridge(bool enable)
 {
     USB_SERIAL_JTAG.conf0.usb_jtag_bridge_en = enable;
 }

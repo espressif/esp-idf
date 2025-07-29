@@ -969,12 +969,12 @@ typedef struct {
     volatile usb_serial_jtag_serial_ep_timeout1_reg_t serial_jtag_serial_ep_timeout1;
     uint32_t reserved_074[3];
     volatile usb_serial_jtag_date_reg_t serial_jtag_date;
-} usb_dev_t;
+} usb_serial_jtag_dev_t;
 
-extern usb_dev_t USB_SERIAL_JTAG;
+extern usb_serial_jtag_dev_t USB_SERIAL_JTAG;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(usb_dev_t) == 0x84, "Invalid size of usb_dev_t structure");
+_Static_assert(sizeof(usb_serial_jtag_dev_t) == 0x84, "Invalid size of usb_dev_t structure");
 #endif
 
 #ifdef __cplusplus
