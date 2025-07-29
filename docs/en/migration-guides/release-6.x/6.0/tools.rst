@@ -44,3 +44,12 @@ Changes in Configuration Files Syntax
 -------------------------------------
 
 ESP-IDF v6 uses esp-idf-kconfig v3, which introduces several changes in the configuration (``Kconfig``) files. For the full list of changes, please refer to the `esp-idf-kconfig migration guide from v2.x to v3.x <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/developer-guide/migration-guide.html>`_.
+
+CMake version upgrade
+---------------------
+
+The minimal supported CMake version has been upgraded to 3.22.1. In case you encounter build issues regarding this change, we recommend updating your operating system to a version that includes CMake 3.22 or newer.
+
+If updating the OS is not possible, you can install a recommended CMake version using the following command: ``./tools/idf_tools.py install cmake``.
+
+This affects ESP-IDF users who use system-provided CMake and custom CMake.
