@@ -8,6 +8,7 @@ menu "ESP-TLS"
             usage. Consult the ESP-TLS documentation in ESP-IDF Programming guide for more details.
         config ESP_TLS_USING_MBEDTLS
             bool "mbedTLS"
+            select MBEDTLS_TLS_ENABLED
         config ESP_TLS_USING_WOLFSSL
             depends on TLS_STACK_WOLFSSL
             bool "wolfSSL (License info in wolfSSL directory README)"

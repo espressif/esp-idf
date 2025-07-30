@@ -6,6 +6,7 @@
 # Few example dependencies need to be enabled by default for the build to succeed
 ##############
 CONFIG_MBEDTLS_SSL_PROTO_TLS1_2=y
+CONFIG_MBEDTLS_SSL_PROTO_TLS1_3=n
 CONFIG_MBEDTLS_KEY_EXCHANGE_RSA=y
 CONFIG_MBEDTLS_AES_C=y
 ##############

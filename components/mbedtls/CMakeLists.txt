@@ -357,7 +357,18 @@ foreach(target ${mbedtls_targets})
     if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10087
         target_compile_options(${target} PRIVATE "-fno-analyzer")
     endif()
+    if(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SIZE)
+        target_compile_options(${target} PRIVATE "-Os")
+    elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SPEED)
+        target_compile_options(${target} PRIVATE "-O2")
+    endif()
 endforeach()
+
+if(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SIZE)
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-Os")
+elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SPEED)
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-O2")
+endif()
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
     set(WRAP_FUNCTIONS
