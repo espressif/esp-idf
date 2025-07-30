@@ -505,11 +505,14 @@ static int read_block(httpd_req_t *req, http_parser *parser, size_t offset, size
        from where the reading will start and buf_len is till what length
        the buffer will be read.
     */
-    raux->scratch = (char*) realloc(raux->scratch, offset + buf_len);
-    if (raux->scratch == NULL) {
+    char *new_scratch = (char *) realloc(raux->scratch, offset + buf_len);
+    if (new_scratch == NULL) {
+        free(raux->scratch);
+        raux->scratch = NULL;
         ESP_LOGE(TAG, "Unable to allocate the scratch buffer");
         return 0;
     }
+    raux->scratch = new_scratch;
     parser_data->last.at = raux->scratch + at_offset;
     raux->scratch_cur_size = offset + buf_len;
     ESP_LOGD(TAG, "scratch buf qsize = %d", raux->scratch_cur_size);

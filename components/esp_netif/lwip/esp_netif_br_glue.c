@@ -329,11 +329,15 @@ esp_err_t esp_netif_br_glue_add_port(esp_netif_br_glue_handle_t netif_br_glue, e
     if (netif_br_glue->ports_esp_netifs == NULL) {
         netif_br_glue->ports_esp_netifs = malloc(sizeof(esp_netif_t *));
     } else {
-        netif_br_glue->ports_esp_netifs = realloc(netif_br_glue->ports_esp_netifs, (netif_br_glue->port_cnt + 1) * sizeof(esp_netif_t *));
-    }
-    if (!netif_br_glue->ports_esp_netifs) {
-        ESP_LOGE(TAG, "no memory to add br port");
-        return ESP_ERR_NO_MEM;
+        esp_netif_t **new_ports = realloc(netif_br_glue->ports_esp_netifs, (netif_br_glue->port_cnt + 1) * sizeof(esp_netif_t *));
+        if (new_ports == NULL) {
+            free(netif_br_glue->ports_esp_netifs);
+            netif_br_glue->ports_esp_netifs = NULL;
+            netif_br_glue->port_cnt = 0;
+            ESP_LOGE(TAG, "no memory to add br port");
+            return ESP_ERR_NO_MEM;
+        }
+        netif_br_glue->ports_esp_netifs = new_ports;
     }
 
     netif_br_glue->ports_esp_netifs[netif_br_glue->port_cnt] = esp_netif_port;

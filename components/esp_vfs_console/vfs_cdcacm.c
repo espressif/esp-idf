@@ -385,7 +385,13 @@ static esp_err_t unregister_select(cdcacm_select_args_t *args)
                 // The item is removed by overwriting it with the last item. The subsequent rellocation will drop the
                 // last item.
                 s_registered_selects[i] = s_registered_selects[new_size];
-                s_registered_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(cdcacm_select_args_t *), CDCACM_VFS_MALLOC_FLAGS);
+                cdcacm_select_args_t **new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(cdcacm_select_args_t *), CDCACM_VFS_MALLOC_FLAGS);
+                if (new_selects == NULL && new_size > 0) {
+                    ret = ESP_ERR_NO_MEM;
+                    break;
+                } else {
+                    s_registered_selects = new_selects;
+                }
                 // Shrinking a buffer with realloc is guaranteed to succeed.
                 s_registered_select_num = new_size;
 
