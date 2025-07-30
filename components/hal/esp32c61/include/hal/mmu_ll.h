@@ -13,6 +13,7 @@
 #include "hal/assert.h"
 #include "hal/mmu_types.h"
 #include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
 
 // TODO: [ESP32C61] IDF-9265, inherit from c6
 
@@ -216,7 +217,10 @@ __attribute__((always_inline)) static inline void mmu_ll_write_entry(uint32_t mm
     (void)mmu_id;
     uint32_t mmu_raw_value;
     if (mmu_ll_cache_encryption_enabled()) {
-        mmu_val |= SOC_MMU_SENSITIVE;
+        // For PSRAM case, avoid encryption due to a bug in the hardware
+        if (!(target == MMU_TARGET_PSRAM0 && efuse_hal_chip_revision() <= 100)) {
+            mmu_val |= SOC_MMU_SENSITIVE;
+        }
     }
     mmu_val |= (target == MMU_TARGET_FLASH0) ? SOC_MMU_ACCESS_FLASH : SOC_MMU_ACCESS_SPIRAM;
 
