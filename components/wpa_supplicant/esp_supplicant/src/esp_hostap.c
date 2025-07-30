@@ -22,6 +22,7 @@
 #include "esp_wps.h"
 #include "esp_wps_i.h"
 
+#include "rsn_supp/wpa.h"
 #include "ap/sta_info.h"
 #include "common/sae.h"
 #include "ap/ieee802_11.h"
@@ -129,6 +130,21 @@ void *hostap_init(void)
         wpa_printf(MSG_DEBUG, "%s : pmf optional", __func__);
     }
 
+    if (auth_conf->ieee80211w != NO_MGMT_FRAME_PROTECTION) {
+        switch (pairwise_cipher) {
+        case WIFI_CIPHER_TYPE_CCMP:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
+            break;
+        case WIFI_CIPHER_TYPE_GCMP:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_BIP_GMAC_128;
+            break;
+        case WIFI_CIPHER_TYPE_GCMP256:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_BIP_GMAC_256;
+            break;
+        default:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
+        }
+    }
     if (authmode == WIFI_AUTH_WPA2_WPA3_PSK) {
         auth_conf->wpa_key_mgmt |= WPA_KEY_MGMT_SAE;
     }
@@ -137,7 +153,7 @@ void *hostap_init(void)
         auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_SAE;
     }
 #endif /* CONFIG_IEEE80211W */
-
+    esp_wifi_ap_set_group_mgmt_cipher_internal(cipher_type_map_supp_to_public(auth_conf->group_mgmt_cipher));
     spp_attrubute = esp_wifi_get_spp_attrubute_internal(WIFI_IF_AP);
     auth_conf->spp_sup.capable = ((spp_attrubute & WPA_CAPABILITY_SPP_CAPABLE) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_CAP_DISABLE);
     auth_conf->spp_sup.require = ((spp_attrubute & WPA_CAPABILITY_SPP_REQUIRED) ? SPP_AMSDU_REQ_ENABLE : SPP_AMSDU_REQ_DISABLE);
@@ -172,9 +188,6 @@ void *hostap_init(void)
 #ifdef CONFIG_SAE
     auth_conf->sae_require_mfp = 1;
 #endif /* CONFIG_SAE */
-
-    //TODO change it when AP support GCMP-PSK
-    auth_conf->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
 
     hapd->conf->ap_max_inactivity = 5 * 60;
     hostapd_setup_wpa_psk(hapd->conf);
