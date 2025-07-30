@@ -7,9 +7,6 @@
 
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 
-// Private includes
-#include "esp_bt.h"
-
 // sdkconfig defines
 #define SPI_OUT_UL_TASK_BUF_SIZE                CONFIG_BT_BLE_LOG_SPI_OUT_UL_TASK_BUF_SIZE
 #define SPI_OUT_LL_ENABLED                      CONFIG_BT_BLE_LOG_SPI_OUT_LL_ENABLED
@@ -21,7 +18,6 @@
 #define SPI_OUT_CS_IO_NUM                       CONFIG_BT_BLE_LOG_SPI_OUT_CS_IO_NUM
 #define SPI_OUT_TS_SYNC_ENABLED                 CONFIG_BT_BLE_LOG_SPI_OUT_TS_SYNC_ENABLED
 #define SPI_OUT_SYNC_IO_NUM                     CONFIG_BT_BLE_LOG_SPI_OUT_SYNC_IO_NUM
-#define SPI_OUT_TS_SYNC_SLEEP_SUPPORT           CONFIG_BT_BLE_LOG_SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 #define SPI_OUT_FLUSH_TIMER_ENABLED             CONFIG_BT_BLE_LOG_SPI_OUT_FLUSH_TIMER_ENABLED
 #define SPI_OUT_FLUSH_TIMEOUT_US                (CONFIG_BT_BLE_LOG_SPI_OUT_FLUSH_TIMEOUT * 1000)
 #define SPI_OUT_LE_AUDIO_ENABLED                CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
@@ -44,6 +40,8 @@
 #define SPI_OUT_TRANS_ITVL_MIN_US               (30)
 #define SPI_OUT_LOG_STR_BUF_SIZE                (100)
 #define SPI_OUT_MALLOC(size)                    heap_caps_malloc(size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#define SPI_OUT_TASK_PRIORITY                   (ESP_TASK_PRIO_MAX - 1)
+#define SPI_OUT_TASK_STACK_SIZE                 (1024)
 
 #if SPI_OUT_TS_SYNC_ENABLED
 #define SPI_OUT_TS_SYNC_TIMEOUT_MS              (1000)
@@ -167,11 +165,11 @@ enum {
 };
 
 // Private variables
+static TaskHandle_t spi_out_task_handle = NULL;
 static bool spi_out_inited = false;
 static bool spi_out_enabled = false;
 static spi_device_handle_t spi_handle = NULL;
 static uint32_t last_tx_done_ts = 0;
-static uint32_t last_tx_done_os_ts = 0;
 
 #if SPI_OUT_LL_ENABLED
 static bool ll_log_inited = false;
@@ -185,10 +183,6 @@ static uint32_t ll_ev_flags = 0;
 static bool ts_sync_inited = false;
 static bool ts_sync_enabled = false;
 static ts_sync_data_t ts_sync_data = {0};
-
-#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
-static esp_timer_handle_t ts_sync_timer = NULL;
-#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
 #if SPI_OUT_FLUSH_TIMER_ENABLED
@@ -214,29 +208,25 @@ static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, 
                                  bool with_checksum);
 static void spi_out_log_cb_write_loss(spi_out_log_cb_t *log_cb);
 static void spi_out_log_cb_dump(spi_out_log_cb_t *log_cb);
+
+#if SPI_OUT_HOST_ENABLED || SPI_OUT_MESH_ENABLED || SPI_OUT_HCI_ENABLED || SPI_OUT_LE_AUDIO_ENABLED
 static bool spi_out_get_task_mapping(task_map_t *map, size_t num,
                                      spi_out_log_cb_t **log_cb, uint8_t **str_buf);
+#endif // SPI_OUT_HOST_ENABLED || SPI_OUT_MESH_ENABLED || SPI_OUT_HCI_ENABLED || SPI_OUT_LE_AUDIO_ENABLED
+
 static void spi_out_log_flush(void);
 
 static void spi_out_write_hex(spi_out_log_cb_t *log_cb, uint8_t source,
                               const uint8_t *addr, uint16_t len, bool with_ts);
+
+#if SPI_OUT_HOST_ENABLED || SPI_OUT_MESH_ENABLED
 static int spi_out_write_str(uint8_t *str_buf, const char *format, va_list args, int offset);
+#endif // SPI_OUT_HOST_ENABLED || SPI_OUT_MESH_ENABLED
 
 #if SPI_OUT_LL_ENABLED
 static int spi_out_ll_log_init(void);
 static void spi_out_ll_log_deinit(void);
 static void spi_out_ll_log_flush(void);
-
-#if defined(CONFIG_IDF_TARGET_ESP32H2) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5) ||\
-    defined(CONFIG_IDF_TARGET_ESP32C61) || defined(CONFIG_IDF_TARGET_ESP32H21)
-extern void r_ble_log_simple_put_ev(void);
-#define SPI_OUT_LL_PUT_EV r_ble_log_simple_put_ev()
-#elif defined(CONFIG_IDF_TARGET_ESP32C2)
-extern void ble_log_simple_put_ev(void);
-#define SPI_OUT_LL_PUT_EV ble_log_simple_put_ev()
-#else
-#define SPI_OUT_LL_PUT_EV
-#endif
 #endif // SPI_OUT_LL_ENABLED
 
 #if SPI_OUT_TS_SYNC_ENABLED
@@ -252,13 +242,13 @@ extern uint32_t r_ble_lll_timer_current_tick_get(void);
 #elif defined(CONFIG_IDF_TARGET_ESP32C2)
 extern uint32_t r_os_cputime_get32(void);
 #define SPI_OUT_GET_LC_TIME r_os_cputime_get32()
+#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
+extern uint32_t lld_read_clock_us(void);
+#define SPI_OUT_GET_LC_TIME lld_read_clock_us()
 #else
 #define SPI_OUT_GET_LC_TIME esp_timer_get_time()
 #endif
 
-#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
-static void esp_timer_cb_ts_sync(void);
-#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
 // Private templates
@@ -279,11 +269,9 @@ static void esp_timer_cb_ts_sync(void);
 #define LOG_MODULE_DUMP(ID)                                                         \
     do {                                                                            \
         if (LOG_MODULE_INIT_FLAG(ID)) {                                             \
-            esp_rom_printf("[DUMP_START:\n");                                       \
             for (int i = 0; i < LOG_MODULE_CB_CNT(ID); i++) {                       \
                 spi_out_log_cb_dump(LOG_MODULE_CB(ID, i));                          \
             }                                                                       \
-            esp_rom_printf("\n:DUMP_END]\n");                                       \
         }                                                                           \
     } while (0)
 
@@ -406,6 +394,20 @@ DECLARE_LOG_MODULE(mesh, LOG_CB_TYPE_MESH, SPI_OUT_MESH_BUF_SIZE,
 #define SPI_OUT_FRAME_TAIL_LEN      (sizeof(uint32_t))
 #define SPI_OUT_FRAME_OVERHEAD      (SPI_OUT_FRAME_HEAD_LEN + SPI_OUT_FRAME_TAIL_LEN)
 #define SPI_OUT_GET_FRAME_SN(VAR)   __atomic_fetch_add(VAR, 1, __ATOMIC_RELAXED)
+#define SPI_OUT_TASK_NOTIFY_FROM_ISR                                                    \
+    do {                                                                                \
+        if (spi_out_task_handle) {                                                      \
+            BaseType_t xHigherPriorityTaskWoken = pdFALSE;                              \
+            vTaskNotifyGiveFromISR(spi_out_task_handle, &xHigherPriorityTaskWoken);     \
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);                               \
+        }                                                                               \
+    } while (0)
+#define SPI_OUT_TASK_NOTIFY_FROM_TASK                                                   \
+    do {                                                                                \
+        if (spi_out_task_handle) {                                                      \
+            xTaskNotifyGive(spi_out_task_handle);                                       \
+        }                                                                               \
+    } while (0)
 
 // Private functions
 static int spi_out_init_trans(spi_out_trans_cb_t **trans_cb, uint16_t buf_size)
@@ -449,7 +451,6 @@ static void spi_out_deinit_trans(spi_out_trans_cb_t **trans_cb)
 IRAM_ATTR static void spi_out_tx_done_cb(spi_transaction_t *ret_trans)
 {
     last_tx_done_ts = esp_timer_get_time();
-    last_tx_done_os_ts = pdTICKS_TO_MS(xTaskGetTickCountFromISR());
     spi_out_trans_cb_t *trans_cb = (spi_out_trans_cb_t *)ret_trans->user;
     trans_cb->length = 0;
     trans_cb->flag = TRANS_CB_FLAG_AVAILABLE;
@@ -479,6 +480,7 @@ IRAM_ATTR static inline void spi_out_append_trans(spi_out_trans_cb_t *trans_cb)
     if (spi_device_queue_trans(spi_handle, &(trans_cb->trans), 0) != ESP_OK) {
         goto recycle;
     }
+    SPI_OUT_TASK_NOTIFY_FROM_ISR;
     return;
 
 recycle:
@@ -660,6 +662,7 @@ static void spi_out_update_task_mapping(int idx, void *ptr)
     entry->task_handle = NULL;
 }
 
+#if SPI_OUT_HOST_ENABLED || SPI_OUT_MESH_ENABLED || SPI_OUT_HCI_ENABLED || SPI_OUT_LE_AUDIO_ENABLED
 static bool spi_out_get_task_mapping(task_map_t *map, size_t num,
                                      spi_out_log_cb_t **log_cb, uint8_t **str_buf)
 {
@@ -707,16 +710,15 @@ static bool spi_out_get_task_mapping(task_map_t *map, size_t num,
     portEXIT_CRITICAL_SAFE(&spinlock);
     return ret;
 }
+#endif // SPI_OUT_HOST_ENABLED || SPI_OUT_MESH_ENABLED || SPI_OUT_HCI_ENABLED || SPI_OUT_LE_AUDIO_ENABLED
 
 static void spi_out_log_flush(void)
 {
     LOG_MODULE_FLUSH(ul)();
 
 #if SPI_OUT_LL_ENABLED
-    if (esp_bt_controller_get_status() >= ESP_BT_CONTROLLER_STATUS_INITED) {
-        ll_ev_flags |= BIT(LL_EV_FLAG_FLUSH_LOG);
-        SPI_OUT_LL_PUT_EV;
-    }
+    ll_ev_flags |= BIT(LL_EV_FLAG_FLUSH_LOG);
+    SPI_OUT_TASK_NOTIFY_FROM_TASK;
 #endif // SPI_OUT_LL_ENABLED
 
 #if SPI_OUT_LE_AUDIO_ENABLED
@@ -765,6 +767,7 @@ static void spi_out_write_hex(spi_out_log_cb_t *log_cb, uint8_t source,
     spi_out_log_cb_write_loss(log_cb);
 }
 
+#if SPI_OUT_HOST_ENABLED || SPI_OUT_MESH_ENABLED
 static int spi_out_write_str(uint8_t *str_buf, const char *format, va_list args, int offset)
 {
     int len = vsnprintf((char *)(str_buf + offset), SPI_OUT_LOG_STR_BUF_SIZE - offset, format, args);
@@ -779,6 +782,7 @@ static int spi_out_write_str(uint8_t *str_buf, const char *format, va_list args,
     }
     return len;
 }
+#endif // SPI_OUT_HOST_ENABLED || SPI_OUT_MESH_ENABLED
 
 #if SPI_OUT_LL_ENABLED
 static int spi_out_ll_log_init(void)
@@ -825,24 +829,19 @@ static void spi_out_ll_log_deinit(void)
     return;
 }
 
-// Context: LL task
 static void spi_out_ll_log_flush(void)
 {
     if (!ll_log_inited) {
         return;
     }
 
-    // Flush task log and hci log buffer
-    spi_out_log_cb_flush_trans(ll_task_log_cb);
-    spi_out_log_cb_flush_trans(ll_hci_log_cb);
-
-    // Race condition for isr log buffer
     portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL_SAFE(&spinlock);
+    spi_out_log_cb_flush_trans(ll_task_log_cb);
+    spi_out_log_cb_flush_trans(ll_hci_log_cb);
     spi_out_log_cb_flush_trans(ll_isr_log_cb);
     portEXIT_CRITICAL_SAFE(&spinlock);
 
-    // Note: Save SPI transfer start time
     spi_out_log_cb_append_trans(ll_task_log_cb);
     spi_out_log_cb_append_trans(ll_hci_log_cb);
     spi_out_log_cb_append_trans(ll_isr_log_cb);
@@ -856,17 +855,6 @@ static int spi_out_ts_sync_init(void)
         return 0;
     }
 
-#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
-    // Initialize sync timer
-    esp_timer_create_args_t timer_args = {
-        .callback = (esp_timer_cb_t)esp_timer_cb_ts_sync,
-        .dispatch_method = ESP_TIMER_TASK
-    };
-    if (esp_timer_create(&timer_args, &ts_sync_timer) != ESP_OK) {
-        goto timer_init_failed;
-    }
-#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
-
     // Initialize sync IO
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
@@ -876,72 +864,34 @@ static int spi_out_ts_sync_init(void)
         .pull_up_en = 0
     };
     if (gpio_config(&io_conf) != ESP_OK) {
-        goto gpio_init_failed;
+        goto failed;
     }
 
     // Initialization done
     ts_sync_inited = true;
     return 0;
 
-gpio_init_failed:
-#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
-    esp_timer_delete(ts_sync_timer);
-    ts_sync_timer = NULL;
-timer_init_failed:
-#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
+failed:
     return -1;
 }
 
 static void spi_out_ts_sync_deinit(void)
 {
-    if (!ts_sync_inited) {
-        return;
-    }
+    ts_sync_inited = false;
 
-#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
-    // Deinitialize timestamp synchronizer
-    esp_timer_stop(ts_sync_timer);
-    esp_timer_delete(ts_sync_timer);
-    ts_sync_timer = NULL;
-#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
-
-    // Deinitialize sync IO
     spi_out_ts_sync_enable(false);
     gpio_reset_pin(SPI_OUT_SYNC_IO_NUM);
-
-    // Deinitialization done
-    ts_sync_inited = false;
-    return;
 }
 
 static void spi_out_ts_sync_enable(bool enable)
 {
     // Update ts sync status
     ts_sync_enabled = enable;
-    if (enable) {
-#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
-        // Start timestamp sync timer
-        if (ts_sync_timer) {
-            if (!esp_timer_is_active(ts_sync_timer)) {
-                esp_timer_start_periodic(ts_sync_timer, SPI_OUT_TS_SYNC_TIMEOUT_US);
-            }
-        }
-#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
-    } else {
-#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
-        // Stop timestamp sync timer
-        if (ts_sync_timer) {
-            if (esp_timer_is_active(ts_sync_timer)) {
-                esp_timer_stop(ts_sync_timer);
-            }
-        }
-#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
-        if (!ts_sync_data.io_level) {
-            gpio_set_level(SPI_OUT_SYNC_IO_NUM, 1);
-        }
+    if (!enable && !ts_sync_data.io_level) {
+        gpio_set_level(SPI_OUT_SYNC_IO_NUM, 1);
     }
     ts_sync_data.io_level = 0;
-    gpio_set_level(SPI_OUT_SYNC_IO_NUM, (uint32_t)ts_sync_data.io_level);
+    gpio_set_level(SPI_OUT_SYNC_IO_NUM, 0);
 }
 
 static void spi_out_ts_sync_toggle(void)
@@ -964,19 +914,28 @@ static void spi_out_ts_sync_toggle(void)
     portEXIT_CRITICAL(&spinlock);
     // Exit critical
 }
-
-#if !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
-// CRITICAL: This function is called in ESP Timer task
-static void esp_timer_cb_ts_sync(void)
-{
-    spi_out_ts_sync_toggle();
-    ble_log_spi_out_write(BLE_LOG_SPI_OUT_SOURCE_SYNC, (const uint8_t *)&ts_sync_data,
-                          sizeof(ts_sync_data_t));
-}
-#else
-
-#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
 #endif // SPI_OUT_TS_SYNC_ENABLED
+
+static void spi_out_task(void *pvParameters)
+{
+    while (1) {
+        if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY)) {
+#if SPI_OUT_LL_ENABLED
+            ble_log_spi_out_ll_log_ev_proc();
+#endif // SPI_OUT_LL_ENABLED
+#if SPI_OUT_TS_SYNC_ENABLED
+        if (ts_sync_inited && ts_sync_enabled) {
+            uint32_t curr_os_ts = pdTICKS_TO_MS(xTaskGetTickCount());
+            if ((curr_os_ts - ts_sync_data.os_ts) > SPI_OUT_TS_SYNC_TIMEOUT_MS) {
+                spi_out_ts_sync_toggle();
+                ble_log_spi_out_write(BLE_LOG_SPI_OUT_SOURCE_SYNC,
+                                      (const uint8_t *)&ts_sync_data, sizeof(ts_sync_data_t));
+            }
+        }
+#endif // SPI_OUT_TS_SYNC_ENABLED
+        }
+    }
+}
 
 // Public functions
 int ble_log_spi_out_init(void)
@@ -1008,49 +967,49 @@ int ble_log_spi_out_init(void)
         .flags = SPI_DEVICE_NO_RETURN_RESULT
     };
     if (spi_bus_initialize(SPI_OUT_BUS, &bus_config, SPI_DMA_CH_AUTO) != ESP_OK) {
-        goto spi_bus_init_failed;
+        goto failed;
     }
     if (spi_bus_add_device(SPI_OUT_BUS, &dev_config, &spi_handle) != ESP_OK) {
-        goto spi_device_add_failed;
+        goto failed;
     }
 
     if (LOG_MODULE_INIT(ul)() != 0) {
-        goto ul_log_init_failed;
+        goto failed;
     }
 
 #if SPI_OUT_LL_ENABLED
     if (spi_out_ll_log_init() != 0) {
-        goto ll_log_init_failed;
+        goto failed;
     }
 #endif // SPI_OUT_LL_ENABLED
 
 #if SPI_OUT_TS_SYNC_ENABLED
     if (spi_out_ts_sync_init() != 0) {
-        goto ts_sync_init_failed;
+        goto failed;
     }
 #endif // SPI_OUT_TS_SYNC_ENABLED
 
 #if SPI_OUT_LE_AUDIO_ENABLED
     if (LOG_MODULE_INIT(le_audio)() != 0) {
-        goto le_audio_init_failed;
+        goto failed;
     }
 #endif // SPI_OUT_LE_AUDIO_ENABLED
 
 #if SPI_OUT_HOST_ENABLED
     if (LOG_MODULE_INIT(host)() != 0) {
-        goto host_init_failed;
+        goto failed;
     }
 #endif // SPI_OUT_HOST_ENABLED
 
 #if SPI_OUT_HCI_ENABLED
     if (LOG_MODULE_INIT(hci)() != 0) {
-        goto hci_init_failed;
+        goto failed;
     }
 #endif // SPI_OUT_HCI_ENABLED
 
 #if SPI_OUT_MESH_ENABLED
     if (LOG_MODULE_INIT(mesh)() != 0) {
-        goto mesh_init_failed;
+        goto failed;
     }
 #endif // SPI_OUT_MESH_ENABLED
 
@@ -1060,9 +1019,16 @@ int ble_log_spi_out_init(void)
         .dispatch_method = ESP_TIMER_TASK
     };
     if (esp_timer_create(&timer_args, &flush_timer) != ESP_OK) {
-        goto timer_init_failed;
+        goto failed;
     }
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
+
+    BaseType_t ret = xTaskCreate(spi_out_task, "BLELogSPIOut",
+                                 SPI_OUT_TASK_STACK_SIZE, NULL,
+                                 SPI_OUT_TASK_PRIORITY, &spi_out_task_handle);
+    if (ret == pdFALSE) {
+        goto failed;
+    }
 
     // Initialization done
     spi_out_inited = true;
@@ -1073,68 +1039,39 @@ int ble_log_spi_out_init(void)
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
     return 0;
 
-#if SPI_OUT_FLUSH_TIMER_ENABLED
-timer_init_failed:
-#endif // SPI_OUT_FLUSH_TIMER_ENABLED
-#if SPI_OUT_MESH_ENABLED
-    LOG_MODULE_DEINIT(mesh)();
-mesh_init_failed:
-#endif // SPI_OUT_MESH_ENABLED
-#if SPI_OUT_HCI_ENABLED
-    LOG_MODULE_DEINIT(hci)();
-hci_init_failed:
-#endif // SPI_OUT_HCI_ENABLED
-#if SPI_OUT_HOST_ENABLED
-    LOG_MODULE_DEINIT(host)();
-host_init_failed:
-#endif // SPI_OUT_HOST_ENABLED
-#if SPI_OUT_LE_AUDIO_ENABLED
-    LOG_MODULE_DEINIT(le_audio)();
-le_audio_init_failed:
-#endif // SPI_OUT_LE_AUDIO_ENABLED
-#if SPI_OUT_TS_SYNC_ENABLED
-    spi_out_ts_sync_deinit();
-ts_sync_init_failed:
-#endif // SPI_OUT_TS_SYNC_ENABLED
-#if SPI_OUT_LL_ENABLED
-    spi_out_ll_log_deinit();
-ll_log_init_failed:
-#endif // SPI_OUT_LL_ENABLED
-    LOG_MODULE_DEINIT(ul)();
-ul_log_init_failed:
-    spi_bus_remove_device(spi_handle);
-    spi_handle = NULL;
-spi_device_add_failed:
-    spi_bus_free(SPI_OUT_BUS);
-spi_bus_init_failed:
+failed:
+    ble_log_spi_out_deinit();
     return -1;
 }
 
 void ble_log_spi_out_deinit(void)
 {
-    // Avoid double deinit
-    if (!spi_out_inited) {
-        return;
-    }
-
-    // Reset init flag
     spi_out_inited = false;
     spi_out_enabled = false;
 
+    if (spi_out_task_handle) {
+        vTaskDelete(spi_out_task_handle);
+        spi_out_task_handle = NULL;
+    }
+
 #if SPI_OUT_FLUSH_TIMER_ENABLED
-    esp_timer_stop(flush_timer);
-    esp_timer_delete(flush_timer);
-    flush_timer = NULL;
+    if (flush_timer) {
+        esp_timer_stop(flush_timer);
+        esp_timer_delete(flush_timer);
+        flush_timer = NULL;
+    }
 #endif // SPI_OUT_FLUSH_TIMER_ENABLED
 
-    // Drain all queued transactions
-    assert(spi_device_acquire_bus(spi_handle, portMAX_DELAY) == ESP_OK);
-    spi_device_release_bus(spi_handle);
+    if (spi_handle) {
+        // Drain all queued transactions
+        assert(spi_device_acquire_bus(spi_handle, portMAX_DELAY) == ESP_OK);
+        spi_device_release_bus(spi_handle);
 
-    // Remove SPI master
-    spi_bus_remove_device(spi_handle);
-    spi_handle = NULL;
-    spi_bus_free(SPI_OUT_BUS);
+        // Remove SPI master
+        spi_bus_remove_device(spi_handle);
+        spi_handle = NULL;
+        spi_bus_free(SPI_OUT_BUS);
+    }
 
 #if SPI_OUT_TS_SYNC_ENABLED
     spi_out_ts_sync_deinit();
@@ -1229,21 +1166,9 @@ IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint3
     if (need_append) {
         if (in_isr) {
             ll_ev_flags |= BIT(LL_EV_FLAG_ISR_APPEND);
-            SPI_OUT_LL_PUT_EV;
+            SPI_OUT_TASK_NOTIFY_FROM_ISR;
         } else {
             spi_out_log_cb_append_trans(log_cb);
-
-#if SPI_OUT_TS_SYNC_SLEEP_SUPPORT
-            if (ts_sync_inited && ts_sync_enabled) {
-                if (last_tx_done_os_ts >= (SPI_OUT_TS_SYNC_TIMEOUT_MS + ts_sync_data.os_ts)) {
-                    if (spi_out_log_cb_check_trans(ll_task_log_cb, sizeof(ts_sync_data_t), &need_append)) {
-                        spi_out_ts_sync_toggle();
-                        spi_out_log_cb_write(ll_task_log_cb, (const uint8_t *)&ts_sync_data,
-                                             sizeof(ts_sync_data_t), NULL, 0, BLE_LOG_SPI_OUT_SOURCE_SYNC, true);
-                    }
-                }
-            }
-#endif // !SPI_OUT_TS_SYNC_SLEEP_SUPPORT
         }
     }
     spi_out_log_cb_write_loss(log_cb);
@@ -1290,13 +1215,13 @@ void ble_log_spi_out_dump_all(void)
     portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL_SAFE(&spinlock);
 
+    esp_rom_printf("[SPI_LOG_DUMP_START:\n");
+
 #if SPI_OUT_LL_ENABLED
     if (ll_log_inited) {
-        esp_rom_printf("[DUMP_START:\n");
         spi_out_log_cb_dump(ll_isr_log_cb);
         spi_out_log_cb_dump(ll_task_log_cb);
         spi_out_log_cb_dump(ll_hci_log_cb);
-        esp_rom_printf("\n:DUMP_END]\n\n");
     }
 #endif // SPI_OUT_LL_ENABLED
 
@@ -1317,6 +1242,8 @@ void ble_log_spi_out_dump_all(void)
 #if SPI_OUT_MESH_ENABLED
     LOG_MODULE_DUMP(mesh);
 #endif // SPI_OUT_MESH_ENABLED
+
+    esp_rom_printf("\n:SPI_LOG_DUMP_END]\n\n");
 
     portEXIT_CRITICAL_SAFE(&spinlock);
 }
@@ -1345,7 +1272,7 @@ void ble_log_spi_out_flush(void)
     spi_out_log_flush();
 }
 
-#if CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
+#if SPI_OUT_LE_AUDIO_ENABLED
 IRAM_ATTR void ble_log_spi_out_le_audio_write(const uint8_t *addr, uint16_t len)
 {
     if (!LOG_MODULE_INIT_FLAG(le_audio)) {
@@ -1369,7 +1296,7 @@ IRAM_ATTR void ble_log_spi_out_le_audio_write(const uint8_t *addr, uint16_t len)
     spi_out_log_cb_write_loss(log_cb);
     return;
 }
-#endif // CONFIG_BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
+#endif // SPI_OUT_LE_AUDIO_ENABLED
 
 #if SPI_OUT_HOST_ENABLED
 int ble_log_spi_out_host_write(uint8_t source, const char *prefix, const char *format, ...)
