@@ -378,17 +378,22 @@ typedef enum {
 
 //////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
 typedef enum {
-    CLKOUT_SIG_PLL      = 1,    /*!< PLL_CLK is the output of crystal oscillator frequency multiplier */
-    CLKOUT_SIG_XTAL     = 5,    /*!< Main crystal oscillator clock */
-    CLKOUT_SIG_PLL_F80M = 13,   /*!< From PLL, usually be 80MHz */
-    CLKOUT_SIG_CPU      = 16,   /*!< CPU clock */
-    CLKOUT_SIG_AHB      = 17,   /*!< AHB clock */
-    CLKOUT_SIG_APB      = 18,   /*!< APB clock */
-    CLKOUT_SIG_XTAL32K  = 21,   /*!< External 32kHz crystal clock */
-    CLKOUT_SIG_EXT32K   = 22,   /*!< External slow clock input through XTAL_32K_P */
-    CLKOUT_SIG_RC_FAST  = 23,   /*!< RC fast clock, about 17.5MHz */
-    CLKOUT_SIG_RC_SLOW  = 25,   /*!< RC slow clock, depends on the RTC_CLK_SRC configuration */
-    CLKOUT_SIG_INVALID  = 0xFF,
+    CLKOUT_SIG_INVALID          = 0,
+    CLKOUT_SIG_PLL_F160M        = 1,    /*!< Divided from PLL_F480M */
+    CLKOUT_SIG_PLL_F22M         = 2,    /*!< Divided from PLL_F160M */
+    CLKOUT_SIG_PLL_F40M         = 3,    /*!< Divided from PLL_F160M */
+    CLKOUT_SIG_XTAL             = 5,    /*!< Main crystal oscillator clock */
+    CLKOUT_SIG_PLL_F44M         = 0xA,  /*!< Divided from PLL_F160M */
+    CLKOUT_SIG_PLL_F80M         = 0xD,  /*!< Divided from PLL_F160M */
+    CLKOUT_SIG_I2S_APB          = 0xF,  /*!< APB clock for i2s */
+    CLKOUT_SIG_CPU              = 0x10, /*!< CPU clock */
+    CLKOUT_SIG_AHB              = 0x11, /*!< AHB clock */
+    CLKOUT_SIG_APB              = 0x12, /*!< APB clock */
+    CLKOUT_SIG_XTAL32K          = 0x15, /*!< External 32kHz crystal clock */
+    CLKOUT_SIG_EXT32K           = 0x16, /*!< External slow clock input through XTAL_32K_P */
+    CLKOUT_SIG_RC_FAST          = 0x17, /*!< RC fast clock, about 17.5MHz */
+    CLKOUT_SIG_RC_32K           = 0x18, /*!< Internal slow RC oscillator */
+    CLKOUT_SIG_RC_SLOW          = 0x19, /*!< RC slow clock, depends on the RTC_CLK_SRC configuration */
 } soc_clkout_sig_id_t;
 
 #ifdef __cplusplus

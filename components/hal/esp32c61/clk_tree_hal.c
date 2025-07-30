@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
+#include "hal/gpio_ll.h"
 #include "hal/assert.h"
 
 uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
@@ -64,4 +65,14 @@ uint32_t clk_hal_xtal_get_freq_mhz(void)
     uint32_t freq = clk_ll_xtal_get_freq_mhz();
     HAL_ASSERT(freq == SOC_XTAL_FREQ_40M);
     return freq;
+}
+
+void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id)
+{
+    gpio_ll_set_pin_ctrl(clk_sig, CLKOUT_CHANNEL_MASK(channel_id), CLKOUT_CHANNEL_SHIFT(channel_id));
+}
+
+void clk_hal_clock_output_teardown(clock_out_channel_t channel_id)
+{
+    gpio_ll_set_pin_ctrl(0, CLKOUT_CHANNEL_MASK(channel_id), CLKOUT_CHANNEL_SHIFT(channel_id));
 }

@@ -1791,10 +1791,10 @@ typedef union {
          *  Set 1 to enable 160m clock
          */
         uint32_t clk160_oen:1;
-        /** clk_320m_oen : R/W; bitpos: [6]; default: 1;
-         *  Set 1 to enable 320m clock
+        /** clk_480m_oen : R/W; bitpos: [6]; default: 1;
+         *  Set 1 to enable 480m clock
          */
-        uint32_t clk_320m_oen:1;
+        uint32_t clk_480m_oen:1;
         /** clk_adc_inf_oen : R/W; bitpos: [7]; default: 1;
          *  Reserved
          */

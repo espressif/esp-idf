@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -154,9 +154,9 @@ TEST_CASE("GPIO output internal clock one-to-many", "[gpio_output_clock][ignore]
     TEST_ESP_OK(esp_clock_output_start(test_clk_out_sig[3], test_clk_out_io[0], &clkout_mapping_hdl_7));    // [0]:1  [1]:0 [2]:2
 
     // Stop all
-    esp_clock_output_stop(clkout_mapping_hdl_2);
-    esp_clock_output_stop(clkout_mapping_hdl_5);
-    esp_clock_output_stop(clkout_mapping_hdl_6);
-    esp_clock_output_stop(clkout_mapping_hdl_7);
+    TEST_ESP_OK(esp_clock_output_stop(clkout_mapping_hdl_2));
+    TEST_ESP_OK(esp_clock_output_stop(clkout_mapping_hdl_5));
+    // clkout_mapping_hdl_6 never been alloc succeed, not need to do stop.
+    TEST_ESP_OK(esp_clock_output_stop(clkout_mapping_hdl_7));
 }
 #endif

@@ -11,10 +11,11 @@
 extern "C" {
 #endif
 
+
 /** GPIO_EXT_PAD_COMP_CONFIG_0_REG register
  *  PAD Compare configure Register
  */
-#define GPIO_EXT_PAD_COMP_CONFIG_0_REG (DR_REG_GPIO_BASE + 0x58)
+#define GPIO_EXT_PAD_COMP_CONFIG_0_REG (DR_REG_GPIO_EXT_BASE + 0x58)
 /** GPIO_EXT_XPD_COMP_0 : R/W; bitpos: [0]; default: 0;
  *  Pad compare enable bit.
  */
@@ -41,7 +42,7 @@ extern "C" {
 /** GPIO_EXT_PAD_COMP_FILTER_0_REG register
  *  Zero Detect filter Register
  */
-#define GPIO_EXT_PAD_COMP_FILTER_0_REG (DR_REG_GPIO_BASE + 0x5c)
+#define GPIO_EXT_PAD_COMP_FILTER_0_REG (DR_REG_GPIO_EXT_BASE + 0x5c)
 /** GPIO_EXT_ZERO_DET_FILTER_CNT_0 : R/W; bitpos: [31:0]; default: 0;
  *  Zero Detect filter cycle length
  */
@@ -53,7 +54,7 @@ extern "C" {
 /** GPIO_EXT_ETM_EVENT_CH0_CFG_REG register
  *  Etm Config register of Channel0
  */
-#define GPIO_EXT_ETM_EVENT_CH0_CFG_REG (DR_REG_GPIO_BASE + 0x118)
+#define GPIO_EXT_ETM_EVENT_CH0_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x118)
 /** GPIO_EXT_ETM_CH0_EVENT_SEL : R/W; bitpos: [5:0]; default: 0;
  *  Etm event channel select gpio.
  */
@@ -72,7 +73,7 @@ extern "C" {
 /** GPIO_EXT_ETM_EVENT_CH1_CFG_REG register
  *  Etm Config register of Channel1
  */
-#define GPIO_EXT_ETM_EVENT_CH1_CFG_REG (DR_REG_GPIO_BASE + 0x11c)
+#define GPIO_EXT_ETM_EVENT_CH1_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x11c)
 /** GPIO_EXT_ETM_CH0_EVENT_SEL : R/W; bitpos: [5:0]; default: 0;
  *  Etm event channel select gpio.
  */
@@ -91,7 +92,7 @@ extern "C" {
 /** GPIO_EXT_ETM_EVENT_CH2_CFG_REG register
  *  Etm Config register of Channel2
  */
-#define GPIO_EXT_ETM_EVENT_CH2_CFG_REG (DR_REG_GPIO_BASE + 0x120)
+#define GPIO_EXT_ETM_EVENT_CH2_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x120)
 /** GPIO_EXT_ETM_CH0_EVENT_SEL : R/W; bitpos: [5:0]; default: 0;
  *  Etm event channel select gpio.
  */
@@ -110,7 +111,7 @@ extern "C" {
 /** GPIO_EXT_ETM_EVENT_CH3_CFG_REG register
  *  Etm Config register of Channel3
  */
-#define GPIO_EXT_ETM_EVENT_CH3_CFG_REG (DR_REG_GPIO_BASE + 0x124)
+#define GPIO_EXT_ETM_EVENT_CH3_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x124)
 /** GPIO_EXT_ETM_CH0_EVENT_SEL : R/W; bitpos: [5:0]; default: 0;
  *  Etm event channel select gpio.
  */
@@ -129,7 +130,7 @@ extern "C" {
 /** GPIO_EXT_ETM_EVENT_CH4_CFG_REG register
  *  Etm Config register of Channel4
  */
-#define GPIO_EXT_ETM_EVENT_CH4_CFG_REG (DR_REG_GPIO_BASE + 0x128)
+#define GPIO_EXT_ETM_EVENT_CH4_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x128)
 /** GPIO_EXT_ETM_CH0_EVENT_SEL : R/W; bitpos: [5:0]; default: 0;
  *  Etm event channel select gpio.
  */
@@ -148,7 +149,7 @@ extern "C" {
 /** GPIO_EXT_ETM_EVENT_CH5_CFG_REG register
  *  Etm Config register of Channel5
  */
-#define GPIO_EXT_ETM_EVENT_CH5_CFG_REG (DR_REG_GPIO_BASE + 0x12c)
+#define GPIO_EXT_ETM_EVENT_CH5_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x12c)
 /** GPIO_EXT_ETM_CH0_EVENT_SEL : R/W; bitpos: [5:0]; default: 0;
  *  Etm event channel select gpio.
  */
@@ -167,7 +168,7 @@ extern "C" {
 /** GPIO_EXT_ETM_EVENT_CH6_CFG_REG register
  *  Etm Config register of Channel6
  */
-#define GPIO_EXT_ETM_EVENT_CH6_CFG_REG (DR_REG_GPIO_BASE + 0x130)
+#define GPIO_EXT_ETM_EVENT_CH6_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x130)
 /** GPIO_EXT_ETM_CH0_EVENT_SEL : R/W; bitpos: [5:0]; default: 0;
  *  Etm event channel select gpio.
  */
@@ -186,7 +187,7 @@ extern "C" {
 /** GPIO_EXT_ETM_EVENT_CH7_CFG_REG register
  *  Etm Config register of Channel7
  */
-#define GPIO_EXT_ETM_EVENT_CH7_CFG_REG (DR_REG_GPIO_BASE + 0x134)
+#define GPIO_EXT_ETM_EVENT_CH7_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x134)
 /** GPIO_EXT_ETM_CH0_EVENT_SEL : R/W; bitpos: [5:0]; default: 0;
  *  Etm event channel select gpio.
  */
@@ -205,7 +206,7 @@ extern "C" {
 /** GPIO_EXT_ETM_TASK_P0_CFG_REG register
  *  Etm Configure Register to decide which GPIO been chosen
  */
-#define GPIO_EXT_ETM_TASK_P0_CFG_REG (DR_REG_GPIO_BASE + 0x158)
+#define GPIO_EXT_ETM_TASK_P0_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x158)
 /** GPIO_EXT_ETM_TASK_GPIO0_SEL : R/W; bitpos: [2:0]; default: 0;
  *  GPIO choose a etm task channel.
  */
@@ -280,7 +281,7 @@ extern "C" {
 /** GPIO_EXT_ETM_TASK_P1_CFG_REG register
  *  Etm Configure Register to decide which GPIO been chosen
  */
-#define GPIO_EXT_ETM_TASK_P1_CFG_REG (DR_REG_GPIO_BASE + 0x15c)
+#define GPIO_EXT_ETM_TASK_P1_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x15c)
 /** GPIO_EXT_ETM_TASK_GPIO5_SEL : R/W; bitpos: [2:0]; default: 0;
  *  GPIO choose a etm task channel.
  */
@@ -355,7 +356,7 @@ extern "C" {
 /** GPIO_EXT_ETM_TASK_P2_CFG_REG register
  *  Etm Configure Register to decide which GPIO been chosen
  */
-#define GPIO_EXT_ETM_TASK_P2_CFG_REG (DR_REG_GPIO_BASE + 0x160)
+#define GPIO_EXT_ETM_TASK_P2_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x160)
 /** GPIO_EXT_ETM_TASK_GPIO10_SEL : R/W; bitpos: [2:0]; default: 0;
  *  GPIO choose a etm task channel.
  */
@@ -430,7 +431,7 @@ extern "C" {
 /** GPIO_EXT_ETM_TASK_P3_CFG_REG register
  *  Etm Configure Register to decide which GPIO been chosen
  */
-#define GPIO_EXT_ETM_TASK_P3_CFG_REG (DR_REG_GPIO_BASE + 0x164)
+#define GPIO_EXT_ETM_TASK_P3_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x164)
 /** GPIO_EXT_ETM_TASK_GPIO15_SEL : R/W; bitpos: [2:0]; default: 0;
  *  GPIO choose a etm task channel.
  */
@@ -505,7 +506,7 @@ extern "C" {
 /** GPIO_EXT_ETM_TASK_P4_CFG_REG register
  *  Etm Configure Register to decide which GPIO been chosen
  */
-#define GPIO_EXT_ETM_TASK_P4_CFG_REG (DR_REG_GPIO_BASE + 0x168)
+#define GPIO_EXT_ETM_TASK_P4_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x168)
 /** GPIO_EXT_ETM_TASK_GPIO20_SEL : R/W; bitpos: [2:0]; default: 0;
  *  GPIO choose a etm task channel.
  */
@@ -580,7 +581,7 @@ extern "C" {
 /** GPIO_EXT_ETM_TASK_P5_CFG_REG register
  *  Etm Configure Register to decide which GPIO been chosen
  */
-#define GPIO_EXT_ETM_TASK_P5_CFG_REG (DR_REG_GPIO_BASE + 0x16c)
+#define GPIO_EXT_ETM_TASK_P5_CFG_REG (DR_REG_GPIO_EXT_BASE + 0x16c)
 /** GPIO_EXT_ETM_TASK_GPIO25_SEL : R/W; bitpos: [2:0]; default: 0;
  *  GPIO choose a etm task channel.
  */
@@ -655,7 +656,7 @@ extern "C" {
 /** GPIO_EXT_INT_RAW_REG register
  *  GPIO_EXT interrupt raw register
  */
-#define GPIO_EXT_INT_RAW_REG (DR_REG_GPIO_BASE + 0x1d0)
+#define GPIO_EXT_INT_RAW_REG (DR_REG_GPIO_EXT_BASE + 0x1d0)
 /** GPIO_EXT_COMP_NEG_0_INT_RAW : RO/WTC/SS; bitpos: [0]; default: 0;
  *  analog comparator pos edge interrupt raw
  */
@@ -681,7 +682,7 @@ extern "C" {
 /** GPIO_EXT_INT_ST_REG register
  *  GPIO_EXT interrupt masked register
  */
-#define GPIO_EXT_INT_ST_REG (DR_REG_GPIO_BASE + 0x1d4)
+#define GPIO_EXT_INT_ST_REG (DR_REG_GPIO_EXT_BASE + 0x1d4)
 /** GPIO_EXT_COMP_NEG_0_INT_ST : RO; bitpos: [0]; default: 0;
  *  analog comparator pos edge interrupt status
  */
@@ -707,7 +708,7 @@ extern "C" {
 /** GPIO_EXT_INT_ENA_REG register
  *  GPIO_EXT interrupt enable register
  */
-#define GPIO_EXT_INT_ENA_REG (DR_REG_GPIO_BASE + 0x1d8)
+#define GPIO_EXT_INT_ENA_REG (DR_REG_GPIO_EXT_BASE + 0x1d8)
 /** GPIO_EXT_COMP_NEG_0_INT_ENA : R/W; bitpos: [0]; default: 1;
  *  analog comparator pos edge interrupt enable
  */
@@ -733,7 +734,7 @@ extern "C" {
 /** GPIO_EXT_INT_CLR_REG register
  *  GPIO_EXT interrupt clear register
  */
-#define GPIO_EXT_INT_CLR_REG (DR_REG_GPIO_BASE + 0x1dc)
+#define GPIO_EXT_INT_CLR_REG (DR_REG_GPIO_EXT_BASE + 0x1dc)
 /** GPIO_EXT_COMP_NEG_0_INT_CLR : WT; bitpos: [0]; default: 0;
  *  analog comparator pos edge interrupt clear
  */
@@ -759,7 +760,7 @@ extern "C" {
 /** GPIO_EXT_PIN_CTRL_REG register
  *  Clock Output Configuration Register
  */
-#define GPIO_EXT_PIN_CTRL_REG (DR_REG_GPIO_BASE + 0x1e0)
+#define GPIO_EXT_PIN_CTRL_REG (DR_REG_GPIO_EXT_BASE + 0x1e0)
 /** GPIO_EXT_CLK_OUT1 : R/W; bitpos: [4:0]; default: 0;
  *  If you want to output clock for I2S to CLK_OUT_out1, set this register to 0x0.
  *  CLK_OUT_out1 can be found in peripheral output signals.
@@ -788,7 +789,7 @@ extern "C" {
 /** GPIO_EXT_VERSION_REG register
  *  Version Control Register
  */
-#define GPIO_EXT_VERSION_REG (DR_REG_GPIO_BASE + 0x1fc)
+#define GPIO_EXT_VERSION_REG (DR_REG_GPIO_EXT_BASE + 0x1fc)
 /** GPIO_EXT_DATE : R/W; bitpos: [27:0]; default: 37823120;
  *  Version control register.
  */
