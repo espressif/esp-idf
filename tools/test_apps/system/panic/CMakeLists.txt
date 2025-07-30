@@ -34,11 +34,9 @@ if(NOT CONFIG_TEST_MEMPROT AND NOT CONFIG_ESP_COREDUMP_CAPTURE_DRAM)
     # due to RAM size limitations.
     set(ubsan_components main espcoredump esp_system spi_flash
         esp_common esp_hw_support soc hal freertos)
-    if(CONFIG_ESP_COREDUMP_CHECKSUM_SHA256)
-        if(CONFIG_IDF_TARGET_ESP32S2)
-            # due to the ram limitation, coredump and freertos are removed from esp32s2 built
-            list(REMOVE_ITEM ubsan_components espcoredump freertos)
-        endif()
+    if(CONFIG_IDF_TARGET_ESP32S2)
+        # due to the ram limitation, coredump and freertos are removed from esp32s2 built
+        list(REMOVE_ITEM ubsan_components espcoredump freertos)
     endif()
     foreach(component  IN LISTS ubsan_components)
         idf_component_get_property(lib ${component} COMPONENT_LIB)

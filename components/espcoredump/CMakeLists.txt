@@ -9,9 +9,7 @@ set(srcs "src/core_dump_init.c"
          "src/core_dump_flash.c"
          "src/core_dump_uart.c"
          "src/core_dump_elf.c"
-         "src/core_dump_binary.c"
-         "src/core_dump_sha.c"
-         "src/core_dump_crc.c")
+         "src/core_dump_sha.c")
 
 set(includes "include")
 set(priv_includes "include_core_dump")
@@ -38,7 +36,4 @@ idf_component_register(SRCS ${srcs}
 
 # make sure 'core_dump_init' object file is considered by the linker
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_system_include_coredump_init")
-
-if(CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF)
-  target_link_libraries(${COMPONENT_LIB} PRIVATE idf::esp_app_format)
-endif()
+target_link_libraries(${COMPONENT_LIB} PRIVATE idf::esp_app_format)

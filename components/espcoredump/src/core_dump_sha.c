@@ -6,8 +6,6 @@
 
 #include "sdkconfig.h"
 
-#if CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
-
 #include <string.h>
 #include "esp_core_dump_types.h"
 
@@ -124,5 +122,3 @@ static uint32_t core_dump_sha_finish(core_dump_checksum_ctx cks_ctx, core_dump_c
 
     return core_dump_sha_size();
 }
-
-#endif /* CONFIG_ESP_COREDUMP_CHECKSUM_SHA256 */

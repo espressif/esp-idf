@@ -34,11 +34,9 @@ CONFIGS = list(
     itertools.chain(
         itertools.product(
             [
-                'coredump_flash_bin_crc',
-                'coredump_flash_elf_sha',
-                'coredump_flash_elf_soft_sha',
-                'coredump_uart_bin_crc',
-                'coredump_uart_elf_crc',
+                'coredump_flash_default',
+                'coredump_flash_soft_sha',
+                'coredump_uart_default',
                 'gdbstub',
                 'panic',
             ],
@@ -62,10 +60,8 @@ CONFIGS_DUAL_CORE = list(
     itertools.chain(
         itertools.product(
             [
-                'coredump_flash_bin_crc',
-                'coredump_flash_elf_sha',
-                'coredump_uart_bin_crc',
-                'coredump_uart_elf_crc',
+                'coredump_flash_default',
+                'coredump_uart_default',
                 'gdbstub',
                 'panic',
             ],
@@ -77,7 +73,7 @@ CONFIGS_DUAL_CORE = list(
 CONFIGS_HW_STACK_GUARD = list(
     itertools.chain(
         itertools.product(
-            ['coredump_flash_bin_crc', 'coredump_uart_bin_crc', 'coredump_uart_elf_crc', 'gdbstub', 'panic'],
+            ['coredump_uart_default', 'gdbstub', 'panic'],
             TARGETS_RISCV,
         )
     )
@@ -86,7 +82,7 @@ CONFIGS_HW_STACK_GUARD = list(
 CONFIGS_HW_STACK_GUARD_DUAL_CORE = list(
     itertools.chain(
         itertools.product(
-            ['coredump_flash_bin_crc', 'coredump_uart_bin_crc', 'coredump_uart_elf_crc', 'gdbstub', 'panic'],
+            ['coredump_uart_default', 'gdbstub', 'panic'],
             TARGETS_RISCV_DUAL_CORE,
         )
     )
@@ -96,7 +92,7 @@ CONFIG_CAPTURE_DRAM = list(
     itertools.chain(itertools.product(['coredump_flash_capture_dram', 'coredump_uart_capture_dram'], TARGETS_ALL))
 )
 
-CONFIG_COREDUMP_SUMMARY = list(itertools.chain(itertools.product(['coredump_flash_elf_sha'], TARGETS_ALL)))
+CONFIG_COREDUMP_SUMMARY = list(itertools.chain(itertools.product(['coredump_flash_default'], TARGETS_ALL)))
 
 CONFIG_COREDUMP_SUMMARY_FLASH_ENCRYPTED = list(
     itertools.chain(
@@ -164,11 +160,6 @@ def common_test(
             dut.verify_gdb_backtrace(frames, expected_backtrace)
         dut.revert_log_level()
         return  # don't expect "Rebooting" output below
-
-    # We will only perform comparisons for ELF files,
-    # as we are not introducing any new fields to the binary file format.
-    if 'bin' in config:
-        expected_coredump = None
 
     if 'uart' in config:
         coredump_base64 = expect_coredump_uart_write_logs(dut, check_cpu_reset)
@@ -1210,7 +1201,7 @@ def test_coredump_summary_flash_encrypted(dut: PanicTestDut, config: str) -> Non
 
 
 @pytest.mark.generic
-@idf_parametrize('config', ['coredump_flash_elf_sha'], indirect=['config'])
+@idf_parametrize('config', ['coredump_flash_default'], indirect=['config'])
 @idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_tcb_corrupted(dut: PanicTestDut, target: str, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)

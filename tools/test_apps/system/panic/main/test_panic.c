@@ -319,7 +319,7 @@ void test_ub(void)
     printf("%d\n", stuff[rand()]);
 }
 
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 void test_setup_coredump_summary(void)
 {
     if (esp_core_dump_image_erase() != ESP_OK)

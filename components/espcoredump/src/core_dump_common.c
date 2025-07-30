@@ -192,7 +192,7 @@ inline static void esp_core_dump_write_internal(panic_info_t *info)
 
     esp_core_dump_setup_stack();
     esp_core_dump_port_init(info, isr_context);
-    esp_err_t err = esp_core_dump_store();
+    esp_err_t err = esp_core_dump_write_elf();
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Core dump write failed with error=%d", err);
     }
