@@ -194,6 +194,26 @@ esp_err_t _ss_esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ct
     return esp_tee_sec_storage_aead_decrypt(ctx, tag, tag_len, output);
 }
 
+esp_err_t _ss_esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2_ctx_t *ctx, const uint8_t *hash, size_t hlen, esp_tee_sec_storage_ecdsa_sign_t *out_sign, esp_tee_sec_storage_ecdsa_pubkey_t *out_pubkey)
+{
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)ctx) &&
+                       esp_tee_ptr_in_ree((void *)hash) &&
+                       esp_tee_ptr_in_ree((void *)out_sign) &&
+                       esp_tee_ptr_in_ree((void *)out_pubkey));
+
+    valid_addr &= (esp_tee_ptr_in_ree((void *)((char *)ctx + sizeof(esp_tee_sec_storage_pbkdf2_ctx_t))) &&
+                   esp_tee_ptr_in_ree((void *)(hash + hlen)) &&
+                   esp_tee_ptr_in_ree((void *)((char *)out_sign + sizeof(esp_tee_sec_storage_ecdsa_sign_t))) &&
+                   esp_tee_ptr_in_ree((void *)((char *)out_pubkey + sizeof(esp_tee_sec_storage_ecdsa_pubkey_t))));
+
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_tee_sec_storage_ecdsa_sign_pbkdf2(ctx, hash, hlen, out_sign, out_pubkey);
+}
+
 /* ---------------------------------------------- MMU HAL ------------------------------------------------- */
 
 void _ss_mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr,

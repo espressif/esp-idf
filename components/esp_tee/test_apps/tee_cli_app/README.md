@@ -21,7 +21,7 @@ Configure the Secure Storage mode for determining how the NVS XTS encryption key
 
   - **Development** Mode: Encryption keys are embedded in the ESP-TEE firmware (identical across all instances).
   - **Release** Mode: Encryption keys are derived via the HMAC peripheral using a key stored in eFuse.
-    - Set the eFuse key ID storing the HMAC key at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: eFuse HMAC key ID`.
+    - Set the eFuse key ID storing the HMAC key at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: eFuse HMAC key ID for storage encryption keys`.
     - Snippet for burning the secure storage key in eFuse is given below.
 
     ```shell
