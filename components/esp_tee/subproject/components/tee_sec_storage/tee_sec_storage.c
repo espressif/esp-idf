@@ -11,6 +11,8 @@
 #include "esp_fault.h"
 #include "esp_flash.h"
 #include "esp_efuse.h"
+#include "esp_efuse_chip.h"
+#include "esp_hmac.h"
 #include "esp_random.h"
 #include "spi_flash_mmap.h"
 
@@ -19,11 +21,8 @@
 #include "mbedtls/sha256.h"
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/error.h"
+#include "esp_hmac_pbkdf2.h"
 
-#include "rom/efuse.h"
-#if SOC_HMAC_SUPPORTED
-#include "rom/hmac.h"
-#endif
 #include "esp_rom_sys.h"
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -40,8 +39,12 @@
 #define ECDSA_SECP256R1_KEY_LEN             32
 #define ECDSA_SECP192R1_KEY_LEN             24
 
+#define SHA256_DIGEST_SZ                    32
+
 #define EKEY_SEED 0xAEBE5A5A
 #define TKEY_SEED 0xCEDEA5A5
+
+#define PBKDF2_HMAC_ITER 2048
 
 /* Structure to hold ECDSA SECP256R1 key pair */
 typedef struct {
@@ -82,6 +85,10 @@ static const char *TAG = "secure_storage";
 /* ---------------------------------------------- Helper APIs ------------------------------------------------- */
 #if CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID < 0
 #error "TEE Secure Storage: Configured eFuse block (CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID) out of range!"
+#endif
+
+#if CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID == CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID
+#error "TEE Secure Storage: Configured eFuse block for storage encryption keys (CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID) and PBKDF2 key derivation (CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID) cannot be the same!"
 #endif
 
 static int buffer_hexdump(const char *label, const void *buffer, size_t length)
@@ -130,24 +137,21 @@ static int rand_func(void *rng_state, unsigned char *output, size_t len)
 }
 
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
-static esp_err_t compute_nvs_keys_with_hmac(ets_efuse_block_t hmac_key, nvs_sec_cfg_t *cfg)
+static esp_err_t compute_nvs_keys_with_hmac(hmac_key_id_t hmac_key_id, nvs_sec_cfg_t *cfg)
 {
     uint32_t ekey_seed[8] = {[0 ... 7] = EKEY_SEED};
     uint32_t tkey_seed[8] = {[0 ... 7] = TKEY_SEED};
 
     memset(cfg, 0x00, sizeof(nvs_sec_cfg_t));
 
-    int ret = -1;
-    ets_hmac_enable();
-    ret = ets_hmac_calculate_message(hmac_key, ekey_seed, sizeof(ekey_seed), (uint8_t *)cfg->eky);
-    ret = ets_hmac_calculate_message(hmac_key, tkey_seed, sizeof(tkey_seed), (uint8_t *)cfg->tky);
-    ets_hmac_disable();
-
-    if (ret != 0) {
+    esp_err_t err = ESP_FAIL;
+    err = esp_hmac_calculate(hmac_key_id, ekey_seed, sizeof(ekey_seed), (uint8_t *)cfg->eky);
+    err |= esp_hmac_calculate(hmac_key_id, tkey_seed, sizeof(tkey_seed), (uint8_t *)cfg->tky);
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to calculate seed HMAC");
         return ESP_FAIL;
     }
-    ESP_FAULT_ASSERT(ret == 0);
+    ESP_FAULT_ASSERT(err == ESP_OK);
 
     /* NOTE: If the XTS E-key and T-key are the same, we have a hash collision */
     ESP_FAULT_ASSERT(memcmp(cfg->eky, cfg->tky, NVS_KEY_SIZE) != 0);
@@ -163,14 +167,14 @@ static esp_err_t read_security_cfg_hmac(nvs_sec_cfg_t *cfg)
     }
 
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
-    ets_efuse_block_t hmac_key = (ets_efuse_block_t)(ETS_EFUSE_BLOCK_KEY0 + CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
-    ets_efuse_purpose_t hmac_efuse_blk_purpose = ets_efuse_get_key_purpose(hmac_key);
-    if (hmac_efuse_blk_purpose != ETS_EFUSE_KEY_PURPOSE_HMAC_UP) {
+    esp_efuse_block_t hmac_key_blk = (esp_efuse_block_t)(EFUSE_BLK_KEY0 + (esp_efuse_block_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
+    esp_efuse_purpose_t hmac_efuse_blk_purpose = esp_efuse_get_key_purpose(hmac_key_blk);
+    if (hmac_efuse_blk_purpose != ESP_EFUSE_KEY_PURPOSE_HMAC_UP) {
         ESP_LOGE(TAG, "HMAC key is not burnt in eFuse block");
         return ESP_ERR_NOT_FOUND;
     }
 
-    esp_err_t err = compute_nvs_keys_with_hmac(hmac_key, cfg);
+    esp_err_t err = compute_nvs_keys_with_hmac((hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID, cfg);
     if (err != ESP_OK) {
         return err;
     }
@@ -304,17 +308,17 @@ static int generate_ecdsa_key(sec_stg_key_t *keyctx, esp_tee_sec_storage_type_t 
                        NULL;
 #endif
 
-    ret = mbedtls_mpi_write_binary(&ctxECDSA.MBEDTLS_PRIVATE(d), priv_key, key_len);
-    if (ret != 0) {
-        goto exit;
-    }
-
     ret = mbedtls_mpi_write_binary(&(ctxECDSA.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X)), pub_key, key_len);
     if (ret != 0) {
         goto exit;
     }
 
     ret = mbedtls_mpi_write_binary(&(ctxECDSA.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y)), pub_key + key_len, key_len);
+    if (ret != 0) {
+        goto exit;
+    }
+
+    ret = mbedtls_mpi_write_binary(&ctxECDSA.MBEDTLS_PRIVATE(d), priv_key, key_len);
     if (ret != 0) {
         goto exit;
     }
@@ -457,18 +461,17 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
     }
 
     memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_ecdsa_sign_t));
-
     ret = mbedtls_mpi_write_binary(&r, out_sign->sign_r, key_len);
+    if (ret == 0) {
+        ret = mbedtls_mpi_write_binary(&s, out_sign->sign_s, key_len);
+    }
+
     if (ret != 0) {
+        memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_ecdsa_sign_t));
         err = ESP_FAIL;
         goto exit;
     }
 
-    ret = mbedtls_mpi_write_binary(&s, out_sign->sign_s, key_len);
-    if (ret != 0) {
-        err = ESP_FAIL;
-        goto exit;
-    }
     err = ESP_OK;
 
 exit:
@@ -605,4 +608,133 @@ esp_err_t esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t 
 esp_err_t esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, const uint8_t *tag, size_t tag_len, uint8_t *output)
 {
     return tee_sec_storage_crypt_common(ctx->key_id, ctx->input, ctx->input_len, ctx->aad, ctx->aad_len, (uint8_t *)tag, tag_len, output, false);
+}
+
+esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2_ctx_t *ctx,
+                                                const uint8_t *hash, size_t hlen,
+                                                esp_tee_sec_storage_ecdsa_sign_t *out_sign,
+                                                esp_tee_sec_storage_ecdsa_pubkey_t *out_pubkey)
+{
+    if (!ctx || !hash || !out_sign || !out_pubkey || !ctx->salt || ctx->salt_len == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (hlen != SHA256_DIGEST_SZ) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    esp_err_t err = ESP_FAIL;
+    size_t key_len;
+    mbedtls_ecp_group_id curve_id = MBEDTLS_ECP_DP_NONE;
+
+    switch (ctx->key_type) {
+    case ESP_SEC_STG_KEY_ECDSA_SECP256R1:
+        key_len = ECDSA_SECP256R1_KEY_LEN;
+        curve_id = MBEDTLS_ECP_DP_SECP256R1;
+        break;
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    case ESP_SEC_STG_KEY_ECDSA_SECP192R1:
+        key_len = ECDSA_SECP192R1_KEY_LEN;
+        curve_id = MBEDTLS_ECP_DP_SECP192R1;
+        break;
+#endif
+    default:
+        ESP_LOGE(TAG, "Unsupported key type");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    hmac_key_id_t key_id = (hmac_key_id_t)(CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
+    esp_efuse_block_t blk = EFUSE_BLK_KEY0 + (esp_efuse_block_t)(key_id);
+    if (esp_efuse_get_key_purpose(blk) != ESP_EFUSE_KEY_PURPOSE_HMAC_UP) {
+        ESP_LOGE(TAG, "HMAC key is not burnt in the specified eFuse block ID");
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    uint8_t *derived_key = calloc(1, key_len);
+    if (!derived_key) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    err = esp_hmac_derive_pbkdf2_key(key_id, ctx->salt, ctx->salt_len, PBKDF2_HMAC_ITER, key_len, derived_key);
+    if (err != ESP_OK) {
+        goto exit;
+    }
+
+    mbedtls_ecp_keypair keypair;
+    mbedtls_mpi r, s;
+
+    mbedtls_ecp_keypair_init(&keypair);
+    mbedtls_mpi_init(&r);
+    mbedtls_mpi_init(&s);
+
+    int ret = -1;
+
+    ret = mbedtls_ecp_group_load(&keypair.MBEDTLS_PRIVATE(grp), curve_id);
+    if (ret != 0) {
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    ret = mbedtls_mpi_read_binary(&keypair.MBEDTLS_PRIVATE(d), derived_key, key_len);
+    if (ret != 0) {
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    ret = mbedtls_ecp_check_privkey(&keypair.MBEDTLS_PRIVATE(grp), &keypair.MBEDTLS_PRIVATE(d));
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Invalid private key!");
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    ret = mbedtls_ecp_keypair_calc_public(&keypair, rand_func, NULL);
+    if (ret != 0) {
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    ret = mbedtls_ecdsa_sign(&keypair.MBEDTLS_PRIVATE(grp), &r, &s,
+                             &keypair.MBEDTLS_PRIVATE(d), hash, hlen,
+                             rand_func, NULL);
+    if (ret != 0) {
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_ecdsa_sign_t));
+    ret = mbedtls_mpi_write_binary(&r, out_sign->sign_r, key_len);
+    if (ret == 0) {
+        ret = mbedtls_mpi_write_binary(&s, out_sign->sign_s, key_len);
+    }
+
+    if (ret != 0) {
+        memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_ecdsa_sign_t));
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    memset(out_pubkey, 0x00, sizeof(esp_tee_sec_storage_ecdsa_pubkey_t));
+    ret = mbedtls_mpi_write_binary(&keypair.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X), out_pubkey->pub_x, key_len);
+    if (ret == 0) {
+        ret = mbedtls_mpi_write_binary(&keypair.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y), out_pubkey->pub_y, key_len);
+    }
+
+    if (ret != 0) {
+        memset(out_pubkey, 0x00, sizeof(esp_tee_sec_storage_ecdsa_pubkey_t));
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    err = ESP_OK;
+
+exit:
+    if (derived_key) {
+        memset(derived_key, 0x00, key_len);
+        free(derived_key);
+    }
+    mbedtls_ecp_keypair_free(&keypair);
+    mbedtls_mpi_free(&r);
+    mbedtls_mpi_free(&s);
+    return err;
 }

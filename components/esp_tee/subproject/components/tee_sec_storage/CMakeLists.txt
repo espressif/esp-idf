@@ -5,7 +5,7 @@ set(priv_requires esp_tee)
 
 if(esp_tee_build)
     list(APPEND srcs "tee_sec_storage.c")
-    list(APPEND priv_requires efuse esp_partition log mbedtls nvs_flash spi_flash tee_flash_mgr)
+    list(APPEND priv_requires efuse esp_partition esp_security log mbedtls nvs_flash spi_flash tee_flash_mgr)
 else()
     if(CONFIG_SECURE_ENABLE_TEE)
         list(APPEND srcs "tee_sec_storage_wrapper.c")

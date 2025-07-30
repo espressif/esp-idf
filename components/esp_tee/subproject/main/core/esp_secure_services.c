@@ -220,6 +220,7 @@ esp_err_t _ss_esp_hmac_calculate(hmac_key_id_t key_id, const void *message, size
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
     valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
 #endif
+    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
@@ -236,6 +237,7 @@ esp_err_t _ss_esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
     valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
 #endif
+    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
@@ -262,6 +264,7 @@ esp_err_t _ss_esp_ds_sign(const void *message,
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
     valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
 #endif
+    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
@@ -283,6 +286,7 @@ esp_err_t _ss_esp_ds_start_sign(const void *message,
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
     valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
 #endif
+    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;

@@ -56,6 +56,16 @@ typedef struct {
 } esp_tee_sec_storage_aead_ctx_t;
 
 /**
+ * @brief Context structure for ECDSA signing with PBKDF2 (HMAC) derived key
+ *
+ */
+typedef struct {
+    const uint8_t *salt;                    /*!< Salt for PBKDF2 */
+    size_t salt_len;                        /*!< Length of the salt */
+    esp_tee_sec_storage_type_t key_type;    /*!< Key type to be generated and used */
+} esp_tee_sec_storage_pbkdf2_ctx_t;
+
+/**
  * @brief Structure holding the X and Y components of the ECDSA public key
  *
  */
@@ -148,6 +158,22 @@ esp_err_t esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t 
  * @return esp_err_t ESP_OK on success, appropriate error code otherwise.
  */
 esp_err_t esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, const uint8_t *tag, size_t tag_len, uint8_t *output);
+
+/**
+ * @brief Generate and return the signature for the specified message digest using
+ *        the key pair derived via PBKDF2-HMAC-SHA256 using the HMAC peripheral
+ *        with the given salt and the configured HMAC eFuse key ID
+ *        (`CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID`).
+ *
+ * @param[in]   ctx        Pointer to the PBKDF2 context
+ * @param[in]   hash       Message digest
+ * @param[in]   hlen       Digest length
+ * @param[out]  out_sign   Output context holding the signature
+ * @param[out]  out_pubkey Output context holding the public key
+ *
+ * @return esp_err_t ESP_OK on success, appropriate error code otherwise.
+ */
+esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2_ctx_t *ctx, const uint8_t *hash, size_t hlen, esp_tee_sec_storage_ecdsa_sign_t *out_sign, esp_tee_sec_storage_ecdsa_pubkey_t *out_pubkey);
 
 #ifdef __cplusplus
 }
