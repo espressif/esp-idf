@@ -441,15 +441,6 @@ API Reference
 GPIO Lookup Macros
 ^^^^^^^^^^^^^^^^^^
 
-The UART peripherals have dedicated IO_MUX pins to which they are connected directly. However, signals can also be routed to other pins using the less direct GPIO matrix. To use direct routes, you need to know which pin is a dedicated IO_MUX pin for a UART channel. GPIO Lookup Macros simplify the process of finding and assigning IO_MUX pins. You choose a macro based on either the IO_MUX pin number, or a required UART channel name, and the macro returns the matching counterpart for you. See some examples below.
-
-.. note::
-
-    These macros are useful if you need very high UART baud rates (over 40 MHz), which means you will have to use IO_MUX pins only. In other cases, these macros can be ignored, and you can use the GPIO Matrix as it allows you to configure any GPIO pin for any UART function.
-
-1. :c:macro:`UART_NUM_2_TXD_DIRECT_GPIO_NUM` returns the IO_MUX pin number of UART channel 2 TXD pin (pin 17)
-2. :c:macro:`UART_GPIO19_DIRECT_CHANNEL` returns the UART number of GPIO 19 when connected to the UART peripheral via IO_MUX (this is UART_NUM_0)
-3. :c:macro:`UART_CTS_GPIO19_DIRECT_CHANNEL` returns the UART number of GPIO 19 when used as the UART CTS pin via IO_MUX (this is UART_NUM_0). It is similar to the above macro but specifies the pin function which is also part of the IO_MUX assignment.
+Some UART ports have dedicated IO_MUX pins to which they are connected directly. These can be useful if you need very high UART baud rates, which means you will have to use IO_MUX pins only. In other cases, any GPIO pin can be used for UART communication by routing the signals through the GPIO matrix. If the UART port has dedicated IO_MUX pins, :c:macro:`UART_NUM_x_TXD_DIRECT_GPIO_NUM` and :c:macro:`UART_NUM_x_RXD_DIRECT_GPIO_NUM` can be used to find the corresponding IO_MUX pin numbers.
 
 .. include-build-file:: inc/uart_channel.inc
-

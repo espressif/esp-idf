@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +8,8 @@
 #include "bootloader_console.h"
 #include "soc/soc_caps.h"
 #include "soc/uart_periph.h"
-#include "soc/uart_channel.h"
+#include "soc/uart_pins.h"
 #include "soc/io_mux_reg.h"
-#include "soc/gpio_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/rtc.h"
 #include "hal/gpio_ll.h"
@@ -27,9 +26,20 @@
 #include "esp_rom_sys.h"
 #include "esp_rom_caps.h"
 
+static void __attribute__((unused)) release_default_console_io(void)
+{
+    // Default console is UART0 with TX and RX on their IOMUX pins
+    gpio_ll_output_disable(&GPIO, U0TXD_GPIO_NUM);
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(UART_NUM_0, SOC_UART_RX_PIN_IDX), 0);
+}
+
 #ifdef CONFIG_ESP_CONSOLE_NONE
 void bootloader_console_init(void)
 {
+    // Wait for UART FIFO to be empty.
+    esp_rom_output_tx_wait_idle(0);
+    release_default_console_io();
+
     esp_rom_install_channel_putc(1, NULL);
     esp_rom_install_channel_putc(2, NULL);
 }
@@ -49,8 +59,8 @@ void bootloader_console_init(void)
 
 #if CONFIG_ESP_CONSOLE_UART_CUSTOM
     // Some constants to make the following code less upper-case
-    const int uart_tx_gpio = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : UART_NUM_0_TXD_DIRECT_GPIO_NUM;
-    const int uart_rx_gpio = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : UART_NUM_0_RXD_DIRECT_GPIO_NUM;
+    const int uart_tx_gpio = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : U0TXD_GPIO_NUM;
+    const int uart_rx_gpio = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : U0RXD_GPIO_NUM;
 
     // Switch to the new UART (this just changes UART number used for esp_rom_printf in ROM code).
     esp_rom_output_set_as_console(uart_num);
@@ -58,11 +68,9 @@ void bootloader_console_init(void)
     // If console is attached to UART1 or if non-default pins are used,
     // need to reconfigure pins using GPIO matrix
     if (uart_num != 0 ||
-            uart_tx_gpio != UART_NUM_0_TXD_DIRECT_GPIO_NUM ||
-            uart_rx_gpio != UART_NUM_0_RXD_DIRECT_GPIO_NUM) {
-        // Change default UART pins back to GPIOs
-        gpio_ll_func_sel(&GPIO, UART_NUM_0_RXD_DIRECT_GPIO_NUM, PIN_FUNC_GPIO);
-        gpio_ll_func_sel(&GPIO, UART_NUM_0_TXD_DIRECT_GPIO_NUM, PIN_FUNC_GPIO);
+            uart_tx_gpio != U0TXD_GPIO_NUM ||
+            uart_rx_gpio != U0RXD_GPIO_NUM) {
+        release_default_console_io();
         // Route GPIO signals to/from pins
         const uint32_t tx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX);
         const uint32_t rx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX);
@@ -102,6 +110,10 @@ static char s_usb_cdc_buf[ESP_ROM_CDC_ACM_WORK_BUF_MIN];
 
 void bootloader_console_init(void)
 {
+    // Wait for UART FIFO to be empty.
+    esp_rom_output_tx_wait_idle(0);
+    release_default_console_io();
+
 #ifdef CONFIG_IDF_TARGET_ESP32S2
     /* ESP32-S2 specific patch to set the correct serial number in the descriptor.
      * Later chips don't need this.
@@ -121,6 +133,10 @@ void bootloader_console_init(void)
 #ifdef CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 void bootloader_console_init(void)
 {
+    // Wait for UART FIFO to be empty.
+    esp_rom_output_tx_wait_idle(0);
+    release_default_console_io();
+
     esp_rom_output_switch_buffer(ESP_ROM_USB_SERIAL_DEVICE_NUM);
 
     /* Switch console channel to avoid output on UART and allow  */

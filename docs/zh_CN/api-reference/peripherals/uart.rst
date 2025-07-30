@@ -441,15 +441,6 @@ API 参考
 GPIO 查找宏指令
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-UART 外设有供直接连接的专用 IO_MUX 管脚，但也可用非直接的 GPIO 矩阵将信号配置到其他管脚。如要直接连接，需要知道哪一管脚为 UART 通道的专用 IO_MUX 管脚。GPIO 查找宏简化了查找和分配 IO_MUX 管脚的过程，可根据 IO_MUX 管脚编号或所需 UART 通道名称选择一个宏，该宏将返回匹配的对应项。请查看下列示例。
-
-.. note::
-
-    如需较高的 UART 波特率（超过 40 MHz），即仅使用 IO_MUX 管脚时，可以使用此类宏。在其他情况下可以忽略这些宏，并使用 GPIO 矩阵为 UART 功能配置任一 GPIO 管脚。
-
-1. :c:macro:`UART_NUM_2_TXD_DIRECT_GPIO_NUM` 返回 UART 通道 2 TXD 管脚的 IO_MUX 管脚编号（管脚 17）
-2. :c:macro:`UART_GPIO19_DIRECT_CHANNEL` 在通过 IO_MUX 连接到 UART 外设时返回 GPIO 19 的 UART 编号（即 UART_NUM_0）
-3. GPIO 19 在通过 IO_MUX 用作 UART CTS 管脚时，:c:macro:`UART_CTS_GPIO19_DIRECT_CHANNEL` 将返回 GPIO 19 的 UART 编号（即 UART_NUM_0）。该宏类似于上述宏，但指定了管脚功能，这也是 IO_MUX 分配的一部分。
+一些 UART 外设有供直接连接的专用 IO_MUX 管脚。这些管脚可用于需要极高 UART 波特率的场景，即仅可使用 IO_MUX 管脚。在其他情况下，任一 GPIO 管脚都可用于 UART 通信，只需将信号通过 GPIO 矩阵路由即可。当特定的 UART 外设有专用 IO_MUX 管脚时，:c:macro:`UART_NUM_x_TXD_DIRECT_GPIO_NUM` 和 :c:macro:`UART_NUM_x_RXD_DIRECT_GPIO_NUM` 可用于查找对应的 IO_MUX 管脚编号。
 
 .. include-build-file:: inc/uart_channel.inc
-
