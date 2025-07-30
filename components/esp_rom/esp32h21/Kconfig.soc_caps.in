@@ -98,3 +98,7 @@ config ESP_ROM_HAS_OUTPUT_PUTC_FUNC
 config ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
     bool
     default y
+
+config ESP_ROM_NO_USB_SERIAL_OUTPUT_API
+    bool
+    default y
