@@ -40,6 +40,7 @@ spi_flash_caps_t spi_flash_chip_gd_get_caps(esp_flash_t *chip)
     case 0xC84016:
     case 0xC84017:
     case 0xC84018:
+    case 0xC84319:
         caps_flags |= SPI_FLASH_CHIP_CAP_SUSPEND;
         break;
     default:
@@ -74,6 +75,7 @@ esp_err_t spi_flash_chip_gd_detect_size(esp_flash_t *chip, uint32_t *size)
 #define GD25Q_PRODUCT_ID    0x4000
 #define GD25LQ_PRODUCT_ID   0x6000
 #define GD25UF_PRODUCT_ID   0x8300
+#define GD55F_PRODUCT_ID    0x4300
 
 #define WRSR_16B_REQUIRED(chip_id) (((chip_id) & FLASH_ID_MASK) == GD25LQ_PRODUCT_ID || \
                                     ((chip_id) & FLASH_SIZE_MASK) <= 0x15)
@@ -89,7 +91,7 @@ esp_err_t spi_flash_chip_gd_probe(esp_flash_t *chip, uint32_t flash_id)
     }
 
     uint32_t product_id = flash_id & FLASH_ID_MASK;
-    if (product_id != GD25Q_PRODUCT_ID && product_id != GD25LQ_PRODUCT_ID && product_id != GD25UF_PRODUCT_ID) {
+    if (product_id != GD25Q_PRODUCT_ID && product_id != GD25LQ_PRODUCT_ID && product_id != GD25UF_PRODUCT_ID && product_id != GD55F_PRODUCT_ID) {
         return ESP_ERR_NOT_FOUND;
     }
 

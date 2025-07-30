@@ -10,3 +10,7 @@ config SPI_FLASH_VENDOR_XMC_SUPPORT_ENABLED
 config SPI_FLASH_VENDOR_GD_SUPPORT_ENABLED
     bool
     default y
+
+config SPI_FLASH_VENDOR_BOYA_SUPPORT_ENABLED
+    bool
+    default y
