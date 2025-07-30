@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,17 +22,17 @@ typedef uint32_t esp_lcd_i2c_bus_handle_t;                    /*!< Type of LCD I
  */
 typedef struct {
     uint32_t dev_addr; /*!< I2C device address */
+    uint32_t scl_speed_hz; /*!< I2C LCD SCL frequency (hz) */
+    size_t control_phase_bytes; /*!< I2C LCD panel will encode control information (e.g. D/C selection) into control phase, in several bytes */
+    uint8_t dc_bit_offset; /*!< Offset of the D/C selection bit in control phase */
+    int lcd_cmd_bits;      /*!< Bit-width of LCD command */
+    int lcd_param_bits;    /*!< Bit-width of LCD parameter */
     esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; /*!< Callback invoked when color data transfer has finished */
     void *user_ctx; /*!< User private data, passed directly to on_color_trans_done's user_ctx */
-    size_t control_phase_bytes; /*!< I2C LCD panel will encode control information (e.g. D/C selection) into control phase, in several bytes */
-    unsigned int dc_bit_offset; /*!< Offset of the D/C selection bit in control phase */
-    int lcd_cmd_bits;           /*!< Bit-width of LCD command */
-    int lcd_param_bits;         /*!< Bit-width of LCD parameter */
     struct {
         unsigned int dc_low_on_data: 1;  /*!< If this flag is enabled, DC line = 0 means transfer data, DC line = 1 means transfer command; vice versa */
         unsigned int disable_control_phase: 1; /*!< If this flag is enabled, the control phase isn't used */
     } flags; /*!< Extra flags to fine-tune the I2C device */
-    uint32_t scl_speed_hz; /*!< I2C LCD SCL frequency (hz) */
 } esp_lcd_panel_io_i2c_config_t;
 
 /**
