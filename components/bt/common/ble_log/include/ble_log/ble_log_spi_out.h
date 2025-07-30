@@ -13,6 +13,7 @@
 #include "esp_timer.h"
 #include "freertos/semphr.h"
 #include "esp_heap_caps.h"
+#include "esp_task.h"
 
 // Public enums
 enum {
