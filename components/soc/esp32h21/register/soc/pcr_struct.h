@@ -317,8 +317,7 @@ typedef union {
          */
         uint32_t rmt_sclk_div_num:8;
         /** rmt_sclk_sel : R/W; bitpos: [20]; default: 1;
-         *  set this field to select clock-source. 0: do not select anyone clock, 1(default):
-         *  80MHz, 2: FOSC, 3: XTAL.
+         *  set this field to select clock-source. 0: XTAL, 1(default): RC_FAST.
          */
         uint32_t rmt_sclk_sel:1;
         /** rmt_sclk_en : R/W; bitpos: [21]; default: 1;
