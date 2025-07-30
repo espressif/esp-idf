@@ -100,7 +100,10 @@ void static inline ulp_riscv_delay_cycles(uint32_t cycles)
     /* Off with an estimate of cycles in this function to improve accuracy */
     uint32_t end = start + cycles - 20;
 
-    while (ULP_RISCV_GET_CCOUNT()  < end) {
+    /* If 'end' is > 2^32 wait for cycles overflow */
+    if (end < start)
+        while (ULP_RISCV_GET_CCOUNT() > start);
+    while (ULP_RISCV_GET_CCOUNT() < end) {
         /* Wait */
     }
 }
