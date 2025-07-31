@@ -214,18 +214,14 @@ esp_err_t modem_clock_domain_clk_gate_disable(modem_clock_domain_t domain, pmu_h
 
 static void IRAM_ATTR modem_clock_device_enable(modem_clock_context_t *ctx, uint32_t dev_map)
 {
-    int16_t refs = 0;
     esp_os_enter_critical_safe(&ctx->lock);
     for (int i = 0; dev_map; dev_map >>= 1, i++) {
         if (dev_map & BIT(0)) {
-            refs = ctx->dev[i].refs++;
-            if (refs == 0) {
-                (*ctx->dev[i].configure)(ctx, true);
-            }
+            ctx->dev[i].refs++;
+            (*ctx->dev[i].configure)(ctx, true);
         }
     }
     esp_os_exit_critical_safe(&ctx->lock);
-    assert(refs >= 0);
 }
 
 static void IRAM_ATTR modem_clock_device_disable(modem_clock_context_t *ctx, uint32_t dev_map)
