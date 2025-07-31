@@ -24,6 +24,12 @@
             "description": "Packages for building ESP-IDF documentation",
             "optional": true,
             "requirement_path": "tools/requirements/requirements.docs.txt"
+        },
+        {
+            "name": "ide",
+            "description": "Packages for IDE support in ESP-IDF",
+            "optional": true,
+            "requirement_path": "tools/requirements/requirements.ide.txt"
         }
     ]
 }
