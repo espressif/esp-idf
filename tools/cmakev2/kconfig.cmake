@@ -115,6 +115,8 @@ function(__consolidate_component_kconfig_files)
     idf_build_set_property(__KCONFIGS "")
     idf_build_set_property(__KCONFIG_PROJBUILDS "")
     idf_build_set_property(__SDKCONFIG_RENAMES "")
+    idf_build_set_property(__KCONFIGS_EXCLUDED "")
+    idf_build_set_property(__KCONFIGS_PROJBUILD_EXCLUDED "")
 
     # Iterate through all discovered components and consolidate their Kconfig files
     foreach(component_name IN LISTS components_discovered)
@@ -143,6 +145,7 @@ function(__consolidate_component_kconfig_files)
                 idf_build_set_property(__KCONFIGS_PROJBUILD_EXCLUDED "${component_projbuild}" APPEND)
             endif()
         endif()
+
         if(component_rename)
             idf_build_set_property(__SDKCONFIG_RENAMES "${component_rename}" APPEND)
         endif()
@@ -308,10 +311,14 @@ function(__create_config_env_file env_path)
     idf_build_get_property(target IDF_TARGET)
     idf_build_get_property(toolchain IDF_TOOLCHAIN)
     idf_build_get_property(sdkconfig SDKCONFIG)
+    idf_build_get_property(kconfigs_excluded __KCONFIGS_EXCLUDED)
+    idf_build_get_property(kconfigs_projbuild_excluded __KCONFIGS_PROJBUILD_EXCLUDED)
 
     # Define Kconfig source file paths
     set(kconfigs_projbuild_path "${build_dir}/kconfigs_projbuild.in")
     set(kconfigs_path "${build_dir}/kconfigs.in")
+    set(kconfigs_excluded_path "${build_dir}/kconfigs_excluded.in")
+    set(kconfigs_projbuild_excluded_path "${build_dir}/kconfigs_projbuild_excluded.in")
 
     # Get IDF version info
     __get_sdkconfig_option(OPTION CONFIG_IDF_INIT_VERSION
@@ -345,6 +352,10 @@ function(__create_config_env_file env_path)
     set(idf_path "${idf_path}")
     set(kconfigs_path "${kconfigs_path}")
     set(kconfigs_projbuild_path "${kconfigs_projbuild_path}")
+    set(kconfigs_excluded_path "${kconfigs_excluded_path}")
+    set(kconfigs_projbuild_excluded_path "${kconfigs_projbuild_excluded_path}")
+    set(kconfigs_excluded "${kconfigs_excluded}")
+    set(kconfigs_projbuild_excluded "${kconfigs_projbuild_excluded}")
 
     # Generate the config.env file from the config.env.in template
     configure_file("${template_path}" "${env_path}")
