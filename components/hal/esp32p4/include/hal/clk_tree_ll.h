@@ -726,6 +726,73 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_pll_f20m_get_divide
 }
 
 /**
+ * @brief Select the frequency calculation clock source for timergroup0
+ *
+ * @param clk_sel One of the clock sources in soc_clk_freq_calculation_src_t
+ */
+static inline __attribute__((always_inline)) void clk_ll_freq_calulation_set_target(soc_clk_freq_calculation_src_t clk_sel)
+{
+    int timg_cali_clk_sel = -1;
+
+    switch (clk_sel) {
+    case CLK_CAL_MPLL:
+        timg_cali_clk_sel = 0;
+        break;
+    case CLK_CAL_SPLL:
+        timg_cali_clk_sel = 1;
+        break;
+    case CLK_CAL_CPLL:
+        timg_cali_clk_sel = 2;
+        break;
+    case CLK_CAL_APLL:
+        timg_cali_clk_sel = 3;
+        break;
+    case CLK_CAL_SDIO_PLL0:
+        timg_cali_clk_sel = 4;
+        break;
+    case CLK_CAL_SDIO_PLL1:
+        timg_cali_clk_sel = 5;
+        break;
+    case CLK_CAL_SDIO_PLL2:
+        timg_cali_clk_sel = 6;
+        break;
+    case CLK_CAL_RC_FAST:
+        timg_cali_clk_sel = 7;
+        break;
+    case CLK_CAL_RC_SLOW:
+        timg_cali_clk_sel = 8;
+        break;
+    case CLK_CAL_RC32K:
+        timg_cali_clk_sel = 9;
+        break;
+    case CLK_CAL_32K_XTAL:
+        timg_cali_clk_sel = 10;
+        break;
+    case CLK_CAL_LP_PLL:
+        timg_cali_clk_sel = 11;
+        break;
+    default:
+        // Unsupported CLK_CAL mux input
+        abort();
+    }
+
+    if (timg_cali_clk_sel >= 0) {
+        HP_SYS_CLKRST.peri_clk_ctrl21.reg_timergrp0_tgrt_clk_src_sel = timg_cali_clk_sel;
+    }
+}
+
+/**
+ * @brief Set a divider for the clock to be frequency calculated by timergroup0
+ *
+ * @param divider Divider. PRE_DIV_CNT = divider - 1.
+ */
+static inline __attribute__((always_inline)) void clk_ll_freq_calculation_set_divider(uint32_t divider)
+{
+    HAL_ASSERT(divider >= 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl21, reg_timergrp0_tgrt_clk_div_num, divider - 1);
+}
+
+/**
  * @brief Select the clock source for RTC_SLOW_CLK
  *
  * @param in_sel One of the clock sources in soc_rtc_slow_clk_src_t

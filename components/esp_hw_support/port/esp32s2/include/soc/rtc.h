@@ -159,15 +159,10 @@ typedef struct rtc_cpu_freq_config_s {
 #define RTC_VDDSDIO_TIEH_1_8V 0 //!< TIEH field value for 1.8V VDDSDIO
 #define RTC_VDDSDIO_TIEH_3_3V 1 //!< TIEH field value for 3.3V VDDSDIO
 
-/**
- * @brief Clock source to be calibrated using rtc_clk_cal function
- */
-typedef enum {
-    RTC_CAL_RTC_MUX = 0,       //!< Currently selected RTC SLOW_CLK
-    RTC_CAL_8MD256 = 1,        //!< Internal 8 MHz RC oscillator, divided by 256
-    RTC_CAL_32K_XTAL = 2,      //!< External 32 kHz XTAL
-    RTC_CAL_INTERNAL_OSC = 3   //!< Internal 150 kHz oscillator
-} rtc_cal_sel_t;
+#define RTC_CAL_RTC_MUX _Pragma ("GCC warning \"'RTC_CAL_RTC_MUX' macro is deprecated\"") CLK_CAL_RTC_SLOW
+#define RTC_CAL_8MD256 _Pragma ("GCC warning \"'RTC_CAL_8MD256' macro is deprecated\"") CLK_CAL_RC_FAST_D256
+#define RTC_CAL_32K_XTAL _Pragma ("GCC warning \"'RTC_CAL_32K_XTAL' macro is deprecated\"") CLK_CAL_32K_XTAL
+#define RTC_CAL_INTERNAL_OSC _Pragma ("GCC warning \"'RTC_CAL_INTERNAL_OSC' macro is deprecated\"") CLK_CAL_RC_SLOW
 
 /**
  * Initialization parameters for rtc_clk_init
@@ -470,8 +465,6 @@ void rtc_clk_apb_freq_update(uint32_t apb_freq);
  */
 uint32_t rtc_clk_apb_freq_get(void);
 
-uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles, uint32_t cal_mode);
-
 /**
  * @brief Measure RTC slow clock's period, based on main XTAL frequency
  *
@@ -485,21 +478,21 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles, ui
  * the check fails, then consider this an invalid 32k clock and return 0. This
  * check can filter some jamming signal.
  *
- * @param cal_clk  clock to be measured
+ * @param cal_clk_sel  clock to be measured
  * @param slow_clk_cycles  number of slow clock cycles to average
  * @return average slow clock period in microseconds, Q13.19 fixed point format,
  *         or 0 if calibration has timed out
  */
-uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slow_clk_cycles);
+uint32_t rtc_clk_cal(soc_clk_freq_calculation_src_t cal_clk_sel, uint32_t slow_clk_cycles);
 
 /**
  * @brief Measure ratio between XTAL frequency and RTC slow clock frequency
- * @param cal_clk slow clock to be measured
+ * @param cal_clk_sel slow clock to be measured
  * @param slow_clk_cycles number of slow clock cycles to average
  * @return average ratio between XTAL frequency and slow clock frequency,
  *         Q13.19 fixed point format, or 0 if calibration has timed out.
  */
-uint32_t rtc_clk_cal_ratio(rtc_cal_sel_t cal_clk, uint32_t slow_clk_cycles);
+uint32_t rtc_clk_cal_ratio(soc_clk_freq_calculation_src_t cal_clk_sel, uint32_t slow_clk_cycles);
 
 /**
  * @brief Convert time interval from microseconds to RTC_SLOW_CLK cycles
@@ -848,10 +841,10 @@ void rtc_vddsdio_set_config(rtc_vddsdio_config_t config);
 /**
  * Using valid hardware calibration value to calibrate slowclk
  * If there is no hardware calibration in process, start hardware calibration and wait for calibration finished
- * @param cal_clk clock to be measured
+ * @param cal_clk_sel clock to be measured
  * @param slowclk_cycles if no hardware calibration in process, use this amount of slow cycles to calibrate slowclk.
  */
-uint32_t rtc_clk_cal_cycling(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
+uint32_t rtc_clk_cal_cycling(soc_clk_freq_calculation_src_t cal_clk_sel, uint32_t slowclk_cycles);
 
 
 // -------------------------- CLOCK TREE DEFS ALIAS ----------------------------

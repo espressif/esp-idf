@@ -18,53 +18,55 @@
 
 __attribute__((unused)) static const char *TAG = "rtc_time";
 
-/* Calibration of clock frequency is performed using a special feature of TIMG0.
- * This feature counts the number of XTAL clock cycles within a given number of
- * clock cycles.
- */
+#define CLK_CAL_TIMEOUT_THRES(cal_clk_sel, cycles) ((cal_clk_sel == CLK_CAL_RC32K || cal_clk_sel == CLK_CAL_32K_XTAL) ? (cycles << 12) : (cycles << 10))
 
-#define CLK_CAL_TIMEOUT_THRES(cal_clk, cycles) ((cal_clk == RTC_CAL_RC32K || cal_clk == RTC_CAL_32K_XTAL) ? (cycles << 12) : (cycles << 10))
-
-// Calibration can only be performed on relatively slow speed clock signal. Therefore, for high-speed clocks,
-// calibration is performed on their DIV_CLKs. The divider is configurable. We set:
-#define CLK_CAL_DIV_VAL(cal_clk) \
-            ((cal_clk == RTC_CAL_RC_SLOW || cal_clk == RTC_CAL_RC32K || cal_clk == RTC_CAL_32K_XTAL) ? 1 : \
-             (cal_clk == RTC_CAL_LP_PLL) ? 25 : \
-             (cal_clk == RTC_CAL_RC_FAST) ? 50 : \
-             (cal_clk == RTC_CAL_APLL) ? 200 : \
+// Calculation can only be performed on relatively slow speed clock signal. Therefore, for high-speed clocks,
+// calculation is performed on their DIV_CLKs. The divider is configurable. We set:
+#define CLK_CAL_DIV_VAL(cal_clk_sel) \
+            ((cal_clk_sel == CLK_CAL_RC_SLOW || cal_clk_sel == CLK_CAL_RC32K || cal_clk_sel == CLK_CAL_32K_XTAL) ? 1 : \
+             (cal_clk_sel == CLK_CAL_LP_PLL) ? 25 : \
+             (cal_clk_sel == CLK_CAL_RC_FAST) ? 50 : \
+             (cal_clk_sel == CLK_CAL_APLL) ? 200 : \
              4000)
 
 // CLK_CAL_FREQ_APPROX = CLK_FREQ_APPROX / CLK_CAL_DIV_VAL
-#define CLK_CAL_FREQ_APPROX(cal_clk) \
-            ((cal_clk == RTC_CAL_MPLL) ? (CLK_LL_PLL_500M_FREQ_MHZ * MHZ / 4000) : \
-             (cal_clk == RTC_CAL_SPLL) ? (CLK_LL_PLL_480M_FREQ_MHZ * MHZ / 4000) : \
-             (cal_clk == RTC_CAL_CPLL) ? (CLK_LL_PLL_400M_FREQ_MHZ * MHZ / 4000) : \
-             (cal_clk == RTC_CAL_APLL) ? (105 * MHZ / 200) : \
-             (cal_clk == RTC_CAL_SDIO_PLL0 || cal_clk == RTC_CAL_SDIO_PLL1 || cal_clk == RTC_CAL_SDIO_PLL2) ? (200 * MHZ / 4000) : \
-             (cal_clk == RTC_CAL_RC_FAST) ? (SOC_CLK_RC_FAST_FREQ_APPROX / 50) : \
-             (cal_clk == RTC_CAL_RC_SLOW) ? (SOC_CLK_RC_SLOW_FREQ_APPROX) : \
-             (cal_clk == RTC_CAL_RC32K) ? (SOC_CLK_RC32K_FREQ_APPROX) : \
-             (cal_clk == RTC_CAL_32K_XTAL) ? (SOC_CLK_XTAL32K_FREQ_APPROX) : \
-             (cal_clk == RTC_CAL_LP_PLL) ? (CLK_LL_PLL_8M_FREQ_MHZ * MHZ / 25) : \
+#define CLK_CAL_FREQ_APPROX(cal_clk_sel) \
+            ((cal_clk_sel == CLK_CAL_MPLL) ? (CLK_LL_PLL_500M_FREQ_MHZ * MHZ / 4000) : \
+             (cal_clk_sel == CLK_CAL_SPLL) ? (CLK_LL_PLL_480M_FREQ_MHZ * MHZ / 4000) : \
+             (cal_clk_sel == CLK_CAL_CPLL) ? (CLK_LL_PLL_400M_FREQ_MHZ * MHZ / 4000) : \
+             (cal_clk_sel == CLK_CAL_APLL) ? (105 * MHZ / 200) : \
+             (cal_clk_sel == CLK_CAL_SDIO_PLL0 || cal_clk_sel == CLK_CAL_SDIO_PLL1 || cal_clk_sel == CLK_CAL_SDIO_PLL2) ? (200 * MHZ / 4000) : \
+             (cal_clk_sel == CLK_CAL_RC_FAST) ? (SOC_CLK_RC_FAST_FREQ_APPROX / 50) : \
+             (cal_clk_sel == CLK_CAL_RC_SLOW) ? (SOC_CLK_RC_SLOW_FREQ_APPROX) : \
+             (cal_clk_sel == CLK_CAL_RC32K) ? (SOC_CLK_RC32K_FREQ_APPROX) : \
+             (cal_clk_sel == CLK_CAL_32K_XTAL) ? (SOC_CLK_XTAL32K_FREQ_APPROX) : \
+             (cal_clk_sel == CLK_CAL_LP_PLL) ? (CLK_LL_PLL_8M_FREQ_MHZ * MHZ / 25) : \
              0)
 
-uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+/**
+ * @brief Clock frequency calculation function used by rtc_clk_cal
+ *
+ * Calculation of clock frequency is performed using a special feature of TIMG0.
+ * This feature counts the number of XTAL clock cycles within a given number of
+ * clock cycles.
+ *
+ * @param cal_clk_sel which clock to calculate frequency
+ * @param slowclk_cycles number of slow clock cycles to count
+ * @return number of XTAL clock cycles within the given number of slow clock cycles
+ */
+static uint32_t rtc_clk_cal_internal(soc_clk_freq_calculation_src_t cal_clk_sel, uint32_t slowclk_cycles)
 {
     assert(slowclk_cycles < TIMG_RTC_CALI_MAX_V);
 
-    if (cal_clk == RTC_CAL_RTC_MUX) {
+    if (cal_clk_sel == CLK_CAL_RTC_SLOW) {
         soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
         if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) {
-            cal_clk = RTC_CAL_RC_SLOW;
+            cal_clk_sel = CLK_CAL_RC_SLOW;
         } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
-            cal_clk = RTC_CAL_32K_XTAL;
+            cal_clk_sel = CLK_CAL_32K_XTAL;
         } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
-            cal_clk = RTC_CAL_RC32K;
+            cal_clk_sel = CLK_CAL_RC32K;
         }
-    }
-    if (cal_clk < 0 || cal_clk >= RTC_CAL_INVALID_CLK) {
-        ESP_EARLY_LOGE(TAG, "clock not supported to be calibrated");
-        return 0;
     }
 
     /* Enable requested clock (some clocks are always on) */
@@ -72,13 +74,13 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     // Only enable if originally was disabled, and set back to the disable state after calibration is done
     // If the clock is already on, then do nothing
     bool dig_32k_xtal_enabled = clk_ll_xtal32k_digi_is_enabled();
-    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
-            clk_ll_xtal32k_digi_enable();
+    if (cal_clk_sel == CLK_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
+        clk_ll_xtal32k_digi_enable();
     }
 
     bool rc_fast_enabled = clk_ll_rc_fast_is_enabled();
     bool dig_rc_fast_enabled = clk_ll_rc_fast_digi_is_enabled();
-    if (cal_clk == RTC_CAL_RC_FAST) {
+    if (cal_clk_sel == CLK_CAL_RC_FAST) {
         if (!rc_fast_enabled) {
             rtc_clk_8m_enable(true);
         }
@@ -89,7 +91,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 
     bool rc32k_enabled = clk_ll_rc32k_is_enabled();
     bool dig_rc32k_enabled = clk_ll_rc32k_digi_is_enabled();
-    if (cal_clk == RTC_CAL_RC32K) {
+    if (cal_clk_sel == CLK_CAL_RC32K) {
         if (!rc32k_enabled) {
             rtc_clk_rc32k_enable(true);
         }
@@ -112,16 +114,16 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     }
 
     /* Prepare calibration */
-    REG_SET_FIELD(HP_SYS_CLKRST_PERI_CLK_CTRL21_REG, HP_SYS_CLKRST_REG_TIMERGRP0_TGRT_CLK_SRC_SEL, cal_clk);
-    uint32_t clk_cal_divider = CLK_CAL_DIV_VAL(cal_clk);
-    REG_SET_FIELD(HP_SYS_CLKRST_PERI_CLK_CTRL21_REG, HP_SYS_CLKRST_REG_TIMERGRP0_TGRT_CLK_DIV_NUM, clk_cal_divider - 1);
+    clk_ll_freq_calulation_set_target(cal_clk_sel);
+    uint32_t clk_cal_divider = CLK_CAL_DIV_VAL(cal_clk_sel);
+    clk_ll_freq_calculation_set_divider(clk_cal_divider);
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING);
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_MAX, slowclk_cycles);
     /* Figure out how long to wait for calibration to finish */
 
     /* Set timeout reg and expect time delay*/
-    REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, CLK_CAL_TIMEOUT_THRES(cal_clk, slowclk_cycles));
-    uint32_t expected_freq = CLK_CAL_FREQ_APPROX(cal_clk);
+    REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, CLK_CAL_TIMEOUT_THRES(cal_clk_sel, slowclk_cycles));
+    uint32_t expected_freq = CLK_CAL_FREQ_APPROX(cal_clk_sel);
     assert(expected_freq);
     uint32_t us_time_estimate = (uint32_t) (((uint64_t) slowclk_cycles) * MHZ / expected_freq);
     /* Start calibration */
@@ -143,14 +145,14 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
         }
     }
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
-    CLEAR_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL21_REG, HP_SYS_CLKRST_REG_TIMERGRP0_TGRT_CLK_DIV_NUM_M);
+    clk_ll_freq_calculation_set_divider(1);
 
     /* if dig_32k_xtal was originally off and enabled due to calibration, then set back to off state */
-    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
+    if (cal_clk_sel == CLK_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
         clk_ll_xtal32k_digi_disable();
     }
 
-    if (cal_clk == RTC_CAL_RC_FAST) {
+    if (cal_clk_sel == CLK_CAL_RC_FAST) {
         if (!dig_rc_fast_enabled) {
             rtc_dig_clk8m_disable();
         }
@@ -159,7 +161,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
         }
     }
 
-    if (cal_clk == RTC_CAL_RC32K) {
+    if (cal_clk_sel == CLK_CAL_RC32K) {
         if (!dig_rc32k_enabled) {
             clk_ll_rc32k_digi_disable();
         }
@@ -178,14 +180,14 @@ static bool rtc_clk_cal_32k_valid(uint32_t xtal_freq, uint32_t slowclk_cycles, u
     return (actual_xtal_cycles >= (expected_xtal_cycles - delta)) && (actual_xtal_cycles <= (expected_xtal_cycles + delta));
 }
 
-uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+uint32_t rtc_clk_cal(soc_clk_freq_calculation_src_t cal_clk_sel, uint32_t slowclk_cycles)
 {
-    slowclk_cycles /= (cal_clk == RTC_CAL_RTC_MUX) ? 1 : CLK_CAL_DIV_VAL(cal_clk);
+    slowclk_cycles /= (cal_clk_sel == CLK_CAL_RTC_SLOW) ? 1 : CLK_CAL_DIV_VAL(cal_clk_sel);
     assert(slowclk_cycles);
     soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
-    uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
+    uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk_sel, slowclk_cycles);
 
-    if (cal_clk == RTC_CAL_32K_XTAL && !rtc_clk_cal_32k_valid((uint32_t)xtal_freq, slowclk_cycles, xtal_cycles)) {
+    if (cal_clk_sel == CLK_CAL_32K_XTAL && !rtc_clk_cal_32k_valid((uint32_t)xtal_freq, slowclk_cycles, xtal_cycles)) {
         return 0;
     }
 

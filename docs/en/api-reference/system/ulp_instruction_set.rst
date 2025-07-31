@@ -83,7 +83,7 @@ ULP coprocessor is clocked from ``RTC_FAST_CLK``, which is normally derived from
     #include "soc/rtc.h"
 
     // calibrate 8M/256 clock against XTAL, get 8M/256 clock period
-    uint32_t rtc_8md256_period = rtc_clk_cal(RTC_CAL_8MD256, 100);
+    uint32_t rtc_8md256_period = rtc_clk_cal(CLK_CAL_RC_FAST_D256, 100);
     uint32_t rtc_fast_freq_hz = 1000000ULL * (1 << RTC_CLK_CAL_FRACT) * 256 / rtc_8md256_period;
 
 ULP coprocessor needs certain number of clock cycles to fetch each instruction, plus certain number of cycles to execute it, depending on the instruction. See description of each instruction below for details on the execution time.

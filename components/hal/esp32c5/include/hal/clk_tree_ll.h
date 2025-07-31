@@ -442,6 +442,55 @@ static inline __attribute__((always_inline)) void clk_ll_soc_root_clk_auto_gatin
 }
 
 /**
+ * @brief Enable the RTC clock calibration reference XTAL source on timer group0.
+ * @param enable Enable or disable the XTAL source.
+ */
+static inline __attribute__((always_inline)) void clk_ll_enable_timergroup_rtc_calibration_clock(bool enable)
+{
+    PCR.timergroup_xtal_conf.tg0_xtal_clk_en = enable;
+}
+
+/**
+ * @brief Select the frequency calculation clock source for timergroup0
+ *
+ * @param clk_sel One of the clock sources in soc_clk_freq_calculation_src_t
+ */
+static inline __attribute__((always_inline)) void clk_ll_freq_calulation_set_target(soc_clk_freq_calculation_src_t clk_sel)
+{
+    int timg_cali_clk_sel = -1;
+
+    switch (clk_sel) {
+    case CLK_CAL_32K_XTAL:
+        timg_cali_clk_sel = 1;
+        break;
+    case CLK_CAL_32K_OSC_SLOW:
+        timg_cali_clk_sel = 2;
+        break;
+    case CLK_CAL_RC_SLOW:
+        timg_cali_clk_sel = 3;
+        break;
+    case CLK_CAL_RC_FAST:
+        timg_cali_clk_sel = 4;
+        break;
+    default:
+        // Unsupported CLK_CAL mux input
+        abort();
+    }
+
+    if (timg_cali_clk_sel >= 0) {
+        PCR.ctrl_32k_conf.clk_32k_sel = timg_cali_clk_sel;
+    }
+}
+
+/**
+ * @brief Set the frequency division factor of RC_FAST clock
+ */
+static inline __attribute__((always_inline)) void clk_ll_rc_fast_tick_conf(void)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_32k_conf, fosc_tick_num, (1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS) - 1); // divider = 1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS
+}
+
+/**
  * @brief Select the clock source for RTC_SLOW_CLK
  *
  * @param in_sel One of the clock sources in soc_rtc_slow_clk_src_t
@@ -550,14 +599,6 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider
 }
 
 /**
- * @brief Set the frequency division factor of RC_FAST clock
- */
-static inline void clk_ll_rc_fast_tick_conf(void)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_32k_conf, fosc_tick_num, (1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS) - 1); // divider = 1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS
-}
-
-/**
  * @brief Set RC_SLOW_CLK divider
  *
  * @param divider Divider of RC_SLOW_CLK. Usually this divider is set to 1 (reg. value is 0) in bootloader stage.
@@ -566,15 +607,6 @@ static inline __attribute__((always_inline)) void clk_ll_rc_slow_set_divider(uin
 {
     // No divider on the target
     HAL_ASSERT(divider == 1);
-}
-
-/**
- * @brief Enable the RTC clock calibration reference XTAL source on timer group0.
- * @param  enable enable or disable the XTAL source.
- */
-static inline __attribute__((always_inline)) void clk_ll_enable_timergroup_rtc_calibration_clock(bool enable)
-{
-    PCR.timergroup_xtal_conf.tg0_xtal_clk_en = enable;
 }
 
 /************************** LP STORAGE REGISTER STORE/LOAD **************************/

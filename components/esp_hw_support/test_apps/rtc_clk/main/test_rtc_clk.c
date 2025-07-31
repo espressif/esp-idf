@@ -31,7 +31,7 @@
 
 #define CALIBRATE_ONE(cali_clk) calibrate_one(cali_clk, #cali_clk)
 
-static uint32_t calibrate_one(rtc_cal_sel_t cal_clk, const char* name)
+static uint32_t calibrate_one(soc_clk_freq_calculation_src_t cal_clk, const char* name)
 {
     const uint32_t cal_count = 1000;
     const float factor = (1 << 19) * 1000.0f;
@@ -54,13 +54,13 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
 
     // By default Kconfig, RTC_SLOW_CLK source is RC_SLOW
     soc_rtc_slow_clk_src_t default_rtc_slow_clk_src = rtc_clk_slow_src_get();
-    CALIBRATE_ONE(RTC_CAL_RTC_MUX);
+    CALIBRATE_ONE(CLK_CAL_RTC_SLOW);
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
-    CALIBRATE_ONE(RTC_CAL_8MD256);
+    CALIBRATE_ONE(CLK_CAL_RC_FAST_D256);
 #endif
 
 #if SOC_CLK_XTAL32K_SUPPORTED
-    uint32_t cal_32k = CALIBRATE_ONE(RTC_CAL_32K_XTAL);
+    uint32_t cal_32k = CALIBRATE_ONE(CLK_CAL_32K_XTAL);
     if (cal_32k == 0) {
         printf("32K XTAL OSC has not started up\n");
     } else {
@@ -68,11 +68,11 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
         rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_XTAL32K);
         printf("done\n");
 
-        CALIBRATE_ONE(RTC_CAL_RTC_MUX);
+        CALIBRATE_ONE(CLK_CAL_RTC_SLOW);
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
-        CALIBRATE_ONE(RTC_CAL_8MD256);
+        CALIBRATE_ONE(CLK_CAL_RC_FAST_D256);
 #endif
-        CALIBRATE_ONE(RTC_CAL_32K_XTAL);
+        CALIBRATE_ONE(CLK_CAL_32K_XTAL);
     }
 #endif
 
@@ -81,16 +81,16 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
     rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256);
     printf("done\n");
 
-    CALIBRATE_ONE(RTC_CAL_RTC_MUX);
-    CALIBRATE_ONE(RTC_CAL_8MD256);
+    CALIBRATE_ONE(CLK_CAL_RTC_SLOW);
+    CALIBRATE_ONE(CLK_CAL_RC_FAST_D256);
 #if SOC_CLK_XTAL32K_SUPPORTED
-    CALIBRATE_ONE(RTC_CAL_32K_XTAL);
+    CALIBRATE_ONE(CLK_CAL_32K_XTAL);
 #endif
 #endif
 
 #if SOC_CLK_OSC_SLOW_SUPPORTED
     rtc_clk_32k_enable_external();
-    uint32_t cal_ext_slow_clk = CALIBRATE_ONE(RTC_CAL_32K_OSC_SLOW);
+    uint32_t cal_ext_slow_clk = CALIBRATE_ONE(CLK_CAL_32K_OSC_SLOW);
     if (cal_ext_slow_clk == 0) {
         printf("EXT CLOCK by PIN has not started up\n");
     } else {
@@ -98,11 +98,11 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
         rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_OSC_SLOW);
         printf("done\n");
 
-        CALIBRATE_ONE(RTC_CAL_RTC_MUX);
+        CALIBRATE_ONE(CLK_CAL_RTC_SLOW);
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
-        CALIBRATE_ONE(RTC_CAL_8MD256);
+        CALIBRATE_ONE(CLK_CAL_RC_FAST_D256);
 #endif
-        CALIBRATE_ONE(RTC_CAL_32K_OSC_SLOW);
+        CALIBRATE_ONE(CLK_CAL_32K_OSC_SLOW);
     }
 #endif
 

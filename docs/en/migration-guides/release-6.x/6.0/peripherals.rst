@@ -62,6 +62,8 @@ LEDC
 
 - :cpp:member:`ledc_channel_config_t::intr_type` has been deprecated. `LEDC_INTR_FADE_END` interrupt enable / disable control is handled by the driver internally. Users can still register a callback for this interrupt by :cpp:func:`ledc_cb_register`.
 
+- :cpp:enumerator:`soc_periph_ledc_clk_src_legacy_t::LEDC_USE_RTC8M_CLK` has been removed. Please use ``LEDC_USE_RC_FAST_CLK`` instead.
+
 I2C
 ---
 

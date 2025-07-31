@@ -397,6 +397,46 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(voi
 }
 
 /**
+ * @brief Select the frequency calculation clock source for timergroup0
+ *
+ * @param clk_sel One of the clock sources in soc_clk_freq_calculation_src_t
+ */
+static inline __attribute__((always_inline)) void clk_ll_freq_calulation_set_target(soc_clk_freq_calculation_src_t clk_sel)
+{
+    int timg_cali_clk_sel = -1;
+
+    switch (clk_sel) {
+    case CLK_CAL_32K_XTAL:
+        timg_cali_clk_sel = 1;
+        break;
+    case CLK_CAL_32K_OSC_SLOW:
+        timg_cali_clk_sel = 2;
+        break;
+    case CLK_CAL_RC_SLOW:
+        timg_cali_clk_sel = 3;
+        break;
+    case CLK_CAL_RC_FAST:
+        timg_cali_clk_sel = 4;
+        break;
+    default:
+        // Unsupported CLK_CAL mux input
+        abort();
+    }
+
+    if (timg_cali_clk_sel >= 0) {
+        PCR.ctrl_32k_conf.clk_32k_sel = timg_cali_clk_sel;
+    }
+}
+
+/**
+ * @brief Set the frequency division factor of RC_FAST clock
+ */
+static inline __attribute__((always_inline)) void clk_ll_rc_fast_tick_conf(void)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_32k_conf, fosc_tick_num, (1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS) - 1); // divider = 1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS
+}
+
+/**
  * @brief Select the clock source for RTC_SLOW_CLK
  *
  * @param in_sel One of the clock sources in soc_rtc_slow_clk_src_t
@@ -502,14 +542,6 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider
 {
     // No divider on the target, always return divider = 1
     return 1;
-}
-
-/**
- * @brief Set the frequency division factor of RC_FAST clock
- */
-static inline void clk_ll_rc_fast_tick_conf(void)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_32k_conf, fosc_tick_num, (1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS) - 1); // divider = 1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS
 }
 
 /**

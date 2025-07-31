@@ -109,7 +109,7 @@ static int64_t test_periodic_timer_accuracy_on_dfs(esp_timer_handle_t timer)
 {
     // Calibrate slow clock.
 #if !CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
-    esp_clk_slowclk_cal_set(rtc_clk_cal(RTC_CAL_RTC_MUX, 8192));
+    esp_clk_slowclk_cal_set(rtc_clk_cal(CLK_CAL_RTC_SLOW, 8192));
 #endif
 
     ESP_ERROR_CHECK(esp_timer_start_periodic(timer, ALARM_PERIOD_MS * 1000));

@@ -451,8 +451,6 @@ typedef enum {
     LEDC_USE_APB_CLK = SOC_MOD_CLK_APB,             /*!< Select APB as the source clock */
     LEDC_USE_RC_FAST_CLK = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
     LEDC_USE_REF_TICK = SOC_MOD_CLK_REF_TICK,       /*!< Select REF_TICK as the source clock */
-
-    LEDC_USE_RTC8M_CLK __attribute__((deprecated("please use 'LEDC_USE_RC_FAST_CLK' instead"))) = LEDC_USE_RC_FAST_CLK,   /*!< Alias of 'LEDC_USE_RC_FAST_CLK' */
 } soc_periph_ledc_clk_src_legacy_t;
 
 //////////////////////////////////////////////////SDMMC///////////////////////////////////////////////////////////////
@@ -483,6 +481,16 @@ typedef enum {
     CLKOUT_SIG_I2S1     = 15,   /*!< I2S1 clock, depends on the i2s driver configuration */
     CLKOUT_SIG_INVALID  = 0xFF,
 } soc_clkout_sig_id_t;
+
+//////////////////////////////////////CLOCK FREQUENCY CALCULATION////////////////////////////////////////////////////
+/**
+ * @brief Clock frequency calculation source selection
+ */
+typedef enum {
+    CLK_CAL_RTC_SLOW,                                /*!< Select to calculate frequency of RTC_SLOW_CLK */
+    CLK_CAL_RC_FAST_D256,                            /*!< Select to calculate frequency of RC_FAST_D256_CLK */
+    CLK_CAL_32K_XTAL,                                /*!< Select to calculate frequency of XTAL32K_CLK */
+} soc_clk_freq_calculation_src_t;
 
 #ifdef __cplusplus
 }
