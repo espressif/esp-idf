@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -145,7 +145,6 @@ static IRAM_ATTR esp_err_t esp_cam_ctlr_dvp_start_trans(esp_cam_ctlr_dvp_cam_t *
 
     if (ctlr->cur_buf) {
         ctlr->cur_buf = NULL;
-        cam_hal_stop_streaming(&ctlr->hal);
         ESP_RETURN_ON_ERROR_ISR(esp_cam_ctlr_dvp_dma_stop(&ctlr->dma), TAG, "failed to stop DMA");
     }
 
@@ -168,8 +167,6 @@ static IRAM_ATTR esp_err_t esp_cam_ctlr_dvp_start_trans(esp_cam_ctlr_dvp_cam_t *
 
     ESP_RETURN_ON_ERROR_ISR(esp_cam_ctlr_dvp_dma_reset(&ctlr->dma), TAG, "failed to reset DMA");
     ESP_RETURN_ON_ERROR_ISR(esp_cam_ctlr_dvp_dma_start(&ctlr->dma, trans.buffer, ctlr->fb_size_in_bytes), TAG, "failed to start DMA");
-
-    cam_hal_start_streaming(&ctlr->hal);
 
     ctlr->cur_buf = trans.buffer;
 
@@ -469,6 +466,8 @@ static esp_err_t esp_cam_ctlr_dvp_cam_enable(esp_cam_ctlr_handle_t handle)
         ctlr->dvp_fsm = ESP_CAM_CTLR_DVP_CAM_FSM_ENABLED;
         ret = ESP_OK;
     }
+    cam_hal_start_streaming(&ctlr->hal);
+
     portEXIT_CRITICAL(&ctlr->spinlock);
 
     return ret;
@@ -495,6 +494,8 @@ static esp_err_t esp_cam_ctlr_dvp_cam_disable(esp_cam_ctlr_handle_t handle)
         ctlr->dvp_fsm = ESP_CAM_CTLR_DVP_CAM_FSM_INIT;
         ret = ESP_OK;
     }
+    cam_hal_stop_streaming(&ctlr->hal);
+
     portEXIT_CRITICAL(&ctlr->spinlock);
 
     return ret;
