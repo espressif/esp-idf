@@ -3,6 +3,9 @@
 components/esp_driver_tsens/test_apps/temperature_sensor:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32c5" and CONFIG_NAME == "iram_safe"
+      temporary: false
+      reason: Use test_temperature_sensor_cbs_esp32c5 instead, iram_safe need to use single app large partition table on c5
   depends_components:
     - esp_driver_tsens
     - esp_phy
