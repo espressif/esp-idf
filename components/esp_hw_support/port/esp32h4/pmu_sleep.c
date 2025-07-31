@@ -141,10 +141,15 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
 
     if (dslp) {
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
+
+        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags);
+
+        config->digital = digital_default;
+
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags);
         config->analog = analog_default;
     } else {
-        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags);
+        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags);
         config->digital = digital_default;
 
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(sleep_flags);
@@ -190,9 +195,13 @@ static void pmu_sleep_power_init(pmu_context_t *ctx, const pmu_sleep_power_confi
     pmu_ll_lp_set_xtalx2_xpd (ctx->hal->dev, LP(SLEEP), power->lp_sys[LP(SLEEP)].xtal.xpd_xtalx2);
 }
 
-static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_config_t *dig)
+static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_config_t *dig, bool dslp)
 {
-    pmu_ll_hp_set_dig_pad_slp_sel   (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
+    pmu_ll_hp_set_icg_sysclk_enable(ctx->hal->dev, HP(SLEEP), (dig->icg_func != 0));
+    pmu_ll_hp_set_icg_func(ctx->hal->dev, HP(SLEEP), dig->icg_func);
+    if (!dslp) {
+        pmu_ll_hp_set_dig_pad_slp_sel(ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
+    }
 }
 
 static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_config_t *analog, bool dslp)
@@ -248,9 +257,7 @@ void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp)
 {
     assert(PMU_instance());
     pmu_sleep_power_init(PMU_instance(), &config->power, dslp);
-    if(!dslp){
-        pmu_sleep_digital_init(PMU_instance(), &config->digital);
-    }
+    pmu_sleep_digital_init(PMU_instance(), &config->digital, dslp);
     pmu_sleep_analog_init(PMU_instance(), &config->analog, dslp);
     pmu_sleep_param_init(PMU_instance(), &config->param, dslp);
 }

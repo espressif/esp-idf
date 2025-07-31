@@ -352,12 +352,21 @@ typedef struct {
 
 typedef struct {
     pmu_hp_sys_cntl_reg_t   syscntl;
+    uint32_t                icg_func;
 } pmu_sleep_digital_config_t;
 
-#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags) {            \
+#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = ((sleep_flags) & PMU_SLEEP_PD_TOP) ? 0 : 1,  \
-    }                                                                   \
+    },                                                                  \
+    .icg_func = clk_flags                                               \
+}
+
+#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
+    .syscntl = {                                                        \
+        .dig_pad_slp_sel = 1,                                           \
+    },                                                                  \
+    .icg_func = 0                                                       \
 }
 
 typedef struct {
