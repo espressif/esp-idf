@@ -418,21 +418,6 @@ void __wrap_mbedtls_ssl_free(mbedtls_ssl_context *ssl)
     __real_mbedtls_ssl_free(ssl);
 }
 
-int __wrap_mbedtls_ssl_session_reset(mbedtls_ssl_context *ssl)
-{
-    CHECK_OK(esp_mbedtls_reset_add_tx_buffer(ssl));
-
-    CHECK_OK(esp_mbedtls_reset_add_rx_buffer(ssl));
-
-    CHECK_OK(__real_mbedtls_ssl_session_reset(ssl));
-
-    CHECK_OK(esp_mbedtls_reset_free_tx_buffer(ssl));
-
-    esp_mbedtls_reset_free_rx_buffer(ssl);
-
-    return 0;
-}
-
 int __wrap_mbedtls_ssl_send_alert_message(mbedtls_ssl_context *ssl, unsigned char level, unsigned char message)
 {
     int ret;
