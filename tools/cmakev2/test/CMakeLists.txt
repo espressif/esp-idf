@@ -58,13 +58,17 @@ function(test_component_priority)
     __dump_component_properties("${component_name}")
 endfunction()
 
-# Test that IDF_VERSION is set
+# Test that IDF_VERSION and IDF_VER build property is set
 function(test_idf_version)
     if(NOT DEFINED IDF_VERSION_MAJOR OR
             NOT DEFINED IDF_VERSION_MINOR OR
             NOT DEFINED IDF_VERSION_PATCH OR
             NOT DEFINED ENV{IDF_VERSION})
         idf_die("IDF_VERSION not set")
+    endif()
+    idf_build_get_property(idf_ver IDF_VER)
+    if(NOT idf_ver)
+        idf_die("IDF_VER build property not set")
     endif()
 endfunction()
 
