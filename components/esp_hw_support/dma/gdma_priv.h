@@ -33,6 +33,8 @@
 #include "soc/periph_defs.h"
 #include "esp_private/gdma.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/critical_section.h"
+#include "esp_private/sleep_retention.h"
 
 #if CONFIG_GDMA_OBJ_DRAM_SAFE
 #define GDMA_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
@@ -97,6 +99,9 @@ struct gdma_rx_channel_t {
     void *user_data;     // user registered DMA event data
     gdma_rx_event_callbacks_t cbs;      // RX event callbacks
 };
+
+void gdma_acquire_sleep_retention(gdma_pair_t* pair);
+void gdma_release_sleep_retention(gdma_pair_t* pair);
 
 #ifdef __cplusplus
 }
