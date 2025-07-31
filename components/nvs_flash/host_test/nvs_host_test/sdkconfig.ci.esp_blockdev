@@ -1,0 +1,2 @@
+# Configuration enabling internal storage via esp_blockdev instead of direct call to esp_partition nvs_api
+CONFIG_NVS_BDL_STACK=y

@@ -174,8 +174,8 @@ bool NVSPartition::is_bdl_nvs_compliant(const char* label, const esp_blockdev_ha
         is_compliant = false;
     }
 
-    if(bdl->geometry.erase_size % NVS_CONST_PAGE_SIZE != 0) {
-        ESP_LOGV(TAG, "Block device erase size is not a multiple of %d, it is %zu", NVS_CONST_PAGE_SIZE, bdl->geometry.erase_size);
+    if(NVS_CONST_PAGE_SIZE % bdl->geometry.erase_size != 0) {
+        ESP_LOGV(TAG, "Block device erase size %zu does not allow erasing pages of size %d.", bdl->geometry.erase_size, NVS_CONST_PAGE_SIZE);
         is_compliant = false;
     }
 

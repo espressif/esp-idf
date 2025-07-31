@@ -1,30 +1,34 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <catch2/catch_test_macros.hpp>
-#include <cstring>
+#include "nvs_flash.h"
 #include "nvs_storage.hpp"
 #include "nvs_partition_manager.hpp"
-#include "test_fixtures.hpp"
-#include <iostream>
 
 using namespace std;
 
+#define TEST_DEFAULT_PARTITION_NAME "nvs"
+
 TEST_CASE("Storage iterator recognizes blob with VerOffset::VER_1_OFFSET", "[nvs_storage]")
 {
-    const uint32_t NVS_FLASH_SECTOR = 6;
-    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
-    PartitionEmulationFixture f(0, 10, "test");
+    // Positive TC for Storage iterator recognizing a blob with VerOffset::VER_1_OFFSET
 
-    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
-            == ESP_OK);
+    // Erase the partition before testing
+    REQUIRE(nvs_flash_erase_partition(TEST_DEFAULT_PARTITION_NAME) == ESP_OK);
+
+    // Init the default partition
+    REQUIRE(nvs_flash_init_partition(TEST_DEFAULT_PARTITION_NAME) == ESP_OK);
 
     uint8_t blob [] = {0x0, 0x1, 0x2, 0x3};
     uint8_t blob_new [] = {0x3, 0x2, 0x1, 0x0};
-    nvs::Storage *storage = nvs::NVSPartitionManager::get_instance()->lookup_storage_from_name("test");
+    nvs::Storage *storage = nvs::NVSPartitionManager::get_instance()->lookup_storage_from_name(TEST_DEFAULT_PARTITION_NAME);
     uint8_t ns_index;
+
+    REQUIRE(storage != nullptr);
     storage->createOrOpenNamespace("test_ns", true, ns_index);
 
     CHECK(storage->writeItem(ns_index, nvs::ItemType::BLOB, "test_blob", blob, sizeof(blob)) == ESP_OK);
@@ -43,5 +47,5 @@ TEST_CASE("Storage iterator recognizes blob with VerOffset::VER_1_OFFSET", "[nvs
     CHECK(string(it.entry_info.key) == string("test_blob"));
     CHECK(it.entry_info.type == NVS_TYPE_BLOB);
 
-    REQUIRE(nvs::NVSPartitionManager::get_instance()->deinit_partition("test") == ESP_OK);
+    REQUIRE(nvs_flash_deinit_partition(TEST_DEFAULT_PARTITION_NAME) == ESP_OK);
 }

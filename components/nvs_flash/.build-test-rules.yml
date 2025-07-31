@@ -1,8 +1,8 @@
 components/nvs_flash/host_test:
   depends_components:
-    - spi_flash
     - nvs_flash
     - nvs_sec_provider
+    - esp_blockdev
     - esp_partition
     - esp_blockdev
   enable:
