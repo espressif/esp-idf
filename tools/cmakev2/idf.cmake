@@ -50,6 +50,24 @@ function(__init_idf_path)
 endfunction()
 
 #[[
+   __init_git()
+
+   Determine the executable.
+
+   Set the GIT build property.
+#]]
+function(__init_git)
+    find_package(Git)
+    if(NOT GIT_FOUND)
+        idf_build_set_property(GIT NOTFOUND)
+        idf_warn("Git executable not found.")
+        return()
+    endif()
+
+    idf_build_set_property(GIT "${GIT_EXECUTABLE}")
+endfunction()
+
+#[[
    __init_python()
 
    Determine Python interpreter, either from the PYTHON CMake cache variable
@@ -331,6 +349,9 @@ idf_build_set_property(BUILD_DIR "${CMAKE_BINARY_DIR}")
 # Initialize IDF_PATH and set it as a global and environmental variable, as
 # well as a build property.
 __init_idf_path()
+
+# Determine git executable and set GIT build property.
+__init_git()
 
 # Determine the Python interpreter and check package dependencies if necessary.
 __init_python()
