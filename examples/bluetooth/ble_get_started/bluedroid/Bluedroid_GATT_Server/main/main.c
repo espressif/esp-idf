@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -187,6 +187,7 @@ static void heart_gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_ga
         gl_profile_tab[HEART_PROFILE_APP_ID].service_id.id.uuid.uuid.uuid16 = HEART_RATE_SVC_UUID;
 
         //config adv data
+        adv_config_done |= ADV_CONFIG_FLAG;
         esp_err_t ret = esp_ble_gap_config_adv_data(&adv_data);
         if (ret) {
             ESP_LOGE(GATTS_TAG, "config adv data failed, error code = %x", ret);
@@ -243,17 +244,21 @@ static void heart_gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_ga
         if (gl_profile_tab[HEART_PROFILE_APP_ID].descr_handle == param->write.handle && param->write.len == 2) {
             uint16_t descr_value = param->write.value[1]<<8 | param->write.value[0];
             if (descr_value == 0x0001) {
-                if (heart_property & ESP_GATT_CHAR_PROP_BIT_NOTIFY) {
-                    ESP_LOGI(GATTS_TAG, "Notification enable");
-                    uint8_t notify_data[15];
-                    for (int i = 0; i < sizeof(notify_data); i++) {
-                        notify_data[i] = i%0xff;
+                if (heart_property & ESP_GATT_CHAR_PROP_BIT_INDICATE) {
+                    ESP_LOGI(GATTS_TAG, "Indication enable");
+                    indicate_enabled = true;
+                    uint8_t indicate_data[15];
+                    for (int i = 0; i < sizeof(indicate_data); i) {
+                        indicate_data[i] = i % 0xff;
                     }
-                    //the size of notify_data[] need less than MTU size
-                    esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[HEART_PROFILE_APP_ID].char_handle,
-                                            sizeof(notify_data), notify_data, false);
+                    uint16_t mtu = 23;
+                    esp_ble_gatt_get_mtu(param->write.conn_id, &mtu);
+                    uint16_t len = (mtu - 3 < sizeof(indicate_data)) ? mtu - 3 : sizeof(indicate_data);
+                    esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id,
+                                                gl_profile_tab[HEART_PROFILE_APP_ID].char_handle,
+                                                len, indicate_data, true);
                 }
-            } else if (descr_value == 0x0002) {
+             } else if (descr_value == 0x0002) {
                 if (heart_property & ESP_GATT_CHAR_PROP_BIT_INDICATE) {
                     ESP_LOGI(GATTS_TAG, "Indication enable");
                     indicate_enabled = true;
@@ -302,9 +307,10 @@ static void heart_gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_ga
     case ESP_GATTS_SET_ATTR_VAL_EVT:
         ESP_LOGI(GATTS_TAG, "Attribute value set, status %d", param->set_attr_val.status);
         if (indicate_enabled) {
-            uint8_t indicate_data[2] = {0};
-            memcpy(indicate_data, heart_rate_val, sizeof(heart_rate_val));
-            esp_ble_gatts_send_indicate(gatts_if, gl_profile_tab[HEART_PROFILE_APP_ID].conn_id, gl_profile_tab[HEART_PROFILE_APP_ID].char_handle, sizeof(indicate_data), indicate_data, true);
+            uint16_t length = sizeof(heart_rate_val);
+            esp_ble_gatts_send_indicate(gatts_if, gl_profile_tab[HEART_PROFILE_APP_ID].conn_id,
+                                        gl_profile_tab[HEART_PROFILE_APP_ID].char_handle,
+                                        length, heart_rate_val, true);
         }
         break;
     default:
@@ -362,12 +368,14 @@ static void auto_io_gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_
     case ESP_GATTS_WRITE_EVT:
         ESP_LOGI(GATTS_TAG, "Characteristic write, value len %u, value ", param->write.len);
         ESP_LOG_BUFFER_HEX(GATTS_TAG, param->write.value, param->write.len);
-        if (param->write.value[0]) {
-            ESP_LOGI(GATTS_TAG, "LED ON!");
-            led_on();
-        } else {
-            ESP_LOGI(GATTS_TAG, "LED OFF!");
-            led_off();
+        if (param->write.len > 0) {
+            if (param->write.value[0]) {
+                ESP_LOGI(GATTS_TAG, "LED ON!");
+                led_on();
+            } else {
+                ESP_LOGI(GATTS_TAG, "LED OFF!");
+                led_off();
+            }
         }
         example_write_event_env(gatts_if, param);
         break;
@@ -501,6 +509,12 @@ void app_main(void)
     ret = esp_ble_gatt_set_local_mtu(500);
     if (ret) {
         ESP_LOGE(GATTS_TAG, "set local  MTU failed, error code = %x", ret);
+    }
+
+    ret = esp_ble_gap_start_advertising(&adv_params);
+    if (ret) {
+        ESP_LOGE(GATTS_TAG, "start adv error, error code = %x", ret);
+        return;
     }
 
     xTaskCreate(heart_rate_task, "Heart Rate", 2 * 1024, NULL, 5, NULL);
