@@ -76,7 +76,7 @@ else()
                                     # [refactor-todo] requirements due to init code,
                                     # should be removable once using component init functions
                                     # link-time registration is used.
-                                    bootloader_support esp_pm
+                                    bootloader_support esp_pm esp_usb_cdc_rom_console
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 

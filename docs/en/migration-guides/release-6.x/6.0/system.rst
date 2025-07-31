@@ -180,3 +180,9 @@ The ``CONFIG_APPTRACE_GCOV_ENABLE`` option has been renamed to ``CONFIG_ESP_GCOV
 **Header File Changes**
 
 For the gcov functionality, include the ``esp_gcov.h`` header file instead of ``esp_app_trace.h``.
+
+System Console (STDIO)
+----------------------
+
+``esp_vfs_cdcacm.h`` has been moved to the new component ``esp_usb_cdc_rom_console``, you will now have to add an explicit ``REQUIRES`` for ``esp_usb_cdc_rom_console`` if using any functions from this header.
+

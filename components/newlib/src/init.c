@@ -14,7 +14,7 @@ ESP_SYSTEM_INIT_FN(init_libc, CORE, BIT(0), 102)
     return ESP_OK;
 }
 
-ESP_SYSTEM_INIT_FN(init_libc_stdio, CORE, BIT(0), 115)
+ESP_SYSTEM_INIT_FN(init_libc_stdio, CORE, BIT(0), 120)
 {
 #if CONFIG_VFS_SUPPORT_IO
     esp_libc_init_global_stdio("/dev/console");

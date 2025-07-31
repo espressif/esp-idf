@@ -38,6 +38,7 @@ idf_component_register(SRCS ${srcs}
                     REQUIRES "${requires}"
                     PRIV_REQUIRES esp_driver_uart
                                   esp_driver_usb_serial_jtag
+                                  esp_usb_cdc_rom_console
                     )
 
 if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10085

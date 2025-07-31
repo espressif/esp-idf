@@ -55,9 +55,10 @@ CORE: 105: init_newlib_time in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 110: init_vfs_uart in components/esp_driver_uart/src/uart_vfs.c on BIT(0)
 CORE: 111: init_vfs_usj in components/esp_driver_usb_serial_jtag/src/usb_serial_jtag_vfs.c on BIT(0)
 CORE: 112: init_vfs_usj_sec in components/esp_driver_usb_serial_jtag/src/usb_serial_jtag_vfs.c on BIT(0)
-CORE: 113: init_vfs_nullfs in components/vfs/nullfs.c on BIT(0)
-CORE: 114: init_vfs_console in components/esp_vfs_console/vfs_console.c on BIT(0)
-CORE: 115: init_libc_stdio in components/newlib/src/init.c on BIT(0)
+CORE: 113: init_vfs_usb_cdc_rom_console in components/esp_usb_cdc_rom_console/vfs_cdcacm.c on BIT(0)
+CORE: 118: init_vfs_nullfs in components/vfs/nullfs.c on BIT(0)
+CORE: 119: init_vfs_console in components/esp_vfs_console/vfs_console.c on BIT(0)
+CORE: 120: init_libc_stdio in components/newlib/src/init.c on BIT(0)
 
 CORE: 130: init_flash in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 140: init_efuse in components/efuse/src/esp_efuse_startup.c on BIT(0)
@@ -112,7 +113,7 @@ SECONDARY: 205: init_bootloader_offset in components/esp_system/startup_funcs.c 
 
 # usb_console needs to create an esp_timer at startup.
 # This can be done only after esp_timer initialization (esp_timer_init_os).
-SECONDARY: 220: esp_usb_console_init_restart_timer in components/esp_system/port/usb_console.c on BIT(0)
+SECONDARY: 220: esp_usb_console_init_restart_timer in components/esp_usb_cdc_rom_console/usb_console.c on BIT(0)
 
 # usb_serial_jtag needs to create and acquire a PM lock at startup.
 # This makes more sense to be done after esp_pm_impl_init (called from init_pm).

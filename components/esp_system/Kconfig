@@ -25,7 +25,6 @@ menu "ESP System Settings"
             - Unified Behavior Sanitizer (UBSAN) hook
             - Interrupt watchdog handler
             - XTAL32K watchdog timer
-            - USB CDC functions for the esp_rom_printf (if ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF=y)
             - IPC and IPC ISR
 
     choice ESP_SYSTEM_PANIC

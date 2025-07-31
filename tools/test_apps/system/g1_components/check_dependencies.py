@@ -2,10 +2,6 @@
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import argparse
 import logging
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
 
 g1_g0_components = [
     'hal',
@@ -27,7 +23,7 @@ g1_g0_components = [
 
 # Global expected dependency violations that apply to all targets
 expected_dep_violations = {
-    'esp_system': ['esp_timer', 'bootloader_support', 'esp_pm'],
+    'esp_system': ['esp_timer', 'bootloader_support', 'esp_pm', 'esp_usb_cdc_rom_console'],
     'spi_flash': ['bootloader_support'],
     'esp_hw_support': ['efuse', 'bootloader_support', 'esp_driver_gpio', 'esp_timer', 'esp_pm'],
     'cxx': ['pthread'],
@@ -46,7 +42,7 @@ target_specific_expected_dep_violations = {
 }
 
 
-def merge_expected_violations(target: Optional[str] = None) -> Dict[str, List[str]]:
+def merge_expected_violations(target: str | None = None) -> dict[str, list[str]]:
     """
     Merge global and target-specific expected dependency violations.
 
@@ -75,13 +71,13 @@ def merge_expected_violations(target: Optional[str] = None) -> Dict[str, List[st
     return merged_violations
 
 
-def parse_dependencies(file_path: str, target: Optional[str] = None) -> Tuple[Dict[str, List[str]], List[str]]:
+def parse_dependencies(file_path: str, target: str | None = None) -> tuple[dict[str, list[str]], list[str]]:
     new_dependency_errors = []
 
     # Get merged expected violations for the specified target
     merged_expected_violations = merge_expected_violations(target)
 
-    with open(file_path, 'r') as file:
+    with open(file_path) as file:
         for line in file:
             line = line.strip(' ;')
 
