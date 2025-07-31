@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,4 +90,12 @@ esp_err_t esp_cam_ctlr_del(esp_cam_ctlr_handle_t handle)
     ESP_RETURN_ON_FALSE(handle->del, ESP_ERR_NOT_SUPPORTED, TAG, "controller driver function not supported");
 
     return handle->del(handle);
+}
+
+void *esp_cam_ctlr_alloc_buffer(esp_cam_ctlr_handle_t handle, size_t size, uint32_t buf_caps)
+{
+    ESP_RETURN_ON_FALSE(handle, NULL, TAG, "invalid argument: null pointer");
+    ESP_RETURN_ON_FALSE(handle->alloc_buffer, NULL, TAG, "alloc_buffer function not supported");
+
+    return handle->alloc_buffer(handle, size, buf_caps);
 }
