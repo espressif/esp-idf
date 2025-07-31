@@ -9,6 +9,7 @@
     build-system
     peripherals
     provisioning
+    protocols
     security
     tools
     system

@@ -162,12 +162,6 @@ examples/protocols/l2tap:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
 
-examples/protocols/modbus:
-  <<: *default_rules
-  depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
-    - examples/protocols/modbus/mb_example_common/**/*
-
 examples/protocols/mqtt/custom_outbox:
   <<: *mqtt_dependencies
 

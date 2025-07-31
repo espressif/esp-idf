@@ -17,7 +17,7 @@ menu "Echo Example Configuration"
         range 1200 115200
         default 115200
         help
-            UART communication speed for Modbus example.
+            UART communication speed.
 
     config EXAMPLE_UART_RXD
         int "UART RXD pin number"
