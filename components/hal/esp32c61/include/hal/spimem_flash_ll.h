@@ -624,9 +624,37 @@ static inline void spimem_flash_ll_set_hold(spi_mem_dev_t *dev, uint32_t hold_n)
     // Not supported on esp32c61
 }
 
+/**
+ * Set CS setup time.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param cs_setup_time CS setup time config used by the host.
+ */
 static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_setup_time)
 {
     // Not supported on esp32c61
+}
+
+/**
+ * Set extra dummy.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param extra_dummy Extra dummy
+ */
+static inline void spimem_flash_ll_set_extra_dummy(spi_mem_dev_t *dev, uint32_t extra_dummy)
+{
+    //for compatibility
+}
+
+/**
+ * Set FDUMMY_RIN.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param fdummy_rin fdummy_rin value
+ */
+static inline void spimem_flash_ll_set_fdummy_rin(spi_mem_dev_t *dev, uint32_t fdummy_rin)
+{
+    dev->ctrl.fdummy_rin = fdummy_rin;
 }
 
 /**
