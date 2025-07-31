@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,8 @@
 #define UART_LL_FIFO_DEF_LEN  (SOC_UART_FIFO_LEN)
 // Get UART hardware instance with giving uart num
 #define UART_LL_GET_HW(num) (((num) == UART_NUM_0) ? (&UART0) : (&UART1))
+// Get UART sleep clock with giving uart num
+#define UART_LL_SLEEP_CLOCK(num) (((num) == UART_NUM_0) ? (ESP_SLEEP_CLOCK_UART0) : (ESP_SLEEP_CLOCK_UART1))
 
 #define UART_LL_PULSE_TICK_CNT_MAX          UART_LOWPULSE_MIN_CNT_V
 
@@ -784,15 +786,15 @@ FORCE_INLINE_ATTR void uart_ll_set_wakeup_mode(uart_dev_t *hw, uart_wakeup_mode_
     case UART_WK_MODE_ACTIVE_THRESH:
         hw->sleep_conf2.wk_mode_sel = 0;
         break;
-    // case UART_WK_MODE_FIFO_THRESH:        // TODO: [ESP32H4] PM-457
-    //     hw->sleep_conf2.wk_mode_sel = 1;
-    //     break;
-    // case UART_WK_MODE_START_BIT:
-    //     hw->sleep_conf2.wk_mode_sel = 2;
-    //     break;
-    // case UART_WK_MODE_CHAR_SEQ:
-    //     hw->sleep_conf2.wk_mode_sel = 3;
-    //     break;
+    case UART_WK_MODE_FIFO_THRESH:
+        hw->sleep_conf2.wk_mode_sel = 1;
+        break;
+    case UART_WK_MODE_START_BIT:
+        hw->sleep_conf2.wk_mode_sel = 2;
+        break;
+    case UART_WK_MODE_CHAR_SEQ:
+        hw->sleep_conf2.wk_mode_sel = 3;
+        break;
     default:
         abort();
         break;
