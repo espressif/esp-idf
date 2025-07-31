@@ -5,17 +5,22 @@ include_guard(GLOBAL)
 
 cmake_minimum_required(VERSION 3.22)
 
-# Update CMAKE_MODULE_PATH to ensure that other build system modules can be
-# included.
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}" ${CMAKE_MODULE_PATH})
+# Update the CMAKE_MODULE_PATH to ensure that additional cmakev2 build system
+# modules can be included. The third_party directory from cmakev1 is also
+# included for third-party modules shared with cmakev1.
+set(CMAKE_MODULE_PATH
+    "${CMAKE_CURRENT_LIST_DIR}"
+    "${CMAKE_CURRENT_LIST_DIR}/../cmake/third_party"
+    ${CMAKE_MODULE_PATH})
 
-# The version.cmake file, which contains the IDF_VERSION variables, is the only
-# file included from the cmakev1 build system.
+# The version.cmake file contains the IDF_VERSION variables, which are the same
+# for both cmakev1 and cmakev2.
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/version.cmake)
 
 include(component)
 include(build)
 include(kconfig)
+include(GetGitRevisionDescription)
 
 #[[
    __init_idf_path()
@@ -65,6 +70,35 @@ function(__init_git)
     endif()
 
     idf_build_set_property(GIT "${GIT_EXECUTABLE}")
+endfunction()
+
+#[[
+   __init_idf_version()
+
+   Determine the IDF version from the version.txt file. If it is not present,
+   use git-describe. If both previous attempts fail, use the IDF_VERSION from
+   the environment variables as a fallback.
+
+   Set IDF_VER build property.
+#]]
+function(__init_idf_version)
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(git GIT)
+    if(EXISTS "${idf_path}/version.txt")
+        file(STRINGS "${idf_path}/version.txt" idf_ver)
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${idf_path}/version.txt")
+    else()
+        # Try to get the version using git-describe.
+        git_describe(idf_ver "${idf_path}" "--match=v*.*")
+        if(NOT idf_ver)
+            # The Git describe command failed unexpectedly, so the version is
+            # set to IDF_VERSION as specified in version.cmake.
+            set(idf_ver "$ENV{IDF_VERSION}")
+        endif()
+    endif()
+    # Trim IDF_VER to the necessary 32 characters.
+    string(SUBSTRING "${idf_ver}" 0 31 idf_ver)
+    idf_build_set_property(IDF_VER ${idf_ver})
 endfunction()
 
 #[[
@@ -352,6 +386,9 @@ __init_idf_path()
 
 # Determine git executable and set GIT build property.
 __init_git()
+
+# Initialize the IDF_VER build property.
+__init_idf_version()
 
 # Determine the Python interpreter and check package dependencies if necessary.
 __init_python()
