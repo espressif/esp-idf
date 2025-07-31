@@ -46,7 +46,6 @@ api-reference/peripherals/lcd/spi_lcd.rst
 api-reference/peripherals/lcd/dsi_lcd.rst
 api-reference/peripherals/lcd/index.rst
 api-reference/peripherals/lcd/rgb_lcd.rst
-api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/parlio.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/index.rst
