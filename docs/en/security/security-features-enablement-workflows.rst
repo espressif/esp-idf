@@ -406,7 +406,13 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
             espsecure.py generate_signing_key --version 2 --scheme ecdsa256 secure_boot_signing_key.pem
 
-        The scheme in the above command can be changed to ``ecdsa192`` to generate ecdsa192 private key.
+        .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
+
+           The scheme in the above command can be changed to ``ecdsa192`` to generate ecdsa192 private key.
+
+        .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+           The scheme in the above command can be changed to ``ecdsa384`` or ``ecdsa192`` to generate ecdsa384 or ecdsa192 private key.
 
     .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
@@ -466,6 +472,15 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
             espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse SECURE_BOOT_EN
 
+    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+        In case Secure Boot v2 is enabled with the ECDSA-P384 signature scheme, SHA-384 must be used to calculate the digest of the image. Thus, the following eFuse needs to be burned:
+
+        .. code:: bash
+
+            espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse SECURE_BOOT_SHA384_EN
+
+
 5. Burn relevant eFuses
 
     A) Burn security eFuses
@@ -485,7 +500,8 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
         :SOC_EFUSE_DIS_USB_JTAG: - ``DIS_USB_JTAG``: Disable USB switch to JTAG.
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``: Disable JTAG permanently.
         :SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS: - ``SECURE_BOOT_AGGRESSIVE_REVOKE``: Aggressive revocation of key digests, see :ref:`secure-boot-v2-aggressive-key-revocation` for more details.
-        :SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED: - ``WR_DIS_ECDSA_CURVE_MODE``: Disable ECDSA curve mode.
+        :SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED: - ``WR_DIS_ECDSA_CURVE_MODE``: Disable writing to the ECDSA curve mode eFuse bit.
+        :SOC_ECDSA_SUPPORT_CURVE_P384: - ``WR_DIS_SECURE_BOOT_SHA384_EN``: Disable writing to the SHA-384 secure boot eFuse bit.
 
     The respective eFuses can be burned by running:
 

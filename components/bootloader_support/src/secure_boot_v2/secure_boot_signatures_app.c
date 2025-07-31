@@ -73,7 +73,7 @@ static esp_err_t calculate_image_public_key_digests(bool verify_image_digest, bo
     }
 
     uint8_t image_digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
-    uint8_t __attribute__((aligned(4))) key_digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
+    uint8_t __attribute__((aligned(4))) key_digest[ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN] = {0};
     size_t sig_block_addr = img_metadata.start_addr + ALIGN_UP(img_metadata.image_len, FLASH_SECTOR_SIZE);
 
     ESP_LOGD(TAG, "calculating public key digests for sig blocks of image offset 0x%"PRIu32" (sig block offset 0x%u)", img_metadata.start_addr, sig_block_addr);
@@ -81,7 +81,11 @@ static esp_err_t calculate_image_public_key_digests(bool verify_image_digest, bo
     bzero(public_key_digests, sizeof(esp_image_sig_public_key_digests_t));
 
     if (verify_image_digest) {
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+        ret = bootloader_sha384_flash_contents(img_metadata.start_addr, sig_block_addr - img_metadata.start_addr, image_digest);
+#else
         ret = bootloader_sha256_flash_contents(img_metadata.start_addr, sig_block_addr - img_metadata.start_addr, image_digest);
+#endif
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error generating image digest, %d", ret);
             return ret;
@@ -118,7 +122,7 @@ static esp_err_t calculate_image_public_key_digests(bool verify_image_digest, bo
                         ESP_LOGD(TAG, "Signature block (%d) is verified", i);
                     }
                     /* Copy the key digest to the buffer provided by the caller */
-                    memcpy((void *)public_key_digests->key_digests[public_key_digests->num_digests], key_digest, ESP_SECURE_BOOT_DIGEST_LEN);
+                    memcpy((void *)public_key_digests->key_digests[public_key_digests->num_digests], key_digest, ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN);
                 }
                 public_key_digests->num_digests++;
             }
@@ -184,14 +188,19 @@ static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t 
 
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
-    uint8_t digest[ESP_SECURE_BOOT_KEY_DIGEST_LEN] = {0};
-    uint8_t verified_digest[ESP_SECURE_BOOT_KEY_DIGEST_LEN] = {0};
+    esp_err_t err = ESP_FAIL;
+    uint8_t digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
 
     /* Rounding off length to the upper 4k boundary */
     uint32_t padded_length = ALIGN_UP(length, FLASH_SECTOR_SIZE);
     ESP_LOGD(TAG, "verifying signature src_addr 0x%"PRIx32" length 0x%"PRIx32, src_addr, length);
 
-    esp_err_t err = bootloader_sha256_flash_contents(src_addr, padded_length, digest);
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+    err = bootloader_sha384_flash_contents(src_addr, padded_length, digest);
+#else
+    err = bootloader_sha256_flash_contents(src_addr, padded_length, digest);
+#endif
+
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Digest calculation failed 0x%"PRIx32", 0x%"PRIx32, src_addr, padded_length);
         return err;
@@ -203,7 +212,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
         return ESP_FAIL;
     }
 
-    err = esp_secure_boot_verify_sbv2_signature_block(sig_block, digest, verified_digest);
+    err = esp_secure_boot_verify_sbv2_signature_block(sig_block, digest, NULL);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Secure Boot V2 verification failed.");
     }
@@ -218,9 +227,11 @@ esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_sign
 {
     bool any_trusted_key = false;
 
-    /* Note: in IDF verification we don't add any fault injection resistance, as we don't expect this to be called
-        during boot-time verification. */
-    memset(verified_digest, 0, ESP_SECURE_BOOT_KEY_DIGEST_LEN);
+    if (verified_digest != NULL) {
+        /* Note: in IDF verification we don't add any fault injection resistance, as we don't expect this to be called
+            during boot-time verification. */
+        memset(verified_digest, 0, ESP_SECURE_BOOT_DIGEST_LEN);
+    }
 
     esp_image_sig_public_key_digests_t trusted = {0};
 
@@ -237,7 +248,7 @@ esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_sign
 #endif
 
     for (unsigned app_blk_idx = 0; app_blk_idx < secure_boot_num_blocks; app_blk_idx++) {
-        uint8_t app_blk_digest[ESP_SECURE_BOOT_DIGEST_LEN] = { 0 };
+        uint8_t app_blk_digest[ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN] = { 0 };
         const ets_secure_boot_sig_block_t *app_blk = &sig_block->block[app_blk_idx];
         const ets_secure_boot_sig_block_t *trusted_block = NULL;
 

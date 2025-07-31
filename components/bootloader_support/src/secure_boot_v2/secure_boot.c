@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,16 +69,21 @@ static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *blo
 */
 static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uint32_t flash_size, esp_image_sig_public_key_digests_t *public_key_digests)
 {
-    esp_err_t ret;
+    esp_err_t ret = ESP_FAIL;
     uint8_t image_digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
-    uint8_t __attribute__((aligned(4))) key_digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
+    uint8_t __attribute__((aligned(4))) key_digest[ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN] = {0};
     size_t sig_block_addr = flash_offset + ALIGN_UP(flash_size, FLASH_SECTOR_SIZE);
 
     ESP_LOGD(TAG, "calculating public key digests for sig blocks of image offset 0x%" PRIx32 " (sig block offset 0x%x)", flash_offset, sig_block_addr);
 
     bzero(public_key_digests, sizeof(esp_image_sig_public_key_digests_t));
 
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+    ret = bootloader_sha384_flash_contents(flash_offset, sig_block_addr - flash_offset, image_digest);
+#else
     ret = bootloader_sha256_flash_contents(flash_offset, sig_block_addr - flash_offset, image_digest);
+#endif
+
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "error generating image digest, %d", ret);
         return ret;
@@ -129,7 +134,7 @@ static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uin
         }
         ESP_LOGD(TAG, "Signature block (%d) is verified", i);
         /* Copy the key digest to the buffer provided by the caller */
-        memcpy((void *)public_key_digests->key_digests[i], key_digest, ESP_SECURE_BOOT_DIGEST_LEN);
+        memcpy((void *)public_key_digests->key_digests[i], key_digest, ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN);
         public_key_digests->num_digests++;
     }
 
@@ -317,7 +322,7 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
         }
 
         for (unsigned j = 0; j < tee_key_digests.num_digests; j++) {
-            if (!memcmp(boot_key_digests.key_digests[i], tee_key_digests.key_digests[j], ESP_SECURE_BOOT_DIGEST_LEN)) {
+            if (!memcmp(boot_key_digests.key_digests[i], tee_key_digests.key_digests[j], ESP_SECURE_BOOT_KEY_DIGEST_LEN)) {
                 ESP_LOGI(TAG, "TEE key(%d) matches with bootloader key(%d).", j, i);
                 tee_match = true;
             }
