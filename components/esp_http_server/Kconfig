@@ -63,4 +63,13 @@ menu "HTTP Server"
         help
             This config option helps in setting the time in millisecond to wait for event to be posted to the
             system default event loop. Set it to -1 if you need to set timeout to portMAX_DELAY.
+
+    config HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT
+        bool "WebSocket pre-handshake callback support"
+        default n
+        depends on HTTPD_WS_SUPPORT
+        help
+            Enable this option to use WebSocket pre-handshake callback. This will allow the server to register
+            a callback function that will be called before the WebSocket handshake is processed i.e. before switching
+            to the WebSocket protocol.
 endmenu
