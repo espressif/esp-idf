@@ -144,6 +144,11 @@ examples/system/light_sleep:
       temporary: true
       reason: target(s) is not supported yet
 
+examples/system/nmi_isr:
+  enable:
+    - if: IDF_TARGET_ARCH_XTENSA == 1
+      reason: test NMI for Xtensa targets only
+
 examples/system/ota/advanced_https_ota:
   disable:
     - if: IDF_TARGET in ["esp32h2", "esp32p4"]

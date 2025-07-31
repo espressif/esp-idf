@@ -43,8 +43,8 @@ const static intr_desc_t intr_desc_table [SOC_CPU_INTR_NUM] = {
     [11] = { 3, ESP_CPU_INTR_TYPE_NA,    ESP_CPU_INTR_DESC_FLAG_SPECIAL },
     [12] = { 1, ESP_CPU_INTR_TYPE_LEVEL, 0                              },
     [13] = { 1, ESP_CPU_INTR_TYPE_LEVEL, 0                              },
-    /* Interrupt 14 reserved for NMI (Non-Maskable Interrupts) */
-    [14] = { 7, ESP_CPU_INTR_TYPE_LEVEL, ESP_CPU_INTR_DESC_FLAG_RESVD   },
+    /* Interrupt 14 is NMI (Non-Maskable Interrupts) */
+    [14] = { 7, ESP_CPU_INTR_TYPE_LEVEL, 0                              },
 #if CONFIG_FREERTOS_CORETIMER_1
     [15] = { 3, ESP_CPU_INTR_TYPE_NA,    ESP_CPU_INTR_DESC_FLAG_RESVD   },
 #else
