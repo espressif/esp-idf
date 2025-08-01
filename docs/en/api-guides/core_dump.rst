@@ -31,7 +31,7 @@ The ELF format contains extended features and allows more information regarding 
 
 The Binary format is kept for compatibility reasons. Binary format core dump files are smaller while provide better performance.
 
-The :ref:`CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` option configures the number of task snapshots saved by the core dump.
+The :ref:`CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` option configures the number of task snapshots saved by the core dump. Crashed task registers and the stack are always saved, regardless of this configuration option. Other tasks are included in order of their priority (starting with the highest-priority ready task).
 
 Core dump data integrity checking is supported via the ``Components`` > ``Core dump`` > ``Core dump data integrity check`` option.
 
@@ -46,7 +46,6 @@ Core dump data integrity checking is supported via the ``Components`` > ``Core d
 
     The SHA256 hash algorithm provides a greater probability of detecting corruption than a CRC32 with multiple-bit errors.
 
-
 Reserved Stack Size
 ^^^^^^^^^^^^^^^^^^^
 
@@ -57,7 +56,6 @@ Setting this option to 0 bytes will cause the core dump routines to run from the
 .. note::
 
    If a separate stack is used, the recommended stack size should be larger than 1300 bytes to ensure that the core dump routines themselves do not cause a stack overflow.
-
 
 .. only:: not esp32c5
 
