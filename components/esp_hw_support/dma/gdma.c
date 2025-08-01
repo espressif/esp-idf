@@ -351,6 +351,12 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
         // burst size must be power of 2
         ESP_RETURN_ON_FALSE((max_data_burst_size & (max_data_burst_size - 1)) == 0, ESP_ERR_INVALID_ARG,
                             TAG, "invalid max_data_burst_size: %"PRIu32, max_data_burst_size);
+#if SOC_AHB_GDMA_SUPPORT_PSRAM || SOC_AXI_GDMA_SUPPORT_PSRAM
+        if (config->access_ext_mem) {
+            ESP_RETURN_ON_FALSE(max_data_burst_size <= GDMA_LL_MAX_BURST_SIZE_PSRAM, ESP_ERR_INVALID_ARG,
+                                TAG, "max_data_burst_size must not exceed %d when accessing external memory", GDMA_LL_MAX_BURST_SIZE_PSRAM);
+        }
+#endif
     }
     gdma_pair_t *pair = dma_chan->pair;
     gdma_group_t *group = pair->group;
