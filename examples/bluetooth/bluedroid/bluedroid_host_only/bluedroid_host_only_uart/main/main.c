@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -54,11 +54,11 @@ static app_gap_cb_t m_dev_info;
 static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
 {
     if (bda == NULL || str == NULL || size < 18) {
-        return NULL;
+        return "";
     }
 
     uint8_t *p = bda;
-    sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
+    snprintf(str, size, "%02x:%02x:%02x:%02x:%02x:%02x",
             p[0], p[1], p[2], p[3], p[4], p[5]);
     return str;
 }
@@ -66,20 +66,20 @@ static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
 static char *uuid2str(esp_bt_uuid_t *uuid, char *str, size_t size)
 {
     if (uuid == NULL || str == NULL) {
-        return NULL;
+        return "";
     }
 
     if (uuid->len == 2 && size >= 5) {
-        sprintf(str, "%04x", uuid->uuid.uuid16);
+        snprintf(str, size, "%04x", uuid->uuid.uuid16);
     } else if (uuid->len == 4 && size >= 9) {
-        sprintf(str, "%08"PRIx32, uuid->uuid.uuid32);
+        snprintf(str, size, "%08"PRIx32, uuid->uuid.uuid32);
     } else if (uuid->len == 16 && size >= 37) {
         uint8_t *p = uuid->uuid.uuid128;
-        sprintf(str, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+        snprintf(str,size, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
                 p[15], p[14], p[13], p[12], p[11], p[10], p[9], p[8],
                 p[7], p[6], p[5], p[4], p[3], p[2], p[1], p[0]);
     } else {
-        return NULL;
+        return "";
     }
 
     return str;
@@ -128,7 +128,7 @@ static void update_device_info(esp_bt_gap_cb_param_t *param)
     uint8_t eir_len = 0;
     esp_bt_gap_dev_prop_t *p;
 
-    ESP_LOGI(GAP_TAG, "Device found: %s", bda2str(param->disc_res.bda, bda_str, 18));
+    ESP_LOGI(GAP_TAG, "Device found: %s", bda2str(param->disc_res.bda, bda_str, sizeof(bda_str)));
     for (int i = 0; i < param->disc_res.num_prop; i++) {
         p = param->disc_res.prop + i;
         switch (p->type) {
@@ -231,18 +231,19 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
                 p_dev->state == APP_GAP_STATE_SERVICE_DISCOVERING) {
             p_dev->state = APP_GAP_STATE_SERVICE_DISCOVER_COMPLETE;
             if (param->rmt_srvcs.stat == ESP_BT_STATUS_SUCCESS) {
-                ESP_LOGI(GAP_TAG, "Services for device %s found",  bda2str(p_dev->bda, bda_str, 18));
+                ESP_LOGI(GAP_TAG, "Services for device %s found",  bda2str(p_dev->bda, bda_str, sizeof(bda_str)));
                 for (int i = 0; i < param->rmt_srvcs.num_uuids; i++) {
                     esp_bt_uuid_t *u = param->rmt_srvcs.uuid_list + i;
                     ESP_LOGI(GAP_TAG, "--%s", uuid2str(u, uuid_str, 37));
                 }
             } else {
-                ESP_LOGI(GAP_TAG, "Services for device %s not found",  bda2str(p_dev->bda, bda_str, 18));
+                ESP_LOGI(GAP_TAG, "Services for device %s not found",  bda2str(p_dev->bda, bda_str, sizeof(bda_str)));
             }
         }
         break;
     }
     case ESP_BT_GAP_RMT_SRVC_REC_EVT:
+        break;
     default: {
         ESP_LOGI(GAP_TAG, "event: %d", event);
         break;
@@ -256,7 +257,7 @@ static void bt_app_gap_start_up(void)
     /* register GAP callback function */
     esp_bt_gap_register_callback(bt_app_gap_cb);
 
-    char *dev_name = "ESP_GAP_INQRUIY";
+    char *dev_name = "ESP_GAP_INQUIRY";
     esp_bt_gap_set_device_name(dev_name);
 
     /* set discoverable and connectable mode, wait to be connected */
