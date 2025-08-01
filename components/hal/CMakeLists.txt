@@ -325,11 +325,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "touch_sens_hal.c")
     endif()
 
-    if(${target} STREQUAL "esp32")
-        list(APPEND srcs
-            "esp32/gpio_hal_workaround.c")
-    endif()
-
     if(${target} STREQUAL "esp32s2")
         list(APPEND srcs
                     "xt_wdt_hal.c"

@@ -34,21 +34,64 @@
 
 static const char *TAG = "sleep_gpio";
 
-#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-void gpio_sleep_mode_config_apply(void)
+#if CONFIG_IDF_TARGET_ESP32
+/* On ESP32, for IOs with RTC functionality, setting SLP_PU, SLP_PD couldn't change IO status
+ * from FUN_PU, FUN_PD to SLP_PU, SLP_PD at sleep.
+ */
+typedef struct gpio_slp_mode_cfg {
+    volatile uint32_t fun_pu;
+    volatile uint32_t fun_pd;
+} gpio_slp_mode_cfg_t;
+
+static DRAM_ATTR gpio_slp_mode_cfg_t gpio_cfg = {};
+
+void esp_sleep_gpio_pupd_config_workaround_apply(void)
 {
+    /* Record fun_pu and fun_pd state in bitmap */
     for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
-        if (GPIO_IS_VALID_GPIO(gpio_num)) {
-            gpio_sleep_pupd_config_apply(gpio_num);
+        int rtcio_num = rtc_io_num_map[gpio_num];
+        if (rtcio_num >= 0 && gpio_ll_sleep_sel_is_enabled(&GPIO, gpio_num)) {
+            if (rtcio_ll_is_pullup_enabled(rtcio_num)) {
+                gpio_cfg.fun_pu |= BIT(rtcio_num);
+            } else {
+                gpio_cfg.fun_pu &= ~BIT(rtcio_num);
+            }
+            if (rtcio_ll_is_pulldown_enabled(rtcio_num)) {
+                gpio_cfg.fun_pd |= BIT(rtcio_num);
+            } else {
+                gpio_cfg.fun_pd &= ~BIT(rtcio_num);
+            }
+
+            if (gpio_ll_sleep_pullup_is_enabled(&GPIO, gpio_num)) {
+                rtcio_ll_pullup_enable(rtcio_num);
+            } else {
+                rtcio_ll_pullup_disable(rtcio_num);
+            }
+            if (gpio_ll_sleep_pulldown_is_enabled(&GPIO, gpio_num)) {
+                rtcio_ll_pulldown_enable(rtcio_num);
+            } else {
+                rtcio_ll_pulldown_disable(rtcio_num);
+            }
         }
     }
 }
 
-IRAM_ATTR void gpio_sleep_mode_config_unapply(void)
+void esp_sleep_gpio_pupd_config_workaround_unapply(void)
 {
+    /* Restore fun_pu and fun_pd state from bitmap */
     for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
-        if (GPIO_IS_VALID_GPIO(gpio_num)) {
-            gpio_sleep_pupd_config_unapply(gpio_num);
+        int rtcio_num = rtc_io_num_map[gpio_num];
+        if (rtcio_num >= 0 && gpio_ll_sleep_sel_is_enabled(&GPIO, gpio_num)) {
+            if (gpio_cfg.fun_pu & BIT(rtcio_num)) {
+                rtcio_ll_pullup_enable(rtcio_num);
+            } else {
+                rtcio_ll_pullup_disable(rtcio_num);
+            }
+            if (gpio_cfg.fun_pd & BIT(rtcio_num)) {
+                rtcio_ll_pulldown_enable(rtcio_num);
+            } else {
+                rtcio_ll_pulldown_disable(rtcio_num);
+            }
         }
     }
 }
