@@ -334,7 +334,7 @@ static esp_err_t i2s_pdm_rx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     clk_info->bclk = rate * dn_sample_factor;
     /* Hardware limitation: bclk_div * dn_sample_factor / slot_num >= 96 */
     uint32_t bclk_limit = (I2S_PDM_RX_CLK_LIMIT_COEFF * slot_num + dn_sample_factor - 1) / dn_sample_factor;
-    clk_info->bclk_div = MAX(MAX(bclk_limit, I2S_PDM_RX_BCLK_DIV_MIN), clk_cfg->bclk_div);
+    clk_info->bclk_div = MAX(bclk_limit, I2S_PDM_RX_BCLK_DIV_MIN);
     clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
     clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
