@@ -2263,6 +2263,16 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
     return ESP_OK;
 }
 
+static const char* s_submode2str[] = {
+    [ESP_SLEEP_RTC_USE_RC_FAST_MODE]        = "ESP_SLEEP_RTC_USE_RC_FAST_MODE",
+    [ESP_SLEEP_DIG_USE_RC_FAST_MODE]        = "ESP_SLEEP_DIG_USE_RC_FAST_MODE",
+    [ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE]   = "ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE",
+    [ESP_SLEEP_ULTRA_LOW_MODE]              = "ESP_SLEEP_ULTRA_LOW_MODE",
+    [ESP_SLEEP_RTC_FAST_USE_XTAL_MODE]      = "ESP_SLEEP_RTC_FAST_USE_XTAL_MODE",
+    [ESP_SLEEP_DIG_USE_XTAL_MODE]           = "ESP_SLEEP_DIG_USE_XTAL_MODE",
+    [ESP_SLEEP_LP_USE_XTAL_MODE]            = "ESP_SLEEP_LP_USE_XTAL_MODE",
+};
+
 esp_err_t esp_sleep_sub_mode_config(esp_sleep_sub_mode_t mode, bool activate)
 {
     if (mode >= ESP_SLEEP_MODE_MAX) {
@@ -2275,7 +2285,10 @@ esp_err_t esp_sleep_sub_mode_config(esp_sleep_sub_mode_t mode, bool activate)
     } else {
         s_sleep_sub_mode_ref_cnt[mode]--;
     }
-    assert(s_sleep_sub_mode_ref_cnt[mode] >= 0);
+    if (s_sleep_sub_mode_ref_cnt[mode] < 0) {
+        ESP_EARLY_LOGW(TAG, "%s disabled multiple times!! (If this log appears only once after OTA upgrade, it can be ignored.)", s_submode2str[mode]);
+        s_sleep_sub_mode_ref_cnt[mode] = 0;
+    }
     portEXIT_CRITICAL_SAFE(&s_config.lock);
     return ESP_OK;
 }
@@ -2296,15 +2309,7 @@ int32_t* esp_sleep_sub_mode_dump_config(FILE *stream) {
     if (stream) {
         for (uint32_t mode = 0; mode < ESP_SLEEP_MODE_MAX; mode++) {
             fprintf(stream, LOG_COLOR_I "%s : %s (cnt = %" PRId32 ")\n" LOG_RESET_COLOR,
-                            (const char*[]){
-                                [ESP_SLEEP_RTC_USE_RC_FAST_MODE]        = "ESP_SLEEP_RTC_USE_RC_FAST_MODE",
-                                [ESP_SLEEP_DIG_USE_RC_FAST_MODE]        = "ESP_SLEEP_DIG_USE_RC_FAST_MODE",
-                                [ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE]   = "ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE",
-                                [ESP_SLEEP_ULTRA_LOW_MODE]              = "ESP_SLEEP_ULTRA_LOW_MODE",
-                                [ESP_SLEEP_RTC_FAST_USE_XTAL_MODE]      = "ESP_SLEEP_RTC_FAST_USE_XTAL_MODE",
-                                [ESP_SLEEP_DIG_USE_XTAL_MODE]           = "ESP_SLEEP_DIG_USE_XTAL_MODE",
-                                [ESP_SLEEP_LP_USE_XTAL_MODE]            = "ESP_SLEEP_LP_USE_XTAL_MODE",
-                            }[mode],
+                            s_submode2str[mode],
                             s_sleep_sub_mode_ref_cnt[mode] ? "ENABLED" : "DISABLED",
                             s_sleep_sub_mode_ref_cnt[mode]);
         }

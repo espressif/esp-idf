@@ -64,7 +64,9 @@ __attribute__((weak)) void esp_clk_init(void)
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
 #elif CONFIG_RTC_FAST_CLK_SRC_XTAL
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_XTAL);
-    esp_sleep_sub_mode_config(ESP_SLEEP_RTC_FAST_USE_XTAL_MODE, true);
+    if (esp_sleep_sub_mode_dump_config(NULL)[ESP_SLEEP_RTC_FAST_USE_XTAL_MODE] == 0) {
+        esp_sleep_sub_mode_config(ESP_SLEEP_RTC_FAST_USE_XTAL_MODE, true);
+    }
 #else
 #error "No RTC fast clock source configured"
 #endif
