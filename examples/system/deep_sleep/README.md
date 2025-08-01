@@ -14,11 +14,21 @@ The following wake up sources are demonstrated in this example (refer to the [Wa
 - **EXT1:** External wake up 1 which is tied to multiple RTC GPIOs. This example uses GPIO2 and GPIO4 to trigger a wake up with any one of the two pins are HIGH. (This wake up source is available on ESP32, ESP32-S2, ESP32-S3, ESP32-C6 and ESP32-H2.)
 - **GPIO:** Pads powered by VDD3P3_RTC can be used to trigger a wake up from deep sleep. You may choose the pin and trigger level in menuconfig. (This wake up source is unavailable on ESP32, ESP32-S2, ESP32-S3 and ESP32-H2.)
 
-Note: Some wake up sources can be disabled via configuration (see section on [project configuration](#Configure-the-project))
+> [!NOTE]
+> Some wake up sources can be disabled via configuration (see section on [project configuration](#Configure-the-project))
+>
+> It is recommended to use a development board with an external USB-UART chip to debug this example. If you're using the USB-Serial-JTAG port to view logs from this example, note that the internal USB peripheral will be disabled during deep_sleep for power saving. This will result in:
+> - Serial output interruption
+> - Host-side errors like ClearCommError failed
+> - Windows may show "Unknown USB device"
+> - Even after wakeup, USB connection may not automatically recover
+>
+> See: [USB Serial/JTAG console sleep mode considerations](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/usb-serial-jtag-console.html#sleep-mode-considerations)
 
-Warning: On ESP32, touch wake up source cannot be used together with EXT0 wake up source. If they co-exist, IDF will give a runtime error and the program will crash. By default in this example, touch wake up is enabled, and the other two are disabled. You can switch to enable the other wake up sources via menuconfig.
-
-In this example, the `CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` Kconfig option is used, which allows you to reduce the boot time of the bootloader during waking up from deep sleep. The bootloader stores in RTC memory the address of a running partition and uses it when it wakes up (ESP32-C2 does not have RTC memory, so a running partition cannot be saved there, instead the partition table is read to select an application). This example allows you to skip all image checks and speed up the boot.
+> [!WARNING]
+> On ESP32, touch wake up source cannot be used together with EXT0 wake up source. If they co-exist, IDF will give a runtime error and the program will crash. By default in this example, touch wake up is enabled, and the other two are disabled. You can switch to enable the other wake up >sources via menuconfig.
+>
+> In this example, the `CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` Kconfig option is used, which allows you to reduce the boot time of the bootloader during waking up from deep sleep. The bootloader stores in RTC memory the address of a running partition and uses it when it wakes up (ESP32-C2 does not have RTC memory, so a running partition cannot be saved there, instead the partition table is read to select an application). This example allows you to skip all image checks and speed up the boot.
 
 ## How to use example
 
