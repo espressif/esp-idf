@@ -35,7 +35,7 @@ For all ``idf.py efuse*`` commands, you now need to specify the serial port with
 Python 3.9 Deprecation
 ----------------------
 
-Python 3.9 is no longer supported. The minimum required Python version is now 3.10. Please upgrade your Python installation to version 3.10 or later. Alternatively, you can use the provided Docker images; for more information, see :ref:`idf-docker-image`.
+Python 3.9 is no longer supported. The minimum required Python version is now 3.10. Please upgrade your Python installation to version 3.10 or later. Alternatively, you can use the provided Docker images. For more information, see :ref:`idf-docker-image`.
 
 Refer to the official `Python documentation <https://docs.python.org/3/using/index.html>`_ for instructions on upgrading Python for your operating system.
 
