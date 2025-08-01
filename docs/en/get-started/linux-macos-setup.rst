@@ -104,13 +104,13 @@ Note that most of the recent versions of macOS include Python 3.9 (or older) by 
 
 To install supported Python 3 on macOS:
 
-  - With HomeBrew_, run::
+- With HomeBrew_, run::
 
-      brew install python3
+    brew install python3
 
-  - With MacPorts_, run::
+- With MacPorts_, run::
 
-      sudo port install python313
+    sudo port install python313
 
 .. note::
 
