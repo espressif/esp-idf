@@ -374,3 +374,64 @@ function(__dump_all_properties)
     idf_build_get_property(library_interfaces LIBRARY_INTERFACES)
     __dump_library_properties("${library_interfaces}")
 endfunction()
+
+#[[
+   __split(STRING <string>
+           OUTPUT <variable>
+           [SEPARATOR <sep>]
+           [REMOVE_EMPTY]
+           [STRIP])
+
+   :STRING[in]: Input string to be split.
+   :OUTPUT[out]: Output variable where the split strings will be stored.
+   :SEPARATOR[in,opt]: The separator string used to split the string.
+                       By default split the string using newlines:
+                       "\r\n", "\n", and "\r".
+   :REMOVE_EMPTY[opt]: Remove empty split strings.
+   :STRIP[opt]: Remove leading and trailing spaces from split strings.
+
+   Split the ``STRING`` using the ``SEPARATOR`` and store the resulting list of
+   split strings in ``OUTPUT``. If ``SEPARATOR`` is not provided, the split
+   will be based on newlines. When ``STRIP`` is specified, leading and trailing
+   whitespaces will be removed. If ``REMOVE_EMPTY`` is specified, empty strings
+   will be removed from the ``OUTPUT`` list.
+#]]
+function(__split)
+    set(options STRIP REMOVE_EMPTY)
+    set(one_value STRING SEPARATOR OUTPUT)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_STRING)
+        idf_die("STRING option is required")
+    endif()
+
+    if(NOT DEFINED ARG_OUTPUT)
+        idf_die("OUTPUT option is required")
+    endif()
+
+    if(NOT DEFINED ARG_SEPARATOR)
+        string(REPLACE "\r\n" "\n" ARG_STRING "${ARG_STRING}")
+        string(REPLACE "\r" "\n" ARG_STRING "${ARG_STRING}")
+        set(ARG_SEPARATOR "\n")
+    endif()
+
+    string(REPLACE "${ARG_SEPARATOR}" ";" lines "${ARG_STRING}")
+
+    if(NOT DEFINED ARG_STRIP AND NOT DEFINED ARG_REMOVE_EMPTY)
+        set(${ARG_OUTPUT} "${lines}" PARENT_SCOPE)
+        return()
+    endif()
+
+    set(filtered_lines "")
+    foreach(line IN LISTS lines)
+        if(ARG_STRIP)
+            string(STRIP "${line}" line)
+        endif()
+        if(ARG_REMOVE_EMPTY AND "${line}" STREQUAL "")
+            continue()
+        endif()
+        list(APPEND filtered_lines "${line}")
+    endforeach()
+    set(${ARG_OUTPUT} "${filtered_lines}" PARENT_SCOPE)
+endfunction()
