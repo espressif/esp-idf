@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,7 @@
 #include "soc/twai_struct.h"
 #include "soc/pcr_struct.h"
 
-#define TWAI_LL_GET_HW(controller_id) ((controller_id == 0) ? (&TWAI0) : NULL)
+#define TWAI_LL_GET_HW(controller_id) ((controller_id == 0) ? (&TWAI) : NULL)
 
 #ifdef __cplusplus
 extern "C" {
@@ -459,7 +459,7 @@ static inline bool twai_ll_check_brp_validation(uint32_t brp)
  * @param triple_sampling Triple Sampling enable/disable
  *
  * @note Must be called in reset mode
- * @note ESP32H2 brp can be any even number between 2 to 32768
+ * @note ESP32H21 brp can be any even number between 2 to 32768
  */
 __attribute__((always_inline))
 static inline void twai_ll_set_bus_timing(twai_dev_t *hw, uint32_t brp, uint32_t sjw, uint32_t tseg1, uint32_t tseg2, bool triple_sampling)

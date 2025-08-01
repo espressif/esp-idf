@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -484,215 +484,46 @@ typedef union {
     uint32_t val;
 } twai_interrupt_enable_reg_t;
 
-
 /** Group: Data Registers */
-/** Type of data_0 register
- *  Data register 0.
+/** Type of buffer register
+ *  TX RX Buffer.
  */
 typedef union {
     struct {
-        /** data_0 : R/W; bitpos: [7:0]; default: 0;
+        /** byte : R/W; bitpos: [7:0]; default: 0;
          *  In reset mode, it is acceptance code register 0 with R/W Permission. In operation
          *  mode, when software initiate write operation, it is tx data register 0 and when
          *  software initiate read operation, it is rx data register 0.
          */
-        uint32_t data_0:8;
+        uint32_t byte:8;
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} twai_data_0_reg_t;
+} twai_tx_rx_buffer_reg_t;
 
-/** Type of data_1 register
- *  Data register 1.
- */
-typedef union {
-    struct {
-        /** data_1 : R/W; bitpos: [7:0]; default: 0;
-         *  In reset mode, it is acceptance code register 1 with R/W Permission. In operation
-         *  mode, when software initiate write operation, it is tx data register 1 and when
-         *  software initiate read operation, it is rx data register 1.
-         */
-        uint32_t data_1:8;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} twai_data_1_reg_t;
+typedef struct {
+    union {
+        struct {
+            uint32_t byte: 8;           /* ACRx[7:0] Acceptance Code */
+            uint32_t reserved8: 24;     /* Internal Reserved */
+        };
+        uint32_t val;
+    } acr[4];
+    union {
+        struct {
+            uint32_t byte: 8;           /* AMRx[7:0] Acceptance Mask */
+            uint32_t reserved8: 24;     /* Internal Reserved */
+        };
+        uint32_t val;
+    } amr[4];
+    uint32_t reserved_60;
+    uint32_t reserved_64;
+    uint32_t reserved_68;
+    uint32_t reserved_6c;
+    uint32_t reserved_70;
+} acceptance_filter_reg_t;
 
-/** Type of data_2 register
- *  Data register 2.
- */
-typedef union {
-    struct {
-        /** data_2 : R/W; bitpos: [7:0]; default: 0;
-         *  In reset mode, it is acceptance code register 2 with R/W Permission. In operation
-         *  mode, when software initiate write operation, it is tx data register 2 and when
-         *  software initiate read operation, it is rx data register 2.
-         */
-        uint32_t data_2:8;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} twai_data_2_reg_t;
 
-/** Type of data_3 register
- *  Data register 3.
- */
-typedef union {
-    struct {
-        /** data_3 : R/W; bitpos: [7:0]; default: 0;
-         *  In reset mode, it is acceptance code register 3 with R/W Permission. In operation
-         *  mode, when software initiate write operation, it is tx data register 3 and when
-         *  software initiate read operation, it is rx data register 3.
-         */
-        uint32_t data_3:8;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} twai_data_3_reg_t;
-
-/** Type of data_4 register
- *  Data register 4.
- */
-typedef union {
-    struct {
-        /** data_4 : R/W; bitpos: [7:0]; default: 0;
-         *  In reset mode, it is acceptance mask register 0 with R/W Permission. In operation
-         *  mode, when software initiate write operation, it is tx data register 4 and when
-         *  software initiate read operation, it is rx data register 4.
-         */
-        uint32_t data_4:8;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} twai_data_4_reg_t;
-
-/** Type of data_5 register
- *  Data register 5.
- */
-typedef union {
-    struct {
-        /** data_5 : R/W; bitpos: [7:0]; default: 0;
-         *  In reset mode, it is acceptance mask register 1 with R/W Permission. In operation
-         *  mode, when software initiate write operation, it is tx data register 5 and when
-         *  software initiate read operation, it is rx data register 5.
-         */
-        uint32_t data_5:8;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} twai_data_5_reg_t;
-
-/** Type of data_6 register
- *  Data register 6.
- */
-typedef union {
-    struct {
-        /** data_6 : R/W; bitpos: [7:0]; default: 0;
-         *  In reset mode, it is acceptance mask register 2 with R/W Permission. In operation
-         *  mode, when software initiate write operation, it is tx data register 6 and when
-         *  software initiate read operation, it is rx data register 6.
-         */
-        uint32_t data_6:8;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} twai_data_6_reg_t;
-
-/** Type of data_7 register
- *  Data register 7.
- */
-typedef union {
-    struct {
-        /** data_7 : R/W; bitpos: [7:0]; default: 0;
-         *  In reset mode, it is acceptance mask register 3 with R/W Permission. In operation
-         *  mode, when software initiate write operation, it is tx data register 7 and when
-         *  software initiate read operation, it is rx data register 7.
-         */
-        uint32_t data_7:8;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} twai_data_7_reg_t;
-
-/** Type of data_8 register
- *  Data register 8.
- */
-typedef union {
-    struct {
-        /** data_8 : R/W; bitpos: [7:0]; default: 0;
-         *  In reset mode, reserved with RO. In operation mode, when software initiate write
-         *  operation, it is tx data register 8 and when software initiate read operation, it
-         *  is rx data register 8.
-         */
-        uint32_t data_8:8;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} twai_data_8_reg_t;
-
-/** Type of data_9 register
- *  Data register 9.
- */
-typedef union {
-    struct {
-        /** data_9 : R/W; bitpos: [7:0]; default: 0;
-         *  In reset mode, reserved with RO. In operation mode, when software initiate write
-         *  operation, it is tx data register 9 and when software initiate read operation, it
-         *  is rx data register 9.
-         */
-        uint32_t data_9:8;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} twai_data_9_reg_t;
-
-/** Type of data_10 register
- *  Data register 10.
- */
-typedef union {
-    struct {
-        /** data_10 : R/W; bitpos: [7:0]; default: 0;
-         *  In reset mode, reserved with RO. In operation mode, when software initiate write
-         *  operation, it is tx data register 10 and when software initiate read operation, it
-         *  is rx data register 10.
-         */
-        uint32_t data_10:8;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} twai_data_10_reg_t;
-
-/** Type of data_11 register
- *  Data register 11.
- */
-typedef union {
-    struct {
-        /** data_11 : R/W; bitpos: [7:0]; default: 0;
-         *  In reset mode, reserved with RO. In operation mode, when software initiate write
-         *  operation, it is tx data register 11 and when software initiate read operation, it
-         *  is rx data register 11.
-         */
-        uint32_t data_11:8;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} twai_data_11_reg_t;
-
-/** Type of data_12 register
- *  Data register 12.
- */
-typedef union {
-    struct {
-        /** data_12 : R/W; bitpos: [7:0]; default: 0;
-         *  In reset mode, reserved with RO. In operation mode, when software initiate write
-         *  operation, it is tx data register 12 and when software initiate read operation, it
-         *  is rx data register 12.
-         */
-        uint32_t data_12:8;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} twai_data_12_reg_t;
 
 
 typedef struct twai_dev_t {
@@ -710,19 +541,10 @@ typedef struct twai_dev_t {
     volatile twai_err_warning_limit_reg_t err_warning_limit;
     volatile twai_rx_err_cnt_reg_t rx_err_cnt;
     volatile twai_tx_err_cnt_reg_t tx_err_cnt;
-    volatile twai_data_0_reg_t data_0;
-    volatile twai_data_1_reg_t data_1;
-    volatile twai_data_2_reg_t data_2;
-    volatile twai_data_3_reg_t data_3;
-    volatile twai_data_4_reg_t data_4;
-    volatile twai_data_5_reg_t data_5;
-    volatile twai_data_6_reg_t data_6;
-    volatile twai_data_7_reg_t data_7;
-    volatile twai_data_8_reg_t data_8;
-    volatile twai_data_9_reg_t data_9;
-    volatile twai_data_10_reg_t data_10;
-    volatile twai_data_11_reg_t data_11;
-    volatile twai_data_12_reg_t data_12;
+    volatile union {
+        acceptance_filter_reg_t acceptance_filter;
+        twai_tx_rx_buffer_reg_t tx_rx_buffer[13];
+    };
     volatile twai_rx_message_counter_reg_t rx_message_counter;
     uint32_t reserved_078;
     volatile twai_clock_divider_reg_t clock_divider;
