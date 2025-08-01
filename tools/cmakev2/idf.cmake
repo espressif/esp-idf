@@ -349,6 +349,89 @@ function(__init_components)
 endfunction()
 
 #[[
+   __init_submodules()
+
+   Initialize submodules that are not yet initialized, and issue a warning for
+   submodules that do not match the recorded hash in the git tree.
+#]]
+function(__init_submodules)
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(git GIT)
+
+    # For internal use: Skip the submodule check if running on GitLab CI
+    # and the job is configured to not clone submodules.
+    if("$ENV{IDF_SKIP_CHECK_SUBMODULES}" STREQUAL "1")
+        idf_msg("skip submodule check on internal CI")
+        return()
+    endif()
+
+    if(NOT git)
+        idf_warn("Git executable was not found. Git submodule checks will not be executed. "
+                 "If you have any build issues at all, start by adding git executable to "
+                 "the PATH and rerun cmake to not see this warning again.")
+        return()
+    endif()
+
+    execute_process(
+        COMMAND ${git} submodule status
+        WORKING_DIRECTORY ${idf_path}
+        OUTPUT_VARIABLE status
+        ERROR_VARIABLE stderr
+        RESULT_VARIABLE rv
+    )
+
+    if(rv)
+        idf_warn("Git submodule status command failed(${rv}): ${stderr}"
+                 "Git submodule checks will not be performed. ")
+        return()
+    endif()
+
+    __split(STRING "${status}"
+            OUTPUT lines
+            REMOVE_EMPTY)
+
+    # The output of the git submodule status command is not guaranteed to be
+    # stable. It may be necessary to check the GIT_VERSION_STRING and make
+    # adjustments in the future.
+    foreach(line IN LISTS lines)
+        string(REGEX MATCH "(.)[0-9a-f]+ ([^\( ]+) ?" _ignored "${line}")
+        set(status "${CMAKE_MATCH_1}")
+        set(submodule_path "${CMAKE_MATCH_2}")
+
+        if("${status}" STREQUAL "-")  # missing submodule
+            idf_msg("Initialising new submodule ${submodule_path}...")
+            execute_process(
+                COMMAND ${git} submodule update --init --recursive ${submodule_path}
+                WORKING_DIRECTORY ${idf_path}
+                ERROR_VARIABLE stderr
+                RESULT_VARIABLE rv
+                )
+            if(rv)
+                idf_die("Git submodule '${submodule_path}' init failed(${rv}): ${stderr}")
+            endif()
+
+        elseif(NOT "${status}" STREQUAL " ")
+            idf_warn("Git submodule ${submodule_path} is out of date. "
+                     "Run the following command to fix: "
+                     "git submodule update --init --recursive")
+        endif()
+
+        # Ensure CMake is rerun if the submodule's .git file is modified or
+        # altered, such as in the case of an accidental deinitialization.
+        get_filename_component(submodule_abs_path ${submodule_path} ABSOLUTE BASE_DIR ${idf_path})
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${submodule_abs_path}/.git)
+        # If the HEAD file in the submodule's directory changes (i.e., if there
+        # are commit changes), it will at least display the 'out of date'
+        # warning.
+        set(submodule_head "${idf_path}/.git/modules/${submodule_path}/HEAD")
+        if(EXISTS "${submodule_head}")
+            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${submodule_head})
+        endif()
+
+    endforeach()
+endfunction()
+
+#[[
    The idf_build_properties interface target is exclusively used to store
    information about global build properties and is not linked or used in any
    other way. This is created very early so that all the initialization
@@ -386,6 +469,9 @@ __init_idf_path()
 
 # Determine git executable and set GIT build property.
 __init_git()
+
+# Initialize git submodules.
+__init_submodules()
 
 # Initialize the IDF_VER build property.
 __init_idf_version()
