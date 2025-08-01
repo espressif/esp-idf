@@ -230,15 +230,16 @@
 /tools/test_apps/README.md           @esp-idf-codeowners/docs @esp-idf-codeowners/ci
 
 ## Note: owners here should be the same as the owners for the same example subdir, above
-/tools/test_apps/build_system/       @esp-idf-codeowners/build-config
-/tools/test_apps/configs/            @esp-idf-codeowners/system
-/tools/test_apps/linux_compatible/   @esp-idf-codeowners/system
-/tools/test_apps/peripherals/        @esp-idf-codeowners/peripherals
-/tools/test_apps/phy/                @esp-idf-codeowners/bluetooth @esp-idf-codeowners/wifi @esp-idf-codeowners/ieee802154
-/tools/test_apps/protocols/          @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
-/tools/test_apps/security/           @esp-idf-codeowners/security
-/tools/test_apps/storage/            @esp-idf-codeowners/storage
-/tools/test_apps/system/             @esp-idf-codeowners/system
+/tools/test_apps/build_system/          @esp-idf-codeowners/build-config
+/tools/test_apps/components/test_utils/ @esp-idf-codeowners/peripherals @esp-idf-codeowners/system
+/tools/test_apps/configs/               @esp-idf-codeowners/system
+/tools/test_apps/linux_compatible/      @esp-idf-codeowners/system
+/tools/test_apps/peripherals/           @esp-idf-codeowners/peripherals
+/tools/test_apps/phy/                   @esp-idf-codeowners/bluetooth @esp-idf-codeowners/wifi @esp-idf-codeowners/ieee802154
+/tools/test_apps/protocols/             @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
+/tools/test_apps/security/              @esp-idf-codeowners/security
+/tools/test_apps/storage/               @esp-idf-codeowners/storage
+/tools/test_apps/system/                @esp-idf-codeowners/system
 
 /tools/test_apps/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 

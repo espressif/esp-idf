@@ -7,7 +7,7 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 #   - test_utils component
 #   - the different test types (e.g., kernel, port, performance, ...) that are organized as components
 set(EXTRA_COMPONENT_DIRS
-    "$ENV{IDF_PATH}/tools/unit-test-app/components"
+    "$ENV{IDF_PATH}/tools/test_apps/components"
     "./kernel"
     "./misc"
     "./performance"
