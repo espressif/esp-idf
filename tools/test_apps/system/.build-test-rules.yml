@@ -47,9 +47,9 @@ tools/test_apps/system/g1_components:
 
 tools/test_apps/system/gdb:
   disable_test:
-    - if: IDF_TARGET in ["esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c61", "esp32p4"]
+    - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61"]
       temporary: true
-      reason: lack of runners
+      reason: not supported yet # TODO: IDF-13142
 
 tools/test_apps/system/gdb_loadable_elf:
   disable_test:
