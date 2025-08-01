@@ -13,14 +13,18 @@
 import logging
 import os
 import re
+import signal
 import sys
+import time
 import xml.etree.ElementTree as ET
 from fnmatch import fnmatch
+from typing import Any
 from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Tuple
 
+import pexpect
 import pytest
 from _pytest.config import Config
 from _pytest.config import ExitCode
@@ -34,8 +38,11 @@ from _pytest.terminal import TerminalReporter
 from pytest_embedded.plugin import multi_dut_argument
 from pytest_embedded.plugin import multi_dut_fixture
 from pytest_embedded.utils import find_by_suffix
+from pytest_embedded.utils import to_bytes
+from pytest_embedded.utils import to_str
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.unity_tester import CaseTester
+from pytest_embedded_jtag._telnetlib.telnetlib import Telnet  # python 3.13 removed telnetlib, use this instead
 
 try:
     from idf_ci_utils import to_list
@@ -48,6 +55,12 @@ try:
 except ImportError:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci', 'python_packages'))
     import common_test_methods  # noqa: F401
+
+try:
+    from idf_py_actions.debug_ext import get_openocd_arguments
+except ModuleNotFoundError:
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+    from idf_py_actions.debug_ext import get_openocd_arguments
 
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2']
 PREVIEW_TARGETS: List[str] = []  # this PREVIEW_TARGETS excludes 'linux' target
@@ -254,6 +267,103 @@ def test_func_name(request: FixtureRequest) -> str:
 @pytest.fixture
 def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
     return format_case_id(target, config, request.node.originalname)
+
+
+class OpenOCD:
+    def __init__(self, dut: 'IdfDut'):
+        self.MAX_RETRIES = 3
+        self.RETRY_DELAY = 1
+        self.TELNET_PORT = 4444
+        self.dut = dut
+        self.telnet: Optional[Telnet] = None
+        self.log_file = os.path.join(self.dut.logdir, 'ocd.txt')
+        self.proc: Optional[pexpect.spawn] = None
+
+    def __enter__(self) -> 'OpenOCD':
+        return self
+
+    def __exit__(self, exception_type: Any, exception_value: Any, exception_traceback: Any) -> None:
+        self.kill()
+
+    def run(self) -> Optional['OpenOCD']:
+        openocd_scripts = os.getenv('OPENOCD_SCRIPTS')
+        if not openocd_scripts:
+            raise RuntimeError('OPENOCD_SCRIPTS environment variable is not set.')
+
+        debug_args = get_openocd_arguments(self.dut.target)
+        assert debug_args
+
+        # For debug purposes, make the value '4'
+        ocd_env = os.environ.copy()
+        ocd_env['LIBUSB_DEBUG'] = '1'
+
+        for _ in range(1, self.MAX_RETRIES + 1):
+            try:
+                self.proc = pexpect.spawn(
+                    command='openocd',
+                    args=['-s', openocd_scripts] + debug_args.split(),
+                    timeout=5,
+                    encoding='utf-8',
+                    codec_errors='ignore',
+                    env=ocd_env,
+                )
+                if self.proc and self.proc.isalive():
+                    self.proc.expect_exact('Info : Listening on port 3333 for gdb connections', timeout=5)
+                    self.connect_telnet()
+                    self.write('log_output {}'.format(self.log_file))
+                    return self
+            except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT, ConnectionRefusedError) as e:
+                logging.error('Error running OpenOCD: %s', str(e))
+                self.kill()
+            time.sleep(self.RETRY_DELAY)
+
+        raise RuntimeError('Failed to run OpenOCD after %d attempts.', self.MAX_RETRIES)
+
+    def connect_telnet(self) -> None:
+        for attempt in range(1, self.MAX_RETRIES + 1):
+            try:
+                self.telnet = Telnet('127.0.0.1', self.TELNET_PORT, 5)
+                break
+            except ConnectionRefusedError as e:
+                logging.error('Error telnet connection: %s in attempt:%d', e, attempt)
+                time.sleep(1)
+        else:
+            raise ConnectionRefusedError
+
+    def write(self, s: str) -> Any:
+        if self.telnet is None:
+            logging.error('Telnet connection is not established.')
+            return ''
+        resp = self.telnet.read_very_eager()
+        self.telnet.write(to_bytes(s, '\n'))
+        resp += self.telnet.read_until(b'>')
+        return to_str(resp)
+
+    def apptrace_wait_stop(self, timeout: int = 30) -> None:
+        stopped = False
+        end_before = time.time() + timeout
+        while not stopped:
+            cmd_out = self.write('esp apptrace status')
+            for line in cmd_out.splitlines():
+                if line.startswith('Tracing is STOPPED.'):
+                    stopped = True
+                    break
+            if not stopped and time.time() > end_before:
+                raise pexpect.TIMEOUT('Failed to wait for apptrace stop!')
+            time.sleep(1)
+
+    def kill(self) -> None:
+        # Check if the process is still running
+        if self.proc and self.proc.isalive():
+            self.proc.terminate()
+            self.proc.kill(signal.SIGKILL)
+
+
+@pytest.fixture
+def openocd_dut(dut: IdfDut) -> OpenOCD:
+    if isinstance(dut, tuple):
+        raise ValueError('Multi-DUT support is not implemented yet')
+    return OpenOCD(dut)
 
 
 @pytest.fixture

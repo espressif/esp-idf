@@ -133,6 +133,28 @@ pytest_examples_esp32s2_jtag:
     SETUP_TOOLS: "1"  # need gdb openocd
     PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
+pytest_examples_esp32c6_usb_serial_jtag:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c6
+  needs:
+    - build_pytest_examples_jtag
+  tags: [ esp32c6, usb_serial_jtag ]
+  variables:
+    SETUP_TOOLS: "1"  # need gdb openocd
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
+
+pytest_examples_esp32h2_usb_serial_jtag:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32h2
+  needs:
+    - build_pytest_examples_jtag
+  tags: [ esp32h2, usb_serial_jtag ]
+  variables:
+    SETUP_TOOLS: "1"  # need gdb openocd
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
+
 pytest_examples_esp32s3_generic:
   extends:
     - .pytest_examples_dir_template

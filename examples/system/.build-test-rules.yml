@@ -36,12 +36,6 @@ examples/system/flash_suspend:
       temporary: true
       reason: the other targets are not tested yet
 
-examples/system/gcov:
-  disable_test:
-    - if: IDF_TARGET == "esp32s3"
-      temporary: true
-      reason: unstable, known data corruption issue #TODO: OCD-1048
-
 examples/system/gdbstub:
   disable:
     - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32h2"
@@ -138,18 +132,10 @@ examples/system/select:
 examples/system/sysview_tracing:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: lack of runners
 
 examples/system/sysview_tracing_heap_log:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: lack of runners
 
 examples/system/task_watchdog:
   disable_test:
