@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -11,6 +11,8 @@
 #include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_random.h"
 #include "hal/clk_gate_ll.h"
+#include "esp_log.h"
+#include "esp_efuse.h"
 #include "hal/ecdsa_hal.h"
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_types.h"
@@ -22,6 +24,8 @@
 #include "unity_fixture.h"
 
 #include "ecdsa_params.h"
+
+__attribute__((unused)) static const char * TAG = "crypto_test";
 
 static void ecdsa_enable_and_reset(void)
 {
@@ -260,19 +264,31 @@ TEST_TEAR_DOWN(ecdsa)
 
 TEST(ecdsa, ecdsa_SECP192R1_signature_verification)
 {
-    TEST_ASSERT_EQUAL(0, test_ecdsa_verify(0, sha, ecdsa192_r, ecdsa192_s, ecdsa192_pub_x, ecdsa192_pub_y));
+    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
+    } else {
+        TEST_ASSERT_EQUAL(0, test_ecdsa_verify(0, sha, ecdsa192_r, ecdsa192_s, ecdsa192_pub_x, ecdsa192_pub_y));
+    }
 }
 
 
 TEST(ecdsa, ecdsa_SECP192R1_sign_and_verify)
 {
-    test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, 0);
+    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
+    } else {
+        test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, 0);
+    }
 }
 
 
 TEST(ecdsa, ecdsa_SECP192R1_corrupt_signature)
 {
-    test_ecdsa_corrupt_data(0, sha, ecdsa192_r, ecdsa192_s, ecdsa192_pub_x, ecdsa192_pub_y);
+    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
+    } else {
+        test_ecdsa_corrupt_data(0, sha, ecdsa192_r, ecdsa192_s, ecdsa192_pub_x, ecdsa192_pub_y);
+    }
 }
 
 
@@ -296,7 +312,11 @@ TEST(ecdsa, ecdsa_SECP256R1_corrupt_signature)
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
 TEST(ecdsa, ecdsa_SECP192R1_export_pubkey)
 {
-    test_ecdsa_export_pubkey(0, 0);
+    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
+    } else {
+        test_ecdsa_export_pubkey(0, 0);
+    }
 }
 
 TEST(ecdsa, ecdsa_SECP256R1_export_pubkey)

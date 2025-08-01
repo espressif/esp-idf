@@ -360,4 +360,11 @@ menu "Hardware Settings"
             clock support isn't done yet. So with this option,
             we use xtal on FPGA as the clock source.
 
+    config ESP_ECDSA_ENABLE_P192_CURVE
+        bool "Enable ECDSA 192-curve operations"
+        depends on SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+        default N
+        help
+            By default, only the 256-bit curve operations are allowed. If this configuration is enabled,
+            it will set the eFuse to allow ECDSA operations using both the 192-bit and 256-bit curves
 endmenu

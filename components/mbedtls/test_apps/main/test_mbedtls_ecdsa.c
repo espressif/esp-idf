@@ -1,6 +1,6 @@
 /* mbedTLS Elliptic Curve Digital Signature performance tests
  *
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,10 @@
 
 #include "ecdsa/ecdsa_alt.h"
 
+#if SOC_ECDSA_SUPPORTED
+#include "hal/ecdsa_ll.h"
+#endif
+
 #define TEST_ASSERT_MBEDTLS_OK(X) TEST_ASSERT_EQUAL_HEX32(0, -(X))
 
 #if CONFIG_NEWLIB_NANO_FORMAT
@@ -32,6 +36,8 @@
 #define NEWLIB_NANO_COMPAT_FORMAT             PRId64
 #define NEWLIB_NANO_COMPAT_CAST(int64_t_var)  int64_t_var
 #endif
+
+__attribute__((unused)) static const char * TAG = "mbedtls_test";
 
 /*
  * All the following values are in big endian format, as required by the mbedTLS APIs
