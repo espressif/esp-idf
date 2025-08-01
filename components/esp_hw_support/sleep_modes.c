@@ -2540,7 +2540,7 @@ int32_t* esp_sleep_sub_mode_dump_config(FILE *stream) {
 #if SOC_PM_SUPPORT_PMU_CLK_ICG
 esp_err_t esp_sleep_clock_config(esp_sleep_clock_t clock, esp_sleep_clock_option_t option)
 {
-    if (clock > ESP_SLEEP_CLOCK_MAX || option > ESP_SLEEP_CLOCK_OPTION_UNGATE) {
+    if (clock >= ESP_SLEEP_CLOCK_MAX || option >= ESP_SLEEP_CLOCK_OPTION_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
