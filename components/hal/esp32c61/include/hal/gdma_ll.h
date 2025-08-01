@@ -8,6 +8,7 @@
 #include "soc/pcr_struct.h"
 #include "hal/ahb_dma_ll.h"
 #define GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE 1 // AHB GDMA supports adjustable burst size
+#define GDMA_LL_MAX_BURST_SIZE_PSRAM      32 // PSRAM controller doesn't support burst access with size > 32 bytes
 
 #ifdef __cplusplus
 extern "C" {
