@@ -23,6 +23,7 @@
 #include "rsn_supp/wpa_i.h"
 #include "rsn_supp/wpa.h"
 #include "esp_private/wifi.h"
+#include "esp_wifi_types_generic.h"
 
 /* Utility Functions */
 esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
@@ -592,22 +593,53 @@ static size_t get_mbo_oce_assoc_ie(uint8_t *ie, size_t len)
     return mbo_ie_len;
 }
 
-static uint8_t get_operating_class_ie(uint8_t *ie, size_t len)
+static uint8_t get_operating_class_ie(uint8_t *bssid, uint8_t *ie, size_t len)
 {
-    uint8_t op_class_ie[4] = {0};
-    uint8_t op_class_ie_len = 2;
-    uint8_t *pos = op_class_ie;
+    size_t res = 0;
+    struct wpabuf *buf;
+    u8 *ie_len;
+    u8 op;
+    channel_bitmap_t non_pref_channels[1] = { 0 };
+    struct wpa_bss *bss = wpa_bss_get_bssid(&g_wpa_supp, bssid);
 
-    *pos++ = WLAN_EID_SUPPORTED_OPERATING_CLASSES;
-    *pos++ = op_class_ie_len;
-#define OPER_CLASS 0x51
-    /* Current Operating Class */
-    *pos++ = OPER_CLASS;
-#undef OPER_CLASS
-    *pos = 0;
-    os_memcpy(ie, op_class_ie, sizeof(op_class_ie));
+    if (!bss) {
+        wpa_printf(MSG_ERROR, "bss not found");
+        return 0;
+    }
 
-    return op_class_ie_len + 2;
+    /*
+     * Need 3 bytes for EID, length, and current operating class, plus
+     * 1 byte for every other supported operating class.
+     */
+    buf = wpabuf_alloc(global_op_class_size + 3);
+    if (!buf) {
+        return 0;
+    }
+    wpabuf_put_u8(buf, WLAN_EID_SUPPORTED_OPERATING_CLASSES);
+    /* Will set the length later, putting a placeholder */
+    ie_len = wpabuf_put(buf, 1);
+    wpabuf_put_u8(buf, get_operating_class(bss->channel, 0));
+    for (op = 0; op < global_op_class_size; op++) {
+        bool supp;
+        u8 op_class = global_op_class[op].op_class;
+        supp = esp_wifi_op_class_supported_internal(op_class, global_op_class[op].min_chan, global_op_class[op].max_chan,
+                                                    global_op_class[op].inc, global_op_class[op].bw, non_pref_channels);
+        if (!supp) {
+            continue;
+        }
+        /* Add a 1-octet operating class to the Operating Class field */
+        wpabuf_put_u8(buf, op_class);
+    }
+    if (non_pref_channels[0].ghz_2_channels != 0 || non_pref_channels[0].ghz_5_channels != 0) {
+        wpa_printf(MSG_WARNING,
+                   "It is recommended to forbid channels by operating class instead of channels for better compatibility.\n"
+                   "Non-preferred channels: 2Ghz=0x%04x, 5Ghz=0x%08x", non_pref_channels[0].ghz_2_channels, non_pref_channels[0].ghz_5_channels);
+    }
+    *ie_len = wpabuf_len(buf) - 2;
+    os_memcpy(ie, wpabuf_head(buf), wpabuf_len(buf));
+    res = wpabuf_len(buf);
+    wpabuf_free(buf);
+    return res;
 }
 #endif /* CONFIG_MBO */
 
@@ -819,7 +851,7 @@ void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
     len -= ie_len;
 #endif /* defined(CONFIG_RRM) */
 #ifdef CONFIG_MBO
-    ie_len = get_operating_class_ie(pos, len);
+    ie_len = get_operating_class_ie(bssid, pos, len);
     pos += ie_len;
     len -= ie_len;
     ie_len = get_mbo_oce_assoc_ie(pos, len);
