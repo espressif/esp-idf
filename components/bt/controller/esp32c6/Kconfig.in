@@ -893,3 +893,7 @@ menu "Reserved Memory Config"
             The actual reserved memory count will be the minimum value between the maximum
             connection instances and the BT_LE_CONN_RESERVED_MEMORY_COUNT.
 endmenu
+
+config BT_LE_DTM_ENABLED
+    bool "Enable Direct Test Mode (DTM) feature"
+    default n
