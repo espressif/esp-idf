@@ -248,7 +248,9 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
 endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-    list(APPEND compile_options "-fno-use-cxa-atexit")
+    list(APPEND compile_options "-fno-use-cxa-atexit")  # TODO IDF-10934
+else()
+    list(APPEND cxx_compile_options "-fuse-cxa-atexit")
 endif()
 
 # For the transition period from 32-bit time_t to 64-bit time_t,
