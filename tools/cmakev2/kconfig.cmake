@@ -137,7 +137,7 @@ function(__consolidate_component_kconfig_files)
             if(component_projbuild)
                 idf_build_set_property(__KCONFIG_PROJBUILDS "${component_projbuild}" APPEND)
             endif()
-        else
+        else()
             if(component_kconfig)
                 idf_build_set_property(__KCONFIGS_EXCLUDED "${component_kconfig}" APPEND)
             endif()
