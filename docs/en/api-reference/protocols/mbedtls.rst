@@ -109,7 +109,7 @@ After applying a preset, you can further customize the configuration using any o
     # After applying a preset in CMakeLists.txt
     idf.py menuconfig
 
-Navigate to ``Component Config -> mbedTLS`` to modify any settings. Your changes will override the preset defaults.
+Navigate to ``Component Config`` > ``mbedTLS`` to modify any settings. Your changes will override the preset defaults.
 
 **Method 2: Additional Configuration Files**
 
@@ -135,10 +135,10 @@ Your current manual configuration will continue to work without any changes.
 
 **Option 2: Migrate to Preset + Customization**
 
-1. **Choose a base preset** that's closest to your current configuration
-2. **Apply the preset** in your CMakeLists.txt
-3. **Use menuconfig** to adjust settings to match your requirements
-4. **Test thoroughly** to ensure functionality is maintained
+1. **Choose a base preset** that's closest to your current configuration.
+2. **Apply the preset** in your ``CMakeLists.txt``.
+3. **Use menuconfig** to adjust settings to match your requirements.
+4. **Test thoroughly** to ensure functionality is maintained.
 
 Configuration Categories
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -166,12 +166,13 @@ The new mbedTLS configuration system is organized into logical categories for ea
 **Certificate Support**
     X.509 certificate parsing, validation, and certificate bundle management.
 
+
 Application Examples
 --------------------
 
 Examples in ESP-IDF use :doc:`/api-reference/protocols/esp_tls` which provides a simplified API interface for accessing the commonly used TLS functionality.
 
-Refer to the examples :example:`protocols/https_server/simple` (Simple HTTPS server) and :example:`protocols/https_request` (Make HTTPS requests) for more information.
+Refer to the examples :example:`protocols/https_server/simple` (simple HTTPS server) and :example:`protocols/https_request` (make HTTPS requests) for more information.
 
 If you plan to use the Mbed TLS API directly, refer to the example :example:`protocols/https_mbedtls`. This example demonstrates how to establish an HTTPS connection using Mbed TLS by setting up a secure socket with a certificate bundle for verification.
 
@@ -179,14 +180,15 @@ If you plan to use the Mbed TLS API directly, refer to the example :example:`pro
 Alternatives
 ------------
 
-:doc:`/api-reference/protocols/esp_tls` acts as an abstraction layer over the underlying SSL/TLS library and thus has an option to use Mbed TLS or wolfSSL as the underlying library. By default, only Mbed TLS is available and used in ESP-IDF whereas wolfSSL is available publicly at `<https://github.com/espressif/esp-wolfSSL>` with the upstream submodule pointer.
+:doc:`/api-reference/protocols/esp_tls` acts as an abstraction layer over the underlying SSL/TLS library and thus has an option to use Mbed TLS or wolfSSL as the underlying library. By default, only Mbed TLS is available and used in ESP-IDF whereas wolfSSL is available publicly at `<https://github.com/espressif/esp-wolfSSL>`_ with the upstream submodule pointer.
 
-Please refer to :ref:`ESP-TLS: Underlying SSL/TLS Library Options <esp_tls_wolfssl>` docs for more information on this and comparison of Mbed TLS and wolfSSL.
+Please refer to :ref:`ESP-TLS: Underlying SSL/TLS Library Options <esp_tls_wolfssl>` documentation for more information on this and comparison of Mbed TLS and wolfSSL.
+
 
 Important Config Options
 ------------------------
 
-The Mbed TLS configuration system supports preset configurations. Following is a brief list of important config options accessible at ``Component Config -> mbedTLS``. The full list of config options can be found :ref:`here <CONFIG_MBEDTLS_MEM_ALLOC_MODE>`.
+The Mbed TLS configuration system supports preset configurations. Following is a brief list of important config options accessible at ``Component Config`` > ``mbedTLS``. The full list of config options can be found :ref:`here <CONFIG_MBEDTLS_MEM_ALLOC_MODE>`.
 
 **Core Configuration:**
 
@@ -199,7 +201,7 @@ The Mbed TLS configuration system supports preset configurations. Following is a
     - :ref:`CONFIG_MBEDTLS_MEM_ALLOC_MODE`: Memory allocation strategy (Internal/External/Custom)
     - :ref:`CONFIG_MBEDTLS_ASYMMETRIC_CONTENT_LEN`: Asymmetric in/out fragment length for memory optimization
     - :ref:`CONFIG_MBEDTLS_DYNAMIC_BUFFER`: Enable dynamic TX/RX buffer allocation
-    - :ref:`CONFIG_MBEDTLS_DEBUG`: Enable mbedTLS debugging (useful for development)
+    - :ref:`CONFIG_MBEDTLS_DEBUG`: Enable mbedTLS debugging (useful for debugging)
 
 **TLS Protocol Configuration:**
 
@@ -209,8 +211,8 @@ The Mbed TLS configuration system supports preset configurations. Following is a
     - :ref:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_2`: Support for TLS 1.2 (recommended)
     - :ref:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_3`: Support for TLS 1.3 (latest standard)
     - :ref:`CONFIG_MBEDTLS_SSL_PROTO_DTLS`: Support for DTLS (UDP-based TLS)
-    - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`: Support for TLS Session Resumption: Client session tickets
-    - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`: Support for TLS Session Resumption: Server session tickets
+    - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`: Support for TLS Session Resumption (client session tickets)
+    - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`: Support for TLS Session Resumption Server session tickets
     - :ref:`CONFIG_MBEDTLS_SSL_ALPN`: Support for Application Layer Protocol Negotiation
     - :ref:`CONFIG_MBEDTLS_SSL_SERVER_NAME_INDICATION`: Support for Server Name Indication (SNI)
 
@@ -223,7 +225,7 @@ The Mbed TLS configuration system supports preset configurations. Following is a
     - :ref:`CONFIG_MBEDTLS_PEM_PARSE_C`: Read & Parse PEM formatted certificates
     - :ref:`CONFIG_MBEDTLS_PEM_WRITE_C`: Write PEM formatted certificates
     - :ref:`CONFIG_MBEDTLS_X509_CRT_PARSE_C`: Parse X.509 certificates
-    - :ref:`CONFIG_MBEDTLS_X509_CRL_PARSE_C`: Parse X.509 Certificate Revocation Lists
+    - :ref:`CONFIG_MBEDTLS_X509_CRL_PARSE_C`: Parse X.509 certificate revocation lists
 
 **Cryptographic Algorithms:**
 
@@ -256,7 +258,7 @@ To enable debugging, add these configurations:
 Performance Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-For optimal performance **Enable hardware acceleration** when available:
+For optimal performance, **enable hardware acceleration** when available:
 
 .. code-block:: kconfig
 
@@ -273,7 +275,7 @@ Performance and Memory Tweaks
 Reducing Heap Usage
 ^^^^^^^^^^^^^^^^^^^
 
-The following table shows typical memory usage with different configs when the :example:`protocols/https_request` example (with Server Validation enabled) was run with Mbed TLS as the SSL/TLS library.
+The following table shows typical memory usage with different configs when the :example:`protocols/https_request` example (with Server Validation enabled) is run with Mbed TLS as the SSL/TLS library.
 
 .. list-table::
     :header-rows: 1
@@ -286,7 +288,7 @@ The following table shows typical memory usage with different configs when the :
     * - Default
       - NA
       - 42196 B
-    * - Enable SSL Variable Length
+    * - Enable SSL Dynamic Buffer Length
       - :ref:`CONFIG_MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH`
       -  42120 B
     * - Disable Keep Peer Certificate
@@ -300,13 +302,13 @@ The following table shows typical memory usage with different configs when the :
 
 .. note::
 
-    These values are subject to change with change in configuration options and versions of Mbed TLS.
+    These values are subject to change with changes in configuration options and versions of Mbed TLS.
 
 
 Reducing Binary Size
 ^^^^^^^^^^^^^^^^^^^^
 
-Under ``Component Config -> mbedTLS``, there are multiple Mbed TLS features which are enabled by default but can be disabled if not needed to save code size. More information can be about this can be found in :ref:`Minimizing Binary Size <minimizing_binary_mbedtls>` docs.
+Under ``Component Config`` > ``mbedTLS``, several Mbed TLS features are enabled by default. These can be disabled if not needed to save code size. More information is available in the :ref:`Minimizing Binary Size <minimizing_binary_mbedtls>` documentation.
 
 
 .. _`API Reference`: https://mbed-tls.readthedocs.io/projects/api/en/v3.6.4/
