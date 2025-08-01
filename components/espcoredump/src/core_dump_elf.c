@@ -408,6 +408,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self)
     void *task = NULL;
     int len = 0;
     int ret = 0;
+    int tasks_num = 0;
 
     esp_core_dump_reset_tasks_snapshots_iter();
     task = esp_core_dump_get_current_task_handle();
@@ -421,6 +422,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self)
             ELF_CHECK_ERR((ret > 0), ret, "Task %x, PR_STATUS write failed, return (%d).", task, ret);
         }
         len += ret;
+        tasks_num++;
     }
     // processes PR_STATUS and register dump for each task
     // each call to the processing function appends PR_STATUS note into note segment
@@ -429,6 +431,11 @@ static int elf_process_tasks_regs(core_dump_elf_t *self)
     while ((task = esp_core_dump_get_next_task(task))) {
         if (task == esp_core_dump_get_current_task_handle()) {
             continue; // skip current task (already processed)
+        }
+        if (tasks_num > CONFIG_ESP_COREDUMP_MAX_TASKS_NUM) {
+            ESP_COREDUMP_LOG_PROCESS("Reached maximum number of tasks (%d), stopping task register processing",
+                                     CONFIG_ESP_COREDUMP_MAX_TASKS_NUM);
+            break;
         }
         if (esp_core_dump_get_task_snapshot(task, &task_hdr, NULL)) {
             ret = elf_add_regs(self,  &task_hdr);
@@ -439,6 +446,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self)
                 ELF_CHECK_ERR((ret > 0), ret, "Task %x, PR_STATUS write failed, return (%d).", task, ret);
             }
             len += ret;
+            tasks_num++;
         }
     }
     ret = elf_process_note_segment(self, len); // tasks regs note
@@ -462,6 +470,25 @@ static int elf_save_task(core_dump_elf_t *self, core_dump_task_header_t *task)
     return elf_len;
 }
 
+static int elf_save_interrupted_stack(core_dump_elf_t *self, core_dump_mem_seg_header_t *interrupted_stack)
+{
+    int ret = 0;
+    /*  interrupt stacks:
+        - 'port_IntStack' is in the data section for xtensa
+        - 'xIsrStack' is in the bss section for risc-v
+    */
+    if (interrupted_stack->size > 0) {
+        ESP_COREDUMP_LOG_PROCESS("Add interrupted task stack %lu bytes @ %x",
+                                 interrupted_stack->size, interrupted_stack->start);
+        ret = elf_add_segment(self, PT_LOAD,
+                              (uint32_t)interrupted_stack->start,
+                              (void*)interrupted_stack->start,
+                              (uint32_t)interrupted_stack->size);
+        ELF_CHECK_ERR((ret > 0), ret, "Interrupted task stack write failed, return (%d).", ret);
+    }
+    return ret;
+}
+
 static int elf_write_tasks_data(core_dump_elf_t *self)
 {
     int elf_len = 0;
@@ -469,8 +496,8 @@ static int elf_write_tasks_data(core_dump_elf_t *self)
     core_dump_task_header_t task_hdr = { 0 };
     core_dump_mem_seg_header_t interrupted_stack = { 0 };
     int ret = ELF_PROC_ERR_OTHER;
-    uint16_t tasks_num = 0;
-    uint16_t bad_tasks_num = 0;
+    int tasks_num = 0;
+    int bad_tasks_num = 0;
 
     ESP_COREDUMP_LOG_PROCESS("================ Processing task registers ================");
     ret = elf_process_tasks_regs(self);
@@ -478,31 +505,45 @@ static int elf_write_tasks_data(core_dump_elf_t *self)
     elf_len += ret;
 
     ESP_COREDUMP_LOG_PROCESS("================   Processing task data   ================");
-    // processes all task's stack data and writes segment data into partition
-    // if flash configuration is set
-    task = NULL;
+
+    // first write crashed task data
     esp_core_dump_reset_tasks_snapshots_iter();
-    while ((task = esp_core_dump_get_next_task(task))) {
+    task = esp_core_dump_get_current_task_handle();
+    if (esp_core_dump_get_task_snapshot(task, &task_hdr, &interrupted_stack)) {
+        int ret = elf_save_task(self, &task_hdr);
+        ELF_CHECK_ERR((ret > 0), ret,
+                      "Task %x, TCB write failed, return (%d).", task, ret);
+        elf_len += ret;
+
+        // Handle interrupted stack (only relevant for current task)
+        ret = elf_save_interrupted_stack(self, &interrupted_stack);
+        if (ret > 0) {
+            elf_len += ret;
+        }
         tasks_num++;
-        if (!esp_core_dump_get_task_snapshot(task, &task_hdr, &interrupted_stack)) {
+    }
+
+    while ((task = esp_core_dump_get_next_task(task))) {
+        if (task == esp_core_dump_get_current_task_handle()) {
+            continue; // skip current task (already processed)
+        }
+        if (tasks_num > CONFIG_ESP_COREDUMP_MAX_TASKS_NUM) {
+            ESP_COREDUMP_LOG_PROCESS("Reached maximum number of tasks (%d), stopping task register processing",
+                                     CONFIG_ESP_COREDUMP_MAX_TASKS_NUM);
+            break;
+        }
+        tasks_num++;
+        if (!esp_core_dump_get_task_snapshot(task, &task_hdr, NULL)) {
             bad_tasks_num++;
             continue;
         }
+
         ret = elf_save_task(self, &task_hdr);
         ELF_CHECK_ERR((ret > 0), ret,
                         "Task %x, TCB write failed, return (%d).", task, ret);
         elf_len += ret;
-        if (interrupted_stack.size > 0) {
-            ESP_COREDUMP_LOG_PROCESS("Add interrupted task stack %lu bytes @ %x",
-                    interrupted_stack.size, interrupted_stack.start);
-            ret = elf_add_segment(self, PT_LOAD,
-                                    (uint32_t)interrupted_stack.start,
-                                    (void*)interrupted_stack.start,
-                                    (uint32_t)interrupted_stack.size);
-            ELF_CHECK_ERR((ret > 0), ret, "Interrupted task stack write failed, return (%d).", ret);
-            elf_len += ret;
-        }
     }
+
     ESP_COREDUMP_LOG_PROCESS("Found %d bad task out of %d", bad_tasks_num, tasks_num);
     return elf_len;
 }
