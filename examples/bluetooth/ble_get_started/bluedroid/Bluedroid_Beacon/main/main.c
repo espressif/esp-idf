@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -32,27 +32,35 @@ static uint8_t adv_config_done = 0;
 static esp_bd_addr_t local_addr;
 static uint8_t local_addr_type;
 
-static esp_ble_adv_params_t adv_params = {
-    .adv_int_min = 0x20,  // 20ms
-    .adv_int_max = 0x20,  // 20ms
-    .adv_type = ADV_TYPE_SCAN_IND,
-    .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
-    .channel_map = ADV_CHNL_ALL,
-    .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
-};
-
-//configure raw data for advertising packet
-static uint8_t adv_raw_data[] = {
-    0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
-    0x11, ESP_BLE_AD_TYPE_NAME_CMPL, 'B', 'l', 'u', 'e', 'd', 'r', 'o', 'i', 'd', '_', 'B', 'e', 'a', 'c', 'o', 'n',
-    0x02, ESP_BLE_AD_TYPE_TX_PWR, 0x09,
-    0x03, ESP_BLE_AD_TYPE_APPEARANCE, 0x00,0x02,
-    0x02, ESP_BLE_AD_TYPE_LE_ROLE, 0x00,
+/* Structured advertising and scan response data */
+static esp_ble_adv_data_t adv_data = {
+    .set_scan_rsp = false,
+    .include_name = true,
+    .include_txpower = true,
+    .appearance = 0x0200,
+    .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };
 
 static uint8_t scan_rsp_raw_data[] = {
-    0x08, ESP_BLE_AD_TYPE_LE_DEV_ADDR, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x11, ESP_BLE_AD_TYPE_URI, URI_PREFIX_HTTPS, '/', '/', 'e', 's', 'p', 'r', 'e', 's', 's', 'i', 'f', '.', 'c', 'o', 'm',
+};
+
+static esp_ble_adv_data_t scan_rsp_data = {
+    .set_scan_rsp = true,
+    .include_name = false,
+    .include_txpower = false,
+    .service_data_len = sizeof(scan_rsp_raw_data),
+    .p_service_data = scan_rsp_raw_data,
+    .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
+};
+
+static esp_ble_adv_params_t adv_params = {
+    .adv_int_min        = 0x20,  // 20ms
+    .adv_int_max        = 0x20,  // 20ms
+    .adv_type           = ADV_TYPE_SCAN_IND,
+    .own_addr_type      = BLE_ADDR_TYPE_PUBLIC,
+    .channel_map        = ADV_CHNL_ALL,
+    .adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
 
 void app_main(void)
@@ -94,6 +102,12 @@ void app_main(void)
         return;
     }
 
+    ret = esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P3);   // +3dBm
+    if (ret) {
+        ESP_LOGE(DEMO_TAG, "%s set tx power failed: %s", __func__, esp_err_to_name(ret));
+        return;
+    }
+
     ret = esp_ble_gap_register_callback(esp_gap_cb);
     if (ret) {
         ESP_LOGE(DEMO_TAG, "gap register error, error code = %x", ret);
@@ -109,7 +123,7 @@ void app_main(void)
     //config adv data
     adv_config_done |= ADV_CONFIG_FLAG;
     adv_config_done |= SCAN_RSP_CONFIG_FLAG;
-    ret = esp_ble_gap_config_adv_data_raw(adv_raw_data, sizeof(adv_raw_data));
+    ret = esp_ble_gap_config_adv_data(&adv_data);
     if (ret) {
         ESP_LOGE(DEMO_TAG, "config adv data failed, error code = %x", ret);
         return;
@@ -121,13 +135,7 @@ void app_main(void)
         return;
     }
 
-    scan_rsp_raw_data[2] = local_addr[5];
-    scan_rsp_raw_data[3] = local_addr[4];
-    scan_rsp_raw_data[4] = local_addr[3];
-    scan_rsp_raw_data[5] = local_addr[2];
-    scan_rsp_raw_data[6] = local_addr[1];
-    scan_rsp_raw_data[7] = local_addr[0];
-    ret = esp_ble_gap_config_scan_rsp_data_raw(scan_rsp_raw_data, sizeof(scan_rsp_raw_data));
+    ret = esp_ble_gap_config_adv_data(&scan_rsp_data);
     if (ret) {
         ESP_LOGE(DEMO_TAG, "config scan rsp data failed, error code = %x", ret);
     }
@@ -143,22 +151,8 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             esp_ble_gap_start_advertising(&adv_params);
         }
         break;
-    case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
-        ESP_LOGI(DEMO_TAG, "Advertising data raw set, status %d", param->adv_data_raw_cmpl.status);
-        adv_config_done &= (~ADV_CONFIG_FLAG);
-        if (adv_config_done == 0) {
-            esp_ble_gap_start_advertising(&adv_params);
-        }
-        break;
     case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
         ESP_LOGI(DEMO_TAG, "Scan response data set, status %d", param->scan_rsp_data_cmpl.status);
-        adv_config_done &= (~SCAN_RSP_CONFIG_FLAG);
-        if (adv_config_done == 0) {
-            esp_ble_gap_start_advertising(&adv_params);
-        }
-        break;
-    case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT:
-        ESP_LOGI(DEMO_TAG, "Scan response data raw set, status %d", param->scan_rsp_data_raw_cmpl.status);
         adv_config_done &= (~SCAN_RSP_CONFIG_FLAG);
         if (adv_config_done == 0) {
             esp_ble_gap_start_advertising(&adv_params);
