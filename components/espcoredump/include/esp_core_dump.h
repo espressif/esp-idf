@@ -80,6 +80,7 @@ void esp_core_dump_init(void);
  */
 void esp_core_dump_write(panic_info_t *info);
 
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 /**
  * @brief  Check integrity of coredump data in flash.
  *         This function reads the coredump data while calculating their checksum. If it
@@ -112,8 +113,6 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
  * @return ESP_OK on success, otherwise \see esp_err_t
  */
 esp_err_t esp_core_dump_image_erase(void);
-
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 
 /**
  * @brief Get panic reason from the core dump.

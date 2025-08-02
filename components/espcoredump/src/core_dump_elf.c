@@ -3,11 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
+
+#if CONFIG_ESP_COREDUMP_ENABLE
+
 #include <string.h>
 #include "esp_attr.h"
 #include "esp_partition.h"
 #include "esp_flash_encrypt.h"
-#include "sdkconfig.h"
 #include "core_dump_checksum.h"
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_port_impl.h"
@@ -1021,3 +1024,5 @@ esp_err_t esp_core_dump_get_summary(esp_core_dump_summary_t *summary)
 }
 
 #endif // CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+
+#endif // CONFIG_ESP_COREDUMP_ENABLE
