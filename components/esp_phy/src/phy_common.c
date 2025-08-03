@@ -15,6 +15,8 @@
 #include "hal/temperature_sensor_ll.h"
 #endif
 
+static const char* TAG = "phy_comm";
+
 static volatile uint16_t s_phy_modem_flag = 0;
 
 #if !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
@@ -114,6 +116,16 @@ void phy_track_pll_deinit(void)
 }
 #endif
 
+static const char *phy_get_modem_str(esp_phy_modem_t modem)
+{
+    switch (modem) {
+        case PHY_MODEM_WIFI: return "Wi-Fi";
+        case PHY_MODEM_BT: return "Bluetooth";
+        case PHY_MODEM_IEEE802154: return "IEEE 802.15.4";
+        default: return "";
+    }
+}
+
 void phy_set_modem_flag(esp_phy_modem_t modem)
 {
     s_phy_modem_flag |= modem;
@@ -121,6 +133,9 @@ void phy_set_modem_flag(esp_phy_modem_t modem)
 
 void phy_clr_modem_flag(esp_phy_modem_t modem)
 {
+    if ((s_phy_modem_flag & modem) == 0) {
+        ESP_LOGW(TAG, "Clear the flag of %s before it's set", phy_get_modem_str(modem));
+    }
     s_phy_modem_flag &= ~modem;
 }
 
