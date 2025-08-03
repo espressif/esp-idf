@@ -20,6 +20,3 @@
 
 #define ADC1_GPIO4_CHANNEL      4
 #define ADC1_CHANNEL_4_GPIO_NUM 4
-
-#define ADC2_GPIO5_CHANNEL      0
-#define ADC2_CHANNEL_0_GPIO_NUM 5
