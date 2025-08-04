@@ -1,5 +1,5 @@
 line-length = 120
-target-version = "py38"
+target-version = "py310"
 
 [format]
     quote-style = "single"
@@ -12,6 +12,7 @@ target-version = "py38"
         "F",    # pyflakes
         "W",    # pycodestyle
         "I",    # reorder-imports
+        "UP",   # pyupgrade
     ]
     ignore = [
         "E203", # whitespace before ':'

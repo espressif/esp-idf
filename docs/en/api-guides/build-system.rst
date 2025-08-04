@@ -130,7 +130,7 @@ For more detailed information about integrating ESP-IDF with CMake into an IDE, 
 Setting up the Python Interpreter
 ---------------------------------
 
-ESP-IDF works well with Python version 3.9+.
+ESP-IDF works well with Python version 3.10+.
 
 ``idf.py`` and other Python scripts will run with the default Python interpreter, i.e., ``python``. You can switch to a different one like ``python3 $IDF_PATH/tools/idf.py ...``, or you can set up a shell alias or another script to simplify the command.
 

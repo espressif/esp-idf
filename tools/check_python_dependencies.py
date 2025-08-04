@@ -6,7 +6,6 @@ import argparse
 import os
 import re
 import sys
-from typing import Optional
 
 try:
     from packaging.requirements import Requirement
@@ -20,22 +19,9 @@ except ImportError:
     )
     sys.exit(1)
 
-try:
-    from importlib.metadata import PackageNotFoundError
-    from importlib.metadata import requires as _requires
-    from importlib.metadata import version as _version
-except ImportError:
-    # compatibility for python <=3.7
-    from importlib_metadata import PackageNotFoundError  # type: ignore
-    from importlib_metadata import requires as _requires  # type: ignore
-    from importlib_metadata import version as _version  # type: ignore
-
-try:
-    from typing import Set
-except ImportError:
-    # This is a script run during the early phase of setting up the environment. So try to avoid failure caused by
-    # Python version incompatibility. The supported Python version is checked elsewhere.
-    pass
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import requires as _requires
+from importlib.metadata import version as _version
 
 PYTHON_PACKAGE_RE = re.compile(r'[^<>=~]+')
 
@@ -50,7 +36,7 @@ def validate_requirement_list(file_path: str) -> str:
         )
     try:
         open(file_path, encoding='utf-8').close()
-    except IOError as e:
+    except OSError as e:
         raise argparse.ArgumentTypeError(f'Cannot read requirement file {file_path}: {e}')
     return file_path
 
@@ -74,7 +60,7 @@ def get_version(name: str) -> str:
     return version
 
 
-def get_requires(name: str) -> Optional[list]:
+def get_requires(name: str) -> list | None:
     try:
         requires = _requires(name)
     except PackageNotFoundError:
@@ -118,20 +104,20 @@ if __name__ == '__main__':
                 elif con.startswith('-e') and '#egg=' in con:
                     con_m = re.search(r'#egg=([^\s]+)', con)
                     if not con_m:
-                        print('Malformed input. Cannot find name in {}'.format(con))
+                        print(f'Malformed input. Cannot find name in {con}')
                         sys.exit(1)
                     con = con_m[1]
 
                 name_m = PYTHON_PACKAGE_RE.search(con)
                 if not name_m:
-                    print('Malformed input. Cannot find name in {}'.format(con))
+                    print(f'Malformed input. Cannot find name in {con}')
                     sys.exit(1)
                 constr_dict[name_m[0]] = con.partition(' #')[0]  # remove comments
 
     not_satisfied = []  # in string form which will be printed
 
     # already_checked set is used in order to avoid circular checks which would cause looping.
-    already_checked: Set[Requirement] = set()
+    already_checked: set[Requirement] = set()
 
     # required_set contains package names in string form without version constraints. If the package has a constraint
     # specification (package name + version requirement) then use that instead. new_req_list is used to store
@@ -198,7 +184,7 @@ if __name__ == '__main__':
             # We are running inside a private virtual environment under IDF_TOOLS_PATH,
             # ask the user to run install.bat again.
             install_script = 'install.bat' if sys.platform == 'win32' else 'install.sh'
-            print('To install the missing packages, please run "{}"'.format(install_script))
+            print(f'To install the missing packages, please run "{install_script}"')
         else:
             print(
                 'Please follow the instructions found in the "Set up the tools" section of '
@@ -208,7 +194,7 @@ if __name__ == '__main__':
         print('Diagnostic information:')
         idf_python_env_path = os.environ.get('IDF_PYTHON_ENV_PATH')
         print('    IDF_PYTHON_ENV_PATH: {}'.format(idf_python_env_path or '(not set)'))
-        print('    Python interpreter used: {}'.format(sys.executable))
+        print(f'    Python interpreter used: {sys.executable}')
         if not idf_python_env_path or idf_python_env_path not in sys.executable:
             print('    Warning: python interpreter not running from IDF_PYTHON_ENV_PATH')
             print('    PATH: {}'.format(os.getenv('PATH')))

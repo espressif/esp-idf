@@ -96,27 +96,25 @@ Apple M1 用户
 
 
 安装 Python 3
----------------------------------------------
+~~~~~~~~~~~~~~
 
-`Catalina 10.15 发布说明`_ 中表示不推荐使用 Python 2.7 版本，在未来的 macOS 版本中也不会默认包含 Python 2.7。执行以下命令来检查当前使用的 Python 版本::
+请确保已安装 Python 3.10 或更高版本。Python 3.10 为 ESP-IDF 支持的最低版本。
 
-  python --version
+请注意，大多数新版 macOS 默认仅包含 Python 3.9（或更低版本），这些版本已不再受支持，请安装 Python 3.10 或更高版本。
 
-如果输出结果是 ``Python 2.7.17``，则代表默认解析器是 Python 2.7。这时需要运行以下命令检查电脑上是否已经安装过 Python 3::
+请根据以下步骤在 macOS 中安装受支持的 Python 3：
 
-  python3 --version
+- 若使用 HomeBrew_，请运行::
 
-如果运行上述命令出现错误，则代表电脑上没有安装 Python 3。
+    brew install python3
 
-请根据以下步骤安装 Python 3：
+- 若使用 MacPorts_，请运行::
 
-  - 使用 HomeBrew_ 进行安装的方法如下::
+    sudo port install python313
 
-      brew install python3
+.. note::
 
-  - 使用 MacPorts_ 进行安装的方法如下::
-
-      sudo port install python38
+    安装过程中，安装脚本 (install.sh) 会检查系统中已安装的 Python 版本，并在所有符合最低要求的版本中，选择最早的版本使用。
 
 .. _get-started-get-esp-idf:
 

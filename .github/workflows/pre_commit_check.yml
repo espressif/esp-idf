@@ -23,7 +23,7 @@ jobs:
       - name: Set up Python environment
         uses: actions/setup-python@master
         with:
-          python-version: v3.8
+          python-version: 3.10
       - name: Install python packages
         run: |
           pip install pre-commit

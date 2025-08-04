@@ -98,25 +98,23 @@ Then you need to install Apple Rosetta 2 by running
 Installing Python 3
 ~~~~~~~~~~~~~~~~~~~
 
-Based on macOS `Catalina 10.15 release notes`_, use of Python 2.7 is not recommended and Python 2.7 is not included by default in future versions of macOS. Check what Python you currently have::
+Ensure that you have Python 3.10 or newer installed, as this is the minimum version supported by ESP-IDF.
 
-  python --version
+Note that most of the recent versions of macOS include Python 3.9 (or older) by default, which is no longer supported. You will need to install Python 3.10 or later.
 
-If the output is like ``Python 2.7.17``, your default interpreter is Python 2.7. If so, also check if Python 3 is not already installed on your computer::
+To install supported Python 3 on macOS:
 
-  python3 --version
+- With HomeBrew_, run::
 
-If the above command returns an error, it means Python 3 is not installed.
+    brew install python3
 
-Below is an overview of the steps to install Python 3.
+- With MacPorts_, run::
 
-  - Installing with HomeBrew_ can be done as follows::
+    sudo port install python313
 
-      brew install python3
+.. note::
 
-  - If you have MacPorts_, you can run::
-
-      sudo port install python38
+    During installation, the install script will check for supported Python versions on your system and select the oldest version that meets the minimum requirement.
 
 .. _get-started-get-esp-idf:
 
