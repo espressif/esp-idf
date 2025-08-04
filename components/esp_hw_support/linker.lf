@@ -13,6 +13,9 @@ entries:
     cpu: esp_cpu_compare_and_set (noflash)
     esp_memory_utils (noflash)
     clk_utils (noflash)
+    if IDF_TARGET_ESP32H4 = y || IDF_TARGET_ESP32H21 = y:
+        # IDF-13780
+        rtc_clk (noflash)
     if PM_SLP_IRAM_OPT = y:
         rtc_clk (noflash)
         rtc_time (noflash_text)
