@@ -72,4 +72,11 @@ menu "HTTP Server"
             Enable this option to use WebSocket pre-handshake callback. This will allow the server to register
             a callback function that will be called before the WebSocket handshake is processed i.e. before switching
             to the WebSocket protocol.
+
+    config HTTPD_SERVER_PSA_CRYPTO_MIGRATE
+        depends on MBEDTLS_ESP_IDF_USE_PSA_CRYPTO
+        bool "Migrate ESP HTTP Server to use PSA Crypto"
+        default y
+        help
+            Migrate ESP HTTP Server to use PSA Crypto.
 endmenu

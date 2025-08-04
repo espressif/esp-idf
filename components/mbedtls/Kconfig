@@ -1,6 +1,15 @@
 menu "mbedTLS"
 
     menu "Core Configuration"
+
+        config MBEDTLS_ESP_IDF_USE_PSA_CRYPTO
+            depends on IDF_EXPERIMENTAL_FEATURES
+            bool "Enable the Platform Security Architecture (PSA) cryptography API for ESP-IDF"
+            default y
+            help
+                Enable the Platform Security Architecture (PSA) cryptography API for ESP-IDF.
+                This option migrates from mbedtls API to PSA Crypto API. This increases code size.
+
         choice MBEDTLS_COMPILER_OPTIMIZATION
             prompt "Compiler optimization level"
             default MBEDTLS_COMPILER_OPTIMIZATION_NONE

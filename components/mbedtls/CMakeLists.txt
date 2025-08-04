@@ -167,6 +167,10 @@ list(APPEND mbedtls_targets everest p256m)
 set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"
                            "${COMPONENT_DIR}/port/esp_platform_time.c")
 
+if(CONFIG_MBEDTLS_ESP_IDF_USE_PSA_CRYPTO)
+    list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/esp_psa_crypto_init.c")
+endif()
+
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
 set(mbedtls_target_sources ${mbedtls_target_sources}
                            "${COMPONENT_DIR}/port/dynamic/esp_mbedtls_dynamic_impl.c"
@@ -357,14 +361,14 @@ foreach(target ${mbedtls_targets})
     endif()
     if(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SIZE)
         target_compile_options(${target} PRIVATE "-Os")
-    elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SPEED)
+    elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_PERF)
         target_compile_options(${target} PRIVATE "-O2")
     endif()
 endforeach()
 
 if(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SIZE)
     target_compile_options(${COMPONENT_LIB} PRIVATE "-Os")
-elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SPEED)
+elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_PERF)
     target_compile_options(${COMPONENT_LIB} PRIVATE "-O2")
 endif()
 
@@ -397,6 +401,9 @@ if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
 endif()
 
 target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
+
+# Ensure PSA crypto initialization is included in the build
+target_link_libraries(${COMPONENT_LIB} ${linkage_type} "-u mbedtls_psa_crypto_init_include_impl")
 
 if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
     # The linker seems to be unable to resolve all the dependencies without increasing this

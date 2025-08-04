@@ -41,4 +41,11 @@ menu "ESP HTTP client"
         help
             This config option helps in setting the time in millisecond to wait for event to be posted to the
             system default event loop. Set it to -1 if you need to set timeout to portMAX_DELAY.
+
+    config ESP_HTTP_CLIENT_PSA_CRYPTO_MIGRATE
+        depends on MBEDTLS_ESP_IDF_USE_PSA_CRYPTO
+        bool "Migrate ESP HTTP Client to use PSA Crypto"
+        default y
+        help
+            Migrate ESP HTTP Client to use PSA Crypto.
 endmenu
