@@ -57,12 +57,16 @@ FORCE_INLINE_ATTR heap_t* find_biggest_heap(void)
     heap_t *heap = NULL;
     heap_t *biggest_heap = NULL;
     SLIST_FOREACH(heap, &registered_heaps, next) {
-        if (biggest_heap == NULL) {
+        /* In the case where we are currently looking for the biggest heap during startup,
+         * before the scheduler stated, all the memory regions marked as startup stacks will
+         * be NULL here. As such, they must be ignored. After boot up, this statement will
+         * never be true. */
+        if (heap->heap == NULL) {
+            /* Continue the loop */
+        } else if (biggest_heap == NULL) {
             biggest_heap = heap;
         } else if ((biggest_heap->end - biggest_heap->start) < (heap->end - heap->start)) {
             biggest_heap = heap;
-        } else {
-            // nothing to do here
         }
     }
     return biggest_heap;
