@@ -90,6 +90,24 @@ function(__dump_build_properties)
 endfunction()
 
 #[[
+   __init_build()
+
+   Initialize settings that need to be configured after the project() function
+   is called. This primarily involves setting compilation options, define
+   settings, and configuring linker options.
+#]]
+function(__init_build)
+    idf_build_get_property(build_initialized __BUILD_INITIALIZED)
+    if(build_initialized)
+        # Ensure this function is executed only once throughout the entire
+        # project.
+        return()
+    endif()
+
+    idf_build_set_property(__BUILD_INITIALIZED YES)
+endfunction()
+
+#[[
    __get_library_interface_or_die(LIBRARY <library>
                                   OUTPUT <variable>)
 
@@ -242,6 +260,10 @@ function(idf_build_library)
         idf_build_get_property(component_names COMPONENTS_DISCOVERED)
         set(ARG_COMPONENTS "${component_names}")
     endif()
+
+    # Initialize settings that must be configured after the project() function
+    # is called.
+    __init_build()
 
     add_library("${ARG_INTERFACE}" INTERFACE)
     idf_build_set_property(LIBRARY_INTERFACES "${ARG_INTERFACE}" APPEND)
