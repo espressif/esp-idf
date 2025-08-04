@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -28,6 +28,10 @@
 #include "app_hf_msg_set.h"
 #include "bt_app_pbac.h"
 
+#ifndef CONFIG_EXAMPLE_PEER_DEVICE_NAME
+#define CONFIG_EXAMPLE_PEER_DEVICE_NAME "Target_Device"
+#endif
+
 esp_bd_addr_t peer_addr = {0};
 static char peer_bdname[ESP_BT_GAP_MAX_BDNAME_LEN + 1];
 static uint8_t peer_bdname_len;
@@ -40,7 +44,7 @@ static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
     }
 
     uint8_t *p = bda;
-    sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
+    snprintf(str, size, "%02x:%02x:%02x:%02x:%02x:%02x",
             p[0], p[1], p[2], p[3], p[4], p[5]);
     return str;
 }
@@ -99,6 +103,7 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     }
     case ESP_BT_GAP_DISC_STATE_CHANGED_EVT:
         ESP_LOGI(BT_HF_TAG, "ESP_BT_GAP_DISC_STATE_CHANGED_EVT");
+        break;
     case ESP_BT_GAP_RMT_SRVCS_EVT:
     case ESP_BT_GAP_RMT_SRVC_REC_EVT:
         break;
@@ -129,7 +134,7 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
         break;
     }
 
-#if (CONFIG_EXAMPLE_SSP_ENABLED == true)
+#if CONFIG_EXAMPLE_SSP_ENABLED
     case ESP_BT_GAP_CFM_REQ_EVT:
         ESP_LOGI(BT_HF_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %06"PRIu32, param->cfm_req.num_val);
         esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
@@ -187,7 +192,7 @@ void app_main(void)
     }
 
     esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-#if (CONFIG_EXAMPLE_SSP_ENABLED == false)
+#if !CONFIG_EXAMPLE_SSP_ENABLED
     bluedroid_cfg.ssp_en = false;
 #endif
     if ((ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg)) != ESP_OK) {
@@ -256,7 +261,7 @@ static void bt_hf_client_hdl_stack_evt(uint16_t event, void *p_param)
         esp_pbac_register_callback(bt_app_pbac_cb);
         esp_pbac_init();
 
-#if (CONFIG_EXAMPLE_SSP_ENABLED == true)
+#if CONFIG_EXAMPLE_SSP_ENABLED
     /* Set default parameters for Secure Simple Pairing */
     esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
     esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_IO;
