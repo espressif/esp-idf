@@ -59,7 +59,7 @@ typedef struct {
   * @brief Wi-Fi authmode type
   * Strength of authmodes
   * Personal Networks   : OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA3_PSK = WPA2_WPA3_PSK
-  * Enterprise Networks : WIFI_AUTH_WPA2_ENTERPRISE < WIFI_AUTH_WPA3_ENT_192
+  * Enterprise Networks : WIFI_AUTH_WPA_ENTERPRISE < WIFI_AUTH_WPA2_ENTERPRISE < WIFI_AUTH_WPA3_ENT_192
   */
 typedef enum {
     WIFI_AUTH_OPEN = 0,         /**< authenticate mode : open */
@@ -67,8 +67,8 @@ typedef enum {
     WIFI_AUTH_WPA_PSK,          /**< authenticate mode : WPA_PSK */
     WIFI_AUTH_WPA2_PSK,         /**< authenticate mode : WPA2_PSK */
     WIFI_AUTH_WPA_WPA2_PSK,     /**< authenticate mode : WPA_WPA2_PSK */
-    WIFI_AUTH_ENTERPRISE,       /**< authenticate mode : WiFi EAP security */
-    WIFI_AUTH_WPA2_ENTERPRISE = WIFI_AUTH_ENTERPRISE,  /**< authenticate mode : WiFi EAP security */
+    WIFI_AUTH_ENTERPRISE,       /**< authenticate mode : WiFi EAP security, treated the same as WIFI_AUTH_WPA2_ENTERPRISE */
+    WIFI_AUTH_WPA2_ENTERPRISE = WIFI_AUTH_ENTERPRISE,  /**< authenticate mode : WPA2-Enterprise security */
     WIFI_AUTH_WPA3_PSK,         /**< authenticate mode : WPA3_PSK */
     WIFI_AUTH_WPA2_WPA3_PSK,    /**< authenticate mode : WPA2_WPA3_PSK */
     WIFI_AUTH_WAPI_PSK,         /**< authenticate mode : WAPI_PSK */
@@ -76,6 +76,10 @@ typedef enum {
     WIFI_AUTH_WPA3_ENT_192,     /**< authenticate mode : WPA3_ENT_SUITE_B_192_BIT */
     WIFI_AUTH_WPA3_EXT_PSK,     /**< this authentication mode will yield same result as WIFI_AUTH_WPA3_PSK and not recommended to be used. It will be deprecated in future, please use WIFI_AUTH_WPA3_PSK instead. */
     WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE, /**< this authentication mode will yield same result as WIFI_AUTH_WPA3_PSK and not recommended to be used. It will be deprecated in future, please use WIFI_AUTH_WPA3_PSK instead.*/
+    WIFI_AUTH_DUMMY1,
+    WIFI_AUTH_DUMMY2,
+    WIFI_AUTH_DUMMY3,
+    WIFI_AUTH_WPA_ENTERPRISE,   /**< Authenticate mode : WPA-Enterprise security */
     WIFI_AUTH_MAX
 } wifi_auth_mode_t;
 
