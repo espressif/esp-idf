@@ -104,6 +104,7 @@ static void eap_wsc_reset(struct eap_sm *sm, void *priv)
 	//wps_deinit(data->wps);
 	os_free(data);
 #ifdef ESP_SUPPLICANT
+	sm->eap_method_priv = NULL;
 	/* TODO: When wps-registrar is shifted in a separate task other than wifi task,
 	 * call esp_wifi_ap_wps_disable() here instead of wifi_ap_wps_disable_internal()
 	 * */
