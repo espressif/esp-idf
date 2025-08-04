@@ -8,6 +8,7 @@ import espsecure
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+
 # To prepare a test runner for this example:
 # 1. Generate zero flash encryption key:
 #   dd if=/dev/zero of=key.bin bs=1 count=32
@@ -75,7 +76,7 @@ def _test_flash_encryption(dut: Dut) -> None:
 
 
 @pytest.mark.flash_encryption
-@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32p4'], indirect=['target'])
 def test_examples_security_flash_encryption(dut: Dut) -> None:
     _test_flash_encryption(dut)
 
@@ -90,4 +91,30 @@ def test_examples_security_flash_encryption(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
 def test_examples_security_flash_encryption_rom_impl(dut: Dut) -> None:
+    _test_flash_encryption(dut)
+
+
+@pytest.mark.flash_encryption_psram
+@pytest.mark.parametrize(
+    'config',
+    [
+        'psram',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_examples_security_flash_encryption_psram_esp32(dut: Dut) -> None:
+    _test_flash_encryption(dut)
+
+
+@pytest.mark.flash_encryption
+@pytest.mark.parametrize(
+    'config',
+    [
+        'psram',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_examples_security_flash_encryption_psram(dut: Dut) -> None:
     _test_flash_encryption(dut)
