@@ -92,6 +92,19 @@ function(__dump_build_properties)
 endfunction()
 
 #[[
+   __init_project_name()
+
+   Initialize the PROJECT_NAME build property, using CMAKE_PROJECT_NAME as a
+   fallback.
+#]]
+function(__init_project_name)
+    __get_default_value(VARIABLE PROJECT_NAME
+                        DEFAULT "${CMAKE_PROJECT_NAME}"
+                        OUTPUT project_name)
+    idf_build_set_property(PROJECT_NAME "${project_name}")
+endfunction()
+
+#[[
    __init_build_configuration()
 
    Configure the build settings in one location, incorporating preset
@@ -110,6 +123,7 @@ function(__init_build_configuration)
     idf_build_get_property(components_discovered COMPONENTS_DISCOVERED)
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(project_dir PROJECT_DIR)
+    idf_build_get_property(project_name PROJECT_NAME)
 
     list(APPEND compile_definitions "_GLIBCXX_USE_POSIX_SEMAPHORE"  # These two lines enable libstd++ to use
                                     "_GLIBCXX_HAVE_POSIX_SEMAPHORE" # posix-semaphores from components/pthread
@@ -428,7 +442,7 @@ function(__init_build_configuration)
     endif()
 
     if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-        set(mapfile "${build_dir}/${CMAKE_PROJECT_NAME}.map")
+        set(mapfile "${build_dir}/${project_name}.map")
         set(target_upper "${idf_target}")
         string(TOUPPER ${target_upper} target_upper)
         # Add cross-reference table to the map file
@@ -525,6 +539,9 @@ function(__init_build)
         # project.
         return()
     endif()
+
+    # Set PROJECT_NAME build property
+    __init_project_name()
 
     # Initialize all compilation options and defines.
     __init_build_configuration()
