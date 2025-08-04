@@ -26,7 +26,7 @@ The following C++ features are supported:
 C++ Language Standard
 ---------------------
 
-By default, ESP-IDF compiles C++ code with C++23 language standard with GNU extensions (``-std=gnu++23``).
+By default, ESP-IDF compiles C++ code with C++26 language standard with GNU extensions (``-std=gnu++26``).
 
 To compile the source code of a certain component using a different language standard, set the desired compiler flag in the component's ``CMakeLists.txt`` file:
 
@@ -182,7 +182,7 @@ Designated Initializers
 
 Many of the ESP-IDF components use :ref:`api_reference_config_structures` as arguments to the initialization functions. ESP-IDF examples written in C routinely use `designated initializers <https://en.cppreference.com/w/c/language/struct_initialization>`_ to fill these structures in a readable and a maintainable way.
 
-C and C++ languages have different rules with regards to the designated initializers. For example, C++23 (currently the default in ESP-IDF) does not support out-of-order designated initialization, nested designated initialization, mixing of designated initializers and regular initializers, and designated initialization of arrays. Therefore, when porting ESP-IDF C examples to C++, some changes to the structure initializers may be necessary. See the `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_ for more details.
+C and C++ languages have different rules with regards to the designated initializers. For example, C++26 (currently the default in ESP-IDF) does not support out-of-order designated initialization, nested designated initialization, mixing of designated initializers and regular initializers, and designated initialization of arrays. Therefore, when porting ESP-IDF C examples to C++, some changes to the structure initializers may be necessary. See the `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_ for more details.
 
 
 ``iostream``
