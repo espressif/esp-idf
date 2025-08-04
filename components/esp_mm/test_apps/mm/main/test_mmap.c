@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,9 @@
 #include <sys/param.h>
 #include <string.h>
 #include "inttypes.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "unity.h"
@@ -69,4 +72,57 @@ TEST_CASE("Can find paddr caps by any paddr offset", "[mmu]")
     TEST_ASSERT(caps == MMU_MEM_CAP_READ);
 
     TEST_ESP_OK(esp_mmu_unmap(ptr0));
+}
+
+typedef struct {
+    SemaphoreHandle_t done;
+} test_task_arg_t;
+
+void map_task(void *varg)
+{
+    esp_err_t ret = ESP_FAIL;
+    test_task_arg_t* args = (test_task_arg_t*) varg;
+
+    const esp_partition_t *part = s_get_partition();
+    srand(199);
+    int cnt = 0;
+    while (true) {
+        if (cnt >= 10000) {
+            break;
+        }
+        size_t i = rand() % part->size;
+        void *ptr0 = NULL;
+        size_t phys_addr = part->address + i;
+        size_t region_offset = phys_addr & (CONFIG_MMU_PAGE_SIZE - 1);
+        size_t mmap_addr = phys_addr & ~(CONFIG_MMU_PAGE_SIZE - 1);
+        ret = esp_mmu_map(mmap_addr, 1 + region_offset, MMU_TARGET_FLASH0, MMU_MEM_CAP_READ | MMU_MEM_CAP_8BIT, ESP_MMU_MMAP_FLAG_PADDR_SHARED, &ptr0);
+        if (ret == ESP_OK) {
+            esp_mmu_unmap(ptr0);
+        }
+        cnt++;
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+
+    xSemaphoreGive(args->done);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Test mmap concurrency", "[mmu][manual][ignore]")
+{
+    test_task_arg_t args0 = {
+        .done = xSemaphoreCreateBinary(),
+    };
+
+    test_task_arg_t args1 = {
+        .done = xSemaphoreCreateBinary(),
+    };
+
+    xTaskCreate(map_task, "map0_task", 8096, &args0, 1, NULL);
+    xTaskCreate(map_task, "map1_task", 8096, &args1, 1, NULL);
+
+    xSemaphoreTake(args0.done, portMAX_DELAY);
+    xSemaphoreTake(args1.done, portMAX_DELAY);
+    vTaskDelay(100);
+    vSemaphoreDelete(args0.done);
+    vSemaphoreDelete(args1.done);
 }
