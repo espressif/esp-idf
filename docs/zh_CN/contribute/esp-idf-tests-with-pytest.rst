@@ -643,7 +643,7 @@ Pytest 使用技巧
 这一 marker 表明，此测试用例仍可以在本地用 ``pytest --target esp32`` 执行，但不会在 CI 中执行。
 
 添加新 marker
-----------------
+-------------
 
 我们目前使用两种自定义 marker。target marker 是指测试用例支持此目标芯片，env marker 是指测试用例应分配到 CI 中具有相应 tag 的 runner 上。
 

@@ -68,10 +68,11 @@ The HTTP server component provides WebSocket support. The WebSocket feature can 
 
 :example:`protocols/http_server/ws_echo_server` demonstrates how to create a WebSocket echo server using the HTTP server, which starts on a local network and requires a WebSocket client for interaction, echoing back received WebSocket frames.
 
+
 WebSocket Pre-Handshake Callback
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The HTTP server component provides a pre-handshake callback for WebSocket endpoints. This callback is invoked before the WebSocket handshake is processed — at this point, the connection is still an HTTP connection and has not yet been upgraded to WebSocket.
+The HTTP server component provides a pre-handshake callback for WebSocket endpoints. This callback is invoked before the WebSocket handshake is processed—at this point, the connection is still an HTTP connection and has not yet been upgraded to WebSocket.
 
 The pre-handshake callback can be used for authentication, authorization, or other checks. If the callback returns :c:macro:`ESP_OK`, the WebSocket handshake will proceed. If the callback returns any other value, the handshake will be aborted and the connection will be closed.
 

@@ -83,6 +83,7 @@ Wi-Fi 配网
                             ESP_LOGE(TAG, "Failed to de-initialize provisioning manager: %s", esp_err_to_name(err));
                         }
                         break;
+                    }
                     default:
                         break;
                 }

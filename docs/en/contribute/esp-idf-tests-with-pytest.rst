@@ -645,7 +645,9 @@ This marker means that the test case could still be run locally with ``pytest --
 Add New Markers
 ---------------
 
-You can add new markers by adding one line under the :idf_file:`pytest.ini`. If it is a marker that specifies a type of test environment, it should be added into ``env_markers`` section. Otherwise it should be added into ``markers`` section. The syntax should be: ``<marker_name>: <marker_description>``.
+We currently use two types of custom markers. The target marker indicates which target chips the test case supports, and the env marker specifies that the test case should be assigned to a CI runner with the corresponding tag.
+
+You can add new markers by adding one line under the :idf_file:`pytest.ini`. If it is a marker that specifies a type of test environment, it should be added into ``env_markers`` section. Otherwise, it should be added into ``markers`` section. The syntax should be: ``<marker_name>: <marker_description>``.
 
 Skip Auto Flash Binary
 ----------------------

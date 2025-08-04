@@ -192,3 +192,67 @@ ESP-IDF 二级引导加载程序位于 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_O
 * :example:`storage/nvs/nvs_bootloader`
 
 如果引导加载程序过大，则可能与内存中的分区表重叠，分区表默认烧录在偏移量 0x8000 处。增加 :ref:`分区表偏移量 <CONFIG_PARTITION_TABLE_OFFSET>` ，将分区表放在 flash 中靠后的区域，这样可以增加引导加载程序的可用空间。
+
+.. only:: SOC_RECOVERY_BOOTLOADER_SUPPORTED
+
+    恢复引导加载程序
+    ----------------
+
+    {IDF_TARGET_NAME} 引入了恢复引导加载程序 (Recovery Bootloader) 和防回滚引导加载程序 (Anti-rollback Bootloader) 功能，这些功能在 ROM 引导加载程序中实现，用于提升设备在 OTA 升级过程中的安全性和可靠性。
+
+    恢复引导加载程序功能可在 OTA 升级失败时为引导加载程序提供安全回退机制。eFuse 字段 ``ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR`` 将指定恢复引导加载程序的 flash（以扇区为单位）地址。如果位于 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 的主引导加载程序加载失败，ROM 引导加载程序会尝试从指定地址加载恢复引导加载程序。
+
+    - 可以使用 ``espefuse.py`` 或在用户应用程序中调用 :cpp:func:`esp_efuse_set_recovery_bootloader_offset()` 来设置 eFuse。
+    - 该地址可通过 ``CONFIG_BOOTLOADER_RECOVERY_OFFSET`` 进行设置，且必须为 flash 扇区大小（0x1000 字节）的整数倍。此 Kconfig 选项有助于确保恢复引导加载程序不会与现有分区重叠。
+    - 注意，eFuse 字段存储的是以扇区为单位的偏移量。将其设置为最大值 ``0xFFF`` 可禁用恢复引导加载程序功能。
+    - 默认情况下，``CONFIG_BOOTLOADER_RECOVERY_OFFSET`` 处的恢复引导加载程序镜像不会被烧录，但可以作为 OTA 升级流程的一部分进行写入。
+
+    下方示例展示了主引导加载程序加载失败后，恢复引导加载程序被加载时的引导日志。
+
+    .. code-block:: none
+
+        ESP-ROM:esp32c5-eco2-20250121
+        Build:Jan 21 2025
+        rst:0x1 (POWERON),boot:0x18 (SPI_FAST_FLASH_BOOT)
+        invalid header: 0xffffffff
+        invalid header: 0xffffffff
+        invalid header: 0xffffffff
+        PRIMARY - FAIL
+        Loading RECOVERY Bootloader...
+        SPI mode:DIO, clock div:1
+        load:0x408556b0,len:0x17cc
+        load:0x4084bba0,len:0xdac
+        load:0x4084e5a0,len:0x3140
+        entry 0x4084bbaa
+
+        I (46) boot: ESP-IDF v6.0-dev-172-g12c5d730097-dirty 2nd stage bootloader
+        I (46) boot: compile time May 22 2025 12:41:59
+        I (47) boot: chip revision: v1.0
+        I (48) boot: efuse block revision: v0.1
+        I (52) boot.esp32c5: SPI Speed      : 80MHz
+        I (55) boot.esp32c5: SPI Mode       : DIO
+        I (59) boot.esp32c5: SPI Flash Size : 4MB
+        I (63) boot: Enabling RNG early entropy source...
+        I (67) boot: Partition Table:
+        ...
+
+    防回滚功能
+    ^^^^^^^^^^
+
+    防回滚功能可防止降级到可能存在安全漏洞的旧版引导加载程序。引导加载程序头部包含安全版本号，由 ``CONFIG_BOOTLOADER_SECURE_VERSION`` 定义。设置 ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN`` 后，ROM 引导加载程序会将该安全版本号与 ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION`` 中存储的值进行比对。只有版本号大于或等于 eFuse 值的引导加载程序才允许启动。
+
+    - 如果设置了 ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_UPDATE_IN_ROM``，ROM 引导加载程序可以更新 eFuse 中的安全版本号。
+    - 随着新引导加载程序版本的发布，安全版本号会递增，且不能降低。
+    - 如果 ROM 引导加载程序未更新 eFuse 中的安全版本号，则应用程序可以通过 :cpp:func:`esp_efuse_write_field_blob` 函数进行更新。
+
+    相关 eFuse
+    ^^^^^^^^^^
+
+    - ``EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR`` （12 位）：恢复引导加载程序的 flash 扇区地址。默认值为 0（禁用），设置为其他值则启用，设置为 0xFFF 时永久禁用。
+    - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN`` （1 位）：在 ROM 引导加载程序中启用防回滚检查。
+    - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION`` （4 位）：防回滚保护的安全版本号。该值随位数增加而递增—0x0、0x1、0x3、0x7、0xF。
+    - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_UPDATE_IN_ROM`` （1 位）：允许 ROM 引导加载程序更新 eFuse 中的安全版本号。
+
+    .. note::
+
+        建议使用以上功能提升设备在 OTA 升级过程中的安全性和可靠性。请谨慎规划 eFuse 的烧录，因为这些设置是永久性的，可能影响未来的升级策略。
