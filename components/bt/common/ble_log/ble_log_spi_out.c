@@ -860,8 +860,8 @@ static int spi_out_ts_sync_init(void)
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = BIT(SPI_OUT_SYNC_IO_NUM),
-        .pull_down_en = 0,
-        .pull_up_en = 0
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE
     };
     if (gpio_config(&io_conf) != ESP_OK) {
         goto failed;

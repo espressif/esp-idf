@@ -182,8 +182,8 @@ static int process_rtcio_wakeup(int argc, char **argv)
         gpio_config_t config = {
             .pin_bit_mask = BIT64(io_wakeup_num),
             .mode = GPIO_MODE_INPUT,
-            .pull_down_en = false,
-            .pull_up_en = false,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
             .intr_type = GPIO_INTR_DISABLE
         };
         ESP_ERROR_CHECK(gpio_config(&config));
@@ -257,8 +257,8 @@ static int process_gpio_wakeup(int argc, char **argv)
         gpio_config_t config = {
             .pin_bit_mask = BIT64(io_wakeup_num),
             .mode = GPIO_MODE_INPUT,
-            .pull_down_en = false,
-            .pull_up_en = false,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
             .intr_type = (io_wakeup_level == 0) ? GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL
         };
         ESP_ERROR_CHECK(gpio_config(&config));

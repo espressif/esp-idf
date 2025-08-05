@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -170,8 +170,8 @@ static void uart_gpio_set(void)
         .intr_type = GPIO_INTR_DISABLE,    //disable interrupt
         .mode = GPIO_MODE_OUTPUT,    // output mode
         .pin_bit_mask = GPIO_OUTPUT_PIN_SEL,    // bit mask of the output pins
-        .pull_down_en = 0,    // disable pull-down mode
-        .pull_up_en = 0,    // disable pull-up mode
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,  // disable pull-down mode
+        .pull_up_en = GPIO_PULLUP_DISABLE,      // disable pull-up mode
     };
     gpio_config(&io_output_conf);
 
@@ -179,8 +179,8 @@ static void uart_gpio_set(void)
         .intr_type = GPIO_INTR_DISABLE,    //disable interrupt
         .mode = GPIO_MODE_INPUT,    // input mode
         .pin_bit_mask = GPIO_INPUT_PIN_SEL,  // bit mask of the input pins
-        .pull_down_en = 0,    // disable pull-down mode
-        .pull_up_en = 0,    // disable pull-down mode
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,  // disable pull-down mode
+        .pull_up_en = GPIO_PULLUP_DISABLE,      // disable pull-down mode
     };
     gpio_config(&io_input_conf);
 
