@@ -46,7 +46,7 @@ typedef enum {
     RESET_REASON_CORE_USB_UART   = 0x15, // USB UART resets the digital core (hp system)
     RESET_REASON_CORE_USB_JTAG   = 0x16, // USB JTAG resets the digital core (hp system)
     RESET_REASON_CPU0_JTAG       = 0x18, // JTAG resets the CPU 0
-    RESET_REASON_CPU_LOCKUP      = 0x19, // Triggered when the CPU enters lockup (exception inside the exception handler would cause this)
+    RESET_REASON_CPU_LOCKUP      = 0x1A, // Triggered when the CPU enters lockup (exception inside the exception handler would cause this)
 } soc_reset_reason_t;
 
 #ifdef __cplusplus

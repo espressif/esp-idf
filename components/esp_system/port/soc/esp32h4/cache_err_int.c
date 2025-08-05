@@ -19,8 +19,6 @@
 #include "hal/cache_ll.h"
 #include "esp_private/cache_err_int.h"
 
-// TODO: [ESP32H4] IDF-12288 inherited from verification branch, need check
-
 static const char *TAG = "CACHE_ERR";
 
 const char cache_error_msg[] = "Cache access error";
@@ -64,6 +62,13 @@ void esp_cache_err_int_init(void)
     esprv_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 
     ESP_DRAM_LOGV(TAG, "access error intr clr & ena mask is: 0x%x", CACHE_LL_L1_ACCESS_EVENT_MASK);
+    /**
+     * Here we
+     * 1. enable the cache fail tracer to take cache error interrupt into effect.
+     * 2. clear potential cache error interrupt raw bits
+     * 3. enable cache error interrupt en bits
+     */
+    cache_ll_l1_enable_fail_tracer(0, true);
     /* On the hardware side, start by clearing all the bits responsible for cache access error */
     cache_ll_l1_clear_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
     /* Then enable cache access error interrupts. */
