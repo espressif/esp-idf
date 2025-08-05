@@ -105,6 +105,58 @@ function(__init_project_name)
 endfunction()
 
 #[[
+   __init_project_version()
+
+   Initialize the PROJECT_VER build property based on the following precedence.
+
+   1. The PROJECT_VER environment or CMake variable.
+   2. The version.txt file located in the top-level project directory.
+   3. The VERSION argument, if provided, in the project() macro.
+   4. The output of git describe if the project is within a Git repository.
+   5. Defaults to 1 if none of the above conditions are met.
+
+   The value of PROJECT_VER will be overridden later if
+   CONFIG_APP_PROJECT_VER_FROM_CONFIG is defined. For more details, refer to
+   components/esp_app_format/CMakeLists.txt.
+#]]
+function(__init_project_version)
+    idf_build_get_property(project_dir PROJECT_DIR)
+
+    # 1. The PROJECT_VER environment or CMake variable.
+    __get_default_value(VARIABLE PROJECT_VER
+                        DEFAULT NOTFOUND
+                        OUTPUT project_ver)
+    if(project_ver)
+        idf_build_set_property(PROJECT_VER "${project_ver}")
+        return()
+    endif()
+
+    # 2. The version.txt file located in the top-level project directory.
+    if(EXISTS "${project_dir}/version.txt")
+        file(STRINGS "${project_dir}/version.txt" project_ver)
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${project_dir}/version.txt")
+        idf_build_set_property(PROJECT_VER "${project_ver}")
+        return()
+    endif()
+
+    # 3. The VERSION argument, if provided, in the project() macro.
+    if(PROJECT_VERSION)
+        idf_build_set_property(PROJECT_VER "${PROJECT_VERSION}")
+        return()
+    endif()
+
+    # 4. The output of git describe if the project is within a Git repository.
+    git_describe(project_ver "${project_dir}")
+    if(project_ver)
+        idf_build_set_property(PROJECT_VER "${project_ver}")
+        return()
+    endif()
+
+    # 5. Defaults to 1 if none of the above conditions are met.
+    idf_build_set_property(PROJECT_VER 1)
+endfunction()
+
+#[[
    __init_build_configuration()
 
    Configure the build settings in one location, incorporating preset
@@ -542,6 +594,9 @@ function(__init_build)
 
     # Set PROJECT_NAME build property
     __init_project_name()
+
+    # Set PROJECT_VER build property
+    __init_project_version()
 
     # Initialize all compilation options and defines.
     __init_build_configuration()
