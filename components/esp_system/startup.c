@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,54 +58,26 @@ const sys_startup_fn_t g_startup_fn[1] = { start_cpu0 };
 
 static const char* TAG = "cpu_start";
 
-/**
- * Xtensa gcc is configured to emit a .ctors section, RISC-V gcc is configured with --enable-initfini-array
- * so it emits an .init_array section instead.
- * But the init_priority sections will be sorted for iteration in ascending order during startup.
- * The rest of the init_array sections is sorted for iteration in descending order during startup, however.
- * Hence a different section is generated for the init_priority functions which is looped
- * over in ascending direction instead of descending direction.
- * The RISC-V-specific behavior is dependent on the linker script ld/esp32c3/sections.ld.in.
- */
-__attribute__((no_sanitize_undefined)) /* TODO: IDF-8133 */
-static void do_global_ctors(void)
-{
-#if __riscv
-    extern void (*__init_priority_array_start)(void);
-    extern void (*__init_priority_array_end)(void);
-#endif
-
-    extern void (*__init_array_start)(void);
-    extern void (*__init_array_end)(void);
-
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
+/**
+ * @brief A helper function for __do_global_ctors, which is in crtend.o.
+ * It has been adapted from GCC source code. In GCC, it resides under
+ * the USE_EH_FRAME_REGISTRY macro, which is not enabled in Espressif
+ * toolchains to save small memory amount. Nevertheless, when C++ exceptions
+ * are enabled this initialization becomes necessary.
+ */
+static void __do_global_ctors_1(void)
+{
     struct object {
-        long placeholder[ 10 ];
+        long placeholder[10];
     };
     void __register_frame_info(const void *begin, struct object * ob);
     extern char __eh_frame[];
 
     static struct object ob;
     __register_frame_info(__eh_frame, &ob);
-#endif // CONFIG_COMPILER_CXX_EXCEPTIONS
-
-    void (**p)(void);
-
-#if __riscv
-    for (p = &__init_priority_array_start; p < &__init_priority_array_end; ++p) {
-        ESP_LOGD(TAG, "calling init function: %p", *p);
-        (*p)();
-    }
-#endif
-
-    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-out-of-bounds")
-    for (p = &__init_array_end - 1; p >= &__init_array_start; --p) {
-        ESP_LOGD(TAG, "calling init function: %p", *p);
-        (*p)();
-    }
-    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-out-of-bounds")
-
 }
+#endif // CONFIG_COMPILER_CXX_EXCEPTIONS
 
 /**
  * @brief Call component init functions defined using ESP_SYSTEM_INIT_Fn macros.
@@ -199,12 +171,16 @@ static void do_secondary_init(void)
 
 static void start_cpu0_default(void)
 {
+    extern void __libc_init_array(void);
     // Initialize core components and services.
     // Operations that needs the cache to be disabled have to be done here.
     do_core_init();
 
     // Execute constructors.
-    do_global_ctors();
+#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
+    __do_global_ctors_1();
+#endif
+    __libc_init_array();
 
     /* ----------------------------------Separator-----------------------------
      * After this stage, other CPU start running with the cache, however the scheduler (and ipc service) is not available.
