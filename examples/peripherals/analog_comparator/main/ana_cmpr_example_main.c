@@ -14,8 +14,8 @@ void example_init_monitor_gpio(void)
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = (1ULL << EXAMPLE_MONITOR_GPIO_NUM),
-        .pull_down_en = false,
-        .pull_up_en = false,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
     };
     gpio_config(&io_conf);
     gpio_set_level(EXAMPLE_MONITOR_GPIO_NUM, 0);

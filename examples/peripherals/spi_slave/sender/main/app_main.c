@@ -100,7 +100,7 @@ void app_main(void)
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_POSEDGE,
         .mode = GPIO_MODE_INPUT,
-        .pull_up_en = 1,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
         .pin_bit_mask = BIT64(GPIO_HANDSHAKE),
     };
 

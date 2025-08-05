@@ -474,9 +474,9 @@ void esp_phy_gpio_output_set(int number, int level) {
     //bit mask of the pin that you want to set,e.g.GPIO18/19
     io_conf.pin_bit_mask = (1ULL<<number);
     //disable pull-down mode
-    io_conf.pull_down_en = 0;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     //disable pull-up mode
-    io_conf.pull_up_en = 0;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     //configure GPIO with the given settings
     gpio_config(&io_conf);
 
