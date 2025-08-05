@@ -148,8 +148,8 @@ build_docs_html_partial:
     GIT_DEPTH: 0
   stage: test_deploy
   tags:
-    - deploy
-    - shiny
+    - brew
+    - amd64
   script:
     # ensure all tags are fetched, need to know the latest/stable tag for the docs
     - git fetch --tags --prune
