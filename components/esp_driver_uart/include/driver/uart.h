@@ -7,7 +7,6 @@
 #pragma once
 
 #include "esp_err.h"
-#include "esp_intr_alloc.h"
 #include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -23,7 +22,6 @@ extern "C" {
  */
 #define UART_PIN_NO_CHANGE      (-1)
 
-#define UART_FIFO_LEN _Pragma ("GCC warning \"'UART_FIFO_LEN' macro is deprecated, please use 'UART_HW_FIFO_LEN' instead\"") SOC_UART_FIFO_LEN ///< Length of the HP UART HW FIFO
 #if (SOC_UART_LP_NUM >= 1)
 #define UART_HW_FIFO_LEN(uart_num) ((uart_num < SOC_UART_HP_NUM) ? SOC_UART_FIFO_LEN : SOC_LP_UART_FIFO_LEN) ///< Length of the UART HW FIFO
 #else
@@ -94,8 +92,6 @@ typedef struct {
     bool timeout_flag;      /*!< UART data read timeout flag for UART_DATA event (no new data received during configured RX TOUT)*/
     /*!< If the event is caused by FIFO-full interrupt, then there will be no event with the timeout flag before the next byte coming.*/
 } uart_event_t;
-
-typedef intr_handle_t uart_isr_handle_t;
 
 /**
  * @brief Install UART driver and set the UART to the default configuration.
