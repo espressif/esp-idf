@@ -178,7 +178,7 @@ endfunction()
    order of precedence, with the first having the highest precedence.
 
    1. environmental variable
-   2. CMake cache variable
+   2. CMake variable or value stored in CMake's cache
    3. ``<value>`` as specified with the ``DEFAULT`` option
 #]]
 function(__get_default_value)
@@ -202,8 +202,8 @@ function(__get_default_value)
 
     if(DEFINED ENV{${ARG_VARIABLE}})
         set(value "$ENV{${ARG_VARIABLE}}")
-    elseif(DEFINED CACHE{${ARG_VARIABLE}})
-        set(value "$CACHE{${ARG_VARIABLE}}")
+    elseif(DEFINED ${ARG_VARIABLE})
+        set(value "${${ARG_VARIABLE}}")
     else()
         set(value "${ARG_DEFAULT}")
     endif()
