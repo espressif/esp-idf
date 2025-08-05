@@ -1,29 +1,20 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _DRIVER_I2C_H_
-#define _DRIVER_I2C_H_
+#pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <esp_types.h>
-#include "esp_err.h"
-#include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "driver/gpio.h"
+#include "esp_types.h"
+#include "esp_err.h"
+#include "esp_intr_alloc.h" // for intr_alloc_flags
 #include "soc/soc_caps.h"
 #include "hal/i2c_types.h"
 
-#if SOC_I2C_SUPPORT_APB
-#define I2C_APB_CLK_FREQ  _Pragma ("GCC warning \"'I2C_APB_CLK_FREQ' macro is deprecated\"") (APB_CLK_FREQ) /*!< I2C source clock is APB clock, 80MHz, deprecated */
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 // I2C clk flags for users to use, can be expanded in the future.
@@ -630,5 +621,3 @@ esp_err_t i2c_get_data_mode(i2c_port_t i2c_num, i2c_trans_mode_t *tx_trans_mode,
 #ifdef __cplusplus
 }
 #endif
-
-#endif /*_DRIVER_I2C_H_*/
