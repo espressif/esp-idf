@@ -7,7 +7,9 @@ cmake_minimum_required(VERSION 3.22)
 
 include($ENV{IDF_PATH}/tools/cmakev2/idf.cmake)
 
-project(cmakev2 C)
+project(cmakev2
+    VERSION 1.2.3
+    LANGUAGES C CXX ASM)
 
 # Test component priority
 function(test_component_priority)
@@ -159,6 +161,25 @@ function(test_kconfig)
     endforeach()
 endfunction()
 
+# Test that PROJECT_NAME and PROJECT_VER build property is set and contain
+# values provided in project() call.
+function(test_project_properties)
+    idf_build_get_property(project_name PROJECT_NAME)
+    if(NOT project_name)
+        idf_die("PROJECT_NAME build property not set")
+    endif()
+    if(NOT "${project_name}" STREQUAL "${PROJECT_NAME}")
+        idf_die("PROJECT_NAME build property '${project_name}' != '${PROJECT_NAME}'")
+    endif()
+    idf_build_get_property(project_ver PROJECT_VER)
+    if(NOT project_ver)
+        idf_die("PROJECT_VER build property not set")
+    endif()
+    if(NOT "${project_ver}" STREQUAL "${PROJECT_VERSION}")
+        idf_die("PROJECT_VER build property '${project_ver}' != '${PROJECT_VERSION}'")
+    endif()
+endfunction()
+
 # Run tests
 test_component_priority()
 test_idf_version()
@@ -166,6 +187,7 @@ test_python()
 test_toolchain()
 test_idf_build_library()
 test_kconfig()
+test_project_properties()
 __dump_all_properties()
 
 message("ALL TESTS PASSED")
