@@ -68,8 +68,8 @@ struct esp_lcd_i80_bus_t {
     portMUX_TYPE spinlock; // spinlock used to protect i80 bus members(hal, device_list, cur_trans)
     i2s_hal_context_t hal; // Hal object
     size_t bus_width;      // Number of data lines
-    int dc_gpio_num;       // GPIO used for DC line
-    int wr_gpio_num;       // GPIO used for WR line
+    gpio_num_t dc_gpio_num;// GPIO used for DC line
+    gpio_num_t wr_gpio_num;// GPIO used for WR line
     intr_handle_t intr;    // LCD peripheral interrupt handle
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; // lock APB frequency when necessary
@@ -100,7 +100,7 @@ struct lcd_i80_trans_descriptor_t {
 struct lcd_panel_io_i80_t {
     esp_lcd_panel_io_t base;   // Base class of generic lcd panel io
     esp_lcd_i80_bus_t *bus;    // Which bus the device is attached to
-    int cs_gpio_num;           // GPIO used for CS line
+    gpio_num_t cs_gpio_num;    // GPIO used for CS line
     uint32_t pclk_hz;          // PCLK clock frequency
     size_t clock_prescale;     // Prescaler coefficient, determined by user's configured PCLK frequency
     QueueHandle_t trans_queue; // Transaction queue, transactions in this queue are pending for scheduler to dispatch

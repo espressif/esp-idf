@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "esp_lcd_types.h"
+#include "hal/mipi_dsi_types.h"
 
 typedef struct esp_lcd_dsi_bus_t *esp_lcd_dsi_bus_handle_t;   /*!< Type of MIPI DSI bus handle */
 

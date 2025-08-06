@@ -20,8 +20,8 @@ typedef int esp_lcd_spi_bus_handle_t;  /*!< Type of LCD SPI bus handle */
  * @brief Panel IO configuration structure, for SPI interface
  */
 typedef struct {
-    int cs_gpio_num; /*!< GPIO used for CS line */
-    int dc_gpio_num; /*!< GPIO used to select the D/C line, set this to -1 if the D/C line is not used */
+    gpio_num_t cs_gpio_num; /*!< GPIO used for CS line */
+    gpio_num_t dc_gpio_num; /*!< GPIO used to select the D/C line, set this to -1 if the D/C line is not used */
     int spi_mode;    /*!< Traditional SPI mode (0~3) */
     unsigned int pclk_hz;    /*!< Frequency of pixel clock */
     size_t trans_queue_depth; /*!< Size of internal transaction queue */
@@ -35,8 +35,6 @@ typedef struct {
         unsigned int dc_high_on_cmd: 1;  /*!< If enabled, DC level = 1 indicates command transfer */
         unsigned int dc_low_on_data: 1;  /*!< If enabled, DC level = 0 indicates color data transfer */
         unsigned int dc_low_on_param: 1; /*!< If enabled, DC level = 0 indicates parameter transfer */
-        unsigned int octal_mode: 1 __attribute__((deprecated("This bitfield is deprecated"))); /*!< Deprecated, driver will detect the bus mode automatically */
-        unsigned int quad_mode: 1  __attribute__((deprecated("This bitfield is deprecated"))); /*!< Deprecated, driver will detect the bus mode automatically */
         unsigned int sio_mode: 1;        /*!< Read and write through a single data line (MOSI) */
         unsigned int lsb_first: 1;       /*!< transmit LSB bit first */
         unsigned int cs_high_active: 1;  /*!< CS line is high active */

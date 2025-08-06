@@ -27,13 +27,20 @@ TEST_CASE("lcd_panel_with_i2c_interface_(ssd1306)", "[lcd]")
     };
 
     i2c_master_bus_config_t i2c_bus_conf = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = -1, // automatically select a free I2C port
         .sda_io_num = TEST_I2C_SDA_GPIO,
         .scl_io_num = TEST_I2C_SCL_GPIO,
-        .i2c_port = -1,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 4,
+        .intr_priority = 0,
+        .trans_queue_depth = 0, // no tx queue, transmit using blocking mode
+        .flags = {
+            .enable_internal_pullup = true,
+            .allow_pd = false,
+        }
     };
 
-    i2c_master_bus_handle_t bus_handle;
+    i2c_master_bus_handle_t bus_handle = NULL;
     TEST_ESP_OK(i2c_new_master_bus(&i2c_bus_conf, &bus_handle));
 
     esp_lcd_panel_io_handle_t io_handle = NULL;
@@ -44,14 +51,26 @@ TEST_CASE("lcd_panel_with_i2c_interface_(ssd1306)", "[lcd]")
         .dc_bit_offset = 6,       // According to SSD1306 datasheet
         .lcd_cmd_bits = 8,        // According to SSD1306 datasheet
         .lcd_param_bits = 8,      // According to SSD1306 datasheet
+        .on_color_trans_done = NULL,
+        .user_ctx = NULL,
+        .flags = {
+            .dc_low_on_data = false, // According to SSD1306 datasheet, DC=0 means command, DC=1 means data
+            .disable_control_phase = false, // Control phase is used
+        }
     };
 
     TEST_ESP_OK(esp_lcd_new_panel_io_i2c(bus_handle, &io_config, &io_handle));
 
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_panel_dev_config_t panel_config = {
-        .bits_per_pixel = 1,
-        .reset_gpio_num = -1,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_BGR, // SSD1306 is monochrome, so RGB order doesn't matter
+        .data_endian = LCD_RGB_DATA_ENDIAN_LITTLE,
+        .bits_per_pixel = 1, // SSD1306 is monochrome, so 1 bit per pixel
+        .reset_gpio_num = GPIO_NUM_NC,
+        .vendor_config = NULL,
+        .flags = {
+            .reset_active_high = false, // SSD1306 reset is active low
+        }
     };
     TEST_ESP_OK(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle));
     TEST_ESP_OK(esp_lcd_panel_reset(panel_handle));

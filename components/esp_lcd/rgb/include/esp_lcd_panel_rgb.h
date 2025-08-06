@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,6 @@
 #include "esp_err.h"
 #include "esp_lcd_types.h"
 #include "soc/soc_caps.h"
-#include "hal/lcd_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,11 +116,6 @@ typedef esp_lcd_rgb_panel_general_cb_t esp_lcd_rgb_panel_vsync_cb_t;
  */
 typedef bool (*esp_lcd_rgb_panel_bounce_buf_fill_cb_t)(esp_lcd_panel_handle_t panel, void *bounce_buf, int pos_px, int len_bytes, void *user_ctx);
 
-/** @cond */
-/// for backward compatible
-typedef esp_lcd_rgb_panel_frame_buf_complete_cb_t esp_lcd_rgb_panel_bounce_buf_finish_cb_t __attribute__((deprecated("esp_lcd_rgb_panel_bounce_buf_finish_cb_t is deprecated, use esp_lcd_rgb_panel_frame_buf_complete_cb_t instead")));
-/** @endcond */
-
 /**
  * @brief Group of supported RGB LCD panel callbacks
  * @note The callbacks are all running under ISR environment
@@ -133,10 +127,7 @@ typedef struct {
                                                                       But doesn't mean the draw buffer finishes the refreshing to the screen. */
     esp_lcd_rgb_panel_vsync_cb_t on_vsync;                         /*!< VSYNC event callback */
     esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty;        /*!< Bounce buffer empty callback. */
-    union {
-        esp_lcd_rgb_panel_frame_buf_complete_cb_t on_bounce_frame_finish __attribute__((deprecated)); /*!< Bounce buffer finish callback. */
-        esp_lcd_rgb_panel_frame_buf_complete_cb_t on_frame_buf_complete;  /*!< A whole frame buffer was just sent to the LCD DMA */
-    };
+    esp_lcd_rgb_panel_frame_buf_complete_cb_t on_frame_buf_complete;  /*!< A whole frame buffer was just sent to the LCD DMA */
 } esp_lcd_rgb_panel_event_callbacks_t;
 
 /**
@@ -151,17 +142,13 @@ typedef struct {
     size_t num_fbs;               /*!< Number of screen-sized frame buffers that allocated by the driver. By default (set to either 0 or 1) only one frame buffer will be used. Maximum number of buffers are 3 */
     size_t bounce_buffer_size_px; /*!< If it's non-zero, the driver allocates two DRAM bounce buffers for DMA use.
                                        DMA fetching from DRAM bounce buffer is much faster than PSRAM frame buffer. */
-    size_t sram_trans_align __attribute__((deprecated)); /*!< Alignment of buffers (frame buffer or bounce buffer) that allocated in SRAM */
-    union {
-        size_t psram_trans_align __attribute__((deprecated)); /*!< Alignment of buffers (frame buffer) that allocated in PSRAM */
-        size_t dma_burst_size;    /*!< DMA burst size, in bytes */
-    };
-    int hsync_gpio_num;           /*!< GPIO used for HSYNC signal */
-    int vsync_gpio_num;           /*!< GPIO used for VSYNC signal */
-    int de_gpio_num;              /*!< GPIO used for DE signal, set to -1 if it's not used */
-    int pclk_gpio_num;            /*!< GPIO used for PCLK signal, set to -1 if it's not used */
-    int disp_gpio_num;            /*!< GPIO used for display control signal, set to -1 if it's not used */
-    int data_gpio_nums[SOC_LCDCAM_RGB_DATA_WIDTH]; /*!< GPIOs used for data lines */
+    size_t dma_burst_size;        /*!< DMA burst size, in bytes */
+    gpio_num_t hsync_gpio_num;    /*!< GPIO used for HSYNC signal */
+    gpio_num_t vsync_gpio_num;    /*!< GPIO used for VSYNC signal */
+    gpio_num_t de_gpio_num;       /*!< GPIO used for DE signal, set to -1 if it's not used */
+    gpio_num_t pclk_gpio_num;     /*!< GPIO used for PCLK signal, set to -1 if it's not used */
+    gpio_num_t disp_gpio_num;     /*!< GPIO used for display control signal, set to -1 if it's not used */
+    gpio_num_t data_gpio_nums[SOC_LCDCAM_RGB_DATA_WIDTH]; /*!< GPIOs used for data lines */
     struct {
         uint32_t disp_active_low: 1;     /*!< If this flag is enabled, a low level of display control signal can turn the screen on; vice versa */
         uint32_t refresh_on_demand: 1;   /*!< If this flag is enabled, the host only refresh the frame buffer in `esp_lcd_panel_draw_bitmap` and `esp_lcd_rgb_panel_refresh`. */

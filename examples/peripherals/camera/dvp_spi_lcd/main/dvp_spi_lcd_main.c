@@ -91,7 +91,7 @@ static void lcd_display_init(esp_lcd_panel_handle_t *lcd_panel_hdl, esp_lcd_pane
     ESP_LOGI(TAG, "New ST7789 panel");
     const esp_lcd_panel_dev_config_t panel_dev_cfg = {
         .reset_gpio_num   = EXAMPLE_LCD_RST,
-        .color_space      = ESP_LCD_COLOR_SPACE_RGB,
+        .rgb_ele_order    = LCD_RGB_ELEMENT_ORDER_RGB,
         .bits_per_pixel   = EXAMPLE_RGB565_BITS_PER_PIXEL,
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(lcd_io_hdl, &panel_dev_cfg, &panel_handle));

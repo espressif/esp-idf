@@ -106,9 +106,9 @@ static esp_err_t i2c_master_init(void)
     i2c_config_t conf_master = {
         .mode = I2C_MODE_MASTER,
         .sda_io_num = I2C_SDA_GPIO,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .sda_pullup_en = true,
         .scl_io_num = I2C_SCL_GPIO,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_pullup_en = true,
         .master.clk_speed = I2C_CLK_FREQUENCY,
     };
 

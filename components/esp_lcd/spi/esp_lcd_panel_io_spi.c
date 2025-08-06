@@ -47,7 +47,7 @@ typedef struct {
     esp_lcd_panel_io_t base;     // Base class of generic lcd panel io
     spi_device_handle_t spi_dev; // SPI device handle
     size_t spi_trans_max_bytes;  // Maximum bytes that can be transmitted in one spi transaction
-    int dc_gpio_num;             // D/C line GPIO number
+    gpio_num_t dc_gpio_num;      // D/C line GPIO number
     esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; // User register's callback, invoked when color data trans done
     void *user_ctx;           // User's private data, passed directly to callback on_color_trans_done
     size_t queue_size;         // Size of transaction queue
