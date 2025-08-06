@@ -23,8 +23,14 @@
 #define CONSOLE_UART_CHANNEL    (1 - DEFAULT_UART_CHANNEL)
 #define DEFAULT_UART_RX_PIN     (3)
 #define DEFAULT_UART_TX_PIN     (2)
+
+#if CONFIG_IDF_TARGET_ESP32H4
+#define CONSOLE_UART_RX_PIN     (15)
+#define CONSOLE_UART_TX_PIN     (16)
+#else
 #define CONSOLE_UART_RX_PIN     (4)
 #define CONSOLE_UART_TX_PIN     (5)
+#endif
 
 #define UARTS_BAUD_RATE         (115200)
 #define TASK_STACK_SIZE         (2048)
