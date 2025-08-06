@@ -372,7 +372,8 @@ static size_t IRAM_ATTR rmt_encode_simple(rmt_encoder_t *encoder, rmt_channel_ha
         // reset internal index if encoding session has finished
         simple_encoder->last_symbol_index = 0;
         state |= RMT_ENCODING_COMPLETE;
-    } else {
+    }
+    if (tx_chan->mem_off >= tx_chan->mem_end) {
         // no more free memory, the caller should yield
         state |= RMT_ENCODING_MEM_FULL;
     }
