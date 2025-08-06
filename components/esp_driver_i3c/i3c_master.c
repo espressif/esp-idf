@@ -332,14 +332,14 @@ static esp_err_t i3c_pins_config(const i3c_master_bus_config_t *bus_config)
 {
     esp_err_t ret = ESP_OK;
     // SDA pin configurations
-    ESP_RETURN_ON_ERROR(gpio_set_level(bus_config->sda_io_num, 1), TAG, "i2c sda pin set level failed");
+    ESP_RETURN_ON_ERROR(gpio_set_level(bus_config->sda_io_num, 1), TAG, "i3c sda pin set level failed");
     gpio_input_enable(bus_config->sda_io_num);
     gpio_func_sel(bus_config->sda_io_num, PIN_FUNC_GPIO);
     gpio_matrix_output(bus_config->sda_io_num, i3c_master_periph_signal->sda_out_sig, 0, 0);
     gpio_matrix_input(bus_config->sda_io_num, i3c_master_periph_signal->sda_in_sig, 0);
 
     // SCL pin configurations
-    ESP_RETURN_ON_ERROR(gpio_set_level(bus_config->scl_io_num, 1), TAG, "i2c scl pin set level failed");
+    ESP_RETURN_ON_ERROR(gpio_set_level(bus_config->scl_io_num, 1), TAG, "i3c scl pin set level failed");
     gpio_input_enable(bus_config->scl_io_num);
     gpio_func_sel(bus_config->scl_io_num, PIN_FUNC_GPIO);
     gpio_matrix_output(bus_config->scl_io_num, i3c_master_periph_signal->scl_out_sig, 0, 0);
@@ -445,7 +445,6 @@ static esp_err_t do_dma_transaction_handler(i3c_master_bus_handle_t bus_handle, 
 {
     esp_err_t err = ESP_OK;
     bus_handle->cur_trans = trans;
-    printf("here, do dma\n");
 
     portENTER_CRITICAL_SAFE(&bus_handle->spinlock);
     if (trans->scl_freq_hz > 400 * 1000) {
@@ -509,7 +508,6 @@ static esp_err_t do_dma_transaction_handler(i3c_master_bus_handle_t bus_handle, 
     portENTER_CRITICAL_SAFE(&bus_handle->spinlock);
     i3c_master_ll_start_transaction(bus_handle->hal.dev);
     portEXIT_CRITICAL_SAFE(&bus_handle->spinlock);
-    printf("here, start transaction\n");
     return ESP_OK;
 }
 

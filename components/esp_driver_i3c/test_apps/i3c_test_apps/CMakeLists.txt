@@ -27,5 +27,5 @@ endif()
 
 message(STATUS "Checking i3c registers are not read-write by half-word")
 include($ENV{IDF_PATH}/tools/ci/check_register_rw_half_word.cmake)
-check_register_rw_half_word(SOC_MODULES "i3c_mst" "i3c_mst_mem" "hp_sys_clkrst" "lpperi" "lp_clkrst"
-                            HAL_MODULES "i3c_master")
+check_register_rw_half_word(SOC_MODULES "i3c_mst" "i3c_mst_mem" "hp_sys_clkrst" "i3c_slv"
+                            HAL_MODULES "i3c_master" "i3c_slave")
