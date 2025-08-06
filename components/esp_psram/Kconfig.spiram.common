@@ -69,6 +69,7 @@ choice SPIRAM_USE
         return SPI RAM pointers.
 
     config SPIRAM_USE_MEMMAP
+        depends on IDF_TARGET_ESP32
         bool "Integrate RAM into memory map"
     config SPIRAM_USE_CAPS_ALLOC
         bool "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)"
