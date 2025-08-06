@@ -3,7 +3,6 @@
 import glob
 import os
 import re
-import typing as t
 import xml.etree.ElementTree as ET
 from urllib.parse import quote
 from urllib.parse import urlencode
@@ -20,7 +19,7 @@ from .models import GitlabJob
 from .models import TestCase
 
 
-def parse_testcases_from_filepattern(junit_report_filepattern: str) -> t.List[TestCase]:
+def parse_testcases_from_filepattern(junit_report_filepattern: str) -> list[TestCase]:
     """
     Parses test cases from XML files matching the provided file pattern.
 
@@ -38,12 +37,12 @@ def parse_testcases_from_filepattern(junit_report_filepattern: str) -> t.List[Te
     return test_cases
 
 
-def load_known_failure_cases() -> t.Optional[t.Set[str]]:
+def load_known_failure_cases() -> set[str] | None:
     known_failures_file = os.getenv('KNOWN_FAILURE_CASES_FILE_NAME', '')
     if not known_failures_file:
         return None
     try:
-        with open(known_failures_file, 'r') as f:
+        with open(known_failures_file) as f:
             file_content = f.read()
 
         pattern = re.compile(r'^(.*?)\s+#\s+([A-Z]+)-\d+', re.MULTILINE)
@@ -66,7 +65,7 @@ def is_url(string: str) -> bool:
     return bool(parsed.scheme) and bool(parsed.netloc)
 
 
-def fetch_failed_jobs(commit_id: str) -> t.List[GitlabJob]:
+def fetch_failed_jobs(commit_id: str) -> list[GitlabJob]:
     """
     Fetches a list of jobs from the specified commit_id using an API request to ci-dashboard-api.
     :param commit_id: The commit ID for which to fetch jobs.
@@ -110,7 +109,7 @@ def fetch_failed_jobs(commit_id: str) -> t.List[GitlabJob]:
     return combined_jobs
 
 
-def fetch_failed_testcases_failure_ratio(failed_testcases: t.List[TestCase], branches_filter: dict) -> t.List[TestCase]:
+def fetch_failed_testcases_failure_ratio(failed_testcases: list[TestCase], branches_filter: dict) -> list[TestCase]:
     """
     Fetches info about failure rates of testcases using an API request to ci-dashboard-api.
     :param failed_testcases: The list of failed testcases models.
@@ -140,13 +139,14 @@ def fetch_failed_testcases_failure_ratio(failed_testcases: t.List[TestCase], bra
 def fetch_app_metrics(
     source_commit_sha: str,
     target_commit_sha: str,
-) -> t.Dict:
+) -> dict:
     """
     Fetches the app metrics for the given source commit SHA and target branch SHA.
     :param source_commit_sha: The source commit SHA.
     :param target_branch_sha: The commit SHA of the branch to compare app sizes against.
     :return: A dict of sizes of built binaries.
     """
+    print(f'Fetching bin size info: {source_commit_sha=} {target_commit_sha=}')
     build_info_map = dict()
     response = requests.post(
         f'{CI_DASHBOARD_API}/apps/metrics',
@@ -174,7 +174,7 @@ def load_file(file_path: str) -> str:
     :param file_path: The path to the file needs to be loaded.
     :return: The content of the file as a string.
     """
-    with open(file_path, 'r') as file:
+    with open(file_path) as file:
         return file.read()
 
 

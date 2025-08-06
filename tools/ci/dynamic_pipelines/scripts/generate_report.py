@@ -23,7 +23,7 @@ def main() -> None:
     parser: argparse.ArgumentParser = setup_argument_parser()
     args: argparse.Namespace = parser.parse_args()
 
-    report_actions: t.Dict[str, t.Callable[[argparse.Namespace], None]] = {
+    report_actions: dict[str, t.Callable[[argparse.Namespace], None]] = {
         'build': generate_build_report,
         'target_test': generate_target_test_report,
         'job': generate_jobs_report,
@@ -42,7 +42,7 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         '--report-type', choices=['build', 'target_test', 'job'], required=True, help='Type of report to generate'
     )
     report_type_args: argparse.Namespace
-    remaining_args: t.List[str]
+    remaining_args: list[str]
     report_type_args, remaining_args = report_type_parser.parse_known_args()
 
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
@@ -105,7 +105,7 @@ def generate_build_report(args: argparse.Namespace) -> None:
 
 
 def generate_target_test_report(args: argparse.Namespace) -> None:
-    test_cases: t.List[t.Any] = parse_testcases_from_filepattern(args.junit_report_filepattern)
+    test_cases: list[t.Any] = parse_testcases_from_filepattern(args.junit_report_filepattern)
     report_generator = TargetTestReportGenerator(
         args.project_id,
         args.mr_iid,
@@ -123,7 +123,7 @@ def generate_target_test_report(args: argparse.Namespace) -> None:
 
 
 def generate_jobs_report(args: argparse.Namespace) -> None:
-    jobs: t.List[t.Any] = fetch_failed_jobs(args.commit_id)
+    jobs: list[t.Any] = fetch_failed_jobs(args.commit_id)
 
     if not jobs:
         return

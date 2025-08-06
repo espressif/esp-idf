@@ -9,6 +9,7 @@ from dynamic_pipelines.constants import BINARY_SIZE_METRIC_NAME
 from idf_build_apps import App
 from idf_build_apps import CMakeApp
 from idf_build_apps.utils import rmdir
+from idf_ci_utils import idf_relpath
 
 if t.TYPE_CHECKING:
     pass
@@ -53,17 +54,17 @@ class Metrics:
 
     def __init__(
         self,
-        source_value: t.Optional[float] = None,
-        target_value: t.Optional[float] = None,
-        difference: t.Optional[float] = None,
-        difference_percentage: t.Optional[float] = None,
+        source_value: float | None = None,
+        target_value: float | None = None,
+        difference: float | None = None,
+        difference_percentage: float | None = None,
     ) -> None:
         self.source_value = source_value or 0.0
         self.target_value = target_value or 0.0
         self.difference = difference or 0.0
         self.difference_percentage = difference_percentage or 0.0
 
-    def to_dict(self) -> t.Dict[str, t.Any]:
+    def to_dict(self) -> dict[str, t.Any]:
         """
         Converts the Metrics object to a dictionary.
         """
@@ -76,7 +77,7 @@ class Metrics:
 
 
 class AppWithMetricsInfo(IdfCMakeApp):
-    metrics: t.Dict[str, Metrics]
+    metrics: dict[str, Metrics]
     is_new_app: bool
 
     def __init__(self, **kwargs: t.Any) -> None:
@@ -90,13 +91,13 @@ class AppWithMetricsInfo(IdfCMakeApp):
 
 
 def enrich_apps_with_metrics_info(
-    app_metrics_info_map: t.Dict[str, t.Dict[str, t.Any]], apps: t.List[App]
-) -> t.List[AppWithMetricsInfo]:
-    def _get_full_attributes(obj: App) -> t.Dict[str, t.Any]:
+    app_metrics_info_map: dict[str, dict[str, t.Any]], apps: list[App]
+) -> list[AppWithMetricsInfo]:
+    def _get_full_attributes(obj: App) -> dict[str, t.Any]:
         """
         Retrieves all attributes of an object, including properties and computed fields.
         """
-        attributes: t.Dict[str, t.Any] = obj.__dict__.copy()
+        attributes: dict[str, t.Any] = obj.__dict__.copy()
         for attr in dir(obj):
             if not attr.startswith('_'):  # Skip private/internal attributes
                 try:
@@ -120,6 +121,7 @@ def enrich_apps_with_metrics_info(
 
     apps_with_metrics_info = []
     for app in apps:
+        app.app_dir = idf_relpath(app.app_dir)
         key = f'{app.app_dir}_{app.config_name}_{app.target}'
         app_attributes = _get_full_attributes(app)
 
