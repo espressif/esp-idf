@@ -256,7 +256,7 @@ Once you created an encoder, you can initiate a TX transaction by calling :cpp:f
 
 .. note::
 
-    There is a limitation in the transmission size if the :cpp:member:`rmt_transmit_config_t::loop_count` is set to non-zero, i.e., to enable the loop feature. The encoded RMT symbols should not exceed the capacity of the RMT hardware memory block size, or you might see an error message like ``encoding artifacts can't exceed hw memory block for loop transmission``. If you have to start a large transaction by loop, you can try either of the following methods.
+    There is a limitation in the transmission size if the :cpp:member:`rmt_transmit_config_t::loop_count` is set to non-zero, i.e., to enable the loop feature. The total amount of symbols returned by the encoder should not exceed the capacity of :c:macro:`SOC_RMT_MEM_WORDS_PER_CHANNEL`, or you might see an error message like ``encoding artifacts can't exceed hw memory block for loop transmission``. If you have to start a large transaction by loop, you can try either of the following methods.
 
     - Increase the :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols`. This approach does not work if the DMA backend is also enabled.
     - Customize an encoder and construct an infinite loop in the encoding function. See also :ref:`rmt-rmt-encoder`.
