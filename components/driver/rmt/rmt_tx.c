@@ -589,18 +589,21 @@ static size_t IRAM_ATTR rmt_encode_check_result(rmt_tx_channel_t *tx_chan, rmt_t
     rmt_encode_state_t encode_state = RMT_ENCODING_RESET;
     rmt_encoder_handle_t encoder = t->encoder;
     size_t encoded_symbols = encoder->encode(encoder, &tx_chan->base, t->payload, t->payload_bytes, &encode_state);
+    bool is_mem_full = encode_state & RMT_ENCODING_MEM_FULL;
+
     if (encode_state & RMT_ENCODING_COMPLETE) {
         t->flags.encoding_done = true;
         // inserting EOF symbol if there's extra space
-        if (!(encode_state & RMT_ENCODING_MEM_FULL)) {
+        if (!is_mem_full) {
             rmt_tx_mark_eof(tx_chan);
             encoded_symbols += 1;
         }
     }
 
-    // for loop transaction, the memory block should accommodate all encoded RMT symbols
+    // for loop transaction, the memory block should accommodate all encoded RMT symbols and an extra EOF symbol
     if (t->loop_count != 0) {
-        if (unlikely(encoded_symbols > tx_chan->base.mem_block_num * SOC_RMT_MEM_WORDS_PER_CHANNEL)) {
+        size_t limit_symbols = tx_chan->base.mem_block_num * SOC_RMT_MEM_WORDS_PER_CHANNEL;
+        if (unlikely(encoded_symbols > limit_symbols)) {
             ESP_DRAM_LOGE(TAG, "encoding artifacts can't exceed hw memory block for loop transmission");
         }
     }
