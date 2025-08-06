@@ -15,7 +15,7 @@
 
 #define ALLOC_SZ 1024
 
-#if  !(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT)
+#if !CONFIG_ESP_SYSTEM_MEMPROT
 static void *malloc_block_diram(uint32_t caps)
 {
     void *attempts[256] = { 0 }; // Allocate up to 256 ALLOC_SZ blocks to exhaust all non-D/IRAM memory temporarily
@@ -78,4 +78,4 @@ TEST_CASE("Allocate D/IRAM as IRAM", "[heap][qemu-ignore]")
 
     free(iram);
 }
-#endif // !(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT)
+#endif // !CONFIG_ESP_SYSTEM_MEMPROT

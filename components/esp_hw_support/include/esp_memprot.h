@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #pragma once
 
 #include "sdkconfig.h"
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_MEMPROT_TEST
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -93,7 +93,7 @@ esp_err_t esp_mprot_get_active_intr(esp_memp_intr_source_t *active_memp_intr);
  * @brief Returns the address which caused the violation interrupt for given Memory type and CPU/Core ID.
  * This function is to be called after a basic resolving of (current) interrupt's parameters (ie corresponding
  * Memory type and CPU ID see esp_mprot_get_active_intr()). This is to minimize processing time of actual exception
- * as this API is typicaly used in a panic-handling code.
+ * as this API is typically used in a panic-handling code.
  * If there is no active interrupt available for the Memory type/CPU ID required, fault_addr is set to NULL.
  *
  * @param mem_type memory type
@@ -167,7 +167,7 @@ esp_err_t esp_mprot_get_violate_byte_enables(const esp_mprot_mem_t mem_type, uin
 /**
  * @brief Convenient routine for setting the PMS defaults
  *
- * Called on system startup, depending on ESP_SYSTEM_MEMPROT_FEATURE Kconfig value
+ * Called on system startup, depending on ESP_SYSTEM_MEMPROT Kconfig value
  *
  * @param memp_config pointer to Memprot configuration structure (esp_memp_config_t). The structure si chip-specific,
  * for details and defaults see appropriate [target-chip]/soc_memprot_types.h
@@ -197,4 +197,4 @@ esp_err_t esp_mprot_dump_configuration(char **dump_info_string);
 }
 #endif
 
-#endif //CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_MEMPROT_TEST
+#endif //CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS

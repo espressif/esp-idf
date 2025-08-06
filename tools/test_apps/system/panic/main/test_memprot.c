@@ -223,7 +223,7 @@ static void __attribute__((constructor)) test_print_rtc_var_func(void)
 
 /* ---------------------------------------------------- I/D Cache (Flash) Violation Checks ---------------------------------------------------- */
 
-#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+#if CONFIG_ESP_SYSTEM_MEMPROT
 static const uint16_t foo_buf[8] = {
     0x0001, 0x0001, 0x0001, 0x0001,
     0x0001, 0x0001, 0x0001, 0x0001,

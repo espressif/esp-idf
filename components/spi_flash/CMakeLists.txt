@@ -53,6 +53,10 @@ else()
 
     list(APPEND srcs ${cache_srcs})
     set(priv_requires bootloader_support soc esp_mm)
+
+    if(${target} STREQUAL "esp32s2")
+        list(APPEND priv_requires esp_security)
+    endif()
 endif()
 
 idf_component_register(SRCS "${srcs}"

@@ -11,8 +11,7 @@ endif()
 
 set(requires soc)
 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
-# TODO: remove esp_security from REQUIRES in ESP-IDF v6.0 (see IDF-10733)
-set(priv_requires efuse spi_flash bootloader_support esp_security)
+set(priv_requires efuse spi_flash bootloader_support)
 
 if(${target} STREQUAL "esp32c6")
     list(APPEND priv_requires hal)

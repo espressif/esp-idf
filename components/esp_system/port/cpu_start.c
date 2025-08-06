@@ -782,7 +782,7 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
     esp_cache_err_int_init();
 #endif
 
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE && !CONFIG_ESP_SYSTEM_MEMPROT_TEST
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS && !CONFIG_ESP_SYSTEM_MEMPROT_PMS_TEST
     // Memprot cannot be locked during OS startup as the lock-on prevents any PMS changes until a next reboot
     // If such a situation appears, it is likely an malicious attempt to bypass the system safety setup -> print error & reset
 
@@ -799,14 +799,14 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
     //default configuration of PMS Memprot
     esp_err_t memp_err = ESP_OK;
 #if CONFIG_IDF_TARGET_ESP32S2 //specific for ESP32S2 unless IDF-3024 is merged
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_LOCK
+#if CONFIG_ESP_SYSTEM_MEMPROT_PMS_LOCK
     memp_err = esp_memprot_set_prot(PANIC_HNDL_ON, MEMPROT_LOCK, NULL);
 #else
     memp_err = esp_memprot_set_prot(PANIC_HNDL_ON, MEMPROT_UNLOCK, NULL);
 #endif
 #else //CONFIG_IDF_TARGET_ESP32S2 specific end
     esp_memp_config_t memp_cfg = ESP_MEMPROT_DEFAULT_CONFIG();
-#if !CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_LOCK
+#if !CONFIG_ESP_SYSTEM_MEMPROT_PMS_LOCK
     memp_cfg.lock_feature = false;
 #endif
     memp_err = esp_mprot_set_prot(&memp_cfg);
@@ -816,7 +816,7 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
         ESP_EARLY_LOGE(TAG, "Failed to set Memprot feature (0x%08X: %s), rebooting.", memp_err, esp_err_to_name(memp_err));
         esp_restart_noos();
     }
-#endif //CONFIG_ESP_SYSTEM_MEMPROT_FEATURE && !CONFIG_ESP_SYSTEM_MEMPROT_TEST
+#endif //CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS && !CONFIG_ESP_SYSTEM_MEMPROT_PMS_TEST
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     // External devices (including SPI0/1, cache) should be initialized

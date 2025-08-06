@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,13 +8,6 @@
 #include "esp_private/system_internal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#if CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/memprot.h"
-#else
-#include "esp_memprot.h"
-#endif
-#endif
 
 #define SHUTDOWN_HANDLERS_NO 5
 

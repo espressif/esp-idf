@@ -171,8 +171,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_cpu.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_crc.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_etm.h \
-    $(PROJECT_PATH)/components/esp_hw_support/include/esp_ds.h \
-    $(PROJECT_PATH)/components/esp_hw_support/include/esp_hmac.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_intr_alloc.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_intr_types.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_mac.h \
@@ -204,6 +202,8 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_pm/include/esp_pm.h \
     $(PROJECT_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
     $(PROJECT_PATH)/components/esp_rom/include/esp_rom_sys.h \
+    $(PROJECT_PATH)/components/esp_security/include/esp_ds.h \
+    $(PROJECT_PATH)/components/esp_security/include/esp_hmac.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_freertos_hooks.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_ipc_isr.h \

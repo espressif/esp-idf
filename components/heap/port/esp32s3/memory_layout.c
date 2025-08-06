@@ -41,7 +41,7 @@ enum {
 #define ESP32S3_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT)
 
 
-#ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#ifdef CONFIG_ESP_SYSTEM_MEMPROT
 #define MALLOC_DIRAM_BASE_CAPS      ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_RETENTION
 #define MALLOC_RTCRAM_BASE_CAPS     ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL
 #else
@@ -82,7 +82,7 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 #define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
 
 const soc_memory_region_t soc_memory_regions[] = {
-#if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB && !defined(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE)
+#if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB && !defined(CONFIG_ESP_SYSTEM_MEMPROT)
     { 0x40374000,           0x4000,                                     SOC_MEMORY_TYPE_IRAM,   0,                                      false}, //Level 1, IRAM
 #endif
     { 0x3FC88000,           0x8000,                                     SOC_MEMORY_TYPE_DIRAM,  0x40378000,                             false}, //Level 2, IDRAM, can be used as trace memory
