@@ -5,10 +5,6 @@ components/freertos/test_apps/freertos:
     - if: CONFIG_NAME == "smp" and IDF_TARGET == "esp32p4"
       temporary: true
       reason: target(s) not supported yet
-  disable_test:
-    - if: CONFIG_NAME == "smp" and IDF_TARGET == "esp32c5"
-      temporary: true
-      reason: target test failed # TODO: [ESP32C5] IDF-10335
 
 components/freertos/test_apps/orig_inc_path:
   enable:
