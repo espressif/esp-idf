@@ -63,6 +63,29 @@ TEST_CASE_MULTIPLE_STAGES("Can use 8MD256 as RTC clock source in deepsleep (ente
                             request_core1_do_deepsleep,
                             check_reset_reason_deep_sleep);
 
+static void do_cpu_reset(void)
+{
+    esp_restart();
+}
+
+static void check_cpu_reset_and_do_system_reset(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
+    esp_rom_software_reset_system();
+}
+
+static void check_system_reset_and_do_deepsleep(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
+    test_deepsleep(false);
+}
+
+TEST_CASE_MULTIPLE_STAGES("Can use 8MD256 as RTC clock source in deepsleep after reset", "[pm]",
+                            do_cpu_reset,
+                            check_cpu_reset_and_do_system_reset,
+                            check_system_reset_and_do_deepsleep,
+                            check_reset_reason_deep_sleep);
+
 static void test_lightsleep(bool force_rtc_periph)
 {
     esp_sleep_enable_timer_wakeup(2000000);
