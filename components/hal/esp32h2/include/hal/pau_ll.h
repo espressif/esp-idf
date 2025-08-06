@@ -120,6 +120,16 @@ static inline __attribute__((always_inline)) void pau_ll_clear_regdma_backup_err
     dev->int_clr.error_int_clr = 1;
 }
 
+static inline void pau_ll_set_regdma_link_wait_retry_count(pau_dev_t *dev, int count)
+{
+    dev->regdma_bkp_conf.link_tout_thres = count;
+}
+
+static inline void pau_ll_set_regdma_link_wait_read_interval(pau_dev_t *dev, int interval)
+{
+    dev->regdma_bkp_conf.read_interval = interval;
+}
+
 #ifdef __cplusplus
 }
 #endif
