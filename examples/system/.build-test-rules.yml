@@ -320,10 +320,6 @@ examples/system/ulp/lp_core/lp_adc:
 examples/system/ulp/lp_core/lp_i2c:
   enable:
     - if: SOC_LP_I2C_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: target esp32p4 is not supported yet, TODO IDF-9407
   depends_components:
     - ulp
 

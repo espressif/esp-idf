@@ -57,10 +57,6 @@ tools/test_apps/system/longjmp_test:
     - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
       temporary: true
       reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET == "esp32s3"
-      temporary: true
-      reason: lack of runners
 
 tools/test_apps/system/memprot:
   enable:
