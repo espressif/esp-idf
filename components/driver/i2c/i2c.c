@@ -981,7 +981,7 @@ esp_err_t i2c_get_timeout(i2c_port_t i2c_num, int *timeout)
     return ESP_OK;
 }
 
-esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, bool sda_pullup_en, bool scl_pullup_en, i2c_mode_t mode)
+esp_err_t i2c_set_pin(i2c_port_t i2c_num, gpio_num_t sda_io_num, gpio_num_t scl_io_num, bool sda_pullup_en, bool scl_pullup_en, i2c_mode_t mode)
 {
     ESP_RETURN_ON_FALSE((i2c_num < I2C_NUM_MAX), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     ESP_RETURN_ON_FALSE(((sda_io_num < 0) || ((GPIO_IS_VALID_OUTPUT_GPIO(sda_io_num)))), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_SDA_IO_ERR_STR);
