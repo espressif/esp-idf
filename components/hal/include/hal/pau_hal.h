@@ -111,6 +111,15 @@ void pau_hal_stop_regdma_extra_link(pau_hal_context_t *hal);
 void pau_hal_regdma_clock_configure(pau_hal_context_t *hal, bool enable);
 #endif
 
+/**
+ * @brief Set regdma link wait timeout, include wait retry count and register read interval
+ *
+ * @param hal           regdma hal context
+ * @param count         the maximum number of regdma wait retry count
+ * @param interval      the interval of regdma wait link to read register
+ */
+void pau_hal_set_regdma_wait_timeout(pau_hal_context_t *hal, int count, int interval);
+
 #endif
 
 #ifdef __cplusplus

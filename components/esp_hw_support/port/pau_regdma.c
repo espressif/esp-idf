@@ -15,6 +15,9 @@
 #include "esp_private/esp_pau.h"
 #include "esp_private/periph_ctrl.h"
 
+#define PAU_REGDMA_LINK_WAIT_RETRY_COUNT    (1000)
+#define PAU_REGDMA_LINK_WAIT_READ_INTERNAL  (32)
+
 static __attribute__((unused)) const char *TAG = "pau_regdma";
 
 typedef struct {
@@ -32,6 +35,7 @@ pau_context_t * __attribute__((weak)) IRAM_ATTR PAU_instance(void)
     if (pau_hal.dev == NULL) {
         pau_hal.dev = &PAU;
         periph_module_enable(PERIPH_REGDMA_MODULE);
+        pau_hal_set_regdma_wait_timeout(&pau_hal, PAU_REGDMA_LINK_WAIT_RETRY_COUNT, PAU_REGDMA_LINK_WAIT_READ_INTERNAL);
     }
 
     return &pau_context;

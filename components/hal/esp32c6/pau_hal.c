@@ -56,3 +56,10 @@ void IRAM_ATTR pau_hal_stop_regdma_extra_link(pau_hal_context_t *hal)
     pau_ll_select_regdma_entry_link(hal->dev, 0); /* restore link select to default */
     pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
 }
+
+void pau_hal_set_regdma_wait_timeout(pau_hal_context_t *hal, int count, int interval)
+{
+    HAL_ASSERT(count > 0 && interval > 0);
+    pau_ll_set_regdma_link_wait_retry_count(hal->dev, count);
+    pau_ll_set_regdma_link_wait_read_interval(hal->dev, interval);
+}
