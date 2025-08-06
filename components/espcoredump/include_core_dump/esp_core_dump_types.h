@@ -66,8 +66,8 @@ extern "C" {
                                                 (((_maj_)&0xFF) << 8) | \
                                                 (((_min_)&0xFF) << 0) \
                                             )
-#define COREDUMP_VERSION_BIN                0
-#define COREDUMP_VERSION_ELF                1
+#define COREDUMP_VERSION_BIN                1
+#define COREDUMP_VERSION_ELF                2
 
 /* legacy bin coredumps (before IDF v4.1) has version set to 1 */
 #define COREDUMP_VERSION_BIN_LEGACY         COREDUMP_VERSION_MAKE(COREDUMP_VERSION_BIN, 1) // -> 0x0001
@@ -146,6 +146,8 @@ typedef struct _core_dump_header_t {
     uint32_t tcb_sz;    /*!< Size of a TCB, in bytes */
     uint32_t mem_segs_num; /*!< Number of memory segments */
     uint32_t chip_rev; /*!< Chip revision */
+    uint64_t boot_time; /*!< Boot time, in microseconds */
+    uint64_t unix_time; /*!< Unix time, in microseconds */
 } core_dump_header_t;
 
 /**
