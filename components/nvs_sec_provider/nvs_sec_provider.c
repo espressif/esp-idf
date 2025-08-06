@@ -291,6 +291,7 @@ esp_err_t nvs_sec_provider_deregister(nvs_sec_scheme_t *sec_scheme_handle)
 
     free(sec_scheme_handle);
 
+    nvs_flash_deregister_security_scheme();
     return ESP_OK;
 }
 
