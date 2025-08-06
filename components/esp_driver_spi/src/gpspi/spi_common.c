@@ -29,6 +29,12 @@
 #include "soc/dport_reg.h"
 #endif
 
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define SPI_COMMON_PERI_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define SPI_COMMON_PERI_CLOCK_ATOMIC()
+#endif
+
 #if CONFIG_SPI_MASTER_ISR_IN_IRAM || CONFIG_SPI_SLAVE_ISR_IN_IRAM
 #define SPI_COMMON_ISR_ATTR IRAM_ATTR
 #else
@@ -87,6 +93,9 @@ esp_err_t spicommon_bus_alloc(spi_host_device_t host_id, const char *name)
         spicommon_periph_free(host_id);
         return ESP_ERR_NO_MEM;
     }
+    SPI_COMMON_PERI_CLOCK_ATOMIC() {
+        spi_ll_enable_clock(host_id, true);
+    }
     ctx->host_id = host_id;
     bus_ctx[host_id] = ctx;
     return ESP_OK;
@@ -96,6 +105,9 @@ esp_err_t spicommon_bus_free(spi_host_device_t host_id)
 {
     assert(bus_ctx[host_id]);
     spicommon_periph_free(host_id);
+    SPI_COMMON_PERI_CLOCK_ATOMIC() {
+        spi_ll_enable_clock(host_id, false);
+    }
     free(bus_ctx[host_id]);
     bus_ctx[host_id] = NULL;
     return ESP_OK;

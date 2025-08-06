@@ -318,9 +318,6 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
         }
     }
 
-    SPI_MASTER_PERI_CLOCK_ATOMIC() {
-        spi_ll_enable_clock(host_id, true);
-    }
     spi_hal_init(&host->hal, host_id);
     spi_hal_config_io_default_level(&host->hal, bus_attr->bus_cfg.data_io_default_level);
 
@@ -406,7 +403,7 @@ static uint32_t s_spi_find_clock_src_pre_div(uint32_t src_freq, uint32_t target_
 
     uint32_t total_div = src_freq / target_freq;
     // Loop the `div` to find a divisible value of `total_div`
-    for (uint32_t pre_div = min_div; pre_div <= total_div; pre_div += 2) {
+    for (uint32_t pre_div = min_div; pre_div <= MIN(total_div, SPI_LL_SRC_PRE_DIV_MAX); pre_div += 2) {
         if ((total_div % pre_div) || (total_div / pre_div) > SPI_LL_PERIPH_CLK_DIV_MAX) {
             continue;
         }
@@ -1529,8 +1526,8 @@ static SPI_MASTER_ISR_ATTR spi_dma_desc_t *s_sct_setup_desc_anywhere(spi_dma_des
 {
     while (len) {
         int dmachunklen = len;
-        if (dmachunklen > LLDESC_MAX_NUM_PER_DESC) {
-            dmachunklen = LLDESC_MAX_NUM_PER_DESC;
+        if (dmachunklen > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+            dmachunklen = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
         }
         if (is_rx) {
             //Receive needs DMA length rounded to next 32-bit boundary
@@ -1557,7 +1554,7 @@ static SPI_MASTER_ISR_ATTR spi_dma_desc_t *s_sct_setup_desc_anywhere(spi_dma_des
 
 static SPI_MASTER_ISR_ATTR int s_sct_desc_get_required_num(uint32_t bytes_len)
 {
-    return (bytes_len + LLDESC_MAX_NUM_PER_DESC - 1) / LLDESC_MAX_NUM_PER_DESC;
+    return (bytes_len + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
 }
 /*-------------------------
  *            TX

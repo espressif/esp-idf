@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,7 +74,7 @@
 #define ESP_SPI_SLAVE_TV        (12.5*3.5)
 #define WIRE_DELAY              12.5
 
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32P4
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32H4
 #define SLAVE_IOMUX_PIN_MISO    -1
 #define SLAVE_IOMUX_PIN_MOSI    -1
 #define SLAVE_IOMUX_PIN_SCLK    -1
@@ -82,7 +82,11 @@
 #define SLAVE_IOMUX_PIN_WP      -1
 #define SLAVE_IOMUX_PIN_HD      -1
 
+#if CONFIG_IDF_TARGET_ESP32H4
+#define UNCONNECTED_PIN         27
+#else
 #define UNCONNECTED_PIN         41
+#endif
 #define INPUT_ONLY_PIN          46
 #define GPIO_DELAY              0
 #define ESP_SPI_SLAVE_TV        0
@@ -112,22 +116,6 @@
 #define TEST_DMA_MAX_SIZE       4092///< length of each transaction with dma
 #define MAX_TEST_SIZE           16  ///< in this test we run several transactions, this is the maximum trans that can be run
 #define PSET_NAME_LEN           30  ///< length of each param set name
-
-//test low frequency, high frequency until freq limit for worst case (both GPIO)
-#define TEST_FREQ_DEFAULT(){    \
-         1 * 1000 * 1000,       \
-         8 * 1000 * 1000,       \
-         9 * 1000 * 1000,       \
-        10 * 1000 * 1000,       \
-        11 * 1000 * 1000,       \
-        13 * 1000 * 1000,       \
-        16 * 1000 * 1000,       \
-        20 * 1000 * 1000,       \
-        26 * 1000 * 1000,       \
-        40 * 1000 * 1000,       \
-        80 * 1000 * 1000,       \
-        0,\
-    }
 
 //default bus config for tests
 #define SPI_BUS_TEST_DEFAULT_CONFIG() {\
@@ -233,9 +221,6 @@ typedef struct {
     spi_slave_task_context_t slave_context;
     slave_txdata_t slave_trans[MAX_TEST_SIZE];
 } spitest_context_t;
-
-// fill default value of spitest_param_set_t
-void spitest_def_param(void* arg);
 
 // functions for slave task
 esp_err_t init_slave_context(spi_slave_task_context_t *context, spi_host_device_t host);

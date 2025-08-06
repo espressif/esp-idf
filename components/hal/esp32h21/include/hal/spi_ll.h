@@ -20,7 +20,6 @@
 #include "soc/spi_struct.h"
 #include "soc/chip_revision.h"
 #include "soc/pcr_struct.h"
-#include "soc/lldesc.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/efuse_hal.h"
@@ -169,8 +168,6 @@ static inline void spi_ll_master_init(spi_dev_t *hw)
     //Disable unneeded ints
     hw->slave.val = 0;
     hw->user.val = 0;
-
-    PCR.spi2_clkm_conf.spi2_clkm_sel = 0;
 
     hw->dma_conf.val = 0;
     hw->dma_conf.slv_tx_seg_trans_clr_en = 1;

@@ -81,6 +81,23 @@ typedef struct {
 typedef esp_err_t (*spi_destroy_func_t)(void*);
 
 /**
+ * @brief Allocate a SPI bus
+ *
+ * @param host_id SPI host ID
+ * @param name Name of the bus
+ * @return ESP_OK on success, ESP_ERR_NO_MEM if no memory is available
+ */
+esp_err_t spicommon_bus_alloc(spi_host_device_t host_id, const char *name);
+
+/**
+ * @brief Free a SPI bus
+ *
+ * @param host_id SPI host ID
+ * @return ESP_OK on success, ESP_ERR_INVALID_STATE if the bus is not allocated
+ */
+esp_err_t spicommon_bus_free(spi_host_device_t host_id);
+
+/**
  * @brief Alloc DMA channel for SPI
  *
  * @param host_id                  SPI host ID

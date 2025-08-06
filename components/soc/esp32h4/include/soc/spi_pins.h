@@ -6,7 +6,6 @@
 
 #pragma once
 
-// TODO: [ESP32H4] IDF-12388
 #define MSPI_FUNC_NUM            0
 #define MSPI_IOMUX_PIN_NUM_CS0   7
 #define MSPI_IOMUX_PIN_NUM_CS1   6

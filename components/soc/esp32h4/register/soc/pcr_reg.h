@@ -1550,9 +1550,8 @@ extern "C" {
 /** PCR_SPI2_CLKM_SEL : R/W; bitpos: [21:20]; default: 0;
  *  Configures the clock source of SPI2.
  *  0 (default): XTAL_CLK
- *  1: PLL_F160M_CLK
+ *  1: PLL_F48M_CLK
  *  2: RC_FAST_CLK
- *  3: PLL_F120M_CLK
  */
 #define PCR_SPI2_CLKM_SEL    0x00000003U
 #define PCR_SPI2_CLKM_SEL_M  (PCR_SPI2_CLKM_SEL_V << PCR_SPI2_CLKM_SEL_S)
@@ -2905,9 +2904,8 @@ extern "C" {
 /** PCR_SPI3_CLKM_SEL : R/W; bitpos: [21:20]; default: 0;
  *  Configures the clock source of SPI3.
  *  0 (default): XTAL_CLK
- *  1: PLL_F160M_CLK
+ *  1: PLL_F48M_CLK
  *  2: RC_FAST_CLK
- *  3: PLL_F120M_CLK
  */
 #define PCR_SPI3_CLKM_SEL    0x00000003U
 #define PCR_SPI3_CLKM_SEL_M  (PCR_SPI3_CLKM_SEL_V << PCR_SPI3_CLKM_SEL_S)

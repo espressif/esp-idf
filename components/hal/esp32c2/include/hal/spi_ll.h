@@ -21,7 +21,6 @@
 #include "soc/spi_periph.h"
 #include "soc/spi_struct.h"
 #include "soc/system_struct.h"
-#include "soc/lldesc.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/spi_types.h"
