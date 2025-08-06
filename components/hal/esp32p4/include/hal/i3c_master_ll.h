@@ -14,7 +14,6 @@
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/hp_sys_clkrst_struct.h"
-#include "soc/lpperi_struct.h"
 #include "hal/misc.h"
 #include "soc/i3c_mst_mem_struct.h"
 #include "soc/i3c_mst_struct.h"
