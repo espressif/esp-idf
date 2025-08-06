@@ -12,6 +12,7 @@
 #include "esp_intr_alloc.h" // for intr_alloc_flags
 #include "soc/soc_caps.h"
 #include "hal/i2c_types.h"
+#include "hal/gpio_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,8 +54,8 @@ extern "C" {
  */
 typedef struct {
     i2c_mode_t mode;     /*!< I2C mode */
-    int sda_io_num;      /*!< GPIO number for I2C sda signal */
-    int scl_io_num;      /*!< GPIO number for I2C scl signal */
+    gpio_num_t sda_io_num; /*!< GPIO number for I2C sda signal */
+    gpio_num_t scl_io_num; /*!< GPIO number for I2C scl signal */
     bool sda_pullup_en;  /*!< Internal GPIO pull mode for I2C sda signal*/
     bool scl_pullup_en;  /*!< Internal GPIO pull mode for I2C scl signal*/
 
@@ -159,7 +160,7 @@ esp_err_t i2c_reset_rx_fifo(i2c_port_t i2c_num);
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num,
+esp_err_t i2c_set_pin(i2c_port_t i2c_num, gpio_num_t sda_io_num, gpio_num_t scl_io_num,
                       bool sda_pullup_en, bool scl_pullup_en, i2c_mode_t mode);
 
 /**
