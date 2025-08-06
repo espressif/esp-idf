@@ -67,6 +67,26 @@ static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
     return ret;
 }
 
+#ifdef CONFIG_EXAMPLE_ENABLE_WS_PRE_HANDSHAKE_CB
+static esp_err_t ws_pre_handshake_cb(httpd_req_t *req)
+{
+    ESP_LOGI(TAG, "=== ws_pre_handshake_cb called ===");
+
+    // Get the URI with query string
+    const char *uri = req->uri;
+    ESP_LOGI(TAG, "Requested URI: %s", uri ? uri : "NULL");
+
+    // Check if the query string contains token=valid
+    if (uri && strstr(uri, "token=valid") != NULL) {
+        ESP_LOGI(TAG, "Valid token found, accepting handshake");
+        return ESP_OK;
+    } else {
+        ESP_LOGI(TAG, "No valid token found, rejecting handshake");
+        return ESP_FAIL;
+    }
+}
+#endif
+
 /*
  * This handler echos back the received ws data
  * and triggers an async send if certain message received
@@ -107,6 +127,7 @@ static esp_err_t echo_handler(httpd_req_t *req)
     }
     ESP_LOGI(TAG, "Packet type: %d", ws_pkt.type);
     if (ws_pkt.type == HTTPD_WS_TYPE_TEXT &&
+        ws_pkt.payload != NULL &&
         strcmp((char*)ws_pkt.payload,"Trigger async") == 0) {
         free(buf);
         return trigger_async_send(req->handle, req);
@@ -128,6 +149,17 @@ static const httpd_uri_t ws = {
         .is_websocket = true
 };
 
+static const httpd_uri_t ws_auth = {
+        .uri        = "/auth",
+        .method     = HTTP_GET,
+        .handler    = echo_handler,
+        .user_ctx   = NULL,
+        .is_websocket = true,
+#ifdef CONFIG_EXAMPLE_ENABLE_WS_PRE_HANDSHAKE_CB
+        .ws_pre_handshake_cb = ws_pre_handshake_cb
+#endif
+};
+
 
 static httpd_handle_t start_webserver(void)
 {
@@ -140,6 +172,7 @@ static httpd_handle_t start_webserver(void)
         // Registering the ws handler
         ESP_LOGI(TAG, "Registering URI handlers");
         httpd_register_uri_handler(server, &ws);
+        httpd_register_uri_handler(server, &ws_auth);
         return server;
     }
 
