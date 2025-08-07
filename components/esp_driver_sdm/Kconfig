@@ -1,17 +1,30 @@
 menu "ESP-Driver:Sigma Delta Modulator Configurations"
     depends on SOC_SDM_SUPPORTED
+
     config SDM_CTRL_FUNC_IN_IRAM
         bool "Place SDM control functions into IRAM"
         default n
+        select SDM_OBJ_CACHE_SAFE
         help
-            Place SDM control functions (like set_duty) into IRAM,
+            Place SDM control functions (like set_pulse_density) into IRAM,
             so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
             Enabling this option can improve driver performance as well.
 
-    config SDM_ENABLE_DEBUG_LOG
-        bool "Enable debug log"
+    config SDM_OBJ_CACHE_SAFE
+        bool
         default n
         help
-            whether to enable the debug log message for SDM driver.
-            Note that, this option only controls the SDM driver log, won't affect other drivers.
+            This will ensure the SDM object will not be allocated from a memory region
+            where its cache can be disabled.
+
+    config SDM_ENABLE_DEBUG_LOG
+        bool "Force enable debug log"
+        default n
+        help
+            If enabled, SDM driver will:
+            1. ignore the global logging settings
+            2. compile all log messages into the binary
+            3. set the runtime log level to VERBOSE
+            Please enable this option by caution, as it will increase the binary size.
+
 endmenu # Sigma Delta Modulator Configurations

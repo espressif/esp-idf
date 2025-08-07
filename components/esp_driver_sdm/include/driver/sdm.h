@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include "hal/sdm_types.h"
+#include "hal/gpio_types.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -23,7 +24,7 @@ typedef struct sdm_channel_t *sdm_channel_handle_t;
  * @brief Sigma Delta channel configuration
  */
 typedef struct {
-    int gpio_num;               /*!< GPIO number */
+    gpio_num_t gpio_num;        /*!< GPIO number */
     sdm_clock_source_t clk_src; /*!< Clock source */
     uint32_t sample_rate_hz;    /*!< Over sample rate in Hz, it determines the frequency of the carrier pulses */
     struct {

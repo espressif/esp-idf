@@ -1,7 +1,7 @@
 set(srcs "test_app_main.c")
 
 if(CONFIG_SOC_SDM_SUPPORTED)
-    list(APPEND srcs "test_sdm.c")
+    list(APPEND srcs "test_sdm.cpp")
 endif()
 
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,

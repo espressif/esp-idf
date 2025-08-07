@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded_idf import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 CONFIGS = [
     'iram_safe',
@@ -14,7 +15,7 @@ CONFIGS = [
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32h2', 'esp32p4'],
+    soc_filtered_targets('SOC_SDM_SUPPORTED == 1'),
     indirect=['target'],
 )
 def test_sdm(dut: IdfDut) -> None:

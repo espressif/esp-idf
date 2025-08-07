@@ -555,12 +555,6 @@
 #define SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE   (1)
 #define SOC_ECDSA_USES_MPI                  (1)
 
-/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
-#define SOC_SDM_GROUPS               1U
-#define SOC_SDM_CHANNELS_PER_GROUP   8
-#define SOC_SDM_CLK_SUPPORT_PLL_F80M 1
-#define SOC_SDM_CLK_SUPPORT_XTAL     1
-
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM              3
 #define SOC_SPI_PERIPH_CS_NUM(i)        (((i)==0)? 2: (((i)==1)? 6: 3))

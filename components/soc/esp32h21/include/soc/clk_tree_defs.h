@@ -187,19 +187,6 @@ typedef enum {
 #endif
 } soc_periph_gptimer_clk_src_t;
 
-/**
- * @brief Type of Timer Group clock source, reserved for the legacy timer group driver
- */
-typedef enum {
-    TIMER_SRC_CLK_PLL_F48M = SOC_MOD_CLK_PLL_F48M,     /*!< Timer group clock source is PLL_F48M */
-    TIMER_SRC_CLK_XTAL = SOC_MOD_CLK_XTAL,             /*!< Timer group clock source is XTAL */
-#if SOC_CLK_TREE_SUPPORTED
-    TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_PLL_F48M,      /*!< Select PLL_F48M as the default choice */
-#else
-    TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_XTAL,          /*!< Select XTAL as the default choice if no clk_tree */
-#endif
-} soc_periph_tg_clk_src_legacy_t;
-
 //////////////////////////////////////////////////RMT///////////////////////////////////////////////////////////////////
 
 /**

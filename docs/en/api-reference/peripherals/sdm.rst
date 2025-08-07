@@ -102,13 +102,13 @@ There is a Kconfig option :ref:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` that can put commo
 Thread Safety
 ^^^^^^^^^^^^^
 
-The factory function :cpp:func:`sdm_new_channel` is guaranteed to be thread-safe by the driver, which means, the user can call it from different RTOS tasks without protection by extra locks.
+The driver uses critical sections to ensure atomic operations on registers. Key members in the driver handle are also protected by critical sections. The driver's internal state machine uses atomic instructions to ensure thread safety, with state checks preventing certain invalid concurrent operations (e.g., conflicts between `enable` and `delete`). Therefore, SDM driver APIs can be used in a multi-threaded environment without extra locking.
 
-The following functions are allowed to run under ISR context, the driver uses a critical section to prevent them being called concurrently in both task and ISR.
+The following functions can also be used in an interrupt context:
 
-- :cpp:func:`sdm_channel_set_pulse_density`
+.. list::
 
-Other functions that take the :cpp:type:`sdm_channel_handle_t` as the first positional parameter, are not treated as thread-safe. This means the user should avoid calling them from multiple tasks.
+    - :cpp:func:`sdm_channel_set_pulse_density`
 
 .. _sdm-kconfig-options:
 

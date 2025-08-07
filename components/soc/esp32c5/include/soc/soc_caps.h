@@ -444,12 +444,6 @@
 #define SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP (1)
 #define SOC_ECDSA_SUPPORT_CURVE_P384        (1)
 
-/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
-#define SOC_SDM_GROUPS               1U
-#define SOC_SDM_CHANNELS_PER_GROUP   4
-#define SOC_SDM_CLK_SUPPORT_PLL_F80M 1
-#define SOC_SDM_CLK_SUPPORT_XTAL     1
-
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2
 #define SOC_SPI_PERIPH_CS_NUM(i)    6
