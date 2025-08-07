@@ -7,7 +7,7 @@
 #include "soc/soc_caps.h"
 #include "driver/ledc.h"
 
-#define PULSE_IO      5
+#define PULSE_IO      2
 
 #define TEST_PWM_FREQ       2000
 #define TEST_PWM_LOW_FREQ   200

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,12 +9,13 @@
 
 #pragma once
 
-#include "hal/assert.h"
 #include "hal/ledc_types.h"
 #include "soc/ledc_struct.h"
 #include "soc/ledc_reg.h"
+#include "soc/pcr_struct.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/hp_sys_clkrst_struct.h"
+#include "hal/assert.h"
+#include "esp_rom_sys.h"    //for sync issue workaround
 #include "soc/soc_caps.h"
 
 #ifdef __cplusplus
@@ -23,9 +24,9 @@ extern "C" {
 
 #define LEDC_LL_GET_HW()           &LEDC
 
-#define LEDC_LL_DUTY_NUM_MAX       (LEDC_CH0_GAMMA_RANGE0_DUTY_NUM_V)
-#define LEDC_LL_DUTY_CYCLE_MAX     (LEDC_CH0_GAMMA_RANGE0_DUTY_CYCLE_V)
-#define LEDC_LL_DUTY_SCALE_MAX     (LEDC_CH0_GAMMA_RANGE0_SCALE_V)
+#define LEDC_LL_DUTY_NUM_MAX       (LEDC_CH0_GAMMA_DUTY_NUM_V)
+#define LEDC_LL_DUTY_CYCLE_MAX     (LEDC_CH0_GAMMA_DUTY_CYCLE_V)
+#define LEDC_LL_DUTY_SCALE_MAX     (LEDC_CH0_GAMMA_SCALE_V)
 #define LEDC_LL_HPOINT_VAL_MAX     (LEDC_HPOINT_CH0_V)
 #define LEDC_LL_FRACTIONAL_BITS    (8)
 #define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
@@ -38,37 +39,23 @@ extern "C" {
  */
 static inline void ledc_ll_enable_bus_clock(bool enable)
 {
-    HP_SYS_CLKRST.soc_clk_ctrl3.reg_ledc_apb_clk_en = enable;
+    PCR.ledc_conf.ledc_clk_en = enable;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_enable_bus_clock(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        ledc_ll_enable_bus_clock(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Reset whole peripheral register to init value defined by HW design
  */
 static inline void ledc_ll_enable_reset_reg(bool enable)
 {
-    HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_ledc = enable;
+    PCR.ledc_conf.ledc_rst_en = enable;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_enable_reset_reg(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        ledc_ll_enable_reset_reg(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Enable the power for LEDC memory block
  */
 static inline void ledc_ll_enable_mem_power(bool enable)
 {
-    // No register to control the power for LEDC memory block on P4
+    // No LEDC memory block on H21
 }
 
 /**
@@ -82,15 +69,8 @@ static inline void ledc_ll_enable_mem_power(bool enable)
 static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en)
 {
     (void)hw;
-    HP_SYS_CLKRST.peri_clk_ctrl22.reg_ledc_clk_en = en;
+    PCR.ledc_sclk_conf.ledc_sclk_en = en;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_enable_clock(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        ledc_ll_enable_clock(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Enable the power for LEDC channel
@@ -102,7 +82,7 @@ static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en)
  */
 static inline void ledc_ll_enable_channel_power(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, bool en)
 {
-    // No per channel power control on P4
+    // No per channel power control on H21
 }
 
 /**
@@ -115,7 +95,7 @@ static inline void ledc_ll_enable_channel_power(ledc_dev_t *hw, ledc_mode_t spee
  */
 static inline void ledc_ll_enable_timer_power(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, bool en)
 {
-    // No per timer power control on P4
+    // No per timer power control on H21
 }
 
 /**
@@ -128,32 +108,17 @@ static inline void ledc_ll_enable_timer_power(ledc_dev_t *hw, ledc_mode_t speed_
  */
 static inline void ledc_ll_set_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t slow_clk_sel)
 {
-    (void) hw;
+    (void)hw;
     uint32_t clk_sel_val = 3;
-    switch (slow_clk_sel)
-    {
-    case LEDC_SLOW_CLK_XTAL:
+    if (slow_clk_sel == LEDC_SLOW_CLK_XTAL) {
         clk_sel_val = 0;
-        break;
-    case LEDC_SLOW_CLK_RC_FAST:
+    } else if (slow_clk_sel == LEDC_SLOW_CLK_RC_FAST) {
         clk_sel_val = 1;
-        break;
-    case LEDC_SLOW_CLK_PLL_DIV:
+    } else if (slow_clk_sel == LEDC_SLOW_CLK_PLL_DIV) {
         clk_sel_val = 2;
-        break;
-    default:
-        abort();
     }
-
-    HP_SYS_CLKRST.peri_clk_ctrl22.reg_ledc_clk_src_sel = clk_sel_val;
+    PCR.ledc_sclk_conf.ledc_sclk_sel = clk_sel_val;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_set_slow_clk_sel(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        ledc_ll_set_slow_clk_sel(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Get LEDC low speed timer clock
@@ -165,19 +130,15 @@ static inline void ledc_ll_set_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t 
  */
 static inline void ledc_ll_get_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t *slow_clk_sel)
 {
-    (void) hw;
-    switch (HP_SYS_CLKRST.peri_clk_ctrl22.reg_ledc_clk_src_sel)
-    {
-    case 0:
+    (void)hw;
+    uint32_t clk_sel_val = PCR.ledc_sclk_conf.ledc_sclk_sel;
+    if (clk_sel_val == 0) {
         *slow_clk_sel = LEDC_SLOW_CLK_XTAL;
-        break;
-    case 1:
+    } else if (clk_sel_val == 1) {
         *slow_clk_sel = LEDC_SLOW_CLK_RC_FAST;
-        break;
-    case 2:
+    } else if (clk_sel_val == 2) {
         *slow_clk_sel = LEDC_SLOW_CLK_PLL_DIV;
-        break;
-    default:
+    } else {
         abort();
     }
 }
@@ -283,7 +244,6 @@ static inline void ledc_ll_get_clock_divider(ledc_dev_t *hw, ledc_mode_t speed_m
 static inline void ledc_ll_get_clock_source(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, ledc_clk_src_t *clk_src)
 {
     // The target has no timer-specific clock source option
-    HAL_ASSERT(hw->timer_group[speed_mode].timer[timer_sel].conf.tick_sel == 0);
     *clk_src = LEDC_SCLK;
 }
 
@@ -329,7 +289,7 @@ static inline void ledc_ll_get_duty_resolution(ledc_dev_t *hw, ledc_mode_t speed
  */
 static inline void ledc_ll_get_max_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t *max_duty)
 {
-    *max_duty = (1 << (hw->timer_group[speed_mode].timer[timer_sel].conf.duty_res));
+    *max_duty = (1 << (LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_res));
 }
 
 /**
@@ -388,7 +348,7 @@ static inline void ledc_ll_get_hpoint(ledc_dev_t *hw, ledc_mode_t speed_mode, le
  */
 static inline void ledc_ll_set_duty_int_part(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t duty_val)
 {
-    hw->channel_group[speed_mode].channel[channel_num].duty_init.duty = duty_val << 4;
+    hw->channel_group[speed_mode].channel[channel_num].duty.duty = duty_val << 4;
 }
 
 /**
@@ -403,11 +363,105 @@ static inline void ledc_ll_set_duty_int_part(ledc_dev_t *hw, ledc_mode_t speed_m
  */
 static inline void ledc_ll_get_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *duty_val)
 {
-    *duty_val = (hw->channel_group[speed_mode].channel[channel_num].duty_r.duty >> 4);
+    *duty_val = (hw->channel_group[speed_mode].channel[channel_num].duty_rd.duty_r >> 4);
+}
+
+/**
+ * @brief Set LEDC duty change direction
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param duty_direction LEDC duty change direction, increase or decrease
+ *
+ * @return None
+ */
+static inline void ledc_ll_set_duty_direction(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, ledc_duty_direction_t duty_direction)
+{
+    hw->channel_gamma_group[speed_mode].channel[channel_num].wr.gamma_duty_inc = duty_direction;
+}
+
+/**
+ * @brief Set the number of increased or decreased times
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param duty_num The number of increased or decreased times
+ *
+ * @return None
+ */
+static inline void ledc_ll_set_duty_num(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t duty_num)
+{
+    hw->channel_gamma_group[speed_mode].channel[channel_num].wr.gamma_duty_num = duty_num;
+}
+
+/**
+ * @brief Set the duty cycles of increase or decrease
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param duty_cycle The duty cycles
+ *
+ * @return None
+ */
+static inline void ledc_ll_set_duty_cycle(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t duty_cycle)
+{
+    hw->channel_gamma_group[speed_mode].channel[channel_num].wr.gamma_duty_cycle = duty_cycle;
+}
+
+/**
+ * @brief Set the step scale of increase or decrease
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param duty_scale The step scale
+ *
+ * @return None
+ */
+static inline void ledc_ll_set_duty_scale(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t duty_scale)
+{
+    hw->channel_gamma_group[speed_mode].channel[channel_num].wr.gamma_scale = duty_scale;
 }
 
 /**
  * @brief Function to set fade parameters all-in-one
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param dir LEDC duty change direction, increase or decrease
+ * @param cycle The duty cycles
+ * @param scale The step scale
+ * @param step The number of increased or decreased times
+ *
+ * @return None
+ */
+static inline void ledc_ll_set_fade_param(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t dir, uint32_t cycle, uint32_t scale, uint32_t step)
+{
+    uint32_t val = (dir << LEDC_CH0_GAMMA_DUTY_INC_S) | (cycle << LEDC_CH0_GAMMA_DUTY_CYCLE_S) | (scale << LEDC_CH0_GAMMA_SCALE_S) | (step << LEDC_CH0_GAMMA_DUTY_NUM_S);
+    hw->channel_gamma_group[speed_mode].channel[channel_num].wr.val = val;
+}
+
+/**
+ * @brief Set the range number of the specified duty configurations to be written from gamma_wr register to gamma ram
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param duty_range Range index (0 - (SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX-1)), it specifies to which range in gamma ram to write
+ *
+ * @return None
+ */
+static inline void ledc_ll_set_duty_range_wr_addr(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t duty_range)
+{
+    hw->channel_gamma_group[speed_mode].channel[channel_num].wr_addr.gamma_wr_addr = duty_range;
+}
+
+/**
+ * @brief Function to set fade parameters all-in-one for one range
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
@@ -423,13 +477,17 @@ static inline void ledc_ll_get_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc
 static inline void ledc_ll_set_fade_param_range(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint8_t range, uint32_t dir, uint32_t cycle, uint32_t scale, uint32_t step)
 {
     HAL_ASSERT(range < SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX);
-    ledc_channel_gamma_fade_param_t range_param = {
-        .duty_inc = dir,
-        .duty_cycle = cycle,
-        .scale = scale,
-        .duty_num = step,
-    };
-    LEDC_GAMMA_RAM.channel[channel_num].entry[range].val = range_param.val;
+    // To workaround sync issue
+    // This is to ensure the fade param write to the gamma_wr register would not mess up the last wr_addr
+    ledc_ll_set_duty_range_wr_addr(hw, speed_mode, channel_num, range);
+    esp_rom_delay_us(5);
+
+    ledc_ll_set_fade_param(hw, speed_mode, channel_num, dir, cycle, scale, step);
+    ledc_ll_set_duty_range_wr_addr(hw, speed_mode, channel_num, range);
+
+    // To workaround sync issue
+    // This is to ensure the fade param in gamma_wr register can be written to the correct wr_addr
+    esp_rom_delay_us(5);
 }
 
 /**
@@ -444,7 +502,7 @@ static inline void ledc_ll_set_fade_param_range(ledc_dev_t *hw, ledc_mode_t spee
  */
 static inline void ledc_ll_set_range_number(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t range_num)
 {
-    hw->chn_gamma_conf[channel_num].ch0_gamma_entry_num = range_num;
+    hw->channel_gamma_conf_group[speed_mode].gamma_conf[channel_num].gamma_entry_num = range_num;
 }
 
 /**
@@ -459,11 +517,48 @@ static inline void ledc_ll_set_range_number(ledc_dev_t *hw, ledc_mode_t speed_mo
  */
 static inline void ledc_ll_get_range_number(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *range_num)
 {
-    *range_num = hw->chn_gamma_conf[channel_num].ch0_gamma_entry_num;
+    *range_num = hw->channel_gamma_conf_group[speed_mode].gamma_conf[channel_num].gamma_entry_num;
+}
+
+/**
+ * @brief Set the range number of the specified duty configurations to be read from gamma ram to gamma_rd register
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param duty_range Range index (0 - (SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX-1)), it specifies to which range in gamma ram to read
+ *
+ * @return None
+ */
+static inline void ledc_ll_set_duty_range_rd_addr(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t duty_range)
+{
+    hw->channel_gamma_group[speed_mode].channel[channel_num].rd_addr.gamma_rd_addr = duty_range;
 }
 
 /**
  * @brief Get fade configurations in gamma_rd register
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param dir Pointer to accept fade direction value
+ * @param cycle Pointer to accept fade cycle value
+ * @param scale Pointer to accept fade scale value
+ * @param step Pointer to accept fade step value
+ *
+ * @return None
+ */
+static inline void ledc_ll_get_fade_param(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step)
+{
+    uint32_t val = hw->channel_gamma_group[speed_mode].channel[channel_num].rd_data.gamma_rd_data;
+    *dir = (val & LEDC_CH0_GAMMA_DUTY_INC_M) >> LEDC_CH0_GAMMA_DUTY_INC_S;
+    *cycle = (val & LEDC_CH0_GAMMA_DUTY_CYCLE_M) >> LEDC_CH0_GAMMA_DUTY_CYCLE_S;
+    *scale = (val & LEDC_CH0_GAMMA_SCALE_M) >> LEDC_CH0_GAMMA_SCALE_S;
+    *step = (val & LEDC_CH0_GAMMA_DUTY_NUM_M) >> LEDC_CH0_GAMMA_DUTY_NUM_S;
+}
+
+/**
+ * @brief Get fade configurations for one range
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
@@ -478,14 +573,11 @@ static inline void ledc_ll_get_range_number(ledc_dev_t *hw, ledc_mode_t speed_mo
  */
 static inline void ledc_ll_get_fade_param_range(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint8_t range, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step)
 {
-    ledc_channel_gamma_fade_param_t range_param = {
-        .val = LEDC_GAMMA_RAM.channel[channel_num].entry[range].val,
-    };
-
-    *dir = range_param.duty_inc;
-    *cycle = range_param.duty_cycle;
-    *scale = range_param.scale;
-    *step = range_param.duty_num;
+    // On ESP32H21, gamma ram read/write has the APB and LEDC clock domain sync issue
+    // To make sure the parameter read is from the correct gamma ram addr, add a delay in between to ensure synchronization
+    ledc_ll_set_duty_range_rd_addr(hw, speed_mode, channel_num, range);
+    esp_rom_delay_us(5);
+    ledc_ll_get_fade_param(hw, speed_mode, channel_num, dir, cycle, scale, step);
 }
 
 /**

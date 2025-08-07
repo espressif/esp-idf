@@ -34,7 +34,8 @@ extern "C" {
                                 LEDC_SLOW_CLK_RC_FAST, \
                               }
 
-#define LEDC_LL_GLOBAL_CLK_DEFAULT LEDC_SLOW_CLK_RC_FAST
+#define LEDC_LL_GLOBAL_CLK_NC_BY_DEFAULT    1
+#define LEDC_LL_GLOBAL_CLK_DEFAULT          LEDC_SLOW_CLK_RC_FAST   // The temporal global clock source to set to at least make the LEDC core clock on
 
 /**
  * @brief Enable peripheral register clock
@@ -87,6 +88,32 @@ static inline void ledc_ll_enable_mem_power(bool enable)
 static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en)
 {
     //resolve for compatibility
+}
+
+/**
+ * @brief Enable the power for LEDC channel
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param en True to enable, false to disable
+ */
+static inline void ledc_ll_enable_channel_power(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, bool en)
+{
+    // No per channel power control on C3
+}
+
+/**
+ * @brief Enable the power for LEDC timer
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param timer_sel LEDC timer index (0-3), select from ledc_timer_t
+ * @param en True to enable, false to disable
+ */
+static inline void ledc_ll_enable_timer_power(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, bool en)
+{
+    // No per timer power control on C3
 }
 
 /**

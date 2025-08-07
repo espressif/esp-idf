@@ -493,8 +493,8 @@ extern "C" {
  */
 #define PCR_LEDC_SCLK_CONF_REG (DR_REG_PCR_BASE + 0x40)
 /** PCR_LEDC_SCLK_SEL : R/W; bitpos: [21:20]; default: 0;
- *  set this field to select clock-source. 0(default): do not select anyone clock, 1:
- *  80MHz, 2: FOSC, 3: XTAL.
+ *  set this field to select clock-source. 0(default): XTAL, 1:
+         *  FOSC, 2: 96MHz.
  */
 #define PCR_LEDC_SCLK_SEL    0x00000003U
 #define PCR_LEDC_SCLK_SEL_M  (PCR_LEDC_SCLK_SEL_V << PCR_LEDC_SCLK_SEL_S)

@@ -66,6 +66,8 @@ LEDC
 
 - ``LEDC_APB_CLK_HZ`` and ``LEDC_REF_CLK_HZ`` have been removed.
 
+- ``LEDC_SLOW_CLK_RTC8M`` macro has been removed. Please use ``LEDC_SLOW_CLK_RC_FAST`` instead.
+
 - Removed esp_driver_gpio as a public required component from esp_driver_ledc.
 
 - :func:`ledc_isr_register` has been deprecated. LEDC interrupt handling is implemented by driver itself, please only register event callbacks if necessary.

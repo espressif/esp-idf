@@ -1,7 +1,7 @@
 LED Control (LEDC)
 ==================
 
-{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16", esp32p4="16", esp32c5="16", esp32c61="16"}
+{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16", esp32p4="16", esp32c5="16", esp32c61="16", esp32h21="16"}
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -202,6 +202,25 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - /
        * - RC_FAST_CLK
          - ~ 8 MHz
+         - Dynamic Frequency Scaling compatible, Light-sleep compatible
+       * - XTAL_CLK
+         - 32 MHz
+         - Dynamic Frequency Scaling compatible
+
+.. only:: esp32h21 or esp32h4
+
+    .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
+       :widths: 15 15 30
+       :header-rows: 1
+
+       * - Clock name
+         - Clock freq
+         - Clock capabilities
+       * - PLL_96M_CLK
+         - 96 MHz
+         - /
+       * - RC_FAST_CLK
+         - ~ 20 MHz
          - Dynamic Frequency Scaling compatible, Light-sleep compatible
        * - XTAL_CLK
          - 32 MHz

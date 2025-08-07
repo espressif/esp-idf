@@ -285,6 +285,7 @@ static IRAM_ATTR esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel
 static bool ledc_glb_clk_set_sleep_mode(ledc_mode_t speed_mode, bool xpd)
 {
     bool glb_clk_xpd_err = false;
+#if SOC_LIGHT_SLEEP_SUPPORTED
     if (p_ledc_obj[speed_mode]->glb_clk == LEDC_SLOW_CLK_RC_FAST) {
         esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_RC_FAST_MODE, xpd);
         p_ledc_obj[speed_mode]->glb_clk_xpd = xpd;
@@ -300,6 +301,7 @@ static bool ledc_glb_clk_set_sleep_mode(ledc_mode_t speed_mode, bool xpd)
             glb_clk_xpd_err = true;
         }
     }
+#endif
     return glb_clk_xpd_err;
 }
 
@@ -761,6 +763,7 @@ static esp_err_t ledc_timer_del(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
                 ledc_glb_clk_set_sleep_mode(speed_mode, false);
             }
         }
+        ledc_ll_enable_timer_power(LEDC_LL_GET_HW(), speed_mode, timer_sel, false);
     }
     portEXIT_CRITICAL(&ledc_spinlock);
     ESP_RETURN_ON_FALSE(is_configured && is_deleted, ESP_ERR_INVALID_STATE, LEDC_TAG, "timer hasn't been configured, or it is still running, please stop it with ledc_timer_pause first");
@@ -788,6 +791,10 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t *timer_conf)
     if (!ledc_speed_mode_ctx_create(speed_mode) && !p_ledc_obj[speed_mode]) {
         return ESP_ERR_NO_MEM;
     }
+
+    portENTER_CRITICAL(&ledc_spinlock);
+    ledc_ll_enable_timer_power(LEDC_LL_GET_HW(), speed_mode, timer_num, true);
+    portEXIT_CRITICAL(&ledc_spinlock);
 
     esp_err_t ret = ledc_set_timer_div(speed_mode, timer_num, timer_conf->clk_cfg, freq_hz, duty_resolution);
     if (ret == ESP_OK) {
@@ -844,7 +851,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     if (!new_speed_mode_ctx_created && !p_ledc_obj[speed_mode]) {
         return ESP_ERR_NO_MEM;
     }
-#if !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61)
+#if LEDC_LL_GLOBAL_CLK_NC_BY_DEFAULT
     // On such targets, the default ledc core(global) clock does not connect to any clock source
     // Set channel configurations and update bits before core clock is on could lead to error
     // Therefore, we should connect the core clock to a real clock source to make it on before any ledc register operation
@@ -853,12 +860,16 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     else if (new_speed_mode_ctx_created) {
         portENTER_CRITICAL(&ledc_spinlock);
         if (p_ledc_obj[speed_mode]->glb_clk == LEDC_SLOW_CLK_UNINIT) {
-            ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)LEDC_LL_GLOBAL_CLK_DEFAULT, true));
+            esp_clk_tree_enable_src((soc_module_clk_t)LEDC_LL_GLOBAL_CLK_DEFAULT, true);
             ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), LEDC_LL_GLOBAL_CLK_DEFAULT);
         }
         portEXIT_CRITICAL(&ledc_spinlock);
     }
 #endif
+
+    portENTER_CRITICAL(&ledc_spinlock);
+    ledc_ll_enable_channel_power(LEDC_LL_GET_HW(), speed_mode, ledc_channel, true);
+    portEXIT_CRITICAL(&ledc_spinlock);
 
     /*set channel parameters*/
     /*   channel parameters decide how the waveform looks like in one period */
@@ -929,6 +940,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     }
 #endif
 
+#if SOC_LIGHT_SLEEP_SUPPORTED
     if (ledc_conf->sleep_mode == LEDC_SLEEP_MODE_KEEP_ALIVE) {
         // 1. timer clock source should not be powered down during sleep
         bool timer_xpd_err = false;
@@ -956,6 +968,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
         esp_sleep_clock_config(ESP_SLEEP_CLOCK_IOMUX, ESP_SLEEP_CLOCK_OPTION_UNGATE);
 #endif
     }
+#endif
 
     return ret;
 }

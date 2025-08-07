@@ -162,8 +162,6 @@ api-reference/peripherals/lcd/spi_lcd.rst
 api-reference/peripherals/lcd/rgb_lcd.rst
 api-reference/peripherals/lcd/parl_lcd.rst
 api-reference/peripherals/spi_features.rst
-api-reference/peripherals/ppa.rst
-api-reference/peripherals/ledc.rst
 api-reference/system/random.rst
 api-reference/system/app_trace.rst
 api-reference/system/esp_https_ota.rst

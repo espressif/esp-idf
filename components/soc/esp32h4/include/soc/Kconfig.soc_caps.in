@@ -63,6 +63,10 @@ config SOC_GPSPI_SUPPORTED
     bool
     default y
 
+config SOC_LEDC_SUPPORTED
+    bool
+    default y
+
 config SOC_I2C_SUPPORTED
     bool
     default y
@@ -503,9 +507,37 @@ config SOC_I2S_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
+config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
+    bool
+    default y
+
+config SOC_LEDC_SUPPORT_XTAL_CLOCK
+    bool
+    default y
+
+config SOC_LEDC_TIMER_NUM
+    int
+    default 4
+
 config SOC_LEDC_CHANNEL_NUM
     int
-    default 6
+    default 8
+
+config SOC_LEDC_TIMER_BIT_WIDTH
+    int
+    default 20
+
+config SOC_LEDC_SUPPORT_FADE_STOP
+    bool
+    default y
+
+config SOC_LEDC_FADE_PARAMS_BIT_WIDTH
+    int
+    default 10
+
+config SOC_LEDC_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
 
 config SOC_MMU_PAGE_SIZE_CONFIGURABLE
     bool

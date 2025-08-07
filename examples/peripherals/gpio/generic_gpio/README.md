@@ -21,12 +21,7 @@ This test code shows how to configure GPIO and how to use it with interruption.
  2. Connect CONFIG_GPIO_OUTPUT_1 with CONFIG_GPIO_INPUT_1
  3. Generate pulses on CONFIG_GPIO_OUTPUT_0/1, that triggers interrupt on CONFIG_GPIO_INPUT_0/1
 
- **Note:** The following pin assignments are used by default, you can change them by `idf.py menuconfig` > `Example Configuration`.
-
-|                           | CONFIG_GPIO_OUTPUT_0 | CONFIG_GPIO_OUTPUT_1 | CONFIG_GPIO_INPUT_0 | CONFIG_GPIO_INPUT_1 |
-| ------------------------- | -------------------- | -------------------- | ------------------- | ------------------- |
-| ESP32C2/H2/C5/C61/H21     | 8                    | 9                    | 4                   | 5                   |
-| All other chips           | 18                   | 19                   | 4                   | 5                   |
+ **Note:** The specific pin assignments can be viewed and changed in `idf.py menuconfig` > `Example Configuration`.
 
 ## How to use example
 

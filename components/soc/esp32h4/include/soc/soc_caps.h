@@ -58,7 +58,7 @@
 #define SOC_RMT_SUPPORTED               1
 #define SOC_SDM_SUPPORTED               1
 #define SOC_GPSPI_SUPPORTED             1
-// #define SOC_LEDC_SUPPORTED              1    // TODO: [ESP32H4] IDF-12343
+#define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1       // TODO: [ESP32H4] IDF-12375 IDF-12377
 // #define SOC_SUPPORT_COEXISTENCE         1    // TODO: [ESP32H4] IDF-12251 IDF-12252 IDF-12253
@@ -291,14 +291,14 @@
 #define SOC_I2S_SUPPORT_SLEEP_RETENTION       1  /*!< The sleep retention feature can help back up I2S registers before sleep */
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
-// #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
-// #define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
-#define SOC_LEDC_CHANNEL_NUM                (6) // TODO: [ESP32H4] IDF-12343
-// #define SOC_LEDC_TIMER_BIT_WIDTH            (20)
-// #define SOC_LEDC_SUPPORT_FADE_STOP          (1)
-// #define SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED (1)
-// #define SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX (16)
-// #define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
+#define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
+#define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
+#define SOC_LEDC_TIMER_NUM                  (4)
+#define SOC_LEDC_CHANNEL_NUM                (8)
+#define SOC_LEDC_TIMER_BIT_WIDTH            (20)
+#define SOC_LEDC_SUPPORT_FADE_STOP          (1)
+#define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
+#define SOC_LEDC_SUPPORT_SLEEP_RETENTION    (1)
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
 #define SOC_MMU_PAGE_SIZE_CONFIGURABLE        (1)
