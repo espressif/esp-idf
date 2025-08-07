@@ -6,7 +6,7 @@
 
 #include "soc/rtc_io_periph.h"
 
-const int rtc_io_num_map[SOC_GPIO_PIN_COUNT] = {
+const int8_t rtc_io_num_map[SOC_GPIO_PIN_COUNT] = {
     -1,//GPIO0
     -1,//GPIO1
     -1,//GPIO2

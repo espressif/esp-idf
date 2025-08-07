@@ -497,24 +497,6 @@ void gpio_hal_matrix_out(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t si
   */
 #define gpio_hal_sleep_output_enable(hal, gpio_num) gpio_ll_sleep_output_enable((hal)->dev, gpio_num)
 
-#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-/**
- * @brief  Apply slp_pu/slp_pd configuration to fun_pu/fun_pd when system sleep.
- *
- * @param  hal Context of the HAL layer
- * @param  gpio_num GPIO number.
- */
-void gpio_hal_sleep_pupd_config_apply(gpio_hal_context_t *hal, uint32_t gpio_num);
-
-/**
- * @brief  Restore fun_pu/fun_pd configuration when system wakeup.
- *
- * @param  hal Context of the HAL layer
- * @param  gpio_num GPIO number.
- */
-void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, uint32_t gpio_num);
-#endif // CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT == 0) && SOC_DEEP_SLEEP_SUPPORTED
 /**
  * @brief Enable GPIO deep-sleep wake-up function.

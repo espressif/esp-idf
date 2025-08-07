@@ -173,7 +173,7 @@ static inline void gpio_ll_sleep_sel_dis(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline bool gpio_ll_sleep_sel_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    return REG_GET_BIT(GPIO_PIN_MUX_REG[gpio_num], SLP_SEL) ? true : false;
+    return REG_GET_BIT(DR_REG_IO_MUX_BASE + GPIO_PIN_MUX_REG_OFFSET[gpio_num], SLP_SEL) ? true : false;
 }
 
 /**
@@ -210,7 +210,7 @@ static inline void gpio_ll_sleep_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline bool gpio_ll_sleep_pullup_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    return REG_GET_BIT(GPIO_PIN_MUX_REG[gpio_num], SLP_PU) ? true : false;
+    return REG_GET_BIT(DR_REG_IO_MUX_BASE + GPIO_PIN_MUX_REG_OFFSET[gpio_num], SLP_PU) ? true : false;
 }
 
 /**
@@ -247,7 +247,7 @@ static inline void gpio_ll_sleep_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline bool gpio_ll_sleep_pulldown_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    return REG_GET_BIT(GPIO_PIN_MUX_REG[gpio_num], SLP_PD) ? true : false;
+    return REG_GET_BIT(DR_REG_IO_MUX_BASE + GPIO_PIN_MUX_REG_OFFSET[gpio_num], SLP_PD) ? true : false;
 }
 
 /**

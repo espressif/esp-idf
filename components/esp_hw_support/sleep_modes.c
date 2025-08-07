@@ -733,8 +733,8 @@ static SLEEP_FN_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool 
 # endif
         mac_bb_power_down_cb_execute();
 #endif
-#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-        gpio_sleep_mode_config_apply();
+#if CONFIG_IDF_TARGET_ESP32
+    esp_sleep_gpio_pupd_config_workaround_apply();
 #endif
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
         sleep_enable_cpu_retention();
@@ -801,8 +801,8 @@ static SLEEP_FN_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
 #endif
-#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-    gpio_sleep_mode_config_unapply();
+#if CONFIG_IDF_TARGET_ESP32
+    esp_sleep_gpio_pupd_config_workaround_unapply();
 #endif
 #if CONFIG_MAC_BB_PD
     mac_bb_power_up_cb_execute();

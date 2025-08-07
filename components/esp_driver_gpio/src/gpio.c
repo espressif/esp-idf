@@ -1011,22 +1011,6 @@ esp_err_t gpio_sleep_sel_dis(gpio_num_t gpio_num)
     return ESP_OK;
 }
 
-#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-esp_err_t gpio_sleep_pupd_config_apply(gpio_num_t gpio_num)
-{
-    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
-    gpio_hal_sleep_pupd_config_apply(gpio_context.gpio_hal, gpio_num);
-    return ESP_OK;
-}
-
-esp_err_t gpio_sleep_pupd_config_unapply(gpio_num_t gpio_num)
-{
-    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
-    gpio_hal_sleep_pupd_config_unapply(gpio_context.gpio_hal, gpio_num);
-    return ESP_OK;
-}
-#endif // CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
 esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
