@@ -245,6 +245,8 @@
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
 #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
+#define SOC_SDM_SUPPORT_SLEEP_RETENTION 1
+
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-C6 has 1 I2C
 #define SOC_I2C_NUM                 (2U) // I2C_NUM = HP_I2C + LP_I2C

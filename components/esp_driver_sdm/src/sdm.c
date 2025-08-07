@@ -39,6 +39,8 @@
 #define SDM_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
 #endif
 
+#define SDM_USE_RETENTION_LINK  (SOC_SDM_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+
 ///!< Logging settings
 #define TAG "sdm"
 
@@ -81,6 +83,31 @@ struct sdm_channel_t {
 // sdm driver platform, it's always a singleton
 static sdm_platform_t s_platform;
 
+#if SDM_USE_RETENTION_LINK
+static esp_err_t sdm_create_sleep_retention_link_cb(void *group)
+{
+    int group_id = ((sdm_group_t *)group)->group_id;
+    esp_err_t err = sleep_retention_entries_create(soc_sdm_retention_infos[group_id].regdma_entry_array,
+                                                   soc_sdm_retention_infos[group_id].array_size,
+                                                   REGDMA_LINK_PRI_SDM, soc_sdm_retention_infos[group_id].module);
+    return err;
+}
+
+static void sdm_create_retention_module(sdm_group_t *group)
+{
+    int group_id = group->group_id;
+    sleep_retention_module_t module = soc_sdm_retention_infos[group_id].module;
+    _lock_acquire(&s_platform.mutex);
+    if (sleep_retention_is_module_inited(module) && !sleep_retention_is_module_created(module)) {
+        if (sleep_retention_module_allocate(module) != ESP_OK) {
+            // even though the sleep retention module create failed, SDM driver should still work, so just warning here
+            ESP_LOGW(TAG, "create retention link failed on SDM Group%d, power domain won't be turned off during sleep", group_id);
+        }
+    }
+    _lock_release(&s_platform.mutex);
+}
+#endif // SDM_USE_RETENTION_LINK
+
 static sdm_group_t *sdm_acquire_group_handle(int group_id, sdm_clock_source_t clk_src)
 {
     bool new_group = false;
@@ -97,6 +124,25 @@ static sdm_group_t *sdm_acquire_group_handle(int group_id, sdm_clock_source_t cl
             group->group_id = group_id;
             group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             group->clk_src = clk_src;
+
+#if SDM_USE_RETENTION_LINK
+            sleep_retention_module_t module = soc_sdm_retention_infos[group->group_id].module;
+            sleep_retention_module_init_param_t init_param = {
+                .cbs = {
+                    .create = {
+                        .handle = sdm_create_sleep_retention_link_cb,
+                        .arg = group,
+                    },
+                },
+                .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+            };
+            // retention module init must be called BEFORE the hal init
+            if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+                ESP_LOGW(TAG, "init sleep retention failed on SDM Group%d, power domain may be turned off during sleep", group->group_id);
+            }
+#endif // SDM_USE_RETENTION_LINK
+
+            // [IDF-12975]: enable APB register clock explicitly
             // initialize HAL context
             sdm_hal_init_config_t hal_config = {
                 .group_id = group_id,
@@ -142,6 +188,16 @@ static void sdm_release_group_handle(sdm_group_t *group)
         do_deinitialize = true;
         s_platform.groups[group_id] = NULL; // deregister from platform
         sdm_hal_deinit(&group->hal);
+
+#if SDM_USE_RETENTION_LINK
+        sleep_retention_module_t module = soc_sdm_retention_infos[group_id].module;
+        if (sleep_retention_is_module_created(module)) {
+            sleep_retention_module_free(module);
+        }
+        if (sleep_retention_is_module_inited(module)) {
+            sleep_retention_module_deinit(module);
+        }
+#endif // SDM_USE_RETENTION_LINK
     }
     _lock_release(&s_platform.mutex);
 
@@ -216,6 +272,10 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
     ESP_RETURN_ON_FALSE(config && ret_chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_OUTPUT_GPIO(config->gpio_num), ESP_ERR_INVALID_ARG, TAG, "invalid GPIO number");
 
+    [[maybe_unused]] bool allow_pd = config->flags.allow_pd == 1;
+#if !SOC_SDM_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(allow_pd == false, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
+#endif // SOC_SDM_SUPPORT_SLEEP_RETENTION
 
     // allocate channel memory from internal memory because it contains atomic variable
     chan = heap_caps_calloc(1, sizeof(sdm_channel_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -270,6 +330,12 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
     // initialize other members of timer
     chan->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     atomic_init(&chan->fsm, SDM_FSM_INIT); // set the initial state to INIT
+
+#if SDM_USE_RETENTION_LINK
+    if (allow_pd) {
+        sdm_create_retention_module(group);
+    }
+#endif // SDM_USE_RETENTION_LINK
 
     ESP_LOGD(TAG, "new sdm channel (%d,%d) at %p, gpio=%d, sample rate=%"PRIu32"Hz", group_id, chan_id, chan, chan->gpio_num, chan->sample_rate_hz);
     *ret_chan = chan;

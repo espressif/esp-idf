@@ -29,6 +29,8 @@ typedef struct {
     uint32_t sample_rate_hz;    /*!< Over sample rate in Hz, it determines the frequency of the carrier pulses */
     struct {
         uint32_t invert_out: 1;   /*!< Whether to invert the output signal */
+        uint32_t allow_pd: 1;     /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.
+                                       This can save power, but at the expense of more RAM being consumed to save register context. */
     } flags;                      /*!< Extra flags */
 } sdm_config_t;
 

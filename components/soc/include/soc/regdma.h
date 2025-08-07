@@ -64,6 +64,7 @@ extern "C" {
 #define REGDMA_GPSPI_LINK(_pri)             ((0x23 << 8) | _pri)
 #define REGDMA_LEDC_LINK(_pri)              ((0x24 << 8) | _pri)
 #define REGDMA_MCPWM_LINK(_pri)             ((0x25 << 8) | _pri)
+#define REGDMA_SDM_LINK(_pri)               ((0x26 << 8) | _pri)
 
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
@@ -90,6 +91,7 @@ extern "C" {
 #define REGDMA_LINK_PRI_GPSPI                   REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_LEDC                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_MCPWM                   REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_SDM                     REGDMA_LINK_PRI_GENERAL_PERIPH
 
 typedef enum {
     REGDMA_LINK_PRI_0 = 0,

@@ -23,6 +23,8 @@
 extern "C" {
 #endif
 
+#if SOC_HAS(SDM)
+
 typedef struct {
     const char *module_name; // Module name
     struct {
@@ -31,6 +33,20 @@ typedef struct {
 } soc_sdm_signal_desc_t;
 
 extern const soc_sdm_signal_desc_t soc_sdm_signals[SOC_SDM_ATTR(INST_NUM)];
+
+#if SOC_HAS(PAU)
+
+typedef struct {
+    const periph_retention_module_t module;             // ID of the SDM as a retention module
+    const regdma_entries_config_t *regdma_entry_array;  // Array of regdma entries for retention
+    const size_t array_size;                            // Size of the regdma_entry_array
+} soc_sdm_retention_desc_t;
+
+extern const soc_sdm_retention_desc_t soc_sdm_retention_infos[SOC_SDM_ATTR(INST_NUM)];
+
+#endif // SOC_HAS(PAU)
+
+#endif // SOC_HAS(SDM)
 
 #ifdef __cplusplus
 }

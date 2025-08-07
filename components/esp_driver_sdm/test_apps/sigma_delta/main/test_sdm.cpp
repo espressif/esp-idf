@@ -22,6 +22,7 @@ TEST_CASE("sdm_channel_install_uninstall", "[sdm]")
         .sample_rate_hz = 1000000,
         .flags = {
             .invert_out = false,
+            .allow_pd = false,
         },
     };
     sdm_channel_handle_t chans[SOC_SDM_ATTR(INST_NUM)][SOC_SDM_ATTR(CHANS_PER_INST)] = {};
@@ -49,6 +50,7 @@ TEST_CASE("sdm_channel_set_pulse_density", "[sdm]")
         .sample_rate_hz = 1000000,
         .flags = {
             .invert_out = false,
+            .allow_pd = false,
         },
     };
     sdm_channel_handle_t chans[2] = {};
