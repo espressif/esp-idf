@@ -7,11 +7,11 @@
 #pragma once
 
 #include "esp_err.h"
-#include "esp_intr_alloc.h"
 #include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "hal/uart_types.h"
+#include "esp_check.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +22,6 @@ extern "C" {
  */
 #define UART_PIN_NO_CHANGE      (-1)
 
-#define UART_FIFO_LEN _Pragma ("GCC warning \"'UART_FIFO_LEN' macro is deprecated, please use 'UART_HW_FIFO_LEN' instead\"") SOC_UART_FIFO_LEN ///< Length of the HP UART HW FIFO
 #if (SOC_UART_LP_NUM >= 1)
 #define UART_HW_FIFO_LEN(uart_num) ((uart_num < SOC_UART_HP_NUM) ? SOC_UART_FIFO_LEN : SOC_LP_UART_FIFO_LEN) ///< Length of the UART HW FIFO
 #else
@@ -93,8 +92,6 @@ typedef struct {
     bool timeout_flag;      /*!< UART data read timeout flag for UART_DATA event (no new data received during configured RX TOUT)*/
     /*!< If the event is caused by FIFO-full interrupt, then there will be no event with the timeout flag before the next byte coming.*/
 } uart_event_t;
-
-typedef intr_handle_t uart_isr_handle_t;
 
 /**
  * @brief Install UART driver and set the UART to the default configuration.
@@ -390,6 +387,23 @@ esp_err_t uart_disable_tx_intr(uart_port_t uart_num);
  */
 esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh);
 
+// Function declarations for different argument counts
+esp_err_t _uart_set_pin6(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num, int dtr_io_num, int dsr_io_num);
+static inline esp_err_t _uart_set_pin4(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num)
+{
+    return _uart_set_pin6(uart_num, tx_io_num, rx_io_num, rts_io_num, cts_io_num, -1, -1);
+}
+
+// Error function for invalid argument count
+static inline esp_err_t __uart_set_pin_invalid_args__(int dummy, ...)
+{
+    ESP_RETURN_ON_FALSE(false, ESP_FAIL, "uart", "Invalid number of arguments to uart_set_pin(). Expected 5 or 7 arguments.");
+    return ESP_OK;
+}
+
+// Argument counting macro
+#define _GET_UART_SET_PIN_FUNC_NAME(_1, _2, _3, _4, _5, _6, _7, _FUNC_NAME, ...) _FUNC_NAME
+
 /**
  * @brief Assign signals of a UART peripheral to GPIO pins
  *
@@ -410,17 +424,23 @@ esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh);
  *       Apply open-drain and pull-up to the pad ahead of time as a protection,
  *       or the upper layer protocol must guarantee no output from two ends at the same time.
  *
- * @param uart_num   UART port number, the max port number is (UART_NUM_MAX -1).
- * @param tx_io_num  UART TX pin GPIO number.
- * @param rx_io_num  UART RX pin GPIO number.
- * @param rts_io_num UART RTS pin GPIO number.
- * @param cts_io_num UART CTS pin GPIO number.
+ * @note Variadic arguments
+ *  - param: uart_num   UART port number, the max port number is (UART_NUM_MAX -1).
+ *  - param: tx_io_num  UART TX pin GPIO number.
+ *  - param: rx_io_num  UART RX pin GPIO number.
+ *  - param: rts_io_num UART RTS pin GPIO number.
+ *  - param: cts_io_num UART CTS pin GPIO number.
+ *  - param: dtr_io_num UART DTR pin GPIO number (optional). DTR signal is automatically controlled by hardware when UART is in RS485 mode.
+ *  - param: dsr_io_num UART DSR pin GPIO number (optional).
  *
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num);
+#define uart_set_pin(...) \
+    _GET_UART_SET_PIN_FUNC_NAME(__VA_ARGS__, \
+            _uart_set_pin6, __uart_set_pin_invalid_args__, _uart_set_pin4, \
+            __uart_set_pin_invalid_args__, __uart_set_pin_invalid_args__, __uart_set_pin_invalid_args__)(__VA_ARGS__)
 
 /**
  * @brief Manually set the UART RTS pin level.

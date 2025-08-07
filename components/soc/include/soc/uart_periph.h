@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,10 +21,15 @@
 extern "C" {
 #endif
 
-#define SOC_UART_TX_PIN_IDX  (0)
-#define SOC_UART_RX_PIN_IDX  (1)
-#define SOC_UART_RTS_PIN_IDX (2)
-#define SOC_UART_CTS_PIN_IDX (3)
+typedef enum {
+    SOC_UART_PERIPH_SIGNAL_TX = 0,      /* Transmit signal*/
+    SOC_UART_PERIPH_SIGNAL_RX = 1,      /* Receive signal*/
+    SOC_UART_PERIPH_SIGNAL_RTS = 2,     /* Request to send signal (0 indicates allowing the other end to send data)*/
+    SOC_UART_PERIPH_SIGNAL_CTS = 3,     /* Clear to send signal (0 indicates I am allowed to send data)*/
+    SOC_UART_PERIPH_SIGNAL_DTR = 4,     /* Data terminal ready signal (1 indicates I am ready to transmit data)*/
+    SOC_UART_PERIPH_SIGNAL_DSR = 5,     /* Data set ready signal (1 indicates the other end is ready to transmit data)*/
+    SOC_UART_PERIPH_SIGNAL_MAX,
+} soc_uart_periph_signal_t;
 
 /**
  * @brief Macro that can be used to retrieve the signal of a certain pin for a
@@ -47,7 +52,7 @@ typedef struct {
 } uart_periph_sig_t;
 
 typedef struct {
-    const uart_periph_sig_t pins[SOC_UART_PINS_COUNT];
+    const uart_periph_sig_t pins[SOC_UART_PERIPH_SIGNAL_MAX];
     const uint8_t irq;
 } uart_signal_conn_t;
 

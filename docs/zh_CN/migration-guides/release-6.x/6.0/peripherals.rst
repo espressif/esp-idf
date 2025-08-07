@@ -64,6 +64,11 @@ LEDC
 
 - :cpp:enumerator:`soc_periph_ledc_clk_src_legacy_t::LEDC_USE_RTC8M_CLK` 已被移除。请使用 ``LEDC_USE_RC_FAST_CLK`` 代替。
 
+UART
+----
+
+``UART_FIFO_LEN`` 已被移除。请使用 ``UART_HW_FIFO_LEN`` 代替。
+
 I2C
 ---
 

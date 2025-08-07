@@ -24,25 +24,25 @@ The MAX483 line driver is used for example below but other similar chips can be 
                     |              B|---------------|B              |
          TXD ------>| DI  MAX483    |    \  /       |    MAX483   DI|<----- TXD
 ESP32 BOARD         |               |   RS-485 side |               |  SERIAL ADAPTER SIDE
-         RTS --+--->| DE            |    /  \       |             DE|---+
+    DTR(RTS) --+--->| DE            |    /  \       |             DE|---+
                |    |              A|---------------|A              |   |
-               +----| /RE           |               |            /RE|---+-- RTS
+               +----| /RE           |               |            /RE|---+-- DTR(RTS)
                     +-------x-------+               +-------x-------+
                             |                               |
                            ---                             ---
 ```
 
-#### Connect an external RS485 serial interface to an ESP32 board
-Connect a USB-to-RS485 adapter to a computer, then connect the adapter's A/B output lines with the corresponding A/B output lines of the RS485 line driver connected to the ESP32 chip (see figure above).
+#### Connect an external RS485 serial interface to an ESP development board
+Connect a USB-to-RS485 adapter to a computer, then connect the adapter's A/B output lines with the corresponding A/B output lines of the RS485 line driver connected to the ESP chip (see figure above).
 ```
-  ------------------------------------------------------------------------------------------------------------------------------
-  |  UART Interface       | #define            | Default pin for ESP32 | Default pins for others   | External RS485 Driver Pin |
-  | ----------------------|--------------------|-----------------------|---------------------------|---------------------------|
-  | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23                | GPIO9                     | DI                        |
-  | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22                | GPIO8                     | RO                        |
-  | Request To Send (RTS) | CONFIG_MB_UART_RTS | GPIO18                | GPIO10                    | ~RE/DE                    |
-  | Ground                | n/a                | GND                   | GND                       | GND                       |
-  ------------------------------------------------------------------------------------------------------------------------------
+  ----------------------------------------------------------------------------
+  |  UART Interface       | #define              | External RS485 Driver Pin |
+  | ----------------------|----------------------|---------------------------|
+  | Transmit Data (TxD)   | CONFIG_ECHO_UART_TXD | DI                        |
+  | Receive Data (RxD)    | CONFIG_ECHO_UART_RXD | RO                        |
+  | DTR / RTS             | CONFIG_RS485_DE      | ~RE/DE                    |
+  | Ground                | n/a                  | GND                       |
+  ----------------------------------------------------------------------------
 ```
 Note: Each target chip has different GPIO pins available for UART connection. Please refer to UART documentation for selected target for more information.
 
