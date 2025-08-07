@@ -18,3 +18,17 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 @idf_parametrize('target', soc_filtered_targets('SOC_I3C_MASTER_SUPPORTED == 1'), indirect=['target'])
 def test_i3c(dut: Dut) -> None:
     dut.run_all_single_board_cases()
+
+
+@pytest.mark.generic_multi_device
+@pytest.mark.parametrize(
+    'count, config',
+    [
+        (2, 'release'),
+        (2, 'cache_safe'),
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', soc_filtered_targets('SOC_I3C_MASTER_SUPPORTED == 1'), indirect=['target'])
+def test_i3c_multi_device(case_tester) -> None:  # type: ignore
+    case_tester.run_all_multi_dev_cases(reset=True)

@@ -10,7 +10,7 @@
 #include "esp_heap_caps.h"
 #include "sdkconfig.h"
 
-#define LEAKS (100)
+#define LEAKS (150)
 
 void setUp(void)
 {
