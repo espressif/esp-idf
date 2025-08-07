@@ -181,7 +181,7 @@ struct rmt_channel_t {
 typedef struct {
     rmt_encoder_handle_t encoder;  // encode user payload into RMT symbols
     const void *payload;           // encoder payload
-    size_t payload_bytes;          // payload size
+    size_t payload_size;           // payload size, in bytes (specially for bits encoder, it is in bits)
     int loop_count;                // transaction can be continued in a loop for specific times
     int remain_loop_count;         // user required loop count may exceed hardware limitation, the driver will transfer them in batches
     size_t transmitted_symbol_num; // track the number of transmitted symbols

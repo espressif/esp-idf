@@ -96,7 +96,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
  * @param[in] tx_channel RMT TX channel that created by `rmt_new_tx_channel()`
  * @param[in] encoder RMT encoder that created by various factory APIs like `rmt_new_bytes_encoder()`
  * @param[in] payload The raw data to be encoded into RMT symbols
- * @param[in] payload_bytes Size of the `payload` in bytes
+ * @param[in] payload_size Size of the `payload` in bytes (specially for bits encoder, it is in bits)
  * @param[in] config Transmission specific configuration
  * @return
  *      - ESP_OK: Transmit data successfully
@@ -105,7 +105,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
  *      - ESP_ERR_NOT_SUPPORTED: Transmit data failed because some feature is not supported by hardware, e.g. unsupported loop count
  *      - ESP_FAIL: Transmit data failed because of other error
  */
-esp_err_t rmt_transmit(rmt_channel_handle_t tx_channel, rmt_encoder_handle_t encoder, const void *payload, size_t payload_bytes, const rmt_transmit_config_t *config);
+esp_err_t rmt_transmit(rmt_channel_handle_t tx_channel, rmt_encoder_handle_t encoder, const void *payload, size_t payload_size, const rmt_transmit_config_t *config);
 
 /**
  * @brief Wait for all pending TX transactions done

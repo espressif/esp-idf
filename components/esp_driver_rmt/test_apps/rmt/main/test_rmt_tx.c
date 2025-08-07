@@ -114,6 +114,81 @@ TEST_CASE("rmt bytes encoder", "[rmt]")
     TEST_ESP_OK(rmt_del_encoder(bytes_encoder));
 }
 
+TEST_CASE("rmt bits encoder", "[rmt]")
+{
+    rmt_tx_channel_config_t tx_channel_cfg = {
+        .clk_src = RMT_CLK_SRC_DEFAULT,
+        .resolution_hz = 1000000, // 1MHz resolution
+        .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
+        .trans_queue_depth = 4,
+        .gpio_num = TEST_RMT_GPIO_NUM_B,
+    };
+    rmt_channel_handle_t tx_channel = NULL;
+    TEST_ESP_OK(rmt_new_tx_channel(&tx_channel_cfg, &tx_channel));
+    TEST_ESP_OK(rmt_enable(tx_channel));
+
+    printf("install bits encoder\r\n");
+    rmt_encoder_handle_t bits_encoder = NULL;
+    rmt_bits_encoder_config_t bits_enc_config = {
+        .bit0 = {
+            .level0 = 1,
+            .duration0 = 3, // T0H=3us
+            .level1 = 0,
+            .duration1 = 9, // T0L=9us
+        },
+        .bit1 = {
+            .level0 = 1,
+            .duration0 = 9, // T1H=9us
+            .level1 = 0,
+            .duration1 = 3, // T1L=3us
+        },
+        .flags.msb_first = 1,
+    };
+    TEST_ESP_OK(rmt_new_bits_encoder(&bits_enc_config, &bits_encoder));
+
+    uint8_t test_data[] = {0xAB, 0xDA}; // 10101011, 11011010
+    size_t num_bits1 = 8;
+    size_t num_bits2 = 5;
+    size_t num_bits3 = 13;
+
+    rmt_transmit_config_t transmit_config = {
+        .loop_count = 0, // no loop
+    };
+
+    printf("transmit bits pattern with MSB first(%zu bits)\r\n", num_bits1);
+    TEST_ESP_OK(rmt_transmit(tx_channel, bits_encoder, test_data, num_bits1, &transmit_config));
+    TEST_ESP_OK(rmt_tx_wait_all_done(tx_channel, -1));
+
+    printf("transmit bits pattern with MSB first(%zu bits)\r\n", num_bits2);
+    TEST_ESP_OK(rmt_transmit(tx_channel, bits_encoder, test_data, num_bits2, &transmit_config));
+    TEST_ESP_OK(rmt_tx_wait_all_done(tx_channel, -1));
+
+    printf("transmit bits pattern with MSB first(%zu bits)\r\n", num_bits3);
+    TEST_ESP_OK(rmt_transmit(tx_channel, bits_encoder, test_data, num_bits3, &transmit_config));
+    TEST_ESP_OK(rmt_tx_wait_all_done(tx_channel, -1));
+
+    // change to LSB first
+    printf("update bits encoder configuration to LSB first\r\n");
+    bits_enc_config.flags.msb_first = 0;
+    TEST_ESP_OK(rmt_bits_encoder_update_config(bits_encoder, &bits_enc_config));
+
+    printf("transmit bits pattern with LSB first(%zu bits)\r\n", num_bits1);
+    TEST_ESP_OK(rmt_transmit(tx_channel, bits_encoder, test_data, num_bits1, &transmit_config));
+    TEST_ESP_OK(rmt_tx_wait_all_done(tx_channel, -1));
+
+    printf("transmit bits pattern with LSB first(%zu bits)\r\n", num_bits2);
+    TEST_ESP_OK(rmt_transmit(tx_channel, bits_encoder, test_data, num_bits2, &transmit_config));
+    TEST_ESP_OK(rmt_tx_wait_all_done(tx_channel, -1));
+
+    printf("transmit bits pattern with LSB first(%zu bits)\r\n", num_bits3);
+    TEST_ESP_OK(rmt_transmit(tx_channel, bits_encoder, test_data, num_bits3, &transmit_config));
+    TEST_ESP_OK(rmt_tx_wait_all_done(tx_channel, -1));
+
+    TEST_ESP_OK(rmt_del_encoder(bits_encoder));
+    TEST_ESP_OK(rmt_disable(tx_channel));
+    TEST_ESP_OK(rmt_del_channel(tx_channel));
+}
+
 static void test_rmt_channel_single_trans(size_t mem_block_symbols, bool with_dma)
 {
     rmt_tx_channel_config_t tx_channel_cfg = {

@@ -6,6 +6,7 @@ if(CONFIG_SOC_RMT_SUPPORTED)
     list(APPEND srcs "src/rmt_common.c"
                      "src/rmt_encoder.c"
                      "src/rmt_encoder_bytes.c"
+                     "src/rmt_encoder_bits.c"
                      "src/rmt_encoder_copy.c"
                      "src/rmt_encoder_simple.c"
                      "src/rmt_rx.c"

@@ -44,7 +44,7 @@ struct rmt_encoder_t {
      * @param[in] encoder Encoder handle
      * @param[in] tx_channel RMT TX channel handle, returned from `rmt_new_tx_channel()`
      * @param[in] primary_data App data to be encoded into RMT symbols
-     * @param[in] data_size Size of primary_data, in bytes
+     * @param[in] data_size Size of primary_data, in bytes (especially for bits encoder, it is in bits)
      * @param[out] ret_state Returned current encoder's state
      * @return Number of RMT symbols that the primary data has been encoded into
      */
@@ -130,6 +130,17 @@ typedef struct {
 } rmt_bytes_encoder_config_t;
 
 /**
+ * @brief Bits encoder configuration
+ */
+typedef struct {
+    rmt_symbol_word_t bit0; /*!< How to represent BIT0 in RMT symbol */
+    rmt_symbol_word_t bit1; /*!< How to represent BIT1 in RMT symbol */
+    struct {
+        uint32_t msb_first: 1; /*!< Whether to encode MSB bit first */
+    } flags;                   /*!< Encoder config flag */
+} rmt_bits_encoder_config_t;
+
+/**
  * @brief Copy encoder configuration
  */
 typedef struct {
@@ -181,6 +192,38 @@ esp_err_t rmt_new_bytes_encoder(const rmt_bytes_encoder_config_t *config, rmt_en
  *      - ESP_FAIL: Update RMT bytes encoder failed because of other error
  */
 esp_err_t rmt_bytes_encoder_update_config(rmt_encoder_handle_t bytes_encoder, const rmt_bytes_encoder_config_t *config);
+
+/**
+ * @brief Create RMT bits encoder, which can encode bit stream into RMT symbols
+ *
+ * @note The bits encoder is similar to bytes encoder, but it can handle arbitrary bit lengths,
+ *       not just multiples of 8 bits. The data_size parameter in (*encode)() represents
+ *       the number of bits to encode, not bytes.
+ *
+ * @param[in] config Bits encoder configuration
+ * @param[out] ret_encoder Returned encoder handle
+ * @return
+ *      - ESP_OK: Create RMT bits encoder successfully
+ *      - ESP_ERR_INVALID_ARG: Create RMT bits encoder failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Create RMT bits encoder failed because out of memory
+ *      - ESP_FAIL: Create RMT bits encoder failed because of other error
+ */
+esp_err_t rmt_new_bits_encoder(const rmt_bits_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder);
+
+/**
+ * @brief Update the configuration of the bits encoder
+ *
+ * @note The configurations of the bits encoder is also set up by `rmt_new_bits_encoder()`.
+ *       This function is used to update the configuration of the bits encoder at runtime.
+ *
+ * @param[in] bits_encoder Bits encoder handle, created by e.g `rmt_new_bits_encoder()`
+ * @param[in] config Bits encoder configuration
+ * @return
+ *      - ESP_OK: Update RMT bits encoder successfully
+ *      - ESP_ERR_INVALID_ARG: Update RMT bits encoder failed because of invalid argument
+ *      - ESP_FAIL: Update RMT bits encoder failed because of other error
+ */
+esp_err_t rmt_bits_encoder_update_config(rmt_encoder_handle_t bits_encoder, const rmt_bits_encoder_config_t *config);
 
 /**
  * @brief Create RMT copy encoder, which copies the given RMT symbols into RMT memory
