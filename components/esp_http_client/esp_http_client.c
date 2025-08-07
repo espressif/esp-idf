@@ -656,10 +656,10 @@ static esp_err_t esp_http_client_prepare_basic_auth(esp_http_client_handle_t cli
     esp_err_t ret = ESP_FAIL;
 
     auth_response = http_auth_basic(client->connection_info.username, client->connection_info.password);
-    ESP_GOTO_ON_FALSE(auth_response, ESP_FAIL, error, TAG, "Failed to generate basic auth response");
-
-    ESP_LOGD(TAG, "auth_response=%s", auth_response);
-    ESP_GOTO_ON_FALSE(ESP_OK == esp_http_client_set_header(client, "Authorization", auth_response), ESP_FAIL, error, TAG, "Failed to set Authorization header");
+    if (auth_response) {
+        ESP_LOGD(TAG, "auth_response=%s", auth_response);
+        ESP_GOTO_ON_FALSE(ESP_OK == esp_http_client_set_header(client, "Authorization", auth_response), ESP_FAIL, error, TAG, "Failed to set Authorization header");
+    }
 
     ret = ESP_OK;
 
@@ -688,10 +688,10 @@ static esp_err_t esp_http_client_prepare_digest_auth(esp_http_client_handle_t cl
 
     client->auth_data->cnonce = ((uint64_t)esp_random() << 32) + esp_random();
     auth_response = http_auth_digest(client->connection_info.username, client->connection_info.password, client->auth_data);
-    ESP_GOTO_ON_FALSE(auth_response, ESP_FAIL, error, TAG, "Failed to generate digest auth response");
-
-    ESP_LOGD(TAG, "auth_response=%s", auth_response);
-    ESP_GOTO_ON_FALSE(ESP_OK == esp_http_client_set_header(client, "Authorization", auth_response), ESP_FAIL, error, TAG, "Failed to set Authorization header");
+    if (auth_response) {
+        ESP_LOGD(TAG, "auth_response=%s", auth_response);
+        ESP_GOTO_ON_FALSE(ESP_OK == esp_http_client_set_header(client, "Authorization", auth_response), ESP_FAIL, error, TAG, "Failed to set Authorization header");
+    }
 
     ret = ESP_OK;
 
