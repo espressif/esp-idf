@@ -527,7 +527,7 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
     ESP_RETURN_ON_FALSE(channel && encoder && payload && payload_bytes && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(channel->direction == RMT_CHANNEL_DIRECTION_TX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
 #if !SOC_RMT_SUPPORT_TX_LOOP_COUNT
-    ESP_RETURN_ON_FALSE(config->loop_count <= 0, ESP_ERR_NOT_SUPPORTED, TAG, "loop count is not supported");
+    ESP_RETURN_ON_FALSE(config->loop_count <= 1, ESP_ERR_NOT_SUPPORTED, TAG, "loop count is not supported");
 #endif // !SOC_RMT_SUPPORT_TX_LOOP_COUNT
 #if CONFIG_RMT_TX_ISR_CACHE_SAFE
     // payload is retrieved by the encoder, we should make sure it's still accessible even when the cache is disabled
@@ -552,7 +552,8 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
     t->encoder = encoder;
     t->payload = payload;
     t->payload_bytes = payload_bytes;
-    t->loop_count = config->loop_count;
+    // treat loop_count == 1 as no loop
+    t->loop_count = config->loop_count == 1 ? 0 : config->loop_count;
     t->remain_loop_count = t->loop_count;
     t->flags.eot_level = config->flags.eot_level;
 
