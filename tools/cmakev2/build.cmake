@@ -575,6 +575,21 @@ function(__init_build_configuration)
     idf_build_set_property(ASM_COMPILE_OPTIONS "${asm_compile_options}" APPEND)
     idf_build_set_property(COMPILE_DEFINITIONS "${compile_definitions}" APPEND)
     idf_build_set_property(LINK_OPTIONS "${link_options}" APPEND)
+
+    # Set the LINKER_TYPE build property. Different linkers may have varying
+    # options, so it's important to identify the linker type to configure the
+    # options correctly. Currently, LINKER_TYPE is used to set the appropriate
+    # linker options for linking the entire archive, which differs between the
+    # GNU and Apple linkers when building on the host.
+    if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        # Compiling for the host, and the host is macOS, so the linker is Darwin LD.
+        # Note, when adding support for Clang and LLD based toolchain this check will
+        # need to be modified.
+        set(linker_type "Darwin")
+    else()
+        set(linker_type "GNU")
+    endif()
+    idf_build_set_property(LINKER_TYPE "${linker_type}")
 endfunction()
 
 #[[
