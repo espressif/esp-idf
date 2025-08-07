@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -53,6 +53,16 @@ typedef struct {
     uint32_t channel;
     esp_phy_wifi_rate_t rate;
 } phy_wifi_rx_s;
+
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+typedef struct {
+    struct arg_int *he_format;
+    struct arg_int *pe;
+    struct arg_int *giltf_num;
+    struct arg_int *ru_index;
+    struct arg_end *end;
+} phy_wifi_11ax_tx_set_t;
+#endif//CONFIG_SOC_WIFI_HE_SUPPORT
 #endif
 
 #if SOC_BT_SUPPORTED

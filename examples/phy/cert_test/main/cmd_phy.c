@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -26,6 +26,9 @@ static phy_args_t       phy_args;
 static phy_wifi_tx_t    phy_wifi_tx_args;
 static phy_wifi_rx_t    phy_wifi_rx_args;
 static phy_wifiscwout_t phy_wifiscwout_args;
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+static phy_wifi_11ax_tx_set_t phy_wifi_11ax_tx_set_args;
+#endif//CONFIG_SOC_WIFI_HE_SUPPORT
 #endif
 #if SOC_BT_SUPPORTED
 static phy_ble_tx_t     phy_ble_tx_args;
@@ -240,6 +243,60 @@ static int esp_phy_wifiscwout_func(int argc, char **argv)
 
     return 0;
 }
+
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+static int esp_phy_wifi_11ax_tx_set_func(int argc, char **argv)
+{
+    uint32_t he_format;
+    uint32_t pe;
+    uint32_t giltf_num;
+    uint32_t ru_index = 0;
+    int nerrors = arg_parse(argc, argv, (void **) &phy_wifi_11ax_tx_set_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, phy_wifi_11ax_tx_set_args.end, argv[0]);
+        return 1;
+    }
+
+    if (phy_wifi_11ax_tx_set_args.he_format->count == 1) {
+        he_format = phy_wifi_11ax_tx_set_args.he_format->ival[0];
+    } else {
+        ESP_LOGE(TAG, "Please enter the HE format 1:HESU, 2:HEER, 3:HETB, 0:exit 11ax mode");
+        return 1;
+    }
+
+    if (phy_wifi_11ax_tx_set_args.pe->count == 1) {
+        pe = phy_wifi_11ax_tx_set_args.pe->ival[0];
+    } else {
+        pe = 16;
+        ESP_LOGW(TAG, "Default pe is 16");
+    }
+
+    if (phy_wifi_11ax_tx_set_args.giltf_num->count == 1) {
+        giltf_num = phy_wifi_11ax_tx_set_args.giltf_num->ival[0];
+    } else {
+        giltf_num = 1;
+        ESP_LOGW(TAG, "Default giltf_num is 1");
+    }
+
+    if (he_format > 3) {
+        ESP_LOGE(TAG, "HE format 1:HESU, 2:HEER, 3:HETB, 0:exit 11ax mode");
+        return 1;
+    }
+
+    if (he_format == 3) {
+        if (phy_wifi_11ax_tx_set_args.ru_index->count == 1) {
+            ru_index = phy_wifi_11ax_tx_set_args.ru_index->ival[0];
+        } else {
+            ru_index = 0;
+            ESP_LOGW(TAG, "Default ru_index is 0");
+        }
+    }
+
+    esp_phy_11ax_tx_set(he_format, pe, giltf_num, ru_index);
+    return 0;
+}
+#endif//CONFIG_SOC_WIFI_HE_SUPPORT
+
 #endif
 
 #if SOC_BT_SUPPORTED
@@ -541,6 +598,24 @@ void register_phy_cmd(void)
         .argtable = &phy_wifiscwout_args
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&wifiscwout_cmd) );
+
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+    phy_wifi_11ax_tx_set_args.he_format     = arg_int0("f", "he_format"     , "<he_format>"     , "1:HESU, 2:HEER, 3:HETB, 0:exit 11ax mode");
+    phy_wifi_11ax_tx_set_args.pe     = arg_int0("p", "pe"     , "<pe>"     , "pe=0/8/16, default 16");
+    phy_wifi_11ax_tx_set_args.giltf_num     = arg_int0("g", "giltf_num"     , "<giltf_num>"     , "giltf_num=1/2/3, default 1");
+    phy_wifi_11ax_tx_set_args.ru_index        = arg_int0("i", "ru_index"        , "<ru_index>"        , "0~8, 37~40, 53~54, 61,\
+        ru_index is only effective in HETB mode. In other modes, this parameter can be omitted or set to 0, with the default value being 0");
+    phy_wifi_11ax_tx_set_args.end         = arg_end(1);
+
+    const esp_console_cmd_t esp_11ax_tx_set_cmd = {
+        .command = "phy_11ax_tx_set",
+        .help = "WiFi 11ax TX set command",
+        .hint = NULL,
+        .func = &esp_phy_wifi_11ax_tx_set_func,
+        .argtable = &phy_wifi_11ax_tx_set_args
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&esp_11ax_tx_set_cmd) );
+#endif//CONFIG_SOC_WIFI_HE_SUPPORT
 #endif
 
 #if SOC_BT_SUPPORTED
