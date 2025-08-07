@@ -94,6 +94,49 @@ function(idf_build_replace_option_from_property property_name option_to_remove n
     idf_build_set_property(${property_name} "${new_list_of_options}")
 endfunction()
 
+# idf_build_add_post_elf_dependency
+#
+# @brief Register a dependency that must run after the ELF is linked (post-ELF) and before
+#        the binary image is generated.
+#
+# @param[in] elf_filename The filename of the ELF file that the dependency must run after.
+# @param[in] dep_target The target that must run after the ELF is linked.
+#
+# @note This function is used by components to register a post-ELF hook.
+#
+# Example usage:
+#   idf_build_add_post_elf_dependency("${CMAKE_PROJECT_NAME}.elf" <dep_target>)
+#
+function(idf_build_add_post_elf_dependency elf_filename dep_target)
+    if("${elf_filename}" STREQUAL "")
+        message(FATAL_ERROR "elf filename must be provided (e.g. ${CMAKE_PROJECT_NAME}.elf)")
+    endif()
+    if(NOT TARGET ${dep_target})
+        message(FATAL_ERROR "dependency '${dep_target}' is not a known CMake target")
+    endif()
+
+    # Append dependency to this ELF's dep list
+    idf_build_get_property(deps "__POST_ELF_DEPS_${elf_filename}")
+    list(APPEND deps "${dep_target}")
+    list(REMOVE_DUPLICATES deps)
+    idf_build_set_property("__POST_ELF_DEPS_${elf_filename}" "${deps}")
+endfunction()
+
+# idf_build_get_post_elf_dependencies
+#
+# @brief Retrieve the dependencies for the given ELF filename.
+#
+# @param[in] elf_filename The filename of the ELF file to get the dependencies for.
+# @param[out] out_var The variable to store the dependencies in.
+#
+# Example usage:
+#   idf_build_get_post_elf_dependencies("${CMAKE_PROJECT_NAME}.elf" post_elf_deps)
+#
+function(idf_build_get_post_elf_dependencies elf_filename out_var)
+    idf_build_get_property(deps "__POST_ELF_DEPS_${elf_filename}")
+    set(${out_var} "${deps}" PARENT_SCOPE)
+endfunction()
+
 #
 # Retrieve the IDF_PATH repository's version, either using a version
 # file or Git revision. Sets the IDF_VER build property.
