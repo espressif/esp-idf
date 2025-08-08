@@ -443,6 +443,14 @@ static inline bool ecdsa_ll_is_deterministic_mode_supported(void)
     return true;
 }
 
+/**
+ * @brief Check if the ECDSA peripheral uses MPI module's memory
+ */
+static inline bool ecdsa_ll_is_mpi_required(void)
+{
+    return true;    // TODO: IDF-13523
+}
+
 #ifdef __cplusplus
 }
 #endif

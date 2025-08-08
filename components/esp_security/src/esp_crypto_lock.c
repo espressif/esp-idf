@@ -47,6 +47,9 @@ static _lock_t s_crypto_ecc_lock;
 #ifdef SOC_ECDSA_SUPPORTED
 /* Lock for ECDSA peripheral */
 static _lock_t s_crypto_ecdsa_lock;
+#if SOC_ECDSA_USES_MPI
+#include "hal/ecdsa_ll.h"
+#endif /* SOC_ECDSA_USES_MPI */
 #endif /* SOC_ECDSA_SUPPORTED */
 
 #ifdef SOC_KEY_MANAGER_SUPPORTED
@@ -138,14 +141,18 @@ void esp_crypto_ecdsa_lock_acquire(void)
     _lock_acquire(&s_crypto_ecdsa_lock);
     esp_crypto_ecc_lock_acquire();
 #ifdef SOC_ECDSA_USES_MPI
-    esp_crypto_mpi_lock_acquire();
+    if (ecdsa_ll_is_mpi_required()) {
+        esp_crypto_mpi_lock_acquire();
+    }
 #endif /* SOC_ECDSA_USES_MPI */
 }
 
 void esp_crypto_ecdsa_lock_release(void)
 {
 #ifdef SOC_ECDSA_USES_MPI
-    esp_crypto_mpi_lock_release();
+    if (ecdsa_ll_is_mpi_required()) {
+        esp_crypto_mpi_lock_release();
+    }
 #endif /* SOC_ECDSA_USES_MPI */
     esp_crypto_ecc_lock_release();
     _lock_release(&s_crypto_ecdsa_lock);

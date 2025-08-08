@@ -76,10 +76,12 @@ static void esp_ecdsa_acquire_hardware(void)
     esp_crypto_ecc_enable_periph_clk(true);
 
 #if SOC_ECDSA_USES_MPI
+    if (ecdsa_ll_is_mpi_required()) {
     /* We need to reset the MPI peripheral because ECDSA peripheral
      * of some targets use the MPI peripheral as well.
      */
-    esp_crypto_mpi_enable_periph_clk(true);
+        esp_crypto_mpi_enable_periph_clk(true);
+    }
 #endif /* SOC_ECDSA_USES_MPI */
 }
 
@@ -90,7 +92,9 @@ static void esp_ecdsa_release_hardware(void)
     esp_crypto_ecc_enable_periph_clk(false);
 
 #if SOC_ECDSA_USES_MPI
-    esp_crypto_mpi_enable_periph_clk(false);
+    if (ecdsa_ll_is_mpi_required()) {
+        esp_crypto_mpi_enable_periph_clk(false);
+    }
 #endif /* SOC_ECDSA_USES_MPI */
 
     esp_crypto_ecdsa_lock_release();
