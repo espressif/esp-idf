@@ -38,14 +38,18 @@ static void ecdsa_enable_and_reset(void)
     esp_crypto_ecdsa_enable_periph_clk(true);
     esp_crypto_ecc_enable_periph_clk(true);
 #ifdef SOC_ECDSA_USES_MPI
-    esp_crypto_mpi_enable_periph_clk(true);
+    if (ecdsa_ll_is_mpi_required()) {
+        esp_crypto_mpi_enable_periph_clk(true);
+    }
 #endif
 }
 
 static void ecdsa_disable(void)
 {
 #ifdef SOC_ECDSA_USES_MPI
-    esp_crypto_mpi_enable_periph_clk(false);
+    if (ecdsa_ll_is_mpi_required()) {
+        esp_crypto_mpi_enable_periph_clk(false);
+    }
 #endif
     esp_crypto_ecc_enable_periph_clk(false);
     esp_crypto_ecdsa_enable_periph_clk(false);
