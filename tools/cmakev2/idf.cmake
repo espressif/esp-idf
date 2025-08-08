@@ -446,11 +446,25 @@ endfunction()
                            have properties attached to them. However, they
                            are not necessarily included in the build through
                            add_subdirectory.
+
    :COMPONENT_INTERFACES: This is a list of component interface targets for
                           the components in ``COMPONENTS_DISCOVERED``. It is
                           used when searching for a component, such as by its
                           name, to set or retrieve the component's properties.
 
+   :COMPONENTS_INCLUDED: This is a list of component names that were included
+                         in the build, meaning their CMakeLists.txt files were
+                         processed with an add_subdirectory call. Each
+                         component is evaluated exactly once, and this list
+                         serves as a record of which components have already
+                         been evaluated.  Although each component can only be
+                         evaluated once, it can be used in multiple
+                         idf_component_include calls. If a component is
+                         requested to be included a second time, this list is
+                         checked. If the component is already included, the
+                         idf_component_include function simply returns, as
+                         there is nothing further to do except add a new alias
+                         target if requested.
 #]]
 add_library(idf_build_properties INTERFACE)
 
