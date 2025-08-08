@@ -418,12 +418,14 @@ function(__init_component)
     idf_build_set_property(COMPONENT_INTERFACES "${component_interface}" APPEND)
 
     idf_component_set_property("${component_name}" COMPONENT_LIB "${component_target}")
+    idf_component_set_property("${component_name}" COMPONENT_TARGET "${component_target}")
     idf_component_set_property("${component_name}" COMPONENT_NAME "${component_name}")
     idf_component_set_property("${component_name}" COMPONENT_DIR "${component_directory}")
     idf_component_set_property("${component_name}" COMPONENT_ALIAS "${component_alias}")
     idf_component_set_property("${component_name}" COMPONENT_SOURCE "${component_source}")
     idf_component_set_property("${component_name}" COMPONENT_INTERFACE "${component_interface}")
     idf_component_set_property("${component_name}" COMPONENT_PRIORITY ${component_priority})
+    idf_component_set_property("${component_name}" COMPONENT_INCLUDED NO)
 
     # Set component properties for Kconfig files.
     idf_component_set_property("${component_name}" __KCONFIG "${component_kconfig}")
@@ -447,4 +449,195 @@ function(__dump_component_properties components)
             idf_msg("   ${property}: ${value}")
         endforeach()
     endforeach()
+endfunction()
+
+#[[api
+.. cmakev2:function:: idf_component_include
+
+   .. code-block:: cmake
+
+      idf_component_include(<name>
+                            [INTERFACE <variable>])
+
+   :name[in]: Component name.
+   :INTERFACE[out,opt]: Optional variable where the name of the target
+                        interface for the included component will be stored.
+
+   This is a core function of the build system, responsible for including the
+   specified component, as indicated by the ``<name>`` option, into the build
+   process. It does this by evaluating the component through the
+   ``add_subdirectory`` call for the component's directory. The component is
+   responsible for creating its own CMake target, with the target name provided
+   via the ``COMPONENT_TARGET`` variable. This target is linked to the
+   component's interface target, which is managed internally by the build
+   system. The component's interface target is used by other components to
+   establish their dependencies.
+
+   When the "INTERFACE" variable is provided, the name of the included
+   component interface target will be stored in it.
+#]]
+function(idf_component_include name)
+    set(options)
+    set(one_value INTERFACE)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    # Check that the specified component name is among the discovered and
+    # recognized components.
+    idf_build_get_property(components_discovered COMPONENTS_DISCOVERED)
+    if(NOT "${name}" IN_LIST components_discovered)
+        idf_die("Component '${name}' not found. Available components: '${components_discovered}'")
+    endif()
+
+    # Check if the component is already included, meaning the add_subdirectory
+    # has already been called for it and the component has been processed.
+    idf_build_get_property(components_included COMPONENTS_INCLUDED)
+    if("${name}" IN_LIST components_included)
+        idf_dbg("Component '${name}' is already included.")
+        # Set the parent variable ARG_INTERFACE to include the target name of
+        # the component interface.
+        if(DEFINED ARG_INTERFACE)
+            idf_component_get_property(component_interface "${name}" COMPONENT_INTERFACE)
+            set(${ARG_INTERFACE} ${component_interface} PARENT_SCOPE)
+        endif()
+        return()
+    endif()
+
+    idf_dbg("Including component '${name}'")
+
+    idf_component_get_property(component_name "${name}" COMPONENT_NAME)
+    idf_component_get_property(component_interface "${name}" COMPONENT_INTERFACE)
+    idf_component_get_property(component_target "${name}" COMPONENT_TARGET)
+    idf_component_get_property(component_directory "${name}" COMPONENT_DIR)
+    idf_component_get_property(component_alias "${name}" COMPONENT_ALIAS)
+    idf_component_get_property(component_lib "${name}" COMPONENT_LIB)
+    idf_component_get_property(component_version "${name}" COMPONENT_VERSION)
+
+    # The following cmakev1 backward-compatible variables are passed to the
+    # component's CMakeLists.txt.
+    set(COMPONENT_NAME ${component_name})
+    set(COMPONENT_DIR ${component_directory})
+    set(COMPONENT_ALIAS ${component_alias})
+    set(COMPONENT_LIB ${component_lib})
+    set(COMPONENT_VERSION ${component_version})
+    set(ESP_PLATFORM 1)
+
+    # The COMPONENT_TARGET is simply an alias for COMPONENT_LIB, which more
+    # accurately reflects its purpose in the cmakev2 build system. The
+    # component's responsibility is to create the target with the name
+    # specified in the COMPONENT_TARGET variable.
+    set(COMPONENT_TARGET ${component_target})
+
+    # To handle potential circular dependencies among components, maintain a
+    # record of currently evaluated components in the __DEPENDENCY_CHAIN. This
+    # helps in detecting and reporting circular dependencies, such as
+    # C1->C2->C1. In this scenario, C2 can still use the C1 interface target,
+    # but C1 will only be fully evaluated after C2 has been evaluated.
+    if("${component_name}" IN_LIST __DEPENDENCY_CHAIN)
+        idf_dbg("Component '${name}' in circular dependency chain '${__DEPENDENCY_CHAIN}'")
+        return()
+    endif()
+
+    # FIXME: Once the shims for cmakev1 components are ready, call
+    # add_subdirectory for all components. Currently, it is only called for
+    # project components that use cmakev2. Since add_subdirectory is not called
+    # for cmakev1 components, the COMPONENT_TARGET will not be created, and
+    # these components will be silently ignored later when the COMPONENT_TARGET
+    # is checked for existence.
+    idf_component_get_property(component_source "${component_name}" COMPONENT_SOURCE)
+    if("${component_source}" STREQUAL "project_components")
+        # Evaluate the CMakeLists.txt file of the component.
+        idf_build_get_property(build_dir BUILD_DIR build_dir)
+        add_subdirectory("${component_directory}" "${build_dir}/esp-idf/${component_name}" EXCLUDE_FROM_ALL)
+    endif()
+
+    # The component has been evaluated; remove it from the dependency chain.
+    list(POP_BACK __DEPENDENCY_CHAIN)
+
+    # Mark the component as included and add it to the COMPONENTS_INCLUDED
+    # build property.  Note that COMPONENTS_INCLUDED is read again because it
+    # might have been updated further down the dependency chain.
+    idf_component_set_property("${component_name}" COMPONENT_INCLUDED YES)
+    idf_build_get_property(components_included COMPONENTS_INCLUDED)
+    list(APPEND components_included "${component_name}")
+    idf_build_set_property(COMPONENTS_INCLUDED "${components_included}")
+
+    if(DEFINED ARG_INTERFACE)
+        idf_component_get_property(component_interface "${name}" COMPONENT_INTERFACE)
+        set(${ARG_INTERFACE} ${component_interface} PARENT_SCOPE)
+    endif()
+
+    if(NOT TARGET "${component_target}")
+        # The cmakev1 system allows component to return without creating any
+        # cmake target. For instance, a component might not be supported for a
+        # given IDF_TARGET. Ideally, we should fail and abort the build process
+        # in such cases. However, for compatibility reasons, the absence of
+        # component's target is silently ignored here.
+        idf_dbg("Component '${name}' lacks a target")
+        idf_component_set_property("${component_name}" COMPONENT_REAL_TARGET NOTFOUND)
+        return()
+    endif()
+
+    # The component might use the COMPONENT_TARGET name as an alias for another
+    # target. In this case, although unlikely, identify the real target and
+    # store it in the COMPONENT_REAL_TARGET component property.
+    __get_real_target(TARGET "${component_target}" OUTPUT component_real_target)
+    idf_component_set_property("${component_name}" COMPONENT_REAL_TARGET "${component_real_target}")
+
+    # Set component target type as COMPONENT_REAL_TARGET_TYPE property.
+    get_target_property(component_real_target_type "${component_real_target}" TYPE)
+    idf_component_set_property("${component_name}" COMPONENT_REAL_TARGET_TYPE "${component_real_target_type}")
+
+    # Link the target created by the component to the component interface
+    # target.
+    if("${component_real_target_type}" STREQUAL "INTERFACE_LIBRARY")
+        target_link_libraries("${component_interface}" INTERFACE "${component_real_target}")
+    elseif("${component_real_target_type}" STREQUAL "STATIC_LIBRARY")
+        idf_component_get_property(whole_archive "${component_name}" WHOLE_ARCHIVE)
+        if(whole_archive)
+            idf_build_get_property(linker_type LINKER_TYPE)
+            if(linker_type STREQUAL "GNU")
+                target_link_libraries("${component_interface}" INTERFACE
+                    "-Wl,--whole-archive" "${component_real_target}"  "-Wl,--no-whole-archive")
+            elseif(linker_type STREQUAL "Darwin")
+                target_link_libraries("${component_interface}" INTERFACE
+                    "-Wl,-force_load" "${component_real_target}")
+            endif()
+        else()
+            target_link_libraries("${component_interface}" INTERFACE "${component_real_target}")
+        endif()
+    else()
+        idf_die("Unsupported target type '${component_real_target_type}' in component '${component_name}'")
+    endif()
+
+    # Components for cmakev1 use the idf_component_register call and are
+    # managed in cmakev2 through a shim. This shim sets the COMPONENT_FORMAT
+    # property to CMAKEV1 and applies global compilation options and
+    # definitions using CMake's directory-scoped function for backward
+    # compatibility. Therefore, no additional configuration is required.
+    idf_component_get_property(component_format "${component_name}" COMPONENT_FORMAT)
+    if("${component_format}" STREQUAL "CMAKEV1")
+        return()
+    endif()
+
+    # The component was not handled by the idf_component_register shim,
+    # consider it as a component for cmakev2.
+    idf_component_set_property("${component_name}" COMPONENT_FORMAT CMAKEV2)
+
+    # The component's target is an interface library; nothing more needs to be
+    # set.
+    if("${component_real_target_type}" STREQUAL "INTERFACE_LIBRARY")
+        return()
+    endif()
+
+    idf_build_get_property(include_directories INCLUDE_DIRECTORIES GENERATOR_EXPRESSION)
+    target_include_directories("${component_real_target}" BEFORE PRIVATE "${include_directories}")
+
+    idf_build_get_property(compile_definitions COMPILE_DEFINITIONS GENERATOR_EXPRESSION)
+    target_compile_definitions("${component_real_target}" PRIVATE "${compile_definitions}")
+
+    __get_compile_options(OUTPUT compile_options)
+    target_compile_options("${component_real_target}" BEFORE PRIVATE "${compile_options}")
+
+    # FIXME: We likely still need to link the common component requirements here.
 endfunction()
