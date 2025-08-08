@@ -118,3 +118,7 @@ config ESP_ROM_CLIC_INT_THRESH_PATCH
 config ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
     bool
     default y
+
+config ESP_ROM_DELAY_US_PATCH
+    bool
+    default y
