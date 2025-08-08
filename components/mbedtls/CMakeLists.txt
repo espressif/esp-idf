@@ -268,7 +268,7 @@ if(SHA_PERIPHERAL_TYPE STREQUAL "core")
     elseif(CONFIG_SOC_SHA_CRYPTO_DMA)
         set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_crypto_dma_impl.c")
     endif()
-    target_sources(builtin PRIVATE  "${SHA_CORE_SRCS}")
+    target_sources(tfpsacrypto PRIVATE  "${SHA_CORE_SRCS}")
 endif()
 
 if(AES_PERIPHERAL_TYPE STREQUAL "dma")
