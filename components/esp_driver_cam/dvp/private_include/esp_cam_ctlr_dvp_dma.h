@@ -18,9 +18,9 @@ extern "C" {
 /**
  * @brief DVP DMA description object
  */
-#if defined(SOC_GDMA_BUS_AHB) && (SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AHB)
+#if defined(SOC_GDMA_BUS_AHB) && (SOC_GDMA_TRIG_PERIPH_CAM0_BUS == SOC_GDMA_BUS_AHB)
 typedef dma_descriptor_align4_t     esp_cam_ctlr_dvp_dma_desc_t;
-#elif defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AXI)
+#elif defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_CAM0_BUS == SOC_GDMA_BUS_AXI)
 typedef dma_descriptor_align8_t     esp_cam_ctlr_dvp_dma_desc_t;
 #endif
 
