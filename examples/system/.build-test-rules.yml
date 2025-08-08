@@ -99,12 +99,6 @@ examples/system/gcov:
       temporary: true
       reason: not supported yet #TODO: OCD-1138
 
-examples/system/gdbstub:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported yet #TODO: IDF-7510
-
 examples/system/heap_task_tracking:
   disable:
     - if: IDF_TARGET != "esp32c3" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
@@ -306,10 +300,6 @@ examples/system/ulp/lp_core/gpio:
     - ulp
 
 examples/system/ulp/lp_core/gpio_intr_pulse_counter:
-  disable:
-    - if: IDF_TARGET == "esp32c5" # TODO: IDF-10918
-      temporary: true
-      reason: unknown error
   enable:
     - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_ULP_LP_UART_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1)
   depends_components:
@@ -342,10 +332,6 @@ examples/system/ulp/lp_core/lp_adc:
 examples/system/ulp/lp_core/lp_i2c:
   enable:
     - if: SOC_LP_I2C_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: target esp32p4 is not supported yet, TODO IDF-9581
   depends_components:
     - ulp
 
