@@ -31,14 +31,15 @@ typedef struct {
     int lcd_param_bits; /*!< Bit-width of LCD parameter */
     uint8_t cs_ena_pretrans;        /*!< Amount of SPI bit-cycles the cs should be activated before the transmission (0-16) */
     uint8_t cs_ena_posttrans;       /*!< Amount of SPI bit-cycles the cs should stay active after the transmission (0-16) */
-    struct {
+    /// Extra flags to fine-tune the SPI device
+    struct esp_lcd_spi_flags_t {
         unsigned int dc_high_on_cmd: 1;  /*!< If enabled, DC level = 1 indicates command transfer */
         unsigned int dc_low_on_data: 1;  /*!< If enabled, DC level = 0 indicates color data transfer */
         unsigned int dc_low_on_param: 1; /*!< If enabled, DC level = 0 indicates parameter transfer */
         unsigned int sio_mode: 1;        /*!< Read and write through a single data line (MOSI) */
-        unsigned int lsb_first: 1;       /*!< transmit LSB bit first */
+        unsigned int lsb_first: 1;       /*!< Transmit LSB bit first */
         unsigned int cs_high_active: 1;  /*!< CS line is high active */
-    } flags; /*!< Extra flags to fine-tune the SPI device */
+    } flags;                            /*!< Extra flags to fine-tune the SPI device */
 } esp_lcd_panel_io_spi_config_t;
 
 /**
