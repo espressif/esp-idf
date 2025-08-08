@@ -774,10 +774,28 @@ function(idf_build_library)
     endif()
 
     # Initialize settings that must be configured after the project() function
-    # is called.
+    # is called. The __init_build function is evaluated only once per project.
     __init_build()
 
+    # Create library interface.
     add_library("${ARG_INTERFACE}" INTERFACE)
     idf_build_set_property(LIBRARY_INTERFACES "${ARG_INTERFACE}" APPEND)
     idf_library_set_property("${ARG_INTERFACE}" LIBRARY_COMPONENTS "${ARG_COMPONENTS}")
+
+    # Add global include directories, such as the directory containing
+    # sdkconfig, to the library's include directories.
+    idf_build_get_property(include_directories INCLUDE_DIRECTORIES GENERATOR_EXPRESSION)
+    target_include_directories("${ARG_INTERFACE}" INTERFACE "${include_directories}")
+
+    # Add link options.
+    idf_build_get_property(link_options LINK_OPTIONS)
+    target_link_options(${ARG_INTERFACE} INTERFACE "${link_options}")
+
+    # Include the requested components and link their interface targets to the
+    # library.
+    foreach(component_name IN LISTS ARG_COMPONENTS)
+        idf_component_include("${component_name}")
+        idf_component_get_property(component_interface "${component_name}" COMPONENT_INTERFACE)
+        target_link_libraries("${ARG_INTERFACE}" INTERFACE "${component_interface}")
+    endforeach()
 endfunction()
