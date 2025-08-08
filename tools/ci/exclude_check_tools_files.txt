@@ -1,6 +1,5 @@
 tools/ble/**/*
-tools/bt/README.md
-tools/bt/bt_hci_to_btsnoop.py
+tools/bt/**/*
 tools/catch/**/*
 tools/check_term.py
 tools/ci/*exclude*.txt

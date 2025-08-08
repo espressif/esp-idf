@@ -541,8 +541,8 @@ void app_main(void)
     * This code is intended for debugging and prints all HCI data.
     * To enable it, turn on the "BT_HCI_LOG_DEBUG_EN" configuration option.
     * The output HCI data can be parsed using the script:
-    * esp-idf/tools/bt/bt_hci_to_btsnoop.py.
-    * For detailed instructions, refer to esp-idf/tools/bt/README.md.
+    * esp-idf/tools/bt/bt_hci_to_btsnoop/bt_hci_to_btsnoop.py.
+    * For detailed instructions, refer to esp-idf/tools/bt/bt_hci_to_btsnoop/README.md.
     */
 
     /*
