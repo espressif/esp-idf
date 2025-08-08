@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-#if HAL_CONFIG_ECDSA_GEN_SIG_CM
+#if HAL_CONFIG(ECDSA_GEN_SIG_CM)
 
 #define ECDSA_SIGN_MAX_DUMMY_OP_COUNT 0x7
 

@@ -10,7 +10,7 @@
 #include "hal/efuse_hal.h"
 #include "soc/soc_caps.h"
 
-#if HAL_CONFIG_ECDSA_GEN_SIG_CM
+#if HAL_CONFIG(ECDSA_GEN_SIG_CM)
 #include "esp_fault.h"
 #include "esp_random.h"
 #include "soc/chip_revision.h"
@@ -99,7 +99,7 @@ static void ecdsa_hal_gen_signature_inner(const uint8_t *hash, uint8_t *r_out,
     }
 }
 
-#if HAL_CONFIG_ECDSA_GEN_SIG_CM
+#if HAL_CONFIG(ECDSA_GEN_SIG_CM)
 __attribute__((optimize("O0"))) static void ecdsa_hal_gen_signature_with_countermeasure(const uint8_t *hash, uint8_t *r_out,
                        uint8_t *s_out, uint16_t len)
 {
@@ -148,7 +148,7 @@ void ecdsa_hal_gen_signature(ecdsa_hal_config_t *conf, const uint8_t *hash,
 
     configure_ecdsa_periph(conf);
 
-#if HAL_CONFIG_ECDSA_GEN_SIG_CM
+#if HAL_CONFIG(ECDSA_GEN_SIG_CM)
 #if SOC_IS(ESP32H2)
     if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
         ecdsa_hal_gen_signature_with_countermeasure(hash, r_out, s_out, len);

@@ -15,7 +15,7 @@ void spi_flash_hal_setup_auto_resume_mode(spi_flash_host_inst_t *host);
 #define SPI_FLASH_TSHSL2_SAFE_VAL_NS (30)
 #endif //SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
-#if !HAL_CONFIG_SPI_FLASH_USE_ROM_API
+#if !HAL_CONFIG(SPI_FLASH_USE_ROM_API)
 
 #include "spi_flash_hal_common.inc"
 
