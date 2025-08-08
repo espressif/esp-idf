@@ -10,6 +10,7 @@
 #include "riscv/rvruntime-frames.h"
 #include "riscv/csr_hwlp.h"
 #include "riscv/csr_pie.h"
+#include "riscv/csr_dsp.h"
 
     .extern pxCurrentTCBs
 
@@ -329,6 +330,59 @@ generate_coprocessor_routine pie, PIE_COPROC_IDX, pie_enable, pie_save_regs, pie
 #endif /* SOC_CPU_HAS_PIE */
 
 
+#if SOC_CPU_HAS_DSP
+
+/**
+ * @brief Macros to enable and disable the DSP coprocessor on the current core
+ */
+.macro dsp_enable scratch_reg=a0
+    li      \scratch_reg, 1
+    csrw    CSR_DSP_STATE_REG, \scratch_reg
+.endm
+
+/**
+ * @brief Disable the DSP coprocessor while returning the former status in the given register
+ */
+.macro dsp_disable reg
+    csrrw \reg, CSR_DSP_STATE_REG, zero
+    /* Only keep the lowest two bits, if register is 0, DSP was off */
+    andi  \reg, \reg, 0b11
+    beqz  \reg, 1f
+    /* It was ON, return the enable bit in \reg */
+    li    \reg, 1 << DSP_COPROC_IDX
+1:
+.endm
+
+/**
+ * @brief Macros to save and restore the DSP coprocessor registers to and from the given frame
+ */
+.macro dsp_save_regs frame=a0
+    csrr    a1,   CSR_DSP_XACC_L
+    sw      a1,   RV_DSP_XACC_L(\frame)
+    csrr    a1,   CSR_DSP_XACC_H
+    sw      a1,   RV_DSP_XACC_H(\frame)
+    csrr    a1,   CSR_DSP_SAR
+    sw      a1,   RV_DSP_SAR(\frame)
+    csrr    a1,   CSR_DSP_STATUS
+    sw      a1,   RV_DSP_STATUS(\frame)
+.endm
+
+
+.macro dsp_restore_regs frame=a0
+    lw      a1, RV_DSP_XACC_L(\frame)
+    csrw    CSR_DSP_XACC_L, a1
+    lw      a1, RV_DSP_XACC_H(\frame)
+    csrw    CSR_DSP_XACC_H, a1
+    lw      a1, RV_DSP_SAR(\frame)
+    csrw    CSR_DSP_SAR, a1
+    lw      a1, RV_DSP_STATUS(\frame)
+    csrw    CSR_DSP_STATUS, a1
+.endm
+
+generate_coprocessor_routine dsp, DSP_COPROC_IDX, dsp_enable, dsp_save_regs, dsp_restore_regs
+
+#endif /* SOC_CPU_HAS_DSP */
+
 #if SOC_CPU_HAS_FPU
 
 /* Bit to set in mstatus to enable the FPU */
@@ -513,6 +567,12 @@ rtos_int_enter:
     or      s2, s2, a0
 #endif /* SOC_CPU_HAS_PIE */
 
+#if SOC_CPU_HAS_DSP
+    /* The current DSP coprocessor status will be returned in a0 */
+    dsp_disable a0
+    or      s2, s2, a0
+#endif /* SOC_CPU_HAS_DSP */
+
 #if SOC_CPU_HAS_FPU
     fpu_disable a0
 #endif /* SOC_CPU_HAS_FPU */
@@ -675,6 +735,14 @@ no_context_switch:
     pie_enable a1
 1:
 #endif /* SOC_CPU_HAS_PIE */
+
+#if SOC_CPU_HAS_DSP
+    /* Re-enable the DSP coprocessor if it was used */
+    andi    a1, s8, 1 << DSP_COPROC_IDX
+    beqz    a1, 1f
+    dsp_enable a1
+1:
+#endif /* SOC_CPU_HAS_DSP */
     j restore_stack_pointer
 
 context_switch_requested:

@@ -183,6 +183,10 @@ config SOC_CPU_HAS_FPU_EXT_ILL_BUG
     bool
     default n
 
+config SOC_CPU_HAS_DSP
+    bool
+    default y
+
 config SOC_CPU_COPROC_NUM
     int
     default 2

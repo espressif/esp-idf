@@ -14,6 +14,7 @@
 #include "riscv/csr.h"
 #include "riscv/interrupt.h"
 #include "riscv/csr_pie.h"
+#include "riscv/csr_dsp.h"
 #include "sdkconfig.h"
 
 #if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
@@ -275,7 +276,27 @@ FORCE_INLINE_ATTR void rv_utils_disable_pie(void)
     RV_WRITE_CSR(CSR_PIE_STATE_REG, 0);
 }
 
-#endif /* SOC_CPU_HAS_FPU */
+#endif /* SOC_CPU_HAS_PIE */
+
+
+/* ------------------------------------------------- DSP Related ----------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#if SOC_CPU_HAS_DSP
+
+FORCE_INLINE_ATTR void rv_utils_enable_dsp(void)
+{
+    RV_WRITE_CSR(CSR_DSP_STATE_REG, 1);
+}
+
+
+FORCE_INLINE_ATTR void rv_utils_disable_dsp(void)
+{
+    RV_WRITE_CSR(CSR_DSP_STATE_REG, 0);
+}
+
+#endif /* SOC_CPU_HAS_DSP */
 
 
 

@@ -20,22 +20,18 @@
 
 #if ( SOC_CPU_COPROC_NUM > 0 )
     /* Targets with coprocessors present a special CSR to get Illegal Instruction exception reason */
-#ifdef __clang__
-    /* Clang does not support constant declared via `equ` as operand for csrrw
-    * TODO: LLVM-369
-    */
     #define EXT_ILL_CSR 0x7F0
-#else
-    .equ EXT_ILL_CSR, 0x7F0
-#endif
 
     /* EXT_ILL CSR reasons are stored as follows:
      * - Bit 0: FPU core instruction (Load/Store instructions NOT concerned)
      * - Bit 1: Hardware Loop instructions
-     * - Bit 2: PIE core */
+     * - Bit 2: PIE core
+     * - Bit 3: DSP core
+     */
     .equ EXT_ILL_RSN_FPU,  1
     .equ EXT_ILL_RSN_HWLP, 2
     .equ EXT_ILL_RSN_PIE,  4
+    .equ EXT_ILL_RSN_DSP,  8
 #endif /* SOC_CPU_COPROC_NUM > 0 */
 
 /* Macro which first allocates space on the stack to save general
@@ -251,6 +247,12 @@ _panic_handler:
     andi a1, a0, EXT_ILL_RSN_PIE
     bnez a1, rtos_save_pie_coproc
 #endif /* SOC_CPU_HAS_PIE */
+
+#if SOC_CPU_HAS_DSP
+    /* Check if the DSP bit is set. */
+    andi a1, a0, EXT_ILL_RSN_DSP
+    bnez a1, rtos_save_dsp_coproc
+#endif /* SOC_CPU_HAS_DSP */
 
     /* We cannot check the HWLP bit in a0 since a hardware bug may set this bit even though no HWLP
      * instruction was executed in the program at all, so check mtval (`t0`) */
