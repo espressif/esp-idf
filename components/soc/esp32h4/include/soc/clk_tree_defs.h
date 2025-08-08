@@ -190,15 +190,6 @@ typedef enum {
 #endif
 } soc_periph_gptimer_clk_src_t;
 
-/**
- * @brief Type of Timer Group clock source, reserved for the legacy timer group driver
- */
-typedef enum {
-    TIMER_SRC_CLK_PLL_F48M = SOC_MOD_CLK_PLL_F48M,     /*!< Timer group clock source is PLL_F48M */
-    TIMER_SRC_CLK_XTAL = SOC_MOD_CLK_XTAL,             /*!< Timer group clock source is XTAL */
-    TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_PLL_F48M,      /*!< Timer group clock source default choice is PLL_F48M */
-} soc_periph_tg_clk_src_legacy_t;
-
 //////////////////////////////////////////////////RMT///////////////////////////////////////////////////////////////////
 
 /**
@@ -347,6 +338,22 @@ typedef enum {
     I2S_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                        /*!< Select XTAL as the source clock */
     I2S_CLK_SRC_EXTERNAL = -1,                                  /*!< Select external clock as source clock */
 } soc_periph_i2s_clk_src_t;
+
+//////////////////////////////////////////////////SDM//////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of SDM
+ */
+#define SOC_SDM_CLKS {SOC_MOD_CLK_PLL_F48M, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Sigma Delta Modulator clock source
+ */
+typedef enum {
+    SDM_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL clock as the source clock */
+    SDM_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M, /*!< Select PLL_F48M clock as the source clock */
+    SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,  /*!< Select PLL_F48M clock as the default clock choice */
+} soc_periph_sdm_clk_src_t;
 
 #ifdef __cplusplus
 }
