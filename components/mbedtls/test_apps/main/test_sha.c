@@ -114,11 +114,11 @@ TEST_CASE("Test esp_sha()", "[hw_crypto]")
     // This check fails because it expects the hardware implementation to be available
     // and be faster than the software implementation
 
-    // TEST_PERFORMANCE_CCOMP_LESS_THAN(TIME_SHA1_32KB, "%" PRId32 " us", us_sha1);
+    TEST_PERFORMANCE_CCOMP_LESS_THAN(TIME_SHA1_32KB, "%" PRId32 " us", us_sha1);
 
-// #if SOC_SHA_SUPPORT_SHA512
-    // TEST_PERFORMANCE_CCOMP_LESS_THAN(TIME_SHA512_32KB, "%" PRId32 " us", us_sha512);
-// #endif
+#if SOC_SHA_SUPPORT_SHA512
+    TEST_PERFORMANCE_CCOMP_LESS_THAN(TIME_SHA512_32KB, "%" PRId32 " us", us_sha512);
+#endif
 }
 
 /* NOTE: This test attempts to mmap 1MB of flash starting from address 0x00, which overlaps

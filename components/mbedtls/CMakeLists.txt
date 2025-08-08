@@ -262,13 +262,13 @@ if(CONFIG_SOC_AES_SUPPORTED)
 endif()
 
 if(SHA_PERIPHERAL_TYPE STREQUAL "core")
-    target_include_directories(builtin PRIVATE "${COMPONENT_DIR}/port/sha/core/include")
+    target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/sha/core/include")
     if(CONFIG_SOC_SHA_GDMA)
         set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_gdma_impl.c")
     elseif(CONFIG_SOC_SHA_CRYPTO_DMA)
         set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_crypto_dma_impl.c")
     endif()
-    target_sources(builtin PRIVATE  "${SHA_CORE_SRCS}")
+    target_sources(tfpsacrypto PRIVATE  "${SHA_CORE_SRCS}")
 endif()
 
 if(AES_PERIPHERAL_TYPE STREQUAL "dma")
@@ -318,11 +318,14 @@ if(CONFIG_SOC_SHA_SUPPORTED)
     #                                 "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
     # )
     if(CONFIG_MBEDTLS_HARDWARE_SHA)
+        target_compile_definitions(tfpsacrypto PRIVATE ESP_SHA_DRIVER_ENABLED)
         target_sources(tfpsacrypto PRIVATE
             "${COMPONENT_DIR}/port/psa_driver/esp_sha/psa_crypto_driver_esp_sha.c"
             "${COMPONENT_DIR}/port/psa_driver/esp_sha/${SHA_PERIPHERAL_TYPE}/psa_crypto_driver_esp_sha1.c"
             "${COMPONENT_DIR}/port/psa_driver/esp_sha/${SHA_PERIPHERAL_TYPE}/psa_crypto_driver_esp_sha256.c"
-            "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c")
+            "${COMPONENT_DIR}/port/psa_driver/esp_sha/${SHA_PERIPHERAL_TYPE}/psa_crypto_driver_esp_sha512.c"
+            "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
+            "${COMPONENT_DIR}/port/sha/esp_sha.c")
     endif()
 endif()
 

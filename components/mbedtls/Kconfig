@@ -1487,7 +1487,7 @@ menu "mbedTLS"
 
         config MBEDTLS_HARDWARE_SHA
             bool "Enable hardware SHA acceleration"
-            default n
+            default y
             depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST && SOC_SHA_SUPPORTED
             help
                 Enable hardware accelerated SHA1, SHA256, SHA384 & SHA512 in mbedTLS.

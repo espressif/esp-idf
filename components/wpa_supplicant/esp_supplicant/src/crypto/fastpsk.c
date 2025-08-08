@@ -322,21 +322,6 @@ int esp_fast_psk(const char *password, size_t password_len, const uint8_t *ssid,
     /* Compute the full PSK */
     psa_status_t status;
     psa_key_derivation_operation_t operation = PSA_KEY_DERIVATION_OPERATION_INIT;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t key_id = 0;
-
-    // Set up key attributes for password
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE);
-    psa_set_key_algorithm(&attributes, PSA_ALG_PBKDF2_HMAC(PSA_ALG_SHA_1));
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_DERIVE);
-
-    // Import password as key
-    status = psa_import_key(&attributes, (uint8_t*)password, password_len, &key_id);
-    if (status != PSA_SUCCESS) {
-        printf("Failed to import key: %d\n", status);
-        psa_reset_key_attributes(&attributes);
-        return -1;
-    }
 
     // Set up key derivation
     status = psa_key_derivation_setup(&operation, PSA_ALG_PBKDF2_HMAC(PSA_ALG_SHA_1));
@@ -377,8 +362,6 @@ int esp_fast_psk(const char *password, size_t password_len, const uint8_t *ssid,
 
 cleanup:
     psa_key_derivation_abort(&operation);
-    psa_destroy_key(key_id);
-    psa_reset_key_attributes(&attributes);
 
     return 0; /* Success */
 }

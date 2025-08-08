@@ -7,7 +7,7 @@ set(TEST_CRTS "crts/server_cert_chain.pem"
 
 idf_component_register(
                     # SRC_DIRS "."
-                    SRCS "app_main.c"
+                    SRCS "app_main.c" "test_sha.c" "test_sha_perf.c" "test_mbedtls_utils.c"
                     PRIV_INCLUDE_DIRS "."
                     PRIV_REQUIRES efuse cmock test_utils mbedtls esp_timer unity spi_flash esp_psram esp_security
                     EMBED_TXTFILES ${TEST_CRTS}
