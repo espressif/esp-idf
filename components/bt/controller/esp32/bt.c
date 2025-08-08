@@ -878,9 +878,22 @@ static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no)
 #if CONFIG_FREERTOS_UNICORE
     cause_sw_intr((void *)intr_no);
 #else /* CONFIG_FREERTOS_UNICORE */
+#if CONFIG_FREERTOS_SMP
+    uint32_t state = portDISABLE_INTERRUPTS();
+#else
+    uint32_t state = portSET_INTERRUPT_MASK_FROM_ISR();
+#endif
     if (xPortGetCoreID() == core_id) {
         cause_sw_intr((void *)intr_no);
+#if CONFIG_FREERTOS_SMP
+        portRESTORE_INTERRUPTS(state);
     } else {
+        portRESTORE_INTERRUPTS(state);
+#else
+        portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
+    } else {
+        portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
+#endif
         err = esp_ipc_call(core_id, cause_sw_intr, (void *)intr_no);
     }
 #endif /* !CONFIG_FREERTOS_UNICORE */
@@ -1501,11 +1514,7 @@ static void hli_queue_setup_pinned_to_core(int core_id)
 #if CONFIG_FREERTOS_UNICORE
     hli_queue_setup_cb(NULL);
 #else /* CONFIG_FREERTOS_UNICORE */
-    if (xPortGetCoreID() == core_id) {
-        hli_queue_setup_cb(NULL);
-    } else {
-        esp_ipc_call(core_id, hli_queue_setup_cb, NULL);
-    }
+    esp_ipc_call_blocking(core_id, hli_queue_setup_cb, NULL);
 #endif /* !CONFIG_FREERTOS_UNICORE */
 }
 #endif /* CONFIG_BTDM_CTRL_HLI */
