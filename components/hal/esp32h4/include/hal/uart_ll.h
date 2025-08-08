@@ -18,8 +18,6 @@
 #include "soc/pcr_reg.h"
 #include "hal/assert.h"
 
-//TODO: [ESP32H4] IDF-12398 inherited from verification branch, need check
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -110,15 +108,14 @@ FORCE_INLINE_ATTR void uart_ll_update(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    HAL_ASSERT(uart_num < SOC_UART_HP_NUM);
-    uint32_t uart_clk_config_reg = ((uart_num == 0) ? PCR_UART0_CONF_REG :
-                                    (uart_num == 1) ? PCR_UART1_CONF_REG : 0);
-    uint32_t uart_rst_bit = ((uart_num == 0) ? PCR_UART0_RST_EN :
-                            (uart_num == 1) ? PCR_UART1_RST_EN : 0);
-    uint32_t uart_en_bit  = ((uart_num == 0) ? PCR_UART0_CLK_EN :
-                            (uart_num == 1) ? PCR_UART1_CLK_EN : 0);
-    return REG_GET_BIT(uart_clk_config_reg, uart_rst_bit) == 0 &&
-        REG_GET_BIT(uart_clk_config_reg, uart_en_bit) != 0;
+    switch (uart_num) {
+    case 0:
+        return PCR.uart0_conf.uart0_clk_en && !PCR.uart0_conf.uart0_rst_en;
+    case 1:
+        return PCR.uart1_conf.uart1_clk_en && !PCR.uart1_conf.uart1_rst_en;
+    default:
+        return false;
+    }
 }
 
 /**
@@ -212,14 +209,14 @@ FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_
 {
     uint32_t sel_value = 0;
     switch (source_clk) {
-    case UART_SCLK_PLL_F48M:
-        sel_value = 2;
+    case UART_SCLK_XTAL:
+        sel_value = 0;
         break;
     case UART_SCLK_RTC:
         sel_value = 1;
         break;
-    case UART_SCLK_XTAL:
-        sel_value = 0;
+    case UART_SCLK_PLL_F48M:
+        sel_value = 2;
         break;
     default:
         // Invalid HP_UART clock source
@@ -240,14 +237,14 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
 {
     switch (UART_LL_PCR_REG_GET(hw, sclk_conf, sclk_sel)) {
     default:
-    case 2:
-        *source_clk = (soc_module_clk_t)UART_SCLK_PLL_F48M;
+    case 0:
+        *source_clk = (soc_module_clk_t)UART_SCLK_XTAL;
         break;
     case 1:
         *source_clk = (soc_module_clk_t)UART_SCLK_RTC;
         break;
-    case 0:
-        *source_clk = (soc_module_clk_t)UART_SCLK_XTAL;
+    case 2:
+        *source_clk = (soc_module_clk_t)UART_SCLK_PLL_F48M;
         break;
     }
 }
@@ -405,6 +402,9 @@ FORCE_INLINE_ATTR void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_
  */
 FORCE_INLINE_ATTR void uart_ll_write_txfifo(uart_dev_t *hw, const uint8_t *buf, uint32_t wr_len)
 {
+    // Write to the FIFO should make sure only involve write operation, any read operation would cause data lost.
+    // Non-32-bit access would lead to a read-modify-write operation to the register, which is undesired.
+    // Therefore, use 32-bit access to avoid any potential problem.
     for (int i = 0; i < (int)wr_len; i++) {
         hw->fifo.val = buf[i];
     }
@@ -449,7 +449,7 @@ FORCE_INLINE_ATTR void uart_ll_txfifo_rst(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR uint32_t uart_ll_get_rxfifo_len(uart_dev_t *hw)
 {
-    return hw->status.rxfifo_cnt;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->status, rxfifo_cnt);
 }
 
 /**
@@ -538,7 +538,7 @@ FORCE_INLINE_ATTR void uart_ll_get_parity(uart_dev_t *hw, uart_parity_t *parity_
  */
 FORCE_INLINE_ATTR void uart_ll_set_rxfifo_full_thr(uart_dev_t *hw, uint16_t full_thrhd)
 {
-    hw->conf1.rxfifo_full_thrhd = full_thrhd;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf1, rxfifo_full_thrhd, full_thrhd);
 }
 
 /**
@@ -552,7 +552,7 @@ FORCE_INLINE_ATTR void uart_ll_set_rxfifo_full_thr(uart_dev_t *hw, uint16_t full
  */
 FORCE_INLINE_ATTR void uart_ll_set_txfifo_empty_thr(uart_dev_t *hw, uint16_t empty_thrhd)
 {
-    hw->conf1.txfifo_empty_thrhd = empty_thrhd;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf1, txfifo_empty_thrhd, empty_thrhd);
 }
 
 /**
@@ -616,7 +616,7 @@ FORCE_INLINE_ATTR void uart_ll_set_hw_flow_ctrl(uart_dev_t *hw, uart_hw_flowcont
 {
     //only when UART_HW_FLOWCTRL_RTS is set , will the rx_thresh value be set.
     if (flow_ctrl & UART_HW_FLOWCTRL_RTS) {
-        hw->hwfc_conf_sync.rx_flow_thrhd = rx_thrs;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hwfc_conf_sync, rx_flow_thrhd, rx_thrs);
         hw->hwfc_conf_sync.rx_flow_en = 1;
     } else {
         hw->hwfc_conf_sync.rx_flow_en = 0;
@@ -662,8 +662,8 @@ FORCE_INLINE_ATTR void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl
     if (sw_flow_ctrl_en) {
         hw->swfc_conf0_sync.xonoff_del = 1;
         hw->swfc_conf0_sync.sw_flow_con_en = 1;
-        hw->swfc_conf1.xon_threshold = flow_ctrl->xon_thrd;
-        hw->swfc_conf1.xoff_threshold = flow_ctrl->xoff_thrd;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf1, xon_threshold, flow_ctrl->xon_thrd);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf1, xoff_threshold, flow_ctrl->xoff_thrd);
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xon_char, flow_ctrl->xon_char);
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xoff_char, flow_ctrl->xoff_char);
     } else {
@@ -779,10 +779,79 @@ FORCE_INLINE_ATTR void uart_ll_set_wakeup_mode(uart_dev_t *hw, uart_wakeup_mode_
         case UART_WK_MODE_ACTIVE_THRESH:
             hw->sleep_conf2.wk_mode_sel = 0;
             break;
+        case UART_WK_MODE_FIFO_THRESH:
+            hw->sleep_conf2.wk_mode_sel = 1;
+            break;
+        case UART_WK_MODE_START_BIT:
+            hw->sleep_conf2.wk_mode_sel = 2;
+            break;
+        case UART_WK_MODE_CHAR_SEQ:
+            hw->sleep_conf2.wk_mode_sel = 3;
+            break;
         default:
             abort();
             break;
     }
+}
+
+/**
+ * @brief  Set the UART specific character sequence wakeup mode mask.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  mask UART wakeup char seq mask to be set.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_wakeup_char_seq_mask(uart_dev_t *hw, uint32_t mask)
+{
+    hw->sleep_conf2.wk_char_mask = mask;
+}
+
+/**
+ * @brief  Set the UART specific character sequence wakeup phrase size.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  char_num UART wakeup char seq phrase size to be set.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_wakeup_char_seq_char_num(uart_dev_t *hw, uint32_t char_num)
+{
+    hw->sleep_conf2.wk_char_num = char_num;
+}
+
+/**
+ * @brief  Set the UART specific character sequence wakeup mode char.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  char_position UART wakeup char seq char position to be set.
+ * @param  value UART wakeup char seq char value to be set.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_char_seq_wk_char(uart_dev_t *hw, uint32_t char_position, char value)
+{
+    switch (char_position) {
+        case 0:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf1, wk_char0, value);
+            break;
+        case 1:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char1, value);
+            break;
+        case 2:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char2, value);
+            break;
+        case 3:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char3, value);
+            break;
+        case 4:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char4, value);
+            break;
+        default:
+            abort();
+            break;
+    }
+
 }
 
 /**
@@ -976,7 +1045,7 @@ FORCE_INLINE_ATTR void uart_ll_get_data_bit_num(uart_dev_t *hw, uart_word_length
  */
 FORCE_INLINE_ATTR bool uart_ll_is_tx_idle(uart_dev_t *hw)
 {
-    return (((hw->status.txfifo_cnt) == 0) && (hw->fsm_status.st_utx_out == 0));
+    return ((HAL_FORCE_READ_U32_REG_FIELD(hw->status, txfifo_cnt) == 0) && (hw->fsm_status.st_utx_out == 0));
 }
 
 /**
