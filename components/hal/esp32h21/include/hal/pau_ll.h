@@ -54,31 +54,6 @@ static inline void pau_ll_set_regdma_entry_link_backup_start_enable(pau_dev_t *d
     dev->regdma_conf.start = enable;
 }
 
-static inline void pau_ll_set_regdma_select_wifimac_link(pau_dev_t *dev)
-{
-    dev->regdma_conf.sel_mac = 1;
-}
-
-static inline void pau_ll_set_regdma_deselect_wifimac_link(pau_dev_t *dev)
-{
-    dev->regdma_conf.sel_mac = 0;
-}
-
-static inline void pau_ll_set_regdma_wifimac_link_backup_direction(pau_dev_t *dev, bool to_mem)
-{
-    dev->regdma_conf.to_mem_mac = to_mem ? 1 : 0;
-}
-
-static inline void pau_ll_set_regdma_wifimac_link_backup_start_enable(pau_dev_t *dev)
-{
-    dev->regdma_conf.start_mac = 1;
-}
-
-static inline void pau_ll_set_regdma_wifimac_link_backup_start_disable(pau_dev_t *dev)
-{
-    dev->regdma_conf.start_mac = 0;
-}
-
 static inline uint32_t pau_ll_get_regdma_current_link_addr(pau_dev_t *dev)
 {
     return dev->regdma_current_link_addr.val;

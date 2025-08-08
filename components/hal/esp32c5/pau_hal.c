@@ -18,17 +18,17 @@ void pau_hal_set_regdma_entry_link_addr(pau_hal_context_t *hal, pau_regdma_link_
 void IRAM_ATTR pau_hal_start_regdma_modem_link(pau_hal_context_t *hal, bool backup_or_restore)
 {
     pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
-    pau_ll_set_regdma_select_wifimac_link(hal->dev);
-    pau_ll_set_regdma_wifimac_link_backup_direction(hal->dev, backup_or_restore);
-    pau_ll_set_regdma_wifimac_link_backup_start_enable(hal->dev);
+    pau_ll_select_regdma_entry_link(hal->dev, SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC);
+    pau_ll_set_regdma_entry_link_backup_direction(hal->dev, backup_or_restore);
+    pau_ll_set_regdma_entry_link_backup_start_enable(hal->dev, true);
 
     while (!(pau_ll_get_regdma_intr_raw_signal(hal->dev) & PAU_DONE_INT_RAW));
 }
 
 void IRAM_ATTR pau_hal_stop_regdma_modem_link(pau_hal_context_t *hal)
 {
-    pau_ll_set_regdma_wifimac_link_backup_start_disable(hal->dev);
-    pau_ll_set_regdma_deselect_wifimac_link(hal->dev);
+    pau_ll_set_regdma_entry_link_backup_start_enable(hal->dev, false);
+    pau_ll_select_regdma_entry_link(hal->dev, 0); /* restore link select to default */
     pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
 }
 
