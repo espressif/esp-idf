@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <sys/lock.h>
 
 #include "esp_crypto_lock.h"
+#include "hal/ecdsa_ll.h"
 
 /* Lock overview:
 SHA: peripheral independent, but DMA is shared with AES
@@ -96,12 +97,18 @@ void esp_crypto_ecdsa_lock_acquire(void)
 {
     _lock_acquire(&s_crypto_ecdsa_lock);
     esp_crypto_ecc_lock_acquire();
-    esp_crypto_mpi_lock_acquire();
+
+    if (ecdsa_ll_is_mpi_required()) {
+        esp_crypto_mpi_lock_acquire();
+    }
 }
 
 void esp_crypto_ecdsa_lock_release(void)
 {
-    esp_crypto_mpi_lock_release();
+    if (ecdsa_ll_is_mpi_required()) {
+        esp_crypto_mpi_lock_release();
+    }
+
     esp_crypto_ecc_lock_release();
     _lock_release(&s_crypto_ecdsa_lock);
 }
