@@ -180,6 +180,26 @@ function(test_project_properties)
     endif()
 endfunction()
 
+# Test that the targets for component1 and component2 are created when
+# component2 is included.
+function(test_include_component)
+    idf_build_library(INTERFACE idflibtest3 COMPONENTS component2)
+    idf_component_get_property(component_real_target
+                               component2
+                               COMPONENT_REAL_TARGET)
+    if(NOT TARGET ${component_real_target})
+        idf_die("Missing component2 target")
+    endif()
+
+    # Test that component1 is included as a dependency of component2.
+    idf_component_get_property(component_real_target
+                               component1
+                               COMPONENT_REAL_TARGET)
+    if(NOT TARGET ${component_real_target})
+        idf_die("Missing component1 target")
+    endif()
+endfunction()
+
 # Run tests
 test_component_priority()
 test_idf_version()
@@ -188,6 +208,7 @@ test_toolchain()
 test_idf_build_library()
 test_kconfig()
 test_project_properties()
+test_include_component()
 __dump_all_properties()
 
 message("ALL TESTS PASSED")
