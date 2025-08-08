@@ -37,3 +37,8 @@ def test_usb_cdc_vfs_default(dut: Dut) -> None:
     dut.expect_exact('test_usb_cdc_read_no_exit_on_newline_reception', timeout=2)
     dut.expect_exact('ready to receive', timeout=2)
     dut.write('!(@*#&(!*@&#((SDasdkjhad\nce')
+
+    # test run: test_usb_cdc_ets_printf_cache_disabled
+    dut.expect_exact('test_usb_cdc_ets_printf_cache_disabled', timeout=2)
+    dut.expect_exact('test_message', timeout=2)
+    dut.expect_exact('successful test', timeout=2)

@@ -51,14 +51,6 @@ entries:
     if APP_BUILD_TYPE_RAM = n:
         image_process (noflash)
 
-[mapping:vfs_cdcacm]
-archive: libvfs.a
-entries:
-    if ESP_SYSTEM_IN_IRAM = y:
-        if ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF:
-            vfs_cdcacm:cdcacm_tx_cb (noflash)
-            vfs_cdcacm:cdcacm_rx_cb (noflash)
-
 [mapping:esp_system_hal]
 archive: libhal.a
 entries:
