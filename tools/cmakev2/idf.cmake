@@ -463,6 +463,9 @@ idf_build_set_property(PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 # Set build directory property.
 idf_build_set_property(BUILD_DIR "${CMAKE_BINARY_DIR}")
 
+# Enable the generation of compile_commands.json.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Initialize IDF_PATH and set it as a global and environmental variable, as
 # well as a build property.
 __init_idf_path()
