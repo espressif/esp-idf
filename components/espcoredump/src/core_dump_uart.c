@@ -1,8 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
+
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_UART
+
 #include <string.h>
 #include "soc/uart_reg.h"
 #include "soc/gpio_periph.h"
@@ -15,8 +19,6 @@
 #include "esp_rom_sys.h"
 
 const static char TAG[] __attribute__((unused)) = "esp_core_dump_uart";
-
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_UART
 
 void esp_core_dump_print_write_start(void) __attribute__((alias("esp_core_dump_uart_print_write_start")));
 void esp_core_dump_print_write_end(void) __attribute__((alias("esp_core_dump_uart_print_write_end")));
@@ -176,4 +178,5 @@ void esp_core_dump_init(void)
 {
     ESP_COREDUMP_LOGI("Init core dump to UART");
 }
-#endif
+
+#endif // CONFIG_ESP_COREDUMP_ENABLE_TO_UART

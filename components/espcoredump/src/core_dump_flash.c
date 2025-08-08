@@ -1,8 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
+
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+
 #include <string.h>
 #include "esp_partition.h"
 #include "esp_log.h"
@@ -17,8 +21,6 @@
 #define BLANK_COREDUMP_SIZE 0xFFFFFFFF
 
 const static char TAG[] __attribute__((unused)) = "esp_core_dump_flash";
-
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 
 typedef struct _core_dump_partition_t {
     /* Core dump partition start. */
@@ -398,8 +400,6 @@ esp_err_t esp_core_dump_image_check(void)
     return ESP_OK;
 }
 
-#endif
-
 esp_err_t esp_core_dump_image_erase(void)
 {
     /* If flash is encrypted, we can only write blocks of 16 bytes, let's always
@@ -522,3 +522,5 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
 
     return ESP_OK;
 }
+
+#endif // CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH

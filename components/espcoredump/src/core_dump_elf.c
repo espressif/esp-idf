@@ -3,11 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
+
+#if CONFIG_ESP_COREDUMP_ENABLE
+
 #include <string.h>
 #include "esp_attr.h"
 #include "esp_partition.h"
 #include "esp_flash_encrypt.h"
-#include "sdkconfig.h"
 #include "core_dump_checksum.h"
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_port_impl.h"
@@ -406,6 +409,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self)
     void *task = NULL;
     int len = 0;
     int ret = 0;
+    uint16_t tasks_num = 0;
 
     esp_core_dump_reset_tasks_snapshots_iter();
     task = esp_core_dump_get_current_task_handle();
@@ -419,6 +423,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self)
             ELF_CHECK_ERR((ret > 0), ret, "Task %x, PR_STATUS write failed, return (%d).", task, ret);
         }
         len += ret;
+        tasks_num++;
     }
     // processes PR_STATUS and register dump for each task
     // each call to the processing function appends PR_STATUS note into note segment
@@ -429,6 +434,11 @@ static int elf_process_tasks_regs(core_dump_elf_t *self)
         if (!task || task == esp_core_dump_get_current_task_handle()) { // skip current task (already processed)
             continue;
         }
+        if (tasks_num > CONFIG_ESP_COREDUMP_MAX_TASKS_NUM) {
+            ESP_COREDUMP_LOG_PROCESS("Reached maximum number of tasks (%d), stopping task register processing",
+                                     CONFIG_ESP_COREDUMP_MAX_TASKS_NUM);
+            break;
+        }
         if (esp_core_dump_get_task_snapshot(task, &task_hdr, NULL)) {
             ret = elf_add_regs(self,  &task_hdr);
             if (self->elf_stage == ELF_STAGE_PLACE_HEADERS) {
@@ -438,6 +448,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self)
                 ELF_CHECK_ERR((ret > 0), ret, "Task %x, PR_STATUS write failed, return (%d).", task, ret);
             }
             len += ret;
+            tasks_num++;
         }
     }
     ret = elf_process_note_segment(self, len); // tasks regs note
@@ -461,6 +472,28 @@ static int elf_save_task(core_dump_elf_t *self, core_dump_task_header_t *task)
     return elf_len;
 }
 
+static int elf_save_interrupted_stack(core_dump_elf_t *self, core_dump_mem_seg_header_t *interrupted_stack)
+{
+    int ret = 0;
+#if !CONFIG_ESP_COREDUMP_CAPTURE_DRAM
+    /*  interrupt stacks:
+        - 'port_IntStack' is in the data section for xtensa
+        - 'xIsrStack' is in the bss section for risc-v
+        When DRAM capture is enabled, interrupt stack saving can be done during the full section store
+    */
+    if (interrupted_stack->size > 0) {
+        ESP_COREDUMP_LOG_PROCESS("Add interrupted task stack %lu bytes @ %x",
+                                 interrupted_stack->size, interrupted_stack->start);
+        ret = elf_add_segment(self, PT_LOAD,
+                              (uint32_t)interrupted_stack->start,
+                              (void*)interrupted_stack->start,
+                              (uint32_t)interrupted_stack->size);
+        ELF_CHECK_ERR((ret > 0), ret, "Interrupted task stack write failed, return (%d).", ret);
+    }
+#endif
+    return ret;
+}
+
 static int elf_process_task_data(core_dump_elf_t *self)
 {
     int elf_len = 0;
@@ -471,13 +504,37 @@ static int elf_process_task_data(core_dump_elf_t *self)
     uint16_t bad_tasks_num = 0;
 
     ESP_COREDUMP_LOG_PROCESS("================   Processing task data   ================");
-    // processes all task's stack data and writes segment data into partition
-    // if flash configuration is set
+
+    // first write crashed task data
     esp_core_dump_reset_tasks_snapshots_iter();
+    void *current_task = esp_core_dump_get_current_task_handle();
+    if (esp_core_dump_get_task_snapshot(current_task, &task_hdr, &interrupted_stack)) {
+        int ret = elf_save_task(self, &task_hdr);
+        ELF_CHECK_ERR((ret > 0), ret,
+                      "Task %x, TCB write failed, return (%d).", current_task, ret);
+        elf_len += ret;
+
+        // Handle interrupted stack (only relevant for current task)
+        ret = elf_save_interrupted_stack(self, &interrupted_stack);
+        if (ret > 0) {
+            elf_len += ret;
+        }
+        tasks_num++;
+    }
+
     esp_core_dump_task_iterator_init(&task_iter);
     while (esp_core_dump_task_iterator_next(&task_iter) != -1) {
+        // Skip the current task (already processed above)
+        if (!task_iter.pxTaskHandle || task_iter.pxTaskHandle == current_task) {
+            continue;
+        }
+        if (tasks_num > CONFIG_ESP_COREDUMP_MAX_TASKS_NUM) {
+            ESP_COREDUMP_LOG_PROCESS("Reached maximum number of tasks (%d), stopping task data processing",
+                                     CONFIG_ESP_COREDUMP_MAX_TASKS_NUM);
+            break;
+        }
         tasks_num++;
-        if (!esp_core_dump_get_task_snapshot(task_iter.pxTaskHandle, &task_hdr, &interrupted_stack)) {
+        if (!esp_core_dump_get_task_snapshot(task_iter.pxTaskHandle, &task_hdr, NULL)) {
             bad_tasks_num++;
             continue;
         }
@@ -485,23 +542,6 @@ static int elf_process_task_data(core_dump_elf_t *self)
         ELF_CHECK_ERR((ret > 0), ret,
                       "Task %x, TCB write failed, return (%d).", task_iter.pxTaskHandle, ret);
         elf_len += ret;
-        /*  interrupt stacks:
-            - 'port_IntStack' is in the data section for xtensa
-            - 'xIsrStack' is in the bss section for risc-v
-            When DRAM capture is enabled, interrupt stack saving can be done during the full section store
-        */
-#if !CONFIG_ESP_COREDUMP_CAPTURE_DRAM
-        if (interrupted_stack.size > 0) {
-            ESP_COREDUMP_LOG_PROCESS("Add interrupted task stack %lu bytes @ %x",
-                                     interrupted_stack.size, interrupted_stack.start);
-            ret = elf_add_segment(self, PT_LOAD,
-                                  (uint32_t)interrupted_stack.start,
-                                  (void*)interrupted_stack.start,
-                                  (uint32_t)interrupted_stack.size);
-            ELF_CHECK_ERR((ret > 0), ret, "Interrupted task stack write failed, return (%d).", ret);
-            elf_len += ret;
-        }
-#endif
     }
     ESP_COREDUMP_LOG_PROCESS("Found %d bad task out of %d", bad_tasks_num, tasks_num);
 
@@ -1021,3 +1061,5 @@ esp_err_t esp_core_dump_get_summary(esp_core_dump_summary_t *summary)
 }
 
 #endif // CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+
+#endif // CONFIG_ESP_COREDUMP_ENABLE
