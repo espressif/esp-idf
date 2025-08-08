@@ -74,3 +74,8 @@ To explicitly control constructor order, use the ``constructor()`` function attr
     void foo(void);
 
 Replace ``PRIO`` with an integer value. Lower values are executed earlier. This is the preferred method when specific ordering is required.
+
+Changes in Configuration Files Syntax
+-------------------------------------
+
+ESP-IDF v6 uses esp-idf-kconfig v3, which introduces several changes in the configuration (``Kconfig``) files. For the full list of changes, please refer to the `esp-idf-kconfig migration guide from v2.x to v3.x <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/developer-guide/migration-guide.html>`_.

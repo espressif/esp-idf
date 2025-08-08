@@ -74,3 +74,9 @@
     void foo(void);
 
 将 ``PRIO`` 替换为整数值。值越小，执行越早。当对执行顺序有特定要求时，这种方式是首选。
+   方案3 **不推荐使用**，因为孤立段可能意味着内存映射配置存在问题，或应用程序中存在非预期行为。
+
+配置文件语法变更
+------------------
+
+ESP-IDF v6 使用了 esp-idf-kconfig v3，对配置文件 ``Kconfig`` 的语法进行了若干变更。完整变更列表请参阅 `Migration Guide From esp-idf-kconfig v2.x to v3.x <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/developer-guide/migration-guide.html>`_。
