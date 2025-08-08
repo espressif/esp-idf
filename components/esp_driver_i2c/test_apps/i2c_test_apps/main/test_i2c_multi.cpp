@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "sdkconfig.h"
+#include "test_board.h"
 #include "unity.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -19,7 +20,6 @@
 #include "driver/i2c_slave.h"
 #include "esp_log.h"
 #include "test_utils.h"
-#include "test_board.h"
 
 void disp_buf(uint8_t *buf, int len)
 {
@@ -61,26 +61,24 @@ static void i2c_slave_read_test(void)
     i2c_slave_dev_handle_t handle;
     event_queue = xQueueCreate(2, sizeof(i2c_slave_event_t));
     assert(event_queue);
-    temp_data = heap_caps_malloc(DATA_LENGTH, MALLOC_CAP_DEFAULT);
+    temp_data = static_cast<uint8_t*>(heap_caps_malloc(DATA_LENGTH, MALLOC_CAP_DEFAULT));
     assert(temp_data);
 
-    i2c_slave_config_t i2c_slv_config = {
-        .i2c_port = TEST_I2C_PORT,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .scl_io_num = I2C_SLAVE_SCL_IO,
-        .sda_io_num = I2C_SLAVE_SDA_IO,
-        .slave_addr = ESP_SLAVE_ADDR,
-        .send_buf_depth = DATA_LENGTH,
-        .receive_buf_depth = DATA_LENGTH,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_slave_config_t i2c_slv_config = {};
+    i2c_slv_config.i2c_port = TEST_I2C_PORT;
+    i2c_slv_config.sda_io_num = I2C_SLAVE_SDA_IO;
+    i2c_slv_config.scl_io_num = I2C_SLAVE_SCL_IO;
+    i2c_slv_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_slv_config.send_buf_depth = DATA_LENGTH;
+    i2c_slv_config.receive_buf_depth = DATA_LENGTH;
+    i2c_slv_config.slave_addr = ESP_SLAVE_ADDR;
+    i2c_slv_config.flags.enable_internal_pullup = true;
 
     TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &handle));
 
-    i2c_slave_event_callbacks_t cbs = {
-        .on_receive = i2c_slave_receive_cb,
-        .on_request = i2c_slave_request_cb,
-    };
+    i2c_slave_event_callbacks_t cbs = {};
+    cbs.on_request = i2c_slave_request_cb;
+    cbs.on_receive = i2c_slave_receive_cb;
 
     TEST_ESP_OK(i2c_slave_register_event_callbacks(handle, &cbs, NULL));
 
@@ -110,22 +108,20 @@ static void i2c_master_write_test(void)
     uint8_t data_wr[DATA_LENGTH] = { 0 };
     int i;
 
-    i2c_master_bus_config_t i2c_mst_config = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = TEST_I2C_PORT,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_master_bus_config_t i2c_mst_config = {};
+    i2c_mst_config.i2c_port = TEST_I2C_PORT;
+    i2c_mst_config.sda_io_num = I2C_MASTER_SDA_IO;
+    i2c_mst_config.scl_io_num = I2C_MASTER_SCL_IO;
+    i2c_mst_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_mst_config.flags.enable_internal_pullup = true;
     i2c_master_bus_handle_t bus_handle;
 
     TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = ESP_SLAVE_ADDR,
-        .scl_speed_hz = 100000,
-    };
+    i2c_device_config_t dev_cfg = {};
+    dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_cfg.device_address = ESP_SLAVE_ADDR;
+    dev_cfg.scl_speed_hz = 100000;
 
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
@@ -157,22 +153,20 @@ TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test", "[i2c][test_env=generi
 static void master_read_slave_test(void)
 {
     uint8_t data_rd[DATA_LENGTH] = {0};
-    i2c_master_bus_config_t i2c_mst_config = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = TEST_I2C_PORT,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_master_bus_config_t i2c_mst_config = {};
+    i2c_mst_config.i2c_port = TEST_I2C_PORT;
+    i2c_mst_config.sda_io_num = I2C_MASTER_SDA_IO;
+    i2c_mst_config.scl_io_num = I2C_MASTER_SCL_IO;
+    i2c_mst_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_mst_config.flags.enable_internal_pullup = true;
     i2c_master_bus_handle_t bus_handle;
     TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = ESP_SLAVE_ADDR,
-        .scl_speed_hz = 100000,
-        .scl_wait_us = 20000,
-    };
+    i2c_device_config_t dev_cfg = {};
+    dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_cfg.device_address = ESP_SLAVE_ADDR;
+    dev_cfg.scl_speed_hz = 100000;
+    dev_cfg.scl_wait_us = 20000;
 
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
@@ -198,23 +192,21 @@ static void slave_write_buffer_test(void)
     event_queue = xQueueCreate(2, sizeof(i2c_slave_event_t));
     assert(event_queue);
 
-    i2c_slave_config_t i2c_slv_config = {
-        .i2c_port = TEST_I2C_PORT,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .scl_io_num = I2C_SLAVE_SCL_IO,
-        .sda_io_num = I2C_SLAVE_SDA_IO,
-        .slave_addr = ESP_SLAVE_ADDR,
-        .send_buf_depth = DATA_LENGTH,
-        .receive_buf_depth = DATA_LENGTH,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_slave_config_t i2c_slv_config = {};
+    i2c_slv_config.i2c_port = TEST_I2C_PORT;
+    i2c_slv_config.sda_io_num = I2C_SLAVE_SDA_IO;
+    i2c_slv_config.scl_io_num = I2C_SLAVE_SCL_IO;
+    i2c_slv_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_slv_config.send_buf_depth = DATA_LENGTH;
+    i2c_slv_config.receive_buf_depth = DATA_LENGTH;
+    i2c_slv_config.slave_addr = ESP_SLAVE_ADDR;
+    i2c_slv_config.flags.enable_internal_pullup = true;
 
     TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &handle));
 
-    i2c_slave_event_callbacks_t cbs = {
-        .on_receive = i2c_slave_receive_cb,
-        .on_request = i2c_slave_request_cb,
-    };
+    i2c_slave_event_callbacks_t cbs = {};
+    cbs.on_request = i2c_slave_request_cb;
+    cbs.on_receive = i2c_slave_receive_cb;
 
     TEST_ESP_OK(i2c_slave_register_event_callbacks(handle, &cbs, NULL));
 
@@ -247,22 +239,21 @@ static void i2c_master_write_test_with_customize_api(void)
     uint8_t data_wr[DATA_LENGTH] = { 0 };
     int i;
 
-    i2c_master_bus_config_t i2c_mst_config = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = TEST_I2C_PORT,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_master_bus_config_t i2c_mst_config = {};
+    i2c_mst_config.i2c_port = TEST_I2C_PORT;
+    i2c_mst_config.sda_io_num = I2C_MASTER_SDA_IO;
+    i2c_mst_config.scl_io_num = I2C_MASTER_SCL_IO;
+    i2c_mst_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_mst_config.flags.enable_internal_pullup = true;
+
     i2c_master_bus_handle_t bus_handle;
 
     TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = I2C_DEVICE_ADDRESS_NOT_USED,
-        .scl_speed_hz = 100000,
-    };
+    i2c_device_config_t dev_cfg = {};
+    dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_cfg.device_address = I2C_DEVICE_ADDRESS_NOT_USED;
+    dev_cfg.scl_speed_hz = 100000;
 
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
@@ -281,10 +272,10 @@ static void i2c_master_write_test_with_customize_api(void)
     uint8_t address = (ESP_SLAVE_ADDR << 1 | 0);
 
     i2c_operation_job_t i2c_ops[] = {
-        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_START, .write = {}},
         { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = true, .data = (uint8_t *) &address, .total_bytes = 1 } },
         { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = true, .data = (uint8_t *) data_wr, .total_bytes = DATA_LENGTH } },
-        { .command = I2C_MASTER_CMD_STOP },
+        { .command = I2C_MASTER_CMD_STOP, .write = {}},
     };
 
     TEST_ESP_OK(i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), -1));
@@ -298,22 +289,21 @@ TEST_CASE_MULTIPLE_DEVICES("I2C master write slave with customize api", "[i2c][t
 static void master_read_slave_test_single_byte(void)
 {
     uint8_t data_rd[DATA_LENGTH] = {0};
-    i2c_master_bus_config_t i2c_mst_config = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = TEST_I2C_PORT,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_master_bus_config_t i2c_mst_config = {};
+    i2c_mst_config.i2c_port = TEST_I2C_PORT;
+    i2c_mst_config.sda_io_num = I2C_MASTER_SDA_IO;
+    i2c_mst_config.scl_io_num = I2C_MASTER_SCL_IO;
+    i2c_mst_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_mst_config.flags.enable_internal_pullup = true;
+
     i2c_master_bus_handle_t bus_handle;
     TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = I2C_DEVICE_ADDRESS_NOT_USED,
-        .scl_speed_hz = 100000,
-        .scl_wait_us = 20000,
-    };
+    i2c_device_config_t dev_cfg = {};
+    dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_cfg.device_address = I2C_DEVICE_ADDRESS_NOT_USED;
+    dev_cfg.scl_speed_hz = 100000;
+    dev_cfg.scl_wait_us = 20000;
 
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
@@ -323,10 +313,10 @@ static void master_read_slave_test_single_byte(void)
     uint8_t read_address = (ESP_SLAVE_ADDR << 1 | 1);
 
     i2c_operation_job_t i2c_ops[] = {
-        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_START, .write = {}},
         { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = true, .data = (uint8_t *) &read_address, .total_bytes = 1 } },
         { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_NACK_VAL, .data = data_rd, .total_bytes = 1 }},
-        { .command = I2C_MASTER_CMD_STOP },
+        { .command = I2C_MASTER_CMD_STOP, .write = {}},
     };
 
     i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), 1000);
@@ -345,23 +335,21 @@ static void slave_write_buffer_test_single_byte(void)
     event_queue = xQueueCreate(2, sizeof(i2c_slave_event_t));
     assert(event_queue);
 
-    i2c_slave_config_t i2c_slv_config = {
-        .i2c_port = TEST_I2C_PORT,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .scl_io_num = I2C_SLAVE_SCL_IO,
-        .sda_io_num = I2C_SLAVE_SDA_IO,
-        .slave_addr = ESP_SLAVE_ADDR,
-        .send_buf_depth = DATA_LENGTH,
-        .receive_buf_depth = DATA_LENGTH,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_slave_config_t i2c_slv_config = {};
+    i2c_slv_config.i2c_port = TEST_I2C_PORT;
+    i2c_slv_config.sda_io_num = I2C_SLAVE_SDA_IO;
+    i2c_slv_config.scl_io_num = I2C_SLAVE_SCL_IO;
+    i2c_slv_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_slv_config.send_buf_depth = DATA_LENGTH;
+    i2c_slv_config.receive_buf_depth = DATA_LENGTH;
+    i2c_slv_config.slave_addr = ESP_SLAVE_ADDR;
+    i2c_slv_config.flags.enable_internal_pullup = true;
 
     TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &handle));
 
-    i2c_slave_event_callbacks_t cbs = {
-        .on_receive = i2c_slave_receive_cb,
-        .on_request = i2c_slave_request_cb,
-    };
+    i2c_slave_event_callbacks_t cbs = {};
+    cbs.on_request = i2c_slave_request_cb;
+    cbs.on_receive = i2c_slave_receive_cb;
 
     TEST_ESP_OK(i2c_slave_register_event_callbacks(handle, &cbs, NULL));
 
@@ -390,22 +378,20 @@ TEST_CASE_MULTIPLE_DEVICES("I2C master read slave test single byte", "[i2c][test
 static void master_read_slave_test_with_multi_read_job(void)
 {
     uint8_t data_rd[DATA_LENGTH] = {0};
-    i2c_master_bus_config_t i2c_mst_config = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = TEST_I2C_PORT,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_master_bus_config_t i2c_mst_config = {};
+    i2c_mst_config.i2c_port = TEST_I2C_PORT;
+    i2c_mst_config.sda_io_num = I2C_MASTER_SDA_IO;
+    i2c_mst_config.scl_io_num = I2C_MASTER_SCL_IO;
+    i2c_mst_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_mst_config.flags.enable_internal_pullup = true;
     i2c_master_bus_handle_t bus_handle;
     TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = I2C_DEVICE_ADDRESS_NOT_USED,
-        .scl_speed_hz = 100000,
-        .scl_wait_us = 20000,
-    };
+    i2c_device_config_t dev_cfg = {};
+    dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_cfg.device_address = I2C_DEVICE_ADDRESS_NOT_USED;
+    dev_cfg.scl_speed_hz = 100000;
+    dev_cfg.scl_wait_us = 20000;
 
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
@@ -415,12 +401,12 @@ static void master_read_slave_test_with_multi_read_job(void)
     uint8_t read_address = (ESP_SLAVE_ADDR << 1 | 1);
 
     i2c_operation_job_t i2c_ops[] = {
-        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_START, .write = {}},
         { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = true, .data = (uint8_t *) &read_address, .total_bytes = 1 } },
         { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_ACK_VAL, .data = data_rd, .total_bytes = 1 }},
         { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_ACK_VAL, .data = data_rd + 1, .total_bytes = 1 }},
         { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_NACK_VAL, .data = data_rd + 2, .total_bytes = 1 }},
-        { .command = I2C_MASTER_CMD_STOP },
+        { .command = I2C_MASTER_CMD_STOP, .write = {}},
     };
 
     i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), 1000);
@@ -441,23 +427,21 @@ static void slave_write_buffer_test_single_byte_for_multi_read_job(void)
     event_queue = xQueueCreate(2, sizeof(i2c_slave_event_t));
     assert(event_queue);
 
-    i2c_slave_config_t i2c_slv_config = {
-        .i2c_port = TEST_I2C_PORT,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .scl_io_num = I2C_SLAVE_SCL_IO,
-        .sda_io_num = I2C_SLAVE_SDA_IO,
-        .slave_addr = ESP_SLAVE_ADDR,
-        .send_buf_depth = DATA_LENGTH,
-        .receive_buf_depth = DATA_LENGTH,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_slave_config_t i2c_slv_config = {};
+    i2c_slv_config.i2c_port = TEST_I2C_PORT;
+    i2c_slv_config.sda_io_num = I2C_SLAVE_SDA_IO;
+    i2c_slv_config.scl_io_num = I2C_SLAVE_SCL_IO;
+    i2c_slv_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_slv_config.send_buf_depth = DATA_LENGTH;
+    i2c_slv_config.receive_buf_depth = DATA_LENGTH;
+    i2c_slv_config.slave_addr = ESP_SLAVE_ADDR;
+    i2c_slv_config.flags.enable_internal_pullup = true;
 
     TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &handle));
 
-    i2c_slave_event_callbacks_t cbs = {
-        .on_receive = i2c_slave_receive_cb,
-        .on_request = i2c_slave_request_cb,
-    };
+    i2c_slave_event_callbacks_t cbs = {};
+    cbs.on_request = i2c_slave_request_cb;
+    cbs.on_receive = i2c_slave_receive_cb;
 
     TEST_ESP_OK(i2c_slave_register_event_callbacks(handle, &cbs, NULL));
 
@@ -491,27 +475,25 @@ static void i2c_slave_repeat_read(void)
     i2c_slave_dev_handle_t handle;
     event_queue = xQueueCreate(5, sizeof(i2c_slave_event_t));
     assert(event_queue);
-    temp_data = heap_caps_malloc(DATA_LENGTH * 3, MALLOC_CAP_DEFAULT);
+    temp_data = static_cast<uint8_t*>(heap_caps_malloc(DATA_LENGTH * 3, MALLOC_CAP_DEFAULT));
     assert(temp_data);
     int times = 3;
 
-    i2c_slave_config_t i2c_slv_config = {
-        .i2c_port = TEST_I2C_PORT,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .scl_io_num = I2C_SLAVE_SCL_IO,
-        .sda_io_num = I2C_SLAVE_SDA_IO,
-        .slave_addr = ESP_SLAVE_ADDR,
-        .send_buf_depth = DATA_LENGTH,
-        .receive_buf_depth = DATA_LENGTH * 3,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_slave_config_t i2c_slv_config = {};
+    i2c_slv_config.i2c_port = TEST_I2C_PORT;
+    i2c_slv_config.sda_io_num = I2C_SLAVE_SDA_IO;
+    i2c_slv_config.scl_io_num = I2C_SLAVE_SCL_IO;
+    i2c_slv_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_slv_config.send_buf_depth = DATA_LENGTH;
+    i2c_slv_config.receive_buf_depth = DATA_LENGTH * 3;
+    i2c_slv_config.slave_addr = ESP_SLAVE_ADDR;
+    i2c_slv_config.flags.enable_internal_pullup = true;
 
     TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &handle));
 
-    i2c_slave_event_callbacks_t cbs = {
-        .on_receive = i2c_slave_receive_cb,
-        .on_request = i2c_slave_request_cb,
-    };
+    i2c_slave_event_callbacks_t cbs = {};
+    cbs.on_request = i2c_slave_request_cb;
+    cbs.on_receive = i2c_slave_receive_cb;
 
     TEST_ESP_OK(i2c_slave_register_event_callbacks(handle, &cbs, NULL));
 
@@ -543,22 +525,20 @@ static void i2c_master_repeat_write(void)
     int i;
     int times = 3;
 
-    i2c_master_bus_config_t i2c_mst_config = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = TEST_I2C_PORT,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_master_bus_config_t i2c_mst_config = {};
+    i2c_mst_config.i2c_port = TEST_I2C_PORT;
+    i2c_mst_config.sda_io_num = I2C_MASTER_SDA_IO;
+    i2c_mst_config.scl_io_num = I2C_MASTER_SCL_IO;
+    i2c_mst_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_mst_config.flags.enable_internal_pullup = true;
     i2c_master_bus_handle_t bus_handle;
 
     TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = ESP_SLAVE_ADDR,
-        .scl_speed_hz = 100000,
-    };
+    i2c_device_config_t dev_cfg = {};
+    dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_cfg.device_address = ESP_SLAVE_ADDR;
+    dev_cfg.scl_speed_hz = 100000;
 
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
@@ -589,13 +569,13 @@ TEST_CASE_MULTIPLE_DEVICES("I2C repeat write test", "[i2c][test_env=generic_mult
 
 static void master_probe_slave(void)
 {
-    i2c_master_bus_config_t i2c_mst_config = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = TEST_I2C_PORT,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_master_bus_config_t i2c_mst_config = {};
+    i2c_mst_config.i2c_port = TEST_I2C_PORT;
+    i2c_mst_config.sda_io_num = I2C_MASTER_SDA_IO;
+    i2c_mst_config.scl_io_num = I2C_MASTER_SCL_IO;
+    i2c_mst_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_mst_config.flags.enable_internal_pullup = true;
+
     i2c_master_bus_handle_t bus_handle;
     TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
@@ -619,16 +599,15 @@ static void master_probe_slave(void)
 
 static void slave_init_for_probe(void)
 {
-    i2c_slave_config_t i2c_slv_config = {
-        .i2c_port = TEST_I2C_PORT,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .scl_io_num = I2C_SLAVE_SCL_IO,
-        .sda_io_num = I2C_SLAVE_SDA_IO,
-        .slave_addr = 0x58,
-        .send_buf_depth = DATA_LENGTH,
-        .receive_buf_depth = DATA_LENGTH,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_slave_config_t i2c_slv_config = {};
+    i2c_slv_config.i2c_port = TEST_I2C_PORT;
+    i2c_slv_config.sda_io_num = I2C_SLAVE_SDA_IO;
+    i2c_slv_config.scl_io_num = I2C_SLAVE_SCL_IO;
+    i2c_slv_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_slv_config.send_buf_depth = DATA_LENGTH;
+    i2c_slv_config.receive_buf_depth = DATA_LENGTH;
+    i2c_slv_config.slave_addr = 0x58;
+    i2c_slv_config.flags.enable_internal_pullup = true;
 
     i2c_slave_dev_handle_t slave_handle;
     TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
@@ -663,22 +642,21 @@ static void i2c_master_write_multi_buffer_test(void)
         {.write_buffer = data_wr3, .buffer_size = DATA_LENGTH},
     };
 
-    i2c_master_bus_config_t i2c_mst_config = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = TEST_I2C_PORT,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_master_bus_config_t i2c_mst_config = {};
+    i2c_mst_config.i2c_port = TEST_I2C_PORT;
+    i2c_mst_config.sda_io_num = I2C_MASTER_SDA_IO;
+    i2c_mst_config.scl_io_num = I2C_MASTER_SCL_IO;
+    i2c_mst_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_mst_config.flags.enable_internal_pullup = true;
+
     i2c_master_bus_handle_t bus_handle;
 
     TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = ESP_SLAVE_ADDR,
-        .scl_speed_hz = 100000,
-    };
+    i2c_device_config_t dev_cfg = {};
+    dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_cfg.device_address = ESP_SLAVE_ADDR;
+    dev_cfg.scl_speed_hz = 100000;
 
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
@@ -705,26 +683,24 @@ static void i2c_slave_read_multi_buffer_test(void)
     i2c_slave_dev_handle_t handle;
     event_queue = xQueueCreate(2, sizeof(i2c_slave_event_t));
     assert(event_queue);
-    temp_data = heap_caps_malloc(DATA_LENGTH * 3, MALLOC_CAP_DEFAULT);
+    temp_data = static_cast<uint8_t*>(heap_caps_malloc(DATA_LENGTH * 3, MALLOC_CAP_DEFAULT));
     assert(temp_data);
 
-    i2c_slave_config_t i2c_slv_config = {
-        .i2c_port = TEST_I2C_PORT,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .scl_io_num = I2C_SLAVE_SCL_IO,
-        .sda_io_num = I2C_SLAVE_SDA_IO,
-        .slave_addr = ESP_SLAVE_ADDR,
-        .send_buf_depth = DATA_LENGTH,
-        .receive_buf_depth = DATA_LENGTH * 3,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_slave_config_t i2c_slv_config = {};
+    i2c_slv_config.i2c_port = TEST_I2C_PORT;
+    i2c_slv_config.sda_io_num = I2C_SLAVE_SDA_IO;
+    i2c_slv_config.scl_io_num = I2C_SLAVE_SCL_IO;
+    i2c_slv_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_slv_config.send_buf_depth = DATA_LENGTH;
+    i2c_slv_config.receive_buf_depth = DATA_LENGTH * 3;
+    i2c_slv_config.slave_addr = ESP_SLAVE_ADDR;
+    i2c_slv_config.flags.enable_internal_pullup = true;
 
     TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &handle));
 
-    i2c_slave_event_callbacks_t cbs = {
-        .on_receive = i2c_slave_receive_cb,
-        .on_request = i2c_slave_request_cb,
-    };
+    i2c_slave_event_callbacks_t cbs = {};
+    cbs.on_request = i2c_slave_request_cb;
+    cbs.on_receive = i2c_slave_receive_cb;
 
     TEST_ESP_OK(i2c_slave_register_event_callbacks(handle, &cbs, NULL));
 
@@ -764,22 +740,21 @@ static void i2c_master_write_test_more_port(void)
     uint8_t data_wr[DATA_LENGTH] = { 0 };
     int i;
 
-    i2c_master_bus_config_t i2c_mst_config = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = 1,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_master_bus_config_t i2c_mst_config = {};
+    i2c_mst_config.i2c_port = 1;
+    i2c_mst_config.sda_io_num = I2C_MASTER_SDA_IO;
+    i2c_mst_config.scl_io_num = I2C_MASTER_SCL_IO;
+    i2c_mst_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_mst_config.flags.enable_internal_pullup = true;
+
     i2c_master_bus_handle_t bus_handle;
 
     TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = 0x58,
-        .scl_speed_hz = 100000,
-    };
+    i2c_device_config_t dev_cfg = {};
+    dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_cfg.device_address = 0x58;
+    dev_cfg.scl_speed_hz = 100000;
 
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
@@ -804,26 +779,24 @@ static void i2c_slave_read_test_more_port(void)
     i2c_slave_dev_handle_t handle;
     event_queue = xQueueCreate(2, sizeof(i2c_slave_event_t));
     assert(event_queue);
-    temp_data = heap_caps_malloc(DATA_LENGTH, MALLOC_CAP_DEFAULT);
+    temp_data = static_cast<uint8_t*>(heap_caps_malloc(DATA_LENGTH, MALLOC_CAP_DEFAULT));
     assert(temp_data);
 
-    i2c_slave_config_t i2c_slv_config = {
-        .i2c_port = 1,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .scl_io_num = I2C_SLAVE_SCL_IO,
-        .sda_io_num = I2C_SLAVE_SDA_IO,
-        .slave_addr = 0x58,
-        .send_buf_depth = DATA_LENGTH,
-        .receive_buf_depth = DATA_LENGTH,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_slave_config_t i2c_slv_config = {};
+    i2c_slv_config.i2c_port = 1;
+    i2c_slv_config.sda_io_num = I2C_SLAVE_SDA_IO;
+    i2c_slv_config.scl_io_num = I2C_SLAVE_SCL_IO;
+    i2c_slv_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_slv_config.send_buf_depth = DATA_LENGTH;
+    i2c_slv_config.receive_buf_depth = DATA_LENGTH;
+    i2c_slv_config.slave_addr = 0x58;
+    i2c_slv_config.flags.enable_internal_pullup = true;
 
     TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &handle));
 
-    i2c_slave_event_callbacks_t cbs = {
-        .on_receive = i2c_slave_receive_cb,
-        .on_request = i2c_slave_request_cb,
-    };
+    i2c_slave_event_callbacks_t cbs = {};
+    cbs.on_request = i2c_slave_request_cb;
+    cbs.on_receive = i2c_slave_receive_cb;
 
     TEST_ESP_OK(i2c_slave_register_event_callbacks(handle, &cbs, NULL));
 

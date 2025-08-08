@@ -5,12 +5,11 @@
  */
 
 #include <stdio.h>
-#include <stdio.h>
 #include <string.h>
+#include "test_flash_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_flash.h"
-#include "test_flash_utils.h"
 #include "esp_err.h"
 #include "soc/soc_caps.h"
 #include "esp_private/periph_ctrl.h"
@@ -18,6 +17,7 @@
 #include "esp_log.h"
 #include "test_utils.h"
 #include "driver/gptimer.h"
+
 #if SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 #include "hal/spimem_flash_ll.h"
 
@@ -69,26 +69,24 @@ TEST_CASE("Flash suspend support on i2c", "[i2c]")
 
     spi_flash_suspend_test_init(&context->flash_handle);
 
-    i2c_master_bus_config_t i2c_bus_config = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = 0,
-        .scl_io_num = 6,
-        .sda_io_num = 7,
-        .glitch_ignore_cnt = 7,
-        .trans_queue_depth = 37,
-        .flags.enable_internal_pullup = true,
-    };
+    i2c_master_bus_config_t i2c_bus_config = {};
+    i2c_bus_config.i2c_port = 0;
+    i2c_bus_config.sda_io_num = GPIO_NUM_7;
+    i2c_bus_config.scl_io_num = GPIO_NUM_6;
+    i2c_bus_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_bus_config.glitch_ignore_cnt = 7;
+    i2c_bus_config.trans_queue_depth = 37;
+    i2c_bus_config.flags.enable_internal_pullup = true;
 
     i2c_master_bus_handle_t bus_handle;
 
     TEST_ESP_OK(i2c_new_master_bus(&i2c_bus_config, &bus_handle));
 
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = 0x58,
-        .scl_speed_hz = 400000,
-        .flags.disable_ack_check = true,
-    };
+    i2c_device_config_t dev_cfg = {};
+    dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_cfg.device_address = 0x58;
+    dev_cfg.scl_speed_hz = 400000;
+    dev_cfg.flags.disable_ack_check = true;
 
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
@@ -104,7 +102,7 @@ TEST_CASE("Flash suspend support on i2c", "[i2c]")
     gptimer_alarm_config_t alarm_config = {
         .reload_count = 0,
         .alarm_count = 1000,
-        .flags.auto_reload_on_alarm = true,
+        .flags = {.auto_reload_on_alarm = true},
     };
     TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
 
