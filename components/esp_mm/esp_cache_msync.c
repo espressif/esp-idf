@@ -101,7 +101,10 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
     uint32_t cache_level = 0;
     uint32_t cache_id = 0;
     valid = cache_hal_vaddr_to_cache_level_id(vaddr, size, &cache_level, &cache_id);
-    ESP_RETURN_ON_FALSE_ISR(valid, ESP_ERR_INVALID_ARG, TAG, "invalid addr or null pointer");
+    if (!valid) {
+        ESP_EARLY_LOGD(TAG, "vaddr is not in cacheable range, do nothing");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
 
     cache_type_t cache_type = CACHE_TYPE_DATA;
     if (flags & ESP_CACHE_MSYNC_FLAG_TYPE_INST) {

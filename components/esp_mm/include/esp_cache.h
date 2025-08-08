@@ -76,6 +76,7 @@ extern "C" {
  *                  - Successful msync
  *                  - For C2M direction, if this chip doesn't support cache writeback, if the input addr is a cache supported one, this API will return ESP_OK
  *        - ESP_ERR_INVALID_ARG:   Invalid argument, not cache supported addr, see printed logs
+ *        - ESP_ERR_NOT_SUPPORTED: Vaddr is not in cacheable range, API will do nothing
  */
 esp_err_t esp_cache_msync(void *addr, size_t size, int flags);
 
