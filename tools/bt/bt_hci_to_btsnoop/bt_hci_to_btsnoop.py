@@ -46,7 +46,7 @@ def parse_log(input_path: str, output_tag: str, has_timestamp: bool = True) -> N
     output_file = os.path.join(output_dir, f'parsed_log_{output_tag}.btsnoop.log')
     parsed_num = 0
     all_line_num = 0
-    with open(input_path, 'r', encoding='utf-8') as infile:
+    with open(input_path, encoding='utf-8') as infile:
         for line in infile:
             try:
                 all_line_num += 1
