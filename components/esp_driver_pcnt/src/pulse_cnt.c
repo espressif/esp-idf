@@ -62,12 +62,9 @@ typedef struct pcnt_group_t pcnt_group_t;
 typedef struct pcnt_unit_t pcnt_unit_t;
 typedef struct pcnt_chan_t pcnt_chan_t;
 
-// Use retention link only when the target supports sleep retention
-#define PCNT_USE_RETENTION_LINK  (SOC_PCNT_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
-
-#if PCNT_USE_RETENTION_LINK
-static esp_err_t pcnt_create_sleep_retention_link_cb(void *arg);
-#endif
+// The count register is read only and can't be restored after power down
+// Use retention link to prevent power down
+#define PCNT_USE_RETENTION_LINK  CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 
 struct pcnt_platform_t {
     _lock_t mutex;                         // platform level mutex lock
@@ -915,18 +912,7 @@ static pcnt_group_t *pcnt_acquire_group_handle(int group_id)
                 pcnt_ll_reset_register(group_id);
             }
 #if PCNT_USE_RETENTION_LINK
-            sleep_retention_module_t module_id = pcnt_reg_retention_info[group_id].retention_module;
-            sleep_retention_module_init_param_t init_param = {
-                .cbs = {
-                    .create = {
-                        .handle = pcnt_create_sleep_retention_link_cb,
-                        .arg = group,
-                    },
-                },
-                .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
-            };
-            // we only do retention init here. Allocate retention module in the unit initialization
-            if (sleep_retention_module_init(module_id, &init_param) != ESP_OK) {
+            if (sleep_retention_power_lock_acquire() != ESP_OK) {
                 // even though the sleep retention module init failed, PCNT driver should still work, so just warning here
                 ESP_LOGW(TAG, "init sleep retention failed %d, power domain may be turned off during sleep", group_id);
             }
@@ -973,10 +959,7 @@ static void pcnt_release_group_handle(pcnt_group_t *group)
             pcnt_ll_enable_bus_clock(group_id, false);
         }
 #if PCNT_USE_RETENTION_LINK
-        const periph_retention_module_t module_id = pcnt_reg_retention_info[group_id].retention_module;
-        if (sleep_retention_is_module_inited(module_id)) {
-            sleep_retention_module_deinit(module_id);
-        }
+        sleep_retention_power_lock_release();
 #endif // PCNT_USE_RETENTION_LINK
     }
     _lock_release(&s_platform.mutex);
@@ -1100,20 +1083,6 @@ IRAM_ATTR static void pcnt_default_isr(void *args)
         portYIELD_FROM_ISR();
     }
 }
-
-#if PCNT_USE_RETENTION_LINK
-static esp_err_t pcnt_create_sleep_retention_link_cb(void *arg)
-{
-    pcnt_group_t *group = (pcnt_group_t *)arg;
-    int group_id = group->group_id;
-    sleep_retention_module_t module_id = pcnt_reg_retention_info[group_id].retention_module;
-    esp_err_t err = sleep_retention_entries_create(pcnt_reg_retention_info[group_id].regdma_entry_array,
-                                                   pcnt_reg_retention_info[group_id].array_size,
-                                                   REGDMA_LINK_PRI_PCNT, module_id);
-    ESP_RETURN_ON_ERROR(err, TAG, "create retention link failed");
-    return ESP_OK;
-}
-#endif // PCNT_USE_RETENTION_LINK
 
 #if CONFIG_PCNT_ENABLE_DEBUG_LOG
 __attribute__((constructor))

@@ -98,10 +98,12 @@ static void test_pcnt_sleep_retention(void)
 
     printf("check if the sleep happened as expected\r\n");
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_PCNT_SUPPORT_SLEEP_RETENTION
+
+#if SOC_PMU_SUPPORTED && !SOC_PM_TOP_PD_NOT_ALLOWED
     // check if the power domain also is powered down
     TEST_ASSERT_EQUAL(0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
+
     esp_sleep_set_sleep_context(NULL);
 
     gpio_hold_dis(TEST_PCNT_GPIO_A);

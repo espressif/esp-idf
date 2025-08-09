@@ -177,7 +177,6 @@ api-reference/peripherals/lcd/i2c_lcd.rst
 api-reference/peripherals/lcd/spi_lcd.rst
 api-reference/peripherals/lcd/rgb_lcd.rst
 api-reference/peripherals/lcd/parl_lcd.rst
-api-reference/peripherals/pcnt.rst
 api-reference/peripherals/spi_features.rst
 api-reference/peripherals/ppa.rst
 api-reference/peripherals/ledc.rst

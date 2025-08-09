@@ -48,8 +48,7 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_GPSPI2       = 24,
     SLEEP_RETENTION_MODULE_GPSPI3       = 25,
     SLEEP_RETENTION_MODULE_LEDC         = 26,
-    SLEEP_RETENTION_MODULE_PCNT0        = 27,
-    SLEEP_RETENTION_MODULE_MCPWM0       = 28,
+    SLEEP_RETENTION_MODULE_MCPWM0       = 27,
 
     /* Modem module, which includes BLE and 802.15.4 */
     SLEEP_RETENTION_MODULE_BLE_MAC      = 29,
@@ -86,7 +85,6 @@ typedef enum periph_retention_module {
     : ((m) == SLEEP_RETENTION_MODULE_GPSPI2)       ? true \
     : ((m) == SLEEP_RETENTION_MODULE_GPSPI3)       ? true \
     : ((m) == SLEEP_RETENTION_MODULE_LEDC)         ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_PCNT0)        ? true \
     : ((m) == SLEEP_RETENTION_MODULE_MCPWM0)       ? true \
     : false)
 

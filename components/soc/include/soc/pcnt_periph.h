@@ -9,10 +9,6 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
-#include "soc/regdma.h"
-#if SOC_PCNT_SUPPORT_SLEEP_RETENTION
-#include "soc/retention_periph_defs.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,16 +31,6 @@ typedef struct {
 } pcnt_signal_conn_t;
 
 extern const pcnt_signal_conn_t pcnt_periph_signals;
-
-#if SOC_PCNT_SUPPORT_SLEEP_RETENTION
-typedef struct {
-    const periph_retention_module_t retention_module;
-    const regdma_entries_config_t *regdma_entry_array;
-    uint32_t array_size;
-} pcnt_reg_retention_info_t;
-
-extern const pcnt_reg_retention_info_t pcnt_reg_retention_info[SOC_PCNT_GROUPS];
-#endif // SOC_PCNT_SUPPORT_SLEEP_RETENTION
 
 #endif // SOC_PCNT_SUPPORTED
 
