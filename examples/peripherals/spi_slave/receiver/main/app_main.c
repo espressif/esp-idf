@@ -92,6 +92,23 @@ void app_main(void)
     gpio_set_pull_mode(GPIO_SCLK, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(GPIO_CS, GPIO_PULLUP_ONLY);
 
+    /**
+     * The default drive capability on esp32 is GPIO_DRIVE_CAP_2 (~20 mA).
+     * When connecting master devices that uses a source/sink current lower or higher than GPIO_DRIVER_CAP_DEFAULT.
+     * Using a drive strength that does not match the requirements of the connected device can cause issues
+     * such as unreliable switching, or damage to the GPIO pin or external device.
+     *
+     * - GPIO_DRIVE_CAP_0: ~5 mA
+     * - GPIO_DRIVE_CAP_1: ~10 mA
+     * - GPIO_DRIVE_CAP_2: ~20 mA
+     * - GPIO_DRIVE_CAP_3: ~40 mA
+
+    gpio_set_drive_capability(GPIO_MOSI, GPIO_DRIVE_CAP_3);
+    gpio_set_drive_capability(GPIO_SCLK, GPIO_DRIVE_CAP_3);
+    gpio_set_drive_capability(GPIO_CS, GPIO_DRIVE_CAP_3);
+
+    **/
+
     //Initialize SPI slave interface
     ret = spi_slave_initialize(RCV_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO);
     assert(ret == ESP_OK);
