@@ -799,3 +799,31 @@ function(idf_build_library)
         target_link_libraries("${ARG_INTERFACE}" INTERFACE "${component_interface}")
     endforeach()
 endfunction()
+
+#[[
+   __generate_project_info()
+
+   Generate a dummy project_description.json file to enable the use of idf.py
+   commands that require ensure_build_directory, such as reconfigure.
+
+   FIXME: This needs to generate a complete project_description.json for the
+   specified executable.
+#]]
+function(__generate_project_info)
+    idf_build_get_property(IDF_PATH IDF_PATH)
+    idf_build_get_property(PROJECT_NAME PROJECT_NAME)
+    idf_build_get_property(PROJECT_VER PROJECT_VER)
+    idf_build_get_property(PROJECT_PATH PROJECT_DIR)
+    idf_build_get_property(BUILD_DIR BUILD_DIR)
+    idf_build_get_property(SDKCONFIG SDKCONFIG)
+    idf_build_get_property(SDKCONFIG_DEFAULTS SDKCONFIG_DEFAULTS)
+
+    set(common_component_reqs_json "\"\"")
+    set(build_components_json "\"\"")
+    set(build_component_paths_json "\"\"")
+    set(build_component_info_json "\"\"")
+    set(all_component_info_json "\"\"")
+
+    configure_file("${IDF_PATH}/tools/cmake/project_description.json.in"
+        "${BUILD_DIR}/project_description.json")
+endfunction()
