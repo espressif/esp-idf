@@ -191,6 +191,7 @@ def test_target_guessing(idf_py: IdfPyFunc, test_app_copy: Path, default_idf_env
     idf_py('reconfigure')
     assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
     assert file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
+    default_idf_env.pop('SDKCONFIG_DEFAULTS')
 
     logging.info('Can guess target from SDKCONFIG_DEFAULTS using -D')
     (test_app_copy / 'sdkconfig3').write_text('CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
