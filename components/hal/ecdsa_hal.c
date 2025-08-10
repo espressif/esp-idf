@@ -8,6 +8,7 @@
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_hal.h"
 #include "hal/efuse_hal.h"
+#include "hal/efuse_ll.h"
 #include "soc/soc_caps.h"
 
 #if HAL_CONFIG(ECDSA_GEN_SIG_CM)
@@ -26,11 +27,20 @@
 #define ECDSA_HAL_P384_COMPONENT_LEN        48
 #endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
 
+void ecdsa_hal_set_efuse_key(ecdsa_curve_t curve, int efuse_blk)
+{
+    ecdsa_ll_set_ecdsa_key_blk(curve, efuse_blk);
+
+    efuse_ll_rs_bypass_update();
+
+    efuse_hal_read();
+}
+
 static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
 {
 
     if (conf->use_km_key == 0) {
-        efuse_hal_set_ecdsa_key(conf->curve, conf->efuse_key_blk);
+        ecdsa_hal_set_efuse_key(conf->curve, conf->efuse_key_blk);
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
         // Force Key Manager to use eFuse key for XTS-AES operation

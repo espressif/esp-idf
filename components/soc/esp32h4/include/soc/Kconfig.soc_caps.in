@@ -797,7 +797,7 @@ config SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
 
 config SOC_EFUSE_ECDSA_KEY
     bool
-    default y
+    default n
 
 config SOC_SECURE_BOOT_V2_RSA
     bool
