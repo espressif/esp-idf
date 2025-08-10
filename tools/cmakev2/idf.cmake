@@ -202,9 +202,12 @@ function(__init_idf_target)
     endif()
 
     # Verify that the chosen target aligns with the sdkconfig.
-    if(sdkconfig_target)
-        if(NOT "${sdkconfig_target}" STREQUAL "${target}")
-            idf_die("Target '${sdkconfig_target}' in sdkconfig '${sdkconfig_file}' "
+    if(EXISTS "${sdkconfig}")
+        if("$ENV{_IDF_PY_SET_TARGET_ACTION}" STREQUAL "1")
+            idf_dbg("The target consistency check for the target specified in ${sdkconfig} "
+                    "was skipped because the set-target action is being executed.")
+        elseif(NOT "${sdkconfig_target}" STREQUAL "${target}")
+            idf_die("Target '${sdkconfig_target}' in sdkconfig '${sdkconfig}' "
                     "does not match currently selected IDF_TARGET '${target}'. "
                     "To change the target, clear the build directory and sdkconfig file, "
                     "and build the project again.")
