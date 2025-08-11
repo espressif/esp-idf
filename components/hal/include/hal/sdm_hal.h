@@ -1,14 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-/*******************************************************************************
- * NOTICE
- * The hal is not public api, don't use in application code.
- * See readme.md in hal/include/hal/readme.md
- ******************************************************************************/
 
 // The HAL layer for sigma delta modulator.
 // There is no parameter check in the hal layer, so the caller must ensure the correctness of the parameters.
@@ -29,12 +23,26 @@ typedef struct {
 } sdm_hal_context_t;
 
 /**
+ * @brief Configuration for the Sigma-Delta HAL layer initialization
+ */
+typedef struct {
+    int group_id; // Group ID, index from 0
+} sdm_hal_init_config_t;
+
+/**
  * @brief Initialize Sigma-Delta hal driver
  *
  * @param hal Context of the HAL layer
- * @param group_id Sigma-Delta group number
+ * @param config Configuration for the HAL layer initialization
  */
-void sdm_hal_init(sdm_hal_context_t *hal, int group_id);
+void sdm_hal_init(sdm_hal_context_t *hal, const sdm_hal_init_config_t *config);
+
+/**
+ * @brief Deinitialize Sigma-Delta hal driver
+ *
+ * @param hal Context of the HAL layer
+ */
+void sdm_hal_deinit(sdm_hal_context_t *hal);
 
 #ifdef __cplusplus
 }

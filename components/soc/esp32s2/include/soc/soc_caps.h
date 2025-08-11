@@ -289,11 +289,6 @@
 // LP IO peripherals have independent clock gating to manage
 #define SOC_LP_IO_CLOCK_IS_INDEPENDENT 1
 
-/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
-#define SOC_SDM_GROUPS             1U
-#define SOC_SDM_CHANNELS_PER_GROUP 8
-#define SOC_SDM_CLK_SUPPORT_APB    1
-
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_HD_BOTH_INOUT_SUPPORTED     1   //Support enabling MOSI and MISO phases together under Halfduplex mode
 #define SOC_SPI_PERIPH_NUM                  3

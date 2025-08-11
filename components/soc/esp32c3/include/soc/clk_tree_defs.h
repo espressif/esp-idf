@@ -171,15 +171,6 @@ typedef enum {
     GPTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default choice */
 } soc_periph_gptimer_clk_src_t;
 
-/**
- * @brief Type of Timer Group clock source, reserved for the legacy timer group driver
- */
-typedef enum {
-    TIMER_SRC_CLK_APB = SOC_MOD_CLK_APB,     /*!< Timer group clock source is APB */
-    TIMER_SRC_CLK_XTAL = SOC_MOD_CLK_XTAL,   /*!< Timer group clock source is XTAL */
-    TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_APB, /*!< Timer group clock source default choice is APB */
-} soc_periph_tg_clk_src_legacy_t;
-
 //////////////////////////////////////////////////RMT///////////////////////////////////////////////////////////////////
 
 /**

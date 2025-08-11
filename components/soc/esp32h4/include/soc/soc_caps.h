@@ -56,7 +56,7 @@
 // #define SOC_RTC_MEM_SUPPORTED           1    // TODO: [ESP32H4] IDF-12313
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
-// #define SOC_SDM_SUPPORTED               1    // TODO: [ESP32H4] IDF-12348
+#define SOC_SDM_SUPPORTED               1
 #define SOC_GPSPI_SUPPORTED             1
 // #define SOC_LEDC_SUPPORTED              1    // TODO: [ESP32H4] IDF-12343
 #define SOC_I2C_SUPPORTED               1
@@ -254,6 +254,8 @@
 // #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
 // #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
+#define SOC_SDM_SUPPORT_SLEEP_RETENTION 1
+
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-H4 has 2 I2C
 #define SOC_I2C_NUM                 (2U)
@@ -395,12 +397,6 @@
 // #define SOC_SHA_SUPPORT_SHA1            (1)
 // #define SOC_SHA_SUPPORT_SHA224          (1)
 // #define SOC_SHA_SUPPORT_SHA256          (1)
-
-/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
-// #define SOC_SDM_GROUPS               1U
-// #define SOC_SDM_CHANNELS_PER_GROUP   4
-// #define SOC_SDM_CLK_SUPPORT_PLL_F80M 1
-// #define SOC_SDM_CLK_SUPPORT_XTAL     1
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM              3

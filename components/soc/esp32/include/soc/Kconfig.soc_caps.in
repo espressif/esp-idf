@@ -623,18 +623,6 @@ config SOC_RTCIO_WAKE_SUPPORTED
     bool
     default y
 
-config SOC_SDM_GROUPS
-    int
-    default 1
-
-config SOC_SDM_CHANNELS_PER_GROUP
-    int
-    default 8
-
-config SOC_SDM_CLK_SUPPORT_APB
-    bool
-    default y
-
 config SOC_SPI_HD_BOTH_INOUT_SUPPORTED
     bool
     default y

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,18 +23,6 @@ const soc_sdm_signal_desc_t soc_sdm_signals[1] = {
             },
             [3] = {
                 .sig_id_matrix = GPIO_SD3_OUT_IDX
-            },
-            [4] = {
-                .sig_id_matrix = GPIO_SD4_OUT_IDX
-            },
-            [5] = {
-                .sig_id_matrix = GPIO_SD5_OUT_IDX
-            },
-            [6] = {
-                .sig_id_matrix = GPIO_SD6_OUT_IDX
-            },
-            [7] = {
-                .sig_id_matrix = GPIO_SD7_OUT_IDX
             }
         }
     }
@@ -45,9 +33,9 @@ const soc_sdm_signal_desc_t soc_sdm_signals[1] = {
  *        GPIO_EXT_SIGMADELTA[x]_REG
  *        GPIO_EXT_SIGMADELTA_MISC_REG
  */
-#define GPIO_EXT_RETENTION_REGS_CNT 9
-#define GPIO_EXT_RETENTION_REGS_BASE (DR_REG_GPIO_EXT_BASE + 0x0)
-static const uint32_t gpio_ext_regs_map[4] = {0x2ff, 0x0, 0x0, 0x0};
+#define GPIO_EXT_RETENTION_REGS_CNT 5
+#define GPIO_EXT_RETENTION_REGS_BASE (DR_REG_GPIO_EXT_BASE + 0x4)
+static const uint32_t gpio_ext_regs_map[4] = {0x1f, 0x0, 0x0, 0x0};
 static const regdma_entries_config_t gpio_ext_regdma_entries[] = {
     // backup stage: save configuration and status registers
     // restore stage: restore the configuration and status registers
@@ -57,7 +45,7 @@ static const regdma_entries_config_t gpio_ext_regdma_entries[] = {
                                             GPIO_EXT_RETENTION_REGS_CNT, 0, 0,
                                             gpio_ext_regs_map[0], gpio_ext_regs_map[1],
                                             gpio_ext_regs_map[2], gpio_ext_regs_map[3]),
-        .owner = ENTRY(0),
+        .owner = ENTRY(0) | ENTRY(2),
     },
 };
 

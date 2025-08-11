@@ -19,3 +19,7 @@
 
 /*--------------------------- Watch Dog ------------------------------------------*/
 #define _SOC_CAPS_WDT_MWDTS_PER_TIMG              1  // Number of main watchdog timers in each Timer Group
+
+/*--------------------------- SDM (Sigma-Delta Modulator) ------------------------*/
+#define _SOC_CAPS_SDM_INST_NUM                    1  // Number of SDM instances
+#define _SOC_CAPS_SDM_CHANS_PER_INST              4  // Number of channels in each SDM instance
