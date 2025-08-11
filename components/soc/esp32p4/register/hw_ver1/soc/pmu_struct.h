@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+#define SOC_PMU_STRUCT_HW_VER      1
+
 typedef union {
     struct {
         uint32_t reserved0    : 21;
