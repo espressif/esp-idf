@@ -92,6 +92,13 @@ FreeRTOS
 - :cpp:func:`xTaskGetIdleTaskHandleForCPU` – 请使用 :cpp:func:`xTaskGetIdleTaskHandleForCore` 替代。
 - :cpp:func:`xTaskGetCurrentTaskHandleForCPU` – 请使用 :cpp:func:`xTaskGetCurrentTaskHandleForCore` 替代。
 
+以下兼容性函数已在 ESP-IDF v6.0 中移除。这些函数原本是为了向后兼容旧版本 ESP-IDF 而维护的，因为它们在 FreeRTOS 中已被更改为宏或独立函数。现已移除此兼容性支持。
+
+- :cpp:func:`xQueueGenericReceive` - 请根据具体使用场景选择 :cpp:func:`xQueueReceive`、:cpp:func:`xQueuePeek` 或 :cpp:func:`xQueueSemaphoreTake` 替代
+- :cpp:func:`vTaskDelayUntil` - 请使用 :cpp:func:`xTaskDelayUntil` 替代
+- :cpp:func:`ulTaskNotifyTake` - 请使用宏 ``ulTaskNotifyTake`` 替代
+- :cpp:func:`xTaskNotifyWait` - 请使用宏 ``xTaskNotifyWait`` 替代
+
 **已弃用的函数**
 
 函数 :cpp:func:`pxTaskGetStackStart` 已弃用。请使用 :cpp:func:`xTaskGetStackStart` 替代以提高类型安全性。
