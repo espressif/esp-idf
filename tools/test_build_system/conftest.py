@@ -44,6 +44,11 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         '--cleanup-idf-copy', action='store_true',
         help='Always clean up the IDF copy after the test. By default, the copy is cleaned up only if the test passes.'
     )
+    parser.addoption(
+        '--buildv2',
+        action='store_true',
+        help='Use the IDF build system v2 project for testing.',
+    )
 
 
 @pytest.fixture(scope='session')
@@ -94,7 +99,10 @@ def work_dir(request: FixtureRequest, _session_work_dir: typing.Tuple[Path, bool
 def test_app_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[Path, None, None]:
     # by default, use hello_world app and copy it to a temporary directory with
     # the name resembling that of the test
-    copy_from = 'tools/test_build_system/build_test_app'
+    if request.config.getoption('buildv2', False):
+        copy_from = 'tools/test_build_system/buildv2_test_app'
+    else:
+        copy_from = 'tools/test_build_system/build_test_app'
     # sanitize test name in case pytest.mark.parametrize was used
     test_name_sanitized = request.node.name.replace('[', '_').replace(']', '')
     copy_to = test_name_sanitized + '_app'
