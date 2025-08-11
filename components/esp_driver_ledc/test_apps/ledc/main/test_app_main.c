@@ -10,8 +10,8 @@
 #include "esp_newlib.h"
 
 // Some resources are lazy allocated in LEDC driver, the threshold is left for that case
-// This leak is large since LEDC driver does not provide channel delete mechanism
-#define TEST_MEMORY_LEAK_THRESHOLD (500)
+// This leak is large since LEDC driver does not provide context free mechanism
+#define TEST_MEMORY_LEAK_THRESHOLD (550)
 
 void setUp(void)
 {

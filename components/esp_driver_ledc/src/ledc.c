@@ -94,6 +94,7 @@ typedef struct {
     bool channel_keep_alive[LEDC_CHANNEL_MAX];          /*!< Records whether each channel needs to keep output during sleep */
     uint8_t timer_xpd_ref_cnt[LEDC_TIMER_MAX];          /*!< Records the timer (glb_clk) not power down during sleep requirement */
     bool glb_clk_xpd;                                   /*!< Records the power strategy applied to the global clock */
+    uint64_t occupied_pin_mask[LEDC_CHANNEL_MAX];       /*!< Records the pins occupied by each channel */
 } ledc_obj_t;
 
 static ledc_obj_t *p_ledc_obj[LEDC_SPEED_MODE_MAX] = {
@@ -805,7 +806,7 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t *timer_conf)
     return ret;
 }
 
-esp_err_t _ledc_set_pin(int gpio_num, bool out_inv, ledc_mode_t speed_mode, ledc_channel_t channel)
+static esp_err_t _ledc_set_pin(int gpio_num, bool out_inv, ledc_mode_t speed_mode, ledc_channel_t channel)
 {
     // reserve the GPIO output path, because we don't expect another peripheral to signal to the same GPIO
     uint64_t old_gpio_rsv_mask = esp_gpio_reserve(BIT64(gpio_num));
@@ -814,6 +815,9 @@ esp_err_t _ledc_set_pin(int gpio_num, bool out_inv, ledc_mode_t speed_mode, ledc
         ESP_LOGW(LEDC_TAG, "GPIO %d is not usable, maybe conflict with others", gpio_num);
     }
     gpio_matrix_output(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + channel, out_inv, false);
+    portENTER_CRITICAL(&ledc_spinlock);
+    p_ledc_obj[speed_mode]->occupied_pin_mask[channel] |= BIT64(gpio_num);
+    portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
 }
 
@@ -823,7 +827,29 @@ esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t chan
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "gpio_num");
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     return _ledc_set_pin(gpio_num, false, speed_mode, channel);
+}
+
+static esp_err_t ledc_channel_del(ledc_mode_t speed_mode, ledc_channel_t channel)
+{
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+
+    portENTER_CRITICAL(&ledc_spinlock);
+    // release all the pins occupied by this channel
+    while (p_ledc_obj[speed_mode]->occupied_pin_mask[channel]) {
+        int gpio_num = __builtin_ffsll(p_ledc_obj[speed_mode]->occupied_pin_mask[channel]) - 1;
+        gpio_output_disable(gpio_num);
+        esp_gpio_revoke(BIT64(gpio_num));
+        p_ledc_obj[speed_mode]->occupied_pin_mask[channel] &= ~BIT64(gpio_num);
+    }
+    ledc_ll_enable_channel_power(LEDC_LL_GET_HW(), speed_mode, channel, false);
+    portEXIT_CRITICAL(&ledc_spinlock);
+
+    // p_ledc_obj[speed_mode]->channel_keep_alive[channel] = false;
+    // TODO: dealing whether need to release the timer clock source xpd
+    // TODO: dealing whether can downgrade the sleep mode, so that retention link can be freed or peripheral clock can be gated during sleep
+    return ESP_OK;
 }
 
 esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
@@ -838,6 +864,11 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     bool output_invert = ledc_conf->flags.output_invert;
     LEDC_ARG_CHECK(ledc_channel < LEDC_CHANNEL_MAX, "ledc_channel");
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+
+    if (ledc_conf->deconfigure) {
+        return ledc_channel_del(speed_mode, ledc_channel);
+    }
+
     LEDC_ARG_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "gpio_num");
     LEDC_ARG_CHECK(timer_select < LEDC_TIMER_MAX, "timer_select");
     LEDC_ARG_CHECK(ledc_conf->sleep_mode < LEDC_SLEEP_MODE_INVALID, "sleep_mode");

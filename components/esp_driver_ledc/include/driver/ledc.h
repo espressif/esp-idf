@@ -45,6 +45,9 @@ typedef struct {
     struct ledc_channel_flags {
         unsigned int output_invert: 1; /*!< Enable (1) or disable (0) gpio output invert */
     } flags;                        /*!< Extra configuration flags for LEDC channel */
+    bool deconfigure;               /*!< Set this field to de-configure a LEDC channel which has been configured before
+                                         The driver only does limited action to release the pins occupied by this channel only.
+                                         When this field is set, gpio_num, timer_sel, duty, hpoint, sleep_mode, flags fields are ignored. */
 } ledc_channel_config_t;
 
 /**

@@ -32,8 +32,19 @@ static void fade_setup(void)
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
     vTaskDelay(5 / portTICK_PERIOD_MS);
 
-    //initialize fade service
+    // initialize fade service
     TEST_ESP_OK(ledc_fade_func_install(0));
+}
+
+static void fade_teardown(void)
+{
+    ledc_channel_config_t ledc_ch_config = initialize_channel_config();
+
+    // deinitialize fade service
+    ledc_fade_func_uninstall();
+
+    ledc_ch_config.deconfigure = true;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 }
 
 static void timer_duty_set_get(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t duty)
@@ -67,6 +78,9 @@ static void timer_duty_test(ledc_channel_t channel, ledc_timer_bit_t timer_bit, 
     timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, 1 << (timer_bit - 1)); // 50% duty
     timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, (1 << timer_bit) - 1);
     timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, (1 << timer_bit) - 2);
+
+    ledc_ch_config.deconfigure = true;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 }
 
 TEST_CASE("LEDC channel config wrong gpio", "[ledc]")
@@ -100,7 +114,9 @@ TEST_CASE("LEDC wrong timer", "[ledc]")
 TEST_CASE("LEDC channel config basic parameter test", "[ledc]")
 {
     ledc_channel_config_t ledc_ch_config = initialize_channel_config();
-    TEST_ASSERT_EQUAL(ESP_OK, ledc_channel_config(&ledc_ch_config));
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
+    ledc_ch_config.deconfigure = true;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 }
 
 TEST_CASE("LEDC wrong duty resolution", "[ledc]")
@@ -148,6 +164,9 @@ TEST_CASE("LEDC output idle level test", "[ledc]")
         TEST_ASSERT_EQUAL_INT32(!current_level, gpio_get_level(PULSE_IO));
         esp_rom_delay_us(50);
     }
+
+    ledc_ch_config.deconfigure = true;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 }
 
 TEST_CASE("LEDC iterate over all channel and timer configs", "[ledc]")
@@ -168,6 +187,10 @@ TEST_CASE("LEDC iterate over all channel and timer configs", "[ledc]")
                 ledc_time_config.timer_num = (ledc_timer_t)k;
                 TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
                 TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+
+                ledc_ch_config.deconfigure = true;
+                TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
+                ledc_ch_config.deconfigure = false;
             }
         }
     }
@@ -191,6 +214,9 @@ TEST_CASE("LEDC memory leak test", "[ledc]")
     }
     TEST_ASSERT_INT32_WITHIN(100, size, esp_get_free_heap_size());
     TEST_ESP_OK(ledc_stop(ledc_time_config.speed_mode, LEDC_CHANNEL_0, 0));
+
+    ledc_ch_config.deconfigure = true;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 }
 
 // duty should be manually checked from the waveform using a logic analyzer
@@ -222,8 +248,7 @@ TEST_CASE("LEDC fade with time", "[ledc]")
     vTaskDelay(210 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(0, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
-    //deinitialize fade service
-    ledc_fade_func_uninstall();
+    fade_teardown();
 }
 
 TEST_CASE("LEDC fade with step", "[ledc]")
@@ -245,8 +270,7 @@ TEST_CASE("LEDC fade with step", "[ledc]")
     //scaler=0 check
     TEST_ASSERT(ledc_set_fade_with_step(test_speed_mode, LEDC_CHANNEL_0, 4000, 0, 1) == ESP_ERR_INVALID_ARG);
 
-    //deinitialize fade service
-    ledc_fade_func_uninstall();
+    fade_teardown();
 }
 
 TEST_CASE("LEDC fast switching duty with fade_wait_done", "[ledc]")
@@ -276,8 +300,7 @@ TEST_CASE("LEDC fast switching duty with fade_wait_done", "[ledc]")
     vTaskDelay(5 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(500, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
-    //deinitialize fade service
-    ledc_fade_func_uninstall();
+    fade_teardown();
 }
 
 TEST_CASE("LEDC fast switching duty with fade_no_wait", "[ledc]")
@@ -310,8 +333,7 @@ TEST_CASE("LEDC fast switching duty with fade_no_wait", "[ledc]")
     vTaskDelay(5 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(500, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
-    //deinitialize fade service
-    ledc_fade_func_uninstall();
+    fade_teardown();
 }
 
 #if SOC_LEDC_SUPPORT_FADE_STOP
@@ -343,8 +365,7 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
     TEST_ASSERT_EQUAL_INT32(duty_after_stop, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
     TEST_ASSERT_NOT_EQUAL(4000, duty_after_stop);
 
-    //deinitialize fade service
-    ledc_fade_func_uninstall();
+    fade_teardown();
 }
 #endif // SOC_LEDC_SUPPORT_FADE_STOP
 
@@ -376,8 +397,7 @@ TEST_CASE("LEDC gamma ram write and read test", "[ledc]")
         TEST_ASSERT_EQUAL_INT32(i + 3, scale);
     }
 
-    // Deinitialize fade service
-    ledc_fade_func_uninstall();
+    fade_teardown();
 }
 
 TEST_CASE("LEDC multi fade test", "[ledc]")
@@ -417,8 +437,7 @@ TEST_CASE("LEDC multi fade test", "[ledc]")
     // Check the duty at the end of the fade
     TEST_ASSERT_EQUAL_INT32((uint32_t)end_duty, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
-    // Deinitialize fade service
-    ledc_fade_func_uninstall();
+    fade_teardown();
 }
 #endif // SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
 
@@ -482,6 +501,9 @@ TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60]")
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_1, LEDC_HIGH_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_2, LEDC_HIGH_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_3, LEDC_HIGH_SPEED_MODE);
+    ledc_ch_config.deconfigure = true;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
+    ledc_ch_config.deconfigure = false;
 #endif // SOC_LEDC_SUPPORT_HS_MODE
     ledc_ch_config.speed_mode = LEDC_LOW_SPEED_MODE;
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
@@ -489,6 +511,8 @@ TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60]")
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_12_BIT, LEDC_TIMER_1, LEDC_LOW_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_12_BIT, LEDC_TIMER_2, LEDC_LOW_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_12_BIT, LEDC_TIMER_3, LEDC_LOW_SPEED_MODE);
+    ledc_ch_config.deconfigure = true;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 }
 
 #if SOC_CLK_TREE_SUPPORTED
@@ -556,6 +580,9 @@ TEST_CASE("LEDC timer select specific clock source", "[ledc]")
     TEST_ESP_OK(ledc_bind_channel_timer(test_speed_mode, LEDC_CHANNEL_0, LEDC_TIMER_0));
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(ledc_get_freq(test_speed_mode, LEDC_TIMER_0), 500);
+
+    ledc_ch_config.deconfigure = true;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 }
 #endif  //SOC_CLK_TREE_SUPPORTED
 
@@ -608,6 +635,9 @@ TEST_CASE("LEDC timer pause and resume", "[ledc]")
     vTaskDelay(100 / portTICK_PERIOD_MS);
     count = wave_count(200);
     TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ * 200 / 1000, count);
+
+    ledc_ch_config.deconfigure = true;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 }
 
 static void ledc_cpu_reset_test_first_stage(void)
