@@ -9,7 +9,7 @@ Security Features Enablement Workflows
 {IDF_TARGET_CRYPT_CNT:default="SPI_BOOT_CRYPT_CNT",esp32="FLASH_CRYPT_CNT"}
 {IDF_TARGET_CRYPT_CNT_MAX_VAL:default="7",esp32="127"}
 {IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2="ECDSA (V2)"}
-{IDF_TARGET_FLASH_ENC_ARGS:default="--aes_xts", esp32=""}
+{IDF_TARGET_FLASH_ENC_ARGS:default="--aes-xts", esp32=""}
 
 Introduction
 ------------
@@ -83,7 +83,7 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
     .. code:: bash
 
-        esptool.py --port PORT erase_flash
+        esptool --port PORT erase-flash
 
 2. Generate a Flash Encryption key
 
@@ -93,7 +93,7 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
         .. code-block:: bash
 
-            espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+            espsecure generate-flash-encryption-key my_flash_encryption_key.bin
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
@@ -101,20 +101,20 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
         .. code-block:: bash
 
-            espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+            espsecure generate-flash-encryption-key my_flash_encryption_key.bin
 
         else if :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-256 (512-bit key):
 
         .. code-block:: bash
 
-            espsecure.py generate_flash_encryption_key --keylen 512 my_flash_encryption_key.bin
+            espsecure generate-flash-encryption-key --keylen 512 my_flash_encryption_key.bin
 
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and not SOC_FLASH_ENCRYPTION_XTS_AES_256 and not SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
         .. code-block:: bash
 
-            espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+            espsecure generate-flash-encryption-key my_flash_encryption_key.bin
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
@@ -122,13 +122,13 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
         .. code-block:: bash
 
-            espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+            espsecure generate-flash-encryption-key my_flash_encryption_key.bin
 
         else if :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 key derived from 128 bits (SHA256(128 bits)):
 
         .. code-block:: bash
 
-            espsecure.py generate_flash_encryption_key --keylen 128 my_flash_encryption_key.bin
+            espsecure generate-flash-encryption-key --keylen 128 my_flash_encryption_key.bin
 
 3. Burn the Flash Encryption key into eFuse
 
@@ -142,13 +142,13 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key flash_encryption my_flash_encryption_key.bin
+            espefuse --port PORT burn-key flash_encryption my_flash_encryption_key.bin
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin KEYPURPOSE
+            espefuse --port PORT burn-key BLOCK my_flash_encryption_key.bin KEYPURPOSE
 
         where ``BLOCK`` is a free keyblock between ``BLOCK_KEY0`` and ``BLOCK_KEY5``. And ``KEYPURPOSE`` is either ``XTS_AES_256_KEY_1``, ``XTS_AES_256_KEY_2``, ``XTS_AES_128_KEY``. See `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ for a description of the key purposes.
 
@@ -156,28 +156,28 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
+            espefuse --port PORT burn-key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
 
-        For AES-256 (512-bit key) - ``XTS_AES_256_KEY_1`` and ``XTS_AES_256_KEY_2``. ``espefuse.py`` supports burning both these two key purposes together with a 512-bit key to two separate key blocks via the virtual key purpose ``XTS_AES_256_KEY``. When this is used ``espefuse.py`` will burn the first 256 bits of the key to the specified ``BLOCK`` and burn the corresponding block key purpose to ``XTS_AES_256_KEY_1``. The last 256 bits of the key will be burned to the first free key block after ``BLOCK`` and the corresponding block key purpose to ``XTS_AES_256_KEY_2``
+        For AES-256 (512-bit key) - ``XTS_AES_256_KEY_1`` and ``XTS_AES_256_KEY_2``. ``espefuse`` supports burning both these two key purposes together with a 512-bit key to two separate key blocks via the virtual key purpose ``XTS_AES_256_KEY``. When this is used ``espefuse`` will burn the first 256 bits of the key to the specified ``BLOCK`` and burn the corresponding block key purpose to ``XTS_AES_256_KEY_1``. The last 256 bits of the key will be burned to the first free key block after ``BLOCK`` and the corresponding block key purpose to ``XTS_AES_256_KEY_2``
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_256_KEY
+            espefuse --port PORT burn-key BLOCK my_flash_encryption_key.bin XTS_AES_256_KEY
 
         If you wish to specify exactly which two blocks are used then it is possible to divide the key into two 256-bit keys, and manually burn each half with ``XTS_AES_256_KEY_1`` and ``XTS_AES_256_KEY_2`` as key purposes:
 
         .. code-block:: bash
 
             split -b 32 my_flash_encryption_key.bin my_flash_encryption_key.bin
-            espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin.aa XTS_AES_256_KEY_1
-            espefuse.py --port PORT burn_key BLOCK+1 my_flash_encryption_key.bin.ab XTS_AES_256_KEY_2
+            espefuse --port PORT burn-key BLOCK my_flash_encryption_key.bin.aa XTS_AES_256_KEY_1
+            espefuse --port PORT burn-key BLOCK+1 my_flash_encryption_key.bin.ab XTS_AES_256_KEY_2
 
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and not SOC_FLASH_ENCRYPTION_XTS_AES_256 and not SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
+            espefuse --port PORT burn-key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
 
         where ``BLOCK`` is a free keyblock between ``BLOCK_KEY0`` and ``BLOCK_KEY5``.
 
@@ -187,20 +187,20 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key BLOCK_KEY0 flash_encryption_key256.bin XTS_AES_128_KEY
+            espefuse --port PORT burn-key BLOCK_KEY0 flash_encryption_key256.bin XTS_AES_128_KEY
 
         For AES-128 key derived from SHA256(128 eFuse bits) - ``XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS``. The FE key will be written in the lower part of eFuse BLOCK_KEY0. The upper 128 bits are not used and will remain available for reading by software. Using the special mode of the espefuse tool, shown in the ``For burning both keys together`` section below, the user can write their data to it using any espefuse commands.
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
+            espefuse --port PORT burn-key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
 
         For burning both keys together (Secure Boot and Flash Encryption):
 
         .. code-block:: bash
 
-            espefuse.py --port PORT --chip esp32c2 burn_key_digest secure_boot_signing_key.pem \
-                                                    burn_key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
+            espefuse --port PORT --chip esp32c2 burn-key-digest secure_boot_signing_key.pem \
+                                                burn-key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
 
 
     .. only:: SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
@@ -216,7 +216,7 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
     .. code-block:: bash
 
-        espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse {IDF_TARGET_CRYPT_CNT} {IDF_TARGET_CRYPT_CNT_MAX_VAL}
+        espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-efuse {IDF_TARGET_CRYPT_CNT} {IDF_TARGET_CRYPT_CNT_MAX_VAL}
 
     .. only:: esp32
 
@@ -224,7 +224,7 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
         .. code-block:: bash
 
-            espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse FLASH_CRYPT_CONFIG 0xF
+            espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-efuse FLASH_CRYPT_CONFIG 0xF
 
 5. Burn Flash Encryption-related security eFuses as listed below
 
@@ -256,11 +256,11 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
     .. code:: bash
 
-        espefuse.py burn_efuse --port PORT EFUSE_NAME 0x1
+        espefuse burn-efuse --port PORT EFUSE_NAME 0x1
 
     .. note::
 
-        Please update the ``EFUSE_NAME`` with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., ``EFUSE_NAME VAL EFUSE_NAME2 VAL2``). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_.
+        Please update the ``EFUSE_NAME`` with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., ``EFUSE_NAME VAL EFUSE_NAME2 VAL2``). More documentation about `espefuse` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_.
 
     .. only:: esp32
 
@@ -270,7 +270,7 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
         .. code:: bash
 
-            espefuse.py --port PORT write_protect_efuse DIS_CACHE
+            espefuse --port PORT write-protect-efuse DIS_CACHE
 
         .. note::
 
@@ -284,7 +284,7 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
         .. code:: bash
 
-            espefuse.py --port PORT write_protect_efuse DIS_ICACHE
+            espefuse --port PORT write-protect-efuse DIS_ICACHE
 
         .. note::
 
@@ -312,15 +312,15 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
     .. code-block:: bash
 
-        espsecure.py encrypt_flash_data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} --output bootloader-enc.bin build/bootloader/bootloader.bin
+        espsecure encrypt-flash-data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} --output bootloader-enc.bin build/bootloader/bootloader.bin
 
-        espsecure.py encrypt_flash_data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address 0x8000 --output partition-table-enc.bin build/partition_table/partition-table.bin
+        espsecure encrypt-flash-data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address 0x8000 --output partition-table-enc.bin build/partition_table/partition-table.bin
 
-        espsecure.py encrypt_flash_data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address 0x10000 --output my-app-enc.bin build/my-app.bin
+        espsecure encrypt-flash-data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address 0x10000 --output my-app-enc.bin build/my-app.bin
 
     In the above command, the offsets are used for a sample firmware, and the actual offset for your firmware can be obtained by checking the partition table entry or by running `idf.py partition-table`. Please note that not all the binaries need to be encrypted, the encryption applies only to those generated from the partitions which are marked as ``encrypted`` in the partition table definition file. Other binaries are flashed unencrypted, i.e., as a plain output of the build process.
 
-    The above files can then be flashed to their respective offset using ``esptool.py``. To see all of the command line options recommended for ``esptool.py``, see the output printed when ``idf.py build`` succeeds.
+    The above files can then be flashed to their respective offset using ``esptool``. To see all of the command line options recommended for ``esptool``, see the output printed when ``idf.py build`` succeeds.
 
     When the application contains the following partition: ``otadata`` and ``nvs_encryption_keys``, they need to be encrypted as well. Please refer to :ref:`encrypted-partitions` for more details about encrypted partitions.
 
@@ -330,9 +330,9 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
         .. only:: esp32
 
-            If your ESP32 uses non-default :ref:`FLASH_CRYPT_CONFIG value in eFuse <setting-flash-crypt-config>` then you will need to pass the ``--flash_crypt_conf`` argument to ``espsecure.py`` to set the matching value. This will not happen when the Flash Encryption is enabled by the second stage bootloader but may happen when burning eFuses manually to enable Flash Encryption.
+            If your ESP32 uses non-default :ref:`FLASH_CRYPT_CONFIG value in eFuse <setting-flash-crypt-config>` then you will need to pass the ``--flash-crypt-conf`` argument to ``espsecure`` to set the matching value. This will not happen when the Flash Encryption is enabled by the second stage bootloader but may happen when burning eFuses manually to enable Flash Encryption.
 
-    The command ``espsecure.py decrypt_flash_data`` can be used with the same options (and different input or output files), to decrypt ciphertext flash contents or a previously encrypted file.
+    The command ``espsecure decrypt-flash-data`` can be used with the same options (and different input or output files), to decrypt ciphertext flash contents or a previously encrypted file.
 
 8. Secure the ROM download mode
 
@@ -352,7 +352,7 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
                 .. code:: bash
 
-                    espefuse.py --port PORT burn_efuse UART_DOWNLOAD_DIS
+                    espefuse --port PORT burn-efuse UART_DOWNLOAD_DIS
 
     .. only:: not esp32
 
@@ -366,7 +366,7 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
                 .. code:: bash
 
-                    espefuse.py --port PORT burn_efuse ENABLE_SECURITY_DOWNLOAD
+                    espefuse --port PORT burn-efuse ENABLE_SECURITY_DOWNLOAD
 
 .. important::
 
@@ -396,7 +396,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
         .. code:: bash
 
-            espsecure.py generate_signing_key --version 2 --scheme rsa3072 secure_boot_signing_key.pem
+            espsecure generate-signing-key --version 2 --scheme rsa3072 secure_boot_signing_key.pem
 
     .. only:: SOC_SECURE_BOOT_V2_ECC
 
@@ -404,7 +404,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
         .. code:: bash
 
-            espsecure.py generate_signing_key --version 2 --scheme ecdsa256 secure_boot_signing_key.pem
+            espsecure generate-signing-key --version 2 --scheme ecdsa256 secure_boot_signing_key.pem
 
         .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
 
@@ -424,7 +424,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
     .. code:: bash
 
-        espsecure.py digest_sbv2_public_key --keyfile secure_boot_signing_key.pem --output digest.bin
+        espsecure digest-sbv2-public-key --keyfile secure_boot_signing_key.pem --output digest.bin
 
     .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
@@ -438,19 +438,19 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
         .. code:: bash
 
-            espefuse.py --port PORT --chip esp32 burn_key secure_boot_v2 digest.bin
+            espefuse --port PORT --chip esp32 burn-key secure_boot_v2 digest.bin
 
     .. only:: esp32c2
 
         .. code:: bash
 
-            espefuse.py --port PORT --chip esp32c2 burn_key KEY_BLOCK0 digest.bin SECURE_BOOT_DIGEST
+            espefuse --port PORT --chip esp32c2 burn-key KEY_BLOCK0 digest.bin SECURE_BOOT_DIGEST
 
     .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
         .. code:: bash
 
-            espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_key BLOCK digest.bin SECURE_BOOT_DIGEST0
+            espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-key BLOCK digest.bin SECURE_BOOT_DIGEST0
 
         where ``BLOCK`` is a free keyblock between ``BLOCK_KEY0`` and ``BLOCK_KEY5``.
 
@@ -464,13 +464,13 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
         .. code:: bash
 
-            espefuse.py --port PORT --chip esp32 burn_efuse ABS_DONE_1
+            espefuse --port PORT --chip esp32 burn-efuse ABS_DONE_1
 
   .. only:: not esp32
 
        .. code:: bash
 
-            espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse SECURE_BOOT_EN
+            espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-efuse SECURE_BOOT_EN
 
     .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
 
@@ -478,7 +478,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
         .. code:: bash
 
-            espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse SECURE_BOOT_SHA384_EN
+            espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-efuse SECURE_BOOT_SHA384_EN
 
 
 5. Burn relevant eFuses
@@ -507,11 +507,11 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
     .. code:: bash
 
-        espefuse.py burn_efuse --port PORT EFUSE_NAME 0x1
+        espefuse burn-efuse --port PORT EFUSE_NAME 0x1
 
     .. note::
 
-        Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_
+        Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_
 
     B) Secure Boot v2-related eFuses
 
@@ -521,7 +521,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
     .. code:: bash
 
-        espefuse.py -p $ESPPORT write_protect_efuse RD_DIS
+        espefuse -p $ESPPORT write-protect-efuse RD_DIS
 
     .. important::
 
@@ -535,7 +535,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
         .. code:: bash
 
-            espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse EFUSE_REVOKE_BIT
+            espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-efuse EFUSE_REVOKE_BIT
 
         The ``EFUSE_REVOKE_BIT`` in the above command can be ``SECURE_BOOT_KEY_REVOKE0`` or ``SECURE_BOOT_KEY_REVOKE1`` or ``SECURE_BOOT_KEY_REVOKE2``. Please note that only the unused key digests must be revoked. Once revoked, the respective digest cannot be used again.
 
@@ -565,9 +565,9 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
     .. code:: bash
 
-        espsecure.py sign_data --version 2 --keyfile secure_boot_signing_key.pem --output bootloader-signed.bin build/bootloader/bootloader.bin
+        espsecure sign-data --version 2 --keyfile secure_boot_signing_key.pem --output bootloader-signed.bin build/bootloader/bootloader.bin
 
-        espsecure.py sign_data --version 2 --keyfile secure_boot_signing_key.pem --output my-app-signed.bin build/my-app.bin
+        espsecure sign-data --version 2 --keyfile secure_boot_signing_key.pem --output my-app-signed.bin build/my-app.bin
 
     .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
@@ -575,9 +575,9 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
         .. code:: bash
 
-            espsecure.py sign_data --keyfile secure_boot_signing_key2.pem --version 2 --append_signatures -o bootloader-signed2.bin bootloader-signed.bin
+            espsecure sign-data --keyfile secure_boot_signing_key2.pem --version 2 --append-signatures -o bootloader-signed2.bin bootloader-signed.bin
 
-            espsecure.py sign_data --keyfile secure_boot_signing_key2.pem --version 2 --append_signatures -o my-app-signed2.bin my-app-signed.bin
+            espsecure sign-data --keyfile secure_boot_signing_key2.pem --version 2 --append-signatures -o my-app-signed2.bin my-app-signed.bin
 
         The same process can be repeated for the third key. Note that the names of the input and output files must not be the same.
 
@@ -585,9 +585,9 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
     .. code:: bash
 
-        espsecure.py signature_info_v2 bootloader-signed.bin
+        espsecure signature-info-v2 bootloader-signed.bin
 
-    The above files along with other binaries (e.g., partition table) can then be flashed to their respective offset using ``esptool.py``. To see all of the command line options recommended for ``esptool.py``, see the output printed when ``idf.py build`` succeeds. The flash offset for your firmware can be obtained by checking the partition table entry or by running ``idf.py partition-table``.
+    The above files along with other binaries (e.g., partition table) can then be flashed to their respective offset using ``esptool``. To see all of the command line options recommended for ``esptool``, see the output printed when ``idf.py build`` succeeds. The flash offset for your firmware can be obtained by checking the partition table entry or by running ``idf.py partition-table``.
 
 8. Secure the ROM download mode
 
@@ -607,7 +607,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
             .. code:: bash
 
-                espefuse.py --port PORT burn_efuse UART_DOWNLOAD_DIS
+                espefuse --port PORT burn-efuse UART_DOWNLOAD_DIS
 
     .. only:: not esp32
 
@@ -621,7 +621,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
             .. code:: bash
 
-                espefuse.py --port PORT burn_efuse ENABLE_SECURITY_DOWNLOAD
+                espefuse --port PORT burn-efuse ENABLE_SECURITY_DOWNLOAD
 
 Secure Boot v2 Guidelines
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -667,7 +667,7 @@ The details about NVS encryption and related schemes can be found at :doc:`NVS E
 
         .. code:: bash
 
-            espefuse.py --port PORT burn_key BLOCK hmac_key.bin HMAC_UP
+            espefuse --port PORT burn-key BLOCK hmac_key.bin HMAC_UP
 
         Here, ``BLOCK`` is a free keyblock between ``BLOCK_KEY0`` and ``BLOCK_KEY5``.
 
@@ -697,7 +697,7 @@ The details about NVS encryption and related schemes can be found at :doc:`NVS E
 
     5. Flash NVS partition
 
-        The NVS partition (``nvs_encr_partition.bin``) generated in Step 3 can then be flashed to its respective offset using ``esptool.py``. To see all of the command line options recommended for ``esptool.py``, check the output printed when ``idf.py build`` succeeds.
+        The NVS partition (``nvs_encr_partition.bin``) generated in Step 3 can then be flashed to its respective offset using ``esptool``. To see all of the command line options recommended for ``esptool``, check the output printed when ``idf.py build`` succeeds.
 
         If Flash Encryption is enabled for the chip, please encrypt the partition first before flashing. More details please refer to the flashing related steps of `Flash Encryption workflow <enable-flash-encryption-externally_>`_.
 
@@ -743,6 +743,6 @@ In this case we generate NVS Encryption keys on a host. This key is then flashed
 
 4. Flash NVS partition and NVS encryption keys
 
-    The NVS partition (``nvs_encr_partition.bin``) and NVS encryption key (``nvs_encr_key.bin``) can then be flashed to their respective offset using ``esptool.py``. To see all of the command line options recommended for ``esptool.py``, check the output print when ``idf.py build`` succeeds.
+    The NVS partition (``nvs_encr_partition.bin``) and NVS encryption key (``nvs_encr_key.bin``) can then be flashed to their respective offset using ``esptool``. To see all of the command line options recommended for ``esptool``, check the output print when ``idf.py build`` succeeds.
 
     If Flash Encryption is enabled for the chip, then please encrypt the partition first before flashing. You may refer the flashing related steps of `Flash Encryption workflow <enable-flash-encryption-externally_>`_.

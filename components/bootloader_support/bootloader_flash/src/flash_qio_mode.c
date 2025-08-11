@@ -25,8 +25,8 @@ ESP_LOG_ATTR_TAG(TAG, "qio_mode");
 
 /* Array of known flash chips and data to enable Quad I/O mode
 
-   Manufacturer & flash ID can be tested by running "esptool.py
-   flash_id"
+   Manufacturer & flash ID can be tested by running "esptool
+   flash-id"
 
    If manufacturer ID matches, and flash ID ORed with flash ID mask
    matches, enable_qio_mode() will execute "Read Cmd", test if bit

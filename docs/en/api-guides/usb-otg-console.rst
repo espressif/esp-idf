@@ -6,7 +6,7 @@ USB OTG Console
 On chips with an integrated USB peripheral, it is possible to use USB Communication Device Class (CDC) to implement the serial console, instead of using UART with an external USB-UART bridge chip. {IDF_TARGET_NAME} ROM code contains a USB CDC implementation, which supports for some basic functionality without requiring the application to include the USB stack:
 
 * Bidirectional serial console, which can be used with :doc:`IDF Monitor <tools/idf-monitor>` or another serial monitor.
-* Flashing using ``esptool.py`` and ``idf.py flash``.
+* Flashing using ``esptool`` and ``idf.py flash``.
 * :doc:`Device Firmware Update (DFU) <dfu>` interface for flashing the device using ``dfu-util`` and ``idf.py dfu``.
 
 .. note::

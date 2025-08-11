@@ -777,7 +777,7 @@ macro(idf_build_process target)
         idf_build_set_property(COMPILE_DEFINITIONS "ESP_PLATFORM" APPEND)
 
         # Create flash targets early so components can attach images to them.
-        # These targets will be appended with actual esptool.py command later
+        # These targets will be appended with actual esptool command later
         # in the build process when __idf_build_setup_flash_targets() is called.
         if(NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD AND NOT "${target}" STREQUAL "linux")
             __build_create_flash_targets()
@@ -875,7 +875,7 @@ function(idf_build_executable elf)
             # Setup flash targets and flash configuration
             __idf_build_setup_flash_targets()
 
-            # Setup utility targets such as monitor, erase_flash, merge-bin
+            # Setup utility targets such as monitor, erase-flash, merge-bin
             __esptool_py_setup_utility_targets()
 
             # Setup post-build validation checks

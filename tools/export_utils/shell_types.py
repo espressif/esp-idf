@@ -238,12 +238,13 @@ class PowerShell(Shell):
         self.new_esp_idf_env['IDF_TOOLS_EXPORT_CMD'] = os.path.join(conf.IDF_PATH, 'export.ps1')
 
     def get_functions(self) -> str:
+        ESPTOOL_WRAPPERS = r'$Env:IDF_PATH\components\esptool_py\esptool'
         return '\n'.join(
             [
                 r'function idf.py { &python "$Env:IDF_PATH\tools\idf.py" $args }',
-                r'function global:esptool.py { &python -m esptool $args }',
-                r'function global:espefuse.py { &python -m espefuse $args }',
-                r'function global:espsecure.py { &python -m espsecure $args }',
+                rf'function global:esptool.py {{ &python "{ESPTOOL_WRAPPERS}\esptool.py" $args }}',
+                rf'function global:espefuse.py {{ &python "{ESPTOOL_WRAPPERS}\espefuse.py" $args }}',
+                rf'function global:espsecure.py {{ &python "{ESPTOOL_WRAPPERS}\espsecure.py" $args }}',
                 r'function global:otatool.py { &python "$Env:IDF_PATH\components\app_update\otatool.py" $args }',
                 r'function global:parttool.py { &python "$Env:IDF_PATH\components\partition_table\parttool.py" $args }',
             ]
@@ -294,9 +295,9 @@ class WinCmd(Shell):
         return '\n'.join(
             [
                 r'DOSKEY idf.py=python.exe "%IDF_PATH%\tools\idf.py" $*',
-                r'DOSKEY esptool.py=python.exe -m esptool $*',
-                r'DOSKEY espefuse.py=python.exe -m espefuse $*',
-                r'DOSKEY espsecure.py=python.exe -m espsecure $*',
+                r'DOSKEY esptool.py=python.exe "%IDF_PATH%\components\esptool_py\esptool\esptool.py" $*',
+                r'DOSKEY espefuse.py=python.exe "%IDF_PATH%\components\esptool_py\esptool\espefuse.py" $*',
+                r'DOSKEY espsecure.py=python.exe "%IDF_PATH%\components\esptool_py\esptool\espsecure.py" $*',
                 r'DOSKEY otatool.py=python.exe "%IDF_PATH%\components\app_update\otatool.py" $*',
                 r'DOSKEY parttool.py=python.exe "%IDF_PATH%\components\partition_table\parttool.py" $*',
             ]

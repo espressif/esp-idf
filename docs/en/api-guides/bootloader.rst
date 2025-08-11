@@ -202,7 +202,7 @@ If the bootloader grows too large then it can collide with the partition table, 
 
     The recovery bootloader feature enables safe OTA updates of the bootloader itself. When the eFuse field ``ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR`` is set, it specifies the flash address (in sectors) of the recovery bootloader. If the primary bootloader at {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} fails to load, the ROM bootloader attempts to load the recovery bootloader from this address.
 
-    - The eFuse can be set using ``espefuse.py`` or by calling :cpp:func:`esp_efuse_set_recovery_bootloader_offset()` in the user application.
+    - The eFuse can be set using ``espefuse`` or by calling :cpp:func:`esp_efuse_set_recovery_bootloader_offset()` in the user application.
     - The address can be set using ``CONFIG_BOOTLOADER_RECOVERY_OFFSET``. This value must be a multiple of the flash sector size (0x1000 bytes). The Kconfig option helps ensure that the recovery bootloader does not overlap with existing partitions.
     - Note that the eFuse field stores the offset in sectors. Setting it to the maximum value ``0xFFF`` disables the feature.
     - The recovery bootloader image at the ``CONFIG_BOOTLOADER_RECOVERY_OFFSET`` is not flashed by default. It can be written as part of the OTA update process.

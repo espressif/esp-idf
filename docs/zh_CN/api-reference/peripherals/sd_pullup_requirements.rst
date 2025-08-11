@@ -218,11 +218,11 @@ SD 上拉需求
 
         烧录 eFuse 是不可逆的！上述问题清单可能已经过时，因此请确保要烧录的模组内嵌 3.3 V flash 芯片，可前往 https://www.espressif.com/ 进行确认。如果在带有 1.8 V flash 芯片的模组上烧录 3.3 V eFuse，模组将停止工作。
 
-    如果确定要烧录 eFuse，请转到 ESP-IDF 目录下，通过 ``espefuse.py`` 工具运行以下命令：
+    如果确定要烧录 eFuse，请转到 ESP-IDF 目录下，通过 ``espefuse`` 工具运行以下命令：
 
     .. code-block:: bash
 
-        components/esptool_py/esptool/espefuse.py set_flash_voltage 3.3V
+        espefuse set-flash-voltage 3.3V
 
     此命令将烧录 ``XPD_SDIO_TIEH``、``XPD_SDIO_FORCE`` 和 ``XPD_SDIO_REG`` eFuse。当以上三个 eFuse 被烧录为 1 时，内部 VDD_SDIO flash 电压调节器将被永久设置为 3.3 V。如果烧录成功，将看到以下日志：
 
@@ -244,7 +244,7 @@ SD 上拉需求
 
         idf.py efuse-summary
 
-    如果运行自动烧录脚本，最好使用独立的 eFuse 工具 ``espefuse.py``。此工具还具有 ``--do-not-confirm`` 选项，可在无需确认的情况下烧录 eFuse。
+    如果运行自动烧录脚本，最好使用独立的 eFuse 工具 ``espefuse``。此工具还具有 ``--do-not-confirm`` 选项，可在无需确认的情况下烧录 eFuse。
 
     有关烧录 eFuse 的更多信息，请参阅 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#efuse>`__]。
 

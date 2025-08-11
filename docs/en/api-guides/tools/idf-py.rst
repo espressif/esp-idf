@@ -7,7 +7,7 @@ The ``idf.py`` command-line tool provides a front-end for easily managing your p
 
 - CMake_, which configures the project to be built.
 - Ninja_, which builds the project.
-- `esptool.py`_, which flashes the target.
+- `esptool`_, which flashes the target.
 
 The :ref:`Step 5. First Steps on ESP-IDF <get-started-configure>` contains a brief introduction on how to set up ``idf.py`` to configure, build, and flash projects.
 
@@ -120,7 +120,7 @@ This command automatically builds the project if necessary, and then flash it to
 
 .. note:: The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
 
-``idf.py`` uses the ``write_flash`` command of ``esptool.py`` under the hood to flash the target. You can pass additional arguments to configure the flash writing process using the ``--extra-args`` option. For example, to `write to an external SPI flash chip <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_, use the following command: ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``. To see the full list of available arguments, run ``esptool.py write_flash --help`` or see the `esptool.py documentation <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_.
+``idf.py`` uses the ``write-flash`` command of ``esptool`` under the hood to flash the target. You can pass additional arguments to configure the flash writing process using the ``--extra-args`` option. For example, to `write to an external SPI flash chip <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_, use the following command: ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``. To see the full list of available arguments, run ``esptool write-flash --help`` or see the `esptool documentation <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_.
 
 Similarly to the ``build`` command, the command can be run with ``app``, ``bootloader`` and ``partition-table`` arguments to flash only the app, bootloader or partition table as applicable.
 
@@ -152,7 +152,7 @@ There are also some format specific options, which are listed below:
 - Only for raw format:
 
   - ``--flash-offset``: This option will create a merged binary that should be flashed at the specified offset, instead of at the standard offset of 0x0.
-  - ``--fill-flash-size``: If set, the final binary file will be padded with FF bytes up to this flash size in order to fill the full flash content with the image and re-write the whole flash chip upon flashing.
+  - ``--pad-to-size``: If set, the final binary file will be padded with FF bytes up to this flash size in order to fill the full flash content with the image and re-write the whole flash chip upon flashing.
 
 - Only for uf2 format:
 
@@ -407,6 +407,6 @@ Basic Usage Examples
 
 .. _cmake: https://cmake.org
 .. _ninja: https://ninja-build.org
-.. _esptool.py: https://github.com/espressif/esptool/#readme
+.. _esptool: https://github.com/espressif/esptool/#readme
 .. _CCache: https://ccache.dev/
 .. _click context: https://click.palletsprojects.com/en/stable/api/#context

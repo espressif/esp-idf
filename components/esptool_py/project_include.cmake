@@ -149,15 +149,15 @@ endfunction()
 
 # esptool_py_flash_target
 #
-# @brief Create a flash target that can flash multiple images using esptool.py.
+# @brief Create a flash target that can flash multiple images using esptool.
 #
 # This function is the core of the flashing mechanism. It creates a custom target
-# and attaches the actual esptool.py command to it as a POST_BUILD step. This
+# and attaches the actual esptool command to it as a POST_BUILD step. This
 # ensures that the flash command only runs after all of the target's dependencies
 # (like binary generation) have been successfully built.
 #
 # It works by generating an argument file (`<prefix>_args`) that contains all the
-# necessary parameters for esptool.py. This file's content is constructed using
+# necessary parameters for esptool. This file's content is constructed using
 # CMake generator expressions, which are resolved at build time. This allows the
 # final list of binaries to be flashed to be collected from properties on the
 # target.
@@ -166,8 +166,8 @@ endfunction()
 # target, which handles the logic for encrypting all or a subset of the binaries.
 #
 # @param[in] target_name    Name of the flash target to create
-# @param[in] main_args      Main esptool.py arguments (before write_flash command)
-# @param[in] sub_args       Sub-arguments for write_flash command (flash mode, frequency, size)
+# @param[in] main_args      Main esptool arguments (before write-flash command)
+# @param[in] sub_args       Sub-arguments for write-flash command (flash mode, frequency, size)
 # @param[in, optional]      FILENAME_PREFIX (single value) Prefix for generated argument files.
 #                           If not specified, uses target_name as prefix.
 # @param[in, optional]      ALWAYS_PLAINTEXT (option) Force all images to be flashed as plain text.
@@ -196,7 +196,7 @@ function(esptool_py_flash_target target_name main_args sub_args)
         COMMAND ${CMAKE_COMMAND}
         -D "IDF_PATH=${idf_path}"
         -D "SERIAL_TOOL=${esptool_py_cmd}"
-        -D "SERIAL_TOOL_ARGS=${main_args};write_flash;@${filename_prefix}_args"
+        -D "SERIAL_TOOL_ARGS=${main_args};write-flash;@${filename_prefix}_args"
         -D "WORKING_DIRECTORY=${build_dir}"
         -P ${esptool_py_dir}/run_serial_tool.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
@@ -242,7 +242,7 @@ $<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
             COMMAND ${CMAKE_COMMAND}
             -D "IDF_PATH=${idf_path}"
             -D "SERIAL_TOOL=${esptool_py_cmd}"
-            -D "SERIAL_TOOL_ARGS=${main_args};write_flash;@encrypted_${filename_prefix}_args"
+            -D "SERIAL_TOOL_ARGS=${main_args};write-flash;@encrypted_${filename_prefix}_args"
             -D "WORKING_DIRECTORY=${build_dir}"
             -P ${esptool_py_dir}/run_serial_tool.cmake
             WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
@@ -250,7 +250,7 @@ $<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
             VERBATIM
             )
 
-        # Generate the parameters for esptool.py command
+        # Generate the parameters for esptool command
         # In case we have both non encrypted and encrypted files to flash, we
         # can use --encrypt-files parameter to specify which ones should be
         # encrypted.
@@ -258,7 +258,7 @@ $<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
         # --encrypt parameter.
         # As the properties ENCRYPTED_IMAGES and NON_ENCRYPTED_IMAGES have not
         # been generated yet, we must use CMake expression generator to test
-        # which esptool.py options we can use.
+        # which esptool options we can use.
 
         # The variable has_non_encrypted_image will be evaluated to "1" if some
         # images must not be encrypted. This variable will be used in the next
@@ -350,30 +350,35 @@ endfunction()
 
 # __esptool_py_setup_tools
 #
-# @brief Sets up esptool.py, espsecure.py, and espefuse.py tool commands.
+# @brief Sets up esptool, espsecure, and espefuse tool commands.
 #
 # This function retrieves the necessary paths and Python interpreter, then
-# constructs the full command-line strings for `esptool.py`, `espsecure.py`,
-# and `espefuse.py`. It stores these commands as properties of the `esptool_py`
+# constructs the full command-line strings for `esptool`, `espsecure`,
+# and `espefuse`. It stores these commands as properties of the `esptool_py`
 # component for later use by other functions or components.
 function(__esptool_py_setup_tools)
     idf_build_get_property(target IDF_TARGET)
     idf_build_get_property(python PYTHON)
     idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
 
-    set(esptool_py_cmd ${python} "$ENV{ESPTOOL_WRAPPER}" "${esptool_py_dir}/esptool/esptool.py" --chip ${target})
+    # If ESPTOOL_WRAPPER is set, use it as the wrapper script, otherwise use 'python -m esptool'
+    if(DEFINED ENV{ESPTOOL_WRAPPER} AND NOT "$ENV{ESPTOOL_WRAPPER}" STREQUAL "")
+        set(esptool_py_cmd ${python} "$ENV{ESPTOOL_WRAPPER}" "esptool" "--chip" ${target})
+    else()
+        set(esptool_py_cmd ${python} "-m" "esptool" "--chip" ${target})
+    endif()
     idf_component_set_property(esptool_py ESPTOOLPY_CMD "${esptool_py_cmd}")
 
-    set(espsecure_py_cmd ${python} "${esptool_py_dir}/esptool/espsecure.py")
+    set(espsecure_py_cmd ${python} "-m" "espsecure")
     idf_component_set_property(esptool_py ESPSECUREPY_CMD "${espsecure_py_cmd}")
 
-    set(espefuse_py_cmd ${python} "${esptool_py_dir}/esptool/espefuse.py")
+    set(espefuse_py_cmd ${python} "-m" "espefuse")
     idf_component_set_property(esptool_py ESPEFUSEPY_CMD "${espefuse_py_cmd}")
 endfunction()
 
 # __esptool_py_setup_esptool_py_args
 #
-# @brief Sets up esptool.py arguments for elf2image and flash targets.
+# @brief Sets up esptool arguments for elf2image and flash targets.
 #
 # This function determines the appropriate flash mode, frequency, and size based
 # on the project configuration (Kconfig values). It assembles argument lists
@@ -398,9 +403,9 @@ function(__esptool_py_setup_esptool_py_args)
         set(ESPFLASHSIZE ${CONFIG_ESPTOOLPY_FLASHSIZE})
 
         set(esptool_elf2image_args
-            --flash_mode ${ESPFLASHMODE}
-            --flash_freq ${ESPFLASHFREQ}
-            --flash_size ${ESPFLASHSIZE}
+            --flash-mode ${ESPFLASHMODE}
+            --flash-freq ${ESPFLASHFREQ}
+            --flash-size ${ESPFLASHSIZE}
             )
 
         if(BOOTLOADER_BUILD AND CONFIG_SECURE_BOOT_V2_ENABLED)
@@ -408,7 +413,7 @@ function(__esptool_py_setup_esptool_py_args)
             # If CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES is NOT set, the bootloader
             # image generated is not 4KB aligned for external HSM to sign it readily.
             # Following esptool option --pad-to-size 4KB generates a 4K aligned bootloader image.
-            # In case of signing during build, espsecure.py "sign_data" operation handles the 4K alignment of the image.
+            # In case of signing during build, espsecure "sign-data" operation handles the 4K alignment of the image.
             if(NOT CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
                 list(APPEND esptool_elf2image_args --pad-to-size 4KB)
             endif()
@@ -469,7 +474,7 @@ function(__esptool_py_setup_esptool_py_args)
 
     if(CONFIG_SECURE_BOOT OR CONFIG_SECURE_FLASH_ENC_ENABLED)
         # If security enabled then override post flash option
-        list(APPEND esptool_flash_main_args "--after=no_reset")
+        list(APPEND esptool_flash_main_args "--after=no-reset")
     else()
         list(APPEND esptool_flash_main_args "--after=${CONFIG_ESPTOOLPY_AFTER}")
     endif()
@@ -481,7 +486,7 @@ function(__esptool_py_setup_esptool_py_args)
     # Save flash arguments to component property
     idf_component_set_property(esptool_py FLASH_ARGS "${esptool_flash_main_args}")
     idf_component_set_property(esptool_py FLASH_SUB_ARGS
-                "--flash_mode ${ESPFLASHMODE} --flash_freq ${ESPFLASHFREQ} --flash_size ${ESPFLASHSIZE}")
+                "--flash-mode ${ESPFLASHMODE} --flash-freq ${ESPFLASHFREQ} --flash-size ${ESPFLASHSIZE}")
 
     # Save arguments for flasher_args.json
     idf_component_set_property(esptool_py ESPFLASHMODE "${ESPFLASHMODE}")
@@ -491,7 +496,7 @@ endfunction()
 
 # __ensure_esptool_py_setup
 #
-# @brief Ensures that the esptool.py setup functions have been called once.
+# @brief Ensures that the esptool setup functions have been called once.
 #
 # This function acts as an initializer. It checks if the esptool_py
 # setup has already been performed by checking a component property. If not, it
@@ -512,7 +517,7 @@ endfunction()
 # @brief Sets up the primary target for generating a .bin file from an .elf file.
 #
 # This function creates the custom command and target required to generate a
-# project binary (`.bin`) file from the final `.elf` executable. It uses `esptool.py
+# project binary (`.bin`) file from the final `.elf` executable. It uses `esptool
 # elf2image` to perform the conversion and manages dependencies to ensure the
 # binary is regenerated whenever the ELF file changes.
 #
@@ -530,7 +535,7 @@ function(__idf_build_binary OUTPUT_BIN_FILENAME TARGET_NAME)
     idf_build_get_property(elf_name EXECUTABLE_NAME)
     idf_build_get_post_elf_dependencies("${elf_name}.elf" post_elf_deps)
 
-    # Get esptool.py arguments for elf2image target
+    # Get esptool arguments for elf2image target
     idf_component_get_property(esptool_elf2image_args esptool_py ESPTOOL_PY_ELF2IMAGE_ARGS)
 
     # Create a custom command and target to generate binary from elf file
@@ -574,7 +579,7 @@ endfunction()
 # @brief Sets up targets for generating a signed binary for Secure Boot.
 #
 # If Secure Boot is enabled, this function adds a custom command to sign the
-# previously generated application binary using `espsecure.py`. It creates a
+# previously generated application binary using `espsecure`. It creates a
 # target that depends on the unsigned binary and produces a signed one, which
 # is required for the bootloader to authenticate the application.
 #
@@ -616,7 +621,7 @@ function(__idf_build_secure_binary UNSIGNED_BIN_FILENAME SIGNED_BIN_FILENAME TAR
         endif()
 
         add_custom_command(OUTPUT "${build_dir}/.signed_bin_timestamp"
-            COMMAND ${espsecure_py_cmd} sign_data
+            COMMAND ${espsecure_py_cmd} sign-data
                 --version ${secure_boot_version} --keyfile "${secure_boot_signing_key}"
                 -o "${build_dir}/${SIGNED_BIN_FILENAME}" "${build_dir}/${UNSIGNED_BIN_FILENAME}"
             COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${SIGNED_BIN_FILENAME}"
@@ -651,7 +656,7 @@ function(__idf_build_secure_binary UNSIGNED_BIN_FILENAME SIGNED_BIN_FILENAME TAR
             COMMAND ${CMAKE_COMMAND} -E echo
                 "${comment_text}"
             COMMAND ${CMAKE_COMMAND} -E echo
-                "\t${espsecurepy} sign_data --keyfile KEYFILE --version ${secure_boot_version} \
+                "\t${espsecurepy} sign-data --keyfile KEYFILE --version ${secure_boot_version} \
                 ${build_dir}/${UNSIGNED_BIN_FILENAME}"
             VERBATIM)
     endif()
@@ -659,7 +664,7 @@ endfunction()
 
 # __esptool_py_setup_utility_targets
 #
-# @brief Sets up common utility targets like `erase_flash`, `merge-bin`, and `monitor`
+# @brief Sets up common utility targets like `erase-flash`, `merge-bin`, and `monitor`
 #
 function(__esptool_py_setup_utility_targets)
     __ensure_esptool_py_setup()
@@ -673,18 +678,18 @@ function(__esptool_py_setup_utility_targets)
     idf_component_get_property(esptool_py_cmd esptool_py ESPTOOLPY_CMD)
     idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
 
-    add_custom_target(erase_flash
+    add_custom_target(erase-flash
         COMMAND ${CMAKE_COMMAND}
         -D "IDF_PATH=${idf_path}"
         -D "SERIAL_TOOL=${esptool_py_cmd}"
-        -D "SERIAL_TOOL_ARGS=erase_flash"
+        -D "SERIAL_TOOL_ARGS=erase-flash"
         -P run_serial_tool.cmake
         WORKING_DIRECTORY ${esptool_py_dir}
         USES_TERMINAL
         VERBATIM
         )
 
-    set(MERGE_BIN_ARGS merge_bin)
+    set(MERGE_BIN_ARGS merge-bin)
     if(DEFINED ENV{ESP_MERGE_BIN_OUTPUT})
         list(APPEND MERGE_BIN_ARGS "-o" "$ENV{ESP_MERGE_BIN_OUTPUT}")
     else()

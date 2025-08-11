@@ -1461,7 +1461,7 @@ menu "mbedTLS"
                 with key purpose set to ECDSA_KEY.
                 If no key is burnt, it will report an error
 
-                The key should be burnt in little endian format. espefuse.py utility handles it internally
+                The key should be burnt in little endian format. espefuse utility handles it internally
                 but care needs to be taken while burning using esp_efuse APIs
 
         config MBEDTLS_TEE_SEC_STG_ECDSA_SIGN

@@ -10,7 +10,7 @@
 
 有关乐鑫芯片版本的编码方式，请参考 [关于芯片版本 (Chip Revision) 编码方式的兼容性公告](https://www.espressif.com/sites/default/files/advisory_downloads/AR2022-005%20%E5%85%B3%E4%BA%8E%E8%8A%AF%E7%89%87%E7%89%88%E6%9C%AC%E7%BC%96%E7%A0%81%E6%96%B9%E5%BC%8F%20%28Chip%20Revision%29%20%E7%9A%84%E5%85%BC%E5%AE%B9%E6%80%A7%E5%85%AC%E5%91%8A.pdf)。
 
-运行 `esptool chip_id` 可查看芯片系列及其版本。有关区分芯片版本及版本改进内容的更多信息，请参考 [芯片勘误表](https://www.espressif.com.cn/zh-hans/support/documents/technical-documents?keys=%E5%8B%98%E8%AF%AF%E8%A1%A8)。运行 `idf.py --version` 可查看当前的 ESP-IDF 版本。
+运行 `esptool chip-id` 可查看芯片系列及其版本。有关区分芯片版本及版本改进内容的更多信息，请参考 [芯片勘误表](https://www.espressif.com.cn/zh-hans/support/documents/technical-documents?keys=%E5%8B%98%E8%AF%AF%E8%A1%A8)。运行 `idf.py --version` 可查看当前的 ESP-IDF 版本。
 
 ## ESP-IDF 对各芯片版本的支持
 

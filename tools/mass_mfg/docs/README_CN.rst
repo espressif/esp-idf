@@ -10,7 +10,7 @@
 
 注意，该程序仅创建用于量产的二进制镜像，您需要使用以下工具将镜像烧录到设备上：
 
-- `esptool.py`_
+- `esptool`_
 - `Flash 下载工具 <https://www.espressif.com/en/support/download/other-tools?keys=flash+download+tools>`_ （仅适用于 Windows）。下载后解压，然后按照 doc 文件夹中的说明操作。
 - 使用定制的生产工具直接烧录程序
 
@@ -252,4 +252,4 @@ CSV 配置文件示例如下::
 - ``csv/`` 存储生成的中间 CSV 文件
 - ``keys/`` 存储加密密钥（创建工厂加密镜像时会用到）
 
-.. _esptool.py: https://github.com/espressif/esptool/#readme
+.. _esptool: https://github.com/espressif/esptool/#readme
