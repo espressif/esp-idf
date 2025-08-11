@@ -74,6 +74,7 @@ list(APPEND ldfragments "src/newlib.lf" "src/system_libs.lf")
 
 if(CONFIG_LIBC_NEWLIB)
     list(APPEND ldfragments src/libc.lf)
+    list(APPEND ldfragments src/libm.lf)
 else()
     list(APPEND ldfragments src/picolibc/libc.lf)
 endif()
