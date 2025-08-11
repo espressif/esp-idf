@@ -40,7 +40,6 @@ tools/ci/python_packages/wifi_tools.py
 tools/ci/sg_rules/*
 tools/ci/sort_yaml.py
 tools/ci/utils.sh
-tools/cmakev2/**/*
 tools/eclipse-code-style.xml
 tools/format.sh
 tools/gdb_panic_server.py
