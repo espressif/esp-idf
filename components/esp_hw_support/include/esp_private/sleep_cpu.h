@@ -22,7 +22,7 @@ extern "C" {
  * This file contains declarations of cpu retention related functions in light sleep mode.
  */
 
-#if ESP_SLEEP_POWER_DOWN_CPU || SOC_PM_SUPPORT_CPU_PD
+#if ESP_SLEEP_POWER_DOWN_CPU || (SOC_PM_SUPPORT_CPU_PD && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
 /**
  * @brief Whether to allow the cpu power domain to be powered off.
  *

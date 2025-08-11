@@ -80,6 +80,9 @@ STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MSTATUS,  mstatus)    /* Machine Status */
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MTVEC,    mtvec)      /* Machine Trap-Vector Base Address */
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MTVT,     mtvt)
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MINTTHRESH, mintthresh) /* Machine intr threshold */ // TODO
+#endif
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MCAUSE,   mcause)     /* Machine Trap Cause */
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MTVAL,    mtval)      /* Machine Trap Value */
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MIE,      mie)        /* Machine intr enable */
