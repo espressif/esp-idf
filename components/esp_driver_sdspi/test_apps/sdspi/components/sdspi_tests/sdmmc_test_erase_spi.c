@@ -16,7 +16,7 @@ static void do_one_sdspi_erase(int slot, int freq_khz)
 {
     sdmmc_card_t card;
     sdmmc_test_spi_skip_if_board_incompatible(slot, freq_khz);
-    sdmmc_test_spi_begin(slot, freq_khz, &card);
+    sdmmc_test_spi_begin(slot, freq_khz, &card, NULL, NULL, NULL);
     sdmmc_card_print_info(stdout, &card);
     sdmmc_test_sd_erase_blocks(&card);
     sdmmc_test_spi_end(slot, &card);
