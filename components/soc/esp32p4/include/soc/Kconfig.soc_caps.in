@@ -1915,6 +1915,10 @@ config SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
     bool
     default y
 
+config SOC_PM_SUPPORT_CPU_PD
+    bool
+    default y
+
 config SOC_PM_SUPPORT_XTAL32K_PD
     bool
     default y
@@ -1964,10 +1968,6 @@ config SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR
     default y
 
 config SOC_PAU_IN_TOP_DOMAIN
-    bool
-    default y
-
-config SOC_CPU_IN_TOP_DOMAIN
     bool
     default y
 

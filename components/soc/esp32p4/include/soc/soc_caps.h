@@ -721,6 +721,7 @@
 #define SOC_PM_EXT1_WAKEUP_BY_PMU       (1)
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP    (1)     /*!<Supports waking up from touch pad trigger */
+#define SOC_PM_SUPPORT_CPU_PD           (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
@@ -737,7 +738,6 @@
 #define SOC_PM_PAU_LINK_NUM             (4)
 #define SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR   (1)
 #define SOC_PAU_IN_TOP_DOMAIN           (1)
-#define SOC_CPU_IN_TOP_DOMAIN           (1)
 
 #define SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE  (1)
 #define SOC_SLEEP_SYSTIMER_STALL_WORKAROUND 1    //TODO IDF-11381: replace with all xtal field clk gate control
