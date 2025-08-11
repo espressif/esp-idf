@@ -91,7 +91,14 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
 #endif //ESP_ROM_HAS_LP_ROM
 
     LP_CORE_RCC_ATOMIC() {
+#if CONFIG_ULP_NORESET_UNDER_DEBUG
+        /* lp_core module reset causes loss of configured HW breakpoints and dcsr.ebreak* */
+        if (!esp_cpu_dbgr_is_attached()) {
+            lp_core_ll_reset_register();
+        }
+#else
         lp_core_ll_reset_register();
+#endif
         lp_core_ll_enable_bus_clock(true);
     }
 
