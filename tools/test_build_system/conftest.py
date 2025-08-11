@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import datetime
 import logging
@@ -11,10 +11,10 @@ from tempfile import mkdtemp
 
 import pytest
 from _pytest.fixtures import FixtureRequest
-from test_build_system_helpers import EnvDict
 from test_build_system_helpers import EXT_IDF_PATH
-from test_build_system_helpers import get_idf_build_env
+from test_build_system_helpers import EnvDict
 from test_build_system_helpers import IdfPyFunc
+from test_build_system_helpers import get_idf_build_env
 from test_build_system_helpers import run_idf_py
 
 
@@ -36,13 +36,15 @@ def should_clean_test_dir(request: FixtureRequest) -> bool:
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
-        '--work-dir', action='store', default=None,
-        help='Directory for temporary files. If not specified, an OS-specific '
-             'temporary directory will be used.'
+        '--work-dir',
+        action='store',
+        default=None,
+        help='Directory for temporary files. If not specified, an OS-specific temporary directory will be used.',
     )
     parser.addoption(
-        '--cleanup-idf-copy', action='store_true',
-        help='Always clean up the IDF copy after the test. By default, the copy is cleaned up only if the test passes.'
+        '--cleanup-idf-copy',
+        action='store_true',
+        help='Always clean up the IDF copy after the test. By default, the copy is cleaned up only if the test passes.',
     )
     parser.addoption(
         '--buildv2',
@@ -52,7 +54,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 @pytest.fixture(scope='session')
-def _session_work_dir(request: FixtureRequest) -> typing.Generator[typing.Tuple[Path, bool], None, None]:
+def _session_work_dir(request: FixtureRequest) -> typing.Generator[tuple[Path, bool], None, None]:
     work_dir = request.config.getoption('--work-dir')
 
     if work_dir:
@@ -76,7 +78,7 @@ def _session_work_dir(request: FixtureRequest) -> typing.Generator[typing.Tuple[
 
 
 @pytest.fixture(name='func_work_dir', autouse=True)
-def work_dir(request: FixtureRequest, _session_work_dir: typing.Tuple[Path, bool]) -> typing.Generator[Path, None, None]:
+def work_dir(request: FixtureRequest, _session_work_dir: tuple[Path, bool]) -> typing.Generator[Path, None, None]:
     session_work_dir, is_temp_dir = _session_work_dir
 
     if request._pyfuncitem.keywords.get('force_temp_work_dir') and not is_temp_dir:
@@ -122,7 +124,9 @@ def test_app_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Genera
     ignore = shutil.ignore_patterns(
         path_to.name,
         # also ignore files which may be present in the work directory
-        'build', 'sdkconfig')
+        'build',
+        'sdkconfig',
+    )
 
     logging.debug(f'copying {path_from} to {path_to}')
     shutil.copytree(path_from, path_to, ignore=ignore, symlinks=True)
@@ -135,7 +139,7 @@ def test_app_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Genera
     os.chdir(old_cwd)
 
     if should_clean_test_dir(request):
-        logging.debug('cleaning up work directory after a successful test: {}'.format(path_to))
+        logging.debug(f'cleaning up work directory after a successful test: {path_to}')
         shutil.rmtree(path_to, ignore_errors=True)
 
 
@@ -149,8 +153,21 @@ def test_git_template_app(func_work_dir: Path, request: FixtureRequest) -> typin
     logging.debug(f'cloning git-template app to {path_to}')
     path_to.mkdir()
     # No need to clone full repository, just a single master branch
-    subprocess.run(['git', 'clone', '--single-branch', '-b', 'master', '--depth', '1', 'https://github.com/espressif/esp-idf-template.git', '.'],
-                   cwd=path_to, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.run(
+        [
+            'git',
+            'clone',
+            '--single-branch',
+            '-b',
+            'master',
+            '--depth',
+            '1',
+            'https://github.com/espressif/esp-idf-template.git',
+            '.',
+        ],
+        cwd=path_to,
+        capture_output=True,
+    )
 
     old_cwd = Path.cwd()
     os.chdir(path_to)
@@ -160,7 +177,7 @@ def test_git_template_app(func_work_dir: Path, request: FixtureRequest) -> typin
     os.chdir(old_cwd)
 
     if should_clean_test_dir(request):
-        logging.debug('cleaning up work directory after a successful test: {}'.format(path_to))
+        logging.debug(f'cleaning up work directory after a successful test: {path_to}')
         shutil.rmtree(path_to, ignore_errors=True)
 
 
@@ -188,7 +205,9 @@ def idf_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[P
         path_to.name,
         # also ignore the build directories which may be quite large
         # plus ignore .git since it is causing trouble when removing on Windows
-        '**/build', '.git')
+        '**/build',
+        '.git',
+    )
 
     logging.debug(f'copying {path_from} to {path_to}')
     shutil.copytree(path_from, path_to, ignore=ignore, symlinks=True)
@@ -201,7 +220,7 @@ def idf_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[P
     os.environ['IDF_PATH'] = orig_idf_path
 
     if should_clean_test_dir(request):
-        logging.debug('cleaning up work directory after a successful test: {}'.format(path_to))
+        logging.debug(f'cleaning up work directory after a successful test: {path_to}')
         shutil.rmtree(path_to, ignore_errors=True)
 
 
@@ -212,6 +231,7 @@ def fixture_default_idf_env() -> EnvDict:
 
 @pytest.fixture
 def idf_py(default_idf_env: EnvDict) -> IdfPyFunc:
-    def result(*args: str, check: bool = True, input_str: typing.Optional[str] = None) -> subprocess.CompletedProcess:
+    def result(*args: str, check: bool = True, input_str: str | None = None) -> subprocess.CompletedProcess:
         return run_idf_py(*args, env=default_idf_env, workdir=os.getcwd(), check=check, input_str=input_str)  # type: ignore
+
     return result
