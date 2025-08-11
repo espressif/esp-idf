@@ -67,7 +67,9 @@ typedef struct {
     int64_t             data_process;   /*!< data processed */
     int                 method;         /*!< http method */
     bool                is_chunked;
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_GET_CONTENT_RANGE
     int64_t             content_range;  /*!< content range */
+#endif
 } esp_http_data_t;
 
 typedef struct {
@@ -279,6 +281,7 @@ static int http_on_header_value(http_parser *parser, const char *at, size_t leng
     if (client->current_header_key == NULL) {
         return 0;
     }
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_GET_CONTENT_RANGE
     if (strcasecmp(client->current_header_key, "Content-Range") == 0) {
         HTTP_RET_ON_FALSE_DBG(http_utils_append_string(&client->current_header_value, at, length), -1, TAG, "Failed to append string");
 
@@ -301,7 +304,9 @@ static int http_on_header_value(http_parser *parser, const char *at, size_t leng
         } else {
             ESP_LOGE(TAG, "Invalid Content-Range format (missing '/')");
         }
-    } else if (strcasecmp(client->current_header_key, "Location") == 0) {
+    } else
+#endif
+    if (strcasecmp(client->current_header_key, "Location") == 0) {
         HTTP_RET_ON_FALSE_DBG(http_utils_append_string(&client->location, at, length), -1, TAG, "Failed to append string");
     } else if (strcasecmp(client->current_header_key, "Transfer-Encoding") == 0
                && memcmp(at, "chunked", length) == 0) {
@@ -1859,10 +1864,12 @@ int64_t esp_http_client_get_content_length(esp_http_client_handle_t client)
     return client->response->content_length;
 }
 
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_GET_CONTENT_RANGE
 int64_t esp_http_client_get_content_range(esp_http_client_handle_t client)
 {
     return client->response->content_range;
 }
+#endif
 
 bool esp_http_client_is_chunked_response(esp_http_client_handle_t client)
 {

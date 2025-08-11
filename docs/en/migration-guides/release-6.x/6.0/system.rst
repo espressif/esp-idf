@@ -104,3 +104,10 @@ Binary data format has been dropped. `CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN` is no
 CRC data integrity check has been dropped. `ESP_COREDUMP_CHECKSUM_CRC32` is no longer supported. SHA256 is now the default checksum algorithm.
 
 The function :cpp:func:`esp_core_dump_partition_and_size_get()` now returns `ESP_ERR_NOT_FOUND` for blank (erased) partitions instead of `ESP_ERR_INVALID_SIZE`.
+
+OTA Updates
+-----------
+
+The partial download functionality in ESP HTTPS OTA has been moved under a configuration option in order to reduce the memory footprint if partial download is not used.
+
+To use partial download features in your OTA applications, you need to enable the component-level configuration :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``).
