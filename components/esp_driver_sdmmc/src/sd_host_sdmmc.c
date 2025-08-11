@@ -1291,8 +1291,8 @@ static esp_err_t sdmmc_slot_io_config(sd_host_sdmmc_slot_t *slot, const sd_host_
                 gpio_config_t gpio_conf = {
                     .pin_bit_mask = BIT64(slot_gpio->d3_io),
                     .mode = GPIO_MODE_OUTPUT,
-                    .pull_up_en = 0,
-                    .pull_down_en = 0,
+                    .pull_up_en = GPIO_PULLUP_DISABLE,
+                    .pull_down_en = GPIO_PULLDOWN_DISABLE,
                     .intr_type = GPIO_INTR_DISABLE,
                 };
                 gpio_config(&gpio_conf);

@@ -294,8 +294,8 @@ static void rtcio_deep_sleep_hold_test_first_stage(void)
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_INPUT_OUTPUT,
         .pin_bit_mask = (1ULL << io_num),
-        .pull_down_en = 0,
-        .pull_up_en = 0,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
     };
     gpio_config(&io_conf);
 

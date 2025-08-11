@@ -97,8 +97,8 @@ static void connect_signal_internally(uint32_t gpio, uint32_t sigo, uint32_t sig
         .pin_bit_mask = BIT64(gpio),
         .mode = GPIO_MODE_INPUT_OUTPUT,
         .intr_type = GPIO_INTR_DISABLE,
-        .pull_down_en = false,
-        .pull_up_en = false,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
     };
     gpio_config(&gpio_conf);
     esp_rom_gpio_connect_out_signal(gpio, sigo, false, false);

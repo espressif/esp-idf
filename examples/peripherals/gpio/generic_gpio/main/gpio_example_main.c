@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,9 +84,9 @@ void app_main(void)
     //bit mask of the pins that you want to set,e.g.GPIO18/19
     io_conf.pin_bit_mask = GPIO_OUTPUT_PIN_SEL;
     //disable pull-down mode
-    io_conf.pull_down_en = 0;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     //disable pull-up mode
-    io_conf.pull_up_en = 0;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     //configure GPIO with the given settings
     gpio_config(&io_conf);
 
@@ -97,7 +97,7 @@ void app_main(void)
     //set as input mode
     io_conf.mode = GPIO_MODE_INPUT;
     //enable pull-up mode
-    io_conf.pull_up_en = 1;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     gpio_config(&io_conf);
 
     //change gpio interrupt type for one pin

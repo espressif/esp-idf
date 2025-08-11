@@ -139,7 +139,7 @@ static void gpio_d2_set_high(void)
     gpio_config_t d2_config = {
         .pin_bit_mask = BIT64(PIN_D2),
         .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = true,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
     };
     gpio_config(&d2_config);
     gpio_set_level(PIN_D2, 1);
@@ -313,8 +313,8 @@ void slave_power_on(void)
     gpio_config_t cfg = {
         .pin_bit_mask = BIT64(GPIO_B1),
         .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = false,
-        .pull_down_en = false,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
     gpio_config(&cfg);

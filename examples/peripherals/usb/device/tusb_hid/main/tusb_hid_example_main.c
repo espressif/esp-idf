@@ -158,8 +158,8 @@ void app_main(void)
         .pin_bit_mask = BIT64(APP_BUTTON),
         .mode = GPIO_MODE_INPUT,
         .intr_type = GPIO_INTR_DISABLE,
-        .pull_up_en = true,
-        .pull_down_en = false,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
     };
     ESP_ERROR_CHECK(gpio_config(&boot_button_config));
 

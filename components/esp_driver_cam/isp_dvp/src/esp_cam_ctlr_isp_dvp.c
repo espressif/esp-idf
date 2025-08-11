@@ -521,8 +521,8 @@ static esp_err_t s_isp_io_init(isp_dvp_controller_t *dvp_ctlr, const esp_cam_ctl
     gpio_config_t gpio_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_INPUT,
-        .pull_down_en = false,
-        .pull_up_en = true,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
     };
 
     if (ctlr_config->pclk_io >= 0) {

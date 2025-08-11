@@ -269,8 +269,8 @@ void set_output_pin(uint32_t num_pin)
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask = (1ULL << num_pin);
-    io_conf.pull_down_en = 0;
-    io_conf.pull_up_en = 0;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     TEST_ESP_OK(gpio_config(&io_conf));
 
     TEST_ESP_OK(gpio_set_level(num_pin, 0));
