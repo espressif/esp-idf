@@ -560,4 +560,22 @@ menu "OpenThread"
                 failure.
     endmenu
 
+    menuconfig OPENTHREAD_DEBUG
+        bool "Enable ESP OpenThread Debug"
+        default n
+        help
+            Enable additional debugging support for ESP OpenThread integration.
+            This includes various diagnostic tools and logs to help track down
+            issues in OpenThread networking or system integration
+
+    config OPENTHREAD_DUMP_MAC_ON_ASSERT
+        bool "Dump 802.15.4 MAC debug info on OpenThread assert"
+        depends on OPENTHREAD_DEBUG && OPENTHREAD_RADIO_NATIVE && IEEE802154_DEBUG
+        default n
+        help
+            When enabled, this option triggers the printing of 802.15.4 MAC layer debug
+            information whenever an OpenThread assert occurs. This can help developers
+            analyze unexpected failures by providing additional MAC layer context.
+
+
 endmenu
