@@ -118,7 +118,12 @@ typedef union {
         uint32_t dcdc_switch_pd_en: 1;
         uint32_t mem_dslp     : 1;
         uint32_t mem_pd_en    : 1;
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
         uint32_t reserved1    : 6;
+#else
+        uint32_t reserved1    : 5;
+        uint32_t cpu_pd_en    : 1;
+#endif
         uint32_t cnnt_pd_en   : 1;
         uint32_t top_pd_en    : 1;
     };
