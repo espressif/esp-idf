@@ -35,9 +35,8 @@ void ble_stack_enableVsCmds(bool en)
 
 #if DEFAULT_BT_LE_ROLE_OBSERVER
     scan_stack_enableAdvFlowCtrlVsCmd(en);
-#endif // DEFAULT_BT_LE_ROLE_OBSERVER
-
     scan_stack_enableSpecifyScanChanVsCmd(en);
+#endif // DEFAULT_BT_LE_ROLE_OBSERVER
 
     chanSel_stack_enableSetCsaVsCmd(en);
     hci_stack_enableSetVsEvtMaskVsCmd(en);
