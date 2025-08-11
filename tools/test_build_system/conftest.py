@@ -10,7 +10,10 @@ from pathlib import Path
 from tempfile import mkdtemp
 
 import pytest
+from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
+from _pytest.main import Session
+from _pytest.nodes import Item
 from test_build_system_helpers import EXT_IDF_PATH
 from test_build_system_helpers import EnvDict
 from test_build_system_helpers import IdfPyFunc
@@ -235,3 +238,13 @@ def idf_py(default_idf_env: EnvDict) -> IdfPyFunc:
         return run_idf_py(*args, env=default_idf_env, workdir=os.getcwd(), check=check, input_str=input_str)  # type: ignore
 
     return result
+
+
+def pytest_collection_modifyitems(session: Session, config: Config, items: list[Item]) -> None:
+    if not config.getoption('--buildv2', False):
+        return
+    for item in items:
+        marker = item.get_closest_marker('buildv2_skip')
+        if marker:
+            reason = marker.args[0] if marker.args else 'Skipped as this test is specific to build system v1.'
+            item.add_marker(pytest.mark.skip(reason=reason))
