@@ -28,6 +28,8 @@
 #error "Unsupported architecture for unwinding"
 #endif
 
+#define MAX_ITERATIONS  100
+
 /**
  * @brief Dimension of an array (number of elements)
  */
@@ -589,7 +591,8 @@ static inline uint32_t esp_eh_frame_execute_opcode_0(const uint32_t opcode, cons
  * @param state DWARF machine state. The registers contained in the state will
  *              modified accordingly to the instructions.
  *
- * @return true if the execution went fine, false if an unsupported instruction was met.
+ * @return true if the execution went fine, false if an unsupported instruction was met or if the DWARF
+ *         instructions were not enough (not properly generated) to reach the current location (PC).
  */
 static bool esp_eh_frame_execute(const uint8_t* instructions, const uint32_t instructions_length,
                                  const ExecutionFrame* frame, dwarf_regs* state)
@@ -637,8 +640,18 @@ static bool esp_eh_frame_execute(const uint8_t* instructions, const uint32_t ins
 
         /* As the state->location can also be modified by 0-opcode instructions (in the function)
          * and also because we need to break the loop (and not only the switch), let's put this
-         * check here, after the execution of the instruction, outside of the switch block. */
-        if (state->location >= EXECUTION_FRAME_PC(*frame)) {
+         * check here, after the execution of the instruction, outside of the switch block.
+         * We should stop executing the opcodes as soon as we go AFTER the program counter that
+         * interests us. For example, if we have the following DWARF instructions:
+         * ```
+         *   DW_CFA_advance_loc: 2 to 40382ecc
+         *   DW_CFA_offset: r1 (ra) at cfa-4
+         *   DW_CFA_nop
+         * ```
+         * And out current PC is `0x40382ecc`, we MUST execute the instructions that are after it
+         * (until the next DW_CFA_advance_loc, where we would need to stop)
+         * */
+        if (state->location > EXECUTION_FRAME_PC(*frame)) {
             break;
         }
     }
@@ -866,7 +879,7 @@ void esp_eh_frame_print_backtrace(const void *frame_or)
     ExecutionFrame frame = *((ExecutionFrame*) frame_or);
     uint32_t size = 0;
     uint8_t* enc_values = NULL;
-    bool end_of_backtrace = false;
+    int iterations = 0;
 
     /* Start parsing the .eh_frame_hdr section. */
     fde_header* header = (fde_header*) EH_FRAME_HDR_ADDR;
@@ -893,7 +906,7 @@ void esp_eh_frame_print_backtrace(const void *frame_or)
     const table_entry* sorted_table = (const table_entry*) enc_values;
 
     panic_print_str("Backtrace:");
-    while (!end_of_backtrace) {
+    for (iterations = 1; iterations < MAX_ITERATIONS; iterations++) {
 
         /* Output one step of the backtrace. */
         esp_eh_frame_generated_step(EXECUTION_FRAME_PC(frame), EXECUTION_FRAME_SP(frame));
@@ -927,13 +940,19 @@ void esp_eh_frame_print_backtrace(const void *frame_or)
         uint32_t ra = esp_eh_frame_restore_caller_state(fde, &frame, &state);
 
         /* End of backtrace is reached if the stack and the PC don't change anymore. */
-        end_of_backtrace = (EXECUTION_FRAME_SP(frame) == prev_sp) && (EXECUTION_FRAME_PC(frame) == ra);
+        if ((EXECUTION_FRAME_SP(frame) == prev_sp) && (EXECUTION_FRAME_PC(frame) == ra)) {
+            break;
+        }
 
         /* Go back to the caller: update stack pointer and program counter. */
         EXECUTION_FRAME_PC(frame) = ra;
     }
 
     panic_print_str("\r\n");
+
+    if (iterations >= MAX_ITERATIONS) {
+        panic_print_str("Backtrace ended abruptly: maximum iterations reached\r\n");
+    }
 }
 
 /**
