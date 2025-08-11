@@ -88,7 +88,7 @@ typedef struct {
 #define ESP_BT_EIR_TYPE_TX_POWER_LEVEL          0x0a      /*!< Tx power level, value is 1 octet ranging from  -127 to 127, unit is dBm*/
 #define ESP_BT_EIR_TYPE_URL                     0x24      /*!< Uniform resource identifier */
 #define ESP_BT_EIR_TYPE_MANU_SPECIFIC           0xff      /*!< Manufacturer specific data */
-#define  ESP_BT_EIR_TYPE_MAX_NUM                12        /*!< MAX number of EIR type */
+#define ESP_BT_EIR_TYPE_MAX_NUM                 12        /*!< MAX number of EIR type */
 
 typedef uint8_t esp_bt_eir_type_t;
 
