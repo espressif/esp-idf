@@ -325,6 +325,10 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "touch_sens_hal.c")
     endif()
 
+    if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
+        list(APPEND srcs "temperature_sensor_hal.c")
+    endif()
+
     if(${target} STREQUAL "esp32s2")
         list(APPEND srcs
                     "xt_wdt_hal.c"
