@@ -359,6 +359,11 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
     if (https_ota_handle->binary_file_len > 0 && !https_ota_handle->partial_http_download) {
         char *header_val = NULL;
         asprintf(&header_val, "bytes=%d-", https_ota_handle->binary_file_len);
+        if (header_val == NULL) {
+            ESP_LOGE(TAG, "Failed to allocate memory for HTTP header");
+            err = ESP_ERR_NO_MEM;
+            goto http_cleanup;
+        }
         esp_http_client_set_header(https_ota_handle->http_client, "Range", header_val);
         free(header_val);
     }
