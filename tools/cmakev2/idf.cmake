@@ -20,6 +20,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/../cmake/version.cmake)
 include(component)
 include(build)
 include(kconfig)
+include(project)
 include(GetGitRevisionDescription)
 
 #[[
