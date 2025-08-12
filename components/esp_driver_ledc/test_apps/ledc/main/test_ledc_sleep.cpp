@@ -92,7 +92,7 @@ TEST_CASE("ledc can output after light sleep (LEDC power domain pd)", "[ledc]")
 }
 #endif
 
-static const ledc_clk_src_t test_ledc_clk_in_slp[] = {
+static const ledc_clk_cfg_t test_ledc_clk_in_slp[] = {
     LEDC_USE_RC_FAST_CLK,
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
     LEDC_USE_XTAL_CLK,
@@ -107,7 +107,7 @@ static void ledc_output_monitor(void)
         unity_wait_for_signal("Go to light sleep for 3 seconds");
         vTaskDelay(500 / portTICK_PERIOD_MS);
         int pulse_count = wave_count(200);
-        uint32_t acceptable_delta = (test_ledc_clk_in_slp[i] == (ledc_clk_src_t)LEDC_USE_RC_FAST_CLK) ? 20 : 5; // RC_FAST as the clk src has a bigger error range is reasonable
+        uint32_t acceptable_delta = (test_ledc_clk_in_slp[i] == LEDC_USE_RC_FAST_CLK) ? 20 : 5; // RC_FAST as the clk src has a bigger error range is reasonable
         TEST_ASSERT_UINT32_WITHIN(acceptable_delta, TEST_PWM_LOW_FREQ * 200 / 1000, pulse_count);
         unity_wait_for_signal("Waked up!");
     }

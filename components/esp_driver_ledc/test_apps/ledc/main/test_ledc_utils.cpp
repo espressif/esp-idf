@@ -13,8 +13,7 @@
 
 ledc_channel_config_t initialize_channel_config(void)
 {
-    ledc_channel_config_t config;
-    memset(&config, 0, sizeof(ledc_channel_config_t));
+    ledc_channel_config_t config = {};
     config.gpio_num = PULSE_IO;
     config.speed_mode = TEST_SPEED_MODE;
     config.channel  = LEDC_CHANNEL_0;
@@ -26,8 +25,7 @@ ledc_channel_config_t initialize_channel_config(void)
 
 ledc_timer_config_t create_default_timer_config(void)
 {
-    ledc_timer_config_t ledc_time_config;
-    memset(&ledc_time_config, 0, sizeof(ledc_timer_config_t));
+    ledc_timer_config_t ledc_time_config = {};
     ledc_time_config.speed_mode = TEST_SPEED_MODE;
     ledc_time_config.duty_resolution = LEDC_TIMER_13_BIT;
     ledc_time_config.timer_num = LEDC_TIMER_0;

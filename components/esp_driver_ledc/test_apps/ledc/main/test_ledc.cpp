@@ -407,13 +407,13 @@ TEST_CASE("LEDC multi fade test", "[ledc]")
 
     // Construct fade parameters
     const ledc_fade_param_config_t fade_params[] = {
-        {.dir = 1, .step_num = 100, .cycle_num = 1, .scale = 1},
-        {.dir = 1, .step_num = 50, .cycle_num = 2, .scale = 2},
-        {.dir = 1, .step_num = 200, .cycle_num = 10, .scale = 5},
-        {.dir = 0, .step_num = 100, .cycle_num = 5, .scale = 5},
-        {.dir = 1, .step_num = 1000, .cycle_num = 1, .scale = 1},
-        {.dir = 0, .step_num = 200, .cycle_num = 1, .scale = 1},
-        {.dir = 1, .step_num = 1, .cycle_num = 1000, .scale = 1000},
+        {.dir = 1, .cycle_num = 1, .scale = 1, .step_num = 100},
+        {.dir = 1, .cycle_num = 2, .scale = 2, .step_num = 50},
+        {.dir = 1, .cycle_num = 10, .scale = 5, .step_num = 200},
+        {.dir = 0, .cycle_num = 5, .scale = 5, .step_num = 100},
+        {.dir = 1, .cycle_num = 1, .scale = 1, .step_num = 1000},
+        {.dir = 0, .cycle_num = 1, .scale = 1, .step_num = 200},
+        {.dir = 1, .cycle_num = 1000, .scale = 1000, .step_num = 1},
     };
     uint32_t fade_range = 7;
     int32_t start_duty = 2000;
@@ -455,13 +455,12 @@ static void frequency_set_get(ledc_mode_t speed_mode, ledc_timer_t timer, uint32
 
 static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_bit, ledc_timer_t timer, ledc_mode_t speed_mode)
 {
-    ledc_timer_config_t ledc_time_config = {
-        .speed_mode = speed_mode,
-        .duty_resolution = timer_bit,
-        .timer_num = timer,
-        .freq_hz = TEST_PWM_FREQ,
-        .clk_cfg = TEST_DEFAULT_CLK_CFG,
-    };
+    ledc_timer_config_t ledc_time_config = {};
+    ledc_time_config.speed_mode = speed_mode;
+    ledc_time_config.duty_resolution = timer_bit;
+    ledc_time_config.timer_num = timer;
+    ledc_time_config.freq_hz = TEST_PWM_FREQ;
+    ledc_time_config.clk_cfg = TEST_DEFAULT_CLK_CFG;
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
     TEST_ESP_OK(ledc_bind_channel_timer(speed_mode, channel, timer));
 
@@ -516,16 +515,15 @@ TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60]")
 }
 
 #if SOC_CLK_TREE_SUPPORTED
-static void timer_set_clk_src_and_freq_test(ledc_mode_t speed_mode, ledc_clk_cfg_t clk_src, uint32_t duty_res,
+static void timer_set_clk_src_and_freq_test(ledc_mode_t speed_mode, ledc_clk_cfg_t clk_src, ledc_timer_bit_t duty_res,
                                             uint32_t freq_hz)
 {
-    ledc_timer_config_t ledc_time_config = {
-        .speed_mode = speed_mode,
-        .duty_resolution = duty_res,
-        .timer_num = LEDC_TIMER_0,
-        .freq_hz = freq_hz,
-        .clk_cfg = clk_src,
-    };
+    ledc_timer_config_t ledc_time_config = {};
+    ledc_time_config.speed_mode = speed_mode;
+    ledc_time_config.duty_resolution = duty_res;
+    ledc_time_config.timer_num = LEDC_TIMER_0;
+    ledc_time_config.freq_hz = freq_hz;
+    ledc_time_config.clk_cfg = clk_src;
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
     TEST_ESP_OK(ledc_update_duty(speed_mode, LEDC_CHANNEL_0)); // Start
     vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -542,38 +540,36 @@ static void timer_set_clk_src_and_freq_test(ledc_mode_t speed_mode, ledc_clk_cfg
 TEST_CASE("LEDC timer select specific clock source", "[ledc]")
 {
     const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
-    ledc_channel_config_t ledc_ch_config = {
-        .gpio_num = PULSE_IO,
-        .speed_mode = test_speed_mode,
-        .channel  = LEDC_CHANNEL_0,
-        .intr_type = LEDC_INTR_DISABLE,
-        .timer_sel = LEDC_TIMER_0,
-        .duty = 800,
-        .hpoint = 0,
-    };
+    ledc_channel_config_t ledc_ch_config = {};
+    ledc_ch_config.gpio_num = PULSE_IO;
+    ledc_ch_config.speed_mode = test_speed_mode;
+    ledc_ch_config.channel  = LEDC_CHANNEL_0;
+    ledc_ch_config.timer_sel = LEDC_TIMER_0;
+    ledc_ch_config.duty = 800;
+    ledc_ch_config.hpoint = 0;
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 
     if (test_speed_mode == LEDC_LOW_SPEED_MODE) {
 #if SOC_CLK_RC_FAST_SUPPORT_CALIBRATION // Otherwise, the frequency of output PWM signal may not be very accurate
         printf("Check LEDC_USE_RC_FAST_CLK for a 100Hz signal\n");
-        timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_RC_FAST_CLK, 10, 100);
+        timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_RC_FAST_CLK, LEDC_TIMER_10_BIT, 100);
 #endif
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
         printf("Check LEDC_USE_XTAL_CLK for a 400Hz signal\n");
-        timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_XTAL_CLK, 13, 400);
+        timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_XTAL_CLK, LEDC_TIMER_13_BIT, 400);
 #endif
     }
 #if SOC_LEDC_SUPPORT_REF_TICK
     printf("Check LEDC_USE_REF_TICK for a 250Hz signal\n");
-    timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_REF_TICK, 10, 250);
+    timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_REF_TICK, LEDC_TIMER_10_BIT, 250);
 #endif
 #if SOC_LEDC_SUPPORT_APB_CLOCK
     printf("Check LEDC_USE_APB_CLK for a 500Hz signal\n");
-    timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_APB_CLK, 13, 500);
+    timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_APB_CLK, LEDC_TIMER_13_BIT, 500);
 #endif
 #if SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
     printf("Check LEDC_USE_PLL_DIV_CLK for a 500Hz signal\n");
-    timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_PLL_DIV_CLK, 13, 500);
+    timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_PLL_DIV_CLK, LEDC_TIMER_13_BIT, 500);
 #endif
 
     printf("Bind channel 0 to timer 0\n");
@@ -591,24 +587,21 @@ TEST_CASE("LEDC timer pause and resume", "[ledc]")
     const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
     int count;
 
-    ledc_timer_config_t ledc_time_config = {
-        .speed_mode = test_speed_mode,
-        .duty_resolution = LEDC_TIMER_13_BIT,
-        .timer_num = LEDC_TIMER_0,
-        .freq_hz = TEST_PWM_FREQ,
-        .clk_cfg = TEST_DEFAULT_CLK_CFG,
-    };
+    ledc_timer_config_t ledc_time_config = {};
+    ledc_time_config.speed_mode = test_speed_mode;
+    ledc_time_config.duty_resolution = LEDC_TIMER_13_BIT;
+    ledc_time_config.timer_num = LEDC_TIMER_0;
+    ledc_time_config.freq_hz = TEST_PWM_FREQ;
+    ledc_time_config.clk_cfg = TEST_DEFAULT_CLK_CFG;
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
 
-    ledc_channel_config_t ledc_ch_config = {
-        .gpio_num = PULSE_IO,
-        .speed_mode = test_speed_mode,
-        .channel  = LEDC_CHANNEL_0,
-        .intr_type = LEDC_INTR_DISABLE,
-        .timer_sel = LEDC_TIMER_0,
-        .duty = 4000,
-        .hpoint = 0,
-    };
+    ledc_channel_config_t ledc_ch_config = {};
+    ledc_ch_config.gpio_num = PULSE_IO;
+    ledc_ch_config.speed_mode = test_speed_mode;
+    ledc_ch_config.channel  = LEDC_CHANNEL_0;
+    ledc_ch_config.timer_sel = LEDC_TIMER_0;
+    ledc_ch_config.duty = 4000;
+    ledc_ch_config.hpoint = 0;
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 
     vTaskDelay(10 / portTICK_PERIOD_MS);
