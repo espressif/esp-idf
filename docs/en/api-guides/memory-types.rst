@@ -189,10 +189,10 @@ The ``DRAM_ATTR`` attribute can be used to force constants from DROM into the :r
 
 .. only:: SOC_MEM_TCM_SUPPORTED
 
-    TCM (Tightly-Coupled Memory)
+    SPM (Scratchpad Memory)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    TCM is memory placed near the CPU, accessible at CPU frequency without passing through a cache. Even though on average, it may not surpass the efficiency or speed of cached memory, it does provide predictable and consistent access times. TCM can be useful for time-critical routines where having a deterministic access speed is important.
+    SPM (Scratchpad Memory) is a dedicated on-chip memory located near the processor core, offering deterministic access timing. SPM does not rely on hardware caching mechanisms; instead, its access is explicitly managed by software, ensuring predictable and stable latency. The access latency of SPM is configuration dependent. When parity check is enabled, the latency is 4 clock cycles and memory bandwidth is reduced. When parity check is disabled, the latency is 1 clock cycle. This type of memory is typically used to store critical code and data that are sensitive to access timing, making it suitable for real-time systems or embedded applications with strict performance and response time requirements.
 
 
 DMA-Capable Requirement
