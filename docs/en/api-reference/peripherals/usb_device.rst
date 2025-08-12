@@ -62,14 +62,18 @@ Hardware Connection
     External PHY Configuration
     --------------------------
 
-    The {IDF_TARGET_NAME} contains two USB controllers - the USB-OTG and USB-Serial-JTAG. However, both controllers share a **single PHY**, which means only one can operate at a time. To use USB Device functionality while the USB-Serial-JTAG is active (e.g., for debugging or flashing), an **external PHY** is required, since the PHY is used by USB-Serial-JTAG.
+    The {IDF_TARGET_NAME} contains two USB controllers: USB-OTG and USB-Serial-JTAG. However, both controllers share a **single PHY**, which means only one can operate at a time. To use USB Device functionality while the USB-Serial-JTAG is active (e.g., for debugging or flashing), an **external PHY** is required, since the PHY is used by USB-Serial-JTAG.
 
     .. note::
-        An external PHY is not the only way to enable debugging alongside USB Host or Device functionality. It is also possible to switch the debugging interface from USB-Serial-JTAG to plain JTAG by burning the appropriate eFuses. For details, refer to the *JTAG Debugging* section in the ESP-IDF Programming Guide for your target.
+        An external PHY is not the only way to enable debugging alongside USB Host or Device functionality. It is also possible to switch the debugging interface from USB-Serial-JTAG to plain JTAG by burning the appropriate eFuses. For details, refer to document :doc:`JTAG Debugging <../../api-guides/jtag-debugging/index>` in ESP-IDF Programming Guide for your target.
 
-    {IDF_TARGET_NAME} supports connecting external PHY ICs. This becomes especially relevant when full-speed USB device functionality is needed while the USB-Serial-JTAG controller is also in use. Various external PHY ICs may require different hardware modifications. Please refer to each IC's datasheet for specifics. A general connection diagram can be found in the official ESP documentation:
+    {IDF_TARGET_NAME} supports connecting external PHY ICs. This becomes especially relevant when full-speed USB device functionality is needed while the USB-Serial-JTAG controller is also in use. Various external PHY ICs may require different hardware modifications. Please refer to each IC's datasheet for specifics. A general connection diagram below is provided for reference. For more information, please refer to `Use an external PHY <https://docs.espressif.com/projects/esp-iot-solution/en/latest/usb/usb_overview/usb_phy.html#use-an-external-phy>`__.
 
-    `ESP PHY Guide (External PHY Section) <https://docs.espressif.com/projects/esp-iot-solution/en/latest/usb/usb_overview/usb_phy.html#use-an-external-phy>`__
+    .. figure:: ../../../_static/usb_device/usb_fs_phy_sp5301.png
+       :align: center
+       :alt: usb_fs_phy_sp5301
+
+       A typical circuit diagram for an external PHY
 
     **List of Tested External PHY ICs:**
 
@@ -84,7 +88,7 @@ Hardware Connection
 
     .. note::
         This schematic is a minimal example intended only to demonstrate the external PHY connection. It omits other essential components and signals (e.g., VCC, GND, RESET) required for a complete, functional {IDF_TARGET_NAME} design.
-        The schematic includes both a +5V rail (usually from USB VBUS) and a VCC rail. VCC should match the chip supply voltage (usually 3.3V). Ensure that the external PHY and the chip are powered from the same voltage domain. If designing a self-powered USB device, connect VBUSDET signal from the external PHY to {IDF_TARGET_NAME} for mandatory VBUS monitoring.
+        The schematic includes both a +5 V rail (usually from USB VBUS) and a VCC rail. VCC should match the chip supply voltage (usually 3.3 V). Ensure that the external PHY and the chip are powered from the same voltage domain. If designing a self-powered USB device, connect VBUSDET signal from the external PHY to {IDF_TARGET_NAME} for mandatory VBUS monitoring.
 
     Hardware configuration is handled via GPIO mapping to the PHY's pins. Any unused pins (e.g., :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num`, :cpp:member:`usb_phy_ext_io_conf_t::fs_edge_sel_io_num`) **must be set to -1**.
 
@@ -94,9 +98,9 @@ Hardware Connection
 
     Starting from version 2.0, the ESP TinyUSB Device Stack supports external PHY usage. To use an external PHY in device mode:
 
-    1. Configure the GPIO mapping and PHY using :cpp:type:`usb_phy_config_t`
-    2. Create the PHY using :cpp:func:`usb_new_phy()`
-    3. Use :cpp:func:`TINYUSB_DEFAULT_CONFIG()` to initialize :cpp:type:`tinyusb_config_t`
+    1. Configure the GPIO mapping and PHY using :cpp:type:`usb_phy_config_t`.
+    2. Create the PHY using :cpp:func:`usb_new_phy()`.
+    3. Use :cpp:func:`TINYUSB_DEFAULT_CONFIG()` to initialize :cpp:type:`tinyusb_config_t`.
     4. Set the `phy.skip_setup` field of :cpp:type:`tinyusb_config_t` to ``true`` to bypass PHY reinitialization and use the externally configured PHY.
 
     **Example Code:**

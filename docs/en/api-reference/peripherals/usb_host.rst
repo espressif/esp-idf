@@ -412,14 +412,12 @@ UVC
     External PHY Configuration
     --------------------------
 
-    The {IDF_TARGET_NAME} contains two USB controllers - the USB-OTG and USB-Serial-JTAG. However, both controllers share a **single PHY**, which means only one can operate at a time. To use USB Host functionality while the USB-Serial-JTAG is active (e.g., for debugging or flashing), an **external PHY** is required, since the PHY is used by USB-Serial-JTAG.
+    The {IDF_TARGET_NAME} contains two USB controllers—the USB-OTG and USB-Serial-JTAG. However, both controllers share a **single PHY**, which means only one can operate at a time. To use USB Host functionality while the USB-Serial-JTAG is active (e.g., for debugging or flashing), an **external PHY** is required, since the PHY is used by USB-Serial-JTAG.
 
     .. note::
-        An external PHY is not the only way to enable debugging alongside USB Host or Device functionality. It is also possible to switch the debugging interface from USB-Serial-JTAG to plain JTAG by burning the appropriate eFuses. For details, refer to the *JTAG Debugging* section in the ESP-IDF Programming Guide for your target.
+        An external PHY is not the only way to enable debugging alongside USB Host or Device functionality. It is also possible to switch the debugging interface from USB-Serial-JTAG to plain JTAG by burning the appropriate eFuses. For details, refer to the `JTAG Debugging <https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/jtag-debugging/index.html>`_ in the ESP-IDF Programming Guide for your target.
 
-    {IDF_TARGET_NAME} supports connecting external PHY ICs. This allows independent operation of both USB-OTG and USB-Serial-JTAG controllers. Various external PHY ICs may require different hardware configurations. Please refer to the respective IC datasheets for details. A general connection diagram is available in the official ESP documentation:
-
-    `ESP PHY Guide (External PHY Section) <https://docs.espressif.com/projects/esp-iot-solution/en/latest/usb/usb_overview/usb_phy.html#use-an-external-phy>`__
+    {IDF_TARGET_NAME} supports connecting external PHY ICs. This allows independent operation of both USB-OTG and USB-Serial-JTAG controllers. Various external PHY ICs may require different hardware configurations. Please refer to the respective IC datasheets for details. A general connection diagram is available in the official ESP documentation: `Use an external PHY <https://docs.espressif.com/projects/esp-iot-solution/en/latest/usb/usb_overview/usb_phy.html#use-an-external-phy>`__.
 
     **List of Tested External PHY ICs:**
 
