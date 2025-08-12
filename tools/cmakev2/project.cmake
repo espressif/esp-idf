@@ -516,6 +516,13 @@ endfunction()
    build system functions. It initializes the PROJECT_NAME and PROJECT_VER
    build properties, as well as all default C, CXX, and ASM compile options,
    link options, and compile definitions.
+
+   This macro also includes project_include.cmake files for the discovered
+   components, as these files define project-wide functionality that needs to
+   be available before any component's CMakeLists.txt is evaluated. The
+   project_include.cmake files should be evaluated in the global scope.
+   Therefore, this is defined as a macro and should be called only from the
+   global scope or from within another macro.
 #]]
 macro(idf_project_init)
     idf_build_get_property(project_initialized __PROJECT_INITIALIZED)
@@ -531,6 +538,26 @@ macro(idf_project_init)
 
         # Initialize all compilation options and defines.
         __init_project_configuration()
+
+        # Include all project_include.cmake files for the components that have
+        # been discovered.
+        idf_build_get_property(component_names COMPONENTS_DISCOVERED)
+        foreach(component_name IN LISTS component_names)
+            idf_component_get_property(project_include ${component_name} __PROJECT_INCLUDE)
+            idf_component_get_property(component_dir ${component_name} COMPONENT_DIR)
+            if(project_include)
+                set(COMPONENT_NAME ${component_name})
+                set(COMPONENT_DIR ${component_dir})
+                # The use of COMPONENT_PATH is deprecated in cmakev1. Users
+                # are encouraged to use COMPONENT_DIR instead.
+                set(COMPONENT_PATH ${component_dir})
+                idf_dbg("Including ${project_include}")
+                include("${project_include}")
+                unset(COMPONENT_NAME)
+                unset(COMPONENT_DIR)
+                unset(COMPONENT_PATH)
+            endif()
+        endforeach()
 
         idf_build_set_property(__PROJECT_INITIALIZED YES)
     endif()
