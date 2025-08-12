@@ -1441,10 +1441,23 @@ static void btc_ble_vendor_hci_cmd_complete_callback(tBTA_VSC_CMPL *p_param)
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT;
+
     if (!param_invalid) {
-        param.vendor_cmd_cmpl.opcode = p_param->opcode;
-        param.vendor_cmd_cmpl.param_len = p_param->param_len;
-        param.vendor_cmd_cmpl.p_param_buf = p_param->p_param_buf;
+        switch (p_param->opcode) {
+        case 0xFD0F:
+            msg.act = ESP_GAP_BLE_SET_COMMON_FACTOR_CMPL_EVT;
+            param.set_common_factor_cmpl.status = p_param->p_param_buf[0];
+            break;
+        case 0xFD10:
+            msg.act = ESP_GAP_BLE_SET_SCH_LEN_CMPL_EVT;
+            param.set_sch_len_cmpl.status = p_param->p_param_buf[0];
+            break;
+        default:
+            param.vendor_cmd_cmpl.opcode = p_param->opcode;
+            param.vendor_cmd_cmpl.param_len = p_param->param_len;
+            param.vendor_cmd_cmpl.p_param_buf = p_param->p_param_buf;
+            break;
+        }
     } else {
         if (p_param) {
             param.vendor_cmd_cmpl.opcode = p_param->opcode;
@@ -1455,7 +1468,11 @@ static void btc_ble_vendor_hci_cmd_complete_callback(tBTA_VSC_CMPL *p_param)
         param.vendor_cmd_cmpl.p_param_buf = NULL;
     }
 
-    ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), btc_gap_ble_cb_deep_copy, btc_gap_ble_cb_deep_free);
+    if (msg.act == ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT) {
+        ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), btc_gap_ble_cb_deep_copy, btc_gap_ble_cb_deep_free);
+    } else {
+        ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
+    }
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
