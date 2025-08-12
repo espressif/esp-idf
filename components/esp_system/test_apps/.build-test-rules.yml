@@ -11,9 +11,6 @@ components/esp_system/test_apps/console:
     - if: CONFIG_NAME == "console_no_vfs" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1
   disable_test:
     - if: CONFIG_NAME == "simple" and IDF_TARGET != "esp32"
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
-      temporary: true
-      reason: runner issue, IDFCI-3064
 
 components/esp_system/test_apps/esp_system_unity_tests:
   disable:

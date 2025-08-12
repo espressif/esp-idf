@@ -25,7 +25,6 @@ def test_esp_system_console_no_output_uart(dut: Dut) -> None:
 
 
 @pytest.mark.usb_serial_jtag
-@pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5'], reason='IDFCI-3064, temporary lack runner')
 @idf_parametrize('config', ['serial_jtag_only'], indirect=['config'])
 @idf_parametrize('flash_port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['flash_port'])
 @idf_parametrize('port', ['/dev/serial_ports/ttyACM-esp32'], indirect=['port'])
@@ -40,7 +39,6 @@ def test_esp_system_console_only_serial_jtag(dut: Dut) -> None:
 
 
 @pytest.mark.usb_serial_jtag
-@pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5'], reason='IDFCI-3064, temporary lack runner')
 @idf_parametrize('config', ['serial_jtag_only_no_vfs'], indirect=['config'])
 @idf_parametrize('flash_port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['flash_port'])
 @idf_parametrize('port', ['/dev/serial_ports/ttyACM-esp32'], indirect=['port'])
@@ -51,7 +49,6 @@ def test_esp_system_console_only_serial_jtag_no_vfs(dut: Dut) -> None:
 
 
 @pytest.mark.usb_serial_jtag
-@pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5'], reason='IDFCI-3064, temporary lack runner')
 @idf_parametrize('config', ['console_no_vfs'], indirect=['config'])
 @idf_parametrize('flash_port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['flash_port'])
 @idf_parametrize('port', ['/dev/serial_ports/ttyACM-esp32'], indirect=['port'])
