@@ -167,7 +167,7 @@ TEST_CASE("TEST DVP driver intern/extern generate xclk", "[DVP]")
     dvp_config.external_xtal = false;
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_cam_new_dvp_ctlr(&dvp_config, &handle));
 
-    pin_cfg.xclk_io = 20;
+    pin_cfg.xclk_io = 15;
     dvp_config.pin = &pin_cfg;
     TEST_ESP_OK(esp_cam_new_dvp_ctlr(&dvp_config, &handle));
     TEST_ESP_OK(esp_cam_ctlr_del(handle));
@@ -175,11 +175,11 @@ TEST_CASE("TEST DVP driver intern/extern generate xclk", "[DVP]")
 
 TEST_CASE("TEST DVP driver only output xclk signal", "[DVP]")
 {
-    TEST_ESP_OK(esp_cam_ctlr_dvp_start_clock(0, 20, CAM_CLK_SRC_DEFAULT, 20000000));
+    TEST_ESP_OK(esp_cam_ctlr_dvp_start_clock(0, 15, CAM_CLK_SRC_DEFAULT, 20000000));
     TEST_ESP_OK(esp_cam_ctlr_dvp_deinit(0));
 
 #if CONFIG_IDF_TARGET_ESP32S3
-    TEST_ESP_OK(esp_cam_ctlr_dvp_start_clock(0, 20, CAM_CLK_SRC_PLL240M, 24000000));
+    TEST_ESP_OK(esp_cam_ctlr_dvp_start_clock(0, 15, CAM_CLK_SRC_PLL240M, 24000000));
     TEST_ESP_OK(esp_cam_ctlr_dvp_deinit(0));
 #endif
 }
