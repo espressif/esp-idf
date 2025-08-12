@@ -53,7 +53,7 @@ TEST_CASE("LP I2C initialize on i2c slave", "[i2c]")
     i2c_slv_config.i2c_port = LP_I2C_NUM_0;
     i2c_slv_config.sda_io_num = LP_I2C_SDA_IO;
     i2c_slv_config.scl_io_num = LP_I2C_SCL_IO;
-    i2c_slv_config.clk_source = LP_I2C_SCLK_DEFAULT;
+    i2c_slv_config.clk_source = static_cast<i2c_clock_source_t>(LP_I2C_SCLK_DEFAULT);
     i2c_slv_config.send_buf_depth = 256;
     i2c_slv_config.slave_addr = 0x58;
     i2c_slv_config.addr_bit_len = I2C_ADDR_BIT_LEN_7;
@@ -83,7 +83,7 @@ TEST_CASE("LP I2C initialize with wrong IO", "[i2c]")
 TEST_CASE("LP I2C initialize with wrong clock source", "[i2c]")
 {
     i2c_master_bus_config_t i2c_mst_config = {};
-    i2c_mst_config.lp_source_clk = I2C_CLK_SRC_DEFAULT;
+    i2c_mst_config.lp_source_clk = static_cast<lp_i2c_clock_source_t>(I2C_CLK_SRC_DEFAULT);
     i2c_mst_config.i2c_port = LP_I2C_NUM_0;
     i2c_mst_config.scl_io_num = LP_I2C_SCL_IO;
     i2c_mst_config.sda_io_num = LP_I2C_SDA_IO;

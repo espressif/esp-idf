@@ -17,7 +17,6 @@
 #include "esp_log.h"
 #include "test_utils.h"
 #include "driver/gptimer.h"
-
 #if SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 #include "hal/spimem_flash_ll.h"
 
@@ -61,7 +60,7 @@ static bool IRAM_ATTR gptimer_alarm_suspend_cb(gptimer_handle_t timer, const gpt
 TEST_CASE("Flash suspend support on i2c", "[i2c]")
 {
     // Init context.
-    spi_flash_test_context_t *context = heap_caps_calloc(1, sizeof(spi_flash_test_context_t), MALLOC_CAP_DEFAULT);
+    spi_flash_test_context_t *context = static_cast<spi_flash_test_context_t *>(heap_caps_calloc(1, sizeof(spi_flash_test_context_t), MALLOC_CAP_DEFAULT));
     assert(context != NULL);
 
     context->sem = xSemaphoreCreateBinary();
@@ -92,23 +91,20 @@ TEST_CASE("Flash suspend support on i2c", "[i2c]")
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
     gptimer_handle_t gptimer = NULL;
-    gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
-        .direction = GPTIMER_COUNT_UP,
-        .resolution_hz = TIMER_RESOLUTION_HZ,
-    };
+    gptimer_config_t timer_config = {};
+    timer_config.clk_src = GPTIMER_CLK_SRC_DEFAULT;
+    timer_config.direction = GPTIMER_COUNT_UP;
+    timer_config.resolution_hz = TIMER_RESOLUTION_HZ;
     TEST_ESP_OK(gptimer_new_timer(&timer_config, &gptimer));
 
-    gptimer_alarm_config_t alarm_config = {
-        .reload_count = 0,
-        .alarm_count = 1000,
-        .flags = {.auto_reload_on_alarm = true},
-    };
+    gptimer_alarm_config_t alarm_config = {};
+    alarm_config.reload_count = 0;
+    alarm_config.alarm_count = 1000;
+    alarm_config.flags.auto_reload_on_alarm = true;
     TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
 
-    gptimer_event_callbacks_t cbs = {
-        .on_alarm = gptimer_alarm_suspend_cb,
-    };
+    gptimer_event_callbacks_t cbs = {};
+    cbs.on_alarm = gptimer_alarm_suspend_cb;
 
     TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, dev_handle));
     TEST_ESP_OK(gptimer_enable(gptimer));
