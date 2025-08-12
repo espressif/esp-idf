@@ -24,6 +24,21 @@ include(project)
 include(GetGitRevisionDescription)
 
 #[[
+   __init_build_version()
+
+   Set the global variables IDF_BUILD_V2 and IDF_BUILD_VER, as well as the
+   build properties and environmental variables.
+#]]
+function(__init_build_version)
+    set(IDF_BUILD_V2 y PARENT_SCOPE)
+    set(IDF_BUILD_VER 2 PARENT_SCOPE)
+    idf_build_set_property(IDF_BUILD_V2 y)
+    idf_build_set_property(IDF_BUILD_VER 2)
+    set(ENV{IDF_BUILD_V2} y)
+    set(ENV{IDF_BUILD_VER} 2)
+endfunction()
+
+#[[
    __init_idf_path()
 
    Determine the IDF_PATH value, either from the IDF_PATH environmental
@@ -483,6 +498,9 @@ idf_build_set_property(BUILD_DIR "${CMAKE_BINARY_DIR}")
 
 # Enable the generation of compile_commands.json.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Initialize build system version.
+__init_build_version()
 
 # Initialize IDF_PATH and set it as a global and environmental variable, as
 # well as a build property.
