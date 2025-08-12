@@ -761,7 +761,7 @@ static uint32_t s_get_src_clk_freq(i2c_clock_source_t clk_src)
         break;
 #endif
 #if SOC_I2C_SUPPORT_REF_TICK
-    case RMT_CLK_SRC_REF_TICK:
+    case I2C_CLK_SRC_REF_TICK:
         periph_src_clk_hz = REF_CLK_FREQ;
         break;
 #endif
