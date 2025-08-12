@@ -172,15 +172,6 @@
  * \{
  */
 
-/* The following units have ESP32 hardware support,
-   uncommenting each _ALT macro will use the
-   hardware-accelerated implementation. */
-#ifdef CONFIG_MBEDTLS_HARDWARE_AES
-#define MBEDTLS_AES_ALT
-#else
-#undef MBEDTLS_AES_ALT
-#endif
-
 #ifdef CONFIG_MBEDTLS_HARDWARE_AES
 #define MBEDTLS_GCM_ALT
 #ifdef CONFIG_MBEDTLS_GCM_SUPPORT_NON_AES_CIPHER
@@ -1968,6 +1959,31 @@
 #undef MBEDTLS_AES_C
 #endif
 
+/* The following units have ESP32 hardware support,
+   uncommenting each _ALT macro will use the
+   hardware-accelerated implementation. */
+#ifdef CONFIG_MBEDTLS_HARDWARE_AES
+#define MBEDTLS_AES_ALT
+#define MBEDTLS_PSA_ACCEL_ALG_CBC_NO_PADDING
+#undef MBEDTLS_PSA_BUILTIN_ALG_CBC_NO_PADDING
+#define MBEDTLS_PSA_ACCEL_ALG_CBC_PKCS7
+#undef MBEDTLS_PSA_ACCEL_ALG_CBC_PKCS7
+#define MBEDTLS_PSA_ACCEL_ALG_CCM
+#undef MBEDTLS_PSA_BUILTIN_ALG_CCM
+#define MBEDTLS_PSA_ACCEL_ALG_CCM_STAR_NO_TAG
+#undef MBEDTLS_PSA_ACCEL_ALG_CCM_STAR_NO_TAG
+#define MBEDTLS_PSA_ACCEL_ALG_CMAC
+#undef MBEDTLS_PSA_BUILTIN_ALG_CMAC
+#define MBEDTLS_PSA_ACCEL_ALG_CFB
+#undef MBEDTLS_PSA_BUILTIN_ALG_CFB
+#undef MBEDTLS_AES_C
+// #define MBEDTLS_PSA_ACCEL_ALG_CHACHA20_POLY1305
+#define MBEDTLS_PSA_ACCEL_ALG_CTR
+#undef MBEDTLS_PSA_BUILTIN_ALG_CTR
+#else
+#undef MBEDTLS_AES_ALT
+#endif
+
 /**
  * \def MBEDTLS_ASN1_PARSE_C
  *
@@ -2950,24 +2966,23 @@
 #endif
 
 /**
- * \def MBEDTLS_SHA256_C
+ * \def MBEDTLS_SHA512_C
  *
- * Enable the SHA-224 and SHA-256 cryptographic hash algorithms.
+ * Enable the SHA-384 and SHA-512 cryptographic hash algorithms.
  *
- * Module:  library/mbedtls_sha256.c
+ * Module:  library/sha512.c
  * Caller:  library/entropy.c
- *          library/mbedtls_md.c
+ *          library/md.c
  *          library/ssl_tls.c
- *          library/ssl*_client.c
- *          library/ssl*_server.c=
+ *          library/ssl_cookie.c
  *
- * This module adds support for SHA-224 and SHA-256.
- * This module is required for the SSL/TLS 1.2 PRF function.
+ * This module adds support for SHA-384 and SHA-512.
  */
-#ifdef CONFIG_MBEDTLS_SHA256_C
-#define MBEDTLS_SHA256_C
+#ifdef CONFIG_MBEDTLS_SHA512_C
+#define MBEDTLS_SHA512_C
 #else
-#undef MBEDTLS_SHA256_C
+#undef MBEDTLS_SHA512_C
+#undef PSA_WANT_ALG_SHA_512
 #endif
 
 /**
@@ -2992,23 +3007,56 @@
 #endif
 
 /**
- * \def MBEDTLS_SHA512_C
+ * \def MBEDTLS_SHA256_C
  *
- * Enable the SHA-384 and SHA-512 cryptographic hash algorithms.
+ * Enable the SHA-224 and SHA-256 cryptographic hash algorithms.
  *
- * Module:  library/sha512.c
+ * Module:  library/mbedtls_sha256.c
  * Caller:  library/entropy.c
- *          library/md.c
+ *          library/mbedtls_md.c
  *          library/ssl_tls.c
- *          library/ssl_cookie.c
+ *          library/ssl*_client.c
+ *          library/ssl*_server.c=
  *
- * This module adds support for SHA-384 and SHA-512.
+ * This module adds support for SHA-224 and SHA-256.
+ * This module is required for the SSL/TLS 1.2 PRF function.
  */
-#ifdef CONFIG_MBEDTLS_SHA512_C
-#define MBEDTLS_SHA512_C
+#ifdef CONFIG_MBEDTLS_SHA256_C
+#define MBEDTLS_SHA256_C
 #else
-#undef MBEDTLS_SHA512_C
-#undef PSA_WANT_ALG_SHA_512
+#undef MBEDTLS_SHA256_C
+#endif
+
+/* MBEDTLS_SHAxx_ALT to enable hardware SHA support
+   with software fallback.
+*/
+#ifdef CONFIG_MBEDTLS_HARDWARE_SHA
+    #define MBEDTLS_SHA1_ALT
+    #define MBEDTLS_SHA256_ALT
+    #define MBEDTLS_PSA_ACCEL_ALG_SHA_1
+    #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_1
+    #define MBEDTLS_PSA_ACCEL_ALG_SHA_224
+    #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_224
+    #define MBEDTLS_PSA_ACCEL_ALG_SHA_256
+    #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_256
+    #undef MBEDTLS_SHA1_C
+    #undef MBEDTLS_SHA256_C
+    #undef MBEDTLS_SHA224_C
+    #if SOC_SHA_SUPPORT_SHA512
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_512
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_512
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_384
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_384
+        #undef MBEDTLS_SHA512_C
+        #undef MBEDTLS_SHA384_C
+        #define MBEDTLS_SHA512_ALT
+    #else
+        #undef MBEDTLS_SHA512_ALT
+    #endif
+#else
+    #undef MBEDTLS_SHA1_ALT
+    #undef MBEDTLS_SHA256_ALT
+    #undef MBEDTLS_SHA512_ALT
 #endif
 
 /**

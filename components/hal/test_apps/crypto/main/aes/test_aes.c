@@ -54,12 +54,28 @@ static void test_cbc_aes(size_t buffer_size, const uint8_t expected_cipher_end[3
 
     // Encrypt
     memcpy(nonce, iv, 16);
-    TEST_ASSERT_EQUAL(0, esp_aes_crypt_cbc(&ctx, ESP_AES_ENCRYPT, buffer_size, nonce, plaintext, ciphertext));
+#ifdef SOC_AES_SUPPORT_DMA
+    if (is_dma) {
+        esp_aes_crypt_cbc(&ctx, ESP_AES_ENCRYPT, buffer_size, nonce, plaintext, ciphertext);
+    }
+    else
+#endif
+    {
+        aes_crypt_cbc_block(ESP_AES_ENCRYPT, key_bits / 8, key_256, buffer_size, nonce, plaintext, ciphertext);
+    }
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + buffer_size - 32, 32);
 
     // Decrypt
     memcpy(nonce, iv, 16);
-    TEST_ASSERT_EQUAL(0, esp_aes_crypt_cbc(&ctx, ESP_AES_DECRYPT, buffer_size, nonce, ciphertext, decryptedtext));
+#ifdef SOC_AES_SUPPORT_DMA
+    if (is_dma) {
+        esp_aes_crypt_cbc(&ctx, ESP_AES_DECRYPT, buffer_size, nonce, ciphertext, decryptedtext);
+    }
+    else
+#endif
+    {
+        aes_crypt_cbc_block(ESP_AES_DECRYPT, key_bits / 8, key_256, buffer_size, nonce, ciphertext, decryptedtext);
+    }
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, buffer_size);
 
     esp_aes_free(&ctx);
@@ -92,13 +108,29 @@ static void test_ctr_aes(size_t buffer_size, const uint8_t expected_cipher_end[3
 
     // Encrypt
     memcpy(nonce, iv, 16);
-    TEST_ASSERT_EQUAL(0, esp_aes_crypt_ctr(&ctx, buffer_size, &nc_off, nonce, stream_block, plaintext, ciphertext));
+#ifdef SOC_AES_SUPPORT_DMA
+    if (is_dma) {
+        esp_aes_crypt_ctr(&ctx, buffer_size, &nc_off, nonce, stream_block, plaintext, ciphertext);
+    }
+    else
+#endif
+    {
+        aes_crypt_ctr_block(key_bits / 8, key_256, buffer_size, &nc_off, nonce, stream_block, plaintext, ciphertext);
+    }
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + buffer_size - 32, 32);
 
     // Decrypt
     memcpy(nonce, iv, 16);
     nc_off = 0;
-    TEST_ASSERT_EQUAL(0, esp_aes_crypt_ctr(&ctx, buffer_size, &nc_off, nonce, stream_block, ciphertext, decryptedtext));
+#ifdef SOC_AES_SUPPORT_DMA
+    if (is_dma) {
+        esp_aes_crypt_ctr(&ctx, buffer_size, &nc_off, nonce, stream_block, ciphertext, decryptedtext);
+    }
+    else
+#endif
+    {
+        aes_crypt_ctr_block(key_bits / 8, key_256, buffer_size, &nc_off, nonce, stream_block, ciphertext, decryptedtext);
+    }
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, buffer_size);
 
     esp_aes_free(&ctx);
@@ -131,13 +163,13 @@ static void test_ofb_aes(size_t buffer_size, const uint8_t expected_cipher_end[3
 
     // Encrypt
     memcpy(nonce, iv, 16);
-    TEST_ASSERT_EQUAL(0, esp_aes_crypt_ofb(&ctx, buffer_size, &nc_off, nonce, plaintext, ciphertext));
+    esp_aes_crypt_ofb(&ctx, buffer_size, &nc_off, nonce, plaintext, ciphertext);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + buffer_size - 32, 32);
 
     // Decrypt
     memcpy(nonce, iv, 16);
     nc_off = 0;
-    TEST_ASSERT_EQUAL(0, esp_aes_crypt_ofb(&ctx, buffer_size, &nc_off, nonce, ciphertext, decryptedtext));
+    esp_aes_crypt_ofb(&ctx, buffer_size, &nc_off, nonce, ciphertext, decryptedtext);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, buffer_size);
 
     esp_aes_free(&ctx);
@@ -168,12 +200,12 @@ static void test_cfb8_aes(size_t buffer_size, const uint8_t expected_cipher_end[
 
     // Encrypt
     memcpy(nonce, iv, 16);
-    TEST_ASSERT_EQUAL(0, esp_aes_crypt_cfb8(&ctx, ESP_AES_ENCRYPT, buffer_size, nonce, plaintext, ciphertext));
+    esp_aes_crypt_cfb8(&ctx, ESP_AES_ENCRYPT, buffer_size, nonce, plaintext, ciphertext);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + buffer_size - 32, 32);
 
     // Decrypt
     memcpy(nonce, iv, 16);
-    TEST_ASSERT_EQUAL(0, esp_aes_crypt_cfb8(&ctx, ESP_AES_DECRYPT, buffer_size, nonce, ciphertext, decryptedtext));
+    esp_aes_crypt_cfb8(&ctx, ESP_AES_DECRYPT, buffer_size, nonce, ciphertext, decryptedtext);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, buffer_size);
 
     esp_aes_free(&ctx);
@@ -205,13 +237,13 @@ static void test_cfb128_aes(size_t buffer_size, const uint8_t expected_cipher_en
 
     // Encrypt
     memcpy(nonce, iv, 16);
-    TEST_ASSERT_EQUAL(0, esp_aes_crypt_cfb128(&ctx, ESP_AES_ENCRYPT, buffer_size, &nc_off, nonce, plaintext, ciphertext));
+    esp_aes_crypt_cfb128(&ctx, ESP_AES_ENCRYPT, buffer_size, &nc_off, nonce, plaintext, ciphertext);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + buffer_size - 32, 32);
 
     // Decrypt
     nc_off = 0;
     memcpy(nonce, iv, 16);
-    TEST_ASSERT_EQUAL(0, esp_aes_crypt_cfb128(&ctx, ESP_AES_DECRYPT, buffer_size, &nc_off, nonce, ciphertext, decryptedtext));
+    esp_aes_crypt_cfb128(&ctx, ESP_AES_DECRYPT, buffer_size, &nc_off, nonce, ciphertext, decryptedtext);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, buffer_size);
 
     esp_aes_free(&ctx);
@@ -222,7 +254,7 @@ static void test_cfb128_aes(size_t buffer_size, const uint8_t expected_cipher_en
     heap_caps_free(decryptedtext);
 }
 
-#if SOC_GCM_SUPPORTED
+#if CONFIG_SOC_AES_SUPPORT_GCM
 #define CIPHER_ID_AES 2
 static void test_gcm_aes(size_t length, const uint8_t expected_last_block[16], const uint8_t expected_tag[16])
 {
@@ -273,6 +305,7 @@ static void test_gcm_aes(size_t length, const uint8_t expected_last_block[16], c
 }
 #endif /* SOC_GCM_SUPPORTED */
 #endif /* SOC_AES_SUPPORT_DMA */
+#endif // CONFIG_SOC_AES_SUPPORT_GCM
 
 TEST(aes, cbc_aes_256_block_test)
 {
@@ -339,7 +372,7 @@ TEST(aes, cfb128_aes_256_long_dma_test)
 
 #endif
 
-#if SOC_GCM_SUPPORTED
+#if CONFIG_SOC_AES_SUPPORT_GCM
 TEST(aes, gcm_aes_dma_test)
 {
     size_t length = 16;
@@ -372,6 +405,7 @@ TEST(aes, gcm_aes_long_dma_test)
 #endif /* CONFIG_CRYPTO_TESTAPP_USE_AES_INTERRUPT */
 #endif /* SOC_GCM_SUPPORTED */
 #endif /* SOC_AES_SUPPORT_DMA */
+#endif /* CONFIG_SOC_AES_SUPPORT_GCM */
 
 TEST_GROUP_RUNNER(aes)
 {
@@ -390,8 +424,9 @@ TEST_GROUP_RUNNER(aes)
     RUN_TEST_CASE(aes, cfb8_aes_256_long_dma_test);
     RUN_TEST_CASE(aes, cfb128_aes_256_long_dma_test);
 #endif /* CONFIG_CRYPTO_TESTAPP_USE_AES_INTERRUPT */
-#if SOC_GCM_SUPPORTED
+#if CONFIG_SOC_AES_SUPPORT_GCM
     RUN_TEST_CASE(aes, gcm_aes_dma_test);
+#endif /* CONFIG_SOC_AES_SUPPORT_GCM */
 #if CONFIG_CRYPTO_TESTAPP_USE_AES_INTERRUPT
     RUN_TEST_CASE(aes, gcm_aes_long_dma_test);
 #endif /* CONFIG_CRYPTO_TESTAPP_USE_AES_INTERRUPT */

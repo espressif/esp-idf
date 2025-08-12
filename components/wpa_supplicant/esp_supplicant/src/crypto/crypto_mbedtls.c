@@ -431,7 +431,7 @@ int hmac_md5(const u8 *key, size_t key_len, const u8 *data, size_t data_len,
     return hmac_md5_vector(key, key_len, 1, &data, &data_len, mac);
 }
 
-#ifdef MBEDTLS_SHA1_C
+#if (defined(MBEDTLS_SHA1_C) || defined(PSA_WANT_ALG_SHA_1))
 int hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
                      const u8 *addr[], const size_t *len, u8 *mac)
 {

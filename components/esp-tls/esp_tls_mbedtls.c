@@ -666,9 +666,8 @@ esp_err_t esp_mbedtls_server_session_ticket_ctx_init(esp_tls_server_session_tick
     int ret;
     esp_err_t esp_ret;
     if ((ret = mbedtls_ssl_ticket_setup(&ctx->ticket_ctx,
-                    mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE,
-                    MBEDTLS_CIPHER_AES_256_GCM,
-                    CONFIG_ESP_TLS_SERVER_SESSION_TICKET_TIMEOUT)) != 0) {
+                    PSA_ALG_GCM, PSA_KEY_TYPE_AES, 256,
+                    86400)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_ticket_setup returned -0x%04X", -ret);
         mbedtls_print_error_msg(ret);
         esp_ret = ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED;

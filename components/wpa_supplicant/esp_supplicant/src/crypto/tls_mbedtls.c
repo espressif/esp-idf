@@ -59,7 +59,7 @@
 #error "TLS not enabled in mbedtls config"
 #endif
 
-#if !defined(MBEDTLS_SHA256_C)
+#if (!defined(MBEDTLS_SHA256_C) && !defined(PSA_WANT_ALG_SHA_256))
 #error "SHA256 is disabled in mbedtls config"
 #endif
 

@@ -3,7 +3,7 @@ menu "mbedTLS"
     menu "Core Configuration"
         choice MBEDTLS_COMPILER_OPTIMIZATION
             prompt "Compiler optimization level"
-            default MBEDTLS_COMPILER_OPTIMIZATION_NONE
+            default MBEDTLS_COMPILER_OPTIMIZATION_SIZE
             help
                 This option allows you to select the compiler optimization level for mbedTLS.
                 The default is set to the optimization level used by the rest of the ESP-IDF project.
@@ -1487,7 +1487,7 @@ menu "mbedTLS"
 
         config MBEDTLS_HARDWARE_SHA
             bool "Enable hardware SHA acceleration"
-            default y
+            default n
             depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST && SOC_SHA_SUPPORTED
             help
                 Enable hardware accelerated SHA1, SHA256, SHA384 & SHA512 in mbedTLS.

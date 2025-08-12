@@ -21,17 +21,6 @@ static const unsigned char sha256_padding[64] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static void esp_internal_sha_update_state(esp_sha1_context *ctx)
-{
-    if (ctx->sha_state == ESP_SHA256_STATE_INIT) {
-        ctx->first_block = true;
-        ctx->sha_state = ESP_SHA256_STATE_IN_PROCESS;
-    } else if (ctx->sha_state == ESP_SHA256_STATE_IN_PROCESS) {
-        ctx->first_block = false;
-        // esp_sha_write_digest_state(SHA1, ctx->state);
-    }
-}
-
 static int esp_internal_sha256_parallel_engine_process( esp_sha256_context *ctx, const unsigned char data[64], bool read_digest )
 {
     if (ctx->sha_state == ESP_SHA256_STATE_INIT) {

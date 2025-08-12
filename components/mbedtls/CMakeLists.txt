@@ -177,7 +177,7 @@ endif()
 # Core libraries from the mbedTLS project
 set(mbedtls_targets mbedtls mbedx509 tfpsacrypto builtin)
 
-if(CONFIG_MBEDTLS_HARDWARE_SHA)
+if(CONFIG_MBEDTLS_HARDWARE_SHA OR CONFIG_MBEDTLS_HARDWARE_AES)
     list(APPEND include_dirs "${COMPONENT_DIR}/port/psa_driver/include")
     target_include_directories(tfpsacrypto PUBLIC "${COMPONENT_DIR}/port/psa_driver/include")
 endif()
@@ -268,7 +268,7 @@ if(SHA_PERIPHERAL_TYPE STREQUAL "core")
     elseif(CONFIG_SOC_SHA_CRYPTO_DMA)
         set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_crypto_dma_impl.c")
     endif()
-    target_sources(tfpsacrypto PRIVATE  "${SHA_CORE_SRCS}")
+    target_sources(builtin PRIVATE  "${SHA_CORE_SRCS}")
 endif()
 
 if(AES_PERIPHERAL_TYPE STREQUAL "dma")
@@ -363,9 +363,18 @@ endif()
 #     )
 # endif()
 
-# if(CONFIG_MBEDTLS_HARDWARE_GCM OR CONFIG_MBEDTLS_HARDWARE_AES)
-#     target_sources(tfpsacrypto PRIVATE  "${COMPONENT_DIR}/port/aes/esp_aes_gcm.c")
-# endif()
+if(CONFIG_MBEDTLS_HARDWARE_GCM OR CONFIG_MBEDTLS_HARDWARE_AES)
+    target_compile_definitions(tfpsacrypto PRIVATE ESP_AES_DRIVER_ENABLED)
+    target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/include/aes")
+    target_sources(tfpsacrypto PRIVATE
+            "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes.c"
+            "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_cmac.c"
+    )
+    if(CONFIG_SOC_AES_SUPPORT_GCM)
+        target_sources(tfpsacrypto PRIVATE "$ENV{IDF_PATH}/components/mbedtls/port/aes/esp_aes_gcm.c"
+        "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes_gcm.c")
+    endif()
+endif()
 
 # if(CONFIG_MBEDTLS_HARDWARE_ECC)
 #     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/ecc/esp_ecc.c"
@@ -424,10 +433,19 @@ if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
     target_compile_options(tfpsacrypto PRIVATE "-fno-analyzer")
 endif()
 
+# If linkage_type is PUBLIC, use PRIVATE while setting compiler optimization flags
+# as we don't want the optimization flags to modify other targets
+if(linkage_type STREQUAL "PUBLIC")
+    set(compiler_linkage_type PRIVATE)
+else()
+    set(compiler_linkage_type ${linkage_type})
+endif()
+
 if(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SIZE)
-    target_compile_options(${COMPONENT_LIB} INTERFACE "-Os")
+    message(STATUS "Linkage type is ${linkage_type}")
+    target_compile_options(${COMPONENT_LIB} ${compiler_linkage_type} "-Os")
 elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SPEED)
-    target_compile_options(${COMPONENT_LIB} INTERFACE "-O2")
+    target_compile_options(${COMPONENT_LIB} ${compiler_linkage_type} "-O2")
 endif()
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)

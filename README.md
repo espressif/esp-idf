@@ -25,9 +25,8 @@ The following table shows ESP-IDF support of Espressif SoCs where ![alt text][pr
 |ESP32-C6     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] |[Announcement](https://www.espressif.com/en/news/ESP32_C6)           |
 |ESP32-H2     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] |[Announcement](https://www.espressif.com/en/news/ESP32_H2)           |
 |ESP32-P4     |                        |                        | ![alt text][supported] |  ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] |[Announcement](https://www.espressif.com/en/news/ESP32-P4)           |
-|ESP32-C5     |                        |                        |                        |                         | ![alt text][supported] |  ![alt text][supported] |[Announcement](https://www.espressif.com/en/news/ESP32-C5)           |
-|ESP32-C61    |                        |                        |                        |                         | ![alt text][supported] |  ![alt text][supported] |[Announcement](https://www.espressif.com/en/products/socs/esp32-c61) |
-|ESP32-H4     |                        |                        |                        |                         |                        |  ![alt text][preview]   |[Announcement](https://www.espressif.com/en/news/ESP32-H4)           |
+|ESP32-C5      |                        |                        |                        |               |![alt text][supported]   |![alt text][supported]   |since v5.5.1, [Announcement](https://www.espressif.com/en/news/ESP32-C5)           |
+|ESP32-C61     |                       |                        |                        |               |![alt text][supported]   |![alt text][supported]   |since v5.5.1, [Announcement](https://www.espressif.com/en/products/socs/esp32-c61) |
 
 [supported]: https://img.shields.io/badge/-supported-green "supported"
 [preview]: https://img.shields.io/badge/-preview-orange "preview"

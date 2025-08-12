@@ -326,14 +326,12 @@ int esp_fast_psk(const char *password, size_t password_len, const uint8_t *ssid,
     // Set up key derivation
     status = psa_key_derivation_setup(&operation, PSA_ALG_PBKDF2_HMAC(PSA_ALG_SHA_1));
     if (status != PSA_SUCCESS) {
-        printf("Failed to set up key derivation: %d\n", status);
         goto cleanup;
     }
 
     // Set iteration count
     status = psa_key_derivation_input_integer(&operation, PSA_KEY_DERIVATION_INPUT_COST, iterations);
     if (status != PSA_SUCCESS) {
-        printf("Failed to set iteration count: %d\n", status);
         goto cleanup;
     }
 
@@ -341,7 +339,6 @@ int esp_fast_psk(const char *password, size_t password_len, const uint8_t *ssid,
     status = psa_key_derivation_input_bytes(&operation, PSA_KEY_DERIVATION_INPUT_SALT,
                                             ssid, ssid_len);
     if (status != PSA_SUCCESS) {
-        printf("Failed to add salt: %d\n", status);
         goto cleanup;
     }
 
@@ -349,14 +346,12 @@ int esp_fast_psk(const char *password, size_t password_len, const uint8_t *ssid,
     status = psa_key_derivation_input_bytes(&operation, PSA_KEY_DERIVATION_INPUT_PASSWORD,
                                             (const uint8_t*)password, password_len);
     if (status != PSA_SUCCESS) {
-        printf("Failed to add password: %d\n", status);
         goto cleanup;
     }
 
     // Generate output
     status = psa_key_derivation_output_bytes(&operation, output, output_len);
     if (status != PSA_SUCCESS) {
-        printf("Failed to generate output: %d\n", status);
         goto cleanup;
     }
 

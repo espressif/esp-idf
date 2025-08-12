@@ -16,6 +16,9 @@
 #include "esp_sha_internal.h"
 #include "sha/sha_core.h"
 #include "esp_err.h"
+#include "sdkconfig.h"
+
+#if CONFIG_SOC_SHA_SUPPORT_SHA512
 
 #ifndef PUT_UINT64_BE
 #define PUT_UINT64_BE(n,b,i)                            \
@@ -51,7 +54,7 @@ static int esp_sha512_starts(esp_sha512_context *ctx, int mode) {
 static int esp_internal_sha_update_state(esp_sha512_context *ctx)
 {
     if (ctx->sha_state == ESP_SHA512_STATE_INIT) {
-        if (ctx->mode == SHA2_512T) {
+        if (ctx->mode == SHA2_512) {
             int ret = -1;
             if ((ret = esp_sha_512_t_init_hash(ctx->t_val)) != 0) {
                 return ret;
@@ -179,9 +182,12 @@ static int esp_sha512_finish(esp_sha512_context *ctx, unsigned char *output)
         return ret;
     }
 
+#if SOC_SHA_SUPPORT_SHA384
     if (ctx->mode == SHA2_384) {
         memcpy(output, ctx->state, 48);
-    } else {
+    } else
+#endif // SOC_SHA_SUPPORT_SHA384
+    {
         memcpy(output, ctx->state, 64);
     }
 
@@ -207,7 +213,10 @@ psa_status_t esp_sha512_driver_compute(
     if (hash_size < PSA_HASH_LENGTH(alg)) {
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
-    int mode = (alg == PSA_ALG_SHA_384) ? SHA2_384 : SHA2_512;
+    int mode = SHA2_512;
+#if SOC_SHA_SUPPORT_SHA384
+    mode = (alg == PSA_ALG_SHA_384) ? SHA2_384 : SHA2_512;
+#endif // SOC_SHA_SUPPORT_SHA384
     int ret = esp_sha512_starts(ctx, mode);
     if (ret != ESP_OK) {
         return PSA_ERROR_HARDWARE_FAILURE;
@@ -271,3 +280,5 @@ psa_status_t esp_sha512_driver_finish(
 
     return PSA_SUCCESS;
 }
+
+#endif // SOC_SHA_SUPPORT_SHA512

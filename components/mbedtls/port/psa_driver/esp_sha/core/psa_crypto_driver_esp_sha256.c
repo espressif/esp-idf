@@ -168,17 +168,25 @@ psa_status_t esp_sha256_driver_compute(
     size_t hash_size,
     size_t *hash_length)
 {
-    printf("SHA256 Driver Compute\n");
+    // printf("SHA256 Driver Compute\n");
     if (!hash || !hash_length) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
-    if (alg != PSA_ALG_SHA_256 && alg != PSA_ALG_SHA_224) {
+    if (alg != PSA_ALG_SHA_256
+#if SOC_SHA_SUPPORT_SHA224
+        && alg != PSA_ALG_SHA_224
+#endif // SOC_SHA_SUPPORT_SHA224
+    ) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
     if (hash_size < PSA_HASH_LENGTH(alg)) {
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
+#if SOC_SHA_SUPPORT_SHA224
     int mode = (alg == PSA_ALG_SHA_224) ? SHA2_224 : SHA2_256;
+#else
+    int mode = SHA2_256;
+#endif // SOC_SHA_SUPPORT_SHA224
     int ret = esp_sha256_starts(ctx, mode);
     if (ret != ESP_OK) {
         return PSA_ERROR_HARDWARE_FAILURE;
@@ -229,9 +237,12 @@ psa_status_t esp_sha256_driver_finish(
     if (ret != ESP_OK) {
         return PSA_ERROR_HARDWARE_FAILURE;
     }
+#if SOC_SHA_SUPPORT_SHA224
     if (sha_type == ESP_SHA_OPERATION_TYPE_SHA224) {
         *hash_length = PSA_HASH_LENGTH(PSA_ALG_SHA_224);
-    } else if (sha_type == ESP_SHA_OPERATION_TYPE_SHA256) {
+    } else
+#endif // SOC_SHA_SUPPORT_SHA224
+    if (sha_type == ESP_SHA_OPERATION_TYPE_SHA256) {
         *hash_length = PSA_HASH_LENGTH(PSA_ALG_SHA_256);
     } else {
         return PSA_ERROR_NOT_SUPPORTED;
