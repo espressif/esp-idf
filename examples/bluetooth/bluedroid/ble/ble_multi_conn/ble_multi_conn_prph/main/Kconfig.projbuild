@@ -1,0 +1,11 @@
+menu "Example Configuration"
+
+    config EXAMPLE_RESTART_ADV_AFTER_CONNECTED
+        bool
+        default y
+        prompt "Restart advertisement when connected"
+        help
+            To simulate multiple connections with only one device,
+            restart the advertisement once a connection has been established.
+
+endmenu
