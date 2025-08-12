@@ -1132,7 +1132,11 @@
 
 /* The number of security records for peer devices. 15 AS Default*/
 #ifndef BTM_SEC_MAX_DEVICE_RECORDS
+#if (UC_BT_SMP_MAX_BONDS < UC_BT_ACL_CONNECTIONS)
+#define BTM_SEC_MAX_DEVICE_RECORDS  UC_BT_ACL_CONNECTIONS
+#else
 #define BTM_SEC_MAX_DEVICE_RECORDS  UC_BT_SMP_MAX_BONDS
+#endif
 #endif
 
 #if BTA_SDP_INCLUDED
