@@ -233,7 +233,10 @@
 // #define SOC_CLOCKOUT_HAS_SOURCE_GATE        (1)
 // #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
 
+/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_SUPPORT_SLEEP_RETENTION 1
+
+/*-------------------------- ETM CAPS -----------------------------------*/
 #define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
@@ -241,11 +244,6 @@
  * for hold, wake & 32kHz crystal functions - via LP_AON registers */
 #define SOC_RTCIO_PIN_COUNT         (7U)
 #define SOC_RTCIO_HOLD_SUPPORTED    (1)
-
-/*-------------------------- Dedicated GPIO CAPS -----------------------------*/
-#define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
-#define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
-#define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*------------------------- Analog Comparator CAPS ---------------------------*/
 #define SOC_ANA_CMPR_NUM                    (1U)

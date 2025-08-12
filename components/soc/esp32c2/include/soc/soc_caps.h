@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -153,11 +153,6 @@
 
 // "RTC"_IOs and DIG_IOs can be hold during deep sleep and after waking up
 #define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP (1)
-
-/*-------------------------- Dedicated GPIO CAPS -----------------------------*/
-#define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
-#define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
-#define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-C2 has 1 I2C

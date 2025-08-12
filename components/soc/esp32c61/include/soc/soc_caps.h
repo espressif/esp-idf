@@ -161,6 +161,7 @@
 #define SOC_AHB_GDMA_SUPPORT_PSRAM 1
 #define SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION   1
 
+/*-------------------------- ETM CAPS -----------------------------------*/
 #define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
@@ -215,11 +216,6 @@
 #define SOC_RTCIO_HOLD_SUPPORTED            1
 #define SOC_RTCIO_WAKE_SUPPORTED            1
 #define SOC_RTCIO_EDGE_WAKE_SUPPORTED       1
-
-/*-------------------------- Dedicated GPIO CAPS -----------------------------*/
-#define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
-#define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
-#define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*------------------------- Analog Comparator CAPS ---------------------------*/
 #define SOC_ANA_CMPR_NUM                       (1U)

@@ -5,15 +5,17 @@
  */
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdint.h>
 #include <stdbool.h>
 #include "hal/misc.h"
 #include "soc/dedic_gpio_struct.h"
 #include "soc/system_reg.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define DEDIC_GPIO_LL_ALLOW_REG_ACCESS  1 /*!< Allow access dedicated GPIO channel by register */
 
 static inline void _dedic_gpio_ll_enable_bus_clock(bool enable)
 {

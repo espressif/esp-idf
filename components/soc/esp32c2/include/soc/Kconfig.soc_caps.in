@@ -335,18 +335,6 @@ config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
     bool
     default y
 
-config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
-    int
-    default 8
-
-config SOC_DEDIC_GPIO_IN_CHANNELS_NUM
-    int
-    default 8
-
-config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
-    bool
-    default y
-
 config SOC_I2C_NUM
     int
     default 1
