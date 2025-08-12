@@ -22,6 +22,10 @@ include(build)
 include(kconfig)
 include(project)
 include(GetGitRevisionDescription)
+# For backward compatibility, since externalproject_add is used by
+# project_include.cmake in the bootloader component. The ExternalProject
+# should probably be included there instead.
+include(ExternalProject)
 
 #[[
    __init_build_version()
