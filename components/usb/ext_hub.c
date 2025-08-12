@@ -145,7 +145,7 @@ typedef struct {
     struct {
         ext_hub_cb_t proc_req_cb;                   /**< Process callback  */
         void *proc_req_cb_arg;                      /**< Process callback argument */
-        const ext_port_driver_api_t* port_driver;   /**< External Port Driver */
+        const ext_port_driver_api_t *port_driver;   /**< External Port Driver */
     } constant;                         /**< Constant members. Do not change after installation thus do not require a critical section or mutex */
 } ext_hub_driver_t;
 
@@ -180,7 +180,7 @@ DEFINE_CRIT_SECTION_LOCK_STATIC(ext_hub_driver_lock);
 // -----------------------------------------------------------------------------
 static bool _device_set_actions(ext_hub_dev_t *ext_hub_dev, uint32_t action_flags);
 static void device_error(ext_hub_dev_t *ext_hub_dev);
-static void device_status_change_handle(ext_hub_dev_t *ext_hub_dev, const uint8_t* data, const int length);
+static void device_status_change_handle(ext_hub_dev_t *ext_hub_dev, const uint8_t *data, const int length);
 
 // -----------------------------------------------------------------------------
 // ---------------------- Callbacks (implementation) ---------------------------
@@ -361,7 +361,7 @@ static void device_has_changed(ext_hub_dev_t *ext_hub_dev)
 //           |                             ...
 //           +---------------------------- Port N change detected
 //
-static void device_status_change_handle(ext_hub_dev_t *ext_hub_dev, const uint8_t* data, const int length)
+static void device_status_change_handle(ext_hub_dev_t *ext_hub_dev, const uint8_t *data, const int length)
 {
     uint32_t device_status = 0;
     // Driver does not support Hubs with EP IN wMaxPacketSize > 4
@@ -415,14 +415,14 @@ static void device_error(ext_hub_dev_t *ext_hub_dev)
 static esp_err_t device_port_new(ext_hub_dev_t *ext_hub_dev, uint8_t port_idx)
 {
     ext_port_config_t port_config = {
-        .context = (void*) ext_hub_dev,
+        .context = (void *) ext_hub_dev,
         .parent_dev_hdl =  ext_hub_dev->constant.dev_hdl,
         .parent_port_num = port_idx + 1,
         .port_power_delay_ms = ext_hub_dev->constant.hub_desc->bPwrOn2PwrGood * 2,
     };
 
     assert(p_ext_hub_driver->constant.port_driver);
-    esp_err_t ret = p_ext_hub_driver->constant.port_driver->new (&port_config, (void**) &ext_hub_dev->constant.ports[port_idx]);
+    esp_err_t ret = p_ext_hub_driver->constant.port_driver->new (&port_config, (void **) &ext_hub_dev->constant.ports[port_idx]);
     if (ret != ESP_OK) {
         ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Port allocation error: %s", ext_hub_dev->constant.dev_addr, port_idx + 1, esp_err_to_name(ret));
         goto fail;
@@ -1208,7 +1208,7 @@ void *ext_hub_get_client(void)
     EXT_HUB_ENTER_CRITICAL();
     driver_installed = (p_ext_hub_driver != NULL);
     EXT_HUB_EXIT_CRITICAL();
-    return (driver_installed) ? (void*) p_ext_hub_driver : NULL;
+    return (driver_installed) ? (void *) p_ext_hub_driver : NULL;
 }
 
 // -----------------------------------------------------------------------------

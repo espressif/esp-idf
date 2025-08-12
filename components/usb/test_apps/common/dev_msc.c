@@ -87,7 +87,7 @@ bLength                     : 0x22      (34 bytes)
 bDescriptorType             : 0x03      (String Descriptor)
 wData                       : " SanDisk 3.2Gen1"
 
------------------------------ String Descriptor Ser ----------------------------
+----------------------------- String Descriptor Set ----------------------------
 bLength                     : 0xF2      (242 bytes)
 bDescriptorType             : 0x03      (String Descriptor)
 wData                       : "0101cdd1e856b427bbb796f870561a4b2b817af9da9872c8d75217cccdd5d5eccb3a0000000000000000000096abe1a3ff83610095558107aea948b4"

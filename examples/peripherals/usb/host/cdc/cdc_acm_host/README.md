@@ -11,7 +11,7 @@ This example shows how to use the CDC-ACM Host Driver to allow an ESP chip to co
 
 ### Hardware Required
 
-Two development boards with USB-OTG support. One will act as USB host and the other as USB device.  
+Two development boards with USB-OTG support. One will act as USB host and the other as USB device.
 
 #### Pin Assignment
 

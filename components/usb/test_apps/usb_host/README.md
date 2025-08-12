@@ -9,4 +9,3 @@ There are three sets of tests in this application:
 3. High-speed: Expects high-speed USB flash disk with 2 bulk endpoints to be connected
 
 For running these tests locally, you will have to update device definitions (VID, PID, ...) in [dev_msc.c](../common/dev_msc.c) and [dev_hid.c](../common/dev_hid.c).
-

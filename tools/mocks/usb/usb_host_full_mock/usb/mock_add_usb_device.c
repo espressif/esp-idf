@@ -14,7 +14,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-
 #define MOCK_CHECK(cond, ret_val) ({                                        \
             if (!(cond)) {                                                  \
                 return (ret_val);                                           \
@@ -31,7 +30,6 @@
 #define MAX_DEV_COUNT 128
 #define IS_VALID_ADDRESS(address) ((address) != 0xFF)
 #define IS_EMPTY_ADDRESS(address) ((address) == 0xFF)
-
 
 const char *MOCK_TAG_CB = "USB MOCK CB";    // Tag for callback functions
 const char *MOCK_TAG = "USB MOCK";          // Tag for the rest of the functions
@@ -56,10 +54,9 @@ typedef struct {
 static device_list_t device_list[MAX_DEV_COUNT];
 static unsigned mocked_devices_count = 0;
 
-
 void usb_host_mock_dev_list_init(void)
 {
-    for(int index = 0; index < MAX_DEV_COUNT; index++) {
+    for (int index = 0; index < MAX_DEV_COUNT; index++) {
         device_list[index].address = 0xFF;
         device_list[index].opened = 0;
         device_list[index].dev_desc = NULL;
@@ -98,7 +95,7 @@ esp_err_t usb_host_mock_add_device(uint8_t dev_address, const usb_device_desc_t 
  */
 static void _print_mocked_device(int index)
 {
-    ESP_LOGI(MOCK_TAG, "Device handle = %p", (void*)(&device_list[index]));
+    ESP_LOGI(MOCK_TAG, "Device handle = %p", (void *)(&device_list[index]));
     ESP_LOGI(MOCK_TAG, "Device address = %d", device_list[index].address);
     ESP_LOGI(MOCK_TAG, "Device opened by = %d clients", device_list[index].opened);
 
@@ -113,12 +110,12 @@ esp_err_t usb_host_mock_print_mocked_devices(uint8_t dev_address)
 
     // dev_address is 0xFF, print all devices from device_list
     if (IS_EMPTY_ADDRESS(dev_address)) {
-        for(int index = 0; index < MAX_DEV_COUNT; index++) {
-            if(IS_VALID_ADDRESS(device_list[index].address)) {
+        for (int index = 0; index < MAX_DEV_COUNT; index++) {
+            if (IS_VALID_ADDRESS(device_list[index].address)) {
                 _print_mocked_device(index);
             }
         }
-    // Print only device at dev_address
+        // Print only device at dev_address
     } else {
         if (IS_VALID_ADDRESS(device_list[dev_address].address)) {
             _print_mocked_device(dev_address);
@@ -194,7 +191,7 @@ esp_err_t usb_host_client_register_mock_callback(const usb_host_client_config_t 
 
     esp_err_t ret;
     // Create client object
-    client_t *client_obj = (client_t*)calloc(1, sizeof(client_t));
+    client_t *client_obj = (client_t *)calloc(1, sizeof(client_t));
     SemaphoreHandle_t event_sem = xSemaphoreCreateBinary();
     if (client_obj == NULL || event_sem == NULL) {
         ret = ESP_ERR_NO_MEM;
@@ -261,7 +258,7 @@ esp_err_t usb_host_device_open_mock_callback(usb_host_client_handle_t client_hdl
     MOCK_CHECK(dev_address < MAX_DEV_COUNT && client_hdl != NULL && dev_hdl_ret != NULL, ESP_ERR_INVALID_ARG);
     // Find a device in dev_list by dev_address
     for (int index = 0; index < MAX_DEV_COUNT; index++) {
-        if(device_list[index].address == dev_address) {
+        if (device_list[index].address == dev_address) {
 
             // We should check, if the device has not been opened by the same client
             // But we are keeping this mock implementation simple
@@ -282,7 +279,7 @@ esp_err_t usb_host_device_open_mock_callback(usb_host_client_handle_t client_hdl
 esp_err_t usb_host_device_close_mock_callback(usb_host_client_handle_t client_hdl, usb_device_handle_t dev_hdl, int call_count)
 {
     MOCK_CHECK(dev_hdl != NULL && client_hdl != NULL, ESP_ERR_INVALID_ARG);
-    device_list_t* current_device = (device_list_t *) dev_hdl;
+    device_list_t *current_device = (device_list_t *) dev_hdl;
 
     if (current_device->opened == 0) {
         // Device was never opened
@@ -305,7 +302,7 @@ esp_err_t usb_host_device_addr_list_fill_mock_callback(int list_len, uint8_t *de
 
     int found_devices_count = 0;
     for (int index = 0; index < MAX_DEV_COUNT; index++) {
-        if(IS_VALID_ADDRESS(device_list[index].address) && (found_devices_count < list_len)) {
+        if (IS_VALID_ADDRESS(device_list[index].address) && (found_devices_count < list_len)) {
             dev_addr_list[found_devices_count++] = device_list[index].address;
         }
     }
@@ -325,7 +322,7 @@ esp_err_t usb_host_get_device_descriptor_mock_callback(usb_device_handle_t dev_h
     MOCK_CHECK(dev_hdl != NULL && device_desc != NULL, ESP_ERR_INVALID_ARG);
     ESP_LOGD(MOCK_TAG_CB, "Get device descriptor");
 
-    const device_list_t* current_device = (const device_list_t *) dev_hdl;
+    const device_list_t *current_device = (const device_list_t *) dev_hdl;
     *device_desc = current_device->dev_desc;
     return ESP_OK;
 }
@@ -335,7 +332,7 @@ esp_err_t usb_host_get_active_config_descriptor_mock_callback(usb_device_handle_
     MOCK_CHECK(dev_hdl != NULL && config_desc != NULL, ESP_ERR_INVALID_ARG);
     ESP_LOGD(MOCK_TAG_CB, "Get active config descriptor");
 
-    const device_list_t* current_device = (const device_list_t *) dev_hdl;
+    const device_list_t *current_device = (const device_list_t *) dev_hdl;
     *config_desc = current_device->config_desc;
     return ESP_OK;
 }

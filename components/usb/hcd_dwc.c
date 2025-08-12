@@ -1407,7 +1407,7 @@ esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, h
     // USB-HAL's size is dependent on its configuration, namely on number of channels in the configuration
     // We must first initialize the HAL, to get the number of channels and then allocate memory for the channels
     usb_dwc_hal_init(port_obj->hal, port_number);
-    port_obj->hal->channels.hdls = calloc(port_obj->hal->constant_config.chan_num_total, sizeof(usb_dwc_hal_chan_t*));
+    port_obj->hal->channels.hdls = calloc(port_obj->hal->constant_config.chan_num_total, sizeof(usb_dwc_hal_chan_t *));
     HCD_CHECK_FROM_CRIT(port_obj->hal->channels.hdls != NULL, ESP_ERR_NO_MEM);
 
     port_obj->initialized = true;
@@ -1669,7 +1669,7 @@ static bool pipe_args_usb_compliance_verification(const hcd_pipe_config_t *pipe_
     return true;
 }
 
-static bool pipe_alloc_hcd_support_verification(usb_dwc_hal_context_t *hal, const usb_ep_desc_t * ep_desc)
+static bool pipe_alloc_hcd_support_verification(usb_dwc_hal_context_t *hal, const usb_ep_desc_t *ep_desc)
 {
     assert(hal != NULL);
     assert(ep_desc != NULL);

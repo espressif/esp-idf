@@ -24,7 +24,7 @@ As a USB stack, a TinyUSB component is used.
 1. USB which accesses the ESP MSC Partition is unplugged initially and the board is powered-on.
      - Result: Host PC can't access the partition over USB MSC. Application example can perform operations (read, write) on partition.
 2. USB which accesses the ESP MSC Partition is already plugged-in at boot time.
-     - Result: Host PC recongnize it as removable device and can access the partition over USB MSC. Application example can't perform any operation on partition.
+     - Result: Host PC recognize it as removable device and can access the partition over USB MSC. Application example can't perform any operation on partition.
 3. USB which accesses the ESP MSC Partition is plugged-in at boot-up. After boot-up, it is ejected on Host PC manually by user.
      - Result: Host PC can't access the partition over USB MSC. Application example can perform operations (read, write) on partition.
 4. USB which accesses the ESP MSC Partition is plugged-in at boot-up. It is then unplugged(removed) from Host PC manually by user.
@@ -145,30 +145,30 @@ Type 'help' to get the list of commands.
 Use UP/DOWN arrows to navigate through command history.
 Press TAB when typing command name to auto-complete.
 I (724) main_task: Returned from app_main()
-esp32s3> 
+esp32s3>
 esp32s3> help
-help 
+help
   Print the list of registered commands
 
-read 
+read
   read BASE_PATH/README.MD and print its contents
 
-write 
+write
   create file BASE_PATH/README.MD if it does not exist
 
-size 
+size
   show storage size and sector size
 
-expose 
+expose
   Expose Storage to Host
 
-status 
+status
   Status of storage exposure over USB
 
-exit 
+exit
   exit from application
 
-esp32s3> 
+esp32s3>
 esp32s3> read
 E (80054) example_main: storage exposed over USB. Application can't read from storage.
 Command returned non-zero error code: 0xffffffff (ESP_FAIL)
@@ -183,8 +183,8 @@ storage exposed over USB: Yes
 esp32s3> expose
 E (108344) example_main: storage is already exposed
 Command returned non-zero error code: 0xffffffff (ESP_FAIL)
-esp32s3> 
-esp32s3> 
+esp32s3>
+esp32s3>
 esp32s3> read
 Mass Storage Devices are one of the most common USB devices. It use Mass Storage Class (MSC) that allow access to their internal data storage.
 In this example, ESP chip will be recognised by host (PC) as Mass Storage Device.
@@ -198,6 +198,6 @@ esp32s3> expose
 I (181224) example_main: Unmount storage...
 esp32s3> status
 storage exposed over USB: Yes
-esp32s3> 
+esp32s3>
 esp32s3>
 ```

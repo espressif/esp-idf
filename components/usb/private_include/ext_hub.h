@@ -37,7 +37,7 @@ typedef bool (*ext_hub_cb_t)(bool in_isr, void *user_arg);
 typedef struct {
     ext_hub_cb_t proc_req_cb;                       /**< External Hub process callback */
     void *proc_req_cb_arg;                          /**< External Hub process callback argument */
-    const ext_port_driver_api_t* port_driver;       /**< External Port Driver */
+    const ext_port_driver_api_t *port_driver;       /**< External Port Driver */
 } ext_hub_config_t;
 
 // ------------------------------ Driver ---------------------------------------
@@ -55,7 +55,7 @@ typedef struct {
  *    - ESP_ERR_NO_MEM: Insufficient memory
  *    - ESP_ERR_INVALID_STATE: External Hub driver already installed
  */
-esp_err_t ext_hub_install(const ext_hub_config_t* config);
+esp_err_t ext_hub_install(const ext_hub_config_t *config);
 
 /**
  * @brief Uninstall External Hub Driver

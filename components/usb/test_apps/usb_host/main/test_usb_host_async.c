@@ -327,7 +327,7 @@ TEST_CASE("Test USB Host multiconfig client (single client)", "[usb_host][full_s
         .bConfigurationValue = B_CONFIGURATION_VALUE,
     };
 
-    xTaskCreatePinnedToCore(multiconf_client_async_task, "async client", 4096, (void*)&multiconf_params, 2, &client_task, 0);
+    xTaskCreatePinnedToCore(multiconf_client_async_task, "async client", 4096, (void *)&multiconf_params, 2, &client_task, 0);
     TEST_ASSERT_NOT_NULL_MESSAGE(client_task, "Failed to create async client task");
     // Start the task
     xTaskNotifyGive(client_task);
@@ -335,7 +335,7 @@ TEST_CASE("Test USB Host multiconfig client (single client)", "[usb_host][full_s
     TaskHandle_t host_lib_task_hdl;
     // Get Current task handle
     TaskHandle_t pending_task = xTaskGetCurrentTaskHandle();
-    xTaskCreatePinnedToCore(host_lib_task, "host lib", 4096, (void*)pending_task, 2, &host_lib_task_hdl, 0);
+    xTaskCreatePinnedToCore(host_lib_task, "host lib", 4096, (void *)pending_task, 2, &host_lib_task_hdl, 0);
     TEST_ASSERT_NOT_NULL_MESSAGE(host_lib_task_hdl, "Failed to create host lib task");
 
     // Wait for the device to be open

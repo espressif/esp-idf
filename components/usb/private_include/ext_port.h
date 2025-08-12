@@ -128,7 +128,7 @@ typedef struct {
  * Structure is used to create new port
  */
 typedef struct {
-    void* context;                              /**< Ports' parent external Hub handle */
+    void *context;                              /**< Ports' parent external Hub handle */
     usb_device_handle_t parent_dev_hdl;         /**< Ports' parent device handle */
     uint8_t parent_port_num;                    /**< Ports' parent port number */
     uint16_t port_power_delay_ms;               /**< Ports' Power on time to Power Good, ms */
@@ -193,7 +193,7 @@ const ext_port_driver_api_t *ext_port_get_driver(void);
  * @return
  *   - Pointer to the External Port Driver context
  */
-void* ext_port_get_context(ext_port_hdl_t port_hdl);
+void *ext_port_get_context(ext_port_hdl_t port_hdl);
 
 /**
  * @brief Returns External Port's port number

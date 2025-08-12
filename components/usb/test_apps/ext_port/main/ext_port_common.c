@@ -77,7 +77,7 @@ typedef struct {
     ext_port_parent_request_data_t data;
 } ext_port_hub_request_msg_t;
 
-static const ext_port_driver_api_t* port_api;
+static const ext_port_driver_api_t *port_api;
 SemaphoreHandle_t _process_cd_req = NULL;
 QueueHandle_t _ext_port_hub_req_queue = NULL;
 QueueHandle_t _ext_port_event_queue = NULL;
@@ -180,11 +180,11 @@ void test_ext_port_setup(void)
     // Install External Port driver
     ext_port_driver_config_t ext_port_config = {
         .proc_req_cb = test_ext_port_callback,
-        .proc_req_cb_arg = (void*)_process_cd_req,
+        .proc_req_cb_arg = (void *)_process_cd_req,
         .event_cb = test_ext_port_event_callback,
-        .event_cb_arg = (void*)_ext_port_event_queue,
+        .event_cb_arg = (void *)_ext_port_event_queue,
         .hub_request_cb = test_ext_port_hub_request,
-        .hub_request_cb_arg = (void*)_ext_port_hub_req_queue,
+        .hub_request_cb_arg = (void *)_ext_port_hub_req_queue,
     };
     TEST_ASSERT_EQUAL(ESP_OK, ext_port_install(&ext_port_config));
     port_api = ext_port_get_driver();
@@ -203,7 +203,7 @@ void test_ext_port_teardown(void)
 ext_port_hdl_t test_ext_port_new(ext_port_config_t *config)
 {
     ext_port_hdl_t port = NULL;
-    TEST_ASSERT_EQUAL(ESP_OK, port_api->new (config, (void**) &port));
+    TEST_ASSERT_EQUAL(ESP_OK, port_api->new (config, (void **) &port));
     TEST_ASSERT_NOT_NULL(port);
     // Adding the port should trigger the process request callback
     test_wait_ext_port_process_request();
