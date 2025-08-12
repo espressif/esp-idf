@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#include "esp_attr.h"
 
 #if CONFIG_IDF_TOOLCHAIN_GCC
 #include <sys/statvfs.h>
@@ -121,11 +122,17 @@ int fstat(int fd, struct stat *st)
     return _fstat_r(__getreent(), fd, st);
 }
 
+#if CONFIG_SPIRAM_CACHE_LIBMISC_IN_IRAM
+IRAM_ATTR
+#endif
 int raise(int sig)
 {
     return _raise_r(__getreent(), sig);
 }
 
+#if CONFIG_SPIRAM_CACHE_LIBMISC_IN_IRAM
+IRAM_ATTR
+#endif
 int system(const char* str)
 {
     return _system_r(__getreent(), str);
