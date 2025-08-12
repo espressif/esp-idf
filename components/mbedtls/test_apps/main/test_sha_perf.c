@@ -63,8 +63,8 @@ TEST_CASE("psa SHA256 performance", "[mbedtls]")
     // bytes/usec = MB/sec
     float mb_sec = (CALL_SZ * CALLS) / elapsed_usec;
     printf("SHA256 rate %.3fMB/sec\n", mb_sec);
-// #ifdef CONFIG_MBEDTLS_HARDWARE_SHA
-//     // Don't put a hard limit on software SHA performance
-//     TEST_PERFORMANCE_CCOMP_GREATER_THAN(SHA256_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
-// #endif
+#ifdef CONFIG_MBEDTLS_HARDWARE_SHA
+    // Don't put a hard limit on software SHA performance
+    TEST_PERFORMANCE_CCOMP_GREATER_THAN(SHA256_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
+#endif
 }
