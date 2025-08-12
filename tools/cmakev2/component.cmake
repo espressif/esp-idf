@@ -359,6 +359,11 @@ function(__init_component)
     __collect_kconfig_files_from_directory("${component_directory}" "${target}"
         component_kconfig component_projbuild component_rename)
 
+    set(component_project_include "${component_directory}/project_include.cmake")
+    if(NOT EXISTS "${component_project_include}")
+        set(component_project_include "")
+    endif()
+
     __get_component_interface(COMPONENT "${component_name}" OUTPUT existing_component_interface)
     if(NOT "${existing_component_interface}" STREQUAL "NOTFOUND")
         # A component with the same name is already initialized. Check if it
@@ -399,6 +404,9 @@ function(__init_component)
             idf_component_set_property("${component_name}" __KCONFIG "${component_kconfig}")
             idf_component_set_property("${component_name}" __KCONFIG_PROJBUILD "${component_projbuild}")
             idf_component_set_property("${component_name}" __SDKCONFIG_RENAME "${component_rename}")
+
+            # Update component project_include.cmake path.
+            idf_component_set_property("${component_name}" __PROJECT_INCLUDE "${component_project_include}")
         endif()
 
         return()
@@ -431,6 +439,9 @@ function(__init_component)
     idf_component_set_property("${component_name}" __KCONFIG "${component_kconfig}")
     idf_component_set_property("${component_name}" __KCONFIG_PROJBUILD "${component_projbuild}")
     idf_component_set_property("${component_name}" __SDKCONFIG_RENAME "${component_rename}")
+
+    # Set component project_include.cmake.
+    idf_component_set_property("${component_name}" __PROJECT_INCLUDE "${component_project_include}")
 endfunction()
 
 #[[
