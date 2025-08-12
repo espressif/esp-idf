@@ -1077,32 +1077,34 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
         L2CAP_TRACE_ERROR("l2cab is_cong_cback_context");
         return;
     }
-
+    list_node_t* start_p_node = NULL;
     /* If we are in a scenario where there are not enough buffers for each link to
     ** have at least 1, then do a round-robin for all the LCBs
     */
     if ( (p_lcb == NULL) || (p_lcb->link_xmit_quota == 0) ) {
         list_node_t *p_node   = NULL;
-	tL2C_LCB    *p_lcb_cur = NULL;
+        tL2C_LCB    *p_lcb_cur = NULL;
         if (p_lcb == NULL) {
             p_node = list_begin(l2cb.p_lcb_pool);
-	    p_lcb = list_node(p_node);
+            p_lcb = list_node(p_node);
         } else if (!single_write) {
-	    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
-	        p_lcb_cur = list_node(p_node);
-		if (p_lcb_cur == p_lcb) {
-		    p_node = list_next(p_node);
-		    if (p_node) {
-		        p_lcb = list_node(p_node);
-		    }
-		    break;
-		}
-	    }
+            for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+                p_lcb_cur = list_node(p_node);
+                if (p_lcb_cur == p_lcb) {
+                    p_node = list_next(p_node);
+                    start_p_node = p_node;
+                    break;
+                }
+            }
         }
 
         /* Loop through, starting at the next */
-        for ( ; p_node; p_node = list_next(p_node)) {
-	    p_lcb = list_node(p_node);
+        do {
+            /* Check for wraparound */
+            if (p_node == list_end(l2cb.p_lcb_pool)) {
+                p_node = list_begin(l2cb.p_lcb_pool);
+            }
+            p_lcb = list_node(p_node);
 #if (BLE_INCLUDED == TRUE)
             L2CAP_TRACE_DEBUG("window = %d,robin_unacked = %d,robin_quota=%d",l2cb.controller_le_xmit_window,l2cb.ble_round_robin_unacked,l2cb.ble_round_robin_quota);
 #endif  ///BLE_INCLUDED == TRUE
@@ -1118,20 +1120,22 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
 #else
                 ))
 #endif  ///BLE_INCLUDED == TRUE
+            {
                 break;
-
-
+            }
             /* Check for wraparound */
-	    if (p_node == list_end(l2cb.p_lcb_pool)) {
+            if (p_node == list_end(l2cb.p_lcb_pool)) {
                 p_node = list_begin(l2cb.p_lcb_pool);
-		p_lcb = list_node(p_node);
-	    }
+                p_lcb = list_node(p_node);
+            }
+
             L2CAP_TRACE_DEBUG("in_use=%d,segment_being_sent=%d,link_state=%d,link_xmit_quota=%d",p_lcb->in_use,p_lcb->partial_segment_being_sent,p_lcb->link_state,p_lcb->link_xmit_quota);
             if ( (!p_lcb->in_use)
                     || (p_lcb->partial_segment_being_sent)
                     || (p_lcb->link_state != LST_CONNECTED)
                     || (p_lcb->link_xmit_quota != 0)
                     || (L2C_LINK_CHECK_POWER_MODE (p_lcb)) ) {
+                p_node = list_next(p_node);
                 continue;
             }
 
@@ -1148,7 +1152,8 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
             else if ((p_buf = l2cu_get_next_buffer_to_send (p_lcb)) != NULL) {
                 l2c_link_send_to_lower (p_lcb, p_buf);
             }
-        }
+            p_node = list_next(p_node);
+        } while (p_node != start_p_node);
 
         /* If we finished without using up our quota, no need for a safety check */
         if ( (l2cb.controller_xmit_window > 0)
