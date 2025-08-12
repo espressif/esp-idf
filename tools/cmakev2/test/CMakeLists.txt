@@ -11,6 +11,8 @@ project(cmakev2
     VERSION 1.2.3
     LANGUAGES C CXX ASM)
 
+idf_project_init()
+
 # Test component priority
 function(test_component_priority)
     # Set the idf component to be replaced with a testing component of higher
