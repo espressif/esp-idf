@@ -49,7 +49,7 @@ void gpio_hal_iomux_out(gpio_hal_context_t *hal, uint32_t gpio_num, int func)
 void gpio_hal_matrix_in(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t signal_idx, bool in_inv)
 {
     gpio_ll_input_enable(hal->dev, gpio_num);
-#if HAL_CONFIG_GPIO_USE_ROM_API
+#if HAL_CONFIG(GPIO_USE_ROM_API)
     esp_rom_gpio_connect_in_signal(gpio_num, signal_idx, in_inv);
 #else
     gpio_ll_set_input_signal_matrix_source(hal->dev, signal_idx, gpio_num, in_inv);
@@ -59,7 +59,7 @@ void gpio_hal_matrix_in(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t sig
 void gpio_hal_matrix_out(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t signal_idx, bool out_inv, bool oen_inv)
 {
     gpio_ll_func_sel(hal->dev, gpio_num, PIN_FUNC_GPIO);
-#if HAL_CONFIG_GPIO_USE_ROM_API
+#if HAL_CONFIG(GPIO_USE_ROM_API)
     esp_rom_gpio_connect_out_signal(gpio_num, signal_idx, out_inv, oen_inv);
 #else
     gpio_ll_set_output_signal_matrix_source(hal->dev, gpio_num, signal_idx, out_inv);
