@@ -1,4 +1,13 @@
 preserve_non_test_related_apps = false
+exclude_dirs = [
+    'tools/test_mkdfu',
+    'tools/test_idf_size',
+    'tools/test_idf_py',
+    'tools/test_idf_diag',
+    'tools/test_bsasm',
+    'tools/ci/test_autocomplete',
+    'tools/test_build_system',
+]
 
 [local_runtime_envs]
 EXTRA_CFLAGS = "-Werror -Werror=deprecated-declarations -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function -Wstrict-prototypes"
