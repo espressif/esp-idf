@@ -99,6 +99,11 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_xtal_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode,
     hw->hp_sys[mode].xtal.xpd_xtal = xpd_xtal;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_hp_set_xtalx2_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode, bool xpd_xtalx2)
+{
+    hw->hp_sys[mode].xtal.xpd_xtalx2 = xpd_xtalx2;
+}
+
 FORCE_INLINE_ATTR void pmu_ll_hp_set_bias_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode, bool xpd_bias)
 {
     hw->hp_sys[mode].bias.xpd_bias = xpd_bias;
@@ -339,6 +344,12 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_xtal_xpd(pmu_dev_t *hw, pmu_lp_mode_t mode,
     hw->lp_sys[mode].xtal.xpd_xtal = xpd_xtal;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_lp_set_xtalx2_xpd(pmu_dev_t *hw, pmu_lp_mode_t mode, bool xpd_xtalx2)
+{
+    HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
+    hw->lp_sys[mode].xtal.xpd_xtalx2 = xpd_xtalx2;
+}
+
 FORCE_INLINE_ATTR void pmu_ll_lp_set_dig_power(pmu_dev_t *hw, pmu_lp_mode_t mode, uint32_t flag)
 {
     hw->lp_sys[mode].dig_power.val = flag;
@@ -558,6 +569,20 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_no_isolate(pmu_dev_t *hw, uint32_t n
 FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_up(pmu_dev_t *hw, uint32_t fpu)
 {
     hw->power.mem_cntl.force_hp_mem_pu = fpu;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_on_mask(pmu_dev_t *hw, uint32_t mem0_mask, uint32_t mem1_mask, uint32_t mem2_mask)
+{
+    hw->power.mem_mask.mem0_mask = mem0_mask;
+    hw->power.mem_mask.mem1_mask = mem1_mask;
+    hw->power.mem_mask.mem2_mask = mem2_mask;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_off_mask(pmu_dev_t *hw, uint32_t mem0_pd_mask, uint32_t mem1_pd_mask, uint32_t mem2_pd_mask)
+{
+    hw->power.mem_mask.mem0_pd_mask = mem0_pd_mask;
+    hw->power.mem_mask.mem1_pd_mask = mem1_pd_mask;
+    hw->power.mem_mask.mem2_pd_mask = mem2_pd_mask;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_sleep_enable(pmu_dev_t *hw)
@@ -786,9 +811,36 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_digital_power_up_wait_cycle(pmu_dev_t *
     return hw->power.wait_timer0.hp_powerup_timer;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_hp_vddspi_ldo_set_sw_adjust(bool sw_enable, uint32_t vdd_flash_mode)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.power.flash_ldo[vdd_flash_mode], sw_en_xpd, sw_enable);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.power.flash_ldo[vdd_flash_mode], sw_en_power_adjust, sw_enable);
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_vddspi_ldo_set_sw_adjust_value(uint32_t value, uint32_t vdd_flash_mode)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.power.flash_ldo[vdd_flash_mode], power_adjust, value);
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_vddio_ldo_set_sw_adjust(bool sw_enable)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.power.io_ldo, sw_en_xpd, sw_enable);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.power.io_ldo, sw_en_power_adjust, sw_enable);
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_vddio_ldo_set_sw_adjust_value(uint32_t value)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.power.io_ldo, power_adjust, value);
+}
+
 FORCE_INLINE_ATTR uint32_t pmu_ll_get_sysclk_sleep_select_state(pmu_dev_t *hw)
 {
     return hw->clk_state0.sysclk_slp_sel_state;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_set_dcdc_ccm_sw_en(pmu_dev_t *hw, bool en)
+{
+    hw->dcm_ctrl.dcdc_ccm_sw_en = en;
 }
 
 #ifdef __cplusplus

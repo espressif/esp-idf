@@ -66,17 +66,17 @@ static __attribute__((unused)) const char *TAG = "pmu_param";
         .xpd_bbpll      = 1  \
     }, \
     .xtal = {                \
-        .xpd_xtalx2     = 1, \
+        .xpd_xtalx2     = 0, \
         .xpd_xtal       = 1  \
     } \
 }
 
 #define PMU_HP_SLEEP_POWER_CONFIG_DEFAULT() { \
     .dig_power = {           \
-        .vdd_flash_mode = 1, \
+        .vdd_flash_mode = 3, \
         .mem_dslp       = 0, \
         .mem_pd_en      = 0, \
-        .wifi_pd_en     = 1, \
+        .wifi_pd_en     = 0, \
         .peri_pd_en     = 0, \
         .cpu_pd_en      = 0, \
         .aon_pd_en      = 0, \
@@ -208,12 +208,12 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
 
 #define PMU_HP_ACTIVE_ANALOG_CONFIG_DEFAULT() { \
     .bias = {                       \
-        .dcdc_ccm_enb       = 1,    \
+        .dcdc_ccm_enb       = 0,    \
         .dcdc_clear_rdy     = 0,    \
         .dig_reg_dpcur_bias = 3,    \
         .dig_reg_dsfmos     = 6,    \
-        .dcm_vset           = 23,   \
-        .dcm_mode           = 0,    \
+        .dcm_mode           = 3,    \
+        .dcm_vset           = 24,   \
         .xpd_trx            = 1,    \
         .xpd_bias           = 1,    \
         .discnnt_dig_rtc    = 0,    \
@@ -234,7 +234,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .dbias              = HP_CALI_DBIAS_DEFAULT \
     }, \
     .regulator1 = {                 \
-        .drv_b              = 0x0   \
+        .drv_b              = 2     \
     } \
 }
 
@@ -244,8 +244,8 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .dcdc_clear_rdy     = 0,    \
         .dig_reg_dpcur_bias = 1,    \
         .dig_reg_dsfmos     = 4,    \
-        .dcm_vset           = 23,   \
-        .dcm_mode           = 0,    \
+        .dcm_mode           = 3,    \
+        .dcm_vset           = 24,   \
         .xpd_trx            = 1,    \
         .xpd_bias           = 0,    \
         .discnnt_dig_rtc    = 0,    \
@@ -262,23 +262,23 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .dbias              = HP_CALI_DBIAS_DEFAULT  \
     }, \
     .regulator1 = {                 \
-        .drv_b              = 0x0   \
+        .drv_b              = 2     \
     } \
 }
 
 #define PMU_HP_SLEEP_ANALOG_CONFIG_DEFAULT() { \
     .bias = {                       \
-        .dcdc_ccm_enb       = 0,    \
+        .dcdc_ccm_enb       = 1,    \
         .dcdc_clear_rdy     = 0,    \
         .dig_reg_dpcur_bias = 1,    \
         .dig_reg_dsfmos     = 4,    \
-        .dcm_vset           = 23,   \
-        .dcm_mode           = 0,    \
+        .dcm_mode           = 3,    \
+        .dcm_vset           = 24,   \
         .xpd_trx            = 0,    \
         .xpd_bias           = 0,    \
         .discnnt_dig_rtc    = 0,    \
-        .pd_cur             = 0,    \
-        .bias_sleep         = 0     \
+        .pd_cur             = 1,    \
+        .bias_sleep         = 1     \
     }, \
     .regulator0 = {                 \
         .power_det_bypass   = 0,    \
@@ -287,10 +287,10 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .xpd                = 1,    \
         .slp_mem_dbias      = 0,    \
         .slp_logic_dbias    = 0,    \
-        .dbias              = 1     \
+        .dbias              = 0     \
     }, \
     .regulator1 = {                 \
-        .drv_b              = 0x0   \
+        .drv_b              = 7     \
     } \
 }
 
@@ -384,10 +384,10 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
 
 #define PMU_LP_SLEEP_POWER_CONFIG_DEFAULT() { \
     .dig_power = {              \
-        .vdd_io_mode    = 0,    \
+        .vdd_io_mode    = 3,    \
         .bod_source_sel = 0,    \
         .vddbat_mode    = 0,    \
-        .mem_dslp       = 1,    \
+        .mem_dslp       = 0,    \
         .peri_pd_en     = 0,    \
     }, \
     .clk_power = {              \
@@ -417,22 +417,22 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
     .regulator0 = {                 \
         .slp_xpd    = 0,            \
         .xpd        = 1,            \
-        .slp_dbias          = 0, \
-        .dbias              = LP_CALI_DBIAS_DEFAULT  \
+        .slp_dbias  = 0,            \
+        .dbias      = LP_CALI_DBIAS_DEFAULT  \
     }, \
     .regulator1 = {                 \
-        .drv_b      = 0x0           \
+        .drv_b      = 2             \
     } \
 }
 
 #define PMU_LP_SLEEP_ANALOG_CONFIG_DEFAULT() { \
     .bias = {                       \
-        .dcdc_ccm_enb       = 0,    \
+        .dcdc_ccm_enb       = 1,    \
         .dcdc_clear_rdy     = 0,    \
         .dig_reg_dpcur_bias = 1,    \
         .dig_reg_dsfmos     = 4,    \
-        .dcm_vset           = 23,   \
-        .dcm_mode           = 0,    \
+        .dcm_mode           = 3,    \
+        .dcm_vset           = 0,    \
         .xpd_bias           = 0,    \
         .discnnt_dig_rtc    = 0,    \
         .pd_cur             = 1,    \
@@ -442,10 +442,10 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
         .slp_xpd            = 0,    \
         .xpd                = 1,    \
         .slp_dbias          = 0,    \
-        .dbias              = 12    \
+        .dbias              = 0     \
     }, \
     .regulator1 = {                 \
-        .drv_b              = 0x0   \
+        .drv_b              = 7     \
     } \
 }
 

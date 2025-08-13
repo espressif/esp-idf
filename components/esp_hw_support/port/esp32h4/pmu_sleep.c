@@ -68,6 +68,8 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t sleep_flags, soc_rtc_slow_clk
     const int lp_hw_wait_time_us = mc->lp.min_slp_time_us + mc->lp.analog_wait_time_us + lp_clk_power_on_wait_time_us \
                                  + lp_clk_switch_time_us + mc->lp.power_supply_wait_time_us + mc->lp.power_up_wait_time_us;
 
+    mc->hp.regdma_s2a_work_time_us = (sleep_flags & PMU_SLEEP_PD_TOP) ? PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US : PMU_REGDMA_S2A_WORK_TIME_PU_TOP_US;
+
     /* HP core hardware wait time, microsecond */
     const int hp_digital_power_up_wait_time_us = mc->hp.power_supply_wait_time_us + mc->hp.power_up_wait_time_us;
     const int hp_control_wait_time_us = mc->hp.isolate_wait_time_us + mc->hp.reset_wait_time_us;
@@ -138,6 +140,9 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
     config->param = *pmu_sleep_param_config_default(&param_default, &power_default, sleep_flags, adjustment, slowclk_period, fastclk_period);
 
     if (dslp) {
+        power_default.hp_sys.memory.mem0_mask = 0;
+        power_default.hp_sys.memory.mem1_mask = 0;
+        power_default.hp_sys.memory.mem2_mask = 0;
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags);
         config->analog = analog_default;
@@ -178,6 +183,8 @@ static void pmu_sleep_power_init(pmu_context_t *ctx, const pmu_sleep_power_confi
     pmu_ll_lp_set_dig_power(ctx->hal->dev, LP(SLEEP), power->lp_sys[LP(SLEEP)].dig_power.val);
     pmu_ll_lp_set_clk_power(ctx->hal->dev, LP(SLEEP), power->lp_sys[LP(SLEEP)].clk_power.val);
     pmu_ll_lp_set_xtal_xpd (ctx->hal->dev, LP(SLEEP), power->lp_sys[LP(SLEEP)].xtal.xpd_xtal);
+
+    pmu_ll_hp_set_memory_power_on_mask(ctx->hal->dev, power->hp_sys.memory.mem0_mask, power->hp_sys.memory.mem1_mask, power->hp_sys.memory.mem2_mask);
 }
 
 static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_config_t *dig)
@@ -188,6 +195,7 @@ static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_c
 static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_config_t *analog, bool dslp)
 {
     assert(ctx->hal);
+    // Core power supply (include DCDC, HP LDO, LP LDO) configuration
     pmu_ll_hp_set_current_power_off    (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.pd_cur);
     pmu_ll_hp_set_bias_sleep_enable    (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.bias_sleep);
     pmu_ll_hp_set_regulator_xpd        (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.xpd);

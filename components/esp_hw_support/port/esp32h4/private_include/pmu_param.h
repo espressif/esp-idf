@@ -40,6 +40,10 @@ extern "C" {
 #define PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT 1
 #define PMU_LP_DBIAS_LIGHTSLEEP_0V7_DEFAULT 12
 
+#define PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US     0
+// The current value of this depends on the restoration time overhead of the longest chain in regdma
+#define PMU_REGDMA_S2A_WORK_TIME_PU_TOP_US     390
+
 // FOR DEEPSLEEP
 #define PMU_DBG_HP_DEEPSLEEP    0
 #define PMU_HP_XPD_DEEPSLEEP    0
@@ -133,6 +137,15 @@ typedef union {
         uint32_t reserved3    : 30;
         uint32_t xpd_xtalx2   : 1;
         uint32_t xpd_xtal     : 1;
+    };
+    struct {
+        uint32_t mem2_pd_mask: 5;
+        uint32_t mem1_pd_mask: 5;
+        uint32_t mem0_pd_mask: 5;
+        uint32_t reserved5   : 2;
+        uint32_t mem2_mask   : 5;
+        uint32_t mem1_mask   : 5;
+        uint32_t mem0_mask   : 5;
     };
     uint32_t val;
 } pmu_hp_power_t;
@@ -277,6 +290,7 @@ typedef struct {
         pmu_hp_power_t  dig_power;
         pmu_hp_power_t  clk_power;
         pmu_hp_power_t  xtal;
+        pmu_hp_power_t  memory;
     } hp_sys;
     struct {
         pmu_lp_power_t  dig_power;
@@ -288,7 +302,7 @@ typedef struct {
 #define PMU_SLEEP_POWER_CONFIG_DEFAULT(pd_flags) {                          \
     .hp_sys = {                                                             \
         .dig_power = {                                                      \
-            .vdd_flash_mode = 0,                                            \
+            .vdd_flash_mode = ((pd_flags) & PMU_SLEEP_PD_VDDSDIO) ? 1 : 3,  \
             .wifi_pd_en     = ((pd_flags) & PMU_SLEEP_PD_MODEM)   ? 1 : 0,  \
             .cpu_pd_en      = ((pd_flags) & PMU_SLEEP_PD_CPU)     ? 1 : 0,  \
             .aon_pd_en      = ((pd_flags) & PMU_SLEEP_PD_HP_AON)  ? 1 : 0,  \
@@ -306,6 +320,11 @@ typedef struct {
         .xtal = {                                                           \
             .xpd_xtalx2     = 0,                                            \
             .xpd_xtal       = ((pd_flags) & PMU_SLEEP_PD_XTAL) ? 0 : 1,     \
+        },                                                                  \
+        .memory = {                                                         \
+            .mem0_mask     = ((pd_flags) & PMU_SLEEP_PD_TOP)     ? 1 : 0,   \
+            .mem1_mask     = ((pd_flags) & PMU_SLEEP_PD_TOP)     ? 1 : 0,   \
+            .mem2_mask     = ((pd_flags) & PMU_SLEEP_PD_TOP)     ? 1 : 0    \
         }                                                                   \
     },                                                                      \
     .lp_sys[PMU_MODE_LP_ACTIVE] = {                                         \
@@ -325,11 +344,11 @@ typedef struct {
     },                                                                      \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                                          \
         .dig_power = {                                                      \
-            .vdd_io_mode    = 0,                                            \
+            .vdd_io_mode    = 3,                                            \
             .bod_source_sel = 0,                                            \
             .vddbat_mode    = 0,                                            \
             .peri_pd_en     = ((pd_flags) & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0,\
-            .mem_dslp       = 1                                             \
+            .mem_dslp       = 0                                             \
         },                                                                  \
         .clk_power = {                                                      \
             .xpd_lppll      = 0,                                            \
@@ -390,7 +409,7 @@ typedef struct {
             .dcm_vset           = 0,                                \
             .dcm_mode           = 3,                                \
             .discnnt_dig_rtc    = 0,                                \
-            .drv_b              = PMU_LP_DRVB_DEEPSLEEP,            \
+            .drv_b              = PMU_LP_DRVB_DEEPSLEEP,           \
             .pd_cur             = PMU_PD_CUR_SLEEP_DEFAULT,         \
             .bias_sleep         = PMU_BIASSLP_SLEEP_DEFAULT,        \
             .slp_xpd            = PMU_LP_SLP_XPD_SLEEP_DEFAULT,     \
@@ -432,9 +451,9 @@ typedef struct {
             .bias_sleep         = PMU_BIASSLP_SLEEP_DEFAULT,        \
             .slp_xpd            = PMU_LP_SLP_XPD_SLEEP_DEFAULT,     \
             .slp_dbias          = PMU_LP_SLP_DBIAS_SLEEP_DEFAULT,   \
-            .xpd                = PMU_LP_XPD_SLEEP_DEFAULT,             \
-            .dbias              = PMU_LP_DBIAS_SLEEP_0V7_DEFAULT        \
-        }                                                               \
+            .xpd                = PMU_LP_XPD_SLEEP_DEFAULT,         \
+            .dbias              = PMU_LP_DBIAS_SLEEP_0V7_DEFAULT    \
+        }                                                           \
     }                                                               \
 }
 
@@ -508,8 +527,8 @@ typedef struct pmu_sleep_machine_constant {
     .lp = {                                     \
         .min_slp_time_us                = 450,  \
         .wakeup_wait_cycle              = 4,    \
-        .analog_wait_time_us            = 154,  \
-        .xtal_wait_stable_time_us       = 250,  \
+        .analog_wait_time_us            = 400,  \
+        .xtal_wait_stable_time_us       = 2000, \
         .clk_switch_cycle               = 1,    \
         .clk_power_on_wait_cycle        = 1,    \
         .isolate_wait_time_us           = 1,    \
@@ -521,7 +540,7 @@ typedef struct pmu_sleep_machine_constant {
         .min_slp_time_us                = 450,  \
         .clock_domain_sync_time_us      = 150,  \
         .system_dfs_up_work_time_us     = 124,  \
-        .analog_wait_time_us            = 154,  \
+        .analog_wait_time_us            = 800,  \
         .isolate_wait_time_us           = 1,    \
         .reset_wait_time_us             = 1,    \
         .power_supply_wait_time_us      = 2,    \
@@ -532,7 +551,7 @@ typedef struct pmu_sleep_machine_constant {
         .regdma_a2s_work_time_us        = 382,  \
         .regdma_rf_on_work_time_us      = 70,   \
         .regdma_rf_off_work_time_us     = 23,   \
-        .xtal_wait_stable_time_us       = 250,  \
+        .xtal_wait_stable_time_us       = 2000, \
         .pll_wait_stable_time_us        = 1     \
     }                                           \
 }

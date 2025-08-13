@@ -103,6 +103,10 @@ config SOC_LIGHT_SLEEP_SUPPORTED
     bool
     default y
 
+config SOC_DEEP_SLEEP_SUPPORTED
+    bool
+    default y
+
 config SOC_MODEM_CLOCK_SUPPORTED
     bool
     default y
@@ -803,23 +807,7 @@ config SOC_UART_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
-config SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN
-    int
-    default 5
-
 config SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
-    bool
-    default y
-
-config SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE
-    bool
-    default y
-
-config SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE
-    bool
-    default y
-
-config SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
     bool
     default y
 
@@ -847,18 +835,6 @@ config SOC_PHY_DIG_REGS_MEM_SIZE
     int
     default 21
 
-config SOC_PM_SUPPORT_BT_WAKEUP
-    bool
-    default y
-
-config SOC_PM_SUPPORT_EXT1_WAKEUP
-    bool
-    default y
-
-config SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
-    bool
-    default y
-
 config SOC_PM_SUPPORT_TOUCH_WAKEUP
     bool
     default y
@@ -884,10 +860,6 @@ config SOC_PM_SUPPORT_HP_AON_PD
     default y
 
 config SOC_PM_SUPPORT_MAC_BB_PD
-    bool
-    default y
-
-config SOC_PM_SUPPORT_RTC_PERIPH_PD
     bool
     default y
 
