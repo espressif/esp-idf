@@ -88,17 +88,7 @@ typedef struct {
     int                          max_store_header_size;
 } connection_info_t;
 
-typedef enum {
-    HTTP_STATE_UNINIT = 0,
-    HTTP_STATE_INIT,
-    HTTP_STATE_CONNECTED,
-    HTTP_STATE_REQ_COMPLETE_HEADER,
-    HTTP_STATE_REQ_COMPLETE_DATA,
-    HTTP_STATE_RES_COMPLETE_HEADER,
-    HTTP_STATE_RES_ON_DATA_START,
-    HTTP_STATE_RES_COMPLETE_DATA,
-    HTTP_STATE_CLOSE
-} esp_http_state_t;
+
 
 typedef enum {
     SESSION_TICKET_UNUSED = 0,
@@ -1429,6 +1419,8 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
            then the esp_http_client_perform() API will return ESP_ERR_HTTP_EAGAIN error. The user may call
            esp_http_client_perform API again, and for this reason, we maintain the states */
             case HTTP_STATE_INIT:
+                /* falls through */
+            case HTTP_STATE_CONNECTING:
                 if ((err = esp_http_client_connect(client)) != ESP_OK) {
                     if (client->is_async && err == ESP_ERR_HTTP_CONNECTING) {
                         return ESP_ERR_HTTP_EAGAIN;
@@ -1576,6 +1568,7 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
         esp_http_client_close(client);
         return err;
     }
+    client->state = HTTP_STATE_CONNECTING;
 
     if (client->state < HTTP_STATE_CONNECTED) {
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
@@ -1815,7 +1808,7 @@ int esp_http_client_write(esp_http_client_handle_t client, const char *buffer, i
 
 esp_err_t esp_http_client_close(esp_http_client_handle_t client)
 {
-    if (client->state >= HTTP_STATE_INIT) {
+    if (client->state > HTTP_STATE_INIT) {
         http_dispatch_event(client, HTTP_EVENT_DISCONNECTED, esp_transport_get_error_handle(client->transport), 0);
         http_dispatch_event_to_event_loop(HTTP_EVENT_DISCONNECTED, &client, sizeof(esp_http_client_handle_t));
         client->state = HTTP_STATE_INIT;
@@ -2024,4 +2017,12 @@ esp_err_t esp_http_client_get_chunk_length(esp_http_client_handle_t client, int 
         return ESP_FAIL;
     }
     return ESP_OK;
+}
+
+esp_http_state_t esp_http_client_get_state(esp_http_client_handle_t client)
+{
+    if (client == NULL) {
+        return HTTP_STATE_UNINIT;
+    }
+    return client->state;
 }

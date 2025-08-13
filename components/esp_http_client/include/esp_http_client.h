@@ -146,6 +146,22 @@ typedef enum {
 } esp_http_client_tls_dyn_buf_strategy_t;
 
 /**
+ * @brief HTTP Client states
+ */
+typedef enum {
+    HTTP_STATE_UNINIT = 0,              /*!< HTTP client uninitialized */
+    HTTP_STATE_INIT,                    /*!< HTTP client initialized */
+    HTTP_STATE_CONNECTING,              /*!< HTTP client connecting to server */
+    HTTP_STATE_CONNECTED,               /*!< HTTP client connected to server */
+    HTTP_STATE_REQ_COMPLETE_HEADER,     /*!< HTTP request headers sent */
+    HTTP_STATE_REQ_COMPLETE_DATA,       /*!< HTTP request data sent */
+    HTTP_STATE_RES_COMPLETE_HEADER,     /*!< HTTP response headers received */
+    HTTP_STATE_RES_ON_DATA_START,       /*!< HTTP response data started */
+    HTTP_STATE_RES_COMPLETE_DATA,       /*!< HTTP response data completed */
+    HTTP_STATE_CLOSE                    /*!< HTTP client connection closed */
+} esp_http_state_t;
+
+/**
  * @brief HTTP configuration
  */
 typedef struct {
@@ -821,6 +837,15 @@ esp_err_t esp_http_client_get_url(esp_http_client_handle_t client, char *url, co
  *     - ESP_ERR_INVALID_ARG    If the client or len are NULL
  */
 esp_err_t esp_http_client_get_chunk_length(esp_http_client_handle_t client, int *len);
+
+/**
+ * @brief      Get the current state of the HTTP client
+ *
+ * @param[in]  client  The HTTP client handle
+ *
+ * @return     Current state of the HTTP client
+ */
+esp_http_state_t esp_http_client_get_state(esp_http_client_handle_t client);
 
 #ifdef __cplusplus
 }
