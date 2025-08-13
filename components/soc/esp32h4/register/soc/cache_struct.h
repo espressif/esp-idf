@@ -251,7 +251,7 @@ typedef union {
         uint32_t l1_dcache_freeze_en:1;
         /** l1_dcache_freeze_mode : R/W; bitpos: [17]; default: 0;
          *  The bit is used to configure mode of freeze operation L1-DCache. 0: a miss-access
-         *  will not stuck. 1: a miss-access will stuck.
+         *  will stuck. 1: a miss-access will not stuck.
          */
         uint32_t l1_dcache_freeze_mode:1;
         /** l1_dcache_freeze_done : RO; bitpos: [18]; default: 0;
@@ -768,7 +768,12 @@ typedef union {
          *  The bit is used to set  the gid of l1 icache0 preload.
          */
         uint32_t l1_icache0_preload_rgid:4;
-        uint32_t reserved_7:25;
+        /** l1_icache0_preload_mode : R/W; bitpos: [7]; default: 0;
+         *  Configures the mode of l1 icache0 preload, 0: load data from next level memory, 1:
+         *  not load data from next level memory.
+         */
+        uint32_t l1_icache0_preload_mode:1;
+        uint32_t reserved_8:24;
     };
     uint32_t val;
 } cache_l1_icache0_preload_ctrl_reg_t;
@@ -826,7 +831,12 @@ typedef union {
          *  The bit is used to set  the gid of l1 icache1 preload.
          */
         uint32_t l1_icache1_preload_rgid:4;
-        uint32_t reserved_7:25;
+        /** l1_icache1_preload_mode : R/W; bitpos: [7]; default: 0;
+         *  Configures the mode of l1 icache1 preload, 0: load data from next level memory, 1:
+         *  not load data from next level memory.
+         */
+        uint32_t l1_icache1_preload_mode:1;
+        uint32_t reserved_8:24;
     };
     uint32_t val;
 } cache_l1_icache1_preload_ctrl_reg_t;
@@ -884,7 +894,12 @@ typedef union {
          *  The bit is used to set  the gid of l1 dcache preload.
          */
         uint32_t l1_dcache_preload_rgid:4;
-        uint32_t reserved_7:25;
+        /** l1_dcache_preload_mode : R/W; bitpos: [7]; default: 0;
+         *  Configures the mode of l1 dcache preload, 0: load data from next level memory, 1:
+         *  not load data from next level memory.
+         */
+        uint32_t l1_dcache_preload_mode:1;
+        uint32_t reserved_8:24;
     };
     uint32_t val;
 } cache_l1_dcache_preload_ctrl_reg_t;
@@ -2415,7 +2430,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 37765696;
+        /** date : R/W; bitpos: [27:0]; default: 38810384;
          *  version control register. Note that this default value stored is the latest date
          *  when the hardware logic was updated.
          */

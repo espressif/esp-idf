@@ -14,7 +14,7 @@ extern "C" {
 /** LP_TEE_TRNG_CTRL_REG register
  *  trng read/write control register
  */
-#define LP_TEE_TRNG_CTRL_REG (DR_REG_LP_BASE + 0x0)
+#define LP_TEE_TRNG_CTRL_REG (DR_REG_LP_TEE_BASE + 0x0)
 /** LP_TEE_READ_TEE_TRNG : R/W; bitpos: [0]; default: 1;
  *  Configures trng registers read permission in tee mode.
  *  0: can not be read
@@ -91,7 +91,7 @@ extern "C" {
 /** LP_TEE_EFUSE_CTRL_REG register
  *  efuse read/write control register
  */
-#define LP_TEE_EFUSE_CTRL_REG (DR_REG_LP_BASE + 0x4)
+#define LP_TEE_EFUSE_CTRL_REG (DR_REG_LP_TEE_BASE + 0x4)
 /** LP_TEE_READ_TEE_EFUSE : R/W; bitpos: [0]; default: 1;
  *  Configures efuse registers read permission in tee mode.
  *  0: can not be read
@@ -168,7 +168,7 @@ extern "C" {
 /** LP_TEE_PMU_CTRL_REG register
  *  pmu read/write control register
  */
-#define LP_TEE_PMU_CTRL_REG (DR_REG_LP_BASE + 0x8)
+#define LP_TEE_PMU_CTRL_REG (DR_REG_LP_TEE_BASE + 0x8)
 /** LP_TEE_READ_TEE_PMU : R/W; bitpos: [0]; default: 1;
  *  Configures pmu registers read permission in tee mode.
  *  0: can not be read
@@ -245,7 +245,7 @@ extern "C" {
 /** LP_TEE_CLKRST_CTRL_REG register
  *  clkrst read/write control register
  */
-#define LP_TEE_CLKRST_CTRL_REG (DR_REG_LP_BASE + 0xc)
+#define LP_TEE_CLKRST_CTRL_REG (DR_REG_LP_TEE_BASE + 0xc)
 /** LP_TEE_READ_TEE_CLKRST : R/W; bitpos: [0]; default: 1;
  *  Configures clkrst registers read permission in tee mode.
  *  0: can not be read
@@ -322,7 +322,7 @@ extern "C" {
 /** LP_TEE_LP_AON_CTRL_CTRL_REG register
  *  lp_aon_ctrl read/write control register
  */
-#define LP_TEE_LP_AON_CTRL_CTRL_REG (DR_REG_LP_BASE + 0x10)
+#define LP_TEE_LP_AON_CTRL_CTRL_REG (DR_REG_LP_TEE_BASE + 0x10)
 /** LP_TEE_READ_TEE_LP_AON_CTRL : R/W; bitpos: [0]; default: 1;
  *  Configures lp_aon_ctrl registers read permission in tee mode.
  *  0: can not be read
@@ -399,7 +399,7 @@ extern "C" {
 /** LP_TEE_LP_TIMER_CTRL_REG register
  *  lp_timer read/write control register
  */
-#define LP_TEE_LP_TIMER_CTRL_REG (DR_REG_LP_BASE + 0x14)
+#define LP_TEE_LP_TIMER_CTRL_REG (DR_REG_LP_TEE_BASE + 0x14)
 /** LP_TEE_READ_TEE_LP_TIMER : R/W; bitpos: [0]; default: 1;
  *  Configures lp_timer registers read permission in tee mode.
  *  0: can not be read
@@ -476,7 +476,7 @@ extern "C" {
 /** LP_TEE_LP_WDT_CTRL_REG register
  *  lp_wdt read/write control register
  */
-#define LP_TEE_LP_WDT_CTRL_REG (DR_REG_LP_BASE + 0x18)
+#define LP_TEE_LP_WDT_CTRL_REG (DR_REG_LP_TEE_BASE + 0x18)
 /** LP_TEE_READ_TEE_LP_WDT : R/W; bitpos: [0]; default: 1;
  *  Configures lp_wdt registers read permission in tee mode.
  *  0: can not be read
@@ -553,7 +553,7 @@ extern "C" {
 /** LP_TEE_LPPERI_CTRL_REG register
  *  lpperi read/write control register
  */
-#define LP_TEE_LPPERI_CTRL_REG (DR_REG_LP_BASE + 0x1c)
+#define LP_TEE_LPPERI_CTRL_REG (DR_REG_LP_TEE_BASE + 0x1c)
 /** LP_TEE_READ_TEE_LPPERI : R/W; bitpos: [0]; default: 1;
  *  Configures lpperi registers read permission in tee mode.
  *  0: can not be read
@@ -630,7 +630,7 @@ extern "C" {
 /** LP_TEE_LP_ANA_PERI_CTRL_REG register
  *  lp_ana_peri read/write control register
  */
-#define LP_TEE_LP_ANA_PERI_CTRL_REG (DR_REG_LP_BASE + 0x20)
+#define LP_TEE_LP_ANA_PERI_CTRL_REG (DR_REG_LP_TEE_BASE + 0x20)
 /** LP_TEE_READ_TEE_LP_ANA_PERI : R/W; bitpos: [0]; default: 1;
  *  Configures lp_ana_peri registers read permission in tee mode.
  *  0: can not be read
@@ -707,7 +707,7 @@ extern "C" {
 /** LP_TEE_LP_TOUCH_CTRL_REG register
  *  lp_touch read/write control register
  */
-#define LP_TEE_LP_TOUCH_CTRL_REG (DR_REG_LP_BASE + 0x24)
+#define LP_TEE_LP_TOUCH_CTRL_REG (DR_REG_LP_TEE_BASE + 0x24)
 /** LP_TEE_READ_TEE_LP_TOUCH : R/W; bitpos: [0]; default: 1;
  *  Configures lp_touch registers read permission in tee mode.
  *  0: can not be read
@@ -784,7 +784,7 @@ extern "C" {
 /** LP_TEE_TOUCH_AON_CTRL_REG register
  *  touch_aon read/write control register
  */
-#define LP_TEE_TOUCH_AON_CTRL_REG (DR_REG_LP_BASE + 0x28)
+#define LP_TEE_TOUCH_AON_CTRL_REG (DR_REG_LP_TEE_BASE + 0x28)
 /** LP_TEE_READ_TEE_TOUCH_AON : R/W; bitpos: [0]; default: 1;
  *  Configures touch_aon registers read permission in tee mode.
  *  0: can not be read
@@ -861,7 +861,7 @@ extern "C" {
 /** LP_TEE_LP_IO_CTRL_REG register
  *  lp_io read/write control register
  */
-#define LP_TEE_LP_IO_CTRL_REG (DR_REG_LP_BASE + 0x2c)
+#define LP_TEE_LP_IO_CTRL_REG (DR_REG_LP_TEE_BASE + 0x2c)
 /** LP_TEE_READ_TEE_LP_IO : R/W; bitpos: [0]; default: 1;
  *  Configures lp_io registers read permission in tee mode.
  *  0: can not be read
@@ -938,7 +938,7 @@ extern "C" {
 /** LP_TEE_LP_BLE_TIMER_CTRL_REG register
  *  lp_ble_timer read/write control register
  */
-#define LP_TEE_LP_BLE_TIMER_CTRL_REG (DR_REG_LP_BASE + 0x30)
+#define LP_TEE_LP_BLE_TIMER_CTRL_REG (DR_REG_LP_TEE_BASE + 0x30)
 /** LP_TEE_READ_TEE_LP_BLE_TIMER : R/W; bitpos: [0]; default: 1;
  *  Configures lp_ble_timer registers read permission in tee mode.
  *  0: can not be read
@@ -1015,7 +1015,7 @@ extern "C" {
 /** LP_TEE_LP_TEE_CTRL_REG register
  *  lp_tee read/write control register
  */
-#define LP_TEE_LP_TEE_CTRL_REG (DR_REG_LP_BASE + 0x34)
+#define LP_TEE_LP_TEE_CTRL_REG (DR_REG_LP_TEE_BASE + 0x34)
 /** LP_TEE_READ_TEE_LP_TEE : R/W; bitpos: [0]; default: 1;
  *  Configures lp_tee registers read permission in tee mode.
  *  0: can not be read
@@ -1092,7 +1092,7 @@ extern "C" {
 /** LP_TEE_HUK_CTRL_REG register
  *  lp_tee read/write control register
  */
-#define LP_TEE_HUK_CTRL_REG (DR_REG_LP_BASE + 0x38)
+#define LP_TEE_HUK_CTRL_REG (DR_REG_LP_TEE_BASE + 0x38)
 /** LP_TEE_READ_TEE_HUK : R/W; bitpos: [0]; default: 1;
  *  Configures huk registers read permission in tee mode.
  *  0: can not be read
@@ -1166,10 +1166,49 @@ extern "C" {
 #define LP_TEE_WRITE_REE2_HUK_V  0x00000001U
 #define LP_TEE_WRITE_REE2_HUK_S  7
 
+/** LP_TEE_LP_GPIO_SECURITY_REG register
+ *  need des
+ */
+#define LP_TEE_LP_GPIO_SECURITY_REG (DR_REG_LP_TEE_BASE + 0xe4)
+/** LP_TEE_LP_GPIO_LOCK : R/W; bitpos: [5:0]; default: 0;
+ *  This field decides whether lp_gpio_config can be locked, or not. 0 (default):
+ *  unlocked. 1: locked.
+ */
+#define LP_TEE_LP_GPIO_LOCK    0x0000003FU
+#define LP_TEE_LP_GPIO_LOCK_M  (LP_TEE_LP_GPIO_LOCK_V << LP_TEE_LP_GPIO_LOCK_S)
+#define LP_TEE_LP_GPIO_LOCK_V  0x0000003FU
+#define LP_TEE_LP_GPIO_LOCK_S  0
+
+/** LP_TEE_HP_GPIO_SECURITY_1_REG register
+ *  need des
+ */
+#define LP_TEE_HP_GPIO_SECURITY_1_REG (DR_REG_LP_TEE_BASE + 0xe8)
+/** LP_TEE_HP_GPIO_LOCK_P1 : R/W; bitpos: [31:0]; default: 0;
+ *  This field decides whether hp_gpio_config of PIN0~31 can be locked, or not. 0
+ *  (default): unlocked. 1: locked.
+ */
+#define LP_TEE_HP_GPIO_LOCK_P1    0xFFFFFFFFU
+#define LP_TEE_HP_GPIO_LOCK_P1_M  (LP_TEE_HP_GPIO_LOCK_P1_V << LP_TEE_HP_GPIO_LOCK_P1_S)
+#define LP_TEE_HP_GPIO_LOCK_P1_V  0xFFFFFFFFU
+#define LP_TEE_HP_GPIO_LOCK_P1_S  0
+
+/** LP_TEE_HP_GPIO_SECURITY_2_REG register
+ *  need des
+ */
+#define LP_TEE_HP_GPIO_SECURITY_2_REG (DR_REG_LP_TEE_BASE + 0xec)
+/** LP_TEE_HP_GPIO_LOCK_P2 : R/W; bitpos: [7:0]; default: 0;
+ *  This field decides whether hp_gpio_config of PIN32~39 can be locked, or not. 0
+ *  (default): unlocked. 1: locked.
+ */
+#define LP_TEE_HP_GPIO_LOCK_P2    0x000000FFU
+#define LP_TEE_HP_GPIO_LOCK_P2_M  (LP_TEE_HP_GPIO_LOCK_P2_V << LP_TEE_HP_GPIO_LOCK_P2_S)
+#define LP_TEE_HP_GPIO_LOCK_P2_V  0x000000FFU
+#define LP_TEE_HP_GPIO_LOCK_P2_S  0
+
 /** LP_TEE_BUS_ERR_CONF_REG register
  *  Clock gating register
  */
-#define LP_TEE_BUS_ERR_CONF_REG (DR_REG_LP_BASE + 0xf0)
+#define LP_TEE_BUS_ERR_CONF_REG (DR_REG_LP_TEE_BASE + 0xf0)
 /** LP_TEE_BUS_ERR_RESP_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether return error response to cpu when access blocked
  *  0: disable error response
@@ -1183,7 +1222,7 @@ extern "C" {
 /** LP_TEE_CLOCK_GATE_REG register
  *  Clock gating register
  */
-#define LP_TEE_CLOCK_GATE_REG (DR_REG_LP_BASE + 0xf8)
+#define LP_TEE_CLOCK_GATE_REG (DR_REG_LP_TEE_BASE + 0xf8)
 /** LP_TEE_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Configures whether to keep the clock always on.
  *  0: enable automatic clock gating
@@ -1197,8 +1236,8 @@ extern "C" {
 /** LP_TEE_DATE_REG register
  *  Version control register
  */
-#define LP_TEE_DATE_REG (DR_REG_LP_BASE + 0xfc)
-/** LP_TEE_DATE : R/W; bitpos: [27:0]; default: 37818640;
+#define LP_TEE_DATE_REG (DR_REG_LP_TEE_BASE + 0xfc)
+/** LP_TEE_DATE : R/W; bitpos: [27:0]; default: 38813840;
  *  Version control register
  */
 #define LP_TEE_DATE    0x0FFFFFFFU

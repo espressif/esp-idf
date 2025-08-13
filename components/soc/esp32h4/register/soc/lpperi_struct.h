@@ -167,6 +167,22 @@ typedef union {
     uint32_t val;
 } lpperi_lp_peri_pms_exception_info_reg_t;
 
+/** Type of peri_pms_int_en register
+ *  APM interrupt enable register
+ */
+typedef union {
+    struct {
+        /** lp_peri_pms_int_en : R/W; bitpos: [0]; default: 0;
+         *  Configures to enable lp peri pms interrupt.
+         *  0: disable
+         *  1: enable
+         */
+        uint32_t lp_peri_pms_int_en:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} lpperi_peri_pms_int_en_reg_t;
+
 
 /** Group: Version register */
 /** Type of date register
@@ -174,7 +190,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** lpperi_date : R/W; bitpos: [30:0]; default: 37819136;
+        /** lpperi_date : R/W; bitpos: [30:0]; default: 38813744;
          *  version register
          */
         uint32_t lpperi_date:31;
@@ -193,7 +209,8 @@ typedef struct {
     uint32_t reserved_008[2];
     volatile lpperi_lp_peri_pms_conf_reg_t lp_peri_pms_conf;
     volatile lpperi_lp_peri_pms_exception_info_reg_t lp_peri_pms_exception_info;
-    uint32_t reserved_018[2];
+    volatile lpperi_peri_pms_int_en_reg_t peri_pms_int_en;
+    uint32_t reserved_01c;
     volatile lpperi_interrupt_source_reg_t interrupt_source;
     uint32_t reserved_024[246];
     volatile lpperi_date_reg_t date;

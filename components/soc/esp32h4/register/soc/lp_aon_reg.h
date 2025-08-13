@@ -150,7 +150,7 @@ extern "C" {
  */
 #define LP_AON_GPIO_HOLD0_REG (DR_REG_LP_AON_BASE + 0x2c)
 /** LP_AON_GPIO_HOLD0 : R/W; bitpos: [31:0]; default: 0;
- *  configure io0~31 hold enable,when io in hold status, all io configure and output
+ *  configure io0~28 hold enable,when io in hold status, all io configure and output
  *  will be latch , input function is useful
  */
 #define LP_AON_GPIO_HOLD0    0xFFFFFFFFU
@@ -160,13 +160,10 @@ extern "C" {
 
 /** LP_AON_GPIO_HOLD1_REG register
  *  reserved
- *  This register is only for internal debugging purposes. Do not use it in
- *  applications.
  */
 #define LP_AON_GPIO_HOLD1_REG (DR_REG_LP_AON_BASE + 0x30)
 /** LP_AON_GPIO_HOLD1 : R/W; bitpos: [31:0]; default: 0;
  *  reserved
- *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_GPIO_HOLD1    0xFFFFFFFFU
 #define LP_AON_GPIO_HOLD1_M  (LP_AON_GPIO_HOLD1_V << LP_AON_GPIO_HOLD1_S)
@@ -248,6 +245,13 @@ extern "C" {
  *  configure hp iomux reset bypass
  */
 #define LP_AON_IO_MUX_REG (DR_REG_LP_AON_BASE + 0x3c)
+/** LP_AON_IO_MUX_PULL_LDO_EN : R/W; bitpos: [27]; default: 0;
+ *  need_des
+ */
+#define LP_AON_IO_MUX_PULL_LDO_EN    (BIT(27))
+#define LP_AON_IO_MUX_PULL_LDO_EN_M  (LP_AON_IO_MUX_PULL_LDO_EN_V << LP_AON_IO_MUX_PULL_LDO_EN_S)
+#define LP_AON_IO_MUX_PULL_LDO_EN_V  0x00000001U
+#define LP_AON_IO_MUX_PULL_LDO_EN_S  27
 /** LP_AON_IO_MUX_PULL_LDO : R/W; bitpos: [30:28]; default: 0;
  *  need_des
  */
@@ -608,45 +612,6 @@ extern "C" {
 #define LP_AON_IO_LDO_ADJUST_SW_EN_V  0x00000001U
 #define LP_AON_IO_LDO_ADJUST_SW_EN_S  31
 
-/** LP_AON_LP_GPIO_SECURITY_REG register
- *  need des
- */
-#define LP_AON_LP_GPIO_SECURITY_REG (DR_REG_LP_AON_BASE + 0x8c)
-/** LP_AON_LP_GPIO_LOCK : R/W; bitpos: [5:0]; default: 0;
- *  This field decides whether lp_gpio_config can be locked, or not. 0 (default):
- *  unlocked. 1: locked.
- */
-#define LP_AON_LP_GPIO_LOCK    0x0000003FU
-#define LP_AON_LP_GPIO_LOCK_M  (LP_AON_LP_GPIO_LOCK_V << LP_AON_LP_GPIO_LOCK_S)
-#define LP_AON_LP_GPIO_LOCK_V  0x0000003FU
-#define LP_AON_LP_GPIO_LOCK_S  0
-
-/** LP_AON_HP_GPIO_SECURITY_1_REG register
- *  need des
- */
-#define LP_AON_HP_GPIO_SECURITY_1_REG (DR_REG_LP_AON_BASE + 0x90)
-/** LP_AON_HP_GPIO_LOCK_P1 : R/W; bitpos: [31:0]; default: 0;
- *  This field decides whether hp_gpio_config of PIN0~31 can be locked, or not. 0
- *  (default): unlocked. 1: locked.
- */
-#define LP_AON_HP_GPIO_LOCK_P1    0xFFFFFFFFU
-#define LP_AON_HP_GPIO_LOCK_P1_M  (LP_AON_HP_GPIO_LOCK_P1_V << LP_AON_HP_GPIO_LOCK_P1_S)
-#define LP_AON_HP_GPIO_LOCK_P1_V  0xFFFFFFFFU
-#define LP_AON_HP_GPIO_LOCK_P1_S  0
-
-/** LP_AON_HP_GPIO_SECURITY_2_REG register
- *  need des
- */
-#define LP_AON_HP_GPIO_SECURITY_2_REG (DR_REG_LP_AON_BASE + 0x94)
-/** LP_AON_HP_GPIO_LOCK_P2 : R/W; bitpos: [7:0]; default: 0;
- *  This field decides whether hp_gpio_config of PIN32~39 can be locked, or not. 0
- *  (default): unlocked. 1: locked.
- */
-#define LP_AON_HP_GPIO_LOCK_P2    0x000000FFU
-#define LP_AON_HP_GPIO_LOCK_P2_M  (LP_AON_HP_GPIO_LOCK_P2_V << LP_AON_HP_GPIO_LOCK_P2_S)
-#define LP_AON_HP_GPIO_LOCK_P2_V  0x000000FFU
-#define LP_AON_HP_GPIO_LOCK_P2_S  0
-
 /** LP_AON_SRAM_USAGE_CONF_REG register
  *  HP memory usage configuration register
  */
@@ -674,11 +639,37 @@ extern "C" {
 #define LP_AON_ICACHE1_USAGE_V  0x00000001U
 #define LP_AON_ICACHE1_USAGE_S  1
 
+/** LP_AON_PUF_CONF_REG register
+ *  PUF mem control config register
+ */
+#define LP_AON_PUF_CONF_REG (DR_REG_LP_AON_BASE + 0x19c)
+/** LP_AON_PUF_SW : R/W; bitpos: [0]; default: 1;
+ *  puf mem power switch control signal
+ */
+#define LP_AON_PUF_SW    (BIT(0))
+#define LP_AON_PUF_SW_M  (LP_AON_PUF_SW_V << LP_AON_PUF_SW_S)
+#define LP_AON_PUF_SW_V  0x00000001U
+#define LP_AON_PUF_SW_S  0
+/** LP_AON_PUF_ISO_EN : R/W; bitpos: [1]; default: 0;
+ *  iso enable signal for puf mem
+ */
+#define LP_AON_PUF_ISO_EN    (BIT(1))
+#define LP_AON_PUF_ISO_EN_M  (LP_AON_PUF_ISO_EN_V << LP_AON_PUF_ISO_EN_S)
+#define LP_AON_PUF_ISO_EN_V  0x00000001U
+#define LP_AON_PUF_ISO_EN_S  1
+/** LP_AON_PUF_MEM_DISCHARGE : R/W; bitpos: [2]; default: 0;
+ *  discharge signal for puf mem
+ */
+#define LP_AON_PUF_MEM_DISCHARGE    (BIT(2))
+#define LP_AON_PUF_MEM_DISCHARGE_M  (LP_AON_PUF_MEM_DISCHARGE_V << LP_AON_PUF_MEM_DISCHARGE_S)
+#define LP_AON_PUF_MEM_DISCHARGE_V  0x00000001U
+#define LP_AON_PUF_MEM_DISCHARGE_S  2
+
 /** LP_AON_DATE_REG register
  *  reserved
  */
 #define LP_AON_DATE_REG (DR_REG_LP_AON_BASE + 0x3fc)
-/** LP_AON_DATE : R/W; bitpos: [30:0]; default: 37823056;
+/** LP_AON_DATE : R/W; bitpos: [30:0]; default: 38814352;
  *  version register
  */
 #define LP_AON_DATE    0x7FFFFFFFU

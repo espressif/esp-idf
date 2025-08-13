@@ -476,7 +476,7 @@ extern "C" {
  *  need_des
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR1_REG (DR_REG_PMU_BASE + 0x2c)
-/** PMU_HP_ACTIVE_HP_REGULATOR_DRV_B : R/W; bitpos: [31:8]; default: 0;
+/** PMU_HP_ACTIVE_HP_REGULATOR_DRV_B : R/W; bitpos: [31:8]; default: 16;
  *  need_des
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR_DRV_B    0x00FFFFFFU
@@ -940,7 +940,7 @@ extern "C" {
  *  need_des
  */
 #define PMU_HP_SLEEP_HP_REGULATOR1_REG (DR_REG_PMU_BASE + 0x94)
-/** PMU_HP_SLEEP_HP_REGULATOR_DRV_B : R/W; bitpos: [31:8]; default: 0;
+/** PMU_HP_SLEEP_HP_REGULATOR_DRV_B : R/W; bitpos: [31:8]; default: 16;
  *  need_des
  */
 #define PMU_HP_SLEEP_HP_REGULATOR_DRV_B    0x00FFFFFFU
@@ -2476,7 +2476,7 @@ extern "C" {
  *  need_des
  */
 #define PMU_POWER_CK_WAIT_CNTL_REG (DR_REG_PMU_BASE + 0x130)
-/** PMU_WAIT_XTL_STABLE : R/W; bitpos: [15:0]; default: 256;
+/** PMU_WAIT_XTL_STABLE : R/W; bitpos: [15:0]; default: 384;
  *  need_des
  */
 #define PMU_WAIT_XTL_STABLE    0x0000FFFFU
@@ -3742,11 +3742,30 @@ extern "C" {
 #define PMU_TOUCH_FORCE_DONE_V  0x00000001U
 #define PMU_TOUCH_FORCE_DONE_S  31
 
+/** PMU_BLE_BANDGAP_CTRL_REG register
+ *  need_des
+ */
+#define PMU_BLE_BANDGAP_CTRL_REG (DR_REG_PMU_BASE + 0x1c4)
+/** PMU_EXT_OCODE : R/W; bitpos: [30:23]; default: 120;
+ *  need_des
+ */
+#define PMU_EXT_OCODE    0x000000FFU
+#define PMU_EXT_OCODE_M  (PMU_EXT_OCODE_V << PMU_EXT_OCODE_S)
+#define PMU_EXT_OCODE_V  0x000000FFU
+#define PMU_EXT_OCODE_S  23
+/** PMU_EXT_FORCE_OCODE : R/W; bitpos: [31]; default: 0;
+ *  need_des
+ */
+#define PMU_EXT_FORCE_OCODE    (BIT(31))
+#define PMU_EXT_FORCE_OCODE_M  (PMU_EXT_FORCE_OCODE_V << PMU_EXT_FORCE_OCODE_S)
+#define PMU_EXT_FORCE_OCODE_V  0x00000001U
+#define PMU_EXT_FORCE_OCODE_S  31
+
 /** PMU_DATE_REG register
  *  need_des
  */
 #define PMU_DATE_REG (DR_REG_PMU_BASE + 0x3fc)
-/** PMU_PMU_DATE : R/W; bitpos: [30:0]; default: 37818464;
+/** PMU_PMU_DATE : R/W; bitpos: [30:0]; default: 38814336;
  *  need_des
  */
 #define PMU_PMU_DATE    0x7FFFFFFFU

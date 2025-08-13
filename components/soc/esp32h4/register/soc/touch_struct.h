@@ -40,7 +40,11 @@ typedef union {
          *  need_des
          */
         uint32_t approach_loop_done_int_raw:1;
-        uint32_t reserved_6:26;
+        /** baseline_update_int_raw : R/WTC/SS; bitpos: [6]; default: 0;
+         *  need_des
+         */
+        uint32_t baseline_update_int_raw:1;
+        uint32_t reserved_7:25;
     };
     uint32_t val;
 } touch_int_raw_reg_t;
@@ -74,7 +78,11 @@ typedef union {
          *  need_des
          */
         uint32_t approach_loop_done_int_st:1;
-        uint32_t reserved_6:26;
+        /** baseline_update_int_st : RO; bitpos: [6]; default: 0;
+         *  need_des
+         */
+        uint32_t baseline_update_int_st:1;
+        uint32_t reserved_7:25;
     };
     uint32_t val;
 } touch_int_st_reg_t;
@@ -108,7 +116,11 @@ typedef union {
          *  need_des
          */
         uint32_t approach_loop_done_int_ena:1;
-        uint32_t reserved_6:26;
+        /** baseline_update_int_ena : R/W; bitpos: [6]; default: 0;
+         *  need_des
+         */
+        uint32_t baseline_update_int_ena:1;
+        uint32_t reserved_7:25;
     };
     uint32_t val;
 } touch_int_ena_reg_t;
@@ -142,7 +154,11 @@ typedef union {
          *  need_des
          */
         uint32_t approach_loop_done_int_clr:1;
-        uint32_t reserved_6:26;
+        /** baseline_update_int_clr : WT; bitpos: [6]; default: 0;
+         *  need_des
+         */
+        uint32_t baseline_update_int_clr:1;
+        uint32_t reserved_7:25;
     };
     uint32_t val;
 } touch_int_clr_reg_t;

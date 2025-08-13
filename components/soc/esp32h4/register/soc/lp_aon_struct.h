@@ -163,7 +163,7 @@ typedef union {
 typedef union {
     struct {
         /** aon_gpio_hold0 : R/W; bitpos: [31:0]; default: 0;
-         *  configure io0~31 hold enable,when io in hold status, all io configure and output
+         *  configure io0~28 hold enable,when io in hold status, all io configure and output
          *  will be latch , input function is useful
          */
         uint32_t gpio_hold0:32;
@@ -178,7 +178,6 @@ typedef union {
     struct {
         /** gpio_hold1 : R/W; bitpos: [31:0]; default: 0;
          *  reserved
-         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t gpio_hold1:32;
     };
@@ -251,7 +250,11 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:28;
+        uint32_t reserved_0:27;
+        /** aon_io_mux_pull_ldo_en : R/W; bitpos: [27]; default: 0;
+         *  need_des
+         */
+        uint32_t aon_io_mux_pull_ldo_en:1;
         /** aon_io_mux_pull_ldo : R/W; bitpos: [30:28]; default: 0;
          *  need_des
          */
@@ -546,50 +549,6 @@ typedef union {
     uint32_t val;
 } lp_aon_io_ldo_cfg_reg_t;
 
-/** Type of aon_lp_gpio_security register
- *  need des
- */
-typedef union {
-    struct {
-        /** aon_lp_gpio_lock : R/W; bitpos: [5:0]; default: 0;
-         *  This field decides whether lp_gpio_config can be locked, or not. 0 (default):
-         *  unlocked. 1: locked.
-         */
-        uint32_t aon_lp_gpio_lock:6;
-        uint32_t reserved_6:26;
-    };
-    uint32_t val;
-} lp_aon_lp_gpio_security_reg_t;
-
-/** Type of aon_hp_gpio_security_1 register
- *  need des
- */
-typedef union {
-    struct {
-        /** aon_hp_gpio_lock_p1 : R/W; bitpos: [31:0]; default: 0;
-         *  This field decides whether hp_gpio_config of PIN0~31 can be locked, or not. 0
-         *  (default): unlocked. 1: locked.
-         */
-        uint32_t aon_hp_gpio_lock_p1:32;
-    };
-    uint32_t val;
-} lp_aon_hp_gpio_security_1_reg_t;
-
-/** Type of aon_hp_gpio_security_2 register
- *  need des
- */
-typedef union {
-    struct {
-        /** aon_hp_gpio_lock_p2 : R/W; bitpos: [7:0]; default: 0;
-         *  This field decides whether hp_gpio_config of PIN32~39 can be locked, or not. 0
-         *  (default): unlocked. 1: locked.
-         */
-        uint32_t aon_hp_gpio_lock_p2:8;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} lp_aon_hp_gpio_security_2_reg_t;
-
 /** Type of aon_sram_usage_conf register
  *  HP memory usage configuration register
  */
@@ -616,12 +575,34 @@ typedef union {
     uint32_t val;
 } lp_aon_sram_usage_conf_reg_t;
 
+/** Type of puf_conf register
+ *  PUF mem control config register
+ */
+typedef union {
+    struct {
+        /** puf_sw : R/W; bitpos: [0]; default: 1;
+         *  puf mem power switch control signal
+         */
+        uint32_t puf_sw:1;
+        /** puf_iso_en : R/W; bitpos: [1]; default: 0;
+         *  iso enable signal for puf mem
+         */
+        uint32_t puf_iso_en:1;
+        /** puf_mem_discharge : R/W; bitpos: [2]; default: 0;
+         *  discharge signal for puf mem
+         */
+        uint32_t puf_mem_discharge:1;
+        uint32_t reserved_3:29;
+    };
+    uint32_t val;
+} lp_aon_puf_conf_reg_t;
+
 /** Type of aon_date register
  *  reserved
  */
 typedef union {
     struct {
-        /** aon_date : R/W; bitpos: [30:0]; default: 37823056;
+        /** aon_date : R/W; bitpos: [30:0]; default: 38814352;
          *  version register
          */
         uint32_t aon_date:31;
@@ -662,12 +643,11 @@ typedef struct {
     volatile lp_aon_mem_ctrl_reg_t mem_ctrl;
     volatile lp_aon_hp_mem_ctrl_reg_t hp_mem_ctrl;
     volatile lp_aon_io_ldo_cfg_reg_t io_ldo_cfg;
-    uint32_t reserved_088;
-    volatile lp_aon_lp_gpio_security_reg_t lp_gpio_security;
-    volatile lp_aon_hp_gpio_security_1_reg_t hp_gpio_security_1;
-    volatile lp_aon_hp_gpio_security_2_reg_t hp_gpio_security_2;
+    uint32_t reserved_088[4];
     volatile lp_aon_sram_usage_conf_reg_t sram_usage_conf;
-    uint32_t reserved_09c[216];
+    uint32_t reserved_09c[64];
+    volatile lp_aon_puf_conf_reg_t puf_conf;
+    uint32_t reserved_1a0[151];
     volatile lp_aon_date_reg_t date;
 } lp_aon_dev_t;
 
