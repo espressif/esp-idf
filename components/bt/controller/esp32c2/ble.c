@@ -13,6 +13,7 @@
  */
 #if (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
 void scan_stack_enableAdvFlowCtrlVsCmd(bool en);
+void scan_stack_enableSpecifyScanChanVsCmd(bool en);
 void adv_stack_enableClearLegacyAdvVsCmd(bool en);
 void chanSel_stack_enableSetCsaVsCmd(bool en);
 void hci_stack_enableSetVsEvtMaskVsCmd(bool en);
@@ -34,6 +35,7 @@ void ble_stack_enableVsCmds(bool en)
 
 #if DEFAULT_BT_LE_ROLE_OBSERVER
     scan_stack_enableAdvFlowCtrlVsCmd(en);
+    scan_stack_enableSpecifyScanChanVsCmd(en);
 #endif // DEFAULT_BT_LE_ROLE_OBSERVER
 
     chanSel_stack_enableSetCsaVsCmd(en);
