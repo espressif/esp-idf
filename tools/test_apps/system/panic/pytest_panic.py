@@ -1237,3 +1237,12 @@ def test_tcb_corrupted(dut: PanicTestDut, target: str, config: str, test_func_na
         expected_backtrace=None,
         expected_coredump=coredump_pattern
     )
+
+
+@pytest.mark.generic
+@pytest.mark.supported_targets
+@pytest.mark.parametrize('config', ['panic_halt'], indirect=True)
+def test_panic_halt(dut: PanicTestDut) -> None:
+    dut.run_test_func('test_panic_halt')
+    dut.expect_exact('CPU halted.', timeout=30)
+    dut.expect_none(dut.REBOOT, timeout=3)
