@@ -50,6 +50,7 @@ CONFIGS = list(
 
 CONFIG_PANIC = list(itertools.chain(itertools.product(['panic'], ['supported_targets'])))
 CONFIG_PANIC_DUAL_CORE = list(itertools.chain(itertools.product(['panic'], TARGETS_DUAL_CORE)))
+CONFIG_PANIC_HALT = list(itertools.chain(itertools.product(['panic_halt'], TARGETS_ALL)))
 
 CONFIGS_BACKTRACE = list(
     itertools.chain(
@@ -1235,3 +1236,11 @@ def test_panic_print_backtrace(dut: PanicTestDut, config: str, test_func_name: s
 
     coredump_pattern = re.compile(PANIC_ABORT_PREFIX + regex_pattern.decode('utf-8'))
     common_test(dut, config, expected_backtrace=None, expected_coredump=[coredump_pattern])
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIG_PANIC_HALT, indirect=['config', 'target'])
+def test_panic_halt(dut: PanicTestDut) -> None:
+    dut.run_test_func('test_panic_halt')
+    dut.expect_exact('CPU halted.', timeout=30)
+    dut.expect_none(dut.REBOOT, timeout=3)

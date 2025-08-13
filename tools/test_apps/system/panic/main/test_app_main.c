@@ -126,6 +126,9 @@ void app_main(void)
     HANDLE_TEST(test_name, test_tcb_corrupted);
     HANDLE_TEST(test_name, test_panic_handler_stuck0);
     HANDLE_TEST(test_name, test_panic_handler_crash0);
+#if CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT
+    HANDLE_TEST(test_name, test_panic_halt);
+#endif /* CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT */
 #if CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
     HANDLE_TEST(test_name, test_panic_print_backtrace);
 #endif
