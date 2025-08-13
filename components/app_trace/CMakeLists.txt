@@ -14,15 +14,6 @@ if(CONFIG_ESP_DEBUG_STUBS_ENABLE)
         "debug_stubs.c")
 endif()
 
-if(CONFIG_APPTRACE_GCOV_ENABLE)
-    if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-        list(APPEND srcs
-            "gcov/gcov_rtio.c")
-    else()
-        fail_at_build_time(app_trace "Only GNU compiler can link with Gcov library")
-    endif()
-endif()
-
 set(include_dirs "include")
 
 set(priv_include_dirs "private_include" "port/include")
@@ -71,53 +62,3 @@ idf_component_register(SRCS "${srcs}"
                        PRIV_REQUIRES esp_driver_gptimer esp_driver_gpio esp_driver_uart
                        REQUIRES esp_timer
                        LDFRAGMENTS linker.lf)
-
-# Force app_trace to also appear later than gcov in link line
-idf_component_get_property(app_trace app_trace COMPONENT_LIB)
-
-if(CONFIG_APPTRACE_GCOV_ENABLE)
-    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-        # Coverage info is not supported when clang is used
-        # TODO: LLVM-214
-        message(FATAL_ERROR "Coverage info is not supported when building with Clang!")
-    endif()
-
-    # The original Gcov library from toolchain will be objcopy with symbols redefinitions (see file gcov/io_sym.map).
-    # This needs because ESP has no file-system onboard, and redefined functions solves this problem and transmits
-    # output file to host PC.
-
-    # Set a name for Gcov library
-    set(GCOV_LIB libgcov_rtio)
-
-    # Set include direcrory of Gcov internal headers
-    execute_process(COMMAND ${CMAKE_C_COMPILER} -print-file-name=plugin
-                    OUTPUT_VARIABLE gcc_plugin_dir
-                    OUTPUT_STRIP_TRAILING_WHITESPACE
-                    ERROR_QUIET)
-    set_source_files_properties(gcov/gcov_rtio.c
-                                PROPERTIES COMPILE_FLAGS "-I${gcc_plugin_dir}/include")
-
-    # Copy libgcov.a with symbols redefinition
-    find_library(GCOV_LIBRARY_PATH gcov ${CMAKE_C_IMPLICIT_LINK_DIRECTORIES})
-    add_custom_command(OUTPUT ${GCOV_LIB}.a
-                       COMMAND ${_CMAKE_TOOLCHAIN_PREFIX}objcopy
-                               --redefine-syms ${CMAKE_CURRENT_LIST_DIR}/gcov/io_sym.map
-                               ${GCOV_LIBRARY_PATH} ${GCOV_LIB}.a
-                       MAIN_DEPENDENCY ${GCOV_LIBRARY_PATH}
-                       VERBATIM)
-    add_custom_target(${GCOV_LIB}_target DEPENDS ${GCOV_LIB}.a)
-    add_library(${GCOV_LIB} STATIC IMPORTED)
-    set_target_properties(${GCOV_LIB}
-                          PROPERTIES
-                          IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/${GCOV_LIB}.a)
-    add_dependencies(${GCOV_LIB} ${GCOV_LIB}_target)
-    add_dependencies(${COMPONENT_LIB} ${GCOV_LIB})
-
-    # disable --coverage for this component, as it is used as transport for gcov
-    target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-profile-arcs" "-fno-test-coverage")
-    target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=__gcov_init")
-
-    target_link_libraries(${COMPONENT_LIB} INTERFACE ${GCOV_LIB} $<TARGET_FILE:${app_trace}> c)
-else()
-    target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${app_trace}> c)
-endif()

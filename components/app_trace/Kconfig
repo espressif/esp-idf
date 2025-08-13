@@ -373,19 +373,4 @@ menu "Application Level Tracing"
 
     endmenu
 
-    config APPTRACE_GCOV_ENABLE
-        bool "GCOV to Host Enable"
-        depends on APPTRACE_ENABLE && !APPTRACE_SV_ENABLE
-        select ESP_DEBUG_STUBS_ENABLE
-        default n
-        help
-            Enables support for GCOV data transfer to host.
-
-    config APPTRACE_GCOV_DUMP_TASK_STACK_SIZE
-        int "Gcov dump task stack size"
-        depends on APPTRACE_GCOV_ENABLE
-        default 2048
-        help
-            Configures stack size of Gcov dump task
-
 endmenu

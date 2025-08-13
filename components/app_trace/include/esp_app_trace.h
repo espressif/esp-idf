@@ -267,12 +267,6 @@ int esp_apptrace_fstop(esp_apptrace_dest_t dest);
  */
 int esp_apptrace_feof(esp_apptrace_dest_t dest, void *stream);
 
-/**
- * @brief Triggers gcov info dump.
- *        This function waits for the host to connect to target before dumping data.
- */
-void esp_gcov_dump(void);
-
 #ifdef __cplusplus
 }
 #endif

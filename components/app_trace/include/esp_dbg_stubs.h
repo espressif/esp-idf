@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,18 +44,18 @@ void esp_dbg_stubs_init(void);
  *
  * @param id    Stub ID.
  * @param entry Stub entry. Usually it is stub entry function address,
- *              but can be any value meaningfull for OpenOCD command/code
+ *              but can be any value meaningful for OpenOCD command/code
  *              such as capabilities
  * @return ESP_OK on success, otherwise see esp_err_t
  */
 esp_err_t esp_dbg_stub_entry_set(esp_dbg_stub_id_t id, uint32_t entry);
 
 /**
- * @brief   Retrives the corresponding stub entry
+ * @brief   Retrieves the corresponding stub entry
  *
  * @param id    Stub ID.
  * @param entry Stub entry. Usually it is stub entry function address,
- *              but can be any value meaningfull for OpenOCD command/code
+ *              but can be any value meaningful for OpenOCD command/code
  *              such as capabilities
  *
  * @return ESP_OK on success, otherwise see esp_err_t

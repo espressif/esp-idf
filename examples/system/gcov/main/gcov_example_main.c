@@ -10,7 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
-#include "esp_app_trace.h"
+#include "esp_gcov.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
 
