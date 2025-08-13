@@ -457,6 +457,7 @@ function(__create_base_kconfgen_command sdkconfig sdkconfig_defaults)
         --sdkconfig-rename "${root_sdkconfig_rename}"
         --config "${sdkconfig}"
         ${defaults_args}
+        --env "IDF_BUILD_V2=y"
         --env-file "${config_env_path}")
 
     # Store base command as a build property
@@ -541,6 +542,8 @@ function(__create_menuconfig_target)
     # Set up kconfig source file paths
     set(kconfigs_path "${build_dir}/kconfigs.in")
     set(kconfigs_projbuild_path "${build_dir}/kconfigs_projbuild.in")
+    set(kconfigs_excluded_path "${CMAKE_CURRENT_BINARY_DIR}/kconfigs_excluded.in")
+    set(kconfigs_projbuild_excluded_path "${CMAKE_CURRENT_BINARY_DIR}/kconfigs_projbuild_excluded.in")
 
     # Newer versions of esp-idf-kconfig renamed menuconfig to esp_menuconfig
     # Order matters here, we want to use esp_menuconfig if it is available
@@ -572,11 +575,14 @@ function(__create_menuconfig_target)
         COMMAND ${CMAKE_COMMAND} -E env
         "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
         "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
+        "COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE=${kconfigs_excluded_path}"
+        "COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE=${kconfigs_projbuild_excluded_path}"
         "KCONFIG_CONFIG=${sdkconfig}"
         "IDF_TARGET=${target}"
         "IDF_TOOLCHAIN=${toolchain}"
         "IDF_ENV_FPGA=${idf_env_fpga}"
         "IDF_INIT_VERSION=${idf_init_version}"
+        "IDF_BUILD_V2=y"
         ${MENUCONFIG_CMD} "${root_kconfig}"
         # Post-menuconfig: insert deprecated options for backward compatibility
         COMMAND ${kconfgen_cmd}
