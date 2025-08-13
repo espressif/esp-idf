@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -209,4 +209,83 @@ TEST_CASE("Test ipc call nonblocking when FreeRTOS Scheduler is suspended", "[ip
     xTaskResumeAll();
 #endif
 }
+
+static void test_func_ipc_cb5(void *arg)
+{
+    static int recursion_count = 0;
+    int cpu = ((recursion_count++) >> 1) & 1;
+    esp_rom_printf("ipc_task(%d) -> esp_ipc_call(%d) -> test_func_ipc_cb4\n", cpu, cpu);
+    esp_ipc_call(cpu, test_func_ipc_cb4, arg);
+}
+
+static void test_func_ipc_cb6(void *arg)
+{
+    static int recursion_count = 0;
+    int cpu = ((recursion_count++) >> 1) & 1;
+    esp_rom_printf("ipc_task(%d) -> esp_ipc_call_blocking(%d) -> test_func_ipc_cb4\n", cpu, cpu);
+    esp_ipc_call_blocking(cpu, test_func_ipc_cb4, arg);
+}
+
+TEST_CASE("Test recursion IPC call", "[ipc]")
+{
+    int val;
+    esp_rom_printf("esp_ipc_call -> esp_ipc_call:\n");
+    /*
+        esp_ipc_call(0) -> test_func_ipc_cb5 -> ipc_task(0) -> esp_ipc_call(0) -> test_func_ipc_cb4
+        esp_ipc_call(1) -> test_func_ipc_cb5 -> ipc_task(0) -> esp_ipc_call(0) -> test_func_ipc_cb4
+        esp_ipc_call(0) -> test_func_ipc_cb5 -> ipc_task(1) -> esp_ipc_call(1) -> test_func_ipc_cb4
+        esp_ipc_call(1) -> test_func_ipc_cb5 -> ipc_task(1) -> esp_ipc_call(1) -> test_func_ipc_cb4
+    */
+    for (int cpu = 0; cpu < CONFIG_FREERTOS_NUMBER_OF_CORES * 2; ++cpu) {
+        val = 0x5a5a;
+        esp_rom_printf("esp_ipc_call(%d) -> test_func_ipc_cb5 -> ", cpu % CONFIG_FREERTOS_NUMBER_OF_CORES);
+        esp_ipc_call(cpu % CONFIG_FREERTOS_NUMBER_OF_CORES, test_func_ipc_cb5, &val);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+        TEST_ASSERT_EQUAL_HEX(val, 0x5a5a + 1);
+    }
+
+    esp_rom_printf("esp_ipc_call_blocking -> esp_ipc_call test:\n");
+    /*
+        esp_ipc_call_blocking(0) -> test_func_ipc_cb5 -> ipc_task(0) -> esp_ipc_call(0) -> test_func_ipc_cb4
+        esp_ipc_call_blocking(1) -> test_func_ipc_cb5 -> ipc_task(0) -> esp_ipc_call(0) -> test_func_ipc_cb4
+        esp_ipc_call_blocking(0) -> test_func_ipc_cb5 -> ipc_task(1) -> esp_ipc_call(1) -> test_func_ipc_cb4
+        esp_ipc_call_blocking(1) -> test_func_ipc_cb5 -> ipc_task(1) -> esp_ipc_call(1) -> test_func_ipc_cb4
+    */
+    for (int cpu = 0; cpu < CONFIG_FREERTOS_NUMBER_OF_CORES * 2; ++cpu) {
+        val = 0xa5a5;
+        esp_rom_printf("esp_ipc_call_blocking(%d) -> test_func_ipc_cb5 -> ", cpu % CONFIG_FREERTOS_NUMBER_OF_CORES);
+        esp_ipc_call_blocking(cpu % CONFIG_FREERTOS_NUMBER_OF_CORES, test_func_ipc_cb5, &val);
+        TEST_ASSERT_EQUAL_HEX(val, 0xa5a5 + 1);
+    }
+
+    esp_rom_printf("esp_ipc_call -> esp_ipc_call_blocking:\n");
+    /*
+        esp_ipc_call(0) -> test_func_ipc_cb6 -> ipc_task(0) -> esp_ipc_call_blocking(0) -> test_func_ipc_cb4
+        esp_ipc_call(1) -> test_func_ipc_cb6 -> ipc_task(0) -> esp_ipc_call_blocking(0) -> test_func_ipc_cb4
+        esp_ipc_call(0) -> test_func_ipc_cb6 -> ipc_task(1) -> esp_ipc_call_blocking(1) -> test_func_ipc_cb4
+        esp_ipc_call(1) -> test_func_ipc_cb6 -> ipc_task(1) -> esp_ipc_call_blocking(1) -> test_func_ipc_cb4
+    */
+    for (int cpu = 0; cpu < CONFIG_FREERTOS_NUMBER_OF_CORES * 2; ++cpu) {
+        val = 0x5a5a;
+        esp_rom_printf("esp_ipc_call(%d) -> test_func_ipc_cb6 -> ", cpu % CONFIG_FREERTOS_NUMBER_OF_CORES);
+        esp_ipc_call(cpu % CONFIG_FREERTOS_NUMBER_OF_CORES, test_func_ipc_cb6, &val);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+        TEST_ASSERT_EQUAL_HEX(val, 0x5a5a + 1);
+    }
+
+    esp_rom_printf("esp_ipc_call_blocking -> esp_ipc_call_blocking test:\n");
+    /*
+        esp_ipc_call_blocking(0) -> test_func_ipc_cb6 -> ipc_task(0) -> esp_ipc_call_blocking(0) -> test_func_ipc_cb4
+        esp_ipc_call_blocking(1) -> test_func_ipc_cb6 -> ipc_task(0) -> esp_ipc_call_blocking(0) -> test_func_ipc_cb4
+        esp_ipc_call_blocking(0) -> test_func_ipc_cb6 -> ipc_task(1) -> esp_ipc_call_blocking(1) -> test_func_ipc_cb4
+        esp_ipc_call_blocking(1) -> test_func_ipc_cb6 -> ipc_task(1) -> esp_ipc_call_blocking(1) -> test_func_ipc_cb4
+    */
+    for (int cpu = 0; cpu < CONFIG_FREERTOS_NUMBER_OF_CORES * 2; ++cpu) {
+        val = 0xa5a5;
+        esp_rom_printf("esp_ipc_call_blocking(%d) -> test_func_ipc_cb6 -> ", cpu % CONFIG_FREERTOS_NUMBER_OF_CORES);
+        esp_ipc_call_blocking(cpu % CONFIG_FREERTOS_NUMBER_OF_CORES, test_func_ipc_cb6, &val);
+        TEST_ASSERT_EQUAL_HEX(val, 0xa5a5 + 1);
+    }
+}
+
 #endif /* !CONFIG_FREERTOS_UNICORE */
