@@ -8,7 +8,7 @@
 
 .patterns-docs-partial: &patterns-docs-partial
   - "components/**/*.h"
-  - "components/**/CMakeList.txt"
+  - "components/**/CMakeLists.txt"
   - "components/**/sdkconfig*"
   - "tools/tools.json"
   - "tools/idf_tools.py"

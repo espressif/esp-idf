@@ -10,7 +10,7 @@
   - "**/*.{c,C,cpp}"
   - "**/*.{h,H,hpp}"
   - "components/**/Kconfig"
-  - "components/**/CMakeList.txt"
+  - "components/**/CMakeLists.txt"
 
 .patterns-python-cache: &patterns-python-cache
   - "tools/requirements.json"

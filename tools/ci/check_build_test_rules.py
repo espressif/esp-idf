@@ -5,7 +5,6 @@ import argparse
 import os
 import re
 import sys
-import typing as t
 from collections import defaultdict
 from pathlib import Path
 
@@ -42,7 +41,7 @@ FORMAL_TO_USUAL = {v: k for k, v in USUAL_TO_FORMAL.items()}
 
 
 def print_diff_table(
-    list1: list[str], list2: list[str], title1: str, title2: str, excluded: t.Optional[list[str]] = None
+    list1: list[str], list2: list[str], title1: str, title2: str, excluded: list[str] | None = None
 ) -> None:
     left_set = set(list1)
     right_set = set(list2)
@@ -82,7 +81,7 @@ def print_diff_table(
     console.print(table)
 
 
-def get_readme_path(app_dir: str) -> t.Optional[str]:
+def get_readme_path(app_dir: str) -> str | None:
     readme_path = os.path.join(app_dir, 'README.md')
 
     if not os.path.isfile(readme_path):
@@ -105,7 +104,7 @@ def generate_new_support_table(targets: list[str]) -> str:
     return res
 
 
-def parse_existing_table(app_dir: str) -> t.Tuple[t.Optional[str], list[str]]:
+def parse_existing_table(app_dir: str) -> tuple[str | None, list[str]]:
     readme_path = get_readme_path(app_dir)
     if not readme_path:
         return None, SUPPORTED_TARGETS
@@ -124,9 +123,9 @@ def parse_existing_table(app_dir: str) -> t.Tuple[t.Optional[str], list[str]]:
 
 def get_grouped_apps(
     paths: list[str],
-    exclude_dirs: t.Optional[list[str]] = None,
-    extra_targets: t.Optional[list[str]] = None,
-) -> t.Dict[str, t.List[App]]:
+    exclude_dirs: list[str] | None = None,
+    extra_targets: list[str] | None = None,
+) -> dict[str, list[App]]:
     apps = sorted(
         find_apps(
             paths,
@@ -136,7 +135,7 @@ def get_grouped_apps(
         )
     )
 
-    grouped_apps: t.Dict[str, t.List[App]] = defaultdict(list)
+    grouped_apps: dict[str, list[App]] = defaultdict(list)
     for app in apps:
         grouped_apps[app.app_dir].append(app)
 
@@ -145,9 +144,9 @@ def get_grouped_apps(
 
 def check_readme(
     paths: list[str],
-    exclude_dirs: t.Optional[list[str]] = None,
+    exclude_dirs: list[str] | None = None,
     *,
-    extra_targets: t.Optional[list[str]] = None,
+    extra_targets: list[str] | None = None,
 ) -> None:
     grouped_apps = get_grouped_apps(paths, exclude_dirs, extra_targets)
     exit_code = 0
@@ -198,10 +197,8 @@ def check_readme(
             print(f'Auto-fixing: Modified README: {readme_path}')
             exit_code = 1
 
-        if exit_code != 0:
-            print('')  # extra new line for readability
-
     if exit_code != 0:
+        print('')  # extra new line for readability
         print('Related documentation:')
         print(
             '\t- https://docs.espressif.com/projects/idf-build-apps/en/latest/references/manifest.html#enable-disable-rules'
@@ -209,7 +206,7 @@ def check_readme(
     sys.exit(exit_code)
 
 
-def get_grouped_cases(paths: list[str]) -> t.Dict[str, t.Dict[str, t.Set[str]]]:
+def get_grouped_cases(paths: list[str]) -> dict[str, dict[str, set[str]]]:
     """
     return something like this:
     {
@@ -244,10 +241,10 @@ def get_grouped_cases(paths: list[str]) -> t.Dict[str, t.Dict[str, t.Set[str]]]:
 
 def check_test_scripts(
     paths: list[str],
-    exclude_dirs: t.Optional[list[str]] = None,
+    exclude_dirs: list[str] | None = None,
     *,
-    extra_targets: t.Optional[list[str]] = None,
-    bypass_targets: t.Optional[list[str]] = None,
+    extra_targets: list[str] | None = None,
+    bypass_targets: list[str] | None = None,
 ) -> None:
     # takes long time, run only in CI
     grouped_apps = get_grouped_apps(paths, exclude_dirs, extra_targets)
@@ -283,9 +280,9 @@ def check_test_scripts(
         for script_path in grouped_cases[app_dir]['script_paths']:
             print('  - ' + script_path)
         exit_code = 1
-        print('')  # extra new line for readability
 
     if exit_code != 0:
+        print('')  # extra new line for readability
         print('Related documentation:')
         print(
             '\t- https://docs.espressif.com/projects/idf-build-apps/en/latest/references/manifest.html#enable-disable-rules'

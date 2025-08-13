@@ -6,7 +6,7 @@
 # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tools/idf-tools.html
 
 # ci
-idf-ci>=0.2.3,<1
+idf-ci>=0.3,<1
 
 coverage
 jsonschema
