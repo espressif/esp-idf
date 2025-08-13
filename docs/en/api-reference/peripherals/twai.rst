@@ -371,7 +371,7 @@ Application Examples
 
 .. list::
 
-    - Temporary no.
+    - :example:`peripherals/twai/twai_utils` demonstrates how to use the TWAI (Two-Wire Automotive Interface) APIs to create a command-line interface for TWAI bus communication, supporting frame transmission/reception, filtering, monitoring, and both classic and FD formats for testing and debugging TWAI networks.
 
 API Reference
 -------------
