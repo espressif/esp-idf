@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,10 @@
 #include "soc/soc_caps.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/gpio_num.h"
+#if SOC_PAU_SUPPORTED
+#include "soc/regdma.h"
+#include "soc/retention_periph_defs.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,6 +86,19 @@ typedef struct {
 extern const emac_io_info_t emac_io_idx;
 extern const emac_rmii_iomux_info_t emac_rmii_iomux_pins;
 extern const emac_mii_iomux_info_t emac_mii_iomux_pins;
+
+#if SOC_PAU_SUPPORTED && SOC_EMAC_SUPPORT_SLEEP_RETENTION
+#define EMAC_REGDMA_LINK_EMAC_START_BEGIN   (10)
+#define EMAC_REGDMA_LINK_EMAC_START_CNT     (3)
+
+typedef struct {
+    const periph_retention_module_t module_id;
+    const regdma_entries_config_t *entry_array;
+    uint32_t array_size;
+} emac_reg_retention_info_t;
+
+extern const emac_reg_retention_info_t emac_reg_retention_info;
+#endif  // SOC_PAU_SUPPORTED && SOC_EMAC_SUPPORT_SLEEP_RETENTION
 
 #endif // SOC_EMAC_SUPPORTED
 

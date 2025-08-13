@@ -65,6 +65,10 @@ void emac_hal_set_rx_tx_desc_addr(emac_hal_context_t *hal, eth_dma_rx_descriptor
 
 void emac_hal_init_mac_default(emac_hal_context_t *hal)
 {
+    /* EMACINTMASK */
+    /* Disable (mask) all interrupts */
+    emac_ll_disable_corresponding_emac_intr(hal->mac_regs, 0xFFFFFFFF);
+
     /* MACCR Configuration */
     /* Enable the watchdog on the receiver, frame longer than 2048 Bytes is not allowed */
     emac_ll_watchdog_enable(hal->mac_regs, true);

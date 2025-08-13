@@ -198,7 +198,8 @@ typedef enum {
     ETH_MAC_ESP_CMD_ADJ_PTP_TIME,                                           /*!< Adjust base PTP time frequency increment by PPS */
     ETH_MAC_ESP_CMD_S_TARGET_TIME,                                          /*!< Set Target Time at which interrupt is invoked when PTP time exceeds this value*/
     ETH_MAC_ESP_CMD_S_TARGET_CB,                                            /*!< Set pointer to a callback function invoked when PTP time exceeds Target Time */
-    ETH_MAC_ESP_CMD_ENABLE_TS4ALL                                           /*!< Enable timestamp for all received frames */
+    ETH_MAC_ESP_CMD_ENABLE_TS4ALL,                                          /*!< Enable timestamp for all received frames */
+    ETH_MAC_ESP_CMD_DUMP_REGS,                                              /*!< Dump EMAC registers */
 } eth_mac_esp_io_cmd_t;
 
 #ifdef SOC_EMAC_IEEE1588V2_SUPPORTED

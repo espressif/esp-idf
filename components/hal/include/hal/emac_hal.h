@@ -276,6 +276,8 @@ void emac_hal_set_phy_cmd(emac_hal_context_t *hal, uint32_t phy_addr, uint32_t p
 
 void emac_hal_set_address(emac_hal_context_t *hal, uint8_t *mac_addr);
 
+#define emac_hal_get_address(hal, mac_addr) emac_ll_get_addr((hal)->mac_regs, mac_addr)
+
 esp_err_t emac_hal_add_addr_da_filter(emac_hal_context_t *hal, const uint8_t *mac_addr, uint8_t addr_num);
 
 esp_err_t emac_hal_get_addr_da_filter(emac_hal_context_t *hal, uint8_t *mac_addr, uint8_t addr_num);

@@ -102,4 +102,9 @@ menu "esp_eth TEST_APPS Configuration"
 
     endif # TARGET_USE_SPI_ETHERNET
 
+    config TARGET_ETH_PHY_RESET_GPIO
+        int "PHY Reset GPIO number"
+        default 5 if IDF_TARGET_ESP32
+        default 51 if IDF_TARGET_ESP32P4
+        default -1
 endmenu
