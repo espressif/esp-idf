@@ -721,6 +721,17 @@ mainmenu "Espressif IoT Development Framework Configuration"
         depends on "${IDF_MINIMAL_BUILD}"
 
         source "$COMPONENT_KCONFIGS_SOURCE_FILE"
+
+        menu "Configuration for components not included in the build"
+            depends on "${IDF_BUILD_V2}"
+            osource "$COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE"
+        endmenu
+
+    endmenu
+
+    menu "Configuration for components not included in the build"
+        depends on "${IDF_BUILD_V2}"
+        osource "$COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE"
     endmenu
 
     config IDF_EXPERIMENTAL_FEATURES
