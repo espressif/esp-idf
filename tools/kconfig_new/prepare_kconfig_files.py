@@ -3,8 +3,6 @@
 # SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import argparse
 import json
@@ -45,12 +43,12 @@ def _prepare_source_files(env_dict: dict[str, str], list_separator: str) -> None
     def _write_source_file(config_var: str, config_file: str) -> None:
         dequoted_var = _dequote(config_var)
         if dequoted_var:
-            new_content = '\n'.join(['source "{}"'.format(path) for path in dequoted_var.split(list_separator)])
+            new_content = '\n'.join([f'source "{path}"' for path in dequoted_var.split(list_separator)])
         else:
             new_content = ''
 
         try:
-            with open(config_file, 'r', encoding='utf-8') as f:
+            with open(config_file, encoding='utf-8') as f:
                 old_content = f.read()
         except Exception:
             # File doesn't exist or other issue
