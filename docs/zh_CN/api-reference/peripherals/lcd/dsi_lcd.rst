@@ -87,6 +87,15 @@ MIPI DSI 接口的 LCD
         ESP_ERROR_CHECK(esp_lcd_new_panel_dpi(mipi_dsi_bus, &dpi_config, &mipi_dpi_panel));
         ESP_ERROR_CHECK(esp_lcd_panel_init(mipi_dpi_panel));
 
+关于 MIPI DPHY 的供电
+---------------------
+
+{IDF_TARGET_NAME} 中的 MIPI DPHY 需要独立的 2.5V 电源供电，请查阅原理图，确保在使用 MIPI DSI 驱动之前，已将其供电引脚（名字可能是 ``VDD_MIPI_DPHY``）连接至 2.5V 电源。
+
+.. only:: SOC_GP_LDO_SUPPORTED
+
+    在 {IDF_TARGET_NAME} 中， MIPI DPHY 可以使用内部的可调 LDO 供电。请将 LDO 通道的输出引脚连接至 MIPI DPHY 的供电引脚。然后在初始化 DSI 驱动之前，使用 :doc:`/api-reference/peripherals/ldo_regulator` 中提供的 API 配置 LDO 输出 2.5V 电压。
+
 API 参考
 --------
 

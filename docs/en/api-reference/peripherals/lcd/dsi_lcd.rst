@@ -87,6 +87,15 @@ MIPI DSI Interfaced LCD
         ESP_ERROR_CHECK(esp_lcd_new_panel_dpi(mipi_dsi_bus, &dpi_config, &mipi_dpi_panel));
         ESP_ERROR_CHECK(esp_lcd_panel_init(mipi_dpi_panel));
 
+Power Supply for MIPI DPHY
+--------------------------
+
+The MIPI DPHY on {IDF_TARGET_NAME} requires a dedicated 2.5V power supply. Please refer to your schematic and ensure that the power pin (often labeled ``VDD_MIPI_DPHY``) is properly connected to a 2.5V power source before using the MIPI DSI driver.
+
+.. only:: SOC_GP_LDO_SUPPORTED
+
+    On {IDF_TARGET_NAME}, the MIPI DPHY can be powered by the internal adjustable LDO. Connect the output pin of the LDO channel to the MIPI DPHY power pin. Before initializing the DSI driver, use the API provided in :doc:`/api-reference/peripherals/ldo_regulator` to configure the LDO output voltage to 2.5V.
+
 API Reference
 -------------
 
