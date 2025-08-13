@@ -1,7 +1,22 @@
-ESP-Modbus
-==========
+协议
+=========
 
 :link_to_translation:`en:[English]`
+
+ESP-TLS
+-------
+
+**已移除的废弃 API**
+
+已移除废弃函数 :cpp:func:`esp_tls_conn_http_new`。请使用以下替代函数：
+
+- :cpp:func:`esp_tls_conn_http_new_sync` 用于阻塞连接
+- :cpp:func:`esp_tls_conn_http_new_async` 用于非阻塞连接
+
+新 API 需要您使用 :cpp:func:`esp_tls_init` 创建 :cpp:type:`esp_tls_t` 结构，并提供对连接过程的更好控制。
+
+ESP-Modbus
+----------
 
 乐鑫ESP-Modbus 库 (esp-modbus) 支持基于 RS485、Wi-Fi 和以太网接口网络的 Modbus 通信。
 

@@ -345,11 +345,6 @@ int esp_internal_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16
 /** XTS-AES buffer encryption/decryption */
 int esp_aes_crypt_xts( esp_aes_xts_context *ctx, int mode, size_t length, const unsigned char data_unit[16], const unsigned char *input, unsigned char *output );
 
-/** Deprecated, see esp_aes_internal_decrypt */
-void esp_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] ) __attribute__((deprecated));
-
-/** Deprecated, see esp_aes_internal_encrypt */
-void esp_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] ) __attribute__((deprecated));
 
 #ifdef __cplusplus
 }
