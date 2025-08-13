@@ -38,6 +38,30 @@ extern "C" {
 #define SHA_MODE_V  0x0000000FU
 #define SHA_MODE_S  0
 
+/** SHA_T_STRING_REG register
+ *  SHA 512/t configuration register 0.
+ */
+#define SHA_T_STRING_REG (DR_REG_SHA_BASE + 0x4)
+/** SHA_T_STRING : R/W; bitpos: [31:0]; default: 0;
+ *  Sha t_string (used if and only if mode == SHA_512/t).
+ */
+#define SHA_T_STRING    0xFFFFFFFFU
+#define SHA_T_STRING_M  (SHA_T_STRING_V << SHA_T_STRING_S)
+#define SHA_T_STRING_V  0xFFFFFFFFU
+#define SHA_T_STRING_S  0
+
+/** SHA_T_LENGTH_REG register
+ *  SHA 512/t configuration register 1.
+ */
+#define SHA_T_LENGTH_REG (DR_REG_SHA_BASE + 0x8)
+/** SHA_T_LENGTH : R/W; bitpos: [6:0]; default: 0;
+ *  Sha t_length (used if and only if mode == SHA_512/t).
+ */
+#define SHA_T_LENGTH    0x0000007FU
+#define SHA_T_LENGTH_M  (SHA_T_LENGTH_V << SHA_T_LENGTH_S)
+#define SHA_T_LENGTH_V  0x0000007FU
+#define SHA_T_LENGTH_S  0
+
 /** SHA_DMA_BLOCK_NUM_REG register
  *  Block number register (only effective for DMA-SHA)
  */

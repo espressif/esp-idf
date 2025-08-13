@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -123,6 +123,37 @@ typedef union {
     };
     uint32_t val;
 } sha_dma_rx_reset_reg_t;
+
+
+/** Group: Configuration Register */
+/** Type of t_string register
+ *  SHA 512/t configuration register 0.
+ */
+typedef union {
+    struct {
+        /** t_string : R/W; bitpos: [31:0]; default: 0;
+         *  Sha t_string (used if and only if mode == SHA_512/t).
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t t_string:32;
+    };
+    uint32_t val;
+} sha_t_string_reg_t;
+
+/** Type of t_length register
+ *  SHA 512/t configuration register 1.
+ */
+typedef union {
+    struct {
+        /** t_length : R/W; bitpos: [6:0]; default: 0;
+         *  Sha t_length (used if and only if mode == SHA_512/t).
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t t_length:7;
+        uint32_t reserved_7:25;
+    };
+    uint32_t val;
+} sha_t_length_reg_t;
 
 
 /** Group: Status Registers */
