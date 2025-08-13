@@ -51,6 +51,19 @@ def test_mbedtls_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
+@pytest.mark.flash_encryption_psram
+@pytest.mark.parametrize(
+    'config',
+    [
+        'psram_all_ext_flash_enc',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_mbedtls_psram_all_ext_flash_enc(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -59,6 +72,19 @@ def test_mbedtls_psram(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
 def test_mbedtls_psram_esp32p4(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.flash_encryption
+@pytest.mark.parametrize(
+    'config',
+    [
+        'psram_all_ext_flash_enc_esp32p4_200m',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_mbedtls_psram_all_ext_flash_enc_esp32p4_200m(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
