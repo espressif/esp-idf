@@ -371,7 +371,7 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
 
 .. list::
 
-    - 暂无
+    - :example:`peripherals/twai/twai_utils` 演示了如何使用 TWAI（Two-Wire Automotive Interface，双线汽车接口）API 创建一个命令行工具，用于 TWAI 总线通信，支持帧的发送/接收、过滤、监控，以及经典和 FD 格式，以便测试和调试 TWAI 网络。
 
 API 参考
 --------

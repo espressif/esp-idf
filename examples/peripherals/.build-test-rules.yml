@@ -530,6 +530,12 @@ examples/peripherals/twai/twai_self_test:
       temporary: true
       reason: lack of runners
 
+examples/peripherals/twai/twai_utils:
+  disable:
+    - if: SOC_TWAI_SUPPORTED != 1
+  depends_components:
+    - esp_driver_twai
+
 examples/peripherals/uart/uart_dma_ota:
   disable:
     - if: SOC_UHCI_SUPPORTED != 1
