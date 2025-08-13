@@ -19,14 +19,14 @@ def _prepare_source_files(env_dict: dict[str, str], list_separator: str) -> None
         - COMPONENT_KCONFIGS_SOURCE_FILE,
         - COMPONENT_KCONFIGS_PROJBUILD,
         - COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE,
-        - COMPONENT_KCONFIGS_EXCLUDED, (TODO: Currently disabled)
-        - COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED. (TODO: Currently disabled)
+        - COMPONENT_KCONFIGS_EXCLUDED,
+        - COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED,
 
     The outputs are written into files pointed by the value of
         - COMPONENT_KCONFIGS_SOURCE_FILE,
         - COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE,
-        - COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE, (TODO: Currently disabled)
-        - COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE, (TODO: Currently disabled)
+        - COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE,
+        - COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE,
 
     After running this function, all source files will contain a list of source statements based on the
     content of their corresponding environment variables. For example, if COMPONENT_KCONFIGS="var1;var2;var3" and
@@ -68,16 +68,15 @@ def _prepare_source_files(env_dict: dict[str, str], list_separator: str) -> None
         _write_source_file(
             env_dict['COMPONENT_KCONFIGS_PROJBUILD'], env_dict['COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE']
         )
-        # TODO: Enable excluded Kconfig processing once integration is complete
-        # Currently commented out due to FileNotFoundError when paths are empty during CI tests
-        # _write_source_file(
-        #     env_dict['COMPONENT_KCONFIGS_EXCLUDED'],
-        #     env_dict['COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE']
-        # )
-        # _write_source_file(
-        #     env_dict['COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED'],
-        #     env_dict['COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE'],
-        # )
+        if env_dict.get('COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE'):
+            _write_source_file(
+                env_dict['COMPONENT_KCONFIGS_EXCLUDED'], env_dict['COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE']
+            )
+        if env_dict.get('COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE'):
+            _write_source_file(
+                env_dict['COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED'],
+                env_dict['COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE'],
+            )
     except KeyError as e:
         print('Error:', e, 'is not defined!')
         sys.exit(1)
