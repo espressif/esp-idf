@@ -929,20 +929,6 @@ int bt_mesh_ble_ext_adv_start(const uint8_t inst_id,
     tBTA_DM_BLE_EXT_ADV ext_adv = {0};
     struct bt_mesh_hci_cp_set_adv_data set = {0};
 
-    if (data && param->adv_type != BLE_MESH_ADV_DIRECT_IND &&
-        param->adv_type != BLE_MESH_ADV_DIRECT_IND_LOW_DUTY) {
-        if (data->adv_data_len) {
-            set.len = data->adv_data_len;
-            memcpy(set.data, data->adv_data, data->adv_data_len);
-                BTA_DmBleGapConfigExtAdvDataRaw(false, inst_id, set.len, set.data);
-        }
-        if (data->scan_rsp_data_len && param->adv_type != BLE_MESH_ADV_NONCONN_IND) {
-            set.len = data->scan_rsp_data_len;
-            memcpy(set.data, data->scan_rsp_data, data->scan_rsp_data_len);
-                BTA_DmBleGapConfigExtAdvDataRaw(true, inst_id, set.len, set.data);
-        }
-    }
-
     switch (param->adv_type) {
     case BLE_MESH_ADV_IND:
     case BLE_MESH_ADV_DIRECT_IND:
@@ -982,6 +968,20 @@ int bt_mesh_ble_ext_adv_start(const uint8_t inst_id,
 
     /* Check if we can start adv using BTM_BleSetAdvParamsStartAdvCheck */
     BTA_DmBleGapExtAdvSetParams(inst_id, &ext_adv_params);
+
+    if (data && param->adv_type != BLE_MESH_ADV_DIRECT_IND &&
+        param->adv_type != BLE_MESH_ADV_DIRECT_IND_LOW_DUTY) {
+        if (data->adv_data_len) {
+            set.len = data->adv_data_len;
+            memcpy(set.data, data->adv_data, data->adv_data_len);
+                BTA_DmBleGapConfigExtAdvDataRaw(false, inst_id, set.len, set.data);
+        }
+        if (data->scan_rsp_data_len && param->adv_type != BLE_MESH_ADV_NONCONN_IND) {
+            set.len = data->scan_rsp_data_len;
+            memcpy(set.data, data->scan_rsp_data, data->scan_rsp_data_len);
+                BTA_DmBleGapConfigExtAdvDataRaw(true, inst_id, set.len, set.data);
+        }
+    }
 
     BTA_DmBleGapExtAdvEnable(true, 1, &ext_adv);
 
