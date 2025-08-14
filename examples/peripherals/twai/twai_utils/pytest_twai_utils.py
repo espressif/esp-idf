@@ -421,6 +421,7 @@ class CanBusManager:
             if self.bus:
                 try:
                     self.bus.shutdown()
+                    subprocess.run(['sudo', '-n', 'ip', 'link', 'set', self.interface, 'down'], check=True)
                 except Exception:
                     pass
 
