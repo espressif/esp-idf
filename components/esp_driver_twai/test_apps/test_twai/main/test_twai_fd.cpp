@@ -15,16 +15,15 @@
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
 
-#define TEST_TX_GPIO                4
-#define TEST_RX_GPIO                5
+#define TEST_TX_GPIO                GPIO_NUM_4
+#define TEST_RX_GPIO                GPIO_NUM_5
 #define TEST_TWAI_QUEUE_DEPTH       5
 
 static void test_random_trans_generator(twai_node_handle_t node_hdl, uint32_t trans_num)
 {
     uint8_t send_pkg_ptr[TWAIFD_FRAME_MAX_LEN];
-    twai_frame_t tx_msg = {
-        .buffer = send_pkg_ptr,
-    };
+    twai_frame_t tx_msg = {};
+    tx_msg.buffer = send_pkg_ptr;
     printf("Sending %ld random trans ...\n", trans_num);
     for (uint32_t tx_cnt = 0; tx_cnt < trans_num; tx_cnt++) {
         tx_msg.header.id = tx_cnt | 0xf000;
@@ -39,12 +38,12 @@ static void test_random_trans_generator(twai_node_handle_t node_hdl, uint32_t tr
 
 static IRAM_ATTR bool test_range_filter_rx_done_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx)
 {
-    uint8_t *test_ctrl = user_ctx;
+    uint8_t *test_ctrl = (uint8_t *)user_ctx;
     uint8_t recv_pkg_ptr[TWAIFD_FRAME_MAX_LEN];
-    twai_frame_t rx_frame = {
-        .buffer = recv_pkg_ptr,
-        .buffer_len = TWAIFD_FRAME_MAX_LEN,
-    };
+    twai_frame_t rx_frame = {};
+    rx_frame.buffer = recv_pkg_ptr;
+    rx_frame.buffer_len = TWAIFD_FRAME_MAX_LEN;
+
     if (ESP_OK == twai_node_receive_from_isr(handle, &rx_frame)) {
         ESP_EARLY_LOGI("Recv", "RX id 0x%4x len %2d ext %d rmt %d fd %d", rx_frame.header.id, twaifd_dlc2len(rx_frame.header.dlc), rx_frame.header.ide, rx_frame.header.rtr, rx_frame.header.fdf);
         switch (test_ctrl[0]) {
@@ -64,35 +63,33 @@ TEST_CASE("twai range filter (loopback)", "[twai]")
 {
     uint8_t test_ctrl[2];
     twai_node_handle_t node_hdl;
-    twai_onchip_node_config_t node_config = {
-        .io_cfg.tx = TEST_TX_GPIO,
-        .io_cfg.rx = TEST_TX_GPIO,  // Using same pin for test without transceiver
-        .bit_timing.bitrate = 1000000,
-        .tx_queue_depth = TEST_TWAI_QUEUE_DEPTH,
-        .flags.enable_loopback = true,
-        .flags.enable_self_test = true,
-    };
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_TX_GPIO; // Using same pin for test without transceiver
+    node_config.bit_timing.bitrate = 1000000;
+    node_config.tx_queue_depth = TEST_TWAI_QUEUE_DEPTH;
+    node_config.flags.enable_self_test = true;
+    node_config.flags.enable_loopback = true;
+
     TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
 
-    twai_event_callbacks_t user_cbs = {
-        .on_rx_done = test_range_filter_rx_done_cb,
-    };
+    twai_event_callbacks_t user_cbs = {};
+    user_cbs.on_rx_done = test_range_filter_rx_done_cb;
     TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &user_cbs, test_ctrl));
 
     // disable mask filter 0 which enabled by default
-    twai_mask_filter_config_t mfilter_cfg = {
-        .id = 0xFFFFFFFF,
-        .mask = 0xFFFFFFFF,
-    };
+    twai_mask_filter_config_t mfilter_cfg = {};
+    mfilter_cfg.id = 0xFFFFFFFF;
+    mfilter_cfg.mask = 0xFFFFFFFF;
     TEST_ESP_OK(twai_node_config_mask_filter(node_hdl, 0, &mfilter_cfg));
 
     test_ctrl[0] = 0;
     test_ctrl[1] = 0;
-    twai_range_filter_config_t rfilter_cfg = {
-        .range_low = 0x0a,
-        .range_high = 0x15,
-        .is_ext = false,
-    };
+    twai_range_filter_config_t rfilter_cfg = {};
+    rfilter_cfg.range_low = 0x0a;
+    rfilter_cfg.range_high = 0x15;
+    rfilter_cfg.is_ext = false;
+
     printf("Config range filter 0: 0x%lx - 0x%lx\n", rfilter_cfg.range_low, rfilter_cfg.range_high);
     TEST_ESP_OK(twai_node_config_range_filter(node_hdl, 0, &rfilter_cfg));
     TEST_ESP_OK(twai_node_enable(node_hdl));
@@ -117,7 +114,7 @@ TEST_CASE("twai range filter (loopback)", "[twai]")
 #define TEST_TRANS_TIME_BUF_LEN              20000
 static IRAM_ATTR bool test_fd_trans_time_rx_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx)
 {
-    twai_frame_t *rx_frame = user_ctx;
+    twai_frame_t *rx_frame = (twai_frame_t *)user_ctx;
     uint32_t data_len;
     if (ESP_OK == twai_node_receive_from_isr(handle, rx_frame)) {
         data_len = MIN(twaifd_dlc2len(rx_frame->header.dlc), rx_frame->buffer_len);
@@ -134,27 +131,28 @@ static IRAM_ATTR bool test_fd_trans_time_rx_cb(twai_node_handle_t handle, const 
 TEST_CASE("twai fd transmit time (loopback)", "[twai]")
 {
     // prepare test memory
-    uint8_t *send_pkg_ptr = heap_caps_malloc(TEST_TRANS_TIME_BUF_LEN, MALLOC_CAP_8BIT);
-    uint8_t *recv_pkg_ptr = heap_caps_malloc(TEST_TRANS_TIME_BUF_LEN, MALLOC_CAP_8BIT);
+    uint8_t *send_pkg_ptr = (uint8_t*)heap_caps_malloc(TEST_TRANS_TIME_BUF_LEN, MALLOC_CAP_8BIT);
+    uint8_t *recv_pkg_ptr = (uint8_t*)heap_caps_malloc(TEST_TRANS_TIME_BUF_LEN, MALLOC_CAP_8BIT);
     TEST_ASSERT(send_pkg_ptr && recv_pkg_ptr);
 
     twai_node_handle_t node_hdl;
-    twai_onchip_node_config_t node_config = {
-        .io_cfg.tx = TEST_TX_GPIO,
-        .io_cfg.rx = TEST_TX_GPIO,  // Using same pin for test without transceiver
-        .bit_timing.bitrate = 1000000,
-        .data_timing.bitrate = 4000000,
-        .data_timing.ssp_permill = 700, // ssp 70.0%
-        .tx_queue_depth = TEST_TWAI_QUEUE_DEPTH,
-        .flags.enable_loopback = true,
-        .flags.enable_self_test = true,
-    };
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_TX_GPIO; // Using same pin for test without transceiver
+    node_config.bit_timing.bitrate = 1000000;
+    node_config.data_timing.bitrate = 4000000;
+    node_config.data_timing.ssp_permill = 700; // ssp 70.0%
+    node_config.tx_queue_depth = TEST_TWAI_QUEUE_DEPTH;
+    node_config.flags.enable_self_test = true;
+    node_config.flags.enable_loopback = true;
+
     TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
 
-    twai_frame_t rx_frame = {.buffer_len = 64};
-    twai_event_callbacks_t user_cbs = {
-        .on_rx_done = test_fd_trans_time_rx_cb,
-    };
+    twai_frame_t rx_frame = {};
+    rx_frame.buffer_len = 64;
+    twai_event_callbacks_t user_cbs = {};
+    user_cbs.on_rx_done = test_fd_trans_time_rx_cb;
+
     TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &user_cbs, &rx_frame));
     TEST_ESP_OK(twai_node_enable(node_hdl));
     printf("%-12s %-14s %-14s %-7s %-15s %s\n", "pkg_len", "frame_len", "frame_num", "brs", "trans_time/ms", "result");
@@ -168,7 +166,7 @@ TEST_CASE("twai fd transmit time (loopback)", "[twai]")
         rx_frame.buffer = recv_pkg_ptr;
         rx_frame.buffer_len = frame_len;
         memset(recv_pkg_ptr, 0xff, TEST_TRANS_TIME_BUF_LEN);
-        twai_frame_t *tx_msgs = heap_caps_calloc(trans_num, sizeof(twai_frame_t), MALLOC_CAP_8BIT);
+        twai_frame_t *tx_msgs = (twai_frame_t *)heap_caps_calloc(trans_num, sizeof(twai_frame_t), MALLOC_CAP_8BIT);
         TEST_ASSERT(tx_msgs);
         time1 = esp_timer_get_time();
         for (uint32_t tx_cnt = 0; tx_cnt < trans_num; tx_cnt++) {

@@ -1,11 +1,11 @@
 set(srcs "test_app_main.c")
 
 if(CONFIG_SOC_TWAI_SUPPORTED)
-    list(APPEND srcs "test_twai_common.c" "test_twai_network.c")
+    list(APPEND srcs "test_twai_common.cpp" "test_twai_network.cpp")
 endif()
 
 if(CONFIG_SOC_TWAI_SUPPORT_FD)
-    list(APPEND srcs "test_twai_fd.c")
+    list(APPEND srcs "test_twai_fd.cpp")
 endif()
 
 idf_component_register(

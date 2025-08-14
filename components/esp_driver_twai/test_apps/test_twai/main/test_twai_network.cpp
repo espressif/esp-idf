@@ -12,8 +12,8 @@
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
 
-#define TEST_TX_GPIO                4
-#define TEST_RX_GPIO                5
+#define TEST_TX_GPIO                GPIO_NUM_4
+#define TEST_RX_GPIO                GPIO_NUM_5
 
 static bool IRAM_ATTR test_listen_only_rx_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx)
 {
@@ -28,27 +28,25 @@ static bool IRAM_ATTR test_listen_only_rx_cb(twai_node_handle_t handle, const tw
 TEST_CASE("twai_listen_only", "[twai_net]")
 {
     twai_node_handle_t node_hdl;
-    twai_onchip_node_config_t node_config = {
-        .io_cfg.tx = TEST_TX_GPIO,
-        .io_cfg.rx = TEST_RX_GPIO,
-        .bit_timing.bitrate = 250000,
-        .tx_queue_depth = 3,
-        .flags.enable_listen_only = true,
-    };
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_RX_GPIO;
+    node_config.bit_timing.bitrate = 250000;
+    node_config.tx_queue_depth = 3;
+    node_config.flags.enable_listen_only = true;
+
     TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
     ESP_LOGI("Test", "driver installed");
 
     uint8_t rx_buffer[8] = {0};
-    twai_frame_t rx_frame = {
-        .buffer = rx_buffer,
-        .buffer_len = sizeof(rx_buffer),
-    };
+    twai_frame_t rx_frame = {};
+    rx_frame.buffer = rx_buffer;
+    rx_frame.buffer_len = sizeof(rx_buffer);
     uint8_t rx_msg_cnt = 0;
     void *user_data[2] = {&rx_msg_cnt, &rx_frame};
 
-    twai_event_callbacks_t user_cbs = {
-        .on_rx_done = test_listen_only_rx_cb,
-    };
+    twai_event_callbacks_t user_cbs = {};
+    user_cbs.on_rx_done = test_listen_only_rx_cb;
     TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &user_cbs, user_data));
     TEST_ESP_OK(twai_node_enable(node_hdl));
 
@@ -69,36 +67,34 @@ TEST_CASE("twai_listen_only", "[twai_net]")
 TEST_CASE("twai_remote_request", "[twai_net]")
 {
     twai_node_handle_t node_hdl;
-    twai_onchip_node_config_t node_config = {
-        .io_cfg.tx = TEST_TX_GPIO,
-        .io_cfg.rx = TEST_RX_GPIO,
-        .bit_timing.bitrate = 250000,
-        .fail_retry_cnt = -1,   // retry forever if send remote frame failed
-        .tx_queue_depth = 3,
-    };
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_RX_GPIO;
+    node_config.bit_timing.bitrate = 250000;
+    node_config.tx_queue_depth = 3;
+    node_config.fail_retry_cnt = -1; // retry forever if send remote frame failed
+
     TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
     ESP_LOGI("Test", "driver installed");
 
     uint8_t rx_buffer[8] = {0};
-    twai_frame_t rx_frame = {
-        .buffer = rx_buffer,
-        .buffer_len = sizeof(rx_buffer),
-    };
+    twai_frame_t rx_frame = {};
+    rx_frame.buffer = rx_buffer;
+    rx_frame.buffer_len = sizeof(rx_buffer);
     uint8_t rx_msg_cnt = 0;
     void *user_data[2] = {&rx_msg_cnt, &rx_frame};
 
-    twai_event_callbacks_t user_cbs = {
-        .on_rx_done = test_listen_only_rx_cb,
-    };
+    twai_event_callbacks_t user_cbs = {};
+    user_cbs.on_rx_done = test_listen_only_rx_cb;
     TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &user_cbs, user_data));
     TEST_ESP_OK(twai_node_enable(node_hdl));
 
-    twai_frame_t tx_frame = {
-        .header.id = 0x123,
-        .header.dlc = 8,
-        .header.rtr = true,
-        .header.ide = true,
-    };
+    twai_frame_t tx_frame = {};
+    tx_frame.header.id = 0x123;
+    tx_frame.header.dlc = 8;
+    tx_frame.header.ide = true;
+    tx_frame.header.rtr = true;
+
     TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 1000));
     ESP_LOGI("Test", "send remote frame");
 
