@@ -283,8 +283,12 @@ int esp_mbedtls_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED);
             if (cfg->crt_bundle_attach != NULL || cfg->cacert_buf != NULL || cfg->use_global_ca_store == true) {
-                /* This is to check whether handshake failed due to invalid certificate*/
-                esp_mbedtls_verify_certificate(tls);
+                if (mbedtls_ssl_get_peer_cert(&tls->ssl) != NULL) {
+                    /* This is to check whether handshake failed due to invalid certificate*/
+                    esp_mbedtls_verify_certificate(tls);
+                } else {
+                    ESP_LOGD(TAG, "Skipping certificate verification - no peer certificate received");
+                }
             }
             tls->conn_state = ESP_TLS_FAIL;
             return -1;
