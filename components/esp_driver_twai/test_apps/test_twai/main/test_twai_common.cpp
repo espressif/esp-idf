@@ -483,21 +483,20 @@ TEST_CASE("twai driver cache safe (loopback)", "[twai]")
 TEST_CASE("twai bus off recovery (loopback)", "[twai]")
 {
     twai_node_handle_t node_hdl;
-    twai_onchip_node_config_t node_config = {
-        .io_cfg.tx = TEST_TX_GPIO,
-        .io_cfg.rx = TEST_TX_GPIO,  // Using same pin for test without transceiver
-        .bit_timing.bitrate = 50000,   //slow bitrate to ensure soft error trigger
-        .tx_queue_depth = 1,
-        .flags.enable_self_test = true,
-    };
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_TX_GPIO;   // Using same pin for test without transceiver
+    node_config.bit_timing.bitrate = 50000; //slow bitrate to ensure soft error trigger
+    node_config.tx_queue_depth = 1;
+    node_config.flags.enable_self_test = true;
+
     TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
     TEST_ESP_OK(twai_node_enable(node_hdl));
 
     twai_node_status_t node_status;
-    twai_frame_t tx_frame = {
-        .buffer = (uint8_t *)"hello\n",
-        .buffer_len = 6,
-    };
+    twai_frame_t tx_frame = {};
+    tx_frame.buffer = (uint8_t *)"hello\n";
+    tx_frame.buffer_len = 6;
 
     // send frames and trigger error, must become bus off before 50 frames
     while ((node_status.state != TWAI_ERROR_BUS_OFF) && (tx_frame.header.id < 50)) {
