@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Common (non-language-specific) configuration for Sphinx
 #
@@ -290,9 +289,17 @@ ESP32C3_DOCS = ['hw-reference/esp32c3/**', 'api-guides/RF_calibration.rst', 'api
 
 ESP32C2_DOCS = ['api-guides/RF_calibration.rst', 'api-guides/phy.rst']
 
-ESP32C5_DOCS = ['api-guides/phy.rst', 'api-reference/peripherals/sd_pullup_requirements.rst']
+ESP32C5_DOCS = [
+    'api-guides/phy.rst',
+    'api-reference/peripherals/sd_pullup_requirements.rst',
+    'api-guides/RF_calibration.rst',
+]
 
-ESP32C61_DOCS = ['api-guides/phy.rst', 'api-reference/peripherals/sd_pullup_requirements.rst']
+ESP32C61_DOCS = [
+    'api-guides/phy.rst',
+    'api-reference/peripherals/sd_pullup_requirements.rst',
+    'api-guides/RF_calibration.rst',
+]
 
 ESP32C6_DOCS = [
     'api-guides/RF_calibration.rst',
@@ -458,7 +465,7 @@ with open('../page_redirects.txt') as f:
     ]
     for line in lines:  # check for well-formed entries
         if len(line.split(' ')) != 2:
-            raise RuntimeError('Invalid line in page_redirects.txt: %s' % line)
+            raise RuntimeError(f'Invalid line in page_redirects.txt: {line}')
 html_redirect_pages = [tuple(line.split(' ')) for line in lines]
 
 html_static_path = ['../_static']
@@ -480,7 +487,7 @@ def conf_setup(app, config):
         f'This document is not updated for {config.idf_target.upper()} yet, so some of the content may not be correct.'
     )
 
-    add_warnings_file = '{}/../docs_not_updated/{}.txt'.format(app.confdir, config.idf_target)
+    add_warnings_file = f'{app.confdir}/../docs_not_updated/{config.idf_target}.txt'
 
     if config.idf_target in QEMU_TARGETS:
         app.tags.add('TARGET_SUPPORT_QEMU')
