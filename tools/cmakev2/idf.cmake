@@ -21,6 +21,7 @@ include(component)
 include(build)
 include(kconfig)
 include(project)
+include(compat)
 include(GetGitRevisionDescription)
 # For backward compatibility, since externalproject_add is used by
 # project_include.cmake in the bootloader component. The ExternalProject
