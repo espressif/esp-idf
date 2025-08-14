@@ -243,9 +243,11 @@ if(CONFIG_SOC_SHA_SUPPORTED)
     )
 endif()
 
-# CONFIG_ESP_TLS_USE_DS_PERIPHERAL can be enabled only for the supported targets.
-if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
-    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c")
+if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
+target_sources(mbedcrypto PRIVATE
+                "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c"
+                "${COMPONENT_DIR}/port/esp_ds/esp_rsa_dec_alt.c"
+                "${COMPONENT_DIR}/port/esp_ds/esp_ds_common.c")
 endif()
 
 # Note: some mbedTLS hardware acceleration can be enabled/disabled by config.
