@@ -217,8 +217,6 @@ ESP-TLS 支持在 ESP32 系列芯片上使用 ATECC608A 加密芯片，但必须
 
     ESP-TLS 支持在 {IDF_TARGET_NAME} 中使用 ECDSA 外设。使用 ECDSA 外设时，ESP-TLS 必须与 MbedTLS 一起作为底层 SSL/TLS 协议栈，并且 ECDSA 的私钥应存储在 eFuse 中。请参考 :doc:`ECDSA 指南 <../peripherals/ecdsa>`，了解如何在 eFuse 中烧写 ECDSA 密钥。
 
-    在 ESP-TLS 中启用 ECDSA 外设前，请将 :cpp:member:`esp_tls_cfg_t::use_ecdsa_peripheral` 设置为 `true`，并将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` 设置为存储了 ECDSA 密钥的 eFuse 块 ID。
-
     这样就可以使用 ECDSA 外设进行私钥操作。由于客户私钥已经存储在 eFuse 中，因此无需将其传递给 :cpp:type:`esp_tls_cfg_t`。
 
     .. code-block:: c
@@ -226,7 +224,9 @@ ESP-TLS 支持在 ESP32 系列芯片上使用 ATECC608A 加密芯片，但必须
         #include "esp_tls.h"
         esp_tls_cfg_t cfg = {
             .use_ecdsa_peripheral = true,
-            .ecdsa_key_efuse_blk = /* 存储 ECDSA 私钥的 eFuse 块 */,
+            .ecdsa_key_efuse_blk = 4,    // ECDSA 密钥的低 eFuse 块
+            .ecdsa_key_efuse_blk_high = 5,   // ECDSA 密钥的高 eFuse 块（仅 SECP384R1）
+            .ecdsa_curve = ESP_TLS_ECDSA_CURVE_SECP384R1, // 设置为 ESP_TLS_ECDSA_CURVE_SECP256R1 以使用 SECP256R1 曲线
         };
 
     .. note::

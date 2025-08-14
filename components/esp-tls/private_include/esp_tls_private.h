@@ -67,6 +67,7 @@ struct esp_tls {
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
     bool use_ecdsa_peripheral;                                                  /*!< Use the ECDSA peripheral for the private key operations. */
     uint8_t ecdsa_efuse_blk;                                                    /*!< The efuse block number where the ECDSA key is stored. */
+    esp_tls_ecdsa_curve_t ecdsa_curve;                                          /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
 #endif
 #if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
     unsigned char *client_session;                                              /*!< Pointer for the serialized client session ticket context. */

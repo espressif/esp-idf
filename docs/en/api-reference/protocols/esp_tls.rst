@@ -217,16 +217,16 @@ To enable the secure element support, and use it in your project for TLS connect
 
     ESP-TLS provides support for using the ECDSA peripheral with {IDF_TARGET_NAME}. The use of ECDSA peripheral is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. The ECDSA private key should be present in the eFuse for using the ECDSA peripheral. Please refer to :doc:`ECDSA Guide <../peripherals/ecdsa>` for programming the ECDSA key in the eFuse.
 
-    To use ECDSA peripheral with ESP-TLS, set :cpp:member:`esp_tls_cfg_t::use_ecdsa_peripheral` to `true`, and set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` to the eFuse block ID in which ECDSA private key is stored.
-
-    This will enable the use of ECDSA peripheral for private key operations. As the client private key is already present in the eFuse, it needs not be supplied to the :cpp:type:`esp_tls_cfg_t` structure.
+    This will enable the use of ECDSA peripheral for private key operations. As the client private key is already present in the eFuse, it need not be supplied to the :cpp:type:`esp_tls_cfg_t` structure. Please see the below code snippet for enabling the use of ECDSA peripheral for a given ESP-TLS connection.
 
     .. code-block:: c
 
         #include "esp_tls.h"
         esp_tls_cfg_t cfg = {
             .use_ecdsa_peripheral = true,
-            .ecdsa_key_efuse_blk = /* efuse block with ecdsa private key */,
+            .ecdsa_key_efuse_blk = 4,     // Low eFuse block for ECDSA key
+            .ecdsa_key_efuse_blk_high = 5,   // High eFuse block for ECDSA key (SECP384R1 only)
+            .ecdsa_curve = ESP_TLS_ECDSA_CURVE_SECP384R1, // set this to ESP_TLS_ECDSA_CURVE_SECP256R1 for SECP256R1 curve
         };
 
     .. note::

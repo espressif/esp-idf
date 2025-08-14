@@ -44,6 +44,21 @@ HTTP 基本请求
         .use_secure_element = true,
     };
 
+为 TLS 使用 ECDSA 外设
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ECDSA 外设可用于 HTTP 客户端连接中的底层 TLS 连接。详细内容请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 **ECDSA 外设与 ESP-TLS** 小节。可以按如下方式配置 HTTP 客户端以使用 ECDSA 外设：
+
+.. code-block:: c
+
+    esp_http_client_config_t cfg = {
+        /* other configurations options */
+        .use_ecdsa_peripheral = true,
+        .ecdsa_key_efuse_blk = 4,    // ECDSA 密钥的低 eFuse 块
+        .ecdsa_key_efuse_blk_high = 5,   // ECDSA 密钥的高 eFuse 块（仅 SECP384R1）
+        .ecdsa_curve = ESP_TLS_ECDSA_CURVE_SECP384R1, // 设置为 ESP_TLS_ECDSA_CURVE_SECP256R1 以使用 SECP256R1 曲线
+    };
+
 
 HTTPS 请求
 -----------

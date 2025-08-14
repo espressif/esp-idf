@@ -22,6 +22,31 @@ ECDSA 外设可以为 TLS 双向身份验证等用例建立 **安全设备身份
 
 在 {IDF_TARGET_NAME} 上，ECDSA 模块使用烧录到 eFuse 块中的密钥。密码模块外的任何资源都不可访问此密钥（默认模式），从而避免密钥泄露。
 
+ECDSA 密钥存储
+^^^^^^^^^^^^^^
+
+.. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+    ECDSA 私钥存储在 eFuse 密钥块中。所需的密钥块数量取决于曲线大小：
+
+    - **P-256 曲线**：需要一个 eFuse 密钥块（256 位）
+    - **P-384 曲线**：需要两个 eFuse 密钥块（总共 512 位）
+
+    对于需要两个密钥块的曲线（如 P-384），配置以下字段：
+
+    - 将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` 设置为低块号
+    - 将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` 设置为高块号
+
+    对于单块曲线（如 P-256），只需设置 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk`，将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` 保持为 0 或不赋值。
+
+.. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
+
+    ECDSA 私钥存储在 eFuse 密钥块中。一个 eFuse 密钥块（256 位）是 P-256 曲线所需的。
+
+    配置以下字段：
+
+    - 将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` 设置为块号，将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` 保持为 0 或不赋值。
+
 ECDSA 密钥可以通过 ``idf.py`` 脚本在外部编程。以下是关于编程 ECDSA 密钥的示例：
 
 .. code:: bash

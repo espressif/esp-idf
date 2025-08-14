@@ -22,6 +22,31 @@ ECDSA on {IDF_TARGET_NAME}
 
 On {IDF_TARGET_NAME}, the ECDSA module works with a secret key burnt into an eFuse block. This eFuse key is made completely inaccessible (default mode) for any resources outside the cryptographic modules, thus avoiding key leakage.
 
+ECDSA Key Storage
+^^^^^^^^^^^^^^^^^
+
+.. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+    ECDSA private keys are stored in eFuse key blocks. The number of key blocks required depends on the curve size:
+
+    - **P-256 curve**: Require one eFuse key block (256 bits)
+    - **P-384 curve**: Requires two eFuse key blocks (512 bits total)
+
+    For curves requiring two key blocks (like P-384), configure the following fields:
+
+    - Set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` to the low block number
+    - Set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` to the high block number
+
+    For single-block curves (like P-256), only set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` and leave :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` as 0 or unassigned.
+
+.. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
+
+    ECDSA private keys are stored in eFuse key blocks. One eFuse key block (256 bits) is required for P-256 curve.
+
+    Configure the following field:
+
+    - Set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` to the block number and leave :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` as 0 or unassigned.
+
 ECDSA key can be programmed externally through ``idf.py`` script. Here is an example of how to program the ECDSA key:
 
 .. code:: bash

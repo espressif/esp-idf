@@ -421,6 +421,22 @@ void esp_transport_ssl_set_client_key_ecdsa_peripheral(esp_transport_handle_t t,
     ssl->cfg.use_ecdsa_peripheral = true;
     ssl->cfg.ecdsa_key_efuse_blk = ecdsa_efuse_blk;
 }
+
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+void esp_transport_ssl_set_client_key_ecdsa_peripheral_extended(esp_transport_handle_t t, uint8_t ecdsa_efuse_blk, uint8_t ecdsa_efuse_blk_high)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.use_ecdsa_peripheral = true;
+    ssl->cfg.ecdsa_key_efuse_blk = ecdsa_efuse_blk;
+    ssl->cfg.ecdsa_key_efuse_blk_high = ecdsa_efuse_blk_high;
+}
+#endif
+
+void esp_transport_ssl_set_ecdsa_curve(esp_transport_handle_t t, esp_tls_ecdsa_curve_t curve)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.ecdsa_curve = curve;
+}
 #endif
 
 void esp_transport_ssl_set_client_cert_data_der(esp_transport_handle_t t, const char *data, int len)
