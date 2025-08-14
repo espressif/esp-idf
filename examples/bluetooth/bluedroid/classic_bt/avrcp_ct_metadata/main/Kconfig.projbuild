@@ -1,0 +1,15 @@
+menu "AVRCP Example Configuration"
+    config EXAMPLE_LOCAL_DEVICE_NAME
+        string "Local Device Name"
+        default "ESP_SPEAKER"
+        help
+            Use this option to set local device name.
+
+    config EXAMPLE_A2DP_SINK_STREAM_ENABLE
+        bool "Enable A2DP Sink Stream"
+        default y
+        help
+            This enables the A2DP sink stream. If disable this option,
+            audio data will not be transmitted
+
+endmenu
