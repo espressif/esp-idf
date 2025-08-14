@@ -1174,7 +1174,21 @@ typedef union {
          *  SPI_FMEM_PMSn_SIZE_REG.
          */
         uint32_t fmem_pmsn_ecc:1;
-        uint32_t reserved_3:29;
+        /** fmem_pmsn_nonsecure_rd_attr : R/W; bitpos: [3]; default: 1;
+         *  1: SPI1 flash  non-secure PMS section n read accessible. 0: Not allowed.
+         */
+        uint32_t fmem_pmsn_nonsecure_rd_attr:1;
+        /** fmem_pmsn_nonsecure_wr_attr : R/W; bitpos: [4]; default: 1;
+         *  1: SPI1 flash non-secure PMS section n write accessible. 0: Not allowed.
+         */
+        uint32_t fmem_pmsn_nonsecure_wr_attr:1;
+        /** fmem_pmsn_nonsecure_ecc : R/W; bitpos: [5]; default: 0;
+         *  SPI1 flash non-secure PMS section n ECC mode, 1: enable ECC mode. 0: Disable it.
+         *  The flash PMS section n is configured by registers SPI_FMEM_PMSn_ADDR_REG and
+         *  SPI_FMEM_PMSn_SIZE_REG.
+         */
+        uint32_t fmem_pmsn_nonsecure_ecc:1;
+        uint32_t reserved_6:26;
     };
     uint32_t val;
 } spi_fmem_pmsn_attr_reg_t;
@@ -1227,7 +1241,21 @@ typedef union {
          *  SPI_SMEM_PMSn_SIZE_REG.
          */
         uint32_t smem_pmsn_ecc:1;
-        uint32_t reserved_3:29;
+        /** smem_pmsn_nonsecure_rd_attr : R/W; bitpos: [3]; default: 1;
+         *  1: SPI1 external RAM non-secure PMS section n read accessible. 0: Not allowed.
+         */
+        uint32_t smem_pmsn_nonsecure_rd_attr:1;
+        /** smem_pmsn_nonsecure_wr_attr : R/W; bitpos: [4]; default: 1;
+         *  1: SPI1 external RAM non-secure PMS section n write accessible. 0: Not allowed.
+         */
+        uint32_t smem_pmsn_nonsecure_wr_attr:1;
+        /** smem_pmsn_nonsecure_ecc : R/W; bitpos: [5]; default: 0;
+         *  SPI1 external RAM non-secure PMS section n ECC mode, 1: enable ECC mode. 0: Disable
+         *  it. The external RAM PMS section n is configured by registers
+         *  SPI_SMEM_PMSn_ADDR_REG and SPI_SMEM_PMSn_SIZE_REG.
+         */
+        uint32_t smem_pmsn_nonsecure_ecc:1;
+        uint32_t reserved_6:26;
     };
     uint32_t val;
 } spi_smem_pmsn_attr_reg_t;
@@ -2679,7 +2707,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 37822512;
+        /** date : R/W; bitpos: [27:0]; default: 38813840;
          *  SPI0 register version.
          */
         uint32_t date:28;

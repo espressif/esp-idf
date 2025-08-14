@@ -63,7 +63,11 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:6;
+        /** freq_scan_cnt_rise : R/W; bitpos: [1:0]; default: 1;
+         *  need_des
+         */
+        uint32_t freq_scan_cnt_rise:2;
+        uint32_t reserved_2:4;
         /** aon_touch_timeout_num : R/W; bitpos: [21:6]; default: 65535;
          *  need_des
          */
@@ -1149,7 +1153,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** aon_date : R/W; bitpos: [30:0]; default: 2360864;
+        /** date : R/W; bitpos: [30:0]; default: 38813808;
          *  need_des
          */
         uint32_t aon_date:31;

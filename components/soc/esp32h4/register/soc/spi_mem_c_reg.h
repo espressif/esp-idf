@@ -1321,6 +1321,29 @@ extern "C" {
 #define SPI_FMEM_PMS0_ECC_M  (SPI_FMEM_PMS0_ECC_V << SPI_FMEM_PMS0_ECC_S)
 #define SPI_FMEM_PMS0_ECC_V  0x00000001U
 #define SPI_FMEM_PMS0_ECC_S  2
+/** SPI_FMEM_PMS0_NONSECURE_RD_ATTR : R/W; bitpos: [3]; default: 1;
+ *  1: SPI1 flash  non-secure PMS section 0 read accessible. 0: Not allowed.
+ */
+#define SPI_FMEM_PMS0_NONSECURE_RD_ATTR    (BIT(3))
+#define SPI_FMEM_PMS0_NONSECURE_RD_ATTR_M  (SPI_FMEM_PMS0_NONSECURE_RD_ATTR_V << SPI_FMEM_PMS0_NONSECURE_RD_ATTR_S)
+#define SPI_FMEM_PMS0_NONSECURE_RD_ATTR_V  0x00000001U
+#define SPI_FMEM_PMS0_NONSECURE_RD_ATTR_S  3
+/** SPI_FMEM_PMS0_NONSECURE_WR_ATTR : R/W; bitpos: [4]; default: 1;
+ *  1: SPI1 flash non-secure PMS section 0 write accessible. 0: Not allowed.
+ */
+#define SPI_FMEM_PMS0_NONSECURE_WR_ATTR    (BIT(4))
+#define SPI_FMEM_PMS0_NONSECURE_WR_ATTR_M  (SPI_FMEM_PMS0_NONSECURE_WR_ATTR_V << SPI_FMEM_PMS0_NONSECURE_WR_ATTR_S)
+#define SPI_FMEM_PMS0_NONSECURE_WR_ATTR_V  0x00000001U
+#define SPI_FMEM_PMS0_NONSECURE_WR_ATTR_S  4
+/** SPI_FMEM_PMS0_NONSECURE_ECC : R/W; bitpos: [5]; default: 0;
+ *  SPI1 flash non-secure PMS section 0 ECC mode, 1: enable ECC mode. 0: Disable it.
+ *  The flash PMS section 0 is configured by registers SPI_FMEM_PMS0_ADDR_REG and
+ *  SPI_FMEM_PMS0_SIZE_REG.
+ */
+#define SPI_FMEM_PMS0_NONSECURE_ECC    (BIT(5))
+#define SPI_FMEM_PMS0_NONSECURE_ECC_M  (SPI_FMEM_PMS0_NONSECURE_ECC_V << SPI_FMEM_PMS0_NONSECURE_ECC_S)
+#define SPI_FMEM_PMS0_NONSECURE_ECC_V  0x00000001U
+#define SPI_FMEM_PMS0_NONSECURE_ECC_S  5
 
 /** SPI_FMEM_PMS1_ATTR_REG register
  *  SPI1 flash PMS section 1 attribute register
@@ -1349,6 +1372,29 @@ extern "C" {
 #define SPI_FMEM_PMS1_ECC_M  (SPI_FMEM_PMS1_ECC_V << SPI_FMEM_PMS1_ECC_S)
 #define SPI_FMEM_PMS1_ECC_V  0x00000001U
 #define SPI_FMEM_PMS1_ECC_S  2
+/** SPI_FMEM_PMS1_NONSECURE_RD_ATTR : R/W; bitpos: [3]; default: 1;
+ *  1: SPI1 flash  non-secure PMS section 1 read accessible. 0: Not allowed.
+ */
+#define SPI_FMEM_PMS1_NONSECURE_RD_ATTR    (BIT(3))
+#define SPI_FMEM_PMS1_NONSECURE_RD_ATTR_M  (SPI_FMEM_PMS1_NONSECURE_RD_ATTR_V << SPI_FMEM_PMS1_NONSECURE_RD_ATTR_S)
+#define SPI_FMEM_PMS1_NONSECURE_RD_ATTR_V  0x00000001U
+#define SPI_FMEM_PMS1_NONSECURE_RD_ATTR_S  3
+/** SPI_FMEM_PMS1_NONSECURE_WR_ATTR : R/W; bitpos: [4]; default: 1;
+ *  1: SPI1 flash non-secure PMS section 1 write accessible. 0: Not allowed.
+ */
+#define SPI_FMEM_PMS1_NONSECURE_WR_ATTR    (BIT(4))
+#define SPI_FMEM_PMS1_NONSECURE_WR_ATTR_M  (SPI_FMEM_PMS1_NONSECURE_WR_ATTR_V << SPI_FMEM_PMS1_NONSECURE_WR_ATTR_S)
+#define SPI_FMEM_PMS1_NONSECURE_WR_ATTR_V  0x00000001U
+#define SPI_FMEM_PMS1_NONSECURE_WR_ATTR_S  4
+/** SPI_FMEM_PMS1_NONSECURE_ECC : R/W; bitpos: [5]; default: 0;
+ *  SPI1 flash non-secure PMS section 1 ECC mode, 1: enable ECC mode. 0: Disable it.
+ *  The flash PMS section 1 is configured by registers SPI_FMEM_PMS1_ADDR_REG and
+ *  SPI_FMEM_PMS1_SIZE_REG.
+ */
+#define SPI_FMEM_PMS1_NONSECURE_ECC    (BIT(5))
+#define SPI_FMEM_PMS1_NONSECURE_ECC_M  (SPI_FMEM_PMS1_NONSECURE_ECC_V << SPI_FMEM_PMS1_NONSECURE_ECC_S)
+#define SPI_FMEM_PMS1_NONSECURE_ECC_V  0x00000001U
+#define SPI_FMEM_PMS1_NONSECURE_ECC_S  5
 
 /** SPI_FMEM_PMS2_ATTR_REG register
  *  SPI1 flash PMS section 2 attribute register
@@ -1377,6 +1423,29 @@ extern "C" {
 #define SPI_FMEM_PMS2_ECC_M  (SPI_FMEM_PMS2_ECC_V << SPI_FMEM_PMS2_ECC_S)
 #define SPI_FMEM_PMS2_ECC_V  0x00000001U
 #define SPI_FMEM_PMS2_ECC_S  2
+/** SPI_FMEM_PMS2_NONSECURE_RD_ATTR : R/W; bitpos: [3]; default: 1;
+ *  1: SPI1 flash  non-secure PMS section 2 read accessible. 0: Not allowed.
+ */
+#define SPI_FMEM_PMS2_NONSECURE_RD_ATTR    (BIT(3))
+#define SPI_FMEM_PMS2_NONSECURE_RD_ATTR_M  (SPI_FMEM_PMS2_NONSECURE_RD_ATTR_V << SPI_FMEM_PMS2_NONSECURE_RD_ATTR_S)
+#define SPI_FMEM_PMS2_NONSECURE_RD_ATTR_V  0x00000001U
+#define SPI_FMEM_PMS2_NONSECURE_RD_ATTR_S  3
+/** SPI_FMEM_PMS2_NONSECURE_WR_ATTR : R/W; bitpos: [4]; default: 1;
+ *  1: SPI1 flash non-secure PMS section 2 write accessible. 0: Not allowed.
+ */
+#define SPI_FMEM_PMS2_NONSECURE_WR_ATTR    (BIT(4))
+#define SPI_FMEM_PMS2_NONSECURE_WR_ATTR_M  (SPI_FMEM_PMS2_NONSECURE_WR_ATTR_V << SPI_FMEM_PMS2_NONSECURE_WR_ATTR_S)
+#define SPI_FMEM_PMS2_NONSECURE_WR_ATTR_V  0x00000001U
+#define SPI_FMEM_PMS2_NONSECURE_WR_ATTR_S  4
+/** SPI_FMEM_PMS2_NONSECURE_ECC : R/W; bitpos: [5]; default: 0;
+ *  SPI1 flash non-secure PMS section 2 ECC mode, 1: enable ECC mode. 0: Disable it.
+ *  The flash PMS section 2 is configured by registers SPI_FMEM_PMS2_ADDR_REG and
+ *  SPI_FMEM_PMS2_SIZE_REG.
+ */
+#define SPI_FMEM_PMS2_NONSECURE_ECC    (BIT(5))
+#define SPI_FMEM_PMS2_NONSECURE_ECC_M  (SPI_FMEM_PMS2_NONSECURE_ECC_V << SPI_FMEM_PMS2_NONSECURE_ECC_S)
+#define SPI_FMEM_PMS2_NONSECURE_ECC_V  0x00000001U
+#define SPI_FMEM_PMS2_NONSECURE_ECC_S  5
 
 /** SPI_FMEM_PMS3_ATTR_REG register
  *  SPI1 flash PMS section 3 attribute register
@@ -1405,6 +1474,29 @@ extern "C" {
 #define SPI_FMEM_PMS3_ECC_M  (SPI_FMEM_PMS3_ECC_V << SPI_FMEM_PMS3_ECC_S)
 #define SPI_FMEM_PMS3_ECC_V  0x00000001U
 #define SPI_FMEM_PMS3_ECC_S  2
+/** SPI_FMEM_PMS3_NONSECURE_RD_ATTR : R/W; bitpos: [3]; default: 1;
+ *  1: SPI1 flash  non-secure PMS section 3 read accessible. 0: Not allowed.
+ */
+#define SPI_FMEM_PMS3_NONSECURE_RD_ATTR    (BIT(3))
+#define SPI_FMEM_PMS3_NONSECURE_RD_ATTR_M  (SPI_FMEM_PMS3_NONSECURE_RD_ATTR_V << SPI_FMEM_PMS3_NONSECURE_RD_ATTR_S)
+#define SPI_FMEM_PMS3_NONSECURE_RD_ATTR_V  0x00000001U
+#define SPI_FMEM_PMS3_NONSECURE_RD_ATTR_S  3
+/** SPI_FMEM_PMS3_NONSECURE_WR_ATTR : R/W; bitpos: [4]; default: 1;
+ *  1: SPI1 flash non-secure PMS section 3 write accessible. 0: Not allowed.
+ */
+#define SPI_FMEM_PMS3_NONSECURE_WR_ATTR    (BIT(4))
+#define SPI_FMEM_PMS3_NONSECURE_WR_ATTR_M  (SPI_FMEM_PMS3_NONSECURE_WR_ATTR_V << SPI_FMEM_PMS3_NONSECURE_WR_ATTR_S)
+#define SPI_FMEM_PMS3_NONSECURE_WR_ATTR_V  0x00000001U
+#define SPI_FMEM_PMS3_NONSECURE_WR_ATTR_S  4
+/** SPI_FMEM_PMS3_NONSECURE_ECC : R/W; bitpos: [5]; default: 0;
+ *  SPI1 flash non-secure PMS section 3 ECC mode, 1: enable ECC mode. 0: Disable it.
+ *  The flash PMS section 3 is configured by registers SPI_FMEM_PMS3_ADDR_REG and
+ *  SPI_FMEM_PMS3_SIZE_REG.
+ */
+#define SPI_FMEM_PMS3_NONSECURE_ECC    (BIT(5))
+#define SPI_FMEM_PMS3_NONSECURE_ECC_M  (SPI_FMEM_PMS3_NONSECURE_ECC_V << SPI_FMEM_PMS3_NONSECURE_ECC_S)
+#define SPI_FMEM_PMS3_NONSECURE_ECC_V  0x00000001U
+#define SPI_FMEM_PMS3_NONSECURE_ECC_S  5
 
 /** SPI_FMEM_PMS0_ADDR_REG register
  *  SPI1 flash PMS section 0 start address register
@@ -1533,6 +1625,29 @@ extern "C" {
 #define SPI_SMEM_PMS0_ECC_M  (SPI_SMEM_PMS0_ECC_V << SPI_SMEM_PMS0_ECC_S)
 #define SPI_SMEM_PMS0_ECC_V  0x00000001U
 #define SPI_SMEM_PMS0_ECC_S  2
+/** SPI_SMEM_PMS0_NONSECURE_RD_ATTR : R/W; bitpos: [3]; default: 1;
+ *  1: SPI1 external RAM non-secure PMS section 0 read accessible. 0: Not allowed.
+ */
+#define SPI_SMEM_PMS0_NONSECURE_RD_ATTR    (BIT(3))
+#define SPI_SMEM_PMS0_NONSECURE_RD_ATTR_M  (SPI_SMEM_PMS0_NONSECURE_RD_ATTR_V << SPI_SMEM_PMS0_NONSECURE_RD_ATTR_S)
+#define SPI_SMEM_PMS0_NONSECURE_RD_ATTR_V  0x00000001U
+#define SPI_SMEM_PMS0_NONSECURE_RD_ATTR_S  3
+/** SPI_SMEM_PMS0_NONSECURE_WR_ATTR : R/W; bitpos: [4]; default: 1;
+ *  1: SPI1 external RAM non-secure PMS section 0 write accessible. 0: Not allowed.
+ */
+#define SPI_SMEM_PMS0_NONSECURE_WR_ATTR    (BIT(4))
+#define SPI_SMEM_PMS0_NONSECURE_WR_ATTR_M  (SPI_SMEM_PMS0_NONSECURE_WR_ATTR_V << SPI_SMEM_PMS0_NONSECURE_WR_ATTR_S)
+#define SPI_SMEM_PMS0_NONSECURE_WR_ATTR_V  0x00000001U
+#define SPI_SMEM_PMS0_NONSECURE_WR_ATTR_S  4
+/** SPI_SMEM_PMS0_NONSECURE_ECC : R/W; bitpos: [5]; default: 0;
+ *  SPI1 external RAM non-secure PMS section 0 ECC mode, 1: enable ECC mode. 0: Disable
+ *  it. The external RAM PMS section 0 is configured by registers
+ *  SPI_SMEM_PMS0_ADDR_REG and SPI_SMEM_PMS0_SIZE_REG.
+ */
+#define SPI_SMEM_PMS0_NONSECURE_ECC    (BIT(5))
+#define SPI_SMEM_PMS0_NONSECURE_ECC_M  (SPI_SMEM_PMS0_NONSECURE_ECC_V << SPI_SMEM_PMS0_NONSECURE_ECC_S)
+#define SPI_SMEM_PMS0_NONSECURE_ECC_V  0x00000001U
+#define SPI_SMEM_PMS0_NONSECURE_ECC_S  5
 
 /** SPI_SMEM_PMS1_ATTR_REG register
  *  SPI1 external RAM PMS section 1 attribute register
@@ -1561,6 +1676,29 @@ extern "C" {
 #define SPI_SMEM_PMS1_ECC_M  (SPI_SMEM_PMS1_ECC_V << SPI_SMEM_PMS1_ECC_S)
 #define SPI_SMEM_PMS1_ECC_V  0x00000001U
 #define SPI_SMEM_PMS1_ECC_S  2
+/** SPI_SMEM_PMS1_NONSECURE_RD_ATTR : R/W; bitpos: [3]; default: 1;
+ *  1: SPI1 external RAM non-secure PMS section 1 read accessible. 0: Not allowed.
+ */
+#define SPI_SMEM_PMS1_NONSECURE_RD_ATTR    (BIT(3))
+#define SPI_SMEM_PMS1_NONSECURE_RD_ATTR_M  (SPI_SMEM_PMS1_NONSECURE_RD_ATTR_V << SPI_SMEM_PMS1_NONSECURE_RD_ATTR_S)
+#define SPI_SMEM_PMS1_NONSECURE_RD_ATTR_V  0x00000001U
+#define SPI_SMEM_PMS1_NONSECURE_RD_ATTR_S  3
+/** SPI_SMEM_PMS1_NONSECURE_WR_ATTR : R/W; bitpos: [4]; default: 1;
+ *  1: SPI1 external RAM non-secure PMS section 1 write accessible. 0: Not allowed.
+ */
+#define SPI_SMEM_PMS1_NONSECURE_WR_ATTR    (BIT(4))
+#define SPI_SMEM_PMS1_NONSECURE_WR_ATTR_M  (SPI_SMEM_PMS1_NONSECURE_WR_ATTR_V << SPI_SMEM_PMS1_NONSECURE_WR_ATTR_S)
+#define SPI_SMEM_PMS1_NONSECURE_WR_ATTR_V  0x00000001U
+#define SPI_SMEM_PMS1_NONSECURE_WR_ATTR_S  4
+/** SPI_SMEM_PMS1_NONSECURE_ECC : R/W; bitpos: [5]; default: 0;
+ *  SPI1 external RAM non-secure PMS section 1 ECC mode, 1: enable ECC mode. 0: Disable
+ *  it. The external RAM PMS section 1 is configured by registers
+ *  SPI_SMEM_PMS1_ADDR_REG and SPI_SMEM_PMS1_SIZE_REG.
+ */
+#define SPI_SMEM_PMS1_NONSECURE_ECC    (BIT(5))
+#define SPI_SMEM_PMS1_NONSECURE_ECC_M  (SPI_SMEM_PMS1_NONSECURE_ECC_V << SPI_SMEM_PMS1_NONSECURE_ECC_S)
+#define SPI_SMEM_PMS1_NONSECURE_ECC_V  0x00000001U
+#define SPI_SMEM_PMS1_NONSECURE_ECC_S  5
 
 /** SPI_SMEM_PMS2_ATTR_REG register
  *  SPI1 external RAM PMS section 2 attribute register
@@ -1589,6 +1727,29 @@ extern "C" {
 #define SPI_SMEM_PMS2_ECC_M  (SPI_SMEM_PMS2_ECC_V << SPI_SMEM_PMS2_ECC_S)
 #define SPI_SMEM_PMS2_ECC_V  0x00000001U
 #define SPI_SMEM_PMS2_ECC_S  2
+/** SPI_SMEM_PMS2_NONSECURE_RD_ATTR : R/W; bitpos: [3]; default: 1;
+ *  1: SPI1 external RAM non-secure PMS section 2 read accessible. 0: Not allowed.
+ */
+#define SPI_SMEM_PMS2_NONSECURE_RD_ATTR    (BIT(3))
+#define SPI_SMEM_PMS2_NONSECURE_RD_ATTR_M  (SPI_SMEM_PMS2_NONSECURE_RD_ATTR_V << SPI_SMEM_PMS2_NONSECURE_RD_ATTR_S)
+#define SPI_SMEM_PMS2_NONSECURE_RD_ATTR_V  0x00000001U
+#define SPI_SMEM_PMS2_NONSECURE_RD_ATTR_S  3
+/** SPI_SMEM_PMS2_NONSECURE_WR_ATTR : R/W; bitpos: [4]; default: 1;
+ *  1: SPI1 external RAM non-secure PMS section 2 write accessible. 0: Not allowed.
+ */
+#define SPI_SMEM_PMS2_NONSECURE_WR_ATTR    (BIT(4))
+#define SPI_SMEM_PMS2_NONSECURE_WR_ATTR_M  (SPI_SMEM_PMS2_NONSECURE_WR_ATTR_V << SPI_SMEM_PMS2_NONSECURE_WR_ATTR_S)
+#define SPI_SMEM_PMS2_NONSECURE_WR_ATTR_V  0x00000001U
+#define SPI_SMEM_PMS2_NONSECURE_WR_ATTR_S  4
+/** SPI_SMEM_PMS2_NONSECURE_ECC : R/W; bitpos: [5]; default: 0;
+ *  SPI1 external RAM non-secure PMS section 2 ECC mode, 1: enable ECC mode. 0: Disable
+ *  it. The external RAM PMS section 2 is configured by registers
+ *  SPI_SMEM_PMS2_ADDR_REG and SPI_SMEM_PMS2_SIZE_REG.
+ */
+#define SPI_SMEM_PMS2_NONSECURE_ECC    (BIT(5))
+#define SPI_SMEM_PMS2_NONSECURE_ECC_M  (SPI_SMEM_PMS2_NONSECURE_ECC_V << SPI_SMEM_PMS2_NONSECURE_ECC_S)
+#define SPI_SMEM_PMS2_NONSECURE_ECC_V  0x00000001U
+#define SPI_SMEM_PMS2_NONSECURE_ECC_S  5
 
 /** SPI_SMEM_PMS3_ATTR_REG register
  *  SPI1 external RAM PMS section 3 attribute register
@@ -1617,6 +1778,29 @@ extern "C" {
 #define SPI_SMEM_PMS3_ECC_M  (SPI_SMEM_PMS3_ECC_V << SPI_SMEM_PMS3_ECC_S)
 #define SPI_SMEM_PMS3_ECC_V  0x00000001U
 #define SPI_SMEM_PMS3_ECC_S  2
+/** SPI_SMEM_PMS3_NONSECURE_RD_ATTR : R/W; bitpos: [3]; default: 1;
+ *  1: SPI1 external RAM non-secure PMS section 3 read accessible. 0: Not allowed.
+ */
+#define SPI_SMEM_PMS3_NONSECURE_RD_ATTR    (BIT(3))
+#define SPI_SMEM_PMS3_NONSECURE_RD_ATTR_M  (SPI_SMEM_PMS3_NONSECURE_RD_ATTR_V << SPI_SMEM_PMS3_NONSECURE_RD_ATTR_S)
+#define SPI_SMEM_PMS3_NONSECURE_RD_ATTR_V  0x00000001U
+#define SPI_SMEM_PMS3_NONSECURE_RD_ATTR_S  3
+/** SPI_SMEM_PMS3_NONSECURE_WR_ATTR : R/W; bitpos: [4]; default: 1;
+ *  1: SPI1 external RAM non-secure PMS section 3 write accessible. 0: Not allowed.
+ */
+#define SPI_SMEM_PMS3_NONSECURE_WR_ATTR    (BIT(4))
+#define SPI_SMEM_PMS3_NONSECURE_WR_ATTR_M  (SPI_SMEM_PMS3_NONSECURE_WR_ATTR_V << SPI_SMEM_PMS3_NONSECURE_WR_ATTR_S)
+#define SPI_SMEM_PMS3_NONSECURE_WR_ATTR_V  0x00000001U
+#define SPI_SMEM_PMS3_NONSECURE_WR_ATTR_S  4
+/** SPI_SMEM_PMS3_NONSECURE_ECC : R/W; bitpos: [5]; default: 0;
+ *  SPI1 external RAM non-secure PMS section 3 ECC mode, 1: enable ECC mode. 0: Disable
+ *  it. The external RAM PMS section 3 is configured by registers
+ *  SPI_SMEM_PMS3_ADDR_REG and SPI_SMEM_PMS3_SIZE_REG.
+ */
+#define SPI_SMEM_PMS3_NONSECURE_ECC    (BIT(5))
+#define SPI_SMEM_PMS3_NONSECURE_ECC_M  (SPI_SMEM_PMS3_NONSECURE_ECC_V << SPI_SMEM_PMS3_NONSECURE_ECC_S)
+#define SPI_SMEM_PMS3_NONSECURE_ECC_V  0x00000001U
+#define SPI_SMEM_PMS3_NONSECURE_ECC_S  5
 
 /** SPI_SMEM_PMS0_ADDR_REG register
  *  SPI1 external RAM PMS section 0 start address register
@@ -3566,7 +3750,7 @@ extern "C" {
  *  SPI0 version control register
  */
 #define SPI_MEM_DATE_REG(i)              (REG_SPI_MEM_BASE(i) + 0x3fc)
-/** SPI_MEM_DATE : R/W; bitpos: [27:0]; default: 37822512;
+/** SPI_MEM_DATE : R/W; bitpos: [27:0]; default: 38813840;
  *  SPI0 register version.
  */
 #define SPI_MEM_DATE    0x0FFFFFFFU

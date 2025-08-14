@@ -254,7 +254,7 @@ extern "C" {
 #define CACHE_L1_DCACHE_FREEZE_EN_S  16
 /** CACHE_L1_DCACHE_FREEZE_MODE : R/W; bitpos: [17]; default: 0;
  *  The bit is used to configure mode of freeze operation L1-DCache. 0: a miss-access
- *  will not stuck. 1: a miss-access will stuck.
+ *  will stuck. 1: a miss-access will not stuck.
  */
 #define CACHE_L1_DCACHE_FREEZE_MODE    (BIT(17))
 #define CACHE_L1_DCACHE_FREEZE_MODE_M  (CACHE_L1_DCACHE_FREEZE_MODE_V << CACHE_L1_DCACHE_FREEZE_MODE_S)
@@ -810,6 +810,14 @@ extern "C" {
 #define CACHE_L1_ICACHE0_PRELOAD_RGID_M  (CACHE_L1_ICACHE0_PRELOAD_RGID_V << CACHE_L1_ICACHE0_PRELOAD_RGID_S)
 #define CACHE_L1_ICACHE0_PRELOAD_RGID_V  0x0000000FU
 #define CACHE_L1_ICACHE0_PRELOAD_RGID_S  3
+/** CACHE_L1_ICACHE0_PRELOAD_MODE : R/W; bitpos: [7]; default: 0;
+ *  Configures the mode of l1 icache0 preload, 0: load data from next level memory, 1:
+ *  not load data from next level memory.
+ */
+#define CACHE_L1_ICACHE0_PRELOAD_MODE    (BIT(7))
+#define CACHE_L1_ICACHE0_PRELOAD_MODE_M  (CACHE_L1_ICACHE0_PRELOAD_MODE_V << CACHE_L1_ICACHE0_PRELOAD_MODE_S)
+#define CACHE_L1_ICACHE0_PRELOAD_MODE_V  0x00000001U
+#define CACHE_L1_ICACHE0_PRELOAD_MODE_S  7
 
 /** CACHE_L1_ICACHE0_PRELOAD_ADDR_REG register
  *  L1 instruction Cache 0 preload address configure register
@@ -872,6 +880,14 @@ extern "C" {
 #define CACHE_L1_ICACHE1_PRELOAD_RGID_M  (CACHE_L1_ICACHE1_PRELOAD_RGID_V << CACHE_L1_ICACHE1_PRELOAD_RGID_S)
 #define CACHE_L1_ICACHE1_PRELOAD_RGID_V  0x0000000FU
 #define CACHE_L1_ICACHE1_PRELOAD_RGID_S  3
+/** CACHE_L1_ICACHE1_PRELOAD_MODE : R/W; bitpos: [7]; default: 0;
+ *  Configures the mode of l1 icache1 preload, 0: load data from next level memory, 1:
+ *  not load data from next level memory.
+ */
+#define CACHE_L1_ICACHE1_PRELOAD_MODE    (BIT(7))
+#define CACHE_L1_ICACHE1_PRELOAD_MODE_M  (CACHE_L1_ICACHE1_PRELOAD_MODE_V << CACHE_L1_ICACHE1_PRELOAD_MODE_S)
+#define CACHE_L1_ICACHE1_PRELOAD_MODE_V  0x00000001U
+#define CACHE_L1_ICACHE1_PRELOAD_MODE_S  7
 
 /** CACHE_L1_ICACHE1_PRELOAD_ADDR_REG register
  *  L1 instruction Cache 1 preload address configure register
@@ -934,6 +950,14 @@ extern "C" {
 #define CACHE_L1_DCACHE_PRELOAD_RGID_M  (CACHE_L1_DCACHE_PRELOAD_RGID_V << CACHE_L1_DCACHE_PRELOAD_RGID_S)
 #define CACHE_L1_DCACHE_PRELOAD_RGID_V  0x0000000FU
 #define CACHE_L1_DCACHE_PRELOAD_RGID_S  3
+/** CACHE_L1_DCACHE_PRELOAD_MODE : R/W; bitpos: [7]; default: 0;
+ *  Configures the mode of l1 dcache preload, 0: load data from next level memory, 1:
+ *  not load data from next level memory.
+ */
+#define CACHE_L1_DCACHE_PRELOAD_MODE    (BIT(7))
+#define CACHE_L1_DCACHE_PRELOAD_MODE_M  (CACHE_L1_DCACHE_PRELOAD_MODE_V << CACHE_L1_DCACHE_PRELOAD_MODE_S)
+#define CACHE_L1_DCACHE_PRELOAD_MODE_V  0x00000001U
+#define CACHE_L1_DCACHE_PRELOAD_MODE_S  7
 
 /** CACHE_L1_DCACHE_PRELOAD_ADDR_REG register
  *  L1 data Cache  preload address configure register
@@ -2575,7 +2599,7 @@ extern "C" {
  *  Version control register
  */
 #define CACHE_DATE_REG (DR_REG_CACHE_BASE + 0x3fc)
-/** CACHE_DATE : R/W; bitpos: [27:0]; default: 37765696;
+/** CACHE_DATE : R/W; bitpos: [27:0]; default: 38810384;
  *  version control register. Note that this default value stored is the latest date
  *  when the hardware logic was updated.
  */

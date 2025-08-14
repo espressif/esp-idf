@@ -478,6 +478,57 @@ extern "C" {
 #define HP_SYSTEM_MODEM_PERI_PMS_EXCEPTION_ADDR_V  0x00FFFFFFU
 #define HP_SYSTEM_MODEM_PERI_PMS_EXCEPTION_ADDR_S  8
 
+/** HP_SYSTEM_PERI_PMS_INT_EN_REG register
+ *  APM interrupt enable register
+ */
+#define HP_SYSTEM_PERI_PMS_INT_EN_REG (DR_REG_HP_SYSTEM_BASE + 0xa8)
+/** HP_SYSTEM_HP_PERI_PMS_INT_EN : R/W; bitpos: [0]; default: 0;
+ *  Configures to enable hp peri pms interrupt.
+ *  0: disable
+ *  1: enable
+ */
+#define HP_SYSTEM_HP_PERI_PMS_INT_EN    (BIT(0))
+#define HP_SYSTEM_HP_PERI_PMS_INT_EN_M  (HP_SYSTEM_HP_PERI_PMS_INT_EN_V << HP_SYSTEM_HP_PERI_PMS_INT_EN_S)
+#define HP_SYSTEM_HP_PERI_PMS_INT_EN_V  0x00000001U
+#define HP_SYSTEM_HP_PERI_PMS_INT_EN_S  0
+/** HP_SYSTEM_CPU_PERI_PMS_INT_EN : R/W; bitpos: [1]; default: 0;
+ *  Configures to enable cpu peri pms interrupt.
+ *  0: disable
+ *  1: enable
+ */
+#define HP_SYSTEM_CPU_PERI_PMS_INT_EN    (BIT(1))
+#define HP_SYSTEM_CPU_PERI_PMS_INT_EN_M  (HP_SYSTEM_CPU_PERI_PMS_INT_EN_V << HP_SYSTEM_CPU_PERI_PMS_INT_EN_S)
+#define HP_SYSTEM_CPU_PERI_PMS_INT_EN_V  0x00000001U
+#define HP_SYSTEM_CPU_PERI_PMS_INT_EN_S  1
+/** HP_SYSTEM_MODEM_PERI_PMS_INT_EN : R/W; bitpos: [2]; default: 0;
+ *  Configures to enable modem peri pms interrupt.
+ *  0: disable
+ *  1: enable
+ */
+#define HP_SYSTEM_MODEM_PERI_PMS_INT_EN    (BIT(2))
+#define HP_SYSTEM_MODEM_PERI_PMS_INT_EN_M  (HP_SYSTEM_MODEM_PERI_PMS_INT_EN_V << HP_SYSTEM_MODEM_PERI_PMS_INT_EN_S)
+#define HP_SYSTEM_MODEM_PERI_PMS_INT_EN_V  0x00000001U
+#define HP_SYSTEM_MODEM_PERI_PMS_INT_EN_S  2
+
+/** HP_SYSTEM_CPU_WAKEUP_EVENT_REG register
+ *  NA
+ */
+#define HP_SYSTEM_CPU_WAKEUP_EVENT_REG (DR_REG_HP_SYSTEM_BASE + 0xc0)
+/** HP_SYSTEM_CPU0_WAKEUP_EVENT : R/W; bitpos: [0]; default: 0;
+ *  Configures the cpu0 to exit WFI mode
+ */
+#define HP_SYSTEM_CPU0_WAKEUP_EVENT    (BIT(0))
+#define HP_SYSTEM_CPU0_WAKEUP_EVENT_M  (HP_SYSTEM_CPU0_WAKEUP_EVENT_V << HP_SYSTEM_CPU0_WAKEUP_EVENT_S)
+#define HP_SYSTEM_CPU0_WAKEUP_EVENT_V  0x00000001U
+#define HP_SYSTEM_CPU0_WAKEUP_EVENT_S  0
+/** HP_SYSTEM_CPU1_WAKEUP_EVENT : R/W; bitpos: [1]; default: 0;
+ *  Configures the cpu1 to exit WFI mode
+ */
+#define HP_SYSTEM_CPU1_WAKEUP_EVENT    (BIT(1))
+#define HP_SYSTEM_CPU1_WAKEUP_EVENT_M  (HP_SYSTEM_CPU1_WAKEUP_EVENT_V << HP_SYSTEM_CPU1_WAKEUP_EVENT_S)
+#define HP_SYSTEM_CPU1_WAKEUP_EVENT_V  0x00000001U
+#define HP_SYSTEM_CPU1_WAKEUP_EVENT_S  1
+
 /** HP_SYSTEM_ID_REG register
  *  ID register
  */
@@ -506,7 +557,7 @@ extern "C" {
  *  Date control and version control register
  */
 #define HP_SYSTEM_DATE_REG (DR_REG_HP_SYSTEM_BASE + 0x3fc)
-/** HP_SYSTEM_DATE : R/W; bitpos: [27:0]; default: 37823056;
+/** HP_SYSTEM_DATE : R/W; bitpos: [27:0]; default: 38813728;
  *  Version control register.
  */
 #define HP_SYSTEM_DATE    0x0FFFFFFFU

@@ -14,7 +14,7 @@ extern "C" {
 /** TOUCH_AON_APPROACH_WORK_MEAS_NUM_REG register
  *  need_des
  */
-#define TOUCH_AON_APPROACH_WORK_MEAS_NUM_REG (DR_REG_TOUCH_BASE + 0x0)
+#define TOUCH_AON_APPROACH_WORK_MEAS_NUM_REG (DR_REG_TOUCH_AON_BASE + 0x0)
 /** TOUCH_AON_TOUCH_APPROACH_MEAS_NUM2 : R/W; bitpos: [9:0]; default: 100;
  *  need_des
  */
@@ -40,7 +40,7 @@ extern "C" {
 /** TOUCH_AON_SCAN_CTRL1_REG register
  *  need_des
  */
-#define TOUCH_AON_SCAN_CTRL1_REG (DR_REG_TOUCH_BASE + 0x4)
+#define TOUCH_AON_SCAN_CTRL1_REG (DR_REG_TOUCH_AON_BASE + 0x4)
 /** TOUCH_AON_TOUCH_SHIELD_PAD_EN : R/W; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -73,7 +73,14 @@ extern "C" {
 /** TOUCH_AON_SCAN_CTRL2_REG register
  *  need_des
  */
-#define TOUCH_AON_SCAN_CTRL2_REG (DR_REG_TOUCH_BASE + 0x8)
+#define TOUCH_AON_SCAN_CTRL2_REG (DR_REG_TOUCH_AON_BASE + 0x8)
+/** TOUCH_AON_FREQ_SCAN_CNT_RISE : R/W; bitpos: [1:0]; default: 1;
+ *  need_des
+ */
+#define TOUCH_AON_FREQ_SCAN_CNT_RISE    0x00000003U
+#define TOUCH_AON_FREQ_SCAN_CNT_RISE_M  (TOUCH_AON_FREQ_SCAN_CNT_RISE_V << TOUCH_AON_FREQ_SCAN_CNT_RISE_S)
+#define TOUCH_AON_FREQ_SCAN_CNT_RISE_V  0x00000003U
+#define TOUCH_AON_FREQ_SCAN_CNT_RISE_S  0
 /** TOUCH_AON_TOUCH_TIMEOUT_NUM : R/W; bitpos: [21:6]; default: 65535;
  *  need_des
  */
@@ -113,7 +120,7 @@ extern "C" {
 /** TOUCH_AON_WORK_REG register
  *  need_des
  */
-#define TOUCH_AON_WORK_REG (DR_REG_TOUCH_BASE + 0xc)
+#define TOUCH_AON_WORK_REG (DR_REG_TOUCH_AON_BASE + 0xc)
 /** TOUCH_AON_DIV_NUM2 : R/W; bitpos: [18:16]; default: 0;
  *  need_des
  */
@@ -160,7 +167,7 @@ extern "C" {
 /** TOUCH_AON_WORK_MEAS_NUM_REG register
  *  need_des
  */
-#define TOUCH_AON_WORK_MEAS_NUM_REG (DR_REG_TOUCH_BASE + 0x10)
+#define TOUCH_AON_WORK_MEAS_NUM_REG (DR_REG_TOUCH_AON_BASE + 0x10)
 /** TOUCH_AON_TOUCH_MEAS_NUM2 : R/W; bitpos: [9:0]; default: 100;
  *  need_des
  */
@@ -186,7 +193,7 @@ extern "C" {
 /** TOUCH_AON_FILTER1_REG register
  *  need_des
  */
-#define TOUCH_AON_FILTER1_REG (DR_REG_TOUCH_BASE + 0x14)
+#define TOUCH_AON_FILTER1_REG (DR_REG_TOUCH_AON_BASE + 0x14)
 /** TOUCH_AON_TOUCH_NN_DISUPDATE_BENCHMARK_EN : R/W; bitpos: [0]; default: 0;
  *  Reserved
  */
@@ -268,7 +275,7 @@ extern "C" {
 /** TOUCH_AON_FILTER2_REG register
  *  need_des
  */
-#define TOUCH_AON_FILTER2_REG (DR_REG_TOUCH_BASE + 0x18)
+#define TOUCH_AON_FILTER2_REG (DR_REG_TOUCH_AON_BASE + 0x18)
 /** TOUCH_AON_TOUCH_OUTEN : R/W; bitpos: [29:15]; default: 16383;
  *  need_des
  */
@@ -294,7 +301,7 @@ extern "C" {
 /** TOUCH_AON_FILTER3_REG register
  *  need_des
  */
-#define TOUCH_AON_FILTER3_REG (DR_REG_TOUCH_BASE + 0x1c)
+#define TOUCH_AON_FILTER3_REG (DR_REG_TOUCH_AON_BASE + 0x1c)
 /** TOUCH_AON_TOUCH_BENCHMARK_SW : R/W; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -327,7 +334,7 @@ extern "C" {
 /** TOUCH_AON_SLP0_REG register
  *  need_des
  */
-#define TOUCH_AON_SLP0_REG (DR_REG_TOUCH_BASE + 0x20)
+#define TOUCH_AON_SLP0_REG (DR_REG_TOUCH_AON_BASE + 0x20)
 /** TOUCH_AON_TOUCH_SLP_TH0 : R/W; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -353,7 +360,7 @@ extern "C" {
 /** TOUCH_AON_SLP1_REG register
  *  need_des
  */
-#define TOUCH_AON_SLP1_REG (DR_REG_TOUCH_BASE + 0x24)
+#define TOUCH_AON_SLP1_REG (DR_REG_TOUCH_AON_BASE + 0x24)
 /** TOUCH_AON_TOUCH_SLP_TH2 : R/W; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -372,7 +379,7 @@ extern "C" {
 /** TOUCH_AON_CLR_REG register
  *  need_des
  */
-#define TOUCH_AON_CLR_REG (DR_REG_TOUCH_BASE + 0x28)
+#define TOUCH_AON_CLR_REG (DR_REG_TOUCH_AON_BASE + 0x28)
 /** TOUCH_AON_TOUCH_CHANNEL_CLR : WT; bitpos: [14:0]; default: 0;
  *  need_des
  */
@@ -391,7 +398,7 @@ extern "C" {
 /** TOUCH_AON_APPROACH_REG register
  *  need_des
  */
-#define TOUCH_AON_APPROACH_REG (DR_REG_TOUCH_BASE + 0x2c)
+#define TOUCH_AON_APPROACH_REG (DR_REG_TOUCH_AON_BASE + 0x2c)
 /** TOUCH_AON_TOUCH_APPROACH_PAD0 : R/W; bitpos: [3:0]; default: 15;
  *  need_des
  */
@@ -424,7 +431,7 @@ extern "C" {
 /** TOUCH_AON_FREQ0_SCAN_PARA_REG register
  *  need_des
  */
-#define TOUCH_AON_FREQ0_SCAN_PARA_REG (DR_REG_TOUCH_BASE + 0x30)
+#define TOUCH_AON_FREQ0_SCAN_PARA_REG (DR_REG_TOUCH_AON_BASE + 0x30)
 /** TOUCH_AON_TOUCH_FREQ0_DCAP_LPF : R/W; bitpos: [6:0]; default: 0;
  *  need_des
  */
@@ -471,7 +478,7 @@ extern "C" {
 /** TOUCH_AON_FREQ1_SCAN_PARA_REG register
  *  need_des
  */
-#define TOUCH_AON_FREQ1_SCAN_PARA_REG (DR_REG_TOUCH_BASE + 0x34)
+#define TOUCH_AON_FREQ1_SCAN_PARA_REG (DR_REG_TOUCH_AON_BASE + 0x34)
 /** TOUCH_AON_TOUCH_FREQ1_DCAP_LPF : R/W; bitpos: [6:0]; default: 0;
  *  need_des
  */
@@ -518,7 +525,7 @@ extern "C" {
 /** TOUCH_AON_FREQ2_SCAN_PARA_REG register
  *  need_des
  */
-#define TOUCH_AON_FREQ2_SCAN_PARA_REG (DR_REG_TOUCH_BASE + 0x38)
+#define TOUCH_AON_FREQ2_SCAN_PARA_REG (DR_REG_TOUCH_AON_BASE + 0x38)
 /** TOUCH_AON_TOUCH_FREQ2_DCAP_LPF : R/W; bitpos: [6:0]; default: 0;
  *  need_des
  */
@@ -565,7 +572,7 @@ extern "C" {
 /** TOUCH_AON_ANA_PARA_REG register
  *  need_des
  */
-#define TOUCH_AON_ANA_PARA_REG (DR_REG_TOUCH_BASE + 0x3c)
+#define TOUCH_AON_ANA_PARA_REG (DR_REG_TOUCH_AON_BASE + 0x3c)
 /** TOUCH_AON_TOUCH_TOUCH_BUF_DRV : R/W; bitpos: [2:0]; default: 0;
  *  need_des
  */
@@ -591,7 +598,7 @@ extern "C" {
 /** TOUCH_AON_MUX0_REG register
  *  need_des
  */
-#define TOUCH_AON_MUX0_REG (DR_REG_TOUCH_BASE + 0x40)
+#define TOUCH_AON_MUX0_REG (DR_REG_TOUCH_AON_BASE + 0x40)
 /** TOUCH_AON_TOUCH_DATA_SEL : R/W; bitpos: [9:8]; default: 0;
  *  need_des
  */
@@ -652,7 +659,7 @@ extern "C" {
 /** TOUCH_AON_MUX1_REG register
  *  need_des
  */
-#define TOUCH_AON_MUX1_REG (DR_REG_TOUCH_BASE + 0x44)
+#define TOUCH_AON_MUX1_REG (DR_REG_TOUCH_AON_BASE + 0x44)
 /** TOUCH_AON_TOUCH_START : R/W; bitpos: [14:0]; default: 0;
  *  need_des
  */
@@ -671,7 +678,7 @@ extern "C" {
 /** TOUCH_AON_PAD0_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD0_TH0_REG (DR_REG_TOUCH_BASE + 0x48)
+#define TOUCH_AON_PAD0_TH0_REG (DR_REG_TOUCH_AON_BASE + 0x48)
 /** TOUCH_AON_TOUCH_PAD0_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -683,7 +690,7 @@ extern "C" {
 /** TOUCH_AON_PAD0_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD0_TH1_REG (DR_REG_TOUCH_BASE + 0x4c)
+#define TOUCH_AON_PAD0_TH1_REG (DR_REG_TOUCH_AON_BASE + 0x4c)
 /** TOUCH_AON_TOUCH_PAD0_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -695,7 +702,7 @@ extern "C" {
 /** TOUCH_AON_PAD0_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD0_TH2_REG (DR_REG_TOUCH_BASE + 0x50)
+#define TOUCH_AON_PAD0_TH2_REG (DR_REG_TOUCH_AON_BASE + 0x50)
 /** TOUCH_AON_TOUCH_PAD0_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -707,7 +714,7 @@ extern "C" {
 /** TOUCH_AON_PAD1_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD1_TH0_REG (DR_REG_TOUCH_BASE + 0x54)
+#define TOUCH_AON_PAD1_TH0_REG (DR_REG_TOUCH_AON_BASE + 0x54)
 /** TOUCH_AON_TOUCH_PAD1_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -719,7 +726,7 @@ extern "C" {
 /** TOUCH_AON_PAD1_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD1_TH1_REG (DR_REG_TOUCH_BASE + 0x58)
+#define TOUCH_AON_PAD1_TH1_REG (DR_REG_TOUCH_AON_BASE + 0x58)
 /** TOUCH_AON_TOUCH_PAD1_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -731,7 +738,7 @@ extern "C" {
 /** TOUCH_AON_PAD1_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD1_TH2_REG (DR_REG_TOUCH_BASE + 0x5c)
+#define TOUCH_AON_PAD1_TH2_REG (DR_REG_TOUCH_AON_BASE + 0x5c)
 /** TOUCH_AON_TOUCH_PAD1_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -743,7 +750,7 @@ extern "C" {
 /** TOUCH_AON_PAD2_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD2_TH0_REG (DR_REG_TOUCH_BASE + 0x60)
+#define TOUCH_AON_PAD2_TH0_REG (DR_REG_TOUCH_AON_BASE + 0x60)
 /** TOUCH_AON_TOUCH_PAD2_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -755,7 +762,7 @@ extern "C" {
 /** TOUCH_AON_PAD2_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD2_TH1_REG (DR_REG_TOUCH_BASE + 0x64)
+#define TOUCH_AON_PAD2_TH1_REG (DR_REG_TOUCH_AON_BASE + 0x64)
 /** TOUCH_AON_TOUCH_PAD2_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -767,7 +774,7 @@ extern "C" {
 /** TOUCH_AON_PAD2_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD2_TH2_REG (DR_REG_TOUCH_BASE + 0x68)
+#define TOUCH_AON_PAD2_TH2_REG (DR_REG_TOUCH_AON_BASE + 0x68)
 /** TOUCH_AON_TOUCH_PAD2_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -779,7 +786,7 @@ extern "C" {
 /** TOUCH_AON_PAD3_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD3_TH0_REG (DR_REG_TOUCH_BASE + 0x6c)
+#define TOUCH_AON_PAD3_TH0_REG (DR_REG_TOUCH_AON_BASE + 0x6c)
 /** TOUCH_AON_TOUCH_PAD3_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -791,7 +798,7 @@ extern "C" {
 /** TOUCH_AON_PAD3_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD3_TH1_REG (DR_REG_TOUCH_BASE + 0x70)
+#define TOUCH_AON_PAD3_TH1_REG (DR_REG_TOUCH_AON_BASE + 0x70)
 /** TOUCH_AON_TOUCH_PAD3_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -803,7 +810,7 @@ extern "C" {
 /** TOUCH_AON_PAD3_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD3_TH2_REG (DR_REG_TOUCH_BASE + 0x74)
+#define TOUCH_AON_PAD3_TH2_REG (DR_REG_TOUCH_AON_BASE + 0x74)
 /** TOUCH_AON_TOUCH_PAD3_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -815,7 +822,7 @@ extern "C" {
 /** TOUCH_AON_PAD4_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD4_TH0_REG (DR_REG_TOUCH_BASE + 0x78)
+#define TOUCH_AON_PAD4_TH0_REG (DR_REG_TOUCH_AON_BASE + 0x78)
 /** TOUCH_AON_TOUCH_PAD4_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -827,7 +834,7 @@ extern "C" {
 /** TOUCH_AON_PAD4_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD4_TH1_REG (DR_REG_TOUCH_BASE + 0x7c)
+#define TOUCH_AON_PAD4_TH1_REG (DR_REG_TOUCH_AON_BASE + 0x7c)
 /** TOUCH_AON_TOUCH_PAD4_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -839,7 +846,7 @@ extern "C" {
 /** TOUCH_AON_PAD4_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD4_TH2_REG (DR_REG_TOUCH_BASE + 0x80)
+#define TOUCH_AON_PAD4_TH2_REG (DR_REG_TOUCH_AON_BASE + 0x80)
 /** TOUCH_AON_TOUCH_PAD4_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -851,7 +858,7 @@ extern "C" {
 /** TOUCH_AON_PAD5_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD5_TH0_REG (DR_REG_TOUCH_BASE + 0x84)
+#define TOUCH_AON_PAD5_TH0_REG (DR_REG_TOUCH_AON_BASE + 0x84)
 /** TOUCH_AON_TOUCH_PAD5_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -863,7 +870,7 @@ extern "C" {
 /** TOUCH_AON_PAD5_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD5_TH1_REG (DR_REG_TOUCH_BASE + 0x88)
+#define TOUCH_AON_PAD5_TH1_REG (DR_REG_TOUCH_AON_BASE + 0x88)
 /** TOUCH_AON_TOUCH_PAD5_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -875,7 +882,7 @@ extern "C" {
 /** TOUCH_AON_PAD5_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD5_TH2_REG (DR_REG_TOUCH_BASE + 0x8c)
+#define TOUCH_AON_PAD5_TH2_REG (DR_REG_TOUCH_AON_BASE + 0x8c)
 /** TOUCH_AON_TOUCH_PAD5_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -887,7 +894,7 @@ extern "C" {
 /** TOUCH_AON_PAD6_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD6_TH0_REG (DR_REG_TOUCH_BASE + 0x90)
+#define TOUCH_AON_PAD6_TH0_REG (DR_REG_TOUCH_AON_BASE + 0x90)
 /** TOUCH_AON_TOUCH_PAD6_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -899,7 +906,7 @@ extern "C" {
 /** TOUCH_AON_PAD6_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD6_TH1_REG (DR_REG_TOUCH_BASE + 0x94)
+#define TOUCH_AON_PAD6_TH1_REG (DR_REG_TOUCH_AON_BASE + 0x94)
 /** TOUCH_AON_TOUCH_PAD6_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -911,7 +918,7 @@ extern "C" {
 /** TOUCH_AON_PAD6_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD6_TH2_REG (DR_REG_TOUCH_BASE + 0x98)
+#define TOUCH_AON_PAD6_TH2_REG (DR_REG_TOUCH_AON_BASE + 0x98)
 /** TOUCH_AON_TOUCH_PAD6_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -923,7 +930,7 @@ extern "C" {
 /** TOUCH_AON_PAD7_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD7_TH0_REG (DR_REG_TOUCH_BASE + 0x9c)
+#define TOUCH_AON_PAD7_TH0_REG (DR_REG_TOUCH_AON_BASE + 0x9c)
 /** TOUCH_AON_TOUCH_PAD7_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -935,7 +942,7 @@ extern "C" {
 /** TOUCH_AON_PAD7_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD7_TH1_REG (DR_REG_TOUCH_BASE + 0xa0)
+#define TOUCH_AON_PAD7_TH1_REG (DR_REG_TOUCH_AON_BASE + 0xa0)
 /** TOUCH_AON_TOUCH_PAD7_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -947,7 +954,7 @@ extern "C" {
 /** TOUCH_AON_PAD7_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD7_TH2_REG (DR_REG_TOUCH_BASE + 0xa4)
+#define TOUCH_AON_PAD7_TH2_REG (DR_REG_TOUCH_AON_BASE + 0xa4)
 /** TOUCH_AON_TOUCH_PAD7_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -959,7 +966,7 @@ extern "C" {
 /** TOUCH_AON_PAD8_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD8_TH0_REG (DR_REG_TOUCH_BASE + 0xa8)
+#define TOUCH_AON_PAD8_TH0_REG (DR_REG_TOUCH_AON_BASE + 0xa8)
 /** TOUCH_AON_TOUCH_PAD8_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -971,7 +978,7 @@ extern "C" {
 /** TOUCH_AON_PAD8_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD8_TH1_REG (DR_REG_TOUCH_BASE + 0xac)
+#define TOUCH_AON_PAD8_TH1_REG (DR_REG_TOUCH_AON_BASE + 0xac)
 /** TOUCH_AON_TOUCH_PAD8_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -983,7 +990,7 @@ extern "C" {
 /** TOUCH_AON_PAD8_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD8_TH2_REG (DR_REG_TOUCH_BASE + 0xb0)
+#define TOUCH_AON_PAD8_TH2_REG (DR_REG_TOUCH_AON_BASE + 0xb0)
 /** TOUCH_AON_TOUCH_PAD8_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -995,7 +1002,7 @@ extern "C" {
 /** TOUCH_AON_PAD9_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD9_TH0_REG (DR_REG_TOUCH_BASE + 0xb4)
+#define TOUCH_AON_PAD9_TH0_REG (DR_REG_TOUCH_AON_BASE + 0xb4)
 /** TOUCH_AON_TOUCH_PAD9_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1007,7 +1014,7 @@ extern "C" {
 /** TOUCH_AON_PAD9_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD9_TH1_REG (DR_REG_TOUCH_BASE + 0xb8)
+#define TOUCH_AON_PAD9_TH1_REG (DR_REG_TOUCH_AON_BASE + 0xb8)
 /** TOUCH_AON_TOUCH_PAD9_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1019,7 +1026,7 @@ extern "C" {
 /** TOUCH_AON_PAD9_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD9_TH2_REG (DR_REG_TOUCH_BASE + 0xbc)
+#define TOUCH_AON_PAD9_TH2_REG (DR_REG_TOUCH_AON_BASE + 0xbc)
 /** TOUCH_AON_TOUCH_PAD9_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1031,7 +1038,7 @@ extern "C" {
 /** TOUCH_AON_PAD10_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD10_TH0_REG (DR_REG_TOUCH_BASE + 0xc0)
+#define TOUCH_AON_PAD10_TH0_REG (DR_REG_TOUCH_AON_BASE + 0xc0)
 /** TOUCH_AON_TOUCH_PAD10_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1043,7 +1050,7 @@ extern "C" {
 /** TOUCH_AON_PAD10_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD10_TH1_REG (DR_REG_TOUCH_BASE + 0xc4)
+#define TOUCH_AON_PAD10_TH1_REG (DR_REG_TOUCH_AON_BASE + 0xc4)
 /** TOUCH_AON_TOUCH_PAD10_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1055,7 +1062,7 @@ extern "C" {
 /** TOUCH_AON_PAD10_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD10_TH2_REG (DR_REG_TOUCH_BASE + 0xc8)
+#define TOUCH_AON_PAD10_TH2_REG (DR_REG_TOUCH_AON_BASE + 0xc8)
 /** TOUCH_AON_TOUCH_PAD10_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1067,7 +1074,7 @@ extern "C" {
 /** TOUCH_AON_PAD11_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD11_TH0_REG (DR_REG_TOUCH_BASE + 0xcc)
+#define TOUCH_AON_PAD11_TH0_REG (DR_REG_TOUCH_AON_BASE + 0xcc)
 /** TOUCH_AON_TOUCH_PAD11_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1079,7 +1086,7 @@ extern "C" {
 /** TOUCH_AON_PAD11_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD11_TH1_REG (DR_REG_TOUCH_BASE + 0xd0)
+#define TOUCH_AON_PAD11_TH1_REG (DR_REG_TOUCH_AON_BASE + 0xd0)
 /** TOUCH_AON_TOUCH_PAD11_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1091,7 +1098,7 @@ extern "C" {
 /** TOUCH_AON_PAD11_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD11_TH2_REG (DR_REG_TOUCH_BASE + 0xd4)
+#define TOUCH_AON_PAD11_TH2_REG (DR_REG_TOUCH_AON_BASE + 0xd4)
 /** TOUCH_AON_TOUCH_PAD11_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1103,7 +1110,7 @@ extern "C" {
 /** TOUCH_AON_PAD12_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD12_TH0_REG (DR_REG_TOUCH_BASE + 0xd8)
+#define TOUCH_AON_PAD12_TH0_REG (DR_REG_TOUCH_AON_BASE + 0xd8)
 /** TOUCH_AON_TOUCH_PAD12_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1115,7 +1122,7 @@ extern "C" {
 /** TOUCH_AON_PAD12_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD12_TH1_REG (DR_REG_TOUCH_BASE + 0xdc)
+#define TOUCH_AON_PAD12_TH1_REG (DR_REG_TOUCH_AON_BASE + 0xdc)
 /** TOUCH_AON_TOUCH_PAD12_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1127,7 +1134,7 @@ extern "C" {
 /** TOUCH_AON_PAD12_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD12_TH2_REG (DR_REG_TOUCH_BASE + 0xe0)
+#define TOUCH_AON_PAD12_TH2_REG (DR_REG_TOUCH_AON_BASE + 0xe0)
 /** TOUCH_AON_TOUCH_PAD12_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1139,7 +1146,7 @@ extern "C" {
 /** TOUCH_AON_PAD13_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD13_TH0_REG (DR_REG_TOUCH_BASE + 0xe4)
+#define TOUCH_AON_PAD13_TH0_REG (DR_REG_TOUCH_AON_BASE + 0xe4)
 /** TOUCH_AON_TOUCH_PAD13_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1151,7 +1158,7 @@ extern "C" {
 /** TOUCH_AON_PAD13_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD13_TH1_REG (DR_REG_TOUCH_BASE + 0xe8)
+#define TOUCH_AON_PAD13_TH1_REG (DR_REG_TOUCH_AON_BASE + 0xe8)
 /** TOUCH_AON_TOUCH_PAD13_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1163,7 +1170,7 @@ extern "C" {
 /** TOUCH_AON_PAD13_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD13_TH2_REG (DR_REG_TOUCH_BASE + 0xec)
+#define TOUCH_AON_PAD13_TH2_REG (DR_REG_TOUCH_AON_BASE + 0xec)
 /** TOUCH_AON_TOUCH_PAD13_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1175,7 +1182,7 @@ extern "C" {
 /** TOUCH_AON_PAD14_TH0_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD14_TH0_REG (DR_REG_TOUCH_BASE + 0xf0)
+#define TOUCH_AON_PAD14_TH0_REG (DR_REG_TOUCH_AON_BASE + 0xf0)
 /** TOUCH_AON_TOUCH_PAD14_TH0 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1187,7 +1194,7 @@ extern "C" {
 /** TOUCH_AON_PAD14_TH1_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD14_TH1_REG (DR_REG_TOUCH_BASE + 0xf4)
+#define TOUCH_AON_PAD14_TH1_REG (DR_REG_TOUCH_AON_BASE + 0xf4)
 /** TOUCH_AON_TOUCH_PAD14_TH1 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1199,7 +1206,7 @@ extern "C" {
 /** TOUCH_AON_PAD14_TH2_REG register
  *  need_des
  */
-#define TOUCH_AON_PAD14_TH2_REG (DR_REG_TOUCH_BASE + 0xf8)
+#define TOUCH_AON_PAD14_TH2_REG (DR_REG_TOUCH_AON_BASE + 0xf8)
 /** TOUCH_AON_TOUCH_PAD14_TH2 : R/W; bitpos: [31:16]; default: 0;
  *  Reserved
  */
@@ -1211,8 +1218,8 @@ extern "C" {
 /** TOUCH_AON_DATE_REG register
  *  need_des
  */
-#define TOUCH_AON_DATE_REG (DR_REG_TOUCH_BASE + 0xfc)
-/** TOUCH_AON_DATE : R/W; bitpos: [30:0]; default: 2360864;
+#define TOUCH_AON_DATE_REG (DR_REG_TOUCH_AON_BASE + 0xfc)
+/** TOUCH_AON_DATE : R/W; bitpos: [30:0]; default: 38813808;
  *  need_des
  */
 #define TOUCH_AON_DATE    0x7FFFFFFFU

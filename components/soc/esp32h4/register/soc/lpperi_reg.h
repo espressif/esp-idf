@@ -179,6 +179,20 @@ extern "C" {
 #define LPPERI_LP_PERI_PMS_EXCEPTION_ADDR_V  0x00FFFFFFU
 #define LPPERI_LP_PERI_PMS_EXCEPTION_ADDR_S  8
 
+/** LPPERI_PERI_PMS_INT_EN_REG register
+ *  APM interrupt enable register
+ */
+#define LPPERI_PERI_PMS_INT_EN_REG (DR_REG_LPPERI_BASE + 0x18)
+/** LPPERI_LP_PERI_PMS_INT_EN : R/W; bitpos: [0]; default: 0;
+ *  Configures to enable lp peri pms interrupt.
+ *  0: disable
+ *  1: enable
+ */
+#define LPPERI_LP_PERI_PMS_INT_EN    (BIT(0))
+#define LPPERI_LP_PERI_PMS_INT_EN_M  (LPPERI_LP_PERI_PMS_INT_EN_V << LPPERI_LP_PERI_PMS_INT_EN_S)
+#define LPPERI_LP_PERI_PMS_INT_EN_V  0x00000001U
+#define LPPERI_LP_PERI_PMS_INT_EN_S  0
+
 /** LPPERI_INTERRUPT_SOURCE_REG register
  *  record the lp cpu interrupt
  */
@@ -195,7 +209,7 @@ extern "C" {
  *  version register
  */
 #define LPPERI_DATE_REG (DR_REG_LPPERI_BASE + 0x3fc)
-/** LPPERI_LPPERI_DATE : R/W; bitpos: [30:0]; default: 37819136;
+/** LPPERI_LPPERI_DATE : R/W; bitpos: [30:0]; default: 38813744;
  *  version register
  */
 #define LPPERI_LPPERI_DATE    0x7FFFFFFFU
