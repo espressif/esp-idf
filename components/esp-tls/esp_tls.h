@@ -213,6 +213,9 @@ typedef struct esp_tls_cfg {
     const int *ciphersuites_list;           /*!< Pointer to a zero-terminated array of IANA identifiers of TLS ciphersuites.
                                                 Please check the list validity by esp_tls_get_ciphersuites_list() API */
     esp_tls_proto_ver_t tls_version;        /*!< TLS protocol version of the connection, e.g., TLS 1.2, TLS 1.3 (default - no preference) */
+#ifdef CONFIG_ATECC608A_RUNTIME_SELECTION
+    uint8_t atecc608a_i2c_addr;            /*!< I2C address of the atecc608a chip */
+#endif // CONFIG_ATECC608A_RUNTIME_SELECTION
 } esp_tls_cfg_t;
 
 #if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
@@ -326,6 +329,10 @@ typedef struct esp_tls_cfg_server {
     esp_tls_handshake_callback cert_select_cb;  /*!< Certificate selection callback that gets called after ClientHello is processed.
                                                      Can be used as an SNI callback, but also has access to other
                                                      TLS extensions, such as ALPN and server_certificate_type . */
+#endif
+
+#if defined(CONFIG_ATECC608A_RUNTIME_SELECTION)
+    uint8_t atecc608a_i2c_addr;                 /*!< I2C address of the atecc608a chip */
 #endif
 
 #if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)

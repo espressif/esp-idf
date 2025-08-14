@@ -183,8 +183,13 @@ void esp_transport_ssl_set_ciphersuites_list(esp_transport_handle_t t, const int
  * @note       Recommended to be used with ESP32 series interfaced to ATECC608A based secure element
  *
  * @param      t     ssl transport
+ * @param      atecc608a_i2c_addr i2c address of the ATECC608A chip to use
  */
+#ifdef CONFIG_ATECC608A_RUNTIME_SELECTION
+void esp_transport_ssl_use_secure_element(esp_transport_handle_t t, uint8_t atecc608a_i2c_addr);
+#else
 void esp_transport_ssl_use_secure_element(esp_transport_handle_t t);
+#endif // CONFIG_ATECC608A_RUNTIME_SELECTION
 
 /**
  * @brief      Set the ds_data handle in ssl context.(used for the digital signature operation)

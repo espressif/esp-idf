@@ -97,7 +97,9 @@ struct esp_tls {
                                                                                      - ESP_TLS_SERVER */
 
     esp_tls_error_handle_t error_handle;                                        /*!< handle to error descriptor */
-
+#ifdef CONFIG_ATECC608A_RUNTIME_SELECTION
+    uint8_t atecc608a_i2c_addr;                                                 /*!< I2C address of the ATECC608A device */
+#endif // CONFIG_ATECC608A_RUNTIME_SELECTION
 };
 
 // Function pointer for the server configuration API

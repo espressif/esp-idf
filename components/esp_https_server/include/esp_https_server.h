@@ -118,6 +118,9 @@ struct httpd_ssl_config {
     /** Enable secure element for server session */
     bool use_secure_element;
 
+    /** ATECC608A I2C address, used for secure element */
+    uint8_t atecc608a_i2c_addr;
+
     /** User callback for esp_https_server */
     esp_https_server_user_cb *user_cb;
 

@@ -910,6 +910,14 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
 
     if (cfg->use_secure_element) {
 #ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT
+#if defined(CONFIG_ATECC608A_RUNTIME_SELECTION)
+        if (cfg->atecc608a_i2c_addr != 0) {
+            tls->atecc608a_i2c_addr = cfg->atecc608a_i2c_addr;
+        } else {
+            ESP_LOGE(TAG, "When using MANUAL SELECTION, i2c address for ATECC608A is required");
+            return ESP_ERR_INVALID_ARG;
+        }
+#endif
         esp_tls_pki_t pki = {
             .public_cert = &tls->clientcert,
             .pk_key = &tls->clientkey,
@@ -1234,7 +1242,27 @@ static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, const void *pki)
         ESP_LOGE(TAG, "Device certificate must be provided for TrustCustom Certs");
         return ESP_FAIL;
     }
-#endif /* CONFIG_ATECC608A_TCUSTOM */
+#elif CONFIG_ATECC608A_RUNTIME_SELECTION
+    esp_ret = esp_init_atecc608a(tls->atecc608a_i2c_addr);
+    if (ret != ESP_OK) {
+        return ESP_ERR_ESP_TLS_SE_FAILED;
+    }
+    mbedtls_x509_crt_init(&tls->clientcert);
+
+    esp_tls_pki_t *pki_l = (esp_tls_pki_t *) pki;
+    if (pki_l->publiccert_pem_buf != NULL) {
+        ret = mbedtls_x509_crt_parse(&tls->clientcert, pki_l->publiccert_pem_buf, pki_l->publiccert_pem_bytes);
+        if (ret < 0) {
+            ESP_LOGE(TAG, "mbedtls_x509_crt_parse of client cert returned -0x%04X", -ret);
+            mbedtls_print_error_msg(ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+            return ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED;
+        }
+    } else {
+        ESP_LOGE(TAG, "Device certificate must be provided for manual setup");
+        return ESP_FAIL;
+    }
+#endif /* CONFIG_ATECC608A_RUNTIME_SELECTION */
     ret = atca_mbedtls_pk_init(&tls->clientkey, 0);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed to parse key from device");
