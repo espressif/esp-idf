@@ -39,7 +39,7 @@ API Guides
    partition-tables
    performance/index
    reproducible-builds
-   :(SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED) and not esp32c5 and not esp32c61: RF_calibration
+   :(SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED): RF_calibration
    stdio
    thread-local-storage
    tools/index
