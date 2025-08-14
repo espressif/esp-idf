@@ -849,9 +849,10 @@ menu "mbedTLS"
 
     menu "DTLS-based configurations"
         depends on MBEDTLS_SSL_PROTO_DTLS
+
         config MBEDTLS_SSL_COOKIE_C
             bool "Enable SSL session cookie"
-            default n
+            default y
             help
                 Enable basic DTLS cookie implementation for hello verification.
 
