@@ -31,6 +31,15 @@ pipx install "gdbgui==0.13.2.0" "pygdbmi<=0.9.0.2" "python-socketio<5" "jinja2<3
 
 对所有 ``idf.py efuse*`` 命令，需使用 ``--port`` 参数（或设置 ``ESPPORT`` 环境变量）明确指定串口。未指定时，命令将报错并终止执行。
 
+Python 3.9 弃用说明
+----------------------
+
+Python 3.9 已不再受支持。现在要求的最低 Python 版本为 3.10。请将你的 Python 升级至 3.10 或更高版本，或者使用 Docker 镜像：:ref:`idf-docker-image`。
+
+参考 `Python 官方文档 <https://docs.python.org/3/using/index.html>`_ 获取不同操作系统的 Python 升级指南。
+
+对于 Linux 用户，建议升级到包含受支持 Python 版本的较新发行版。
+
 配置文件语法变更
 ----------------
 
