@@ -212,5 +212,6 @@ test_kconfig()
 test_project_properties()
 test_include_component()
 __dump_all_properties()
+__generate_project_info()
 
 message("ALL TESTS PASSED")
