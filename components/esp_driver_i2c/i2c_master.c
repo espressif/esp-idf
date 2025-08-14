@@ -701,7 +701,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
         s_i2c_send_commands(i2c_master, ticks_to_wait);
         // Wait event bits
         if (atomic_load(&i2c_master->status) != I2C_STATUS_DONE) {
-            ret = ESP_ERR_INVALID_STATE;
+            ret = ESP_ERR_INVALID_RESPONSE; // NACK is received
         }
         // Interrupt can be disabled when on transaction finishes.
         i2c_ll_disable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
