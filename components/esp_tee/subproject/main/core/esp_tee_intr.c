@@ -60,8 +60,23 @@ void esp_tee_route_intr_matrix(int cpu_no, uint32_t model_num, uint32_t intr_num
     if (esp_tee_is_intr_src_protected(model_num) || intr_num == TEE_SECURE_INUM) {
         return;
     }
+#if SOC_INT_CLIC_SUPPORTED
+    if (intr_num == TEE_PASS_INUM) {
+        return;
+    }
+#endif
 
     esp_rom_route_intr_matrix(cpu_no, model_num, intr_num);
+    ESP_LOGV(TAG, "Connected src %d to int %d (cpu %d)", model_num, intr_num, cpu_no);
+
+#if SOC_INT_CLIC_SUPPORTED
+    if (intr_num != ETS_T1_WDT_INUM && intr_num != ETS_CACHEERR_INUM) {
+        /* Configure interrupts to be visible in the TEE (M-mode) */
+        REG_SET_BIT(DR_REG_INTMTX_BASE + 4 * model_num, BIT(8));
+        /* Configure interrupts to be serviced in the REE (U-mode) */
+        rv_utils_tee_intr_set_mode(intr_num, PRV_U);
+    }
+#endif
 }
 
 /**
@@ -73,7 +88,7 @@ void esp_tee_route_intr_matrix(int cpu_no, uint32_t model_num, uint32_t intr_num
 static intr_handler_t tee_set_interrupt_handler(void *arg)
 {
     tee_handler_table_entry *entry;
-    intr_handler_t           old;
+    intr_handler_t old;
     vector_desc_t *vd = (vector_desc_t *)arg;
     int source = vd->source;
 
@@ -119,7 +134,7 @@ int esp_tee_intr_deregister(void *arg)
     tee_set_interrupt_handler(vd);
 
     // Setting back the default value for interrupt pin.
-    esp_rom_route_intr_matrix(cpu, vd->source, 0);
+    esp_rom_route_intr_matrix(cpu, vd->source, ETS_INVALID_INUM);
 
     return 0;
 }

@@ -100,7 +100,7 @@ esp_err_t get_flash_contents_sha256(uint32_t flash_offset, uint32_t len, uint8_t
         uint32_t mmap_len = MIN(len, partial_image_len);
         const void *image = esp_tee_flash_mmap(flash_offset, mmap_len);
         if (image == NULL) {
-            mbedtls_sha256_finish(&ctx, NULL);
+            mbedtls_sha256_free(&ctx);
             return ESP_FAIL;
         }
         mbedtls_sha256_update(&ctx, image, mmap_len);

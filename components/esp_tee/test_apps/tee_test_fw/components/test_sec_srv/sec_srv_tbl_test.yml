@@ -3,73 +3,69 @@ secure_services:
     entries:
       - id: 200
         type: custom
-        function: esp_tee_service_add
+        function: esp_tee_test_service_add
         args: 2
       - id: 201
         type: custom
-        function: esp_tee_service_sub
+        function: esp_tee_test_service_sub
         args: 2
       - id: 202
         type: custom
-        function: esp_tee_service_mul
+        function: esp_tee_test_service_mul
         args: 2
       - id: 203
         type: custom
-        function: esp_tee_service_div
+        function: esp_tee_test_service_div
         args: 2
       - id: 204
         type: custom
-        function: esp_tee_test_timer_init
-        args: 1
+        function: esp_tee_test_tee_intr_in_tee
+        args: 0
       - id: 205
         type: custom
-        function: esp_tee_secure_int_test
-        args: 0
+        function: esp_tee_test_ree_intr_in_tee
+        args: 1
       - id: 206
         type: custom
-        function: esp_tee_non_secure_int_test
-        args: 1
+        function: esp_tee_test_tee_intr_in_ree
+        args: 2
       - id: 207
-        type: custom
-        function: esp_tee_test_int_count
-        args: 1
-      - id: 208
         type: custom
         function: esp_tee_test_resv_reg1_write_violation
         args: 0
-      - id: 209
+      - id: 208
         type: custom
         function: esp_tee_test_resv_reg1_exec_violation
         args: 0
-      - id: 210
+      - id: 209
         type: custom
         function: esp_tee_test_iram_reg1_write_violation
         args: 0
-      - id: 211
+      - id: 210
         type: custom
         function: esp_tee_test_iram_reg2_write_violation
         args: 0
-      - id: 212
+      - id: 211
         type: custom
         function: esp_tee_test_dram_reg1_exec_violation
         args: 0
-      - id: 213
+      - id: 212
         type: custom
         function: esp_tee_test_dram_reg2_exec_violation
         args: 0
-      - id: 214
+      - id: 213
         type: custom
         function: esp_tee_test_illegal_instruction
         args: 0
+      - id: 214
+        type: custom
+        function: esp_tee_test_dummy_sec_srv
+        args: 9
       - id: 215
         type: custom
-        function: dummy_secure_service
-        args: 9
+        function: esp_tee_test_priv_mode_switch
+        args: 2
       - id: 216
-        type: custom
-        function: add_in_loop
-        args: 3
-      - id: 217
         type: custom
         function: esp_tee_test_heap_malloc_write_free
         args: 0

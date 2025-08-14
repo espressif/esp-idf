@@ -44,6 +44,7 @@ extern "C" {
  * @brief CSR to set the interrupt jump table address is MTVT.
  */
 #define MTVT_CSR    0x307
+#define UTVT_CSR    0x007
 
 
 #if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V2
@@ -61,7 +62,9 @@ extern "C" {
 /* The ESP32-C5 (MP), C61, H4 and P4 (since REV2) use the standard CLIC specification, for example, it defines the mintthresh CSR */
 #define INTTHRESH_STANDARD  1
 #define MINTSTATUS_CSR      0xFB1
+#define UINTSTATUS_CSR      0xCB1
 #define MINTTHRESH_CSR      0x347
+#define UINTTHRESH_CSR      0x047
 
 #else
     #error "Check the implementation of the CLIC on this target."
@@ -114,7 +117,11 @@ extern "C" {
 #define RVHAL_INTR_ENABLE_THRESH_CLIC   (CLIC_INT_THRESH(RVHAL_INTR_ENABLE_THRESH))
 
 
-
+#if CONFIG_SECURE_ENABLE_TEE
+#define IS_PRV_M_MODE()  (RV_READ_CSR(CSR_PRV_MODE) == PRV_M)
+#else
+#define IS_PRV_M_MODE()  (1UL)
+#endif
 
 
 FORCE_INLINE_ATTR void assert_valid_rv_int_num(int rv_int_num)
@@ -132,7 +139,12 @@ FORCE_INLINE_ATTR void assert_valid_rv_int_num(int rv_int_num)
 FORCE_INLINE_ATTR uint32_t rv_utils_get_interrupt_threshold(void)
 {
 #if INTTHRESH_STANDARD
-    uint32_t threshold = RV_READ_CSR(MINTTHRESH_CSR);
+    uint32_t threshold;
+    if (IS_PRV_M_MODE()) {
+        threshold = RV_READ_CSR(MINTTHRESH_CSR);
+    } else {
+        threshold = RV_READ_CSR(UINTTHRESH_CSR);
+    }
 #else
     uint32_t threshold = REG_READ(CLIC_INT_THRESH_REG);
 #endif
@@ -146,6 +158,19 @@ FORCE_INLINE_ATTR uint32_t rv_utils_get_interrupt_threshold(void)
 FORCE_INLINE_ATTR void rv_utils_set_mtvt(uint32_t mtvt_val)
 {
     RV_WRITE_CSR(MTVT_CSR, mtvt_val);
+}
+
+/**
+ * @brief Set the XTVT CSR value (based on the current privilege mode),
+ * used as a base address for the interrupt jump table
+ */
+FORCE_INLINE_ATTR void rv_utils_set_xtvt(uint32_t xtvt_val)
+{
+    if (IS_PRV_M_MODE()) {
+        RV_WRITE_CSR(MTVT_CSR, xtvt_val);
+    } else {
+        RV_WRITE_CSR(UTVT_CSR, xtvt_val);
+    }
 }
 
 #if SOC_CPU_SUPPORT_WFE
@@ -167,7 +192,11 @@ FORCE_INLINE_ATTR void rv_utils_wfe_mode_enable(bool en)
  */
 FORCE_INLINE_ATTR uint32_t rv_utils_get_interrupt_level_regval(void)
 {
-    return RV_READ_CSR(MINTSTATUS_CSR);
+    if (IS_PRV_M_MODE()) {
+        return RV_READ_CSR(MINTSTATUS_CSR);
+    } else {
+        return RV_READ_CSR(UINTSTATUS_CSR);
+    }
 }
 
 /**
@@ -175,9 +204,14 @@ FORCE_INLINE_ATTR uint32_t rv_utils_get_interrupt_level_regval(void)
  */
 FORCE_INLINE_ATTR uint32_t rv_utils_get_interrupt_level(void)
 {
-    const uint32_t mintstatus = RV_READ_CSR(MINTSTATUS_CSR);
+    uint32_t xintstatus;
+    if (IS_PRV_M_MODE()) {
+        xintstatus = RV_READ_CSR(MINTSTATUS_CSR);
+    } else {
+        xintstatus = RV_READ_CSR(UINTSTATUS_CSR);
+    }
     /* Extract the level from this field */
-    return CLIC_STATUS_TO_INT(mintstatus);
+    return CLIC_STATUS_TO_INT(xintstatus);
 }
 
 /**
@@ -190,7 +224,11 @@ FORCE_INLINE_ATTR uint32_t rv_utils_get_interrupt_level(void)
 FORCE_INLINE_ATTR void rv_utils_restore_intlevel_regval(uint32_t restoreval)
 {
 #if INTTHRESH_STANDARD
-    RV_WRITE_CSR(MINTTHRESH_CSR, restoreval);
+    if (IS_PRV_M_MODE()) {
+        RV_WRITE_CSR(MINTTHRESH_CSR, restoreval);
+    } else {
+        RV_WRITE_CSR(UINTTHRESH_CSR, restoreval);
+    }
 #else
     REG_WRITE(CLIC_INT_THRESH_REG, restoreval);
     /**
@@ -224,7 +262,11 @@ FORCE_INLINE_ATTR void rv_utils_restore_intlevel(uint32_t restoreval)
 FORCE_INLINE_ATTR uint32_t rv_utils_set_intlevel_regval(uint32_t intlevel)
 {
 #if INTTHRESH_STANDARD
-    return RV_SWAP_CSR(MINTTHRESH_CSR, intlevel);
+    if (IS_PRV_M_MODE()) {
+        return RV_SWAP_CSR(MINTTHRESH_CSR, intlevel);
+    } else {
+        return RV_SWAP_CSR(UINTTHRESH_CSR, intlevel);
+    }
 #else // !INTTHRESH_STANDARD
     uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     uint32_t old_thresh = REG_READ(CLIC_INT_THRESH_REG);

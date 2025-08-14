@@ -23,7 +23,7 @@
     .equ RTNVAL, 0xc0de
     .equ ECALL_U_MODE, 0x8
     .equ ECALL_M_MODE, 0xb
-    .equ TEE_INTR_DELEG_MASK, 0xffffbfff
+    .equ TEE_INTR_DELEG_MASK, ~(1U << TEE_SECURE_INUM)
 
     .global esp_tee_global_interrupt_handler
     .global esp_tee_service_dispatcher
