@@ -25,15 +25,19 @@ __attribute__((always_inline))
 static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t per_block_size, size_t last_block_size)
 {
     uint8_t *data = (uint8_t *)buffer;
+    gdma_buffer_mount_config_t mount_configs[rx_chan->num_dma_nodes];
+    memset(mount_configs, 0, sizeof(mount_configs));
     for (int i = 0; i < rx_chan->num_dma_nodes; i++) {
-        rmt_dma_descriptor_t *desc_nc = &rx_chan->dma_nodes_nc[i];
-        desc_nc->buffer = data + i * per_block_size;
-        desc_nc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        desc_nc->dw0.suc_eof = 0;
-        desc_nc->dw0.length = 0;
-        desc_nc->dw0.size = per_block_size;
+        mount_configs[i] = (gdma_buffer_mount_config_t) {
+            .buffer = data + i * per_block_size,
+            .length = per_block_size,
+            .flags = {
+                .mark_final = false,
+            }
+        };
     }
-    rx_chan->dma_nodes_nc[rx_chan->num_dma_nodes - 1].dw0.size = last_block_size;
+    mount_configs[rx_chan->num_dma_nodes - 1].length = last_block_size;
+    gdma_link_mount_buffers(rx_chan->dma_link, 0, mount_configs, rx_chan->num_dma_nodes, NULL);
 }
 
 static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx_channel_config_t *config)
@@ -60,11 +64,21 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
     // register the DMA callbacks may fail if the interrupt service can not be installed successfully
     ESP_RETURN_ON_ERROR(gdma_register_rx_event_callbacks(rx_channel->base.dma_chan, &cbs, rx_channel), TAG, "register DMA callbacks failed");
 
-    // circular DMA descriptor
-    for (int i = 0; i < rx_channel->num_dma_nodes - 1; i++) {
-        rx_channel->dma_nodes_nc[i].next = &rx_channel->dma_nodes[i + 1];
-    }
-    rx_channel->dma_nodes_nc[rx_channel->num_dma_nodes - 1].next = &rx_channel->dma_nodes[0];
+    rx_channel->num_dma_nodes = esp_dma_calculate_node_count(config->mem_block_symbols * sizeof(rmt_symbol_word_t),
+                                                             rx_channel->dma_int_mem_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    rx_channel->num_dma_nodes = MAX(2, rx_channel->num_dma_nodes); // at least 2 DMA nodes for ping-pong
+
+    //  create DMA link list
+    gdma_link_list_config_t dma_link_config = {
+        .buffer_alignment = rx_channel->dma_int_mem_alignment,
+        .item_alignment = RMT_DMA_DESC_ALIGN,
+        .num_items = rx_channel->num_dma_nodes,
+        .flags = {
+            // the reception may be interrupted by rmt_rx_disable(), DMA may not have accessed the descriptor yet
+            .check_owner = false,
+        },
+    };
+    ESP_RETURN_ON_ERROR(gdma_new_link_list(&dma_link_config, &rx_channel->dma_link), TAG, "create DMA link list failed");
     return ESP_OK;
 }
 #endif // SOC_RMT_SUPPORT_DMA
@@ -156,13 +170,13 @@ static esp_err_t rmt_rx_destroy(rmt_rx_channel_t *rx_channel)
     if (rx_channel->base.dma_chan) {
         ESP_RETURN_ON_ERROR(gdma_del_channel(rx_channel->base.dma_chan), TAG, "delete dma channel failed");
     }
+    if (rx_channel->dma_link) {
+        ESP_RETURN_ON_ERROR(gdma_del_link_list(rx_channel->dma_link), TAG, "delete dma link list failed");
+    }
 #endif // SOC_RMT_SUPPORT_DMA
     if (rx_channel->base.group) {
         // de-register channel from RMT group
         rmt_rx_unregister_from_group(&rx_channel->base, rx_channel->base.group);
-    }
-    if (rx_channel->dma_nodes) {
-        free(rx_channel->dma_nodes);
     }
     free(rx_channel);
     return ESP_OK;
@@ -201,31 +215,6 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     ESP_GOTO_ON_FALSE(rx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel");
     // gpio is not configured yet
     rx_channel->base.gpio_num = -1;
-
-#if SOC_RMT_SUPPORT_DMA
-    // create DMA descriptor
-    size_t num_dma_nodes = 0;
-    if (config->flags.with_dma) {
-        // DMA descriptors must be placed in internal SRAM
-        mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
-        num_dma_nodes = config->mem_block_symbols * sizeof(rmt_symbol_word_t) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
-        num_dma_nodes = MAX(2, num_dma_nodes); // at least 2 DMA nodes for ping-pong
-        rmt_dma_descriptor_t *dma_nodes =  heap_caps_aligned_calloc(RMT_DMA_DESC_ALIGN, num_dma_nodes, sizeof(rmt_dma_descriptor_t), mem_caps);
-        ESP_GOTO_ON_FALSE(dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel DMA nodes");
-        rx_channel->dma_nodes = dma_nodes;
-        // do memory sync only when the data cache exists
-        uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-        if (data_cache_line_size) {
-            // write back and then invalidate the cached dma_nodes, because later the DMA nodes are accessed by non-cacheable address
-            ESP_GOTO_ON_ERROR(esp_cache_msync(dma_nodes, num_dma_nodes * sizeof(rmt_dma_descriptor_t),
-                                              ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE | ESP_CACHE_MSYNC_FLAG_UNALIGNED),
-                              err, TAG, "cache sync failed");
-        }
-        // we will use the non-cached address to manipulate the DMA descriptor, for simplicity
-        rx_channel->dma_nodes_nc = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(dma_nodes);
-    }
-    rx_channel->num_dma_nodes = num_dma_nodes;
-#endif // SOC_RMT_SUPPORT_DMA
 
     // register the channel to group
     ESP_GOTO_ON_ERROR(rmt_rx_register_to_group(rx_channel, config), err, TAG, "register channel failed");
@@ -366,21 +355,35 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     size_t mem_alignment = sizeof(rmt_symbol_word_t);
 
 #if SOC_RMT_SUPPORT_DMA
+    uint32_t int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     if (channel->dma_chan) {
-        // append the alignment requirement from the DMA
-        mem_alignment = MAX(mem_alignment, rx_chan->dma_int_mem_alignment);
         // [IDF-8997]: Currently we assume the user buffer is allocated from internal RAM, PSRAM is not supported yet.
         ESP_RETURN_ON_FALSE_ISR(esp_ptr_internal(buffer), ESP_ERR_INVALID_ARG, TAG, "user buffer not in the internal RAM");
-        size_t max_buf_sz_per_dma_node = ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, mem_alignment);
-        ESP_RETURN_ON_FALSE_ISR(buffer_size <= rx_chan->num_dma_nodes * max_buf_sz_per_dma_node,
-                                ESP_ERR_INVALID_ARG, TAG, "buffer size exceeds DMA capacity: %zu", rx_chan->num_dma_nodes * max_buf_sz_per_dma_node);
+        // append the alignment requirement from the DMA and cache line size
+        mem_alignment = MAX(MAX(mem_alignment, rx_chan->dma_int_mem_alignment), int_mem_cache_line_size);
     }
 #endif // SOC_RMT_SUPPORT_DMA
 
-    // check buffer alignment
-    uint32_t align_check_mask = mem_alignment - 1;
-    ESP_RETURN_ON_FALSE_ISR(((((uintptr_t)buffer) & align_check_mask) == 0) && (((buffer_size) & align_check_mask) == 0), ESP_ERR_INVALID_ARG,
-                            TAG, "buffer address or size are not %"PRIu32 "bytes aligned", mem_alignment);
+    // Align the buffer address to mem_alignment
+    if ((((uintptr_t)buffer) & (mem_alignment - 1)) != 0) {
+        uintptr_t aligned_address = ALIGN_UP((uintptr_t)buffer, mem_alignment);
+        size_t offset = aligned_address - (uintptr_t)buffer;
+        ESP_RETURN_ON_FALSE_ISR(buffer_size > offset, ESP_ERR_INVALID_ARG, TAG, "buffer size is not aligned and is too small, please increase the buffer size");
+        ESP_EARLY_LOGD(TAG, "origin buffer %p not satisfy alignment %d, align buffer to %p", buffer, mem_alignment, aligned_address);
+        buffer = (uint8_t *)aligned_address;
+        buffer_size -= offset;
+    }
+    // Align the buffer size to mem_alignment
+    buffer_size = ALIGN_DOWN(buffer_size, mem_alignment);
+    ESP_RETURN_ON_FALSE_ISR(buffer_size > 0, ESP_ERR_INVALID_ARG, TAG, "buffer size is less than alignment: %"PRIu32", please increase the buffer size", mem_alignment);
+
+#if SOC_RMT_SUPPORT_DMA
+    if (channel->dma_chan) {
+        size_t max_buf_sz_per_dma_node = ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, mem_alignment);
+        ESP_RETURN_ON_FALSE_ISR(buffer_size <= rx_chan->num_dma_nodes * max_buf_sz_per_dma_node,
+                                ESP_ERR_INVALID_ARG, TAG, "buffer size exceeds DMA capacity: %"PRIu32", please increase the mem_block_symbols", rx_chan->num_dma_nodes * max_buf_sz_per_dma_node);
+    }
+#endif // SOC_RMT_SUPPORT_DMA
 
     rmt_group_t *group = channel->group;
     rmt_hal_context_t *hal = &group->hal;
@@ -409,7 +412,6 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 #if SOC_RMT_SUPPORT_DMA
     if (channel->dma_chan) {
         // invalidate the user buffer, in case cache auto-write back happens and breaks the data just written by the DMA
-        uint32_t int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
         if (int_mem_cache_line_size) {
             // this function will also check the alignment of the buffer and size, against the cache line size
             ESP_RETURN_ON_ERROR_ISR(esp_cache_msync(buffer, buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), TAG, "cache sync failed");
@@ -420,7 +422,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
         size_t last_dma_block_size = buffer_size - per_dma_block_size * (rx_chan->num_dma_nodes - 1);
         rmt_rx_mount_dma_buffer(rx_chan, buffer, buffer_size, per_dma_block_size, last_dma_block_size);
         gdma_reset(channel->dma_chan);
-        gdma_start(channel->dma_chan, (intptr_t)rx_chan->dma_nodes); // note, we must use the cached descriptor address to start the DMA
+        gdma_start(channel->dma_chan, gdma_link_get_head_addr(rx_chan->dma_link)); // note, we must use the cached descriptor address to start the DMA
     }
 #endif
 
@@ -585,6 +587,16 @@ bool rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     // disable the RX engine, it will be enabled again when next time user calls `rmt_receive()`
     rmt_ll_rx_enable(hal->regs, channel_id, false);
     portEXIT_CRITICAL_ISR(&channel->spinlock);
+
+#if !SOC_RMT_SUPPORT_ASYNC_STOP
+    // This is a workaround for ESP32.
+    // The RX engine can not be disabled once it is enabled in ESP32
+    // If the state isn't RMT_FSM_RUN, it means the RX engine was disabled
+    // and we shouldn't process the data.
+    if (atomic_load(&channel->fsm) != RMT_FSM_RUN) {
+        return false;
+    }
+#endif
 
     uint32_t offset = rmt_ll_rx_get_memory_writer_offset(hal->regs, channel_id);
 
@@ -771,15 +783,7 @@ static void rmt_rx_default_isr(void *args)
 __attribute__((always_inline))
 static inline size_t rmt_rx_count_symbols_until_eof(rmt_rx_channel_t *rx_chan, int start_index)
 {
-    size_t received_bytes = 0;
-    for (int i = 0; i < rx_chan->num_dma_nodes; i++) {
-        received_bytes += rx_chan->dma_nodes_nc[start_index].dw0.length;
-        if (rx_chan->dma_nodes_nc[start_index].dw0.suc_eof) {
-            break;
-        }
-        start_index++;
-        start_index %= rx_chan->num_dma_nodes;
-    }
+    size_t received_bytes = gdma_link_count_buffer_size_till_eof(rx_chan->dma_link, start_index);
     received_bytes = ALIGN_UP(received_bytes, sizeof(rmt_symbol_word_t));
     return received_bytes / sizeof(rmt_symbol_word_t);
 }
@@ -787,7 +791,7 @@ static inline size_t rmt_rx_count_symbols_until_eof(rmt_rx_channel_t *rx_chan, i
 __attribute__((always_inline))
 static inline size_t rmt_rx_count_symbols_for_single_block(rmt_rx_channel_t *rx_chan, int desc_index)
 {
-    size_t received_bytes = rx_chan->dma_nodes_nc[desc_index].dw0.length;
+    size_t received_bytes = gdma_link_get_length(rx_chan->dma_link, desc_index);
     received_bytes = ALIGN_UP(received_bytes, sizeof(rmt_symbol_word_t));
     return received_bytes / sizeof(rmt_symbol_word_t);
 }
@@ -821,7 +825,7 @@ static bool rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_d
         if (rx_chan->on_recv_done) {
             int recycle_start_index = trans_desc->dma_desc_index;
             rmt_rx_done_event_data_t edata = {
-                .received_symbols = rx_chan->dma_nodes_nc[recycle_start_index].buffer,
+                .received_symbols = gdma_link_get_buffer(rx_chan->dma_link, recycle_start_index),
                 .num_symbols = rmt_rx_count_symbols_until_eof(rx_chan, recycle_start_index),
                 .flags.is_last = true,
             };
@@ -835,7 +839,7 @@ static bool rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_d
             if (rx_chan->on_recv_done) {
                 size_t dma_desc_index = trans_desc->dma_desc_index;
                 rmt_rx_done_event_data_t edata = {
-                    .received_symbols = rx_chan->dma_nodes_nc[dma_desc_index].buffer,
+                    .received_symbols = gdma_link_get_buffer(rx_chan->dma_link, dma_desc_index),
                     .num_symbols = rmt_rx_count_symbols_for_single_block(rx_chan, dma_desc_index),
                     .flags.is_last = false,
                 };

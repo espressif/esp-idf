@@ -83,15 +83,33 @@ static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx
                         TAG, "mem_block_symbols can't exceed %zu", DMA_DESCRIPTOR_BUFFER_MAX_SIZE * RMT_DMA_NODES_PING_PONG / sizeof(rmt_symbol_word_t));
 
     tx_channel->ping_pong_symbols = mount_size_per_node / sizeof(rmt_symbol_word_t);
+
+    // create DMA link list
+    gdma_link_list_config_t dma_link_config = {
+        .buffer_alignment = int_alignment,
+        .item_alignment = RMT_DMA_DESC_ALIGN,
+        .num_items = RMT_DMA_NODES_PING_PONG,
+        .flags = {
+            .check_owner = true,
+        },
+    };
+    ESP_RETURN_ON_ERROR(gdma_new_link_list(&dma_link_config, &tx_channel->dma_link), TAG, "create DMA link list failed");
+
+    gdma_buffer_mount_config_t mount_configs[RMT_DMA_NODES_PING_PONG];
     for (int i = 0; i < RMT_DMA_NODES_PING_PONG; i++) {
         // each descriptor shares half of the DMA buffer
-        tx_channel->dma_nodes_nc[i].buffer = dma_mem_base + tx_channel->ping_pong_symbols * i;
-        tx_channel->dma_nodes_nc[i].dw0.size = tx_channel->ping_pong_symbols * sizeof(rmt_symbol_word_t);
-        // the ownership will be switched to DMA in `rmt_tx_do_transaction()`
-        tx_channel->dma_nodes_nc[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_CPU;
-        // each node can generate the DMA eof interrupt, and the driver will do a ping-pong trick in the eof callback
-        tx_channel->dma_nodes_nc[i].dw0.suc_eof = 1;
+        mount_configs[i] = (gdma_buffer_mount_config_t) {
+            .buffer = tx_channel->dma_mem_base + tx_channel->ping_pong_symbols * i,
+            .length = tx_channel->ping_pong_symbols * sizeof(rmt_symbol_word_t),
+            .flags = {
+                // each node can generate the DMA eof interrupt, and the driver will do a ping-pong trick in the eof callback
+                .mark_eof = true,
+                // chain the descriptors into a ring, and will break it in `rmt_encode_eof()`
+                .mark_final = false,
+            }
+        };
     }
+    ESP_RETURN_ON_ERROR(gdma_link_mount_buffers(tx_channel->dma_link, 0, mount_configs, RMT_DMA_NODES_PING_PONG, NULL), TAG, "mount DMA buffers failed");
 
     return ESP_OK;
 }
@@ -211,6 +229,9 @@ static esp_err_t rmt_tx_destroy(rmt_tx_channel_t *tx_channel)
     if (tx_channel->base.dma_chan) {
         ESP_RETURN_ON_ERROR(gdma_del_channel(tx_channel->base.dma_chan), TAG, "delete dma channel failed");
     }
+    if (tx_channel->dma_link) {
+        ESP_RETURN_ON_ERROR(gdma_del_link_list(tx_channel->dma_link), TAG, "delete dma link list failed");
+    }
 #endif // SOC_RMT_SUPPORT_DMA
     for (int i = 0; i < RMT_TX_QUEUE_MAX; i++) {
         if (tx_channel->trans_queues[i]) {
@@ -223,9 +244,6 @@ static esp_err_t rmt_tx_destroy(rmt_tx_channel_t *tx_channel)
     if (tx_channel->base.group) {
         // de-register channel from RMT group
         rmt_tx_unregister_from_group(&tx_channel->base, tx_channel->base.group);
-    }
-    if (tx_channel->dma_nodes) {
-        free(tx_channel->dma_nodes);
     }
     free(tx_channel);
     return ESP_OK;
@@ -264,23 +282,6 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     ESP_GOTO_ON_FALSE(tx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for tx channel");
     // GPIO configuration is not done yet
     tx_channel->base.gpio_num = -1;
-    // create DMA descriptors
-    if (config->flags.with_dma) {
-        // DMA descriptors must be placed in internal SRAM
-        mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
-        rmt_dma_descriptor_t *dma_nodes = heap_caps_aligned_calloc(RMT_DMA_DESC_ALIGN, RMT_DMA_NODES_PING_PONG, sizeof(rmt_dma_descriptor_t), mem_caps);
-        ESP_GOTO_ON_FALSE(dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no mem for tx DMA nodes");
-        tx_channel->dma_nodes = dma_nodes;
-        // write back and then invalidate the cached dma_nodes, because later the DMA nodes are accessed by non-cacheable address
-        uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-        if (data_cache_line_size) {
-            ESP_GOTO_ON_ERROR(esp_cache_msync(dma_nodes, RMT_DMA_NODES_PING_PONG * sizeof(rmt_dma_descriptor_t),
-                                              ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE | ESP_CACHE_MSYNC_FLAG_UNALIGNED),
-                              err, TAG, "cache sync failed");
-        }
-        // we will use the non-cached address to manipulate the DMA descriptor, for simplicity
-        tx_channel->dma_nodes_nc = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(dma_nodes);
-    }
     // create transaction queues
     ESP_GOTO_ON_ERROR(rmt_tx_create_trans_queue(tx_channel, config), err, TAG, "install trans queues failed");
     // register the channel to group
@@ -330,7 +331,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     // disable carrier modulation by default, can re-enable by `rmt_apply_carrier()`
     rmt_ll_tx_enable_carrier_modulation(hal->regs, channel_id, false);
     // idle level is determined by register value
-    rmt_ll_tx_fix_idle_level(hal->regs, channel_id, 0, true);
+    rmt_ll_tx_fix_idle_level(hal->regs, channel_id, config->flags.init_level, true);
     // always enable tx wrap, both DMA mode and ping-pong mode rely this feature
     rmt_ll_tx_enable_wrap(hal->regs, channel_id, true);
 
@@ -358,9 +359,9 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     tx_channel->base.disable = rmt_tx_disable;
     // return general channel handle
     *ret_chan = &tx_channel->base;
-    ESP_LOGD(TAG, "new tx channel(%d,%d) at %p, gpio=%d, res=%"PRIu32"Hz, hw_mem_base=%p, dma_mem_base=%p, dma_nodes=%p, ping_pong_size=%zu, queue_depth=%zu",
+    ESP_LOGD(TAG, "new tx channel(%d,%d) at %p, gpio=%d, res=%"PRIu32"Hz, hw_mem_base=%p, dma_mem_base=%p, ping_pong_size=%zu, queue_depth=%zu",
              group_id, channel_id, tx_channel, config->gpio_num, tx_channel->base.resolution_hz,
-             tx_channel->base.hw_mem_base, tx_channel->dma_mem_base, tx_channel->dma_nodes, tx_channel->ping_pong_symbols, tx_channel->queue_size);
+             tx_channel->base.hw_mem_base, tx_channel->dma_mem_base, tx_channel->ping_pong_symbols, tx_channel->queue_size);
     return ESP_OK;
 
 err:
@@ -591,13 +592,12 @@ esp_err_t rmt_tx_wait_all_done(rmt_channel_handle_t channel, int timeout_ms)
     return ESP_OK;
 }
 
-static size_t rmt_tx_mark_eof(rmt_tx_channel_t *tx_chan, bool need_eof_marker)
+size_t rmt_tx_mark_eof(rmt_tx_channel_t *tx_chan, bool need_eof_marker)
 {
     rmt_channel_t *channel = &tx_chan->base;
     rmt_group_t *group = channel->group;
     int channel_id = channel->channel_id;
     rmt_tx_trans_desc_t *cur_trans = tx_chan->cur_trans;
-    rmt_dma_descriptor_t *desc_nc = NULL;
 
     if (need_eof_marker) {
         rmt_symbol_word_t *mem_to_nc = NULL;
@@ -617,25 +617,28 @@ static size_t rmt_tx_mark_eof(rmt_tx_channel_t *tx_chan, bool need_eof_marker)
         tx_chan->mem_off_bytes += sizeof(rmt_symbol_word_t);
     }
 
-    size_t off = 0;
-    if (channel->dma_chan) {
-        if (tx_chan->mem_off_bytes <= tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t)) {
-            desc_nc = &tx_chan->dma_nodes_nc[0];
-            off = tx_chan->mem_off_bytes;
-        } else {
-            desc_nc = &tx_chan->dma_nodes_nc[1];
-            off = tx_chan->mem_off_bytes - tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t);
-        }
-        desc_nc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        desc_nc->dw0.length = off;
-        // break down the DMA descriptor link
-        desc_nc->next = NULL;
-    } else {
+    if (!channel->dma_chan) {
         portENTER_CRITICAL_ISR(&group->spinlock);
         // This is the end of a sequence of encoding sessions, disable the threshold interrupt as no more data will be put into RMT memory block
         rmt_ll_enable_interrupt(group->hal.regs, RMT_LL_EVENT_TX_THRES(channel_id), false);
         portEXIT_CRITICAL_ISR(&group->spinlock);
     }
+#if SOC_RMT_SUPPORT_DMA
+    else {
+        int dma_lli_index = 0;
+        size_t off = 0;
+        if (tx_chan->mem_off_bytes <= tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t)) {
+            dma_lli_index = 0;
+            off = tx_chan->mem_off_bytes;
+        } else {
+            dma_lli_index = 1;
+            off = tx_chan->mem_off_bytes - tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t);
+        }
+        gdma_link_set_length(tx_chan->dma_link, dma_lli_index, off);
+        gdma_link_set_owner(tx_chan->dma_link, dma_lli_index, GDMA_LLI_OWNER_DMA);
+        gdma_link_concat(tx_chan->dma_link, dma_lli_index, NULL, 0);
+    }
+#endif // SOC_RMT_SUPPORT_DMA
 
     return need_eof_marker ? 1 : 0;
 }
@@ -684,10 +687,10 @@ static void rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t
         gdma_reset(channel->dma_chan);
         // chain the descriptors into a ring, and will break it in `rmt_encode_eof()`
         for (int i = 0; i < RMT_DMA_NODES_PING_PONG; i++) {
-            tx_chan->dma_nodes_nc[i].next = &tx_chan->dma_nodes[i + 1]; // note, we must use the cache address for the next pointer
-            tx_chan->dma_nodes_nc[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_CPU;
+            // we will set the owner to DMA in the encoding session
+            gdma_link_set_owner(tx_chan->dma_link, i, GDMA_LLI_OWNER_CPU);
+            gdma_link_concat(tx_chan->dma_link, i, tx_chan->dma_link, i + 1);
         }
-        tx_chan->dma_nodes_nc[RMT_DMA_NODES_PING_PONG - 1].next = &tx_chan->dma_nodes[0];
     }
 #endif // SOC_RMT_SUPPORT_DMA
 
@@ -739,7 +742,7 @@ static void rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t
 
 #if SOC_RMT_SUPPORT_DMA
     if (channel->dma_chan) {
-        gdma_start(channel->dma_chan, (intptr_t)tx_chan->dma_nodes); // note, we must use the cached descriptor address to start the DMA
+        gdma_start(channel->dma_chan, gdma_link_get_head_addr(tx_chan->dma_link)); // note, we must use the cached descriptor address to start the DMA
         // delay a while, wait for DMA data going to RMT memory block
         esp_rom_delay_us(1);
     }
@@ -818,14 +821,14 @@ static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel)
         // disable the hardware
         portENTER_CRITICAL(&channel->spinlock);
         rmt_ll_tx_enable_loop(hal->regs, channel->channel_id, false);
-#if SOC_RMT_SUPPORT_TX_ASYNC_STOP
+#if SOC_RMT_SUPPORT_ASYNC_STOP
         rmt_ll_tx_stop(hal->regs, channel->channel_id);
 #endif
         portEXIT_CRITICAL(&channel->spinlock);
 
         portENTER_CRITICAL(&group->spinlock);
         rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_MASK(channel_id), false);
-#if !SOC_RMT_SUPPORT_TX_ASYNC_STOP
+#if !SOC_RMT_SUPPORT_ASYNC_STOP
         // we do a trick to stop the undergoing transmission
         // stop interrupt, insert EOF marker to the RMT memory, polling the trans_done event
         channel->hw_mem_base[0].val = 0;
@@ -1099,15 +1102,11 @@ static void rmt_tx_default_isr(void *args)
 static bool rmt_dma_tx_eof_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     rmt_tx_channel_t *tx_chan = (rmt_tx_channel_t *)user_data;
-    // tx_eof_desc_addr must be non-zero, guaranteed by the hardware
-    rmt_dma_descriptor_t *eof_desc_nc = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(event_data->tx_eof_desc_addr);
-    if (!eof_desc_nc->next) {
-        return false;
-    }
-    // next points to a cache address, convert it to a non-cached one
-    rmt_dma_descriptor_t *n = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(eof_desc_nc->next);
-    if (!n->next) {
-        return false;
+    // Due to concurrent software and DMA, check each node to ensure that this ring has been broken
+    for (int i = 0; i < RMT_DMA_NODES_PING_PONG; i++) {
+        if (gdma_link_check_end(tx_chan->dma_link, i)) {
+            return false;
+        }
     }
     // if the DMA descriptor link is still a ring (i.e. hasn't broken down by `rmt_tx_mark_eof()`), then we treat it as a valid ping-pong event
     // continue ping-pong transmission

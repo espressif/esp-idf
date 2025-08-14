@@ -25,6 +25,8 @@
 typedef struct {
     TaskHandle_t task_to_notify;
     size_t received_symbol_num;
+    rmt_symbol_word_t *received_symbols;
+    bool is_first_event;
 } test_rx_user_data_t;
 
 TEST_RMT_CALLBACK_ATTR
@@ -45,8 +47,8 @@ static bool test_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx
 static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt_clock_source_t clk_src)
 {
     uint32_t const test_rx_buffer_symbols = 128;
-    rmt_symbol_word_t *remote_codes = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
-                                                               MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    rmt_symbol_word_t *remote_codes = heap_caps_calloc(test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
+                                                       MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(remote_codes);
 
     rmt_rx_channel_config_t rx_channel_cfg = {
@@ -180,9 +182,6 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
 
     TEST_ESP_OK(rmt_tx_wait_all_done(tx_channel, -1));
 
-    // test rmt receive with unaligned buffer
-    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, rmt_receive(rx_channel, remote_codes, 13, &receive_config));
-
     printf("disable tx and rx channels\r\n");
     TEST_ESP_OK(rmt_disable(tx_channel));
     TEST_ESP_OK(rmt_disable(rx_channel));
@@ -234,8 +233,8 @@ static bool test_rmt_partial_receive_done(rmt_channel_handle_t channel, const rm
 static void test_rmt_partial_receive(size_t mem_block_symbols, int test_symbols_num, bool with_dma, rmt_clock_source_t clk_src)
 {
     uint32_t const test_rx_buffer_symbols = 128; // the user buffer is small, it can't hold all the received symbols
-    rmt_symbol_word_t *receive_user_buf = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
-                                                                   MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    rmt_symbol_word_t *receive_user_buf = heap_caps_calloc(test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
+                                                           MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(receive_user_buf);
 
     gpio_config_t sig_simulator_io_conf = {
@@ -334,8 +333,8 @@ static bool test_rmt_received_done(rmt_channel_handle_t channel, const rmt_rx_do
 static void test_rmt_receive_filter(rmt_clock_source_t clk_src)
 {
     uint32_t const test_rx_buffer_symbols = 32;
-    rmt_symbol_word_t *receive_user_buf = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
-                                                                   MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    rmt_symbol_word_t *receive_user_buf = heap_caps_calloc(test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
+                                                           MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(receive_user_buf);
 
     rmt_rx_channel_config_t rx_channel_cfg = {
@@ -439,4 +438,129 @@ TEST_CASE("rmt rx filter functionality", "[rmt]")
     for (size_t i = 0; i < sizeof(clk_srcs) / sizeof(clk_srcs[0]); i++) {
         test_rmt_receive_filter(clk_srcs[i]);
     }
+}
+
+TEST_RMT_CALLBACK_ATTR
+static bool test_rmt_rx_unaligned_buffer_done_callback(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *edata, void *user_data)
+{
+    BaseType_t high_task_wakeup = pdFALSE;
+    test_rx_user_data_t *test_user_data = (test_rx_user_data_t *)user_data;
+    if (test_user_data->is_first_event) {
+        test_user_data->received_symbols = edata->received_symbols;
+        test_user_data->is_first_event = false;
+    }
+    test_user_data->received_symbol_num += edata->num_symbols;
+    if (edata->flags.is_last) {
+        vTaskNotifyGiveFromISR(test_user_data->task_to_notify, &high_task_wakeup);
+    }
+    return high_task_wakeup == pdTRUE;
+}
+
+static void test_rmt_unaligned_receive(size_t mem_block_symbols, int test_symbols_num, bool with_dma, bool en_partial_rx, rmt_clock_source_t clk_src)
+{
+    uint32_t const test_rx_buffer_symbols = 128;
+    rmt_symbol_word_t *receive_user_buf = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
+                                                                   MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(receive_user_buf);
+    rmt_symbol_word_t *receive_user_buf_unaligned = (rmt_symbol_word_t *)((uint8_t *)receive_user_buf + 1);
+    size_t receive_user_buf_unaligned_size = test_rx_buffer_symbols * sizeof(rmt_symbol_word_t) - 1;
+
+    // use TX channel to simulate the input signal
+    rmt_tx_channel_config_t tx_channel_cfg = {
+        .clk_src = clk_src,
+        .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
+        .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
+        .trans_queue_depth = 4,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
+    };
+
+    rmt_channel_handle_t tx_channel = NULL;
+    TEST_ESP_OK(rmt_new_tx_channel(&tx_channel_cfg, &tx_channel));
+
+    rmt_encoder_handle_t copy_encoder = NULL;
+    rmt_copy_encoder_config_t encoder_cfg = {};
+    TEST_ESP_OK(rmt_new_copy_encoder(&encoder_cfg, &copy_encoder));
+    rmt_transmit_config_t transmit_config = {
+        .loop_count = 0,
+    };
+
+    rmt_rx_channel_config_t rx_channel_cfg = {
+        .clk_src = clk_src,
+        .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
+        .mem_block_symbols = mem_block_symbols,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
+        .flags.with_dma = with_dma,
+    };
+
+    rmt_channel_handle_t rx_channel = NULL;
+    TEST_ESP_OK(rmt_new_rx_channel(&rx_channel_cfg, &rx_channel));
+
+    rmt_rx_event_callbacks_t cbs = {
+        .on_recv_done = test_rmt_rx_unaligned_buffer_done_callback,
+    };
+    test_rx_user_data_t test_user_data = {
+        .task_to_notify = xTaskGetCurrentTaskHandle(),
+        .received_symbol_num = 0,
+        .is_first_event = true,
+    };
+    TEST_ESP_OK(rmt_rx_register_event_callbacks(rx_channel, &cbs, &test_user_data));
+
+    TEST_ESP_OK(rmt_enable(tx_channel));
+    TEST_ESP_OK(rmt_enable(rx_channel));
+
+    rmt_receive_config_t rx_config = {
+        .signal_range_min_ns = 1250,
+        .signal_range_max_ns = 12000000,
+        .flags.en_partial_rx = en_partial_rx,
+    };
+    // ready to receive
+    TEST_ESP_OK(rmt_receive(rx_channel, receive_user_buf_unaligned, receive_user_buf_unaligned_size, &rx_config));
+
+    rmt_symbol_word_t *transmit_buf = heap_caps_calloc(test_symbols_num, sizeof(rmt_symbol_word_t),
+                                                       MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    for (int i = 0; i < test_symbols_num; i++) {
+        transmit_buf[i] = (rmt_symbol_word_t) {
+            .level0 = 1,
+            .duration0 = 75,
+            .level1 = 0,
+            .duration1 = 25,
+        };
+    }
+    TEST_ESP_OK(rmt_transmit(tx_channel, copy_encoder, transmit_buf, test_symbols_num * sizeof(rmt_symbol_word_t), &transmit_config));
+
+    TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(2000)));
+    printf("received %zu symbols\r\n", test_user_data.received_symbol_num);
+    // Some chips do not support auto stop in loop mode, so the received symbol number may be slightly more than the expected
+    TEST_ASSERT_INT_WITHIN(15, test_symbols_num, test_user_data.received_symbol_num);
+
+    // verify the received data
+    for (int i = 0; i < 10; i++) {
+        printf("{%d:%d},{%d:%d}\r\n", test_user_data.received_symbols[i].level0, test_user_data.received_symbols[i].duration0, test_user_data.received_symbols[i].level1, test_user_data.received_symbols[i].duration1);
+        TEST_ASSERT_EQUAL(1, test_user_data.received_symbols[i].level0);
+        TEST_ASSERT_INT_WITHIN(20, 75, test_user_data.received_symbols[i].duration0);
+        TEST_ASSERT_EQUAL(0, test_user_data.received_symbols[i].level1);
+        TEST_ASSERT_INT_WITHIN(20, 25, test_user_data.received_symbols[i].duration1);
+    }
+
+    TEST_ESP_OK(rmt_disable(tx_channel));
+    TEST_ESP_OK(rmt_disable(rx_channel));
+    TEST_ESP_OK(rmt_del_channel(rx_channel));
+    TEST_ESP_OK(rmt_del_channel(tx_channel));
+    TEST_ESP_OK(rmt_del_encoder(copy_encoder));
+    free(receive_user_buf);
+    free(transmit_buf);
+}
+
+TEST_CASE("rmt rx unaligned buffer", "[rmt]")
+{
+    test_rmt_unaligned_receive(SOC_RMT_MEM_WORDS_PER_CHANNEL, SOC_RMT_MEM_WORDS_PER_CHANNEL, false, false, RMT_CLK_SRC_DEFAULT);
+#if SOC_RMT_SUPPORT_RX_PINGPONG
+    test_rmt_unaligned_receive(SOC_RMT_MEM_WORDS_PER_CHANNEL, 10000, false, true, RMT_CLK_SRC_DEFAULT);
+#endif
+#if SOC_RMT_SUPPORT_DMA
+    test_rmt_unaligned_receive(256, SOC_RMT_MEM_WORDS_PER_CHANNEL, true, false, RMT_CLK_SRC_DEFAULT);
+#endif
+#if SOC_RMT_SUPPORT_RX_PINGPONG && SOC_RMT_SUPPORT_DMA
+    test_rmt_unaligned_receive(256, 10000, true, true, RMT_CLK_SRC_DEFAULT);
+#endif
 }

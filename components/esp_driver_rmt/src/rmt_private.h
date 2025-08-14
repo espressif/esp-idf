@@ -41,11 +41,13 @@
 #include "esp_pm.h"
 #include "esp_attr.h"
 #include "esp_private/gdma.h"
+#include "esp_private/gdma_link.h"
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/esp_dma_utils.h"
 #include "driver/rmt_types.h"
 
 #ifdef __cplusplus
@@ -83,7 +85,6 @@ extern "C" {
 
 // RMT is a slow peripheral, it only supports AHB-GDMA
 #define RMT_DMA_DESC_ALIGN      4
-typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
 
 #ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
 #define RMT_GET_NON_CACHE_ADDR(addr) (CACHE_LL_L2MEM_NON_CACHE_ADDR(addr))
@@ -199,8 +200,7 @@ struct rmt_tx_channel_t {
     rmt_tx_trans_desc_t *cur_trans; // points to current transaction
     void *user_data;                // user context
     rmt_tx_done_callback_t on_trans_done; // callback, invoked on trans done
-    rmt_dma_descriptor_t *dma_nodes;    // DMA descriptor nodes
-    rmt_dma_descriptor_t *dma_nodes_nc; // DMA descriptor nodes accessed in non-cached way
+    gdma_link_list_handle_t dma_link;    // DMA link list handle
     rmt_tx_trans_desc_t trans_desc_pool[];   // transfer descriptor pool
 };
 
@@ -224,9 +224,8 @@ struct rmt_rx_channel_t {
     void *user_data;                     // user context
     rmt_rx_trans_desc_t trans_desc;      // transaction description
     size_t num_dma_nodes;                // number of DMA nodes, determined by how big the memory block that user configures
-    size_t dma_int_mem_alignment;         // DMA buffer alignment (both in size and address) for internal RX memory
-    rmt_dma_descriptor_t *dma_nodes;     // DMA link nodes
-    rmt_dma_descriptor_t *dma_nodes_nc;  // DMA descriptor nodes accessed in non-cached way
+    size_t dma_int_mem_alignment;        // DMA buffer alignment (both in size and address) for internal RX memory
+    gdma_link_list_handle_t dma_link;    // DMA link list handle
 };
 
 /**

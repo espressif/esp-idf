@@ -28,8 +28,6 @@ static size_t rmt_encode_copy(rmt_encoder_t *encoder, rmt_channel_handle_t chann
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
     rmt_symbol_word_t *symbols = (rmt_symbol_word_t *)input_symbols;
     rmt_encode_state_t state = RMT_ENCODING_RESET;
-    rmt_dma_descriptor_t *desc0 = NULL;
-    rmt_dma_descriptor_t *desc1 = NULL;
 
     size_t symbol_index = copy_encoder->last_symbol_index;
     // how many symbols will be copied by the encoder
@@ -49,14 +47,18 @@ static size_t rmt_encode_copy(rmt_encoder_t *encoder, rmt_channel_handle_t chann
     bool encoding_truncated = mem_have < mem_want;
     bool encoding_space_free = mem_have > mem_want;
 
+#if SOC_RMT_SUPPORT_DMA
+    uint8_t dma_lli0_index = 0;
+    uint8_t dma_lli1_index = 0;
     if (channel->dma_chan) {
         // mark the start descriptor
         if (symbol_off < tx_chan->ping_pong_symbols) {
-            desc0 = &tx_chan->dma_nodes_nc[0];
+            dma_lli0_index = 0;
         } else {
-            desc0 = &tx_chan->dma_nodes_nc[1];
+            dma_lli0_index = 1;
         }
     }
+#endif // SOC_RMT_SUPPORT_DMA
 
     size_t len = encode_len;
     while (len > 0) {
@@ -64,20 +66,21 @@ static size_t rmt_encode_copy(rmt_encoder_t *encoder, rmt_channel_handle_t chann
         len--;
     }
 
+#if SOC_RMT_SUPPORT_DMA
     if (channel->dma_chan) {
         // mark the end descriptor
         if (symbol_off < tx_chan->ping_pong_symbols) {
-            desc1 = &tx_chan->dma_nodes_nc[0];
+            dma_lli1_index = 0;
         } else {
-            desc1 = &tx_chan->dma_nodes_nc[1];
+            dma_lli1_index = 1;
         }
 
         // cross line, means desc0 has prepared with sufficient data buffer
-        if (desc0 != desc1) {
-            desc0->dw0.length = tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t);
-            desc0->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+        if (dma_lli0_index != dma_lli1_index) {
+            gdma_link_set_owner(tx_chan->dma_link, dma_lli0_index, GDMA_LLI_OWNER_DMA);
         }
     }
+#endif // SOC_RMT_SUPPORT_DMA
 
     if (encoding_truncated) {
         // this encoding has not finished yet, save the truncated position
@@ -95,10 +98,11 @@ static size_t rmt_encode_copy(rmt_encoder_t *encoder, rmt_channel_handle_t chann
 
     // reset offset pointer when exceeds maximum range
     if (symbol_off >= tx_chan->ping_pong_symbols * 2) {
+#if SOC_RMT_SUPPORT_DMA
         if (channel->dma_chan) {
-            desc1->dw0.length = tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t);
-            desc1->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+            gdma_link_set_owner(tx_chan->dma_link, dma_lli1_index, GDMA_LLI_OWNER_DMA);
         }
+#endif // SOC_RMT_SUPPORT_DMA
         tx_chan->mem_off_bytes = 0;
     } else {
         tx_chan->mem_off_bytes = symbol_off * sizeof(rmt_symbol_word_t);

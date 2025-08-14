@@ -121,6 +121,8 @@ uintptr_t gdma_link_get_head_addr(gdma_link_list_handle_t list);
  *       Link A: A1 --> B3 --> B4
  *       Link B: B1 --> B2 --> B3 --> B4
  *
+ * @note If the second link is NULL, the next item of the first_link_item will be set to NULL. And the second_link_item_index is meaningless.
+ *
  * @param[in] first_link First link list handle, allocated by `gdma_new_link_list`
  * @param[in] first_link_item_index Index of the item in the first link list (-1 means the last item)
  * @param[in] second_link Second link list handle, allocated by `gdma_new_link_list`
@@ -193,6 +195,28 @@ void* gdma_link_get_buffer(gdma_link_list_handle_t list, int item_index);
  * @return Length of the buffer of the link list item
  */
 size_t gdma_link_get_length(gdma_link_list_handle_t list, int item_index);
+
+/**
+ * @brief Set the length of the buffer of a DMA link list item
+ *
+ * @param[in] list Link list handle, allocated by `gdma_new_link_list`
+ * @param[in] item_index Index of the link list item
+ * @param[in] length Length of the buffer of the link list item
+ * @return
+ *      - ESP_OK: Set the length successfully
+ *      - ESP_ERR_INVALID_ARG: Set the length failed because of invalid argument
+ *      - ESP_FAIL: Set the length failed because of other error
+ */
+esp_err_t gdma_link_set_length(gdma_link_list_handle_t list, int item_index, size_t length);
+
+/**
+ * @brief Check if a DMA link list item is the last item (has no next item)
+ *
+ * @param[in] list Link list handle, allocated by `gdma_new_link_list`
+ * @param[in] item_index Index of the link list item
+ * @return True if the link list item is the last item, false otherwise
+ */
+bool gdma_link_check_end(gdma_link_list_handle_t list, int item_index);
 
 #ifdef __cplusplus
 }
