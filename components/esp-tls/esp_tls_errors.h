@@ -47,6 +47,7 @@ extern "C" {
 #define ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x1A)  /*!< mbedtls api returned failed  */
 #define ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED               (ESP_ERR_ESP_TLS_BASE + 0x1B)  /*!< mbedtls api returned failed  */
 #define ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x1C)  /*!< mbedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_SSL_READ_FAILED                   (ESP_ERR_ESP_TLS_BASE + 0x1D)  /*!< mbedtls api returned failed  */
 
 /* wolfssl specific error codes */
 #define ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x31)  /*!< wolfSSL api returned error */
