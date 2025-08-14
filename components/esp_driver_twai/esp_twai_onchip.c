@@ -122,16 +122,19 @@ static void _ctrlr_release(int ctrlr_id)
 
 static esp_err_t _node_config_io(twai_onchip_ctx_t *node, const twai_onchip_node_config_t *node_config)
 {
-    ESP_RETURN_ON_FALSE(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.tx), ESP_ERR_INVALID_ARG, TAG, "Invalid tx gpio num");
+    ESP_RETURN_ON_FALSE(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.tx) || (node_config->flags.enable_listen_only && (node_config->io_cfg.tx == -1)), ESP_ERR_INVALID_ARG, TAG, "Invalid tx gpio num");
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(node_config->io_cfg.rx), ESP_ERR_INVALID_ARG, TAG, "Invalid rx gpio num");
+    uint64_t reserve_mask = 0;
 
     // Set RX pin
     gpio_set_pull_mode(node_config->io_cfg.rx, GPIO_PULLUP_ONLY);    // pullup to avoid noise if no connection to transceiver
     gpio_matrix_input(node_config->io_cfg.rx, twai_periph_signals[node->ctrlr_id].rx_sig, false);
 
     // Set TX pin
-    uint64_t reserve_mask = BIT64(node_config->io_cfg.tx);
-    gpio_matrix_output(node_config->io_cfg.tx, twai_periph_signals[node->ctrlr_id].tx_sig, false, false);
+    if (node_config->io_cfg.tx != -1) { // listen only node is able to not have TX pin
+        reserve_mask |= BIT64(node_config->io_cfg.tx);
+        gpio_matrix_output(node_config->io_cfg.tx, twai_periph_signals[node->ctrlr_id].tx_sig, false, false);
+    }
 
     //Configure output clock pin (Optional)
     if (GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.quanta_clk_out)) {
@@ -611,7 +614,7 @@ static esp_err_t _node_parse_rx(twai_node_handle_t node, twai_frame_t *rx_frame)
 esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twai_node_handle_t *node_ret)
 {
     esp_err_t ret = ESP_OK;
-    ESP_RETURN_ON_FALSE(node_config->tx_queue_depth > 0, ESP_ERR_INVALID_ARG, TAG, "tx_queue_depth at least 1");
+    ESP_RETURN_ON_FALSE((node_config->tx_queue_depth > 0) || node_config->flags.enable_listen_only, ESP_ERR_INVALID_ARG, TAG, "tx_queue_depth at least 1");
     ESP_RETURN_ON_FALSE(!node_config->intr_priority || (BIT(node_config->intr_priority) & ESP_INTR_FLAG_LOWMED), ESP_ERR_INVALID_ARG, TAG, "Invalid intr_priority level");
 
     // Allocate TWAI node from internal memory because it contains atomic variable
@@ -627,7 +630,7 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     // state is in bus_off before enabled
     atomic_store(&node->state, TWAI_ERROR_BUS_OFF);
     node->tx_mount_queue = xQueueCreateWithCaps(node_config->tx_queue_depth, sizeof(twai_frame_t *), TWAI_MALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(node->tx_mount_queue, ESP_ERR_NO_MEM, err, TAG, "no_mem");
+    ESP_GOTO_ON_FALSE(node->tx_mount_queue || node_config->flags.enable_listen_only, ESP_ERR_NO_MEM, err, TAG, "no_mem");
     uint32_t intr_flags = TWAI_INTR_ALLOC_FLAGS;
     intr_flags |= (node_config->intr_priority > 0) ? BIT(node_config->intr_priority) : ESP_INTR_FLAG_LOWMED;
     ESP_GOTO_ON_ERROR(esp_intr_alloc(twai_periph_signals[ctrlr_id].irq_id, intr_flags, _node_isr_main, (void *)node, &node->intr_hdl),

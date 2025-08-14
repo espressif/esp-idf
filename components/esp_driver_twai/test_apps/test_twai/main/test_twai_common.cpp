@@ -16,6 +16,8 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
+#include "soc/twai_periph.h"
+#include "esp_private/gpio.h"
 #include "driver/uart.h" // for baudrate detection
 
 #define TEST_TX_GPIO                GPIO_NUM_4
@@ -477,3 +479,55 @@ TEST_CASE("twai driver cache safe (loopback)", "[twai]")
     TEST_ESP_OK(twai_node_delete(node_hdl));
 }
 #endif //CONFIG_TWAI_ISR_CACHE_SAFE
+
+TEST_CASE("twai bus off recovery (loopback)", "[twai]")
+{
+    twai_node_handle_t node_hdl;
+    twai_onchip_node_config_t node_config = {
+        .io_cfg.tx = TEST_TX_GPIO,
+        .io_cfg.rx = TEST_TX_GPIO,  // Using same pin for test without transceiver
+        .bit_timing.bitrate = 50000,   //slow bitrate to ensure soft error trigger
+        .tx_queue_depth = 1,
+        .flags.enable_self_test = true,
+    };
+    TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
+    TEST_ESP_OK(twai_node_enable(node_hdl));
+
+    twai_node_status_t node_status;
+    twai_frame_t tx_frame = {
+        .buffer = (uint8_t *)"hello\n",
+        .buffer_len = 6,
+    };
+
+    // send frames and trigger error, must become bus off before 50 frames
+    while ((node_status.state != TWAI_ERROR_BUS_OFF) && (tx_frame.header.id < 50)) {
+        printf("sending frame %ld\n", tx_frame.header.id ++);
+        TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 500));
+        if (tx_frame.header.id > 3) {    // trigger error after 3 frames
+            printf("trigger bit_error now!\n");
+            esp_rom_delay_us(30 * (1000000 / node_config.bit_timing.bitrate)); // trigger error at 30 bits after frame start
+            gpio_matrix_output(TEST_TX_GPIO, twai_periph_signals[0].tx_sig, true, false);
+            esp_rom_delay_us(2 * (1000000 / node_config.bit_timing.bitrate)); // trigger error for 2 bits
+            gpio_matrix_output(TEST_TX_GPIO, twai_periph_signals[0].tx_sig, false, false);
+        }
+        vTaskDelay(pdMS_TO_TICKS(100)); // some time for hardware report errors
+        twai_node_get_info(node_hdl, &node_status, NULL);
+    }
+
+    // recover node
+    TEST_ASSERT_EQUAL(TWAI_ERROR_BUS_OFF, node_status.state);
+    printf("node offline, start recover ...\n");
+    TEST_ESP_OK(twai_node_recover(node_hdl));
+
+    // wait node recovered
+    while (node_status.state != TWAI_ERROR_ACTIVE) {
+        printf("waiting ...\n");
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        twai_node_get_info(node_hdl, &node_status, NULL);
+    }
+    printf("node recovered! continue\n");
+    TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 500));
+
+    TEST_ESP_OK(twai_node_disable(node_hdl));
+    TEST_ESP_OK(twai_node_delete(node_hdl));
+}
