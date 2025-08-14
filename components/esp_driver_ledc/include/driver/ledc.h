@@ -41,10 +41,10 @@ typedef struct {
     uint32_t duty;                  /*!< LEDC channel duty, the range of duty setting is [0, (2**duty_resolution)] */
     int hpoint;                     /*!< LEDC channel hpoint value, the range is [0, (2**duty_resolution)-1] */
     ledc_sleep_mode_t sleep_mode;   /*!< choose the desired behavior for the LEDC channel in Light-sleep */
-    struct {
-        unsigned int output_invert: 1;/*!< Enable (1) or disable (0) gpio output invert */
-    } flags;                        /*!< LEDC flags */
-
+    /// Extra configuration flags for LEDC channel
+    struct ledc_channel_flags {
+        unsigned int output_invert: 1; /*!< Enable (1) or disable (0) gpio output invert */
+    } flags;                        /*!< Extra configuration flags for LEDC channel */
 } ledc_channel_config_t;
 
 /**
