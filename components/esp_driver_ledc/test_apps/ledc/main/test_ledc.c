@@ -151,6 +151,12 @@ TEST_CASE("LEDC output idle level test", "[ledc]")
     TEST_ESP_OK(ledc_stop(test_speed_mode, LEDC_CHANNEL_0, !current_level));
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(!current_level, LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv);
+    // check real output level over some period
+    gpio_input_enable(PULSE_IO);
+    for (int i = 0; i < 40; i++) {
+        TEST_ASSERT_EQUAL_INT32(!current_level, gpio_get_level(PULSE_IO));
+        esp_rom_delay_us(50);
+    }
 }
 
 TEST_CASE("LEDC iterate over all channel and timer configs", "[ledc]")
