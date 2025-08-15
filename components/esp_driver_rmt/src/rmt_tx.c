@@ -256,15 +256,15 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     ESP_RETURN_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, TAG, "DMA not supported");
 #endif
 
-    // malloc channel memory
-    uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
+    // allocate channel memory from internal memory because it contains atomic variable
+    uint32_t mem_caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
     tx_channel = heap_caps_calloc(1, sizeof(rmt_tx_channel_t) + sizeof(rmt_tx_trans_desc_t) * config->trans_queue_depth, mem_caps);
     ESP_GOTO_ON_FALSE(tx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for tx channel");
     // GPIO configuration is not done yet
     tx_channel->base.gpio_num = -1;
     // create DMA descriptors
     if (config->flags.with_dma) {
-        mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
+        mem_caps |= MALLOC_CAP_DMA;
         // DMA descriptors must be placed in internal SRAM
         uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
         // the alignment should meet both the DMA and cache requirement
