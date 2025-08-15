@@ -209,9 +209,8 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_RMT_SUPPORT_SLEEP_RETENTION
 
-    // malloc channel memory
-    uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
-    rx_channel = heap_caps_calloc(1, sizeof(rmt_rx_channel_t), mem_caps);
+    // allocate channel memory from internal memory because it contains atomic variable
+    rx_channel = heap_caps_calloc(1, sizeof(rmt_rx_channel_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(rx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel");
     // gpio is not configured yet
     rx_channel->base.gpio_num = -1;
