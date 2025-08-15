@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -195,14 +195,14 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     ESP_GOTO_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "DMA not supported");
 #endif // SOC_RMT_SUPPORT_DMA
 
-    // malloc channel memory
-    uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
+    // allocate channel memory from internal memory because it contains atomic variable
+    uint32_t mem_caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
     rx_channel = heap_caps_calloc(1, sizeof(rmt_rx_channel_t), mem_caps);
     ESP_GOTO_ON_FALSE(rx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel");
     // create DMA descriptor
     size_t num_dma_nodes = 0;
     if (config->flags.with_dma) {
-        mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
+        mem_caps |= MALLOC_CAP_DMA;
         num_dma_nodes = config->mem_block_symbols * sizeof(rmt_symbol_word_t) / RMT_DMA_DESC_BUF_MAX_SIZE + 1;
         // DMA descriptors must be placed in internal SRAM
         rx_channel->dma_nodes = heap_caps_aligned_calloc(RMT_DMA_DESC_ALIGN, num_dma_nodes, sizeof(rmt_dma_descriptor_t), mem_caps);
@@ -579,7 +579,7 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     portENTER_CRITICAL_ISR(&channel->spinlock);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_SW);
     // copy the symbols to user space
-    
+
     // Start from C6, the actual pulse count is the number of input pulses N - 1.
     // Resulting in the last threshold interrupts may not be triggered correctly when the number of received symbols is a multiple of the memory block size.
     // As shown in the figure below, So we special handle the offset

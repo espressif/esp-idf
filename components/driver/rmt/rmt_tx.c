@@ -233,14 +233,14 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     ESP_GOTO_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "DMA not supported");
 #endif
 
-    // malloc channel memory
-    uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
+    // allocate channel memory from internal memory because it contains atomic variable
+    uint32_t mem_caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
     tx_channel = heap_caps_calloc(1, sizeof(rmt_tx_channel_t) + sizeof(rmt_tx_trans_desc_t) * config->trans_queue_depth, mem_caps);
     ESP_GOTO_ON_FALSE(tx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for tx channel");
     // create DMA descriptors
     if (config->flags.with_dma) {
         // DMA descriptors must be placed in internal SRAM
-        mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
+        mem_caps |= MALLOC_CAP_DMA;
         tx_channel->dma_nodes = heap_caps_aligned_calloc(RMT_DMA_DESC_ALIGN, RMT_DMA_NODES_PING_PONG, sizeof(rmt_dma_descriptor_t), mem_caps);
         ESP_GOTO_ON_FALSE(tx_channel->dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no mem for tx DMA nodes");
         // we will use the non-cached address to manipulate the DMA descriptor, for simplicity
