@@ -116,6 +116,20 @@ Ring Buffer
 
 To reduce IRAM usage, the default placement for `esp_ringbuf` functions has been changed from IRAM to Flash. Consequently, the ``CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`` option has been removed. This change saves a significant amount of IRAM but may have a slight performance impact. For performance-critical applications, the previous behavior can be restored by enabling the new :ref:`CONFIG_RINGBUF_IN_IRAM` option.
 
+Log
+---
+
+**Removed Functions**
+
+The following deprecated Log functions have been removed in ESP-IDF v6.0:
+
+- :cpp:func:`esp_log_buffer_hex` - Use :cpp:func:`ESP_LOG_BUFFER_HEX` instead.
+- :cpp:func:`esp_log_buffer_char` - Use :cpp:func:`ESP_LOG_BUFFER_CHAR` instead.
+
+**Removed Headers**
+
+- ``esp_log_internal.h`` - Use ``esp_log_buffer.h`` instead.
+
 Core Dump
 ---------
 
