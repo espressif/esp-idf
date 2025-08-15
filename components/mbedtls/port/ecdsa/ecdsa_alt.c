@@ -665,14 +665,7 @@ static int esp_ecdsa_tee_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mp
     } else if (grp->id == MBEDTLS_ECP_DP_SECP192R1) {
         len = ECDSA_KEY_LEN_P192;
         key_type = ESP_SEC_STG_KEY_ECDSA_SECP192R1;
-    }
-#if SOC_ECDSA_SUPPORT_CURVE_P384
-    else if (grp->id == MBEDTLS_ECP_DP_SECP384R1) {
-        len = ECDSA_KEY_LEN_P384;
-        key_type = ESP_SEC_STG_KEY_ECDSA_SECP384R1;
-    }
-#endif
-    else {
+    } else {
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
