@@ -77,7 +77,7 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
  */
 static inline void rtcio_ll_output_enable(int rtcio_num)
 {
-    RTCIO.enable_w1ts.w1ts = (1U << rtcio_num);
+    RTCIO.enable_w1ts.val = (1U << (rtcio_num + RTC_GPIO_ENABLE_W1TS_S));
 }
 
 /**
@@ -87,7 +87,7 @@ static inline void rtcio_ll_output_enable(int rtcio_num)
  */
 static inline void rtcio_ll_output_disable(int rtcio_num)
 {
-    RTCIO.enable_w1tc.w1tc = (1U << rtcio_num);
+    RTCIO.enable_w1tc.val = (1U << (rtcio_num + RTC_GPIO_ENABLE_W1TC_S));
 }
 
 /**
@@ -99,9 +99,9 @@ static inline void rtcio_ll_output_disable(int rtcio_num)
 static inline void rtcio_ll_set_level(int rtcio_num, uint32_t level)
 {
     if (level) {
-        RTCIO.out_w1ts.w1ts = (1U << rtcio_num);
+        RTCIO.out_w1ts.val = (1U << (rtcio_num + RTC_GPIO_OUT_DATA_W1TS_S));
     } else {
-        RTCIO.out_w1tc.w1tc = (1U << rtcio_num);
+        RTCIO.out_w1tc.val = (1U << (rtcio_num + RTC_GPIO_OUT_DATA_W1TC_S));
     }
 }
 
@@ -172,10 +172,11 @@ static inline void rtcio_ll_output_mode_set(int rtcio_num, rtcio_ll_out_mode_t m
 }
 
 /**
- * RTC GPIO pullup enable.
+ * @brief RTC GPIO pullup enable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
+__attribute__((always_inline))
 static inline void rtcio_ll_pullup_enable(int rtcio_num)
 {
     if (rtc_io_desc[rtcio_num].pullup) {
@@ -184,10 +185,11 @@ static inline void rtcio_ll_pullup_enable(int rtcio_num)
 }
 
 /**
- * RTC GPIO pullup disable.
+ * @brief RTC GPIO pullup disable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
+__attribute__((always_inline))
 static inline void rtcio_ll_pullup_disable(int rtcio_num)
 {
     if (rtc_io_desc[rtcio_num].pullup) {
@@ -201,6 +203,7 @@ static inline void rtcio_ll_pullup_disable(int rtcio_num)
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  * @return Whether the pullup of the pad is enabled or not.
  */
+__attribute__((always_inline))
 static inline bool rtcio_ll_is_pullup_enabled(int rtcio_num)
 {
     if (rtc_io_desc[rtcio_num].pullup) {
@@ -211,10 +214,11 @@ static inline bool rtcio_ll_is_pullup_enabled(int rtcio_num)
 }
 
 /**
- * RTC GPIO pulldown enable.
+ * @brief RTC GPIO pulldown enable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
+__attribute__((always_inline))
 static inline void rtcio_ll_pulldown_enable(int rtcio_num)
 {
     if (rtc_io_desc[rtcio_num].pulldown) {
@@ -223,10 +227,11 @@ static inline void rtcio_ll_pulldown_enable(int rtcio_num)
 }
 
 /**
- * RTC GPIO pulldown disable.
+ * @brief RTC GPIO pulldown disable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
+__attribute__((always_inline))
 static inline void rtcio_ll_pulldown_disable(int rtcio_num)
 {
     if (rtc_io_desc[rtcio_num].pulldown) {
@@ -240,6 +245,7 @@ static inline void rtcio_ll_pulldown_disable(int rtcio_num)
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  * @return Whether the pulldown of the pad is enabled or not.
  */
+__attribute__((always_inline))
 static inline bool rtcio_ll_is_pulldown_enabled(int rtcio_num)
 {
     if (rtc_io_desc[rtcio_num].pulldown) {
