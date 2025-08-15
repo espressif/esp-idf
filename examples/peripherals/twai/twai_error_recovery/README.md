@@ -45,17 +45,17 @@ idf.py -p PORT flash monitor
 install twai success
 node started
 
-sending frame 0
-sending frame 1
+sending frame 0, please trigger error during sending
+sending frame 1, please trigger error during sending
 
 ...
-sending frame 4
+sending frame 4, please trigger error during sending
 // Manually trigger error here (disconnect TX/RX or short H/L)
 bus error: 0x2
 state changed: error_active -> error_warning
 
 ...
-sending frame 9
+sending frame 9, please trigger error during sending
 // Trigger error again
 bus error: 0x2
 state changed: error_passive -> bus_off
@@ -66,7 +66,7 @@ waiting ... 0
 state changed: bus_off -> error_active
 node recovered! continue
 
-sending frame 0
+sending frame 0, please trigger error during sending
 ```
 
 ## Troubleshooting
