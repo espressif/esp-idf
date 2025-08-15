@@ -89,7 +89,7 @@ void app_main(void)
                 }
             }
         } else {
-            ESP_LOGI(TAG, "sending frame %d", i);
+            ESP_LOGI(TAG, "sending frame %d, please trigger error during sending", i);
             tx_frame.header.id = i;
             ESP_ERROR_CHECK(twai_node_transmit(node_hdl, &tx_frame, 500));
         }
