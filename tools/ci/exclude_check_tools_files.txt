@@ -44,10 +44,6 @@ tools/eclipse-code-style.xml
 tools/esp_prov/**/*
 tools/format.sh
 tools/gdb_panic_server.py
-tools/legacy_exports/export_legacy.bat
-tools/legacy_exports/export_legacy.fish
-tools/legacy_exports/export_legacy.ps1
-tools/legacy_exports/export_legacy.sh
 tools/mocks/**/*
 tools/python_version_checker.py
 tools/set-submodules-to-github.sh
