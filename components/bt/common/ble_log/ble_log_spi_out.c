@@ -242,9 +242,9 @@ extern uint32_t r_ble_lll_timer_current_tick_get(void);
 #elif defined(CONFIG_IDF_TARGET_ESP32C2)
 extern uint32_t r_os_cputime_get32(void);
 #define SPI_OUT_GET_LC_TIME r_os_cputime_get32()
-#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
-extern uint32_t lld_read_clock_us(void);
-#define SPI_OUT_GET_LC_TIME lld_read_clock_us()
+// #elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
+// extern uint32_t lld_read_clock_us(void);
+// #define SPI_OUT_GET_LC_TIME lld_read_clock_us()
 #else
 #define SPI_OUT_GET_LC_TIME esp_timer_get_time()
 #endif
