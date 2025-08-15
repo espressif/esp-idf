@@ -125,9 +125,9 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
      * - DIO is similar.
      */
     if (conf_required) {
-#if !SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
         int line_width = (io_mode == SPI_FLASH_DIO? 2: 4);
         dummy_cyclelen_base -= SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS / line_width;
+#if !SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
         addr_bitlen += SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS;
 #endif
         spi_flash_ll_set_extra_address(dev, 0);
@@ -145,7 +145,9 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
     }
 #endif
 #else
-    gpspi_flash_ll_set_dummy_out(dev, (conf_required? 1: 0), 1);
+    if (conf_required) {
+        gpspi_flash_ll_set_dummy_out(dev, (conf_required? 1: 0), 1);
+    }
 #endif
 
 #if SOC_IS(ESP32P4)
