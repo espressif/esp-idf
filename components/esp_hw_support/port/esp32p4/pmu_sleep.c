@@ -42,6 +42,7 @@
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
 
+#define DCDC_STARTUP_TIME_US    (950)
 
 static bool s_pmu_sleep_regdma_backup_enabled;
 
@@ -272,6 +273,24 @@ static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_con
     pmu_ll_hp_set_regulator_dbias             (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dbias);
     pmu_ll_hp_set_regulator_driver_bar        (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.drv_b);
 
+#if CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
+    if (dslp)
+#endif
+    {
+/**
+        DCDC_EN will be controlled by software to avoid DCDC working in a non-feedback state, which may
+        cause input glitch voltage when waking up and switching to LDO.
+        1. Lightsleep:
+           CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON = y: DCDC will not shutdown during sleep.
+           CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON = n:
+               PD_TOP: DCDC_EN DCDC_EN enabled by regdma after wake up.
+               PU_TOP: DCDC_EN DCDC_EN enabled by pmu_sleep_finish after wakeup.
+        2. Deepsleep
+           After chip wake up from deepsleep, set DCDC_EN in rtc_clk_init.
+**/
+        pmu_ll_hp_set_dcm_mode(ctx->hal->dev, HP(ACTIVE), 0);
+    }
+
     pmu_ll_lp_set_regulator_sleep_dbias(ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.slp_dbias);
     pmu_ll_lp_set_regulator_dbias      (ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.dbias);
     pmu_ll_lp_set_regulator_driver_bar (ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.drv_b);
@@ -322,7 +341,7 @@ void pmu_sleep_increase_ldo_volt(void) {
 }
 
 void pmu_sleep_shutdown_dcdc(void) {
-    pmu_ll_set_dcdc_switch_force_power_down(&PMU, true);
+    // Keep dcdc_switch on, will be disabled by PMU when entered sleep.
     pmu_ll_set_dcdc_en(&PMU, false);
     // Decrease hp_ldo voltage.
     REG_SET_FIELD(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_DBIAS, 24);
@@ -432,10 +451,12 @@ TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
     {
         pmu_ll_hp_set_dcm_vset(&PMU, PMU_MODE_HP_ACTIVE, HP_CALI_ACTIVE_DCM_VSET_DEFAULT);
         pmu_sleep_enable_dcdc();
-        if (pmu_ll_hp_is_sleep_reject(&PMU)) {
-            // If sleep is rejected, the hardware wake-up process that turns on DCDC
-            // is skipped, and wait DCDC volt rise up by software here.
-            esp_rom_delay_us(950);
+        if (pmu_ll_hp_is_sleep_reject(&PMU) || !s_pmu_sleep_regdma_backup_enabled) {
+            // If sleep is rejected or regdma restore is skipped, the hardware wake-up process that
+            // turns on DCDC is skipped, and wait DCDC volt rise up by software here.
+            esp_rom_delay_us(DCDC_STARTUP_TIME_US);
+        } else if (s_pmu_sleep_regdma_backup_enabled) {
+            esp_rom_delay_us(DCDC_STARTUP_TIME_US - PMU_REGDMA_S2A_WORK_TIME_US);
         }
         pmu_sleep_shutdown_ldo();
     }
