@@ -74,7 +74,9 @@ menu "Core dump"
         depends on ESP_COREDUMP_ENABLE
         default 64
         help
-            Maximum number of tasks snapshots in core dump.
+            Maximum number of tasks that will be included in the core dump.
+            Crashed task registers and stacks are always included.
+            Other tasks are included in order of their priority. (Highest priority ready task first)
 
     config ESP_COREDUMP_UART_DELAY
         int "Delay before print to UART"
