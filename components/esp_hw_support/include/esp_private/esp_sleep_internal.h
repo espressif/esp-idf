@@ -110,7 +110,8 @@ typedef enum {
  */
 typedef enum {
     ESP_SLEEP_CLOCK_OPTION_GATE,    //!< Gate the clock in sleep mode
-    ESP_SLEEP_CLOCK_OPTION_UNGATE   //!< Ungate the clock in sleep mode
+    ESP_SLEEP_CLOCK_OPTION_UNGATE,  //!< Ungate the clock in sleep mode
+    ESP_SLEEP_CLOCK_OPTION_MAX
 } esp_sleep_clock_option_t;
 
 /**
