@@ -391,8 +391,6 @@ static void s_configure_psram_ecc(void)
 {
     psram_ctrlr_ll_enable_16to18_ecc(PSRAM_CTRLR_LL_MSPI_ID_2, true);
     psram_ctrlr_ll_enable_skip_page_corner(PSRAM_CTRLR_LL_MSPI_ID_2, true);
-    psram_ctrlr_ll_enable_split_trans(PSRAM_CTRLR_LL_MSPI_ID_2, true);
-    psram_ctrlr_ll_set_page_size(PSRAM_CTRLR_LL_MSPI_ID_2, 2048);
     psram_ctrlr_ll_enable_ecc_addr_conversion(PSRAM_CTRLR_LL_MSPI_ID_2, 2048);
 
     /**
@@ -427,6 +425,8 @@ esp_err_t esp_psram_impl_enable(void)
     mspi_timing_ll_enable_dqs(true);
 
     s_set_psram_cs_timing();
+    psram_ctrlr_ll_enable_split_trans(PSRAM_CTRLR_LL_MSPI_ID_2, true);
+    psram_ctrlr_ll_set_page_size(PSRAM_CTRLR_LL_MSPI_ID_2, 2048);
 #if CONFIG_SPIRAM_ECC_ENABLE
     s_configure_psram_ecc();
 #endif
