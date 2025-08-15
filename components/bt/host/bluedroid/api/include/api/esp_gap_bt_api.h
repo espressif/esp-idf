@@ -953,7 +953,7 @@ esp_err_t esp_bt_gap_get_page_timeout(void);
 
 /**
  * @brief           Set ACL packet types
- *                  An ESP_BT_GAP_SET_ACL_PPKT_TYPES_EVT event will reported to
+ *                  An ESP_BT_GAP_ACL_PKT_TYPE_CHANGED_EVT event will be reported to
  *                  the APP layer.
  *
  * @return          - ESP_OK: success
