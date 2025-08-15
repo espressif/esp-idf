@@ -17,9 +17,6 @@
 #include "esp_private/cache_utils.h"
 #include "spi_flash_mmap.h"
 #include "esp_flash_internal.h"
-#if CONFIG_NEWLIB_ENABLED
-#include "esp_newlib.h"
-#endif
 #include "esp_newlib.h"
 #include "esp_xt_wdt.h"
 #include "esp_cpu.h"

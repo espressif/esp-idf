@@ -286,7 +286,7 @@ static void print_device_info(msc_host_device_info_t *info)
     printf("\t Sector count: %"PRIu32"\n", info->sector_count);
     printf("\t PID: 0x%04X \n", info->idProduct);
     printf("\t VID: 0x%04X \n", info->idVendor);
-#ifndef CONFIG_NEWLIB_NANO_FORMAT
+#ifndef CONFIG_LIBC_NEWLIB_NANO_FORMAT
     wprintf(L"\t iProduct: %S \n", info->iProduct);
     wprintf(L"\t iManufacturer: %S \n", info->iManufacturer);
     wprintf(L"\t iSerialNumber: %S \n", info->iSerialNumber);

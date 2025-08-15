@@ -4,7 +4,7 @@
 # CONFIG_ESP_TASK_WDT_INIT is not set
 CONFIG_FREERTOS_HZ=1000
 # Disable nano printf, because we need to print the timer count in %llu format
-CONFIG_NEWLIB_NANO_FORMAT=n
+CONFIG_LIBC_NEWLIB_NANO_FORMAT=n
 
 # primitives for checking sleep internal state
 CONFIG_ESP_SLEEP_DEBUG=y

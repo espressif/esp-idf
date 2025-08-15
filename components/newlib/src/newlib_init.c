@@ -101,7 +101,7 @@ static struct syscall_stub_table s_stub_table = {
     ._lock_release = &_lock_release,
     ._lock_release_recursive = &_lock_release_recursive,
 #endif
-#ifdef CONFIG_NEWLIB_NANO_FORMAT
+#ifdef CONFIG_LIBC_NEWLIB_NANO_FORMAT
     ._printf_float = &_printf_float,
     ._scanf_float = &_scanf_float,
 #else
