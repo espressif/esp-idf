@@ -3,7 +3,7 @@ menu "ESP-Driver:SPI Configurations"
     config SPI_MASTER_IN_IRAM
         bool "Place transmitting functions of SPI master into IRAM"
         default n
-        depends on !FREERTOS_PLACE_FUNCTIONS_INTO_FLASH
+        depends on FREERTOS_IN_IRAM
         select SPI_MASTER_ISR_IN_IRAM
         select ESP_SPI_BUS_LOCK_FUNCS_IN_IRAM
         help
@@ -15,7 +15,7 @@ menu "ESP-Driver:SPI Configurations"
             Enable this to put ``queue_trans``, ``get_trans_result`` and
             ``transmit`` functions into the IRAM to avoid possible cache miss.
 
-            This configuration won't be available if `CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH` is enabled.
+            This configuration won't be available if `CONFIG_FREERTOS_IN_IRAM` is disabled.
 
             During unit test, this is enabled to measure the ideal case of api.
 

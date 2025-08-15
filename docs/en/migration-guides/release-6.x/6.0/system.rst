@@ -103,6 +103,19 @@ The following compatibility functions have been removed in ESP-IDF v6.0. These f
 
 The function :cpp:func:`pxTaskGetStackStart` has been deprecated. Use :cpp:func:`xTaskGetStackStart` instead for improved type safety.
 
+**Memory Placement**
+
+To reduce IRAM usage, the default placement for most FreeRTOS functions has been changed from IRAM to Flash. Consequently, the ``CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`` option has been removed. This change saves a significant amount of IRAM but may have a slight performance impact. For performance-critical applications, the previous behavior can be restored by enabling the new :ref:`CONFIG_FREERTOS_IN_IRAM` option.
+When deciding whether to enable ``CONFIG_FREERTOS_IN_IRAM``, consider conducting performance testing to measure the actual impact on your specific use case. Performance differences between Flash and IRAM configurations can vary depending on flash cache efficiency, API usage patterns, and system load.
+A baseline performance test is provided in ``components/freertos/test_apps/freertos/performance/test_freertos_api_performance.c`` that measures the execution time of commonly used FreeRTOS APIs. This test can help you evaluate the performance impact of memory placement for your target hardware and application requirements.
+
+Ring Buffer
+-----------
+
+**Memory Placement**
+
+To reduce IRAM usage, the default placement for `esp_ringbuf` functions has been changed from IRAM to Flash. Consequently, the ``CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`` option has been removed. This change saves a significant amount of IRAM but may have a slight performance impact. For performance-critical applications, the previous behavior can be restored by enabling the new :ref:`CONFIG_RINGBUF_IN_IRAM` option.
+
 Core Dump
 ---------
 

@@ -185,12 +185,12 @@ void vPortAssertIfInISR(void)
 // ------------------ Critical Sections --------------------
 
 #if ( configNUMBER_OF_CORES > 1 )
-void IRAM_ATTR vPortTakeLock( portMUX_TYPE *lock )
+void vPortTakeLock( portMUX_TYPE *lock )
 {
     spinlock_acquire( lock, portMUX_NO_TIMEOUT);
 }
 
-void IRAM_ATTR vPortReleaseLock( portMUX_TYPE *lock )
+void vPortReleaseLock( portMUX_TYPE *lock )
 {
     spinlock_release( lock );
 }

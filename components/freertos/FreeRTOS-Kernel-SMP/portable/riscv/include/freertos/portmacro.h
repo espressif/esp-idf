@@ -328,7 +328,7 @@ void vPortExitCritical(void);
 
 // ---------------------- Yielding -------------------------
 
-static inline bool IRAM_ATTR xPortCanYield(void)
+static inline bool xPortCanYield(void)
 {
 #if SOC_INT_CLIC_SUPPORTED
     /* When CLIC is supported:

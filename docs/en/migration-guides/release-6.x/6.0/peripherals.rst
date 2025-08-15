@@ -153,3 +153,17 @@ LCD
 - The ``color_space`` and ``rgb_endian`` configuration options in the :cpp:type:`esp_lcd_panel_dev_config_t` structure have been replaced by the :cpp:member:`esp_lcd_panel_dev_config_t::rgb_ele_order` member, which sets the RGB element order. The corresponding types ``lcd_color_rgb_endian_t`` and ``esp_lcd_color_space_t`` have also been removed; use :cpp:type:`lcd_rgb_element_order_t` instead.
 - The ``esp_lcd_panel_disp_off`` function has been removed. Please use the :func:`esp_lcd_panel_disp_on_off` function to control display on/off.
 - The ``on_bounce_frame_finish`` member in :cpp:type:`esp_lcd_rgb_panel_event_callbacks_t` has been replaced by :cpp:member:`esp_lcd_rgb_panel_event_callbacks_t::on_frame_buf_complete`, which indicates that a complete frame buffer has been sent to the LCD controller.
+
+SPI
+---
+
+The :ref:`CONFIG_SPI_MASTER_IN_IRAM` option is now invisible by default in menuconfig and depends on :ref:`CONFIG_FREERTOS_IN_IRAM`. This change was made to prevent potential crashes when SPI functions in IRAM call FreeRTOS functions that are placed in Flash.
+
+To enable SPI master IRAM optimization:
+
+1. Navigate to ``Component config`` → ``FreeRTOS`` → ``Port`` in menuconfig
+2. Enable ``Place FreeRTOS functions in IRAM`` (:ref:`CONFIG_FREERTOS_IN_IRAM`)
+3. Navigate to ``Component config`` → ``ESP-Driver:SPI Configurations``
+4. Enable ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`)
+
+Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.

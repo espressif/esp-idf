@@ -612,7 +612,7 @@ The default config puts only the ISR into the IRAM. Other SPI-related functions,
 
 .. note::
 
-    SPI driver implementation is based on FreeRTOS APIs, to use :ref:`CONFIG_SPI_MASTER_IN_IRAM`, you should not enable :ref:`CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`.
+    SPI driver implementation is based on FreeRTOS APIs, to use :ref:`CONFIG_SPI_MASTER_IN_IRAM`, you should enable :ref:`CONFIG_FREERTOS_IN_IRAM`.
 
 For an interrupt transaction, the overall cost is **20+8n/Fspi[MHz]** [µs] for n bytes transferred in one transaction. Hence, the transferring speed is: **n/(20+8n/Fspi)**. An example of transferring speed at 8 MHz clock speed is given in the following table.
 

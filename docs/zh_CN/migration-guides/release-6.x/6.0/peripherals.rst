@@ -153,3 +153,17 @@ LCD
 - :cpp:type:`esp_lcd_panel_dev_config_t` 结构体中的 ``color_space`` 和 ``rgb_endian`` 配置均已被 :cpp:member:`esp_lcd_panel_dev_config_t::rgb_ele_order` 成员取代，用来设置 RGB 元素的排列顺序。对应的类型 ``lcd_color_rgb_endian_t`` 和 ``esp_lcd_color_space_t`` 也已被移除，请使用 :cpp:type:`lcd_rgb_element_order_t` 替代。
 - ``esp_lcd_panel_disp_off`` 函数已被移除。请使用 :func:`esp_lcd_panel_disp_on_off` 函数来控制显示内容的开关。
 - :cpp:type:`esp_lcd_rgb_panel_event_callbacks_t` 中的 ``on_bounce_frame_finish`` 成员已被 :cpp:member:`esp_lcd_rgb_panel_event_callbacks_t::on_frame_buf_complete` 成员取代，用于指示一个完整的帧缓冲区已被发送给 LCD 控制器。
+
+SPI
+---
+
+:ref:`CONFIG_SPI_MASTER_IN_IRAM` 选项现在在 menuconfig 中默认不可见，并且依赖于 :ref:`CONFIG_FREERTOS_IN_IRAM`。此更改是为了防止位于 IRAM 中的 SPI 函数调用位于 Flash 中的 FreeRTOS 函数时可能发生的崩溃。
+
+要启用 SPI 主机 IRAM 优化：
+
+1. 在 menuconfig 中导航到 ``Component config`` → ``FreeRTOS`` → ``Port``
+2. 启用 ``Place FreeRTOS functions in IRAM`` (:ref:`CONFIG_FREERTOS_IN_IRAM`)
+3. 导航到 ``Component config`` → ``ESP-Driver:SPI Configurations``
+4. 启用 ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`)
+
+请注意，启用 :ref:`CONFIG_FREERTOS_IN_IRAM` 会显著增加 IRAM 使用量。在为 SPI 性能进行优化时，请考虑此权衡。

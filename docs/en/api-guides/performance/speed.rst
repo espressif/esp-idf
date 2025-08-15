@@ -156,6 +156,8 @@ The following changes increase the speed of a chosen part of the firmware applic
 
     -  Jump table optimizations can be re-enabled for individual source files that do not need to be placed in IRAM. For hot paths in large ``switch cases``, this improves performance. For instructions on how to add the ``-fjump-tables`` and ``-ftree-switch-conversion`` options when compiling individual source files, see :ref:`component_build_control`
 
+    - Many ESP-IDF components and drivers provide configuration options to place performance-critical functions in IRAM for reduced latency and improved speed. These options typically have names like ``CONFIG_*_IN_IRAM``, ``CONFIG_*_ISR_IN_IRAM``, or ``CONFIG_*_IRAM_OPT``. Some examples are :ref:`CONFIG_FREERTOS_IN_IRAM` for FreeRTOS functions, :ref:`CONFIG_ESP_WIFI_IRAM_OPT` for Wi-Fi operations, :ref:`CONFIG_UART_ISR_IN_IRAM` for UART interrupt handling, and :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` for SPI operations. These options trade IRAM usage for speed, so they should be used selectively based on your application's performance requirements and available IRAM space.
+
 Improving Startup Time
 ----------------------
 
