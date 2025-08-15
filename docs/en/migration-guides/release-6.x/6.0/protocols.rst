@@ -38,5 +38,3 @@ Discussions
 ~~~~~~~~~~~
 
 * `Discussions for version v2 <https://github.com/espressif/esp-modbus/discussions>`__
-
-

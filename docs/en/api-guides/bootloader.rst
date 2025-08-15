@@ -202,8 +202,8 @@ If the bootloader grows too large then it can collide with the partition table, 
 
     The recovery bootloader feature enables safe OTA updates of the bootloader itself. When the eFuse field ``ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR`` is set, it specifies the flash address (in sectors) of the recovery bootloader. If the primary bootloader at {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} fails to load, the ROM bootloader attempts to load the recovery bootloader from this address.
 
-    - The eFuse can be programmed using ``espefuse.py`` or via the user application using :cpp:func:`esp_efuse_set_recovery_bootloader_offset()`.
-    - The address can be set via the ``CONFIG_BOOTLOADER_RECOVERY_OFFSET``, it must be a multiple of the flash sector size (0x1000 bytes). This Kconfig option helps ensure the recovery bootloader does not overlap with existing partitions.
+    - The eFuse can be set using ``espefuse.py`` or by calling :cpp:func:`esp_efuse_set_recovery_bootloader_offset()` in the user application.
+    - The address can be set using ``CONFIG_BOOTLOADER_RECOVERY_OFFSET``. This value must be a multiple of the flash sector size (0x1000 bytes). The Kconfig option helps ensure that the recovery bootloader does not overlap with existing partitions.
     - Note that the eFuse field stores the offset in sectors. Setting it to the maximum value ``0xFFF`` disables the feature.
     - The recovery bootloader image at the ``CONFIG_BOOTLOADER_RECOVERY_OFFSET`` is not flashed by default. It can be written as part of the OTA update process.
 
@@ -250,7 +250,7 @@ If the bootloader grows too large then it can collide with the partition table, 
 
     - ``EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR`` (12 bits): Flash sector address for the recovery bootloader. Default value is 0 (disabled), set any other value to enable, 0xFFF to permanently disable.
     - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN`` (1 bit): Enables anti-rollback check in the ROM bootloader.
-    - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION`` (4 bits): Secure version for anti-rollback protection. The value increases as bits are set - 0x0, 0x1, 0x3, 0x7, 0xF.
+    - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION`` (4 bits): Secure version for anti-rollback protection. The value increases as bits are set—0x0, 0x1, 0x3, 0x7, 0xF.
     - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_UPDATE_IN_ROM`` (1 bit): Allows the ROM bootloader to update the secure version in eFuse.
 
     .. note::

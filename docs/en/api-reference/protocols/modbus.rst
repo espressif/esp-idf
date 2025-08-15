@@ -25,4 +25,3 @@ Protocol References
 -------------------
 
     - For the detailed protocol specifications, see `The Modbus Organization <https://modbus.org/specs.php>`_.
-

@@ -198,11 +198,155 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 .. _heap-task-tracking:
 
 堆任务跟踪
-------------------
+----------
 
-堆任务跟踪可获取堆内存分配的各任务信息，应用程序须指定计划跟踪堆分配的堆属性。
+可以通过 menuconfig 启用堆任务跟踪功能：``Component config`` > ``Heap memory debugging`` > ``Enable heap task tracking`` （参见 :ref:`CONFIG_HEAP_TASK_TRACKING`）。
 
-示例代码可参考 :example:`system/heap_task_tracking`。
+该功能允许用户跟踪自启动以来每个任务的堆内存使用情况，并提供一系列统计信息，这些信息可以通过 getter 函数获取，或直接输出到用户指定的流中。此功能有助于识别内存使用模式和潜在的内存泄漏。
+
+用户还可以通过 menuconfig 启用额外配置：``Component config`` > ``Heap memory debugging`` > ``Keep information about the memory usage of deleted tasks`` （参见 :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS`），以便在任务被删除后仍然保留其统计信息。
+
+.. note::
+
+    请注意，堆任务跟踪无法检测静态分配的任务是否被删除。因此，在阅读下文时需注意，静态分配的任务在堆任务跟踪功能范围内始终被视为存活状态。
+
+需要特别说明的是，除调试目的外，强烈不建议将该功能用于其他用途，原因如下：
+
+.. list::
+
+    - 跟踪每个任务的分配并存储统计信息会占用较大 RAM。
+    - 每次内存分配和释放操作所需的额外数据处理会大幅降低堆分配器的整体性能。
+
+.. note::
+
+    在统计信息输出或访问时不会显示堆任务跟踪功能自身分配的内存。
+
+统计信息的结构
+^^^^^^^^^^^^^^
+
+堆任务跟踪功能将每个任务的统计信息分为三个层级：
+
+.. list::
+
+    - 任务级统计信息
+    - 堆级统计信息
+    - 分配级统计信息
+
+任务级统计信息包括以下内容：
+
+.. list::
+
+    - 任务名称
+    - 任务句柄
+    - 任务状态（运行中或已删除）
+    - 任务的峰值内存使用量（任务生命周期内使用的最大内存）
+    - 任务的当前内存使用量
+    - 该任务分配过内存的堆数量
+
+堆级统计信息针对每个被该任务使用的堆，包含以下内容：
+
+.. list::
+
+    - 堆名称
+    - 堆的内存分配能力（不含优先级）
+    - 堆的总大小
+    - 该任务在该堆上的当前使用量
+    - 该任务在该堆上的峰值使用量
+    - 该任务在该堆上的分配次数
+
+分配级统计信息针对该任务在该堆上的每次分配，包含以下内容：
+
+.. list::
+
+    - 分配的地址
+    - 分配的大小
+
+输出统计信息
+^^^^^^^^^^^^
+
+:cpp:func:`heap_caps_print_single_task_stat_overview` API 可将指定任务的堆使用情况概览输出到指定流。
+
+.. code-block:: text
+
+  ┌────────────────────┬─────────┬──────────────────────┬───────────────────┬─────────────────┐
+  │ TASK               │ STATUS  │ CURRENT MEMORY USAGE │ PEAK MEMORY USAGE │ TOTAL HEAP USED │
+  ├────────────────────┼─────────┼──────────────────────┼───────────────────┼─────────────────┤
+  │          task_name │ ALIVE   │                    0 │              7152 │               1 │
+  └────────────────────┴─────────┴──────────────────────┴───────────────────┴─────────────────┘
+
+:cpp:func:`heap_caps_print_all_task_stat_overview` 可输出所有任务（若启用 :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS`，则包括已删除任务）的堆使用概览。
+
+.. code-block:: text
+
+  ┌────────────────────┬─────────┬──────────────────────┬───────────────────┬─────────────────┐
+  │ TASK               │ STATUS  │ CURRENT MEMORY USAGE │ PEAK MEMORY USAGE │ TOTAL HEAP USED │
+  ├────────────────────┼─────────┼──────────────────────┼───────────────────┼─────────────────┤
+  │          task_name │ DELETED │                11392 │             11616 │               1 │
+  │    other_task_name │ ALIVE   │                    0 │              9408 │               2 │
+  │               main │ ALIVE   │                 3860 │              7412 │               2 │
+  │               ipc1 │ ALIVE   │                   32 │                44 │               1 │
+  │               ipc0 │ ALIVE   │                10080 │             10092 │               1 │
+  │      Pre-scheduler │ ALIVE   │                 2236 │              2236 │               1 │
+  └────────────────────┴─────────┴──────────────────────┴───────────────────┴─────────────────┘
+
+.. note::
+
+    名为 "Pre-scheduler" 的任务表示调度器启动前发生的内存分配。这并非实际任务，因此 "status" 字段（显示为 "ALIVE"）没有实际意义，可忽略。
+
+使用 :cpp:func:`heap_caps_print_single_task_stat` 可输出指定任务的完整统计信息，或使用 :cpp:func:`heap_caps_print_all_task_stat` 输出所有任务的统计信息：
+
+.. code-block:: text
+
+  [...]
+  ├ ALIVE: main, CURRENT MEMORY USAGE 308, PEAK MEMORY USAGE 7412, TOTAL HEAP USED 2:
+  │    ├ HEAP: RAM, CAPS: 0x0010580e, SIZE: 344400, USAGE: CURRENT 220 (0%), PEAK 220 (0%), ALLOC COUNT: 2
+  │    │    ├ ALLOC 0x3fc99024, SIZE 88
+  │    │    ├ ALLOC 0x3fc99124, SIZE 132
+  │    └ HEAP: RAM, CAPS: 0x0010580e, SIZE: 22308, USAGE: CURRENT 88 (0%), PEAK 7192 (32%), ALLOC COUNT: 5
+  │         ├ ALLOC 0x3fce99f8, SIZE 20
+  │         ├ ALLOC 0x3fce9a10, SIZE 12
+  │         ├ ALLOC 0x3fce9a20, SIZE 16
+  │         ├ ALLOC 0x3fce9a34, SIZE 20
+  │         ├ ALLOC 0x3fce9a4c, SIZE 20
+  [...]
+  └ ALIVE: Pre-scheduler, CURRENT MEMORY USAGE 2236, PEAK MEMORY USAGE 2236, TOTAL HEAP USED 1:
+      └ HEAP: RAM, CAPS: 0x0010580e, SIZE: 344400, USAGE: CURRENT 2236 (0%), PEAK 2236 (0%), ALLOC COUNT: 11
+            ├ ALLOC 0x3fc95cb0, SIZE 164
+            ├ ALLOC 0x3fc95dd8, SIZE 12
+            ├ ALLOC 0x3fc95dfc, SIZE 12
+            ├ ALLOC 0x3fc95e20, SIZE 16
+            ├ ALLOC 0x3fc95e48, SIZE 24
+            ├ ALLOC 0x3fc95e78, SIZE 88
+            ├ ALLOC 0x3fc95ee8, SIZE 88
+            ├ ALLOC 0x3fc95f58, SIZE 88
+            ├ ALLOC 0x3fc95fc8, SIZE 88
+            ├ ALLOC 0x3fc96038, SIZE 1312
+            ├ ALLOC 0x3fc96570, SIZE 344
+
+.. note::
+
+    为了便于阅读，上述输出内容有删减（见 "[...]"），仅展示了 **main** 任务和 **Pre-scheduler** 任务的统计信息。此处演示了示调用 :cpp:func:`heap_caps_print_all_task_stat` （或 :cpp:func:`heap_caps_print_single_task_stat`）API 时的输出内容。
+
+.. note::
+
+    本节所述 API 的详细用法可参考 :example:`system/heap_task_tracking/basic`。
+
+获取统计信息
+^^^^^^^^^^^^
+
+用户可使用 :cpp:func:`heap_caps_get_single_task_stat` 获取指定任务的信息。通过该 API 获取的信息与 :cpp:func:`heap_caps_print_single_task_stat` 的输出内容一致。
+
+用户可使用 :cpp:func:`heap_caps_get_all_task_stat` 获取所有任务（若启用 :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS`，则包括已删除任务）的统计信息概览。通过该 API 获取的信息与 :cpp:func:`heap_caps_print_all_task_stat` 的输出内容一致。
+
+每个 getter 函数都需要一个指向数据结构的指针，该结构用于堆任务跟踪收集指定任务（或所有任务）的统计信息。该数据结构包含指向数组的指针，用户可以选择静态或动态分配这些数组。
+
+由于难以预估用于存储信息的数组大小（如每个任务的分配次数、每个任务使用的堆数量、自启动以来创建的任务总数等），堆任务跟踪还提供了 :cpp:func:`heap_caps_alloc_single_task_stat_arrays` （或 :cpp:func:`heap_caps_alloc_all_task_stat_arrays`）来动态分配这些数组所需的内存。
+
+同时，堆任务跟踪还提供 :cpp:func:`heap_caps_free_single_task_stat_arrays` （或 :cpp:func:`heap_caps_free_all_task_stat_arrays`）用于释放通过上述 API 动态分配的内存。
+
+.. note::
+
+    本节所述 API 的详细用法可参考 :example:`system/heap_task_tracking/advanced`。
 
 
 .. _heap-tracing:
@@ -632,7 +776,12 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 - :example:`system/heap_task_tracking/basic` 演示了堆任务跟踪的概览功能，用于导出每个任务在堆内存使用方面的统计信息概要。
 - :example:`system/heap_task_tracking/advanced` 演示了堆任务跟踪中统计信息函数的用法，用于访问每个任务在堆内存使用方面的完整统计数据。
 
-API 参考 - 堆内存跟踪
+API 参考–堆任务跟踪
+----------------------------------
+
+.. include-build-file:: inc/esp_heap_task_info.inc
+
+API 参考–堆内存跟踪
 ----------------------------
 
 .. include-build-file:: inc/esp_heap_trace.inc
