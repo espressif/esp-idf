@@ -338,7 +338,7 @@ function(__create_config_env_file env_path)
     idf_build_set_property(__IDF_ENV_FPGA "${idf_env_fpga}")
 
     # Get the config.env.in template path
-    set(template_path "${idf_path}/tools/kconfig_new/config.env.in")
+    set(template_path "${idf_path}/tools/kconfig_new/config_buildv2.env.in")
     if(NOT EXISTS "${template_path}")
         idf_die("Kconfig environment template file not found at ${template_path}")
     endif()
