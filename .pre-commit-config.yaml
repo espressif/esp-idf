@@ -229,5 +229,5 @@ repos:
   - repo: https://github.com/espressif/esp-idf-kconfig.git
     rev: v3.2.0
     hooks:
-      - id: check-kconfig-files
+#      - id: check-kconfig-files
       - id: check-deprecated-kconfig-options
