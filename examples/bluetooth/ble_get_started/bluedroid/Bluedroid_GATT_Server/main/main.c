@@ -368,7 +368,6 @@ static void auto_io_gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_
         ESP_LOGI(GATTS_TAG, "LED ON!");
         led_on();
     	}
-    	// Comparar com "OFF"
     	else if (param->write.len == 3 && memcmp(param->write.value, "OFF", 3) == 0) {
         ESP_LOGI(GATTS_TAG, "LED OFF!");
         led_off();
