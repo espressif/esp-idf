@@ -151,7 +151,7 @@ menu "LibC"
             Enables performance-optimized implementations of memory and string functions
             when handling misaligned memory.
 
-            This increases the image size by ~1000 bytes.
+            Require approximately 800–1000 bytes of IRAM.
 
             Optimized functions include:
                 - memcpy

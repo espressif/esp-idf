@@ -6,10 +6,15 @@
 #include <stdint.h>
 #include <string.h>
 #include "esp_heap_caps.h"
+#include "soc/soc.h"
 #include "hal/cpu_ll.h"
 #include "unity.h"
 
 #define MAX_MEMTEST_SIZE 4096
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+#pragma GCC diagnostic ignored "-Wstrict-prototypes"
 
 uint32_t test_function_dest_src_size(void (*foo)(...), bool pass_size)
 {
@@ -106,3 +111,52 @@ TEST_CASE("strncmp", "[misaligned_mem]")
     /* esp32c2: 24369 cycles instead 49141.  */
     TEST_ASSERT_LESS_THAN(30000, ccount);
 }
+#pragma GCC diagnostic pop // "-Wincompatible-pointer-types" "-Wstrict-prototypes"
+
+static bool fn_in_ram(void *fn)
+{
+    const int fnaddr = (int)fn;
+    return (fnaddr >= SOC_IRAM_LOW && fnaddr < SOC_IRAM_HIGH);
+}
+
+TEST_CASE("mem functions in IRAM", "[misaligned_mem]")
+{
+    TEST_ASSERT_TRUE(fn_in_ram(memcpy));
+    TEST_ASSERT_TRUE(fn_in_ram(memcmp));
+    TEST_ASSERT_TRUE(fn_in_ram(memmove));
+    TEST_ASSERT_TRUE(fn_in_ram(strcpy));
+    TEST_ASSERT_TRUE(fn_in_ram(strncpy));
+    TEST_ASSERT_TRUE(fn_in_ram(strcmp));
+    TEST_ASSERT_TRUE(fn_in_ram(strncmp));
+}
+
+#if CONFIG_ESP_SYSTEM_MEMPROT_PMP
+TEST_CASE("access across different PMP regions", "[misaligned_mem]")
+{
+    /*
+     * PMP configurations for load and store addresses may
+     * have different permissions (e.g., "R" vs. "RW").
+     *
+     * Due to the timing alignment of internal signals, the address
+     * permission check may be incorrectly applied during the second
+     * part of a misaligned access transaction.
+     *
+     * As a workaround, insert two instructions (e.g. ADDI/NOP) between
+     * accessing to different memory regions. This spacing avoids the
+     * false permission check caused by signal timing overlap.
+     *
+     * This test may help identify the root issue in affected chips.
+     */
+
+    const void *src = (void *) SOC_DROM_MASK_LOW;
+    asm volatile("addi sp, sp, -16\n"
+                 "lw t0, 2(%0)\n"
+#if CONFIG_SOC_CPU_MISALIGNED_ACCESS_ON_PMP_MISMATCH_ISSUE
+                 "nop\n"
+                 "nop\n"
+#endif
+                 "sw t0, 3(sp)\n"
+                 "addi sp, sp, 16"
+                 :: "r"(src) : "memory");
+}
+#endif

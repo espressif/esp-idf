@@ -165,6 +165,8 @@
 #define SOC_CPU_HAS_PMA                 1
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
 #define SOC_CPU_PMP_REGION_GRANULARITY  4
+// DIG-694: misaligned access across PMP regions must be spaced at least by two instructions
+#define SOC_CPU_MISALIGNED_ACCESS_ON_PMP_MISMATCH_ISSUE 1
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
 #define SOC_MMU_PAGE_SIZE_CONFIGURABLE        (1)

@@ -6,9 +6,8 @@
  * SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
  */
 #include <string.h>
-#include "local.h"
+#include "string/local.h"
 
-__attribute__((optimize("-Os")))
 int
 memcmp(const void *m1,
        const void *m2,

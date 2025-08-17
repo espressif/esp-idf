@@ -8,10 +8,6 @@
 archive:
     libc.a
 entries:
-  if LIBC_OPTIMIZED_MISALIGNED_ACCESS = y && IDF_TARGET_ARCH_RISCV = y:
-    memcpy-asm (noflash)
-  if LIBC_OPTIMIZED_MISALIGNED_ACCESS = y && IDF_TARGET_ARCH_XTENSA = y:
-    libc_machine_xtensa_memcpy (noflash)
   if SPIRAM_CACHE_WORKAROUND = y:
     # The following libs are either used in a lot of places or in critical code. (such as panic or abort)
     # Thus, they shall always be placed in IRAM.

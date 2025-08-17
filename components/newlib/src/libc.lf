@@ -11,8 +11,6 @@ archive:
   else:
     libc.a
 entries:
-  if LIBC_OPTIMIZED_MISALIGNED_ACCESS = y:
-    libc_a-memcpy (noflash)
   if SPIRAM_CACHE_WORKAROUND = y:
     # The following libs are either used in a lot of places or in critical
     # code. (such as panic or abort)

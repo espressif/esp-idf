@@ -143,6 +143,8 @@
 #define SOC_CPU_BREAKPOINTS_NUM             8
 #define SOC_CPU_WATCHPOINTS_NUM             8
 #define SOC_CPU_WATCHPOINT_MAX_REGION_SIZE  0x80000000 // bytes
+// DIG-694: misaligned access across PMP regions must be spaced at least by two instructions
+#define SOC_CPU_MISALIGNED_ACCESS_ON_PMP_MISMATCH_ISSUE 1
 
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
 /** The maximum length of a Digital Signature in bits. */

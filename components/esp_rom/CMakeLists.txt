@@ -149,6 +149,10 @@ if(ESP_TEE_BUILD)
     if(CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT)
         rom_linker_script("newlib-nano")
     endif()
+    rom_linker_script("libc")
+    if(CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY) # TODO IDF-13852: use optimized memcpy for TEE ?
+        rom_linker_script("libc-suboptimal_for_misaligned_mem")
+    endif()
 endif()
 
 if(BOOTLOADER_BUILD)
@@ -173,8 +177,8 @@ if(BOOTLOADER_BUILD)
             else()
                 rom_linker_script("libc")
             endif()
-            if(CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
-                AND NOT CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS)
+            if(CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY)
+                # For bootloader use only ROM functions due to 'relocation truncated to fit' error
                 rom_linker_script("libc-suboptimal_for_misaligned_mem")
             endif()
             if(CONFIG_LIBC_NEWLIB)
