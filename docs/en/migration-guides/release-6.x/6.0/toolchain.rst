@@ -107,3 +107,64 @@ The header ``<sys/signal.h>`` is no longer available in Picolibc. To ensure comp
 
     #include <sys/signal.h> /* fatal error: sys/signal.h: No such file or directory */
     #include <signal.h>     /* Ok: standard and portable */
+
+.. only:: CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
+
+    RISC-V Chips and Misaligned Memory Access in LibC Functions
+    -----------------------------------------------------------
+
+    Espressif RISC-V chips can perform misaligned memory accesses with only a small
+    performance penalty compared to aligned accesses.
+
+    Previously, LibC functions that operate on memory (such as copy or comparison
+    functions) were implemented using byte-by-byte operations when a non-word-aligned
+    pointer was passed. Now, these functions use word (4-byte) load/store operations
+    whenever possible, resulting in a significant performance increase. These optimized
+    implementations are enabled by default via :ref:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS`,
+    which reduces the application’s memory budget (IRAM) by approximately 800–1000 bytes.
+
+    The table below shows benchmark results on the ESP32-C3 chip using 4096-byte buffers:
+
+    .. list-table:: Benchmark Results
+       :header-rows: 1
+       :widths: 20 20 20 20
+
+       * - Function
+         - Old (CPU cycles)
+         - Optimized (CPU cycles)
+         - Improvement (%)
+       * - memcpy
+         - 32873
+         - 4200
+         - 87.2
+       * - memcmp
+         - 57436
+         - 14722
+         - 74.4
+       * - memmove
+         - 49336
+         - 9237
+         - 81.3
+       * - strcpy
+         - 28678
+         - 16659
+         - 41.9
+       * - strcmp
+         - 36867
+         - 11146
+         - 69.8
+
+    .. note::
+       The results above apply to misaligned memory operations.
+       Performance for aligned memory operations remains unchanged.
+
+    Functions with Improved Performance
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    - ``memcpy``
+    - ``memcmp``
+    - ``memmove``
+    - ``strcpy``
+    - ``strncpy``
+    - ``strcmp``
+    - ``strncmp``

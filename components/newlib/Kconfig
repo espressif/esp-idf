@@ -145,7 +145,7 @@ menu "LibC"
 
     config LIBC_OPTIMIZED_MISALIGNED_ACCESS
         bool "Use performance-optimized memXXX/strXXX functions on misaligned memory access"
-        default n
+        default y
         depends on ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
         help
             Enables performance-optimized implementations of memory and string functions
