@@ -134,16 +134,20 @@ endfunction()
 
 #[[
    __get_absolute_paths(PATHS <path>...
+                        BASE_DIR <base_dir>
                         OUTPUT <variable>)
 
    :PATHS[in]: List of paths to convert to absolute paths.
+   :BASE_DIR[in,opt]: Evaluate relative paths based on the specified
+                      ``<base_dir>``. If not provided, use CMAKE_CURRENT_SOURCE_DIR
+                      instead.
    :OUTPUT[out]: Output variable to store absolute paths.
 
    For a given ``PATHS``, return the absolute paths in ``OUTPUT``.
 #]]
 function(__get_absolute_paths)
     set(options)
-    set(one_value OUTPUT)
+    set(one_value BASE_DIR OUTPUT)
     set(multi_value PATHS)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
@@ -157,7 +161,11 @@ function(__get_absolute_paths)
 
     set(absolute_paths "")
     foreach(path IN LISTS ARG_PATHS)
-        get_filename_component(path_abs ${path} ABSOLUTE)
+        if(DEFINED ARG_BASE_DIR)
+            get_filename_component(path_abs ${path} ABSOLUTE BASE_DIR "${ARG_BASE_DIR}")
+        else()
+            get_filename_component(path_abs ${path} ABSOLUTE)
+        endif()
         list(APPEND absolute_paths "${path_abs}")
     endforeach()
 
