@@ -21,6 +21,9 @@ from ecdsa.util import sigdecode_der
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
+# TODO: Enable for ESP32-C5 once support is stable
+SUPPORTED_TARGETS = ['esp32c6', 'esp32h2']
+
 TEST_MSG = 'hello world'
 
 server_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_certs/server_cert.pem')
@@ -33,7 +36,7 @@ key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_certs/
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize('target', SUPPORTED_TARGETS, indirect=['target'])
 def test_tee_cli_secure_storage(dut: Dut) -> None:
     # Dumping the REE binary size
     binary_file = os.path.join(dut.app.binary_path, 'tee_cli.bin')
@@ -119,7 +122,7 @@ def verify_att_token_signature(att_tk: str) -> Any:
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize('target', SUPPORTED_TARGETS, indirect=['target'])
 def test_tee_cli_attestation(dut: Dut) -> None:
     # Dumping the REE binary size
     binary_file = os.path.join(dut.app.binary_path, 'tee_cli.bin')
@@ -161,7 +164,7 @@ def start_https_server(ota_image_dir: str, server_ip: str, server_port: int) -> 
 
 
 @pytest.mark.wifi_high_traffic
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize('target', SUPPORTED_TARGETS, indirect=['target'])
 def test_tee_cli_secure_ota_wifi(dut: Dut) -> None:
     """
     This is a positive test case, which downloads complete binary file multiple number of times.
