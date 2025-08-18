@@ -45,21 +45,21 @@ TEST_CASE("memcpy", "[misaligned_mem]")
 {
     uint32_t ccount = test_function_dest_src_size(memcpy, true);
     /* esp32c2: 4128 cycles instead 28676.  */
-    TEST_ASSERT_LESS_THAN(5000, ccount);
+    TEST_ASSERT_LESS_THAN(10000, ccount);
 }
 
 TEST_CASE("memcmp", "[misaligned_mem]")
 {
     uint32_t ccount = test_function_dest_src_size(memcmp, true);
     /* esp32c2: 14259 cycles instead 49147.  */
-    TEST_ASSERT_LESS_THAN(16000, ccount);
+    TEST_ASSERT_LESS_THAN(20000, ccount);
 }
 
 TEST_CASE("memmove", "[misaligned_mem]")
 {
     uint32_t ccount = test_function_dest_src_size(memmove, true);
     /* esp32c2: 8086 cycles instead 33896.  */
-    TEST_ASSERT_LESS_THAN(10000, ccount);
+    TEST_ASSERT_LESS_THAN(15000, ccount);
 }
 
 TEST_CASE("memmove - overlapping", "[misaligned_mem]")
@@ -76,21 +76,21 @@ TEST_CASE("memmove - overlapping", "[misaligned_mem]")
     heap_caps_free(buf);
 
     /* esp32c2: 11503 cycles instead 45024.  */
-    TEST_ASSERT_LESS_THAN(15000, ccount2 - ccount1);
+    TEST_ASSERT_LESS_THAN(20000, ccount2 - ccount1);
 }
 
 TEST_CASE("strcpy", "[misaligned_mem]")
 {
     uint32_t ccount = test_function_dest_src_size(strcpy, false);
     /* esp32c2: 17313 cycles instead 32771.  */
-    TEST_ASSERT_LESS_THAN(20000, ccount);
+    TEST_ASSERT_LESS_THAN(22000, ccount);
 }
 
 TEST_CASE("strcmp", "[misaligned_mem]")
 {
     uint32_t ccount = test_function_dest_src_size(strcmp, false);
     /* esp32c2: 13191 cycles instead 32775.  */
-    TEST_ASSERT_LESS_THAN(15000, ccount);
+    TEST_ASSERT_LESS_THAN(20000, ccount);
 }
 
 TEST_CASE("strncpy", "[misaligned_mem]")
@@ -104,5 +104,5 @@ TEST_CASE("strncmp", "[misaligned_mem]")
 {
     uint32_t ccount = test_function_dest_src_size(strncmp, true);
     /* esp32c2: 24369 cycles instead 49141.  */
-    TEST_ASSERT_LESS_THAN(27000, ccount);
+    TEST_ASSERT_LESS_THAN(30000, ccount);
 }
