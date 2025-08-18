@@ -45,9 +45,11 @@ static void ecdsa_enable_and_reset(void)
     }
 
 #ifdef SOC_ECDSA_USES_MPI
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(true);
-        mpi_ll_reset_register();
+    if (ecdsa_ll_is_mpi_required()) {
+        MPI_RCC_ATOMIC() {
+            mpi_ll_enable_bus_clock(true);
+            mpi_ll_reset_register();
+        }
     }
 #endif
 }
@@ -55,8 +57,10 @@ static void ecdsa_enable_and_reset(void)
 static void ecdsa_disable(void)
 {
 #ifdef SOC_ECDSA_USES_MPI
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(false);
+    if (ecdsa_ll_is_mpi_required()) {
+        MPI_RCC_ATOMIC() {
+            mpi_ll_enable_bus_clock(false);
+        }
     }
 #endif
 
