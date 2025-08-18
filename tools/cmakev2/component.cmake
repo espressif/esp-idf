@@ -549,18 +549,9 @@ function(idf_component_include name)
         return()
     endif()
 
-    # FIXME: Once the shims for cmakev1 components are ready, call
-    # add_subdirectory for all components. Currently, it is only called for
-    # project components that use cmakev2. Since add_subdirectory is not called
-    # for cmakev1 components, the COMPONENT_TARGET will not be created, and
-    # these components will be silently ignored later when the COMPONENT_TARGET
-    # is checked for existence.
-    idf_component_get_property(component_source "${component_name}" COMPONENT_SOURCE)
-    if("${component_source}" STREQUAL "project_components")
-        # Evaluate the CMakeLists.txt file of the component.
-        idf_build_get_property(build_dir BUILD_DIR build_dir)
-        add_subdirectory("${component_directory}" "${build_dir}/esp-idf/${component_name}" EXCLUDE_FROM_ALL)
-    endif()
+    # Evaluate the CMakeLists.txt file of the component.
+    idf_build_get_property(build_dir BUILD_DIR build_dir)
+    add_subdirectory("${component_directory}" "${build_dir}/esp-idf/${component_name}" EXCLUDE_FROM_ALL)
 
     # The component has been evaluated; remove it from the dependency chain.
     list(POP_BACK __DEPENDENCY_CHAIN)
