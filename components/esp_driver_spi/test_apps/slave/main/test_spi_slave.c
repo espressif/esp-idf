@@ -312,6 +312,7 @@ static void test_slave_iram_master_normal(void)
 
     spi_device_handle_t dev_handle = {0};
     spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.cs_ena_pretrans = 1;
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev_handle));
 
     uint8_t *master_send = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DMA);
