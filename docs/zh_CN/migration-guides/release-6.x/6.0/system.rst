@@ -105,9 +105,11 @@ FreeRTOS
 
 **内存布局**
 
-为了减少 IRAM 的使用，大多数 FreeRTOS 函数的默认位置已从 IRAM 更改为 Flash。因此，``CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`` 选项已被移除。此举可节省大量 IRAM，但可能会对性能造成轻微影响。对于性能要求严苛的应用程序，可通过启用新增的 :ref:`CONFIG_FREERTOS_IN_IRAM` 选项来恢复之前的行为。
-在决定是否启用 ``CONFIG_FREERTOS_IN_IRAM`` 时，建议进行性能测试以测量对特定用例的实际影响。Flash 和 IRAM 配置之间的性能差异可能因 Flash 缓存效率、API 使用模式和系统负载而异。
-在 ``components/freertos/test_apps/freertos/performance/test_freertos_api_performance.c`` 中提供了基准性能测试，用于测量常用 FreeRTOS API 的执行时间。此测试可帮助您评估内存布局对目标硬件和应用程序要求的性能影响。
+为了减少 IRAM 的使用，大多数 FreeRTOS 函数的默认位置已从 IRAM 更改为 flash。因此，``CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`` 选项已被移除。这项变更可显著节省 IRAM 空间，但可能会对性能造成轻微影响。如果应用对性能有严苛要求，可通过启用新增的 :ref:`CONFIG_FREERTOS_IN_IRAM` 选项来恢复原先配置。
+
+在决定是否启用 ``CONFIG_FREERTOS_IN_IRAM`` 时，建议进行性能测试以评估对具体应用场景的实际影响。flash 和 IRAM 配置的性能差异会受 flash 缓存效率、API 调用模式和系统负载等因素影响。
+
+``components/freertos/test_apps/freertos/performance/test_freertos_api_performance.c`` 中提供了基准性能测试，可测量常用 FreeRTOS API 的执行时间。该测试有助于根据目标硬件和应用需求评估内存布局调整带来的性能影响。
 
 环形缓冲区
 ----------
@@ -138,6 +140,13 @@ Log
 CRC 数据完整性检查已被弃用。`ESP_COREDUMP_CHECKSUM_CRC32` 表示该功能已完全删除，不再可用。现在默认的校验和算法为 SHA256。
 
 函数 :cpp:func:`esp_core_dump_partition_and_size_get()` 现在对空白（已擦除）分区返回 `ESP_ERR_NOT_FOUND`，而不是 `ESP_ERR_INVALID_SIZE`。
+
+OTA 更新
+-----------
+
+ESP HTTPS OTA 的分段下载功能已移至配置选项下，以便在未使用分段下载时减少内存占用。
+
+如果要在 OTA 应用中使用分段下载功能，需要在 menuconfig 中启用组件级配置 :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``)。
 
 Gcov
 ----

@@ -152,11 +152,11 @@
 
     - 将频繁执行的代码移至 IRAM。应用程序中的所有代码都默认从 flash 中执行。这意味着缓存缺失时，CPU 需要等待从 flash 加载后续指令。如果将函数复制到 IRAM 中，则仅需要在启动时加载一次，然后始终以全速执行。
 
-      IRAM 资源有限，使用更多的 IRAM 可能会减少可用的 DRAM。因此，将代码移动到 IRAM 需要有所取舍。更多信息参见 :ref:`iram` 。
+      IRAM 资源有限，使用更多的 IRAM 可能会减少可用的 DRAM。因此，将代码移动到 IRAM 需要有所取舍。更多信息参见 :ref:`iram`。
 
-    -  针对不需要放置在 IRAM 中的单个源文件，可以重新启用跳转表优化。这将提高大型 ``switch cases`` 代码中的热路径性能。关于如何在编译单个源文件时添加 -fjump-tables -ftree-switch-conversion 选项，参见 :ref:`component_build_control` 。
+    -  针对不需要放置在 IRAM 中的单个源文件，可以重新启用跳转表优化。这将提高大型 ``switch cases`` 代码中的热路径性能。关于如何在编译单个源文件时添加 -fjump-tables -ftree-switch-conversion 选项，参见 :ref:`component_build_control`。
 
-    - 许多 ESP-IDF 组件和驱动程序提供配置选项，将性能关键函数放置在 IRAM 中以减少延迟并提高速度。这些选项通常具有类似 ``CONFIG_*_IN_IRAM``、``CONFIG_*_ISR_IN_IRAM`` 或 ``CONFIG_*_IRAM_OPT`` 的名称。一些示例包括 :ref:`CONFIG_FREERTOS_IN_IRAM` 用于 FreeRTOS 函数，:ref:`CONFIG_ESP_WIFI_IRAM_OPT` 用于 Wi-Fi 操作，:ref:`CONFIG_UART_ISR_IN_IRAM` 用于 UART 中断处理，:ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 用于 SPI 操作。这些选项以 IRAM 使用量换取速度，因此应根据应用程序的性能要求和可用 IRAM 空间有选择地使用。
+    - 许多 ESP-IDF 组件和驱动程序提供了配置选项，用于将性能关键的函数放置在 IRAM 中以降低延迟并提高速度。这些选项通常以 ``CONFIG_*_IN_IRAM``、``CONFIG_*_ISR_IN_IRAM`` 或 ``CONFIG_*_IRAM_OPT`` 命名。例如，FreeRTOS 函数的 :ref:`CONFIG_FREERTOS_IN_IRAM`，Wi-Fi 操作的 :ref:`CONFIG_ESP_WIFI_IRAM_OPT`，UART 中断处理的 :ref:`CONFIG_UART_ISR_IN_IRAM`，以及 SPI 操作的 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM`。这些选项通过增加 IRAM 占用换取速度提升，因此应根据应用的性能需求和可用 IRAM 空间有选择地使用。
 
 减少启动时间
 ----------------------------

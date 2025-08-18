@@ -282,7 +282,7 @@ Now verify that the serial connection is operational. You can do this using a se
 Windows and Linux
 ^^^^^^^^^^^^^^^^^
 
-In this example, we use `PuTTY SSH Client <https://putty.software/>`_ that is available for both Windows and Linux. You can use other serial programs and set communication parameters like below.
+In this example, we use the `PuTTY SSH Client <https://putty.software/>`_, available for both Windows and Linux. You can use other serial programs and set communication parameters as shown below.
 
 Run terminal and set identified serial port. Baud rate = 115200 (if needed, change this to the default baud rate of the chip in use), data bits = 8, stop bits = 1, and parity = N. Below are example screenshots of setting the port and such transmission parameters (in short described as 115200-8-1-N) on Windows and Linux. Remember to select exactly the same serial port you have identified in steps above.
 

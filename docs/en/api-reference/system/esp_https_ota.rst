@@ -43,7 +43,7 @@ Partial Image Download over HTTPS
 
 To use the partial image download feature, you need to:
 
-* **Enable the component-level configuration**: enable :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``)
+* **Enable the component-level configuration**: Enable :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``)
 
 * **Enable the feature in your application**: Set the ``partial_http_download`` field in :cpp:struct:`esp_https_ota_config_t` configuration structure
 

@@ -38,10 +38,16 @@ ESP HTTPS OTA 升级
 
     应使用服务器端点的 **根** 证书应用于验证，而不能使用证书链中的任何中间证书，因为根证书有效期最长，且通常长时间维持不变。用户还可以通过 :cpp:member:`esp_http_client_config_t::crt_bundle_attach` 成员使用 ``ESP x509 证书包`` 功能进行验证，其中涵盖了大多数受信任的根证书。
 
-通过 HTTPS 下载部分镜像
+通过 HTTPS 分段下载镜像
 ---------------------------------
 
-要使用部分镜像下载功能，请启用 ``esp_https_ota_config_t`` 中的 ``partial_http_download`` 配置。启用此配置后，固件镜像将通过多个指定大小的 HTTP 请求进行下载。将 ``max_http_request_size`` 设置为所需值，即可指定每个请求的最大内容长度。
+要使用分段镜像下载功能，需要：
+
+* **启用组件级配置**：在 menuconfig 中启用 :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``)
+
+* **在应用程序中启用该功能**：在 :cpp:struct:`esp_https_ota_config_t` 配置结构中设置 ``partial_http_download`` 字段
+
+启用该配置后，固件镜像将通过多个指定大小的 HTTP 请求进行下载。通过将 ``max_http_request_size`` 设置为所需值，即可指定每个请求的最大内容长度。
 
 在从 AWS S3 等服务获取镜像时，这一选项非常有用。在启用该选项时，可以将 mbedTLS Rx 的 buffer 大小（即 :ref:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`）设置为较小的值。不启用此配置时，无法将其设置为较小值。
 
