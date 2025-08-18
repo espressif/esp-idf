@@ -45,6 +45,13 @@ esp_err_t esp_blufi_host_init(void)
     }
     BLUFI_INFO("BD ADDR: "ESP_BD_ADDR_STR"\n", ESP_BD_ADDR_HEX(esp_bt_dev_get_address()));
 
+    /* Set the default device name */
+    ret = esp_ble_gap_set_device_name(BLUFI_DEVICE_NAME);
+    if (ret) {
+        BLUFI_ERROR("%s set device name failed: %s\n", __func__, esp_err_to_name(ret));
+        return ESP_FAIL;
+    }
+
     return ESP_OK;
 
 }
