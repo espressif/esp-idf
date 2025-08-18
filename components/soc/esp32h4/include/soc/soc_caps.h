@@ -63,10 +63,8 @@
 #define SOC_SYSTIMER_SUPPORTED          1       // TODO: [ESP32H4] IDF-12375 IDF-12377
 // #define SOC_SUPPORT_COEXISTENCE         1    // TODO: [ESP32H4] IDF-12251 IDF-12252 IDF-12253
 // #define SOC_AES_SUPPORTED               0    // TODO: [ESP32H4] IDF-12266
-// #define SOC_MPI_SUPPORTED               0
 // #define SOC_SHA_SUPPORTED               1    // TODO: [ESP32H4] IDF-12263
 // #define SOC_HMAC_SUPPORTED              0    // TODO: [ESP32H4] IDF-12257
-// #define SOC_DIG_SIGN_SUPPORTED          0    // TODO: [ESP32H4] IDF-12443
 // #define SOC_ECC_SUPPORTED               1    // TODO: [ESP32H4] IDF-12264
 #define SOC_FLASH_ENC_SUPPORTED         1       // TODO: [ESP32H4] IDF-12261
 // #define SOC_SECURE_BOOT_SUPPORTED       1    // TODO: [ESP32H4] IDF-12262
@@ -175,17 +173,6 @@
 
 #define SOC_HP_CPU_HAS_MULTIPLE_CORES   1   // Convenience boolean macro used to determine if a target has multiple cores.
 #define SOC_CPU_HAS_LOCKUP_RESET        1
-
-/*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
-/** The maximum length of a Digital Signature in bits. */
-// #define SOC_DS_SIGNATURE_MAX_BIT_LEN (3072)
-
-/** Initialization vector (IV) length for the RSA key parameter message digest (MD) in bytes. */
-// #define SOC_DS_KEY_PARAM_MD_IV_LENGTH (16)
-
-/** Maximum wait time for DS parameter decryption key. If overdue, then key error.
-    See TRM DS chapter for more details */
-// #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
 /*-------------------------- DMA Common CAPS ----------------------------------------*/
 #define SOC_DMA_CAN_ACCESS_FLASH 1 /*!< DMA can access Flash memory */
@@ -368,13 +355,6 @@
 // #define SOC_PARLIO_RX_UNITS_PER_GROUP        1U  /*!< number of RX units in each group */
 // #define SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH    8   /*!< Number of data lines of the TX unit */
 // #define SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH    8   /*!< Number of data lines of the RX unit */
-
-/*--------------------------- MPI CAPS ---------------------------------------*/
-// #define SOC_MPI_MEM_BLOCKS_NUM (4)
-// #define SOC_MPI_OPERATIONS_NUM (3)
-
-/*--------------------------- RSA CAPS ---------------------------------------*/
-// #define SOC_RSA_MAX_BIT_LEN    (3072)
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
 
