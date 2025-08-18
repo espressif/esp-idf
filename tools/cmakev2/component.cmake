@@ -549,6 +549,7 @@ function(idf_component_include name)
         return()
     endif()
 
+    list(APPEND __DEPENDENCY_CHAIN "${name}")
     # Evaluate the CMakeLists.txt file of the component.
     idf_build_get_property(build_dir BUILD_DIR build_dir)
     add_subdirectory("${component_directory}" "${build_dir}/esp-idf/${component_name}" EXCLUDE_FROM_ALL)
