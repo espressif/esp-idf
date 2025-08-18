@@ -29,7 +29,7 @@ The ELF format contains extended features and allows more information regarding 
 
 The Binary format is kept for compatibility reasons. Binary format core dump files are smaller while provide better performance.
 
-The :ref:`CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` option configures the number of task snapshots saved by the core dump.
+The :ref:`CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` option configures the number of task snapshots saved by the core dump. Crashed task registers and the stack are always saved, regardless of this configuration option. Other tasks are included in order of their priority (starting with the highest-priority ready task).
 
 Core dump data integrity checking is supported via the ``Components`` > ``Core dump`` > ``Core dump data integrity check`` option.
 
