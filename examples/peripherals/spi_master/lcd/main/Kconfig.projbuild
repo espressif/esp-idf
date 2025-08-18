@@ -23,4 +23,13 @@ menu "Example Configuration"
             in practice the driver chips work fine with a higher clock rate, and using that gives a better framerate.
             Select this to try using the out-of-spec clock rate.
 
+    config LCD_BUFFER_IN_PSRAM
+        bool
+        prompt "Malloc LCD buffer from PSRAM, it can save internal RAM"
+        depends on SPIRAM && SOC_PSRAM_DMA_CAPABLE
+        default "y"
+        help
+            Driver is now support using PSRAM memory as LCD buffer directly
+            without additional internal copy, using it is able to save internal
+            memory space, and without CPU cost.
 endmenu

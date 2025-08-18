@@ -1185,6 +1185,19 @@ static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, uint32
 }
 
 /**
+ * Get the DMA RX alignment requirements
+ *
+ * @param dma_dev Beginning address of the DMA peripheral registers.
+ * @param internal_size The internal memory alignment requirements.
+ * @param external_size The external memory alignment requirements.
+ */
+static inline void spi_dma_ll_get_rx_alignment_require(spi_dma_dev_t *dma_dev, uint32_t *internal_size, uint32_t *external_size)
+{
+    *internal_size = 4;     // esp32 needs 4 bytes alignment on hardware design
+    *external_size = UINT32_MAX;    // dma of esp32 spi don't support external memory
+}
+
+/**
  * Reset TX DMA which transmits the data from RAM to a peripheral.
  *
  * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.

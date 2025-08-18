@@ -358,10 +358,9 @@ The example code for the SPI Master driver can be found in the :example:`periphe
     Transactions with Data on PSRAM
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    {IDF_TARGET_NAME} supports GPSPI Master with DMA transferring data from/to PSRAM directly without extra internal copy process, by adding :c:macro:`SPI_TRANS_DMA_USE_PSRAM` flag to the transaction. Some requirements for PSRAM transactions are:
+    {IDF_TARGET_NAME} supports GPSPI Master with DMA transferring data from/to PSRAM directly without extra internal copy process, which saves memory, by adding :c:macro:`SPI_TRANS_DMA_USE_PSRAM` flag to the transaction.
 
-    1. The data memory **address** and **transaction length** must both be aligned to cache length, usually the cache length is 16/32/64 bytes.
-    2. This feature shares bandwidth with MSPI bus, so GPSPI transfer bandwidth should be less than PSRAM bandwidth, **otherwise transmission data may be lost**. You can check the :c:macro:`SPI_TRANS_DMA_RX_FAIL` and :c:macro:`SPI_TRANS_DMA_TX_FAIL` flags after the transaction is finished to check if error occurs during the transmission.
+    Note that this feature shares bandwidth (bus frequency * bus bits width) with MSPI bus, so GPSPI transfer bandwidth should be less than PSRAM bandwidth, **otherwise transmission data may be lost**. You can check the return value or :c:macro:`SPI_TRANS_DMA_RX_FAIL` and :c:macro:`SPI_TRANS_DMA_TX_FAIL` flags after the transaction is finished to check if error occurs during the transmission. If the transaction returns :c:macro:`ESP_ERR_INVALID_STATE` error, the transaction fails.
 
 Transactions with Data Not Exceeding 32 Bits
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
