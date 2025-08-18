@@ -16,3 +16,5 @@ INPUT += \
         $(PROJECT_PATH)/components/ulp/lp_core/shared/include/ulp_lp_core_lp_uart_shared.h \
         $(PROJECT_PATH)/components/bt/include/esp32c5/include/esp_bt.h \
         $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt_vs.h \
+        $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
+        $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \
