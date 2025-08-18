@@ -413,12 +413,11 @@ static inline bool spimem_flash_ll_host_idle(const spi_mem_dev_t *dev)
  */
 static inline void spimem_flash_ll_read_phase(spi_mem_dev_t *dev)
 {
-    typeof(dev->user) user = {
-        .usr_mosi = 0,
-        .usr_miso = 1,
-        .usr_addr = 1,
-        .usr_command = 1,
-    };
+    typeof(dev->user) user = {};
+    user.usr_mosi = 0;
+    user.usr_miso = 1;
+    user.usr_addr = 1;
+    user.usr_command = 1;
     dev->user.val = user.val;
 }
 /*------------------------------------------------------------------------------
