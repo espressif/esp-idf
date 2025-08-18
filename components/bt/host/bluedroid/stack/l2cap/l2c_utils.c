@@ -67,7 +67,8 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
     /* Check if peer device's and our BD_ADDR is same or not. It
        should be different to avoid 'Impersonation in the Pin Pairing
        Protocol' (CVE-2020-26555) vulnerability. */
-    if (memcmp((uint8_t *)p_bd_addr, (uint8_t *)&controller_get_interface()->get_address()->address, sizeof (BD_ADDR)) == 0) {
+    if ((transport == BT_TRANSPORT_BR_EDR) &&
+        (memcmp((uint8_t *)p_bd_addr, (uint8_t *)&controller_get_interface()->get_address()->address, sizeof (BD_ADDR)) == 0)) {
         L2CAP_TRACE_ERROR ("%s connection rejected due to same BD ADDR", __func__);
         return (NULL);
     }
