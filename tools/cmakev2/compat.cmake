@@ -137,3 +137,24 @@ endfunction()
 function(target_linker_script target deptype scriptfiles)
     # FIXME: This is just a placeholder without implementation.
 endfunction()
+
+#[[api
+.. cmakev2:function:: idf_component_optional_requires
+
+   .. code-block:: cmake
+
+      idf_component_optional_requires(<type> <component>...)
+
+   :type[in]: Type of dependency: PRIVATE, PUBLIC or INTERFACE
+   :component[in]: The component name that should be added as a dependency to
+                   the evaluated component. It may be provided multiple times.
+
+   Add a dependency on a specific component only if it is included in the build.
+#]]
+function(idf_component_optional_requires req_type)
+    set(optional_reqs ${ARGN})
+    foreach(req ${optional_reqs})
+        __get_component_interface(COMPONENT "${req}" OUTPUT req_interface)
+        target_link_libraries(${COMPONENT_TARGET} ${req_type} "$<$<TARGET_EXISTS:${req_interface}>:${req_interface}>")
+    endforeach()
+endfunction()
