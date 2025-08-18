@@ -12,9 +12,13 @@ ECDSA peripheral can help to establish **Secure Device Identity** for TLS mutual
 Supported Features
 ------------------
 
-- ECDSA digital signature generation and verification
-- Two different elliptic curves, namely P-192 and P-256 (FIPS 186-3 specification)
-- Two hash algorithms for message hash in the ECDSA operation, namely SHA-224 and SHA-256 (FIPS PUB 180-4 specification)
+.. list::
+
+    - ECDSA digital signature generation and verification
+    :SOC_ECDSA_SUPPORT_CURVE_P384: - Three different elliptic curves, namely P-192, P-256 and P-384 (FIPS 186-3 specification)
+    :not SOC_ECDSA_SUPPORT_CURVE_P384: - Two different elliptic curves, namely P-192 and P-256 (FIPS 186-3 specification)
+    :SOC_ECDSA_SUPPORT_CURVE_P384: - Three hash algorithms for message hash in the ECDSA operation, namely SHA-224, SHA-256 and SHA-384 (FIPS PUB 180-4 specification)
+    :not SOC_ECDSA_SUPPORT_CURVE_P384: - Two hash algorithms for message hash in the ECDSA operation, namely SHA-224 and SHA-256 (FIPS PUB 180-4 specification)
 
 
 ECDSA on {IDF_TARGET_NAME}

@@ -12,9 +12,13 @@ ECDSA 外设可以为 TLS 双向身份验证等用例建立 **安全设备身份
 支持的特性
 ----------
 
-- ECDSA 数字签名生成和验证
-- 两种不同的椭圆曲线，P-192 和 P-256（FIPS 186-3 规范）
-- ECDSA 操作中哈希消息的两种哈希算法，SHA-224 和 SHA-256（FIPS PUB 180-4 规范）
+.. list::
+
+    - ECDSA 数字签名生成和验证
+    :SOC_ECDSA_SUPPORT_CURVE_P384: - 三种不同的椭圆曲线，P-192，P-256 和 P-384（FIPS 186-3 规范）
+    :not SOC_ECDSA_SUPPORT_CURVE_P384: - 两种不同的椭圆曲线，P-192 和 P-256（FIPS 186-3 规范）
+    :SOC_ECDSA_SUPPORT_CURVE_P384: - ECDSA 操作中用于散列消息的三种哈希算法，SHA-224, SHA-256 和 SHA-384（FIPS PUB 180-4 规范）
+    :not SOC_ECDSA_SUPPORT_CURVE_P384: - ECDSA 操作中哈希消息的两种哈希算法，SHA-224 和 SHA-256（FIPS PUB 180-4 规范）
 
 
 {IDF_TARGET_NAME} 上的 ECDSA
