@@ -295,10 +295,18 @@ menu "Example Connection Configuration"
 
             config EXAMPLE_ETH_SPI_INT_GPIO
                 int "Interrupt GPIO number"
-                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+                range -1 ENV_GPIO_IN_RANGE_MAX
                 default 4
                 help
                     Set the GPIO number used by the SPI Ethernet module interrupt line.
+                    Set -1 to use SPI Ethernet module in polling mode.
+
+            config EXAMPLE_ETH_SPI_POLLING_MS_VAL
+                depends on EXAMPLE_ETH_SPI_INT_GPIO < 0
+                int "Polling period in msec of SPI Ethernet Module"
+                default 10
+                help
+                    Set SPI Ethernet module polling period.
         endif # EXAMPLE_USE_SPI_ETHERNET
 
         config EXAMPLE_ETH_PHY_RST_GPIO
