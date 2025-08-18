@@ -52,3 +52,76 @@ function(check_expected_tool_version tool_name tool_path)
     endif()
     unset(ENV{IDF_TOOLS_VERSION_HELPER})
 endfunction()
+
+#[[
+   __get_component_sources([SRCS <src>...]
+                           [SRC_DIRS <dir>...]
+                           [EXCLUDE_SRCS <exclude>...]
+                           OUTPUT <var>)
+
+   :SRCS[in,opt]: Optional list of sources.
+   :SRC_DIRS[in,opt]: Option list of source directories.
+   :EXCLUDE_SRCS[in,opt]: Optional list of sources to exclude.
+   :OUTPUT[out]: Output variable to store the list of component sources.
+
+   This helper function gathers component sources from the arguments specified
+   in either ``SRCS`` or ``SRC_DIRS``. If both are provided, the ``SRC_DIRS`` option
+   is disregarded. The sources are collected as absolute paths relative to the
+   component's directory. If ``EXCLUDE_SRCS`` is specified, the source files
+   listed in it are excluded. The final list of component sources is returned
+   in the ``OUTPUT`` variable.
+
+   The ``COMPONENT_NAME`` and ``COMPONENT_DIR`` variables are provided by the
+   build system when ``idf_component_register`` is called.
+#]]
+function(__get_component_sources)
+    set(options)
+    set(one_value OUTPUT)
+    set(multi_value SRCS SRC_DIRS EXCLUDE_SRCS)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_OUTPUT)
+        idf_die("OUTPUT option is required")
+    endif()
+
+    if(DEFINED ARG_SRCS AND DEFINED ARG_SRC_DIRS)
+        idf_warn("SRCS and SRC_DIRS are both specified for '${COMPONENT_NAME}' "
+                 "in '${COMPONENT_DIR}'. Ignoring SRC_DIRS.")
+        unset(ARG_SRC_DIRS)
+    endif()
+
+    set(sources)
+
+    if(ARG_SRCS)
+        __get_absolute_paths(PATHS "${ARG_SRCS}" BASE_DIR "${COMPONENT_DIR}" OUTPUT sources)
+    elseif(ARG_SRC_DIRS)
+        __get_absolute_paths(PATHS "${ARG_SRC_DIRS}" BASE_DIR "${COMPONENT_DIR}" OUTPUT dirs)
+        foreach(dir IN LISTS dirs)
+            if(NOT IS_DIRECTORY "${dir}")
+                idf_die("SRC_DIRS entry '${dir}' does not exist for component "
+                        "'${COMPONENT_NAME}' in '${COMPONENT_DIR}'.")
+            endif()
+
+            file(GLOB dir_sources "${dir}/*.c" "${dir}/*.cpp" "${dir}/*.S")
+            list(SORT dir_sources)
+
+            if(NOT dir_sources)
+                idf_warn("No source files found for SRC_DIRS entry '${dir}' for "
+                         "'${COMPONENT_NAME}' in '${COMPONENT_DIR}'.")
+                continue()
+            endif()
+
+            list(APPEND sources "${dir_sources}")
+        endforeach()
+    endif()
+
+    if(ARG_EXCLUDE_SRCS)
+        __get_absolute_paths(PATHS "${ARG_EXCLUDE_SRCS}" BASE_DIR "${COMPONENT_DIR}" OUTPUT exclude_srcs)
+        foreach(src IN LISTS exclude_srcs)
+            list(REMOVE_ITEM sources "${src}")
+        endforeach()
+    endif()
+
+    list(REMOVE_DUPLICATES sources)
+    set(${ARG_OUTPUT} "${sources}" PARENT_SCOPE)
+endfunction()
