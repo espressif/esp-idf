@@ -125,3 +125,15 @@ function(__get_component_sources)
     list(REMOVE_DUPLICATES sources)
     set(${ARG_OUTPUT} "${sources}" PARENT_SCOPE)
 endfunction()
+
+#[[api
+.. cmakev2:function:: target_linker_script
+
+   .. code-block:: cmake
+
+      target_linker_script(<target> <deptype> <scriptfile>...)
+
+#]]
+function(target_linker_script target deptype scriptfiles)
+    # FIXME: This is just a placeholder without implementation.
+endfunction()
