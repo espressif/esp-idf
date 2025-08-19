@@ -69,7 +69,7 @@ typedef int twai_clock_source_t;
 typedef struct {
     twai_clock_source_t clk_src;    /**< Optional, clock source, remain 0 to using TWAI_CLK_SRC_DEFAULT by default */
     uint32_t quanta_resolution_hz;  /**< The resolution of one timing quanta, in Hz. If setting, brp will be ignored */
-    uint32_t brp;                   /**< Bit rate pre-divider, clock_source_freq / brp = quanta_resolution_hz */
+    uint32_t brp;                   /**< Bit rate pre-divider, f(clk_src) / brp = quanta_resolution_hz, f(clk_src) can be obtained using esp_clk_tree_src_get_freq_hz(clk_src,,)*/
     uint8_t  prop_seg;              /**< Prop_seg length, in quanta time */
     uint8_t  tseg_1;                /**< Seg_1 length, in quanta time */
     uint8_t  tseg_2;                /**< Seg_2 length, in quanta time */
