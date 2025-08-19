@@ -501,3 +501,21 @@ function(remove_duplicated_flags FLAGS UNIQFLAGS)
     # Return that string to the caller
     set(${UNIQFLAGS} "${FLAGS_LIST}" PARENT_SCOPE)
 endfunction()
+
+#[[
+   spaces2list(<variable>)
+
+   :variable[in,out]: String with space-delimited values.
+
+   Take a variable containing space-delimited values and convert it into a
+   CMake list with semicolon-delimited values.
+
+   Note: do not use this for directories or full paths, as they may contain
+   spaces.
+
+   TODO: look at cmake separate_arguments, which is quote-aware
+#]]
+function(spaces2list variable_name)
+    string(REPLACE " " ";" tmp "${${variable_name}}")
+    set("${variable_name}" "${tmp}" PARENT_SCOPE)
+endfunction()
