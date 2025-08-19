@@ -282,7 +282,7 @@ macOS::
 Windows 和 Linux 操作系统
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-在本示例中，我们将使用 `PuTTY SSH Client <https://www.putty.org/>`_，`PuTTY SSH Client <https://www.putty.org/>`_ 既可用于 Windows 也可用于 Linux。也可以使用其他串口程序并设置如下的通信参数。
+在本示例中，我们使用 `PuTTY SSH Client <https://putty.software/>`_，该工具可在 Windows 和 Linux 上使用。你也可以使用其他串口程序，并按照下方所示设置通信参数。
 
 运行终端，配置在上述步骤中确认的串口：波特率 = 115200（如有需要，请更改为使用芯片的默认波特率），数据位 = 8，停止位 = 1，奇偶校验 = N。以下截屏分别展示了如何在 Windows 和 Linux 中配置串口和上述通信参数（如 115200-8-1-N）。注意，这里一定要选择在上述步骤中确认的串口进行配置。
 

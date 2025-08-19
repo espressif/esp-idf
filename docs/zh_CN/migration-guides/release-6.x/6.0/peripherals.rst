@@ -157,13 +157,13 @@ LCD
 SPI
 ---
 
-:ref:`CONFIG_SPI_MASTER_IN_IRAM` 选项现在在 menuconfig 中默认不可见，并且依赖于 :ref:`CONFIG_FREERTOS_IN_IRAM`。此更改是为了防止位于 IRAM 中的 SPI 函数调用位于 Flash 中的 FreeRTOS 函数时可能发生的崩溃。
+:ref:`CONFIG_SPI_MASTER_IN_IRAM` 选项在 menuconfig 中默认不可见，并且依赖于 :ref:`CONFIG_FREERTOS_IN_IRAM`。这样修改是为了防止位于 IRAM 中的 SPI 函数调用位于 flash 中的 FreeRTOS 函数时可能发生的崩溃。
 
 要启用 SPI 主机 IRAM 优化：
 
-1. 在 menuconfig 中导航到 ``Component config`` → ``FreeRTOS`` → ``Port``
+1. 在 menuconfig 中进入 ``Component config`` → ``FreeRTOS`` → ``Port``
 2. 启用 ``Place FreeRTOS functions in IRAM`` (:ref:`CONFIG_FREERTOS_IN_IRAM`)
-3. 导航到 ``Component config`` → ``ESP-Driver:SPI Configurations``
+3. 在 menuconfig 中进入 ``Component config`` → ``ESP-Driver:SPI Configurations``
 4. 启用 ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`)
 
-请注意，启用 :ref:`CONFIG_FREERTOS_IN_IRAM` 会显著增加 IRAM 使用量。在为 SPI 性能进行优化时，请考虑此权衡。
+请注意，启用 :ref:`CONFIG_FREERTOS_IN_IRAM` 会显著增加 IRAM 使用量。在优化 SPI 性能时，需进行权衡。
