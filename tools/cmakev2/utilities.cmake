@@ -590,3 +590,20 @@ function(file_generate output)
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${output}")
 endfunction()
+
+#[[
+   add_deprecated_target_alias(<old_target> <new_target>)
+
+   :old_target[in]: Old target name.
+   :new_target[in]: New target name.
+
+   Create an alias for the existing target and display a deprecation warning.
+#]]
+function(add_deprecated_target_alias old_target new_target)
+    add_custom_target(${old_target}
+     # `COMMAND` is important to print the `COMMENT` message at the end of the target action.
+        COMMAND ${CMAKE_COMMAND} -E echo ""
+        COMMENT "Warning: command \"${old_target}\" is deprecated. Have you wanted to run \"${new_target}\" instead?"
+    )
+    add_dependencies(${old_target} ${new_target})
+endfunction()
