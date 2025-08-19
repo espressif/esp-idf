@@ -186,6 +186,41 @@ TEST_CASE("esp_http_client_set_header() should not return error if header value 
     esp_http_client_cleanup(client);
 }
 
+static int disconnect_event_count = 0;
+
+static esp_err_t disconnect_event_handler(esp_http_client_event_t *evt)
+{
+    if (evt->event_id == HTTP_EVENT_DISCONNECTED) {
+        disconnect_event_count++;
+    }
+    return ESP_OK;
+}
+
+TEST_CASE("esp_http_client_close() and cleanup() should not dispatch duplicate disconnect events", "[esp_http_client]")
+{
+    esp_http_client_config_t config = {
+        .url = "http://httpbin.org/get",
+        .event_handler = disconnect_event_handler,
+    };
+
+    // Reset event counter
+    disconnect_event_count = 0;
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    TEST_ASSERT_NOT_NULL(client);
+
+    // Close the client first
+    esp_err_t err = esp_http_client_close(client);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    // Then cleanup - this should not dispatch another disconnect event
+    err = esp_http_client_cleanup(client);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    // Verify that only one disconnect event was dispatched (or none if client was never connected)
+    TEST_ASSERT_LESS_OR_EQUAL(1, disconnect_event_count);
+}
+
 void app_main(void)
 {
     unity_run_menu();
