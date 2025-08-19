@@ -33,7 +33,7 @@ static uint8_t get_lp_hp_gap(void)
     int8_t lp_hp_gap = 0;
     uint32_t blk_version = efuse_hal_blk_version();
     uint8_t lp_hp_gap_efuse = 0;
-    if (blk_version >= 2) {
+    if (blk_version >= 2 && blk_version < 100) {
         lp_hp_gap_efuse = efuse_ll_get_dbias_vol_gap();
         bool gap_flag = lp_hp_gap_efuse >> 4;
         uint8_t gap_abs_value = lp_hp_gap_efuse & 0xf;
@@ -77,7 +77,7 @@ static uint32_t pvt_get_lp_dbias(void)
 void pvt_auto_dbias_init(void)
 {
     uint32_t blk_version = efuse_hal_blk_version();
-    if (blk_version >= 2) {
+    if (blk_version >= 2 && blk_version < 100) {
         SET_PERI_REG_MASK(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN);
         SET_PERI_REG_MASK(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_PVT_SYS_CLK_EN);
         /*config for dbias func*/
@@ -120,7 +120,7 @@ void pvt_auto_dbias_init(void)
 void pvt_func_enable(bool enable)
 {
     uint32_t blk_version = efuse_hal_blk_version();
-    if (blk_version >= 2){
+    if (blk_version >= 2 && blk_version < 100){
 
         if (enable) {
             SET_PERI_REG_MASK(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN);

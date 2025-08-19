@@ -182,7 +182,7 @@ static bool rtc_clk_cal_32k_valid(uint32_t xtal_freq, uint32_t slowclk_cycles, u
 
 uint32_t rtc_clk_cal(soc_clk_freq_calculation_src_t cal_clk_sel, uint32_t slowclk_cycles)
 {
-    slowclk_cycles /= (cal_clk_sel == CLK_CAL_RTC_SLOW) ? 1 : CLK_CAL_DIV_VAL(cal_clk_sel);
+    // slowclk_cycles /= (cal_clk_sel == CLK_CAL_RTC_SLOW) ? 1 : CLK_CAL_DIV_VAL(cal_clk_sel);
     assert(slowclk_cycles);
     soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
     uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk_sel, slowclk_cycles);
