@@ -1625,7 +1625,7 @@ typedef union {
      * @brief ESP_GAP_BLE_PERIODIC_ADV_SYNC_ESTAB_EVT
      */
     struct ble_periodic_adv_sync_estab_param {
-        uint8_t status;                      /*!< periodic advertising sync status */
+        esp_bt_status_t status;              /*!< periodic advertising sync status */
         uint16_t sync_handle;                /*!< periodic advertising sync handle */
         uint8_t sid;                         /*!< periodic advertising sid */
         esp_ble_addr_type_t adv_addr_type;   /*!< periodic advertising address type */

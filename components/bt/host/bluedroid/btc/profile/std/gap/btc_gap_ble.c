@@ -1104,7 +1104,7 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
         }
         case BTA_DM_BLE_5_GAP_PHY_UPDATE_COMPLETE_EVT:
             msg.act = ESP_GAP_BLE_PHY_UPDATE_COMPLETE_EVT;
-            param.phy_update.status = btc_btm_status_to_esp_status(params->phy_update.status);
+            param.phy_update.status = btc_hci_to_esp_status(params->phy_update.status);
             memcpy(param.phy_update.bda, params->phy_update.addr, BD_ADDR_LEN);
             param.phy_update.tx_phy = params->phy_update.tx_phy;
             param.phy_update.rx_phy = params->phy_update.rx_phy;
@@ -1169,7 +1169,7 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
         }
         case BTA_DM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT: {
             msg.act = ESP_GAP_BLE_PERIODIC_ADV_SYNC_ESTAB_EVT;
-            param.periodic_adv_sync_estab.status = btc_btm_status_to_esp_status(params->sync_estab.status);
+            param.periodic_adv_sync_estab.status = btc_hci_to_esp_status(params->sync_estab.status);
             param.periodic_adv_sync_estab.sync_handle = params->sync_estab.sync_handle;
             param.periodic_adv_sync_estab.sid = params->sync_estab.sid;
             param.periodic_adv_sync_estab.adv_addr_type = params->sync_estab.adv_addr_type;
@@ -1204,7 +1204,7 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             break;
         case BTA_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT:
             msg.act = ESP_GAP_BLE_PERIODIC_ADV_SYNC_TRANS_RECV_EVT;
-            param.past_received.status = btc_btm_status_to_esp_status(params->past_recv.status);
+            param.past_received.status = btc_hci_to_esp_status(params->past_recv.status);
             memcpy(param.past_received.bda, params->past_recv.addr, sizeof(BD_ADDR));
             param.past_received.service_data = params->past_recv.service_data;
             param.past_received.sync_handle = params->past_recv.sync_handle;
