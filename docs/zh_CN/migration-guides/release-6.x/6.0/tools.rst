@@ -44,3 +44,12 @@ Python 3.9 已不再受支持。现在要求的最低 Python 版本为 3.10。�
 ----------------
 
 ESP-IDF v6 使用了 esp-idf-kconfig v3，对配置文件 ``Kconfig`` 的语法进行了若干变更。完整变更列表请参阅 `Migration Guide From esp-idf-kconfig v2.x to v3.x <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/developer-guide/migration-guide.html>`_。
+
+CMake 版本升级
+---------------------
+
+最低支持的 CMake 版本已升级至 3.22.1。如果你在构建过程中遇到与此相关的问题，建议将操作系统升级到包含 CMake 3.22 或更高版本。
+
+如果无法升级操作系统，可以使用以下命令安装推荐的 CMake 版本：``./tools/idf_tools.py install cmake``。
+
+此变更影响所有使用系统自带 CMake 或自定义 CMake 的 ESP-IDF 用户。

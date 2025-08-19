@@ -1,5 +1,5 @@
 # This is the project CMakeLists.txt file for the test subproject
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 set(COMPONENTS main)
 set(EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/tools/test_apps/components")

@@ -4,7 +4,7 @@
 
 
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 # Project/target name is passed from the main project to allow IDF to have a dependency on this target
 # as well as embed the binary into the main app

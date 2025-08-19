@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 idf_build_get_property(target IDF_TARGET)
 
 set(srcs "src/common/test_apm_utils.c"

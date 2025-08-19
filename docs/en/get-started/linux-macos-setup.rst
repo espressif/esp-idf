@@ -47,7 +47,7 @@ CentOS 7 is still supported but CentOS version 8 is recommended for a better use
     sudo pacman -S --needed gcc git make flex bison gperf python cmake ninja ccache dfu-util libusb python-pip
 
 .. note::
-    - CMake version 3.16 or newer is required for use with ESP-IDF. Run "tools/idf_tools.py install cmake" to install a suitable version if your OS versions does not have one.
+    - CMake version 3.22 or newer is required for use with ESP-IDF. Run "tools/idf_tools.py install cmake" to install a suitable version if your OS versions does not have one.
     - If you do not see your Linux distribution in the above list then please check its documentation to find out which command to use for package installation.
 
 For macOS Users

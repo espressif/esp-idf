@@ -57,7 +57,7 @@ In case you only want to override the bootloader under a certain condition (targ
 
 For example, if the custom bootloader shall not be compiled for ESP32-C3 targets, which should use the default ESP-IDF one, the `CMakeLists.txt` file in this current example must look like this:
 ```
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 # "Trim" the build. Include the minimal set of components, main, and anything it depends on.

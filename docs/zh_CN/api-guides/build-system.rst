@@ -214,7 +214,7 @@ ESP-IDF 适用于 Python 3.10 以上版本。
 
 最小项目::
 
-        cmake_minimum_required(VERSION 3.16)
+        cmake_minimum_required(VERSION 3.22)
         include($ENV{IDF_PATH}/tools/cmake/project.cmake)
         project(myProject)
 
@@ -226,7 +226,7 @@ ESP-IDF 适用于 Python 3.10 以上版本。
 
 每个项目都要按照上面显示的顺序添加上述三行代码：
 
-- ``cmake_minimum_required(VERSION 3.16)`` 必须放在 CMakeLists.txt 文件的第一行，它会告诉 CMake 构建该项目所需要的最小版本号。ESP-IDF 支持 CMake 3.16 或更高的版本。
+- ``cmake_minimum_required(VERSION 3.22)`` 必须放在 CMakeLists.txt 文件的第一行，它会告诉 CMake 构建该项目所需要的最小版本号。ESP-IDF 支持 CMake 3.22 或更高的版本。
 - ``include($ENV{IDF_PATH}/tools/cmake/project.cmake)`` 会导入 CMake 的其余功能来完成配置项目、检索组件等任务。
 - ``project(myProject)`` 会创建项目本身，并指定项目名称。该名称会作为最终输出的二进制文件的名字，即 ``myProject.elf`` 和 ``myProject.bin``。每个 CMakeLists 文件只能定义一个项目。
 
@@ -276,7 +276,7 @@ ESP-IDF 适用于 Python 3.10 以上版本。
 应在 ``project()`` 之后进行::
 
 
-    cmake_minimum_required(VERSION 3.16)
+    cmake_minimum_required(VERSION 3.22)
     include($ENV{IDF_PATH}/tools/cmake/project.cmake)
     project(myProject)
 
@@ -383,7 +383,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照以下优先级搜索组
   * 如果设置 :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` 选项，将会使用 :ref:`CONFIG_APP_PROJECT_VER` 的值。
   * 或者，如果在项目 CMakeLists.txt 文件中设置了 ``PROJECT_VER`` 变量，则该变量值可以使用。
   * 或者，如果 ``PROJECT_DIR/version.txt`` 文件存在，其内容会用作 ``PROJECT_VER`` 的值。
-  * 或者，如果在 CMakeLists.txt 文件中将 ``VERSION`` 参数传递给 ``project()`` 调用，形式为 ``project(... VERSION x.y.z.w )``，那么 ``VERSION`` 参数将用作为 ``PROJECT_VER`` 的值。``VERSION`` 参数必须符合 `cmake 标准 <https://cmake.org/cmake/help/v3.16/command/project.html>`_。
+  * 或者，如果在 CMakeLists.txt 文件中将 ``VERSION`` 参数传递给 ``project()`` 调用，形式为 ``project(... VERSION x.y.z.w )``，那么 ``VERSION`` 参数将用作为 ``PROJECT_VER`` 的值。``VERSION`` 参数必须符合 `cmake 标准 <https://cmake.org/cmake/help/v3.22/command/project.html>`_。
   * 或者，如果项目位于某个 Git 仓库中，则使用 ``git describe`` 命令的输出作为 ``PROJECT_VER`` 的值。
   * 否则，``PROJECT_VER`` 的值为 1。
 - ``EXTRA_PARTITION_SUBTYPES``：CMake 列表，用于创建额外的分区子类型。子类型的描述由字符串组成，以逗号为分隔，格式为 ``type_name, subtype_name, numeric_value``。组件可通过此列表，添加新的子类型。
@@ -808,7 +808,7 @@ Kconfig.projbuild
 CMake 调试
 ===========
 
-请查看 `CMake v3.16 官方文档`_ 获取更多关于 CMake_ 和 CMake 命令的信息。
+请查看 `CMake v3.22 官方文档`_ 获取更多关于 CMake_ 和 CMake 命令的信息。
 
 调试 ESP-IDF CMake 构建系统的一些技巧：
 
@@ -1236,7 +1236,7 @@ ESP-IDF 提供了一个模板 CMake 项目，可以基于此轻松创建应用�
 
 .. code-block:: cmake
 
-  cmake_minimum_required(VERSION 3.16)
+  cmake_minimum_required(VERSION 3.22)
   project(my_custom_app C)
 
   # 导入提供 ESP-IDF CMake 构建系统 API 的 CMake 文件
@@ -1707,23 +1707,23 @@ CMake 中不可用的功能
 .. _Cmake: https://cmake.org
 .. _ninja: https://ninja-build.org
 .. _esptool.py: https://github.com/espressif/esptool/#readme
-.. _CMake v3.16 官方文档: https://cmake.org/cmake/help/v3.16/index.html
-.. _cmake 命令行文档: https://cmake.org/cmake/help/v3.16/manual/cmake.1.html#options
-.. _cmake add_library: https://cmake.org/cmake/help/v3.16/command/add_library.html
-.. _cmake if: https://cmake.org/cmake/help/v3.16/command/if.html
-.. _cmake list: https://cmake.org/cmake/help/v3.16/command/list.html
-.. _cmake project: https://cmake.org/cmake/help/v3.16/command/project.html
-.. _cmake set: https://cmake.org/cmake/help/v3.16/command/set.html
-.. _cmake string: https://cmake.org/cmake/help/v3.16/command/string.html
+.. _CMake v3.22 官方文档: https://cmake.org/cmake/help/v3.22/index.html
+.. _cmake 命令行文档: https://cmake.org/cmake/help/v3.22/manual/cmake.1.html#options
+.. _cmake add_library: https://cmake.org/cmake/help/v3.22/command/add_library.html
+.. _cmake if: https://cmake.org/cmake/help/v3.22/command/if.html
+.. _cmake list: https://cmake.org/cmake/help/v3.22/command/list.html
+.. _cmake project: https://cmake.org/cmake/help/v3.22/command/project.html
+.. _cmake set: https://cmake.org/cmake/help/v3.22/command/set.html
+.. _cmake string: https://cmake.org/cmake/help/v3.22/command/string.html
 .. _cmake faq generated files: https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#how-can-i-generate-a-source-file-during-the-build
-.. _ADDITIONAL_MAKE_CLEAN_FILES: https://cmake.org/cmake/help/v3.16/prop_dir/ADDITIONAL_MAKE_CLEAN_FILES.html
-.. _ExternalProject: https://cmake.org/cmake/help/v3.16/module/ExternalProject.html
-.. _cmake language variables: https://cmake.org/cmake/help/v3.16/manual/cmake-variables.7.html#variables-for-languages
-.. _set_source_files_properties: https://cmake.org/cmake/help/v3.16/command/set_source_files_properties.html
-.. _target_compile_options: https://cmake.org/cmake/help/v3.16/command/target_compile_options.html
-.. _target_link_libraries: https://cmake.org/cmake/help/v3.16/command/target_link_libraries.html#command:target_link_libraries
-.. _cmake_toolchain_file: https://cmake.org/cmake/help/v3.16/variable/CMAKE_TOOLCHAIN_FILE.html
-.. _LINK_INTERFACE_MULTIPLICITY: https://cmake.org/cmake/help/v3.16/prop_tgt/LINK_INTERFACE_MULTIPLICITY.html
+.. _ADDITIONAL_MAKE_CLEAN_FILES: https://cmake.org/cmake/help/v3.22/prop_dir/ADDITIONAL_MAKE_CLEAN_FILES.html
+.. _ExternalProject: https://cmake.org/cmake/help/v3.22/module/ExternalProject.html
+.. _cmake language variables: https://cmake.org/cmake/help/v3.22/manual/cmake-variables.7.html#variables-for-languages
+.. _set_source_files_properties: https://cmake.org/cmake/help/v3.22/command/set_source_files_properties.html
+.. _target_compile_options: https://cmake.org/cmake/help/v3.22/command/target_compile_options.html
+.. _target_link_libraries: https://cmake.org/cmake/help/v3.22/command/target_link_libraries.html#command:target_link_libraries
+.. _cmake_toolchain_file: https://cmake.org/cmake/help/v3.22/variable/CMAKE_TOOLCHAIN_FILE.html
+.. _LINK_INTERFACE_MULTIPLICITY: https://cmake.org/cmake/help/v3.22/prop_tgt/LINK_INTERFACE_MULTIPLICITY.html
 .. _quirc: https://github.com/dlbeer/quirc
 .. _pyenv: https://github.com/pyenv/pyenv#readme
 .. _virtualenv: https://virtualenv.pypa.io/en/stable/

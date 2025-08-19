@@ -1,5 +1,5 @@
 # Designed to be included from an IDF app's CMakeLists.txt file
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 # Get the currently selected sdkconfig file early, so this doesn't
 # have to be done multiple times on different places.
@@ -607,7 +607,7 @@ macro(project project_name)
         # Set the variables that project() normally sets, documented in the
         # command's docs.
         #
-        # https://cmake.org/cmake/help/v3.16/command/project.html
+        # https://cmake.org/cmake/help/v3.22/command/project.html
         #
         # There is some nuance when it comes to setting version variables in terms of whether
         # CMP0048 is set to OLD or NEW. However, the proper behavior should have bee already handled by the original

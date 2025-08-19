@@ -47,7 +47,7 @@ Linux 用户
     sudo pacman -S --needed gcc git make flex bison gperf python cmake ninja ccache dfu-util libusb python-pip
 
 .. note::
-    - 使用 ESP-IDF 需要 CMake 3.16 或以上版本。较早的 Linux 发行版可能需要升级自身的软件源仓库，或开启 backports 套件库，或安装 "cmake3" 软件包（不是安装 "cmake"）。
+    - 使用 ESP-IDF 需要 CMake 3.22 或以上版本。较早的 Linux 发行版可能需要升级自身的软件源仓库，或开启 backports 套件库，或安装 "cmake3" 软件包（不是安装 "cmake"）。
     - 如果上述列表中没有当前所用系统，请参考所用系统的相关文档，查看安装软件包所用的命令。
 
 macOS 用户

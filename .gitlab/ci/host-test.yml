@@ -113,7 +113,7 @@ test_cli_installer:
     # Tools must be downloaded for testing
     # We could use "idf_tools.py download all", but we don't want to install clang because of its huge size
     #                                                                      cmake@version that is supported
-    - python3 ${IDF_PATH}/tools/idf_tools.py download required qemu-riscv32 qemu-xtensa cmake cmake@3.16.3
+    - python3 ${IDF_PATH}/tools/idf_tools.py download required qemu-riscv32 qemu-xtensa cmake cmake@3.22.1
     - cd ${IDF_PATH}/tools/test_idf_tools
     - python3 -m pip install jsonschema
     - python3 ./test_idf_tools.py -v

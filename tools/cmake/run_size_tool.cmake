@@ -4,7 +4,7 @@
 #
 # It is recommended to NOT USE this CMake script if you have the option of
 # running the tool directly. This script exists only for use inside CMake builds.
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 # Main purpose of this script: we can't expand these environment variables in the main IDF CMake build,
 # because we want to expand them at CMake target build time not at CMake configuration time
