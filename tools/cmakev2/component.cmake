@@ -420,7 +420,6 @@ function(__init_component)
     # Interface target is used to attach all component properties and is also
     # used when the component is linked to other targets.
     add_library("${component_interface}" INTERFACE)
-    add_library("${component_alias}" ALIAS "${component_interface}")
 
     idf_build_set_property(COMPONENTS_DISCOVERED "${component_name}" APPEND)
     idf_build_set_property(COMPONENT_INTERFACES "${component_interface}" APPEND)
@@ -565,8 +564,8 @@ function(idf_component_include name)
     list(APPEND components_included "${component_name}")
     idf_build_set_property(COMPONENTS_INCLUDED "${components_included}")
 
+    idf_component_get_property(component_interface "${name}" COMPONENT_INTERFACE)
     if(DEFINED ARG_INTERFACE)
-        idf_component_get_property(component_interface "${name}" COMPONENT_INTERFACE)
         set(${ARG_INTERFACE} ${component_interface} PARENT_SCOPE)
     endif()
 
@@ -586,6 +585,13 @@ function(idf_component_include name)
     # store it in the COMPONENT_REAL_TARGET component property.
     __get_real_target(TARGET "${component_target}" OUTPUT component_real_target)
     idf_component_set_property("${component_name}" COMPONENT_REAL_TARGET "${component_real_target}")
+
+    # Create a component interface alias, but only after the real target is
+    # known, meaning the component is included. The alias has a well-defined
+    # name and can be used, for example, in generator expressions without
+    # needing to get the COMPONENT_ALIAS property.
+    idf_component_get_property(component_alias "${name}" COMPONENT_ALIAS)
+    add_library("${component_alias}" ALIAS "${component_interface}")
 
     # Set component target type as COMPONENT_REAL_TARGET_TYPE property.
     get_target_property(component_real_target_type "${component_real_target}" TYPE)
