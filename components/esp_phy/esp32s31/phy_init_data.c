@@ -157,26 +157,42 @@ static const char* TAG = "phy_sleep";
 
 static esp_err_t sleep_retention_wifi_bb_init(void *arg)
 {
-    #define N_REGS_WIFI_AGC()       (130)
-    #define N_REGS_WIFI_TX()        (30)
-    #define N_REGS_WIFI_NRX()       (145)
-    #define N_REGS_WIFI_BB()        (82)
-    #define N_REGS_WIFI_BRX()       (39)
-    #define N_REGS_WIFI_FE_COEX()   (21)
-    #define N_REGS_WIFI_FE_DATA()   (34)
-    #define N_REGS_WIFI_FE_CTRL()   (56)
-    #define N_REGS_WIFI_FE_WIFI()   (21)
+    #define N_REGS_WIFI_AGC()           (130)
+    #define N_REGS_WIFI_TX()            (32)
+    #define N_REGS_WIFI_NRX()           (145)
+    #define N_REGS_WIFI_BB()            (84)
+    #define N_REGS_WIFI_BRX()           (39)
+    #define N_REGS_WIFI_FE_COEX()       (22)
+    #define N_REGS_WIFI_FE_DATA()       (35)
+    #define N_REGS_WIFI_FE_CTRL()       (57)
+    #define N_REGS_WIFI_FE_DATA_WIFI()  (22)
+    #define AGC_BASE            0x20107000
+    #define BB_TX_BASE          0x20107400
+    #define NRX_BASE            0x20107800
+    #define BB_BASE             0x20107C00
+    #define BRX_BASE            0x20108000
+    #define REG_FECOEX_BASE             0x20100000
+    #define REG_FEDATA_BASE             0x20100400
+    #define REG_FECTRL_BASE             0x20100800
+    #define REG_FEDATAWIFI_BASE         0x20100c00
+/*
+AGC agc_reg: 0x000 ~0x204         130
+BB bb_reg: 0x000~0x14c            84
+BB_TX bb_tx_reg: 0x000~0x07c      32
+BRX brx_reg: 0x000~0x098          39
+NRX: 0x000~0x240                  145
+*/
 
     const static sleep_retention_entries_config_t bb_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b00, 0x600a7000, 0x600a7000, N_REGS_WIFI_AGC(),     0, 0), .owner = BIT(0) | BIT(1) }, /* AGC */
-        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b01, 0x600a7400, 0x600a7400, N_REGS_WIFI_TX(),      0, 0), .owner = BIT(0) | BIT(1) }, /* TX */
-        [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b02, 0x600a7800, 0x600a7800, N_REGS_WIFI_NRX(),     0, 0), .owner = BIT(0) | BIT(1) }, /* NRX */
-        [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b03, 0x600a7c00, 0x600a7c00, N_REGS_WIFI_BB(),      0, 0), .owner = BIT(0) | BIT(1) }, /* BB */
-        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b05, 0x600a0000, 0x600a0000, N_REGS_WIFI_FE_COEX(), 0, 0), .owner = BIT(0) | BIT(1) }, /* FE COEX */
-        [5] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b06, 0x600a8000, 0x600a8000, N_REGS_WIFI_BRX(),     0, 0), .owner = BIT(0) | BIT(1) }, /* BRX */
-        [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b07, 0x600a0400, 0x600a0400, N_REGS_WIFI_FE_DATA(), 0, 0), .owner = BIT(0) | BIT(1) }, /* FE DATA */
-        [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b08, 0x600a0800, 0x600a0800, N_REGS_WIFI_FE_CTRL(), 0, 0), .owner = BIT(0) | BIT(1) }, /* FE CTRL */
-        [8] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b09, 0x600a0c00, 0x600a0c00, N_REGS_WIFI_FE_WIFI(), 0, 0), .owner = BIT(0) | BIT(1) }  /* FE WiFi DATA */
+        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b00, AGC_BASE,            AGC_BASE,               N_REGS_WIFI_AGC(),         0, 0), .owner = BIT(0) | BIT(1) }, /* AGC */
+        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b01, BB_TX_BASE,          BB_TX_BASE,             N_REGS_WIFI_TX(),          0, 0), .owner = BIT(0) | BIT(1) }, /* TX */
+        [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b02, NRX_BASE,            NRX_BASE,               N_REGS_WIFI_NRX(),         0, 0), .owner = BIT(0) | BIT(1) }, /* NRX */
+        [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b03, BB_BASE,             BB_BASE,                N_REGS_WIFI_BB(),          0, 0), .owner = BIT(0) | BIT(1) }, /* BB */
+        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b05, REG_FECOEX_BASE,     REG_FECOEX_BASE,        N_REGS_WIFI_FE_COEX(),     0, 0), .owner = BIT(0) | BIT(1) }, /* FE COEX */
+        [5] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b06, BRX_BASE,            BRX_BASE,               N_REGS_WIFI_BRX(),         0, 0), .owner = BIT(0) | BIT(1) }, /* BRX */
+        [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b07, REG_FEDATA_BASE,     REG_FEDATA_BASE,        N_REGS_WIFI_FE_DATA(),     0, 0), .owner = BIT(0) | BIT(1) }, /* FE DATA */
+        [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b08, REG_FECTRL_BASE,     REG_FECTRL_BASE,        N_REGS_WIFI_FE_CTRL(),     0, 0), .owner = BIT(0) | BIT(1) }, /* FE CTRL */
+        [8] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b09, REG_FEDATAWIFI_BASE, REG_FEDATAWIFI_BASE, N_REGS_WIFI_FE_DATA_WIFI(),   0, 0), .owner = BIT(0) | BIT(1) }  /* FE WIFI DATA */
     };
     esp_err_t err = sleep_retention_entries_create(bb_regs_retention, ARRAY_SIZE(bb_regs_retention), 3, SLEEP_RETENTION_MODULE_WIFI_BB);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for modem (%s) retention", "WiFi BB");
