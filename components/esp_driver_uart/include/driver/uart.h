@@ -556,6 +556,25 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const void* src, size_t si
 
 /**
  * @brief Read bytes from the UART RX buffer.
+ * This function blocks until \e any data was received, or the given timeout expires;
+ * so the given buffer will usually be only \e partially filled with received data when
+ * this function returns.
+ * 
+ * Note that, depending on the interrupt configuration, data arrives at the RX buffer
+ * not a byte at a time but rather as blocks of bytes (up to <tt>UART_FIFO_LEN</tt>).
+ * 
+ * @param uart_num UART port number, the max port number is <tt>(UART_NUM_MAX-1)</tt>.
+ * @param buf     pointer to the buffer where the read bytes will be placed
+ * @param max_length size of the buffer, i.e. the maximum number of bytes to read 
+ * @param ticks_to_wait the maximum time to block while waiting for data from the UART
+ * @return
+ *     - (-1) Error; either because of invalid arguments or because the UART driver was not initialized via uart_driver_install()
+ *     - OTHERS (>=0) The number of bytes read from the UART buffer
+ */
+int uart_read_bytes_partial(uart_port_t uart_num, void* buf, uint32_t max_length, TickType_t ticks_to_wait);
+
+/**
+ * @brief Read bytes from the UART RX buffer.
  * This function blocks until either \p length bytes of data have been read or the given timeout
  * expires. Only when the timeout expires will this return a value between \c 0 and <tt>length - 1</tt>.
  *
