@@ -11,7 +11,7 @@
 
 #define MAX_MEMTEST_SIZE 4096
 
-uint32_t test_function_dest_src_size(void (*foo)(), bool pass_size)
+uint32_t test_function_dest_src_size(void (*foo)(...), bool pass_size)
 {
     uint32_t ccount1, ccount2;
     char* test_des = heap_caps_aligned_alloc(32, MAX_MEMTEST_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);

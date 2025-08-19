@@ -26,7 +26,7 @@ ESP-IDF 支持以下 C++ 功能：
 C++ 语言标准
 ---------------------
 
-默认情况下，ESP-IDF 使用 C++23 语言标准和 GNU 扩展 (``-std=gnu++23``) 编译 C++ 代码。
+默认情况下，ESP-IDF 使用 C++26 语言标准和 GNU 扩展 (``-std=gnu++26``) 编译 C++ 代码。
 
 要使用其他语言标准编译特定组件的源代码，请按以下步骤，在组件的 CMakeLists.txt 文件中设置所需的编译器标志：
 
@@ -182,7 +182,7 @@ ESP-IDF 希望应用程序入口点 ``app_main`` 以 C 链接定义。当 ``app_
 
 许多 ESP-IDF 组件会以 :ref:`api_reference_config_structures` 作为初始化函数的参数。用 C 编写的 ESP-IDF 示例通常使用 `指定初始化器 <https://en.cppreference.com/w/c/language/struct_initialization>`_，以可读且可维护的方式填充有关结构体。
 
-C 和 C++ 语言对于指定初始化器有不同的规则。例如，C++23（当前在 ESP-IDF 中默认使用）不支持无序指定初始化、嵌套指定初始化、混合使用指定初始化器和常规初始化器，而对数组进行指定初始化。因此，当将 ESP-IDF 的 C 示例移植到 C++ 时，可能需要对结构体初始化器进行一些更改。详细信息请参阅 `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_。
+C 和 C++ 语言对于指定初始化器有不同的规则。例如，C++26（当前在 ESP-IDF 中默认使用）不支持无序指定初始化、嵌套指定初始化、混合使用指定初始化器和常规初始化器，而对数组进行指定初始化。因此，当将 ESP-IDF 的 C 示例移植到 C++ 时，可能需要对结构体初始化器进行一些更改。详细信息请参阅 `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_。
 
 
 ``iostream``
