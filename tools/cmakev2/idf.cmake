@@ -31,16 +31,19 @@ include(ExternalProject)
 #[[
    __init_build_version()
 
-   Set the global variables IDF_BUILD_V2 and IDF_BUILD_VER, as well as the
-   build properties and environmental variables.
+   Set the global variables IDF_BUILD_V2, IDF_BUILD_VER and IDF_BUILD_VER_TAG,
+   as well as the build properties and environmental variables.
 #]]
 function(__init_build_version)
     set(IDF_BUILD_V2 y PARENT_SCOPE)
     set(IDF_BUILD_VER 2 PARENT_SCOPE)
+    set(IDF_BUILD_VER_TAG "v2" PARENT_SCOPE)
     idf_build_set_property(IDF_BUILD_V2 y)
     idf_build_set_property(IDF_BUILD_VER 2)
+    idf_build_set_property(IDF_BUILD_VER_TAG "v2")
     set(ENV{IDF_BUILD_V2} y)
     set(ENV{IDF_BUILD_VER} 2)
+    set(ENV{IDF_BUILD_VER_TAG} "v2")
 endfunction()
 
 #[[
