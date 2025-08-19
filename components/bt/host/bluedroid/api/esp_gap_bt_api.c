@@ -138,7 +138,27 @@ uint8_t *esp_bt_gap_resolve_eir_data(uint8_t *eir, esp_bt_eir_type_t type, uint8
         return NULL;
     }
 
-    return BTM_CheckEirData(eir, type, length);
+    switch (type) {
+        case ESP_BT_EIR_TYPE_FLAGS:
+        case ESP_BT_EIR_TYPE_INCMPL_16BITS_UUID:
+        case ESP_BT_EIR_TYPE_CMPL_16BITS_UUID:
+        case ESP_BT_EIR_TYPE_INCMPL_32BITS_UUID:
+        case ESP_BT_EIR_TYPE_CMPL_32BITS_UUID:
+        case ESP_BT_EIR_TYPE_INCMPL_128BITS_UUID:
+        case ESP_BT_EIR_TYPE_CMPL_128BITS_UUID:
+        case ESP_BT_EIR_TYPE_SHORT_LOCAL_NAME:
+        case ESP_BT_EIR_TYPE_CMPL_LOCAL_NAME:
+        case ESP_BT_EIR_TYPE_TX_POWER_LEVEL:
+        case ESP_BT_EIR_TYPE_URL:
+        case ESP_BT_EIR_TYPE_MANU_SPECIFIC: {
+            return BTM_CheckEirData(eir, type, length);
+        }
+        default:
+            /*Error type*/
+            break;
+    }
+
+    return NULL;
 }
 
 esp_err_t esp_bt_gap_config_eir_data(esp_bt_eir_data_t *eir_data)
