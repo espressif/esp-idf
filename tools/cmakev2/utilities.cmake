@@ -535,3 +535,31 @@ function(add_prefix var prefix)
     endforeach()
     set(${var} "${newlist}" PARENT_SCOPE)
 endfunction()
+
+#[[
+   fail_target(<target> <line0> [<line>...])
+
+   :target[in]: Fail target name.
+   :line0[in]: First line of the failed message.
+   :line[in,opt]: Optional additional message lines.
+
+   Create a phony target which fails when invoked. This is used when the
+   necessary conditions for a target are not met, such as configuration. Rather
+   than omitting the target altogether, we fail execution with a helpful
+   message.
+#]]
+function(fail_target target_name message_line0)
+    idf_build_get_property(idf_path IDF_PATH)
+    set(message_lines COMMAND ${CMAKE_COMMAND} -E echo "${message_line0}")
+    foreach(message_line ${ARGN})
+        set(message_lines ${message_lines} COMMAND ${CMAKE_COMMAND} -E echo "${message_line}")
+    endforeach()
+    # Generate a timestamp file that gets included. When deleted on build, this forces CMake
+    # to rerun.
+    set(fail_message "Failed executing target (see errors on lines above)")
+    add_custom_target(${target_name}
+        ${message_lines}
+        COMMAND ${CMAKE_COMMAND} -E env FAIL_MESSAGE=${fail_message}
+                ${CMAKE_COMMAND} -P ${idf_path}/tools/cmake/scripts/fail.cmake
+        VERBATIM)
+endfunction()
