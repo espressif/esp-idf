@@ -85,9 +85,20 @@ I2C 从机在 v5.4 上已经被重新设计。在当前版本上，老的 I2C �
 ~~~~~~~~~~~~~~~~~~
 
 - ``i2c_slave_receive`` 被移除， 在新驱动中使用回调接收数据。
-- ``i2c_slave_transmit`` 已被 ``i2c_slave_write`` 取代.
+- ``i2c_slave_transmit`` 已被 ``i2c_slave_write`` 取代。
 - ``i2c_slave_write_ram`` 被移除。
 - ``i2c_slave_read_ram`` 被移除。
+
+同时，I2C的主机驱动也有一些API用法上的改动
+
+主要用法更新
+~~~~~~~~~~~~~~~~~~
+
+当主机在I2C总线上检测到NACK，以下的函数目前会返回 ``ESP_ERR_INVALID_RESPONSE``，而不是像之前一样返回 ``ESP_ERR_INVALID_STATE``：
+- ``i2c_master_transmit``
+- ``i2c_master_multi_buffer_transmit``
+- ``i2c_master_transmit_receive``
+- ``i2c_master_execute_defined_operations``
 
 旧版定时器组驱动被移除
 ----------------------

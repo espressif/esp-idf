@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -162,7 +162,8 @@ esp_err_t i2c_master_bus_rm_device(i2c_master_dev_handle_t handle);
  * @param[in] write_size Size, in bytes, of the write buffer.
  * @param[in] xfer_timeout_ms Wait timeout, in ms. Note: -1 means wait forever.
  * @return
- *      - ESP_OK: I2C master transmit success
+ *      - ESP_OK: I2C master transmit success.
+ *      - ESP_ERR_INVALID_RESPONSE: I2C master transmit receives NACK.
  *      - ESP_ERR_INVALID_ARG: I2C master transmit parameter invalid.
  *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash.
  */
@@ -180,7 +181,8 @@ esp_err_t i2c_master_transmit(i2c_master_dev_handle_t i2c_dev, const uint8_t *wr
  * @param xfer_timeout_ms Wait timeout, in ms. Note: -1 means wait forever.
  *
  * @return
- *      - ESP_OK: I2C master transmit success
+ *      - ESP_OK: I2C master transmit success.
+ *      - ESP_ERR_INVALID_RESPONSE: I2C master transmit receives NACK.
  *      - ESP_ERR_INVALID_ARG: I2C master transmit parameter invalid.
  *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash.
  */
@@ -201,7 +203,8 @@ esp_err_t i2c_master_multi_buffer_transmit(i2c_master_dev_handle_t i2c_dev, i2c_
  * @param[in] read_size Size, in bytes, of the read buffer.
  * @param[in] xfer_timeout_ms Wait timeout, in ms. Note: -1 means wait forever.
  * @return
- *      - ESP_OK: I2C master transmit-receive success
+ *      - ESP_OK: I2C master transmit-receive success.
+ *      - ESP_ERR_INVALID_RESPONSE: I2C master transmit-receive receives NACK.
  *      - ESP_ERR_INVALID_ARG: I2C master transmit parameter invalid.
  *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash.
  */
@@ -246,7 +249,7 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
  * So, if the on line data is strange and no ack/nack got respond. Please check the device datasheet.
  *
  * @return
- *      - ESP_OK: I2C device probe successfully
+ *      - ESP_OK: I2C device probed successfully.
  *      - ESP_ERR_NOT_FOUND: I2C probe failed, doesn't find the device with specific address you gave.
  *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash.
  */
@@ -267,9 +270,9 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
  *
  * @return
  *  - ESP_OK: Transaction completed successfully.
+ *  - ESP_ERR_INVALID_RESPONSE: I2C master transaction receives NACK.
  *  - ESP_ERR_INVALID_ARG: One or more arguments are invalid.
  *  - ESP_ERR_TIMEOUT: Transaction timed out.
- *  - ESP_FAIL: Other error during transaction.
  *
  * @note The `ack_value` field in the READ operation must be set to `I2C_NACK_VAL` if the next
  *       operation is a STOP command.
