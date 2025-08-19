@@ -9,7 +9,8 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 # ---------------- Pytest build parameters ----------------
 
-SUPPORTED_TARGETS = ['esp32c6', 'esp32h2', 'esp32c5']
+# TODO: Enable for ESP32-C5 once support is stable
+SUPPORTED_TARGETS = ['esp32c6', 'esp32h2']
 
 CONFIG_DEFAULT = [
     # 'config, target, markers',
