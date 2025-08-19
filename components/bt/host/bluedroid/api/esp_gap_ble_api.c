@@ -1759,6 +1759,42 @@ esp_err_t esp_ble_gap_set_csa_support(uint8_t csa_select)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+#if CONFIG_SOC_BLE_MULTI_CONN_OPTIMIZATION
+esp_err_t esp_ble_gap_set_common_factor(uint32_t common_factor)
+{
+    esp_ble_vendor_cmd_params_t vs_cmd;
+    uint8_t cmd_param[5];
+
+    cmd_param[0] = common_factor & 0xFF;
+    cmd_param[1] = (common_factor >> 8) & 0xFF;
+    cmd_param[2] = (common_factor >> 16) & 0xFF;
+    cmd_param[3] = (common_factor >> 24) & 0xFF;
+    cmd_param[4] = 0x01;
+    vs_cmd.opcode = 0xFD0F;
+    vs_cmd.param_len = 5;
+    vs_cmd.p_param_buf = cmd_param;
+
+    return esp_ble_gap_vendor_command_send(&vs_cmd);
+}
+
+esp_err_t esp_ble_gap_set_sch_len(uint8_t role, uint32_t len)
+{
+    esp_ble_vendor_cmd_params_t vs_cmd;
+    uint8_t cmd_param[5];
+
+    cmd_param[0] = role;
+    cmd_param[1] = len & 0xFF;
+    cmd_param[2] = (len >> 8) & 0xFF;
+    cmd_param[3] = (len >> 16) & 0xFF;
+    cmd_param[4] = (len >> 24) & 0xFF;
+    vs_cmd.opcode = 0xFD10;
+    vs_cmd.param_len = 5;
+    vs_cmd.p_param_buf = cmd_param;
+
+    return esp_ble_gap_vendor_command_send(&vs_cmd);
+}
+#endif // CONFIG_SOC_BLE_MULTI_CONN_OPTIMIZATION
 #endif // (BLE_VENDOR_HCI_EN == TRUE)
 
 #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
