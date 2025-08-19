@@ -26,14 +26,12 @@ The following digram shows the noise sources for the RNG on the {IDF_TARGET_NAME
 
 .. only:: SOC_WIFI_SUPPORTED or SOC_IEEE802154_SUPPORTED or SOC_BT_SUPPORTED
 
-    .. image:: /../_static/esp_rng_noise_source_rf_available.png
-        :scale: 80 %
+    .. image:: /../_static/esp_rng_noise_source_rf_available.svg
         :align: center
 
 .. only:: not SOC_WIFI_SUPPORTED and not SOC_IEEE802154_SUPPORTED and not SOC_BT_SUPPORTED
 
-    .. image:: /../_static/esp_rng_noise_source_rf_unavailable.png
-        :scale: 80 %
+    .. image:: /../_static/esp_rng_noise_source_rf_unavailable.svg
         :align: center
 
 The hardware RNG produces true random numbers so long as one or more of the following conditions are met:
@@ -55,7 +53,7 @@ If none of the above conditions are true, the output of the RNG should be consid
     Enabling RF subsystem
     ---------------------
 
-    The RF subsystem can be enabled with help of the following APIs:
+    The RF subsystem can be enabled with help of one of the following APIs:
 
     .. list::
 
@@ -71,7 +69,7 @@ During startup, the ESP-IDF bootloader temporarily enables the non-RF internal e
 
 .. only:: not SOC_WIFI_SUPPORTED and not SOC_IEEE802154_SUPPORTED and not SOC_BT_SUPPORTED
 
-    For {IDF_TARGET_NAME}, the High Speed ADC is not available. Hence the non-RF internal entropy source (SAR ADC) is kept enabled by default at the time of application startup. Please note that if the application wants to use ADC for other purposes, it should call :cpp:func:`bootloader_random_disable` before using the ADC and :cpp:func:`bootloader_random_enable` to re-enable the entropy source when the Random Number Generator is needed again.
+    For {IDF_TARGET_NAME}, the High Speed ADC is not available. Hence the non-RF internal entropy source (SAR ADC) is kept enabled by default at the time of application startup.
 
 .. only:: SOC_WIFI_SUPPORTED or SOC_IEEE802154_SUPPORTED or SOC_BT_SUPPORTED
 
