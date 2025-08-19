@@ -303,7 +303,9 @@
     {
       "description": "Standalone Clang shared libraries distribution",
       "export_paths": [],
-      "export_vars": {},
+      "export_vars": {
+        "ESP_CLANG_LIBS_PATH": "${TOOL_PATH}/esp-clang/lib"
+      },
       "info_url": "https://github.com/espressif/llvm-project",
       "install": "on_request",
       "license": "Apache-2.0",
