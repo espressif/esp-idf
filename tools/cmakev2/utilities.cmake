@@ -658,3 +658,38 @@ function(target_add_binary_data target embed_file embed_type)
 
     target_sources("${target}" PRIVATE "${embed_srcfile}")
 endfunction()
+
+#[[
+   add_prebuilt_library(<target> <lib>
+                        [REQUIRES <component>...])
+                        [PRIV_REQUIRES <component>...])
+
+   :target[in]: Target name for the imported library.
+   :library[in]: Imported library path.
+   :REQUIRES[in,opt]: Optional dependency on other components.
+   :PRIV_REQUIRES[in,opt]: Optional private dependency on other components.
+
+   Add prebuilt library with support for adding dependencies on ESP-IDF
+   components.
+#]]
+function(add_prebuilt_library target_name lib_path)
+    cmake_parse_arguments(_ "" "" "REQUIRES;PRIV_REQUIRES" ${ARGN})
+
+    get_filename_component(lib_path "${lib_path}"
+                ABSOLUTE BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
+
+    add_library(${target_name} STATIC IMPORTED GLOBAL)
+    set_property(TARGET ${target_name} PROPERTY IMPORTED_LOCATION ${lib_path})
+
+    foreach(req ${__REQUIRES})
+        idf_component_get_property(req_lib "${req}" COMPONENT_LIB)
+        set_property(TARGET ${target_name} APPEND PROPERTY LINK_LIBRARIES "${req_lib}")
+        set_property(TARGET ${target_name} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${req_lib}")
+    endforeach()
+
+    foreach(req ${__PRIV_REQUIRES})
+        idf_component_get_property(req_lib "${req}" COMPONENT_LIB)
+        set_property(TARGET ${target_name} APPEND PROPERTY LINK_LIBRARIES "${req_lib}")
+        set_property(TARGET ${target_name} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "$<LINK_ONLY:${req_lib}>")
+    endforeach()
+endfunction()
