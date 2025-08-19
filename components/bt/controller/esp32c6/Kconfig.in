@@ -237,6 +237,13 @@ config BT_LE_CTE_FEATURE_ENABLED
         This feature allows devices to determine the direction of a Bluetooth CTE signal,
         enabling Angle of Arrival (AoA) and Angle of Departure (AoD) functionality.
 
+config BT_LE_PERIODIC_ADV_WITH_RESPONSE_ENABLED
+    bool "Enable BLE periodic advertising with response"
+    depends on BT_LE_50_FEATURE_SUPPORT
+    default n
+    help
+        This enables BLE periodic advertising with response feature
+
 menu "Memory Settings"
     depends on !BT_NIMBLE_ENABLED
 
