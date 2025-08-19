@@ -418,6 +418,14 @@ static inline bool ecdsa_ll_is_deterministic_mode_supported(void)
     return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
 }
 
+/**
+ * @brief Check if the ECDSA peripheral uses MPI module's memory
+ */
+static inline bool ecdsa_ll_is_mpi_required(void)
+{
+    return !ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
+}
+
 #ifdef __cplusplus
 }
 #endif

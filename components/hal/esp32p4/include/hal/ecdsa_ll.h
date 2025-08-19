@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -430,6 +430,14 @@ static inline int ecdsa_ll_get_operation_result(void)
 static inline int ecdsa_ll_check_k_value(void)
 {
     return REG_GET_BIT(ECDSA_RESULT_REG, ECDSA_K_VALUE_WARNING);
+}
+
+/**
+ * @brief Check if the ECDSA peripheral uses MPI module's memory
+ */
+static inline bool ecdsa_ll_is_mpi_required(void)
+{
+    return true;    // TODO: IDF-13523
 }
 
 #ifdef __cplusplus

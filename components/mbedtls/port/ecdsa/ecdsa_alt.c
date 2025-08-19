@@ -68,9 +68,11 @@ static void esp_ecdsa_acquire_hardware(void)
     /* We need to reset the MPI peripheral because ECDSA peripheral
      * of some targets use the MPI peripheral as well.
      */
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(true);
-        mpi_ll_reset_register();
+    if (ecdsa_ll_is_mpi_required()) {
+        MPI_RCC_ATOMIC() {
+            mpi_ll_enable_bus_clock(true);
+            mpi_ll_reset_register();
+        }
     }
 #endif /* SOC_ECDSA_USES_MPI */
 }
@@ -87,8 +89,10 @@ static void esp_ecdsa_release_hardware(void)
     }
 
 #ifdef SOC_ECDSA_USES_MPI
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(false);
+    if (ecdsa_ll_is_mpi_required()) {
+        MPI_RCC_ATOMIC() {
+            mpi_ll_enable_bus_clock(false);
+        }
     }
 #endif /* SOC_ECDSA_USES_MPI */
 
