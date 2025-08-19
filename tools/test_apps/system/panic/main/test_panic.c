@@ -443,3 +443,12 @@ void test_capture_dram(void)
     assert(0);
 }
 #endif
+
+#if CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT
+void test_panic_halt(void)
+{
+    printf("Triggering panic. Device should print 'CPU halted.' and stop.\n");
+    fflush(stdout);
+    assert(0);
+}
+#endif /* CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT */
