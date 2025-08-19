@@ -6,6 +6,7 @@ choice ESPTOOLPY_FLASHFREQ
         bool "48 MHz"
     config ESPTOOLPY_FLASHFREQ_32M
         bool "32 MHz"
+        depends on IDF_ENV_FPGA
     config ESPTOOLPY_FLASHFREQ_24M
         bool "24 MHz"
 endchoice

@@ -115,7 +115,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** reg_date : R/W; bitpos: [27:0]; default: 36770416;
+        /** reg_date : R/W; bitpos: [27:0]; default: 38806096;
          *  Version control register
          */
         uint32_t reg_date:28;
@@ -127,7 +127,7 @@ typedef union {
 
 typedef struct {
     volatile io_mux_gpio_reg_t gpio[26];
-    uint32_t reserved_074[101];
+    uint32_t reserved_068[101];
     volatile io_mux_date_reg_t date;
 } io_mux_dev_t;
 

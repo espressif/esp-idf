@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -323,19 +323,87 @@ typedef union {
     uint32_t val;
 } lp_clkrst_xtal32k_reg_t;
 
-/** Type of clkrst_date register
+/** Type of cali0 register
  *  need_des
  */
 typedef union {
     struct {
-        /** clkrst_clkrst_date : R/W; bitpos: [30:0]; default: 37782064;
+        /** lp_cali_div_cycle : R/W; bitpos: [7:0]; default: 1;
          *  need_des
          */
-        uint32_t clkrst_clkrst_date:31;
-        /** clkrst_clk_en : R/W; bitpos: [31]; default: 0;
+        uint32_t lp_cali_div_cycle:8;
+        /** lp_cali_full_cnt_done : RO; bitpos: [8]; default: 0;
          *  need_des
          */
-        uint32_t clkrst_clk_en:1;
+        uint32_t lp_cali_full_cnt_done:1;
+        /** lp_cali_div_cali_cnt : RO; bitpos: [24:9]; default: 0;
+         *  need_des
+         */
+        uint32_t lp_cali_div_cali_cnt:16;
+        /** lp_cali_div_numerator_type : RO; bitpos: [25]; default: 0;
+         *  need_des
+         */
+        uint32_t lp_cali_div_numerator_type:1;
+        /** lp_cali_div_num : RO; bitpos: [31:26]; default: 0;
+         *  need_des
+         */
+        uint32_t lp_cali_div_num:6;
+    };
+    uint32_t val;
+} lp_clkrst_cali0_reg_t;
+
+/** Type of cali1 register
+ *  need_des
+ */
+typedef union {
+    struct {
+        /** lp_cali_div_numerator : RO; bitpos: [15:0]; default: 0;
+         *  need_des
+         */
+        uint32_t lp_cali_div_numerator:16;
+        /** lp_cali_div_denominator : RO; bitpos: [31:16]; default: 0;
+         *  need_des
+         */
+        uint32_t lp_cali_div_denominator:16;
+    };
+    uint32_t val;
+} lp_clkrst_cali1_reg_t;
+
+/** Type of cali2 register
+ *  need_des
+ */
+typedef union {
+    struct {
+        /** lp_cali_div_wait_pwr_good : R/W; bitpos: [8:0]; default: 255;
+         *  need_des
+         */
+        uint32_t lp_cali_div_wait_pwr_good:9;
+        uint32_t reserved_9:6;
+        /** lp_cali_div_slp_val : R/W; bitpos: [30:15]; default: 1;
+         *  need_des
+         */
+        uint32_t lp_cali_div_slp_val:16;
+        /** lp_cali_div_timer_en : R/W; bitpos: [31]; default: 0;
+         *  need_des
+         */
+        uint32_t lp_cali_div_timer_en:1;
+    };
+    uint32_t val;
+} lp_clkrst_cali2_reg_t;
+
+/** Type of date register
+ *  need_des
+ */
+typedef union {
+    struct {
+        /** clkrst_date : R/W; bitpos: [30:0]; default: 38806112;
+         *  need_des
+         */
+        uint32_t clkrst_date:31;
+        /** clk_en : R/W; bitpos: [31]; default: 0;
+         *  need_des
+         */
+        uint32_t clk_en:1;
     };
     uint32_t val;
 } lp_clkrst_date_reg_t;
@@ -354,7 +422,11 @@ typedef struct {
     volatile lp_clkrst_lpmem_force_reg_t lpmem_force;
     volatile lp_clkrst_lpperi_reg_t lpperi;
     volatile lp_clkrst_xtal32k_reg_t xtal32k;
-    uint32_t reserved_030[243];
+    uint32_t reserved_030[2];
+    volatile lp_clkrst_cali0_reg_t cali0;
+    volatile lp_clkrst_cali1_reg_t cali1;
+    volatile lp_clkrst_cali2_reg_t cali2;
+    uint32_t reserved_044[238];
     volatile lp_clkrst_date_reg_t date;
 } lp_clkrst_dev_t;
 

@@ -144,6 +144,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
         select IDF_ENV_BRINGUP
+        select IDF_ENV_FPGA if ESP32H21_SELECTS_REV_MP
 
     config IDF_TARGET_ESP32H4
         bool
