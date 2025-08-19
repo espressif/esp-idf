@@ -41,7 +41,7 @@ extern "C" {
 #define PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT 1
 #define PMU_LP_DBIAS_SLEEP_0V7_DEFAULT      6
 
-#define PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US     0
+#define PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US     480
 // The current value of this depends on the restoration time overhead of the longest chain in regdma
 #define PMU_REGDMA_S2A_WORK_TIME_PU_TOP_US     390
 

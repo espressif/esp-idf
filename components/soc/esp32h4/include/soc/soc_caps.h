@@ -70,7 +70,6 @@
 // #define SOC_ECC_SUPPORTED               1    // TODO: [ESP32H4] IDF-12264
 #define SOC_FLASH_ENC_SUPPORTED         1       // TODO: [ESP32H4] IDF-12261
 // #define SOC_SECURE_BOOT_SUPPORTED       1    // TODO: [ESP32H4] IDF-12262
-#define SOC_MODEM_CLOCK_SUPPORTED       1
 
 // #define SOC_BOD_SUPPORTED               1    // TODO: [ESP32H4] IDF-12295
 // #define SOC_APM_SUPPORTED               1    // TODO: [ESP32H4] IDF-12256
@@ -87,7 +86,10 @@
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1       // TODO: [ESP32H4] IDF-12388
 #define SOC_SPIRAM_SUPPORTED            1
-
+#define SOC_LIGHT_SLEEP_SUPPORTED       1
+#define SOC_DEEP_SLEEP_SUPPORTED        1
+#define SOC_MODEM_CLOCK_SUPPORTED       1
+#define SOC_PM_SUPPORTED                1
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_32M                        1
 #define SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN   1
@@ -499,13 +501,13 @@
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
-#define SOC_UART_SUPPORT_SLEEP_RETENTION   (1)         /*!< Support back up registers before sleep */
+// #define SOC_UART_SUPPORT_SLEEP_RETENTION   (1)         /*!< Support back up registers before sleep */
 
-#define SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN 5
+// #define SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN 5
 #define SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE (1)
-#define SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE   (1)
-#define SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE     (1)
-#define SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE      (1)
+// #define SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE   (1)      // TODO: [ESP32H4] PM-457
+// #define SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE     (1)
+// #define SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE      (1)
 
 /*-------------------------- SPIRAM CAPS -------------------------------------*/
 #define SOC_SPIRAM_XIP_SUPPORTED      1
@@ -523,12 +525,12 @@
 
 // TODO: IDF-12286 (inherit from verify code, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
-#define SOC_PM_SUPPORT_BT_WAKEUP        (1)
+// #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 // #define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
-#define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
+// #define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
 #define SOC_PM_SUPPORT_TOUCH_WAKEUP     (1)
 // #define SOC_PM_SUPPORT_CPU_PD           (1)
-#define SOC_PM_SUPPORT_MODEM_PD         (1)
+// #define SOC_PM_SUPPORT_MODEM_PD         (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
@@ -536,7 +538,7 @@
 // #define SOC_PM_SUPPORT_TOP_PD           (1)
 #define SOC_PM_SUPPORT_HP_AON_PD        (1)
 #define SOC_PM_SUPPORT_MAC_BB_PD        (1)
-#define SOC_PM_SUPPORT_RTC_PERIPH_PD    (1)
+// #define SOC_PM_SUPPORT_RTC_PERIPH_PD    (1)      // TODO： [ESP32H4] PM-484
 
 // #define SOC_PM_SUPPORT_PMU_MODEM_STATE  (1)
 // /* macro redefine for pass esp_wifi headers md5sum check */
