@@ -519,3 +519,19 @@ function(spaces2list variable_name)
     string(REPLACE " " ";" tmp "${${variable_name}}")
     set("${variable_name}" "${tmp}" PARENT_SCOPE)
 endfunction()
+
+#[[
+   add_prefix(<variable> <prefix> <item>...)
+
+   :variable[out]: Output variable with list of prefixed items.
+   :prefix[in]: Prefix string.
+   :item[in]: Items to be prefixed.
+
+   Add a prefix to each item in the given list.
+#]]
+function(add_prefix var prefix)
+    foreach(elm ${ARGN})
+        list(APPEND newlist "${prefix}${elm}")
+    endforeach()
+    set(${var} "${newlist}" PARENT_SCOPE)
+endfunction()
