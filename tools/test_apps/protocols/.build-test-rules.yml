@@ -12,19 +12,17 @@ tools/test_apps/protocols/mqtt/publish_connect_test:
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET == "esp32s2" or IDF_TARGET == "esp32c3"
+    - if: IDF_TARGET not in ["esp32"]
       temporary: true
       reason: lack of runners
   depends_components:
     - mqtt
+    - esp_netif
   depends_filepatterns:
     - tools/ci/python_packages/common_test_methods.py
     - examples/common_components/**/*
-    - examples/protocols/**/*
-    - examples/system/ota/**/*
-    - examples/ethernet/iperf/**/*
-    - examples/network/vlan_support/**/*
-    - components/esp_netif/esp_netif_handlers.c
+    - examples/protocols/mqtt/*
+    - examples/protocols/mqtt5/*
 
 tools/test_apps/protocols/netif_components:
   enable:
