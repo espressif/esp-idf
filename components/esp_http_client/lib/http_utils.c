@@ -65,15 +65,8 @@ char *http_utils_append_string(char **str, const char *new_str, int len)
         }
         if (old_str) {
             old_len = strlen(old_str);
-            // old_str should not be reallocated directly, as in case of memory exhaustion,
-            // it will be lost and we will not be able to free it.
-            char *tmp = realloc(old_str, old_len + l + 1);
-            if (tmp == NULL) {
-                free(old_str);
-                old_str = NULL;
-                ESP_RETURN_ON_FALSE(old_str, NULL, "http_utils", "Memory exhausted");
-            }
-            old_str = tmp;
+            old_str = realloc(old_str, old_len + l + 1);
+            mem_check(old_str);
             // Ensure the new string is null-terminated
             old_str[old_len + l] = 0;
         } else {
