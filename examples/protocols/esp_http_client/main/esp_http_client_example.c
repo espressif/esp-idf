@@ -45,9 +45,6 @@ static const char *TAG = "HTTP_CLIENT";
 extern const char howsmyssl_com_root_cert_pem_start[] asm("_binary_howsmyssl_com_root_cert_pem_start");
 extern const char howsmyssl_com_root_cert_pem_end[]   asm("_binary_howsmyssl_com_root_cert_pem_end");
 
-extern const char postman_root_cert_pem_start[] asm("_binary_postman_root_cert_pem_start");
-extern const char postman_root_cert_pem_end[]   asm("_binary_postman_root_cert_pem_end");
-
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
     static char *output_buffer;  // Buffer to store response of http request from event handler
@@ -145,7 +142,7 @@ static void http_rest_with_url(void)
     // it is used by functions like strlen(). The buffer should only be used upto size MAX_HTTP_OUTPUT_BUFFER
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER + 1] = {0};
     /**
-     * NOTE: All the configuration parameters for http_client must be spefied either in URL or as host and path parameters.
+     * NOTE: All the configuration parameters for http_client must be specified either in URL or as host and path parameters.
      * If host and path parameters are not set, query parameter will be ignored. In such cases,
      * query parameter should be specified in URL.
      *
@@ -625,7 +622,7 @@ static void https_async(void)
     esp_http_client_config_t config = {
         .url = "https://postman-echo.com/post",
         .event_handler = _http_event_handler,
-        .cert_pem = postman_root_cert_pem_start,
+        .crt_bundle_attach = esp_crt_bundle_attach,
         .is_async = true,
         .timeout_ms = 5000,
     };
