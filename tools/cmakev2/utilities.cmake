@@ -563,3 +563,30 @@ function(fail_target target_name message_line0)
                 ${CMAKE_COMMAND} -P ${idf_path}/tools/cmake/scripts/fail.cmake
         VERBATIM)
 endfunction()
+
+#[[
+   file_generate(<output>
+                 [INPUT <file>]
+                 [CONTENT <string>])
+
+   :output[in]: Output file name.
+   :INPUT[in]: Input file name.
+   :CONTENT[in]: Input string.
+
+   Utility to generate file and have the output automatically added to cleaned
+   files.
+#]]
+function(file_generate output)
+    cmake_parse_arguments(_ "" "INPUT;CONTENT" "" ${ARGN})
+
+    if(__INPUT)
+        file(GENERATE OUTPUT "${output}" INPUT "${__INPUT}")
+    elseif(__CONTENT)
+        file(GENERATE OUTPUT "${output}" CONTENT "${__CONTENT}")
+    else()
+        message(FATAL_ERROR "Content to generate not specified.")
+    endif()
+
+    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${output}")
+endfunction()
