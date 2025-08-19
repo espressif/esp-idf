@@ -54,6 +54,9 @@ if(NOT non_os_build)
     if(CONFIG_SOC_PAU_SUPPORTED)
         list(APPEND srcs "sleep_retention.c")
     endif()
+    if(CONFIG_SOC_MODEM_SUPPORT_ETM)
+        list(APPEND srcs "modem/modem_etm.c")
+    endif()
     if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
         list(APPEND srcs "sleep_modem.c"
                          "sleep_modes.c"
@@ -177,7 +180,7 @@ endif()
 set(public_include_dirs "include" "include/soc"
                         "dma/include" "ldo/include" "debug_probe/include" "etm/include"
                         "mspi_timing_tuning/include" "mspi_timing_tuning/tuning_scheme_impl/include"
-                        "power_supply/include")
+                        "power_supply/include" "modem/include")
 
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/include/soc/${target}")
     list(APPEND public_include_dirs

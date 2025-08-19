@@ -185,6 +185,13 @@
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 #define SOC_AHB_GDMA_SUPPORT_PSRAM 1
 
+/*-------------------------- ETM CAPS --------------------------------------*/
+#define SOC_ETM_GROUPS                  1U  // Number of ETM groups
+#define SOC_ETM_CHANNELS_PER_GROUP      50  // Number of ETM channels in the group
+
+/*-------------------------- MODEM CAPS --------------------------------------*/
+#define SOC_MODEM_SUPPORT_ETM           1
+
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-H4 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                       1U

@@ -11,7 +11,7 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "modem/modem_etm.h"
-#include "hal/modem_ll.h"
+#include "hal/modem_etm_ll.h"
 #include "esp_private/etm_interface.h"
 
 #define ETM_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT

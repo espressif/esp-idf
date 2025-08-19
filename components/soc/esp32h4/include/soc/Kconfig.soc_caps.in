@@ -267,6 +267,18 @@ config SOC_AHB_GDMA_SUPPORT_PSRAM
     bool
     default y
 
+config SOC_ETM_GROUPS
+    int
+    default 1
+
+config SOC_ETM_CHANNELS_PER_GROUP
+    int
+    default 50
+
+config SOC_MODEM_SUPPORT_ETM
+    bool
+    default y
+
 config SOC_GPIO_PORT
     int
     default 1
