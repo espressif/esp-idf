@@ -1,5 +1,3 @@
-# Enable single core mode by default
-CONFIG_FREERTOS_UNICORE=y
 # 1ms tick period
 CONFIG_FREERTOS_HZ=1000
 # Enable application tracing by default
