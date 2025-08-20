@@ -102,7 +102,7 @@ if(target STREQUAL "linux")
     endif()
 else()
     # TODO: IDF-13410. Update to (CONFIG_ESP32P4_REV_MIN_FULL GREATER_EQUAL 200) when chip efuse is correct.
-    if(CONFIG_ESP32P4_REV_MIN_200)
+    if(CONFIG_ESP32P4_REV_MIN_300)
         target_linker_script(${COMPONENT_LIB} INTERFACE "${target_folder}/${ld_folder}/${target}.rom.eco5.ld")
     elseif(CONFIG_IDF_TARGET_ESP32H4 AND NOT CONFIG_ESP32H4_SELECTS_REV_MP) # TODO: ESP32H4 IDF-13835
         target_linker_script(${COMPONENT_LIB} INTERFACE "${target_folder}/${ld_folder}/${target}.rom.beta5.ld")
@@ -117,7 +117,7 @@ else()
     endif()
 
     if(CONFIG_COMPILER_FLOAT_LIB_FROM_GCCLIB)
-        if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410
+        if(CONFIG_ESP32P4_REV_MIN_300) # TODO: IDF-13410
             rom_linker_script("eco5.libgcc")
         elseif(CONFIG_IDF_TARGET_ESP32H4 AND NOT CONFIG_ESP32H4_SELECTS_REV_MP) # TODO: ESP32H4 IDF-13835
             rom_linker_script("beta5.libgcc")
@@ -125,7 +125,7 @@ else()
             rom_linker_script("libgcc")
         endif()
     else()
-        if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410.
+        if(CONFIG_ESP32P4_REV_MIN_300) # TODO: IDF-13410.
             rom_linker_script("eco5.rvfp")
         else()
             rom_linker_script("rvfp")
@@ -192,7 +192,7 @@ if(BOOTLOADER_BUILD)
         if(target STREQUAL "esp32" OR target STREQUAL "esp32s2")
             rom_linker_script("libc-funcs")
         else()
-            if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410
+            if(CONFIG_ESP32P4_REV_MIN_300) # TODO: IDF-13410
                 rom_linker_script("eco5.libc")
             elseif(CONFIG_IDF_TARGET_ESP32H4 AND NOT CONFIG_ESP32H4_SELECTS_REV_MP) # TODO: ESP32H4 IDF-13835
                 rom_linker_script("beta5.libc")
@@ -204,7 +204,7 @@ if(BOOTLOADER_BUILD)
                 rom_linker_script("libc-suboptimal_for_misaligned_mem")
             endif()
             if(CONFIG_LIBC_NEWLIB)
-                if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410
+                if(CONFIG_ESP32P4_REV_MIN_300) # TODO: IDF-13410
                     rom_linker_script("eco5.newlib")
                 elseif(CONFIG_IDF_TARGET_ESP32H4 AND NOT CONFIG_ESP32H4_SELECTS_REV_MP) # TODO: ESP32H4 IDF-13835
                     rom_linker_script("beta5.newlib")
@@ -363,7 +363,7 @@ else() # Regular app build
 
     if(CONFIG_ESP_ROM_HAS_NEWLIB AND NOT target STREQUAL "esp32" AND NOT target STREQUAL "esp32s2")
         # ESP32 and S2 are a bit different, keep them as special cases in the target specific include section
-        if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410
+        if(CONFIG_ESP32P4_REV_MIN_300) # TODO: IDF-13410
             rom_linker_script("eco5.libc")
         elseif(CONFIG_IDF_TARGET_ESP32H4 AND NOT CONFIG_ESP32H4_SELECTS_REV_MP) # TODO: ESP32H4 IDF-13835
             rom_linker_script("beta5.libc")
@@ -374,7 +374,7 @@ else() # Regular app build
             rom_linker_script("libc-suboptimal_for_misaligned_mem")
         endif()
         if(CONFIG_LIBC_NEWLIB)
-            if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410
+            if(CONFIG_ESP32P4_REV_MIN_300) # TODO: IDF-13410
                 rom_linker_script("eco5.newlib")
             elseif(CONFIG_IDF_TARGET_ESP32H4 AND NOT CONFIG_ESP32H4_SELECTS_REV_MP) # TODO: ESP32H4 IDF-13835
                 rom_linker_script("beta5.newlib")

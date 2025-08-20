@@ -43,8 +43,8 @@ menu "Bootloader config"
         int
         default 64 if IDF_TARGET_ESP32H2
         default 48 if IDF_TARGET_ESP32H21 || IDF_TARGET_ESP32H4
-        default 90 if IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V2
-        default 100 if IDF_TARGET_ESP32P4 && !ESP32P4_SELECTS_REV_LESS_V2
+        default 90 if IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3
+        default 100 if IDF_TARGET_ESP32P4 && !ESP32P4_SELECTS_REV_LESS_V3
         default 80
         help
             The CPU clock frequency to be at least raised to in 2nd bootloader. Invisible for users.
