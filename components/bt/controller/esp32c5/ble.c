@@ -39,6 +39,25 @@ int dtm_stack_enable(void);
 void dtm_stack_disable(void);
 #endif // CONFIG_BT_LE_DTM_ENABLED
 
+#if DEFAULT_BT_LE_PAWR_SUPPORTED || CONFIG_BT_LE_ERROR_SIM_ENABLED
+int ble_single_env_init(void);
+void ble_single_env_deinit(void);
+int ble_single_init(void);
+void ble_single_deinit(void);
+#endif // DEFAULT_BT_LE_PAWR_SUPPORTED || CONFIG_BT_LE_ERROR_SIM_ENABLED
+
+#if DEFAULT_BT_LE_PAWR_SUPPORTED
+int pawrBcast_stack_initEnv(void);
+void pawrBcast_stack_deinitEnv(void);
+int pawrBcast_stack_enable(void);
+void pawrBcast_stack_disable(void);
+
+int pawrSync_stack_initEnv(void);
+void pawrSync_stack_deinitEnv(void);
+int pawrSync_stack_enable(void);
+void pawrSync_stack_disable(void);
+#endif // DEFAULT_BT_LE_PAWR_SUPPORTED
+
 int conn_stack_initEnv(void);
 void conn_stack_deinitEnv(void);
 int conn_stack_enable(void);
@@ -128,6 +147,7 @@ int ble_stack_initEnv(void)
         return rc;
     }
 #endif // CONFIG_BT_LE_DTM_ENABLED
+
 #if DEFAULT_BT_LE_MAX_CONNECTIONS
     rc = conn_stack_initEnv();
     if (rc) {
@@ -140,11 +160,45 @@ int ble_stack_initEnv(void)
     }
 #endif // CONFIG_BT_LE_ERROR_SIM_ENABLED
 #endif // DEFAULT_BT_LE_MAX_CONNECTIONS
+
+#if DEFAULT_BT_LE_PAWR_SUPPORTED || CONFIG_BT_LE_ERROR_SIM_ENABLED
+    rc = ble_single_env_init();
+    if (rc) {
+        return rc;
+    }
+
+    rc = ble_single_init();
+    if (rc) {
+        return rc;
+    }
+#endif // DEFAULT_BT_LE_PAWR_SUPPORTED || CONFIG_BT_LE_ERROR_SIM_ENABLED
+
+#if DEFAULT_BT_LE_PAWR_SUPPORTED
+    rc = pawrBcast_stack_initEnv();
+    if (rc) {
+        return rc;
+    }
+
+    rc = pawrSync_stack_initEnv();
+    if (rc) {
+        return rc;
+    }
+#endif // DEFAULT_BT_LE_PAWR_SUPPORTED
+
     return 0;
 }
 
 void ble_stack_deinitEnv(void)
 {
+#if DEFAULT_BT_LE_PAWR_SUPPORTED
+    pawrSync_stack_deinitEnv();
+    pawrBcast_stack_deinitEnv();
+#endif // DEFAULT_BT_LE_PAWR_SUPPORTED
+#if DEFAULT_BT_LE_PAWR_SUPPORTED || CONFIG_BT_LE_ERROR_SIM_ENABLED
+    ble_single_deinit();
+    ble_single_env_deinit();
+#endif // DEFAULT_BT_LE_PAWR_SUPPORTED || CONFIG_BT_LE_ERROR_SIM_ENABLED
+
 #if DEFAULT_BT_LE_MAX_CONNECTIONS
 #if CONFIG_BT_LE_ERROR_SIM_ENABLED
     conn_errorSim_deinitEnv();
@@ -154,6 +208,7 @@ void ble_stack_deinitEnv(void)
 #if CONFIG_BT_LE_DTM_ENABLED
     dtm_stack_deinitEnv();
 #endif // CONFIG_BT_LE_DTM_ENABLED
+
     sync_stack_deinitEnv();
     extAdv_stack_deinitEnv();
     adv_stack_deinitEnv();
@@ -203,6 +258,17 @@ int ble_stack_enable(void)
     }
 #endif // CONFIG_BT_LE_ERROR_SIM_ENABLED
 #endif // DEFAULT_BT_LE_MAX_CONNECTIONS
+#if DEFAULT_BT_LE_PAWR_SUPPORTED
+    rc = pawrBcast_stack_enable();
+    if (rc) {
+        return rc;
+    }
+
+    rc = pawrSync_stack_enable();
+    if (rc) {
+        return rc;
+    }
+#endif // DEFAULT_BT_LE_PAWR_SUPPORTED
 
 #if (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
     ble_stack_enableVsCmds(true);
@@ -212,20 +278,7 @@ int ble_stack_enable(void)
 #if CONFIG_BT_LE_RXBUF_OPT_ENABLED
     mmgmt_enableRxbufOptFeature();
 #endif // CONFIG_BT_LE_RXBUF_OPT_ENABLED
-    rc = adv_stack_enable();
-    if (rc) {
-        return rc;
-    }
 
-    rc = extAdv_stack_enable();
-    if (rc) {
-        return rc;
-    }
-
-    rc = sync_stack_enable();
-    if (rc) {
-        return rc;
-    }
     return 0;
 }
 
@@ -235,7 +288,10 @@ void ble_stack_disable(void)
     ble_stack_enableVsEvents(false);
     ble_stack_enableVsCmds(false);
 #endif // (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
-
+#if DEFAULT_BT_LE_PAWR_SUPPORTED
+    pawrSync_stack_disable();
+    pawrBcast_stack_disable();
+#endif // DEFAULT_BT_LE_PAWR_SUPPORTED
 #if DEFAULT_BT_LE_MAX_CONNECTIONS
 #if CONFIG_BT_LE_ERROR_SIM_ENABLED
     conn_errorSim_disable();

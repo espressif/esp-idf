@@ -196,6 +196,13 @@ config BT_LE_POWER_CONTROL_ENABLED
     help
         Set this option to enable the Power Control feature on controller
 
+config BT_LE_PERIODIC_ADV_WITH_RESPONSE_ENABLED
+    bool "Enable BLE periodic advertising with response"
+    depends on BT_LE_50_FEATURE_SUPPORT
+    default n
+    help
+        This enables BLE periodic advertising with response feature
+
 menu "Memory Settings"
     depends on !BT_NIMBLE_ENABLED
 
