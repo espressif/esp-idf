@@ -253,6 +253,11 @@ function(idf_component_register)
     __get_compile_options(OUTPUT compile_options)
     add_compile_options("${compile_options}")
 
+    idf_build_get_property(common_component_interfaces __COMMON_COMPONENT_INTERFACES)
+    idf_component_get_property(component_interface "${COMPONENT_NAME}" COMPONENT_INTERFACE)
+    list(REMOVE_ITEM common_component_interfaces ${component_interface})
+    link_libraries(${common_component_interfaces})
+
     __get_absolute_paths(PATHS "${ARG_INCLUDE_DIRS}" BASE_DIR "${COMPONENT_DIR}" OUTPUT include_dirs)
     __get_absolute_paths(PATHS "${ARG_PRIV_INCLUDE_DIRS}" BASE_DIR "${COMPONENT_DIR}" OUTPUT priv_include_dirs)
     foreach(dir IN LISTS include_dirs priv_include_dirs)
