@@ -12,7 +12,7 @@
 
 void esp_log_printf(esp_log_config_t config, const char *format, ...)
 {
-    va_list args;
+    va_list args = {0};
     va_start(args, format);
     esp_log_vprintf(config, format, args);
     va_end(args);
