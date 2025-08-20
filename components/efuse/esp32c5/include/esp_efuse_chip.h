@@ -64,8 +64,6 @@ typedef enum {
     ESP_EFUSE_KEY_PURPOSE_USER = 0,                         /**< User purposes (software-only use) */
     ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY = 1,                    /**< ECDSA private key (P256) (Expected in little endian order)*/
     ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P256 = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, /**< ECDSA private key (P256) (Expected in little endian order)*/
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 = 2,            /**< XTS_AES_256_KEY_1 (flash/PSRAM encryption) */
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 = 3,            /**< XTS_AES_256_KEY_2 (flash/PSRAM encryption) */
     ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY = 4,              /**< XTS_AES_128_KEY (flash/PSRAM encryption) */
     ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL = 5,                /**< HMAC Downstream mode */
     ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG = 6,               /**< JTAG soft enable key (uses HMAC Downstream mode) */
@@ -75,8 +73,6 @@ typedef enum {
     ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1 = 10,         /**< SECURE_BOOT_DIGEST1 (Secure Boot key digest) */
     ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 = 11,         /**< SECURE_BOOT_DIGEST2 (Secure Boot key digest) */
     ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY = 12,                 /**< KM_INIT_KEY (Key Manager initialization key) */
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_1 = 13,     /**< XTS_AES_256_PSRAM_KEY_1 (PSRAM encryption) */
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_2 = 14,     /**< XTS_AES_256_PSRAM_KEY_2 (PSRAM encryption) */
     ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_PSRAM_KEY = 15,       /**< XTS_AES_128_PSRAM_KEY (PSRAM encryption) */
     ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P192 = 16,              /**< ECDSA private key (P192) */
     ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L = 17,            /**< ECDSA private key (P384) */
