@@ -506,7 +506,7 @@ mqd_t mq_open( const char * name,
 
     if( oflag & O_CREAT )
     {
-        va_list args;
+        va_list args = {0};
         va_start( args, oflag );
         mode = va_arg( args, mode_t );
         attr = va_arg( args, struct mq_attr * );
