@@ -381,7 +381,15 @@ void esp_blufi_deinit(void)
 
 void esp_blufi_adv_start(void)
 {
-    esp_ble_gap_set_device_name(BLUFI_DEVICE_NAME);
+    esp_ble_gap_config_adv_data(&blufi_adv_data);
+}
+
+void esp_blufi_adv_start_with_name(const char *name)
+{
+    if (name != NULL) {
+        esp_ble_gap_set_device_name(name);
+    }
+
     esp_ble_gap_config_adv_data(&blufi_adv_data);
 }
 
