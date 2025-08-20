@@ -47,6 +47,7 @@
 
 #define GDMA_LL_AHB_DESC_ALIGNMENT      4
 #define GDMA_LL_AXI_DESC_ALIGNMENT      8
+#define GDMA_LL_MAX_BURST_SIZE_PSRAM    64 // PSRAM controller doesn't support burst access with size > 64 bytes
 
 #define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                \
     (uint32_t[2][GDMA_ETM_EVENT_MAX]){                                \
