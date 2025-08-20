@@ -619,6 +619,22 @@ function(idf_component_include name)
         idf_die("Unsupported target type '${component_real_target_type}' in component '${component_name}'")
     endif()
 
+    idf_component_get_property(embed_files "${component_name}" EMBED_FILES)
+    foreach(file IN LISTS embed_files)
+        target_add_binary_data(${COMPONENT_TARGET} "${file}" "BINARY")
+    endforeach()
+
+    idf_component_get_property(embed_txtfiles "${component_name}" EMBED_TXTFILES)
+    foreach(file IN LISTS embed_txtfiles)
+        target_add_binary_data(${COMPONENT_TARGET} "${file}" "TEXT")
+    endforeach()
+
+    idf_component_get_property(ldfragments "${component_name}" LDFRAGMENTS)
+    if(ldfragments)
+        # FIXME: Enable this once the ldgen integration is implemented.
+        #        ldgen_add_fragment_files("${ldfragments}")
+    endif()
+
     # Components for cmakev1 use the idf_component_register call and are
     # managed in cmakev2 through a shim. This shim sets the COMPONENT_FORMAT
     # property to CMAKEV1 and applies global compilation options and
