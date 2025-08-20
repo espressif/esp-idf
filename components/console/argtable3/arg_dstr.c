@@ -221,7 +221,7 @@ void arg_dstr_catc(arg_dstr_t ds, char c) {
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 void arg_dstr_catf(arg_dstr_t ds, const char* fmt, ...) {
-    va_list arglist;
+    va_list arglist = {0};
     char* buff;
     int n, r;
     size_t slen;
