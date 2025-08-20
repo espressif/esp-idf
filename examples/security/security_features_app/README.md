@@ -77,6 +77,10 @@ idf.py docs -sp api-guides/tools/qemu.html
 ```
 </details>
 
+When running the entire example in QEMU, in particular burning the eFuses one by one, it is important to not rely on the auto-generated `build/qemu_efuse.bin`.
+Changes to this file are detected by the build system, causing a new build to be generated and the file content reset between burning individual eFuses.
+Instead, the parameter `--efuse-file qemu_efuse.bin` is added to the QEMU eFuse burning commands, to keep the binary file outside the `build` directory.
+
 ## Enabling Security Features
 
 We shall enable the necessary security features one by one as follows:
@@ -121,7 +125,7 @@ Please follow below steps to enable Secure Boot V2:
 	For QEMU emulation, the above command can be updated as follows:
 
 	```
-	idf.py qemu efuse-burn-key BLOCK_KEY0 digest.bin SECURE_BOOT_DIGEST0
+	idf.py qemu --efuse-file qemu_efuse.bin efuse-burn-key BLOCK_KEY0 digest.bin SECURE_BOOT_DIGEST0
 	```
 	</details>
 
@@ -141,7 +145,7 @@ Please follow below steps to enable Secure Boot V2:
 	For QEMU emulation, the above command can be updated as follows:
 
 	```
-	idf.py qemu efuse-burn SECURE_BOOT_EN
+	idf.py qemu --efuse-file qemu_efuse.bin efuse-burn SECURE_BOOT_EN
 	```
 	</details>
 
@@ -202,7 +206,7 @@ Follow below steps to enable Flash Encryption:
 	For QEMU emulation, the above command can be updated as follows:
 
 	```
-	idf.py qemu efuse-burn-key BLOCK_KEY1 my_flash_encryption_key.bin XTS_AES_128_KEY
+	idf.py qemu --efuse-file qemu_efuse.bin efuse-burn-key BLOCK_KEY1 my_flash_encryption_key.bin XTS_AES_128_KEY
 	```
 	</details>
 	
@@ -220,7 +224,7 @@ Follow below steps to enable Flash Encryption:
 	For QEMU emulation, the above command can be updated as follows:
 
 	```
-	idf.py qemu efuse-burn SPI_BOOT_CRYPT_CNT 7
+	idf.py qemu --efuse-file qemu_efuse.bin efuse-burn SPI_BOOT_CRYPT_CNT 7
 	```
 	</details>
     
@@ -306,7 +310,7 @@ We shall use the [nvs_partition_gen.py](../../../components/nvs_flash/nvs_partit
 	For QEMU emulation, the above command can be updated as follows:
 
 	```
-	idf.py qemu efuse-burn-key BLOCK_KEY2 keys/hmac_key.bin HMAC_UP
+	idf.py qemu --efuse-file qemu_efuse.bin efuse-burn-key BLOCK_KEY2 keys/hmac_key.bin HMAC_UP
 	```
 	</details>
     
@@ -371,7 +375,7 @@ The target provides an ability to disable JTAG access in the device for the soft
 	For QEMU emulation, the above command can be updated as follows:
 
     ```shell
-    idf.py qemu efuse-burn-key BLOCK_KEY3 secure_jtag_hmac_key.bin HMAC_DOWN_JTAG
+    idf.py qemu --efuse-file qemu_efuse.bin efuse-burn-key BLOCK_KEY3 secure_jtag_hmac_key.bin HMAC_DOWN_JTAG
     ```
 
 	</details>
@@ -389,7 +393,7 @@ The target provides an ability to disable JTAG access in the device for the soft
 	For QEMU emulation, the above command can be updated as follows:
 
     ```shell
-    idf.py qemu efuse-burn SOFT_DIS_JTAG 7
+    idf.py qemu --efuse-file qemu_efuse.bin efuse-burn SOFT_DIS_JTAG 7
     ```
 
 	</details>
@@ -605,14 +609,21 @@ Below are the commands that can be used to to emulate the target device on host 
 	idf.py merge-bin --merge-args ../qemu/qemu_flash_args -o qemu/security_features_flash_image.bin
     ```
 
-**NOTE: The `idf.py merge-bin` command runs with `build` as the working directory. Make sure the relative path provided are relative to the `build` directory
+	**NOTE: The `idf.py merge-bin` command runs with `build` as the working directory. Make sure the relative path provided are relative to the `build` directory
+
+	If the above command doesn't work in your environment, due to newer versions of the tool interpreting the arguments differently, try to use this instead:
+
+	```sh
+	mkdir build/qemu
+	idf.py merge-bin -o qemu/security_features_flash_image.bin --fill-flash-size 4MB @qemu/qemu_flash_args
+	```
 
 ### Run example on QEMU
 
 The following command can be used to run example on qemu
 
 ```sh
-idf.py qemu --flash-file build/qemu/security_features_flash_image.bin monitor
+idf.py qemu --efuse-file qemu_efuse.bin --flash-file build/qemu/security_features_flash_image.bin monitor
 ```
 
 The qemu session can be closed by pressing `CTRL+ ]`.
