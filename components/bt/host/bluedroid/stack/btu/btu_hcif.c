@@ -2890,6 +2890,7 @@ void btu_ble_create_big_cmd_status(UINT8 status)
 {
     if (status != HCI_SUCCESS) {
         tBTM_BLE_BIG_CREATE_CMPL big_cmpl = {0};
+        big_cmpl.status = status;
         btm_ble_big_create_cmpl_evt(&big_cmpl);
     }
 }
