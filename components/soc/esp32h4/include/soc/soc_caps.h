@@ -66,7 +66,8 @@
 // #define SOC_AES_SUPPORTED               0    // TODO: [ESP32H4] IDF-12266
 // #define SOC_SHA_SUPPORTED               1    // TODO: [ESP32H4] IDF-12263
 // #define SOC_HMAC_SUPPORTED              0    // TODO: [ESP32H4] IDF-12257
-// #define SOC_ECC_SUPPORTED               1    // TODO: [ESP32H4] IDF-12264
+#define SOC_ECC_SUPPORTED               1
+#define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
 #define SOC_FLASH_ENC_SUPPORTED         1       // TODO: [ESP32H4] IDF-12261
 // #define SOC_SECURE_BOOT_SUPPORTED       1    // TODO: [ESP32H4] IDF-12262
 
@@ -364,6 +365,9 @@
 // #define SOC_SHA_SUPPORT_SHA1            (1)
 // #define SOC_SHA_SUPPORT_SHA224          (1)
 // #define SOC_SHA_SUPPORT_SHA256          (1)
+
+/*--------------------------- ECC CAPS ---------------------------------------*/
+#define SOC_ECC_CONSTANT_TIME_POINT_MUL           1
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM              3
