@@ -382,10 +382,10 @@ void twai_hal_format_frame(const twai_hal_trans_desc_t *trans_desc, twai_hal_fra
 
 void twai_hal_parse_frame(const twai_hal_frame_t *frame, twai_frame_header_t *header, uint8_t *buffer, uint8_t buffer_len)
 {
-    twai_message_t msg_flags = {0};
-    twai_ll_parse_frame_buffer((twai_hal_frame_t *)frame, &header->id, (uint8_t *)&header->dlc, buffer, buffer_len, &msg_flags.flags);
-    header->ide = msg_flags.extd;
-    header->rtr = msg_flags.rtr;
+    twai_ll_parse_frame_header((const twai_ll_frame_buffer_t *)frame, header);
+    if (!header->rtr) {
+        twai_ll_parse_frame_data((const twai_ll_frame_buffer_t *)frame, buffer, buffer_len);
+    }
 }
 
 void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_frame_t *tx_frame, uint8_t buffer_idx)
