@@ -350,6 +350,7 @@ static int http_on_body(http_parser *parser, const char *at, size_t length)
                 ESP_LOGE(TAG, "Failed to allocate memory for storing decoded data");
                 free(res_buffer->orig_raw_data);
                 res_buffer->orig_raw_data = NULL;
+                res_buffer->raw_data = NULL;
                 return -1;
             }
             res_buffer->orig_raw_data = tmp;

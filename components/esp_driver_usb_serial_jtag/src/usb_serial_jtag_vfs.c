@@ -429,24 +429,38 @@ static esp_err_t unregister_select(usb_serial_jtag_select_args_t *args)
         for (int i = 0; i < s_registered_select_num; ++i) {
             if (s_registered_selects[i] == args) {
                 const int new_size = s_registered_select_num - 1;
-                // The item is removed by overwriting it with the last item. The subsequent rellocation will drop the
-                // last item.
-                s_registered_selects[i] = s_registered_selects[new_size];
-                usb_serial_jtag_select_args_t **new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(usb_serial_jtag_select_args_t *), USJ_VFS_MALLOC_FLAGS);
-                if (new_selects == NULL && new_size > 0) {
-                    ret = ESP_ERR_NO_MEM;
-                } else {
-                    s_registered_selects = new_selects;
+                // Move last element to fill gap (only if not removing the last element)
+                if (i < new_size) {
+                    s_registered_selects[i] = s_registered_selects[new_size];
                 }
-                // Shrinking a buffer with realloc is guaranteed to succeed.
-                s_registered_select_num = new_size;
+                if (new_size == 0) {
+                    // Free the entire array
+                    free(s_registered_selects);
+                    s_registered_selects = NULL;
+                    s_registered_select_num = 0;
+                    ret = ESP_OK;
+                } else {
+                    // Shrink the array
+                    usb_serial_jtag_select_args_t **new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(usb_serial_jtag_select_args_t *), USJ_VFS_MALLOC_FLAGS);
+                    if (new_selects == NULL) {
+                        // Realloc failed - restore moved element
+                        if (i < new_size) {
+                            s_registered_selects[new_size] = s_registered_selects[i];
+                        }
+                        ret = ESP_ERR_NO_MEM;
+                    } else {
+                        // Success - update pointer
+                        s_registered_selects = new_selects;
+                        s_registered_select_num = new_size;
+                        ret = ESP_OK;
+                    }
+                }
 
                 /* when the last select is unregistered, also unregister the callback  */
                 if (s_registered_select_num == 0) {
                     usb_serial_jtag_set_select_notif_callback(NULL);
                 }
 
-                ret = ESP_OK;
                 break;
             }
         }
