@@ -2071,6 +2071,13 @@ UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT16 adv_data_len, UINT8 type, UINT8 *p
         STREAM_TO_UINT8(adv_type, p);
 
         if ( adv_type == type ) {
+
+            if((p + length - 1) > (p_adv + adv_data_len)) {
+                /* avoid memory overflow*/
+                *p_length = 0;
+                return NULL;
+            }
+
             /* length doesn't include itself */
             *p_length = length - 1; /* minus the length of type */
             return p;
