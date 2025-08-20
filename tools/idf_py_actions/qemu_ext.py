@@ -111,7 +111,7 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
         'esp32s3',
         'qemu-system-xtensa',
         'qemu-xtensa',
-        '-M esp32s3',
+        '-M esp32s3 -m 32M',
         # Chip revision 0.3
         binascii.unhexlify(
             '00000000000000000000000000000000000000000000000000000000000000000000000000000c00'
@@ -307,6 +307,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             '-global',
             f'driver=timer.{target}.timg,property=wdt_disable,value=true',
         ]
+
+        # Quad PSRAM should work by default; octal requires a flag
+        if get_sdkconfig_value(project_desc['config_file'], 'CONFIG_SPIRAM_MODE_OCT'):
+            qemu_args += ['-global', 'driver=ssi_psram,property=is_octal,value=true']
 
         if '-nic' not in qemu_extra_args:
             qemu_args += ['-nic', 'user,model=open_eth']
