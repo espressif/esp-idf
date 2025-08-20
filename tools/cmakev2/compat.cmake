@@ -158,3 +158,176 @@ function(idf_component_optional_requires req_type)
         target_link_libraries(${COMPONENT_TARGET} ${req_type} "$<$<TARGET_EXISTS:${req_interface}>:${req_interface}>")
     endforeach()
 endfunction()
+
+#[[api
+.. cmakev2:function:: idf_component_register
+
+   .. code-block:: cmake
+
+      idf_component_register([SRCS <file>..]
+                             [SRC_DIRS <dir>...]
+                             [EXCLUDE_SRCS <file>...]
+                             [INCLUDE_DIRS <dir>...]
+                             [PRIV_INCLUDE_DIRS <dir>...]
+                             [LDFRAGMENTS <file>...]
+                             [REQUIRES <component>...]
+                             [PRIV_REQUIRES <component>...]
+                             [REQUIRED_IDF_TARGETS <target>...]
+                             [EMBED_FILES <file>...]
+                             [EMBED_TXTFILES <file>...]
+                             [KCONFIG <file>]
+                             [KCONFIG_PROJBUILD <file>]
+                             [WHOLE_ARCHIVE])
+
+   :SRCS[in,opt]: List of source files for the component.
+   :SRC_DIRS[in,opt]: List of source directories to search for source files
+                      (.c, .cpp, .S); ignored when SRCS is specified.
+   :EXCLUDE_SRCS[in,opt]: List of source files to exclude from the designated
+                          source directories.
+   :INCLUDE_DIRS[in,opt]: List of public include directories for the created
+                          component library.
+   :PRIV_INCLUDE_DIRS[in,opt]: List of private include directories for the
+                               newly created component library.
+   :LDFRAGMENTS[in,opt]: List of linker script fragments for the component.
+   :REQUIRES[in,opt]: List of publicly required components based on usage
+                      requirements.
+   :PRIV_REQUIRES[in,opt]: List of privately required components based on usage
+                           requirements or components needed solely for functions
+                           or values defined in project_include.cmake.
+   :REQUIRED_IDF_TARGETS[in,opt]: List of IDF build targets supported
+                                   exclusively by the component.
+   :EMBED_FILES[in,opt]: List of binary files to embed with the component.
+   :EMBED_TXTFILES[in,opt]: List of text files to embed with the component.
+   :WHOLE_ARCHIVE[in,opt]: Link the component as --whole-archive.
+   :KCONFIG[in,opt]: Obsolete.
+   :KCONFIG_PROJBUILD[in,opt]: Obsolete.
+
+   Register a component with the build system.
+#]]
+function(idf_component_register)
+    set(options WHOLE_ARCHIVE)
+    set(one_value KCONFIG KCONFIG_PROJBUILD)
+    set(multi_value SRCS SRC_DIRS EXCLUDE_SRCS
+                    INCLUDE_DIRS PRIV_INCLUDE_DIRS LDFRAGMENTS REQUIRES
+                    PRIV_REQUIRES REQUIRED_IDF_TARGETS EMBED_FILES EMBED_TXTFILES)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(ARG_REQUIRED_IDF_TARGETS)
+        idf_build_get_property(idf_target IDF_TARGET)
+        if(NOT idf_target IN_LIST ARG_REQUIRED_IDF_TARGETS)
+            idf_die("Component ${COMPONENT_NAME} only supports targets: ${ARG_REQUIRED_IDF_TARGETS}")
+        endif()
+    endif()
+
+    if(ARG_KCONFIG)
+        get_filename_component(filename "${ARG_KCONFIG}" NAME)
+        string(TOLOWER "${filename}" filename)
+        if(NOT "${filename}" STREQUAL "kconfig")
+            idf_die("The component '${COMPONENT_NAME}' in the '${COMPONENT_DIR}' directory "
+                    "is specifying '${ARG_KCONFIG}' as the 'KCONFIG' option, which is not "
+                    "the default 'Kconfig' filename.")
+        endif()
+    endif()
+
+    if(ARG_KCONFIG_PROJBUILD)
+        get_filename_component(filename "${ARG_KCONFIG_PROJBUILD}" NAME)
+        string(TOLOWER "${filename}" filename)
+        if(NOT "${filename}" STREQUAL "kconfig.projbuild")
+            idf_die("The component '${COMPONENT_NAME}' in the '${COMPONENT_DIR}' directory "
+                    "is specifying '${ARG_KCONFIG_PROJBUILD}' as the 'KCONFIG_PROJBUILD' option, "
+                    "which is not the default 'Kconfig.projbuild' filename.")
+        endif()
+    endif()
+
+    __get_component_sources(SRCS "${ARG_SRCS}"
+                            SRC_DIRS "${ARG_SRC_DIRS}"
+                            EXCLUDE_SRCS "${ARG_EXCLUDE_SRCS}"
+                            OUTPUT sources)
+
+    idf_build_get_property(include_directories INCLUDE_DIRECTORIES GENERATOR_EXPRESSION)
+    include_directories("${include_directories}")
+
+    idf_build_get_property(compile_definitions COMPILE_DEFINITIONS GENERATOR_EXPRESSION)
+    add_compile_definitions("${compile_definitions}")
+
+    __get_compile_options(OUTPUT compile_options)
+    add_compile_options("${compile_options}")
+
+    __get_absolute_paths(PATHS "${ARG_INCLUDE_DIRS}" BASE_DIR "${COMPONENT_DIR}" OUTPUT include_dirs)
+    __get_absolute_paths(PATHS "${ARG_PRIV_INCLUDE_DIRS}" BASE_DIR "${COMPONENT_DIR}" OUTPUT priv_include_dirs)
+    foreach(dir IN LISTS include_dirs priv_include_dirs)
+        if(NOT IS_DIRECTORY ${dir})
+            idf_die("The component '${COMPONENT_NAME}' in the '${COMPONENT_DIR}' directory "
+                    "is specifying '${dir}' as its include directory, but the directory does "
+                    "not exists.")
+        endif()
+    endforeach()
+
+    if(sources OR ARG_EMBED_FILES OR ARG_EMBED_TXTFILES)
+        add_library("${COMPONENT_TARGET}" STATIC "${sources}")
+
+        foreach(include_dir IN LISTS include_dirs)
+            target_include_directories("${COMPONENT_TARGET}" PUBLIC "${include_dir}")
+        endforeach()
+
+        foreach(include_dir IN LISTS priv_include_dirs)
+            target_include_directories("${COMPONENT_TARGET}" PRIVATE "${include_dir}")
+        endforeach()
+
+        set_target_properties(${COMPONENT_TARGET} PROPERTIES OUTPUT_NAME ${COMPONENT_NAME} LINKER_LANGUAGE C)
+
+        set(component_type LIBRARY)
+
+    else()
+        add_library("${COMPONENT_TARGET}" INTERFACE)
+
+        foreach(include_dir IN LISTS include_dirs)
+            target_include_directories("${COMPONENT_TARGET}" INTERFACE "${include_dir}")
+        endforeach()
+
+        set(component_type CONFIG_ONLY)
+    endif()
+
+    foreach(req IN LISTS ARG_REQUIRES)
+        idf_component_include("${req}")
+        idf_component_get_property(req_interface "${req}" COMPONENT_INTERFACE)
+        if(${component_type} STREQUAL LIBRARY)
+            target_link_libraries("${COMPONENT_TARGET}" PUBLIC "${req_interface}")
+        else()
+            target_link_libraries("${COMPONENT_TARGET}" INTERFACE "${req_interface}")
+        endif()
+    endforeach()
+
+    foreach(req IN LISTS ARG_PRIV_REQUIRES)
+        idf_component_include("${req}")
+        idf_component_get_property(req_interface "${req}" COMPONENT_INTERFACE)
+        if(${component_type} STREQUAL CONFIG_ONLY)
+            continue()
+        endif()
+        target_link_libraries("${COMPONENT_TARGET}" PRIVATE "${req_interface}")
+    endforeach()
+
+    # Signal to idf_component_include that this component was included via the
+    # backward compatible idf_component_register function.
+    idf_component_set_property("${COMPONENT_NAME}" COMPONENT_FORMAT CMAKEV1)
+
+    # The handling of WHOLE_ARCHIVE linkage is managed within the
+    # idf_component_include function.
+    idf_component_set_property("${COMPONENT_NAME}" WHOLE_ARCHIVE "${ARG_WHOLE_ARCHIVE}")
+
+    idf_component_set_property("${COMPONENT_NAME}" SRCS "${sources}")
+    idf_component_set_property("${COMPONENT_NAME}" INCLUDE_DIRS "${ARG_INCLUDE_DIRS}")
+    idf_component_set_property("${COMPONENT_NAME}" PRIV_INCLUDE_DIRS "${ARG_PRIV_INCLUDE_DIRS}")
+
+    # The addition of ldgen fragment files is managed by the
+    # idf_component_include function.
+    idf_component_set_property("${COMPONENT_NAME}" LDFRAGMENTS "${ARG_LDFRAGMENTS}")
+
+    # Embedded files are managed in the idf_component_include function.
+    idf_component_set_property("${COMPONENT_NAME}" EMBED_FILES "${ARG_EMBED_FILES}")
+    idf_component_set_property("${COMPONENT_NAME}" EMBED_TXTFILES "${ARG_EMBED_TXTFILES}")
+    idf_component_set_property("${COMPONENT_NAME}" REQUIRES "${ARG_REQUIRES}")
+    idf_component_set_property("${COMPONENT_NAME}" PRIV_REQUIRES "${ARG_PRIV_REQUIRES}")
+    idf_component_set_property("${COMPONENT_NAME}" REQUIRED_IDF_TARGETS "${ARG_REQUIRED_IDF_TARGETS}")
+    idf_component_set_property("${COMPONENT_NAME}" COMPONENT_TYPE "${component_type}")
+endfunction()
