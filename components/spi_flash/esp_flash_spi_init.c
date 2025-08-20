@@ -294,7 +294,7 @@ static uint32_t init_gpspi_clock(esp_flash_t *chip, const esp_flash_spi_device_c
 #if GPSPI_FLASH_LL_SUPPORT_CLK_SRC_PRE_DIV
     uint32_t pre_div = s_spi_find_clock_src_pre_div(clk_src_freq, GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ * 1000 * 1000);
     gpspi_flash_ll_clk_source_pre_div(spi_flash_ll_get_hw(config->host_id), pre_div / 2, 2);
-    final_freq_mhz = clk_src_freq / (1 * 1000 * 1000) / (pre_div);
+    final_freq_mhz = clk_src_freq / (pre_div);
 #else
     final_freq_mhz = clk_src_freq / (1 * 1000 * 1000);
 #endif
