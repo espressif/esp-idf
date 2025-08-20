@@ -260,7 +260,7 @@ TEST_CASE("probe test after general call (0x00 0x06)", "[i2c]")
     i2c_master_dev_handle_t dev_handle1;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg1, &dev_handle1));
 
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, i2c_master_transmit(dev_handle1, data_wr, 1, 200));
+    TEST_ESP_ERR(ESP_ERR_INVALID_RESPONSE, i2c_master_transmit(dev_handle1, data_wr, 1, 200));
 
     for (int i = 1; i < 0x7f; i++) {
         TEST_ESP_ERR(ESP_ERR_NOT_FOUND, i2c_master_probe(bus_handle, i, 800));
@@ -383,7 +383,7 @@ TEST_CASE("I2C master transaction transmit check nack return value", "[i2c]")
     i2c_master_bus_handle_t bus_handle;
     i2c_master_dev_handle_t dev_handle;
     _test_i2c_new_bus_device(&bus_handle, &dev_handle);
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, i2c_master_transmit(dev_handle, data_wr, DATA_LENGTH, -1));
+    TEST_ESP_ERR(ESP_ERR_INVALID_RESPONSE, i2c_master_transmit(dev_handle, data_wr, DATA_LENGTH, -1));
     _test_i2c_del_bus_device(bus_handle, dev_handle);
 }
 
@@ -395,7 +395,7 @@ TEST_CASE("I2C master transaction transmit receive check nack return value", "[i
     i2c_master_bus_handle_t bus_handle;
     i2c_master_dev_handle_t dev_handle;
     _test_i2c_new_bus_device(&bus_handle, &dev_handle);
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, i2c_master_transmit_receive(dev_handle, data_wr, DATA_LENGTH, data_rd, DATA_LENGTH, -1));
+    TEST_ESP_ERR(ESP_ERR_INVALID_RESPONSE, i2c_master_transmit_receive(dev_handle, data_wr, DATA_LENGTH, data_rd, DATA_LENGTH, -1));
     _test_i2c_del_bus_device(bus_handle, dev_handle);
 }
 
@@ -407,7 +407,7 @@ TEST_CASE("I2C master transaction receive check nack return value", "[i2c]")
     i2c_master_dev_handle_t dev_handle;
 
     _test_i2c_new_bus_device(&bus_handle, &dev_handle);
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, i2c_master_receive(dev_handle, data_rd, DATA_LENGTH, -1));
+    TEST_ESP_ERR(ESP_ERR_INVALID_RESPONSE, i2c_master_receive(dev_handle, data_rd, DATA_LENGTH, -1));
     _test_i2c_del_bus_device(bus_handle, dev_handle);
 }
 
