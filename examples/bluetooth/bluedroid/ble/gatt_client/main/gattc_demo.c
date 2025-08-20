@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -487,7 +487,8 @@ void app_main(void)
         return;
     }
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);;
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
@@ -505,7 +506,8 @@ void app_main(void)
         ESP_ERROR_CHECK( esp_bluedroid_deinit() );
         vTaskDelay(10/portTICK_PERIOD_MS);
         ESP_LOGI(GATTC_TAG, "Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
-        ESP_ERROR_CHECK( esp_bluedroid_init() );
+        esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+        ESP_ERROR_CHECK( esp_bluedroid_init_with_cfg(&cfg) );
         ESP_ERROR_CHECK( esp_bluedroid_enable() );
         vTaskDelay(10/portTICK_PERIOD_MS);
     }

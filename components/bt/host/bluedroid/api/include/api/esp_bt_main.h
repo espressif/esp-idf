@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,7 +48,7 @@ typedef struct {
 esp_bluedroid_status_t esp_bluedroid_get_status(void);
 
 /**
- * @brief     Enable bluetooth, must after esp_bluedroid_init()/esp_bluedroid_init_with_cfg().
+ * @brief     Enable bluetooth, must after esp_bluedroid_init_with_cfg().
  *
  * @return
  *            - ESP_OK : Succeed

@@ -219,7 +219,8 @@ void app_main(void)
         return;
     }
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         ESP_LOGE(HID_DEMO_TAG, "%s init bluedroid failed", __func__);
         return;

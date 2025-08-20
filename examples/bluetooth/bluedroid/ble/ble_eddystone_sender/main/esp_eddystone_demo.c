@@ -166,7 +166,8 @@ void esp_eddystone_appRegister(void)
 
 void esp_eddystone_init(void)
 {
-    esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    esp_bluedroid_init_with_cfg(&cfg);
     esp_bluedroid_enable();
     esp_eddystone_appRegister();
 }

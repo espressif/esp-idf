@@ -572,26 +572,6 @@ static bt_status_t btc_hf_cmee_response(bt_bdaddr_t *bd_addr, esp_hf_at_response
     return BT_STATUS_FAIL;
 }
 
-// +CIEV<...> for device status update
-static bt_status_t btc_hf_indchange_notification(bt_bdaddr_t *bd_addr,
-                                                esp_hf_call_status_t call_state,
-                                                esp_hf_call_setup_status_t call_setup_state,
-                                                esp_hf_network_state_t ntk_state, int signal)
-{
-    int idx = btc_hf_idx_by_bdaddr(bd_addr);
-    CHECK_HF_INIT(idx);
-    if (is_connected(idx, bd_addr)) {
-        /* Send all indicators to BTA.
-         * BTA will make sure no duplicates are sent out*/
-        send_indicator_update(BTA_AG_IND_CALL, call_state);
-        send_indicator_update(BTA_AG_IND_CALLSETUP, call_setup_state);
-        send_indicator_update(BTA_AG_IND_SERVICE, ntk_state);
-        send_indicator_update(BTA_AG_IND_SIGNAL, signal);
-        return BT_STATUS_SUCCESS;
-    }
-    return BT_STATUS_FAIL;
-}
-
 // +CIEV<...> for device status update, send other indicators, e.g. roaming, battery, call held and bearer
 bt_status_t btc_hf_ciev_report(bt_bdaddr_t *bd_addr, tBTA_AG_IND_TYPE indicator, uint16_t value)
 {
@@ -1197,14 +1177,6 @@ void btc_hf_call_handler(btc_msg_t *msg)
         case BTC_HF_CME_ERR_EVT:
         {
             btc_hf_cmee_response(&arg->ext_at.remote_addr, arg->ext_at.response_code, arg->ext_at.error_code);
-            break;
-        }
-
-        case BTC_HF_IND_NOTIFICATION_EVT:
-        {
-            btc_hf_indchange_notification(&arg->ind_change.remote_addr,
-                                        arg->ind_change.call_state, arg->ind_change.call_setup_state,
-                                        arg->ind_change.ntk_state, arg->ind_change.signal);
             break;
         }
 

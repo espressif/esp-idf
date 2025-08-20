@@ -443,29 +443,6 @@ esp_err_t esp_hf_ag_cmee_send(esp_bd_addr_t remote_bda, esp_hf_at_response_code_
 
 /**
  *
- * @brief           Unsolicited send device status notification to HFP Client.
- *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
- *
- * @param[in]       remote_addr: remote bluetooth device address
- * @param[in]       call_state: call state
- * @param[in]       call_setup_state: call setup state
- * @param[in]       ntk_state: network service state
- * @param[in]       signal: signal strength from 0 to 5
- * @return
- *                  - ESP_OK: device status notification is sent to lower layer
- *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_ERR_INVALID_ARG: if arguments are invalid
- *                  - ESP_FAIL: others
- *
- */
-esp_err_t esp_hf_ag_devices_status_indchange(esp_bd_addr_t remote_addr, esp_hf_call_status_t call_state,
-                                             esp_hf_call_setup_status_t call_setup_state,
-                                             esp_hf_network_state_t ntk_state, int signal) __attribute__((
-                                             deprecated("Please use esp_hf_ag_ciev_report")
-                                             ));
-
-/**
- *
  * @brief           Send indicator report "+CIEV: <ind> <value>" to HFP Client. "CIEV" means “indicator events reporting",
  *                  and all indicator types can be sent one type at a time.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.

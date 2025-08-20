@@ -6,6 +6,7 @@
 .. toctree::
     :maxdepth: 1
 
+    bluetooth-classic
     build-system
     peripherals
     provisioning

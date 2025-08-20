@@ -32,7 +32,8 @@
 esp_err_t esp_blufi_host_init(void)
 {
     int ret;
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         BLUFI_ERROR("%s init bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return ESP_FAIL;

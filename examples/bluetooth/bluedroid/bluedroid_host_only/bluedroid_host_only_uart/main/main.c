@@ -292,7 +292,8 @@ void app_main(void)
     };
     esp_bluedroid_attach_hci_driver(&operations);
 
-    if ((ret = esp_bluedroid_init()) != ESP_OK) {
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    if ((esp_bluedroid_init_with_cfg(&cfg)) != ESP_OK) {
         ESP_LOGE(GAP_TAG, "%s initialize bluedroid failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
