@@ -316,7 +316,7 @@ void ulp_riscv_i2c_master_set_slave_reg_addr(uint8_t slave_reg_addr)
  * | Slave  |        |         |  ACK   |        |   ACK  |        |         |   ACK  |  DATA  |        |  DATA  |        |        |
  * |--------|--------|---------|--------|--------|--------|--------|---------|--------|--------|--------|--------|--------|--------|
  */
-void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
+esp_err_t ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
 {
     uint32_t i = 0;
     uint32_t cmd_idx = 0;
@@ -325,7 +325,7 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
 
     if (size == 0) {
         // Quietly return
-        return;
+        return ESP_ERR_INVALID_ARG;
     }
 
     /* By default, RTC I2C controller is hard wired to use CMD2 register onwards for read operations */
@@ -382,6 +382,7 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
         } else {
             status = READ_PERI_REG(RTC_I2C_INT_RAW_REG);
             SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, status);
+            ret = ESP_ERR_INVALID_RESPONSE;
             break;
         }
     }
@@ -397,6 +398,8 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
     /* Clear the RTC I2C transmission bits */
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START_FORCE);
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
+
+    return ret;
 }
 
 /*
@@ -416,7 +419,7 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
  * | Slave  |        |         |  ACK   |        |   ACK  |        |   ACK  |        |   ACK  |        |
  * |--------|--------|---------|--------|--------|--------|--------|--------|--------|--------|--------|
  */
-void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
+esp_err_t ulp_riscv_i2c_master_write_to_device(const uint8_t *data_wr, size_t size)
 {
     uint32_t i = 0;
     uint32_t cmd_idx = 0;
@@ -425,7 +428,7 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
 
     if (size == 0) {
         // Quietly return
-        return;
+        return ESP_ERR_INVALID_ARG;
     }
 
     /* By default, RTC I2C controller is hard wired to use CMD0 and CMD1 registers for write operations */
@@ -462,6 +465,7 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
         } else {
             status = READ_PERI_REG(RTC_I2C_INT_RAW_REG);
             SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, status);
+            ret = ESP_ERR_INVALID_RESPONSE;
             break;
         }
     }
@@ -478,6 +482,8 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
     /* Clear the RTC I2C transmission bits */
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START_FORCE);
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
+
+    return ret;
 }
 
 esp_err_t ulp_riscv_i2c_master_init(const ulp_riscv_i2c_cfg_t *cfg)
