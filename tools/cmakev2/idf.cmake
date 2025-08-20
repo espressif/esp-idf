@@ -459,6 +459,24 @@ function(__init_submodules)
 endfunction()
 
 #[[
+   __init_idf_target_arch()
+
+   Set the IDF_TARGET_ARCH value based on the sdkconfig. This means it must be
+   initialized after the sdkconfig is generated and its CMake version is
+   included.
+#]]
+function(__init_idf_target_arch)
+    if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+        idf_build_set_property(IDF_TARGET_ARCH "xtensa")
+    elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
+        idf_build_set_property(IDF_TARGET_ARCH "riscv")
+    else()
+        # Currently, no architecture is specified for Linux host builds.
+        idf_build_set_property(IDF_TARGET_ARCH "")
+    endif()
+endfunction()
+
+#[[
    The idf_build_properties interface target is exclusively used to store
    information about global build properties and is not linked or used in any
    other way. This is created very early so that all the initialization
@@ -555,6 +573,10 @@ if(NOT EXISTS "${sdkconfig_cmake}")
     idf_die("sdkconfig.cmake file not found.")
 endif()
 include("${sdkconfig_cmake}")
+
+# Initialize the target architecture based on the configuration. Ensure this is
+# done after including the sdkconfig.
+__init_idf_target_arch()
 
 #[[ TODO
 
