@@ -13,8 +13,6 @@ api-guides/inc/external-ram-esp32-notes.rst
 api-guides/dfu.rst
 api-guides/current-consumption-measurement-modules.rst
 api-guides/wifi-security.rst
-api-guides/openthread.rst
-api-reference/template.rst
 api-reference/storage/vfs.rst
 api-reference/storage/spiffs.rst
 api-reference/storage/nvs_encryption.rst
@@ -50,7 +48,6 @@ api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/index.rst
 api-reference/peripherals/ldo_regulator.rst
 api-reference/peripherals/jpeg.rst
-api-reference/network/esp_openthread.rst
 api-reference/network/esp_eth.rst
 api-reference/network/esp_netif_driver.rst
 api-reference/network/esp_dpp.rst
@@ -68,7 +65,6 @@ api-reference/system/power_management.rst
 api-reference/system/inc/show-efuse-table_ESP32-C61.rst
 api-reference/system/inc/power_management_esp32c61.rst
 api-reference/system/inc/espefuse_summary_ESP32-C61.rst
-api-reference/error-codes.rst
 api-reference/index.rst
 api-reference/protocols/icmp_echo.rst
 api-reference/protocols/esp_serial_slave_link.rst

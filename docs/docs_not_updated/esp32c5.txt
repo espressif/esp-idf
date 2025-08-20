@@ -6,8 +6,6 @@ api-guides/esp-wifi-mesh.rst
 api-guides/inc/external-ram-esp32-notes.rst
 api-guides/current-consumption-measurement-modules.rst
 api-guides/wifi-security.rst
-api-guides/openthread.rst
-api-reference/template.rst
 api-reference/storage/vfs.rst
 api-reference/storage/spiffs.rst
 api-reference/storage/nvs_encryption.rst
@@ -23,7 +21,6 @@ api-reference/storage/nvs_partition_parse.rst
 api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/index.rst
 api-reference/peripherals/ecdsa.rst
-api-reference/network/esp_openthread.rst
 api-reference/network/esp_dpp.rst
 api-reference/network/esp_now.rst
 api-reference/network/esp-wifi-mesh.rst
