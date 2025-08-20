@@ -121,13 +121,13 @@
 #include "esp_private/startup_internal.h"
 #include "esp_private/system_internal.h"
 
-#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 extern int _bss_start_low, _bss_start_high;
 extern int _bss_end_low, _bss_end_high;
 #else
 extern int _bss_start;
 extern int _bss_end;
-#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 extern int _rtc_bss_start;
 extern int _rtc_bss_end;
 #if CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
@@ -431,12 +431,12 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
     //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
-#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     memset(&_bss_start_low, 0, (&_bss_end_low - &_bss_start_low) * sizeof(_bss_start_low));
     memset(&_bss_start_high, 0, (&_bss_end_high - &_bss_start_high) * sizeof(_bss_start_high));
 #else
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
-#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 
 #if CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
     // Clear Bluetooth bss

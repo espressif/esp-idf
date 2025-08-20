@@ -5,6 +5,11 @@ set(target_folder "${target}")
 
 idf_build_get_property(target IDF_TARGET)
 set(scripts "ld/${target_folder}/bootloader.ld")
+if(CONFIG_ESP32P4_REV_MIN_300)
+    set(scripts "ld/${target_folder}/bootloader.rev3.ld")
+else()
+    set(scripts "ld/${target_folder}/bootloader.ld")
+endif()
 
 list(APPEND scripts "ld/${target_folder}/bootloader.rom.ld")
 target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")

@@ -123,8 +123,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         bool
         default "y" if IDF_TARGET="esp32p4"
         select IDF_TARGET_ARCH_RISCV
-        select IDF_ENV_FPGA if ESP32P4_REV_MIN_200
-        select IDF_ENV_BRINGUP if ESP32P4_REV_MIN_200
 
     config IDF_TARGET_ESP32H2
         bool

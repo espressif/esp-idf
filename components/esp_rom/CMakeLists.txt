@@ -102,7 +102,7 @@ if(target STREQUAL "linux")
     endif()
 else()
     # TODO: IDF-13410. Update to (CONFIG_ESP32P4_REV_MIN_FULL GREATER_EQUAL 200) when chip efuse is correct.
-    if(CONFIG_ESP32P4_REV_MIN_200)
+    if(CONFIG_ESP32P4_REV_MIN_300)
         target_linker_script(${COMPONENT_LIB} INTERFACE "${target_folder}/${ld_folder}/${target}.rom.eco5.ld")
     else()
         target_linker_script(${COMPONENT_LIB} INTERFACE "${target_folder}/${ld_folder}/${target}.rom.ld")
@@ -115,13 +115,13 @@ else()
     endif()
 
     if(CONFIG_COMPILER_FLOAT_LIB_FROM_GCCLIB)
-        if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410
+        if(CONFIG_ESP32P4_REV_MIN_300) # TODO: IDF-13410
             rom_linker_script("eco5.libgcc")
         else()
             rom_linker_script("libgcc")
         endif()
     else()
-        if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410.
+        if(CONFIG_ESP32P4_REV_MIN_300) # TODO: IDF-13410.
             rom_linker_script("eco5.rvfp")
         else()
             rom_linker_script("rvfp")
@@ -168,7 +168,7 @@ if(BOOTLOADER_BUILD)
         if(target STREQUAL "esp32" OR target STREQUAL "esp32s2")
             rom_linker_script("newlib-funcs")
         else()
-            if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410
+            if(CONFIG_ESP32P4_REV_MIN_300) # TODO: IDF-13410
                 rom_linker_script("eco5.newlib")
             else()
                 rom_linker_script("newlib")
@@ -309,7 +309,7 @@ else() # Regular app build
 
     if(CONFIG_ESP_ROM_HAS_NEWLIB AND NOT target STREQUAL "esp32" AND NOT target STREQUAL "esp32s2")
         # ESP32 and S2 are a bit different, keep them as special cases in the target specific include section
-        if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410
+        if(CONFIG_ESP32P4_REV_MIN_300) # TODO: IDF-13410
             rom_linker_script("eco5.newlib")
         else()
             rom_linker_script("newlib")

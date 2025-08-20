@@ -220,7 +220,7 @@ static void rtc_clk_cpu_freq_to_cpll_mhz(int cpu_freq_mhz, hal_utils_clk_div_t *
     uint32_t mem_divider = 1;
     uint32_t sys_divider = 1; // We are not going to change this
     uint32_t apb_divider = 1;
-#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     switch (cpu_freq_mhz) {
     case 360:
         mem_divider = 2;
@@ -308,7 +308,7 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
 
     // Keep default CPLL at 360MHz
     uint32_t xtal_freq = (uint32_t)rtc_clk_xtal_freq_get();
-#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     if (freq_mhz <= xtal_freq && freq_mhz != 0) {
         divider.integer = xtal_freq / freq_mhz;
         real_freq_mhz = (xtal_freq + divider.integer / 2) / divider.integer; /* round */
