@@ -208,6 +208,7 @@ esp_err_t httpd_sess_new(struct httpd_data *hd, int newfd)
     session->handle = (httpd_handle_t) hd;
     session->send_fn = httpd_default_send;
     session->recv_fn = httpd_default_recv;
+    session->lru_counter = hd->lru_counter;
 
     // increment number of sessions
     hd->hd_sd_active_count++;
