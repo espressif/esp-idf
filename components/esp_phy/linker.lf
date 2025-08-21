@@ -10,11 +10,28 @@ if IDF_TARGET_ESP32 = y:
     entries:
         .phyiram+
 
+if IDF_TARGET_ESP32C2 = y:
+    [scheme:phy_iram]
+    entries:
+        phy_iram -> iram0_text
+
+    [sections:phy_iram]
+    entries:
+        .phyiram+
+
+[mapping:btbb]
+archive: libbtbb.a
+entries:
+    if IDF_TARGET_ESP32C2 = y:
+        * (phy_iram)
+
 [mapping:phy]
 archive: libphy.a
 entries:
     * (noflash_data)
     if IDF_TARGET_ESP32 = y:
+        * (phy_iram)
+    if IDF_TARGET_ESP32C2 = y:
         * (phy_iram)
 
 [mapping:rtc]
