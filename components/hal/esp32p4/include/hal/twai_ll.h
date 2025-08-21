@@ -149,12 +149,18 @@ ESP_STATIC_ASSERT(sizeof(twai_ll_frame_buffer_t) == 13, "TX/RX buffer type shoul
  */
 static inline void twai_ll_enable_bus_clock(int group_id, bool enable)
 {
-    switch (group_id)
-    {
-    case 0: HP_SYS_CLKRST.soc_clk_ctrl2.reg_twai0_apb_clk_en = enable; break;
-    case 1: HP_SYS_CLKRST.soc_clk_ctrl2.reg_twai1_apb_clk_en = enable; break;
-    case 2: HP_SYS_CLKRST.soc_clk_ctrl2.reg_twai2_apb_clk_en = enable; break;
-    default: HAL_ASSERT(false);
+    switch (group_id) {
+    case 0:
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_twai0_apb_clk_en = enable;
+        break;
+    case 1:
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_twai1_apb_clk_en = enable;
+        break;
+    case 2:
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_twai2_apb_clk_en = enable;
+        break;
+    default:
+        HAL_ASSERT(false);
     }
 }
 
@@ -172,17 +178,19 @@ static inline void twai_ll_enable_bus_clock(int group_id, bool enable)
  */
 static inline void twai_ll_reset_register(int group_id)
 {
-    switch (group_id)
-    {
-    case 0: HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_twai0 = 1;
-            HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_twai0 = 0;
-            break;
-    case 1: HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_twai1 = 1;
-            HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_twai1 = 0;
-            break;
-    case 2: HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_twai2 = 1;
-            HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_twai2 = 0;
-            break;
+    switch (group_id) {
+    case 0:
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_twai0 = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_twai0 = 0;
+        break;
+    case 1:
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_twai1 = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_twai1 = 0;
+        break;
+    case 2:
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_twai2 = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_twai2 = 0;
+        break;
     default: HAL_ASSERT(false);
     }
 }
@@ -229,21 +237,23 @@ static inline void twai_ll_enable_clock(int group_id, bool en)
 __attribute__((always_inline))
 static inline void twai_ll_set_clock_source(int group_id, twai_clock_source_t clk_src)
 {
+    // We do not plan to support the TWAI_CLK_SRC_RC_FAST clock source,
+    // as the accuracy of this clock does not meet the requirements for the baud rate
+    HAL_ASSERT(clk_src == TWAI_CLK_SRC_XTAL);
     uint32_t clk_id = 0;
 
-    switch (clk_src) {
-    case TWAI_CLK_SRC_XTAL: clk_id = 0; break;
-#if SOC_CLK_TREE_SUPPORTED
-    case TWAI_CLK_SRC_RC_FAST: clk_id = 1; break;
-#endif
-    default: HAL_ASSERT(false);
-    }
-
     switch (group_id) {
-    case 0: HP_SYS_CLKRST.peri_clk_ctrl115.reg_twai0_clk_src_sel = clk_id; break;
-    case 1: HP_SYS_CLKRST.peri_clk_ctrl115.reg_twai1_clk_src_sel = clk_id; break;
-    case 2: HP_SYS_CLKRST.peri_clk_ctrl115.reg_twai2_clk_src_sel = clk_id; break;
-    default: HAL_ASSERT(false);
+    case 0:
+        HP_SYS_CLKRST.peri_clk_ctrl115.reg_twai0_clk_src_sel = clk_id;
+        break;
+    case 1:
+        HP_SYS_CLKRST.peri_clk_ctrl115.reg_twai1_clk_src_sel = clk_id;
+        break;
+    case 2:
+        HP_SYS_CLKRST.peri_clk_ctrl115.reg_twai2_clk_src_sel = clk_id;
+        break;
+    default:
+        HAL_ASSERT(false);
     }
 }
 
@@ -554,9 +564,9 @@ __attribute__((always_inline))
 static inline void twai_ll_parse_err_code_cap(twai_dev_t *hw, twai_ll_err_type_t *type, twai_ll_err_dir_t *dir, twai_ll_err_seg_t *seg)
 {
     uint32_t ecc = hw->err_code_cap.val;
-    *type = (twai_ll_err_type_t) ((ecc >> 6) & 0x3);
-    *dir = (twai_ll_err_dir_t) ((ecc >> 5) & 0x1);
-    *seg = (twai_ll_err_seg_t) (ecc & 0x1F);
+    *type = (twai_ll_err_type_t)((ecc >> 6) & 0x3);
+    *dir = (twai_ll_err_dir_t)((ecc >> 5) & 0x1);
+    *seg = (twai_ll_err_seg_t)(ecc & 0x1F);
 }
 
 /* ----------------------------- EWL Register ------------------------------- */

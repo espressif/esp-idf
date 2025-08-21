@@ -355,6 +355,22 @@ typedef enum {
     SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,  /*!< Select PLL_F48M clock as the default clock choice */
 } soc_periph_sdm_clk_src_t;
 
+//////////////////////////////////////////////////TWAI//////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of TWAI
+ */
+#define SOC_TWAI_CLKS {(soc_periph_twai_clk_src_t)SOC_MOD_CLK_XTAL, (soc_periph_twai_clk_src_t)SOC_MOD_CLK_PLL_F96M}
+
+/**
+ * @brief TWAI clock source
+ */
+typedef enum {
+    TWAI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
+    TWAI_CLK_SRC_PLL_F96M = SOC_MOD_CLK_PLL_F96M, /*!< Select PLL_96M as the source clock */
+    TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F96M,  /*!< Select PLL_96M as the default clock choice */
+} soc_periph_twai_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif
