@@ -29,6 +29,10 @@ typedef enum {
     MODEM_CLOCK_MODEM_PRIVATE_FE,
     MODEM_CLOCK_COEXIST,
     MODEM_CLOCK_I2C_MASTER,
+#if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
+    MODEM_CLOCK_WIFI_APB,
+    MODEM_CLOCK_WIFI_BB_44M,
+#endif
 #if SOC_WIFI_SUPPORTED
     MODEM_CLOCK_WIFI_MAC,
     MODEM_CLOCK_WIFI_BB,
@@ -65,7 +69,9 @@ typedef struct modem_clock_context {
 static void IRAM_ATTR modem_clock_wifi_mac_configure(modem_clock_context_t *ctx, bool enable)
 {
     if (enable) {
+#if !SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
         modem_syscon_ll_enable_wifi_apb_clock(ctx->hal->syscon_dev, enable);
+#endif
         modem_syscon_ll_enable_wifi_mac_clock(ctx->hal->syscon_dev, enable);
     }
 }
@@ -86,6 +92,22 @@ static void IRAM_ATTR modem_clock_ble_mac_configure(modem_clock_context_t *ctx, 
     modem_syscon_ll_enable_ble_timer_clock(ctx->hal->syscon_dev, enable);
 }
 #endif // SOC_BT_SUPPORTED
+
+#if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
+static void IRAM_ATTR modem_clock_wifi_apb_configure(modem_clock_context_t *ctx, bool enable)
+{
+    if (enable) {
+        modem_syscon_ll_enable_wifi_apb_clock(ctx->hal->syscon_dev, enable);
+    }
+}
+
+static void IRAM_ATTR modem_clock_wifi_bb_44m_configure(modem_clock_context_t *ctx, bool enable)
+{
+    if (enable) {
+        modem_syscon_ll_enable_wifibb_44m_clock(ctx->hal->syscon_dev, enable);
+    }
+}
+#endif
 
 #if SOC_BT_SUPPORTED || SOC_IEEE802154_SUPPORTED
 static void IRAM_ATTR modem_clock_ble_i154_bb_configure(modem_clock_context_t *ctx, bool enable)
@@ -150,6 +172,10 @@ modem_clock_context_t * __attribute__((weak)) IRAM_ATTR MODEM_CLOCK_instance(voi
             [MODEM_CLOCK_MODEM_PRIVATE_FE]      = { .refs = 0, .configure = modem_clock_modem_private_fe_configure },
             [MODEM_CLOCK_COEXIST]               = { .refs = 0, .configure = modem_clock_coex_configure },
             [MODEM_CLOCK_I2C_MASTER]            = { .refs = 0, .configure = modem_clock_i2c_master_configure },
+#if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
+            [MODEM_CLOCK_WIFI_APB]              = { .refs = 0, .configure = modem_clock_wifi_apb_configure },
+            [MODEM_CLOCK_WIFI_BB_44M]           = { .refs = 0, .configure = modem_clock_wifi_bb_44m_configure },
+#endif
 #if SOC_WIFI_SUPPORTED
             [MODEM_CLOCK_WIFI_MAC]              = { .refs = 0, .configure = modem_clock_wifi_mac_configure },
             [MODEM_CLOCK_WIFI_BB]               = { .refs = 0, .configure = modem_clock_wifi_bb_configure },
@@ -270,8 +296,11 @@ void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
     }
     esp_os_exit_critical_safe(&ctx->lock);
 }
-
+#if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
+#define WIFI_CLOCK_DEPS         (BIT(MODEM_CLOCK_WIFI_MAC) | BIT(MODEM_CLOCK_WIFI_APB) | BIT(MODEM_CLOCK_WIFI_BB) | BIT(MODEM_CLOCK_WIFI_BB_44M) | BIT(MODEM_CLOCK_COEXIST))
+#else
 #define WIFI_CLOCK_DEPS         (BIT(MODEM_CLOCK_WIFI_MAC) | BIT(MODEM_CLOCK_WIFI_BB) | BIT(MODEM_CLOCK_COEXIST))
+#endif
 #define BLE_CLOCK_DEPS          (BIT(MODEM_CLOCK_BLE_MAC) | BIT(MODEM_CLOCK_BT_I154_COMMON_BB) | BIT(MODEM_CLOCK_ETM) | BIT(MODEM_CLOCK_COEXIST))
 #define IEEE802154_CLOCK_DEPS   (BIT(MODEM_CLOCK_802154_MAC) | BIT(MODEM_CLOCK_BT_I154_COMMON_BB) | BIT(MODEM_CLOCK_ETM) | BIT(MODEM_CLOCK_COEXIST))
 #define COEXIST_CLOCK_DEPS      (BIT(MODEM_CLOCK_COEXIST))
@@ -279,6 +308,9 @@ void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
 #define I2C_ANA_MST_CLOCK_DEPS  (BIT(MODEM_CLOCK_I2C_MASTER))
 #define MODEM_ETM_CLOCK_DEPS    (BIT(MODEM_CLOCK_ETM))
 #define MODEM_ADC_COMMON_FE_CLOCK_DEPS  (BIT(MODEM_CLOCK_MODEM_ADC_COMMON_FE))
+#if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
+#define PHY_CALIBRATION_CLOCK_DEPS      (BIT(MODEM_CLOCK_WIFI_APB) | BIT(MODEM_CLOCK_WIFI_BB_44M))
+#endif
 
 static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
 {
@@ -295,6 +327,9 @@ static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
 #endif
 #if SOC_BT_SUPPORTED
         case PERIPH_BT_MODULE:                  deps = BLE_CLOCK_DEPS;                  break;
+#endif
+#if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
+        case PERIPH_PHY_CALIBRATION_MODULE:     deps = PHY_CALIBRATION_CLOCK_DEPS;      break;
 #endif
 #if SOC_IEEE802154_SUPPORTED
         case PERIPH_IEEE802154_MODULE:          deps = IEEE802154_CLOCK_DEPS;           break;
