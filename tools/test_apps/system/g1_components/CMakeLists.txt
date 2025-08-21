@@ -100,6 +100,9 @@ set(extra_components_which_shouldnt_be_included
     # both which should be removed
     esp_partition
 
+    # esp_blockdev is a new component for separated IDF block storage device APIs. Pulled in from esp_partition
+    esp_blockdev
+
     # pthread is required by cxx. See [refactor-todo] about cxx, can it work without pthread?
     pthread
 
