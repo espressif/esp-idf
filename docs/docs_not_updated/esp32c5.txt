@@ -18,7 +18,6 @@ api-reference/storage/mass_mfg.rst
 api-reference/storage/fatfsgen.rst
 api-reference/storage/index.rst
 api-reference/storage/nvs_partition_parse.rst
-api-reference/peripherals/ecdsa.rst
 api-reference/network/esp_dpp.rst
 api-reference/network/esp_now.rst
 api-reference/network/esp-wifi-mesh.rst
