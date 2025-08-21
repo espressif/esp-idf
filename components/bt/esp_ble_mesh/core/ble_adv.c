@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,8 +15,12 @@
 #include "mesh/buf.h"
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
-
+#if CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
+/* Use independent ble adv queue only if multi adv instance is used */
 static struct bt_mesh_adv_queue ble_adv_queue;
+static void bt_mesh_ble_task_post(bt_mesh_msg_t *msg, uint32_t timeout, bool front);
+#endif
+static struct bt_mesh_adv_queue *p_ble_adv_queue;
 #define BLE_MESH_BLE_ADV_QUEUE_SIZE (CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT + 1)
 /* length + advertising data + length + scan response data */
 NET_BUF_POOL_DEFINE(ble_adv_buf_pool, CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT,
@@ -28,8 +32,6 @@ static struct bt_mesh_ble_adv_tx ble_adv_tx[CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT];
 
 #define SEND_BLE_ADV_INFINITE    0xFFFF
 
-static void bt_mesh_ble_task_post(bt_mesh_msg_t *msg, uint32_t timeout, bool front);
-
 static struct bt_mesh_adv *ble_adv_alloc(int id, enum bt_mesh_adv_type type)
 {
     memset(&ble_adv_pool[id], 0, sizeof(struct bt_mesh_adv));
@@ -37,27 +39,30 @@ static struct bt_mesh_adv *ble_adv_alloc(int id, enum bt_mesh_adv_type type)
     return &ble_adv_pool[id];
 }
 
+#if CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
+/* A separate post function is required only when using a separate queue */
 static void bt_mesh_ble_task_post(bt_mesh_msg_t *msg, uint32_t timeout, bool front)
 {
     BT_DBG("%s", __func__);
 
-    if (ble_adv_queue.q.handle == NULL) {
+    if (p_ble_adv_queue->q.handle == NULL) {
         BT_ERR("Invalid adv queue");
         return;
     }
 
     if (front) {
-        if (xQueueSendToFront(ble_adv_queue.q.handle, msg, timeout) != pdTRUE) {
+        if (xQueueSendToFront(p_ble_adv_queue->q.handle, msg, timeout) != pdTRUE) {
             BT_ERR("Failed to send item to adv queue front");
             bt_mesh_unref_buf(msg);
         }
     } else {
-        if (xQueueSend(ble_adv_queue.q.handle, msg, timeout) != pdTRUE) {
+        if (xQueueSend(p_ble_adv_queue->q.handle, msg, timeout) != pdTRUE) {
             BT_ERR("Failed to send item to adv queue back");
             bt_mesh_unref_buf(msg);
         }
     }
 }
+#endif
 
 static struct net_buf *bt_mesh_ble_adv_create(enum bt_mesh_adv_type type, int32_t timeout)
 {
@@ -282,10 +287,20 @@ int bt_mesh_stop_ble_advertising(uint8_t index)
     return 0;
 }
 
+struct bt_mesh_adv_queue *bt_mesh_ble_adv_queue_get(void)
+{
+#if CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
+    bt_mesh_adv_queue_init(&ble_adv_queue, CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT, bt_mesh_ble_task_post);
+    return &ble_adv_queue;
+#else
+    return bt_mesh_adv_queue_get();
+#endif
+}
+
 void bt_mesh_ble_adv_init(void)
 {
-    bt_mesh_adv_queue_init(&ble_adv_queue, CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT, bt_mesh_ble_task_post);
-    bt_mesh_adv_type_init(BLE_MESH_ADV_BLE, &ble_adv_queue, &ble_adv_buf_pool, ble_adv_alloc);
+    p_ble_adv_queue = bt_mesh_ble_adv_queue_get();
+    bt_mesh_adv_type_init(BLE_MESH_ADV_BLE, p_ble_adv_queue, &ble_adv_buf_pool, ble_adv_alloc);
 #if CONFIG_BLE_MESH_USE_BLE_50
 #if CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
     bt_mesh_adv_inst_init(BLE_MESH_BLE_ADV_INS, CONFIG_BLE_MESH_BLE_ADV_INST_ID);
@@ -308,7 +323,11 @@ void bt_mesh_ble_adv_deinit(void)
     bt_mesh_unref_buf_from_pool(&ble_adv_buf_pool);
     memset(ble_adv_pool, 0, sizeof(ble_adv_pool));
 
-    bt_mesh_adv_queue_deinit(&ble_adv_queue);
+#if CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
+    /* In other cases, ble_adv queue is an adv queue,
+     * so ble does not need to deinit separately */
+    bt_mesh_adv_queue_deinit(p_ble_adv_queue);
+#endif
     bt_mesh_adv_type_deinit(BLE_MESH_ADV_BLE);
 #if CONFIG_BLE_MESH_USE_BLE_50
 #if CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
