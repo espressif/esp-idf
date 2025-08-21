@@ -93,6 +93,7 @@ function(__init_project_configuration)
                                     "_GLIBCXX_HAVE_POSIX_SEMAPHORE" # posix-semaphores from components/pthread
                                     "_GNU_SOURCE")
 
+    list(APPEND compile_definitions "ESP_PLATFORM")
     list(APPEND compile_definitions "IDF_VER=\"${idf_ver}\"")
 
     list(APPEND compile_options     "-ffunction-sections"
