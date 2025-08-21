@@ -6,4 +6,7 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 # For registering the test-specific and attestation secure services
 include(${CMAKE_CURRENT_LIST_DIR}/components/test_sec_srv/test_tee_project.cmake)
 
+# "Trim" the build. Include the minimal set of components, main, and anything it depends on.
+idf_build_set_property(MINIMAL_BUILD ON)
+
 project(esp_tee_test)
