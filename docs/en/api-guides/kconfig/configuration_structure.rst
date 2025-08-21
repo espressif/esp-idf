@@ -87,17 +87,17 @@ Example:
 
 .. code-block:: kconfig
 
-    # new name            old name
-    CONFIG_HYPEDRIVE      CONFIG_WARP_DRIVE
-    CONFIG_DISABLE_WAPRT_ !CONFIG_ENABLE_WARP_DRIVE
+    # old name            new name
+    CONFIG_WARP_DRIVE     CONFIG_HYPERDRIVE
+    CONFIG_ENABLE_WARP_DRIVE !CONFIG_DISABLE_HYPERDRIVE
 
 ``sdkconfig``:
 
 .. code-block:: kconfig
 
     (...)
-    CONFIG_HYPEDRIVE=y
-    CONFIG_DISABLE_HYPEDRIVE=n
+    CONFIG_HYPERDRIVE=y
+    CONFIG_DISABLE_HYPERDRIVE=n
     (...)
     # Deprecated options for backward compatibility
     CONFIG_WARP_DRIVE=y
