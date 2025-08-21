@@ -738,7 +738,7 @@ esp_err_t twai_transmit_v2(twai_handle_t handle, const twai_message_t *message, 
         .frame = {
             .header = &header,
             .buffer = (uint8_t *)message->data,
-            .buffer_len = TWAI_FRAME_MAX_LEN,
+            .buffer_len = message->data_length_code,
         },
         .config.retry_cnt = message->ss ? 0 : -1,
         .config.loopback = message->self,

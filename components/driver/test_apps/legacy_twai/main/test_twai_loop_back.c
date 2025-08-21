@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,19 +68,21 @@ TEST_CASE("twai_mode_std_no_ack_25kbps", "[twai-loop-back]")
 
     twai_message_t tx_msg = {
         .identifier = 0x123,
-        .data_length_code = 8,
         .data = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88},
         .self = true, // Transmitted message will also received by the same node
     };
-    printf("transmit message\r\n");
-    TEST_ESP_OK(twai_transmit(&tx_msg, pdMS_TO_TICKS(1000)));
+    for (int len = 0; len <= 8; len++) {
+        tx_msg.data_length_code = len;
+        printf("TX id %lx len %d\r\n", tx_msg.identifier, tx_msg.data_length_code);
+        TEST_ESP_OK(twai_transmit(&tx_msg, pdMS_TO_TICKS(1000)));
 
-    printf("receive message\r\n");
-    twai_message_t rx_msg;
-    TEST_ESP_OK(twai_receive(&rx_msg, pdMS_TO_TICKS(1000)));
-    TEST_ASSERT_TRUE(rx_msg.data_length_code == 8);
-    for (int i = 0; i < 8; i++) {
-        TEST_ASSERT_EQUAL(tx_msg.data[i], rx_msg.data[i]);
+        twai_message_t rx_msg = {};
+        TEST_ESP_OK(twai_receive(&rx_msg, pdMS_TO_TICKS(1000)));
+        printf("RX id %lx len %d\r\n", rx_msg.identifier, rx_msg.data_length_code);
+        TEST_ASSERT_EQUAL(rx_msg.data_length_code, tx_msg.data_length_code);
+        for (int i = 0; i < rx_msg.data_length_code; i++) {
+            TEST_ASSERT_EQUAL(tx_msg.data[i], rx_msg.data[i]);
+        }
     }
 
     TEST_ESP_OK(twai_stop());
