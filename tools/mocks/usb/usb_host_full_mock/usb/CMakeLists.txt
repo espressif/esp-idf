@@ -7,7 +7,7 @@ message(STATUS "building full USB HOST MOCKS")
 idf_component_get_property(original_usb_dir usb COMPONENT_OVERRIDEN_DIR)
 idf_component_get_property(original_esp_hw_support_dir esp_hw_support COMPONENT_OVERRIDEN_DIR)
 if(NOT original_esp_hw_support_dir)
-    idf_component_get_property(original_esp_hw_support_dir esp_hw_support COMPONENT_SRCDIR)
+    idf_component_get_property(original_esp_hw_support_dir esp_hw_support COMPONENT_DIR)
 endif()
 
 idf_component_mock(INCLUDE_DIRS "${original_usb_dir}/include"
