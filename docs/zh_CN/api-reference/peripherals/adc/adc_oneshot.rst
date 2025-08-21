@@ -6,17 +6,13 @@
 简介
 ----
 
-模数转换器集成于芯片，支持测量特定模拟 IO 管脚的模拟信号。
+本文档介绍了 {IDF_TARGET_NAME} 上的 ADC 单次转换模式驱动。
 
-{IDF_TARGET_NAME} 有 {IDF_TARGET_SOC_ADC_PERIPH_NUM} 个 ADC 单元，可以在以下场景使用：
+单次转换模式允许在选定的模拟输入通道上执行按需单次 ADC 转换。该模式适用于需要低频采样或触发采样的应用场景，而非持续的数据采集。
 
-.. list::
+.. only:: SOC_ADC_DMA_SUPPORTED
 
-    - 生成 ADC 单次转换结果
-    :SOC_ADC_DMA_SUPPORTED: - 生成连续 ADC 转换结果
-
-本指南介绍了 ADC 单次转换模式。
-
+    如需执行连续数据采集，{IDF_TARGET_NAME} 提供了 :doc:`ADC 连续转换模式驱动 <adc_continuous>`。
 
 功能概述
 --------
