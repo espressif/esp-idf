@@ -469,7 +469,6 @@ function(__get_compile_options)
     idf_build_get_property(cxx_compile_options CXX_COMPILE_OPTIONS GENERATOR_EXPRESSION)
     idf_build_get_property(asm_compile_options ASM_COMPILE_OPTIONS GENERATOR_EXPRESSION)
 
-    set(compile_options)
     foreach(option IN LISTS c_compile_options)
         list(APPEND compile_options $<$<COMPILE_LANGUAGE:C>:${option}>)
     endforeach()
