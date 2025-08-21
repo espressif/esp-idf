@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -776,6 +776,11 @@ esp_err_t esp_wifi_connect_internal(void);
   *
   */
 esp_err_t esp_wifi_disconnect_internal(void);
+
+/**
+ * @brief This API is not context safe and enable easy fragment just for internal test only.
+ */
+void esp_wifi_enable_easy_fragment(bool enable);
 
 #ifdef __cplusplus
 }
