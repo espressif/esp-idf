@@ -170,7 +170,7 @@ esp_err_t mcpwm_generator_set_actions_on_timer_event(mcpwm_gen_handle_t gen, mcp
     mcpwm_gen_timer_event_action_t ev_act_itor = ev_act;
     bool invalid_utep = false;
     bool invalid_dtez = false;
-    va_list it;
+    va_list it = {};
     va_start(it, ev_act);
     while (ev_act_itor.event != MCPWM_TIMER_EVENT_INVALID) {
         invalid_utep = (timer->count_mode == MCPWM_TIMER_COUNT_MODE_UP_DOWN) &&
@@ -208,7 +208,7 @@ esp_err_t mcpwm_generator_set_actions_on_compare_event(mcpwm_gen_handle_t gen, m
     mcpwm_oper_t *oper = gen->oper;
     mcpwm_group_t *group = oper->group;
     mcpwm_gen_compare_event_action_t ev_act_itor = ev_act;
-    va_list it;
+    va_list it = {};
     va_start(it, ev_act);
     while (ev_act_itor.comparator) {
         mcpwm_ll_generator_set_action_on_compare_event(group->hal.dev, oper->oper_id, gen->gen_id,
@@ -236,7 +236,7 @@ esp_err_t mcpwm_generator_set_actions_on_brake_event(mcpwm_gen_handle_t gen, mcp
     mcpwm_oper_t *oper = gen->oper;
     mcpwm_group_t *group = oper->group;
     mcpwm_gen_brake_event_action_t ev_act_itor = ev_act;
-    va_list it;
+    va_list it = {};
     va_start(it, ev_act);
     while (ev_act_itor.brake_mode != MCPWM_OPER_BRAKE_MODE_INVALID) {
         mcpwm_ll_generator_set_action_on_brake_event(group->hal.dev, oper->oper_id, gen->gen_id,
