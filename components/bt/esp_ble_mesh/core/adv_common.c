@@ -748,6 +748,12 @@ uint16_t ble_mesh_adv_buf_count_get(void)
     adv_count += CONFIG_BLE_MESH_LONG_PACKET_RELAY_ADV_BUF_COUNT;
 #endif
 #endif
+
+#if (CONFIG_BLE_MESH_SUPPORT_BLE_ADV && \
+    !(CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE))
+    adv_count += CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT;
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+
     return adv_count;
 }
 
