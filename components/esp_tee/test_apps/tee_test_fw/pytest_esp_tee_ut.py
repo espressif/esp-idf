@@ -14,20 +14,20 @@ SUPPORTED_TARGETS = ['esp32c6', 'esp32h2']
 
 CONFIG_DEFAULT = [
     # 'config, target, markers',
-    ('default', target, (pytest.mark.generic,))
+    ('tee_default', target, (pytest.mark.generic,))
     for target in SUPPORTED_TARGETS
 ]
 
 CONFIG_OTA = [
     # 'config, target, skip_autoflash, markers',
-    ('ota', target, 'y', (pytest.mark.generic,))
+    ('tee_ota', target, 'y', (pytest.mark.generic,))
     for target in SUPPORTED_TARGETS
 ]
 
 CONFIG_ALL = [
     # 'config, target, markers',
     (config, target, (pytest.mark.generic,))
-    for config in ['default', 'ota']
+    for config in ['tee_default', 'tee_ota']
     for target in SUPPORTED_TARGETS
 ]
 
@@ -97,12 +97,7 @@ def test_esp_tee_crypto_sha(dut: IdfDut) -> None:
 def test_esp_tee_aes_perf(dut: IdfDut) -> None:
     # start test
     for i in range(24):
-        if not i:
-            dut.expect_exact('Press ENTER to see the list of tests')
-        else:
-            dut.expect_exact("Enter next test, or 'enter' to see menu")
-        dut.write('"mbedtls AES performance"')
-        dut.expect_unity_test_output(timeout=60)
+        dut.run_all_single_board_cases(name=['mbedtls AES performance'])
 
 
 # ---------------- TEE Exceptions generation Tests ----------------
@@ -263,7 +258,7 @@ def test_esp_tee_flash_prot_esp_partition_mmap(dut: IdfDut) -> None:
     dut.serial.custom_flash()
 
     # start test
-    extra_data = dut.parse_test_menu()
+    extra_data = dut._parse_test_menu()
     for test_case in extra_data:
         if test_case.name == 'Test REE-TEE isolation: Flash - SPI0 (esp_partition_mmap)':
             run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.ESP_PARTITION_MMAP)
@@ -281,7 +276,7 @@ def test_esp_tee_flash_prot_spi_flash_mmap(dut: IdfDut) -> None:
     dut.serial.custom_flash()
 
     # start test
-    extra_data = dut.parse_test_menu()
+    extra_data = dut._parse_test_menu()
     for test_case in extra_data:
         if test_case.name == 'Test REE-TEE isolation: Flash - SPI0 (spi_flash_mmap)':
             run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.SPI_FLASH_MMAP)
@@ -299,7 +294,7 @@ def test_esp_tee_flash_prot_esp_rom_spiflash(dut: IdfDut) -> None:
     dut.serial.custom_flash()
 
     # start test
-    extra_data = dut.parse_test_menu()
+    extra_data = dut._parse_test_menu()
     for test_case in extra_data:
         if test_case.name == 'Test REE-TEE isolation: Flash - SPI1 (esp_rom_spiflash)':
             run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.ESP_ROM_SPIFLASH)
@@ -317,7 +312,7 @@ def test_esp_tee_flash_prot_esp_partition(dut: IdfDut) -> None:
     dut.serial.custom_flash()
 
     # start test
-    extra_data = dut.parse_test_menu()
+    extra_data = dut._parse_test_menu()
     for test_case in extra_data:
         if test_case.name == 'Test REE-TEE isolation: Flash - SPI1 (esp_partition)':
             run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.ESP_PARTITION)
@@ -335,7 +330,7 @@ def test_esp_tee_flash_prot_esp_flash(dut: IdfDut) -> None:
     dut.serial.custom_flash()
 
     # start test
-    extra_data = dut.parse_test_menu()
+    extra_data = dut._parse_test_menu()
     for test_case in extra_data:
         if test_case.name == 'Test REE-TEE isolation: Flash - SPI1 (esp_flash)':
             run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.ESP_FLASH)
@@ -347,13 +342,11 @@ def test_esp_tee_flash_prot_esp_flash(dut: IdfDut) -> None:
 
 
 @pytest.mark.generic
-@idf_parametrize('config', ['ota'], indirect=['config'])
+@idf_parametrize('config', ['tee_ota'], indirect=['config'])
 @idf_parametrize('target', SUPPORTED_TARGETS, indirect=['target'])
 def test_esp_tee_ota_negative(dut: IdfDut) -> None:
     # start test
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('[ota_neg_1]')
-    dut.expect_unity_test_output(timeout=120)
+    dut.run_all_single_board_cases(group='ota_neg_1', timeout=30)
 
     # erasing TEE otadata
     dut.serial.erase_partition('tee_otadata')
@@ -369,9 +362,7 @@ def test_esp_tee_ota_corrupted_img(dut: IdfDut) -> None:
     dut.serial.custom_flash_w_test_tee_img_gen()
 
     # start test
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"Test TEE OTA - Corrupted image"')
-    dut.expect_unity_test_output(timeout=120)
+    dut.run_all_single_board_cases(name=['Test TEE OTA - Corrupted image'], timeout=30)
 
     # erasing TEE otadata
     dut.serial.erase_partition('tee_otadata')
