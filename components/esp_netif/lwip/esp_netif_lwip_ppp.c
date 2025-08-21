@@ -229,6 +229,7 @@ netif_related_data_t * esp_netif_new_ppp(esp_netif_t *esp_netif, const esp_netif
     ESP_LOGD(TAG, "%s: PPP connection created: %p", __func__, ppp_obj->ppp);
     if (!ppp_obj->ppp) {
         ESP_LOGE(TAG, "%s: lwIP PPP connection cannot be created", __func__);
+        free(ppp_obj);
         return NULL;
     }
 
