@@ -1427,6 +1427,14 @@ config SOC_KEY_MANAGER_FE_KEY_DEPLOY
     bool
     default y
 
+config SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128
+    bool
+    default y
+
+config SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256
+    bool
+    default y
+
 config SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
     bool
     default y
@@ -1467,19 +1475,11 @@ config SOC_FLASH_ENCRYPTION_XTS_AES_128
     bool
     default y
 
-config SOC_FLASH_ENCRYPTION_XTS_AES_256
-    bool
-    default y
-
 config SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
     bool
     default y
 
 config SOC_PSRAM_ENCRYPTION_XTS_AES_128
-    bool
-    default y
-
-config SOC_PSRAM_ENCRYPTION_XTS_AES_256
     bool
     default y
 

@@ -84,7 +84,7 @@ static void test_xts_aes_key_ecdh0_mode(test_data_ecdh0_mode_t *test_data)
     ESP_LOG_BUFFER_HEXDUMP("Encrypted data", read_data, data_size, ESP_LOG_DEBUG);
 }
 
-#if SOC_FLASH_ENCRYPTION_XTS_AES_128
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128
 static void key_mgr_test_xts_aes_128_aes_mode(void)
 {
     static esp_key_mgr_aes_key_config_t key_config;
@@ -117,9 +117,9 @@ static void key_mgr_test_xts_aes_128_ecdh0_mode(void)
     test_xts_aes_key_ecdh0_mode(&test_data_ecdh0);
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info.key_type));
 }
-#endif /* SOC_FLASH_ENCRYPTION_XTS_AES_128 */
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128 */
 
-#if SOC_FLASH_ENCRYPTION_XTS_AES_256
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256
 static void key_mgr_test_xts_aes_256_aes_mode(void)
 {
     static esp_key_mgr_aes_key_config_t key_config;
@@ -155,7 +155,7 @@ static void key_mgr_test_xts_aes_256_ecdh0_mode(void)
     test_xts_aes_key_ecdh0_mode(&test_data_ecdh0);
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info.key_type));
 }
-#endif /* SOC_FLASH_ENCRYPTION_XTS_AES_256 */
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256 */
 
 #if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS
 static void test_xts_aes_key_random_mode(void)
@@ -173,7 +173,7 @@ static void test_xts_aes_key_random_mode(void)
     }
 }
 
-#if SOC_FLASH_ENCRYPTION_XTS_AES_128
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128
 static void key_mgr_test_xts_aes_128_random_mode(void)
 {
     static esp_key_mgr_random_key_config_t key_config;
@@ -185,9 +185,9 @@ static void key_mgr_test_xts_aes_128_random_mode(void)
     test_xts_aes_key_random_mode();
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info.key_type));
 }
-#endif /* SOC_FLASH_ENCRYPTION_XTS_AES_128 */
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128 */
 
-#if SOC_FLASH_ENCRYPTION_XTS_AES_256
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256
 static void key_mgr_test_xts_aes_256_random_mode(void)
 {
     static esp_key_mgr_random_key_config_t key_config;
@@ -199,7 +199,7 @@ static void key_mgr_test_xts_aes_256_random_mode(void)
     test_xts_aes_key_random_mode();
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info.key_type));
 }
-#endif /* SOC_FLASH_ENCRYPTION_XTS_AES_256 */
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256 */
 #endif /* CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS */
 #endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY */
 
@@ -436,7 +436,7 @@ TEST_TEAR_DOWN(key_manager)
 }
 
 #if SOC_KEY_MANAGER_FE_KEY_DEPLOY
-#if SOC_FLASH_ENCRYPTION_XTS_AES_128
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128
 TEST(key_manager, xts_aes_128_key_aes_deployment)
 {
     key_mgr_test_xts_aes_128_aes_mode();
@@ -453,9 +453,9 @@ TEST(key_manager, xts_key_128_random_deployment)
     key_mgr_test_xts_aes_128_random_mode();
 }
 #endif /* CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS */
-#endif /* SOC_FLASH_ENCRYPTION_XTS_AES_128 */
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128 */
 
-#if SOC_FLASH_ENCRYPTION_XTS_AES_256
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256
 TEST(key_manager, xts_aes_256_key_aes_deployment)
 {
     key_mgr_test_xts_aes_256_aes_mode();
@@ -472,7 +472,7 @@ TEST(key_manager, xts_key_256_random_deployment)
     key_mgr_test_xts_aes_256_random_mode();
 }
 #endif /* CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS */
-#endif /* SOC_FLASH_ENCRYPTION_XTS_AES_256 */
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256 */
 #endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY */
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
@@ -519,22 +519,22 @@ TEST(key_manager, ds_key_aes_deployment)
 TEST_GROUP_RUNNER(key_manager)
 {
 #if SOC_KEY_MANAGER_FE_KEY_DEPLOY
-#if SOC_FLASH_ENCRYPTION_XTS_AES_128
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128
     RUN_TEST_CASE(key_manager, xts_aes_128_key_aes_deployment);
     RUN_TEST_CASE(key_manager, xts_key_128_ecdh0_deployment);
 #if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS
     // This tests expects Flash encryption to be enabled as the test compares the decrypted flash data with the plaintext data
     RUN_TEST_CASE(key_manager, xts_key_128_random_deployment);
 #endif /* CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS */
-#endif /* SOC_FLASH_ENCRYPTION_XTS_AES_128 */
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128 */
 
-#if SOC_FLASH_ENCRYPTION_XTS_AES_256
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256
     RUN_TEST_CASE(key_manager, xts_aes_256_key_aes_deployment);
     RUN_TEST_CASE(key_manager, xts_key_256_ecdh0_deployment);
 #if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS
     RUN_TEST_CASE(key_manager, xts_key_256_random_deployment);
 #endif /* CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS */
-#endif /* SOC_FLASH_ENCRYPTION_XTS_AES_256 */
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256 */
 #endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY */
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
