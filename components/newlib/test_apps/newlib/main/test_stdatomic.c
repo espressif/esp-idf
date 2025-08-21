@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -25,6 +25,19 @@ atomic_ullong *g_atomic64;
 atomic_uint   *g_atomic32;
 atomic_ushort *g_atomic16;
 atomic_uchar  *g_atomic8;
+
+TEST_CASE("stdatomic - test_atomic_flag", "[newlib_stdatomic]")
+{
+    bool x8 = 0;
+    g_atomic8 = heap_caps_calloc(sizeof(*g_atomic8), 1, MALLOC_CAP_DEFAULT);
+
+    x8 = atomic_flag_test_and_set(g_atomic8);
+    TEST_ASSERT_EQUAL_HEX8(0x00, x8);
+    TEST_ASSERT_EQUAL_HEX8(0x01, *g_atomic8);
+    atomic_flag_clear(g_atomic8);
+    TEST_ASSERT_EQUAL_HEX8(0x00, *g_atomic8);
+    free(g_atomic8);
+}
 
 TEST_CASE("stdatomic - test_64bit_atomics", "[newlib_stdatomic]")
 {
@@ -262,7 +275,7 @@ TEST_CASE("stdatomic - test_" #NAME, "[newlib_stdatomic]")                      
   free(var_##NAME);                                                               \
 }
 
-// Note that the assert at the end is doing an excat bitwise comparison.
+// Note that the assert at the end is doing an exact bitwise comparison.
 // This easily can fail due to rounding errors. However, there is currently
 // no corresponding Unity assert macro for long double. USE THIS WITH CARE!
 #define TEST_RACE_OPERATION_LONG_DOUBLE(NAME, LHSTYPE, PRE, POST, INIT, FINAL) \
