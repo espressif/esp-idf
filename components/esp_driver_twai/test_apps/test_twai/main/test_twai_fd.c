@@ -67,6 +67,8 @@ TEST_CASE("twai range filter (loopback)", "[twai]")
     twai_onchip_node_config_t node_config = {
         .io_cfg.tx = TEST_TX_GPIO,
         .io_cfg.rx = TEST_TX_GPIO,  // Using same pin for test without transceiver
+        .io_cfg.quanta_clk_out = GPIO_NUM_NC,
+        .io_cfg.bus_off_indicator = GPIO_NUM_NC,
         .bit_timing.bitrate = 1000000,
         .tx_queue_depth = TEST_TWAI_QUEUE_DEPTH,
         .flags.enable_loopback = true,
@@ -142,6 +144,8 @@ TEST_CASE("twai fd transmit time (loopback)", "[twai]")
     twai_onchip_node_config_t node_config = {
         .io_cfg.tx = TEST_TX_GPIO,
         .io_cfg.rx = TEST_TX_GPIO,  // Using same pin for test without transceiver
+        .io_cfg.quanta_clk_out = GPIO_NUM_NC,
+        .io_cfg.bus_off_indicator = GPIO_NUM_NC,
         .bit_timing.bitrate = 1000000,
         .data_timing.bitrate = 4000000,
         .data_timing.ssp_permill = 700, // ssp 70.0%
