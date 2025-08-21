@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include <stdatomic.h>
 #include <sys/param.h>
 #include "unity.h"
 #include "unity_test_utils_cache.h"
@@ -89,7 +90,9 @@ TEST_CASE("twai install uninstall (loopback)", "[twai]")
         TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl[SOC_TWAI_CONTROLLER_NUM], &user_cbs, NULL));
         TEST_ESP_OK(twai_node_enable(node_hdl[SOC_TWAI_CONTROLLER_NUM]));
         tx_frame.header.id = 0x100;
+        TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl[SOC_TWAI_CONTROLLER_NUM], 0));    // test wait before transmit
         TEST_ESP_OK(twai_node_transmit(node_hdl[SOC_TWAI_CONTROLLER_NUM], &tx_frame, 0));
+        TEST_ESP_ERR(ESP_ERR_TIMEOUT, twai_node_transmit_wait_all_done(node_hdl[SOC_TWAI_CONTROLLER_NUM], 0));  // test return before finish
         twai_frame_t rx_frame = {};
         printf("Test receive from task\n");
         TEST_ESP_ERR(ESP_ERR_INVALID_STATE, twai_node_receive_from_isr(node_hdl[SOC_TWAI_CONTROLLER_NUM], &rx_frame));
@@ -216,9 +219,7 @@ TEST_CASE("twai transmit stop resume (loopback)", "[twai]")
     TEST_ESP_OK(twai_node_enable(node_hdl));
 
     //waiting pkg receive finish
-    while (rx_frame.buffer < recv_pkg_ptr + TEST_TRANS_LEN) {
-        vTaskDelay(1);
-    }
+    TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, -1));
     free(tx_msgs);
 
     // check if pkg receive correct
@@ -244,7 +245,7 @@ static void test_random_trans_generator(twai_node_handle_t node_hdl, uint32_t tr
         tx_msg.header.rtr = !!(tx_cnt % 3);
         tx_msg.buffer_len = tx_cnt % TWAI_FRAME_MAX_LEN;
         TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_msg, 0));
-        vTaskDelay(8);  //as async transaction, waiting trans done
+        TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, 8));
     }
 }
 
@@ -526,6 +527,52 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
     }
     printf("node recovered! continue\n");
     TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 500));
+
+    TEST_ESP_OK(twai_node_disable(node_hdl));
+    TEST_ESP_OK(twai_node_delete(node_hdl));
+}
+
+static void test_send_wait_task(void *args)
+{
+    const char *task_name = pcTaskGetName(NULL);
+    twai_node_handle_t node_hdl = ((twai_node_handle_t *)args)[0];
+    atomic_int *tasks_finished = ((atomic_int **)args)[1];
+    twai_frame_t tx_frame = {};
+    tx_frame.header.rtr = true;
+
+    for (uint8_t i = 0; i < 10; i++) {
+        tx_frame.header.id = 0x100 + i;
+        printf("%s send %d\n", task_name, i);
+        TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, -1));
+        printf("%s wait %d\n", task_name, i);
+        TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, -1));
+    }
+    printf("%s finished\n", task_name);
+    atomic_fetch_add(tasks_finished, 1);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("twai tx_wait_all_done thread safe", "[twai]")
+{
+    twai_node_handle_t node_hdl;
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_TX_GPIO;    //Using same pin for test without transceiver
+    node_config.bit_timing.bitrate = 100000; //slow bitrate to ensure transmite finish during wait_all_done
+    node_config.tx_queue_depth = TEST_FRAME_NUM;
+    node_config.flags.enable_self_test = true;
+
+    TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
+    TEST_ESP_OK(twai_node_enable(node_hdl));
+
+    atomic_int tasks_finished = 0;
+    void *args[2] = {node_hdl, &tasks_finished};
+    xTaskCreate(test_send_wait_task, "task_high", 4096, args, 1, NULL);
+    xTaskCreate(test_send_wait_task, "task_low ", 4096, args, 0, NULL);
+
+    vTaskDelay(500);   //wait for tasks finished
+    printf("tasks_finished: %d\n", atomic_load(&tasks_finished));
+    TEST_ASSERT_EQUAL(2, atomic_load(&tasks_finished));
 
     TEST_ESP_OK(twai_node_disable(node_hdl));
     TEST_ESP_OK(twai_node_delete(node_hdl));

@@ -42,66 +42,13 @@ static struct {
 static bool twai_send_tx_done_cb(twai_node_handle_t handle, const twai_tx_done_event_data_t *event_data, void *user_ctx)
 {
     ESP_UNUSED(handle);
-    ESP_UNUSED(event_data);
     twai_controller_ctx_t *controller = (twai_controller_ctx_t *)user_ctx;
-
-    /* Signal TX completion */
-    if (atomic_load(&controller->send_ctx.is_tx_pending)) {
-        atomic_store(&controller->send_ctx.is_tx_pending, false);
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        xSemaphoreGiveFromISR(controller->send_ctx.tx_done_sem, &xHigherPriorityTaskWoken);
-        return xHigherPriorityTaskWoken == pdTRUE;
-    }
-
-    return false;
-}
-
-/**
- * @brief Initialize the send module for a controller
- *
- * @param[in] controller Pointer to the controller context
- *
- * @return @c ESP_OK on success, error code on failure
- */
-static esp_err_t twai_send_init_controller(twai_controller_ctx_t *controller)
-{
     int controller_id = controller - &g_twai_controller_ctx[0];
 
-    /* Create TX completion semaphore */
-    controller->send_ctx.tx_done_sem = xSemaphoreCreateBinary();
-    if (controller->send_ctx.tx_done_sem == NULL) {
-        ESP_LOGE(TAG, "Failed to create TX semaphore for controller %d", controller_id);
-        return ESP_ERR_NO_MEM;
+    if (!event_data->is_tx_success) {
+        ESP_EARLY_LOGW(TAG, "Node %d: Bus error when sending frame with ID: 0x%X", controller_id, event_data->done_tx_frame->header.id);
     }
-
-    /* Initialize TX pending flag */
-    atomic_init(&controller->send_ctx.is_tx_pending, false);
-
-    /* Register TX done callback */
-    twai_core_ctx_t *core_ctx = &controller->core_ctx;
-    core_ctx->driver_cbs.on_tx_done = twai_send_tx_done_cb;
-
-    return ESP_OK;
-}
-
-/**
- * @brief Deinitialize the send module for a controller
- *
- * @param[in] controller Pointer to the controller context
- */
-static void twai_send_deinit_controller(twai_controller_ctx_t *controller)
-{
-    /* Clear pending flag */
-    atomic_store(&controller->send_ctx.is_tx_pending, false);
-
-    /* Delete TX completion semaphore */
-    if (controller->send_ctx.tx_done_sem) {
-        vSemaphoreDelete(controller->send_ctx.tx_done_sem);
-        controller->send_ctx.tx_done_sem = NULL;
-    }
-
-    /* Clear callback */
-    controller->core_ctx.driver_cbs.on_tx_done = NULL;
+    return false;
 }
 
 /**
@@ -115,33 +62,21 @@ static void twai_send_deinit_controller(twai_controller_ctx_t *controller)
  */
 static esp_err_t send_frame_sync(twai_controller_ctx_t *controller, const twai_frame_t *frame, uint32_t timeout_ms)
 {
-    if (!controller) {
-        ESP_LOGE(TAG, "Invalid controller pointer");
-        return ESP_ERR_INVALID_ARG;
-    }
+    ESP_RETURN_ON_FALSE(controller, ESP_ERR_INVALID_ARG, TAG, "Invalid controller pointer");
 
     int controller_id = controller - &g_twai_controller_ctx[0];
-    esp_err_t ret = ESP_OK;
     twai_core_ctx_t *ctx = &controller->core_ctx;
 
     /* Check if TWAI driver is running */
     ESP_RETURN_ON_FALSE(atomic_load(&ctx->is_initialized), ESP_ERR_INVALID_STATE, TAG, "TWAI%d not initialized", controller_id);
 
-    /* Mark TX as pending */
-    atomic_store(&controller->send_ctx.is_tx_pending, true);
-
     /* Transmit the frame */
-    ret = twai_node_transmit(controller->node_handle, frame, timeout_ms);
-    ESP_GOTO_ON_ERROR(ret, err, TAG, "Node %d: Failed to queue TX frame: %s", controller_id, esp_err_to_name(ret));
+    ESP_RETURN_ON_ERROR(twai_node_transmit(controller->node_handle, frame, timeout_ms), TAG, "Node %d: Failed to queue TX frame", controller_id);
 
     /* Wait for TX completion or timeout */
-    ESP_GOTO_ON_FALSE(xSemaphoreTake(controller->send_ctx.tx_done_sem, pdMS_TO_TICKS(timeout_ms)) == pdTRUE, ESP_ERR_TIMEOUT, err, TAG,
-                      "Node %d: TX timed out after %"PRIu32" ms", controller_id, timeout_ms);
+    ESP_RETURN_ON_ERROR(twai_node_transmit_wait_all_done(controller->node_handle, timeout_ms), TAG, "Node %d: TX not completed after %"PRIu32" ms", controller_id, timeout_ms);
 
     return ESP_OK;
-err:
-    atomic_store(&controller->send_ctx.is_tx_pending, false);
-    return ret;
 }
 
 /**
@@ -228,10 +163,7 @@ void register_twai_send_commands(void)
     /* Initialize send context for all controllers */
     for (int i = 0; i < SOC_TWAI_CONTROLLER_NUM; i++) {
         twai_controller_ctx_t *controller = &g_twai_controller_ctx[i];
-        esp_err_t ret = twai_send_init_controller(controller);
-        if (ret != ESP_OK) {
-            ESP_LOGW(TAG, "Failed to initialize send module for TWAI%d: %s", i, esp_err_to_name(ret));
-        }
+        controller->core_ctx.driver_cbs.on_tx_done = twai_send_tx_done_cb;
     }
 
     /* Register command arguments */
@@ -270,6 +202,6 @@ void unregister_twai_send_commands(void)
     /* Cleanup all controller send modules */
     for (int i = 0; i < SOC_TWAI_CONTROLLER_NUM; i++) {
         twai_controller_ctx_t *controller = &g_twai_controller_ctx[i];
-        twai_send_deinit_controller(controller);
+        controller->core_ctx.driver_cbs.on_tx_done = NULL;
     }
 }

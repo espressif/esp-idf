@@ -34,13 +34,10 @@ typedef struct {
 // Transmission completion callback
 static IRAM_ATTR bool twai_sender_tx_done_callback(twai_node_handle_t handle, const twai_tx_done_event_data_t *edata, void *user_ctx)
 {
-    BaseType_t woken;
-    SemaphoreHandle_t *tx_semaphore = (SemaphoreHandle_t *)user_ctx;
     if (!edata->is_tx_success) {
         ESP_EARLY_LOGW(TAG, "Failed to transmit message, ID: 0x%X", edata->done_tx_frame->header.id);
     }
-    xSemaphoreGiveFromISR(*tx_semaphore, &woken);
-    return (woken == pdTRUE);
+    return false; // No task wake required
 }
 
 // Bus error callback
@@ -53,7 +50,6 @@ static IRAM_ATTR bool twai_sender_on_error_callback(twai_node_handle_t handle, c
 void app_main(void)
 {
     twai_node_handle_t sender_node = NULL;
-    SemaphoreHandle_t tx_semaphore = NULL;
     printf("===================TWAI Sender Example Starting...===================\n");
 
     // Configure TWAI node
@@ -79,15 +75,10 @@ void app_main(void)
         .on_tx_done = twai_sender_tx_done_callback,
         .on_error = twai_sender_on_error_callback,
     };
-    ESP_ERROR_CHECK(twai_node_register_event_callbacks(sender_node, &callbacks, &tx_semaphore));
+    ESP_ERROR_CHECK(twai_node_register_event_callbacks(sender_node, &callbacks, NULL));
 
     // Enable TWAI node
     ESP_ERROR_CHECK(twai_node_enable(sender_node));
-
-    // Create semaphore for transmission completion
-    tx_semaphore = xSemaphoreCreateCounting(howmany(TWAI_DATA_LEN, TWAI_FRAME_MAX_LEN), 0);
-    assert(tx_semaphore != NULL);
-
     ESP_LOGI(TAG, "TWAI Sender started successfully");
     ESP_LOGI(TAG, "Sending messages with IDs: 0x%03X (data), 0x%03X (heartbeat)",  TWAI_DATA_ID, TWAI_HEARTBEAT_ID);
 
@@ -101,7 +92,7 @@ void app_main(void)
         };
         ESP_ERROR_CHECK(twai_node_transmit(sender_node, &tx_frame, 500));
         ESP_LOGI(TAG, "Sending heartbeat message: %lld", timestamp);
-        xSemaphoreTake(tx_semaphore, portMAX_DELAY);
+        ESP_ERROR_CHECK(twai_node_transmit_wait_all_done(sender_node, -1)); // -1 means wait forever
 
         // Send burst data messages every 10 seconds
         if ((timestamp / 1000000) % 10 == 0) {
@@ -118,9 +109,7 @@ void app_main(void)
             }
 
             // Frames mounted, wait for all frames to be transmitted
-            for (int i = 0; i < num_frames; i++) {
-                xSemaphoreTake(tx_semaphore, portMAX_DELAY);
-            }
+            ESP_ERROR_CHECK(twai_node_transmit_wait_all_done(sender_node, -1));
             free(data);
         }
 
@@ -133,7 +122,6 @@ void app_main(void)
         }
     }
 
-    vSemaphoreDelete(tx_semaphore);
     ESP_ERROR_CHECK(twai_node_disable(sender_node));
     ESP_ERROR_CHECK(twai_node_delete(sender_node));
 }
