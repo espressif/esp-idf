@@ -269,15 +269,6 @@ typedef struct {
 
 #endif // !CONFIG_IDF_TARGET_ESP32 || CONFIG_ESP32_REV_MIN_FULL >= 300
 
-/** @brief Legacy ECDSA verification function
- *
- * @note Deprecated, call either esp_secure_boot_verify_ecdsa_signature_block() or esp_secure_boot_verify_rsa_signature_block() instead.
- *
- * @param sig_block Pointer to ECDSA signature block data
- * @param image_digest Pointer to 32 byte buffer holding SHA-256 hash.
- */
-esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest)
-    __attribute__((deprecated("use esp_secure_boot_verify_ecdsa_signature_block instead")));
 
 
 #define FLASH_OFFS_SECURE_BOOT_IV_DIGEST 0

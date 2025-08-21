@@ -148,6 +148,15 @@ The partial download functionality in ESP HTTPS OTA has been moved under a confi
 
 To use partial download features in your OTA applications, you need to enable the component-level configuration :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``).
 
+**Removed Deprecated APIs**
+
+The following deprecated functions have been removed from the ``app_update`` component:
+
+- :cpp:func:`esp_ota_get_app_description` – Use :cpp:func:`esp_app_get_description` instead.
+- :cpp:func:`esp_ota_get_app_elf_sha256` – Use :cpp:func:`esp_app_get_elf_sha256` instead.
+
+These functions have moved to the ``esp_app_format`` component. Update your include from ``esp_ota_ops.h`` to ``esp_app_desc.h`` and add ``esp_app_format`` to your component dependencies if needed.
+
 Gcov
 ----
 

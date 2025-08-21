@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -109,50 +109,6 @@ err:
     return ret;
 }
 
-esp_err_t esp_crypto_shared_gdma_start(const lldesc_t *input, const lldesc_t *output, gdma_trigger_peripheral_t peripheral)
-{
-    int rx_ch_id = 0;
-    esp_err_t ret = ESP_OK;
-
-    if (tx_channel == NULL) {
-        /* Allocate a pair of RX and TX for crypto, should only happen the first time we use the GMDA
-           or if user called esp_crypto_shared_gdma_release */
-        ret = crypto_shared_gdma_init();
-    }
-
-    if (ret != ESP_OK) {
-        return ret;
-    }
-
-    /* Tx channel is shared between AES and SHA, need to connect to peripheral every time */
-    gdma_disconnect(tx_channel);
-
-#ifdef SOC_SHA_SUPPORTED
-    if (peripheral == GDMA_TRIG_PERIPH_SHA) {
-        gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SHA, 0));
-    } else
-#endif // SOC_SHA_SUPPORTED
-#ifdef SOC_AES_SUPPORTED
-    if (peripheral == GDMA_TRIG_PERIPH_AES) {
-        gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
-    } else
-#endif // SOC_AES_SUPPORTED
-    {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    /* tx channel is reset by gdma_connect(), also reset rx to ensure a known state */
-    gdma_get_channel_id(rx_channel, &rx_ch_id);
-
-#if SOC_AHB_GDMA_VERSION == 1
-    gdma_ll_rx_reset_channel(&GDMA, rx_ch_id);
-#endif /* SOC_AHB_GDMA_VERSION */
-
-    gdma_start(tx_channel, (intptr_t)input);
-    gdma_start(rx_channel, (intptr_t)output);
-
-    return ESP_OK;
-}
 
 /* The external memory ecc-aes access must be enabled when there exists
    at least one buffer in the DMA descriptors that resides in external memory. */

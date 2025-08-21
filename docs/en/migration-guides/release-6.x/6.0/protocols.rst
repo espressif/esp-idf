@@ -1,7 +1,23 @@
-ESP-Modbus
-==========
+Protocols
+=========
 
 :link_to_translation:`zh_CN:[中文]`
+
+
+ESP-TLS
+-------
+
+**Removed Deprecated API**
+
+The deprecated :cpp:func:`esp_tls_conn_http_new` function has been removed. Use either:
+
+- :cpp:func:`esp_tls_conn_http_new_sync` for blocking connections
+- :cpp:func:`esp_tls_conn_http_new_async` for non-blocking connections
+
+The new API requires you to create the :cpp:type:`esp_tls_t` structure using :cpp:func:`esp_tls_init` and provides better control over the connection process.
+
+ESP-Modbus
+----------
 
 The Espressif ESP-Modbus Library (esp-modbus) supports Modbus communication in the networks based on RS485, Wi-Fi, and Ethernet interfaces.
 

@@ -402,21 +402,6 @@ typedef struct esp_tls esp_tls_t;
  */
 esp_tls_t *esp_tls_init(void);
 
-/**
- * @brief      Create a new blocking TLS/SSL connection with a given "HTTP" url
- *
- * Note: This API is present for backward compatibility reasons. Alternative function
- * with the same functionality is `esp_tls_conn_http_new_sync` (and its asynchronous version
- * `esp_tls_conn_http_new_async`)
- *
- * @param[in]  url  url of host.
- * @param[in]  cfg  TLS configuration as esp_tls_cfg_t. If you wish to open
- *                  non-TLS connection, keep this NULL. For TLS connection,
- *                  a pass pointer to 'esp_tls_cfg_t'. At a minimum, this
- *                  structure should be zero-initialized.
- * @return pointer to esp_tls_t, or NULL if connection couldn't be opened.
- */
-esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg) __attribute__((deprecated("Please use esp_tls_conn_http_new_sync (or its asynchronous version esp_tls_conn_http_new_async) instead")));
 
 /**
  * @brief      Create a new blocking TLS/SSL connection

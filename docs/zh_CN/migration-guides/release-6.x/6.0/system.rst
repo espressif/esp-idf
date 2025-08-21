@@ -148,6 +148,15 @@ ESP HTTPS OTA 的分段下载功能已移至配置选项下，以便在未使用
 
 如果要在 OTA 应用中使用分段下载功能，需要在 menuconfig 中启用组件级配置 :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``)。
 
+**已移除的废弃 API**
+
+以下废弃函数已从 ``app_update`` 组件中移除：
+
+- :cpp:func:`esp_ota_get_app_description` – 请使用 :cpp:func:`esp_app_get_description` 代替。
+- :cpp:func:`esp_ota_get_app_elf_sha256` – 请使用 :cpp:func:`esp_app_get_elf_sha256` 代替。
+
+这些函数已移至 ``esp_app_format`` 组件。请将包含文件从 ``esp_ota_ops.h`` 更新为 ``esp_app_desc.h``，如有需要请将 ``esp_app_format`` 添加到您的组件依赖项中。
+
 Gcov
 ----
 
