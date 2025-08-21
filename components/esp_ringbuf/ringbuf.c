@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -629,8 +629,21 @@ static void prvReturnItemDefault(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
      * freed or items with dummy data should be skipped over
      */
     pxCurHeader = (ItemHeader_t *)pxRingbuffer->pucFree;
+
+    // allow a single advancement either when buffer is FULL (to release the oldest block)
+    // or when buffer is EMPTY (to skip a FREE block sitting at the head)
+    BaseType_t allow_advance_free_pointer =
+        ((pxRingbuffer->uxRingbufferFlags & rbBUFFER_FULL_FLAG) ? pdTRUE : pdFALSE) ||
+        ((pxRingbuffer->xItemsWaiting == 0) ? pdTRUE : pdFALSE);
+    BaseType_t freed_any = pdFALSE;
+
     //Skip over Items that have already been freed or are dummy items
-    while (((pxCurHeader->uxItemFlags & rbITEM_FREE_FLAG) || (pxCurHeader->uxItemFlags & rbITEM_DUMMY_DATA_FLAG)) && pxRingbuffer->pucFree != pxRingbuffer->pucRead) {
+    while (((pxCurHeader->uxItemFlags & (rbITEM_FREE_FLAG | rbITEM_DUMMY_DATA_FLAG)) != 0) &&
+            ((pxRingbuffer->pucFree != pxRingbuffer->pucRead) || allow_advance_free_pointer)) {
+
+        allow_advance_free_pointer = pdFALSE;
+        freed_any = pdTRUE;
+
         if (pxCurHeader->uxItemFlags & rbITEM_DUMMY_DATA_FLAG) {
             pxCurHeader->uxItemFlags |= rbITEM_FREE_FLAG;   //Mark as freed (not strictly necessary but adds redundancy)
             pxRingbuffer->pucFree = pxRingbuffer->pucHead;    //Wrap around due to dummy data
@@ -648,14 +661,9 @@ static void prvReturnItemDefault(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
         pxCurHeader = (ItemHeader_t *)pxRingbuffer->pucFree;      //Update header to point to item
     }
 
-    //Check if the buffer full flag should be reset
-    if (pxRingbuffer->uxRingbufferFlags & rbBUFFER_FULL_FLAG) {
-        if (pxRingbuffer->pucFree != pxRingbuffer->pucAcquire) {
-            pxRingbuffer->uxRingbufferFlags &= ~rbBUFFER_FULL_FLAG;
-        } else if (pxRingbuffer->pucFree == pxRingbuffer->pucAcquire && pxRingbuffer->pucFree == pxRingbuffer->pucRead) {
-            //Special case where a full buffer is completely freed in one go
-            pxRingbuffer->uxRingbufferFlags &= ~rbBUFFER_FULL_FLAG;
-        }
+    // clear FULL only if we actually freed something
+    if ((pxRingbuffer->uxRingbufferFlags & rbBUFFER_FULL_FLAG) && freed_any) {
+        pxRingbuffer->uxRingbufferFlags &= ~rbBUFFER_FULL_FLAG;
     }
 }
 
@@ -1356,12 +1364,80 @@ void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer)
 {
     Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
     configASSERT(pxRingbuffer);
-    printf("Rb size:%" PRId32 "\tfree: %" PRId32 "\trptr: %" PRId32 "\tfreeptr: %" PRId32 "\twptr: %" PRId32 ", aptr: %" PRId32 "\n",
-           (int32_t)pxRingbuffer->xSize, (int32_t)prvGetFreeSize(pxRingbuffer),
+
+    uint32_t RingbufferFlags = pxRingbuffer->uxRingbufferFlags;
+    printf("RingBuffer Size: %" PRId32 ", FreeSize: %" PRId32 "\n"
+           "  Read: %" PRId32 ", Free: %" PRId32 ", Write: %" PRId32 ", Acquire: %" PRId32 ", Waiting: %" PRId32 ", Flags: 0x%" PRIx32 " [",
+           (int32_t)pxRingbuffer->xSize,
+           (int32_t)prvGetFreeSize(pxRingbuffer),
            (int32_t)(pxRingbuffer->pucRead - pxRingbuffer->pucHead),
            (int32_t)(pxRingbuffer->pucFree - pxRingbuffer->pucHead),
            (int32_t)(pxRingbuffer->pucWrite - pxRingbuffer->pucHead),
-           (int32_t)(pxRingbuffer->pucAcquire - pxRingbuffer->pucHead));
+           (int32_t)(pxRingbuffer->pucAcquire - pxRingbuffer->pucHead),
+           (int32_t)pxRingbuffer->xItemsWaiting,
+           RingbufferFlags);
+
+    if (RingbufferFlags) {
+        if (RingbufferFlags & rbALLOW_SPLIT_FLAG) {
+            printf(" [ALLOW_SPLIT]");
+        }
+        if (RingbufferFlags & rbBYTE_BUFFER_FLAG) {
+            printf(" [BYTE_BUFFER]");
+        }
+        if (RingbufferFlags & rbBUFFER_FULL_FLAG) {
+            printf(" [FULL]");
+        }
+        if (RingbufferFlags & rbBUFFER_STATIC_FLAG) {
+            printf(" [STATIC]");
+        }
+        if (RingbufferFlags & rbUSING_QUEUE_SET) {
+            printf(" [USING_QUEUE_SET]");
+        }
+    }
+    printf(" ]\n  Items:\n");
+
+    uint8_t *Head = pxRingbuffer->pucHead;
+    uint8_t *ptr = Head;
+    size_t max_steps = (pxRingbuffer->xSize / rbHEADER_SIZE) + 4;
+    for (size_t steps = 0; ptr < pxRingbuffer->pucTail && steps < max_steps; ++steps) {
+        unsigned offset = ptr - Head;
+        ItemHeader_t *hdr = (ItemHeader_t *)ptr;
+        unsigned ItemFlags = hdr->uxItemFlags;
+        unsigned ItemLen = hdr->xItemLen;
+        printf("  [%4u] Size: %u Flags: 0x%x [", offset, ItemLen, ItemFlags);
+        if (ItemLen > pxRingbuffer->xMaxItemSize && !(ItemFlags & rbITEM_DUMMY_DATA_FLAG)) {
+            printf(" [INVALID HEADER or UNUSED SPACE]\n");
+            break;
+        }
+        if (ItemFlags) {
+            if (ItemFlags & rbITEM_FREE_FLAG) {
+                printf(" [FREE]");
+            }
+            if (ItemFlags & rbITEM_DUMMY_DATA_FLAG) {
+                printf(" [DUMMY]");
+            }
+            if (ItemFlags & rbITEM_SPLIT_FLAG) {
+                printf(" [SPLIT]");
+            }
+            if (ItemFlags & rbITEM_WRITTEN_FLAG) {
+                printf(" [WRITTEN]");
+            }
+        }
+        printf(" ]\n");
+
+        if (ItemFlags & rbITEM_DUMMY_DATA_FLAG) {
+            ptr = Head;
+        } else {
+            size_t step = rbHEADER_SIZE + rbALIGN_SIZE(ItemLen);
+            if (step == 0) {
+                break;
+            }
+            ptr += step;
+        }
+        if (ptr == Head) {
+            break; // full circle
+        }
+    }
 }
 
 BaseType_t xRingbufferGetStaticBuffer(RingbufHandle_t xRingbuffer, uint8_t **ppucRingbufferStorage, StaticRingbuffer_t **ppxStaticRingbuffer)
