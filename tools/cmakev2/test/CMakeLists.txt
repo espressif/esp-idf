@@ -11,7 +11,10 @@ project(cmakev2
     VERSION 1.2.3
     LANGUAGES C CXX ASM)
 
+add_custom_target(flash)
+
 idf_project_init()
+
 
 # Test component priority
 function(test_component_priority)
@@ -202,6 +205,12 @@ function(test_include_component)
     endif()
 endfunction()
 
+function(test_executable)
+    add_executable(test_executable components/component1/component1.c)
+    idf_build_library(INTERFACE test_executable_lib)
+    target_link_libraries(test_executable PRIVATE test_executable_lib)
+endfunction()
+
 # Run tests
 test_component_priority()
 test_idf_version()
@@ -211,6 +220,7 @@ test_idf_build_library()
 test_kconfig()
 test_project_properties()
 test_include_component()
+test_executable()
 __dump_all_properties()
 __generate_project_info()
 
