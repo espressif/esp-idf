@@ -391,6 +391,9 @@ void esp_panic_handler(panic_info_t *info)
     PANIC_INFO_DUMP(info, state);
     panic_print_str("\r\n");
 
+    // Now, after all panic info was printed we can clear active interrupts
+    panic_clear_active_interrupts(info->frame);
+
     /* No matter if we come here from abort or an exception, this variable must be reset.
      * Else, any exception/error occurring during the current panic handler would considered
      * an abort. Do this after PANIC_INFO_DUMP(info, state) as it also checks this variable.

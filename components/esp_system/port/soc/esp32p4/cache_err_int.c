@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +39,12 @@ bool esp_cache_err_has_active_err(void)
 {
     bool has_active_err = cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK) | cache_ll_l2_get_access_error_intr_status(0, CACHE_LL_L2_ACCESS_EVENT_MASK);
     return has_active_err;
+}
+
+void esp_cache_err_clear_active_err(void)
+{
+    cache_ll_l1_clear_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
+    cache_ll_l2_clear_access_error_intr(0, CACHE_LL_L2_ACCESS_EVENT_MASK);
 }
 
 void esp_cache_err_int_init(void)

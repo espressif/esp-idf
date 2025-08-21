@@ -39,6 +39,11 @@ bool esp_cache_err_has_active_err(void)
     return cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
 }
 
+void esp_cache_err_clear_active_err(void)
+{
+    cache_ll_l1_clear_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
+}
+
 void esp_cache_err_int_init(void)
 {
     const uint32_t core_id = 0;

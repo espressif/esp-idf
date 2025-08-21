@@ -343,3 +343,9 @@ void panic_prepare_frame_from_ctx(void* frame)
     /* Nothing to cleanup on xtensa */
     (void)frame;
 }
+
+void panic_clear_active_interrupts(const void *frame)
+{
+    /* Nothing to cleanup on xtensa */
+    (void)frame;
+}

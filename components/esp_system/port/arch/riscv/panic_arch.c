@@ -374,3 +374,10 @@ void panic_prepare_frame_from_ctx(void* frame)
 
     ((RvExcFrame *)frame)->mhartid = RV_READ_CSR(mhartid);
 }
+
+void panic_clear_active_interrupts(const void *frame)
+{
+    if (((RvExcFrame *)frame)->mcause == ETS_CACHEERR_INUM) {
+        esp_cache_err_clear_active_err();
+    }
+}
