@@ -238,17 +238,8 @@ menu "Hardware Settings"
                 so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
     endmenu
 
-    menu "ETM Configuration"
-        depends on SOC_ETM_SUPPORTED
-        config ETM_ENABLE_DEBUG_LOG
-            bool "Enable debug log"
-            default n
-            help
-                whether to enable the debug log message for ETM core driver.
-                Note that, this option only controls the ETM related driver log, won't affect other drivers.
-    endmenu # ETM Configuration
-
     rsource "./dma/Kconfig.dma"
+    rsource "./etm/Kconfig.etm"
 
     menu "Main XTAL Config"
         orsource "./port/$IDF_TARGET/Kconfig.xtal"

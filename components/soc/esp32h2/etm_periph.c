@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,7 @@ static const regdma_entries_config_t etm_regdma_entries[] = {
     },
 };
 
-const etm_reg_retention_info_t etm_reg_retention_info[SOC_ETM_GROUPS] = {
+const soc_etm_retention_desc_t soc_etm_retention_info[1] = {
     [0] = {
         .module = SLEEP_RETENTION_MODULE_ETM0,
         .regdma_entry_array = etm_regdma_entries,

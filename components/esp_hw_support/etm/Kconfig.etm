@@ -1,0 +1,12 @@
+menu "Event Task Matrix (ETM) Configurations"
+    depends on SOC_ETM_SUPPORTED
+    config ETM_ENABLE_DEBUG_LOG
+        bool "Force enable debug log"
+        default n
+        help
+            If enabled, ETM driver will:
+            1. ignore the global logging settings
+            2. compile all log messages into the binary
+            3. set the runtime log level to VERBOSE
+            Please enable this option by caution, as it will increase the binary size.
+endmenu # ETM Configuration

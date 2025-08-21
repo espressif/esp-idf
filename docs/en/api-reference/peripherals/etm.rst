@@ -148,11 +148,11 @@ When power management is enabled, i.e., :ref:`CONFIG_PM_ENABLE` is on, the syste
 Thread Safety
 ^^^^^^^^^^^^^
 
-The factory functions like :cpp:func:`esp_etm_new_channel` and :cpp:func:`gpio_new_etm_task` are guaranteed to be thread-safe by the driver, which means, you can call them from different RTOS tasks without protection by extra locks.
+The ETM core driver is thread-safe.
 
-No functions are allowed to run within the ISR environment.
-
-Other functions that take :cpp:type:`esp_etm_channel_handle_t`, :cpp:type:`esp_etm_task_handle_t` and :cpp:type:`esp_etm_event_handle_t` as the first positional parameter, are not treated as thread-safe, which means you should avoid calling them from multiple tasks.
+- Factory functions (for example, :cpp:func:`esp_etm_new_channel`, :cpp:func:`gpio_new_etm_task`, and other ``*_new_etm_*`` creators) are thread-safe and can be called from different RTOS tasks concurrently.
+- Channel control APIs (for example, :cpp:func:`esp_etm_channel_connect`, :cpp:func:`esp_etm_channel_enable`, :cpp:func:`esp_etm_channel_disable`, :cpp:func:`esp_etm_del_channel`) are also thread-safe. Concurrent operations on different channels are safe. Concurrent operations on the same channel are serialized internally; if an operation is incompatible with the current channel state, it will return :c:macro:`ESP_ERR_INVALID_STATE`.
+- No functions are allowed to run within the ISR environment.
 
 .. _etm-kconfig-options:
 

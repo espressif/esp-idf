@@ -19,3 +19,7 @@
 
 /*--------------------------- Watch Dog ------------------------------------------*/
 #define _SOC_CAPS_WDT_MWDTS_PER_TIMG              1  // Number of main watchdog timers in each Timer Group
+
+/*--------------------------- ETM (Event Task Matrix) ----------------------------*/
+#define _SOC_CAPS_ETM_INST_NUM                    1  // Number of ETM instances
+#define _SOC_CAPS_ETM_CHANS_PER_INST              50 // Number of channels in each ETM instance

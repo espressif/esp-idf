@@ -8,11 +8,6 @@
 #include <string.h>
 #include <sys/cdefs.h>
 #include "sdkconfig.h"
-#if CONFIG_ETM_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
 #include "freertos/FreeRTOS.h"
 #include "driver/gpio.h"
 #include "driver/gpio_etm.h"
@@ -151,9 +146,6 @@ static esp_err_t gpio_del_etm_task(esp_etm_task_t *task)
 
 esp_err_t gpio_new_etm_event(const gpio_etm_event_config_t *config, esp_etm_event_handle_t *ret_event, ...)
 {
-#if CONFIG_ETM_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     int chan_id = -1;
     uint8_t event_mask = 0;
@@ -243,9 +235,6 @@ err:
 
 esp_err_t gpio_new_etm_task(const gpio_etm_task_config_t *config, esp_etm_task_handle_t *ret_task, ...)
 {
-#if CONFIG_ETM_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     int chan_id = -1;
     uint8_t task_mask = 0;
