@@ -51,7 +51,7 @@ int16_t temperature_sensor_hal_get_degree(bool *range_changed)
     } else {
         s_hal_tsens_idx = 2;
     }
-    HAL_LOGD(TAG_TSENS, "range changed, change to index %d", s_hal_tsens_idx);
+    HAL_EARLY_LOGD(TAG_TSENS, "range changed, change to index %d", s_hal_tsens_idx);
     temperature_dac = temperature_sensor_attributes[s_hal_tsens_idx].reg_val;
     s_hal_record_min = temperature_sensor_attributes[s_hal_tsens_idx].range_min;
     s_hal_record_max = temperature_sensor_attributes[s_hal_tsens_idx].range_max;
