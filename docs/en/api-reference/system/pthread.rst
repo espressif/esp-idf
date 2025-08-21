@@ -154,6 +154,8 @@ The following API functions of the POSIX reader-writer locks specification are i
 * `pthread_rwlock_wrlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_wrlock.html>`_
 * `pthread_rwlock_trywrlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_trywrlock.html>`_
 * `pthread_rwlock_unlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_unlock.html>`_
+* `pthread_rwlock_timedwrlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_timedwrlock.html>`_
+* `pthread_rwlock_timedrdlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_timedrdlock.html>`_
 
 The static initializer constant ``PTHREAD_RWLOCK_INITIALIZER`` is supported.
 

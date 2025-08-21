@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <stdatomic.h>
+#include <time.h>
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "sys/queue.h"
@@ -308,6 +309,93 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
 
     pthread_mutex_unlock(&esp_rwlock->resource_mutex);
 
+    return 0;
+}
+
+int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock, const struct timespec *abstime)
+{
+    esp_pthread_rwlock_t *esp_rwlock;
+    int res;
+
+    res = checkrw_lock(rwlock);
+    if (res != 0) {
+        return res;
+    }
+
+    esp_rwlock = (esp_pthread_rwlock_t *)*rwlock;
+    res = pthread_mutex_lock(&esp_rwlock->resource_mutex);
+    if (res != 0) {
+        return res;
+    }
+
+    // If there are active readers or active writers, we go into the timed wait path
+    // otherwise, we go into the immediate success path.
+    if (esp_rwlock->active_readers || esp_rwlock->active_writers) {
+        // The timed wait path
+        if (!abstime || abstime->tv_nsec < 0 || abstime->tv_nsec >= 1000000000) {
+            // The validity of the abstime parameter need be checked
+            // if the lock can not be immediately acquired (see Immediate success path).
+            pthread_mutex_unlock(&esp_rwlock->resource_mutex);
+            return EINVAL;
+        }
+
+        esp_rwlock->waiting_writers++;
+        while (esp_rwlock->active_readers > 0 || esp_rwlock->active_writers > 0) {
+            res = pthread_cond_timedwait(&esp_rwlock->cv, &esp_rwlock->resource_mutex, abstime);
+            if (res == ETIMEDOUT) {
+                esp_rwlock->waiting_writers--;
+                pthread_mutex_unlock(&esp_rwlock->resource_mutex);
+                return ETIMEDOUT;
+            }
+        }
+        esp_rwlock->waiting_writers--;
+    }
+
+    // Immediate success path.
+    esp_rwlock->active_writers++;
+    pthread_mutex_unlock(&esp_rwlock->resource_mutex);
+    return 0;
+}
+
+int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock, const struct timespec *abstime)
+{
+    esp_pthread_rwlock_t *esp_rwlock;
+    int res;
+
+    res = checkrw_lock(rwlock);
+    if (res != 0) {
+        return res;
+    }
+
+    esp_rwlock = (esp_pthread_rwlock_t *)*rwlock;
+    res = pthread_mutex_lock(&esp_rwlock->resource_mutex);
+    if (res != 0) {
+        return res;
+    }
+
+    // If there are active writers or waiting writers, we go into the timed wait path
+    // otherwise, we go into the immediate success path.
+    if (esp_rwlock->active_writers || esp_rwlock->waiting_writers) {
+        // The timed wait path
+        if (!abstime || abstime->tv_nsec < 0 || abstime->tv_nsec >= 1000000000) {
+            // The validity of the abstime parameter need be checked
+            // if the lock can not be immediately acquired (see Immediate success path).
+            pthread_mutex_unlock(&esp_rwlock->resource_mutex);
+            return EINVAL;
+        }
+
+        while (esp_rwlock->active_writers > 0 || esp_rwlock->waiting_writers > 0) {
+            res = pthread_cond_timedwait(&esp_rwlock->cv, &esp_rwlock->resource_mutex, abstime);
+            if (res == ETIMEDOUT) {
+                pthread_mutex_unlock(&esp_rwlock->resource_mutex);
+                return ETIMEDOUT;
+            }
+        }
+    }
+
+    // Immediate success path.
+    esp_rwlock->active_readers++;
+    pthread_mutex_unlock(&esp_rwlock->resource_mutex);
     return 0;
 }
 
