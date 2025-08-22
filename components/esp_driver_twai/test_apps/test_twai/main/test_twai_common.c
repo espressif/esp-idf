@@ -44,6 +44,8 @@ TEST_CASE("twai install uninstall (loopback)", "[twai]")
     twai_onchip_node_config_t node_config = {
         .io_cfg.tx = TEST_TX_GPIO,
         .io_cfg.rx = TEST_TX_GPIO,  // Using same pin for test without transceiver
+        .io_cfg.quanta_clk_out = GPIO_NUM_NC,
+        .io_cfg.bus_off_indicator = GPIO_NUM_NC,
         .bit_timing.bitrate = 1000000,
         .data_timing.bitrate = 1000000,
         .tx_queue_depth = TEST_TWAI_QUEUE_DEPTH,
@@ -128,7 +130,7 @@ static void test_twai_baudrate_correctness(twai_clock_source_t clk_src, uint32_t
         .buffer = (uint8_t []){0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55},
         .buffer_len = 8,
         .header = {
-            .id = 0x55555,
+            .id = 0x15555555,
             .ide = true,
             .dlc = 8,
         }
@@ -182,6 +184,8 @@ TEST_CASE("twai transmit stop resume (loopback)", "[twai]")
     twai_onchip_node_config_t node_config = {
         .io_cfg.tx = TEST_TX_GPIO,
         .io_cfg.rx = TEST_TX_GPIO,  // Using same pin for test without transceiver
+        .io_cfg.quanta_clk_out = GPIO_NUM_NC,
+        .io_cfg.bus_off_indicator = GPIO_NUM_NC,
         .bit_timing.bitrate = 200000,
         .tx_queue_depth = TEST_TWAI_QUEUE_DEPTH,
         .flags.enable_loopback = true,
@@ -282,6 +286,8 @@ TEST_CASE("twai mask filter (loopback)", "[twai]")
     twai_onchip_node_config_t node_config = {
         .io_cfg.tx = TEST_TX_GPIO,
         .io_cfg.rx = TEST_TX_GPIO,  // Using same pin for test without transceiver
+        .io_cfg.quanta_clk_out = GPIO_NUM_NC,
+        .io_cfg.bus_off_indicator = GPIO_NUM_NC,
         .bit_timing.bitrate = 1000000,
         .tx_queue_depth = TEST_TWAI_QUEUE_DEPTH,
         .flags.enable_loopback = true,
@@ -366,6 +372,8 @@ TEST_CASE("twai dual 16bit mask filter (loopback)", "[twai]")
     twai_onchip_node_config_t node_config = {
         .io_cfg.tx = TEST_TX_GPIO,
         .io_cfg.rx = TEST_TX_GPIO,  // Using same pin for test without transceiver
+        .io_cfg.quanta_clk_out = GPIO_NUM_NC,
+        .io_cfg.bus_off_indicator = GPIO_NUM_NC,
         .bit_timing.bitrate = 1000000,
         .tx_queue_depth = TEST_TWAI_QUEUE_DEPTH,
         .flags.enable_loopback = true,
@@ -440,6 +448,8 @@ TEST_CASE("twai driver cache safe (loopback)", "[twai]")
     twai_onchip_node_config_t node_config = {
         .io_cfg.tx = TEST_TX_GPIO,
         .io_cfg.rx = TEST_TX_GPIO,  // Using same pin for test without transceiver
+        .io_cfg.quanta_clk_out = GPIO_NUM_NC,
+        .io_cfg.bus_off_indicator = GPIO_NUM_NC,
         .bit_timing.bitrate = 50000,   //slow bitrate to ensure cache disabled before tx_queue finish
         .tx_queue_depth = TEST_FRAME_NUM,
         .flags.enable_loopback = true,
@@ -485,3 +495,131 @@ TEST_CASE("twai driver cache safe (loopback)", "[twai]")
     TEST_ESP_OK(twai_node_delete(node_hdl));
 }
 #endif //CONFIG_TWAI_ISR_CACHE_SAFE
+
+// Test data for ISR send functionality
+typedef struct {
+    twai_node_handle_t node;
+    uint32_t rx_count;
+    uint32_t tx_isr_send_count;
+    uint32_t rx_isr_send_count;
+    bool test_completed;
+} isr_send_test_ctx_t;
+
+static IRAM_ATTR bool test_tx_isr_send_cb(twai_node_handle_t handle, const twai_tx_done_event_data_t *edata, void *user_ctx)
+{
+    isr_send_test_ctx_t *ctx = (isr_send_test_ctx_t *)user_ctx;
+
+    // Test sending from TX ISR context
+    if (ctx->tx_isr_send_count < 3) {
+        static twai_frame_t isr_frame = {};
+        isr_frame.header.id = 0x200 + ctx->tx_isr_send_count;
+        isr_frame.header.dlc = 1;
+        isr_frame.buffer = (uint8_t*)(&ctx->tx_isr_send_count);
+        isr_frame.buffer_len = 1;
+
+        esp_err_t err = twai_node_transmit(handle, &isr_frame, 0);  // timeout must be 0 in ISR
+        if (err == ESP_OK) {
+            ctx->tx_isr_send_count++;
+        }
+    }
+
+    return false;
+}
+
+static IRAM_ATTR bool test_rx_isr_send_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx)
+{
+    isr_send_test_ctx_t *ctx = (isr_send_test_ctx_t *)user_ctx;
+    twai_frame_t rx_frame = {};
+    uint8_t buffer[8];
+    rx_frame.buffer = buffer;
+    rx_frame.buffer_len = sizeof(buffer);
+
+    if (ESP_OK == twai_node_receive_from_isr(handle, &rx_frame)) {
+        ctx->rx_count++;
+
+        // Test sending from RX ISR context (response pattern)
+        if ((rx_frame.header.id >= 0x100) && (rx_frame.header.id < 0x103) && (ctx->rx_isr_send_count < 3)) {
+            static twai_frame_t response_frame;
+            response_frame = (twai_frame_t) {};
+            response_frame.header.id = 0x300 + ctx->rx_isr_send_count;
+            response_frame.header.dlc = 1;
+            response_frame.buffer = (uint8_t*)(&ctx->rx_isr_send_count);
+            response_frame.buffer_len = 1;
+
+            esp_err_t err = twai_node_transmit(handle, &response_frame, 0);  // timeout must be 0 in ISR
+            if (err == ESP_OK) {
+                ctx->rx_isr_send_count++;
+            }
+        }
+
+        // Mark test completed when we receive expected frames
+        if (ctx->rx_count >= 9) {  // 3 initial + 3 tx_isr + 3 rx_isr responses
+            ctx->test_completed = true;
+        }
+    }
+    return false;
+}
+
+TEST_CASE("twai send from ISR context (loopback)", "[twai]")
+{
+    isr_send_test_ctx_t test_ctx = {};
+
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_TX_GPIO; // Using same pin for test without transceiver
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
+    node_config.bit_timing.bitrate = 500000;
+    node_config.tx_queue_depth = 10;  // Larger queue for ISR sends
+    node_config.flags.enable_self_test = true;
+    node_config.flags.enable_loopback = true;
+
+    TEST_ESP_OK(twai_new_node_onchip(&node_config, &test_ctx.node));
+
+    twai_event_callbacks_t user_cbs = {};
+    user_cbs.on_rx_done = test_rx_isr_send_cb;
+    user_cbs.on_tx_done = test_tx_isr_send_cb;
+    TEST_ESP_OK(twai_node_register_event_callbacks(test_ctx.node, &user_cbs, &test_ctx));
+    TEST_ESP_OK(twai_node_enable(test_ctx.node));
+
+    printf("Testing ISR context sending...\n");
+
+    // Send initial frames to trigger RX ISR responses
+    for (int i = 0; i < 3; i++) {
+        twai_frame_t trigger_frame = {};
+        trigger_frame.header.id = 0x100 + i;
+        trigger_frame.header.dlc = 1;
+        trigger_frame.buffer = (uint8_t[]) {
+            (uint8_t)i
+        };
+        trigger_frame.buffer_len = 1;
+
+        TEST_ESP_OK(twai_node_transmit(test_ctx.node, &trigger_frame, 500));
+        printf("Sent trigger frame 0x%" PRIx32 "\n", trigger_frame.header.id);
+        vTaskDelay(pdMS_TO_TICKS(50));  // Allow ISR processing
+    }
+
+    // Wait for test completion
+    int timeout_count = 0;
+    while (!test_ctx.test_completed && timeout_count < 100) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+        timeout_count++;
+    }
+
+    printf("Test results:\n");
+    printf("  RX count: %" PRIu32 "\n", test_ctx.rx_count);
+    printf("  TX ISR sends: %" PRIu32 "\n", test_ctx.tx_isr_send_count);
+    printf("  RX ISR sends: %" PRIu32 "\n", test_ctx.rx_isr_send_count);
+    printf("  Test completed: %s\n", test_ctx.test_completed ? "YES" : "NO");
+
+    // Verify test results
+    TEST_ASSERT_TRUE(test_ctx.test_completed);
+    TEST_ASSERT_EQUAL_UINT32(3, test_ctx.tx_isr_send_count);  // 3 sends from TX ISR
+    TEST_ASSERT_EQUAL_UINT32(3, test_ctx.rx_isr_send_count);  // 3 sends from RX ISR
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT32(9, test_ctx.rx_count); // At least 9 received frames
+
+    TEST_ESP_OK(twai_node_disable(test_ctx.node));
+    TEST_ESP_OK(twai_node_delete(test_ctx.node));
+
+    printf("ISR send test passed!\n");
+}
