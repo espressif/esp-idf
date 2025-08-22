@@ -692,3 +692,74 @@ function(add_prebuilt_library target_name lib_path)
         set_property(TARGET ${target_name} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "$<LINK_ONLY:${req_lib}>")
     endforeach()
 endfunction()
+
+#[[
+   __get_target_dependencies(TARGET <target>
+                             OUTPUT <variable>)
+
+   :TARGET[in]: Target for which to get dependencies.
+   :OUTPUT[out]: Output variable where the list of dependencies will be stored.
+
+   Recursively retrieve the list of dependencies for ``TARGET``.
+#]]
+function(__get_target_dependencies)
+    set(options)
+    set(one_value TARGET OUTPUT)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_TARGET)
+        idf_die("TARGET option is required")
+    endif()
+
+    if(NOT DEFINED ARG_OUTPUT)
+        idf_die("OUTPUT option is required")
+    endif()
+
+    set(targets_list "${${ARG_OUTPUT}}")
+    set(target_deps)
+
+    get_target_property(target_deps_link ${ARG_TARGET} LINK_LIBRARIES)
+    if(target_deps_link)
+        list(APPEND target_deps "${target_deps_link}")
+    endif()
+    get_target_property(target_deps_interface ${ARG_TARGET} INTERFACE_LINK_LIBRARIES)
+    if(target_deps_interface)
+        list(APPEND target_deps "${target_deps_interface}")
+    endif()
+    list(REMOVE_DUPLICATES target_deps)
+
+    if(NOT target_deps)
+        # This target has no dependencies, nothing to do.
+        return()
+    endif()
+
+    foreach(dep IN LISTS target_deps)
+        if(dep IN_LIST targets_list)
+            # This dependency has already been processed, skip it.
+            continue()
+        endif()
+
+        if(dep MATCHES "^\\$<.*>$")
+            # Skip generator expressions
+            continue()
+        endif()
+
+        if(NOT TARGET ${dep})
+            # LINK_LIBRARIES may contain various non-library-related linker flags
+            # (-u, -L, -l, etc.), skip them.
+            if(dep MATCHES "^-" OR dep MATCHES "^\:\:")
+                continue()
+            endif()
+
+            # If the dependency is not a target, it may be a library. Add it to the list.
+            list(APPEND targets_list ${dep})
+        else()
+            # Recursively add the dependencies of this target.
+            list(APPEND targets_list ${dep})
+            __get_target_dependencies(TARGET ${dep} OUTPUT targets_list)
+        endif()
+    endforeach()
+
+    set(${ARG_OUTPUT} ${targets_list} PARENT_SCOPE)
+endfunction()
