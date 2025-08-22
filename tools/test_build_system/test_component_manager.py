@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import json
 import os.path
 from pathlib import Path
 
@@ -40,7 +41,7 @@ def test_trimmed_components_still_passed_to_cmake(idf_py: IdfPyFunc, test_app_co
 
     idf_py('reconfigure')
 
-    with open('dependencies.lock', 'r') as f:
+    with open('dependencies.lock') as f:
         fs = f.read()
 
     assert '  example/cmp:' in fs
@@ -58,7 +59,7 @@ class TestOptionalDependencyWithKconfig:
 
         idf_py('reconfigure')
 
-        with open('dependencies.lock', 'r') as f:
+        with open('dependencies.lock') as f:
             fs = f.read()
         assert '  example/cmp:' in fs
 
@@ -72,7 +73,7 @@ class TestOptionalDependencyWithKconfig:
 
         idf_py('reconfigure')
 
-        with open('dependencies.lock', 'r') as f:
+        with open('dependencies.lock') as f:
             fs = f.read()
         assert '  example/cmp:' not in fs
 
@@ -90,7 +91,7 @@ class TestOptionalDependencyWithKconfig:
 
         idf_py('reconfigure')
 
-        with open('dependencies.lock', 'r') as f:
+        with open('dependencies.lock') as f:
             fs = f.read()
         assert '  example/cmp:' in fs
 
@@ -110,7 +111,7 @@ class TestOptionalDependencyWithKconfig:
 
         idf_py('reconfigure')
 
-        with open('dependencies.lock', 'r') as f:
+        with open('dependencies.lock') as f:
             fs = f.read()
         assert '  example/cmp:' in fs
 
@@ -132,7 +133,7 @@ class TestOptionalDependencyWithKconfig:
 
         idf_py('reconfigure')
 
-        with open('dependencies.lock', 'r') as f:
+        with open('dependencies.lock') as f:
             fs = f.read()
         assert '  example/cmp:' in fs
 
@@ -156,3 +157,38 @@ class TestOptionalDependencyWithKconfig:
             f'defined in {str(test_app_copy / "main" / "idf_component.yml")}' in res.stderr
         )
         assert 'Missing required kconfig option after retry.' in res.stderr
+
+    def test_kconfig_in_transitive_dependency(self, idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+        idf_py('create-component', 'foo')
+        (test_app_copy / 'foo' / 'idf_component.yml').write_text("""
+        dependencies:
+          example/cmp:
+            version: "*"
+            rules:
+              - if: $CONFIG{WHO_AM_I} == "foo"
+
+          espressif/mdns:
+            version: "*"
+            require: public
+            rules:
+              - if: $CONFIG{WHO_AM_I} == "foo"
+        """)
+        (test_app_copy / 'foo' / 'Kconfig').write_text("""
+        menu "foo component config"
+        config WHO_AM_I
+            string "Who am I"
+            default "foo"
+        endmenu
+        """)
+
+        replace_in_file(
+            (test_app_copy / 'CMakeLists.txt'),
+            '# placeholder_before_include_project_cmake',
+            'set(EXTRA_COMPONENT_DIRS foo)',
+        )
+
+        idf_py('reconfigure')
+
+        data = json.load(open(test_app_copy / 'build' / 'project_description.json'))
+        assert ['example__cmp'] == data['build_component_info']['foo']['priv_reqs']
+        assert ['espressif__mdns'] == data['build_component_info']['foo']['reqs']
