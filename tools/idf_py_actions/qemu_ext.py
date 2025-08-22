@@ -48,7 +48,6 @@ class QemuTarget:
     qemu_args: str  # chip-specific arguments to pass to QEMU
     default_efuse: bytes  # default efuse values for the target
     boot_mode_arg: str = ''  # additional arguments to pass to QEMU when booting in download mode
-    efuse_device: str = ''  # efuse device name, if different from the target nvram.{target}.efuse
 
 
 # To generate the default eFuse values, follow the instructions in
@@ -68,7 +67,6 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
             '00000000'
         ),
         '-global driver=esp32.gpio,property=strap_mode,value=0x0f',
-        'nvram.esp32.efuse',
     ),
     'esp32c3': QemuTarget(
         'esp32c3',
@@ -105,7 +103,6 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
             '000000000000000000000000000000000000000000000000'
         ),
         '-global driver=esp32c3.gpio,property=strap_mode,value=0x02',
-        'nvram.esp32c3.efuse',
     ),
     'esp32s3': QemuTarget(
         'esp32s3',
@@ -142,8 +139,7 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
             '000000000000000000000000000000000000000000000000'
         ),
         '-global driver=esp32s3.gpio,property=strap_mode,value=0x07',
-        'nvram.esp32c3.efuse',
-    ),  # Not esp32s3, QEMU-201
+    ),
 }
 
 
@@ -303,7 +299,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             '-drive',
             f'file={efuse_bin_path},if=none,format=raw,id=efuse',
             '-global',
-            f'driver={qemu_target_info.efuse_device},property=drive,value=efuse',
+            f'driver=nvram.{target}.efuse,property=drive,value=efuse',
             '-global',
             f'driver=timer.{target}.timg,property=wdt_disable,value=true',
         ]
