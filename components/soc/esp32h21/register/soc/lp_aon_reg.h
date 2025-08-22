@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -251,6 +251,13 @@ extern "C" {
  *  need_des
  */
 #define LP_AON_IO_MUX_REG (DR_REG_LP_AON_BASE + 0x3c)
+/** LP_AON_IO_MUX_PULL_LDO_EN : R/W; bitpos: [27]; default: 0;
+ *  need_des
+ */
+#define LP_AON_IO_MUX_PULL_LDO_EN    (BIT(27))
+#define LP_AON_IO_MUX_PULL_LDO_EN_M  (LP_AON_IO_MUX_PULL_LDO_EN_V << LP_AON_IO_MUX_PULL_LDO_EN_S)
+#define LP_AON_IO_MUX_PULL_LDO_EN_V  0x00000001U
+#define LP_AON_IO_MUX_PULL_LDO_EN_S  27
 /** LP_AON_IO_MUX_PULL_LDO : R/W; bitpos: [30:28]; default: 0;
  *  need_des
  */
@@ -450,7 +457,7 @@ extern "C" {
  *  need_des
  */
 #define LP_AON_DATE_REG (DR_REG_LP_AON_BASE + 0x3fc)
-/** LP_AON_DATE : R/W; bitpos: [30:0]; default: 37781648;
+/** LP_AON_DATE : R/W; bitpos: [30:0]; default: 38814352;
  *  need_des
  */
 #define LP_AON_DATE    0x7FFFFFFFU

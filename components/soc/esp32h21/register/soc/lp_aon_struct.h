@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -246,7 +246,11 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:28;
+        uint32_t reserved_0:27;
+        /** aon_io_mux_pull_ldo_en : R/W; bitpos: [27]; default: 0;
+         *  need_des
+         */
+        uint32_t aon_io_mux_pull_ldo_en:1;
         /** aon_io_mux_pull_ldo : R/W; bitpos: [30:28]; default: 0;
          *  need_des
          */
@@ -431,7 +435,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** aon_date : R/W; bitpos: [30:0]; default: 37781648;
+        /** date : R/W; bitpos: [30:0]; default: 38814352;
          *  need_des
          */
         uint32_t aon_date:31;

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -476,7 +476,7 @@ extern "C" {
  *  need_des
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR1_REG (DR_REG_PMU_BASE + 0x2c)
-/** PMU_HP_ACTIVE_HP_REGULATOR_DRV_B : R/W; bitpos: [31:8]; default: 0;
+/** PMU_HP_ACTIVE_HP_REGULATOR_DRV_B : R/W; bitpos: [31:8]; default: 16;
  *  need_des
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR_DRV_B    0x00FFFFFFU
@@ -505,10 +505,13 @@ extern "C" {
 
 /** PMU_HP_MODEM_DIG_POWER_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_MODEM_DIG_POWER_REG (DR_REG_PMU_BASE + 0x34)
 /** PMU_HP_MODEM_VDD_FLASH_MODE : R/W; bitpos: [21:18]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_VDD_FLASH_MODE    0x0000000FU
 #define PMU_HP_MODEM_VDD_FLASH_MODE_M  (PMU_HP_MODEM_VDD_FLASH_MODE_V << PMU_HP_MODEM_VDD_FLASH_MODE_S)
@@ -516,6 +519,7 @@ extern "C" {
 #define PMU_HP_MODEM_VDD_FLASH_MODE_S  18
 /** PMU_HP_MODEM_HP_MEM_DSLP : R/W; bitpos: [22]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_HP_MEM_DSLP    (BIT(22))
 #define PMU_HP_MODEM_HP_MEM_DSLP_M  (PMU_HP_MODEM_HP_MEM_DSLP_V << PMU_HP_MODEM_HP_MEM_DSLP_S)
@@ -523,6 +527,7 @@ extern "C" {
 #define PMU_HP_MODEM_HP_MEM_DSLP_S  22
 /** PMU_HP_MODEM_PD_HP_MEM_PD_EN : R/W; bitpos: [26:23]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_PD_HP_MEM_PD_EN    0x0000000FU
 #define PMU_HP_MODEM_PD_HP_MEM_PD_EN_M  (PMU_HP_MODEM_PD_HP_MEM_PD_EN_V << PMU_HP_MODEM_PD_HP_MEM_PD_EN_S)
@@ -530,6 +535,7 @@ extern "C" {
 #define PMU_HP_MODEM_PD_HP_MEM_PD_EN_S  23
 /** PMU_HP_MODEM_PD_HP_WIFI_PD_EN : R/W; bitpos: [27]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_PD_HP_WIFI_PD_EN    (BIT(27))
 #define PMU_HP_MODEM_PD_HP_WIFI_PD_EN_M  (PMU_HP_MODEM_PD_HP_WIFI_PD_EN_V << PMU_HP_MODEM_PD_HP_WIFI_PD_EN_S)
@@ -537,6 +543,7 @@ extern "C" {
 #define PMU_HP_MODEM_PD_HP_WIFI_PD_EN_S  27
 /** PMU_HP_MODEM_PD_HP_PERI_PD_EN : R/W; bitpos: [28]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_PD_HP_PERI_PD_EN    (BIT(28))
 #define PMU_HP_MODEM_PD_HP_PERI_PD_EN_M  (PMU_HP_MODEM_PD_HP_PERI_PD_EN_V << PMU_HP_MODEM_PD_HP_PERI_PD_EN_S)
@@ -544,6 +551,7 @@ extern "C" {
 #define PMU_HP_MODEM_PD_HP_PERI_PD_EN_S  28
 /** PMU_HP_MODEM_PD_HP_CPU_PD_EN : R/W; bitpos: [29]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_PD_HP_CPU_PD_EN    (BIT(29))
 #define PMU_HP_MODEM_PD_HP_CPU_PD_EN_M  (PMU_HP_MODEM_PD_HP_CPU_PD_EN_V << PMU_HP_MODEM_PD_HP_CPU_PD_EN_S)
@@ -551,6 +559,7 @@ extern "C" {
 #define PMU_HP_MODEM_PD_HP_CPU_PD_EN_S  29
 /** PMU_HP_MODEM_PD_HP_AON_PD_EN : R/W; bitpos: [30]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_PD_HP_AON_PD_EN    (BIT(30))
 #define PMU_HP_MODEM_PD_HP_AON_PD_EN_M  (PMU_HP_MODEM_PD_HP_AON_PD_EN_V << PMU_HP_MODEM_PD_HP_AON_PD_EN_S)
@@ -558,6 +567,7 @@ extern "C" {
 #define PMU_HP_MODEM_PD_HP_AON_PD_EN_S  30
 /** PMU_HP_MODEM_PD_TOP_PD_EN : R/W; bitpos: [31]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_PD_TOP_PD_EN    (BIT(31))
 #define PMU_HP_MODEM_PD_TOP_PD_EN_M  (PMU_HP_MODEM_PD_TOP_PD_EN_V << PMU_HP_MODEM_PD_TOP_PD_EN_S)
@@ -566,10 +576,13 @@ extern "C" {
 
 /** PMU_HP_MODEM_ICG_HP_FUNC_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_MODEM_ICG_HP_FUNC_REG (DR_REG_PMU_BASE + 0x38)
 /** PMU_HP_MODEM_DIG_ICG_FUNC_EN : R/W; bitpos: [31:0]; default: 4294967295;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DIG_ICG_FUNC_EN    0xFFFFFFFFU
 #define PMU_HP_MODEM_DIG_ICG_FUNC_EN_M  (PMU_HP_MODEM_DIG_ICG_FUNC_EN_V << PMU_HP_MODEM_DIG_ICG_FUNC_EN_S)
@@ -578,10 +591,13 @@ extern "C" {
 
 /** PMU_HP_MODEM_ICG_HP_APB_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_MODEM_ICG_HP_APB_REG (DR_REG_PMU_BASE + 0x3c)
 /** PMU_HP_MODEM_DIG_ICG_APB_EN : R/W; bitpos: [31:0]; default: 4294967295;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DIG_ICG_APB_EN    0xFFFFFFFFU
 #define PMU_HP_MODEM_DIG_ICG_APB_EN_M  (PMU_HP_MODEM_DIG_ICG_APB_EN_V << PMU_HP_MODEM_DIG_ICG_APB_EN_S)
@@ -590,10 +606,13 @@ extern "C" {
 
 /** PMU_HP_MODEM_ICG_MODEM_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_MODEM_ICG_MODEM_REG (DR_REG_PMU_BASE + 0x40)
 /** PMU_HP_MODEM_DIG_ICG_MODEM_CODE : R/W; bitpos: [31:30]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DIG_ICG_MODEM_CODE    0x00000003U
 #define PMU_HP_MODEM_DIG_ICG_MODEM_CODE_M  (PMU_HP_MODEM_DIG_ICG_MODEM_CODE_V << PMU_HP_MODEM_DIG_ICG_MODEM_CODE_S)
@@ -602,10 +621,13 @@ extern "C" {
 
 /** PMU_HP_MODEM_HP_SYS_CNTL_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_MODEM_HP_SYS_CNTL_REG (DR_REG_PMU_BASE + 0x44)
 /** PMU_HP_MODEM_UART_WAKEUP_EN : R/W; bitpos: [24]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_UART_WAKEUP_EN    (BIT(24))
 #define PMU_HP_MODEM_UART_WAKEUP_EN_M  (PMU_HP_MODEM_UART_WAKEUP_EN_V << PMU_HP_MODEM_UART_WAKEUP_EN_S)
@@ -613,6 +635,7 @@ extern "C" {
 #define PMU_HP_MODEM_UART_WAKEUP_EN_S  24
 /** PMU_HP_MODEM_LP_PAD_HOLD_ALL : R/W; bitpos: [25]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_LP_PAD_HOLD_ALL    (BIT(25))
 #define PMU_HP_MODEM_LP_PAD_HOLD_ALL_M  (PMU_HP_MODEM_LP_PAD_HOLD_ALL_V << PMU_HP_MODEM_LP_PAD_HOLD_ALL_S)
@@ -620,6 +643,7 @@ extern "C" {
 #define PMU_HP_MODEM_LP_PAD_HOLD_ALL_S  25
 /** PMU_HP_MODEM_HP_PAD_HOLD_ALL : R/W; bitpos: [26]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_HP_PAD_HOLD_ALL    (BIT(26))
 #define PMU_HP_MODEM_HP_PAD_HOLD_ALL_M  (PMU_HP_MODEM_HP_PAD_HOLD_ALL_V << PMU_HP_MODEM_HP_PAD_HOLD_ALL_S)
@@ -627,6 +651,7 @@ extern "C" {
 #define PMU_HP_MODEM_HP_PAD_HOLD_ALL_S  26
 /** PMU_HP_MODEM_DIG_PAD_SLP_SEL : R/W; bitpos: [27]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DIG_PAD_SLP_SEL    (BIT(27))
 #define PMU_HP_MODEM_DIG_PAD_SLP_SEL_M  (PMU_HP_MODEM_DIG_PAD_SLP_SEL_V << PMU_HP_MODEM_DIG_PAD_SLP_SEL_S)
@@ -634,6 +659,7 @@ extern "C" {
 #define PMU_HP_MODEM_DIG_PAD_SLP_SEL_S  27
 /** PMU_HP_MODEM_DIG_PAUSE_WDT : R/W; bitpos: [28]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DIG_PAUSE_WDT    (BIT(28))
 #define PMU_HP_MODEM_DIG_PAUSE_WDT_M  (PMU_HP_MODEM_DIG_PAUSE_WDT_V << PMU_HP_MODEM_DIG_PAUSE_WDT_S)
@@ -641,6 +667,7 @@ extern "C" {
 #define PMU_HP_MODEM_DIG_PAUSE_WDT_S  28
 /** PMU_HP_MODEM_DIG_CPU_STALL : R/W; bitpos: [29]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DIG_CPU_STALL    (BIT(29))
 #define PMU_HP_MODEM_DIG_CPU_STALL_M  (PMU_HP_MODEM_DIG_CPU_STALL_V << PMU_HP_MODEM_DIG_CPU_STALL_S)
@@ -649,10 +676,13 @@ extern "C" {
 
 /** PMU_HP_MODEM_HP_CK_POWER_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_MODEM_HP_CK_POWER_REG (DR_REG_PMU_BASE + 0x48)
 /** PMU_HP_MODEM_I2C_ISO_EN : R/W; bitpos: [26]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_I2C_ISO_EN    (BIT(26))
 #define PMU_HP_MODEM_I2C_ISO_EN_M  (PMU_HP_MODEM_I2C_ISO_EN_V << PMU_HP_MODEM_I2C_ISO_EN_S)
@@ -660,6 +690,7 @@ extern "C" {
 #define PMU_HP_MODEM_I2C_ISO_EN_S  26
 /** PMU_HP_MODEM_I2C_RETENTION : R/W; bitpos: [27]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_I2C_RETENTION    (BIT(27))
 #define PMU_HP_MODEM_I2C_RETENTION_M  (PMU_HP_MODEM_I2C_RETENTION_V << PMU_HP_MODEM_I2C_RETENTION_S)
@@ -667,6 +698,7 @@ extern "C" {
 #define PMU_HP_MODEM_I2C_RETENTION_S  27
 /** PMU_HP_MODEM_XPD_BB_I2C : R/W; bitpos: [28]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_XPD_BB_I2C    (BIT(28))
 #define PMU_HP_MODEM_XPD_BB_I2C_M  (PMU_HP_MODEM_XPD_BB_I2C_V << PMU_HP_MODEM_XPD_BB_I2C_S)
@@ -674,6 +706,7 @@ extern "C" {
 #define PMU_HP_MODEM_XPD_BB_I2C_S  28
 /** PMU_HP_MODEM_XPD_BBPLL_I2C : R/W; bitpos: [29]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_XPD_BBPLL_I2C    (BIT(29))
 #define PMU_HP_MODEM_XPD_BBPLL_I2C_M  (PMU_HP_MODEM_XPD_BBPLL_I2C_V << PMU_HP_MODEM_XPD_BBPLL_I2C_S)
@@ -681,6 +714,7 @@ extern "C" {
 #define PMU_HP_MODEM_XPD_BBPLL_I2C_S  29
 /** PMU_HP_MODEM_XPD_BBPLL : R/W; bitpos: [30]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_XPD_BBPLL    (BIT(30))
 #define PMU_HP_MODEM_XPD_BBPLL_M  (PMU_HP_MODEM_XPD_BBPLL_V << PMU_HP_MODEM_XPD_BBPLL_S)
@@ -689,10 +723,13 @@ extern "C" {
 
 /** PMU_HP_MODEM_BIAS_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_MODEM_BIAS_REG (DR_REG_PMU_BASE + 0x4c)
 /** PMU_HP_MODEM_DCDC_CCM_ENB : R/W; bitpos: [9]; default: 1;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DCDC_CCM_ENB    (BIT(9))
 #define PMU_HP_MODEM_DCDC_CCM_ENB_M  (PMU_HP_MODEM_DCDC_CCM_ENB_V << PMU_HP_MODEM_DCDC_CCM_ENB_S)
@@ -700,6 +737,7 @@ extern "C" {
 #define PMU_HP_MODEM_DCDC_CCM_ENB_S  9
 /** PMU_HP_MODEM_DCDC_CLEAR_RDY : R/W; bitpos: [10]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DCDC_CLEAR_RDY    (BIT(10))
 #define PMU_HP_MODEM_DCDC_CLEAR_RDY_M  (PMU_HP_MODEM_DCDC_CLEAR_RDY_V << PMU_HP_MODEM_DCDC_CLEAR_RDY_S)
@@ -707,6 +745,7 @@ extern "C" {
 #define PMU_HP_MODEM_DCDC_CLEAR_RDY_S  10
 /** PMU_HP_MODEM_DIG_PMU_DPCUR_BIAS : R/W; bitpos: [12:11]; default: 1;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DIG_PMU_DPCUR_BIAS    0x00000003U
 #define PMU_HP_MODEM_DIG_PMU_DPCUR_BIAS_M  (PMU_HP_MODEM_DIG_PMU_DPCUR_BIAS_V << PMU_HP_MODEM_DIG_PMU_DPCUR_BIAS_S)
@@ -714,6 +753,7 @@ extern "C" {
 #define PMU_HP_MODEM_DIG_PMU_DPCUR_BIAS_S  11
 /** PMU_HP_MODEM_DIG_PMU_DSFMOS : R/W; bitpos: [16:13]; default: 4;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DIG_PMU_DSFMOS    0x0000000FU
 #define PMU_HP_MODEM_DIG_PMU_DSFMOS_M  (PMU_HP_MODEM_DIG_PMU_DSFMOS_V << PMU_HP_MODEM_DIG_PMU_DSFMOS_S)
@@ -721,6 +761,7 @@ extern "C" {
 #define PMU_HP_MODEM_DIG_PMU_DSFMOS_S  13
 /** PMU_HP_MODEM_DCM_VSET : R/W; bitpos: [21:17]; default: 23;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DCM_VSET    0x0000001FU
 #define PMU_HP_MODEM_DCM_VSET_M  (PMU_HP_MODEM_DCM_VSET_V << PMU_HP_MODEM_DCM_VSET_S)
@@ -728,6 +769,7 @@ extern "C" {
 #define PMU_HP_MODEM_DCM_VSET_S  17
 /** PMU_HP_MODEM_DCM_MODE : R/W; bitpos: [23:22]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DCM_MODE    0x00000003U
 #define PMU_HP_MODEM_DCM_MODE_M  (PMU_HP_MODEM_DCM_MODE_V << PMU_HP_MODEM_DCM_MODE_S)
@@ -735,6 +777,7 @@ extern "C" {
 #define PMU_HP_MODEM_DCM_MODE_S  22
 /** PMU_HP_MODEM_XPD_TRX : R/W; bitpos: [24]; default: 1;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_XPD_TRX    (BIT(24))
 #define PMU_HP_MODEM_XPD_TRX_M  (PMU_HP_MODEM_XPD_TRX_V << PMU_HP_MODEM_XPD_TRX_S)
@@ -742,6 +785,7 @@ extern "C" {
 #define PMU_HP_MODEM_XPD_TRX_S  24
 /** PMU_HP_MODEM_XPD_BIAS : R/W; bitpos: [25]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_XPD_BIAS    (BIT(25))
 #define PMU_HP_MODEM_XPD_BIAS_M  (PMU_HP_MODEM_XPD_BIAS_V << PMU_HP_MODEM_XPD_BIAS_S)
@@ -749,6 +793,7 @@ extern "C" {
 #define PMU_HP_MODEM_XPD_BIAS_S  25
 /** PMU_HP_MODEM_DISCNNT_DIG_RTC : R/W; bitpos: [29]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DISCNNT_DIG_RTC    (BIT(29))
 #define PMU_HP_MODEM_DISCNNT_DIG_RTC_M  (PMU_HP_MODEM_DISCNNT_DIG_RTC_V << PMU_HP_MODEM_DISCNNT_DIG_RTC_S)
@@ -756,6 +801,7 @@ extern "C" {
 #define PMU_HP_MODEM_DISCNNT_DIG_RTC_S  29
 /** PMU_HP_MODEM_PD_CUR : R/W; bitpos: [30]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_PD_CUR    (BIT(30))
 #define PMU_HP_MODEM_PD_CUR_M  (PMU_HP_MODEM_PD_CUR_V << PMU_HP_MODEM_PD_CUR_S)
@@ -763,6 +809,7 @@ extern "C" {
 #define PMU_HP_MODEM_PD_CUR_S  30
 /** PMU_HP_MODEM_BIAS_SLEEP : R/W; bitpos: [31]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_BIAS_SLEEP    (BIT(31))
 #define PMU_HP_MODEM_BIAS_SLEEP_M  (PMU_HP_MODEM_BIAS_SLEEP_V << PMU_HP_MODEM_BIAS_SLEEP_S)
@@ -771,10 +818,13 @@ extern "C" {
 
 /** PMU_HP_MODEM_BACKUP_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_MODEM_BACKUP_REG (DR_REG_PMU_BASE + 0x50)
 /** PMU_HP_SLEEP2MODEM_BACKUP_MODEM_CLK_CODE : R/W; bitpos: [5:4]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODEM_CLK_CODE    0x00000003U
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODEM_CLK_CODE_M  (PMU_HP_SLEEP2MODEM_BACKUP_MODEM_CLK_CODE_V << PMU_HP_SLEEP2MODEM_BACKUP_MODEM_CLK_CODE_S)
@@ -782,6 +832,7 @@ extern "C" {
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODEM_CLK_CODE_S  4
 /** PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL : R/W; bitpos: [15:14]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL    0x00000003U
 #define PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_M  (PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_V << PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_S)
@@ -789,6 +840,7 @@ extern "C" {
 #define PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_S  14
 /** PMU_HP_SLEEP2MODEM_BACKUP_MODE : R/W; bitpos: [24:20]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODE    0x0000001FU
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODE_M  (PMU_HP_SLEEP2MODEM_BACKUP_MODE_V << PMU_HP_SLEEP2MODEM_BACKUP_MODE_S)
@@ -796,6 +848,7 @@ extern "C" {
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODE_S  20
 /** PMU_HP_SLEEP2MODEM_BACKUP_EN : R/W; bitpos: [29]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_SLEEP2MODEM_BACKUP_EN    (BIT(29))
 #define PMU_HP_SLEEP2MODEM_BACKUP_EN_M  (PMU_HP_SLEEP2MODEM_BACKUP_EN_V << PMU_HP_SLEEP2MODEM_BACKUP_EN_S)
@@ -804,10 +857,13 @@ extern "C" {
 
 /** PMU_HP_MODEM_BACKUP_CLK_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_MODEM_BACKUP_CLK_REG (DR_REG_PMU_BASE + 0x54)
 /** PMU_HP_MODEM_BACKUP_ICG_FUNC_EN : R/W; bitpos: [31:0]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_BACKUP_ICG_FUNC_EN    0xFFFFFFFFU
 #define PMU_HP_MODEM_BACKUP_ICG_FUNC_EN_M  (PMU_HP_MODEM_BACKUP_ICG_FUNC_EN_V << PMU_HP_MODEM_BACKUP_ICG_FUNC_EN_S)
@@ -816,10 +872,13 @@ extern "C" {
 
 /** PMU_HP_MODEM_SYSCLK_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_MODEM_SYSCLK_REG (DR_REG_PMU_BASE + 0x58)
 /** PMU_HP_MODEM_DIG_SYS_CLK_NO_DIV : R/W; bitpos: [26]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DIG_SYS_CLK_NO_DIV    (BIT(26))
 #define PMU_HP_MODEM_DIG_SYS_CLK_NO_DIV_M  (PMU_HP_MODEM_DIG_SYS_CLK_NO_DIV_V << PMU_HP_MODEM_DIG_SYS_CLK_NO_DIV_S)
@@ -827,6 +886,7 @@ extern "C" {
 #define PMU_HP_MODEM_DIG_SYS_CLK_NO_DIV_S  26
 /** PMU_HP_MODEM_ICG_SYS_CLOCK_EN : R/W; bitpos: [27]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_ICG_SYS_CLOCK_EN    (BIT(27))
 #define PMU_HP_MODEM_ICG_SYS_CLOCK_EN_M  (PMU_HP_MODEM_ICG_SYS_CLOCK_EN_V << PMU_HP_MODEM_ICG_SYS_CLOCK_EN_S)
@@ -834,6 +894,7 @@ extern "C" {
 #define PMU_HP_MODEM_ICG_SYS_CLOCK_EN_S  27
 /** PMU_HP_MODEM_SYS_CLK_SLP_SEL : R/W; bitpos: [28]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_SYS_CLK_SLP_SEL    (BIT(28))
 #define PMU_HP_MODEM_SYS_CLK_SLP_SEL_M  (PMU_HP_MODEM_SYS_CLK_SLP_SEL_V << PMU_HP_MODEM_SYS_CLK_SLP_SEL_S)
@@ -841,6 +902,7 @@ extern "C" {
 #define PMU_HP_MODEM_SYS_CLK_SLP_SEL_S  28
 /** PMU_HP_MODEM_ICG_SLP_SEL : R/W; bitpos: [29]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_ICG_SLP_SEL    (BIT(29))
 #define PMU_HP_MODEM_ICG_SLP_SEL_M  (PMU_HP_MODEM_ICG_SLP_SEL_V << PMU_HP_MODEM_ICG_SLP_SEL_S)
@@ -848,6 +910,7 @@ extern "C" {
 #define PMU_HP_MODEM_ICG_SLP_SEL_S  29
 /** PMU_HP_MODEM_DIG_SYS_CLK_SEL : R/W; bitpos: [31:30]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_DIG_SYS_CLK_SEL    0x00000003U
 #define PMU_HP_MODEM_DIG_SYS_CLK_SEL_M  (PMU_HP_MODEM_DIG_SYS_CLK_SEL_V << PMU_HP_MODEM_DIG_SYS_CLK_SEL_S)
@@ -856,10 +919,13 @@ extern "C" {
 
 /** PMU_HP_MODEM_HP_REGULATOR0_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_MODEM_HP_REGULATOR0_REG (DR_REG_PMU_BASE + 0x5c)
 /** PMU_HP_MODEM_HP_POWER_DET_BYPASS : R/W; bitpos: [0]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_HP_POWER_DET_BYPASS    (BIT(0))
 #define PMU_HP_MODEM_HP_POWER_DET_BYPASS_M  (PMU_HP_MODEM_HP_POWER_DET_BYPASS_V << PMU_HP_MODEM_HP_POWER_DET_BYPASS_S)
@@ -867,6 +933,7 @@ extern "C" {
 #define PMU_HP_MODEM_HP_POWER_DET_BYPASS_S  0
 /** PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD : R/W; bitpos: [16]; default: 1;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD    (BIT(16))
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD_M  (PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD_V << PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD_S)
@@ -874,6 +941,7 @@ extern "C" {
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD_S  16
 /** PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_XPD : R/W; bitpos: [17]; default: 1;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_XPD    (BIT(17))
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_XPD_M  (PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_XPD_V << PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_XPD_S)
@@ -881,6 +949,7 @@ extern "C" {
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_XPD_S  17
 /** PMU_HP_MODEM_HP_REGULATOR_XPD : R/W; bitpos: [18]; default: 1;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_HP_REGULATOR_XPD    (BIT(18))
 #define PMU_HP_MODEM_HP_REGULATOR_XPD_M  (PMU_HP_MODEM_HP_REGULATOR_XPD_V << PMU_HP_MODEM_HP_REGULATOR_XPD_S)
@@ -888,6 +957,7 @@ extern "C" {
 #define PMU_HP_MODEM_HP_REGULATOR_XPD_S  18
 /** PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_DBIAS : R/W; bitpos: [22:19]; default: 8;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_DBIAS    0x0000000FU
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_DBIAS_M  (PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_DBIAS_V << PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_DBIAS_S)
@@ -895,6 +965,7 @@ extern "C" {
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_DBIAS_S  19
 /** PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_DBIAS : R/W; bitpos: [26:23]; default: 8;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_DBIAS    0x0000000FU
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_DBIAS_M  (PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_DBIAS_V << PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_DBIAS_S)
@@ -902,6 +973,7 @@ extern "C" {
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_DBIAS_S  23
 /** PMU_HP_MODEM_HP_REGULATOR_DBIAS : R/W; bitpos: [31:27]; default: 16;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_HP_REGULATOR_DBIAS    0x0000001FU
 #define PMU_HP_MODEM_HP_REGULATOR_DBIAS_M  (PMU_HP_MODEM_HP_REGULATOR_DBIAS_V << PMU_HP_MODEM_HP_REGULATOR_DBIAS_S)
@@ -910,10 +982,13 @@ extern "C" {
 
 /** PMU_HP_MODEM_HP_REGULATOR1_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_MODEM_HP_REGULATOR1_REG (DR_REG_PMU_BASE + 0x60)
-/** PMU_HP_MODEM_HP_REGULATOR_DRV_B : R/W; bitpos: [31:8]; default: 0;
+/** PMU_HP_MODEM_HP_REGULATOR_DRV_B : R/W; bitpos: [31:8]; default: 16;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_HP_REGULATOR_DRV_B    0x00FFFFFFU
 #define PMU_HP_MODEM_HP_REGULATOR_DRV_B_M  (PMU_HP_MODEM_HP_REGULATOR_DRV_B_V << PMU_HP_MODEM_HP_REGULATOR_DRV_B_S)
@@ -922,10 +997,13 @@ extern "C" {
 
 /** PMU_HP_MODEM_XTAL_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_MODEM_XTAL_REG (DR_REG_PMU_BASE + 0x64)
 /** PMU_HP_MODEM_XPD_XTALX2 : R/W; bitpos: [30]; default: 1;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_XPD_XTALX2    (BIT(30))
 #define PMU_HP_MODEM_XPD_XTALX2_M  (PMU_HP_MODEM_XPD_XTALX2_V << PMU_HP_MODEM_XPD_XTALX2_S)
@@ -933,6 +1011,7 @@ extern "C" {
 #define PMU_HP_MODEM_XPD_XTALX2_S  30
 /** PMU_HP_MODEM_XPD_XTAL : R/W; bitpos: [31]; default: 1;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_MODEM_XPD_XTAL    (BIT(31))
 #define PMU_HP_MODEM_XPD_XTAL_M  (PMU_HP_MODEM_XPD_XTAL_V << PMU_HP_MODEM_XPD_XTAL_S)
@@ -1376,7 +1455,7 @@ extern "C" {
  *  need_des
  */
 #define PMU_HP_SLEEP_HP_REGULATOR1_REG (DR_REG_PMU_BASE + 0x94)
-/** PMU_HP_SLEEP_HP_REGULATOR_DRV_B : R/W; bitpos: [31:8]; default: 0;
+/** PMU_HP_SLEEP_HP_REGULATOR_DRV_B : R/W; bitpos: [31:8]; default: 16;
  *  need_des
  */
 #define PMU_HP_SLEEP_HP_REGULATOR_DRV_B    0x00FFFFFFU
@@ -1450,10 +1529,13 @@ extern "C" {
 
 /** PMU_HP_SLEEP_LP_DCDC_RESERVE_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_HP_SLEEP_LP_DCDC_RESERVE_REG (DR_REG_PMU_BASE + 0xa4)
 /** PMU_HP_SLEEP_LP_DCDC_RESERVE : WT; bitpos: [31:0]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_HP_SLEEP_LP_DCDC_RESERVE    0xFFFFFFFFU
 #define PMU_HP_SLEEP_LP_DCDC_RESERVE_M  (PMU_HP_SLEEP_LP_DCDC_RESERVE_V << PMU_HP_SLEEP_LP_DCDC_RESERVE_S)
@@ -1542,10 +1624,13 @@ extern "C" {
 
 /** PMU_LP_SLEEP_LP_BIAS_RESERVE_REG register
  *  need_des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define PMU_LP_SLEEP_LP_BIAS_RESERVE_REG (DR_REG_PMU_BASE + 0xb0)
 /** PMU_LP_SLEEP_LP_BIAS_RESERVE : WT; bitpos: [31:0]; default: 0;
  *  need_des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define PMU_LP_SLEEP_LP_BIAS_RESERVE    0xFFFFFFFFU
 #define PMU_LP_SLEEP_LP_BIAS_RESERVE_M  (PMU_LP_SLEEP_LP_BIAS_RESERVE_V << PMU_LP_SLEEP_LP_BIAS_RESERVE_S)
@@ -2666,12 +2751,12 @@ extern "C" {
 #define PMU_FLASH1P8_STANDBY_M  (PMU_FLASH1P8_STANDBY_V << PMU_FLASH1P8_STANDBY_S)
 #define PMU_FLASH1P8_STANDBY_V  0x00000001U
 #define PMU_FLASH1P8_STANDBY_S  25
-/** PMU_FLASH1P8_POWER_ADJUST : R/W; bitpos: [30:26]; default: 0;
+/** PMU_FLASH1P8_POWER_ADJUST : R/W; bitpos: [29:26]; default: 0;
  *  need_des
  */
-#define PMU_FLASH1P8_POWER_ADJUST    0x0000001FU
+#define PMU_FLASH1P8_POWER_ADJUST    0x0000000FU
 #define PMU_FLASH1P8_POWER_ADJUST_M  (PMU_FLASH1P8_POWER_ADJUST_V << PMU_FLASH1P8_POWER_ADJUST_S)
-#define PMU_FLASH1P8_POWER_ADJUST_V  0x0000001FU
+#define PMU_FLASH1P8_POWER_ADJUST_V  0x0000000FU
 #define PMU_FLASH1P8_POWER_ADJUST_S  26
 /** PMU_FLASH1P8_ENDET : R/W; bitpos: [31]; default: 0;
  *  need_des
@@ -2755,12 +2840,12 @@ extern "C" {
 #define PMU_FLASH1P2_STANDBY_M  (PMU_FLASH1P2_STANDBY_V << PMU_FLASH1P2_STANDBY_S)
 #define PMU_FLASH1P2_STANDBY_V  0x00000001U
 #define PMU_FLASH1P2_STANDBY_S  25
-/** PMU_FLASH1P2_POWER_ADJUST : R/W; bitpos: [30:26]; default: 0;
+/** PMU_FLASH1P2_POWER_ADJUST : R/W; bitpos: [29:26]; default: 0;
  *  need_des
  */
-#define PMU_FLASH1P2_POWER_ADJUST    0x0000001FU
+#define PMU_FLASH1P2_POWER_ADJUST    0x0000000FU
 #define PMU_FLASH1P2_POWER_ADJUST_M  (PMU_FLASH1P2_POWER_ADJUST_V << PMU_FLASH1P2_POWER_ADJUST_S)
-#define PMU_FLASH1P2_POWER_ADJUST_V  0x0000001FU
+#define PMU_FLASH1P2_POWER_ADJUST_V  0x0000000FU
 #define PMU_FLASH1P2_POWER_ADJUST_S  26
 /** PMU_FLASH1P2_ENDET : R/W; bitpos: [31]; default: 0;
  *  need_des
@@ -2898,12 +2983,12 @@ extern "C" {
 #define PMU_IO_STANDBY_M  (PMU_IO_STANDBY_V << PMU_IO_STANDBY_S)
 #define PMU_IO_STANDBY_V  0x00000001U
 #define PMU_IO_STANDBY_S  25
-/** PMU_IO_POWER_ADJUST : R/W; bitpos: [30:26]; default: 0;
+/** PMU_IO_POWER_ADJUST : R/W; bitpos: [29:26]; default: 0;
  *  need_des
  */
-#define PMU_IO_POWER_ADJUST    0x0000001FU
+#define PMU_IO_POWER_ADJUST    0x0000000FU
 #define PMU_IO_POWER_ADJUST_M  (PMU_IO_POWER_ADJUST_V << PMU_IO_POWER_ADJUST_S)
-#define PMU_IO_POWER_ADJUST_V  0x0000001FU
+#define PMU_IO_POWER_ADJUST_V  0x0000000FU
 #define PMU_IO_POWER_ADJUST_S  26
 /** PMU_IO_ENDET : R/W; bitpos: [31]; default: 0;
  *  need_des
@@ -2936,7 +3021,7 @@ extern "C" {
  *  need_des
  */
 #define PMU_POWER_CK_WAIT_CNTL_REG (DR_REG_PMU_BASE + 0x130)
-/** PMU_WAIT_XTL_STABLE : R/W; bitpos: [15:0]; default: 256;
+/** PMU_WAIT_XTL_STABLE : R/W; bitpos: [15:0]; default: 384;
  *  need_des
  */
 #define PMU_WAIT_XTL_STABLE    0x0000FFFFU
@@ -4136,10 +4221,43 @@ extern "C" {
 #define PMU_DCDC_RDY_CLR_V  0x00000001U
 #define PMU_DCDC_RDY_CLR_S  31
 
+/** PMU_DCM_BOOST_CTRL_REG register
+ *  need_des
+ */
+#define PMU_DCM_BOOST_CTRL_REG (DR_REG_PMU_BASE + 0x1bc)
+/** PMU_DCDC_BOOST_CCM_CTRLEN : R/W; bitpos: [24]; default: 0;
+ *  need_des
+ */
+#define PMU_DCDC_BOOST_CCM_CTRLEN    (BIT(24))
+#define PMU_DCDC_BOOST_CCM_CTRLEN_M  (PMU_DCDC_BOOST_CCM_CTRLEN_V << PMU_DCDC_BOOST_CCM_CTRLEN_S)
+#define PMU_DCDC_BOOST_CCM_CTRLEN_V  0x00000001U
+#define PMU_DCDC_BOOST_CCM_CTRLEN_S  24
+/** PMU_DCDC_BOOST_CCM_ENB : R/W; bitpos: [25]; default: 1;
+ *  need_des
+ */
+#define PMU_DCDC_BOOST_CCM_ENB    (BIT(25))
+#define PMU_DCDC_BOOST_CCM_ENB_M  (PMU_DCDC_BOOST_CCM_ENB_V << PMU_DCDC_BOOST_CCM_ENB_S)
+#define PMU_DCDC_BOOST_CCM_ENB_V  0x00000001U
+#define PMU_DCDC_BOOST_CCM_ENB_S  25
+/** PMU_DCDC_BOOST_EN : R/W; bitpos: [26]; default: 0;
+ *  need_des
+ */
+#define PMU_DCDC_BOOST_EN    (BIT(26))
+#define PMU_DCDC_BOOST_EN_M  (PMU_DCDC_BOOST_EN_V << PMU_DCDC_BOOST_EN_S)
+#define PMU_DCDC_BOOST_EN_V  0x00000001U
+#define PMU_DCDC_BOOST_EN_S  26
+/** PMU_DCDC_BOOST_DREG : R/W; bitpos: [31:27]; default: 23;
+ *  need_des
+ */
+#define PMU_DCDC_BOOST_DREG    0x0000001FU
+#define PMU_DCDC_BOOST_DREG_M  (PMU_DCDC_BOOST_DREG_V << PMU_DCDC_BOOST_DREG_S)
+#define PMU_DCDC_BOOST_DREG_V  0x0000001FU
+#define PMU_DCDC_BOOST_DREG_S  27
+
 /** PMU_TOUCH_PWR_CTRL_REG register
  *  need_des
  */
-#define PMU_TOUCH_PWR_CTRL_REG (DR_REG_PMU_BASE + 0x1bc)
+#define PMU_TOUCH_PWR_CTRL_REG (DR_REG_PMU_BASE + 0x1c0)
 /** PMU_TOUCH_SLEEP_CYCLES : R/W; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -4169,11 +4287,30 @@ extern "C" {
 #define PMU_TOUCH_FORCE_DONE_V  0x00000001U
 #define PMU_TOUCH_FORCE_DONE_S  31
 
+/** PMU_BLE_BANDGAP_CTRL_REG register
+ *  need_des
+ */
+#define PMU_BLE_BANDGAP_CTRL_REG (DR_REG_PMU_BASE + 0x1c4)
+/** PMU_EXT_OCODE : R/W; bitpos: [30:23]; default: 120;
+ *  need_des
+ */
+#define PMU_EXT_OCODE    0x000000FFU
+#define PMU_EXT_OCODE_M  (PMU_EXT_OCODE_V << PMU_EXT_OCODE_S)
+#define PMU_EXT_OCODE_V  0x000000FFU
+#define PMU_EXT_OCODE_S  23
+/** PMU_EXT_FORCE_OCODE : R/W; bitpos: [31]; default: 0;
+ *  need_des
+ */
+#define PMU_EXT_FORCE_OCODE    (BIT(31))
+#define PMU_EXT_FORCE_OCODE_M  (PMU_EXT_FORCE_OCODE_V << PMU_EXT_FORCE_OCODE_S)
+#define PMU_EXT_FORCE_OCODE_V  0x00000001U
+#define PMU_EXT_FORCE_OCODE_S  31
+
 /** PMU_DATE_REG register
  *  need_des
  */
 #define PMU_DATE_REG (DR_REG_PMU_BASE + 0x3fc)
-/** PMU_PMU_DATE : R/W; bitpos: [30:0]; default: 37814400;
+/** PMU_PMU_DATE : R/W; bitpos: [30:0]; default: 38814336;
  *  need_des
  */
 #define PMU_PMU_DATE    0x7FFFFFFFU

@@ -362,7 +362,7 @@ void apm_hal_enable_ctrl_clk_gating(apm_ctrl_module_t ctrl_mod, bool enable);
 
 #endif //SOC_IS(ESP32P4)
 
-#elif SOC_APM_CTRL_FILTER_SUPPORTED //!SOC_APM_SUPPORTED
+#elif SOC_APM_CTRL_FILTER_SUPPORTED //!SOCKconfig_APM_SUPPORTED
 
 #if SOC_IS(ESP32H4)
 #include "soc/hp_apm_reg.h"

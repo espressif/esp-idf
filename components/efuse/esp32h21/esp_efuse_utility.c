@@ -21,7 +21,7 @@ extern uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
 /*Range addresses to read blocks*/
 const esp_efuse_range_addr_t range_read_addr_blocks[] = {
     {EFUSE_RD_WR_DIS_REG,       EFUSE_RD_REPEAT_DATA4_REG},      // range address of EFUSE_BLK0  REPEAT
-    {EFUSE_RD_MAC_SYS_0_REG, EFUSE_RD_MAC_SYS_5_REG},      // range address of EFUSE_BLK1  MAC_8M
+    {EFUSE_RD_MAC_SYS0_REG, EFUSE_RD_MAC_SYS5_REG},      // range address of EFUSE_BLK1  MAC_8M
     {EFUSE_RD_SYS_PART1_DATA0_REG,    EFUSE_RD_SYS_PART1_DATA7_REG},         // range address of EFUSE_BLK2  SYS_DATA
     {EFUSE_RD_USR_DATA0_REG,    EFUSE_RD_USR_DATA7_REG},         // range address of EFUSE_BLK3  USR_DATA
     {EFUSE_RD_KEY0_DATA0_REG,   EFUSE_RD_KEY0_DATA7_REG},        // range address of EFUSE_BLK4  KEY0
