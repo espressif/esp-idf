@@ -1,4 +1,4 @@
-Bluetooth Classic
+经典蓝牙
 =================
 
 :link_to_translation:`en:[English]`

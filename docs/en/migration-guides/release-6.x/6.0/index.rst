@@ -6,7 +6,7 @@ Migration from 5.5 to 6.0
 .. toctree::
     :maxdepth: 1
 
-    bluetooth-classic
+    :SOC_BT_CLASSIC_SUPPORTED: bluetooth-classic
     build-system
     peripherals
     provisioning
