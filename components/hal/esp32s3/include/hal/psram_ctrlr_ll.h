@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -224,6 +224,30 @@ __attribute__((always_inline))
 static inline void psram_ctrlr_ll_enable_quad_command(uint32_t mspi_id, bool ena)
 {
     SPIMEM1.ctrl.fcmd_quad = ena;
+}
+
+/**
+ * @brief Set page size
+ *
+ * @param mspi_id      mspi_id
+ * @param size         page size
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_set_page_size(uint32_t mspi_id, uint32_t size)
+{
+    //for compatibility
+}
+
+/**
+ * @brief Enable splitting transactions
+ *
+ * @param mspi_id      mspi_id
+ * @param en           enable / disable
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_enable_split_trans(uint32_t mspi_id, bool en)
+{
+    //for compatibility
 }
 
 #ifdef __cplusplus
