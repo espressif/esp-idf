@@ -127,8 +127,10 @@ static esp_err_t _node_config_io(twai_onchip_ctx_t *node, const twai_onchip_node
 {
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.tx) || (node_config->flags.enable_listen_only && (node_config->io_cfg.tx == -1)), ESP_ERR_INVALID_ARG, TAG, "Invalid tx gpio num");
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(node_config->io_cfg.rx), ESP_ERR_INVALID_ARG, TAG, "Invalid rx gpio num");
-    uint64_t reserve_mask = 0;
+    ESP_RETURN_ON_FALSE(!(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.quanta_clk_out) && (twai_periph_signals[node->ctrlr_id].clk_out_sig < 0)), ESP_ERR_NOT_SUPPORTED, TAG, "quanta_clk_out is not supported");
+    ESP_RETURN_ON_FALSE(!(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.bus_off_indicator) && (twai_periph_signals[node->ctrlr_id].bus_off_sig < 0)), ESP_ERR_NOT_SUPPORTED, TAG, "bus_off_indicator is not supported");
 
+    uint64_t reserve_mask = 0;
     // Set RX pin
     gpio_set_pull_mode(node_config->io_cfg.rx, GPIO_PULLUP_ONLY);    // pullup to avoid noise if no connection to transceiver
     gpio_matrix_input(node_config->io_cfg.rx, twai_periph_signals[node->ctrlr_id].rx_sig, false);

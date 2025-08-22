@@ -49,8 +49,12 @@ void app_main(void)
 {
     twai_node_handle_t node_hdl;
     twai_onchip_node_config_t node_config = {
-        .io_cfg.tx = TX_GPIO_NUM,
-        .io_cfg.rx = RX_GPIO_NUM,
+        .io_cfg = {
+            .tx = TX_GPIO_NUM,
+            .rx = RX_GPIO_NUM,
+            .quanta_clk_out = GPIO_NUM_NC,
+            .bus_off_indicator = GPIO_NUM_NC,
+        },
         .bit_timing.bitrate = TWAI_BITRATE,
         .tx_queue_depth = 1,
         .flags.enable_self_test = true,

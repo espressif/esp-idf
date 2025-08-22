@@ -31,6 +31,8 @@ TEST_CASE("twai_listen_only", "[twai_net]")
     twai_onchip_node_config_t node_config = {};
     node_config.io_cfg.tx = TEST_TX_GPIO;
     node_config.io_cfg.rx = TEST_RX_GPIO;
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
     node_config.bit_timing.bitrate = 250000;
     node_config.tx_queue_depth = 3;
     node_config.flags.enable_listen_only = true;
@@ -71,6 +73,8 @@ TEST_CASE("twai_remote_request", "[twai_net]")
     twai_onchip_node_config_t node_config = {};
     node_config.io_cfg.tx = TEST_TX_GPIO;
     node_config.io_cfg.rx = TEST_RX_GPIO;
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
     node_config.bit_timing.bitrate = 250000;
     node_config.tx_queue_depth = 3;
     node_config.fail_retry_cnt = -1; // retry forever if send remote frame failed

@@ -48,6 +48,8 @@ TEST_CASE("twai install uninstall (loopback)", "[twai]")
     twai_onchip_node_config_t node_config = {};
     node_config.io_cfg.tx = TEST_TX_GPIO;
     node_config.io_cfg.rx = TEST_TX_GPIO; // Using same pin for test without transceiver
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
     node_config.bit_timing.bitrate = 1000000;
     node_config.tx_queue_depth = TEST_TWAI_QUEUE_DEPTH;
     node_config.flags.enable_self_test = true;
@@ -111,6 +113,8 @@ static void test_twai_baudrate_correctness(twai_clock_source_t clk_src, uint32_t
     twai_onchip_node_config_t node_config = {};
     node_config.io_cfg.tx = TEST_TX_GPIO;
     node_config.io_cfg.rx = TEST_TX_GPIO;
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
     node_config.clk_src = clk_src;
     node_config.bit_timing.bitrate = test_bitrate;
     node_config.tx_queue_depth = 1;
@@ -183,6 +187,8 @@ TEST_CASE("twai transmit stop resume (loopback)", "[twai]")
     twai_onchip_node_config_t node_config = {};
     node_config.io_cfg.tx = TEST_TX_GPIO;
     node_config.io_cfg.rx = TEST_TX_GPIO; // Using same pin for test without transceiver
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
     node_config.bit_timing.bitrate = 200000;
     node_config.tx_queue_depth = TEST_TWAI_QUEUE_DEPTH;
     node_config.flags.enable_self_test = true;
@@ -280,6 +286,8 @@ TEST_CASE("twai mask filter (loopback)", "[twai]")
     twai_onchip_node_config_t node_config = {};
     node_config.io_cfg.tx = TEST_TX_GPIO;
     node_config.io_cfg.rx = TEST_TX_GPIO; // Using same pin for test without transceiver
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
     node_config.bit_timing.bitrate = 1000000;
     node_config.tx_queue_depth = TEST_TWAI_QUEUE_DEPTH;
     node_config.flags.enable_self_test = true;
@@ -363,6 +371,8 @@ TEST_CASE("twai dual 16bit mask filter (loopback)", "[twai]")
     twai_onchip_node_config_t node_config = {};
     node_config.io_cfg.tx = TEST_TX_GPIO;
     node_config.io_cfg.rx = TEST_TX_GPIO; // Using same pin for test without transceiver
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
     node_config.bit_timing.bitrate = 1000000;
     node_config.tx_queue_depth = TEST_TWAI_QUEUE_DEPTH;
     node_config.flags.enable_self_test = true;
@@ -436,6 +446,8 @@ TEST_CASE("twai driver cache safe (loopback)", "[twai]")
     twai_onchip_node_config_t node_config = {};
     node_config.io_cfg.tx = TEST_TX_GPIO;
     node_config.io_cfg.rx = TEST_TX_GPIO; // Using same pin for test without transceiver
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
     node_config.bit_timing.bitrate = 50000; //slow bitrate to ensure cache disabled before tx_queue finish
     node_config.tx_queue_depth = TEST_FRAME_NUM;
     node_config.flags.enable_loopback = true;
@@ -487,6 +499,8 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
     twai_onchip_node_config_t node_config = {};
     node_config.io_cfg.tx = TEST_TX_GPIO;
     node_config.io_cfg.rx = TEST_TX_GPIO;   // Using same pin for test without transceiver
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
     node_config.bit_timing.bitrate = 50000; //slow bitrate to ensure soft error trigger
     node_config.tx_queue_depth = 1;
     node_config.flags.enable_self_test = true;
@@ -558,6 +572,8 @@ TEST_CASE("twai tx_wait_all_done thread safe", "[twai]")
     twai_onchip_node_config_t node_config = {};
     node_config.io_cfg.tx = TEST_TX_GPIO;
     node_config.io_cfg.rx = TEST_TX_GPIO;    //Using same pin for test without transceiver
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
     node_config.bit_timing.bitrate = 100000; //slow bitrate to ensure transmite finish during wait_all_done
     node_config.tx_queue_depth = TEST_FRAME_NUM;
     node_config.flags.enable_self_test = true;
