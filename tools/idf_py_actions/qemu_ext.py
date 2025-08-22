@@ -13,8 +13,6 @@ import sys
 import time
 from dataclasses import dataclass
 from typing import Any
-from typing import Dict
-from typing import List
 
 from click.core import Context
 
@@ -54,7 +52,7 @@ class QemuTarget:
 # To generate the default eFuse values, follow the instructions in
 # https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/esp32/README.md#using-esptoolpy-and-espefusepy-to-interact-with-qemu
 # and burn the eFuses which should be set by default. Then take the binary file, convert it to hex, and paste it here.
-QEMU_TARGETS: Dict[str, QemuTarget] = {
+QEMU_TARGETS: dict[str, QemuTarget] = {
     'esp32': QemuTarget(
         'esp32',
         'qemu-system-xtensa',
@@ -178,12 +176,12 @@ def wait_for_socket(port: int, timeout_sec: float = 10.0) -> None:
     raise SystemExit(1)
 
 
-def action_extensions(base_actions: Dict, project_path: str) -> Dict:
+def action_extensions(base_actions: dict, project_path: str) -> dict:
     # Shared state between "global_callback" and "qemu" action.
     # Stores options which depend on the presence of other tasks.
     options = QemuTaskRunOptions()
 
-    def global_callback(ctx: Context, global_args: Dict, tasks: List) -> None:
+    def global_callback(ctx: Context, global_args: dict, tasks: list) -> None:
         # This callback lets us customize QEMU launch arguments depending on the presence of other tasks.
         def have_task(name: str) -> bool:
             return any(fnmatch.fnmatch(task.name, name) for task in tasks)
@@ -219,7 +217,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         desc_path = os.path.join(args.build_dir, 'project_description.json')
         if not os.path.exists(desc_path):
             ensure_build_directory(args, ctx.info_name)
-        with open(desc_path, 'r', encoding='utf-8') as f:
+        with open(desc_path, encoding='utf-8') as f:
             project_desc = json.load(f)
         return project_desc
 
