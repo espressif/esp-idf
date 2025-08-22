@@ -4,24 +4,21 @@
 :link_to_translation:`en:[English]`
 
 简介
-------------
+----
 
-{IDF_TARGET_NAME} 芯片集成了模数转换器 (ADC)，支持测量特定模拟 IO 管脚的模拟信号。此外，ADC 还支持直接内存访问 (DMA) 功能，高效获取 ADC 转换结果。
+本文档介绍了 {IDF_TARGET_NAME} 上的 ADC 连续转换模式驱动。
 
-{IDF_TARGET_NAME} 具有 {IDF_TARGET_SOC_ADC_PERIPH_NUM} 个 ADC 单元，可应用于以下场景：
+在连续模式下，ADC 可对一个或多个模拟输入通道执行自动高速采样，并通过直接内存访问 (DMA) 将结果高效传输至内存。此模式非常适合需要周期性或高频数据采集的应用场景。
 
-- 生成单次 ADC 转换结果
-- 生成连续 ADC 转换结果
+如需执行按需单次 ADC 转换，请查阅 :doc:`ADC 单次转换模式驱动 <adc_oneshot>`。
 
-本指南介绍了 ADC 连续转换模式。
+驱动原理
+--------
 
-ADC 连续转换模式驱动概念
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ADC连续模式将数据组织为由多个转换结果构成的转换帧。
 
-ADC 连续转换模式驱动由多个转换帧组成。
-
-- 转换帧：一个转换帧包含多个转换结果。转换帧大小以字节为单位，在 :cpp:func:`adc_continuous_new_handle` 中配置。
-- 转换结果：一个转换结果包含多个字节，即 :c:macro:`SOC_ADC_DIGI_RESULT_BYTES`。转换结果的数据结构由 :cpp:type:`adc_digi_output_data_t` 定义，包括 ADC 单元、ADC 通道以及原始数据。
+- 转换帧：每个帧包含多个转换结果。帧大小（字节数）在 :cpp:func:`adc_continuous_new_handle` 中配置。
+- 转换结果：每个结果由 :c:macro:`SOC_ADC_DIGI_RESULT_BYTES` 定义的若干字节组成，其结构体为 :cpp:type:`adc_digi_output_data_t`，包含 ADC 单元、ADC 通道以及原始数据。
 
 .. image:: /../_static/diagrams/adc/adc_conversion_frame.png
     :scale: 100 %

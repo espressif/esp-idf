@@ -6,22 +6,19 @@ Analog to Digital Converter (ADC) Continuous Mode Driver
 Introduction
 ------------
 
-The Analog to Digital Converter is integrated on the chip and is capable of measuring analog signals from specific analog IO pads. Additionally, the Direct Memory Access (DMA) functionality is utilized to efficiently retrieve ADC conversion results.
+This document describes the ADC continuous mode driver on {IDF_TARGET_NAME}.
 
-{IDF_TARGET_NAME} has {IDF_TARGET_SOC_ADC_PERIPH_NUM} ADC unit(s), which can be used in scenarios like:
+In continuous mode, the ADC performs automatic, high-speed sampling on one or more analog input channels, with results efficiently transferred to memory via DMA. This mode is suitable for applications that require periodic or high-frequency data acquisition.
 
-- Generate one-shot ADC conversion result
-- Generate continuous ADC conversion results
-
-This guide introduces ADC continuous mode conversion.
+To perform single, on-demand ADC conversions, check :doc:`ADC Oneshot Mode Driver <adc_oneshot>`.
 
 Driver Concepts
-^^^^^^^^^^^^^^^
+---------------
 
-ADC continuous mode conversion is made up of multiple conversion frames.
+ADC continuous mode organizes data into conversion frames, which consist of multiple conversion results.
 
-- Conversion Frame: One conversion frame contains multiple conversion results. Conversion frame size is configured in :cpp:func:`adc_continuous_new_handle` in bytes.
-- Conversion Result: One conversion result contains multiple bytes, see :c:macro:`SOC_ADC_DIGI_RESULT_BYTES`. Its structure is :cpp:type:`adc_digi_output_data_t`, including ADC unit, ADC channel, and raw data.
+- Conversion Frame: A frame contains multiple conversion results. Conversion frame size is configured with :cpp:func:`adc_continuous_new_handle` in bytes.
+- Conversion Result: A result consists of multiple bytes, as defined by :c:macro:`SOC_ADC_DIGI_RESULT_BYTES`. Its structure is :cpp:type:`adc_digi_output_data_t`, including the ADC unit, ADC channel, and raw data.
 
 .. image:: /../_static/diagrams/adc/adc_conversion_frame.png
     :scale: 100 %
