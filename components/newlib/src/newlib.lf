@@ -1,6 +1,14 @@
 [mapping:newlib]
 archive: libnewlib.a
 entries:
+  if LIBC_OPTIMIZED_MISALIGNED_ACCESS = y:
+      memcpy (noflash)
+      memmove (noflash)
+      memcmp (noflash)
+      strcpy  (noflash)
+      strncpy (noflash)
+      strcmp  (noflash)
+      strncmp (noflash)
   if LIBC_MISC_IN_IRAM = y:
     if HEAP_PLACE_FUNCTION_INTO_FLASH = n:
       heap (noflash)
@@ -11,16 +19,3 @@ entries:
     stdatomic_s32c1i (noflash)
   if STDATOMIC_S32C1I_SPIRAM_WORKAROUND = y:
     stdatomic_s32c1i (noflash)
-  if CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS = y && IDF_TOOLCHAIN_GCC = y:
-    # memcpy() should be in IRAM due to early system use
-    # Others can stay in flash (performance difference is minimal)
-    #
-    # Performance Comparison:
-    # | func    | flash | iram  |
-    # |---------|-------|-------|
-    # | memcmp  | 15986 | 15170 |
-    # | strcpy  | 17499 | 16660 |
-    # | strcmp  | 13125 | 11147 |
-    # | strncpy | 17386 | 16668 |
-    # | strncmp | 22161 | 21782 |
-    libc_a-memcpy (noflash)

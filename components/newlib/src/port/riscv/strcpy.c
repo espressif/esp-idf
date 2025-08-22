@@ -30,7 +30,6 @@ unsigned long __newlib__libc_detect_null(unsigned long w)
     return ~(((w & mask) + mask) | w | mask);
 }
 
-__attribute__((optimize("-Os")))
 char *strcpy(char *dst, const char *src)
 {
     char *dst0 = dst;
@@ -44,6 +43,7 @@ char *strcpy(char *dst, const char *src)
         const long *lsrc = (const long *)src;
 
         while (!__newlib__libc_detect_null(*lsrc)) {
+            /* DIG-694: there are enough instructions between lw and sw after compiler unrolls the loop */
             *ldst++ = *lsrc++;
         }
 
