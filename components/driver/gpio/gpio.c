@@ -441,11 +441,12 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
 esp_err_t gpio_reset_pin(gpio_num_t gpio_num)
 {
     assert(GPIO_IS_VALID_GPIO(gpio_num));
+    bool pu_en = GPIO_IS_VALID_OUTPUT_GPIO(gpio_num);
     gpio_config_t cfg = {
         .pin_bit_mask = BIT64(gpio_num),
         .mode = GPIO_MODE_DISABLE,
         //for powersave reasons, the GPIO should not be floating, select pullup
-        .pull_up_en = true,
+        .pull_up_en = pu_en,
         .pull_down_en = false,
         .intr_type = GPIO_INTR_DISABLE,
     };
