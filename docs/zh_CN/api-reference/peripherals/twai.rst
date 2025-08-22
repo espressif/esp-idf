@@ -121,7 +121,7 @@ TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主
     };
     ESP_ERROR_CHECK(twai_node_transmit(node_hdl, &tx_msg, 0));  // 超时为0，队列满则直接返回超时
 
-其中 :cpp:member:`twai_frame_t::header::id` 指示了该文的 ID 为 0x01。报文的 ID 通常用于表示报文在应用中的类型，并在发送过程中起到总线竞争仲裁的作用，其数值越小，在总线上的优先级越高。:cpp:member:`twai_frame_t::buffer` 则指向要发送数据所在的内存地址，并由 :cpp:member:`twai_frame_t::buffer_len` 给出数据长度。
+其中 :cpp:member:`twai_frame_t::header::id` 指示了该文的 ID 为 0x01。报文的 ID 通常用于表示报文在应用中的类型，并在发送过程中起到总线竞争仲裁的作用，其数值越小，在总线上的优先级越高。:cpp:member:`twai_frame_t::buffer` 则指向要发送数据所在的内存地址，并由 :cpp:member:`twai_frame_t::buffer_len` 给出数据长度。:cpp:func:`twai_node_transmit` 函数是线程安全的，并且也可以在 ISR 中调用。当从 ISR 调用时，``timeout`` 参数将被忽略，函数不会阻塞。
 
 需要注意的是 :cpp:member:`twai_frame_t::header::dlc` 同样可以指定一个数据帧中数据的长度，dlc(data length code) 与具体长度的对应兼容 ISO11898-1 规定。可使用 :cpp:func:`twaifd_dlc2len` / :cpp:func:`twaifd_len2dlc` 进行转换，选择其一即可，如果 dlc 和 buffer_len 都不为 0 ，那他们所代表的长度必须一致。
 
@@ -179,6 +179,32 @@ TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主
 
 .. image:: ../../../_static/diagrams/twai/full_flow.drawio.svg
     :align: center
+
+在 ISR 中发送
+^^^^^^^^^^^^^
+
+TWAI 驱动支持在中断服务程序 (ISR) 中发送报文。这对于需要低延迟响应或由硬件定时器触发的周期性传输的应用特别有用。例如，你可以在 ``on_tx_done`` 回调中触发一次新的传输，该回调在 ISR 上下文中执行。
+
+.. code:: c
+
+    static bool twai_tx_done_cb(twai_node_handle_t handle, const twai_tx_done_event_data_t *edata, void *user_ctx)
+    {
+        // 一帧已成功发送。排队另一帧。
+        // 帧及其数据缓冲区必须在传输完成之前保持有效。
+        static const uint8_t data_buffer[] = {1, 2, 3, 4};
+        static const twai_frame_t tx_frame = {
+            .header.id = 0x2,
+            .buffer = (uint8_t *)data_buffer,
+            .buffer_len = sizeof(data_buffer),
+        };
+
+        // `twai_node_transmit` 在 ISR 上下文中调用是安全的
+        twai_node_transmit(handle, &tx_frame, 0);
+        return false;
+    }
+
+.. note::
+    在 ISR 中调用 :cpp:func:`twai_node_transmit` 时，``timeout`` 参数将被忽略，函数不会阻塞。如果发送队列已满，函数将立即返回错误。应用程序需要自行处理队列已满的情况。
 
 位时序自定义
 ^^^^^^^^^^^^^
@@ -317,7 +343,9 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
 关于性能
 ^^^^^^^^
 
-为了提升中断处理的实时响应能力， 驱动提供了 :ref:`CONFIG_TWAI_ISR_IN_IRAM` 选项。启用该选项后，中断处理程序将被放置在内部 RAM 中运行，从而减少了从 Flash 加载指令带来的延迟。
+为了提升中断处理的实时响应能力， 驱动提供了 :ref:`CONFIG_TWAI_ISR_IN_IRAM` 选项。启用该选项后，中断处理程序和接收操作将被放置在内部 RAM 中运行，从而减少了从 Flash 加载指令带来的延迟。
+
+对于需要高性能发送操作的应用，驱动还提供了 :ref:`CONFIG_TWAI_IO_FUNC_IN_IRAM` 选项，用于将发送函数放置在 IRAM 中。这对于在用户任务中频繁调用 :cpp:func:`twai_node_transmit` 的时间关键应用特别有效。
 
 .. note::
 

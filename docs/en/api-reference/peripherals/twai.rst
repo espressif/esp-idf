@@ -121,7 +121,7 @@ To reduce performance overhead caused by memory copying, the TWAI driver uses po
     };
     ESP_ERROR_CHECK(twai_node_transmit(node_hdl, &tx_msg, 0));  // Timeout = 0: returns immediately if queue is full
 
-In this example, :cpp:member:`twai_frame_t::header::id` specifies the ID of the message as 0x01. Message IDs are typically used to indicate the type of message in an application and also play a role in bus arbitration during transmission—lower values indicate higher priority on the bus. :cpp:member:`twai_frame_t::buffer` points to the memory address where the data to be transmitted is stored, and :cpp:member:`twai_frame_t::buffer_len` specifies the length of that data.
+In this example, :cpp:member:`twai_frame_t::header::id` specifies the ID of the message as 0x01. Message IDs are typically used to indicate the type of message in an application and also play a role in bus arbitration during transmission—lower values indicate higher priority on the bus. :cpp:member:`twai_frame_t::buffer` points to the memory address where the data to be transmitted is stored, and :cpp:member:`twai_frame_t::buffer_len` specifies the length of that data. The :cpp:func:`twai_node_transmit` function is thread-safe and can also be called from an ISR. When called from an ISR, the ``timeout`` parameter is ignored, and the function will not block.
 
 Note that :cpp:member:`twai_frame_t::header::dlc` can also specify the length of the data in the frame. The DLC (Data Length Code) is mapped to the actual data length as defined in ISO 11898-1. You can use either :cpp:func:`twaifd_dlc2len` or :cpp:func:`twaifd_len2dlc` for conversion. If both dlc and buffer_len are non-zero, they must represent the same length.
 
@@ -179,6 +179,32 @@ After understanding the basic usage, you can further explore more advanced capab
 
 .. image:: ../../../_static/diagrams/twai/full_flow.drawio.svg
     :align: center
+
+Transmit from ISR
+^^^^^^^^^^^^^^^^^
+
+The TWAI driver supports transmitting messages from an Interrupt Service Routine (ISR). This is particularly useful for applications requiring low-latency responses or periodic transmissions triggered by hardware timers. For example, you can trigger a new transmission from within the ``on_tx_done`` callback, which is executed in an ISR context.
+
+.. code:: c
+
+    static bool twai_tx_done_cb(twai_node_handle_t handle, const twai_tx_done_event_data_t *edata, void *user_ctx)
+    {
+        // A frame has been successfully transmitted. Queue another one.
+        // The frame and its data buffer must be valid until transmission is complete.
+        static const uint8_t data_buffer[] = {1, 2, 3, 4};
+        static const twai_frame_t tx_frame = {
+            .header.id = 0x2,
+            .buffer = (uint8_t *)data_buffer,
+            .buffer_len = sizeof(data_buffer),
+        };
+
+        // The `twai_node_transmit` is safe to be called in an ISR context
+        twai_node_transmit(handle, &tx_frame, 0);
+        return false;
+    }
+
+.. note::
+    When calling :cpp:func:`twai_node_transmit` from an ISR, the ``timeout`` parameter is ignored, and the function will not block. If the transmit queue is full, the function will return immediately with an error. It is the application's responsibility to handle cases where the queue is full.
 
 Bit Timing Customization
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -317,7 +343,9 @@ The driver guarantees thread safety for all public TWAI APIs. You can safely cal
 Performance
 ^^^^^^^^^^^
 
-To improve the real-time performance of interrupt handling, the driver provides the :ref:`CONFIG_TWAI_ISR_IN_IRAM` option. When enabled, the TWAI ISR (Interrupt Service Routine) is placed in internal RAM, reducing latency caused by instruction fetching from Flash.
+To improve the real-time performance of interrupt handling, the driver provides the :ref:`CONFIG_TWAI_ISR_IN_IRAM` option. When enabled, the TWAI ISR (Interrupt Service Routine) and receive operations are placed in internal RAM, reducing latency caused by instruction fetching from Flash.
+
+For applications that require high-performance transmit operations, the driver provides the :ref:`CONFIG_TWAI_IO_FUNC_IN_IRAM` option to place transmit functions in IRAM. This is particularly beneficial for time-critical applications that frequently call :cpp:func:`twai_node_transmit` from user tasks.
 
 .. note::
 
