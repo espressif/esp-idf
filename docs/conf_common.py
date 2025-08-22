@@ -22,7 +22,7 @@ BT_DOCS = ['api-reference/bluetooth/esp_bt_defs.rst',
            'api-reference/bluetooth/bt_common.rst',
            'api-reference/bluetooth/bt_vhci.rst',
            'api-reference/bluetooth/controller_vhci.rst',
-           'api-reference/bluetooth/index.rst']
+           'api-reference/bluetooth/index.rst',]
 
 BLE_DOCS = ['api-guides/ble/index.rst',
             'api-guides/ble/overview.rst',
@@ -62,7 +62,9 @@ CLASSIC_BT_DOCS = ['api-guides/classic-bt/index.rst',
                    'api-reference/bluetooth/esp_hf_ag.rst',
                    'api-reference/bluetooth/esp_spp.rst',
                    'api-reference/bluetooth/esp_gap_bt.rst',
-                   'migration-guides/release-5.x/5.0/bluetooth-classic.rst']
+                   'migration-guides/release-5.x/5.0/bluetooth-classic.rst',
+                   'migration-guides/release-5.x/5.2/bluetooth-classic.rst',
+]
 
 BLUFI_DOCS = ['api-guides/ble/blufi.rst',
               'api-reference/bluetooth/esp_blufi.rst']
