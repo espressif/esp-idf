@@ -8,6 +8,7 @@
 
     gcc
     system
-    bluetooth-classic
+    :SOC_BT_CLASSIC_SUPPORTED: bluetooth-classic
+    :SOC_BT_SUPPORTED: bt_common
     storage
-    wifi
+    :SOC_WIFI_SUPPORTED: wifi

@@ -22,7 +22,8 @@ BT_DOCS = ['api-reference/bluetooth/esp_bt_defs.rst',
            'api-reference/bluetooth/bt_common.rst',
            'api-reference/bluetooth/bt_vhci.rst',
            'api-reference/bluetooth/controller_vhci.rst',
-           'api-reference/bluetooth/index.rst']
+           'api-reference/bluetooth/index.rst',
+           'migration-guides/release-5.x/5.4/bt_common.rst',]
 
 BLE_DOCS = ['api-guides/ble/index.rst',
             'api-guides/ble/overview.rst',
@@ -63,7 +64,10 @@ CLASSIC_BT_DOCS = ['api-guides/classic-bt/index.rst',
                    'api-reference/bluetooth/esp_hf_ag.rst',
                    'api-reference/bluetooth/esp_spp.rst',
                    'api-reference/bluetooth/esp_gap_bt.rst',
-                   'migration-guides/release-5.x/5.0/bluetooth-classic.rst']
+                   'migration-guides/release-5.x/5.0/bluetooth-classic.rst',
+                   'migration-guides/release-5.x/5.2/bluetooth-classic.rst',
+                   'migration-guides/release-5.x/5.3/bluetooth-classic.rst',
+                   'migration-guides/release-5.x/5.4/bluetooth-classic.rst',]
 
 BLUFI_DOCS = ['api-guides/ble/blufi.rst',
               'api-reference/bluetooth/esp_blufi.rst']
@@ -78,7 +82,8 @@ WIFI_DOCS = ['api-guides/low-power-mode/low-power-mode-wifi.rst',
              'api-reference/network/esp_dpp.rst',
              'api-reference/provisioning/provisioning.rst',
              'api-reference/provisioning/wifi_provisioning.rst',
-             'migration-guides/release-5.x/5.2/wifi.rst']
+             'migration-guides/release-5.x/5.2/wifi.rst',
+             'migration-guides/release-5.x/5.4/wifi.rst',]
 
 IEEE802154_DOCS = ['migration-guides/release-5.x/5.1/ieee802154.rst',
                    'migration-guides/release-5.x/5.2/ieee802154.rst']
