@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -327,12 +327,23 @@ static inline void modem_syscon_ll_clk_conf1_configure(modem_syscon_dev_t *hw, b
 __attribute__((always_inline))
 static inline void modem_syscon_ll_clk_wifibb_configure(modem_syscon_dev_t *hw, bool en)
 {
+#if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
+    /* Configure
+        clk_wifibb_22m / clk_wifibb_40m / clk_wifibb_80m
+        clk_wifibb_40x / clk_wifibb_80x / clk_wifibb_40x1 / clk_wifibb_80x1
+        clk_wifibb_160x1
+
+        clk_wifibb_44m is configured in modem_syscon_ll_enable_wifibb_44m_clock
+    */
+    modem_syscon_ll_clk_conf1_configure(hw, en, 0x1fb);
+#else
     /* Configure
         clk_wifibb_22m / clk_wifibb_40m / clk_wifibb_44m / clk_wifibb_80m
         clk_wifibb_40x / clk_wifibb_80x / clk_wifibb_40x1 / clk_wifibb_80x1
         clk_wifibb_160x1
     */
     modem_syscon_ll_clk_conf1_configure(hw, en, 0x1ff);
+#endif
 }
 
 __attribute__((always_inline))
