@@ -505,44 +505,6 @@ function(__init_project_configuration)
     idf_build_set_property(LINKER_TYPE "${linker_type}")
 endfunction()
 
-#[[
-   __init_common_components()
-
-   Identify the commonly required components based on the target and
-   architecture, and store them in the __COMPONENT_REQUIRES_COMMON build
-   property. These components are automatically included, and their interfaces
-   are stored in the __COMMON_COMPONENT_INTERFACES build property. The commonly
-   required component interfaces are automatically linked to each component.
-#]]
-function(__init_common_components)
-    idf_build_get_property(idf_target IDF_TARGET)
-    idf_build_get_property(idf_target_arch IDF_TARGET_ARCH)
-
-    # Define common components that are included as dependencies for each
-    # component.
-    if("${idf_target}" STREQUAL "linux")
-        set(requires_common freertos esp_hw_support heap log soc hal esp_rom esp_common esp_system linux)
-    else()
-        set(requires_common cxx newlib freertos esp_hw_support heap log soc hal esp_rom esp_common
-                            esp_system ${idf_target_arch})
-    endif()
-    idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${requires_common}")
-
-    # Set the common component interfaces first, before including them, so the
-    # idf_component_include function can see the complete list of common
-    # component interfaces.
-    set(common_component_interfaces "")
-    foreach(component_name IN LISTS requires_common)
-        idf_component_get_property(component_interface "${component_name}" COMPONENT_INTERFACE)
-        list(APPEND common_component_interfaces "${component_interface}")
-    endforeach()
-    idf_build_set_property(__COMMON_COMPONENT_INTERFACES "${common_component_interfaces}")
-
-    foreach(component_name IN LISTS requires_common)
-        idf_component_include("${component_name}")
-    endforeach()
-endfunction()
-
 #[[api
 .. cmakev2:macro:: idf_project_init
 
@@ -597,9 +559,6 @@ macro(idf_project_init)
                 unset(COMPONENT_PATH)
             endif()
         endforeach()
-
-        # Initialize and include commonly required components.
-        __init_common_components()
 
         idf_build_set_property(__PROJECT_INITIALIZED YES)
     endif()

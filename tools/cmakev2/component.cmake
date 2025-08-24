@@ -663,6 +663,4 @@ function(idf_component_include name)
 
     __get_compile_options(OUTPUT compile_options)
     target_compile_options("${component_real_target}" BEFORE PRIVATE "${compile_options}")
-
-    # FIXME: We likely still need to link the common component requirements here.
 endfunction()
