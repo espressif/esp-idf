@@ -228,6 +228,14 @@ endfunction()
    ``INTERFACE`` option and link component targets to it based on the component
    names provided in the ``COMPONENTS`` option. If ``COMPONENTS`` option is not
    set, link component targets of all discovered components.
+
+   List of library properties
+
+   :LIBRARY_COMPONENTS: List of component as specified by the ``COMPONENTS``
+                        option.
+   :LIBRARY_COMPONENTS_LINKED: List of components linked to the library based
+                               on recursive evaluations of the INTERFACE_LINK_LIBRARIES
+                               and LINK_LIBRARIES target properties.
 #]]
 function(idf_build_library)
     set(options)
@@ -270,5 +278,24 @@ function(idf_build_library)
         idf_component_include("${component_name}")
         idf_component_get_property(component_interface "${component_name}" COMPONENT_INTERFACE)
         target_link_libraries("${ARG_INTERFACE}" INTERFACE "${component_interface}")
+    endforeach()
+
+    # Identify the components linked to the library by obtaining all targets
+    # that are transitively linked to the library and mapping these targets to
+    # components.
+    __get_target_dependencies(TARGET "${ARG_INTERFACE}" OUTPUT dependencies)
+    set(dep_component_interfaces)
+    foreach(dep IN LISTS dependencies)
+        __get_component_interface(COMPONENT "${dep}" OUTPUT component_interface)
+        if(NOT component_interface)
+            continue()
+        endif()
+        if("${component_interface}" IN_LIST dep_component_interfaces)
+            continue()
+        endif()
+
+        list(APPEND dep_component_interfaces "${component_interface}")
+        idf_component_get_property(component_name "${component_interface}" COMPONENT_NAME)
+        idf_library_set_property("${ARG_INTERFACE}" LIBRARY_COMPONENTS_LINKED "${component_name}" APPEND)
     endforeach()
 endfunction()
