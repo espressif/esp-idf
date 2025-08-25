@@ -211,7 +211,7 @@ typedef struct {
 #endif
     const char                  *user_agent;         /*!< The User Agent string to send with HTTP requests */
     esp_http_client_method_t    method;                   /*!< HTTP Method */
-    int                         timeout_ms;               /*!< Network timeout in milliseconds */
+    int                         timeout_ms;               /*!< Network timeout in milliseconds. 0 defaults to 5 seconds */
     bool                        disable_auto_redirect;    /*!< Disable HTTP automatic redirects */
     int                         max_redirection_count;    /*!< Max number of redirections on receiving HTTP redirect status code, using default value if zero*/
     int                         max_authorization_retries;    /*!< Max connection retries on receiving HTTP unauthorized status code, using default value if zero. Disables authorization retry if -1*/
