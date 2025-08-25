@@ -30,5 +30,3 @@ Useful Links
 * If you're interested in contributing to ESP-IDF, please check the :doc:`contribute/index`.
 
 * For additional {IDF_TARGET_NAME} product related information, please refer to `documentation <https://espressif.com/en/support/download/documents>`_ section of `Espressif <https://espressif.com/en/support/download/documents>`__ site.
-
-* `Download <https://readthedocs.com/projects/espressif-esp-idf/downloads/>`_ latest and previous versions of this documentation in PDF and HTML format.
