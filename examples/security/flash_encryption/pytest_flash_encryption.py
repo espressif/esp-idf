@@ -36,12 +36,15 @@ def _test_flash_encryption(dut: Dut) -> None:
         key_bytes = b'\xff' + b'\x00' * 31
         aes_xts = True
 
-    # Emulate espsecure encrypt_flash_data command
     EncryptFlashDataArgs = namedtuple(
         'EncryptFlashDataArgs', ['output', 'plaintext_file', 'address', 'keyfile', 'flash_crypt_conf', 'aes_xts']
     )
     args = EncryptFlashDataArgs(BytesIO(), BytesIO(plain_data), flash_addr, BytesIO(key_bytes), 0xF, aes_xts)
-    espsecure.encrypt_flash_data(args)
+    try:
+        # espsecure 5.0 arguments are passed one by one; the following will convert tuple to dict and unwrap it
+        espsecure.encrypt_flash_data(**args._asdict())
+    except TypeError:
+        espsecure.encrypt_flash_data(args)
 
     expected_ciphertext = args.output.getvalue()
     hex_ciphertext = binascii.hexlify(expected_ciphertext).decode('ascii')

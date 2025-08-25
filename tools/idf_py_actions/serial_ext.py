@@ -7,9 +7,6 @@ import signal
 import sys
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import click
 
@@ -46,22 +43,22 @@ PORT = {
 }
 
 
-def yellow_print(message: str, newline: Optional[str] = '\n') -> None:
+def yellow_print(message: str, newline: str | None = '\n') -> None:
     """Print a message to stderr with yellow highlighting"""
-    sys.stderr.write('%s%s%s%s' % ('\033[0;33m', message, '\033[0m', newline))
+    sys.stderr.write(f'\033[0;33m{message}\033[0m{newline}')
     sys.stderr.flush()
 
 
-def action_extensions(base_actions: Dict, project_path: str) -> Dict:
+def action_extensions(base_actions: dict, project_path: str) -> dict:
     def _get_project_desc(ctx: click.core.Context, args: PropertyDict) -> Any:
         desc_path = os.path.join(args.build_dir, 'project_description.json')
         if not os.path.exists(desc_path):
             ensure_build_directory(args, ctx.info_name)
-        with open(desc_path, 'r', encoding='utf-8') as f:
+        with open(desc_path, encoding='utf-8') as f:
             project_desc = json.load(f)
         return project_desc
 
-    def _get_esptool_args(args: PropertyDict) -> List:
+    def _get_esptool_args(args: PropertyDict) -> list:
         esptool_path = os.path.join(os.environ['IDF_PATH'], 'components/esptool_py/esptool/esptool.py')
         esptool_wrapper_path = os.environ.get('ESPTOOL_WRAPPER', '')
         if args.port is None:
@@ -84,7 +81,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             result += ['--no-stub']
         return result
 
-    def _get_commandline_options(ctx: click.core.Context) -> List:
+    def _get_commandline_options(ctx: click.core.Context) -> list:
         """Return all the command line options up to first action"""
         # This approach ignores argument parsing done Click
         result = []
@@ -185,7 +182,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             monitor_args += ['--disable-auto-color']
 
         idf_py = [PYTHON] + _get_commandline_options(ctx)  # commands to re-run idf.py
-        monitor_args += ['-m', ' '.join("'%s'" % a for a in idf_py)]
+        monitor_args += ['-m', ' '.join(f"'{a}'" for a in idf_py)]
         hints = not args.no_hints
 
         # Temporally ignore SIGINT, which is used in idf_monitor to spawn gdb.
@@ -247,7 +244,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         esptool_args += ['erase_flash']
         RunTool('esptool.py', esptool_args, args.build_dir, hints=not args.no_hints)()
 
-    def global_callback(ctx: click.core.Context, global_args: Dict, tasks: PropertyDict) -> None:
+    def global_callback(ctx: click.core.Context, global_args: dict, tasks: PropertyDict) -> None:
         encryption = any([task.name in ('encrypted-flash', 'encrypted-app-flash') for task in tasks])
         if encryption:
             for task in tasks:
@@ -503,7 +500,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             encrypt_nvs_partition_args += [extra_args['partition_size']]
         RunTool('espsecure', encrypt_nvs_partition_args, args.project_dir)()
 
-    def _parse_efuse_args(ctx: click.core.Context, args: PropertyDict, extra_args: Dict) -> List:
+    def _parse_efuse_args(ctx: click.core.Context, args: PropertyDict, extra_args: dict) -> list:
         efuse_args = []
         if args.port:
             efuse_args += ['-p', args.port]
@@ -520,18 +517,20 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             efuse_args += ['--do-not-confirm']
         return efuse_args
 
-    def efuse_burn(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: Dict) -> None:
+    def efuse_burn(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: dict) -> None:
         ensure_build_directory(args, ctx.info_name)
-        burn_efuse_args = [PYTHON, '-mespefuse', 'burn_efuse']
+        burn_efuse_args = [PYTHON, '-m', 'espefuse']
         burn_efuse_args += _parse_efuse_args(ctx, args, extra_args)
+        burn_efuse_args.append('burn_efuse')
         if extra_args['efuse_positional_args']:
             burn_efuse_args += list(extra_args['efuse_positional_args'])
         RunTool('espefuse', burn_efuse_args, args.build_dir)()
 
     def efuse_burn_key(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: str) -> None:
         ensure_build_directory(args, ctx.info_name)
-        burn_key_args = [PYTHON, '-mespefuse', 'burn_key']
+        burn_key_args = [PYTHON, '-m', 'espefuse']
         burn_key_args += _parse_efuse_args(ctx, args, extra_args)
+        burn_key_args.append('burn_key')
         if extra_args['no_protect_key']:
             burn_key_args += ['--no-protect-key']
         if extra_args['force_write_always']:
@@ -543,19 +542,21 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         RunTool('espefuse.py', burn_key_args, args.project_dir, build_dir=args.build_dir)()
 
     def efuse_dump(
-        action: str, ctx: click.core.Context, args: PropertyDict, file_name: str, **extra_args: Dict
+        action: str, ctx: click.core.Context, args: PropertyDict, file_name: str, **extra_args: dict
     ) -> None:
         ensure_build_directory(args, ctx.info_name)
-        dump_args = [PYTHON, '-mespefuse', 'dump']
+        dump_args = [PYTHON, '-m', 'espefuse']
         dump_args += _parse_efuse_args(ctx, args, extra_args)
+        dump_args.append('dump')
         if file_name:
             dump_args += ['--file_name', file_name]
         RunTool('espefuse', dump_args, args.build_dir)()
 
-    def efuse_read_protect(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: Dict) -> None:
+    def efuse_read_protect(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: dict) -> None:
         ensure_build_directory(args, ctx.info_name)
-        read_protect_args = [PYTHON, '-mespefuse', 'read_protect_efuse']
+        read_protect_args = [PYTHON, '-m', 'espefuse']
         read_protect_args += _parse_efuse_args(ctx, args, extra_args)
+        read_protect_args.append('read_protect_efuse')
         if extra_args['efuse_positional_args']:
             read_protect_args += list(extra_args['efuse_positional_args'])
         RunTool('espefuse', read_protect_args, args.build_dir)()
@@ -565,21 +566,23 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         ctx: click.core.Context,
         args: PropertyDict,
         format: str,  # noqa: A002
-        **extra_args: Dict,
+        **extra_args: dict,
     ) -> None:
         ensure_build_directory(args, ctx.info_name)
-        summary_args = [PYTHON, '-mespefuse', 'summary']
+        summary_args = [PYTHON, '-m', 'espefuse']
         summary_args += _parse_efuse_args(ctx, args, extra_args)
+        summary_args.append('summary')
         if format:
             summary_args += [f'--format={format.replace("-", "_")}']
         if extra_args['efuse_name']:
             summary_args += [str(extra_args['efuse_name'])]
         RunTool('espefuse', summary_args, args.build_dir)()
 
-    def efuse_write_protect(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: Dict) -> None:
+    def efuse_write_protect(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: dict) -> None:
         ensure_build_directory(args, ctx.info_name)
-        write_protect_args = [PYTHON, '-mespefuse', 'write_protect_efuse']
+        write_protect_args = [PYTHON, '-m', 'espefuse']
         write_protect_args += _parse_efuse_args(ctx, args, extra_args)
+        write_protect_args.append('write_protect_efuse')
         if extra_args['efuse_positional_args']:
             write_protect_args += list(extra_args['efuse_positional_args'])
         RunTool('espefuse', write_protect_args, args.build_dir)()

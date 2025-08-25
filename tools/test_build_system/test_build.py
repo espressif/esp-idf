@@ -2,13 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
+import re
 import shutil
 import stat
 import sys
 import textwrap
 from pathlib import Path
-from typing import List
-from typing import Union
 
 import pytest
 from test_build_system_helpers import APP_BINS
@@ -22,7 +21,7 @@ from test_build_system_helpers import replace_in_file
 from test_build_system_helpers import run_cmake_and_build
 
 
-def assert_built(paths: Union[List[str], List[Path]]) -> None:
+def assert_built(paths: list[str] | list[Path]) -> None:
     for path in paths:
         assert os.path.exists(path)
 
@@ -92,7 +91,7 @@ def test_build_with_cmake_and_idf_path_unset(idf_py: IdfPyFunc, test_app_copy: P
 
     logging.info('Can build with IDF_PATH set via cmake cache not environment')
     replace_in_file('CMakeLists.txt', 'ENV{IDF_PATH}', '{IDF_PATH}')
-    run_cmake_and_build('-G', 'Ninja', '..', '-DIDF_PATH={}'.format(idf_path), env=env)
+    run_cmake_and_build('-G', 'Ninja', '..', f'-DIDF_PATH={idf_path}', env=env)
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
     idf_py('fullclean')
 
@@ -100,7 +99,7 @@ def test_build_with_cmake_and_idf_path_unset(idf_py: IdfPyFunc, test_app_copy: P
     # working with already changed CMakeLists.txt
     kconfig_file = test_app_copy / 'main' / 'Kconfig.projbuild'
     kconfig_file.write_text('source "$IDF_PATH/examples/wifi/getting_started/station/main/Kconfig.projbuild"')
-    run_cmake_and_build('-G', 'Ninja', '..', '-DIDF_PATH={}'.format(idf_path), env=env)
+    run_cmake_and_build('-G', 'Ninja', '..', f'-DIDF_PATH={idf_path}', env=env)
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
     kconfig_file.unlink()  # remove file to not affect following sub-test
     idf_py('fullclean')
@@ -108,7 +107,7 @@ def test_build_with_cmake_and_idf_path_unset(idf_py: IdfPyFunc, test_app_copy: P
     logging.info('Can build with IDF_PATH unset and inferred by build system')
     # replacing {IDF_PATH} not ENV{IDF_PATH} since CMakeLists.txt was already changed in this test
     replace_in_file('CMakeLists.txt', '{IDF_PATH}', '{ci_idf_path}')
-    run_cmake_and_build('-G', 'Ninja', '-D', 'ci_idf_path={}'.format(idf_path), '..', env=env)
+    run_cmake_and_build('-G', 'Ninja', '-D', f'ci_idf_path={idf_path}', '..', env=env)
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
 
 
@@ -184,16 +183,18 @@ def test_build_dfu(idf_py: IdfPyFunc) -> None:
 def test_build_uf2(idf_py: IdfPyFunc) -> None:
     logging.info('UF2 build works')
     ret = idf_py('uf2')
-    assert 'build/uf2.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, 'UF2 build should work for esp32'
+    assert re.search(r"build/uf2.bin'?, ready to be flashed with any ESP USB Bridge", ret.stdout) is not None, (
+        'UF2 build should work for esp32'
+    )
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/uf2.bin'])
     ret = idf_py('uf2-app')
-    assert 'build/uf2-app.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, (
+    assert re.search(r"build/uf2-app.bin'?, ready to be flashed with any ESP USB Bridge", ret.stdout) is not None, (
         'UF2 build should work for application binary'
     )
     assert_built(['build/uf2-app.bin'])
     idf_py('set-target', 'esp32s2')
     ret = idf_py('uf2')
-    assert 'build/uf2.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, (
+    assert re.search(r"build/uf2.bin'?, ready to be flashed with any ESP USB Bridge", ret.stdout) is not None, (
         'UF2 build should work for esp32s2'
     )
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/uf2.bin'])
@@ -253,7 +254,7 @@ def test_build_with_misspelled_kconfig(idf_py: IdfPyFunc, test_app_copy: Path) -
     ret = idf_py('build')
     assert " file should be named 'Kconfig.projbuild'" in ret.stderr, 'Misspelled Kconfig file should be detected'
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
-    with open(test_app_copy / 'sdkconfig', 'r') as f:
+    with open(test_app_copy / 'sdkconfig') as f:
         sdkconfig = f.read()
         assert 'CONFIG_FROM_MISSPELLED_KCONFIG=y' in sdkconfig, (
             'There should be a config from the misspelled Kconfig file in sdkconfig'

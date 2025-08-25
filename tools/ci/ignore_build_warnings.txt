@@ -39,3 +39,8 @@ warning: unknown kconfig symbol 'UNITY_FREERTOS_STACK_SIZE' assigned to '12288' 
 warning: unknown kconfig symbol 'WPA3_SAE' assigned to 'y' in .*/components/wpa_supplicant/test_apps/sdkconfig.defaults
 ld: warning: ignoring duplicate libraries
 archive library: .+ the table of contents is empty
+Warning: Deprecated: Option '--flash_size' is deprecated. Use '--flash-size' instead.
+Warning: Deprecated: Option '--flash_mode' is deprecated. Use '--flash-mode' instead.
+Warning: Deprecated: Option '--flash_freq' is deprecated. Use '--flash-freq' instead.
+Warning: Deprecated: Command 'sign_data' is deprecated. Use 'sign-data' instead.
+Warning: Deprecated: Command 'extract_public_key' is deprecated. Use 'extract-public-key' instead.

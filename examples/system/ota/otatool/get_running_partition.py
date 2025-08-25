@@ -38,7 +38,7 @@ def get_running_partition(port=None):
         try:
             # Check what esptool.py finds on what port the device is connected to
             output = subprocess.check_output([sys.executable, ESPTOOL_PY, 'chip_id'])  # may raise CalledProcessError
-            pattern = r'Serial port ([\S]+)'
+            pattern = r'Serial port ([^:\s]+)'
             pattern = re.compile(pattern.encode())
 
             port = re.search(pattern, output).group(1)  # may raise AttributeError
