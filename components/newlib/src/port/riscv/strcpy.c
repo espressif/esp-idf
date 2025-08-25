@@ -23,6 +23,7 @@ __attribute__((always_inline))
 static inline
 unsigned long __newlib__libc_detect_null(unsigned long w)
 {
+    /* coverity[result_independent_of_operands] */
     unsigned long mask = 0x7f7f7f7f;
     if (sizeof(long) == 8) {
         mask = ((mask << 16) << 16) | mask;
@@ -87,6 +88,7 @@ out:
         return dst0;
     }
 
+    /* coverity[unreachable] */
     char ch;
     do {
         ch = *src;
