@@ -69,6 +69,12 @@
         esp_cam_ctlr_handle_t handle = NULL;
         ESP_ERROR_CHECK(esp_cam_new_csi_ctlr(&csi_config, &handle));
 
+    {IDF_TARGET_NAME} 中的 CSI 控制器需要稳定的 2.5V 电源供电，请查阅原理图，确保在使用 MIPI CSI 驱动之前，已将其供电管脚连接至 2.5V 电源。
+
+    .. only:: SOC_GP_LDO_SUPPORTED
+
+        在 {IDF_TARGET_NAME} 中，CSI 控制器可以使用内部的可调 LDO 供电。请将 LDO 通道的输出管脚连接至 CSI 控制器的供电管脚。然后在初始化 CSI 驱动之前，使用 :doc:`/api-reference/peripherals/ldo_regulator` 中提供的 API 配置 LDO 输出 2.5 V 电压。
+
 .. only:: SOC_ISP_DVP_SUPPORTED
 
     摄像头控制器驱动程序可以通过 ISP 外设实现，需要应用 :cpp:type:`esp_cam_ctlr_isp_dvp_cfg_t` 指定的配置。
