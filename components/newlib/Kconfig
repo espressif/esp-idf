@@ -160,6 +160,22 @@ menu "LibC"
                 - str[n]cpy
                 - str[n]cmp
 
+    config LIBC_ASSERT_BUFFER_SIZE
+        int "Assert message buffer size"
+        range 100 2048
+        default 200
+        help
+            Size of the buffer used to format assert failure messages.
+
+            When assertions fail, the system formats a message containing the function name,
+            file name, line number, and the failed expression. This option controls the
+            maximum length of this message.
+
+            If you encounter truncated assert messages (especially with C++ templates or
+            long function names), increase this value. The default value of 200 bytes
+            should be sufficient for most cases, but complex template expressions may
+            require larger buffers.
+
 endmenu # LibC
 
 config STDATOMIC_S32C1I_SPIRAM_WORKAROUND
