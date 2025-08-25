@@ -145,6 +145,18 @@ esp_err_t esp_efuse_write_field_bit(const esp_efuse_desc_t* field[])
     uint8_t existing = 0;
     const uint8_t one = 1;
 
+    #if defined(ESP_EFUSE_VDD_SPI_AS_GPIO_DESC) && !defined(CONFIG_ESP_EFUSE_VDD_SPI_AS_GPIO_ALLOWED)
+    if (field == ESP_EFUSE_VDD_SPI_AS_GPIO) {
+        ESP_LOGE(TAG, "Writing to VDD_SPI_AS_GPIO is not allowed.");
+        ESP_LOGW(TAG, "[DANGER] Enable CONFIG_ESP_EFUSE_VDD_SPI_AS_GPIO_ALLOWED in menuconfig.");
+        ESP_LOGW(TAG, "WARNING: This is an irreversible operation! Once written, it cannot be undone.");
+        ESP_LOGW(TAG, "CRITICAL: If you use Embedded Flash, it will immediately stop working and can never be recovered.");
+        ESP_LOGW(TAG, "This flag changes the VDD_SPI pin to function as a GPIO, which will permanently disable power to the Embedded Flash.");
+        ESP_LOGW(TAG, "Ensure that you fully understand the implications of setting this flag.");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    #endif
+
     if (field == NULL || field[0]->bit_count != 1) {
         return ESP_ERR_INVALID_ARG;
     }

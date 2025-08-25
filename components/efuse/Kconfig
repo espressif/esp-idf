@@ -70,4 +70,20 @@ menu "eFuse Bit Manager"
         default 128 if EFUSE_CODE_SCHEME_COMPAT_REPEAT
         default 256 if !IDF_TARGET_ESP32
 
+    config ESP_EFUSE_VDD_SPI_AS_GPIO_ALLOWED
+        bool "[DANGER] Allow Writing to ESP_EFUSE_VDD_SPI_AS_GPIO"
+        default n
+        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32H21
+        help
+            Allows writing to the VDD_SPI_AS_GPIO efuse field.
+
+            WARNING: This is an irreversible operation! Once written, it cannot be undone.
+
+            CRITICAL: If you use Embedded Flash, it will immediately stop working and can never be recovered.
+            This flag changes the VDD_SPI pin to function as a GPIO, which will permanently disable power to the Embedded Flash.
+
+            Ensure that you fully understand the implications of setting this flag.
+
+            If unsure, say N.
+
 endmenu

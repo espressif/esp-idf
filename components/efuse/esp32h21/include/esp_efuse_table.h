@@ -156,6 +156,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_USB_DREFH[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USB_DREFL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USB_EXCHG_PINS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_VDD_SPI_AS_GPIO[];
+#define ESP_EFUSE_VDD_SPI_AS_GPIO_DESC ESP_EFUSE_VDD_SPI_AS_GPIO
 extern const esp_efuse_desc_t* ESP_EFUSE_ECDSA_CURVE_MODE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ECC_FORCE_CONST_TIME[];
 extern const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[];

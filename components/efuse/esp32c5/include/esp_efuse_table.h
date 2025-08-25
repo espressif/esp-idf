@@ -168,6 +168,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_DIS_PAD_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USB_EXCHG_PINS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_VDD_SPI_AS_GPIO[];
+#define ESP_EFUSE_VDD_SPI_AS_GPIO_DESC ESP_EFUSE_VDD_SPI_AS_GPIO
 extern const esp_efuse_desc_t* ESP_EFUSE_WDT_DELAY_SEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_LO[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KM_DISABLE_DEPLOY_MODE[];
