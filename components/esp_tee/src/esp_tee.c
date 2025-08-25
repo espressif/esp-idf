@@ -40,7 +40,7 @@ uint32_t IRAM_ATTR esp_tee_service_call(int argc, ...)
     init_mutex();
 
     uint32_t val = UINT32_MAX;
-    va_list ap;
+    va_list ap = {0};
     va_start(ap, argc);
 
     if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
@@ -59,7 +59,7 @@ uint32_t IRAM_ATTR esp_tee_service_call(int argc, ...)
 uint32_t IRAM_ATTR esp_tee_service_call_with_noniram_intr_disabled(int argc, ...)
 {
     uint32_t val = UINT32_MAX;
-    va_list ap;
+    va_list ap = {0};
     va_start(ap, argc);
 
     /* NOTE: Disabling the scheduler and non-IRAM residing interrupts */
