@@ -617,6 +617,7 @@ static void http_perform_as_stream_reader(void)
     free(buffer);
 }
 
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 static void https_async(void)
 {
     esp_http_client_config_t config = {
@@ -674,6 +675,7 @@ static void https_async(void)
     }
     esp_http_client_cleanup(client);
 }
+#endif
 
 static void https_with_invalid_url(void)
 {
@@ -835,7 +837,9 @@ static void http_test_task(void *pvParameters)
     http_redirect_to_https();
     http_download_chunk();
     http_perform_as_stream_reader();
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
     https_async();
+#endif
     https_with_invalid_url();
     http_native_request();
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
