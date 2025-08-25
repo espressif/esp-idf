@@ -26,7 +26,7 @@ The following C++ features are supported:
 C++ Language Standard
 ---------------------
 
-By default, ESP-IDF compiles C++ code with C++26 language standard with GNU extensions (``-std=gnu++26``).
+By default, ESP-IDF compiles C++ code using C++26 language standard with GNU extensions (``-std=gnu++26``) for chip targets. For Linux targets, ESP-IDF selects the highest C+ standard supported by your host compiler. To use the highest C++ standard, upgrade your Linux toolchain to a version that supports it.
 
 To compile the source code of a certain component using a different language standard, set the desired compiler flag in the component's ``CMakeLists.txt`` file:
 
