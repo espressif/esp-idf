@@ -131,11 +131,47 @@ endfunction()
 
    .. code-block:: cmake
 
-      target_linker_script(<target> <deptype> <scriptfile>...)
+      target_linker_script(<target> <deptype> <scriptfile>...
+                           [PROCESS <output>])
 
+   :target[in]: The component target to which linker script files should be
+                added.
+   :deptype[in]: This option is obsolete and maintained solely for backward
+                 compatibility.
+   :scriptfile[in]: Specifies the linker script file ``scriptfile`` to be added
+                    to the link.  Multiple files can be specified.
+   :PROCESS[in,opt]: Specifies the ``output`` linker script, which is generated
+                     from the ``linkerscript`` template. The ``linkerscript``
+                     is processed with ldgen to produce the ``output``.
+
+   This function adds one or more linker scripts to the specified component
+   target, incorporating the linker script into the linking process.
+
+   If the ``PROCESS`` option is specified, the last ``scriptfile`` listed is
+   processed using the ldgen command, and the generated ``output`` file is used
+   as the linker script during the linking process. This implies that with the
+   ``PROCESS`` option, it is logical to provide only a single ``scriptfile`` as
+   a template.
 #]]
 function(target_linker_script target deptype scriptfiles)
-    # FIXME: This is just a placeholder without implementation.
+    # The linker script files, templates, and their output filenames are stored
+    # only as component properties. The script files are generated and added to
+    # the library link interface in the idf_build_library function.
+    set(options)
+    set(one_value PROCESS)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+    foreach(scriptfile ${scriptfiles})
+        get_filename_component(scriptfile "${scriptfile}" ABSOLUTE)
+        idf_msg("Adding linker script ${scriptfile}")
+        if(ARG_PROCESS)
+            get_filename_component(output "${ARG_PROCESS}" ABSOLUTE)
+            idf_component_set_property("${target}" LINKER_SCRIPTS_TEMPLATE "${scriptfile}" APPEND)
+            idf_component_set_property("${target}" LINKER_SCRIPTS_GENERATED "${output}" APPEND)
+        else()
+            idf_component_set_property("${target}" LINKER_SCRIPTS_STATIC ${scriptfile} APPEND)
+        endif()
+    endforeach()
 endfunction()
 
 #[[api

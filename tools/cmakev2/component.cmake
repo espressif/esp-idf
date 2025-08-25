@@ -629,12 +629,6 @@ function(idf_component_include name)
         target_add_binary_data(${COMPONENT_TARGET} "${file}" "TEXT")
     endforeach()
 
-    idf_component_get_property(ldfragments "${component_name}" LDFRAGMENTS)
-    if(ldfragments)
-        # FIXME: Enable this once the ldgen integration is implemented.
-        #        ldgen_add_fragment_files("${ldfragments}")
-    endif()
-
     # Components for cmakev1 use the idf_component_register call and are
     # managed in cmakev2 through a shim. This shim sets the COMPONENT_FORMAT
     # property to CMAKEV1 and applies global compilation options and

@@ -280,22 +280,105 @@ function(idf_build_library)
         target_link_libraries("${ARG_INTERFACE}" INTERFACE "${component_interface}")
     endforeach()
 
-    # Identify the components linked to the library by obtaining all targets
-    # that are transitively linked to the library and mapping these targets to
-    # components.
+    # Get all targets transitively linked to the library interface target.
     __get_target_dependencies(TARGET "${ARG_INTERFACE}" OUTPUT dependencies)
-    set(dep_component_interfaces)
+
+    # Identify the components linked to the library by looking at all targets
+    # that are transitively linked to the library and mapping these targets to
+    # components. Store the linked component interfaces in
+    # LIBRARY_COMPONENTS_LINKED property.
+    set(component_interfaces_linked)
     foreach(dep IN LISTS dependencies)
         __get_component_interface(COMPONENT "${dep}" OUTPUT component_interface)
         if(NOT component_interface)
             continue()
         endif()
-        if("${component_interface}" IN_LIST dep_component_interfaces)
+        if("${component_interface}" IN_LIST component_interfaces_linked)
             continue()
         endif()
 
-        list(APPEND dep_component_interfaces "${component_interface}")
+        list(APPEND component_interfaces_linked "${component_interface}")
         idf_component_get_property(component_name "${component_interface}" COMPONENT_NAME)
         idf_library_set_property("${ARG_INTERFACE}" LIBRARY_COMPONENTS_LINKED "${component_name}" APPEND)
+    endforeach()
+
+    # Collect linker fragment files from all components linked to the library
+    # interface and store them in the __LDGEN_FRAGMENT_FILES files. This
+    # property is used by ldgen to generate template-based linker scripts.
+    foreach(component_interface IN LISTS component_interfaces_linked)
+        idf_component_get_property(component_ldfragments "${component_interface}" LDFRAGMENTS)
+        idf_component_get_property(component_directory "${component_interface}" COMPONENT_DIR)
+        __get_absolute_paths(PATHS "${component_ldfragments}"
+                             BASE_DIR "${component_directory}"
+                             OUTPUT ldfragments)
+        idf_library_set_property("${ARG_INTERFACE}" __LDGEN_FRAGMENT_FILES "${ldfragments}" APPEND)
+    endforeach()
+
+    # Collect archive files from all targets linked to the library interface
+    # and store them in the __LDGEN_DEPENDS and __LDGEN_LIBRARIES library
+    # properties. These properties are used by ldgen to generate linker scripts
+    # from templates. The __LDGEN_LIBRARIES property contains a list of
+    # TARGET_FILE generator expressions for archive files.
+    foreach(dep IN LISTS dependencies)
+        if(NOT TARGET "${dep}")
+            continue()
+        endif()
+
+        get_target_property(type "${dep}" TYPE)
+        if("${type}" STREQUAL "INTERFACE_LIBRARY")
+            continue()
+        endif()
+
+        idf_library_get_property(ldgen_depends "${ARG_INTERFACE}" __LDGEN_DEPENDS)
+        if(NOT "${dep}" IN_LIST ldgen_depends)
+            idf_library_set_property("${ARG_INTERFACE}" __LDGEN_LIBRARIES "$<TARGET_FILE:${dep}>" APPEND)
+            idf_library_set_property("${ARG_INTERFACE}" __LDGEN_DEPENDS ${dep} APPEND)
+        endif()
+    endforeach()
+
+    # Create a sanitized library interface name that can be used as a suffix
+    # for files and targets specific to the library.
+    string(REGEX REPLACE "[^A-Za-z0-9_]" "_" suffix "_${ARG_INTERFACE}")
+
+    foreach(component_interface IN LISTS component_interfaces_linked)
+        # Generate linker scripts from templates.
+        # LINKER_SCRIPTS_TEMPLATE and LINKER_SCRIPTS_GENERATED are parallel
+        # lists. The first holds the template linker script path, and the
+        # second holds the generated linker script path.
+        idf_component_get_property(template_scripts "${component_interface}" LINKER_SCRIPTS_TEMPLATE)
+        idf_component_get_property(generated_scripts "${component_interface}" LINKER_SCRIPTS_GENERATED)
+
+        set(scripts)
+        foreach(template script IN ZIP_LISTS template_scripts generated_scripts)
+            set(script "${script}${suffix}")
+            __ldgen_process_template(LIBRARY "${ARG_INTERFACE}"
+                                     TEMPLATE "${template}"
+                                     SUFFIX "${suffix}"
+                                     OUTPUT "${script}")
+            list(APPEND scripts "${script}")
+            # Add a custom target for the generated script and include it as a
+            # dependency for the library interface to ensure the script is
+            # generated before linking.
+            get_filename_component(basename "${script}" NAME)
+            string(REGEX REPLACE "[^A-Za-z0-9_]" "_" basename "${basename}")
+            add_custom_target(__ldgen_output_${basename} DEPENDS "${script}")
+            add_dependencies("${ARG_INTERFACE}" __ldgen_output_${basename})
+        endforeach()
+
+        # Add linker scripts.
+        idf_component_get_property(scripts_static "${component_interface}" LINKER_SCRIPTS_STATIC)
+        list(PREPEND scripts "${scripts_static}")
+        foreach(script IN LISTS scripts)
+            get_filename_component(script_dir "${script}" DIRECTORY)
+            get_filename_component(script_name "${script}" NAME)
+            # Add linker script directory to the linker search path.
+            target_link_directories("${ARG_INTERFACE}" INTERFACE "${script_dir}")
+            # Add linker script to link. Regarding the usage of SHELL, see
+            # https://cmake.org/cmake/help/latest/command/target_link_options.html#option-de-duplication
+            target_link_options("${ARG_INTERFACE}" INTERFACE "SHELL:-T ${script_name}")
+            # Add the linker script as a dependency to ensure the executable is
+            # re-linked if the script changes.
+            set_property(TARGET "${ARG_INTERFACE}" APPEND PROPERTY INTERFACE_LINK_DEPENDS "${script}")
+        endforeach()
     endforeach()
 endfunction()
