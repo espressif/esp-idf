@@ -223,7 +223,6 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit, const parlio
     size_t buffer_alignment = MAX(tx_unit->int_mem_align, tx_unit->ext_mem_align);
     size_t num_dma_nodes = esp_dma_calculate_node_count(config->max_transfer_size, buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t dma_link_config = {
-        .buffer_alignment = buffer_alignment,
         .item_alignment = PARLIO_DMA_DESC_ALIGNMENT,
         .num_items = num_dma_nodes,
     };
@@ -469,8 +468,10 @@ static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio
     }
 
     // DMA transfer data based on bytes not bits, so convert the bit length to bytes, round up
+    size_t buffer_alignment = esp_ptr_internal(t->payload) ? tx_unit->int_mem_align : tx_unit->ext_mem_align;
     gdma_buffer_mount_config_t mount_config = {
         .buffer = (void *)t->payload,
+        .buffer_alignment = buffer_alignment,
         .length = (t->payload_bits + 7) / 8,
         .flags = {
             .mark_eof = true,

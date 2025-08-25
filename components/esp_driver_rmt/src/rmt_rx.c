@@ -39,7 +39,7 @@ static void rmt_rx_default_isr(void *args);
 #if SOC_RMT_SUPPORT_DMA
 static bool rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 
-static void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t per_block_size, size_t last_block_size)
+static void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t mem_alignment, size_t per_block_size, size_t last_block_size)
 {
     uint8_t *data = (uint8_t *)buffer;
     for (int i = 0; i < rx_chan->num_dma_nodes; i++) {
@@ -436,7 +436,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
         size_t per_dma_block_size = buffer_size / rx_chan->num_dma_nodes;
         per_dma_block_size = ALIGN_DOWN(per_dma_block_size, mem_alignment);
         size_t last_dma_block_size = buffer_size - per_dma_block_size * (rx_chan->num_dma_nodes - 1);
-        rmt_rx_mount_dma_buffer(rx_chan, buffer, buffer_size, per_dma_block_size, last_dma_block_size);
+        rmt_rx_mount_dma_buffer(rx_chan, buffer, buffer_size, mem_alignment, per_dma_block_size, last_dma_block_size);
         gdma_reset(channel->dma_chan);
         gdma_start(channel->dma_chan, (intptr_t)rx_chan->dma_nodes); // note, we must use the cached descriptor address to start the DMA
     }
