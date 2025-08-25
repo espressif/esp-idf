@@ -69,6 +69,11 @@ Camera controller driver can be implemented in one of following ways:
         esp_cam_ctlr_handle_t handle = NULL;
         ESP_ERROR_CHECK(esp_cam_new_csi_ctlr(&csi_config, &handle));
 
+    The CSI in {IDF_TARGET_NAME} requires stable 2.5V power supply. Please refer to the schematic diagram to ensure that the power supply pins are connected to 2.5V power before using the MIPI CSI driver.
+
+    .. only:: SOC_GP_LDO_SUPPORTED
+
+        In {IDF_TARGET_NAME}, the CSI can be powered by the internal adjustable LDO. Please connect the LDO channel output pin to the CSI power supply pin. Then, before initializing the CSI driver, use the API provided in :doc:`/api-reference/peripherals/ldo_regulator` to configure the LDO to output 2.5 V voltage.
 .. only:: SOC_ISP_DVP_SUPPORTED
 
     A camera controller driver can be implemented by the ISP DVP peripheral, which requires the configuration that specified by :cpp:type:`esp_cam_ctlr_isp_dvp_cfg_t`.
