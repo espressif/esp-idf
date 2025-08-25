@@ -200,7 +200,6 @@ ESP-IDF 支持 ``iostream`` 功能，但应注意：
 -----------
 
 - 链接脚本生成器不支持将具有 C++ 链接的函数单独放置在内存的特定位置。
-- 当与模板函数一起使用时，会忽略各种节属性（例如 ``IRAM_ATTR``）。
 - vtable 位于 flash 中，在禁用 flash 缓存时无法访问。因此，在 :ref:`iram-safe-interrupt-handlers` 中应避免调用虚拟函数。目前尚无法使用链接器脚本生成器调整 vtable 的放置位置。
 
 
