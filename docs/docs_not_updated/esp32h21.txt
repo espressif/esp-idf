@@ -4,7 +4,6 @@ api-guides/core_dump_internals.rst
 api-guides/wifi-expansion.rst
 api-guides/deep-sleep-stub.rst
 api-guides/app_trace.rst
-api-guides/esp-wifi-mesh.rst
 api-guides/core_dump.rst
 api-guides/lwip.rst
 api-guides/esp-ble-mesh/ble-mesh-faq.rst
@@ -20,7 +19,6 @@ api-guides/external-ram.rst
 api-guides/low-power-mode/index.rst
 api-guides/low-power-mode/low-power-mode-wifi.rst
 api-guides/low-power-mode/low-power-mode-soc.rst
-api-guides/wifi.rst
 api-guides/ble/index.rst
 api-guides/ble/overview.rst
 api-guides/ble/get-started/ble-device-discovery.rst
@@ -42,11 +40,9 @@ api-guides/jtag-debugging/using-debugger.rst
 api-guides/jtag-debugging/building-openocd-linux.rst
 api-guides/jtag-debugging/tips-and-quirks.rst
 api-guides/jtag-debugging/configure-builtin-jtag.rst
-api-guides/wifi-security.rst
 api-guides/RF_calibration.rst
 api-guides/usb-otg-console.rst
 api-guides/current-consumption-measurement-modules.rst
-api-guides/coexist.rst
 api-guides/dfu.rst
 about.rst
 get-started/index.rst
@@ -60,18 +56,6 @@ get-started/linux-macos-setup.rst
 get-started/windows-setup-update.rst
 hw-reference/index.rst
 api-reference/index.rst
-api-reference/network/index.rst
-api-reference/network/esp_eth.rst
-api-reference/network/esp-wifi-mesh.rst
-api-reference/network/esp_smartconfig.rst
-api-reference/network/esp_wifi.rst
-api-reference/network/esp_netif_programming.rst
-api-reference/network/esp_dpp.rst
-api-reference/network/esp_nan.rst
-api-reference/network/esp_now.rst
-api-reference/network/esp_netif_driver.rst
-api-reference/network/esp_netif.rst
-api-reference/network/esp_openthread.rst
 api-reference/provisioning/index.rst
 api-reference/provisioning/provisioning.rst
 api-reference/provisioning/protocomm.rst
