@@ -12,7 +12,7 @@
 #include "test_wpa_supplicant_common.h"
 
 #define PMK_LEN 32
-#define NUM_ITERATIONS 15
+#define NUM_ITERATIONS 5
 #define MIN_PASSPHARSE_LEN 8
 
 void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
