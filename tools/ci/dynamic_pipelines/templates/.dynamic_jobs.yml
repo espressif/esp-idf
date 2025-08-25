@@ -11,7 +11,7 @@
   image: $ESP_ENV_IMAGE
   tags: [build, shiny]
   stage: build
-  timeout: 1 hour
+  timeout: 2 hour
   variables:
     # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
     IDF_CCACHE_ENABLE: "1"
