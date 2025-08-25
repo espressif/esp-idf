@@ -63,7 +63,7 @@ def test_reproducible_builds(app_name: str, idf_py: IdfPyFunc, test_app_copy: Pa
             '--batch',
             '--quiet',
             '-x',
-            f'{build_first}/prefix_map_gdbinit',
+            f'{build_first}/gdbinit/prefix_map',
             '-ex',
             'set logging enabled',
             '-ex',

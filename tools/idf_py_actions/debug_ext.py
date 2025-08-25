@@ -125,7 +125,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         espcoredump_kwargs['chip_rev'] = chip_rev_to_int(chip_rev)
 
         # for reproducible builds
-        extra_gdbinit_file = project_desc.get('debug_prefix_map_gdbinit', None)
+        extra_gdbinit_file = project_desc['gdbinit_files']['02_prefix_map']
 
         if extra_gdbinit_file:
             espcoredump_kwargs['extra_gdbinit_file'] = extra_gdbinit_file
@@ -285,7 +285,10 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                 gdb_args.append(f'-x={gdb_x_list[gdb_x_index]}')
                 gdb_x_list.pop(gdb_x_index)
                 continue
-            if name == 'connect' and gdb_x_list:  # TODO IDF-11692
+            # If the user provides a gdbinit file with name not in the "gdbinit_files" list,
+            # we assume the connection logic is defined within it.
+            # Otherwise, the configuration may be invalid.
+            if name == 'connect' and gdb_x_list:
                 continue
             gdb_args.append(f'-x={path}')
         # append user-defined gdbinit files

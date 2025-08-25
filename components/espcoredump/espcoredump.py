@@ -29,7 +29,7 @@ def get_prefix_map_gdbinit_path(prog_path: str) -> Any:
     with open(desc_path, encoding='utf-8') as f:
         project_desc = json.load(f)
 
-    return project_desc.get('debug_prefix_map_gdbinit')
+    return project_desc['gdbinit_files']['02_prefix_map']
 
 
 def main() -> None:
