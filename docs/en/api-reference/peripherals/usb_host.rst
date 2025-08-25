@@ -407,6 +407,75 @@ UVC
 
 .. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------
 
+.. only:: esp32s3
+
+    External PHY Configuration
+    --------------------------
+
+    The {IDF_TARGET_NAME} contains two USB controllers—the USB-OTG and USB-Serial-JTAG. However, both controllers share a **single PHY**, which means only one can operate at a time. To use USB Host functionality while the USB-Serial-JTAG is active (e.g., for debugging or flashing), an **external PHY** is required, since the PHY is used by USB-Serial-JTAG.
+
+    .. note::
+        An external PHY is not the only way to enable debugging alongside USB Host or Device functionality. It is also possible to switch the debugging interface from USB-Serial-JTAG to plain JTAG by burning the appropriate eFuses. For details, refer to the `JTAG Debugging <https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/jtag-debugging/index.html>`_ in the ESP-IDF Programming Guide for your target.
+
+    {IDF_TARGET_NAME} supports connecting external PHY ICs. This allows independent operation of both USB-OTG and USB-Serial-JTAG controllers. Various external PHY ICs may require different hardware configurations. Please refer to the respective IC datasheets for details. A general connection diagram is available in the official ESP documentation: `Use an external PHY <https://docs.espressif.com/projects/esp-iot-solution/en/latest/usb/usb_overview/usb_phy.html#use-an-external-phy>`__.
+
+    **List of Tested External PHY ICs:**
+
+    - **SP5301** — Directly supported by {IDF_TARGET_NAME}. See the guide above for schematic and routing details.
+    - **STUSB03E** — Requires signal routing using an analog switch. See example below.
+
+    .. figure:: ../../../_static/usb_host/ext_phy_schematic_stusb03e.png
+       :align: center
+       :alt: External PHY with Analog Switch Schematic (Host mode)
+
+       Example connection using STUSB03E and analog switch (Host mode)
+
+    .. note::
+        This schematic is a minimal example intended only to demonstrate the external PHY connection. It omits other essential components and signals (e.g., VCC, GND, RESET) required for a complete, functional {IDF_TARGET_NAME} design.
+        The schematic includes both a +5 V rail (used to power USB devices) and a VCC rail (typically 3.3 V). VCC should match the chip supply voltage. Ensure that +5 V for the USB bus is appropriately sourced and protected (e.g., with a power switch and current limiting). Always comply with USB host power requirements, particularly when supporting USB bus-powered devices.
+
+    Hardware configuration is handled via GPIO mapping to the PHY's pins. Any unused pins (e.g., :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num`) **must be set to -1**.
+
+    .. note::
+        The :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num` pin is **currently not supported** and does not need to be connected.
+
+    **Example Code:**
+
+    .. code-block:: c
+
+        // GPIO configuration for external PHY
+        const usb_phy_ext_io_conf_t ext_io_conf = {
+            .vp_io_num  = 8,
+            .vm_io_num  = 5,
+            .rcv_io_num = 11,
+            .oen_io_num = 17,
+            .vpo_io_num = 4,
+            .vmo_io_num = 46,
+            .fs_edge_sel_io_num = 38,
+            .suspend_n_io_num = -1,
+        };
+
+        // Configuration and initialization of external PHY for OTG controller (Host mode)
+        const usb_phy_config_t phy_config = {
+            .controller = USB_PHY_CTRL_OTG,
+            .target = USB_PHY_TARGET_EXT,
+            .otg_mode = USB_OTG_MODE_HOST,
+            .otg_speed = USB_PHY_SPEED_FULL,
+            .ext_io_conf = &ext_io_conf
+        };
+
+        usb_phy_handle_t phy_hdl;
+        ESP_ERROR_CHECK(usb_new_phy(&phy_config, &phy_hdl));
+
+        // Configure USB Host to use the externally initialized PHY
+        usb_host_config_t host_config = {
+            .skip_phy_setup = true,
+            // Add other host configuration fields as needed
+        };
+        ESP_ERROR_CHECK(usb_host_install(&host_config));
+
+    This setup ensures that the USB Host stack uses the **external PHY** and bypasses PHY setup.
+
 Host Stack Configuration
 ------------------------
 

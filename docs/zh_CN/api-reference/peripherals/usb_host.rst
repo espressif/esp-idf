@@ -407,6 +407,75 @@ UVC
 
 .. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------
 
+.. only:: esp32s3
+
+    外部 PHY 配置
+    -------------
+
+    {IDF_TARGET_NAME} 内部集成了两个 USB 控制器 —— USB-OTG 和 USB-Serial-JTAG。这两个控制器 **共用同一个 PHY**，因此同一时间只能有一个控制器工作。如果在 USB-Serial-JTAG 工作时（如调试或烧录）时仍需使用 USB 主机功能，必须使用 **外部 PHY**，因为此时内部 PHY 已被 USB-Serial-JTAG 占用。
+
+    .. note::
+        使用外部 PHY 并不是在 USB 主机或设备功能开启时同时实现调试的唯一办法。也可以通过烧录对应的 eFuse，将调试接口从 USB-Serial-JTAG 切换为传统的 JTAG 接口。具体步骤请参考 ESP-IDF 编程指南中针对你的芯片的 `JTAG 调试 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32s3/api-guides/jtag-debugging/index.html>`_ 章节。
+
+    {IDF_TARGET_NAME} 支持连接外部 PHY 芯片，从而实现 USB-OTG 和 USB-Serial-JTAG 控制器的独立工作。不同的外部 PHY 芯片可能需要不同的硬件配置，具体请参阅各芯片的规格书。乐鑫官方文档提供了通用的连接示意图用于参考：`使用外部 PHY <https://docs.espressif.com/projects/esp-iot-solution/en/latest/usb/usb_overview/usb_phy.html#use-an-external-phy>`__。
+
+    **已测试的外部 PHY 芯片如下：**
+
+    - **SP5301** — {IDF_TARGET_NAME} 原生支持此芯片。原理图与布线方法请参考上文链接。
+    - **STUSB03E** — 需要通过模拟开关进行信号路由。请参考下方示例。
+
+    .. figure:: ../../../_static/usb_host/ext_phy_schematic_stusb03e.png
+       :align: center
+       :alt: 使用模拟开关的外部 PHY 原理图（主机模式）
+
+       使用 STUSB03E 与模拟开关的连接示例（主机模式）
+
+    .. note::
+        此原理图为简化示例，用于演示外部 PHY 连接方式，未包含完整 {IDF_TARGET_NAME} 设计所需的所有元器件和信号（如 VCC、GND、RESET 等）。
+        图中包含 +5 V 电源轨（用于为 USB 设备供电）和 VCC 电源轨（通常为 3.3 V）。VCC 电压应与芯片供电电压保持一致。确保为 USB 总线提供的 +5 V 电源可靠，并具备必要的保护措施（如电源开关和限流设计）在支持 USB 总线供电设备时，务必遵守 USB 主机的供电规范。
+
+    硬件配置通过将 GPIO 映射到 PHY 引脚实现。任何未使用的引脚（如 :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num`） **必须设置为 -1**。
+
+    .. note::
+        :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num` 引脚 **当前不支持**，无需连接。
+
+    **示例代码：**
+
+    .. code-block:: c
+
+        // 外部 PHY 的 GPIO 配置
+        const usb_phy_ext_io_conf_t ext_io_conf = {
+            .vp_io_num  = 8,
+            .vm_io_num  = 5,
+            .rcv_io_num = 11,
+            .oen_io_num = 17,
+            .vpo_io_num = 4,
+            .vmo_io_num = 46,
+            .fs_edge_sel_io_num = 38,
+            .suspend_n_io_num = -1,
+        };
+
+        // 针对 OTG 控制器（Host 模式）的外部 PHY 配置与初始化
+        const usb_phy_config_t phy_config = {
+            .controller = USB_PHY_CTRL_OTG,
+            .target = USB_PHY_TARGET_EXT,
+            .otg_mode = USB_OTG_MODE_HOST,
+            .otg_speed = USB_PHY_SPEED_FULL,
+            .ext_io_conf = &ext_io_conf
+        };
+
+        usb_phy_handle_t phy_hdl;
+        ESP_ERROR_CHECK(usb_new_phy(&phy_config, &phy_hdl));
+
+        // 配置 USB 主机使用外部初始化的 PHY
+        usb_host_config_t host_config = {
+            .skip_phy_setup = true,
+            // 根据需求添加其他 host 配置字段
+        };
+        ESP_ERROR_CHECK(usb_host_install(&host_config));
+
+    该配置确保 USB 主机协议栈使用 **外部 PHY**，并跳过 PHY 初始化步骤。
+
 主机栈配置
 ----------
 
