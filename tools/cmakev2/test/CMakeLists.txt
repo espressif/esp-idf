@@ -15,7 +15,6 @@ add_custom_target(flash)
 
 idf_project_init()
 
-
 # Test component priority
 function(test_component_priority)
     # Set the idf component to be replaced with a testing component of higher
@@ -205,14 +204,27 @@ function(test_include_component)
     endif()
 endfunction()
 
+# Add two executables fatfs_example and hello_world_example
+# After configuration these can be build with
+# cmake --build build/ --target hello_world_example
+# cmake --build build/ --target fatfs_example
 function(test_executable)
-    add_executable(test_executable components/component1/component1.c)
-    idf_build_library(INTERFACE test_executable_lib)
-    target_link_libraries(test_executable PRIVATE test_executable_lib)
+    idf_build_get_property(build_dir BUILD_DIR)
+    file(TOUCH "${build_dir}/test_executable.c")
+
+    add_executable(fatfs_example "${build_dir}/test_executable.c")
+    idf_build_library(INTERFACE fatfs_lib
+                      COMPONENTS fatfs_example)
+    target_link_libraries(fatfs_example PRIVATE fatfs_lib)
+
+    add_executable(hello_world_example "${build_dir}/test_executable.c")
+    idf_build_library(INTERFACE hello_world_lib
+                      COMPONENTS hello_world_example)
+    target_link_libraries(hello_world_example PRIVATE hello_world_lib)
+
 endfunction()
 
 # Run tests
-test_component_priority()
 test_idf_version()
 test_python()
 test_toolchain()
@@ -221,6 +233,10 @@ test_kconfig()
 test_project_properties()
 test_include_component()
 test_executable()
+
+# Call this test last because it replaces the ESP system component.
+test_component_priority()
+
 __dump_all_properties()
 __generate_project_info()
 
