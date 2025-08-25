@@ -136,8 +136,8 @@ esp_err_t twai_node_get_info(twai_node_handle_t node, twai_node_status_t *status
 
 esp_err_t twai_node_transmit(twai_node_handle_t node, const twai_frame_t *frame, int timeout_ms)
 {
-    ESP_RETURN_ON_FALSE(node && frame, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null");
-    ESP_RETURN_ON_FALSE(node->transmit, ESP_ERR_NOT_SUPPORTED, TAG, "transmit is not supported");
+    ESP_RETURN_ON_FALSE_ISR(node && frame, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null");
+    ESP_RETURN_ON_FALSE_ISR(node->transmit, ESP_ERR_NOT_SUPPORTED, TAG, "transmit is not supported");
 
     return node->transmit(node, frame, timeout_ms);
 }
