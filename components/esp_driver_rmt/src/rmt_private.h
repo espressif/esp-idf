@@ -225,6 +225,7 @@ struct rmt_rx_channel_t {
     rmt_rx_trans_desc_t trans_desc;      // transaction description
     size_t num_dma_nodes;                // number of DMA nodes, determined by how big the memory block that user configures
     size_t dma_int_mem_alignment;        // DMA buffer alignment (both in size and address) for internal RX memory
+    size_t dma_ext_mem_alignment;        // DMA buffer alignment (both in size and address) for external RX memory
     gdma_link_list_handle_t dma_link;    // DMA link list handle
 };
 
