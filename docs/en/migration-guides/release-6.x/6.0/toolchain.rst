@@ -113,15 +113,9 @@ The header ``<sys/signal.h>`` is no longer available in Picolibc. To ensure comp
     RISC-V Chips and Misaligned Memory Access in LibC Functions
     -----------------------------------------------------------
 
-    Espressif RISC-V chips can perform misaligned memory accesses with only a small
-    performance penalty compared to aligned accesses.
+    Espressif RISC-V chips can perform misaligned memory accesses with only a small performance penalty compared to aligned accesses.
 
-    Previously, LibC functions that operate on memory (such as copy or comparison
-    functions) were implemented using byte-by-byte operations when a non-word-aligned
-    pointer was passed. Now, these functions use word (4-byte) load/store operations
-    whenever possible, resulting in a significant performance increase. These optimized
-    implementations are enabled by default via :ref:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS`,
-    which reduces the application’s memory budget (IRAM) by approximately 800–1000 bytes.
+    Previously, LibC functions that operate on memory (such as copy or comparison functions) were implemented using byte-by-byte operations when a non-word-aligned pointer was passed. Now, these functions use word (4-byte) load/store operations whenever possible, resulting in a significant performance increase. These optimized implementations are enabled by default via :ref:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS`, which reduces the application's memory budget (IRAM) by approximately 800–1000 bytes.
 
     The table below shows benchmark results on the ESP32-C3 chip using 4096-byte buffers:
 
@@ -155,8 +149,8 @@ The header ``<sys/signal.h>`` is no longer available in Picolibc. To ensure comp
          - 69.8
 
     .. note::
-       The results above apply to misaligned memory operations.
-       Performance for aligned memory operations remains unchanged.
+
+        The results above apply to misaligned memory operations. Performance for aligned memory operations remains unchanged.
 
     Functions with Improved Performance
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
