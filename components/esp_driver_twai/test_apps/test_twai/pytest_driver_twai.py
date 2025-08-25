@@ -26,17 +26,17 @@ def fixture_create_socket_can() -> Bus:
     start_command = 'sudo ip link set can0 up type can bitrate 250000'
     stop_command = 'sudo ip link set can0 down'
     try:
-        subprocess.run(start_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        subprocess.run(start_command, shell=True, capture_output=True, text=True)
     except Exception as e:
         print(f'Open bus Error: {e}')
     bus = Bus(interface='socketcan', channel='can0', bitrate=250000)
     yield bus  # test invoked here
     bus.shutdown()
-    subprocess.run(stop_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    subprocess.run(stop_command, shell=True, capture_output=True, text=True)
 
 
 @pytest.mark.twai_std
-@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='no runner')
+@pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32h4'], reason='no runner')
 @pytest.mark.parametrize('config', ['release'], indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
 def test_driver_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
@@ -59,7 +59,7 @@ def test_driver_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
 
 
 @pytest.mark.twai_std
-@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='no runner')
+@pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32h4'], reason='no runner')
 @pytest.mark.parametrize('config', ['release'], indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
 def test_driver_twai_remote_request(dut: Dut, socket_can: Bus) -> None:

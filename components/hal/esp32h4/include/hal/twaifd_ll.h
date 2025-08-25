@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,7 @@ extern "C" {
 #include "hal/assert.h"
 #include "hal/misc.h"
 
-#define TWAIFD_LL_GET_HW(num) (((num) == 0) ? (&TWAI0) : (&TWAI1))
+#define TWAIFD_LL_GET_HW(num) (((num) == 0) ? (&TWAI0) : NULL)
 
 #define TWAI_LL_BRP_MIN                 1
 #define TWAI_LL_BRP_MAX                 255
@@ -76,7 +76,7 @@ extern "C" {
  */
 static inline void twaifd_ll_enable_bus_clock(uint8_t twai_id, bool enable)
 {
-    PCR.twai[twai_id].twai_conf.twai_clk_en = enable;
+    PCR.twai0_conf.twai0_clk_en = enable;
 }
 
 /**
@@ -86,8 +86,8 @@ static inline void twaifd_ll_enable_bus_clock(uint8_t twai_id, bool enable)
  */
 static inline void twaifd_ll_reset_register(uint8_t twai_id)
 {
-    PCR.twai[twai_id].twai_conf.twai_rst_en = 1;
-    PCR.twai[twai_id].twai_conf.twai_rst_en = 0;
+    PCR.twai0_conf.twai0_rst_en = 1;
+    PCR.twai0_conf.twai0_rst_en = 0;
 }
 
 /**
@@ -99,12 +99,17 @@ static inline void twaifd_ll_reset_register(uint8_t twai_id)
 static inline void twaifd_ll_set_clock_source(uint8_t twai_id, twai_clock_source_t clk_src)
 {
     switch (clk_src) {
-    case TWAI_CLK_SRC_PLL_F80M:
-        PCR.twai[twai_id].twai_func_clk_conf.twai_func_clk_sel = 1;
-        break;
     case TWAI_CLK_SRC_XTAL:
-        PCR.twai[twai_id].twai_func_clk_conf.twai_func_clk_sel = 0;
+        PCR.twai0_func_clk_conf.twai0_func_clk_sel = 0;
         break;
+    case TWAI_CLK_SRC_PLL_F96M:
+        PCR.twai0_func_clk_conf.twai0_func_clk_sel = 2;
+        break;
+    // We do not plan to support the TWAI_CLK_SRC_RC_FAST clock source,
+    // as the accuracy of this clock does not meet the requirements for the baud rate
+    // case TWAI_CLK_SRC_RC_FAST:
+    //     PCR.twai0_func_clk_conf.twai0_func_clk_sel = 1;
+    //     break;
     default:
         HAL_ASSERT(false);
     }
@@ -118,9 +123,9 @@ static inline void twaifd_ll_set_clock_source(uint8_t twai_id, twai_clock_source
  */
 static inline void twaifd_ll_enable_clock(uint8_t twai_id, bool enable)
 {
-    PCR.twai[twai_id].twai_func_clk_conf.twai_func_clk_en = enable;
+    PCR.twai0_func_clk_conf.twai0_func_clk_en = enable;
     if (enable) {
-        while (!PCR.twai[twai_id].twai_conf.twai_ready);
+        while (!PCR.twai0_conf.twai0_ready);
     }
 }
 

@@ -94,8 +94,8 @@ void app_main(void)
         .io_cfg = {
             .tx = TWAI_LISTENER_TX_GPIO,
             .rx = TWAI_LISTENER_RX_GPIO,
-            .quanta_clk_out = -1,
-            .bus_off_indicator = -1,
+            .quanta_clk_out = GPIO_NUM_NC,
+            .bus_off_indicator = GPIO_NUM_NC,
         },
         .bit_timing.bitrate = TWAI_BITRATE,
         .flags.enable_listen_only = true,

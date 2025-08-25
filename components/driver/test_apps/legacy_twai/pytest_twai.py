@@ -22,7 +22,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 @idf_parametrize(
     'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
 )
-def test_twai_self(dut: Dut) -> None:
+def test_legacy_twai_self(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='twai-loop-back')
 
 
@@ -31,11 +31,11 @@ def fixture_create_socket_can() -> Bus:
     # Set up the socket CAN with the bitrate
     start_command = 'sudo ip link set can0 up type can bitrate 250000 restart-ms 100'
     stop_command = 'sudo ip link set can0 down'
-    subprocess.run(start_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    subprocess.run(start_command, shell=True, capture_output=True, text=True)
     bus = Bus(interface='socketcan', channel='can0', bitrate=250000)
     yield bus  # test invoked here
     bus.shutdown()
-    subprocess.run(stop_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    subprocess.run(stop_command, shell=True, capture_output=True, text=True)
 
 
 @pytest.mark.twai_std
@@ -49,7 +49,7 @@ def fixture_create_socket_can() -> Bus:
 @idf_parametrize(
     'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
 )
-def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
+def test_legacy_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     dut.serial.hard_reset()
     dut.expect_exact('Press ENTER to see the list of tests')
 
@@ -79,7 +79,7 @@ def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
 @idf_parametrize(
     'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
 )
-def test_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
+def test_legacy_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
     dut.serial.hard_reset()
     dut.expect_exact('Press ENTER to see the list of tests')
 
