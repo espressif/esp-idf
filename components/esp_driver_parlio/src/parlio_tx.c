@@ -164,7 +164,6 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit, const parlio
     size_t buffer_alignment = MAX(tx_unit->int_mem_align, tx_unit->ext_mem_align);
     size_t num_dma_nodes = esp_dma_calculate_node_count(config->max_transfer_size, buffer_alignment, PARLIO_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t dma_link_config = {
-        .buffer_alignment = buffer_alignment,
         .item_alignment = PARLIO_DMA_DESC_ALIGNMENT,
         .num_items = num_dma_nodes,
     };
@@ -452,9 +451,11 @@ esp_err_t parlio_tx_unit_register_event_callbacks(parlio_tx_unit_handle_t tx_uni
 
 static void parlio_mount_buffer(parlio_tx_unit_t *tx_unit, parlio_tx_trans_desc_t *t)
 {
+    size_t buffer_alignment = esp_ptr_internal(t->payload) ? tx_unit->int_mem_align : tx_unit->ext_mem_align;
     // DMA transfer data based on bytes not bits, so convert the bit length to bytes, round up
     gdma_buffer_mount_config_t mount_config = {
         .buffer = (void *)t->payload,
+        .buffer_alignment = buffer_alignment,
         .length = (t->payload_bits + 7) / 8,
         .flags = {
             // if transmission is loop, we don't need to generate the EOF for 1-bit data width, DIG-559

@@ -306,10 +306,9 @@ static esp_err_t i3c_master_init_dma(i3c_master_bus_t *i3c_master_handle, const 
     // create DMA link list
     size_t int_mem_align = 0;
     gdma_get_alignment_constraints(i3c_master_handle->dma_tx_chan, &int_mem_align, NULL);
-    size_t buffer_alignment = I3C_ALIGN_UP(int_mem_align, I3C_MASTER_DMA_INTERFACE_ALIGNMENT);
-    size_t num_dma_nodes = esp_dma_calculate_node_count(dma_config->max_transfer_size, buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    i3c_master_handle->dma_buffer_alignment = I3C_ALIGN_UP(int_mem_align, I3C_MASTER_DMA_INTERFACE_ALIGNMENT);
+    size_t num_dma_nodes = esp_dma_calculate_node_count(dma_config->max_transfer_size, i3c_master_handle->dma_buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t dma_link_config = {
-        .buffer_alignment = buffer_alignment,  // no special buffer alignment for i3c master buffer
         .item_alignment = 4,                   // 4 bytes alignment for AHB-DMA
         .num_items = num_dma_nodes,            // only one item in the link list so far
     };
@@ -462,6 +461,7 @@ static esp_err_t do_dma_transaction_handler(i3c_master_bus_handle_t bus_handle, 
             size_t dma_aligned_size = I3C_ALIGN_UP(write_size, I3C_MASTER_DMA_INTERFACE_ALIGNMENT);
             gdma_buffer_mount_config_t mount_config = {
                 .buffer = trans->write_buffer,
+                .buffer_alignment = bus_handle->dma_buffer_alignment,
                 .length = dma_aligned_size,
                 .flags = {
                     .mark_eof = true,
@@ -487,6 +487,7 @@ static esp_err_t do_dma_transaction_handler(i3c_master_bus_handle_t bus_handle, 
             size_t dma_aligned_size = I3C_ALIGN_UP(read_size, I3C_MASTER_DMA_INTERFACE_ALIGNMENT);
             gdma_buffer_mount_config_t mount_config = {
                 .buffer = trans->read_buffer,
+                .buffer_alignment = bus_handle->dma_buffer_alignment,
                 .length = dma_aligned_size,
                 .flags = {
                     .mark_eof = true,

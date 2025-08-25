@@ -199,7 +199,6 @@ static esp_err_t uhci_gdma_initialize(uhci_controller_handle_t uhci_ctrl, const 
     size_t buffer_alignment = UHCI_MAX(uhci_ctrl->tx_dir.int_mem_align, uhci_ctrl->tx_dir.ext_mem_align);
     size_t num_dma_nodes = esp_dma_calculate_node_count(config->max_transmit_size, buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t dma_link_config = {
-        .buffer_alignment = buffer_alignment,
         .item_alignment = 4,
         .num_items = num_dma_nodes,
     };
@@ -220,7 +219,6 @@ static esp_err_t uhci_gdma_initialize(uhci_controller_handle_t uhci_ctrl, const 
     gdma_get_alignment_constraints(uhci_ctrl->rx_dir.dma_chan, &uhci_ctrl->rx_dir.int_mem_align, &uhci_ctrl->rx_dir.ext_mem_align);
     buffer_alignment = UHCI_MAX(uhci_ctrl->rx_dir.int_mem_align, uhci_ctrl->rx_dir.ext_mem_align);
     uhci_ctrl->rx_dir.rx_num_dma_nodes = esp_dma_calculate_node_count(config->max_receive_internal_mem, buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
-    dma_link_config.buffer_alignment = buffer_alignment;
     dma_link_config.num_items = uhci_ctrl->rx_dir.rx_num_dma_nodes;
     ESP_RETURN_ON_ERROR(gdma_new_link_list(&dma_link_config, &uhci_ctrl->rx_dir.dma_link), TAG, "DMA rx link list alloc failed");
     ESP_LOGD(TAG, "rx_dma node number is %d", uhci_ctrl->rx_dir.rx_num_dma_nodes);
@@ -268,8 +266,10 @@ static esp_err_t uhci_gdma_deinitialize(uhci_controller_handle_t uhci_ctrl)
 static void uhci_do_transmit(uhci_controller_handle_t uhci_ctrl, uhci_transaction_desc_t *trans)
 {
     uhci_ctrl->tx_dir.cur_trans = trans;
+    size_t buffer_alignment = esp_ptr_internal(trans->buffer) ? uhci_ctrl->tx_dir.int_mem_align : uhci_ctrl->tx_dir.ext_mem_align;
     gdma_buffer_mount_config_t mount_config = {
         .buffer = trans->buffer,
+        .buffer_alignment = buffer_alignment,
         .length = trans->buffer_size,
         .flags = {
             .mark_eof = true,
@@ -326,7 +326,7 @@ esp_err_t uhci_receive(uhci_controller_handle_t uhci_ctrl, uint8_t *read_buffer,
     for (size_t i = 0; i < node_count; i++) {
         uhci_ctrl->rx_dir.buffer_size_per_desc_node[i] = base_size;
         uhci_ctrl->rx_dir.buffer_pointers[i] = read_buffer;
-
+        size_t buffer_alignment = esp_ptr_internal(read_buffer) ? uhci_ctrl->rx_dir.int_mem_align : uhci_ctrl->rx_dir.ext_mem_align;
         // Distribute the remaining size to the first few nodes
         if (remaining_size >= max_alignment_needed) {
             uhci_ctrl->rx_dir.buffer_size_per_desc_node[i] += max_alignment_needed;
@@ -335,6 +335,7 @@ esp_err_t uhci_receive(uhci_controller_handle_t uhci_ctrl, uint8_t *read_buffer,
 
         mount_configs[i] = (gdma_buffer_mount_config_t) {
             .buffer = read_buffer,
+            .buffer_alignment = buffer_alignment,
             .length = uhci_ctrl->rx_dir.buffer_size_per_desc_node[i],
             .flags = {
                 .mark_final = false,

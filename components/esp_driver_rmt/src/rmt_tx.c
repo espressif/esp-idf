@@ -86,7 +86,6 @@ static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx
 
     // create DMA link list
     gdma_link_list_config_t dma_link_config = {
-        .buffer_alignment = int_alignment,
         .item_alignment = RMT_DMA_DESC_ALIGN,
         .num_items = RMT_DMA_NODES_PING_PONG,
         .flags = {
@@ -100,6 +99,7 @@ static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx
         // each descriptor shares half of the DMA buffer
         mount_configs[i] = (gdma_buffer_mount_config_t) {
             .buffer = tx_channel->dma_mem_base + tx_channel->ping_pong_symbols * i,
+            .buffer_alignment = int_alignment,
             .length = tx_channel->ping_pong_symbols * sizeof(rmt_symbol_word_t),
             .flags = {
                 // each node can generate the DMA eof interrupt, and the driver will do a ping-pong trick in the eof callback

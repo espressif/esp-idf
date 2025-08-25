@@ -22,7 +22,7 @@ static void rmt_rx_default_isr(void *args);
 static bool rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 
 __attribute__((always_inline))
-static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t per_block_size, size_t last_block_size)
+static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t mem_alignment, size_t per_block_size, size_t last_block_size)
 {
     uint8_t *data = (uint8_t *)buffer;
     gdma_buffer_mount_config_t mount_configs[rx_chan->num_dma_nodes];
@@ -31,6 +31,7 @@ static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void
         mount_configs[i] = (gdma_buffer_mount_config_t) {
             .buffer = data + i * per_block_size,
             .length = per_block_size,
+            .buffer_alignment = mem_alignment,
             .flags = {
                 .mark_final = false,
             }
@@ -70,7 +71,6 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
 
     //  create DMA link list
     gdma_link_list_config_t dma_link_config = {
-        .buffer_alignment = rx_channel->dma_int_mem_alignment,
         .item_alignment = RMT_DMA_DESC_ALIGN,
         .num_items = rx_channel->num_dma_nodes,
         .flags = {
@@ -419,7 +419,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
         size_t per_dma_block_size = buffer_size / rx_chan->num_dma_nodes;
         per_dma_block_size = ALIGN_DOWN(per_dma_block_size, mem_alignment);
         size_t last_dma_block_size = buffer_size - per_dma_block_size * (rx_chan->num_dma_nodes - 1);
-        rmt_rx_mount_dma_buffer(rx_chan, buffer, buffer_size, per_dma_block_size, last_dma_block_size);
+        rmt_rx_mount_dma_buffer(rx_chan, buffer, buffer_size, mem_alignment, per_dma_block_size, last_dma_block_size);
         gdma_reset(channel->dma_chan);
         gdma_start(channel->dma_chan, gdma_link_get_head_addr(rx_chan->dma_link)); // note, we must use the cached descriptor address to start the DMA
     }
