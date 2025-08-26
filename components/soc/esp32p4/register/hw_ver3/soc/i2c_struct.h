@@ -235,9 +235,9 @@ typedef union {
         /** clk_en : R/W; bitpos: [8]; default: 0;
          *  Configures whether to gate clock signal for registers.
          *
-         *  0: Force clock on for registers
+         *  0: Support clock only when registers are read or written to by software
          *
-         *  1: Support clock only when registers are read or written to by software.
+         *  1: Force clock on for registers
          */
         uint32_t clk_en:1;
         /** arbitration_en : R/W; bitpos: [9]; default: 1;
@@ -550,7 +550,7 @@ typedef union {
         uint32_t slave_addressed:1;
         uint32_t reserved_6:2;
         /** rxfifo_cnt : RO; bitpos: [13:8]; default: 0;
-         *  Represents the number of data bytes to be sent.
+         *  Represents the number of data bytes received in RAM.
          */
         uint32_t rxfifo_cnt:6;
         /** stretch_cause : RO; bitpos: [15:14]; default: 3;
@@ -564,7 +564,7 @@ typedef union {
         uint32_t stretch_cause:2;
         uint32_t reserved_16:2;
         /** txfifo_cnt : RO; bitpos: [23:18]; default: 0;
-         *  Represents the number of data bytes received in RAM.
+         *  Represents the number of data bytes to be sent.
          */
         uint32_t txfifo_cnt:6;
         /** scl_main_state_last : RO; bitpos: [26:24]; default: 0;
@@ -1009,11 +1009,11 @@ typedef union {
         /** command : R/W; bitpos: [13:0]; default: 0;
          *  Configures command. It consists of three parts:
          *  op_code is the command,
-         *  0: RSTART,
-         *  1: WRITE,
-         *  2: READ,
-         *  3: STOP,
-         *  4: END.
+         *  1: WRITE
+         *  2: STOP
+         *  3: READ
+         *  4: END
+         *  6: RSTART
          *
          *  Byte_num represents the number of bytes that need to be sent or received.
          *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
