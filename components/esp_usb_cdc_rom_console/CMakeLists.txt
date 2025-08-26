@@ -1,5 +1,6 @@
 idf_build_get_property(target IDF_TARGET)
 
+set(srcs)
 
 if(CONFIG_ESP_CONSOLE_USB_CDC)
     list(APPEND srcs "usb_console.c")
