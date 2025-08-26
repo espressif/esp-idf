@@ -142,9 +142,6 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
     /* Brownout detection initialization */
     esp_tee_brownout_init();
 
-    /* Switch back to bootloader stack. */
-    asm volatile("mv sp, %0" :: "r"(btld_sp));
-
     ESP_LOGI(TAG, "Initializing. RAM available for dynamic allocation:");
     ESP_LOGI(TAG, "At %08X len %08X (%d KiB): %s",
              ((void *)&_tee_heap_start), TEE_HEAP_SIZE, TEE_HEAP_SIZE / 1024, "RAM");
@@ -180,6 +177,9 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
      * pass control to the non-secure app (see below).
      */
     tee_mark_app_and_valid_cancel_rollback();
+
+    /* Switch back to bootloader stack. */
+    asm volatile("mv sp, %0" :: "r"(btld_sp));
 
     /* Switch to the REE and launch app */
     esp_tee_switch_to_ree(ree_entry_addr);
