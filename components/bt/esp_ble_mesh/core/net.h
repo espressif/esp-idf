@@ -66,7 +66,7 @@ struct bt_mesh_subnet {
 
 #if CONFIG_BLE_MESH_BRC_SRV
     uint16_t sbr_net_idx;               /* NetKeyIndex of bridged subnet */
-#endif
+#endif /* CONFIG_BLE_MESH_BRC_SRV */
 
     bool     kr_flag;                   /* Key Refresh Flag */
     uint8_t  kr_phase;                  /* Key Refresh Phase */
@@ -163,17 +163,17 @@ struct bt_mesh_rpl {
     bool     old_iv;
 #if CONFIG_BLE_MESH_SETTINGS
     bool     store;
-#endif
+#endif /* CONFIG_BLE_MESH_SETTINGS */
     uint32_t seq;
 };
 
 #if CONFIG_BLE_MESH_FRIEND
 #define FRIEND_SEG_RX           CONFIG_BLE_MESH_FRIEND_SEG_RX
 #define FRIEND_SUB_LIST_SIZE    CONFIG_BLE_MESH_FRIEND_SUB_LIST_SIZE
-#else
+#else /* CONFIG_BLE_MESH_FRIEND */
 #define FRIEND_SEG_RX           0
 #define FRIEND_SUB_LIST_SIZE    0
-#endif
+#endif /* CONFIG_BLE_MESH_FRIEND */
 
 struct bt_mesh_friend {
     uint16_t lpn;
@@ -220,10 +220,10 @@ struct bt_mesh_friend {
 };
 
 #if CONFIG_BLE_MESH_LOW_POWER
-#define LPN_GROUPS CONFIG_BLE_MESH_LPN_GROUPS
-#else
-#define LPN_GROUPS 0
-#endif
+#define LPN_GROUPS  CONFIG_BLE_MESH_LPN_GROUPS
+#else /* CONFIG_BLE_MESH_LOW_POWER */
+#define LPN_GROUPS  0
+#endif /* CONFIG_BLE_MESH_LOW_POWER */
 
 /* Low Power Node state */
 struct bt_mesh_lpn {
@@ -275,7 +275,7 @@ struct bt_mesh_lpn {
 
 #if CONFIG_BLE_MESH_DF_SRV
     uint8_t  old_directed_forwarding;
-#endif
+#endif /* CONFIG_BLE_MESH_DF_SRV */
 
     /* Duration reported for last advertising packet */
     uint16_t adv_duration;
@@ -331,11 +331,11 @@ struct bt_mesh_net {
 #if CONFIG_BLE_MESH_FRIEND
     /* Friend state, unique for each LPN that we're Friends for */
     struct bt_mesh_friend frnd[CONFIG_BLE_MESH_FRIEND_LPN_COUNT];
-#endif
+#endif /* CONFIG_BLE_MESH_FRIEND */
 
 #if CONFIG_BLE_MESH_LOW_POWER
     struct bt_mesh_lpn lpn;  /* Low Power Node state */
-#endif
+#endif /* CONFIG_BLE_MESH_LOW_POWER */
 
     /* Number of hours in current IV Update state */
     uint8_t ivu_duration;
@@ -362,7 +362,7 @@ struct bt_mesh_net {
     struct bt_mesh_subnet *p_sub[CONFIG_BLE_MESH_PROVISIONER_SUBNET_COUNT];
     /* Next net_idx can be assigned */
     uint16_t p_net_idx_next;
-#endif
+#endif /* CONFIG_BLE_MESH_PROVISIONER */
 };
 
 /* Network interface */
@@ -393,7 +393,7 @@ struct bt_mesh_net_rx {
              friend_match:1, /* Matched an LPN we're friends for */
 #if CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
              replay_msg:1,   /* Replayed messages */
-#endif
+#endif /* CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG */
              sbr_rpl:1;      /* Bridge RPL attacker */
     uint16_t msg_cache_idx;  /* Index of entry in message cache */
 };
@@ -431,7 +431,7 @@ void bt_mesh_msg_cache_clear(uint16_t unicast_addr, uint8_t elem_num);
 int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
                             const uint8_t key[16]);
 
-int bt_mesh_net_create(uint16_t idx, uint8_t flags, const uint8_t key[16],
+int bt_mesh_net_create(uint16_t net_idx, uint8_t flags, const uint8_t key[16],
                        uint32_t iv_index);
 
 uint8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub);

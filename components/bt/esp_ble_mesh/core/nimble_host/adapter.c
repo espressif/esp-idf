@@ -993,8 +993,8 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
         return 0;
 
     case BLE_GAP_EVENT_ADV_COMPLETE:
-        BT_DBG("advertise complete; reason=%d",
-               event->adv_complete.reason);
+        BT_DBG("advertise complete; reason=%d", event->adv_complete.reason);
+
 #if CONFIG_BLE_MESH_USE_BLE_50
 #if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
         bt_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(event->adv_complete.instance));
