@@ -10,4 +10,4 @@
     system
     peripherals
     protocols
-    wifi
+    :SOC_WIFI_SUPPORTED: wifi
