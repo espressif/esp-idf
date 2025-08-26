@@ -395,6 +395,17 @@ function(__generate_kconfig_outputs)
     # Create and store base kconfgen command for this generation and target reuse
     __create_base_kconfgen_command("${sdkconfig}" "${sdkconfig_defaults}")
 
+    # Create and store common kconfgen outputs command
+    set(kconfgen_outputs_cmd
+        --output header "${sdkconfig_header}"
+        --output cmake "${sdkconfig_cmake}"
+        --output json "${sdkconfig_json}"
+        --output json_menus "${sdkconfig_json_menus}"
+        --output config "${sdkconfig}"
+    )
+
+    idf_build_set_property(__KCONFGEN_OUTPUTS_CMD "${kconfgen_outputs_cmd}")
+
     # Generate Kconfig outputs using kconfgen
     __run_kconfgen("${sdkconfig_header}" "${sdkconfig_cmake}" "${sdkconfig_json}" "${sdkconfig_json_menus}")
 
@@ -477,16 +488,11 @@ endfunction()
 #]]
 function(__run_kconfgen header_path cmake_path json_path menus_path)
     idf_build_get_property(base_kconfgen_cmd __BASE_KCONFGEN_CMD)
+    idf_build_get_property(kconfgen_outputs_cmd __KCONFGEN_OUTPUTS_CMD)
     idf_build_get_property(sdkconfig SDKCONFIG)
 
     # Create full command with output file paths
-    set(kconfgen_cmd ${base_kconfgen_cmd}
-        --output header "${header_path}"
-        --output cmake "${cmake_path}"
-        --output json "${json_path}"
-        --output json_menus "${menus_path}"
-        --output config "${sdkconfig}"
-    )
+    set(kconfgen_cmd ${base_kconfgen_cmd} ${kconfgen_outputs_cmd})
 
     idf_dbg("Running kconfgen: ${kconfgen_cmd}")
     execute_process(
@@ -538,6 +544,7 @@ function(__create_menuconfig_target)
     idf_build_get_property(toolchain IDF_TOOLCHAIN)
     idf_build_get_property(idf_init_version __IDF_INIT_VERSION)
     idf_build_get_property(idf_env_fpga __IDF_ENV_FPGA)
+    idf_build_get_property(kconfgen_outputs_cmd __KCONFGEN_OUTPUTS_CMD)
 
     # Set up kconfig source file paths
     set(kconfigs_path "${build_dir}/kconfigs.in")
@@ -568,7 +575,7 @@ function(__create_menuconfig_target)
         --env "IDF_ENV_FPGA=${idf_env_fpga}"
         --env "IDF_INIT_VERSION=${idf_init_version}"
         --dont-write-deprecated
-        --output config ${sdkconfig}
+        ${kconfgen_outputs_cmd}
         # Check terminal capabilities
         COMMAND ${python} "${idf_path}/tools/check_term.py"
         # Run menuconfig
@@ -590,7 +597,7 @@ function(__create_menuconfig_target)
         --env "IDF_TOOLCHAIN=${toolchain}"
         --env "IDF_ENV_FPGA=${idf_env_fpga}"
         --env "IDF_INIT_VERSION=${idf_init_version}"
-        --output config "${sdkconfig}"
+        ${kconfgen_outputs_cmd}
         USES_TERMINAL
         COMMENT "Running menuconfig..."
     )
