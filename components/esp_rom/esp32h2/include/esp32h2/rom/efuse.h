@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -272,6 +272,17 @@ int ets_jtag_enable_temporarily(const uint8_t *jtag_hmac_key, ets_efuse_block_t 
   * @return unsigned char: Crc value.
   */
 unsigned char esp_crc8(unsigned char const *p, unsigned int len);
+
+/**
+  * @brief  Read if usb print in ROM disabled by efuse
+  *
+  *
+  * @return
+  * - 0 for enable.
+  * - 1 for disable.
+  */
+ uint32_t ets_efuse_usb_print_is_disabled(void);
+
 
 /**
   * @}
