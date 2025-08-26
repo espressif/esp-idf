@@ -26,10 +26,13 @@ extern "C" {
 void bt_mesh_adv_update(void);
 
 void bt_mesh_adv_init(void);
+
 void bt_mesh_adv_deinit(void);
 
 #ifdef __cplusplus
 }
 #endif
+
 #endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
+
 #endif /* _ADV_H_ */
