@@ -86,9 +86,15 @@ typedef enum {
 #if SOC_UART_SUPPORT_WAKEUP_INT
 #define RTC_UART0_TRIG_EN           PMU_UART0_WAKEUP_EN     //!< UART0 wakeup (light sleep only)
 #define RTC_UART1_TRIG_EN           PMU_UART1_WAKEUP_EN     //!< UART1 wakeup (light sleep only)
+#if SOC_UART_HP_NUM > 2
+#define RTC_UART2_TRIG_EN           PMU_UART2_WAKEUP_EN     //!< UART2 wakeup (light sleep only)
+#else
+#define RTC_UART2_TRIG_EN           0
+#endif
 #else
 #define RTC_UART0_TRIG_EN           0
 #define RTC_UART1_TRIG_EN           0
+#define RTC_UART2_TRIG_EN           0
 #endif
 
 #if SOC_BT_SUPPORTED
