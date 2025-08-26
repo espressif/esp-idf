@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -247,6 +247,19 @@ typedef struct {
  * @return None
  */
 void ledc_hal_init(ledc_hal_context_t *hal, ledc_mode_t speed_mode);
+
+#if LEDC_LL_CHANNEL_SUPPORT_OVF_CNT
+/**
+ * @brief Configure the maximum timer overflow times for the LEDC channel
+ *
+ * @param hal Context of the HAL layer
+ * @param channel LEDC channel index, select from ledc_channel_t
+ * @param max_ovf_cnt The maximum timer overflow times. To disable the timer overflow count, set this parameter to 0.
+ *
+ * @return None
+ */
+void ledc_hal_channel_configure_maximum_timer_ovf_cnt(ledc_hal_context_t *hal, ledc_channel_t channel, uint32_t max_ovf_cnt);
+#endif
 
 /**
  * @brief Update channel configure when select low speed mode
