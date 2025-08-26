@@ -256,7 +256,7 @@ RMT 是一种特殊的通信外设，无法像 SPI 和 I2C 那样发送原始字
 
 .. note::
 
-    如果将 :cpp:member:`rmt_transmit_config_t::loop_count` 设置为非零值，即启用循环功能，则传输的大小将受到限制。编码的 RMT 符号不应超过 RMT 硬件内存块容量，否则会出现类似 ``encoding artifacts can't exceed hw memory block for loop transmission`` 的报错信息。如需通过循环启动大型事务，请尝试以下任一方法：
+    如果将 :cpp:member:`rmt_transmit_config_t::loop_count` 设置为非零值，即启用循环功能，则传输的大小将受到限制。编码器返回的符号总量不能超过 :c:macro:`SOC_RMT_MEM_WORDS_PER_CHANNEL`，否则会出现类似 ``encoding artifacts can't exceed hw memory block for loop transmission`` 的报错信息。如需通过循环启动大型事务，请尝试以下任一方法：
 
     - 增加 :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols`。若此时启用了 DMA 后端，该方法将失效。
     - 自定义编码器，并在编码函数中构造一个无限循环，详情请参阅 :ref:`rmt-rmt-encoder`。
