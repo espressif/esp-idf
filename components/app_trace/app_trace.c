@@ -11,16 +11,8 @@
 #include "esp_app_trace_port.h"
 #include "esp_private/startup_internal.h"
 
-#ifdef CONFIG_APPTRACE_DEST_UART0
-#define ESP_APPTRACE_DEST_UART_NUM 0
-#elif CONFIG_APPTRACE_DEST_UART1
-#define ESP_APPTRACE_DEST_UART_NUM 1
-#elif CONFIG_APPTRACE_DEST_UART2
-#define ESP_APPTRACE_DEST_UART_NUM 2
-#elif CONFIG_APPTRACE_DEST_USB_CDC
-#define ESP_APPTRACE_DEST_UART_NUM 10
-#else
-#define ESP_APPTRACE_DEST_UART_NUM 0
+#if CONFIG_ESP_CONSOLE_UART && CONFIG_APPTRACE_DEST_UART && (CONFIG_APPTRACE_DEST_UART_NUM == CONFIG_ESP_CONSOLE_UART_NUM)
+#error "Application trace UART and console UART cannot use the same port number"
 #endif
 
 #define ESP_APPTRACE_MAX_VPRINTF_ARGS 256
@@ -39,24 +31,19 @@ static bool s_inited;
 
 esp_err_t esp_apptrace_init(void)
 {
-    int res;
-    esp_apptrace_hw_t *hw = NULL;
-    void *hw_data = NULL;
+    __attribute__((unused)) void *hw_data = NULL;
 
     // 'esp_apptrace_init()' is called on every core, so ensure to do main initialization only once
     if (esp_cpu_get_core_id() == 0) {
         memset(&s_trace_channels, 0, sizeof(s_trace_channels));
-        hw = esp_apptrace_jtag_hw_get(&hw_data);
-        ESP_APPTRACE_LOGD("HW interface %p", hw);
-        if (hw != NULL) {
-            s_trace_channels[ESP_APPTRACE_DEST_JTAG].hw = hw;
-            s_trace_channels[ESP_APPTRACE_DEST_JTAG].hw_data = hw_data;
-        }
-        hw = esp_apptrace_uart_hw_get(ESP_APPTRACE_DEST_UART_NUM, &hw_data);
-        if (hw != NULL) {
-            s_trace_channels[ESP_APPTRACE_DEST_UART].hw = hw;
-            s_trace_channels[ESP_APPTRACE_DEST_UART].hw_data = hw_data;
-        }
+#if CONFIG_APPTRACE_DEST_JTAG
+        s_trace_channels[ESP_APPTRACE_DEST_JTAG].hw = esp_apptrace_jtag_hw_get(&hw_data);
+        s_trace_channels[ESP_APPTRACE_DEST_JTAG].hw_data = hw_data;
+#endif
+#if CONFIG_APPTRACE_DEST_UART
+        s_trace_channels[ESP_APPTRACE_DEST_UART].hw = esp_apptrace_uart_hw_get(CONFIG_APPTRACE_DEST_UART_NUM, &hw_data);
+        s_trace_channels[ESP_APPTRACE_DEST_UART].hw_data = hw_data;
+#endif
         s_inited = true;
     }
 
@@ -64,7 +51,7 @@ esp_err_t esp_apptrace_init(void)
     for (int i = 0; i < sizeof(s_trace_channels) / sizeof(s_trace_channels[0]); i++) {
         esp_apptrace_channel_t *ch = &s_trace_channels[i];
         if (ch->hw) {
-            res = ch->hw->init(ch->hw_data);
+            int res = ch->hw->init(ch->hw_data);
             if (res != ESP_OK) {
                 ESP_APPTRACE_LOGE("Failed to init trace channel HW interface (%d)!", res);
                 return res;
@@ -441,10 +428,3 @@ bool esp_apptrace_host_is_connected(esp_apptrace_dest_t dest)
 
     return ch->hw->host_is_connected(ch->hw_data);
 }
-
-#if !CONFIG_APPTRACE_DEST_JTAG
-esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
-{
-    return NULL;
-}
-#endif

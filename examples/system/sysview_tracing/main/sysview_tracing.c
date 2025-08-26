@@ -134,7 +134,7 @@ static void example_task(void *p)
 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "Ready for OpenOCD connection");
+    ESP_LOGI(TAG, "Hello from sysview_tracing example!");
 
     static example_event_data_t event_data[CONFIG_FREERTOS_NUMBER_OF_CORES];
 

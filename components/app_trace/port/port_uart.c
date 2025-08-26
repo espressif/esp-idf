@@ -14,8 +14,6 @@
 #include "string.h"
 #include "driver/gpio.h"
 
-#define APPTRACE_DEST_UART (CONFIG_APPTRACE_DEST_UART0 | CONFIG_APPTRACE_DEST_UART1 | CONFIG_APPTRACE_DEST_UART2)
-
 #define APP_TRACE_MAX_TX_BUFF_UART          CONFIG_APPTRACE_UART_TX_BUFF_SIZE
 #define APP_TRACE_MAX_TX_MSG_UART           CONFIG_APPTRACE_UART_TX_MSG_SIZE
 
@@ -42,46 +40,7 @@ typedef struct {
     bool circular_buff_overflow;
 } esp_apptrace_uart_data_t;
 
-#if APPTRACE_DEST_UART
-static esp_err_t esp_apptrace_uart_init(esp_apptrace_uart_data_t *hw_data);
-static esp_err_t esp_apptrace_uart_flush(esp_apptrace_uart_data_t *hw_data, esp_apptrace_tmo_t *tmo);
-static esp_err_t esp_apptrace_uart_flush_nolock(esp_apptrace_uart_data_t *hw_data, uint32_t min_sz, esp_apptrace_tmo_t *tmo);
-static uint8_t *esp_apptrace_uart_up_buffer_get(esp_apptrace_uart_data_t *hw_data, uint32_t size, esp_apptrace_tmo_t *tmo);
-static esp_err_t esp_apptrace_uart_up_buffer_put(esp_apptrace_uart_data_t *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo);
-static void esp_apptrace_uart_down_buffer_config(esp_apptrace_uart_data_t *hw_data, uint8_t *buf, uint32_t size);
-static uint8_t *esp_apptrace_uart_down_buffer_get(esp_apptrace_uart_data_t *hw_data, uint32_t *size, esp_apptrace_tmo_t *tmo);
-static esp_err_t esp_apptrace_uart_down_buffer_put(esp_apptrace_uart_data_t *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo);
-static bool esp_apptrace_uart_host_is_connected(esp_apptrace_uart_data_t *hw_data);
-
-#endif // APPTRACE_DEST_UART
 const static char *TAG = "esp_apptrace_uart";
-
-esp_apptrace_hw_t *esp_apptrace_uart_hw_get(int num, void **data)
-{
-    ESP_LOGD(TAG, "esp_apptrace_uart_hw_get - %i", num);
-#if APPTRACE_DEST_UART
-    static esp_apptrace_uart_data_t s_uart_hw_data = {
-    };
-    static esp_apptrace_hw_t s_uart_hw = {
-        .init = (esp_err_t (*)(void *))esp_apptrace_uart_init,
-        .get_up_buffer = (uint8_t *(*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_uart_up_buffer_get,
-        .put_up_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_uart_up_buffer_put,
-        .flush_up_buffer_nolock = (esp_err_t (*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_uart_flush_nolock,
-        .flush_up_buffer = (esp_err_t (*)(void *, esp_apptrace_tmo_t *))esp_apptrace_uart_flush,
-        .down_buffer_config = (void (*)(void *, uint8_t *, uint32_t))esp_apptrace_uart_down_buffer_config,
-        .get_down_buffer = (uint8_t *(*)(void *, uint32_t *, esp_apptrace_tmo_t *))esp_apptrace_uart_down_buffer_get,
-        .put_down_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_uart_down_buffer_put,
-        .host_is_connected = (bool (*)(void *))esp_apptrace_uart_host_is_connected,
-    };
-    s_uart_hw_data.port_num = num;
-    *data = &s_uart_hw_data;
-    return &s_uart_hw;
-#else
-    return NULL;
-#endif
-}
-
-#if APPTRACE_DEST_UART
 
 static esp_err_t esp_apptrace_uart_lock(esp_apptrace_uart_data_t *hw_data, esp_apptrace_tmo_t *tmo)
 {
@@ -348,4 +307,23 @@ static esp_err_t esp_apptrace_uart_flush(esp_apptrace_uart_data_t *hw_data, esp_
     return ESP_OK;
 }
 
-#endif // APPTRACE_DEST_UART
+esp_apptrace_hw_t *esp_apptrace_uart_hw_get(int num, void **data)
+{
+    ESP_LOGD(TAG, "esp_apptrace_uart_hw_get - %i", num);
+
+    static esp_apptrace_uart_data_t s_uart_hw_data;
+    static esp_apptrace_hw_t s_uart_hw = {
+        .init = (esp_err_t (*)(void *))esp_apptrace_uart_init,
+        .get_up_buffer = (uint8_t *(*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_uart_up_buffer_get,
+        .put_up_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_uart_up_buffer_put,
+        .flush_up_buffer_nolock = (esp_err_t (*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_uart_flush_nolock,
+        .flush_up_buffer = (esp_err_t (*)(void *, esp_apptrace_tmo_t *))esp_apptrace_uart_flush,
+        .down_buffer_config = (void (*)(void *, uint8_t *, uint32_t))esp_apptrace_uart_down_buffer_config,
+        .get_down_buffer = (uint8_t *(*)(void *, uint32_t *, esp_apptrace_tmo_t *))esp_apptrace_uart_down_buffer_get,
+        .put_down_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_uart_down_buffer_put,
+        .host_is_connected = (bool (*)(void *))esp_apptrace_uart_host_is_connected,
+    };
+    s_uart_hw_data.port_num = num;
+    *data = &s_uart_hw_data;
+    return &s_uart_hw;
+}

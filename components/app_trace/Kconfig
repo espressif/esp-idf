@@ -17,65 +17,43 @@ menu "Application Level Tracing"
 
     endchoice
 
-    config APPTRACE_DEST_UART
-        bool
-
-    config APPTRACE_DEST_UART_NOUSB
-        bool
-
     choice APPTRACE_DESTINATION2
         prompt "Data Destination 2"
         default APPTRACE_DEST_UART_NONE
         help
-            Select destination for application trace: UART(XX) or none (to disable).
+            Select destination for application trace: UART or none (to disable).
 
-        config APPTRACE_DEST_UART0
-            bool "UART0"
+        config APPTRACE_DEST_UART
+            bool "UART"
             select APPTRACE_ENABLE
-            select APPTRACE_DEST_UART
-            select APPTRACE_DEST_UART_NOUSB
-            depends on (ESP_CONSOLE_UART_NUM !=0)
-
-        config APPTRACE_DEST_UART1
-            bool "UART1"
-            select APPTRACE_ENABLE
-            select APPTRACE_DEST_UART
-            select APPTRACE_DEST_UART_NOUSB
-            depends on (ESP_CONSOLE_UART_NUM !=1)
-
-        config APPTRACE_DEST_UART2
-            bool "UART2"
-            select APPTRACE_ENABLE
-            select APPTRACE_DEST_UART
-            select APPTRACE_DEST_UART_NOUSB
-            depends on (ESP_CONSOLE_UART_NUM !=2) && (SOC_UART_NUM > 2)
-
-        config APPTRACE_DEST_USB_CDC
-            bool "USB_CDC"
-            select APPTRACE_ENABLE
-            select APPTRACE_DEST_UART
-            depends on !ESP_CONSOLE_USB_CDC && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3) && !USB_ENABLED
 
         config APPTRACE_DEST_UART_NONE
             bool "None"
     endchoice
 
+    config APPTRACE_DEST_UART_NUM
+        int "UART port number"
+        depends on APPTRACE_DEST_UART
+        range 0 1 if (SOC_UART_NUM <= 2)
+        range 0 2 if (SOC_UART_NUM <= 3)
+        range 0 5 if (SOC_UART_NUM <= 6)
+        default 1
+        help
+            UART communication port number for the apptrace destination.
+            See UART documentation for available port numbers.
+
     config APPTRACE_UART_TX_GPIO
         int "UART TX on GPIO<num>"
-        depends on APPTRACE_DEST_UART_NOUSB
+        depends on APPTRACE_DEST_UART
         range 0 46
-        default 12 if IDF_TARGET_ESP32
-        default 12 if IDF_TARGET_ESP32C3
         default 12
         help
             This GPIO is used for UART TX pin.
 
     config APPTRACE_UART_RX_GPIO
         int "UART RX on GPIO<num>"
-        depends on APPTRACE_DEST_UART_NOUSB
+        depends on APPTRACE_DEST_UART
         range 0 46
-        default 13 if IDF_TARGET_ESP32
-        default 13 if IDF_TARGET_ESP32C3
         default 13
         help
             This GPIO is used for UART RX pin.

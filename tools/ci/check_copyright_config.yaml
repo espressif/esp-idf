@@ -175,8 +175,8 @@ app_trace:
     - components/app_trace/app_trace.c
     - components/app_trace/app_trace_membufs_proto.c
     - components/app_trace/app_trace_util.c
-    - components/app_trace/port/riscv/port.c
-    - components/app_trace/port/xtensa/port.c
+    - components/app_trace/port/riscv/port_jtag.c
+    - components/app_trace/port/xtensa/port_jtag.c
   allowed_licenses:
     - Apache-2.0
     - MIT
