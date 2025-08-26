@@ -475,22 +475,6 @@ config SOC_LEDC_CHANNEL_NUM
     int
     default 6
 
-config SOC_PCNT_GROUPS
-    int
-    default 1
-
-config SOC_PCNT_UNITS_PER_GROUP
-    int
-    default 4
-
-config SOC_PCNT_CHANNELS_PER_UNIT
-    int
-    default 2
-
-config SOC_PCNT_THRES_POINT_PER_UNIT
-    int
-    default 2
-
 config SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE
     bool
     default y

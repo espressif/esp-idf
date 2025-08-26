@@ -257,7 +257,7 @@ TEST_CASE("DAC_dma_convert_frequency_test", "[dac]")
     gpio_set_direction(GPIO_NUM_4, GPIO_MODE_INPUT_OUTPUT);
     // The DAC conversion frequency is equal to I2S bclk.
     esp_rom_gpio_connect_out_signal(GPIO_NUM_4, i2s_periph_signal[0].m_tx_ws_sig, 0, 0);
-    esp_rom_gpio_connect_in_signal(GPIO_NUM_4, pcnt_periph_signals.groups[0].units[0].channels[0].pulse_sig, 0);
+    esp_rom_gpio_connect_in_signal(GPIO_NUM_4, soc_pcnt_signals[0].units[0].channels[0].pulse_sig_id_matrix, 0);
 
     size_t len = 800;
     uint8_t data[len];

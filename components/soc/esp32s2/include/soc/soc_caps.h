@@ -257,12 +257,6 @@
 #define SOC_MPU_REGION_RO_SUPPORTED               0
 #define SOC_MPU_REGION_WO_SUPPORTED               0
 
-/*-------------------------- PCNT CAPS ---------------------------------------*/
-#define SOC_PCNT_GROUPS               (1U)
-#define SOC_PCNT_UNITS_PER_GROUP      (4)
-#define SOC_PCNT_CHANNELS_PER_UNIT    (2)
-#define SOC_PCNT_THRES_POINT_PER_UNIT (2)
-
 /*-------------------------- RMT CAPS ----------------------------------------*/
 #define SOC_RMT_GROUPS                        1U /*!< One RMT group */
 #define SOC_RMT_TX_CANDIDATES_PER_GROUP       4  /*!< Number of channels that capable of Transmit in each group */
