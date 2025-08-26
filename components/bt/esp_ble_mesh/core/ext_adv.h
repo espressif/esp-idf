@@ -23,6 +23,7 @@ extern "C" {
 void bt_mesh_adv_update(void);
 
 void bt_mesh_adv_init(void);
+
 void bt_mesh_adv_deinit(void);
 
 #ifdef __cplusplus

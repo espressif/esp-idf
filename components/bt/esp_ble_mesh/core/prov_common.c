@@ -419,6 +419,9 @@ static void prov_retransmit(struct k_work *work)
     }
 
 #if CONFIG_BLE_MESH_FAST_PROV
+    BT_DBG("FastProv, TxPDUType %u LastTxPDU %u",
+           link->tx_pdu_type, link->last_tx_pdu);
+
     if (link->tx_pdu_type >= link->last_tx_pdu) {
         timeout = K_SECONDS(30);
     }
@@ -651,6 +654,9 @@ int bt_mesh_prov_send_adv(struct bt_mesh_prov_link *link, struct net_buf_simple 
     send_reliable(link, PROV_XMIT);
 
 #if CONFIG_BLE_MESH_FAST_PROV
+    BT_DBG("FastProv, TxPDUType %u LastTxPDU %u",
+           link->tx_pdu_type, link->last_tx_pdu);
+
     if (link->tx_pdu_type >= link->last_tx_pdu) {
         timeout = K_SECONDS(60);
     }

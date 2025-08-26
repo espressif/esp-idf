@@ -1615,7 +1615,7 @@ int bt_mesh_gatts_service_register(struct bt_mesh_gatt_service *svc)
                 svc->attrs[i].handle = char_handle - 1;
                 svc->attrs[i + 1].handle =  char_handle;
                 BT_DBG("Add characteristic, uuid 0x%04x, handle %d, perm %d, properties %d",
-                        BLE_MESH_UUID_16(gatts_chrc->uuid)->val, char_handle, svc->attrs[i + 1].perm, gatts_chrc->properties);
+                       BLE_MESH_UUID_16(gatts_chrc->uuid)->val, char_handle, svc->attrs[i + 1].perm, gatts_chrc->properties);
                 break;
             }
             case BLE_MESH_UUID_GATT_CEP_VAL:
@@ -1803,7 +1803,7 @@ uint16_t bt_mesh_gattc_get_service_uuid(struct bt_mesh_conn *conn)
 
 int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, uint16_t service_uuid)
 {
-    tBTA_BLE_CONN_PARAMS  conn_1m_param = {0};
+    tBTA_BLE_CONN_PARAMS conn_1m_param = {0};
     uint8_t zero[6] = {0};
     int i;
 
@@ -1872,9 +1872,10 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, uint16_t service_uuid)
     conn_1m_param.max_ce_len = 0;
 
     BTA_GATTC_Enh_Open(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
-                   bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE, TRUE, BLE_ADDR_UNKNOWN_TYPE,
-                   BTA_BLE_PHY_1M_MASK, &conn_1m_param, NULL, NULL);
-#else
+                       bt_mesh_gattc_info[i].addr.type, true,
+                       BTA_GATT_TRANSPORT_LE, TRUE, BLE_ADDR_UNKNOWN_TYPE,
+                       BTA_BLE_PHY_1M_MASK, &conn_1m_param, NULL, NULL);
+#else /* CONFIG_BLE_MESH_USE_BLE_50 */
     /* Min_interval: 15ms
      * Max_interval: 15ms
      * Slave_latency: 0x0
@@ -1886,9 +1887,10 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, uint16_t service_uuid)
     conn_1m_param.supervision_timeout = 0x64;
 
     BTA_GATTC_Enh_Open(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
-                   bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE,
-                   BTA_BLE_PHY_1M_MASK, &conn_1m_param, NULL, NULL);
-#endif
+                       bt_mesh_gattc_info[i].addr.type, true,
+                       BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE,
+                       BTA_BLE_PHY_1M_MASK, &conn_1m_param, NULL, NULL);
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 
     return 0;
 }

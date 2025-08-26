@@ -44,8 +44,8 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
     uint8_t is_ext_adv = false;
 #endif
 
-    BT_DBG("type %u len %u: %s", BLE_MESH_ADV(buf)->type,
-            buf->len, bt_hex(buf->data, buf->len));
+    BT_DBG("ExtAdvSend, Type %u", BLE_MESH_ADV(buf)->type);
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     switch (BLE_MESH_ADV(buf)->type) {
 #if CONFIG_BLE_MESH_EXT_ADV
@@ -65,13 +65,13 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
     case BLE_MESH_ADV_DATA:
 #if CONFIG_BLE_MESH_FRIEND
     case BLE_MESH_ADV_FRIEND:
-#endif
+#endif /* CONFIG_BLE_MESH_FRIEND */
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
     case BLE_MESH_ADV_RELAY_DATA:
-#endif
+#endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
 #if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX
     case BLE_MESH_ADV_PROXY_SOLIC:
-#endif
+#endif /* CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX */
     case BLE_MESH_ADV_BEACON:
     case BLE_MESH_ADV_URI: {
 #if CONFIG_BLE_MESH_EXT_ADV
@@ -127,19 +127,23 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
 #if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX
         if (BLE_MESH_ADV(buf)->type == BLE_MESH_ADV_PROXY_SOLIC) {
             bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
+
             struct bt_mesh_adv_data solic_ad[2] = {
                 BLE_MESH_ADV_DATA_BYTES(BLE_MESH_DATA_UUID16_ALL, 0x59, 0x18),
                 BLE_MESH_ADV_DATA(BLE_MESH_DATA_SVC_DATA16, buf->data, buf->len),
             };
-            err = bt_le_ext_adv_start(CONFIG_BLE_MESH_ADV_INST_ID, &param, solic_ad, ARRAY_SIZE(solic_ad), NULL, 0);
+
+            err = bt_le_ext_adv_start(CONFIG_BLE_MESH_ADV_INST_ID, &param,
+                                      solic_ad, ARRAY_SIZE(solic_ad), NULL, 0);
         } else
-#endif
+#endif /* CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX */
         {
             bt_mesh_adv_buf_ref_debug(__func__, buf, 4U, BLE_MESH_BUF_REF_SMALL);
+
             err = bt_le_ext_adv_start(inst->id, &param, &ad, 1, NULL, 0);
         }
-        }
         break;
+
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
     case BLE_MESH_ADV_BLE:
         struct bt_mesh_ble_adv_data data = {0};
@@ -152,8 +156,8 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
         }
 
         BT_DBG("interval %dms, duration %dms, period %dms, count %d",
-            ADV_SCAN_INT(tx->param.interval), tx->param.duration,
-            tx->param.period, tx->param.count);
+               ADV_SCAN_INT(tx->param.interval), tx->param.duration,
+               tx->param.period, tx->param.count);
 
         data.adv_data_len = tx->buf->data[0];
         if (data.adv_data_len) {
@@ -169,9 +173,10 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
 
         err = bt_mesh_ble_ext_adv_start(inst->id, &tx->param, &data);
         break;
-#endif
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+
     default:
-        BT_ERR("Error Type");
+        BT_ERR("InvalidAdvType %u", BLE_MESH_ADV(buf)->type);
         break;
     }
 
@@ -182,12 +187,15 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
     }
 
     *adv_duration = duration;
+
     BT_DBG("Advertising started. %u ms", duration);
     return 0;
 }
 
 static int find_valid_msg_from_queue(bt_mesh_queue_t *msg_queue, bt_mesh_msg_t *msg)
 {
+    BT_DBG("FindValidMsgFromQueue");
+
     while(uxQueueMessagesWaiting(msg_queue->handle)) {
         xQueueReceive(msg_queue->handle, msg, K_WAIT(K_FOREVER));
 
@@ -197,11 +205,16 @@ static int find_valid_msg_from_queue(bt_mesh_queue_t *msg_queue, bt_mesh_msg_t *
          */
         assert(msg->arg);
 
+        BT_DBG("Buf %p Relay %u Busy %u",
+               BLE_MESH_MSG_NET_BUF(msg), msg->relay,
+               !!bt_mesh_atomic_get(&BLE_MESH_ADV_BUSY(BLE_MESH_MSG_NET_BUF(msg))));
+
         /* If the message is cancelled for advertising, then continue to retrieve the next
          * message from that queue.
          */
         if (!bt_mesh_atomic_cas(&BLE_MESH_ADV_BUSY(BLE_MESH_MSG_NET_BUF(msg)), 1, 0)) {
             bt_mesh_adv_buf_ref_debug(__func__, BLE_MESH_MSG_NET_BUF(msg), 1U, BLE_MESH_BUF_REF_EQUAL);
+
             /* Cancel the adv task's reference to this data packet.
              * Tips:
              * The reference of buffer by adv_task occurs when the buffer is pushed into
@@ -225,11 +238,13 @@ static int find_valid_msg_from_queue(bt_mesh_queue_t *msg_queue, bt_mesh_msg_t *
              * BLE_MESH_RELAY_TIME_INTERVAL, this relay packet will not be sent.
              */
             BT_DBG("Ignore relay packet");
+
             net_buf_unref(BLE_MESH_MSG_NET_BUF(msg));
             msg->arg = NULL;
             continue;
         }
-#endif
+#endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
+
         break;
     }
 
@@ -250,14 +265,18 @@ static int activate_idle_adv_instance(uint32_t *update_evts, uint16_t *min_durat
     uint32_t spt_mask = 0;
     uint32_t evts = 0;
 
+    BT_DBG("ActivateIdleAdvInst");
+
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
      CONFIG_BLE_MESH_GATT_PROXY_SERVER
     if (!adv_insts[BLE_MESH_ADV_PROXY_INST].busy) {
         BT_DBG("Mesh Proxy Advertising start");
+
         duration = bt_mesh_proxy_server_adv_start();
         if (duration < cur_min_duration) {
             cur_min_duration = duration;
         }
+
         adv_insts[BLE_MESH_ADV_PROXY_INST].busy = true;
         evts |= ADV_TASK_ADV_INST_EVT(adv_insts[BLE_MESH_ADV_PROXY_INST].id);
     }
@@ -268,10 +287,11 @@ static int activate_idle_adv_instance(uint32_t *update_evts, uint16_t *min_durat
 
         if (instance->busy
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
-    CONFIG_BLE_MESH_GATT_PROXY_SERVER
-        || unlikely(instance->id == CONFIG_BLE_MESH_PROXY_ADV_INST_ID)
+     CONFIG_BLE_MESH_GATT_PROXY_SERVER
+            || unlikely(instance->id == CONFIG_BLE_MESH_PROXY_ADV_INST_ID)
 #endif
-        ) {
+            ) {
+            BT_DBG("AdvInstSkipped, InstID %u Busy %u", instance->id, instance->busy);
             continue;
         }
 
@@ -285,13 +305,13 @@ static int activate_idle_adv_instance(uint32_t *update_evts, uint16_t *min_durat
 
             /* If no new message in the queue, the *buf (aka: msg.arg) will be empty */
             if (find_valid_msg_from_queue(msg_queue, &msg)) {
-                BT_DBG("no valid message for instance %d", instance->id);
+                BT_DBG("NoMsgForAdvInst, InstID %u", instance->id);
                 continue;
             }
 
             instance->sending_buf = (struct net_buf *)msg.arg;
+
             if (adv_send(instance, &duration)) {
-                BT_ERR("adv start failed");
                 /* When this adv instance fails to broadcast, it could be due to some
                  * persistent issues, such as incorrect adv parameter settings, or it
                  * could be due to some temporary issues, such as memory allocation
@@ -301,10 +321,17 @@ static int activate_idle_adv_instance(uint32_t *update_evts, uint16_t *min_durat
                  * instance and attempt to broadcast subsequent data again next time,
                  * rather than disabling the adv instance.
                  */
+                BT_ERR("AdvSendFailed, InstID %u AdvType %u SptMask %08lx Buf %p",
+                       instance->id, adv_type, instance->spt_mask, instance->sending_buf);
+
                 net_buf_unref(instance->sending_buf);
                 instance->sending_buf = NULL;
                 break;
             }
+
+            BT_DBG("Activate, InstID %u AdvType %u SptMask %08lx Buf %p Duration %u/%u",
+                   instance->id, adv_type, instance->spt_mask,
+                   instance->sending_buf, duration, cur_min_duration);
 
             if (duration < cur_min_duration) {
                 cur_min_duration = duration;
@@ -321,6 +348,9 @@ static int activate_idle_adv_instance(uint32_t *update_evts, uint16_t *min_durat
         }
     }
 
+    BT_DBG("ActivateEnd, Duration %u UpdateEvts %08lx Evts%08lx",
+           cur_min_duration, *update_evts, evts);
+
     *min_duration = cur_min_duration;
     *update_evts |= evts;
 
@@ -329,6 +359,8 @@ static int activate_idle_adv_instance(uint32_t *update_evts, uint16_t *min_durat
 
 static uint32_t received_adv_evts_handle(uint32_t recv_evts)
 {
+    BT_DBG("RecvAdvEvtsHandle, RecvEvts 0x%08lx", recv_evts);
+
     if (!recv_evts) {
         return 0;
     }
@@ -338,20 +370,25 @@ static uint32_t received_adv_evts_handle(uint32_t recv_evts)
 
         if (recv_evts & evt) {
             recv_evts &= ~evt;
+
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
-CONFIG_BLE_MESH_GATT_PROXY_SERVER
+     CONFIG_BLE_MESH_GATT_PROXY_SERVER
             if (unlikely(i == BLE_MESH_ADV_PROXY_INST)) {
                 BT_DBG("Mesh Proxy Advertising auto stop");
+
                 bt_mesh_proxy_server_adv_flag_set(false);
             } else
 #endif
             {
-                /* adv_send_end maybe*/
-                adv_send_end(0, BLE_MESH_ADV(adv_insts[i].sending_buf)->cb, BLE_MESH_ADV(adv_insts[i].sending_buf)->cb_data);
+                adv_send_end(0, BLE_MESH_ADV(adv_insts[i].sending_buf)->cb,
+                             BLE_MESH_ADV(adv_insts[i].sending_buf)->cb_data);
+
                 bt_mesh_adv_buf_ref_debug(__func__, adv_insts[i].sending_buf, 4U, BLE_MESH_BUF_REF_SMALL);
+
                 net_buf_unref(adv_insts[i].sending_buf);
                 adv_insts[i].sending_buf = NULL;
             }
+
             adv_insts[i].busy = false;
         }
     }
@@ -365,7 +402,7 @@ static void adv_thread(void *p)
     uint32_t recv_evts = 0;
     uint32_t wait_evts = 0;
 
-    BT_DBG("%s, starts", __func__);
+    BT_DBG("ExtAdvThread");
 
     while (1) {
         adv_duration = K_FOREVER;
@@ -374,6 +411,8 @@ static void adv_thread(void *p)
         activate_idle_adv_instance(&wait_evts, &adv_duration);
 
         bt_mesh_adv_task_wait(wait_evts, adv_duration, &recv_evts);
+
+        BT_DBG("WaitEvts %08lx RecvEvts %08lx", wait_evts, recv_evts);
 
         wait_evts &= ~recv_evts;
 
@@ -400,17 +439,21 @@ static void adv_thread(void *p)
         recv_evts = received_adv_evts_handle(recv_evts);
 
         if (recv_evts) {
-            BT_ERR("Remain evts %08x to handle", recv_evts);
+            BT_ERR("RecvEvts %08lx", recv_evts);
         }
     }
 }
 
 void bt_mesh_adv_update(void)
 {
+    BT_DBG("ExtAdvUpdate");
+
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
      CONFIG_BLE_MESH_GATT_PROXY_SERVER
     BT_DBG("Mesh Proxy Advertising stopped manually");
+
     bt_mesh_proxy_server_adv_stop();
+
     if (adv_insts[BLE_MESH_ADV_PROXY_INST].busy) {
         bt_mesh_adv_task_wakeup(ADV_TASK_PROXY_ADV_UPD_EVT);
     }
@@ -419,17 +462,19 @@ void bt_mesh_adv_update(void)
 
 void bt_mesh_adv_init(void)
 {
+    BT_DBG("ExtAdvInit");
+
     bt_mesh_adv_common_init();
 
     adv_insts = bt_mesh_get_adv_insts_set();
 
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
     bt_mesh_relay_adv_init();
-#endif
+#endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
     bt_mesh_ble_adv_init();
-#endif
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 
     bt_mesh_adv_task_init(adv_thread);
 }
@@ -437,6 +482,8 @@ void bt_mesh_adv_init(void)
 #if CONFIG_BLE_MESH_DEINIT
 void bt_mesh_adv_deinit(void)
 {
+    BT_DBG("ExtAdvDeinit");
+
     bt_mesh_adv_task_deinit();
 
     bt_mesh_adv_common_deinit();
@@ -445,10 +492,10 @@ void bt_mesh_adv_deinit(void)
 
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
     bt_mesh_relay_adv_deinit();
-#endif
+#endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
     bt_mesh_ble_adv_deinit();
-#endif
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
