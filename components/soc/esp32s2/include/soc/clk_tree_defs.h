@@ -214,6 +214,21 @@ typedef enum {
     RMT_BASECLK_DEFAULT = SOC_MOD_CLK_APB,  /*!< RMT source clock default choice is APB */
 } soc_periph_rmt_clk_src_legacy_t;
 
+//////////////////////////////////////////////////PCNT//////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of PCNT
+ */
+#define SOC_PCNT_CLKS {SOC_MOD_CLK_APB}
+
+/**
+ * @brief Type of PCNT clock source
+ */
+typedef enum {
+    PCNT_CLK_SRC_APB = SOC_MOD_CLK_APB,           /*!< Select APB as the source clock */
+    PCNT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,       /*!< Select APB as the default choice */
+} soc_periph_pcnt_clk_src_t;
+
 //////////////////////////////////////////////////Temp Sensor///////////////////////////////////////////////////////////
 
 /**

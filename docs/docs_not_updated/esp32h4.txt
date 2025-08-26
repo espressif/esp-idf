@@ -179,7 +179,6 @@ api-reference/peripherals/lcd/dsi_lcd.rst
 api-reference/peripherals/lcd/spi_lcd.rst
 api-reference/peripherals/lcd/rgb_lcd.rst
 api-reference/peripherals/lcd/parl_lcd.rst
-api-reference/peripherals/pcnt.rst
 api-reference/peripherals/ppa.rst
 api-reference/peripherals/ldo_regulator.rst
 api-reference/peripherals/ledc.rst

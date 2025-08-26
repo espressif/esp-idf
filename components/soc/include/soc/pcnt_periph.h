@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "soc/soc_caps_full.h"
-#include "soc/periph_defs.h"
+#include "soc/interrupts.h"
 
 // helper macros to access module attributes
 #define SOC_PCNT_ATTR(_attr) SOC_MODULE_ATTR(PCNT, _attr)

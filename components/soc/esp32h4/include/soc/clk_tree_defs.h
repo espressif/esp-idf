@@ -214,6 +214,23 @@ typedef enum {
     RMT_BASECLK_DEFAULT = SOC_MOD_CLK_XTAL, /*!< RMT source clock default choice is XTAL */
 } soc_periph_rmt_clk_src_legacy_t;
 
+//////////////////////////////////////////////////PCNT//////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of PCNT
+ */
+#define SOC_PCNT_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+
+/**
+ * @brief Type of PCNT clock source
+ */
+typedef enum {
+    PCNT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
+    PCNT_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,   /*!< Select RC_FAST as the source clock */
+    // PCNT_CLK_SRC_XTAL_X2_F32M = SOC_MOD_CLK_XTAL_X2_F32M, /*!< Select XTAL_X2_F32M as the source clock */
+    PCNT_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,      /*!< Select XTAL as the default choice */
+} soc_periph_pcnt_clk_src_t;
+
 ///////////////////////////////////////////////////UART/////////////////////////////////////////////////////////////////
 
 /**

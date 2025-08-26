@@ -18,9 +18,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "soc/pcnt_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "hal/pcnt_types.h"
 #include "hal/misc.h"
-#include "soc/hp_sys_clkrst_struct.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +44,26 @@ typedef enum {
 
 #define PCNT_LL_WATCH_EVENT_MASK          ((1 << PCNT_LL_WATCH_EVENT_MAX) - 1)
 #define PCNT_LL_UNIT_WATCH_EVENT(unit_id) (1 << (unit_id))
+#define PCNT_LL_CLOCK_SUPPORT_APB         1
+
+/**
+ * @brief Set clock source for pcnt group
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param clk_src Clock source
+ */
+static inline void _pcnt_ll_set_clock_source(pcnt_dev_t *hw, pcnt_clock_source_t clk_src)
+{
+    (void)hw;
+    HAL_ASSERT(clk_src == PCNT_CLK_SRC_APB && "unsupported clock source");
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define pcnt_ll_set_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _pcnt_ll_set_clock_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set PCNT channel edge action

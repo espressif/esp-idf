@@ -25,12 +25,13 @@
 #include "soc/gpio_pins.h"
 #include "hal/pcnt_hal.h"
 #include "hal/pcnt_ll.h"
+#include "driver/gpio.h"
+#include "driver/pulse_cnt.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/sleep_retention.h"
-#include "driver/gpio.h"
 #include "esp_private/gpio.h"
-#include "driver/pulse_cnt.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_memory_utils.h"
 
 // If ISR handler is allowed to run whilst cache is disabled,
@@ -48,6 +49,12 @@
 #endif
 
 #define PCNT_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define PCNT_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define PCNT_CLOCK_SRC_ATOMIC()
+#endif
 
 #if !SOC_RCC_IS_INDEPENDENT
 #define PCNT_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
@@ -75,6 +82,7 @@ struct pcnt_platform_t {
 struct pcnt_group_t {
     int group_id;          // Group ID, index from 0
     int intr_priority;     // PCNT interrupt priority
+    pcnt_clock_source_t clk_src; // PCNT clock source
     portMUX_TYPE spinlock; // to protect per-group register level concurrent access
     pcnt_hal_context_t hal;
     pcnt_unit_t *units[SOC_PCNT_ATTR(UNITS_PER_INST)]; // array of PCNT units
@@ -140,6 +148,7 @@ static pcnt_platform_t s_platform;
 static pcnt_group_t *pcnt_acquire_group_handle(int group_id);
 static void pcnt_release_group_handle(pcnt_group_t *group);
 static void pcnt_default_isr(void *args);
+static esp_err_t pcnt_select_periph_clock(pcnt_unit_t *unit, pcnt_clock_source_t clk_src);
 
 static esp_err_t pcnt_register_to_group(pcnt_unit_t *unit)
 {
@@ -221,6 +230,10 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
     pcnt_group_t *group = unit->group;
     int group_id = group->group_id;
     int unit_id = unit->unit_id;
+
+    pcnt_clock_source_t pcnt_clk_src = config->clk_src ? config->clk_src : PCNT_CLK_SRC_DEFAULT;
+    ESP_GOTO_ON_ERROR(pcnt_select_periph_clock(unit, pcnt_clk_src), err, TAG, "select periph clock failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)group->clk_src, true), err, TAG, "clock source enable failed");
 
     // if interrupt priority specified before, it cannot be changed until the group is released
     // check if the new priority specified consistents with the old one
@@ -323,6 +336,8 @@ esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit)
 #endif // SOC_PCNT_SUPPORT_CLEAR_SIGNAL
 
     ESP_LOGD(TAG, "del unit (%d,%d)", group_id, unit_id);
+    // disable clock source
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)group->clk_src, false), TAG, "clock source disable failed");
     // recycle memory resource
     ESP_RETURN_ON_ERROR(pcnt_destroy(unit), TAG, "destroy pcnt unit failed");
     return ESP_OK;
@@ -930,14 +945,6 @@ static pcnt_group_t *pcnt_acquire_group_handle(int group_id)
     _lock_release(&s_platform.mutex);
 
     if (new_group) {
-#if CONFIG_PM_ENABLE
-        // PCNT uses the APB as its function clock,
-        // and its filter module is sensitive to the clock frequency
-        // thus we choose the APM_MAX lock to prevent the function clock from being changed
-        if (esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, pcnt_periph_signals.groups[group_id].module_name, &group->pm_lock) != ESP_OK) {
-            ESP_LOGW(TAG, "create pm lock failed");
-        }
-#endif
         ESP_LOGD(TAG, "new group (%d) at %p", group_id, group);
     }
 
@@ -973,6 +980,48 @@ static void pcnt_release_group_handle(pcnt_group_t *group)
         free(group);
         ESP_LOGD(TAG, "del group (%d)", group_id);
     }
+}
+
+static esp_err_t pcnt_select_periph_clock(pcnt_unit_t *unit, pcnt_clock_source_t clk_src)
+{
+    esp_err_t ret = ESP_OK;
+    pcnt_group_t *group = unit->group;
+    bool clock_selection_conflict = false;
+    bool do_clock_init = false;
+    // group clock source is shared by all units
+    portENTER_CRITICAL(&group->spinlock);
+    if (group->clk_src == 0) {
+        group->clk_src = clk_src;
+        do_clock_init = true;
+    } else {
+        clock_selection_conflict = (group->clk_src != clk_src);
+    }
+    portEXIT_CRITICAL(&group->spinlock);
+    ESP_RETURN_ON_FALSE(!clock_selection_conflict, ESP_ERR_INVALID_ARG, TAG,
+                        "group clock conflict, already is %d but attempt to %d", group->clk_src, clk_src);
+
+    if (do_clock_init) {
+
+#if CONFIG_PM_ENABLE
+        // PCNT filter module is sensitive to the clock frequency
+        // to make the pcnt works reliable, the source clock must stay alive and unchanged
+        esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
+#if PCNT_LL_CLOCK_SUPPORT_APB
+        if (clk_src == PCNT_CLK_SRC_APB) {
+            // APB clock frequency can be changed during DFS
+            // thus we choose the APM_MAX lock to prevent the function clock from being changed
+            pm_lock_type = ESP_PM_APB_FREQ_MAX;
+        }
+#endif // PCNT_LL_CLOCK_SUPPORT_APB
+        ret = esp_pm_lock_create(pm_lock_type, 0, soc_pcnt_signals[group->group_id].module_name, &group->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
+#endif // CONFIG_PM_ENABLE
+
+        PCNT_CLOCK_SRC_ATOMIC() {
+            pcnt_ll_set_clock_source(group->hal.dev, clk_src);
+        }
+    }
+    return ret;
 }
 
 IRAM_ATTR static void pcnt_default_isr(void *args)

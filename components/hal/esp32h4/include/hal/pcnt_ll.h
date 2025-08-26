@@ -41,7 +41,6 @@ typedef enum {
 
 #define PCNT_LL_WATCH_EVENT_MASK          ((1 << PCNT_LL_WATCH_EVENT_MAX) - 1)
 #define PCNT_LL_UNIT_WATCH_EVENT(unit_id) (1 << (unit_id))
-#define PCNT_LL_CLOCK_SUPPORT_APB         1
 
 /**
  * @brief Set clock source for pcnt group
@@ -52,7 +51,17 @@ typedef enum {
 static inline void pcnt_ll_set_clock_source(pcnt_dev_t *hw, pcnt_clock_source_t clk_src)
 {
     (void)hw;
-    HAL_ASSERT(clk_src == PCNT_CLK_SRC_APB && "unsupported clock source");
+    switch (clk_src) {
+    case PCNT_CLK_SRC_XTAL:
+        PCR.pcnt_conf.pcnt_clk_sel = 0;
+        break;
+    case PCNT_CLK_SRC_RC_FAST:
+        PCR.pcnt_conf.pcnt_clk_sel = 1;
+        break;
+    default:
+        HAL_ASSERT(false && "unsupported clock source");
+        break;
+    }
 }
 
 /**
@@ -491,6 +500,7 @@ static inline void pcnt_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
     PCR.pcnt_conf.pcnt_clk_en = enable;
+    PCR.pcnt_conf.pcnt_reg_clk_en = enable;
 }
 
 /**
@@ -511,7 +521,6 @@ static inline bool pcnt_ll_is_step_notify_supported(int group_id)
     (void)group_id;
     return true;
 }
-
 
 #ifdef __cplusplus
 }

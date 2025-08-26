@@ -59,6 +59,7 @@ typedef struct {
  * @brief PCNT unit configuration
  */
 typedef struct {
+    pcnt_clock_source_t clk_src; /*!< Clock source for PCNT unit */
     int low_limit;      /*!< Low limitation of the count unit, should be lower than 0 */
     int high_limit;     /*!< High limitation of the count unit, should be higher than 0 */
     int intr_priority;  /*!< PCNT interrupt priority,

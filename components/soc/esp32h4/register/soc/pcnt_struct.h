@@ -148,73 +148,22 @@ typedef union {
     uint32_t val;
 } pcnt_un_conf2_reg_t;
 
-/** Type of u0_conf3 register
- *  Configuration register for unit $n's step value.
+/** Type of un_conf3 register
+ *  Configuration register for unit n's step value.
  */
 typedef union {
     struct {
-        /** cnt_h_step_u0 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the forward rotation step value for unit 0.
+        /** cnt_h_step_un : R/W; bitpos: [15:0]; default: 0;
+         *  Configures the forward rotation step value for unit n.
          */
-        uint32_t cnt_h_step_u0:16;
-        /** cnt_l_step_u0 : R/W; bitpos: [31:16]; default: 0;
-         *  Configures the reverse rotation step value for unit 0.
+        uint32_t cnt_h_step_un:16;
+        /** cnt_l_step_un : R/W; bitpos: [31:16]; default: 0;
+         *  Configures the reverse rotation step value for unit n.
          */
-        uint32_t cnt_l_step_u0:16;
+        uint32_t cnt_l_step_un:16;
     };
     uint32_t val;
-} pcnt_u0_conf3_reg_t;
-
-/** Type of u1_conf3 register
- *  Configuration register for unit $n's step value.
- */
-typedef union {
-    struct {
-        /** cnt_h_step_u1 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the forward rotation step value for unit 1.
-         */
-        uint32_t cnt_h_step_u1:16;
-        /** cnt_l_step_u1 : R/W; bitpos: [31:16]; default: 0;
-         *  Configures the reverse rotation step value for unit 1.
-         */
-        uint32_t cnt_l_step_u1:16;
-    };
-    uint32_t val;
-} pcnt_u1_conf3_reg_t;
-
-/** Type of u2_conf3 register
- *  Configuration register for unit $n's step value.
- */
-typedef union {
-    struct {
-        /** cnt_h_step_u2 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the forward rotation step value for unit 2.
-         */
-        uint32_t cnt_h_step_u2:16;
-        /** cnt_l_step_u2 : R/W; bitpos: [31:16]; default: 0;
-         *  Configures the reverse rotation step value for unit 2.
-         */
-        uint32_t cnt_l_step_u2:16;
-    };
-    uint32_t val;
-} pcnt_u2_conf3_reg_t;
-
-/** Type of u3_conf3 register
- *  Configuration register for unit $n's step value.
- */
-typedef union {
-    struct {
-        /** cnt_h_step_u3 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the forward rotation step value for unit 3.
-         */
-        uint32_t cnt_h_step_u3:16;
-        /** cnt_l_step_u3 : R/W; bitpos: [31:16]; default: 0;
-         *  Configures the reverse rotation step value for unit 3.
-         */
-        uint32_t cnt_l_step_u3:16;
-    };
-    uint32_t val;
-} pcnt_u3_conf3_reg_t;
+} pcnt_un_conf3_reg_t;
 
 /** Type of ctrl register
  *  Control register for all counters
@@ -484,29 +433,19 @@ typedef union {
 } pcnt_date_reg_t;
 
 
-typedef struct {
-    volatile pcnt_un_conf0_reg_t u0_conf0;
-    volatile pcnt_un_conf1_reg_t u0_conf1;
-    volatile pcnt_un_conf2_reg_t u0_conf2;
-    volatile pcnt_u0_conf3_reg_t u0_conf3;
-    volatile pcnt_un_conf0_reg_t u1_conf0;
-    volatile pcnt_un_conf1_reg_t u1_conf1;
-    volatile pcnt_un_conf2_reg_t u1_conf2;
-    volatile pcnt_u1_conf3_reg_t u1_conf3;
-    volatile pcnt_un_conf0_reg_t u2_conf0;
-    volatile pcnt_un_conf1_reg_t u2_conf1;
-    volatile pcnt_un_conf2_reg_t u2_conf2;
-    volatile pcnt_u2_conf3_reg_t u2_conf3;
-    volatile pcnt_un_conf0_reg_t u3_conf0;
-    volatile pcnt_un_conf1_reg_t u3_conf1;
-    volatile pcnt_un_conf2_reg_t u3_conf2;
-    volatile pcnt_u3_conf3_reg_t u3_conf3;
-    volatile pcnt_un_cnt_reg_t un_cnt[4];
+typedef struct pcnt_dev_t {
+    volatile struct {
+        pcnt_un_conf0_reg_t conf0;
+        pcnt_un_conf1_reg_t conf1;
+        pcnt_un_conf2_reg_t conf2;
+        pcnt_un_conf3_reg_t conf3;
+    } conf_unit[4];
+    volatile pcnt_un_cnt_reg_t cnt_unit[4];
     volatile pcnt_int_raw_reg_t int_raw;
     volatile pcnt_int_st_reg_t int_st;
     volatile pcnt_int_ena_reg_t int_ena;
     volatile pcnt_int_clr_reg_t int_clr;
-    volatile pcnt_un_status_reg_t un_status[4];
+    volatile pcnt_un_status_reg_t status_unit[4];
     volatile pcnt_ctrl_reg_t ctrl;
     uint32_t reserved_074[34];
     volatile pcnt_date_reg_t date;
