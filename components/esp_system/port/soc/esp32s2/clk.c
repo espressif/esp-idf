@@ -296,7 +296,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 
     /* Disable some peripheral clocks. */
     DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, common_perip_clk);
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, common_perip_clk);
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, common_perip_clk);
 
     DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN1_REG, common_perip_clk1);
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN1_REG, common_perip_clk1);

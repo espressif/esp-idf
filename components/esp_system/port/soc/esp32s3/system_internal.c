@@ -58,7 +58,9 @@ void esp_system_reset_modules_on_exit(void)
     // Reset dma and crypto peripherals. This ensures a clean state for the crypto peripherals after a CPU restart
     // and hence avoiding any possibility with crypto failure in ROM security workflows.
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST | SYSTEM_CRYPTO_AES_RST | SYSTEM_CRYPTO_DS_RST |
-                      SYSTEM_CRYPTO_HMAC_RST | SYSTEM_CRYPTO_RSA_RST | SYSTEM_CRYPTO_SHA_RST);
+                      SYSTEM_CRYPTO_HMAC_RST | SYSTEM_CRYPTO_RSA_RST | SYSTEM_CRYPTO_SHA_RST |
+                      // The DMA inside SDMMC Host needs to be reset to avoid memory corruption after restart.
+                      SYSTEM_SDIO_HOST_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
 
     SET_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
