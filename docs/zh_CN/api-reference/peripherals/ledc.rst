@@ -354,6 +354,21 @@ LED PWM 控制器 API 有多种方式即时改变 PWM 频率：
 
 第一个定时器复位函数在函数 :cpp:func:`ledc_timer_config` 内部完成所有定时器配置后会被调用一次。
 
+.. only:: SOC_LEDC_SUPPORT_ETM and SOC_ETM_SUPPORTED
+
+    LEDC 的 ETM 事件和任务
+    ----------------------
+
+    LEDC 可以生成多种事件，这些事件可以连接到 :doc:`ETM </api-reference/peripherals/etm>` 模块。定时器支持的事件列在 :cpp:type:`ledc_timer_etm_event_type_t` 中，通道支持的事件列在 :cpp:type:`ledc_channel_etm_event_type_t` 中。用户可以分别通过调用 :cpp:func:`ledc_timer_new_etm_event` 或 :cpp:func:`ledc_channel_new_etm_event` 来创建 ``ETM event`` 句柄。
+    LEDC 还支持一些可由其他事件触发并自动执行的任务。定时器支持的任务列在 :cpp:type:`ledc_timer_etm_task_type_t` 中，通道支持的任务列在 :cpp:type:`ledc_channel_etm_task_type_t` 中。用户可以分别通过调用 :cpp:func:`ledc_timer_new_etm_task` 或 :cpp:func:`ledc_channel_new_etm_task` 来创建 ``ETM task`` 句柄。
+
+    一些使用 ETM 与 LEDC 结合的实用应用包括：
+
+        * 生成一段特定脉冲数的 PWM 信号
+        * 同步 PWM 周期与外部信号
+        * 无需 CPU 干预即可开始 / 停止 PWM 信号输出或一次渐变
+
+    关于如何将 LEDC 事件和任务连接到 ETM 通道，请参考 :doc:`ETM </api-reference/peripherals/etm>` 文档。
 
 电源管理
 --------
@@ -418,6 +433,7 @@ LED PWM 控制器 API 会在设定的频率和占空比分辨率超过 LED PWM �
     * :example:`peripherals/ledc/ledc_basic` 演示了如何使用 LEDC 生成低速模式的 PWM 信号。
     * :example:`peripherals/ledc/ledc_fade` 演示了如何使用 LEDC 实现 LED 亮度的渐变控制。
     :SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED: * :example:`peripherals/ledc/ledc_gamma_curve_fade` 演示了如何使用 LEDC 对 RGB LED 实现带伽马校正的颜色控制。
+    :SOC_LEDC_SUPPORT_ETM and SOC_ETM_SUPPORTED: * :example:`peripherals/ledc/ledc_dimmer` 演示了如何使用 LEDC 和 ETM 生成与交流电零交叉同步的 TRIAC 门触发脉冲。
 
 
 API 参考
@@ -425,3 +441,7 @@ API 参考
 
 .. include-build-file:: inc/ledc.inc
 .. include-build-file:: inc/ledc_types.inc
+
+.. only:: SOC_LEDC_SUPPORT_ETM and SOC_ETM_SUPPORTED
+
+    .. include-build-file:: inc/ledc_etm.inc

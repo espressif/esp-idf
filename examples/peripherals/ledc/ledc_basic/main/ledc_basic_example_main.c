@@ -49,7 +49,6 @@ static void example_ledc_init(void)
         .speed_mode     = LEDC_MODE,
         .channel        = LEDC_CHANNEL,
         .timer_sel      = LEDC_TIMER,
-        .intr_type      = LEDC_INTR_DISABLE,
         .gpio_num       = LEDC_OUTPUT_IO,
         .duty           = 0, // Set duty to 0%
         .hpoint         = 0,

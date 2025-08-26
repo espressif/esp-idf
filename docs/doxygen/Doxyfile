@@ -107,6 +107,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_gptimer/include/driver/gptimer_etm.h \
     $(PROJECT_PATH)/components/esp_driver_gptimer/include/driver/gptimer_types.h \
     $(PROJECT_PATH)/components/esp_driver_ledc/include/driver/ledc.h \
+    $(PROJECT_PATH)/components/esp_driver_ledc/include/driver/ledc_etm.h \
     $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_cap.h \
     $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_cmpr.h \
     $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_etm.h \

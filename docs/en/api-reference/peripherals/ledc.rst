@@ -354,6 +354,21 @@ There are several individual timer-specific functions that can be used to change
 
 The first function is called "behind the scenes" by :cpp:func:`ledc_timer_config` to provide a startup of a timer after it is configured.
 
+.. only:: SOC_LEDC_SUPPORT_ETM and SOC_ETM_SUPPORTED
+
+    LEDC's ETM Events and Tasks
+    ---------------------------
+
+    LEDC can generate various events that can be connected to the :doc:`ETM </api-reference/peripherals/etm>` module. Timer's supported events are listed in :cpp:type:`ledc_timer_etm_event_type_t`, and channel's supported events are listed in :cpp:type:`ledc_channel_etm_event_type_t`. Users can create an ``ETM event`` handle by calling :cpp:func:`ledc_timer_new_etm_event` or :cpp:func:`ledc_channel_new_etm_event` respectively.
+    LEDC also supports some tasks that can be triggered by other events and executed automatically. Timer's supported tasks are listed in :cpp:type:`ledc_timer_etm_task_type_t`, and channel's supported tasks are listed in :cpp:type:`ledc_channel_etm_task_type_t`. Users can create an ``ETM task`` handle by calling :cpp:func:`ledc_timer_new_etm_task` or :cpp:func:`ledc_channel_new_etm_task` respectively.
+
+    Some useful applications of ETM with LEDC are:
+
+        * To generate a PWM signal with certain number of pulses
+        * To synchronize the PWM period with an external signal
+        * To start / stop the PWM signal output or a fading without CPU intervention
+
+    For how to connect the LEDC events and tasks to the ETM channel, please refer to the :doc:`ETM </api-reference/peripherals/etm>` documentation.
 
 Power Management
 ----------------
@@ -418,6 +433,7 @@ Application Example
     * :example:`peripherals/ledc/ledc_basic` demonstrates how to use the LEDC to generate a PWM signal in LOW SPEED mode.
     * :example:`peripherals/ledc/ledc_fade` demonstrates how to control the intensity of LEDs using the LEDC fade functionality.
     :SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED: * :example:`peripherals/ledc/ledc_gamma_curve_fade` demonstrates how to use the LEDC for color control of RGB LEDs with gamma correction.
+    :SOC_LEDC_SUPPORT_ETM and SOC_ETM_SUPPORTED: * :example:`peripherals/ledc/ledc_dimmer` demonstrates how to use the LEDC and ETM to generate TRIAC gate trigger pulses that are synchronized to the mains zero‑cross.
 
 
 API Reference
@@ -425,3 +441,7 @@ API Reference
 
 .. include-build-file:: inc/ledc.inc
 .. include-build-file:: inc/ledc_types.inc
+
+.. only:: SOC_LEDC_SUPPORT_ETM and SOC_ETM_SUPPORTED
+
+    .. include-build-file:: inc/ledc_etm.inc
