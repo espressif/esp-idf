@@ -783,6 +783,31 @@ static void *esp_cam_ctlr_dvp_cam_alloc_buffer(esp_cam_ctlr_t *handle, size_t si
 }
 
 /**
+ * @brief Configure format conversion
+ *
+ * @param cam_handle Camera controller handle
+ * @param src_format Source format
+ * @param dst_format Destination format
+ * @return ESP_OK on success, ESP_FAIL on failure
+ */
+esp_err_t esp_cam_ctlr_dvp_format_conversion(esp_cam_ctlr_handle_t cam_handle,
+                                             const cam_ctlr_format_conv_config_t *config)
+{
+    if (cam_handle == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_cam_ctlr_dvp_cam_t *ctlr = (esp_cam_ctlr_dvp_cam_t *)cam_handle;
+
+    ESP_LOGD(TAG, "Configure format conversion: %d -> %d", config->src_format, config->dst_format);
+
+    // Configure color format conversion
+    cam_hal_color_format_convert(&ctlr->hal, config);
+
+    return ESP_OK;
+}
+
+/**
  * @brief New ESP CAM DVP controller
  *
  * @param config      DVP controller configurations
@@ -876,6 +901,7 @@ esp_err_t esp_cam_new_dvp_ctlr(const esp_cam_ctlr_dvp_config_t *config, esp_cam_
     ctlr->base.get_internal_buffer = esp_cam_ctlr_dvp_cam_get_internal_buffer;
     ctlr->base.get_buffer_len = esp_cam_ctlr_get_dvp_cam_frame_buffer_len;
     ctlr->base.alloc_buffer = esp_cam_ctlr_dvp_cam_alloc_buffer;
+    ctlr->base.format_conversion = esp_cam_ctlr_dvp_format_conversion;
 
     *ret_handle = &ctlr->base;
 

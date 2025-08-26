@@ -120,6 +120,16 @@
 
     在调用 :cpp:func:`esp_cam_new_dvp_ctlr` 之后，需要分配符合对齐约束的摄像头缓冲区，或调用 :cpp:func:`esp_cam_ctlr_alloc_buffer` 来自动分配。
 
+    可以调用 :cpp:func:`esp_cam_ctlr_format_conversion` 来配置格式转换。驱动程序支持以下转换类型：
+
+    * YUV 到 RGB 转换
+    * RGB 到 YUV 转换
+    * YUV 到 YUV 转换
+
+    色彩空间范围支持：
+    * 全色彩空间：RGB 和 YUV 的取值范围为 0-255
+    * 有限色彩空间：RGB 取值范围为 16-240，YUV Y 分量取值范围为 16-240，U-V 分量取值范围为 16-235
+
     .. code:: c
 
         esp_cam_ctlr_handle_t cam_handle = NULL;
@@ -153,6 +163,16 @@
         };
 
         ESP_ERROR_CHECK(esp_cam_new_dvp_ctlr(&dvp_config, &cam_handle));
+
+        const cam_ctlr_format_conv_config_t conv_cfg = {
+            .src_format = CAM_CTLR_COLOR_YUV422,      // 源格式：YUV422
+            .dst_format = CAM_CTLR_COLOR_RGB565,      // 目标格式：RGB565
+            .conv_std = COLOR_CONV_STD_RGB_YUV_BT601,
+            .data_width = 8,
+            .input_range = COLOR_RANGE_LIMIT,
+            .output_range = COLOR_RANGE_LIMIT,
+        };
+        ESP_ERROR_CHECK(esp_cam_ctlr_format_conversion(cam_handle, &conv_cfg));
 
 卸载摄像头控制器驱动程序
 ~~~~~~~~~~~~~~~~~~~~~~~~

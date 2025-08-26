@@ -11,6 +11,7 @@
 #include "esp_err.h"
 #include "esp_heap_caps.h"
 #include "esp_cam_ctlr_types.h"
+#include "hal/cam_ctlr_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -149,6 +150,20 @@ esp_err_t esp_cam_ctlr_get_frame_buffer_len(esp_cam_ctlr_handle_t handle, size_t
  *        - NULL on failure
  */
 void *esp_cam_ctlr_alloc_buffer(esp_cam_ctlr_handle_t handle, size_t size, uint32_t buf_caps);
+
+/**
+ * @brief Configure format conversion
+ *
+ * @param[in] handle      ESP CAM controller handle
+ * @param[in] conv_cfg    Color conversion configuration, contains source and destination formats
+ *
+ * @return
+ *        - ESP_OK on success
+ *        - ESP_ERR_INVALID_ARG:   Invalid argument
+ *        - ESP_ERR_NOT_SUPPORTED: Format conversion not supported by this controller
+ */
+esp_err_t esp_cam_ctlr_format_conversion(esp_cam_ctlr_handle_t handle,
+                                         const cam_ctlr_format_conv_config_t *conv_cfg);
 
 #ifdef __cplusplus
 }

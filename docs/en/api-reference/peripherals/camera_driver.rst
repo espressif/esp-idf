@@ -119,6 +119,16 @@ Camera controller driver can be implemented in one of following ways:
 
     After calling :cpp:func:`esp_cam_new_dvp_ctlr`, you should allocate a camera buffer that meets the alignment constraints, or call :cpp:func:`esp_cam_ctlr_alloc_buffer` to automatically allocate.
 
+    You can call :cpp:func:`esp_cam_ctlr_format_conversion` to configure format conversion. The driver supports the following conversion types:
+
+    * YUV to RGB conversion
+    * RGB to YUV conversion
+    * YUV to YUV conversion
+
+    Color range support:
+    * Full range: 0-255 for both RGB and YUV
+    * Limited range: RGB 16-240, YUV Y:16-240, U-V:16-235
+
     .. code:: c
 
         esp_cam_ctlr_handle_t cam_handle = NULL;
@@ -152,6 +162,16 @@ Camera controller driver can be implemented in one of following ways:
         };
 
         ESP_ERROR_CHECK(esp_cam_new_dvp_ctlr(&dvp_config, &cam_handle));
+
+        const cam_ctlr_format_conv_config_t conv_cfg = {
+            .src_format = CAM_CTLR_COLOR_YUV422,      // Source format: YUV422
+            .dst_format = CAM_CTLR_COLOR_RGB565,      // Destination format: RGB565
+            .conv_std = COLOR_CONV_STD_RGB_YUV_BT601,
+            .data_width = 8,
+            .input_range = COLOR_RANGE_LIMIT,
+            .output_range = COLOR_RANGE_LIMIT,
+        };
+        ESP_ERROR_CHECK(esp_cam_ctlr_format_conversion(cam_handle, &conv_cfg));
 
 Uninstall Camera Controller Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +38,18 @@ typedef enum {
     CAM_CTLR_DATA_WIDTH_12 = 12,    ////< 12-bit data width
     CAM_CTLR_DATA_WIDTH_16 = 16,    ///< 16-bit data width
 } cam_ctlr_data_width_t;
+
+/**
+ * @brief Camera Controller format conversion configuration
+ */
+typedef struct {
+    cam_ctlr_color_t src_format;           /*!< Source format */
+    cam_ctlr_color_t dst_format;           /*!< Destination format */
+    color_conv_std_rgb_yuv_t conv_std;     /*!< Conversion standard */
+    uint32_t data_width;                   /*!< Data width in bits */
+    color_range_t input_range;             /*!< Input color range */
+    color_range_t output_range;            /*!< Output color range */
+} cam_ctlr_format_conv_config_t;
 
 #ifdef __cplusplus
 }
