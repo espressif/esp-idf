@@ -166,8 +166,8 @@ static inline int adv_send(struct net_buf *buf)
     struct bt_mesh_adv_data ad = {0};
     int err = 0;
 
-    BT_DBG("type %u len %u: %s", BLE_MESH_ADV(buf)->type,
-        buf->len, bt_hex(buf->data, buf->len));
+    BT_DBG("LegacyAdvSend, Type %u", BLE_MESH_ADV(buf)->type);
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
     if (BLE_MESH_ADV(buf)->type != BLE_MESH_ADV_BLE) {
@@ -192,13 +192,14 @@ static inline int adv_send(struct net_buf *buf)
 #if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX
         if (BLE_MESH_ADV(buf)->type == BLE_MESH_ADV_PROXY_SOLIC) {
             bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
+
             struct bt_mesh_adv_data solic_ad[2] = {
                 BLE_MESH_ADV_DATA_BYTES(BLE_MESH_DATA_UUID16_ALL, 0x59, 0x18),
                 BLE_MESH_ADV_DATA(BLE_MESH_DATA_SVC_DATA16, buf->data, buf->len),
             };
             err = bt_le_adv_start(&param, solic_ad, ARRAY_SIZE(solic_ad), NULL, 0);
         } else
-#endif
+#endif /* CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX */
         {
             bt_mesh_adv_buf_ref_debug(__func__, buf, 4U, BLE_MESH_BUF_REF_SMALL);
             err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
@@ -215,8 +216,8 @@ static inline int adv_send(struct net_buf *buf)
         }
 
         BT_DBG("interval %dms, duration %dms, period %dms, count %d",
-            ADV_SCAN_INT(tx->param.interval), tx->param.duration,
-            tx->param.period, tx->param.count);
+               ADV_SCAN_INT(tx->param.interval), tx->param.duration,
+               tx->param.period, tx->param.count);
 
         data.adv_data_len = tx->buf->data[0];
         if (data.adv_data_len) {
@@ -235,6 +236,7 @@ static inline int adv_send(struct net_buf *buf)
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 
     net_buf_unref(buf);
+
     adv_send_start(duration, err, cb, cb_data);
     if (err) {
         BT_ERR("Start advertising failed: err %d", err);
@@ -266,7 +268,7 @@ static void adv_thread(void *p)
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
     QueueHandle_t relay_adv_handle = NULL;
     QueueSetMemberHandle_t handle = NULL;
-#endif
+#endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
     struct net_buf **buf = NULL;
     bt_mesh_msg_t msg = {0};
 
@@ -277,17 +279,20 @@ static void adv_thread(void *p)
 
     buf = (struct net_buf **)(&msg.arg);
 
-    BT_DBG("%s, starts", __func__);
+    BT_DBG("LegacyAdvThread");
 
     while (1) {
         *buf = NULL;
+
 #if !CONFIG_BLE_MESH_RELAY_ADV_BUF
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
      CONFIG_BLE_MESH_GATT_PROXY_SERVER
         xQueueReceive(adv_queue.handle, &msg, K_NO_WAIT);
         while (!(*buf)) {
             int32_t timeout = 0;
+
             BT_DBG("Mesh Proxy Advertising start");
+
             timeout = bt_mesh_proxy_server_adv_start();
             BT_DBG("Mesh Proxy Advertising up to %d ms", timeout);
             xQueueReceive(adv_queue.handle, &msg, K_WAIT(timeout));
@@ -310,12 +315,17 @@ static void adv_thread(void *p)
         } else {
             while (!(*buf)) {
                 int32_t timeout = 0;
+
                 BT_DBG("Mesh Proxy Advertising start");
+
                 timeout = bt_mesh_proxy_server_adv_start();
                 BT_DBG("Mesh Proxy Advertising up to %d ms", timeout);
+
                 handle = xQueueSelectFromSet(mesh_queue_set, K_WAIT(timeout));
+
                 BT_DBG("Mesh Proxy Advertising stop");
                 bt_mesh_proxy_server_adv_stop();
+
                 if (handle) {
                     if (uxQueueMessagesWaiting(adv_queue.handle)) {
                         xQueueReceive(adv_queue.handle, &msg, K_NO_WAIT);
@@ -325,7 +335,7 @@ static void adv_thread(void *p)
                 }
             }
         }
-#else
+#else /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */
         handle = xQueueSelectFromSet(mesh_queue_set, portMAX_DELAY);
         if (handle) {
             if (uxQueueMessagesWaiting(adv_queue.handle)) {
@@ -353,6 +363,7 @@ static void adv_thread(void *p)
                  * BLE_MESH_RELAY_TIME_INTERVAL, this relay packet will not be sent.
                  */
                 BT_INFO("Ignore relay packet");
+
                 net_buf_unref(*buf);
             } else {
                 if (adv_send(*buf)) {
@@ -364,6 +375,8 @@ static void adv_thread(void *p)
             bt_mesh_adv_buf_ref_debug(__func__, *buf, 1U, BLE_MESH_BUF_REF_EQUAL);
             net_buf_unref(*buf);
         }
+
+        BT_DBG("Yield");
 
         /* Give other threads a chance to run */
         taskYIELD();
@@ -514,6 +527,8 @@ void bt_mesh_adv_update(void)
         .relay = false,
         .arg = NULL,
     };
+
+    BT_DBG("LegacyAdvUpdate");
 
     bt_mesh_task_post(&msg, K_NO_WAIT, false);
 }
