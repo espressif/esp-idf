@@ -145,7 +145,6 @@ extern const esp_efuse_desc_t* ESP_EFUSE_DIS_PAD_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USB_EXCHG_PINS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_VDD_SPI_AS_GPIO[];
-#define ESP_EFUSE_VDD_SPI_AS_GPIO_DESC ESP_EFUSE_VDD_SPI_AS_GPIO
 extern const esp_efuse_desc_t* ESP_EFUSE_WDT_DELAY_SEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_BOOT_CRYPT_CNT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_KEY_REVOKE0[];
