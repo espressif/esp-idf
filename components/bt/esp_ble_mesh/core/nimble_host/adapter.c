@@ -698,8 +698,7 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
         return 0;
 
     case BLE_GAP_EVENT_ADV_COMPLETE:
-        MODLOG_DFLT(INFO, "advertise complete; reason=%d",
-                    event->adv_complete.reason);
+        BT_DBG("advertise complete; reason=%d", event->adv_complete.reason);
         return 0;
 
     case BLE_GAP_EVENT_ENC_CHANGE:
