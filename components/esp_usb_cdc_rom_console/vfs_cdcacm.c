@@ -16,9 +16,9 @@
 #include "esp_attr.h"
 #include "sdkconfig.h"
 #include "esp_heap_caps.h"
-
 #include "esp_private/esp_vfs_cdcacm_select.h"
 #include "esp_private/usb_console.h"
+#include "esp_private/startup_internal.h"
 
 #define USB_CDC_LOCAL_FD 0
 
@@ -521,4 +521,20 @@ const esp_vfs_fs_ops_t *esp_vfs_cdcacm_get_vfs(void)
 esp_err_t esp_vfs_dev_cdcacm_register(void)
 {
     return esp_vfs_register_fs("/dev/cdcacm", &s_cdcacm_vfs, ESP_VFS_FLAG_STATIC, NULL);
+}
+#if CONFIG_ESP_CONSOLE_USB_CDC
+ESP_SYSTEM_INIT_FN(init_vfs_usb_cdc_rom_console, CORE, BIT(0), 113)
+{
+    esp_err_t err = esp_usb_console_init();
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    return esp_vfs_dev_cdcacm_register();
+}
+#endif
+
+void esp_vfs_dev_cdcacm_include_dev_init(void)
+{
+    // Linker hook function, exists to make the linker examine this file
 }

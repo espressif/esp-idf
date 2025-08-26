@@ -68,10 +68,10 @@ set(extra_components_which_shouldnt_be_included
 
     # esp_timer is a dependency of esp_pm, esp_system, esp_security, esp_hw_support
     # esp_pm should be removed from G1 build
-    # esp_system's dependency is due to usb_console (used for timeout functionality)
-    # and task_wdt timer implementation on C2, we could possibly place this implementation in esp_timer instead
+    # esp_system's dependency is due to task_wdt timer implementation on C2,
+    # we could possibly place this implementation in esp_timer instead
     # esp_security uses it for esp_ds (used for timeout functionality)
-    # esp_hw_support uses it for componensating time after sleep (dependency could be reversed) IDF-10416
+    # and for componensating time after sleep (dependency could be reversed) IDF-10416
     esp_timer
 
     # esptool_py is a dependency of bootloader, app_update, partition_table, all of which
@@ -94,6 +94,10 @@ set(extra_components_which_shouldnt_be_included
 
     # esp_security is required by mbedtls and spi_flash
     esp_security
+
+    # esp_usb_cdc_rom_console is used by the panic handler, will be conditional on cdc console option when
+    # the new build-system is implemented
+    esp_usb_cdc_rom_console
 )
 
 set(expected_components

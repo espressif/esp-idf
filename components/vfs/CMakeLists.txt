@@ -15,10 +15,7 @@ list(APPEND sources "vfs.c"
                     "nullfs.c"
                     )
 
-list(APPEND pr esp_timer
-               # for backwards compatibility (TODO: IDF-8799)
-               esp_driver_uart esp_driver_usb_serial_jtag esp_vfs_console
-               )
+list(APPEND pr esp_vfs_console)
 
 idf_component_register(SRCS ${sources}
                        LDFRAGMENTS "linker.lf"

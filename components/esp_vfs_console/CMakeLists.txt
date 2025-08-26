@@ -8,12 +8,8 @@ set(srcs "vfs_console.c")
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS include
-                       PRIV_REQUIRES vfs esp_driver_uart esp_driver_usb_serial_jtag
-                       LDFRAGMENTS linker.lf)
-
-if(CONFIG_ESP_CONSOLE_USB_CDC)
-    target_sources(${COMPONENT_LIB} PRIVATE "vfs_cdcacm.c")
-endif()
+                       PRIV_REQUIRES vfs esp_driver_uart esp_driver_usb_serial_jtag esp_usb_cdc_rom_console
+                      )
 
 if(CONFIG_VFS_SUPPORT_IO)
     target_link_libraries(${COMPONENT_LIB} PUBLIC idf::vfs)

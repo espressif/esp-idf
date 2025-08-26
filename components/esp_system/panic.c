@@ -12,7 +12,6 @@
 #include "esp_compiler.h"
 
 #include "esp_private/system_internal.h"
-#include "esp_private/usb_console.h"
 
 #include "esp_cpu.h"
 #include "soc/rtc.h"
@@ -62,6 +61,10 @@
 
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 #include "hal/usb_serial_jtag_ll.h"
+#endif
+
+#if CONFIG_ESP_CONSOLE_USB_CDC
+#include "esp_private/usb_console.h"
 #endif
 
 #ifdef __XTENSA__
