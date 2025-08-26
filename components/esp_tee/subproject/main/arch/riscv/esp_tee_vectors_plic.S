@@ -27,14 +27,15 @@
 
     .global esp_tee_global_interrupt_handler
     .global esp_tee_service_dispatcher
+    .global _tee_s_entry
 
     .section .data
+
     .align 4
     .global _ns_sp
 _ns_sp:
     .word 0
 
-    .section .data
     .align 4
     .global _s_sp
 _s_sp:
@@ -91,6 +92,8 @@ _s_sp:
     sw    t0, RV_STK_MTVAL(sp)
     csrr  t0, mhartid
     sw    t0, RV_STK_MHARTID(sp)
+    csrr  t0, mcause
+    sw    t0, RV_STK_MCAUSE(sp)
 .endm
 
 /* Restore the general purpose registers (excluding gp) from the context on
@@ -169,16 +172,17 @@ _s_sp:
     .section .exception_vectors.text, "ax"
 
     /* Exception handler. */
-    .global _panic_handler
-    .type _panic_handler, @function
-_panic_handler:
-    /* Backup t0 on the stack before using it */
+    .global _tee_panic_handler
+    .type _tee_panic_handler, @function
+_tee_panic_handler:
+    /* Backup t0, t1 on the stack before using it */
     addi    sp, sp, -16
     sw      t0, 0(sp)
+    sw      t1, 4(sp)
 
     /* Read mcause */
     csrr    t0, mcause
-    li      t1, VECTORS_MCAUSE_INTBIT_MASK | VECTORS_MCAUSE_REASON_MASK
+    li      t1, VECTORS_MCAUSE_REASON_MASK
     and     t0, t0, t1
 
     /* Check whether the exception is an M-mode ecall */
@@ -189,10 +193,12 @@ _panic_handler:
     li      t1, ECALL_U_MODE
     beq     t0, t1, _user_ecall
 
-    /* Restore t0 from the stack */
+    /* Restore t0, t1 from the stack */
     lw      t0, 0(sp)
+    lw      t1, 4(sp)
     addi    sp, sp, 16
 
+_actual_panic:
     /* Not an ecall, proceed to the panic handler */
     /* Allocate space on the stack and store general purpose registers */
     save_general_regs RV_STK_FRMSZ
@@ -245,13 +251,17 @@ _return_from_exception:
     restore_general_regs RV_STK_FRMSZ
     mret
 
-    .size  _panic_handler, .-_panic_handler
+    .size  _tee_panic_handler, .-_tee_panic_handler
 
     /* ECALL handler. */
     .type _ecall_handler, @function
 _ecall_handler:
     /* M-mode ecall handler */
 _machine_ecall:
+    /* Enable the U-mode delegation of all interrupts (except the TEE secure interrupt) */
+    li      t0, TEE_INTR_DELEG_MASK
+    csrs    mideleg, t0
+
     /* Set the privilege mode to transition to after mret to U-mode  */
     li      t0, MSTATUS_MPP
     csrc    mstatus, t0
@@ -270,7 +280,7 @@ _machine_ecall:
      * The A0 register contains the return value of the corresponding service.
      * After restoring the entire register context, we assign A0 the value back to the return value. */
     csrw    mscratch, a0
-    restore_general_regs RV_STK_FRMSZ
+    restore_general_regs
     csrrw   a0, mscratch, zero
 
 _skip_ctx_restore:
@@ -284,17 +294,17 @@ _skip_ctx_restore:
 _user_ecall:
     /* Check whether we are returning after servicing an U-mode interrupt */
     lui     t0, RTNVAL
-    csrr    t1, mscratch
+    csrrw   t1, mscratch, zero
     beq     t0, t1, _rtn_from_ns_int
-    csrwi   mscratch, 0
 
-    /* Restore t0 from the stack */
+    /* Restore t0, t1 from the stack */
     lw      t0, 0(sp)
+    lw      t1, 4(sp)
     addi    sp, sp, 16
 
     /* This point is reached when a secure service call is issued from the REE */
     /* Save register context and mepc */
-    save_general_regs RV_STK_FRMSZ
+    save_general_regs
     save_mepc
 
     /* Save the U-mode (i.e. REE) stack pointer */
@@ -304,22 +314,18 @@ _user_ecall:
     /* Switch to the M-mode (i.e. TEE) stack */
     la      sp, _tee_stack
 
+    /* Load the TEE entry point (see _tee_s_entry) in the mepc */
+    la      t0, _tee_s_entry
+    csrw    mepc, t0
+
     /* Disable the U-mode delegation of all interrupts */
     csrwi   mideleg, 0
 
-    /* Enable interrupts */
-    csrsi   mstatus, MSTATUS_MIE
+    /* Set the privilege mode to transition to after mret to M-mode  */
+    li      t0, MSTATUS_MPP
+    csrs    mstatus, t0
 
-    /* Jump to the secure service dispatcher */
-    jal     esp_tee_service_dispatcher
-
-    /* Enable the U-mode delegation of all interrupts (except the TEE secure interrupt) */
-    li      t0, TEE_INTR_DELEG_MASK
-    csrs    mideleg, t0
-
-    /* Fire an M-ecall */
-    mv      a1, zero
-    ecall
+    mret
 
     /* This point is reached after servicing a U-mode interrupt occurred
      * while executing a secure service */
@@ -331,16 +337,13 @@ _rtn_from_ns_int:
     la      t0, _s_sp
     lw      sp, 0(t0)
 
-    /* Clear the flag set marking the completion of interrupt service */
-    csrwi    mscratch, 0
-
     /* Set the privilege mode to transition to after mret to M-mode */
     li      t0, MSTATUS_MPP
     csrs    mstatus, t0
 
     /* Restore register context and resume the secure service */
     restore_mepc
-    restore_general_regs RV_STK_FRMSZ
+    restore_general_regs
 
     mret
 
@@ -354,7 +357,7 @@ _rtn_from_ns_int:
 _tee_ns_intr_handler:
     /* Start by saving the general purpose registers and the PC value before
      * the interrupt happened. */
-    save_general_regs RV_STK_FRMSZ
+    save_general_regs
     save_mepc
 
     /* Though it is not necessary we save GP and SP here.
@@ -364,7 +367,7 @@ _tee_ns_intr_handler:
     /* As gp register is not saved by the macro, save it here */
     sw      gp, RV_STK_GP(sp)
     /* Same goes for the SP value before trapping */
-    addi    t0, sp, RV_STK_FRMSZ /* restore sp with the value when interrupt happened */
+    addi    t0, sp, CONTEXT_SIZE /* restore sp with the value when interrupt happened */
     /* Save SP */
     sw      t0, RV_STK_SP(sp)
 
@@ -391,7 +394,7 @@ _tee_ns_intr_handler:
     csrc    mstatus, t1
 
     /* Save the current secure stack pointer and switch to the U-mode interrupt stack
-     * saved while entering the secure service call routine (see `sec_world_entry`) */
+     * saved while entering the secure service call routine (see `_tee_s_entry`) */
     la     t0, _s_sp
     sw     sp, 0(t0)
     la     t1, _ns_sp
@@ -461,8 +464,6 @@ _tee_s_intr_handler:
 _save_reg_ctx:
     /* Save CSR context here */
     save_mcsr
-    csrr    t0, mcause
-    sw      t0, RV_STK_MCAUSE(sp)
     /* NOTE: With ESP-TEE, since APM violations trigger a panic, it's safe to use the mscratch
      * register to pass on the stack pointer to the APM violation handler */
     csrw    mscratch, sp
@@ -519,7 +520,7 @@ _intr_hdlr_exec:
     mv      a0, sp      /* argument 1, stack pointer */
     mv      a1, s1      /* argument 2, interrupt number (mcause) */
     /* mask off the interrupt flag of mcause */
-    li      t0, 0x7fffffff
+    li      t0, VECTORS_MCAUSE_REASON_MASK
     and     a1, a1, t0
 
     jal     esp_tee_global_interrupt_handler
@@ -546,3 +547,18 @@ _intr_hdlr_exec:
     mret
 
     .size  _tee_s_intr_handler, .-_tee_s_intr_handler
+
+    .section .text, "ax"
+
+    .align  4
+    .type _tee_s_entry, @function
+_tee_s_entry:
+    /* Jump to the secure service dispatcher */
+    jal     esp_tee_service_dispatcher
+
+    /* Fire an M-ecall */
+    mv      a1, zero
+    ecall
+    fence
+
+    .size  _tee_s_entry, .-_tee_s_entry

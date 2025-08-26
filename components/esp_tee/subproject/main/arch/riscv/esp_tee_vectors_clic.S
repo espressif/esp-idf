@@ -176,10 +176,6 @@ _s_sp:
     .global _tee_panic_handler
     .type _tee_panic_handler, @function
 _tee_panic_handler:
-     /* Exception handler. */
-    .global _panic_handler
-    .type _panic_handler, @function
-_panic_handler:
     /* Backup t0, t1 on the stack before using it */
     addi    sp, sp, -16
     sw      t0, 0(sp)
@@ -187,7 +183,7 @@ _panic_handler:
 
     /* Read mcause */
     csrr    t0, mcause
-    li      t1, VECTORS_MCAUSE_INTBIT_MASK | VECTORS_MCAUSE_REASON_MASK
+    li      t1, VECTORS_MCAUSE_REASON_MASK
     and     t0, t0, t1
 
     /* Check whether the exception is an M-mode ecall */
@@ -265,7 +261,7 @@ _return_from_exception:
     restore_general_regs RV_STK_FRMSZ
     mret
 
-    .size  _panic_handler, .-_panic_handler
+    .size  _tee_panic_handler, .-_tee_panic_handler
 
     /* ECALL handler. */
     .type _ecall_handler, @function
@@ -274,13 +270,12 @@ _ecall_handler:
 _machine_ecall:
     /* Enable the U-mode delegation of all interrupts */
     li      t0, INTMTX_SIG_IDX_ASSERT_IN_SEC_REG
-    li      t1, 0x00
-    sw      t1, 0(t0)
+    sw      zero, 0(t0)
     fence
     /* Verify the above */
 _1:
-    lw      t2, 0(t0)
-    bne     t2, t1, _2
+    lw      t1, 0(t0)
+    bnez    t1, _1
 
     /* Set the privilege mode to transition to after mret to U-mode  */
     li      t0, MSTATUS_MPP
@@ -365,7 +360,7 @@ _rtn_from_ns_int:
     /* Verify the above */
 _3:
     lw      t2, 0(t0)
-    bne     t2, t1, _2
+    bne     t2, t1, _3
 
     /* Restore the secure stack pointer */
     la      t0, _s_sp
@@ -457,13 +452,12 @@ _found_intr:
 
     /* Enable the U-mode interrupt delegation */
     li      t0, INTMTX_SIG_IDX_ASSERT_IN_SEC_REG
-    li      t1, 0x00
-    sw      t1, 0(t0)
+    sw      zero, 0(t0)
     fence
     /* Verify the above */
 _4:
-    lw      t2, 0(t0)
-    bne     t2, t1, _2
+    lw      t1, 0(t0)
+    bnez    t1, _4
 
     /* For U-mode interrupts, we use mret to switch to U-mode after executing the below steps - */
     /* Disable the U-mode global interrupts */
@@ -484,7 +478,7 @@ _4:
     csrc    mstatus, t1
 
     /* Save the current secure stack pointer and switch to the U-mode interrupt stack
-     * saved while entering the secure service call routine (see `sec_world_entry`) */
+     * saved while entering the secure service call routine (see `_tee_s_entry`) */
     la     t0, _s_sp
     sw     sp, 0(t0)
     la     t1, _ns_sp
@@ -589,7 +583,7 @@ _intr_hdlr_exec:
     mv      a0, sp      /* argument 1, stack pointer */
     mv      a1, s1      /* argument 2, interrupt number (mcause) */
     /* mask off the interrupt flag of mcause */
-    li	    t0, VECTORS_MCAUSE_INTBIT_MASK | VECTORS_MCAUSE_REASON_MASK
+    li      t0, VECTORS_MCAUSE_REASON_MASK
     and     a1, a1, t0
 
     jal     esp_tee_global_interrupt_handler

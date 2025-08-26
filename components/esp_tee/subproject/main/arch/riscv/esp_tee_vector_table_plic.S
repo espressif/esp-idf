@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #endif
 
     /* Handlers defined in the `esp_tee_vectors.S` file */
-    .global _panic_handler
+    .global _tee_panic_handler
     .global _tee_ns_intr_handler
     .global _tee_s_intr_handler
 
@@ -36,7 +36,7 @@
     .global _vector_table
     .type _vector_table, @function
 _vector_table:
-    j _panic_handler            /* 0: Exception entry */
+    j _tee_panic_handler        /* 0: Exception entry */
     /* NOTE: All of the free interrupts are used by the REE */
     j _tee_ns_intr_handler      /* 1: Free interrupt number */
     j _tee_ns_intr_handler      /* 2: Free interrupt number */
@@ -61,17 +61,16 @@ _vector_table:
     j _tee_ns_intr_handler      /* 21: Free interrupt number */
     j _tee_ns_intr_handler      /* 22: Free interrupt number */
     j _tee_ns_intr_handler      /* 23: Free interrupt number */
-    j _panic_handler            /* 24: ETS_INT_WDT_INUM panic-interrupt (soc-level panic) */
-    j _panic_handler            /* 25: ETS_CACHEERR_INUM panic-interrupt (soc-level panic) */
+    j _tee_panic_handler        /* 24: ETS_INT_WDT_INUM panic-interrupt (soc-level panic) */
+    j _tee_panic_handler        /* 25: ETS_CACHEERR_INUM panic-interrupt (soc-level panic) */
     /* NOTE: Triggers panic irrespective of the Kconfig setting with ESP-TEE */
-    j _panic_handler            /* 26: ETS_MEMPROT_ERR_INUM handler (soc-level panic) */
+    j _tee_panic_handler        /* 26: ETS_MEMPROT_ERR_INUM handler (soc-level panic) */
     /* TODO: [IDF-10770] Not supported yet with ESP-TEE */
-    j _panic_handler            /* 27: ETS_ASSIST_DEBUG_INUM handler (soc-level panic) */
+    j _tee_panic_handler        /* 27: ETS_ASSIST_DEBUG_INUM handler (soc-level panic) */
     j _tee_ns_intr_handler      /* 28: Free interrupt number */
     j _tee_ns_intr_handler      /* 29: Free interrupt number */
     j _tee_ns_intr_handler      /* 30: Free interrupt number */
     j _tee_s_intr_handler       /* 31: ESP-TEE: Secure interrupt handler entry */
-    j _panic_handler            /* exception handler, entry 0 */
 
     .size _vector_table, .-_vector_table
 
