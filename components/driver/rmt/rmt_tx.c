@@ -296,7 +296,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     // disable carrier modulation by default, can reenable by `rmt_apply_carrier()`
     rmt_ll_tx_enable_carrier_modulation(hal->regs, channel_id, false);
     // idle level is determined by register value
-    rmt_ll_tx_fix_idle_level(hal->regs, channel_id, 0, true);
+    rmt_ll_tx_fix_idle_level(hal->regs, channel_id, config->flags.init_level, true);
     // always enable tx wrap, both DMA mode and ping-pong mode rely this feature
     rmt_ll_tx_enable_wrap(hal->regs, channel_id, true);
 
@@ -774,14 +774,14 @@ static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel)
         // disable the hardware
         portENTER_CRITICAL(&channel->spinlock);
         rmt_ll_tx_enable_loop(hal->regs, channel->channel_id, false);
-#if SOC_RMT_SUPPORT_TX_ASYNC_STOP
+#if SOC_RMT_SUPPORT_ASYNC_STOP
         rmt_ll_tx_stop(hal->regs, channel->channel_id);
 #endif
         portEXIT_CRITICAL(&channel->spinlock);
 
         portENTER_CRITICAL(&group->spinlock);
         rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_MASK(channel_id), false);
-#if !SOC_RMT_SUPPORT_TX_ASYNC_STOP
+#if !SOC_RMT_SUPPORT_ASYNC_STOP
         // we do a trick to stop the undergoing transmission
         // stop interrupt, insert EOF marker to the RMT memory, polling the trans_done event
         channel->hw_mem_base[0].val = 0;

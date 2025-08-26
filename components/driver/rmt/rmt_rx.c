@@ -562,8 +562,21 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     portENTER_CRITICAL_ISR(&channel->spinlock);
     // disable the RX engine, it will be enabled again when next time user calls `rmt_receive()`
     rmt_ll_rx_enable(hal->regs, channel_id, false);
+    portEXIT_CRITICAL_ISR(&channel->spinlock);
+
+#if !SOC_RMT_SUPPORT_ASYNC_STOP
+    // This is a workaround for ESP32.
+    // The RX engine can not be disabled once it is enabled in ESP32
+    // If the state isn't RMT_FSM_RUN, it means the RX engine was disabled
+    // and we shouldn't process the data.
+    if (atomic_load(&channel->fsm) != RMT_FSM_RUN) {
+        return false;
+    }
+#endif
+
     uint32_t offset = rmt_ll_rx_get_memory_writer_offset(hal->regs, channel_id);
 
+    portENTER_CRITICAL_ISR(&channel->spinlock);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_SW);
     // copy the symbols to user space
     
