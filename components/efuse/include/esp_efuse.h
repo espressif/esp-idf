@@ -367,11 +367,12 @@ esp_err_t esp_efuse_set_rom_log_scheme(esp_efuse_rom_log_scheme_t log_scheme);
  *
  * @note If Secure Download mode is already enabled, this function does nothing and returns success.
  *
- * @note Disabling the ROM Download Mode also disables Secure Download Mode.
+ * @note If UART DL mode is completely disabled then Secure Download mode can not be enabled
+ * and this API simply returns success.
  *
  * @return
- * - ESP_OK If the eFuse was successfully burned, or had already been burned.
- * - ESP_ERR_INVALID_STATE ROM Download Mode has been disabled via eFuse, so Secure Download mode is unavailable.
+ * - ESP_OK If the eFuse was successfully burned, or had already been burned, or UART DL mode is already disabled.
+ * - Other errors If an error occurred while burning ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD.
  */
 esp_err_t esp_efuse_enable_rom_secure_download_mode(void);
 #endif
