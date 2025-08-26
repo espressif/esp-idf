@@ -720,3 +720,64 @@ TEST_CASE("twai send from ISR context (loopback)", "[twai]")
 
     printf("ISR send test passed!\n");
 }
+
+static IRAM_ATTR bool test_dlc_range_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx)
+{
+    twai_frame_t *rx_frame = (twai_frame_t *)user_ctx;
+    if (ESP_OK == twai_node_receive_from_isr(handle, rx_frame)) {
+        esp_rom_printf(DRAM_STR("RX len %d %s\n"), rx_frame->header.dlc, rx_frame->buffer);
+    }
+    return false;
+}
+
+TEST_CASE("twai dlc range test", "[twai]")
+{
+    twai_node_handle_t node_hdl;
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_TX_GPIO; // Using same pin for test without transceiver
+    node_config.bit_timing.bitrate = 800000;
+    node_config.tx_queue_depth = TEST_FRAME_NUM;
+    node_config.flags.enable_loopback = true;
+    node_config.flags.enable_self_test = true;
+
+    TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
+
+    uint8_t rx_buffer[TWAI_FRAME_MAX_LEN] = {0};
+    twai_frame_t rx_frame = {};
+    rx_frame.buffer = rx_buffer;
+    rx_frame.buffer_len = sizeof(rx_buffer);
+
+    twai_event_callbacks_t user_cbs = {};
+    user_cbs.on_rx_done = test_dlc_range_cb;
+    TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &user_cbs, &rx_frame));
+    TEST_ESP_OK(twai_node_enable(node_hdl));
+
+    twai_frame_t tx_frame = {};
+    tx_frame.header.id = TWAI_STD_ID_MASK;
+    tx_frame.buffer = (uint8_t *)"hi esp32";
+    for (int len = 0; len < 2 * 9; len++) { // [0:8] is 9 times
+        if (len < 9) {
+            tx_frame.buffer_len = len;
+            tx_frame.header.dlc = 0;
+        } else {
+            tx_frame.buffer_len = 0;
+            tx_frame.header.dlc = len % 9;
+        }
+        TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 100));
+        TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, -1));
+        TEST_ASSERT_EQUAL(len % 9, rx_frame.header.dlc);
+        memset(rx_buffer, 0, sizeof(rx_buffer));
+    }
+
+    tx_frame.buffer_len = 9;
+    tx_frame.header.dlc = 0;
+    TEST_ESP_ERR(twai_node_transmit(node_hdl, &tx_frame, 0), ESP_ERR_INVALID_ARG);
+
+    tx_frame.buffer_len = 0;
+    tx_frame.header.dlc = TWAIFD_FRAME_MAX_DLC + 1;
+    TEST_ESP_ERR(twai_node_transmit(node_hdl, &tx_frame, 0), ESP_ERR_INVALID_ARG);
+
+    TEST_ESP_OK(twai_node_disable(node_hdl));
+    TEST_ESP_OK(twai_node_delete(node_hdl));
+}
