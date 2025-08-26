@@ -70,9 +70,9 @@ menu "eFuse Bit Manager"
         default 128 if EFUSE_CODE_SCHEME_COMPAT_REPEAT
         default 256 if !IDF_TARGET_ESP32
 
-    config ESP_EFUSE_VDD_SPI_AS_GPIO_ALLOWED
+    choice ESP_EFUSE_VDD_SPI_AS_GPIO_DANGEROUS_WRITE
         bool "[DANGER] Allow Writing to ESP_EFUSE_VDD_SPI_AS_GPIO"
-        default n
+        default ESP_EFUSE_VDD_SPI_AS_GPIO_DANGEROUS_WRITE_NOT_ALLOWED
         depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32H21
         help
             Allows writing to the VDD_SPI_AS_GPIO efuse field.
@@ -84,6 +84,11 @@ menu "eFuse Bit Manager"
 
             Ensure that you fully understand the implications of setting this flag.
 
-            If unsure, say N.
+            If unsure, choice 'Not allowed'.
+        config ESP_EFUSE_VDD_SPI_AS_GPIO_DANGEROUS_WRITE_NOT_ALLOWED
+            bool "Not allowed"
+        config ESP_EFUSE_VDD_SPI_AS_GPIO_DANGEROUS_WRITE_ALLOWED
+            bool "Allowed"
+    endchoice
 
 endmenu

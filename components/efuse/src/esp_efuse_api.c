@@ -145,7 +145,7 @@ esp_err_t esp_efuse_write_field_bit(const esp_efuse_desc_t* field[])
     uint8_t existing = 0;
     const uint8_t one = 1;
 
-    #if defined(ESP_EFUSE_VDD_SPI_AS_GPIO_DESC) && !defined(CONFIG_ESP_EFUSE_VDD_SPI_AS_GPIO_ALLOWED)
+    #if defined(ESP_EFUSE_VDD_SPI_AS_GPIO_DANGEROUS_WRITE_NOT_ALLOWED)
     if (field == ESP_EFUSE_VDD_SPI_AS_GPIO) {
         ESP_LOGE(TAG, "Writing to VDD_SPI_AS_GPIO is not allowed.");
         ESP_LOGW(TAG, "[DANGER] Enable CONFIG_ESP_EFUSE_VDD_SPI_AS_GPIO_ALLOWED in menuconfig.");
