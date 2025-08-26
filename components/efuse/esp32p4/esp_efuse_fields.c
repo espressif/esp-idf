@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,8 +47,8 @@ esp_err_t esp_efuse_disable_rom_download_mode(void)
 
 esp_err_t esp_efuse_enable_rom_secure_download_mode(void)
 {
-    if (esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MODE)) {
-        return ESP_ERR_INVALID_STATE;
+    if (!esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MODE)) {
+        return esp_efuse_write_field_bit(ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD);
     }
-    return esp_efuse_write_field_bit(ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD);
+    return ESP_OK;
 }
