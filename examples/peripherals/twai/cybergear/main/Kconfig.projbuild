@@ -1,0 +1,59 @@
+menu "Example Configuration"
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    config EXAMPLE_TWAI_TX_GPIO_NUM
+        int "TX GPIO number"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 0
+        help
+            This option selects the GPIO pin used for the TWAI TX signal. Connect the
+            TWAI TX signal to your transceiver.
+
+    config EXAMPLE_TWAI_RX_GPIO_NUM
+        int "RX GPIO number"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+        default 2
+        help
+            This option selects the GPIO pin used for the TWAI RX signal. Connect the
+            TWAI RX signal to your transceiver.
+
+    config EXAMPLE_TWAI_ESP_NODE_ID
+        int "TWAI ESP Node ID"
+        range 0 256
+        default 254
+        help
+            This option selects the ESP Node ID of the ESP Controller.
+
+    config EXAMPLE_TWAI_MOTOR_ID
+        int "TWAI CyberGear motor ID"
+        range 0 256
+        default 127
+        help
+            This option selects the motor ID of the CyberGear. 127 is the factory value.
+            Check the README if you don't know how to get the motor ID.
+
+    choice EXAMPLE_TWAI_MOTOR_BITRATE_CHOICE
+        prompt "TWAI CyberGear motor bitrate"
+        default EXAMPLE_TWAI_MOTOR_BITRATE_1M
+        help
+            This option selects the bitrate of the CyberGear.
+
+        config EXAMPLE_TWAI_MOTOR_BITRATE_1M
+            bool "1M"
+        config EXAMPLE_TWAI_MOTOR_BITRATE_500K
+            bool "500K"
+        config EXAMPLE_TWAI_MOTOR_BITRATE_250K
+            bool "250K"
+        config EXAMPLE_TWAI_MOTOR_BITRATE_125K
+            bool "125K"
+    endchoice
+
+    config EXAMPLE_TWAI_MOTOR_BITRATE
+        int
+        default 1000000 if EXAMPLE_TWAI_MOTOR_BITRATE_1M
+        default 500000 if EXAMPLE_TWAI_MOTOR_BITRATE_500K
+        default 250000 if EXAMPLE_TWAI_MOTOR_BITRATE_250K
+        default 125000 if EXAMPLE_TWAI_MOTOR_BITRATE_125K
+
+endmenu
