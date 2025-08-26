@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-H21 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # CyberGear Motor Control Example
 
@@ -14,23 +14,23 @@ This example demonstrates how to control [XiaoMi CyberGear motors](https://www.m
 
 * A development board with any supported Espressif SOC chip (see `Supported Targets` table above)
 * XiaoMi CyberGear motor
-* CAN transceiver (e.g., SN65HVD230)
+* Transceiver (e.g., SN65HVD230)
 * Connecting wires
 
 ### Hardware Connection
 
-The CAN bus connection requires a CAN transceiver to convert between the ESP32's TWAI signals and the CAN bus differential signals.
+The TWAI bus connection requires a transceiver to convert between the ESP32's TWAI signals and the TWAI bus differential signals.
 
 ```
-ESP32 Pin      CAN Transceiver     CyberGear Motor
----------      ---------------     ---------------
+ESP32 Pin      Transceiver     CyberGear Motor
+---------      -----------    ---------------
 GPIO TX   --->  CTX  
 GPIO RX   <---  CRX 
-GND       --->  GND                 GND       <--- Separate power supply 
-VCC(3.3V) --->  VCC(3.3V)           VCC (24V) <--- Separate power supply 
-                CAN_H         <-->  CAN_H
-                CAN_L         <-->  CAN_L  
----------     ---------------      ---------------
+GND       --->  GND             GND       <--- Separate power supply 
+VCC(3.3V) --->  VCC(3.3V)       VCC (24V) <--- Separate power supply 
+                CAN_H     <-->  CAN_H
+                CAN_L     <-->  CAN_L  
+---------     ------------     ---------------
 ```
 
 ### Configure the project
@@ -166,9 +166,9 @@ Temperature: 36.500000
 
 **If Motor not responding**
 
-   - Check CAN transceiver connections
+   - Check transceiver connections
    - Verify motor ID settings are correct
-   - Confirm CAN bus bitrate matches (1Mbps)
+   - Confirm TWAI bus bitrate matches (1Mbps)
    - Check motor power supply
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
