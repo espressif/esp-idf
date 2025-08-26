@@ -31,9 +31,9 @@ extern "C" {
 #endif
 
 /* Convert from ms to 0.625ms units */
-#define ADV_SCAN_UNIT(_ms)  ((_ms) * 8 / 5)
+#define ADV_SCAN_UNIT(_ms)              ((_ms) * 8 / 5)
 /* Convert from 0.625ms units to interval(ms) */
-#define ADV_SCAN_INT(val)   ((val) * 5 / 8)
+#define ADV_SCAN_INT(val)               ((val) * 5 / 8)
 
 /* Maximum advertising data payload for a single data type */
 #define BLE_MESH_ADV_DATA_SIZE          29
@@ -75,15 +75,13 @@ typedef struct {
 #endif
 
 #if CONFIG_BLE_MESH_FRIEND
-
 #define FRIEND_ADV(buf)     CONTAINER_OF(BLE_MESH_ADV(buf), bt_mesh_friend_adv_t, adv)
 
 typedef struct {
     struct bt_mesh_adv adv;
     uint16_t app_idx;
 } bt_mesh_friend_adv_t;
-
-#endif
+#endif /* CONFIG_BLE_MESH_FRIEND */
 
 enum {
 #if CONFIG_BLE_MESH_USE_BLE_50
@@ -103,12 +101,15 @@ enum {
     ADV_TASK_BLE_ADV_INST_EVT = BIT(CONFIG_BLE_MESH_BLE_ADV_INST_ID),
 #endif
 #endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
+
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
      CONFIG_BLE_MESH_GATT_PROXY_SERVER
     ADV_TASK_PROXY_ADV_UPD_EVT = BIT(30),
 #endif
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
+
     ADV_TASK_PKT_SEND_EVT = BIT(31),
+
     ADV_TASK_EVT_MAX,
 };
 
@@ -124,6 +125,7 @@ typedef struct bt_mesh_msg {
 
 struct bt_mesh_adv_inst {
     uint8_t id;
+
 #if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
     bool busy;
     struct net_buf *sending_buf;
@@ -184,13 +186,13 @@ static const uint8_t adv_type[] = {
 #endif /* CONFIG_BLE_MESH_LONG_PACKET */
 #endif /* CONFIG_BLE_MESH_EXT_ADV */
 #if CONFIG_BLE_MESH_FRIEND
-    [BLE_MESH_ADV_FRIEND]   = BLE_MESH_DATA_MESH_MESSAGE,
+    [BLE_MESH_ADV_FRIEND]     = BLE_MESH_DATA_MESH_MESSAGE,
 #endif
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
     [BLE_MESH_ADV_RELAY_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
 #endif
-    [BLE_MESH_ADV_BEACON] = BLE_MESH_DATA_MESH_BEACON,
-    [BLE_MESH_ADV_URI]    = BLE_MESH_DATA_URI,
+    [BLE_MESH_ADV_BEACON]     = BLE_MESH_DATA_MESH_BEACON,
+    [BLE_MESH_ADV_URI]        = BLE_MESH_DATA_URI,
 };
 
 typedef struct bt_mesh_adv *(*bt_mesh_pool_allocator_t)(int id, enum bt_mesh_adv_type type);
@@ -256,6 +258,7 @@ static inline void bt_mesh_adv_send(struct net_buf *buf, uint8_t xmit,
 }
 
 void bt_mesh_unref_buf_from_pool(struct net_buf_pool *pool);
+
 void bt_mesh_unref_buf(bt_mesh_msg_t *msg);
 
 int bt_mesh_adv_queue_init(struct bt_mesh_adv_queue *adv_queue,
@@ -265,34 +268,38 @@ int bt_mesh_adv_queue_init(struct bt_mesh_adv_queue *adv_queue,
 int bt_mesh_adv_queue_deinit(struct bt_mesh_adv_queue *adv_queue);
 
 void bt_mesh_adv_type_init(enum bt_mesh_adv_type adv_type,
-                          struct bt_mesh_adv_queue *adv_queue,
-                          struct net_buf_pool *buf_pool,
-                          bt_mesh_pool_allocator_t adv_alloc);
+                           struct bt_mesh_adv_queue *adv_queue,
+                           struct net_buf_pool *buf_pool,
+                           bt_mesh_pool_allocator_t adv_alloc);
 
 void bt_mesh_adv_type_deinit(enum bt_mesh_adv_type adv_type);
 
 void bt_mesh_task_post(bt_mesh_msg_t *msg, uint32_t timeout, bool front);
 
 #if CONFIG_BLE_MESH_USE_BLE_50
-struct bt_mesh_adv_inst * bt_mesh_get_adv_insts_set(void);
-bool bt_mesh_is_adv_inst_used(uint8_t adv_inst_id);
+struct bt_mesh_adv_inst *bt_mesh_get_adv_insts_set(void);
+
+bool bt_mesh_is_adv_inst_used(uint8_t inst_id);
+
 int bt_mesh_adv_inst_init(enum bt_mesh_adv_inst_type inst_type, uint8_t inst_id);
+
 int bt_mesh_adv_inst_deinit(enum bt_mesh_adv_inst_type inst_type);
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 
 #if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
 void bt_mesh_adv_inst_type_add(enum bt_mesh_adv_inst_type inst_type,
-                                             enum bt_mesh_adv_type  adv_type);
+                               enum bt_mesh_adv_type  adv_type);
 
-void bt_mesh_adv_inst_type_rm(enum bt_mesh_adv_inst_type inst_type,
-                                            enum bt_mesh_adv_type  adv_type);
+void bt_mesh_adv_inst_type_rem(enum bt_mesh_adv_inst_type inst_type,
+                               enum bt_mesh_adv_type  adv_type);
 
-void bt_mesh_adv_inst_supported_adv_type_clear(enum bt_mesh_adv_inst_type inst_type,
-                                               enum bt_mesh_adv_type  adv_type);
-#endif
+void bt_mesh_adv_inst_type_clear(enum bt_mesh_adv_inst_type inst_type,
+                                 enum bt_mesh_adv_type adv_type);
+#endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
 
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
 void bt_mesh_relay_adv_init(void);
+
 bool bt_mesh_ignore_relay_packet(uint32_t timestamp);
 
 static inline void bt_mesh_relay_adv_send(struct net_buf *buf, uint8_t xmit,
@@ -312,25 +319,29 @@ void bt_mesh_relay_adv_deinit(void);
 
 #if CONFIG_BLE_MESH_FRIEND
 void bt_mesh_frnd_adv_init(void);
+
 #if CONFIG_BLE_MESH_DEINIT
 void bt_mesh_frnd_adv_deinit(void);
 #endif /* CONFIG_BLE_MESH_DEINIT */
 #endif /* CONFIG_BLE_MESH_FRIEND */
 
 void bt_mesh_adv_task_init(void adv_thread(void *p));
+
 void bt_mesh_adv_common_init(void);
 
 #if CONFIG_BLE_MESH_DEINIT
 void bt_mesh_adv_task_deinit(void);
+
 void bt_mesh_adv_common_deinit(void);
 #endif
 
 #if CONFIG_BLE_MESH_USE_BLE_50
 int bt_mesh_adv_task_wakeup(uint32_t evt);
+
 bool bt_mesh_adv_task_wait(uint32_t wait_bits, TickType_t timeout, uint32_t *notify);
-#else
+#else /* CONFIG_BLE_MESH_USE_BLE_50 */
 bool bt_mesh_adv_task_wait(uint32_t timeout);
-#endif
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
 static inline void bt_mesh_ble_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
