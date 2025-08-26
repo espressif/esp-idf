@@ -99,3 +99,13 @@ void *esp_cam_ctlr_alloc_buffer(esp_cam_ctlr_handle_t handle, size_t size, uint3
 
     return handle->alloc_buffer(handle, size, buf_caps);
 }
+
+esp_err_t esp_cam_ctlr_format_conversion(esp_cam_ctlr_handle_t handle,
+                                         const cam_ctlr_format_conv_config_t *conv_cfg)
+{
+    ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    ESP_RETURN_ON_FALSE(conv_cfg, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null conv_cfg");
+    ESP_RETURN_ON_FALSE(handle->format_conversion, ESP_ERR_NOT_SUPPORTED, TAG, "format conversion function not supported");
+
+    return handle->format_conversion(handle, conv_cfg);
+}
