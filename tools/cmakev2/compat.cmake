@@ -435,3 +435,33 @@ function(idf_component_register)
     idf_component_set_property("${COMPONENT_NAME}" REQUIRED_IDF_TARGETS "${ARG_REQUIRED_IDF_TARGETS}")
     idf_component_set_property("${COMPONENT_NAME}" COMPONENT_TYPE "${component_type}")
 endfunction()
+
+#[[api
+.. cmakev2:function:: idf_build_component
+
+   .. code-block:: cmake
+
+      idf_build_component(<component_dir> [<component_source>])
+
+   :component_dir[in]: Directory path of the component.
+   :component_source[in,opt]: Source of the component. One of:
+                             "idf_components", "project_managed_components",
+                             "project_extra_components", "project_components".
+                             Defaults to "project_components".
+
+   Compatibility shim used by generated files (e.g. managed_components_list)
+   that initializes the component in build system v2 by delegating to
+   ``__init_component``.
+#]]
+function(idf_build_component component_dir)
+    if(${ARGC} EQUAL 1)
+        set(component_source "project_components")
+    else()
+        set(component_source ${ARGV1})
+    endif()
+
+    idf_build_get_property(component_prefix PREFIX)
+    __init_component(DIRECTORY "${component_dir}"
+                     PREFIX "${component_prefix}"
+                     SOURCE "${component_source}")
+endfunction()
