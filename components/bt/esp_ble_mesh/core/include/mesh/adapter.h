@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2017 Nordic Semiconductor ASA
  * SPDX-FileCopyrightText: 2015-2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -553,7 +553,7 @@ struct bt_mesh_gatt_attr {
      *  @param len    Length of data to read
      *  @param offset Offset to start reading from
      *
-     *  @return Number fo bytes read, or in case of an error
+     *  @return Number of bytes read, or in case of an error
      *          BLE_MESH_GATT_ERR() with a specific ATT error code.
      */
     ssize_t (*read)(struct bt_mesh_conn *conn,
