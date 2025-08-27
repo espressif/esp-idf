@@ -131,43 +131,23 @@ typedef union {
 
 /** Group: I3C DEV ADDR TABLEn LOC REG */
 /** Type of dev_addr_tablen_loc register
- *  NA
- */
+*  NA
+*/
 typedef union {
     struct {
-        /** reg_dat_devn_static_addr : R/W; bitpos: [6:0]; default: 0;
+        /** dat_data : WO; bitpos: [31:0]; default: 0;
          *  NA
          */
-        uint32_t reg_dat_devn_static_addr:7;
-        uint32_t reserved_7:9;
-        /** reg_dat_dev12_dynamic_addr : R/W; bitpos: [23:16]; default: 0;
-         *  Device Dynamic Address with parity, The MSB,bit[23], should be programmed with
-         *  parity of dynamic address.
-         */
-        uint32_t reg_dat_devn_dynamic_addr:8;
-        uint32_t reserved_24:5;
-        /** reg_dat_dev12_nack_retry_cnt : R/W; bitpos: [30:29]; default: 0;
-         *  This field is used to set the Device NACK Retry count for the particular device. If
-         *  the Device NACK's for the device address, the controller automatically retries the
-         *  same device until this count expires. If the Slave does not ACK for the mentioned
-         *  number of retries, then controller generates an error response and move to the Halt
-         *  state.
-         */
-        uint32_t reg_dat_devn_nack_retry_cnt:2;
-        /** reg_dat_dev12_i2c : R/W; bitpos: [31]; default: 0;
-         *  Legacy I2C device or not. This bit should be set to 1 if the device is a legacy I2C
-         *  device.
-         */
-        uint32_t reg_dat_devn_i2c:1;
+        uint32_t dat_data:32;
     };
     uint32_t val;
 } i3c_mst_mem_dev_addr_tablen_loc_reg_t;
 
 typedef struct {
+    volatile uint32_t loc0;
     volatile uint32_t loc1;
     volatile uint32_t loc2;
     volatile uint32_t loc3;
-    volatile uint32_t loc4;
 } i3c_mst_mem_dev_char_tablen_reg_t;
 
 typedef struct {
