@@ -1679,7 +1679,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
         if (rx->ctx.enh.long_pkt_cfg) {
             buf = bt_mesh_adv_create(BLE_MESH_ADV_EXT_LONG_RELAY_DATA, K_NO_WAIT);
         } else
-#endif
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
         {
             buf = bt_mesh_adv_create(BLE_MESH_ADV_EXT_DATA, K_NO_WAIT);
         }
@@ -1690,11 +1690,11 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
             EXT_ADV(buf)->tx_power = rx->ctx.enh.ext_adv_cfg.tx_power;
         }
     } else
-#endif
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
     {
         buf = bt_mesh_adv_create(BLE_MESH_ADV_DATA, K_NO_WAIT);
     }
-#else
+#else /* !CONFIG_BLE_MESH_RELAY_ADV_BUF */
     /* Check if the number of relay packets in queue is too large, if so
      * use minimum relay retransmit value for later relay packets.
      */
@@ -1707,7 +1707,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
         if (rx->ctx.enh.long_pkt_cfg) {
             buf = bt_mesh_adv_create(BLE_MESH_ADV_EXT_LONG_RELAY_DATA, K_NO_WAIT);
         } else
-#endif
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
         {
             buf = bt_mesh_adv_create(BLE_MESH_ADV_EXT_DATA, K_NO_WAIT);
         }
@@ -1718,11 +1718,11 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
             EXT_ADV(buf)->tx_power = rx->ctx.enh.ext_adv_cfg.tx_power;
         }
     } else
-#endif
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
     {
-        buf = bt_mesh_relay_adv_create(BLE_MESH_ADV_RELAY_DATA, K_NO_WAIT);
+        buf = bt_mesh_adv_create(BLE_MESH_ADV_RELAY_DATA, K_NO_WAIT);
     }
-#endif
+#endif /* !CONFIG_BLE_MESH_RELAY_ADV_BUF */
 
     if (!buf) {
         BT_INFO("Out of relay buffers");

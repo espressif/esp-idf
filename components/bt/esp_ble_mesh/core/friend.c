@@ -346,7 +346,7 @@ static struct net_buf *create_friend_pdu(struct bt_mesh_friend *frnd,
 {
     struct net_buf *buf = NULL;
 
-    buf = bt_mesh_adv_create_from_pool(BLE_MESH_ADV_FRIEND, K_NO_WAIT);
+    buf = bt_mesh_adv_create(BLE_MESH_ADV_FRIEND, K_NO_WAIT);
     if (!buf) {
         return NULL;
     }

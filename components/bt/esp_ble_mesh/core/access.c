@@ -117,7 +117,7 @@ static int32_t next_period(struct bt_mesh_model *mod)
 
     if (!pub) {
         BT_ERR("Model has no publication support");
-        return -ENOTSUP;
+        return 0;
     }
 
     period = bt_mesh_model_pub_period_get(mod);
@@ -1384,4 +1384,72 @@ struct bt_mesh_app_key *bt_mesh_rx_appkey_get(size_t index)
 #endif
 
     return key;
+}
+
+struct bt_mesh_app_key *bt_mesh_app_key_get(uint16_t app_idx)
+{
+    if (bt_mesh_is_provisioned()) {
+#if CONFIG_BLE_MESH_NODE
+        if (!IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV)) {
+            for (int i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
+                if (bt_mesh.app_keys[i].net_idx != BLE_MESH_KEY_UNUSED &&
+                    bt_mesh.app_keys[i].app_idx == app_idx) {
+                    return &bt_mesh.app_keys[i];
+                }
+            }
+        } else {
+            return bt_mesh_fast_prov_app_key_find(app_idx);
+        }
+#endif
+    } else if (bt_mesh_is_provisioner_en()) {
+#if CONFIG_BLE_MESH_PROVISIONER
+        for (int i = 0; i < ARRAY_SIZE(bt_mesh.p_app_keys); i++) {
+            if (bt_mesh.p_app_keys[i] &&
+                bt_mesh.p_app_keys[i]->net_idx != BLE_MESH_KEY_UNUSED &&
+                bt_mesh.p_app_keys[i]->app_idx == app_idx) {
+                return bt_mesh.p_app_keys[i];
+            }
+        }
+#endif
+    }
+
+    return NULL;
+}
+
+int bt_mesh_upper_key_get(const struct bt_mesh_subnet *subnet, uint16_t app_idx,
+                          const uint8_t **key, uint8_t *aid, uint16_t dst)
+{
+    struct bt_mesh_app_key *app_key = NULL;
+
+    if (app_idx == BLE_MESH_KEY_DEV) {
+        *key = bt_mesh_dev_key_get(dst);
+        if (!*key) {
+            BT_ERR("DevKey of 0x%04x not found", dst);
+            return -EINVAL;
+        }
+
+        *aid = 0U;
+        return 0;
+    }
+
+    if (!subnet) {
+        BT_ERR("Invalid subnet");
+        return -EINVAL;
+    }
+
+    app_key = bt_mesh_app_key_get(app_idx);
+    if (!app_key) {
+        BT_ERR("AppKey 0x%04x not found", app_idx);
+        return -ENOENT;
+    }
+
+    if (subnet->kr_phase == BLE_MESH_KR_PHASE_2 && app_key->updated) {
+        *key = app_key->keys[1].val;
+        *aid = app_key->keys[1].id;
+    } else {
+        *key = app_key->keys[0].val;
+        *aid = app_key->keys[0].id;
+    }
+
+    return 0;
 }

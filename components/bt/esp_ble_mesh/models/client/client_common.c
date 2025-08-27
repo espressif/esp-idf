@@ -20,7 +20,7 @@
 
 #define HCI_TIME_FOR_START_ADV  K_MSEC(5)   /* Three adv related hci commands may take 4 ~ 5ms */
 
-static bt_mesh_client_node_t *bt_mesh_client_pick_node(sys_slist_t *list, uint16_t tx_dst)
+static bt_mesh_client_node_t *client_pick_node(sys_slist_t *list, uint16_t tx_dst)
 {
     bt_mesh_client_node_t *node = NULL;
     sys_snode_t *cur = NULL;
@@ -86,7 +86,7 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(struct bt_mesh_model *
         return NULL;
     }
 
-    if ((node = bt_mesh_client_pick_node(&data->queue, ctx->addr)) == NULL) {
+    if ((node = client_pick_node(&data->queue, ctx->addr)) == NULL) {
         BT_DBG("Unexpected status message 0x%08x", ctx->recv_op);
         if (cli->publish_status && need_pub) {
             cli->publish_status(ctx->recv_op, model, ctx, buf);
@@ -113,32 +113,8 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(struct bt_mesh_model *
     return node;
 }
 
-static bool bt_mesh_client_check_node_in_list(sys_slist_t *list, uint16_t tx_dst)
-{
-    bt_mesh_client_node_t *node = NULL;
-    sys_snode_t *cur = NULL;
-
-    bt_mesh_list_lock();
-    if (sys_slist_is_empty(list)) {
-        bt_mesh_list_unlock();
-        return false;
-    }
-
-    for (cur = sys_slist_peek_head(list);
-         cur != NULL; cur = sys_slist_peek_next(cur)) {
-        node = (bt_mesh_client_node_t *)cur;
-        if (node->ctx.addr == tx_dst) {
-            bt_mesh_list_unlock();
-            return true;
-        }
-    }
-
-    bt_mesh_list_unlock();
-    return false;
-}
-
-static uint32_t bt_mesh_client_get_status_op(const bt_mesh_client_op_pair_t *op_pair,
-                                             int size, uint32_t opcode)
+static uint32_t client_get_status_op(const bt_mesh_client_op_pair_t *op_pair,
+                                     int size, uint32_t opcode)
 {
     if (!op_pair || size == 0) {
         return 0;
@@ -155,7 +131,7 @@ static uint32_t bt_mesh_client_get_status_op(const bt_mesh_client_op_pair_t *op_
     return 0;
 }
 
-static int32_t bt_mesh_get_adv_duration(struct bt_mesh_msg_ctx *ctx)
+static int32_t client_get_adv_duration(struct bt_mesh_msg_ctx *ctx)
 {
     uint16_t duration = 0, adv_int = 0;
     uint8_t xmit = 0;
@@ -177,9 +153,9 @@ static int32_t bt_mesh_get_adv_duration(struct bt_mesh_msg_ctx *ctx)
     return (int32_t)duration;
 }
 
-static int32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
-                                           struct net_buf_simple *msg,
-                                           uint32_t opcode, int32_t timeout)
+static int32_t client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
+                                   struct net_buf_simple *msg,
+                                   uint32_t opcode, int32_t timeout)
 {
     int32_t seg_rtx_to = 0, duration = 0, time = 0;
     uint8_t seg_count = 0, seg_rtx_num = 0;
@@ -228,7 +204,7 @@ static int32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
             seg_count = (msg->len + mic_size - 1) / 12U + 1U;
         }
 
-        duration = bt_mesh_get_adv_duration(ctx);
+        duration = client_get_adv_duration(ctx);
 
         /* Currently only consider the time consumption of the same segmented
          * messages, but if there are other messages between any two retrans-
@@ -334,7 +310,7 @@ int bt_mesh_client_send_msg(bt_mesh_client_common_param_t *param,
         return -EINVAL;
     }
 
-    if (bt_mesh_client_check_node_in_list(&internal->queue, param->ctx.addr)) {
+    if (client_pick_node(&internal->queue, param->ctx.addr)) {
         BT_ERR("Busy sending message to DST 0x%04x", param->ctx.addr);
         return -EBUSY;
     }
@@ -349,14 +325,15 @@ int bt_mesh_client_send_msg(bt_mesh_client_common_param_t *param,
     memcpy(&node->ctx, &param->ctx, sizeof(struct bt_mesh_msg_ctx));
     node->model = param->model;
     node->opcode = param->opcode;
-    node->op_pending = bt_mesh_client_get_status_op(client->op_pair, client->op_pair_size, param->opcode);
+    node->op_pending = client_get_status_op(client->op_pair, client->op_pair_size, param->opcode);
     if (node->op_pending == 0U) {
         BT_ERR("Status opcode not found in op_pair list, opcode 0x%08x", param->opcode);
         bt_mesh_free(node);
         return -EINVAL;
     }
-    node->timeout = bt_mesh_client_calc_timeout(&param->ctx, msg, param->opcode,
-                        param->msg_timeout ? param->msg_timeout : CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT);
+    node->timeout = client_calc_timeout(&param->ctx, msg, param->opcode,
+                                        (param->msg_timeout ? param->msg_timeout :
+                                                              CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT));
 
     if (k_delayed_work_init(&node->timer, timer_handler)) {
         BT_ERR("Failed to create a timer");

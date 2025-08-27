@@ -396,11 +396,11 @@ void ble_mesh_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             goto transfer_to_user;
         }
 #if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
-        ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(params->adv_term.adv_handle));
+        bt_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(params->adv_term.adv_handle));
 #else /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
         if (params->adv_term.status == 0x43 ||  /* Limit reached */
             params->adv_term.status == 0x3C) {  /* Advertising timeout */
-            ble_mesh_adv_task_wakeup(ADV_TASK_MESH_ADV_INST_EVT);
+            bt_mesh_adv_task_wakeup(ADV_TASK_MESH_ADV_INST_EVT);
         }
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
         /**
@@ -423,7 +423,7 @@ void ble_mesh_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
                 * could lead to resource contention issues.
                 */
             bt_mesh_unset_ble_adv_running();
-            ble_mesh_adv_task_wakeup(ADV_TASK_MESH_ADV_INST_EVT);
+            bt_mesh_adv_task_wakeup(ADV_TASK_MESH_ADV_INST_EVT);
         }
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 #endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
@@ -655,7 +655,7 @@ static void bt_mesh_scan_result_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARC
 static struct {
     bool set;
     tBTA_DM_BLE_GAP_EXT_ADV_PARAMS param;
-} last_param[BLE_MESH_ADV_INS_TYPES_NUM];
+} last_param[BLE_MESH_ADV_INST_TYPES_NUM];
 
 int bt_le_ext_adv_start(const uint8_t inst_id,
                         const struct bt_mesh_adv_param *param,

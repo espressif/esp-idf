@@ -14,14 +14,14 @@
 #include "mesh/common.h"
 #include "mesh/buf.h"
 
-#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
 #if CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
 /* Use independent ble adv queue only if multi adv instance is used */
 static struct bt_mesh_adv_queue ble_adv_queue;
 static void bt_mesh_ble_task_post(bt_mesh_msg_t *msg, uint32_t timeout, bool front);
 #endif
+
 static struct bt_mesh_adv_queue *p_ble_adv_queue;
-#define BLE_MESH_BLE_ADV_QUEUE_SIZE (CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT + 1)
+
 /* length + advertising data + length + scan response data */
 NET_BUF_POOL_DEFINE(ble_adv_buf_pool, CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT,
                     ((BLE_MESH_ADV_DATA_SIZE + 3) << 1), BLE_MESH_ADV_USER_DATA_SIZE, NULL);
@@ -63,17 +63,6 @@ static void bt_mesh_ble_task_post(bt_mesh_msg_t *msg, uint32_t timeout, bool fro
     }
 }
 #endif
-
-static struct net_buf *bt_mesh_ble_adv_create(enum bt_mesh_adv_type type, int32_t timeout)
-{
-    return bt_mesh_adv_create_from_pool(type, timeout);
-}
-
-inline void bt_mesh_ble_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
-                                 void *cb_data, bool front)
-{
-    bt_mesh_generic_adv_send(buf, 0, cb, cb_data, BLE_MESH_ADDR_UNASSIGNED, BLE_MESH_ADDR_UNASSIGNED, front);
-}
 
 static void ble_adv_tx_reset(struct bt_mesh_ble_adv_tx *tx, bool unref)
 {
@@ -211,7 +200,7 @@ int bt_mesh_start_ble_advertising(const struct bt_mesh_ble_adv_param *param,
         return -EINVAL;
     }
 
-    buf = bt_mesh_ble_adv_create(BLE_MESH_ADV_BLE, K_NO_WAIT);
+    buf = bt_mesh_adv_create(BLE_MESH_ADV_BLE, K_NO_WAIT);
     if (!buf) {
         BT_ERR("No empty ble adv buffer");
         return -ENOBUFS;
@@ -303,11 +292,11 @@ void bt_mesh_ble_adv_init(void)
     bt_mesh_adv_type_init(BLE_MESH_ADV_BLE, p_ble_adv_queue, &ble_adv_buf_pool, ble_adv_alloc);
 #if CONFIG_BLE_MESH_USE_BLE_50
 #if CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
-    bt_mesh_adv_inst_init(BLE_MESH_BLE_ADV_INS, CONFIG_BLE_MESH_BLE_ADV_INST_ID);
-    bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_BLE_ADV_INS, BLE_MESH_ADV_BLE);
+    bt_mesh_adv_inst_init(BLE_MESH_BLE_ADV_INST, CONFIG_BLE_MESH_BLE_ADV_INST_ID);
+    bt_mesh_adv_inst_type_add(BLE_MESH_BLE_ADV_INST, BLE_MESH_ADV_BLE);
 #else
 #if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
-    bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_ADV_INS, BLE_MESH_ADV_BLE);
+    bt_mesh_adv_inst_type_add(BLE_MESH_ADV_INST, BLE_MESH_ADV_BLE);
 #endif
 #endif /* CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE */
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
@@ -317,8 +306,7 @@ void bt_mesh_ble_adv_init(void)
 void bt_mesh_ble_adv_deinit(void)
 {
     for (int i = 0; i < ARRAY_SIZE(ble_adv_tx); i++) {
-        struct bt_mesh_ble_adv_tx *tx = &ble_adv_tx[i];
-        ble_adv_tx_reset(tx, false);
+        ble_adv_tx_reset(&ble_adv_tx[i], false);
     }
     bt_mesh_unref_buf_from_pool(&ble_adv_buf_pool);
     memset(ble_adv_pool, 0, sizeof(ble_adv_pool));
@@ -331,14 +319,13 @@ void bt_mesh_ble_adv_deinit(void)
     bt_mesh_adv_type_deinit(BLE_MESH_ADV_BLE);
 #if CONFIG_BLE_MESH_USE_BLE_50
 #if CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
-    bt_mesh_adv_inst_deinit(BLE_MESH_BLE_ADV_INS);
-    bt_mesh_adv_inst_supported_adv_type_rm(BLE_MESH_BLE_ADV_INS, BLE_MESH_ADV_BLE);
+    bt_mesh_adv_inst_deinit(BLE_MESH_BLE_ADV_INST);
+    bt_mesh_adv_inst_type_rm(BLE_MESH_BLE_ADV_INST, BLE_MESH_ADV_BLE);
 #else
 #if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
-    bt_mesh_adv_inst_supported_adv_type_rm(BLE_MESH_ADV_INS, BLE_MESH_ADV_BLE);
+    bt_mesh_adv_inst_type_rm(BLE_MESH_ADV_INST, BLE_MESH_ADV_BLE);
 #endif
 #endif /* CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE */
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
-#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */

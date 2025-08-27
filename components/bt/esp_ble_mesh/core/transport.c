@@ -177,74 +177,6 @@ int32_t bt_mesh_get_seg_rtx_timeout(uint16_t dst, uint8_t ttl)
     return SEG_RETRANSMIT_TIMEOUT_UNICAST(&tx);
 }
 
-struct bt_mesh_app_key *bt_mesh_app_key_get(uint16_t app_idx)
-{
-    if (bt_mesh_is_provisioned()) {
-#if CONFIG_BLE_MESH_NODE
-        if (!IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV)) {
-            for (int i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
-                if (bt_mesh.app_keys[i].net_idx != BLE_MESH_KEY_UNUSED &&
-                    bt_mesh.app_keys[i].app_idx == app_idx) {
-                    return &bt_mesh.app_keys[i];
-                }
-            }
-        } else {
-            return bt_mesh_fast_prov_app_key_find(app_idx);
-        }
-#endif
-    } else if (bt_mesh_is_provisioner_en()) {
-#if CONFIG_BLE_MESH_PROVISIONER
-        for (int i = 0; i < ARRAY_SIZE(bt_mesh.p_app_keys); i++) {
-            if (bt_mesh.p_app_keys[i] &&
-                bt_mesh.p_app_keys[i]->net_idx != BLE_MESH_KEY_UNUSED &&
-                bt_mesh.p_app_keys[i]->app_idx == app_idx) {
-                return bt_mesh.p_app_keys[i];
-            }
-        }
-#endif
-    }
-
-    return NULL;
-}
-
-int bt_mesh_upper_key_get(const struct bt_mesh_subnet *subnet, uint16_t app_idx,
-                          const uint8_t **key, uint8_t *aid, uint16_t dst)
-{
-    struct bt_mesh_app_key *app_key = NULL;
-
-    if (app_idx == BLE_MESH_KEY_DEV) {
-        *key = bt_mesh_dev_key_get(dst);
-        if (!*key) {
-            BT_ERR("DevKey of 0x%04x not found", dst);
-            return -EINVAL;
-        }
-
-        *aid = 0U;
-        return 0;
-    }
-
-    if (!subnet) {
-        BT_ERR("Invalid subnet");
-        return -EINVAL;
-    }
-
-    app_key = bt_mesh_app_key_get(app_idx);
-    if (!app_key) {
-        BT_ERR("AppKey 0x%04x not found", app_idx);
-        return -ENOENT;
-    }
-
-    if (subnet->kr_phase == BLE_MESH_KR_PHASE_2 && app_key->updated) {
-        *key = app_key->keys[1].val;
-        *aid = app_key->keys[1].id;
-    } else {
-        *key = app_key->keys[0].val;
-        *aid = app_key->keys[0].id;
-    }
-
-    return 0;
-}
-
 static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
                       const struct bt_mesh_send_cb *cb, void *cb_data,
                       const uint8_t *ctl_op)
@@ -442,7 +374,6 @@ static inline void seg_tx_complete(struct seg_tx *tx, int err)
 
 static void schedule_retransmit(struct seg_tx *tx)
 {
-    bt_mesh_seg_tx_lock(tx);
     /* It's possible that a segment broadcast hasn't finished,
      * but the tx are already released. Only the seg_pending
      * of this segment remains unprocessed. So, here, we
@@ -450,27 +381,29 @@ static void schedule_retransmit(struct seg_tx *tx)
      * destination (dst) is unassigned, and then process
      * the seg_pending of this segment.
      * See BLEMESH25-92 for details */
+
+    bt_mesh_seg_tx_lock(tx);
+
     if (tx->dst == BLE_MESH_ADDR_UNASSIGNED) {
         if (tx->seg_pending) {
             tx->seg_pending--;
         }
-        bt_mesh_seg_tx_unlock(tx);
-        return;
+        goto end;
     }
 
     if (--tx->seg_pending) {
-        bt_mesh_seg_tx_unlock(tx);
-        return;
+        goto end;
     }
 
     if (!BLE_MESH_ADDR_IS_UNICAST(tx->dst) && !tx->attempts) {
         BT_INFO("Complete tx sdu to group");
         seg_tx_complete(tx, 0);
-        bt_mesh_seg_tx_unlock(tx);
-        return;
+        goto end;
     }
 
     k_delayed_work_submit(&tx->rtx_timer, SEG_RETRANSMIT_TIMEOUT(tx));
+
+end:
     bt_mesh_seg_tx_unlock(tx);
 }
 
