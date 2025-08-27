@@ -793,7 +793,6 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
     esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
 
     _uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, clock_hz);
-#endif
     int console_uart_tx_pin = U0TXD_GPIO_NUM;
     int console_uart_rx_pin = U0RXD_GPIO_NUM;
 #if CONFIG_ESP_CONSOLE_UART_CUSTOM
@@ -801,7 +800,8 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
     console_uart_rx_pin = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : U0RXD_GPIO_NUM;
 #endif
     ESP_EARLY_LOGI(TAG, "GPIO %d and %d are used as console UART I/O pins", console_uart_rx_pin, console_uart_tx_pin);
-#endif
+#endif // CONFIG_ESP_CONSOLE_UART
+#endif // !CONFIG_IDF_ENV_FPGA
 
 #if SOC_DEEP_SLEEP_SUPPORTED
     // Need to unhold the IOs that were hold right before entering deep sleep, which are used as wakeup pins
