@@ -28,28 +28,9 @@
 #include "adv_common.h"
 #include "ble_adv.h"
 
-static struct bt_mesh_adv_queue *adv_queue;
-
 static struct bt_mesh_adv_inst *adv_insts;
 
-static inline void adv_send_start(uint16_t duration, int err,
-                                  const struct bt_mesh_send_cb *cb,
-                                  void *cb_data)
-{
-    if (cb && cb->start) {
-        cb->start(duration, err, cb_data);
-    }
-}
-
-static inline void adv_send_end(int err, const struct bt_mesh_send_cb *cb,
-                                void *cb_data)
-{
-    if (cb && cb->end) {
-        cb->end(err, cb_data);
-    }
-}
-
-static inline int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
+static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
 {
     struct net_buf *buf = inst->sending_buf;
     const struct bt_mesh_send_cb *cb = BLE_MESH_ADV(buf)->cb;
@@ -205,40 +186,40 @@ static inline int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration
     return 0;
 }
 
-static inline int find_valid_msg_from_queue(bt_mesh_queue_t *msg_queue, bt_mesh_msg_t *msg)
+static int find_valid_msg_from_queue(bt_mesh_queue_t *msg_queue, bt_mesh_msg_t *msg)
 {
     while(uxQueueMessagesWaiting(msg_queue->handle)) {
         xQueueReceive(msg_queue->handle, msg, K_WAIT(K_FOREVER));
 
-        /* In the previous adv task design, only
-         * the *buf of messages pushed to the queue
-         * by adv_update would be empty, but in the
-         * new design, there is a new processing method
-         * for adv_update's messages,
-         * so *buf here cannot be empty. */
+        /* In the previous adv task design, only the *buf of messages pushed to the queue
+         * by adv_update would be empty, but in the new design, there is a new processing
+         * method for adv_update's messages, so *buf here cannot be empty.
+         */
         assert(msg->arg);
 
-        /* If the message is canceled for advertising,
-         * then continue to retrieve the next message
-         * from that queue. */
+        /* If the message is cancelled for advertising, then continue to retrieve the next
+         * message from that queue.
+         */
         if (!bt_mesh_atomic_cas(&BLE_MESH_ADV_BUSY(BLE_MESH_MSG_NET_BUF(msg)), 1, 0)) {
             bt_mesh_adv_buf_ref_debug(__func__, BLE_MESH_MSG_NET_BUF(msg), 1U, BLE_MESH_BUF_REF_EQUAL);
             /* Cancel the adv task's reference to this data packet.
-             * tips: The reference of buffer by adv_task occurs
-             * when the buffer is pushed into the queue.
+             * Tips:
+             * The reference of buffer by adv_task occurs when the buffer is pushed into
+             * the queue.
              */
             net_buf_unref(BLE_MESH_MSG_NET_BUF(msg));
-            /* Avoid reading the last message in the queue, which could lead
-             * to pointing to an invalid buffer due to the absence of other
-             * messages in the queue. */
+
+            /* Avoid reading the last message in the queue, which could lead to pointing
+             * to an invalid buffer due to the absence of other messages in the queue.
+             */
             msg->arg = NULL;
             continue;
         }
 
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
-        /* If the relay message should be ignored,
-         * then continue to retrieve the next message
-         * from that queue. */
+        /* If the relay message should be ignored, then continue to retrieve the next message
+         * from that queue.
+         */
         if (msg->relay && bt_mesh_ignore_relay_packet(msg->timestamp)) {
             /* If the interval between "current time - msg.timestamp" is bigger than
              * BLE_MESH_RELAY_TIME_INTERVAL, this relay packet will not be sent.
@@ -259,32 +240,32 @@ static inline int find_valid_msg_from_queue(bt_mesh_queue_t *msg_queue, bt_mesh_
     return 0;
 }
 
-static inline int active_idle_adv_instance(uint32_t *update_evts, uint16_t *min_duration)
+static int activate_idle_adv_instance(uint32_t *update_evts, uint16_t *min_duration)
 {
-    uint32_t evts = 0;
-    uint16_t duration = K_FOREVER;
     uint16_t cur_min_duration = K_FOREVER;
     enum bt_mesh_adv_type adv_type = 0;
-    struct bt_mesh_adv_inst *instance = NULL;
     bt_mesh_queue_t *msg_queue = NULL;
+    uint16_t duration = K_FOREVER;
     bt_mesh_msg_t msg = {0};
     uint32_t spt_mask = 0;
+    uint32_t evts = 0;
 
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
      CONFIG_BLE_MESH_GATT_PROXY_SERVER
-    if (!adv_insts[BLE_MESH_ADV_PROXY_INS].busy) {
+    if (!adv_insts[BLE_MESH_ADV_PROXY_INST].busy) {
         BT_DBG("Mesh Proxy Advertising start");
         duration = bt_mesh_proxy_server_adv_start();
         if (duration < cur_min_duration) {
             cur_min_duration = duration;
         }
-        adv_insts[BLE_MESH_ADV_PROXY_INS].busy = true;
-        evts |= ADV_TASK_ADV_INST_EVT(adv_insts[BLE_MESH_ADV_PROXY_INS].id);
+        adv_insts[BLE_MESH_ADV_PROXY_INST].busy = true;
+        evts |= ADV_TASK_ADV_INST_EVT(adv_insts[BLE_MESH_ADV_PROXY_INST].id);
     }
 #endif
 
-    for (int i = BLE_MESH_ADV_INS; i < BLE_MESH_ADV_INS_TYPES_NUM; i++) {
-        instance = &adv_insts[i];
+    for (int i = BLE_MESH_ADV_INST; i < BLE_MESH_ADV_INST_TYPES_NUM; i++) {
+        struct bt_mesh_adv_inst *instance = &adv_insts[i];
+
         if (instance->busy
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_SERVER
@@ -300,10 +281,9 @@ static inline int active_idle_adv_instance(uint32_t *update_evts, uint16_t *min_
         while(spt_mask) {
             adv_type = find_lsb_set(spt_mask) - 1;
             spt_mask &= ~BIT(adv_type);
-            msg_queue = &(bt_mesh_adv_types_mgnt_get(adv_type)->adv_q->q);
+            msg_queue = &(bt_mesh_adv_types_mgmt_get(adv_type)->adv_q->q);
 
-            /* When there is no new message in the queue, *buf (aka: msg.arg)
-             * will be empty. */
+            /* If no new message in the queue, the *buf (aka: msg.arg) will be empty */
             if (find_valid_msg_from_queue(msg_queue, &msg)) {
                 BT_DBG("no valid message for instance %d", instance->id);
                 continue;
@@ -312,15 +292,17 @@ static inline int active_idle_adv_instance(uint32_t *update_evts, uint16_t *min_
             instance->sending_buf = (struct net_buf *)msg.arg;
             if (adv_send(instance, &duration)) {
                 BT_ERR("adv start failed");
+                /* When this adv instance fails to broadcast, it could be due to some
+                 * persistent issues, such as incorrect adv parameter settings, or it
+                 * could be due to some temporary issues, such as memory allocation
+                 * failure.
+                 *
+                 * Therefore, it is advisable to skip subsequent queue reads for this
+                 * instance and attempt to broadcast subsequent data again next time,
+                 * rather than disabling the adv instance.
+                 */
                 net_buf_unref(instance->sending_buf);
                 instance->sending_buf = NULL;
-                /* When this adv instance fails to broadcast, it could be
-                 * due to some persistent issues, such as incorrect adv
-                 * parameter settings, or it could be due to some temporary
-                 * issues, such as memory allocation failure. Therefore, it
-                 * is advisable to skip subsequent queue reads for this instance
-                 * and attempt to broadcast subsequent data again next time,
-                 * rather than disabling the adv instance. */
                 break;
             }
 
@@ -331,9 +313,9 @@ static inline int active_idle_adv_instance(uint32_t *update_evts, uint16_t *min_
             instance->busy = true;
             evts |= ADV_TASK_ADV_INST_EVT(adv_insts[i].id);
 
-            /* Must be nullified to avoid affecting the next adv
-             * instance's judgment on whether the message queue
-             * is empty. */
+            /* Must be nullified to avoid affecting the next adv instance's judgment
+             * on whether the message queue is empty.
+             */
             msg.arg = NULL;
             break;
         }
@@ -347,19 +329,18 @@ static inline int active_idle_adv_instance(uint32_t *update_evts, uint16_t *min_
 
 static uint32_t received_adv_evts_handle(uint32_t recv_evts)
 {
-    uint32_t evt = 0;
-
     if (!recv_evts) {
         return 0;
     }
 
-    for (int i = 0; recv_evts && i < BLE_MESH_ADV_INS_TYPES_NUM; i++) {
-        evt = ADV_TASK_ADV_INST_EVT(adv_insts[i].id);
+    for (int i = 0; recv_evts && i < BLE_MESH_ADV_INST_TYPES_NUM; i++) {
+        uint32_t evt = ADV_TASK_ADV_INST_EVT(adv_insts[i].id);
+
         if (recv_evts & evt) {
             recv_evts &= ~evt;
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
 CONFIG_BLE_MESH_GATT_PROXY_SERVER
-            if (unlikely(i == BLE_MESH_ADV_PROXY_INS)) {
+            if (unlikely(i == BLE_MESH_ADV_PROXY_INST)) {
                 BT_DBG("Mesh Proxy Advertising auto stop");
                 bt_mesh_proxy_server_adv_flag_set(false);
             } else
@@ -390,24 +371,23 @@ static void adv_thread(void *p)
         adv_duration = K_FOREVER;
         wait_evts |= ADV_TASK_PKT_SEND_EVT;
 
-        active_idle_adv_instance(&wait_evts, &adv_duration);
+        activate_idle_adv_instance(&wait_evts, &adv_duration);
 
-        ble_mesh_adv_task_wait(wait_evts, adv_duration, &recv_evts);
+        bt_mesh_adv_task_wait(wait_evts, adv_duration, &recv_evts);
 
         wait_evts &= ~recv_evts;
 
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
      CONFIG_BLE_MESH_GATT_PROXY_SERVER
         if (recv_evts & ADV_TASK_PROXY_ADV_UPD_EVT) {
-            adv_insts[BLE_MESH_ADV_PROXY_INS].busy = false;
+            adv_insts[BLE_MESH_ADV_PROXY_INST].busy = false;
             recv_evts &= ~ADV_TASK_PROXY_ADV_UPD_EVT;
         }
 #endif
 
-        /**
-         * `recv_evts == ADV_TASK_PKT_SEND_EVT` indicates that new packets
-         * have been placed into the queue, and the advertising instances started
-         * previous have not yet stopped.
+        /* The `recv_evts == ADV_TASK_PKT_SEND_EVT` indicates that new packets
+         * have been put into the queue, and the advertising instances started
+         * previously have not yet been stopped.
          */
         if (recv_evts == ADV_TASK_PKT_SEND_EVT) {
             continue;
@@ -431,8 +411,8 @@ void bt_mesh_adv_update(void)
      CONFIG_BLE_MESH_GATT_PROXY_SERVER
     BT_DBG("Mesh Proxy Advertising stopped manually");
     bt_mesh_proxy_server_adv_stop();
-    if (adv_insts[BLE_MESH_ADV_PROXY_INS].busy) {
-        ble_mesh_adv_task_wakeup(ADV_TASK_PROXY_ADV_UPD_EVT);
+    if (adv_insts[BLE_MESH_ADV_PROXY_INST].busy) {
+        bt_mesh_adv_task_wakeup(ADV_TASK_PROXY_ADV_UPD_EVT);
     }
 #endif
 }
@@ -442,7 +422,6 @@ void bt_mesh_adv_init(void)
     bt_mesh_adv_common_init();
 
     adv_insts = bt_mesh_get_adv_insts_set();
-    adv_queue = bt_mesh_adv_queue_get();
 
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
     bt_mesh_relay_adv_init();
