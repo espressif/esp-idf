@@ -524,7 +524,7 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
 
     // send frames and trigger error, must become bus off before 50 frames
     while ((node_status.state != TWAI_ERROR_BUS_OFF) && (tx_frame.header.id < 50)) {
-        printf("sending frame %ld\n", tx_frame.header.id ++);
+        printf("sending frame %ld last tec %d rec %d\n", tx_frame.header.id ++, node_status.tx_error_count, node_status.rx_error_count);
         TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 500));
         if (tx_frame.header.id > 3) {    // trigger error after 3 frames
             printf("trigger bit_error now!\n");
@@ -538,6 +538,11 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
     }
 
     // recover node
+#if SOC_TWAI_SUPPORT_FD
+    TEST_ASSERT_GREATER_THAN(200, node_status.tx_error_count);
+#else
+    TEST_ASSERT_EQUAL(128, node_status.tx_error_count); // TEC become 128 when bus off on legacy chips
+#endif
     TEST_ASSERT_EQUAL(TWAI_ERROR_BUS_OFF, node_status.state);
     printf("node offline, start recover ...\n");
     TEST_ESP_OK(twai_node_recover(node_hdl));
@@ -548,7 +553,8 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
         vTaskDelay(pdMS_TO_TICKS(1000));
         twai_node_get_info(node_hdl, &node_status, NULL);
     }
-    printf("node recovered! continue\n");
+    printf("node recovered! current tec %d rec %d, continue\n", node_status.tx_error_count, node_status.rx_error_count);
+    TEST_ASSERT_LESS_THAN(96, node_status.tx_error_count);
     TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 500));
 
     TEST_ESP_OK(twai_node_disable(node_hdl));
@@ -606,25 +612,25 @@ TEST_CASE("twai tx_wait_all_done thread safe", "[twai]")
 // Test data for ISR send functionality
 typedef struct {
     twai_node_handle_t node;
-    uint32_t rx_count;
-    uint32_t tx_isr_send_count;
-    uint32_t rx_isr_send_count;
+    uint8_t rx_count;
+    uint8_t tx_isr_send_count;
+    uint8_t rx_isr_send_count;
+    twai_frame_t tx_isr_frame;
+    twai_frame_t rx_isr_frame;
     bool test_completed;
 } isr_send_test_ctx_t;
 
 static IRAM_ATTR bool test_tx_isr_send_cb(twai_node_handle_t handle, const twai_tx_done_event_data_t *edata, void *user_ctx)
 {
     isr_send_test_ctx_t *ctx = (isr_send_test_ctx_t *)user_ctx;
+    twai_frame_t *isr_frame = &ctx->tx_isr_frame;
 
     // Test sending from TX ISR context
     if (ctx->tx_isr_send_count < 3) {
-        static twai_frame_t isr_frame = {};
-        isr_frame.header.id = 0x200 + ctx->tx_isr_send_count;
-        isr_frame.header.dlc = 1;
-        isr_frame.buffer = (uint8_t*)(&ctx->tx_isr_send_count);
-        isr_frame.buffer_len = 1;
+        isr_frame->header.id = 0x200 + ctx->tx_isr_send_count;
+        isr_frame->header.dlc = 1;
 
-        esp_err_t err = twai_node_transmit(handle, &isr_frame, 0);  // timeout must be 0 in ISR
+        esp_err_t err = twai_node_transmit(handle, isr_frame, 0);  // timeout must be 0 in ISR
         if (err == ESP_OK) {
             ctx->tx_isr_send_count++;
         }
@@ -636,23 +642,17 @@ static IRAM_ATTR bool test_tx_isr_send_cb(twai_node_handle_t handle, const twai_
 static IRAM_ATTR bool test_rx_isr_send_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx)
 {
     isr_send_test_ctx_t *ctx = (isr_send_test_ctx_t *)user_ctx;
-    twai_frame_t rx_frame = {};
-    uint8_t buffer[8];
-    rx_frame.buffer = buffer;
-    rx_frame.buffer_len = sizeof(buffer);
+    twai_frame_t *rx_frame = &ctx->rx_isr_frame;
 
-    if (ESP_OK == twai_node_receive_from_isr(handle, &rx_frame)) {
+    if (ESP_OK == twai_node_receive_from_isr(handle, rx_frame)) {
         ctx->rx_count++;
 
         // Test sending from RX ISR context (response pattern)
-        if ((rx_frame.header.id >= 0x100) && (rx_frame.header.id < 0x103) && (ctx->rx_isr_send_count < 3)) {
-            static twai_frame_t response_frame = {};
-            response_frame.header.id = 0x300 + ctx->rx_isr_send_count;
-            response_frame.header.dlc = 1;
-            response_frame.buffer = (uint8_t*)(&ctx->rx_isr_send_count);
-            response_frame.buffer_len = 1;
+        if ((rx_frame->header.id >= 0x100) && (rx_frame->header.id < 0x103) && (ctx->rx_isr_send_count < 3)) {
+            rx_frame->header.id = 0x300 + ctx->rx_isr_send_count;
+            rx_frame->header.dlc = 1;
 
-            esp_err_t err = twai_node_transmit(handle, &response_frame, 0);  // timeout must be 0 in ISR
+            esp_err_t err = twai_node_transmit(handle, rx_frame, 0);  // timeout must be 0 in ISR
             if (err == ESP_OK) {
                 ctx->rx_isr_send_count++;
             }
@@ -669,6 +669,8 @@ static IRAM_ATTR bool test_rx_isr_send_cb(twai_node_handle_t handle, const twai_
 TEST_CASE("twai send from ISR context (loopback)", "[twai]")
 {
     isr_send_test_ctx_t test_ctx = {};
+    test_ctx.tx_isr_frame.buffer = &test_ctx.tx_isr_send_count;
+    test_ctx.rx_isr_frame.buffer = &test_ctx.rx_isr_send_count;
 
     twai_onchip_node_config_t node_config = {};
     node_config.io_cfg.tx = TEST_TX_GPIO;
@@ -711,9 +713,9 @@ TEST_CASE("twai send from ISR context (loopback)", "[twai]")
     }
 
     printf("Test results:\n");
-    printf("  RX count: %" PRIu32 "\n", test_ctx.rx_count);
-    printf("  TX ISR sends: %" PRIu32 "\n", test_ctx.tx_isr_send_count);
-    printf("  RX ISR sends: %" PRIu32 "\n", test_ctx.rx_isr_send_count);
+    printf("  RX count: %d\n", test_ctx.rx_count);
+    printf("  TX ISR sends: %d\n", test_ctx.tx_isr_send_count);
+    printf("  RX ISR sends: %d\n", test_ctx.rx_isr_send_count);
     printf("  Test completed: %s\n", test_ctx.test_completed ? "YES" : "NO");
 
     // Verify test results

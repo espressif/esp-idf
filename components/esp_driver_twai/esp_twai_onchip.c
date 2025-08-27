@@ -77,8 +77,6 @@ typedef struct {
     esp_pm_lock_handle_t pm_lock;
 
     _Atomic twai_error_state_t state;
-    uint16_t tx_error_count;
-    uint16_t rx_error_count;
     twai_node_record_t history;
 
     atomic_bool hw_busy;
@@ -125,8 +123,8 @@ static esp_err_t _node_config_io(twai_onchip_ctx_t *node, const twai_onchip_node
 {
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.tx) || (node_config->flags.enable_listen_only && (node_config->io_cfg.tx == -1)), ESP_ERR_INVALID_ARG, TAG, "Invalid tx gpio num");
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(node_config->io_cfg.rx), ESP_ERR_INVALID_ARG, TAG, "Invalid rx gpio num");
-    ESP_RETURN_ON_FALSE(!(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.quanta_clk_out) && (twai_controller_periph_signals.controllers[node->ctrlr_id].clk_out_sig < 0)), ESP_ERR_NOT_SUPPORTED, TAG, "quanta_clk_out is not supported");
-    ESP_RETURN_ON_FALSE(!(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.bus_off_indicator) && (twai_controller_periph_signals.controllers[node->ctrlr_id].bus_off_sig < 0)), ESP_ERR_NOT_SUPPORTED, TAG, "bus_off_indicator is not supported");
+    ESP_RETURN_ON_FALSE(!(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.quanta_clk_out) && (twai_controller_periph_signals.controllers[node->ctrlr_id].clk_out_sig < 0)), ESP_ERR_NOT_SUPPORTED, TAG, "quanta_clk_out gpio is not supported");
+    ESP_RETURN_ON_FALSE(!(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.bus_off_indicator) && (twai_controller_periph_signals.controllers[node->ctrlr_id].bus_off_sig < 0)), ESP_ERR_NOT_SUPPORTED, TAG, "bus_off_indicator gpio is not supported");
     uint64_t reserve_mask = 0;
 
     // Set RX pin
@@ -569,8 +567,8 @@ static esp_err_t _node_get_status(twai_node_handle_t node, twai_node_status_t *s
 
     if (status_ret) {
         status_ret->state = atomic_load(&twai_ctx->state);
-        status_ret->tx_error_count = twai_ctx->tx_error_count;
-        status_ret->rx_error_count = twai_ctx->rx_error_count;
+        status_ret->tx_error_count = twai_hal_get_tec(twai_ctx->hal);
+        status_ret->rx_error_count = twai_hal_get_rec(twai_ctx->hal);
     }
     if (record_ret) {
         *record_ret = twai_ctx->history;
