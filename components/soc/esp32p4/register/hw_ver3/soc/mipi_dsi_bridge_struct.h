@@ -34,7 +34,11 @@ typedef union {
          *  this bit configures module enable of dsi_bridge. 0: disable, 1: enable
          */
         uint32_t dsi_en:1;
-        uint32_t reserved_1:31;
+        /** dsi_brig_rst : R/W; bitpos: [1]; default: 0;
+         *  Configures software reset of dsi_bridge. 0: release reset, 1: reset
+         */
+        uint32_t dsi_brig_rst:1;
+        uint32_t reserved_2:30;
     };
     uint32_t val;
 } dsi_brg_en_reg_t;
@@ -109,7 +113,8 @@ typedef union {
 typedef union {
     struct {
         /** raw_type : R/W; bitpos: [3:0]; default: 0;
-         *  this field configures the pixel type. 0: rgb888, 1:rgb666, 2:rgb565
+         *  this field configures the raw pixel type. 0: rgb888, 1:rgb666, 2:rgb565, 8:yuv444,
+         *  9:yuv422, 10:yuv420, 12:gray
          */
         uint32_t raw_type:4;
         /** dpi_config : R/W; bitpos: [5:4]; default: 0;
@@ -117,10 +122,14 @@ typedef union {
          */
         uint32_t dpi_config:2;
         /** data_in_type : R/W; bitpos: [6]; default: 0;
-         *  input data type, 0: rgb, 1: yuv
+         *  input data type, 0: not yuv, 1: yuv
          */
         uint32_t data_in_type:1;
-        uint32_t reserved_7:25;
+        /** dpi_type : R/W; bitpos: [10:7]; default: 0;
+         *  this field configures the dpi pixel type. 0: rgb888, 1:rgb666, 2:rgb565
+         */
+        uint32_t dpi_type:4;
+        uint32_t reserved_11:21;
     };
     uint32_t val;
 } dsi_brg_pixel_type_reg_t;
@@ -198,7 +207,11 @@ typedef union {
          *  this field controls the pixel data sent to dsi_host when dsi_bridge fifo underflow
          */
         uint32_t dpi_rsv_data:30;
-        uint32_t reserved_30:2;
+        /** dpi_dbg_en : R/W; bitpos: [30]; default: 0;
+         *  Configures data debug feature enable. 0: disable, 1: enable
+         */
+        uint32_t dpi_dbg_en:1;
+        uint32_t reserved_31:1;
     };
     uint32_t val;
 } dsi_brg_dpi_rsv_dpi_data_reg_t;
@@ -507,7 +520,11 @@ typedef union {
          *  this field configures yuv422 store format, 0: yuyv, 1: yvyu, 2: uyvy, 3: vyuy
          */
         uint32_t yuv422_format:2;
-        uint32_t reserved_4:28;
+        /** yuv_range : R/W; bitpos: [4]; default: 0;
+         *  Configures yuv pixel range, 0: limit range, 1: full range
+         */
+        uint32_t yuv_range:1;
+        uint32_t reserved_5:27;
     };
     uint32_t val;
 } dsi_brg_yuv_cfg_reg_t;
@@ -716,7 +733,12 @@ typedef union {
          *  by dpi_underrun  interrupt signal
          */
         uint32_t underrun_int_ena:1;
-        uint32_t reserved_1:31;
+        /** vsync_int_ena : R/W; bitpos: [1]; default: 0;
+         *  write 1 to enables dpi_vsync_int_st field of MIPI_DSI_BRG_INT_ST_REG controlled by
+         *  dpi_vsync  interrupt signal
+         */
+        uint32_t vsync_int_ena:1;
+        uint32_t reserved_2:30;
     };
     uint32_t val;
 } dsi_brg_int_ena_reg_t;
@@ -730,7 +752,11 @@ typedef union {
          *  write 1 to this bit to clear dpi_underrun_int_raw field of MIPI_DSI_BRG_INT_RAW_REG
          */
         uint32_t underrun_int_clr:1;
-        uint32_t reserved_1:31;
+        /** vsync_int_clr : WT; bitpos: [1]; default: 0;
+         *  write 1 to this bit to clear dpi_vsync_int_raw field of MIPI_DSI_BRG_INT_RAW_REG
+         */
+        uint32_t vsync_int_clr:1;
+        uint32_t reserved_2:30;
     };
     uint32_t val;
 } dsi_brg_int_clr_reg_t;
@@ -744,7 +770,11 @@ typedef union {
          *  the raw interrupt status of dpi_underrun
          */
         uint32_t underrun_int_raw:1;
-        uint32_t reserved_1:31;
+        /** vsync_int_raw : R/WTC/SS; bitpos: [1]; default: 0;
+         *  the raw interrupt status of dpi_vsync
+         */
+        uint32_t vsync_int_raw:1;
+        uint32_t reserved_2:30;
     };
     uint32_t val;
 } dsi_brg_int_raw_reg_t;
@@ -758,11 +788,28 @@ typedef union {
          *  the masked interrupt status of dpi_underrun
          */
         uint32_t underrun_int_st:1;
-        uint32_t reserved_1:31;
+        /** vsync_int_st : RO; bitpos: [1]; default: 0;
+         *  the masked interrupt status of dpi_vsync
+         */
+        uint32_t vsync_int_st:1;
+        uint32_t reserved_2:30;
     };
     uint32_t val;
 } dsi_brg_int_st_reg_t;
 
+/** Group: Version Register */
+/** Type of ver_date register
+ *  version control register
+ */
+typedef union {
+    struct {
+        /** ver_data : R/W; bitpos: [31:0]; default: 539296009;
+         *  Represents csv version
+         */
+        uint32_t ver_data:32;
+    };
+    uint32_t val;
+} dsi_brg_ver_date_reg_t;
 
 typedef struct dsi_brg_dev_t {
     volatile dsi_brg_clk_en_reg_t clk_en;
@@ -804,14 +851,15 @@ typedef struct dsi_brg_dev_t {
     volatile dsi_brg_phy_lp_loopback_ctrl_reg_t phy_lp_loopback_ctrl;
     volatile dsi_brg_phy_hs_loopback_ctrl_reg_t phy_hs_loopback_ctrl;
     volatile dsi_brg_phy_loopback_cnt_reg_t phy_loopback_cnt;
+    uint32_t reserved_0a0[24];
+    volatile dsi_brg_ver_date_reg_t ver_date;
 } dsi_brg_dev_t;
 
+extern dsi_brg_dev_t MIPI_DSI_BRIDGE;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(dsi_brg_dev_t) == 0xa0, "Invalid size of dsi_brg_dev_t structure");
+_Static_assert(sizeof(dsi_brg_dev_t) == 0x104, "Invalid size of dsi_brg_dev_t structure");
 #endif
-
-extern dsi_brg_dev_t MIPI_DSI_BRIDGE;
 
 #ifdef __cplusplus
 }

@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-// TODO: IDF-13422
+#define REG_TIMG_BASE(i)     (DR_REG_TIMG0_BASE + (i) * 0x1000)
 
 /** TIMG_T0CONFIG_REG register
  *  Timer 0 configuration register

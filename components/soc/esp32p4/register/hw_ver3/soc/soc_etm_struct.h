@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-// TODO: IDF-13428
-
 /** Group: Status register */
 /** Type of ch_ena_ad0 register
  *  Channel enable status register
