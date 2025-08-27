@@ -161,6 +161,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event_base.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event.h \
+    $(PROJECT_PATH)/components/esp_hal_i2c/include/hal/i2c_types.h \
     $(PROJECT_PATH)/components/esp_http_client/include/esp_http_client.h \
     $(PROJECT_PATH)/components/esp_http_server/include/esp_http_server.h \
     $(PROJECT_PATH)/components/esp_https_ota/include/esp_https_ota.h \
@@ -251,7 +252,6 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/dac_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/esp_flash_err.h \
     $(PROJECT_PATH)/components/hal/include/hal/gpio_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/i2c_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/i2s_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/lcd_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/ledc_types.h \

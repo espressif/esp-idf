@@ -4,10 +4,6 @@ components/hal/test_apps/crypto:
     - mbedtls
     - esp_security
 
-components/hal/test_apps/hal_i2c:
-  disable:
-    - if: SOC_I2C_SUPPORTED != 1
-
 components/hal/test_apps/hal_utils:
   enable:
     - if: IDF_TARGET == "linux"

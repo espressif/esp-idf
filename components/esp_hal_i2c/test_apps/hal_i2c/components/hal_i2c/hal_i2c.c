@@ -28,7 +28,7 @@
 
 static inline uint32_t time_get_us_by_ccount(uint32_t counter)
 {
-    return counter/CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ;
+    return counter / CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ;
 }
 
 #define ACK_VALUE            (0)

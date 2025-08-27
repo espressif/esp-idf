@@ -102,10 +102,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "ledc_hal.c" "ledc_hal_iram.c")
     endif()
 
-    if(CONFIG_SOC_I2C_SUPPORTED)
-        list(APPEND srcs "i2c_hal.c" "i2c_hal_iram.c")
-    endif()
-
     if(CONFIG_SOC_I3C_MASTER_SUPPORTED)
         list(APPEND srcs "i3c_master_hal.c")
     endif()

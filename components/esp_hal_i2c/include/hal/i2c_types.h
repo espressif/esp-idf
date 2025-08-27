@@ -55,7 +55,7 @@ typedef struct {
     uint16_t tout;              /*!< I2C bus timeout period */
 } i2c_hal_clk_config_t;
 
-typedef enum{
+typedef enum {
 #if SOC_I2C_SUPPORT_SLAVE
     I2C_MODE_SLAVE = 0,   /*!< I2C slave mode */
 #endif
@@ -130,7 +130,6 @@ typedef soc_periph_lp_i2c_clk_src_t lp_i2c_clock_source_t;
  */
 typedef int                      i2c_clock_source_t;
 #endif
-
 
 #ifdef __cplusplus
 }

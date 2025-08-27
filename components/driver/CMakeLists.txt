@@ -19,6 +19,7 @@ set(ldfragments "")
 # I2C related source files
 if(CONFIG_SOC_I2C_SUPPORTED)
     list(APPEND srcs "i2c/i2c.c")
+    list(APPEND ldfragments "i2c/linker.lf")
 endif()
 
 # RMT legacy driver
