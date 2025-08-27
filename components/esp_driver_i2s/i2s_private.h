@@ -164,6 +164,7 @@ struct i2s_channel_obj_t {
         bool                is_etm_stop: 1;    /*!< Whether stop by etm tasks */
         bool                is_raw_pdm: 1;     /*!< Flag of whether send/receive PDM in raw data, i.e., no PCM2PDM/PDM2PCM filter enabled */
         bool                is_external: 1;    /*!< Whether use external clock */
+        bool                full_duplex_slave: 1; /*!< whether the channel is forced to switch to slave role for full duplex */
 #if SOC_I2S_SUPPORTS_APLL
         bool                apll_en: 1;        /*!< Flag of whether APLL enabled */
 #endif
