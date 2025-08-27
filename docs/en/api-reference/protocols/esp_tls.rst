@@ -248,14 +248,14 @@ The mechanism for session resumption differs slightly between TLS versions:
 
 To enable and use client session tickets:
 
-1.  Enable the Kconfig option :ref:`CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS`.
-2.  After a successful TLS connection (and handshake completion), retrieve the session ticket using :cpp:func:`esp_tls_get_client_session`.
+1. Enable the Kconfig option :ref:`CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS`.
+2. After a successful TLS connection (and handshake completion), retrieve the session ticket using :cpp:func:`esp_tls_get_client_session`.
 
-    *   **For TLS 1.3**: Since session tickets can arrive from the server at any point after the handshake, an application might need to call :cpp:func:`esp_tls_get_client_session` periodically or after specific application-level exchanges if it wants to ensure it has the most recent ticket. Each new ticket received and processed by the TLS stack supersedes the previous one for future resumption attempts.
+    * **For TLS 1.3**: Since session tickets can arrive from the server at any point after the handshake, an application might need to call :cpp:func:`esp_tls_get_client_session` periodically or after specific application-level exchanges if it wants to ensure it has the most recent ticket. Each new ticket received and processed by the TLS stack supersedes the previous one for future resumption attempts.
 
-3.  Store this session ticket securely.
-4.  For subsequent connections to the same server, provide the stored session ticket in the :cpp:member:`esp_tls_cfg_t::client_session` field.
-5.  Remember to free the client session context using :cpp:func:`esp_tls_free_client_session` when it's no longer needed or before obtaining a new one.
+3. Store this session ticket securely.
+4. For subsequent connections to the same server, provide the stored session ticket in the :cpp:member:`esp_tls_cfg_t::client_session` field.
+5. Remember to free the client session context using :cpp:func:`esp_tls_free_client_session` when it's no longer needed or before obtaining a new one.
 
 .. code-block:: c
 
@@ -305,6 +305,7 @@ To enable and use client session tickets:
     }
 
 .. note::
+
     - The session ticket obtained from a server is typically valid for a limited time. The server dictates this lifetime.
     - When attempting a connection using a stored session ticket, if the ticket is found to be invalid by the server (e.g., it has expired or is otherwise rejected), ESP-TLS will automatically attempt to perform a full TLS handshake to establish the connection. The application does not need to implement separate logic to retry the connection without the ticket in this scenario. A connection failure will only be reported if both the session resumption and the subsequent internal attempt at a full handshake are unsuccessful.
     - The :cpp:type:`esp_tls_client_session_t` context should be freed using :cpp:func:`esp_tls_free_client_session` when it is no longer needed, or before a new session is obtained and stored in the same pointer.
