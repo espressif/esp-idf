@@ -6,7 +6,7 @@
 /* ROM function interface esp32h4.rom.spiflash.ld for esp32h4
  *
  *
- * Generated from ../../rom/target/esp32h4/interface-esp32h4.yml md5sum c9db9928804fe99070d282b058ff3c65
+ * Generated from ./target/esp32h4/interface-esp32h4.yml md5sum 14f04fa4b1cf69c4e6eec57d641026c4
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
@@ -34,15 +34,15 @@ esp_flash_chip_driver_initialized = 0x4000020c;
 esp_flash_read_id = 0x40000210;
 esp_flash_get_size = 0x40000214;
 esp_flash_erase_chip = 0x40000218;
-esp_flash_erase_region = 0x4000021c;
+rom_esp_flash_erase_region = 0x4000021c;
 esp_flash_get_chip_write_protect = 0x40000220;
 esp_flash_set_chip_write_protect = 0x40000224;
 esp_flash_get_protectable_regions = 0x40000228;
 esp_flash_get_protected_region = 0x4000022c;
 esp_flash_set_protected_region = 0x40000230;
 esp_flash_read = 0x40000234;
-esp_flash_write = 0x40000238;
-esp_flash_write_encrypted = 0x4000023c;
+rom_esp_flash_write = 0x40000238;
+rom_esp_flash_write_encrypted = 0x4000023c;
 esp_flash_read_encrypted = 0x40000240;
 esp_flash_get_io_mode = 0x40000244;
 esp_flash_set_io_mode = 0x40000248;
@@ -98,32 +98,51 @@ spi_flash_encryption = 0x4085ffd8;
 
 
 /***************************************
+ Group memspi_host
+ ***************************************/
+
+/* Functions */
+memspi_host_read_id_hs = 0x400002dc;
+memspi_host_read_status_hs = 0x400002e0;
+memspi_host_flush_cache = 0x400002e4;
+memspi_host_erase_chip = 0x400002e8;
+memspi_host_erase_sector = 0x400002ec;
+memspi_host_erase_block = 0x400002f0;
+memspi_host_program_page = 0x400002f4;
+memspi_host_read = 0x400002f8;
+memspi_host_set_write_protect = 0x400002fc;
+memspi_host_set_max_read_len = 0x40000300;
+memspi_host_read_data_slicer = 0x40000304;
+memspi_host_write_data_slicer = 0x40000308;
+
+
+/***************************************
  Group hal_spiflash
  ***************************************/
 
 /* Functions */
-spi_flash_hal_poll_cmd_done = 0x400002dc;
-spi_flash_hal_device_config = 0x400002e0;
-spi_flash_hal_configure_host_io_mode = 0x400002e4;
-spi_flash_hal_common_command = 0x400002e8;
-spi_flash_hal_read = 0x400002ec;
-spi_flash_hal_erase_chip = 0x400002f0;
-spi_flash_hal_erase_sector = 0x400002f4;
-spi_flash_hal_erase_block = 0x400002f8;
-spi_flash_hal_program_page = 0x400002fc;
-spi_flash_hal_set_write_protect = 0x40000300;
-spi_flash_hal_host_idle = 0x40000304;
-spi_flash_hal_check_status = 0x40000308;
-spi_flash_hal_setup_read_suspend = 0x4000030c;
-spi_flash_hal_setup_auto_suspend_mode = 0x40000310;
-spi_flash_hal_setup_auto_resume_mode = 0x40000314;
-spi_flash_hal_disable_auto_suspend_mode = 0x40000318;
-spi_flash_hal_disable_auto_resume_mode = 0x4000031c;
-spi_flash_hal_resume = 0x40000320;
-spi_flash_hal_suspend = 0x40000324;
-spi_flash_encryption_hal_enable = 0x40000328;
-spi_flash_encryption_hal_disable = 0x4000032c;
-spi_flash_encryption_hal_prepare = 0x40000330;
-spi_flash_encryption_hal_done = 0x40000334;
-spi_flash_encryption_hal_destroy = 0x40000338;
-spi_flash_encryption_hal_check = 0x4000033c;
+spi_flash_hal_poll_cmd_done = 0x4000030c;
+spi_flash_hal_device_config = 0x40000310;
+spi_flash_hal_configure_host_io_mode = 0x40000314;
+spi_flash_hal_common_command = 0x40000318;
+spi_flash_hal_read = 0x4000031c;
+spi_flash_hal_erase_chip = 0x40000320;
+spi_flash_hal_erase_sector = 0x40000324;
+spi_flash_hal_erase_block = 0x40000328;
+spi_flash_hal_program_page = 0x4000032c;
+spi_flash_hal_set_write_protect = 0x40000330;
+spi_flash_hal_host_idle = 0x40000334;
+spi_flash_hal_check_status = 0x40000338;
+spi_flash_hal_setup_read_suspend = 0x4000033c;
+spi_flash_hal_setup_auto_suspend_mode = 0x40000340;
+spi_flash_hal_setup_auto_resume_mode = 0x40000344;
+spi_flash_hal_disable_auto_suspend_mode = 0x40000348;
+spi_flash_hal_disable_auto_resume_mode = 0x4000034c;
+spi_flash_hal_resume = 0x40000350;
+spi_flash_hal_suspend = 0x40000354;
+spi_flash_encryption_hal_enable = 0x40000358;
+spi_flash_encryption_hal_disable = 0x4000035c;
+spi_flash_encryption_hal_prepare = 0x40000360;
+spi_flash_encryption_hal_done = 0x40000364;
+spi_flash_encryption_hal_destroy = 0x40000368;
+spi_flash_encryption_hal_check = 0x4000036c;
