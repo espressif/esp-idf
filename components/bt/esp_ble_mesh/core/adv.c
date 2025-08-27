@@ -264,10 +264,16 @@ static inline TickType_t K_WAIT(int32_t val)
 static void adv_thread(void *p)
 {
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
+    QueueHandle_t relay_adv_handle = NULL;
     QueueSetMemberHandle_t handle = NULL;
 #endif
-    bt_mesh_msg_t msg = {0};
     struct net_buf **buf = NULL;
+    bt_mesh_msg_t msg = {0};
+
+#if CONFIG_BLE_MESH_RELAY_ADV_BUF
+    relay_adv_handle = relay_adv_handle_get();
+    assert(relay_adv_handle);
+#endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
 
     buf = (struct net_buf **)(&msg.arg);
 

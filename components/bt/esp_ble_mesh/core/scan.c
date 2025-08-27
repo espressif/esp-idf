@@ -99,21 +99,21 @@ int bt_mesh_unprov_dev_info_query(uint8_t uuid[16], uint8_t addr[6],
             if (!memcmp(unprov_dev_info_fifo.info[idx].addr, addr, 6)) {
                 if (query_type & BLE_MESH_STORE_UNPROV_INFO_QUERY_TYPE_EXISTS) {
                     return 0;
-                } else {
-                    memcpy(uuid, unprov_dev_info_fifo.info[idx].uuid, 16);
-                    *adv_type = unprov_dev_info_fifo.info[idx].adv_type;
-                    break;
                 }
+
+                memcpy(uuid, unprov_dev_info_fifo.info[idx].uuid, 16);
+                *adv_type = unprov_dev_info_fifo.info[idx].adv_type;
+                break;
             }
         } else {
             if (!memcmp(unprov_dev_info_fifo.info[idx].uuid, uuid, 16)) {
                 if (query_type & BLE_MESH_STORE_UNPROV_INFO_QUERY_TYPE_EXISTS) {
                     return 0;
-                } else {
-                    memcpy(addr, unprov_dev_info_fifo.info[idx].addr, 6);
-                    *adv_type = unprov_dev_info_fifo.info[idx].adv_type;
-                    break;
                 }
+
+                memcpy(addr, unprov_dev_info_fifo.info[idx].addr, 6);
+                *adv_type = unprov_dev_info_fifo.info[idx].adv_type;
+                break;
             }
         }
         cnt++;
