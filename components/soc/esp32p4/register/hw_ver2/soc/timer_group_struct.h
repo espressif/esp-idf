@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-// TODO: IDF-13422
-
 /** Group: T0 Control and configuration registers */
 /** Type of txconfig register
  *  Timer x configuration register
