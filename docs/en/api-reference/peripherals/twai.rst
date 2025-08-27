@@ -90,12 +90,6 @@ Below are additional configuration fields of the :cpp:type:`twai_onchip_node_con
     - :cpp:member:`twai_onchip_node_config_t::flags::enable_listen_only`: Configures the node in listen-only mode. In this mode, the node only receives and does not transmit any dominant bits, including ACK and error frames.
     - :cpp:member:`twai_onchip_node_config_t::flags::no_receive_rtr`: When using filters, determines whether remote frames matching the ID pattern should be filtered out.
 
-.. only:: esp32c5
-
-    .. note::
-
-        Note: The listen-only mode on ESP32C5 can't work properly when there are multiple nodes on the bus that are sending ACKs to each other. An alternative is to use transceiver which supports listen-only mode itself (e.g. TJA1145), and combine it with self-test mode enabled.
-
 The :cpp:func:`twai_node_enable` function starts the TWAI controller. Once enabled, the controller is connected to the bus and can transmit messages. It also generates events upon receiving messages from other nodes on the bus or when bus errors are detected.
 
 The corresponding function, :cpp:func:`twai_node_disable`, immediately stops the node and disconnects it from the bus. Any ongoing transmissions will be aborted. When the node is re-enabled later, if there are pending transmissions in the queue, the driver will immediately initiate a new transmission attempt.

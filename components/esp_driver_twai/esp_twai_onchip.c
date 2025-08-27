@@ -707,13 +707,6 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
         .enable_self_test = node_config->flags.enable_self_test,
         .enable_loopback = node_config->flags.enable_loopback,
     };
-#if CONFIG_IDF_TARGET_ESP32C5
-    // ESP32C5 has a bug that the listen only mode don't work when there are other nodes sending ACK each other
-    // See IDF-13059 for more details
-    if (node_config->flags.enable_listen_only) {
-        ESP_LOGW(TAG, "Listen only mode for ESP32C5 may not work properly when there are more than 2 nodes on the bus that are sending ACKs to each other");
-    }
-#endif
     ESP_GOTO_ON_FALSE(twai_hal_init(node->hal, &hal_config), ESP_ERR_INVALID_STATE, err, TAG, "hardware not in reset state");
     // Configure bus timing
     ESP_GOTO_ON_ERROR(_node_calc_set_bit_timing(&node->api_base, node_config->clk_src, &node_config->bit_timing, &node_config->data_timing), err, TAG, "bitrate error");

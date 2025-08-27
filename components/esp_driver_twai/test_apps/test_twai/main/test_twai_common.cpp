@@ -609,7 +609,7 @@ static IRAM_ATTR bool test_tx_isr_send_cb(twai_node_handle_t handle, const twai_
 
     // Test sending from TX ISR context
     if (ctx->tx_isr_send_count < 3) {
-        twai_frame_t isr_frame = {};
+        static twai_frame_t isr_frame = {};
         isr_frame.header.id = 0x200 + ctx->tx_isr_send_count;
         isr_frame.header.dlc = 1;
         isr_frame.buffer = (uint8_t*)(&ctx->tx_isr_send_count);
@@ -637,7 +637,7 @@ static IRAM_ATTR bool test_rx_isr_send_cb(twai_node_handle_t handle, const twai_
 
         // Test sending from RX ISR context (response pattern)
         if ((rx_frame.header.id >= 0x100) && (rx_frame.header.id < 0x103) && (ctx->rx_isr_send_count < 3)) {
-            twai_frame_t response_frame = {};
+            static twai_frame_t response_frame = {};
             response_frame.header.id = 0x300 + ctx->rx_isr_send_count;
             response_frame.header.dlc = 1;
             response_frame.buffer = (uint8_t*)(&ctx->rx_isr_send_count);
@@ -682,13 +682,11 @@ TEST_CASE("twai send from ISR context (loopback)", "[twai]")
     printf("Testing ISR context sending...\n");
 
     // Send initial frames to trigger RX ISR responses
-    for (int i = 0; i < 3; i++) {
+    for (uint8_t i = 0; i < 3; i++) {
         twai_frame_t trigger_frame = {};
         trigger_frame.header.id = 0x100 + i;
         trigger_frame.header.dlc = 1;
-        trigger_frame.buffer = (uint8_t[]) {
-            (uint8_t)i
-        };
+        trigger_frame.buffer = &i;
         trigger_frame.buffer_len = 1;
 
         TEST_ESP_OK(twai_node_transmit(test_ctx.node, &trigger_frame, 500));
@@ -717,8 +715,6 @@ TEST_CASE("twai send from ISR context (loopback)", "[twai]")
 
     TEST_ESP_OK(twai_node_disable(test_ctx.node));
     TEST_ESP_OK(twai_node_delete(test_ctx.node));
-
-    printf("ISR send test passed!\n");
 }
 
 static IRAM_ATTR bool test_dlc_range_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx)

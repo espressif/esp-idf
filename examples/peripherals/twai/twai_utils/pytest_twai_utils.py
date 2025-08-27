@@ -644,7 +644,7 @@ def test_twai_range_filters(twai: TwaiTestHelper) -> None:
 
 
 @pytest.mark.twai_std
-@pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32h4'], reason='no runner')
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
 def test_twai_external_communication(twai: TwaiTestHelper, can_manager: CanBusManager) -> None:
     """
