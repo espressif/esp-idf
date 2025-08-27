@@ -217,8 +217,8 @@ static esp_err_t sd_host_slot_sdmmc_configure(sd_host_slot_handle_t slot, const 
     if (config->freq_hz == SDMMC_FREQ_SDR104 * 1000) {
         unsigned chip_version = efuse_hal_chip_revision();
         ESP_LOGD(TAG, "chip_version: %d", chip_version);
-        if (!ESP_CHIP_REV_ABOVE(chip_version, 200)) {
-            ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "UHS-I SDR104 is not supported on ESP32P4 chips prior than v2.0");
+        if (!ESP_CHIP_REV_ABOVE(chip_version, 300)) {
+            ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "UHS-I SDR104 is not supported on ESP32P4 chips prior than v3.0");
         }
     }
 #endif

@@ -14,6 +14,7 @@
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
 #include "driver/sdmmc_host.h"
+#include "driver/gpio.h"
 #include "sd_test_io.h"
 #if SOC_SDMMC_IO_POWER_EXTERNAL
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
@@ -98,6 +99,38 @@ static esp_err_t s_example_read_file(const char *path)
     return ESP_OK;
 }
 
+#if CONFIG_EXAMPLE_PIN_CARD_POWER_RESET
+static esp_err_t s_example_reset_card_power(void)
+{
+    esp_err_t ret = ESP_FAIL;
+    gpio_config_t io_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = (1ULL<<CONFIG_EXAMPLE_PIN_CARD_POWER_RESET),
+    };
+    ret = gpio_config(&io_conf);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to config GPIO");
+        return ret;
+    }
+
+    ret = gpio_set_level(CONFIG_EXAMPLE_PIN_CARD_POWER_RESET, 1);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set GPIO level");
+        return ret;
+    }
+
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+
+    ret = gpio_set_level(CONFIG_EXAMPLE_PIN_CARD_POWER_RESET, 0);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set GPIO level");
+        return ret;
+    }
+
+    return ESP_OK;
+}
+#endif // CONFIG_EXAMPLE_PIN_CARD_POWER_RESET
+
 void app_main(void)
 {
     esp_err_t ret;
@@ -159,6 +192,10 @@ void app_main(void)
         return;
     }
     host.pwr_ctrl_handle = pwr_ctrl_handle;
+#endif
+
+#if CONFIG_EXAMPLE_PIN_CARD_POWER_RESET
+    ESP_ERROR_CHECK(s_example_reset_card_power());
 #endif
 
     // This initializes the slot without card detect (CD) and write protect (WP) signals.
