@@ -37,24 +37,7 @@ static QueueSetHandle_t mesh_queue_set;
 
 #endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
 
-static inline void adv_send_start(uint16_t duration, int err,
-                                  const struct bt_mesh_send_cb *cb,
-                                  void *cb_data)
-{
-    if (cb && cb->start) {
-        cb->start(duration, err, cb_data);
-    }
-}
-
-static inline void adv_send_end(int err, const struct bt_mesh_send_cb *cb,
-                                void *cb_data)
-{
-    if (cb && cb->end) {
-        cb->end(err, cb_data);
-    }
-}
-
-static inline int adv_send(struct net_buf *buf)
+static int adv_send(struct net_buf *buf)
 {
     const struct bt_mesh_send_cb *cb = BLE_MESH_ADV(buf)->cb;
     void *cb_data = BLE_MESH_ADV(buf)->cb_data;
@@ -201,17 +184,15 @@ static inline int adv_send(struct net_buf *buf)
     BT_DBG("Advertising started. Sleeping %u ms", duration);
 
 #if CONFIG_BLE_MESH_USE_BLE_50
-    if (!ble_mesh_adv_task_wait(UINT32_MAX, K_FOREVER, NULL)) {
+    if (!bt_mesh_adv_task_wait(UINT32_MAX, K_FOREVER, NULL)) {
         BT_WARN("Advertising didn't finish on time");
         bt_le_ext_adv_stop(CONFIG_BLE_MESH_ADV_INST_ID);
     }
 #else /* CONFIG_BLE_MESH_USE_BLE_50 */
-    ble_mesh_adv_task_wait(K_MSEC(duration));
-#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
+    bt_mesh_adv_task_wait(K_MSEC(duration));
 
-#if !CONFIG_BLE_MESH_USE_BLE_50
     err = bt_le_adv_stop();
-#endif
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 
     adv_send_end(err, cb, cb_data);
     if (err) {
@@ -223,15 +204,34 @@ static inline int adv_send(struct net_buf *buf)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_RELAY_ADV_BUF
+static QueueHandle_t relay_adv_handle_get(void)
+{
+    struct bt_mesh_adv_type_manager *adv_type = NULL;
+
+    adv_type = bt_mesh_adv_types_mgmt_get(BLE_MESH_ADV_RELAY_DATA);
+
+    if (adv_type->adv_q == NULL) {
+        return NULL;
+    }
+
+    return adv_type->adv_q->q.handle;
+}
+#endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
+
 static void adv_thread(void *p)
 {
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
+    QueueHandle_t relay_adv_handle = NULL;
     QueueSetMemberHandle_t handle = NULL;
-    QueueHandle_t relay_adv_handle =
-        bt_mesh_adv_types_mgnt_get(BLE_MESH_ADV_RELAY_DATA)->adv_q->q.handle;
 #endif
-    bt_mesh_msg_t msg = {0};
     struct net_buf **buf = NULL;
+    bt_mesh_msg_t msg = {0};
+
+#if CONFIG_BLE_MESH_RELAY_ADV_BUF
+    relay_adv_handle = relay_adv_handle_get();
+    assert(relay_adv_handle);
+#endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
 
     buf = (struct net_buf **)(&msg.arg);
 
@@ -328,28 +328,6 @@ static void adv_thread(void *p)
     }
 }
 
-void bt_mesh_adv_send(struct net_buf *buf, uint8_t xmit,
-                      const struct bt_mesh_send_cb *cb,
-                      void *cb_data)
-{
-    bt_mesh_msg_t msg = {
-        .relay = false,
-    };
-
-    BT_DBG("type 0x%02x len %u: %s", BLE_MESH_ADV(buf)->type, buf->len,
-           bt_hex(buf->data, buf->len));
-
-    BLE_MESH_ADV(buf)->cb = cb;
-    BLE_MESH_ADV(buf)->cb_data = cb_data;
-    bt_mesh_atomic_set(&BLE_MESH_ADV_BUSY(buf), 1);
-    BLE_MESH_ADV(buf)->xmit = xmit;
-
-    bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
-
-    msg.arg = (void *)net_buf_ref(buf);
-    bt_mesh_task_post(&msg, portMAX_DELAY, false);
-}
-
 void bt_mesh_adv_update(void)
 {
     bt_mesh_msg_t msg = {
@@ -375,11 +353,11 @@ void bt_mesh_adv_init(void)
     bt_mesh_ble_adv_init();
 #endif
 
-#if CONFIG_BLE_MESH_RELAY_ADV_BUF && !CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
-    QueueHandle_t relay_adv_handle =
-        bt_mesh_adv_types_mgnt_get(BLE_MESH_ADV_RELAY_DATA)->adv_q->q.handle;
+#if CONFIG_BLE_MESH_RELAY_ADV_BUF
+    QueueHandle_t relay_adv_handle = relay_adv_handle_get();
+    assert(relay_adv_handle);
     mesh_queue_set = xQueueCreateSet(BLE_MESH_QUEUE_SET_SIZE);
-    __ASSERT(mesh_queue_set, "Failed to create queue set");
+    assert(mesh_queue_set);
     xQueueAddToSet(adv_queue->q.handle, mesh_queue_set);
     xQueueAddToSet(relay_adv_handle, mesh_queue_set);
 #endif
@@ -394,8 +372,8 @@ void bt_mesh_adv_deinit(void)
     bt_mesh_adv_task_deinit();
 
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
-    QueueHandle_t relay_adv_handle =
-        bt_mesh_adv_types_mgnt_get(BLE_MESH_ADV_RELAY_DATA)->adv_q->q.handle;
+    QueueHandle_t relay_adv_handle = relay_adv_handle_get();
+    assert(relay_adv_handle);
 
     xQueueRemoveFromSet(adv_queue->q.handle, mesh_queue_set);
     xQueueRemoveFromSet(relay_adv_handle, mesh_queue_set);

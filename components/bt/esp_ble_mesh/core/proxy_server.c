@@ -1598,8 +1598,13 @@ static int private_node_id_adv(struct bt_mesh_subnet *sub)
     memcpy(proxy_svc_data + 3, tmp + 8, 8);
     proxy_sd_len = gatt_proxy_adv_create(&proxy_sd);
 
+#if CONFIG_BLE_MESH_USE_BLE_50
+    err = bt_le_ext_adv_start(proxy_adv_inst, &fast_adv_param, private_node_id_ad,
+                              ARRAY_SIZE(private_node_id_ad), &proxy_sd, proxy_sd_len);
+#else /* CONFIG_BLE_MESH_USE_BLE_50 */
     err = bt_le_adv_start(&fast_adv_param, private_node_id_ad,
                           ARRAY_SIZE(private_node_id_ad), &proxy_sd, proxy_sd_len);
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
     if (err) {
         BT_WARN("Failed to advertise with Private Node ID (err %d)", err);
         return err;
@@ -1642,8 +1647,13 @@ static int private_net_id_adv(struct bt_mesh_subnet *sub)
 
     proxy_sd_len = gatt_proxy_adv_create(&proxy_sd);
 
+#if CONFIG_BLE_MESH_USE_BLE_50
+    err = bt_le_ext_adv_start(proxy_adv_inst, &fast_adv_param, private_net_id_ad,
+                              ARRAY_SIZE(private_net_id_ad), &proxy_sd, proxy_sd_len);
+#else /* CONFIG_BLE_MESH_USE_BLE_50 */
     err = bt_le_adv_start(&fast_adv_param, private_net_id_ad,
                           ARRAY_SIZE(private_net_id_ad), &proxy_sd, proxy_sd_len);
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
     if (err) {
         BT_WARN("Failed to advertise with Private Net ID (err %d)", err);
         return err;

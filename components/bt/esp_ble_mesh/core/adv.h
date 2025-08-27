@@ -23,10 +23,6 @@
 extern "C" {
 #endif
 
-void bt_mesh_adv_send(struct net_buf *buf, uint8_t xmit,
-                      const struct bt_mesh_send_cb *cb,
-                      void *cb_data);
-
 void bt_mesh_adv_update(void);
 
 void bt_mesh_adv_init(void);

@@ -43,18 +43,18 @@
 
 static struct bt_mesh_scan_param scan_param = {
 #if CONFIG_BLE_MESH_RPR_SRV_ACTIVE_SCAN
-        .type       = BLE_MESH_SCAN_ACTIVE,
+    .type       = BLE_MESH_SCAN_ACTIVE,
 #else
-        .type       = BLE_MESH_SCAN_PASSIVE,
+    .type       = BLE_MESH_SCAN_PASSIVE,
 #endif
 #if CONFIG_BLE_MESH_USE_DUPLICATE_SCAN
-        .filter_dup = BLE_MESH_SCAN_FILTER_DUP_ENABLE,
+    .filter_dup = BLE_MESH_SCAN_FILTER_DUP_ENABLE,
 #else
-        .filter_dup = BLE_MESH_SCAN_FILTER_DUP_DISABLE,
+    .filter_dup = BLE_MESH_SCAN_FILTER_DUP_DISABLE,
 #endif
-        .interval   = SCAN_INTERVAL,
-        .window     = SCAN_WINDOW,
-        .scan_fil_policy = BLE_MESH_SP_ADV_ALL,
+    .interval   = SCAN_INTERVAL,
+    .window     = SCAN_WINDOW,
+    .scan_fil_policy = BLE_MESH_SP_ADV_ALL,
 };
 
 #if (CONFIG_BLE_MESH_PROVISIONER || CONFIG_BLE_MESH_RPR_SRV)
@@ -115,21 +115,21 @@ int bt_mesh_unprov_dev_info_query(uint8_t uuid[16], uint8_t addr[6],
             if (!memcmp(unprov_dev_info_fifo.info[idx].addr, addr, 6)) {
                 if (query_type & BLE_MESH_STORE_UNPROV_INFO_QUERY_TYPE_EXISTS) {
                     return 0;
-                } else {
-                    memcpy(uuid, unprov_dev_info_fifo.info[idx].uuid, 16);
-                    *adv_type = unprov_dev_info_fifo.info[idx].adv_type;
-                    break;
                 }
+
+                memcpy(uuid, unprov_dev_info_fifo.info[idx].uuid, 16);
+                *adv_type = unprov_dev_info_fifo.info[idx].adv_type;
+                break;
             }
         } else {
             if (!memcmp(unprov_dev_info_fifo.info[idx].uuid, uuid, 16)) {
                 if (query_type & BLE_MESH_STORE_UNPROV_INFO_QUERY_TYPE_EXISTS) {
                     return 0;
-                } else {
-                    memcpy(addr, unprov_dev_info_fifo.info[idx].addr, 6);
-                    *adv_type = unprov_dev_info_fifo.info[idx].adv_type;
-                    break;
                 }
+
+                memcpy(addr, unprov_dev_info_fifo.info[idx].addr, 6);
+                *adv_type = unprov_dev_info_fifo.info[idx].adv_type;
+                break;
             }
         }
         cnt++;
@@ -458,12 +458,12 @@ static void bt_mesh_scan_cb(struct bt_mesh_adv_report *adv_rpt)
         */
         if (rpr_ext_scan_handle_adv_pkt(&adv_rpt->addr, adv_data, adv_len)) {
             return;
-        } else {
-#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
-            callback_ble_adv_pkt(&adv_rpt->addr, adv_rpt->adv_type, adv_data, adv_len, adv_rpt->rssi);
-#endif
-            net_buf_simple_restore(buf, &buf_state);
         }
+
+#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
+        callback_ble_adv_pkt(&adv_rpt->addr, adv_rpt->adv_type, adv_data, adv_len, adv_rpt->rssi);
+#endif
+        net_buf_simple_restore(buf, &buf_state);
     }
 #endif /* CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_RPR_SRV_ACTIVE_SCAN */
 
