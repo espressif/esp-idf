@@ -1543,6 +1543,10 @@ config SOC_PM_MODEM_RETENTION_BY_REGDMA
     bool
     default y
 
+config SOC_PM_SUPPORT_PMU_MODEM_STATE
+    bool
+    default y
+
 config SOC_PM_RETENTION_MODULE_NUM
     int
     default 64
