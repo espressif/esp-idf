@@ -592,3 +592,22 @@ function(__generate_project_info)
     configure_file("${IDF_PATH}/tools/cmake/project_description.json.in"
         "${BUILD_DIR}/project_description.json")
 endfunction()
+
+#[[api
+.. cmakev2:macro:: idf_project_default
+
+   .. code-block:: cmake
+
+      idf_project_default()
+
+   Create a default project executable based on the main component and its
+   transitive dependencies. The executable name is derived from the
+   PROJECT_NAME variable, which by default uses the CMAKE_PROJECT_NAME value
+   specified in the CMake's project() call.
+#]]
+macro(idf_project_default)
+    idf_project_init()
+    idf_build_get_property(project_name PROJECT_NAME)
+    idf_build_executable("${project_name}" COMPONENTS main SUFFIX ".elf")
+    unset(project_name)
+endmacro()

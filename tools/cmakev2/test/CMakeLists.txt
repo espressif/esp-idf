@@ -222,6 +222,9 @@ test_project_properties()
 test_include_component()
 test_executable()
 
+# Create default project
+idf_project_default()
+
 # Call this test last because it replaces the ESP system component.
 test_component_priority()
 
