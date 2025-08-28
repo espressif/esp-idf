@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -349,78 +349,73 @@ void esp_gdbstub_trigger_cpu(void)
  *
  * */
 
-void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t value)
+void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t *value_ptr)
 {
-    uint32_t temp_fpu_value = value;
-    float *ptr0;
-
-    asm volatile ("mov %0, %1" : "=a" (ptr0) : "a" (&temp_fpu_value));
+    uint32_t value = *value_ptr;
 
     if (reg_index == 0) {
         frame->pc = value;
     } else if (reg_index > 0 && (reg_index <= 27)) {
         (&frame->a0)[reg_index - 1] = value;
     }
+
 #if XCHAL_HAVE_FP
-    void  *ptr1;
     uint32_t cp_enabled;
     RSR(XT_REG_CPENABLE, cp_enabled);
     if (cp_enabled != 0) {
         if (reg_index == 87) {
-            asm volatile ("lsi f0, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f0, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 88) {
-            asm volatile ("lsi f1, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f1, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 89) {
-            asm volatile ("lsi f2, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f2, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 90) {
-            asm volatile ("lsi f3, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f3, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 91) {
-            asm volatile ("lsi f4, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f4, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 92) {
-            asm volatile ("lsi f5, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f5, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 93) {
-            asm volatile ("lsi f6, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f6, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 94) {
-            asm volatile ("lsi f7, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f7, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 95) {
-            asm volatile ("lsi f8, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f8, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 96) {
-            asm volatile ("lsi f9, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f9, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 97) {
-            asm volatile ("lsi f10, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f10, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 98) {
-            asm volatile ("lsi f11, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f11, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 99) {
-            asm volatile ("lsi f12, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f12, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 100) {
-            asm volatile ("lsi f13, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f13, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 101) {
-            asm volatile ("lsi f14, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f14, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 102) {
-            asm volatile ("lsi f15, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f15, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 103) {
-            asm volatile ("l32i %0, %1, 0" : "=a" (ptr1) : "a" (ptr0));
-            asm volatile ("wur.FCR %0" : "=a" (ptr1));
+            asm volatile ("wur.FCR %0" : "=a" (value));
         }
         if (reg_index == 104) {
-            asm volatile ("l32i %0, %1, 0" : "=a" (ptr1) : "a" (ptr0));
-            asm volatile ("wur.FSR %0" : "=a" (ptr1));
+            asm volatile ("wur.FSR %0" : "=a" (value));
         }
     }
 #endif // XCHAL_HAVE_FP

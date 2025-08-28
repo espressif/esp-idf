@@ -239,10 +239,13 @@ FORCE_INLINE_ATTR void rv_utils_intr_set_threshold(int priority_threshold)
 
 #if SOC_CPU_HAS_FPU
 
-FORCE_INLINE_ATTR bool rv_utils_enable_fpu(void)
+FORCE_INLINE_ATTR void rv_utils_enable_fpu(void)
 {
-    /* Set mstatus[14:13] to 0b01 to start the floating-point unit initialization */
+    /* Set mstatus[14:13] to 0b01 to enable the floating-point unit */
     RV_SET_CSR(mstatus, CSR_MSTATUS_FPU_ENA);
+}
+
+FORCE_INLINE_ATTR bool rv_utils_clear_fpu(void) {
     /* On the ESP32-P4, the FPU can be used directly after setting `mstatus` bit 13.
      * Since the interrupt handler expects the FPU states to be either 0b10 or 0b11,
      * let's write the FPU CSR and clear the dirty bit afterwards. */
