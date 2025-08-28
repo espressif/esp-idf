@@ -10,23 +10,12 @@
 extern "C" {
 #endif
 
-#include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 #include "esp_timer.h"
+#include "esp_app_trace_types.h"
 
 /** Infinite waiting timeout */
 #define ESP_APPTRACE_TMO_INFINITE               ((uint32_t)-1)
-
-/** Structure which holds data necessary for measuring time intervals.
- *
- *  After initialization via esp_apptrace_tmo_init() user needs to call esp_apptrace_tmo_check()
- *  periodically to check timeout for expiration.
- */
-typedef struct {
-    int64_t   start;   ///< time interval start (in us)
-    int64_t   tmo;     ///< timeout value (in us)
-    int64_t   elapsed; ///< elapsed time (in us)
-} esp_apptrace_tmo_t;
 
 /**
  * @brief Initializes timeout structure.
@@ -55,22 +44,12 @@ static inline uint32_t esp_apptrace_tmo_remaining_us(esp_apptrace_tmo_t *tmo)
     return tmo->tmo != (int64_t) -1 ? (tmo->elapsed - tmo->tmo) : ESP_APPTRACE_TMO_INFINITE;
 }
 
-/** Tracing module synchronization lock */
-typedef struct {
-    spinlock_t mux;
-    unsigned int_state;
-} esp_apptrace_lock_t;
-
 /**
  * @brief Initializes lock structure.
  *
  * @param lock Pointer to lock structure to be initialized.
  */
-static inline void esp_apptrace_lock_init(esp_apptrace_lock_t *lock)
-{
-    portMUX_INITIALIZE(&lock->mux);
-    lock->int_state = 0;
-}
+void esp_apptrace_lock_init(esp_apptrace_lock_t *lock);
 
 /**
  * @brief Tries to acquire lock in specified time period.
@@ -90,19 +69,6 @@ esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, esp_apptrace_tmo_t *
  * @return ESP_OK on success, otherwise \see esp_err_t
  */
 esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock);
-
-/** Ring buffer control structure.
- *
- * @note For purposes of application tracing module if there is no enough space for user data and write pointer can be wrapped
- *       current ring buffer size can be temporarily shrunk in order to provide buffer with requested size.
- */
-typedef struct {
-    uint8_t *data;      ///< pointer to data storage
-    volatile uint32_t size;      ///< size of data storage
-    volatile uint32_t cur_size;  ///< current size of data storage
-    volatile uint32_t rd;        ///< read pointer
-    volatile uint32_t wr;        ///< write pointer
-} esp_apptrace_rb_t;
 
 /**
  * @brief Initializes ring buffer control  structure.

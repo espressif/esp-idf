@@ -7,8 +7,10 @@
 #include <string.h>
 #include "esp_cpu.h"
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 #include "esp_app_trace.h"
 #include "esp_app_trace_port.h"
+#include "esp_app_trace_types.h"
 #include "esp_private/startup_internal.h"
 
 #if CONFIG_ESP_CONSOLE_UART && CONFIG_APPTRACE_DEST_UART && (CONFIG_APPTRACE_DEST_UART_NUM == CONFIG_ESP_CONSOLE_UART_NUM)
@@ -24,257 +26,205 @@ const static char *TAG = "esp_apptrace";
 typedef struct {
     esp_apptrace_hw_t *hw;
     void               *hw_data;
+    esp_apptrace_dest_t dest;
 } esp_apptrace_channel_t;
 
-static esp_apptrace_channel_t   s_trace_channels[ESP_APPTRACE_DEST_MAX];
-static bool s_inited;
+static esp_apptrace_channel_t s_trace_ch;
+static volatile int s_trace_ch_hw_initialized = 0;
 
-esp_err_t esp_apptrace_init(void)
+static esp_err_t esp_apptrace_init(const esp_apptrace_config_t *config)
 {
     __attribute__((unused)) void *hw_data = NULL;
 
-    // 'esp_apptrace_init()' is called on every core, so ensure to do main initialization only once
     if (esp_cpu_get_core_id() == 0) {
-        memset(&s_trace_channels, 0, sizeof(s_trace_channels));
 #if CONFIG_APPTRACE_DEST_JTAG
-        s_trace_channels[ESP_APPTRACE_DEST_JTAG].hw = esp_apptrace_jtag_hw_get(&hw_data);
-        s_trace_channels[ESP_APPTRACE_DEST_JTAG].hw_data = hw_data;
+        s_trace_ch.hw = esp_apptrace_jtag_hw_get(&hw_data);
+        s_trace_ch.hw_data = hw_data;
+#elif CONFIG_APPTRACE_DEST_UART
+        const esp_apptrace_uart_config_t *uart_config = &config->dest_cfg.uart;
+        s_trace_ch.hw = esp_apptrace_uart_hw_get(uart_config->uart_num, &hw_data);
+        s_trace_ch.hw_data = hw_data;
+#else // CONFIG_APPTRACE_DEST_NONE allows runtime selection
+        if (config->dest == ESP_APPTRACE_DEST_JTAG) {
+            s_trace_ch.hw = esp_apptrace_jtag_hw_get(&hw_data);
+            s_trace_ch.hw_data = hw_data;
+        } else if (config->dest == ESP_APPTRACE_DEST_UART) {
+            const esp_apptrace_uart_config_t *uart_config = &config->dest_cfg.uart;
+            s_trace_ch.hw = esp_apptrace_uart_hw_get(uart_config->uart_num, &hw_data);
+            s_trace_ch.hw_data = hw_data;
+        } else {
+            s_trace_ch.hw = NULL;
+            s_trace_ch.hw_data = NULL;
+            ESP_APPTRACE_LOGE("Invalid destination type (%d)!", config->dest);
+            return ESP_ERR_INVALID_ARG;
+        }
 #endif
-#if CONFIG_APPTRACE_DEST_UART
-        s_trace_channels[ESP_APPTRACE_DEST_UART].hw = esp_apptrace_uart_hw_get(CONFIG_APPTRACE_DEST_UART_NUM, &hw_data);
-        s_trace_channels[ESP_APPTRACE_DEST_UART].hw_data = hw_data;
-#endif
-        s_inited = true;
+        s_trace_ch.dest = config->dest;
+        s_trace_ch_hw_initialized = 1;
+    } else {
+        // There is NO guarantee that system init functions will execute on core 0 first
+        // So we need to wait for core 0 to set up the hardware interface
+        while (!s_trace_ch_hw_initialized) {
+            esp_rom_delay_us(10);
+        }
     }
 
-    // esp_apptrace_init() is called on every core, so initialize trace channel on every core
-    for (int i = 0; i < sizeof(s_trace_channels) / sizeof(s_trace_channels[0]); i++) {
-        esp_apptrace_channel_t *ch = &s_trace_channels[i];
-        if (ch->hw) {
-            int res = ch->hw->init(ch->hw_data);
-            if (res != ESP_OK) {
-                ESP_APPTRACE_LOGE("Failed to init trace channel HW interface (%d)!", res);
-                return res;
-            }
+    if (s_trace_ch.hw) {
+        int res = s_trace_ch.hw->init(s_trace_ch.hw_data, config);
+        if (res != ESP_OK) {
+            ESP_APPTRACE_LOGE("Failed to init trace channel HW interface (%d)!", res);
+            return res;
         }
     }
 
     return ESP_OK;
 }
 
-ESP_SYSTEM_INIT_FN(esp_apptrace_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CORES, 115)
+esp_err_t esp_apptrace_down_buffer_config(uint8_t *buf, uint32_t size)
 {
-    return esp_apptrace_init();
-}
-
-esp_err_t esp_apptrace_down_buffer_config(esp_apptrace_dest_t dest, uint8_t *buf, uint32_t size)
-{
-    esp_apptrace_channel_t *ch;
-
-    if (dest >= ESP_APPTRACE_DEST_MAX) {
+    if (!buf || size == 0) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (buf == NULL || size == 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (!s_inited) {
+    if (!s_trace_ch.hw) {
         return ESP_ERR_INVALID_STATE;
     }
-
-    ch = &s_trace_channels[dest];
-    if (ch->hw == NULL) {
-        ESP_APPTRACE_LOGE("Trace destination %d not supported!", dest);
-        return ESP_FAIL;
-    }
-    if (ch->hw->down_buffer_config != NULL) {
-        ch->hw->down_buffer_config(ch->hw_data, buf, size);
+    if (s_trace_ch.hw->down_buffer_config) {
+        s_trace_ch.hw->down_buffer_config(s_trace_ch.hw_data, buf, size);
     }
 
     return ESP_OK;
 }
 
-uint8_t *esp_apptrace_down_buffer_get(esp_apptrace_dest_t dest, uint32_t *size, uint32_t user_tmo)
+uint8_t *esp_apptrace_down_buffer_get(uint32_t *size, uint32_t user_tmo)
 {
-    esp_apptrace_tmo_t tmo;
-    esp_apptrace_channel_t *ch;
-
     ESP_APPTRACE_LOGV("%s(): enter", __func__);
-    if (dest >= ESP_APPTRACE_DEST_MAX) {
+
+    if (!size || *size == 0) {
         return NULL;
     }
-    if (size == NULL || *size == 0) {
+    if (!s_trace_ch.hw) {
         return NULL;
     }
-    if (!s_inited) {
-        return NULL;
-    }
-    ch = &s_trace_channels[dest];
-    if (ch->hw == NULL) {
-        ESP_APPTRACE_LOGE("Trace destination %d not supported!", dest);
-        return NULL;
-    }
-    if (ch->hw->get_down_buffer == NULL) {
+    if (!s_trace_ch.hw->get_down_buffer) {
         return NULL;
     }
 
+    esp_apptrace_tmo_t tmo;
     esp_apptrace_tmo_init(&tmo, user_tmo);
-    return ch->hw->get_down_buffer(ch->hw_data, size, &tmo);
+
+    return s_trace_ch.hw->get_down_buffer(s_trace_ch.hw_data, size, &tmo);
 }
 
-esp_err_t esp_apptrace_down_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, uint32_t user_tmo)
+esp_err_t esp_apptrace_down_buffer_put(uint8_t *ptr, uint32_t user_tmo)
 {
-    esp_apptrace_tmo_t tmo;
-    esp_apptrace_channel_t *ch;
-
     ESP_APPTRACE_LOGV("%s(): enter", __func__);
-    if (dest >= ESP_APPTRACE_DEST_MAX) {
+
+    if (!ptr) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (ptr == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (!s_inited) {
+    if (!s_trace_ch.hw) {
         return ESP_ERR_INVALID_STATE;
     }
-    ch = &s_trace_channels[dest];
-    if (ch->hw == NULL) {
-        ESP_APPTRACE_LOGE("Trace destination %d not supported!", dest);
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    if (ch->hw->get_down_buffer == NULL) {
+    if (!s_trace_ch.hw->get_down_buffer) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 
+    esp_apptrace_tmo_t tmo;
     esp_apptrace_tmo_init(&tmo, user_tmo);
-    return ch->hw->put_down_buffer(ch->hw_data, ptr, &tmo);
+
+    return s_trace_ch.hw->put_down_buffer(s_trace_ch.hw_data, ptr, &tmo);
 }
 
-esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *buf, uint32_t *size, uint32_t user_tmo)
+esp_err_t esp_apptrace_read(void *buf, uint32_t *size, uint32_t user_tmo)
 {
-    int res = ESP_OK;
-    esp_apptrace_tmo_t tmo;
-    esp_apptrace_channel_t *ch;
-
     ESP_APPTRACE_LOGV("%s(): enter", __func__);
-    if (dest >= ESP_APPTRACE_DEST_MAX) {
+
+    if (!buf || !size || *size == 0) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (buf == NULL || size == NULL || *size == 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (!s_inited) {
+    if (!s_trace_ch.hw) {
         return ESP_ERR_INVALID_STATE;
     }
-    ch = &s_trace_channels[dest];
-    if (ch->hw == NULL) {
-        ESP_APPTRACE_LOGE("Trace destination %d not supported!", dest);
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    if (ch->hw->get_down_buffer == NULL || ch->hw->put_down_buffer == NULL) {
+    if (!s_trace_ch.hw->get_down_buffer || !s_trace_ch.hw->put_down_buffer) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 
     //TODO: callback system
+    esp_apptrace_tmo_t tmo;
     esp_apptrace_tmo_init(&tmo, user_tmo);
+
     uint32_t act_sz = *size;
     *size = 0;
-    uint8_t *ptr = ch->hw->get_down_buffer(ch->hw_data, &act_sz, &tmo);
+    uint8_t *ptr = s_trace_ch.hw->get_down_buffer(s_trace_ch.hw_data, &act_sz, &tmo);
     if (ptr && act_sz > 0) {
         ESP_APPTRACE_LOGD("Read %" PRIu32 " bytes from host", act_sz);
         memcpy(buf, ptr, act_sz);
-        res = ch->hw->put_down_buffer(ch->hw_data, ptr, &tmo);
         *size = act_sz;
-    } else {
-        res = ESP_ERR_TIMEOUT;
+        return s_trace_ch.hw->put_down_buffer(s_trace_ch.hw_data, ptr, &tmo);
     }
 
-    return res;
+    return ESP_ERR_TIMEOUT;
 }
 
-uint8_t *esp_apptrace_buffer_get(esp_apptrace_dest_t dest, uint32_t size, uint32_t user_tmo)
+uint8_t *esp_apptrace_buffer_get(uint32_t size, uint32_t user_tmo)
 {
-    esp_apptrace_tmo_t tmo;
-    esp_apptrace_channel_t *ch;
-
     ESP_APPTRACE_LOGV("%s(): enter", __func__);
-    if (dest >= ESP_APPTRACE_DEST_MAX) {
-        return NULL;
-    }
+
     if (size == 0) {
         return NULL;
     }
-    if (!s_inited) {
+    if (!s_trace_ch.hw) {
         return NULL;
     }
-    ch = &s_trace_channels[dest];
-    if (ch->hw == NULL) {
-        ESP_APPTRACE_LOGE("Trace destination %d not supported!", dest);
-        return NULL;
-    }
-    if (ch->hw->get_up_buffer == NULL) {
+    if (!s_trace_ch.hw->get_up_buffer) {
         return NULL;
     }
 
+    esp_apptrace_tmo_t tmo;
     esp_apptrace_tmo_init(&tmo, user_tmo);
-    return ch->hw->get_up_buffer(ch->hw_data, size, &tmo);
+
+    return s_trace_ch.hw->get_up_buffer(s_trace_ch.hw_data, size, &tmo);
 }
 
-esp_err_t esp_apptrace_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, uint32_t user_tmo)
+esp_err_t esp_apptrace_buffer_put(uint8_t *ptr, uint32_t user_tmo)
 {
-    esp_apptrace_tmo_t tmo;
-    esp_apptrace_channel_t *ch;
-
     ESP_APPTRACE_LOGV("%s(): enter", __func__);
-    if (dest >= ESP_APPTRACE_DEST_MAX) {
+
+    if (!ptr) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (ptr == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (!s_inited) {
+    if (!s_trace_ch.hw) {
         return ESP_ERR_INVALID_STATE;
     }
-    ch = &s_trace_channels[dest];
-    if (ch->hw == NULL) {
-        ESP_APPTRACE_LOGE("Trace destination %d not supported!", dest);
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    if (ch->hw->put_up_buffer == NULL) {
+    if (!s_trace_ch.hw->put_up_buffer) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 
+    esp_apptrace_tmo_t tmo;
     esp_apptrace_tmo_init(&tmo, user_tmo);
-    return ch->hw->put_up_buffer(ch->hw_data, ptr, &tmo);
+
+    return s_trace_ch.hw->put_up_buffer(s_trace_ch.hw_data, ptr, &tmo);
 }
 
-esp_err_t esp_apptrace_write(esp_apptrace_dest_t dest, const void *data, uint32_t size, uint32_t user_tmo)
+esp_err_t esp_apptrace_write(const void *data, uint32_t size, uint32_t user_tmo)
 {
-    uint8_t *ptr = NULL;
-    esp_apptrace_tmo_t tmo;
-    esp_apptrace_channel_t *ch;
-
     ESP_APPTRACE_LOGV("%s(): enter", __func__);
-    if (dest >= ESP_APPTRACE_DEST_MAX) {
+
+    if (!data || size == 0) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (data == NULL || size == 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (!s_inited) {
+    if (!s_trace_ch.hw) {
         return ESP_ERR_INVALID_STATE;
     }
-    ch = &s_trace_channels[dest];
-    if (ch->hw == NULL) {
-        ESP_APPTRACE_LOGE("Trace destination %d not supported!", dest);
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    if (ch->hw->get_up_buffer == NULL || ch->hw->put_up_buffer == NULL) {
+    if (!s_trace_ch.hw->get_up_buffer || !s_trace_ch.hw->put_up_buffer) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 
+    esp_apptrace_tmo_t tmo;
     esp_apptrace_tmo_init(&tmo, user_tmo);
-    ptr = ch->hw->get_up_buffer(ch->hw_data, size, &tmo);
-    if (ptr == NULL) {
+
+    uint8_t *ptr = s_trace_ch.hw->get_up_buffer(s_trace_ch.hw_data, size, &tmo);
+    if (!ptr) {
         return ESP_ERR_NO_MEM;
     }
 
@@ -283,36 +233,29 @@ esp_err_t esp_apptrace_write(esp_apptrace_dest_t dest, const void *data, uint32_
     memcpy(ptr, data, size);
 
     // now indicate that this buffer is ready to be sent off to host
-    return ch->hw->put_up_buffer(ch->hw_data, ptr, &tmo);
+    return s_trace_ch.hw->put_up_buffer(s_trace_ch.hw_data, ptr, &tmo);
 }
 
-int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const char *fmt, va_list ap)
+int esp_apptrace_vprintf_to(uint32_t user_tmo, const char *fmt, va_list ap)
 {
     uint16_t nargs = 0;
     uint8_t *pout, *p = (uint8_t *)fmt;
-    esp_apptrace_tmo_t tmo;
-    esp_apptrace_channel_t *ch;
 
     ESP_APPTRACE_LOGV("%s(): enter", __func__);
-    if (dest >= ESP_APPTRACE_DEST_MAX) {
+
+    if (!fmt) {
         return -1;
     }
-    if (fmt == NULL) {
+    if (!s_trace_ch.hw) {
         return -1;
     }
-    if (!s_inited) {
-        return -1;
-    }
-    ch = &s_trace_channels[dest];
-    if (ch->hw == NULL) {
-        ESP_APPTRACE_LOGE("Trace destination %d not supported!", dest);
-        return -1;
-    }
-    if (ch->hw->get_up_buffer == NULL || ch->hw->put_up_buffer == NULL) {
+    if (!s_trace_ch.hw->get_up_buffer || !s_trace_ch.hw->put_up_buffer) {
         return -1;
     }
 
+    esp_apptrace_tmo_t tmo;
     esp_apptrace_tmo_init(&tmo, user_tmo);
+
     ESP_APPTRACE_LOGD("fmt %p", fmt);
     while ((p = (uint8_t *)strchr((char *)p, '%')) && nargs < ESP_APPTRACE_MAX_VPRINTF_ARGS) {
         p++;
@@ -325,8 +268,8 @@ int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const c
         ESP_APPTRACE_LOGE("Failed to store all printf args!");
     }
 
-    pout = ch->hw->get_up_buffer(ch->hw_data, 1 + sizeof(char *) + nargs * sizeof(uint32_t), &tmo);
-    if (pout == NULL) {
+    pout = s_trace_ch.hw->get_up_buffer(s_trace_ch.hw_data, 1 + sizeof(char *) + nargs * sizeof(uint32_t), &tmo);
+    if (!pout) {
         ESP_APPTRACE_LOGE("Failed to get buffer!");
         return -1;
     }
@@ -342,7 +285,7 @@ int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const c
         ESP_APPTRACE_LOGD("arg %" PRIx32, arg);
     }
 
-    int ret = ch->hw->put_up_buffer(ch->hw_data, p, &tmo);
+    int ret = s_trace_ch.hw->put_up_buffer(s_trace_ch.hw_data, p, &tmo);
     if (ret != ESP_OK) {
         ESP_APPTRACE_LOGE("Failed to put printf buf (%d)!", ret);
         return -1;
@@ -353,78 +296,81 @@ int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const c
 
 int esp_apptrace_vprintf(const char *fmt, va_list ap)
 {
-    return esp_apptrace_vprintf_to(ESP_APPTRACE_DEST_JTAG, 0, fmt, ap);
+    return esp_apptrace_vprintf_to(0, fmt, ap);
 }
 
-esp_err_t esp_apptrace_flush_nolock(esp_apptrace_dest_t dest, uint32_t min_sz, uint32_t usr_tmo)
+esp_err_t esp_apptrace_flush_nolock(uint32_t min_sz, uint32_t usr_tmo)
 {
-    esp_apptrace_tmo_t tmo;
-    esp_apptrace_channel_t *ch;
-
     ESP_APPTRACE_LOGV("%s(): enter", __func__);
-    if (dest >= ESP_APPTRACE_DEST_MAX) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (!s_inited) {
+
+    if (!s_trace_ch.hw) {
         return ESP_ERR_INVALID_STATE;
     }
-    ch = &s_trace_channels[dest];
-    if (ch->hw == NULL) {
-        ESP_APPTRACE_LOGE("Trace destination %d not supported!", dest);
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    if (ch->hw->flush_up_buffer_nolock == NULL) {
+    if (!s_trace_ch.hw->flush_up_buffer_nolock) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 
+    esp_apptrace_tmo_t tmo;
     esp_apptrace_tmo_init(&tmo, usr_tmo);
-    return ch->hw->flush_up_buffer_nolock(ch->hw_data, min_sz, &tmo);
+
+    return s_trace_ch.hw->flush_up_buffer_nolock(s_trace_ch.hw_data, min_sz, &tmo);
 }
 
-esp_err_t esp_apptrace_flush(esp_apptrace_dest_t dest, uint32_t usr_tmo)
+esp_err_t esp_apptrace_flush(uint32_t usr_tmo)
 {
-    esp_apptrace_tmo_t tmo;
-    esp_apptrace_channel_t *ch;
-
     ESP_APPTRACE_LOGV("%s(): enter", __func__);
-    if (dest >= ESP_APPTRACE_DEST_MAX) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (!s_inited) {
+
+    if (!s_trace_ch.hw) {
         return ESP_ERR_INVALID_STATE;
     }
-    ch = &s_trace_channels[dest];
-    if (ch->hw == NULL) {
-        ESP_APPTRACE_LOGE("Trace destination %d not supported!", dest);
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    if (ch->hw->flush_up_buffer == NULL) {
+    if (!s_trace_ch.hw->flush_up_buffer) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 
+    esp_apptrace_tmo_t tmo;
     esp_apptrace_tmo_init(&tmo, usr_tmo);
-    return ch->hw->flush_up_buffer(ch->hw_data, &tmo);
+
+    return s_trace_ch.hw->flush_up_buffer(s_trace_ch.hw_data, &tmo);
 }
 
-bool esp_apptrace_host_is_connected(esp_apptrace_dest_t dest)
+bool esp_apptrace_host_is_connected(void)
 {
-    esp_apptrace_channel_t *ch;
-
     ESP_APPTRACE_LOGV("%s(): enter", __func__);
-    if (dest >= ESP_APPTRACE_DEST_MAX) {
+
+    if (!s_trace_ch.hw) {
         return false;
     }
-    if (!s_inited) {
-        return false;
-    }
-    ch = &s_trace_channels[dest];
-    if (ch->hw == NULL) {
-        ESP_APPTRACE_LOGE("Trace destination %d not supported!", dest);
-        return false;
-    }
-    if (ch->hw->host_is_connected == NULL) {
+    if (!s_trace_ch.hw->host_is_connected) {
         return false;
     }
 
-    return ch->hw->host_is_connected(ch->hw_data);
+    return s_trace_ch.hw->host_is_connected(s_trace_ch.hw_data);
+}
+
+esp_apptrace_dest_t esp_apptrace_get_destination(void)
+{
+    return s_trace_ch.dest;
+}
+
+esp_err_t esp_apptrace_set_header_size(esp_apptrace_header_size_t header_size)
+{
+    if (!s_trace_ch.hw) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (s_trace_ch.hw->set_header_size) {
+        s_trace_ch.hw->set_header_size(s_trace_ch.hw_data, header_size);
+    }
+    return ESP_OK;
+}
+
+esp_apptrace_config_t __attribute__((weak)) esp_apptrace_get_user_params(void)
+{
+    esp_apptrace_config_t default_config = APPTRACE_CONFIG_DEFAULT();
+    return default_config;
+}
+
+ESP_SYSTEM_INIT_FN(apptrace_early_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CORES, 115)
+{
+    esp_apptrace_config_t config = esp_apptrace_get_user_params();
+    return esp_apptrace_init(&config);
 }

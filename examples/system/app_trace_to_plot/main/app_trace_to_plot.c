@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -56,7 +56,7 @@ typedef struct {
 
 int16_t get_engine_temperature(int cnt)
 {
-    /* A healhty engine should work between 90 to 105 degree Celcius */
+    /* A healhty engine should work between 90 to 105 degree Celsius */
     const int32_t temp_arr[] = {1, 1, 2, 3, 4, 6, 8, 10, 13, 16, 19, 24, 29, 34, 40, 47, 53,
         60, 68, 75, 82, 88, 94, 99, 103, 105, 107, 107, 106, 104, 101, 96, 91, 85, 78, 71, 64,
         57, 50, 43, 37, 31, 26, 21, 17, 14, 11, 9, 7, 5, 4, 3};
@@ -65,7 +65,7 @@ int16_t get_engine_temperature(int cnt)
 
 int8_t get_outside_temperature(int cnt)
 {
-    /* Recorded hightest temperature was around 57 degree and lowest was -89 degree Celcius */
+    /* Recorded highest temperature was around 57 degree and lowest was -89 degree Celsius */
     return (rand() % 146) - 89;
 }
 
@@ -84,7 +84,7 @@ int32_t get_pressure(int cnt)
 void app_main(void)
 {
     ESP_LOGI(TAG, "Waiting for OpenOCD connection");
-    while (!esp_apptrace_host_is_connected(ESP_APPTRACE_DEST_JTAG)) {
+    while (!esp_apptrace_host_is_connected()) {
         vTaskDelay(1);
     }
 
@@ -98,7 +98,7 @@ void app_main(void)
 
     memcpy(buf, (uint8_t *)&STX, STX_LENGTH);
 
-    while (esp_apptrace_host_is_connected(ESP_APPTRACE_DEST_JTAG)) {
+    while (esp_apptrace_host_is_connected()) {
         sensor.header.id = 1;
         sensor.header.timestamp = esp_log_timestamp();
         sensor.value = get_outside_temperature(cnt);
@@ -106,7 +106,7 @@ void app_main(void)
         buf[STX_LENGTH] = sizeof(sensor);
         memcpy(buf + STX_LENGTH + 1, (uint8_t *)&sensor, sizeof(sensor));
         buf[STX_LENGTH + 1 + sizeof(sensor)] = ETX;
-        esp_err_t res = esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, buf, sizeof(sensor) + STX_LENGTH + 1/*sensor pkt len*/ + 1/*ETX len*/, ESP_APPTRACE_TMO_INFINITE);
+        esp_err_t res = esp_apptrace_write(buf, sizeof(sensor) + STX_LENGTH + 1/*sensor pkt len*/ + 1/*ETX len*/, ESP_APPTRACE_TMO_INFINITE);
         if (res != ESP_OK) {
             ESP_LOGE(TAG, "Failed to write data to host [0x%x] (%s)", res, esp_err_to_name(res));
             break;
@@ -121,7 +121,7 @@ void app_main(void)
         buf[STX_LENGTH] = sizeof(sensor2);
         memcpy(buf + STX_LENGTH + 1, (uint8_t *)&sensor2, sizeof(sensor2));
         buf[STX_LENGTH + 1 + sizeof(sensor2)] = ETX;
-        res = esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, buf, sizeof(sensor2) + STX_LENGTH + 1/*sensor pkt len*/ + 1/*ETX len*/, ESP_APPTRACE_TMO_INFINITE);
+        res = esp_apptrace_write(buf, sizeof(sensor2) + STX_LENGTH + 1/*sensor pkt len*/ + 1/*ETX len*/, ESP_APPTRACE_TMO_INFINITE);
         if (res != ESP_OK) {
             ESP_LOGE(TAG, "Failed to write data to host [0x%x] (%s)", res, esp_err_to_name(res));
             break;
@@ -136,7 +136,7 @@ void app_main(void)
             buf[STX_LENGTH] = sizeof(sensor3);
             memcpy(buf + STX_LENGTH + 1, (uint8_t *)&sensor3, sizeof(sensor3));
             buf[STX_LENGTH + 1 + sizeof(sensor3)] = ETX;
-            res = esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, buf, sizeof(sensor3) + STX_LENGTH + 1/*sensor pkt len*/ + 1/*ETX len*/, ESP_APPTRACE_TMO_INFINITE);
+            res = esp_apptrace_write(buf, sizeof(sensor3) + STX_LENGTH + 1/*sensor pkt len*/ + 1/*ETX len*/, ESP_APPTRACE_TMO_INFINITE);
             if (res != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to write data to host [0x%x] (%s)", res, esp_err_to_name(res));
                 break;
@@ -151,14 +151,14 @@ void app_main(void)
         buf[STX_LENGTH] = sizeof(sensor4);
         memcpy(buf + STX_LENGTH + 1, (uint8_t *)&sensor4, sizeof(sensor4));
         buf[STX_LENGTH + 1 + sizeof(sensor4)] = ETX;
-        res = esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, buf, sizeof(sensor4) + STX_LENGTH + 1/*sensor pkt len*/ + 1/*ETX len*/, ESP_APPTRACE_TMO_INFINITE);
+        res = esp_apptrace_write(buf, sizeof(sensor4) + STX_LENGTH + 1/*sensor pkt len*/ + 1/*ETX len*/, ESP_APPTRACE_TMO_INFINITE);
         if (res != ESP_OK) {
             ESP_LOGE(TAG, "Failed to write data to host [0x%x] (%s)", res, esp_err_to_name(res));
             break;
         }
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
-        esp_apptrace_flush(ESP_APPTRACE_DEST_JTAG, 1000);
+        esp_apptrace_flush(1000);
         cnt = (cnt + 1) % CYCLE_PERIOD;
     }
     ESP_LOGE(TAG, "Apptrace connection lost");

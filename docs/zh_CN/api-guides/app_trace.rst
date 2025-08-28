@@ -41,27 +41,31 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
 
 1. **主机端：** 应用程序跟踪通过 JTAG 来完成，因此需要在主机上安装并运行 OpenOCD。详细信息请参阅 :doc:`JTAG 调试 <../api-guides/jtag-debugging/index>`。
 
-2. **目标端：** 在 menuconfig 中开启应用程序跟踪功能。前往 ``Component config`` > ``Application Level Tracing`` 菜单，选择跟踪数据的传输目标（具体用于传输的硬件接口：JTAG 和/或 UART），选择任一非 None 的目标都会自动开启 ``CONFIG_APPTRACE_ENABLE`` 这个选项。对于 UART 接口，用户需要定义端口号、波特率、TX 和 RX 管脚及其他相关参数。
+2. **目标端：** 在 menuconfig 中开启应用程序跟踪功能。**重要提示：** 您必须首先通过 ``Component config`` > ``Application Level Tracing`` > ``Enable Application Level Tracing`` (:ref:`CONFIG_APPTRACE_ENABLE`) 启用应用程序跟踪。启用此选项后，您可以配置跟踪数据的传输目标。对于 UART 接口，用户需要定义端口号、波特率、TX 和 RX 管脚及其他相关参数。当启用 FreeRTOS SystemView 跟踪功能时，所选目标也将被用于 SystemView 跟踪。
 
 .. note::
 
    为了实现更高的数据速率并降低丢包率，建议优化 JTAG 的时钟频率，使其达到能够稳定运行的最大值。详细信息请参阅 :ref:`jtag-debugging-tip-optimize-jtag-speed`。
 
-以下为前述未提及的另外两个 menuconfig 选项：
+以下为前述未提及的另外几个 menuconfig 选项：
 
 1. *Threshold for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH`)。使用 JTAG 接口时，此选项是必选项。在该模式下，跟踪数据以 16 KB 数据块的形式暴露给主机。在后验模式中，一个块被填充后会被暴露给主机，同时之前的块不再可用。也就是说，跟踪数据以 16 KB 的粒度进行覆盖。发生 Panic 时，当前输入块的最新数据将会被暴露给主机，主机可以读取数据以进行后续分析。如果系统发生 Panic 时，仍有少量数据还没来得及暴露给主机，那么之前收集的 16 KB 数据将丢失，主机只能获取少部分的最新跟踪数据，从而可能无法诊断问题。此 menuconfig 选项有助于避免此类情况，它可以控制发生 Panic 时刷新数据的阈值。例如，用户可以设置需要不少于 512 字节的最新跟踪数据，如果在发生 Panic 时待处理的数据少于 512 字节，则数据不会被刷新，也不会覆盖之前的 16 KB 数据。该选项仅在后验模式和使用 JTAG 工作时可发挥作用。
 
 2. *Timeout for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO`)。该选项仅在流模式下才可发挥作用，它可用于控制跟踪模块在发生 Panic 时等待主机读取最新数据的最长时间。
 
-3. *UART RX/TX ring buffer size* (:ref:`CONFIG_APPTRACE_UART_TX_BUFF_SIZE`)。缓冲区的大小取决于通过 UART 传输的数据量。
+3. *Internal Sync Lock* (:ref:`CONFIG_APPTRACE_LOCK_ENABLE`)。启用此选项可使用锁保护跟踪缓冲区写入操作，防止多个任务并发生成跟踪数据时发生数据损坏。
 
-4. *UART TX message size* (：ref:`CONFIG_APPTRACE_UART_TX_MSG_size`)。要传输的单条消息的最大尺寸。
+4. *UART RX/TX ring buffer size* (:ref:`CONFIG_APPTRACE_UART_TX_BUFF_SIZE`)。缓冲区的大小取决于通过 UART 传输的数据量。
+
+5. *UART TX message size* (:ref:`CONFIG_APPTRACE_UART_TX_MSG_size`)。要传输的单条消息的最大尺寸。
 
 
 如何使用此库
 --------------
 
-该库提供了用于在主机和 {IDF_TARGET_NAME} 之间传输任意数据的 API。在 menuconfig 中启用该库后，目标应用程序的跟踪模块会在系统启动时自动初始化。因此，用户需要做的就是调用相应的 API 来发送、接收或者刷新数据。
+该库提供了用于在主机和 {IDF_TARGET_NAME} 之间传输任意数据的 API。在 menuconfig 中启用该库后，应用程序跟踪模块会在系统启动期间使用 menuconfig 配置自动初始化。然后用户可以调用相应的 API 来发送、接收或者刷新数据。
+
+用户可以通过实现弱回调函数 :cpp:func:`esp_apptrace_get_user_params()` 来覆盖默认配置（可选）。
 
 
 .. _app_trace-application-specific-tracing:
@@ -71,18 +75,40 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
 
 通常，用户需要决定在每个方向上待传输数据的类型以及如何解析（处理）这些数据。要想在目标和主机之间传输数据，则需执行以下几个步骤：
 
-1. 在目标端，用户需要实现将跟踪数据写入主机的算法。下面的代码片段展示了如何执行此操作。
+1. **配置：** 应用程序跟踪会在系统启动期间使用 menuconfig 配置自动初始化。如需在运行时覆盖默认配置（例如使用自定义的 UART 引脚），可实现 :cpp:func:`esp_apptrace_get_user_params()` 回调函数：
+
+    .. code-block:: c
+
+        #include "esp_app_trace.h"
+
+        esp_apptrace_config_t *esp_apptrace_get_user_params(void)
+        {
+            esp_apptrace_config_t config = APPTRACE_CONFIG_DEFAULT();
+
+            // Customize configuration if needed
+            // For example, to use different UART pins:
+            config.dest_cfg.uart.tx_pin_num = GPIO_NUM_17;
+            config.dest_cfg.uart.rx_pin_num = GPIO_NUM_16;
+
+            return config;
+        }
+
+    .. note::
+
+        此回调函数为可选项。仅当需要覆盖 menuconfig 设置时才需实现。对于大多数使用场景，通过 menuconfig 配置即可满足需求。
+
+2. 在目标设备端，用户需实现将跟踪数据写入主机的算法。下方代码片段展示了实现示例。
 
    .. code-block:: c
 
-      #include "esp_app_trace.h"
-      ...
-      char buf[] = "Hello World!";
-      esp_err_t res = esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, buf, strlen(buf), ESP_APPTRACE_TMO_INFINITE);
-      if (res != ESP_OK) {
-          ESP_LOGE(TAG, "Failed to write data to host!");
-          return res;
-      }
+       #include "esp_app_trace.h"
+       ...
+       char buf[] = "Hello World!";
+       esp_err_t res = esp_apptrace_write(buf, strlen(buf), ESP_APPTRACE_TMO_INFINITE);
+       if (res != ESP_OK) {
+           ESP_LOGE(TAG, "Failed to write data to host!");
+           return res;
+       }
 
    ``esp_apptrace_write()`` 函数使用 memcpy 把用户数据复制到内部缓存中。在某些情况下，使用 ``esp_apptrace_buffer_get()`` 和 ``esp_apptrace_buffer_put()`` 函数会更加理想，它们允许开发人员自行分配缓冲区并填充。下面的代码片段展示了如何执行此操作。
 
@@ -91,13 +117,13 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
       #include "esp_app_trace.h"
       ...
       int number = 10;
-      char *ptr = (char *)esp_apptrace_buffer_get(ESP_APPTRACE_DEST_JTAG, 32, 100/*tmo in us*/);
+      char *ptr = (char *)esp_apptrace_buffer_get(32, 100/*tmo in us*/);
       if (ptr == NULL) {
           ESP_LOGE(TAG, "Failed to get buffer!");
           return ESP_FAIL;
       }
       sprintf(ptr, "Here is the number %d", number);
-      esp_err_t res = esp_apptrace_buffer_put(ESP_APPTRACE_DEST_JTAG, ptr, 100/*tmo in us*/);
+      esp_err_t res = esp_apptrace_buffer_put(ptr, 100/*tmo in us*/);
       if (res != ESP_OK) {
           /* in case of error host tracing tool (e.g. OpenOCD) will report incomplete user buffer */
           ESP_LOGE(TAG, "Failed to put buffer!");
@@ -115,13 +141,13 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
       size_t sz = sizeof(buf);
 
       /* config down buffer */
-      esp_err_t res = esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_JTAG, down_buf, sizeof(down_buf));
+      esp_err_t res = esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
       if (res != ESP_OK) {
           ESP_LOGE(TAG, "Failed to config down buffer!");
           return res;
       }
       /* check for incoming data and read them if any */
-      res = esp_apptrace_read(ESP_APPTRACE_DEST_JTAG, buf, &sz, 0/*do not wait*/);
+      res = esp_apptrace_read(buf, &sz, 0/*do not wait*/);
       if (res != ESP_OK) {
           ESP_LOGE(TAG, "Failed to read data from host!");
           return res;
@@ -142,12 +168,12 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
       size_t sz = 32;
 
       /* config down buffer */
-      esp_err_t res = esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_JTAG, down_buf, sizeof(down_buf));
+      esp_err_t res = esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
       if (res != ESP_OK) {
           ESP_LOGE(TAG, "Failed to config down buffer!");
           return res;
       }
-      char *ptr = (char *)esp_apptrace_down_buffer_get(ESP_APPTRACE_DEST_JTAG, &sz, 100/*tmo in us*/);
+      char *ptr = (char *)esp_apptrace_down_buffer_get(&sz, 100/*tmo in us*/);
       if (ptr == NULL) {
           ESP_LOGE(TAG, "Failed to get buffer!");
           return ESP_FAIL;
@@ -158,22 +184,22 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
       } else {
           printf("No data");
       }
-      res = esp_apptrace_down_buffer_put(ESP_APPTRACE_DEST_JTAG, ptr, 100/*tmo in us*/);
+      res = esp_apptrace_down_buffer_put(ptr, 100/*tmo in us*/);
       if (res != ESP_OK) {
           /* in case of error host tracing tool (e.g. OpenOCD) will report incomplete user buffer */
           ESP_LOGE(TAG, "Failed to put buffer!");
           return res;
       }
 
-2. 下一步是编译应用程序的镜像，并将其下载到目标板上。这一步可以参考文档 :ref:`构建并烧写 <get-started-build>`。
+3. 下一步是编译应用程序的镜像，并将其下载到目标板上。这一步可以参考文档 :ref:`构建并烧写 <get-started-build>`。
 
-3. 运行 OpenOCD（参见 :doc:`JTAG 调试 <../api-guides/jtag-debugging/index>`）。
+4. 运行 OpenOCD（参见 :doc:`JTAG 调试 <../api-guides/jtag-debugging/index>`）。
 
-4. 连接到 OpenOCD 的 telnet 服务器。用户可在终端执行命令 ``telnet <oocd_host> 4444``。如果用户是在运行 OpenOCD 的同一台机器上打开 telnet 会话，可以使用 ``localhost`` 替换上面命令中的 ``<oocd_host>``。
+5. 连接到 OpenOCD 的 telnet 服务器。用户可在终端执行命令 ``telnet <oocd_host> 4444``。如果用户是在运行 OpenOCD 的同一台机器上打开 telnet 会话，可以使用 ``localhost`` 替换上面命令中的 ``<oocd_host>``。
 
-5. 使用特殊的 OpenOCD 命令开始收集待跟踪的命令。此命令将传输跟踪数据并将其重定向到指定的文件或套接字（当前仅支持文件作为跟踪数据目标）。相关命令的说明，请参阅 :ref:`jtag-debugging-launching-debugger`。
+6. 使用特殊的 OpenOCD 命令开始收集待跟踪的命令。此命令将传输跟踪数据并将其重定向到指定的文件或套接字（当前仅支持文件作为跟踪数据目标）。相关命令的说明，请参阅 :ref:`jtag-debugging-launching-debugger`。
 
-6. 最后，处理接收到的数据。由于数据格式由用户自己定义，本文档中省略数据处理的具体流程。数据处理的范例可以参考位于 ``$IDF_PATH/tools/esp_app_trace`` 下的 Python 脚本 ``apptrace_proc.py`` （用于功能测试）和 ``logtrace_proc.py`` （请参阅 :ref:`app_trace-logging-to-host` 章节中的详细信息）。
+7. 最后，处理接收到的数据。由于数据格式由用户自己定义，本文档中省略数据处理的具体流程。数据处理的范例可以参考位于 ``$IDF_PATH/tools/esp_app_trace`` 下的 Python 脚本 ``apptrace_proc.py`` （用于功能测试）和 ``logtrace_proc.py`` （请参阅 :ref:`app_trace-logging-to-host` 章节中的详细信息）。
 
 
 OpenOCD 应用程序跟踪命令
@@ -302,9 +328,10 @@ ESP-IDF 的日志库会默认使用类 vprintf 的函数将格式化的字符串
 
 为了使用跟踪模块来记录日志，用户需要执行以下步骤：
 
-1. 在目标端，需要安装特殊的类 vprintf 函数 :cpp:func:`esp_apptrace_vprintf`，该函数负责将日志数据发送给主机，使用方法为 ``esp_log_set_vprintf(esp_apptrace_vprintf);``。如需将日志数据再次重定向给 UART，请使用 ``esp_log_set_vprintf(vprintf);``。
-2. 按照 :ref:`app_trace-application-specific-tracing` 章节中的第 2-5 步进行操作。
-3. 打印接收到的日志记录，请在终端运行以下命令：``$IDF_PATH/tools/esp_app_trace/logtrace_proc.py /path/to/trace/file /path/to/program/elf/file``。
+1. 在 menuconfig 中启用应用程序跟踪功能（路径为 ``Component config`` > ``Application Level Tracing`` > ``Enable Application Level Tracing``）。
+2. 在目标端，需要安装特殊的类 vprintf 函数 :cpp:func:`esp_apptrace_vprintf`，该函数负责将日志数据发送给主机，使用方法为 ``esp_log_set_vprintf(esp_apptrace_vprintf);``。如需将日志数据再次重定向给 UART，请使用 ``esp_log_set_vprintf(vprintf);``。
+3. 按照 :ref:`app_trace-application-specific-tracing` 章节中的第 1-5 步进行操作。
+4. 打印接收到的日志记录，请在终端运行以下命令：``$IDF_PATH/tools/esp_app_trace/logtrace_proc.py /path/to/trace/file /path/to/program/elf/file``。
 
 
 Log Trace Processor 命令选项
@@ -342,11 +369,9 @@ ESP-IDF 中另一个基于应用层跟踪库的实用功能是系统级跟踪，
 
 若需使用这个功能，需要在 menuconfig 中开启 :ref:`CONFIG_APPTRACE_SV_ENABLE` 选项，具体路径为 ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing``。同一菜单栏下还开启了其它几个选项：
 
-1. *SytemView destination*。选择需要使用的接口：JTAG 或 UART。使用 UART 接口时，可以将 SystemView 应用程序直接连接到 {IDF_TARGET_NAME} 并实时接收数据。
+1. {IDF_TARGET_NAME} 用作 SystemView 时间戳源的定时器选择：（:ref:`CONFIG_APPTRACE_SV_TS_SOURCE`）用于选择 SystemView 事件的时间戳源。在单核模式下，时间戳由以最大频率运行的 {IDF_TARGET_NAME} 内部周期计数器生成。（:ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`）在双核模式下，使用外部定时器生成时间戳，其频率为 CPU 频率的 1/2。
 
-2. *{IDF_TARGET_NAME} timer to use as SystemView timestamp source* （:ref:`CONFIG_APPTRACE_SV_TS_SOURCE`）。选择 SystemView 事件使用的时间戳来源。在单核模式下，使用 {IDF_TARGET_NAME} 内部的循环计数器生成时间戳，其最大的工作频率是 240 MHz（时间戳粒度大约为 4 ns）。在双核模式下，使用工作在 40 MHz 的外部定时器，因此时间戳粒度为 25 ns。
-
-3. 可以单独启用或禁用的 SystemView 事件集合 (``CONFIG_APPTRACE_SV_EVT_XXX``)：
+2. 可以单独启用或禁用的 SystemView 事件集合 (``CONFIG_APPTRACE_SV_EVT_XXX``)：
 
     - Trace Buffer Overflow Event
     - ISR Enter Event
@@ -362,10 +387,9 @@ ESP-IDF 中另一个基于应用层跟踪库的实用功能是系统级跟踪，
     - Timer Enter Event
     - Timer Exit Event
 
-ESP-IDF 中已经包含了所有用于生成兼容 SystemView 跟踪信息的代码，用户只需配置必要的项目选项（如上所示），然后构建、烧写映像到目标板，接着参照前面的介绍，使用 OpenOCD 收集数据。
+ESP-IDF 中已经包含了所有用于生成兼容 SystemView 跟踪信息的代码。
 
-4. 想要通过 UART 接口进行实时跟踪，请在菜单配置选项 ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` 中选择 Pro 或 App CPU。
-
+3. 想要通过 UART 接口进行实时跟踪，请在菜单配置选项 ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` 中选择 Pro 或 App CPU。
 
 OpenOCD SystemView 跟踪命令选项
 """""""""""""""""""""""""""""""
@@ -430,7 +454,7 @@ Start 子命令语法：
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-    遗憾的是，SystemView 不支持从多个核心进行跟踪。所以当使用 JTAG 追踪双核模式下的 {IDF_TARGET_NAME} 时会生成两个文件：一个用于 PRO CPU，另一个用于 APP CPU。用户可以将每个文件加载到工具中单独分析。使用 UART 进行追踪时，用户可以在 menuconfig Pro 或 App 中点击 ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` 并选择要追踪的 CPU。
+    遗憾的是，SystemView 不支持从多个核心进行跟踪。所以当使用 JTAG 跟踪双核模式下的 {IDF_TARGET_NAME} 时会生成两个文件：一个用于 PRO CPU，另一个用于 APP CPU。用户可以将每个文件加载到工具中单独分析。使用 UART 进行跟踪时，用户可以在 menuconfig Pro 或 App 中点击 ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` 并选择要跟踪的 CPU。
 
 在工具中单独分析每个核的跟踪数据是比较棘手的，但是 Eclipse 提供了 *Impulse* 插件，该插件可以加载多个跟踪文件，并且可以在同一视图中检查来自两个内核的事件。此外，与免费版的 SystemView 相比，此插件没有 1,000,000 个事件的限制。
 
