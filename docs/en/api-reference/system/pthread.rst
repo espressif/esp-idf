@@ -29,7 +29,7 @@ Unlike many operating systems using POSIX Threads, ESP-IDF is a real-time operat
 
 .. note::
 
-    The POSIX ``errno`` is provided by newlib in ESP-IDF. Thus the configuration ``configUSE_POSIX_ERRNO`` is not used and should stay disabled.
+    The POSIX ``errno`` is provided by esp_libc in ESP-IDF. Thus the configuration ``configUSE_POSIX_ERRNO`` is not used and should stay disabled.
 
 By default, all POSIX Threads have the same RTOS priority, but it is possible to change this by calling a :ref:`custom API <esp-pthread>`.
 

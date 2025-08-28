@@ -23,7 +23,7 @@ idf_component_register(SRCS ${sources}
                        PRIV_INCLUDE_DIRS private_include
                        PRIV_REQUIRES ${pr})
 
-# Some newlib syscalls are implemented in vfs.c, make sure these are always
+# Some libc syscalls are implemented in vfs.c, make sure these are always
 # seen by the linker
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u vfs_include_syscalls_impl")
 

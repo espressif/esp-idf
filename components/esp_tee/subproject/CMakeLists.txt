@@ -34,7 +34,7 @@ list(APPEND COMPONENTS tee_flash_mgr tee_ota_ops tee_sec_storage tee_attestation
 include_directories(${CONFIG_DIR})
 
 include("${IDF_PATH}/tools/cmake/project.cmake")
-set(common_req esp_common esp_hw_support esp_rom freertos hal log newlib soc spi_flash)
+set(common_req esp_common esp_hw_support esp_rom freertos hal log esp_libc soc spi_flash)
 
 if(CONFIG_IDF_TARGET_ARCH_RISCV)
     list(APPEND common_req riscv)

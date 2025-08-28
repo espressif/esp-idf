@@ -1,5 +1,5 @@
 name: 'newlib'
-version: '4.3.0'
+version: '4.5.0'
 cpe: cpe:2.3:a:newlib_project:newlib:{}:*:*:*:*:*:*:*
 supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
 originator: 'Organization: Red Hat Incorporated'

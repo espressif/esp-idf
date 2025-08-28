@@ -603,7 +603,7 @@ Common Component Requirements
 
 To avoid duplication, every component automatically requires some "common" IDF components even if they are not mentioned explicitly. Headers from these components can always be included.
 
-The list of common components is: cxx, newlib, freertos, esp_hw_support, heap, log, soc, hal, esp_rom, esp_common, esp_system, xtensa/riscv.
+The list of common components is: cxx, esp_libc, freertos, esp_hw_support, heap, log, soc, hal, esp_rom, esp_common, esp_system, xtensa/riscv.
 
 
 Including Components in the Build
@@ -1247,10 +1247,10 @@ It is possible to do so by using the :ref:`build system APIs provided <cmake_bui
   # specific build processes.
   idf_build_process(esp32)
 
-  # Create the project executable and plainly link the newlib component to it using
-  # its alias, idf::newlib.
+  # Create the project executable and plainly link the esp_libc component to it using
+  # its alias, idf::esp_libc.
   add_executable(${CMAKE_PROJECT_NAME}.elf main.c)
-  target_link_libraries(${CMAKE_PROJECT_NAME}.elf idf::newlib)
+  target_link_libraries(${CMAKE_PROJECT_NAME}.elf idf::esp_libc)
 
   # Let the build system know what the project executable is to attach more targets, dependencies, etc.
   idf_build_executable(${CMAKE_PROJECT_NAME}.elf)

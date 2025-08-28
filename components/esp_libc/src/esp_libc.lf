@@ -1,5 +1,5 @@
-[mapping:newlib]
-archive: libnewlib.a
+[mapping:esp_libc]
+archive: libesp_libc.a
 entries:
   if LIBC_OPTIMIZED_MISALIGNED_ACCESS = y:
       memcpy (noflash)

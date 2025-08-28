@@ -1833,7 +1833,7 @@ int tcsendbreak(int fd, int duration)
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 
-/* Create aliases for newlib syscalls
+/* Create aliases for libc syscalls
 
    These functions are also available in ROM as stubs which use the syscall table, but linking them
    directly here saves an additional function call when a software function is linked to one, and

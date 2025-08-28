@@ -74,15 +74,15 @@ if(NOT esp_tee_build)
     # Furthermore, force libcxx to appear later than libgcc because some libgcc unwind code is wrapped, if C++
     # exceptions are disabled. libcxx (this component) provides the unwind code wrappers.
     # This is to prevent linking of libgcc's unwind code which considerably increases the binary size.
-    # Also force libnewlib to appear later than libstdc++ in link line since libstdc++ depends on
-    # some functions in libnewlib, e.g. getentropy().
+    # Also force esp_libc to appear later than libstdc++ in link line since libstdc++ depends on
+    # some functions in esp_libc, e.g. getentropy().
     idf_component_get_property(pthread pthread COMPONENT_LIB)
-    idf_component_get_property(newlib newlib COMPONENT_LIB)
+    idf_component_get_property(esp_libc esp_libc COMPONENT_LIB)
 
     if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-        target_link_libraries(stdcpp_deps INTERFACE stdc++ c $<TARGET_FILE:${pthread}> $<TARGET_FILE:${newlib}>)
+        target_link_libraries(stdcpp_deps INTERFACE stdc++ c $<TARGET_FILE:${pthread}> $<TARGET_FILE:${esp_libc}>)
     else()
-        target_link_libraries(stdcpp_deps INTERFACE stdc++ $<TARGET_FILE:${pthread}> $<TARGET_FILE:${newlib}>)
+        target_link_libraries(stdcpp_deps INTERFACE stdc++ $<TARGET_FILE:${pthread}> $<TARGET_FILE:${esp_libc}>)
     endif()
 endif()
 

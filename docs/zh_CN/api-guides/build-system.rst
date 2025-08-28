@@ -603,7 +603,7 @@ Spark Plug 组件
 
 为避免重复性工作，各组件都用自动依赖一些“通用” IDF 组件，即使它们没有被明确提及。这些组件的头文件会一直包含在构建系统中。
 
-通用组件包括：cxx、newlib、freertos、esp_hw_support、heap、log、soc、hal、esp_rom、esp_common、esp_system。
+通用组件包括：cxx、esp_libc、freertos、esp_hw_support、heap、log、soc、hal、esp_rom、esp_common、esp_system。
 
 
 在构建中导入组件
@@ -1248,9 +1248,9 @@ ESP-IDF 提供了一个模板 CMake 项目，可以基于此轻松创建应用�
   idf_build_process(esp32)
 
   # 创建项目可执行文件
-  # 使用其别名 idf::newlib 将其链接到 newlib 组件
+  # 使用其别名 idf::esp_libc 将其链接到 esp_libc 组件
   add_executable(${CMAKE_PROJECT_NAME}.elf main.c)
-  target_link_libraries(${CMAKE_PROJECT_NAME}.elf idf::newlib)
+  target_link_libraries(${CMAKE_PROJECT_NAME}.elf idf::esp_libc)
 
   # 让构建系统知道项目到可执行文件是什么，从而添加更多的目标以及依赖关系等
   idf_build_executable(${CMAKE_PROJECT_NAME}.elf)

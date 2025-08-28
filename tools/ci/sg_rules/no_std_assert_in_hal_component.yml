@@ -2,7 +2,7 @@
 id: no-std-assert-call-in-hal-component
 message: Don't use standard assert function in the hal component
 severity: error # error, warning, info, hint
-note: The standard assert function depends on newlib(G1) component, but hal is a G0 component
+note: The standard assert function depends on esp_libc(G1) component, but hal is a G0 component
 language: C
 files:
   - "components/hal/**/*"

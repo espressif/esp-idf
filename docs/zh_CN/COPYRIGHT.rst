@@ -19,9 +19,9 @@
 
 以下这些第三方库包含在 ESP-IDF 生成的应用程序（固件）中。
 
-* 如 :component_file:`COPYING.NEWLIB <newlib/COPYING.NEWLIB>` 中所述， :component:`Newlib <newlib>` 经 BSD 许可证许可，版权归各方所有。如启用了 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`，请参阅 :component_file:`COPYING.picolibc <newlib/COPYING.picolibc>`。
+* 如 :component_file:`COPYING.NEWLIB <esp_libc/COPYING.NEWLIB>` 中所述， :component:`Newlib <esp_libc>` 经 BSD 许可证许可，版权归各方所有。如启用了 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`，请参阅 :component_file:`COPYING.picolibc <esp_libc/COPYING.picolibc>`。
 
-* 如 :component_file:`COPYING.picolibc <newlib/COPYING.NEWLIB>` 中所述， :component:`Picolibc <newlib>` 经 BSD 许可证许可，版权归各方所有。
+* 如 :component_file:`COPYING.picolibc <esp_libc/COPYING.NEWLIB>` 中所述， :component:`Picolibc <esp_libc>` 经 BSD 许可证许可，版权归各方所有。
 
 * :component:`Xtensa 头文件 <xtensa/include/xtensa>` 版权归 2013 Tensilica 公司所有，并根据各头文件中复制的 MIT 许可证进行许可。
 
@@ -87,7 +87,7 @@ ROM 源代码版权
 
 乐鑫芯片中的 Mask ROM 包含以下部分第三方软件编译的二进制文件：
 
-* :component:`Newlib <newlib>`，如 :component_file:`COPYING.NEWLIB <newlib/COPYING.NEWLIB>` 所述，由 BSD 许可证进行许可，版权归各方所有。
+* :component:`Newlib <esp_libc>`，如 :component_file:`COPYING.NEWLIB <esp_libc/COPYING.NEWLIB>` 所述，由 BSD 许可证进行许可，版权归各方所有。
 
 * Xtensa libhal，版权归 Tensilica 公司所有，并根据下述 MIT 许可证进行许可。
 

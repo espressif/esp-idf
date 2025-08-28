@@ -229,7 +229,7 @@ static ssize_t uart_write(int fd, const void * data, size_t size)
     tx_func_t tx_func = s_ctx[fd]->tx_func;
     esp_line_endings_t tx_mode = s_ctx[fd]->tx_mode;
     const char *data_c = (const char *)data;
-    /*  Even though newlib does stream locking on each individual stream, we need
+    /*  Even though libc does stream locking on each individual stream, we need
      *  a dedicated UART lock if two streams (stdout and stderr) point to the
      *  same UART.
      */

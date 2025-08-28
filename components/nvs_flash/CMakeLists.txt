@@ -32,7 +32,7 @@ elseif(esp_tee_build)
              "src/nvs_platform.cpp")
 
     set(requires esp_partition mbedtls)
-    set(priv_requires spi_flash newlib cxx)
+    set(priv_requires spi_flash esp_libc cxx)
 
     idf_component_register(SRCS "${srcs}"
                     REQUIRES "${requires}"
@@ -63,7 +63,7 @@ else()
     if(${target} STREQUAL "linux")
         set(priv_requires spi_flash)
     else()
-        set(priv_requires spi_flash newlib esptool_py)
+        set(priv_requires spi_flash esp_libc esptool_py)
     endif()
 
     idf_component_register(SRCS "${srcs}"

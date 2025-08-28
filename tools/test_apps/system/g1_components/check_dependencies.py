@@ -6,7 +6,7 @@ import logging
 g1_g0_components = [
     'hal',
     'cxx',
-    'newlib',
+    'esp_libc',
     'freertos',
     'esp_hw_support',
     'heap',

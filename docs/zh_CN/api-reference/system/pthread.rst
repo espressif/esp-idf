@@ -29,7 +29,7 @@ RTOS 集成
 
 .. note::
 
-    POSIX 的 ``errno`` 由 ESP-IDF 中的 newlib 提供。因此，配置项 ``configUSE_POSIX_ERRNO`` 并未被使用，应该保持禁用状态。
+    POSIX 的 ``errno`` 由 ESP-IDF 中的 esp_libc 提供。因此，配置项 ``configUSE_POSIX_ERRNO`` 并未被使用，应该保持禁用状态。
 
 默认情况下，所有 pthread 具有相同的 RTOS 优先级，但可以通过调用 :ref:`ESP-IDF 提供的扩展 API <esp-pthread>` 对此优先级进行更改。
 

@@ -19,7 +19,7 @@
 #error This file should only be built when CONFIG_VFS_SUPPORT_IO=n
 #endif
 
-/* Default implementations of read/write provided in newlib component,
+/* Default implementations of read/write provided in esp_libc component,
  * used as a fallback for console I/O.
  */
 extern ssize_t _write_r_console(struct _reent *r, int fd, const void * data, size_t size);
