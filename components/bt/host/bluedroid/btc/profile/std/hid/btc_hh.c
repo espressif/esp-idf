@@ -1119,6 +1119,8 @@ static void btc_hh_call_arg_deep_free(btc_msg_t *msg)
 void btc_hh_call_handler(btc_msg_t *msg)
 {
     btc_hidh_args_t *arg = (btc_hidh_args_t *)(msg->arg);
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
+
     switch (msg->act) {
     case BTC_HH_INIT_EVT:
         btc_hh_init();
@@ -1227,6 +1229,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
     btc_hh_device_t *p_dev = NULL;
     int len, i;
     BTC_TRACE_DEBUG("%s: event=%s dereg = %d", __func__, dump_hh_event(msg->act), btc_hh_cb.service_dereg_active);
+
     switch (msg->act) {
     case BTA_HH_ENABLE_EVT:
         if (p_data->status == BTA_HH_OK) {

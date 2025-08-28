@@ -335,7 +335,8 @@ tBTM_SEC_DEV_REC *btm_sec_alloc_dev (BD_ADDR bd_addr)
     BOOLEAN           new_entry_found  = FALSE;
     BOOLEAN           old_entry_found  = FALSE;
     BOOLEAN           malloc_new_entry = FALSE;
-    BTM_TRACE_EVENT ("btm_sec_alloc_dev\n");
+    BTM_TRACE_EVENT ("btm_sec_alloc_dev - start alloc for device %02x:%02x:%02x:%02x:%02x:%02x",
+                     bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
     for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
         p_dev_old_rec = list_node(p_node);
         /* look for old entry which match the bd_addr and the BTM_SEC_IN_USE is cleared */
@@ -691,6 +692,14 @@ tBTM_SEC_DEV_REC *btm_find_oldest_dev (void)
             old_ts   = p_dev_rec->timestamp;
         }
     }
+
+    if (p_oldest) {
+        BTM_TRACE_EVENT("oldest paired device found: bd_addr=%02x:%02x:%02x:%02x:%02x:%02x, timestamp=%u",
+                         p_oldest->bd_addr[0], p_oldest->bd_addr[1], p_oldest->bd_addr[2],
+                         p_oldest->bd_addr[3], p_oldest->bd_addr[4], p_oldest->bd_addr[5],
+                         p_oldest->timestamp);
+    }
+
     return (p_oldest);
 }
 /*******************************************************************************

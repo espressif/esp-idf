@@ -721,6 +721,9 @@ static void btc_hd_call_arg_deep_free(btc_msg_t *msg)
 void btc_hd_call_handler(btc_msg_t *msg)
 {
     btc_hidd_args_t *arg = (btc_hidd_args_t *)(msg->arg);
+
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
+
     switch (msg->act) {
     case BTC_HD_INIT_EVT:
         btc_hd_init();
@@ -778,6 +781,8 @@ void btc_hd_cb_handler(btc_msg_t *msg)
     tBTA_HD *p_data = (tBTA_HD *)msg->arg;
     esp_hidd_cb_param_t param = {0};
     BTC_TRACE_API("%s: event=%s", __func__, dump_hd_event(event));
+
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (event) {
     case BTA_HD_ENABLE_EVT:

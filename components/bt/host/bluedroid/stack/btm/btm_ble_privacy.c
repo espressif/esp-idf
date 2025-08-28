@@ -984,6 +984,10 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
 *******************************************************************************/
 void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC *p_dev_rec)
 {
+    BTM_TRACE_EVENT ("%s - bd_addr=%02x:%02x:%02x:%02x:%02x:%02x", __func__,
+                     p_dev_rec->bd_addr[0], p_dev_rec->bd_addr[1], p_dev_rec->bd_addr[2],
+                     p_dev_rec->bd_addr[3], p_dev_rec->bd_addr[4], p_dev_rec->bd_addr[5]);
+
     UINT8 rl_mask = btm_cb.ble_ctr_cb.rl_state;
 
     BTM_TRACE_EVENT ("%s\n", __func__);
