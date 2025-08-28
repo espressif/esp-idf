@@ -27,9 +27,18 @@ The following features are supported:
     - Multiple antennas
     - Channel state information
 
-    .. only:: SOC_WIFI_NAN_SUPPORT
+.. only:: esp32c2
 
-     - Wi-Fi Aware (NAN)
+    - 3 virtual Wi-Fi interfaces, which are STA, AP and Sniffer.
+    - Station-only mode, AP-only mode, station/AP-coexistence mode
+    - IEEE 802.11b, IEEE 802.11g, IEEE 802.11n, and APIs to configure the protocol mode
+    - WPA/WPA2/WPA3/WPA2-Enterprise/WPA3-Enterprise/WPS and DPP
+    - AMPDU, QoS, and other key features
+    - Modem-sleep
+    - Up to 20 MBit/s TCP throughput and 30 MBit/s UDP throughput over the air
+    - Sniffer
+    - Both fast scan and all-channel scan
+    - Multiple antennas
 
 .. only:: esp32c6
 
@@ -45,23 +54,32 @@ The following features are supported:
     - Both fast scan and all-channel scan
     - Multiple antennas
     - Channel state information
-    - TWT
+    - Individual TWT and Broadcast TWT
     - Downlink MU-MIMO
     - OFDMA
     - BSS Color
 
-.. only:: esp32c2
+.. only:: esp32c5
 
-    - 3 virtual Wi-Fi interfaces, which are STA, AP and Sniffer.
+    - 4 virtual Wi-Fi interfaces, which are STA, AP, Sniffer and reserved.
     - Station-only mode, AP-only mode, station/AP-coexistence mode
-    - IEEE 802.11b, IEEE 802.11g, IEEE 802.11n, and APIs to configure the protocol mode
-    - WPA/WPA2/WPA3/WPA2-Enterprise/WPA3-Enterprise/WPS and DPP
-    - AMPDU, QoS, and other key features
+    - IEEE 802.11b, IEEE 802.11g, IEEE 802.11n, IEEE 802.11a, IEEE 802.11ac, IEEE 802.11ax, and APIs to configure the protocol mode
+    - WPA/WPA2/WPA3/WPA2-Enterprise/WPA3-Enterprise/WAPI/WPS and DPP
+    - AMSDU, AMPDU, HT40, QoS, and other key features
     - Modem-sleep
+    - The Espressif-specific ESP-NOW protocol and Long Range mode (only supported on 2.4 GHz band), which supports up to **1 km** of data traffic
     - Up to 20 MBit/s TCP throughput and 30 MBit/s UDP throughput over the air
     - Sniffer
     - Both fast scan and all-channel scan
     - Multiple antennas
+    - Channel state information
+    - Individual TWT and Broadcast TWT
+    - Downlink MU-MIMO
+    - OFDMA
+    - BSS Color
+.. only:: SOC_WIFI_NAN_SUPPORT
+
+    - Wi-Fi Aware (NAN)
 
 
 How To Write a Wi-Fi Application
@@ -1302,6 +1320,65 @@ Call :cpp:func:`esp_wifi_set_mode()` to set the Wi-Fi mode.
    * - ``WIFI_MODE_APSTA``
      - Station/AP coexistence mode: in this mode, :cpp:func:`esp_wifi_start()` will simultaneously initialize both the station and the AP. This is done in station mode and AP mode. Please note that the channel of the external AP, which the ESP station is connected to, has higher priority over the ESP AP channel.
 
+.. only:: esp32c5
+
+    Wi-Fi Band Mode Configuration
+    ++++++++++++++++++++++++++++++
+
+    The Wi-Fi band mode used by {IDF_TARGET_NAME} can be set via the function :cpp:func:`esp_wifi_set_band_mode()`.
+
+    .. list-table::
+        :header-rows: 1
+        :widths: 15 50
+
+        * - Mode
+          - Description
+        * - ``WIFI_BAND_MODE_2G_ONLY``
+          - **2.4 GHz band mode**: The device operates only on 2.4 GHz band channels.
+        * - ``WIFI_BAND_MODE_5G_ONLY``
+          - **5 GHz band mode**: The device operates only on 5 GHz band channels.
+        * - ``WIFI_BAND_MODE_AUTO``
+          - **2.4 GHz + 5 GHz auto mode**: The device automatically selects either the 2.4 GHz or 5 GHz band based on the connected AP or SoftAP configuration.
+
+    .. note::
+        - ``WIFI_BAND_MODE_AUTO`` does not mean simultaneous dual-band support; it only allows automatic band selection.
+
+        When operating in ``WIFI_BAND_MODE_AUTO`` mode, protocols and bandwidth can be configured separately for the 2.4 GHz and 5 GHz bands:
+
+        - Use the function :cpp:func:`esp_wifi_set_protocols()` to set the supported protocol types for each band (e.g., 802.11b/g/n/ac/ax);
+
+        - Use the function :cpp:func:`esp_wifi_set_bandwidths()` to set the bandwidth for each band (e.g., 20 MHz, 40 MHz).
+
+.. only:: esp32c5
+
+    AP Choose
+    +++++++++++++++++++++++++
+
+    When the device scans multiple APs with the same SSID, {IDF_TARGET_NAME} selects the most suitable AP to connect to based on signal strength (RSSI) and band information. The default policy usually prefers the AP with higher RSSI; however, in environments where 2.4 GHz and 5 GHz coexist, this can cause the device to favor the 2.4 GHz band, ignoring the performance benefits of the 5 GHz band.
+
+    To address this, ESP-IDF provides the field :cpp:member:`rssi_5g_adjustment` in the :cpp:type:`wifi_scan_threshold_t` structure to optimize the priority of selecting 5 GHz APs.
+
+    .. list-table::
+      :header-rows: 1
+      :widths: 30 70
+
+      * - Field
+        - Description
+      * - ``rssi_5g_adjustment``
+        - Used to adjust priority between 2.4 GHz and 5 GHz APs with the same SSID. The default value is ``10``, meaning when the 5 GHz AP's RSSI is within 10 dB lower than the 2.4 GHz AP, the 5 GHz AP will be preferred. Properly setting this parameter helps the device prioritize 5 GHz networks that offer better bandwidth and interference resistance when signal strengths are close.
+
+    Example:
+
+    Suppose the device scans the following two APs with the SSID "MyWiFi":
+
+    - 2.4 GHz AP: RSSI = -60 dBm
+    - 5 GHz AP: RSSI = -68 dBm
+
+    Since ``rssi_5g_adjustment = 10`` (default) and ``-68 > -60 - 10`` holds true, the device will prioritize connecting to the 5 GHz AP.
+
+    .. note::
+
+        This parameter only takes effect when scanning results contain APs with the same SSID on both 2.4 GHz and 5 GHz bands. Its purpose is to avoid always connecting to a 2.4 GHz network with slightly stronger signal but poorer performance.
 
 Station Basic Configuration
 +++++++++++++++++++++++++++++++++++++
@@ -1347,7 +1424,7 @@ AP Basic Configuration
 
 API :cpp:func:`esp_wifi_set_config()` can be used to configure the AP. And the configuration will be stored in NVS. The table below describes the fields in detail.
 
-.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c6
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c5 or esp32c6
 
     .. list-table::
       :header-rows: 1
@@ -1362,7 +1439,7 @@ API :cpp:func:`esp_wifi_set_config()` can be used to configure the AP. And the c
       * - ssid_len
         - Length of SSID; if ssid_len is 0, check the SSID until there is a termination character. If ssid_len > 32, change it to 32; otherwise, set the SSID length according to ssid_len.
       * - channel
-        - Channel of AP; if the channel is out of range, the Wi-Fi driver defaults to channel 1. So, please make sure the channel is within the required range. For more details, refer to `Wi-Fi Country Code`_.
+        - Channel of AP; if the channel is out of range, the Wi-Fi driver will return error. So, please make sure the channel is within the required range. For more details, refer to `Wi-Fi Country Code`_.
       * - authmode
         - Auth mode of ESP AP; currently, ESP AP does not support AUTH_WEP. If the authmode is an invalid value, AP defaults the value to ``WIFI_AUTH_OPEN``.
       * - ssid_hidden
@@ -1458,6 +1535,46 @@ Currently, the ESP-IDF supports the following protocol modes:
 
           **This mode is an Espressif-patented mode which can achieve a one-kilometer line of sight range. Please make sure both the station and the AP are connected to an ESP device.**
 
+.. only:: esp32c5
+
+    - **2.4 GHz band**: Supports 802.11b, 802.11bg, 802.11bgn, 802.11bgnax, and Espressif's proprietary LR mode.
+    - **5 GHz band**: Supports 802.11a, 802.11an, 802.11anac, and 802.11anacax.
+
+    {IDF_TARGET_NAME} supports configuring Wi-Fi protocol modes for the 2.4 GHz and 5 GHz bands separately. It is recommended to use :cpp:func:`esp_wifi_set_protocols()` for this purpose. The legacy API :cpp:func:`esp_wifi_set_protocol()` is also supported.
+
+    **Recommended Usage**
+
+    Use the new API :cpp:func:`esp_wifi_set_protocols()` to configure each band independently:
+
+    .. code-block:: c
+
+        // Set 2.4 GHz to use 802.11bgnax, and 5 GHz to use 802.11anacax
+        wifi_protocols_t protocols = {
+            .ghz_2g = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11AX,
+            .ghz_5g = WIFI_PROTOCOL_11A | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11AC | WIFI_PROTOCOL_11AX,
+        };
+        esp_wifi_set_protocols(WIFI_IF_STA, &protocols);
+
+    **Legacy Usage**
+
+    Use the legacy API :cpp:func:`esp_wifi_set_protocol()` to configure the protocol mode for 2.4 GHz band or 5 GHz band:
+
+    .. code-block:: c
+
+        // Set band mode to 2.4 GHz band
+        esp_wifi_set_band_mode(WIFI_BAND_MODE_2G_ONLY);
+
+        // Set protocol of station to 802.11bgnax
+        uint8_t protocol = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11AX;
+        esp_wifi_set_protocol(WIFI_IF_STA, protocol);
+
+    .. note::
+
+        - The new API `esp_wifi_set_protocols()` allows configuring both bands simultaneously and is recommended for use on {IDF_TARGET_NAME}.
+        - The function ``esp_wifi_set_protocol()`` is suitable for single-band scenarios, such as when ``WIFI_BAND_MODE_2G_ONLY`` or ``WIFI_BAND_MODE_5G_ONLY`` is used. It only takes effect on the currently connected band. For example, if the interface is operating on the 5 GHz band, any configuration for the 2.4 GHz band will be ignored.
+        - If the configuration includes unsupported protocol combinations, the function will return an error.
+        - To enable Espressif's proprietary LR mode, make sure to include `WIFI_PROTOCOL_LR` in the 2.4 GHz protocol configuration.
+
 .. only:: esp32c2
 
     .. list-table::
@@ -1477,9 +1594,122 @@ Currently, the ESP-IDF supports the following protocol modes:
       * - 802.11gn
         - Call ``esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N)`` and ``esp_wifi_config_11b_rate(ifx, true)`` to set the station/AP to 802.11gn mode.
 
+Wi-Fi Bandwidth Mode
+++++++++++++++++++++++
 
+.. only:: esp32 or esp32s2 or esp32c3 or esp32s3
 
-.. only:: esp32 or esp32s2 or esp32c3 or esp32s3 or esp32c6
+    {IDF_TARGET_NAME} currently supports 20 MHz and 40 MHz bandwidth modes, which are used in combination with protocol modes. Common combinations include:
+
+    - **HT20**: 802.11n with 20 MHz bandwidth
+    - **HT40**: 802.11n with 40 MHz bandwidth
+
+    .. note::
+
+        - The 40 MHz bandwidth mode is only supported in 802.11n mode.
+
+    Applications can use the :cpp:func:`esp_wifi_set_bandwidth()` API to set the bandwidth mode of the current interface.
+
+    Example:
+
+    .. code-block:: c
+
+        // Set STA interface protocol to 802.11bgn
+        uint8_t protocol = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N;
+        esp_wifi_set_protocol(WIFI_IF_STA, protocol);
+
+        // Set STA interface bandwidth to 40 MHz
+        esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT40);
+
+.. only:: esp32c6
+
+    {IDF_TARGET_NAME} currently supports 20 MHz and 40 MHz bandwidth modes, which are used in combination with protocol modes. Common combinations include:
+
+    - **HT20**: 802.11n with 20 MHz bandwidth
+    - **HT40**: 802.11n with 40 MHz bandwidth
+    - **HE20**: 802.11ax with 20 MHz bandwidth
+
+    .. note::
+
+        - The 40 MHz bandwidth mode is only supported in 802.11n mode.
+
+    Applications can use the :cpp:func:`esp_wifi_set_bandwidth()` API to set the bandwidth mode of the current interface.
+
+    Example:
+
+    .. code-block:: c
+
+        // Set protocol of station to 802.11bgn
+        uint8_t protocol = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N;
+        esp_wifi_set_protocol(WIFI_IF_STA, protocol);
+
+        // Set bandwidth of station to 40 MHz
+        esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT40);
+
+.. only:: esp32c5
+
+    {IDF_TARGET_NAME} currently supports two bandwidth modes, 20 MHz and 40 MHz, which are used in combination with protocol modes. Common combinations include:
+
+    - **HT20**: 802.11n/11an, 20 MHz bandwidth
+    - **HT40**: 802.11n/11an, 40 MHz bandwidth
+    - **HE20**: 802.11ax, 20 MHz bandwidth
+
+    .. note::
+
+        - The 40 MHz bandwidth mode is only supported under 802.11n (2.4 GHz) or 802.11an (5 GHz) modes.
+
+    Applications can use the :cpp:func:`esp_wifi_set_bandwidths()` API to set independent bandwidths for 2.4 GHz and 5 GHz bands.
+
+    Example:
+
+    .. code-block:: c
+
+        // Set 2.4 GHz to use 802.11bgnax, and 5 GHz to use 802.11an
+        wifi_protocols_t protocols = {
+            .ghz_2g = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11AX,
+            .ghz_5g = WIFI_PROTOCOL_11A | WIFI_PROTOCOL_11N,
+        };
+        esp_wifi_set_protocols(WIFI_IF_STA, &protocols);
+
+        // Set bandwidth to 20 MHz for 2.4 GHz band and 40 MHz for 5 GHz band
+        wifi_bandwidths_t bw = {
+            .ghz_2g = WIFI_BW_HT20,
+            .ghz_5g = WIFI_BW_HT40
+        };
+        esp_wifi_set_bandwidths(WIFI_IF_STA, &bw);
+
+    .. note::
+
+        - When `.ghz_2g` is set to 0, only the 5 GHz bandwidth is updated, and the 2.4 GHz bandwidth remains unchanged.
+        - When `.ghz_5g` is set to 0, only the 2.4 GHz bandwidth is updated, and the 5 GHz bandwidth remains unchanged.
+
+    **Legacy Usage**
+
+    Use the legacy API :cpp:func:`esp_wifi_set_bandwidth()` to configure the bandwidth of the 2.4 GHz or 5 GHz band:
+
+    .. code-block:: c
+
+          // Set band mode to 5 GHz band
+          esp_wifi_set_band_mode(WIFI_BAND_MODE_5G_ONLY);
+
+          // Set protocol of the station interface to 802.11an
+          uint8_t protocol = WIFI_PROTOCOL_11A | WIFI_PROTOCOL_11N;
+          esp_wifi_set_protocol(WIFI_IF_STA, protocol);
+
+          // Set bandwidth of the station interface to 40 MHz
+          esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT40);
+
+    .. note::
+
+        - The new API :cpp:func:`esp_wifi_set_bandwidths()` can configure both 2.4 GHz and 5 GHz bandwidths simultaneously, and is recommended for use on {IDF_TARGET_NAME}.
+        - ``esp_wifi_set_bandwidth()`` is suitable for single-band scenarios, such as ``WIFI_BAND_MODE_2G_ONLY`` or ``WIFI_BAND_MODE_5G_ONLY`` modes. It only affects the currently connected band. For example, if the interface is on the 5 GHz band, any 2.4 GHz bandwidth settings will be ignored.
+        - If the configured bandwidth is not supported on the current band, the function will return an error.
+
+.. only:: esp32c2
+
+    {IDF_TARGET_NAME} currently supports only 20 MHz bandwidth mode.
+
+.. only:: esp32 or esp32s2 or esp32c3 or esp32s3 or esp32c5 or esp32c6
 
     Long Range (LR)
     +++++++++++++++++++++++++
@@ -1489,9 +1719,12 @@ Currently, the ESP-IDF supports the following protocol modes:
     LR Compatibility
     *************************
 
-    Since LR is Espressif-unique Wi-Fi mode, only ESP32 chip series devices (except ESP32-C2) can transmit and receive the LR data. In other words, the ESP32 chip series devices (except ESP32-C2) should NOT transmit the data in LR data rate if the connected device does not support LR. The application can achieve this by configuring a suitable Wi-Fi mode. If the negotiated mode supports LR, the ESP32 chip series devices (except ESP32-C2) may transmit data in LR rate. Otherwise, ESP32 chip series devices (except ESP32-C2) will transmit all data in the traditional Wi-Fi data rate.
+    Since LR is an Espressif-unique Wi-Fi mode operating on the 2.4 GHz band, only ESP32-series chips (excluding the ESP32-C2) support LR data transmission and reception. To ensure compatibility, the ESP32 devices should NOT use LR data rates when connected to non-LR-capable devices. This can be enforced by configuring the appropriate Wi-Fi mode:
 
-    The following table depicts the Wi-Fi mode negotiation:
+    - If the negotiated mode supports LR, ESP32 devices may transmit data at LR rates.
+    - Otherwise, they must default to traditional Wi-Fi data rates.
+
+    The following table depicts the Wi-Fi mode negotiation on 2.4 GHz band:
 
     .. only:: esp32 or esp32s2 or esp32c3 or esp32s3
 
@@ -1513,7 +1746,7 @@ Currently, the ESP-IDF supports the following protocol modes:
         | LR    | -   | -  | - | LR    | LR   | LR  | LR |
         +-------+-----+----+---+-------+------+-----+----+
 
-    .. only:: esp32c6
+    .. only:: esp32c5 or esp32c6
 
         +---------+-------+-----+----+---+---------+-------+------+-----+----+
         | AP\STA  | BGNAX | BGN | BG | B | BGNAXLR | BGNLR | BGLR | BLR | LR |
@@ -1576,107 +1809,243 @@ Currently, the ESP-IDF supports the following protocol modes:
     - Long distance Wi-Fi connection and data transmission is required.
     - Data throughput requirements are very small, such as remote device control.
 
+.. only:: esp32c5
+
+    Dynamic Frequency Selection (DFS)
+    +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    In the 5 GHz Wi-Fi band, certain channels (e.g., channels 52–144) share spectrum with critical systems such as weather radars. To avoid interference with these systems, Wi-Fi devices must perform specific detection and channel switching mechanisms before operating on these channels—this is known as **Dynamic Frequency Selection (DFS)**.
+
+    Enabling DFS allows devices to access more 5 GHz channels, thereby increasing network capacity and reducing interference. This is especially beneficial in high-density deployments or applications that require high bandwidth. The range of DFS channels may vary by country or region; see :component_file:`esp_wifi/regulatory/esp_wifi_regulatory.txt` for details.
+
+    {IDF_TARGET_NAME} supports DFS channels in the 5 GHz band, but only supports **passive radar detection**.
+
+    .. list-table::
+      :header-rows: 1
+      :widths: 20 60
+
+      * - Type
+        - Description
+      * - Passive Radar Detection Supported
+        - During scanning, the device can listen to DFS channels, detect access points (APs) operating on DFS channels, and connect to them. If the AP detects radar signals and switches to another channel using Channel Switch Announcement (CSA), {IDF_TARGET_NAME} will follow the AP to the new channel.
+      * - Active Radar Detection Not Supported
+        - {IDF_TARGET_NAME} **does not support** active radar detection and therefore cannot operate as a DFS AP in SoftAP mode.
+
+    .. note::
+      - In STA mode, {IDF_TARGET_NAME} can connect to APs operating on DFS channels, provided those channels are detected during scanning.
+      - In SoftAP mode, {IDF_TARGET_NAME} is not allowed to operate on DFS channels to comply with regulatory requirements.
+      - In STA+SoftAP coexistence mode:
+        1. If the STA connects to an AP on a DFS channel, the SoftAP is allowed to switch to the same DFS channel using CSA (Channel Switch Announcement).
+        2. When the STA disconnects, the SoftAP will switch back to a non-DFS channel via CSA to remain compliant with regulations.
+
 Wi-Fi Country Code
 +++++++++++++++++++++++++
 
-Call :cpp:func:`esp_wifi_set_country()` to set the country info. The table below describes the fields in detail. Please consult local 2.4 GHz RF operating regulations before configuring these fields.
+.. only:: esp32 or esp32c2 or esp32s2 or esp32c3 or esp32s3 or esp32c6
 
-.. list-table::
-   :header-rows: 1
-   :widths: 15 55
+    Call :cpp:func:`esp_wifi_set_country()` to set the country info. The table below describes the fields in detail. Please consult local 2.4 GHz RF operating regulations before configuring these fields.
 
-   * - Field
-     - Description
-   * - cc[3]
-     - Country code string. This attribute identifies the country or noncountry entity in which the station/AP is operating. If it is a country, the first two octets of this string is the two-character country info as described in the document ISO/IEC3166-1. The third octet is one of the following:
+    .. list-table::
+      :header-rows: 1
+      :widths: 15 55
 
-       - an ASCII space character, which means the regulations under which the station/AP is operating encompass all environments for the current frequency band in the country.
-       - an ASCII ‘O’ character, which means the regulations under which the station/AP is operating are for an outdoor environment only.
-       - an ASCII ‘I’ character, which means the regulations under which the station/AP is operating are for an indoor environment only.
-       - an ASCII ‘X’ character, which means the station/AP is operating under a noncountry entity. The first two octets of the noncountry entity is two ASCII ‘XX’ characters.
-       - the binary representation of the Operating Class table number currently in use. Refer to Annex E of IEEE Std 802.11-2020.
+      * - Field
+        - Description
+      * - cc[3]
+        - Country code string. This attribute identifies the country or noncountry entity in which the station/AP is operating. If it is a country, the first two octets of this string is the two-character country info as described in the document ISO/IEC3166-1. The third octet is one of the following:
 
-   * - schan
-     - Start channel. It is the minimum channel number of the regulations under which the station/AP can operate.
-   * - nchan
-     - Total number of channels as per the regulations. For example, if the schan=1, nchan=13, then the station/AP can send data from channel 1 to 13.
-   * - policy
-     - Country policy. This field controls which country info will be used if the configured country info is in conflict with the connected AP’s. For more details on related policies, see the following section.
+          - an ASCII space character, which means the regulations under which the station/AP is operating encompass all environments for the current frequency band in the country.
+          - an ASCII ‘O’ character, which means the regulations under which the station/AP is operating are for an outdoor environment only.
+          - an ASCII ‘I’ character, which means the regulations under which the station/AP is operating are for an indoor environment only.
+          - an ASCII ‘X’ character, which means the station/AP is operating under a noncountry entity. The first two octets of the noncountry entity is two ASCII ‘XX’ characters.
+          - the binary representation of the Operating Class table number currently in use. Refer to Annex E of IEEE Std 802.11-2020.
+
+      * - schan
+        - Start channel. It is the minimum channel number of the regulations under which the station/AP can operate.
+      * - nchan
+        - Total number of channels as per the regulations. For example, if the schan=1, nchan=13, then the station/AP can send data from channel 1 to 13.
+      * - policy
+        - Country policy. This field controls which country info will be used if the configured country info is in conflict with the connected AP’s. For more details on related policies, see the following section.
 
 
-The default country info is::
+    The default country info is::
 
-    wifi_country_t config = {
-        .cc = "01",
-        .schan = 1,
-        .nchan = 11,
-        .policy = WIFI_COUNTRY_POLICY_AUTO,
-    };
+        wifi_country_t config = {
+            .cc = "01",
+            .schan = 1,
+            .nchan = 11,
+          .policy = WIFI_COUNTRY_POLICY_AUTO,
+        };
 
-If the Wi-Fi Mode is station/AP coexist mode, they share the same configured country info. Sometimes, the country info of AP, to which the station is connected, is different from the country info of configured. For example, the configured station has country info::
+    If the Wi-Fi Mode is station/AP coexist mode, they share the same configured country info. Sometimes, the country info of AP, to which the station is connected, is different from the country info of configured. For example, the configured station has country info::
 
-    wifi_country_t config = {
-        .cc = "JP",
-        .schan = 1,
-        .nchan = 14,
-        .policy = WIFI_COUNTRY_POLICY_AUTO,
-    };
+        wifi_country_t config = {
+            .cc = "JP",
+            .schan = 1,
+            .nchan = 14,
+            .policy = WIFI_COUNTRY_POLICY_AUTO,
+        };
 
-but the connected AP has country info::
+    but the connected AP has country info::
 
-    wifi_country_t config = {
-        .cc = "CN",
-        .schan = 1,
-        .nchan = 13,
-    };
+        wifi_country_t config = {
+            .cc = "CN",
+            .schan = 1,
+            .nchan = 13,
+        ;
 
-then country info of connected AP's is used.
+    then country info of connected AP's is used.
 
-The following table depicts which country info is used in different Wi-Fi modes and different country policies, and it also describes the impact on active scan.
+    The following table depicts which country info is used in different Wi-Fi modes and different country policies, and it also describes the impact on active scan.
 
-.. list-table::
-   :header-rows: 1
-   :widths: 15 15 35
+    .. list-table::
+      :header-rows: 1
+      :widths: 15 15 35
 
-   * - Wi-Fi Mode
-     - Policy
-     - Description
-   * - Station
-     - WIFI_COUNTRY_POLICY_AUTO
-     - If the connected AP has country IE in its beacon, the country info equals to the country info in beacon. Otherwise, use the default country info.
+      * - Wi-Fi Mode
+        - Policy
+        - Description
+      * - Station
+        - WIFI_COUNTRY_POLICY_AUTO
+        - If the connected AP has country IE in its beacon, the country info equals to the country info in beacon. Otherwise, use the default country info.
 
-       For scan:
+          For scan:
 
-         Use active scan from 1 to 11 and use passive scan from 12 to 14.
+            Use active scan from 1 to 11 and use passive scan from 12 to 14.
 
-       Always keep in mind that if an AP with hidden SSID and station is set to a passive scan channel, the passive scan will not find it. In other words, if the application hopes to find the AP with hidden SSID in every channel, the policy of country info should be configured to WIFI_COUNTRY_POLICY_MANUAL.
+          Always keep in mind that if an AP with hidden SSID and station is set to a passive scan channel, the passive scan will not find it. In other words, if the application hopes to find the AP with hidden SSID in every channel, the policy of country info should be configured to WIFI_COUNTRY_POLICY_MANUAL.
 
-   * - Station
-     - WIFI_COUNTRY_POLICY_MANUAL
-     - Always use the configured country info.
+      * - Station
+        - WIFI_COUNTRY_POLICY_MANUAL
+        - Always use the configured country info.
 
-       For scan:
+          For scan:
 
-         Use active scan from schan to schan+nchan-1.
+            Use active scan from schan to schan+nchan-1.
 
-   * - AP
-     - WIFI_COUNTRY_POLICY_AUTO
-     - Always use the configured country info.
+      * - AP
+        - WIFI_COUNTRY_POLICY_AUTO
+        - Always use the configured country info.
 
-   * - AP
-     - WIFI_COUNTRY_POLICY_MANUAL
-     - Always use the configured country info.
+      * - AP
+        - WIFI_COUNTRY_POLICY_MANUAL
+        - Always use the configured country info.
 
-   * - Station/AP-coexistence
-     - WIFI_COUNTRY_POLICY_AUTO
-     - Station: Same as station mode with policy WIFI_COUNTRY_POLICY_AUTO.
-       AP: If the station does not connect to any external AP, the AP uses the configured country info. If the station connects to an external AP, the AP has the same country info as the station.
+      * - Station/AP-coexistence
+        - WIFI_COUNTRY_POLICY_AUTO
+        - Station: Same as station mode with policy WIFI_COUNTRY_POLICY_AUTO.
+          AP: If the station does not connect to any external AP, the AP uses the configured country info. If the station connects to an external AP, the AP has the same country info as the station.
 
-   * - Station/AP-coexistence
-     - WIFI_COUNTRY_POLICY_MANUAL
-     - Station: Same as station mode with policy WIFI_COUNTRY_POLICY_MANUAL.
-       AP: Same as AP mode with policy WIFI_COUNTRY_POLICY_MANUAL.
+      * - Station/AP-coexistence
+        - WIFI_COUNTRY_POLICY_MANUAL
+        - Station: Same as station mode with policy WIFI_COUNTRY_POLICY_MANUAL.
+          AP: Same as AP mode with policy WIFI_COUNTRY_POLICY_MANUAL.
 
+.. only:: esp32c5
+
+    The :cpp:func:`esp_wifi_set_country()` function is used to set the country/region information. The table below details the meaning of each field. Before configuring these fields, please refer to local 2.4 GHz and 5 GHz RF regulations.
+
+    .. list-table::
+      :header-rows: 1
+      :widths: 15 55
+
+      * - Field
+        - Description
+      * - cc[3]
+        - Country/region code string identifying the country or region of the station/AP, or a non-country entity. If it is a country/region, the first two bytes comply with the ISO/IEC 3166-1 two-letter country code standard. The third byte has the following meanings:
+
+          - Space character (ASCII): The country/region allows usage of the respective frequency band in all environments.
+          - Character `'O'`: Usage allowed only in outdoor environments.
+          - Character `'I'`: Usage allowed only in indoor environments.
+          - Character `'X'`: Non-country entity, in which case the first two characters should be `'XX'`.
+          - Binary operational class number, referring to IEEE Std 802.11-2020 Appendix E.
+
+      * - schan
+        - Start channel number, indicating the minimum channel allowed in the 2.4 GHz band for the configured country/region.
+      * - nchan
+        - Number of channels. Defines the total number of allowed channels in the 2.4 GHz band. For example, if `schan = 1` and `nchan = 13`, then channels 1 through 13 are allowed.
+      * - policy
+        - Country/region policy. When the configured country/region conflicts with that of the connected AP, this field determines which information to use. Details are explained below.
+      * - wifi_5g_channel_mask
+        - Bitmask indicating allowed 5 GHz channels for the station/AP. The mapping between channel numbers and bits can be found in :cpp:enum:`wifi_5g_channel_bit_t`.
+
+    A default configuration example::
+
+        wifi_country_t config = {
+            .cc = "01",
+            .schan = 1,
+            .nchan = 11,
+            .wifi_5g_channel_mask = 0xfe,
+            .policy = WIFI_COUNTRY_POLICY_AUTO,
+        };
+
+    When Wi-Fi is in station/AP coexistence mode, both use the same country/region information. Sometimes, the connected AP's country/region information may differ from the station's preset. For example:
+
+    Station configuration::
+
+        wifi_country_t config = {
+            .cc = "JP",
+            .schan = 1,
+            .nchan = 14,
+            .wifi_5g_channel_mask = 0xfe,
+            .policy = WIFI_COUNTRY_POLICY_AUTO,
+        };
+
+    Connected AP configuration::
+
+        wifi_country_t config = {
+            .cc = "CN",
+            .schan = 1,
+            .nchan = 13,
+        };
+
+    In this case, the connected AP's country/region information will be used.
+
+    The following table explains which country/region information is used under different Wi-Fi modes and policies, as well as differences in scanning behavior:
+
+    .. list-table::
+      :header-rows: 1
+      :widths: 15 15 35
+
+      * - Wi-Fi Mode
+        - Policy
+        - Description
+      * - Station mode
+        - WIFI_COUNTRY_POLICY_AUTO
+        - If the connected AP's beacon contains country/region information IE, that information is used; otherwise, the default configuration is used.
+
+          Scanning behavior:
+
+            - 2.4 GHz band: active scanning on channels 1–11, passive scanning on channels 12–14;
+            - 5 GHz band: active scanning on non-DFS channels, passive scanning on DFS channels.
+
+          Note: If an AP with a hidden SSID is on a passive scan channel, scanning may not discover that AP. To discover hidden SSIDs on all channels, use `WIFI_COUNTRY_POLICY_MANUAL`.
+
+      * - Station mode
+        - WIFI_COUNTRY_POLICY_MANUAL
+        - Always use the configured country/region information.
+
+          Scanning behavior:
+
+            - 2.4 GHz band: scan channels from `schan` to `schan + nchan - 1`;
+            - 5 GHz band: scan channels supported as indicated by `wifi_5g_channel_mask`.
+
+      * - AP mode
+        - WIFI_COUNTRY_POLICY_AUTO
+        - Always use the configured country/region information.
+      * - AP mode
+        - WIFI_COUNTRY_POLICY_MANUAL
+        - Always use the configured country/region information.
+      * - Station/AP coexistence mode
+        - WIFI_COUNTRY_POLICY_AUTO
+        - Same behavior as station mode with `WIFI_COUNTRY_POLICY_AUTO`.
+
+          If the station is not connected to any AP, the AP uses the configured country/region information;
+          if the station is connected to an external AP, the AP uses the country/region information obtained by the station.
+
+      * - Station/AP coexistence mode
+        - WIFI_COUNTRY_POLICY_MANUAL
+        - Same behavior as station mode with `WIFI_COUNTRY_POLICY_MANUAL`. The AP always uses the configured country/region information.
 
 Home Channel
 *************************
@@ -2343,54 +2712,133 @@ Please refer to the :doc:`PHY <../api-guides/phy>`
     Wi-Fi Channel State Information
     ------------------------------------
 
-    Channel state information (CSI) refers to the channel information of a Wi-Fi connection. In {IDF_TARGET_NAME}, this information consists of channel frequency responses of sub-carriers and is estimated when packets are received from the transmitter. Each channel frequency response of sub-carrier is recorded by two bytes of signed characters. The first one is imaginary part and the second one is real part. There are up to three fields of channel frequency responses according to the type of received packet. They are legacy long training field (LLTF), high throughput LTF (HT-LTF), and space time block code HT-LTF (STBC-HT-LTF). For different types of packets which are received on channels with different state, the sub-carrier index and total bytes of signed characters of CSI are shown in the following table.
+    .. only:: esp32 or esp32s2 or esp32c3 or esp32s3
 
-    +-------------+--------------------+-----------------------------------------+--------------------------------------------------------+----------------------------------------------------------+
-    | channel     | secondary channel  |                   none                  |                           below                        |                            above                         |
-    +-------------+--------------------+-------------+---------------------------+----------+---------------------------------------------+----------+-----------------------------------------------+
-    | packet      | signal mode        |   non HT    |            HT             |  non HT  |                      HT                     |  non HT  |                       HT                      |
-    +             +--------------------+-------------+---------------------------+----------+-----------------+---------------------------+----------+-------------------+---------------------------+
-    | information | channel bandwidth  |    20 MHz   |           20 MHz          |   20 MHz |      20 MHz     |            40 MHz         |   20 MHz |       20 MHz      |            40 MHz         |
-    +             +--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
-    |             | STBC               |  non STBC   |  non STBC   |     STBC    | non STBC | non STBC | STBC |  non STBC   |     STBC    | non STBC | non STBC |  STBC  |  non STBC   |     STBC    |
-    +-------------+--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
-    | sub-carrier | LLTF               | 0~31, -32~-1| 0~31, -32~-1| 0~31, -32~-1|   0~63   |   0~63   | 0~63 |     0~63    |     0~63    |  -64~-1  |  -64~-1  | -64~-1 |    -64~-1   |    -64~-1   |
-    +             +--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
-    | index       | HT-LTF             |      -      | 0~31, -32~-1| 0~31, -32~-1|     -    |   0~63   | 0~62 | 0~63, -64~-1| 0~60, -60~-1|     -    |  -64~-1  | -62~-1 | 0~63, -64~-1| 0~60, -60~-1|
-    +             +--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
-    |             | STBC-HT-LTF        |      -      |      -      | 0~31, -32~-1|     -    |     -    | 0~62 |       -     | 0~60, -60~-1|     -    |     -    | -62~-1 |       -     | 0~60, -60~-1|
-    +-------------+--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
-    | total bytes                      |     128     |     256     |     384     |    128   |    256   | 380  |      384    |      612    |    128   |    256   |   376  |      384    |      612    |
-    +----------------------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
+        Channel state information (CSI) refers to the channel information of a Wi-Fi connection. In {IDF_TARGET_NAME}, this information consists of channel frequency responses of sub-carriers and is estimated when packets are received from the transmitter. Each channel frequency response of sub-carrier is recorded by two bytes of signed characters. The first one is imaginary part and the second one is real part. There are up to three fields of channel frequency responses according to the type of received packet. They are legacy long training field (LLTF), high throughput LTF (HT-LTF), and space time block code HT-LTF (STBC-HT-LTF). For different types of packets which are received on channels with different state, the sub-carrier index and total bytes of signed characters of CSI are shown in the following table.
 
-    All of the information in the table can be found in the structure wifi_csi_info_t.
+        +-------------+--------------------+-----------------------------------------+--------------------------------------------------------+----------------------------------------------------------+
+        | channel     | secondary channel  |                   none                  |                           below                        |                            above                         |
+        +-------------+--------------------+-------------+---------------------------+----------+---------------------------------------------+----------+-----------------------------------------------+
+        | packet      | signal mode        |   non HT    |            HT             |  non HT  |                      HT                     |  non HT  |                       HT                      |
+        +             +--------------------+-------------+---------------------------+----------+-----------------+---------------------------+----------+-------------------+---------------------------+
+        | information | channel bandwidth  |    20 MHz   |           20 MHz          |   20 MHz |      20 MHz     |            40 MHz         |   20 MHz |       20 MHz      |            40 MHz         |
+        +             +--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
+        |             | STBC               |  non STBC   |  non STBC   |     STBC    | non STBC | non STBC | STBC |  non STBC   |     STBC    | non STBC | non STBC |  STBC  |  non STBC   |     STBC    |
+        +-------------+--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
+        | sub-carrier | LLTF               | 0~31, -32~-1| 0~31, -32~-1| 0~31, -32~-1|   0~63   |   0~63   | 0~63 |     0~63    |     0~63    |  -64~-1  |  -64~-1  | -64~-1 |    -64~-1   |    -64~-1   |
+        +             +--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
+        | index       | HT-LTF             |      -      | 0~31, -32~-1| 0~31, -32~-1|     -    |   0~63   | 0~62 | 0~63, -64~-1| 0~60, -60~-1|     -    |  -64~-1  | -62~-1 | 0~63, -64~-1| 0~60, -60~-1|
+        +             +--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
+        |             | STBC-HT-LTF        |      -      |      -      | 0~31, -32~-1|     -    |     -    | 0~62 |       -     | 0~60, -60~-1|     -    |     -    | -62~-1 |       -     | 0~60, -60~-1|
+        +-------------+--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
+        | total bytes                      |     128     |     256     |     384     |    128   |    256   | 380  |      384    |      612    |    128   |    256   |   376  |      384    |      612    |
+        +----------------------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
 
-        - Secondary channel refers to secondary_channel field of rx_ctrl field.
-        - Signal mode of packet refers to sig_mode field of rx_ctrl field.
-        - Channel bandwidth refers to cwb field of rx_ctrl field.
-        - STBC refers to stbc field of rx_ctrl field.
-        - Total bytes refers to len field.
-        - The CSI data corresponding to each Long Training Field (LTF) type is stored in a buffer starting from the buf field. Each item is stored as two bytes: imaginary part followed by real part. The order of each item is the same as the sub-carrier in the table. The order of LTF is: LLTF, HT-LTF, STBC-HT-LTF. However, all 3 LTFs may not be present, depending on the channel and packet information (see above).
-        - If first_word_invalid field of :cpp:type:`wifi_csi_info_t` is true, it means that the first four bytes of CSI data is invalid due to a hardware limitation in {IDF_TARGET_NAME}.
-        - More information like RSSI, noise floor of RF, receiving time and antenna is in the rx_ctrl field.
+        All of the information in the table can be found in the structure wifi_csi_info_t.
 
-    When imaginary part and real part data of sub-carrier are used, please refer to the table below.
+            - Secondary channel refers to secondary_channel field of rx_ctrl field.
+            - Signal mode of packet refers to sig_mode field of rx_ctrl field.
+            - Channel bandwidth refers to cwb field of rx_ctrl field.
+            - STBC refers to stbc field of rx_ctrl field.
+            - Total bytes refers to len field.
+            - The CSI data corresponding to each Long Training Field (LTF) type is stored in a buffer starting from the buf field. Each item is stored as two bytes: imaginary part followed by real part. The order of each item is the same as the sub-carrier in the table. The order of LTF is: LLTF, HT-LTF, STBC-HT-LTF. However, all 3 LTFs may not be present, depending on the channel and packet information (see above).
+            - If first_word_invalid field of :cpp:type:`wifi_csi_info_t` is true, it means that the first four bytes of CSI data is invalid due to a hardware limitation in {IDF_TARGET_NAME}.
+            - More information like RSSI, noise floor of RF, receiving time and antenna is in the rx_ctrl field.
 
-    +-----------------+-------------------+------------------------------+--------------------------+
-    | PHY standard    | Sub-carrier range | Pilot sub-carrier            | Sub-carrier (total/data) |
-    +=================+===================+==============================+==========================+
-    | 802.11a/g       | -26 to +26        | -21, -7, +7, +21             | 52 total, 48 usable      |
-    +-----------------+-------------------+------------------------------+--------------------------+
-    | 802.11n, 20 MHz | -28 to +28        | -21, -7, +7, +21             | 56 total, 52 usable      |
-    +-----------------+-------------------+------------------------------+--------------------------+
-    | 802.11n, 40 MHz | -57 to +57        | -53, -25, -11, +11, +25, +53 | 114 total, 108 usable    |
-    +-----------------+-------------------+------------------------------+--------------------------+
+        When imaginary part and real part data of sub-carrier are used, please refer to the table below.
 
-    .. note::
+        +-----------------+-------------------+------------------------------+--------------------------+
+        | PHY standard    | Sub-carrier range | Pilot sub-carrier            | Sub-carrier (total/data) |
+        +=================+===================+==============================+==========================+
+        | 802.11a/g       | -26 to +26        | -21, -7, +7, +21             | 52 total, 48 usable      |
+        +-----------------+-------------------+------------------------------+--------------------------+
+        | 802.11n, 20 MHz | -28 to +28        | -21, -7, +7, +21             | 56 total, 52 usable      |
+        +-----------------+-------------------+------------------------------+--------------------------+
+        | 802.11n, 40 MHz | -57 to +57        | -53, -25, -11, +11, +25, +53 | 114 total, 108 usable    |
+        +-----------------+-------------------+------------------------------+--------------------------+
 
-        - For STBC packet, CSI is provided for every space-time stream without CSD (cyclic shift delay). As each cyclic shift on the additional chains shall be -200 ns, only the CSD angle of first space-time stream is recorded in sub-carrier 0 of HT-LTF and STBC-HT-LTF for there is no channel frequency response in sub-carrier 0. CSD[10:0] is 11 bits, ranging from -pi to pi.
+        .. note::
 
-        - If LLTF, HT-LTF, or STBC-HT-LTF is not enabled by calling API :cpp:func:`esp_wifi_set_csi_config()`, the total bytes of CSI data will be fewer than that in the table. For example, if LLTF and HT-LTF is not enabled and STBC-HT-LTF is enabled, when a packet is received with the condition above/HT/40MHz/STBC, the total bytes of CSI data is 244 ((61 + 60) * 2 + 2 = 244. The result is aligned to four bytes, and the last two bytes are invalid).
+            - For STBC packet, CSI is provided for every space-time stream without CSD (cyclic shift delay). As each cyclic shift on the additional chains shall be -200 ns, only the CSD angle of first space-time stream is recorded in sub-carrier 0 of HT-LTF and STBC-HT-LTF for there is no channel frequency response in sub-carrier 0. CSD[10:0] is 11 bits, ranging from -pi to pi.
+
+            - If LLTF, HT-LTF, or STBC-HT-LTF is not enabled by calling API :cpp:func:`esp_wifi_set_csi_config()`, the total bytes of CSI data will be fewer than that in the table. For example, if LLTF and HT-LTF is not enabled and STBC-HT-LTF is enabled, when a packet is received with the condition above/HT/40MHz/STBC, the total bytes of CSI data is 244 ((61 + 60) * 2 + 2 = 244. The result is aligned to four bytes, and the last two bytes are invalid).
+
+    .. only:: esp32c5
+
+        Channel state information (CSI) refers to the channel information of a Wi-Fi connection. In {IDF_TARGET_NAME}, this information consists of channel frequency responses of sub-carriers and is estimated when packets are received from the transmitter. Each channel frequency response of sub-carrier is recorded by two bytes of signed characters. The first one is imaginary part and the second one is real part. Except for the IEEE 802.11g mode, all other modes have two LTF sequences (LLTF + HT/VHT/HE-LTF). {IDF_TARGET_NAME} can determine whether to include LLTF or HT/VHT/HE-LTF through ``acquire_csi_force_lltf`` field of :cpp:struct:`wifi_csi_acquire_config_t`. For different types of packets which are received on channels with different state, the sub-carrier index and total bytes of signed characters of CSI are shown in the following table.
+
+        +-------------+-------------------+--------------------------------------------+-----------------------------------+--------------------------------------------------------------------------+--------------------------------------------------------------------------+
+        | channel     | secondary channel |                                           none                                 |                                  below                                   |                                  above                                   |
+        +-------------+-------------------+--------------+-----------------------------+-----------------------------------+--------------+-----------------------------------------------------------+--------------+-----------------------------------------------------------+
+        | packet      | signal mode       |    non HT    |              HT             |                 HE                |    non HT    |                           HT                              |    non HT    |                           HT                              |
+        |             +-------------------+--------------+-----------------------------+-----------------------------------+--------------+-----------------------------+-----------------------------+--------------+-----------------------------+-----------------------------+
+        | information | channel bandwidth |    20 MHz    |            20 MHz           |               20 MHz              |    20 MHz    |            20 MHz           |            40 MHz           |    20 MHz    |             20 MHz          |           40 MHz            |
+        |             +-------------------+--------------+--------------+--------------+---------------+-------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+        |             | STBC              |   non STBC   |   non STBC   |     STBC     |    non STBC   |       STBC        |   non STBC   |   non STBC   |     STBC     |   none STBC  |     STBC     |   non STBC   |   non STBC   |     STBC     |   non STBC   |     STBC     |
+        +-------------+-------------------+--------------+--------------+--------------+---------------+-------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+        | sub-carrier | LLTF              | 0~26, -26~-1 |      —       |      —       |       —       |         —         |     0~52     |      —       |      —       |      —       |      —       |    -53~-1    |       —      |      —       |      —       |      —       |
+        |             +-------------------+--------------+--------------+--------------+---------------+-------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+        | index       | HT-LTF (HT-LTF1)  |      —       | 0~28, -28~-1 | 0~28, -28~-1 |       —       |         —         |      —       |     0~56     |     0~56     | 0~58, -58~-1 | 0~58, -58~-1 |       —      |    -57~-1    |    -57~-1    | 0~58, -58~-1 | 0~58, -58~-1 |
+        |             +-------------------+--------------+--------------+--------------+---------------+-------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+        |             | HT-LTF2           |      —       |      —       | 0~28, -28~-1 |       —       |         —         |      —       |      —       |     0~56     |      —       | 0~58, -58~-1 |       —      |       —      |    -57~-1    |      —       | 0~58, -58~-1 |
+        |             +-------------------+--------------+--------------+--------------+---------------+-------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+        |             | HE-LTF (HE-LTF1)  |      —       |      —       |      —       | 0~122, -122~1 | Determined by     |      —       |      —       |      —       |      —       |      —       |       —      |       —      |      —       |      —       |      —       |
+        |             +-------------------+--------------+--------------+--------------+---------------+                   +--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+        |             | HE-LTF2           |      —       |      —       |      —       |       —       | wifi_csi_config_t |      —       |      —       |      —       |      —       |      —       |       —      |       —      |      —       |      —       |      —       |
+        +-------------+-------------------+--------------+--------------+--------------+---------------+-------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+        | total bytes                     |     106      |     114      |     228      |      490      |        490        |     106      |     114      |     228      |     234      |     468      |      106     |      114     |     228      |     234      |     468      |
+        +---------------------------------+--------------+--------------+--------------+---------------+-------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+
+        .. note ::
+
+            - In HT/VHT/HE modes, there are two LTF sequences: LLTF + HT/VHT/HE-LTF. If the ``acquire_csi_force_lltf`` field of :cpp:struct:`wifi_csi_acquire_config_t` is set to false, the CSI data will only contain HT/VHT/HE-LTF (as shown in the table above); otherwise, the CSI data will only contain LLTF. The sub-carrier index and total bytes for LLTF in HT/VHT/HE modes are the same as those for LLTF in non-HT modes.
+            - In VHT mode, the sub-carrier index and total bytes are the same as those in HT mode.
+
+        All of the information in the table can be found in the structure :cpp:type:`wifi_csi_info_t`.
+
+            - Secondary channel refers to ``second`` field of ``rx_ctrl`` field.
+            - signal mode of packet refers to  ``cur_bb_format`` field of ``rx_ctrl`` field.
+            - total bytes refers to ``len`` field
+            - The CSI data corresponding to each Long Training Field (LTF) type is stored in a buffer starting from the buf field. Each item is stored as two bytes: imaginary part followed by real part. The order of each item is the same as the sub-carrier in the table.
+            - If ``first_word_invalid`` of :cpp:type:`wifi_csi_info_t` is true, it means that the first four bytes of CSI data is invalid due to a hardware limitation in {IDF_TARGET_NAME}.
+            - If ``rx_channel_estimate_info_vld`` of ``rx_ctrl`` field is 1, indicates that the CSI data is valid; otherwise, the CSI data is invalid.
+            - More information like RSSI, noise floor of RF, receiving time and antenna is in the ``rx_ctrl`` field.
+
+        For STBC packets, the subcarrier indices of HE-LTF1 and HE-LTF2 are determined by ``acquire_csi_he_stbc_mode`` field of :cpp:type:`wifi_csi_config_t`. Please refer to the table below for details.
+
+        +---------------------+----------------------+----------------------+
+        | acquire_csi_he_stbc |         HE-LTF1      |         HE-LTF2      |
+        +---------------------+----------------------+----------------------+
+        |         0           |    -122~-1, 0~122    |           —          |
+        +---------------------+----------------------+----------------------+
+        |         1           |           —          |    -122~-1, 0~122    |
+        +---------------------+----------------------+----------------------+
+        |         2           | Sample evenly among the HE-LTF1 and HE-LTF2 |
+        +---------------------+----------------------+----------------------+
+
+        When imaginary part and real part data of sub-carrier are used, please refer to the table below.
+
+        +-----------------------+-------------------+------------------------------------------+------------------------------+
+        | PHY standard          | Sub-carrier range |           Invalid sub-carrier            |   Sub-carrier (total/data)   |
+        +=======================+===================+==========================================+==============================+
+        | 802.11a/g             |  -26 to +26       |                    0                     |     53 total, 52 usable      |
+        +-----------------------+-------------------+------------------------------------------+------------------------------+
+        | 802.11n, 20 MHz       |  -28 to +28       |                    0                     |     57 total, 56 usable      |
+        +-----------------------+-------------------+------------------------------------------+------------------------------+
+        | 802.11n, 40 MHz       |  -58 to +58       |                -1, 0, 1                  |     117 total, 114 usable    |
+        +-----------------------+-------------------+------------------------------------------+------------------------------+
+        | 802.11ac, 20 MHz      |  -28 to +28       |                    0                     |     57 total, 56 usable      |
+        +-----------------------+-------------------+------------------------------------------+------------------------------+
+        | 802.11ax, 20 MHz (SU) |  -122 to + 122    |                -1, 0, 1                  |     245 total, 242 usable    |
+        +-----------------------+-------------------+------------------------------------------+------------------------------+
+
+        .. note::
+
+            - When the PHY is 802.11ax, please refer to the protocol for sub-carrier range and invalid sub-carrier for MU packets.
+
+        .. note::
+
+            - For STBC packet, CSI is provided for every space-time stream without CSD (cyclic shift delay). As each cyclic shift on the additional chains shall be -200 ns, only the CSD angle of first space-time stream is recorded in sub-carrier 0 of HT-LTF1 (HE-LTF1) and HT-LTF2 (HE-LTF2) for there is no channel frequency response in sub-carrier 0. CSD[10:0] is 11 bits, ranging from -pi to pi.
 
     Wi-Fi Channel State Information Configure
     -------------------------------------------
@@ -2407,7 +2855,7 @@ Please refer to the :doc:`PHY <../api-guides/phy>`
 Wi-Fi HT20/40
 -------------------------
 
-.. only:: esp32 or esp32s2 or esp32c3 or esp32s3 or esp32c6
+.. only:: esp32 or esp32s2 or esp32c3 or esp32s3 or esp32c5 or esp32c6
 
     {IDF_TARGET_NAME} supports Wi-Fi bandwidth HT20 or HT40 and does not support HT20/40 coexist. :cpp:func:`esp_wifi_set_bandwidth()` can be used to change the default bandwidth of station or AP. The default bandwidth for {IDF_TARGET_NAME} station and AP is HT40.
 
@@ -2418,6 +2866,12 @@ Wi-Fi HT20/40
     In station/AP coexist mode, the station/AP can configure HT20/40 separately. If both station and AP are negotiated to HT40, the HT40 channel should be the channel of station because the station always has higher priority than AP in {IDF_TARGET_NAME}. For example, the configured bandwidth of AP is HT40, the configured primary channel is 6, and the configured secondary channel is 10. The station is connected to an router whose primary channel is 6 and secondary channel is 2, then the actual channel of AP is changed to primary 6 and secondary 2 automatically.
 
     Theoretically, the HT40 can gain better throughput because the maximum raw physical (PHY) data rate for HT40 is 150 Mbps while it is 72 Mbps for HT20. However, if the device is used in some special environment, e.g., there are too many other Wi-Fi devices around the {IDF_TARGET_NAME} device, the performance of HT40 may be degraded. So if the applications need to support same or similar scenarios, it is recommended that the bandwidth is always configured to HT20.
+
+.. only:: esp32c5
+
+    ..note ..
+
+        When operating in the 2.4 GHz + 5 GHz band mode (``WIFI_BAND_MODE_AUTO``), can use the function :cpp:func:`esp_wifi_set_bandwidths()` to configure the bandwidth for the 2.4 GHz and 5 GHz bands separately.
 
 .. only:: esp32c2
 
@@ -2475,7 +2929,7 @@ Wi-Fi Fragment
 
     supports Wi-Fi receiving fragment, but does not support Wi-Fi transmitting fragment.
 
-.. only:: esp32c3 or esp32s3 or esp32c6
+.. only:: esp32c3 or esp32s3 or esp32c5 or esp32c6
 
     {IDF_TARGET_NAME} supports Wi-Fi receiving and transmitting fragment.
 
