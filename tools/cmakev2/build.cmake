@@ -218,14 +218,14 @@ endfunction()
 
    .. code-block:: cmake
 
-       idf_build_library(INTERFACE <interface>
+       idf_build_library(<library>
                          [COMPONENTS <component>...])
 
-   :INTERFACE[in,out]: Name of the library interface to be created.
+   :library[in]: Name of the library interface to be created.
    :COMPONENTS[in,opt]: List of component names to add to the library.
 
    Create a new library interface target with the name specified in the
-   ``INTERFACE`` option and link component targets to it based on the component
+   ``library`` option and link component targets to it based on the component
    names provided in the ``COMPONENTS`` option. If ``COMPONENTS`` option is not
    set, link component targets of all discovered components.
 
@@ -237,19 +237,15 @@ endfunction()
                                on recursive evaluations of the INTERFACE_LINK_LIBRARIES
                                and LINK_LIBRARIES target properties.
 #]]
-function(idf_build_library)
+function(idf_build_library library)
     set(options)
-    set(one_value INTERFACE)
+    set(one_value)
     set(multi_value COMPONENTS)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
     idf_build_get_property(project_initialized __PROJECT_INITIALIZED)
     if(NOT project_initialized)
         idf_die("The IDF project is not initialized. The 'idf_project_init()' must be called first.")
-    endif()
-
-    if(NOT DEFINED ARG_INTERFACE)
-        idf_die("INTERFACE option is required")
     endif()
 
     if(NOT DEFINED ARG_COMPONENTS)
@@ -259,29 +255,29 @@ function(idf_build_library)
     endif()
 
     # Create library interface.
-    add_library("${ARG_INTERFACE}" INTERFACE)
-    idf_build_set_property(LIBRARY_INTERFACES "${ARG_INTERFACE}" APPEND)
-    idf_library_set_property("${ARG_INTERFACE}" LIBRARY_COMPONENTS "${ARG_COMPONENTS}")
+    add_library("${library}" INTERFACE)
+    idf_build_set_property(LIBRARY_INTERFACES "${library}" APPEND)
+    idf_library_set_property("${library}" LIBRARY_COMPONENTS "${ARG_COMPONENTS}")
 
     # Add global include directories, such as the directory containing
     # sdkconfig, to the library's include directories.
     idf_build_get_property(include_directories INCLUDE_DIRECTORIES GENERATOR_EXPRESSION)
-    target_include_directories("${ARG_INTERFACE}" INTERFACE "${include_directories}")
+    target_include_directories("${library}" INTERFACE "${include_directories}")
 
     # Add link options.
     idf_build_get_property(link_options LINK_OPTIONS)
-    target_link_options(${ARG_INTERFACE} INTERFACE "${link_options}")
+    target_link_options(${library} INTERFACE "${link_options}")
 
     # Include the requested components and link their interface targets to the
     # library.
     foreach(component_name IN LISTS ARG_COMPONENTS)
         idf_component_include("${component_name}")
         idf_component_get_property(component_interface "${component_name}" COMPONENT_INTERFACE)
-        target_link_libraries("${ARG_INTERFACE}" INTERFACE "${component_interface}")
+        target_link_libraries("${library}" INTERFACE "${component_interface}")
     endforeach()
 
     # Get all targets transitively linked to the library interface target.
-    __get_target_dependencies(TARGET "${ARG_INTERFACE}" OUTPUT dependencies)
+    __get_target_dependencies(TARGET "${library}" OUTPUT dependencies)
 
     # Identify the components linked to the library by looking at all targets
     # that are transitively linked to the library and mapping these targets to
@@ -299,7 +295,7 @@ function(idf_build_library)
 
         list(APPEND component_interfaces_linked "${component_interface}")
         idf_component_get_property(component_name "${component_interface}" COMPONENT_NAME)
-        idf_library_set_property("${ARG_INTERFACE}" LIBRARY_COMPONENTS_LINKED "${component_name}" APPEND)
+        idf_library_set_property("${library}" LIBRARY_COMPONENTS_LINKED "${component_name}" APPEND)
     endforeach()
 
     # Collect linker fragment files from all components linked to the library
@@ -311,7 +307,7 @@ function(idf_build_library)
         __get_absolute_paths(PATHS "${component_ldfragments}"
                              BASE_DIR "${component_directory}"
                              OUTPUT ldfragments)
-        idf_library_set_property("${ARG_INTERFACE}" __LDGEN_FRAGMENT_FILES "${ldfragments}" APPEND)
+        idf_library_set_property("${library}" __LDGEN_FRAGMENT_FILES "${ldfragments}" APPEND)
     endforeach()
 
     # Collect archive files from all targets linked to the library interface
@@ -329,16 +325,16 @@ function(idf_build_library)
             continue()
         endif()
 
-        idf_library_get_property(ldgen_depends "${ARG_INTERFACE}" __LDGEN_DEPENDS)
+        idf_library_get_property(ldgen_depends "${library}" __LDGEN_DEPENDS)
         if(NOT "${dep}" IN_LIST ldgen_depends)
-            idf_library_set_property("${ARG_INTERFACE}" __LDGEN_LIBRARIES "$<TARGET_FILE:${dep}>" APPEND)
-            idf_library_set_property("${ARG_INTERFACE}" __LDGEN_DEPENDS ${dep} APPEND)
+            idf_library_set_property("${library}" __LDGEN_LIBRARIES "$<TARGET_FILE:${dep}>" APPEND)
+            idf_library_set_property("${library}" __LDGEN_DEPENDS ${dep} APPEND)
         endif()
     endforeach()
 
     # Create a sanitized library interface name that can be used as a suffix
     # for files and targets specific to the library.
-    string(REGEX REPLACE "[^A-Za-z0-9_]" "_" suffix "_${ARG_INTERFACE}")
+    string(REGEX REPLACE "[^A-Za-z0-9_]" "_" suffix "_${library}")
 
     foreach(component_interface IN LISTS component_interfaces_linked)
         # Generate linker scripts from templates.
@@ -351,7 +347,7 @@ function(idf_build_library)
         set(scripts)
         foreach(template script IN ZIP_LISTS template_scripts generated_scripts)
             set(script "${script}${suffix}")
-            __ldgen_process_template(LIBRARY "${ARG_INTERFACE}"
+            __ldgen_process_template(LIBRARY "${library}"
                                      TEMPLATE "${template}"
                                      SUFFIX "${suffix}"
                                      OUTPUT "${script}")
@@ -362,7 +358,7 @@ function(idf_build_library)
             get_filename_component(basename "${script}" NAME)
             string(REGEX REPLACE "[^A-Za-z0-9_]" "_" basename "${basename}")
             add_custom_target(__ldgen_output_${basename} DEPENDS "${script}")
-            add_dependencies("${ARG_INTERFACE}" __ldgen_output_${basename})
+            add_dependencies("${library}" __ldgen_output_${basename})
         endforeach()
 
         # Add linker scripts.
@@ -372,13 +368,13 @@ function(idf_build_library)
             get_filename_component(script_dir "${script}" DIRECTORY)
             get_filename_component(script_name "${script}" NAME)
             # Add linker script directory to the linker search path.
-            target_link_directories("${ARG_INTERFACE}" INTERFACE "${script_dir}")
+            target_link_directories("${library}" INTERFACE "${script_dir}")
             # Add linker script to link. Regarding the usage of SHELL, see
             # https://cmake.org/cmake/help/latest/command/target_link_options.html#option-de-duplication
-            target_link_options("${ARG_INTERFACE}" INTERFACE "SHELL:-T ${script_name}")
+            target_link_options("${library}" INTERFACE "SHELL:-T ${script_name}")
             # Add the linker script as a dependency to ensure the executable is
             # re-linked if the script changes.
-            set_property(TARGET "${ARG_INTERFACE}" APPEND PROPERTY INTERFACE_LINK_DEPENDS "${script}")
+            set_property(TARGET "${library}" APPEND PROPERTY INTERFACE_LINK_DEPENDS "${script}")
         endforeach()
     endforeach()
 endfunction()
