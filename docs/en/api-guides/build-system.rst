@@ -1342,6 +1342,50 @@ Specify the executable *executable* for ESP-IDF build. This attaches additional 
 
 Get the value of the specified config. Much like build properties, specifying *GENERATOR_EXPRESSION* will retrieve the generator expression string for that config, instead of the actual value, which can be used with CMake commands that support generator expressions. Actual config values are only known after call to ``idf_build_process``, however.
 
+.. code-block:: none
+
+  idf_build_add_post_elf_dependency(elf_filename dep_target)
+
+Register a dependency that must run after the ELF is linked (post-ELF) and before the binary image is generated. This is useful when a component needs to post‑process the ELF in place prior to ``elf2image`` execution (for example, inserting metadata, stripping sections, or generating additional symbol files). The dependency target ``dep_target`` must be a valid CMake target. If your rule reads or modifies the ELF, declare the ELF file as a ``DEPENDS`` of your custom command.
+
+.. important::
+
+   When creating post‑ELF steps, ensure the build graph remains acyclic:
+
+   - Do not make the ELF itself the output of your custom command. Produce a separate output (for example, ``app.elf.post``, ``app.elf.symbols``, or a simple marker file).
+   - If you must modify the ELF in place, also produce an additional output file and update its timestamp to be newer than the ELF after modification (for example, using ``cmake -E touch``). This ensures the output file has a newer timestamp than the modified ELF, so CMake considers the rule satisfied and won't re-run it on subsequent builds.
+
+   Following these rules ensures the post‑ELF hook runs in the intended order without triggering infinite rebuild loops.
+
+Example:
+
+.. code-block:: cmake
+
+    # Create a custom command to process the ELF file after linking
+    idf_build_get_property(elf_target EXECUTABLE GENERATOR_EXPRESSION)
+    add_custom_command(
+        OUTPUT "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.stripped_marker"
+        COMMAND ${CMAKE_OBJCOPY} --strip-debug
+                "$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>"
+        COMMAND ${CMAKE_COMMAND} -E touch
+                "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.stripped_marker"
+        DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>"
+    )
+
+    # Wrap it in a custom target
+    add_custom_target(strip_elf DEPENDS
+        "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.stripped_marker"
+    )
+
+    # Register it to run after the ELF is linked but before the BIN is generated
+    idf_build_add_post_elf_dependency("${CMAKE_PROJECT_NAME}.elf" strip_elf)
+
+.. code-block:: none
+
+  idf_build_get_post_elf_dependencies(elf_filename out_var)
+
+Retrieve the list of post-ELF dependencies registered for the given ELF file and store it in ``out_var``.
+
 
 .. _cmake-build-properties:
 

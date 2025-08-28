@@ -526,6 +526,10 @@ function(__idf_build_binary OUTPUT_BIN_FILENAME TARGET_NAME)
     idf_build_get_property(elf EXECUTABLE GENERATOR_EXPRESSION)
     idf_component_get_property(esptool_py_cmd esptool_py ESPTOOLPY_CMD)
 
+    # Collect post-ELF dependencies for the current ELF file
+    idf_build_get_property(elf_name EXECUTABLE_NAME)
+    idf_build_get_post_elf_dependencies("${elf_name}.elf" post_elf_deps)
+
     # Get esptool.py arguments for elf2image target
     idf_component_get_property(esptool_elf2image_args esptool_py ESPTOOL_PY_ELF2IMAGE_ARGS)
 
@@ -535,7 +539,7 @@ function(__idf_build_binary OUTPUT_BIN_FILENAME TARGET_NAME)
             -o "${build_dir}/${OUTPUT_BIN_FILENAME}" "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
         COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${OUTPUT_BIN_FILENAME}"
         COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${OUTPUT_BIN_FILENAME}" > "${build_dir}/.bin_timestamp"
-        DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
+        DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>" ${post_elf_deps}
         VERBATIM
         WORKING_DIRECTORY ${build_dir}
         COMMENT "Generating binary image from built executable"
