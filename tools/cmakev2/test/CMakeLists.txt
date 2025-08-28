@@ -208,17 +208,8 @@ endfunction()
 # cmake --build build/ --target hello_world_example
 # cmake --build build/ --target fatfs_example
 function(test_executable)
-    idf_build_get_property(build_dir BUILD_DIR)
-    file(TOUCH "${build_dir}/test_executable.c")
-
-    add_executable(fatfs_example "${build_dir}/test_executable.c")
-    idf_build_library(fatfs_lib COMPONENTS fatfs_example)
-    target_link_libraries(fatfs_example PRIVATE fatfs_lib)
-
-    add_executable(hello_world_example "${build_dir}/test_executable.c")
-    idf_build_library(hello_world_lib COMPONENTS hello_world_example)
-    target_link_libraries(hello_world_example PRIVATE hello_world_lib)
-
+    idf_build_executable(fatfs_example COMPONENTS fatfs_example)
+    idf_build_executable(hello_world_example COMPONENTS hello_world_example)
 endfunction()
 
 # Run tests
