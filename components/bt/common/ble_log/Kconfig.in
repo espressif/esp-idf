@@ -1,0 +1,147 @@
+config BLE_LOG_ENABLED
+    bool "Enable BLE Log Module (Experimental)"
+    default n
+    help
+        Enable BLE Log Module
+
+if BLE_LOG_ENABLED
+    config BLE_LOG_LBM_TRANS_SIZE
+        int "Buffer size for each peripheral transport"
+        default 512
+        help
+            There're 2 log buffer managers (LBMs) with compare-and-swap
+            (CAS) protection, 1 LBM with FreeRTOS mutex protection, 1 LBM
+            without protection for critical section. Each LBM is managing
+            2 ping-pong buffers, which means there will be 4 * 2 *
+            BLE_LOG_LBM_TRANS_SIZE bytes buffer allocated
+
+    config BLE_LOG_LBM_ATOMIC_LOCK_TASK_CNT
+        int "Count of log buffer managers with atomic lock protection for task context"
+        default 2
+        help
+            BLE Log module will search for an LBM with atomic lock protection first; if
+            all LBMs with atomic lock protection are unavailable, BLE Log module will
+            try to use the LBM with spin lock protection. So the more LBMs with atomic
+            lock protection are created, the better the logging performance will be.
+
+    config BLE_LOG_LBM_ATOMIC_LOCK_ISR_CNT
+        int "Count of log buffer managers with atomic lock protection for ISR context"
+        default 1
+        help
+            BLE Log module will search for an LBM with atomic lock protection first; if
+            all LBMs with atomic lock protection are unavailable, BLE Log module will
+            try to use the LBM with spin lock protection. So the more LBMs with atomic
+            lock protection are created, the more ISRs can nest.
+
+    config BLE_LOG_LL_ENABLED
+        bool "Enable BLE Log for Link Layer"
+        depends on BT_CONTROLLER_ENABLED
+        default y
+        select BT_LE_CONTROLLER_LOG_ENABLED
+        select BT_LE_CONTROLLER_LOG_MODE_BLE_LOG
+        help
+            Enable BLE Log for Link Layer
+
+    config BLE_LOG_LBM_LL_TRANS_SIZE
+        int "Buffer size for each peripheral transport of Link Layer LBM"
+        depends on BLE_LOG_LL_ENABLED
+        default 1024
+        help
+            There're 2 Link Layer dedicated log buffer managers (LBMs) with
+            compare-and-swap (CAS) protection. Each LBM is managing 2 ping-
+            pong buffers, which means there will be additional 2 * 2 *
+            BLE_LOG_LBM_LL_TRANS_SIZE bytes buffer allocated
+
+    config BLE_LOG_PAYLOAD_CHECKSUM_ENABLED
+        bool "Enable payload checksum for BLE Log data integrity check"
+        default y
+        help
+            Checksum is the default method for BLE Log data integrity check,
+            but for targets with slow CPU speed, it may cause significant system
+            performance decrease; a compromise could be made to balance the
+            realtime performance and log data integrity, which is calculating the
+            checksum of frame head and payload all together by default, or only
+            calculate the checksum of frame head to minimize performance decrease
+
+    config BLE_LOG_ENH_STAT_ENABLED
+        bool "Enable enhanced statistics for BLE Log"
+        default n
+        help
+            Enable enhanced statistics for written/lost frame/bytes count, which may
+            cost additional ~100kB memory
+
+    config BLE_LOG_TS_ENABLED
+        bool "Enable BLE Log Timestamp Synchronization (TS)"
+        default n
+        help
+            Enable BLE Log TS with external logging module
+
+    config BLE_LOG_SYNC_IO_NUM
+        int "GPIO number for Timestamp Synchronization (TS) toggle output"
+        depends on BLE_LOG_TS_ENABLED
+        default 0
+        help
+            GPIO number for TS toggle output
+
+    choice BLE_LOG_PRPH_CHOICE
+        prompt "BLE Log peripheral choice"
+        default BLE_LOG_PRPH_DUMMY
+        help
+            Choose BLE Log peripheral
+
+        config BLE_LOG_PRPH_DUMMY
+            bool "Dummy transport"
+            help
+                Dummy transport (dump only)
+
+        config BLE_LOG_PRPH_SPI_MASTER_DMA
+            bool "Utilize SPI master DMA driver as transport"
+            help
+                Utilize SPI master DMA driver as transport
+
+        config BLE_LOG_PRPH_UART_DMA
+            bool "Utilize UART DMA driver as transport"
+            help
+                Utilize UART DMA driver as transport
+    endchoice
+
+    if BLE_LOG_PRPH_SPI_MASTER_DMA
+        config BLE_LOG_PRPH_SPI_MASTER_DMA_MOSI_IO_NUM
+            int "GPIO number of MOSI port for SPI master DMA transport"
+            default 0
+            help
+                GPIO number of MOSI port for SPI master DMA transport
+
+        config BLE_LOG_PRPH_SPI_MASTER_DMA_SCLK_IO_NUM
+            int "GPIO number of SCLK port for SPI master DMA transport"
+            default 0
+            help
+                GPIO number of SCLK port for SPI master DMA transport
+
+        config BLE_LOG_PRPH_SPI_MASTER_DMA_CS_IO_NUM
+            int "GPIO number of CS port for SPI master DMA transport"
+            default 0
+            help
+                GPIO number of CS port for SPI master DMA transport
+    endif
+
+    if BLE_LOG_PRPH_UART_DMA
+        config BLE_LOG_PRPH_UART_DMA_PORT
+            int "UART port number for UART DMA transport"
+            default 0
+            help
+                UART port number for UART DMA
+
+        config BLE_LOG_PRPH_UART_DMA_BAUD_RATE
+            int "Baud rate of UART port for UART DMA transport"
+            default 921600
+            help
+                Determine the baud rate of UART port
+
+        config BLE_LOG_PRPH_UART_DMA_TX_IO_NUM
+            int "GPIO number for UART TX"
+            default 0
+            help
+                GPIO number for UART TX
+    endif
+endif
