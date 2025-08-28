@@ -378,3 +378,59 @@ function(idf_build_library library)
         endforeach()
     endforeach()
 endfunction()
+
+#[[api
+.. cmakev2:function:: idf_build_executable
+
+   .. code-block:: cmake
+
+       idf_build_executable(<executable>
+                            [COMPONENTS <component>...]
+                            [NAME <name>]
+                            [SUFFIX <suffix>])
+
+   :executable[in]: Name of the executable target to be created.
+   :COMPONENTS[in,opt]: List of component names to add to the library.
+   :NAME[in,opt]: Optional preferred generated binary name. If not provided,
+                  the ``executable`` name is used.
+   :SUFFIX[in,opt]: Optional ``executable`` suffix.
+
+   Create a new executable target using the name specified in the
+   ``executable`` argument, and link it to the library created with the
+   component names provided in the ``COMPONENTS`` option. If the ``COMPONENTS``
+   option is not set, all discovered components are added to the library.
+   Optinaly set the executable name and suffix.
+#]]
+function(idf_build_executable executable)
+    set(options)
+    set(one_value NAME SUFFIX)
+    set(multi_value COMPONENTS)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_NAME)
+        set(ARG_NAME "${executable}")
+    endif()
+
+    if(NOT DEFINED ARG_SUFFIX)
+        set(ARG_SUFFIX ".elf")
+    endif()
+
+    idf_build_get_property(build_dir BUILD_DIR)
+
+    set(library "library_${executable}")
+    idf_build_library(${library} COMPONENTS "${ARG_COMPONENTS}")
+
+    set(executable_src ${CMAKE_BINARY_DIR}/executable_${executable}.c)
+    file(TOUCH "${executable_src}")
+    add_executable(${executable} "${executable_src}")
+
+    if(ARG_NAME)
+        set_target_properties(${executable} PROPERTIES OUTPUT_NAME ${ARG_NAME})
+    endif()
+
+    if(ARG_SUFFIX)
+        set_target_properties(${executable} PROPERTIES SUFFIX ${ARG_SUFFIX})
+    endif()
+
+    target_link_libraries(${executable} PRIVATE ${library})
+endfunction()
