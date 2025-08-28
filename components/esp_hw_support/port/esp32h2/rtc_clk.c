@@ -15,6 +15,7 @@
 #include "esp_private/rtc_clk.h"
 #include "esp_hw_log.h"
 #include "esp_rom_sys.h"
+#include "esp_sleep.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "hal/gpio_ll.h"
@@ -121,6 +122,13 @@ void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t clk_src)
 {
     clk_ll_rtc_slow_set_src(clk_src);
     esp_rom_delay_us(SOC_DELAY_RTC_SLOW_CLK_SWITCH);
+#ifndef BOOTLOADER_BUILD
+    if ((clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) || (clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW)) {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_ON);
+    } else {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_AUTO);
+    }
+#endif
 }
 
 soc_rtc_slow_clk_src_t rtc_clk_slow_src_get(void)
