@@ -132,6 +132,12 @@ The following deprecated Log functions have been removed in ESP-IDF v6.0:
 
 - ``esp_log_internal.h`` - Use ``esp_log_buffer.h`` instead.
 
+ESP-Event
+---------
+
+Removed unnecessary FreeRTOS header includes from ``esp_event.h``; if your code relied on these implicit includes, please add the correct explicit includes ``#include "freertos/queue.h"`` and ``#include "freertos/semphr.h"`` to your files.
+
+
 Core Dump
 ---------
 
