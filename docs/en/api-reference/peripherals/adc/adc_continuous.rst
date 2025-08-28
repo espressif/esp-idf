@@ -313,6 +313,71 @@ where:
 
 To do further calibration to convert the ADC raw result to voltage in mV, please refer to :doc:`adc_calibration`.
 
+Parse ADC Raw Data
+~~~~~~~~~~~~~~~~~~~~~
+
+The raw data read from ADC continuous mode needs to be further parsed to obtain usable ADC conversion results. The function :cpp:func:`adc_continuous_parse_data` provides the functionality to parse raw data into structured ADC data.
+
+.. note::
+
+    Input buffer requirements:
+
+    - **Length alignment**: `raw_data_size` must be a multiple of :c:macro:`SOC_ADC_DIGI_RESULT_BYTES`
+    - **Buffer size**: Ensure the `raw_data` buffer is large enough to hold `raw_data_size` bytes of data
+
+.. code:: c
+
+    // Read raw data
+    uint32_t ret_num = 0;
+    esp_err_t ret = adc_continuous_read(handle, result, EXAMPLE_READ_LEN, &ret_num, 0);
+    if (ret == ESP_OK) {
+        // Parse raw data
+        adc_continuous_data_t parsed_data[ret_num / SOC_ADC_DIGI_RESULT_BYTES];
+        uint32_t num_parsed_samples = 0;
+
+        esp_err_t parse_ret = adc_continuous_parse_data(handle, result, ret_num, parsed_data, &num_parsed_samples);
+        if (parse_ret == ESP_OK) {
+            for (int i = 0; i < num_parsed_samples; i++) {
+                if (parsed_data[i].valid) {
+                    ESP_LOGI(TAG, "ADC%d, Channel: %d, Value: %"PRIu32,
+                             parsed_data[i].unit + 1,
+                             parsed_data[i].channel,
+                             parsed_data[i].raw_data);
+                }
+            }
+        }
+    }
+
+The parsed data structure :cpp:type:`adc_continuous_data_t` contains the following information:
+
+- :cpp:member:`adc_continuous_data_t::unit`：ADC unit (ADC_UNIT_1 or ADC_UNIT_2)
+- :cpp:member:`adc_continuous_data_t::channel`：ADC channel number (0-9)
+- :cpp:member:`adc_continuous_data_t::raw_data`：ADC raw data value (0-4095, 12-bit resolution)
+- :cpp:member:`adc_continuous_data_t::valid`：Whether the data is valid
+
+Read and Parse ADC Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To simplify the usage flow, the function :cpp:func:`adc_continuous_read_parse` is provided, which merges the read and parse operations into a single function call.
+
+.. code:: c
+
+    // Using the read and parse function
+    adc_continuous_data_t parsed_data[64];  // User specifies maximum number of samples
+    uint32_t num_samples = 0;
+
+    esp_err_t ret = adc_continuous_read_parse(handle, parsed_data, 64, &num_samples, 1000);
+    if (ret == ESP_OK) {
+        for (int i = 0; i < num_samples; i++) {
+            if (parsed_data[i].valid) {
+                ESP_LOGI(TAG, "ADC%d, Channel: %d, Value: %"PRIu32,
+                         parsed_data[i].unit + 1,
+                         parsed_data[i].channel,
+                         parsed_data[i].raw_data);
+            }
+        }
+    }
+
 .. _adc-continuous-hardware-limitations:
 
 .. _hardware_limitations_adc_continuous:

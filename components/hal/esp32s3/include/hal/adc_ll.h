@@ -40,6 +40,8 @@ extern "C" {
 
 #define ADC_LL_NEED_APB_PERIPH_CLAIM(ADC_UNIT)      (0)
 
+#define ADC_LL_UNIT2_CHANNEL_SUBSTRATION 0
+
 /*---------------------------------------------------------------
                     Oneshot
 ---------------------------------------------------------------*/

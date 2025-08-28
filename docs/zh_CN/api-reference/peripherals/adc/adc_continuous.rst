@@ -313,6 +313,71 @@ ADC 连续转换模式驱动使用内部缓冲池保存转换结果，缓冲池�
 
 若需进一步校准，将 ADC 原始结果转换为以 mV 为单位的电压数据，请参考 :doc:`adc_calibration`。
 
+解析 ADC 原始数据
+~~~~~~~~~~~~~~~~~~~~~
+
+ADC 连续转换模式读取的原始数据需要进一步解析才能获得可用的 ADC 转换结果。函数 :cpp:func:`adc_continuous_parse_data` 提供了将原始数据解析为结构化 ADC 数据的功能。
+
+.. note::
+
+    输入缓冲区要求：
+
+    - **长度对齐**：`raw_data_size` 必须是 :c:macro:`SOC_ADC_DIGI_RESULT_BYTES` 的整数倍
+    - **缓冲区大小**：确保 `raw_data` 缓冲区足够大以容纳 `raw_data_size` 字节的数据
+
+.. code:: c
+
+    // 读取原始数据
+    uint32_t ret_num = 0;
+    esp_err_t ret = adc_continuous_read(handle, result, EXAMPLE_READ_LEN, &ret_num, 0);
+    if (ret == ESP_OK) {
+        // 解析原始数据
+        adc_continuous_data_t parsed_data[ret_num / SOC_ADC_DIGI_RESULT_BYTES];
+        uint32_t num_parsed_samples = 0;
+
+        esp_err_t parse_ret = adc_continuous_parse_data(handle, result, ret_num, parsed_data, &num_parsed_samples);
+        if (parse_ret == ESP_OK) {
+            for (int i = 0; i < num_parsed_samples; i++) {
+                if (parsed_data[i].valid) {
+                    ESP_LOGI(TAG, "ADC%d, Channel: %d, Value: %"PRIu32,
+                             parsed_data[i].unit + 1,
+                             parsed_data[i].channel,
+                             parsed_data[i].raw_data);
+                }
+            }
+        }
+    }
+
+解析后的数据结构 :cpp:type:`adc_continuous_data_t` 包含以下信息：
+
+- :cpp:member:`adc_continuous_data_t::unit`：ADC 单元（ADC_UNIT_1 或 ADC_UNIT_2）
+- :cpp:member:`adc_continuous_data_t::channel`：ADC 通道号（0-9）
+- :cpp:member:`adc_continuous_data_t::raw_data`：ADC 原始数据值（0-4095，12位分辨率）
+- :cpp:member:`adc_continuous_data_t::valid`：数据是否有效
+
+读取并解析 ADC 数据
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+为了简化使用流程，提供了 :cpp:func:`adc_continuous_read_parse` 函数，该函数将读取和解析操作合并为一个函数调用。
+
+.. code:: c
+
+    // 使用读取并解析函数
+    adc_continuous_data_t parsed_data[64];  // 用户指定最大样本数
+    uint32_t num_samples = 0;
+
+    esp_err_t ret = adc_continuous_read_parse(handle, parsed_data, 64, &num_samples, 1000);
+    if (ret == ESP_OK) {
+        for (int i = 0; i < num_samples; i++) {
+            if (parsed_data[i].valid) {
+                ESP_LOGI(TAG, "ADC%d, Channel: %d, Value: %"PRIu32,
+                         parsed_data[i].unit + 1,
+                         parsed_data[i].channel,
+                         parsed_data[i].raw_data);
+            }
+        }
+    }
+
 .. _adc-continuous-hardware-limitations:
 
 .. _hardware_limitations_adc_continuous:
