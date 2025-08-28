@@ -142,17 +142,29 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_controller_st
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_hp_dbias(void)
 {
+#ifdef EFUSE_ACTIVE_HP_DBIAS
     return EFUSE.rd_mac_sys_4.active_hp_dbias;
+#else
+    return 0;
+#endif
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_lp_dbias(void)
 {
+#ifdef EFUSE_ACTIVE_LP_DBIAS
     return EFUSE.rd_mac_sys_4.active_lp_dbias;
+#else
+    return 0;
+#endif
 }
 
 __attribute__((always_inline)) static inline int32_t efuse_ll_get_dbias_vol_gap(void)
 {
+#ifdef EFUSE_LP_DCDC_DBIAS_VOL_GAP
     return EFUSE.rd_mac_sys_5.lp_dcdc_dbias_vol_gap;
+#else
+    return 0;
+#endif
 }
 
 /******************* eFuse control functions *************************/
