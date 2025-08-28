@@ -176,6 +176,5 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
-
     ESP_EARLY_LOGW(TAG, "esp_perip_clk_init() has not been implemented yet");
 }
