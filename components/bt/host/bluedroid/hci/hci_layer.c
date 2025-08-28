@@ -614,3 +614,96 @@ const hci_t *hci_layer_get_interface(void)
     init_layer_interface();
     return &interface;
 }
+
+#if !UC_BT_STACK_NO_LOG
+/*******************************************************************************
+**
+** Function         hci_status_code_to_string
+**
+** Description      Converts an HCI status code to a human-readable string.
+**                  If the code is not defined in the specification, the
+**                  function returns "Unknown Status (0xXX)" where XX is the
+**                  actual code value.
+**                  Reference: BLUETOOTH CORE SPECIFICATION Version 5.4,
+**                  Vol 1, Part F, p. 376
+**
+** Parameters       status : HCI status code
+**
+** Returns          const char* : readable description of the status
+**
+*******************************************************************************/
+const char *hci_status_code_to_string(uint8_t status)
+{
+    switch (status) {
+        case HCI_SUCCESS:                           return "Success";                 /* 0x00 */
+        case HCI_ERR_ILLEGAL_COMMAND:               return "Illegal Command";        /* 0x01 */
+        case HCI_ERR_NO_CONNECTION:                 return "No Connection";          /* 0x02 */
+        case HCI_ERR_HW_FAILURE:                     return "HW Failure";             /* 0x03 */
+        case HCI_ERR_PAGE_TIMEOUT:                   return "Page Timeout";           /* 0x04 */
+        case HCI_ERR_AUTH_FAILURE:                   return "Auth Failure";           /* 0x05 */
+        case HCI_ERR_KEY_MISSING:                    return "Key Missing";            /* 0x06 */
+        case HCI_ERR_MEMORY_FULL:                    return "Memory Full";            /* 0x07 */
+        case HCI_ERR_CONNECTION_TOUT:                return "Conn Timeout";           /* 0x08 */
+        case HCI_ERR_MAX_NUM_OF_CONNECTIONS:         return "Conn Limit Exceeded";   /* 0x09 */
+        case HCI_ERR_MAX_NUM_OF_SCOS:                return "Sync Conn Limit Exceeded"; /* 0x0A */
+        case HCI_ERR_CONNECTION_EXISTS:              return "Conn Exists";            /* 0x0B */
+        case HCI_ERR_COMMAND_DISALLOWED:             return "Cmd Disallowed";         /* 0x0C */
+        case HCI_ERR_HOST_REJECT_RESOURCES:          return "Rejected: Resources";   /* 0x0D */
+        case HCI_ERR_HOST_REJECT_SECURITY:           return "Rejected: Security";    /* 0x0E */
+        case HCI_ERR_HOST_REJECT_DEVICE:             return "Rejected: BD_ADDR";     /* 0x0F */
+        case HCI_ERR_HOST_TIMEOUT:                   return "Accept Timeout";         /* 0x10 */
+        case HCI_ERR_UNSUPPORTED_VALUE:             return "Unsupported Value";      /* 0x11 */
+        case HCI_ERR_ILLEGAL_PARAMETER_FMT:         return "Invalid Param";          /* 0x12 */
+        case HCI_ERR_PEER_USER:                      return "Terminated by Peer";     /* 0x13 */
+        case HCI_ERR_PEER_LOW_RESOURCES:             return "Peer Low Resources";    /* 0x14 */
+        case HCI_ERR_PEER_POWER_OFF:                 return "Peer Power Off";         /* 0x15 */
+        case HCI_ERR_CONN_CAUSE_LOCAL_HOST:          return "Terminated by Host";     /* 0x16 */
+        case HCI_ERR_REPEATED_ATTEMPTS:             return "Repeated Attempts";      /* 0x17 */
+        case HCI_ERR_PAIRING_NOT_ALLOWED:            return "Pairing Not Allowed";    /* 0x18 */
+        case HCI_ERR_UNKNOWN_LMP_PDU:               return "Unknown LMP PDU";        /* 0x19 */
+        case HCI_ERR_UNSUPPORTED_REM_FEATURE:        return "Unsupported Remote Feature"; /* 0x1A */
+        case HCI_ERR_SCO_OFFSET_REJECTED:            return "SCO Offset Rejected";   /* 0x1B */
+        case HCI_ERR_SCO_INTERVAL_REJECTED:          return "SCO Interval Rejected"; /* 0x1C */
+        case HCI_ERR_SCO_AIR_MODE:                   return "SCO Air Mode Rejected"; /* 0x1D */
+        case HCI_ERR_INVALID_LMP_PARAM:              return "Invalid LMP/LL Param";  /* 0x1E */
+        case HCI_ERR_UNSPECIFIED:                     return "Unspecified Error";     /* 0x1F */
+        case HCI_ERR_UNSUPPORTED_LMP_PARAMETERS:     return "Unsupported LMP/LL";    /* 0x20 */
+        case HCI_ERR_ROLE_CHANGE_NOT_ALLOWED:        return "Role Change Not Allowed"; /* 0x21 */
+        case HCI_ERR_LMP_RESPONSE_TIMEOUT:           return "LMP/LL Response Timeout"; /* 0x22 */
+        case HCI_ERR_LMP_ERR_TRANS_COLLISION:        return "Transaction Collision"; /* 0x23 */
+        case HCI_ERR_LMP_PDU_NOT_ALLOWED:            return "LMP PDU Not Allowed";   /* 0x24 */
+        case HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE:      return "Encryption Not Acceptable"; /* 0x25 */
+        case HCI_ERR_UNIT_KEY_USED:                  return "Link Key Used";          /* 0x26 */
+        case HCI_ERR_QOS_NOT_SUPPORTED:              return "QoS Not Supported";     /* 0x27 */
+        case HCI_ERR_INSTANT_PASSED:                 return "Instant Passed";        /* 0x28 */
+        case HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED: return "Pairing w/ Unit Key Not Supported"; /* 0x29 */
+        case HCI_ERR_DIFF_TRANSACTION_COLLISION:     return "Transaction Collision"; /* 0x2A */
+        case HCI_ERR_UNDEFINED_0x2B:                 return "Reserved";               /* 0x2B */
+        case HCI_ERR_QOS_UNACCEPTABLE_PARAM:         return "QoS Unacceptable";      /* 0x2C */
+        case HCI_ERR_QOS_REJECTED:                   return "QoS Rejected";           /* 0x2D */
+        case HCI_ERR_CHAN_CLASSIF_NOT_SUPPORTED:     return "Chan Classif Not Supported"; /* 0x2E */
+        case HCI_ERR_INSUFFCIENT_SECURITY:           return "Insufficient Security"; /* 0x2F */
+        case HCI_ERR_PARAM_OUT_OF_RANGE:             return "Param Out of Range";     /* 0x30 */
+        case HCI_ERR_UNDEFINED_0x31:                 return "Reserved";               /* 0x31 */
+        case HCI_ERR_ROLE_SWITCH_PENDING:            return "Role Switch Pending";   /* 0x32 */
+        case HCI_ERR_UNDEFINED_0x33:                 return "Reserved";               /* 0x33 */
+        case HCI_ERR_RESERVED_SLOT_VIOLATION:        return "Slot Violation";        /* 0x34 */
+        case HCI_ERR_ROLE_SWITCH_FAILED:             return "Role Switch Failed";    /* 0x35 */
+        case HCI_ERR_INQ_RSP_DATA_TOO_LARGE:         return "Inquiry Response Too Large"; /* 0x36 */
+        case HCI_ERR_SIMPLE_PAIRING_NOT_SUPPORTED:   return "Simple Pairing Not Supported"; /* 0x37 */
+        case HCI_ERR_HOST_BUSY_PAIRING:              return "Host Busy";              /* 0x38 */
+        case HCI_ERR_REJ_NO_SUITABLE_CHANNEL:        return "No Suitable Channel";   /* 0x39 */
+        case HCI_ERR_CONTROLLER_BUSY:                return "Controller Busy";       /* 0x3A */
+        case HCI_ERR_UNACCEPT_CONN_INTERVAL:         return "Unacceptable Conn Interval"; /* 0x3B */
+        case HCI_ERR_DIRECTED_ADVERTISING_TIMEOUT:   return "Adv Timeout";           /* 0x3C */
+        case HCI_ERR_CONN_TOUT_DUE_TO_MIC_FAILURE:   return "MIC Failure";           /* 0x3D */
+        case HCI_ERR_CONN_FAILED_ESTABLISHMENT:      return "Conn Failed";           /* 0x3E */
+        case HCI_ERR_MAC_CONNECTION_FAILED:          return "Previously Used";       /* 0x3F */
+        default: {
+            static char buf[24];
+            snprintf(buf, sizeof(buf), "Unknown Status (0x%02X)", status);
+            return buf;
+        }
+    }
+}
+#endif
