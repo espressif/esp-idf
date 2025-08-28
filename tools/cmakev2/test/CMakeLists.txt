@@ -110,8 +110,7 @@ function(test_idf_build_library)
     set(components app_trace app_update bootloader bootloader_support bt cmock)
 
     set(idflib idflibtest)
-    idf_build_library(INTERFACE "${idflib}"
-                      COMPONENTS "${components}")
+    idf_build_library("${idflib}" COMPONENTS "${components}")
 
     if(NOT TARGET "${idflib}")
         idf_die("'${idflib}' not created")
@@ -126,7 +125,7 @@ function(test_idf_build_library)
     # Create idflibtest2 without specifying COMPONENTS and test that it
     # contains all discovered components.
     set(idflib idflibtest2)
-    idf_build_library(INTERFACE "${idflib}")
+    idf_build_library("${idflib}")
 
     if(NOT TARGET "${idflib}")
         idf_die("'${idflib}' not created")
@@ -187,7 +186,7 @@ endfunction()
 # Test that the targets for component1 and component2 are created when
 # component2 is included.
 function(test_include_component)
-    idf_build_library(INTERFACE idflibtest3 COMPONENTS component2)
+    idf_build_library(idflibtest3 COMPONENTS component2)
     idf_component_get_property(component_real_target
                                component2
                                COMPONENT_REAL_TARGET)
@@ -213,13 +212,11 @@ function(test_executable)
     file(TOUCH "${build_dir}/test_executable.c")
 
     add_executable(fatfs_example "${build_dir}/test_executable.c")
-    idf_build_library(INTERFACE fatfs_lib
-                      COMPONENTS fatfs_example)
+    idf_build_library(fatfs_lib COMPONENTS fatfs_example)
     target_link_libraries(fatfs_example PRIVATE fatfs_lib)
 
     add_executable(hello_world_example "${build_dir}/test_executable.c")
-    idf_build_library(INTERFACE hello_world_lib
-                      COMPONENTS hello_world_example)
+    idf_build_library(hello_world_lib COMPONENTS hello_world_example)
     target_link_libraries(hello_world_example PRIVATE hello_world_lib)
 
 endfunction()
