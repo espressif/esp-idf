@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,6 @@
 #include "esp_rom_crc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_heap_caps.h"
 #include "riscv/csr.h"
 #include "soc/clic_reg.h"
 #include "soc/rtc_periph.h"
@@ -32,6 +31,7 @@
 #include "esp32p4/rom/ets_sys.h"
 #include "esp32p4/rom/rtc.h"
 #include "rvsleep-frames.h"
+#include "sleep_cpu_retention.h"
 
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
 #include "esp_private/system_internal.h"
@@ -40,141 +40,15 @@
 
 
 #if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
-#include <stdatomic.h>
-#include "soc/hp_system_reg.h"
-typedef enum {
-    SMP_IDLE,
-    SMP_BACKUP_START,
-    SMP_BACKUP_DONE,
-    SMP_RESTORE_START,
-    SMP_RESTORE_DONE,
-    SMP_SKIP_RETENTION,
-} smp_retention_state_t;
-
 static TCM_DRAM_ATTR smp_retention_state_t s_smp_retention_state[portNUM_PROCESSORS];
 #endif
 
+
 static __attribute__((unused)) const char *TAG = "sleep";
-
-typedef struct {
-    uint32_t start;
-    uint32_t end;
-} cpu_domain_dev_regs_region_t;
-
-typedef struct {
-    cpu_domain_dev_regs_region_t *region;
-    int region_num;
-    uint32_t *regs_frame;
-} cpu_domain_dev_sleep_frame_t;
-
-/**
- * Internal structure which holds all requested light sleep cpu retention parameters
- */
-typedef struct {
-    struct {
-        RvCoreCriticalSleepFrame *critical_frame[portNUM_PROCESSORS];
-        RvCoreNonCriticalSleepFrame *non_critical_frame[portNUM_PROCESSORS];
-        cpu_domain_dev_sleep_frame_t *clic_frame[portNUM_PROCESSORS];
-    } retent;
-} sleep_cpu_retention_t;
 
 static TCM_DRAM_ATTR __attribute__((unused)) sleep_cpu_retention_t s_cpu_retention;
 
 extern RvCoreCriticalSleepFrame *rv_core_critical_regs_frame[portNUM_PROCESSORS];
-
-static void * cpu_domain_dev_sleep_frame_alloc_and_init(const cpu_domain_dev_regs_region_t *regions, const int region_num)
-{
-    const int region_sz = sizeof(cpu_domain_dev_regs_region_t) * region_num;
-    int regs_frame_sz = 0;
-    for (int num = 0; num < region_num; num++) {
-        regs_frame_sz += regions[num].end - regions[num].start;
-    }
-    void *frame = heap_caps_malloc(sizeof(cpu_domain_dev_sleep_frame_t) + region_sz + regs_frame_sz, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL);
-    if (frame) {
-        cpu_domain_dev_regs_region_t *region = (cpu_domain_dev_regs_region_t *)(frame + sizeof(cpu_domain_dev_sleep_frame_t));
-        memcpy(region, regions, region_num * sizeof(cpu_domain_dev_regs_region_t));
-        void *regs_frame = frame + sizeof(cpu_domain_dev_sleep_frame_t) + region_sz;
-        memset(regs_frame, 0, regs_frame_sz);
-        *(cpu_domain_dev_sleep_frame_t *)frame = (cpu_domain_dev_sleep_frame_t) {
-            .region = region,
-            .region_num = region_num,
-            .regs_frame = (uint32_t *)regs_frame
-        };
-    }
-    return frame;
-}
-
-static inline void * cpu_domain_clic_sleep_frame_alloc_and_init(uint8_t core_id)
-{
-    const static cpu_domain_dev_regs_region_t regions[portNUM_PROCESSORS][2] = {
-       [0 ... portNUM_PROCESSORS - 1] = {
-            { .start = CLIC_INT_CONFIG_REG, .end = CLIC_INT_THRESH_REG + 4 },
-            { .start = CLIC_INT_CTRL_REG(0), .end = CLIC_INT_CTRL_REG(47) + 4 },
-        }
-    };
-    return cpu_domain_dev_sleep_frame_alloc_and_init(regions[core_id], sizeof(regions[core_id]) / sizeof(cpu_domain_dev_regs_region_t));
-}
-
-static esp_err_t esp_sleep_cpu_retention_init_impl(void)
-{
-    for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
-        if (s_cpu_retention.retent.critical_frame[core_id] == NULL) {
-            void *frame = heap_caps_calloc(1, RV_SLEEP_CTX_FRMSZ, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL);
-            if (frame == NULL) {
-                goto err;
-            }
-            s_cpu_retention.retent.critical_frame[core_id] = (RvCoreCriticalSleepFrame *)frame;
-            rv_core_critical_regs_frame[core_id] = (RvCoreCriticalSleepFrame *)frame;
-        }
-        if (s_cpu_retention.retent.non_critical_frame[core_id] == NULL) {
-            void *frame = heap_caps_calloc(1, sizeof(RvCoreNonCriticalSleepFrame), MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL);
-            if (frame == NULL) {
-                goto err;
-            }
-            s_cpu_retention.retent.non_critical_frame[core_id] = (RvCoreNonCriticalSleepFrame *)frame;
-        }
-    }
-    for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
-        if (s_cpu_retention.retent.clic_frame[core_id] == NULL) {
-            void *frame = cpu_domain_clic_sleep_frame_alloc_and_init(core_id);
-            if (frame == NULL) {
-                goto err;
-            }
-            s_cpu_retention.retent.clic_frame[core_id] = (cpu_domain_dev_sleep_frame_t *)frame;
-        }
-    }
-#if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
-    for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
-        atomic_init(&s_smp_retention_state[core_id], SMP_IDLE);
-    }
-#endif
-    return ESP_OK;
-err:
-    esp_sleep_cpu_retention_deinit();
-    return ESP_ERR_NO_MEM;
-}
-
-static esp_err_t esp_sleep_cpu_retention_deinit_impl(void)
-{
-    for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
-        if (s_cpu_retention.retent.critical_frame[core_id]) {
-            heap_caps_free((void *)s_cpu_retention.retent.critical_frame[core_id]);
-            s_cpu_retention.retent.critical_frame[core_id] = NULL;
-            rv_core_critical_regs_frame[core_id] = NULL;
-        }
-        if (s_cpu_retention.retent.non_critical_frame[core_id]) {
-            heap_caps_free((void *)s_cpu_retention.retent.non_critical_frame[core_id]);
-            s_cpu_retention.retent.non_critical_frame[core_id] = NULL;
-        }
-    }
-    for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
-        if (s_cpu_retention.retent.clic_frame[core_id]) {
-            heap_caps_free((void *)s_cpu_retention.retent.clic_frame[core_id]);
-            s_cpu_retention.retent.clic_frame[core_id] = NULL;
-        }
-    }
-    return ESP_OK;
-}
 
 FORCE_INLINE_ATTR uint32_t save_mstatus_and_disable_global_int(void)
 {
@@ -457,12 +331,16 @@ esp_err_t TCM_IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t,
 
 esp_err_t esp_sleep_cpu_retention_init(void)
 {
-    return esp_sleep_cpu_retention_init_impl();
+#if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+    return esp_sleep_cpu_retention_init_impl(& s_cpu_retention, s_smp_retention_state);
+#else
+    return esp_sleep_cpu_retention_init_impl(& s_cpu_retention);
+#endif
 }
 
 esp_err_t esp_sleep_cpu_retention_deinit(void)
 {
-    return esp_sleep_cpu_retention_deinit_impl();
+    return esp_sleep_cpu_retention_deinit_impl(& s_cpu_retention);
 }
 
 bool cpu_domain_pd_allowed(void)

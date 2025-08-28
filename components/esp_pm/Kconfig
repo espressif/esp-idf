@@ -130,6 +130,31 @@ menu "Power Management"
             On esp32s3 soc, enabling this option will consume 8.58 KB of internal RAM
             and will reduce sleep current consumption by about 650 uA.
 
+    choice
+        bool "Retentive memory alloaction strategy for light sleep"
+        depends on  SOC_PM_CPU_RETENTION_BY_SW && \
+            (PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP || (PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_CPU_IN_TOP_DOMAIN))
+        default PM_CPU_RETENTION_DYNAMIC
+        help
+            In light sleep mode, certain CPU states and data need to be preserved in memory while cpu domain
+            is powered down. This configuration determines how the required memory resources are allocated.
+            The PM_CPU_RETENTION_DYNAMIC option allows more flexible runtime memory management by
+            supporting access to larger memory. However, it carries the risk of insufficient memory
+            when the chip enters the light-sleep mode, even resulting in retention failure.
+            In contrast, the PM_CPU_RETENTION_STATIC option ensures reliable sleep CPU retention during the
+            system initialization, but reduces the memory available during runtime.
+
+        config PM_CPU_RETENTION_DYNAMIC
+            bool "Dynamically allocate memory"
+            help
+                Allocate memory for retention data only when preparing to enter light sleep.
+
+        config PM_CPU_RETENTION_STATIC
+            bool "Statically allocate memory"
+            help
+                Pre-allocate all required retention memory during system initialization.
+    endchoice
+
     config PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
         bool "Restore I/D-cache tag memory after power down CPU light sleep"
         depends on IDF_TARGET_ESP32S3 && PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
