@@ -339,7 +339,7 @@ void btc_ble_cte_call_handler(btc_msg_t *msg)
 #if ((BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE) || (BLE_FEAT_CTE_CONNECTION_EN == TRUE))
     btc_ble_cte_args_t *arg = (btc_ble_cte_args_t *)msg->arg;
 #endif // #if ((BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE) || (BLE_FEAT_CTE_CONNECTION_EN == TRUE))
-    BTC_TRACE_DEBUG("%s act %d\n", __FUNCTION__, msg->act);
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (msg->act) {
 #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)

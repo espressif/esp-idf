@@ -297,7 +297,7 @@ void btc_iso_ble_cb_deep_free(btc_msg_t *msg)
 void btc_iso_ble_call_handler(btc_msg_t *msg)
 {
     btc_ble_iso_args_t *arg = (btc_ble_iso_args_t *)msg->arg;
-    BTC_TRACE_DEBUG("%s act %d\n", __FUNCTION__, msg->act);
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (msg->act) {
 #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)

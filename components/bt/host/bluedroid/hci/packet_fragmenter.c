@@ -26,7 +26,7 @@
 #include "osi/hash_map.h"
 #include "osi/hash_functions.h"
 #include "common/bt_trace.h"
-
+#include "esp_log.h"
 
 #define APPLY_CONTINUATION_FLAG(handle) (((handle) & 0xCFFF) | 0x1000)
 #define APPLY_START_FLAG(handle) (((handle) & 0xCFFF) | 0x2000)
@@ -173,7 +173,8 @@ static void reassemble_and_dispatch(BT_HDR *packet)
             partial_packet = (BT_HDR *)osi_calloc(full_length + sizeof(BT_HDR));
 
             if (partial_packet == NULL) {
-               HCI_TRACE_WARNING("%s full_length %d no memory.\n", __func__, full_length);
+               HCI_TRACE_WARNING("%s full_length %d no memory, free=%d, largest_block=%d", __func__, full_length,
+                                heap_caps_get_free_size(MALLOC_CAP_DEFAULT), heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
                assert(0);
             }
 

@@ -1114,6 +1114,8 @@ void btc_hf_call_handler(btc_msg_t *msg)
 {
     btc_hf_args_t *arg = (btc_hf_args_t *)(msg->arg);
 
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
+
     switch (msg->act) {
         case BTC_HF_INIT_EVT:
         {
