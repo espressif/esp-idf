@@ -77,6 +77,7 @@ tools/ci/generate_rules.py
 tools/ci/get-full-sources.sh
 tools/ci/get_supported_examples.sh
 tools/ci/gitlab_yaml_linter.py
+tools/ci/metrics/examples_count/generate_metrics.py
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/push_to_github.sh

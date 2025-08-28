@@ -16,18 +16,18 @@ workflow:
 # Place the default settings in `.gitlab/ci/common.yml` instead
 
 include:
-  - '.gitlab/ci/danger.yml'
-  - '.gitlab/ci/common.yml'
-  - '.gitlab/ci/rules.yml'
-  - '.gitlab/ci/upload_cache.yml'
-  - '.gitlab/ci/docs.yml'
-  - '.gitlab/ci/static-code-analysis.yml'
-  - '.gitlab/ci/pre_commit.yml'
-  - '.gitlab/ci/pre_check.yml'
-  - '.gitlab/ci/build.yml'
-  - '.gitlab/ci/integration_test.yml'
-  - '.gitlab/ci/host-test.yml'
-  - '.gitlab/ci/deploy.yml'
-  - '.gitlab/ci/post_deploy.yml'
-  - '.gitlab/ci/retry_failed_jobs.yml'
-  - '.gitlab/ci/test-win.yml'
+  - ".gitlab/ci/danger.yml"
+  - ".gitlab/ci/common.yml"
+  - ".gitlab/ci/rules.yml"
+  - ".gitlab/ci/upload_cache.yml"
+  - ".gitlab/ci/docs.yml"
+  - ".gitlab/ci/static-code-analysis.yml"
+  - ".gitlab/ci/pre_commit.yml"
+  - ".gitlab/ci/pre_check.yml"
+  - ".gitlab/ci/build.yml"
+  - ".gitlab/ci/integration_test.yml"
+  - ".gitlab/ci/host-test.yml"
+  - ".gitlab/ci/deploy.yml"
+  - ".gitlab/ci/post_deploy.yml"
+  - ".gitlab/ci/retry_failed_jobs.yml"
+  - ".gitlab/ci/test-win.yml"

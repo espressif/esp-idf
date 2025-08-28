@@ -3,6 +3,27 @@
   image: $ESP_ENV_IMAGE
   tags: [ deploy ]
 
+.metrics_template:
+  stage: deploy
+  tags: [ fast_run, shiny ]
+  image: python:3.13-slim
+  dependencies: []
+  needs: []
+  variables:
+    PIP_CACHE_DIR: ".cache/pip"
+    # Metrics - related env vars
+    ESP_METRICS_PROJECT_URL: "$CI_PROJECT_URL"
+    ESP_METRICS_PROJECT_ID: "$CI_PROJECT_ID"
+    ESP_METRICS_COMMIT_SHA: "$PIPELINE_COMMIT_SHA"
+    ESP_METRICS_BRANCH_NAME: "$CI_COMMIT_REF_NAME"
+  cache:
+    key: metrics-pip
+    paths:
+      - .cache/pip
+  before_script:
+    - echo "Installing esp-metrics-cli tool"
+    - pip install "esp-metrics-cli>=0.3,<1"
+
 check_submodule_sync:
   extends:
     - .deploy_job_template
@@ -82,3 +103,13 @@ upload_junit_report:
       junit: XUNIT_RESULT_*.xml
     expire_in: 1 week
     when: always
+
+target-examples-count-metrics:
+  extends:
+    - .metrics_template
+  allow_failure: true
+  script:
+    - echo "Generating ESP-IDF examples count metrics"
+    - cd tools/ci/metrics/examples_count
+    - python3 generate_metrics.py
+    - esp-metrics-cli upload -d schema.yaml -i metrics.json

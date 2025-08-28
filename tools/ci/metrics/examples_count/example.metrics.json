@@ -1,0 +1,27 @@
+{
+    "examples_count": {
+        "data": [
+            {
+                "component": "storage",
+                "target": "ESP32-C3",
+                "count": 7
+            },
+            {
+                "component": "peripherals",
+                "target": "ESP32",
+                "count": 25
+            },
+            {
+                "component": "peripherals",
+                "target": "ESP32-C2",
+                "count": 18
+            },
+            {
+                "component": "peripherals",
+                "target": "ESP32-C3",
+                "count": 22
+            }
+        ],
+        "total_examples_count": 153
+    }
+}
