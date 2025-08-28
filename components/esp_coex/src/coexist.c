@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,10 @@
 
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
 #include "esp_private/esp_modem_clock.h"
+#endif
+
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE && CONFIG_SOC_IEEE802154_SUPPORTED
+#include "esp_coex_i154.h"
 #endif
 
 #if SOC_EXTERNAL_COEX_ADVANCE
@@ -289,7 +293,7 @@ esp_err_t esp_coex_wifi_i154_enable(void)
     // TODO: Add a scheme for wifi and 154 coex.
     // Remove this function if FCC-50 closes.
     coex_enable();
-    coex_schm_status_bit_set(1, 1);
+    esp_coex_ieee802154_status_enable();
     return ESP_OK;
 }
 #endif
