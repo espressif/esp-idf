@@ -74,3 +74,25 @@ As ROM functions are unique to each target, features are as well. For example, E
     ├── test_miniz.c
     └── ... // other ROM function unit tests
 ```
+
+## Adding New Chip Support For Debugging
+
+1. Dump .rodata strings via `riscv32-esp-elf-readelf -p .rodata esp32c5_rev0_rom.elf`
+2. Locate the build date in the output (e.g. `[  23c4]  Mar 29 2024`).
+3. Get start address of .rodata section via `riscv32-esp-elf-readelf -S esp32c5_rev0_rom.elf | grep rodata`
+4. Compute the absolute address by adding the offset from step 2 to the base address from step 3.
+5. Verify with GDB:
+   ```
+     riscv32-esp-elf-gdb esp32c5_rev0_rom.elf -ex "p (char*) 0x4004b3c4" --batch
+     $1 = 0x4004b3c4 "Mar 29 2024"
+   ```
+6. Update roms.json:
+   ```
+    "esp32c5": [
+        {
+        "rev": 0,
+        "build_date_str_addr": "0x4004b3c4",
+        "build_date_str": "Mar 29 2024"
+        }
+    ],
+   ```
