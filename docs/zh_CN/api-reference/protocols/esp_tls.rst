@@ -234,6 +234,83 @@ ESP-TLS 支持在 ESP32 系列芯片上使用 ATECC608A 加密芯片，但必须
         在 TLS 中使用 ECDSA 外设时，只支持 ``MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`` 密码套件。如果使用 TLS v1.3，则支持 ``MBEDTLS_TLS1_3_AES_128_GCM_SHA256`` 密码套件。
 
 
+.. _esp_tls_client_session_tickets:
+
+客户端会话票据
+----------------------
+
+ESP-TLS 支持客户端会话恢复，可以在后续与同一服务器连接时避免完整的 TLS 握手，节省时间和资源。该功能在 ESP-TLS 使用 MbedTLS 作为底层协议栈时可用。
+
+会话恢复机制在不同 TLS 版本中略有差异：
+
+*   **TLS 1.2**：通过会话 ID（由 TLS 协议栈内部管理）或会话票据（参见 `RFC 5077 <https://tools.ietf.org/html/rfc5077>`_）实现会话恢复。ESP-TLS 主要采用会话票据机制，从而显式控制应用程序。
+*   **TLS 1.3**：会话恢复完全依赖会话票据实现。服务器会在主握手完成后，通过 "NewSessionTicket" 消息发送票据。与 TLS 1.2 不同，这些票据可以在会话期间的任意时刻发送，无需在握手后立即完成。
+
+要启用和使用客户端会话票据的步骤如下：
+
+1. 启用 Kconfig 选项 :ref:`CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS`。
+2. 在成功建立 TLS 连接（并完成握手）后，使用 :cpp:func:`esp_tls_get_client_session` 获取会话票据。
+
+    * **对于 TLS 1.3**：会话票据可能在握手后由服务器随时发送，因此应用程序应定期或在特定的应用层交互之后调用 :cpp:func:`esp_tls_get_client_session`，确保获取最新的票据。TLS 协议栈接收并处理的每个新票据都会覆盖之前的票据，用于后续的会话恢复。
+
+3. 将此会话票据安全地存储起来。
+4. 后续连接同一服务器时，将存储的会话票据填入 :cpp:member:`esp_tls_cfg_t::client_session` 字段。
+5. 在不再需要客户端会话或获取新会话前，应调用 :cpp:func:`esp_tls_free_client_session` 释放客户端会话上下文。
+
+.. code-block:: c
+
+    #include "esp_tls.h"
+
+    // 全局或持久存储客户端会话
+    esp_tls_client_session_t *saved_session = NULL;
+
+    void connect_to_server(bool use_saved_session_arg) {
+        esp_tls_cfg_t cfg = {0}; // 按需初始化配置参数
+        // ... 设置其他 cfg 成员，如 cacert_buf, common_name 等
+
+        if (use_saved_session_arg && saved_session) {
+            cfg.client_session = saved_session;
+            // ESP_LOGI(TAG, "Attempting connection with saved session ticket.");
+        } else {
+            // ESP_LOGI(TAG, "Attempting connection without a saved session ticket (full handshake).");
+        }
+
+        esp_tls_t *tls = esp_tls_init();
+        if (!tls) {
+            // ESP_LOGE(TAG, "Failed to initialize ESP-TLS handle.");
+            return;
+        }
+
+        if (esp_tls_conn_http_new_sync("https://your-server.com", &cfg, tls) == 1) {
+            // ESP_LOGI(TAG, "Connection successful.");
+
+            // 每次连接成功后，都要尝试获取/更新最新的会话票据。
+            // 无论本次是新握手还是通过会话恢复连接，更新票据都是有益的。
+            // 特别是对 TLS 1.3 而言，服务器可能会在握手完成后下发新票据。
+            if (saved_session) {
+                esp_tls_free_client_session(saved_session); // 释放之前的票据
+                saved_session = NULL;
+            }
+            saved_session = esp_tls_get_client_session(tls);
+            if (saved_session) {
+                // ESP_LOGI(TAG, "Successfully retrieved/updated client session ticket.");
+            } else {
+                // ESP_LOGW(TAG, "Failed to get client session ticket even after a successful connection.");
+            }
+
+            // 执行 TLS 通信...
+
+        }
+        esp_tls_conn_destroy(tls);
+    }
+
+.. note::
+
+    - 从服务器获取的会话票据通常有有效期，期限由服务器决定。
+    - 当尝试使用存储的票据进行连接时，如果服务器判定该票据无效（例如过期或被拒绝），ESP-TLS 会自动尝试执行完整的 TLS 握手来建立连接。在这种情况下，应用程序无需实现额外的重试逻辑。只有当会话恢复和后续的完整握手均失败时，才会报告连接失败。
+    - 当不再需要 :cpp:type:`esp_tls_client_session_t` 上下文时，或在获取并存储新的会话票据前，应调用 :cpp:func:`esp_tls_free_client_session` 释放会话。
+    - 对于 TLS 1.3，服务器在一次连接中可能多次发送新会话票据 NewSessionTicket。每次成功调用 :cpp:func:`esp_tls_get_client_session` 都会返回由底层 TLS 协议栈处理的最新票据上下文。如果应用程序要使用最新的票据进行会话恢复，则需由应用程序负责管理并更新其存储的会话信息。
+
 TLS 加密套件
 ----------------
 
