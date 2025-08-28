@@ -92,7 +92,15 @@ ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参
 
 ESP-NOW 数据可以从 Station 或 SoftAP 接口发送。确保在发送 ESP-NOW 数据之前已启用该接口。
 
-配对设备的信道范围是从 0 ~ 14。如果信道设置为 0，数据将在当前信道上发送。否则，必须使用本地设备所在的通道。
+.. only:: esp32 or esp32c2 or esp32s2 or esp32s3 or esp32c3 or esp32c6
+
+    配对设备的信道范围是从 0 ~ 14。如果信道设置为 0，数据将在当前信道上发送。否则，必须使用本地设备所在的通道。
+
+.. only:: esp32c5
+
+    2.4G频段配对设备的信道范围是从 1 ~ 14。5G频段配对设备的信道范围是[36，40，44，48，52，56，60，64，100，112，116，120，124，128，132，136，140，144，149，153，157，161，165，169，173，177]。
+
+    如果信道设置为 0，数据将在当前信道上发送。否则，必须使用本地设备所在的通道。
 
 对于接收设备，调用 :cpp:func:`esp_now_add_peer()` 不是必需的。如果没有添加配对设备，只能接收广播包和不加密的单播包。如果需要接收加密的单播包，则必须添加配对设备并设置相同的 LMK。
 
@@ -100,7 +108,7 @@ ESP-NOW 数据可以从 Station 或 SoftAP 接口发送。确保在发送 ESP-NO
 
     配对设备的最大数量是 20，其中加密设备的数量不超过 4，默认值是 2。如果想要修改加密设备的数量，在 Wi-Fi menuconfig 设置 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`。
 
-.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c6
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c6 or esp32c5
 
     配对设备的最大数量是 20，其中加密设备的数量不超过 17，默认值是 7。如果想要修改加密设备的数量，在 Wi-Fi menuconfig 设置 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`。
 
@@ -124,7 +132,7 @@ ESP-NOW 数据可以从 Station 或 SoftAP 接口发送。确保在发送 ESP-NO
 
     调用 :cpp:func:`esp_wifi_config_espnow_rate()` 配置指定接口的 ESP-NOW 速率。确保在配置速率之前启用接口。这个 API 应该在 :cpp:func:`esp_wifi_start()` 之后调用。
 
-.. only:: esp32c6
+.. only:: esp32c5 or esp32c6
 
     调用 :cpp:func:`esp_now_set_peer_rate_config()` 配置指定 peer 的 ESP-NOW 速率。确保在配置速率之前添加 peer。这个 API 应该在 :cpp:func:`esp_wifi_start()` 和 :cpp:func:`esp_now_add_peer()` 之后调用。
 

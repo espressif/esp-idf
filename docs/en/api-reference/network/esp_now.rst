@@ -92,7 +92,15 @@ Call :cpp:func:`esp_now_add_peer()` to add the device to the paired device list 
 
 You can send ESP-NOW data via both the Station and the SoftAP interface. Make sure that the interface is enabled before sending ESP-NOW data.
 
-The range of the channel of paired devices is from 0 to 14. If the channel is set to 0, data will be sent on the current channel. Otherwise, the channel must be set as the channel that the local device is on.
+.. only:: esp32 or esp32c2 or esp32s2 or esp32s3 or esp32c3 or esp32c6
+
+    The range of the channel of paired devices is from 0 to 14. If the channel is set to 0, data will be sent on the current channel. Otherwise, the channel must be set as the channel that the local device is on.
+
+.. only:: esp32c5
+
+    The channel range for paired devices in the 2.4 GHz band is from 1 to 14. The channel range for paired devices in the 5 GHz band includes the following channels: [36, 40, 44, 48, 52, 56, 60, 64, 100, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165, 169, 173, 177].
+
+    If the channel is set to 0, data will be transmitted on the current channel. Otherwise, the channel must correspond to the local device's current channel.
 
 For the receiving device, calling :cpp:func:`esp_now_add_peer()` is not required. If no paired device is added, it can only receive broadcast packets and unencrypted unicast packets. To receive encrypted unicast packets, a paired device must be added, and the same LMK must be set.
 
@@ -100,7 +108,7 @@ For the receiving device, calling :cpp:func:`esp_now_add_peer()` is not required
 
     The maximum number of paired devices is 20, and the paired encryption devices are no more than 4, the default is 2. If you want to change the number of paired encryption devices, set :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` in the Wi-Fi component configuration menu.
 
-.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c6
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c6 or esp32c5
 
     The maximum number of paired devices is 20, and the paired encryption devices are no more than 17, the default is 7. If you want to change the number of paired encryption devices, set :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` in the Wi-Fi component configuration menu.
 
@@ -124,7 +132,7 @@ Config ESP-NOW Rate
 
     Call :cpp:func:`esp_wifi_config_espnow_rate()` to config ESP-NOW rate of specified interface. Make sure that the interface is enabled before config rate. This API should be called after :cpp:func:`esp_wifi_start()`.
 
-.. only:: esp32c6
+.. only:: esp32c5 or esp32c6
 
     Call :cpp:func:`esp_now_set_peer_rate_config()` to configure ESP-NOW rate of each peer. Make sure that the peer is added before configuring the rate. This API should be called after :cpp:func:`esp_wifi_start()` and :cpp:func:`esp_now_add_peer()`.
 
