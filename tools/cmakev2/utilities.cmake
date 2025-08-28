@@ -763,3 +763,52 @@ function(__get_target_dependencies)
 
     set(${ARG_OUTPUT} ${targets_list} PARENT_SCOPE)
 endfunction()
+
+#[[
+   __get_executable_library_or_die(TARGET <executable>
+                                   OUTPUT <library>)
+
+   :TARGET[in]: Executable target.
+   :OUTPUT[out]: Output variable to store the library interface target linked
+                 to the executable.
+
+   Search for the library interface target created with the idf_build_library()
+   function and linked to the executable, examine the LINK_LIBRARIES for the
+   executable and the LIBRARY_INTERFACES build property, which stores all
+   library interface targets created by the idf_build_library() function.
+#]]
+function(__get_executable_library_or_die)
+    set(options)
+    set(one_value TARGET OUTPUT)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_TARGET)
+        idf_die("TARGET option is required")
+    endif()
+
+    if(NOT DEFINED ARG_OUTPUT)
+        idf_die("OUTPUT option is required")
+    endif()
+
+    get_target_property(type "${ARG_TARGET}" TYPE)
+    if(NOT type STREQUAL "EXECUTABLE")
+        idf_die("The type of target '${ARG_TARGET}' is '${type}', "
+                "but an 'EXECUTABLE' target type is expected.")
+    endif()
+
+    set(library NOTFOUND)
+    get_target_property(targets "${ARG_TARGET}" LINK_LIBRARIES)
+    idf_build_get_property(libraries LIBRARY_INTERFACES)
+    foreach(target IN LISTS targets)
+        if("${target}" IN_LIST libraries)
+            set(library "${target}")
+            break()
+        endif()
+    endforeach()
+
+    if("${library}" STREQUAL "NOTFOUND")
+        idf_die("No library interface target linked to the '${ARG_TARGET}' executable")
+    endif()
+    set(${ARG_OUTPUT} "${library}" PARENT_SCOPE)
+endfunction()
