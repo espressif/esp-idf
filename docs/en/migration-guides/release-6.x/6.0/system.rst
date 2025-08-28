@@ -89,6 +89,7 @@ The UART destination configuration has been simplified:
 To migrate, update your sdkconfig:
 
 Old configuration:
+
 .. code-block:: none
 
     CONFIG_APPTRACE_DEST_UART0=y
@@ -96,6 +97,7 @@ Old configuration:
     CONFIG_APPTRACE_DEST_UART1=y
 
 New configuration:
+
 .. code-block:: none
 
     CONFIG_APPTRACE_DEST_UART=y
