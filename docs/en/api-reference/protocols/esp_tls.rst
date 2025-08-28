@@ -57,6 +57,29 @@ ESP-TLS provides multiple options for TLS server verification on the client side
 
           If this option is enabled, there is a risk of establishing a TLS connection with a server that has a fake identity, unless the server certificate is provided through the API or other mechanisms like ``ca_store``.
 
+SNI (Server Name Indication)
+----------------------------
+
+SNI is an extension to the TLS protocol that allows the client to specify the hostname it is connecting to during the TLS handshake. This is required when connecting to servers that host multiple domains on the same IP address.
+
+**How to ensure SNI works properly:**
+
+* SNI is enabled by default in ESP-TLS when using HTTPS connections.
+* To explicitly set the SNI hostname, use the ``common_name`` field in :cpp:type:`esp_tls_cfg_t`. This ensures that the correct hostname is sent to the server during the handshake.
+* The value of ``common_name`` must match the server certificate's CN (Common Name).
+* The ``skip_common_name`` field should be set to ``false`` to ensure the server certificate is properly validated against the hostname. This is required for SNI to function correctly.
+
+Example:
+
+.. code-block:: c
+
+    esp_tls_cfg_t cfg = {
+        .cacert_buf = ...,
+        .cacert_bytes = ...,
+        .common_name = "example.com", // SNI hostname
+        .skip_common_name = false,    // Ensure certificate is validated
+    };
+
 ESP-TLS Server Cert Selection Hook
 ----------------------------------
 

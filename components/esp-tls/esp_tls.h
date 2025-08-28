@@ -203,7 +203,8 @@ typedef struct esp_tls_cfg {
     const char *common_name;                /*!< If non-NULL, server certificate CN must match this name.
                                                  If NULL, server certificate CN must match hostname. */
 
-    bool skip_common_name;                  /*!< Skip any validation of server certificate CN field */
+    bool skip_common_name;                  /*!< Skip any validation of server certificate CN field.
+                                                 This field should be set to false for SNI to function correctly. */
 
     tls_keep_alive_cfg_t *keep_alive_cfg;   /*!< Enable TCP keep-alive timeout for SSL connection */
 
