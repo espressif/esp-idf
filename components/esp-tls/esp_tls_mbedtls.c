@@ -49,7 +49,7 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki);
 static const char *TAG = "esp-tls-mbedtls";
 static mbedtls_x509_crt *global_cacert = NULL;
 
-#if CONFIG_NEWLIB_NANO_FORMAT
+#if CONFIG_LIBC_NEWLIB_NANO_FORMAT
 #define NEWLIB_NANO_SSIZE_T_COMPAT_FORMAT           "X"
 #define NEWLIB_NANO_SIZE_T_COMPAT_FORMAT            PRIu32
 #define NEWLIB_NANO_SIZE_T_COMPAT_CAST(size_t_var)  (uint32_t)size_t_var

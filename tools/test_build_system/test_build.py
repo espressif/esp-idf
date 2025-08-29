@@ -207,7 +207,7 @@ def test_build_loadable_elf(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
             [
                 'CONFIG_APP_BUILD_TYPE_RAM=y',
                 'CONFIG_VFS_SUPPORT_TERMIOS=n',
-                'CONFIG_NEWLIB_NANO_FORMAT=y',
+                'CONFIG_LIBC_NEWLIB_NANO_FORMAT=y',
                 'CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y',
                 'CONFIG_ESP_ERR_TO_NAME_LOOKUP=n',
             ]

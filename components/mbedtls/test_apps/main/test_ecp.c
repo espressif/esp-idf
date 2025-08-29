@@ -41,7 +41,7 @@
 #define ACCESS_ECDH(S, var) S.MBEDTLS_PRIVATE(ctx).MBEDTLS_PRIVATE(mbed_ecdh).MBEDTLS_PRIVATE(var)
 #endif
 
-#if CONFIG_NEWLIB_NANO_FORMAT
+#if CONFIG_LIBC_NEWLIB_NANO_FORMAT
 #define NEWLIB_NANO_COMPAT_FORMAT             PRIu32
 #define NEWLIB_NANO_COMPAT_CAST(int64_t_var)  (uint32_t)int64_t_var
 #else

@@ -27,10 +27,10 @@
 #define ESP_TASK_PRIO_MAX (configMAX_PRIORITIES)
 #define ESP_TASK_PRIO_MIN (0)
 
-/* Bt contoller Task */
+/* Bt controller Task */
 /* controller */
 #define ESP_TASK_BT_CONTROLLER_PRIO   (ESP_TASK_PRIO_MAX - 2)
-#ifdef CONFIG_NEWLIB_NANO_FORMAT
+#ifdef CONFIG_LIBC_NEWLIB_NANO_FORMAT
 #define TASK_EXTRA_STACK_SIZE      (0)
 #else
 #define TASK_EXTRA_STACK_SIZE      (512)

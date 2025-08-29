@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-#if CONFIG_NEWLIB_NANO_FORMAT
+#if CONFIG_LIBC_NEWLIB_NANO_FORMAT
 #define NEWLIB_NANO_COMPAT_FORMAT            PRIu32
 #define NEWLIB_NANO_COMPAT_CAST(size_t_var)  (uint32_t)size_t_var
 #else
