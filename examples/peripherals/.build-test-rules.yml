@@ -493,6 +493,14 @@ examples/peripherals/twai/twai_self_test:
       temporary: true
       reason: lack of runners
 
+examples/peripherals/uart/uart_dma_ota:
+  disable:
+    - if: SOC_UHCI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
+      temporary: true
+      reason: Lack runners
+
 examples/peripherals/uart/uart_echo_rs485:
   enable:
     - if: INCLUDE_DEFAULT == 1
