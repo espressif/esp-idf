@@ -11,7 +11,7 @@ from pytest_embedded import Dut
 @pytest.mark.parametrize(
     'config',
     [
-        'default',
+        'defaults',
     ],
     indirect=True,
 )
