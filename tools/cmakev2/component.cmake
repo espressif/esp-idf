@@ -433,6 +433,7 @@ function(__init_component)
     idf_component_set_property("${component_name}" COMPONENT_INTERFACE "${component_interface}")
     idf_component_set_property("${component_name}" COMPONENT_PRIORITY ${component_priority})
     idf_component_set_property("${component_name}" COMPONENT_INCLUDED NO)
+    idf_component_set_property("${component_name}" __PREFIX "${ARG_PREFIX}")
 
     # Set component properties for Kconfig files.
     idf_component_set_property("${component_name}" __KCONFIG "${component_kconfig}")
