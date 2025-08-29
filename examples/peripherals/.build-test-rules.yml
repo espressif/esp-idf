@@ -136,6 +136,9 @@ examples/peripherals/i2s/i2s_advance/i2s_usb:
     - if: SOC_I2S_SUPPORTED != 1
     - if: SOC_I2C_SUPPORTED != 1
     - if: SOC_USB_OTG_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: usb_device_uac does not support esp32h4
   depends_components:
     - esp_driver_i2s
     - esp_driver_i2c
@@ -559,6 +562,12 @@ examples/peripherals/usb/device:
   depends_filepatterns:
     - examples/peripherals/usb/device/**/*
 
+examples/peripherals/usb/device/cherryusb_serial_device:
+  disable:
+    - if: (IDF_TARGET == "esp32h4") or (SOC_USB_OTG_SUPPORTED != 1)
+      temporary: true
+      reason: CherryUSB does not support esp32h4
+
 examples/peripherals/usb/device/tusb_ncm:
   disable:
     - if: SOC_USB_OTG_SUPPORTED != 1 or SOC_WIFI_SUPPORTED != 1
@@ -591,6 +600,12 @@ examples/peripherals/usb/host:
     - components/esp_hw_support/usb_phy/usb_phy.c
     - components/esp_hw_support/include/esp_private/usb_phy.h
     - examples/peripherals/usb/host/**/*
+
+examples/peripherals/usb/host/cherryusb_host:
+  disable:
+    - if: (IDF_TARGET == "esp32h4") or (SOC_USB_OTG_SUPPORTED != 1)
+      temporary: true
+      reason: CherryUSB does not support esp32h4
 
 examples/peripherals/usb_serial_jtag/usb_serial_jtag_echo:
   disable:

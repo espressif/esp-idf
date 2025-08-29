@@ -46,6 +46,7 @@
 // #define SOC_BT_SUPPORTED                1
 // #define SOC_IEEE802154_SUPPORTED        1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
+#define SOC_USB_OTG_SUPPORTED           1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 // #define SOC_TEMP_SENSOR_SUPPORTED       1    // TODO: [ESP32H4] IDF-12404
 // #define SOC_SUPPORTS_SECURE_DL_MODE     1
@@ -555,3 +556,6 @@
 // #define SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED  (1)    /*!< Support For BLE Periodic Adv Enhancements */
 // #define SOC_BLUFI_SUPPORTED             (1)    /*!< Support BLUFI */
 // #define SOC_BLE_MULTI_CONN_OPTIMIZATION (1)    /*!< Support multiple connections optimization */
+
+/*-------------------------- USB CAPS ----------------------------------------*/
+#define SOC_USB_OTG_PERIPH_NUM          (1U)
