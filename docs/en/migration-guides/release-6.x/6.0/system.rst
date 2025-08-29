@@ -56,6 +56,10 @@ HW-Support
 
 The deprecated ``soc_memory_types.h`` header file has been removed. Please include the replacement ``esp_memory_utils.h`` instead.
 
+The deprecated ``intr_types.h`` header file has been removed. Please include the replacement ``esp_intr_types.h`` instead.
+
+The deprecated ``esp_private/interrupt_deprecated.h`` header file, which was available to users through the ``riscv/interrupt.h`` header, has been removed. The deprecated functions are no longer available, please use the non-deprecated versions instead.
+
 App Trace
 ----------
 
