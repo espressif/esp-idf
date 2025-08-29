@@ -670,6 +670,8 @@ Application Examples
 
 - :example:`peripherals/i2c/i2c_slave_network_sensor` demonstrates how to use the I2C slave for developing I2C related applications, providing how I2C slave can behave as a network sensor, and use event callbacks to receive and send data.
 
+- :example:`peripherals/i2c/i2c_u8g2` demonstrates how to use the I2C master mode to interface with U8G2 library for controlling OLED displays.
+
 API Reference
 -------------
 
