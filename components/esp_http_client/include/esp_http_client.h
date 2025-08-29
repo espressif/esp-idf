@@ -369,7 +369,8 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
 
 /**
  * @brief      Set post data, this function must be called before `esp_http_client_perform`.
- *             Note: The data parameter passed to this function is a pointer and this function will not copy the data
+ *             Note: Post data persists between requests and must be cleared manually.
+ *             To avoid post data carryover, set the post data to NULL before starting any subsequent requests.
  *
  * @param[in]  client  The esp_http_client handle
  * @param[in]  data    post data pointer
