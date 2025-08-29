@@ -675,6 +675,7 @@ esp_err_t httpd_req_async_handler_begin(httpd_req_t *r, httpd_req_t **out)
 
     async_aux->resp_hdrs = calloc(hd->config.max_resp_headers, sizeof(struct resp_hdr));
     if (async_aux->resp_hdrs == NULL) {
+        free(async_aux->scratch);
         free(async_aux);
         free(async);
         return ESP_ERR_NO_MEM;
