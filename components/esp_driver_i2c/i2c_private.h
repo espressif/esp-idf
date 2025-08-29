@@ -134,7 +134,7 @@ struct i2c_master_bus_t {
     SemaphoreHandle_t bus_lock_mux;                                  // semaphore to lock bus process
     int cmd_idx;                                                     //record current command index, for master mode
     _Atomic i2c_master_status_t status;                              // record current command status, for master mode
-    i2c_master_event_t event;                                        // record current i2c bus event
+    _Atomic i2c_master_event_t event;                                // record current i2c bus event
     int rx_cnt;                                                      // record current read index, for master mode
     i2c_transaction_t i2c_trans;                                     // Pointer to I2C transfer structure
     i2c_operation_t i2c_ops[I2C_STATIC_OPERATION_ARRAY_MAX];         // I2C operation array
