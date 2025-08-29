@@ -801,6 +801,7 @@ typedef enum {
     CLK_CAL_RC32K,                                   /*!< Select to calculate frequency of RC32K_CLK */
     CLK_CAL_32K_XTAL,                                /*!< Select to calculate frequency of XTAL32K_CLK */
     CLK_CAL_LP_PLL,                                  /*!< Select to calculate frequency of LP_PLL_CLK */
+    CLK_CAL_DSI_DPHY,                                /*!< Select to calculate frequency of DSI_DPHY_lanebyteclk */
 } soc_clk_freq_calculation_src_t;
 
 #ifdef __cplusplus

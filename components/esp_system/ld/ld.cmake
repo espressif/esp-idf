@@ -48,8 +48,8 @@ preprocess_linker_file("memory.ld.in" "memory.ld" ld_out_path)
 target_linker_script(${COMPONENT_LIB} INTERFACE "${ld_out_path}")
 
 # Generate sections.ld.in and pass it through linker script generator
-if(CONFIG_ESP32P4_REV_MIN_200) # TODO: IDF-13410
-    preprocess_linker_file("sections.rev2.ld.in" "sections.ld.in" ld_out_path)
+if(CONFIG_ESP32P4_REV_MIN_300)
+    preprocess_linker_file("sections.rev3.ld.in" "sections.ld.in" ld_out_path)
 else()
     preprocess_linker_file("sections.ld.in" "sections.ld.in" ld_out_path)
 endif()

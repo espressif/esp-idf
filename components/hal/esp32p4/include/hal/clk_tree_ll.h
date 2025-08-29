@@ -771,6 +771,9 @@ static inline __attribute__((always_inline)) void clk_ll_freq_calulation_set_tar
     case CLK_CAL_LP_PLL:
         timg_cali_clk_sel = 11;
         break;
+    case CLK_CAL_DSI_DPHY:
+        timg_cali_clk_sel = 12;
+        break;
     default:
         // Unsupported CLK_CAL mux input
         abort();

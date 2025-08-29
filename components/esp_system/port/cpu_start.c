@@ -124,13 +124,13 @@
 #include "esp_private/startup_internal.h"
 #include "esp_private/system_internal.h"
 
-#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 extern int _bss_start_low, _bss_start_high;
 extern int _bss_end_low, _bss_end_high;
 #else
 extern int _bss_start;
 extern int _bss_end;
-#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 extern int _rtc_bss_start;
 extern int _rtc_bss_end;
 #if CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
@@ -426,12 +426,12 @@ FORCE_INLINE_ATTR IRAM_ATTR void get_reset_reason(soc_reset_reason_t *rst_reas)
 
 FORCE_INLINE_ATTR IRAM_ATTR void init_bss(const soc_reset_reason_t *rst_reas)
 {
-#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     memset(&_bss_start_low, 0, (uintptr_t)&_bss_end_low - (uintptr_t)&_bss_start_low);
     memset(&_bss_start_high, 0, (uintptr_t)&_bss_end_high - (uintptr_t)&_bss_start_high);
 #else
     memset(&_bss_start, 0, (uintptr_t)&_bss_end - (uintptr_t)&_bss_start);
-#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 
 #if CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
     // Clear Bluetooth bss

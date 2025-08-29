@@ -684,15 +684,15 @@ typedef union {
         /** dref_comp0 : R/W; bitpos: [2:0]; default: 0;
          *  pad comp dref
          */
-        uint32_t dref_comp0:3;
+        uint32_t dref_comp:3;
         /** mode_comp0 : R/W; bitpos: [3]; default: 0;
          *  pad comp mode
          */
-        uint32_t mode_comp0:1;
+        uint32_t mode_comp:1;
         /** xpd_comp0 : R/W; bitpos: [4]; default: 0;
          *  pad comp xpd
          */
-        uint32_t xpd_comp0:1;
+        uint32_t xpd_comp:1;
         uint32_t reserved_5:27;
     };
     uint32_t val;
