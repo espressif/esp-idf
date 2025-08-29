@@ -31,6 +31,7 @@
 typedef struct xTASK_SNAPSHOT
 {
     void * pxTCB;               /*!< Address of the task control block. */
+    StackType_t * pxStack;      /*!< Points to the start of the stack. */
     StackType_t * pxTopOfStack; /*!< Points to the location of the last item placed on the tasks stack. */
     StackType_t * pxEndOfStack; /*!< Points to the end of the stack. pxTopOfStack < pxEndOfStack, stack grows hi2lo
                                  *  pxTopOfStack > pxEndOfStack, stack grows lo2hi*/
