@@ -268,7 +268,7 @@ TEST_CASE("call destructors for thread_local classes CXX", "[misc]")
     is_tls_class_destructor_called = false;
     s_slow_init_sem = xSemaphoreCreateCounting(1, 0);
     xTaskCreate(test_thread_local_destructors, "test_thread_local_destructors", 2048, NULL, 10, NULL);
-    vTaskDelay(1); /* Triggers IDLE task to call prvCheckTasksWaitingTermination() which cleans task-specific data */
+    vTaskDelay(10); /* Triggers IDLE task to call prvCheckTasksWaitingTermination() which cleans task-specific data */
     TEST_ASSERT_TRUE(xSemaphoreTake(s_slow_init_sem, 500 / portTICK_PERIOD_MS));
     vSemaphoreDelete(s_slow_init_sem);
     TEST_ASSERT_TRUE(is_tls_class_destructor_called);
