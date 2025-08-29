@@ -117,6 +117,19 @@ esp_err_t esp_ble_mesh_node_input_string(const char *string);
 esp_err_t esp_ble_mesh_set_unprovisioned_device_name(const char *name);
 
 /**
+ * @brief        Using this function, you can set the default name set during init.
+ *
+ * @param[in]    name: Unprovisioned device name
+ *
+ * @note         This API applicable to PB-GATT mode only by setting the name to the scan response data,
+ *               it doesn't apply to PB-ADV mode.
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_set_default_unprovisioned_device_name(const char *name);
+
+/**
  * @brief        Provisioner inputs unprovisioned device's oob public key.
  *
  * @note         In order to avoid suffering brute-forcing attack (CVE-2020-26559).

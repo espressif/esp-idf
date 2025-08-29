@@ -170,6 +170,11 @@ esp_err_t esp_ble_mesh_set_unprovisioned_device_name(const char *name)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_mesh_set_default_unprovisioned_device_name(const char *name)
+{
+    return bt_mesh_set_default_device_name(name) ? ESP_FAIL : ESP_OK;
+}
+
 #if CONFIG_BLE_MESH_PROVISIONER
 esp_err_t esp_ble_mesh_provisioner_read_oob_pub_key(uint8_t link_idx, uint8_t pub_key_x[32],
                                                     uint8_t pub_key_y[32])
