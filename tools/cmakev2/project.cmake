@@ -560,6 +560,19 @@ macro(idf_project_init)
             endif()
         endforeach()
 
+        # If explicitly requested, include all components by calling
+        # `add_subdirectory` for every discovered component. The default
+        # behavior is to include only the components based on the requirements.
+        __get_default_value(VARIABLE IDF_INCLUDE_ALL_COMPONENTS
+                            DEFAULT NO
+                            OUTPUT include_all_components)
+        if(include_all_components)
+            idf_msg("Including all discovered components")
+            foreach(component_name IN LISTS component_names)
+                idf_component_include("${component_name}")
+            endforeach()
+        endif()
+
         idf_build_set_property(__PROJECT_INITIALIZED YES)
     endif()
     unset(project_initialized)
