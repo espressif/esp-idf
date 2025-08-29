@@ -1538,10 +1538,10 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                 if (err != ESP_OK) {
                     http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
                     http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
+                } else {
+                    http_dispatch_event(client, HTTP_EVENT_ON_FINISH, NULL, 0);
+                    http_dispatch_event_to_event_loop(HTTP_EVENT_ON_FINISH, &client, sizeof(esp_http_client_handle_t));
                 }
-
-                http_dispatch_event(client, HTTP_EVENT_ON_FINISH, NULL, 0);
-                http_dispatch_event_to_event_loop(HTTP_EVENT_ON_FINISH, &client, sizeof(esp_http_client_handle_t));
 
                 client->response->buffer->raw_len = 0;
                 if (!http_should_keep_alive(client->parser)) {
