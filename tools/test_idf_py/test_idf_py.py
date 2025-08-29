@@ -204,7 +204,8 @@ class TestDeprecations(TestWithoutExtensions):
                 [sys.executable, idf_py_path, '-C', current_dir, 'test-2'], env=os.environ, stderr=subprocess.STDOUT
             )
         except subprocess.CalledProcessError as e:
-            self.assertIn('Error: Command "test-2" is deprecated and was removed.', e.output.decode('utf-8', 'ignore'))
+            output = e.output.decode('utf-8', 'ignore').replace('\r\n', '\n')
+            self.assertIn('Error: Command "test-2" is deprecated and was removed\n', output)
 
     def test_exit_with_error_for_option(self):
         try:
@@ -239,7 +240,6 @@ class TestDeprecations(TestWithoutExtensions):
             env=os.environ,
             stderr=subprocess.STDOUT,
         ).decode('utf-8', 'ignore')
-
         self.assertIn('Warning: Option "test_sub_1" is deprecated and will be removed in future versions.', output)
         self.assertIn(
             'Warning: Command "test-1" is deprecated and will be removed in future versions. '
@@ -374,8 +374,8 @@ class TestWrapperCommands(TestCase):
 class TestEFuseCommands(TestWrapperCommands):
     """
     Test if wrapper commands for espefuse.py are working as expected.
-    The goal is NOT to test the functionality of espefuse.py, but to test if the wrapper commands
-    are working as expected.
+    The goal is NOT to test the functionality of espefuse.py
+    but to test if the wrapper commands are working as expected.
     """
 
     def test_efuse_summary(self):
@@ -438,8 +438,8 @@ class TestEFuseCommands(TestWrapperCommands):
 class TestSecureCommands(TestWrapperCommands):
     """
     Test if wrapper commands for espsecure.py are working as expected.
-    The goal is NOT to test the functionality of espsecure.py, but to test if the wrapper commands are
-    working as expected.
+    The goal is NOT to test the functionality of espsecure.py
+    but to test if the wrapper commands are working as expected.
     """
 
     @classmethod
@@ -577,8 +577,8 @@ class TestSecureCommands(TestWrapperCommands):
 class TestMergeBinCommands(TestWrapperCommands):
     """
     Test if merge-bin command is invoked as expected.
-    This test is not testing the functionality of esptool.py merge_bin command, but the invocation of
-    the command from idf.py.
+    This test is not testing the functionality of esptool.py merge_bin command
+    but the invocation of the command from idf.py.
     """
 
     def test_merge_bin(self):
