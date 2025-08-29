@@ -1,0 +1,27 @@
+menu "MQTT OTA Example Configuration"
+
+    config MQTT_BROKER_URI
+        string "MQTT Broker URI"
+        default "mqtt://test.mosquitto.org:1883"
+        help
+            URI of the MQTT broker the device connects to.
+
+    config MQTT_TOPIC_FIRMWARE
+        string "MQTT Topic for Firmware Data"
+        default "ota/firmware"
+        help
+            Topic name where firmware data will be published.
+
+    config MQTT_TOPIC_START_UPDATE
+        string "MQTT Topic for Starting Update"
+        default "ota/update"
+        help
+            Topic name to trigger OTA start.
+
+    config MQTT_TOPIC_DONE
+        string "MQTT Topic for OTA Done"
+        default "ota/done"
+        help
+            Topic name that signals OTA completion.
+
+endmenu
