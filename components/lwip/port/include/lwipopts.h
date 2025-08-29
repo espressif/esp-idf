@@ -846,7 +846,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 /**
  * TCPIP_THREAD_NAME: The name assigned to the main tcpip thread.
  */
-#define TCPIP_THREAD_NAME              "tiT"
+#define TCPIP_THREAD_NAME              "tcpip"
 
 /**
  * TCPIP_THREAD_STACKSIZE: The stack size used by the main tcpip thread.
