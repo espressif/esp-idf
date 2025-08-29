@@ -49,6 +49,11 @@ extern "C" {
  */
 #define HAL_CONFIG_ECDSA_GEN_SIG_CM CONFIG_HAL_ECDSA_GEN_SIG_CM
 
+/**
+ * @brief The minimum supported chip revision.
+ */
+#define HAL_CONFIG_CHIP_SUPPORT_MIN_REV CONFIG_ESP_REV_MIN_FULL
+
 #ifdef __cplusplus
 }
 #endif

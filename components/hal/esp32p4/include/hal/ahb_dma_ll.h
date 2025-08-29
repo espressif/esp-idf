@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,6 +69,31 @@ static inline void ahb_dma_ll_set_default_memory_range(ahb_dma_dev_t *dev)
     dev->intr_mem_end_addr.val = 0x4FFC0000;
 }
 
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+/**
+ * @brief Enable the weighted arbitration for AHB-DMA
+ *
+ * @param dev DMA register base address
+ * @param enable True to enable, false to disable
+ */
+static inline void ahb_dma_ll_enable_weighted_arb(ahb_dma_dev_t *dev, bool enable)
+{
+    dev->weight_en.weight_en = enable;
+}
+
+/**
+ * @brief Set the weighted arbitration timeout for AHB-DMA
+ *
+ * @param dev DMA register base address
+ * @param timeout AHB bus clock cycle
+ */
+static inline void ahb_dma_ll_set_weighted_arb_timeout(ahb_dma_dev_t *dev, uint32_t timeout)
+{
+    HAL_ASSERT(timeout != 0 && timeout <= 65535);
+    dev->arb_timeout.arb_timeout_num = timeout;
+}
+#endif
+
 ///////////////////////////////////// RX /////////////////////////////////////////
 /**
  * @brief Get DMA RX channel interrupt status word
@@ -135,6 +160,34 @@ static inline void ahb_dma_ll_rx_enable_descriptor_burst(ahb_dma_dev_t *dev, uin
 {
     dev->channel[channel].in.in_conf0.indscr_burst_en_chn = enable;
 }
+
+#if GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE
+/**
+ * @brief Set RX channel burst size
+ */
+static inline void ahb_dma_ll_rx_set_burst_size(ahb_dma_dev_t *dev, uint32_t channel, uint32_t sz)
+{
+    uint8_t burst_mode = 0;
+    switch (sz) {
+    case 4:
+        burst_mode = 0; // single
+        break;
+    case 16:
+        burst_mode = 1; // incr4
+        break;
+    case 32:
+        burst_mode = 2; // incr8
+        break;
+    case 64:
+        burst_mode = 3; // incr16
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
+    dev->channel[channel].in.in_conf0.in_data_burst_mode_sel_chn = burst_mode;
+}
+#endif
 
 /**
  * @brief Reset DMA RX channel FSM and FIFO pointer
@@ -297,6 +350,32 @@ static inline void ahb_dma_ll_rx_enable_etm_task(ahb_dma_dev_t *dev, uint32_t ch
     dev->channel[channel].in.in_conf0.in_etm_en_chn = enable;
 }
 
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+/**
+ * @brief Enable the weighted arbitration optimize for DMA RX channel
+ *
+ * @param dev DMA register base address
+ * @param channel Channel ID
+ * @param enable True to enable, false to disable
+ */
+static inline void ahb_dma_ll_rx_enable_weighted_arb_opt(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->in_crc_arb[channel].arb_weight_opt.rx_arb_weight_opt_dis_chn = !enable;
+}
+
+/**
+ * @brief Set the weight for DMA RX channel
+ *
+ * @param dev DMA register base address
+ * @param channel Channel ID
+ * @param weight Weight value
+ */
+static inline void ahb_dma_ll_rx_set_weight(ahb_dma_dev_t *dev, uint32_t channel, uint32_t weight)
+{
+    dev->in_crc_arb[channel].ch_arb_weight.rx_arb_weight_value_chn = weight;
+}
+#endif
+
 ///////////////////////////////////// TX /////////////////////////////////////////
 /**
  * @brief Get DMA TX channel interrupt status word
@@ -363,6 +442,34 @@ static inline void ahb_dma_ll_tx_enable_descriptor_burst(ahb_dma_dev_t *dev, uin
 {
     dev->channel[channel].out.out_conf0.outdscr_burst_en_chn = enable;
 }
+
+#if GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE
+/**
+ * @brief Set TX channel burst size
+ */
+static inline void ahb_dma_ll_tx_set_burst_size(ahb_dma_dev_t *dev, uint32_t channel, uint32_t sz)
+{
+    uint8_t burst_mode = 0;
+    switch (sz) {
+    case 4:
+        burst_mode = 0; // single
+        break;
+    case 16:
+        burst_mode = 1; // incr4
+        break;
+    case 32:
+        burst_mode = 2; // incr8
+        break;
+    case 64:
+        burst_mode = 3; // incr16
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
+    dev->channel[channel].out.out_conf0.out_data_burst_mode_sel_chn = burst_mode;
+}
+#endif
 
 /**
  * @brief Set TX channel EOF mode
@@ -522,6 +629,32 @@ static inline void ahb_dma_ll_tx_enable_etm_task(ahb_dma_dev_t *dev, uint32_t ch
 {
     dev->channel[channel].out.out_conf0.out_etm_en_chn = enable;
 }
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+/**
+ * @brief Enable the weighted arbitration optimize for DMA TX channel
+ *
+ * @param dev DMA register base address
+ * @param channel Channel ID
+ * @param enable True to enable, false to disable
+ */
+static inline void ahb_dma_ll_tx_enable_weighted_arb_opt(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->out_crc_arb[channel].arb_weight_opt.tx_arb_weight_opt_dis_chn = !enable;
+}
+
+/**
+ * @brief Set the weight for DMA TX channel
+ *
+ * @param dev DMA register base address
+ * @param channel Channel ID
+ * @param weight Weight value
+ */
+static inline void ahb_dma_ll_tx_set_weight(ahb_dma_dev_t *dev, uint32_t channel, uint32_t weight)
+{
+    dev->out_crc_arb[channel].ch_arb_weight.tx_arb_weight_value_chn = weight;
+}
+#endif
 
 ///////////////////////////////////// CRC-TX /////////////////////////////////////////
 
