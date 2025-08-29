@@ -191,7 +191,14 @@ function(idf_component_optional_requires req_type)
     set(optional_reqs ${ARGN})
     foreach(req ${optional_reqs})
         __get_component_interface(COMPONENT "${req}" OUTPUT req_interface)
-        target_link_libraries(${COMPONENT_TARGET} ${req_type} "$<$<TARGET_EXISTS:${req_interface}>:${req_interface}>")
+        if("${req_interface}" STREQUAL "NOTFOUND")
+            continue()
+        endif()
+        idf_component_get_property(req_alias "${req}" COMPONENT_ALIAS)
+        # The component alias is created only after the component is included,
+        # meaning the add_subdirectory command for it has been called. This can
+        # be used to detect if a component has already been added to the build.
+        target_link_libraries(${COMPONENT_TARGET} ${req_type} "$<$<TARGET_EXISTS:${req_alias}>:${req_interface}>")
     endforeach()
 endfunction()
 
