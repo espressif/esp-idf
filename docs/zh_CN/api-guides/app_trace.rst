@@ -41,7 +41,7 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
 
 1. **主机端：** 应用程序跟踪通过 JTAG 来完成，因此需要在主机上安装并运行 OpenOCD。详细信息请参阅 :doc:`JTAG 调试 <../api-guides/jtag-debugging/index>`。
 
-2. **目标端：** 在 menuconfig 中开启应用程序跟踪功能。前往 ``Component config`` > ``Application Level Tracing`` 菜单，选择跟踪数据的传输目标（具体用于传输的硬件接口：JTAG 和/或 UART），选择任一非 None 的目标都会自动开启 ``CONFIG_APPTRACE_ENABLE`` 这个选项。对于 UART 接口，用户必须定义波特率、TX 和 RX 管脚及其他相关参数。
+2. **目标端：** 在 menuconfig 中开启应用程序跟踪功能。前往 ``Component config`` > ``Application Level Tracing`` 菜单，选择跟踪数据的传输目标（具体用于传输的硬件接口：JTAG 和/或 UART），选择任一非 None 的目标都会自动开启 ``CONFIG_APPTRACE_ENABLE`` 这个选项。对于 UART 接口，用户需要定义端口号、波特率、TX 和 RX 管脚及其他相关参数。
 
 .. note::
 

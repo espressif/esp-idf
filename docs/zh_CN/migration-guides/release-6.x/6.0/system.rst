@@ -81,6 +81,28 @@ App 追踪
         return res;
     }
 
+UART 目标配置已简化：
+
+- 移除：通过 ``CONFIG_APPTRACE_DEST_UARTx=y`` 选择单个 UART
+- 新增：通过 ``CONFIG_APPTRACE_DEST_UART_NUM`` 选择 UART 端口
+
+迁移方法，更新你的 sdkconfig 配置：
+
+旧配置：
+
+.. code-block:: none
+
+    CONFIG_APPTRACE_DEST_UART0=y
+    # 或
+    CONFIG_APPTRACE_DEST_UART1=y
+
+新配置：
+
+.. code-block:: none
+
+    CONFIG_APPTRACE_DEST_UART=y
+    CONFIG_APPTRACE_DEST_UART_NUM=0  # 或 1、2，具体取决于目标芯片
+
 FreeRTOS
 --------
 

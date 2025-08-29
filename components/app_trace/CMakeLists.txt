@@ -10,8 +10,7 @@ set(srcs
     "host_file_io.c")
 
 if(CONFIG_ESP_DEBUG_STUBS_ENABLE)
-    list(APPEND srcs
-        "debug_stubs.c")
+    list(APPEND srcs "debug_stubs.c")
 endif()
 
 set(include_dirs "include")
@@ -19,20 +18,21 @@ set(include_dirs "include")
 set(priv_include_dirs "private_include" "port/include")
 
 if(CONFIG_APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE)
-    list(APPEND srcs
-        "app_trace_membufs_proto.c")
+    list(APPEND srcs "app_trace_membufs_proto.c")
+endif()
 
+if(CONFIG_APPTRACE_DEST_JTAG)
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)
-        list(APPEND srcs
-            "port/xtensa/port.c")
+        list(APPEND srcs "port/xtensa/port_jtag.c")
     endif()
     if(CONFIG_IDF_TARGET_ARCH_RISCV)
-        list(APPEND srcs
-            "port/riscv/port.c")
+        list(APPEND srcs "port/riscv/port_jtag.c")
     endif()
 endif()
-list(APPEND srcs
-    "port/port_uart.c")
+
+if(CONFIG_APPTRACE_DEST_UART)
+    list(APPEND srcs "port/port_uart.c")
+endif()
 
 if(CONFIG_APPTRACE_SV_ENABLE)
     list(APPEND include_dirs

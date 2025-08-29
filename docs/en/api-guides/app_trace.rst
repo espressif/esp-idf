@@ -41,7 +41,7 @@ Using of this feature depends on two components:
 
 1. **Host side:** Application tracing is done over JTAG, so it needs OpenOCD to be set up and running on host machine. For instructions on how to set it up, please see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>` for details.
 
-2. **Target side:** Application tracing functionality can be enabled in menuconfig. Please go to ``Component config`` > ``Application Level Tracing`` menu, which allows selecting destination for the trace data (hardware interface for transport: JTAG or/and UART). Choosing any of the destinations automatically enables the ``CONFIG_APPTRACE_ENABLE`` option. For UART interfaces, users have to define baud rate, TX and RX pins numbers, and additional UART-related parameters.
+2. **Target side:** Application tracing functionality can be enabled in menuconfig. Please go to ``Component config`` > ``Application Level Tracing`` menu, which allows selecting destination for the trace data (hardware interface for transport: JTAG or/and UART). Choosing any of the destinations automatically enables the ``CONFIG_APPTRACE_ENABLE`` option. For UART interfaces, users have to define port number, baud rate, TX and RX pins numbers, and additional UART-related parameters.
 
 .. note::
 

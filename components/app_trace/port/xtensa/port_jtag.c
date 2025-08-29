@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -188,58 +188,12 @@ typedef struct {
     esp_apptrace_membufs_proto_data_t   membufs;
 } esp_apptrace_trax_data_t;
 
-static esp_err_t esp_apptrace_trax_init(esp_apptrace_trax_data_t *hw_data);
-static esp_err_t esp_apptrace_trax_flush(esp_apptrace_trax_data_t *hw_data, esp_apptrace_tmo_t *tmo);
-static esp_err_t esp_apptrace_trax_flush_nolock(esp_apptrace_trax_data_t *hw_data, uint32_t min_sz, esp_apptrace_tmo_t *tmo);
-static uint8_t *esp_apptrace_trax_up_buffer_get(esp_apptrace_trax_data_t *hw_data, uint32_t size, esp_apptrace_tmo_t *tmo);
-static esp_err_t esp_apptrace_trax_up_buffer_put(esp_apptrace_trax_data_t *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo);
-static void esp_apptrace_trax_down_buffer_config(esp_apptrace_trax_data_t *hw_data, uint8_t *buf, uint32_t size);
-static uint8_t *esp_apptrace_trax_down_buffer_get(esp_apptrace_trax_data_t *hw_data, uint32_t *size, esp_apptrace_tmo_t *tmo);
-static esp_err_t esp_apptrace_trax_down_buffer_put(esp_apptrace_trax_data_t *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo);
-static bool esp_apptrace_trax_host_is_connected(esp_apptrace_trax_data_t *hw_data);
-static esp_err_t esp_apptrace_trax_buffer_swap_start(uint32_t curr_block_id);
-static esp_err_t esp_apptrace_trax_buffer_swap(uint32_t new_block_id, uint32_t prev_block_len);
-static esp_err_t esp_apptrace_trax_buffer_swap_end(uint32_t new_block_id, uint32_t prev_block_len);
-static bool esp_apptrace_trax_host_data_pending(void);
-
 const static char *TAG = "esp_apptrace";
 
 static uint8_t * const s_trax_blocks[] = {
     (uint8_t *)TRACEMEM_BLK0_ADDR,
     (uint8_t *)TRACEMEM_BLK1_ADDR
 };
-
-esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
-{
-#if CONFIG_APPTRACE_DEST_JTAG
-    static esp_apptrace_membufs_proto_hw_t s_trax_proto_hw = {
-        .swap_start = esp_apptrace_trax_buffer_swap_start,
-        .swap = esp_apptrace_trax_buffer_swap,
-        .swap_end = esp_apptrace_trax_buffer_swap_end,
-        .host_data_pending = esp_apptrace_trax_host_data_pending,
-    };
-    static esp_apptrace_trax_data_t s_trax_hw_data = {
-        .membufs = {
-            .hw = &s_trax_proto_hw,
-        },
-    };
-    static esp_apptrace_hw_t s_trax_hw = {
-        .init = (esp_err_t (*)(void *))esp_apptrace_trax_init,
-        .get_up_buffer = (uint8_t *(*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_trax_up_buffer_get,
-        .put_up_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_trax_up_buffer_put,
-        .flush_up_buffer_nolock = (esp_err_t (*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_trax_flush_nolock,
-        .flush_up_buffer = (esp_err_t (*)(void *, esp_apptrace_tmo_t *))esp_apptrace_trax_flush,
-        .down_buffer_config = (void (*)(void *, uint8_t *, uint32_t))esp_apptrace_trax_down_buffer_config,
-        .get_down_buffer = (uint8_t *(*)(void *, uint32_t *, esp_apptrace_tmo_t *))esp_apptrace_trax_down_buffer_get,
-        .put_down_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_trax_down_buffer_put,
-        .host_is_connected = (bool (*)(void *))esp_apptrace_trax_host_is_connected,
-    };
-    *data = &s_trax_hw_data;
-    return &s_trax_hw;
-#else
-    return NULL;
-#endif
-}
 
 static esp_err_t esp_apptrace_trax_lock(esp_apptrace_trax_data_t *hw_data, esp_apptrace_tmo_t *tmo)
 {
@@ -538,4 +492,32 @@ static bool esp_apptrace_trax_host_data_pending(void)
 {
     uint32_t ctrl_reg = eri_read(ESP_APPTRACE_TRAX_CTRL_REG);
     return (ctrl_reg & ESP_APPTRACE_TRAX_HOST_DATA) ? true : false;
+}
+
+esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
+{
+    static esp_apptrace_membufs_proto_hw_t s_trax_proto_hw = {
+        .swap_start = esp_apptrace_trax_buffer_swap_start,
+        .swap = esp_apptrace_trax_buffer_swap,
+        .swap_end = esp_apptrace_trax_buffer_swap_end,
+        .host_data_pending = esp_apptrace_trax_host_data_pending,
+    };
+    static esp_apptrace_trax_data_t s_trax_hw_data = {
+        .membufs = {
+            .hw = &s_trax_proto_hw,
+        },
+    };
+    static esp_apptrace_hw_t s_trax_hw = {
+        .init = (esp_err_t (*)(void *))esp_apptrace_trax_init,
+        .get_up_buffer = (uint8_t *(*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_trax_up_buffer_get,
+        .put_up_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_trax_up_buffer_put,
+        .flush_up_buffer_nolock = (esp_err_t (*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_trax_flush_nolock,
+        .flush_up_buffer = (esp_err_t (*)(void *, esp_apptrace_tmo_t *))esp_apptrace_trax_flush,
+        .down_buffer_config = (void (*)(void *, uint8_t *, uint32_t))esp_apptrace_trax_down_buffer_config,
+        .get_down_buffer = (uint8_t *(*)(void *, uint32_t *, esp_apptrace_tmo_t *))esp_apptrace_trax_down_buffer_get,
+        .put_down_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_trax_down_buffer_put,
+        .host_is_connected = (bool (*)(void *))esp_apptrace_trax_host_is_connected,
+    };
+    *data = &s_trax_hw_data;
+    return &s_trax_hw;
 }

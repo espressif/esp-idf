@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -40,20 +40,6 @@ typedef struct {
 
 #define ESP_APPTRACE_RISCV_INITED(_hw_)          ((_hw_)->inited & (1 << 0/*esp_cpu_get_core_id()*/))
 
-static esp_err_t esp_apptrace_riscv_init(esp_apptrace_riscv_data_t *hw_data);
-static esp_err_t esp_apptrace_riscv_flush(esp_apptrace_riscv_data_t *hw_data, esp_apptrace_tmo_t *tmo);
-static esp_err_t esp_apptrace_riscv_flush_nolock(esp_apptrace_riscv_data_t *hw_data, uint32_t min_sz, esp_apptrace_tmo_t *tmo);
-static uint8_t *esp_apptrace_riscv_up_buffer_get(esp_apptrace_riscv_data_t *hw_data, uint32_t size, esp_apptrace_tmo_t *tmo);
-static esp_err_t esp_apptrace_riscv_up_buffer_put(esp_apptrace_riscv_data_t *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo);
-static void esp_apptrace_riscv_down_buffer_config(esp_apptrace_riscv_data_t *hw_data, uint8_t *buf, uint32_t size);
-static uint8_t *esp_apptrace_riscv_down_buffer_get(esp_apptrace_riscv_data_t *hw_data, uint32_t *size, esp_apptrace_tmo_t *tmo);
-static esp_err_t esp_apptrace_riscv_down_buffer_put(esp_apptrace_riscv_data_t *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo);
-static bool esp_apptrace_riscv_host_is_connected(esp_apptrace_riscv_data_t *hw_data);
-static esp_err_t esp_apptrace_riscv_buffer_swap_start(uint32_t curr_block_id);
-static esp_err_t esp_apptrace_riscv_buffer_swap(uint32_t new_block_id, uint32_t prev_block_len);
-static esp_err_t esp_apptrace_riscv_buffer_swap_end(uint32_t new_block_id, uint32_t prev_block_len);
-static bool esp_apptrace_riscv_host_data_pending(void);
-
 const static char *TAG = "esp_apptrace";
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
@@ -63,38 +49,6 @@ const static char *TAG = "esp_apptrace";
 #endif
 
 static APPTRACE_DRAM_ATTR esp_apptrace_riscv_ctrl_block_t s_tracing_ctrl[CONFIG_FREERTOS_NUMBER_OF_CORES];
-
-esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
-{
-#if CONFIG_APPTRACE_DEST_JTAG
-    static esp_apptrace_membufs_proto_hw_t s_trace_proto_hw = {
-        .swap_start = esp_apptrace_riscv_buffer_swap_start,
-        .swap = esp_apptrace_riscv_buffer_swap,
-        .swap_end = esp_apptrace_riscv_buffer_swap_end,
-        .host_data_pending = esp_apptrace_riscv_host_data_pending,
-    };
-    static esp_apptrace_riscv_data_t s_trace_hw_data = {
-        .membufs = {
-            .hw = &s_trace_proto_hw,
-        },
-    };
-    static esp_apptrace_hw_t s_trace_hw = {
-        .init = (esp_err_t (*)(void *))esp_apptrace_riscv_init,
-        .get_up_buffer = (uint8_t *(*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_riscv_up_buffer_get,
-        .put_up_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_riscv_up_buffer_put,
-        .flush_up_buffer_nolock = (esp_err_t (*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_riscv_flush_nolock,
-        .flush_up_buffer = (esp_err_t (*)(void *, esp_apptrace_tmo_t *))esp_apptrace_riscv_flush,
-        .down_buffer_config = (void (*)(void *, uint8_t *, uint32_t))esp_apptrace_riscv_down_buffer_config,
-        .get_down_buffer = (uint8_t *(*)(void *, uint32_t *, esp_apptrace_tmo_t *))esp_apptrace_riscv_down_buffer_get,
-        .put_down_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_riscv_down_buffer_put,
-        .host_is_connected = (bool (*)(void *))esp_apptrace_riscv_host_is_connected,
-    };
-    *data = &s_trace_hw_data;
-    return &s_trace_hw;
-#else
-    return NULL;
-#endif
-}
 
 /* Advertises apptrace control block address to host.
    This function can be overridden with custom implementation,
@@ -363,4 +317,32 @@ static bool esp_apptrace_riscv_host_data_pending(void)
     uint32_t ctrl_reg = s_tracing_ctrl[esp_cpu_get_core_id()].ctrl;
     // ESP_APPTRACE_LOGV("%s() 0x%x", __func__, ctrl_reg);
     return (ctrl_reg & ESP_APPTRACE_RISCV_HOST_DATA) ? true : false;
+}
+
+esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
+{
+    static esp_apptrace_membufs_proto_hw_t s_trace_proto_hw = {
+        .swap_start = esp_apptrace_riscv_buffer_swap_start,
+        .swap = esp_apptrace_riscv_buffer_swap,
+        .swap_end = esp_apptrace_riscv_buffer_swap_end,
+        .host_data_pending = esp_apptrace_riscv_host_data_pending,
+    };
+    static esp_apptrace_riscv_data_t s_trace_hw_data = {
+        .membufs = {
+            .hw = &s_trace_proto_hw,
+        },
+    };
+    static esp_apptrace_hw_t s_trace_hw = {
+        .init = (esp_err_t (*)(void *))esp_apptrace_riscv_init,
+        .get_up_buffer = (uint8_t *(*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_riscv_up_buffer_get,
+        .put_up_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_riscv_up_buffer_put,
+        .flush_up_buffer_nolock = (esp_err_t (*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_riscv_flush_nolock,
+        .flush_up_buffer = (esp_err_t (*)(void *, esp_apptrace_tmo_t *))esp_apptrace_riscv_flush,
+        .down_buffer_config = (void (*)(void *, uint8_t *, uint32_t))esp_apptrace_riscv_down_buffer_config,
+        .get_down_buffer = (uint8_t *(*)(void *, uint32_t *, esp_apptrace_tmo_t *))esp_apptrace_riscv_down_buffer_get,
+        .put_down_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_riscv_down_buffer_put,
+        .host_is_connected = (bool (*)(void *))esp_apptrace_riscv_host_is_connected,
+    };
+    *data = &s_trace_hw_data;
+    return &s_trace_hw;
 }
