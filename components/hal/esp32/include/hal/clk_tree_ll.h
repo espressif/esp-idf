@@ -670,31 +670,31 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_divider_fro
 }
 
 /**
- * @brief Set REF_TICK divider to make REF_TICK frequency at 1MHz
+ * @brief Set REF_TICK divider to make REF_TICK frequency at REF_CLK_FREQ
  *
  * @param cpu_clk_src Selected CPU clock source (one of soc_cpu_clk_src_t values)
  * @param cpu_freq_mhz CPU frequency value, in MHz
  *
- * Divider = APB_CLK freq in Hz / 1MHz. Value in register = divider - 1.
+ * Divider = APB_CLK freq in Hz / (REF_CLK_FREQ / MHZ). Value in register = divider - 1.
  */
 static inline __attribute__((always_inline)) void clk_ll_ref_tick_set_divider(soc_cpu_clk_src_t cpu_clk_src, uint32_t cpu_freq_mhz)
 {
     uint32_t apb_freq_mhz;
     switch (cpu_clk_src) {
     case SOC_CPU_CLK_SRC_XTAL:
-        apb_freq_mhz = cpu_freq_mhz;
+        apb_freq_mhz = cpu_freq_mhz / (REF_CLK_FREQ / MHZ);
         REG_WRITE(SYSCON_XTAL_TICK_CONF_REG, apb_freq_mhz - 1);
         break;
     case SOC_CPU_CLK_SRC_PLL:
-        apb_freq_mhz = 80;
+        apb_freq_mhz = 80 / (REF_CLK_FREQ / MHZ);
         REG_WRITE(SYSCON_PLL_TICK_CONF_REG, apb_freq_mhz - 1);
         break;
     case SOC_CPU_CLK_SRC_RC_FAST:
-        apb_freq_mhz = cpu_freq_mhz;
+        apb_freq_mhz = cpu_freq_mhz / (REF_CLK_FREQ / MHZ);
         REG_WRITE(SYSCON_CK8M_TICK_CONF_REG, apb_freq_mhz - 1);
         break;
     case SOC_CPU_CLK_SRC_APLL:
-        apb_freq_mhz = cpu_freq_mhz >> 1;
+        apb_freq_mhz = (cpu_freq_mhz / (REF_CLK_FREQ / MHZ)) >> 1;
         REG_WRITE(SYSCON_APLL_TICK_CONF_REG, apb_freq_mhz - 1);
         break;
     default:
