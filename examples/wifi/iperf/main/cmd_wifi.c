@@ -55,6 +55,8 @@ static wifi_args_t sta_args;
 static wifi_scan_arg_t scan_args;
 static wifi_args_t ap_args;
 static bool reconnect = true;
+static int retry_count = 0;
+static bool reconn_state = false;
 static const char *TAG = "cmd_wifi";
 esp_netif_t *netif_ap = NULL;
 esp_netif_t *netif_sta = NULL;
@@ -125,11 +127,15 @@ static void got_ip_handler(void *arg, esp_event_base_t event_base,
 static void disconnect_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
-    if (reconnect) {
+    if (reconnect && retry_count < 5) {
         ESP_LOGI(TAG, "sta disconnect, reconnect...");
         esp_wifi_connect();
+        reconn_state = true;
+        retry_count++;
     } else {
         ESP_LOGI(TAG, "sta disconnect");
+        reconn_state = false;
+        retry_count = 0;
     }
     xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
     xEventGroupSetBits(wifi_event_group, DISCONNECTED_BIT);
@@ -230,6 +236,7 @@ static bool wifi_cmd_sta_join(const char *ssid, const char *pass, bool enable_he
     esp_wifi_connect();
 
     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 5000 / portTICK_PERIOD_MS);
+    reconn_state = false;
 
     return true;
 }
@@ -240,6 +247,10 @@ static int wifi_cmd_sta(int argc, char **argv)
 
     if (nerrors != 0) {
         arg_print_errors(stderr, sta_args.end, argv[0]);
+        return 1;
+    }
+    if (reconn_state == true) {
+        ESP_LOGE(TAG, "Reconnection in progress, try again later");
         return 1;
     }
 
