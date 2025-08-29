@@ -40,7 +40,7 @@ typedef enum {
                                                            and will be deprecated in future versions esp-idf */
     HTTP_EVENT_ON_HEADER,       /*!< Occurs when receiving each header sent from the server */
     HTTP_EVENT_ON_DATA,         /*!< Occurs when receiving data from the server, possibly multiple portions of the packet */
-    HTTP_EVENT_ON_FINISH,       /*!< Occurs when finish a HTTP session */
+    HTTP_EVENT_ON_FINISH,       /*!< Occurs when complete data is received */
     HTTP_EVENT_DISCONNECTED,    /*!< The connection has been disconnected */
     HTTP_EVENT_REDIRECT,        /*!< Intercepting HTTP redirects to handle them manually */
 } esp_http_client_event_id_t;
