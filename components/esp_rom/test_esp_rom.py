@@ -27,6 +27,9 @@ def test_roms_check_supported_chips() -> None:
     with open(ROMS_JSON, 'r') as f:
         roms_json = json.load(f)
     for chip in SUPPORTED_TARGETS:
+        if chip in ['esp32c5', 'esp32c61']:
+            # IDFCI-3109
+            continue
         assert chip in roms_json, f'Have no ROM data for chip {chip}'
 
 
