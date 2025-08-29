@@ -17,6 +17,16 @@ set(CMAKE_MODULE_PATH
 # for both cmakev1 and cmakev2.
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/version.cmake)
 
+# The gdbinit.cmake file from cmakev1 contains a single function,
+# __generate_gdbinit, which is used in the generation of
+# project_description.json.
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/gdbinit.cmake)
+
+# The openocd.cmake file from cmakev1 contains a single function,
+# __get_openocd_options, which is used in the generation of
+# project_description.json.
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/openocd.cmake)
+
 include(component)
 include(build)
 include(kconfig)

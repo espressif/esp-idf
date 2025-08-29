@@ -434,3 +434,189 @@ function(idf_build_executable executable)
 
     target_link_libraries(${executable} PRIVATE ${library})
 endfunction()
+
+#[[
+   __get_components_metadata(COMPONENTS <component>...
+                             OUTPUT <variable>)
+
+   :COMPONENTS[in]: List of components for which to generate metadata.
+   :OUTPUT[out]: Output variable to store JSON metadata.
+
+   Generate metadata in JSON format from ``COMPONENTS`` and store it in the
+   ``OUTPUT`` variable.
+#]]
+function(__get_components_metadata)
+    set(options)
+    set(one_value OUTPUT)
+    set(multi_value COMPONENTS)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_COMPONENTS)
+        idf_die("COMPONENTS option is required")
+    endif()
+
+    if(NOT DEFINED ARG_OUTPUT)
+        idf_die("OUTPUT option is required")
+    endif()
+
+    set(components_json "")
+
+    foreach(name IN LISTS ARG_COMPONENTS)
+        idf_component_get_property(target ${name} COMPONENT_REAL_TARGET)
+        idf_component_get_property(alias ${name} COMPONENT_ALIAS)
+        idf_component_get_property(prefix ${name} __PREFIX)
+        idf_component_get_property(dir ${name} COMPONENT_DIR)
+        idf_component_get_property(type ${name} COMPONENT_TYPE)
+        idf_component_get_property(lib ${name} COMPONENT_LIB)
+        idf_component_get_property(reqs ${name} REQUIRES)
+        idf_component_get_property(include_dirs ${name} INCLUDE_DIRS)
+        idf_component_get_property(priv_reqs ${name} PRIV_REQUIRES)
+        idf_component_get_property(managed_reqs ${name} MANAGED_REQUIRES)
+        idf_component_get_property(managed_priv_reqs ${name} MANAGED_PRIV_REQUIRES)
+        if("${type}" STREQUAL "LIBRARY")
+            set(file "$<TARGET_LINKER_FILE:${lib}>")
+
+            # The idf_component_register function is converting each source file path defined
+            # in SRCS into absolute one. But source files can be also added with cmake's
+            # target_sources and have relative paths. This is used for example in log
+            # component. Let's make sure all source files have absolute path.
+            set(sources "")
+            get_target_property(srcs ${lib} SOURCES)
+            foreach(src IN LISTS srcs)
+                get_filename_component(src "${src}" ABSOLUTE BASE_DIR "${dir}")
+                list(APPEND sources "${src}")
+            endforeach()
+
+        else()
+            set(file "")
+            set(sources "")
+        endif()
+
+        __make_json_list("${reqs}" OUTPUT reqs)
+        __make_json_list("${priv_reqs}" OUTPUT priv_reqs)
+        __make_json_list("${managed_reqs}" OUTPUT managed_reqs)
+        __make_json_list("${managed_priv_reqs}" OUTPUT managed_priv_reqs)
+        __make_json_list("${include_dirs}" OUTPUT include_dirs)
+        __make_json_list("${sources}" OUTPUT sources)
+
+        string(JOIN "\n" component_json
+            "        \"${name}\": {"
+            "            \"alias\": \"${alias}\","
+            "            \"target\": \"${target}\","
+            "            \"prefix\": \"${prefix}\","
+            "            \"dir\": \"${dir}\","
+            "            \"type\": \"${type}\","
+            "            \"lib\": \"${lib}\","
+            "            \"reqs\": ${reqs},"
+            "            \"priv_reqs\": ${priv_reqs},"
+            "            \"managed_reqs\": ${managed_reqs},"
+            "            \"managed_priv_reqs\": ${managed_priv_reqs},"
+            "            \"file\": \"${file}\","
+            "            \"sources\": ${sources},"
+            "            \"include_dirs\": ${include_dirs}"
+            "        }"
+        )
+        string(CONFIGURE "${component_json}" component_json)
+        if(NOT "${components_json}" STREQUAL "")
+            string(APPEND components_json ",\n")
+        endif()
+        string(APPEND components_json "${component_json}")
+    endforeach()
+    string(PREPEND components_json "{\n")
+    string(APPEND components_json "\n    }")
+    set(${ARG_OUTPUT} "${components_json}" PARENT_SCOPE)
+endfunction()
+
+#[[api
+.. cmakev2:function:: idf_build_generate_metadata
+
+   .. code-block:: cmake
+
+      idf_build_generate_metadata(<executable>
+                                  [FILE <file>])
+
+   :executable[in]: Executable target for which to generate a metadata file.
+   :FILE[in,opt]: Optional output file path for storing the metadata. If not
+                  provided, the default path ``<build>/project_description.json``
+                  is used.
+
+   Generate metadata for the specified ``executable`` and store it in the
+   specified ``FILE``. If no ``FILE`` is provided, the default location
+   ``<build>/project_description.json`` will be used.
+#]]
+function(idf_build_generate_metadata executable)
+    set(options)
+    set(one_value FILE)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    __get_executable_library_or_die(TARGET "${executable}" OUTPUT library)
+
+    idf_build_get_property(PROJECT_NAME PROJECT_NAME)
+    idf_build_get_property(PROJECT_VER PROJECT_VER)
+    idf_build_get_property(PROJECT_PATH PROJECT_DIR)
+    idf_build_get_property(IDF_PATH IDF_PATH)
+    idf_build_get_property(BUILD_DIR BUILD_DIR)
+    idf_build_get_property(SDKCONFIG SDKCONFIG)
+    idf_build_get_property(SDKCONFIG_DEFAULTS SDKCONFIG_DEFAULTS)
+    set(PROJECT_EXECUTABLE "$<TARGET_FILE_NAME:${executable}>")
+    # The PROJECT_BIN executable property must be set by the idf_build_binary
+    # function.
+    get_target_property(PROJECT_BIN "${executable}" PROJECT_BIN)
+    if(NOT PROJECT_BIN)
+        set(PROJECT_BIN "")
+    endif()
+    if(CONFIG_APP_BUILD_TYPE_RAM)
+        set(PROJECT_BUILD_TYPE ram_app)
+    else()
+        set(PROJECT_BUILD_TYPE flash_app)
+    endif()
+    idf_build_get_property(IDF_VER IDF_VER)
+
+    idf_build_get_property(common_component_reqs __COMPONENT_REQUIRES_COMMON)
+    list(SORT common_component_reqs)
+    __make_json_list("${common_component_reqs}" OUTPUT common_component_reqs_json)
+
+    idf_library_get_property(build_components "${library}" LIBRARY_COMPONENTS_LINKED)
+    list(SORT build_components)
+    __make_json_list("${build_components}" OUTPUT build_components_json)
+
+    set(build_component_paths)
+    set(COMPONENT_KCONFIGS)
+    set(COMPONENT_KCONFIGS_PROJBUILD)
+    foreach(component_name IN LISTS build_components)
+        idf_component_get_property(component_dir "${component_name}" COMPONENT_DIR)
+        idf_component_get_property(component_kconfig "${component_name}" __KCONFIG)
+        idf_component_get_property(component_kconfig_projbuild "${component_name}" __KCONFIG_PROJBUILD)
+        list(APPEND build_component_paths "${component_dir}")
+        if(component_kconfig)
+            list(APPEND COMPONENT_KCONFIGS "${component_kconfig}")
+        endif()
+        if(component_kconfig_projbuild)
+            list(APPEND COMPONENT_KCONFIGS_PROJBUILD "${component_kconfig_projbuild}")
+        endif()
+    endforeach()
+    __make_json_list("${build_component_paths}" OUTPUT build_component_paths_json)
+
+    __get_components_metadata(COMPONENTS "${build_components}" OUTPUT build_component_info_json)
+
+    idf_build_get_property(components_discovered COMPONENTS_DISCOVERED)
+    __get_components_metadata(COMPONENTS "${components_discovered}" OUTPUT all_component_info_json)
+
+    __generate_gdbinit()
+    idf_build_get_property(gdbinit_files_prefix_map GDBINIT_FILES_PREFIX_MAP)
+    idf_build_get_property(gdbinit_files_symbols GDBINIT_FILES_SYMBOLS)
+    idf_build_get_property(gdbinit_files_py_extensions GDBINIT_FILES_PY_EXTENSIONS)
+    idf_build_get_property(gdbinit_files_connect GDBINIT_FILES_CONNECT)
+    __get_openocd_options(debug_arguments_openocd)
+
+    if(NOT DEFINED ARG_FILE)
+        set(ARG_FILE "${BUILD_DIR}/project_description.json")
+    endif()
+
+    configure_file("${IDF_PATH}/tools/cmake/project_description.json.in" "${ARG_FILE}.templ")
+    file(READ "${ARG_FILE}.templ" project_description_json_templ)
+    file(REMOVE "${ARG_FILE}.templ")
+    file(GENERATE OUTPUT "${ARG_FILE}"
+         CONTENT "${project_description_json_templ}")
+endfunction()
