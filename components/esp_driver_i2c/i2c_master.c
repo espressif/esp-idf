@@ -535,7 +535,7 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
 
     // Initialise event queue.
     xQueueReset(i2c_master->event_queue);
-    i2c_master->event = I2C_EVENT_ALIVE;
+    atomic_store(&i2c_master->event, I2C_EVENT_ALIVE);
     while (i2c_master->i2c_trans.cmd_count) {
         if (xSemaphoreTake(i2c_master->cmd_semphr, ticks_to_wait) != pdTRUE) {
             // Software timeout, clear the command link and finish this transaction.
@@ -624,7 +624,8 @@ static void s_i2c_send_command_async(i2c_master_bus_handle_t i2c_master, BaseTyp
     }
 
     // Stop the transaction when invalid event is detected
-    if (i2c_master->event == I2C_EVENT_NACK || i2c_master->event == I2C_EVENT_TIMEOUT) {
+    i2c_master_event_t current_event = atomic_load(&i2c_master->event);
+    if (current_event == I2C_EVENT_NACK || current_event == I2C_EVENT_TIMEOUT) {
         i2c_master->sent_all = true;
         i2c_master->trans_finish = true;
         i2c_master->in_progress = false;
@@ -633,7 +634,7 @@ static void s_i2c_send_command_async(i2c_master_bus_handle_t i2c_master, BaseTyp
             xQueueSendFromISR(i2c_master->trans_queues[I2C_TRANS_QUEUE_COMPLETE], &i2c_master->i2c_trans, do_yield);
         }
         i2c_master->i2c_trans.cmd_count = 0;
-        i2c_master->event = I2C_EVENT_ALIVE;
+        atomic_store(&i2c_master->event, I2C_EVENT_ALIVE);
         return;
     }
     while (i2c_ll_is_bus_busy(hal->dev)) {}
@@ -775,16 +776,19 @@ static void i2c_master_isr_handler_default(void *arg)
 
     if (int_mask & I2C_LL_INTR_NACK) {
         atomic_store(&i2c_master->status, I2C_STATUS_ACK_ERROR);
-        i2c_master->event = I2C_EVENT_NACK;
+        i2c_master_event_t nack_event = I2C_EVENT_NACK;
+        atomic_store(&i2c_master->nack_event, nack_event);
+        xQueueSendFromISR(i2c_master->event_queue, (void *)&nack_event, &HPTaskAwoken);
     } else if (int_mask & I2C_LL_INTR_TIMEOUT || int_mask & I2C_LL_INTR_ARBITRATION) {
         atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
-        i2c_master->event = I2C_EVENT_TIMEOUT;
+        i2c_master_event_t timeout_event = I2C_EVENT_TIMEOUT;
+        atomic_store(&i2c_master->event, timeout_event);
+        xQueueSendFromISR(i2c_master->event_queue, (void *)&timeout_event, &HPTaskAwoken);
     } else if (int_mask & I2C_LL_INTR_MST_COMPLETE) {
         i2c_master->trans_done = true;
-        i2c_master->event = I2C_EVENT_DONE;
-    }
-    if (i2c_master->event != I2C_EVENT_ALIVE) {
-        xQueueSendFromISR(i2c_master->event_queue, (void *)&i2c_master->event, &HPTaskAwoken);
+        i2c_master_event_t done_event = I2C_EVENT_DONE;
+        atomic_store(&i2c_master->event, done_event);
+        xQueueSendFromISR(i2c_master->event_queue, (void *)&done_event, &HPTaskAwoken);
     }
     if (i2c_master->contains_read == true) {
         if (int_mask & I2C_LL_INTR_MST_COMPLETE || int_mask & I2C_LL_INTR_END_DETECT) {
