@@ -55,7 +55,11 @@ typedef union {
          *  underflow.
          */
         uint32_t infifo_udf_chn_int_raw: 1;
-        uint32_t reserved_7: 25;
+        /** in_ahbinf_resp_err_chn_int_raw : R/WTC/SS; bitpos: [7]; default: 0;
+         *  The raw interrupt status of AHB_DMA_IN_RESP_ERR_CHN_INT
+         */
+        uint32_t in_ahbinf_resp_err_chn_int_raw:1;
+        uint32_t reserved_8: 24;
     };
     uint32_t val;
 } ahb_dma_in_int_raw_chn_reg_t;
@@ -93,7 +97,11 @@ typedef union {
          *  The raw interrupt status bit for the INFIFO_UDF_L1_CH_INT interrupt.
          */
         uint32_t infifo_udf_chn_int_st: 1;
-        uint32_t reserved_7: 25;
+        /** in_ahbinf_resp_err_chn_int_st : RO; bitpos: [7]; default: 0;
+         *  The masked interrupt status of AHB_DMA_IN_RESP_ERR_CHN_INT
+         */
+        uint32_t in_ahbinf_resp_err_chn_int_st: 1;
+        uint32_t reserved_8: 24;
     };
     uint32_t val;
 } ahb_dma_in_int_st_chn_reg_t;
@@ -131,7 +139,11 @@ typedef union {
          *  The interrupt enable bit for the INFIFO_UDF_L1_CH_INT interrupt.
          */
         uint32_t infifo_udf_chn_int_ena: 1;
-        uint32_t reserved_7: 25;
+        /** in_ahbinf_resp_err_chn_int_ena : R/W; bitpos: [7]; default: 0;
+         *  Write 1 to enable AHB_DMA_IN_RESP_ERR_CHN_INT
+         */
+        uint32_t in_ahbinf_resp_err_chn_int_ena: 1;
+        uint32_t reserved_8: 24;
     };
     uint32_t val;
 } ahb_dma_in_int_ena_chn_reg_t;
@@ -169,7 +181,11 @@ typedef union {
          *  Set this bit to clear the INFIFO_UDF_L1_CH_INT interrupt.
          */
         uint32_t infifo_udf_chn_int_clr: 1;
-        uint32_t reserved_7: 25;
+        /** in_ahbinf_resp_err_chn_int_clr : WT; bitpos: [7]; default: 0;
+         *  Write 1 to clear AHB_DMA_IN_RESP_ERR_CHN_INT
+         */
+        uint32_t in_ahbinf_resp_err_chn_int_clr: 1;
+        uint32_t reserved_8: 24;
     };
     uint32_t val;
 } ahb_dma_in_int_clr_chn_reg_t;
@@ -211,7 +227,11 @@ typedef union {
          *  underflow.
          */
         uint32_t outfifo_udf_chn_int_raw: 1;
-        uint32_t reserved_6: 26;
+        /** out_ahbinf_resp_err_chn_int_raw : R/WTC/SS; bitpos: [6]; default: 0;
+         *  The raw interrupt status of AHB_DMA_OUT_RESP_ERR_CHN_INT
+         */
+        uint32_t out_ahbinf_resp_err_chn_int_raw:1;
+        uint32_t reserved_7:25;
     };
     uint32_t val;
 } ahb_dma_out_int_raw_chn_reg_t;
@@ -245,7 +265,11 @@ typedef union {
          *  The raw interrupt status bit for the OUTFIFO_UDF_L1_CH_INT interrupt.
          */
         uint32_t outfifo_udf_chn_int_st: 1;
-        uint32_t reserved_6: 26;
+        /** out_ahbinf_resp_err_chn_int_st : RO; bitpos: [6]; default: 0;
+         *  The masked interrupt status of AHB_DMA_OUT_RESP_ERR_CHN_INT
+         */
+        uint32_t out_ahbinf_resp_err_chn_int_st:1;
+        uint32_t reserved_7:25;
     };
     uint32_t val;
 } ahb_dma_out_int_st_chn_reg_t;
@@ -279,7 +303,11 @@ typedef union {
          *  The interrupt enable bit for the OUTFIFO_UDF_L1_CH_INT interrupt.
          */
         uint32_t outfifo_udf_chn_int_ena: 1;
-        uint32_t reserved_6: 26;
+        /** out_ahbinf_resp_err_chn_int_ena : R/W; bitpos: [6]; default: 0;
+         *  Write 1 to enable AHB_DMA_OUT_RESP_ERR_CHN_INT
+         */
+        uint32_t out_ahbinf_resp_err_chn_int_ena: 1;
+        uint32_t reserved_7: 25;
     };
     uint32_t val;
 } ahb_dma_out_int_ena_chn_reg_t;
@@ -313,7 +341,11 @@ typedef union {
          *  Set this bit to clear the OUTFIFO_UDF_L1_CH_INT interrupt.
          */
         uint32_t outfifo_udf_chn_int_clr: 1;
-        uint32_t reserved_6: 26;
+        /** out_ahbinf_resp_err_chn_int_clr : WT; bitpos: [6]; default: 0;
+         *  Write 1 to clear AHB_DMA_OUT_RESP_ERR_CHN_INT
+         */
+        uint32_t out_ahbinf_resp_err_chn_int_clr: 1;
+        uint32_t reserved_7: 25;
     };
     uint32_t val;
 } ahb_dma_out_int_clr_chn_reg_t;
@@ -396,7 +428,15 @@ typedef union {
          *  task.
          */
         uint32_t in_etm_en_chn: 1;
-        uint32_t reserved_6: 26;
+        /** in_data_burst_mode_sel_chn : R/W; bitpos: [7:6]; default: 1;
+         *  Configures max burst size for Rx channeln.
+         *  2'b00: single
+         *  2'b01: incr4
+         *  2'b10: incr8
+         *  2'b11: incr16
+         */
+        uint32_t in_data_burst_mode_sel_chn: 2;
+        uint32_t reserved_8: 24;
     };
     uint32_t val;
 } ahb_dma_in_conf0_chn_reg_t;
@@ -564,13 +604,21 @@ typedef union {
          *  task.
          */
         uint32_t out_etm_en_chn: 1;
-        uint32_t reserved_7: 25;
+        /** out_data_burst_mode_sel_chn : R/W; bitpos: [9:8]; default: 1;
+         *  Configures max burst size for TX channeln.
+         *  2'b00: single
+         *  2'b01: incr4
+         *  2'b10: incr8
+         *  2'b11: incr16
+         */
+        uint32_t out_data_burst_mode_sel_chn:2;
+        uint32_t reserved_10:22;
     };
     uint32_t val;
 } ahb_dma_out_conf0_chn_reg_t;
 
 /** Type of out_crc_init_data_chn register
- *  This register is used to config ch0 crc initial data(max 32 bit)
+ *  This register is used to config chn crc initial data(max 32 bit)
  */
 typedef union {
     struct {
@@ -583,7 +631,7 @@ typedef union {
 } ahb_dma_out_crc_init_data_chn_reg_t;
 
 /** Type of tx_crc_width_chn register
- *  This register is used to config tx ch0 crc result width,2'b00 mean crc_width
+ *  This register is used to config tx chn crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -603,7 +651,7 @@ typedef union {
 } ahb_dma_tx_crc_width_chn_reg_t;
 
 /** Type of out_crc_clear_chn register
- *  This register is used to clear ch0 crc result
+ *  This register is used to clear chn crc result
  */
 typedef union {
     struct {
@@ -617,7 +665,7 @@ typedef union {
 } ahb_dma_out_crc_clear_chn_reg_t;
 
 /** Type of out_crc_final_result_chn register
- *  This register is used to store ch0 crc result
+ *  This register is used to store chn crc result
  */
 typedef union {
     struct {
@@ -630,7 +678,7 @@ typedef union {
 } ahb_dma_out_crc_final_result_chn_reg_t;
 
 /** Type of tx_crc_en_wr_data_chn register
- *  This resister is used to config ch0 crc en for every bit
+ *  This resister is used to config chn crc en for every bit
  */
 typedef union {
     struct {
@@ -643,7 +691,7 @@ typedef union {
 } ahb_dma_tx_crc_en_wr_data_chn_reg_t;
 
 /** Type of tx_crc_en_addr_chn register
- *  This register is used to config ch0 crc en addr
+ *  This register is used to config chn crc en addr
  */
 typedef union {
     struct {
@@ -688,13 +736,13 @@ typedef union {
 typedef union {
     struct {
         /** tx_ch_arb_weigh_chn : R/W; bitpos: [3:0]; default: 0;
-         *  reserved
+         *  Configures the weight(i.e the number of tokens) of TX channeln
          */
-        uint32_t tx_ch_arb_weigh_chn: 4;
+        uint32_t tx_arb_weight_value_chn: 4;
         uint32_t reserved_4: 28;
     };
     uint32_t val;
-} ahb_dma_tx_ch_arb_weigh_chn_reg_t;
+} ahb_dma_tx_ch_arb_weight_chn_reg_t;
 
 /** Type of tx_arb_weigh_opt_dir_chn register
  *  This register is used to config off or on weigh optimization
@@ -704,14 +752,14 @@ typedef union {
         /** tx_arb_weigh_opt_dir_chn : R/W; bitpos: [0]; default: 0;
          *  reserved
          */
-        uint32_t tx_arb_weigh_opt_dir_chn: 1;
+        uint32_t tx_arb_weight_opt_dis_chn: 1;
         uint32_t reserved_1: 31;
     };
     uint32_t val;
-} ahb_dma_tx_arb_weigh_opt_dir_chn_reg_t;
+} ahb_dma_tx_arb_weight_opt_dis_chn_reg_t;
 
 /** Type of in_crc_init_data_chn register
- *  This register is used to config ch0 crc initial data(max 32 bit)
+ *  This register is used to config chn crc initial data(max 32 bit)
  */
 typedef union {
     struct {
@@ -724,7 +772,7 @@ typedef union {
 } ahb_dma_in_crc_init_data_chn_reg_t;
 
 /** Type of rx_crc_width_chn register
- *  This register is used to config rx ch0 crc result width,2'b00 mean crc_width
+ *  This register is used to config rx chn crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -744,7 +792,7 @@ typedef union {
 } ahb_dma_rx_crc_width_chn_reg_t;
 
 /** Type of in_crc_clear_chn register
- *  This register is used to clear ch0 crc result
+ *  This register is used to clear chn crc result
  */
 typedef union {
     struct {
@@ -758,7 +806,7 @@ typedef union {
 } ahb_dma_in_crc_clear_chn_reg_t;
 
 /** Type of in_crc_final_result_chn register
- *  This register is used to store ch0 crc result
+ *  This register is used to store chn crc result
  */
 typedef union {
     struct {
@@ -771,7 +819,7 @@ typedef union {
 } ahb_dma_in_crc_final_result_chn_reg_t;
 
 /** Type of rx_crc_en_wr_data_chn register
- *  This resister is used to config ch0 crc en for every bit
+ *  This resister is used to config chn crc en for every bit
  */
 typedef union {
     struct {
@@ -784,7 +832,7 @@ typedef union {
 } ahb_dma_rx_crc_en_wr_data_chn_reg_t;
 
 /** Type of rx_crc_en_addr_chn register
- *  This register is used to config ch0 crc en addr
+ *  This register is used to config chn crc en addr
  */
 typedef union {
     struct {
@@ -828,14 +876,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rx_ch_arb_weigh_chn : R/W; bitpos: [3:0]; default: 0;
-         *  reserved
+        /** rx_ch_arb_weight_chn : R/W; bitpos: [3:0]; default: 0;
+         *  Configures the weight(i.e the number of tokens) of RX channeln
          */
-        uint32_t rx_ch_arb_weigh_chn: 4;
+        uint32_t rx_arb_weight_value_chn: 4;
         uint32_t reserved_4: 28;
     };
     uint32_t val;
-} ahb_dma_rx_ch_arb_weigh_chn_reg_t;
+} ahb_dma_rx_ch_arb_weight_chn_reg_t;
 
 /** Type of rx_arb_weigh_opt_dir_chn register
  *  This register is used to config off or on weigh optimization
@@ -845,11 +893,11 @@ typedef union {
         /** rx_arb_weigh_opt_dir_chn : R/W; bitpos: [0]; default: 0;
          *  reserved
          */
-        uint32_t rx_arb_weigh_opt_dir_chn: 1;
+        uint32_t rx_arb_weight_opt_dis_chn: 1;
         uint32_t reserved_1: 31;
     };
     uint32_t val;
-} ahb_dma_rx_arb_weigh_opt_dir_chn_reg_t;
+} ahb_dma_rx_arb_weight_opt_dis_chn_reg_t;
 
 /** Type of in_link_addr_chn register
  *  Link descriptor configure of Rx channel 0
@@ -907,69 +955,13 @@ typedef union {
     uint32_t val;
 } ahb_dma_intr_mem_end_addr_reg_t;
 
-/** Type of arb_timeout_tx register
- *  This retister is used to config arbiter time slice for tx dir
- */
-typedef union {
-    struct {
-        /** arb_timeout_tx : R/W; bitpos: [15:0]; default: 0;
-         *  This register is used to config arbiter time out value
-         */
-        uint32_t arb_timeout_tx: 16;
-        uint32_t reserved_16: 16;
-    };
-    uint32_t val;
-} ahb_dma_arb_timeout_tx_reg_t;
-
-/** Type of arb_timeout_rx register
- *  This retister is used to config arbiter time slice for rx dir
- */
-typedef union {
-    struct {
-        /** arb_timeout_rx : R/W; bitpos: [15:0]; default: 0;
-         *  This register is used to config arbiter time out value
-         */
-        uint32_t arb_timeout_rx: 16;
-        uint32_t reserved_16: 16;
-    };
-    uint32_t val;
-} ahb_dma_arb_timeout_rx_reg_t;
-
-/** Type of weight_en_tx register
- *  This register is used to config arbiter weigh function to on or off for tx dir
- */
-typedef union {
-    struct {
-        /** weight_en_tx : R/W; bitpos: [0]; default: 0;
-         *  This register is used to config arbiter weight function  off/on
-         */
-        uint32_t weight_en_tx: 1;
-        uint32_t reserved_1: 31;
-    };
-    uint32_t val;
-} ahb_dma_weight_en_tx_reg_t;
-
-/** Type of weight_en_rx register
- *  This register is used to config arbiter weigh function to on or off for rx dir
- */
-typedef union {
-    struct {
-        /** weight_en_rx : R/W; bitpos: [0]; default: 0;
-         *  This register is used to config arbiter weight function  off/on
-         */
-        uint32_t weight_en_rx: 1;
-        uint32_t reserved_1: 31;
-    };
-    uint32_t val;
-} ahb_dma_weight_en_rx_reg_t;
-
 /** Group: Version Registers */
 /** Type of date register
  *  Version control register
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [31:0]; default: 36712768;
+        /** date : R/W; bitpos: [31:0]; default: 2425376;
          *  register version.
          */
         uint32_t date: 32;
@@ -991,11 +983,12 @@ typedef union {
          *  L1 Rx FIFO empty signal for Rx channel 0.
          */
         uint32_t infifo_empty_chn: 1;
-        /** infifo_cnt_chn : RO; bitpos: [7:2]; default: 0;
+        uint32_t reserved_2: 6;
+        /** infifo_cnt_chn : RO; bitpos: [14:8]; default: 0;
          *  The register stores the byte number of the data in L1 Rx FIFO for Rx channel 0.
          */
-        uint32_t infifo_cnt_chn: 6;
-        uint32_t reserved_8: 15;
+        uint32_t infifo_cnt_chn: 7;
+        uint32_t reserved_15: 8;
         /** in_remain_under_1b_chn : RO; bitpos: [23]; default: 1;
          *  reserved
          */
@@ -1044,7 +1037,7 @@ typedef union {
 } ahb_dma_in_state_chn_reg_t;
 
 /** Type of in_suc_eof_des_addr_chn register
- *  Inlink descriptor address when EOF occurs of Rx channel 0
+ *  Inlink descriptor address when EOF occurs of Rx channel n
  */
 typedef union {
     struct {
@@ -1058,7 +1051,7 @@ typedef union {
 } ahb_dma_in_suc_eof_des_addr_chn_reg_t;
 
 /** Type of in_err_eof_des_addr_chn register
- *  Inlink descriptor address when errors occur of Rx channel 0
+ *  Inlink descriptor address when errors occur of Rx channel n
  */
 typedef union {
     struct {
@@ -1072,7 +1065,7 @@ typedef union {
 } ahb_dma_in_err_eof_des_addr_chn_reg_t;
 
 /** Type of in_dscr_chn register
- *  Current inlink descriptor address of Rx channel 0
+ *  Current inlink descriptor address of Rx channel n
  */
 typedef union {
     struct {
@@ -1085,12 +1078,13 @@ typedef union {
 } ahb_dma_in_dscr_chn_reg_t;
 
 /** Type of in_dscr_bf0_chn register
- *  The last inlink descriptor address of Rx channel 0
+ *  The last inlink descriptor address of Rx channel n
  */
 typedef union {
     struct {
         /** inlink_dscr_bf0_chn : RO; bitpos: [31:0]; default: 0;
-         *  The address of the last inlink descriptor x-1.
+         *  Represents the address of the current receive descriptor x that has already been
+         *  fetched.
          */
         uint32_t inlink_dscr_bf0_chn: 32;
     };
@@ -1098,12 +1092,13 @@ typedef union {
 } ahb_dma_in_dscr_bf0_chn_reg_t;
 
 /** Type of in_dscr_bf1_chn register
- *  The second-to-last inlink descriptor address of Rx channel 0
+ *  The second-to-last inlink descriptor address of Rx channel n
  */
 typedef union {
     struct {
         /** inlink_dscr_bf1_chn : RO; bitpos: [31:0]; default: 0;
-         *  The address of the second-to-last inlink descriptor x-2.
+         *  Represents the address of the previous receive descriptor x-1 that has already been
+         *  fetched.
          */
         uint32_t inlink_dscr_bf1_chn: 32;
     };
@@ -1111,7 +1106,7 @@ typedef union {
 } ahb_dma_in_dscr_bf1_chn_reg_t;
 
 /** Type of outfifo_status_chn register
- *  Transmit FIFO status of Tx channel 0
+ *  Transmit FIFO status of Tx channel n
  */
 typedef union {
     struct {
@@ -1123,11 +1118,12 @@ typedef union {
          *  L1 Tx FIFO empty signal for Tx channel 0.
          */
         uint32_t outfifo_empty_chn: 1;
-        /** outfifo_cnt_chn : RO; bitpos: [7:2]; default: 0;
+        uint32_t reserved_2:6;
+        /** outfifo_cnt_chn : RO; bitpos: [14:8]; default: 0;
          *  The register stores the byte number of the data in L1 Tx FIFO for Tx channel 0.
          */
-        uint32_t outfifo_cnt_chn: 6;
-        uint32_t reserved_8: 15;
+        uint32_t outfifo_cnt_chn: 7;
+        uint32_t reserved_15: 8;
         /** out_remain_under_1b_chn : RO; bitpos: [23]; default: 1;
          *  reserved
          */
@@ -1150,12 +1146,13 @@ typedef union {
 } ahb_dma_outfifo_status_chn_reg_t;
 
 /** Type of out_state_chn register
- *  Transmit status of Tx channel 0
+ *  Transmit status of Tx channel n
  */
 typedef union {
     struct {
         /** outlink_dscr_addr_chn : RO; bitpos: [17:0]; default: 0;
-         *  This register stores the current outlink descriptor's address.
+         *  Represents the lower 18 bits of the address of the next transmit descriptor to be
+         *  processed.
          */
         uint32_t outlink_dscr_addr_chn: 18;
         /** out_dscr_state_chn : RO; bitpos: [19:18]; default: 0;
@@ -1172,7 +1169,7 @@ typedef union {
 } ahb_dma_out_state_chn_reg_t;
 
 /** Type of out_eof_des_addr_chn register
- *  Outlink descriptor address when EOF occurs of Tx channel 0
+ *  Outlink descriptor address when EOF occurs of Tx channel n
  */
 typedef union {
     struct {
@@ -1186,7 +1183,7 @@ typedef union {
 } ahb_dma_out_eof_des_addr_chn_reg_t;
 
 /** Type of out_eof_bfr_des_addr_chn register
- *  The last outlink descriptor address when EOF occurs of Tx channel 0
+ *  The last outlink descriptor address when EOF occurs of Tx channel n
  */
 typedef union {
     struct {
@@ -1200,12 +1197,13 @@ typedef union {
 } ahb_dma_out_eof_bfr_des_addr_chn_reg_t;
 
 /** Type of out_dscr_chn register
- *  Current inlink descriptor address of Tx channel 0
+ *  Current inlink descriptor address of Tx channel n
  */
 typedef union {
     struct {
         /** outlink_dscr_chn : RO; bitpos: [31:0]; default: 0;
-         *  The address of the current outlink descriptor y.
+         *  Represents the address of the next transmit descriptor y+1 pointed by the current
+         *  transmit descriptor that has already been fetched.
          */
         uint32_t outlink_dscr_chn: 32;
     };
@@ -1213,12 +1211,13 @@ typedef union {
 } ahb_dma_out_dscr_chn_reg_t;
 
 /** Type of out_dscr_bf0_chn register
- *  The last inlink descriptor address of Tx channel 0
+ *  The last inlink descriptor address of Tx channel n
  */
 typedef union {
     struct {
         /** outlink_dscr_bf0_chn : RO; bitpos: [31:0]; default: 0;
-         *  The address of the last outlink descriptor y-1.
+         *  Represents the address of the current transmit descriptor y that has already been
+         *  fetched.
          */
         uint32_t outlink_dscr_bf0_chn: 32;
     };
@@ -1226,12 +1225,13 @@ typedef union {
 } ahb_dma_out_dscr_bf0_chn_reg_t;
 
 /** Type of out_dscr_bf1_chn register
- *  The second-to-last inlink descriptor address of Tx channel 0
+ *  The second-to-last inlink descriptor address of Tx channel n
  */
 typedef union {
     struct {
         /** outlink_dscr_bf1_chn : RO; bitpos: [31:0]; default: 0;
-         *  The address of the second-to-last inlink descriptor x-2.
+         *  Represents the address of the previous transmit descriptor y-1 that has already
+         *  been fetched.
          */
         uint32_t outlink_dscr_bf1_chn: 32;
     };
@@ -1240,7 +1240,7 @@ typedef union {
 
 /** Group: Priority Registers */
 /** Type of in_pri_chn register
- *  Priority register of Rx channel 0
+ *  Priority register of Rx channel n
  */
 typedef union {
     struct {
@@ -1274,9 +1274,19 @@ typedef union {
 typedef union {
     struct {
         /** peri_in_sel_chn : R/W; bitpos: [5:0]; default: 63;
-         *  This register is used to select peripheral for Rx channel 0. I3C. 1: Dummy. 2:
-         *  UHCI0. 3: I2S0. 4: I2S1. 5: I2S2. 6: Dummy. 7: Dummy. 8: ADC_DAC. 9: Dummy. 10:
-         *  RMT,11~15: Dummy
+         *  Configures the peripheral connected to RX channel n.
+         *  0: I3C
+         *  1: Dummy
+         *  2: UHCI0
+         *  3: I2S0
+         *  4: I2S1
+         *  5: I2S2
+         *  6: Dummy
+         *  7: Dummy
+         *  8: ADC_DAC
+         *  9: Dummy
+         *  10: RMT
+         *  11~15: Dummy
          */
         uint32_t peri_in_sel_chn: 6;
         uint32_t reserved_6: 26;
@@ -1285,20 +1295,175 @@ typedef union {
 } ahb_dma_in_peri_sel_chn_reg_t;
 
 /** Type of out_peri_sel_chn register
- *  Peripheral selection of Tx channel 0
+ *  Peripheral selection of Tx channel n
  */
 typedef union {
     struct {
         /** peri_out_sel_chn : R/W; bitpos: [5:0]; default: 63;
-         *  This register is used to select peripheral for Tx channel 0. I3C. 1: Dummy. 2:
-         *  UHCI0. 3: I2S0. 4: I2S1. 5: I2S2. 6: Dummy. 7: Dummy. 8: ADC_DAC. 9: Dummy. 10:
-         *  RMT,11~15: Dummy
+         *  Configures the peripheral connected to TX channel n.
+         *  0: I3C
+         *  1: Dummy
+         *  2: UHCI0
+         *  3: I2S0
+         *  4: I2S1
+         *  5: I2S2
+         *  6: Dummy
+         *  7: Dummy
+         *  8: ADC_DAC
+         *  9: Dummy
+         *  10: RMT
+         *  11~15: Dummy
          */
         uint32_t peri_out_sel_chn: 6;
         uint32_t reserved_6: 26;
     };
     uint32_t val;
 } ahb_dma_out_peri_sel_chn_reg_t;
+
+/** Type of arb_timeout register
+ *  TX arbitration timeout configuration register
+ */
+typedef union {
+    struct {
+        /** arb_timeout_num : R/W; bitpos: [15:0]; default: 0;
+         *  Configures the time slot. Measurement unit: AHB bus clock cycle.
+         */
+        uint32_t arb_timeout_num:16;
+        uint32_t reserved_16:16;
+    };
+    uint32_t val;
+} ahb_dma_arb_timeout_reg_t;
+
+/** Type of weight_en register
+ *  TX weight arbitration enable register
+ */
+typedef union {
+    struct {
+        /** weight_en : R/W; bitpos: [0]; default: 0;
+         *  Configures whether to enable weight arbitration.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t weight_en:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} ahb_dma_weight_en_reg_t;
+
+/** Type of module_clk_en register
+ *  Module clock force on register
+ */
+typedef union {
+    struct {
+        /** ahb_apb_sync_clk_en : R/W; bitpos: [2:0]; default: 7;
+         *  Configures whether to force on ahb_apb_sync 2~0 module clock. For bit n:
+         *  0 : Not force on ahb_apb_sync n clock
+         *  1 : Force on ahb_apb_sync n clock
+         */
+        uint32_t ahb_apb_sync_clk_en:3;
+        /** out_dscr_clk_en : R/W; bitpos: [5:3]; default: 7;
+         *  Configures whether to force on out_dscr 2~0 module clock. For bit n:
+         *  0 : Not force on out_dscr n clock
+         *  1 : Force on out_dscr n clock
+         */
+        uint32_t out_dscr_clk_en:3;
+        /** out_ctrl_clk_en : R/W; bitpos: [8:6]; default: 7;
+         *  Configures whether to force on out_ctrl 2~0 module clock. For bit n:
+         *  0 : Not force on out_ctrl n clock
+         *  1 : Force on out_ctrl n clock
+         */
+        uint32_t out_ctrl_clk_en:3;
+        /** in_dscr_clk_en : R/W; bitpos: [11:9]; default: 7;
+         *  Configures whether to force on in_dscr 2~0 module clock. For bit n:
+         *  0 : Not force on in_dscr n clock
+         *  1 : Force on in_dscr n clock
+         */
+        uint32_t in_dscr_clk_en:3;
+        /** in_ctrl_clk_en : R/W; bitpos: [14:12]; default: 7;
+         *  Configures whether to force on in_ctrl 2~0 module clock. For bit n:
+         *  0 : Not force on in_ctrl n clock
+         *  1 : Force on in_ctrl n clock
+         */
+        uint32_t in_ctrl_clk_en:3;
+        uint32_t reserved_15:12;
+        /** cmd_arb_clk_en : R/W; bitpos: [27]; default: 0;
+         *  Configures whether to force on cmd_arb module clock.
+         *  0 : Not force on cmd_arb clock
+         *  1 : Force on cmd_arb clock
+         */
+        uint32_t cmd_arb_clk_en:1;
+        /** ahbinf_clk_en : R/W; bitpos: [28]; default: 0;
+         *  Configures whether to force on ahbinf module clock.
+         *  0 : Not force on ahbinf clock
+         *  1 : Force on ahbinf clock
+         */
+        uint32_t ahbinf_clk_en:1;
+        uint32_t reserved_29:3;
+    };
+    uint32_t val;
+} ahb_dma_module_clk_en_reg_t;
+
+/** Type of ahbinf_resp_err_status0 register
+ *  AHB response error status 0 register
+ */
+typedef union {
+    struct {
+        /** ahbinf_resp_err_addr : RO; bitpos: [31:0]; default: 0;
+         *  Represents the address of the AHB response error.
+         */
+        uint32_t ahbinf_resp_err_addr:32;
+    };
+    uint32_t val;
+} ahb_dma_ahbinf_resp_err_status0_reg_t;
+
+/** Type of ahbinf_resp_err_status1 register
+ *  AHB response error status 1 register
+ */
+typedef union {
+    struct {
+        /** ahbinf_resp_err_wr : RO; bitpos: [0]; default: 0;
+         *  Represents the AHB response error is write request.
+         */
+        uint32_t ahbinf_resp_err_wr:1;
+        /** ahbinf_resp_err_id : RO; bitpos: [4:1]; default: 15;
+         *  Represents the AHB response error request id.
+         */
+        uint32_t ahbinf_resp_err_id:4;
+        /** ahbinf_resp_err_ch_id : RO; bitpos: [7:5]; default: 0;
+         *  Represents the AHB response error request channel id.bit[2]=1:TX channel.
+         *  bit[2]=0:RX channel.
+         */
+        uint32_t ahbinf_resp_err_ch_id:3;
+        uint32_t reserved_8:24;
+    };
+    uint32_t val;
+} ahb_dma_ahbinf_resp_err_status1_reg_t;
+
+/** Type of in_done_des_addr_ch0 register
+ *  RX_done Inlink descriptor address of RX channel 0
+ */
+typedef union {
+    struct {
+        /** in_done_des_addr_ch0 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the address of the inlink descriptor when  this descriptor is completed .
+         */
+        uint32_t in_done_des_addr_ch0:32;
+    };
+    uint32_t val;
+} ahb_dma_in_done_des_addr_chn_reg_t;
+
+/** Type of out_done_des_addr_ch0 register
+ *  TX done outlink descriptor address of TX channel 0
+ */
+typedef union {
+    struct {
+        /** out_done_des_addr_ch0 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the address of the outlink descriptor when this descriptor is completed.
+         */
+        uint32_t out_done_des_addr_ch0:32;
+    };
+    uint32_t val;
+} ahb_dma_out_done_des_addr_chn_reg_t;
 
 typedef struct {
     volatile ahb_dma_in_int_raw_chn_reg_t raw;
@@ -1355,8 +1520,8 @@ typedef struct {
     ahb_dma_rx_crc_en_addr_chn_reg_t crc_en_addr;
     ahb_dma_rx_crc_data_en_wr_data_chn_reg_t crc_data_en_wr_data;
     ahb_dma_rx_crc_data_en_addr_chn_reg_t crc_data_en_addr;
-    ahb_dma_rx_ch_arb_weigh_chn_reg_t ch_arb_weigh;
-    ahb_dma_rx_arb_weigh_opt_dir_chn_reg_t arb_weigh_opt;
+    ahb_dma_rx_ch_arb_weight_chn_reg_t ch_arb_weight;
+    ahb_dma_rx_arb_weight_opt_dis_chn_reg_t arb_weight_opt;
 } ahb_dma_in_crc_arb_chn_reg_t;
 
 typedef struct {
@@ -1368,8 +1533,8 @@ typedef struct {
     ahb_dma_tx_crc_en_addr_chn_reg_t crc_en_addr;
     ahb_dma_tx_crc_data_en_wr_data_chn_reg_t crc_data_en_wr_data;
     ahb_dma_tx_crc_data_en_addr_chn_reg_t crc_data_en_addr;
-    ahb_dma_tx_ch_arb_weigh_chn_reg_t ch_arb_weigh;
-    ahb_dma_tx_arb_weigh_opt_dir_chn_reg_t arb_weigh_opt;
+    ahb_dma_tx_ch_arb_weight_chn_reg_t ch_arb_weight;
+    ahb_dma_tx_arb_weight_opt_dis_chn_reg_t arb_weight_opt;
 } ahb_dma_out_crc_arb_chn_reg_t;
 
 typedef struct {
@@ -1378,6 +1543,11 @@ typedef struct {
     volatile ahb_dma_out_chn_reg_t out;
     uint32_t reserved_out[11];
 } ahb_dma_chn_reg_t;
+
+typedef struct {
+    volatile ahb_dma_in_done_des_addr_chn_reg_t in;
+    volatile ahb_dma_out_done_des_addr_chn_reg_t out;
+} ahb_dma_done_des_addr_chn_reg_t;
 
 typedef struct {
     volatile ahb_dma_in_int_chn_reg_t in_intr[3];
@@ -1394,16 +1564,20 @@ typedef struct {
     volatile ahb_dma_out_link_addr_chn_reg_t out_link_addr[3];
     volatile ahb_dma_intr_mem_start_addr_reg_t intr_mem_start_addr;
     volatile ahb_dma_intr_mem_end_addr_reg_t intr_mem_end_addr;
-    volatile ahb_dma_arb_timeout_tx_reg_t arb_timeout_tx;
-    volatile ahb_dma_arb_timeout_rx_reg_t arb_timeout_rx;
-    volatile ahb_dma_weight_en_tx_reg_t weight_en_tx;
-    volatile ahb_dma_weight_en_rx_reg_t weight_en_rx;
+    uint32_t reserved_3cc[4];
+    volatile ahb_dma_arb_timeout_reg_t arb_timeout;
+    uint32_t reserved_3e0[8];
+    volatile ahb_dma_weight_en_reg_t weight_en;
+    volatile ahb_dma_module_clk_en_reg_t module_clk_en;
+    volatile ahb_dma_ahbinf_resp_err_status0_reg_t ahbinf_resp_err_status0;
+    volatile ahb_dma_ahbinf_resp_err_status1_reg_t ahbinf_resp_err_status1;
+    volatile ahb_dma_done_des_addr_chn_reg_t done_des_addr_chn[3];
 } ahb_dma_dev_t;
 
 extern ahb_dma_dev_t AHB_DMA;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(ahb_dma_dev_t) == 0x3DC, "Invalid size of ahb_dma_dev_t structure");
+_Static_assert(sizeof(ahb_dma_dev_t) == 0x428, "Invalid size of ahb_dma_dev_t structure");
 #endif
 
 #ifdef __cplusplus

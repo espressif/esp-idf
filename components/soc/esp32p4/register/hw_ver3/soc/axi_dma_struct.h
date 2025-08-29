@@ -10,9 +10,9 @@
 extern "C" {
 #endif
 
-/** Group: in */
+/** Group: Interrupt Registers */
 /** Type of in_int_raw_chn register
- *  Raw status interrupt of channel 0
+ *  Raw status interrupt of channel n
  */
 typedef union {
     struct {
@@ -81,7 +81,7 @@ typedef union {
 } axi_dma_in_int_raw_chn_reg_t;
 
 /** Type of in_int_st_chn register
- *  Masked interrupt of channel 0
+ *  Masked interrupt of channel n
  */
 typedef union {
     struct {
@@ -135,7 +135,7 @@ typedef union {
 } axi_dma_in_int_st_chn_reg_t;
 
 /** Type of in_int_ena_chn register
- *  Interrupt enable bits of channel 0
+ *  Interrupt enable bits of channel n
  */
 typedef union {
     struct {
@@ -189,7 +189,7 @@ typedef union {
 } axi_dma_in_int_ena_chn_reg_t;
 
 /** Type of in_int_clr_chn register
- *  Interrupt clear bits of channel 0
+ *  Interrupt clear bits of channel n
  */
 typedef union {
     struct {
@@ -243,7 +243,7 @@ typedef union {
 } axi_dma_in_int_clr_chn_reg_t;
 
 /** Type of in_conf0_chn register
- *  Configure 0 register of Rx channel 0
+ *  Configure 0 register of Rx channel n
  */
 typedef union {
     struct {
@@ -288,7 +288,7 @@ typedef union {
 } axi_dma_in_conf0_chn_reg_t;
 
 /** Type of in_conf1_chn register
- *  Configure 1 register of Rx channel 0
+ *  Configure 1 register of Rx channel n
  */
 typedef union {
     struct {
@@ -303,7 +303,7 @@ typedef union {
 } axi_dma_in_conf1_chn_reg_t;
 
 /** Type of infifo_status_chn register
- *  Receive FIFO status of Rx channel 0
+ *  Receive FIFO status of Rx channel n
  */
 typedef union {
     struct {
@@ -401,7 +401,7 @@ typedef union {
 } axi_dma_infifo_status_chn_reg_t;
 
 /** Type of in_pop_chn register
- *  Pop control register of Rx channel 0
+ *  Pop control register of Rx channel n
  */
 typedef union {
     struct {
@@ -419,7 +419,7 @@ typedef union {
 } axi_dma_in_pop_chn_reg_t;
 
 /** Type of in_link1_chn register
- *  Link descriptor configure and control register of Rx channel 0
+ *  Link descriptor configure and control register of Rx channel n
  */
 typedef union {
     struct {
@@ -451,7 +451,7 @@ typedef union {
 } axi_dma_in_link1_chn_reg_t;
 
 /** Type of in_link2_chn register
- *  Link descriptor configure and control register of Rx channel 0
+ *  Link descriptor configure and control register of Rx channel n
  */
 typedef union {
     struct {
@@ -465,7 +465,7 @@ typedef union {
 } axi_dma_in_link2_chn_reg_t;
 
 /** Type of in_state_chn register
- *  Receive status of Rx channel 0
+ *  Receive status of Rx channel n
  */
 typedef union {
     struct {
@@ -487,7 +487,7 @@ typedef union {
 } axi_dma_in_state_chn_reg_t;
 
 /** Type of in_suc_eof_des_addr_chn register
- *  Inlink descriptor address when EOF occurs of Rx channel 0
+ *  Inlink descriptor address when EOF occurs of Rx channel n
  */
 typedef union {
     struct {
@@ -501,7 +501,7 @@ typedef union {
 } axi_dma_in_suc_eof_des_addr_chn_reg_t;
 
 /** Type of in_err_eof_des_addr_chn register
- *  Inlink descriptor address when errors occur of Rx channel 0
+ *  Inlink descriptor address when errors occur of Rx channel n
  */
 typedef union {
     struct {
@@ -515,7 +515,7 @@ typedef union {
 } axi_dma_in_err_eof_des_addr_chn_reg_t;
 
 /** Type of in_dscr_chn register
- *  Current inlink descriptor address of Rx channel 0
+ *  Current inlink descriptor address of Rx channel n
  */
 typedef union {
     struct {
@@ -528,7 +528,7 @@ typedef union {
 } axi_dma_in_dscr_chn_reg_t;
 
 /** Type of in_dscr_bf0_chn register
- *  The last inlink descriptor address of Rx channel 0
+ *  The last inlink descriptor address of Rx channel n
  */
 typedef union {
     struct {
@@ -541,7 +541,7 @@ typedef union {
 } axi_dma_in_dscr_bf0_chn_reg_t;
 
 /** Type of in_dscr_bf1_chn register
- *  The second-to-last inlink descriptor address of Rx channel 0
+ *  The second-to-last inlink descriptor address of Rx channel n
  */
 typedef union {
     struct {
@@ -554,7 +554,7 @@ typedef union {
 } axi_dma_in_dscr_bf1_chn_reg_t;
 
 /** Type of in_pri_chn register
- *  Priority register of Rx channel 0
+ *  Priority register of Rx channel n
  */
 typedef union {
     struct {
@@ -576,7 +576,7 @@ typedef union {
 } axi_dma_in_pri_chn_reg_t;
 
 /** Type of in_peri_sel_chn register
- *  Peripheral selection of Rx channel 0
+ *  Peripheral selection of Rx channel n
  */
 typedef union {
     struct {
@@ -591,7 +591,7 @@ typedef union {
 } axi_dma_in_peri_sel_chn_reg_t;
 
 /** Type of in_crc_init_data_chn register
- *  This register is used to config ch0 crc initial data(max 32 bit)
+ *  This register is used to config chn crc initial data(max 32 bit)
  */
 typedef union {
     struct {
@@ -604,7 +604,7 @@ typedef union {
 } axi_dma_in_crc_init_data_chn_reg_t;
 
 /** Type of rx_crc_width_chn register
- *  This register is used to config rx ch0 crc result width,2'b00 mean crc_width
+ *  This register is used to config rx chn crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -624,7 +624,7 @@ typedef union {
 } axi_dma_rx_crc_width_chn_reg_t;
 
 /** Type of in_crc_clear_chn register
- *  This register is used to clear ch0 crc result
+ *  This register is used to clear chn crc result
  */
 typedef union {
     struct {
@@ -638,7 +638,7 @@ typedef union {
 } axi_dma_in_crc_clear_chn_reg_t;
 
 /** Type of in_crc_final_result_chn register
- *  This register is used to store ch0 crc result
+ *  This register is used to store chn crc result
  */
 typedef union {
     struct {
@@ -651,7 +651,7 @@ typedef union {
 } axi_dma_in_crc_final_result_chn_reg_t;
 
 /** Type of rx_crc_en_wr_data_chn register
- *  This resister is used to config ch0 crc en for every bit
+ *  This resister is used to config chn crc en for every bit
  */
 typedef union {
     struct {
@@ -664,7 +664,7 @@ typedef union {
 } axi_dma_rx_crc_en_wr_data_chn_reg_t;
 
 /** Type of rx_crc_en_addr_chn register
- *  This register is used to config ch0 crc en addr
+ *  This register is used to config chn crc en addr
  */
 typedef union {
     struct {
@@ -705,7 +705,7 @@ typedef union {
 
 /** Group: out */
 /** Type of out_int_raw_chn register
- *  Raw status interrupt of channel0
+ *  Raw status interrupt of channeln
  */
 typedef union {
     struct {
@@ -761,13 +761,18 @@ typedef union {
          *  underflow.
          */
         uint32_t outfifo_l3_udf_chn_int_raw: 1;
-        uint32_t reserved_10: 22;
+        /** out_link_switch_chn_int_raw : R/WTC/SS; bitpos: [10]; default: 0;
+         *  The raw interrupt bit turns to high level when the dma switch to new link for Tx
+         *  channel0.
+         */
+        uint32_t out_link_switch_chn_int_raw: 1;
+        uint32_t reserved_11: 21;
     };
     uint32_t val;
 } axi_dma_out_int_raw_chn_reg_t;
 
 /** Type of out_int_st_chn register
- *  Masked interrupt of channel0
+ *  Masked interrupt of channeln
  */
 typedef union {
     struct {
@@ -811,13 +816,17 @@ typedef union {
          *  The raw interrupt status bit for the OUTFIFO_UDF_L3_CH_INT interrupt.
          */
         uint32_t outfifo_l3_udf_chn_int_st: 1;
-        uint32_t reserved_10: 22;
+        /** out_link_switch_chn_int_st : RO; bitpos: [10]; default: 0;
+         *  The raw interrupt status bit for the OUT_LINK_SWITCH_CH_INT interrupt.
+         */
+        uint32_t out_link_switch_chn_int_st: 1;
+        uint32_t reserved_11: 21;
     };
     uint32_t val;
 } axi_dma_out_int_st_chn_reg_t;
 
 /** Type of out_int_ena_chn register
- *  Interrupt enable bits of channel0
+ *  Interrupt enable bits of channeln
  */
 typedef union {
     struct {
@@ -861,13 +870,17 @@ typedef union {
          *  The interrupt enable bit for the OUTFIFO_UDF_L3_CH_INT interrupt.
          */
         uint32_t outfifo_l3_udf_chn_int_ena: 1;
-        uint32_t reserved_10: 22;
+        /** out_link_switch_chn_int_ena : R/W; bitpos: [10]; default: 0;
+         *  The interrupt enable bit for the OUT_LINK_SWITCH_CH_INT interrupt.
+         */
+        uint32_t out_link_switch_chn_int_ena: 1;
+        uint32_t reserved_11: 21;
     };
     uint32_t val;
 } axi_dma_out_int_ena_chn_reg_t;
 
 /** Type of out_int_clr_chn register
- *  Interrupt clear bits of channel0
+ *  Interrupt clear bits of channeln
  */
 typedef union {
     struct {
@@ -911,13 +924,17 @@ typedef union {
          *  Set this bit to clear the OUTFIFO_UDF_L3_CH_INT interrupt.
          */
         uint32_t outfifo_l3_udf_chn_int_clr: 1;
-        uint32_t reserved_10: 22;
+        /** out_link_switch_chn_int_clr : WT; bitpos: [10]; default: 0;
+         *  Set this bit to clear the OUT_LINK_SWITCH_CH_INT interrupt.
+         */
+        uint32_t out_link_switch_chn_int_clr: 1;
+        uint32_t reserved_11: 21;
     };
     uint32_t val;
 } axi_dma_out_int_clr_chn_reg_t;
 
 /** Type of out_conf0_chn register
- *  Configure 0 register of Tx channelN
+ *  Configure 0 register of Tx channeln
  */
 typedef union {
     struct {
@@ -967,7 +984,7 @@ typedef union {
 } axi_dma_out_conf0_chn_reg_t;
 
 /** Type of out_conf1_chn register
- *  Configure 1 register of Tx channel0
+ *  Configure 1 register of Tx channeln
  */
 typedef union {
     struct {
@@ -982,7 +999,7 @@ typedef union {
 } axi_dma_out_conf1_chn_reg_t;
 
 /** Type of outfifo_status_chn register
- *  Transmit FIFO status of Tx channel0
+ *  Transmit FIFO status of Tx channeln
  */
 typedef union {
     struct {
@@ -1077,7 +1094,7 @@ typedef union {
 } axi_dma_outfifo_status_chn_reg_t;
 
 /** Type of out_push_chn register
- *  Push control register of Tx channel0
+ *  Push control register of Tx channeln
  */
 typedef union {
     struct {
@@ -1095,7 +1112,7 @@ typedef union {
 } axi_dma_out_push_chn_reg_t;
 
 /** Type of out_link1_chn register
- *  Link descriptor configure and control register of Tx channel0
+ *  Link descriptor configure and control register of Tx channeln
  */
 typedef union {
     struct {
@@ -1122,7 +1139,7 @@ typedef union {
 } axi_dma_out_link1_chn_reg_t;
 
 /** Type of out_link2_chn register
- *  Link descriptor configure and control register of Tx channel0
+ *  Link descriptor configure and control register of Tx channeln
  */
 typedef union {
     struct {
@@ -1136,7 +1153,7 @@ typedef union {
 } axi_dma_out_link2_chn_reg_t;
 
 /** Type of out_state_chn register
- *  Transmit status of Tx channel0
+ *  Transmit status of Tx channeln
  */
 typedef union {
     struct {
@@ -1158,7 +1175,7 @@ typedef union {
 } axi_dma_out_state_chn_reg_t;
 
 /** Type of out_eof_des_addr_chn register
- *  Outlink descriptor address when EOF occurs of Tx channel0
+ *  Outlink descriptor address when EOF occurs of Tx channeln
  */
 typedef union {
     struct {
@@ -1172,7 +1189,7 @@ typedef union {
 } axi_dma_out_eof_des_addr_chn_reg_t;
 
 /** Type of out_eof_bfr_des_addr_chn register
- *  The last outlink descriptor address when EOF occurs of Tx channel0
+ *  The last outlink descriptor address when EOF occurs of Tx channeln
  */
 typedef union {
     struct {
@@ -1186,7 +1203,7 @@ typedef union {
 } axi_dma_out_eof_bfr_des_addr_chn_reg_t;
 
 /** Type of out_dscr_chn register
- *  Current outlink descriptor address of Tx channel0
+ *  Current outlink descriptor address of Tx channeln
  */
 typedef union {
     struct {
@@ -1199,7 +1216,7 @@ typedef union {
 } axi_dma_out_dscr_chn_reg_t;
 
 /** Type of out_dscr_bf0_chn register
- *  The last outlink descriptor address of Tx channel0
+ *  The last outlink descriptor address of Tx channeln
  */
 typedef union {
     struct {
@@ -1212,7 +1229,7 @@ typedef union {
 } axi_dma_out_dscr_bf0_chn_reg_t;
 
 /** Type of out_dscr_bf1_chn register
- *  The second-to-last outlink descriptor address of Tx channel0
+ *  The second-to-last outlink descriptor address of Tx channeln
  */
 typedef union {
     struct {
@@ -1225,7 +1242,7 @@ typedef union {
 } axi_dma_out_dscr_bf1_chn_reg_t;
 
 /** Type of out_pri_chn register
- *  Priority register of Tx channel0.
+ *  Priority register of Tx channeln.
  */
 typedef union {
     struct {
@@ -1247,7 +1264,7 @@ typedef union {
 } axi_dma_out_pri_chn_reg_t;
 
 /** Type of out_peri_sel_chn register
- *  Peripheral selection of Tx channel0
+ *  Peripheral selection of Tx channeln
  */
 typedef union {
     struct {
@@ -1262,7 +1279,7 @@ typedef union {
 } axi_dma_out_peri_sel_chn_reg_t;
 
 /** Type of out_crc_init_data_chn register
- *  This register is used to config ch0 crc initial data(max 32 bit)
+ *  This register is used to config chn crc initial data(max 32 bit)
  */
 typedef union {
     struct {
@@ -1275,7 +1292,7 @@ typedef union {
 } axi_dma_out_crc_init_data_chn_reg_t;
 
 /** Type of tx_crc_width_chn register
- *  This register is used to config tx ch0 crc result width,2'b00 mean crc_width
+ *  This register is used to config tx chn crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -1295,7 +1312,7 @@ typedef union {
 } axi_dma_tx_crc_width_chn_reg_t;
 
 /** Type of out_crc_clear_chn register
- *  This register is used to clear ch0 crc result
+ *  This register is used to clear chn crc result
  */
 typedef union {
     struct {
@@ -1309,7 +1326,7 @@ typedef union {
 } axi_dma_out_crc_clear_chn_reg_t;
 
 /** Type of out_crc_final_result_chn register
- *  This register is used to store ch0 crc result
+ *  This register is used to store chn crc result
  */
 typedef union {
     struct {
@@ -1322,7 +1339,7 @@ typedef union {
 } axi_dma_out_crc_final_result_chn_reg_t;
 
 /** Type of tx_crc_en_wr_data_chn register
- *  This resister is used to config ch0 crc en for every bit
+ *  This resister is used to config chn crc en for every bit
  */
 typedef union {
     struct {
@@ -1335,7 +1352,7 @@ typedef union {
 } axi_dma_tx_crc_en_wr_data_chn_reg_t;
 
 /** Type of tx_crc_en_addr_chn register
- *  This register is used to config ch0 crc en addr
+ *  This register is used to config chn crc en addr
  */
 typedef union {
     struct {
@@ -1503,7 +1520,7 @@ typedef union {
 } axi_dma_extr_mem_end_addr_reg_t;
 
 /** Type of in_reset_avail_chn register
- *  The rx channel 0 reset valid_flag register.
+ *  The rx channel n reset valid_flag register.
  */
 typedef union {
     struct {
@@ -1517,7 +1534,7 @@ typedef union {
 } axi_dma_in_reset_avail_chn_reg_t;
 
 /** Type of out_reset_avail_chn register
- *  The tx channel 0 reset valid_flag register.
+ *  The tx channel n reset valid_flag register.
  */
 typedef union {
     struct {
@@ -1633,7 +1650,7 @@ typedef union {
 } axi_dma_rresp_cnt_reg_t;
 
 /** Type of infifo_status1_chn register
- *  Receive FIFO status of Rx channel 0
+ *  Receive FIFO status of Rx channel n
  */
 typedef union {
     struct {
@@ -1651,7 +1668,7 @@ typedef union {
 } axi_dma_infifo_status1_chn_reg_t;
 
 /** Type of outfifo_status1_chn register
- *  Receive FIFO status of Tx channel 0
+ *  Receive FIFO status of Tx channel n
  */
 typedef union {
     struct {
@@ -1667,6 +1684,28 @@ typedef union {
     };
     uint32_t val;
 } axi_dma_outfifo_status1_chn_reg_t;
+
+/** Type of link_switch_state register
+ *  Version control register
+ */
+typedef union {
+    struct {
+        /** link_switch_state_ch0 : R/W; bitpos: [0]; default: 0;
+         *  The register that confirm ch dscr switch success
+         */
+        uint32_t link_switch_state_ch0: 1;
+        /** link_switch_state_ch1 : R/W; bitpos: [1]; default: 0;
+         *  The register that confirm ch dscr switch success
+         */
+        uint32_t link_switch_state_ch1: 1;
+        /** link_switch_state_ch2 : R/W; bitpos: [2]; default: 0;
+         *  The register that confirm ch dscr switch success
+         */
+        uint32_t link_switch_state_ch2: 1;
+        uint32_t reserved_3: 29;
+    };
+    uint32_t val;
+} axi_dma_link_switch_state_reg_t;
 
 /** Group: Version Registers */
 /** Type of date register
@@ -1786,12 +1825,13 @@ typedef struct {
     volatile axi_dma_infifo_status1_chn_reg_t infifo_status1_chn[3];
     volatile axi_dma_outfifo_status1_chn_reg_t outfifo_status1_chn[3];
     volatile axi_dma_date_reg_t date;
+    volatile axi_dma_link_switch_state_reg_t link_switch_state;
 } axi_dma_dev_t;
 
 extern axi_dma_dev_t AXI_DMA;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(axi_dma_dev_t) == 0x2dc, "Invalid size of axi_dma_dev_t structure");
+_Static_assert(sizeof(axi_dma_dev_t) == 0x2e0, "Invalid size of axi_dma_dev_t structure");
 #endif
 
 #ifdef __cplusplus
