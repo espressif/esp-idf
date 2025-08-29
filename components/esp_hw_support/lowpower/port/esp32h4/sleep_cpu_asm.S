@@ -6,14 +6,11 @@
 
 #include "soc/soc.h"
 #include "rvsleep-frames.h"
-#include "soc/soc_caps.h"
-#include "sdkconfig.h"
 #include "freertos/FreeRTOSConfig.h"
-#define MTVT              (0x307)
-#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C5 && !CONFIG_IDF_TARGET_ESP32H4
-#include "soc/lp_aon_reg.h"
-#include "soc/extmem_reg.h"
-#endif
+#include "sdkconfig.h"
+
+#include "soc/cache_reg.h"
+#define CACHE_MAP_L1_CACHE_MASK     (BIT(0) | BIT(1) | BIT(4))
 
     .section    .data1,"aw"
     .global     rv_core_critical_regs_frame
@@ -23,6 +20,7 @@ rv_core_critical_regs_frame:
     .rept (portNUM_PROCESSORS)
     .word       0
     .endr
+
 
 /*
 --------------------------------------------------------------------------------
@@ -65,7 +63,6 @@ rv_core_critical_regs_save:
      */
     mv      a0, t0
     sw      a0, RV_SLP_CTX_A0(t0)
-
     sw      a1, RV_SLP_CTX_A1(t0)
     sw      a2, RV_SLP_CTX_A2(t0)
     sw      a3, RV_SLP_CTX_A3(t0)
@@ -120,30 +117,6 @@ rv_core_critical_regs_save:
     mv      t3, t0
     csrr    t0, mscratch
     sw      t0, RV_SLP_CTX_T0(t3)
-
-#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C5 && !CONFIG_IDF_TARGET_ESP32H4
-    /* writeback dcache is required here!!! */
-    la      t0, EXTMEM_CACHE_SYNC_MAP_REG
-    li      t1, 0x10
-    sw      t1, 0x0(t0)                     /* set EXTMEM_CACHE_SYNC_MAP_REG bit 4 */
-    la      t2, EXTMEM_CACHE_SYNC_ADDR_REG
-    sw      zero, 0x0(t2)                   /* clear EXTMEM_CACHE_SYNC_ADDR_REG */
-    la      t0, EXTMEM_CACHE_SYNC_SIZE_REG
-    sw      zero, 0x0(t0)                   /* clear EXTMEM_CACHE_SYNC_SIZE_REG */
-
-    la      t1, EXTMEM_CACHE_SYNC_CTRL_REG
-    lw      t2, 0x0(t1)
-    ori     t2, t2, 0x4
-    sw      t2, 0x0(t1)
-
-    li      t0, 0x10                        /* SYNC_DONE bit */
-wait_sync_done:
-    lw      t2, 0x0(t1)
-    and     t2, t0, t2
-    beqz    t2, wait_sync_done
-#endif
-
-    lw      t0, RV_SLP_CTX_T0(t3)
     lw      t1, RV_SLP_CTX_T1(t3)
     lw      t2, RV_SLP_CTX_T2(t3)
     lw      t3, RV_SLP_CTX_T3(t3)
@@ -151,14 +124,6 @@ wait_sync_done:
     ret
 
     .size   rv_core_critical_regs_save, . - rv_core_critical_regs_save
-
-
-#define CSR_PCER_U              0x800
-#define CSR_PCMR_U              0x801
-#define PCER_CYCLES             (1<<0)  /* count clock cycles */
-#define PCMR_GLOBAL_EN          (1<<0)  /* enable count */
-#define pcer                    CSR_PCER_U
-#define pcmr                    CSR_PCMR_U
 
 /*
 --------------------------------------------------------------------------------
@@ -183,7 +148,6 @@ _rv_core_critical_regs_restore: /* export a strong symbol to jump to here, used
     nop
 
 rv_core_critical_regs_restore:
-
     la      t0, rv_core_critical_regs_frame
     csrr    t1, mhartid
     slli    t1, t1, 2

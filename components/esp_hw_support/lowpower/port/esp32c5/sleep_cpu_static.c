@@ -97,10 +97,10 @@ static void * cache_sleep_frame_init(void)
 static void * clint_sleep_frame_init(void)
 {
     const static cpu_domain_dev_regs_region_t regions[] = {
-        { .start = CLINT_MINT_SIP_REG,        .end = CLINT_MINT_SIP_REG + 4        },
-        { .start = CLINT_MINT_MTIMECMP_L_REG, .end = CLINT_MINT_MTIMECMP_H_REG + 4 },
-        { .start = CLINT_MINT_TIMECTL_REG,    .end = CLINT_MINT_TIMECTL_REG + 4    },
-        { .start = CLINT_MINT_MTIME_L_REG,    .end = CLINT_MINT_MTIME_H_REG + 4    }
+        { .start = CPU_DOMAIN_DEV_START_ADDR0, .end = CPU_DOMAIN_DEV_END_ADDR0 },
+        { .start = CPU_DOMAIN_DEV_START_ADDR1, .end = CPU_DOMAIN_DEV_END_ADDR1 },
+        { .start = CPU_DOMAIN_DEV_START_ADDR2, .end = CPU_DOMAIN_DEV_END_ADDR2 },
+        { .start = CPU_DOMAIN_DEV_START_ADDR3, .end = CPU_DOMAIN_DEV_END_ADDR3 }
     };
     static uint8_t sleep_frame[CPU_DOMAIN_DEV_TOTAL_SZ(4)] __attribute__((aligned(4)));
     return cpu_domain_dev_sleep_frame_init(regions, sizeof(regions) / sizeof(regions[0]), sleep_frame);
