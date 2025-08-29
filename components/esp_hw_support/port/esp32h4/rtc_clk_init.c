@@ -73,10 +73,11 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     REG_SET_FIELD(LP_CLKRST_FOSC_CNTL_REG, LP_CLKRST_FOSC_DFREQ, cfg.clk_8m_dfreq);
     REG_SET_FIELD(LP_CLKRST_RC32K_CNTL_REG, LP_CLKRST_RC32K_DFREQ, cfg.slow_clk_dcap); // h4 specific workaround (RC32K_DFREQ is used for RC_SLOW clock tuning) TODO: IDF-12313
 
-    uint32_t hp_cali_dbias = get_act_hp_dbias();
-    uint32_t lp_cali_dbias = get_act_lp_dbias();
-    REG_SET_FIELD(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_DBIAS, hp_cali_dbias);
-    REG_SET_FIELD(PMU_HP_SLEEP_LP_REGULATOR0_REG, PMU_HP_SLEEP_LP_REGULATOR_DBIAS, lp_cali_dbias);
+    uint32_t hp_dbias = get_act_hp_dbias();
+    uint32_t lp_dbias = get_act_lp_dbias();
+    pmu_ll_hp_set_regulator_xpd(&PMU, PMU_MODE_HP_ACTIVE, true);
+    pmu_ll_hp_set_regulator_dbias(&PMU, PMU_MODE_HP_ACTIVE, hp_dbias);
+    pmu_ll_lp_set_regulator_dbias(&PMU, PMU_MODE_LP_ACTIVE, lp_dbias);
 
     // XTAL freq can be directly informed from register field PCR_CLK_XTAL_FREQ
 
