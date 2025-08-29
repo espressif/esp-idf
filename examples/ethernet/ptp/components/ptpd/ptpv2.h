@@ -50,26 +50,59 @@
 
 #define PTP_MULTICAST_ADDR ((in_addr_t)0xE0000181)
 
+/* Multicast MAC addresses for PTP */
+
+#define LLDP_MULTICAST_ADDR (uint8_t[6]){0x01, 0x80, 0xC2, 0x00, 0x00, 0x0e} // for all messages in case of gPTP
+#define PTP4L_MULTICAST_ADDR (uint8_t[6]){0x01, 0x1B, 0x19, 0x00, 0x00, 0x00} // for sync, announce, follow_up (non-gPTP)
+
 /* Message types */
 
-#define PTP_MSGTYPE_MASK       0x0F
-#define PTP_MSGTYPE_SYNC          0
-#define PTP_MSGTYPE_DELAY_REQ     1
-#define PTP_MSGTYPE_FOLLOW_UP     8
-#define PTP_MSGTYPE_DELAY_RESP    9
-#define PTP_MSGTYPE_ANNOUNCE     11
+#define PTP_MSGTYPE_MASK                   0x0F
+#define PTP_MSGTYPE_SYNC                   0x00
+#define PTP_MSGTYPE_FOLLOW_UP              0x08
+#define PTP_MSGTYPE_ANNOUNCE               0x0b
+#define PTP_MSGTYPE_DELAY_REQ              0x01
+#define PTP_MSGTYPE_DELAY_RESP             0x09
+#define PTP_MSGTYPE_PDELAY_REQ             0x02 // only used in gPTP
+#define PTP_MSGTYPE_PDELAY_RESP            0x03 // only used in gPTP
+#define PTP_MSGTYPE_PDELAY_RESP_FOLLOW_UP  0x1a // only used in gPTP
 
 /* Message flags */
 
-#define PTP_FLAGS0_TWOSTEP        (1 << 1)
+#define PTP_FLAGS0_TWOSTEP        (1 << 1) // flag indicating there will be a follow-up message
+#define PTP_FLAGS1_PTP_TIMESCALE  (1 << 3) // flag indicating use of PTP timescale (gPTP required)
+#define PTP_MSGTYPE_SDOID_GPTP    (1 << 4) // flag indicating a gPTP message
 
 /****************************************************************************
  * Public Types
  ****************************************************************************/
 
-/* Defined in IEEE 1588-2008 Precision Time Protocol
+/* Defined in IEEE 1588-2008 Precision Time Protocol and IEEE 802.1AS-2011
  * All multi-byte fields are big-endian.
  */
+
+/* Path trace TLV for gPTP follow up messages */
+
+struct ptp_pathtrace_tlv_s
+{
+  uint8_t type[2];
+  uint8_t length[2];
+  uint8_t pathsequence[8]; // this can have more but gPTP endpoints will ignore
+};
+
+/* Information TLV for gPTP announce messages */
+
+struct ptp_info_tlv_s
+{
+  uint8_t type[2];
+  uint8_t length[2];
+  uint8_t orgidentity[3];
+  uint8_t orgsubtype[3];
+  uint8_t cumulativescaledrateoffset[4];
+  uint8_t gmtimebaseindicator[2];
+  uint8_t lastgmphasechange[12];
+  uint8_t scaledlastgmfreqchange[4];
+};
 
 /* Common header for all message types */
 
@@ -104,6 +137,7 @@ struct ptp_announce_s
   uint8_t gm_identity[8];
   uint8_t stepsremoved[2];
   uint8_t timesource;
+  struct ptp_pathtrace_tlv_s pathtracetlv; // gPTP required
 };
 
 /* Sync: transmit timestamp from master clock */
@@ -111,7 +145,7 @@ struct ptp_announce_s
 struct ptp_sync_s
 {
   struct ptp_header_s header;
-  uint8_t origintimestamp[10];
+  uint8_t origintimestamp[10]; // in gPTP profile, this will be ignored
 };
 
 /* FollowUp: actual timestamp of when sync message was sent */
@@ -120,22 +154,33 @@ struct ptp_follow_up_s
 {
   struct ptp_header_s header;
   uint8_t origintimestamp[10];
+  uint8_t informationtlv[32]; // gPTP required
 };
 
-/* DelayReq: request delay measurement */
+/* DelayReq: request delay measurement (path delay or peer delay) */
 
 struct ptp_delay_req_s
 {
   struct ptp_header_s header;
-  uint8_t origintimestamp[10];
+  uint8_t origintimestamp[10]; // in gPTP profile, this will be ignored
 };
 
-/* DelayResp: response to DelayReq */
+/* DelayResp: response to DelayReq (path delay or peer delay)*/
 
 struct ptp_delay_resp_s
 {
   struct ptp_header_s header;
   uint8_t receivetimestamp[10];
+  uint8_t reqidentity[8];
+  uint8_t reqportindex[2];
+};
+
+/* DelayResp: follow up to DelayResp (gPTP only)*/
+
+struct ptp_delay_resp_follow_up_s
+{
+  struct ptp_header_s header;
+  uint8_t origintimestamp[10];
   uint8_t reqidentity[8];
   uint8_t reqportindex[2];
 };
