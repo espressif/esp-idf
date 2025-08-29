@@ -812,3 +812,32 @@ function(__get_executable_library_or_die)
     endif()
     set(${ARG_OUTPUT} "${library}" PARENT_SCOPE)
 endfunction()
+
+#[[
+   __make_json_list(<list> OUTPUT <variable>)
+
+   :list[in]: CMake string containing a list to be converted into JSON
+              format.
+   :OUTPUT[out]: Output variable name to store the JSON list.
+
+   Convert a CMake list to a JSON list and store it in a OUTPUT
+   variable.
+#]]
+function(__make_json_list input)
+    set(options)
+    set(one_value OUTPUT)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_OUTPUT)
+        idf_die("OUTPUT option is required")
+    endif()
+
+    list(LENGTH input length)
+    if(${length})
+        string(REPLACE ";" "\", \"" result "[ \"${input}\" ]")
+    else()
+        set(result "[]")
+    endif()
+    set("${ARG_OUTPUT}" "${result}" PARENT_SCOPE)
+endfunction()
