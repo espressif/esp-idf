@@ -34,8 +34,16 @@ extern "C" {
 #define CLK_LL_AHB_MAX_FREQ_MHZ    CLK_LL_PLL_80M_FREQ_MHZ
 
 /* RC_FAST clock enable/disable wait time */
+#if defined(CONFIG_RTC_CLK_SRC_EXT_OSC) || defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
+#define CLK_LL_RC_FAST_WAIT_DEFAULT            5
+#define CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT     2
+#elif defined(CONFIG_RTC_CLK_SRC_INT_8MD256)
+#define CLK_LL_RC_FAST_WAIT_DEFAULT            10
+#define CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT     3
+#else
 #define CLK_LL_RC_FAST_WAIT_DEFAULT            20
 #define CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT     5
+#endif
 
 #define CLK_LL_XTAL32K_CONFIG_DEFAULT() { \
     .dac = 3, \

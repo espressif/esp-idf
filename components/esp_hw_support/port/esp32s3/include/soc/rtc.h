@@ -7,9 +7,7 @@
 #pragma once
 
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
-#include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
 
 #ifdef __cplusplus
@@ -94,23 +92,44 @@ extern "C" {
 #define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
 #define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
 
-#define RTC_CNTL_PLL_BUF_WAIT_DEFAULT  20
-#define RTC_CNTL_XTL_BUF_WAIT_DEFAULT  100
-#define RTC_CNTL_CK8M_WAIT_DEFAULT     20       // Equivalent macro as `CLK_LL_RC_FAST_WAIT_DEFAULT`
-#define RTC_CK8M_ENABLE_WAIT_DEFAULT   5        // Equivalent macro as `CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT`
+
+#if defined(CONFIG_RTC_CLK_SRC_EXT_OSC) || defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
+#define RTC_CNTL_PLL_BUF_WAIT_DEFAULT               5
+#define RTC_CNTL_XTL_BUF_WAIT_DEFAULT               25
+#define RTC_CNTL_CK8M_WAIT_DEFAULT                  5        // Equivalent macro as `CLK_LL_RC_FAST_WAIT_DEFAULT`
+#define RTC_CK8M_ENABLE_WAIT_DEFAULT                2        // Equivalent macro as `CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT`
+#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_IN_SLEEP    (0x40)
+#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_DEFAULT     (0x04)
+#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES               (1)
+#define RTC_CNTL_WAKEUP_DELAY_CYCLES                (1)
+#elif defined(CONFIG_RTC_CLK_SRC_INT_8MD256)
+#define RTC_CNTL_PLL_BUF_WAIT_DEFAULT               10
+#define RTC_CNTL_XTL_BUF_WAIT_DEFAULT               50
+#define RTC_CNTL_CK8M_WAIT_DEFAULT                  10       // Equivalent macro as `CLK_LL_RC_FAST_WAIT_DEFAULT`
+#define RTC_CK8M_ENABLE_WAIT_DEFAULT                3        // Equivalent macro as `CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT`
+#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_IN_SLEEP    (0x80)
+#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_DEFAULT     (0x08)
+#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES               (2)
+#define RTC_CNTL_WAKEUP_DELAY_CYCLES                (2)
+#else // Internal 150k oscillator
+#define RTC_CNTL_PLL_BUF_WAIT_DEFAULT               20
+#define RTC_CNTL_XTL_BUF_WAIT_DEFAULT               100
+#define RTC_CNTL_CK8M_WAIT_DEFAULT                  20       // Equivalent macro as `CLK_LL_RC_FAST_WAIT_DEFAULT`
+#define RTC_CK8M_ENABLE_WAIT_DEFAULT                5        // Equivalent macro as `CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT`
+#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_IN_SLEEP    (0xFF)
+#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_DEFAULT     (0x10)
+#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES               (4)
+#define RTC_CNTL_WAKEUP_DELAY_CYCLES                (4)
+#endif
 
 /* Various delays to be programmed into power control state machines */
 #define RTC_CNTL_XTL_BUF_WAIT_SLP_US        (250)
 #define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES    (1)
-#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES       (4)
-#define RTC_CNTL_WAKEUP_DELAY_CYCLES        (4)
 #define RTC_CNTL_MIN_SLP_VAL_MIN            (2)
 
 #define RTC_CNTL_CK8M_DFREQ_DEFAULT 100
 #define RTC_CNTL_SCK_DCAP_DEFAULT   255
 
-#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_IN_SLEEP    (0xFF)
-#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_DEFAULT     (0x10)
 
 /*
 set sleep_init default param
