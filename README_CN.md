@@ -25,8 +25,8 @@ ESP-IDF 是乐鑫官方推出的物联网开发框架，支持 Windows、Linux �
 |ESP32-C6     |![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |![alt text][supported] | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32_C6)           |
 |ESP32-H2     |![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |![alt text][supported] | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32_H2)           |
 |ESP32-P4     |                         |                        | ![alt text][supported] | ![alt text][supported] |![alt text][supported] | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32-P4)           |
-|ESP32-C5       |                        |                        |                   |                        |![alt text][preview] | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32-C5)           |
-|ESP32-C61      |                       |                        |                    |                        |![alt text][preview] | [芯片发布公告](https://www.espressif.com/zh-hans/products/socs/esp32-c61) |
+|ESP32-C5       |                        |                        |                   |                        |![alt text][supported] | 自 v5.5.1 开始，[芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32-C5)           |
+|ESP32-C61      |                       |                        |                    |                        |![alt text][supported] | 自 v5.5.1 开始，[芯片发布公告](https://www.espressif.com/zh-hans/products/socs/esp32-c61) |
 
 
 [supported]: https://img.shields.io/badge/-%E6%94%AF%E6%8C%81-green "supported"
