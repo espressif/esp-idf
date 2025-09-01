@@ -606,14 +606,15 @@ static void print_timer_info(esp_timer_handle_t t, char** dst, size_t* dst_size)
     } else {
         cb = snprintf(*dst, *dst_size, "timer@%-10p  ", t);
     }
-    cb += snprintf(*dst + cb, *dst_size + cb, "%-10lld  %-12lld  %-12d  %-12d  %-12d  %-12lld\n",
+
+    cb += snprintf(*dst + cb, *dst_size - cb, "%-10lld  %-12lld  %-12d  %-12d  %-12d  %-12lld\n",
                    (uint64_t)t->period, t->alarm, t->times_armed,
                    t->times_triggered, t->times_skipped, t->total_callback_run_time);
     /* keep this in sync with the format string, used in esp_timer_dump */
-#define TIMER_INFO_LINE_LEN 90
+#define TIMER_INFO_LINE_LEN 103
 #else
     size_t cb = snprintf(*dst, *dst_size, "timer@%-14p  %-10lld  %-12lld\n", t, (uint64_t)t->period, t->alarm);
-#define TIMER_INFO_LINE_LEN 46
+#define TIMER_INFO_LINE_LEN 47
 #endif
     *dst += cb;
     *dst_size -= cb;
