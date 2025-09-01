@@ -63,6 +63,7 @@ examples/bluetooth/bluedroid/classic_bt:
   disable:
     - if: SOC_BT_CLASSIC_SUPPORTED != 1
   depends_components+:
+    - esp_lcd
     - esp_console
     - esp_driver_gpio
     - esp_driver_i2s
@@ -73,6 +74,8 @@ examples/bluetooth/bluedroid/classic_bt:
   depends_filepatterns:
     - examples/bluetooth/bluedroid/esp_hid_host/**/*
     - examples/bluetooth/bluedroid/classic_bt/pytest_classic_bt_test.py
+    - examples/bluetooth/bluedroid/classic_bt/avrcp_ct_cover_art/pytest_classic_bt_cover_art_test.py
+    - examples/bluetooth/bluedroid/classic_bt/avrcp_ct_metadata/pytest_classic_bt_metadata_test.py
     - examples/bluetooth/bluedroid/classic_bt/bt_discovery/pytest_classic_bt_discovery_test.py
 
 examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
