@@ -6,6 +6,10 @@ config BT_ALARM_MAX_NUM
         This option decides the maximum number of alarms which
         could be used by Bluetooth host.
 
+menu "BLE Log"
+    source "$IDF_PATH/components/bt/common/ble_log/Kconfig.in"
+endmenu
+
 config BT_BLE_LOG_SPI_OUT_ENABLED
     bool "Output ble logs to SPI bus (Experimental)"
     default n
