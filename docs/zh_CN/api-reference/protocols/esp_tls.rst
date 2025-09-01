@@ -57,6 +57,29 @@ ESP-TLS 在客户端提供了多种验证 TLS 服务器的选项，如验证对�
 
           启用 **跳过服务器验证** 选项存在潜在风险，若未通过 API 或 ``ca_store`` 等其他机制提供服务器证书，可能导致设备与伪造身份的服务器建立 TLS 连接。
 
+SNI（服务器名称指示）
+----------------------
+
+SNI 是 TLS 协议的一个扩展，它能让客户端在 TLS 握手过程中，主动指定要连接的主机名。当服务器通过同一个 IP 地址托管多个域名时，客户端必须使用这一功能才能成功建立连接。
+
+**如何确保 SNI 正常工作：**
+
+* 使用 HTTPS 连接时，ESP-TLS 默认启用 SNI，无需额外配置。
+* 若需手动指定 SNI 主机名，请使用 :cpp:type:`esp_tls_cfg_t` 中的 ``common_name`` 字段进行设置，确保在握手过程中向服务器发送正确的主机名。
+* ``common_name`` 的值必须与服务器证书中的通用名称 (CN, Common Name) 完全匹配。
+* 需将 ``skip_common_name`` 字段设置为 ``false``，确保服务器证书能通过主机名完成正确验证。这是 SNI 正常运行的必要条件。
+
+示例：
+
+.. code-block:: c
+
+    esp_tls_cfg_t cfg = {
+        .cacert_buf = ...,
+        .cacert_bytes = ...,
+        .common_name = "example.com", // SNI 主机名
+        .skip_common_name = false,    // 确保证书验证无误
+    };
+
 ESP-TLS 服务器证书选择回调
 ----------------------------------
 
