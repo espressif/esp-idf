@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,13 @@
 #include "esp_rom_sys.h"
 #include "esp_check.h"
 #include "esp_private/rtc_ctrl.h"
+#include "esp_private/periph_ctrl.h"
+
+#if SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS
+#define RTC_CNTL_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define RTC_CNTL_ATOMIC()
+#endif
 
 __attribute__((unused)) static const char* TAG = "ulp-riscv";
 
@@ -44,8 +51,10 @@ esp_err_t ulp_riscv_isr_register(intr_handler_t fn, void *arg, uint32_t mask)
     /* Register the RTC ISR */
     ESP_RETURN_ON_ERROR(rtc_isr_register(fn, arg, mask, 0), TAG, "rtc_isr_register() failed");
 
-    /* Enable the interrupt bits */
-    SET_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, mask);
+    /* Enable the interrupt bits atomically to avoid race condition with other code accessing RTC_CNTL_INT_ENA_REG */
+    RTC_CNTL_ATOMIC() {
+        SET_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, mask);
+    }
 
     return ESP_OK;
 }
@@ -64,8 +73,10 @@ esp_err_t ulp_riscv_isr_deregister(intr_handler_t fn, void *arg, uint32_t mask)
     /* Make sure we disable only the ULP interrupt bits */
     mask &= (RTC_CNTL_COCPU_INT_ST_M | RTC_CNTL_COCPU_TRAP_INT_ST_M);
 
-    /* Disable the interrupt bits */
-    CLEAR_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, mask);
+    /* Disable the interrupt bits atomically to avoid race condition with other code accessing RTC_CNTL_INT_ENA_REG */
+    RTC_CNTL_ATOMIC() {
+        CLEAR_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, mask);
+    }
 
     /* Deregister the RTC ISR */
     ESP_RETURN_ON_ERROR(rtc_isr_deregister(fn, arg), TAG, "rtc_isr_deregister() failed");
@@ -103,7 +114,7 @@ esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
     /* Reset COCPU when power on. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
 
-    /* The coprocessor cpu trap signal doesnt have a stable reset value,
+    /* The coprocessor cpu trap signal doesn't have a stable reset value,
       force ULP-RISC-V clock on to stop RTC_COCPU_TRAP_TRIG_EN from waking the CPU*/
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLK_FO);
 
@@ -123,7 +134,7 @@ esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
     /* Reset COCPU when power on. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
 
-    /* The coprocessor cpu trap signal doesnt have a stable reset value,
+    /* The coprocessor cpu trap signal doesn't have a stable reset value,
       force ULP-RISC-V clock on to stop RTC_COCPU_TRAP_TRIG_EN from waking the CPU*/
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLK_FO);
 
