@@ -234,6 +234,7 @@ typedef enum {
     ESP_GAP_BLE_VENDOR_HCI_EVT,                                  /*!< When BLE vendor HCI event received, the event comes */
     ESP_GAP_BLE_SET_COMMON_FACTOR_CMPL_EVT,                      /*!< When set the common factor complete, the event comes */
     ESP_GAP_BLE_SET_SCH_LEN_CMPL_EVT,                            /*!< When set the scheduling length complete, the event comes */
+    ESP_GAP_BLE_SET_SCAN_CHAN_MAP_CMPL_EVT,                      /*!< When set the channel map for scanning complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1657,6 +1658,12 @@ typedef union {
     struct ble_set_sch_len_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate scheduling length set operation success status */
     } set_sch_len_cmpl;                             /*!< Event parameter of ESP_GAP_BLE_SET_SCH_LEN_CMPL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_SCAN_CHAN_MAP_CMPL_EVT
+     */
+    struct ble_set_scan_chan_map_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate channel map for scanning set operation success status */
+    } set_scan_chan_map_cmpl;                       /*!< Event parameter of ESP_GAP_BLE_SET_SCAN_CHAN_MAP_CMPL_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -2916,6 +2923,28 @@ esp_err_t esp_ble_gap_set_common_factor(uint32_t common_factor);
  *                  - other  : failed
  */
 esp_err_t esp_ble_gap_set_sch_len(uint8_t role, uint32_t len);
+
+/**
+ * @brief           This function is used to Set the channel map for LE scanning or initiating state.
+ *
+ * @note            - This function must be called before starting scanning or initiating.
+ *                  - At least one channel should be marked as used.
+ *
+ * @param[in]       state: The LE state for which the channel map is applied.
+ *                         - 0 : Scanning state
+ *                         - 1 : Initiating state
+ * @param[in]       chan_map: A 5-byte array representing the channel usage bit mask.
+ *                            Each bit corresponds to one channel from channel 0 to channel 39.
+ *                            The least significant bit of chan_map[0] corresponds to channel 0.
+ *                            The most significant bit of chan_map[4] corresponds to channel 39.
+ *                            - Bit = 1 : channel is used
+ *                            - Bit = 0 : channel is not used
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_scan_chan_map(uint8_t state, uint8_t chan_map[5]);
 
 #ifdef __cplusplus
 }
