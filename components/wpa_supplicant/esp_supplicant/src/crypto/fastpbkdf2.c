@@ -410,6 +410,13 @@ void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
         goto cleanup;
     }
 
+    // Set iteration count
+    status = psa_key_derivation_input_integer(&operation, PSA_KEY_DERIVATION_INPUT_COST,
+                                              iterations);
+    if (status != PSA_SUCCESS) {
+        goto cleanup;
+    }
+
     // Add salt
     status = psa_key_derivation_input_bytes(&operation, PSA_KEY_DERIVATION_INPUT_SALT,
                                             salt, nsalt);
@@ -419,13 +426,6 @@ void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
 
     // Add password
     status = psa_key_derivation_input_key(&operation, PSA_KEY_DERIVATION_INPUT_PASSWORD, key_id);
-    if (status != PSA_SUCCESS) {
-        goto cleanup;
-    }
-
-    // Set iteration count
-    status = psa_key_derivation_input_integer(&operation, PSA_KEY_DERIVATION_INPUT_COST,
-                                              iterations);
     if (status != PSA_SUCCESS) {
         goto cleanup;
     }

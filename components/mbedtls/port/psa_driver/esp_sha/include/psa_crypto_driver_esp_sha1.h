@@ -25,6 +25,8 @@ psa_status_t esp_sha1_driver_compute(
     size_t hash_size,
     size_t *hash_length);
 
+psa_status_t esp_sha1_starts(esp_sha1_context *ctx);
+
 psa_status_t esp_sha1_driver_update(
     esp_sha1_context *ctx,
     const uint8_t *input,
@@ -35,4 +37,8 @@ psa_status_t esp_sha1_driver_finish(
     uint8_t *hash,
     size_t hash_size,
     size_t *hash_length);
+
+psa_status_t esp_sha1_driver_abort(esp_sha1_context *ctx);
+
+psa_status_t esp_sha1_driver_clone(const esp_sha1_context *source_ctx, esp_sha1_context *target_ctx);
 #endif /* ESP_SHA_DRIVER_ENABLED */

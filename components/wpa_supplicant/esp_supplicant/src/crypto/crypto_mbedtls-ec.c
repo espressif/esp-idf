@@ -912,11 +912,6 @@ int crypto_ec_get_publickey_buf(struct crypto_ec_key *key, u8 *key_buf, int len)
 
 int crypto_write_pubkey_der(struct crypto_ec_key *key, unsigned char **key_buf)
 {
-    psa_status_t status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        return -1;
-    }
-
     unsigned char *buf = os_malloc(ECP_PUB_DER_MAX_BYTES);
     if (!buf) {
         wpa_printf(MSG_ERROR, "memory allocation failed");
@@ -970,11 +965,6 @@ struct crypto_ec_key *crypto_ec_key_parse_priv(const u8 *privkey, size_t privkey
      * knowing the metadata (such as type, size, etc.) of the key. So, we need to use
      * mbedtls_pk_parse_key() to parse the private key and then import it into PSA.
     */
-
-    psa_status_t status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        return NULL;
-    }
 
     int ret;
     mbedtls_pk_context *kctx = (mbedtls_pk_context *)crypto_alloc_key();

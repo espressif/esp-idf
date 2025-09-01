@@ -116,7 +116,7 @@ psa_status_t esp_sha_hash_setup(esp_sha_hash_operation_t *operation, psa_algorit
         esp_sha1_context *sha1_ctx = calloc(1, sizeof(esp_sha1_context));
         operation->sha_ctx = sha1_ctx;
         operation->sha_type = ESP_SHA_OPERATION_TYPE_SHA1;
-        return PSA_SUCCESS;
+        return esp_sha1_starts(sha1_ctx);
     } else
 #endif // CONFIG_SOC_SHA_SUPPORT_SHA1
 #if CONFIG_SOC_SHA_SUPPORT_SHA256
@@ -127,13 +127,13 @@ psa_status_t esp_sha_hash_setup(esp_sha_hash_operation_t *operation, psa_algorit
         alg == PSA_ALG_SHA_256) {
         esp_sha256_context *sha256_ctx = calloc(1, sizeof(esp_sha256_context));
         operation->sha_ctx = sha256_ctx;
-        sha256_ctx->mode = SHA2_256;
+        int mode = SHA2_256;
         operation->sha_type = ESP_SHA_OPERATION_TYPE_SHA256;
 #if CONFIG_SOC_SHA_SUPPORT_SHA224
         operation->sha_type = (alg == PSA_ALG_SHA_224) ? ESP_SHA_OPERATION_TYPE_SHA224 : ESP_SHA_OPERATION_TYPE_SHA256;
-        sha256_ctx->mode = (alg == PSA_ALG_SHA_224) ? SHA2_224 : SHA2_256;
+        mode = (alg == PSA_ALG_SHA_224) ? SHA2_224 : SHA2_256;
 #endif // CONFIG_SOC_SHA_SUPPORT_SHA224
-        return PSA_SUCCESS;
+        return esp_sha256_starts(sha256_ctx, mode);
     } else
 #endif // CONFIG_SOC_SHA_SUPPORT_SHA256
 #if CONFIG_SOC_SHA_SUPPORT_SHA512
@@ -144,13 +144,13 @@ psa_status_t esp_sha_hash_setup(esp_sha_hash_operation_t *operation, psa_algorit
         alg == PSA_ALG_SHA_512) {
         esp_sha512_context *sha512_ctx = calloc(1, sizeof(esp_sha512_context));
         operation->sha_ctx = sha512_ctx;
-        sha512_ctx->mode = SHA2_512;
+        int mode = SHA2_512;
         operation->sha_type = ESP_SHA_OPERATION_TYPE_SHA512;
 #if CONFIG_SOC_SHA_SUPPORT_SHA384
         operation->sha_type = (alg == PSA_ALG_SHA_384) ? ESP_SHA_OPERATION_TYPE_SHA384 : ESP_SHA_OPERATION_TYPE_SHA512;
-        sha512_ctx->mode = (alg == PSA_ALG_SHA_384) ? SHA2_384 : SHA2_512;
+        mode = (alg == PSA_ALG_SHA_384) ? SHA2_384 : SHA2_512;
 #endif // CONFIG_SOC_SHA_SUPPORT_SHA384
-        return PSA_SUCCESS;
+        return esp_sha512_starts(sha512_ctx, mode);
     }
 #endif // CONFIG_SOC_SHA_SUPPORT_SHA512
     return PSA_ERROR_NOT_SUPPORTED;
@@ -233,7 +233,35 @@ psa_status_t esp_sha_hash_abort(esp_sha_hash_operation_t *operation)
     if (!operation) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
-
+#if CONFIG_SOC_SHA_SUPPORT_SHA1
+    if (operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA1) {
+        esp_sha1_context *ctx = (esp_sha1_context *)operation->sha_ctx;
+        if (ctx) {
+            esp_sha1_driver_abort(ctx);
+        }
+    } else
+#endif // CONFIG_SOC_SHA_SUPPORT_SHA1
+#if CONFIG_SOC_SHA_SUPPORT_SHA224 || CONFIG_SOC_SHA_SUPPORT_SHA256
+    if (operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA256 ||
+        operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA224) {
+        esp_sha256_context *ctx = (esp_sha256_context *)operation->sha_ctx;
+        if (ctx) {
+            esp_sha256_driver_abort(ctx);
+        }
+    } else
+#endif // CONFIG_SOC_SHA_SUPPORT_SHA224 || CONFIG_SOC_SHA_SUPPORT_SHA256
+#if CONFIG_SOC_SHA_SUPPORT_SHA384 || CONFIG_SOC_SHA_SUPPORT_SHA512
+    if (operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA384 ||
+        operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA512) {
+        esp_sha512_context *ctx = (esp_sha512_context *)operation->sha_ctx;
+        if (ctx) {
+            esp_sha512_driver_abort(ctx);
+        }
+    } else
+#endif // CONFIG_SOC_SHA_SUPPORT_SHA384 || CONFIG_SOC_SHA_SUPPORT_SHA512
+    {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
     if (operation->sha_ctx) {
         free(operation->sha_ctx);
         operation->sha_ctx = NULL;
@@ -253,7 +281,7 @@ psa_status_t esp_sha_hash_clone(
         if (!target_operation->sha_ctx) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
-        memcpy(target_operation->sha_ctx, source_operation->sha_ctx, sizeof(esp_sha1_context));
+        esp_sha1_driver_clone(source_operation->sha_ctx, target_operation->sha_ctx);
     } else
 #endif // CONFIG_SOC_SHA_SUPPORT_SHA1
 #if CONFIG_SOC_SHA_SUPPORT_SHA224 || CONFIG_SOC_SHA_SUPPORT_SHA256
@@ -263,7 +291,7 @@ psa_status_t esp_sha_hash_clone(
         if (!target_operation->sha_ctx) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
-        memcpy(target_operation->sha_ctx, source_operation->sha_ctx, sizeof(esp_sha256_context));
+        esp_sha256_driver_clone(source_operation->sha_ctx, target_operation->sha_ctx);
     } else
 #endif // CONFIG_SOC_SHA_SUPPORT_SHA224 || CONFIG_SOC_SHA_SUPPORT_SHA256
 #if CONFIG_SOC_SHA_SUPPORT_SHA384 || CONFIG_SOC_SHA_SUPPORT_SHA512
@@ -273,7 +301,7 @@ psa_status_t esp_sha_hash_clone(
         if (!target_operation->sha_ctx) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
-        memcpy(target_operation->sha_ctx, source_operation->sha_ctx, sizeof(esp_sha512_context));
+        esp_sha512_driver_clone(source_operation->sha_ctx, target_operation->sha_ctx);
     } else
 #endif // CONFIG_SOC_SHA_SUPPORT_SHA384 || CONFIG_SOC_SHA_SUPPORT_SHA512
     {

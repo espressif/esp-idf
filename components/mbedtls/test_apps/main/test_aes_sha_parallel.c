@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "psa/crypto.h"
 
 static SemaphoreHandle_t done_sem;
 
@@ -28,18 +29,20 @@ static const uint8_t sha256_thousand_bs[32] = {
 
 static void tskRunSHA256Test(void *pvParameters)
 {
-    mbedtls_sha256_context sha256_ctx;
     unsigned char sha256[32];
-
+    psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
+    psa_status_t status;
+    size_t hash_length = 0;
     for (int i = 0; i < 1000; i++) {
-
-        mbedtls_sha256_init(&sha256_ctx);
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts(&sha256_ctx, false));
+        status = psa_hash_setup(&operation, PSA_ALG_SHA_256);
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
         for (int j = 0; j < 10; j++) {
-            TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&sha256_ctx, (unsigned char *)one_hundred_bs, 100));
+            status = psa_hash_update(&operation, (unsigned char *)one_hundred_bs, 100);
+            TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
         }
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish(&sha256_ctx, sha256));
-        mbedtls_sha256_free(&sha256_ctx);
+        status = psa_hash_finish(&operation, sha256, sizeof(sha256), &hash_length);
+        operation = psa_hash_operation_init();
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
         TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha256_thousand_bs, sha256, 32, "SHA256 calculation");
     }
     xSemaphoreGive(done_sem);

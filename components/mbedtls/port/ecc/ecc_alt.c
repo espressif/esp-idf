@@ -9,8 +9,10 @@
 #include "ecc_impl.h"
 #include "hal/ecc_ll.h"
 
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/ecp.h"
 #include "mbedtls/platform_util.h"
+#include "mbedtls/bignum.h"
 
 #if defined(MBEDTLS_ECP_MUL_ALT) || defined(MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK)
 

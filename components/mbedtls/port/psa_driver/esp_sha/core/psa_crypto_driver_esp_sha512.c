@@ -45,10 +45,10 @@ static const unsigned char sha512_padding[128] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static int esp_sha512_starts(esp_sha512_context *ctx, int mode) {
+psa_status_t esp_sha512_starts(esp_sha512_context *ctx, int mode) {
     memset(ctx, 0, sizeof(esp_sha512_context));
     ctx->mode = mode;
-    return ESP_OK;
+    return PSA_SUCCESS;
 }
 
 static int esp_internal_sha_update_state(esp_sha512_context *ctx)
@@ -203,7 +203,6 @@ psa_status_t esp_sha512_driver_compute(
     size_t hash_size,
     size_t *hash_length)
 {
-    printf("SHA512 Driver Compute\n");
     if (!hash || !hash_length) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -278,6 +277,24 @@ psa_status_t esp_sha512_driver_finish(
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
+    return PSA_SUCCESS;
+}
+
+psa_status_t esp_sha512_driver_abort(esp_sha512_context *ctx)
+{
+    if (!ctx) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    memset(ctx, 0, sizeof(esp_sha512_context));
+    return PSA_SUCCESS;
+}
+
+psa_status_t esp_sha512_driver_clone(const esp_sha512_context *source_ctx, esp_sha512_context *target_ctx)
+{
+    if (source_ctx == NULL || target_ctx == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    memcpy(target_ctx, source_ctx, sizeof(esp_sha512_context));
     return PSA_SUCCESS;
 }
 

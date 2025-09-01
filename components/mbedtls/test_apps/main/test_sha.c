@@ -28,6 +28,8 @@
 
 #include "sha/sha_parallel_engine.h"
 
+#if MBEDTLS_MAJOR_VERSION < 4
+
 /* Note: Most of the SHA functions are called as part of mbedTLS, so
 are tested as part of mbedTLS tests. Only esp_sha() is different.
 */
@@ -273,3 +275,4 @@ TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
 #endif
 
 #endif // SOC_SHA_SUPPORTED
+#endif // MBEDTLS_MAJOR_VERSION

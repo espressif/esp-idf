@@ -175,8 +175,6 @@ psa_status_t esp_crypto_aes_update(
     size_t expected_output_size;
     *output_length = 0;
 
-    esp_aes_context *ctx = (esp_aes_context *) esp_aes_driver_ctx->esp_aes_ctx;
-
     if (!PSA_ALG_IS_STREAM_CIPHER(esp_aes_driver_ctx->aes_alg)) {
         /* Take the unprocessed partial block left over from previous
          * update calls, if any, plus the input to this call. Remove
@@ -212,8 +210,9 @@ psa_status_t esp_crypto_aes_update(
         }
 
         switch (esp_aes_driver_ctx->aes_alg) {
+#if CONFIG_MBEDTLS_CIPHER_MODE_CTR
             case PSA_ALG_CTR:
-                ret = esp_aes_crypt_ctr(ctx,
+                ret = esp_aes_crypt_ctr(esp_aes_driver_ctx->esp_aes_ctx,
                                         input_length,
                                         &esp_aes_driver_ctx->unprocessed_len,
                                         esp_aes_driver_ctx->iv,
@@ -222,8 +221,10 @@ psa_status_t esp_crypto_aes_update(
                                         output);
                 *output_length = input_length;
                 break;
+#endif /* CONFIG_MBEDTLS_CIPHER_MODE_CTR */
+#if CONFIG_MBEDTLS_CIPHER_MODE_CFB
             case PSA_ALG_CFB:
-                ret = esp_aes_crypt_cfb128(ctx,
+                ret = esp_aes_crypt_cfb128(esp_aes_driver_ctx->esp_aes_ctx,
                                         esp_aes_driver_ctx->mode,
                                         input_length,
                                         &esp_aes_driver_ctx->unprocessed_len,
@@ -232,8 +233,10 @@ psa_status_t esp_crypto_aes_update(
                                         output);
                 *output_length = input_length;
                 break;
+#endif /* CONFIG_MBEDTLS_CIPHER_MODE_CFB */
+#if CONFIG_MBEDTLS_CIPHER_MODE_OFB
             case PSA_ALG_OFB:
-                ret = esp_aes_crypt_ofb(ctx,
+                ret = esp_aes_crypt_ofb(esp_aes_driver_ctx->esp_aes_ctx,
                                         input_length,
                                         &esp_aes_driver_ctx->unprocessed_len,
                                         esp_aes_driver_ctx->iv,
@@ -241,6 +244,7 @@ psa_status_t esp_crypto_aes_update(
                                         output);
                 *output_length = input_length;
                 break;
+#endif /* CONFIG_MBEDTLS_CIPHER_MODE_OFB */
             case PSA_ALG_CBC_NO_PADDING:
             case PSA_ALG_CBC_PKCS7:
                 ret = esp_crypto_aes_cbc_update(esp_aes_driver_ctx,

@@ -131,7 +131,7 @@ TEST_CASE("PSA AES-GCM multipart", "[psa-aes-gcm]")
 
     /* Destroy the key */
     psa_destroy_key(key_id);
-    mbedtls_psa_crypto_free();
+    // mbedtls_psa_crypto_free();
 }
 
 TEST_CASE("PSA AES-GCM one-shot", "[psa-aes-gcm]")
@@ -208,5 +208,5 @@ TEST_CASE("PSA AES-GCM one-shot", "[psa-aes-gcm]")
 
     /* Destroy the key */
     psa_destroy_key(key_id);
-    mbedtls_psa_crypto_free();
+    // mbedtls_psa_crypto_free();
 }

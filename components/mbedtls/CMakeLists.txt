@@ -192,7 +192,7 @@ foreach(target ${mbedtls_targets})
     endif()
     if(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SIZE)
         target_compile_options(${target} PRIVATE "-Os")
-    elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SPEED)
+    elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_PERF)
         target_compile_options(${target} PRIVATE "-O2")
     endif()
 endforeach()
@@ -366,58 +366,61 @@ endif()
 if(CONFIG_MBEDTLS_HARDWARE_GCM OR CONFIG_MBEDTLS_HARDWARE_AES)
     target_compile_definitions(tfpsacrypto PRIVATE ESP_AES_DRIVER_ENABLED)
     target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/include/aes")
-    target_sources(tfpsacrypto PRIVATE
-            "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes.c"
-            "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_cmac.c"
-    )
+    if(CONFIG_MBEDTLS_HARDWARE_SHA)
+        target_sources(tfpsacrypto PRIVATE
+                "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes.c"
+                "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_cmac.c"
+        )
+    endif()
     if(CONFIG_SOC_AES_SUPPORT_GCM)
         target_sources(tfpsacrypto PRIVATE "$ENV{IDF_PATH}/components/mbedtls/port/aes/esp_aes_gcm.c"
         "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes_gcm.c")
     endif()
 endif()
 
-# if(CONFIG_MBEDTLS_HARDWARE_ECC)
-#     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/ecc/esp_ecc.c"
-#                                        "${COMPONENT_DIR}/port/ecc/ecc_alt.c")
-# endif()
+if(CONFIG_MBEDTLS_HARDWARE_ECC)
+    target_sources(builtin PRIVATE "${COMPONENT_DIR}/port/ecc/esp_ecc.c"
+                                       "${COMPONENT_DIR}/port/ecc/ecc_alt.c")
+    include_directories("${COMPONENT_DIR}/tf-psa-crypto/drivers/builtin/include/mbedtls")
+endif()
 
-# if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR
-# CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY OR CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
-#     target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/ecdsa/ecdsa_alt.c")
+if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR
+CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY OR CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
+    target_sources(builtin PRIVATE "${COMPONENT_DIR}/port/ecdsa/ecdsa_alt.c")
 
-#     set(WRAP_FUNCTIONS_SIGN
-#         mbedtls_ecdsa_sign
-#         mbedtls_ecdsa_sign_restartable
-#         mbedtls_ecdsa_write_signature
-#         mbedtls_ecdsa_write_signature_restartable)
+    set(WRAP_FUNCTIONS_SIGN
+        mbedtls_ecdsa_sign
+        mbedtls_ecdsa_sign_restartable
+        mbedtls_ecdsa_write_signature
+        mbedtls_ecdsa_write_signature_restartable)
 
-#     set(WRAP_FUNCTIONS_VERIFY
-#         mbedtls_ecdsa_verify
-#         mbedtls_ecdsa_verify_restartable
-#         mbedtls_ecdsa_read_signature
-#         mbedtls_ecdsa_read_signature_restartable)
+    set(WRAP_FUNCTIONS_VERIFY
+        mbedtls_ecdsa_verify
+        mbedtls_ecdsa_verify_restartable
+        mbedtls_ecdsa_read_signature
+        mbedtls_ecdsa_read_signature_restartable)
 
-#     if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
-#         foreach(wrap ${WRAP_FUNCTIONS_SIGN})
-#             target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
-#         endforeach()
+    if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
+        foreach(wrap ${WRAP_FUNCTIONS_SIGN})
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
+        endforeach()
 
-#         if(CONFIG_SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE)
-#             target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_det_ext")
-#             target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_det_restartable")
-#         endif()
-#     endif()
+        if(CONFIG_SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE)
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_det_ext")
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_det_restartable")
+        endif()
+    endif()
 
-#     if(CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
-#         foreach(wrap ${WRAP_FUNCTIONS_VERIFY})
-#             target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
-#         endforeach()
-#     endif()
+    if(CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
+        foreach(wrap ${WRAP_FUNCTIONS_VERIFY})
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
+        endforeach()
+    endif()
 
-#     if(CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
-#         target_link_libraries(mbedcrypto PRIVATE idf::tee_sec_storage)
-#     endif()
-# endif()
+    if(CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
+        target_link_libraries(builtin PRIVATE idf::tee_sec_storage)
+    endif()
+endif()
 
 # if(CONFIG_MBEDTLS_ROM_MD5)
 #     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/md/esp_md.c")
@@ -444,7 +447,7 @@ endif()
 if(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SIZE)
     message(STATUS "Linkage type is ${linkage_type}")
     target_compile_options(${COMPONENT_LIB} ${compiler_linkage_type} "-Os")
-elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SPEED)
+elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_PERF)
     target_compile_options(${COMPONENT_LIB} ${compiler_linkage_type} "-O2")
 endif()
 
@@ -472,9 +475,9 @@ if(CONFIG_PM_ENABLE)
     target_link_libraries(tfpsacrypto PRIVATE idf::esp_pm)
 endif()
 
-# if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
-#     target_link_libraries(mbedcrypto PRIVATE idf::efuse)
-# endif()
+if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
+    target_link_libraries(builtin PRIVATE idf::efuse)
+endif()
 
 target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
 

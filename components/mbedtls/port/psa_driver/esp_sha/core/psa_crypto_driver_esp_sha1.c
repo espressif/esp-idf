@@ -24,36 +24,10 @@ static const unsigned char sha1_padding[64] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static int esp_sha1_starts(esp_sha1_context *ctx) {
+psa_status_t esp_sha1_starts(esp_sha1_context *ctx) {
     memset(ctx, 0, sizeof(esp_sha1_context));
-    return ESP_OK;
+    return PSA_SUCCESS;
 }
-
-// int mbedtls_internal_sha1_process(mbedtls_sha1_context *ctx, const unsigned char data[64])
-// {
-//     esp_sha_acquire_hardware();
-
-//     esp_sha_set_mode(ctx->mode);
-
-//     esp_internal_sha_update_state(ctx);
-
-// #if SOC_SHA_SUPPORT_DMA
-//     if (sha_operation_mode(64) == SHA_DMA_MODE) {
-//         int ret = esp_sha_dma(SHA1, data, 64, NULL, 0, ctx->first_block);
-//         if (ret != 0) {
-//             esp_sha_release_hardware();
-//             return ret;
-//         }
-//     } else
-// #endif /* SOC_SHA_SUPPORT_DMA */
-//     {
-//         esp_sha_block(ctx->mode, data, ctx->first_block);
-//     }
-
-//     esp_sha_read_digest_state(ctx->mode, ctx->state);
-//     esp_sha_release_hardware();
-//     return 0;
-// }
 
 static void esp_internal_sha1_block_process(esp_sha1_context *ctx, const uint8_t *data)
 {
@@ -239,5 +213,23 @@ psa_status_t esp_sha1_driver_finish(
     }
 
     *hash_length = PSA_HASH_LENGTH(PSA_ALG_SHA_1);
+    return PSA_SUCCESS;
+}
+
+psa_status_t esp_sha1_driver_abort(esp_sha1_context *ctx)
+{
+    if (!ctx) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    memset(ctx, 0, sizeof(esp_sha1_context));
+    return PSA_SUCCESS;
+}
+
+psa_status_t esp_sha1_driver_clone(const esp_sha1_context *source_ctx, esp_sha1_context *target_ctx)
+{
+    if (source_ctx == NULL || target_ctx == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    memcpy(target_ctx, source_ctx, sizeof(esp_sha1_context));
     return PSA_SUCCESS;
 }

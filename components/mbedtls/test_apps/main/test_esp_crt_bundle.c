@@ -310,8 +310,11 @@ void client_task(void *pvParameters)
     mbedtls_net_free( &client->client_fd);
 
     /* Test with bundle that does contain the CA crt */
-    esp_crt_bundle_attach(&client->conf);
-    esp_crt_bundle_set(server_cert_bundle_start, server_cert_bundle_end - server_cert_bundle_start);
+    ret = esp_crt_bundle_attach(&client->conf);
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    ret = esp_crt_bundle_set(server_cert_bundle_start, server_cert_bundle_end - server_cert_bundle_start);
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
 
     ESP_LOGI(TAG, "Connecting to %s:%s...", SERVER_ADDRESS, SERVER_PORT);
     if ((ret = mbedtls_net_connect(&client->client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {

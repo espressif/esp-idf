@@ -24,10 +24,10 @@ static const unsigned char sha256_padding[64] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static int esp_sha256_starts(esp_sha256_context *ctx, int mode) {
+psa_status_t esp_sha256_starts(esp_sha256_context *ctx, int mode) {
     memset(ctx, 0, sizeof(esp_sha256_context));
     ctx->mode = mode; /* SHA2_224 or SHA2_256 */
-    return ESP_OK;
+    return PSA_SUCCESS;
 }
 
 static void esp_internal_sha256_block_process(esp_sha256_context *ctx, const uint8_t *data)
@@ -251,5 +251,23 @@ psa_status_t esp_sha256_driver_finish(
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
+    return PSA_SUCCESS;
+}
+
+psa_status_t esp_sha256_driver_abort(esp_sha256_context *ctx)
+{
+    if (!ctx) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    memset(ctx, 0, sizeof(esp_sha256_context));
+    return PSA_SUCCESS;
+}
+
+psa_status_t esp_sha256_driver_clone(const esp_sha256_context *source_ctx, esp_sha256_context *target_ctx)
+{
+    if (source_ctx == NULL || target_ctx == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    memcpy(target_ctx, source_ctx, sizeof(esp_sha256_context));
     return PSA_SUCCESS;
 }

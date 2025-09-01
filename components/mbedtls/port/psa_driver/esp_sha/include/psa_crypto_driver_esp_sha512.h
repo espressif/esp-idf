@@ -26,6 +26,8 @@ psa_status_t esp_sha512_driver_compute(
     size_t hash_size,
     size_t *hash_length);
 
+psa_status_t esp_sha512_starts(esp_sha512_context *ctx, int mode);
+
 psa_status_t esp_sha512_driver_update(
     esp_sha512_context *ctx,
     const uint8_t *input,
@@ -37,4 +39,8 @@ psa_status_t esp_sha512_driver_finish(
     size_t hash_size,
     size_t *hash_length,
     esp_sha_operation_type_t sha_type);
+
+psa_status_t esp_sha512_driver_abort(esp_sha512_context *ctx);
+
+psa_status_t esp_sha512_driver_clone(const esp_sha512_context *source_ctx, esp_sha512_context *target_ctx);
 #endif /* ESP_SHA_DRIVER_ENABLED */

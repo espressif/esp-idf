@@ -336,7 +336,7 @@ _Static_assert(sizeof(pki_rsa2048_output) == 2048/8, "rsa2048 output is wrong si
 _Static_assert(sizeof(pki_rsa3072_output) == 3072/8, "rsa3072 output is wrong size");
 _Static_assert(sizeof(pki_rsa4096_output) == 4096/8, "rsa4096 output is wrong size");
 
-void mbedtls_mpi_printf(const char *name, const mbedtls_mpi *X);
+// void mbedtls_mpi_printf(const char *name, const mbedtls_mpi *X);
 
 
 static void test_cert(const char *cert, const uint8_t *expected_output, size_t output_len);
@@ -418,22 +418,22 @@ static void rsa_key_operations(int keysize, bool check_performance, bool generat
 //     return mbedtls_hardware_poll(rng_state, output, len, &olen);
 // }
 
-// #ifdef PRINT_DEBUG_INFO
-// static void print_rsa_details(mbedtls_rsa_context *rsa)
-// {
-//     mbedtls_mpi X[5];
-//     for (int i=0; i<5; ++i) {
-//         mbedtls_mpi_init( &X[i] );
-//     }
+#ifdef PRINT_DEBUG_INFO
+static void print_rsa_details(mbedtls_rsa_context *rsa)
+{
+    mbedtls_mpi X[5];
+    for (int i=0; i<5; ++i) {
+        mbedtls_mpi_init( &X[i] );
+    }
 
-//     if (0 == mbedtls_rsa_export(rsa, &X[0], &X[1], &X[2], &X[3], &X[4])) {
-//         for (int i=0; i<5; ++i) {
-//             mbedtls_mpi_printf((char*)"N\0P\0Q\0D\0E" + 2*i, &X[i]);
-//             mbedtls_mpi_free( &X[i] );
-//         }
-//     }
-// }
-// #endif
+    if (0 == mbedtls_rsa_export(rsa, &X[0], &X[1], &X[2], &X[3], &X[4])) {
+        for (int i=0; i<5; ++i) {
+            // mbedtls_mpi_printf((char*)"N\0P\0Q\0D\0E" + 2*i, &X[i]);
+            mbedtls_mpi_free( &X[i] );
+        }
+    }
+}
+#endif
 
 #if CONFIG_FREERTOS_SMP // IDF-5260
 TEST_CASE("test performance RSA key operations", "[bignum][timeout=60]")
@@ -528,18 +528,18 @@ static void rsa_key_operations(int keysize, bool check_performance, bool generat
         memcpy(&rsa, mbedtls_pk_rsa(clientkey), sizeof(mbedtls_rsa_context));
     }
 
-// #ifdef PRINT_DEBUG_INFO
-//     print_rsa_details(&rsa);
-// #endif
+#ifdef PRINT_DEBUG_INFO
+    print_rsa_details(&rsa);
+#endif
 
     TEST_ASSERT_EQUAL(keysize, (int)rsa.MBEDTLS_PRIVATE(len) * 8);
     TEST_ASSERT_EQUAL(keysize, (int)rsa.MBEDTLS_PRIVATE(D).MBEDTLS_PRIVATE(n) * sizeof(mbedtls_mpi_uint) * 8); // The private exponent
 
 #ifdef SOC_CCOMP_TIMER_SUPPORTED
-    // int public_perf, private_perf;
+    int public_perf, private_perf;
     ccomp_timer_start();
     res = mbedtls_rsa_public(&rsa, orig_buf, encrypted_buf);
-    // public_perf = ccomp_timer_stop();
+    public_perf = ccomp_timer_stop();
 
     if (res == MBEDTLS_ERR_MPI_NOT_ACCEPTABLE + MBEDTLS_ERR_RSA_PUBLIC_FAILED) {
         mbedtls_rsa_free(&rsa);
@@ -549,17 +549,17 @@ static void rsa_key_operations(int keysize, bool check_performance, bool generat
 
     ccomp_timer_start();
     res =  mbedtls_rsa_private(&rsa, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE, encrypted_buf, decrypted_buf);
-    // private_perf = ccomp_timer_stop();
+    private_perf = ccomp_timer_stop();
     TEST_ASSERT_EQUAL_HEX16(0, -res);
 
     // We will bring this check back once we have the hardware acceleration with PSA
-    // if (check_performance && keysize == 2048) {
-    //     TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_2048KEY_PUBLIC_OP, "%d us", public_perf);
-    //     TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_2048KEY_PRIVATE_OP, "%d us", private_perf);
-    // } else if (check_performance && keysize == 4096) {
-    //     TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_4096KEY_PUBLIC_OP, "%d us", public_perf);
-    //     TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_4096KEY_PRIVATE_OP, "%d us", private_perf);
-    // }
+    if (check_performance && keysize == 2048) {
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_2048KEY_PUBLIC_OP, "%d us", public_perf);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_2048KEY_PRIVATE_OP, "%d us", private_perf);
+    } else if (check_performance && keysize == 4096) {
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_4096KEY_PUBLIC_OP, "%d us", public_perf);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_4096KEY_PRIVATE_OP, "%d us", private_perf);
+    }
 #else
     res = mbedtls_rsa_public(&rsa, orig_buf, encrypted_buf);
     TEST_ASSERT_EQUAL_HEX16(0, -res);
@@ -574,24 +574,25 @@ static void rsa_key_operations(int keysize, bool check_performance, bool generat
 }
 
 // We will bring this check back once we have the hardware acceleration with PSA
-// TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
-// {
-//     psa_status_t status;
-//     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-//     psa_key_id_t key_id;
+TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
+{
+    psa_status_t status;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id;
 
-//     psa_set_key_type(&attributes, PSA_KEY_TYPE_RSA_KEY_PAIR);
-//     psa_set_key_bits(&attributes, 2048);
-//     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
-//     psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_VOLATILE);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_RSA_KEY_PAIR);
+    psa_set_key_bits(&attributes, 2048);
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_VOLATILE);
 
-//     status = psa_generate_key(&attributes, &key_id);
-//     TEST_ASSERT_EQUAL_HEX(status, PSA_SUCCESS);
+    status = psa_generate_key(&attributes, &key_id);
+    printf("Status: %ld\n", status);
+    TEST_ASSERT_EQUAL_HEX(status, PSA_SUCCESS);
 
-//     psa_reset_key_attributes(&attributes);
+    psa_reset_key_attributes(&attributes);
 
-//     status = psa_destroy_key(key_id);
-//     TEST_ASSERT_EQUAL_HEX(status, PSA_SUCCESS);
-// }
+    status = psa_destroy_key(key_id);
+    TEST_ASSERT_EQUAL_HEX(status, PSA_SUCCESS);
+}
 
 #endif // CONFIG_MBEDTLS_HARDWARE_MPI

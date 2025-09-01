@@ -102,7 +102,7 @@ TEST_CASE("PSA AES-CTR multipart", "[psa-aes]")
 
     /* Destroy the key */
     psa_destroy_key(key_id);
-    mbedtls_psa_crypto_free();
+    // mbedtls_psa_crypto_free();
 }
 
 TEST_CASE("PSA AES-ECB multipart", "[psa-aes]")
@@ -180,7 +180,7 @@ TEST_CASE("PSA AES-ECB multipart", "[psa-aes]")
 
     /* Destroy the key */
     psa_destroy_key(key_id);
-    mbedtls_psa_crypto_free();
+    // // mbedtls_psa_crypto_free();
 }
 
 TEST_CASE("PSA AES-CBC multipart", "[psa-aes]")
@@ -261,7 +261,7 @@ TEST_CASE("PSA AES-CBC multipart", "[psa-aes]")
 
     /* Destroy the key */
     psa_destroy_key(key_id);
-    mbedtls_psa_crypto_free();
+    // mbedtls_psa_crypto_free();
 }
 
 #if 0
@@ -411,7 +411,7 @@ TEST_CASE("PSA AES-CBC-PKCS7 multipart", "[psa-aes]")
     free(decryptedtext2);
 
     psa_destroy_key(key_id);
-    mbedtls_psa_crypto_free();
+    // mbedtls_psa_crypto_free();
 }
 #endif
 
@@ -492,7 +492,7 @@ TEST_CASE("PSA AES-CFB multipart", "[psa-aes]")
 
     /* Destroy the key */
     psa_destroy_key(key_id);
-    mbedtls_psa_crypto_free();
+    // mbedtls_psa_crypto_free();
 }
 
 TEST_CASE("PSA AES-OFB multipart", "[psa-aes]")
@@ -572,7 +572,7 @@ TEST_CASE("PSA AES-OFB multipart", "[psa-aes]")
 
     /* Destroy the key */
     psa_destroy_key(key_id);
-    mbedtls_psa_crypto_free();
+    // mbedtls_psa_crypto_free();
 }
 
 
@@ -628,5 +628,5 @@ TEST_CASE("PSA AES-CBC one-shot", "[psa-aes]")
     /* Destroy the key */
     psa_destroy_key(key_id);
 
-    mbedtls_psa_crypto_free();
+    // mbedtls_psa_crypto_free();
 }

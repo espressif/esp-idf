@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2025 Espressif Systems (Shanghai) CO LTD
  */
 /*
  *  The AES block cipher was designed by Vincent Rijmen and Joan Daemen.
@@ -260,7 +260,7 @@ int esp_aes_gcm_setkey( esp_gcm_context *ctx,
      * cipher is selected, as we support hardware acceleration only for a
      * GCM operation using AES cipher.
      */
-#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK) && 0
     if (ctx->ctx_soft != NULL) {
         mbedtls_gcm_free_soft(ctx->ctx_soft);
         free(ctx->ctx_soft);
@@ -358,7 +358,7 @@ void esp_aes_gcm_free( esp_gcm_context *ctx)
     if (ctx == NULL) {
         return;
     }
-#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK) && 0
     if (ctx->ctx_soft != NULL) {
         mbedtls_gcm_free_soft(ctx->ctx_soft);
         free(ctx->ctx_soft);
@@ -380,7 +380,7 @@ int esp_aes_gcm_starts( esp_gcm_context *ctx,
         return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
 
-#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK) && 0
     if (ctx->ctx_soft != NULL) {
         return mbedtls_gcm_starts_soft(ctx->ctx_soft, mode, iv, iv_len);
     }
@@ -452,7 +452,7 @@ int esp_aes_gcm_update_ad( esp_gcm_context *ctx,
         return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
 
-#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK) && 0
     if (ctx->ctx_soft != NULL) {
         return mbedtls_gcm_update_ad_soft(ctx->ctx_soft, aad, aad_len);
     }
@@ -493,7 +493,7 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
         return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
 
-#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK) && 0
     if (ctx->ctx_soft != NULL) {
         return mbedtls_gcm_update_soft(ctx->ctx_soft, input, input_length, output, output_size, output_length);
     }
@@ -565,7 +565,7 @@ int esp_aes_gcm_finish( esp_gcm_context *ctx,
                         size_t *output_length,
                         unsigned char *tag, size_t tag_len )
 {
-#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK) && 0
     if (ctx->ctx_soft != NULL) {
         return mbedtls_gcm_finish_soft(ctx->ctx_soft, output, output_size, output_length, tag, tag_len);
     }
@@ -666,7 +666,7 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
         return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
 
-#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK) && 0
     if (ctx->ctx_soft != NULL) {
         return mbedtls_gcm_crypt_and_tag_soft(ctx->ctx_soft, mode, length, iv, iv_len, aad, aad_len, input, output, tag_len, tag);
     }
@@ -761,7 +761,7 @@ int esp_aes_gcm_auth_decrypt( esp_gcm_context *ctx,
                               const unsigned char *input,
                               unsigned char *output )
 {
-#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK) && 0
     if (ctx->ctx_soft != NULL) {
         return mbedtls_gcm_auth_decrypt_soft(ctx->ctx_soft, length, iv, iv_len, aad, aad_len, tag, tag_len, input, output);
     }
