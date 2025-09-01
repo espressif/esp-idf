@@ -225,6 +225,23 @@ typedef struct {
     uint8_t signature[64];
 } esp_secure_boot_sig_block_t;
 
+/** @brief Get the size of the secure boot signature block
+ *
+ * This is the size of the signature block appended to a signed image.
+ *
+ * @return Size of the secure boot signature block in bytes
+ */
+static inline uint32_t esp_secure_boot_sig_block_size()
+{
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+    return sizeof(ets_secure_boot_signature_t);
+#elif defined(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+    return sizeof(esp_secure_boot_sig_block_t);
+#else
+    return 0;
+#endif
+}
+
 /** @brief Verify the ECDSA secure boot signature block for Secure Boot V1.
  *
  *  Calculates Deterministic ECDSA w/ SHA256 based on the SHA256 hash of the image. ECDSA signature
