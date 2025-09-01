@@ -63,8 +63,8 @@ typedef struct {
     char *sub_protocol;
     char *user_agent;
     char *headers;
-    ws_header_hook header_hook;
-    void * header_userp;
+    ws_header_hook_t header_hook;
+    void * header_user_context;
     char *auth;
     char *buffer;             /*!< Initial HTTP connection buffer, which may include data beyond the handshake headers, such as the next WebSocket packet*/
     size_t buffer_len;        /*!< The buffer length */
@@ -328,7 +328,7 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
             server_key_len = line_len - header_sec_websocket_accept_len;
         }
         else if (ws->header_hook) {
-            ws->header_hook(ws->header_userp, header_cursor, line_len);
+            ws->header_hook(ws->header_user_context, header_cursor, line_len);
         }
 
         // Check for Location: header
@@ -878,23 +878,20 @@ esp_err_t esp_transport_ws_set_headers(esp_transport_handle_t t, const char *hea
     return ESP_OK;
 }
 
-esp_err_t esp_transport_ws_set_header_hook(esp_transport_handle_t t, ws_header_hook hook)
+esp_err_t esp_transport_ws_set_header_hook(esp_transport_handle_t t, ws_header_hook_t hook, void * user_context)
 {
     if (t == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+    if (hook == NULL) {
+        ESP_LOGE(TAG, "Header hook is NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_LOGV(TAG, "User has context: %s", user_context != NULL ? "true" : "false");
+
     transport_ws_t *ws = esp_transport_get_context_data(t);
     ws->header_hook = hook;
-    return ESP_OK;
-}
-
-esp_err_t esp_transport_ws_set_header_userp(esp_transport_handle_t t, void * userp)
-{
-    if (t == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    transport_ws_t *ws = esp_transport_get_context_data(t);
-    ws->header_userp = userp;
+    ws->header_user_context = user_context;
     return ESP_OK;
 }
 
@@ -963,13 +960,9 @@ esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transp
         err = esp_transport_ws_set_headers(t, config->headers);
         ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
     }
-    if (config->header_hook) {
-        err = esp_transport_ws_set_header_hook(t, config->header_hook);
+    if (config->header_hook || config->header_user_context) {
+        err = esp_transport_ws_set_header_hook(t, config->header_hook, config->header_user_context);
         ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
-    }
-    if (config->header_userp) {
-      err = esp_transport_ws_set_header_userp(t, config->header_userp);
-      ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
     }
     if (config->auth) {
         err = esp_transport_ws_set_auth(t, config->auth);

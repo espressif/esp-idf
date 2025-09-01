@@ -29,7 +29,7 @@ typedef enum ws_transport_opcodes {
                                           * from the API esp_transport_ws_get_read_opcode() */
 } ws_transport_opcodes_t;
 
-typedef void (*ws_header_hook)(void * userp, const char * line, int line_len);
+typedef void (*ws_header_hook_t)(void * user_context, const char * line, int line_len);
 
 /**
  * WS transport configuration structure
@@ -39,8 +39,8 @@ typedef struct {
     const char *sub_protocol;               /*!< WS subprotocol */
     const char *user_agent;                 /*!< WS user agent */
     const char *headers;                    /*!< WS additional headers */
-    ws_header_hook header_hook;             /*!< WS received header */
-    void *header_userp;                     /*!< WS received header user-pointer */
+    ws_header_hook_t header_hook;           /*!< WS received header */
+    void *header_user_context;              /*!< WS received header user-context pointer */
     const char *auth;                       /*!< HTTP authorization header */
     char *response_headers;                 /*!< The buffer to copy the http response header */
     size_t response_headers_len;            /*!< The length of the http response header */
@@ -104,29 +104,17 @@ esp_err_t esp_transport_ws_set_user_agent(esp_transport_handle_t t, const char *
 esp_err_t esp_transport_ws_set_headers(esp_transport_handle_t t, const char *headers);
 
 /**
- * @brief               Set websocket header callback
+ * @brief               Set websocket header callback and user-pointer
  *
  * @param t             websocket transport handle
  * @param hook          call function on header received. NULL to disable.
+ * @param user_context  caller-controlled argument to pass to ws_header_hook_t
  *
  * @return
  *      - ESP_OK on success
  *      - One of the error codes
  */
-esp_err_t esp_transport_ws_set_header_hook(esp_transport_handle_t t, ws_header_hook hook);
-
-
-/**
- * @brief               Set websocket header callback user-pointer
- *
- * @param t             websocket transport handle
- * @param userp         caller-controlled argument to ws_header_hook
- *
- * @return
- *      - ESP_OK on success
- *      - One of the error codes
- */
-esp_err_t esp_transport_ws_set_header_userp(esp_transport_handle_t t, void * userp);
+esp_err_t esp_transport_ws_set_header_hook(esp_transport_handle_t t, ws_header_hook_t hook, void * user_context);
 
 /**
  * @brief               Set websocket authorization headers
