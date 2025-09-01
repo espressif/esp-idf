@@ -735,6 +735,84 @@ if BT_NIMBLE_50_FEATURE_SUPPORT
         default n
         help
             Enable support for Connectionless and Connection Oriented Direction Finding
+
+    config BT_NIMBLE_ISO
+        bool "Isochronous channels"
+        depends on BT_NIMBLE_50_FEATURE_SUPPORT
+        help
+            Enable BLE Isochronous functionality.
+
+    if BT_NIMBLE_ISO
+        choice BT_NIMBLE_ISO_FLOW_CONTROL
+            prompt "ISO flow control mode"
+            default BT_NIMBLE_ISO_NON_STD_FLOW_CTRL
+            help
+                ISO flow control mode
+
+            config BT_NIMBLE_ISO_STD_FLOW_CTRL
+                bool "Standard"
+                help
+                    ISO standard flow control
+
+            config BT_NIMBLE_ISO_NON_STD_FLOW_CTRL
+                bool "Non-standard"
+                help
+                    ISO non-standard flow control
+        endchoice
+
+        config BT_NIMBLE_ISO_TEST
+            bool "ISO Test mode"
+            default y
+            help
+                Enable BLE Isochronous Test functionality.
+
+        config BT_NIMBLE_ISO_BIG
+            int "Maximum number of BIG"
+            range 1 2
+            default 1
+            help
+                Maximum number of BIG.
+
+        config BT_NIMBLE_ISO_BIS
+            int "Maximum number of BIS"
+            range 1 3
+            default 2
+            help
+                Maximum number of BIS.
+
+        config BT_NIMBLE_ISO_BIS_PER_BIG
+            int "Maximum number of BIS per BIG"
+            range 1 3
+            default 2
+            help
+                Maximum number of BIS per BIG.
+
+        config BT_NIMBLE_ISO_CIG
+            int "Maximum number of CIG"
+            range 1 2
+            default 1
+            help
+                Maximum number of CIG.
+
+        config BT_NIMBLE_ISO_CIS
+            int "Maximum number of CIS"
+            range 1 3
+            default 2
+            help
+                Maximum number of CIS.
+
+        config BT_NIMBLE_ISO_CIS_PER_CIG
+            int "Maximum number of CIS per CIG"
+            range 1 3
+            default 2
+            help
+                Maximum number of CIS per CIG.
+
+        config BT_NIMBLE_ISO_CIS_ESTAB_V2
+            bool "LE CIS Established event [v2]"
+            help
+                Enable this to support LE CIS Established event [v2].
+    endif
 endif
 
 menuconfig BT_NIMBLE_GATT_CACHING
@@ -795,6 +873,12 @@ config BT_NIMBLE_GATT_CACHING_DISABLE_AUTO
     help
         When client receives ATT out-of-sync error message, it will not automatically start the discovery procedure
         to correct the invalid cache.
+config BT_NIMBLE_GATT_CACHING_ASSOC_ENABLE
+    bool "Enable association-based GATT caching"
+    depends on BT_NIMBLE_GATT_CACHING
+    default n
+    help
+        Enable this option to use associated address caching instead of performing service discovery.
 
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"

@@ -427,6 +427,13 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(INFO, "Connection secured\n");
             }
 #else
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+            rc =  ble_gattc_cache_assoc(desc.peer_id_addr);
+            if (rc != 0) {
+                MODLOG_DFLT(ERROR, "Cache Association Failed; rc=%d\n", rc);
+                return 0;
+            }
+#else
             /* Perform service discovery */
             rc = peer_disc_all(event->connect.conn_handle,
                                ble_cts_cent_on_disc_complete, NULL);
@@ -434,6 +441,7 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
             }
+#endif // BLE_GATT_CACHING_ASSOC_ENABLE
 #endif
         } else {
             /* Connection attempt failed; resume scanning. */
@@ -470,6 +478,13 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
         assert(rc == 0);
         print_conn_desc(&desc);
 #if CONFIG_EXAMPLE_ENCRYPTION
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+        rc =  ble_gattc_cache_assoc(desc.peer_id_addr);
+        if (rc != 0) {
+            MODLOG_DFLT(ERROR, "Cache Association Failed; rc=%d\n", rc);
+            return 0;
+        }
+#else
         /*** Go for service discovery after encryption has been successfully enabled ***/
         rc = peer_disc_all(event->connect.conn_handle,
                            ble_cts_cent_on_disc_complete, NULL);
@@ -477,8 +492,26 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
             MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
             return 0;
         }
+#endif // BLE_GATT_CACHING_ASSOC_ENABLE
 #endif
         return 0;
+
+    case BLE_GAP_EVENT_CACHE_ASSOC:
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+          /* Cache association result for this connection */
+          MODLOG_DFLT(INFO, "cache association; conn_handle=%d status=%d cache_state=%s\n",
+                      event->cache_assoc.conn_handle,
+                      event->cache_assoc.status,
+                      (event->cache_assoc.cache_state == 0) ? "INVALID" : "LOADED");
+          /* Perform service discovery */
+          rc = peer_disc_all(event->connect.conn_handle,
+                             blecent_on_disc_complete, NULL);
+          if(rc != 0) {
+                MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
+                return 0;
+          }
+#endif
+          return 0;
 
     case BLE_GAP_EVENT_NOTIFY_RX:
         /* Peer sent us a notification or indication. */
