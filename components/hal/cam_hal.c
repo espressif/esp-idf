@@ -1,13 +1,24 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "hal/cam_ll.h"
 #include "hal/cam_hal.h"
+#include "hal/color_types.h"
 #include "soc/soc_caps.h"
 #include "soc/cam_periph.h"
+
+/**
+ * @brief Default format conversion configuration
+ */
+#define CAM_HAL_DEFAULT_FORMAT_CONV_CONFIG { \
+    .conv_std = COLOR_CONV_STD_RGB_YUV_BT601, \
+    .data_width = 8, \
+    .input_range = COLOR_RANGE_LIMIT, \
+    .output_range = COLOR_RANGE_LIMIT \
+}
 
 /**
  * @brief Configure line number to trigger interrupt
@@ -118,4 +129,60 @@ void cam_hal_start_streaming(cam_hal_context_t *hal)
 void cam_hal_stop_streaming(cam_hal_context_t *hal)
 {
     cam_ll_stop(hal->hw);
+}
+
+/**
+ * @brief Configure color format conversion
+ *
+ * This function handles all types of color format conversions:
+ * - YUV to RGB conversion
+ * - RGB to YUV conversion
+ * - YUV to YUV conversion
+ *
+ * Color range support:
+ * - Full range: 0-255 for both RGB and YUV
+ * - Limited range: RGB 16-240, YUV Y:16-240, U-V:16-235
+ *
+ * @param hal    CAM HAL context pointer
+ * @param config Color conversion configuration. If NULL, default config is used.
+ */
+void cam_hal_color_format_convert(cam_hal_context_t *hal,
+                                 const cam_ctlr_format_conv_config_t *config)
+{
+    // Use provided config or default
+    const cam_ctlr_format_conv_config_t *cfg = config;
+    if (cfg == NULL) {
+        static const cam_ctlr_format_conv_config_t default_config = CAM_HAL_DEFAULT_FORMAT_CONV_CONFIG;
+        cfg = &default_config;
+    }
+
+    cam_ll_enable_rgb_yuv_convert(hal->hw, false);
+
+    // Extract color space from source and destination formats
+    color_space_t src_space = COLOR_SPACE_TYPE(cfg->src_format);
+    color_space_t dst_space = COLOR_SPACE_TYPE(cfg->dst_format);
+
+    // Configure conversion based on color space types
+    if (src_space == COLOR_SPACE_YUV && dst_space == COLOR_SPACE_RGB) {
+        // YUV to RGB conversion
+        color_pixel_yuv_format_t yuv_format = COLOR_PIXEL_FORMAT(cfg->src_format);
+        cam_ll_set_convert_mode_yuv_to_rgb(hal->hw, yuv_format);
+    } else if (src_space == COLOR_SPACE_RGB && dst_space == COLOR_SPACE_YUV) {
+        // RGB to YUV conversion
+        color_pixel_yuv_format_t yuv_format = COLOR_PIXEL_FORMAT(cfg->dst_format);
+        cam_ll_set_convert_mode_rgb_to_yuv(hal->hw, yuv_format);
+    } else if (src_space == COLOR_SPACE_YUV && dst_space == COLOR_SPACE_YUV) {
+        // YUV to YUV conversion
+        color_pixel_yuv_format_t src_yuv_format = COLOR_PIXEL_FORMAT(cfg->src_format);
+        color_pixel_yuv_format_t dst_yuv_format = COLOR_PIXEL_FORMAT(cfg->dst_format);
+        cam_ll_set_convert_mode_yuv_to_yuv(hal->hw, src_yuv_format, dst_yuv_format);
+    }
+
+    // Common configuration for all conversion types
+    cam_ll_set_yuv_convert_std(hal->hw, cfg->conv_std);
+    cam_ll_set_convert_data_width(hal->hw, cfg->data_width);
+    cam_ll_set_input_color_range(hal->hw, cfg->input_range);
+    cam_ll_set_output_color_range(hal->hw, cfg->output_range);
+
+    cam_ll_enable_rgb_yuv_convert(hal->hw, true);
 }

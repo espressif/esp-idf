@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,6 +67,24 @@ void cam_hal_start_streaming(cam_hal_context_t *hal);
  * @return None
  */
 void cam_hal_stop_streaming(cam_hal_context_t *hal);
+
+/**
+ * @brief Configure color format conversion
+ *
+ * This function handles all types of color format conversions:
+ * - YUV to RGB conversion
+ * - RGB to YUV conversion
+ * - YUV to YUV conversion
+ *
+ * Color range support:
+ * - Full range: 0-255 for both RGB and YUV
+ * - Limited range: RGB 16-240, YUV Y:16-240, U-V:16-235
+ *
+ * @param hal    CAM HAL context pointer
+ * @param config Color conversion configuration. If NULL, default config is used.
+ */
+void cam_hal_color_format_convert(cam_hal_context_t *hal,
+                                 const cam_ctlr_format_conv_config_t *config);
 
 #ifdef __cplusplus
 }
