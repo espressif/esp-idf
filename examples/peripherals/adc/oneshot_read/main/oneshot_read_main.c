@@ -38,11 +38,7 @@ const static char *TAG = "EXAMPLE";
 
 #if EXAMPLE_USE_ADC2
 //ADC2 Channels
-#if CONFIG_IDF_TARGET_ESP32
 #define EXAMPLE_ADC2_CHAN0          ADC_CHANNEL_0
-#else
-#define EXAMPLE_ADC2_CHAN0          ADC_CHANNEL_0
-#endif
 #endif  //#if EXAMPLE_USE_ADC2
 
 #define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_12
