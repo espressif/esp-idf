@@ -10,7 +10,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.parametrize(
     'config',
     [
-        'default',
+        'defaults',
     ],
     indirect=True,
 )
