@@ -46,6 +46,7 @@ typedef struct {
         uint32_t io_od_mode: 1;   /*!< Configure the GPIO as open-drain mode */
         uint32_t allow_pd: 1;     /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.
                                        This can save power, but at the expense of more RAM being consumed to save register context. */
+        uint32_t init_level: 1;    /*!< Set the initial level of the RMT channel signal */
     } flags;                      /*!< TX channel config flags */
 } rmt_tx_channel_config_t;
 

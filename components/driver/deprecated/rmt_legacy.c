@@ -302,7 +302,7 @@ esp_err_t rmt_tx_stop(rmt_channel_t channel)
 {
     ESP_RETURN_ON_FALSE(RMT_IS_TX_CHANNEL(channel), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
-#if SOC_RMT_SUPPORT_TX_ASYNC_STOP
+#if SOC_RMT_SUPPORT_ASYNC_STOP
     rmt_ll_tx_stop(rmt_contex.hal.regs, channel);
 #else
     // write ending marker to stop the TX channel
