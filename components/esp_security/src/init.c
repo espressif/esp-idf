@@ -13,6 +13,9 @@
 #include "esp_security_priv.h"
 #include "esp_err.h"
 #include "hal/efuse_hal.h"
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+#include "hal/ecdsa_ll.h"
+#endif
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY || SOC_KEY_MANAGER_FE_KEY_DEPLOY
 #include "hal/key_mgr_ll.h"
@@ -65,6 +68,17 @@ ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
     err = esp_efuse_enable_ecdsa_p192_curve_mode();
     if (err != ESP_OK) {
         return err;
+    }
+#endif
+
+#if CONFIG_SECURE_BOOT_V2_ENABLED && SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    // Also write protect the ECDSA_CURVE_MODE efuse bit.
+    if (ecdsa_ll_is_configurable_curve_supported()) {
+        err = esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to write protect the ECDSA_CURVE_MODE efuse bit.");
+            return err;
+        }
     }
 #endif
 
