@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "soc/mipi_dsi_bridge_struct.h"
 #include "hal/mipi_dsi_types.h"
 #include "hal/lcd_types.h"
+#include "hal/config.h"
 
 #define MIPI_DSI_LL_GET_BRG(bus_id) (bus_id == 0 ? &MIPI_DSI_BRIDGE : NULL)
 #define MIPI_DSI_LL_EVENT_UNDERRUN  (1 << 0)
@@ -173,6 +174,30 @@ static inline void mipi_dsi_brg_ll_credit_reset(dsi_brg_dev_t *dev)
  * @param color_coding Color coding value
  * @param sub_config Sub configuration
  */
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+static inline void mipi_dsi_brg_ll_set_pixel_format(dsi_brg_dev_t *dev, lcd_color_format_t color_coding, uint32_t sub_config)
+{
+    switch (color_coding) {
+    case LCD_COLOR_FMT_RGB565:
+        dev->pixel_type.raw_type = 2;
+        dev->pixel_type.dpi_type = 2;
+        break;
+    case LCD_COLOR_FMT_RGB666:
+        dev->pixel_type.raw_type = 1;
+        dev->pixel_type.dpi_type = 1;
+        break;
+    case LCD_COLOR_FMT_RGB888:
+        dev->pixel_type.raw_type = 0;
+        dev->pixel_type.dpi_type = 0;
+        break;
+    default:
+        // MIPI DSI host can only accept RGB data, no YUV data
+        HAL_ASSERT(false);
+        break;
+    }
+    dev->pixel_type.dpi_config = sub_config;
+}
+#else
 static inline void mipi_dsi_brg_ll_set_pixel_format(dsi_brg_dev_t *dev, lcd_color_format_t color_coding, uint32_t sub_config)
 {
     switch (color_coding) {
@@ -192,6 +217,7 @@ static inline void mipi_dsi_brg_ll_set_pixel_format(dsi_brg_dev_t *dev, lcd_colo
     }
     dev->pixel_type.dpi_config = sub_config;
 }
+#endif
 
 /**
  * @brief Set the color space for input color data
