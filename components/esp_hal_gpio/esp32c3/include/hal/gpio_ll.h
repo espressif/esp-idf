@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -385,21 +385,31 @@ static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
   *
   * @param hw Peripheral GPIO hardware instance address.
   */
-static inline void gpio_ll_deep_sleep_hold_en(gpio_dev_t *hw)
+static inline void _gpio_ll_deep_sleep_hold_en(gpio_dev_t *hw)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+/// When operating RTC_CNTL_DIG_ISO_REG, PERIPH_RCC_ATOMIC() must be used to ensure atomicity.
+#define gpio_ll_deep_sleep_hold_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gpio_ll_deep_sleep_hold_en(__VA_ARGS__)
 
 /**
   * @brief Disable all digital gpio pad hold function during Deep-sleep.
   *
   * @param hw Peripheral GPIO hardware instance address.
   */
-static inline void gpio_ll_deep_sleep_hold_dis(gpio_dev_t *hw)
+static inline void _gpio_ll_deep_sleep_hold_dis(gpio_dev_t *hw)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+/// When operating RTC_CNTL_DIG_ISO_REG, PERIPH_RCC_ATOMIC() must be used to ensure atomicity.
+#define gpio_ll_deep_sleep_hold_dis(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gpio_ll_deep_sleep_hold_dis(__VA_ARGS__)
 
 /**
  * @brief  Get deep sleep hold status
@@ -544,24 +554,34 @@ static inline void gpio_ll_set_output_signal_matrix_source(gpio_dev_t *hw, uint3
   * @brief Force hold all digital(VDD3P3_CPU) and rtc(VDD3P3_RTC) gpio pads.
   * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
   */
-static inline void gpio_ll_force_hold_all(void)
+static inline void _gpio_ll_force_hold_all(void)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_HOLD);
     SET_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_PAD_FORCE_HOLD_M);
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+/// When operating RTC_CNTL_DIG_ISO_REG, RTC_CNTL_PWC_REG, PERIPH_RCC_ATOMIC() must be used to ensure atomicity.
+#define gpio_ll_force_hold_all(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gpio_ll_force_hold_all(__VA_ARGS__)
+
 /**
   * @brief Force unhold all digital(VDD3P3_CPU) and rtc(VDD3P3_RTC) gpio pads.
   * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
   */
-static inline void gpio_ll_force_unhold_all(void)
+static inline void _gpio_ll_force_unhold_all(void)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_HOLD);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CLR_DG_PAD_AUTOHOLD);
     CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_PAD_FORCE_HOLD_M);
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+/// When operating RTC_CNTL_DIG_ISO_REG, RTC_CNTL_PWC_REG, PERIPH_RCC_ATOMIC() must be used to ensure atomicity.
+#define gpio_ll_force_unhold_all(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gpio_ll_force_unhold_all(__VA_ARGS__)
 
 /**
   * @brief Enable GPIO pin used for wakeup from sleep.
