@@ -81,7 +81,11 @@ static void i2c_master_write_read_test(void)
 
     uint8_t *wr_data = (uint8_t*)&ulp_data_wr;
     for (int i = 0; i < RW_TEST_LENGTH; i++) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
         wr_data[i] = expected_master_write_data[i];
+#pragma GCC diagnostic pop
     }
 
     unity_wait_for_signal("master write");
