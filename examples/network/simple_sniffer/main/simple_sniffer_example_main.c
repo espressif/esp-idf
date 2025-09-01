@@ -148,6 +148,8 @@ static struct {
     struct arg_end *end;
 } mount_args;
 
+static sdmmc_card_t *card = NULL;
+
 /** 'mount' command */
 static int mount(int argc, char **argv)
 {
@@ -168,8 +170,6 @@ static int mount(int argc, char **argv)
         };
 
         // initialize SD card and mount FAT filesystem.
-        sdmmc_card_t *card;
-
 #if CONFIG_SNIFFER_SD_SPI_MODE
         ESP_LOGI(TAG, "Using SPI peripheral");
         sdmmc_host_t host = SDSPI_HOST_DEFAULT();
@@ -249,10 +249,11 @@ static int unmount(int argc, char **argv)
     }
     /* unmount sd card */
     if (!strncmp(mount_args.device->sval[0], "sd", 2)) {
-        if (esp_vfs_fat_sdmmc_unmount() != ESP_OK) {
+        if (esp_vfs_fat_sdcard_unmount(CONFIG_SNIFFER_MOUNT_POINT, card) != ESP_OK) {
             ESP_LOGE(TAG, "Card unmount failed");
             return -1;
         }
+        card = NULL;
         ESP_LOGI(TAG, "Card unmounted");
     }
     return 0;
