@@ -103,6 +103,11 @@ static uint32_t* s_phy_digital_regs_mem = NULL;
 static uint8_t s_phy_modem_init_ref = 0;
 #endif
 
+#if SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS
+#define RTC_CNTL_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define RTC_CNTL_ATOMIC()
+#endif
 
 #if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
 #if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED
@@ -425,7 +430,9 @@ void IRAM_ATTR esp_wifi_bt_power_domain_on(void)
 #if SOC_PM_MODEM_PD_BY_SW // TODO: [ESP32C5] IDF-8667
     _lock_acquire(&s_wifi_bt_pd_controller.lock);
     if (s_wifi_bt_pd_controller.count++ == 0) {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+        RTC_CNTL_ATOMIC() {
+            CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+        }
         esp_rom_delay_us(10);
         wifi_bt_common_module_enable();
 #if CONFIG_IDF_TARGET_ESP32
@@ -436,7 +443,9 @@ void IRAM_ATTR esp_wifi_bt_power_domain_on(void)
         SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, MODEM_RESET_FIELD_WHEN_PU);
         CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, MODEM_RESET_FIELD_WHEN_PU);
 #endif
-        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+        RTC_CNTL_ATOMIC() {
+            CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+        }
         wifi_bt_common_module_disable();
     }
     _lock_release(&s_wifi_bt_pd_controller.lock);
@@ -450,8 +459,10 @@ void esp_wifi_bt_power_domain_off(void)
 #if SOC_PM_MODEM_PD_BY_SW // TODO: [ESP32C5] IDF-8667
     _lock_acquire(&s_wifi_bt_pd_controller.lock);
     if (--s_wifi_bt_pd_controller.count == 0) {
-        SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
-        SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+        RTC_CNTL_ATOMIC() {
+            SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+            SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+        }
     }
     _lock_release(&s_wifi_bt_pd_controller.lock);
 #endif // SOC_PM_MODEM_PD_BY_SW
