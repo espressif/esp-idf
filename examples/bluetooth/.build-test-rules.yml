@@ -71,6 +71,7 @@ examples/bluetooth/bluedroid/classic_bt:
     - components/driver/dac/**/*
     - examples/bluetooth/bluedroid/esp_hid_host/**/*
     - examples/bluetooth/bluedroid/classic_bt/pytest_classic_bt_test.py
+    - examples/bluetooth/bluedroid/classic_bt/avrcp_ct_metadata/pytest_classic_bt_metadata_test.py
     - examples/bluetooth/bluedroid/classic_bt/bt_discovery/pytest_classic_bt_discovery_test.py
 
 examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
