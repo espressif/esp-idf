@@ -632,9 +632,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
 
 esp_err_t spi_device_get_actual_freq(spi_device_handle_t handle, int* freq_khz)
 {
-    if ((spi_device_t *)handle == NULL || freq_khz == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    SPI_CHECK(handle && freq_khz, "invalid arg", ESP_ERR_INVALID_ARG);
 
     *freq_khz = handle->hal_dev.timing_conf.real_freq / 1000;
     return ESP_OK;
