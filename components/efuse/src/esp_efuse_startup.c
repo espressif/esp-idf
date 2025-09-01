@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,11 @@
 #include "esp_secure_boot.h"
 #include "esp_log.h"
 #include "esp_private/startup_internal.h"
+
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+#include "hal/ecdsa_ll.h"
+#endif
+
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
 #include "esp_partition.h"
 #endif
@@ -126,6 +131,14 @@ static esp_err_t init_efuse_secure(void)
 #if CONFIG_ESP_ECDSA_ENABLE_P192_CURVE
     ESP_RETURN_ON_ERROR(esp_efuse_enable_ecdsa_p192_curve_mode(), TAG, "Failed to enable ECDSA 192-curve operations");
 #endif
+
+#if CONFIG_SECURE_BOOT_V2_ENABLED && SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    // Also write protect the ECDSA_CURVE_MODE efuse bit.
+    if (ecdsa_ll_is_configurable_curve_supported()) {
+        ESP_RETURN_ON_ERROR(esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE), TAG, "Failed to write protect the ECDSA_CURVE_MODE efuse bit");
+    }
+#endif
+
     return ESP_OK;
 }
 
