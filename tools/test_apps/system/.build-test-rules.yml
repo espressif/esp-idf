@@ -64,18 +64,13 @@ tools/test_apps/system/gdb_loadable_elf:
 tools/test_apps/system/log:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
-      temporary: true
-      reason: test only on esp32 as other targets are similar
+      reason: test only on esp32 and c3 as other targets are similar
 
 tools/test_apps/system/longjmp_test:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
       temporary: true
       reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET == "esp32s3"
-      temporary: true
-      reason: lack of runners
 
 tools/test_apps/system/memprot:
   enable:
@@ -121,5 +116,4 @@ tools/test_apps/system/unicore_bootloader:
       reason: the test should be run on multicore chips
   disable:
     - if: IDF_TARGET in ["esp32h4"]
-      temporary: true
-      reason: not supported yet  # TODO: [ESP32H4] IDF-12300
+      reason: not supported
