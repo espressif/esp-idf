@@ -39,6 +39,7 @@ extern "C" {
 #define ADC_LL_GET_HIGH_THRES_MASK(monitor_id)    ((monitor_id == 0) ? SARADC_THRES0_HIGH_INT_ST_M : SARADC_THRES1_HIGH_INT_ST_M)
 #define ADC_LL_GET_LOW_THRES_MASK(monitor_id)     ((monitor_id == 0) ? SARADC_THRES0_LOW_INT_ST_M : SARADC_THRES1_LOW_INT_ST_M)
 
+#define ADC_LL_ADC_FE_ON_MODEM_DOMAIN               (1)
 /*---------------------------------------------------------------
                     Oneshot
 ---------------------------------------------------------------*/
