@@ -83,7 +83,7 @@ The Stack Canary Bytes feature adds a set of magic bytes at the end of each task
 Run-time Methods to Determine Stack Size
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- The :cpp:func:`uxTaskGetStackHighWaterMark` returns the minimum free stack memory of a task throughout the task's lifetime, which gives a good indication of how much stack memory is left unused by a task.
+- The :cpp:func:`uxTaskGetStackHighWaterMark` returns the minimum free stack memory of a task throughout the task's lifetime in bytes, which gives a good indication of how much stack memory is left unused by a task. Note that on {IDF_TARGET_NAME}, the function returns the value in bytes (not words as stated in the standard FreeRTOS documentation).
 
   - The easiest time to call :cpp:func:`uxTaskGetStackHighWaterMark` is from the task itself: call ``uxTaskGetStackHighWaterMark(NULL)`` to get the current task's high water mark after the time that the task has achieved its peak stack usage, i.e., if there is a main loop, execute the main loop a number of times with all possible states, and then call :cpp:func:`uxTaskGetStackHighWaterMark`.
   - Often, it is possible to subtract almost the entire value returned here from the total stack size of a task, but allow some safety margin to account for unexpected small increases in stack usage at runtime.
