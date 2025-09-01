@@ -53,8 +53,6 @@ esp_err_t esp_secure_boot_enable_secure_features(void)
     esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_SHA384_EN);
 #endif
 
-    esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_SECURE_BOOT_SHA384_EN);
-
     esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_EN);
 
 #ifndef CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS
