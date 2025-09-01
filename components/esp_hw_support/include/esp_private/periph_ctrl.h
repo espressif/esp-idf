@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,7 +48,7 @@ extern "C" {
  * @note User code protected by this macro should be as short as possible, because it's a critical section
  */
 #define PERIPH_RCC_ATOMIC()                   \
-    for (int i = 1, __DECLARE_RCC_ATOMIC_ENV; \
+    for (int i = 1, __DECLARE_RCC_ATOMIC_ENV __attribute__((unused)); \
          i ? (periph_rcc_enter(), 1) : 0;     \
          periph_rcc_exit(), i--)
 
