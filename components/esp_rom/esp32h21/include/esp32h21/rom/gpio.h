@@ -73,7 +73,7 @@ void gpio_output_set(uint32_t set_mask, uint32_t clear_mask, uint32_t enable_mas
 uint32_t gpio_input_get(void);
 
 /**
-  * @brief Set GPIO to wakeup the ESP32H21.
+  * @brief Set GPIO to wakeup the chip.
   *        Please do not call this function in SDK.
   *
   * @param uint32_t i: gpio number.
@@ -85,7 +85,7 @@ uint32_t gpio_input_get(void);
 void gpio_pin_wakeup_enable(uint32_t i, GPIO_INT_TYPE intr_state);
 
 /**
-  * @brief disable GPIOs to wakeup the ESP32H21.
+  * @brief disable GPIOs to wakeup the chip.
   *        Please do not call this function in SDK.
   *
   * @param None
