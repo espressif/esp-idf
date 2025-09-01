@@ -1855,6 +1855,7 @@ TEST_CASE("test_spi_master_sleep_retention", "[spi]")
     spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
     buscfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
     buscfg.flags |= SPICOMMON_BUSFLAG_SLP_ALLOW_PD;
+    buscfg.miso_io_num = buscfg.mosi_io_num;    // set spi "self-loop"
     uint8_t send[16] = "hello spi x\n";
     uint8_t recv[16];
     spi_transaction_t trans_cfg = {
@@ -1871,8 +1872,6 @@ TEST_CASE("test_spi_master_sleep_retention", "[spi]")
 #endif
             printf("Retention on GPSPI%d with dma: %d\n", periph + 1, use_dma);
             TEST_ESP_OK(spi_bus_initialize(periph, &buscfg, use_dma));
-            // set spi "self-loop" after bus initialized
-            spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, spi_periph_signal[periph].spid_out);
             TEST_ESP_OK(spi_bus_add_device(periph, &devcfg, &dev_handle));
 
             for (uint8_t cnt = 0; cnt < 3; cnt ++) {
@@ -1927,9 +1926,8 @@ TEST_CASE("test_spi_master_auto_sleep_retention", "[spi]")
         spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
         buscfg.flags = (allow_pd) ? SPICOMMON_BUSFLAG_SLP_ALLOW_PD : 0;
         buscfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
+        buscfg.miso_io_num = buscfg.mosi_io_num;    // set spi "self-loop"
         TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_DISABLED));
-        // set spi "self-loop" after bus initialized
-        spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
 
         spi_device_handle_t dev_handle;
         spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
