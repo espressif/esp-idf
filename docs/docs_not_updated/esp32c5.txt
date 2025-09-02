@@ -1,7 +1,6 @@
 api-guides/low-power-mode.rst
 api-guides/deep-sleep-stub.rst
 api-guides/inc/external-ram-esp32-notes.rst
-api-guides/current-consumption-measurement-modules.rst
 api-reference/storage/vfs.rst
 api-reference/storage/spiffs.rst
 api-reference/storage/nvs_encryption.rst
@@ -16,8 +15,6 @@ api-reference/storage/index.rst
 api-reference/storage/nvs_partition_parse.rst
 api-reference/system/sleep_modes.rst
 api-reference/system/async_memcpy.rst
-api-reference/system/power_management.rst
-api-reference/system/inc/power_management_esp32c5.rst
 api-reference/index.rst
 api-reference/protocols/esp_serial_slave_link.rst
 api-reference/protocols/esp_crt_bundle.rst
