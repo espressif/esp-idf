@@ -107,7 +107,15 @@ typedef union {
          *  this bit configures the clk force on of all isp memory. 0: disable, 1: enable
          */
         uint32_t isp_mem_clk_force_on:1;
-        uint32_t reserved_19:13;
+        /** clk_crop_force_on : R/W; bitpos: [19]; default: 0;
+         *  this bit configures the clk force on of crop. 0: disable, 1: enable
+         */
+        uint32_t clk_crop_force_on:1;
+        /** clk_wbg_force_on : R/W; bitpos: [20]; default: 0;
+         *  this bit configures the clk force on of wbg. 0: disable, 1: enable
+         */
+        uint32_t clk_wbg_force_on:1;
+        uint32_t reserved_21:11;
     };
     uint32_t val;
 } isp_clk_en_reg_t;
@@ -189,7 +197,15 @@ typedef union {
          *  this bit configures hist enable. 0: disable, 1: enable
          */
         uint32_t hist_en:1;
-        uint32_t reserved_18:6;
+        /** crop_en : R/W; bitpos: [18]; default: 0;
+         *  this bit configures crop enable. 0: disable, 1: enable
+         */
+        uint32_t crop_en:1;
+        /** wbg_en : R/W; bitpos: [19]; default: 0;
+         *  this bit configures wbg enable. 0: disable, 1: enable
+         */
+        uint32_t wbg_en:1;
+        uint32_t reserved_20:4;
         /** byte_endian_order : R/W; bitpos: [24]; default: 0;
          *  select input idi data byte_endian_order when isp is bypass, 0: csi_data[31:0], 1:
          *  {[7:0], [15:8], [23:16], [31:24]}
@@ -247,11 +263,11 @@ typedef union {
          */
         uint32_t bayer_mode:2;
         /** hsync_start_exist : R/W; bitpos: [29]; default: 1;
-         *  this bit configures the line end start exist or not. 0: not exist, 1: exist
+         *  this bit configures the line end packet exist or not. 0: not exist, 1: exist
          */
         uint32_t hsync_start_exist:1;
         /** hsync_end_exist : R/W; bitpos: [30]; default: 1;
-         *  this bit configures the line end packet exist or not. 0: not exist, 1: exist
+         *  this bit configures the line start packet exist or not. 0: not exist, 1: exist
          */
         uint32_t hsync_end_exist:1;
         uint32_t reserved_31:1;
@@ -264,11 +280,11 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ccm_rr : R/W; bitpos: [12:0]; default: 1856;
+        /** ccm_rr : R/W; bitpos: [12:0]; default: 256;
          *  this field configures the color correction matrix coefficient
          */
         uint32_t ccm_rr:13;
-        /** ccm_rg : R/W; bitpos: [25:13]; default: 4736;
+        /** ccm_rg : R/W; bitpos: [25:13]; default: 0;
          *  this field configures the color correction matrix coefficient
          */
         uint32_t ccm_rg:13;
@@ -282,11 +298,11 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ccm_rb : R/W; bitpos: [12:0]; default: 4288;
+        /** ccm_rb : R/W; bitpos: [12:0]; default: 0;
          *  this field configures the color correction matrix coefficient
          */
         uint32_t ccm_rb:13;
-        /** ccm_gr : R/W; bitpos: [25:13]; default: 4416;
+        /** ccm_gr : R/W; bitpos: [25:13]; default: 0;
          *  this field configures the color correction matrix coefficient
          */
         uint32_t ccm_gr:13;
@@ -300,11 +316,11 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ccm_gg : R/W; bitpos: [12:0]; default: 1664;
+        /** ccm_gg : R/W; bitpos: [12:0]; default: 256;
          *  this field configures the color correction matrix coefficient
          */
         uint32_t ccm_gg:13;
-        /** ccm_gb : R/W; bitpos: [25:13]; default: 4352;
+        /** ccm_gb : R/W; bitpos: [25:13]; default: 0;
          *  this field configures the color correction matrix coefficient
          */
         uint32_t ccm_gb:13;
@@ -318,11 +334,11 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ccm_br : R/W; bitpos: [12:0]; default: 4160;
+        /** ccm_br : R/W; bitpos: [12:0]; default: 0;
          *  this field configures the color correction matrix coefficient
          */
         uint32_t ccm_br:13;
-        /** ccm_bg : R/W; bitpos: [25:13]; default: 4800;
+        /** ccm_bg : R/W; bitpos: [25:13]; default: 0;
          *  this field configures the color correction matrix coefficient
          */
         uint32_t ccm_bg:13;
@@ -336,7 +352,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ccm_bb : R/W; bitpos: [12:0]; default: 1856;
+        /** ccm_bb : R/W; bitpos: [12:0]; default: 256;
          *  this field configures the color correction matrix coefficient
          */
         uint32_t ccm_bb:13;
@@ -557,7 +573,7 @@ typedef union {
          */
         uint32_t lut_addr:12;
         /** lut_num : WT; bitpos: [15:12]; default: 0;
-         *  this field configures the lut selection. 0000:LSC LUT 0001:DPC LUT
+         *  this field configures the lut selection. 0000:LSC LUT. 0001:DPC LUT. 0010:AWB LUT
          */
         uint32_t lut_num:4;
         /** lut_cmd : WT; bitpos: [16]; default: 0;
@@ -688,6 +704,7 @@ typedef union {
     };
     uint32_t val;
 } isp_gamma_ctrl_reg_t;
+
 
 /** Type of gamma_y1 register
  *  point of Y-axis of r/g/b channel gamma curve register 1
@@ -1019,6 +1036,28 @@ typedef union {
 } isp_sharp_ctrl0_reg_t;
 
 /** Type of sharp_filter0 register
+ *  sharp usm config register
+ */
+typedef union {
+    struct {
+        /** sharp_filter_coe0 : R/W; bitpos: [4:0]; default: 1;
+         *  this field configures usm filter coefficient
+         */
+        uint32_t sharp_filter_coe0:5;
+        /** sharp_filter_coe1 : R/W; bitpos: [9:5]; default: 2;
+         *  this field configures usm filter coefficient
+         */
+        uint32_t sharp_filter_coe1:5;
+        /** sharp_filter_coe2 : R/W; bitpos: [14:10]; default: 1;
+         *  this field configures usm filter coefficient
+         */
+        uint32_t sharp_filter_coe2:5;
+        uint32_t reserved_15:17;
+    };
+    uint32_t val;
+} isp_sharp_filter_reg_t;
+
+/** Type of sharp_filter0 register
  *  sharp usm config register 0
  */
 typedef union {
@@ -1083,25 +1122,6 @@ typedef union {
     };
     uint32_t val;
 } isp_sharp_filter2_reg_t;
-
-typedef union {
-    struct {
-        /** sharp_filter_coe0 : R/W; bitpos: [4:0]; default: 1;
-         *  this field configures usm filter coefficient
-         */
-        uint32_t sharp_filter_coe0:5;
-        /** sharp_filter_coe1 : R/W; bitpos: [9:5]; default: 2;
-         *  this field configures usm filter coefficient
-         */
-        uint32_t sharp_filter_coe1:5;
-        /** sharp_filter_coe2 : R/W; bitpos: [14:10]; default: 1;
-         *  this field configures usm filter coefficient
-         */
-        uint32_t sharp_filter_coe2:5;
-        uint32_t reserved_15:17;
-    };
-    uint32_t val;
-} isp_sharp_filter_reg_t;
 
 /** Type of sharp_matrix_ctrl register
  *  sharp pix2matrix ctrl
@@ -1264,7 +1284,11 @@ typedef union {
          *  this bit configures vsync filter en
          */
         uint32_t cam_vsync_filter_en:1;
-        uint32_t reserved_15:17;
+        /** cam_de_only : R/W; bitpos: [15]; default: 0;
+         *  configures whether cam inf only has de, no hsync data. 0: has hsync, 1: no hsync
+         */
+        uint32_t cam_de_only:1;
+        uint32_t reserved_16:16;
     };
     uint32_t val;
 } isp_cam_conf_reg_t;
@@ -1839,7 +1863,6 @@ typedef union {
     uint32_t val;
 } isp_hist_seg_reg_t;
 
-
 /** Type of hist_seg0 register
  *  histogram bin control register 0
  */
@@ -1938,7 +1961,7 @@ typedef union {
 } isp_hist_seg3_reg_t;
 
 /** Type of hist_weight register
- *  histogram sub-window weight register 0
+ *  histogram sub-window weight register
  */
 typedef union {
     struct {
@@ -2249,6 +2272,244 @@ typedef union {
     uint32_t val;
 } isp_rdn_eco_high_reg_t;
 
+/** Type of crop_ctrl register
+ *  isp_crop ctrl register
+ */
+typedef union {
+    struct {
+        /** crop_sft_rst : WT; bitpos: [0]; default: 0;
+         *  Write 1 to clear err st
+         */
+        uint32_t crop_sft_rst:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} isp_crop_ctrl_reg_t;
+
+/** Type of crop_y_capture register
+ *  isp_crop row capture range register
+ */
+typedef union {
+    struct {
+        /** crop_y_start : R/W; bitpos: [11:0]; default: 0;
+         *  isp_crop capture row start index
+         */
+        uint32_t crop_y_start:12;
+        /** crop_y_end : R/W; bitpos: [23:12]; default: 0;
+         *  isp_crop capture row end index
+         */
+        uint32_t crop_y_end:12;
+        uint32_t reserved_24:8;
+    };
+    uint32_t val;
+} isp_crop_y_capture_reg_t;
+
+/** Type of crop_x_capture register
+ *  isp_crop col capture range register
+ */
+typedef union {
+    struct {
+        /** crop_x_start : R/W; bitpos: [11:0]; default: 0;
+         *  isp_crop capture col start index
+         */
+        uint32_t crop_x_start:12;
+        /** crop_x_end : R/W; bitpos: [23:12]; default: 0;
+         *  isp_crop capture col end index
+         */
+        uint32_t crop_x_end:12;
+        uint32_t reserved_24:8;
+    };
+    uint32_t val;
+} isp_crop_x_capture_reg_t;
+
+/** Type of crop_err_st register
+ *  crop error state register
+ */
+typedef union {
+    struct {
+        /** crop_y_mismatch : RO; bitpos: [0]; default: 0;
+         *  Represents isp_corp row end index over image size
+         */
+        uint32_t crop_y_mismatch:1;
+        /** crop_x_mismatch : RO; bitpos: [1]; default: 0;
+         *  Represents isp_corp col end index over image size
+         */
+        uint32_t crop_x_mismatch:1;
+        /** crop_y_end_even : RO; bitpos: [2]; default: 0;
+         *  Represents isp_corp row end index is an even number
+         */
+        uint32_t crop_y_end_even:1;
+        /** crop_x_end_even : RO; bitpos: [3]; default: 0;
+         *  Represents isp_corp col end index is an even number
+         */
+        uint32_t crop_x_end_even:1;
+        /** crop_y_start_odd : RO; bitpos: [4]; default: 0;
+         *  Represents isp_corp row start index is an odd number
+         */
+        uint32_t crop_y_start_odd:1;
+        /** crop_x_start_odd : RO; bitpos: [5]; default: 0;
+         *  Represents isp_corp col start index is an odd number
+         */
+        uint32_t crop_x_start_odd:1;
+        uint32_t reserved_6:26;
+    };
+    uint32_t val;
+} isp_crop_err_st_reg_t;
+
+/** Type of wbg_coef_r register
+ *  white balance red gain register 0
+ */
+typedef union {
+    struct {
+        /** wbg_r : R/W; bitpos: [11:0]; default: 256;
+         *  Configures the white balance red gain
+         */
+        uint32_t wbg_r:12;
+        uint32_t reserved_12:20;
+    };
+    uint32_t val;
+} isp_wbg_coef_r_reg_t;
+
+/** Type of wbg_coef_g register
+ *  white balance green gain register 0
+ */
+typedef union {
+    struct {
+        /** wbg_g : R/W; bitpos: [11:0]; default: 256;
+         *  Configures the white balance green gain
+         */
+        uint32_t wbg_g:12;
+        uint32_t reserved_12:20;
+    };
+    uint32_t val;
+} isp_wbg_coef_g_reg_t;
+
+/** Type of wbg_coef_b register
+ *  white balance blue gain register 0
+ */
+typedef union {
+    struct {
+        /** wbg_b : R/W; bitpos: [11:0]; default: 256;
+         *  Configures the white balance blue gain
+         */
+        uint32_t wbg_b:12;
+        uint32_t reserved_12:20;
+    };
+    uint32_t val;
+} isp_wbg_coef_b_reg_t;
+
+/** Type of color_hue_ctrl register
+ *  color control register
+ */
+typedef union {
+    struct {
+        /** color_hue_h : R/W; bitpos: [0]; default: 0;
+         *  Configures the color hue angle most bit
+         */
+        uint32_t color_hue_h:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} isp_color_hue_ctrl_reg_t;
+
+/** Type of awb_bx register
+ *  awb window register in x-direction
+ */
+typedef union {
+    struct {
+        /** awb_x_bsize : R/W; bitpos: [11:0]; default: 0;
+         *  Configures every block x size, min number is 4
+         */
+        uint32_t awb_x_bsize:12;
+        /** awb_x_start : R/W; bitpos: [23:12]; default: 0;
+         *  Configures first block start x address
+         */
+        uint32_t awb_x_start:12;
+        uint32_t reserved_24:8;
+    };
+    uint32_t val;
+} isp_awb_bx_reg_t;
+
+/** Type of awb_by register
+ *  awb window register in y-direction
+ */
+typedef union {
+    struct {
+        /** awb_y_bsize : R/W; bitpos: [11:0]; default: 0;
+         *  Configures every block y size
+         */
+        uint32_t awb_y_bsize:12;
+        /** awb_y_start : R/W; bitpos: [23:12]; default: 0;
+         *  Configures first block start y address
+         */
+        uint32_t awb_y_start:12;
+        uint32_t reserved_24:8;
+    };
+    uint32_t val;
+} isp_awb_by_reg_t;
+
+/** Type of state register
+ *  awb window register in y-direction
+ */
+typedef union {
+    struct {
+        /** tail_busy : RO; bitpos: [0]; default: 0;
+         *  Represents isp_tail state
+         */
+        uint32_t tail_busy:1;
+        /** header_busy : RO; bitpos: [1]; default: 0;
+         *  Represents isp_header state
+         */
+        uint32_t header_busy:1;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} isp_state_reg_t;
+
+/** Type of shadow_reg_ctrl register
+ *  shadow register ctrl register
+ */
+typedef union {
+    struct {
+        /** blc_update : R/W; bitpos: [0]; default: 0;
+         *  Write 1 to update blc configuration register
+         */
+        uint32_t blc_update:1;
+        /** dpc_update : R/W; bitpos: [1]; default: 0;
+         *  Write 1 to update dpc configuration register
+         */
+        uint32_t dpc_update:1;
+        /** bf_update : R/W; bitpos: [2]; default: 0;
+         *  Write 1 to update bf configuration register
+         */
+        uint32_t bf_update:1;
+        /** wbg_update : R/W; bitpos: [3]; default: 0;
+         *  Write 1 to update wbg configuration register
+         */
+        uint32_t wbg_update:1;
+        /** ccm_update : R/W; bitpos: [4]; default: 0;
+         *  Write 1 to update ccm configuration register
+         */
+        uint32_t ccm_update:1;
+        uint32_t reserved_5:1;
+        /** sharp_update : R/W; bitpos: [6]; default: 0;
+         *  Write 1 to update sharp configuration register
+         */
+        uint32_t sharp_update:1;
+        /** color_update : R/W; bitpos: [7]; default: 0;
+         *  Write 1 to update color configuration register
+         */
+        uint32_t color_update:1;
+        uint32_t reserved_8:22;
+        /** shadow_update_sel : R/W; bitpos: [31:30]; default: 1;
+         *  Configures shadow register update type. 0: no shadow register. 1: update every
+         *  vsyn. 2: update only the next vsync after write reg_xxx_update
+         */
+        uint32_t shadow_update_sel:2;
+    };
+    uint32_t val;
+} isp_shadow_reg_ctrl_reg_t;
+
 
 /** Group: Status Registers */
 /** Type of dpc_deadpix_cnt register
@@ -2455,6 +2716,7 @@ typedef union {
     };
     uint32_t val;
 } isp_ae_block_mean_6_reg_t;
+
 /** Type of af_sum_a register
  *  result of sum of af window a
  */
@@ -2629,7 +2891,231 @@ typedef union {
         uint32_t reserved_17:15;
     };
     uint32_t val;
-} isp_hist_binn_reg_t;
+} isp_hist_bin_reg_t;
+
+/** Type of hist_bin0 register
+ *  result of histogram bin 0
+ */
+typedef union {
+    struct {
+        /** hist_bin_0 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 0
+         */
+        uint32_t hist_bin_0:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin0_reg_t;
+
+/** Type of hist_bin1 register
+ *  result of histogram bin 1
+ */
+typedef union {
+    struct {
+        /** hist_bin_1 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 1
+         */
+        uint32_t hist_bin_1:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin1_reg_t;
+
+/** Type of hist_bin2 register
+ *  result of histogram bin 2
+ */
+typedef union {
+    struct {
+        /** hist_bin_2 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 2
+         */
+        uint32_t hist_bin_2:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin2_reg_t;
+
+/** Type of hist_bin3 register
+ *  result of histogram bin 3
+ */
+typedef union {
+    struct {
+        /** hist_bin_3 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 3
+         */
+        uint32_t hist_bin_3:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin3_reg_t;
+
+/** Type of hist_bin4 register
+ *  result of histogram bin 4
+ */
+typedef union {
+    struct {
+        /** hist_bin_4 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 4
+         */
+        uint32_t hist_bin_4:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin4_reg_t;
+
+/** Type of hist_bin5 register
+ *  result of histogram bin 5
+ */
+typedef union {
+    struct {
+        /** hist_bin_5 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 5
+         */
+        uint32_t hist_bin_5:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin5_reg_t;
+
+/** Type of hist_bin6 register
+ *  result of histogram bin 6
+ */
+typedef union {
+    struct {
+        /** hist_bin_6 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 6
+         */
+        uint32_t hist_bin_6:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin6_reg_t;
+
+/** Type of hist_bin7 register
+ *  result of histogram bin 7
+ */
+typedef union {
+    struct {
+        /** hist_bin_7 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 7
+         */
+        uint32_t hist_bin_7:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin7_reg_t;
+
+/** Type of hist_bin8 register
+ *  result of histogram bin 8
+ */
+typedef union {
+    struct {
+        /** hist_bin_8 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 8
+         */
+        uint32_t hist_bin_8:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin8_reg_t;
+
+/** Type of hist_bin9 register
+ *  result of histogram bin 9
+ */
+typedef union {
+    struct {
+        /** hist_bin_9 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 9
+         */
+        uint32_t hist_bin_9:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin9_reg_t;
+
+/** Type of hist_bin10 register
+ *  result of histogram bin 10
+ */
+typedef union {
+    struct {
+        /** hist_bin_10 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 10
+         */
+        uint32_t hist_bin_10:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin10_reg_t;
+
+/** Type of hist_bin11 register
+ *  result of histogram bin 11
+ */
+typedef union {
+    struct {
+        /** hist_bin_11 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 11
+         */
+        uint32_t hist_bin_11:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin11_reg_t;
+
+/** Type of hist_bin12 register
+ *  result of histogram bin 12
+ */
+typedef union {
+    struct {
+        /** hist_bin_12 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 12
+         */
+        uint32_t hist_bin_12:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin12_reg_t;
+
+/** Type of hist_bin13 register
+ *  result of histogram bin 13
+ */
+typedef union {
+    struct {
+        /** hist_bin_13 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 13
+         */
+        uint32_t hist_bin_13:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin13_reg_t;
+
+/** Type of hist_bin14 register
+ *  result of histogram bin 14
+ */
+typedef union {
+    struct {
+        /** hist_bin_14 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 14
+         */
+        uint32_t hist_bin_14:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin14_reg_t;
+
+/** Type of hist_bin15 register
+ *  result of histogram bin 15
+ */
+typedef union {
+    struct {
+        /** hist_bin_15 : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin 15
+         */
+        uint32_t hist_bin_15:17;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} isp_hist_bin15_reg_t;
 
 /** Type of rdn_eco_cs register
  *  rdn eco cs register
@@ -2779,7 +3265,18 @@ typedef union {
          *  the raw interrupt status of real input frame end of isp_input
          */
         uint32_t header_idi_frame_int_raw:1;
-        uint32_t reserved_29:3;
+        /** crop_frame_int_raw : R/SS/WTC; bitpos: [29]; default: 0;
+         *  the raw interrupt status of crop frame done
+         */
+        uint32_t crop_frame_int_raw:1;
+        /** wbg_frame_int_raw : R/SS/WTC; bitpos: [30]; default: 0;
+         *  the raw interrupt status of wbg frame done
+         */
+        uint32_t wbg_frame_int_raw:1;
+        /** crop_err_int_raw : R/SS/WTC; bitpos: [31]; default: 0;
+         *  the raw interrupt status of crop error
+         */
+        uint32_t crop_err_int_raw:1;
     };
     uint32_t val;
 } isp_int_raw_reg_t;
@@ -2905,7 +3402,18 @@ typedef union {
          *  the masked interrupt status of real input frame end of isp_input
          */
         uint32_t header_idi_frame_int_st:1;
-        uint32_t reserved_29:3;
+        /** crop_frame_int_st : RO; bitpos: [29]; default: 0;
+         *  the masked interrupt status of crop frame done
+         */
+        uint32_t crop_frame_int_st:1;
+        /** wbg_frame_int_st : RO; bitpos: [30]; default: 0;
+         *  the masked interrupt status of wbg frame done
+         */
+        uint32_t wbg_frame_int_st:1;
+        /** crop_err_int_st : RO; bitpos: [31]; default: 0;
+         *  the masked interrupt status of crop error
+         */
+        uint32_t crop_err_int_st:1;
     };
     uint32_t val;
 } isp_int_st_reg_t;
@@ -3031,7 +3539,18 @@ typedef union {
          *  write 1 to enable real input frame end of isp_input
          */
         uint32_t header_idi_frame_int_ena:1;
-        uint32_t reserved_29:3;
+        /** crop_frame_int_ena : R/W; bitpos: [29]; default: 0;
+         *  write 1 to enable crop frame done
+         */
+        uint32_t crop_frame_int_ena:1;
+        /** wbg_frame_int_ena : R/W; bitpos: [30]; default: 0;
+         *  write 1 to enable wbg frame done
+         */
+        uint32_t wbg_frame_int_ena:1;
+        /** crop_err_int_ena : R/W; bitpos: [31]; default: 0;
+         *  write 1 to enable crop error
+         */
+        uint32_t crop_err_int_ena:1;
     };
     uint32_t val;
 } isp_int_ena_reg_t;
@@ -3157,7 +3676,18 @@ typedef union {
          *  write 1 to clear real input frame end of isp_input
          */
         uint32_t header_idi_frame_int_clr:1;
-        uint32_t reserved_29:3;
+        /** crop_frame_int_clr : WT; bitpos: [29]; default: 0;
+         *  write 1 to clear crop frame done
+         */
+        uint32_t crop_frame_int_clr:1;
+        /** wbg_frame_int_clr : WT; bitpos: [30]; default: 0;
+         *  write 1 to clear wbg frame done
+         */
+        uint32_t wbg_frame_int_clr:1;
+        /** crop_err_int_clr : WT; bitpos: [31]; default: 0;
+         *  write 1 to clear crop error
+         */
+        uint32_t crop_err_int_clr:1;
     };
     uint32_t val;
 } isp_int_clr_reg_t;
@@ -3174,7 +3704,7 @@ typedef struct {
     volatile isp_gamma_x2_reg_t gamma_x2;
 } isp_gamma_x_reg_t;
 
-typedef struct {
+typedef struct isp_dev_t {
     volatile isp_ver_date_reg_t ver_date;
     volatile isp_clk_en_reg_t clk_en;
     volatile isp_cntl_reg_t cntl;
@@ -3262,7 +3792,7 @@ typedef struct {
     volatile isp_hist_size_reg_t hist_size;
     volatile isp_hist_seg_reg_t hist_seg[4];
     volatile isp_hist_weight_reg_t hist_weight[7];
-    volatile isp_hist_binn_reg_t hist_binn[16];
+    volatile isp_hist_bin_reg_t hist_bin[16];
     volatile isp_mem_aux_ctrl_0_reg_t mem_aux_ctrl_0;
     volatile isp_mem_aux_ctrl_1_reg_t mem_aux_ctrl_1;
     volatile isp_mem_aux_ctrl_2_reg_t mem_aux_ctrl_2;
@@ -3272,12 +3802,24 @@ typedef struct {
     volatile isp_rdn_eco_cs_reg_t rdn_eco_cs;
     volatile isp_rdn_eco_low_reg_t rdn_eco_low;
     volatile isp_rdn_eco_high_reg_t rdn_eco_high;
+    volatile isp_crop_ctrl_reg_t crop_ctrl;
+    volatile isp_crop_y_capture_reg_t crop_y_capture;
+    volatile isp_crop_x_capture_reg_t crop_x_capture;
+    volatile isp_crop_err_st_reg_t crop_err_st;
+    volatile isp_wbg_coef_r_reg_t wbg_coef_r;
+    volatile isp_wbg_coef_g_reg_t wbg_coef_g;
+    volatile isp_wbg_coef_b_reg_t wbg_coef_b;
+    volatile isp_color_hue_ctrl_reg_t color_hue_ctrl;
+    volatile isp_awb_bx_reg_t awb_bx;
+    volatile isp_awb_by_reg_t awb_by;
+    volatile isp_state_reg_t state;
+    volatile isp_shadow_reg_ctrl_reg_t shadow_reg_ctrl;
 } isp_dev_t;
 
 extern isp_dev_t ISP;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(isp_dev_t) == 0x244, "Invalid size of isp_dev_t structure");
+_Static_assert(sizeof(isp_dev_t) == 0x274, "Invalid size of isp_dev_t structure");
 #endif
 
 #ifdef __cplusplus
