@@ -1,11 +1,9 @@
 index.rst
 api-guides/openthread.rst
-api-guides/core_dump_internals.rst
 api-guides/wifi-expansion.rst
 api-guides/deep-sleep-stub.rst
 api-guides/app_trace.rst
 api-guides/esp-wifi-mesh.rst
-api-guides/core_dump.rst
 api-guides/lwip.rst
 api-guides/esp-ble-mesh/ble-mesh-faq.rst
 api-guides/esp-ble-mesh/ble-mesh-feature-list.rst
