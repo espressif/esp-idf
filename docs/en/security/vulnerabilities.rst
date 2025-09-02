@@ -10,6 +10,17 @@ This page briefly lists all of the vulnerabilities that are discovered and fixed
 CVE-2025
 --------
 
+CVE-2025-55297
+~~~~~~~~~~~~~~
+
+BluFi Example Memory Overflow Vulnerability
+
+* Espressif Advisory: NA (Published on GitHub)
+* Impact: Applicable for ESP-IDF
+* Resolution: Please see advisory for details
+* Advisory pointer: `GHSA-9w88-r2vm-qfc4`_
+
+
 CVE-2025-52471
 ~~~~~~~~~~~~~~
 
@@ -198,7 +209,6 @@ Security Advisory Concerning Wi-Fi Authentication Bypass
 * Impact: Applicable for ESP-IDF
 * Resolution: Please see advisory for details
 
-
 .. _`AR2020-002`: https://www.espressif.com/sites/default/files/advisory_downloads/AR2020-002%20Security%20Advisory%20Concerning%20Wi-Fi%20Authentication%20Bypass%20V1.1%20EN.pdf
 .. _`AR2021-004`: https://www.espressif.com/sites/default/files/advisory_downloads/AR2021-004%20Bluetooth%20Security%20Advisory.pdf
 .. _`AR2021-005`: https://www.espressif.com/sites/default/files/advisory_downloads/AR2021-005%20Security%20Advisory%20on%20BadAlloc%20Vulnerabilities.pdf
@@ -210,3 +220,4 @@ Security Advisory Concerning Wi-Fi Authentication Bypass
 .. _`GHSA-7f7f-jj2q-28wm` : https://github.com/espressif/esp-idf/security/advisories/GHSA-7f7f-jj2q-28wm
 .. _`GHSA-wm57-466g-mhrr` : https://github.com/espressif/esp-idf/security/advisories/GHSA-wm57-466g-mhrr
 .. _`GHSA-hqhh-cp47-fv5g` : https://github.com/espressif/esp-idf/security/advisories/GHSA-hqhh-cp47-fv5g
+.. _`GHSA-9w88-r2vm-qfc4` : https://github.com/espressif/esp-idf/security/advisories/GHSA-9w88-r2vm-qfc4
