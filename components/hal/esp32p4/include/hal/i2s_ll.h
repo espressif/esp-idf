@@ -1139,7 +1139,8 @@ static inline void i2s_ll_tx_set_pdm_hp_filter_param5(i2s_dev_t *hw, uint32_t pa
  */
 static inline void i2s_ll_tx_enable_pdm_hp_filter(i2s_dev_t *hw, bool enable)
 {
-    hw->tx_pcm2pdm_conf.tx_pdm_hp_bypass = !enable;
+    // Must enable on P4
+    HAL_ASSERT(enable);
 }
 
 /**

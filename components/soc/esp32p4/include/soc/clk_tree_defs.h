@@ -332,7 +332,7 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of I2S
  */
-#define SOC_I2S_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_APLL, I2S_CLK_SRC_EXTERNAL}
+#define SOC_I2S_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_APLL, I2S_CLK_SRC_EXTERNAL}
 
 /**
  * @brief I2S clock source enum
