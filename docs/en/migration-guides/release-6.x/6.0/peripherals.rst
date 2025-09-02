@@ -232,3 +232,10 @@ Touch Sensor
 ------------
 
 The ``touch_sensor_sample_config_t::bypass_shield_output`` member for version 3 touch sensor has been removed because it is not supported in the version 3 hardware.
+
+USB
+---
+
+The ``usb`` component is moved to ESP Component Registry
+
+You can add this dependency to your project by running ``idf.py add-dependency "espressif/usb"``.

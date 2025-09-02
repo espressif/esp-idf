@@ -28,7 +28,7 @@ The design of the Enum Driver takes into consideration following actions:
 
     Typically, most USB devices only contain a single configuration. Thus, the Enum Driver defaults to selecting the configuration with `bConfigurationValue = 1`.
 
-    If users would like to select a different configuration, the Enum Driver provides an enumeration filter callback feature (enabled via :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK`). This callback is called during the enumeration process and allows users to decide what devices to enumerate, and which ``bConfigurationValue`` to use.
+    If users would like to select a different configuration, the Enum Driver provides an enumeration filter callback feature (enabled via `CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK`). This callback is called during the enumeration process and allows users to decide what devices to enumerate, and which ``bConfigurationValue`` to use.
 
 .. note::
 

@@ -36,7 +36,6 @@ examples/network/sta2eth:
     - esp_eth
     - esp_wifi
     - protocomm
-    - usb
     - esp_tinyusb
     - http-server
 

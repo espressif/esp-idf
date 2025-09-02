@@ -283,6 +283,11 @@
     hint: "The applications static IRAM usage is larger than the available IRAM size.\nFor more information on how to reduce IRAM usage run 'idf.py docs -sp api-guides/performance/ram-usage.html#optimizing-iram-usage' "
 
 -
+    re: "Failed to resolve component 'usb'"
+    hint: "USB host layer ('usb' component) was removed from ESP-IDF. Please use 'usb' component from IDF component manager instead.\nYou can install 'usb' component using 'idf.py add-dependency espressif/usb' command.\nRefer to the migration guide for more details."
+    match_to_output: True
+
+-
     re: "fatal error: (tinyusb.h): No such file or directory"
     hint: "{} was removed. Please use esp_tinyusb component from IDF component manager instead.\nYou can install `esp_tinyusb` using 'idf.py add-dependency espressif/esp_tinyusb' command.\nRefer to the migration guide for more details."
     match_to_output: True
