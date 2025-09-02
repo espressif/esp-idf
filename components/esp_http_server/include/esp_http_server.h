@@ -458,6 +458,14 @@ typedef struct httpd_uri {
      * Pointer to subprotocol supported by URI
      */
     const char *supported_subprotocol;
+
+#if CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT || __DOXYGEN__
+    /**
+     * Pointer to WebSocket pre-handshake callback. This will be called before the WebSocket handshake is processed,
+     * i.e. before the server responds with the WebSocket handshake response or before switching to the WebSocket handler.
+     */
+    esp_err_t (*ws_pre_handshake_cb)(httpd_req_t *req);
+#endif
 #endif
 } httpd_uri_t;
 
