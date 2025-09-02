@@ -505,6 +505,27 @@ function(__init_project_configuration)
     idf_build_set_property(LINKER_TYPE "${linker_type}")
 endfunction()
 
+#[[
+   __init_project_flash_targets()
+
+   Add placeholder flash targets to the build. This is used by components to
+   declare dependencies on the flash target.
+#]]
+function(__init_project_flash_targets)
+    if(NOT TARGET flash)
+        add_custom_target(flash)
+    endif()
+
+    # When flash encryption is enabled, a corresponding 'encrypted-flash' target will be created.
+    idf_build_get_property(sdkconfig SDKCONFIG)
+    __get_sdkconfig_option(OPTION CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+                           SDKCONFIG "${sdkconfig}"
+                           OUTPUT sdkconfig_target)
+    if(encrypted_flash_enabled AND NOT TARGET encrypted-flash)
+        add_custom_target(encrypted-flash)
+    endif()
+endfunction()
+
 #[[api
 .. cmakev2:macro:: idf_project_init
 
@@ -539,6 +560,9 @@ macro(idf_project_init)
 
         # Initialize all compilation options and defines.
         __init_project_configuration()
+
+        # Create global flash targets.
+        __init_project_flash_targets()
 
         # Include all project_include.cmake files for the components that have
         # been discovered.
