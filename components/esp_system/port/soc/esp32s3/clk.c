@@ -26,6 +26,7 @@
 #include "esp_private/esp_clk.h"
 #include "bootloader_clock.h"
 #include "soc/syscon_reg.h"
+#include "hal/gpio_ll.h"
 
 ESP_LOG_ATTR_TAG(TAG, "clk");
 
@@ -225,6 +226,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     /* For reason that only reset CPU, do not disable the clocks
      * that have been enabled before reset.
      */
+    uint32_t hwcrypto_mask_in_perip1 = (SYSTEM_CRYPTO_HMAC_CLK_EN | SYSTEM_CRYPTO_DS_CLK_EN | SYSTEM_CRYPTO_RSA_CLK_EN | SYSTEM_CRYPTO_SHA_CLK_EN | SYSTEM_CRYPTO_AES_CLK_EN);
+
     if ((rst_reas[0] == RESET_REASON_CPU0_MWDT0 || rst_reas[0] == RESET_REASON_CPU0_SW ||
             rst_reas[0] == RESET_REASON_CPU0_RTC_WDT || rst_reas[0] == RESET_REASON_CPU0_MWDT1)
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -233,82 +236,91 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 #endif
        ) {
         common_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN0_REG);
-        hwcrypto_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN1_REG);
+        common_perip_clk1 = (~READ_PERI_REG(SYSTEM_PERIP_CLK_EN1_REG)) & (~hwcrypto_mask_in_perip1);
+        hwcrypto_perip_clk = (~READ_PERI_REG(SYSTEM_PERIP_CLK_EN1_REG)) & hwcrypto_mask_in_perip1;
         wifi_bt_sdio_clk = ~READ_PERI_REG(SYSTEM_WIFI_CLK_EN_REG);
     } else {
-        common_perip_clk = SYSTEM_WDG_CLK_EN |
-                           SYSTEM_I2S0_CLK_EN |
+        common_perip_clk =
+            SYSTEM_WDG_CLK_EN |
+            SYSTEM_I2S0_CLK_EN |
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
-                           SYSTEM_UART_CLK_EN |
+            SYSTEM_UART_CLK_EN |
 #endif
 #if CONFIG_ESP_CONSOLE_UART_NUM != 1
-                           SYSTEM_UART1_CLK_EN |
+            SYSTEM_UART1_CLK_EN |
 #endif
+            SYSTEM_USB_CLK_EN |
+            SYSTEM_SPI2_CLK_EN |
+            SYSTEM_I2C_EXT0_CLK_EN |
+            SYSTEM_UHCI0_CLK_EN |
+            SYSTEM_RMT_CLK_EN |
+            SYSTEM_PCNT_CLK_EN |
+            SYSTEM_LEDC_CLK_EN |
+            SYSTEM_TIMERGROUP1_CLK_EN |
+            SYSTEM_SPI3_CLK_EN |
+            SYSTEM_SPI4_CLK_EN |
+            SYSTEM_PWM0_CLK_EN |
+            SYSTEM_TWAI_CLK_EN |
+            SYSTEM_PWM1_CLK_EN |
+            SYSTEM_I2S1_CLK_EN |
+            SYSTEM_SPI2_DMA_CLK_EN |
+            SYSTEM_SPI3_DMA_CLK_EN |
+            SYSTEM_PWM2_CLK_EN |
+            SYSTEM_PWM3_CLK_EN;
+        common_perip_clk1 =
 #if CONFIG_ESP_CONSOLE_UART_NUM != 2
-                           SYSTEM_UART2_CLK_EN |
+            SYSTEM_UART2_CLK_EN |
 #endif
-                           SYSTEM_USB_CLK_EN |
-                           SYSTEM_SPI2_CLK_EN |
-                           SYSTEM_I2C_EXT0_CLK_EN |
-                           SYSTEM_UHCI0_CLK_EN |
-                           SYSTEM_RMT_CLK_EN |
-                           SYSTEM_PCNT_CLK_EN |
-                           SYSTEM_LEDC_CLK_EN |
-                           SYSTEM_TIMERGROUP1_CLK_EN |
-                           SYSTEM_SPI3_CLK_EN |
-                           SYSTEM_SPI4_CLK_EN |
-                           SYSTEM_PWM0_CLK_EN |
-                           SYSTEM_TWAI_CLK_EN |
-                           SYSTEM_PWM1_CLK_EN |
-                           SYSTEM_I2S1_CLK_EN |
-                           SYSTEM_SPI2_DMA_CLK_EN |
-                           SYSTEM_SPI3_DMA_CLK_EN |
-                           SYSTEM_PWM2_CLK_EN |
-                           SYSTEM_PWM3_CLK_EN;
-        common_perip_clk1 = 0;
-        hwcrypto_perip_clk = SYSTEM_CRYPTO_AES_CLK_EN |
-                             SYSTEM_CRYPTO_SHA_CLK_EN |
-                             SYSTEM_CRYPTO_RSA_CLK_EN;
-        wifi_bt_sdio_clk = SYSTEM_WIFI_CLK_WIFI_EN |
-                           SYSTEM_WIFI_CLK_BT_EN_M |
-                           SYSTEM_WIFI_CLK_I2C_CLK_EN |
-                           SYSTEM_WIFI_CLK_UNUSED_BIT12 |
-                           SYSTEM_WIFI_CLK_SDIO_HOST_EN;
+            0;
+        hwcrypto_perip_clk =
+            SYSTEM_CRYPTO_AES_CLK_EN |
+            SYSTEM_CRYPTO_SHA_CLK_EN |
+            SYSTEM_CRYPTO_RSA_CLK_EN;
+        wifi_bt_sdio_clk =
+            SYSTEM_WIFI_CLK_WIFI_EN |
+            SYSTEM_WIFI_CLK_BT_EN_M |
+            SYSTEM_WIFI_CLK_I2C_CLK_EN |
+            SYSTEM_WIFI_CLK_UNUSED_BIT12 |
+            SYSTEM_WIFI_CLK_SDIO_HOST_EN;
 
 #if !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG && !CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
         /* This function only called on startup thus is thread safe. To avoid build errors/warnings
          * declare __DECLARE_RCC_ATOMIC_ENV here. */
         int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
         // Disable USB-Serial-JTAG clock and it's pad if not used
-        usb_serial_jtag_ll_phy_enable_pad(false);
+        usb_serial_jtag_ll_phy_enable_pad(false);   // should not reset USJ registers in the code below, otherwises, usb pad will be enabled again
         usb_serial_jtag_ll_enable_bus_clock(false);
 #endif
     }
 
     //Reset the communication peripherals like I2C, SPI, UART, I2S and bring them to known state.
-    common_perip_clk |= SYSTEM_I2S0_CLK_EN |
+    common_perip_clk |=
+        SYSTEM_I2S0_CLK_EN |
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
-                        SYSTEM_UART_CLK_EN |
+        SYSTEM_UART_CLK_EN |
 #endif
 #if CONFIG_ESP_CONSOLE_UART_NUM != 1
-                        SYSTEM_UART1_CLK_EN |
+        SYSTEM_UART1_CLK_EN |
 #endif
+        SYSTEM_USB_CLK_EN |
+        SYSTEM_SPI2_CLK_EN |
+        SYSTEM_I2C_EXT0_CLK_EN |
+        SYSTEM_UHCI0_CLK_EN |
+        SYSTEM_RMT_CLK_EN |
+        SYSTEM_UHCI1_CLK_EN |
+        SYSTEM_SPI3_CLK_EN |
+        SYSTEM_SPI4_CLK_EN |
+        SYSTEM_I2C_EXT1_CLK_EN |
+        SYSTEM_I2S1_CLK_EN |
+        SYSTEM_SPI2_DMA_CLK_EN |
+        SYSTEM_SPI3_DMA_CLK_EN;
+    common_perip_clk1 |=
 #if CONFIG_ESP_CONSOLE_UART_NUM != 2
-                        SYSTEM_UART2_CLK_EN |
+        SYSTEM_UART2_CLK_EN |
 #endif
-                        SYSTEM_USB_CLK_EN |
-                        SYSTEM_SPI2_CLK_EN |
-                        SYSTEM_I2C_EXT0_CLK_EN |
-                        SYSTEM_UHCI0_CLK_EN |
-                        SYSTEM_RMT_CLK_EN |
-                        SYSTEM_UHCI1_CLK_EN |
-                        SYSTEM_SPI3_CLK_EN |
-                        SYSTEM_SPI4_CLK_EN |
-                        SYSTEM_I2C_EXT1_CLK_EN |
-                        SYSTEM_I2S1_CLK_EN |
-                        SYSTEM_SPI2_DMA_CLK_EN |
-                        SYSTEM_SPI3_DMA_CLK_EN;
-    common_perip_clk1 = 0;
+        0;
+
+    common_perip_clk1 &= ~SYSTEM_USB_DEVICE_CLK_EN; // ignore USB-Serial-JTAG module, which has already been handled above (for non-CPU-reset cases)
 
     /* Disable some peripheral clocks. */
     CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, common_perip_clk);
