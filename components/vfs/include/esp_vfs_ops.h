@@ -19,11 +19,7 @@
 #include <sys/time.h>
 #include <sys/termios.h>
 #include <sys/poll.h>
-#ifdef __clang__ // TODO LLVM-330
-#include <sys/dirent.h>
-#else
 #include <dirent.h>
-#endif
 #include <string.h>
 #include "sdkconfig.h"
 

@@ -10,11 +10,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/fcntl.h>
-#ifdef __clang__ // TODO LLVM-330
-#include <sys/dirent.h>
-#else
 #include <dirent.h>
-#endif
 #include "esp_vfs.h"
 #include "unity.h"
 #include "esp_log.h"

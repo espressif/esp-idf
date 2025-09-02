@@ -433,7 +433,7 @@
     match_to_output: True
 
 -
-    re: "implicit declaration of function '(opendir|readdir|telldir|seekdir|rewinddir|closedir|readdir_r|scandir|alphasort)'"
+    re: "implicit declaration of function '(opendir|readdir|telldir|seekdir|rewinddir|closedir|readdir_r|scandir|alphasort|dirfd|fdclosedir|fdopendir|scandirat|versionsort|posix_getdents)'"
     hint: "Please include <dirent.h> (not <sys/dirent.h>)"
 
 -
