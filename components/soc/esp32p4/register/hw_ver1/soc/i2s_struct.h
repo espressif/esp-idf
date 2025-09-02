@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -282,10 +282,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** tx_pdm_hp_bypass : R/W; bitpos: [0]; default: 0;
-         *  I2S TX PDM bypass hp filter or not. The option has been removed.
-         */
-        uint32_t tx_pdm_hp_bypass:1;
+        uint32_t reserved_0:1;
         /** tx_pdm_sinc_osr2 : R/W; bitpos: [4:1]; default: 2;
          *  I2S TX PDM OSR2 value
          */

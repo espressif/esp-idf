@@ -23,6 +23,7 @@
 #include "soc/soc_etm_source.h"
 #include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
+#include "hal/config.h"
 
 
 #ifdef __cplusplus
@@ -441,6 +442,11 @@ static inline uint32_t i2s_ll_get_clk_src(i2s_clock_src_t src)
             return 1;
         case I2S_CLK_SRC_EXTERNAL:
             return 2;
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+        // Only support PLL_160M on P4 ver3 and later
+        case I2S_CLK_SRC_PLL_160M:
+            return 3;
+#endif
         default:
             HAL_ASSERT(false && "unsupported clock source");
             return -1;
@@ -1195,7 +1201,8 @@ static inline void i2s_ll_tx_set_pdm_hp_filter_param5(i2s_dev_t *hw, uint32_t pa
  */
 static inline void i2s_ll_tx_enable_pdm_hp_filter(i2s_dev_t *hw, bool enable)
 {
-    hw->tx_pcm2pdm_conf.tx_pdm_hp_bypass = !enable;
+    // Must enable on P4
+    HAL_ASSERT(enable);
 }
 
 /**
