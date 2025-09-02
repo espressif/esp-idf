@@ -243,6 +243,7 @@ function(__component_get_requirements)
             "idf_component_manager.prepare_components"
             "--project_dir=${project_dir}"
             "--lock_path=${DEPENDENCIES_LOCK}"
+            "--sdkconfig_json_file=${build_dir}/config/sdkconfig.json"
             "--interface_version=${component_manager_interface_version}"
             "inject_requirements"
             "--idf_path=${idf_path}"
