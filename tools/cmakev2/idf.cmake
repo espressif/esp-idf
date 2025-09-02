@@ -317,6 +317,25 @@ function(__init_toolchain)
 endfunction()
 
 #[[
+   __init_ccache()
+
+   Enable ccache if requested through CCACHE_ENABLE.
+#]]
+function(__init_ccache)
+    if(NOT CCACHE_ENABLE)
+        return()
+    endif()
+
+    find_program(CCACHE_FOUND ccache)
+    if(CCACHE_FOUND)
+        idf_msg("ccache will be used for faster recompilation")
+        set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    else()
+        idf_warn("enabled ccache in build but ccache program not found")
+    endif()
+endfunction()
+
+#[[
    __init_components()
 
    Search for possible component directories categorized by their source, which
@@ -564,6 +583,9 @@ __init_idf_target()
 
 # Set IDF_TOOLCHAIN, IDF_TOOLCHAIN_FILE and CMAKE_TOOLCHAIN_FILE.
 __init_toolchain()
+
+# Enable ccache if requested.
+__init_ccache()
 
 # Discover and initialize components.
 __init_components()
