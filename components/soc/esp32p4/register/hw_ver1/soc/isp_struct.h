@@ -2629,7 +2629,7 @@ typedef union {
         uint32_t reserved_17:15;
     };
     uint32_t val;
-} isp_hist_binn_reg_t;
+} isp_hist_bin_reg_t;
 
 /** Type of rdn_eco_cs register
  *  rdn eco cs register
@@ -3262,7 +3262,7 @@ typedef struct {
     volatile isp_hist_size_reg_t hist_size;
     volatile isp_hist_seg_reg_t hist_seg[4];
     volatile isp_hist_weight_reg_t hist_weight[7];
-    volatile isp_hist_binn_reg_t hist_binn[16];
+    volatile isp_hist_bin_reg_t hist_bin[16];
     volatile isp_mem_aux_ctrl_0_reg_t mem_aux_ctrl_0;
     volatile isp_mem_aux_ctrl_1_reg_t mem_aux_ctrl_1;
     volatile isp_mem_aux_ctrl_2_reg_t mem_aux_ctrl_2;

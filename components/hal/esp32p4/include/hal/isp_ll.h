@@ -1974,7 +1974,7 @@ __attribute__((always_inline))
 static inline void isp_ll_hist_get_histogram_value(isp_dev_t *hw, uint32_t *histogram_value)
 {
     for (int i = 0; i < SOC_ISP_HIST_SEGMENT_NUMS; i++) {
-        histogram_value[i] = hw->hist_binn[i].hist_bin_n;
+        histogram_value[i] = hw->hist_bin[i].hist_bin_n;
     }
 }
 
