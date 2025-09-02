@@ -945,14 +945,8 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_mode_
     // Enter sleep
     esp_err_t result;
 #if SOC_PMU_SUPPORTED
-
 #if SOC_DCDC_SUPPORTED
-#if CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
-    if (!deep_sleep) {
-        // Keep DCDC always on during light sleep, no need to adjust LDO voltage.
-    } else
-#endif
-    {
+    if (deep_sleep) {
         s_config.rtc_ticks_at_ldo_prepare = rtc_time_get();
         pmu_sleep_increase_ldo_volt();
     }
@@ -1049,14 +1043,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_mode_
             if (sleep_flags & PMU_SLEEP_PD_TOP) {
                 esp_sleep_mmu_retention(true);
             }
-#endif
-
-#if SOC_DCDC_SUPPORTED && !CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
-            uint64_t ldo_increased_us = rtc_time_slowclk_to_us(rtc_time_get() - s_config.rtc_ticks_at_ldo_prepare, s_config.rtc_clk_cal_period);
-            if (ldo_increased_us < LDO_POWER_TAKEOVER_PREPARATION_TIME_US) {
-                esp_rom_delay_us(LDO_POWER_TAKEOVER_PREPARATION_TIME_US - ldo_increased_us);
-            }
-            pmu_sleep_shutdown_dcdc();
 #endif
 
 #if SOC_PMU_SUPPORTED

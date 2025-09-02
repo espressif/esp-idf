@@ -351,7 +351,7 @@ typedef struct {
 #define PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(sleep_flags) {       \
     .hp_sys = {                                                   \
         .analog = {                                               \
-            .dcm_mode        = 0,                                 \
+            .dcm_mode        = 1,                                 \
             .drv_b           = PMU_HP_DRVB_LIGHTSLEEP,            \
             .pd_cur          = PMU_PD_CUR_SLEEP_DEFAULT,          \
             .bias_sleep      = PMU_BIASSLP_SLEEP_DEFAULT,         \
