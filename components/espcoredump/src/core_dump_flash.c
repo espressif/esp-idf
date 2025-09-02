@@ -5,8 +5,6 @@
  */
 #include "sdkconfig.h"
 
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
-
 #include <string.h>
 #include "esp_partition.h"
 #include "esp_log.h"
@@ -522,5 +520,3 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
 
     return ESP_OK;
 }
-
-#endif // CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH

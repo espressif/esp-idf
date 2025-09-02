@@ -11,8 +11,6 @@
 
 #include "sdkconfig.h"
 
-#if CONFIG_ESP_COREDUMP_ENABLE
-
 #include <string.h>
 #include <stdbool.h>
 #include "soc/soc_memory_layout.h"
@@ -564,7 +562,5 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
     bt_info->depth = index;
     bt_info->corrupted = corrupted;
 }
-
-#endif /* #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH */
 
 #endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH */

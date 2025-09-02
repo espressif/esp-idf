@@ -13,7 +13,9 @@
 #include "esp_flash.h"
 #include "esp_system.h"
 #include "spi_flash_mmap.h"
+#if CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
+#endif
 
 #include "esp_private/cache_utils.h"
 #include "esp_memory_utils.h"

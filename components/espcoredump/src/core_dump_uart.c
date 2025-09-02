@@ -5,8 +5,6 @@
  */
 #include "sdkconfig.h"
 
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_UART
-
 #include <string.h>
 #include "soc/uart_reg.h"
 #include "soc/gpio_periph.h"
@@ -178,5 +176,3 @@ void esp_core_dump_init(void)
 {
     ESP_COREDUMP_LOGI("Init core dump to UART");
 }
-
-#endif // CONFIG_ESP_COREDUMP_ENABLE_TO_UART
