@@ -405,7 +405,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [31:0]; default: 571021568;
+        /** date : R/W; bitpos: [31:0]; default: 35721985;
          *  This is the PCNT version control register.
          */
         uint32_t date:32;
