@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,21 +14,9 @@
 #include "esp_adc/adc_continuous.h"
 
 #define EXAMPLE_ADC_UNIT                    ADC_UNIT_1
-#define _EXAMPLE_ADC_UNIT_STR(unit)         #unit
-#define EXAMPLE_ADC_UNIT_STR(unit)          _EXAMPLE_ADC_UNIT_STR(unit)
 #define EXAMPLE_ADC_CONV_MODE               ADC_CONV_SINGLE_UNIT_1
-#define EXAMPLE_ADC_ATTEN                   ADC_ATTEN_DB_0
+#define EXAMPLE_ADC_ATTEN                   ADC_ATTEN_DB_12
 #define EXAMPLE_ADC_BIT_WIDTH               SOC_ADC_DIGI_MAX_BITWIDTH
-
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-#define EXAMPLE_ADC_OUTPUT_TYPE             ADC_DIGI_OUTPUT_FORMAT_TYPE1
-#define EXAMPLE_ADC_GET_CHANNEL(p_data)     ((p_data)->type1.channel)
-#define EXAMPLE_ADC_GET_DATA(p_data)        ((p_data)->type1.data)
-#else
-#define EXAMPLE_ADC_OUTPUT_TYPE             ADC_DIGI_OUTPUT_FORMAT_TYPE2
-#define EXAMPLE_ADC_GET_CHANNEL(p_data)     ((p_data)->type2.channel)
-#define EXAMPLE_ADC_GET_DATA(p_data)        ((p_data)->type2.data)
-#endif
 
 #define EXAMPLE_READ_LEN                    256
 
@@ -63,7 +51,6 @@ static void continuous_adc_init(adc_channel_t *channel, uint8_t channel_num, adc
     adc_continuous_config_t dig_cfg = {
         .sample_freq_hz = 20 * 1000,
         .conv_mode = EXAMPLE_ADC_CONV_MODE,
-        .format = EXAMPLE_ADC_OUTPUT_TYPE,
     };
 
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
@@ -114,23 +101,33 @@ void app_main(void)
          */
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        char unit[] = EXAMPLE_ADC_UNIT_STR(EXAMPLE_ADC_UNIT);
-
         while (1) {
             ret = adc_continuous_read(handle, result, EXAMPLE_READ_LEN, &ret_num, 0);
             if (ret == ESP_OK) {
                 ESP_LOGI("TASK", "ret is %x, ret_num is %"PRIu32" bytes", ret, ret_num);
-                for (int i = 0; i < ret_num; i += SOC_ADC_DIGI_RESULT_BYTES) {
-                    adc_digi_output_data_t *p = (adc_digi_output_data_t*)&result[i];
-                    uint32_t chan_num = EXAMPLE_ADC_GET_CHANNEL(p);
-                    uint32_t data = EXAMPLE_ADC_GET_DATA(p);
-                    /* Check the channel number validation, the data is invalid if the channel num exceed the maximum channel */
-                    if (chan_num < SOC_ADC_CHANNEL_NUM(EXAMPLE_ADC_UNIT)) {
-                        ESP_LOGI(TAG, "Unit: %s, Channel: %"PRIu32", Value: %"PRIx32, unit, chan_num, data);
-                    } else {
-                        ESP_LOGW(TAG, "Invalid data [%s_%"PRIu32"_%"PRIx32"]", unit, chan_num, data);
+
+                adc_continuous_data_t parsed_data[ret_num / SOC_ADC_DIGI_RESULT_BYTES];
+                uint32_t num_parsed_samples = 0;
+
+                esp_err_t parse_ret = adc_continuous_parse_data(handle, result, ret_num, parsed_data, &num_parsed_samples);
+                if (parse_ret == ESP_OK) {
+                    for (int i = 0; i < num_parsed_samples; i++) {
+                        if (parsed_data[i].valid) {
+                            ESP_LOGI(TAG, "ADC%d, Channel: %d, Value: %"PRIu32,
+                                     parsed_data[i].unit + 1,
+                                     parsed_data[i].channel,
+                                     parsed_data[i].raw_data);
+                        } else {
+                            ESP_LOGW(TAG, "Invalid data [ADC%d_Ch%d_%"PRIu32"]",
+                                     parsed_data[i].unit + 1,
+                                     parsed_data[i].channel,
+                                     parsed_data[i].raw_data);
+                        }
                     }
+                } else {
+                    ESP_LOGE(TAG, "Data parsing failed: %s", esp_err_to_name(parse_ret));
                 }
+
                 /**
                  * Because printing is slow, so every time you call `ulTaskNotifyTake`, it will immediately return.
                  * To avoid a task watchdog timeout, add a delay here. When you replace the way you process the data,

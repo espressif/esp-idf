@@ -34,6 +34,9 @@ extern "C" {
 #define LP_ADC_FORCE_XPD_SAR_PD  2 // Force power down
 #define LP_ADC_FORCE_XPD_SAR_PU  3 // Force power up
 
+// ESP32P4 ADC2 channel is 2-7, so we need to subtract 2 to get the correct channel
+#define ADC_LL_UNIT2_CHANNEL_SUBSTRATION 2
+
 #define ADC_LL_NEED_APB_PERIPH_CLAIM(ADC_UNIT)      (((ADC_UNIT) == ADC_UNIT_1) ? 0 : 1)
 
 /*---------------------------------------------------------------
@@ -359,13 +362,14 @@ static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t patt
     uint8_t offset = (pattern_index % 4) * 6;
     adc_ll_digi_pattern_table_t pattern = {0};
 
-    pattern.val = (table.atten & 0x3) | ((table.channel & 0xF) << 2);
     if (table.unit == ADC_UNIT_1){
+        pattern.val = (table.atten & 0x3) | ((table.channel & 0xF) << 2);
         tab = ADC.sar1_patt_tab[index].sar1_patt_tab;               //Read old register value
         tab &= (~(0xFC0000 >> offset));                             //Clear old data
         tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;    //Fill in the new data
         ADC.sar1_patt_tab[index].sar1_patt_tab = tab;               //Write back
     } else {
+        pattern.val = (table.atten & 0x3) | (((table.channel + 2) & 0xF) << 2);
         tab = ADC.sar2_patt_tab[index].sar2_patt_tab;               //Read old register value
         tab &= (~(0xFC0000 >> offset));                             //clear old data
         tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;    //Fill in the new data

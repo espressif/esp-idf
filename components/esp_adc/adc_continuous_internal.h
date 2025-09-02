@@ -87,6 +87,7 @@ struct adc_continuous_ctx_t {
     adc_atten_t                     adc1_atten;                 //Attenuation for ADC1. On this chip each ADC can only support one attenuation.
     adc_atten_t                     adc2_atten;                 //Attenuation for ADC2. On this chip each ADC can only support one attenuation.
     adc_hal_digi_ctrlr_cfg_t        hal_digi_ctrlr_cfg;         //Hal digital controller configuration
+    adc_digi_output_format_t        format;                     //ADC DMA conversion output format
     adc_continuous_evt_cbs_t        cbs;                        //Callbacks
     void                            *user_data;                 //User context
 #if CONFIG_PM_ENABLE
