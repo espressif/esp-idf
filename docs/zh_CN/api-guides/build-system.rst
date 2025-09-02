@@ -1342,26 +1342,26 @@ ESP-IDF 构建命令
 
 获取指定配置的值。就像构建属性一样，特定 *GENERATOR_EXPRESSION* 将检索该配置的生成器表达式字符串，而不是实际值，即可以与支持生成器表达式的 CMake 命令一起使用。然而，实际的配置值只有在调用 ``idf_build_process`` 后才能知道。
 
-
 .. code-block:: none
 
   idf_build_add_post_elf_dependency(elf_filename dep_target)
 
-注册一个在 ELF 链接完成之后（post-ELF）且在生成二进制镜像之前必须运行的依赖。适用于组件在执行 ``elf2image`` 之前需要对 ELF 进行就地处理的场景（例如，插入元数据、剥离段或生成额外的符号文件）。依赖目标 ``dep_target`` 必须是一个有效的 CMake 目标。如果您的规则读取或修改 ELF，请将 ELF 文件声明为自定义命令的 ``DEPENDS``。
+注册一个依赖项，该依赖必须在 ELF 链接完成之后 (post-ELF)、生成二进制镜像之前运行，适用于组件在执行 ``elf2image`` 之前需要对 ELF 进行就地处理的场景（例如，插入元数据、剥离段或生成额外的符号文件）。依赖目标 ``dep_target`` 必须是一个有效的 CMake 目标。如果你的规则需要读取或修改 ELF 文件，请在自定义命令中将 ELF 文件声明为 ``DEPENDS``。
 
-.. important:: 避免构建循环
+.. important::
 
-   创建 post-ELF 步骤时，确保构建图保持无环：
+   创建 post-ELF 步骤时，请确保构建图保持无环性：
 
-   - 不要将 ELF 本身作为自定义命令的输出。产生一个单独的输出（例如，``app.elf.post``、``app.elf.symbols`` 或简单的标记文件）。
-   - 如果必须就地修改 ELF，还要产生一个额外的输出文件，并将其时间戳更新为比修改后的 ELF 更新（例如，使用 ``cmake -E touch``）。这确保输出文件比修改后的 ELF 具有更新的时间戳，因此 CMake 认为规则已满足，不会在后续构建中重新运行它。
-   - 遵循这些规则可确保 post-ELF 钩子按预期顺序运行，而不会触发无限重建循环。
+   - 不要将 ELF 本身作为自定义命令的输出，应生成一个单独的输出（例如，``app.elf.post``、``app.elf.symbols`` 或简单的标记文件）。
+   - 如果必须就地修改 ELF，还需要生成一个额外的输出文件，并更新其时间戳，使其晚于 ELF 的修改时间（例如，使用 ``cmake -E touch``）。这样可以确保输出文件的时间戳比修改后的 ELF 文件更新，从而使 CMake 认为规则已满足，不会在后续构建中反复执行。
+
+   遵循这些规则可确保 post-ELF 钩子按预期顺序运行，而不会触发无限重建循环。
 
 示例：
 
 .. code-block:: cmake
 
-    # 创建一个自定义命令来在链接后处理 ELF 文件
+    # 创建一个自定义命令，在 ELF 链接完成后处理 ELF 文件
     idf_build_get_property(elf_target EXECUTABLE GENERATOR_EXPRESSION)
     add_custom_command(
         OUTPUT "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.stripped_marker"
@@ -1372,12 +1372,12 @@ ESP-IDF 构建命令
         DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>"
     )
 
-    # 将其包装在自定义目标中
+    # 将其封装为自定义目标
     add_custom_target(strip_elf DEPENDS
         "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.stripped_marker"
     )
 
-    # 注册它在 ELF 链接后但在 BIN 生成前运行
+    # 注册该依赖，使其在 ELF 链接完成后、BIN 生成之前运行
     idf_build_add_post_elf_dependency("${CMAKE_PROJECT_NAME}.elf" strip_elf)
 
 
@@ -1385,7 +1385,7 @@ ESP-IDF 构建命令
 
   idf_build_get_post_elf_dependencies(elf_filename out_var)
 
-获取指定 ELF 文件名 ``elf_filename`` 已注册的 post-ELF 依赖列表，并将结果存入 ``out_var``。
+获取已为指定 ELF 文件注册的 post-ELF 依赖列表，并将其存储在 ``out_var`` 中。
 
 
 .. _cmake-build-properties:
