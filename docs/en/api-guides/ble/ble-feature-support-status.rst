@@ -407,7 +407,7 @@ If none of our chip series meet your needs, please contact `customer support tea
    please consult `SIG Bluetooth Product Database <https://qualification.bluetooth.com/Listings/Search>`__.
 
 For certain features, if the majority of the development is completed on the Controller, the Host's support status will be limited by the Controller's support status.
-If you want BLE Controller and Host to run on different Espressif chips, the functionality of the Host will not be limited by the Controller's support status on the chip running the Host,
+If you want Bluetooth LE Controller and Host to run on different Espressif chips, the functionality of the Host will not be limited by the Controller's support status on the chip running the Host,
 please check the :doc:`ESP Host Feature Support Status Table <host-feature-support-status>` .
 
 It is important to clarify that this document is not a binding commitment to our customers.
