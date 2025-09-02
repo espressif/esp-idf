@@ -247,9 +247,9 @@ function(__get_default_value)
 endfunction()
 
 #[[
-    __get_config_option(OPTION <option>
-                        SDKCONFIG <path>)
-                        OUTPUT <variable>)
+   __get_sdkconfig_option(OPTION <option>
+                          SDKCONFIG <path>)
+                          OUTPUT <variable>)
 
     *OPTION[in]*
 
