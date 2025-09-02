@@ -851,6 +851,7 @@ Kconfig 选项 :ref:`CONFIG_ISP_CTRL_FUNC_IN_IRAM` 支持：
 --------
 
 * :example:`peripherals/isp/multi_pipelines` 演示了如何使用 ISP 流水线处理来自摄像头传感器的图像信号，并通过 DSI 外设在 LCD 屏幕上显示视频。
+* `esp_video/examples <https://github.com/espressif/esp-video-components/tree/master/esp_video/examples>`_ 中包含自动启用 ISP 控制算法的一些示例。
 
 API 参考
 --------

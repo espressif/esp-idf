@@ -851,6 +851,7 @@ Application Examples
 --------------------
 
 * :example:`peripherals/isp/multi_pipelines` demonstrates how to use the ISP pipelines to process the image signals from camera sensors and display the video on LCD screen via DSI peripheral.
+* `esp_video/examples <https://github.com/espressif/esp-video-components/tree/master/esp_video/examples>`_ provides some examples of enabling ISP control algorithms.
 
 API Reference
 -------------
