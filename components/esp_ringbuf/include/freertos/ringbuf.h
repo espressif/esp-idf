@@ -387,6 +387,15 @@ void vRingbufferReturnItem(RingbufHandle_t xRingbuffer, void *pvItem);
 void vRingbufferReturnItemFromISR(RingbufHandle_t xRingbuffer, void *pvItem, BaseType_t *pxHigherPriorityTaskWoken);
 
 /**
+ * @brief   Reset a ring buffer back to its original empty state
+ *
+ * @param[in]   xRingbuffer     Ring buffer to reset
+ *
+ * @note    Users must ensure that all buffers are returned before calling this function
+ */
+void vRingbufferReset(RingbufHandle_t xRingbuffer);
+
+/**
  * @brief   Delete a ring buffer
  *
  * @param[in]   xRingbuffer     Ring buffer to delete
