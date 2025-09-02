@@ -190,16 +190,10 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
             analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
             analog_default.lp_sys[LP(SLEEP)].analog.dbg_atten = PMU_DBG_ATTEN_ACTIVE_DEFAULT;
-#if !CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
-            analog_default.lp_sys[LP(SLEEP)].analog.dbias = LP_CALI_ACTIVE_DBIAS_DEFAULT;
-#endif
         }
-
-#if CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
         power_default.hp_sys.dig_power.dcdc_switch_pd_en = 0;
         analog_default.hp_sys.analog.dcm_vset = CONFIG_ESP_SLEEP_DCM_VSET_VAL_IN_SLEEP;
         analog_default.hp_sys.analog.dcm_mode = 1;
-#endif
         if (pd_flags & PMU_SLEEP_PD_VDDSDIO) {
             analog_default.hp_sys.analog.xpd_0p1a = 0;
         } else {
@@ -258,6 +252,10 @@ static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_c
 static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_config_t *analog, bool dslp)
 {
     assert(ctx->hal);
+    /* For deepsleep, DCDC_EN will be controlled by software to avoid DCDC working in a non-feedback state,
+       which may cause input glitch voltage when waking up and switching to LDO. After chip wake up from deepsleep,
+       set DCDC_EN in rtc_clk_init. */
+    pmu_ll_hp_set_dcm_mode                    (ctx->hal->dev, HP(ACTIVE), dslp ? 0 : 1);
     pmu_ll_hp_set_dcm_mode                    (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dcm_mode);
     pmu_ll_hp_set_dcm_vset                    (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dcm_vset);
     pmu_ll_hp_set_current_power_off           (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.pd_cur);
@@ -272,24 +270,6 @@ static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_con
     pmu_ll_hp_set_dbg_atten                   (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dbg_atten);
     pmu_ll_hp_set_regulator_dbias             (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dbias);
     pmu_ll_hp_set_regulator_driver_bar        (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.drv_b);
-
-#if CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
-    if (dslp)
-#endif
-    {
-/**
-        DCDC_EN will be controlled by software to avoid DCDC working in a non-feedback state, which may
-        cause input glitch voltage when waking up and switching to LDO.
-        1. Lightsleep:
-           CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON = y: DCDC will not shutdown during sleep.
-           CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON = n:
-               PD_TOP: DCDC_EN DCDC_EN enabled by regdma after wake up.
-               PU_TOP: DCDC_EN DCDC_EN enabled by pmu_sleep_finish after wakeup.
-        2. Deepsleep
-           After chip wake up from deepsleep, set DCDC_EN in rtc_clk_init.
-**/
-        pmu_ll_hp_set_dcm_mode(ctx->hal->dev, HP(ACTIVE), 0);
-    }
 
     pmu_ll_lp_set_regulator_sleep_dbias(ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.slp_dbias);
     pmu_ll_lp_set_regulator_dbias      (ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.dbias);
@@ -443,20 +423,13 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
 
 TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
 {
-#if CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
-    if (!dslp) {
-        // Keep DCDC always on during light sleep, no need to adjust LDO.
-    } else
-#endif
-    {
+    if (dslp) {
         pmu_ll_hp_set_dcm_vset(&PMU, PMU_MODE_HP_ACTIVE, HP_CALI_ACTIVE_DCM_VSET_DEFAULT);
         pmu_sleep_enable_dcdc();
-        if (pmu_ll_hp_is_sleep_reject(&PMU) || !s_pmu_sleep_regdma_backup_enabled) {
+        if (pmu_ll_hp_is_sleep_reject(&PMU)) {
             // If sleep is rejected or regdma restore is skipped, the hardware wake-up process that
             // turns on DCDC is skipped, and wait DCDC volt rise up by software here.
             esp_rom_delay_us(DCDC_STARTUP_TIME_US);
-        } else if (s_pmu_sleep_regdma_backup_enabled) {
-            esp_rom_delay_us(DCDC_STARTUP_TIME_US - PMU_REGDMA_S2A_WORK_TIME_US);
         }
         pmu_sleep_shutdown_ldo();
     }
