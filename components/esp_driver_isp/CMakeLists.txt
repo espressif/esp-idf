@@ -22,6 +22,10 @@ if(CONFIG_SOC_ISP_BF_SUPPORTED)
     list(APPEND srcs "src/isp_bf.c")
 endif()
 
+if(CONFIG_SOC_ISP_BLC_SUPPORTED)
+    list(APPEND srcs "src/isp_blc.c")
+endif()
+
 if(CONFIG_SOC_ISP_DEMOSAIC_SUPPORTED)
     list(APPEND srcs "src/isp_demosaic.c")
 endif()

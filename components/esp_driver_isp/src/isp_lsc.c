@@ -27,7 +27,7 @@ static const char *TAG = "ISP_LSC";
 
 esp_err_t esp_isp_lsc_allocate_gain_array(isp_proc_handle_t isp_proc, esp_isp_lsc_gain_array_t *gain_array, size_t *out_array_size_per_channel)
 {
-    ESP_RETURN_ON_FALSE(isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    ESP_RETURN_ON_FALSE(isp_proc && gain_array && out_array_size_per_channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(isp_proc->lsc_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "lsc is enabled already");
 
     int num_grids_x_max = ISP_LSC_GET_GRIDS(ISP_LL_HSIZE_MAX);
