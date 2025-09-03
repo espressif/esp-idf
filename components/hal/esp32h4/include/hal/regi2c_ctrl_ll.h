@@ -12,6 +12,7 @@
 #include "soc/i2c_ana_mst_reg.h"
 #include "soc/pmu_reg.h"
 #include "modem/modem_lpcon_struct.h"
+#include "modem/modem_syscon_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,7 +66,7 @@ static inline __attribute__((always_inline)) void regi2c_ctrl_ll_master_force_en
  */
 static inline __attribute__((always_inline)) void regi2c_ctrl_ll_master_configure_clock(void)
 {
-    // Nothing to configure
+    MODEM_SYSCON.clk_conf.clk_i2c_mst_sel_160m = 1;
 }
 
 /**

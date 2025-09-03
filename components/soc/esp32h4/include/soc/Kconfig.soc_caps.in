@@ -83,6 +83,10 @@ config SOC_LP_TIMER_SUPPORTED
     bool
     default y
 
+config SOC_LP_AON_SUPPORTED
+    bool
+    default y
+
 config SOC_REG_I2C_SUPPORTED
     bool
     default y
@@ -847,6 +851,10 @@ config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     bool
     default y
 
+config SOC_UART_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
     bool
     default y
@@ -875,7 +883,23 @@ config SOC_PHY_DIG_REGS_MEM_SIZE
     int
     default 21
 
+config SOC_PM_SUPPORT_EXT1_WAKEUP
+    bool
+    default y
+
+config SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+    bool
+    default y
+
 config SOC_PM_SUPPORT_TOUCH_WAKEUP
+    bool
+    default y
+
+config SOC_PM_SUPPORT_CPU_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_MODEM_PD
     bool
     default y
 
@@ -895,11 +919,27 @@ config SOC_PM_SUPPORT_VDDSDIO_PD
     bool
     default y
 
+config SOC_PM_SUPPORT_TOP_PD
+    bool
+    default y
+
 config SOC_PM_SUPPORT_HP_AON_PD
     bool
     default y
 
 config SOC_PM_SUPPORT_MAC_BB_PD
+    bool
+    default y
+
+config SOC_PM_CPU_RETENTION_BY_SW
+    bool
+    default y
+
+config SOC_PM_MODEM_RETENTION_BY_REGDMA
+    bool
+    default y
+
+config SOC_PM_MODEM_CLK_CONF_RETENTION
     bool
     default y
 

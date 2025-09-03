@@ -195,7 +195,7 @@
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
 #elif CONFIG_IDF_TARGET_ESP32H4
-#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (130)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
 #elif CONFIG_IDF_TARGET_ESP32P4
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US           (324)
@@ -1172,7 +1172,6 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
     {
         rtc_clk_cpu_freq_set_config(&cpu_freq_config);
     }
-
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CLK_READY, (void *)0);
 
     if (!deep_sleep) {
