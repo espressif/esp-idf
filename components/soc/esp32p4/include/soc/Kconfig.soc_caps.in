@@ -1415,6 +1415,10 @@ config SOC_SHA_SUPPORT_SHA512_T
     bool
     default y
 
+config SOC_ECC_CONSTANT_TIME_POINT_MUL
+    bool
+    default y
+
 config SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
     bool
     default y
