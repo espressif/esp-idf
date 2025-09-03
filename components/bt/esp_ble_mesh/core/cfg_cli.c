@@ -237,7 +237,7 @@ static void comp_data_status(struct bt_mesh_model *model,
     BT_DBG("CompDataStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.page = net_buf_simple_pull_u8(buf);
     status.comp_data = bt_mesh_alloc_buf(buf->len);
@@ -260,7 +260,7 @@ static void state_status_u8(struct bt_mesh_model *model,
     BT_DBG("StateStatusU8");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status = net_buf_simple_pull_u8(buf);
 
@@ -312,7 +312,7 @@ static void relay_status(struct bt_mesh_model *model,
     BT_DBG("RelayStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.relay      = net_buf_simple_pull_u8(buf);
     status.retransmit = net_buf_simple_pull_u8(buf);
@@ -329,7 +329,7 @@ static void net_key_status(struct bt_mesh_model *model,
     BT_DBG("NetKeyStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.status = net_buf_simple_pull_u8(buf);
     status.net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
@@ -346,7 +346,7 @@ static void app_key_status(struct bt_mesh_model *model,
     BT_DBG("AppKeyStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.status = net_buf_simple_pull_u8(buf);
     key_idx_unpack(buf, &status.net_idx, &status.app_idx);
@@ -363,7 +363,7 @@ static void mod_app_status(struct bt_mesh_model *model,
     BT_DBG("ModAppStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.status    = net_buf_simple_pull_u8(buf);
     status.elem_addr = net_buf_simple_pull_le16(buf);
@@ -387,7 +387,7 @@ static void mod_pub_status(struct bt_mesh_model *model,
     BT_DBG("ModPubStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.status    = net_buf_simple_pull_u8(buf);
     status.elem_addr = net_buf_simple_pull_le16(buf);
@@ -417,7 +417,7 @@ static void mod_sub_status(struct bt_mesh_model *model,
     BT_DBG("ModSubStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.status    = net_buf_simple_pull_u8(buf);
     status.elem_addr = net_buf_simple_pull_le16(buf);
@@ -441,7 +441,7 @@ static void hb_sub_status(struct bt_mesh_model *model,
     BT_DBG("HbSubStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.status = net_buf_simple_pull_u8(buf);
     status.src    = net_buf_simple_pull_le16(buf);
@@ -463,7 +463,7 @@ static void hb_pub_status(struct bt_mesh_model *model,
     BT_DBG("HbPubStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.status  = net_buf_simple_pull_u8(buf);
     status.dst     = net_buf_simple_pull_le16(buf);
@@ -483,7 +483,7 @@ static void node_reset_status(struct bt_mesh_model *model,
     BT_DBG("NodeResetStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     cfg_client_recv_status(model, ctx, NULL, 0);
 }
@@ -497,7 +497,7 @@ static void mod_sub_list(struct bt_mesh_model *model,
     BT_DBG("ModSubList");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     list.status = net_buf_simple_pull_u8(buf);
     list.elem_addr = net_buf_simple_pull_le16(buf);
@@ -527,7 +527,7 @@ static void net_key_list(struct bt_mesh_model *model,
     BT_DBG("NetKeyList");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     list.net_idx = bt_mesh_alloc_buf(buf->len);
     if (!list.net_idx) {
@@ -548,7 +548,7 @@ static void app_key_list(struct bt_mesh_model *model,
     BT_DBG("AppKeyList");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     list.status = net_buf_simple_pull_u8(buf);
     list.net_idx = net_buf_simple_pull_le16(buf);
@@ -571,7 +571,7 @@ static void node_id_status(struct bt_mesh_model *model,
     BT_DBG("NodeIDStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.status = net_buf_simple_pull_u8(buf);
     status.net_idx = net_buf_simple_pull_le16(buf);
@@ -589,7 +589,7 @@ static void mod_app_list(struct bt_mesh_model *model,
     BT_DBG("ModAppList");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     list.status = net_buf_simple_pull_u8(buf);
     list.elem_addr = net_buf_simple_pull_le16(buf);
@@ -619,7 +619,7 @@ static void kr_phase_status(struct bt_mesh_model *model,
     BT_DBG("KrPhaseStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.status = net_buf_simple_pull_u8(buf);
     status.net_idx = net_buf_simple_pull_le16(buf);
@@ -637,7 +637,7 @@ static void lpn_pollto_status(struct bt_mesh_model *model,
     BT_DBG("LPNPollToStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.lpn_addr = net_buf_simple_pull_le16(buf);
     status.timeout  = net_buf_simple_pull_u8(buf);
