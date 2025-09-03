@@ -18,12 +18,12 @@ Each UART controller is independently configurable with parameters such as baud 
 
     Additionally, the {IDF_TARGET_NAME} chip has one low-power (LP) UART controller. It is the cut-down version of regular UART. Usually, the LP UART controller only support basic UART functionality with a much smaller RAM size, and does not support IrDA or RS485 protocols. For a full list of difference between UART and LP UART, please refer to the **{IDF_TARGET_NAME} Technical Reference Manual** > **UART Controller (UART)** > **Features** [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]).
 
-.. toctree::
-    :hidden:
-
-    uhci
-
 .. only:: SOC_UHCI_SUPPORTED
+
+    .. toctree::
+        :hidden:
+
+        uhci
 
     The {IDF_TARGET_NAME} chip also supports using DMA with UART. For details, see to :doc:`uhci`.
 
@@ -239,7 +239,7 @@ The UART controller supports a number of communication modes. A mode can be sele
 Use Interrupts
 ^^^^^^^^^^^^^^^^
 
-There are many interrupts that can be generated depending on specific UART states or detected errors. The full list of available interrupts is provided in *{IDF_TARGET_NAME} Technical Reference Manual* > *UART Controller (UART)* > *UART Interrupts* and *UHCI Interrupts* [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]. You can enable or disable specific interrupts by calling :cpp:func:`uart_enable_intr_mask` or :cpp:func:`uart_disable_intr_mask` respectively.
+There are many interrupts that can be generated depending on specific UART states or detected errors. The full list of available interrupts is provided in *{IDF_TARGET_NAME} Technical Reference Manual* > *UART Controller (UART)* > *UART Interrupts* [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]. You can enable or disable specific interrupts by calling :cpp:func:`uart_enable_intr_mask` or :cpp:func:`uart_disable_intr_mask` respectively.
 
 The UART driver provides a convenient way to handle specific interrupts by wrapping them into corresponding events. Events defined in :cpp:type:`uart_event_type_t` can be reported to a user application using the FreeRTOS queue functionality.
 
