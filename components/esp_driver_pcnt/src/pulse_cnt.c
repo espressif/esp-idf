@@ -25,12 +25,13 @@
 #include "soc/gpio_pins.h"
 #include "hal/pcnt_hal.h"
 #include "hal/pcnt_ll.h"
+#include "driver/gpio.h"
+#include "driver/pulse_cnt.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/sleep_retention.h"
-#include "driver/gpio.h"
 #include "esp_private/gpio.h"
-#include "driver/pulse_cnt.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_memory_utils.h"
 
 // If ISR handler is allowed to run whilst cache is disabled,
@@ -48,6 +49,12 @@
 #endif
 
 #define PCNT_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define PCNT_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define PCNT_CLOCK_SRC_ATOMIC()
+#endif
 
 #if !SOC_RCC_IS_INDEPENDENT
 #define PCNT_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
@@ -68,16 +75,17 @@ typedef struct pcnt_chan_t pcnt_chan_t;
 
 struct pcnt_platform_t {
     _lock_t mutex;                         // platform level mutex lock
-    pcnt_group_t *groups[SOC_PCNT_GROUPS]; // pcnt group pool
-    int group_ref_counts[SOC_PCNT_GROUPS]; // reference count used to protect group install/uninstall
+    pcnt_group_t *groups[SOC_PCNT_ATTR(INST_NUM)]; // pcnt group pool
+    int group_ref_counts[SOC_PCNT_ATTR(INST_NUM)]; // reference count used to protect group install/uninstall
 };
 
 struct pcnt_group_t {
     int group_id;          // Group ID, index from 0
     int intr_priority;     // PCNT interrupt priority
+    pcnt_clock_source_t clk_src; // PCNT clock source
     portMUX_TYPE spinlock; // to protect per-group register level concurrent access
     pcnt_hal_context_t hal;
-    pcnt_unit_t *units[SOC_PCNT_UNITS_PER_GROUP]; // array of PCNT units
+    pcnt_unit_t *units[SOC_PCNT_ATTR(UNITS_PER_INST)]; // array of PCNT units
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;  // power management lock
 #endif
@@ -112,7 +120,7 @@ struct pcnt_unit_t {
     int clear_signal_gpio_num;                            // which gpio clear signal input
     int accum_value;                                      // accumulated count value
     pcnt_step_interval_t step_info;                       // step interval info
-    pcnt_chan_t *channels[SOC_PCNT_CHANNELS_PER_UNIT];    // array of PCNT channels
+    pcnt_chan_t *channels[SOC_PCNT_ATTR(CHANS_PER_UNIT)];    // array of PCNT channels
     pcnt_watch_point_t watchers[PCNT_LL_WATCH_EVENT_MAX]; // array of PCNT watchers
     intr_handle_t intr;                                   // interrupt handle
     pcnt_unit_fsm_t fsm;      // record PCNT unit's driver state
@@ -140,17 +148,18 @@ static pcnt_platform_t s_platform;
 static pcnt_group_t *pcnt_acquire_group_handle(int group_id);
 static void pcnt_release_group_handle(pcnt_group_t *group);
 static void pcnt_default_isr(void *args);
+static esp_err_t pcnt_select_periph_clock(pcnt_unit_t *unit, pcnt_clock_source_t clk_src);
 
 static esp_err_t pcnt_register_to_group(pcnt_unit_t *unit)
 {
     pcnt_group_t *group = NULL;
     int unit_id = -1;
-    for (int i = 0; i < SOC_PCNT_GROUPS; i++) {
+    for (int i = 0; i < SOC_PCNT_ATTR(INST_NUM); i++) {
         group = pcnt_acquire_group_handle(i);
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", i);
         // loop to search free unit in the group
         portENTER_CRITICAL(&group->spinlock);
-        for (int j = 0; j < SOC_PCNT_UNITS_PER_GROUP; j++) {
+        for (int j = 0; j < SOC_PCNT_ATTR(UNITS_PER_INST); j++) {
             if (!group->units[j]) {
                 unit_id = j;
                 group->units[j] = unit;
@@ -222,6 +231,10 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
     int group_id = group->group_id;
     int unit_id = unit->unit_id;
 
+    pcnt_clock_source_t pcnt_clk_src = config->clk_src ? config->clk_src : PCNT_CLK_SRC_DEFAULT;
+    ESP_GOTO_ON_ERROR(pcnt_select_periph_clock(unit, pcnt_clk_src), err, TAG, "select periph clock failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)group->clk_src, true), err, TAG, "clock source enable failed");
+
     // if interrupt priority specified before, it cannot be changed until the group is released
     // check if the new priority specified consistents with the old one
     bool intr_priority_conflict = false;
@@ -243,7 +256,7 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
         } else {
             isr_flags |= PCNT_ALLOW_INTR_PRIORITY_MASK;
         }
-        ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(pcnt_periph_signals.groups[group_id].irq, isr_flags,
+        ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(soc_pcnt_signals[group_id].irq_id, isr_flags,
                                                     (uint32_t)pcnt_ll_get_intr_status_reg(group->hal.dev), PCNT_LL_UNIT_WATCH_EVENT(unit_id),
                                                     pcnt_default_isr, unit, &unit->intr), err,
                           TAG, "install interrupt service failed");
@@ -311,18 +324,20 @@ esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit)
     int group_id = group->group_id;
     int unit_id = unit->unit_id;
 
-    for (int i = 0; i < SOC_PCNT_CHANNELS_PER_UNIT; i++) {
+    for (int i = 0; i < SOC_PCNT_ATTR(CHANS_PER_UNIT); i++) {
         ESP_RETURN_ON_FALSE(!unit->channels[i], ESP_ERR_INVALID_STATE, TAG, "channel %d still in working", i);
     }
 
 #if SOC_PCNT_SUPPORT_CLEAR_SIGNAL
     if (unit->clear_signal_gpio_num >= 0) {
-        uint32_t clear_signal_idx = pcnt_periph_signals.groups[group_id].units[unit_id].clear_sig;
+        uint32_t clear_signal_idx = soc_pcnt_signals[group_id].units[unit_id].clear_sig_id_matrix;
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, clear_signal_idx, 0);
     }
 #endif // SOC_PCNT_SUPPORT_CLEAR_SIGNAL
 
     ESP_LOGD(TAG, "del unit (%d,%d)", group_id, unit_id);
+    // disable clock source
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)group->clk_src, false), TAG, "clock source disable failed");
     // recycle memory resource
     ESP_RETURN_ON_ERROR(pcnt_destroy(unit), TAG, "destroy pcnt unit failed");
     return ESP_OK;
@@ -335,7 +350,7 @@ esp_err_t pcnt_unit_set_clear_signal(pcnt_unit_handle_t unit, const pcnt_clear_s
     pcnt_group_t *group = unit->group;
     int group_id = group->group_id;
     int unit_id = unit->unit_id;
-    uint32_t clear_signal_idx = pcnt_periph_signals.groups[group_id].units[unit_id].clear_sig;
+    uint32_t clear_signal_idx = soc_pcnt_signals[group_id].units[unit_id].clear_sig_id_matrix;
 
     if (config) {
         int io_num = config->clear_signal_gpio_num;
@@ -534,7 +549,7 @@ esp_err_t pcnt_unit_register_event_callbacks(pcnt_unit_handle_t unit, const pcnt
         } else {
             isr_flags |= PCNT_ALLOW_INTR_PRIORITY_MASK;
         }
-        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(pcnt_periph_signals.groups[group_id].irq, isr_flags,
+        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(soc_pcnt_signals[group_id].irq_id, isr_flags,
                                                       (uint32_t)pcnt_ll_get_intr_status_reg(group->hal.dev), PCNT_LL_UNIT_WATCH_EVENT(unit_id),
                                                       pcnt_default_isr, unit, &unit->intr),
                             TAG, "install interrupt service failed");
@@ -592,7 +607,7 @@ esp_err_t pcnt_unit_add_watch_point(pcnt_unit_handle_t unit, int watch_point)
     }
     // other threshold watch point
     else {
-        int thres_num = SOC_PCNT_THRES_POINT_PER_UNIT - 1;
+        int thres_num = SOC_PCNT_ATTR(THRES_POINT_PER_UNIT) - 1;
         switch (thres_num) {
         case 1:
             if (unit->watchers[PCNT_LL_WATCH_EVENT_THRES1].event_id == PCNT_LL_WATCH_EVENT_INVALID) {
@@ -779,7 +794,7 @@ esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *co
     // search for a free channel
     int channel_id = -1;
     portENTER_CRITICAL(&unit->spinlock);
-    for (int i = 0; i < SOC_PCNT_CHANNELS_PER_UNIT; i++) {
+    for (int i = 0; i < SOC_PCNT_ATTR(CHANS_PER_UNIT); i++) {
         if (!unit->channels[i]) {
             channel_id = i;
             unit->channels[channel_id] = channel;
@@ -794,12 +809,12 @@ esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *co
         gpio_func_sel(config->edge_gpio_num, PIN_FUNC_GPIO);
         gpio_input_enable(config->edge_gpio_num);
         esp_rom_gpio_connect_in_signal(config->edge_gpio_num,
-                                       pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].pulse_sig,
+                                       soc_pcnt_signals[group_id].units[unit_id].channels[channel_id].pulse_sig_id_matrix,
                                        config->flags.invert_edge_input);
     } else {
         // using virtual IO
         esp_rom_gpio_connect_in_signal(config->flags.virt_edge_io_level ? GPIO_MATRIX_CONST_ONE_INPUT : GPIO_MATRIX_CONST_ZERO_INPUT,
-                                       pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].pulse_sig,
+                                       soc_pcnt_signals[group_id].units[unit_id].channels[channel_id].pulse_sig_id_matrix,
                                        config->flags.invert_edge_input);
     }
 
@@ -807,12 +822,12 @@ esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *co
         gpio_func_sel(config->level_gpio_num, PIN_FUNC_GPIO);
         gpio_input_enable(config->level_gpio_num);
         esp_rom_gpio_connect_in_signal(config->level_gpio_num,
-                                       pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].control_sig,
+                                       soc_pcnt_signals[group_id].units[unit_id].channels[channel_id].ctl_sig_id_matrix,
                                        config->flags.invert_level_input);
     } else {
         // using virtual IO
         esp_rom_gpio_connect_in_signal(config->flags.virt_level_io_level ? GPIO_MATRIX_CONST_ONE_INPUT : GPIO_MATRIX_CONST_ZERO_INPUT,
-                                       pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].control_sig,
+                                       soc_pcnt_signals[group_id].units[unit_id].channels[channel_id].ctl_sig_id_matrix,
                                        config->flags.invert_level_input);
     }
 
@@ -846,12 +861,12 @@ esp_err_t pcnt_del_channel(pcnt_channel_handle_t chan)
 
     if (chan->level_gpio_num >= 0) {
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,
-                                       pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].control_sig,
+                                       soc_pcnt_signals[group_id].units[unit_id].channels[channel_id].ctl_sig_id_matrix,
                                        0);
     }
     if (chan->edge_gpio_num >= 0) {
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,
-                                       pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].pulse_sig,
+                                       soc_pcnt_signals[group_id].units[unit_id].channels[channel_id].pulse_sig_id_matrix,
                                        0);
     }
 
@@ -930,14 +945,6 @@ static pcnt_group_t *pcnt_acquire_group_handle(int group_id)
     _lock_release(&s_platform.mutex);
 
     if (new_group) {
-#if CONFIG_PM_ENABLE
-        // PCNT uses the APB as its function clock,
-        // and its filter module is sensitive to the clock frequency
-        // thus we choose the APM_MAX lock to prevent the function clock from being changed
-        if (esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, pcnt_periph_signals.groups[group_id].module_name, &group->pm_lock) != ESP_OK) {
-            ESP_LOGW(TAG, "create pm lock failed");
-        }
-#endif
         ESP_LOGD(TAG, "new group (%d) at %p", group_id, group);
     }
 
@@ -973,6 +980,48 @@ static void pcnt_release_group_handle(pcnt_group_t *group)
         free(group);
         ESP_LOGD(TAG, "del group (%d)", group_id);
     }
+}
+
+static esp_err_t pcnt_select_periph_clock(pcnt_unit_t *unit, pcnt_clock_source_t clk_src)
+{
+    esp_err_t ret = ESP_OK;
+    pcnt_group_t *group = unit->group;
+    bool clock_selection_conflict = false;
+    bool do_clock_init = false;
+    // group clock source is shared by all units
+    portENTER_CRITICAL(&group->spinlock);
+    if (group->clk_src == 0) {
+        group->clk_src = clk_src;
+        do_clock_init = true;
+    } else {
+        clock_selection_conflict = (group->clk_src != clk_src);
+    }
+    portEXIT_CRITICAL(&group->spinlock);
+    ESP_RETURN_ON_FALSE(!clock_selection_conflict, ESP_ERR_INVALID_ARG, TAG,
+                        "group clock conflict, already is %d but attempt to %d", group->clk_src, clk_src);
+
+    if (do_clock_init) {
+
+#if CONFIG_PM_ENABLE
+        // PCNT filter module is sensitive to the clock frequency
+        // to make the pcnt works reliable, the source clock must stay alive and unchanged
+        esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
+#if PCNT_LL_CLOCK_SUPPORT_APB
+        if (clk_src == PCNT_CLK_SRC_APB) {
+            // APB clock frequency can be changed during DFS
+            // thus we choose the APM_MAX lock to prevent the function clock from being changed
+            pm_lock_type = ESP_PM_APB_FREQ_MAX;
+        }
+#endif // PCNT_LL_CLOCK_SUPPORT_APB
+        ret = esp_pm_lock_create(pm_lock_type, 0, soc_pcnt_signals[group->group_id].module_name, &group->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
+#endif // CONFIG_PM_ENABLE
+
+        PCNT_CLOCK_SRC_ATOMIC() {
+            pcnt_ll_set_clock_source(group->hal.dev, clk_src);
+        }
+    }
+    return ret;
 }
 
 IRAM_ATTR static void pcnt_default_isr(void *args)

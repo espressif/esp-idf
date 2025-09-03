@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,11 +18,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "soc/pcnt_struct.h"
-#include "hal/pcnt_types.h"
-#include "hal/misc.h"
-#include "hal/efuse_hal.h"
 #include "soc/chip_revision.h"
 #include "soc/pcr_struct.h"
+#include "hal/pcnt_types.h"
+#include "hal/misc.h"
+#include "hal/assert.h"
+#include "hal/efuse_hal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,9 +49,22 @@ typedef enum {
     PCNT_LL_STEP_EVENT_REACH_INTERVAL
 } pcnt_ll_step_event_id_t;
 
-#define PCNT_LL_STEP_NOTIFY_DIR_LIMIT     1
 #define PCNT_LL_WATCH_EVENT_MASK          ((1 << PCNT_LL_WATCH_EVENT_MAX) - 1)
 #define PCNT_LL_UNIT_WATCH_EVENT(unit_id) (1 << (unit_id))
+#define PCNT_LL_STEP_NOTIFY_DIR_LIMIT     1
+#define PCNT_LL_CLOCK_SUPPORT_APB         1
+
+/**
+ * @brief Set clock source for pcnt group
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param clk_src Clock source
+ */
+static inline void pcnt_ll_set_clock_source(pcnt_dev_t *hw, pcnt_clock_source_t clk_src)
+{
+    (void)hw;
+    HAL_ASSERT(clk_src == PCNT_CLK_SRC_APB && "unsupported clock source");
+}
 
 /**
  * @brief Set PCNT channel edge action

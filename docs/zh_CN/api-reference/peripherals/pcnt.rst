@@ -60,7 +60,7 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 
     由于所有 PCNT 单元共享一个中断源，安装多个 PCNT 单元时请确保每个单元的中断优先级 :cpp:member:`pcnt_unit_config_t::intr_priority` 一致。
 
-调用函数 :cpp:func:`pcnt_new_unit` 并将 :cpp:type:`pcnt_unit_config_t` 作为其输入值，可对 PCNT 单元进行分配和初始化。该函数正常运行时，会返回一个 PCNT 单元句柄。没有可用的 PCNT 单元时（即 PCNT 单元全部被占用），该函数会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。可用的 PCNT 单元总数记录在 :c:macro:`SOC_PCNT_UNITS_PER_GROUP` 中，以供参考。
+调用函数 :cpp:func:`pcnt_new_unit` 并将 :cpp:type:`pcnt_unit_config_t` 作为其输入值，可对 PCNT 单元进行分配和初始化。该函数正常运行时，会返回一个 PCNT 单元句柄。没有可用的 PCNT 单元时（即 PCNT 单元全部被占用），该函数会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。
 
 如果不再需要之前创建的某个 PCNT 单元，建议通过调用 :cpp:func:`pcnt_del_unit` 来回收该单元，从而该单元可用于其他用途。删除某个 PCNT 单元之前，需要满足以下条件：
 
@@ -88,7 +88,7 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 -  :cpp:member:`pcnt_chan_config_t::virt_edge_io_level` 与 :cpp:member:`pcnt_chan_config_t::virt_level_io_level` 用于指定 **边沿** 信号和 **电平** 信号的虚拟 IO 电平，以保证这些控制信号处于确定状态。请注意，只有在 :cpp:member:`pcnt_chan_config_t::edge_gpio_num` 或 :cpp:member:`pcnt_chan_config_t::level_gpio_num` 设置为 `-1` 时，这两个参数才有效。
 -  :cpp:member:`pcnt_chan_config_t::invert_edge_input` 与 :cpp:member:`pcnt_chan_config_t::invert_level_input` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵（不是 PCNT 单元）执行。
 
-调用函数 :cpp:func:`pcnt_new_channel`，将 :cpp:type:`pcnt_chan_config_t` 作为输入值并调用 :cpp:func:`pcnt_new_unit` 返回的 PCNT 单元句柄，可对 PCNT 通道进行分配和初始化。如果该函数正常运行，会返回一个 PCNT 通道句柄。如果没有可用的 PCNT 通道（PCNT 通道资源全部被占用），该函数会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。可用的 PCNT 通道总数记录在 :c:macro:`SOC_PCNT_CHANNELS_PER_UNIT`，以供参考。注意，为某个单元安装 PCNT 通道时，应确保该单元处于初始状态，否则函数 :cpp:func:`pcnt_new_channel` 会返回错误 :c:macro:`ESP_ERR_INVALID_STATE`。
+调用函数 :cpp:func:`pcnt_new_channel`，将 :cpp:type:`pcnt_chan_config_t` 作为输入值并调用 :cpp:func:`pcnt_new_unit` 返回的 PCNT 单元句柄，可对 PCNT 通道进行分配和初始化。如果该函数正常运行，会返回一个 PCNT 通道句柄。如果没有可用的 PCNT 通道（PCNT 通道资源全部被占用），该函数会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。注意，为某个单元安装 PCNT 通道时，应确保该单元处于初始状态，否则函数 :cpp:func:`pcnt_new_channel` 会返回错误 :c:macro:`ESP_ERR_INVALID_STATE`。
 
 如果不再需要之前创建的某个 PCNT 通道，建议通过调用 :cpp:func:`pcnt_del_channel` 回收该通道，从而该通道可用于其他用途。
 

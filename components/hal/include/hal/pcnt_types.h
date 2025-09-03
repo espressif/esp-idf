@@ -6,8 +6,24 @@
 
 #pragma once
 
+#include "soc/clk_tree_defs.h"
+#include "soc/soc_caps.h"
+
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if SOC_HAS(PCNT)
+/**
+ * @brief PCNT clock source
+ * @note User should select the clock source based on the power and resolution requirement
+ */
+typedef soc_periph_pcnt_clk_src_t pcnt_clock_source_t;
+#else
+/**
+ * @brief Default type
+ */
+typedef int                       pcnt_clock_source_t;
 #endif
 
 /**

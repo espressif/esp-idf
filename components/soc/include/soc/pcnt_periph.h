@@ -7,32 +7,34 @@
 #pragma once
 
 #include <stdint.h>
-#include "soc/soc_caps.h"
-#include "soc/periph_defs.h"
+#include <stddef.h>
+#include "soc/soc_caps_full.h"
+#include "soc/interrupts.h"
+
+// helper macros to access module attributes
+#define SOC_PCNT_ATTR(_attr) SOC_MODULE_ATTR(PCNT, _attr)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if SOC_PCNT_SUPPORTED
+#if SOC_HAS(PCNT)
 
 typedef struct {
+    const char *module_name; // module name
     struct {
-        const char *module_name;
         struct {
-            struct {
-                const uint32_t pulse_sig;
-                const uint32_t control_sig;
-            } channels[SOC_PCNT_CHANNELS_PER_UNIT];
-            const uint32_t clear_sig;
-        } units[SOC_PCNT_UNITS_PER_GROUP];
-        const uint32_t irq;
-    } groups[SOC_PCNT_GROUPS];
-} pcnt_signal_conn_t;
+            const int pulse_sig_id_matrix; // pulse signal ID in the GPIO matrix
+            const int ctl_sig_id_matrix;   // control signal ID in the GPIO matrix
+        } channels[SOC_PCNT_ATTR(CHANS_PER_UNIT)];
+        const int clear_sig_id_matrix;     // clear signal ID in the GPIO matrix
+    } units[SOC_PCNT_ATTR(UNITS_PER_INST)];
+    const int irq_id; // interrupt source ID
+} soc_pcnt_signal_desc_t;
 
-extern const pcnt_signal_conn_t pcnt_periph_signals;
+extern const soc_pcnt_signal_desc_t soc_pcnt_signals[SOC_PCNT_ATTR(INST_NUM)];
 
-#endif // SOC_PCNT_SUPPORTED
+#endif // SOC_HAS(PCNT)
 
 #ifdef __cplusplus
 }

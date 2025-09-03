@@ -847,7 +847,7 @@ static void i2s_test_common_sample_rate(i2s_chan_handle_t rx_chan, i2s_std_clk_c
     gpio_func_sel(MASTER_WS_IO, PIN_FUNC_GPIO);
     gpio_set_direction(MASTER_WS_IO, GPIO_MODE_INPUT_OUTPUT);
     esp_rom_gpio_connect_out_signal(MASTER_WS_IO, i2s_periph_signal[0].m_rx_ws_sig, 0, 0);
-    esp_rom_gpio_connect_in_signal(MASTER_WS_IO, pcnt_periph_signals.groups[0].units[0].channels[0].pulse_sig, 0);
+    esp_rom_gpio_connect_in_signal(MASTER_WS_IO, soc_pcnt_signals[0].units[0].channels[0].pulse_sig_id_matrix, 0);
 
     const uint32_t test_freq[] = {
         8000,  10000, 11025, 12000, 16000, 22050,
