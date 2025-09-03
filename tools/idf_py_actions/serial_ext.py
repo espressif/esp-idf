@@ -275,6 +275,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         flash_offset: str,
         pad_to_size: str,
         merge_args: tuple[str],
+        fill_flash_size: str = '',
     ) -> None:
         ensure_build_directory(args, ctx.info_name)
         project_desc = _get_project_desc(ctx, args)
@@ -300,11 +301,11 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                 yellow_print('idf.py merge-bin: --flash-offset is only valid for RAW format. Option will be ignored.')
             else:
                 merge_bin_args += ['-t', flash_offset]
-        if pad_to_size:
+        if pad_to_size or fill_flash_size:
             if format != 'raw':
                 yellow_print('idf.py merge-bin: --pad-to-size is only valid for RAW format, option will be ignored.')
             else:
-                merge_bin_args += ['--pad-to-size', pad_to_size]
+                merge_bin_args += ['--pad-to-size', pad_to_size or fill_flash_size]
         if merge_args:
             merge_bin_args += list(merge_args)
         else:
@@ -680,6 +681,17 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     {
                         'names': ['--flash-offset', '-t'],
                         'help': ('[ONLY RAW] Flash offset where the output file will be flashed.'),
+                    },
+                    {
+                        'names': ['--fill-flash-size'],
+                        'deprecated': {
+                            'since': 'v6.0',
+                            'message': 'Did you want to use "--pad-to-size" instead?',
+                        },
+                        'hidden': True,
+                        'type': click.Choice(
+                            ['256KB', '512KB', '1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB']
+                        ),
                     },
                     {
                         'names': ['--pad-to-size'],
