@@ -114,15 +114,16 @@ typedef union {
 } usb_wrap_date_reg_t;
 
 
-typedef struct {
+typedef struct usb_wrap_dev_t {
     volatile usb_wrap_otg_conf_reg_t wrap_otg_conf;
     uint32_t reserved_004[254];
     volatile usb_wrap_date_reg_t wrap_date;
-} usb_dev_t;
+} usb_wrap_dev_t;
 
+extern usb_wrap_dev_t USB_WRAP;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(usb_dev_t) == 0x400, "Invalid size of usb_dev_t structure");
+_Static_assert(sizeof(usb_wrap_dev_t) == 0x400, "Invalid size of usb_wrap_dev_t structure");
 #endif
 
 #ifdef __cplusplus

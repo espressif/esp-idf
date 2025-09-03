@@ -974,7 +974,7 @@ typedef struct {
 extern usb_serial_jtag_dev_t USB_SERIAL_JTAG;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(usb_serial_jtag_dev_t) == 0x84, "Invalid size of usb_dev_t structure");
+_Static_assert(sizeof(usb_serial_jtag_dev_t) == 0x84, "Invalid size of usb_serial_jtag_dev_t structure");
 #endif
 
 #ifdef __cplusplus

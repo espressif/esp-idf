@@ -128,6 +128,14 @@ extern "C" {
 
 #define USB_INT_PHY0_DM_GPIO_NUM     13
 #define USB_INT_PHY0_DP_GPIO_NUM     14
+#define USB_INT_PHY1_DM_GPIO_NUM     21
+#define USB_INT_PHY1_DP_GPIO_NUM     22
+
+// We would fix the USB PHY usage on H4: PHY0 -> USJ, PHY1 -> USB_OTG
+#define USB_USJ_INT_PHY_DM_GPIO_NUM     USB_INT_PHY0_DM_GPIO_NUM
+#define USB_USJ_INT_PHY_DP_GPIO_NUM     USB_INT_PHY0_DP_GPIO_NUM
+#define USB_OTG_INT_PHY_DM_GPIO_NUM     USB_INT_PHY1_DM_GPIO_NUM
+#define USB_OTG_INT_PHY_DP_GPIO_NUM     USB_INT_PHY1_DP_GPIO_NUM
 
 #define MAX_RTC_GPIO_NUM              5
 #define MAX_PAD_GPIO_NUM             39

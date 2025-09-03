@@ -20,7 +20,9 @@
 #include "soc/lp_aon_struct.h"
 #include "soc/pmu_struct.h"
 #include "soc/io_mux_struct.h"
+#include "soc/io_mux_reg.h"
 #include "soc/usb_serial_jtag_struct.h"
+#include "soc/usb_wrap_struct.h"
 #include "soc/pcr_struct.h"
 #include "soc/clk_tree_defs.h"
 #include "hal/gpio_types.h"
@@ -89,10 +91,17 @@ static inline void gpio_ll_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
     // Note that esp32h4 has supported USB_EXCHG_PINS feature. If this efuse is burnt, the gpio pin
     // which should be checked is USB_INT_PHY0_DM_GPIO_NUM instead.
     // TODO: read the specific efuse with efuse_ll.h
-    if (gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
+
+    // One more noticeable point is H4 has two internal PHYs connecting to USJ and USB_WRAP(OTG1.1) separately.
+    // We only consider the default connection here: PHY0 -> USJ, PHY1 -> USB_OTG
+    if (gpio_num == USB_USJ_INT_PHY_DP_GPIO_NUM) {
         USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_pad_pull_override = 1;
         USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_dp_pullup = 0;
+    } else if (gpio_num == USB_OTG_INT_PHY_DP_GPIO_NUM) {
+        USB_WRAP.wrap_otg_conf.wrap_pad_pull_override = 1;
+        USB_WRAP.wrap_otg_conf.wrap_dp_pullup = 0;
     }
+
     IO_MUX.gpio[gpio_num].fun_wpu = 0;
 }
 
@@ -547,9 +556,13 @@ static inline void gpio_ll_set_output_signal_matrix_source(gpio_dev_t *hw, uint3
 __attribute__((always_inline))
 static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t func)
 {
-    // Disable USB Serial JTAG if USB pins needs to select an IOMUX function
-    if (gpio_num == USB_INT_PHY0_DM_GPIO_NUM || gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
+    // Disable USB PHY configuration if pins (13, 14) (21, 22) needs to select an IOMUX function
+    // P4 has two internal PHYs connecting to USJ and USB_WRAP(OTG1.1) separately.
+    // We only consider the default connection here: PHY0 -> USJ, PHY1 -> USB_OTG
+    if (gpio_num == USB_USJ_INT_PHY_DM_GPIO_NUM || gpio_num == USB_USJ_INT_PHY_DP_GPIO_NUM) {
         USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_usb_pad_enable = 0;
+    } else if (gpio_num == USB_OTG_INT_PHY_DM_GPIO_NUM || gpio_num == USB_OTG_INT_PHY_DP_GPIO_NUM) {
+        USB_WRAP.wrap_otg_conf.wrap_usb_pad_enable = 0;
     }
     IO_MUX.gpio[gpio_num].mcu_sel = func;
 }
