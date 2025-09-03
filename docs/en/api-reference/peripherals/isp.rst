@@ -18,6 +18,7 @@ Terminology
   - AF:  Auto-focus
   - AWB: Auto-white balance
   - BF:  Bayer noise filter
+  - BLC: Black Level Correction
   - CCM: Color correction matrix
 
 ISP Pipeline
