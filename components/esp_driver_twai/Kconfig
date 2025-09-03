@@ -8,6 +8,13 @@ menu "ESP-Driver:TWAI Configurations"
         help
             Place the TWAI ISR in to IRAM to reduce latency and increase performance
 
+    config TWAI_IO_FUNC_IN_IRAM
+        bool "Place TWAI I/O functions in IRAM"
+        select TWAI_OBJ_CACHE_SAFE
+        default n
+        help
+            Place certain TWAI I/O functions (like twai_transmit) in IRAM to reduce latency
+
     config TWAI_ISR_CACHE_SAFE
         bool "Allow TWAI ISR execute when cache disabled" if !SPI_FLASH_AUTO_SUSPEND
         select TWAI_ISR_IN_IRAM

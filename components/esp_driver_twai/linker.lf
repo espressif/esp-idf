@@ -7,6 +7,10 @@ entries:
         esp_twai_onchip: _node_start_trans (noflash)
         esp_twai_onchip: _node_parse_rx (noflash)
 
+    if TWAI_IO_FUNC_IN_IRAM = y:
+        esp_twai_onchip: _node_queue_tx (noflash)
+        esp_twai: twai_node_transmit (noflash)
+
 [mapping:twai_hal]
 archive: libhal.a
 entries:
