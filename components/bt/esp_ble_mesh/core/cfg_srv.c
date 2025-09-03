@@ -144,7 +144,7 @@ static void get_comp_data(struct net_buf_simple *buf,
         }
     }
 
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 }
 
 static int fetch_comp_data(struct net_buf_simple *buf,
@@ -213,7 +213,7 @@ static void comp_data_get(struct bt_mesh_model *model,
     BT_DBG("CompDataGet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     /* TODO:
      *
@@ -817,7 +817,7 @@ static void beacon_get(struct bt_mesh_model *model,
     BT_DBG("BeaconGet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     bt_mesh_model_msg_init(&msg, OP_BEACON_STATUS);
     net_buf_simple_add_u8(&msg, bt_mesh_secure_beacon_get());
@@ -837,7 +837,7 @@ static void beacon_set(struct bt_mesh_model *model,
     BT_DBG("BeaconSet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     if (!cfg) {
         BT_WARN("No Configuration Server context available");
@@ -877,7 +877,7 @@ static void default_ttl_get(struct bt_mesh_model *model,
     BT_DBG("DefaultTTLGet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     bt_mesh_model_msg_init(&msg, OP_DEFAULT_TTL_STATUS);
     net_buf_simple_add_u8(&msg, bt_mesh_default_ttl_get());
@@ -897,7 +897,7 @@ static void default_ttl_set(struct bt_mesh_model *model,
     BT_DBG("DefaultTTLSet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     if (!cfg) {
         BT_WARN("No Configuration Server context available");
@@ -944,7 +944,7 @@ static void gatt_proxy_get(struct bt_mesh_model *model,
     BT_DBG("GattProxyGet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     send_gatt_proxy_status(model, ctx);
 }
@@ -958,7 +958,7 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
     BT_DBG("GattProxySet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     if (buf->data[0] != 0x00 && buf->data[0] != 0x01) {
         BT_WARN("Invalid GATT Proxy value 0x%02x", buf->data[0]);
@@ -1021,7 +1021,7 @@ static void net_transmit_get(struct bt_mesh_model *model,
     BT_DBG("NetTransmitGet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     bt_mesh_model_msg_init(&msg, OP_NET_TRANSMIT_STATUS);
     net_buf_simple_add_u8(&msg, bt_mesh_net_transmit_get());
@@ -1041,7 +1041,7 @@ static void net_transmit_set(struct bt_mesh_model *model,
     BT_DBG("NetTransmitSet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     BT_DBG("Transmit 0x%02x Count %u Interval %u",
            buf->data[0],
@@ -1075,7 +1075,7 @@ static void relay_get(struct bt_mesh_model *model,
     BT_DBG("RelayGet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     bt_mesh_model_msg_init(&msg, OP_RELAY_STATUS);
     net_buf_simple_add_u8(&msg, bt_mesh_relay_get());
@@ -1096,7 +1096,7 @@ static void relay_set(struct bt_mesh_model *model,
     BT_DBG("RelaySet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     if (!cfg) {
         BT_WARN("No Configuration Server context available");
@@ -2777,7 +2777,7 @@ static void node_identity_get(struct bt_mesh_model *model,
     BT_DBG("NodeIdentityGet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     idx = net_buf_simple_pull_le16(buf);
     if (idx > 0xfff) {
@@ -2817,7 +2817,7 @@ static void node_identity_set(struct bt_mesh_model *model,
     BT_DBG("NodeIdentitySet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     idx = net_buf_simple_pull_le16(buf);
     if (idx > 0xfff) {
@@ -3098,7 +3098,7 @@ static void node_reset(struct bt_mesh_model *model,
     BT_DBG("NodeReset");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     bt_mesh_model_msg_init(&msg, OP_NODE_RESET_STATUS);
 
@@ -3137,7 +3137,7 @@ static void friend_get(struct bt_mesh_model *model,
     BT_DBG("FrndGet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     send_friend_status(model, ctx);
 }
@@ -3151,7 +3151,7 @@ static void friend_set(struct bt_mesh_model *model,
     BT_DBG("FrndSet");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     if (buf->data[0] != 0x00 && buf->data[0] != 0x01) {
         BT_WARN("Invalid Friend value 0x%02x", buf->data[0]);
