@@ -37,6 +37,7 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_awb.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_ccm.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_bf.h \
+    $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_blc.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_lsc.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_demosaic.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_sharpen.h \

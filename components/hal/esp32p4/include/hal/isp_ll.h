@@ -848,6 +848,110 @@ static inline void isp_ll_bf_set_template(isp_dev_t *hw, uint8_t template_arr[SO
 }
 
 /*---------------------------------------------------------------
+                      BLC
+---------------------------------------------------------------*/
+/**
+ * @brief Set BLC clock control mode
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
+ */
+static inline void isp_ll_blc_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
+{
+    hw->clk_en.clk_blc_force_on = mode;
+}
+
+/**
+ * @brief Enable / Disable BLC
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_blc_enable(isp_dev_t *hw, bool enable)
+{
+    hw->cntl.blc_en = enable;
+}
+
+/**
+ * @brief Set BLC correction offset
+ *
+ * @param[in] hw                       Hardware instance address
+ * @param[in] top_left_chan_offset     Correction offset for top left channel of the raw Bayer image
+ * @param[in] top_right_chan_offset    Correction offset for top right channel of the raw Bayer image
+ * @param[in] bottom_left_chan_offset  Correction offset for bottom left channel of the raw Bayer image
+ * @param[in] bottom_right_chan_offset Correction offset for bottom right channel of the raw Bayer image
+ */
+static inline void isp_ll_blc_set_correction_offset(isp_dev_t *hw, uint32_t top_left_chan_offset, uint32_t top_right_chan_offset, uint32_t bottom_left_chan_offset, uint32_t bottom_right_chan_offset)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_value, blc_r0_value, top_left_chan_offset);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_value, blc_r1_value, top_right_chan_offset);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_value, blc_r2_value, bottom_left_chan_offset);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_value, blc_r3_value, bottom_right_chan_offset);
+}
+
+/**
+ * @brief Enable / Disable BLC stretch
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] top_left_chan_stretch_en  Enable / Disable stretch for top left channel of the raw Bayer image
+ * @param[in] top_right_chan_stretch_en Enable / Disable stretch for top right channel of the raw Bayer image
+ * @param[in] bottom_left_chan_stretch_en Enable / Disable stretch for bottom left channel of the raw Bayer image
+ * @param[in] bottom_right_chan_stretch_en Enable / Disable stretch for bottom right channel of the raw Bayer image
+ */
+static inline void isp_ll_blc_enable_stretch(isp_dev_t *hw, bool top_left_chan_stretch_en, bool top_right_chan_stretch_en, bool bottom_left_chan_stretch_en, bool bottom_right_chan_stretch_en)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl0, blc_r0_stretch, top_left_chan_stretch_en);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl0, blc_r1_stretch, top_right_chan_stretch_en);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl0, blc_r2_stretch, bottom_left_chan_stretch_en);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl0, blc_r3_stretch, bottom_right_chan_stretch_en);
+}
+
+/**
+ * @brief Set BLC window
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] x_start X start position
+ * @param[in] y_start Y start position
+ * @param[in] x_size  X size
+ * @param[in] y_size  Y size
+ */
+static inline void isp_ll_blc_set_window(isp_dev_t *hw, uint32_t x_start, uint32_t y_start, uint32_t x_size, uint32_t y_size)
+{
+    hw->blc_ctrl1.blc_window_top = y_start;
+    hw->blc_ctrl1.blc_window_left = x_start;
+    hw->blc_ctrl1.blc_window_vnum = y_size;
+    hw->blc_ctrl1.blc_window_hnum = x_size;
+}
+
+/**
+ * @brief Set BLC filter threshold
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] top_left_chan_thresh  Filter threshold for top left channel of the raw Bayer image
+ * @param[in] top_right_chan_thresh Filter threshold for top right channel of the raw Bayer image
+ * @param[in] bottom_left_chan_thresh Filter threshold for bottom left channel of the raw Bayer image
+ * @param[in] bottom_right_chan_thresh Filter threshold for bottom right channel of the raw Bayer image
+ */
+static inline void isp_ll_blc_set_filter_threshold(isp_dev_t *hw, uint32_t top_left_chan_thresh, uint32_t top_right_chan_thresh, uint32_t bottom_left_chan_thresh, uint32_t bottom_right_chan_thresh)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl2, blc_r0_th, top_left_chan_thresh);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl2, blc_r1_th, top_right_chan_thresh);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl2, blc_r2_th, bottom_left_chan_thresh);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl2, blc_r3_th, bottom_right_chan_thresh);
+}
+
+/**
+ * @brief Enable / Disable BLC filter
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_blc_enable_filter(isp_dev_t *hw, bool enable)
+{
+    hw->blc_ctrl1.blc_filter_en = enable;
+}
+
+/*---------------------------------------------------------------
                       CCM
 ---------------------------------------------------------------*/
 /**
