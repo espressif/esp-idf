@@ -178,3 +178,11 @@ SPI
 4. 启用 ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`)
 
 请注意，启用 :ref:`CONFIG_FREERTOS_IN_IRAM` 会显著增加 IRAM 使用量。在优化 SPI 性能时，需进行权衡。
+
+Touch Element
+-------------
+
+``touch_element`` 组件已移至 [ESP Component Registry](https://components.espressif.com/components/espressif/touch_element/versions/1.0.0/readme)。
+
+您可以通过运行 ``idf.py add-dependency "espressif/touch_element"`` 将这个依赖添加到您的项目中。
+

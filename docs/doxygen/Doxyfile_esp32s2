@@ -5,10 +5,6 @@ INPUT += \
          $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/dac_channel.h \
          $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/rtc_io_channel.h \
          $(PROJECT_PATH)/components/ulp/ulp_fsm/include/$(IDF_TARGET)/ulp.h \
-         $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_button.h \
-         $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_element.h \
-         $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_matrix.h \
-         $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_slider.h \
          $(PROJECT_PATH)/components/usb/include/usb/usb_helpers.h \
          $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \
          $(PROJECT_PATH)/components/usb/include/usb/usb_types_ch9.h \

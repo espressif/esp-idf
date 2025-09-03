@@ -23,6 +23,19 @@ components/driver/test_apps/legacy_twai:
   depends_components:
     - esp_driver_gpio
 
+components/driver/test_apps/touch_element:
+  disable:
+    - if: IDF_TARGET not in ["esp32s2", "esp32s3"]
+      reason: only supports esp32s2 and esp32s3
+  depends_filepatterns:
+    - components/soc/**/touch_sensor_periph.h
+    - components/soc/esp32s2/**/rtc_cntl_*
+    - components/soc/esp32s3/**/rtc_cntl_*
+    - components/soc/esp32s2/**/rtc_io_struct.h
+    - components/soc/esp32s3/**/rtc_io_struct.h
+    - components/soc/esp32s2/**/sens_struct.h
+    - components/soc/esp32s3/**/sens_struct.h
+
 components/driver/test_apps/touch_sensor_v1:
   disable:
     - if: SOC_TOUCH_SENSOR_VERSION != 1
