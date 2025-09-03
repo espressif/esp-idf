@@ -1098,6 +1098,10 @@ app_main(void)
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
 #if NIMBLE_BLE_CONNECT
+#if MYNEWT_VAL(STATIC_PASSKEY)
+    ble_sm_configure_static_passkey(456789, true);
+#endif
+
     int rc;
     /* Initialize data structures to track connected peers. */
 #if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
