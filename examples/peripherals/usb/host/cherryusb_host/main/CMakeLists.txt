@@ -7,6 +7,7 @@ endif()
 if(CONFIG_CHERRYUSB_HOST_CDC_ACM OR CONFIG_CHERRYUSB_HOST_FTDI OR CONFIG_CHERRYUSB_HOST_CH34X OR
    CONFIG_CHERRYUSB_HOST_CP210X OR CONFIG_CHERRYUSB_HOST_PL2303)
     list(APPEND srcs "cdc_acm.c")
+    set(CHERRYUSB_HOST_CDC_ACM_INCLUDE TRUE)
 endif()
 
 if(CONFIG_CHERRYUSB_HOST_MSC)
@@ -15,40 +16,20 @@ endif()
 
 idf_component_register(SRCS ${srcs}
     INCLUDE_DIRS "."
-    PRIV_REQUIRES esp_timer fatfs
+    PRIV_REQUIRES esp_timer fatfs esp_ringbuf
 )
 
 if(CONFIG_CHERRYUSB_HOST_HID)
     # Make sure the definitions in hid.c are linked correctly
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u usbh_hid_run_real")
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u ld_include_hid")
 endif()
 
-if(CONFIG_CHERRYUSB_HOST_CDC_ACM)
-    # Make sure the definitions in hid.c are linked correctly
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u usbh_cdc_acm_run_real")
-endif()
-
-if(CONFIG_CHERRYUSB_HOST_FTDI)
-    # Make sure the definitions in hid.c are linked correctly
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u usbh_ftdi_run_real")
-endif()
-
-if(CONFIG_CHERRYUSB_HOST_CH34X)
-    # Make sure the definitions in hid.c are linked correctly
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u usbh_ch34x_run_real")
-endif()
-
-if(CONFIG_CHERRYUSB_HOST_CP210X)
-    # Make sure the definitions in hid.c are linked correctly
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u usbh_cp210x_run_real")
-endif()
-
-if(CONFIG_CHERRYUSB_HOST_PL2303)
-    # Make sure the definitions in hid.c are linked correctly
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u usbh_pl2303_run_real")
+if(CHERRYUSB_HOST_CDC_ACM_INCLUDE)
+    # Make sure the definitions in cdc_acm.c are linked correctly
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u ld_include_cdc_acm")
 endif()
 
 if(CONFIG_CHERRYUSB_HOST_MSC)
-    # Make sure the definitions in hid.c are linked correctly
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u usbh_msc_run_real")
+    # Make sure the definitions in msc.c are linked correctly
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u ld_include_msc")
 endif()

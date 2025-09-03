@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -32,7 +32,7 @@ QueueHandle_t app_event_queue = NULL;
 /**
  * @brief APP event group
  *
- * Application logic can be different. There is a one among other ways to distingiush the
+ * Application logic can be different. There is a one among other ways to distinguish the
  * event by application event group.
  * In this example we have two event groups:
  * APP_EVENT            - General event, which is APP_QUIT_PIN press event (Generally, it is IO0).
@@ -87,8 +87,8 @@ typedef struct {
 #define KEYBOARD_ENTER_ALT_ESCAPE   1
 
 #if KEYBOARD_ENTER_ALT_ESCAPE
-static bool escaping = false;
-static unsigned char escap_hex = 0;
+static bool is_ansi = false;
+static unsigned int alt_code = 0;
 #endif
 
 /**
@@ -155,6 +155,24 @@ const uint8_t keycode2ascii [57][2] = {
 };
 
 /**
+ * @brief HID Keyboard print char symbol
+ *
+ * @param[in] key_char  Keyboard char to stdout
+ */
+static inline void hid_keyboard_print_char(unsigned int key_char)
+{
+    if (!!key_char) {
+        putchar(key_char);
+#if (KEYBOARD_ENTER_LF_EXTEND)
+        if (KEYBOARD_ENTER_MAIN_CHAR == key_char) {
+            putchar('\n');
+        }
+#endif // KEYBOARD_ENTER_LF_EXTEND
+        fflush(stdout);
+    }
+}
+
+/**
  * @brief Makes new line depending on report output protocol type
  *
  * @param[in] proto Current protocol to output
@@ -211,6 +229,62 @@ static inline bool hid_keyboard_is_modifier_alt(uint8_t modifier)
     }
     return false;
 }
+
+/**
+ * @brief HID Keyboard alt code process(Called when ALT is pressed)
+ *
+ * @param[in] key_code Entered key value
+ * @return true  Key values that qualify for ALT escape processing
+ * @return false Key values that do not comply with ALT escape processing
+ *
+ */
+static inline bool hid_keyboard_alt_code_processing(uint8_t key_code)
+{
+    if ((key_code < HID_KEY_KEYPAD_1) || (key_code > HID_KEY_KEYPAD_0)) {
+        return false;
+    }
+    if (key_code == HID_KEY_KEYPAD_0) {
+        if (alt_code == 0) {
+            is_ansi = true;
+            return true;
+        }
+        /* Note: Since the keyboard code 0 of the numeric keypad is not keyboard code 1 minus 1, the
+         * conversion is performed here to facilitate subsequent calculations of the input numbers.
+        */
+        key_code = HID_KEY_KEYPAD_1 - 1;
+    }
+    alt_code = alt_code * 10 + (key_code - (HID_KEY_KEYPAD_1 - 1));
+    return true;
+}
+
+/**
+ * @brief HID Keyboard alt code process complete(Called when ALT is not pressed)
+ */
+static inline void hid_keyboard_alt_code_process_complete(void)
+{
+    if (alt_code > 0) {
+        alt_code = alt_code & 0xff;
+        if (is_ansi || alt_code == 0) {
+            char utf8_buffer[8] = { 0 };
+            if (alt_code == 0) {
+                alt_code = 0x100;
+            }
+            //ANSI is processed as UTF8
+            if (alt_code <= 0x7F) {
+                utf8_buffer[0] = (char)alt_code;
+            } else {
+                utf8_buffer[0] = 0xC0 | ((alt_code >> 6) & 0x1F);
+                utf8_buffer[1] = 0x80 | (alt_code & 0x3F);
+            }
+            printf("%s", utf8_buffer);
+            fflush(stdout);
+        } else {
+            hid_keyboard_print_char(alt_code);
+        }
+        alt_code = 0;
+    }
+    is_ansi = false;
+}
 #endif
 
 /**
@@ -230,14 +304,12 @@ static inline bool hid_keyboard_get_char(uint8_t modifier,
     uint8_t mod = (hid_keyboard_is_modifier_shift(modifier)) ? 1 : 0;
 
 #if KEYBOARD_ENTER_ALT_ESCAPE
-    if (escaping) {
-        if ((key_code >= HID_KEY_KEYPAD_1) && (key_code <= HID_KEY_KEYPAD_0)) {
-            if (key_code == HID_KEY_KEYPAD_0) {
-                key_code = HID_KEY_KEYPAD_1 - 1;
-            }
-            escap_hex = escap_hex * 10 + (key_code - (HID_KEY_KEYPAD_1 - 1));
+    if (hid_keyboard_is_modifier_alt(modifier)) {
+        // ALT modifier is still pressed
+        if (hid_keyboard_alt_code_processing(key_code)) {
+            // ALT code processed, no need to go further
+            return false;
         }
-        return false;
     }
 #endif
 
@@ -249,24 +321,6 @@ static inline bool hid_keyboard_get_char(uint8_t modifier,
     }
 
     return true;
-}
-
-/**
- * @brief HID Keyboard print char symbol
- *
- * @param[in] key_char  Keyboard char to stdout
- */
-static inline void hid_keyboard_print_char(unsigned int key_char)
-{
-    if (!!key_char) {
-        putchar(key_char);
-#if (KEYBOARD_ENTER_LF_EXTEND)
-        if (KEYBOARD_ENTER_MAIN_CHAR == key_char) {
-            putchar('\n');
-        }
-#endif // KEYBOARD_ENTER_LF_EXTEND
-        fflush(stdout);
-    }
 }
 
 /**
@@ -328,16 +382,8 @@ static void hid_host_keyboard_report_callback(const uint8_t *const data, const i
     key_event_t key_event;
 
 #if KEYBOARD_ENTER_ALT_ESCAPE
-    if (hid_keyboard_is_modifier_alt(kb_report->modifier.val)) {
-        if (escaping == false) {
-            escaping = true;
-            escap_hex = 0;
-        }
-    } else {
-        if (escaping && escap_hex > 0) {
-            escaping = false;
-            hid_keyboard_print_char(escap_hex);
-        }
+    if (!hid_keyboard_is_modifier_alt(kb_report->modifier.val)) {
+        hid_keyboard_alt_code_process_complete();
     }
 #endif
 

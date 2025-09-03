@@ -33,10 +33,11 @@ static TaskHandle_t s_task_handle = NULL;
 #define CDC_IN_EP  0x81
 #define CDC_OUT_EP 0x01
 #define CDC_INT_EP 0x83
-
+#if CDC_ACM_CHANNEL_NUM >= 2
 #define CDC_IN_EP1  0x82
 #define CDC_OUT_EP1 0x02
 #define CDC_INT_EP1 0x84
+#endif
 
 #define USBD_VID           0xFFFF
 #define USBD_PID           0xFFFF
@@ -44,7 +45,7 @@ static TaskHandle_t s_task_handle = NULL;
 #define USBD_LANGID_STRING 1033
 
 /*!< config descriptor size */
-#define USB_CONFIG_SIZE (9 + CDC_ACM_DESCRIPTOR_LEN * 4)
+#define USB_CONFIG_SIZE (9 + CDC_ACM_DESCRIPTOR_LEN * CDC_ACM_CHANNEL_NUM)
 
 #define CDC_FS_MAX_MPS 64
 #define CDC_HS_MAX_MPS 512
@@ -85,7 +86,6 @@ static uint32_t s_mps = CDC_MAX_MPS;
 static DRAM_DMA_ALIGNED_ATTR uint8_t read_buffer[CDC_ACM_CHANNEL_NUM][READ_BUFFER_SIZE];
 static DRAM_DMA_ALIGNED_ATTR uint8_t write_buffer[CDC_ACM_CHANNEL_NUM][WRITE_BUFFER_SIZE];
 
-#ifdef CONFIG_USBDEV_ADVANCE_DESC
 static const uint8_t device_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0xEF, 0x02, 0x01, USBD_VID, USBD_PID, 0x0100, 0x01)
 };
@@ -170,90 +170,8 @@ const struct usb_descriptor cdc_descriptor = {
     .device_quality_descriptor_callback = device_quality_descriptor_callback,
     .string_descriptor_callback = string_descriptor_callback
 };
-#else
-/*!< global descriptor */
-static const uint8_t cdc_descriptor[] = {
-    USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0xEF, 0x02, 0x01, USBD_VID, USBD_PID, 0x0100, 0x01),
-    USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, INTERFACES_NUM, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    CDC_ACM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, 0x02),
-#ifdef CONFIG_EXAMPLE_CHERRYUSB_CDC_ACM_TWO_CHANNEL
-    CDC_ACM_DESCRIPTOR_INIT(0x02, CDC_INT_EP1, CDC_OUT_EP1, CDC_IN_EP1, CDC_MAX_MPS, 0x02),
-#endif
-    ///////////////////////////////////////
-    /// string0 descriptor
-    ///////////////////////////////////////
-    USB_LANGID_INIT(USBD_LANGID_STRING),
-    ///////////////////////////////////////
-    /// string1 descriptor
-    ///////////////////////////////////////
-    0x14,                       /* bLength */
-    USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
-    'C', 0x00,                  /* wcChar0 */
-    'h', 0x00,                  /* wcChar1 */
-    'e', 0x00,                  /* wcChar2 */
-    'r', 0x00,                  /* wcChar3 */
-    'r', 0x00,                  /* wcChar4 */
-    'y', 0x00,                  /* wcChar5 */
-    'U', 0x00,                  /* wcChar6 */
-    'S', 0x00,                  /* wcChar7 */
-    'B', 0x00,                  /* wcChar8 */
-    ///////////////////////////////////////
-    /// string2 descriptor
-    ///////////////////////////////////////
-    0x26,                       /* bLength */
-    USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
-    'C', 0x00,                  /* wcChar0 */
-    'h', 0x00,                  /* wcChar1 */
-    'e', 0x00,                  /* wcChar2 */
-    'r', 0x00,                  /* wcChar3 */
-    'r', 0x00,                  /* wcChar4 */
-    'y', 0x00,                  /* wcChar5 */
-    'U', 0x00,                  /* wcChar6 */
-    'S', 0x00,                  /* wcChar7 */
-    'B', 0x00,                  /* wcChar8 */
-    ' ', 0x00,                  /* wcChar9 */
-    'C', 0x00,                  /* wcChar10 */
-    'D', 0x00,                  /* wcChar11 */
-    'C', 0x00,                  /* wcChar12 */
-    ' ', 0x00,                  /* wcChar13 */
-    'D', 0x00,                  /* wcChar14 */
-    'E', 0x00,                  /* wcChar15 */
-    'M', 0x00,                  /* wcChar16 */
-    'O', 0x00,                  /* wcChar17 */
-    ///////////////////////////////////////
-    /// string3 descriptor
-    ///////////////////////////////////////
-    0x16,                       /* bLength */
-    USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
-    '2', 0x00,                  /* wcChar0 */
-    '0', 0x00,                  /* wcChar1 */
-    '2', 0x00,                  /* wcChar2 */
-    '5', 0x00,                  /* wcChar3 */
-    '0', 0x00,                  /* wcChar4 */
-    '6', 0x00,                  /* wcChar5 */
-    '0', 0x00,                  /* wcChar6 */
-    '5', 0x00,                  /* wcChar7 */
-    '1', 0x00,                  /* wcChar8 */
-    '8', 0x00,                  /* wcChar9 */
-#ifdef CONFIG_USB_HS
-    ///////////////////////////////////////
-    /// device qualifier descriptor
-    ///////////////////////////////////////
-    0x0a,
-    USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER,
-    0x00,
-    0x02,
-    0x00,
-    0x00,
-    0x00,
-    0x40,
-    0x00,
-    0x00,
-#endif
-    0x00
-};
-#endif
 
+//Note: This callback is in the interrupt context
 void usbd_event_handler(uint8_t busid, uint8_t event)
 {
     switch (event) {
@@ -285,6 +203,7 @@ void usbd_event_handler(uint8_t busid, uint8_t event)
     }
 }
 
+//Note: This callback is in the interrupt context
 static void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     ESP_EARLY_LOGI(TAG, "ep 0x%02X actual out len:%d", ep, nbytes);
@@ -321,6 +240,7 @@ static void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
     }
 }
 
+//Note: This callback is in the interrupt context
 static void usbd_cdc_acm_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     BaseType_t HPTaskAwoken = pdFALSE;
@@ -373,11 +293,8 @@ struct usbd_interface intf3;
 
 static void cdc_acm_init(void)
 {
-#ifdef CONFIG_USBDEV_ADVANCE_DESC
     usbd_desc_register(0, &cdc_descriptor);
-#else
-    usbd_desc_register(0, cdc_descriptor);
-#endif
+
     usbd_add_interface(0, usbd_cdc_acm_init_intf(0, &intf0));
     usbd_add_interface(0, usbd_cdc_acm_init_intf(0, &intf1));
     usbd_add_endpoint(0, &cdc_out_ep);
@@ -396,11 +313,13 @@ static void cdc_acm_init(void)
 #endif
 }
 
+//Note: This callback is in the interrupt context
 void usbd_cdc_acm_set_dtr(uint8_t busid, uint8_t intf, bool dtr)
 {
     ESP_EARLY_LOGI(TAG, "intf:%u, dtr:%d", intf, dtr);
 }
 
+//Note: This callback is in the interrupt context
 void usbd_cdc_acm_set_rts(uint8_t busid, uint8_t intf, bool rts)
 {
     ESP_EARLY_LOGI(TAG, "intf:%u, rts:%d", intf, rts);
@@ -470,22 +389,22 @@ void cdc_acm_task(void *arg)
 void app_main(void)
 {
 #if CONFIG_EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
-reinit :
+    while (1)
 #endif
-
-    xTaskCreatePinnedToCore(&cdc_acm_task, "cdc_acm_task", 1024 * 3, NULL, 10, &s_task_handle, 0);
+    {
+        xTaskCreatePinnedToCore(&cdc_acm_task, "cdc_acm_task", 1024 * 3, NULL, 10, &s_task_handle, 0);
 
 #if CONFIG_EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
-    for (int i = 10; i >= 0; i--) {
-        ESP_LOGW(TAG, "Deinit usb after %d seconds...", i);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-    ESP_LOGW(TAG, "Notify deinit usb");
-    xTaskNotify(s_task_handle, NOTIFY_EXIT_BIT, eSetBits);
-    while (s_task_handle) {
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-    }
-    goto reinit;
+        for (int i = 10; i >= 0; i--) {
+            ESP_LOGW(TAG, "Deinit usb after %d seconds...", i);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+        }
+        ESP_LOGW(TAG, "Notify deinit usb");
+        xTaskNotify(s_task_handle, NOTIFY_EXIT_BIT, eSetBits);
+        while (s_task_handle) {
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+        }
 #endif
+    }
 
 }

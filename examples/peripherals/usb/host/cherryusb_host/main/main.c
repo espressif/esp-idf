@@ -41,25 +41,25 @@ void app_main(void)
 #endif
 
 #if CONFIG_EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
-reinit:
+    while (1)
 #endif
-
+    {
 #if CONFIG_EXAMPLE_USB_HOST_RHPORT_HS
-    usbh_initialize(0, ESP_USB_HS0_BASE);
+        usbh_initialize(0, ESP_USB_HS0_BASE);
 #else
-    usbh_initialize(0, ESP_USB_FS0_BASE);
+        usbh_initialize(0, ESP_USB_FS0_BASE);
 #endif
 
-    ESP_LOGI(TAG, "Init usb");
+        ESP_LOGI(TAG, "Init usb");
 
 #if CONFIG_EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
-    for (int i = 10; i >= 0; i--) {
-        ESP_LOGW(TAG, "Deinit usb after %d seconds...", i);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-    ESP_LOGW(TAG, "Deinit usb");
-    usbh_deinitialize(0);
-    goto reinit;
+        for (int i = 10; i >= 0; i--) {
+            ESP_LOGW(TAG, "Deinit usb after %d seconds...", i);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+        }
+        ESP_LOGW(TAG, "Deinit usb");
+        usbh_deinitialize(0);
 #endif
+    }
 
 }
