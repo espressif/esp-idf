@@ -503,7 +503,7 @@ TEST_CASE("erase operations are distributed among sectors", "[nvs]")
     }
 
     /* Check that erase counts are distributed between the remaining sectors */
-    const size_t max_erase_cnt = write_ops / nvs::Page::ENTRY_COUNT / (sectors - static_sectors) + 1;
+    TEMPORARILY_DISABLED(const size_t max_erase_cnt = write_ops / nvs::Page::ENTRY_COUNT / (sectors - static_sectors) + 1;)
     for (size_t i = 0; i < sectors; ++i) {
         TEMPORARILY_DISABLED(
             auto erase_cnt = f.emu.getSectorEraseCount(i);
@@ -2045,4 +2045,62 @@ TEST_CASE("Recovery from power-off during modification of blob present in old-fo
     TEST_ESP_ERR(p3.findItem(1, nvs::ItemType::BLOB, "singlepage"), ESP_ERR_NVS_NOT_FOUND);
 
     TEST_ESP_OK(nvs_flash_deinit_partition(f.part()->get_partition_name()));
+}
+
+TEST_CASE("Page handles invalid CRC of variable length items", "[nvs][cur]")
+{
+    PartitionEmulationFixture f(0, 4);
+    {
+        nvs::Page p;
+        TEST_ESP_OK(p.load(f.part(), 0));
+        char buf[128] = {0};
+        TEST_ESP_OK(p.writeItem(1, nvs::ItemType::BLOB, "1", buf, sizeof(buf)));
+    }
+    // corrupt header of the item (64 is the offset of the first item in page)
+    uint32_t overwrite_buf = 0;
+    TEST_ESP_OK(esp_partition_write(&f.esp_partition, 64, &overwrite_buf, 4));
+    // load page again
+    {
+        nvs::Page p1;
+        TEST_ESP_OK(p1.load(f.part(), 0));
+    }
+}
+
+TEST_CASE("namespace name is deep copy", "[nvs]")
+{
+    char ns_name[16];
+    strcpy(ns_name, "const_name");
+
+    nvs_handle_t handle_1;
+    nvs_handle_t handle_2;
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+
+    PartitionEmulationFixture f(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
+
+    TEST_ESP_OK( nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
+                 NVS_FLASH_SECTOR,
+                 NVS_FLASH_SECTOR_COUNT_MIN));
+
+    TEST_ESP_OK(nvs_open("const_name", NVS_READWRITE, &handle_1));
+    strcpy(ns_name, "just_kidding");
+
+    CHECK(nvs_open("just_kidding", NVS_READONLY, &handle_2) == ESP_ERR_NVS_NOT_FOUND);
+
+    nvs_close(handle_1);
+    nvs_close(handle_2);
+
+    nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME);
+}
+
+/* Add new tests above */
+/* This test has to be the final one */
+
+TEST_CASE("dump all performance data", "[nvs]")
+{
+    std::cout << "====================" << std::endl << "Dumping benchmarks" << std::endl;
+    std::cout << s_perf.str() << std::endl;
+    std::cout << "====================" << std::endl;
 }
