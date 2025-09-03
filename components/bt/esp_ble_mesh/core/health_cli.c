@@ -138,7 +138,7 @@ static void health_fault_status(struct bt_mesh_model *model,
     BT_DBG("HealthFaultStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.test_id = net_buf_simple_pull_u8(buf);
     status.cid = net_buf_simple_pull_le16(buf);
@@ -162,7 +162,7 @@ static void health_current_status(struct bt_mesh_model *model,
     BT_DBG("HealthCurrentStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.test_id = net_buf_simple_pull_u8(buf);
     status.cid = net_buf_simple_pull_le16(buf);
@@ -186,7 +186,7 @@ static void health_period_status(struct bt_mesh_model *model,
     BT_DBG("HealthPeriodStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status = net_buf_simple_pull_u8(buf);
 
@@ -202,7 +202,7 @@ static void health_attention_status(struct bt_mesh_model *model,
     BT_DBG("HealthAttentionStatus");
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
            ctx->net_idx, ctx->app_idx, ctx->addr);
-    BT_DBG("Len %u: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status = net_buf_simple_pull_u8(buf);
 

@@ -2094,6 +2094,9 @@ void bt_mesh_generic_net_recv(struct net_buf_simple *data,
     /* Save the state so the buffer can later be relayed */
     net_buf_simple_save(buf, &state);
 
+    BT_DBG("NetRecv, Src 0x%04x Dst 0x%04x Rssi %d NetIf %u",
+           rx->ctx.addr, rx->ctx.recv_dst, rx->ctx.recv_rssi, net_if);
+
     BT_BQB(BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE | \
            BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_NET,
            "\nNetRecv: ctl: %d, src: %d, dst: %d, ttl: %d, data: 0x%s",

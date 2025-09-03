@@ -332,7 +332,7 @@ static bool friend_sub_exist(struct bt_mesh_friend *frnd, uint16_t addr)
 {
     int i;
 
-    BT_DBG("IsFrndSubExist, Addr 0x%04x");
+    BT_DBG("IsFrndSubExist, Addr 0x%04x", addr);
 
     for (i = 0; i < ARRAY_SIZE(frnd->sub_list); i++) {
         if (frnd->sub_list[i] == addr) {
@@ -347,7 +347,7 @@ static void friend_sub_add(struct bt_mesh_friend *frnd, uint16_t addr)
 {
     int i;
 
-    BT_DBG("FrndSubAdd, Addr 0x%04x");
+    BT_DBG("FrndSubAdd, Addr 0x%04x", addr);
 
     for (i = 0; i < ARRAY_SIZE(frnd->sub_list); i++) {
         if (frnd->sub_list[i] == BLE_MESH_ADDR_UNASSIGNED) {
@@ -363,7 +363,7 @@ static void friend_sub_rem(struct bt_mesh_friend *frnd, uint16_t addr)
 {
     int i;
 
-    BT_DBG("FrndSubRem, Addr 0x%04x");
+    BT_DBG("FrndSubRem, Addr 0x%04x", addr);
 
     for (i = 0; i < ARRAY_SIZE(frnd->sub_list); i++) {
         if (frnd->sub_list[i] == addr) {
