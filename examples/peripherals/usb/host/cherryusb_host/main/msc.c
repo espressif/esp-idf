@@ -36,6 +36,10 @@ static SemaphoreHandle_t s_buff_mux = NULL;
 static size_t s_buff_size = 0;
 static uint8_t *s_buff = NULL;
 
+void ld_include_msc(void)
+{
+}
+
 static DSTATUS usb_disk_initialize(BYTE pdrv)
 {
     return RES_OK;
@@ -393,8 +397,6 @@ void usbh_msc_run(struct usbh_msc *msc_class)
 
     return;
 }
-
-void usbh_msc_run_real(struct usbh_msc *) __attribute__((alias("usbh_msc_run")));
 
 void usbh_msc_stop(struct usbh_msc *msc_class)
 {

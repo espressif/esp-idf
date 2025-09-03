@@ -7,6 +7,7 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/ringbuf.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 
@@ -29,6 +30,10 @@
 #endif
 
 static char *TAG = "CDC_ACM";
+
+#define RINGBUF_SIZE 1024
+static RingbufHandle_t s_recv_ringbuf = NULL;
+static TaskHandle_t s_printf_task_handle = NULL;
 
 typedef enum {
     SERIAL_TYPE_CDC_ACM = 0,
@@ -53,6 +58,10 @@ typedef struct {
 
 static void free_serial_buffer(serial_t *serial);
 static esp_err_t serial_start_in(serial_t *serial);
+
+void ld_include_cdc_acm(void)
+{
+}
 
 #define alloc_serial_buffer(serial_class, serial_type, out_serial) \
     {   \
@@ -87,9 +96,10 @@ static void free_serial_buffer(serial_t *serial)
     heap_caps_free(serial);
 }
 
+//Note: This callback is in the interrupt context
 static void serial_in_cb(void *arg, int nbytes)
 {
-    // ESP_EARLY_LOGE(TAG, "in_cb: %d bytes", nbytes);
+    BaseType_t xTaskWoken = pdFALSE;
     serial_t *serial = (serial_t *)arg;
     uint8_t *data = serial->in_buffer;
     if (nbytes < 0) {
@@ -105,17 +115,14 @@ static void serial_in_cb(void *arg, int nbytes)
         nbytes -= 2;
     }
 
-    for (size_t i = 0; i < nbytes; i++) {
-        if (data[i] >= 0x20 && data[i] <= 0x7e) {
-            esp_rom_printf("%c", data[i]);
-        } else {
-            esp_rom_printf("[%02x]", data[i]);
-            if (data[i] == '\n') {
-                esp_rom_printf("\n");
-            }
+    if (s_recv_ringbuf) {
+        if (xRingbufferSendFromISR(s_recv_ringbuf, data, nbytes, &xTaskWoken) != pdTRUE) {
+            ESP_LOGD(TAG, "Ringbuffer send failed");
         }
     }
-
+    if (xTaskWoken == pdTRUE) {
+        portYIELD_FROM_ISR();
+    }
     serial_start_in(serial);
 }
 
@@ -130,7 +137,7 @@ static esp_err_t serial_start_in(serial_t *serial)
     return ESP_OK;
 }
 
-esp_err_t serial_out(serial_t *serial, uint8_t *data, size_t len, uint32_t timeout)
+static esp_err_t serial_out(serial_t *serial, uint8_t *data, size_t len, uint32_t timeout)
 {
     int ret;
     if (len > serial->bulkout->wMaxPacketSize) {
@@ -145,6 +152,36 @@ esp_err_t serial_out(serial_t *serial, uint8_t *data, size_t len, uint32_t timeo
     return ESP_OK;
 }
 
+static void usbh_cdc_acm_printf_task(void *arg)
+{
+    while (1) {
+        size_t length = 0;
+        char *data = (char *)xRingbufferReceive(s_recv_ringbuf, &length, portMAX_DELAY);
+        if (data == NULL) {
+            continue;
+        }
+        ESP_LOGI(TAG, "Data received");
+        ESP_LOG_BUFFER_HEXDUMP(TAG, data, length, ESP_LOG_INFO);
+        vRingbufferReturnItem(s_recv_ringbuf, (void *)data);
+        fflush(stdout);
+    }
+    vTaskDelete(NULL);
+}
+
+static void creat_printf_task(void)
+{
+    if (s_recv_ringbuf == NULL) {
+        s_recv_ringbuf = xRingbufferCreate(RINGBUF_SIZE, RINGBUF_TYPE_BYTEBUF);
+        if (s_recv_ringbuf == NULL) {
+            ESP_LOGE(TAG, "ringbuf create failed");
+            return;
+        }
+    }
+    if (s_printf_task_handle == NULL) {
+        xTaskCreate(usbh_cdc_acm_printf_task, "usbh_cdc_acm_printf_task", 4096, NULL, 5, &s_printf_task_handle);
+    }
+}
+
 #if CONFIG_CHERRYUSB_HOST_CDC_ACM
 
 void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
@@ -155,6 +192,7 @@ void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
         ESP_LOGW(TAG, "Malloc failed");
         return;
     }
+    creat_printf_task();
     cdc_acm_class->user_data = serial;
 
     struct cdc_line_coding linecoding = {
@@ -169,8 +207,6 @@ void usbh_cdc_acm_run(struct usbh_cdc_acm *cdc_acm_class)
     const char data[]  = "CDC: Hello, world!\r\n";
     serial_out(serial, (uint8_t *)data, sizeof(data), 1000);
 }
-
-void usbh_cdc_acm_run_real(struct usbh_cdc_acm *cdc_acm_class) __attribute__((alias("usbh_cdc_acm_run")));
 
 void usbh_cdc_acm_stop(struct usbh_cdc_acm *cdc_acm_class)
 {
@@ -188,6 +224,7 @@ void usbh_ftdi_run(struct usbh_ftdi *ftdi_class)
         ESP_LOGW(TAG, "Malloc failed");
         return;
     }
+    creat_printf_task();
     ftdi_class->user_data = serial;
 
     struct cdc_line_coding linecoding = {
@@ -204,8 +241,6 @@ void usbh_ftdi_run(struct usbh_ftdi *ftdi_class)
     serial_out(serial, (uint8_t *)data, sizeof(data), 1000);
 }
 
-void usbh_ftdi_run_real(struct usbh_ftdi *cdc_acm_class) __attribute__((alias("usbh_ftdi_run")));
-
 void usbh_ftdi_stop(struct usbh_ftdi *ftdi_class)
 {
     free_serial_buffer(ftdi_class->user_data);
@@ -221,6 +256,7 @@ void usbh_ch34x_run(struct usbh_ch34x *ch34x_class)
         ESP_LOGW(TAG, "Malloc failed");
         return;
     }
+    creat_printf_task();
     ch34x_class->user_data = serial;
 
     struct cdc_line_coding linecoding = {
@@ -235,8 +271,6 @@ void usbh_ch34x_run(struct usbh_ch34x *ch34x_class)
     const char data[]  = "CH34x: Hello, world!\r\n";
     serial_out(serial, (uint8_t *)data, sizeof(data), 1000);
 }
-
-void usbh_ch34x_run_real(struct usbh_ch34x *cdc_acm_class) __attribute__((alias("usbh_ch34x_run")));
 
 void usbh_ch34x_stop(struct usbh_ch34x *ch34x_class)
 {
@@ -253,6 +287,7 @@ void usbh_cp210x_run(struct usbh_cp210x *cp210x_class)
         ESP_LOGW(TAG, "Malloc failed");
         return;
     }
+    creat_printf_task();
     cp210x_class->user_data = serial;
 
     struct cdc_line_coding linecoding = {
@@ -267,8 +302,6 @@ void usbh_cp210x_run(struct usbh_cp210x *cp210x_class)
     const char data[]  = "CP201x: Hello, world!\r\n";
     serial_out(serial, (uint8_t *)data, sizeof(data), 1000);
 }
-
-void usbh_cp210x_run_real(struct usbh_cp210x *cdc_acm_class) __attribute__((alias("usbh_cp210x_run")));
 
 void usbh_cp210x_stop(struct usbh_cp210x *cp210x_class)
 {
@@ -285,6 +318,7 @@ void usbh_pl2303_run(struct usbh_pl2303 *pl2303_class)
         ESP_LOGW(TAG, "Malloc failed");
         return;
     }
+    creat_printf_task();
     pl2303_class->user_data = serial;
 
     struct cdc_line_coding linecoding = {
@@ -299,8 +333,6 @@ void usbh_pl2303_run(struct usbh_pl2303 *pl2303_class)
     const char data[]  = "PL2303: Hello, world!\r\n";
     serial_out(serial, (uint8_t *)data, sizeof(data), 1000);
 }
-
-void usbh_pl2303_run_real(struct usbh_pl2303 *cdc_acm_class) __attribute__((alias("usbh_pl2303_run")));
 
 void usbh_pl2303_stop(struct usbh_pl2303 *pl2303_class)
 {
