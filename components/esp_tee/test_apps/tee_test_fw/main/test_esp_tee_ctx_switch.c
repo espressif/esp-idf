@@ -5,6 +5,7 @@
  */
 
 #include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
@@ -18,6 +19,7 @@
 
 #define TEST_TASK_1_DONE_BIT (BIT0)
 #define TEST_TASK_2_DONE_BIT (BIT1)
+#define TEST_TASK_DONE_BITS  (TEST_TASK_1_DONE_BIT | TEST_TASK_2_DONE_BIT)
 
 typedef struct {
     uint32_t id;
@@ -87,7 +89,7 @@ TEST_CASE("Test custom secure service call", "[basic]")
     TEST_ASSERT_EQUAL_UINT32(36, res);
 }
 
-static void test_task(void *pvParameters)
+static void test_task_basic(void *pvParameters)
 {
     test_task_args_t *args = (test_task_args_t *)pvParameters;
     uint32_t *val = args->val;
@@ -97,7 +99,7 @@ static void test_task(void *pvParameters)
     while (*val <= ESP_TEE_TEST_INTR_ITER) {
         uint32_t curr_val = *val;
         if (curr_val != prev_val) {
-            esp_rom_printf("[mode: %d] test_task - %d | val - %d\n", esp_cpu_get_curr_privilege_level(), id, curr_val);
+            esp_rom_printf("[mode: %d] test_task - %lu | val - %lu\n", esp_cpu_get_curr_privilege_level(), id, curr_val);
             prev_val = curr_val;
         }
         vTaskDelay(pdMS_TO_TICKS(100));
@@ -109,39 +111,65 @@ static void test_task(void *pvParameters)
 
 TEST_CASE("Test task switching during secure service calls", "[basic]")
 {
-    esp_cpu_priv_mode_t mode = esp_cpu_get_curr_privilege_level();
-    TEST_ASSERT_MESSAGE((mode == ESP_CPU_NS_MODE), "Incorrect privilege mode!");
+    TEST_ASSERT_EQUAL(ESP_CPU_NS_MODE, esp_cpu_get_curr_privilege_level());
 
     test_task_eg = xEventGroupCreate();
     TEST_ASSERT_NOT_NULL(test_task_eg);
 
     uint32_t a = 0, b = 0;
-
-    test_task_args_t task_args_1 = {
-        .id = 1,
-        .val = &a,
-        .done_bit = TEST_TASK_1_DONE_BIT
+    test_task_args_t task_args[] = {
+        { .id = 1, .val = &a, .done_bit = TEST_TASK_1_DONE_BIT },
+        { .id = 2, .val = &b, .done_bit = TEST_TASK_2_DONE_BIT }
     };
 
-    test_task_args_t task_args_2 = {
-        .id = 2,
-        .val = &b,
-        .done_bit = TEST_TASK_2_DONE_BIT
-    };
-
-    xTaskCreate(test_task, "test_task_1", 4096, (void *)&task_args_1, CONFIG_UNITY_FREERTOS_PRIORITY + 3, NULL);
-    xTaskCreate(test_task, "test_task_2", 4096, (void *)&task_args_2, CONFIG_UNITY_FREERTOS_PRIORITY + 3, NULL);
+    xTaskCreate(test_task_basic, "test_task_1", 4096, (void *)&task_args[0], CONFIG_UNITY_FREERTOS_PRIORITY + 3, NULL);
+    xTaskCreate(test_task_basic, "test_task_2", 4096, (void *)&task_args[1], CONFIG_UNITY_FREERTOS_PRIORITY + 3, NULL);
 
     uint32_t val = esp_tee_service_call(3, SS_ESP_TEE_TEST_PRIV_MODE_SWITCH, &a, &b);
     TEST_ASSERT_EQUAL_UINT32(ESP_TEE_TEST_INTR_ITER * 2, val);
 
-    EventBits_t bits = xEventGroupWaitBits(test_task_eg, TEST_TASK_1_DONE_BIT | TEST_TASK_2_DONE_BIT, pdTRUE, pdTRUE, portMAX_DELAY);
-    TEST_ASSERT_MESSAGE((bits & TEST_TASK_1_DONE_BIT), "Task 1 did not complete");
-    TEST_ASSERT_MESSAGE((bits & TEST_TASK_2_DONE_BIT), "Task 2 did not complete");
+    EventBits_t bits = xEventGroupWaitBits(test_task_eg, TEST_TASK_DONE_BITS, pdTRUE, pdTRUE, portMAX_DELAY);
+    TEST_ASSERT(bits & TEST_TASK_DONE_BITS);
     vEventGroupDelete(test_task_eg);
 
-    mode = esp_cpu_get_curr_privilege_level();
-    TEST_ASSERT_MESSAGE((mode == ESP_CPU_NS_MODE), "Incorrect privilege mode!");
+    TEST_ASSERT_EQUAL(ESP_CPU_NS_MODE, esp_cpu_get_curr_privilege_level());
+}
+
+static void test_task_w_sec_srv(void *pvParameters)
+{
+    test_task_args_t *args = (test_task_args_t *)pvParameters;
+    uint32_t id = args->id;
+
+    esp_rom_printf("[task: %lu] Running...\n", id);
+
+    uint32_t a = 0, b = 0;
+    uint32_t res = esp_tee_service_call(3, SS_ESP_TEE_TEST_PRIV_MODE_SWITCH, &a, &b);
+
+    vTaskDelay(pdMS_TO_TICKS(100));
+    TEST_ASSERT_EQUAL_UINT32(ESP_TEE_TEST_INTR_ITER * 2, res);
+
+    esp_rom_printf("[task: %lu] Exiting...\n", id);
+
+    xEventGroupSetBits(test_task_eg, args->done_bit);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Test parallel secure service calls", "[basic]")
+{
+    test_task_eg = xEventGroupCreate();
+    TEST_ASSERT_NOT_NULL(test_task_eg);
+
+    test_task_args_t task_args[] = {
+        { .id = 1, .done_bit = TEST_TASK_1_DONE_BIT },
+        { .id = 2, .done_bit = TEST_TASK_2_DONE_BIT }
+    };
+
+    xTaskCreate(test_task_w_sec_srv, "test_task1", 4096, (void *)&task_args[0], CONFIG_UNITY_FREERTOS_PRIORITY, NULL);
+    xTaskCreate(test_task_w_sec_srv, "test_task2", 4096, (void *)&task_args[1], CONFIG_UNITY_FREERTOS_PRIORITY, NULL);
+
+    EventBits_t bits = xEventGroupWaitBits(test_task_eg, TEST_TASK_DONE_BITS, pdTRUE, pdTRUE, portMAX_DELAY);
+    TEST_ASSERT(bits & TEST_TASK_DONE_BITS);
+    vEventGroupDelete(test_task_eg);
 }
 
 TEST_CASE("Test TEE Heap: Malloc-write-free cycles", "[heap]")

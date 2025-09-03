@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "esp_private/cache_utils.h"
 
 #include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 
@@ -43,7 +44,9 @@ uint32_t IRAM_ATTR esp_tee_service_call(int argc, ...)
     va_list ap = {0};
     va_start(ap, argc);
 
-    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+    /* NOTE: Cannot take the mutex if the scheduler is suspended or
+     * service call is requested from a critical section */
+    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING && xPortCanYield()) {
         if (xSemaphoreTake(s_tee_mutex, portMAX_DELAY) == pdTRUE) {
             val = _u2m_switch(argc, ap);
             xSemaphoreGive(s_tee_mutex);
