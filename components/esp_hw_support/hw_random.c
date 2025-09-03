@@ -78,7 +78,7 @@ uint32_t IRAM_ATTR esp_random(void)
             result ^= REG_READ(WDEV_RND_REG);
         } while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
         uint32_t current_rtc_timer_counter = (lp_timer_hal_get_cycle_count() & 0xFF);
-        result ^= ((result ^ current_rtc_timer_counter) & 0xFF) << (i * 8);
+        result ^= (current_rtc_timer_counter << (i * 8));
     }
 #else
     do {
