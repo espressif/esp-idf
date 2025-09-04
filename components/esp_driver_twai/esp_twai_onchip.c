@@ -444,7 +444,7 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_s
         .sjw_max = TWAI_LL_SJW_MAX,
     };
     uint32_t real_baud = twai_node_timing_calc_param(source_freq, timing, &hw_const, &timing_adv);
-    ESP_LOGD(TAG, "norm src %ld, param %ld %d %d %d %d %d", source_freq, timing_adv.brp, timing_adv.prop_seg, timing_adv.tseg_1, timing_adv.tseg_2, timing_adv.sjw, timing_adv.ssp_offset);
+    ESP_LOGD(TAG, "timing: src %ld brp %ld prop %d seg1 %d seg2 %d sjw %d ssp %d", source_freq, timing_adv.brp, timing_adv.prop_seg, timing_adv.tseg_1, timing_adv.tseg_2, timing_adv.sjw, timing_adv.ssp_offset);
     ESP_RETURN_ON_FALSE(real_baud, ESP_ERR_INVALID_ARG, TAG, "bitrate can't achieve!");
     if (timing->bitrate != real_baud) {
         ESP_LOGW(TAG, "bitrate precision loss, adjust from %ld to %ld", timing->bitrate, real_baud);
@@ -453,7 +453,7 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_s
     twai_timing_advanced_config_t timing_adv_fd = { .clk_src = root_clock_src, };
     if (timing_fd->bitrate) {
         real_baud = twai_node_timing_calc_param(source_freq, timing_fd, &hw_const, &timing_adv_fd);
-        ESP_LOGD(TAG, "fd src %ld, param %ld %d %d %d %d %d", source_freq, timing_adv_fd.brp, timing_adv_fd.prop_seg, timing_adv_fd.tseg_1, timing_adv_fd.tseg_2, timing_adv_fd.sjw, timing_adv_fd.ssp_offset);
+        ESP_LOGD(TAG, "timing_fd: src %ld brp %ld prop %d seg1 %d seg2 %d sjw %d ssp %d", source_freq, timing_adv_fd.brp, timing_adv_fd.prop_seg, timing_adv_fd.tseg_1, timing_adv_fd.tseg_2, timing_adv_fd.sjw, timing_adv_fd.ssp_offset);
         ESP_RETURN_ON_FALSE(real_baud, ESP_ERR_INVALID_ARG, TAG, "bitrate can't achieve!");
         if (timing_fd->bitrate != real_baud) {
             ESP_LOGW(TAG, "bitrate precision loss, adjust from %ld to %ld", timing_fd->bitrate, real_baud);

@@ -251,7 +251,7 @@ static void test_random_trans_generator(twai_node_handle_t node_hdl, uint32_t tr
     };
     printf("Sending %ld random trans ...\n", trans_num);
     for (uint32_t tx_cnt = 0; tx_cnt < trans_num; tx_cnt++) {
-        tx_msg.header.id = tx_cnt | 0xf000;
+        tx_msg.header.id = tx_cnt | 0xf000 | (tx_cnt << 16);
         tx_msg.header.ide = !!(tx_cnt % 2);
         tx_msg.header.rtr = !!(tx_cnt % 3);
         tx_msg.buffer_len = tx_cnt % TWAI_FRAME_MAX_LEN;
@@ -356,13 +356,17 @@ static IRAM_ATTR bool test_dual_filter_rx_done_cb(twai_node_handle_t handle, con
         .buffer_len = TWAI_FRAME_MAX_LEN,
     };
     if (ESP_OK == twai_node_receive_from_isr(handle, &rx_frame)) {
-        ESP_EARLY_LOGI("Recv", "RX id 0x%4x len %2d ext %d rmt %d", rx_frame.header.id, twaifd_dlc2len(rx_frame.header.dlc), rx_frame.header.ide, rx_frame.header.rtr);
+        ESP_EARLY_LOGI("Recv", "id 0x%8x len %2d ext %d rmt %d", rx_frame.header.id, twaifd_dlc2len(rx_frame.header.dlc), rx_frame.header.ide, rx_frame.header.rtr);
         switch (test_ctrl[0]) {
-        case 0:         // receive something
+        case 0:         // receive std id
             TEST_ASSERT(!rx_frame.header.ide);
             TEST_ASSERT((rx_frame.header.id >= 0x10) && (rx_frame.header.id <= 0x2f));
             break;
         case 1: break;  // receive none
+        case 2:         // receive ext id
+            TEST_ASSERT(rx_frame.header.ide);
+            TEST_ASSERT((rx_frame.header.id >= 0x280000) || (rx_frame.header.id <= 0xfffff));
+            break;
         default: TEST_ASSERT(false);
         }
         test_ctrl[1] ++;
@@ -391,7 +395,7 @@ TEST_CASE("twai dual 16bit mask filter (loopback)", "[twai]")
     };
     TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &user_cbs, test_ctrl));
 
-    printf("Testing dual filter: id1 0x%x mask1 0x%x, id2 0x%x mask2 0x%x\n", 0x020, 0x7f0, 0x013, 0x7f8);
+    printf("Testing dual filter: std id1 0x%x mask1 0x%x, id2 0x%x mask2 0x%x\n", 0x020, 0x7f0, 0x013, 0x7f8);
     test_ctrl[0] = 0;
     test_ctrl[1] = 0;
     // filter 1 receive only std id 0x02x
@@ -402,16 +406,30 @@ TEST_CASE("twai dual 16bit mask filter (loopback)", "[twai]")
     test_random_trans_generator(node_hdl, 50);
     TEST_ASSERT_EQUAL(12, test_ctrl[1]);    // must receive 12 of 50 frames under filter config
 
-    printf("Disable filter\n");
+    dual_config = twai_make_dual_filter(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, false);
+    printf("Testing disable filter by dual_maker, result: id %lx mask %lx\n", dual_config.id, dual_config.mask);
+    TEST_ASSERT_EQUAL(0xffffffff, dual_config.id & dual_config.mask);
+
+    printf("Testing disable filter\n");
     test_ctrl[0] = 1;
     test_ctrl[1] = 0;
-    dual_config.id = 0xFFFFFFFF;
-    dual_config.mask = 0xFFFFFFFF;
     TEST_ESP_OK(twai_node_disable(node_hdl));
     TEST_ESP_OK(twai_node_config_mask_filter(node_hdl, 0, &dual_config));
     TEST_ESP_OK(twai_node_enable(node_hdl));
     test_random_trans_generator(node_hdl, 40);
     TEST_ASSERT_EQUAL(0, test_ctrl[1]);
+
+    printf("Testing dual filter: ext id1 0x%x mask1 0x%x, id2 0x%x mask2 0x%x\n", 0x0280000, 0x1ff80000, 0x0000000, 0x1ff00000);
+    test_ctrl[0] = 2;
+    test_ctrl[1] = 0;
+    // filter 1 receive only ext id 0x028xxxxx~0x02fxxxxx
+    // filter 2 receive only ext id 0x000xxxxx
+    dual_config = twai_make_dual_filter(0x0280000, 0x1ff80000, 0x0000000, 0x1ff00000, true);
+    TEST_ESP_OK(twai_node_disable(node_hdl));
+    TEST_ESP_OK(twai_node_config_mask_filter(node_hdl, 0, &dual_config));
+    TEST_ESP_OK(twai_node_enable(node_hdl));
+    test_random_trans_generator(node_hdl, 50);
+    TEST_ASSERT_EQUAL(12, test_ctrl[1]);    // must receive 12 of 50 frames
 
     TEST_ESP_OK(twai_node_disable(node_hdl));
     TEST_ESP_OK(twai_node_delete(node_hdl));
