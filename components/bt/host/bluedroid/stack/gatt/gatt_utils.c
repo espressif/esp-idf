@@ -1364,7 +1364,8 @@ void gatt_rsp_timeout(TIMER_LIST_ENT *p_tle)
         }
     }
 
-    GATT_TRACE_WARNING("gatt_rsp_timeout disconnecting...");
+    GATT_TRACE_WARNING("gatt_rsp_timeout conn_id=%x op=%u op_sub=%u retry_count=%u disconnecting...",
+        p_clcb->conn_id, p_clcb->operation, p_clcb->op_subtype, p_clcb->retry_count);
     gatt_disconnect (p_clcb->p_tcb);
 }
 
@@ -1806,7 +1807,7 @@ void gatt_clcb_dealloc (tGATT_CLCB *p_clcb)
         btu_free_timer(&p_clcb->rsp_timer_ent);
         memset(p_clcb, 0, sizeof(tGATT_CLCB));
         list_remove(gatt_cb.p_clcb_list, p_clcb);
-	p_clcb = NULL;
+        p_clcb = NULL;
     }
 }
 

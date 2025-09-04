@@ -2185,7 +2185,7 @@ UINT16 BTM_BleReadConnectability(void)
 void BTM_Recovery_Pre_State(void)
 {
     tBTM_BLE_INQ_CB *ble_inq_cb = &btm_cb.ble_ctr_cb.inq_var;
-
+    BTM_TRACE_DEBUG("%s state=0x%x", __func__, ble_inq_cb->state);
     if (ble_inq_cb->state & BTM_BLE_ADVERTISING) {
         btm_ble_stop_adv();
         btm_ble_start_adv();
