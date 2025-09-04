@@ -31,7 +31,6 @@ from idf_py_actions.tools import generate_hints
 from idf_py_actions.tools import get_target
 from idf_py_actions.tools import idf_version
 from idf_py_actions.tools import merge_action_lists
-from idf_py_actions.tools import print_warning
 from idf_py_actions.tools import run_target
 from idf_py_actions.tools import yellow_print
 
@@ -48,13 +47,7 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
         run_target(target_name, args, force_progression=GENERATORS[args.generator].get('force_progression', False))
 
     def size_target(
-        target_name: str,
-        ctx: Context,
-        args: PropertyDict,
-        output_format: str,
-        output_file: str,
-        diff_map_file: str,
-        legacy: bool,
+        target_name: str, ctx: Context, args: PropertyDict, output_format: str, output_file: str, diff_map_file: str
     ) -> None:
         """
         Builds the app and then executes a size-related target passed in 'target_name'.
@@ -68,27 +61,9 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
 
         env: dict[str, Any] = {}
 
-        if not legacy and output_format != 'json':
-            try:
-                import esp_idf_size.ng  # noqa: F401
-            except ImportError:
-                print_warning('WARNING: refactored esp-idf-size not installed, using legacy mode')
-                legacy = True
-            else:
-                # Legacy mode is used only when explicitly requested with --legacy option
-                # or when "--format json" option is specified. Here we enable the
-                # esp-idf-size refactored version with ESP_IDF_SIZE_NG env. variable.
-                env['ESP_IDF_SIZE_NG'] = '1'
-                # ESP_IDF_SIZE_FORCE_TERMINAL is set to force terminal control codes even
-                # if stdout is not attached to terminal. This is set to pass color codes
-                # from esp-idf-size to idf.py.
-                env['ESP_IDF_SIZE_FORCE_TERMINAL'] = '1'
-
-        if legacy and output_format in ['json2', 'raw', 'tree']:
-            # These formats are supported in new version only.
-            # We would get error from the esp-idf-size anyway, so print error early.
-            raise FatalError(f'Legacy esp-idf-size does not support {output_format} format')
-
+        # Enforce NG mode for esp-idf-size v 1.x. After v 2.x is fully incorporated, 'ESP_IDF_SIZE_NG' can be removed.
+        env['ESP_IDF_SIZE_NG'] = '1'
+        env['ESP_IDF_SIZE_FORCE_TERMINAL'] = '1'
         env['SIZE_OUTPUT_FORMAT'] = output_format
         if output_file:
             env['SIZE_OUTPUT_FILE'] = os.path.abspath(output_file)
@@ -441,15 +416,9 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
     size_options = [
         {
             'names': ['--format', 'output_format'],
-            'type': click.Choice(['default', 'text', 'csv', 'json', 'json2', 'tree', 'raw']),
-            'help': 'Specify output format: text (same as "default"), csv, json, json2, tree or raw.',
+            'type': click.Choice(['default', 'text', 'csv', 'json2', 'tree', 'raw']),
+            'help': 'Specify output format: text (same as "default"), csv, json2, tree or raw.',
             'default': 'default',
-        },
-        {
-            'names': ['--legacy', '-l'],
-            'is_flag': True,
-            'default': os.environ.get('ESP_IDF_SIZE_LEGACY', '0') == '1',
-            'help': 'Use legacy esp-idf-size version',
         },
         {
             'names': ['--diff', 'diff_map_file'],
