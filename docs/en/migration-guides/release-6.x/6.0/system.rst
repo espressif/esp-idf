@@ -60,6 +60,8 @@ The deprecated ``intr_types.h`` header file has been removed. Please include the
 
 The deprecated ``esp_private/interrupt_deprecated.h`` header file, previously accessible through ``riscv/interrupt.h`` header, has been removed. The deprecated functions are no longer available; please use the non-deprecated versions instead.
 
+The ``esp_fault.h`` header file has been moved from the ``esp_hw_support`` component to the ``esp_common`` component. If your application encounters build errors after this change, add ``esp_common`` to your component's ``REQUIRES`` or ``PRIV_REQUIRES`` list in ``CMakeLists.txt``.
+
 ROM Headers
 -----------
 

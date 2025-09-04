@@ -60,6 +60,8 @@ Xtensa 特殊寄存器头文件已更新，使用新的命名约定。旧的 ``s
 
 已弃用的头文件 ``esp_private/interrupt_deprecated.h`` （此前通过 ``riscv/interrupt.h`` 头文件提供）已被移除。相关已弃用的函数不再可用，请改用非弃用版本。
 
+头文件 ``esp_fault.h`` 已从 ``esp_hw_support`` 组件移动到 ``esp_common`` 组件。如果应用程序在此更改后遇到构建错误，请在 ``CMakeLists.txt`` 中将 ``esp_common`` 添加到组件的 ``REQUIRES`` 或 ``PRIV_REQUIRES`` 列表中。
+
 ROM 头文件
 -----------
 
