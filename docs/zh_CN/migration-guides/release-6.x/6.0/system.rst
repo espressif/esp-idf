@@ -154,6 +154,11 @@ Log
 
 - ``esp_log_internal.h`` – 请使用 ``esp_log_buffer.h`` 替代。
 
+ESP-Event
+---------
+
+不必要的 FreeRTOS 头文件已从 ``esp_event.h`` 中移除。此前依赖这些隐式包含的代码，现在必须显式添加以下头文件：``#include "freertos/queue.h"`` 和 ``#include "freertos/semphr.h"``。
+
 核心转储
 --------
 
