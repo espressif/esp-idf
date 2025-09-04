@@ -173,8 +173,7 @@ static void reassemble_and_dispatch(BT_HDR *packet)
             partial_packet = (BT_HDR *)osi_calloc(full_length + sizeof(BT_HDR));
 
             if (partial_packet == NULL) {
-               HCI_TRACE_WARNING("%s full_length %d no memory, free=%d, largest_block=%d", __func__, full_length,
-                                heap_caps_get_free_size(MALLOC_CAP_DEFAULT), heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
+               HCI_TRACE_WARNING("%s full_length %d no memory.", __func__, full_length);
                assert(0);
             }
 

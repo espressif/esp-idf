@@ -332,7 +332,7 @@ void smp_generate_stk(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         output.opcode =  HCI_BLE_ENCRYPT;
         memcpy(output.param_buf, p_cb->ltk, SMP_ENCRYT_DATA_SIZE);
     } else if (!smp_calculate_legacy_short_term_key(p_cb, &output)) {
-        SMP_TRACE_ERROR("%s failed", __func__);
+        SMP_TRACE_ERROR("%s pairing failed", __func__);
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
         return;
     }
@@ -459,7 +459,7 @@ void smp_compute_csrk(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     UINT16_TO_STREAM(p, r);
 
     if (!SMP_Encrypt(er, BT_OCTET16_LEN, buffer, 4, &output)) {
-        SMP_TRACE_ERROR("smp_generate_csrk failed\n");
+        SMP_TRACE_ERROR("%s pairing failed", __func__);
         if (p_cb->smp_over_br) {
 #if (CLASSIC_BT_INCLUDED == TRUE)
             smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &status);
@@ -549,7 +549,7 @@ void smp_concatenate_peer( tSMP_CB *p_cb, UINT8 **p_data, UINT8 op_code)
 ** Function         smp_gen_p1_4_confirm
 **
 ** Description      Generate Confirm/Compare Step1:
-**                  p1 = pres || preq || rat' || iat'
+**                  p1 = press || preq || rat' || iat'
 **
 ** Returns          void
 **
@@ -574,22 +574,22 @@ void smp_gen_p1_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p1)
         UINT8_TO_STREAM(p, p_cb->addr_type);
         /* LSB : iat': responder's address type */
         UINT8_TO_STREAM(p, addr_type);
-        /* concatinate preq */
+        /* concatenate preq */
         smp_concatenate_local(p_cb, &p, SMP_OPCODE_PAIRING_REQ);
-        /* concatinate pres */
+        /* concatenate press */
         smp_concatenate_peer(p_cb, &p, SMP_OPCODE_PAIRING_RSP);
     } else {
         /* LSB : iat': initiator's address type */
         UINT8_TO_STREAM(p, addr_type);
         /* LSB : rat': responder's(local) address type */
         UINT8_TO_STREAM(p, p_cb->addr_type);
-        /* concatinate preq */
+        /* concatenate preq */
         smp_concatenate_peer(p_cb, &p, SMP_OPCODE_PAIRING_REQ);
-        /* concatinate pres */
+        /* concatenate press */
         smp_concatenate_local(p_cb, &p, SMP_OPCODE_PAIRING_RSP);
     }
 #if SMP_DEBUG == TRUE
-    SMP_TRACE_DEBUG("p1 = pres || preq || rat' || iat'\n");
+    SMP_TRACE_DEBUG("p1 = press || preq || rat' || iat'\n");
     smp_debug_print_nbyte_little_endian ((UINT8 *)p1, (const UINT8 *)"P1", 16);
 #endif
 }
@@ -654,7 +654,7 @@ void smp_calculate_comfirm (tSMP_CB *p_cb, BT_OCTET16 rand, BD_ADDR bda)
     tSMP_STATUS     status = SMP_PAIR_FAIL_UNKNOWN;
 
     SMP_TRACE_DEBUG ("smp_calculate_comfirm \n");
-    /* generate p1 = pres || preq || rat' || iat' */
+    /* generate p1 = press || preq || rat' || iat' */
     smp_gen_p1_4_confirm(p_cb, p1);
 
     /* p1 = rand XOR p1 */
@@ -664,7 +664,7 @@ void smp_calculate_comfirm (tSMP_CB *p_cb, BT_OCTET16 rand, BD_ADDR bda)
 
     /* calculate e(k, r XOR p1), where k = TK */
     if (!SMP_Encrypt(p_cb->tk, BT_OCTET16_LEN, p1, BT_OCTET16_LEN, &output)) {
-        SMP_TRACE_ERROR("smp_generate_csrk failed");
+        SMP_TRACE_ERROR("%s calculate TK failed", __func__);
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
     } else {
         smp_calculate_comfirm_cont(p_cb, &output);
@@ -701,7 +701,7 @@ static void smp_calculate_comfirm_cont(tSMP_CB *p_cb, tSMP_ENC *p)
 
     /* calculate: Confirm = E(k, p1' XOR p2) */
     if (!SMP_Encrypt(p_cb->tk, BT_OCTET16_LEN, p2, BT_OCTET16_LEN, &output)) {
-        SMP_TRACE_ERROR("smp_calculate_comfirm_cont failed\n");
+        SMP_TRACE_ERROR("%s pairing failed", __func__);
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
     } else {
         SMP_TRACE_DEBUG("p_cb->rand_enc_proc_state=%d\n", p_cb->rand_enc_proc_state);
@@ -861,7 +861,7 @@ static void smp_generate_ltk_cont(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     /* LTK = d1(ER, DIV, 0)= e(ER, DIV)*/
     if (!SMP_Encrypt(er, BT_OCTET16_LEN, (UINT8 *)&p_cb->div,
                      sizeof(UINT16), &output)) {
-        SMP_TRACE_ERROR("%s failed\n", __func__);
+        SMP_TRACE_ERROR("%s failed", __func__);
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
     } else {
         /* mask the LTK */
@@ -1373,6 +1373,8 @@ void smp_calculate_numeric_comparison_display_number(tSMP_CB *p_cb,
     }
 
     if (p_cb->number_to_display >= (BTM_MAX_PASSKEY_VAL + 1)) {
+        SMP_TRACE_ERROR("%s pairing failed - invalid number to display %u",
+            __func__, p_cb->number_to_display);
         UINT8 reason;
         reason = p_cb->failure = SMP_PAIR_FAIL_UNKNOWN;
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
