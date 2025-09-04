@@ -9,6 +9,15 @@ The [Deep-sleep wake stub](https://docs.espressif.com/projects/esp-idf/en/latest
 
 In this example, the `CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` Kconfig option is used, which allows you to reduce the boot time of the bootloader during waking up from deep sleep. The bootloader stores in rtc memory the address of a running partition and uses it when it wakes up. This example allows you to skip all image checks and speed up the boot.
 
+> [!NOTE]
+> It is recommended to use a development board with an external USB-UART chip to debug this example. If you're using the USB-Serial-JTAG port to view logs from this example, note that the internal USB peripheral will be disabled during deep_sleep for power saving. This will result in:
+> - Serial output interruption
+> - Host-side errors like ClearCommError failed
+> - Windows may show "Unknown USB device"
+> - Even after wakeup, USB connection may not automatically recover
+>
+> See: [USB Serial/JTAG console sleep mode considerations](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/usb-serial-jtag-console.html#sleep-mode-considerations)
+
 ## How to use example
 
 ### Hardware Required

@@ -15,6 +15,15 @@ Power save mode only works in station mode. If the modem sleep mode is enabled, 
 
 * others: not supported yet.
 
+> [!NOTE]
+> It is recommended to use a development board with an external USB-UART chip to debug this example. If you're using the USB-Serial-JTAG port to view logs from this example, note that the internal USB peripheral will be disabled during light_sleep for power saving. This will result in:
+> - Serial output interruption
+> - Host-side errors like ClearCommError failed
+> - Windows may show "Unknown USB device"
+> - Even after wakeup, USB connection may not automatically recover
+>
+> See: [USB Serial/JTAG console sleep mode considerations](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/usb-serial-jtag-console.html#sleep-mode-considerations)
+
 ### Typical current consumption with management enabled
 
 ![current consumption with CONFIG_PM_ENABLE enabled](image/power_save_graph.png)
