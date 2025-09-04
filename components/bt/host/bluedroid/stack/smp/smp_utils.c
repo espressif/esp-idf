@@ -366,6 +366,7 @@ BOOLEAN smp_send_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
     }
 
     if (!sent) {
+        SMP_TRACE_ERROR("%s failed, cmd_code=0x%02x", __func__, cmd_code);
         if (p_cb->smp_over_br) {
 #if (CLASSIC_BT_INCLUDED == TRUE)
             smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &failure);
@@ -392,7 +393,7 @@ void smp_rsp_timeout(TIMER_LIST_ENT *p_tle)
     UINT8 failure = SMP_RSP_TIMEOUT;
     UNUSED(p_tle);
 
-    SMP_TRACE_EVENT("%s state:%d br_state:%d", __FUNCTION__, p_cb->state, p_cb->br_state);
+    SMP_TRACE_ERROR("%s state=%d br_state=%d", __func__, p_cb->state, p_cb->br_state);
 
     if (p_cb->smp_over_br) {
 #if (CLASSIC_BT_INCLUDED == TRUE)
