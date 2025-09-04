@@ -3818,6 +3818,8 @@ TEST_CASE("nvs multiple write with same key but different types", "[nvs]")
     TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
+#ifndef CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
+// Following test case is not valid for new behavior not leading to multiple active values under the same key
 TEST_CASE("nvs multiple write with same key blob and string involved", "[nvs]")
 {
     PartitionEmulationFixture f(0, 10);
@@ -3893,6 +3895,7 @@ TEST_CASE("nvs multiple write with same key blob and string involved", "[nvs]")
 
     TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
+#endif // !CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
 
 TEST_CASE("nvs find key tests", "[nvs]")
 {
