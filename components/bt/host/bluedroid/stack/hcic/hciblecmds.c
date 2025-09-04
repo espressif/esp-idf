@@ -618,6 +618,8 @@ BOOLEAN btsnd_hcic_ble_start_enc (UINT16 handle, UINT8 rand[HCIC_BLE_RAND_DI_SIZ
     BT_HDR *p;
     UINT8 *pp;
 
+    HCI_TRACE_DEBUG("%s handle=%u LTK=%s", __func__, handle, bt_hex2str(ltk, HCIC_BLE_ENCRYT_KEY_SIZE));
+
     if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_BLE_START_ENC)) == NULL) {
         return (FALSE);
     }
@@ -644,6 +646,8 @@ BOOLEAN btsnd_hcic_ble_ltk_req_reply (UINT16 handle, UINT8 ltk[HCIC_BLE_ENCRYT_K
     BT_HDR *p;
     UINT8 *pp;
 
+    HCI_TRACE_DEBUG("%s handle=%u LTK=%s", __func__, handle, bt_hex2str(ltk, HCIC_BLE_ENCRYT_KEY_SIZE));
+
     if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_LTK_REQ_REPLY)) == NULL) {
         return (FALSE);
     }
@@ -667,6 +671,8 @@ BOOLEAN btsnd_hcic_ble_ltk_req_neg_reply (UINT16 handle)
 {
     BT_HDR *p;
     UINT8 *pp;
+
+    HCI_TRACE_WARNING("%s handle=%u", __func__, handle);
 
     if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_LTK_REQ_NEG_REPLY)) == NULL) {
         return (FALSE);

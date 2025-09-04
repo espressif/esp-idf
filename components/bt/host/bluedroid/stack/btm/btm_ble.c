@@ -77,18 +77,16 @@ BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name, tBT_DEVICE_TYPE d
     tBTM_SEC_DEV_REC  *p_dev_rec;
     tBTM_INQ_INFO      *p_info = NULL;
 
-    BTM_TRACE_DEBUG ("BTM_SecAddBleDevice dev_type=0x%x", dev_type);
+    BTM_TRACE_DEBUG ("%s dev_type=0x%x bd_addr="MACSTR"", __func__, dev_type, MAC2STR(bd_addr));
     p_dev_rec = btm_find_dev (bd_addr);
 
     if (!p_dev_rec) {
-        BTM_TRACE_DEBUG("Add a new device");
-
         /* There is no device record, allocate one.
          * If we can not find an empty spot for this one, let it fail. */
         if (list_length(btm_cb.p_sec_dev_rec_list) < BTM_SEC_MAX_DEVICE_RECORDS) {
-	    p_dev_rec = (tBTM_SEC_DEV_REC *)osi_malloc(sizeof(tBTM_SEC_DEV_REC));
-	    if(p_dev_rec) {
-		list_append(btm_cb.p_sec_dev_rec_list, p_dev_rec);
+            p_dev_rec = (tBTM_SEC_DEV_REC *)osi_malloc(sizeof(tBTM_SEC_DEV_REC));
+            if (p_dev_rec) {
+                list_append(btm_cb.p_sec_dev_rec_list, p_dev_rec);
                 BTM_TRACE_DEBUG ("allocate a new dev rec idx=0x%x\n", list_length(btm_cb.p_sec_dev_rec_list));
 
                 /* Mark this record as in use and initialize */
@@ -158,22 +156,20 @@ BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name, tBT_DEVICE_TYPE d
 BOOLEAN BTM_SecAddBleKey (BD_ADDR bd_addr, tBTM_LE_KEY_VALUE *p_le_key, tBTM_LE_KEY_TYPE key_type)
 {
     tBTM_SEC_DEV_REC  *p_dev_rec;
-    BTM_TRACE_DEBUG ("BTM_SecAddBleKey");
     p_dev_rec = btm_find_dev (bd_addr);
+
     if (!p_dev_rec || !p_le_key ||
             (key_type != BTM_LE_KEY_PENC && key_type != BTM_LE_KEY_PID &&
              key_type != BTM_LE_KEY_PCSRK && key_type != BTM_LE_KEY_LENC &&
              key_type != BTM_LE_KEY_LCSRK && key_type != BTM_LE_KEY_LID)) {
-        BTM_TRACE_WARNING ("BTM_SecAddBleKey()  Wrong Type, or No Device record \
-                        for bdaddr: %08x%04x, Type: %d",
-                           (bd_addr[0] << 24) + (bd_addr[1] << 16) + (bd_addr[2] << 8) + bd_addr[3],
-                           (bd_addr[4] << 8) + bd_addr[5], key_type);
+        BTM_TRACE_WARNING ("BTM_SecAddBleKey() Wrong Type, or No Device record \
+                           for bdaddr: "MACSTR", key_type: %02x",
+                           MAC2STR(bd_addr), key_type);
         return (FALSE);
     }
 
-    BTM_TRACE_DEBUG ("BTM_SecAddLeKey()  BDA: %08x%04x, Type: 0x%02x",
-                     (bd_addr[0] << 24) + (bd_addr[1] << 16) + (bd_addr[2] << 8) + bd_addr[3],
-                     (bd_addr[4] << 8) + bd_addr[5], key_type);
+    BTM_TRACE_DEBUG ("BTM_SecAddLeKey()  BDA: "MACSTR", key_type: 0x%02x",
+                     MAC2STR(bd_addr), key_type);
 
     btm_sec_save_le_key (bd_addr, key_type, p_le_key, FALSE);
 
@@ -1756,15 +1752,14 @@ void btm_ble_ltk_request_reply(BD_ADDR bda,  BOOLEAN use_stk, BT_OCTET16 stk)
     tBTM_CB *p_cb = &btm_cb;
 
     if (p_rec == NULL) {
-        BTM_TRACE_ERROR("btm_ble_ltk_request_reply received for unknown device");
+        BTM_TRACE_ERROR("%s received for unknown device "MACSTR"", __func__, MAC2STR(bda));
         return;
     }
 
-    BTM_TRACE_DEBUG ("btm_ble_ltk_request_reply");
+    BTM_TRACE_DEBUG ("%s key_type=%x key_size=%d", __func__, p_rec->ble.key_type, p_rec->ble.keys.key_size);
     p_cb->enc_handle = p_rec->ble_hci_handle;
     p_cb->key_size = p_rec->ble.keys.key_size;
 
-    BTM_TRACE_DEBUG("key size = %d", p_rec->ble.keys.key_size);
     if (use_stk) {
         btsnd_hcic_ble_ltk_req_reply(btm_cb.enc_handle, stk);
     } else { /* calculate LTK using peer device  */
@@ -2044,7 +2039,8 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
     STREAM_TO_UINT8    (role, p);
     STREAM_TO_UINT8    (bda_type, p);
     STREAM_TO_BDADDR   (bda, p);
-    BTM_TRACE_DEBUG("status = %d, handle = %d, role = %d, bda_type = %d",status,handle,role,bda_type);
+    BTM_TRACE_DEBUG("status=%d handle=%d role=%d bda_type=%d bda="MACSTR"",
+        status, handle, role, bda_type, MAC2STR(bda));
     if (status == 0) {
         if (enhanced) {
             STREAM_TO_BDADDR   (local_rpa, p);

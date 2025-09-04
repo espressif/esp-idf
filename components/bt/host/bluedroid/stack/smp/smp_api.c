@@ -236,7 +236,7 @@ BOOLEAN SMP_PairCancel (BD_ADDR bd_addr)
     if ( (p_cb->state != SMP_STATE_IDLE)  &&
             (!memcmp (p_cb->pairing_bda, bd_addr, BD_ADDR_LEN)) ) {
         p_cb->is_pair_cancel = TRUE;
-        SMP_TRACE_DEBUG("Cancel Pairing: set fail reason Unknown");
+        SMP_TRACE_ERROR("%s Cancel Pairing: set fail reason Unknown", __func__);
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &err_code);
         status = TRUE;
     }
@@ -434,6 +434,8 @@ void SMP_OobDataReply(BD_ADDR bd_addr, tSMP_STATUS res, UINT8 len, UINT8 *p_data
     }
 
     if (res != SMP_SUCCESS || len == 0 || !p_data) {
+        SMP_TRACE_ERROR("%s pairing failed, res=0x%x len=%u p_data=%p",
+            __func__, res, len, p_data);
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &failure);
     } else {
         if (len > BT_OCTET16_LEN) {
@@ -524,10 +526,10 @@ void SMP_SecureConnectionOobDataReply(UINT8 *p_data)
 ** Description      This function is called to encrypt the data with the specified
 **                  key
 **
-** Parameters:      key                 - Pointer to key key[0] conatins the MSB
+** Parameters:      key                 - Pointer to key key[0] contains the MSB
 **                  key_len             - key length
 **                  plain_text          - Pointer to data to be encrypted
-**                                        plain_text[0] conatins the MSB
+**                                        plain_text[0] contains the MSB
 **                  pt_len              - plain text length
 **                  p_out                - output of the encrypted texts
 **
