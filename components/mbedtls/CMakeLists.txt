@@ -188,9 +188,14 @@ endif()
 # net_sockets.c should only be compiled if BSD socket functions are available.
 # Do this by checking if lwip component is included into the build.
 if(CONFIG_LWIP_ENABLE)
-    list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/net_sockets.c")
-    idf_component_get_property(lwip_lib lwip COMPONENT_LIB)
-    target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${lwip_lib})
+    if(IDF_BUILD_V2)
+        target_sources(${COMPONENT_LIB} PRIVATE "$<$<TARGET_EXISTS:idf::lwip>:${COMPONENT_DIR}/port/net_sockets.c>")
+        target_link_libraries(${COMPONENT_LIB} ${linkage_type} "$<$<TARGET_EXISTS:idf::lwip>:idf::lwip>")
+    else()
+        list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/net_sockets.c")
+        idf_component_get_property(lwip_lib lwip COMPONENT_LIB)
+        target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${lwip_lib})
+    endif()
 endif()
 
 # Add port files to mbedtls targets
