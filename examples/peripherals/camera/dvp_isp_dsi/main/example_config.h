@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #define EXAMPLE_RGB565_BITS_PER_PIXEL           16
+#define EXAMPLE_RGB565_BYTES_PER_PIXEL          (EXAMPLE_RGB565_BITS_PER_PIXEL / 8)
 
 #define EXAMPLE_ISP_DVP_CAM_SCCB_SCL_IO        (33)
 #define EXAMPLE_ISP_DVP_CAM_SCCB_SDA_IO        (32)

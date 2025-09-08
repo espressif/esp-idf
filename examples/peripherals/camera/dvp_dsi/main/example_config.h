@@ -13,6 +13,8 @@ extern "C" {
 #endif
 
 #define EXAMPLE_RGB565_BITS_PER_PIXEL      (16)
+#define EXAMPLE_RGB565_BYTES_PER_PIXEL     (EXAMPLE_RGB565_BITS_PER_PIXEL / 8)
+
 #define EXAMPLE_DVP_CAM_XCLK_FREQ_HZ       (20000000)
 #define EXAMPLE_DVP_CAM_DATA_WIDTH         (8)
 
@@ -36,6 +38,7 @@ extern "C" {
 #define EXAMPLE_DVP_CAM_HSYNC_IO           (-1)
 
 #else
+
 #define EXAMPLE_DVP_CAM_SCCB_SCL_IO        (33)
 #define EXAMPLE_DVP_CAM_SCCB_SDA_IO        (32)
 
