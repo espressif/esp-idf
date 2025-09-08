@@ -710,3 +710,94 @@ function(idf_build_binary executable)
     # custom binary target, which is used by the idf_flash_binary.
     set_target_properties(${ARG_TARGET} PROPERTIES BINARY_PATH ${ARG_OUTPUT_FILE})
 endfunction()
+
+#[[api
+.. cmakev2:function:: idf_sign_binary
+
+   .. code-block:: cmake
+
+      idf_sign_binary(<binary>
+                      TARGET <target>
+                      OUTPUT_FILE <file>
+                      [KEYFILE <file>])
+
+   :binary[in]: Binary image target for which to generate a signed binary image
+                file. The ``binary`` target is created by the ``idf_build_binary``
+                function.
+   :TARGET[in]: The name of the target that will be created for the
+                signed binary image.
+   :OUTPUT_FILE[in]: Output file path for storing the signed binary image file.
+   :KEYFILE[in,opt]: Optional path to the key file that should be used for
+                     signing. If not provided, the key file specified by the
+                     ``CONFIG_SECURE_BOOT_SIGNING_KEY`` configuration option
+                     will be used.
+
+   Sign binary image specified by ``binary`` target with ``KEYFILE`` and save
+   it in the file specified with the  `OUTPUT_FILE` option. A custom target
+   named ``TARGET`` will be created for the signed binary image. The path of
+   the signed binary image will be also stored in the ``BINARY_PATH`` property
+   of the ``TARGET``.
+#]]
+function(idf_sign_binary binary)
+    set(options)
+    set(one_value OUTPUT_FILE TARGET KEYFILE)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT TARGET idf::esptool_py)
+        idf_die("The 'esptool_py' component is not available")
+    endif()
+
+    if(NOT CONFIG_APP_BUILD_GENERATE_BINARIES)
+        idf_die("Binary file generation is not enabled with 'CONFIG_APP_BUILD_GENERATE_BINARIES'")
+    endif()
+
+    if(NOT CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        idf_die("Binary file signing is not enabled with 'CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES'")
+    endif()
+
+    if(NOT DEFINED ARG_TARGET)
+        idf_die("TARGET option is required")
+    endif()
+
+    if(NOT DEFINED ARG_OUTPUT_FILE)
+        idf_die("OUTPUT_FILE option is required")
+    endif()
+
+    if(ARG_KEYFILE)
+        set(keyfle "${ARG_KEYFILE}")
+    else()
+        idf_build_get_property(project_dir PROJECT_DIR)
+        get_filename_component(keyfile "${CONFIG_SECURE_BOOT_SIGNING_KEY}" ABSOLUTE BASE_DIR "${project_dir}")
+    endif()
+
+    if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+        set(secure_boot_version "1")
+    elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
+        set(secure_boot_version "2")
+    endif()
+
+    idf_component_get_property(espsecure_py_cmd esptool_py ESPSECUREPY_CMD)
+    get_target_property(binary_path ${binary} BINARY_PATH)
+    if(NOT binary_path)
+        idf_die("Binary target '${binary}' is missing 'BINARY_PATH' property.")
+    endif()
+    get_filename_component(binary_name "${binary_path}" NAME)
+    get_filename_component(signed_binary_name "${ARG_OUTPUT_FILE}" NAME)
+    get_filename_component(key_name "${keyfile}" NAME)
+
+    add_custom_command(OUTPUT "${ARG_OUTPUT_FILE}"
+        COMMAND ${espsecure_py_cmd} sign_data
+        --version ${secure_boot_version} --keyfile "${keyfile}"
+        -o "${ARG_OUTPUT_FILE}" "${binary_path}"
+        COMMAND ${CMAKE_COMMAND} -E md5sum "${ARG_OUTPUT_FILE}" > "${ARG_OUTPUT_FILE}.md5sum"
+        DEPENDS "${binary}"
+        VERBATIM
+        COMMENT "Signing '${binary_name}' with key '${key_name}' into '${signed_binary_name}'"
+    )
+    add_custom_target(${ARG_TARGET} DEPENDS "${ARG_OUTPUT_FILE}")
+
+    # Store the path of the binary file in the BINARY_PATH property of the
+    # custom signed binary target, which is used by the idf_flash_binary.
+    set_target_properties(${ARG_TARGET} PROPERTIES BINARY_PATH ${ARG_OUTPUT_FILE})
+endfunction()
