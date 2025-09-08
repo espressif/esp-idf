@@ -186,10 +186,15 @@ function(__get_component_interface)
     idf_build_get_property(component_prefix PREFIX)
 
     set(component_interface NOTFOUND)
-    if("${ARG_COMPONENT}" IN_LIST component_names)
-        # The component name is among the discovered components, and the
-        # component interface is simply the component name with a prefix.
-        set(component_interface "${component_prefix}_${ARG_COMPONENT}")
+
+    # Try to resolve component name from short name to namespaced name
+    __resolve_component_name(COMPONENT "${ARG_COMPONENT}"
+                            KNOWN_COMPONENTS "${component_names}"
+                            OUTPUT resolved_component)
+
+    if("${resolved_component}" IN_LIST component_names)
+        # Found a resolved component name, use it
+        set(component_interface "${component_prefix}_${resolved_component}")
     else()
         # The component name might be an alias, so retrieve the actual target
         # name.
@@ -467,6 +472,153 @@ function(__dump_component_properties components)
     endforeach()
 endfunction()
 
+#[[
+   __component_name_without_namespace(COMPONENT <component_name>
+                                      OUTPUT <variable>)
+
+   :COMPONENT[in]: Component name that may include namespace.
+   :OUTPUT[out]: Output variable to store the component name without namespace.
+
+   Extract the component name without namespace. For example:
+   - "espressif__led_strip" -> "led_strip"
+   - "led_strip" -> "led_strip"
+   This follows the same logic as the component manager's name_without_namespace function.
+#]]
+function(__component_name_without_namespace)
+    set(options)
+    set(one_value COMPONENT OUTPUT)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_COMPONENT)
+        idf_die("COMPONENT option is required")
+    endif()
+
+    if(NOT DEFINED ARG_OUTPUT)
+        idf_die("OUTPUT option is required")
+    endif()
+
+    # Split by "__" and take the last part (same logic as component manager)
+    # Use rsplit with maxsplit=1 equivalent: split and take last part
+    string(FIND "${ARG_COMPONENT}" "__" last_pos REVERSE)
+    if(last_pos GREATER -1)
+        math(EXPR start_pos "${last_pos} + 2")
+        string(SUBSTRING "${ARG_COMPONENT}" ${start_pos} -1 name_without_ns)
+    else()
+        set(name_without_ns "${ARG_COMPONENT}")
+    endif()
+
+    set(${ARG_OUTPUT} "${name_without_ns}" PARENT_SCOPE)
+endfunction()
+
+#[[
+   __resolve_component_name(COMPONENT <component_name>
+                            KNOWN_COMPONENTS <known_components_list>
+                            OUTPUT <variable>)
+
+   :COMPONENT[in]: Component name to resolve (may be short name or canonical).
+   :KNOWN_COMPONENTS[in]: List of known/discovered component names.
+   :OUTPUT[out]: Output variable to store the resolved component name.
+
+   Resolve a component name to its canonical form by checking against known components.
+   This implements the same logic as the component manager's _choose_component function:
+   1. If the exact name exists in known components, return it
+   2. If a namespaced version exists (e.g., "espressif__led_strip" for "led_strip"), return that
+   3. If a non-namespaced version exists (e.g., "led_strip" for "espressif__led_strip"), return that
+   4. If any known component has the same name without namespace , return that
+   5. Otherwise, return the original name (will likely cause CMake error)
+
+   This function takes component priority into account by preferring components
+   with higher priority when multiple matches exist. This behavior differs from
+   the component manager's _choose_component function.
+#]]
+function(__resolve_component_name)
+    set(options)
+    set(one_value COMPONENT OUTPUT)
+    set(multi_value KNOWN_COMPONENTS)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_COMPONENT)
+        idf_die("COMPONENT option is required")
+    endif()
+
+    if(NOT DEFINED ARG_OUTPUT)
+        idf_die("OUTPUT option is required")
+    endif()
+
+    set(component "${ARG_COMPONENT}")
+    set(known_components "${ARG_KNOWN_COMPONENTS}")
+
+    # 1. If exact name exists, return it (highest priority match)
+    if("${component}" IN_LIST known_components)
+        set(${ARG_OUTPUT} "${component}" PARENT_SCOPE)
+        return()
+    endif()
+
+    # 2. Check for namespaced version (e.g., "led_strip" -> "espressif__led_strip")
+    # Look for components ending with "__${component}"
+    set(namespaced_suffix "__${component}")
+    set(best_match "")
+    set(best_priority -1)
+
+    foreach(known_component IN LISTS known_components)
+        string(LENGTH "${namespaced_suffix}" suffix_len)
+        string(LENGTH "${known_component}" comp_len)
+        if(comp_len GREATER_EQUAL suffix_len)
+            math(EXPR start_pos "${comp_len} - ${suffix_len}")
+            string(SUBSTRING "${known_component}" ${start_pos} -1 comp_suffix)
+            if("${comp_suffix}" STREQUAL "${namespaced_suffix}")
+                # Get component priority to choose the best match
+                idf_component_get_property(comp_priority "${known_component}" COMPONENT_PRIORITY)
+                if(comp_priority GREATER best_priority)
+                    set(best_match "${known_component}")
+                    set(best_priority ${comp_priority})
+                endif()
+            endif()
+        endif()
+    endforeach()
+
+    if(NOT "${best_match}" STREQUAL "")
+        idf_dbg("Component '${component}' resolved to namespaced version '${best_match}'")
+        set(${ARG_OUTPUT} "${best_match}" PARENT_SCOPE)
+        return()
+    endif()
+
+    # 3. Check for non-namespaced version (e.g., "espressif__led_strip" -> "led_strip")
+    __component_name_without_namespace(COMPONENT "${component}" OUTPUT component_without_ns)
+    if("${component_without_ns}" IN_LIST known_components)
+        idf_dbg("Component '${component}' resolved to non-namespaced version '${component_without_ns}'")
+        set(${ARG_OUTPUT} "${component_without_ns}" PARENT_SCOPE)
+        return()
+    endif()
+
+    # 4. Check if any known component has the same name without namespace (cross-namespace matching)
+    set(best_match "")
+    set(best_priority -1)
+
+    foreach(known_component IN LISTS known_components)
+        __component_name_without_namespace(COMPONENT "${known_component}" OUTPUT known_without_ns)
+        if("${component_without_ns}" STREQUAL "${known_without_ns}")
+            # Get component priority to choose the best match
+            idf_component_get_property(comp_priority "${known_component}" COMPONENT_PRIORITY)
+            if(comp_priority GREATER best_priority)
+                set(best_match "${known_component}")
+                set(best_priority ${comp_priority})
+            endif()
+        endif()
+    endforeach()
+
+    if(NOT "${best_match}" STREQUAL "")
+        idf_dbg("Component '${component}'
+         resolved via cross-namespace matching to '${best_match}' (priority ${best_priority})")
+        set(${ARG_OUTPUT} "${best_match}" PARENT_SCOPE)
+        return()
+    endif()
+
+    # 5. No match found, return original name (will likely cause CMake error)
+    set(${ARG_OUTPUT} "${component}" PARENT_SCOPE)
+endfunction()
+
 #[[api
 .. cmakev2:function:: idf_component_include
 
@@ -498,12 +650,20 @@ function(idf_component_include name)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
-    # Check that the specified component name is among the discovered and
-    # recognized components.
+    # Resolve the component name to its namespaced form if needed
     idf_build_get_property(components_discovered COMPONENTS_DISCOVERED)
-    if(NOT "${name}" IN_LIST components_discovered)
-        idf_die("Component '${name}' not found. Available components: '${components_discovered}'")
+    __resolve_component_name(COMPONENT "${name}"
+                            KNOWN_COMPONENTS "${components_discovered}"
+                            OUTPUT resolved_name)
+
+    # Check that the resolved component name is among the discovered components
+    if(NOT "${resolved_name}" IN_LIST components_discovered)
+        idf_die("Component '${name}' (resolved to '${resolved_name}') not found.
+        Available components: '${components_discovered}'")
     endif()
+
+    # Use the resolved name for the rest of the function
+    set(name "${resolved_name}")
 
     # Check if the component is already included, meaning the add_subdirectory
     # has already been called for it and the component has been processed.
@@ -635,12 +795,61 @@ function(idf_component_include name)
         target_add_binary_data(${COMPONENT_TARGET} "${file}" "TEXT")
     endforeach()
 
+    # Inject managed dependencies if component manager is enabled
+    idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
+    idf_component_get_property(component_format "${component_name}" COMPONENT_FORMAT)
+    if(idf_component_manager EQUAL 1)
+        idf_component_get_property(component_dir "${component_name}" COMPONENT_DIR)
+        # Check if component has manifest for managed dependency injection
+        if(EXISTS "${component_dir}/idf_component.yml")
+            __inject_requirements_for_component_from_manager("${component_name}")
+
+            # Include any managed dependencies
+            idf_component_get_property(managed_requires "${component_name}" MANAGED_REQUIRES)
+            idf_component_get_property(managed_priv_requires "${component_name}" MANAGED_PRIV_REQUIRES)
+
+            foreach(dep IN LISTS managed_requires managed_priv_requires)
+                if(dep)
+                    idf_component_include("${dep}")
+                endif()
+            endforeach()
+
+            # For cmakev1 components, automatically link managed dependencies to maintain
+            # backward compatibility.
+            if("${component_format}" STREQUAL "CMAKEV1")
+                idf_component_get_property(component_type "${component_name}" COMPONENT_TYPE)
+
+                # Link managed public requirements
+                foreach(req IN LISTS managed_requires)
+                    if(req)
+                        idf_component_get_property(req_interface "${req}" COMPONENT_INTERFACE)
+                        if(${component_type} STREQUAL LIBRARY)
+                            target_link_libraries("${component_target}" PUBLIC "${req_interface}")
+                        else()
+                            target_link_libraries("${component_target}" INTERFACE "${req_interface}")
+                        endif()
+                    endif()
+                endforeach()
+
+                # Link managed private requirements
+                foreach(req IN LISTS managed_priv_requires)
+                    if(req)
+                        idf_component_get_property(req_interface "${req}" COMPONENT_INTERFACE)
+                        if(${component_type} STREQUAL CONFIG_ONLY)
+                            continue()
+                        endif()
+                        target_link_libraries("${component_target}" PRIVATE "${req_interface}")
+                    endif()
+                endforeach()
+            endif()
+        endif()
+    endif()
+
     # Components for cmakev1 use the idf_component_register call and are
     # managed in cmakev2 through a shim. This shim sets the COMPONENT_FORMAT
     # property to CMAKEV1 and applies global compilation options and
     # definitions using CMake's directory-scoped function for backward
     # compatibility. Therefore, no additional configuration is required.
-    idf_component_get_property(component_format "${component_name}" COMPONENT_FORMAT)
     if("${component_format}" STREQUAL "CMAKEV1")
         return()
     endif()
