@@ -117,9 +117,9 @@ QEMU 支持虚拟帧缓冲设备。帧缓冲设备在真实的 {IDF_TARGET_NAME}
 eFuse 仿真
 ~~~~~~~~~~~
 
-QEMU 支持 eFuse 的仿真，可用来测试安全启动和 flash 加密等与安全相关的功能，而无需在真实硬件上执行不可逆操作。
+QEMU 支持 eFuse 的仿真，可用来测试安全启动和 flash 加密等与安全相关的功能，而无需在真实硬件上执行不可逆操作。更多详细信息，请参考 `QEMU 文档 <https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/esp32/README.md#specifying-efuse-storage>`_。
 
-使用 :doc:`idf.py<idf-py>` eFuse 相关命令来编程 eFuse。当这些命令与 ``qemu`` 命令一起运行时，eFuse 会在 QEMU 中编程，并且 ``qemu_efuse.bin`` 文件会更新。例如，
+使用 :doc:`idf.py<idf-py>` eFuse 相关命令来编程 eFuse。当这些命令与 ``qemu`` 命令一起运行时，eFuse 会在 QEMU 中编程，同时更新 ``qemu_efuse.bin`` 文件。例如，
 
 .. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
 
