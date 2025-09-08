@@ -83,6 +83,8 @@ typedef struct esp_hidh_scan_result_s {
 } esp_hid_scan_result_t;
 
 esp_err_t esp_hid_gap_init(uint8_t mode);
+esp_err_t esp_hid_gap_deinit(void);
+
 esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_result_t **results);
 void esp_hid_scan_results_free(esp_hid_scan_result_t *results);
 
