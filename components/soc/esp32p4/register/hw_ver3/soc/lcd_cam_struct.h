@@ -62,7 +62,11 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:20;
+        uint32_t reserved_0:18;
+        /** lcd_conv_rgb2rgb_mode : R/W; bitpos: [19:18]; default: 3;
+         *  0:rgb888 trans to rgb565. 1:rgb565 trans to rgb888.2,3:disabled
+         */
+        uint32_t lcd_conv_rgb2rgb_mode:2;
         /** lcd_conv_8bits_data_inv : R/W; bitpos: [20]; default: 0;
          *  1:invert every two 8bits input data. 2. disabled.
          */
@@ -72,13 +76,12 @@ typedef union {
          */
         uint32_t lcd_conv_txtorx:1;
         /** lcd_conv_yuv2yuv_mode : R/W; bitpos: [23:22]; default: 3;
-         *  0: to yuv422. 1: to yuv420. 2: to yuv411. 3: disabled.  To enable yuv2yuv mode,
-         *  trans_mode must be set to 1.
+         *  0: to yuv422.  2: to yuv411. 1,3: disabled.  To enable yuv2yuv mode, trans_mode
+         *  must be set to 1.
          */
         uint32_t lcd_conv_yuv2yuv_mode:2;
         /** lcd_conv_yuv_mode : R/W; bitpos: [25:24]; default: 0;
-         *  0: yuv422. 1: yuv420. 2: yuv411. When in yuv2yuv mode, yuv_mode decides the yuv
-         *  mode of Data_in
+         *  0: yuv422. 2: yuv411. When in yuv2yuv mode, yuv_mode decides the yuv mode of Data_in
          */
         uint32_t lcd_conv_yuv_mode:2;
         /** lcd_conv_protocol_mode : R/W; bitpos: [26]; default: 0;
@@ -553,12 +556,12 @@ typedef union {
          */
         uint32_t cam_update_reg:1;
         /** cam_byte_order : R/W; bitpos: [5]; default: 0;
-         *  1: Change data bit order, change CAM_DATA_in[7:0] to CAM_DATA_in[0:7] in one byte
-         *  mode, and bits[15:0] to bits[0:15] in two byte mode.  0: Not change.
+         *  1: invert data byte order. 0: Not change.
          */
         uint32_t cam_byte_order:1;
         /** cam_bit_order : R/W; bitpos: [6]; default: 0;
-         *  1: invert data byte order, only valid in 2 byte mode. 0: Not change.
+         *  1: Change data bit order, change CAM_DATA_in[7:0] to CAM_DATA_in[0:7] in one byte
+         *  mode, and bits[15:0] to bits[0:15] in two byte mode.  0: Not change.
          */
         uint32_t cam_bit_order:1;
         /** cam_line_int_en : R/W; bitpos: [7]; default: 0;
@@ -720,7 +723,11 @@ typedef union {
          *  The enable bit for Camera line interrupt.
          */
         uint32_t cam_hs_int_ena:1;
-        uint32_t reserved_4:28;
+        /** lcd_underrun_int_ena : R/W; bitpos: [4]; default: 0;
+         *  The enable bit for LCD underrun interrupt
+         */
+        uint32_t lcd_underrun_int_ena:1;
+        uint32_t reserved_5:27;
     };
     uint32_t val;
 } lcdcam_lc_dma_int_ena_reg_t;
@@ -746,7 +753,11 @@ typedef union {
          *  The raw bit for Camera line interrupt.
          */
         uint32_t cam_hs_int_raw:1;
-        uint32_t reserved_4:28;
+        /** lcd_underrun_int_raw : RO/WTC/SS; bitpos: [4]; default: 0;
+         *  The raw bit for LCD underrun interrupt
+         */
+        uint32_t lcd_underrun_int_raw:1;
+        uint32_t reserved_5:27;
     };
     uint32_t val;
 } lcdcam_lc_dma_int_raw_reg_t;
@@ -772,7 +783,11 @@ typedef union {
          *  The status bit for Camera transfer end interrupt.
          */
         uint32_t cam_hs_int_st:1;
-        uint32_t reserved_4:28;
+        /** lcd_underrun_int_st : RO; bitpos: [4]; default: 0;
+         *  The status bit for LCD underrun interrupt
+         */
+        uint32_t lcd_underrun_int_st:1;
+        uint32_t reserved_5:27;
     };
     uint32_t val;
 } lcdcam_lc_dma_int_st_reg_t;
@@ -798,7 +813,11 @@ typedef union {
          *  The clear bit for Camera line interrupt.
          */
         uint32_t cam_hs_int_clr:1;
-        uint32_t reserved_4:28;
+        /** lcd_underrun_int_clr : WT; bitpos: [4]; default: 0;
+         *  The clear bit for LCD underrun interrupt
+         */
+        uint32_t lcd_underrun_int_clr:1;
+        uint32_t reserved_5:27;
     };
     uint32_t val;
 } lcdcam_lc_dma_int_clr_reg_t;
@@ -810,7 +829,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** lc_date : R/W; bitpos: [27:0]; default: 36712592;
+        /** lc_date : R/W; bitpos: [27:0]; default: 38806054;
          *  LCD_CAM version control register
          */
         uint32_t lc_date:28;
@@ -845,12 +864,11 @@ typedef struct lcd_cam_dev_t {
     volatile lcdcam_lc_reg_date_reg_t lc_reg_date;
 } lcd_cam_dev_t;
 
+extern lcd_cam_dev_t LCD_CAM;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(lcd_cam_dev_t) == 0x100, "Invalid size of lcdcam_dev_t structure");
+_Static_assert(sizeof(lcd_cam_dev_t) == 0x100, "Invalid size of lcd_cam_dev_t structure");
 #endif
-
-extern lcd_cam_dev_t LCD_CAM;
 
 #ifdef __cplusplus
 }
