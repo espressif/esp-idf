@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,19 +13,28 @@
 
 ESP_LOG_ATTR_TAG(TAG, "efuse");
 
-#ifdef NON_OS_BUILD
-#define EFUSE_LOCK_ACQUIRE_RECURSIVE()
-#define EFUSE_LOCK_RELEASE_RECURSIVE()
-#else
+#if !NON_OS_BUILD
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <sys/lock.h>
 static _lock_t s_efuse_lock;
-#define EFUSE_LOCK_ACQUIRE_RECURSIVE() _lock_acquire_recursive(&s_efuse_lock)
-#define EFUSE_LOCK_RELEASE_RECURSIVE() _lock_release_recursive(&s_efuse_lock)
 #endif
 
-static int s_batch_writing_mode = 0;
+void esp_efuse_lock_acquire(void)
+{
+#if !NON_OS_BUILD
+    _lock_acquire_recursive(&s_efuse_lock);
+#endif
+}
+
+void esp_efuse_lock_release(void)
+{
+#if !NON_OS_BUILD
+    _lock_release_recursive(&s_efuse_lock);
+#endif
+}
+
+int s_batch_writing_mode = 0;
 
 // Public API functions
 
@@ -80,7 +89,7 @@ esp_err_t esp_efuse_read_field_cnt(const esp_efuse_desc_t* field[], size_t* out_
 // write array to EFUSE
 esp_err_t esp_efuse_write_field_blob(const esp_efuse_desc_t* field[], const void* src, size_t src_size_bits)
 {
-    EFUSE_LOCK_ACQUIRE_RECURSIVE();
+    esp_efuse_lock_acquire();
     esp_err_t err = ESP_OK;
     if (field == NULL || src == NULL || src_size_bits == 0) {
         err = ESP_ERR_INVALID_ARG;
@@ -100,14 +109,14 @@ esp_err_t esp_efuse_write_field_blob(const esp_efuse_desc_t* field[], const void
             esp_efuse_utility_reset();
         }
     }
-    EFUSE_LOCK_RELEASE_RECURSIVE();
+    esp_efuse_lock_release();
     return err;
 }
 
 // program cnt bits to "1"
 esp_err_t esp_efuse_write_field_cnt(const esp_efuse_desc_t* field[], size_t cnt)
 {
-    EFUSE_LOCK_ACQUIRE_RECURSIVE();
+    esp_efuse_lock_acquire();
     esp_err_t err = ESP_OK;
     if (field == NULL || cnt == 0) {
         err = ESP_ERR_INVALID_ARG;
@@ -135,7 +144,7 @@ esp_err_t esp_efuse_write_field_cnt(const esp_efuse_desc_t* field[], size_t cnt)
             esp_efuse_utility_reset();
         }
     }
-    EFUSE_LOCK_RELEASE_RECURSIVE();
+    esp_efuse_lock_release();
     return err;
 }
 
@@ -185,7 +194,7 @@ uint32_t esp_efuse_read_reg(esp_efuse_block_t blk, unsigned int num_reg)
 // writing efuse register.
 esp_err_t esp_efuse_write_reg(esp_efuse_block_t blk, unsigned int num_reg, uint32_t val)
 {
-    EFUSE_LOCK_ACQUIRE_RECURSIVE();
+    esp_efuse_lock_acquire();
     if (s_batch_writing_mode == 0) {
         esp_efuse_utility_reset();
     }
@@ -199,7 +208,7 @@ esp_err_t esp_efuse_write_reg(esp_efuse_block_t blk, unsigned int num_reg, uint3
         }
         esp_efuse_utility_reset();
     }
-    EFUSE_LOCK_RELEASE_RECURSIVE();
+    esp_efuse_lock_release();
     return err;
 }
 
@@ -245,7 +254,7 @@ esp_err_t esp_efuse_write_block(esp_efuse_block_t blk, const void* src_key, size
 
 esp_err_t esp_efuse_batch_write_begin(void)
 {
-    EFUSE_LOCK_ACQUIRE_RECURSIVE();
+    esp_efuse_lock_acquire();
     assert(s_batch_writing_mode >= 0);
     if (++s_batch_writing_mode == 1) {
         esp_efuse_utility_reset();
@@ -263,7 +272,7 @@ esp_err_t esp_efuse_batch_write_cancel(void)
     if (--s_batch_writing_mode == 0) {
         esp_efuse_utility_reset();
         ESP_LOGI(TAG, "Batch mode of writing fields is cancelled");
-        EFUSE_LOCK_RELEASE_RECURSIVE();
+        esp_efuse_lock_release();
     }
     return ESP_OK;
 }
@@ -282,7 +291,7 @@ esp_err_t esp_efuse_batch_write_commit(void)
         } else {
             esp_efuse_utility_reset();
         }
-        EFUSE_LOCK_RELEASE_RECURSIVE();
+        esp_efuse_lock_release();
         return err;
     }
     return ESP_OK;
@@ -349,8 +358,8 @@ esp_err_t esp_efuse_destroy_block(esp_efuse_block_t block)
     if (block < EFUSE_BLK_KEY0 || block >= EFUSE_BLK_KEY_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
-    EFUSE_LOCK_ACQUIRE_RECURSIVE();
+    esp_efuse_lock_acquire();
     esp_err_t error = destroy_block(block);
-    EFUSE_LOCK_RELEASE_RECURSIVE();
+    esp_efuse_lock_release();
     return error;
 }

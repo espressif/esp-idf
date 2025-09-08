@@ -25,6 +25,7 @@ else()
 endif()
 
 list(APPEND srcs "src/esp_efuse_api.c"
+                 "src/esp_efuse_dump.c"
                  "src/esp_efuse_fields.c"
                  "src/esp_efuse_utility.c"
                  "src/efuse_controller/keys/${type}/esp_efuse_api_key.c")

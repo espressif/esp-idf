@@ -356,6 +356,8 @@ Access to the fields is via a pointer to the description structure. API function
 * :cpp:func:`esp_efuse_get_keypurpose_dis_write` - Returns a write protection of the key purpose field for an eFuse key block (for esp32 always true).
 * :cpp:func:`esp_efuse_key_block_unused` - Returns true if the key block is unused, false otherwise.
 * :cpp:func:`esp_efuse_destroy_block` - Destroys the data in this eFuse block. There are two things to do: (1) if write protection is not set, then the remaining unset bits are burned, (2) set read protection for this block if it is not locked.
+* :cpp:func:`esp_efuse_token_dump` - Generates a compact, single-line eFuse token (``EFSR``, ``EFSW``, or ``EFSRW``) that can be copied from device logs and decoded on the host with ``espefuse --token ...`` (useful when direct eFuse access is not available).
+* :cpp:func:`esp_efuse_token_burn` - Applies an ``EFSW`` token on the device by burning the staged eFuse writes encoded in the token (other token types are rejected).
 
 For frequently used fields, special functions are made, like this :cpp:func:`esp_efuse_get_pkg_ver`.
 
@@ -576,6 +578,212 @@ Deferred WR_DIS Burning
 ``WR_DIS`` (Write Disable) is a special eFuse field that implements permanent write-protection. Each bit in ``WR_DIS`` disables further programming of one (or more) associated eFuse fields. Once a ``WR_DIS`` bit is burned, its associated fields can no longer be modified.
 
 When burning staged data in BLOCK0, the ``WR_DIS`` bits are burned separately after all other BLOCK0 data to ensure the burn function can recover from coding errors via its retry mechanism. This approach guarantees that write-protection is applied only after other BLOCK0 data is successfully burned.
+
+Token Dump
+----------
+
+The *token dump* feature provides a compact, single-line representation of an eFuse state that can be copied from device logs and decoded later on the host. This is designed for cases where reading eFuses directly with host tools is not possible or not convenient (for example, UART download is disabled, secure download is enabled, secure boot/flash encryption is deployed, or the device is remote).
+
+.. code-block:: none
+
+    EFSR:esp32c3:004:AAGAAAEAAAAAAAAEAAAAAAAAAAAAAAAA:AAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAA:AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA::::::::::epNVBg
+
+A token can represent:
+
+* the currently programmed eFuses (read snapshot, `EFSR`),
+* the staged (not yet burned) write set (write snapshot, `EFSW`) — in batch write mode you can dump the pending writes **before** calling :cpp:func:`esp_efuse_batch_write_commit`,
+* both the programmed eFuses and the staged writes in a single token (combined snapshot, `EFSRW`).
+
+Tokens include a CRC32 checksum to detect truncation and accidental modifications.
+
+Typical Use Cases
+^^^^^^^^^^^^^^^^^
+
+* **Production/field diagnostics:** export the eFuse state from a locked-down device and decode it offline.
+* **Post-provisioning verification:** confirm security configuration and key purposes after manufacturing steps.
+* **Coding error investigation:** capture and share coding-error register snapshots alongside block data.
+* **Audit and traceability:** store a token as a provisioning artifact for later review.
+* **Staged write transfer:** generate ``EFSW`` in firmware (or on the host) and apply it later using a controlled workflow.
+
+Supported Workflows
+^^^^^^^^^^^^^^^^^^^
+
+* On the device:
+
+    * :cpp:func:`esp_efuse_token_dump()` — always supports ``EFSR`` tokens; ``EFSW`` and ``EFSRW`` require :ref:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API` because they expose staged values that are not yet burned and not yet read-protected.
+    * :cpp:func:`esp_efuse_token_burn()` — accepts an ``EFSW`` token and applies staged writes on the device.
+
+* On the host:
+
+  * ``espefuse --token EFS... summary`` — decodes tokens and shows the eFuse summary without connecting to a device.
+  * ``espefuse dump --format EFSR`` — generates an ``EFSR`` token from a connected chip for sharing/backup.
+  * ``espefuse burn-efuse ... --show-token`` — generates an ``EFSW`` token representing staged writes.
+
+Security Note
+^^^^^^^^^^^^^
+
+.. important::
+
+    Tokens are not encrypted. Treat tokens as sensitive data:
+
+    * Tokens can include **unique identifiers** (for example MAC/UUID-like fields) and **security-relevant configuration bits** (secure boot, flash encryption, JTAG/UART disablement, key purposes).
+    * ``EFSW`` tokens represent **staged writes**. They may include **write-only key data in plaintext** because the staged view shows values that have not yet been burned and are not yet protected by the eFuse read-protection bits. This can disclose provisioning intent and secret material before it is irreversibly locked down.
+    * ``EFSRW`` tokens include the same staged portion and therefore carry the same plaintext key-exposure risk.
+    * Even when certain eFuses are read-protected on the target, the token may still carry **operationally sensitive values**.
+
+    If firmware exposes a console command, remote endpoint, or other runtime API that prints eFuse tokens, the firmware must authenticate and authorize that request before generating the token.
+
+Recommendations:
+
+* Share tokens only with trusted parties and via trusted channels (avoid public issue trackers).
+* Store tokens as you would store other manufacturing/provisioning artifacts (restricted access, limited retention).
+* Prefer ``EFSR`` tokens for diagnostics and auditing; use ``EFSW`` tokens only when you explicitly need to transfer staged write state.
+
+Token format
+^^^^^^^^^^^^
+
+A token is a colon-separated sequence:
+
+.. code-block:: none
+
+    <token_name>:<chip>:<ver>:<b64_block0>:...:<b64_blockN>:<b64_cerr>:<b64_crc32>
+
+Fields:
+
+* ``token_name`` — one of ``EFSR``, ``EFSW``, or ``EFSRW``.
+* ``chip`` — chip name (lowercase, without dashes), for example ``esp32c3``.
+* ``ver`` — chip revision as three decimal digits (leading zeros), for example ``004``. Constructed from major and minor wafer version fields using the formula ``ver = major * 100 + minor``, where the major version occupies the first digit and the minor version occupies the last two digits.
+* ``b64_block0 ... b64_blockN`` — Base64URL-encoded per-block data. Each block is a concatenation of 32-bit words in little-endian byte order. The number of blocks is not explicitly encoded in the format. It is derived from the chip type. The number of blocks can be determined by counting the colon separators (``:``) in the token. Empty blocks are represented as consecutive colons (``::``).
+* ``b64_cerr`` — optional Base64URL-encoded coding-error registers snapshot. It may be empty if there are no errors.
+* ``b64_crc32`` — Base64URL-encoded CRC32 over whole token ``"<token_name>:<chip>:<ver>:<b64_block0>:...:<b64_blockN>:<b64_cerr>:"``. CRC32 is stored little-endian and encoded as unpadded Base64URL.
+
+A token can be decoded and interpreted correctly only when it is processed using the same target it was created for. ESP-IDF APIs and ``espefuse`` validate and rely on the following fields: chip name, chip revision, and block layout, as well as CRC32 integrity. If any of these do not match the target chip, decoding errors or missing fields may occur.
+
+Base64URL uses the same alphabet as Base64 but replaces ``+`` with ``-`` and ``/`` with ``_``, and omits padding (``=``).
+
+Generating Token On-Device
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use :cpp:func:`esp_efuse_token_dump()` to create a token in a buffer or print it to the log:
+
+.. code-block:: c
+
+    char token[1024]; /* size depends on target and eFuses */
+    esp_efuse_token_type_t token_type = ESP_EFUSE_TOKEN_FROM_READ;
+    ESP_ERROR_CHECK(esp_efuse_token_dump(token_type, token, sizeof(token)));
+    ESP_LOGI(TAG, "IDF_MONITOR_EXECUTE_ESPEFUSE_SUMMARY %s", token);
+
+Token type values:
+
+* ``ESP_EFUSE_TOKEN_FROM_READ`` — token of programmed eFuses (starts with ``EFSR``).
+* ``ESP_EFUSE_TOKEN_FROM_STAGED`` — token of staged writes (starts with ``EFSW``). It can expose keys in plaintext because it shows values that are not yet burned and not yet read-protected. Requires :ref:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API`. Only this type can be burned back.
+* ``ESP_EFUSE_TOKEN_FROM_READ_STAGED`` — combined token (starts with ``EFSRW``). It includes the same staged portion and the same plaintext key-exposure risk. Requires :ref:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API`.
+
+If ``buf == NULL``, the token is printed to the console (INFO level) without colors, tag, or timestamp.
+
+Burn Token On-Device
+^^^^^^^^^^^^^^^^^^^^
+
+Use :cpp:func:`esp_efuse_token_burn()` to apply an ``EFSW`` token on the device by burning the staged eFuse writes encoded in the token. The function validates the token integrity (CRC32) and checks compatibility using the chip name and revision. The token is rejected if the **major** wafer version does not match the target chip. To bypass the version check, use the ignore argument. Example of burning a token:
+
+.. code-block:: c
+
+    esp_efuse_batch_write_begin();
+    esp_efuse_token_burn(token, false);  // set true to ignore major version mismatch
+    esp_efuse_batch_write_commit();
+
+You can skip the major-version check only when you know the token was generated for the same eFuse layout (for example, the same target with only a minor wafer revision difference); in that case the token version may differ only in the last two digits, while the first digit (major version) must normally match.
+
+ESP-IDF Monitor Integration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When running ``idf.py monitor``, the host can automatically decode eFuse tokens printed by the target and display the result inline if the log line starts with one of the following markers:
+
+* ``IDF_MONITOR_EXECUTE_ESPEFUSE_SUMMARY`` → ``espefuse --token {ARGS} summary --active``
+* ``IDF_MONITOR_EXECUTE_ESPEFUSE_DUMP`` → ``espefuse --token <TOKEN> dump``
+
+``{ARGS}`` must include an eFuse token (``EFSR/EFSW/EFSRW``) and may include ``--extend-efuse-table <csv>`` to load custom eFuse definitions.
+
+Example: The following shows executing the summary command with ``--active`` to display only non-zero eFuse fields, which reduces output size. The ``--extend-efuse-table`` option loads a custom eFuse table definition:
+
+.. code-block:: text
+
+   I (441) example: IDF_MONITOR_EXECUTE_ESPEFUSE_SUMMARY EFSR:esp32c3:100:AAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAA:zIH3-VVgAAAAAAAAAAAAS8kmEVKwQgYB:ZSd8yloMSAJssOWmfZQw8lFbphuTZH574QcV3ggAAAA:AAAAAAAAAAEayAcAAAAAAAAAAAAAAAAAAAAAAAAAAAA:::::::::ydrNkQ --extend-efuse-table main/esp_efuse_custom_table.csv
+
+    --- Executing monitor command: espefuse --token EFSR:esp32c3:100:AAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAA:zIH3-VVgAAAAAAAAAAAAS8kmEVKwQgYB:ZSd8yloMSAJssOWmfZQw8lFbphuTZH574QcV3ggAAAA:AAAAAAAAAAEayAcAAAAAAAAAAAAAAAAAAAAAAAAAAAA:::::::::ydrNkQ --extend-efuse-table main/esp_efuse_custom_table.csv summary --active
+    espefuse v5.1.0
+
+    === Run "summary" command ===
+    EFUSE_NAME (Block) Description  = [Meaningful Value] [Readable/Writeable] (Hex Value)
+    ----------------------------------------------------------------------------------------
+    Calibration fuses:
+    K_RTC_LDO (BLOCK1)                                 BLOCK1 K_RTC_LDO                                   = 77 R/W (0b1001101)
+    K_DIG_LDO (BLOCK1)                                 BLOCK1 K_DIG_LDO                                   = 68 R/W (0b1000100)
+    V_RTC_DBIAS20 (BLOCK1)                             BLOCK1 voltage of rtc dbias20                      = 144 R/W (0x90)
+    V_DIG_DBIAS20 (BLOCK1)                             BLOCK1 voltage of digital dbias20                  = 130 R/W (0x82)
+    DIG_DBIAS_HVT (BLOCK1)                             BLOCK1 digital dbias when hvt                      = 21 R/W (0b10101)
+    THRES_HVT (BLOCK1)                                 BLOCK1 pvt threshold when hvt                      = 400 R/W (0b0110010000)
+    TEMP_CALIB (BLOCK2)                                Temperature calibration data                       = -10.600000000000001 R/W (0b101101010)
+    OCODE (BLOCK2)                                     ADC OCode                                          = 101 R/W (0x65)
+    ADC1_INIT_CODE_ATTEN0 (BLOCK2)                     ADC1 init code at atten0                           = 442 R/W (0b0110111010)
+    ADC1_INIT_CODE_ATTEN1 (BLOCK2)                     ADC1 init code at atten1                           = 588 R/W (0b1001001100)
+    ADC1_INIT_CODE_ATTEN2 (BLOCK2)                     ADC1 init code at atten2                           = 612 R/W (0b1001100100)
+    ADC1_INIT_CODE_ATTEN3 (BLOCK2)                     ADC1 init code at atten3                           = 735 R/W (0b1011011111)
+    ADC1_CAL_VOL_ATTEN0 (BLOCK2)                       ADC1 calibration voltage at atten0                 = 535 R/W (0b1000010111)
+    ADC1_CAL_VOL_ATTEN1 (BLOCK2)                       ADC1 calibration voltage at atten1                 = 31 R/W (0b0000011111)
+    ADC1_CAL_VOL_ATTEN2 (BLOCK2)                       ADC1 calibration voltage at atten2                 = 533 R/W (0b1000010101)
+    ADC1_CAL_VOL_ATTEN3 (BLOCK2)                       ADC1 calibration voltage at atten3                 = 567 R/W (0b1000110111)
+
+    Config fuses:
+    ERR_RST_ENABLE (BLOCK0)                            Use BLOCK0 to check error record registers         = with check R/W (0b1)
+    BLOCK_USR_DATA (BLOCK3)                            User data
+    = 00 00 00 00 00 00 00 01 1a c8 07 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 R/W
+
+    Flash fuses:
+    FLASH_CAP (BLOCK1)                                 Flash capacity                                     = 4M R/W (0b001)
+    FLASH_TEMP (BLOCK1)                                Flash temperature                                  = 105C R/W (0b01)
+    FLASH_VENDOR (BLOCK1)                              Flash vendor                                       = XMC R/W (0b001)
+
+    Identity fuses:
+    BLK_VERSION_MINOR (BLOCK1)                         BLK_VERSION_MINOR                                  = 3 R/W (0b011)
+    WAFER_VERSION_MAJOR (BLOCK1)                       WAFER_VERSION_MAJOR                                = 1 R/W (0b01)
+    OPTIONAL_UNIQUE_ID (BLOCK2)                        Optional unique 128-bit ID
+    = 65 27 7c ca 5a 0c 48 02 6c b0 e5 a6 7d 94 30 f2 R/W
+    BLK_VERSION_MAJOR (BLOCK2)                         BLK_VERSION_MAJOR of BLOCK2                        = With calibration R/W (0b01)
+
+    Mac fuses:
+    MAC (BLOCK1)                                       MAC address
+    = 60:55:f9:f7:81:cc (OK) R/W
+
+    User fuses:
+    MODULE_VERSION (BLOCK3)                            Module version (56-63)                             = 1 R/W (0x01)
+    DEVICE_ROLE (BLOCK3)                               Device role (64-66)                                = 2 R/W (0b010)
+    SETTING_1 (BLOCK3)                                 Setting 1 (67-72)                                  = 3 R/W (0b000011)
+    SETTING_2 (BLOCK3)                                 Setting 2 (73-77)                                  = 4 R/W (0b00100)
+    CUSTOM_SECURE_VERSION (BLOCK3)                     Custom secure version (78-93)                      = 31 R/W (0x001f)
+    ...
+
+Example (dump):
+
+.. code-block:: text
+
+    I (441) example: IDF_MONITOR_EXECUTE_ESPEFUSE_DUMP EFSR:esp32c3:100:AAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAA:zIH3-VVgAAAAAAAAAAAAS8kmEVKwQgYB:ZSd8yloMSAJssOWmfZQw8lFbphuTZH574QcV3ggAAAA:AAAAAAAAAAEayAcAAAAAAAAAAAAAAAAAAAAAAAAAAAA:::::::::ydrNkQ
+
+    --- Executing monitor command: espefuse --token EFSR:esp32c3:100:AAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAA:zIH3-VVgAAAAAAAAAAAAS8kmEVKwQgYB:ZSd8yloMSAJssOWmfZQw8lFbphuTZH574QcV3ggAAAA:AAAAAAAAAAEayAcAAAAAAAAAAAAAAAAAAAAAAAAAAAA:::::::::ydrNkQ dump
+    espefuse v5.1.0
+
+    === Run "dump" command ===
+    BLOCK0          (                ) [0 ] dump: 00000000 00000000 00000000 00000000 80000000 00000000
+    MAC_SPI_8M_0    (BLOCK1          ) [1 ] dump: f9f781cc 00006055 00000000 4b000000 521126c9 010642b0
+    BLOCK_SYS_DATA  (BLOCK2          ) [2 ] dump: ca7c2765 02480c5a a6e5b06c f230947d 1ba65b51 7b7e6493 de1507e1 00000008
+    BLOCK_USR_DATA  (BLOCK3          ) [3 ] dump: 00000000 01000000 0007c81a 00000000 00000000 00000000 00000000 00000000
+    BLOCK_KEY0      (BLOCK4          ) [4 ] dump: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+    BLOCK_KEY1      (BLOCK5          ) [5 ] dump: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+    BLOCK_KEY2      (BLOCK6          ) [6 ] dump: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+    BLOCK_KEY3      (BLOCK7          ) [7 ] dump: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+    BLOCK_KEY4      (BLOCK8          ) [8 ] dump: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+    BLOCK_KEY5      (BLOCK9          ) [9 ] dump: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+    BLOCK_SYS_DATA2 (BLOCK10         ) [10] dump: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
 
 Application Examples
 --------------------

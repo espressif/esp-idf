@@ -84,6 +84,8 @@ idf.py -p PORT flash monitor
 
 (Replace PORT with the name of the serial port to use.)
 
+Running `idf.py monitor` is important for this example, not only to view the UART log. The application prints special `IDF_MONITOR_EXECUTE_ESPEFUSE_* EFSR:..` messages, and `idf.py monitor` recognizes them, runs the corresponding `espefuse` command, and prints the decoded eFuse information in the console. If you only use `idf.py flash` or another serial terminal, you will only see the raw marker lines with an efuse token and will not get the additional `espefuse` output shown below.
+
 (To exit the serial monitor, type ``Ctrl-]``.)
 
 See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
@@ -91,36 +93,194 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
-For ``None`` coding scheme:
-
+For ``RS`` coding scheme (esp32c3):
 
 ```
-I (0) cpu_start: Starting scheduler on APP CPU.
-I (323) example: Coding Scheme NONE
-I (323) example: Uses common and custom tables
-I (333) example: read efuse fields
-I (333) example: 1. read MAC address: d8:a0:1d:40:ac:90
-I (343) example: 2. read secure_version: 0
-I (343) example: 3. read custom fields
-I (353) example: module_version = 0
-I (353) example: device_role = None
-I (363) example: setting_1 = 0
-I (363) example: setting_2 = 0
-I (363) example: custom_secure_version = 0
-W (373) example: This example does not burn any efuse in reality only virtually
-W (383) example: Write operations in efuse fields are performed virtually
-I (383) example: write custom efuse fields
-W (393) efuse: Virtual efuses enabled: Not really burning eFuses
-W (403) efuse: Virtual efuses enabled: Not really burning eFuses
-W (403) efuse: Virtual efuses enabled: Not really burning eFuses
-W (413) efuse: Virtual efuses enabled: Not really burning eFuses
-W (423) efuse: Virtual efuses enabled: Not really burning eFuses
-I (423) example: module_version = 1
-I (433) example: device_role = Slave
-I (433) example: setting_1 = 3
-I (433) example: setting_2 = 4
-I (443) example: custom_secure_version = 5
-I (443) example: Done
+ESP-ROM:esp32c3-eco6-20230321
+Build:Mar 21 2023
+rst:0x1 (POWERON),boot:0xc (SPI_FAST_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fcd5990,len:0x1750
+load:0x403cbf10,len:0xd00
+load:0x403ce710,len:0x304c
+entry 0x403cbf1a
+W (25) boot.esp32c3: eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!
+W (31) efuse: [Virtual] Loading virtual efuse blocks from real efuses
+I (49) boot: ESP-IDF v6.1-dev-1458-ga7a9419ed8f-dirt 2nd stage bootloader
+I (49) boot: compile time Dec 23 2025 13:37:44
+I (50) boot: chip revision: v1.0
+I (52) boot: efuse block revision: v1.3
+I (55) boot.esp32c3: SPI Speed      : 80MHz
+I (59) boot.esp32c3: SPI Mode       : DIO
+I (63) boot.esp32c3: SPI Flash Size : 2MB
+I (67) boot: Enabling RNG early entropy source...
+I (71) boot: Partition Table:
+I (74) boot: ## Label            Usage          Type ST Offset   Length
+I (80) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (87) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (93) boot:  2 factory          factory app      00 00 00010000 00100000
+I (100) boot: End of partition table
+I (103) esp_image: segment 0: paddr=00010020 vaddr=3c010020 size=06a24h ( 27172) map
+I (115) esp_image: segment 1: paddr=00016a4c vaddr=3fc89200 size=0175ch (  5980) load
+I (119) esp_image: segment 2: paddr=000181b0 vaddr=40380000 size=07e68h ( 32360) load
+I (131) esp_image: segment 3: paddr=00020020 vaddr=42000020 size=0e6d4h ( 59092) map
+I (142) esp_image: segment 4: paddr=0002e6fc vaddr=40387e68 size=011b4h (  4532) load
+I (143) esp_image: segment 5: paddr=0002f8b8 vaddr=50000000 size=00024h (    36) load
+I (151) boot: Loaded app from partition at offset 0x10000
+I (153) boot: Disabling RNG early entropy source...
+I (169) cpu_start: Unicore app
+I (177) cpu_start: GPIO 20 and 21 are used as console UART I/O pins
+I (178) cpu_start: Pro cpu start user code
+I (178) cpu_start: cpu freq: 160000000 Hz
+I (180) app_init: Application information:
+I (183) app_init: Project name:     efuse
+I (187) app_init: App version:      v6.1-dev-1458-ga7a9419ed8f-dirt
+I (193) app_init: Compile time:     Dec 23 2025 13:37:47
+I (198) app_init: ELF file SHA256:  64e4d02c1...
+I (203) app_init: ESP-IDF:          v6.1-dev-1458-ga7a9419ed8f-dirt
+I (209) efuse_init: Min chip rev:     v0.3
+I (212) efuse_init: Max chip rev:     v1.99 
+I (216) efuse_init: Chip rev:         v1.0
+I (220) heap_init: Initializing. RAM available for dynamic allocation:
+I (227) heap_init: At 3FC8BE70 len 00034190 (208 KiB): RAM
+I (232) heap_init: At 3FCC0000 len 0001C710 (113 KiB): Retention RAM
+I (238) heap_init: At 3FCDC710 len 0000294C (10 KiB): Retention RAM
+I (244) heap_init: At 50000024 len 00001FC4 (7 KiB): RTCRAM
+I (250) spi_flash: detected chip: generic
+I (253) spi_flash: flash io: dio
+W (256) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.
+W (268) efuse_init: eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!
+W (281) efuse: [Virtual] Loading virtual efuse blocks from real efuses
+I (288) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (294) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (301) main_task: Started on CPU0
+I (301) main_task: Calling app_main()
+I (301) example: Start eFuse example
+I (301) example: Initial token dump to log
+I (311) example: IDF_MONITOR_EXECUTE_ESPEFUSE_SUMMARY EFSR:esp32c3:100:AAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAA:zIH3-VVgAAAAAAAAAAAAS8kmEVKwQgYB:ZSd8yloMSAJssOWmfZQw8lFbphuTZH574QcV3ggAAAA::::::::::lcxoUA --extend-efuse-table main/esp_efuse_custom_table.csv
+--- Executing monitor command: espefuse --token EFSR:esp32c3:100:AAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAA:zIH3-VVgAAAAAAAAAAAAS8kmEVKwQgYB:ZSd8yloMSAJssOWmfZQw8lFbphuTZH574QcV3ggAAAA::::::::::lcxoUA --extend-efuse-table main/esp_efuse_custom_table.csv summary --active
+espefuse v5.1.0
+
+=== Run "summary" command ===
+EFUSE_NAME (Block) Description  = [Meaningful Value] [Readable/Writeable] (Hex Value)
+----------------------------------------------------------------------------------------
+Calibration fuses:
+K_RTC_LDO (BLOCK1)                                 BLOCK1 K_RTC_LDO                                   = 77 R/W (0b1001101)
+K_DIG_LDO (BLOCK1)                                 BLOCK1 K_DIG_LDO                                   = 68 R/W (0b1000100)
+V_RTC_DBIAS20 (BLOCK1)                             BLOCK1 voltage of rtc dbias20                      = 144 R/W (0x90)
+V_DIG_DBIAS20 (BLOCK1)                             BLOCK1 voltage of digital dbias20                  = 130 R/W (0x82)
+DIG_DBIAS_HVT (BLOCK1)                             BLOCK1 digital dbias when hvt                      = 21 R/W (0b10101)
+THRES_HVT (BLOCK1)                                 BLOCK1 pvt threshold when hvt                      = 400 R/W (0b0110010000)
+TEMP_CALIB (BLOCK2)                                Temperature calibration data                       = -10.600000000000001 R/W (0b101101010)
+OCODE (BLOCK2)                                     ADC OCode                                          = 101 R/W (0x65)
+ADC1_INIT_CODE_ATTEN0 (BLOCK2)                     ADC1 init code at atten0                           = 442 R/W (0b0110111010)
+ADC1_INIT_CODE_ATTEN1 (BLOCK2)                     ADC1 init code at atten1                           = 588 R/W (0b1001001100)
+ADC1_INIT_CODE_ATTEN2 (BLOCK2)                     ADC1 init code at atten2                           = 612 R/W (0b1001100100)
+ADC1_INIT_CODE_ATTEN3 (BLOCK2)                     ADC1 init code at atten3                           = 735 R/W (0b1011011111)
+ADC1_CAL_VOL_ATTEN0 (BLOCK2)                       ADC1 calibration voltage at atten0                 = 535 R/W (0b1000010111)
+ADC1_CAL_VOL_ATTEN1 (BLOCK2)                       ADC1 calibration voltage at atten1                 = 31 R/W (0b0000011111)
+ADC1_CAL_VOL_ATTEN2 (BLOCK2)                       ADC1 calibration voltage at atten2                 = 533 R/W (0b1000010101)
+ADC1_CAL_VOL_ATTEN3 (BLOCK2)                       ADC1 calibration voltage at atten3                 = 567 R/W (0b1000110111)
+
+Config fuses:
+ERR_RST_ENABLE (BLOCK0)                            Use BLOCK0 to check error record registers         = with check R/W (0b1)
+
+Flash fuses:
+FLASH_CAP (BLOCK1)                                 Flash capacity                                     = 4M R/W (0b001)
+FLASH_TEMP (BLOCK1)                                Flash temperature                                  = 105C R/W (0b01)
+FLASH_VENDOR (BLOCK1)                              Flash vendor                                       = XMC R/W (0b001)
+
+Identity fuses:
+BLK_VERSION_MINOR (BLOCK1)                         BLK_VERSION_MINOR                                  = 3 R/W (0b011)
+WAFER_VERSION_MAJOR (BLOCK1)                       WAFER_VERSION_MAJOR                                = 1 R/W (0b01)
+OPTIONAL_UNIQUE_ID (BLOCK2)                        Optional unique 128-bit ID                        
+   = 65 27 7c ca 5a 0c 48 02 6c b0 e5 a6 7d 94 30 f2 R/W 
+BLK_VERSION_MAJOR (BLOCK2)                         BLK_VERSION_MAJOR of BLOCK2                        = With calibration R/W (0b01)
+
+Jtag fuses:
+
+Mac fuses:
+MAC (BLOCK1)                                       MAC address                                       
+   = 60:55:f9:f7:81:cc (OK) R/W 
+
+Security fuses:
+
+Spi Pad fuses:
+
+Usb fuses:
+
+User fuses:
+
+Vdd fuses:
+
+Wdt fuses:
+
+
+I (331) example: Coding Scheme RS (Reed-Solomon coding)
+I (331) example: read efuse fields
+I (341) example: 1. read MAC address: 60:55:f9:f7:81:cc
+I (341) example: 2. read secure_version: 0
+I (351) example: 3. read custom fields
+I (351) example: module_version = 0
+I (351) example: device_role = None
+I (361) example: setting_1 = 0
+I (361) example: setting_2 = 0
+I (361) example: custom_secure_version = 0
+W (371) example: This example does not burn any efuse in reality only virtually
+W (371) example: Write operations in efuse fields are performed virtually
+I (381) example: write custom efuse fields
+I (381) example: In the case of 3/4 or RS coding scheme, you cannot write efuse fields separately
+I (391) example: You should use the batch mode of writing fields for this
+I (401) efuse: Batch mode of writing fields is enabled
+I (401) example: Token dump of staged eFuse writes:
+I (411) example: IDF_MONITOR_EXECUTE_ESPEFUSE_SUMMARY EFSW:esp32c3:100::::AAAAAAAAAAEayAcAAAAAAAAAAAAAAAAAAAAAAAAAAAA:::::::::7jMAoA --extend-efuse-table main/esp_efuse_custom_table.csv
+--- Executing monitor command: espefuse --token EFSW:esp32c3:100::::AAAAAAAAAAEayAcAAAAAAAAAAAAAAAAAAAAAAAAAAAA:::::::::7jMAoA --extend-efuse-table main/esp_efuse_custom_table.csv summary --active
+espefuse v5.1.0
+
+=== Run "summary" command ===
+EFUSE_NAME (Block) Description  = [Meaningful Value] [Readable/Writeable] (Hex Value)
+----------------------------------------------------------------------------------------
+Config fuses:
+BLOCK_USR_DATA (BLOCK3)                            User data                                         
+   = 00 00 00 00 00 00 00 01 1a c8 07 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 R/W 
+
+Flash fuses:
+
+Identity fuses:
+WAFER_VERSION_MAJOR (BLOCK1)                       WAFER_VERSION_MAJOR                                = 1 R/W (0b01)
+
+Jtag fuses:
+
+Mac fuses:
+
+Security fuses:
+
+Spi Pad fuses:
+
+Usb fuses:
+
+User fuses:
+MODULE_VERSION (BLOCK3)                            Module version (56-63)                             = 1 R/W (0x01)
+DEVICE_ROLE (BLOCK3)                               Device role (64-66)                                = 2 R/W (0b010)
+SETTING_1 (BLOCK3)                                 Setting 1 (67-72)                                  = 3 R/W (0b000011)
+SETTING_2 (BLOCK3)                                 Setting 2 (73-77)                                  = 4 R/W (0b00100)
+CUSTOM_SECURE_VERSION (BLOCK3)                     Custom secure version (78-93)                      = 31 R/W (0x001f)
+
+Vdd fuses:
+
+Wdt fuses:
+
+
+W (421) efuse: Virtual efuses enabled: Not really burning eFuses
+I (431) efuse: Batch mode. Prepared fields are committed
+I (431) example: module_version = 1
+I (441) example: device_role = Slave
+I (441) example: setting_1 = 3
+I (441) example: setting_2 = 4
+I (451) example: custom_secure_version = 5
+I (451) example: Done
+I (451) main_task: Returned from app_main()
 ```
 
 And for ``3/4`` coding scheme:

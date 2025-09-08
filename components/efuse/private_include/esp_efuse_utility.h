@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,13 @@ typedef struct {
     uintptr_t start;
     uintptr_t end;
 } esp_efuse_range_addr_t;
+
+/**
+ * @brief Current nesting level of eFuse batch write mode.
+ *
+ * This state is shared between the public eFuse API implementation.
+ */
+extern int s_batch_writing_mode;
 
 /**
  * @brief This is type of function that will handle the efuse field register.

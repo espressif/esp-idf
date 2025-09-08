@@ -99,6 +99,34 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_recovery_boot
     return EFUSE.rd_repeat_data5.recovery_bootloader_flash_sector;
 }
 
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_coding_error(unsigned index)
+{
+    switch (index) {
+    case 0:
+        return EFUSE.rd_repeat_data_err0.val;
+    case 1:
+        return EFUSE.rd_repeat_data_err1.val;
+    case 2:
+        return EFUSE.rd_repeat_data_err2.val;
+    case 3:
+        return EFUSE.rd_repeat_data_err3.val;
+    case 4:
+        return EFUSE.rd_repeat_data_err4.val;
+    case 5:
+        return EFUSE.rd_repeat_data_err5.val;
+    case 6:
+        return EFUSE.rd_repeat_data_err6.val;
+    case 7:
+        return EFUSE.rd_repeat_data_err7.val;
+    case 8:
+        return EFUSE.rd_rs_data_err0.val;
+    case 9:
+        return EFUSE.rd_rs_data_err1.val;
+    default:
+        return 0;
+    }
+}
+
 /******************* eFuse control functions *************************/
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_read_cmd(void)

@@ -883,3 +883,109 @@ TEST_CASE("Test deferred WR_DIS programming", "[efuse]")
     TEST_ASSERT_TRUE(esp_efuse_get_key_dis_write(EFUSE_BLK_KEY0));
     TEST_ASSERT_TRUE(esp_efuse_get_key_dis_read(EFUSE_BLK_KEY0));
 }
+
+TEST_CASE("Test token dump", "[efuse]")
+{
+#ifdef CONFIG_IDF_TARGET_ESP32
+    const char *valid_token = "EFSW:esp32:300:AAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:oKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr8:::x8WPiQ";
+#elif CONFIG_IDF_TARGET_ESP32C2
+    const char *valid_token = "EFSW:esp32c2:000:gAAAAAEEAAA::AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:v769vLu6ubi3trW0s7KxsK-urayrqqmop6alpKOioaA::4d9CPw";
+#elif CONFIG_IDF_TARGET_ESP32C3
+    const char *valid_token = "EFSW:esp32c3:004:AAGAAAEAAAAAAAAEAAAAAAAAAAAAAAAA::AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA::v769vLu6ubi3trW0s7KxsK-urayrqqmop6alpKOioaA::::::::n9AtsQ";
+#elif CONFIG_IDF_TARGET_LINUX
+    const char *valid_token = "EFSW:linux:000:AAGAAAEAAAAAAAAEAAAAAAAAAAAAAAAA::AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA::v769vLu6ubi3trW0s7KxsK-urayrqqmop6alpKOioaA::::::::dq_wIQ";
+#else
+    const char *valid_token = NULL;
+    return;
+#endif
+
+    esp_efuse_utility_reset();
+    esp_efuse_utility_erase_virt_blocks();
+
+    esp_rom_printf("Initial read token:\n");
+    esp_efuse_token_dump(ESP_EFUSE_TOKEN_FROM_READ, NULL, 0);
+
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(NULL, true));
+
+    char test_token[256];
+
+    printf(" - Test bad header\n");
+    strcpy(test_token, valid_token);
+    test_token[0] = 'X';
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test not allowed token type\n");
+    strcpy(test_token, valid_token);
+    test_token[3] = 'R';
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, false));
+
+    printf(" - Test bad chip name\n");
+    strcpy(test_token, valid_token);
+    char *chip_name_start = strchr(test_token, ':') + 1;
+    chip_name_start[0] = 'X';
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test chip name prefix only\n");
+    strcpy(test_token, valid_token);
+    chip_name_start = strchr(test_token, ':') + 1;
+    char *chip_name_end = strchr(chip_name_start, ':');
+    memmove(chip_name_end + 2, chip_name_end, strlen(chip_name_end) + 1);
+    memcpy(chip_name_end, "X9", 2);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test bad version\n");
+    strcpy(test_token, valid_token);
+    chip_name_start = strchr(test_token, ':') + 1;
+    char *version_start = strchr(chip_name_start, ':') + 1;
+    memcpy(version_start, "999", 3);
+    TEST_ESP_ERR(ESP_ERR_INVALID_VERSION, esp_efuse_token_burn(test_token, false));
+    TEST_ESP_ERR(ESP_ERR_INVALID_CRC, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test missing version\n");
+    memcpy(version_start, ":", 1);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test short version\n");
+    memcpy(version_start, "99:", 3);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test non-numeric version\n");
+    memcpy(version_start, "0A0", 3);
+    TEST_ESP_ERR(ESP_ERR_INVALID_CRC, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test 4-digit version\n");
+    memcpy(version_start, "1000", 4);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test bad CRC\n");
+    strcpy(test_token, valid_token);
+    test_token[strlen(test_token) - 3] = 'X';
+    TEST_ESP_ERR(ESP_ERR_INVALID_CRC, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test corrupted first data block\n");
+    strcpy(test_token, valid_token);
+    char *first_block_start = strchr(version_start, ':') + 1;
+    first_block_start = strchr(first_block_start, ':') + 1;
+    first_block_start = strchr(first_block_start, ':') + 1;
+    char *first_block_end = strchr(first_block_start, ':');
+    memset(first_block_start, ':', first_block_end - first_block_start);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, false));
+
+    printf(" - Test valid token burn\n");
+    esp_rom_printf("BURN token:\n%s\n", valid_token);
+    TEST_ESP_OK(esp_efuse_token_burn(valid_token, true)); // ignore chip version
+    esp_rom_printf("Staged token:\n");
+    esp_rom_printf(" - from console:\n");
+    TEST_ESP_OK(esp_efuse_token_dump(ESP_EFUSE_TOKEN_FROM_STAGED, NULL, 0));
+    esp_rom_printf(" - from buffer:\n");
+    char token_ready_burn[256];
+    TEST_ESP_OK(esp_efuse_token_dump(ESP_EFUSE_TOKEN_FROM_STAGED, token_ready_burn, sizeof(token_ready_burn)));
+    esp_rom_printf("%s\n", token_ready_burn);
+    // cut off crc part and starting part to exclude chip version from comparison
+    const int b64_crc_len = 6;
+    TEST_ASSERT_EQUAL_STRING_LEN_MESSAGE(&valid_token[16], &token_ready_burn[16], strlen(&valid_token[16]) - b64_crc_len, "Tokens mismatch");
+
+    TEST_ESP_OK(esp_efuse_batch_write_cancel());
+}

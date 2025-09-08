@@ -1,5 +1,23 @@
 menu "eFuse Bit Manager"
 
+    config EFUSE_ENABLE_STAGED_TOKEN_API
+        bool "Enable staged eFuse token dump API"
+        default n
+        help
+            Allows esp_efuse_token_dump() to produce dump types that include
+            staged eFuse writes. Staging refers to pending eFuse writes
+            prepared in batch mode but not yet burned to hardware.
+
+            Token dump types:
+            - EFSR: current eFuse read state.
+            - EFSW: pending write state.
+            - EFSRW: combined read and pending write state.
+
+            Pending write tokens may contain sensitive data, including
+            plaintext keys, before eFuses are burned and read-protected.
+            Keep this option disabled in production firmware unless staged
+            token workflows are explicitly required.
+
     config EFUSE_CUSTOM_TABLE
         bool "Use custom eFuse table"
         default n

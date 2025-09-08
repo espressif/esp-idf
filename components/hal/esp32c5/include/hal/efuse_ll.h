@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -137,6 +137,28 @@ __attribute__((always_inline)) static inline int32_t efuse_ll_get_dbias_vol_gap(
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_recovery_bootloader_sector(void)
 {
     return (EFUSE.rd_repeat_data2.recovery_bootloader_flash_sector_hi << 9) | EFUSE.rd_repeat_data4.recovery_bootloader_flash_sector_lo;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_coding_error(unsigned index)
+{
+    switch (index) {
+    case 0:
+        return EFUSE.rd_repeat_data_err0.val;
+    case 1:
+        return EFUSE.rd_repeat_data_err1.val;
+    case 2:
+        return EFUSE.rd_repeat_data_err2.val;
+    case 3:
+        return EFUSE.rd_repeat_data_err3.val;
+    case 4:
+        return EFUSE.rd_repeat_data_err4.val;
+    case 5:
+        return EFUSE.rd_rs_data_err0.val;
+    case 6:
+        return EFUSE.rd_rs_data_err1.val;
+    default:
+        return 0;
+    }
 }
 
 /******************* eFuse control functions *************************/

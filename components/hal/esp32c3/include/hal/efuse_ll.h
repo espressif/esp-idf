@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -122,6 +122,28 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_dig_dbias_hvt
 {
     // EFUSE_BLK1,    165,    5,      BLOCK1 digital dbias when hvt
     return EFUSE.rd_mac_spi_sys_5.dig_dbias_hvt;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_coding_error(unsigned index)
+{
+    switch (index) {
+    case 0:
+        return EFUSE.rd_repeat_err0.val;
+    case 1:
+        return EFUSE.rd_repeat_err1.val;
+    case 2:
+        return EFUSE.rd_repeat_err2.val;
+    case 3:
+        return EFUSE.rd_repeat_err3.val;
+    case 4:
+        return EFUSE.rd_repeat_err4.val;
+    case 5:
+        return EFUSE.rd_rs_err0.val;
+    case 6:
+        return EFUSE.rd_rs_err1.val;
+    default:
+        return 0;
+    }
 }
 
 /******************* eFuse control functions *************************/
