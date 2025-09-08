@@ -11,6 +11,16 @@ All drivers' ``io_loop_back`` configuration have been removed
 
 Different driver objects can share the same GPIO number, enabling more complex functionalities. For example, you can bind the TX and RX channels of the RMT peripheral to the same GPIO to simulate 1-Wire bus read and write timing. In previous versions, you needed to configure the ``io_loop_back`` setting in the driver to achieve this "loopback" functionality. Now, this configuration has been removed. Simply configuring the same GPIO number in different drivers will achieve the same functionality.
 
+Peripheral Clock Gating
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Peripheral clock gating is managed within the driver layer. Users do not need to manually handle peripheral module clock gating. Its corresponding APIs are included via a private header file ``esp_private/periph_ctrl.h``. There used to be another header file ``driver/periph_ctrl.h`` for the same purpose, which is now removed.
+
+RTC Subsystem Control
+~~~~~~~~~~~~~~~~~~~~~~
+
+Low power modules usually share some common resources like interrupt number. To avoid conflicts, some private APIs are created in the ``esp_private/rtc_ctrl.h`` header file to manage these shared resources with ease. There used to be another header file ``driver/rtc_cntl.h`` for the same purpose, which is now removed.
+
 ADC
 ---
 

@@ -1,4 +1,4 @@
-menu "Driver Configurations"
+menu "Legacy Driver Configurations"
 
     orsource "./twai/Kconfig.twai"
 
