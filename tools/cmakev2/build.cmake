@@ -562,7 +562,7 @@ function(idf_build_generate_metadata executable)
     set(PROJECT_EXECUTABLE "$<TARGET_FILE_NAME:${executable}>")
     # The PROJECT_BIN executable property must be set by the idf_build_binary
     # function.
-    get_target_property(PROJECT_BIN "${executable}" PROJECT_BIN)
+    get_target_property(PROJECT_BIN "${executable}" EXECUTABLE_BINARY)
     if(NOT PROJECT_BIN)
         set(PROJECT_BIN "")
     endif()
@@ -614,9 +614,99 @@ function(idf_build_generate_metadata executable)
         set(ARG_FILE "${BUILD_DIR}/project_description.json")
     endif()
 
+    get_filename_component(ARG_FILE "${ARG_FILE}" ABSOLUTE BASE_DIR "${BUILD_DIR}")
+
     configure_file("${IDF_PATH}/tools/cmake/project_description.json.in" "${ARG_FILE}.templ")
     file(READ "${ARG_FILE}.templ" project_description_json_templ)
     file(REMOVE "${ARG_FILE}.templ")
     file(GENERATE OUTPUT "${ARG_FILE}"
          CONTENT "${project_description_json_templ}")
+endfunction()
+
+#[[api
+.. cmakev2:function:: idf_build_binary
+
+   .. code-block:: cmake
+
+      idf_build_binary(<executable>
+                       TARGET <target>
+                       OUTPUT_FILE <file>)
+
+   :executable[in]: Executable target for which to generate a binary image
+                    file.
+   :TARGET[in]: The name of the target that will be created for the generated
+                binary image.
+   :OUTPUT_FILE[in]: Output file path for storing the binary image file.
+
+   Create a binary image for the specified ``executable`` target and save it in
+   the file specified with the  `OUTPUT_FILE` option. A custom target named
+   ``TARGET`` will be created for the generated binary image. The path of the
+   generated binary image will be also stored in the ``BINARY_PATH`` property
+   of the ``TARGET``.
+#]]
+function(idf_build_binary executable)
+    set(options)
+    set(one_value OUTPUT_FILE TARGET)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT TARGET idf::esptool_py)
+        idf_die("The 'esptool_py' component is not available")
+    endif()
+
+    if(NOT CONFIG_APP_BUILD_GENERATE_BINARIES)
+        idf_die("Binary file generation is not enabled with 'CONFIG_APP_BUILD_GENERATE_BINARIES'")
+    endif()
+
+    if(NOT TARGET "${executable}")
+        idf_die("The executable '${executable}' is not a cmake target")
+    endif()
+
+    get_target_property(type "${executable}" TYPE)
+    if(NOT "${type}" STREQUAL "EXECUTABLE")
+        idf_die("The executable target '${executable}' is not of the EXECUTABLE type")
+    endif()
+
+    idf_build_get_property(build_dir BUILD_DIR)
+
+    get_target_property(executable_name ${executable} OUTPUT_NAME)
+    if(NOT executable_name)
+        set(executable_name "${executable}")
+    endif()
+
+    if(NOT DEFINED ARG_TARGET)
+        idf_die("TARGET option is required")
+    endif()
+
+    if(NOT DEFINED ARG_OUTPUT_FILE)
+        idf_die("OUTPUT_FILE option is required")
+    endif()
+
+    idf_component_get_property(esptool_py_cmd esptool_py ESPTOOLPY_CMD)
+    idf_component_get_property(esptool_elf2image_args esptool_py ESPTOOL_PY_ELF2IMAGE_ARGS)
+
+    get_filename_component(binary_name "${ARG_OUTPUT_FILE}" NAME)
+
+    # Create a custom command and target to generate a binary from an ELF file.
+    add_custom_command(OUTPUT "${ARG_OUTPUT_FILE}"
+        COMMAND ${esptool_py_cmd} elf2image ${esptool_elf2image_args}
+        -o "${ARG_OUTPUT_FILE}" "$<TARGET_FILE:${executable}>"
+        COMMAND ${CMAKE_COMMAND} -E echo "Generated ${ARG_OUTPUT_FILE}"
+        COMMAND ${CMAKE_COMMAND} -E md5sum "${ARG_OUTPUT_FILE}" > "${ARG_OUTPUT_FILE}.md5sum"
+        DEPENDS ${executable}
+        VERBATIM
+        WORKING_DIRECTORY ${build_dir}
+        COMMENT "Generating binary image '${binary_name}' from executable '${executable_name}'"
+    )
+
+    # Create a custom target to generate the binary file
+    add_custom_target(${ARG_TARGET} DEPENDS "${ARG_OUTPUT_FILE}")
+
+    # The EXECUTABLE_BINARY property is used by idf_build_generate_metadata to
+    # store the name of the binary image.
+    set_target_properties(${executable} PROPERTIES EXECUTABLE_BINARY ${binary_name})
+
+    # Store the path of the binary file in the BINARY_PATH property of the
+    # custom binary target, which is used by the idf_flash_binary.
+    set_target_properties(${ARG_TARGET} PROPERTIES BINARY_PATH ${ARG_OUTPUT_FILE})
 endfunction()
