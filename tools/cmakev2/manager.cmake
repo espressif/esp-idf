@@ -82,9 +82,6 @@ function(__fetch_components_from_registry)
             idf_die("IDF Component Manager error: ${cmgr_result}")
         endif()
     endwhile()
-
-    # Auto-include all project-level managed components after component manager is done
-    __include_project_level_managed_components()
 endfunction()
 
 #[[
@@ -178,15 +175,8 @@ function(__download_component_level_managed_components)
     set(__contents "components:\n")
     idf_build_get_property(component_names COMPONENTS_DISCOVERED)
     foreach(name ${component_names})
-        # Respect EXCLUDE_COMPONENTS passed via -D
-        set(__include 1)
-        if(DEFINED EXCLUDE_COMPONENTS AND name IN_LIST EXCLUDE_COMPONENTS)
-            set(__include 0)
-        endif()
-        if(__include)
-            idf_component_get_property(dir ${name} COMPONENT_DIR)
-            set(__contents "${__contents}  - name: \"${name}\"\n    path: \"${dir}\"\n")
-        endif()
+        idf_component_get_property(dir ${name} COMPONENT_DIR)
+        set(__contents "${__contents}  - name: \"${name}\"\n    path: \"${dir}\"\n")
     endforeach()
     file(WRITE ${local_components_list_file} "${__contents}")
 
@@ -231,4 +221,122 @@ function(__component_manager_warn_if_disabled_and_manifests_exist)
         idf_warn(NOTICE "\"idf_component.yml\" file was found for components:\n\t
         ${with_lines}\nHowever, the component manager is not enabled.")
     endif()
+endfunction()
+
+#[[
+   __component_set_property(target property value)
+
+   Shim for setting component properties, primarily for use by the component manager
+   in build system v2. This function only processes dependency-related properties
+   (MANAGED_REQUIRES and MANAGED_PRIV_REQUIRES) produced by the component manager's
+   injection file. Other properties are ignored to avoid interfering with the
+   cmakev2 build flow. Target names with triple underscores are normalized.
+#]]
+function(__component_set_property target property value)
+    # If the target has 3 underscores, remove all of them and normalize the target
+    # This shim is only intended to process dependency-related properties produced
+    # by the component manager injection file. Ignore unrelated properties to avoid
+    # clobbering configuration already set by the cmakev2 build flow.
+    string(REPLACE "___" "" target "${target}")
+
+    # We only consume MANAGED_REQUIRES and MANAGED_PRIV_REQUIRES from the component manager.
+    # The manager's REQUIRES/PRIV_REQUIRES output contains both original and resolved names,
+    # which we don't want. We'll handle name resolution locally using our utility functions.
+    if(property STREQUAL "MANAGED_REQUIRES")
+        # Set the managed property for tracking
+        idf_component_set_property("${target}" "${property}" "${value}")
+        # Also append to the regular REQUIRES property
+        idf_component_set_property("${target}" REQUIRES "${value}" APPEND)
+    elseif(property STREQUAL "MANAGED_PRIV_REQUIRES")
+        # Set the managed property for tracking
+        idf_component_set_property("${target}" "${property}" "${value}")
+        # Also append to the regular PRIV_REQUIRES property
+        idf_component_set_property("${target}" PRIV_REQUIRES "${value}" APPEND)
+    else()
+        # Ignore REQUIRES, PRIV_REQUIRES, and other properties like INCLUDE_DIRS,
+        # __COMPONENT_SOURCE, __COMPONENT_REGISTERED, etc.
+    endif()
+endfunction()
+
+#[[
+   __inject_requirements_for_component_from_manager(<component_name>)
+
+   Managed dependency injection for a single component in build system v2.
+   Calls the Component Manager to compute manifest-derived dependencies and
+   updates the component's MANAGED_* properties.
+#]]
+function(__inject_requirements_for_component_from_manager component_name)
+    # Skip if already injected
+    idf_component_get_property(already_injected "${component_name}" __MANAGED_INJECTED)
+    if(already_injected)
+        return()
+    endif()
+
+    idf_dbg("Injecting requirements for component '${component_name}' from the component manager")
+
+    idf_build_get_property(python PYTHON)
+    idf_build_get_property(project_dir PROJECT_DIR)
+    idf_build_get_property(build_dir BUILD_DIR)
+    idf_build_get_property(dependencies_lock_file DEPENDENCIES_LOCK)
+    idf_build_get_property(sdkconfig_json __SDKCONFIG_JSON)
+    idf_build_get_property(component_manager_interface_version IDF_COMPONENT_MANAGER_INTERFACE_VERSION)
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(component_prefix PREFIX)
+    idf_component_get_property(component_source "${component_name}" COMPONENT_SOURCE)
+    idf_component_get_property(component_dir "${component_name}" COMPONENT_DIR)
+
+    # The component manager will inject requirements for this component. To do this, it needs to files:
+    #
+    # 1. An input file which states the component's source type. This is a minimal build system v1-style file
+    #    which contains the component's source type. To make the component manager happy, we create a file with
+    #    shim __component_set_property(), which calls idf_component_set_property(). The component manager will
+    #    modify this file by adding the component's requirements. TODO: Improve this.
+    # 2. A file which lists the components with manifests. This file is created by the component manager,
+    #    and is deleted after the component manager is done. This works for build system v1 where we provide
+    #    a global list of components with manifests. However, for build system v2, we need to provide this file
+    #    for each component. Hence, we create this file and place it in the build directory.
+    set(out_file "${build_dir}/component_requires.${component_name}.temp.cmake")
+    set(cmgr_target "___${component_prefix}_${component_name}")
+    # We only provide component source to the component manager
+    file(WRITE "${out_file}" "__component_set_property(${cmgr_target} __COMPONENT_SOURCE \"${component_source}\")\n")
+
+    # Create components_with_manifests_list.temp file with only this component if it has a manifest
+    set(components_with_manifests_file "${build_dir}/components_with_manifests_list.temp")
+    if(EXISTS "${component_dir}/idf_component.yml")
+        file(WRITE "${components_with_manifests_file}" "${component_dir}\n")
+    else()
+        file(WRITE "${components_with_manifests_file}" "")
+    endif()
+
+    # Call component manager to inject requirements
+    execute_process(COMMAND ${python}
+        "-m"
+        "idf_component_manager.prepare_components"
+        "--project_dir=${project_dir}"
+        "--lock_path=${dependencies_lock_file}"
+        "--sdkconfig_json_file=${sdkconfig_json}"
+        "--interface_version=${component_manager_interface_version}"
+        "inject_requirements"
+        "--idf_path=${idf_path}"
+        "--build_dir=${build_dir}"
+        "--component_requires_file=${out_file}"
+        RESULT_VARIABLE result
+        ERROR_VARIABLE error)
+
+    if(NOT result EQUAL 0)
+        idf_die("Component manager requirements injection failed for '${component_name}': ${error}")
+    endif()
+
+    # Include the component manager's output
+    if(EXISTS "${out_file}")
+        include("${out_file}")
+    endif()
+
+    # Clean up temporary files
+    if(NOT DEFINED ENV{IDF_KEEP_CMANAGER_TEMP} OR NOT "$ENV{IDF_KEEP_CMANAGER_TEMP}" STREQUAL "1")
+        file(REMOVE "${out_file}")
+        file(REMOVE "${components_with_manifests_file}")
+    endif()
+
+    idf_component_set_property("${component_name}" __MANAGED_INJECTED YES)
 endfunction()
