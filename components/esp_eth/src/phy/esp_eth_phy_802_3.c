@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,9 +22,6 @@
 
 static const char *TAG = "eth_phy_802_3";
 
-// TODO: IDF-11362 (should be renamed to esp_eth_phy_802_3_reset_hw with the next major release)
-static esp_err_t esp_eth_phy_802_3_reset_hw_internal(phy_802_3_t *phy_802_3);
-
 static esp_err_t set_mediator(esp_eth_phy_t *phy, esp_eth_mediator_t *eth)
 {
     phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
@@ -40,7 +37,7 @@ static esp_err_t reset(esp_eth_phy_t *phy)
 static esp_err_t reset_hw(esp_eth_phy_t *phy)
 {
     phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
-    return esp_eth_phy_802_3_reset_hw_internal(phy_802_3);
+    return esp_eth_phy_802_3_reset_hw(phy_802_3);
 }
 
 static esp_err_t autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
@@ -438,39 +435,25 @@ esp_err_t esp_eth_phy_802_3_del(phy_802_3_t *phy_802_3)
     return ESP_OK;
 }
 
-esp_err_t esp_eth_phy_802_3_reset_hw(phy_802_3_t *phy_802_3, uint32_t reset_assert_us)
+esp_err_t esp_eth_phy_802_3_reset_hw(phy_802_3_t *phy_802_3)
 {
+    esp_err_t ret = ESP_OK;
     if (phy_802_3->reset_gpio_num >= 0) {
         gpio_func_sel(phy_802_3->reset_gpio_num, PIN_FUNC_GPIO);
         gpio_set_level(phy_802_3->reset_gpio_num, 0);
         gpio_output_enable(phy_802_3->reset_gpio_num);
-        if (reset_assert_us < 10000) {
-            esp_rom_delay_us(reset_assert_us);
+        if (phy_802_3->hw_reset_assert_time_us < 10000) {
+            esp_rom_delay_us(phy_802_3->hw_reset_assert_time_us);
         } else {
-            vTaskDelay(pdMS_TO_TICKS(reset_assert_us/1000));
+            vTaskDelay(pdMS_TO_TICKS(phy_802_3->hw_reset_assert_time_us/1000));
         }
         gpio_set_level(phy_802_3->reset_gpio_num, 1);
-        return ESP_OK;
-    }
-    return ESP_ERR_NOT_ALLOWED;
-}
-
-/**
- * @brief Hardware reset with internal timing configuration defined during initialization
- *
- * @param phy_802_3 IEEE 802.3 PHY object infostructure
- * @return
- *      - ESP_OK: reset Ethernet PHY successfully
- *      - ESP_ERR_NOT_ALLOWED: reset GPIO not defined
- */
-static esp_err_t esp_eth_phy_802_3_reset_hw_internal(phy_802_3_t *phy_802_3)
-{
-    esp_err_t ret = ESP_OK;
-    if ((ret = esp_eth_phy_802_3_reset_hw(phy_802_3, phy_802_3->hw_reset_assert_time_us)) == ESP_OK) {
         if (phy_802_3->post_hw_reset_delay_ms > 0) {
             vTaskDelay(pdMS_TO_TICKS(phy_802_3->post_hw_reset_delay_ms));
         }
+        return ESP_OK;
     }
+
     return ret;
 }
 
