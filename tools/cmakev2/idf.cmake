@@ -31,6 +31,7 @@ include(component)
 include(build)
 include(kconfig)
 include(project)
+include(manager)
 include(compat)
 include(ldgen)
 include(GetGitRevisionDescription)
@@ -570,10 +571,8 @@ __init_components()
 # Generate initial sdkconfig with discovered components.
 __generate_sdkconfig()
 
-# TODO: Invoke component manager with initial sdkconfig.
-# We need to re-collect and re-generate sdkconfig with managed components.
-# This will be done iteratively until the component manager resolves all sdkconfig
-# related dependencies.
+# Initialize the component manager and fetch components in a loop
+__fetch_components_from_registry()
 
 # Create Kconfig targets
 __create_kconfig_targets()
@@ -595,12 +594,6 @@ Many of the following things are already implemented in PoC !38337, but they
 need to be reviewed.
 
 * Enable ccache if requested and available.
-* Generate initial sdkconfig for component manager.
-* Call component manager with initial sdkconfig to download requested components
-  and include the generated cmake.  See the generated
-  ``build/managed_components_list.temp.cmake``. We probably need shim for
-  ``idf_build_component`` calling ``__init_component``.
-* Generate final sdkconfig and include its cmake version.
 
 There may be additional steps. We should initialize everything necessary before
 calling the ``project()`` function, as well as any global settings that cannot be
