@@ -506,12 +506,12 @@ function(__init_project_configuration)
 endfunction()
 
 #[[
-   __init_project_flash_targets()
+   __create_project_flash_targets()
 
    Add placeholder flash targets to the build. This is used by components to
    declare dependencies on the flash target.
 #]]
-function(__init_project_flash_targets)
+function(__create_project_flash_targets)
     if(NOT TARGET flash)
         add_custom_target(flash)
     endif()
@@ -523,6 +523,23 @@ function(__init_project_flash_targets)
                            OUTPUT sdkconfig_target)
     if(encrypted_flash_enabled AND NOT TARGET encrypted-flash)
         add_custom_target(encrypted-flash)
+    endif()
+endfunction()
+
+#[[
+   __init_project_flash_targets()
+
+   If binary generation is enabled, initialize the esptool component and enable
+   the generation of esptool flash argument files for the flash and
+   encrypted-flash targets. Note that this is done after including the
+   project_include.cmake files, as we need the functions defined in the
+   esptool_py component.
+#]]
+function(__init_project_flash_targets)
+    if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+        idf_component_get_property(main_args esptool_py FLASH_ARGS)
+        idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
+        esptool_py_flash_target(flash "${main_args}" "${sub_args}")
     endif()
 endfunction()
 
@@ -562,7 +579,7 @@ macro(idf_project_init)
         __init_project_configuration()
 
         # Create global flash targets.
-        __init_project_flash_targets()
+        __create_project_flash_targets()
 
         # Include all project_include.cmake files for the components that have
         # been discovered.
@@ -583,6 +600,9 @@ macro(idf_project_init)
                 unset(COMPONENT_PATH)
             endif()
         endforeach()
+
+        # Initialize global flash targets.
+        __init_project_flash_targets()
 
         # If explicitly requested, include all components by calling
         # `add_subdirectory` for every discovered component. The default
