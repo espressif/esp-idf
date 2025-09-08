@@ -4,11 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <sys/param.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "soc/soc_caps.h"
-#include "esp_check.h"
 #include "esp_lcd_panel_interface.h"
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_clk_tree.h"
@@ -17,12 +12,7 @@
 #include "esp_async_fbcpy.h"
 #include "esp_memory_utils.h"
 #include "esp_private/dw_gdma.h"
-#include "esp_private/esp_clk_tree_common.h"
-#include "hal/cache_hal.h"
-#include "hal/cache_ll.h"
 #include "hal/color_hal.h"
-
-static const char *TAG = "lcd.dsi.dpi";
 
 typedef struct esp_lcd_dpi_panel_t esp_lcd_dpi_panel_t;
 
@@ -75,8 +65,7 @@ static bool async_fbcpy_done_cb(esp_async_fbcpy_handle_t mcp, esp_async_fbcpy_ev
     return need_yield;
 }
 
-IRAM_ATTR
-static bool dma_trans_done_cb(dw_gdma_channel_handle_t chan, const dw_gdma_trans_done_event_data_t *event_data, void *user_data)
+bool mipi_dsi_dma_trans_done_cb(dw_gdma_channel_handle_t chan, const dw_gdma_trans_done_event_data_t *event_data, void *user_data)
 {
     bool yield_needed = false;
     esp_lcd_dpi_panel_t *dpi_panel = (esp_lcd_dpi_panel_t *)user_data;
@@ -150,7 +139,7 @@ static esp_err_t dpi_panel_create_dma_link(esp_lcd_dpi_panel_t *dpi_panel)
 
     // register DMA ISR callbacks
     dw_gdma_event_callbacks_t dsi_dma_cbs = {
-        .on_full_trans_done = dma_trans_done_cb,
+        .on_full_trans_done = mipi_dsi_dma_trans_done_cb,
     };
     ESP_RETURN_ON_ERROR(dw_gdma_channel_register_event_callbacks(dma_chan, &dsi_dma_cbs, dpi_panel), TAG, "register DMA callbacks failed");
 
@@ -175,7 +164,10 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     }
     ESP_RETURN_ON_FALSE(num_fbs <= DPI_PANEL_MAX_FB_NUM, ESP_ERR_INVALID_ARG, TAG, "num_fbs not within [1,%d]", DPI_PANEL_MAX_FB_NUM);
 
-    size_t bits_per_pixel = 0;
+    // by default, use RGB888 as the input color format
+    lcd_color_format_t in_color_format = LCD_COLOR_FMT_RGB888;
+    size_t bits_per_pixel = 24;
+    // the deprecated way to set the pixel format
     switch (panel_config->pixel_format) {
     case LCD_COLOR_PIXEL_FORMAT_RGB565:
         bits_per_pixel = 16;
@@ -188,15 +180,17 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
         bits_per_pixel = 24;
         break;
     }
-    lcd_color_format_t in_color_format = COLOR_TYPE_ID(COLOR_SPACE_RGB, panel_config->pixel_format);
-    // if user sets the in_color_format, it can override the pixel format setting
+    in_color_format = COLOR_TYPE_ID(COLOR_SPACE_RGB, panel_config->pixel_format);
+    // the recommended way to set the input color format
     if (panel_config->in_color_format) {
+        in_color_format = panel_config->in_color_format;
+        // if user sets the in_color_format, it can override the pixel format setting
         color_space_pixel_format_t in_color_id = {
-            .color_type_id = panel_config->in_color_format,
+            .color_type_id = in_color_format,
         };
         bits_per_pixel = color_hal_pixel_format_get_bit_depth(in_color_id);
-        in_color_format = panel_config->in_color_format;
     }
+    // by default, out_color_format is the same as in_color_format (i.e. no color format conversion)
     lcd_color_format_t out_color_format = in_color_format;
     if (panel_config->out_color_format) {
         out_color_format = panel_config->out_color_format;
@@ -216,20 +210,16 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     dpi_panel->num_fbs = num_fbs;
 
     // allocate frame buffer from PSRAM
-    uint32_t cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
-    // DMA doesn't have requirement on the buffer alignment, but the cache does
-    uint32_t alignment = cache_line_size;
     size_t fb_size = panel_config->video_timing.h_size * panel_config->video_timing.v_size * bits_per_pixel / 8;
-    uint8_t *frame_buffer = NULL;
     for (int i = 0; i < num_fbs; i++) {
-        frame_buffer = heap_caps_aligned_calloc(alignment, 1, fb_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        uint8_t *frame_buffer = heap_caps_calloc(1, fb_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
         ESP_GOTO_ON_FALSE(frame_buffer, ESP_ERR_NO_MEM, err, TAG, "no memory for frame buffer");
         dpi_panel->fbs[i] = frame_buffer;
         ESP_LOGD(TAG, "fb[%d] @%p", i, frame_buffer);
         // preset the frame buffer with black color
-        // the frame buffer address alignment is ensured by `heap_caps_aligned_calloc`
+        // the frame buffer address alignment is ensured by `heap_caps_calloc`
         // while the value of the fb_size may not be aligned to the cache line size
-        // but that's not a problem because the `heap_caps_aligned_calloc` internally allocated a buffer whose size is aligned up to the cache line size
+        // but that's not a problem because the `heap_caps_calloc` internally allocated a buffer whose size is aligned up to the cache line size
         ESP_GOTO_ON_ERROR(esp_cache_msync(frame_buffer, fb_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED),
                           err, TAG, "cache write back failed");
     }
@@ -262,7 +252,7 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     uint32_t dpi_div = mipi_dsi_hal_host_dpi_calculate_divider(hal, dpi_clk_src_freq_hz / 1000 / 1000, panel_config->dpi_clock_freq_mhz);
     ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)dpi_clk_src, true), err, TAG, "clock source enable failed");
     // set the clock source, set the divider, and enable the dpi clock
-    DSI_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         mipi_dsi_ll_set_dpi_clock_source(bus_id, dpi_clk_src);
         mipi_dsi_ll_set_dpi_clock_div(bus_id, dpi_div);
         mipi_dsi_ll_enable_dpi_clock(bus_id, true);
@@ -281,7 +271,7 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     ESP_GOTO_ON_ERROR(dpi_panel_create_dma_link(dpi_panel), err, TAG, "initialize DMA link failed");
 
     mipi_dsi_host_ll_dpi_set_vcid(hal->host, panel_config->virtual_channel);
-    mipi_dsi_hal_host_dpi_set_color_coding(hal, out_color_format, 0);
+    mipi_dsi_host_ll_dpi_set_color_coding(hal->host, out_color_format, 0);
     // these signals define how the DPI interface interacts with the controller
     mipi_dsi_host_ll_dpi_set_timing_polarity(hal->host, false, false, false, false, false);
 
@@ -319,8 +309,9 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
                                               panel_config->video_timing.vsync_front_porch);
     mipi_dsi_brg_ll_set_num_pixel_bits(hal->bridge, panel_config->video_timing.h_size * panel_config->video_timing.v_size * bits_per_pixel);
     mipi_dsi_brg_ll_set_underrun_discard_count(hal->bridge, panel_config->video_timing.h_size);
-    // set input color space
-    mipi_dsi_brg_ll_set_input_color_space(hal->bridge, COLOR_SPACE_TYPE(in_color_format));
+    // set the in/out color formats in the DSI bridge
+    mipi_dsi_brg_ll_set_input_color_format(hal->bridge, in_color_format);
+    mipi_dsi_brg_ll_set_output_color_format(hal->bridge, out_color_format, 0);
     // use the DW_GDMA as the flow controller
     mipi_dsi_brg_ll_set_flow_controller(hal->bridge, MIPI_DSI_LL_FLOW_CONTROLLER_DMA);
     mipi_dsi_brg_ll_set_multi_block_number(hal->bridge, DPI_PANEL_MIN_DMA_NODES_PER_LINK);
@@ -350,7 +341,7 @@ static esp_err_t dpi_panel_del(esp_lcd_panel_t *panel)
     int bus_id = bus->bus_id;
     mipi_dsi_hal_context_t *hal = &bus->hal;
     // disable the DPI clock
-    DSI_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         mipi_dsi_ll_enable_dpi_clock(bus_id, false);
     }
     // disable the DSI bridge
@@ -568,6 +559,7 @@ esp_err_t esp_lcd_dpi_panel_set_color_conversion(esp_lcd_panel_handle_t panel, c
     if (dpi_panel->in_color_format == COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422)
             && COLOR_SPACE_TYPE(dpi_panel->out_color_format) == LCD_COLOR_SPACE_RGB) {
         // YUV422->RGB
+        mipi_dsi_brg_ll_set_input_color_range(hal->bridge, config->in_color_range);
         mipi_dsi_brg_ll_set_yuv_convert_std(hal->bridge, config->spec.yuv.conv_std);
         mipi_dsi_brg_ll_set_yuv422_pack_order(hal->bridge, config->spec.yuv.yuv422.in_pack_order);
     } else {
@@ -605,7 +597,7 @@ esp_err_t esp_lcd_dpi_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
 {
     ESP_RETURN_ON_FALSE(panel && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
-#if CONFIG_LCD_DSI_ISR_IRAM_SAFE
+#if CONFIG_LCD_DSI_ISR_CACHE_SAFE
     if (cbs->on_color_trans_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_color_trans_done), ESP_ERR_INVALID_ARG, TAG, "on_color_trans_done callback not in IRAM");
     }
@@ -615,7 +607,7 @@ esp_err_t esp_lcd_dpi_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
     if (user_ctx) {
         ESP_RETURN_ON_FALSE(esp_ptr_internal(user_ctx), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
     }
-#endif // CONFIG_LCD_RGB_ISR_IRAM_SAFE
+#endif // CONFIG_LCD_DSI_ISR_CACHE_SAFE
     dpi_panel->on_color_trans_done = cbs->on_color_trans_done;
     dpi_panel->on_refresh_done = cbs->on_refresh_done;
     dpi_panel->user_ctx = user_ctx;

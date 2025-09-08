@@ -1,17 +1,28 @@
-[mapping:esp_lcd_gdma]
+[mapping:esp_lcd_dsi]
+archive: libesp_lcd.a
+entries:
+    if LCD_DSI_ISR_HANDLER_IN_IRAM = y:
+        esp_lcd_panel_dpi: mipi_dsi_dma_trans_done_cb (noflash)
+
+[mapping:esp_lcd_dsi_dma]
+archive: libesp_hw_support.a
+entries:
+    if LCD_DSI_ISR_HANDLER_IN_IRAM = y:
+        # Control dw_gdma function placement granularly
+        dw_gdma: dw_gdma_link_list_get_item (noflash)
+        dw_gdma: dw_gdma_lli_set_block_markers (noflash)
+        dw_gdma: dw_gdma_channel_use_link_list (noflash)
+        dw_gdma: dw_gdma_channel_enable_ctrl (noflash)
+
+[mapping:esp_lcd_rgb_dma]
 archive: libesp_hw_support.a
 entries:
     if LCD_RGB_ISR_IRAM_SAFE = y:
         gdma: gdma_reset (noflash)
         gdma: gdma_start (noflash)
         gdma_link: gdma_link_get_head_addr (noflash)
-    if LCD_DSI_ISR_IRAM_SAFE = y:
-        dw_gdma: dw_gdma_link_list_get_item (noflash)
-        dw_gdma: dw_gdma_lli_set_block_markers (noflash)
-        dw_gdma: dw_gdma_channel_use_link_list (noflash)
-        dw_gdma: dw_gdma_channel_enable_ctrl (noflash)
 
-[mapping:esp_lcd_hal]
+[mapping:esp_lcd_rgb_hal]
 archive: libhal.a
 entries:
     if LCD_RGB_ISR_IRAM_SAFE = y:
