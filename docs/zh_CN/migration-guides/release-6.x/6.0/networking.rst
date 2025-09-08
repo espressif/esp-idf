@@ -69,6 +69,27 @@
 请通过 `idf.py add-dependency` 命令，从 `IDF 组件管理器 <https://components.espressif.com/>`_ 添加驱动组件到你的项目，并包含相应的 `esp_eth_phy_xxxx.h` 和 `esp_eth_mac_xxxx.h` 头文件，或使用 `Ethernet Init 组件 <https://components.espressif.com/components/espressif/ethernet_init>`_。
 
 
+PTP API 变更
+---------------
+
+以太网 `esp_eth_ioctl` PTP 配置和控制命令已被移除。
+
+**移除的 ioctl 命令**：
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_PTP_ENABLE`
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_S_PTP_TIME`
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_G_PTP_TIME`
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_ADJ_PTP_FREQ`
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_ADJ_PTP_TIME`
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_S_TARGET_TIME`
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_S_TARGET_CB`
+
+**影响**：使用已移除 ioctl 命令的应用程序将不再工作。
+
+**迁移**：
+
+请改用新的 PTP API。
+
+
 ESP-NETIF
 *********
 

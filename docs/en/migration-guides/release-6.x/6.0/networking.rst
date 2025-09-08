@@ -69,6 +69,27 @@ The Ethernet PHY and Ethernet SPI Module drivers have been removed from ESP-IDF 
 Add driver component from `IDF Component Manager <https://components.espressif.com/>`_ to your project using `idf.py add-dependency` and include `esp_eth_phy_xxxx.h` and `esp_eth_mac_xxxx.h` or use the `Ethernet Init component <https://components.espressif.com/components/espressif/ethernet_init>`_.
 
 
+PTP API Changes
+---------------
+
+Ethernet `esp_eth_ioctl` PTP configuration and control commands have been removed.
+
+**Removed ioctl Commands**:
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_PTP_ENABLE`
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_S_PTP_TIME`
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_G_PTP_TIME`
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_ADJ_PTP_FREQ`
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_ADJ_PTP_TIME`
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_S_TARGET_TIME`
+- :cpp:enumerator:`eth_mac_esp_io_cmd_t::ETH_MAC_ESP_CMD_S_TARGET_CB`
+
+**Impact**: Applications using the removed ioctl commands will no longer work.
+
+**Migration**:
+
+Use the new PTP API instead.
+
+
 ESP-NETIF
 *********
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include "soc/soc_caps.h"
+#include "soc/clk_tree_defs.h"
 #include "esp_eth_com.h"
 #include "esp_eth_mac.h"
 #include "sdkconfig.h"
@@ -126,7 +127,7 @@ typedef struct {
 #if !SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
     eth_mac_clock_config_t clock_config_out_in;     /*!< EMAC input clock configuration for internally generated output clock (when output clock is looped back externally) */
 #endif //SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
-    int32_t mdc_freq_hz;                            /*!< EMAC MDC frequency range limit, if set to 0 or a negative value, the driver will can set the CSR clock range up to 2.5 MHz */
+    int32_t mdc_freq_hz;                            /*!< EMAC MDC frequency range limit, if set to 0 or a negative value, the driver will set the CSR clock range up to 2.5 MHz */
 } eth_esp32_emac_config_t;
 
 /**
@@ -136,18 +137,23 @@ typedef struct {
 typedef enum {
     ETH_MAC_ESP_CMD_SET_TDES0_CFG_BITS = ETH_CMD_CUSTOM_MAC_CMDS_OFFSET,    /*!< Set Transmit Descriptor Word 0 control bit mask (debug option)*/
     ETH_MAC_ESP_CMD_CLEAR_TDES0_CFG_BITS,                                   /*!< Clear Transmit Descriptor Word 0 control bit mask (debug option)*/
-    ETH_MAC_ESP_CMD_PTP_ENABLE,                                             /*!< Enable IEEE1588 Time stamping */
-    ETH_MAC_ESP_CMD_S_PTP_TIME,                                             /*!< Set PTP time in the module */
-    ETH_MAC_ESP_CMD_G_PTP_TIME,                                             /*!< Get PTP time from the module */
-    ETH_MAC_ESP_CMD_ADJ_PTP_FREQ,                                           /*!< Adjust current PTP time frequency increment by scale factor */
-    ETH_MAC_ESP_CMD_ADJ_PTP_TIME,                                           /*!< Adjust base PTP time frequency increment by PPS */
-    ETH_MAC_ESP_CMD_S_TARGET_TIME,                                          /*!< Set Target Time at which interrupt is invoked when PTP time exceeds this value*/
-    ETH_MAC_ESP_CMD_S_TARGET_CB,                                            /*!< Set pointer to a callback function invoked when PTP time exceeds Target Time */
-    ETH_MAC_ESP_CMD_ENABLE_TS4ALL,                                          /*!< Enable timestamp for all received frames */
-    ETH_MAC_ESP_CMD_DUMP_REGS,                                              /*!< Dump EMAC registers */
+    ETH_MAC_ESP_CMD_DUMP_REGS,                                              /*!< Dump EMAC registers (debug option) */
 } eth_mac_esp_io_cmd_t;
 
 #ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
+/**
+ * @brief Configuration of PTP module
+ *
+ * @warning Time stamping is currently Experimental Feature! Be aware that API may change.
+ *
+ */
+typedef struct {
+    soc_periph_emac_ptp_clk_src_t clk_src;  /*!< Clock source for PTP */
+    float clk_src_period_ns;                /*!< Period of the clock source for PTP in nanoseconds*/
+    float required_accuracy_ns;             /*!< Required accuracy for PTP in nanoseconds (must be worse than clock source for PTP)*/
+    eth_mac_ptp_roll_type_t roll_type;      /*!< Rollover mode (digital or binary) for subseconds register */
+} eth_mac_ptp_config_t;
+
 /**
  * @brief Type of callback function invoked under Time Stamp target time exceeded interrupt
  *
@@ -161,6 +167,18 @@ typedef enum {
  *          - FALSE no high priority task was woken by this function
  */
 typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *user_args);
+
+/**
+ * @brief Default configuration for PTP module
+ *
+ */
+#define ETH_MAC_ESP_PTP_DEFAULT_CONFIG()                                      \
+    {                                                                         \
+        .clk_src = EMAC_PTP_CLK_SRC_XTAL,                                     \
+        .clk_src_period_ns = 25,                                              \
+        .required_accuracy_ns = 40,                                           \
+        .roll_type = ETH_PTP_BINARY_ROLLOVER,                                 \
+    }
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 
 /**
@@ -242,6 +260,152 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
 *      - NULL: create MAC instance failed because some error occurred
 */
 esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config, const eth_mac_config_t *config);
+
+#ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
+/**
+ * @brief Enable/Disable PTP module
+ *
+ * @param mac: Ethernet MAC instance
+ * @param config: PTP configuration
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_ptp_enable(esp_eth_mac_t *mac, const eth_mac_ptp_config_t *config);
+
+/**
+ * @brief Disable PTP module
+ *
+ * @param mac: Ethernet MAC instance
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_ptp_disable(esp_eth_mac_t *mac);
+
+/**
+ * @brief Set PTP time
+ *
+ * @param mac: Ethernet MAC instance
+ * @param time: PTP time
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_set_ptp_time(esp_eth_mac_t *mac, const eth_mac_time_t *time);
+
+/**
+ * @brief Get PTP time
+ *
+ * @param mac: Ethernet MAC instance
+ * @param time: PTP time
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_get_ptp_time(esp_eth_mac_t *mac, eth_mac_time_t *time);
+
+/**
+ * @brief Adjust PTP time frequency increment by scale factor
+ *
+ * @param mac: Ethernet MAC instance
+ * @param scale_factor: frequency scale factor
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_adj_ptp_freq(esp_eth_mac_t *mac, double scale_factor);
+
+/**
+ * @brief Adjust base PTP time frequency increment by PPS
+ *
+ * @param mac: Ethernet MAC instance
+ * @param adj_ppb: adjustment in ppb
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_adj_ptp_time(esp_eth_mac_t *mac, int32_t adj_ppb);
+
+/**
+ * @brief Set Target Time at which interrupt is invoked when PTP time exceeds this value
+ *
+ * @param mac: Ethernet MAC instance
+ * @param target: target time
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_set_target_time(esp_eth_mac_t *mac, const eth_mac_time_t *target);
+
+/**
+ * @brief Set pointer to a callback function invoked when PTP time exceeds Target Time
+ *
+ * @param mac: Ethernet MAC instance
+ * @param cb: callback function
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_set_target_time_cb(esp_eth_mac_t *mac, ts_target_exceed_cb_from_isr_t cb);
+
+/**
+ * @brief Enable timestamp for all received frames
+ *
+ * @param mac: Ethernet MAC instance
+ * @param enable: enable or disable
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_enable_ts4all(esp_eth_mac_t *mac, bool enable);
+
+/**
+ * @brief Set PPS0 output at GPIO
+ *
+ * @param mac: Ethernet MAC instance
+ * @param gpio_num: GPIO number
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_set_pps_out_gpio(esp_eth_mac_t *mac, int gpio_num);
+
+/**
+ * @brief Set PPS0 output frequency
+ *
+ * @param mac: Ethernet MAC instance
+ * @param freq_hz: Supported frequencies: 0 = 1PPS (narrow pulse), other values generate square clock signal.
+ *                 The clock frequency must be power of two and less than or equal to 16384 Hz.
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_set_pps_out_freq(esp_eth_mac_t *mac, uint32_t freq_hz);
+#endif // SOC_EMAC_IEEE1588V2_SUPPORTED
+
 #endif // CONFIG_ETH_USE_ESP32_EMAC
 
 #ifdef __cplusplus

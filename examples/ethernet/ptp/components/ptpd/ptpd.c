@@ -290,6 +290,11 @@ static struct ptp_state_s *s_state;
  * Private Functions
  ****************************************************************************/
 #ifdef ESP_PTP
+static int ptp_get_esp_eth_handle(struct ptp_state_s *state, esp_eth_handle_t *eth_handle)
+{
+  return ioctl(state->ptp_socket, L2TAP_G_DEVICE_DRV_HNDL, eth_handle);
+}
+
 static void ptp_create_eth_frame(struct ptp_state_s *state, uint8_t *eth_frame, void *ptp_msg, uint16_t ptp_msg_len)
 {
   struct eth_hdr eth_hdr = {
@@ -636,7 +641,7 @@ static int ptp_initialize_state(FAR struct ptp_state_s *state,
   }
   // Enable time stamping in driver
   esp_eth_handle_t eth_handle;
-  if (ioctl(state->ptp_socket, L2TAP_G_DEVICE_DRV_HNDL, &eth_handle) < 0)
+  if (ptp_get_esp_eth_handle(state, &eth_handle) < 0)
   {
     ptperr("failed to get socket eth_handle %d\n", errno);
     return ERROR;
@@ -859,7 +864,7 @@ static int ptp_destroy_state(FAR struct ptp_state_s *state)
 #ifdef ESP_PTP
   // Remove well-known PTP multicast destination MAC addresses from the filter
   esp_eth_handle_t eth_handle;
-  if (ioctl(state->ptp_socket, L2TAP_G_DEVICE_DRV_HNDL, &eth_handle) < 0)
+  if (ptp_get_esp_eth_handle(state, &eth_handle) < 0)
   {
     ptperr("failed to get socket eth_handle %d\n", errno);
     return ERROR;

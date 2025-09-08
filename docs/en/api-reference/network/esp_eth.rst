@@ -541,20 +541,36 @@ The following functions should only be invoked after the Ethernet driver has bee
 
     ::
 
+        esp_eth_mac_t *mac;
+        esp_eth_get_mac_instance(eth_hndl, &mac);
+
         // Enable hardware time stamping
-        bool ptp_enable = true;
-        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_PTP_ENABLE, &ptp_enable);
+        eth_mac_ptp_config_t ptp_cfg = ETH_MAC_ESP_PTP_DEFAULT_CONFIG();
+        esp_eth_mac_ptp_enable(mac, &ptp_cfg);
 
         // Get current EMAC time
         eth_mac_time_t ptp_time;
-        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_G_PTP_TIME, &ptp_time);
+        esp_eth_mac_get_ptp_time(mac, &ptp_time);
 
         // Set EMAC time
         ptp_time = {
             .seconds = 42,
             .nanoseconds = 0
         };
-        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_S_PTP_TIME, &ptp_time);
+        esp_eth_mac_set_ptp_time(mac, &ptp_time);
+
+    The PTP module be can configured as follows:
+
+    .. list::
+        * :cpp:member:`eth_mac_ptp_config_t::clk_src`: Clock source for PTP. Select one of the clock sources offered by the :cpp:type:`soc_periph_emac_ptp_clk_src_t` enumeration.
+
+        * :cpp:member:`eth_mac_ptp_config_t::clk_src_period_ns`: Period of the clock source for PTP in nanoseconds. For example, if the clock source is 40MHz, the period is 25ns.
+
+        * :cpp:member:`eth_mac_ptp_config_t::required_accuracy_ns`: Required accuracy for PTP in nanoseconds. The required accuracy must be worse than clock source for PTP. For example, if the clock source is 40MHz (25ns period), the required accuracy is 40ns.
+
+        * :cpp:member:`eth_mac_ptp_config_t::roll_type`: Rollover mode (digital or binary) for subseconds register. The binary rollover mode is recommended as it provides a more precise time synchronization.
+
+    Time stamps for transmitted and received frames can be accessed via the last argument of the registered :cpp:member:`esp_eth_config_t::stack_input_info` function for the receive path, and via the ``ctrl`` argument of the :cpp:func:`esp_eth_transmit_ctrl_vargs` function for the transmit path. However, a more user-friendly approach to retrieve time stamp information in user space is by utilizing the L2 TAP :ref:`Extended Buffer <esp_netif_l2tap_ext_buff>` mechanism.
 
     You have an option to schedule event at precise point in time by registering callback function and configuring a target time when the event is supposed to be fired. Note that the callback function is then called from ISR context so it should be as brief as possible.
 
@@ -563,16 +579,21 @@ The following functions should only be invoked after the Ethernet driver has bee
     ::
 
         // Register the callback function
-        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_S_TARGET_CB, ts_callback);
+        esp_eth_mac_set_target_time_cb(mac, ts_callback);
 
         // Set time when event is triggered
         eth_mac_time_t mac_target_time = {
             .seconds = 42,
             .nanoseconds = 0
         };
-        esp_eth_ioctl(s_eth_hndl, ETH_MAC_ESP_CMD_S_TARGET_TIME, &mac_target_time);
+        esp_eth_mac_set_target_time(mac, &mac_target_time);
 
-    Time stamps for transmitted and received frames can be accessed via the last argument of the registered :cpp:member:`esp_eth_config_t::stack_input_info` function for the receive path, and via the ``ctrl`` argument of the :cpp:func:`esp_eth_transmit_ctrl_vargs` function for the transmit path. However, a more user-friendly approach to retrieve time stamp information in user space is by utilizing the L2 TAP :ref:`Extended Buffer <esp_netif_l2tap_ext_buff>` mechanism.
+    Alternatively, the PTP-synchronized time can be exposed via a PPS (Pulse-Per-Second) signal on a GPIO. This provides a precise hardware time reference that can be used to synchronize external devices, align independent clock domains, or drive time-critical processes outside the ESP32 chip series. As the name suggests, the PPS signal is a pulse that occurs once per second by default. However, the frequency can be adjusted by setting the PPS0 output frequency using the :cpp:func:`esp_eth_mac_set_pps_out_freq` function. The command accepts an integer value in the range of 0-16384, where 0 = 1PPS (narrow pulse), other values generate square clock signal. The clock frequency must be power of two and less than or equal to 16384 Hz. Note that due to non-linear toggling of bits in the digital rollover mode, the actual frequency is an average number (duty cycle differs from 50% in overall one second period). This behavior does not apply to the binary rollover mode and so this mode is recommended. The PPS signal can be configured to be output at a GPIO using the :cpp:func:`esp_eth_mac_set_pps_out_gpio` function.
+
+    .. only:: esp32p4
+
+        .. note::
+            The PPS signal output on GPIO pin is available starting from ESP32-P4 silicon revision 3.
 
 .. _flow-control:
 

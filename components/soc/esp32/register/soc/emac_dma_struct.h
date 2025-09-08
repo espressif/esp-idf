@@ -145,6 +145,7 @@ typedef struct emac_dma_dev_s {
     uint32_t dmarxcurrdesc;     /*The address of the current receive descriptor list. Cleared on Reset.Pointer updated by the DMA during operation.*/
     uint32_t dmatxcurraddr_buf; /*The address of the current receive descriptor list. Cleared on Reset.Pointer updated by the DMA during operation.*/
     uint32_t dmarxcurraddr_buf; /*The address of the current receive descriptor list. Cleared on Reset.Pointer updated by the DMA during operation.*/
+    uint32_t hwfeat;            /*Hardware features*/
 } emac_dma_dev_t;
 
 extern emac_dma_dev_t EMAC_DMA;

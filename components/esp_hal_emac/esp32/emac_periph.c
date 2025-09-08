@@ -1,16 +1,25 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "hal/emac_periph.h"
 #include "soc/io_mux_reg.h"
 
+/**
+ * In emac_periph terms, `SIG_GPIO_OUT_IDX` indicates that the EMAC signal cannot be connected
+ * via the GPIO Matrix (i.e. such connection doesn't exist for the function), so it should
+ * stay in the default "unconnected state".
+ *
+ * Note: `SIG_GPIO_OUT_IDX` is defined for all targets and is usually used to signify "disconnect
+ * from peripheral signal" (a default unconnected peripheral state).
+ */
+
 const emac_io_info_t emac_io_idx = {
     .mdc_idx = EMAC_MDC_O_IDX,
     .mdo_idx = EMAC_MDO_O_IDX,
     .mdi_idx = EMAC_MDI_I_IDX,
-    .mii_tx_clk_i_idx = SIG_GPIO_OUT_IDX, // indicates EMAC signal cannot be connected via GPIO Matrix on the target
+    .mii_tx_clk_i_idx = SIG_GPIO_OUT_IDX,
     .mii_tx_en_o_idx = SIG_GPIO_OUT_IDX,
     .mii_txd0_o_idx = SIG_GPIO_OUT_IDX,
     .mii_txd1_o_idx = SIG_GPIO_OUT_IDX,
@@ -27,7 +36,8 @@ const emac_io_info_t emac_io_idx = {
     .mii_tx_er_o_idx = SIG_GPIO_OUT_IDX,
     .mii_rx_er_i_idx = SIG_GPIO_OUT_IDX,
     .rmii_refclk_i_idx = SIG_GPIO_OUT_IDX,
-    .rmii_refclk_o_idx = SIG_GPIO_OUT_IDX
+    .rmii_refclk_o_idx = SIG_GPIO_OUT_IDX,
+    .ptp_pps_idx = SIG_GPIO_OUT_IDX,
 };
 
 static const emac_iomux_info_t emac_rmii_iomux_clki[] = {
