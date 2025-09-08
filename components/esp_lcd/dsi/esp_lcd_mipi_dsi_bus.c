@@ -1,18 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "soc/soc_caps.h"
-#include "esp_check.h"
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_clk_tree.h"
-#include "esp_private/esp_clk_tree_common.h"
 #include "mipi_dsi_priv.h"
-
-static const char *TAG = "lcd.dsi.bus";
 
 #define MIPI_DSI_DEFAULT_TIMEOUT_CLOCK_FREQ_MHZ 10
 // TxClkEsc frequency must be configured between 2 and 20 MHz
@@ -38,25 +31,31 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
     dsi_bus->bus_id = bus_id;
 
     // Enable the APB clock for accessing the DSI host and bridge registers
-    DSI_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         mipi_dsi_ll_enable_bus_clock(bus_id, true);
         mipi_dsi_ll_reset_register(bus_id);
     }
 
     // if the clock source is not assigned, fallback to the default clock source
-    mipi_dsi_phy_clock_source_t phy_clk_src = bus_config->phy_clk_src;
+    mipi_dsi_phy_pllref_clock_source_t phy_clk_src = bus_config->phy_clk_src;
     if (phy_clk_src == 0) {
-        phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT;
+#if SOC_IS(ESP32P4) && HAL_CONFIG(CHIP_SUPPORT_MIN_REV) < 300
+        phy_clk_src = MIPI_DSI_PHY_PLLREF_CLK_SRC_DEFAULT_LEGACY;
+#else
+        phy_clk_src = MIPI_DSI_PHY_PLLREF_CLK_SRC_DEFAULT;
+#endif
     }
     ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)phy_clk_src, true), err, TAG, "clock source enable failed");
     // enable the clock source for DSI PHY
-    DSI_CLOCK_SRC_ATOMIC() {
-        // set clock source for DSI PHY
-        mipi_dsi_ll_set_phy_clock_source(bus_id, phy_clk_src);
+    PERIPH_RCC_ATOMIC() {
+        // set the DSI PHY configuration clock
         // the configuration clock is used for all modes except the shutdown mode
+        mipi_dsi_ll_set_phy_config_clock_source(bus_id, MIPI_DSI_PHY_CFG_CLK_SRC_DEFAULT);
         mipi_dsi_ll_enable_phy_config_clock(bus_id, true);
-        // enable the clock for generating the serial clock
-        mipi_dsi_ll_enable_phy_reference_clock(bus_id, true);
+        // set the DSI PHY PLL reference clock
+        mipi_dsi_ll_set_phy_pllref_clock_source(bus_id, phy_clk_src);
+        mipi_dsi_ll_set_phy_pll_ref_clock_div(bus_id, 1); // no division
+        mipi_dsi_ll_enable_phy_pllref_clock(bus_id, true);
     }
 
 #if CONFIG_PM_ENABLE
@@ -135,12 +134,12 @@ esp_err_t esp_lcd_del_dsi_bus(esp_lcd_dsi_bus_handle_t bus)
     ESP_RETURN_ON_FALSE(bus, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     int bus_id = bus->bus_id;
     // disable the clock source for DSI PHY
-    DSI_CLOCK_SRC_ATOMIC() {
-        mipi_dsi_ll_enable_phy_reference_clock(bus_id, false);
+    PERIPH_RCC_ATOMIC() {
+        mipi_dsi_ll_enable_phy_pllref_clock(bus_id, false);
         mipi_dsi_ll_enable_phy_config_clock(bus_id, false);
     }
     // disable the APB clock for accessing the DSI peripheral registers
-    DSI_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         mipi_dsi_ll_enable_bus_clock(bus_id, false);
     }
 #if CONFIG_PM_ENABLE
@@ -152,3 +151,11 @@ esp_err_t esp_lcd_del_dsi_bus(esp_lcd_dsi_bus_handle_t bus)
     free(bus);
     return ESP_OK;
 }
+
+#if CONFIG_LCD_ENABLE_DEBUG_LOG
+__attribute__((constructor))
+static void mipi_dsi_override_default_log_level(void)
+{
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+}
+#endif

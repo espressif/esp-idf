@@ -11,7 +11,6 @@ MIPI DSI Interfaced LCD
         esp_lcd_dsi_bus_config_t bus_config = {
             .bus_id = 0, // index from 0, specify the DSI host to use
             .num_data_lanes = 2, // Number of data lanes to use, can't set a value that exceeds the chip's capability
-            .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT, // Clock source for the DPHY
             .lane_bit_rate_mbps = EXAMPLE_MIPI_DSI_LANE_BITRATE_MBPS, // Bit rate of the data lanes, in Mbps
         };
         ESP_ERROR_CHECK(esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus));

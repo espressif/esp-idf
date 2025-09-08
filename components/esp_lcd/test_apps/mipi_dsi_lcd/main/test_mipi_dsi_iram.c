@@ -46,7 +46,6 @@ TEST_CASE("MIPI DSI draw bitmap (EK79007) IRAM Safe", "[mipi_dsi]")
     esp_lcd_dsi_bus_config_t bus_config = {
         .bus_id = 0,
         .num_data_lanes = 2,
-        .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT,
         .lane_bit_rate_mbps = 1000, // 1000 Mbps
     };
     TEST_ESP_OK(esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus));

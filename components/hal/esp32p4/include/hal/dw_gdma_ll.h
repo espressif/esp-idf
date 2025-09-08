@@ -300,6 +300,7 @@ static inline void dw_gdma_ll_channel_clear_intr(dw_gdma_dev_t *dev, uint8_t cha
  * @param channel Channel number
  * @param en True to enable, false to disable
  */
+__attribute__((always_inline))
 static inline void dw_gdma_ll_channel_enable(dw_gdma_dev_t *dev, uint8_t channel, bool en)
 {
     if (en) {
@@ -818,6 +819,7 @@ static inline void dw_gdma_ll_channel_set_dst_outstanding_limit(dw_gdma_dev_t *d
  * @param channel Channel number
  * @param addr Address of the first link list item, it must be aligned 64 bytes
  */
+__attribute__((always_inline))
 static inline void dw_gdma_ll_channel_set_link_list_head_addr(dw_gdma_dev_t *dev, uint8_t channel, uint32_t addr)
 {
     dev->ch[channel].llp0.loc0 = addr >> 6;
@@ -846,6 +848,7 @@ static inline intptr_t dw_gdma_ll_channel_get_current_link_list_item_addr(dw_gdm
  * @param channel Channel number
  * @param port Master port
  */
+__attribute__((always_inline))
 static inline void dw_gdma_ll_channel_set_link_list_master_port(dw_gdma_dev_t *dev, uint8_t channel, uint32_t port)
 {
     dev->ch[channel].llp0.lms = port;

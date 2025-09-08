@@ -9,7 +9,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.parametrize(
     'config',
     [
-        'iram_safe',
+        'cache_safe',
         'release',
     ],
     indirect=True,
