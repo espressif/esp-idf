@@ -364,6 +364,11 @@ function(__init_component)
         set(component_project_include "")
     endif()
 
+    # Track manifest presence
+    if(EXISTS "${component_directory}/idf_component.yml")
+        idf_build_set_property(__COMPONENTS_WITH_MANIFESTS "${component_directory}" APPEND)
+    endif()
+
     __get_component_interface(COMPONENT "${component_name}" OUTPUT existing_component_interface)
     if(NOT "${existing_component_interface}" STREQUAL "NOTFOUND")
         # A component with the same name is already initialized. Check if it
