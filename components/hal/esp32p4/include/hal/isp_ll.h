@@ -72,7 +72,11 @@ extern "C" {
 #define ISP_LL_EVENT_WBG_FRAME                (1<<30)
 #define ISP_LL_EVENT_CROP_ERR                 (1<<31)
 
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#define ISP_LL_EVENT_ALL_MASK                 (0xFFFFFFFF)
+#else
 #define ISP_LL_EVENT_ALL_MASK                 (0x1FFFFFFF)
+#endif
 #define ISP_LL_EVENT_AF_MASK                  (ISP_LL_EVENT_AF_FDONE | ISP_LL_EVENT_AF_ENV)
 #define ISP_LL_EVENT_AE_MASK                  (ISP_LL_EVENT_AE_FDONE | ISP_LL_EVENT_AE_ENV)
 #define ISP_LL_EVENT_AWB_MASK                 (ISP_LL_EVENT_AWB_FDONE | ISP_LL_EVENT_WBG_FRAME)
@@ -205,6 +209,23 @@ typedef enum {
     ISP_SHADOW_MODE_UPDATE_EVERY_VSYNC,
     ISP_SHADOW_MODE_UPDATE_ONLY_NEXT_VSYNC,
 } isp_ll_shadow_mode_t;
+
+/*---------------------------------------------------------------
+                      Crop
+---------------------------------------------------------------*/
+
+/**
+ * @brief ISP crop error types
+ */
+typedef enum {
+    ISP_LL_CROP_ERR_X_MISMATCH    = (1 << 0),  /*!< X end coordinate exceeds image size */
+    ISP_LL_CROP_ERR_Y_MISMATCH    = (1 << 1),  /*!< Y end coordinate exceeds image size */
+    ISP_LL_CROP_ERR_X_END_EVEN    = (1 << 2),  /*!< X end coordinate is even (should be odd) */
+    ISP_LL_CROP_ERR_Y_END_EVEN    = (1 << 3),  /*!< Y end coordinate is even (should be odd) */
+    ISP_LL_CROP_ERR_X_START_ODD   = (1 << 4),  /*!< X start coordinate is odd (should be even) */
+    ISP_LL_CROP_ERR_Y_START_ODD   = (1 << 5),  /*!< Y start coordinate is odd (should be even) */
+} isp_ll_crop_error_t;
+
 
 /*---------------------------------------------------------------
                       Clock
@@ -2472,6 +2493,128 @@ static inline void isp_ll_hist_set_rgb_coefficient(isp_dev_t *hw, const isp_hist
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_g, rgb_coeff->coeff_g.decimal);
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_b, rgb_coeff->coeff_b.decimal);
 }
+
+/*---------------------------------------------------------------
+                      CROP
+---------------------------------------------------------------*/
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+/**
+ * @brief Set crop clock control mode
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
+ */
+static inline void isp_ll_crop_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
+{
+    hw->clk_en.clk_crop_force_on = mode;
+}
+
+/**
+ * @brief Enable/Disable ISP crop
+ *
+ * @param[in] hw Hardware instance address
+ * @param[in] en enable / disable
+ */
+static inline void isp_ll_crop_enable(isp_dev_t *hw, bool enable)
+{
+    hw->cntl.crop_en = enable;
+}
+
+/**
+ * @brief Set ISP crop window coordinates
+ *
+ * @param[in] hw Hardware instance address
+ * @param[in] x_start Crop start x coordinate (0 to image_width-1)
+ * @param[in] x_end   Crop end x coordinate (x_start+1 to image_width-1)
+ * @param[in] y_start Crop start y coordinate (0 to image_height-1)
+ * @param[in] y_end   Crop end y coordinate (y_start+1 to image_height-1)
+ */
+static inline void isp_ll_crop_set_window(isp_dev_t *hw,
+                                         uint32_t x_start, uint32_t x_end,
+                                         uint32_t y_start, uint32_t y_end)
+{
+    hw->crop_x_capture.crop_x_start = x_start;
+    hw->crop_x_capture.crop_x_end = x_end;
+    hw->crop_y_capture.crop_y_start = y_start;
+    hw->crop_y_capture.crop_y_end = y_end;
+}
+
+/**
+ * @brief Get crop window coordinates
+ *
+ * @param[in] hw Hardware instance address
+ * @param[out] x_start Crop start x coordinate (0 to image_width-1)
+ * @param[out] x_end   Crop end x coordinate (x_start+1 to image_width-1)
+ * @param[out] y_start Crop start y coordinate (0 to image_height-1)
+ * @param[out] y_end   Crop end y coordinate (y_start+1 to image_height-1)
+ */
+static inline void isp_ll_crop_get_window(isp_dev_t *hw,
+                                         uint32_t *x_start, uint32_t *x_end,
+                                         uint32_t *y_start, uint32_t *y_end)
+{
+    *x_start = hw->crop_x_capture.crop_x_start;
+    *x_end = hw->crop_x_capture.crop_x_end;
+    *y_start = hw->crop_y_capture.crop_y_start;
+    *y_end = hw->crop_y_capture.crop_y_end;
+}
+
+/**
+ * @brief Get crop error status
+ *
+ * @param[in] hw Hardware instance address
+ * @param[out] error_bits Error status bits
+ */
+static inline void isp_ll_crop_get_error_status(isp_dev_t *hw, uint32_t *error_bits)
+{
+    *error_bits = hw->crop_err_st.val & 0x3F;   // Retrieve lower 6 bits
+}
+
+/**
+ * @brief Clear crop error
+ *
+ * @param[in] hw Hardware instance address
+ */
+static inline void isp_ll_crop_clear_error(isp_dev_t *hw)
+{
+    hw->crop_ctrl.crop_sft_rst = 1;
+}
+
+#else
+static inline void isp_ll_crop_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
+{
+    // for compatibility
+}
+
+static inline void isp_ll_crop_enable(isp_dev_t *hw, bool enable)
+{
+    // for compatibility
+}
+
+static inline void isp_ll_crop_set_window(isp_dev_t *hw,
+                                         uint32_t x_start, uint32_t x_end,
+                                         uint32_t y_start, uint32_t y_end)
+{
+    // for compatibility
+}
+
+static inline void isp_ll_crop_get_window(isp_dev_t *hw,
+                                         uint32_t *x_start, uint32_t *x_end,
+                                         uint32_t *y_start, uint32_t *y_end)
+{
+    // for compatibility
+}
+
+static inline void isp_ll_crop_get_error_status(isp_dev_t *hw, uint32_t *error_bits)
+{
+    // for compatibility
+}
+
+static inline void isp_ll_crop_clear_error(isp_dev_t *hw)
+{
+    // for compatibility
+}
+#endif  //#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
 
 #ifdef __cplusplus
 }

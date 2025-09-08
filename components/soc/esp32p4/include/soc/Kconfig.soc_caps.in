@@ -907,6 +907,10 @@ config SOC_ISP_COLOR_SUPPORTED
     bool
     default y
 
+config SOC_ISP_CROP_SUPPORTED
+    bool
+    default y
+
 config SOC_ISP_DEMOSAIC_SUPPORTED
     bool
     default y

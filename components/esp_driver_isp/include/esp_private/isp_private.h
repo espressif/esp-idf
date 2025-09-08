@@ -85,6 +85,7 @@ typedef struct isp_processor_t {
     ISP_ATOMIC_TYPE(isp_fsm_t)  blc_fsm;
     ISP_ATOMIC_TYPE(isp_fsm_t)  ccm_fsm;
     ISP_ATOMIC_TYPE(isp_fsm_t)  color_fsm;
+    ISP_ATOMIC_TYPE(isp_fsm_t)  crop_fsm;
     ISP_ATOMIC_TYPE(isp_fsm_t)  demosaic_fsm;
     ISP_ATOMIC_TYPE(isp_fsm_t)  gamma_fsm;
     ISP_ATOMIC_TYPE(isp_fsm_t)  lsc_fsm;
