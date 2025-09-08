@@ -47,7 +47,7 @@ ISP 流水线
         isp_chs [label = "对比度 &\n 色调 & 饱和度", width = 150, height = 70];
         isp_yuv [label = "YUV 限制\n YUB2RGB", width = 120, height = 70];
 
-        isp_header -> BLC -> BF -> LSC -> 去马赛克 -> CCM -> gamma 校正 -> RGB 转 YUV -> 锐化 -> isp_chs -> isp_yuv -> isp_tail;
+        isp_header -> BLC -> BF -> LSC -> 去马赛克 -> CCM -> gamma 校正 -> RGB 转 YUV -> 锐化 -> isp_chs -> isp_yuv -> 裁剪 -> isp_tail;
 
         LSC -> HIST
         去马赛克 -> AWB
@@ -77,6 +77,7 @@ ISP 驱动程序提供以下服务：
 - :ref:`isp-demosaic` - 涵盖如何配置去马赛克功能。
 - :ref:`isp-gamma-correction` - 涵盖如何启用和配置 gamma 校正。
 - :ref:`isp-sharpen` - 涵盖如何配置锐化功能。
+- :ref:`isp-crop` - 涵盖如何启用和配置图像裁剪功能。
 - :ref:`isp-callback` - 涵盖如何将用户特定代码挂接到 ISP 驱动事件回调。
 - :ref:`isp-thread-safety` - 列出了驱动程序中线程安全的 API。
 - :ref:`isp-kconfig-options` - 列出了支持的 Kconfig 选项，这些选项可以对驱动程序产生不同影响。
@@ -262,7 +263,7 @@ ISP AF 控制器
 
     使用连续统计时，AF 环境检测器将失效。
 
-.. code-block:: c
+.. code:: c
 
     esp_isp_af_config_t af_config = {
         .edge_thresh = 128,
@@ -399,7 +400,7 @@ ISP AE 控制器
 
 .. code-block:: c
 
-     esp_isp_ae_config_t ae_config = {
+    esp_isp_ae_config_t ae_config = {
         .sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
     };
     isp_ae_ctlr_t ae_ctlr = NULL;
@@ -517,7 +518,6 @@ ISP BF 控制器
 * 将驱动程序状态从 **init** 切换到 **enable**。
 
 调用 :cpp:func:`esp_isp_bf_disable` 函数会执行相反的操作，即将驱动程序恢复到 **init** 状态。
-
 
 .. _isp-blc:
 
@@ -801,6 +801,50 @@ ISP 锐化控制器
 
 即使驱动程序处于 **init** 状态，也可以调用 :cpp:func:`esp_isp_sharpen_configure`，但锐化配置只有在 **enable** 状态下才会生效。
 
+.. _isp-crop:
+
+ISP 图像裁剪控制器
+~~~~~~~~~~~~~~~~~~
+
+ISP 图像裁剪功能可以从原始图像中提取指定区域，减少后续处理的数据量，提高处理效率。裁剪功能在 ISP 流水线的末端执行，可以输出比输入图像更小的区域。
+
+.. note::
+
+    ISP 图像裁剪功能仅在 ESP32-P4 revision 3.0 及以上版本中可用。
+
+可调用 :cpp:func:`esp_isp_crop_configure` 函数配置图像裁剪功能，请参考以下代码：
+
+.. code-block:: c
+
+    esp_isp_crop_config_t crop_config = {
+        .window = {
+            .top_left = {
+                .x = 100,  // 裁剪区域左上角 X 坐标
+                .y = 100,  // 裁剪区域左上角 Y 坐标
+            },
+            .btm_right = {
+                .x = 699,  // 裁剪区域右下角 X 坐标
+                .y = 499,  // 裁剪区域右下角 Y 坐标
+            }
+        }
+    };
+    ESP_ERROR_CHECK(esp_isp_crop_configure(isp_proc, &crop_config));
+    ESP_ERROR_CHECK(esp_isp_crop_enable(isp_proc));
+
+调用 :cpp:func:`esp_isp_crop_configure` 后，需要通过调用 :cpp:func:`esp_isp_crop_enable` 来启用 ISP 图像裁剪控制器。此函数：
+
+* 将驱动程序状态从 **init** 切换到 **enable**。
+
+调用 :cpp:func:`esp_isp_crop_disable` 函数会执行相反的操作，即将驱动程序恢复到 **init** 状态。
+
+即使驱动程序处于 **init** 状态，也可以调用 :cpp:func:`esp_isp_crop_configure`，但裁剪配置只有在 **enable** 状态下才会生效。
+
+.. note::
+
+    - 裁剪区域的左上角坐标 (top_left) 必须小于右下角坐标 (btm_right)
+    - 裁剪区域的左上角坐标必须为偶数，右下角坐标必须为奇数
+    - 裁剪区域不能超出原始图像的边界
+    - 需根据裁剪后分辨率调整显示介质（如LCD）的尺寸，确保显示完整，避免出现黑边或拉伸现象。
 
 .. _isp-callback:
 
@@ -850,7 +894,7 @@ ISP AE 环境检测器启动后，将动态生成特定事件。若想在事件�
 注册 ISP HIST 统计完成事件回调函数
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-ISP HIST 控制器完成亮度统计后，将动态生成特定事件。若想在统计完成时收到通知，请通过调用 :cpp:func:`esp_isp_hist_register_event_callbacks` 将目标函数挂挂接到中断服务程序。所有支持的事件回调函数可参见 :cpp:type:`esp_isp_hist_cbs_t`：
+ISP HIST 控制器完成亮度统计后，将动态生成特定事件。若想在统计完成时收到通知，请通过调用 :cpp:func:`esp_isp_hist_register_event_callbacks` 将目标函数挂接到中断服务程序。所有支持的事件回调函数可参见 :cpp:type:`esp_isp_hist_cbs_t`：
 
 - :cpp:member:`esp_isp_hist_cbs_t::on_statistics_done` 在完成亮度统计时设置回调函数。该函数原型在 :cpp:type:`esp_isp_hist_callback_t` 中声明。
 
@@ -928,6 +972,7 @@ API 参考
 .. include-build-file:: inc/isp_gamma.inc
 .. include-build-file:: inc/isp_hist.inc
 .. include-build-file:: inc/isp_color.inc
+.. include-build-file:: inc/isp_crop.inc
 .. include-build-file:: inc/isp_core.inc
 .. include-build-file:: inc/components/esp_driver_isp/include/driver/isp_types.inc
 .. include-build-file:: inc/components/hal/include/hal/isp_types.inc
