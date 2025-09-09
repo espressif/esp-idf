@@ -904,3 +904,54 @@ function(idf_check_binary_size binary)
         PARTITION_TYPE app)
     add_dependencies("${binary}" "${binary}_check_size")
 endfunction()
+
+#[[api
+.. cmakev2:function:: idf_check_binary_signed
+
+   .. code-block:: cmake
+
+      idf_check_binary_signed(<binary>)
+
+   :binary[in]: Binary image target to which to add a partition size check.
+                The ``binary`` target is created by the ``idf_build_binary``.
+
+   If the binary is not signed and signed applications are required with
+   CONFIG_SECURE_SIGNED_APPS, print a note indicating that the binary needs to
+   be signed manually. This situation can occur if the binary images are not
+   signed during the build because CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES is
+   not set.
+#]]
+function(idf_check_binary_signed binary)
+    if(NOT CONFIG_SECURE_SIGNED_APPS)
+        # Signed binaries are not required.
+        return()
+    endif()
+
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        # Binary should be already signed with idf_sign_binary.
+        return()
+    endif()
+
+    get_target_property(binary_path ${binary} BINARY_PATH)
+    if(NOT binary_path)
+        idf_die("Binary target '${binary}' is missing 'BINARY_PATH' property.")
+    endif()
+
+    if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+        set(secure_boot_version "1")
+    elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
+        set(secure_boot_version "2")
+    endif()
+
+    idf_component_get_property(espsecure_py_cmd esptool_py ESPSECUREPY_CMD)
+    string(REPLACE ";" " " espsecure_py_cmd "${espsecure_py_cmd}")
+    get_filename_component(binary_name "${binary_path}" NAME)
+
+    add_custom_command(TARGET "${binary}" POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo
+        "Binary '${binary_name}' not signed. Sign it before flashing with:"
+        COMMAND ${CMAKE_COMMAND} -E echo
+        "${espsecure_py_cmd} sign_data --keyfile KEYFILE --version ${secure_boot_version}"
+        "${binary_path}"
+        VERBATIM)
+endfunction()
