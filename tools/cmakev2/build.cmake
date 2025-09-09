@@ -872,3 +872,35 @@ function(idf_flash_binary binary)
         add_dependencies(flash "${binary}")
     endif()
 endfunction()
+
+#[[api
+.. cmakev2:function:: idf_check_binary_size
+
+   .. code-block:: cmake
+
+      idf_check_binary_size(<binary>)
+
+   :binary[in]: Binary image target to which to add a partition size check.
+                The ``binary`` target is created by the ``idf_build_binary``
+                or ``idf_sign_binary`` function.
+
+   Ensure that the generated binary image fits within the smallest available
+   application partition. The file path of the binary image should be stored in
+   the ``BINARY_PATH`` property of the ``binary`` target.
+#]]
+function(idf_check_binary_size binary)
+    if(NOT CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
+        return()
+    endif()
+
+    get_target_property(binary_path ${binary} BINARY_PATH)
+    if(NOT binary_path)
+        idf_die("Binary target '${binary}' is missing 'BINARY_PATH' property.")
+    endif()
+
+    partition_table_add_check_size_target("${binary}_check_size"
+        DEPENDS "${binary_path}"
+        BINARY_PATH "${binary_path}"
+        PARTITION_TYPE app)
+    add_dependencies("${binary}" "${binary}_check_size")
+endfunction()
