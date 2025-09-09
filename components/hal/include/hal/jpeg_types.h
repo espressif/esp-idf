@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,6 +78,8 @@ typedef enum {
     JPEG_ENC_SRC_RGB888 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB888),   /*!< JPEG encoder source RGB888 */
     JPEG_ENC_SRC_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),   /*!< JPEG encoder source YUV422 */
     JPEG_ENC_SRC_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565),   /*!< JPEG encoder source RGB565 */
+    JPEG_ENC_SRC_YUV444 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV444),   /*!< JPEG encoder source YUV444 */
+    JPEG_ENC_SRC_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420),   /*!< JPEG encoder source YUV420 */
     JPEG_ENC_SRC_GRAY = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8),     /*!< JPEG encoder source GRAY */
 } jpeg_enc_src_type_t;
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,8 @@
 
 #include <stdint.h>
 #include "hal/color_types.h"
+#include "sdkconfig.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,6 +59,10 @@ typedef enum {
     JPEG_ENCODE_IN_FORMAT_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565),       /*!< input RGB565 format */
     JPEG_ENCODE_IN_FORMAT_GRAY = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8),         /*!< input GRAY format */
     JPEG_ENCODE_IN_FORMAT_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),       /*!< input YUV422 format */
+#if !(CONFIG_ESP_REV_MIN_FULL < 300 && SOC_IS(ESP32P4)) // Invisible for unsupported chips
+    JPEG_ENCODE_IN_FORMAT_YUV444 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV444),       /*!< input YUV444 format */
+    JPEG_ENCODE_IN_FORMAT_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420),       /*!< input YUV420 format */
+#endif
 } jpeg_enc_input_format_t;
 
 /**
