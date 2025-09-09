@@ -1409,7 +1409,7 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             param.cs_proc_enable.conn_handle = params->cs_proc_en.conn_handle;
             param.cs_proc_enable.config_id = params->cs_proc_en.config_id;
             param.cs_proc_enable.state = params->cs_proc_en.state;
-            param.cs_proc_enable.tone_Ant_config_select = params->cs_proc_en.tone_Ant_config_select;
+            param.cs_proc_enable.tone_ant_config_select = params->cs_proc_en.tone_ant_config_select;
             param.cs_proc_enable.select_tx_power = params->cs_proc_en.select_tx_power;
             param.cs_proc_enable.subevent_Len = params->cs_proc_en.subevent_Len;
             param.cs_proc_enable.subevents_per_event = params->cs_proc_en.subevents_per_event;
