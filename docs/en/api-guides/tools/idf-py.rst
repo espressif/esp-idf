@@ -369,14 +369,14 @@ The ``action_extensions`` function takes arguments ``base_actions`` (all current
 - ``global_options``: A list of options available globally for all commands. Each option is a dictionary with fields such as ``names``, ``help``, ``type``, ``is_flag``, ``scope``, etc.
 - ``global_action_callbacks``: A list of functions called once before any task execution. Each global action callback function accepts three arguments:
 
-   - ``ctx`` — the `click context`_,
-   - ``global_args`` — all available global arguments,
-   - ``tasks`` — the list of tasks to be executed. Task refer to the action / sub-command used with `idf.py`
+   - ``ctx`` — The `click context`_
+   - ``global_args`` — All available global arguments
+   - ``tasks`` — The list of tasks to be executed. Task refer to the action / sub-command used with `idf.py`
 
 - ``actions``: A dictionary of new subcommands. Each action has a ``callback`` function and may also include ``options``, ``arguments``, ``dependencies``, etc. Each action callback function accepts three to four arguments:
 
-   - ``subcommand_name`` — the name of the command (useful if multiple commands share the same callback),
-   - ``ctx`` — the `click context`_,
+   - ``subcommand_name`` — the name of the command (useful if multiple commands share the same callback)
+   - ``ctx`` — the `click context`_
    - ``global_args`` — all available global arguments,
    - ``**action_args`` — (optional) arguments passed to the action
 

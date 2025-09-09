@@ -301,7 +301,112 @@ uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生�
 
 关于参数文件的更多示例，如通过 @filename 创建配置文件概要，请参阅 :example_file:`多个构建配置示例 <build_system/cmake/multi_config/README.md>`。
 
+扩展 ``idf.py``
+====================
+
+``idf.py`` 支持扩展功能。通过项目中的扩展文件以及参与构建的组件中的扩展文件，可以增加额外的子命令、全局选项和回调函数；通过暴露入口点的外部 Python 包，可以提供新的扩展功能。
+
+- **参与构建的组件**：在项目根目录，或注册在项目 ``CMakeLists.txt`` 中的组件根目录，放置名为 ``idf_ext.py`` 的文件，该文件会在项目配置完成后得到识别。运行 ``idf.py build`` 或 ``idf.py reconfigure``，新添加的命令即可生效。
+- **Python 入口点**：对于任何已安装的 Python 包，在 ``idf_extension`` 组中定义入口点后，就可以提供扩展功能。只要安装了 Python 包就可以使用扩展功能，无需重新构建项目。
+
+.. important::
+
+   扩展不能定义与 ``idf.py`` 命令同名的子命令或选项。系统会检查自定义的动作和选项名称是否存在冲突，不允许覆盖默认命令，如有冲突会打印警告。对于 Python 入口点，必须使用唯一标识符，否则会忽略重复的入口点名称并发出警告。
+
+扩展文件示例
+----------------------
+
+扩展文件需要定义一个 ``action_extensions`` 函数，用于返回扩展的动作或选项。组件扩展 ``idf_ext.py`` 和基于包的扩展（例如 ``<package_name>_ext.py``）使用相同的结构，如下所示：
+
+.. code-block:: python
+
+  from typing import Any
+  import click
+
+  def action_extensions(base_actions: dict, project_path: str) -> dict:
+      def hello_test(subcommand_name: str, ctx: click.Context, global_args: dict, **action_args: Any) -> None:
+          message = action_args.get('message')
+          print(f"Running action: {subcommand_name}. Message: {message}")
+
+      def global_callback_detail(ctx: click.Context, global_args: dict, tasks: list) -> None:
+          if getattr(global_args, 'detail', False):
+              print(f"About to execute {len(tasks)} task(s): {[t.name for t in tasks]}")
+
+      return {
+          "version": "1",
+          "global_options": [
+              {
+                  "names": ["--detail", "-d"],
+                  "is_flag": True,
+                  "help": "Enable detailed output",
+              }
+          ],
+          "global_action_callbacks": [global_callback_detail],
+          "actions": {
+              "hello": {
+                  "callback": hello_test,
+                  "short_help": "Hello from component",
+                  "help": "Test command from component extension",
+                  "options": [
+                      {
+                          "names": ["--message", "-m"],
+                          "help":  "Custom message to display",
+                          "default": "Hi there!",
+                          "type": str,
+                      }
+                  ]
+              },
+          },
+      }
+
+
+扩展 API 参考
+-----------------------
+
+``action_extensions`` 函数接收两个参数： ``base_actions`` 表示当前已注册的所有命令， ``project_path`` 表示项目的绝对路径。该函数返回一个包含最多四个键的字典：
+
+- ``version``：表示扩展接口版本。当前 API 版本为 ``1``。此键为必填项。
+- ``global_options``：一组全局选项，适用于所有命令。每个选项都是一个字典，包含 ``names``、 ``help``、 ``type``、 ``is_flag``、 ``scope`` 等字段。
+- ``global_action_callbacks``：表示一组全局回调函数，在执行任何任务之前都会调用一次。每个全局回调函数接受三个参数：
+
+   - ``ctx``：即 `click context`_
+   - ``global_args``：所有可用的全局参数
+   - ``tasks``：将要执行的任务列表。任务指的是运行 ``idf.py`` 时所调用的具体动作或子命令
+
+- ``actions``：子命令字典，用于定义新的子命令。每个子命令都有一个 ``callback`` 函数，并且可以包含 ``options``、 ``arguments``、 ``dependencies`` 等。每个回调函数接受三到四个参数：
+
+   - ``subcommand_name``：命令的名称（在多个命令共享同一回调时很有用）
+   - ``ctx``：即 `click context`_
+   - ``global_args``：所有可用的全局参数
+   - ``**action_args``：传递给该子命令的具体参数，可选
+
+基本用法示例
+--------------------
+
+1) **通过项目组件提供扩展**
+
+  在项目根目录或某个已注册的组件目录下创建 ``idf_ext.py`` （例如 ``components/my_component/idf_ext.py`` ）。实现内容可参考上面的扩展文件示例。
+
+  运行 ``idf.py build`` 或 ``idf.py reconfigure`` 加载新命令，然后执行 ``idf.py --help`` 即可看到新扩展。
+
+2) **通过 Python 包入口点提供扩展**
+
+  使用上述扩展文件示例，在名为 ``<package_name>_ext.py`` 的模块中实现扩展，并通过 ``idf_extension`` 入口点组暴露 ``action_extensions`` 函数。例如，在 ``pyproject.toml`` 中配置：
+
+  .. code-block:: TOML
+
+    [project]
+    name = "my_comp"
+    version = "0.1.0"
+
+    [project.entry-points.idf_extension]
+    my_pkg_ext = "my_component.my_ext:action_extensions"
+
+
+  将该包安装到与 ``idf.py`` 相同的 Python 环境中（例如在包目录下执行 ``pip install -e .``）。建议使用唯一的模块名（例如 ``<package_name>_ext.py``）避免命名冲突。安装成功后，运行 ``idf.py --help`` 就可以看到新扩展命令。
+
 .. _cmake: https://cmake.org
 .. _ninja: https://ninja-build.org
 .. _esptool.py: https://github.com/espressif/esptool/#readme
 .. _CCache: https://ccache.dev/
+.. _click context: https://click.palletsprojects.com/en/stable/api/#context
