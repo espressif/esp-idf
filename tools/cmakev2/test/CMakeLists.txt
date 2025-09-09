@@ -203,16 +203,39 @@ function(test_include_component)
     endif()
 endfunction()
 
-# Add two executables fatfs_example and hello_world_example
+# Add two executables fatfs_example and hello_world_example, generate
+# binary images for them and add flash targets.
 # After configuration these can be build with
-# cmake --build build/ --target hello_world_example
-# cmake --build build/ --target fatfs_example
+#    idf.py hello_world_example_bin
+#    idf.py fatfs_example_bin
+# or simply
+#   idf.py hello_world_example-flash monitor
+#   idf.py fatfs-flash monitor
 function(test_executable)
-    idf_build_get_property(build_dir BUILD_DIR)
-    idf_build_executable(fatfs_example COMPONENTS fatfs_example)
-    idf_build_generate_metadata(fatfs_example OUTPUT_FILE project_description_fatfs.json)
-    idf_build_executable(hello_world_example COMPONENTS hello_world_example)
-    idf_build_generate_metadata(hello_world_example OUTPUT_FILE project_description_hello_world.json)
+    idf_build_executable(fatfs_example
+                         COMPONENTS fatfs_example)
+    idf_build_binary(fatfs_example
+                     TARGET fatfs_example_bin
+                     OUTPUT_FILE fatfs_example.bin)
+    idf_check_binary_size(fatfs_example_bin)
+    idf_flash_binary(fatfs_example_bin
+                     TARGET fatfs_example-flash
+                     NAME fatfs_example)
+    idf_build_generate_metadata(fatfs_example
+                                OUTPUT_FILE project_description_fatfs.json)
+
+
+    idf_build_executable(hello_world_example
+                         COMPONENTS hello_world_example)
+    idf_build_binary(hello_world_example
+                     TARGET hello_world_example_bin
+                     OUTPUT_FILE hello_world_example.bin)
+    idf_check_binary_size(hello_world_example_bin)
+    idf_flash_binary(hello_world_example_bin
+                     TARGET hello_world_example-flash
+                     NAME hello_world_example)
+    idf_build_generate_metadata(hello_world_example
+                                OUTPUT_FILE project_description_hello_world.json)
 endfunction()
 
 # Run tests
