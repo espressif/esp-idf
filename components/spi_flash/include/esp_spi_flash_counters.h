@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,21 +35,15 @@ typedef struct {
     esp_flash_counter_t erase;  /*!< counters for erase action, like `esp_flash_erase`*/
 } esp_flash_counters_t;
 
-// for deprecate old api
-typedef esp_flash_counter_t   spi_flash_counter_t;
-typedef esp_flash_counters_t  spi_flash_counters_t;
-
 /**
  * @brief  Reset SPI flash operation counters
  */
 void esp_flash_reset_counters(void);
-void spi_flash_reset_counters(void) __attribute__((deprecated("Please use 'esp_flash_reset_counters' instead")));
 
 /**
  * @brief  Print SPI flash operation counters
  */
 void esp_flash_dump_counters(FILE* stream);
-void spi_flash_dump_counters(void) __attribute__((deprecated("Please use 'esp_flash_dump_counters' instead")));
 
 /**
  * @brief  Return current SPI flash operation counters
@@ -58,7 +52,6 @@ void spi_flash_dump_counters(void) __attribute__((deprecated("Please use 'esp_fl
  *          of the operation counters
  */
 const esp_flash_counters_t* esp_flash_get_counters(void);
-const spi_flash_counters_t* spi_flash_get_counters(void) __attribute__((deprecated("Please use 'esp_flash_get_counters' instead")));
 
 #ifdef __cplusplus
 }

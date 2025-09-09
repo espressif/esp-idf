@@ -109,22 +109,6 @@ void esp_flash_dump_counters(FILE* stream)
     }
 }
 
-
-const spi_flash_counters_t *spi_flash_get_counters(void)
-{
-    return (spi_flash_counters_t *)esp_flash_get_counters();
-}
-
-void spi_flash_reset_counters(void)
-{
-    esp_flash_reset_counters();
-}
-
-void spi_flash_dump_counters(void)
-{
-    esp_flash_dump_counters(stdout);
-}
-
 #else
 #define COUNTER_START()
 #define COUNTER_STOP(counter)

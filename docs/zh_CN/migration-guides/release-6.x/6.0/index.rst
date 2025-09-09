@@ -13,5 +13,6 @@
     protocols
     security
     tools
+    storage
     system
     toolchain

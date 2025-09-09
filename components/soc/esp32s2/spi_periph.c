@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,16 +56,16 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .spid7_in = FSPIIO7_IN_IDX,
         .spics_out = {FSPICS0_OUT_IDX, FSPICS1_OUT_IDX, FSPICS2_OUT_IDX, FSPICS3_OUT_IDX, FSPICS4_OUT_IDX, FSPICS5_OUT_IDX},
         .spics_in = FSPICS0_IN_IDX,
-        .spiclk_iomux_pin = FSPI_IOMUX_PIN_NUM_CLK,
-        .spid_iomux_pin = FSPI_IOMUX_PIN_NUM_MOSI,
-        .spiq_iomux_pin = FSPI_IOMUX_PIN_NUM_MISO,
-        .spiwp_iomux_pin = FSPI_IOMUX_PIN_NUM_WP,
-        .spihd_iomux_pin = FSPI_IOMUX_PIN_NUM_HD,
-        .spics0_iomux_pin = FSPI_IOMUX_PIN_NUM_CS,
+        .spiclk_iomux_pin = SPI2_IOMUX_PIN_NUM_CLK,
+        .spid_iomux_pin = SPI2_IOMUX_PIN_NUM_MOSI,
+        .spiq_iomux_pin = SPI2_IOMUX_PIN_NUM_MISO,
+        .spiwp_iomux_pin = SPI2_IOMUX_PIN_NUM_WP,
+        .spihd_iomux_pin = SPI2_IOMUX_PIN_NUM_HD,
+        .spics0_iomux_pin = SPI2_IOMUX_PIN_NUM_CS,
         .irq = ETS_SPI2_INTR_SOURCE,
         .irq_dma = ETS_SPI2_DMA_INTR_SOURCE,
         .hw = &GPSPI2,
-        .func = FSPI_FUNC_NUM,
+        .func = SPI2_FUNC_NUM,
     }, {
         .spiclk_out = SPI3_CLK_OUT_MUX_IDX,
         .spiclk_in = SPI3_CLK_IN_IDX,

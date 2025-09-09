@@ -13,5 +13,6 @@ Migration from 5.5 to 6.0
     protocols
     security
     tools
+    storage
     system
     toolchain

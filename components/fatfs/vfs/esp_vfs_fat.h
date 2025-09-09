@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -208,17 +208,6 @@ esp_err_t esp_vfs_fat_sdspi_mount(const char* base_path,
                                   const sdspi_device_config_t* slot_config,
                                   const esp_vfs_fat_mount_config_t* mount_config,
                                   sdmmc_card_t** out_card);
-
-/**
- * @brief Unmount FAT filesystem and release resources acquired using esp_vfs_fat_sdmmc_mount
- *
- * @deprecated Use `esp_vfs_fat_sdcard_unmount()` instead.
- *
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_sdmmc_mount hasn't been called
- */
-esp_err_t esp_vfs_fat_sdmmc_unmount(void) __attribute__((deprecated("Please use esp_vfs_fat_sdcard_unmount instead")));
 
 /**
  * @brief Unmount an SD card from the FAT filesystem and release resources acquired using
