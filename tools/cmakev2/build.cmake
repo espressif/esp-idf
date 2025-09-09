@@ -801,3 +801,74 @@ function(idf_sign_binary binary)
     # custom signed binary target, which is used by the idf_flash_binary.
     set_target_properties(${ARG_TARGET} PROPERTIES BINARY_PATH ${ARG_OUTPUT_FILE})
 endfunction()
+
+#[[api
+.. cmakev2:function:: idf_flash_binary
+
+   .. code-block:: cmake
+
+      idf_flash_binary(<binary>
+                       TARGET <target>
+                       [NAME <name>]
+                       [FLASH])
+
+   :binary[in]: Binary image target for which to create flash target.
+                The ``binary`` target is created by the ``idf_build_binary``
+                function or ``idf_sign_binary``.
+   :TARGET[in]: The name of the flash target that will be created for the
+                binary image.
+   :NAME[in,opt]: An optional name to be used as a prefix for the file
+                  containing arguments for esptool, and as a logical name
+                  for the binary in ``flasher_args.json``. If not specified,
+                  the name of the ``TARGET`` is used.
+   :FLASH[in,opt]: If specified, the binary will also be added to the global
+                   ``flash`` target.
+
+   Create a new flash target for ``binary`` using the name specified in the
+   ``TARGET`` option. The file path of the binary image should be stored in the
+   ``BINARY_PATH`` property of the ``binary`` target.
+#]]
+function(idf_flash_binary binary)
+    set(options FLASH)
+    set(one_value TARGET NAME)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT TARGET idf::esptool_py)
+        idf_die("The 'esptool_py' component is not available")
+    endif()
+
+    if(NOT CONFIG_APP_BUILD_GENERATE_BINARIES)
+        idf_die("Binary file generation is not enabled with 'CONFIG_APP_BUILD_GENERATE_BINARIES'")
+    endif()
+
+    if(NOT DEFINED ARG_TARGET)
+        idf_die("TARGET option is required")
+    endif()
+
+    if(NOT DEFINED ARG_NAME)
+        set(ARG_NAME "${ARG_TARGET}")
+    endif()
+
+    idf_component_get_property(main_args esptool_py FLASH_ARGS)
+    idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
+
+    partition_table_get_partition_info(offset "--partition-boot-default" "offset")
+    get_target_property(binary_path ${binary} BINARY_PATH)
+    if(NOT binary_path)
+        idf_die("Binary target '${binary}' is missing 'BINARY_PATH' property.")
+    endif()
+
+    idf_build_get_property(build_dir BUILD_DIR)
+    get_filename_component(binary_path "${binary_path}" ABSOLUTE BASE_DIR "${build_dir}")
+
+    esptool_py_flash_target("${ARG_TARGET}" "${main_args}" "${sub_args}"
+                            FILENAME_PREFIX "${ARG_NAME}")
+    esptool_py_flash_target_image("${ARG_TARGET}" "${ARG_NAME}" "${offset}" "${binary_path}")
+    add_dependencies("${ARG_TARGET}" "${binary}")
+
+    if(ARG_FLASH)
+        esptool_py_flash_target_image(flash ${ARG_NAME} "${offset}" "${binary_path}")
+        add_dependencies(flash "${binary}")
+    endif()
+endfunction()
