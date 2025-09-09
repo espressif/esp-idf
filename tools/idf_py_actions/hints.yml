@@ -583,3 +583,49 @@
 -
     re: "cannot open linker script file bootloader.ld"
     hint: "The file 'bootloader.ld' was renamed to 'bootloader.ld.in' in ESP-IDF v6.0. Please use update your build scripts."
+    
+-
+    re: "fatal error: esp_wpa2.h: No such file or directory"
+    hint: "The header file 'esp_wpa2.h' has been removed. Please use 'esp_eap_client.h' instead."
+
+-
+    re: "error: implicit declaration of function '(esp_wifi_sta_wpa2_ent_enable|esp_wifi_sta_wpa2_ent_disable|esp_wifi_sta_wpa2_ent_set_identity|esp_wifi_sta_wpa2_ent_clear_identity|esp_wifi_sta_wpa2_ent_set_username|esp_wifi_sta_wpa2_ent_clear_username|esp_wifi_sta_wpa2_ent_set_password|esp_wifi_sta_wpa2_ent_clear_password|esp_wifi_sta_wpa2_ent_set_new_password|esp_wifi_sta_wpa2_ent_clear_new_password|esp_wifi_sta_wpa2_ent_set_ca_cert|esp_wifi_sta_wpa2_ent_clear_ca_cert|esp_wifi_sta_wpa2_ent_set_cert_key|esp_wifi_sta_wpa2_ent_clear_cert_key|esp_wifi_sta_wpa2_ent_set_disable_time_check|esp_wifi_sta_wpa2_ent_get_disable_time_check|esp_wifi_sta_wpa2_ent_set_ttls_phase2_method|esp_wifi_sta_wpa2_set_suiteb_192bit_certification|esp_wifi_sta_wpa2_ent_set_pac_file|esp_wifi_sta_wpa2_ent_set_fast_phase1_params|esp_wifi_sta_wpa2_use_default_cert_bundle)'"
+    hint: "The function '{}' has been removed from esp_wpa2.h. Please use the equivalent function from esp_eap_client.h instead."
+    match_to_output: True
+
+-
+    re: "error: too many arguments to function 'esp_supp_dpp_init'"
+    hint: "The function 'esp_supp_dpp_init' no longer accepts a callback. Please register for Wi-Fi events directly to get DPP events."
+
+-
+    re: "error: unknown type name '(esp_supp_dpp_event_t|esp_supp_dpp_event_cb_t)'"
+    hint: "The DPP event callback 'esp_supp_dpp_event_cb_t' and event enum 'esp_supp_dpp_event_t' have been removed. Please use Wi-Fi events directly."
+
+-
+    re: "error: implicit declaration of function 'esp_rrm_send_neighbor_rep_request'"
+    hint: "The function 'esp_rrm_send_neighbor_rep_request' has been removed. Use 'esp_rrm_send_neighbor_report_request' instead."
+
+-
+    re: "error: implicit declaration of function '(esp_wifi_set_ant_gpio|esp_wifi_get_ant_gpio|esp_wifi_set_ant|esp_wifi_get_ant)'"
+    hint: "The function '{}' has been removed. Please use the equivalent function from the esp_phy component (e.g. 'esp_phy_set_ant_gpio')."
+    match_to_output: True
+
+-
+    re: "error: implicit declaration of function 'esp_wifi_config_espnow_rate'"
+    hint: "The function 'esp_wifi_config_espnow_rate' has been removed. Use 'esp_now_set_peer_rate_config' instead."
+
+-
+    re: "error: too many arguments to function 'esp_wifi_wps_start'"
+    hint: "The function 'esp_wifi_wps_start' no longer accepts a 'timeout_ms' argument."
+
+-
+    re: "error: '(WIFI_AUTH_WPA3_EXT_PSK|WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE)' undeclared"
+    hint: "The authentication modes 'WIFI_AUTH_WPA3_EXT_PSK' and 'WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE' have been removed. Use 'WIFI_AUTH_WPA3_PSK' instead."
+
+-
+    re: "error: 'struct wifi_event_neighbor_report_t' has no member named 'report'"
+    hint: "In the 'wifi_event_neighbor_report_t' structure, the 'report' field has been removed. Please use the 'n_report' field instead."
+
+-
+    re: "fatal error: esp_interface.h: No such file or directory"
+    hint: "The header file 'esp_interface.h' has been removed. The 'wifi_interface_t' enum is now defined in 'esp_wifi_types_generic.h'."
