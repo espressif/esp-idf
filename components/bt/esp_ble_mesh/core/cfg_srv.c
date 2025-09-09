@@ -3356,7 +3356,7 @@ static void krp_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 static uint8_t hb_log(uint16_t val)
 {
     BT_DBG("HbLog, Val 0x%04x", val);
- 
+
     switch (val) {
     case 0x0000:
         return 0x00;

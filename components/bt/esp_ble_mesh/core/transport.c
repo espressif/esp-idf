@@ -788,7 +788,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
     uint8_t aid = 0U;
     int err = 0;
 
-    BT_DBG("TransSend");
+    BT_DBG("transcend");
 
     if (msg->len < 1) {
         BT_ERR("Zero-length SDU not allowed");

@@ -29,10 +29,8 @@
 static struct bt_mesh_adv_queue *adv_queue;
 
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
-#define BLE_MESH_RELAY_QUEUE_SIZE   CONFIG_BLE_MESH_RELAY_ADV_BUF_COUNT
-
 static QueueSetHandle_t mesh_queue_set;
-#define BLE_MESH_QUEUE_SET_SIZE     (BLE_MESH_ADV_QUEUE_SIZE + BLE_MESH_RELAY_QUEUE_SIZE)
+#define BLE_MESH_QUEUE_SET_SIZE     (bt_mesh_adv_buf_count_get() + bt_mesh_relay_adv_buf_count_get())
 #endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
 
 static int adv_send(struct net_buf *buf)

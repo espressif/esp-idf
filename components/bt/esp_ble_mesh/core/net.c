@@ -104,7 +104,7 @@ static bool check_dup(struct net_buf_simple *data)
         }
     }
 
-    BT_DBG("DupCacheAdd, CacheNext %ld", val, dup_cache_next);
+    BT_DBG("DupCacheAdd, CacheNext %ld %d", val, dup_cache_next);
 
     dup_cache[dup_cache_next++] = val;
     dup_cache_next %= ARRAY_SIZE(dup_cache);

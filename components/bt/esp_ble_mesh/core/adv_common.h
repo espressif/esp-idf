@@ -298,6 +298,21 @@ void bt_mesh_adv_inst_type_clear(enum bt_mesh_adv_inst_type inst_type,
 #endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
 
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
+static ALWAYS_INLINE
+uint16_t bt_mesh_relay_adv_buf_count_get(void)
+{
+    uint16_t relay_adv_count = 2 + CONFIG_BLE_MESH_RELAY_ADV_BUF_COUNT;
+
+#if CONFIG_BLE_MESH_EXT_ADV && CONFIG_BLE_MESH_RELAY
+    relay_adv_count += CONFIG_BLE_MESH_EXT_RELAY_ADV_BUF_COUNT;
+#endif
+
+#if CONFIG_BLE_MESH_LONG_PACKET && CONFIG_BLE_MESH_RELAY
+    relay_adv_count += CONFIG_BLE_MESH_LONG_PACKET_RELAY_ADV_BUF_COUNT;
+#endif
+    return relay_adv_count;
+}
+
 void bt_mesh_relay_adv_init(void);
 
 bool bt_mesh_ignore_relay_packet(uint32_t timestamp);
@@ -324,6 +339,33 @@ void bt_mesh_frnd_adv_init(void);
 void bt_mesh_frnd_adv_deinit(void);
 #endif /* CONFIG_BLE_MESH_DEINIT */
 #endif /* CONFIG_BLE_MESH_FRIEND */
+
+static ALWAYS_INLINE
+uint16_t bt_mesh_adv_buf_count_get(void)
+{
+    uint16_t adv_count = 2 + CONFIG_BLE_MESH_ADV_BUF_COUNT;
+
+#if CONFIG_BLE_MESH_EXT_ADV
+    adv_count += CONFIG_BLE_MESH_EXT_ADV_BUF_COUNT;
+#if !CONFIG_BLE_MESH_RELAY_ADV_BUF && CONFIG_BLE_MESH_RELAY
+    adv_count += CONFIG_BLE_MESH_EXT_RELAY_ADV_BUF_COUNT;
+#endif /* !CONFIG_BLE_MESH_RELAY_ADV_BUF && CONFIG_BLE_MESH_RELAY */
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+    adv_count += CONFIG_BLE_MESH_LONG_PACKET_ADV_BUF_COUNT;
+#if !CONFIG_BLE_MESH_RELAY_ADV_BUF && CONFIG_BLE_MESH_RELAY
+    adv_count += CONFIG_BLE_MESH_LONG_PACKET_RELAY_ADV_BUF_COUNT;
+#endif /* !CONFIG_BLE_MESH_RELAY_ADV_BUF && CONFIG_BLE_MESH_RELAY */
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+
+#if (CONFIG_BLE_MESH_SUPPORT_BLE_ADV && \
+    !(CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE))
+    adv_count += CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT;
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+
+    return adv_count;
+}
 
 void bt_mesh_adv_task_init(void adv_thread(void *p));
 

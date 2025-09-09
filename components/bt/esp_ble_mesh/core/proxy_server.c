@@ -36,7 +36,7 @@ _Static_assert(!(IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) && IS_ENABLED(CON
 #endif
 
 #if CONFIG_BLE_MESH_USE_BLE_50
-static uint8_t proxy_adv_inst = BLE_MESH_ADV_INS_UNUSED;
+static uint8_t proxy_adv_inst = BLE_MESH_ADV_INST_UNUSED;
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 
 #define ADV_OPT     (BLE_MESH_ADV_OPT_CONNECTABLE | BLE_MESH_ADV_OPT_ONE_TIME)
@@ -2028,7 +2028,7 @@ int32_t bt_mesh_proxy_server_adv_start(void)
     }
 
 #if CONFIG_BLE_MESH_USE_BLE_50
-    if (proxy_adv_inst == BLE_MESH_ADV_INS_UNUSED) {
+    if (proxy_adv_inst == BLE_MESH_ADV_INST_UNUSED) {
         BT_DBG("ProxyAdvInstUnused");
         return K_FOREVER;
     }
@@ -2108,7 +2108,7 @@ int bt_mesh_proxy_server_adv_stop(void)
     }
 
 #if CONFIG_BLE_MESH_USE_BLE_50
-    if (proxy_adv_inst == BLE_MESH_ADV_INS_UNUSED) {
+    if (proxy_adv_inst == BLE_MESH_ADV_INST_UNUSED) {
         BT_ERR("Proxy adv inst is not initialized!");
         return -EINVAL;
    }
@@ -2189,7 +2189,7 @@ int bt_mesh_proxy_server_deinit(void)
     BT_DBG("ProxyServerDeinit");
 
 #if CONFIG_BLE_MESH_USE_BLE_50
-    proxy_adv_inst = BLE_MESH_ADV_INS_UNUSED;
+    proxy_adv_inst = BLE_MESH_ADV_INST_UNUSED;
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 
     bt_mesh_proxy_server_adv_flag_set(false);

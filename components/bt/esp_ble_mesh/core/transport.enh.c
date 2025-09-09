@@ -1199,7 +1199,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
     uint8_t aid = 0U;
     int err = 0;
 
-    BT_DBG("TransSend");
+    BT_DBG("transcend");
 
     if (msg->len < 1) {
         BT_ERR("Zero-length SDU not allowed");
@@ -2220,7 +2220,6 @@ static struct seg_rx *seg_rx_alloc(struct bt_mesh_net_rx *net_rx,
 {
     int err = 0;
 
-<<<<<<< HEAD
     /* By default, traditional seg_rx is used for allocation.
      * If the first segment received is the last segment of
      * the long packet, and its length is the length of the traditional packet,
@@ -2240,12 +2239,8 @@ static struct seg_rx *seg_rx_alloc(struct bt_mesh_net_rx *net_rx,
 
     for (size_t i = 0; i < rx_buf_size; i++) {
         struct seg_rx *rx = &seg_rx_buf[i];
-=======
-    BT_DBG("SegRxAlloc, SegN %u", seg_n);
 
-    for (size_t i = 0; i < ARRAY_SIZE(seg_rx); i++) {
-        struct seg_rx *rx = &seg_rx[i];
->>>>>>> 7652269a401 (feat(ble_mesh): Miscellaneous log enhancement for BLE Mesh)
+        BT_DBG("SegRxAlloc, SegN %u", seg_n);
 
         if (rx->in_use) {
             continue;
@@ -2474,20 +2469,14 @@ found_rx:
         /* Set the expected final buffer length */
         rx->buf.len = seg_n * seg_len(&si) + buf->len;
 
-<<<<<<< HEAD
         BT_DBG("Target len %u * %u + %u = %u", seg_n, seg_len(&si),
                buf->len, rx->buf.len);
-=======
-        BT_DBG("Target len %u * %u + %u = %u",
-               seg_n, seg_len(rx->ctl), buf->len, rx->buf.len);
->>>>>>> 7652269a401 (feat(ble_mesh): Miscellaneous log enhancement for BLE Mesh)
 
         /* This should not happen, since we have made sure the whole
          * SDU could be received while handling the first segment.
          * But if the peer device sends the segments of a segmented
          * message with different CTL, then the following could happen.
          */
-<<<<<<< HEAD
         if ((!rx->ext && rx->buf.len > CONFIG_BLE_MESH_RX_SDU_MAX)
 #if CONFIG_BLE_MESH_LONG_PACKET
             || (rx->ext && rx->buf.len > BLE_MESH_EXT_RX_SDU_MAX)
@@ -2495,11 +2484,6 @@ found_rx:
         ) {
             BT_ERR("Too large SDU len %u/%u", rx->buf.len,
                     CONFIG_BLE_MESH_RX_SDU_MAX);
-=======
-        if (rx->buf.len > CONFIG_BLE_MESH_RX_SDU_MAX) {
-            BT_ERR("Too large SDU len %u/%u",
-                   rx->buf.len, CONFIG_BLE_MESH_RX_SDU_MAX);
->>>>>>> 7652269a401 (feat(ble_mesh): Miscellaneous log enhancement for BLE Mesh)
 
             send_ack(net_rx->sub, net_rx->ctx.recv_dst,
                      net_rx->ctx.addr, net_rx->ctx.send_ttl,
