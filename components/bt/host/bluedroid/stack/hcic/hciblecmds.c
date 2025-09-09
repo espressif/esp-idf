@@ -3105,7 +3105,7 @@ UINT8 btsnd_hcic_ble_cs_read_remote_supported_capabilities(UINT16 conn_handle)
     BT_HDR *p;
     UINT8 *pp;
 
-    HCI_TRACE_ERROR("cs read remote supported caps, conn_handle %d", conn_handle);
+    HCI_TRACE_DEBUG("cs read remote supported caps, conn_handle %d", conn_handle);
 
     HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_READ_REMOTE_SUPP_CAPS_PARAMS_LEN);
 
@@ -3303,7 +3303,7 @@ UINT8 btsnd_hcic_ble_cs_remove_config(UINT16 conn_handle, UINT8 config_id)
     BT_HDR *p;
     UINT8 *pp;
 
-    HCI_TRACE_ERROR("cs remove config, conn_handle %d config_id %d", conn_handle, config_id);
+    HCI_TRACE_DEBUG("cs remove config, conn_handle %d config_id %d", conn_handle, config_id);
 
     HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_REMOVE_CONFIG_PARAMS_LEN);
 
