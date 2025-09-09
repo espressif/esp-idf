@@ -623,6 +623,55 @@ macro(idf_project_init)
 endmacro()
 
 #[[api
+.. cmakev2:macro:: idf_build_generate_flasher_args
+
+   .. code-block:: cmake
+
+      idf_build_generate_flasher_args()
+
+   Generate the flasher_args.json file for the global flash target for tools
+   that require it.
+#]]
+function(idf_build_generate_flasher_args)
+    # The variables listed below are used to configure the template
+    # flasher_args.json.in. Some of these variables, such as flash mode, size,
+    # and frequency, are set as properties of the esptool_py component.
+
+    idf_build_get_property(target IDF_TARGET)
+    set(ESPTOOLPY_CHIP "${target}")
+    set(ESPTOOLPY_BEFORE "${CONFIG_ESPTOOLPY_BEFORE}")
+    set(ESPTOOLPY_AFTER  "${CONFIG_ESPTOOLPY_AFTER}")
+    if(CONFIG_ESPTOOLPY_NO_STUB)
+        set(ESPTOOLPY_WITH_STUB false)
+    else()
+        set(ESPTOOLPY_WITH_STUB true)
+    endif()
+
+    if(CONFIG_SECURE_BOOT OR CONFIG_SECURE_FLASH_ENC_ENABLED)
+        # If security enabled then override post flash option
+        set(ESPTOOLPY_AFTER "no_reset")
+    endif()
+
+    idf_component_get_property(ESPFLASHMODE esptool_py ESPFLASHMODE)
+    idf_component_get_property(ESPFLASHFREQ esptool_py ESPFLASHFREQ)
+    idf_component_get_property(ESPFLASHSIZE esptool_py ESPFLASHSIZE)
+    idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
+
+    # Generate flasher args files
+    idf_build_get_property(build_dir BUILD_DIR)
+    file(READ "${esptool_py_dir}/flasher_args.json.in" flasher_args_content)
+    string(CONFIGURE "${flasher_args_content}" flasher_args_content)
+
+    # We need to create a flasher_args.json.in to create the final flasher_args.json
+    # because CMake only resolves generator expressions in the file_generate command
+    # with the INPUT keyword during the generation phase.
+    file_generate("${build_dir}/flasher_args.json.in"
+                 CONTENT "${flasher_args_content}")
+    file_generate("${build_dir}/flasher_args.json"
+                 INPUT "${build_dir}/flasher_args.json.in")
+endfunction()
+
+#[[api
 .. cmakev2:macro:: idf_project_default
 
    .. code-block:: cmake
@@ -686,6 +735,8 @@ macro(idf_project_default)
         if(CONFIG_APP_BUILD_BOOTLOADER)
             add_dependencies(flash "bootloader")
         endif()
+
+        idf_build_generate_flasher_args()
     endif()
 
     idf_build_generate_metadata("${executable}")
