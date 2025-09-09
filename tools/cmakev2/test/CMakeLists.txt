@@ -210,9 +210,9 @@ endfunction()
 function(test_executable)
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_executable(fatfs_example COMPONENTS fatfs_example)
-    idf_build_generate_metadata(fatfs_example FILE "${build_dir}/project_description_fatfs.json")
+    idf_build_generate_metadata(fatfs_example OUTPUT_FILE project_description_fatfs.json)
     idf_build_executable(hello_world_example COMPONENTS hello_world_example)
-    idf_build_generate_metadata(hello_world_example FILE "${build_dir}/project_description_hello_world.json")
+    idf_build_generate_metadata(hello_world_example OUTPUT_FILE project_description_hello_world.json)
 endfunction()
 
 # Run tests
