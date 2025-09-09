@@ -1618,7 +1618,7 @@ typedef struct {
     UINT16 conn_handle;
     UINT8 config_id;
     UINT8 state;
-    UINT8 tone_Ant_config_select;
+    UINT8 tone_ant_config_select;
     INT8 select_tx_power;
     UINT32 subevent_Len;
     UINT8 subevents_per_event;

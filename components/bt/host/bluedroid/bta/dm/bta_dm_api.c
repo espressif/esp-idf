@@ -3244,27 +3244,6 @@ void BTA_DmBleGapWriteCachedRemoteSupportedCaps(tBTA_DM_CS_WRITE_CACHED_REMOTE_S
     if ((p_msg = (tBTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPP_CAPS *)osi_malloc(sizeof(tBTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPP_CAPS))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPS;
         memcpy(&p_msg->conn_handle, &write_cachedremote_supp_caps->conn_handle, sizeof(tBTA_DM_CS_WRITE_CACHED_REMOTE_SUPP_CAPS));
-        // p_msg->conn_handle = write_cachedremote_supp_caps->conn_handle;
-        // p_msg->num_config_supported = write_cachedremote_supp_caps->num_config_supported;
-        // p_msg->max_consecutive_proc_supported = write_cachedremote_supp_caps->max_consecutive_proc_supported;
-        // p_msg->num_ant_supported = write_cachedremote_supp_caps->num_ant_supported;
-        // p_msg->max_ant_paths_supported = write_cachedremote_supp_caps->max_ant_paths_supported;
-        // p_msg->roles_supported = write_cachedremote_supp_caps->roles_supported;
-        // p_msg->modes_supported = write_cachedremote_supp_caps->modes_supported;
-        // p_msg->rtt_capability = write_cachedremote_supp_caps->rtt_capability;
-        // p_msg->rtt_aa_only_n = write_cachedremote_supp_caps->rtt_aa_only_n;
-        // p_msg->rtt_sounding_n = write_cachedremote_supp_caps->rtt_sounding_n;
-        // p_msg->rtt_random_payload_n = write_cachedremote_supp_caps->rtt_random_payload_n;
-        // p_msg->NADM_sounding_capability = write_cachedremote_supp_caps->NADM_sounding_capability;
-        // p_msg->NADM_random_capability = write_cachedremote_supp_caps->NADM_random_capability;
-        // p_msg->cs_sync_phys_supported = write_cachedremote_supp_caps->cs_sync_phys_supported;
-        // p_msg->subfeatures_supported = write_cachedremote_supp_caps->subfeatures_supported;
-        // p_msg->T_IP1_times_supported = write_cachedremote_supp_caps->T_IP1_times_supported;
-        // p_msg->T_IP2_times_supported = write_cachedremote_supp_caps->T_IP2_times_supported;
-        // p_msg->T_FCS_times_supported = write_cachedremote_supp_caps->T_FCS_times_supported;
-        // p_msg->T_PM_times_supported = write_cachedremote_supp_caps->T_PM_times_supported;
-        // p_msg->T_SW_times_supported = write_cachedremote_supp_caps->T_SW_times_supported;
-        // p_msg->TX_SNR_capability = write_cachedremote_supp_caps->TX_SNR_capability;
         bta_sys_sendmsg(p_msg);
     }
 }

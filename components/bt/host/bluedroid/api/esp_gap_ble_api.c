@@ -2097,6 +2097,10 @@ esp_err_t esp_ble_gap_set_periodic_adv_subevent_data(esp_ble_per_adv_subevent_da
         return ESP_ERR_NOT_ALLOWED;
     }
 
+    if ((subevent_data_params->num_subevents_with_data > 0x0F) || (!subevent_data_params->num_subevents_with_data)) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
     for (uint8_t i = 0; i < subevent_data_params->num_subevents_with_data; i++)
     {
         if (subevent_data_params->subevent_params[i].subevent_data_len && (subevent_data_params->subevent_params[i].subevent_data == NULL)) {

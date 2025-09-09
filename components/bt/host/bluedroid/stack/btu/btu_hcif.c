@@ -3197,28 +3197,30 @@ static void btu_ble_pa_response_report_evt(UINT8 *p)
     STREAM_TO_UINT8(pa_rsp_rpt_evt.tx_status, p);
     STREAM_TO_UINT8(pa_rsp_rpt_evt.num_rsp, p);
 
-    pa_rsp_rpt_evt.rsp_data_info = osi_malloc(pa_rsp_rpt_evt.num_rsp * sizeof(tBTM_BLE_PA_RSP_DATA_INFO));
-    if (pa_rsp_rpt_evt.rsp_data_info)
-    {
-        for (UINT8 i = 0; i < pa_rsp_rpt_evt.num_rsp; i++)
+    if (pa_rsp_rpt_evt.num_rsp) {
+        pa_rsp_rpt_evt.rsp_data_info = osi_malloc(pa_rsp_rpt_evt.num_rsp * sizeof(tBTM_BLE_PA_RSP_DATA_INFO));
+        if (pa_rsp_rpt_evt.rsp_data_info)
         {
-            STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].tx_power, p);
-            STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].rssi, p);
-            STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].cte_type, p);
-            STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].rsp_slot, p);
-            STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].data_status, p);
-            STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].data_len, p);
-            if (pa_rsp_rpt_evt.rsp_data_info[i].data_len) {
-                pa_rsp_rpt_evt.rsp_data_info[i].data = osi_malloc(pa_rsp_rpt_evt.rsp_data_info[i].data_len);
-                if (pa_rsp_rpt_evt.rsp_data_info[i].data) {
-                    STREAM_TO_ARRAY(pa_rsp_rpt_evt.rsp_data_info[i].data, p, pa_rsp_rpt_evt.rsp_data_info[i].data_len);
-                } else {
-                    HCI_TRACE_ERROR("%s, no enough memory.", __func__);
+            for (UINT8 i = 0; i < pa_rsp_rpt_evt.num_rsp; i++)
+            {
+                STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].tx_power, p);
+                STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].rssi, p);
+                STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].cte_type, p);
+                STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].rsp_slot, p);
+                STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].data_status, p);
+                STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].data_len, p);
+                if (pa_rsp_rpt_evt.rsp_data_info[i].data_len) {
+                    pa_rsp_rpt_evt.rsp_data_info[i].data = osi_malloc(pa_rsp_rpt_evt.rsp_data_info[i].data_len);
+                    if (pa_rsp_rpt_evt.rsp_data_info[i].data) {
+                        STREAM_TO_ARRAY(pa_rsp_rpt_evt.rsp_data_info[i].data, p, pa_rsp_rpt_evt.rsp_data_info[i].data_len);
+                    } else {
+                        HCI_TRACE_ERROR("%s, no enough memory.", __func__);
+                    }
                 }
             }
+        } else {
+            HCI_TRACE_ERROR("%s, no memory.", __func__);
         }
-    } else {
-        HCI_TRACE_ERROR("%s, no memory.", __func__);
     }
 
     btm_ble_pa_rsp_rpt_evt(&pa_rsp_rpt_evt);
@@ -3347,7 +3349,7 @@ static void btu_ble_cs_proc_enable_cmpl_evt(UINT8 *p)
     STREAM_TO_UINT16(proc_en.conn_handle, p);
     STREAM_TO_UINT8(proc_en.config_id, p);
     STREAM_TO_UINT8(proc_en.state, p);
-    STREAM_TO_UINT8(proc_en.tone_Ant_config_select, p);
+    STREAM_TO_UINT8(proc_en.tone_ant_config_select, p);
     STREAM_TO_UINT8(proc_en.select_tx_power, p);
     STREAM_TO_UINT24(proc_en.subevent_Len, p);
     STREAM_TO_UINT8(proc_en.subevents_per_event, p);
