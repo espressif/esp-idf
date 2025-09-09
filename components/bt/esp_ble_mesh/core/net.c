@@ -104,7 +104,7 @@ static bool check_dup(struct net_buf_simple *data)
         }
     }
 
-    BT_DBG("DupCacheAdd, CacheNext %ld", val, dup_cache_next);
+    BT_DBG("DupCacheAdd, CacheNext %ld %d", val, dup_cache_next);
 
     dup_cache[dup_cache_next++] = val;
     dup_cache_next %= ARRAY_SIZE(dup_cache);
@@ -2013,7 +2013,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
     net_buf_simple_save(&buf, &state);
 
     BT_DBG("NetRecv, Src 0x%04x Dst 0x%04x Rssi %d NetIf %u",
-           rx->ctx.addr, rx->ctx.recv_dst, rx->ctx.recv_rssi, net_if);
+           rx.ctx.addr, rx.ctx.recv_dst, rx.ctx.recv_rssi, net_if);
 
     BT_BQB(BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE | \
            BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_NET,

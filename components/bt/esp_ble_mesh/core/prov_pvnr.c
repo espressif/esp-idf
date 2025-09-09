@@ -2812,7 +2812,7 @@ static void protocol_timeout(struct k_work *work)
 {
     struct bt_mesh_prov_link *link = work->user_data;
 
-    BT_WARN("Protocol timeout,LinkId:%08x", link->link_id);
+    BT_WARN("Protocol timeout,RmtAddr:%s", bt_hex(link->addr.val, 6));
 
     close_link(link, CLOSE_REASON_TIMEOUT);
 }

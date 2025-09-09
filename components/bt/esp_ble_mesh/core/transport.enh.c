@@ -2006,10 +2006,13 @@ static struct seg_rx *seg_rx_alloc(struct bt_mesh_net_rx *net_rx,
     int err = 0;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     for (size_t i = 0; i < ARRAY_SIZE(seg_rx); i++) {
         struct seg_rx *rx = &seg_rx[i];
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9fc4381f187 (fix(ble_mesh): resolve miscellaneous logging issues)
     /* By default, traditional seg_rx is used for allocation.
      * If the first segment received is the last segment of
      * the long packet, and its length is the length of the traditional packet,
@@ -2029,13 +2032,15 @@ static struct seg_rx *seg_rx_alloc(struct bt_mesh_net_rx *net_rx,
 
     for (size_t i = 0; i < rx_buf_size; i++) {
         struct seg_rx *rx = &seg_rx_buf[i];
-=======
-    BT_DBG("SegRxAlloc, SegN %u", seg_n);
 
+<<<<<<< HEAD
     for (size_t i = 0; i < ARRAY_SIZE(seg_rx); i++) {
         struct seg_rx *rx = &seg_rx[i];
 >>>>>>> 7652269a401 (feat(ble_mesh): Miscellaneous log enhancement for BLE Mesh)
 >>>>>>> bdcd87e62fa (feat(ble_mesh): Miscellaneous log enhancement for BLE Mesh)
+=======
+        BT_DBG("SegRxAlloc, SegN %u", seg_n);
+>>>>>>> 9fc4381f187 (fix(ble_mesh): resolve miscellaneous logging issues)
 
         if (rx->in_use) {
             continue;
@@ -2254,16 +2259,15 @@ found_rx:
         rx->buf.len = seg_n * seg_len(rx->ctl) + buf->len;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         BT_DBG("Target len %u * %u + %u = %u", seg_n, seg_len(rx->ctl),
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9fc4381f187 (fix(ble_mesh): resolve miscellaneous logging issues)
         BT_DBG("Target len %u * %u + %u = %u", seg_n, seg_len(&si),
 >>>>>>> bdcd87e62fa (feat(ble_mesh): Miscellaneous log enhancement for BLE Mesh)
                buf->len, rx->buf.len);
-=======
-        BT_DBG("Target len %u * %u + %u = %u",
-               seg_n, seg_len(rx->ctl), buf->len, rx->buf.len);
->>>>>>> 7652269a401 (feat(ble_mesh): Miscellaneous log enhancement for BLE Mesh)
 
         /* This should not happen, since we have made sure the whole
          * SDU could be received while handling the first segment.
@@ -2271,9 +2275,12 @@ found_rx:
          * message with different CTL, then the following could happen.
          */
 <<<<<<< HEAD
+<<<<<<< HEAD
         if (rx->buf.len > CONFIG_BLE_MESH_RX_SDU_MAX) {
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9fc4381f187 (fix(ble_mesh): resolve miscellaneous logging issues)
         if ((!rx->ext && rx->buf.len > CONFIG_BLE_MESH_RX_SDU_MAX)
 #if CONFIG_BLE_MESH_LONG_PACKET
             || (rx->ext && rx->buf.len > BLE_MESH_EXT_RX_SDU_MAX)
@@ -2282,11 +2289,6 @@ found_rx:
 >>>>>>> bdcd87e62fa (feat(ble_mesh): Miscellaneous log enhancement for BLE Mesh)
             BT_ERR("Too large SDU len %u/%u", rx->buf.len,
                     CONFIG_BLE_MESH_RX_SDU_MAX);
-=======
-        if (rx->buf.len > CONFIG_BLE_MESH_RX_SDU_MAX) {
-            BT_ERR("Too large SDU len %u/%u",
-                   rx->buf.len, CONFIG_BLE_MESH_RX_SDU_MAX);
->>>>>>> 7652269a401 (feat(ble_mesh): Miscellaneous log enhancement for BLE Mesh)
 
             send_ack(net_rx->sub, net_rx->ctx.recv_dst,
                      net_rx->ctx.addr, net_rx->ctx.send_ttl,
