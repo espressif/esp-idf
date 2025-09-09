@@ -536,9 +536,9 @@ endfunction()
                                   [FILE <file>])
 
    :executable[in]: Executable target for which to generate a metadata file.
-   :FILE[in,opt]: Optional output file path for storing the metadata. If not
-                  provided, the default path ``<build>/project_description.json``
-                  is used.
+   :OUTPUT_FILE[in,opt]: Optional output file path for storing the metadata. If not
+                         provided, the default path ``<build>/project_description.json``
+                         is used.
 
    Generate metadata for the specified ``executable`` and store it in the
    specified ``FILE``. If no ``FILE`` is provided, the default location
@@ -546,7 +546,7 @@ endfunction()
 #]]
 function(idf_build_generate_metadata executable)
     set(options)
-    set(one_value FILE)
+    set(one_value OUTPUT_FILE)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
@@ -610,16 +610,16 @@ function(idf_build_generate_metadata executable)
     idf_build_get_property(gdbinit_files_connect GDBINIT_FILES_CONNECT)
     __get_openocd_options(debug_arguments_openocd)
 
-    if(NOT DEFINED ARG_FILE)
-        set(ARG_FILE "${BUILD_DIR}/project_description.json")
+    if(NOT DEFINED ARG_OUTPUT_FILE)
+        set(ARG_OUTPUT_FILE "${BUILD_DIR}/project_description.json")
     endif()
 
-    get_filename_component(ARG_FILE "${ARG_FILE}" ABSOLUTE BASE_DIR "${BUILD_DIR}")
+    get_filename_component(ARG_OUTPUT_FILE "${ARG_OUTPUT_FILE}" ABSOLUTE BASE_DIR "${BUILD_DIR}")
 
-    configure_file("${IDF_PATH}/tools/cmake/project_description.json.in" "${ARG_FILE}.templ")
-    file(READ "${ARG_FILE}.templ" project_description_json_templ)
-    file(REMOVE "${ARG_FILE}.templ")
-    file(GENERATE OUTPUT "${ARG_FILE}"
+    configure_file("${IDF_PATH}/tools/cmake/project_description.json.in" "${ARG_OUTPUT_FILE}.templ")
+    file(READ "${ARG_OUTPUT_FILE}.templ" project_description_json_templ)
+    file(REMOVE "${ARG_OUTPUT_FILE}.templ")
+    file(GENERATE OUTPUT "${ARG_OUTPUT_FILE}"
          CONTENT "${project_description_json_templ}")
 endfunction()
 
