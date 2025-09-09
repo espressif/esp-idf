@@ -51,6 +51,7 @@
 	url = ../../DaveGamble/cJSON.git
 	sbom-version = 1.7.19
 	sbom-cpe = cpe:2.3:a:cjson_project:cjson:{}:*:*:*:*:*:*:*
+	sbom-cpe = cpe:2.3:a:davegamble:cjson:{}:*:*:*:*:*:*:*
 	sbom-supplier = Person: Dave Gamble
 	sbom-url = https://github.com/DaveGamble/cJSON
 	sbom-description = Ultralightweight JSON parser in ANSI C
