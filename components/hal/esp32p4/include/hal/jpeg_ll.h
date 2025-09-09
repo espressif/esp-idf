@@ -14,6 +14,7 @@
 #include "soc/jpeg_struct.h"
 #include "hal/jpeg_types.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -641,6 +642,11 @@ static inline uint32_t jpeg_ll_get_intr_status(jpeg_dev_t *hw)
 static inline void jpeg_ll_config_picture_pixel_format(jpeg_dev_t *hw, jpeg_enc_src_type_t pixel_format)
 {
     uint8_t cs = 0;
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    uint8_t ecs = 0;
+    // Default, we disable extend color space
+    hw->extd_config.extd_color_space_en = 0;
+#endif
     switch (pixel_format) {
     case JPEG_ENC_SRC_RGB888:
         cs = 0;
@@ -654,10 +660,23 @@ static inline void jpeg_ll_config_picture_pixel_format(jpeg_dev_t *hw, jpeg_enc_
     case JPEG_ENC_SRC_GRAY:
         cs = 3;
         break;
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    case JPEG_ENC_SRC_YUV444:
+        hw->extd_config.extd_color_space_en = 1;
+        ecs = 0;
+        break;
+    case JPEG_ENC_SRC_YUV420:
+        hw->extd_config.extd_color_space_en = 1;
+        ecs = 1;
+        break;
+#endif
     default:
         abort();
     }
     hw->config.color_space = cs;
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    hw->extd_config.extd_color_space = ecs;
+#endif
 }
 
 #ifdef __cplusplus
