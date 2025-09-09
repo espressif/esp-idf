@@ -693,6 +693,16 @@ The data to be encrypted and decrypted must be in the same length. The IV8 is an
 
 This function is used to compute CheckSum and return a value of CheckSum. BluFi uses the returned value to compare the CheckSum of the frame.
 
+5. Implementing Stronger Security
+
+The default encryption/decryption logic in this example is intended for demonstration purposes only.
+
+If you require a higher level of security, it is recommended to implement your own encryption, decryption, authentication, and checksum algorithms by customizing the security callbacks in the BluFi framework.
+
+.. code-block:: c
+
+   esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks)
+
 GATT Related Instructions
 ----------------------------
 

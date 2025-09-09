@@ -693,6 +693,17 @@ BluFi 会在调用完 Negotiate_data_handler 后，发送 Negotiate_data_handler
 
 该函数用来进行校验，返回值为校验的值。BluFi 会使用该函数返回值与帧的校验值进行比较。
 
+5. 实现更强的安全性
+
+本示例中默认的加密/解密逻辑仅用于演示目的。
+
+如果需要更高等级的安全性，建议通过自定义 BluFi 框架中的安全回调函数，实现您自己的加密、解密、认证以及校验算法。
+
+.. code-block:: c
+
+   esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks)
+
+
 GATT 相关说明
 -------------
 
