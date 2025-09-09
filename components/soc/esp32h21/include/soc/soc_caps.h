@@ -42,7 +42,7 @@
 #define SOC_EFUSE_SUPPORTED             1       //TODO: [ESP32H21] IDF-11507
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1       //TODO: [ESP32H21] IDF-11548
-// #define SOC_I2S_SUPPORTED               1    //TODO: [ESP32H21] IDF-11606, IDF-11608
+#define SOC_I2S_SUPPORTED               1
 // #define SOC_SDM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11573
 #define SOC_GPSPI_SUPPORTED             1
 #define SOC_LEDC_SUPPORTED              1
@@ -268,13 +268,13 @@
 // #define SOC_I2C_SUPPORT_SLEEP_RETENTION           (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-// #define SOC_I2S_HW_VERSION_2        (1)
-// // #define SOC_I2S_SUPPORTS_ETM        (1)
-// #define SOC_I2S_SUPPORTS_PCM        (1)
-// #define SOC_I2S_SUPPORTS_PDM        (1)
-// #define SOC_I2S_SUPPORTS_PDM_TX     (1)
-// #define SOC_I2S_PDM_MAX_TX_LINES    (2)
-// #define SOC_I2S_SUPPORTS_TDM        (1)
+#define SOC_I2S_HW_VERSION_2        (1)
+#define SOC_I2S_SUPPORTS_ETM        (1)
+#define SOC_I2S_SUPPORTS_PCM        (1)
+#define SOC_I2S_SUPPORTS_PDM        (1)
+#define SOC_I2S_SUPPORTS_PDM_TX     (1)
+#define SOC_I2S_PDM_MAX_TX_LINES    (2)
+#define SOC_I2S_SUPPORTS_TDM        (1)
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)

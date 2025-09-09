@@ -132,7 +132,6 @@ api-reference/peripherals/i2c_slave_v1.rst
 api-reference/peripherals/adc_continuous.rst
 api-reference/peripherals/sdspi_host.rst
 api-reference/peripherals/vad.rst
-api-reference/peripherals/i2s.rst
 api-reference/peripherals/isp.rst
 api-reference/peripherals/usb_host/usb_host_notes_usbh.rst
 api-reference/peripherals/usb_host/usb_host_notes_ext_hub.rst

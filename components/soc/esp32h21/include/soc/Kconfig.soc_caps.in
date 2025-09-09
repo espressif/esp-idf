@@ -43,6 +43,10 @@ config SOC_RTC_MEM_SUPPORTED
     bool
     default y
 
+config SOC_I2S_SUPPORTED
+    bool
+    default y
+
 config SOC_GPSPI_SUPPORTED
     bool
     default y
@@ -468,6 +472,34 @@ config SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
     default y
 
 config SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
+    bool
+    default y
+
+config SOC_I2S_HW_VERSION_2
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_ETM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PCM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM_TX
+    bool
+    default y
+
+config SOC_I2S_PDM_MAX_TX_LINES
+    int
+    default 2
+
+config SOC_I2S_SUPPORTS_TDM
     bool
     default y
 

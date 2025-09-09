@@ -116,13 +116,9 @@ Overview of All Modes
 =========  ========  ============  ============  =========  ========  ========  ==========
 ESP32      I2S 0/1      I2S 0          I2S 0      I2S 0/1     none      I2S 0      I2S 0
 ESP32-S2    I2S 0       none           none        none       none      none       I2S 0
-ESP32-C3    I2S 0       I2S 0          none        I2S 0      I2S 0     none       none
-ESP32-C6    I2S 0       I2S 0          none        I2S 0      I2S 0     none       none
 ESP32-S3   I2S 0/1      I2S 0          I2S 0      I2S 0/1    I2S 0/1    none       none
-ESP32-H2    I2S 0       I2S 0          none        I2S 0      I2S 0     none       none
 ESP32-P4   I2S 0~2      I2S 0          I2S 0      I2S 0~2    I2S 0~2    none       none
-ESP32-C5    I2S 0       I2S 0          none        I2S 0      I2S 0     none       none
-ESP32-C61   I2S 0       I2S 0          none        I2S 0      I2S 0     none       none
+others      I2S 0       I2S 0          none        I2S 0      I2S 0     none       none
 =========  ========  ============  ============  =========  ========  ========  ==========
 
 .. note::
@@ -225,11 +221,11 @@ In standard mode, there are always two sound channels, i.e., the left and right 
 
     TDM (Time Division Multiplexing) mode supports up to 16 slots. These slots can be enabled by :cpp:member:`i2s_tdm_slot_config_t::slot_mask`.
 
-    .. only:: SOC_I2S_TDM_FULL_DATA_WIDTH
+    .. only:: not esp32c3 or esp32c6 or esp32s3
 
         Any data bit-width is supported no matter how many slots are enabled, which means there can be up to ``32 bit-width * 16 slots = 512 bit`` data in one frame.
 
-    .. only:: not SOC_I2S_TDM_FULL_DATA_WIDTH
+    .. only:: esp32c3 or esp32c6 or esp32s3
 
         But due to the hardware limitation, only up to 4 slots are supported while the slot is set to 32 bit-width, and 8 slots for 16 bit-width, 16 slots for 8 bit-width. The slot communication format of TDM is almost the same as the standard mode, yet with some small differences.
 
