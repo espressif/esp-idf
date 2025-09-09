@@ -139,13 +139,7 @@ menu "Scan Configuration"
             Duration for which the results from the most recent scans can be used
             by the roaming app for determining the roaming candidates.
 
-    config ESP_WIFI_ROAMING_MAX_CANDIDATES
-        int "Max Candidates in the network"
-        default 3
-        range 3 20
-        help
-            Max candidates that can be considered while scanning as a part of the
-            network at one time.
+
 
 endmenu #"Scan Configuration"
 
@@ -193,7 +187,6 @@ menu "Blacklist Configuration"
     config ESP_WIFI_ROAMING_AUTO_BLACKLISTING
         bool "Enable automatic BSSID blacklisting"
         depends on ESP_WIFI_ROAMING_BSSID_BLACKLIST
-        default y
         help
             Enable this to automatically blacklist BSSIDs after multiple failed connection attempts.
 
@@ -207,11 +200,12 @@ menu "Blacklist Configuration"
 
     config ESP_WIFI_ROAMING_BLACKLIST_TIMEOUT
         int "Blacklist timeout (in seconds)"
-        depends on ESP_WIFI_ROAMING_AUTO_BLACKLISTING
+        depends on ESP_WIFI_ROAMING_BSSID_BLACKLIST
         range 10 3600
         default 300
         help
             Time in seconds for which a BSSID remains in the blacklist.
+            This applies to both automatically and manually blacklisted BSSIDs.
 
     config ESP_WIFI_ROAMING_MAX_CANDIDATES
         int "Maximum number of roaming candidates"

@@ -9,6 +9,8 @@
 #ifndef WPA_I_H
 #define WPA_I_H
 
+#include "common/defs.h"
+
 extern struct wpa_sm gWpaSm;
 #define DEFAULT_EAPOL_VERSION 1
 
