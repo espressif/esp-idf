@@ -963,18 +963,8 @@ typedef struct {
     uint8_t sid;                        /*!< ext adv sid */
     bool scan_req_notif;                /*!< ext adv scan request event notify */
 #if (CONFIG_BT_BLE_FEAT_ADV_CODING_SELECTION)
-    esp_ble_gap_adv_phy_options_t primary_adv_phy_options;   /*!<
-                                                                0x00: The Host has no preferred or required coding when transmitting on the LE Coded PHY
-                                                                0x01: The Host prefers that S=2 coding be used when transmitting on the LE Coded PHY
-                                                                0x02: The Host prefers that S=8 coding be used when transmitting on the LE Coded PHY
-                                                                0x03: The Host requires that S=2 coding be used when transmitting on the LE Coded PHY
-                                                                0x04: The Host requires that S=8 coding be used when transmitting on the LE Coded PHY */
-    esp_ble_gap_adv_phy_options_t secondary_adv_phy_options;  /*!<
-                                                                0x00: The Host has no preferred or required coding when transmitting on the LE Coded PHY
-                                                                0x01: The Host prefers that S=2 coding be used when transmitting on the LE Coded PHY
-                                                                0x02: The Host prefers that S=8 coding be used when transmitting on the LE Coded PHY
-                                                                0x03: The Host requires that S=2 coding be used when transmitting on the LE Coded PHY
-                                                                0x04: The Host requires that S=8 coding be used when transmitting on the LE Coded PHY */
+    esp_ble_gap_adv_phy_options_t primary_adv_phy_options;   /*!< The Host's preference or requirement concerning coding scheme */
+    esp_ble_gap_adv_phy_options_t secondary_adv_phy_options; /*!< The Host's preference or requirement concerning coding scheme(including for periodic advertising) */
 #endif // CONFIG_BT_BLE_FEAT_ADV_CODING_SELECTION
 } esp_ble_gap_ext_adv_params_t;
 
@@ -1097,7 +1087,7 @@ typedef struct {
                                                         Otherwise: Reserved for future use
                                                     */
 
-    esp_ble_gap_rpt_phy_t secondly_phy;                 /*!< extend advertising secondary phy
+    esp_ble_gap_rpt_phy_t secondary_phy;            /*!< extend advertising secondary phy
                                                     0x00: No packets on the secondary advertising physical channel
                                                     0x01: Advertiser PHY is LE 1M
                                                     0x02: Advertiser PHY is LE 2M
@@ -1405,6 +1395,9 @@ typedef uint8_t esp_ble_cs_rtt_caps_opt_t;
 /** CS_SYNC 2M 2BT phy supported */
 #define ESP_BLE_CS_SYNC_PHYS_2M_2BT_SUPPORTED   (1 << 2)
 
+/**The length of Channel Sounding channel map */
+#define ESP_BLE_CS_CHAN_MAP_LEN 10
+
 /**
 * @brief CS write cached remote supported capabilities parameters
 */
@@ -1584,24 +1577,24 @@ typedef struct {
                                             0x01: Reflector
                                         */
     esp_ble_cs_rtt_type_opt_t rtt_type; /*!< 0x00: RTT AA-only
-                                            0x01: RTT with 32-bit sounding sequence
-                                            0x02: RTT with 96-bit sounding sequence
-                                            0x03: RTT with 32-bit random sequence
-                                            0x04: RTT with 64-bit random sequence
-                                            0x05: RTT with 96-bit random sequence
-                                            0x06: RTT with 128-bit random sequence
+                                             0x01: RTT with 32-bit sounding sequence
+                                             0x02: RTT with 96-bit sounding sequence
+                                             0x03: RTT with 32-bit random sequence
+                                             0x04: RTT with 64-bit random sequence
+                                             0x05: RTT with 96-bit random sequence
+                                             0x06: RTT with 128-bit random sequence
                                         */
     esp_ble_cs_sync_phy_opt_t cs_sync_phy;  /*!< 0x01: LE 1M PHY
                                                  0x02: LE 2M PHY
                                                  0x03: LE 2M 2BT PHY
                                              */
-    uint8_t channel_map[10];           /*!< This parameter contains 80 1-bit fields.
-                                            The nth such field (in the range 0 to 78) contains the value for the CS channel index n.
-                                            Channel n is enabled for CS procedure = 1
-                                            Channel n is disabled for CS procedure = 0
-                                            Channels n = 0, 1, 23, 24, 25, 77, and 78 shall be ignored and shall be set to zero. At least 15 channels shall be enabled.
-                                            The most significant bit (bit 79) is reserved for future use
-                                        */
+    uint8_t channel_map[ESP_BLE_CS_CHAN_MAP_LEN]; /*!< This parameter contains 80 1-bit fields.
+                                                    The nth such field (in the range 0 to 78) contains the value for the CS channel index n.
+                                                    Channel n is enabled for CS procedure = 1
+                                                    Channel n is disabled for CS procedure = 0
+                                                    Channels n = 0, 1, 23, 24, 25, 77, and 78 shall be ignored and shall be set to zero. At least 15 channels shall be enabled.
+                                                    The most significant bit (bit 79) is reserved for future use
+                                                  */
     uint8_t channel_map_repetition;    /*!< The number of times the map represented by the Channel_Map field is to be cycled through for non-mode-0 steps within a CS procedure. Range: 0x01 to 0xFF */
     esp_ble_cs_channel_select_type_opt_t channel_selection_type;/*!< 0x00: Use Channel Selection Algorithm #3b for non-mode-0 CS steps
                                                                     0x01: Use Channel Selection Algorithm #3c for non-mode-0 CS steps
@@ -2642,13 +2635,13 @@ typedef union {
                                            0x02: LE 2M PHY
                                            0x03: LE 2M 2BT PHY
                                         */
-        uint8_t channel_map[10];      /*!<  This parameter contains 80 1-bit fields.
-                                            The nth such field (in the range 0 to 78) contains the value for the CS channel index n.
-                                            Channel n is enabled for CS procedure = 1
-                                            Channel n is disabled for CS procedure = 0
-                                            Channels n = 0, 1, 23, 24, 25, 77, and 78 shall be ignored and shall be set to zero. At least 15 channels shall be enabled.
-                                            The most significant bit (bit 79) is reserved for future use.
-                                        */
+        uint8_t channel_map[ESP_BLE_CS_CHAN_MAP_LEN];  /*!< This parameter contains 80 1-bit fields.
+                                                            The nth such field (in the range 0 to 78) contains the value for the CS channel index n.
+                                                            Channel n is enabled for CS procedure = 1
+                                                            Channel n is disabled for CS procedure = 0
+                                                            Channels n = 0, 1, 23, 24, 25, 77, and 78 shall be ignored and shall be set to zero. At least 15 channels shall be enabled.
+                                                            The most significant bit (bit 79) is reserved for future use.
+                                                        */
         uint8_t channel_map_repetition; /*!< The number of times the Channel_Map field will be cycled through for non-mode-0 steps within a CS procedure*/
         uint8_t channel_selection_type; /*!< 0x00: Use Channel Selection Algorithm #3b for non-mode-0 CS steps
                                              0x01: Use Channel Selection Algorithm #3c for non-mode-0 CS steps
@@ -2689,7 +2682,7 @@ typedef union {
         uint8_t state;                  /*!< 0x00: CS procedures are disabled
                                              0x01: CS procedures are enabled
                                           */
-        uint8_t tone_Ant_config_select; /*!< Antenna Configuration Index. Range:0x00 to 0x07*/
+        uint8_t tone_ant_config_select; /*!< Antenna Configuration Index. Range:0x00 to 0x07*/
         int8_t select_tx_power;         /*!< Transmit power level used for CS procedure. Range: -127 to 20. Units: dBm */
         uint32_t subevent_Len;          /*!< Duration for each CS subevent in microseconds. Range: 1250 μs to 4 s */
         uint8_t subevents_per_event;    /*!< Number of CS subevents anchored off the same ACL connection event. Range: 0x01 to 0x20 */
