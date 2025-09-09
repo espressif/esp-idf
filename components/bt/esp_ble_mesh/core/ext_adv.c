@@ -142,7 +142,8 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
 
             err = bt_le_ext_adv_start(inst->id, &param, &ad, 1, NULL, 0);
         }
-        break;
+    }
+    break;
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
     case BLE_MESH_ADV_BLE:

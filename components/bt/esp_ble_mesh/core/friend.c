@@ -792,7 +792,7 @@ int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
 
 static void enqueue_buf(struct bt_mesh_friend *frnd, struct net_buf *buf)
 {
-    BT_DBG("EnqueueBuf, Buf %p QueueSize %u", __func__, buf, frnd->queue_size);
+    BT_DBG("EnqueueBuf, Buf %p QueueSize %u", buf, frnd->queue_size);
 
     net_buf_slist_put(&frnd->queue, buf);
     frnd->queue_size++;
@@ -802,7 +802,7 @@ static void enqueue_update(struct bt_mesh_friend *frnd, uint8_t md)
 {
     struct net_buf *buf = NULL;
 
-    BT_DBG("EnqueueUpdate, LPN 0x%04x MD %u", __func__, frnd->lpn, md);
+    BT_DBG("EnqueueUpdate, LPN 0x%04x MD %u", frnd->lpn, md);
 
     buf = encode_update(frnd, md);
     if (!buf) {
