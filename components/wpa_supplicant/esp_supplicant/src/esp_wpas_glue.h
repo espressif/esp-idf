@@ -7,6 +7,8 @@
 #ifndef WPAS_GLUE_H
 #define WPAS_GLUE_H
 
+#include "rsn_supp/wpa_i.h"
+
 u8 *wpa_sm_alloc_eapol(struct wpa_sm *sm, u8 type,
                        const void *data, u16 data_len,
                        size_t *msg_len, void **data_pos);
