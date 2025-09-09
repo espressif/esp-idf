@@ -200,14 +200,14 @@
             "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32-elf-12.2.0_20250801-i686-linux-gnu.tar.xz"
           },
           "macos": {
-            "sha256": "b9676bbc9d37353cad409e16e5d749caed3e01ff0a706ea55d1600bdb56d9aba",
-            "size": 65445932,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32-elf-12.2.0_20250801-x86_64-apple-darwin.tar.xz"
+            "sha256": "e52398ec24a91b66c65a1d19dd804b6bab7b77ed3ce8d02cb41df2a50994b7fe",
+            "size": 71077956,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32-elf-12.2.0_20250801-x86_64-apple-darwin_signed.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "4adc40cdd8cc00242bab105514ed45980e76350746e67767a3362f7331fc72c3",
-            "size": 55831532,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32-elf-12.2.0_20250801-aarch64-apple-darwin.tar.xz"
+            "sha256": "ddb81280e27d9dd7223898a244fe292223b70d9815b545e6dea9cb9d51eb7438",
+            "size": 59290760,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32-elf-12.2.0_20250801-aarch64-apple-darwin_signed.tar.xz"
           },
           "name": "esp-12.2.0_20250801",
           "status": "recommended",
@@ -273,14 +273,14 @@
             "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32s2-elf-12.2.0_20250801-i686-linux-gnu.tar.xz"
           },
           "macos": {
-            "sha256": "abc27a979e1b348918561004bb18b1ed25667194cd480c76d041900be58e85af",
-            "size": 70098604,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32s2-elf-12.2.0_20250801-x86_64-apple-darwin.tar.xz"
+            "sha256": "8b765b230a22908986e6aefc5329660fa3c9cb3b3149cecb2c7d4d508e8a7cea",
+            "size": 71366236,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32s2-elf-12.2.0_20250801-x86_64-apple-darwin_signed.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "84b319e961200ff59ea00c0087fac246b21aa73347c5b29ac8b624024d9cbe36",
-            "size": 60395232,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32s2-elf-12.2.0_20250801-aarch64-apple-darwin.tar.xz"
+            "sha256": "bd17a4e3fcd265aa64207be4548d1e741dbabbb053b9e840f7634445204894e7",
+            "size": 59266652,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32s2-elf-12.2.0_20250801-aarch64-apple-darwin_signed.tar.xz"
           },
           "name": "esp-12.2.0_20250801",
           "status": "recommended",
@@ -346,14 +346,14 @@
             "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32s3-elf-12.2.0_20250801-i686-linux-gnu.tar.xz"
           },
           "macos": {
-            "sha256": "4bf79ba720424799b11852be6247e3c964ac7645d3f357f058b380a5c6a96e87",
-            "size": 68316576,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32s3-elf-12.2.0_20250801-x86_64-apple-darwin.tar.xz"
+            "sha256": "3223e4dd5f5379e8deadc7c8303edbfab7da681e2ff67c8caf2b47f4c2f51e41",
+            "size": 71001036,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32s3-elf-12.2.0_20250801-x86_64-apple-darwin_signed.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "f150a03ba1d2717c8bca99a2e1cecafa4b12c3fa2e8fff96505d580b4137a87a",
-            "size": 58639240,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32s3-elf-12.2.0_20250801-aarch64-apple-darwin.tar.xz"
+            "sha256": "060b635904dd12ab42be2300537be9f69435c3a499cd23eee54832273c21a3a3",
+            "size": 59116576,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/xtensa-esp32s3-elf-12.2.0_20250801-aarch64-apple-darwin_signed.tar.xz"
           },
           "name": "esp-12.2.0_20250801",
           "status": "recommended",
@@ -489,14 +489,14 @@
             "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/riscv32-esp-elf-12.2.0_20250801-i686-linux-gnu.tar.xz"
           },
           "macos": {
-            "sha256": "65fbfd69b71a5cad16e5670a45a1b17b6db9a2ba32f34eea63091d2b3c4d56ac",
-            "size": 135620760,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/riscv32-esp-elf-12.2.0_20250801-x86_64-apple-darwin.tar.xz"
+            "sha256": "7414baaac6a629dba8330ecde46b0376185b3dc9125a8e389f703ed3dd3ec7d3",
+            "size": 135623432,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/riscv32-esp-elf-12.2.0_20250801-x86_64-apple-darwin_signed.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "a454cc563a9f15372e99fafe4d9ea18bc12987dc16965b0265c2d8f981727720",
-            "size": 124071592,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/riscv32-esp-elf-12.2.0_20250801-aarch64-apple-darwin.tar.xz"
+            "sha256": "7414baaac6a629dba8330ecde46b0376185b3dc9125a8e389f703ed3dd3ec7d3",
+            "size": 122096020,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20250801/riscv32-esp-elf-12.2.0_20250801-aarch64-apple-darwin_signed.tar.xz"
           },
           "name": "esp-12.2.0_20250801",
           "status": "recommended",
