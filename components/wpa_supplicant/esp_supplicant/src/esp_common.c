@@ -139,7 +139,7 @@ static void register_mgmt_frames(struct wpa_supplicant *wpa_s)
 
 #ifdef CONFIG_IEEE80211R
     /* register auth/assoc frames if FT is enabled */
-    if (esp_wifi_is_ft_enabled_internal(ESP_IF_WIFI_STA))
+    if (esp_wifi_is_ft_enabled_internal(WIFI_IF_STA))
         wpa_s->type |= (1 << WLAN_FC_STYPE_AUTH) |
                        (1 << WLAN_FC_STYPE_ASSOC_RESP) |
                        (1 << WLAN_FC_STYPE_REASSOC_RESP);
