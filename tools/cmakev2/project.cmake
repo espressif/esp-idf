@@ -633,11 +633,62 @@ endmacro()
    transitive dependencies. The executable name is derived from the
    PROJECT_NAME variable, which by default uses the CMAKE_PROJECT_NAME value
    specified in the CMake's project() call.
+
+   Generate the binary image for the executable, signed or unsigned based on
+   the configuration, and add flash targets for it.
 #]]
 macro(idf_project_default)
     idf_project_init()
-    idf_build_get_property(project_name PROJECT_NAME)
-    idf_build_executable("${project_name}" COMPONENTS main SUFFIX ".elf")
-    idf_build_generate_metadata("${project_name}")
-    unset(project_name)
+    idf_build_get_property(build_dir BUILD_DIR)
+    idf_build_get_property(executable PROJECT_NAME)
+    idf_build_executable("${executable}" COMPONENTS main SUFFIX ".elf")
+
+    if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+        # Is it possible to have a configuration where
+        # CONFIG_APP_BUILD_GENERATE_BINARIES is not set?
+
+        if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+            idf_build_binary("${executable}"
+                             OUTPUT_FILE "${build_dir}/${executable}-unsigned.bin"
+                             TARGET "${executable}_binary_unsigned")
+            idf_sign_binary("${executable}_binary_unsigned"
+                             OUTPUT_FILE "${build_dir}/${executable}.bin"
+                             TARGET "${executable}_binary_signed")
+            idf_check_binary_size("${executable}_binary_signed")
+
+            add_custom_target(app ALL DEPENDS "${executable}_binary_signed")
+
+            idf_flash_binary("${executable}_binary_signed"
+                             TARGET app-flash
+                             NAME "app"
+                             FLASH)
+        else()
+            idf_build_binary("${executable}"
+                             OUTPUT_FILE "${build_dir}/${executable}.bin"
+                             TARGET "${executable}_binary")
+            idf_check_binary_size("${executable}_binary")
+            idf_check_binary_signed("${executable}_binary")
+
+            add_custom_target(app ALL DEPENDS "${executable}_binary")
+
+            idf_flash_binary("${executable}_binary"
+                             TARGET app-flash
+                             NAME "app"
+                             FLASH)
+        endif()
+
+        # FIXME: Dependencies should be specified within the components, not in the
+        # build system.
+        if(CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
+            add_dependencies(flash "partition_table_bin")
+        endif()
+
+        if(CONFIG_APP_BUILD_BOOTLOADER)
+            add_dependencies(flash "bootloader")
+        endif()
+    endif()
+
+    idf_build_generate_metadata("${executable}")
+    unset(build_dir)
+    unset(executable)
 endmacro()
