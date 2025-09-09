@@ -745,39 +745,6 @@ function(__esptool_py_setup_utility_targets)
         )
 endfunction()
 
-# __esptool_py_setup_main_flash_target
-#
-# @brief Sets up the main `flash` target and its dependencies.
-#
-# This function creates the main `flash` target, which is used to flash multiple
-# images to the target device. It determines the dependencies for a full
-# project flash (bootloader, partition table, the main app) and then calls
-#
-function(__esptool_py_setup_main_flash_target)
-    __ensure_esptool_py_setup()
-
-    idf_build_get_property(non_os_build NON_OS_BUILD)
-
-    if(NOT non_os_build)
-        set(flash_deps "")
-
-        if(CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
-            list(APPEND flash_deps "partition_table_bin")
-        endif()
-
-        if(CONFIG_APP_BUILD_GENERATE_BINARIES)
-            list(APPEND flash_deps "app")
-        endif()
-
-        if(CONFIG_APP_BUILD_BOOTLOADER)
-            list(APPEND flash_deps "bootloader")
-        endif()
-
-        # Create the flash target. If encryption is enabled, it will also create
-        # an encrypted-flash target.
-        esptool_py_custom_target(flash project "${flash_deps}" FILENAME_PREFIX "flash")
-    endif()
-endfunction()
 
 # Adds espefuse functions for global use
 idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
