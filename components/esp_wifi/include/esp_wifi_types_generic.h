@@ -95,6 +95,8 @@ typedef enum {
     WIFI_AUTH_WAPI_PSK,         /**< Authenticate mode : WAPI_PSK */
     WIFI_AUTH_OWE,              /**< Authenticate mode : OWE */
     WIFI_AUTH_WPA3_ENT_192,     /**< Authenticate mode : WPA3_ENT_SUITE_B_192_BIT */
+    WIFI_AUTH_DUMMY_1,          /**< Placeholder: Previously used by WIFI_AUTH_WPA3_EXT_PSK. Can be reused in the future if needed. */
+    WIFI_AUTH_DUMMY_2,          /**< Placeholder: Previously used by WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE. Can be reused in the future if needed. */
     WIFI_AUTH_DPP,              /**< Authenticate mode : DPP */
     WIFI_AUTH_WPA3_ENTERPRISE,  /**< Authenticate mode : WPA3-Enterprise Only Mode */
     WIFI_AUTH_WPA2_WPA3_ENTERPRISE, /**< Authenticate mode : WPA3-Enterprise Transition Mode */
@@ -111,12 +113,9 @@ typedef enum {
     WIFI_REASON_UNSPECIFIED                        = 1,     /**< Unspecified reason */
     WIFI_REASON_AUTH_EXPIRE                        = 2,     /**< Authentication expired */
     WIFI_REASON_AUTH_LEAVE                         = 3,     /**< Deauthentication due to leaving */
-    WIFI_REASON_ASSOC_EXPIRE                       = 4,     /**< Deprecated, will be removed in next IDF major release */
     WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY         = 4,     /**< Disassociated due to inactivity */
     WIFI_REASON_ASSOC_TOOMANY                      = 5,     /**< Too many associated stations */
-    WIFI_REASON_NOT_AUTHED                         = 6,     /**< Deprecated, will be removed in next IDF major release */
     WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA      = 6,     /**< Class 2 frame received from nonauthenticated STA */
-    WIFI_REASON_NOT_ASSOCED                        = 7,     /**< Deprecated, will be removed in next IDF major release */
     WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA     = 7,     /**< Class 3 frame received from nonassociated STA */
     WIFI_REASON_ASSOC_LEAVE                        = 8,     /**< Deassociated due to leaving */
     WIFI_REASON_ASSOC_NOT_AUTHED                   = 9,     /**< Association but not authenticated */
