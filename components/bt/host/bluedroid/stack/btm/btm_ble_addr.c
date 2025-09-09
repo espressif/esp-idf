@@ -617,4 +617,71 @@ void btm_ble_refresh_local_resolvable_private_addr(BD_ADDR pseudo_addr,
     }
 #endif
 }
+
+#if (SMP_INCLUDED == TRUE) && (BLE_PRIVACY_SPT == TRUE)
+BOOLEAN btm_ble_resolve_rpa(BD_ADDR rpa, uint8_t *irk)
+{
+    UINT8 rand[3];
+    UINT8 hash[3];
+    tSMP_ENC output;
+
+    /* use the 3 MSB of bd address as prand */
+    rand[0] = rpa[2];
+    rand[1] = rpa[1];
+    rand[2] = rpa[0];
+    /* use the 3 LSB of bd address as hash */
+    hash[0] = rpa[5];
+    hash[1] = rpa[4];
+    hash[2] = rpa[3];
+
+    /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
+    SMP_Encrypt(irk, BT_OCTET16_LEN, &rand[0], 3, &output);
+    if (!memcmp(output.param_buf, &hash[0], 3)) {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/**
+ * For internal testing only.
+ * Should be invoked only after the Bluedroid host has been enabled.
+ */
+bool btm_ble_rpa_resolve(uint8_t *rpa, uint8_t *ida, uint8_t *ida_type)
+{
+    list_node_t *p_node = NULL;
+    tBTM_SEC_DEV_REC *p_dev_rec = NULL;
+
+    if (!rpa || !ida || !ida_type) {
+        return false;
+    }
+
+    if (!BTM_BLE_IS_RESOLVE_BDA(rpa)) {
+        return false;
+    }
+
+    // Iterate through all peer IRKs to resolve the RPA
+    for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+        p_dev_rec = list_node(p_node);
+        // If device record has peer IRK
+        if ((p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) &&
+            (p_dev_rec->ble.key_type & BTM_LE_KEY_PID)) {
+            if (btm_ble_resolve_rpa(rpa, p_dev_rec->ble.keys.irk)) {
+                memcpy(ida, p_dev_rec->ble.static_addr, BD_ADDR_LEN);
+                *ida_type = p_dev_rec->ble.static_addr_type;
+                return true;
+            }
+        }
+    }
+
+    // Iterate through all local IRKs to resolve the RPA
+    if (btm_ble_resolve_rpa(rpa, btm_cb.devcb.id_keys.irk)) {
+        memset(ida, 0, BD_ADDR_LEN);
+        *ida_type = 0;
+        return true;
+    }
+
+    return false;
+}
+#endif
 #endif
