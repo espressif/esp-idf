@@ -98,7 +98,16 @@ static inline void twaifd_ll_reset_register(uint8_t twai_id)
  */
 static inline void twaifd_ll_set_clock_source(uint8_t twai_id, twai_clock_source_t clk_src)
 {
-    PCR.twai[twai_id].twai_func_clk_conf.twai_func_clk_sel = (clk_src == TWAI_CLK_SRC_XTAL) ? 0 : 1;
+    switch (clk_src) {
+    case TWAI_CLK_SRC_PLL_F80M:
+        PCR.twai[twai_id].twai_func_clk_conf.twai_func_clk_sel = 1;
+        break;
+    case TWAI_CLK_SRC_XTAL:
+        PCR.twai[twai_id].twai_func_clk_conf.twai_func_clk_sel = 0;
+        break;
+    default:
+        HAL_ASSERT(false);
+    }
 }
 
 /**

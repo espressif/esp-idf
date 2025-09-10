@@ -29,7 +29,7 @@ static IRAM_ATTR bool test_driver_install_rx_cb(twai_node_handle_t handle, const
 {
     twai_frame_t rx_frame = {0};
     if (ESP_OK == twai_node_receive_from_isr(handle, &rx_frame)) {
-        ESP_EARLY_LOGI("Recv ", "id 0x%lx rtr %d", rx_frame.header.id, rx_frame.header.rtr);
+        esp_rom_printf("Recv id 0x%lx rtr %d", rx_frame.header.id, rx_frame.header.rtr);
     }
     if (rx_frame.header.id != 0x100) {
         TEST_FAIL();    //callback is unregistered, should not run here
@@ -111,6 +111,8 @@ static void test_twai_baudrate_correctness(twai_clock_source_t clk_src, uint32_t
         .clk_src = clk_src,
         .io_cfg.tx = TEST_TX_GPIO,
         .io_cfg.rx = TEST_TX_GPIO,
+        .io_cfg.quanta_clk_out = GPIO_NUM_NC,
+        .io_cfg.bus_off_indicator = GPIO_NUM_NC,
         .bit_timing.bitrate = test_bitrate,
         .tx_queue_depth = 1,
         .flags.enable_loopback = true,
