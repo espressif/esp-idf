@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,6 +49,11 @@ typedef struct {
                                                              */
     touch_out_mode_t                output_mode;            /*!< Touch channel counting mode of the binarized touch output */
     uint32_t                        sample_cfg_num;         /*!< The sample configuration number that used for sampling */
+    uint32_t                        trigger_rise_cnt;       /*!< The counter of triggered frequency points to judge whether a channel active.
+                                                             *   For example, there are 3 sample configurations activated, and the trigger_rise_cnt is 2,
+                                                             *   then the channel will only be active when at least 2 of 3 sample configurations triggered.
+                                                             *   Range: [0 ~ sample_cfg_num], '0' means select the recommended value automatically.
+                                                             */
     touch_hal_sample_config_t       *sample_cfg;            /*!< The array of the sample configuration configurations, the length should be specified in `touch_hal_sample_config_t::sample_cfg_num` */
 } touch_hal_config_t;
 

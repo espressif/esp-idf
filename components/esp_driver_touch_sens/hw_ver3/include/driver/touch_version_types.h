@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,8 +19,14 @@
 extern "C" {
 #endif
 
-#define TOUCH_MIN_CHAN_ID           0           /*!< The minimum available channel id of the touch pad */
-#define TOUCH_MAX_CHAN_ID           13          /*!< The maximum available channel id of the touch pad */
+#define TOUCH_MIN_CHAN_ID           1           /*!< The minimum available channel id of the touch pad */
+#define TOUCH_MAX_CHAN_ID           14          /*!< The maximum available channel id of the touch pad */
+
+/**
+ * @brief The auto trigger rise count
+ * @note  If the trigger_rise_cnt is '0', the recommended value will be selected automatically.
+ */
+#define TOUCH_SENSOR_AUTO_TRIGGER_RISE_CNT 0
 
 /**
  * @brief Helper macro to the default configurations of the touch sensor controller
@@ -32,6 +38,7 @@ extern "C" {
     .max_meas_time_us = 0, \
     .output_mode = TOUCH_PAD_OUT_AS_CLOCK, \
     .sample_cfg_num = sample_cfg_number, \
+    .trigger_rise_cnt = TOUCH_SENSOR_AUTO_TRIGGER_RISE_CNT, \
     .sample_cfg = sample_cfg_array, \
 }
 
@@ -147,7 +154,7 @@ typedef struct {
     uint8_t                         low_drv;            /*!< Low speed touch driver, only effective when high speed driver is disabled */
     uint8_t                         high_drv;           /*!< High speed touch driver */
     uint8_t                         bias_volt;          /*!< The Internal LDO voltage, which decide the bias voltage of the sample wave, range [0,15] */
-    bool                            bypass_shield_output; /*!< Whether to bypass the shield output, enable when the charging/discharging rate greater than 10MHz */
+    bool                            bypass_shield_output; /*!< (Deprecated) no effect, only for compatibility */
 } touch_sensor_sample_config_t;
 
 /**
@@ -162,7 +169,12 @@ typedef struct {
                                                          *   of this sample configurations below.
                                                          */
     touch_out_mode_t                output_mode;        /*!< Touch channel counting mode of the binarized touch output */
-    uint32_t                        sample_cfg_num;     /*!< The sample configuration number that used for sampling */
+    uint32_t                        sample_cfg_num;     /*!< The sample configuration number that used for sampling, CANNOT exceed TOUCH_SAMPLE_CFG_NUM */
+    uint32_t                        trigger_rise_cnt;   /*!< The counter of triggered frequency points to judge whether a channel active.
+                                                         *   For example, there are 3 sample configurations activated, and the trigger_rise_cnt is 2,
+                                                         *   then the channel will only be active when at least 2 of 3 sample configurations triggered.
+                                                         *   Range: [0 ~ sample_cfg_num], '0' means select the recommended value automatically.
+                                                         */
     touch_sensor_sample_config_t    *sample_cfg;        /*!< The array of this sample configuration configurations, the length should be specified in `touch_sensor_config_t::sample_cfg_num` */
 } touch_sensor_config_t;
 
@@ -416,7 +428,10 @@ typedef struct {
  *
  */
 typedef struct {
-    bool                            do_reset;                /*!< Whether to reset the benchmark to the channel's latest smooth data */
+    bool                            do_reset;               /*!< Whether to reset the benchmark to the channel's latest smooth data, conflict with `do_force_update` */
+    bool                            do_force_update;        /*!< Whether to force update the benchmark to the specified value, conflict with `do_reset` */
+    uint32_t                        benchmark;              /*!< The specified benchmark value to update, only available when `do_force_update` is true */
+    uint32_t                        sample_cfg_id;          /*!< The sample configuration index to update the benchmark, only available when `do_force_update` is true */
 } touch_chan_benchmark_config_t;
 
 #ifdef __cplusplus

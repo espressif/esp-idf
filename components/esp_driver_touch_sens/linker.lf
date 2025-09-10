@@ -5,6 +5,5 @@ entries:
         touch_sens_common: touch_sensor_start_continuous_scanning (noflash)
         touch_sens_common: touch_sensor_stop_continuous_scanning (noflash)
         touch_sens_common: touch_channel_read_data (noflash)
-        touch_sens_common: touch_channel_config_benchmark (noflash)
         touch_sens_version_specific: touch_priv_channel_read_data (noflash)
-        touch_sens_version_specific: touch_priv_config_benchmark (noflash)
+        touch_sens_version_specific: touch_channel_config_benchmark (noflash)
