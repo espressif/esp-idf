@@ -670,6 +670,8 @@ Kconfig 选项
 
 - :example:`peripherals/i2c/i2c_slave_network_sensor` 演示如何使用 I2C 从机开发 I2C 相关应用程序，提供 I2C 从机如何充当网络传感器，以及如何使用事件回调接收和发送数据。
 
+- :example:`peripherals/i2c/i2c_u8g2` 演示了如何使用 I2C 主机模式与 U8G2 库对接，以控制 OLED 显示器。
+
 API 参考
 --------
 
