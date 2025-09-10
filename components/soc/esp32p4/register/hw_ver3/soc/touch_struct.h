@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-// TODO: IDF-13423
-
 /** Group: configure_register */
 /** Type of int_raw register
  *  need_des
@@ -42,7 +40,11 @@ typedef union {
          *  need_des
          */
         uint32_t approach_loop_done_int_raw:1;
-        uint32_t reserved_6:26;
+        /** benchmark_update_int_raw : R/WTC/SS; bitpos: [6]; default: 0;
+         *  need_des
+         */
+        uint32_t benchmark_update_int_raw:1;
+        uint32_t reserved_7:25;
     };
     uint32_t val;
 } rtc_touch_int_raw_reg_t;
@@ -76,7 +78,11 @@ typedef union {
          *  need_des
          */
         uint32_t approach_loop_done_int_st:1;
-        uint32_t reserved_6:26;
+        /** benchmark_update_int_st : RO; bitpos: [6]; default: 0;
+         *  need_des
+         */
+        uint32_t benchmark_update_int_st:1;
+        uint32_t reserved_7:25;
     };
     uint32_t val;
 } rtc_touch_int_st_reg_t;
@@ -110,7 +116,11 @@ typedef union {
          *  need_des
          */
         uint32_t approach_loop_done_int_ena:1;
-        uint32_t reserved_6:26;
+        /** benchmark_update_int_ena : R/W; bitpos: [6]; default: 0;
+         *  need_des
+         */
+        uint32_t benchmark_update_int_ena:1;
+        uint32_t reserved_7:25;
     };
     uint32_t val;
 } rtc_touch_int_ena_reg_t;
@@ -144,7 +154,11 @@ typedef union {
          *  need_des
          */
         uint32_t approach_loop_done_int_clr:1;
-        uint32_t reserved_6:26;
+        /** benchmark_update_int_clr : WT; bitpos: [6]; default: 0;
+         *  need_des
+         */
+        uint32_t benchmark_update_int_clr:1;
+        uint32_t reserved_7:25;
     };
     uint32_t val;
 } rtc_touch_int_clr_reg_t;
@@ -162,7 +176,7 @@ typedef union {
          *  need_des
          */
         uint32_t meas_done:1;
-        /** scan_curr : RO; bitpos: [19:16]; default: 0;
+        /** scan_curr : RO; bitpos: [19:16]; default: 15;
          *  need_des
          */
         uint32_t scan_curr:4;
@@ -299,11 +313,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 2294548;
-         *  need_des
-         */
-        uint32_t date:28;
-        uint32_t reserved_28:3;
+        uint32_t reserved_0:31;
         /** clk_en : R/W; bitpos: [31]; default: 0;
          *  need_des
          */
