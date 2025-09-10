@@ -135,4 +135,7 @@ const char *const esp_isr_names[] = {
     [ETS_H264_DMA2D_IN_CH5_INTR_SOURCE]  = "H264_DMA2D_IN_CH5",
     [ETS_H264_REG_INTR_SOURCE]           = "H264_REG",
     [ETS_ASSIST_DEBUG_INTR_SOURCE]       = "ASSIST_DEBUG",
+    [ETS_DMA2D_IN_CH2_INTR_SOURCE]       = "DMA2D_IN_CH2",     /* This interrupt source only exists on chip ver. >= 3.0 */
+    [ETS_DMA2D_OUT_CH3_INTR_SOURCE]      = "DMA2D_OUT_CH3",    /* This interrupt source only exists on chip ver. >= 3.0 */
+    [ETS_AXI_PERF_MON_INTR_SOURCE]       = "AXI_PERF_MON",     /* This interrupt source only exists on chip ver. >= 3.0 */
 };
