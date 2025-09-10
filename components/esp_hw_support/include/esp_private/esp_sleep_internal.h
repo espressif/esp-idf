@@ -39,6 +39,7 @@ typedef enum {
     ESP_SLEEP_RTC_FAST_USE_XTAL_MODE,     //!< The mode in which the crystal is used as the RTC_FAST clock source, need keep XTAL on in HP_SLEEP mode when ULP is working.
     ESP_SLEEP_DIG_USE_XTAL_MODE,          //!< The mode requested by digital peripherals to keep XTAL clock on during sleep (both HP_SLEEP and LP_SLEEP mode). (!!! Only valid for lightsleep, will override the XTAL domain config by esp_sleep_pd_config)
     ESP_SLEEP_LP_USE_XTAL_MODE,           //!< The mode requested by lp peripherals to keep XTAL clock on during sleep. Only valid for lightsleep.
+    ESP_SLEEP_LP_USE_RC_FAST_MODE,        //!< The mode requested by lp peripherals to keep FOSC clock on during sleep.
     ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE,  //!< The mode to switch power supply to VBAT during deep sleep.
 #if CONFIG_IDF_TARGET_ESP32
     ESP_SLEEP_ANALOG_LOW_POWER_MODE,      //!< If analog-related peripherals(ADC, TSENS, TOUCH) is not used in monitor mode, analog low power mode can be enabled to reduce power consumption (~300uA) in monitor state.
@@ -77,6 +78,24 @@ esp_err_t esp_sleep_sub_mode_force_disable(esp_sleep_sub_mode_t mode);
  * @return            return the reference count array pointer
  */
 int32_t* esp_sleep_sub_mode_dump_config(FILE *stream);
+
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
+/**
+ * @brief Enable LP peripherals to use XTAL during sleep
+ *
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_sleep_acquire_lp_use_xtal(void);
+
+/**
+ * @brief Disable LP peripherals to use XTAL during sleep
+ *
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_sleep_release_lp_use_xtal(void);
+#endif
 
 #if SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 /**

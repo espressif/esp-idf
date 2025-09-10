@@ -241,6 +241,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags);
         analog_default.lp_sys[LP(SLEEP)].analog.dbg_atten = get_dslp_dbg();
         analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_dslp_lp_dbias();
+
         config->analog = analog_default;
     } else {
         pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags);
@@ -277,6 +278,12 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->analog.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
         config->analog.hp_sys.analog.dbg_atten = PMU_DBG_ATTEN_ACTIVE_DEFAULT;
         config->analog.hp_sys.analog.dbias = get_act_hp_dbias();
+    }
+
+    if (sleep_flags & RTC_SLEEP_LP_PERIPH_USE_RC_FAST) {
+        config->analog.hp_sys.analog.dbias = get_act_hp_dbias();
+        config->analog.lp_sys[LP(SLEEP)].analog.dbg_atten = PMU_DBG_ATTEN_LIGHTSLEEP_NODROP;
+        config->analog.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
     }
 
     return config;

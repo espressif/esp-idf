@@ -103,9 +103,11 @@
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/rtc.h"
 #include "hal/gpio_ll.h"
+#include "hal/clk_gate_ll.h"
 #elif CONFIG_IDF_TARGET_ESP32C5
 #include "esp32c5/rom/rtc.h"
 #include "hal/gpio_ll.h"
+#include "hal/clk_gate_ll.h"
 #elif CONFIG_IDF_TARGET_ESP32C61
 #include "esp32c61/rom/rtc.h"
 #include "hal/gpio_ll.h"
@@ -125,6 +127,7 @@
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/rtc.h"
 #include "hal/gpio_ll.h"
+#include "hal/clk_gate_ll.h"
 #endif
 
 #if SOC_PM_SUPPORT_PMU_CLK_ICG
@@ -713,6 +716,33 @@ static SLEEP_FN_ATTR bool light_sleep_uart_prepare(uint32_t sleep_flags, int64_t
 }
 
 /**
+ * LP peripherals prepare XTAL, FOSC or other clocks as the clock source for sleep.
+ */
+static SLEEP_FN_ATTR void lp_periph_use_clk_sleep_prepare(uint32_t sleep_flags, bool deep_sleep)
+{
+#if SOC_PMU_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32P4
+    if (sleep_flags & RTC_SLEEP_LP_PERIPH_USE_XTAL) {
+        /* Force the xtal clk pass lp clock gate */
+        _clk_gate_ll_xtal_to_lp_periph_en(true);
+    } else {
+        /* Set xtal lp clock gate controlled by hardware fsm */
+        _clk_gate_ll_xtal_to_lp_periph_en(false);
+    }
+#endif
+#if SOC_LP_PERIPHERALS_SUPPORTED
+    if (sleep_flags & RTC_SLEEP_LP_PERIPH_USE_RC_FAST) {
+        /* Force the rtc_fast clk pass lp clock gate */
+        _clk_gate_ll_rtc_fast_to_lp_periph_en(true);
+    } else {
+        /* Lp clock gate of rtc_fast clk is decided by FSM(PMU state)*/
+        _clk_gate_ll_rtc_fast_to_lp_periph_en(false);
+    }
+#endif
+#endif
+}
+
+/**
  * These save-restore workaround should be moved to lower layer
  */
 static SLEEP_FN_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool deep_sleep)
@@ -1119,6 +1149,9 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
         s_sleep_ctx->sleep_flags = sleep_flags;
     }
 #endif
+
+    /* Prepare for LP peripherals to select a clock source. */
+    lp_periph_use_clk_sleep_prepare(sleep_flags, deep_sleep);
 
     // Enter sleep
     esp_err_t result;
@@ -1782,30 +1815,60 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
     return ESP_OK;
 }
 
-#if SOC_LP_VAD_SUPPORTED
-esp_err_t esp_sleep_enable_vad_wakeup(void)
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
+esp_err_t esp_sleep_acquire_lp_use_xtal(void)
 {
     esp_err_t ret = ESP_FAIL;
-
-    ret = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "fail to keep rtc periph power on");
-        return ret;
-    }
 
     ret = esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "fail to keep xtal power on");
         return ret;
     }
+
     ret = esp_sleep_sub_mode_config(ESP_SLEEP_LP_USE_XTAL_MODE, true);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "fail to set to ESP_SLEEP_LP_USE_XTAL_MODE mode");
         return ret;
     }
-    s_config.wakeup_triggers |= RTC_LP_VAD_TRIG_EN;
 
     return ESP_OK;
+}
+
+esp_err_t esp_sleep_release_lp_use_xtal(void)
+{
+    esp_err_t ret = ESP_FAIL;
+
+    ret = esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "fail to keep xtal power off");
+        return ret;
+    }
+
+    ret = esp_sleep_sub_mode_config(ESP_SLEEP_LP_USE_XTAL_MODE, false);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "fail to disable ESP_SLEEP_LP_USE_XTAL_MODE mode");
+        return ret;
+    }
+
+    return ESP_OK;
+}
+#endif
+
+#if SOC_LP_VAD_SUPPORTED
+esp_err_t esp_sleep_enable_vad_wakeup(void)
+{
+    esp_err_t ret = ESP_FAIL;
+    ret = esp_sleep_acquire_lp_use_xtal();
+
+    ret = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "fail to keep rtc periph power on");
+        return ret;
+    }
+    s_config.wakeup_triggers |= RTC_LP_VAD_TRIG_EN;
+
+    return ret;
 }
 #endif
 
@@ -2224,6 +2287,10 @@ esp_err_t esp_sleep_enable_uart_wakeup(int uart_num)
     } else if (uart_num == UART_NUM_2) {
         s_config.wakeup_triggers |= RTC_UART2_TRIG_EN;
 #endif
+#if SOC_PM_SUPPORT_LP_UART_WAKEUP
+    } else if (uart_num == LP_UART_NUM_0) {
+        s_config.wakeup_triggers |= PMU_LP_UART_WAKEUP_EN;
+#endif
     } else {
         return ESP_ERR_INVALID_ARG;
     }
@@ -2516,6 +2583,7 @@ static const char* s_submode2str[] = {
     [ESP_SLEEP_RTC_FAST_USE_XTAL_MODE]      = "ESP_SLEEP_RTC_FAST_USE_XTAL_MODE",
     [ESP_SLEEP_DIG_USE_XTAL_MODE]           = "ESP_SLEEP_DIG_USE_XTAL_MODE",
     [ESP_SLEEP_LP_USE_XTAL_MODE]            = "ESP_SLEEP_LP_USE_XTAL_MODE",
+    [ESP_SLEEP_LP_USE_RC_FAST_MODE]         = "ESP_SLEEP_LP_USE_RC_FAST_MODE",
     [ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE]   = "ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE",
 #if CONFIG_IDF_TARGET_ESP32
     [ESP_SLEEP_ANALOG_LOW_POWER_MODE]       = "ESP_SLEEP_ANALOG_LOW_POWER_MODE",
@@ -2825,10 +2893,18 @@ static SLEEP_FN_ATTR uint32_t get_sleep_flags(uint32_t sleep_flags, bool deepsle
         sleep_flags |= RTC_SLEEP_XTAL_AS_RTC_FAST;
     }
 
-#if SOC_LP_VAD_SUPPORTED
+#if SOC_PMU_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32P4
     if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_LP_USE_XTAL_MODE] && !deepsleep) {
         sleep_flags |= RTC_SLEEP_LP_PERIPH_USE_XTAL;
     }
+#endif
+#if SOC_LP_PERIPHERALS_SUPPORTED
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_LP_USE_RC_FAST_MODE]) {
+        sleep_flags &= ~RTC_SLEEP_PD_INT_8M;
+        sleep_flags |= RTC_SLEEP_LP_PERIPH_USE_RC_FAST;
+    }
+#endif
 #endif
 
 #if SOC_VBAT_SUPPORTED
