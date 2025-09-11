@@ -112,7 +112,6 @@ components_not_formatted_temporary:
     - "/tools/esp_app_trace/test/"
     - "/tools/mocks/"
     - "/tools/test_apps/"
-    - "/tools/unit-test-app/"
 
 components_not_formatted_permanent:
   # Files which are not supposed to be formatted.
