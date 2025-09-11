@@ -111,6 +111,12 @@
         -   re_variables: ['driver/can.h']
             hint_variables: ['driver/can.h', 'driver/twai.h']
 
+        -   re_variables: ['driver/periph_ctrl.h']
+            hint_variables: ['driver/periph_ctrl.h', 'esp_private/periph_ctrl.h']
+
+        -   re_variables: ['driver/rtc_cntl.h']
+            hint_variables: ['driver/rtc_cntl.h', 'esp_private/rtc_ctrl.h']
+
 -
     re: "error: implicit declaration of function 'esp_int_wdt_\\w+'"
     hint: 'The Interrupt Watchdog API has been made private, it shall not be used anymore. You can still force its inclusion with #include "esp_private/esp_int_wdt.h" (not recommended)'
