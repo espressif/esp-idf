@@ -36,6 +36,8 @@ typedef struct {
         unsigned int dc_high_on_cmd: 1;  /*!< If enabled, DC level = 1 indicates command transfer */
         unsigned int dc_low_on_data: 1;  /*!< If enabled, DC level = 0 indicates color data transfer */
         unsigned int dc_low_on_param: 1; /*!< If enabled, DC level = 0 indicates parameter transfer */
+        unsigned int octal_mode: 1;      /*!< transmit data and parameters with 8 lines */
+        unsigned int quad_mode: 1;       /*!< transmit data and parameters with 4 lines */
         unsigned int sio_mode: 1;        /*!< Read and write through a single data line (MOSI) */
         unsigned int lsb_first: 1;       /*!< Transmit LSB bit first */
         unsigned int cs_high_active: 1;  /*!< CS line is high active */
