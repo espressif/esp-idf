@@ -140,6 +140,42 @@ if(CONFIG_BT_ENABLED)
          "common/ble_log/ble_log_uhci_out.c"
          )
 
+    # BLE Log Module
+    if(CONFIG_BLE_LOG_ENABLED)
+        # Core source files
+        list(APPEND srcs
+             common/ble_log/src/ble_log.c
+             common/ble_log/src/ble_log_lbm.c
+             common/ble_log/src/ble_log_rt.c
+             common/ble_log/src/ble_log_util.c
+        )
+
+        # Includes
+        list(APPEND include_dirs
+             common/ble_log/include
+        )
+
+        # Private includes
+        list(APPEND priv_include_dirs
+             common/ble_log/src/internal_include
+             common/ble_log/src/internal_include/prph
+        )
+
+        # Timestamp synchronization extension
+        if(CONFIG_BLE_LOG_TS_ENABLED)
+            list(APPEND srcs common/ble_log/src/ble_log_ts.c)
+        endif()
+
+        # Peripheral interface implementation
+        if(CONFIG_BLE_LOG_PRPH_DUMMY)
+            list(APPEND srcs common/ble_log/src/prph/ble_log_prph_dummy.c)
+        elseif(CONFIG_BLE_LOG_PRPH_SPI_MASTER_DMA)
+            list(APPEND srcs common/ble_log/src/prph/ble_log_prph_spi_master_dma.c)
+        elseif(CONFIG_BLE_LOG_PRPH_UART_DMA)
+            list(APPEND srcs common/ble_log/src/prph/ble_log_prph_uart_dma.c)
+        endif()
+    endif()
+
     # Host Bluedroid
     if(CONFIG_BT_BLUEDROID_ENABLED)
 
@@ -966,6 +1002,13 @@ if(CONFIG_BT_ENABLED)
             target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_tx_chars")
             target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes")
             target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes_with_break")
+        endif()
+        if(DEFINED CONFIG_BLE_LOG_PRPH_UART_DMA_PORT)
+            if(CONFIG_BLE_LOG_PRPH_UART_DMA_PORT EQUAL 0)
+                target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_tx_chars")
+                target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes")
+                target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes_with_break")
+            endif()
         endif()
         if(CONFIG_IDF_TARGET_ESP32C6)
             add_prebuilt_library(libble_app
