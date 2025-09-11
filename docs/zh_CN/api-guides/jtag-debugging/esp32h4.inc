@@ -13,7 +13,7 @@
 
     openocd -f board/esp32h4-builtin.cfg
 
-.. |run-openocd-device-name| replace:: ESP32-H2 through built-in USB connection
+.. |run-openocd-device-name| replace:: ESP32-H4 through built-in USB connection
 
 ---
 
@@ -22,24 +22,31 @@
 ::
 
     user-name@computer-name:~/esp/esp-idf$ openocd -f board/esp32h4-builtin.cfg
-    Open On-Chip Debugger v0.12.0-esp32-20221026-175-g0f5217b3-dirty (2023-02-02-11:32)
+    Open On-Chip Debugger v0.12.0-esp32-20250707-152-g5b64e9cc-dirty (2025-09-02-09:30)
     Licensed under GNU GPL v2
     For bug reports, read
             http://openocd.org/doc/doxygen/bugs.html
     Info : only one transport option; autoselecting 'jtag'
     Info : esp_usb_jtag: VID set to 0x303a and PID to 0x1001
     Info : esp_usb_jtag: capabilities descriptor set to 0x2000
-    Warn : Transport "jtag" was already selected
     Info : Listening on port 6666 for tcl connections
     Info : Listening on port 4444 for telnet connections
-    Info : esp_usb_jtag: serial (60:55:F9:F7:2C:3F)
+    Info : esp_usb_jtag: serial (00:00:00:00:00:00)
     Info : esp_usb_jtag: Device found. Base speed 24000KHz, div range 1 to 255
     Info : clock speed 24000 kHz
-    Info : JTAG tap: esp32h4.cpu tap/device found: 0x00010c25 (mfg: 0x612 (Espressif Systems), part: 0x0010, ver: 0x0)
-    Info : datacount=2 progbufsize=16
-    Info : Examined RISC-V core; found 1 harts
-    Info :  hart 0: XLEN=32, misa=0x40903105
-    Info : starting gdb server for esp32h4 on 3333
+    Info : JTAG tap: esp32h4.tap0 tap/device found: 0x0001cc25 (mfg: 0x612 (Espressif Systems), part: 0x001c, ver: 0x0)
+    Info : [esp32h4.hp.cpu0] datacount=1 progbufsize=2
+    Info : [esp32h4.hp.cpu0] Core 0 made part of halt group 1.
+    Info : [esp32h4.hp.cpu0] Examined RISC-V core; found 2 harts
+    Info : [esp32h4.hp.cpu0]  XLEN=32, misa=0x40903127
+    Info : [esp32h4.hp.cpu0] Examination succeed
+    Info : [esp32h4.hp.cpu1] datacount=1 progbufsize=2
+    Info : [esp32h4.hp.cpu1] Hart unexpectedly reset!
+    Info : [esp32h4.hp.cpu1] Core 1 made part of halt group 1.
+    Info : [esp32h4.hp.cpu1] Examined RISC-V core; found 2 harts
+    Info : [esp32h4.hp.cpu1]  XLEN=32, misa=0x40903127
+    Info : [esp32h4.hp.cpu1] Examination succeed
+    Info : [esp32h4.hp.cpu0] starting gdb server on 3333
     Info : Listening on port 3333 for gdb connections
 
 .. |run-openocd-cfg-file-err| replace:: ``Can't find board/esp32h4-builtin.cfg``
@@ -86,20 +93,20 @@
 
 .. openocd-cfg-files
 
-.. list-table:: OpenOCD configuration files for ESP32-H2
+.. list-table:: OpenOCD configuration files for ESP32-H4
     :widths: 25 75
     :header-rows: 1
 
     * - Name
       - Description
     * - ``board/esp32h4-builtin.cfg``
-      - Board configuration file for ESP32-H2 through built-in USB, includes target and adapter configuration.
+      - Board configuration file for ESP32-H4 through built-in USB, includes target and adapter configuration.
     * - ``board/esp32h4-ftdi.cfg``
-      - Board configuration file for ESP32-H2 for via externally connected FTDI-based probe like ESP-Prog, includes target and adapter configuration.
+      - Board configuration file for ESP32-H4 for via externally connected FTDI-based probe like ESP-Prog, includes target and adapter configuration.
     * - ``target/esp32h4.cfg``
-      - ESP32-H2 target configuration file. Can be used together with one of the ``interface/`` configuration files.
+      - ESP32-H4 target configuration file. Can be used together with one of the ``interface/`` configuration files.
     * - ``interface/esp_usb_jtag.cfg``
-      - JTAG adapter configuration file for ESP32-H2.
+      - JTAG adapter configuration file for ESP32-H4.
     * - ``interface/ftdi/esp_ftdi.cfg``
       - JTAG adapter configuration file for ESP-Prog boards.
 
@@ -113,23 +120,23 @@
 
 .. jtag-pins
 
-.. list-table:: ESP32-H2 pins and JTAG signals
+.. list-table:: ESP32-H4 pins and JTAG ESP32-H4
     :widths: 25 75
     :header-rows: 1
 
-    * - ESP32-H2 Pin
+    * - ESP32-H4 Pin
       - JTAG Signal
-    * - MTDO / GPIO3
+    * - MTDO / GPIO31
       - TDO
-    * - MTDI / GPIO5
+    * - MTDI / GPIO29
       - TDI
-    * - MTCK / GPIO4
+    * - MTCK / GPIO30
       - TCK
-    * - MTMS / GPIO2
+    * - MTMS / GPIO28
       - TMS
 
-.. |jtag-sel-gpio| replace:: GPIO25
-.. |jtag-gpio-list| replace:: GPIO2-GPIO5
+.. |jtag-sel-gpio| replace:: GPIO36
+.. |jtag-gpio-list| replace:: GPIO28-GPIO31
 
 ---
 
@@ -159,13 +166,13 @@
 
 .. devkit-defs
 
-.. |devkit-name| replace:: ESP32-H2
-.. |devkit-name-with-link| replace:: :doc:`ESP32-H2 <../../hw-reference/index>`
+.. |devkit-name| replace:: ESP32-H4
+.. |devkit-name-with-link| replace:: :doc:`ESP32-H4 <../../hw-reference/index>`
 
 ---
 
 .. devkit-hw-config
 
-* Out of the box, ESP32-H2 doesn't need any additional hardware configuration for JTAG debugging.
+* Out of the box, ESP32-H4 doesn't need any additional hardware configuration for JTAG debugging.
 
 ---
