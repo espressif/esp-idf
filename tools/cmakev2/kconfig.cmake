@@ -235,7 +235,7 @@ function(__collect_kconfig_files_from_directory directory target out_kconfigs ou
         if(filename_lower STREQUAL "kconfig")
             list(APPEND kconfig_files "${file}")
             if(NOT filename STREQUAL "Kconfig")
-                idf_warn("${filename} should be named 'Kconfig' (uppercase K, rest lowercase).
+                idf_warn("${filename} file should be named 'Kconfig' (uppercase K, rest lowercase).
                  Full path to the file: ${file}")
             endif()
 
@@ -243,7 +243,7 @@ function(__collect_kconfig_files_from_directory directory target out_kconfigs ou
         elseif(filename_lower STREQUAL "kconfig.projbuild")
             list(APPEND projbuild_files "${file}")
             if(NOT filename STREQUAL "Kconfig.projbuild")
-                idf_warn("${filename} should be named 'Kconfig.projbuild' (uppercase K, rest lowercase).
+                idf_warn("${filename} file should be named 'Kconfig.projbuild' (uppercase K, rest lowercase).
                  Full path to the file: ${file}")
             endif()
         endif()
