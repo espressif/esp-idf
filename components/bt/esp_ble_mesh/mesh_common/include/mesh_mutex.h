@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,11 @@ void bt_mesh_mutex_create(bt_mesh_mutex_t *mutex);
 void bt_mesh_mutex_free(bt_mesh_mutex_t *mutex);
 void bt_mesh_mutex_lock(bt_mesh_mutex_t *mutex);
 void bt_mesh_mutex_unlock(bt_mesh_mutex_t *mutex);
+
+void bt_mesh_r_mutex_create(bt_mesh_mutex_t *mutex);
+void bt_mesh_r_mutex_free(bt_mesh_mutex_t *mutex);
+void bt_mesh_r_mutex_lock(bt_mesh_mutex_t *mutex);
+void bt_mesh_r_mutex_unlock(bt_mesh_mutex_t *mutex);
 
 void bt_mesh_alarm_lock(void);
 void bt_mesh_alarm_unlock(void);
