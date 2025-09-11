@@ -5,8 +5,6 @@
  */
 #include "sdkconfig.h"
 
-#if CONFIG_ESP_COREDUMP_ENABLE
-
 #include <string.h>
 #include "esp_attr.h"
 #include "esp_partition.h"
@@ -1061,5 +1059,3 @@ esp_err_t esp_core_dump_get_summary(esp_core_dump_summary_t *summary)
 }
 
 #endif // CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
-
-#endif // CONFIG_ESP_COREDUMP_ENABLE

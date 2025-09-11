@@ -12,8 +12,6 @@ extern "C"
 {
 #endif
 
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
-
 /**
  * @brief Backtrace information
  *
@@ -39,8 +37,6 @@ typedef struct {
     uint32_t sp;          /* Stack pointer */
     uint32_t exc_a[8];    /* A0-A7 registers when the exception caused */
 } esp_core_dump_summary_extra_info_t;
-
-#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH */
 
 #ifdef __cplusplus
 }

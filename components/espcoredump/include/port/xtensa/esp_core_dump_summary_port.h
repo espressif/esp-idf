@@ -13,8 +13,6 @@ extern "C"
 {
 #endif
 
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
-
 #define EPCx_REGISTER_COUNT XCHAL_NUM_INTLEVELS
 
 /**
@@ -38,8 +36,6 @@ typedef struct {
     uint32_t epcx[EPCx_REGISTER_COUNT]; /*!< PC register address at exception level(1 to 7) */
     uint8_t epcx_reg_bits;              /*!< Bit mask of available EPCx registers */
 } esp_core_dump_summary_extra_info_t;
-
-#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH */
 
 #ifdef __cplusplus
 }

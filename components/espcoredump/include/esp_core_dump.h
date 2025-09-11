@@ -10,7 +10,6 @@
 #include <stddef.h>
 #include "esp_err.h"
 #include "esp_private/panic_internal.h"
-#include "esp_core_dump_summary_port.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,6 +18,8 @@ extern "C" {
 #define APP_ELF_SHA256_SZ (CONFIG_APP_RETRIEVE_LEN_ELF_SHA + 1)
 
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+
+#include "esp_core_dump_summary_port.h"
 
 /**
  * @brief Core dump summary, Most meaningful contents of the core dump
