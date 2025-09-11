@@ -1,6 +1,0 @@
-[mapping:esp_vfs_console]
-archive: libesp_vfs_console.a
-entries:
-    if ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF:
-        vfs_cdcacm:cdcacm_tx_cb (noflash)
-        vfs_cdcacm:cdcacm_rx_cb (noflash)
