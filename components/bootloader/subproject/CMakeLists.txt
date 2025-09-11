@@ -31,8 +31,7 @@ set(COMPONENTS
     micro-ecc
     main
     efuse
-    esp_system
-    newlib
+    esp_libc
     esp_tee)
 
 # EXTRA_COMPONENT_DIRS can be populated with directories containing one or several components.
@@ -61,7 +60,7 @@ endforeach()
 set(BOOTLOADER_BUILD 1)
 set(NON_OS_BUILD 1)
 include("${IDF_PATH}/tools/cmake/project.cmake")
-set(common_req log esp_rom esp_common esp_hw_support newlib)
+set(common_req log esp_rom esp_common esp_hw_support esp_libc)
 idf_build_set_property(EXTRA_COMPONENT_EXCLUDE_DIRS "${EXTRA_COMPONENT_EXCLUDE_DIRS}")
 idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${common_req}")
 idf_build_set_property(__OUTPUT_SDKCONFIG 0)

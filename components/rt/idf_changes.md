@@ -8,7 +8,7 @@ This document is used to track all changes made to the FreeRTOS-Plus-POSIX V1.0.
 
 ## POSIX errno
 
-Instead of relying on the FreeRTOS `errno` scheme by enabling `configUSE_POSIX_ERRNO`, the `errno` provided by newlib is used. `configUSE_POSIX_ERRNO` should stay disabled.
+Instead of relying on the FreeRTOS `errno` scheme by enabling `configUSE_POSIX_ERRNO`, the `errno` provided by libc is used. `configUSE_POSIX_ERRNO` should stay disabled.
 
 ## API Changes
 
@@ -22,7 +22,7 @@ The following functions are stubs and always return `ENOSYS`:
 
 In the original FreeRTOS-Plus-POSIX project, the POSIX header files are provided in the sub directory `FreeRTOS-Plus-POSIX`. In ESP-IDF, however, the POSIX header files do not need any prefix. This increases compatibility with applications originally written for other platforms. All files originating from the FreeRTOS-Plus-POSIX project have been modified to reflect the different include path.
 
-Wherever possible, ESP-IDF is using header files from newlib instead of the header files from FreeRTOS-Plus-POSIX.
+Wherever possible, ESP-IDF is using header files from libc instead of the header files from FreeRTOS-Plus-POSIX.
 
 In some cases, additional includes have been added to files from FreeRTOS-Plus-POSIX to simplify building.
 
@@ -39,7 +39,7 @@ NANOSECONDS_PER_SECOND
 NANOSECONDS_PER_TICK   
 ```
 
-In FreeRTOS-Plus-POSIX, they are located in the custom `time.h`, but ESP-IDF uses newlib's `time.h`, where these definitions are not present.
+In FreeRTOS-Plus-POSIX, they are located in the custom `time.h`, but ESP-IDF uses `components/esp_libc/platform_include/time.h`, where these definitions are not present.
 
 ## Code Format
 

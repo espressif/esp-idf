@@ -48,7 +48,7 @@ deactivate_dependency_driven_build_by_components = [
     'hal',
     'heap',
     'log',
-    'newlib',
+    'esp_libc',
     'riscv',
     'soc',
     'xtensa',

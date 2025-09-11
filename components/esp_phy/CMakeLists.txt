@@ -144,7 +144,7 @@ if(CONFIG_ESP_PHY_ENABLED)
    if(CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION)
         idf_component_get_property(esp_common_dir esp_common COMPONENT_DIR)
         idf_component_get_property(esp_rom_dir esp_rom COMPONENT_DIR)
-        idf_component_get_property(newlib_dir newlib COMPONENT_DIR)
+        idf_component_get_property(esp_libc_dir esp_libc COMPONENT_DIR)
         idf_component_get_property(soc_dir soc COMPONENT_DIR)
         idf_component_get_property(log_dir log COMPONENT_DIR)
         partition_table_get_partition_info(phy_partition_offset
@@ -165,7 +165,7 @@ if(CONFIG_ESP_PHY_ENABLED)
                 COMMAND ${CMAKE_C_COMPILER} -c ${CMAKE_CURRENT_LIST_DIR}/${idf_target}/phy_init_data.c
                 -I ${esp_common_dir}/include -I ${CMAKE_CURRENT_LIST_DIR}/include
                 -I ${CMAKE_CURRENT_LIST_DIR}/${idf_target}/include -I ${esp_rom_dir}/include
-                -I ${soc_dir}/${idf_target}/include -I ${newlib_dir}/platform_include
+                -I ${soc_dir}/${idf_target}/include -I ${esp_libc_dir}/platform_include
                 -I ${log_dir}/include -I ${config_dir} -o phy_init_data.obj
                 COMMAND ${CMAKE_OBJCOPY} -O binary phy_init_data.obj ${phy_init_data_bin}
                 )

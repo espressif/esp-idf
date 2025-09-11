@@ -141,7 +141,7 @@ The primary system initialization stage includes:
 
    - Log information about this application (project name, :ref:`app-version`, etc.) if default log level enables this.
    - Initialize the heap allocator (before this point all allocations must be static or on the stack).
-   - Initialize newlib component syscalls and time functions.
+   - Initialize esp_libc component syscalls and time functions.
    - Configure the brownout detector.
    - Setup libc stdin, stdout, and stderr according to the :ref:`serial console configuration <CONFIG_ESP_CONSOLE_UART>`.
    :esp32: - Perform any security-related checks, including burning efuses that should be burned for this configuration (including :ref:`disabling ROM download mode on ESP32 V3 <CONFIG_SECURE_UART_ROM_DL_MODE>`, :ref:`CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE`).

@@ -173,7 +173,7 @@ BSD 套接字的相关参考资料十分丰富，包括但不限于：
 套接字错误原因代码
 ++++++++++++++++++++++++
 
-以下是常见错误代码列表。获取标准 POSIX/C 错误代码的详细列表，请参阅 `newlib errno.h <https://github.com/espressif/newlib-esp32/blob/master/newlib/libc/include/sys/errno.h>`_ 和特定平台扩展 :component_file:`newlib/platform_include/sys/errno.h`。
+以下是常见错误代码列表。获取标准 POSIX/C 错误代码的详细列表，请参阅 `newlib errno.h <https://github.com/espressif/newlib-esp32/blob/master/newlib/libc/include/sys/errno.h>`_ 和特定平台扩展 :component_file:`esp_libc/platform_include/sys/errno.h`。
 
 .. list-table::
     :header-rows: 1

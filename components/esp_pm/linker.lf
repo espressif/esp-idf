@@ -73,8 +73,8 @@ entries:
             esp_timer_impl_systimer:esp_timer_impl_advance (noflash)
             esp_timer_impl_systimer:esp_timer_impl_set (noflash)
 
-[mapping:newlib_pm]
-archive: libnewlib.a
+[mapping:esp_libc_pm]
+archive: libesp_libc.a
 entries:
     if PM_SLP_IRAM_OPT = y:
         esp_time_impl:esp_time_impl_set_boot_time (noflash)

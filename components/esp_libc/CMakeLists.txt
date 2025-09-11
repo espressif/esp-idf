@@ -68,7 +68,7 @@ else()
 endif()
 
 set(ldfragments "")
-list(APPEND ldfragments "src/newlib.lf" "src/system_libs.lf")
+list(APPEND ldfragments "src/esp_libc.lf" "src/system_libs.lf")
 
 if(CONFIG_LIBC_NEWLIB)
     list(APPEND ldfragments src/libc.lf)
@@ -84,8 +84,8 @@ idf_component_register(SRCS "${srcs}"
                     LDFRAGMENTS "${ldfragments}")
 
 # Toolchain libraries require code defined in this component
-idf_component_get_property(newlib newlib COMPONENT_LIB)
-target_link_libraries(${COMPONENT_LIB} INTERFACE c m ${CONFIG_COMPILER_RT_LIB_NAME} "$<TARGET_FILE:${newlib}>")
+idf_component_get_property(esp_libc esp_libc COMPONENT_LIB)
+target_link_libraries(${COMPONENT_LIB} INTERFACE c m ${CONFIG_COMPILER_RT_LIB_NAME} "$<TARGET_FILE:${esp_libc}>")
 
 set_source_files_properties(heap.c PROPERTIES COMPILE_FLAGS -fno-builtin)
 

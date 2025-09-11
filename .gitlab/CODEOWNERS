@@ -103,6 +103,7 @@
 /components/esp_hw_support/lowpower/  @esp-idf-codeowners/power-management
 /components/esp_hw_support/usb_phy/   @esp-idf-codeowners/peripherals/usb
 /components/esp_lcd/                  @esp-idf-codeowners/peripherals
+/components/esp_libc/                 @esp-idf-codeowners/system @esp-idf-codeowners/toolchain
 /components/esp_local_ctrl/           @esp-idf-codeowners/app-utilities
 /components/esp_mm/                   @esp-idf-codeowners/peripherals
 /components/esp_netif/                @esp-idf-codeowners/network
@@ -140,7 +141,6 @@
 /components/lwip/                     @esp-idf-codeowners/lwip
 /components/mbedtls/                  @esp-idf-codeowners/app-utilities/mbedtls @esp-idf-codeowners/security
 /components/mqtt/                     @esp-idf-codeowners/network
-/components/newlib/                   @esp-idf-codeowners/system @esp-idf-codeowners/toolchain
 /components/nvs_flash/                @esp-idf-codeowners/storage
 /components/nvs_sec_provider/         @esp-idf-codeowners/storage @esp-idf-codeowners/security
 /components/openthread/               @esp-idf-codeowners/ieee802154
