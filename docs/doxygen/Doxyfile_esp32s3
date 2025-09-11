@@ -4,10 +4,6 @@ INPUT += \
 		 $(PROJECT_PATH)/components/esp_driver_touch_sens/hw_ver2/include/driver/touch_version_types.h \
          $(PROJECT_PATH)/components/esp_lcd/rgb/include/esp_lcd_panel_rgb.h \
          $(PROJECT_PATH)/components/ulp/ulp_fsm/include/$(IDF_TARGET)/ulp.h \
-         $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_button.h \
-         $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_element.h \
-         $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_matrix.h \
-         $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_slider.h \
          $(PROJECT_PATH)/components/usb/include/usb/usb_helpers.h \
          $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \
          $(PROJECT_PATH)/components/usb/include/usb/usb_types_ch9.h \

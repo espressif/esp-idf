@@ -209,8 +209,15 @@
     hint: "The issue is better to resolve by replacing format specifiers to 'PRI'-family macros (include <inttypes.h> header file)."
 
 -
-    re: "Failed to resolve component 'esp_ipc'"
-    hint: "IPC component has been moved to esp_system. Any `REQUIRES esp_ipc` can simply be deleted as esp_system is REQUIRED by default."
+    re: "Failed to resolve component '{}'"
+    hint: "The {} component has been moved to {}. You can {}."
+    variables:
+        -
+            re_variables: ['esp_ipc']
+            hint_variables: ['IPC', 'esp_system', 'simply delete any `REQUIRES esp_ipc` as esp_system is REQUIRED by default']
+        -
+            re_variables: ['touch_element']
+            hint_variables: ['touch_element', 'ESP Component Registry', 'add this dependency by running `idf.py add-dependency "espressif/touch_element"`']
 
 -
     re: "error: invalid use of incomplete typedef 'esp_tls_t'"

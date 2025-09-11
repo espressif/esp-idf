@@ -188,3 +188,10 @@ To enable SPI master IRAM optimization:
 4. Enable ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`)
 
 Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
+
+Touch Element
+-------------
+
+The ``touch_element`` component is moved to [ESP Component Registry](https://components.espressif.com/components/espressif/touch_element/versions/1.0.0/readme).
+
+You can add this dependency to your project by running ``idf.py add-dependency "espressif/touch_element"``.

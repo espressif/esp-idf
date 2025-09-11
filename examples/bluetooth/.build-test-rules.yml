@@ -104,7 +104,6 @@ examples/bluetooth/esp_ble_mesh:
     - if: CI_COMMIT_REF_NAME == "master" and (NIGHTLY_RUN == 0 and CONFIG_NAME not in ["default", "bluedroid", "nimble"])
   depends_components+:
     - esp_console
-    - touch_element
     - esp_driver_gpio
   depends_components-:
     - esp_coex

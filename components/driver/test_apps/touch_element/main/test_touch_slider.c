@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,7 +13,8 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 
-#include "touch_element/touch_element_private.h"
+#include "esp_private/touch_element_private.h"
+#include "esp_private/touch_sensor_legacy_ll.h"
 #include "touch_element/touch_slider.h"
 
 static const touch_pad_t slider_channel_array[5] = {
@@ -63,9 +64,11 @@ void test_slider_event_simulator(touch_slider_handle_t slider_handle, touch_slid
     te_slider_handle_t te_slider = (te_slider_handle_t) slider_handle;
     touch_pad_t channel = te_slider->device[random % te_slider->channel_sum]->channel;
     if (slider_event == TOUCH_SLIDER_EVT_ON_PRESS) {
-        touch_pad_set_cnt_mode(channel, TOUCH_PAD_SLOPE_3, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(channel, TOUCH_PAD_SLOPE_3);
+        touch_ll_set_tie_option(channel, TOUCH_PAD_TIE_OPT_DEFAULT);
     } else if (slider_event == TOUCH_SLIDER_EVT_ON_RELEASE) {
-        touch_pad_set_cnt_mode(channel, TOUCH_PAD_SLOPE_7, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(channel, TOUCH_PAD_SLOPE_7);
+        touch_ll_set_tie_option(channel, TOUCH_PAD_TIE_OPT_DEFAULT);
     }
 }
 
@@ -126,7 +129,6 @@ void test_slider_callback_trigger_and_check(touch_slider_handle_t handle, touch_
     }
 }
 
-
 static void test_slider_disp_event(void)
 {
     touch_slider_handle_t slider_handle;
@@ -160,7 +162,6 @@ static void test_slider_disp_event(void)
     TEST_ESP_OK(touch_slider_delete(slider_handle));
     touch_slider_uninstall();
 }
-
 
 static void test_slider_disp_callback(void)
 {

@@ -156,7 +156,6 @@
 /components/spi_flash/                @esp-idf-codeowners/peripherals
 /components/spiffs/                   @esp-idf-codeowners/storage
 /components/tcp_transport/            @esp-idf-codeowners/network
-/components/touch_element/            @esp-idf-codeowners/peripherals
 /components/ulp/                      @esp-idf-codeowners/system
 /components/unity/                    @esp-idf-codeowners/peripherals @esp-idf-codeowners/system
 /components/usb/                      @esp-idf-codeowners/peripherals/usb

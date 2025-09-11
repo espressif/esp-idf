@@ -44,7 +44,6 @@ Peripherals API
     :SOC_LP_VAD_SUPPORTED: vad
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
     :SOC_TOUCH_SENSOR_SUPPORTED: cap_touch_sens
-    :esp32s2 or esp32s3: touch_element
     :SOC_TWAI_SUPPORTED: twai
     uart
     :SOC_USB_OTG_SUPPORTED: usb_device

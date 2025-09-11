@@ -496,11 +496,6 @@ examples/peripherals/touch_sensor:
   disable:
     - if: SOC_TOUCH_SENSOR_SUPPORTED != 1
 
-examples/peripherals/touch_sensor/touch_element:
-  enable:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
-      reason: only supports esp32s2 and esp32s3
-
 examples/peripherals/touch_sensor/touch_sens_basic:
   disable:
     - if: SOC_TOUCH_SENSOR_SUPPORTED != 1

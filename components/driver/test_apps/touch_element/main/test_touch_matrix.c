@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,7 +13,8 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 
-#include "touch_element/touch_element_private.h"
+#include "esp_private/touch_element_private.h"
+#include "esp_private/touch_sensor_legacy_ll.h"
 #include "touch_element/touch_matrix.h"
 
 static const touch_pad_t x_axis_channel[3] = {
@@ -95,23 +96,31 @@ void test_matrix_event_simulator(touch_matrix_handle_t matrix_handle, touch_matr
     touch_pad_t x_channel = te_matrix->device[pos_index / te_matrix->y_channel_num]->channel;
     touch_pad_t y_channel = te_matrix->device[te_matrix->x_channel_num + (pos_index % te_matrix->y_channel_num)]->channel;
     if (matrix_event == TOUCH_MATRIX_EVT_ON_PRESS) {
-        touch_pad_set_cnt_mode(x_channel, TOUCH_PAD_SLOPE_3, TOUCH_PAD_TIE_OPT_DEFAULT);
-        touch_pad_set_cnt_mode(y_channel, TOUCH_PAD_SLOPE_3, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(x_channel, TOUCH_PAD_SLOPE_3);
+        touch_ll_set_tie_option(x_channel, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(y_channel, TOUCH_PAD_SLOPE_3);
+        touch_ll_set_tie_option(y_channel, TOUCH_PAD_TIE_OPT_DEFAULT);
     } else if (matrix_event == TOUCH_MATRIX_EVT_ON_RELEASE) {
-        touch_pad_set_cnt_mode(x_channel, TOUCH_PAD_SLOPE_7, TOUCH_PAD_TIE_OPT_DEFAULT);
-        touch_pad_set_cnt_mode(y_channel, TOUCH_PAD_SLOPE_7, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(x_channel, TOUCH_PAD_SLOPE_7);
+        touch_ll_set_tie_option(x_channel, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(y_channel, TOUCH_PAD_SLOPE_7);
+        touch_ll_set_tie_option(y_channel, TOUCH_PAD_TIE_OPT_DEFAULT);
     } else {
-        touch_pad_set_cnt_mode(x_channel, TOUCH_PAD_SLOPE_3, TOUCH_PAD_TIE_OPT_DEFAULT); // LongPress
-        touch_pad_set_cnt_mode(y_channel, TOUCH_PAD_SLOPE_3, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(x_channel, TOUCH_PAD_SLOPE_3);
+        touch_ll_set_tie_option(x_channel, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(y_channel, TOUCH_PAD_SLOPE_3);
+        touch_ll_set_tie_option(y_channel, TOUCH_PAD_TIE_OPT_DEFAULT);
     }
 }
 
 static void test_matrix_channel_simulator(touch_pad_t channel, touch_matrix_event_t matrix_event)
 {
     if (matrix_event == TOUCH_MATRIX_EVT_ON_PRESS) {
-        touch_pad_set_cnt_mode(channel, TOUCH_PAD_SLOPE_3, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(channel, TOUCH_PAD_SLOPE_3);
+        touch_ll_set_tie_option(channel, TOUCH_PAD_TIE_OPT_DEFAULT);
     } else if (matrix_event == TOUCH_MATRIX_EVT_ON_RELEASE) {
-        touch_pad_set_cnt_mode(channel, TOUCH_PAD_SLOPE_7, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(channel, TOUCH_PAD_SLOPE_7);
+        touch_ll_set_tie_option(channel, TOUCH_PAD_TIE_OPT_DEFAULT);
     }
 }
 
@@ -218,7 +227,7 @@ static void test_matrix_disp_event(void)
     printf("Touch matrix event test start\n");
     for (int i = 0; i < 10; i++) {
         printf("Touch matrix event test... (%d/10)\n", i + 1);
-        uint32_t button_num = random() % ( MATRIX_CHANNEL_NUM_X * MATRIX_CHANNEL_NUM_Y );
+        uint32_t button_num = random() % (MATRIX_CHANNEL_NUM_X * MATRIX_CHANNEL_NUM_Y);
         test_matrix_event_trigger_and_check(matrix_handle, TOUCH_MATRIX_EVT_ON_PRESS, button_num);
         test_matrix_event_trigger_and_check(matrix_handle, TOUCH_MATRIX_EVT_ON_LONGPRESS, button_num);
         test_matrix_event_trigger_and_check(matrix_handle, TOUCH_MATRIX_EVT_ON_RELEASE, button_num);
@@ -377,7 +386,7 @@ static void test_matrix_event_change_lp(void)
     printf("Touch matrix event change longtime test start\n");
     for (int i = 0; i < 10; i++) {
         printf("Touch matrix event change longtime test... (%d/10)\n", i + 1);
-        uint32_t button_num = random() % ( MATRIX_CHANNEL_NUM_X * MATRIX_CHANNEL_NUM_Y );
+        uint32_t button_num = random() % (MATRIX_CHANNEL_NUM_X * MATRIX_CHANNEL_NUM_Y);
         TEST_ESP_OK(touch_matrix_set_longpress(matrix_handle, 200 + (i + 1) * 50));
         test_matrix_event_trigger_and_check(matrix_handle, TOUCH_MATRIX_EVT_ON_LONGPRESS, button_num);
         test_matrix_event_simulator(matrix_handle, TOUCH_MATRIX_EVT_ON_RELEASE, button_num); //Reset hardware

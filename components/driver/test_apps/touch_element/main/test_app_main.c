@@ -10,7 +10,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-// Some resources are lazy allocated in gpio/dedicated_gpio/delta_sigma driver, the threshold is left for that case
 #define TEST_MEMORY_LEAK_THRESHOLD (-400)
 
 static size_t before_free_8bit;

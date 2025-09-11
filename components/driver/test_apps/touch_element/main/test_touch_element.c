@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -34,6 +34,7 @@
 #include "touch_element/touch_button.h"
 #include "touch_element/touch_slider.h"
 #include "touch_element/touch_matrix.h"
+#include "esp_private/touch_sensor_legacy_ll.h"
 
 typedef struct {
     QueueHandle_t valid_msg_handle;
@@ -110,7 +111,8 @@ static void test_system_waterproof_guard(void)
     printf("Touch Element waterproof guard sensor test start\n");
 
     srandom((unsigned int)time(NULL));
-    {//No use waterproof guard sensor
+    {
+        //No use waterproof guard sensor
         touch_elem_waterproof_config_t waterproof_config = {
             .guard_channel = TOUCH_WATERPROOF_GUARD_NOUSE,
             .guard_sensitivity = 0.0F
@@ -128,7 +130,8 @@ static void test_system_waterproof_guard(void)
         touch_element_waterproof_uninstall();
     }
 
-    {//Use waterproof guard sensor(Add all handles)
+    {
+        //Use waterproof guard sensor(Add all handles)
         touch_elem_waterproof_config_t waterproof_config = {
             .guard_channel = TOUCH_PAD_NUM13,
             .guard_sensitivity = 0.1F
@@ -158,7 +161,8 @@ static void test_system_waterproof_guard(void)
         touch_element_waterproof_uninstall();
     }
 
-    {//Put half button handles into guard ring
+    {
+        //Put half button handles into guard ring
         const uint8_t protect_handle_threshold = BUTTON_CHANNEL_NUM / 2;
         touch_elem_waterproof_config_t waterproof_config = {
             .guard_channel = TOUCH_PAD_NUM13,
@@ -196,9 +200,11 @@ static void test_system_waterproof_guard(void)
 static void test_waterproof_event_simulator(touch_pad_t guard_channel, touch_button_event_t guard_state)
 {
     if (guard_state == TOUCH_BUTTON_EVT_ON_PRESS) {
-        touch_pad_set_cnt_mode(guard_channel, TOUCH_PAD_SLOPE_3, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(guard_channel, TOUCH_PAD_SLOPE_3);
+        touch_ll_set_tie_option(guard_channel, TOUCH_PAD_TIE_OPT_DEFAULT);
     } else if (guard_state == TOUCH_BUTTON_EVT_ON_RELEASE) {
-        touch_pad_set_cnt_mode(guard_channel, TOUCH_PAD_SLOPE_7, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(guard_channel, TOUCH_PAD_SLOPE_7);
+        touch_ll_set_tie_option(guard_channel, TOUCH_PAD_TIE_OPT_DEFAULT);
     } else {
         printf("guard sensor simulator doesn't support this operation\n");
     }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -14,7 +14,8 @@
 #include "unity.h"
 #include "esp_random.h"
 
-#include "touch_element/touch_element_private.h"
+#include "esp_private/touch_element_private.h"
+#include "esp_private/touch_sensor_legacy_ll.h"
 #include "touch_element/touch_button.h"
 
 static portMUX_TYPE test_button_spinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -103,11 +104,14 @@ void test_button_event_simulator(touch_button_handle_t button_handle, touch_butt
     te_button_handle_t te_button = (te_button_handle_t) button_handle;
     touch_pad_t channel = te_button->device->channel;
     if (button_event == TOUCH_BUTTON_EVT_ON_PRESS) {
-        touch_pad_set_cnt_mode(channel, TOUCH_PAD_SLOPE_3, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(channel, TOUCH_PAD_SLOPE_3);
+        touch_ll_set_tie_option(channel, TOUCH_PAD_TIE_OPT_DEFAULT);
     } else if (button_event == TOUCH_BUTTON_EVT_ON_RELEASE) {
-        touch_pad_set_cnt_mode(channel, TOUCH_PAD_SLOPE_7, TOUCH_PAD_TIE_OPT_DEFAULT);
+        touch_ll_set_slope(channel, TOUCH_PAD_SLOPE_7);
+        touch_ll_set_tie_option(channel, TOUCH_PAD_TIE_OPT_DEFAULT);
     } else {
-        touch_pad_set_cnt_mode(channel, TOUCH_PAD_SLOPE_3, TOUCH_PAD_TIE_OPT_DEFAULT);  //LongPress
+        touch_ll_set_slope(channel, TOUCH_PAD_SLOPE_3);
+        touch_ll_set_tie_option(channel, TOUCH_PAD_TIE_OPT_DEFAULT);
     }
 }
 
@@ -129,7 +133,8 @@ static void test_button_callback_check(touch_button_handle_t current_handle, tou
 }
 
 void test_button_event_trigger_and_check(touch_button_handle_t handle, touch_button_event_t button_event)
-{//TODO: refactor this with a constructor
+{
+    //TODO: refactor this with a constructor
     touch_elem_message_t valid_message = {
         .handle = handle,
         .element_type = TOUCH_ELEM_TYPE_BUTTON,
@@ -189,8 +194,8 @@ static void test_button_disp_event(void)
         };
         TEST_ESP_OK(touch_button_create(&button_config, &button_handle[i]));
         TEST_ESP_OK(touch_button_subscribe_event(button_handle[i],
-                    TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS,
-                    (void *) button_channel_array[i]));
+                                                 TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS,
+                                                 (void *) button_channel_array[i]));
         TEST_ESP_OK(touch_button_set_longpress(button_handle[i], 300));
         TEST_ESP_OK(touch_button_set_dispatch_method(button_handle[i], TOUCH_ELEM_DISP_EVENT));
     }
@@ -233,8 +238,8 @@ static void test_button_disp_callback(void)
         };
         TEST_ESP_OK(touch_button_create(&button_config, &button_handle[i]));
         TEST_ESP_OK(touch_button_subscribe_event(button_handle[i],
-                    TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS,
-                    (void *) &monitor));
+                                                 TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS,
+                                                 (void *) &monitor));
         TEST_ESP_OK(touch_button_set_dispatch_method(button_handle[i], TOUCH_ELEM_DISP_CALLBACK));
         TEST_ESP_OK(touch_button_set_callback(button_handle[i], &test_button_handler));
         TEST_ESP_OK(touch_button_set_longpress(button_handle[i], 300));
@@ -295,7 +300,7 @@ static void test_button_event_change_lp(void)
     printf("Touch button event change longtime test start\n");
     for (int i = 0; i < 10; i++) {
         printf("Touch button event change longtime test... (%d/10)\n", i + 1);
-        esp_err_t ret;
+        esp_err_t ret = ESP_OK;
         uint8_t channel_index = random() % BUTTON_CHANNEL_NUM;
         touch_elem_message_t valid_message = {
             .handle = button_handle[channel_index],
@@ -412,7 +417,7 @@ static void test_button_event_concurrent(void)
     printf("Touch button event concurrent test start\n");
     for (int i = 0; i < 10; i++) {
         printf("Touch button event concurrent test... (%d/10)\n", i + 1);
-        esp_err_t ret;
+        esp_err_t ret = ESP_OK;
         uint32_t message_count = 0;
         touch_elem_message_t current_message;
 
@@ -487,7 +492,6 @@ static void test_button_random_trigger_concurrent(void)
         BaseType_t os_ret = xTaskCreate(test_random_trigger_concurrent_task, "test_random_trigger_concurrent_task", 1024 * 4, (void *)&sem_and_monitor[i], 10, NULL);
         TEST_ASSERT(os_ret == pdPASS);
     }
-
 
     uint32_t run_count = 0;
     while (1) {
