@@ -238,7 +238,7 @@ function(__init_idf_target)
     endif()
 
     # Verify that the chosen target aligns with the sdkconfig.
-    if(EXISTS "${sdkconfig}")
+    if(sdkconfig_target AND "${sdkconfig_file}" STREQUAL "${sdkconfig}")
         if("$ENV{_IDF_PY_SET_TARGET_ACTION}" STREQUAL "1")
             idf_dbg("The target consistency check for the target specified in ${sdkconfig} "
                     "was skipped because the set-target action is being executed.")
