@@ -177,28 +177,42 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     }
     ESP_RETURN_ON_FALSE(num_fbs <= DPI_PANEL_MAX_FB_NUM, ESP_ERR_INVALID_ARG, TAG, "num_fbs not within [1,%d]", DPI_PANEL_MAX_FB_NUM);
 
-    size_t bits_per_pixel = 0;
-    switch (panel_config->pixel_format) {
-    case LCD_COLOR_PIXEL_FORMAT_RGB565:
-        bits_per_pixel = 16;
-        break;
-    case LCD_COLOR_PIXEL_FORMAT_RGB666:
-        // RGB data in the memory must be constructed in 6-6-6 (18 bits) for each pixel
-        bits_per_pixel = 18;
-        break;
-    case LCD_COLOR_PIXEL_FORMAT_RGB888:
-        bits_per_pixel = 24;
-        break;
+    // by default, use RGB888 as the input color format
+    lcd_color_format_t in_color_format = LCD_COLOR_FMT_RGB888;
+    size_t bits_per_pixel = 24;
+    // the deprecated way to set the pixel format
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    bool has_pixel_fmt = panel_config->pixel_format != 0;
+    bool has_in_fmt = panel_config->in_color_format != 0;
+    ESP_RETURN_ON_FALSE(has_pixel_fmt ^ has_in_fmt, ESP_ERR_INVALID_ARG, TAG,
+                        "must set exactly one of pixel_format or in_color_format");
+    if (panel_config->pixel_format) {
+        switch (panel_config->pixel_format) {
+        case LCD_COLOR_PIXEL_FORMAT_RGB565:
+            bits_per_pixel = 16;
+            break;
+        case LCD_COLOR_PIXEL_FORMAT_RGB666:
+            // RGB data in the memory must be constructed in 6-6-6 (18 bits) for each pixel
+            bits_per_pixel = 18;
+            break;
+        case LCD_COLOR_PIXEL_FORMAT_RGB888:
+            bits_per_pixel = 24;
+            break;
+        }
+        in_color_format = COLOR_TYPE_ID(COLOR_SPACE_RGB, panel_config->pixel_format);
     }
-    lcd_color_format_t in_color_format = COLOR_TYPE_ID(COLOR_SPACE_RGB, panel_config->pixel_format);
-    // if user sets the in_color_format, it can override the pixel format setting
+#pragma GCC diagnostic pop
+    // the recommended way to set the input color format
     if (panel_config->in_color_format) {
+        in_color_format = panel_config->in_color_format;
+        // if user sets the in_color_format, it can override the pixel format setting
         color_space_pixel_format_t in_color_id = {
-            .color_type_id = panel_config->in_color_format,
+            .color_type_id = in_color_format,
         };
         bits_per_pixel = color_hal_pixel_format_get_bit_depth(in_color_id);
-        in_color_format = panel_config->in_color_format;
     }
+    // by default, out_color_format is the same as in_color_format (i.e. no color format conversion)
     lcd_color_format_t out_color_format = in_color_format;
     if (panel_config->out_color_format) {
         out_color_format = panel_config->out_color_format;

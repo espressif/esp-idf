@@ -32,7 +32,7 @@ typedef enum {
 } lcd_rgb_data_endian_t;
 
 /**
- * @brief LCD color space
+ * @brief The color space of the LCD input color data
  */
 typedef enum {
     LCD_COLOR_SPACE_RGB = COLOR_SPACE_RGB, /*!< Color space: RGB */
