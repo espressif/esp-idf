@@ -2,7 +2,7 @@
 #
 # Checks that all links in the readme markdown files are valid
 #
-# SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -14,12 +14,9 @@ import re
 import sys
 import urllib.error
 import urllib.request
-from collections import defaultdict, namedtuple
+from collections import defaultdict
+from collections import namedtuple
 from pathlib import Path
-from typing import List
-
-# The apple apps links are not accessible from the company network for some reason
-EXCLUDE_URL_LIST = ['https://apps.apple.com/in/app/esp-ble-provisioning/id1473590141', 'https://apps.apple.com/in/app/esp-softap-provisioning/id1474040630']
 
 Link = namedtuple('Link', ['file', 'url'])
 
@@ -32,7 +29,7 @@ class ReadmeLinkError(Exception):
 
 class RelativeLinkError(ReadmeLinkError):
     def __str__(self) -> str:
-        return 'Relative link error, file - {} not found, linked from {}'.format(self.url, self.file)
+        return f'Relative link error, file - {self.url} not found, linked from {self.file}'
 
 
 class UrlLinkError(ReadmeLinkError):
@@ -42,7 +39,10 @@ class UrlLinkError(ReadmeLinkError):
 
     def __str__(self) -> str:
         files = [str(f) for f in self.file]
-        return 'URL error, url - {} in files - {} is not accessible, request returned {}'.format(self.url, ', '.join(files), self.error_code)
+        files_str = ', '.join(files)
+        return (
+            f'URL error, url - {self.url} in files - {files_str} is not accessible, request returned {self.error_code}'
+        )
 
 
 # we do not want a failed test just due to bad network conditions, for non 404 errors we simply print a warning
@@ -54,16 +54,17 @@ def check_url(url: str, files: str, timeout: float) -> None:
         if e.code == 404:
             raise UrlLinkError(files, url, str(e))
         else:
-            print('Unable to access {}, err = {}'.format(url, str(e)))
+            print(f'Unable to access {url}, err = {str(e)}')
     except Exception as e:
-        print('Unable to access {}, err = {}'.format(url, str(e)))
+        print(f'Unable to access {url}, err = {str(e)}')
 
 
-def check_web_links(web_links: defaultdict) -> List:
-
+def check_web_links(web_links: defaultdict) -> list:
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         errors = []
-        future_to_url = {executor.submit(check_url, url, files, timeout=30): (url, files) for url, files in web_links.items()}
+        future_to_url = {
+            executor.submit(check_url, url, files, timeout=30): (url, files) for url, files in web_links.items()
+        }
         for future in concurrent.futures.as_completed(future_to_url):
             try:
                 future.result()
@@ -73,7 +74,7 @@ def check_web_links(web_links: defaultdict) -> List:
         return errors
 
 
-def check_file_links(file_links: List) -> List:
+def check_file_links(file_links: list) -> list:
     errors = []
 
     for link in file_links:
@@ -82,11 +83,11 @@ def check_file_links(file_links: List) -> List:
         if not Path.exists(link_path):
             errors.append(RelativeLinkError(link.file, link.url))
 
-    print('Found {} errors with relative links'.format(len(errors)))
+    print(f'Found {len(errors)} errors with relative links')
     return errors
 
 
-def get_md_links(folder: str) -> List:
+def get_md_links(folder: str) -> list:
     MD_LINK_RE = r'\[.+?\]\((.+?)(#.+)?\)'
 
     idf_path_str = os.getenv('IDF_PATH')
@@ -109,9 +110,8 @@ def get_md_links(folder: str) -> List:
 
 
 def check_readme_links(args: argparse.Namespace) -> int:
-
     links = get_md_links('examples')
-    print('Found {} links'.format(len(links)))
+    print(f'Found {len(links)} links')
 
     errors = []
 
@@ -121,19 +121,16 @@ def check_readme_links(args: argparse.Namespace) -> int:
     # Sort links into file and web links
     for link in links:
         if link.url.startswith('http'):
-                web_links[link.url].append(link.file)
+            web_links[link.url].append(link.file)
         else:
             file_links.append(link)
-
-    for url in EXCLUDE_URL_LIST:
-        del web_links[url]
 
     errors.extend(check_file_links(file_links))
 
     if not args.skip_weburl:
         errors.extend(check_web_links(web_links))
 
-    print('Found {} errors:'.format(len(errors)))
+    print(f'Found {len(errors)} errors:')
     for e in errors:
         print(e)
 
@@ -141,9 +138,12 @@ def check_readme_links(args: argparse.Namespace) -> int:
 
 
 if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='check_readme_links.py: Checks for dead links in example READMEs', prog='check_readme_links.py')
-    parser.add_argument('--skip-weburl', '-w', action='store_true', help='Skip checking of web URLs, only check links to local files')
+    parser = argparse.ArgumentParser(
+        description='check_readme_links.py: Checks for dead links in example READMEs', prog='check_readme_links.py'
+    )
+    parser.add_argument(
+        '--skip-weburl', '-w', action='store_true', help='Skip checking of web URLs, only check links to local files'
+    )
     args = parser.parse_args()
 
     sys.exit(check_readme_links(args))

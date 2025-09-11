@@ -246,6 +246,4 @@ ignore:
     - components/esp_local_ctrl/python/
     - components/protocomm/proto-c/
     - components/protocomm/python/
-    - components/wifi_provisioning/proto-c/
-    - components/wifi_provisioning/python/
     - tools/templates/

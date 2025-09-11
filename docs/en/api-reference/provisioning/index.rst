@@ -3,16 +3,17 @@ Provisioning API
 
 :link_to_translation:`zh_CN:[中文]`
 
+This document describes methods to connect a device to `Wi-Fi <../network/esp_wifi.rst>`_ or `Thread <../network/esp_openthread.rst>`_ network.
+
 .. toctree::
     :maxdepth: 1
 
     protocomm
-    :SOC_WIFI_SUPPORTED: provisioning
-    :SOC_WIFI_SUPPORTED: wifi_provisioning
+    provisioning
+
+Code examples for above API are provided in the `network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning/examples>`_ component.
 
 .. only:: SOC_WIFI_SUPPORTED
-
-    Code examples for above API are provided in the :example:`provisioning` directory of ESP-IDF examples.
 
     .. toctree::
         :maxdepth: 1

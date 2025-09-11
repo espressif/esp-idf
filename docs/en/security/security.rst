@@ -265,7 +265,7 @@ Product Security
 
     ESP-IDF provides various security schemes to establish a secure session between ESP and the provisioning entity, they are highlighted at :ref:`provisioning_security_schemes`.
 
-    Please refer to the :doc:`../api-reference/provisioning/wifi_provisioning` documentation for details and the example code for this feature.
+    Please refer to `network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning>`_ for details and the example code for this feature.
 
     .. note::
 
