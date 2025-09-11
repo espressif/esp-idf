@@ -11,7 +11,6 @@
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
 #include "rom/efuse.h"
-#include "hal/ecdsa_types.h"
 
 //TODO: [ESP32H21] IDF-11556, inherit from h2
 
@@ -101,13 +100,6 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_key_blk
 {
     //TODO: [ESP32H21] IDF-11507
     return 0;
-}
-
-__attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(ecdsa_curve_t curve, int efuse_blk)
-{
-    //TODO: [ESP32H21] IDF-11507
-    (void) curve;
-    (void) efuse_blk;
 }
 
 /******************* eFuse control functions *************************/

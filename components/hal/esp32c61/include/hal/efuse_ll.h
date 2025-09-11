@@ -13,7 +13,6 @@
 #include "soc/efuse_struct.h"
 #include "hal/assert.h"
 #include "rom/efuse.h"
-#include "hal/ecdsa_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -139,11 +138,6 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_key_blk
     return EFUSE0.conf.cfg_ecdsa_blk;
 }
 
-__attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(ecdsa_curve_t curve, int efuse_blk)
-{
-    (void) curve;
-    EFUSE0.conf.cfg_ecdsa_blk = efuse_blk;
-}
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_recovery_bootloader_sector(void)
 {

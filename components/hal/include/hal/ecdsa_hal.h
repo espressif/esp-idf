@@ -109,6 +109,17 @@ bool ecdsa_hal_det_signature_k_check(void);
 
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
 
+/**
+ * @brief Set the efuse block that should be used as ECDSA private key
+ *
+ * @note The efuse block must be burnt with key purpose ECDSA_KEY
+ *
+ * @param curve ECDSA curve type
+ * @param efuse_key_blk     If two blocks are used to store the key, then the macro HAL_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. The macro is defined in hal/ecdsa_types.h
+ *                          Each efuse key block number (Must be in [EFUSE_BLK_KEY0...EFUSE_BLK_KEY_MAX - 1] range).
+ */
+void ecdsa_hal_set_efuse_key(ecdsa_curve_t curve, int efuse_key_blk);
+
 #ifdef __cplusplus
 }
 #endif

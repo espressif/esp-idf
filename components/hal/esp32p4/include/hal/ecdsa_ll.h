@@ -11,6 +11,7 @@
 #include "soc/ecdsa_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/soc_caps.h"
+#include "soc/efuse_periph.h"
 #include "hal/ecdsa_types.h"
 
 #ifdef __cplusplus
@@ -441,6 +442,18 @@ static inline int ecdsa_ll_check_k_value(void)
 static inline bool ecdsa_ll_is_deterministic_mode_supported(void)
 {
     return true;
+}
+
+/**
+ * @brief Set the ECDSA key block in eFuse
+ *
+ * @param curve    ECDSA curve type
+ * @param efuse_blk eFuse block number
+ */
+__attribute__((always_inline)) static inline void ecdsa_ll_set_ecdsa_key_blk(ecdsa_curve_t curve, int efuse_blk)
+{
+    (void) curve;
+    EFUSE.conf.cfg_ecdsa_blk = efuse_blk;
 }
 
 /**

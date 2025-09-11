@@ -13,7 +13,6 @@
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
 #include "rom/efuse.h"
-#include "hal/ecdsa_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,31 +91,6 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_disable_blk_versi
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(void)
 {
     return EFUSE.rd_mac_sys2.pkg_version;
-}
-
-__attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(ecdsa_curve_t curve, int efuse_blk)
-{
-    uint8_t efuse_blk_low = 0;
-    uint8_t efuse_blk_high = 0;
-
-    switch (curve) {
-        case ECDSA_CURVE_SECP192R1:
-            EFUSE.ecdsa.cfg_ecdsa_p192_blk = efuse_blk;
-            break;
-        case ECDSA_CURVE_SECP256R1:
-            EFUSE.ecdsa.cfg_ecdsa_p256_blk = efuse_blk;
-            break;
-        case ECDSA_CURVE_SECP384R1:
-            // ECDSA-p384 uses two efuse blocks to store the key. These two blocks are stored in a single integer
-            // where the least significant 4 bits store the low key block number and the next 4 more significant bits store the high key block number.
-            HAL_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, efuse_blk_high, efuse_blk_low);
-            EFUSE.ecdsa.cfg_ecdsa_p384_h_blk = efuse_blk_high;
-            EFUSE.ecdsa.cfg_ecdsa_p384_l_blk = efuse_blk_low;
-            break;
-        default:
-            HAL_ASSERT(false && "Unsupported curve");
-            break;
-    }
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)

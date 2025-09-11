@@ -97,13 +97,6 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_key_blk
     return 0;
 }
 
-__attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(ecdsa_curve_t curve, int efuse_blk)
-{
-    //ESP32H4 TODO
-    (void)curve;
-    (void)efuse_blk;
-}
-
 /******************* eFuse control functions *************************/
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_read_cmd(void)

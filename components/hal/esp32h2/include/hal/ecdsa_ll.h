@@ -11,6 +11,7 @@
 #include "soc/ecdsa_reg.h"
 #include "soc/ecdsa_struct.h"
 #include "soc/pcr_struct.h"
+#include "soc/efuse_periph.h"
 #include "hal/ecdsa_types.h"
 #include "hal/ecc_ll.h"
 
@@ -416,6 +417,18 @@ static inline bool ecdsa_ll_is_configurable_curve_supported(void)
 static inline bool ecdsa_ll_is_deterministic_mode_supported(void)
 {
     return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
+}
+
+/**
+ * @brief Set the ECDSA key block in eFuse
+ *
+ * @param curve    ECDSA curve type
+ * @param efuse_blk eFuse block number
+ */
+__attribute__((always_inline)) static inline void ecdsa_ll_set_ecdsa_key_blk(ecdsa_curve_t curve, int efuse_blk)
+{
+    (void) curve;
+    EFUSE.conf.cfg_ecdsa_blk = efuse_blk;
 }
 
 /**
