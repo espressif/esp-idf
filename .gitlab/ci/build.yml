@@ -273,6 +273,7 @@ pytest_buildv2_system:
       --
       test_non_default_target.py
       test_component_manager.py
+      test_build.py
 
 pytest_build_system_macos:
   extends:
