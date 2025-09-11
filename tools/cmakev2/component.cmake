@@ -858,7 +858,7 @@ function(idf_component_include name)
     list(APPEND __DEPENDENCY_CHAIN "${name}")
     # Evaluate the CMakeLists.txt file of the component.
     idf_build_get_property(build_dir BUILD_DIR build_dir)
-    add_subdirectory("${component_directory}" "${build_dir}/esp-idf/${component_name}" EXCLUDE_FROM_ALL)
+    add_subdirectory("${component_directory}" "${build_dir}/esp-idf/${component_name}")
 
     # The component has been evaluated; remove it from the dependency chain.
     list(POP_BACK __DEPENDENCY_CHAIN)
