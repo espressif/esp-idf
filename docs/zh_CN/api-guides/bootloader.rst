@@ -202,7 +202,7 @@ ESP-IDF 二级引导加载程序位于 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_O
 
     恢复引导加载程序功能可在 OTA 升级失败时为引导加载程序提供安全回退机制。eFuse 字段 ``ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR`` 将指定恢复引导加载程序的 flash（以扇区为单位）地址。如果位于 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 的主引导加载程序加载失败，ROM 引导加载程序会尝试从指定地址加载恢复引导加载程序。
 
-    - 可以使用 ``espefuse.py`` 或在用户应用程序中调用 :cpp:func:`esp_efuse_set_recovery_bootloader_offset()` 来设置 eFuse。
+    - 可以使用 ``espefuse`` 或在用户应用程序中调用 :cpp:func:`esp_efuse_set_recovery_bootloader_offset()` 来设置 eFuse。
     - 该地址可通过 ``CONFIG_BOOTLOADER_RECOVERY_OFFSET`` 进行设置，且必须为 flash 扇区大小（0x1000 字节）的整数倍。此 Kconfig 选项有助于确保恢复引导加载程序不会与现有分区重叠。
     - 注意，eFuse 字段存储的是以扇区为单位的偏移量。将其设置为最大值 ``0xFFF`` 可禁用恢复引导加载程序功能。
     - 默认情况下，``CONFIG_BOOTLOADER_RECOVERY_OFFSET`` 处的恢复引导加载程序镜像不会被烧录，但可以作为 OTA 升级流程的一部分进行写入。

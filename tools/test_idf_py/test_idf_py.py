@@ -374,8 +374,8 @@ class TestWrapperCommands(TestCase):
 
 class TestEFuseCommands(TestWrapperCommands):
     """
-    Test if wrapper commands for espefuse.py are working as expected.
-    The goal is NOT to test the functionality of espefuse.py
+    Test if wrapper commands for espefuse are working as expected.
+    The goal is NOT to test the functionality of espefuse
     but to test if the wrapper commands are working as expected.
     """
 
@@ -438,8 +438,8 @@ class TestEFuseCommands(TestWrapperCommands):
 
 class TestSecureCommands(TestWrapperCommands):
     """
-    Test if wrapper commands for espsecure.py are working as expected.
-    The goal is NOT to test the functionality of espsecure.py
+    Test if wrapper commands for espsecure are working as expected.
+    The goal is NOT to test the functionality of espsecure
     but to test if the wrapper commands are working as expected.
     """
 

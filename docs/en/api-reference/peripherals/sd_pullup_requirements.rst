@@ -228,15 +228,27 @@ No Pull-ups
 
     .. code-block:: bash
 
-        espefuse.py v2.6
+        espefuse v5.0.2
         Connecting....
 
-        Enable internal flash voltage regulator (VDD_SDIO) to 3.3 V.
+        === Run "set-flash-voltage" command ===
+        Enable internal flash voltage regulator (VDD_SDIO) to 3.3V.
         The following eFuses are burned: XPD_SDIO_FORCE, XPD_SDIO_REG, XPD_SDIO_TIEH.
-        This is an irreversible operation.
+        VDD_SDIO setting complete.
+
+        Check all blocks for burn...
+        idx, BLOCK_NAME,          Conclusion
+        [00] BLOCK0               is not empty
+                (written ): 0x0000000400182226000004320000a8b0002bc8f09e47e69800000000
+                (to write): 0x00000000000000000001c00000000000000000000000000000000000
+                (coding scheme = NONE)
+        .
+        This is an irreversible operation!
         Type 'BURN' (all capitals) to continue.
         BURN
-        VDD_SDIO setting complete.
+        BURN BLOCK0  - OK (write block == read block)
+        Reading updated eFuses...
+        Successful.
 
     To check the status of the eFuses, run:
 

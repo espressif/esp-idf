@@ -1380,7 +1380,6 @@ ESP-IDF 构建命令
     # 注册该依赖，使其在 ELF 链接完成后、BIN 生成之前运行
     idf_build_add_post_elf_dependency("${CMAKE_PROJECT_NAME}.elf" strip_elf)
 
-
 .. code-block:: none
 
   idf_build_get_post_elf_dependencies(elf_filename out_var)
