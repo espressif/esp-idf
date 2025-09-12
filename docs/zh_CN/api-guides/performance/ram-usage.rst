@@ -83,7 +83,7 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
 任务运行时确定栈内存大小的方法
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- 调用 :cpp:func:`uxTaskGetStackHighWaterMark` 会返回任务整个生命周期中空闲栈内存的最小值，从而较好地显示出任务未使用的栈内存量。
+- 调用 :cpp:func:`uxTaskGetStackHighWaterMark` 会返回任务整个生命周期中空闲栈内存的最小值（以字节为单位），从而较好地显示出任务未使用的栈内存量。注意：在 {IDF_TARGET_NAME} 上，该函数返回字节数（而不是标准 FreeRTOS 文档中所述的字数）。
 
   - 从任务本身内部调用 :cpp:func:`uxTaskGetStackHighWaterMark` 是调用该函数最容易的方式：在任务达到其栈内存使用峰值后，调用 ``uxTaskGetStackHighWaterMark(NULL)`` 获取当前任务的高水位标记，换言之，如果有主循环，请多次执行主循环来覆盖各种状态，随后调用 :cpp:func:`uxTaskGetStackHighWaterMark`。
   - 通常可以用任务的栈内存总大小减去调用 :cpp:func:`uxTaskGetStackHighWaterMark` 的返回值，计算任务实际使用的栈内存大小，但应留出一定的安全余量，应对运行时栈内存使用量的小幅意外增长。

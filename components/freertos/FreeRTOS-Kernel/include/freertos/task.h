@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -1493,9 +1493,9 @@ TaskHandle_t xTaskGetHandle( const char * pcNameToQuery ) PRIVILEGED_FUNCTION; /
  * this function to be available.
  *
  * Returns the high water mark of the stack associated with xTask.  That is,
- * the minimum free stack space there has been (in words, so on a 32 bit machine
- * a value of 1 means 4 bytes) since the task started.  The smaller the returned
- * number the closer the task has come to overflowing its stack.
+ * the minimum free stack space there has been in bytes (as opposed to words
+ * in the standard FreeRTOS documentation) since the task started.  The smaller
+ * the returned number the closer the task has come to overflowing its stack.
  *
  * uxTaskGetStackHighWaterMark() and uxTaskGetStackHighWaterMark2() are the
  * same except for their return type.  Using configSTACK_DEPTH_TYPE allows the
@@ -1506,9 +1506,9 @@ TaskHandle_t xTaskGetHandle( const char * pcNameToQuery ) PRIVILEGED_FUNCTION; /
  * @param xTask Handle of the task associated with the stack to be checked.
  * Set xTask to NULL to check the stack of the calling task.
  *
- * @return The smallest amount of free stack space there has been (in words, so
- * actual spaces on the stack rather than bytes) since the task referenced by
- * xTask was created.
+ * @return The smallest amount of free stack space there has been in bytes
+ * (as opposed to words in the standard FreeRTOS documentation) since the task
+ * referenced by xTask was created.
  */
 UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 
@@ -1518,9 +1518,9 @@ UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask ) PRIVILEGED_FUNCTIO
  * this function to be available.
  *
  * Returns the high water mark of the stack associated with xTask.  That is,
- * the minimum free stack space there has been (in words, so on a 32 bit machine
- * a value of 1 means 4 bytes) since the task started.  The smaller the returned
- * number the closer the task has come to overflowing its stack.
+ * the minimum free stack space there has been in bytes (as opposed to words in
+ * the standard FreeRTOS documentation) since the task started.  The smaller the
+ * returned number the closer the task has come to overflowing its stack.
  *
  * uxTaskGetStackHighWaterMark() and uxTaskGetStackHighWaterMark2() are the
  * same except for their return type.  Using configSTACK_DEPTH_TYPE allows the
@@ -1531,9 +1531,9 @@ UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask ) PRIVILEGED_FUNCTIO
  * @param xTask Handle of the task associated with the stack to be checked.
  * Set xTask to NULL to check the stack of the calling task.
  *
- * @return The smallest amount of free stack space there has been (in words, so
- * actual spaces on the stack rather than bytes) since the task referenced by
- * xTask was created.
+ * @return The smallest amount of free stack space there has been in bytes
+ * (as opposed to words in the standard FreeRTOS documentation) since the task
+ * referenced by xTask was created.
  */
 configSTACK_DEPTH_TYPE uxTaskGetStackHighWaterMark2( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 
