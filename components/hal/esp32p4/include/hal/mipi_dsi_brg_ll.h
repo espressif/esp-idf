@@ -361,6 +361,10 @@ static inline void mipi_dsi_brg_ll_set_input_color_format(dsi_brg_dev_t *dev, lc
         dev->pixel_type.raw_type = 9;
         dev->pixel_type.data_in_type = 1;
         break;
+    case LCD_COLOR_FMT_GRAY8:
+        dev->pixel_type.raw_type = 12;
+        dev->pixel_type.data_in_type = 0;
+        break;
     default:
         abort();
     }
