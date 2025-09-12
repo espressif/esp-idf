@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include "soc/soc_memory_layout.h"
 #include "freertos/FreeRTOS.h"
-#include "esp_private/freertos_debug.h"
+#include "freertos/freertos_debug.h"
 #include "esp_rom_sys.h"
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_common.h"

@@ -9,9 +9,7 @@
 #include "esp_heap_caps.h"
 #include "esp_compiler.h"
 #include "freertos/idf_additions.h"
-#if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
-    #include "esp_private/freertos_debug.h"
-#endif /* CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT */
+#include "freertos/freertos_debug.h"
 #include "esp_private/freertos_idf_additions_priv.h"
 
 /**

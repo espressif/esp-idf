@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,9 @@
 #include "freertos/task.h"
 
 /*
- * This header contains private API used by various ESP-IDF debugging features (e.g., esp_gdbstub).
+ * This header contains public API for FreeRTOS debugging features including task snapshots.
+ * These APIs are used by ESP-IDF debugging features (e.g., esp_gdbstub, core dump) and
+ * external frameworks (e.g., ESP Insights) for debugging and monitoring purposes.
  */
 
 /* *INDENT-OFF* */
@@ -71,7 +73,9 @@ int xTaskGetNext( TaskIterator_t * xIterator );
  * - This function is used by the panic handler to get the snapshot of a particular task.
  *
  * @note This function should only be called when FreeRTOS is no longer running (e.g., during a panic) as this function
- *       does not acquire any locks.
+ *       does not acquire any locks. For safe usage with scheduler running, use vTaskSuspendAll() before calling
+ *       this function and xTaskResumeAll() after.
+ *
  * @param[in] pxTask Task's handle
  * @param[out] pxTaskSnapshot Snapshot of the task
  * @return pdTRUE if operation was successful else pdFALSE
@@ -85,11 +89,13 @@ BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask,
  * - This function is used by the panic handler to get a snapshot of all tasks in the system
  *
  * @note This function should only be called when FreeRTOS is no longer running (e.g., during a panic) as this function
- *        does not acquire any locks.
+ *        does not acquire any locks. For safe usage with scheduler running, use vTaskSuspendAll() before calling
+ *        this function and xTaskResumeAll() after.
+ *
  * @param[out] pxTaskSnapshotArray Array of TaskSnapshot_t structures filled by this function
  * @param[in] uxArrayLength Length of the provided array
  * @param[out] pxTCBSize Size of the a task's TCB structure (can be set to NULL)
- * @return UBaseType_t
+ * @return UBaseType_t Number of task snapshots filled in the array
  */
 UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray,
                                   const UBaseType_t uxArrayLength,
