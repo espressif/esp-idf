@@ -878,7 +878,7 @@ It is recommended to use flash encryption in combination with Secure Boot. Howev
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND and SOC_ECDSA_SUPPORT_CURVE_P384
 
-  - It is recommended that the required :ref: `strength of the pseudo rounds function <xts-aes-pseudo-round-func>` should be set during the first boot itself when flash encryption release mode is enabled. If your workflow needs to update the function's strength after the first boot, you should enable :ref:`CONFIG_SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA` to avoid write protecting this bit during the boot up.
+  - It is recommended that the required strength of the :ref:`xts-aes-pseudo-round-func` should be set during the first boot when flash encryption release mode is enabled. If your workflow needs to update the function's strength after the first boot, you should enable :ref:`CONFIG_SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA` to avoid write-protecting this bit during boot.
 
 .. _flash-encryption-advanced-features:
 
