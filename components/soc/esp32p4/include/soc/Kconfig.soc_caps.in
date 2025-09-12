@@ -629,11 +629,11 @@ config SOC_DMA2D_GROUPS
 
 config SOC_DMA2D_TX_CHANNELS_PER_GROUP
     int
-    default 3
+    default 4
 
 config SOC_DMA2D_RX_CHANNELS_PER_GROUP
     int
-    default 2
+    default 3
 
 config SOC_ETM_GROUPS
     int
