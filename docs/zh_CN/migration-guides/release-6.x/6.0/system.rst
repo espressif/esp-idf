@@ -56,6 +56,10 @@ Xtensa 特殊寄存器头文件已更新，使用新的命名约定。旧的 ``s
 
 已弃用的头文件 ``soc_memory_types.h`` 已被移除，请改用替代头文件 ``esp_memory_utils.h``。
 
+已弃用的头文件 ``intr_types.h`` 已被移除，请改用替代头文件 ``esp_intr_types.h``。
+
+已弃用的头文件 ``esp_private/interrupt_deprecated.h`` 已被移除，已弃用的函数不再可用，请改用非弃用版本。
+
 App 追踪
 ----------
 

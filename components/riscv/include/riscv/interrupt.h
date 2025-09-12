@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -162,10 +162,7 @@ typedef uint32_t (*esprv_int_mgmt_t)(int argc, ...);
  */
 void esprv_int_setup_mgmt_cb(void *fptr);
 
-/**
- * Include the deprecated functions last since they will alias the functions declared above
- */
-#include "esp_private/interrupt_deprecated.h"
+
 
 #ifdef __cplusplus
 }
