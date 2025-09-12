@@ -11,8 +11,10 @@
 #include "hal/dma2d_types.h"
 #include "soc/dma2d_channel.h"
 #include "soc/dma2d_struct.h"
+#include "soc/soc_caps.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
+#include "hal/config.h"
 #include "soc/soc.h"
 #include "soc/hp_sys_clkrst_struct.h"
 
@@ -21,6 +23,14 @@ extern "C" {
 #endif
 
 #define DMA2D_LL_GET_HW(id)                  (((id) == 0) ? (&DMA2D) : NULL)
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#define DMA2D_LL_TX_CHANNELS_PER_GROUP             SOC_DMA2D_TX_CHANNELS_PER_GROUP  // Number of 2D-DMA TX (OUT) channels in each group
+#define DMA2D_LL_RX_CHANNELS_PER_GROUP             SOC_DMA2D_RX_CHANNELS_PER_GROUP  // Number of 2D-DMA RX (IN) channels in each group
+#else
+#define DMA2D_LL_TX_CHANNELS_PER_GROUP             (3)  // Number of 2D-DMA TX (OUT) channels in each group
+#define DMA2D_LL_RX_CHANNELS_PER_GROUP             (2)  // Number of 2D-DMA RX (IN) channels in each group
+#endif
 
 // 2D-DMA interrupts
 #define DMA2D_LL_RX_EVENT_MASK               (0x3FFF)
@@ -57,8 +67,11 @@ extern "C" {
 
 // Bit masks that are used to indicate availability of some sub-features in the channels
 #define DMA2D_LL_TX_CHANNEL_SUPPORT_RO_MASK        (0U | BIT0) // TX channels that support reorder feature
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#define DMA2D_LL_TX_CHANNEL_SUPPORT_CSC_MASK       (0U | BIT0 | BIT1 | BIT2 | BIT3) // TX channels that support color space conversion feature
+#else
 #define DMA2D_LL_TX_CHANNEL_SUPPORT_CSC_MASK       (0U | BIT0 | BIT1 | BIT2) // TX channels that support color space conversion feature
-
+#endif
 #define DMA2D_LL_RX_CHANNEL_SUPPORT_RO_MASK        (0U | BIT0) // RX channels that support reorder feature
 #define DMA2D_LL_RX_CHANNEL_SUPPORT_CSC_MASK       (0U | BIT0) // RX channels that support color space conversion feature
 
@@ -158,16 +171,13 @@ static inline uint32_t dma2d_ll_get_scramble_order_sel(dma2d_scramble_order_t or
 }
 
 /////////////////////////////////////// RX ///////////////////////////////////////////
-#define DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, ch, reg)      ((volatile void*[]){&dev->in_channel0.reg, &dev->in_channel1.reg}[(ch)])
-
 /**
  * @brief Get 2D-DMA RX channel interrupt status word
  */
 __attribute__((always_inline))
 static inline uint32_t dma2d_ll_rx_get_interrupt_status(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_int_st_chn_reg_t *reg = (volatile dma2d_in_int_st_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_int_st);
-    return reg->val;
+    return dev->in_channel[channel].in_int_st.val & DMA2D_LL_RX_EVENT_MASK;
 }
 
 /**
@@ -176,11 +186,10 @@ static inline uint32_t dma2d_ll_rx_get_interrupt_status(dma2d_dev_t *dev, uint32
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_enable_interrupt(dma2d_dev_t *dev, uint32_t channel, uint32_t mask, bool enable)
 {
-    volatile dma2d_in_int_ena_chn_reg_t *reg = (volatile dma2d_in_int_ena_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_int_ena);
     if (enable) {
-        reg->val = reg->val | (mask & DMA2D_LL_RX_EVENT_MASK);
+        dev->in_channel[channel].in_int_ena.val = dev->in_channel[channel].in_int_ena.val | (mask & DMA2D_LL_RX_EVENT_MASK);
     } else {
-        reg->val = reg->val & ~(mask & DMA2D_LL_RX_EVENT_MASK);
+        dev->in_channel[channel].in_int_ena.val = dev->in_channel[channel].in_int_ena.val & ~(mask & DMA2D_LL_RX_EVENT_MASK);
     }
 }
 
@@ -190,8 +199,7 @@ static inline void dma2d_ll_rx_enable_interrupt(dma2d_dev_t *dev, uint32_t chann
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_clear_interrupt_status(dma2d_dev_t *dev, uint32_t channel, uint32_t mask)
 {
-    volatile dma2d_in_int_clr_chn_reg_t *reg = (volatile dma2d_in_int_clr_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_int_clr);
-    reg->val = (mask & DMA2D_LL_RX_EVENT_MASK);
+    dev->in_channel[channel].in_int_clr.val = (mask & DMA2D_LL_RX_EVENT_MASK);
 }
 
 /**
@@ -199,7 +207,7 @@ static inline void dma2d_ll_rx_clear_interrupt_status(dma2d_dev_t *dev, uint32_t
  */
 static inline volatile void *dma2d_ll_rx_get_interrupt_status_reg(dma2d_dev_t *dev, uint32_t channel)
 {
-    return (volatile void *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_int_st);
+    return (volatile void *)(&dev->in_channel[channel].in_int_st);
 }
 
 /**
@@ -208,8 +216,7 @@ static inline volatile void *dma2d_ll_rx_get_interrupt_status_reg(dma2d_dev_t *d
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_enable_owner_check(dma2d_dev_t *dev, uint32_t channel, bool enable)
 {
-    volatile dma2d_in_conf0_chn_reg_t *reg = (volatile dma2d_in_conf0_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_conf0);
-    reg->in_check_owner_chn = enable;
+    dev->in_channel[channel].in_conf0.in_check_owner_chn = enable;
 }
 
 /**
@@ -218,8 +225,7 @@ static inline void dma2d_ll_rx_enable_owner_check(dma2d_dev_t *dev, uint32_t cha
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_enable_page_bound_wrap(dma2d_dev_t *dev, uint32_t channel, bool enable)
 {
-    volatile dma2d_in_conf0_chn_reg_t *reg = (volatile dma2d_in_conf0_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_conf0);
-    reg->in_page_bound_en_chn = enable;
+    dev->in_channel[channel].in_conf0.in_page_bound_en_chn = enable;
 }
 
 /**
@@ -249,8 +255,7 @@ static inline void dma2d_ll_rx_set_data_burst_length(dma2d_dev_t *dev, uint32_t 
         // Unsupported data burst length
         abort();
     }
-    volatile dma2d_in_conf0_chn_reg_t *reg = (volatile dma2d_in_conf0_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_conf0);
-    reg->in_mem_burst_length_chn = sel;
+    dev->in_channel[channel].in_conf0.in_mem_burst_length_chn = sel;
 }
 
 /**
@@ -259,8 +264,7 @@ static inline void dma2d_ll_rx_set_data_burst_length(dma2d_dev_t *dev, uint32_t 
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_enable_descriptor_burst(dma2d_dev_t *dev, uint32_t channel, bool enable)
 {
-    volatile dma2d_in_conf0_chn_reg_t *reg = (volatile dma2d_in_conf0_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_conf0);
-    reg->indscr_burst_en_chn = enable;
+    dev->in_channel[channel].in_conf0.indscr_burst_en_chn = enable;
 }
 
 /**
@@ -269,9 +273,8 @@ static inline void dma2d_ll_rx_enable_descriptor_burst(dma2d_dev_t *dev, uint32_
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_reset_channel(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_conf0_chn_reg_t *reg = (volatile dma2d_in_conf0_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_conf0);
-    reg->in_rst_chn = 1;
-    reg->in_rst_chn = 0;
+    dev->in_channel[channel].in_conf0.in_rst_chn = 1;
+    dev->in_channel[channel].in_conf0.in_rst_chn = 0;
 }
 
 /**
@@ -280,8 +283,7 @@ static inline void dma2d_ll_rx_reset_channel(dma2d_dev_t *dev, uint32_t channel)
 __attribute__((always_inline))
 static inline bool dma2d_ll_rx_is_reset_avail(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_state_chn_reg_t *reg = (volatile dma2d_in_state_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_state);
-    return reg->in_reset_avail_chn;
+    return dev->in_channel[channel].in_state.in_reset_avail_chn;
 }
 
 /**
@@ -290,8 +292,7 @@ static inline bool dma2d_ll_rx_is_reset_avail(dma2d_dev_t *dev, uint32_t channel
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_abort(dma2d_dev_t *dev, uint32_t channel, bool disable)
 {
-    volatile dma2d_in_conf0_chn_reg_t *reg = (volatile dma2d_in_conf0_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_conf0);
-    reg->in_cmd_disable_chn = disable;
+    dev->in_channel[channel].in_conf0.in_cmd_disable_chn = disable;
 }
 
 /**
@@ -300,8 +301,7 @@ static inline void dma2d_ll_rx_abort(dma2d_dev_t *dev, uint32_t channel, bool di
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_enable_dscr_port(dma2d_dev_t *dev, uint32_t channel, bool enable)
 {
-    volatile dma2d_in_conf0_chn_reg_t *reg = (volatile dma2d_in_conf0_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_conf0);
-    reg->in_dscr_port_en_chn = enable;
+    dev->in_channel[channel].in_conf0.in_dscr_port_en_chn = enable;
 }
 
 /**
@@ -328,8 +328,7 @@ static inline void dma2d_ll_rx_set_macro_block_size(dma2d_dev_t *dev, uint32_t c
         // Unsupported macro block size
         abort();
     }
-    volatile dma2d_in_conf0_chn_reg_t *reg = (volatile dma2d_in_conf0_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_conf0);
-    reg->in_macro_block_size_chn = sel;
+    dev->in_channel[channel].in_conf0.in_macro_block_size_chn = sel;
 }
 
 /**
@@ -338,9 +337,8 @@ static inline void dma2d_ll_rx_set_macro_block_size(dma2d_dev_t *dev, uint32_t c
 __attribute__((always_inline))
 static inline uint32_t dma2d_ll_rx_pop_data(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_pop_chn_reg_t *reg = (volatile dma2d_in_pop_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_pop);
-    reg->infifo_pop_chn = 1;
-    return reg->infifo_rdata_chn;
+    dev->in_channel[channel].in_pop.infifo_pop_chn = 1;
+    return dev->in_channel[channel].in_pop.infifo_rdata_chn;
 }
 
 /**
@@ -349,8 +347,7 @@ static inline uint32_t dma2d_ll_rx_pop_data(dma2d_dev_t *dev, uint32_t channel)
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_set_desc_addr(dma2d_dev_t *dev, uint32_t channel, uint32_t addr)
 {
-    volatile dma2d_in_link_addr_chn_reg_t *reg = (volatile dma2d_in_link_addr_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_link_addr);
-    reg->inlink_addr_chn = addr;
+    dev->in_channel[channel].in_link_addr.inlink_addr_chn = addr;
 }
 
 /**
@@ -359,8 +356,7 @@ static inline void dma2d_ll_rx_set_desc_addr(dma2d_dev_t *dev, uint32_t channel,
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_start(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_link_conf_chn_reg_t *reg = (volatile dma2d_in_link_conf_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_link_conf);
-    reg->inlink_start_chn = 1;
+    dev->in_channel[channel].in_link_conf.inlink_start_chn = 1;
 }
 
 /**
@@ -369,8 +365,7 @@ static inline void dma2d_ll_rx_start(dma2d_dev_t *dev, uint32_t channel)
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_stop(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_link_conf_chn_reg_t *reg = (volatile dma2d_in_link_conf_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_link_conf);
-    reg->inlink_stop_chn = 1;
+    dev->in_channel[channel].in_link_conf.inlink_stop_chn = 1;
 }
 
 /**
@@ -379,8 +374,7 @@ static inline void dma2d_ll_rx_stop(dma2d_dev_t *dev, uint32_t channel)
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_restart(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_link_conf_chn_reg_t *reg = (volatile dma2d_in_link_conf_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_link_conf);
-    reg->inlink_restart_chn = 1;
+    dev->in_channel[channel].in_link_conf.inlink_restart_chn = 1;
 }
 
 /**
@@ -389,8 +383,7 @@ static inline void dma2d_ll_rx_restart(dma2d_dev_t *dev, uint32_t channel)
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_set_auto_return_owner(dma2d_dev_t *dev, uint32_t channel, int owner)
 {
-    volatile dma2d_in_link_conf_chn_reg_t *reg = (volatile dma2d_in_link_conf_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_link_conf);
-    reg->inlink_auto_ret_chn = owner;
+    dev->in_channel[channel].in_link_conf.inlink_auto_ret_chn = owner;
 }
 
 /**
@@ -399,8 +392,7 @@ static inline void dma2d_ll_rx_set_auto_return_owner(dma2d_dev_t *dev, uint32_t 
 __attribute__((always_inline))
 static inline bool dma2d_ll_rx_is_desc_fsm_idle(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_link_conf_chn_reg_t *reg = (volatile dma2d_in_link_conf_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_link_conf);
-    return reg->inlink_park_chn;
+    return dev->in_channel[channel].in_link_conf.inlink_park_chn;
 }
 
 /**
@@ -409,8 +401,7 @@ static inline bool dma2d_ll_rx_is_desc_fsm_idle(dma2d_dev_t *dev, uint32_t chann
 __attribute__((always_inline))
 static inline bool dma2d_ll_rx_is_fsm_idle(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_state_chn_reg_t *reg = (volatile dma2d_in_state_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_state);
-    return (reg->in_state_chn == 0);
+    return (dev->in_channel[channel].in_state.in_state_chn == 0);
 }
 
 /**
@@ -419,8 +410,7 @@ static inline bool dma2d_ll_rx_is_fsm_idle(dma2d_dev_t *dev, uint32_t channel)
 __attribute__((always_inline))
 static inline uint32_t dma2d_ll_rx_get_success_eof_desc_addr(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_suc_eof_des_addr_chn_reg_t *reg = (volatile dma2d_in_suc_eof_des_addr_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_suc_eof_des_addr);
-    return reg->val;
+    return dev->in_channel[channel].in_suc_eof_des_addr.val;
 }
 
 /**
@@ -429,8 +419,7 @@ static inline uint32_t dma2d_ll_rx_get_success_eof_desc_addr(dma2d_dev_t *dev, u
 __attribute__((always_inline))
 static inline uint32_t dma2d_ll_rx_get_error_eof_desc_addr(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_err_eof_des_addr_chn_reg_t *reg = (volatile dma2d_in_err_eof_des_addr_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_err_eof_des_addr);
-    return reg->val;
+    return dev->in_channel[channel].in_err_eof_des_addr.val;
 }
 
 /**
@@ -439,18 +428,7 @@ static inline uint32_t dma2d_ll_rx_get_error_eof_desc_addr(dma2d_dev_t *dev, uin
 __attribute__((always_inline))
 static inline uint32_t dma2d_ll_rx_get_prefetched_desc_addr(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_dscr_chn_reg_t *reg = (volatile dma2d_in_dscr_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_dscr);
-    return reg->val;
-}
-
-/**
- * @brief Set priority for 2D-DMA RX channel
- */
-__attribute__((always_inline))
-static inline void dma2d_ll_rx_set_priority(dma2d_dev_t *dev, uint32_t channel, uint32_t prio)
-{
-    volatile dma2d_in_arb_chn_reg_t *reg = (volatile dma2d_in_arb_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_arb);
-    reg->in_arb_priority_chn = prio;
+    return dev->in_channel[channel].in_dscr.val;
 }
 
 /**
@@ -459,10 +437,8 @@ static inline void dma2d_ll_rx_set_priority(dma2d_dev_t *dev, uint32_t channel, 
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_connect_to_periph(dma2d_dev_t *dev, uint32_t channel, dma2d_trigger_peripheral_t periph, int periph_id)
 {
-    volatile dma2d_in_peri_sel_chn_reg_t *peri_sel_reg = (volatile dma2d_in_peri_sel_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_peri_sel);
-    peri_sel_reg->in_peri_sel_chn = periph_id;
-    volatile dma2d_in_conf0_chn_reg_t *conf0_reg = (volatile dma2d_in_conf0_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_conf0);
-    conf0_reg->in_mem_trans_en_chn = (periph == DMA2D_TRIG_PERIPH_M2M);
+    dev->in_channel[channel].in_peri_sel.in_peri_sel_chn = periph_id;
+    dev->in_channel[channel].in_conf0.in_mem_trans_en_chn = (periph == DMA2D_TRIG_PERIPH_M2M);
 }
 
 /**
@@ -471,10 +447,8 @@ static inline void dma2d_ll_rx_connect_to_periph(dma2d_dev_t *dev, uint32_t chan
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_disconnect_from_periph(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_peri_sel_chn_reg_t *peri_sel_reg = (volatile dma2d_in_peri_sel_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_peri_sel);
-    peri_sel_reg->in_peri_sel_chn = DMA2D_LL_CHANNEL_PERIPH_NO_CHOICE;
-    volatile dma2d_in_conf0_chn_reg_t *conf0_reg = (volatile dma2d_in_conf0_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_conf0);
-    conf0_reg->in_mem_trans_en_chn = false;
+    dev->in_channel[channel].in_peri_sel.in_peri_sel_chn = DMA2D_LL_CHANNEL_PERIPH_NO_CHOICE;
+    dev->in_channel[channel].in_conf0.in_mem_trans_en_chn = false;
 }
 
 // REORDER FUNCTION (Only CH0 supports this feature)
@@ -485,8 +459,7 @@ static inline void dma2d_ll_rx_disconnect_from_periph(dma2d_dev_t *dev, uint32_t
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_enable_reorder(dma2d_dev_t *dev, uint32_t channel, bool enable)
 {
-    volatile dma2d_in_conf0_chn_reg_t *reg = (volatile dma2d_in_conf0_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_conf0);
-    reg->in_reorder_en_chn = enable;
+    dev->in_channel[channel].in_conf0.in_reorder_en_chn = enable;
 }
 
 // COLOR SPACE CONVERSION FUNCTION
@@ -523,6 +496,17 @@ static inline void dma2d_ll_rx_configure_color_space_conv(dma2d_dev_t *dev, uint
         input_sel = 0;
         proc_en = false;
         output_sel = 1;
+        break;
+    case DMA2D_CSC_RX_YUV444_TO_YUV422:
+        input_sel = 0;
+        proc_en = false;
+        output_sel = 2;
+        break;
+    case DMA2D_CSC_RX_YUV444_TO_YUV420:
+    case DMA2D_CSC_RX_YUV422_TO_YUV420:
+        input_sel = 0;
+        proc_en = false;
+        output_sel = 3;
         break;
     case DMA2D_CSC_RX_YUV420_TO_RGB888_601:
     case DMA2D_CSC_RX_YUV422_TO_RGB888_601:
@@ -581,13 +565,13 @@ static inline void dma2d_ll_rx_configure_color_space_conv(dma2d_dev_t *dev, uint
         abort();
     }
 
-    dev->in_channel0.in_color_convert.in_color_input_sel_chn = input_sel;
-    dev->in_channel0.in_color_convert.in_color_3b_proc_en_chn = proc_en;
-    dev->in_channel0.in_color_convert.in_color_output_sel_chn = output_sel;
+    dev->in_channel[channel].in_color_convert.in_color_input_sel_chn = input_sel;
+    dev->in_channel[channel].in_color_convert.in_color_3b_proc_en_chn = proc_en;
+    dev->in_channel[channel].in_color_convert.in_color_output_sel_chn = output_sel;
 
     if (proc_en) {
         HAL_ASSERT(table);
-        typeof(dev->in_channel0.in_color_param_group) color_param_group;
+        typeof(dev->in_channel[channel].in_color_param_group) color_param_group;
 
         color_param_group.param_h.a = table[0][0];
         color_param_group.param_h.b = table[0][1];
@@ -604,12 +588,12 @@ static inline void dma2d_ll_rx_configure_color_space_conv(dma2d_dev_t *dev, uint
         color_param_group.param_l.c = table[2][2];
         color_param_group.param_l.d = table[2][3];
 
-        dev->in_channel0.in_color_param_group.param_h.val[0] = color_param_group.param_h.val[0];
-        dev->in_channel0.in_color_param_group.param_h.val[1] = color_param_group.param_h.val[1];
-        dev->in_channel0.in_color_param_group.param_m.val[0] = color_param_group.param_m.val[0];
-        dev->in_channel0.in_color_param_group.param_m.val[1] = color_param_group.param_m.val[1];
-        dev->in_channel0.in_color_param_group.param_l.val[0] = color_param_group.param_l.val[0];
-        dev->in_channel0.in_color_param_group.param_l.val[1] = color_param_group.param_l.val[1];
+        dev->in_channel[channel].in_color_param_group.param_h.val[0] = color_param_group.param_h.val[0];
+        dev->in_channel[channel].in_color_param_group.param_h.val[1] = color_param_group.param_h.val[1];
+        dev->in_channel[channel].in_color_param_group.param_m.val[0] = color_param_group.param_m.val[0];
+        dev->in_channel[channel].in_color_param_group.param_m.val[1] = color_param_group.param_m.val[1];
+        dev->in_channel[channel].in_color_param_group.param_l.val[0] = color_param_group.param_l.val[0];
+        dev->in_channel[channel].in_color_param_group.param_l.val[1] = color_param_group.param_l.val[1];
     }
 }
 
@@ -620,7 +604,7 @@ __attribute__((always_inline))
 static inline void dma2d_ll_rx_set_csc_pre_scramble(dma2d_dev_t *dev, uint32_t channel, dma2d_scramble_order_t order)
 {
     HAL_ASSERT(channel == 0); // Only channel 0 supports scramble
-    dev->in_channel0.in_scramble.in_scramble_sel_pre_chn = dma2d_ll_get_scramble_order_sel(order);
+    dev->in_channel[channel].in_scramble.in_scramble_sel_pre_chn = dma2d_ll_get_scramble_order_sel(order);
 }
 
 /**
@@ -630,7 +614,7 @@ __attribute__((always_inline))
 static inline void dma2d_ll_rx_set_csc_post_scramble(dma2d_dev_t *dev, uint32_t channel, dma2d_scramble_order_t order)
 {
     HAL_ASSERT(channel == 0); // Only channel 0 supports scramble
-    dev->in_channel0.in_scramble.in_scramble_sel_post_chn = dma2d_ll_get_scramble_order_sel(order);
+    dev->in_channel[channel].in_scramble.in_scramble_sel_post_chn = dma2d_ll_get_scramble_order_sel(order);
 }
 
 // Arbiter
@@ -659,8 +643,7 @@ static inline void dma2d_ll_rx_set_arb_timeout(dma2d_dev_t *dev, uint32_t timeou
 __attribute__((always_inline))
 static inline void dma2d_ll_rx_set_arb_token_num(dma2d_dev_t *dev, uint32_t channel, uint32_t token_num)
 {
-    volatile dma2d_in_arb_chn_reg_t *reg = (volatile dma2d_in_arb_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_arb);
-    reg->in_arb_token_num_chn = token_num;
+    dev->in_channel[channel].in_arb.in_arb_token_num_chn = token_num;
 }
 
 /**
@@ -669,19 +652,21 @@ static inline void dma2d_ll_rx_set_arb_token_num(dma2d_dev_t *dev, uint32_t chan
 __attribute__((always_inline))
 static inline uint32_t dma2d_ll_rx_get_arb_token_num(dma2d_dev_t *dev, uint32_t channel)
 {
-    volatile dma2d_in_arb_chn_reg_t *reg = (volatile dma2d_in_arb_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_arb);
-    return reg->in_arb_token_num_chn;
+    return dev->in_channel[channel].in_arb.in_arb_token_num_chn;
 }
 
 /**
- * @brief Set 2D-DMA RX channel arbiter priority
+ * @brief Set priority for 2D-DMA RX channel
  */
 __attribute__((always_inline))
-static inline void dma2d_ll_rx_set_arb_priority(dma2d_dev_t *dev, uint32_t channel, uint32_t priority)
+static inline void dma2d_ll_rx_set_priority(dma2d_dev_t *dev, uint32_t channel, uint32_t priority)
 {
-    volatile dma2d_in_arb_chn_reg_t *reg = (volatile dma2d_in_arb_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_arb);
-    reg->in_arb_priority_chn = priority;
+    dev->in_channel[channel].in_arb.in_arb_priority_chn = priority;
 }
+
+// ETM
+
+// note that in_ch1 in_etm_conf register addr is different before and after rev3 chip!
 
 /////////////////////////////////////// TX ///////////////////////////////////////////
 /**
@@ -955,15 +940,6 @@ static inline uint32_t dma2d_ll_tx_get_prefetched_desc_addr(dma2d_dev_t *dev, ui
 }
 
 /**
- * @brief Set priority for 2D-DMA TX channel
- */
-__attribute__((always_inline))
-static inline void dma2d_ll_tx_set_priority(dma2d_dev_t *dev, uint32_t channel, uint32_t prio)
-{
-    dev->out_channel[channel].out_arb.out_arb_priority_chn = prio;
-}
-
-/**
  * @brief Connect 2D-DMA TX channel to a given peripheral
  */
 __attribute__((always_inline))
@@ -1165,10 +1141,10 @@ static inline uint32_t dma2d_ll_tx_get_arb_token_num(dma2d_dev_t *dev, uint32_t 
 }
 
 /**
- * @brief Set 2D-DMA TX channel arbiter priority
+ * @brief Set priority for 2D-DMA TX channel
  */
 __attribute__((always_inline))
-static inline void dma2d_ll_tx_set_arb_priority(dma2d_dev_t *dev, uint32_t channel, uint32_t priority)
+static inline void dma2d_ll_tx_set_priority(dma2d_dev_t *dev, uint32_t channel, uint32_t priority)
 {
     dev->out_channel[channel].out_arb.out_arb_priority_chn = priority;
 }

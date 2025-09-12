@@ -223,8 +223,8 @@
 
 /*-------------------------- 2D-DMA CAPS -------------------------------------*/
 #define SOC_DMA2D_GROUPS                            (1U) // Number of 2D-DMA groups
-#define SOC_DMA2D_TX_CHANNELS_PER_GROUP             (3)  // Number of 2D-DMA TX (OUT) channels in each group
-#define SOC_DMA2D_RX_CHANNELS_PER_GROUP             (2)  // Number of 2D-DMA RX (IN) channels in each group
+#define SOC_DMA2D_TX_CHANNELS_PER_GROUP             (4)  // Number of 2D-DMA TX (OUT) channels in each group (4th channel only exists on P4 ver. >= 3.0)
+#define SOC_DMA2D_RX_CHANNELS_PER_GROUP             (3)  // Number of 2D-DMA RX (IN) channels in each group (3rd channel only exists on P4 ver. >= 3.0)
 // #define SOC_DMA2D_SUPPORT_ETM              (1)  // Support ETM submodule
 
 /*-------------------------- ETM CAPS --------------------------------------*/

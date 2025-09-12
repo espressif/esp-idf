@@ -14,10 +14,12 @@ const dma2d_signal_conn_t dma2d_periph_signals = {
                 [0] = ETS_DMA2D_OUT_CH0_INTR_SOURCE,
                 [1] = ETS_DMA2D_OUT_CH1_INTR_SOURCE,
                 [2] = ETS_DMA2D_OUT_CH2_INTR_SOURCE,
+                [3] = ETS_DMA2D_OUT_CH3_INTR_SOURCE, // This channel only exists on P4 ver. >= 3.0
             },
             .rx_irq_id = {
                 [0] = ETS_DMA2D_IN_CH0_INTR_SOURCE,
                 [1] = ETS_DMA2D_IN_CH1_INTR_SOURCE,
+                [2] = ETS_DMA2D_IN_CH2_INTR_SOURCE, // This channel only exists on P4 ver. >= 3.0
             }
         }
     }
