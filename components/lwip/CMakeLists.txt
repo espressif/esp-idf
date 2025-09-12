@@ -158,8 +158,6 @@ if(NOT ${target} STREQUAL "linux")
 
     if(CONFIG_LWIP_ICMP)
         list(APPEND srcs
-            "apps/ping/esp_ping.c"
-            "apps/ping/ping.c"
             "apps/ping/ping_sock.c")
     endif()
 
