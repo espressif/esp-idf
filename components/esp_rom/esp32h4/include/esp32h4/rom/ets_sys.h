@@ -414,17 +414,6 @@ void ets_set_appcpu_boot_addr(uint32_t start);
 
 #define ETS_MEM_BAR() asm volatile ( "" : : : "memory" )
 
-#ifdef ESP_PLATFORM
-// Remove in IDF v6.0 (IDF-7044)
-typedef enum {
-    OK = 0,
-    FAIL,
-    PENDING,
-    BUSY,
-    CANCEL,
-} STATUS __attribute__((deprecated("Use ETS_STATUS instead")));
-#endif
-
 /**
   * @}
   */
