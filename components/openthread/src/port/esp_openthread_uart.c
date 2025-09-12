@@ -25,6 +25,9 @@
 #include "utils/uart.h"
 #include "driver/usb_serial_jtag_vfs.h"
 #include "driver/usb_serial_jtag.h"
+#if CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG
+#include "hal/usb_serial_jtag_ll.h"
+#endif
 
 static int s_uart_port;
 static int s_uart_fd;
@@ -50,6 +53,11 @@ otError otPlatUartFlush(void)
 otError otPlatUartSend(const uint8_t *buf, uint16_t buf_length)
 {
     int rval = write(s_uart_fd, buf, buf_length);
+
+    // DIG-727
+#if CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG
+    usb_serial_jtag_ll_txfifo_flush();
+#endif
 
     if (rval != (int)buf_length) {
         return OT_ERROR_FAILED;
