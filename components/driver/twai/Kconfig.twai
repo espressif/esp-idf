@@ -1,6 +1,12 @@
 menu "Legacy TWAI Driver Configurations"
     depends on SOC_TWAI_SUPPORTED
 
+    config TWAI_ISR_IN_IRAM_LEGACY
+        bool "Place TWAI ISR function in IRAM"
+        default n
+        help
+            Place the TWAI ISR in to IRAM to reduce latency and increase performance
+
     config TWAI_SKIP_LEGACY_CONFLICT_CHECK
         bool "Skip legacy driver conflict check"
         default n

@@ -6,6 +6,37 @@ Peripherals
 Common Changes
 --------------
 
+Legacy Driver Dependencies Removal
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The legacy driver component :component:`driver` has been deprecated and no longer contains public dependencies on the following driver components:
+
+.. list::
+    :class: no-bullet
+
+    - :component:`esp_driver_ana_cmpr`
+    - :component:`esp_driver_dac`
+    - :component:`esp_driver_gptimer`
+    - :component:`esp_driver_i2s`
+    - :component:`esp_driver_ledc`
+    - :component:`esp_driver_mcpwm`
+    - :component:`esp_driver_parlio`
+    - :component:`esp_driver_pcnt`
+    - :component:`esp_driver_rmt`
+    - :component:`esp_driver_sdio`
+    - :component:`esp_driver_sdm`
+    - :component:`esp_driver_sdmmc`
+    - :component:`esp_driver_sdspi`
+    - :component:`esp_driver_spi`
+    - :component:`esp_driver_tsens`
+    - :component:`esp_driver_twai`
+    - :component:`esp_driver_uart`
+    - :component:`esp_driver_usb_serial_jtag`
+
+If your project uses legacy :component:`driver` component, it is strongly recommended to remove :component:`driver` component dependencies, and add new driver component (usually ``esp_driver_xxx``) dependencies to your project.
+
+If you still need to keep legacy :component:`driver` component (e.g. your project depends on the legacy ``i2c`` driver), please keep the :component:`driver` component remaining in the dependency list of your project (usually ``<project_root>/main/CMakeLists.txt``), and manually add component dependencies that are no longer included in :component:`driver` as needed.
+
 All drivers' ``io_loop_back`` configuration have been removed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

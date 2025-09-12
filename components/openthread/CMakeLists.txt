@@ -277,7 +277,7 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        EXCLUDE_SRCS "${exclude_srcs}"
                        INCLUDE_DIRS "${public_include_dirs}"
                        PRIV_INCLUDE_DIRS "${private_include_dirs}"
-                       REQUIRES esp_netif lwip esp_driver_uart driver
+                       REQUIRES esp_netif lwip esp_driver_uart esp_driver_gpio esp_driver_spi esp_driver_usb_serial_jtag
                        LDFRAGMENTS linker.lf
                        PRIV_REQUIRES console esp_coex esp_event esp_partition esp_timer
                                      ieee802154 mbedtls nvs_flash)

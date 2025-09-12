@@ -1,4 +1,4 @@
-迁移构建系统至 ESP-IDF v6.0
+构建系统
 ===================================
 
 :link_to_translation:`en:[English]`

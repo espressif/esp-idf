@@ -23,7 +23,7 @@ void tearDown(void)
     unity_utils_evaluate_leaks_direct(TEST_MEMORY_LEAK_THRESHOLD);
 }
 
-void app_main(void)
+extern "C" void app_main(void)
 {
     //  _______        ___    ___   _____         _
     // |_   _\ \      / / \  |_ _| |_   _|__  ___| |_
