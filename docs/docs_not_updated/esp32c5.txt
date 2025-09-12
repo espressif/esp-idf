@@ -13,8 +13,6 @@ api-reference/storage/mass_mfg.rst
 api-reference/storage/fatfsgen.rst
 api-reference/storage/index.rst
 api-reference/storage/nvs_partition_parse.rst
-api-reference/system/sleep_modes.rst
-api-reference/system/async_memcpy.rst
 api-reference/index.rst
 api-reference/protocols/esp_serial_slave_link.rst
 api-reference/protocols/esp_crt_bundle.rst
