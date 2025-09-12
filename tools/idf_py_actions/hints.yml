@@ -575,3 +575,7 @@
 -
     re: "error: implicit declaration of function 'vPortCleanUpTCB'"
     hint: "The legacy FreeRTOS hook vPortCleanUpTCB() has been removed from ESP-IDF. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK with vTaskPreDeletionHook( void * pxTCB ) instead."
+
+-
+    re: "error: implicit declaration of function 'esp_lcd_new_panel_nt35510'"
+    hint: "The NT35510 LCD device driver has been moved out of ESP-IDF and is now hosted in the Component Registry. You can add it to your project by running idf.py add-dependency \"espressif/esp_lcd_nt35510\""

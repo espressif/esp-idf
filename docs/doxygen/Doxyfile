@@ -188,7 +188,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_dev.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_ssd1306.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_st7789.h \
-    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_nt35510.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_types.h \
     $(PROJECT_PATH)/components/esp_local_ctrl/include/esp_local_ctrl.h \
     $(PROJECT_PATH)/components/esp_mm/include/esp_mmu_map.h \
