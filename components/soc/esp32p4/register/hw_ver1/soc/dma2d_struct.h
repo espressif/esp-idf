@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -1763,42 +1763,21 @@ typedef struct {
     volatile dma2d_in_peri_sel_chn_reg_t in_peri_sel;
     volatile dma2d_in_arb_chn_reg_t in_arb;
     volatile dma2d_in_ro_status_chn_reg_t in_ro_status;
-    volatile dma2d_in_ro_pd_conf_chn_reg_t in_ro_pd_conf;
-    volatile dma2d_in_color_convert_chn_reg_t in_color_convert;
-    volatile dma2d_in_scramble_chn_reg_t in_scramble;
-    volatile dma2d_color_param_group_chn_reg_t in_color_param_group;
-    volatile dma2d_in_etm_conf_chn_reg_t in_etm_conf;
-    uint32_t reserved_570[36];
-} dma2d_in_ch0_reg_t;
-
-typedef struct {
-    volatile dma2d_in_conf0_chn_reg_t in_conf0;
-    volatile dma2d_in_int_raw_chn_reg_t in_int_raw;
-    volatile dma2d_in_int_ena_chn_reg_t in_int_ena;
-    volatile dma2d_in_int_st_chn_reg_t in_int_st;
-    volatile dma2d_in_int_clr_chn_reg_t in_int_clr;
-    volatile dma2d_infifo_status_chn_reg_t infifo_status;
-    volatile dma2d_in_pop_chn_reg_t in_pop;
-    volatile dma2d_in_link_conf_chn_reg_t in_link_conf;
-    volatile dma2d_in_link_addr_chn_reg_t in_link_addr;
-    volatile dma2d_in_state_chn_reg_t in_state;
-    volatile dma2d_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr;
-    volatile dma2d_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr;
-    volatile dma2d_in_dscr_chn_reg_t in_dscr;
-    volatile dma2d_in_dscr_bf0_chn_reg_t in_dscr_bf0;
-    volatile dma2d_in_dscr_bf1_chn_reg_t in_dscr_bf1;
-    volatile dma2d_in_peri_sel_chn_reg_t in_peri_sel;
-    volatile dma2d_in_arb_chn_reg_t in_arb;
-    volatile dma2d_in_ro_status_chn_reg_t in_ro_status;
-    volatile dma2d_in_etm_conf_chn_reg_t in_etm_conf;
-    uint32_t reserved_64c[45];
-} dma2d_in_ch1_reg_t;
+    union {
+        volatile dma2d_in_ro_pd_conf_chn_reg_t in_ro_pd_conf;             /* only exist on channel0 */
+        volatile dma2d_in_etm_conf_chn_reg_t in1_etm_conf;                /* specific for channel1 */
+    };
+    volatile dma2d_in_color_convert_chn_reg_t in_color_convert;           /* only exist on channel0 */
+    volatile dma2d_in_scramble_chn_reg_t in_scramble;                     /* only exist on channel0 */
+    volatile dma2d_color_param_group_chn_reg_t in_color_param_group;      /* only exist on channel0 */
+    volatile dma2d_in_etm_conf_chn_reg_t in_etm_conf;                     /* On ver. less than 3.0, channel 1 in_etm_conf register is at the in_ro_pd_conf addr. Here is to only be compatible with new ECOs. Workaround should be done in LL layer. */
+    uint32_t reserved_in[36];
+} dma2d_in_chn_reg_t;
 
 typedef struct dma2d_dev_t {
     volatile dma2d_out_chn_reg_t out_channel[3];
     uint32_t reserved_300[128];
-    volatile dma2d_in_ch0_reg_t in_channel0;
-    volatile dma2d_in_ch1_reg_t in_channel1;
+    volatile dma2d_in_chn_reg_t in_channel[2];
     uint32_t reserved_700[192];
     volatile dma2d_axi_err_reg_t axi_err;
     volatile dma2d_rst_conf_reg_t rst_conf;

@@ -34,6 +34,11 @@
 #define _SOC_CAPS_PCNT_CHANS_PER_UNIT             2  // Number of channels in each PCNT unit
 #define _SOC_CAPS_PCNT_THRES_POINT_PER_UNIT       2  // Number of threshold points in each PCNT unit
 
+/*--------------------------- 2D-DMA CAPS -------------------------------------*/
+#define _SOC_CAPS_DMA2D_INST_NUM                 1  // Number of 2D-DMA instances
+#define _SOC_CAPS_DMA2D_TX_CHANS_PER_INST        4  // Number of 2D-DMA TX (OUT) channels in each instance (4th channel only exists on P4 ver. >= 3.0)
+#define _SOC_CAPS_DMA2D_RX_CHANS_PER_INST        3  // Number of 2D-DMA RX (IN) channels in each instance (3rd channel only exists on P4 ver. >= 3.0)
+
 /*--------------------------- ETM (Event Task Matrix) ----------------------------*/
 #define _SOC_CAPS_ETM_INST_NUM                    1  // Number of ETM instances
 #define _SOC_CAPS_ETM_CHANS_PER_INST              50 // Number of channels in each ETM instance
