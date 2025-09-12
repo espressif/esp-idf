@@ -168,3 +168,10 @@ LWIP
 ****
 
 lwIP TCP/IP 线程名称由 "tiT" 更改为 "tcpip"。
+
+
+SNTP 头文件移除
+---------------
+
+已弃用的 ``sntp.h`` 头文件在 IDF v6.0 中已被移除。应用程序现在应该包含 ``esp_sntp.h`` 而不是 ``sntp.h`` 来使用 SNTP 功能。
+

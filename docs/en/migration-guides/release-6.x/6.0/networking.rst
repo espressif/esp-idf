@@ -168,3 +168,9 @@ LWIP
 ****
 
 The lwIP TCP/IP thread name has changed from "tiT" to "tcpip".
+
+
+SNTP Header File Removal
+------------------------
+
+The deprecated ``sntp.h`` header file has been removed in IDF v6.0. Applications should now include ``esp_sntp.h`` instead of ``sntp.h`` for SNTP functionality.

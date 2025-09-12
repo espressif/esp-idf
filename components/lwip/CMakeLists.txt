@@ -10,7 +10,6 @@ if(CONFIG_LWIP_ENABLE)
     set(include_dirs
         include
         include/apps
-        include/apps/sntp
         lwip/src/include
         port/include
         port/freertos/include/
