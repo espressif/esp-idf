@@ -117,7 +117,7 @@ To use the virtual framebuffer device in your application, you can add the `espr
 Efuse Emulation
 ~~~~~~~~~~~~~~~
 
-QEMU supports emulation of eFuses. This can be a convenient way to test security-related features, such as secure boot and flash encryption, without having to perform irreversible operations on real hardware.
+QEMU supports emulation of eFuses. This can be a convenient way to test security-related features, such as secure boot and flash encryption, without having to perform irreversible operations on real hardware. For more detailed information, refer to the `QEMU documentation <https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/esp32/README.md#specifying-efuse-storage>`_.
 
 You can use :doc:`idf.py<idf-py>` eFuse-related commands to program eFuses. When you run any of these commands together with ``qemu`` command, the eFuses are programmed in QEMU, and the ``qemu_efuse.bin`` file is updated. For example,
 
