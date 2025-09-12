@@ -10,18 +10,26 @@ include(CheckCXXCompilerFlag)
 #[[api
 .. cmakev2:function:: idf_build_set_property
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_build_set_property(<property> <value> [APPEND])
+        idf_build_set_property(<property> <value> [APPEND])
 
-   :property[in]: Property name.
-   :value[in]: Property value.
-   :APPEND: Append the value to the property's current value instead of
-            replacing it.
+    *property[in]*
 
-   Set the value of the specified property related to the ESP-IDF build. The
-   property is also added to the internal list of build properties if it isn't
-   already there.
+        Property name.
+
+    *value[in]*
+
+        Property value.
+
+    *APPEND*
+
+        Append the value to the property's current value instead of replacing
+        it.
+
+    Set the value of the specified property related to the ESP-IDF build. The
+    property is also added to the internal list of build properties if it isn't
+    already there.
 #]]
 function(idf_build_set_property property value)
     set(options APPEND)
@@ -44,16 +52,24 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_build_get_property
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_build_get_property(<var> <property> [GENERATOR_EXPRESSION])
+        idf_build_get_property(<var> <property> [GENERATOR_EXPRESSION])
 
-   :variable[out]: Variable to store the value in.
-   :property[in]: Property name to get the value of.
-   :GENERATOR_EXPRESSION: Obtain the generator expression for the property
-                          rather than the actual value.
+    *variable[out]*
 
-   Get the value of the specified property related to the ESP-IDF build.
+        Variable to store the value in.
+
+    *property[in]*
+
+        Property name to get the value of.
+
+    *GENERATOR_EXPRESSION[in]*
+
+        Obtain the generator expression for the property rather than the actual
+        value.
+
+    Get the value of the specified property related to the ESP-IDF build.
 #]]
 function(idf_build_get_property variable property)
     set(options GENERATOR_EXPRESSION)
@@ -78,9 +94,9 @@ function(idf_build_get_property variable property)
 endfunction()
 
 #[[
-   __dump_build_properties()
+    __dump_build_properties()
 
-   Dump all build properties.
+    Dump all build properties.
 #]]
 function(__dump_build_properties)
     idf_build_get_property(properties BUILD_PROPERTIES)
@@ -92,15 +108,20 @@ function(__dump_build_properties)
 endfunction()
 
 #[[
-   __get_library_interface_or_die(LIBRARY <library>
-                                  OUTPUT <variable>)
+    __get_library_interface_or_die(LIBRARY <library>
+                                   OUTPUT <variable>)
 
-   :LIBRARY[in]: Library interface or alias.
-   :OUTPUT[out]: Output variable to store the library interface.
+    *LIBRARY[in]*
 
-   Verify that "LIBRARY" is a known interface created by ``idf_build_library``
-   or its alias. If it is, return the library interface; otherwise, terminate
-   the build process.
+        Library interface or alias.
+
+    *OUTPUT[out]*
+
+        Output variable to store the library interface.
+
+    Verify that "LIBRARY" is a known interface created by ``idf_build_library``
+    or its alias. If it is, return the library interface; otherwise, terminate
+    the build process.
 #]]
 function(__get_library_interface_or_die)
     set(options)
@@ -128,19 +149,29 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_library_set_property
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_library_set_property(<library> <property> <value> [APPEND])
+        idf_library_set_property(<library> <property> <value> [APPEND])
 
-   :library[in]: Library interface target or alias.
-   :property[in]: Property name.
-   :value[in]: Property value.
-   :APPEND: Append the value to the property's current value instead of
-            replacing it.
+    *library[in]*
 
-   Set the value of the specified library property. The property is also
-   added to the internal list of library properties if it isn't already
-   there.
+        Library interface target or alias.
+
+    *property[in]*
+
+        Property name.
+
+    *value[in]*
+
+        Property value.
+
+    *APPEND*
+
+        Append the value to the property's current value instead of replacing
+        it.
+
+    Set the value of the specified library property. The property is also added
+    to the internal list of library properties if it isn't already there.
 #]]
 function(idf_library_set_property library property value)
     set(options APPEND)
@@ -164,17 +195,28 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_library_get_property
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_library_get_property(<variable> <library> <property> [GENERATOR_EXPRESSION])
+        idf_library_get_property(<variable> <library> <property> [GENERATOR_EXPRESSION])
 
-   :variable[out]: Variable to store the value in.
-   :library[in]: Library interface target or alias.
-   :property[in]: Property name to get the value of.
-   :GENERATOR_EXPRESSION: Obtain the generator expression for the property
-                          rather than the actual value.
+    *variable[out]*
 
-   Retrieve the value of the specified library property.
+        Variable to store the value in.
+
+    *library[in]*
+
+        Library interface target or alias.
+
+    *property[in]*
+
+        Property name to get the value of.
+
+    *GENERATOR_EXPRESSION*
+
+        Obtain the generator expression for the property rather than the actual
+        value.
+
+    Retrieve the value of the specified library property.
 #]]
 function(idf_library_get_property variable library property)
     set(options GENERATOR_EXPRESSION)
@@ -196,11 +238,13 @@ function(idf_library_get_property variable library property)
 endfunction()
 
 #[[
-   __dump_library_properties(<libraries>)
+    __dump_library_properties(<libraries>)
 
-   :libraries: List of library interfaces whose properties should be displayed.
+    *libraries*
 
-   Dump all properties for the libraries listed in ``<libraries>``.
+        List of library interfaces whose properties should be displayed.
+
+    Dump all properties for the libraries listed in ``<libraries>``.
 #]]
 function(__dump_library_properties libraries)
     foreach(library IN LISTS libraries)
@@ -216,26 +260,32 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_build_library
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-       idf_build_library(<library>
-                         [COMPONENTS <component>...])
+        idf_build_library(<library>
+                          [COMPONENTS <component>...])
 
-   :library[in]: Name of the library interface to be created.
-   :COMPONENTS[in,opt]: List of component names to add to the library.
+    *library[in]*
 
-   Create a new library interface target with the name specified in the
-   ``library`` option and link component targets to it based on the component
-   names provided in the ``COMPONENTS`` option. If ``COMPONENTS`` option is not
-   set, link component targets of all discovered components.
+        Name of the library interface to be created.
 
-   List of library properties
+    *COMPONENTS[in,opt]*
 
-   :LIBRARY_COMPONENTS: List of component as specified by the ``COMPONENTS``
-                        option.
-   :LIBRARY_COMPONENTS_LINKED: List of components linked to the library based
-                               on recursive evaluations of the INTERFACE_LINK_LIBRARIES
-                               and LINK_LIBRARIES target properties.
+        List of component names to add to the library.
+
+    Create a new library interface target with the name specified in the
+    ``library`` option and link component targets to it based on the component
+    names provided in the ``COMPONENTS`` option. If ``COMPONENTS`` option is
+    not set, link component targets of all discovered components.
+
+    List of library properties
+
+    LIBRARY_COMPONENTS
+        List of component as specified by the ``COMPONENTS`` option.
+
+    LIBRARY_COMPONENTS_LINKED
+        List of components linked to the library based on recursive evaluations
+        of the INTERFACE_LINK_LIBRARIES and LINK_LIBRARIES target properties.
 #]]
 function(idf_build_library library)
     set(options)
@@ -382,24 +432,35 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_build_executable
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-       idf_build_executable(<executable>
-                            [COMPONENTS <component>...]
-                            [NAME <name>]
-                            [SUFFIX <suffix>])
+        idf_build_executable(<executable>
+                             [COMPONENTS <component>...]
+                             [NAME <name>]
+                             [SUFFIX <suffix>])
 
-   :executable[in]: Name of the executable target to be created.
-   :COMPONENTS[in,opt]: List of component names to add to the library.
-   :NAME[in,opt]: Optional preferred generated binary name. If not provided,
-                  the ``executable`` name is used.
-   :SUFFIX[in,opt]: Optional ``executable`` suffix.
+    *executable[in]*
 
-   Create a new executable target using the name specified in the
-   ``executable`` argument, and link it to the library created with the
-   component names provided in the ``COMPONENTS`` option. If the ``COMPONENTS``
-   option is not set, all discovered components are added to the library.
-   Optinaly set the executable name and suffix.
+        Name of the executable target to be created.
+
+    *COMPONENTS[in,opt]*
+
+        List of component names to add to the library.
+
+    *NAME[in,opt]*
+
+        Optional preferred generated binary name. If not provided, the
+        ``executable`` name is used.
+
+    *SUFFIX[in,opt]*
+
+        Optional ``executable`` suffix.
+
+    Create a new executable target using the name specified in the
+    ``executable`` argument, and link it to the library created with the
+    component names provided in the ``COMPONENTS`` option. If the
+    ``COMPONENTS`` option is not set, all discovered components are added to
+    the library.  Optinaly set the executable name and suffix.
 #]]
 function(idf_build_executable executable)
     set(options)
@@ -436,14 +497,19 @@ function(idf_build_executable executable)
 endfunction()
 
 #[[
-   __get_components_metadata(COMPONENTS <component>...
-                             OUTPUT <variable>)
+    __get_components_metadata(COMPONENTS <component>...
+                              OUTPUT <variable>)
 
-   :COMPONENTS[in]: List of components for which to generate metadata.
-   :OUTPUT[out]: Output variable to store JSON metadata.
+    *COMPONENTS[in]*
 
-   Generate metadata in JSON format from ``COMPONENTS`` and store it in the
-   ``OUTPUT`` variable.
+        List of components for which to generate metadata.
+
+    *OUTPUT[out]*
+
+        Output variable to store JSON metadata.
+
+    Generate metadata in JSON format from ``COMPONENTS`` and store it in the
+    ``OUTPUT`` variable.
 #]]
 function(__get_components_metadata)
     set(options)
@@ -530,19 +596,23 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_build_generate_metadata
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_build_generate_metadata(<executable>
-                                  [FILE <file>])
+        idf_build_generate_metadata(<executable>
+                                    [FILE <file>])
 
-   :executable[in]: Executable target for which to generate a metadata file.
-   :OUTPUT_FILE[in,opt]: Optional output file path for storing the metadata. If not
-                         provided, the default path ``<build>/project_description.json``
-                         is used.
+    *executable[in]*
 
-   Generate metadata for the specified ``executable`` and store it in the
-   specified ``FILE``. If no ``FILE`` is provided, the default location
-   ``<build>/project_description.json`` will be used.
+        Executable target for which to generate a metadata file.
+
+    *OUTPUT_FILE[in,opt]*
+
+        Optional output file path for storing the metadata. If not provided,
+        the default path ``<build>/project_description.json`` is used.
+
+    Generate metadata for the specified ``executable`` and store it in the
+    specified ``FILE``. If no ``FILE`` is provided, the default location
+    ``<build>/project_description.json`` will be used.
 #]]
 function(idf_build_generate_metadata executable)
     set(options)
@@ -626,23 +696,30 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_build_binary
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_build_binary(<executable>
-                       TARGET <target>
-                       OUTPUT_FILE <file>)
+        idf_build_binary(<executable>
+                         TARGET <target>
+                         OUTPUT_FILE <file>)
 
-   :executable[in]: Executable target for which to generate a binary image
-                    file.
-   :TARGET[in]: The name of the target that will be created for the generated
-                binary image.
-   :OUTPUT_FILE[in]: Output file path for storing the binary image file.
+    *executable[in]*
 
-   Create a binary image for the specified ``executable`` target and save it in
-   the file specified with the  `OUTPUT_FILE` option. A custom target named
-   ``TARGET`` will be created for the generated binary image. The path of the
-   generated binary image will be also stored in the ``BINARY_PATH`` property
-   of the ``TARGET``.
+        Executable target for which to generate a binary image file.
+
+    *TARGET[in]*
+
+        The name of the target that will be created for the generated binary
+        image.
+
+    *OUTPUT_FILE[in]*
+
+        Output file path for storing the binary image file.
+
+    Create a binary image for the specified ``executable`` target and save it
+    in the file specified with the ``OUTPUT_FILE`` option. A custom target
+    named ``TARGET`` will be created for the generated binary image. The path
+    of the generated binary image will be also stored in the ``BINARY_PATH``
+    property of the ``TARGET``.
 #]]
 function(idf_build_binary executable)
     set(options)
@@ -714,29 +791,39 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_sign_binary
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_sign_binary(<binary>
-                      TARGET <target>
-                      OUTPUT_FILE <file>
-                      [KEYFILE <file>])
+        idf_sign_binary(<binary>
+                        TARGET <target>
+                        OUTPUT_FILE <file>
+                        [KEYFILE <file>])
 
-   :binary[in]: Binary image target for which to generate a signed binary image
-                file. The ``binary`` target is created by the ``idf_build_binary``
-                function.
-   :TARGET[in]: The name of the target that will be created for the
-                signed binary image.
-   :OUTPUT_FILE[in]: Output file path for storing the signed binary image file.
-   :KEYFILE[in,opt]: Optional path to the key file that should be used for
-                     signing. If not provided, the key file specified by the
-                     ``CONFIG_SECURE_BOOT_SIGNING_KEY`` configuration option
-                     will be used.
+    *binary[in]*
 
-   Sign binary image specified by ``binary`` target with ``KEYFILE`` and save
-   it in the file specified with the  `OUTPUT_FILE` option. A custom target
-   named ``TARGET`` will be created for the signed binary image. The path of
-   the signed binary image will be also stored in the ``BINARY_PATH`` property
-   of the ``TARGET``.
+        Binary image target for which to generate a signed binary image file.
+        The ``binary`` target is created by the :cmakev2:ref:`idf_build_binary`
+        function.
+
+    *TARGET[in]*
+
+        The name of the target that will be created for the signed binary
+        image.
+
+    *OUTPUT_FILE[in]*
+
+        Output file path for storing the signed binary image file.
+
+    *KEYFILE[in,opt]*
+
+        Optional path to the key file that should be used for signing. If not
+        provided, the key file specified by the
+        ``CONFIG_SECURE_BOOT_SIGNING_KEY`` configuration option will be used.
+
+    Sign binary image specified by ``binary`` target with ``KEYFILE`` and save
+    it in the file specified with the  `OUTPUT_FILE` option. A custom target
+    named ``TARGET`` will be created for the signed binary image. The path of
+    the signed binary image will be also stored in the ``BINARY_PATH`` property
+    of the ``TARGET``.
 #]]
 function(idf_sign_binary binary)
     set(options)
@@ -805,28 +892,38 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_flash_binary
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_flash_binary(<binary>
-                       TARGET <target>
-                       [NAME <name>]
-                       [FLASH])
+        idf_flash_binary(<binary>
+                         TARGET <target>
+                         [NAME <name>]
+                         [FLASH])
 
-   :binary[in]: Binary image target for which to create flash target.
-                The ``binary`` target is created by the ``idf_build_binary``
-                function or ``idf_sign_binary``.
-   :TARGET[in]: The name of the flash target that will be created for the
-                binary image.
-   :NAME[in,opt]: An optional name to be used as a prefix for the file
-                  containing arguments for esptool, and as a logical name
-                  for the binary in ``flasher_args.json``. If not specified,
-                  the name of the ``TARGET`` is used.
-   :FLASH[in,opt]: If specified, the binary will also be added to the global
-                   ``flash`` target.
+    *binary[in]*
 
-   Create a new flash target for ``binary`` using the name specified in the
-   ``TARGET`` option. The file path of the binary image should be stored in the
-   ``BINARY_PATH`` property of the ``binary`` target.
+        Binary image target for which to create flash target.  The ``binary``
+        target is created by the :cmakev2:ref:`idf_build_binary` function or
+        :cmakev2:ref:`idf_sign_binary`.
+
+    *TARGET[in]*
+
+        The name of the flash target that will be created for the binary image.
+
+    *NAME[in,opt]*
+
+        An optional name to be used as a prefix for the file containing
+        arguments for esptool, and as a logical name for the binary in
+        ``flasher_args.json``. If not specified, the name of the ``TARGET`` is
+        used.
+
+    *FLASH[in,opt]*
+
+        If specified, the binary will also be added to the global ``flash``
+        target.
+
+    Create a new flash target for ``binary`` using the name specified in the
+    ``TARGET`` option. The file path of the binary image should be stored in
+    the ``BINARY_PATH`` property of the ``binary`` target.
 #]]
 function(idf_flash_binary binary)
     set(options FLASH)
@@ -876,17 +973,19 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_check_binary_size
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_check_binary_size(<binary>)
+        idf_check_binary_size(<binary>)
 
-   :binary[in]: Binary image target to which to add a partition size check.
-                The ``binary`` target is created by the ``idf_build_binary``
-                or ``idf_sign_binary`` function.
+    *binary[in]*
 
-   Ensure that the generated binary image fits within the smallest available
-   application partition. The file path of the binary image should be stored in
-   the ``BINARY_PATH`` property of the ``binary`` target.
+        Binary image target to which to add a partition size check.  The
+        ``binary`` target is created by the :cmakev2:ref:`idf_build_binary` or
+        :cmakev2:ref:`idf_sign_binary` function.
+
+    Ensure that the generated binary image fits within the smallest available
+    application partition. The file path of the binary image should be stored
+    in the ``BINARY_PATH`` property of the ``binary`` target.
 #]]
 function(idf_check_binary_size binary)
     if(NOT CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
@@ -908,18 +1007,20 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_check_binary_signed
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_check_binary_signed(<binary>)
+        idf_check_binary_signed(<binary>)
 
-   :binary[in]: Binary image target to which to add a partition size check.
-                The ``binary`` target is created by the ``idf_build_binary``.
+    *binary[in]*
 
-   If the binary is not signed and signed applications are required with
-   CONFIG_SECURE_SIGNED_APPS, print a note indicating that the binary needs to
-   be signed manually. This situation can occur if the binary images are not
-   signed during the build because CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES is
-   not set.
+        Binary image target to which to add a partition size check.  The
+        ``binary`` target is created by the ``idf_build_binary``.
+
+    If the binary is not signed and signed applications are required with
+    CONFIG_SECURE_SIGNED_APPS, print a note indicating that the binary needs to
+    be signed manually. This situation can occur if the binary images are not
+    signed during the build because CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES is
+    not set.
 #]]
 function(idf_check_binary_signed binary)
     if(NOT CONFIG_SECURE_SIGNED_APPS)

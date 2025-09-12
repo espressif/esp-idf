@@ -8,9 +8,9 @@ include(build)
 include(kconfig)
 
 #[[
-   __init_component_manager()
+    __init_component_manager()
 
-   Initialize component manager related build properties and defaults.
+    Initialize component manager related build properties and defaults.
 #]]
 function(__init_component_manager)
     # Set IDF_COMPONENT_MANAGER build property to 1 if not explicitly set to 0
@@ -41,17 +41,17 @@ function(__init_component_manager)
 endfunction()
 
 #[[
-   __fetch_components_from_registry()
+    __fetch_components_from_registry()
 
-   Iteratively run the component manager and Kconfig until stable or error out.
-   This routine allows 1 re-run if the manager fails with a missing kconfig
-   option. This behavior is similar to the build system v1.
+    Iteratively run the component manager and Kconfig until stable or error
+    out.  This routine allows 1 re-run if the manager fails with a missing
+    kconfig option. This behavior is similar to the build system v1.
 
-   This routine performs the following steps:
-   1. Initialize the component manager.
-   2. Run the component manager for all discovered components.
-   3. Re-collect Kconfig and regenerate sdkconfig with managed components included.
-   4. If the component manager run failed, error out.
+    This routine performs the following steps:
+    1. Initialize the component manager.
+    2. Run the component manager for all discovered components.
+    3. Re-collect Kconfig and regenerate sdkconfig with managed components included.
+    4. If the component manager run failed, error out.
 #]]
 function(__fetch_components_from_registry)
     # Initialize the component manager.
@@ -86,16 +86,24 @@ function(__fetch_components_from_registry)
 endfunction()
 
 #[[
-   __download_managed_component(COMPONENTS_LIST_FILE <file>
-                                MANAGED_OUTPUT_FILE <file>
-                                RESULT <variable>)
+    __download_managed_component(COMPONENTS_LIST_FILE <file>
+                                 MANAGED_OUTPUT_FILE <file>
+                                 RESULT <variable>)
 
-   Utility function to run the component manager with a specific components list
-   and generate managed components output.
+    *COMPONENTS_LIST_FILE[in]*
 
-   :COMPONENTS_LIST_FILE[in]: Path to the local components list file
-   :MANAGED_OUTPUT_FILE[in]: Path where managed components CMake file will be written
-   :RESULT[out]: Exit code returned by the manager. 0 success, 10 re-run.
+        Path to the local components list file
+
+    *MANAGED_OUTPUT_FILE[in]*
+
+        Path where managed components CMake file will be written
+
+    *RESULT[out]*
+
+        Exit code returned by the manager. 0 success, 10 re-run.
+
+    Utility function to run the component manager with a specific components
+    list and generate managed components output.
 #]]
 function(__download_managed_component)
     set(options)
@@ -151,11 +159,13 @@ function(__download_managed_component)
 endfunction()
 
 #[[
-   __download_component_level_managed_components(RESULT <variable>)
+    __download_component_level_managed_components(RESULT <variable>)
 
-   Download component-level managed components
+    *RESULT[out]*
 
-   :RESULT[out]: Exit code returned by the manager. 0 success, 10 re-run.
+        Exit code returned by the manager. 0 success, 10 re-run.
+
+    Download component-level managed components
 #]]
 function(__download_component_level_managed_components)
     set(options)
@@ -209,10 +219,10 @@ function(__download_component_level_managed_components)
 endfunction()
 
 #[[
-   __component_manager_warn_if_disabled_and_manifests_exist()
+    __component_manager_warn_if_disabled_and_manifests_exist()
 
-   When the component manager is disabled, warn if any discovered component
-   contains an idf_component.yml manifest.
+    When the component manager is disabled, warn if any discovered component
+    contains an idf_component.yml manifest.
 #]]
 function(__component_manager_warn_if_disabled_and_manifests_exist)
     idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
@@ -228,13 +238,14 @@ function(__component_manager_warn_if_disabled_and_manifests_exist)
 endfunction()
 
 #[[
-   __component_set_property(target property value)
+    __component_set_property(target property value)
 
-   Shim for setting component properties, primarily for use by the component manager
-   in build system v2. This function only processes dependency-related properties
-   (MANAGED_REQUIRES and MANAGED_PRIV_REQUIRES) produced by the component manager's
-   injection file. Other properties are ignored to avoid interfering with the
-   cmakev2 build flow. Target names with triple underscores are normalized.
+    Shim for setting component properties, primarily for use by the component
+    manager in build system v2. This function only processes dependency-related
+    properties(MANAGED_REQUIRES and MANAGED_PRIV_REQUIRES) produced by the
+    component manager's injection file. Other properties are ignored to avoid
+    interfering with the cmakev2 build flow. Target names with triple
+    underscores are normalized.
 #]]
 function(__component_set_property target property value)
     # If the target has 3 underscores, remove all of them and normalize the target
@@ -263,11 +274,11 @@ function(__component_set_property target property value)
 endfunction()
 
 #[[
-   __inject_requirements_for_component_from_manager(<component_name>)
+    __inject_requirements_for_component_from_manager(<component_name>)
 
-   Managed dependency injection for a single component in build system v2.
-   Calls the Component Manager to compute manifest-derived dependencies and
-   updates the component's MANAGED_* properties.
+    Managed dependency injection for a single component in build system v2.
+    Calls the Component Manager to compute manifest-derived dependencies and
+    updates the component's MANAGED_* properties.
 #]]
 function(__inject_requirements_for_component_from_manager component_name)
     # Skip if already injected

@@ -10,19 +10,29 @@ include(kconfig)
 #[[api
 .. cmakev2:function:: idf_component_set_property
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_component_set_property(<component> <property> <value> [APPEND])
+        idf_component_set_property(<component> <property> <value> [APPEND])
 
-   :component[in]: Component name, target, target alias or interface.
-   :property[in]: Property name.
-   :value[in]: Property value.
-   :APPEND: Append the value to the property's current value instead of
-            replacing it.
+    *component[in]*
 
-   Set the value of the specified component property. The property is also
-   added to the internal list of component properties if it isn't already
-   there.
+        Component name, target, target alias or interface.
+
+    *property[in]*
+
+        Property name.
+
+    *value[in]*
+
+        Property value.
+
+    *APPEND*
+        Append the value to the property's current value instead of replacing
+        it.
+
+    Set the value of the specified component property. The property is also
+    added to the internal list of component properties if it isn't already
+    there.
 #]]
 function(idf_component_set_property component property value)
     set(options APPEND)
@@ -46,17 +56,28 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_component_get_property
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_component_get_property(<variable> <component> <property> [GENERATOR_EXPRESSION])
+        idf_component_get_property(<variable> <component> <property> [GENERATOR_EXPRESSION])
 
-   :variable[out]: Variable to store the value in.
-   :component[in]: Component name, target, target alias or interface.
-   :property[in]: Property name to get the value of.
-   :GENERATOR_EXPRESSION: Obtain the generator expression for the property
-                          rather than the actual value.
+    *variable[out]*
 
-   Retrieve the value of the specified component property.
+        Variable to store the value in.
+
+    *component[in]*
+
+        Component name, target, target alias or interface.
+
+    *property[in]*
+
+        Property name to get the value of.
+
+    *GENERATOR_EXPRESSION*
+
+        Obtain the generator expression for the property rather than the actual
+        value.
+
+    Retrieve the value of the specified component property.
 #]]
 function(idf_component_get_property variable component property)
     set(options GENERATOR_EXPRESSION)
@@ -78,26 +99,39 @@ function(idf_component_get_property variable component property)
 endfunction()
 
 #[[
-   __get_component_paths(PATHS <path>...
-                         [EXCLUDE_PATHS <path>...]
-                         [SOURCE <source>]
-                         [CHECK]
-                         OUTPUT <var>)
+    __get_component_paths(PATHS <path>...
+                          [EXCLUDE_PATHS <path>...]
+                          [SOURCE <source>]
+                          [CHECK]
+                          OUTPUT <var>)
 
-   :PATHS[in]: List of paths to search for component directories.
-   :EXCLUDE_PATHS[in,opt]: Optional list of paths to exclude from the search of
-                           component directories.
-   :SOURCE[in,opt]: Source of the ``PATHS``. If provided, it will be included
-                    in the error message when ``CHECK`` is specified.
-   :CHECK[in,opt]: Verify whether the paths listed in "PATHS" exist. If any
-                   path is missing, abort the build process.
-   :OUTPUT[out]: Output variable to store the list of found component
-                 directories.
+    *PATHS[in]*
 
-   Search for component directories in the specified ``PATHS``, excluding those
-   in ``EXCLUDE_PATHS``, and store the list of absolute component paths in the
-   ``OUTPUT`` variable. If ``CHECK`` is specified, ensure that the paths listed
-   in ``PATHS`` exist, and stop the build process if they do not.
+        List of paths to search for component directories.
+
+    *EXCLUDE_PATHS[in,opt]*
+
+        Optional list of paths to exclude from the search of component
+        directories.
+
+    *SOURCE[in,opt]*
+
+        Source of the ``PATHS``. If provided, it will be included in the error
+        message when ``CHECK`` is specified.
+
+    *CHECK[in,opt]*
+
+        Verify whether the paths listed in "PATHS" exist. If any path is
+        missing, abort the build process.
+
+    *OUTPUT[out]*
+
+        Output variable to store the list of found component directories.
+
+    Search for component directories in the specified ``PATHS``, excluding
+    those in ``EXCLUDE_PATHS``, and store the list of absolute component paths
+    in the ``OUTPUT`` variable. If ``CHECK`` is specified, ensure that the
+    paths listed in ``PATHS`` exist, and stop the build process if they do not.
 #]]
 function(__get_component_paths)
     set(options CHECK)
@@ -155,17 +189,22 @@ endfunction()
     __get_component_interface(COMPONENT <component>
                               OUTPUT <variable>)
 
-   :COMPONENT[int]: Component name, target, target alias or interface.
-   :OUTPUT[out]: Output variable to store the component interface.
+    *COMPONENT[int]*
 
-   Identify the component interface target using the ``<component>`` value,
-   which could be a component name, target, target alias, or interface. Return
-   the component interface target, or NOTFOUND if the interface cannot be
-   located.
+        Component name, target, target alias or interface.
 
-   component interface: <component_prefix>_<component name>
-   component target: _<component_prefix>_<component name>
-   component alias: <component_prefix>::<component name>
+    *OUTPUT[out]*
+
+        Output variable to store the component interface.
+
+    Identify the component interface target using the ``<component>`` value,
+    which could be a component name, target, target alias, or interface. Return
+    the component interface target, or NOTFOUND if the interface cannot be
+    located.
+
+    component interface: <component_prefix>_<component name>
+    component target: _<component_prefix>_<component name>
+    component alias: <component_prefix>::<component name>
 #]]
 function(__get_component_interface)
     set(options)
@@ -227,11 +266,16 @@ endfunction()
     __get_component_interface_or_die(COMPONENT <component>
                                      OUTPUT <variable>)
 
-   :COMPONENT[in]: Component name, target, target alias or interface.
-   :OUTPUT[out]: Output variable to store the component interface.
+    *COMPONENT[in]*
 
-   A simple wrapper for ``__get_component_interface`` that aborts the build
-   process if the component interface is not found.
+        Component name, target, target alias or interface.
+
+    *OUTPUT[out]*
+
+        Output variable to store the component interface.
+
+    A simple wrapper for ``__get_component_interface`` that aborts the build
+    process if the component interface is not found.
 #]]
 function(__get_component_interface_or_die)
     set(options)
@@ -255,15 +299,20 @@ function(__get_component_interface_or_die)
 endfunction()
 
 #[[
-   __get_component_priority(SOURCE <source>
-                            OUTPUT <variable>)
+    __get_component_priority(SOURCE <source>
+                             OUTPUT <variable>)
 
-   :SOURCE[in]: String identifying the component source.
-   :OUTPUT[out]: Output variable to store the component priority.
+    *SOURCE[in]*
 
-   Return the priority number of a component, where a higher number indicates a
-   higher priority, based on the given ``source`` string. If the ``source`` is
-   not valid, return ``NOTFOUND``.
+        String identifying the component source.
+
+    *OUTPUT[out]*
+
+        Output variable to store the component priority.
+
+    Return the priority number of a component, where a higher number indicates
+    a higher priority, based on the given ``source`` string. If the ``source``
+    is not valid, return ``NOTFOUND``.
 #]]
 function(__get_component_priority)
     set(options)
@@ -295,36 +344,44 @@ function(__get_component_priority)
 endfunction()
 
 #[[
-   __init_component(DIRECTORY <path>
-                    PREFIX <prefix>
-                    SOURCE <source>)
+    __init_component(DIRECTORY <path>
+                     PREFIX <prefix>
+                     SOURCE <source>)
 
-   :DIRECTORY[in]: ``<path>`` where the component is located.
-   :PREFIX[in]: Prefix for component target names.
-   :SOURCE[in]: String identifying the component source.
+    *DIRECTORY[in]*
 
-   Initialize the component by creating a component interface target, allowing
-   properties to be attached to it and also add initial component properties.
-   At this stage, the component is not included in the build. The actual
-   component target, named as specified in the `COMPONENT_LIB` property, is
-   created later when ``add_subdirectory`` is called for the component's
-   directory based on the project or other component requirements.
+        ``<path>`` where the component is located.
 
-   Components are identified by the directory name they reside in. This means
-   that components with the same name might exist in different directory paths.
-   In such cases, the component with the higher priority is used. Priority is
-   determined by the component's source, as defined in
-   ``__get_component_priority``. If a component with a higher priority than an
-   existing one is initialized, its name, targets, and other properties remain
-   the same. Only the directory, priority, and source are updated in the
-   already initialized component.
+    *PREFIX[in]*
 
-   The name of the initialized component is added to the
-   ``COMPONENTS_DISCOVERED`` build property, and its interface target is added
-   to the ``COMPONENT_INTERFACES`` build property. These two lists are used by
-   ``__get_component_interface``, which searches for a component interface
-   based on the component name, alias, or targets, enabling the setting and
-   retrieval of component properties.
+        Prefix for component target names.
+
+    *SOURCE[in]*
+
+        String identifying the component source.
+
+    Initialize the component by creating a component interface target, allowing
+    properties to be attached to it and also add initial component properties.
+    At this stage, the component is not included in the build. The actual
+    component target, named as specified in the `COMPONENT_LIB` property, is
+    created later when ``add_subdirectory`` is called for the component's
+    directory based on the project or other component requirements.
+
+    Components are identified by the directory name they reside in. This means
+    that components with the same name might exist in different directory
+    paths.  In such cases, the component with the higher priority is used.
+    Priority is determined by the component's source, as defined in
+    ``__get_component_priority``. If a component with a higher priority than an
+    existing one is initialized, its name, targets, and other properties remain
+    the same. Only the directory, priority, and source are updated in the
+    already initialized component.
+
+    The name of the initialized component is added to the
+    ``COMPONENTS_DISCOVERED`` build property, and its interface target is added
+    to the ``COMPONENT_INTERFACES`` build property. These two lists are used by
+    ``__get_component_interface``, which searches for a component interface
+    based on the component name, alias, or targets, enabling the setting and
+    retrieval of component properties.
 #]]
 function(__init_component)
     set(options)
@@ -455,11 +512,13 @@ function(__init_component)
 endfunction()
 
 #[[
-   __dump_component_properties(<components>)
+    __dump_component_properties(<components>)
 
-   :components: List of components whose properties should be displayed.
+    *components[in]*
 
-   Dump all properties for the components listed in ``<components>``.
+        List of components whose properties should be displayed.
+
+    Dump all properties for the components listed in ``components``.
 #]]
 function(__dump_component_properties components)
     foreach(component IN LISTS components)
@@ -473,16 +532,21 @@ function(__dump_component_properties components)
 endfunction()
 
 #[[
-   __component_name_without_namespace(COMPONENT <component_name>
-                                      OUTPUT <variable>)
+    __component_name_without_namespace(COMPONENT <component_name>
+                                       OUTPUT <variable>)
 
-   :COMPONENT[in]: Component name that may include namespace.
-   :OUTPUT[out]: Output variable to store the component name without namespace.
+    *COMPONENT[in]*
 
-   Extract the component name without namespace. For example:
-   - "espressif__led_strip" -> "led_strip"
-   - "led_strip" -> "led_strip"
-   This follows the same logic as the component manager's name_without_namespace function.
+        Component name that may include namespace.
+
+    *OUTPUT[out]*
+
+        Output variable to store the component name without namespace.
+
+    Extract the component name without namespace. For example:
+    - "espressif__led_strip" -> "led_strip"
+    - "led_strip" -> "led_strip" This follows the same logic as the component
+    manager's name_without_namespace function.
 #]]
 function(__component_name_without_namespace)
     set(options)
@@ -512,25 +576,33 @@ function(__component_name_without_namespace)
 endfunction()
 
 #[[
-   __resolve_component_name(COMPONENT <component_name>
-                            KNOWN_COMPONENTS <known_components_list>
-                            OUTPUT <variable>)
+    __resolve_component_name(COMPONENT <component_name>
+                             KNOWN_COMPONENTS <known_components_list>
+                             OUTPUT <variable>)
 
-   :COMPONENT[in]: Component name to resolve (may be short name or canonical).
-   :KNOWN_COMPONENTS[in]: List of known/discovered component names.
-   :OUTPUT[out]: Output variable to store the resolved component name.
+    *COMPONENT[in]*
 
-   Resolve a component name to its canonical form by checking against known components.
-   This implements the same logic as the component manager's _choose_component function:
-   1. If the exact name exists in known components, return it
-   2. If a namespaced version exists (e.g., "espressif__led_strip" for "led_strip"), return that
-   3. If a non-namespaced version exists (e.g., "led_strip" for "espressif__led_strip"), return that
-   4. If any known component has the same name without namespace , return that
-   5. Otherwise, return the original name (will likely cause CMake error)
+        Component name to resolve (may be short name or canonical).
 
-   This function takes component priority into account by preferring components
-   with higher priority when multiple matches exist. This behavior differs from
-   the component manager's _choose_component function.
+    *KNOWN_COMPONENTS[in]*
+
+        List of known/discovered component names.
+
+    *OUTPUT[out]*
+
+        Output variable to store the resolved component name.
+
+    Resolve a component name to its canonical form by checking against known components.
+    This implements the same logic as the component manager's _choose_component function:
+    1. If the exact name exists in known components, return it
+    2. If a namespaced version exists (e.g., "espressif__led_strip" for "led_strip"), return that
+    3. If a non-namespaced version exists (e.g., "led_strip" for "espressif__led_strip"), return that
+    4. If any known component has the same name without namespace , return that
+    5. Otherwise, return the original name (will likely cause CMake error)
+
+    This function takes component priority into account by preferring
+    components with higher priority when multiple matches exist. This behavior
+    differs from the component manager's _choose_component function.
 #]]
 function(__resolve_component_name)
     set(options)
@@ -622,27 +694,32 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_component_include
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_component_include(<name>
-                            [INTERFACE <variable>])
+        idf_component_include(<name>
+                              [INTERFACE <variable>])
 
-   :name[in]: Component name.
-   :INTERFACE[out,opt]: Optional variable where the name of the target
-                        interface for the included component will be stored.
+    *name[in]*
 
-   This is a core function of the build system, responsible for including the
-   specified component, as indicated by the ``<name>`` option, into the build
-   process. It does this by evaluating the component through the
-   ``add_subdirectory`` call for the component's directory. The component is
-   responsible for creating its own CMake target, with the target name provided
-   via the ``COMPONENT_TARGET`` variable. This target is linked to the
-   component's interface target, which is managed internally by the build
-   system. The component's interface target is used by other components to
-   establish their dependencies.
+        Component name.
 
-   When the "INTERFACE" variable is provided, the name of the included
-   component interface target will be stored in it.
+    *INTERFACE[out,opt]*
+
+        Optional variable where the name of the target interface for the
+        included component will be stored.
+
+    This is a core function of the build system, responsible for including the
+    specified component, as indicated by the ``name`` option, into the build
+    process. It does this by evaluating the component through the
+    ``add_subdirectory`` call for the component's directory. The component is
+    responsible for creating its own CMake target, with the target name
+    provided via the ``COMPONENT_TARGET`` variable. This target is linked to
+    the component's interface target, which is managed internally by the build
+    system. The component's interface target is used by other components to
+    establish their dependencies.
+
+    When the ``INTERFACE`` variable is provided, the name of the included
+    component interface target will be stored in it.
 #]]
 function(idf_component_include name)
     set(options)

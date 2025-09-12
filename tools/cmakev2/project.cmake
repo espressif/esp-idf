@@ -4,10 +4,10 @@
 include_guard(GLOBAL)
 
 #[[
-   __init_project_name()
+    __init_project_name()
 
-   Initialize the PROJECT_NAME build property, using CMAKE_PROJECT_NAME as a
-   fallback.
+    Initialize the PROJECT_NAME build property, using CMAKE_PROJECT_NAME as a
+    fallback.
 #]]
 function(__init_project_name)
     __get_default_value(VARIABLE PROJECT_NAME
@@ -17,19 +17,20 @@ function(__init_project_name)
 endfunction()
 
 #[[
-   __init_project_version()
+    __init_project_version()
 
-   Initialize the PROJECT_VER build property based on the following precedence.
+    Initialize the PROJECT_VER build property based on the following
+    precedence.
 
-   1. The PROJECT_VER environment or CMake variable.
-   2. The version.txt file located in the top-level project directory.
-   3. The VERSION argument, if provided, in the project() macro.
-   4. The output of git describe if the project is within a Git repository.
-   5. Defaults to 1 if none of the above conditions are met.
+    1. The PROJECT_VER environment or CMake variable.
+    2. The version.txt file located in the top-level project directory.
+    3. The VERSION argument, if provided, in the project() macro.
+    4. The output of git describe if the project is within a Git repository.
+    5. Defaults to 1 if none of the above conditions are met.
 
-   The value of PROJECT_VER will be overridden later if
-   CONFIG_APP_PROJECT_VER_FROM_CONFIG is defined. For more details, refer to
-   components/esp_app_format/CMakeLists.txt.
+    The value of PROJECT_VER will be overridden later if
+    CONFIG_APP_PROJECT_VER_FROM_CONFIG is defined. For more details, refer to
+    components/esp_app_format/CMakeLists.txt.
 #]]
 function(__init_project_version)
     idf_build_get_property(project_dir PROJECT_DIR)
@@ -69,10 +70,10 @@ function(__init_project_version)
 endfunction()
 
 #[[
-   __init_project_configuration()
+    __init_project_configuration()
 
-   Configure the build settings in one location, incorporating preset
-   compilation flags, definitions, and settings based on sdkconfig.
+    Configure the build settings in one location, incorporating preset
+    compilation flags, definitions, and settings based on sdkconfig.
 #]]
 function(__init_project_configuration)
     set(compile_definitions)
@@ -506,10 +507,10 @@ function(__init_project_configuration)
 endfunction()
 
 #[[
-   __create_project_flash_targets()
+    __create_project_flash_targets()
 
-   Add placeholder flash targets to the build. This is used by components to
-   declare dependencies on the flash target.
+    Add placeholder flash targets to the build. This is used by components to
+    declare dependencies on the flash target.
 #]]
 function(__create_project_flash_targets)
     if(NOT TARGET flash)
@@ -527,13 +528,13 @@ function(__create_project_flash_targets)
 endfunction()
 
 #[[
-   __init_project_flash_targets()
+    __init_project_flash_targets()
 
-   If binary generation is enabled, initialize the esptool component and enable
-   the generation of esptool flash argument files for the flash and
-   encrypted-flash targets. Note that this is done after including the
-   project_include.cmake files, as we need the functions defined in the
-   esptool_py component.
+    If binary generation is enabled, initialize the esptool component and
+    enable the generation of esptool flash argument files for the flash and
+    encrypted-flash targets. Note that this is done after including the
+    project_include.cmake files, as we need the functions defined in the
+    esptool_py component.
 #]]
 function(__init_project_flash_targets)
     if(CONFIG_APP_BUILD_GENERATE_BINARIES)
@@ -546,22 +547,23 @@ endfunction()
 #[[api
 .. cmakev2:macro:: idf_project_init
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_project_init()
+        idf_project_init()
 
-   Initialize settings that need to be configured after the project() function
-   is called. This must occur after the project() function and before any other
-   build system functions. It initializes the PROJECT_NAME and PROJECT_VER
-   build properties, as well as all default C, CXX, and ASM compile options,
-   link options, and compile definitions.
+    Initialize settings that need to be configured after the ``project()``
+    function is called. This must occur after the ``project()`` function and
+    before any other build system functions. It initializes the
+    ``PROJECT_NAME`` and ``PROJECT_VER`` build properties, as well as all
+    default C, CXX, and ASM compile options, link options, and compile
+    definitions.
 
-   This macro also includes project_include.cmake files for the discovered
-   components, as these files define project-wide functionality that needs to
-   be available before any component's CMakeLists.txt is evaluated. The
-   project_include.cmake files should be evaluated in the global scope.
-   Therefore, this is defined as a macro and should be called only from the
-   global scope or from within another macro.
+    This macro also includes ``project_include.cmake`` files for the discovered
+    components, as these files define project-wide functionality that needs to
+    be available before any component's ``CMakeLists.txt`` is evaluated. The
+    ``project_include.cmake`` files should be evaluated in the global scope.
+    Therefore, this is defined as a macro and should be called only from the
+    global scope or from within another macro.
 #]]
 macro(idf_project_init)
     idf_build_get_property(project_initialized __PROJECT_INITIALIZED)
@@ -643,14 +645,14 @@ macro(idf_project_init)
 endmacro()
 
 #[[api
-.. cmakev2:macro:: idf_build_generate_flasher_args
+.. cmakev2:function:: idf_build_generate_flasher_args
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_build_generate_flasher_args()
+        idf_build_generate_flasher_args()
 
-   Generate the flasher_args.json file for the global flash target for tools
-   that require it.
+    Generate the flasher_args.json file for the global flash target for tools
+    that require it.
 #]]
 function(idf_build_generate_flasher_args)
     # The variables listed below are used to configure the template
@@ -694,17 +696,17 @@ endfunction()
 #[[api
 .. cmakev2:macro:: idf_project_default
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_project_default()
+        idf_project_default()
 
-   Create a default project executable based on the main component and its
-   transitive dependencies. The executable name is derived from the
-   PROJECT_NAME variable, which by default uses the CMAKE_PROJECT_NAME value
-   specified in the CMake's project() call.
+    Create a default project executable based on the main component and its
+    transitive dependencies. The executable name is derived from the
+    ``PROJECT_NAME`` variable, which by default uses the ``CMAKE_PROJECT_NAME``
+    value specified in the CMake's ``project()`` call.
 
-   Generate the binary image for the executable, signed or unsigned based on
-   the configuration, and add flash targets for it.
+    Generate the binary image for the executable, signed or unsigned based on
+    the configuration, and add flash targets for it.
 #]]
 macro(idf_project_default)
     idf_project_init()

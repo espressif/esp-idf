@@ -1,32 +1,41 @@
 include_guard(GLOBAL)
 
-    set(one_value LIBRARY TEMPLATE SUFFIX OUTPUT)
 #[[
-   __ldgen_process_template(LIBRARY <target>
-                            TEMPLATE <template>
-                            OUTPUT <output>
-                            [SUFFIX <suffix>])
+    __ldgen_process_template(LIBRARY <target>
+                             TEMPLATE <template>
+                             OUTPUT <output>
+                             [SUFFIX <suffix>])
 
-   :TARGET[in]: A library interface target that already has the properties
-                __LDGEN_LIBRARIES, __LDGEN_FRAGMENT_FILES, and __LDGEN_DEPENDS
-                set. These properties include libraries and fragment files for
-                components linked to the library interface.
-   :TEMPLATE[in]: Linker script template to process.
-   :OUTPUT[in]: The output filename where the generated linker script will be
-                saved.
-   :SUFFIX[in,opt]: Optional suffix for the generated files containing the list
-                    of linked library archives.
+    *TARGET[in]*
 
-   Pass the linker script ``TEMPLATE`` to the linker script generation tool,
-   ldgen, for processing. The processed linker script is stored in the file
-   specified by the ``OUTPUT`` option.
+        A library interface target that already has the properties
+        __LDGEN_LIBRARIES, __LDGEN_FRAGMENT_FILES, and __LDGEN_DEPENDS set.
+        These properties include libraries and fragment files for components
+        linked to the library interface.
 
-   This function can be called multiple times to generate multiple linker
-   scripts from a single template. For example, a component like esp_system may
-   be linked to multiple library interface targets, each with a different set
-   of components. This results in different sets of fragment files and library
-   archives. The suffix is used to ensure that the files listing the archives
-   are not overwritten.
+    *TEMPLATE[in]*
+
+        Linker script template to process.
+
+    *OUTPUT[in]*
+
+        The output filename where the generated linker script will be saved.
+
+    *SUFFIX[in,opt]*
+
+        Optional suffix for the generated files containing the list of linked
+        library archives.
+
+    Pass the linker script ``TEMPLATE`` to the linker script generation tool,
+    ldgen, for processing. The processed linker script is stored in the file
+    specified by the ``OUTPUT`` option.
+
+    This function can be called multiple times to generate multiple linker
+    scripts from a single template. For example, a component like esp_system
+    may be linked to multiple library interface targets, each with a different
+    set of components. This results in different sets of fragment files and
+    library archives. The suffix is used to ensure that the files listing the
+    archives are not overwritten.
 #]]
 function(__ldgen_process_template)
     set(options)
