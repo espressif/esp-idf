@@ -11,16 +11,19 @@ include(build)
 include(component)
 
 #[[
-   __init_kconfig()
+    __init_kconfig()
 
-   Initialize the Kconfig system infrastructure for the build.
-   This function performs the Kconfig initialization and setup by:
-   1. Setting up SDKCONFIG and SDKCONFIG_DEFAULTS build properties
-   2. Setting up ESP-IDF root Kconfig files and config directory
-   3. Creating the default config directory
+    Initialize the Kconfig system infrastructure for the build.  This function
+    performs the Kconfig initialization and setup by:
+    1. Setting up SDKCONFIG and SDKCONFIG_DEFAULTS build properties
+    2. Setting up ESP-IDF root Kconfig files and config directory
+    3. Creating the default config directory
 
-   This should be called after component discovery but before component manager.
-   Note: Regular component Kconfig files are collected during component discovery.
+    This should be called after component discovery but before component
+    manager.
+
+    Note: Regular component Kconfig files are collected during component
+    discovery.
 #]]
 function(__init_kconfig)
     idf_build_get_property(idf_path IDF_PATH)
@@ -66,13 +69,13 @@ function(__init_kconfig)
 endfunction()
 
 #[[
-   __generate_sdkconfig()
+    __generate_sdkconfig()
 
-   This function performs the complete Kconfig generation process:
-   1. Collect Kconfig files from discovered components
-   2. Collect Kconfig files from bootloader components
-   3. Set up the Kconfig environment with all collected files
-   4. Generate all output files (sdkconfig.h, sdkconfig.cmake, etc.)
+    This function performs the complete Kconfig generation process:
+    1. Collect Kconfig files from discovered components
+    2. Collect Kconfig files from bootloader components
+    3. Set up the Kconfig environment with all collected files
+    4. Generate all output files (sdkconfig.h, sdkconfig.cmake, etc.)
 #]]
 function(__generate_sdkconfig)
     idf_msg("Generating sdkconfig configuration...")
@@ -97,12 +100,13 @@ endfunction()
 # =============================================================================
 
 #[[
-   __consolidate_component_kconfig_files()
+    __consolidate_component_kconfig_files()
 
-   Consolidate Kconfig files from discovered components into global build properties.
-   This scans the COMPONENTS_DISCOVERED build property and for each component,
-   retrieves its Kconfig files from component properties and adds them to the
-   global __KCONFIGS, __KCONFIG_PROJBUILDS, and __SDKCONFIG_RENAMES build properties.
+    Consolidate Kconfig files from discovered components into global build
+    properties.  This scans the COMPONENTS_DISCOVERED build property and for
+    each component, retrieves its Kconfig files from component properties and
+    adds them to the global __KCONFIGS, __KCONFIG_PROJBUILDS, and
+    __SDKCONFIG_RENAMES build properties.
 #]]
 function(__consolidate_component_kconfig_files)
     idf_build_get_property(components_discovered COMPONENTS_DISCOVERED)
@@ -153,11 +157,12 @@ function(__consolidate_component_kconfig_files)
 endfunction()
 
 #[[
-   __collect_kconfig_files_from_bootloader_components()
+    __collect_kconfig_files_from_bootloader_components()
 
-   Collect Kconfig files from bootloader components and store them in build properties.
-   Bootloader components are located in the bootloader_components directory of the project.
-   This function only runs if the bootloader component is discovered.
+    Collect Kconfig files from bootloader components and store them in build
+    properties.  Bootloader components are located in the bootloader_components
+    directory of the project.  This function only runs if the bootloader
+    component is discovered.
 #]]
 function(__collect_kconfig_files_from_bootloader_components)
     # Check if bootloader component is discovered - only then collect bootloader components
@@ -191,15 +196,29 @@ function(__collect_kconfig_files_from_bootloader_components)
 endfunction()
 
 #[[
-   __collect_kconfig_files_from_directory(directory target out_kconfigs out_projbuilds out_renames)
+    __collect_kconfig_files_from_directory(directory target out_kconfigs out_projbuilds out_renames)
 
-   Collect Kconfig files from a single directory.
+    Collect Kconfig files from a single directory.
 
-   :directory[in]: Path to the directory to collect Kconfig files from.
-   :target[in]: Target name for target-specific files.
-   :out_kconfigs[out]: List of Kconfig files.
-   :out_projbuilds[out]: List of projbuild files.
-   :out_renames[out]: List of rename files.
+    *directory[in]*
+
+        Path to the directory to collect Kconfig files from.
+
+    *target[in]*
+
+        Target name for target-specific files.
+
+    *out_kconfigs[out]*
+
+        List of Kconfig files.
+
+    *out_projbuilds[out]*
+
+        List of projbuild files.
+
+    *out_renames[out]*
+
+        List of rename files.
 #]]
 function(__collect_kconfig_files_from_directory directory target out_kconfigs out_projbuilds out_renames)
     file(GLOB all_files "${directory}/*")
@@ -256,10 +275,10 @@ endfunction()
 # =============================================================================
 
 #[[
-   __setup_kconfig_environment()
+    __setup_kconfig_environment()
 
-   Setup the Kconfig environment for kconfgen.
-   This function creates the environment and prepares Kconfig source files.
+    Setup the Kconfig environment for kconfgen.  This function creates the
+    environment and prepares Kconfig source files.
 #]]
 function(__setup_kconfig_environment)
     # Create the config.env file, which contains all environment variables for the python script
@@ -293,13 +312,16 @@ endfunction()
 
 
 #[[
-   __create_config_env_file(env_path)
+    __create_config_env_file(env_path)
 
-   Create config environment file for kconfgen.
-   This function gathers all necessary properties and creates the config.env file
-   used by the kconfgen Python script.
+    *env_path[in]*
 
-   :env_path[in]: Path where to create the config.env file.
+        Path where to create the config.env file.
+
+    Create config environment file for kconfgen.  This function gathers all
+    necessary properties and creates the config.env file used by the kconfgen
+    Python script.
+
 #]]
 function(__create_config_env_file env_path)
     # Get all necessary build properties
@@ -368,12 +390,12 @@ endfunction()
 # =============================================================================
 
 #[[
-   __generate_kconfig_outputs()
+    __generate_kconfig_outputs()
 
-   Generate all Kconfig output files.
-   Generates: sdkconfig.h, sdkconfig.cmake, sdkconfig.json, kconfig_menus.json
+    Generate all Kconfig output files.
+    Generates: sdkconfig.h, sdkconfig.cmake, sdkconfig.json, kconfig_menus.json
 
-   Must be called after __setup_kconfig_environment().
+    Must be called after __setup_kconfig_environment().
 #]]
 function(__generate_kconfig_outputs)
     # Get inputs from build properties
@@ -435,12 +457,18 @@ function(__generate_kconfig_outputs)
 endfunction()
 
 #[[
-   __create_base_kconfgen_command(sdkconfig sdkconfig_defaults)
+    __create_base_kconfgen_command(sdkconfig sdkconfig_defaults)
 
-   Create the base kconfgen command and store it as a build property for reuse.
+    *sdkconfig[in]*
 
-   :sdkconfig[in]: Path to sdkconfig file.
-   :sdkconfig_defaults[in]: List of sdkconfig defaults files.
+        Path to sdkconfig file.
+
+    *sdkconfig_defaults[in]*
+
+        List of sdkconfig defaults files.
+
+    Create the base kconfgen command and store it as a build property for
+    reuse.
 #]]
 function(__create_base_kconfgen_command sdkconfig sdkconfig_defaults)
     # Get all necessary properties for base command
@@ -476,15 +504,27 @@ function(__create_base_kconfgen_command sdkconfig sdkconfig_defaults)
 endfunction()
 
 #[[
-   __run_kconfgen(header_path cmake_path json_path menus_path)
+    __run_kconfgen(header_path cmake_path json_path menus_path)
 
-   Run kconfgen and generate all output files using the stored base command.
-   Assumes that the base command is already created by __create_base_kconfgen_command().
+    *header_path[in]*
 
-   :header_path[in]: Path for sdkconfig.h output.
-   :cmake_path[in]: Path for sdkconfig.cmake output.
-   :json_path[in]: Path for sdkconfig.json output.
-   :menus_path[in]: Path for kconfig_menus.json output.
+        Path for sdkconfig.h output.
+
+    *cmake_path[in]*
+
+        Path for sdkconfig.cmake output.
+
+    *json_path[in]*
+
+        Path for sdkconfig.json output.
+
+    *menus_path[in]*
+
+        Path for kconfig_menus.json output.
+
+    Run kconfgen and generate all output files using the stored base command.
+    Assumes that the base command is already created by
+    __create_base_kconfgen_command().
 #]]
 function(__run_kconfgen header_path cmake_path json_path menus_path)
     idf_build_get_property(base_kconfgen_cmd __BASE_KCONFGEN_CMD)
@@ -510,15 +550,15 @@ endfunction()
 # =============================================================================
 
 #[[
-   __create_kconfig_targets()
+    __create_kconfig_targets()
 
-   Create Kconfig related targets.
-   This function must be called after all kconfig processing is complete, including
-   the component manager. It creates the following targets:
+    Create Kconfig related targets.  This function must be called after all
+    kconfig processing is complete, including the component manager. It creates
+    the following targets:
 
-   - menuconfig
-   - confserver
-   - save-defconfig
+    - menuconfig
+    - confserver
+    - save-defconfig
 #]]
 function(__create_kconfig_targets)
     # Create Kconfig targets
@@ -528,9 +568,9 @@ function(__create_kconfig_targets)
 endfunction()
 
 #[[
-   __create_menuconfig_target()
+    __create_menuconfig_target()
 
-   Create menuconfig target.
+    Create menuconfig target.
 #]]
 function(__create_menuconfig_target)
     idf_build_get_property(python PYTHON)
@@ -604,9 +644,9 @@ function(__create_menuconfig_target)
 endfunction()
 
 #[[
-   __create_confserver_target()
+    __create_confserver_target()
 
-   Create confserver target.
+    Create confserver target.
 #]]
 function(__create_confserver_target)
     idf_build_get_property(python PYTHON)
@@ -632,9 +672,9 @@ function(__create_confserver_target)
 endfunction()
 
 #[[
-   __create_save_defconfig_target()
+    __create_save_defconfig_target()
 
-   Create save-defconfig target.
+    Create save-defconfig target.
 #]]
 function(__create_save_defconfig_target)
     idf_build_get_property(prepare_cmd __PREPARE_KCONFIG_CMD)

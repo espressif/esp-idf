@@ -41,10 +41,10 @@ include(GetGitRevisionDescription)
 include(ExternalProject)
 
 #[[
-   __init_build_version()
+    __init_build_version()
 
-   Set the global variables IDF_BUILD_V2, IDF_BUILD_VER and IDF_BUILD_VER_TAG,
-   as well as the build properties and environmental variables.
+    Set the global variables IDF_BUILD_V2, IDF_BUILD_VER and IDF_BUILD_VER_TAG,
+    as well as the build properties and environmental variables.
 #]]
 function(__init_build_version)
     set(IDF_BUILD_V2 y PARENT_SCOPE)
@@ -59,13 +59,13 @@ function(__init_build_version)
 endfunction()
 
 #[[
-   __init_idf_path()
+    __init_idf_path()
 
-   Determine the IDF_PATH value, either from the IDF_PATH environmental
-   variable or based on the location of this file. Also check there is no
-   inconsistency between the two.
+    Determine the IDF_PATH value, either from the IDF_PATH environmental
+    variable or based on the location of this file. Also check there is no
+    inconsistency between the two.
 
-   Set the IDF_PATH global variable, environment variable and build property.
+    Set the IDF_PATH global variable, environment variable and build property.
 #]]
 function(__init_idf_path)
     get_filename_component(idf_path_infer "${CMAKE_CURRENT_LIST_DIR}/../.." REALPATH)
@@ -91,11 +91,11 @@ function(__init_idf_path)
 endfunction()
 
 #[[
-   __init_git()
+    __init_git()
 
-   Determine the executable.
+    Determine the executable.
 
-   Set the GIT build property.
+    Set the GIT build property.
 #]]
 function(__init_git)
     find_package(Git)
@@ -109,13 +109,13 @@ function(__init_git)
 endfunction()
 
 #[[
-   __init_idf_version()
+    __init_idf_version()
 
-   Determine the IDF version from the version.txt file. If it is not present,
-   use git-describe. If both previous attempts fail, use the IDF_VERSION from
-   the environment variables as a fallback.
+    Determine the IDF version from the version.txt file. If it is not present,
+    use git-describe. If both previous attempts fail, use the IDF_VERSION from
+    the environment variables as a fallback.
 
-   Set IDF_VER build property.
+    Set IDF_VER build property.
 #]]
 function(__init_idf_version)
     idf_build_get_property(idf_path IDF_PATH)
@@ -138,16 +138,16 @@ function(__init_idf_version)
 endfunction()
 
 #[[
-   __init_python()
+    __init_python()
 
-   Determine Python interpreter, either from the PYTHON CMake cache variable
-   or environmental variable or default it to "python".
+    Determine Python interpreter, either from the PYTHON CMake cache variable
+    or environmental variable or default it to "python".
 
-   If the PYTHON_DEPS_CHECKED CMake cache variable is not set, check if all
-   Python packages dependencies are satisfied. For instance, if a tool calling
-   CMake has already performed this check, it doesn't need to be repeated.
+    If the PYTHON_DEPS_CHECKED CMake cache variable is not set, check if all
+    Python packages dependencies are satisfied. For instance, if a tool calling
+    CMake has already performed this check, it doesn't need to be repeated.
 
-   Set the global PYTHON variable, environment variable and build property.
+    Set the global PYTHON variable, environment variable and build property.
 #]]
 function(__init_python)
     __get_default_value(VARIABLE PYTHON
@@ -182,15 +182,15 @@ function(__init_python)
 endfunction()
 
 #[[
-   __init_idf_target()
+    __init_idf_target()
 
-   Determine the IDF_TARGET value from the IDF_TARGET environment variable, the
-   CMake cache variable, or the sdkconfig files. If none of these are set,
-   use the default esp32 target. Ensure there are no inconsistencies in the
-   IDF_TARGET values set in different locations.
+    Determine the IDF_TARGET value from the IDF_TARGET environment variable,
+    the CMake cache variable, or the sdkconfig files. If none of these are set,
+    use the default esp32 target. Ensure there are no inconsistencies in the
+    IDF_TARGET values set in different locations.
 
-   Set the IDF_TARGET as a global variable, in the CMake cache, as an
-   environment variable, and as a build property.
+    Set the IDF_TARGET as a global variable, in the CMake cache, as an
+    environment variable, and as a build property.
 #]]
 function(__init_idf_target)
     set(sdkconfig_target "")
@@ -256,18 +256,18 @@ function(__init_idf_target)
 endfunction()
 
 #[[
-   __init_toolchain()
+    __init_toolchain()
 
-   Determine the IDF_TOOLCHAIN value from the IDF_TOOLCHAIN environment
-   variable or the CMake cache variable. If none of these are set, use the
-   default gcc toolchain. Ensure there are no inconsistencies in the
-   IDF_TOOLCHAIN values set in different locations. Also ensure that the
-   CMAKE_TOOLCHAIN_FILE is set to the correct file according to the current
-   IDF_TARGET.
+    Determine the IDF_TOOLCHAIN value from the IDF_TOOLCHAIN environment
+    variable or the CMake cache variable. If none of these are set, use the
+    default gcc toolchain. Ensure there are no inconsistencies in the
+    IDF_TOOLCHAIN values set in different locations. Also ensure that the
+    CMAKE_TOOLCHAIN_FILE is set to the correct file according to the current
+    IDF_TARGET.
 
-   Set the IDF_TOOLCHAIN and IDF_TOOLCHAIN_FILE build properties. Also,
-   configure the IDF_TOOLCHAIN CMake cache variable and set the
-   CMAKE_TOOLCHAIN_FILE global variable.
+    Set the IDF_TOOLCHAIN and IDF_TOOLCHAIN_FILE build properties. Also,
+    configure the IDF_TOOLCHAIN CMake cache variable and set the
+    CMAKE_TOOLCHAIN_FILE global variable.
 #]]
 function(__init_toolchain)
     set(cache_toolchain $CACHE{IDF_TOOLCHAIN})
@@ -317,9 +317,9 @@ function(__init_toolchain)
 endfunction()
 
 #[[
-   __init_ccache()
+    __init_ccache()
 
-   Enable ccache if requested through CCACHE_ENABLE.
+    Enable ccache if requested through CCACHE_ENABLE.
 #]]
 function(__init_ccache)
     if(NOT CCACHE_ENABLE)
@@ -336,25 +336,28 @@ function(__init_ccache)
 endfunction()
 
 #[[
-   __init_components()
+    __init_components()
 
-   Search for possible component directories categorized by their source, which
-   could be ``idf_components``, ``project_extra_components``, or
-   ``project_components``. Components added by the component manager are
-   initialized later as ``project_managed_components`` after the component
-   manager is called.
+    Search for possible component directories categorized by their source,
+    which could be ``idf_components``, ``project_extra_components``, or
+    ``project_components``. Components added by the component manager are
+    initialized later as ``project_managed_components`` after the component
+    manager is called.
 
-   The search respects the variables set by the user e.g. in the project's
-   CMakeLists.txt file. These are maintained for backward compatibility.
+    The search respects the variables set by the user e.g. in the project's
+    CMakeLists.txt file. These are maintained for backward compatibility.
 
-   :COMPONENT_DIRS: If set, component directories are searched exclusively in
-                    the paths provided in ``COMPONENT_DIRS``.
-   :EXTRA_COMPONENT_DIRS: Includes extra paths to search if ``COMPONENT_DIRS``
-                          is not specified.
-   :EXTRA_COMPONENT_EXCLUDE_DIRS: List of paths to exclude from searching the
-                                  component directories.
+    COMPONENT_DIRS
+        If set, component directories are searched exclusively in the paths
+        provided in ``COMPONENT_DIRS``.
 
-   Each component is initialized for every component directory found.
+    EXTRA_COMPONENT_DIRS
+        Includes extra paths to search if ``COMPONENT_DIRS`` is not specified.
+
+    EXTRA_COMPONENT_EXCLUDE_DIRS
+        List of paths to exclude from searching the component directories.
+
+    Each component is initialized for every component directory found.
 #]]
 function(__init_components)
     idf_build_get_property(idf_path IDF_PATH)
@@ -407,10 +410,10 @@ function(__init_components)
 endfunction()
 
 #[[
-   __init_submodules()
+    __init_submodules()
 
-   Initialize submodules that are not yet initialized, and issue a warning for
-   submodules that do not match the recorded hash in the git tree.
+    Initialize submodules that are not yet initialized, and issue a warning for
+    submodules that do not match the recorded hash in the git tree.
 #]]
 function(__init_submodules)
     idf_build_get_property(idf_path IDF_PATH)
@@ -490,11 +493,11 @@ function(__init_submodules)
 endfunction()
 
 #[[
-   __init_idf_target_arch()
+    __init_idf_target_arch()
 
-   Set the IDF_TARGET_ARCH value based on the sdkconfig. This means it must be
-   initialized after the sdkconfig is generated and its CMake version is
-   included.
+    Set the IDF_TARGET_ARCH value based on the sdkconfig. This means it must be
+    initialized after the sdkconfig is generated and its CMake version is
+    included.
 #]]
 function(__init_idf_target_arch)
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)
@@ -508,39 +511,41 @@ function(__init_idf_target_arch)
 endfunction()
 
 #[[
-   The idf_build_properties interface target is exclusively used to store
-   information about global build properties and is not linked or used in any
-   other way. This is created very early so that all the initialization
-   functions can use it.
+    The idf_build_properties interface target is exclusively used to store
+    information about global build properties and is not linked or used in any
+    other way. This is created very early so that all the initialization
+    functions can use it.
 
-   List of build properties
+    List of build properties
 
-   :IDF_PATH: Path to esp-idf directory.
-   :PREFIX: Prefix used for component target names.
-   :COMPONENTS_DISCOVERED: List of component names identified by the build
-                           system. These components are initialized and can
-                           have properties attached to them. However, they
-                           are not necessarily included in the build through
-                           add_subdirectory.
+    IDF_PATH
+        Path to esp-idf directory.
 
-   :COMPONENT_INTERFACES: This is a list of component interface targets for
-                          the components in ``COMPONENTS_DISCOVERED``. It is
-                          used when searching for a component, such as by its
-                          name, to set or retrieve the component's properties.
+    PREFIX
+        Prefix used for component target names.
 
-   :COMPONENTS_INCLUDED: This is a list of component names that were included
-                         in the build, meaning their CMakeLists.txt files were
-                         processed with an add_subdirectory call. Each
-                         component is evaluated exactly once, and this list
-                         serves as a record of which components have already
-                         been evaluated.  Although each component can only be
-                         evaluated once, it can be used in multiple
-                         idf_component_include calls. If a component is
-                         requested to be included a second time, this list is
-                         checked. If the component is already included, the
-                         idf_component_include function simply returns, as
-                         there is nothing further to do except add a new alias
-                         target if requested.
+    COMPONENTS_DISCOVERED
+        List of component names identified by the build system. These
+        components are initialized and can have properties attached to them.
+        However, they are not necessarily included in the build through
+        add_subdirectory.
+
+    COMPONENT_INTERFACES
+        This is a list of component interface targets for the components in
+        ``COMPONENTS_DISCOVERED``. It is used when searching for a component,
+        such as by its name, to set or retrieve the component's properties.
+
+    COMPONENTS_INCLUDED
+        This is a list of component names that were included in the build,
+        meaning their CMakeLists.txt files were processed with an
+        add_subdirectory call. Each component is evaluated exactly once, and
+        this list serves as a record of which components have already been
+        evaluated.  Although each component can only be evaluated once, it can
+        be used in multiple idf_component_include calls. If a component is
+        requested to be included a second time, this list is checked. If the
+        component is already included, the idf_component_include function
+        simply returns, as there is nothing further to do except add a new
+        alias target if requested.
 #]]
 add_library(idf_build_properties INTERFACE)
 

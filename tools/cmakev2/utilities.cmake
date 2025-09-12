@@ -13,14 +13,16 @@
 #[[api
 .. cmakev2:function:: idf_die
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_die(<msg>...)
+        idf_die(<msg>...)
 
-   :msg[in]: Message to print.
+    *msg[in]*
 
-   Print error ``<msg>`` and abort the build process. Multiple messages are
-   concatenated into a single message with no separator between them.
+        Message to print.
+
+    Print error ``<msg>`` and abort the build process. Multiple messages are
+    concatenated into a single message with no separator between them.
 
 #]]
 function(idf_die)
@@ -35,14 +37,16 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_warn
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_warn(<msg>...)
+        idf_warn(<msg>...)
 
-   :msg[in]: Message to print.
+    *msg[in]*
 
-   Print warning ``<msg>``.  Multiple messages are concatenated into a single
-   message with no separator between them.
+        Message to print.
+
+    Print warning ``<msg>``.  Multiple messages are concatenated into a single
+    message with no separator between them.
 #]]
 function(idf_warn)
     set(joined "")
@@ -56,14 +60,16 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_msg
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_msg(<msg>...)
+        idf_msg(<msg>...)
 
-   :msg[in]: Message to print.
+    *msg[in]*
 
-   Print status ``<msg>``.  Multiple messages are concatenated into a single
-   message with no separator between them.
+        Message to print.
+
+    Print status ``<msg>``.  Multiple messages are concatenated into a single
+    message with no separator between them.
 #]]
 function(idf_msg)
     set(joined "")
@@ -77,14 +83,16 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_dbg
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_dbg(<msg>...)
+        idf_dbg(<msg>...)
 
-   :msg[in]: Message to print.
+    *msg[in]*
 
-   Print debug ``<msg>``. Multiple messages are concatenated into a single
-   message with no separator between them.
+        Message to print.
+
+    Print debug ``<msg>``. Multiple messages are concatenated into a single
+    message with no separator between them.
 #]]
 function(idf_dbg)
     set(joined "")
@@ -96,15 +104,20 @@ function(idf_dbg)
 endfunction()
 
 #[[
-   __get_real_target(TARGET <target>
-                     OUTPUT <variable>)
+    __get_real_target(TARGET <target>
+                      OUTPUT <variable>)
 
-   :TARGET[int]: Target name or target alias name.
-   :OUTPUT[out]: Output variable to store the real target name.
+    *TARGET[int]*
 
-   For a given ``<target>``, return the actual target if ``<target>`` is an
-   alias. If ``<target>`` is the target itself, return it. If ``<target>`` is
-   not a target at all, return ``NOTFOUND``.
+        Target name or target alias name.
+
+    *OUTPUT[out]*
+
+        Output variable to store the real target name.
+
+    For a given ``<target>``, return the actual target if ``<target>`` is an
+    alias. If ``<target>`` is the target itself, return it. If ``<target>`` is
+    not a target at all, return ``NOTFOUND``.
 #]]
 function(__get_real_target)
     set(options)
@@ -133,17 +146,24 @@ function(__get_real_target)
 endfunction()
 
 #[[
-   __get_absolute_paths(PATHS <path>...
-                        BASE_DIR <base_dir>
-                        OUTPUT <variable>)
+    __get_absolute_paths(PATHS <path>...
+                         BASE_DIR <base_dir>
+                         OUTPUT <variable>)
 
-   :PATHS[in]: List of paths to convert to absolute paths.
-   :BASE_DIR[in,opt]: Evaluate relative paths based on the specified
-                      ``<base_dir>``. If not provided, use CMAKE_CURRENT_SOURCE_DIR
-                      instead.
-   :OUTPUT[out]: Output variable to store absolute paths.
+    *PATHS[in]*
 
-   For a given ``PATHS``, return the absolute paths in ``OUTPUT``.
+        List of paths to convert to absolute paths.
+
+    *BASE_DIR[in,opt]*
+
+        Evaluate relative paths based on the specified ``<base_dir>``. If not
+        provided, use CMAKE_CURRENT_SOURCE_DIR instead.
+
+    *OUTPUT[out]*
+
+        Output variable to store absolute paths.
+
+    For a given ``PATHS``, return the absolute paths in ``OUTPUT``.
 #]]
 function(__get_absolute_paths)
     set(options)
@@ -173,21 +193,28 @@ function(__get_absolute_paths)
 endfunction()
 
 #[[
-   __get_default_value(VARIABLE <variable>
-                       DEFAULT <value>)
-                       OUTPUT <result>)
+    __get_default_value(VARIABLE <variable>
+                        DEFAULT <value>)
+                        OUTPUT <result>)
 
-   :VARIABLE[in]: The name of the variable for which to obtain its default
-                  value.
-   :DEFAULT[in]: Default variable value.
-   :OUTPUT[out]: Variable to store the default value of ``<variable>``.
+    *VARIABLE[in]*
 
-   Set the ``<result>`` to the value of ``<variable>`` based on the following
-   order of precedence, with the first having the highest precedence.
+        The name of the variable for which to obtain its default value.
 
-   1. environmental variable
-   2. CMake variable or value stored in CMake's cache
-   3. ``<value>`` as specified with the ``DEFAULT`` option
+    *DEFAULT[in]*
+
+        Default variable value.
+
+    *OUTPUT[out]*
+
+        Variable to store the default value of ``<variable>``.
+
+    Set the ``<result>`` to the value of ``<variable>`` based on the following
+    order of precedence, with the first having the highest precedence.
+
+    1. environmental variable
+    2. CMake variable or value stored in CMake's cache
+    3. ``<value>`` as specified with the ``DEFAULT`` option
 #]]
 function(__get_default_value)
     set(options)
@@ -220,16 +247,25 @@ function(__get_default_value)
 endfunction()
 
 #[[
-   __get_config_option(OPTION <option>
-                       SDKCONFIG <path>)
-                       OUTPUT <variable>)
+    __get_config_option(OPTION <option>
+                        SDKCONFIG <path>)
+                        OUTPUT <variable>)
 
-   :OPTION[in]: Option name in sdkconfig to obtain the value of.
-   :SDKCONFIG[in]: Sdkconfig file path.
-   :OUTPUT[out]: Variable to store the value of sdkconfig ``<option>``.
+    *OPTION[in]*
 
-   Search for the ``<option>`` in the sdkconfig file specified by ``<path>`` and store
-   its value in ``<variable>``. If the option is not found, return ``NOTFOUND``.
+        Option name in sdkconfig to obtain the value of.
+
+    *SDKCONFIG[in]*
+
+        Sdkconfig file path.
+
+    *OUTPUT[out]*
+
+        Variable to store the value of sdkconfig ``<option>``.
+
+    Search for the ``<option>`` in the sdkconfig file specified by ``<path>``
+    and store its value in ``<variable>``. If the option is not found, return
+    ``NOTFOUND``.
 #]]
 function(__get_sdkconfig_option)
     set(options)
@@ -270,18 +306,32 @@ function(__get_sdkconfig_option)
 endfunction()
 
 #[[
-   __set_property(TARGET <target>
-                  PROPERTY <property>)
-                  PROPERTIES <properties>
-                  VALUE <value>
-                  APPEND)
+    __set_property(TARGET <target>
+                   PROPERTY <property>)
+                   PROPERTIES <properties>
+                   VALUE <value>
+                   APPEND)
 
-   :TARGET[in]: The target name to attach the property.
-   :PROPERTY[in]: Property name.
-   :PROPERTIES[in]: The target property containing list of properties.
-   :VALUE[in]: Property value.
-   :APPEND: Append the value to the property's current value instead of
-            replacing it.
+    *TARGET[in]*
+
+        The target name to attach the property.
+
+    *PROPERTY[in]*
+
+        Property name.
+
+    *PROPERTIES[in]*
+
+        The target property containing list of properties.
+
+    *VALUE[in]*
+
+        Property value.
+
+    *APPEND*
+
+        Append the value to the property's current value instead of replacing
+        it.
 
     Set the ``PROPERTY`` to ``VALUE`` for the ``TARGET``, and also record the
     ``PROPERTY`` name in the list of all properties for the ``TARGET``. The
@@ -328,19 +378,30 @@ function(__set_property)
 endfunction()
 
 #[[
-   __get_property(TARGET <target>
-                  PROPERTY <property>)
-                  OUTPUT <variable>
-                  GENERATOR_EXPRESSION)
+    __get_property(TARGET <target>
+                   PROPERTY <property>)
+                   OUTPUT <variable>
+                   GENERATOR_EXPRESSION)
 
-   :TARGET[in]: The target from which to obtain the property value.
-   :PROPERTY[in]: Property name.
-   :OUTPUT[out]: Output variable to store the property value.
-   :GENERATOR_EXPRESSION: Obtain the generator expression for the property
-                          rather than the actual value.
+    *TARGET[in]*
 
-   Get the value of the specified ``PROPERTY`` from ``TARGET`` and store it in
-   the ``OUTPUT`` variable.
+        The target from which to obtain the property value.
+
+    *PROPERTY[in]*
+
+        Property name.
+
+    *OUTPUT[out]*
+
+        Output variable to store the property value.
+
+    *GENERATOR_EXPRESSION*
+
+        Obtain the generator expression for the property rather than the actual
+        value.
+
+    Get the value of the specified ``PROPERTY`` from ``TARGET`` and store it in
+    the ``OUTPUT`` variable.
 #]]
 function(__get_property)
     set(options GENERATOR_EXPRESSION)
@@ -370,10 +431,10 @@ function(__get_property)
 endfunction()
 
 #[[
-   __dump_all_properties()
+    __dump_all_properties()
 
-   Dump all properties, including build properties, component properties, and
-   library properties.
+    Dump all properties, including build properties, component properties, and
+    library properties.
 #]]
 function(__dump_all_properties)
     __dump_build_properties()
@@ -384,25 +445,38 @@ function(__dump_all_properties)
 endfunction()
 
 #[[
-   __split(STRING <string>
-           OUTPUT <variable>
-           [SEPARATOR <sep>]
-           [REMOVE_EMPTY]
-           [STRIP])
+    __split(STRING <string>
+            OUTPUT <variable>
+            [SEPARATOR <sep>]
+            [REMOVE_EMPTY]
+            [STRIP])
 
-   :STRING[in]: Input string to be split.
-   :OUTPUT[out]: Output variable where the split strings will be stored.
-   :SEPARATOR[in,opt]: The separator string used to split the string.
-                       By default split the string using newlines:
-                       "\r\n", "\n", and "\r".
-   :REMOVE_EMPTY[opt]: Remove empty split strings.
-   :STRIP[opt]: Remove leading and trailing spaces from split strings.
+    *STRING[in]*
 
-   Split the ``STRING`` using the ``SEPARATOR`` and store the resulting list of
-   split strings in ``OUTPUT``. If ``SEPARATOR`` is not provided, the split
-   will be based on newlines. When ``STRIP`` is specified, leading and trailing
-   whitespaces will be removed. If ``REMOVE_EMPTY`` is specified, empty strings
-   will be removed from the ``OUTPUT`` list.
+        Input string to be split.
+
+    *OUTPUT[out]*
+
+        Output variable where the split strings will be stored.
+
+    *SEPARATOR[in,opt]*
+
+        The separator string used to split the string.  By default split the
+        string using newlines: "\r\n", "\n", and "\r".
+
+    *REMOVE_EMPTY[opt]*
+
+        Remove empty split strings.
+
+    *STRIP[opt]*
+
+        Remove leading and trailing spaces from split strings.
+
+    Split the ``STRING`` using the ``SEPARATOR`` and store the resulting list
+    of split strings in ``OUTPUT``. If ``SEPARATOR`` is not provided, the split
+    will be based on newlines. When ``STRIP`` is specified, leading and
+    trailing whitespaces will be removed. If ``REMOVE_EMPTY`` is specified,
+    empty strings will be removed from the ``OUTPUT`` list.
 #]]
 function(__split)
     set(options STRIP REMOVE_EMPTY)
@@ -445,15 +519,16 @@ function(__split)
 endfunction()
 
 #[[
-   __get_compile_options(OUTPUT <variable>)
+    __get_compile_options(OUTPUT <variable>)
 
-   :OUTPUT[out]: List of generator expressions for C, CXX, and ASM compile
-                 options
+    *OUTPUT[out]*
 
-   Gather the compilation options from COMPILE_OPTIONS, C_COMPILE_OPTIONS,
-   CXX_COMPILE_OPTIONS, and ASM_COMPILE_OPTIONS build properties into a single
-   list using generator expressions. This list can then be used with the
-   target_compile_options call.
+        List of generator expressions for C, CXX, and ASM compile options
+
+    Gather the compilation options from COMPILE_OPTIONS, C_COMPILE_OPTIONS,
+    CXX_COMPILE_OPTIONS, and ASM_COMPILE_OPTIONS build properties into a single
+    list using generator expressions. This list can then be used with the
+    target_compile_options call.
 #]]
 function(__get_compile_options)
     set(options)
@@ -482,12 +557,17 @@ function(__get_compile_options)
 endfunction()
 
 #[[
-   remove_duplicated_flags(<flags> <uniq_flags>)
+    remove_duplicated_flags(<flags> <uniq_flags>)
 
-   :flags[in]: Input string with compilation flags.
-   :uniq_flags[out]: Output string with unified compilation flags.
+    *flags[in]*
 
-   Remove duplicate entries from a string of compilation flags.
+        Input string with compilation flags.
+
+    *uniq_flags[out]*
+
+        Output string with unified compilation flags.
+
+    Remove duplicate entries from a string of compilation flags.
 #]]
 function(remove_duplicated_flags FLAGS UNIQFLAGS)
     set(FLAGS_LIST "${FLAGS}")
@@ -502,17 +582,19 @@ function(remove_duplicated_flags FLAGS UNIQFLAGS)
 endfunction()
 
 #[[
-   spaces2list(<variable>)
+    spaces2list(<variable>)
 
-   :variable[in,out]: String with space-delimited values.
+    *variable[in,out]*
 
-   Take a variable containing space-delimited values and convert it into a
-   CMake list with semicolon-delimited values.
+        String with space-delimited values.
 
-   Note: do not use this for directories or full paths, as they may contain
-   spaces.
+    Take a variable containing space-delimited values and convert it into a
+    CMake list with semicolon-delimited values.
 
-   TODO: look at cmake separate_arguments, which is quote-aware
+    Note: do not use this for directories or full paths, as they may contain
+    spaces.
+
+    TODO: look at cmake separate_arguments, which is quote-aware
 #]]
 function(spaces2list variable_name)
     string(REPLACE " " ";" tmp "${${variable_name}}")
@@ -520,13 +602,21 @@ function(spaces2list variable_name)
 endfunction()
 
 #[[
-   add_prefix(<variable> <prefix> <item>...)
+    add_prefix(<variable> <prefix> <item>...)
 
-   :variable[out]: Output variable with list of prefixed items.
-   :prefix[in]: Prefix string.
-   :item[in]: Items to be prefixed.
+    *variable[out]*
 
-   Add a prefix to each item in the given list.
+        Output variable with list of prefixed items.
+
+    *prefix[in]*
+
+        Prefix string.
+
+    *item[in]*
+
+        Items to be prefixed.
+
+    Add a prefix to each item in the given list.
 #]]
 function(add_prefix var prefix)
     foreach(elm ${ARGN})
@@ -536,16 +626,24 @@ function(add_prefix var prefix)
 endfunction()
 
 #[[
-   fail_target(<target> <line0> [<line>...])
+    fail_target(<target> <line0> [<line>...])
 
-   :target[in]: Fail target name.
-   :line0[in]: First line of the failed message.
-   :line[in,opt]: Optional additional message lines.
+    *target[in]*
 
-   Create a phony target which fails when invoked. This is used when the
-   necessary conditions for a target are not met, such as configuration. Rather
-   than omitting the target altogether, we fail execution with a helpful
-   message.
+        Fail target name.
+
+    *line0[in]*
+
+        First line of the failed message.
+
+    *line[in,opt]*
+
+        Optional additional message lines.
+
+    Create a phony target which fails when invoked. This is used when the
+    necessary conditions for a target are not met, such as configuration.
+    Rather than omitting the target altogether, we fail execution with a
+    helpful message.
 #]]
 function(fail_target target_name message_line0)
     idf_build_get_property(idf_path IDF_PATH)
@@ -564,16 +662,24 @@ function(fail_target target_name message_line0)
 endfunction()
 
 #[[
-   file_generate(<output>
-                 [INPUT <file>]
-                 [CONTENT <string>])
+    file_generate(<output>
+                  [INPUT <file>]
+                  [CONTENT <string>])
 
-   :output[in]: Output file name.
-   :INPUT[in]: Input file name.
-   :CONTENT[in]: Input string.
+    *output[in]*
 
-   Utility to generate file and have the output automatically added to cleaned
-   files.
+        Output file name.
+
+    *INPUT[in]*
+
+        Input file name.
+
+    *CONTENT[in]*
+
+        Input string.
+
+    Utility to generate file and have the output automatically added to cleaned
+    files.
 #]]
 function(file_generate output)
     cmake_parse_arguments(_ "" "INPUT;CONTENT" "" ${ARGN})
@@ -591,12 +697,17 @@ function(file_generate output)
 endfunction()
 
 #[[
-   add_deprecated_target_alias(<old_target> <new_target>)
+    add_deprecated_target_alias(<old_target> <new_target>)
 
-   :old_target[in]: Old target name.
-   :new_target[in]: New target name.
+    *old_target[in]*
 
-   Create an alias for the existing target and display a deprecation warning.
+        Old target name.
+
+    *new_target[in]*
+
+        New target name.
+
+    Create an alias for the existing target and display a deprecation warning.
 #]]
 function(add_deprecated_target_alias old_target new_target)
     add_custom_target(${old_target}
@@ -608,23 +719,35 @@ function(add_deprecated_target_alias old_target new_target)
 endfunction()
 
 #[[
-   target_add_binary_data(<target> <embed_file> <embed_type>
-                          [RENAME_TO <symbol>])
-                          [DEPENDS <dependency>...])
+    target_add_binary_data(<target> <embed_file> <embed_type>
+                           [RENAME_TO <symbol>])
+                           [DEPENDS <dependency>...])
 
-   :target[in]: Attach the source file with embedded data to the specified
-                target.
-   :embed_file[in]: File containing the embedded data.
-   :embed_type[in]: BINARY or TEXT
-   :RENAME_TO[in,opt]: Use the given symbol name for the embedded data. If no
-                       symbol name is provided, the embed_file file name will
-                       be used instead.
-   :DEPENDS[in,opt]: List of additional dependencies for the generated file
-                     containing embedded data.
+    *target[in]*
 
-   Add binary data into the build target by converting it into a generated
-   source file, which is then compiled into a binary object as part of the
-   build process.
+        Attach the source file with embedded data to the specified target.
+
+    *embed_file[in]*
+
+        File containing the embedded data.
+
+    *embed_type[in]*
+
+        BINARY or TEXT
+
+    *RENAME_TO[in,opt]*
+
+        Use the given symbol name for the embedded data. If no symbol name is
+        provided, the embed_file file name will be used instead.
+
+    *DEPENDS[in,opt]*
+
+        List of additional dependencies for the generated file containing
+        embedded data.
+
+    Add binary data into the build target by converting it into a generated
+    source file, which is then compiled into a binary object as part of the
+    build process.
 #]]
 function(target_add_binary_data target embed_file embed_type)
     cmake_parse_arguments(_ "" "RENAME_TO" "DEPENDS" ${ARGN})
@@ -659,17 +782,28 @@ function(target_add_binary_data target embed_file embed_type)
 endfunction()
 
 #[[
-   add_prebuilt_library(<target> <lib>
-                        [REQUIRES <component>...])
-                        [PRIV_REQUIRES <component>...])
+    add_prebuilt_library(<target> <lib>
+                         [REQUIRES <component>...])
+                         [PRIV_REQUIRES <component>...])
 
-   :target[in]: Target name for the imported library.
-   :library[in]: Imported library path.
-   :REQUIRES[in,opt]: Optional dependency on other components.
-   :PRIV_REQUIRES[in,opt]: Optional private dependency on other components.
+    *target[in]*
 
-   Add prebuilt library with support for adding dependencies on ESP-IDF
-   components.
+        Target name for the imported library.
+
+    *library[in]*
+
+        Imported library path.
+
+    *REQUIRES[in,opt]*
+
+        Optional dependency on other components.
+
+    *PRIV_REQUIRES[in,opt]*
+
+        Optional private dependency on other components.
+
+    Add prebuilt library with support for adding dependencies on ESP-IDF
+    components.
 #]]
 function(add_prebuilt_library target_name lib_path)
     cmake_parse_arguments(_ "" "" "REQUIRES;PRIV_REQUIRES" ${ARGN})
@@ -694,13 +828,18 @@ function(add_prebuilt_library target_name lib_path)
 endfunction()
 
 #[[
-   __get_target_dependencies(TARGET <target>
-                             OUTPUT <variable>)
+    __get_target_dependencies(TARGET <target>
+                              OUTPUT <variable>)
 
-   :TARGET[in]: Target for which to get dependencies.
-   :OUTPUT[out]: Output variable where the list of dependencies will be stored.
+    *TARGET[in]*
 
-   Recursively retrieve the list of dependencies for ``TARGET``.
+        Target for which to get dependencies.
+
+    *OUTPUT[out]*
+
+        Output variable where the list of dependencies will be stored.
+
+    Recursively retrieve the list of dependencies for ``TARGET``.
 #]]
 function(__get_target_dependencies)
     set(options)
@@ -765,17 +904,23 @@ function(__get_target_dependencies)
 endfunction()
 
 #[[
-   __get_executable_library_or_die(TARGET <executable>
-                                   OUTPUT <library>)
+    __get_executable_library_or_die(TARGET <executable>
+                                    OUTPUT <library>)
 
-   :TARGET[in]: Executable target.
-   :OUTPUT[out]: Output variable to store the library interface target linked
-                 to the executable.
+    *TARGET[in]*
 
-   Search for the library interface target created with the idf_build_library()
-   function and linked to the executable, examine the LINK_LIBRARIES for the
-   executable and the LIBRARY_INTERFACES build property, which stores all
-   library interface targets created by the idf_build_library() function.
+        Executable target.
+
+    *OUTPUT[out]*
+
+        Output variable to store the library interface target linked to the
+        executable.
+
+    Search for the library interface target created with the
+    idf_build_library() function and linked to the executable, examine the
+    LINK_LIBRARIES for the executable and the LIBRARY_INTERFACES build
+    property, which stores all library interface targets created by the
+    idf_build_library() function.
 #]]
 function(__get_executable_library_or_die)
     set(options)
@@ -814,14 +959,17 @@ function(__get_executable_library_or_die)
 endfunction()
 
 #[[
-   __make_json_list(<list> OUTPUT <variable>)
+    __make_json_list(<list> OUTPUT <variable>)
 
-   :list[in]: CMake string containing a list to be converted into JSON
-              format.
-   :OUTPUT[out]: Output variable name to store the JSON list.
+    *list[in]*
 
-   Convert a CMake list to a JSON list and store it in a OUTPUT
-   variable.
+        CMake string containing a list to be converted into JSON format.
+
+    *OUTPUT[out]*
+
+        Output variable name to store the JSON list.
+
+    Convert a CMake list to a JSON list and store it in a OUTPUT variable.
 #]]
 function(__make_json_list input)
     set(options)
@@ -843,16 +991,21 @@ function(__make_json_list input)
 endfunction()
 
 #[[
-   fail_at_build_time(<target> <message>...)
+    fail_at_build_time(<target> <message>...)
 
-   :target[in]: Target name to create and add to ALL.
-   :message[in]: Error message to display. Multiple messages may be provided.
+    *target[in]*
 
-   Create a phony target that intentionally fails the build, displaying the
-   error messages specified in the message arguments. An empty CMake file is
-   created and included, which is then deleted when the target is executed.
-   This forces CMake to rerun, as the file is added to the CMake rerun
-   dependencies.
+        Target name to create and add to ALL.
+
+    *message[in]*
+
+        Error message to display. Multiple messages may be provided.
+
+    Create a phony target that intentionally fails the build, displaying the
+    error messages specified in the message arguments. An empty CMake file is
+    created and included, which is then deleted when the target is executed.
+    This forces CMake to rerun, as the file is added to the CMake rerun
+    dependencies.
 #]]
 function(fail_at_build_time target_name message_line0)
     idf_build_get_property(idf_path IDF_PATH)

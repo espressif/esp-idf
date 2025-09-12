@@ -4,10 +4,10 @@
 include_guard(GLOBAL)
 
 #[[
-   check_expected_tool_version()
+    check_expected_tool_version()
 
-   Function to verify if the tool is using the expected version and issue a
-   warning if it is not.
+    Function to verify if the tool is using the expected version and issue a
+    warning if it is not.
 #]]
 function(check_expected_tool_version tool_name tool_path)
     set(tool_version_warning "Check Getting Started documentation or proceed at own risk.\n")
@@ -54,25 +54,36 @@ function(check_expected_tool_version tool_name tool_path)
 endfunction()
 
 #[[
-   __get_component_sources([SRCS <src>...]
-                           [SRC_DIRS <dir>...]
-                           [EXCLUDE_SRCS <exclude>...]
-                           OUTPUT <var>)
+    __get_component_sources([SRCS <src>...]
+                            [SRC_DIRS <dir>...]
+                            [EXCLUDE_SRCS <exclude>...]
+                            OUTPUT <var>)
 
-   :SRCS[in,opt]: Optional list of sources.
-   :SRC_DIRS[in,opt]: Option list of source directories.
-   :EXCLUDE_SRCS[in,opt]: Optional list of sources to exclude.
-   :OUTPUT[out]: Output variable to store the list of component sources.
+    *SRCS[in,opt]*
 
-   This helper function gathers component sources from the arguments specified
-   in either ``SRCS`` or ``SRC_DIRS``. If both are provided, the ``SRC_DIRS`` option
-   is disregarded. The sources are collected as absolute paths relative to the
-   component's directory. If ``EXCLUDE_SRCS`` is specified, the source files
-   listed in it are excluded. The final list of component sources is returned
-   in the ``OUTPUT`` variable.
+        Optional list of sources.
 
-   The ``COMPONENT_NAME`` and ``COMPONENT_DIR`` variables are provided by the
-   build system when ``idf_component_register`` is called.
+    *SRC_DIRS[in,opt]*
+
+        Option list of source directories.
+
+    *EXCLUDE_SRCS[in,opt]*
+
+        Optional list of sources to exclude.
+
+    *OUTPUT[out]*
+
+        Output variable to store the list of component sources.
+
+    This helper function gathers component sources from the arguments specified
+    in either ``SRCS`` or ``SRC_DIRS``. If both are provided, the ``SRC_DIRS``
+    option is disregarded. The sources are collected as absolute paths relative
+    to the component's directory. If ``EXCLUDE_SRCS`` is specified, the source
+    files listed in it are excluded. The final list of component sources is
+    returned in the ``OUTPUT`` variable.
+
+    The ``COMPONENT_NAME`` and ``COMPONENT_DIR`` variables are provided by the
+    build system when ``idf_component_register`` is called.
 #]]
 function(__get_component_sources)
     set(options)
@@ -129,29 +140,39 @@ endfunction()
 #[[api
 .. cmakev2:function:: target_linker_script
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      target_linker_script(<target> <deptype> <scriptfile>...
-                           [PROCESS <output>])
+        target_linker_script(<target> <deptype> <scriptfile>...
+                             [PROCESS <output>])
 
-   :target[in]: The component target to which linker script files should be
-                added.
-   :deptype[in]: This option is obsolete and maintained solely for backward
-                 compatibility.
-   :scriptfile[in]: Specifies the linker script file ``scriptfile`` to be added
-                    to the link.  Multiple files can be specified.
-   :PROCESS[in,opt]: Specifies the ``output`` linker script, which is generated
-                     from the ``linkerscript`` template. The ``linkerscript``
-                     is processed with ldgen to produce the ``output``.
+    *target[in]*
 
-   This function adds one or more linker scripts to the specified component
-   target, incorporating the linker script into the linking process.
+        The component target to which linker script files should be added.
 
-   If the ``PROCESS`` option is specified, the last ``scriptfile`` listed is
-   processed using the ldgen command, and the generated ``output`` file is used
-   as the linker script during the linking process. This implies that with the
-   ``PROCESS`` option, it is logical to provide only a single ``scriptfile`` as
-   a template.
+    *deptype[in]*
+
+        This option is obsolete and maintained solely for backward
+        compatibility.
+
+    *scriptfile[in]*
+
+        Specifies the linker script file ``scriptfile`` to be added to the
+        link.  Multiple files can be specified.
+
+    *PROCESS[in,opt]*
+
+        Specifies the ``output`` linker script, which is generated from the
+        ``linkerscript`` template. The ``linkerscript`` is processed with ldgen
+        to produce the ``output``.
+
+    This function adds one or more linker scripts to the specified component
+    target, incorporating the linker script into the linking process.
+
+    If the ``PROCESS`` option is specified, the last ``scriptfile`` listed is
+    processed using the ldgen command, and the generated ``output`` file is
+    used as the linker script during the linking process. This implies that
+    with the ``PROCESS`` option, it is logical to provide only a single
+    ``scriptfile`` as a template.
 #]]
 function(target_linker_script target deptype scriptfiles)
     # The linker script files, templates, and their output filenames are stored
@@ -177,15 +198,21 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_component_optional_requires
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_component_optional_requires(<type> <component>...)
+        idf_component_optional_requires(<type> <component>...)
 
-   :type[in]: Type of dependency: PRIVATE, PUBLIC or INTERFACE
-   :component[in]: The component name that should be added as a dependency to
-                   the evaluated component. It may be provided multiple times.
+    *type[in]*
 
-   Add a dependency on a specific component only if it is included in the build.
+        Type of dependency: PRIVATE, PUBLIC or INTERFACE
+
+    *component[in]*
+
+        The component name that should be added as a dependency to the
+        evaluated component. It may be provided multiple times.
+
+    Add a dependency on a specific component only if it is included in the
+    build.
 #]]
 function(idf_component_optional_requires req_type)
     set(optional_reqs ${ARGN})
@@ -203,21 +230,21 @@ function(idf_component_optional_requires req_type)
 endfunction()
 
 #[[
-   __init_common_components()
+    __init_common_components()
 
-   Identify the commonly required components based on the target and
-   architecture, and store them in the __COMPONENT_REQUIRES_COMMON build
-   property. Their interfaces are stored in the __COMMON_COMPONENT_INTERFACES
-   build property. The commonly required component interfaces are automatically
-   linked to each cmakev1 component added through the idf_component_register
-   function.
+    Identify the commonly required components based on the target and
+    architecture, and store them in the __COMPONENT_REQUIRES_COMMON build
+    property. Their interfaces are stored in the __COMMON_COMPONENT_INTERFACES
+    build property. The commonly required component interfaces are
+    automatically linked to each cmakev1 component added through the
+    idf_component_register function.
 
-   This function is called from the idf_component_register function and is
-   evaluated only once per project, as ensured by the
-   __COMMON_COMPONENTS_INITIALIZED build property. The cmakev2 components are
-   expected to properly specify all their dependencies, rather than relying on
-   common components to be automatically linked to them. Therefore, the common
-   components are relevant only within the context of cmakev1 components.
+    This function is called from the idf_component_register function and is
+    evaluated only once per project, as ensured by the
+    __COMMON_COMPONENTS_INITIALIZED build property. The cmakev2 components are
+    expected to properly specify all their dependencies, rather than relying on
+    common components to be automatically linked to them. Therefore, the common
+    components are relevant only within the context of cmakev1 components.
 #]]
 function(__init_common_components)
     idf_build_get_property(common_components_initialized __COMMON_COMPONENTS_INITIALIZED)
@@ -258,47 +285,84 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_component_register
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_component_register([SRCS <file>..]
-                             [SRC_DIRS <dir>...]
-                             [EXCLUDE_SRCS <file>...]
-                             [INCLUDE_DIRS <dir>...]
-                             [PRIV_INCLUDE_DIRS <dir>...]
-                             [LDFRAGMENTS <file>...]
-                             [REQUIRES <component>...]
-                             [PRIV_REQUIRES <component>...]
-                             [REQUIRED_IDF_TARGETS <target>...]
-                             [EMBED_FILES <file>...]
-                             [EMBED_TXTFILES <file>...]
-                             [KCONFIG <file>]
-                             [KCONFIG_PROJBUILD <file>]
-                             [WHOLE_ARCHIVE])
+        idf_component_register([SRCS <file>..]
+                               [SRC_DIRS <dir>...]
+                               [EXCLUDE_SRCS <file>...]
+                               [INCLUDE_DIRS <dir>...]
+                               [PRIV_INCLUDE_DIRS <dir>...]
+                               [LDFRAGMENTS <file>...]
+                               [REQUIRES <component>...]
+                               [PRIV_REQUIRES <component>...]
+                               [REQUIRED_IDF_TARGETS <target>...]
+                               [EMBED_FILES <file>...]
+                               [EMBED_TXTFILES <file>...]
+                               [KCONFIG <file>]
+                               [KCONFIG_PROJBUILD <file>]
+                               [WHOLE_ARCHIVE])
 
-   :SRCS[in,opt]: List of source files for the component.
-   :SRC_DIRS[in,opt]: List of source directories to search for source files
-                      (.c, .cpp, .S); ignored when SRCS is specified.
-   :EXCLUDE_SRCS[in,opt]: List of source files to exclude from the designated
-                          source directories.
-   :INCLUDE_DIRS[in,opt]: List of public include directories for the created
-                          component library.
-   :PRIV_INCLUDE_DIRS[in,opt]: List of private include directories for the
-                               newly created component library.
-   :LDFRAGMENTS[in,opt]: List of linker script fragments for the component.
-   :REQUIRES[in,opt]: List of publicly required components based on usage
-                      requirements.
-   :PRIV_REQUIRES[in,opt]: List of privately required components based on usage
-                           requirements or components needed solely for functions
-                           or values defined in project_include.cmake.
-   :REQUIRED_IDF_TARGETS[in,opt]: List of IDF build targets supported
-                                   exclusively by the component.
-   :EMBED_FILES[in,opt]: List of binary files to embed with the component.
-   :EMBED_TXTFILES[in,opt]: List of text files to embed with the component.
-   :WHOLE_ARCHIVE[in,opt]: Link the component as --whole-archive.
-   :KCONFIG[in,opt]: Obsolete.
-   :KCONFIG_PROJBUILD[in,opt]: Obsolete.
+    *SRCS[in,opt]*
 
-   Register a component with the build system.
+        List of source files for the component.
+
+    *SRC_DIRS[in,opt]*
+
+        List of source directories to search for source files (.c, .cpp, .S);
+        ignored when SRCS is specified.
+
+    *EXCLUDE_SRCS[in,opt]*
+
+        List of source files to exclude from the designated source directories.
+
+    *INCLUDE_DIRS[in,opt]*
+
+        List of public include directories for the created component library.
+
+    *PRIV_INCLUDE_DIRS[in,opt]*
+
+        List of private include directories for the newly created component
+        library.
+
+    *LDFRAGMENTS[in,opt]*
+
+        List of linker script fragments for the component.
+
+    *REQUIRES[in,opt]*
+
+        List of publicly required components based on usage requirements.
+
+    *PRIV_REQUIRES[in,opt]*
+
+        List of privately required components based on usage requirements or
+        components needed solely for functions or values defined in
+        project_include.cmake.
+
+    *REQUIRED_IDF_TARGETS[in,opt]*
+
+        List of IDF build targets supported exclusively by the component.
+
+    *EMBED_FILES[in,opt]*
+
+        List of binary files to embed with the component.
+
+    *EMBED_TXTFILES[in,opt]*
+
+        List of text files to embed with the component.
+
+    *WHOLE_ARCHIVE[in,opt]*
+
+        Link the component as --whole-archive.
+
+    *KCONFIG[in,opt]*
+
+        Obsolete.
+
+    *KCONFIG_PROJBUILD[in,opt]*
+
+        Obsolete.
+
+    Register a component with the build system.
 #]]
 function(idf_component_register)
     set(options WHOLE_ARCHIVE)
@@ -439,19 +503,28 @@ endfunction()
 #[[api
 .. cmakev2:function:: idf_build_component
 
-   .. code-block:: cmake
+    .. code-block:: cmake
 
-      idf_build_component(<component_dir> [<component_source>])
+        idf_build_component(<component_dir> [<component_source>])
 
-   :component_dir[in]: Directory path of the component.
-   :component_source[in,opt]: Source of the component. One of:
-                             "idf_components", "project_managed_components",
-                             "project_extra_components", "project_components".
-                             Defaults to "project_components".
+    *component_dir[in]*
 
-   Compatibility shim used by generated files (e.g. managed_components_list)
-   that initializes the component in build system v2 by delegating to
-   ``__init_component``.
+        Directory path of the component.
+
+    *component_source[in,opt]*
+
+        Source of the component. One of:
+
+        * ``idf_components``
+        * ``project_managed_components``
+        * ``project_extra_components``
+        * ``project_components``
+
+        Defaults to ``project_components``.
+
+    Compatibility shim used by generated files (e.g. managed_components_list)
+    that initializes the component in build system v2 by delegating to
+    ``__init_component``.
 #]]
 function(idf_build_component component_dir)
     if(${ARGC} EQUAL 1)
