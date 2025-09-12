@@ -8,9 +8,12 @@
 # pylint: disable=undefined-variable
 import os.path
 import re
+import sys
 from pathlib import Path
 
 from esp_docs.conf_docs import *  # noqa: F403,F401
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tools', 'cmakev2')))
 
 if os.environ.get('IDF_PATH') is None:
     raise RuntimeError('IDF_PATH should be set, run export.sh before building docs')
@@ -416,6 +419,7 @@ extensions += [  # noqa: F405
     'esp_docs.esp_extensions.run_doxygen',
     'esp_docs.esp_extensions.add_html_zip',
     'linuxdoc.rstFlatTable',  # https://return42.github.io/linuxdoc/linuxdoc-howto/table-markup.html#flat-table
+    'esp_docs_cmakev2_extension',
 ]
 
 # Use wavedrompy as backend, instead of wavedrom-cli
