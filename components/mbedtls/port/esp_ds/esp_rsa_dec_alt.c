@@ -62,6 +62,9 @@ static int esp_ds_rsaes_pkcs1_v15_unpadding(unsigned char *input,
     }
 
     /* Verify padding bytes are non-zero in constant time */
+#if defined(__clang__) && defined(__xtensa__)
+    #pragma clang loop vectorize(disable)
+#endif
     for (size_t i = 2; i < ilen; i++) {
         unsigned char in_padding = (i < pad_count + 2);
         unsigned char is_zero = (input[i] == 0x00);
