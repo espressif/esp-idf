@@ -765,7 +765,7 @@ blecent_custom_gatt_operations(const struct peer* peer)
                              remote_chr_uuid,
                              BLE_UUID16_DECLARE(BLE_GATT_DSC_CLT_CFG_UUID16));
     if (dsc == NULL) {
-        MODLOG_DFLT(ERROR, "Error: Peer lacks a CCCD for the subscribable characterstic\n");
+        MODLOG_DFLT(ERROR, "Error: Peer lacks a CCCD for the subscribable characteristic\n");
         goto err;
     }
 
