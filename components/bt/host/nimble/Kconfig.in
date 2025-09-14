@@ -309,6 +309,12 @@ config BT_NIMBLE_SVC_GAP_APPEARANCE
     help
         Standard BLE GAP Appearance value in HEX format e.g. 0x02C0
 
+config BT_NIMBLE_CHANNEL_SOUNDING
+    bool "ble channel souding feature"
+    depends on BT_NIMBLE_ENABLED
+    default 0
+    help
+        Used to enable/disable the channel sounding feature
 
 menu "Memory Settings"
     config BT_NIMBLE_MSYS_1_BLOCK_COUNT
