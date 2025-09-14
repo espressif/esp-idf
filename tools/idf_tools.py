@@ -1941,7 +1941,7 @@ def parse_targets_arg(targets_str: str) -> List[str]:
         if invalid_targets:
             warn(
                 f'Targets: "{", ".join(invalid_targets)}" are not supported. '
-                'Only allowed options are: {", ".join(targets_from_tools_json)}.'
+                f'Only allowed options are: {", ".join(targets_from_tools_json)}.'
             )
             raise SystemExit(1)
         return targets
