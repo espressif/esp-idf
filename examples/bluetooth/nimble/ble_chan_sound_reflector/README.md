@@ -1,23 +1,33 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- |
+| Supported Targets | ESP32-C6 |
+| ----------------- | -------- |
 
-# BLE Peripheral Example
+# BLE Channel Sounding reflector Example
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+(See the README.md file in the upper-level 'examples' directory for more information about examples.)
+* This example demonstrates the capability of the CS procedure to be executed on the ESP host + external controller.
+* It is important to note that the current example does not provide support for distance calculation, and it is currently under development.
+* Ble channel sounding reflector example uses the RAS service defined in [ble_svc_ras.c](../../../../components/bt/host/nimble/nimble/nimble/host/services/ras/src/ble_svc_ras.c)
 
-This example creates GATT server and then starts advertising, waiting to be connected to a GATT client.
+I (372) hal_uart: set baud_rate:115200.
 
-It uses ESP32's Bluetooth controller and NimBLE stack based BLE host.
+I (382) NimBLE_RAS_INITIATOR: BLE Host Task Started
+I (382) main_task: Returned from app_main()
 
-This example aims at understanding GATT database configuration, handling GATT reads and writes, handling subscribe events, understanding advertisement and SMP related NimBLE APIs.
+I (157562) NimBLE: GAP procedure initiated: extended advertise; instance=0
 
-It also demonstrates security features of NimBLE stack. SMP parameters like I/O capabilities of device, Bonding flag, MITM protection flag and Secure Connection only mode, Enabling Link Encryption etc., can be configured through menuconfig options.
+I (157562) NimBLE: Connection secured
+I (162222) NimBLE: encryption change event; status=0
 
-For RPA feature (currently Host based privacy feature is supported), use API `ble_hs_pvcy_rpa_config` to enable/disable host based privacy, `own_addr_type` needs to be set to `BLE_ADDR_RANDOM` to use this feature. Please include `ble_hs_pvcy.h` while using this API. As `ble_hs_pvcy_rpa_config` configures host privacy and sets address in controller, it is necessary to call this API after host-controller are synced (e.g. in `bleprph_on_sync` callback).
+I (162372) NimBLE: CS capabilities exchanged
+I (162372) NimBLE: Set default CS settings
 
-To test this demo, any BLE scanner app can be used.
+I (162392) NimBLE: Setup phase completed
 
-Note :
+To test this demo, any BLE channel sounding initiator app can be used.
+
+## Note
+
+* This example currently requires an external Bluetooth controller supporting BLE Channel sounding functionality, as the ESP chips listed above do not have native controller support for BLE channel sounding feature and is under development phase
 
 * To install the dependency packages needed, please refer to the top level [README file](../../../README.md#running-test-python-script-pytest).
 
@@ -50,47 +60,6 @@ Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 
 See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects.
 
-## Example Output
-
-There is this console output when bleprph is connected and characteristic is read:
-
-```
-I (118) BTDM_INIT: BT controller compile version [fe7ced0]
-I (118) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
-W (128) phy_init: failed to load RF calibration data (0xffffffff), falling back to full calibration
-I (268) phy: phy_version: 4100, 6fa5e27, Jan 25 2019, 17:02:06, 0, 2
-I (508) NimBLE_BLE_PRPH: BLE Host Task Started
-I (508) uart: queue free spaces: 8
-GAP procedure initiated: stop advertising.
-Device Address: xx:xx:xx:xx:xx:xx
-GAP procedure initiated: advertise; disc_mode=2 adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=0 adv_itvl_max=0
-connection established; status=0 handle=0 our_ota_addr_type=0 our_ota_addr=xx:xx:xx:xx:xx:xx our_id_addr_type=0 our_id_addr=xx:xx:xx:xx:xx:xx peer_ota_addr_type=1 peer_ota_addr=xx:xx:xx:xx:xx:xx peer_id_addr_type=1 peer_id_addr=xx:xx:xx:xx:xx:xx conn_itvl=39 conn_latency=0 supervision_timeout=500 encrypted=0 authenticated=0 bonded=0
-
-connection updated; status=0 handle=0 our_ota_addr_type=0 our_ota_addr=xx:xx:xx:xx:xx:xx our_id_addr_type=0 our_id_addr=xx:xx:xx:xx:xx:xx peer_ota_addr_type=1 peer_ota_addr=xx:xx:xx:xx:xx:xx peer_id_addr_type=1 peer_id_addr=xx:xx:xx:xx:xx:xx conn_itvl=6 conn_latency=0 supervision_timeout=500 encrypted=0 authenticated=0 bonded=0
-
-I (50888) NimBLE_BLE_PRPH: PASSKEY_ACTION_EVENT started
-
-I (50888) NimBLE_BLE_PRPH: Passkey on device's display: xxxxxx
-I (50888) NimBLE_BLE_PRPH: Accept or reject the passkey through console in this format -> key Y or key N
-key Y
-I (50898) NimBLE_BLE_PRPH: ble_sm_inject_io result: 0
-
-encryption change event; status=0 handle=0 our_ota_addr_type=0 our_ota_addr=xx:xx:xx:xx:xx:xx our_id_addr_type=0 our_id_addr=xx:xx:xx:xx:xx:xx peer_ota_addr_type=1 peer_ota_addr=xx:xx:xx:xx:xx:xx peer_id_addr_type=1
-peer_id_addr=xx:xx:xx:xx:xx:xx conn_itvl=6 conn_latency=0 supervision_timeout=500 encrypted=1 authenticated=1 bonded=1
-
-connection updated; status=0 handle=0 our_ota_addr_type=0 our_ota_addr=xx:xx:xx:xx:xx:xx our_id_addr_type=0 our_id_addr=xx:xx:xx:xx:xx:xx
-peer_ota_addr_type=1 peer_ota_addr=xx:xx:xx:xx:xx:xx peer_id_addr_type=1 peer_id_addr=xx:xx:xx:xx:xx:xx conn_itvl=39 conn_latency=0 supervision_timeout=500 encrypted=1 authenticated=1 bonded=1
-
-subscribe event; conn_handle=1 attr_handle=19 reason=1 prevn=0 curn=1 previ=0 curi=0
-Subscribe to attribute (19) successful
-subscribe event; conn_handle=1 attr_handle=25 reason=1 prevn=0 curn=1 previ=0 curi=0
-Subscribe to attribute (25) successful
-GATT procedure initiated: notify; att_handle=25
-Notification sent successfully
-```
-
-## Note
-* NVS support is not yet integrated to bonding. So, for now, bonding is not persistent across reboot.
 
 ## Troubleshooting
 
