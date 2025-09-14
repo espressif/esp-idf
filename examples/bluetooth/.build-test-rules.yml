@@ -187,6 +187,25 @@ examples/bluetooth/nimble/ble_ancs:
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
 
+examples/bluetooth/nimble/ble_chan_sound_initiator:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: Channel Sounding example only supported on ESP32-C6
+  depends_filepatterns:
+    - examples/bluetooth/nimble/ble_chan_sound_initiator/**/*
+    - examples/bluetooth/nimble/common/**/*
+
+examples/bluetooth/nimble/ble_chan_sound_reflector:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: Channel Sounding example only supported on ESP32-C6
+  depends_filepatterns:
+    - examples/bluetooth/nimble/ble_chan_sound_reflector/**/*
+    - examples/bluetooth/nimble/common/**/*
 examples/bluetooth/nimble/ble_cte:
   <<: *bt_default_depends
   enable:
