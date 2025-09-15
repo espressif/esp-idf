@@ -3,21 +3,22 @@
 """This file is used for generating the child pipeline for build jobs."""
 
 import argparse
+import logging
 import os
-import typing as t
 
 import __init__  # noqa: F401 # inject the system path
 import yaml
-from idf_build_apps.manifest import FolderRule
+from idf_build_apps.manifest import DEFAULT_BUILD_TARGETS
 from idf_build_apps.utils import semicolon_separated_str_to_list
 from idf_ci.idf_gitlab import build_child_pipeline
+from idf_ci.utils import setup_logging
 from idf_ci_utils import IDF_PATH
 
 BUILD_CHILD_PIPELINE_FILEPATH = os.path.join(IDF_PATH, 'build_child_pipeline.yml')
 TEST_PATHS = ['examples', os.path.join('tools', 'test_apps'), 'components']
 
 
-def _separate_str_to_list(s: str) -> t.List[str]:
+def _separate_str_to_list(s: str) -> list[str]:
     """
     Gitlab env file will escape the doublequotes in the env file, so we need to remove them
 
@@ -35,7 +36,7 @@ def _separate_str_to_list(s: str) -> t.List[str]:
 
 def main(arguments: argparse.Namespace) -> None:
     # load from default build test rules config file
-    extra_default_build_targets: t.List[str] = []
+    extra_default_build_targets: list[str] = []
     if arguments.default_build_test_rules:
         with open(arguments.default_build_test_rules) as fr:
             configs = yaml.safe_load(fr)
@@ -44,8 +45,9 @@ def main(arguments: argparse.Namespace) -> None:
             extra_default_build_targets = configs.get('extra_default_build_targets') or []
 
     if extra_default_build_targets:
-        FolderRule.DEFAULT_BUILD_TARGETS.extend(extra_default_build_targets)
+        DEFAULT_BUILD_TARGETS.set(list(set(DEFAULT_BUILD_TARGETS.get()).union(set(extra_default_build_targets))))
 
+    setup_logging(logging.DEBUG)
     build_child_pipeline(
         paths=args.paths,
         modified_files=args.modified_files,
