@@ -173,6 +173,7 @@ LCD
 - The ``color_space`` and ``rgb_endian`` configuration options in the :cpp:type:`esp_lcd_panel_dev_config_t` structure have been replaced by the :cpp:member:`esp_lcd_panel_dev_config_t::rgb_ele_order` member, which sets the RGB element order. The corresponding types ``lcd_color_rgb_endian_t`` and ``esp_lcd_color_space_t`` have also been removed; use :cpp:type:`lcd_rgb_element_order_t` instead.
 - The ``esp_lcd_panel_disp_off`` function has been removed. Please use the :func:`esp_lcd_panel_disp_on_off` function to control display on/off.
 - The ``on_bounce_frame_finish`` member in :cpp:type:`esp_lcd_rgb_panel_event_callbacks_t` has been replaced by :cpp:member:`esp_lcd_rgb_panel_event_callbacks_t::on_frame_buf_complete`, which indicates that a complete frame buffer has been sent to the LCD controller.
+- The legacy I2C driver ``driver/i2c.h`` is deprecated since version 5.2. Starting from version 6.0, LCD driver based on legacy I2C is removed and LCD driver would only based on new I2C driver ``driver/i2c_master.h``.
 
 SPI
 ---
