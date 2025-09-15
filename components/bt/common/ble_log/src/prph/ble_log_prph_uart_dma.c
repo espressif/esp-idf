@@ -23,7 +23,7 @@
 
 /* MACRO */
 #define BLE_LOG_UART_MAX_TRANSFER_SIZE      (10240)
-#define BLE_LOG_UART_RX_BUF_SIZE            (32)
+#define BLE_LOG_UART_RX_BUF_SIZE            (256)
 #define BLE_LOG_UART_DMA_BURST_SIZE         (32)
 #if BLE_LOG_PRPH_UART_DMA_REDIR
 #define BLE_LOG_UART_REDIR_BUF_SIZE         (512)
@@ -95,8 +95,6 @@ bool ble_log_prph_init(size_t trans_cnt)
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
-        .rx_flow_ctrl_thresh = 122,
     };
     if ((uart_param_config(CONFIG_BLE_LOG_PRPH_UART_DMA_PORT, &uart_config) != ESP_OK) ||
         (uart_set_pin(CONFIG_BLE_LOG_PRPH_UART_DMA_PORT,
