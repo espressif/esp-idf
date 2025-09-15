@@ -36,7 +36,11 @@ typedef union {
          *  0: disable csi bridge. 1: enable csi bridge.
          */
         uint32_t csi_brg_en:1;
-        uint32_t reserved_1:31;
+        /** csi_brg_rst : R/W; bitpos: [1]; default: 0;
+         *  0: release csi bridge reset. 1: enable csi bridge reset.
+         */
+        uint32_t csi_brg_rst:1;
+        uint32_t reserved_2:30;
     };
     uint32_t val;
 } csi_brg_csi_en_reg_t;
@@ -81,7 +85,11 @@ typedef union {
          *  1: mask dma request when reading frame info. 0: disable mask.
          */
         uint32_t dma_force_rd_status:1;
-        uint32_t reserved_17:15;
+        /** csi_dma_flow_controller : R/W; bitpos: [17]; default: 1;
+         *  0: dma as flow controller. 1: csi_bridge as flow controller
+         */
+        uint32_t csi_dma_flow_controller:1;
+        uint32_t reserved_18:14;
     };
     uint32_t val;
 } csi_brg_dma_req_cfg_reg_t;
@@ -170,11 +178,11 @@ typedef union {
          *  endianness order in bytes. 2'h0 is normal mode and 2'h3 is useful to YUV420(Legacy)
          *  when isp is bapassed.
          */
-        uint32_t byte_endian_order:1;    //byte_swap_en
+        uint32_t byte_endian_order:1;
         /** bit_endian_order : R/W; bitpos: [1]; default: 0;
          *  N/A
          */
-        uint32_t bit_endian_order:1;     //reserved
+        uint32_t bit_endian_order:1;
         uint32_t reserved_2:30;
     };
     uint32_t val;
@@ -343,6 +351,75 @@ typedef union {
 } csi_brg_host_ctrl_reg_t;
 
 
+/** Group: csi host color mode control registers. */
+/** Type of host_cm_ctrl register
+ *  CSI HOST color mode convert configuration.
+ */
+typedef union {
+    struct {
+        /** csi_host_cm_en : R/W; bitpos: [0]; default: 1;
+         *  Configures whether to enable cm output
+         */
+        uint32_t csi_host_cm_en:1;
+        /** csi_host_cm_bypass : R/W; bitpos: [1]; default: 1;
+         *  Configures whether to bypass cm
+         */
+        uint32_t csi_host_cm_bypass:1;
+        /** csi_host_cm_rx : R/W; bitpos: [3:2]; default: 0;
+         *  Configures whether to bypass cm
+         */
+        uint32_t csi_host_cm_rx:2;
+        /** csi_host_cm_rx_rgb_format : R/W; bitpos: [6:4]; default: 0;
+         *  Configures whether to bypass cm
+         */
+        uint32_t csi_host_cm_rx_rgb_format:3;
+        /** csi_host_cm_rx_yuv422_format : R/W; bitpos: [8:7]; default: 0;
+         *  Configures whether to bypass cm
+         */
+        uint32_t csi_host_cm_rx_yuv422_format:2;
+        /** csi_host_cm_tx : R/W; bitpos: [10:9]; default: 0;
+         *  Configures whether to bypass cm
+         */
+        uint32_t csi_host_cm_tx:2;
+        /** csi_host_cm_lane_num : R/W; bitpos: [11]; default: 1;
+         *  Configures lane number that csi used, valid only rgb888 to rgb888. 0: 1-lane, 1:
+         *  2-lane
+         */
+        uint32_t csi_host_cm_lane_num:1;
+        /** csi_host_cm_16bit_swap : R/W; bitpos: [12]; default: 0;
+         *  Configures whether to swap idi32 high and low 16-bit
+         */
+        uint32_t csi_host_cm_16bit_swap:1;
+        /** csi_host_cm_8bit_swap : R/W; bitpos: [13]; default: 0;
+         *  Configures whether to swap idi32 high and low 8-bit
+         */
+        uint32_t csi_host_cm_8bit_swap:1;
+        uint32_t reserved_14:18;
+    };
+    uint32_t val;
+} csi_brg_host_cm_ctrl_reg_t;
+
+/** Type of host_size_ctrl register
+ *  CSI HOST color mode convert configuration.
+ */
+typedef union {
+    struct {
+        /** csi_host_cm_vnum : R/W; bitpos: [11:0]; default: 0;
+         *  Configures idi32 image size in y-direction, row_num - 1, valid only when
+         *  yuv422_to_yuv420_en = 1
+         */
+        uint32_t csi_host_cm_vnum:12;
+        /** csi_host_cm_hnum : R/W; bitpos: [23:12]; default: 0;
+         *  Configures idi32 image size in x-direction, line_pix_num*bits_per_pix/32 - 1, valid
+         *  only when yuv422_to_yuv420_en = 1
+         */
+        uint32_t csi_host_cm_hnum:12;
+        uint32_t reserved_24:8;
+    };
+    uint32_t val;
+} csi_brg_host_size_ctrl_reg_t;
+
+
 typedef struct csi_brg_dev_t {
     volatile csi_brg_clk_en_reg_t clk_en;
     volatile csi_brg_csi_en_reg_t csi_en;
@@ -359,12 +436,15 @@ typedef struct csi_brg_dev_t {
     volatile csi_brg_dmablk_size_reg_t dmablk_size;
     uint32_t reserved_034[3];
     volatile csi_brg_host_ctrl_reg_t host_ctrl;
+    uint32_t reserved_044;
+    volatile csi_brg_host_cm_ctrl_reg_t host_cm_ctrl;
+    volatile csi_brg_host_size_ctrl_reg_t host_size_ctrl;
 } csi_brg_dev_t;
 
 extern csi_brg_dev_t MIPI_CSI_BRIDGE;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(csi_brg_dev_t) == 0x44, "Invalid size of csi_brg_dev_t structure");
+_Static_assert(sizeof(csi_brg_dev_t) == 0x50, "Invalid size of csi_brg_dev_t structure");
 #endif
 
 #ifdef __cplusplus
