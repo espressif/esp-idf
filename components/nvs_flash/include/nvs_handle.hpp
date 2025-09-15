@@ -165,6 +165,21 @@ public:
     virtual esp_err_t get_item_size(ItemType datatype, const char *key, size_t &size) = 0;
 
     /**
+     * @brief Checks whether key exists and optionally returns also data type of associated entry.
+     *
+     * @param[in]     key        Key name. Maximum length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
+     * @param[out]    nvstype    Nvs data type to of entry, if it exists.
+     *
+     * @return      - ESP_OK if NVS entry for key provided was found. Data type will be returned via \c nvstype.
+     *              - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist.
+     *              - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL.
+     *              - ESP_FAIL if there is an internal error; most likely due to corrupted
+     *                NVS partition (only if NVS assertion checks are disabled).
+     *              - other error codes from the underlying storage driver.
+     */
+    virtual esp_err_t find_key(const char* key, nvs_type_t &nvstype) = 0;
+
+    /**
      * @brief Erases an entry.
      */
     virtual esp_err_t erase_item(const char* key) = 0;
