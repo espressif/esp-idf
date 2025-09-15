@@ -17,9 +17,9 @@
 #include <string.h>
 
 #include "esp_bit_defs.h"
+#include "freertos/FreeRTOS.h"
 
 #ifndef UNIT_TEST
-#include "freertos/portmacro.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_serial_output.h"
 #endif /* !UNIT_TEST */
@@ -47,18 +47,9 @@
 #define BLE_LOG_MEMSET(ptr, value, len)         memset(ptr, value, len)
 
 /* Critical section wrapper */
-#ifndef CONFIG_BLE_LOG_LL_ENABLED
 extern portMUX_TYPE ble_log_spin_lock;
 #define BLE_LOG_ENTER_CRITICAL()                portENTER_CRITICAL_SAFE(&ble_log_spin_lock);
 #define BLE_LOG_EXIT_CRITICAL()                 portEXIT_CRITICAL_SAFE(&ble_log_spin_lock);
-#else /* CONFIG_BLE_LOG_LL_ENABLED */
-/* Note
- * It's mandatory to use the same spin lock with Link Layer in multi-core system */
-extern uint32_t npl_freertos_hw_enter_critical(void);
-extern void npl_freertos_hw_exit_critical(uint32_t ctx);
-#define BLE_LOG_ENTER_CRITICAL()                npl_freertos_hw_enter_critical()
-#define BLE_LOG_EXIT_CRITICAL()                 npl_freertos_hw_exit_critical(0)
-#endif /* !CONFIG_BLE_LOG_LL_ENABLED */
 
 #define BLE_LOG_ACQUIRE_SPIN_LOCK(spin_lock)    portENTER_CRITICAL_SAFE(spin_lock)
 #define BLE_LOG_RELEASE_SPIN_LOCK(spin_lock)    portEXIT_CRITICAL_SAFE(spin_lock)
