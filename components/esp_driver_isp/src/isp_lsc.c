@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,10 +76,10 @@ esp_err_t esp_isp_lsc_configure(isp_proc_handle_t isp_proc, const esp_isp_lsc_co
     for (int y = 0; y < num_grids_y; y++) {
         for (int x = 0; x < num_grids_x; x++) {
             int i = y * num_grids_x + x;
-            isp_ll_lut_set_wdata_r_gr(isp_proc->hal.hw, config->gain_array->gain_r[i], config->gain_array->gain_gr[i]);
-            isp_ll_lut_set_cmd(isp_proc->hal.hw, true, false, i, ISP_LL_LUT_LSC);
-            isp_ll_lut_set_wdata_gb_b(isp_proc->hal.hw, config->gain_array->gain_gb[i], config->gain_array->gain_b[i]);
-            isp_ll_lut_set_cmd(isp_proc->hal.hw, true, true, i, ISP_LL_LUT_LSC);
+            isp_ll_lut_lsc_set_wdata_r_gr(isp_proc->hal.hw, config->gain_array->gain_r[i], config->gain_array->gain_gr[i]);
+            isp_ll_lut_lsc_set_cmd(isp_proc->hal.hw, true, false, i, ISP_LL_LUT_LSC);
+            isp_ll_lut_lsc_set_wdata_gb_b(isp_proc->hal.hw, config->gain_array->gain_gb[i], config->gain_array->gain_b[i]);
+            isp_ll_lut_lsc_set_cmd(isp_proc->hal.hw, true, true, i, ISP_LL_LUT_LSC);
         }
     }
 
