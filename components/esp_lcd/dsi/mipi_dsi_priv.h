@@ -12,7 +12,7 @@
 // Set the maximum log level for gptimer driver
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #endif
-#include "soc/soc_caps_full.h"
+#include "soc/mipi_dsi_periph.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
