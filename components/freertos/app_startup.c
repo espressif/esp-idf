@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,9 +22,6 @@
 /* Required by esp_psram_extram_reserve_dma_pool() */
 #include "esp_psram.h"
 #include "esp_private/esp_psram_extram.h"
-#endif
-#ifdef CONFIG_APPTRACE_ENABLE
-#include "esp_app_trace.h"    /* Required for esp_apptrace_init. [refactor-todo] */
 #endif
 #ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 #include "esp_gdbstub.h"                    /* Required by esp_gdbstub_init() */
@@ -115,12 +112,6 @@ void esp_startup_start_app_other_cores(void)
     while (port_xSchedulerRunning[0] == 0) {
         ;
     }
-
-#if CONFIG_APPTRACE_ENABLE
-    // [refactor-todo] move to esp_system initialization
-    esp_err_t err = esp_apptrace_init();
-    assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
-#endif
 
 #if CONFIG_ESP_INT_WDT
     // Initialize the interrupt watch dog for CPU1.
