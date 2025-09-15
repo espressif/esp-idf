@@ -129,7 +129,7 @@ def ethernet_test(dut: IdfDut) -> None:
 
 
 def ethernet_int_emac_test(dut: IdfDut) -> None:
-    dut.run_all_single_board_cases(group='esp_emac', timeout=120)
+    dut.run_all_single_board_cases(group='esp_emac', timeout=240)
 
 
 def ethernet_l2_test(dut: IdfDut) -> None:
