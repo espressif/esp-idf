@@ -106,8 +106,9 @@ char* esp_log_timestamp_str(bool constrained_env, uint64_t timestamp_ms, char* b
         uint64_t msec = timestamp_ms % 1000;
         localtime_r(&sec, &timeinfo);
 #if CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM_FULL
+        uint32_t year = (timeinfo.tm_year + 1900) % 100;
         // it takes 22 bytes to output it in the format: "YY-MM-DD HH:MM:SS.sss"
-        buffer += esp_log_util_cvt_dec(timeinfo.tm_year, 2, buffer);
+        buffer += esp_log_util_cvt_dec(year, 2, buffer);
         *buffer++ = '-';
         buffer += esp_log_util_cvt_dec(timeinfo.tm_mon + 1, 2, buffer);
         *buffer++ = '-';
