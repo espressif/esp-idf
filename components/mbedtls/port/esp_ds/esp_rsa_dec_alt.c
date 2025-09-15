@@ -45,7 +45,7 @@ static int esp_ds_rsaes_pkcs1_v15_unpadding(unsigned char *input,
     for (size_t i = 2; i < ilen; i++) {
         unsigned char found = (input[i] == 0x00);
         /* Prevent vectorization fault for clang O2 optimization */
-        __asm__ __volatile__("" ::: "memory");
+        __asm__ __volatile__("" : "+r" (found));
         pad_done = pad_done | found;
         pad_count += (pad_done == 0) ? 1 : 0;
     }
@@ -68,7 +68,7 @@ static int esp_ds_rsaes_pkcs1_v15_unpadding(unsigned char *input,
         unsigned char in_padding = (i < pad_count + 2);
         unsigned char is_zero = (input[i] == 0x00);
         /* Prevent vectorization fault for clang O2 optimization */
-        __asm__ __volatile__("" ::: "memory");
+        __asm__ __volatile__("" : "+r" (in_padding));
         bad |= in_padding & is_zero;
     }
 
