@@ -7,6 +7,7 @@
 #include "soc/soc_caps.h"
 #include "esp_private/esp_crypto_lock_internal.h"
 #include "sdkconfig.h"
+#include "esp_crypto_periph_clk.h"
 
 #if SOC_AES_SUPPORTED
 #include "hal/aes_ll.h"

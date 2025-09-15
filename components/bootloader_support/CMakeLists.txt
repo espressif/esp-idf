@@ -93,6 +93,8 @@ endif()
 
 if(BOOTLOADER_BUILD)
     list(APPEND srcs "src/bootloader_panic.c")
+    list(APPEND priv_requires esp_security)
+
     if(CONFIG_SECURE_FLASH_ENC_ENABLED)
         list(APPEND srcs "src/flash_encryption/flash_encrypt.c"
                          "src/${IDF_TARGET}/flash_encryption_secure_features.c")

@@ -110,6 +110,17 @@ typedef enum {
     ESP_KEY_MGR_INT_POST_DONE,
 } esp_key_mgr_interrupt_type_t;
 
+/**
+ * @brief Force use key manager key type
+ * @note This is used to force the key manager to use a specific key type.
+ */
+typedef enum {
+    ESP_KEY_MGR_FORCE_USE_KM_ECDSA_KEY = 0,
+    ESP_KEY_MGR_FORCE_USE_KM_XTS_AES_KEY = 1,
+    ESP_KEY_MGR_FORCE_USE_KM_HMAC_KEY = 2,
+    ESP_KEY_MGR_FORCE_USE_KM_DS_KEY = 3,
+} esp_key_mgr_force_use_km_key_t;
+
 // store huk info, occupy 96 words
 typedef struct PACKED_ATTR {
 #define HUK_INFO_LEN 660

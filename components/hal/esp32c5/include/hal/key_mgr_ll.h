@@ -20,6 +20,7 @@
 #include "soc/keymng_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/pcr_reg.h"
+#include "hal/efuse_hal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -440,6 +441,14 @@ static inline uint32_t key_mgr_ll_get_date_info(void)
 
 static inline bool key_mgr_ll_is_supported(void)
 {
+    return true;
+}
+
+static inline bool key_mgr_ll_flash_encryption_supported(void)
+{
+    if (!key_mgr_ll_is_supported() || efuse_hal_chip_revision() <= 100) {
+        return false;
+    }
     return true;
 }
 

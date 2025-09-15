@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,8 @@ extern "C" {
 
 #define KEY_MGR_HUK_INFO_SIZE            HUK_INFO_LEN
 #define KEY_MGR_HUK_RISK_ALERT_LEVEL     HUK_RISK_ALERT_LEVEL
+
+#define KEY_MGR_KEY_INFO_SIZE            KEY_INFO_LEN
 
 /* AES deploy mode */
 #define KEY_MGR_K2_INFO_SIZE             64
@@ -58,6 +60,13 @@ typedef struct {
     esp_key_mgr_key_type_t key_type;
     WORD_ALIGNED_ATTR uint8_t k2_G[2][KEY_MGR_ECDH0_INFO_SIZE];
 } esp_key_mgr_ecdh0_info_t;
+
+/**
+ * @brief Wait for the Key Manager to reach the given state
+ *
+ * @param state The state to wait for
+ */
+void key_mgr_wait_for_state(esp_key_mgr_state_t state);
 
 /**
  * @brief Deploy key in AES deployment mode
