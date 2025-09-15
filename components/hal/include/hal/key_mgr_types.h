@@ -70,6 +70,7 @@ typedef enum {
  * @brief Key Purpose to be set for a particular key in the Key Manager
  */
 typedef enum {
+    ESP_KEY_MGR_KEY_PURPOSE_INVALID = 0,
     ESP_KEY_MGR_KEY_PURPOSE_ECDSA_192 = 1,      /* ECDSA 192-bit key */
     ESP_KEY_MGR_KEY_PURPOSE_ECDSA_256 = 2,      /* ECDSA 256-bit key */
     ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1 = 3,    /* First half of flash 256-bit key */
