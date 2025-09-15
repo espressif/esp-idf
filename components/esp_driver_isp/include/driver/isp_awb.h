@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -163,6 +163,18 @@ esp_err_t esp_isp_awb_controller_start_continuous_statistics(isp_awb_ctlr_t awb_
  *         - ESP_ERR_INVALID_STATE Driver state is invalid.
  */
 esp_err_t esp_isp_awb_controller_stop_continuous_statistics(isp_awb_ctlr_t awb_ctlr);
+
+/**
+ * @brief Set AWB white balance gain
+ *
+ * @param[in] awb_ctlr  AWB controller handle
+ * @param[in] gain      AWB white balance gain
+ * @return
+ *         - ESP_OK                On success
+ *         - ESP_ERR_INVALID_ARG   Null pointer
+ *         - ESP_ERR_INVALID_STATE Driver state is invalid.
+ */
+esp_err_t esp_isp_awb_controller_set_wb_gain(isp_awb_ctlr_t awb_ctlr, isp_awb_gain_t gain);
 
 /**
  * @brief Event data of callbacks
