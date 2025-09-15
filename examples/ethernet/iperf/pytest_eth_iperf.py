@@ -115,7 +115,7 @@ def test_esp_eth_iperf(
             )
 
 
-@pytest.mark.ethernet_router
+@pytest.mark.eth_ip101
 @pytest.mark.parametrize(
     'config',
     [
@@ -150,7 +150,6 @@ def test_esp_eth_iperf_ip101_esp32p4(
 
 
 @pytest.mark.eth_lan8720
-@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14059')
 @pytest.mark.parametrize(
     'config',
     [
@@ -185,7 +184,6 @@ def test_esp_eth_iperf_rtl8201(
 
 
 @pytest.mark.eth_dp83848
-@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14059')
 @pytest.mark.parametrize(
     'config',
     [

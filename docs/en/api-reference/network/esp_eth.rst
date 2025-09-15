@@ -296,13 +296,13 @@ The Ethernet driver is implemented in an Object-Oriented style. Any operation on
 
         eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();                      // apply default common MAC configuration
         eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG(); // apply default vendor-specific MAC configuration
-        esp32_emac_config.smi_gpio.mdc_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;            // alter the GPIO used for MDC signal
-        esp32_emac_config.smi_gpio.mdio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;          // alter the GPIO used for MDIO signal
+        esp32_emac_config.smi_gpio.mdc_num = CONFIG_ETHERNET_MDC_GPIO;               // alter the GPIO used for MDC signal
+        esp32_emac_config.smi_gpio.mdio_num = CONFIG_ETHERNET_MDIO_GPIO;             // alter the GPIO used for MDIO signal
         esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // create MAC instance
 
         eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();      // apply default PHY configuration
-        phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;           // alter the PHY address according to your board design
-        phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO; // alter the GPIO used for PHY reset
+        phy_config.phy_addr = CONFIG_ETHERNET_PHY_ADDR;              // alter the PHY address according to your board design
+        phy_config.reset_gpio_num = CONFIG_ETHERNET_PHY_RST_GPIO;    // alter the GPIO used for PHY reset
         esp_eth_phy_t *phy = esp_eth_phy_new_generic(&phy_config);   // create generic PHY instance
         // ESP-IDF officially supports several different specific Ethernet PHY chip driver
         // esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
@@ -341,30 +341,30 @@ SPI-Ethernet Module
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();      // apply default common MAC configuration
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();      // apply default PHY configuration
-    phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;           // alter the PHY address according to your board design
-    phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO; // alter the GPIO used for PHY reset
+    phy_config.phy_addr = CONFIG_ETHERNET_PHY_ADDR;              // alter the PHY address according to your board design
+    phy_config.reset_gpio_num = CONFIG_ETHERNET_PHY_RST_GPIO;    // alter the GPIO used for PHY reset
     // Install GPIO interrupt service (as the SPI-Ethernet module is interrupt-driven)
     gpio_install_isr_service(0);
     // SPI bus configuration
     spi_device_handle_t spi_handle = NULL;
     spi_bus_config_t buscfg = {
-        .miso_io_num = CONFIG_EXAMPLE_ETH_SPI_MISO_GPIO,
-        .mosi_io_num = CONFIG_EXAMPLE_ETH_SPI_MOSI_GPIO,
-        .sclk_io_num = CONFIG_EXAMPLE_ETH_SPI_SCLK_GPIO,
+        .miso_io_num = CONFIG_ETHERNET_SPI_MISO_GPIO,
+        .mosi_io_num = CONFIG_ETHERNET_SPI_MOSI_GPIO,
+        .sclk_io_num = CONFIG_ETHERNET_SPI_SCLK_GPIO,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
     };
-    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, 1));
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_ETHERNET_SPI_HOST, &buscfg, 1));
     // Configure SPI device
     spi_device_interface_config_t spi_devcfg = {
         .mode = 0,
-        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
-        .spics_io_num = CONFIG_EXAMPLE_ETH_SPI_CS_GPIO,
+        .clock_speed_hz = CONFIG_ETHERNET_SPI_CLOCK_MHZ * 1000 * 1000,
+        .spics_io_num = CONFIG_ETHERNET_SPI_CS_GPIO,
         .queue_size = 20
     };
     /* dm9051 ethernet driver is based on spi driver */
-    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
-    dm9051_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
+    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(CONFIG_ETHERNET_SPI_HOST, &spi_devcfg);
+    dm9051_config.int_gpio_num = CONFIG_ETHERNET_SPI_INT_GPIO;
     esp_eth_mac_t *mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_dm9051(&phy_config);
 

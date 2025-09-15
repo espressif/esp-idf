@@ -127,7 +127,7 @@ static void initialize_eth(void)
     // Initialize Ethernet driver
     uint8_t eth_port_cnt = 0;
     esp_eth_handle_t *eth_handles;
-    ESP_ERROR_CHECK(example_eth_init(&eth_handles, &eth_port_cnt));
+    ESP_ERROR_CHECK(ethernet_init_all(&eth_handles, &eth_port_cnt));
 
     if (eth_port_cnt > 0) {
         // Register user defined event handlers

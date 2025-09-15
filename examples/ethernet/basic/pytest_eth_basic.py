@@ -11,8 +11,8 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.parametrize(
     'config',
     [
-        pytest.param('default_ip101', marks=[pytest.mark.ethernet_router]),
-        pytest.param('default_generic', marks=[pytest.mark.ethernet_router]),
+        pytest.param('default_ip101', marks=[pytest.mark.eth_ip101]),
+        pytest.param('default_generic', marks=[pytest.mark.eth_ip101]),
         pytest.param('default_dm9051', marks=[pytest.mark.eth_dm9051]),
     ],
     indirect=True,

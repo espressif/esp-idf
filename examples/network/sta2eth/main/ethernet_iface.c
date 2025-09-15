@@ -271,7 +271,7 @@ esp_err_t wired_bridge_init(wired_rx_cb_t rx_cb, wired_free_cb_t free_cb)
 {
     uint8_t eth_port_cnt = 0;
     esp_eth_handle_t *eth_handles;
-    ESP_ERROR_CHECK(example_eth_init(&eth_handles, &eth_port_cnt));
+    ESP_ERROR_CHECK(ethernet_init_all(&eth_handles, &eth_port_cnt));
 
     // Check for multiple Ethernet interfaces
     if (1 < eth_port_cnt) {
@@ -324,7 +324,7 @@ esp_err_t wired_netif_init(void)
 {
     uint8_t eth_port_cnt = 0;
     esp_eth_handle_t *eth_handles;
-    ESP_ERROR_CHECK(example_eth_init(&eth_handles, &eth_port_cnt));
+    ESP_ERROR_CHECK(ethernet_init_all(&eth_handles, &eth_port_cnt));
 
     // Check or multiple ethernet interface
     if (1 < eth_port_cnt) {
