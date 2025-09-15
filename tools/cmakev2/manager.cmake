@@ -191,8 +191,11 @@ function(__download_component_level_managed_components)
     endif()
 
     # Initialize managed components by including the generated list
-    if(result EQUAL 0)
+    # Include components even if result is 10 (missing kconfig) to allow kconfig regeneration
+    if(result EQUAL 0 OR result EQUAL 10)
         include(${managed_components_list_file})
+    else()
+        idf_warn("Component manager returned unexpected result: ${result}. Managed components will not be included.")
     endif()
 
     # Clean up temporary files
