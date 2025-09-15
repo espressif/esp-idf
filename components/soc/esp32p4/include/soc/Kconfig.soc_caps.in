@@ -971,6 +971,14 @@ config SOC_ISP_AF_WINDOW_NUMS
     int
     default 3
 
+config SOC_ISP_AWB_WINDOW_X_NUMS
+    int
+    default 5
+
+config SOC_ISP_AWB_WINDOW_Y_NUMS
+    int
+    default 5
+
 config SOC_ISP_BF_TEMPLATE_X_NUMS
     int
     default 3
