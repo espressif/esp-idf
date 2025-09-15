@@ -293,7 +293,6 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
     }
 
     key_mgr_hal_start();
-    key_mgr_hal_continue();
 
     // Step 2: Load phase
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_LOAD);
@@ -459,8 +458,9 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
     }
 
     key_mgr_hal_set_key_purpose(config->key_purpose);
+
     key_mgr_hal_start();
-    key_mgr_hal_continue();
+
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_LOAD);
 
     if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
@@ -629,8 +629,8 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
 
     // Set key purpose
     key_mgr_hal_set_key_purpose(config->key_purpose);
+
     key_mgr_hal_start();
-    key_mgr_hal_continue();
 
     // Step 2: Load phase
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_LOAD);
@@ -805,8 +805,9 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
     key_mgr_hal_set_key_purpose(config->key_purpose);
 
     key_mgr_hal_start();
-    key_mgr_hal_continue();
+
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_LOAD);
+
     key_mgr_hal_continue();
 
     // No configuration for Random deploy mode
