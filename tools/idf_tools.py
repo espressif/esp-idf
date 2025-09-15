@@ -2415,7 +2415,7 @@ def action_export(args: Any) -> None:
             except ValueError:
                 fatal(
                     'Both of the directories (..\\idf-exe\\.. and ..\\tools) '
-                    'has to be in the PATH:\n\n{paths_to_check}\n'
+                    f'has to be in the PATH:\n\n{paths_to_check}\n'
                 )
 
     if export_vars:
