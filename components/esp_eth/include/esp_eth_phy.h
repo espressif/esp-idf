@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -299,7 +299,7 @@ typedef struct {
 /**
 * @brief Create a PHY instance of generic chip which conforms with IEEE 802.3
 *
-* @note Default reset timing configuration is set conservatively( @c DEFAULT_PHY_RESET_ASSERTION_TIME_US ).
+* @note Default reset timing configuration is set conservatively(see internals of the function).
 *       If you need faster response and your chip supports it, configure it via @c config parameter.
 *
 * @warning While basic functionality should always work, some specific features might be limited,
@@ -313,105 +313,6 @@ typedef struct {
  */
 esp_eth_phy_t *esp_eth_phy_new_generic(const eth_phy_config_t *config);
 
-/**
-* @brief Create a PHY instance of IP101
-*
-* @param[in] config: configuration of PHY
-*
-* @return
-*      - instance: create PHY instance successfully
-*      - NULL: create PHY instance failed because some error occurred
-*/
-esp_eth_phy_t *esp_eth_phy_new_ip101(const eth_phy_config_t *config);
-
-/**
-* @brief Create a PHY instance of RTL8201
-*
-* @param[in] config: configuration of PHY
-*
-* @return
-*      - instance: create PHY instance successfully
-*      - NULL: create PHY instance failed because some error occurred
-*/
-esp_eth_phy_t *esp_eth_phy_new_rtl8201(const eth_phy_config_t *config);
-
-/**
-* @brief Create a PHY instance of LAN87xx
-*
-* @param[in] config: configuration of PHY
-*
-* @return
-*      - instance: create PHY instance successfully
-*      - NULL: create PHY instance failed because some error occurred
-*/
-esp_eth_phy_t *esp_eth_phy_new_lan87xx(const eth_phy_config_t *config);
-
-/**
-* @brief Create a PHY instance of DP83848
-*
-* @param[in] config: configuration of PHY
-*
-* @return
-*      - instance: create PHY instance successfully
-*      - NULL: create PHY instance failed because some error occurred
-*/
-esp_eth_phy_t *esp_eth_phy_new_dp83848(const eth_phy_config_t *config);
-
-/**
-* @brief Create a PHY instance of KSZ80xx
-*
-* The phy model from the KSZ80xx series is detected automatically. If the driver
-* is unable to detect a supported model, \c NULL is returned.
-*
-* Currently, the following models are supported:
-* KSZ8001, KSZ8021, KSZ8031, KSZ8041, KSZ8051, KSZ8061, KSZ8081, KSZ8091
-*
-* @param[in] config: configuration of PHY
-*
-* @return
-*      - instance: create PHY instance successfully
-*      - NULL: create PHY instance failed because some error occurred
-*/
-esp_eth_phy_t *esp_eth_phy_new_ksz80xx(const eth_phy_config_t *config);
-
-#if CONFIG_ETH_SPI_ETHERNET_DM9051
-/**
-* @brief Create a PHY instance of DM9051
-*
-* @param[in] config: configuration of PHY
-*
-* @return
-*      - instance: create PHY instance successfully
-*      - NULL: create PHY instance failed because some error occurred
-*/
-esp_eth_phy_t *esp_eth_phy_new_dm9051(const eth_phy_config_t *config);
-#endif
-
-#if CONFIG_ETH_SPI_ETHERNET_W5500
-/**
-* @brief Create a PHY instance of W5500
-*
-* @param[in] config: configuration of PHY
-*
-* @return
-*      - instance: create PHY instance successfully
-*      - NULL: create PHY instance failed because some error occurred
-*/
-esp_eth_phy_t *esp_eth_phy_new_w5500(const eth_phy_config_t *config);
-#endif
-
-#if CONFIG_ETH_SPI_ETHERNET_KSZ8851SNL
-/**
-* @brief Create a PHY instance of KSZ8851SNL
-*
-* @param[in] config: configuration of PHY
-*
-* @return
-*      - instance: create PHY instance successfully
-*      - NULL: create PHY instance failed because some error occurred
-*/
-esp_eth_phy_t *esp_eth_phy_new_ksz8851snl(const eth_phy_config_t *config);
-#endif
 #ifdef __cplusplus
 }
 #endif

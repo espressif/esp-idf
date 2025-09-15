@@ -251,7 +251,7 @@ def ethernet_heap_alloc_test(dut: IdfDut) -> None:
 
 # ----------- IP101 -----------
 @pytest.mark.ethernet
-@pytest.mark.parametrize('config', ['default_ip101', 'release_ip101', 'single_core_ip101'], indirect=True)
+@pytest.mark.parametrize('config', ['default_generic', 'release_generic', 'single_core_generic'], indirect=True)
 @pytest.mark.flaky(reruns=3, reruns_delay=5)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_ethernet(dut: IdfDut) -> None:
@@ -262,7 +262,7 @@ def test_esp_ethernet(dut: IdfDut) -> None:
 @pytest.mark.parametrize(
     'config',
     [
-        'default_ip101',
+        'default_generic',
     ],
     indirect=True,
 )
@@ -277,7 +277,7 @@ def test_esp_emac(dut: IdfDut) -> None:
 @pytest.mark.parametrize(
     'config',
     [
-        'default_ip101',
+        'default_generic',
     ],
     indirect=True,
 )
@@ -291,7 +291,7 @@ def test_esp_eth_ip101(dut: IdfDut) -> None:
 @pytest.mark.parametrize(
     'config',
     [
-        'default_ip101_esp32p4',
+        'default_generic_esp32p4',
     ],
     indirect=True,
 )
@@ -306,7 +306,7 @@ def test_esp32p4_ethernet(dut: IdfDut) -> None:
 @pytest.mark.parametrize(
     'config',
     [
-        'default_ip101_esp32p4',
+        'default_generic_esp32p4',
     ],
     indirect=True,
 )
@@ -331,6 +331,7 @@ def test_esp32p4_emac_clko(dut: IdfDut) -> None:
 
 
 # ----------- LAN8720 -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_lan8720
 @pytest.mark.parametrize(
     'config',
@@ -347,6 +348,7 @@ def test_esp_eth_lan8720(dut: IdfDut) -> None:
 
 
 # ----------- RTL8201 -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_rtl8201
 @pytest.mark.parametrize(
     'config',
@@ -363,6 +365,7 @@ def test_esp_eth_rtl8201(dut: IdfDut) -> None:
 
 
 # ----------- KSZ8041 -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_ksz8041
 @pytest.mark.parametrize(
     'config',
@@ -379,6 +382,7 @@ def test_esp_eth_ksz8041(dut: IdfDut) -> None:
 
 
 # ----------- DP83848 -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_dp83848
 @pytest.mark.parametrize(
     'config',
@@ -395,6 +399,7 @@ def test_esp_eth_dp83848(dut: IdfDut) -> None:
 
 
 # ----------- W5500 -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_w5500
 @pytest.mark.parametrize(
     'config',
@@ -414,6 +419,7 @@ def test_esp_eth_w5500(dut: IdfDut) -> None:
 
 
 # ----------- KSZ8851SNL -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_ksz8851snl
 @pytest.mark.parametrize(
     'config',
@@ -433,6 +439,7 @@ def test_esp_eth_ksz8851snl(dut: IdfDut) -> None:
 
 
 # ----------- DM9051 -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_dm9051
 @pytest.mark.parametrize(
     'config',

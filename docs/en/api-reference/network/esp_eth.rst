@@ -305,14 +305,12 @@ The Ethernet driver is implemented in an Object-Oriented style. Any operation on
         phy_config.phy_addr = CONFIG_ETHERNET_PHY_ADDR;              // alter the PHY address according to your board design
         phy_config.reset_gpio_num = CONFIG_ETHERNET_PHY_RST_GPIO;    // alter the GPIO used for PHY reset
         esp_eth_phy_t *phy = esp_eth_phy_new_generic(&phy_config);   // create generic PHY instance
-        // ESP-IDF officially supports several different specific Ethernet PHY chip driver
-        // esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
-        // esp_eth_phy_t *phy = esp_eth_phy_new_rtl8201(&phy_config);
-        // esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
-        // esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_config);
 
     .. note::
         Any Ethernet PHY chip compliant with IEEE 802.3 can be used when creating new PHY instance with :cpp:func:`esp_eth_phy_new_generic`. However, while basic functionality should always work, some specific features might be limited, even if the PHY meets IEEE 802.3 standard. A typical example is loopback functionality, where certain PHYs may require setting a specific speed mode to operate correctly. If this is the concern and you need PHY driver specifically tailored to your chip needs, use drivers for PHY chips the ESP-IDF already officially supports or consult with :ref:`Custom PHY Driver <custom-phy-driver>` section to create a new custom driver.
+
+    .. tip::
+        Espressif provides drivers for several specific Ethernet PHY chips in the `esp-eth-drivers <https://github.com/espressif/esp-eth-drivers>`_ repository. Drivers are distributed as components and are available in the `ESP Component Registry <https://components.espressif.com/>`_.
 
     Optional Runtime MAC Clock Configuration
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -329,7 +327,7 @@ The Ethernet driver is implemented in an Object-Oriented style. Any operation on
 
         esp32_emac_config.interface = EMAC_DATA_INTERFACE_RMII;                      // alter EMAC Data Interface
         esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;               // select EMAC REF_CLK mode
-        esp32_emac_config.clock_config.rmii.clock_gpio = EMAC_CLK_OUT_GPIO;          // select GPIO number used to input/output EMAC REF_CLK
+        esp32_emac_config.clock_config.rmii.clock_gpio = 17;                         // select GPIO number used to input/output EMAC REF_CLK
         esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // create MAC instance
 
 
@@ -375,6 +373,8 @@ SPI-Ethernet Module
 
     * The SPI device configuration (i.e., `spi_device_interface_config_t`) may slightly differ for other Ethernet modules or to meet SPI timing on specific PCB. Please check out your module's specs and the examples in ESP-IDF.
 
+.. tip::
+    Espressif provides drivers for various SPI-Ethernet modules in the `esp-eth-drivers <https://github.com/espressif/esp-eth-drivers>`_ repository. Drivers are distributed as components and are available in the `ESP Component Registry <https://components.espressif.com/>`_.
 
 Install Driver
 --------------
@@ -383,7 +383,7 @@ To install the Ethernet driver, we need to combine the instance of MAC and PHY a
 
 * :cpp:member:`esp_eth_config_t::mac`: instance that created from MAC generator (e.g., :cpp:func:`esp_eth_mac_new_esp32`).
 
-* :cpp:member:`esp_eth_config_t::phy`: instance that created from PHY generator (e.g., :cpp:func:`esp_eth_phy_new_ip101`).
+* :cpp:member:`esp_eth_config_t::phy`: instance that created from PHY generator (e.g., :cpp:func:`esp_eth_phy_new_generic`).
 
 * :cpp:member:`esp_eth_config_t::check_link_period_ms`: Ethernet driver starts an OS timer to check the link status periodically, this field is used to set the interval, in milliseconds.
 
@@ -644,11 +644,11 @@ The majority of PHY management functionality required by the ESP-IDF Ethernet dr
 
 **Steps to create a custom PHY driver:**
 
-1. Define vendor-specific registry layout based on the PHY datasheet. See :component_file:`esp_eth/src/phy/esp_eth_phy_ip101.c` as an example.
+1. Define vendor-specific registry layout based on the PHY datasheet.
 2. Prepare derived PHY management object info structure which:
 
     * must contain at least parent IEEE 802.3 :cpp:class:`phy_802_3_t` object
-    * optionally contain additional variables needed to support non-IEEE 802.3 or customized functionality. See :component_file:`esp_eth/src/phy/esp_eth_phy_ksz80xx.c` as an example.
+    * optionally contain additional variables needed to support non-IEEE 802.3 or customized functionality.
 
 3. Define chip-specific management call-back functions.
 4. Initialize parent IEEE 802.3 object and re-assign chip-specific management call-back functions.

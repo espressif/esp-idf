@@ -24,10 +24,12 @@ menu "esp_eth TEST_APPS Configuration"
     if TARGET_USE_INTERNAL_ETHERNET
         choice TARGET_ETH_PHY_DEVICE
             prompt "Ethernet PHY"
-            default TARGET_ETH_PHY_DEVICE_IP101
+            default TARGET_ETH_PHY_DEVICE_GENERIC
             help
                 Select one of the devices listed here
 
+            config TARGET_ETH_PHY_DEVICE_GENERIC
+                bool "Generic IEEE802.3"
             config TARGET_ETH_PHY_DEVICE_IP101
                 bool "IP101"
             config TARGET_ETH_PHY_DEVICE_LAN8720

@@ -57,38 +57,13 @@ menu "Ethernet"
                 If disabled, all functions are placed into FLASH.
 
     endif # ETH_USE_ESP32_EMAC
-
     menuconfig ETH_USE_SPI_ETHERNET
         bool "Support SPI to Ethernet Module"
         default y
         select ETH_ENABLED
         help
-            ESP-IDF can also support some SPI-Ethernet modules.
-
-    if ETH_USE_SPI_ETHERNET
-        config ETH_SPI_ETHERNET_DM9051
-            bool "Use DM9051"
-            help
-                DM9051 is a fast Ethernet controller with an SPI interface.
-                It's also integrated with a 10/100M PHY and MAC.
-                Select this to enable DM9051 driver.
-
-        config ETH_SPI_ETHERNET_W5500
-            bool "Use W5500 (MAC RAW)"
-            help
-                W5500 is a HW TCP/IP embedded Ethernet controller.
-                TCP/IP stack, 10/100 Ethernet MAC and PHY are embedded in a single chip.
-                However the driver in ESP-IDF only enables the RAW MAC mode,
-                making it compatible with the software TCP/IP stack.
-                Say yes to enable W5500 driver.
-
-        config ETH_SPI_ETHERNET_KSZ8851SNL
-            bool "Use KSZ8851SNL"
-            help
-                The KSZ8851SNL is a single-chip Fast Ethernet controller consisting of
-                a 10/100 physical layer transceiver (PHY), a MAC, and a Serial Peripheral Interface (SPI).
-                Select this to enable KSZ8851SNL driver.
-    endif # ETH_USE_SPI_ETHERNET
+            ESP-IDF can also support SPI-Ethernet. Actual chip drivers are available as components in
+            Component Registry.
 
     menuconfig ETH_USE_OPENETH
         bool "Support OpenCores Ethernet MAC (for use with QEMU)"

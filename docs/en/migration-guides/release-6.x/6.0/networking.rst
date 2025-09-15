@@ -43,6 +43,32 @@ Removed the following RMII clock Kconfig options from `components/esp_eth`. Cloc
 **Impact**: Applications using ``ETH_ESP32_EMAC_DEFAULT_CONFIG()`` continue to work. Custom clock configurations must be set explicitly in the EMAC config structure or use the `Ethernet Init component <https://components.espressif.com/components/espressif/ethernet_init>`_.
 
 
+Ethernet PHY and Ethernet SPI Module drivers are moved from ESP-IDF to external repo
+------------------------------------------------------------------------------------
+
+The Ethernet PHY and Ethernet SPI Module drivers have been removed from ESP-IDF and have been migrated to `esp-eth-drivers <https://github.com/espressif/esp-eth-drivers>`_ repository. If you are using these drivers, you need to use the drivers as component in your project. The drivers are now available in the `ESP Component Registry <https://components.espressif.com/>`_.
+
+**Removed APIs**:
+- :cpp:func:`esp_eth_phy_new_ip101`
+- :cpp:func:`esp_eth_phy_new_lan87xx`
+- :cpp:func:`esp_eth_phy_new_rtl8201`
+- :cpp:func:`esp_eth_phy_new_dp83848`
+- :cpp:func:`esp_eth_phy_new_ksz80xx`
+- :cpp:func:`esp_eth_mac_new_dm9051`
+- :cpp:func:`esp_eth_phy_new_dm9051`
+- :cpp:func:`esp_eth_mac_new_ksz8851snl`
+- :cpp:func:`esp_eth_phy_new_ksz8851snl`
+- :cpp:func:`esp_eth_mac_new_w5500`
+- :cpp:func:`esp_eth_phy_new_w5500`
+
+
+**Impact**: Applications using Ethernet PHY and Ethernet SPI Module drivers that used to be part of ESP-IDF will no longer work.
+
+**Migration**:
+
+Add driver component from `IDF Component Manager <https://components.espressif.com/>`_ to your project using `idf.py add-dependency` and include `esp_eth_phy_xxxx.h` and `esp_eth_mac_xxxx.h` or use the `Ethernet Init component <https://components.espressif.com/components/espressif/ethernet_init>`_.
+
+
 ESP-NETIF
 *********
 
