@@ -45,9 +45,13 @@
 #else //CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/rom_layout.h"
 #endif
+#if CONFIG_BLE_LOG_ENABLED
+#include "ble_log.h"
+#else /* !CONFIG_BLE_LOG_ENABLED */
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 #include "ble_log/ble_log_spi_out.h"
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 #if CONFIG_BT_CTRL_LE_LOG_STORAGE_EN
 #include "esp_partition.h"
 #include "hal/wdt_hal.h"
@@ -499,10 +503,14 @@ enum log_out_mode {
     LOG_ASYNC_OUT,
     LOG_STORAGE_TO_FLASH,
     LOG_SPI_OUT,
+    LOG_BLE_LOG_V2,
 };
 
 const static uint32_t log_bufs_size[] = {CONFIG_BT_CTRL_LE_LOG_BUF1_SIZE, CONFIG_BT_CTRL_LE_LOG_HCI_BUF_SIZE, CONFIG_BT_CTRL_LE_LOG_BUF2_SIZE};
 bool log_is_inited = false;
+#if CONFIG_BT_CTRL_LE_LOG_MODE_BLE_LOG_V2
+uint8_t log_output_mode = LOG_BLE_LOG_V2;
+#else /* !CONFIG_BT_CTRL_LE_LOG_MODE_BLE_LOG_V2 */
 #if CONFIG_BT_CTRL_LE_LOG_DUMP_ONLY
 uint8_t log_output_mode = LOG_DUMP_MEMORY;
 #else
@@ -514,6 +522,7 @@ uint8_t log_output_mode = LOG_SPI_OUT;
 uint8_t log_output_mode = LOG_ASYNC_OUT;
 #endif // CONFIG_BT_CTRL_LE_LOG_STORAGE_EN
 #endif // CONFIG_BT_CTRL_LE_LOG_DUMP_ONLY
+#endif /* CONFIG_BT_CTRL_LE_LOG_MODE_BLE_LOG_V2 */
 #if CONFIG_BT_CTRL_LE_LOG_STORAGE_EN
 static const esp_partition_t *log_partition;
 static uint32_t write_index = 0;
@@ -523,6 +532,17 @@ static bool stop_write = false;
 static bool is_filled = false;
 #endif // CONFIG_BT_CTRL_LE_LOG_STORAGE_EN
 
+#if CONFIG_BT_CTRL_LE_LOG_MODE_BLE_LOG_V2
+static IRAM_ATTR void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end)
+{
+    ble_log_write_hex_ll(len, addr, 0, NULL, 0);
+}
+
+void esp_ble_controller_log_dump_all(bool output)
+{
+    ble_log_dump_to_console();
+}
+#else /* !CONFIG_BT_CTRL_LE_LOG_MODE_BLE_LOG_V2 */
 static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end)
 {
     if (log_output_mode == LOG_STORAGE_TO_FLASH) {
@@ -567,6 +587,7 @@ void esp_ble_controller_log_dump_all(bool output)
         portEXIT_CRITICAL_SAFE(&spinlock);
     }
 }
+#endif /* CONFIG_BT_CTRL_LE_LOG_MODE_BLE_LOG_V2 */
 
 void esp_bt_log_output_mode_set(uint8_t output_mode)
 {
@@ -578,6 +599,31 @@ uint8_t esp_bt_log_output_mode_get(void)
     return log_output_mode;
 }
 
+#if CONFIG_BT_CTRL_LE_LOG_MODE_BLE_LOG_V2
+esp_err_t esp_bt_controller_log_init(uint8_t log_output_mode)
+{
+    if (log_is_inited) {
+        return ESP_OK;
+    }
+
+    esp_err_t ret = ESP_OK;
+    uint8_t buffers = 0;
+
+#if CONFIG_BT_CTRL_LE_LOG_EN
+    buffers |= ESP_BLE_LOG_BUF_CONTROLLER;
+#endif // CONFIG_BT_CTRL_LE_LOG_EN
+#if CONFIG_BT_CTRL_LE_HCI_LOG_EN
+    buffers |= ESP_BLE_LOG_BUF_HCI;
+#endif // CONFIG_BT_CTRL_LE_HCI_LOG_EN
+
+    ret = r_ble_log_init_async(esp_bt_controller_log_interface, true, buffers, (uint32_t *)log_bufs_size);
+    if (ret == ESP_OK) {
+        log_is_inited = true;
+    }
+
+    return ret;
+}
+#else /* !CONFIG_BT_CTRL_LE_LOG_MODE_BLE_LOG_V2 */
 esp_err_t esp_bt_controller_log_init(uint8_t log_output_mode)
 {
     esp_err_t ret = ESP_OK;
@@ -627,8 +673,9 @@ esp_err_t esp_bt_controller_log_init(uint8_t log_output_mode)
 
     return ret;
 }
+#endif /* CONFIG_BT_CTRL_LE_LOG_MODE_BLE_LOG_V2*/
 
-void esp_bt_ontroller_log_deinit(void)
+void esp_bt_controller_log_deinit(void)
 {
     r_ble_log_deinit_async();
     log_is_inited = false;
@@ -709,7 +756,7 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
     portENTER_CRITICAL_SAFE(&spinlock);
     esp_panic_handler_feed_wdts();
     r_ble_log_async_output_dump_all(true);
-    esp_bt_ontroller_log_deinit();
+    esp_bt_controller_log_deinit();
     stop_write = true;
 
     buffer = (const uint8_t *)mapped_ptr;
@@ -1802,6 +1849,13 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     coex_init();
 #endif
 
+#if CONFIG_BLE_LOG_ENABLED
+    if (!ble_log_init()) {
+        ESP_LOGE(BT_LOG_TAG, "BLE Log v2 init failed");
+        err = ESP_ERR_NO_MEM;
+        goto error;
+    }
+#else /* !CONFIG_BLE_LOG_ENABLED */
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
     if (ble_log_spi_out_init() != 0) {
         ESP_LOGE(BT_LOG_TAG, "BLE Log SPI output init failed");
@@ -1809,6 +1863,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto error;
     }
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
     periph_module_enable(PERIPH_BT_MODULE);
     periph_module_reset(PERIPH_BT_MODULE);
@@ -1842,9 +1897,13 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
 error:
 
+#if CONFIG_BLE_LOG_ENABLED
+    ble_log_deinit();
+#else /* !CONFIG_BLE_LOG_ENABLED */
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
     ble_log_spi_out_deinit();
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
     bt_controller_deinit_internal();
 
@@ -1857,9 +1916,13 @@ esp_err_t esp_bt_controller_deinit(void)
         return ESP_ERR_INVALID_STATE;
     }
 
+#if CONFIG_BLE_LOG_ENABLED
+    ble_log_deinit();
+#else /* !CONFIG_BLE_LOG_ENABLED */
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
     ble_log_spi_out_deinit();
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
 #if (CONFIG_BT_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED)
     scan_stack_enableAdvFlowCtrlVsCmd(false);
@@ -1947,7 +2010,7 @@ static void bt_controller_deinit_internal(void)
     esp_phy_modem_deinit();
 
 #if CONFIG_BT_CTRL_LE_LOG_EN
-    esp_bt_ontroller_log_deinit();
+    esp_bt_controller_log_deinit();
 #endif // CONFIG_BT_CTRL_LE_LOG_EN
 
     if (osi_funcs_p != NULL) {
