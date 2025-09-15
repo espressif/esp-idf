@@ -344,6 +344,33 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 esp_err_t esp_http_client_perform(esp_http_client_handle_t client);
 
 /**
+ * @brief      Prepare HTTP client for a new request
+ *             This function initializes the client state and prepares authentication if needed.
+ *             It should be called before sending a request.
+ *
+ * @param[in]  client  The esp_http_client handle
+ *
+ * @return
+ *  - ESP_OK on successful
+ *  - ESP_FAIL on error
+ */
+esp_err_t esp_http_client_prepare(esp_http_client_handle_t client);
+
+/**
+ * @brief      Send HTTP request headers and data
+ *             This function sends the HTTP request line, headers, and any post data to the server.
+ *
+ * @param[in]  client     The esp_http_client handle
+ * @param[in]  write_len  Length of data to write (for POST/PUT requests)
+ *
+ * @return
+ *  - ESP_OK on successful
+ *  - ESP_FAIL on error
+ *  - ESP_ERR_HTTP_WRITE_DATA if write operation fails
+ */
+esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len);
+
+/**
  * @brief       Cancel an ongoing HTTP request. This API closes the current socket and opens a new socket with the same esp_http_client context.
  *
  * @param       client  The esp_http_client handle
@@ -865,6 +892,15 @@ esp_err_t esp_http_client_get_chunk_length(esp_http_client_handle_t client, int 
  * @return     Current state of the HTTP client
  */
 esp_http_state_t esp_http_client_get_state(esp_http_client_handle_t client);
+
+/**
+ * @brief      Check if persistent connection is supported by the server
+ *
+ * @param[in]  client  The HTTP client handle
+ *
+ * @return     true if persistent connection is supported, false otherwise
+ */
+bool esp_http_client_is_persistent_connection(esp_http_client_handle_t client);
 
 #ifdef __cplusplus
 }
