@@ -210,14 +210,8 @@ static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_con
     pmu_ll_lp_set_regulator_dbias      (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dbias);
     pmu_ll_lp_set_regulator_driver_bar (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.drv_b);
 
-    pmu_ll_hp_set_discnnt_dig_rtc      (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.discnnt_dig_rtc);
-    pmu_ll_hp_set_regulator_driver_bar (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.drv_b);
     pmu_ll_hp_set_dcm_mode             (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dcm_mode);
     pmu_ll_hp_set_dcm_vset             (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dcm_vset);
-    pmu_ll_lp_set_discnnt_dig_rtc      (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.discnnt_dig_rtc);
-    pmu_ll_lp_set_regulator_dbias      (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dbias);
-    pmu_ll_lp_set_regulator_xpd        (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.xpd);
-    pmu_ll_lp_set_regulator_driver_bar (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.drv_b);
     pmu_ll_lp_set_dcm_mode             (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dcm_mode);
     pmu_ll_lp_set_dcm_vset             (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dcm_vset);
 }

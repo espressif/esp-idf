@@ -332,7 +332,7 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
         .dcm_vset           = 0, \
         .dcm_mode           = 3, \
         .xpd_bias           = 0, \
-        .discnnt_dig_rtc    = 0, \
+        .discnnt_dig_rtc    = 1, \
         .pd_cur             = 1, \
         .bias_sleep         = 1  \
     }, \

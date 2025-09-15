@@ -384,7 +384,7 @@ typedef struct {
 #define PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags) {            \
     .hp_sys = {                                                     \
         .analog = {                                                 \
-            .dcdc_ccm_enb       = 0,                                \
+            .dcdc_ccm_enb       = 1,                                \
             .dcdc_clear_rdy     = 0,                                \
             .dig_reg_dpcur_bias = 1,                                \
             .dig_reg_dsfmos     = 4,                                \
@@ -402,7 +402,7 @@ typedef struct {
     },                                                              \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                                  \
         .analog = {                                                 \
-            .dcdc_ccm_enb       = 0,                                \
+            .dcdc_ccm_enb       = 1,                                \
             .dcdc_clear_rdy     = 0,                                \
             .dig_reg_dpcur_bias = 1,                                \
             .dig_reg_dsfmos     = 4,                                \
@@ -423,7 +423,7 @@ typedef struct {
 #define PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(pd_flags) {            \
     .hp_sys = {                                                     \
         .analog = {                                                 \
-            .dcdc_ccm_enb       = 0,                                \
+            .dcdc_ccm_enb       = 1,                                \
             .dcdc_clear_rdy     = 0,                                \
             .dig_reg_dpcur_bias = 1,                                \
             .dig_reg_dsfmos     = 4,                                \
@@ -439,13 +439,13 @@ typedef struct {
     },                                                              \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                                  \
         .analog = {                                                 \
-            .dcdc_ccm_enb       = 0,                                \
+            .dcdc_ccm_enb       = 1,                                \
             .dcdc_clear_rdy     = 0,                                \
             .dig_reg_dpcur_bias = 1,                                \
             .dig_reg_dsfmos     = 4,                                \
             .dcm_vset           = 0,                                \
             .dcm_mode           = 3,                                \
-            .discnnt_dig_rtc    = 0,                                \
+            .discnnt_dig_rtc    = 1,                                \
             .drv_b              = PMU_LP_DRVB_DEEPSLEEP,            \
             .pd_cur             = PMU_PD_CUR_SLEEP_DEFAULT,         \
             .bias_sleep         = PMU_BIASSLP_SLEEP_DEFAULT,        \

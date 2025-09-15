@@ -134,6 +134,12 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_xtal_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode,
     hw->hp_sys[mode].xtal.xpd_xtal = xpd_xtal;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_hp_set_discnnt_dig_rtc(pmu_dev_t *hw, pmu_hp_mode_t mode, bool discnnt)
+{
+    hw->hp_sys[mode].bias.discnnt_dig_rtc = discnnt;
+}
+
+
 FORCE_INLINE_ATTR void pmu_ll_hp_set_current_power_off(pmu_dev_t *hw, pmu_hp_mode_t mode, bool off)
 {
     hw->hp_sys[mode].bias.pd_cur = off;
@@ -343,6 +349,12 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_bias_xpd(pmu_dev_t *hw, pmu_lp_mode_t mode,
 {
     HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
     hw->lp_sys[mode].bias.xpd_bias = xpd_bias;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_set_discnnt_dig_rtc(pmu_dev_t *hw, pmu_lp_mode_t mode, bool discnnt)
+{
+    HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
+    hw->lp_sys[mode].bias.discnnt_dig_rtc = discnnt;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_lp_set_current_power_off(pmu_dev_t *hw, pmu_lp_mode_t mode, bool off)
@@ -714,7 +726,7 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_digital_power_up_wait_cycle(pmu_dev_t *
     return hw->power.wait_timer0.powerup_timer;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_dcm_ctrl_ccm_sw_en(pmu_dev_t *hw, bool enable)
+FORCE_INLINE_ATTR void pmu_ll_set_dcdc_ccm_sw_en(pmu_dev_t *hw, bool enable)
 {
     hw->dcm_ctrl.dcdc_ccm_sw_en = enable;
 }
