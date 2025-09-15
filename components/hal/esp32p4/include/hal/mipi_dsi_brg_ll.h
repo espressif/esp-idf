@@ -15,8 +15,13 @@
 #include "hal/config.h"
 
 #define MIPI_DSI_LL_GET_BRG(bus_id) (bus_id == 0 ? &MIPI_DSI_BRIDGE : NULL)
-#define MIPI_DSI_LL_EVENT_UNDERRUN  (1 << 0)
-#define MIPI_DSI_LL_EVENT_VSYNC     (1 << 1)
+
+#define MIPI_DSI_BRG_LL_EVENT_UNDERRUN  (1 << 0)
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#define MIPI_DSI_BRG_LL_EVENT_VSYNC     (1 << 1)
+#else
+#define MIPI_DSI_BRG_LL_EVENT_VSYNC     0 // not supported
+#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -37,3 +37,6 @@
 /*--------------------------- ETM (Event Task Matrix) ----------------------------*/
 #define _SOC_CAPS_ETM_INST_NUM                    1  // Number of ETM instances
 #define _SOC_CAPS_ETM_CHANS_PER_INST              50 // Number of channels in each ETM instance
+
+/*--------------------------- MIPI DSI -------------------------------------------*/
+#define _SOC_CAPS_MIPI_DSI_INST_NUM               1  // Number of MIPI DSI instances

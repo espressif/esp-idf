@@ -6,6 +6,7 @@
 #include <sys/param.h>
 #include "esp_lcd_panel_interface.h"
 #include "esp_lcd_mipi_dsi.h"
+#include "esp_intr_alloc.h"
 #include "esp_clk_tree.h"
 #include "esp_cache.h"
 #include "mipi_dsi_priv.h"
@@ -33,7 +34,8 @@ struct esp_lcd_dpi_panel_t {
     size_t bits_per_pixel;        // Bits per pixel
     lcd_color_format_t in_color_format;  // Input color format
     lcd_color_format_t out_color_format; // Output color format
-    dw_gdma_channel_handle_t dma_chan;    // DMA channel
+    dw_gdma_channel_handle_t dma_chan;   // DMA channel
+    intr_handle_t brg_intr;              // DSI Bridge interrupt handle
     dw_gdma_link_list_handle_t link_lists[DPI_PANEL_MAX_FB_NUM]; // DMA link list
     esp_async_fbcpy_handle_t fbcpy_handle; // Use DMA2D to do frame buffer copy
     SemaphoreHandle_t draw_sem;            // A semaphore used to synchronize the draw operations when DMA2D is used
@@ -71,19 +73,8 @@ bool mipi_dsi_dma_trans_done_cb(dw_gdma_channel_handle_t chan, const dw_gdma_tra
 {
     bool yield_needed = false;
     esp_lcd_dpi_panel_t *dpi_panel = (esp_lcd_dpi_panel_t *)user_data;
-    mipi_dsi_hal_context_t *hal = &dpi_panel->bus->hal;
     uint8_t fb_index = dpi_panel->cur_fb_index;
     dw_gdma_link_list_handle_t link_list = dpi_panel->link_lists[fb_index];
-
-    // clear the interrupt status
-    uint32_t error_status = mipi_dsi_brg_ll_get_interrupt_status(hal->bridge);
-    mipi_dsi_brg_ll_clear_interrupt_status(hal->bridge, error_status);
-    if (unlikely(error_status & MIPI_DSI_LL_EVENT_UNDERRUN)) {
-        // when an underrun happens, the LCD display may already becomes blue
-        // it's too late to recover the display, so we just print an error message
-        // as a hint to the user that he should optimize the memory bandwidth (with AXI-ICM)
-        ESP_DRAM_LOGE(TAG, "can't fetch data from external memory fast enough, underrun happens");
-    }
 
     // restart the DMA transfer, keep refreshing the LCD
     dw_gdma_block_markers_t markers = {
@@ -94,13 +85,38 @@ bool mipi_dsi_dma_trans_done_cb(dw_gdma_channel_handle_t chan, const dw_gdma_tra
     dw_gdma_channel_use_link_list(chan, link_list);
     dw_gdma_channel_enable_ctrl(chan, true);
 
+#if !MIPI_DSI_BRG_LL_EVENT_VSYNC
     // the DMA descriptor is large enough to carry a whole frame buffer, so this event can also be treated as a fake "vsync end"
     if (dpi_panel->on_refresh_done) {
         if (dpi_panel->on_refresh_done(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
             yield_needed = true;
         }
     }
+#endif
     return yield_needed;
+}
+
+void mipi_dsi_bridge_isr_handler(void *args)
+{
+    esp_lcd_dpi_panel_t* dpi_panel = (esp_lcd_dpi_panel_t *)args;
+    mipi_dsi_hal_context_t *hal = &dpi_panel->bus->hal;
+    // clear the interrupt status
+    uint32_t intr_status = mipi_dsi_brg_ll_get_interrupt_status(hal->bridge);
+    mipi_dsi_brg_ll_clear_interrupt_status(hal->bridge, intr_status);
+
+    if (intr_status & MIPI_DSI_BRG_LL_EVENT_UNDERRUN) {
+        // when an underrun happens, the LCD display may already becomes blue
+        // it's too late to recover the display, so we just print an error message
+        // as a hint to the user that he should optimize the memory bandwidth (with AXI-ICM)
+        ESP_DRAM_LOGE(TAG, "can't fetch data from external memory fast enough, underrun happens");
+    }
+    if (intr_status & MIPI_DSI_BRG_LL_EVENT_VSYNC) {
+        if (dpi_panel->on_refresh_done) {
+            if (dpi_panel->on_refresh_done(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
+                portYIELD_FROM_ISR();
+            }
+        }
+    }
 }
 
 // Please note, errors happened in this function is just propagated to the caller
@@ -172,25 +188,19 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     // the deprecated way to set the pixel format
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    bool has_pixel_fmt = panel_config->pixel_format != 0;
-    bool has_in_fmt = panel_config->in_color_format != 0;
-    ESP_RETURN_ON_FALSE(has_pixel_fmt ^ has_in_fmt, ESP_ERR_INVALID_ARG, TAG,
-                        "must set exactly one of pixel_format or in_color_format");
-    if (panel_config->pixel_format) {
-        switch (panel_config->pixel_format) {
-        case LCD_COLOR_PIXEL_FORMAT_RGB565:
-            bits_per_pixel = 16;
-            break;
-        case LCD_COLOR_PIXEL_FORMAT_RGB666:
-            // RGB data in the memory must be constructed in 6-6-6 (18 bits) for each pixel
-            bits_per_pixel = 18;
-            break;
-        case LCD_COLOR_PIXEL_FORMAT_RGB888:
-            bits_per_pixel = 24;
-            break;
-        }
-        in_color_format = COLOR_TYPE_ID(COLOR_SPACE_RGB, panel_config->pixel_format);
+    switch (panel_config->pixel_format) {
+    case LCD_COLOR_PIXEL_FORMAT_RGB565:
+        bits_per_pixel = 16;
+        break;
+    case LCD_COLOR_PIXEL_FORMAT_RGB666:
+        // RGB data in the memory must be constructed in 6-6-6 (18 bits) for each pixel
+        bits_per_pixel = 18;
+        break;
+    case LCD_COLOR_PIXEL_FORMAT_RGB888:
+        bits_per_pixel = 24;
+        break;
     }
+    in_color_format = COLOR_TYPE_ID(COLOR_SPACE_RGB, panel_config->pixel_format);
 #pragma GCC diagnostic pop
     // the recommended way to set the input color format
     if (panel_config->in_color_format) {
@@ -277,6 +287,14 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     ESP_GOTO_ON_ERROR(ret, err, TAG, "create PM lock failed");
     esp_pm_lock_acquire(dpi_panel->pm_lock);
 #endif
+
+    // install interrupt service
+    int isr_flags = ESP_INTR_FLAG_LOWMED;
+#if CONFIG_LCD_DSI_ISR_CACHE_SAFE
+    isr_flags |= ESP_INTR_FLAG_IRAM;
+#endif
+    ESP_GOTO_ON_ERROR(esp_intr_alloc(soc_mipi_dsi_signals[bus_id].brg_irq_id, isr_flags, mipi_dsi_bridge_isr_handler,
+                                     dpi_panel, &dpi_panel->brg_intr), err, TAG, "allocate DSI Bridge interrupt failed");
 
     // create DMA resources
     ESP_GOTO_ON_ERROR(dpi_panel_create_dma_link(dpi_panel), err, TAG, "initialize DMA link failed");
@@ -377,6 +395,9 @@ static esp_err_t dpi_panel_del(esp_lcd_panel_t *panel)
     if (dpi_panel->draw_sem) {
         vSemaphoreDeleteWithCaps(dpi_panel->draw_sem);
     }
+    if (dpi_panel->brg_intr) {
+        esp_intr_free(dpi_panel->brg_intr);
+    }
 #if CONFIG_PM_ENABLE
     if (dpi_panel->pm_lock) {
         esp_pm_lock_release(dpi_panel->pm_lock);
@@ -458,9 +479,8 @@ static esp_err_t dpi_panel_init(esp_lcd_panel_t *panel)
     mipi_dsi_brg_ll_enable_dpi_output(hal->bridge, true);
     mipi_dsi_brg_ll_update_dpi_config(hal->bridge);
 
-    // enable the underrun interrupt, we use this as a signal of bandwidth shortage
-    // note, we opt to not install a dedicated interrupt handler just for this error condition, instead, we check it in the DMA callback
-    mipi_dsi_brg_ll_enable_interrupt(hal->bridge, MIPI_DSI_LL_EVENT_UNDERRUN, true);
+    // always enable the interrupt to detect the underflow condition
+    mipi_dsi_brg_ll_enable_interrupt(hal->bridge, MIPI_DSI_BRG_LL_EVENT_UNDERRUN, true);
 
     return ESP_OK;
 }
@@ -622,10 +642,13 @@ esp_err_t esp_lcd_dpi_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
     if (user_ctx) {
         ESP_RETURN_ON_FALSE(esp_ptr_internal(user_ctx), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
     }
-#endif // CONFIG_LCD_DSI_ISR_HANDLER_IN_IRAM
+#endif // CONFIG_LCD_DSI_ISR_CACHE_SAFE
     dpi_panel->on_color_trans_done = cbs->on_color_trans_done;
     dpi_panel->on_refresh_done = cbs->on_refresh_done;
     dpi_panel->user_ctx = user_ctx;
+
+    // enable the vsync interrupt if the callback is provided
+    mipi_dsi_brg_ll_enable_interrupt(dpi_panel->bus->hal.bridge, MIPI_DSI_BRG_LL_EVENT_VSYNC, cbs->on_refresh_done != NULL);
 
     return ESP_OK;
 }
