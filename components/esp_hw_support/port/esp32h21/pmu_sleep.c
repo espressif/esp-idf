@@ -193,6 +193,12 @@ static void pmu_sleep_power_init(pmu_context_t *ctx, const pmu_sleep_power_confi
     pmu_ll_hp_set_clk_power(ctx->hal->dev, HP(SLEEP), power->hp_sys.clk_power.val);
     pmu_ll_hp_set_xtal_xpd (ctx->hal->dev, HP(SLEEP), power->hp_sys.xtal.xpd_xtal);
 
+    if (dslp) {
+        pmu_ll_hp_set_memory_power_on_mask(ctx->hal->dev, 0);
+    } else {
+        pmu_ll_hp_set_memory_power_on_mask(ctx->hal->dev, 0xf);
+    }
+
     pmu_ll_lp_set_dig_power(ctx->hal->dev, LP(ACTIVE), power->lp_sys[LP(ACTIVE)].dig_power.val);
     pmu_ll_lp_set_clk_power(ctx->hal->dev, LP(ACTIVE), power->lp_sys[LP(ACTIVE)].clk_power.val);
 

@@ -351,6 +351,13 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_bias_xpd(pmu_dev_t *hw, pmu_lp_mode_t mode,
     hw->lp_sys[mode].bias.xpd_bias = xpd_bias;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_on_mask(pmu_dev_t *hw, uint32_t mem_mask)
+{
+    hw->power.mem_mask.mem0_mask = mem_mask & BIT(0);
+    hw->power.mem_mask.mem1_mask = mem_mask & BIT(1);
+    hw->power.mem_mask.mem2_mask = mem_mask & BIT(2);
+}
+
 FORCE_INLINE_ATTR void pmu_ll_lp_set_discnnt_dig_rtc(pmu_dev_t *hw, pmu_lp_mode_t mode, bool discnnt)
 {
     HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
