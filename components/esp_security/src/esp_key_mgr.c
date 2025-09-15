@@ -6,7 +6,6 @@
 // The Hardware Support layer for Key manager
 #include <assert.h>
 #include <string.h>
-#include <sys/lock.h>
 #include "esp_key_mgr.h"
 #include "esp_crypto_periph_clk.h"
 #include "esp_crypto_lock.h"
@@ -24,15 +23,18 @@
 #if SOC_KEY_MANAGER_SUPPORTED
 static const char *TAG = "esp_key_mgr";
 
+ESP_STATIC_ASSERT(sizeof(esp_key_mgr_key_recovery_info_t) == sizeof(struct huk_key_block), "Size of esp_key_mgr_key_recovery_info_t should match huk_key_block (from ROM)");
+ESP_STATIC_ASSERT(sizeof(esp_key_mgr_key_info_t) == sizeof(struct key_info), "Size of esp_key_mgr_key_info_t should match key_info (from ROM)");
+ESP_STATIC_ASSERT(sizeof(esp_key_mgr_huk_info_t) == sizeof(struct huk_info), "Size of esp_key_mgr_huk_info_t should match huk_info (from ROM)");
+
+#if !NON_OS_BUILD
+#include <sys/lock.h>
+
 static _lock_t s_key_mgr_ecdsa_key_lock;
 static _lock_t s_key_mgr_xts_aes_key_lock;
 static _lock_t s_key_mgr_hmac_key_lock;
 static _lock_t s_key_mgr_ds_key_lock;
 static _lock_t s_key_mgr_psram_key_lock;
-
-ESP_STATIC_ASSERT(sizeof(esp_key_mgr_key_recovery_info_t) == sizeof(struct huk_key_block), "Size of esp_key_mgr_key_recovery_info_t should match huk_key_block (from ROM)");
-ESP_STATIC_ASSERT(sizeof(esp_key_mgr_key_info_t) == sizeof(struct key_info), "Size of esp_key_mgr_key_info_t should match key_info (from ROM)");
-ESP_STATIC_ASSERT(sizeof(esp_key_mgr_huk_info_t) == sizeof(struct huk_info), "Size of esp_key_mgr_huk_info_t should match huk_info (from ROM)");
 
 static void esp_key_mgr_acquire_key_lock(esp_key_mgr_key_type_t key_type)
 {
@@ -91,6 +93,46 @@ static void esp_key_mgr_release_key_lock(esp_key_mgr_key_type_t key_type)
     }
     ESP_LOGV(TAG, "Key lock released for key type %d", key_type);
 }
+#else /* !NON_OS_BUILD */
+static void esp_key_mgr_acquire_key_lock(esp_key_mgr_key_type_t key_type)
+{
+    switch (key_type) {
+    case ESP_KEY_MGR_ECDSA_192_KEY:
+    case ESP_KEY_MGR_ECDSA_256_KEY:
+    case ESP_KEY_MGR_ECDSA_384_KEY:
+    case ESP_KEY_MGR_XTS_AES_128_KEY:
+    case ESP_KEY_MGR_XTS_AES_256_KEY:
+    case ESP_KEY_MGR_HMAC_KEY:
+    case ESP_KEY_MGR_DS_KEY:
+    case ESP_KEY_MGR_PSRAM_128_KEY:
+    case ESP_KEY_MGR_PSRAM_256_KEY:
+        break;
+    default:
+        ESP_LOGE(TAG, "Invalid key type");
+        break;
+    }
+    ESP_LOGV(TAG, "Key lock acquired for key type %d", key_type);
+}
+
+static void esp_key_mgr_release_key_lock(esp_key_mgr_key_type_t key_type)
+{
+    switch (key_type) {
+    case ESP_KEY_MGR_ECDSA_192_KEY:
+    case ESP_KEY_MGR_ECDSA_256_KEY:
+    case ESP_KEY_MGR_ECDSA_384_KEY:
+    case ESP_KEY_MGR_XTS_AES_128_KEY:
+    case ESP_KEY_MGR_XTS_AES_256_KEY:
+    case ESP_KEY_MGR_HMAC_KEY:
+    case ESP_KEY_MGR_DS_KEY:
+    case ESP_KEY_MGR_PSRAM_128_KEY:
+    case ESP_KEY_MGR_PSRAM_256_KEY:
+    default:
+        ESP_LOGE(TAG, "Invalid key type");
+        break;
+    }
+    ESP_LOGV(TAG, "Key lock released for key type %d", key_type);
+}
+#endif /* NON_OS_BUILD */
 
 static void esp_key_mgr_acquire_hardware(bool deployment_mode)
 {
@@ -155,7 +197,7 @@ static void check_huk_risk_level(void)
                  "It is recommended to immediately regenerate HUK in order"
                  "to avoid permanently losing the deployed keys", huk_risk_level);
     } else {
-        ESP_LOGD(TAG, "HUK Risk level - %" PRId8 " within acceptable limit (%" PRIu32 ")", huk_risk_level, (uint32_t)KEY_MGR_HUK_RISK_ALERT_LEVEL);
+        ESP_LOGD(TAG, "HUK Risk level - %d within acceptable limit (%d)", huk_risk_level, (int) KEY_MGR_HUK_RISK_ALERT_LEVEL);
     }
 
 }
@@ -186,6 +228,8 @@ typedef struct {
     esp_key_mgr_huk_info_t *huk_recovery_info;
 } huk_deploy_config_t;
 
+static const uint8_t zeros[KEY_MGR_HUK_INFO_SIZE] = {0};
+
 static esp_err_t configure_huk(esp_huk_mode_t huk_mode, uint8_t *huk_info)
 {
     esp_err_t ret = huk_hal_configure(huk_mode, huk_info);
@@ -198,9 +242,11 @@ static esp_err_t configure_huk(esp_huk_mode_t huk_mode, uint8_t *huk_info)
         huk_hal_recharge_huk_memory();
         ret = huk_hal_configure(huk_mode, huk_info);
         if (ret != ESP_OK) {
+            // heap_caps_free(huk_recovery_info_zeros);
             return ret;
         }
     }
+    // heap_caps_free(huk_recovery_info_zeros);
 #endif
 
     if (!key_mgr_hal_is_huk_valid()) {
@@ -213,6 +259,10 @@ static esp_err_t configure_huk(esp_huk_mode_t huk_mode, uint8_t *huk_info)
 static esp_err_t deploy_huk(huk_deploy_config_t *config)
 {
     esp_err_t esp_ret = ESP_FAIL;
+
+    // TODO: Could we use config->huk_recovery_info->info directly instead of allocating a copy of it?
+    // Advantage: BOOTLOADER_BUILD would be able to use this function.
+    // Note: We can memset it to zeros in case of an error.
     uint8_t *huk_recovery_info = (uint8_t *) heap_caps_calloc(1, KEY_MGR_HUK_INFO_SIZE, MALLOC_CAP_INTERNAL);
     if (!huk_recovery_info) {
         return ESP_ERR_NO_MEM;

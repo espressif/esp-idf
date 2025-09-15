@@ -484,6 +484,14 @@ static inline bool key_mgr_ll_is_supported(void)
 #endif
 }
 
+static inline bool key_mgr_ll_flash_encryption_supported(void)
+{
+    if (!key_mgr_ll_is_supported()) {
+        return false;
+    }
+    return true;
+}
+
 #ifdef __cplusplus
 }
 #endif

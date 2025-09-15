@@ -11,10 +11,12 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_log.h"
-#include "hal/key_mgr_ll.h"
+#include "esp_key_mgr.h"
+#include "hal/key_mgr_hal.h"
 #include "hal/mspi_ll.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
+#include "esp_crypto_periph_clk.h"
 
 ESP_LOG_ATTR_TAG(TAG, "flash_encrypt");
 
@@ -71,15 +73,18 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
 
 esp_err_t esp_flash_encryption_enable_key_mgr(void)
 {
-    _key_mgr_ll_enable_bus_clock(true);
-    _key_mgr_ll_enable_peripheral_clock(true);
-    _key_mgr_ll_reset_register();
-
-    while (key_mgr_ll_get_state() != ESP_KEY_MGR_STATE_IDLE) {
-    };
+#if CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_EFUSES
+    esp_crypto_key_mgr_enable_periph_clk(true);
+    key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
 
     // Force Key Manager to use eFuse key for XTS-AES operation
-    key_mgr_ll_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+    key_mgr_hal_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+#endif
+
+    // In case Flash Encryption is enabled by a key deployed using the Key Manager,
+    // we just need to reset the SPI flash to ensure the key is used.
+    // Enabling Key Manager and forcing it to use its OWN key is handled in the
+    // Key Manager's key deployment API itself.
     _mspi_timing_ll_reset_mspi();
 
     return ESP_OK;

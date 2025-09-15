@@ -3,6 +3,8 @@
 tools/test_apps/system/bootloader_sections:
   disable:
     - if: CONFIG_NAME == "rtc_retain" and SOC_RTC_FAST_MEM_SUPPORTED != 1
+    - if: CONFIG_NAME == "flash_encryption_key_mgr" and (SOC_KEY_MANAGER_FE_KEY_DEPLOY != 1 or IDF_TARGET == "esp32p4")
+    - if: CONFIG_NAME == "flash_encryption_key_mgr_esp32p4" and IDF_TARGET != "esp32p4"
 
 tools/test_apps/system/build_tests/client_only_mbedtls:
   disable:
