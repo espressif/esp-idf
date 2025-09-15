@@ -153,6 +153,13 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     osi_mem_dbg_init();
 #endif
 
+#if HEAP_MEMORY_STATS
+    if (osi_mem_init() != 0) {
+        LOG_ERROR("Bluedroid Initialize Fail");
+        return ESP_FAIL;
+    }
+#endif
+
     ret = bluedroid_config_init(cfg);
     if (ret != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid stack initialize fail, ret:%d", ret);
@@ -242,6 +249,10 @@ esp_err_t esp_bluedroid_deinit(void)
 #if (BT_HCI_LOG_INCLUDED == TRUE)
     bt_hci_log_deinit();
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)
+
+#if HEAP_MEMORY_STATS
+    osi_mem_deinit();
+#endif
 
     s_bt_host_state = ESP_BLUEDROID_STATUS_UNINITIALIZED;
     return ESP_OK;

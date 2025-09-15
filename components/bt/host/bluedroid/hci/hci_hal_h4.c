@@ -660,7 +660,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
         }
 #endif
         pkt_size = BT_PKT_LINKED_HDR_SIZE + BT_HDR_SIZE + len;
-        #if HEAP_MEMORY_DEBUG
+        #if (HEAP_MEMORY_DEBUG || HEAP_MEMORY_STATS)
         linked_pkt = (pkt_linked_item_t *) osi_calloc(pkt_size);
         #else
         linked_pkt = (pkt_linked_item_t *) osi_calloc_base(pkt_size);
