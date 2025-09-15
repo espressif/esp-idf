@@ -29,12 +29,13 @@ function(__init_component_manager)
                         OUTPUT cmgr_iface)
     idf_build_set_property(IDF_COMPONENT_MANAGER_INTERFACE_VERSION ${cmgr_iface})
 
-    # Set DEPENDENCIES_LOCK from env/-D if provided. Otherwise, use the
+    # Set DEPENDENCIES_LOCK if set by the user. Otherwise, use the
     # project directory and IDF_TARGET to determine the lock file path.
     # Note: This deviates from the build system v1 behavior where we allow
     # users to specify the lock file path via idf_build_set_property.
+    idf_build_get_property(deps_lock_file DEPENDENCIES_LOCK)
     __get_default_value(VARIABLE DEPENDENCIES_LOCK
-                        DEFAULT ""
+                        DEFAULT "${deps_lock_file}"
                         OUTPUT deps_lock_file)
     idf_build_set_property(DEPENDENCIES_LOCK "${deps_lock_file}")
 endfunction()
