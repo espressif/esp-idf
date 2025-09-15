@@ -180,8 +180,6 @@ DUT2 (slave) 终端::
 
 你还可以运行 ``idf.py -T all flash`` 或者 ``idf.py -T xxx flash`` 来编译并烧写，所有需要的文件都会在烧写之前自动重新编译。
 
-使用 ``menuconfig`` 可以设置烧写测试程序所使用的串口。更多信息，见 :idf_file:`tools/unit-test-app/README.md`。
-
 运行单元测试
 --------------
 

@@ -8,7 +8,6 @@ set(EXTRA_COMPONENT_DIRS "../components")
 # Set the components to include the tests for.
 # This can be overridden from CMake cache:
 # - when invoking CMake directly: cmake -D TEST_COMPONENTS="xxxxx" ..
-# - when using idf.py: idf.py -T xxxxx build
 #
 set(TEST_COMPONENTS "testable" CACHE STRING "List of components to test")
 

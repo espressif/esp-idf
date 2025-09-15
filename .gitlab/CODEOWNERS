@@ -247,8 +247,6 @@
 
 /tools/tools.json             @esp-idf-codeowners/tools @esp-idf-codeowners/toolchain @esp-idf-codeowners/debugging
 
-/tools/unit-test-app/         @esp-idf-codeowners/system @esp-idf-codeowners/tools
-
 # sort-order-reset
 
 /components/**/test_apps/**/*.py     @esp-idf-codeowners/ci @esp-idf-codeowners/tools

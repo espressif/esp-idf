@@ -160,27 +160,18 @@ Some old ways of disabling unit tests for targets, that have obvious disadvantag
 
     But please avoid using ``#else`` macro. When new target is added, the test case will fail at building stage, so that the maintainer will be aware of this, and choose one of the implementations explicitly.
 
-Building Unit Test App
-----------------------
+Building Unit Test Apps
+-----------------------
 
 Follow the setup instructions in the top-level esp-idf README. Make sure that ``IDF_PATH`` environment variable is set to point to the path of esp-idf top-level directory.
 
-Change into ``tools/unit-test-app`` directory to configure and build it:
+Change into the test app directory to configure and build it:
 
 * ``idf.py menuconfig`` - configure unit test app.
-* ``idf.py -T all build`` - build unit test app with tests for each component having tests in the ``test`` subdirectory.
-* ``idf.py -T "xxx yyy" build`` - build unit test app with tests for some space-separated specific components (For instance: ``idf.py -T heap build`` - build unit tests only for ``heap`` component directory).
-* ``idf.py -T all -E "xxx yyy" build`` - build unit test app with all unit tests, except for unit tests of some components (For instance: ``idf.py -T all -E "ulp mbedtls" build`` - build all unit tests excludes ``ulp`` and ``mbedtls`` components).
+* ``idf.py build`` - build unit test app.
 
-.. note::
-
-    Due to inherent limitations of Windows command prompt, following syntax has to be used in order to build unit-test-app with multiple components: ``idf.py -T xxx -T yyy build`` or with escaped quotes: ``idf.py -T \`"xxx yyy\`" build`` in PowerShell or ``idf.py -T \^"ssd1306 hts221\^" build`` in Windows command prompt.
 
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
-
-You can also run ``idf.py -T all flash`` or ``idf.py -T xxx flash`` to build and flash. Everything needed will be rebuilt automatically before flashing.
-
-Use menuconfig to set the serial port for flashing. For more information, see :idf_file:`tools/unit-test-app/README.md`.
 
 Running Unit Tests
 ------------------
