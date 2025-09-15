@@ -194,3 +194,64 @@ config BT_BLE_LOG_SPI_OUT_MESH_TASK_CNT
     default 3
     help
         Mesh task count
+
+config BT_BLE_LOG_UHCI_OUT_ENABLED
+    bool "Output ble logs via UHCI (UART DMA) driver (Experimental)"
+    default n
+    help
+        Output ble logs via UHCI (UART DMA) driver
+        On enable, BT_BLE_LOG_UHCI_OUT_UART_PORT would be reinited with
+        BT_BLE_LOG_UHCI_OUT_UART_BAUD_RATE as new baud rate and
+        BT_BLE_LOG_UHCI_OUT_UART_IO_NUM_TX as new UART Tx IO
+
+config BT_BLE_LOG_UHCI_OUT_UART_PORT
+    int "UART port connected to UHCI controller"
+    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
+    default 0
+    help
+        UART port connected to UHCI controller
+        If UART port 0 is selected, UART VFS Driver, UART ROM Driver
+        and UART Driver output would be redirected to BLE Log UHCI Out
+        to solve UART Tx FIFO multi-task access issue
+
+config BT_BLE_LOG_UHCI_OUT_LL_TASK_BUF_SIZE
+    int "UHCI transaction buffer size for lower layer task logs"
+    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
+    default 1024
+    help
+        UHCI transaction buffer size for lower layer task logs
+
+config BT_BLE_LOG_UHCI_OUT_LL_ISR_BUF_SIZE
+    int "UHCI transaction buffer size for lower layer ISR logs"
+    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
+    default 1024
+    help
+        UHCI transaction buffer size for lower layer ISR logs
+
+config BT_BLE_LOG_UHCI_OUT_LL_HCI_BUF_SIZE
+    int "UHCI transaction buffer size for lower layer HCI logs"
+    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
+    default 1024
+    help
+        UHCI transaction buffer size for lower layer HCI logs
+
+config BT_BLE_LOG_UHCI_OUT_UART_NEED_INIT
+    bool "Enable to init UART port"
+    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
+    default y
+    help
+        Enable to init UART port
+
+config BT_BLE_LOG_UHCI_OUT_UART_BAUD_RATE
+    int "Baud rate for BT_BLE_LOG_UHCI_OUT_UART_PORT"
+    depends on BT_BLE_LOG_UHCI_OUT_UART_NEED_INIT
+    default 3000000
+    help
+        Baud rate for BT_BLE_LOG_UHCI_OUT_UART_PORT
+
+config BT_BLE_LOG_UHCI_OUT_UART_IO_NUM_TX
+    int "IO number for UART TX port"
+    depends on BT_BLE_LOG_UHCI_OUT_UART_NEED_INIT
+    default 0
+    help
+        IO number for UART TX port
