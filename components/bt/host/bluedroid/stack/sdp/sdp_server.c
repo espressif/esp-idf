@@ -355,6 +355,7 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         /* Free and reallocate buffer */
         if (p_ccb->rsp_list) {
             osi_free(p_ccb->rsp_list);
+            p_ccb->rsp_list = NULL;
         }
 
         p_ccb->rsp_list = (UINT8 *)osi_malloc(max_list_len);
@@ -457,7 +458,7 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
             }
         }
     }
-    /* If all the attributes have been accomodated in p_rsp,
+    /* If all the attributes have been accommodated in p_rsp,
        reset next_attr_index */
     if (xx == attr_seq.num_attr) {
         p_ccb->cont_info.next_attr_index = 0;
@@ -590,6 +591,7 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         /* Free and reallocate buffer */
         if (p_ccb->rsp_list) {
             osi_free (p_ccb->rsp_list);
+            p_ccb->rsp_list = NULL;
         }
 
         p_ccb->rsp_list = (UINT8 *)osi_malloc (max_list_len);
@@ -623,6 +625,7 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         /* Free and reallocate if the earlier allocated buffer is small */
         if (p_ccb->rsp_list) {
             osi_free (p_ccb->rsp_list);
+            p_ccb->rsp_list = NULL;
         }
 
         p_ccb->rsp_list = (UINT8 *)osi_malloc (max_list_len);
