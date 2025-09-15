@@ -422,6 +422,7 @@ UVC
     **已测试的外部 PHY 芯片如下：**
 
     - **SP5301** — {IDF_TARGET_NAME} 原生支持此芯片。原理图与布线方法请参考上文链接。
+    - **TUSB1106** — {IDF_TARGET_NAME} 原生支持。可通过 GPIO 映射与外部 PHY 驱动配合使用。请遵循 TUSB1106 数据手册中的参考连接（供电方案以及在 D+/D– 上建议的串联电阻）。
     - **STUSB03E** — 需要通过模拟开关进行信号路由。请参考下方示例。
 
     .. figure:: ../../../_static/usb_host/ext_phy_schematic_stusb03e.png

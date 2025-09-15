@@ -78,6 +78,7 @@ Hardware Connection
     **List of Tested External PHY ICs:**
 
     - **SP5301** — Directly supported by {IDF_TARGET_NAME}. See the guide above for schematic and routing information.
+    - **TUSB1106** — Directly supported by {IDF_TARGET_NAME}. Works with the external-PHY driver via GPIO mapping. Follow the reference wiring in the TUSB1106 datasheet (power-supply options and recommended series resistors on D+/D–).
     - **STUSB03E** — Requires signal routing using an analog switch. See example below.
 
     .. figure:: ../../../_static/usb_device/ext_phy_schematic_stusb03e.png
