@@ -96,8 +96,8 @@ typedef struct {
         UINT8       u8;                         /* 8-bit integer            */
         UINT16      u16;                        /* 16-bit integer           */
         UINT32      u32;                        /* 32-bit integer           */
-        UINT8       array[4];                   /* Variable length field    */
         struct t_sdp_disc_attr *p_sub_attr;     /* Addr of first sub-attr (list)*/
+        UINT8       array[];                    /* Variable length field    */
     } v;
 
 } tSDP_DISC_ATVAL;
