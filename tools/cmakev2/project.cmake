@@ -581,6 +581,26 @@ macro(idf_project_init)
         # Create global flash targets.
         __create_project_flash_targets()
 
+        # Discover and initialize components
+        __init_components()
+
+        # Generate initial sdkconfig with discovered components
+        __generate_sdkconfig()
+
+        # Initialize the component manager and fetch components in a loop
+        __fetch_components_from_registry()
+
+        # Include sdkconfig.cmake
+        idf_build_get_property(sdkconfig_cmake __SDKCONFIG_CMAKE)
+        if(NOT EXISTS "${sdkconfig_cmake}")
+            idf_die("sdkconfig.cmake file not found.")
+        endif()
+        include("${sdkconfig_cmake}")
+
+        # Initialize the target architecture based on the configuration
+        # Ensure this is done after including the sdkconfig.
+        __init_idf_target_arch()
+
         # Include all project_include.cmake files for the components that have
         # been discovered.
         idf_build_get_property(component_names COMPONENTS_DISCOVERED)
