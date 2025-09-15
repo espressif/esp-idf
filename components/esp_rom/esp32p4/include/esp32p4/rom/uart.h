@@ -31,7 +31,7 @@ extern "C" {
 //uart int enable register ctrl bits
 #define UART_RCV_INTEN                   BIT0
 #define UART_TRX_INTEN                   BIT1
-#define UART_LINE_ETS_STATUS_INTEN           BIT2
+#define UART_LINE_STATUS_INTEN           BIT2
 
 //uart int identification ctrl bits
 #define UART_INT_FLAG_MASK               0x0E
@@ -58,7 +58,7 @@ extern "C" {
 #define FRAME_FLAG                       0x7E
 
 typedef enum {
-    UART_LINE_ETS_STATUS_INT_FLAG  = 0x06,
+    UART_LINE_STATUS_INT_FLAG  = 0x06,
     UART_RCV_FIFO_INT_FLAG     = 0x04,
     UART_RCV_TMOUT_INT_FLAG    = 0x0C,
     UART_TXBUFF_EMPTY_INT_FLAG = 0x02

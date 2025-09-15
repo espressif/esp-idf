@@ -65,7 +65,6 @@ ROM Headers
 
 The deprecated ``STATUS`` type has been removed from ``ets_sys.h`` ROM header files. Please use ``ETS_STATUS`` instead.
 
-
 App Trace
 ----------
 
