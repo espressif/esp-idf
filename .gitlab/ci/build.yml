@@ -272,6 +272,7 @@ pytest_buildv2_system:
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
       --
       test_non_default_target.py
+      test_component_manager.py
 
 pytest_build_system_macos:
   extends:
