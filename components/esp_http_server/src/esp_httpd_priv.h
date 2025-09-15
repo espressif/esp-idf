@@ -38,6 +38,19 @@ extern "C" {
 #define LOG_FMT(x)      "%s: " x, __func__
 
 /**
+ * @brief Control message data structure for internal use. Sent to control socket.
+ */
+struct httpd_ctrl_data {
+    enum httpd_ctrl_msg {
+        HTTPD_CTRL_SHUTDOWN,
+        HTTPD_CTRL_WORK,
+        HTTPD_CTRL_MAX,
+    } hc_msg;
+    httpd_work_fn_t hc_work;
+    void *hc_work_arg;
+};
+
+/**
  * @brief Thread related data for internal use
  */
 struct thread_data {
