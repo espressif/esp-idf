@@ -587,38 +587,11 @@ __init_toolchain()
 # Enable ccache if requested.
 __init_ccache()
 
-# Discover and initialize components.
-__init_components()
+#[[
 
-# Generate initial sdkconfig with discovered components.
-__generate_sdkconfig()
-
-# Initialize the component manager and fetch components in a loop
-__fetch_components_from_registry()
-
-# Create Kconfig targets
-__create_kconfig_targets()
-
-# Include sdkconfig.cmake
-idf_build_get_property(sdkconfig_cmake __SDKCONFIG_CMAKE)
-if(NOT EXISTS "${sdkconfig_cmake}")
-    idf_die("sdkconfig.cmake file not found.")
-endif()
-include("${sdkconfig_cmake}")
-
-# Initialize the target architecture based on the configuration. Ensure this is
-# done after including the sdkconfig.
-__init_idf_target_arch()
-
-#[[ TODO
-
-Many of the following things are already implemented in PoC !38337, but they
-need to be reviewed.
-
-* Enable ccache if requested and available.
-
-There may be additional steps. We should initialize everything necessary before
-calling the ``project()`` function, as well as any global settings that cannot be
-modified later.
+At this point, the build system infrastructure is ready.
+Project-specific operations (component discovery, Kconfig generation,
+component manager, etc.) are handled in idf_project_init() after the
+project() call.
 
 #]]
