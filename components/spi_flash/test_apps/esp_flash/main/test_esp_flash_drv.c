@@ -64,28 +64,28 @@ static void setup_bus(spi_host_device_t host_id)
         esp_rom_gpio_connect_out_signal(EXTRA_SPI1_CLK_IO, SPICLK_OUT_IDX, 0, 0);
         //currently the SPI bus for main flash chip is initialized through GPIO matrix
     } else if (host_id == SPI2_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI%u (HSPI) CS0...", host_id + 1);
-        spi_bus_config_t hspi_bus_cfg = {
-            .mosi_io_num = HSPI_PIN_NUM_MOSI,
-            .miso_io_num = HSPI_PIN_NUM_MISO,
-            .sclk_io_num = HSPI_PIN_NUM_CLK,
-            .quadhd_io_num = HSPI_PIN_NUM_HD,
-            .quadwp_io_num = HSPI_PIN_NUM_WP,
+        ESP_LOGI(TAG, "setup flash on SPI%u CS0...", host_id + 1);
+        spi_bus_config_t spi2_bus_cfg = {
+            .mosi_io_num = SPI2_PIN_NUM_MOSI,
+            .miso_io_num = SPI2_PIN_NUM_MISO,
+            .sclk_io_num = SPI2_PIN_NUM_CLK,
+            .quadhd_io_num = SPI2_PIN_NUM_HD,
+            .quadwp_io_num = SPI2_PIN_NUM_WP,
             .max_transfer_sz = 64,
         };
-        esp_err_t ret = spi_bus_initialize(host_id, &hspi_bus_cfg, 0);
+        esp_err_t ret = spi_bus_initialize(host_id, &spi2_bus_cfg, 0);
         TEST_ESP_OK(ret);
     } else if (host_id == SPI3_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI%u (VSPI) CS0...", host_id + 1);
-        spi_bus_config_t vspi_bus_cfg = {
-            .mosi_io_num = VSPI_PIN_NUM_MOSI,
-            .miso_io_num = VSPI_PIN_NUM_MISO,
-            .sclk_io_num = VSPI_PIN_NUM_CLK,
-            .quadhd_io_num = VSPI_PIN_NUM_HD,
-            .quadwp_io_num = VSPI_PIN_NUM_WP,
+        ESP_LOGI(TAG, "setup flash on SPI%u CS0...", host_id + 1);
+        spi_bus_config_t spi3_bus_cfg = {
+            .mosi_io_num = SPI3_PIN_NUM_MOSI,
+            .miso_io_num = SPI3_PIN_NUM_MISO,
+            .sclk_io_num = SPI3_PIN_NUM_CLK,
+            .quadhd_io_num = SPI3_PIN_NUM_HD,
+            .quadwp_io_num = SPI3_PIN_NUM_WP,
             .max_transfer_sz = 64,
         };
-        esp_err_t ret = spi_bus_initialize(host_id, &vspi_bus_cfg, 0);
+        esp_err_t ret = spi_bus_initialize(host_id, &spi3_bus_cfg, 0);
         TEST_ESP_OK(ret);
     } else {
         ESP_LOGE(TAG, "invalid bus");
@@ -107,38 +107,38 @@ static void setup_bus(spi_host_device_t host_id)
 #endif //CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
         //currently the SPI bus for main flash chip is initialized through GPIO matrix
     } else if (host_id == SPI2_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI%u (FSPI) CS0...", host_id + 1);
-        spi_bus_config_t fspi_bus_cfg = {
-            .mosi_io_num = FSPI_PIN_NUM_MOSI,
-            .miso_io_num = FSPI_PIN_NUM_MISO,
-            .sclk_io_num = FSPI_PIN_NUM_CLK,
-            .quadhd_io_num = FSPI_PIN_NUM_HD,
-            .quadwp_io_num = FSPI_PIN_NUM_WP,
+        ESP_LOGI(TAG, "setup flash on SPI%u CS0...", host_id + 1);
+        spi_bus_config_t spi2_bus_cfg = {
+            .mosi_io_num = SPI2_PIN_NUM_MOSI,
+            .miso_io_num = SPI2_PIN_NUM_MISO,
+            .sclk_io_num = SPI2_PIN_NUM_CLK,
+            .quadhd_io_num = SPI2_PIN_NUM_HD,
+            .quadwp_io_num = SPI2_PIN_NUM_WP,
             .max_transfer_sz = 64,
         };
-        esp_err_t ret = spi_bus_initialize(host_id, &fspi_bus_cfg, 0);
+        esp_err_t ret = spi_bus_initialize(host_id, &spi2_bus_cfg, 0);
         TEST_ESP_OK(ret);
     }
 #if SOC_SPI_PERIPH_NUM > 2
     else if (host_id == SPI3_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI%u (HSPI) CS0...", host_id + 1);
-        spi_bus_config_t hspi_bus_cfg = {
-            .mosi_io_num = HSPI_PIN_NUM_MOSI,
-            .miso_io_num = HSPI_PIN_NUM_MISO,
-            .sclk_io_num = HSPI_PIN_NUM_CLK,
-            .quadhd_io_num = HSPI_PIN_NUM_HD,
-            .quadwp_io_num = HSPI_PIN_NUM_WP,
+        ESP_LOGI(TAG, "setup flash on SPI%u CS0...", host_id + 1);
+        spi_bus_config_t spi2_bus_cfg = {
+            .mosi_io_num = SPI2_PIN_NUM_MOSI,
+            .miso_io_num = SPI2_PIN_NUM_MISO,
+            .sclk_io_num = SPI2_PIN_NUM_CLK,
+            .quadhd_io_num = SPI2_PIN_NUM_HD,
+            .quadwp_io_num = SPI2_PIN_NUM_WP,
             .max_transfer_sz = 64,
         };
-        esp_err_t ret = spi_bus_initialize(host_id, &hspi_bus_cfg, 0);
+        esp_err_t ret = spi_bus_initialize(host_id, &spi2_bus_cfg, 0);
         TEST_ESP_OK(ret);
 
-        // HSPI have no multiline mode, use GPIO to pull those pins up
-        gpio_set_direction(HSPI_PIN_NUM_HD, GPIO_MODE_OUTPUT);
-        gpio_set_level(HSPI_PIN_NUM_HD, 1);
+        // SPI2 have no multiline mode, use GPIO to pull those pins up
+        gpio_set_direction(SPI2_PIN_NUM_HD, GPIO_MODE_OUTPUT);
+        gpio_set_level(SPI2_PIN_NUM_HD, 1);
 
-        gpio_set_direction(HSPI_PIN_NUM_WP, GPIO_MODE_OUTPUT);
-        gpio_set_level(HSPI_PIN_NUM_WP, 1);
+        gpio_set_direction(SPI2_PIN_NUM_WP, GPIO_MODE_OUTPUT);
+        gpio_set_level(SPI2_PIN_NUM_WP, 1);
     }
 #endif
     else {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -14,114 +14,78 @@
 #define EXTRA_SPI1_CLK_IO   17  //the pin which is usually used by the PSRAM clk
 #define SPI1_CS_IO          16  //the pin which is usually used by the PSRAM cs
 
-#define HSPI_PIN_NUM_MOSI   HSPI_IOMUX_PIN_NUM_MOSI
-#define HSPI_PIN_NUM_MISO   HSPI_IOMUX_PIN_NUM_MISO
-#define HSPI_PIN_NUM_CLK    HSPI_IOMUX_PIN_NUM_CLK
-#define HSPI_PIN_NUM_HD     HSPI_IOMUX_PIN_NUM_HD
-#define HSPI_PIN_NUM_WP     HSPI_IOMUX_PIN_NUM_WP
-#define HSPI_PIN_NUM_CS     HSPI_IOMUX_PIN_NUM_CS
+#define SPI2_PIN_NUM_MOSI   SPI2_IOMUX_PIN_NUM_MOSI
+#define SPI2_PIN_NUM_MISO   SPI2_IOMUX_PIN_NUM_MISO
+#define SPI2_PIN_NUM_CLK    SPI2_IOMUX_PIN_NUM_CLK
+#define SPI2_PIN_NUM_HD     SPI2_IOMUX_PIN_NUM_HD
+#define SPI2_PIN_NUM_WP     SPI2_IOMUX_PIN_NUM_WP
+#define SPI2_PIN_NUM_CS     SPI2_IOMUX_PIN_NUM_CS
 
-#define VSPI_PIN_NUM_MOSI   VSPI_IOMUX_PIN_NUM_MOSI
-#define VSPI_PIN_NUM_MISO   VSPI_IOMUX_PIN_NUM_MISO
-#define VSPI_PIN_NUM_CLK    VSPI_IOMUX_PIN_NUM_CLK
-#define VSPI_PIN_NUM_HD     VSPI_IOMUX_PIN_NUM_HD
-#define VSPI_PIN_NUM_WP     VSPI_IOMUX_PIN_NUM_WP
-#define VSPI_PIN_NUM_CS     VSPI_IOMUX_PIN_NUM_CS
+#define SPI3_PIN_NUM_MOSI   SPI3_IOMUX_PIN_NUM_MOSI
+#define SPI3_PIN_NUM_MISO   SPI3_IOMUX_PIN_NUM_MISO
+#define SPI3_PIN_NUM_CLK    SPI3_IOMUX_PIN_NUM_CLK
+#define SPI3_PIN_NUM_HD     SPI3_IOMUX_PIN_NUM_HD
+#define SPI3_PIN_NUM_WP     SPI3_IOMUX_PIN_NUM_WP
+#define SPI3_PIN_NUM_CS     SPI3_IOMUX_PIN_NUM_CS
 
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define SPI1_CS_IO          26  //the pin which is usually used by the PSRAM cs
 #define SPI1_HD_IO          27  //the pin which is usually used by the PSRAM hd
 #define SPI1_WP_IO          28  //the pin which is usually used by the PSRAM wp
 
-#define FSPI_PIN_NUM_MOSI   35
-#define FSPI_PIN_NUM_MISO   37
-#define FSPI_PIN_NUM_CLK    36
-#define FSPI_PIN_NUM_HD     33
-#define FSPI_PIN_NUM_WP     38
-#define FSPI_PIN_NUM_CS     34
-
 // Just use the same pins for HSPI
-#define HSPI_PIN_NUM_MOSI   FSPI_PIN_NUM_MOSI
-#define HSPI_PIN_NUM_MISO   FSPI_PIN_NUM_MISO
-#define HSPI_PIN_NUM_CLK    FSPI_PIN_NUM_CLK
-#define HSPI_PIN_NUM_HD     FSPI_PIN_NUM_HD
-#define HSPI_PIN_NUM_WP     FSPI_PIN_NUM_WP
-#define HSPI_PIN_NUM_CS     FSPI_PIN_NUM_CS
+#define SPI2_PIN_NUM_MOSI   35
+#define SPI2_PIN_NUM_MISO   37
+#define SPI2_PIN_NUM_CLK    36
+#define SPI2_PIN_NUM_HD     33
+#define SPI2_PIN_NUM_WP     38
+#define SPI2_PIN_NUM_CS     34
 
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define SPI1_CS_IO          26  //the pin which is usually used by the PSRAM cs
 #define SPI1_HD_IO          27  //the pin which is usually used by the PSRAM hd
 #define SPI1_WP_IO          28  //the pin which is usually used by the PSRAM wp
 
-#define FSPI_PIN_NUM_MOSI   11
-#define FSPI_PIN_NUM_MISO   13
-#define FSPI_PIN_NUM_CLK    12
-#define FSPI_PIN_NUM_HD     9
-#define FSPI_PIN_NUM_WP     14
-#define FSPI_PIN_NUM_CS     10
-
 // Just use the same pins for HSPI
-#define HSPI_PIN_NUM_MOSI   FSPI_PIN_NUM_MOSI
-#define HSPI_PIN_NUM_MISO   FSPI_PIN_NUM_MISO
-#define HSPI_PIN_NUM_CLK    FSPI_PIN_NUM_CLK
-#define HSPI_PIN_NUM_HD     FSPI_PIN_NUM_HD
-#define HSPI_PIN_NUM_WP     FSPI_PIN_NUM_WP
-#define HSPI_PIN_NUM_CS     FSPI_PIN_NUM_CS
+#define SPI2_PIN_NUM_MOSI   11
+#define SPI2_PIN_NUM_MISO   13
+#define SPI2_PIN_NUM_CLK    12
+#define SPI2_PIN_NUM_HD     9
+#define SPI2_PIN_NUM_WP     14
+#define SPI2_PIN_NUM_CS     10
 
 #elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C61
 #define SPI1_CS_IO          26  //the pin which is usually used by the PSRAM cs
 #define SPI1_HD_IO          27  //the pin which is usually used by the PSRAM hd
 #define SPI1_WP_IO          28  //the pin which is usually used by the PSRAM wp
 
-#define FSPI_PIN_NUM_MOSI   7
-#define FSPI_PIN_NUM_MISO   2
-#define FSPI_PIN_NUM_CLK    6
-#define FSPI_PIN_NUM_HD     4
-#define FSPI_PIN_NUM_WP     5
-#define FSPI_PIN_NUM_CS     10
-
 // Just use the same pins for HSPI
-#define HSPI_PIN_NUM_MOSI   FSPI_PIN_NUM_MOSI
-#define HSPI_PIN_NUM_MISO   FSPI_PIN_NUM_MISO
-#define HSPI_PIN_NUM_CLK    FSPI_PIN_NUM_CLK
-#define HSPI_PIN_NUM_HD     FSPI_PIN_NUM_HD
-#define HSPI_PIN_NUM_WP     FSPI_PIN_NUM_WP
-#define HSPI_PIN_NUM_CS     FSPI_PIN_NUM_CS
+#define SPI2_PIN_NUM_MOSI   7
+#define SPI2_PIN_NUM_MISO   2
+#define SPI2_PIN_NUM_CLK    6
+#define SPI2_PIN_NUM_HD     4
+#define SPI2_PIN_NUM_WP     5
+#define SPI2_PIN_NUM_CS     10
 
 #elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32H21 || CONFIG_IDF_TARGET_ESP32H4
 
-#define FSPI_PIN_NUM_MOSI   5
-#define FSPI_PIN_NUM_MISO   0
-#define FSPI_PIN_NUM_CLK    4
-#define FSPI_PIN_NUM_HD     3
-#define FSPI_PIN_NUM_WP     2
-#define FSPI_PIN_NUM_CS     1
-
 // Just use the same pins for HSPI
-#define HSPI_PIN_NUM_MOSI   FSPI_PIN_NUM_MOSI
-#define HSPI_PIN_NUM_MISO   FSPI_PIN_NUM_MISO
-#define HSPI_PIN_NUM_CLK    FSPI_PIN_NUM_CLK
-#define HSPI_PIN_NUM_HD     FSPI_PIN_NUM_HD
-#define HSPI_PIN_NUM_WP     FSPI_PIN_NUM_WP
-#define HSPI_PIN_NUM_CS     FSPI_PIN_NUM_CS
+#define SPI2_PIN_NUM_MOSI   5
+#define SPI2_PIN_NUM_MISO   0
+#define SPI2_PIN_NUM_CLK    4
+#define SPI2_PIN_NUM_HD     3
+#define SPI2_PIN_NUM_WP     2
+#define SPI2_PIN_NUM_CS     1
 
 #elif CONFIG_IDF_TARGET_ESP32P4
 
-// Normal IOMUX pins
-#define FSPI_PIN_NUM_MOSI   8
-#define FSPI_PIN_NUM_MISO   10
-#define FSPI_PIN_NUM_CLK    9
-#define FSPI_PIN_NUM_HD     6
-#define FSPI_PIN_NUM_WP     11
-#define FSPI_PIN_NUM_CS     7
-
 // Just use the same pins for HSPI
-#define HSPI_PIN_NUM_MOSI   FSPI_PIN_NUM_MOSI
-#define HSPI_PIN_NUM_MISO   FSPI_PIN_NUM_MISO
-#define HSPI_PIN_NUM_CLK    FSPI_PIN_NUM_CLK
-#define HSPI_PIN_NUM_HD     FSPI_PIN_NUM_HD
-#define HSPI_PIN_NUM_WP     FSPI_PIN_NUM_WP
-#define HSPI_PIN_NUM_CS     FSPI_PIN_NUM_CS
+#define SPI2_PIN_NUM_MOSI   8
+#define SPI2_PIN_NUM_MISO   10
+#define SPI2_PIN_NUM_CLK    9
+#define SPI2_PIN_NUM_HD     6
+#define SPI2_PIN_NUM_WP     11
+#define SPI2_PIN_NUM_CS     7
 #endif
 
 #define TEST_CONFIG_NUM (sizeof(config_list)/sizeof(flashtest_config_t))
@@ -227,7 +191,7 @@ flashtest_config_t config_list[] = {
     //     .host_id = SPI2_HOST,
     //     .cs_id = 0,
     //     // uses GPIO matrix on esp32s2 regardless if FORCE_GPIO_MATRIX
-    //     .cs_io_num = HSPI_PIN_NUM_CS,
+    //     .cs_io_num = SPI2_PIN_NUM_CS,
     //     .input_delay_ns = 20,
     // },
     {
@@ -235,7 +199,7 @@ flashtest_config_t config_list[] = {
         .freq_mhz = TEST_SPI_SPEED,
         .host_id = SPI3_HOST,
         .cs_id = 0,
-        .cs_io_num = VSPI_PIN_NUM_CS,
+        .cs_io_num = SPI3_PIN_NUM_CS,
         .input_delay_ns = 0,
     },
 };
@@ -247,7 +211,7 @@ flashtest_config_t config_list[] = {
         .freq_mhz = TEST_SPI_SPEED,
         .host_id = SPI2_HOST,
         .cs_id = 0,
-        .cs_io_num = FSPI_PIN_NUM_CS,
+        .cs_io_num = SPI2_PIN_NUM_CS,
         .input_delay_ns = 0,
     },
     {
@@ -256,7 +220,7 @@ flashtest_config_t config_list[] = {
         .host_id = SPI3_HOST,
         .cs_id = 0,
         // uses GPIO matrix on esp32s2 regardless of FORCE_GPIO_MATRIX
-        .cs_io_num = HSPI_PIN_NUM_CS,
+        .cs_io_num = SPI2_PIN_NUM_CS,
         .input_delay_ns = 0,
     },
 };
@@ -272,7 +236,7 @@ flashtest_config_t config_list[] = {
         .freq_mhz = TEST_SPI_SPEED,
         .host_id = SPI2_HOST,
         .cs_id = 0,
-        .cs_io_num = FSPI_PIN_NUM_CS,
+        .cs_io_num = SPI2_PIN_NUM_CS,
         .input_delay_ns = 0,
     },
 };
@@ -288,7 +252,7 @@ flashtest_config_t config_list[] = {
         .freq_mhz = TEST_SPI_SPEED,
         .host_id = SPI2_HOST,
         .cs_id = 0,
-        .cs_io_num = FSPI_PIN_NUM_CS,
+        .cs_io_num = SPI2_PIN_NUM_CS,
         .input_delay_ns = 0,
     },
 };

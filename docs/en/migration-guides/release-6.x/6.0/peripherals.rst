@@ -179,14 +179,32 @@ LCD
 SPI
 ---
 
-The :ref:`CONFIG_SPI_MASTER_IN_IRAM` option is now invisible by default in menuconfig and depends on :ref:`CONFIG_FREERTOS_IN_IRAM`. This change was made to prevent potential crashes when SPI functions in IRAM call FreeRTOS functions that are placed in flash.
+- The :ref:`CONFIG_SPI_MASTER_IN_IRAM` option is now invisible by default in menuconfig and depends on :ref:`CONFIG_FREERTOS_IN_IRAM`. This change was made to prevent potential crashes when SPI functions in IRAM call FreeRTOS functions that are placed in flash.
+  - To enable SPI master IRAM optimization:
 
-To enable SPI master IRAM optimization:
+    1. Navigate to ``Component config`` → ``FreeRTOS`` → ``Port`` in menuconfig
+    2. Enable ``Place FreeRTOS functions in IRAM`` (:ref:`CONFIG_FREERTOS_IN_IRAM`)
+    3. Navigate to ``Component config`` → ``ESP-Driver:SPI Configurations``
+    4. Enable ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`)
 
-1. Navigate to ``Component config`` → ``FreeRTOS`` → ``Port`` in menuconfig
-2. Enable ``Place FreeRTOS functions in IRAM`` (:ref:`CONFIG_FREERTOS_IN_IRAM`)
-3. Navigate to ``Component config`` → ``ESP-Driver:SPI Configurations``
-4. Enable ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`)
+  - Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
+
+- Deprecated HSPI and VSPI related IOMUX pin macros on ESP32 and ESP32S2 have been removed.
+
+PSRAM
+-----
+
+Deprecated header file ``esp_spiram.h`` has been removed. Please use ``esp_psram.h`` instead.
+
+
+SPI Flash Driver
+----------------
+
+- Deprecated ``enum`` type ``esp_flash_speed_t`` has been removed. The main flash speed is controlled by :ref:`CONFIG_ESPTOOLPY_FLASHFREQ` option.
+- Deprecated header file ``esp_spi_flash.h`` has been removed. Please use ``spi_flash_mmap.h`` instead.
+- Deprecated API ``spi_flash_dump_counters`` has been removed. Please use :cpp:func:`esp_flash_dump_counters` instead.
+- Deprecated API ``spi_flash_get_counters`` has been removed. Please use :cpp:func:`esp_flash_get_counters` instead.
+- Deprecated API ``spi_flash_reset_counters`` has been removed. Please use :cpp:func:`esp_flash_reset_counters` instead.
 
 Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
 

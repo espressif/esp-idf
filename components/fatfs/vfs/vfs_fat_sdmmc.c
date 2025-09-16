@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,11 +32,6 @@ static const char* TAG = "vfs_fat_sdmmc";
     } while(0)
 
 static vfs_fat_sd_ctx_t *s_ctx[FF_VOLUMES] = {};
-/**
- * This `s_saved_ctx_id` is only used by `esp_vfs_fat_sdmmc_unmount`, which is deprecated.
- * This variable together with `esp_vfs_fat_sdmmc_unmount` should be removed in next major version
- */
-static uint32_t s_saved_ctx_id = FF_VOLUMES;
 
 static void call_host_deinit(const sdmmc_host_t *host_config);
 static esp_err_t partition_card(const esp_vfs_fat_mount_config_t *mount_config,
@@ -287,10 +282,6 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     if (out_card != NULL) {
         *out_card = card;
     }
-    //For deprecation backward compatibility
-    if (s_saved_ctx_id == FF_VOLUMES) {
-        s_saved_ctx_id = 0;
-    }
 
     ctx = calloc(1, sizeof(vfs_fat_sd_ctx_t));
     if (!ctx) {
@@ -385,10 +376,6 @@ esp_err_t esp_vfs_fat_sdspi_mount(const char* base_path,
     if (out_card != NULL) {
         *out_card = card;
     }
-    //For deprecation backward compatibility
-    if (s_saved_ctx_id == FF_VOLUMES) {
-        s_saved_ctx_id = 0;
-    }
 
     ctx = calloc(1, sizeof(vfs_fat_sd_ctx_t));
     if (!ctx) {
@@ -441,15 +428,6 @@ static esp_err_t unmount_card_core(const char *base_path, sdmmc_card_t *card)
     free(card);
 
     esp_err_t err = esp_vfs_fat_unregister_path(base_path);
-    return err;
-}
-
-esp_err_t esp_vfs_fat_sdmmc_unmount(void)
-{
-    esp_err_t err = unmount_card_core(s_ctx[s_saved_ctx_id]->base_path, s_ctx[s_saved_ctx_id]->card);
-    free(s_ctx[s_saved_ctx_id]);
-    s_ctx[s_saved_ctx_id] = NULL;
-    s_saved_ctx_id = FF_VOLUMES;
     return err;
 }
 
