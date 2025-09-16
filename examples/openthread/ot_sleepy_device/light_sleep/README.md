@@ -15,8 +15,8 @@ Set the chip target: `idf.py set-target <chip_name>`, then configure the project
 
 There are two options to configure Openthread Dataset:
 
-* Auto start mode: Enable `OPENTHREAD_AUTO_START` under `OpenThread Sleepy Example---> Enable the automatic start mode`, and configure the dataset under `Component config ---> Openthread ---> Thread Operation Dataset`.
-* Manual mode: Disable `OPENTHREAD_AUTO_START`, use the CLI command to configure the dataset and start network.
+* Auto start mode: Enable `OPENTHREAD_NETWORK_AUTO_START` under `OpenThread Sleepy Example---> Enable the automatic start mode`, and configure the dataset under `Component config ---> Openthread ---> Thread Operation Dataset`.
+* Manual mode: Disable `OPENTHREAD_NETWORK_AUTO_START`, use the CLI command to configure the dataset and start network.
 
 ### Build and Flash
 
@@ -24,11 +24,11 @@ Build the project and flash it to the board. Use the following command: `idf.py 
 
 ### Configure the Openthread sleepy device
 ```
-> mode -
-> pollperiod 3000
-> dataset set active <the same as dataset of the leader>
-> ifconfig up
-> thread start
+esp32h2> ot mode -
+esp32h2> ot pollperiod 3000
+esp32h2> ot dataset set active <the same as dataset of the leader>
+esp32h2> ot ifconfig up
+esp32h2> ot thread start
 ```
 
 ### Example Output
@@ -62,23 +62,23 @@ I (652) gdma: GDMA pair (0, 0) retention initialization
 I(660) OPENTHREAD:[I] ChildSupervsn-: Timeout: 0 -> 190
 > I (664) OPENTHREAD: OpenThread attached to netif
 I (635) main_task: Returned from app_main()
-> mode -
+esp32h2> ot mode -
 
 I(2250683) OPENTHREAD:[N] Mle-----------: Mode 0x0f -> 0x04 [rx-on:no ftd:no full-net:no]
 Done
-> pollperiod 3000
+esp32h2> ot pollperiod 3000
 
 Done
 
-> dataset set active 0e080000000000010000000300001a35060004001fffe00208dead00beef00cafe0708fd000db800a00000051000112233445566778899aabbccdd0000030e4f70656e5468726561642d455350010212340410104810e2315100afd6bc9215a6bfac530c0402a0f7f8
+esp32h2> ot dataset set active 0e080000000000010000000300001a35060004001fffe00208dead00beef00cafe0708fd000db800a00000051000112233445566778899aabbccdd0000030e4f70656e5468726561642d455350010212340410104810e2315100afd6bc9215a6bfac530c0402a0f7f8
 
 Done
 
-> ifconfig up
+esp32h2> ot ifconfig up
 
 Done
 I (2274801) OT_STATE: netif up
-> thread start
+esp32h2> ot thread start
 
 I(2279917) OPENTHREAD:[N] Mle-----------: Role disabled -> detached
 Done
