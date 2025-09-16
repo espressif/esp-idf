@@ -138,7 +138,7 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #include "esp_flash_partitions.h"
 #include "rom/spi_flash.h"
 
-extern bool esp_tee_flash_check_paddr_in_active_tee_part(size_t paddr);
+extern bool esp_tee_flash_check_prange_in_active_tee_part(const size_t paddr, const size_t len);
 #endif
 
 ESP_LOG_ATTR_TAG(TAG, "bootloader_flash");
@@ -524,7 +524,7 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
      * by validating the address before proceeding.
      */
 #if ESP_TEE_BUILD
-    bool addr_chk = esp_tee_flash_check_paddr_in_active_tee_part(dest_addr);
+    bool addr_chk = esp_tee_flash_check_prange_in_active_tee_part(dest_addr, size);
     if (addr_chk) {
         ESP_EARLY_LOGE(TAG, "bootloader_flash_write invalid dest_addr");
         return ESP_FAIL;
@@ -578,7 +578,7 @@ esp_err_t bootloader_flash_erase_sector(size_t sector)
 esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 {
 #if ESP_TEE_BUILD
-    bool addr_chk = esp_tee_flash_check_paddr_in_active_tee_part(start_addr);
+    bool addr_chk = esp_tee_flash_check_prange_in_active_tee_part(start_addr, size);
     if (addr_chk) {
         return ESP_ERR_INVALID_ARG;
     }

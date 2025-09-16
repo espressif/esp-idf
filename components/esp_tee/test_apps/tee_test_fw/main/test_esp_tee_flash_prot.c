@@ -250,6 +250,16 @@ TEST_CASE_MULTIPLE_STAGES("Test REE-TEE isolation: Flash - SPI0 (spi_flash_mmap)
                           test_initial_boot, test_spi_flash_mmap_api, test_spi_flash_mmap_api,
                           test_spi_flash_mmap_api);
 
+TEST_CASE("Test REE-TEE isolation: MMU-spillover", "[exception]")
+{
+    const void *ptr;
+    spi_flash_mmap_handle_t handle;
+    const size_t len = 0x100000;  // 1MB
+    TEST_ESP_OK(spi_flash_mmap(0x00, len, SPI_FLASH_MMAP_DATA, &ptr, &handle));
+    ESP_LOG_BUFFER_HEXDUMP(TAG, ptr, 32, ESP_LOG_INFO);
+    TEST_FAIL_MESSAGE("Exception should have been generated!");
+}
+
 /* ---------------------------------------------- API family 3: esp_flash ------------------------------------------------- */
 
 #if CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1
