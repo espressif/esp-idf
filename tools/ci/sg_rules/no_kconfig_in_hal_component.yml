@@ -6,10 +6,12 @@ note: hal component should be able to deliver without 3rd party config system
 language: C
 files:
   - "components/hal/**/*"
+  - "components/esp_hal*/**/*"
 ignores:
   # porting layer and test apps are allowed to use Kconfig macros
   - "components/hal/platform_port/**/*"
   - "components/hal/test_apps/**/*"
+  - "components/esp_hal*/test_apps/**/*"
   # the following files should be refactored to remove Kconfig macros
   - "components/hal/adc_oneshot_hal.c"
   - "components/hal/cache_hal.c"
@@ -43,10 +45,12 @@ note: hal component should be able to deliver without 3rd party config system
 language: C
 files:
   - "components/hal/**/*"
+  - "components/esp_hal*/**/*"
 ignores:
   # porting layer and test apps are allowed to include sdkconfig.h
   - "components/hal/platform_port/**/*"
   - "components/hal/test_apps/**/*"
+  - "components/esp_hal*/test_apps/**/*"
   # the following files should be refactored to remove sdkconfig.h
   - "components/hal/adc_oneshot_hal.c"
   - "components/hal/cache_hal.c"

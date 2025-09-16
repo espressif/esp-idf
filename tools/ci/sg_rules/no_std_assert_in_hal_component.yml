@@ -6,8 +6,10 @@ note: The standard assert function depends on esp_libc(G1) component, but hal is
 language: C
 files:
   - "components/hal/**/*"
+  - "components/esp_hal*/**/*"
 ignores:
   - "components/hal/test_apps/**/*"
+  - "components/esp_hal*/test_apps/**/*"
 rule:
   kind: expression_statement
   pattern: assert($$$ARGS);
@@ -22,8 +24,10 @@ note: Please use hal/assert.h to replace assert.h
 language: C
 files:
   - "components/hal/**/*"
+  - "components/esp_hal*/**/*"
 ignores:
   - "components/hal/test_apps/**/*"
+  - "components/esp_hal*/test_apps/**/*"
 rule:
   kind: preproc_include
   has:
