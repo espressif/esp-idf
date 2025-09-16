@@ -23,7 +23,7 @@ extern "C" {
 typedef struct {
     int bus_id;                              /*!< Select which DSI controller, index from 0 */
     uint8_t num_data_lanes;                  /*!< Number of data lanes, if set to 0, the driver will fallback to use maximum number of lanes */
-    mipi_dsi_phy_clock_source_t phy_clk_src; /*!< MIPI DSI PHY clock source */
+    mipi_dsi_phy_pllref_clock_source_t phy_clk_src; /*!< The clock source for the PHY PLL */
     uint32_t lane_bit_rate_mbps;             /*!< Lane bit rate in Mbps */
 } esp_lcd_dsi_bus_config_t;
 
@@ -84,7 +84,6 @@ typedef struct {
     uint8_t virtual_channel;                   /*!< Virtual channel ID, index from 0 */
     mipi_dsi_dpi_clock_source_t dpi_clk_src;   /*!< MIPI DSI DPI clock source */
     uint32_t dpi_clock_freq_mhz;               /*!< DPI clock frequency in MHz */
-    lcd_color_rgb_pixel_format_t pixel_format; /*!< Pixel format that used by the MIPI LCD device */
     lcd_color_format_t in_color_format;        /*!< Format of the input data (color space and pixel format),
                                                     which is the format stored in the frame buffer */
     lcd_color_format_t out_color_format;       /*!< Format of the output data (color space and pixel format),
@@ -92,6 +91,8 @@ typedef struct {
     uint8_t num_fbs;                           /*!< Number of screen-sized frame buffers that allocated by the driver
                                                     By default (set to either 0 or 1) only one frame buffer will be created */
     esp_lcd_video_timing_t video_timing;       /*!< Video timing */
+    /** @deprecated Duplicate of in_color_format; use in_color_format instead. */
+    lcd_color_rgb_pixel_format_t pixel_format __attribute__((deprecated("pixel_format is deprecated, use in_color_format instead"))); /*!< Pixel format that used by the MIPI LCD device */
     /// Extra configuration flags for MIPI DSI DPI panel
     struct extra_dpi_panel_flags {
         uint32_t use_dma2d: 1; /*!< Use DMA2D to copy user buffer to the frame buffer when necessary */

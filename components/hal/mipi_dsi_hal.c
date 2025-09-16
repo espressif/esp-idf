@@ -25,6 +25,8 @@ void mipi_dsi_hal_init(mipi_dsi_hal_context_t *hal, const mipi_dsi_hal_config_t 
     mipi_dsi_phy_ll_reset(hal->host);
     mipi_dsi_phy_ll_enable_clock_lane(hal->host, true);
     mipi_dsi_phy_ll_force_pll(hal->host, true);
+    // reset the dsi bridge
+    mipi_dsi_brg_ll_reset(hal->bridge);
 }
 
 void mipi_dsi_hal_deinit(mipi_dsi_hal_context_t *hal)
@@ -225,12 +227,6 @@ void mipi_dsi_hal_host_gen_read_dcs_command(mipi_dsi_hal_context_t *hal, uint8_t
 {
     uint16_t header_data = command & ((1 << (8 * command_bytes)) - 1);
     mipi_dsi_hal_host_gen_read_short_packet(hal, vc, MIPI_DSI_DT_DCS_READ_0, header_data, ret_param, param_buf_size);
-}
-
-void mipi_dsi_hal_host_dpi_set_color_coding(mipi_dsi_hal_context_t *hal, lcd_color_format_t color_coding, uint32_t sub_config)
-{
-    mipi_dsi_host_ll_dpi_set_color_coding(hal->host, color_coding, sub_config);
-    mipi_dsi_brg_ll_set_pixel_format(hal->bridge, color_coding, sub_config);
 }
 
 void mipi_dsi_hal_host_dpi_set_horizontal_timing(mipi_dsi_hal_context_t *hal, uint32_t hsw, uint32_t hbp, uint32_t active_width, uint32_t hfp)

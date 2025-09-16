@@ -16,6 +16,7 @@
 
 #define MIPI_DSI_LL_GET_BRG(bus_id) (bus_id == 0 ? &MIPI_DSI_BRIDGE : NULL)
 #define MIPI_DSI_LL_EVENT_UNDERRUN  (1 << 0)
+#define MIPI_DSI_LL_EVENT_VSYNC     (1 << 1)
 
 #ifdef __cplusplus
 extern "C" {
@@ -165,78 +166,6 @@ static inline void mipi_dsi_brg_ll_credit_set_burst_threshold(dsi_brg_dev_t *dev
 static inline void mipi_dsi_brg_ll_credit_reset(dsi_brg_dev_t *dev)
 {
     dev->raw_buf_credit_ctl.credit_reset = 1;
-}
-
-/**
- * @brief Set the color coding for the bridge controller
- *
- * @param dev Pointer to the DSI bridge controller register base address
- * @param color_coding Color coding value
- * @param sub_config Sub configuration
- */
-#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
-static inline void mipi_dsi_brg_ll_set_pixel_format(dsi_brg_dev_t *dev, lcd_color_format_t color_coding, uint32_t sub_config)
-{
-    switch (color_coding) {
-    case LCD_COLOR_FMT_RGB565:
-        dev->pixel_type.raw_type = 2;
-        dev->pixel_type.dpi_type = 2;
-        break;
-    case LCD_COLOR_FMT_RGB666:
-        dev->pixel_type.raw_type = 1;
-        dev->pixel_type.dpi_type = 1;
-        break;
-    case LCD_COLOR_FMT_RGB888:
-        dev->pixel_type.raw_type = 0;
-        dev->pixel_type.dpi_type = 0;
-        break;
-    default:
-        // MIPI DSI host can only accept RGB data, no YUV data
-        HAL_ASSERT(false);
-        break;
-    }
-    dev->pixel_type.dpi_config = sub_config;
-}
-#else
-static inline void mipi_dsi_brg_ll_set_pixel_format(dsi_brg_dev_t *dev, lcd_color_format_t color_coding, uint32_t sub_config)
-{
-    switch (color_coding) {
-    case LCD_COLOR_FMT_RGB565:
-        dev->pixel_type.raw_type = 2;
-        break;
-    case LCD_COLOR_FMT_RGB666:
-        dev->pixel_type.raw_type = 1;
-        break;
-    case LCD_COLOR_FMT_RGB888:
-        dev->pixel_type.raw_type = 0;
-        break;
-    default:
-        // MIPI DSI host can only accept RGB data, no YUV data
-        HAL_ASSERT(false);
-        break;
-    }
-    dev->pixel_type.dpi_config = sub_config;
-}
-#endif
-
-/**
- * @brief Set the color space for input color data
- *
- * @param dev Pointer to the DSI bridge controller register base address
- * @param color_space Color space type
- */
-static inline void mipi_dsi_brg_ll_set_input_color_space(dsi_brg_dev_t *dev, lcd_color_space_t color_space)
-{
-    switch (color_space) {
-    case LCD_COLOR_SPACE_RGB:
-        dev->pixel_type.data_in_type = 0;
-        break;
-    case LCD_COLOR_SPACE_YUV:
-        dev->pixel_type.data_in_type = 1;
-        break;
-    default:
-        abort();
-    }
 }
 
 /**
@@ -401,6 +330,161 @@ static inline void mipi_dsi_brg_ll_set_yuv422_pack_order(dsi_brg_dev_t *dev, lcd
         abort();
     }
 }
+
+/**********************************************************************************************************************/
+/************************ The following functions behave differently based on the chip revision ***********************/
+/**********************************************************************************************************************/
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+/**
+ * @brief Set the color format for the input color data
+ *
+ * @param dev Pointer to the DSI bridge controller register base address
+ * @param color_format Color format
+ */
+static inline void mipi_dsi_brg_ll_set_input_color_format(dsi_brg_dev_t *dev, lcd_color_format_t color_format)
+{
+    switch (color_format) {
+    case LCD_COLOR_FMT_RGB888:
+        dev->pixel_type.raw_type = 0;
+        dev->pixel_type.data_in_type = 0;
+        break;
+    case LCD_COLOR_FMT_RGB666:
+        dev->pixel_type.raw_type = 1;
+        dev->pixel_type.data_in_type = 0;
+        break;
+    case LCD_COLOR_FMT_RGB565:
+        dev->pixel_type.raw_type = 2;
+        dev->pixel_type.data_in_type = 0;
+        break;
+    case LCD_COLOR_FMT_YUV422:
+        dev->pixel_type.raw_type = 9;
+        dev->pixel_type.data_in_type = 1;
+        break;
+    case LCD_COLOR_FMT_GRAY8:
+        dev->pixel_type.raw_type = 12;
+        dev->pixel_type.data_in_type = 0;
+        break;
+    default:
+        abort();
+    }
+}
+
+/**
+ * @brief Set the color space for output color data
+ *
+ * @param dev Pointer to the DSI bridge controller register base address
+ * @param color_format Color format
+ */
+static inline void mipi_dsi_brg_ll_set_output_color_format(dsi_brg_dev_t *dev, lcd_color_format_t color_format, uint32_t sub_config)
+{
+    switch (color_format) {
+    case LCD_COLOR_FMT_RGB888:
+        dev->pixel_type.dpi_type = 0;
+        break;
+    case LCD_COLOR_FMT_RGB666:
+        dev->pixel_type.dpi_type = 1;
+        break;
+    case LCD_COLOR_FMT_RGB565:
+        dev->pixel_type.dpi_type = 2;
+        break;
+    default:
+        abort();
+    }
+    dev->pixel_type.dpi_config = sub_config;
+}
+
+/**
+ * @brief Reset the DSI bridge module
+ *
+ * @param dev Pointer to the DSI bridge controller register base address
+ */
+static inline void mipi_dsi_brg_ll_reset(dsi_brg_dev_t *dev)
+{
+    dev->en.dsi_brig_rst = 1;
+    dev->en.dsi_brig_rst = 0;
+}
+
+/**
+ * @brief Set the color range of input data
+ *
+ * @param dev LCD register base address
+ * @param range Color range
+ */
+static inline void mipi_dsi_brg_ll_set_input_color_range(dsi_brg_dev_t *dev, lcd_color_range_t range)
+{
+    if (range == LCD_COLOR_RANGE_LIMIT) {
+        dev->yuv_cfg.yuv_range = 0;
+    } else if (range == LCD_COLOR_RANGE_FULL) {
+        dev->yuv_cfg.yuv_range = 1;
+    }
+}
+
+#else
+
+/**
+ * @brief Set the color format for the input color data
+ *
+ * @param dev Pointer to the DSI bridge controller register base address
+ * @param color_format Color format
+ */
+static inline void mipi_dsi_brg_ll_set_input_color_format(dsi_brg_dev_t *dev, lcd_color_format_t color_format)
+{
+    switch (color_format) {
+    case LCD_COLOR_FMT_RGB888:
+        dev->pixel_type.raw_type = 0;
+        dev->pixel_type.data_in_type = 0;
+        break;
+    case LCD_COLOR_FMT_RGB666:
+        dev->pixel_type.raw_type = 1;
+        dev->pixel_type.data_in_type = 0;
+        break;
+    case LCD_COLOR_FMT_RGB565:
+        dev->pixel_type.raw_type = 2;
+        dev->pixel_type.data_in_type = 0;
+        break;
+    case LCD_COLOR_FMT_YUV422:
+        dev->pixel_type.data_in_type = 1;
+        break;
+    default:
+        abort();
+    }
+}
+
+/**
+ * @brief Set the color space for output color data
+ *
+ * @param dev Pointer to the DSI bridge controller register base address
+ * @param color_format Color format
+ */
+static inline void mipi_dsi_brg_ll_set_output_color_format(dsi_brg_dev_t *dev, lcd_color_format_t color_format, uint32_t sub_config)
+{
+    switch (color_format) {
+    case LCD_COLOR_FMT_RGB565:
+        dev->pixel_type.raw_type = 2;
+        break;
+    case LCD_COLOR_FMT_RGB666:
+        dev->pixel_type.raw_type = 1;
+        break;
+    case LCD_COLOR_FMT_RGB888:
+        dev->pixel_type.raw_type = 0;
+        break;
+    default:
+        abort();
+    }
+    dev->pixel_type.dpi_config = sub_config;
+}
+
+static inline void mipi_dsi_brg_ll_reset(dsi_brg_dev_t *dev)
+{
+    // Not supported
+}
+
+static inline void mipi_dsi_brg_ll_set_input_color_range(dsi_brg_dev_t *dev, lcd_color_range_t range)
+{
+    // Not supported
+}
+#endif
 
 #ifdef __cplusplus
 }

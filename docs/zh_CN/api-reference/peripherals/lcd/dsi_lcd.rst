@@ -11,7 +11,6 @@ MIPI DSI 接口的 LCD
         esp_lcd_dsi_bus_config_t bus_config = {
             .bus_id = 0, // 从 0 开始编号，指定要使用的 DSI 主机
             .num_data_lanes = 2, // 要使用的数据通道数，不能超过芯片支持的数量
-            .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT, // DPHY 的时钟源
             .lane_bit_rate_mbps = EXAMPLE_MIPI_DSI_LANE_BITRATE_MBPS, // 数据通道的比特率 (Mbps)
         };
         ESP_ERROR_CHECK(esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus));

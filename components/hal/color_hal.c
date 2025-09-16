@@ -29,6 +29,8 @@ uint32_t color_hal_pixel_format_get_bit_depth(color_space_pixel_format_t format)
     case COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565):
     case COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422):
         return 16;
+    case COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB666):
+        return 18;
     case COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB888):
     case COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV444):
         return 24;
