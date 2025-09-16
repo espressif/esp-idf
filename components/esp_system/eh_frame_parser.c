@@ -255,8 +255,8 @@ typedef struct {
  * @brief Symbols defined by the linker.
  * Retrieve the addresses of both .eh_frame_hdr and .eh_frame sections.
  */
-extern void *__eh_frame_hdr;
-extern void *__eh_frame;
+extern uint8_t __eh_frame_hdr[];
+extern uint8_t __eh_frame[];
 
 /**
  * @brief Decode multiple bytes encoded in LEB128.
