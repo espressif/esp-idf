@@ -9,44 +9,11 @@
 // In fact, we're simulating the Intel 8080 bus with I2S peripheral, in a special parallel mode.
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <stdlib.h>
-#include <string.h>
-#include <sys/cdefs.h>
-#include <sys/param.h>
-#include <sys/queue.h>
-#include "sdkconfig.h"
-#if CONFIG_LCD_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "esp_attr.h"
-#include "esp_check.h"
-#include "esp_intr_alloc.h"
-#include "esp_heap_caps.h"
-#include "esp_pm.h"
-#include "esp_lcd_panel_io_interface.h"
-#include "esp_lcd_panel_io.h"
-#include "esp_lcd_common.h"
-#include "esp_rom_gpio.h"
-#include "soc/soc_caps.h"
-#include "hal/gpio_hal.h"
-#include "driver/gpio.h"
-#include "esp_clk_tree.h"
-#include "esp_private/periph_ctrl.h"
+#include "i80_io_priv.h"
 #include "esp_private/i2s_platform.h"
-#include "esp_private/gdma_link.h"
-#include "esp_private/esp_dma_utils.h"
-#include "esp_private/gpio.h"
-#include "soc/lcd_periph.h"
 #include "hal/i2s_hal.h"
 #include "hal/i2s_ll.h"
 #include "hal/i2s_types.h"
-
-static const char *TAG = "lcd_panel.io.i80";
 
 typedef struct esp_lcd_i80_bus_t esp_lcd_i80_bus_t;
 typedef struct lcd_panel_io_i80_t lcd_panel_io_i80_t;
@@ -126,9 +93,6 @@ struct lcd_panel_io_i80_t {
 
 esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lcd_i80_bus_handle_t *ret_bus)
 {
-#if CONFIG_LCD_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     esp_lcd_i80_bus_t *bus = NULL;
     ESP_GOTO_ON_FALSE(bus_config && ret_bus, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
@@ -178,7 +142,12 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // initialize HAL layer
     i2s_hal_init(&bus->hal, bus->bus_id);
     // set peripheral clock resolution
-    ret = i2s_lcd_select_periph_clock(bus, bus_config->clk_src);
+    lcd_clock_source_t clk_src = bus_config->clk_src;
+    // if user doesn't specify a clock source, use the default one
+    if (clk_src == 0) {
+        clk_src = LCD_CLK_SRC_DEFAULT;
+    }
+    ret = i2s_lcd_select_periph_clock(bus, clk_src);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "select periph clock failed");
     // reset peripheral, DMA channel and FIFO
     i2s_ll_tx_reset(bus->hal.dev);
@@ -855,3 +824,11 @@ static IRAM_ATTR void i2s_lcd_default_isr_handler(void *args)
         portYIELD_FROM_ISR();
     }
 }
+
+#if CONFIG_LCD_ENABLE_DEBUG_LOG
+__attribute__((constructor))
+static void i2s_lcd_override_default_log_level(void)
+{
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+}
+#endif
