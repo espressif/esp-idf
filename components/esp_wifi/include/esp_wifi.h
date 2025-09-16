@@ -1410,8 +1410,7 @@ esp_err_t esp_wifi_ftm_resp_set_offset(int16_t offset_cm);
   *                (sizeof(wifi_ftm_report_entry_t) * num_entries) where the API will fill up to num_entries
   *                valid FTM measurements in the buffer. Total number of entries can be found in the event
   *                WIFI_EVENT_FTM_REPORT as ftm_report_num_entries
-  * @attention  2. The internal FTM report is freed upon use of this API which means the API can only be used
-  *                once after every FTM session initiated
+  * @attention  2. The internal FTM report is freed upon use of this API OR after initiating a fresh FTM session
   * @attention  3. Passing the buffer as NULL merely frees the FTM report
   *
   * @param      report  Pointer to the buffer for receiving the FTM report
