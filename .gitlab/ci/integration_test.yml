@@ -60,6 +60,9 @@ child_integration_test_pipeline:
   stage: assign_test
   needs:
     - gen_integration_pipeline
+  variables:
+    IDF_S3_SERVER: $IDF_S3_NEW_SERVER
+    IDF_S3_ACCESS_KEY: $IDF_S3_NEW_ACCESS_KEY
   trigger:
     include:
       - artifact: idf-integration-ci/child_pipeline/pipeline.yml
