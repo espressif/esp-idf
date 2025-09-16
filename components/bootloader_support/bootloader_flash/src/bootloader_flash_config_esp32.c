@@ -22,6 +22,7 @@
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 #include "hal/gpio_hal.h"
+#include "hal/mmu_hal.h"
 #include "flash_qio_mode.h"
 #include "bootloader_common.h"
 #include "bootloader_flash_config.h"
@@ -453,6 +454,14 @@ void bootloader_flash_hardware_init(void)
     Cache_Flush(1);
 #endif
     mmu_init(0);
+    mmu_hal_config_t mmu_config = {
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        .core_nums = 1,
+#else
+        .core_nums = SOC_CPU_CORES_NUM,
+#endif
+    };
+    mmu_hal_ctx_init(&mmu_config);
 #if !CONFIG_FREERTOS_UNICORE
     /* The lines which manipulate DPORT_APP_CACHE_MMU_IA_CLR bit are
         necessary to work around a hardware bug. */

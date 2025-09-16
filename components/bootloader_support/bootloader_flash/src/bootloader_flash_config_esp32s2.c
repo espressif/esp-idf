@@ -313,10 +313,9 @@ void bootloader_flash_hardware_init(void)
 {
     esp_rom_spiflash_attach(esp_rom_efuse_get_flash_gpio_info(), false);
 
-    // init cache hal
-    cache_hal_init();
-    //init mmu
-    mmu_hal_init();
+    // init cache and mmu
+    bootloader_init_ext_mem();
+
     // Workaround: normal ROM bootloader exits with DROM0 cache unmasked, but 2nd bootloader exits with it masked.
     REG_CLR_BIT(EXTMEM_PRO_ICACHE_CTRL1_REG, EXTMEM_PRO_ICACHE_MASK_DROM0);
     // update flash ID

@@ -292,10 +292,9 @@ void bootloader_flash_hardware_init(void)
 {
     esp_rom_spiflash_attach(0, false);
 
-    //init cache hal
-    cache_hal_init();
-    //init mmu
-    mmu_hal_init();
+    // init cache and mmu
+    bootloader_init_ext_mem();
+
     // update flash ID
     bootloader_flash_update_id();
     // Check and run XMC startup flow

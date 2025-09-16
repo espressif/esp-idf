@@ -8,7 +8,7 @@
 
 static uint32_t s_cache_status[2];
 
-void cache_hal_init(void)
+void cache_hal_init(const cache_hal_config_t *config)
 {
     //for compatibility
 }
