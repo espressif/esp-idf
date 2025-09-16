@@ -15,7 +15,12 @@
 #include "soc/soc.h"
 #include "hal/spi_flash_hal.h"
 #include "hal/mspi_ll.h"
+#if !ESP_TEE_BUILD
 #include "esp_private/esp_cache_private.h"
+#else
+#include "hal/cache_ll.h"
+#include "hal/cache_hal.h"
+#endif
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/mspi_timing_config.h"
 #include "esp_private/mspi_timing_by_mspi_delay.h"
@@ -553,7 +558,12 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
      * for preventing concurrent from MSPI to external memory
      */
 #if SOC_CACHE_FREEZE_SUPPORTED
+#if !ESP_TEE_BUILD
     esp_cache_freeze_ext_mem_cache();
+#else
+    /* NOTE: [ESP-TEE] Check implementation when SoCs with 2-level cache are supported */
+    cache_hal_freeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+#endif
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
 
     if (switch_down) {
@@ -565,7 +575,11 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
     }
 
 #if SOC_CACHE_FREEZE_SUPPORTED
+#if !ESP_TEE_BUILD
     esp_cache_unfreeze_ext_mem_cache();
+#else
+    cache_hal_unfreeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+#endif
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && !CONFIG_FREERTOS_UNICORE
