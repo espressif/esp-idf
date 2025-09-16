@@ -14,10 +14,6 @@
 
 #pragma once
 
-#if CONFIG_EXTERNAL_COEX_ENABLE
-#include "esp_coexist.h"
-#endif
-
 #include "esp_openthread_types.h"
 #define ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG()                   \
     {                                                           \
@@ -89,33 +85,3 @@
         .netif_queue_size = 10,                 \
         .task_queue_size = 10,                  \
     }
-
-#if CONFIG_EXTERNAL_COEX_ENABLE
-#if CONFIG_EXTERNAL_COEX_WIRE_TYPE == EXTERNAL_COEXIST_WIRE_1
-#define ESP_OPENTHREAD_DEFAULT_EXTERNAL_COEX_CONFIG()   \
-    {                                                   \
-        .request = CONFIG_EXTERNAL_COEX_REQUEST_PIN,    \
-    }
-#elif CONFIG_EXTERNAL_COEX_WIRE_TYPE == EXTERNAL_COEXIST_WIRE_2
-#define ESP_OPENTHREAD_DEFAULT_EXTERNAL_COEX_CONFIG()   \
-    {                                                   \
-        .request = CONFIG_EXTERNAL_COEX_REQUEST_PIN,    \
-        .grant = CONFIG_EXTERNAL_COEX_GRANT_PIN,        \
-    }
-#elif CONFIG_EXTERNAL_COEX_WIRE_TYPE == EXTERNAL_COEXIST_WIRE_3
-#define ESP_OPENTHREAD_DEFAULT_EXTERNAL_COEX_CONFIG()   \
-    {                                                   \
-        .request = CONFIG_EXTERNAL_COEX_REQUEST_PIN,    \
-        .priority = CONFIG_EXTERNAL_COEX_PRIORITY_PIN,  \
-        .grant = CONFIG_EXTERNAL_COEX_GRANT_PIN,        \
-    }
-#elif CONFIG_EXTERNAL_COEX_WIRE_TYPE == EXTERNAL_COEXIST_WIRE_4
-#define ESP_OPENTHREAD_DEFAULT_EXTERNAL_COEX_CONFIG()   \
-    {                                                   \
-        .request = CONFIG_EXTERNAL_COEX_REQUEST_PIN,    \
-        .priority = CONFIG_EXTERNAL_COEX_PRIORITY_PIN,  \
-        .grant = CONFIG_EXTERNAL_COEX_GRANT_PIN,        \
-        .tx_line = CONFIG_EXTERNAL_COEX_TX_LINE_PIN,    \
-    }
-#endif
-#endif // CONFIG_EXTERNAL_COEX_ENABLE

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -25,25 +25,9 @@
     }
 #endif
 
-// When JIRA PM-3 is fixed, the UART clock will automatically switch.
-#define ESP_OPENTHREAD_DEFAULT_HOST_CONFIG()                    \
-    {                                                           \
-        .host_connection_mode = HOST_CONNECTION_MODE_CLI_UART,  \
-        .host_uart_config = {                                   \
-            .port = 0,                                          \
-            .uart_config =                                      \
-                {                                               \
-                    .baud_rate = 115200,                        \
-                    .data_bits = UART_DATA_8_BITS,              \
-                    .parity = UART_PARITY_DISABLE,              \
-                    .stop_bits = UART_STOP_BITS_1,              \
-                    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,      \
-                    .rx_flow_ctrl_thresh = 0,                   \
-                    .source_clk = UART_SCLK_XTAL,               \
-                },                                              \
-            .rx_pin = UART_PIN_NO_CHANGE,                       \
-            .tx_pin = UART_PIN_NO_CHANGE,                       \
-        },                                                      \
+#define ESP_OPENTHREAD_DEFAULT_HOST_CONFIG()                        \
+    {                                                               \
+        .host_connection_mode = HOST_CONNECTION_MODE_NONE,          \
     }
 
 #define ESP_OPENTHREAD_DEFAULT_PORT_CONFIG()    \
