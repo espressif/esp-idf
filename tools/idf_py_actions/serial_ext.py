@@ -238,13 +238,13 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             'SERIAL_TOOL_EXTRA_PRE_CMD_ARGS': ';'.join(extra_pre),
             'SERIAL_TOOL_EXTRA_ARGS': ';'.join(extra_post),
         }
-        run_target(action, args, env, force_progression=True)
+        run_target(action, args, env, force_progression=True, interactive=True)
 
     def erase_flash(action: str, ctx: click.core.Context, args: PropertyDict) -> None:
         ensure_build_directory(args, ctx.info_name)
         esptool_args = _get_esptool_args(args)
         esptool_args += ['erase-flash']
-        RunTool('esptool', esptool_args, args.build_dir, hints=not args.no_hints)()
+        RunTool('esptool', esptool_args, args.build_dir, hints=not args.no_hints, interactive=True)()
 
     def global_callback(ctx: click.core.Context, global_args: dict, tasks: PropertyDict) -> None:
         encryption = any([task.name in ('encrypted-flash', 'encrypted-app-flash') for task in tasks])
@@ -263,7 +263,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         """
         args.port = args.port or get_default_serial_port()
         ensure_build_directory(args, ctx.info_name)
-        run_target(target_name, args, {'ESPBAUD': str(args.baud), 'ESPPORT': args.port})
+        run_target(target_name, args, {'ESPBAUD': str(args.baud), 'ESPPORT': args.port}, interactive=True)
 
     def merge_bin(
         action: str,
