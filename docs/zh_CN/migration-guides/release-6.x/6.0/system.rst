@@ -60,6 +60,11 @@ Xtensa 特殊寄存器头文件已更新，使用新的命名约定。旧的 ``s
 
 已弃用的头文件 ``esp_private/interrupt_deprecated.h`` 已被移除，已弃用的函数不再可用，请改用非弃用版本。
 
+ROM 头文件
+-----------
+
+已从 ``ets_sys.h`` ROM 头文件中移除了已弃用的 ``STATUS`` 类型。请改用 ``ETS_STATUS``。
+
 App 追踪
 ----------
 
