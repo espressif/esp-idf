@@ -8,7 +8,12 @@ import sys
 import tempfile
 import unittest
 
-import pexpect
+if sys.platform == 'win32':
+    import pytest
+
+    pytest.skip('pexpect.spawn is not available on Windows', allow_module_level=True)
+else:
+    import pexpect
 
 
 class IdfPyQemuTest(unittest.TestCase):
