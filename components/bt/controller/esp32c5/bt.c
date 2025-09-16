@@ -1585,13 +1585,11 @@ void esp_ble_controller_log_dump_all(bool output)
 #if (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)
 #if CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
 #define BLE_SM_KEY_ERR 0x17
+#define BLE_PUB_KEY_LEN 65
 #if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 #if CONFIG_BT_LE_SM_SC
 #include "psa/crypto.h"
-
-#define BLE_PUB_KEY_LEN 65
 #endif // CONFIG_BT_LE_SM_SC
-
 #else
 #include "tinycrypt/aes.h"
 #include "tinycrypt/constants.h"

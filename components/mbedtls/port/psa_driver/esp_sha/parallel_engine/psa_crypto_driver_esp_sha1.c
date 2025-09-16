@@ -52,11 +52,11 @@ psa_status_t esp_sha1_starts(esp_sha1_context *ctx)
     ctx->state[2] = 0x98BADCFE;
     ctx->state[3] = 0x10325476;
     ctx->state[4] = 0xC3D2E1F0;
-    if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
-        esp_sha_unlock_engine(SHA1);
-    }
+
     ctx->sha_state = ESP_SHA1_STATE_INIT;
-    return ESP_OK;
+    ctx->first_block = false;
+    ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
+    return PSA_SUCCESS;
 }
 
 static void esp_sha1_software_process( esp_sha1_context *ctx, const unsigned char data[64] )

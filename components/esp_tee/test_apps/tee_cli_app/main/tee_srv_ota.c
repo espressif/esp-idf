@@ -230,7 +230,7 @@ static void init_ota_sem(void)
 static int create_ota_task(const char *url, const char *task_name, void (*ota_task)(void *))
 {
     init_ota_sem();
-    if (xTaskCreate(ota_task, task_name, configMINIMAL_STACK_SIZE * 3, (void *)url, 5, NULL) != pdPASS) {
+    if (xTaskCreate(ota_task, task_name, configMINIMAL_STACK_SIZE * 4, (void *)url, 5, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Task creation failed for %s", task_name);
         return ESP_FAIL;
     }

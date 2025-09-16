@@ -17,7 +17,7 @@
 
 #if defined(MBEDTLS_SHA256_C) && defined(MBEDTLS_SHA256_ALT)
 
-#include "mbedtls/sha256.h"
+// #include "mbedtls/sha256.h"
 
 #include <string.h>
 #include <stdbool.h>

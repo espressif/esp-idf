@@ -97,11 +97,13 @@ psa_status_t esp_sha512_starts(esp_sha512_context *ctx, int mode)
 
     ctx->mode = mode;
     ctx->sha_state = ESP_SHA512_STATE_INIT;
-    if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
-        esp_sha_unlock_engine(sha_type(ctx));
-    }
+    ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
+    ctx->first_block = false;
+    // if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
+    //     esp_sha_unlock_engine(sha_type(ctx));
+    // }
 
-    return ESP_OK;
+    return PSA_SUCCESS;
 }
 
 /*
@@ -283,6 +285,10 @@ static int esp_sha512_update(esp_sha512_context *ctx, const unsigned char *input
         ilen  -= 128;
     }
 
+    if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
+        esp_sha_read_digest_state(sha_type(ctx), ctx->state);
+    }
+
     if ( ilen > 0 ) {
         memcpy( (void *) (ctx->buffer + left), input, ilen );
     }
@@ -451,7 +457,7 @@ psa_status_t esp_sha512_driver_clone(const esp_sha512_context *source_ctx, esp_s
     // If the source context is in hardware mode, we need to read the digest state
     // from the hardware engine to ensure the target context has the correct state
     if (source_ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
-        esp_sha_read_digest_state(sha_type(source_ctx), target_ctx->state);
+        esp_sha_read_digest_state(SHA2_512, target_ctx->state);
         target_ctx->operation_mode = ESP_SHA_MODE_SOFTWARE; // Cloned context operates in software mode
     }
     return PSA_SUCCESS;

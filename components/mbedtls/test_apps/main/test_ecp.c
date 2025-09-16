@@ -13,12 +13,13 @@
 #include <inttypes.h>
 #include <esp_random.h>
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-#include <mbedtls/entropy.h>
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/ecdh.h>
-#include <mbedtls/ecdsa.h>
+// #include <mbedtls/entropy.h>
+// #include <mbedtls/ctr_drbg.h>
+#include <mbedtls/private/ecdh.h>
+#include <mbedtls/private/ecdsa.h>
 #include <mbedtls/error.h>
 #include "psa/crypto.h"
+#include "mbedtls/psa_util.h"
 
 #include "test_utils.h"
 #include "ccomp_timer.h"
@@ -97,29 +98,29 @@ TEST_CASE("mbedtls ECP self-tests", "[mbedtls]")
 TEST_CASE("mbedtls ECP mul w/ koblitz", "[mbedtls]")
 {
     /* Test case code via https://github.com/espressif/esp-idf/issues/1556 */
-    mbedtls_entropy_context ctxEntropy;
-    mbedtls_ctr_drbg_context ctxRandom;
+    // mbedtls_entropy_context ctxEntropy;
+    // mbedtls_ctr_drbg_context ctxRandom;
     mbedtls_ecdsa_context ctxECDSA;
-    const char* pers = "myecdsa";
+    // const char* pers = "myecdsa";
 
-    mbedtls_entropy_init(&ctxEntropy);
-    mbedtls_ctr_drbg_init(&ctxRandom);
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ctr_drbg_seed(&ctxRandom, mbedtls_entropy_func, &ctxEntropy,
-                                                  (const unsigned char*) pers, strlen(pers)) );
+    // mbedtls_entropy_init(&ctxEntropy);
+    // mbedtls_ctr_drbg_init(&ctxRandom);
+    // TEST_ASSERT_MBEDTLS_OK( mbedtls_ctr_drbg_seed(&ctxRandom, mbedtls_entropy_func, &ctxEntropy,
+    //                                               (const unsigned char*) pers, strlen(pers)) );
 
     mbedtls_ecdsa_init(&ctxECDSA);
 
     TEST_ASSERT_MBEDTLS_OK( mbedtls_ecdsa_genkey(&ctxECDSA, MBEDTLS_ECP_DP_SECP256K1,
-                                                 mbedtls_ctr_drbg_random, &ctxRandom) );
+                                                 mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE) );
 
 
     TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_mul(&ctxECDSA.MBEDTLS_PRIVATE(grp), &ctxECDSA.MBEDTLS_PRIVATE(Q),
                                            &ctxECDSA.MBEDTLS_PRIVATE(d), &ctxECDSA.MBEDTLS_PRIVATE(grp).G,
-                                           mbedtls_ctr_drbg_random, &ctxRandom) );
+                                           mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE) );
 
     mbedtls_ecdsa_free(&ctxECDSA);
-    mbedtls_ctr_drbg_free(&ctxRandom);
-    mbedtls_entropy_free(&ctxEntropy);
+    // mbedtls_ctr_drbg_free(&ctxRandom);
+    // mbedtls_entropy_free(&ctxEntropy);
 }
 
 #if CONFIG_MBEDTLS_HARDWARE_ECC

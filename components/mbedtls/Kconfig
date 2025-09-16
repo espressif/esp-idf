@@ -1,6 +1,15 @@
 menu "mbedTLS"
 
     menu "Core Configuration"
+
+        config MBEDTLS_VER_4_X_SUPPORT
+            depends on IDF_EXPERIMENTAL_FEATURES
+            bool "Enable support for mbedTLS version 4.x and the PSA cryptography API for ESP-IDF"
+            default y
+            help
+                Enable support for mbedTLS version 4.x and the PSA cryptography API for ESP-IDF.
+                This option migrates from mbedtls API to PSA Crypto API. This increases code size and is experimental.
+
         choice MBEDTLS_COMPILER_OPTIMIZATION
             prompt "Compiler optimization level"
             default MBEDTLS_COMPILER_OPTIMIZATION_SIZE
@@ -693,7 +702,7 @@ menu "mbedTLS"
             config MBEDTLS_KEY_EXCHANGE_DHE_PSK
                 bool "Enable DHE-PSK based ciphersuite modes"
                 depends on MBEDTLS_PSK_MODES && MBEDTLS_DHM_C
-                default y
+                default n
                 help
                     Enable to support Diffie-Hellman PSK (pre-shared-key) TLS authentication modes.
 
@@ -707,7 +716,7 @@ menu "mbedTLS"
             config MBEDTLS_KEY_EXCHANGE_RSA_PSK
                 bool "Enable RSA-PSK based ciphersuite modes"
                 depends on MBEDTLS_PSK_MODES
-                default y
+                default n
                 help
                     Enable to support RSA PSK (pre-shared-key) TLS authentication modes.
 
@@ -719,7 +728,7 @@ menu "mbedTLS"
 
             config MBEDTLS_KEY_EXCHANGE_DHE_RSA
                 bool "Enable DHE-RSA based ciphersuite modes"
-                default y
+                default n
                 depends on MBEDTLS_DHM_C
                 help
                     Enable to support ciphersuites with prefix TLS-DHE-RSA-WITH-
@@ -1411,7 +1420,7 @@ menu "mbedTLS"
     menu "Hardware Acceleration"
         config MBEDTLS_HARDWARE_ECDSA_VERIFY
             bool "Enable ECDSA signature verification using on-chip ECDSA peripheral"
-            default n
+            default y
             depends on SOC_ECDSA_SUPPORTED
             help
                 Enable hardware accelerated ECDSA peripheral to verify signature
@@ -1423,7 +1432,7 @@ menu "mbedTLS"
             config MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM
                 bool "Mask original ECDSA sign operation under dummy sign operations"
                 select HAL_ECDSA_GEN_SIG_CM
-                default n
+                default y
                 help
                     The ECDSA peripheral before ESP32-H2 v1.2 does not offer constant time ECDSA sign operation.
                     This time can be observed through power profiling of the device,
@@ -1436,7 +1445,7 @@ menu "mbedTLS"
 
             config MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
                 bool "Make ECDSA signature operation pseudo constant time for software"
-                default n
+                default y
                 help
                     This option adds a delay after the actual ECDSA signature operation
                     so that the entire operation appears to be constant  time for the software.
@@ -1466,12 +1475,12 @@ menu "mbedTLS"
 
         config MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
             bool "Enable ECDSA signing using TEE secure storage"
-            default n
+            default y
             depends on SECURE_ENABLE_TEE
 
         config MBEDTLS_HARDWARE_ECC
             bool "Enable hardware ECC acceleration"
-            default n
+            default y
             depends on SOC_ECC_SUPPORTED
             help
                 Enable hardware accelerated ECC point multiplication and point verification for points
@@ -1480,7 +1489,7 @@ menu "mbedTLS"
         config MBEDTLS_ECC_OTHER_CURVES_SOFT_FALLBACK
             bool "Fallback to software implementation for curves not supported in hardware"
             depends on MBEDTLS_HARDWARE_ECC
-            default n
+            default y
             help
                 Fallback to software implementation of ECC point multiplication and point verification
                 for curves not supported in hardware.
@@ -1517,7 +1526,7 @@ menu "mbedTLS"
             bool "Fallback to software implementation for larger MPI values"
             depends on MBEDTLS_HARDWARE_MPI
             default y if SOC_RSA_MAX_BIT_LEN <= 3072 # HW max 3072 bits
-            default n
+            default y
             help
                 Fallback to software implementation for RSA key lengths
                 larger than SOC_RSA_MAX_BIT_LEN. If this is not active
@@ -1527,7 +1536,7 @@ menu "mbedTLS"
         config MBEDTLS_MPI_USE_INTERRUPT
             bool "Use interrupt for MPI exp-mod operations"
             depends on !IDF_TARGET_ESP32 && MBEDTLS_HARDWARE_MPI
-            default n
+            default y
             help
                 Use an interrupt to coordinate long MPI operations.
 
@@ -1558,7 +1567,7 @@ menu "mbedTLS"
         config MBEDTLS_HARDWARE_GCM
             bool "Enable partially hardware accelerated GCM"
             depends on SOC_AES_SUPPORT_GCM && MBEDTLS_HARDWARE_AES
-            default n
+            default y
             help
                 Enable partially hardware accelerated GCM. GHASH calculation is still done
                 in software.
@@ -1570,7 +1579,7 @@ menu "mbedTLS"
         config MBEDTLS_GCM_SUPPORT_NON_AES_CIPHER
             bool "Enable support for non-AES ciphers in GCM operation"
             depends on MBEDTLS_HARDWARE_AES
-            default n
+            default y
             help
                 Enable this config to support fallback to software definitions for a non-AES
                 cipher GCM operation as we support hardware acceleration only for AES cipher.
@@ -1593,7 +1602,7 @@ menu "mbedTLS"
         config MBEDTLS_AES_USE_INTERRUPT
             bool "Use interrupt for long AES operations"
             depends on !IDF_TARGET_ESP32 && MBEDTLS_HARDWARE_AES
-            default n
+            default y
             help
                 Use an interrupt to coordinate long AES operations.
 
@@ -1776,7 +1785,7 @@ menu "mbedTLS"
 
     config MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER
         bool "Use ROM implementation of the crypto algorithm in the bootloader"
-        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
+        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB && !MBEDTLS_VER_4_X_SUPPORT
         default "n"
         select MBEDTLS_AES_C
         help
@@ -1787,7 +1796,7 @@ menu "mbedTLS"
 
     config MBEDTLS_USE_CRYPTO_ROM_IMPL
         bool "Use ROM implementation of the crypto algorithm"
-        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
+        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB && !MBEDTLS_VER_4_X_SUPPORT
         default "n"
         select MBEDTLS_SHA512_C
         select MBEDTLS_AES_C

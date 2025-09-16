@@ -43,7 +43,17 @@ if(CONFIG_OPENTHREAD_ENABLED)
     set(exclude_srcs
         "openthread/examples/platforms/utils/logging_rtt.c"
         "openthread/examples/platforms/utils/soft_source_match_table.c"
-        "openthread/src/core/instance/extension_example.cpp")
+        "openthread/src/core/instance/extension_example.cpp"
+        # "openthread/src/core/crypto/aes_ccm.cpp"
+        # "openthread/src/core/crypto/aes_ecb.cpp"
+        "openthread/src/core/crypto/crypto_platform_mbedtls.cpp"
+        # "openthread/src/core/crypto/hkdf_sha256.cpp"
+        # "openthread/src/core/crypto/hmac_sha256.cpp"
+        # "openthread/src/core/crypto/mbedtls.cpp"
+        # "openthread/src/core/crypto/sha256.cpp"
+        # "openthread/src/core/crypto/storage.cpp"
+        )
+
 
     if(CONFIG_OPENTHREAD_FTD OR CONFIG_OPENTHREAD_MTD)
         list(APPEND src_dirs

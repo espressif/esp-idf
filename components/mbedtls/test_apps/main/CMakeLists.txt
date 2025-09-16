@@ -3,7 +3,10 @@ set(TEST_CRTS "crts/server_cert_chain.pem"
               "crts/server_cert_bundle"
               "crts/bad_md_crt.pem"
               "crts/wrong_sig_crt_esp32_com.pem"
-              "crts/correct_sig_crt_esp32_com.pem")
+              "crts/correct_sig_crt_esp32_com.pem"
+              "crts/ecdsa_cert_bundle"
+              "crts/ecdsa_correct_sig_crt.pem"
+              "crts/ecdsa_wrong_sig_crt.pem")
 
 idf_component_register(
                     SRC_DIRS "."

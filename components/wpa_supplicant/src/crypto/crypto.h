@@ -386,6 +386,17 @@ int __must_check crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
 					       u8 *out, size_t *outlen);
 
 /**
+ * crypto_public_key_from_private_key - Extract public key from private key
+ * @priv_key: Private key
+ * Returns: Public key or %NULL on failure
+ *
+ * This function extracts the public key component from a private key.
+ * The returned public key must be freed with crypto_public_key_free().
+ */
+struct crypto_public_key * crypto_public_key_from_private_key(
+	struct crypto_private_key *priv_key);
+
+/**
  * crypto_public_key_free - Free public key
  * @key: Public key
  *
@@ -977,7 +988,7 @@ struct crypto_ec_key *crypto_ec_key_parse_priv(const u8 *privkey, size_t privkey
  * @id: mbedtls group
  * Returns: NIST group
  */
-unsigned int crypto_ec_get_mbedtls_to_nist_group_id(int id);
+unsigned int crypto_ec_get_mbedtls_to_nist_group_id(int id, int bits);
 
 /**
  * crypto_ec_get_curve_id - get curve id from ec group

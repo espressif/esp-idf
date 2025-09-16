@@ -19,7 +19,7 @@
 
 #if defined(MBEDTLS_SHA1_ALT)
 
-#include "mbedtls/sha1.h"
+// #include "mbedtls/sha1.h"
 
 #include <string.h>
 

@@ -37,9 +37,10 @@
 #include <string.h>
 #include <sys/lock.h>
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-#include "mbedtls/aes.h"
+// #include "mbedtls/aes.h"
 
 #include "aes/esp_aes.h"
+#include "psa/crypto.h"
 
 void esp_aes_xts_init( esp_aes_xts_context *ctx )
 {
@@ -66,7 +67,7 @@ static int esp_aes_xts_decode_keys( const unsigned char *key,
     switch ( keybits ) {
     case 256: break;
     case 512: break;
-    default : return ( MBEDTLS_ERR_AES_INVALID_KEY_LENGTH );
+    default : return ( PSA_ERROR_NOT_SUPPORTED );
     }
 
     *key1bits = half_keybits;
@@ -196,16 +197,16 @@ int esp_aes_crypt_xts( esp_aes_xts_context *ctx,
 
     /* Sectors must be at least 16 bytes. */
     if ( length < 16 ) {
-        return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
+        return PSA_ERROR_DATA_INVALID;
     }
 
     /* NIST SP 80-38E disallows data units larger than 2**20 blocks. */
     if ( length > ( 1 << 20 ) * 16 ) {
-        return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
+        return PSA_ERROR_DATA_INVALID;
     }
 
     /* Compute the tweak. */
-    ret = esp_aes_crypt_ecb( &ctx->tweak, MBEDTLS_AES_ENCRYPT,
+    ret = esp_aes_crypt_ecb( &ctx->tweak, ESP_AES_ENCRYPT,
                              data_unit, tweak );
     if ( ret != 0 ) {
         return ( ret );
@@ -214,7 +215,7 @@ int esp_aes_crypt_xts( esp_aes_xts_context *ctx,
     while ( blocks-- ) {
         size_t i;
 
-        if ( leftover && ( mode == MBEDTLS_AES_DECRYPT ) && blocks == 0 ) {
+        if ( leftover && ( mode == ESP_AES_DECRYPT ) && blocks == 0 ) {
             /* We are on the last block in a decrypt operation that has
              * leftover bytes, so we need to use the next tweak for this block,
              * and this tweak for the lefover bytes. Save the current tweak for
@@ -247,7 +248,7 @@ int esp_aes_crypt_xts( esp_aes_xts_context *ctx,
     if ( leftover ) {
         /* If we are on the leftover bytes in a decrypt operation, we need to
          * use the previous tweak for these bytes (as saved in prev_tweak). */
-        unsigned char *t = mode == MBEDTLS_AES_DECRYPT ? prev_tweak : tweak;
+        unsigned char *t = mode == ESP_AES_DECRYPT ? prev_tweak : tweak;
 
         /* We are now on the final part of the data unit, which doesn't divide
          * evenly by 16. It's time for ciphertext stealing. */

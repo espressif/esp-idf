@@ -16,6 +16,7 @@
 #include "random.h"
 #include "sha256.h"
 #include "mbedtls/pk.h"
+#include "mbedtls/psa_util.h"
 
 struct crypto_bignum *crypto_bignum_init(void)
 {
@@ -216,7 +217,7 @@ int crypto_bignum_is_odd(const struct crypto_bignum *a)
 int crypto_bignum_rand(struct crypto_bignum *r, const struct crypto_bignum *m)
 {
     return ((mbedtls_mpi_random((mbedtls_mpi *) r, 0, (const mbedtls_mpi *) m,
-                                mbedtls_esp_random, NULL) != 0) ? -1 : 0);
+                                mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE) != 0) ? -1 : 0);
 }
 
 int crypto_bignum_legendre(const struct crypto_bignum *a,

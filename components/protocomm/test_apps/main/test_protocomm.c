@@ -31,11 +31,11 @@
 #endif
 
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-#include <mbedtls/aes.h>
-#include <mbedtls/sha256.h>
-#include <mbedtls/entropy.h>
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/ecdh.h>
+// #include <mbedtls/aes.h>
+// #include <mbedtls/sha256.h>
+// #include <mbedtls/entropy.h>
+// #include <mbedtls/ctr_drbg.h>
+// #include <mbedtls/ecdh.h>
 #include <mbedtls/error.h>
 #include "psa/crypto.h"
 #include <protocomm.h>
@@ -1142,7 +1142,6 @@ TEST_CASE("leak test", "[PROTOCOMM]")
      * time allocations to happen (not related to protocomm) */
     test_security0();
     test_security1();
-    mbedtls_psa_crypto_free();
     usleep(1000);
 
 #ifdef CONFIG_HEAP_TRACING
@@ -1153,7 +1152,6 @@ TEST_CASE("leak test", "[PROTOCOMM]")
     /* Run all tests passively. Any leaks due
      * to protocomm should show  up now */
     unsigned pre_start_mem = esp_get_free_heap_size();
-    psa_crypto_init();
     test_security0();
     test_security1();
     test_security1_no_encryption();
@@ -1161,7 +1159,6 @@ TEST_CASE("leak test", "[PROTOCOMM]")
     test_security1_wrong_pop();
     test_security1_insecure_client();
     test_security1_weak_session();
-    mbedtls_psa_crypto_free();
 
     usleep(1000);
 
@@ -1181,36 +1178,36 @@ TEST_CASE("security 0 basic test", "[PROTOCOMM]")
 
 TEST_CASE("security 1 basic test", "[PROTOCOMM]")
 {
-    psa_crypto_init();
+    // psa_crypto_init();
     TEST_ASSERT(test_security1() == ESP_OK);
 }
 
 TEST_CASE("security 1 no encryption test", "[PROTOCOMM]")
 {
-    psa_crypto_init();
+    // psa_crypto_init();
     TEST_ASSERT(test_security1_no_encryption() == ESP_OK);
 }
 
 TEST_CASE("security 1 session overflow test", "[PROTOCOMM]")
 {
-    psa_crypto_init();
+    // psa_crypto_init();
     TEST_ASSERT(test_security1_session_overflow() == ESP_OK);
 }
 
 TEST_CASE("security 1 wrong pop test", "[PROTOCOMM]")
 {
-    psa_crypto_init();
+    // psa_crypto_init();
     TEST_ASSERT(test_security1_wrong_pop() == ESP_OK);
 }
 
 TEST_CASE("security 1 insecure client test", "[PROTOCOMM]")
 {
-    psa_crypto_init();
+    // psa_crypto_init();
     TEST_ASSERT(test_security1_insecure_client() == ESP_OK);
 }
 
 TEST_CASE("security 1 weak session test", "[PROTOCOMM]")
 {
-    psa_crypto_init();
+    // psa_crypto_init();
     TEST_ASSERT(test_security1_weak_session() == ESP_OK);
 }

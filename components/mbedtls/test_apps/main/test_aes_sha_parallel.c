@@ -7,8 +7,8 @@
 #include <stdbool.h>
 #include <esp_system.h>
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-#include "mbedtls/aes.h"
-#include "mbedtls/sha256.h"
+// // #include "mbedtls/aes.h"
+// // #include "mbedtls/sha256.h"
 #include "unity.h"
 #include "sdkconfig.h"
 #include "esp_heap_caps.h"
@@ -64,10 +64,21 @@ static void tskRunAES256Test(void *pvParameters)
         0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
     };
 
+    psa_key_id_t key_id;
+    psa_algorithm_t alg = PSA_ALG_CBC_NO_PADDING;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_algorithm(&attributes, alg);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&attributes, sizeof(key_256) * 8);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_import_key(&attributes, key_256, sizeof(key_256), &key_id));
+    psa_reset_key_attributes(&attributes);
+
     for (int i = 0; i <1000; i++)
     {
         const unsigned SZ = 1600;
-        mbedtls_aes_context ctx;
+        // mbedtls_aes_context ctx;
+        psa_cipher_operation_t ctx = PSA_CIPHER_OPERATION_INIT;
         uint8_t nonce[16];
 
         const uint8_t expected_cipher_end[] = {
@@ -88,24 +99,32 @@ static void tskRunAES256Test(void *pvParameters)
         TEST_ASSERT_NOT_NULL(plaintext);
         TEST_ASSERT_NOT_NULL(decryptedtext);
 
-        mbedtls_aes_init(&ctx);
-        mbedtls_aes_setkey_enc(&ctx, key_256, 256);
+        psa_cipher_encrypt_setup(&ctx, key_id, PSA_ALG_CBC_NO_PADDING);
+        psa_cipher_set_iv(&ctx, nonce, sizeof(nonce));
+        // mbedtls_aes_init(&ctx);
+        // mbedtls_aes_setkey_enc(&ctx, key_256, 256);
 
         memset(plaintext, 0x3A, SZ);
         memset(decryptedtext, 0x0, SZ);
 
         // Encrypt
-        mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, ciphertext);
+        // mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, ciphertext);
+        size_t enc_len = 0;
+        psa_cipher_update(&ctx, plaintext, SZ, ciphertext, SZ, &enc_len);
+        psa_cipher_finish(&ctx, ciphertext + enc_len, SZ - enc_len, &enc_len);
         TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + SZ - 32, 32);
 
         // Decrypt
         memcpy(nonce, iv, 16);
-        mbedtls_aes_setkey_dec(&ctx, key_256, 256);
-        mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_DECRYPT, SZ, nonce, ciphertext, decryptedtext);
+        psa_cipher_decrypt_setup(&ctx, key_id, PSA_ALG_CBC_NO_PADDING);
+        psa_cipher_set_iv(&ctx, nonce, sizeof(nonce));
+        psa_cipher_update(&ctx, ciphertext, SZ, decryptedtext, SZ, &enc_len);
+        psa_cipher_finish(&ctx, decryptedtext + enc_len, SZ - enc_len, &enc_len);
 
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
-        mbedtls_aes_free(&ctx);
+        // mbedtls_aes_free(&ctx);
+        psa_cipher_abort(&ctx);
         free(plaintext);
         free(ciphertext);
         free(decryptedtext);

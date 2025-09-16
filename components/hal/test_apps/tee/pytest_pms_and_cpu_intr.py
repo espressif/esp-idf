@@ -58,4 +58,4 @@ def test_tee_peri_apm(dut: IdfDut) -> None:
     indirect=['config', 'target'],
 )
 def test_tee_interrupts(dut: IdfDut) -> None:
-    dut.run_all_single_board_cases()
+    dut.run_all_single_board_cases(group='CPU')

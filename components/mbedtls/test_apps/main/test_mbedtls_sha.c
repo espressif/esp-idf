@@ -7,13 +7,14 @@
 /*
  * mbedTLS SHA unit tests
  */
+#if 0
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <esp_system.h>
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-#include "mbedtls/sha1.h"
-#include "mbedtls/sha256.h"
+// #include "mbedtls/sha1.h"
+// #include "mbedtls/sha256.h"
 #include "mbedtls/sha512.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -24,7 +25,6 @@
 #include "soc/soc_caps.h"
 #include "test_utils.h"
 #include "esp_memory_utils.h"
-#if 0
 
 TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
 {

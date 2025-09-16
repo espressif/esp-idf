@@ -16,9 +16,9 @@
 #include "soc/soc_caps.h"
 #include "esp_log.h"
 
-#include <mbedtls/sha1.h>
-#include <mbedtls/sha256.h>
-#include <mbedtls/sha512.h>
+// #include <mbedtls/sha1.h>
+// #include <mbedtls/sha256.h>
+// #include <mbedtls/sha512.h>
 
 #if SOC_SHA_SUPPORT_PARALLEL_ENG
 #include "sha/sha_parallel_engine.h"

@@ -12,6 +12,7 @@
 #include "esp_aes.h"
 #include "psa_crypto_core.h"
 #include "constant_time_internal.h"
+#include "esp_log.h"
 
 static psa_status_t esp_crypto_aes_ecb_update(
     esp_aes_operation_t *esp_aes_driver_ctx,
@@ -186,6 +187,7 @@ psa_status_t esp_crypto_aes_update(
     }
 
     if (output_size < expected_output_size) {
+        ESP_LOGE("TAG", "Output buffer too small: have %zu, need %zu", output_size, expected_output_size);
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
@@ -341,9 +343,10 @@ psa_status_t esp_crypto_aes_finish(
             break;
         case PSA_ALG_CBC_PKCS7:
             if (esp_aes_driver_ctx->mode == PSA_CRYPTO_DRIVER_ENCRYPT) {
-                if (esp_aes_driver_ctx->unprocessed_len != 0) {
-                    add_pkcs_padding(esp_aes_driver_ctx->unprocessed_data, esp_aes_driver_ctx->block_length, esp_aes_driver_ctx->unprocessed_len);
-                }
+                /* PKCS7 padding: always add padding, even if data is block-aligned.
+                 * If unprocessed_len == 0, we add a full padding block.
+                 * Otherwise, we pad the partial block. */
+                add_pkcs_padding(esp_aes_driver_ctx->unprocessed_data, esp_aes_driver_ctx->block_length, esp_aes_driver_ctx->unprocessed_len);
             } else if (esp_aes_driver_ctx->unprocessed_len != esp_aes_driver_ctx->block_length) {
                 /*
                  * For decrypt operations, expect a full block,
@@ -525,16 +528,20 @@ psa_status_t esp_aes_cipher_encrypt(
     memset(&esp_aes_driver_ctx, 0, sizeof(esp_aes_operation_t));
     size_t update_output_length, finish_output_length;
 
+    // ESP_LOGI("esp_aes_cipher_encrypt", "Starting encryption");
+
     status = esp_aes_cipher_encrypt_setup(&esp_aes_driver_ctx, attributes,
                                         key_buffer, key_buffer_size,
                                         alg);
     if (status != PSA_SUCCESS) {
+        ESP_LOGE("esp_aes_cipher_encrypt", "Failed to setup encryption: %ld", status);
         goto exit;
     }
 
     if (iv_length > 0) {
         status = esp_crypto_aes_set_iv(&esp_aes_driver_ctx, iv, iv_length);
         if (status != PSA_SUCCESS) {
+            ESP_LOGE("esp_aes_cipher_encrypt", "Failed to set IV: %ld", status);
             goto exit;
         }
     }
@@ -543,6 +550,7 @@ psa_status_t esp_aes_cipher_encrypt(
                                 output, output_size,
                                 &update_output_length);
     if (status != PSA_SUCCESS) {
+        ESP_LOGE("esp_aes_cipher_encrypt", "Failed to update: %ld", status);
         goto exit;
     }
 
@@ -550,6 +558,7 @@ psa_status_t esp_aes_cipher_encrypt(
         mbedtls_buffer_offset(output, update_output_length),
         output_size - update_output_length, &finish_output_length);
     if (status != PSA_SUCCESS) {
+        ESP_LOGE("esp_aes_cipher_encrypt", "Failed to finish: %ld", status);
         goto exit;
     }
 
@@ -559,6 +568,7 @@ exit:
     if (status == PSA_SUCCESS) {
         status = esp_crypto_aes_abort(&esp_aes_driver_ctx);
     } else {
+        ESP_LOGE("esp_aes_cipher_encrypt", "Failed to abort: %ld", status);
         esp_crypto_aes_abort(&esp_aes_driver_ctx);
     }
 

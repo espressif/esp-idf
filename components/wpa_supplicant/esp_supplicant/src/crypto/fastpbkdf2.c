@@ -26,7 +26,7 @@
 #include <endian.h>
 #endif
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-#include "mbedtls/sha1.h"
+// #include "mbedtls/sha1.h"
 #include "mbedtls/esp_config.h"
 #include "utils/wpa_debug.h"
 #include "psa/crypto.h"
@@ -381,13 +381,11 @@ DECL_PBKDF2(sha1,                           // _name
             sha1_xor)                       // _xxor
 #endif /* 0 */
 
-#define USE_PSA 1
 void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
                           const uint8_t *salt, size_t nsalt,
                           uint32_t iterations,
                           uint8_t *out, size_t nout)
 {
-#ifdef USE_PSA
     psa_status_t status;
     psa_key_derivation_operation_t operation = PSA_KEY_DERIVATION_OPERATION_INIT;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
@@ -401,6 +399,7 @@ void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
     // Import password as key
     status = psa_import_key(&attributes, pw, npw, &key_id);
     if (status != PSA_SUCCESS) {
+        psa_reset_key_attributes(&attributes);
         return;
     }
 
@@ -435,10 +434,8 @@ void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
 
 cleanup:
     psa_key_derivation_abort(&operation);
-    psa_destroy_key(key_id);
+    if (key_id) {
+        psa_destroy_key(key_id);
+    }
     psa_reset_key_attributes(&attributes);
-
-#else
-    PBKDF2(sha1)(pw, npw, salt, nsalt, iterations, out, nout);
-#endif // USE_PSA
 }

@@ -161,9 +161,6 @@ struct crypto_ec_key * dpp_set_pubkey_point(struct crypto_ec_key *group_key,
 	const struct crypto_ec_group *group;
 	struct crypto_ec_key *pkey = NULL;
 
-	if (len & 1)
-		return NULL;
-
 	group = crypto_ec_get_group_from_key(group_key);
 	if (group)
 		pkey = crypto_ec_key_set_pub(group, buf, len);

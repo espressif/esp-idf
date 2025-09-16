@@ -27,8 +27,8 @@
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/esp_debug.h"
 #include "mbedtls/ssl.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
+// #include "mbedtls/entropy.h"
+// #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
 #ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
 #include "psa/crypto.h"
@@ -54,8 +54,8 @@ static void https_get_task(void *pvParameters)
     char buf[512];
     int ret, flags, len;
 
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
+    // mbedtls_entropy_context entropy;
+    // mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ssl_context ssl;
     mbedtls_x509_crt cacert;
     mbedtls_ssl_config conf;
@@ -63,18 +63,18 @@ static void https_get_task(void *pvParameters)
 
     mbedtls_ssl_init(&ssl);
     mbedtls_x509_crt_init(&cacert);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
+    // mbedtls_ctr_drbg_init(&ctr_drbg);
     ESP_LOGI(TAG, "Seeding the random number generator");
 
     mbedtls_ssl_config_init(&conf);
 
-    mbedtls_entropy_init(&entropy);
-    if((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-                                    NULL, 0)) != 0)
-    {
-        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
-        abort();
-    }
+    // mbedtls_entropy_init(&entropy);
+    // if((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+    //                                 NULL, 0)) != 0)
+    // {
+    //     ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
+    //     abort();
+    // }
 
     ESP_LOGI(TAG, "Attaching the certificate bundle...");
 

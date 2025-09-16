@@ -54,7 +54,7 @@ psa_status_t esp_sha512_starts(esp_sha512_context *ctx, int mode) {
 static int esp_internal_sha_update_state(esp_sha512_context *ctx)
 {
     if (ctx->sha_state == ESP_SHA512_STATE_INIT) {
-        if (ctx->mode == SHA2_512) {
+        if (ctx->mode == SHA2_512T) {
             int ret = -1;
             if ((ret = esp_sha_512_t_init_hash(ctx->t_val)) != 0) {
                 return ret;

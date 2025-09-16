@@ -15,6 +15,7 @@ extern "C" {
 
 #include "esp_ds.h"
 #include "mbedtls/md.h"
+#include "mbedtls/pk.h"
 
 /**
  * @brief      ESP-DS data context
@@ -59,6 +60,10 @@ int esp_ds_rsa_sign(void *ctx,
                     int (*f_rng)(void *, unsigned char *, size_t), void *p_rng,
                     mbedtls_md_type_t md_alg, unsigned int hashlen,
                     const unsigned char *hash, unsigned char *sig);
+
+int esp_ds_rsa_sign_alt(mbedtls_pk_context *pk, mbedtls_md_type_t md_alg,
+                     const unsigned char *hash, size_t hash_len,
+                     unsigned char *sig, size_t sig_size, size_t *sig_len)
 
 /*
  * @brief       Get RSA key length in bytes from internal DS context

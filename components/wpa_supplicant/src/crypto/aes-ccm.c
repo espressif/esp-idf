@@ -169,12 +169,6 @@ int aes_ccm_ad(const u8 *key, size_t key_len, const u8 *nonce,
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id;
 
-    status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_crypto_init failed", __func__);
-        return -1;
-    }
-
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
     psa_set_key_algorithm(&attributes, PSA_ALG_CCM);
     psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);

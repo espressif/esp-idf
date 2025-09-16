@@ -25,11 +25,11 @@
 #define ACCESS_ECDH(S, var) S->MBEDTLS_PRIVATE(ctx).MBEDTLS_PRIVATE(mbed_ecdh).MBEDTLS_PRIVATE(var)
 #endif
 
-#include <mbedtls/aes.h>
-#include <mbedtls/sha256.h>
-#include <mbedtls/entropy.h>
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/ecdh.h>
+// #include <mbedtls/aes.h>
+// #include <mbedtls/sha256.h>
+// #include <mbedtls/entropy.h>
+// #include <mbedtls/ctr_drbg.h>
+// #include <mbedtls/ecdh.h>
 #include <mbedtls/error.h>
 #include <mbedtls/constant_time.h>
 #include "psa/crypto.h"
@@ -362,7 +362,11 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     ret = ESP_OK;
 
 exit_cmd0:
-
+    // Clean up the key_id if it wasn't stored in the session
+    // This happens when key agreement fails before cur_session->key_id is assigned
+    if (ret != ESP_OK && key_id != 0 && cur_session->key_id != key_id) {
+        psa_destroy_key(key_id);
+    }
     return ret;
 }
 

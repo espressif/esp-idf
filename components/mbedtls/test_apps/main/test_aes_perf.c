@@ -25,10 +25,7 @@ TEST_CASE("mbedtls AES performance", "[aes][timeout=60]")
     uint8_t iv[16];
     uint8_t key[16];
 
-    psa_status_t status = PSA_SUCCESS;
-    // if (status != PSA_SUCCESS) {
-    //     TEST_FAIL_MESSAGE("PSA crypto initialization failed");
-    // }
+    psa_status_t status;
 
     memset(iv, 0xEE, 16);
     memset(key, 0x44, 16);
@@ -65,7 +62,7 @@ TEST_CASE("mbedtls AES performance", "[aes][timeout=60]")
         memset(buf, 0xAA, CALL_SZ);
         psa_cipher_update(&operation, buf, CALL_SZ, buf, CALL_SZ, &output_length);
     }
-    psa_cipher_finish(&operation, buf + CALL_SZ - 16, 16, &output_length);
+    psa_cipher_finish(&operation, buf + output_length, CALL_SZ - output_length, &output_length);
     elapsed_usec = ccomp_timer_stop();
 
     /* Sanity check: make sure the last ciphertext block matches

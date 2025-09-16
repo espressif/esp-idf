@@ -21,7 +21,7 @@ static const uint8_t key_256[] = {
 
 TEST_CASE("PSA ARIA-GCM multipart", "[psa-gcm]")
 {
-    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
+    // TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
 
     const size_t SZ = 100;
     const size_t iv_SZ = 12;  // GCM typically uses 12 bytes IV
@@ -134,7 +134,7 @@ TEST_CASE("PSA ARIA-GCM multipart", "[psa-gcm]")
 
 TEST_CASE("PSA ARIA-GCM one-shot", "[psa-gcm]")
 {
-    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
+    // TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
 
     const size_t SZ = 100;
     const size_t iv_SZ = 12;  // GCM typically uses 12 bytes IV

@@ -734,24 +734,45 @@ TEST_CASE("Test crypto lib ecdsa apis", "[wpa_crypto]")
     {
         /* Check ecdsa_get_sign apis */
         uint8_t data[64] = {[0 ... 63] = 0xA5};
+        uint8_t signature[64];  /* Buffer for signature (r||s) */
+        uint8_t r_buf[32];      /* Buffer for r component */
+        uint8_t s_buf[32];      /* Buffer for s component */
 
         struct crypto_ec_key *eckey = crypto_ec_key_gen(MBEDTLS_ECP_DP_SECP256R1);
         TEST_ASSERT_NOT_NULL(eckey);
         // Signature length is defined as 2 * key_size
-        int ret = crypto_ecdsa_get_sign(data, NULL, NULL, eckey, 2 * 32);
+        struct crypto_bignum *r = crypto_bignum_init();
+        struct crypto_bignum *s = crypto_bignum_init();
+        TEST_ASSERT_NOT_NULL(r);
+        TEST_ASSERT_NOT_NULL(s);
+
+        int ret = crypto_ecdsa_get_sign(data, r, s, eckey, 2 * 32);
         TEST_ASSERT(ret == 0);
+
+        /* Extract r and s from bignums to binary buffers */
+        ret = crypto_bignum_to_bin(r, r_buf, sizeof(r_buf), 32);
+        TEST_ASSERT(ret == 32);
+        ret = crypto_bignum_to_bin(s, s_buf, sizeof(s_buf), 32);
+        TEST_ASSERT(ret == 32);
+
+        /* Construct signature as r||s */
+        memcpy(signature, r_buf, 32);
+        memcpy(signature + 32, s_buf, 32);
 
         uint8_t expected_data[64] = {[0 ... 63] = 0xA5};
-        ret = crypto_ec_key_verify_signature(eckey, expected_data, 64, data, 64);
-        TEST_ASSERT(ret == 0);
+        ret = crypto_ec_key_verify_signature(eckey, expected_data, 64, signature, 64);
+        TEST_ASSERT(ret == 1);  /* Returns 1 on success */
 
-        ret = crypto_ec_key_verify_signature_r_s(eckey, expected_data, 64, data, 32, data + 32, 32);
+        ret = crypto_ec_key_verify_signature_r_s(eckey, expected_data, 64, r_buf, 32, s_buf, 32);
         TEST_ASSERT(ret == 0);
 
         // Negative test case
         expected_data[0] = 0x5A;
-        ret = crypto_ec_key_verify_signature(eckey, expected_data, 64, data, 64);
+        ret = crypto_ec_key_verify_signature(eckey, expected_data, 64, signature, 64);
         TEST_ASSERT(ret == -1);
+
+        crypto_bignum_deinit(r, 1);
+        crypto_bignum_deinit(s, 1);
         crypto_ec_key_deinit(eckey);
     }
 }
@@ -1043,23 +1064,32 @@ TEST_CASE("Test crypto lib rsa apis", "[wpa_crypto]")
         };
         unsigned int rsa_der_len = 1217;
 
-        struct crypto_private_key *ctx = crypto_private_key_import(rsa_der, rsa_der_len, NULL);
-        TEST_ASSERT_NOT_NULL(ctx);
+        struct crypto_private_key *priv_ctx = crypto_private_key_import(rsa_der, rsa_der_len, NULL);
+        TEST_ASSERT_NOT_NULL(priv_ctx);
+
+        // Extract public key from private key - following principle of least privilege
+        struct crypto_public_key *pub_ctx = crypto_public_key_from_private_key(priv_ctx);
+        TEST_ASSERT_NOT_NULL(pub_ctx);
+
         uint8_t data[32] = {[0 ... 31] = 0xA5};
         uint8_t encrypted[2048];
         size_t encrypted_size = 2048;
 
-        int ret = crypto_public_key_encrypt_pkcs1_v15((struct crypto_public_key *)ctx, data, 32, encrypted, &encrypted_size);
+        // Use the public key for encryption
+        int ret = crypto_public_key_encrypt_pkcs1_v15(pub_ctx, data, 32, encrypted, &encrypted_size);
         TEST_ASSERT(ret == 0);
 
         uint8_t decrypted[32] = {[0 ... 31] = 0};
         size_t decrypted_size = 32;
 
-        ret = crypto_private_key_decrypt_pkcs1_v15((struct crypto_private_key *)ctx, encrypted, encrypted_size, decrypted, &decrypted_size);
+        // Use the private key for decryption
+        ret = crypto_private_key_decrypt_pkcs1_v15(priv_ctx, encrypted, encrypted_size, decrypted, &decrypted_size);
         TEST_ASSERT(ret == 0);
         TEST_ASSERT(!memcmp(data, decrypted, 32));
 
-        crypto_private_key_free(ctx);
+        // Clean up both keys
+        crypto_public_key_free(pub_ctx);
+        crypto_private_key_free(priv_ctx);
     }
 
     {
@@ -1165,5 +1195,106 @@ TEST_CASE("Test crypto lib ec apis", "[wpa_crypto]")
         TEST_ASSERT(ret > 0);
         free(key_buf);
         ESP_LOGI("EC Test", "Public key DER size: %d", ret);
+        psa_destroy_key(key_id);
+    }
+}
+
+TEST_CASE("Test crypto lib ecdh apis", "[wpa_crypto]")
+{
+    set_leak_threshold(1);
+    {
+        /* Test ECDH key agreement between two keys */
+        struct crypto_ec_key *own_key = crypto_ec_key_gen(MBEDTLS_ECP_DP_SECP256R1);
+        TEST_ASSERT_NOT_NULL(own_key);
+
+        struct crypto_ec_key *peer_key = crypto_ec_key_gen(MBEDTLS_ECP_DP_SECP256R1);
+        TEST_ASSERT_NOT_NULL(peer_key);
+
+        uint8_t secret[66];  /* Max size for P-256 is 32 bytes, but PSA may return up to 66 */
+        size_t secret_len = 0;
+
+        /* Perform ECDH key agreement - this should succeed with our fix */
+        int ret = crypto_ecdh(own_key, peer_key, secret, &secret_len);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(secret_len > 0);
+        TEST_ASSERT(secret_len <= 66);
+
+        /* Verify secret is not all zeros */
+        int all_zeros = 1;
+        for (size_t i = 0; i < secret_len; i++) {
+            if (secret[i] != 0) {
+                all_zeros = 0;
+                break;
+            }
+        }
+        TEST_ASSERT(all_zeros == 0);
+
+        /* Test reverse direction (peer -> own) should produce same secret */
+        uint8_t secret2[66];
+        size_t secret_len2 = 0;
+        ret = crypto_ecdh(peer_key, own_key, secret2, &secret_len2);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(secret_len2 == secret_len);
+        TEST_ASSERT(!memcmp(secret, secret2, secret_len));
+
+        crypto_ec_key_deinit(own_key);
+        crypto_ec_key_deinit(peer_key);
+    }
+
+    {
+        /* Test that the same key can be used for both ECDSA signing and ECDH */
+        struct crypto_ec_key *key = crypto_ec_key_gen(MBEDTLS_ECP_DP_SECP256R1);
+        TEST_ASSERT_NOT_NULL(key);
+
+        /* First, test ECDSA signing */
+        uint8_t data[64] = {[0 ... 63] = 0xA5};
+        struct crypto_bignum *r = crypto_bignum_init();
+        struct crypto_bignum *s = crypto_bignum_init();
+        TEST_ASSERT_NOT_NULL(r);
+        TEST_ASSERT_NOT_NULL(s);
+
+        int ret = crypto_ecdsa_get_sign(data, r, s, key, 2 * 32);
+        TEST_ASSERT(ret == 0);
+
+        /* Extract r and s from bignums to binary buffers */
+        uint8_t r_buf[32], s_buf[32], signature[64];
+        ret = crypto_bignum_to_bin(r, r_buf, sizeof(r_buf), 32);
+        TEST_ASSERT(ret == 32);
+        ret = crypto_bignum_to_bin(s, s_buf, sizeof(s_buf), 32);
+        TEST_ASSERT(ret == 32);
+
+        /* Construct signature as r||s */
+        memcpy(signature, r_buf, 32);
+        memcpy(signature + 32, s_buf, 32);
+
+        /* Verify the signature */
+        ret = crypto_ec_key_verify_signature(key, data, 64, signature, 64);
+        TEST_ASSERT(ret == 1);  /* Returns 1 on success */
+
+        /* Now test ECDH with the same key */
+        struct crypto_ec_key *peer_key = crypto_ec_key_gen(MBEDTLS_ECP_DP_SECP256R1);
+        TEST_ASSERT_NOT_NULL(peer_key);
+
+        uint8_t secret[66];
+        size_t secret_len = 0;
+        ret = crypto_ecdh(key, peer_key, secret, &secret_len);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(secret_len > 0);
+        TEST_ASSERT(secret_len <= 66);
+
+        /* Verify secret is not all zeros */
+        int all_zeros = 1;
+        for (size_t i = 0; i < secret_len; i++) {
+            if (secret[i] != 0) {
+                all_zeros = 0;
+                break;
+            }
+        }
+        TEST_ASSERT(all_zeros == 0);
+
+        crypto_bignum_deinit(r, 1);
+        crypto_bignum_deinit(s, 1);
+        crypto_ec_key_deinit(key);
+        crypto_ec_key_deinit(peer_key);
     }
 }

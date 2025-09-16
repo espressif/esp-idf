@@ -5,7 +5,7 @@
  */
 #include <string.h>
 #include "esp_log.h"
-#include "mbedtls/aes.h"
+// #include "mbedtls/aes.h"
 #include "psa_crypto_core.h"
 // #include "mbedtls/cipher.h"
 
@@ -44,7 +44,7 @@ static psa_status_t esp_crypto_aes_gcm_setup(
 
     esp_aes_gcm_init(ctx);
 
-    status = mbedtls_to_psa_error(esp_aes_gcm_setkey(ctx, MBEDTLS_CIPHER_ID_AES, key_buffer, key_buffer_size * 8));
+    status = mbedtls_to_psa_error(esp_aes_gcm_setkey(ctx, 2, key_buffer, key_buffer_size * 8));
 
     if (status != PSA_SUCCESS) {
         goto exit;

@@ -9,6 +9,7 @@
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "esp_heap_caps.h"
 #include "mbedtls/gcm.h"
+#include "mbedtls/private/gcm.h"
 #include "sdkconfig.h"
 #include "unity.h"
 

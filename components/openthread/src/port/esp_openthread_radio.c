@@ -488,7 +488,11 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 {
     OT_UNUSED_VARIABLE(aInstance);
     OT_UNUSED_VARIABLE(aKeyIdMode);
+#if OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
+    assert(aKeyType == OT_KEY_TYPE_KEY_REF);
+#else
     assert(aKeyType == OT_KEY_TYPE_LITERAL_KEY);
+#endif // OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
     assert(aPrevKey != NULL && aCurrKey != NULL && aNextKey != NULL);
 
     s_key_id = aKeyId;

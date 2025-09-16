@@ -6,7 +6,9 @@
 
 #pragma once
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if defined(ESP_AES_DRIVER_ENABLED) || defined(PSA_CRYPTO_DRIVER_TEST)
 
@@ -50,3 +52,7 @@ typedef struct {
 } esp_cmac_operation_t;
 
 #endif /* ESP_AES_DRIVER_ENABLED */
+
+#ifdef __cplusplus
+}
+#endif

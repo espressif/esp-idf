@@ -252,7 +252,7 @@ _test_panic_handler:
 
     /* Executing the panic handler */
     li      t0, 0xDEADC0DE
-    csrr    t0, mscratch
+    csrw    mscratch, t0
     mv      a0, sp
     csrr    a1, mcause
     li      t0, VECTORS_MCAUSE_REASON_MASK

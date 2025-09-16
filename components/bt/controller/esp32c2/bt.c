@@ -1443,13 +1443,11 @@ uint8_t esp_ble_get_chip_rev_version(void)
 #if (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)
 #if CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
 #define BLE_SM_KEY_ERR 0x17
+#define BLE_PUB_KEY_LEN 65
 #if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 #if CONFIG_BT_LE_SM_SC
 #include "psa/crypto.h"
-
-#define BLE_PUB_KEY_LEN 65
 #endif // CONFIG_BT_LE_SM_SC
-
 #else
 #include "tinycrypt/aes.h"
 #include "tinycrypt/constants.h"
@@ -1590,7 +1588,7 @@ exit:
 #endif  // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 
 /**
- * pub: 64 bytes
+ * pub: BLE_PUB_KEY_LEN bytes
  * priv: 32 bytes
  */
 int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
@@ -1600,7 +1598,7 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
     swap_buf(&pub[32], &ble_sm_alg_dbg_pub_key[32], 32);
     swap_buf(priv, ble_sm_alg_dbg_priv_key, 32);
 #else
-    uint8_t pk[64];
+    uint8_t pk[BLE_PUB_KEY_LEN];
 
     do {
 #if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS

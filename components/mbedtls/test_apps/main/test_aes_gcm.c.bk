@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <esp_system.h>
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-#include "mbedtls/aes.h"
+// #include "mbedtls/aes.h"
 #include "mbedtls/gcm.h"
 #include "unity.h"
 #include "sdkconfig.h"

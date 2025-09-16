@@ -24,7 +24,7 @@
 #include "esp_aes_internal.h"
 #include "esp_crypto_dma.h"
 
-#include "mbedtls/aes.h"
+// // #include "mbedtls/aes.h"
 #include "mbedtls/platform_util.h"
 
 #if !ESP_TEE_BUILD
@@ -546,7 +546,7 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
     */
     if (ctx->key_in_hardware != ctx->key_bytes) {
         mbedtls_platform_zeroize(output, len);
-        return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
+        return -1;
     }
 
 #ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
@@ -736,7 +736,7 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
     */
     if (ctx->key_in_hardware != ctx->key_bytes) {
         mbedtls_platform_zeroize(output, len);
-        return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
+        return -1;
     }
 
     unsigned stream_bytes = len % AES_BLOCK_BYTES; // bytes which aren't in a full block
@@ -1014,7 +1014,7 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
     */
     if (ctx->key_in_hardware != ctx->key_bytes) {
         mbedtls_platform_zeroize(output, len);
-        return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
+        return -1;
     }
 
     if (block_bytes > 0) {
@@ -1249,7 +1249,7 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
     */
     if (ctx->key_in_hardware != ctx->key_bytes) {
         mbedtls_platform_zeroize(output, len);
-        return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
+        return -1;
     }
 
     /* Set up dma descriptors for input and output */

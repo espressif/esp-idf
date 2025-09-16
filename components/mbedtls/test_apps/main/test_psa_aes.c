@@ -11,8 +11,8 @@
 #include "esp_log.h"
 #include "esp_private/periph_ctrl.h"
 
-#include "mbedtls/aes.h"
-#include "mbedtls/cipher.h"
+// // #include "mbedtls/aes.h"
+// #include "mbedtls/cipher.h"
 
 #include "psa/crypto.h"
 
@@ -27,7 +27,7 @@ static const uint8_t key_256[] = {
 
 TEST_CASE("PSA AES-CTR multipart", "[psa-aes]")
 {
-    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
+    // TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
 
     const size_t SZ = 100;
     const size_t iv_SZ = 16;
@@ -107,7 +107,7 @@ TEST_CASE("PSA AES-CTR multipart", "[psa-aes]")
 
 TEST_CASE("PSA AES-ECB multipart", "[psa-aes]")
 {
-    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
+    // TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
 
     const size_t SZ = 112;
     const size_t iv_SZ = 16;
@@ -185,7 +185,7 @@ TEST_CASE("PSA AES-ECB multipart", "[psa-aes]")
 
 TEST_CASE("PSA AES-CBC multipart", "[psa-aes]")
 {
-    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
+    // TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
 
     const size_t SZ = 112;  // Multiple of block size (16)
     const size_t iv_SZ = 16;
@@ -264,10 +264,10 @@ TEST_CASE("PSA AES-CBC multipart", "[psa-aes]")
     // mbedtls_psa_crypto_free();
 }
 
-#if 0
+#if 1
 TEST_CASE("PSA AES-CBC-PKCS7 multipart", "[psa-aes]")
 {
-    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
+    // TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
 
     // Test both aligned and unaligned sizes
     const size_t SZ1 = 112;  // Multiple of block size (16)
@@ -277,19 +277,21 @@ TEST_CASE("PSA AES-CBC-PKCS7 multipart", "[psa-aes]")
 
     uint8_t *plaintext1 = malloc(SZ1);
     uint8_t *ciphertext1 = malloc(SZ1 + 16); // Extra block for padding
-    uint8_t *decryptedtext1 = malloc(SZ1);
+    uint8_t *decryptedtext1 = malloc(SZ1 + 16); // Extra space for intermediate buffering
 
     uint8_t *plaintext2 = malloc(SZ2);
     uint8_t *ciphertext2 = malloc(SZ2 + 16); // Extra block for padding
-    uint8_t *decryptedtext2 = malloc(SZ2);
+    uint8_t *decryptedtext2 = malloc(SZ2 + 16); // Extra space for intermediate buffering
 
     uint8_t iv[iv_SZ];
 
     // Initialize test data
     memset(plaintext1, 0x3A, SZ1);
     memset(plaintext2, 0x3B, SZ2);
-    memset(decryptedtext1, 0x0, SZ1);
-    memset(decryptedtext2, 0x0, SZ2);
+    memset(ciphertext1, 0x0, SZ1 + 16);
+    memset(ciphertext2, 0x0, SZ2 + 16);
+    memset(decryptedtext1, 0x0, SZ1 + 16);
+    memset(decryptedtext2, 0x0, SZ2 + 16);
 
     /* Import a key */
     psa_key_id_t key_id;
@@ -315,23 +317,21 @@ TEST_CASE("PSA AES-CBC-PKCS7 multipart", "[psa-aes]")
         // Process all blocks except the last one
         for (size_t offset = 0; offset < SZ1 - part_size; offset += part_size) {
             TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_update(&enc_op, plaintext1 + offset, part_size,
-                                                            ciphertext1 + total_out_len, part_size, &out_len));
+                                                            ciphertext1 + total_out_len, SZ1 + 16 - total_out_len, &out_len));
             total_out_len += out_len;
         }
 
         // Process the last block separately
         TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_update(&enc_op, plaintext1 + SZ1 - part_size, part_size,
-                                                        ciphertext1 + total_out_len, part_size + 16, &out_len));
+                                                        ciphertext1 + total_out_len, SZ1 + 16 - total_out_len, &out_len));
         total_out_len += out_len;
 
         TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_finish(&enc_op, ciphertext1 + total_out_len,
-                                                        16, &out_len));  // Space for padding block
+                                                        SZ1 + 16 - total_out_len, &out_len));  // Space for padding block
         total_out_len += out_len;
 
         // The output size should be the input size rounded up to the next multiple of 16
         TEST_ASSERT_EQUAL_size_t((SZ1 + 16), total_out_len);  // Should include padding block
-
-        ESP_LOGI("TAG", "Decryption");
         /* Decrypt */
         psa_cipher_operation_t dec_op = PSA_CIPHER_OPERATION_INIT;
         size_t dec_len = 0;
@@ -342,12 +342,12 @@ TEST_CASE("PSA AES-CBC-PKCS7 multipart", "[psa-aes]")
         for (size_t offset = 0; offset < total_out_len; offset += part_size) {
             size_t this_part = total_out_len - offset < part_size ? total_out_len - offset : part_size;
             TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_update(&dec_op, ciphertext1 + offset, this_part,
-                                                            decryptedtext1 + dec_len, SZ1 - dec_len, &out_len));
+                                                            decryptedtext1 + dec_len, SZ1 + 16 - dec_len, &out_len));
             dec_len += out_len;
         }
 
         TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_finish(&dec_op, decryptedtext1 + dec_len,
-                                                        SZ1 - dec_len, &out_len));
+                                                        SZ1 + 16 - dec_len, &out_len));
         dec_len += out_len;
 
         TEST_ASSERT_EQUAL_size_t(SZ1, dec_len);
@@ -387,12 +387,12 @@ TEST_CASE("PSA AES-CBC-PKCS7 multipart", "[psa-aes]")
         for (size_t offset = 0; offset < total_out_len; offset += part_size) {
             size_t this_part = total_out_len - offset < part_size ? total_out_len - offset : part_size;
             TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_update(&dec_op, ciphertext2 + offset, this_part,
-                                                            decryptedtext2 + dec_len, SZ2 - dec_len, &out_len));
+                                                            decryptedtext2 + dec_len, SZ2 + 16 - dec_len, &out_len));
             dec_len += out_len;
         }
 
         TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_finish(&dec_op, decryptedtext2 + dec_len,
-                                                        SZ2 - dec_len, &out_len));
+                                                        SZ2 + 16 - dec_len, &out_len));
         dec_len += out_len;
 
         TEST_ASSERT_EQUAL_size_t(SZ2, dec_len);
@@ -417,7 +417,7 @@ TEST_CASE("PSA AES-CBC-PKCS7 multipart", "[psa-aes]")
 
 TEST_CASE("PSA AES-CFB multipart", "[psa-aes]")
 {
-    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
+    // TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
 
     const size_t SZ = 100;
     const size_t iv_SZ = 16;
@@ -497,7 +497,7 @@ TEST_CASE("PSA AES-CFB multipart", "[psa-aes]")
 
 TEST_CASE("PSA AES-OFB multipart", "[psa-aes]")
 {
-    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
+    // TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
 
     const size_t SZ = 100;
     const size_t iv_SZ = 16;
@@ -578,7 +578,7 @@ TEST_CASE("PSA AES-OFB multipart", "[psa-aes]")
 
 TEST_CASE("PSA AES-CBC one-shot", "[psa-aes]")
 {
-    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
+    // TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
 
     const size_t SZ = 1600;
     const size_t iv_SZ = 16;

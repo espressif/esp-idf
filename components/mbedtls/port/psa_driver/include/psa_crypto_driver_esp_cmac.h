@@ -5,6 +5,10 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(ESP_AES_DRIVER_ENABLED)
 
 #include "psa/crypto.h"
@@ -45,3 +49,7 @@ psa_status_t esp_cmac_mac_verify_finish(
     const uint8_t *mac,
     size_t mac_length);
 #endif /* ESP_AES_DRIVER_ENABLED */
+
+#ifdef __cplusplus
+}
+#endif

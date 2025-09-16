@@ -5,6 +5,10 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(ESP_SHA_DRIVER_ENABLED)
 #ifndef PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
 #define PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
@@ -60,4 +64,8 @@ psa_status_t esp_sha_hash_abort(esp_sha_hash_operation_t *operation);
 psa_status_t esp_sha_hash_clone(
     const esp_sha_hash_operation_t *source_operation,
     esp_sha_hash_operation_t *target_operation);
+#endif
+
+#ifdef __cplusplus
+}
 #endif

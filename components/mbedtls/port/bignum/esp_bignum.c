@@ -494,7 +494,6 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     size_t y_words = bits_to_words(y_bits);
     size_t z_words = bits_to_words(x_bits + y_bits);
     size_t hw_words = mpi_hal_calc_hardware_words(MAX(x_words, y_words)); // length of one operand in hardware
-
     /* Short-circuit eval if either argument is 0 or 1.
 
        This is needed as the mpi modular division

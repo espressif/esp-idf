@@ -14,7 +14,7 @@
 * Need MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS to access XTS functions.
 */
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-#include "mbedtls/aes.h"
+#include "mbedtls/private/aes.h"
 #include "nvs_flash.h"
 #include "nvs_partition.hpp"
 
@@ -80,3 +80,5 @@ protected:
 };
 
 } // nvs
+
+#endif // NVS_ENCRYPTED_PARTITION_HPP_

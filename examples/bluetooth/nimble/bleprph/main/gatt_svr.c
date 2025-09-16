@@ -240,7 +240,9 @@ gatt_svr_init(void)
 {
     int rc;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     ble_svc_gap_init();
+#endif /* CONFIG_BT_NIMBLE_GAP_SERVICE */
     ble_svc_gatt_init();
     ble_svc_ans_init();
 

@@ -30,7 +30,7 @@
 
 #ifdef CONFIG_NVS_ENCRYPTION
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-#include "mbedtls/aes.h"
+#include "mbedtls/private/aes.h"
 #endif
 
 #ifdef CONFIG_SOC_HMAC_SUPPORTED

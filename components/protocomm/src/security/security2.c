@@ -12,10 +12,10 @@
 #include <esp_check.h>
 #include <inttypes.h>
 
-#include <mbedtls/gcm.h>
+// #include <mbedtls/gcm.h>
 #include <mbedtls/error.h>
-#include <mbedtls/entropy.h>
-#include <mbedtls/ctr_drbg.h>
+// #include <mbedtls/entropy.h>
+// #include <mbedtls/ctr_drbg.h>
 #include "psa/crypto.h"
 
 #include <protocomm_security.h>
@@ -65,9 +65,7 @@ typedef struct session {
     char *session_key;
     uint16_t session_key_len;
     uint8_t iv[AES_GCM_IV_SIZE];
-    /* mbedtls context data for AES-GCM */
-    // mbedtls_gcm_context ctx_gcm;
-    psa_cipher_operation_t ctx_gcm;
+    /* PSA key for AES-GCM */
     psa_key_id_t key_id;
     esp_srp_handle_t *srp_hd;
 } session_t;
@@ -257,26 +255,24 @@ static esp_err_t handle_session_command1(session_t *cur_session,
 
     hexdump("Initialization vector", (char *)cur_session->iv, AES_GCM_IV_SIZE);
 
-    /* Initialize crypto context */
-    cur_session->ctx_gcm = (psa_cipher_operation_t) {0};
+    /* Initialize AES-GCM key */
     psa_algorithm_t alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, AES_GCM_TAG_LEN);
     psa_key_id_t key_id = 0;
     psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
     psa_set_key_bits(&key_attributes, AES_GCM_KEY_LEN);
-    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT);
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
     psa_set_key_algorithm(&key_attributes, alg);
-    psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
-    status = psa_import_key(&key_attributes, (uint8_t *)cur_session->session_key, cur_session->session_key_len, &key_id);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "psa_import_key failed with status=%d", status);
+    /* Use first 32 bytes (256 bits) of the session key for AES-GCM */
+    size_t aes_key_bytes = AES_GCM_KEY_LEN / 8;
+    if (cur_session->session_key_len < aes_key_bytes) {
+        ESP_LOGE(TAG, "Session key too short: %d bytes (need at least %zu bytes)", cur_session->session_key_len, aes_key_bytes);
         free(device_proof);
         return ESP_FAIL;
     }
-
-    status = psa_cipher_encrypt_setup(&cur_session->ctx_gcm, key_id, alg);
+    status = psa_import_key(&key_attributes, (uint8_t *)cur_session->session_key, aes_key_bytes, &key_id);
     if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "psa_cipher_encrypt_setup failed with status=%d", status);
+        ESP_LOGE(TAG, "psa_import_key failed with status=%d", status);
         free(device_proof);
         return ESP_FAIL;
     }
@@ -289,9 +285,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
         free(device_proof);
         free(out);
         free(out_resp);
-        psa_cipher_abort(&cur_session->ctx_gcm);
         psa_destroy_key(key_id);
-        // mbedtls_gcm_free(&cur_session->ctx_gcm);
         return ESP_ERR_NO_MEM;
     }
 
@@ -395,13 +389,7 @@ static esp_err_t sec2_close_session(protocomm_security_handle_t handle, uint32_t
     }
 
     if (cur_session->state == SESSION_STATE_DONE) {
-        /* Free GCM context data */
-        // mbedtls_gcm_free(&cur_session->ctx_gcm);
-        psa_status_t status = psa_cipher_abort(&cur_session->ctx_gcm);
-        if (status != PSA_SUCCESS) {
-            ESP_LOGE(TAG, "psa_cipher_abort failed with status=%d", status);
-            return ESP_FAIL;
-        }
+        /* Destroy the AES-GCM key */
         psa_destroy_key(cur_session->key_id);
         cur_session->key_id = 0;
     }
@@ -492,44 +480,27 @@ static esp_err_t sec2_encrypt(protocomm_security_handle_t handle,
         ESP_LOGE(TAG, "Failed to allocate encrypt buf len %d", *outlen);
         return ESP_ERR_NO_MEM;
     }
-    uint8_t gcm_tag[AES_GCM_TAG_LEN];
 
     psa_status_t status;
-    status = psa_cipher_set_iv(&cur_session->ctx_gcm, cur_session->iv, AES_GCM_IV_SIZE);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "psa_cipher_set_iv failed with status=%d", status);
-        free(*outbuf);
-        return ESP_FAIL;
-    }
-
+    psa_algorithm_t alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, AES_GCM_TAG_LEN);
     size_t out_len = 0;
-    status = psa_cipher_update(&cur_session->ctx_gcm, inbuf, inlen, *outbuf, *outlen , &out_len);
+
+    status = psa_aead_encrypt(cur_session->key_id, alg,
+                             cur_session->iv, AES_GCM_IV_SIZE,
+                             NULL, 0,  /* No additional data */
+                             inbuf, inlen,
+                             *outbuf, *outlen, &out_len);
     if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "psa_cipher_update failed with status=%d", status);
+        ESP_LOGE(TAG, "psa_aead_encrypt failed with status=%d", status);
         free(*outbuf);
         return ESP_FAIL;
     }
 
-    if (out_len != inlen) {
-        ESP_LOGE(TAG, "psa_cipher_update output length mismatch: expected %zd, got %zu", inlen, out_len);
+    if (out_len != *outlen) {
+        ESP_LOGE(TAG, "psa_aead_encrypt output length mismatch: expected %zd, got %zu", *outlen, out_len);
         free(*outbuf);
         return ESP_FAIL;
     }
-
-    status = psa_cipher_finish(&cur_session->ctx_gcm, gcm_tag, AES_GCM_TAG_LEN, &out_len);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "psa_cipher_finish failed with status=%d", status);
-        free(*outbuf);
-        return ESP_FAIL;
-    }
-
-    if (out_len != AES_GCM_TAG_LEN) {
-        ESP_LOGE(TAG, "psa_cipher_finish output length mismatch: expected %d, got %zu", AES_GCM_TAG_LEN, out_len);
-        free(*outbuf);
-        return ESP_FAIL;
-    }
-
-    memcpy(*outbuf + inlen, gcm_tag, AES_GCM_TAG_LEN);
 
     /* Increment counter value for next operation */
     sec2_gcm_iv_counter_increment(cur_session->iv);
@@ -572,45 +543,24 @@ static esp_err_t sec2_decrypt(protocomm_security_handle_t handle,
     }
 
     psa_status_t status;
-    status = psa_cipher_set_iv(&cur_session->ctx_gcm, cur_session->iv, AES_GCM_IV_SIZE);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "psa_cipher_set_iv failed with status=%d", status);
-        free(*outbuf);
-        return ESP_FAIL;
-    }
-
+    psa_algorithm_t alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, AES_GCM_TAG_LEN);
     size_t out_len = 0;
-    status = psa_cipher_update(&cur_session->ctx_gcm, inbuf, inlen - AES_GCM_TAG_LEN, *outbuf, *outlen, &out_len);
+
+    status = psa_aead_decrypt(cur_session->key_id, alg,
+                             cur_session->iv, AES_GCM_IV_SIZE,
+                             NULL, 0,  /* No additional data */
+                             inbuf, inlen,
+                             *outbuf, *outlen, &out_len);
     if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "psa_cipher_update failed with status=%d", status);
+        ESP_LOGE(TAG, "psa_aead_decrypt failed with status=%d", status);
         free(*outbuf);
         return ESP_FAIL;
     }
 
     if (out_len != *outlen) {
-        ESP_LOGE(TAG, "psa_cipher_update output length mismatch: expected %zd, got %zu", *outlen, out_len);
+        ESP_LOGE(TAG, "psa_aead_decrypt output length mismatch: expected %zd, got %zu", *outlen, out_len);
         free(*outbuf);
         return ESP_FAIL;
-    }
-
-    uint8_t gcm_tag[AES_GCM_TAG_LEN];
-    memcpy(gcm_tag, inbuf + (inlen - AES_GCM_TAG_LEN), AES_GCM_TAG_LEN);
-    status = psa_cipher_finish(&cur_session->ctx_gcm, gcm_tag, AES_GCM_TAG_LEN, &out_len);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "psa_cipher_finish failed with status=%d", status);
-        free(*outbuf);
-        return ESP_FAIL;
-    }
-
-    if (out_len != 0) {
-        ESP_LOGE(TAG, "psa_cipher_finish output length mismatch: expected 0, got %zu", out_len);
-        free(*outbuf);
-        return ESP_FAIL;
-    }
-
-    if (*outbuf == NULL) {
-        ESP_LOGE(TAG, "Output buffer is NULL");
-        return ESP_ERR_INVALID_ARG;
     }
 
     /* Increment counter value for next operation */

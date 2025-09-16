@@ -17,7 +17,7 @@
 #include "sdkconfig.h"
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "esp_aes_internal.h"
-#include "mbedtls/aes.h"
+// // #include "mbedtls/aes.h"
 #include "hal/aes_hal.h"
 #include "hal/aes_types.h"
 #include "soc/soc_caps.h"
@@ -70,7 +70,7 @@ int esp_aes_setkey( esp_aes_context *ctx, const unsigned char *key,
     }
 #endif
     if (keybits != 128 && keybits != 192 && keybits != 256) {
-        return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
+        return -1;
     }
     ctx->key_bytes = keybits / 8;
     memcpy(ctx->key, key, ctx->key_bytes);

@@ -28,7 +28,12 @@ if(NOT ${IDF_TARGET} STREQUAL "linux")
 endif()
 
 set(mbedtls_srcs "")
-set(mbedtls_include_dirs "port/include" "mbedtls/include" "mbedtls/library")
+set(mbedtls_include_dirs
+    "port/include"
+    "mbedtls/include"
+    "mbedtls/library"
+    "mbedtls/tf-psa-crypto/core"
+    "mbedtls/tf-psa-crypto/drivers/builtin/src/")
 
 if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
     list(APPEND mbedtls_include_dirs "port/mbedtls_rom")
@@ -177,6 +182,8 @@ endif()
 # Core libraries from the mbedTLS project
 set(mbedtls_targets mbedtls mbedx509 tfpsacrypto builtin)
 
+target_include_directories(tfpsacrypto PUBLIC "port/include")
+
 if(CONFIG_MBEDTLS_HARDWARE_SHA OR CONFIG_MBEDTLS_HARDWARE_AES)
     list(APPEND include_dirs "${COMPONENT_DIR}/port/psa_driver/include")
     target_include_directories(tfpsacrypto PUBLIC "${COMPONENT_DIR}/port/psa_driver/include")
@@ -202,6 +209,10 @@ list(APPEND mbedtls_targets everest p256m)
 
 set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"
                            "${COMPONENT_DIR}/port/esp_platform_time.c")
+
+if(CONFIG_MBEDTLS_VER_4_X_SUPPORT)
+    list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/esp_psa_crypto_init.c")
+endif()
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
     set(mbedtls_target_sources ${mbedtls_target_sources}
@@ -309,7 +320,7 @@ if(CONFIG_SOC_AES_SUPPORTED)
     target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/aes/include")
     target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
                                   "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
-                                  "${COMPONENT_DIR}/port/aes/${AES_PERIPHERAL_TYPE}/esp_aes.c"
+                                  "${COMPONENT_DIR}/port/aes/esp_aes.c"
     )
 endif()
 
@@ -329,19 +340,19 @@ if(CONFIG_SOC_SHA_SUPPORTED)
     endif()
 endif()
 
-# if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
-# target_sources(mbedcrypto PRIVATE
-#                 "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c"
-#                 "${COMPONENT_DIR}/port/esp_ds/esp_rsa_dec_alt.c"
-#                 "${COMPONENT_DIR}/port/esp_ds/esp_ds_common.c")
-# endif()
+if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
+target_sources(tfpsacrypto PRIVATE
+                "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c"
+                "${COMPONENT_DIR}/port/esp_ds/esp_rsa_dec_alt.c"
+                "${COMPONENT_DIR}/port/esp_ds/esp_ds_common.c")
+endif()
 # # CONFIG_ESP_TLS_USE_DS_PERIPHERAL can be enabled only for the supported targets.
-# if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
-#     target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c")
-# endif()
+if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
+    target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c")
+endif()
 
 if(CONFIG_SOC_HMAC_SUPPORTED)
-    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hmac_pbkdf2.c")
+    target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/esp_hmac_pbkdf2.c")
 endif()
 
 # Note: some mbedTLS hardware acceleration can be enabled/disabled by config.
@@ -366,9 +377,11 @@ endif()
 if(CONFIG_MBEDTLS_HARDWARE_GCM OR CONFIG_MBEDTLS_HARDWARE_AES)
     target_compile_definitions(tfpsacrypto PRIVATE ESP_AES_DRIVER_ENABLED)
     target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/include/aes")
+    target_sources(tfpsacrypto PRIVATE
+                "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes.c"
+        )
     if(CONFIG_MBEDTLS_HARDWARE_SHA)
         target_sources(tfpsacrypto PRIVATE
-                "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes.c"
                 "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_cmac.c"
         )
     endif()
@@ -481,23 +494,27 @@ endif()
 
 target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
 
+# Ensure PSA crypto initialization is included in the build
+if(NOT ${IDF_TARGET} STREQUAL "linux")
+    target_link_libraries(${COMPONENT_LIB} ${linkage_type} "-u mbedtls_psa_crypto_init_include_impl")
+endif()
 # if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
 #     # The linker seems to be unable to resolve all the dependencies without increasing this
 #     set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 6)
 # endif()
 
 # Additional optional dependencies for the mbedcrypto library
-# function(mbedcrypto_optional_deps component_name)
-#     idf_build_get_property(components BUILD_COMPONENTS)
-#     if(${component_name} IN_LIST components)
-#         idf_component_get_property(lib_name ${component_name} COMPONENT_LIB)
-#         target_link_libraries(mbedcrypto PRIVATE ${lib_name})
-#     endif()
-# endfunction()
+function(builtin_optional_deps component_name)
+    idf_build_get_property(components BUILD_COMPONENTS)
+    if(${component_name} IN_LIST components)
+        idf_component_get_property(lib_name ${component_name} COMPONENT_LIB)
+        target_link_libraries(builtin PRIVATE ${lib_name})
+    endif()
+endfunction()
 
-# if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM)
-#     mbedcrypto_optional_deps(esp_timer idf::esp_timer)
-# endif()
+if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM)
+    builtin_optional_deps(esp_timer idf::esp_timer)
+endif()
 
 # # Link esp-cryptoauthlib to mbedtls
 # if(CONFIG_ATCA_MBEDTLS_ECDSA)

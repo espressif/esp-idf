@@ -46,7 +46,7 @@ static void esp_internal_sha_update_state(esp_sha256_context *ctx)
         ctx->sha_state = ESP_SHA256_STATE_IN_PROCESS;
     } else if (ctx->sha_state == ESP_SHA256_STATE_IN_PROCESS) {
         ctx->first_block = false;
-    esp_sha_write_digest_state(ctx->mode, ctx->state);
+        esp_sha_write_digest_state(ctx->mode, ctx->state);
     }
 }
 

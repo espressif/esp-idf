@@ -403,12 +403,6 @@ int des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id;
 
-    status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        printf("%s: psa_crypto_init failed\n", __func__);
-        return -1;
-    }
-
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
     psa_set_key_algorithm(&attributes, PSA_ALG_ECB_NO_PADDING);
     psa_set_key_type(&attributes, PSA_KEY_TYPE_DES);

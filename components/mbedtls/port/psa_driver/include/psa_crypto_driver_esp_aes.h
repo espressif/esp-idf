@@ -5,6 +5,10 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(ESP_AES_DRIVER_ENABLED)
 #ifndef PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
 #define PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
@@ -90,3 +94,7 @@ psa_status_t esp_aes_cipher_finish(
 psa_status_t esp_aes_cipher_abort(
     esp_aes_operation_t *operation);
 #endif /* ESP_AES_DRIVER_ENABLED */
+
+#ifdef __cplusplus
+}
+#endif

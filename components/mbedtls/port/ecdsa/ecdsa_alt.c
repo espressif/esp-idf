@@ -16,7 +16,8 @@
 #include "esp_crypto_periph_clk.h"
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 // #include "mbedtls/error.h"
-#include "mbedtls/ecdsa.h"
+#include "mbedtls/private/ecdsa.h"
+#include "mbedtls/private/pk_private.h"
 #include "mbedtls/asn1.h"
 #include "mbedtls/asn1write.h"
 #include "mbedtls/platform_util.h"
@@ -389,7 +390,20 @@ int esp_ecdsa_privkey_load_pk_context(mbedtls_pk_context *key_ctx, int efuse_blk
     if (mbedtls_pk_setup(key_ctx, pk_info) != 0) {
         return -1;
     }
-    keypair = mbedtls_pk_ec(*key_ctx);
+
+    /* In mbedtls v4.0, MBEDTLS_PK_ECDSA doesn't allocate pk_ctx (ctx_alloc_func = NULL)
+     * because EC keys are managed through PSA. For hardware ECDSA, we need to manually
+     * allocate an mbedtls_ecp_keypair structure to store the magic values. */
+    keypair = calloc(1, sizeof(mbedtls_ecp_keypair));
+    if (keypair == NULL) {
+        return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+    }
+
+    /* Initialize the keypair structure */
+    mbedtls_ecp_keypair_init(keypair);
+
+    /* Manually assign to pk_ctx since mbedtls_pk_setup didn't do it */
+    key_ctx->MBEDTLS_PRIVATE(pk_ctx) = keypair;
 
     return esp_ecdsa_privkey_load_mpi(&(keypair->MBEDTLS_PRIVATE(d)), efuse_blk);
 }
@@ -431,7 +445,6 @@ int esp_ecdsa_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_t *c
 #endif
     return 0;
 }
-
 
 static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s,
                           const mbedtls_mpi *d, const unsigned char* msg, size_t msg_len,
@@ -549,6 +562,23 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
 }
 #endif
 
+void esp_ecdsa_free_pk_context(mbedtls_pk_context *key_ctx)
+{
+    if (key_ctx == NULL) {
+        return;
+    }
+
+    /* In mbedtls v4.0, we manually allocated the keypair structure for hardware ECDSA.
+     * We need to free it manually since ctx_free_func is NULL for MBEDTLS_PK_ECDSA. */
+    mbedtls_ecp_keypair *keypair = mbedtls_pk_ec(*key_ctx);
+    if (keypair != NULL) {
+        mbedtls_ecp_keypair_free(keypair);
+        free(keypair);
+        key_ctx->MBEDTLS_PRIVATE(pk_ctx) = NULL;
+    }
+
+    mbedtls_pk_free(key_ctx);
+}
 
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
 int esp_ecdsa_tee_load_pubkey(mbedtls_ecp_keypair *keypair, const char *tee_key_id)
@@ -619,7 +649,16 @@ int esp_ecdsa_tee_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_
         ESP_LOGE(TAG, "Failed to setup pk context, mbedtls_pk_setup() returned %d", ret);
         return ret;
     }
-    keypair = mbedtls_pk_ec(*key_ctx);
+    // keypair = mbedtls_pk_ec(*key_ctx);
+    keypair = calloc(1, sizeof(mbedtls_ecp_keypair));
+    if (keypair == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory for ecp_keypair");
+        return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+    }
+
+    mbedtls_ecp_keypair_init(keypair);
+
+    key_ctx->MBEDTLS_PRIVATE(pk_ctx) = keypair;
 
     mbedtls_mpi_init(&(keypair->MBEDTLS_PRIVATE(d)));
     keypair->MBEDTLS_PRIVATE(d).MBEDTLS_PRIVATE(s) = ECDSA_KEY_MAGIC_TEE;
@@ -696,8 +735,8 @@ static int esp_ecdsa_tee_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mp
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
-    mbedtls_mpi_read_binary(r, sign.sign_r, len);
-    mbedtls_mpi_read_binary(s, sign.sign_s, len);
+    mbedtls_mpi_read_binary(r, sign.signature, len);
+    mbedtls_mpi_read_binary(s, sign.signature + len, len);
 
     return 0;
 }

@@ -526,9 +526,9 @@ size_t esp_mbedtls_get_crt_size(mbedtls_x509_crt *cert, size_t *num)
 void esp_mbedtls_free_dhm(mbedtls_ssl_context *ssl)
 {
 #ifdef CONFIG_MBEDTLS_DHM_C
-    const mbedtls_ssl_config *conf = mbedtls_ssl_context_get_config(ssl);
-    mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_P));
-    mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_G));
+    // const mbedtls_ssl_config *conf = mbedtls_ssl_context_get_config(ssl);
+    // mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_P));
+    // mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_G));
 #endif /* CONFIG_MBEDTLS_DHM_C */
 }
 

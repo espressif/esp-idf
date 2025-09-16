@@ -26,6 +26,8 @@
 // located at mbedtls/library/ssl_misc.h
 #include "ssl_misc.h"
 
+// // #include "mbedtls/ctr_drbg.h"
+// // #include "mbedtls/entropy.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/oid.h"
 #ifdef ESPRESSIF_USE
@@ -410,7 +412,7 @@ static const int suiteb_rsa_ciphersuite_preference[] = {
 #if defined(MBEDTLS_GCM_C)
 #if defined(MBEDTLS_SHA512_C)
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-    MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
+    // MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
 #endif
 #endif
     0
@@ -435,7 +437,7 @@ static const int suiteb_ciphersuite_preference[] = {
 #if defined(MBEDTLS_SHA512_C)
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-    MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
+    // MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
 #endif
 #endif
     0
@@ -595,12 +597,6 @@ static int tls_create_mbedtls_handle(struct tls_connection *conn,
 
     assert(params != NULL);
     assert(tls != NULL);
-
-    psa_status_t status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "Failed to initialize PSA crypto, returned %d", (int) status);
-        return -1;
-    }
 
     mbedtls_ssl_init(&tls->ssl);
     mbedtls_ssl_config_init(&tls->conf);

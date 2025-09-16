@@ -6,7 +6,7 @@
 
 #include <string.h>
 #include "unity.h"
-#include "mbedtls/rsa.h"
+#include "mbedtls/private/rsa.h"
 #include "esp_random.h"
 #include "sdkconfig.h"
 
@@ -16,10 +16,7 @@
 static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in internal RAM
 #endif
 
-// Disabled these tests for now as with PSA, DS peripheral probably can not be used like this
-// Instead we will have to create a driver
-#if 0
-// #ifdef SOC_DIG_SIGN_SUPPORTED
+#ifdef SOC_DIG_SIGN_SUPPORTED
 #include "soc/soc_caps.h"
 #include "esp_ds.h"
 #include "esp_ds/esp_ds_rsa.h"
@@ -41,9 +38,12 @@ TEST_CASE("ds sign test pkcs1_v15", "[ds_rsa]")
     mbedtls_esp_random(NULL, hash, sizeof(hash)); // Fill hash with random data
     unsigned int hashlen = sizeof(hash);
     unsigned char signature[256] = {0};
+    mbedtls_pk_context pk;
+    mbedtls_pk_init(&pk);
+    pk.MBEDTLS_PRIVATE(pk_ctx) = &rsa_ctx;
 
     // esp_ds is not initialized, so we expect an error
-    int err = esp_ds_rsa_sign(&rsa_ctx, mbedtls_esp_random, NULL, MBEDTLS_MD_SHA256, hashlen, hash, signature);
+    int err = esp_ds_rsa_sign(&pk, mbedtls_esp_random, NULL, MBEDTLS_MD_SHA256, hashlen, hash, signature);
     TEST_ASSERT_EQUAL(-1, err);
 
     // Initialize the esp_ds context
@@ -58,7 +58,7 @@ TEST_CASE("ds sign test pkcs1_v15", "[ds_rsa]")
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     // Now we can call esp_ds_rsa_sign again
-    err = esp_ds_rsa_sign(&rsa_ctx, mbedtls_esp_random, NULL, MBEDTLS_MD_SHA256, hashlen, hash, signature);
+    err = esp_ds_rsa_sign(&pk, mbedtls_esp_random, NULL, MBEDTLS_MD_SHA256, hashlen, hash, signature);
     TEST_ASSERT_EQUAL(0, err);
     TEST_ASSERT_NOT_NULL(signature);
 
@@ -92,9 +92,12 @@ TEST_CASE("ds sign test pkcs1_v21", "[ds_rsa]")
     mbedtls_esp_random(NULL, hash, sizeof(hash)); // Fill hash with random data
     unsigned int hashlen = sizeof(hash);
     unsigned char signature[256] = {0};
+    mbedtls_pk_context pk;
+    mbedtls_pk_init(&pk);
+    pk.MBEDTLS_PRIVATE(pk_ctx) = &rsa_ctx;
 
     // esp_ds is not initialized, so we expect an error
-    int err = esp_ds_rsa_sign(&rsa_ctx, mbedtls_esp_random, NULL, MBEDTLS_MD_SHA256, hashlen, hash, signature);
+    int err = esp_ds_rsa_sign(&pk, mbedtls_esp_random, NULL, MBEDTLS_MD_SHA256, hashlen, hash, signature);
     TEST_ASSERT_EQUAL(-1, err);
 
     // Initialize the esp_ds context
@@ -109,7 +112,7 @@ TEST_CASE("ds sign test pkcs1_v21", "[ds_rsa]")
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     // Now we can call esp_ds_rsa_sign again
-    err = esp_ds_rsa_sign(&rsa_ctx, mbedtls_esp_random, NULL, MBEDTLS_MD_SHA256, hashlen, hash, signature);
+    err = esp_ds_rsa_sign(&pk, mbedtls_esp_random, NULL, MBEDTLS_MD_SHA256, hashlen, hash, signature);
     TEST_ASSERT_EQUAL(0, err);
     TEST_ASSERT_NOT_NULL(signature);
 

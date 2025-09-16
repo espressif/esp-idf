@@ -23,8 +23,8 @@
 #include "esp_log.h"
 #include "sha/sha_parallel_engine.h"
 #include "aes/esp_aes.h"
-#include "mbedtls/rsa.h"
-#include "mbedtls/sha256.h"
+// #include "mbedtls/rsa.h"
+// #include "mbedtls/sha256.h"
 #include "psa/crypto.h"
 
 static const char *TAG = "test";
@@ -163,7 +163,7 @@ static void rsa_task(void *pvParameters)
     SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     ESP_LOGI(TAG, "rsa_task is started");
     while (exit_flag == false) {
-        mbedtls_rsa_self_test(0);
+        // mbedtls_rsa_self_test(0);
     }
     xSemaphoreGive(*sema);
     vTaskDelete(NULL);

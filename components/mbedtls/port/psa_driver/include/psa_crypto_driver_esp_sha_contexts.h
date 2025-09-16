@@ -6,6 +6,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \file psa_crypto_driver_esp_sha_contexts.h
  *
@@ -117,3 +121,7 @@ typedef struct {
 } esp_sha_hash_operation_t;
 
 #endif /* ESP_SHA_DRIVER_ENABLED */
+
+#ifdef __cplusplus
+}
+#endif

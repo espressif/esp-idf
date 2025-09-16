@@ -488,23 +488,49 @@ void esp_mbedtls_cleanup(esp_tls_t *tls)
     mbedtls_x509_crt_free(&tls->clientcert);
 
 #ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
-    if (mbedtls_pk_get_type(&tls->clientkey) == MBEDTLS_PK_RSA_ALT) {
-        mbedtls_rsa_alt_context *rsa_alt = tls->clientkey.MBEDTLS_PRIVATE(pk_ctx);
-        if (rsa_alt && rsa_alt->key != NULL) {
-            mbedtls_rsa_free(rsa_alt->key);
-            mbedtls_free(rsa_alt->key);
-            rsa_alt->key = NULL;
+    if (mbedtls_pk_get_type(&tls->clientkey) == MBEDTLS_PK_RSASSA_PSS) {
+        mbedtls_rsa_context *rsa = tls->clientkey.MBEDTLS_PRIVATE(pk_ctx);
+        if (rsa != NULL) {
+            mbedtls_rsa_free(rsa);
+            mbedtls_free(rsa);
+            rsa = NULL;
         }
+        tls->clientkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
     }
 
     // Similar cleanup for server key
-    if (mbedtls_pk_get_type(&tls->serverkey) == MBEDTLS_PK_RSA_ALT) {
-        mbedtls_rsa_alt_context *rsa_alt = tls->serverkey.MBEDTLS_PRIVATE(pk_ctx);
-        if (rsa_alt && rsa_alt->key != NULL) {
-            mbedtls_rsa_free(rsa_alt->key);
-            mbedtls_free(rsa_alt->key);
-            rsa_alt->key = NULL;
+    if (mbedtls_pk_get_type(&tls->serverkey) == MBEDTLS_PK_RSASSA_PSS) {
+        mbedtls_rsa_context *rsa = tls->serverkey.MBEDTLS_PRIVATE(pk_ctx);
+        if (rsa != NULL) {
+            mbedtls_rsa_free(rsa);
+            mbedtls_free(rsa);
+            rsa = NULL;
         }
+        tls->serverkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
+    }
+#endif
+
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+    /* In mbedtls v4.0, ECDSA keys require manual cleanup of the keypair structure */
+    if (mbedtls_pk_get_type(&tls->clientkey) == MBEDTLS_PK_ECDSA) {
+        mbedtls_ecp_keypair *keypair = tls->clientkey.MBEDTLS_PRIVATE(pk_ctx);
+        if (keypair != NULL) {
+            mbedtls_ecp_keypair_free(keypair);
+            mbedtls_free(keypair);
+            keypair = NULL;
+        }
+        tls->clientkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
+    }
+
+    // Similar cleanup for server key
+    if (mbedtls_pk_get_type(&tls->serverkey) == MBEDTLS_PK_ECDSA) {
+        mbedtls_ecp_keypair *keypair = tls->serverkey.MBEDTLS_PRIVATE(pk_ctx);
+        if (keypair != NULL) {
+            mbedtls_ecp_keypair_free(keypair);
+            mbedtls_free(keypair);
+            keypair = NULL;
+        }
+        tls->serverkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
     }
 #endif
 
@@ -1347,6 +1373,13 @@ static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, const void *pki)
 #endif /* CONFIG_ESP_TLS_USE_SECURE_ELEMENT */
 
 #ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
+
+int esp_mbedtls_ds_can_do(mbedtls_pk_type_t type)
+{
+    ESP_LOGI(TAG, "esp_mbedtls_ds_can_do called with type %d", type);
+    return type == MBEDTLS_PK_RSA || type == MBEDTLS_PK_RSASSA_PSS;
+}
+
 static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
 {
     int ret = -1;
@@ -1357,15 +1390,31 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
         return ESP_ERR_NO_MEM;
     }
     mbedtls_rsa_init(rsakey);
-    if ((ret = mbedtls_pk_setup_rsa_alt(((const esp_tls_pki_t*)pki)->pk_key, rsakey, NULL, esp_ds_rsa_sign,
-                                        esp_ds_get_keylen )) != 0) {
-        ESP_LOGE(TAG, "Error in mbedtls_pk_setup_rsa_alt, returned -0x%04X", -ret);
-        mbedtls_print_error_msg(ret);
-        mbedtls_rsa_free(rsakey);
-        free(rsakey);
-        ret = ESP_FAIL;
+    esp_tls_pki_t *pki_l = (esp_tls_pki_t *) pki;
+    mbedtls_pk_context *pk_context = (mbedtls_pk_context *) pki_l->pk_key;
+    // const mbedtls_pk_info_t *pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_RSA);
+    mbedtls_pk_info_t *esp_ds_pk_info = calloc(1, sizeof(mbedtls_pk_info_t));
+    if (esp_ds_pk_info == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory for mbedtls_pk_info_t");
+        ret = ESP_ERR_NO_MEM;
         goto exit;
     }
+
+    esp_ds_pk_info->sign_func = esp_ds_rsa_sign_alt;
+    esp_ds_pk_info->get_bitlen = esp_ds_get_keylen_alt;
+    esp_ds_pk_info->can_do = esp_mbedtls_ds_can_do;
+    esp_ds_pk_info->type = MBEDTLS_PK_RSASSA_PSS;
+    pk_context->pk_info = esp_ds_pk_info;
+    pk_context->pk_ctx = rsakey;
+    // if ((ret = mbedtls_pk_setup_rsa_alt(((const esp_tls_pki_t*)pki)->pk_key, rsakey, NULL, esp_ds_rsa_sign,
+    //                                     esp_ds_get_keylen )) != 0) {
+    //     ESP_LOGE(TAG, "Error in mbedtls_pk_setup_rsa_alt, returned -0x%04X", -ret);
+    //     mbedtls_print_error_msg(ret);
+    //     mbedtls_rsa_free(rsakey);
+    //     free(rsakey);
+    //     ret = ESP_FAIL;
+    //     goto exit;
+    // }
     ret = esp_ds_init_data_ctx(((const esp_tls_pki_t*)pki)->esp_ds_data);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize DS parameters from nvs");

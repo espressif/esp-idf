@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include_next "mbedtls/gcm.h"
+// #include_next "mbedtls/gcm.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus

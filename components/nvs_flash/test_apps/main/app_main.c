@@ -8,7 +8,7 @@
 #include "unity.h"
 #include "esp_partition.h"
 #ifdef CONFIG_NVS_ENCRYPTION
-#include "mbedtls/aes.h"
+// #include "mbedtls/aes.h"
 #endif
 #include "memory_checks.h"
 #include "esp_newlib.h"

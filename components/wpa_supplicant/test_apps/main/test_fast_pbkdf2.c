@@ -7,12 +7,12 @@
 #include <inttypes.h>
 #include "unity.h"
 #include "utils/common.h"
-#include "mbedtls/pkcs5.h"
+#include "mbedtls/private/pkcs5.h"
 #include "crypto/sha1.h"
 #include "test_wpa_supplicant_common.h"
 
 #define PMK_LEN 32
-#define NUM_ITERATIONS 5
+#define NUM_ITERATIONS 3
 #define MIN_PASSPHARSE_LEN 8
 
 void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,

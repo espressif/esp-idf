@@ -66,6 +66,10 @@ TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
         sprintf(command, "type=qrcode key=%s", key);
         id = dpp_bootstrap_gen(dpp, command);
         uri =  dpp_bootstrap_get_uri(dpp, id);
+        if (uri == NULL) {
+            ESP_LOGE("DPP Test", "Failed to get URI from bootstrap id");
+            TEST_ASSERT(0);
+        }
         printf("uri is =%s\n", uri);
         printf("is  be =%s\n", bootstrap_info);
         TEST_ASSERT((strcmp(uri, bootstrap_info) == 0));
