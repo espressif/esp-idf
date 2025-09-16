@@ -13,7 +13,9 @@
 #include "rom/digital_signature.h"
 #include "hal/mmu_types.h"
 #include "hal/wdt_hal.h"
+#include "hal/spi_flash_hal.h"
 #include "hal/spi_flash_types.h"
+#include "esp_private/mspi_timing_tuning.h"
 #include "esp_hmac.h"
 #include "esp_ds.h"
 #include "esp_crypto_lock.h"
@@ -490,4 +492,36 @@ esp_err_t IRAM_ATTR __wrap_spi_flash_chip_generic_config_host_io_mode(esp_flash_
 {
     return esp_tee_service_call(3, SS_SPI_FLASH_CHIP_GENERIC_CONFIG_HOST_IO_MODE, chip, flags);
 }
+
+#if CONFIG_IDF_TARGET_ESP32C5
+void IRAM_ATTR __wrap_mspi_timing_flash_tuning(void)
+{
+    esp_tee_service_call(1, SS_MSPI_TIMING_FLASH_TUNING);
+}
+
+void IRAM_ATTR __wrap_mspi_timing_psram_tuning(void)
+{
+    esp_tee_service_call(1, SS_MSPI_TIMING_PSRAM_TUNING);
+}
+
+void IRAM_ATTR __wrap_mspi_timing_enter_low_speed_mode(bool control_spi1)
+{
+    esp_tee_service_call(2, SS_MSPI_TIMING_ENTER_LOW_SPEED_MODE, control_spi1);
+}
+
+void IRAM_ATTR __wrap_mspi_timing_enter_high_speed_mode(bool control_spi1)
+{
+    esp_tee_service_call(2, SS_MSPI_TIMING_ENTER_HIGH_SPEED_MODE, control_spi1);
+}
+
+void IRAM_ATTR __wrap_mspi_timing_change_speed_mode_cache_safe(bool switch_down)
+{
+    esp_tee_service_call(2, SS_MSPI_TIMING_CHANGE_SPEED_MODE_CACHE_SAFE, switch_down);
+}
+
+void IRAM_ATTR __wrap_spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing_config)
+{
+    esp_tee_service_call(2, SS_SPI_TIMING_GET_FLASH_TIMING_PARAM, out_timing_config);
+}
+#endif
 #endif
