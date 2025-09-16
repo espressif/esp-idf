@@ -53,9 +53,23 @@ def test_flash4_psram4(dut: IdfDut) -> None:
     'config',
     [
         'esp32p4_120sdr_200ddr',
+        'esp32p4_timing_tuning_log_safe',
     ],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
 def test_flash_psram_esp32p4(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'generic_timing_tuning_log_safe',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c5', 'esp32c61'], indirect=['target'])
+def test_flash_psram_generic(dut: IdfDut) -> None:
     dut.run_all_single_board_cases()

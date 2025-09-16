@@ -27,13 +27,13 @@ const static char *TAG = "MSPI Timing";
 //-------------------------------------MSPI Clock Setting-------------------------------------//
 static void s_mspi_flash_set_core_clock(uint8_t mspi_id, uint32_t core_clock_mhz)
 {
-    ESP_EARLY_LOGV(TAG, "flash core clock: %d", core_clock_mhz);
+    ESP_DRAM_LOGV(TAG, "flash core clock: %d", core_clock_mhz);
     mspi_timing_ll_set_core_clock(mspi_id, core_clock_mhz);
 }
 
 static void s_mspi_psram_set_core_clock(uint8_t mspi_id, uint32_t core_clock_mhz)
 {
-    ESP_EARLY_LOGV(TAG, "psram core clock: %d", core_clock_mhz);
+    ESP_DRAM_LOGV(TAG, "psram core clock: %d", core_clock_mhz);
     mspi_timing_ll_set_core_clock(mspi_id, core_clock_mhz);
 }
 
@@ -49,7 +49,7 @@ void mspi_timing_config_set_flash_clock(uint32_t flash_freq_mhz, mspi_timing_spe
     s_mspi_flash_set_core_clock(MSPI_TIMING_LL_MSPI_ID_0, core_clock_mhz);
 
     uint32_t freqdiv = core_clock_mhz / flash_freq_mhz;
-    ESP_EARLY_LOGV(TAG, "flash freqdiv: %d", freqdiv);
+    ESP_DRAM_LOGV(TAG, "flash freqdiv: %d", freqdiv);
     assert(freqdiv > 0);
     uint32_t reg_val = mspi_timing_ll_calculate_clock_reg(freqdiv);
     mspi_timing_ll_set_flash_clock(MSPI_TIMING_LL_MSPI_ID_0, reg_val);
@@ -71,7 +71,7 @@ void mspi_timing_config_set_psram_clock(uint32_t psram_freq_mhz, mspi_timing_spe
     s_mspi_psram_set_core_clock(MSPI_TIMING_LL_MSPI_ID_0, core_clock_mhz);
 
     uint32_t freqdiv = core_clock_mhz / psram_freq_mhz;
-    ESP_EARLY_LOGV(TAG, "psram freqdiv: %d", freqdiv);
+    ESP_DRAM_LOGV(TAG, "psram freqdiv: %d", freqdiv);
     assert(freqdiv > 0);
     uint32_t reg_val = mspi_timing_ll_calculate_clock_reg(freqdiv);
     mspi_timing_ll_set_psram_clock(MSPI_TIMING_LL_MSPI_ID_0, reg_val);
