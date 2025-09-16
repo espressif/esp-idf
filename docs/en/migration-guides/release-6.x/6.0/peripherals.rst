@@ -195,3 +195,8 @@ Touch Element
 The ``touch_element`` component is moved to [ESP Component Registry](https://components.espressif.com/components/espressif/touch_element/versions/1.0.0/readme).
 
 You can add this dependency to your project by running ``idf.py add-dependency "espressif/touch_element"``.
+
+Touch Sensor
+------------
+
+The ``touch_sensor_sample_config_t::bypass_shield_output`` member for version 3 touch sensor has been removed because it is not supported in the version 3 hardware.

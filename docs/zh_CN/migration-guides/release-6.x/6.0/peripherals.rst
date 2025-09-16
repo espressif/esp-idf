@@ -196,3 +196,7 @@ Touch Element
 
 您可以通过运行 ``idf.py add-dependency "espressif/touch_element"`` 将这个依赖添加到您的项目中。
 
+Touch Sensor
+------------
+
+第三版触摸传感器的驱动配置项 ``touch_sensor_sample_config_t::bypass_shield_output`` 已被移除，因为第三版触摸传感器硬件已不支持该功能。

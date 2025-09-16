@@ -137,6 +137,12 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
                         "at least one sample configuration required");
     ESP_RETURN_ON_FALSE(sens_cfg->sample_cfg_num <= TOUCH_SAMPLE_CFG_NUM, ESP_ERR_INVALID_ARG, TAG,
                         "at most %d sample configurations supported", (int)(TOUCH_SAMPLE_CFG_NUM));
+    ESP_RETURN_ON_FALSE(sens_cfg->trigger_rise_cnt <= sens_cfg->sample_cfg_num, ESP_ERR_INVALID_ARG, TAG,
+                        "trigger_rise_cnt should within 0 ~ sample_cfg_num");
+#if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP_REV_MIN_FULL < 300
+    ESP_RETURN_ON_FALSE(sens_cfg->trigger_rise_cnt < 2, ESP_ERR_INVALID_ARG, TAG,
+                        "this target do not support trigger_rise_cnt > 1");
+#endif
 
     /* Get the source clock frequency for the first time */
     if (!sens_handle->src_freq_hz) {
@@ -161,6 +167,7 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
     ESP_RETURN_ON_FALSE(hal_cfg->timeout_ticks <= TOUCH_LL_TIMEOUT_MAX, ESP_ERR_INVALID_ARG, TAG,
                         "max_meas_time_ms should within %"PRIu32, TOUCH_LL_TIMEOUT_MAX / src_freq_mhz);
     hal_cfg->sample_cfg_num = sens_cfg->sample_cfg_num;
+    hal_cfg->trigger_rise_cnt = sens_cfg->trigger_rise_cnt ? sens_cfg->trigger_rise_cnt : (sens_cfg->sample_cfg_num == 1 ? 1 : 2);
     hal_cfg->output_mode = sens_cfg->output_mode;
 
     for (uint32_t smp_cfg_id = 0; smp_cfg_id < sens_cfg->sample_cfg_num; smp_cfg_id++) {
@@ -317,8 +324,16 @@ esp_err_t touch_channel_config_benchmark(touch_channel_handle_t chan_handle, con
 {
     TOUCH_NULL_POINTER_CHECK_ISR(chan_handle);
     TOUCH_NULL_POINTER_CHECK_ISR(benchmark_cfg);
+#if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP_REV_MIN_FULL < 300
+    ESP_RETURN_ON_FALSE_ISR(!benchmark_cfg->do_force_update, ESP_ERR_INVALID_ARG, TAG, "this target do not support force update benchmark");
+#else
+    ESP_RETURN_ON_FALSE_ISR(benchmark_cfg->do_reset != benchmark_cfg->do_force_update, ESP_ERR_INVALID_ARG, TAG, "do_reset and do_force_update cannot be both true");
+#endif
     if (benchmark_cfg->do_reset) {
         touch_ll_reset_chan_benchmark(BIT(chan_handle->id));
+    }
+    if (benchmark_cfg->do_force_update) {
+        touch_ll_force_update_benchmark(chan_handle->id, benchmark_cfg->sample_cfg_id, benchmark_cfg->benchmark);
     }
     return ESP_OK;
 }
