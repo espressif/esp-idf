@@ -77,6 +77,9 @@ else()
                                     # should be removable once using component init functions
                                     # link-time registration is used.
                                     bootloader_support esp_pm esp_usb_cdc_rom_console
+                                    # [REFACTOR-TODO] Provide system hook to release dependency reversion.
+                                    # IDF-13980
+                                    esp_hal_i2c
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 

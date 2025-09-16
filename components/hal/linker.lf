@@ -7,8 +7,6 @@ entries:
             cache_hal_esp32 (noflash)
         else:
             cache_hal (noflash)
-    if SOC_I2C_SUPPORTED = y:
-        i2c_hal_iram (noflash)
     if HAL_WDT_USE_ROM_IMPL = n:
         wdt_hal_iram (noflash)
     if SOC_SYSTIMER_SUPPORTED = y && HAL_SYSTIMER_USE_ROM_IMPL = n:

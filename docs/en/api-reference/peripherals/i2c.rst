@@ -682,4 +682,4 @@ API Reference
     .. include-build-file:: inc/i2c_slave.inc
 
 .. include-build-file:: inc/components/esp_driver_i2c/include/driver/i2c_types.inc
-.. include-build-file:: inc/components/hal/include/hal/i2c_types.inc
+.. include-build-file:: inc/components/esp_hal_i2c/include/hal/i2c_types.inc

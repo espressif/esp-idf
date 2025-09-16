@@ -95,6 +95,7 @@
 /components/esp_eth/                  @esp-idf-codeowners/network
 /components/esp_event/                @esp-idf-codeowners/system
 /components/esp_gdbstub/              @esp-idf-codeowners/debugging
+/components/esp_hal_*/                @esp-idf-codeowners/peripherals
 /components/esp_hid/                  @esp-idf-codeowners/bluetooth
 /components/esp_http_client/          @esp-idf-codeowners/app-utilities
 /components/esp_http_server/          @esp-idf-codeowners/app-utilities

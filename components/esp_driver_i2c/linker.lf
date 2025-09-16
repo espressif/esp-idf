@@ -10,7 +10,7 @@ entries:
         i2c_master: s_i2c_start_end_command (noflash)
 
 [mapping:i2c_hal]
-archive: libhal.a
+archive: libesp_hal_i2c.a
 entries:
     if I2C_ISR_IRAM_SAFE = y:
         i2c_hal: i2c_hal_master_trans_start (noflash)

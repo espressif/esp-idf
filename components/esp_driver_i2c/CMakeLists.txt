@@ -15,6 +15,7 @@ if(CONFIG_SOC_I2C_SUPPORTED)
 
 endif()
 
+set(requires esp_hal_i2c)
 if(${target} STREQUAL "linux")
     set(priv_requires esp_ringbuf)
 else()
@@ -23,6 +24,7 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS ${include}
+                    REQUIRES "${requires}"
                     PRIV_REQUIRES "${priv_requires}"
                     LDFRAGMENTS "linker.lf"
                     )

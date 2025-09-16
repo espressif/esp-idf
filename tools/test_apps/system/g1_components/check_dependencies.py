@@ -1,9 +1,12 @@
 # SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import argparse
+import glob
 import logging
+import os
 
-g1_g0_components = [
+# Base G1/G0 components (static list)
+g1_g0_components_base = [
     'hal',
     'cxx',
     'esp_libc',
@@ -20,6 +23,33 @@ g1_g0_components = [
     'spi_flash',
     'esp_mm',
 ]
+
+
+def get_all_esp_hal_components() -> list[str]:
+    """Dynamically discover all esp_hal_* components"""
+    esp_hal_components = []
+
+    # Try to get IDF_PATH from environment
+    idf_path = os.environ.get('IDF_PATH')
+    if idf_path is None:
+        # Fallback: assume script is in IDF_PATH/tools/test_apps/system/g1_components/
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        idf_path = os.path.join(script_dir, '../../../../..')
+
+    components_dir = os.path.join(idf_path, 'components')
+    if os.path.exists(components_dir):
+        # Find all esp_hal_* directories
+        esp_hal_dirs = glob.glob(os.path.join(components_dir, 'esp_hal_*'))
+        for hal_dir in esp_hal_dirs:
+            if os.path.isdir(hal_dir):
+                component_name = os.path.basename(hal_dir)
+                esp_hal_components.append(component_name)
+
+    return sorted(esp_hal_components)
+
+
+# Build complete G1/G0 components list (base + dynamic esp_hal_* components)
+g1_g0_components = g1_g0_components_base + get_all_esp_hal_components()
 
 # Global expected dependency violations that apply to all targets
 expected_dep_violations = {
