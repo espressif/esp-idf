@@ -99,6 +99,46 @@ function(idf_component_get_property variable component property)
 endfunction()
 
 #[[
+   idf_component_get_cached_name(<variable> <component>)
+
+   :variable[out]: Variable to store the cached resolved name in, or empty if not found.
+   :component[in]: Component name to look up in the cache.
+
+   Get a cached resolved component name
+#]]
+function(idf_component_get_cached_name variable component)
+    # Create a target to use to store the cached resolved name
+    if(NOT TARGET __idf_component_name_cache)
+        add_library(__idf_component_name_cache INTERFACE)
+    endif()
+
+    __get_property(TARGET __idf_component_name_cache
+                   PROPERTY "__IDF_COMPONENT_NAME_CACHE_${component}"
+                   OUTPUT cached_name)
+    set(${variable} "${cached_name}" PARENT_SCOPE)
+endfunction()
+
+#[[
+   idf_component_set_cached_name(<component> <resolved_name>)
+
+   :component[in]: Original component name.
+   :resolved_name[in]: Resolved component name to cache.
+
+   Store a resolved component name in the component name cache.
+#]]
+function(idf_component_set_cached_name component resolved_name)
+    # Create a target to use to store the cached resolved name
+    if(NOT TARGET __idf_component_name_cache)
+        add_library(__idf_component_name_cache INTERFACE)
+    endif()
+
+    __set_property(TARGET __idf_component_name_cache
+                   PROPERTY "__IDF_COMPONENT_NAME_CACHE_${component}"
+                   PROPERTIES __IDF_COMPONENT_NAME_CACHE_PROPERTIES
+                   VALUE "${resolved_name}")
+endfunction()
+
+#[[
     __get_component_paths(PATHS <path>...
                           [EXCLUDE_PATHS <path>...]
                           [SOURCE <source>]
@@ -226,26 +266,35 @@ function(__get_component_interface)
 
     set(component_interface NOTFOUND)
 
-    # Try to resolve component name from short name to namespaced name
-    __resolve_component_name(COMPONENT "${ARG_COMPONENT}"
-                            KNOWN_COMPONENTS "${component_names}"
-                            OUTPUT resolved_component)
-
-    if("${resolved_component}" IN_LIST component_names)
-        # Found a resolved component name, use it
-        set(component_interface "${component_prefix}_${resolved_component}")
+    # Search by the exact component name first (most common case)
+    if("${ARG_COMPONENT}" IN_LIST component_names)
+        set(component_interface "${component_prefix}_${ARG_COMPONENT}")
     else()
-        # The component name might be an alias, so retrieve the actual target
-        # name.
-        __get_real_target(TARGET ${ARG_COMPONENT} OUTPUT real_target)
-        if("${real_target}" IN_LIST component_interfaces)
-            # The component name is already a component interface or its alias.
-            set(component_interface "${real_target}")
+        # Search by component interface
+        set(interface "${component_prefix}_${ARG_COMPONENT}")
+        if("${interface}" IN_LIST component_interfaces)
+            set(component_interface "${interface}")
         else()
-            string(SUBSTRING "${ARG_COMPONENT}" 1 -1 interface)
-            if("${interface}" IN_LIST component_interfaces)
-                # The component name is the actual target of the component.
-                set(component_interface "${interface}")
+            # Search by real target/alias
+            __get_real_target(TARGET ${ARG_COMPONENT} OUTPUT real_target)
+            if("${real_target}" IN_LIST component_interfaces)
+                # The component name is already a component interface or its alias
+                set(component_interface "${real_target}")
+            else()
+                string(SUBSTRING "${ARG_COMPONENT}" 1 -1 interface)
+                if("${interface}" IN_LIST component_interfaces)
+                    # The component name is the actual target of the component
+                    set(component_interface "${interface}")
+                else()
+                    # Try to resolve component name from short name to namespaced name
+                    __resolve_component_name(COMPONENT "${ARG_COMPONENT}"
+                                            KNOWN_COMPONENTS "${component_names}"
+                                            OUTPUT resolved_component)
+                    if("${resolved_component}" IN_LIST component_names)
+                        # Found a resolved component name, use it
+                        set(component_interface "${component_prefix}_${resolved_component}")
+                    endif()
+                endif()
             endif()
         endif()
     endif()
@@ -603,6 +652,9 @@ endfunction()
     This function takes component priority into account by preferring
     components with higher priority when multiple matches exist. This behavior
     differs from the component manager's _choose_component function.
+
+    This function also caches the resolved component name in the component name cache
+    to avoid re-resolving the same component name multiple times.
 #]]
 function(__resolve_component_name)
     set(options)
@@ -621,8 +673,16 @@ function(__resolve_component_name)
     set(component "${ARG_COMPONENT}")
     set(known_components "${ARG_KNOWN_COMPONENTS}")
 
+    # Lookup for previously resolved components in the cache
+    idf_component_get_cached_name(cached_result "${component}")
+    if(cached_result)
+        set(${ARG_OUTPUT} "${cached_result}" PARENT_SCOPE)
+        return()
+    endif()
+
     # 1. If exact name exists, return it (highest priority match)
     if("${component}" IN_LIST known_components)
+        idf_component_set_cached_name("${component}" "${component}")
         set(${ARG_OUTPUT} "${component}" PARENT_SCOPE)
         return()
     endif()
@@ -652,6 +712,7 @@ function(__resolve_component_name)
 
     if(NOT "${best_match}" STREQUAL "")
         idf_dbg("Component '${component}' resolved to namespaced version '${best_match}'")
+        idf_component_set_cached_name("${component}" "${best_match}")
         set(${ARG_OUTPUT} "${best_match}" PARENT_SCOPE)
         return()
     endif()
@@ -660,6 +721,7 @@ function(__resolve_component_name)
     __component_name_without_namespace(COMPONENT "${component}" OUTPUT component_without_ns)
     if("${component_without_ns}" IN_LIST known_components)
         idf_dbg("Component '${component}' resolved to non-namespaced version '${component_without_ns}'")
+        idf_component_set_cached_name("${component}" "${component_without_ns}")
         set(${ARG_OUTPUT} "${component_without_ns}" PARENT_SCOPE)
         return()
     endif()
@@ -683,11 +745,13 @@ function(__resolve_component_name)
     if(NOT "${best_match}" STREQUAL "")
         idf_dbg("Component '${component}'
          resolved via cross-namespace matching to '${best_match}' (priority ${best_priority})")
+        idf_component_set_cached_name("${component}" "${best_match}")
         set(${ARG_OUTPUT} "${best_match}" PARENT_SCOPE)
         return()
     endif()
 
     # 5. No match found, return original name (will likely cause CMake error)
+    idf_component_set_cached_name("${component}" "${component}")
     set(${ARG_OUTPUT} "${component}" PARENT_SCOPE)
 endfunction()
 
