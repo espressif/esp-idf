@@ -73,6 +73,7 @@ static size_t rmt_encode_bs(rmt_encoder_t *encoder, rmt_channel_handle_t channel
     // cross line, means desc0 has prepared with sufficient data buffer
     if (dma_lli0_index != dma_lli1_index) {
         gdma_link_set_owner(tx_chan->dma_link, dma_lli0_index, GDMA_LLI_OWNER_DMA);
+        gdma_link_set_length(tx_chan->dma_link, dma_lli0_index, tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t));
     }
 
     if (encoding_truncated) {
@@ -94,6 +95,7 @@ static size_t rmt_encode_bs(rmt_encoder_t *encoder, rmt_channel_handle_t channel
     // reset offset pointer when exceeds maximum range
     if (tx_chan->mem_off_bytes >= tx_chan->ping_pong_symbols * 2 * sizeof(rmt_symbol_word_t)) {
         gdma_link_set_owner(tx_chan->dma_link, dma_lli1_index, GDMA_LLI_OWNER_DMA);
+        gdma_link_set_length(tx_chan->dma_link, dma_lli1_index, tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t));
         tx_chan->mem_off_bytes = 0;
     }
 

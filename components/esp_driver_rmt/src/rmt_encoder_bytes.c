@@ -104,6 +104,7 @@ static size_t rmt_encode_bytes(rmt_encoder_t *encoder, rmt_channel_handle_t chan
         // cross line, means desc0 has prepared with sufficient data buffer
         if (dma_lli0_index != dma_lli1_index) {
             gdma_link_set_owner(tx_chan->dma_link, dma_lli0_index, GDMA_LLI_OWNER_DMA);
+            gdma_link_set_length(tx_chan->dma_link, dma_lli0_index, tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t));
         }
     }
 #endif // SOC_RMT_SUPPORT_DMA
@@ -129,6 +130,7 @@ static size_t rmt_encode_bytes(rmt_encoder_t *encoder, rmt_channel_handle_t chan
 #if SOC_RMT_SUPPORT_DMA
         if (channel->dma_chan) {
             gdma_link_set_owner(tx_chan->dma_link, dma_lli1_index, GDMA_LLI_OWNER_DMA);
+            gdma_link_set_length(tx_chan->dma_link, dma_lli1_index, tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t));
         }
 #endif // SOC_RMT_SUPPORT_DMA
         tx_chan->mem_off_bytes = 0;
