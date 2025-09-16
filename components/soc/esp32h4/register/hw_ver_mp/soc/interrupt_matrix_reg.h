@@ -10,10 +10,12 @@
 extern "C" {
 #endif
 
+#define DR_REG_INTERRUPT_BASE(i)             (DR_REG_INTMTX0_BASE + (i) * 0x1000)
+
 /** INTERRUPT_CORE0_WIFI_MAC_INTR_MAP_REG register
  *  WIFI_MAC_INTR mapping register
  */
-#define INTERRUPT_CORE0_WIFI_MAC_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x0)
+#define INTERRUPT_CORE0_WIFI_MAC_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x0)
 /** INTERRUPT_CORE0_WIFI_MAC_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -32,7 +34,7 @@ extern "C" {
 /** INTERRUPT_CORE0_WIFI_MAC_NMI_MAP_REG register
  *  WIFI_MAC_NMI mapping register
  */
-#define INTERRUPT_CORE0_WIFI_MAC_NMI_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x4)
+#define INTERRUPT_CORE0_WIFI_MAC_NMI_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x4)
 /** INTERRUPT_CORE0_WIFI_MAC_NMI_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -51,7 +53,7 @@ extern "C" {
 /** INTERRUPT_CORE0_WIFI_PWR_INTR_MAP_REG register
  *  WIFI_PWR_INTR mapping register
  */
-#define INTERRUPT_CORE0_WIFI_PWR_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x8)
+#define INTERRUPT_CORE0_WIFI_PWR_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x8)
 /** INTERRUPT_CORE0_WIFI_PWR_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -70,7 +72,7 @@ extern "C" {
 /** INTERRUPT_CORE0_WIFI_BB_INTR_MAP_REG register
  *  WIFI_BB_INTR mapping register
  */
-#define INTERRUPT_CORE0_WIFI_BB_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xc)
+#define INTERRUPT_CORE0_WIFI_BB_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xc)
 /** INTERRUPT_CORE0_WIFI_BB_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -89,7 +91,7 @@ extern "C" {
 /** INTERRUPT_CORE0_BT_MAC_INTR_MAP_REG register
  *  BT_MAC_INTR mapping register
  */
-#define INTERRUPT_CORE0_BT_MAC_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x10)
+#define INTERRUPT_CORE0_BT_MAC_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x10)
 /** INTERRUPT_CORE0_BT_MAC_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -108,7 +110,7 @@ extern "C" {
 /** INTERRUPT_CORE0_BT_BB_INTR_MAP_REG register
  *  BT_BB_INTR mapping register
  */
-#define INTERRUPT_CORE0_BT_BB_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x14)
+#define INTERRUPT_CORE0_BT_BB_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x14)
 /** INTERRUPT_CORE0_BT_BB_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -127,7 +129,7 @@ extern "C" {
 /** INTERRUPT_CORE0_BT_BB_NMI_MAP_REG register
  *  BT_BB_NMI mapping register
  */
-#define INTERRUPT_CORE0_BT_BB_NMI_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x18)
+#define INTERRUPT_CORE0_BT_BB_NMI_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x18)
 /** INTERRUPT_CORE0_BT_BB_NMI_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -146,7 +148,7 @@ extern "C" {
 /** INTERRUPT_CORE0_LP_TIMER_INTR_MAP_REG register
  *  LP_TIMER_INTR mapping register
  */
-#define INTERRUPT_CORE0_LP_TIMER_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x1c)
+#define INTERRUPT_CORE0_LP_TIMER_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x1c)
 /** INTERRUPT_CORE0_LP_TIMER_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -165,7 +167,7 @@ extern "C" {
 /** INTERRUPT_CORE0_COEX_INTR_MAP_REG register
  *  COEX_INTR mapping register
  */
-#define INTERRUPT_CORE0_COEX_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x20)
+#define INTERRUPT_CORE0_COEX_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x20)
 /** INTERRUPT_CORE0_COEX_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -184,7 +186,7 @@ extern "C" {
 /** INTERRUPT_CORE0_BLE_TIMER_INTR_MAP_REG register
  *  BLE_TIMER_INTR mapping register
  */
-#define INTERRUPT_CORE0_BLE_TIMER_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x24)
+#define INTERRUPT_CORE0_BLE_TIMER_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x24)
 /** INTERRUPT_CORE0_BLE_TIMER_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -203,7 +205,7 @@ extern "C" {
 /** INTERRUPT_CORE0_BLE_SEC_INTR_MAP_REG register
  *  BLE_SEC_INTR mapping register
  */
-#define INTERRUPT_CORE0_BLE_SEC_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x28)
+#define INTERRUPT_CORE0_BLE_SEC_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x28)
 /** INTERRUPT_CORE0_BLE_SEC_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -222,7 +224,7 @@ extern "C" {
 /** INTERRUPT_CORE0_I2C_MST_INTR_MAP_REG register
  *  I2C_MST_INTR mapping register
  */
-#define INTERRUPT_CORE0_I2C_MST_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x2c)
+#define INTERRUPT_CORE0_I2C_MST_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x2c)
 /** INTERRUPT_CORE0_I2C_MST_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -241,7 +243,7 @@ extern "C" {
 /** INTERRUPT_CORE0_ZB_MAC_INTR_MAP_REG register
  *  ZB_MAC_INTR mapping register
  */
-#define INTERRUPT_CORE0_ZB_MAC_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x30)
+#define INTERRUPT_CORE0_ZB_MAC_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x30)
 /** INTERRUPT_CORE0_ZB_MAC_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -260,7 +262,7 @@ extern "C" {
 /** INTERRUPT_CORE0_MODEM_APB_TIMEOUT_INTR_MAP_REG register
  *  MODEM_APB_TIMEOUT_INTR mapping register
  */
-#define INTERRUPT_CORE0_MODEM_APB_TIMEOUT_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x34)
+#define INTERRUPT_CORE0_MODEM_APB_TIMEOUT_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x34)
 /** INTERRUPT_CORE0_MODEM_APB_TIMEOUT_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -279,7 +281,7 @@ extern "C" {
 /** INTERRUPT_CORE0_BT_MAC_INT1_MAP_REG register
  *  BT_MAC_INT1 mapping register
  */
-#define INTERRUPT_CORE0_BT_MAC_INT1_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x38)
+#define INTERRUPT_CORE0_BT_MAC_INT1_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x38)
 /** INTERRUPT_CORE0_BT_MAC_INT1_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -298,7 +300,7 @@ extern "C" {
 /** INTERRUPT_CORE0_PMU_INTR_MAP_REG register
  *  PMU_INTR mapping register
  */
-#define INTERRUPT_CORE0_PMU_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x3c)
+#define INTERRUPT_CORE0_PMU_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x3c)
 /** INTERRUPT_CORE0_PMU_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -317,7 +319,7 @@ extern "C" {
 /** INTERRUPT_CORE0_EFUSE_INTR_MAP_REG register
  *  EFUSE_INTR mapping register
  */
-#define INTERRUPT_CORE0_EFUSE_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x40)
+#define INTERRUPT_CORE0_EFUSE_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x40)
 /** INTERRUPT_CORE0_EFUSE_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -336,7 +338,7 @@ extern "C" {
 /** INTERRUPT_CORE0_LP_RTC_TIMER_INTR_MAP_REG register
  *  LP_RTC_TIMER_INTR mapping register
  */
-#define INTERRUPT_CORE0_LP_RTC_TIMER_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x44)
+#define INTERRUPT_CORE0_LP_RTC_TIMER_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x44)
 /** INTERRUPT_CORE0_LP_RTC_TIMER_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -355,7 +357,7 @@ extern "C" {
 /** INTERRUPT_CORE0_LP_RTC_BLE_TIMER_INTR_MAP_REG register
  *  LP_RTC_BLE_TIMER_INTR mapping register
  */
-#define INTERRUPT_CORE0_LP_RTC_BLE_TIMER_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x48)
+#define INTERRUPT_CORE0_LP_RTC_BLE_TIMER_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x48)
 /** INTERRUPT_CORE0_LP_RTC_BLE_TIMER_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -374,7 +376,7 @@ extern "C" {
 /** INTERRUPT_CORE0_LP_WDT_INTR_MAP_REG register
  *  LP_WDT_INTR mapping register
  */
-#define INTERRUPT_CORE0_LP_WDT_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x4c)
+#define INTERRUPT_CORE0_LP_WDT_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x4c)
 /** INTERRUPT_CORE0_LP_WDT_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -393,7 +395,7 @@ extern "C" {
 /** INTERRUPT_CORE0_TOUCH_INTR_MAP_REG register
  *  TOUCH_INTR mapping register
  */
-#define INTERRUPT_CORE0_TOUCH_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x50)
+#define INTERRUPT_CORE0_TOUCH_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x50)
 /** INTERRUPT_CORE0_TOUCH_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -412,7 +414,7 @@ extern "C" {
 /** INTERRUPT_CORE0_HUK_INTR_MAP_REG register
  *  HUK_INTR mapping register
  */
-#define INTERRUPT_CORE0_HUK_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x54)
+#define INTERRUPT_CORE0_HUK_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x54)
 /** INTERRUPT_CORE0_HUK_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -431,7 +433,7 @@ extern "C" {
 /** INTERRUPT_CORE0_LP_PERI_PMS_INTR_MAP_REG register
  *  LP_PERI_PMS_INTR mapping register
  */
-#define INTERRUPT_CORE0_LP_PERI_PMS_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x58)
+#define INTERRUPT_CORE0_LP_PERI_PMS_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x58)
 /** INTERRUPT_CORE0_LP_PERI_PMS_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -450,7 +452,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CPU_INTR_FROM_CPU_0_MAP_REG register
  *  CPU_INTR_FROM_CPU_0 mapping register
  */
-#define INTERRUPT_CORE0_CPU_INTR_FROM_CPU_0_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x5c)
+#define INTERRUPT_CORE0_CPU_INTR_FROM_CPU_0_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x5c)
 /** INTERRUPT_CORE0_CPU_INTR_FROM_CPU_0_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -469,7 +471,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CPU_INTR_FROM_CPU_1_MAP_REG register
  *  CPU_INTR_FROM_CPU_1 mapping register
  */
-#define INTERRUPT_CORE0_CPU_INTR_FROM_CPU_1_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x60)
+#define INTERRUPT_CORE0_CPU_INTR_FROM_CPU_1_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x60)
 /** INTERRUPT_CORE0_CPU_INTR_FROM_CPU_1_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -488,7 +490,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CPU_INTR_FROM_CPU_2_MAP_REG register
  *  CPU_INTR_FROM_CPU_2 mapping register
  */
-#define INTERRUPT_CORE0_CPU_INTR_FROM_CPU_2_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x64)
+#define INTERRUPT_CORE0_CPU_INTR_FROM_CPU_2_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x64)
 /** INTERRUPT_CORE0_CPU_INTR_FROM_CPU_2_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -507,7 +509,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CPU_INTR_FROM_CPU_3_MAP_REG register
  *  CPU_INTR_FROM_CPU_3 mapping register
  */
-#define INTERRUPT_CORE0_CPU_INTR_FROM_CPU_3_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x68)
+#define INTERRUPT_CORE0_CPU_INTR_FROM_CPU_3_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x68)
 /** INTERRUPT_CORE0_CPU_INTR_FROM_CPU_3_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -526,7 +528,7 @@ extern "C" {
 /** INTERRUPT_CORE0_BUS_MONITOR_INTR_MAP_REG register
  *  BUS_MONITOR_INTR mapping register
  */
-#define INTERRUPT_CORE0_BUS_MONITOR_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x6c)
+#define INTERRUPT_CORE0_BUS_MONITOR_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x6c)
 /** INTERRUPT_CORE0_BUS_MONITOR_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -545,7 +547,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CORE0_TRACE_INTR_MAP_REG register
  *  CORE0_TRACE_INTR mapping register
  */
-#define INTERRUPT_CORE0_CORE0_TRACE_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x70)
+#define INTERRUPT_CORE0_CORE0_TRACE_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x70)
 /** INTERRUPT_CORE0_CORE0_TRACE_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -564,7 +566,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CORE1_TRACE_INTR_MAP_REG register
  *  CORE1_TRACE_INTR mapping register
  */
-#define INTERRUPT_CORE0_CORE1_TRACE_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x74)
+#define INTERRUPT_CORE0_CORE1_TRACE_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x74)
 /** INTERRUPT_CORE0_CORE1_TRACE_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -583,7 +585,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CACHE_INTR_MAP_REG register
  *  CACHE_INTR mapping register
  */
-#define INTERRUPT_CORE0_CACHE_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x78)
+#define INTERRUPT_CORE0_CACHE_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x78)
 /** INTERRUPT_CORE0_CACHE_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -602,7 +604,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CPU_PERI_TIMEOUT_INTR_MAP_REG register
  *  CPU_PERI_TIMEOUT_INTR mapping register
  */
-#define INTERRUPT_CORE0_CPU_PERI_TIMEOUT_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x7c)
+#define INTERRUPT_CORE0_CPU_PERI_TIMEOUT_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x7c)
 /** INTERRUPT_CORE0_CPU_PERI_TIMEOUT_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -621,7 +623,7 @@ extern "C" {
 /** INTERRUPT_CORE0_GPIO_INTERRUPT_PRO_MAP_REG register
  *  GPIO_INTERRUPT_PRO mapping register
  */
-#define INTERRUPT_CORE0_GPIO_INTERRUPT_PRO_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x80)
+#define INTERRUPT_CORE0_GPIO_INTERRUPT_PRO_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x80)
 /** INTERRUPT_CORE0_GPIO_INTERRUPT_PRO_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -640,7 +642,7 @@ extern "C" {
 /** INTERRUPT_CORE0_GPIO_INTERRUPT_2_MAP_REG register
  *  GPIO_INTERRUPT_2 mapping register
  */
-#define INTERRUPT_CORE0_GPIO_INTERRUPT_2_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x84)
+#define INTERRUPT_CORE0_GPIO_INTERRUPT_2_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x84)
 /** INTERRUPT_CORE0_GPIO_INTERRUPT_2_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -659,7 +661,7 @@ extern "C" {
 /** INTERRUPT_CORE0_PAU_INTR_MAP_REG register
  *  PAU_INTR mapping register
  */
-#define INTERRUPT_CORE0_PAU_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x88)
+#define INTERRUPT_CORE0_PAU_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x88)
 /** INTERRUPT_CORE0_PAU_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -678,7 +680,7 @@ extern "C" {
 /** INTERRUPT_CORE0_HP_PERI_TIMEOUT_INTR_MAP_REG register
  *  HP_PERI_TIMEOUT_INTR mapping register
  */
-#define INTERRUPT_CORE0_HP_PERI_TIMEOUT_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x8c)
+#define INTERRUPT_CORE0_HP_PERI_TIMEOUT_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x8c)
 /** INTERRUPT_CORE0_HP_PERI_TIMEOUT_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -697,7 +699,7 @@ extern "C" {
 /** INTERRUPT_CORE0_HP_APM_M0_INTR_MAP_REG register
  *  HP_APM_M0_INTR mapping register
  */
-#define INTERRUPT_CORE0_HP_APM_M0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x90)
+#define INTERRUPT_CORE0_HP_APM_M0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x90)
 /** INTERRUPT_CORE0_HP_APM_M0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -716,7 +718,7 @@ extern "C" {
 /** INTERRUPT_CORE0_HP_APM_M1_INTR_MAP_REG register
  *  HP_APM_M1_INTR mapping register
  */
-#define INTERRUPT_CORE0_HP_APM_M1_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x94)
+#define INTERRUPT_CORE0_HP_APM_M1_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x94)
 /** INTERRUPT_CORE0_HP_APM_M1_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -735,7 +737,7 @@ extern "C" {
 /** INTERRUPT_CORE0_HP_APM_M2_INTR_MAP_REG register
  *  HP_APM_M2_INTR mapping register
  */
-#define INTERRUPT_CORE0_HP_APM_M2_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x98)
+#define INTERRUPT_CORE0_HP_APM_M2_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x98)
 /** INTERRUPT_CORE0_HP_APM_M2_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -754,7 +756,7 @@ extern "C" {
 /** INTERRUPT_CORE0_HP_APM_M3_INTR_MAP_REG register
  *  HP_APM_M3_INTR mapping register
  */
-#define INTERRUPT_CORE0_HP_APM_M3_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x9c)
+#define INTERRUPT_CORE0_HP_APM_M3_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x9c)
 /** INTERRUPT_CORE0_HP_APM_M3_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -773,7 +775,7 @@ extern "C" {
 /** INTERRUPT_CORE0_HP_APM_M4_INTR_MAP_REG register
  *  HP_APM_M4_INTR mapping register
  */
-#define INTERRUPT_CORE0_HP_APM_M4_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xa0)
+#define INTERRUPT_CORE0_HP_APM_M4_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xa0)
 /** INTERRUPT_CORE0_HP_APM_M4_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -792,7 +794,7 @@ extern "C" {
 /** INTERRUPT_CORE0_HP_MEM_APM_M0_INTR_MAP_REG register
  *  HP_MEM_APM_M0_INTR mapping register
  */
-#define INTERRUPT_CORE0_HP_MEM_APM_M0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xa4)
+#define INTERRUPT_CORE0_HP_MEM_APM_M0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xa4)
 /** INTERRUPT_CORE0_HP_MEM_APM_M0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -811,7 +813,7 @@ extern "C" {
 /** INTERRUPT_CORE0_HP_MEM_APM_M1_INTR_MAP_REG register
  *  HP_MEM_APM_M1_INTR mapping register
  */
-#define INTERRUPT_CORE0_HP_MEM_APM_M1_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xa8)
+#define INTERRUPT_CORE0_HP_MEM_APM_M1_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xa8)
 /** INTERRUPT_CORE0_HP_MEM_APM_M1_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -830,7 +832,7 @@ extern "C" {
 /** INTERRUPT_CORE0_HP_MEM_APM_M2_INTR_MAP_REG register
  *  HP_MEM_APM_M2_INTR mapping register
  */
-#define INTERRUPT_CORE0_HP_MEM_APM_M2_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xac)
+#define INTERRUPT_CORE0_HP_MEM_APM_M2_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xac)
 /** INTERRUPT_CORE0_HP_MEM_APM_M2_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -849,7 +851,7 @@ extern "C" {
 /** INTERRUPT_CORE0_HP_MEM_APM_M3_INTR_MAP_REG register
  *  HP_MEM_APM_M3_INTR mapping register
  */
-#define INTERRUPT_CORE0_HP_MEM_APM_M3_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xb0)
+#define INTERRUPT_CORE0_HP_MEM_APM_M3_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xb0)
 /** INTERRUPT_CORE0_HP_MEM_APM_M3_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -868,7 +870,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CPU_APM_M0_INTR_MAP_REG register
  *  CPU_APM_M0_INTR mapping register
  */
-#define INTERRUPT_CORE0_CPU_APM_M0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xb4)
+#define INTERRUPT_CORE0_CPU_APM_M0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xb4)
 /** INTERRUPT_CORE0_CPU_APM_M0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -887,7 +889,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CPU_APM_M1_INTR_MAP_REG register
  *  CPU_APM_M1_INTR mapping register
  */
-#define INTERRUPT_CORE0_CPU_APM_M1_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xb8)
+#define INTERRUPT_CORE0_CPU_APM_M1_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xb8)
 /** INTERRUPT_CORE0_CPU_APM_M1_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -906,7 +908,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CPU_APM_M2_INTR_MAP_REG register
  *  CPU_APM_M2_INTR mapping register
  */
-#define INTERRUPT_CORE0_CPU_APM_M2_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xbc)
+#define INTERRUPT_CORE0_CPU_APM_M2_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xbc)
 /** INTERRUPT_CORE0_CPU_APM_M2_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -925,7 +927,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CPU_APM_M3_INTR_MAP_REG register
  *  CPU_APM_M3_INTR mapping register
  */
-#define INTERRUPT_CORE0_CPU_APM_M3_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xc0)
+#define INTERRUPT_CORE0_CPU_APM_M3_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xc0)
 /** INTERRUPT_CORE0_CPU_APM_M3_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -944,7 +946,7 @@ extern "C" {
 /** INTERRUPT_CORE0_HP_PERI_PMS_INTR_MAP_REG register
  *  HP_PERI_PMS_INTR mapping register
  */
-#define INTERRUPT_CORE0_HP_PERI_PMS_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xc4)
+#define INTERRUPT_CORE0_HP_PERI_PMS_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xc4)
 /** INTERRUPT_CORE0_HP_PERI_PMS_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -963,7 +965,7 @@ extern "C" {
 /** INTERRUPT_CORE0_MODEM_PERI_PMS_INTR_MAP_REG register
  *  MODEM_PERI_PMS_INTR mapping register
  */
-#define INTERRUPT_CORE0_MODEM_PERI_PMS_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xc8)
+#define INTERRUPT_CORE0_MODEM_PERI_PMS_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xc8)
 /** INTERRUPT_CORE0_MODEM_PERI_PMS_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -982,7 +984,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CPU_PERI_PMS_INTR_MAP_REG register
  *  CPU_PERI_PMS_INTR mapping register
  */
-#define INTERRUPT_CORE0_CPU_PERI_PMS_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xcc)
+#define INTERRUPT_CORE0_CPU_PERI_PMS_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xcc)
 /** INTERRUPT_CORE0_CPU_PERI_PMS_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1001,7 +1003,7 @@ extern "C" {
 /** INTERRUPT_CORE0_MSPI_INTR_MAP_REG register
  *  MSPI_INTR mapping register
  */
-#define INTERRUPT_CORE0_MSPI_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xd0)
+#define INTERRUPT_CORE0_MSPI_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xd0)
 /** INTERRUPT_CORE0_MSPI_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1020,7 +1022,7 @@ extern "C" {
 /** INTERRUPT_CORE0_I2S_INTR_MAP_REG register
  *  I2S_INTR mapping register
  */
-#define INTERRUPT_CORE0_I2S_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xd4)
+#define INTERRUPT_CORE0_I2S_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xd4)
 /** INTERRUPT_CORE0_I2S_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1039,7 +1041,7 @@ extern "C" {
 /** INTERRUPT_CORE0_UHCI0_INTR_MAP_REG register
  *  UHCI0_INTR mapping register
  */
-#define INTERRUPT_CORE0_UHCI0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xd8)
+#define INTERRUPT_CORE0_UHCI0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xd8)
 /** INTERRUPT_CORE0_UHCI0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1058,7 +1060,7 @@ extern "C" {
 /** INTERRUPT_CORE0_UART0_INTR_MAP_REG register
  *  UART0_INTR mapping register
  */
-#define INTERRUPT_CORE0_UART0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xdc)
+#define INTERRUPT_CORE0_UART0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xdc)
 /** INTERRUPT_CORE0_UART0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1077,7 +1079,7 @@ extern "C" {
 /** INTERRUPT_CORE0_UART1_INTR_MAP_REG register
  *  UART1_INTR mapping register
  */
-#define INTERRUPT_CORE0_UART1_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xe0)
+#define INTERRUPT_CORE0_UART1_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xe0)
 /** INTERRUPT_CORE0_UART1_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1096,7 +1098,7 @@ extern "C" {
 /** INTERRUPT_CORE0_LEDC_INTR_MAP_REG register
  *  LEDC_INTR mapping register
  */
-#define INTERRUPT_CORE0_LEDC_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xe4)
+#define INTERRUPT_CORE0_LEDC_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xe4)
 /** INTERRUPT_CORE0_LEDC_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1115,7 +1117,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CAN0_INTR_MAP_REG register
  *  CAN0_INTR mapping register
  */
-#define INTERRUPT_CORE0_CAN0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xe8)
+#define INTERRUPT_CORE0_CAN0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xe8)
 /** INTERRUPT_CORE0_CAN0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1134,7 +1136,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CAN0_TIMER_INTR_MAP_REG register
  *  CAN0_TIMER_INTR mapping register
  */
-#define INTERRUPT_CORE0_CAN0_TIMER_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xec)
+#define INTERRUPT_CORE0_CAN0_TIMER_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xec)
 /** INTERRUPT_CORE0_CAN0_TIMER_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1153,7 +1155,7 @@ extern "C" {
 /** INTERRUPT_CORE0_USB_SERIAL_JTAG_INTR_MAP_REG register
  *  USB_SERIAL_JTAG_INTR mapping register
  */
-#define INTERRUPT_CORE0_USB_SERIAL_JTAG_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xf0)
+#define INTERRUPT_CORE0_USB_SERIAL_JTAG_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xf0)
 /** INTERRUPT_CORE0_USB_SERIAL_JTAG_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1172,7 +1174,7 @@ extern "C" {
 /** INTERRUPT_CORE0_RMT_INTR_MAP_REG register
  *  RMT_INTR mapping register
  */
-#define INTERRUPT_CORE0_RMT_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xf4)
+#define INTERRUPT_CORE0_RMT_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xf4)
 /** INTERRUPT_CORE0_RMT_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1191,7 +1193,7 @@ extern "C" {
 /** INTERRUPT_CORE0_I2C_EXT0_INTR_MAP_REG register
  *  I2C_EXT0_INTR mapping register
  */
-#define INTERRUPT_CORE0_I2C_EXT0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xf8)
+#define INTERRUPT_CORE0_I2C_EXT0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xf8)
 /** INTERRUPT_CORE0_I2C_EXT0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1210,7 +1212,7 @@ extern "C" {
 /** INTERRUPT_CORE0_I2C_EXT1_INTR_MAP_REG register
  *  I2C_EXT1_INTR mapping register
  */
-#define INTERRUPT_CORE0_I2C_EXT1_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0xfc)
+#define INTERRUPT_CORE0_I2C_EXT1_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0xfc)
 /** INTERRUPT_CORE0_I2C_EXT1_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1229,7 +1231,7 @@ extern "C" {
 /** INTERRUPT_CORE0_TG0_T0_INTR_MAP_REG register
  *  TG0_T0_INTR mapping register
  */
-#define INTERRUPT_CORE0_TG0_T0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x100)
+#define INTERRUPT_CORE0_TG0_T0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x100)
 /** INTERRUPT_CORE0_TG0_T0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1248,7 +1250,7 @@ extern "C" {
 /** INTERRUPT_CORE0_TG0_WDT_INTR_MAP_REG register
  *  TG0_WDT_INTR mapping register
  */
-#define INTERRUPT_CORE0_TG0_WDT_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x104)
+#define INTERRUPT_CORE0_TG0_WDT_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x104)
 /** INTERRUPT_CORE0_TG0_WDT_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1267,7 +1269,7 @@ extern "C" {
 /** INTERRUPT_CORE0_TG1_T0_INTR_MAP_REG register
  *  TG1_T0_INTR mapping register
  */
-#define INTERRUPT_CORE0_TG1_T0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x108)
+#define INTERRUPT_CORE0_TG1_T0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x108)
 /** INTERRUPT_CORE0_TG1_T0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1286,7 +1288,7 @@ extern "C" {
 /** INTERRUPT_CORE0_TG1_WDT_INTR_MAP_REG register
  *  TG1_WDT_INTR mapping register
  */
-#define INTERRUPT_CORE0_TG1_WDT_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x10c)
+#define INTERRUPT_CORE0_TG1_WDT_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x10c)
 /** INTERRUPT_CORE0_TG1_WDT_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1305,7 +1307,7 @@ extern "C" {
 /** INTERRUPT_CORE0_SYSTIMER_TARGET0_INTR_MAP_REG register
  *  SYSTIMER_TARGET0_INTR mapping register
  */
-#define INTERRUPT_CORE0_SYSTIMER_TARGET0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x110)
+#define INTERRUPT_CORE0_SYSTIMER_TARGET0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x110)
 /** INTERRUPT_CORE0_SYSTIMER_TARGET0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1324,7 +1326,7 @@ extern "C" {
 /** INTERRUPT_CORE0_SYSTIMER_TARGET1_INTR_MAP_REG register
  *  SYSTIMER_TARGET1_INTR mapping register
  */
-#define INTERRUPT_CORE0_SYSTIMER_TARGET1_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x114)
+#define INTERRUPT_CORE0_SYSTIMER_TARGET1_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x114)
 /** INTERRUPT_CORE0_SYSTIMER_TARGET1_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1343,7 +1345,7 @@ extern "C" {
 /** INTERRUPT_CORE0_SYSTIMER_TARGET2_INTR_MAP_REG register
  *  SYSTIMER_TARGET2_INTR mapping register
  */
-#define INTERRUPT_CORE0_SYSTIMER_TARGET2_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x118)
+#define INTERRUPT_CORE0_SYSTIMER_TARGET2_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x118)
 /** INTERRUPT_CORE0_SYSTIMER_TARGET2_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1362,7 +1364,7 @@ extern "C" {
 /** INTERRUPT_CORE0_APB_ADC_INTR_MAP_REG register
  *  APB_ADC_INTR mapping register
  */
-#define INTERRUPT_CORE0_APB_ADC_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x11c)
+#define INTERRUPT_CORE0_APB_ADC_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x11c)
 /** INTERRUPT_CORE0_APB_ADC_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1381,7 +1383,7 @@ extern "C" {
 /** INTERRUPT_CORE0_PWM0_INTR_MAP_REG register
  *  PWM0_INTR mapping register
  */
-#define INTERRUPT_CORE0_PWM0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x120)
+#define INTERRUPT_CORE0_PWM0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x120)
 /** INTERRUPT_CORE0_PWM0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1400,7 +1402,7 @@ extern "C" {
 /** INTERRUPT_CORE0_PWM1_INTR_MAP_REG register
  *  PWM1_INTR mapping register
  */
-#define INTERRUPT_CORE0_PWM1_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x124)
+#define INTERRUPT_CORE0_PWM1_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x124)
 /** INTERRUPT_CORE0_PWM1_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1419,7 +1421,7 @@ extern "C" {
 /** INTERRUPT_CORE0_PCNT_INTR_MAP_REG register
  *  PCNT_INTR mapping register
  */
-#define INTERRUPT_CORE0_PCNT_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x128)
+#define INTERRUPT_CORE0_PCNT_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x128)
 /** INTERRUPT_CORE0_PCNT_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1438,7 +1440,7 @@ extern "C" {
 /** INTERRUPT_CORE0_PARL_IO_TX_INTR_MAP_REG register
  *  PARL_IO_TX_INTR mapping register
  */
-#define INTERRUPT_CORE0_PARL_IO_TX_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x12c)
+#define INTERRUPT_CORE0_PARL_IO_TX_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x12c)
 /** INTERRUPT_CORE0_PARL_IO_TX_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1457,7 +1459,7 @@ extern "C" {
 /** INTERRUPT_CORE0_PARL_IO_RX_INTR_MAP_REG register
  *  PARL_IO_RX_INTR mapping register
  */
-#define INTERRUPT_CORE0_PARL_IO_RX_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x130)
+#define INTERRUPT_CORE0_PARL_IO_RX_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x130)
 /** INTERRUPT_CORE0_PARL_IO_RX_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1476,7 +1478,7 @@ extern "C" {
 /** INTERRUPT_CORE0_USB_OTG11_INTR_MAP_REG register
  *  USB_OTG11_INTR mapping register
  */
-#define INTERRUPT_CORE0_USB_OTG11_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x134)
+#define INTERRUPT_CORE0_USB_OTG11_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x134)
 /** INTERRUPT_CORE0_USB_OTG11_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1495,7 +1497,7 @@ extern "C" {
 /** INTERRUPT_CORE0_ASRC_CHNL0_INTR_MAP_REG register
  *  ASRC_CHNL0_INTR mapping register
  */
-#define INTERRUPT_CORE0_ASRC_CHNL0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x138)
+#define INTERRUPT_CORE0_ASRC_CHNL0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x138)
 /** INTERRUPT_CORE0_ASRC_CHNL0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1514,7 +1516,7 @@ extern "C" {
 /** INTERRUPT_CORE0_ASRC_CHNL1_INTR_MAP_REG register
  *  ASRC_CHNL1_INTR mapping register
  */
-#define INTERRUPT_CORE0_ASRC_CHNL1_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x13c)
+#define INTERRUPT_CORE0_ASRC_CHNL1_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x13c)
 /** INTERRUPT_CORE0_ASRC_CHNL1_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1533,7 +1535,7 @@ extern "C" {
 /** INTERRUPT_CORE0_ZERO_DET_INTR_MAP_REG register
  *  ZERO_DET_INTR mapping register
  */
-#define INTERRUPT_CORE0_ZERO_DET_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x140)
+#define INTERRUPT_CORE0_ZERO_DET_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x140)
 /** INTERRUPT_CORE0_ZERO_DET_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1552,7 +1554,7 @@ extern "C" {
 /** INTERRUPT_CORE0_DMA_IN_CH0_INTR_MAP_REG register
  *  DMA_IN_CH0_INTR mapping register
  */
-#define INTERRUPT_CORE0_DMA_IN_CH0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x144)
+#define INTERRUPT_CORE0_DMA_IN_CH0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x144)
 /** INTERRUPT_CORE0_DMA_IN_CH0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1571,7 +1573,7 @@ extern "C" {
 /** INTERRUPT_CORE0_DMA_IN_CH1_INTR_MAP_REG register
  *  DMA_IN_CH1_INTR mapping register
  */
-#define INTERRUPT_CORE0_DMA_IN_CH1_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x148)
+#define INTERRUPT_CORE0_DMA_IN_CH1_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x148)
 /** INTERRUPT_CORE0_DMA_IN_CH1_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1590,7 +1592,7 @@ extern "C" {
 /** INTERRUPT_CORE0_DMA_IN_CH2_INTR_MAP_REG register
  *  DMA_IN_CH2_INTR mapping register
  */
-#define INTERRUPT_CORE0_DMA_IN_CH2_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x14c)
+#define INTERRUPT_CORE0_DMA_IN_CH2_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x14c)
 /** INTERRUPT_CORE0_DMA_IN_CH2_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1609,7 +1611,7 @@ extern "C" {
 /** INTERRUPT_CORE0_DMA_IN_CH3_INTR_MAP_REG register
  *  DMA_IN_CH3_INTR mapping register
  */
-#define INTERRUPT_CORE0_DMA_IN_CH3_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x150)
+#define INTERRUPT_CORE0_DMA_IN_CH3_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x150)
 /** INTERRUPT_CORE0_DMA_IN_CH3_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1628,7 +1630,7 @@ extern "C" {
 /** INTERRUPT_CORE0_DMA_IN_CH4_INTR_MAP_REG register
  *  DMA_IN_CH4_INTR mapping register
  */
-#define INTERRUPT_CORE0_DMA_IN_CH4_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x154)
+#define INTERRUPT_CORE0_DMA_IN_CH4_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x154)
 /** INTERRUPT_CORE0_DMA_IN_CH4_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1647,7 +1649,7 @@ extern "C" {
 /** INTERRUPT_CORE0_DMA_OUT_CH0_INTR_MAP_REG register
  *  DMA_OUT_CH0_INTR mapping register
  */
-#define INTERRUPT_CORE0_DMA_OUT_CH0_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x158)
+#define INTERRUPT_CORE0_DMA_OUT_CH0_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x158)
 /** INTERRUPT_CORE0_DMA_OUT_CH0_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1666,7 +1668,7 @@ extern "C" {
 /** INTERRUPT_CORE0_DMA_OUT_CH1_INTR_MAP_REG register
  *  DMA_OUT_CH1_INTR mapping register
  */
-#define INTERRUPT_CORE0_DMA_OUT_CH1_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x15c)
+#define INTERRUPT_CORE0_DMA_OUT_CH1_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x15c)
 /** INTERRUPT_CORE0_DMA_OUT_CH1_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1685,7 +1687,7 @@ extern "C" {
 /** INTERRUPT_CORE0_DMA_OUT_CH2_INTR_MAP_REG register
  *  DMA_OUT_CH2_INTR mapping register
  */
-#define INTERRUPT_CORE0_DMA_OUT_CH2_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x160)
+#define INTERRUPT_CORE0_DMA_OUT_CH2_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x160)
 /** INTERRUPT_CORE0_DMA_OUT_CH2_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1704,7 +1706,7 @@ extern "C" {
 /** INTERRUPT_CORE0_DMA_OUT_CH3_INTR_MAP_REG register
  *  DMA_OUT_CH3_INTR mapping register
  */
-#define INTERRUPT_CORE0_DMA_OUT_CH3_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x164)
+#define INTERRUPT_CORE0_DMA_OUT_CH3_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x164)
 /** INTERRUPT_CORE0_DMA_OUT_CH3_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1723,7 +1725,7 @@ extern "C" {
 /** INTERRUPT_CORE0_DMA_OUT_CH4_INTR_MAP_REG register
  *  DMA_OUT_CH4_INTR mapping register
  */
-#define INTERRUPT_CORE0_DMA_OUT_CH4_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x168)
+#define INTERRUPT_CORE0_DMA_OUT_CH4_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x168)
 /** INTERRUPT_CORE0_DMA_OUT_CH4_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1742,7 +1744,7 @@ extern "C" {
 /** INTERRUPT_CORE0_GPSPI2_INTR_MAP_REG register
  *  GPSPI2_INTR mapping register
  */
-#define INTERRUPT_CORE0_GPSPI2_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x16c)
+#define INTERRUPT_CORE0_GPSPI2_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x16c)
 /** INTERRUPT_CORE0_GPSPI2_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1761,7 +1763,7 @@ extern "C" {
 /** INTERRUPT_CORE0_GPSPI3_INTR_MAP_REG register
  *  GPSPI3_INTR mapping register
  */
-#define INTERRUPT_CORE0_GPSPI3_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x170)
+#define INTERRUPT_CORE0_GPSPI3_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x170)
 /** INTERRUPT_CORE0_GPSPI3_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1780,7 +1782,7 @@ extern "C" {
 /** INTERRUPT_CORE0_AES_INTR_MAP_REG register
  *  AES_INTR mapping register
  */
-#define INTERRUPT_CORE0_AES_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x174)
+#define INTERRUPT_CORE0_AES_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x174)
 /** INTERRUPT_CORE0_AES_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1799,7 +1801,7 @@ extern "C" {
 /** INTERRUPT_CORE0_SHA_INTR_MAP_REG register
  *  SHA_INTR mapping register
  */
-#define INTERRUPT_CORE0_SHA_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x178)
+#define INTERRUPT_CORE0_SHA_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x178)
 /** INTERRUPT_CORE0_SHA_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1818,7 +1820,7 @@ extern "C" {
 /** INTERRUPT_CORE0_ECC_INTR_MAP_REG register
  *  ECC_INTR mapping register
  */
-#define INTERRUPT_CORE0_ECC_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x17c)
+#define INTERRUPT_CORE0_ECC_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x17c)
 /** INTERRUPT_CORE0_ECC_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1837,7 +1839,7 @@ extern "C" {
 /** INTERRUPT_CORE0_ECDSA_INTR_MAP_REG register
  *  ECDSA_INTR mapping register
  */
-#define INTERRUPT_CORE0_ECDSA_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x180)
+#define INTERRUPT_CORE0_ECDSA_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x180)
 /** INTERRUPT_CORE0_ECDSA_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1856,7 +1858,7 @@ extern "C" {
 /** INTERRUPT_CORE0_KM_INTR_MAP_REG register
  *  KM_INTR mapping register
  */
-#define INTERRUPT_CORE0_KM_INTR_MAP_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x184)
+#define INTERRUPT_CORE0_KM_INTR_MAP_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x184)
 /** INTERRUPT_CORE0_KM_INTR_MAP : R/W; bitpos: [5:0]; default: 0;
  *  Configures the interrupt source into one CPU interrupt.
  */
@@ -1875,7 +1877,7 @@ extern "C" {
 /** INTERRUPT_CORE0_INT_STATUS_REG_0_REG register
  *  Status register for interrupt sources 0 ~ 31
  */
-#define INTERRUPT_CORE0_INT_STATUS_REG_0_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x188)
+#define INTERRUPT_CORE0_INT_STATUS_REG_0_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x188)
 /** INTERRUPT_CORE0_INT_STATUS_0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the status of the interrupt sources within interrupt-index-range 0 ~ 31.
  *  Each bit corresponds to one interrupt source
@@ -1890,7 +1892,7 @@ extern "C" {
 /** INTERRUPT_CORE0_INT_STATUS_REG_1_REG register
  *  Status register for interrupt sources 32 ~ 63
  */
-#define INTERRUPT_CORE0_INT_STATUS_REG_1_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x18c)
+#define INTERRUPT_CORE0_INT_STATUS_REG_1_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x18c)
 /** INTERRUPT_CORE0_INT_STATUS_1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the status of the interrupt sources within interrupt-index-range 32 ~
  *  63. Each bit corresponds to one interrupt source
@@ -1905,7 +1907,7 @@ extern "C" {
 /** INTERRUPT_CORE0_INT_STATUS_REG_2_REG register
  *  Status register for interrupt sources 64 ~ 95
  */
-#define INTERRUPT_CORE0_INT_STATUS_REG_2_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x190)
+#define INTERRUPT_CORE0_INT_STATUS_REG_2_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x190)
 /** INTERRUPT_CORE0_INT_STATUS_2 : RO; bitpos: [31:0]; default: 0;
  *  Represents the status of the interrupt sources within interrupt-index-range 64 ~
  *  95. Each bit corresponds to one interrupt source
@@ -1920,7 +1922,7 @@ extern "C" {
 /** INTERRUPT_CORE0_INT_STATUS_REG_3_REG register
  *  Status register for interrupt sources 96 ~ 97
  */
-#define INTERRUPT_CORE0_INT_STATUS_REG_3_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x194)
+#define INTERRUPT_CORE0_INT_STATUS_REG_3_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x194)
 /** INTERRUPT_CORE0_INT_STATUS_3 : RO; bitpos: [1:0]; default: 0;
  *  Represents the status of the interrupt sources within interrupt-index-range 96 ~
  *  97. Each bit corresponds to one interrupt source
@@ -1935,7 +1937,7 @@ extern "C" {
 /** INTERRUPT_CORE0_SRC_PASS_IN_SEC_STATUS_0_REG register
  *  PASS_IN_SEC status register for interrupt sources 0 ~ 31
  */
-#define INTERRUPT_CORE0_SRC_PASS_IN_SEC_STATUS_0_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x198)
+#define INTERRUPT_CORE0_SRC_PASS_IN_SEC_STATUS_0_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x198)
 /** INTERRUPT_CORE0_INT_SRC_PASS_IN_SEC_STATUS_0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the PASS_IN_SEC status of the interrupt sources within
  *  interrupt-index-range 0 ~ 31. Each bit corresponds to one interrupt source
@@ -1950,7 +1952,7 @@ extern "C" {
 /** INTERRUPT_CORE0_SRC_PASS_IN_SEC_STATUS_1_REG register
  *  PASS_IN_SEC status register for interrupt sources 32 ~ 63
  */
-#define INTERRUPT_CORE0_SRC_PASS_IN_SEC_STATUS_1_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x19c)
+#define INTERRUPT_CORE0_SRC_PASS_IN_SEC_STATUS_1_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x19c)
 /** INTERRUPT_CORE0_INT_SRC_PASS_IN_SEC_STATUS_1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the PASS_IN_SEC status of the interrupt sources within
  *  interrupt-index-range 32 ~ 63. Each bit corresponds to one interrupt source
@@ -1965,7 +1967,7 @@ extern "C" {
 /** INTERRUPT_CORE0_SRC_PASS_IN_SEC_STATUS_2_REG register
  *  PASS_IN_SEC status register for interrupt sources 64 ~ 95
  */
-#define INTERRUPT_CORE0_SRC_PASS_IN_SEC_STATUS_2_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x1a0)
+#define INTERRUPT_CORE0_SRC_PASS_IN_SEC_STATUS_2_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x1a0)
 /** INTERRUPT_CORE0_INT_SRC_PASS_IN_SEC_STATUS_2 : RO; bitpos: [31:0]; default: 0;
  *  Represents the PASS_IN_SEC status of the interrupt sources within
  *  interrupt-index-range 64 ~ 95. Each bit corresponds to one interrupt source
@@ -1980,7 +1982,7 @@ extern "C" {
 /** INTERRUPT_CORE0_SRC_PASS_IN_SEC_STATUS_3_REG register
  *  PASS_IN_SEC status register for interrupt sources 96 ~ 97
  */
-#define INTERRUPT_CORE0_SRC_PASS_IN_SEC_STATUS_3_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x1a4)
+#define INTERRUPT_CORE0_SRC_PASS_IN_SEC_STATUS_3_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x1a4)
 /** INTERRUPT_CORE0_INT_SRC_PASS_IN_SEC_STATUS_3 : RO; bitpos: [1:0]; default: 0;
  *  Represents the PASS_IN_SEC status of the interrupt sources with
  *  interrupt-index-range 96 ~ 97. Each bit corresponds to one interrupt source
@@ -1995,7 +1997,7 @@ extern "C" {
 /** INTERRUPT_CORE0_SIG_IDX_ASSERT_IN_SEC_REG register
  *  reserved
  */
-#define INTERRUPT_CORE0_SIG_IDX_ASSERT_IN_SEC_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x1a8)
+#define INTERRUPT_CORE0_SIG_IDX_ASSERT_IN_SEC_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x1a8)
 /** INTERRUPT_CORE0_INT_SIG_IDX_ASSERT_IN_SEC : R/W; bitpos: [5:0]; default: 0;
  *  reserved
  */
@@ -2007,7 +2009,7 @@ extern "C" {
 /** INTERRUPT_CORE0_SECURE_STATUS_REG register
  *  reserved
  */
-#define INTERRUPT_CORE0_SECURE_STATUS_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x1ac)
+#define INTERRUPT_CORE0_SECURE_STATUS_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x1ac)
 /** INTERRUPT_CORE0_INT_SECURE_STATUS : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -2019,7 +2021,7 @@ extern "C" {
 /** INTERRUPT_CORE0_CLOCK_GATE_REG register
  *  Interrupt clock gating configure register
  */
-#define INTERRUPT_CORE0_CLOCK_GATE_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x1b0)
+#define INTERRUPT_CORE0_CLOCK_GATE_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x1b0)
 /** INTERRUPT_CORE0_REG_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Interrupt clock gating configure register
  */
@@ -2031,7 +2033,7 @@ extern "C" {
 /** INTERRUPT_CORE0_INTERRUPT_DATE_REG register
  *  Version control register
  */
-#define INTERRUPT_CORE0_INTERRUPT_DATE_REG (DR_REG_INTERRUPT_CORE0_BASE + 0x7fc)
+#define INTERRUPT_CORE0_INTERRUPT_DATE_REG(i) (DR_REG_INTERRUPT_BASE(i) + 0x7fc)
 /** INTERRUPT_CORE0_INTERRUPT_DATE : R/W; bitpos: [27:0]; default: 38813760;
  *  Version control register
  */
