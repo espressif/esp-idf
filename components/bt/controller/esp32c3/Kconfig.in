@@ -570,6 +570,7 @@ menu "Controller debug log Options (Experimental)"
     config BT_CTRL_LE_LOG_MODE_BLE_LOG_V2
         bool "Utilize BLE Log v2 for controller log"
         depends on BT_CTRL_LE_LOG_EN
+        depends on BLE_LOG_ENABLED
         default y
         help
             Utilize BLE Log v2 for controller log
