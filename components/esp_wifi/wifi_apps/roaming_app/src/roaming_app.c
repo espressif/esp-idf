@@ -57,6 +57,13 @@ static void roaming_app_periodic_scan_internal_handler(void *data, void *ctx);
 
 static const char *ROAMING_TAG = "ROAM";
 
+void esp_wifi_roaming_set_current_bssid(const uint8_t *bssid)
+{
+    if (bssid) {
+        memcpy(g_roaming_app.current_bss.ap.bssid, bssid, ETH_ALEN);
+    }
+}
+
 static inline long time_diff_sec(struct timeval *a, struct timeval *b)
 {
     return (a->tv_sec - b->tv_sec);
@@ -183,7 +190,11 @@ static void roaming_app_disconnected_event_handler(void *ctx, void *data)
 #endif /*PERIODIC_SCAN_MONITORING*/
 
     wifi_event_sta_disconnected_t *disconn = data;
-    ESP_LOGD(ROAMING_TAG, "station got disconnected reason=%d", disconn->reason);
+#define RSSI_INVALID -128
+    g_roaming_app.current_bss.ap.rssi = RSSI_INVALID;
+#undef RSSI_INVALID
+
+    ESP_LOGD(ROAMING_TAG, "station got disconnected reason=%d, rssi =%d", disconn->reason, disconn->rssi);
 #if CONFIG_ESP_WIFI_ROAMING_AUTO_BLACKLISTING
     if (disconn->reason == WIFI_REASON_CONNECTION_FAIL || disconn->reason == WIFI_REASON_AUTH_FAIL) {
         bool found = false;
@@ -498,6 +509,7 @@ static void trigger_legacy_roam(struct cand_bss *bss)
     wifi_cfg.sta.bssid_set = true;
     os_memcpy(wifi_cfg.sta.bssid, bss->bssid, ETH_ALEN);
     esp_wifi_internal_issue_disconnect(WIFI_REASON_BSS_TRANSITION_DISASSOC);
+    esp_wifi_roaming_set_current_bssid(bss->bssid);
     esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
     esp_wifi_connect();
     ESP_LOGI(ROAMING_TAG, "Disconnecting and connecting to "MACSTR" on account of better rssi",MAC2STR(bss->bssid));
@@ -710,19 +722,17 @@ static void parse_scan_results_and_roam(void)
     int8_t rssi_diff = 0;
     uint8_t i;
     int8_t best_ap_index = -1;
-    wifi_ap_record_t ap_info;
-    roaming_app_get_ap_info(&ap_info);
     for (i = 0; i < g_roaming_app.scanned_aps.current_count; i++) {
         if (is_bssid_blacklisted(g_roaming_app.scanned_aps.ap_records[i].bssid)) {
             ESP_LOGD(ROAMING_TAG, "BSSID " MACSTR " is blacklisted, skipping", MAC2STR(g_roaming_app.scanned_aps.ap_records[i].bssid));
             continue;
         }
-        rssi_diff = g_roaming_app.scanned_aps.ap_records[i].rssi - ap_info.rssi;
+        rssi_diff = g_roaming_app.scanned_aps.ap_records[i].rssi - g_roaming_app.current_bss.ap.rssi;
         ESP_LOGD(ROAMING_TAG, "The difference between ("MACSTR", "MACSTR") with rssi (%d,%d) is : %d while the threshold is %d and the best rssi diff yet is %d, thecand_auth is %d",
-                              MAC2STR(g_roaming_app.scanned_aps.ap_records[i].bssid),MAC2STR(ap_info.bssid),
-                              g_roaming_app.scanned_aps.ap_records[i].rssi, ap_info.rssi,
+                              MAC2STR(g_roaming_app.scanned_aps.ap_records[i].bssid),MAC2STR(g_roaming_app.current_bss.ap.bssid),
+                              g_roaming_app.scanned_aps.ap_records[i].rssi, g_roaming_app.current_bss.ap.rssi,
                               rssi_diff, rssi_threshold, best_rssi_diff, g_roaming_app.scanned_aps.ap_records[i].authmode);
-        if ((memcmp(g_roaming_app.scanned_aps.ap_records[i].bssid, ap_info.bssid, ETH_ALEN) != 0) &&
+        if ((memcmp(g_roaming_app.scanned_aps.ap_records[i].bssid, g_roaming_app.current_bss.ap.bssid, ETH_ALEN) != 0) &&
              candidate_security_match(g_roaming_app.scanned_aps.ap_records[i]) && rssi_diff > best_rssi_diff ) {
             best_rssi_diff = rssi_diff;
             best_ap_index = i;

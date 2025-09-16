@@ -37,6 +37,10 @@ void roam_sta_disconnected(void *disconn);
 esp_err_t roam_get_config_params(struct roam_config *config);
 esp_err_t roam_set_config_params(struct roam_config *config);
 
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+void esp_wifi_roaming_set_current_bssid(const uint8_t *bssid);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
