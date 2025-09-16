@@ -28,6 +28,9 @@ static void sorted_array_insert(uint32_t *array, uint32_t *size, uint32_t item)
 #elif CONFIG_IDF_TARGET_ESP32P4
 #define TEST_TIME_CNT           30
 #define TEST_TIME_LIMIT_US      30
+#else
+#define TEST_TIME_CNT           20
+#define TEST_TIME_LIMIT_US      20
 #endif
 
 TEST_CASE("MSPI: Test mspi timing tuning time cost", "[mspi]")
