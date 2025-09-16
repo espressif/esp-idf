@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -150,7 +150,7 @@ typedef struct {
 
 /**
  * @brief Set a register's offset (relative to CFA).
- * The highest bit is set to 1 to mark that this register needs to be retrived because it has been
+ * The highest bit is set to 1 to mark that this register needs to be retrieved because it has been
  * altered.
  */
 #define ESP_EH_FRAME_SET_REG_OFFSET(offset)     (0x80000000 | offset)
@@ -201,7 +201,7 @@ typedef struct {
 #define ESP_EH_FRAME_GET_CFA_OFF(value)         ((value) >> 8)
 
 /**
- * @brief Unsupported opcode value to return when exeucting 0-opcode type instructions.
+ * @brief Unsupported opcode value to return when executing 0-opcode type instructions.
  */
 #define ESP_EH_FRAME_UNSUPPORTED_OPCODE ((uint32_t) -1)
 
@@ -253,8 +253,8 @@ typedef struct {
  * @brief Symbols defined by the linker.
  * Retrieve the addresses of both .eh_frame_hdr and .eh_frame sections.
  */
-extern void *__eh_frame_hdr;
-extern void *__eh_frame;
+extern uint8_t __eh_frame_hdr[];
+extern uint8_t __eh_frame[];
 
 /**
  * @brief Decode multiple bytes encoded in LEB128.
@@ -727,7 +727,7 @@ static uint32_t esp_eh_frame_initialize_state(const uint8_t* cie, ExecutionFrame
  * @param state DWARF VM registers.
  *
  * @return Return Address of the current context. Frame has been restored to the previous context
- * (before calling the function program counter is currently going throught).
+ * (before calling the function program counter is currently going through).
  */
 static uint32_t esp_eh_frame_restore_caller_state(const uint32_t* fde,
                                                   ExecutionFrame* frame,
@@ -768,7 +768,7 @@ static uint32_t esp_eh_frame_restore_caller_state(const uint32_t* fde,
      */
     bool success = esp_eh_frame_execute(instructions, instructions_length, frame, state);
     if (!success) {
-        /* An error occured (unsupported opcode), return PC as the return address.
+        /* An error occurred (unsupported opcode), return PC as the return address.
          * This will be tested by the caller, and the backtrace will be finished. */
         return EXECUTION_FRAME_PC(*frame);
     }
@@ -799,7 +799,7 @@ static uint32_t esp_eh_frame_restore_caller_state(const uint32_t* fde,
     /* If the frame was not available, it would be possible to retrieve the return address
      * register thanks to CIE structure.
      * The return address points to the address the PC needs to jump to. It
-     * does NOT point to the instruction where the routine call occured.
+     * does NOT point to the instruction where the routine call occurred.
      * This can cause problems with functions without epilogue (i.e. function
      * which last instruction is a function call). This happens when compiler
      * optimization are ON or when a function is marked as "noreturn".
@@ -840,7 +840,7 @@ static bool esp_eh_frame_missing_info(const uint32_t* fde, uint32_t pc)
 
 /**
  * @brief When one step of the backtrace is generated, output it to the serial.
- * This function can be overriden as it is defined as weak.
+ * This function can be overridden as it is defined as weak.
  *
  * @param pc Program counter of the backtrace step.
  * @param sp Stack pointer of the backtrace step.
