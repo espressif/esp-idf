@@ -47,8 +47,7 @@ extern "C" {
 #define I2S_LL_TX_EVENT_MASK        I2S_LL_EVENT_TX_EOF
 #define I2S_LL_RX_EVENT_MASK        I2S_LL_EVENT_RX_EOF
 
-#define I2S_LL_PLL_F160M_CLK_FREQ   (160 * 1000000) // PLL_F160M_CLK: 160MHz
-#define I2S_LL_DEFAULT_CLK_FREQ     I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
+#define I2S_LL_DEFAULT_CLK_FREQ     (160 * 1000000) // PLL_F160M_CLK: 160MHz
 
 /**
  * @brief Enable DMA descriptor owner check

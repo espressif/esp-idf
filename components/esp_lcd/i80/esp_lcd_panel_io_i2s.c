@@ -100,7 +100,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     ESP_GOTO_ON_FALSE(bus_config->bus_width == 8 || bus_config->bus_width == 16, ESP_ERR_INVALID_ARG, err,
                       TAG, "invalid bus width:%d", bus_config->bus_width);
     size_t max_transfer_bytes = (bus_config->max_transfer_bytes + 3) & ~0x03; // align up to 4 bytes
-#if SOC_I2S_TRANS_SIZE_ALIGN_WORD
+#if SOC_I2S_ATTR(TRANS_SIZE_ALIGN_WORD)
     // double the size of the internal DMA buffer if bus_width is 8,
     // because one I2S FIFO (4 bytes) will only contain two bytes of valid data
     max_transfer_bytes = max_transfer_bytes * 16 / bus_config->bus_width + 4;
@@ -120,13 +120,13 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     ESP_GOTO_ON_ERROR(gdma_new_link_list(&dma_link_config, &bus->dma_link), err, TAG, "create DMA link list failed");
     bus->bus_id = -1;
     bus->max_transfer_bytes = max_transfer_bytes;
-#if SOC_I2S_TRANS_SIZE_ALIGN_WORD
+#if SOC_I2S_ATTR(TRANS_SIZE_ALIGN_WORD)
     // transform format for LCD commands, parameters and color data, so we need a big buffer
     bus->format_buffer = heap_caps_calloc(1, max_transfer_bytes, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
 #else
     // only transform format for LCD parameters, buffer size depends on specific LCD, set at compile time
     bus->format_buffer = heap_caps_calloc(1, LCD_I80_IO_FORMAT_BUF_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
-#endif // SOC_I2S_TRANS_SIZE_ALIGN_WORD
+#endif // SOC_I2S_ATTR(TRANS_SIZE_ALIGN_WORD)
     ESP_GOTO_ON_FALSE(bus->format_buffer, ESP_ERR_NO_MEM, err, TAG, "no mem for format buffer");
     // LCD mode can't work with other modes at the same time, we need to register the driver object to the I2S platform
     int bus_id = -1;
@@ -171,7 +171,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     i2s_ll_tx_select_std_slot(bus->hal.dev, I2S_STD_SLOT_BOTH, true); // copy mono
     bus->bus_width = bus_config->bus_width;
     i2s_ll_tx_enable_right_first(bus->hal.dev, true);
-#if SOC_I2S_SUPPORTS_DMA_EQUAL
+#if SOC_MODULE_SUPPORT(I2S, DMA_EQUAL)
     i2s_ll_tx_enable_dma_equal(bus->hal.dev, true);
 #endif
     // enable trans done interrupt
@@ -372,7 +372,7 @@ static void i2s_lcd_prepare_cmd_buffer(lcd_i80_trans_descriptor_t *trans_desc, c
         int end = i80_device->lcd_cmd_bits / 8 - 1;
         lcd_com_reverse_buffer_bytes(from, start, end);
     }
-#if SOC_I2S_TRANS_SIZE_ALIGN_WORD
+#if SOC_I2S_ATTR(TRANS_SIZE_ALIGN_WORD)
     uint8_t *to = bus->format_buffer;
     int cmd_cycle = i80_device->lcd_cmd_bits / bus->bus_width;
     if (cmd_cycle * bus->bus_width < i80_device->lcd_cmd_bits) {
@@ -410,7 +410,7 @@ static void i2s_lcd_prepare_param_buffer(lcd_i80_trans_descriptor_t *trans_desc,
             lcd_com_reverse_buffer_bytes(from, start, end);
         }
     }
-#if SOC_I2S_TRANS_SIZE_ALIGN_WORD
+#if SOC_I2S_ATTR(TRANS_SIZE_ALIGN_WORD)
     uint8_t *to = bus->format_buffer;
     int param_cycle = i80_device->lcd_param_bits / bus->bus_width;
     if (param_cycle * bus->bus_width < i80_device->lcd_param_bits) {
@@ -452,7 +452,7 @@ static void i2s_lcd_prepare_param_buffer(lcd_i80_trans_descriptor_t *trans_desc,
 
 static void i2s_lcd_prepare_color_buffer(lcd_i80_trans_descriptor_t *trans_desc, const void *color, size_t color_size)
 {
-#if SOC_I2S_TRANS_SIZE_ALIGN_WORD
+#if SOC_I2S_ATTR(TRANS_SIZE_ALIGN_WORD)
     lcd_panel_io_i80_t *i80_device = trans_desc->i80_device;
     esp_lcd_i80_bus_t *bus = i80_device->bus;
     uint8_t *from = (uint8_t *)color;
@@ -509,7 +509,7 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     trans_desc->i80_device = next_device;
     trans_desc->trans_done_cb = NULL; // no callback for command transfer
     bus->cur_trans = trans_desc;
-#if SOC_I2S_TRANS_SIZE_ALIGN_WORD
+#if SOC_I2S_ATTR(TRANS_SIZE_ALIGN_WORD)
     // switch to I2S 32bits mode, one WS cycle <=> one I2S FIFO
     i2s_ll_tx_set_bits_mod(bus->hal.dev, 32);
 #endif
@@ -589,7 +589,7 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     trans_desc->i80_device = next_device;
     trans_desc->trans_done_cb = NULL; // no callback for command transfer
     bus->cur_trans = trans_desc;
-#if SOC_I2S_TRANS_SIZE_ALIGN_WORD
+#if SOC_I2S_ATTR(TRANS_SIZE_ALIGN_WORD)
     // switch to I2S 32bits mode, one WS cycle <=> one I2S FIFO
     i2s_ll_tx_set_bits_mod(bus->hal.dev, 32);
 #endif
@@ -680,10 +680,10 @@ static esp_err_t i2s_lcd_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_
     for (size_t i = 0; i < bus_config->bus_width; i++) {
         gpio_func_sel(bus_config->data_gpio_nums[i], PIN_FUNC_GPIO);
         // the esp_rom_gpio_connect_out_signal function will also help enable the output path properly
-#if SOC_I2S_TRANS_SIZE_ALIGN_WORD
+#if SOC_I2S_ATTR(TRANS_SIZE_ALIGN_WORD)
         esp_rom_gpio_connect_out_signal(bus_config->data_gpio_nums[i], lcd_periph_i2s_signals.buses[bus_id].data_sigs[i + 8], false, false);
 #else
-        esp_rom_gpio_connect_out_signal(bus_config->data_gpio_nums[i], lcd_periph_i2s_signals.buses[bus_id].data_sigs[i + SOC_I2S_MAX_DATA_WIDTH - bus_config->bus_width], false, false);
+        esp_rom_gpio_connect_out_signal(bus_config->data_gpio_nums[i], lcd_periph_i2s_signals.buses[bus_id].data_sigs[i + SOC_I2S_ATTR(MAX_DATA_WIDTH) - bus_config->bus_width], false, false);
 #endif
     }
     // WR signal (pclk)
@@ -800,7 +800,7 @@ static IRAM_ATTR void i2s_lcd_default_isr_handler(void *args)
                     }
                 };
                 gdma_link_mount_buffers(bus->dma_link, 0, &mount_config, 1, NULL);
-#if SOC_I2S_TRANS_SIZE_ALIGN_WORD
+#if SOC_I2S_ATTR(TRANS_SIZE_ALIGN_WORD)
                 // switch to I2S 16bits mode, two WS cycle <=> one I2S FIFO
                 i2s_ll_tx_set_bits_mod(bus->hal.dev, 16);
 #endif

@@ -27,7 +27,7 @@
 #endif
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_gpio_reserve.h"
-#if SOC_I2S_SUPPORT_SLEEP_RETENTION
+#if SOC_HAS(PAU)
 #include "esp_private/sleep_retention.h"
 #endif
 #include "esp_pm.h"
@@ -61,7 +61,7 @@ extern "C" {
 #define I2S_RCC_ATOMIC()
 #endif
 
-#define I2S_USE_RETENTION_LINK  (SOC_I2S_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+#define I2S_USE_RETENTION_LINK  (SOC_MODULE_SUPPORT(I2S, SLEEP_RETENTION) && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 #define I2S_NULL_POINTER_CHECK(tag, p)          ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, tag, "input parameter '"#p"' is NULL")
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -138,7 +138,7 @@ typedef struct {
     i2s_chan_handle_t       tx_chan;        /*!< tx channel handler */
     i2s_chan_handle_t       rx_chan;        /*!< rx channel handler */
     _lock_t                 mutex;          /*!< mutex for controller */
-#if SOC_I2S_SUPPORT_SLEEP_RETENTION
+#if SOC_HAS(PAU)
     sleep_retention_module_t slp_retention_mod; /*!< Sleep retention module */
     bool                    retention_link_created;  /*!< Whether the retention link is created */
 #endif
@@ -223,11 +223,11 @@ struct lp_i2s_channel_obj_t {
  */
 typedef struct {
     portMUX_TYPE            spinlock;                          /*!< Platform level lock */
-    i2s_controller_t        *controller[SOC_I2S_NUM];          /*!< Controller object */
-    const char              *comp_name[SOC_I2S_NUM];           /*!< The component name that occupied i2s controller */
+    i2s_controller_t        *controller[SOC_I2S_ATTR(INST_NUM)];          /*!< Controller object */
+    const char              *comp_name[SOC_I2S_ATTR(INST_NUM)];           /*!< The component name that occupied i2s controller */
 #if SOC_LP_I2S_SUPPORTED
     lp_i2s_controller_t     *lp_controller[SOC_LP_I2S_NUM];    /*!< LP controller object*/
-    const char              *lp_comp_name[SOC_I2S_NUM];        /*!< The component name that occupied lp i2s controller */
+    const char              *lp_comp_name[SOC_I2S_ATTR(INST_NUM)];        /*!< The component name that occupied lp i2s controller */
 #endif
 } i2s_platform_t;
 

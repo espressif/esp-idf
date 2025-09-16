@@ -33,3 +33,8 @@
 /*--------------------------- ETM (Event Task Matrix) ----------------------------*/
 #define _SOC_CAPS_ETM_INST_NUM                    1  // Number of ETM instances
 #define _SOC_CAPS_ETM_CHANS_PER_INST              50 // Number of channels in each ETM instance
+
+/*------------------------------- I2S ---------------------------------------*/
+// helper macros to access module attributes
+// #define SOC_I2S_ATTR(_attr)                       SOC_MODULE_ATTR(I2S, _attr)
+// #define _SOC_CAPS_I2S_INST_NUM                    1  // Number of I2S instances

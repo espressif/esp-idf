@@ -29,3 +29,11 @@
 #define _SOC_CAPS_PCNT_UNITS_PER_INST             8  // Number of units in each PCNT instance
 #define _SOC_CAPS_PCNT_CHANS_PER_UNIT             2  // Number of channels in each PCNT unit
 #define _SOC_CAPS_PCNT_THRES_POINT_PER_UNIT       2  // Number of threshold points in each PCNT unit
+
+/*------------------------------- I2S ---------------------------------------*/
+// helper macros to access module attributes
+#define SOC_I2S_ATTR(_attr)                       SOC_MODULE_ATTR(I2S, _attr)
+#define _SOC_CAPS_I2S_INST_NUM                    2  // Number of I2S instances
+#define _SOC_CAPS_I2S_MAX_DATA_WIDTH              24 // Maximum data line width of I2S
+#define _SOC_CAPS_I2S_TRANS_SIZE_ALIGN_WORD       1  // I2S DMA transfer size must be aligned to word
+#define _SOC_CAPS_I2S_SUPPORT_ADC_DAC             1  // I2S supports to connect to ADC / DAC converters

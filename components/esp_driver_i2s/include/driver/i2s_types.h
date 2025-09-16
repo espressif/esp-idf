@@ -16,16 +16,12 @@ extern "C" {
 #endif
 
 /**
- * @brief I2S controller port number, the max port number is (SOC_I2S_NUM -1).
+ * @brief I2S controller port number, see the _SOC_CAPS_I2S_INST_NUM for the max port number.
  */
 typedef enum {
     I2S_NUM_0 = 0,                 /*!< I2S controller port 0 */
-#if SOC_I2S_NUM > 1
     I2S_NUM_1 = 1,                 /*!< I2S controller port 1 */
-#endif
-#if SOC_I2S_NUM > 2
     I2S_NUM_2 = 2,                 /*!< I2S controller port 2 */
-#endif
     I2S_NUM_AUTO,                  /*!< Select whichever port is available */
 } i2s_port_t;
 

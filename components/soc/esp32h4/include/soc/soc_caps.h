@@ -268,12 +268,8 @@
 #define SOC_I2C_SUPPORT_SLEEP_RETENTION (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-#define SOC_I2S_NUM                 (1U)
 #define SOC_I2S_HW_VERSION_2        (1)
 #define SOC_I2S_SUPPORTS_ETM        (1)
-#define SOC_I2S_SUPPORTS_XTAL       (1)
-#define SOC_I2S_SUPPORTS_PLL_F96M   (1)
-#define SOC_I2S_SUPPORTS_PLL_F64M   (1)
 #define SOC_I2S_SUPPORTS_PCM        (1)
 #define SOC_I2S_SUPPORTS_PDM        (1)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)     // Support to output raw PDM format data
@@ -284,9 +280,6 @@
 #define SOC_I2S_PDM_MAX_TX_LINES    (2)
 #define SOC_I2S_PDM_MAX_RX_LINES    (1U)
 #define SOC_I2S_SUPPORTS_TDM        (1)
-#define SOC_I2S_TDM_FULL_DATA_WIDTH (1)  /*!< No limitation to data bit width when using multiple slots */
-
-#define SOC_I2S_SUPPORT_SLEEP_RETENTION       1  /*!< The sleep retention feature can help back up I2S registers before sleep */
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
