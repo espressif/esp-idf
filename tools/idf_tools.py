@@ -1941,7 +1941,7 @@ def parse_targets_arg(targets_str: str) -> List[str]:
         if invalid_targets:
             warn(
                 f'Targets: "{", ".join(invalid_targets)}" are not supported. '
-                'Only allowed options are: {", ".join(targets_from_tools_json)}.'
+                f'Only allowed options are: {", ".join(targets_from_tools_json)}.'
             )
             raise SystemExit(1)
         return targets
@@ -2415,7 +2415,7 @@ def action_export(args: Any) -> None:
             except ValueError:
                 fatal(
                     'Both of the directories (..\\idf-exe\\.. and ..\\tools) '
-                    'has to be in the PATH:\n\n{paths_to_check}\n'
+                    f'has to be in the PATH:\n\n{paths_to_check}\n'
                 )
 
     if export_vars:
