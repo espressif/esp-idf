@@ -1,8 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "esp_err.h"
 #include "ulp_riscv_i2c_ulp_core.h"
 #include "ulp_riscv_utils.h"
 #include "soc/rtc_i2c_reg.h"
@@ -131,14 +132,15 @@ void ulp_riscv_i2c_master_set_slave_reg_addr(uint8_t slave_reg_addr)
  * | Slave  |        |         |  ACK   |        |   ACK  |        |         |   ACK  |  DATA  |        |  DATA  |        |        |
  * |--------|--------|---------|--------|--------|--------|--------|---------|--------|--------|--------|--------|--------|--------|
  */
-void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
+esp_err_t ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
 {
     uint32_t i = 0;
     uint32_t cmd_idx = 0;
+    esp_err_t ret = ESP_OK;
 
     if (size == 0) {
         // Quietly return
-        return;
+        return ESP_ERR_INVALID_ARG;
     }
 
     // Workaround for IDF-9145
@@ -197,6 +199,7 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
         } else {
             /* Error in transaction */
             CLEAR_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, READ_PERI_REG(RTC_I2C_INT_ST_REG));
+            ret = ESP_ERR_INVALID_RESPONSE;
             break;
         }
     }
@@ -207,6 +210,8 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
 
     // Workaround for IDF-9145
     ULP_RISCV_EXIT_CRITICAL();
+
+    return ret;
 }
 
 /*
@@ -226,14 +231,15 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
  * | Slave  |        |         |  ACK   |        |   ACK  |        |   ACK  |        |   ACK  |        |
  * |--------|--------|---------|--------|--------|--------|--------|--------|--------|--------|--------|
  */
-void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
+esp_err_t ulp_riscv_i2c_master_write_to_device(const uint8_t *data_wr, size_t size)
 {
     uint32_t i = 0;
     uint32_t cmd_idx = 0;
+    esp_err_t ret = ESP_OK;
 
     if (size == 0) {
         // Quietly return
-        return;
+        return ESP_ERR_INVALID_ARG;
     }
 
     // Workaround for IDF-9145
@@ -271,6 +277,7 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
             SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_TX_DATA_INT_CLR);
         } else {
             SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, READ_PERI_REG(RTC_I2C_INT_ST_REG));
+            ret = ESP_ERR_INVALID_RESPONSE;
             break;
         }
     }
@@ -281,4 +288,6 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
 
     // Workaround for IDF-9145
     ULP_RISCV_EXIT_CRITICAL();
+
+    return ret;
 }

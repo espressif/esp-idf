@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -316,15 +316,16 @@ void ulp_riscv_i2c_master_set_slave_reg_addr(uint8_t slave_reg_addr)
  * | Slave  |        |         |  ACK   |        |   ACK  |        |         |   ACK  |  DATA  |        |  DATA  |        |        |
  * |--------|--------|---------|--------|--------|--------|--------|---------|--------|--------|--------|--------|--------|--------|
  */
-void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
+esp_err_t ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
 {
     uint32_t i = 0;
     uint32_t cmd_idx = 0;
     esp_err_t ret = ESP_OK;
+    uint32_t status = 0;
 
     if (size == 0) {
         // Quietly return
-        return;
+        return ESP_ERR_INVALID_ARG;
     }
 
     /* By default, RTC I2C controller is hard wired to use CMD2 register onwards for read operations */
@@ -379,20 +380,26 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
             /* Clear the Rx data interrupt bit */
             SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_RX_DATA_INT_CLR);
         } else {
-            ESP_EARLY_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: Read Failed!");
-            uint32_t status = READ_PERI_REG(RTC_I2C_INT_RAW_REG);
-            ESP_EARLY_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: RTC I2C Interrupt Raw Reg 0x%"PRIx32"", status);
-            ESP_EARLY_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: RTC I2C Status Reg 0x%"PRIx32"", READ_PERI_REG(RTC_I2C_STATUS_REG));
+            status = READ_PERI_REG(RTC_I2C_INT_RAW_REG);
             SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, status);
+            ret = ESP_ERR_INVALID_RESPONSE;
             break;
         }
     }
 
     portEXIT_CRITICAL(&rtc_i2c_lock);
 
+    if (ret != ESP_OK) {
+        ESP_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: Read Failed!");
+        ESP_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: RTC I2C Interrupt Raw Reg 0x%"PRIx32"", status);
+        ESP_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: RTC I2C Status Reg 0x%"PRIx32"", READ_PERI_REG(RTC_I2C_STATUS_REG));
+    }
+
     /* Clear the RTC I2C transmission bits */
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START_FORCE);
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
+
+    return ret;
 }
 
 /*
@@ -412,15 +419,16 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
  * | Slave  |        |         |  ACK   |        |   ACK  |        |   ACK  |        |   ACK  |        |
  * |--------|--------|---------|--------|--------|--------|--------|--------|--------|--------|--------|
  */
-void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
+esp_err_t ulp_riscv_i2c_master_write_to_device(const uint8_t *data_wr, size_t size)
 {
     uint32_t i = 0;
     uint32_t cmd_idx = 0;
     esp_err_t ret = ESP_OK;
+    uint32_t status = 0;
 
     if (size == 0) {
         // Quietly return
-        return;
+        return ESP_ERR_INVALID_ARG;
     }
 
     /* By default, RTC I2C controller is hard wired to use CMD0 and CMD1 registers for write operations */
@@ -455,20 +463,27 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
             /* Clear the Tx data interrupt bit */
             SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_TX_DATA_INT_CLR);
         } else {
-            ESP_EARLY_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: Write Failed!");
-            uint32_t status = READ_PERI_REG(RTC_I2C_INT_RAW_REG);
-            ESP_EARLY_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: RTC I2C Interrupt Raw Reg 0x%"PRIx32"", status);
-            ESP_EARLY_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: RTC I2C Status Reg 0x%"PRIx32"", READ_PERI_REG(RTC_I2C_STATUS_REG));
+            status = READ_PERI_REG(RTC_I2C_INT_RAW_REG);
             SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, status);
+            ret = ESP_ERR_INVALID_RESPONSE;
             break;
         }
     }
 
     portEXIT_CRITICAL(&rtc_i2c_lock);
 
+    /* In case of error, print the status after critical section */
+    if (ret != ESP_OK) {
+        ESP_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: Write Failed!");
+        ESP_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: RTC I2C Interrupt Raw Reg 0x%"PRIx32"", status);
+        ESP_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: RTC I2C Status Reg 0x%"PRIx32"", READ_PERI_REG(RTC_I2C_STATUS_REG));
+    }
+
     /* Clear the RTC I2C transmission bits */
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START_FORCE);
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
+
+    return ret;
 }
 
 esp_err_t ulp_riscv_i2c_master_init(const ulp_riscv_i2c_cfg_t *cfg)
