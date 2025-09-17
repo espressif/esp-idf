@@ -47,7 +47,7 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
     }
 
 #ifdef CONFIG_WPA3_COMPAT
-    if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA)) {
+    if (esp_wifi_is_wpa3_compatible_mode_enabled(WIFI_IF_STA)) {
         rsnxe = esp_wifi_sta_get_ie((u8*)bssid, WFA_RSNXE_OVERRIDE_OUI_TYPE);
         if (rsnxe) {
             rsnxe_capa = rsnxe[2 + 4];

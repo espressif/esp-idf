@@ -2629,12 +2629,12 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_
 
 #ifdef CONFIG_WPA3_COMPAT
     wpa_sm_set_param(sm, WPA_PARAM_RSN_OVERRIDE_SUPPORT,
-            esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA));
+            esp_wifi_is_wpa3_compatible_mode_enabled(WIFI_IF_STA));
     wpa_sm_set_param(sm, WPA_PARAM_RSN_OVERRIDE,
             RSN_OVERRIDE_NOT_USED);
     ie = esp_wifi_sta_get_ie(bssid, WFA_RSNE_OVERRIDE_OUI_TYPE);
 
-    if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA) && ie) {
+    if (esp_wifi_is_wpa3_compatible_mode_enabled(WIFI_IF_STA) && ie) {
         enum rsn_selection_variant variant = RSN_SELECTION_RSNE;
 
         if (ie && ie[0] == WLAN_EID_VENDOR_SPECIFIC && ie[1] >= 4) {

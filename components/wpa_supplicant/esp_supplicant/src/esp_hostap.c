@@ -109,7 +109,7 @@ void *hostap_init(void)
         }
     }
 #endif /* CONFIG_IEEE80211W */
-    if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_AP)) {
+    if (esp_wifi_is_wpa3_compatible_mode_enabled(WIFI_IF_AP)) {
 #ifdef CONFIG_WPA3_COMPAT
         hapd->conf->sae_pwe = SAE_PWE_HASH_TO_ELEMENT;
         auth_conf->rsn_override_omit_rsnxe = 1;
@@ -121,7 +121,7 @@ void *hostap_init(void)
         auth_conf->rsn_override_pairwise = WPA_CIPHER_CCMP;
         auth_conf->rsn_override_mfp = MGMT_FRAME_PROTECTION_REQUIRED;
 #else
-        wpa_printf(MSG_ERROR, "ESP_WIFI_WPA3_COMPATIBLE_SUPPORT disabled ignoring wpa3_compatible configuration");
+        wpa_printf(MSG_ERROR, "ESP_WIFI_WPA3_COMPATIBLE_SUPPORT disabled, ignoring wpa3_compatible configuration");
 #endif
     }
     /* TKIP is compulsory in WPA Mode */
@@ -208,7 +208,7 @@ void *hostap_init(void)
 #ifdef CONFIG_SAE
     if (authmode == WIFI_AUTH_WPA3_PSK ||
             authmode == WIFI_AUTH_WPA2_WPA3_PSK ||
-            esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_AP)) {
+            esp_wifi_is_wpa3_compatible_mode_enabled(WIFI_IF_AP)) {
         if (wpa3_hostap_auth_init(hapd) != 0) {
             goto fail;
         }
@@ -444,9 +444,10 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
             }
 
 #ifdef CONFIG_WPA3_COMPAT
+#define RSN_SELECTION_IE_OUI_LEN 4
             if (rsn_selection_ie) {
-                rsn_selection_variant_len = rsn_selection_ie[1] - 4;
-                rsn_selection_variant_ie = &rsn_selection_ie[6];
+                rsn_selection_variant_len = rsn_selection_ie[1] - RSN_SELECTION_IE_OUI_LEN;
+                rsn_selection_variant_ie = &rsn_selection_ie[RSN_SELECTION_IE_OUI_LEN + 2];
             }
 
             wpa_auth_set_rsn_selection(sta->wpa_sm, rsn_selection_variant_ie, rsn_selection_variant_len);

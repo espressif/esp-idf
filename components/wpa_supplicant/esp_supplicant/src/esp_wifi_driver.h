@@ -310,6 +310,5 @@ int esp_wifi_softap_set_obss_overlap(bool overlap);
 void esp_wifi_set_sigma_internal(bool flag);
 void esp_wifi_ap_set_group_mgmt_cipher_internal(wifi_cipher_type_t cipher);
 uint8_t esp_wifi_op_class_supported_internal(uint8_t op_class, uint8_t min_chan, uint8_t max_chan, uint8_t inc, uint8_t bw, channel_bitmap_t *non_pref_channels);
-bool esp_wifi_wpa3_compatible_mode_enabled(uint8_t if_index);
-
+bool esp_wifi_is_wpa3_compatible_mode_enabled(uint8_t if_index);
 #endif /* _ESP_WIFI_DRIVER_H_ */

@@ -130,7 +130,7 @@ void wifi_init_sta(void)
             .sae_pwe_h2e = ESP_WIFI_SAE_MODE,
             .sae_h2e_identifier = EXAMPLE_H2E_IDENTIFIER,
 #ifdef CONFIG_ESP_WIFI_WPA3_COMPATIBLE_SUPPORT
-            .wpa3_compatible_mode = 1,
+            .disable_wpa3_compatible_mode = 0,
 #endif
         },
     };
