@@ -288,74 +288,83 @@ menu "Controller debug features"
         help
             Enable controller log
 
-    config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
-        bool "enable controller log module"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
+    config BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+        bool "Utilize BLE Log v2 for controller log"
+        depends on BLE_LOG_ENABLED
         default y
         help
-                Enable controller log module
+            Utilize BLE Log v2 for controller log
 
-    config BT_LE_CONTROLLER_LOG_HCI_ENABLED
-        bool "enable HCI log module"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default y
-        help
-                Enable hci log module
+    if !BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+        config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+            bool "enable controller log module"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default y
+            help
+                    Enable controller log module
 
-    config BT_LE_CONTROLLER_LOG_DUMP_ONLY
-        bool "Controller log dump mode only"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default y
-        help
-                Only operate in dump mode
+        config BT_LE_CONTROLLER_LOG_HCI_ENABLED
+            bool "enable HCI log module"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default y
+            help
+                    Enable hci log module
 
-    config BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
-        bool "Output ble controller logs to SPI bus (Experimental)"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
-        select BT_BLE_LOG_SPI_OUT_ENABLED
-        default n
-        help
-            Output ble controller logs to SPI bus
+        config BT_LE_CONTROLLER_LOG_DUMP_ONLY
+            bool "Controller log dump mode only"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default y
+            help
+                    Only operate in dump mode
 
-    config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-        bool "Store ble controller logs to flash(Experimental)"
-        depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default n
-        help
-                Store ble controller logs to flash memory.
+        config BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+            bool "Output ble controller logs to SPI bus (Experimental)"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+            select BT_BLE_LOG_SPI_OUT_ENABLED
+            default n
+            help
+                Output ble controller logs to SPI bus
 
-    config BT_LE_CONTROLLER_LOG_PARTITION_SIZE
-        int "size of ble controller log partition(Multiples of 4K)"
-        depends on BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-        default 65536
-        help
-                The size of ble controller log partition shall be a multiples of 4K.
-                The name of log partition shall be "bt_ctrl_log".
-                The partition type shall be ESP_PARTITION_TYPE_DATA.
-                The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
+        config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+            bool "Store ble controller logs to flash(Experimental)"
+            depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default n
+            help
+                    Store ble controller logs to flash memory.
 
-    config BT_LE_LOG_CTRL_BUF1_SIZE
-        int "size of the first BLE controller LOG buffer"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default 4096
-        help
-                Configure the size of the first BLE controller LOG buffer.
+        config BT_LE_CONTROLLER_LOG_PARTITION_SIZE
+            int "size of ble controller log partition(Multiples of 4K)"
+            depends on BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+            default 65536
+            help
+                    The size of ble controller log partition shall be a multiples of 4K.
+                    The name of log partition shall be "bt_ctrl_log".
+                    The partition type shall be ESP_PARTITION_TYPE_DATA.
+                    The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
 
-    config BT_LE_LOG_CTRL_BUF2_SIZE
-        int "size of the second BLE controller LOG buffer"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default 1024
-        help
-                Configure the size of the second BLE controller LOG buffer.
+        config BT_LE_LOG_CTRL_BUF1_SIZE
+            int "size of the first BLE controller LOG buffer"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default 4096
+            help
+                    Configure the size of the first BLE controller LOG buffer.
 
-    config BT_LE_LOG_HCI_BUF_SIZE
-        int "size of the BLE HCI LOG buffer"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default 4096
-        help
-                Configure the size of the BLE HCI LOG buffer.
+        config BT_LE_LOG_CTRL_BUF2_SIZE
+            int "size of the second BLE controller LOG buffer"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default 1024
+            help
+                    Configure the size of the second BLE controller LOG buffer.
+
+        config BT_LE_LOG_HCI_BUF_SIZE
+            int "size of the BLE HCI LOG buffer"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default 4096
+            help
+                    Configure the size of the BLE HCI LOG buffer.
+    endif
 
     config BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
         bool "Enable wrap panic handler"
