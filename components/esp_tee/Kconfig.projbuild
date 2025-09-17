@@ -12,15 +12,15 @@ menu "ESP-TEE (Trusted Execution Environment)"
         config SECURE_TEE_IRAM_SIZE
             hex "IRAM region size"
             default 0x8000
-            range 0x7000 0xA000
+            range 0x5000 0xA000
             help
                 This configuration sets the IRAM size for the TEE module.
                 This should be 256-byte (0x100) aligned.
 
         config SECURE_TEE_DRAM_SIZE
             hex "DRAM region size"
-            default 0x6000
-            range 0x5000 0x7000
+            default 0x5000
+            range 0x4000 0x7000
             help
                 This configuration sets the DRAM size for the TEE module.
                 This should be 256-byte (0x100) aligned.

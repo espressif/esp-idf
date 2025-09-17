@@ -179,6 +179,13 @@ def test_tee_cli_secure_ota_wifi(dut: Dut) -> None:
     server_port = 8001
     tee_bin = 'esp_tee/esp_tee.bin'
     user_bin = 'tee_cli.bin'
+    prev_tee_offs = None
+    prev_app_offs = None
+
+    # Fetch Wi-Fi credentials
+    env_name = 'wifi_high_traffic'
+    ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+    ap_password = get_env_config_variable(env_name, 'ap_password')
 
     # Start server
     thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, '0.0.0.0', server_port))
@@ -190,17 +197,26 @@ def test_tee_cli_secure_ota_wifi(dut: Dut) -> None:
         # start test
         for i in range(iterations):
             # Boot up sequence checks
-            dut.expect('Loaded TEE app from partition at offset', timeout=30)
-            dut.expect('Loaded app from partition at offset', timeout=30)
+            curr_tee_offs = (
+                dut.expect(r'Loaded TEE app from partition at offset (0x[0-9a-fA-F]+)', timeout=30).group(1).decode()
+            )
+            curr_app_offs = (
+                dut.expect(r'Loaded app from partition at offset (0x[0-9a-fA-F]+)', timeout=30).group(1).decode()
+            )
+
+            # Check for offset change across iterations
+            if prev_tee_offs is not None and curr_tee_offs == prev_tee_offs:
+                raise ValueError('Updated TEE app is not running')
+
+            prev_tee_offs = curr_tee_offs
+            if prev_app_offs is None:
+                prev_app_offs = curr_app_offs
 
             # Starting the test
             dut.expect('ESP-TEE: Secure services demonstration', timeout=30)
             time.sleep(2)
 
             # Connecting to Wi-Fi
-            env_name = 'wifi_high_traffic'
-            ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
-            ap_password = get_env_config_variable(env_name, 'ap_password')
             dut.write(f'wifi_connect {ap_ssid} {ap_password}')
 
             # Fetch the DUT IP address
@@ -216,6 +232,11 @@ def test_tee_cli_secure_ota_wifi(dut: Dut) -> None:
             if i == (iterations - 1):
                 dut.write(f'user_ota https://{host_ip}:{str(server_port)}/{user_bin}')
                 dut.expect('OTA Succeed, Rebooting', timeout=150)
+                curr_app_offs = (
+                    dut.expect(r'Loaded app from partition at offset (0x[0-9a-fA-F]+)', timeout=30).group(1).decode()
+                )
+                if curr_app_offs == prev_app_offs:
+                    raise ValueError('Updated user app is not running')
             else:
                 dut.write(f'tee_ota https://{host_ip}:{str(server_port)}/{tee_bin}')
                 dut.expect('esp_tee_ota_end succeeded', timeout=150)
