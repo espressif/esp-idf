@@ -38,6 +38,7 @@
 typedef enum {
     FL_ISR_DISPATCH_METHOD   = (1 << 0),  //!< 0=Callback is called from timer task, 1=Callback is called from timer ISR
     FL_SKIP_UNHANDLED_EVENTS = (1 << 1),  //!< 0=NOT skip unhandled events for periodic timers, 1=Skip unhandled events for periodic timers
+    FL_CALLBACK_IS_RUNNING = (1 << 2),    //!< 0=Callback is NOT running, 1=Callback is running
 } flags_t;
 
 struct esp_timer {
@@ -427,6 +428,7 @@ static bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
             free(it);
             it = NULL;
         } else {
+            it->flags |= FL_CALLBACK_IS_RUNNING;
             if (it->period > 0) {
                 int skipped = (now - it->alarm) / it->period;
                 if ((it->flags & FL_SKIP_UNHANDLED_EVENTS) && (skipped > 1)) {
@@ -452,6 +454,7 @@ static bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
             timer_list_unlock(dispatch_method);
             (*callback)(arg);
             timer_list_lock(dispatch_method);
+            it->flags &= ~FL_CALLBACK_IS_RUNNING;
 #if WITH_PROFILING
             it->times_triggered++;
             it->total_callback_run_time += esp_timer_impl_get_time() - callback_start;
@@ -788,5 +791,5 @@ bool ESP_TIMER_IRAM_ATTR esp_timer_is_active(esp_timer_handle_t timer)
     if (timer == NULL) {
         return false;
     }
-    return timer_armed(timer);
+    return timer_armed(timer) || (timer->flags & FL_CALLBACK_IS_RUNNING);
 }
