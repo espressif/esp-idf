@@ -91,12 +91,12 @@ typedef union {
     struct {
         /** sr_rx_cm : R/W; bitpos: [3:0]; default: 0;
          *  The source image color mode for Scaling and Rotating engine Rx. 0: ARGB8888. 1:
-         *  RGB888. 2: RGB565. 8: YUV420. others: Reserved.
+         *  RGB888. 2: RGB565. 8: YUV420. 9: YUV422. 12: GRAY. others: Reserved.
          */
         uint32_t sr_rx_cm:4;
         /** sr_tx_cm : R/W; bitpos: [7:4]; default: 0;
          *  The destination image color mode for Scaling and Rotating engine Tx. 0: ARGB8888.
-         *  1: RGB888. 2: RGB565. 8: YUV420. others: Reserved.
+         *  1: RGB888. 2: RGB565. 8: YUV420. 9: YUV422. 12: GRAY. others: Reserved.
          */
         uint32_t sr_tx_cm:4;
         /** yuv_rx_range : R/W; bitpos: [8]; default: 0;
@@ -115,7 +115,11 @@ typedef union {
          *  RGB to YUV protocol when reg_sr_tx_cm is 4'd8. 0: BT601. 1: BT709
          */
         uint32_t rgb2yuv_protocol:1;
-        uint32_t reserved_12:20;
+        /** yuv422_rx_byte_order : R/W; bitpos: [13:12]; default: 0;
+         *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY
+         */
+        uint32_t yuv422_rx_byte_order:2;
+        uint32_t reserved_14:18;
     };
     uint32_t val;
 } ppa_sr_color_mode_reg_t;
@@ -127,7 +131,7 @@ typedef union {
     struct {
         /** blend0_rx_cm : R/W; bitpos: [3:0]; default: 0;
          *  The source image color mode for background plane. 0: ARGB8888. 1: RGB888. 2:
-         *  RGB565. 3: Reserved. 4: L8. 5: L4.
+         *  RGB565. 3: Reserved. 4: L8. 5: L4. 8: YUV420. 9: YUV422. 12:GRAY
          */
         uint32_t blend0_rx_cm:4;
         /** blend1_rx_cm : R/W; bitpos: [7:4]; default: 0;
@@ -137,10 +141,30 @@ typedef union {
         uint32_t blend1_rx_cm:4;
         /** blend_tx_cm : R/W; bitpos: [11:8]; default: 0;
          *  The destination image color mode for output of blender. 0: ARGB8888. 1: RGB888. 2:
-         *  RGB565. 3: Reserved..
+         *  RGB565. 3: Reserved. 8: YUV420. 9: YUV422. 12:GRAY
          */
         uint32_t blend_tx_cm:4;
-        uint32_t reserved_12:20;
+        /** blend0_rx_yuv_range : R/W; bitpos: [12]; default: 0;
+         *  YUV input range when blend0 rx cm is yuv. 0: limit range. 1: full range
+         */
+        uint32_t blend0_rx_yuv_range:1;
+        /** blend_tx_yuv_range : R/W; bitpos: [13]; default: 0;
+         *  YUV output range when blend tx cm is yuv. 0: limit range. 1: full range
+         */
+        uint32_t blend_tx_yuv_range:1;
+        /** blend0_rx_yuv2rgb_protocol : R/W; bitpos: [14]; default: 0;
+         *  YUV to RGB protocol when blend0 rx cm is yuv. 0: BT601. 1: BT709
+         */
+        uint32_t blend0_rx_yuv2rgb_protocol:1;
+        /** blend_tx_rgb2yuv_protocol : R/W; bitpos: [15]; default: 0;
+         *  RGB to YUV protocol when blend tx cm is yuv. 0: BT601. 1: BT709
+         */
+        uint32_t blend_tx_rgb2yuv_protocol:1;
+        /** blend0_rx_yuv422_byte_order : R/W; bitpos: [17:16]; default: 0;
+         *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY
+         */
+        uint32_t blend0_rx_yuv422_byte_order:2;
+        uint32_t reserved_18:14;
     };
     uint32_t val;
 } ppa_blend_color_mode_reg_t;
@@ -165,7 +189,11 @@ typedef union {
          *  to improve efficient accessing external memory.
          */
         uint32_t sr_macro_bk_ro_bypass:1;
-        uint32_t reserved_3:29;
+        /** sr_bk_size_sel : R/W; bitpos: [3]; default: 0;
+         *  sel srm pix_blk size, 0:32x32, 1:16x16
+         */
+        uint32_t sr_bk_size_sel:1;
+        uint32_t reserved_4:28;
     };
     uint32_t val;
 } ppa_sr_byte_order_reg_t;
@@ -227,7 +255,12 @@ typedef union {
          *  write 1 then write 0 to reset blending engine.
          */
         uint32_t blend_rst:1;
-        uint32_t reserved_5:27;
+        /** blend_tx_inf_sel : R/W; bitpos: [6:5]; default: 0;
+         *  unused ! Configures blend tx interface. 0: dma2d only, 1: le_enc only, 2: dma2d and
+         *  ls_enc
+         */
+        uint32_t blend_tx_inf_sel:2;
+        uint32_t reserved_7:25;
     };
     uint32_t val;
 } ppa_blend_trans_mode_reg_t;
@@ -263,13 +296,13 @@ typedef union {
 typedef union {
     struct {
         /** blend_hb : R/W; bitpos: [13:0]; default: 0;
-         *  The horizontal width of image block that would be filled in fix pixel filling mode.
-         *  The unit is pixel
+         *  The horizontal width of image block that would be filled in fix pixel filling mode
+         *  or blend mode. The unit is pixel. Must be even num when YUV422 or YUV420
          */
         uint32_t blend_hb:14;
         /** blend_vb : R/W; bitpos: [27:14]; default: 0;
-         *  The vertical width of image block that would be filled in fix pixel filling mode.
-         *  The unit is pixel
+         *  The vertical width of image block that would be filled in fix pixel filling mode or
+         *  blend mode. The unit is pixel. Must be even num when YUV420
          */
         uint32_t blend_vb:14;
         uint32_t reserved_28:4;
@@ -293,13 +326,13 @@ typedef union {
          */
         uint32_t blend1_rx_fix_alpha:8;
         /** blend0_rx_alpha_mod : R/W; bitpos: [17:16]; default: 0;
-         *  Alpha mode. 0/3: not replace alpha. 1: replace alpha with PPA_SR_FIX_ALPHA. 2:
-         *  Original alpha multiply with PPA_SR_FIX_ALPHA/256.
+         *  Alpha mode. 0/3: not replace alpha. 1: replace alpha with PPA_BLEND0_FIX_ALPHA. 2:
+         *  Original alpha multiply with PPA_BLEND0_FIX_ALPHA/256.
          */
         uint32_t blend0_rx_alpha_mod:2;
         /** blend1_rx_alpha_mod : R/W; bitpos: [19:18]; default: 0;
-         *  Alpha mode. 0/3: not replace alpha. 1: replace alpha with PPA_SR_FIX_ALPHA. 2:
-         *  Original alpha multiply with PPA_SR_FIX_ALPHA/256.
+         *  Alpha mode. 0/3: not replace alpha. 1: replace alpha with PPA_BLEND1_FIX_ALPHA. 2:
+         *  Original alpha multiply with PPA_BLEND1_FIX_ALPHA/256.
          */
         uint32_t blend1_rx_alpha_mod:2;
         /** blend0_rx_alpha_inv : R/W; bitpos: [20]; default: 0;
@@ -612,7 +645,12 @@ typedef union {
          *  PPA_SR_PARAM_ERR_ST_REG.
          */
         uint32_t sr_param_cfg_err_int_raw:1;
-        uint32_t reserved_3:29;
+        /** blend_param_cfg_err_int_raw : R/WTC/SS; bitpos: [3]; default: 0;
+         *  The raw interrupt bit turns to high level when the configured blending coefficient
+         *  is wrong. User can check the reasons through register PPA_BLEND_ST_REG.
+         */
+        uint32_t blend_param_cfg_err_int_raw:1;
+        uint32_t reserved_4:28;
     };
     uint32_t val;
 } ppa_int_raw_reg_t;
@@ -631,10 +669,14 @@ typedef union {
          */
         uint32_t blend_eof_int_st:1;
         /** sr_param_cfg_err_int_st : RO; bitpos: [2]; default: 0;
-         *  The raw interrupt status bit for the PPA_SR_RX_YSCAL_ERR_INT interrupt.
+         *  The raw interrupt status bit for the PPA_SR_PARAM_CFG_ERR_INT interrupt.
          */
         uint32_t sr_param_cfg_err_int_st:1;
-        uint32_t reserved_3:29;
+        /** blend_param_cfg_err_int_st : RO; bitpos: [3]; default: 0;
+         *  The raw interrupt status bit for the PPA_BLEND_PARAM_CFG_ERR_INT interrupt.
+         */
+        uint32_t blend_param_cfg_err_int_st:1;
+        uint32_t reserved_4:28;
     };
     uint32_t val;
 } ppa_int_st_reg_t;
@@ -653,10 +695,14 @@ typedef union {
          */
         uint32_t blend_eof_int_ena:1;
         /** sr_param_cfg_err_int_ena : R/W; bitpos: [2]; default: 0;
-         *  The interrupt enable bit for the PPA_SR_RX_YSCAL_ERR_INT interrupt.
+         *  The interrupt enable bit for the PPA_SR_PARAM_CFG_ERR_INT interrupt.
          */
         uint32_t sr_param_cfg_err_int_ena:1;
-        uint32_t reserved_3:29;
+        /** blend_param_cfg_err_int_ena : R/W; bitpos: [3]; default: 0;
+         *  The interrupt enable bit for the PPA_BLEND_PARAM_CFG_ERR_INT interrupt.
+         */
+        uint32_t blend_param_cfg_err_int_ena:1;
+        uint32_t reserved_4:28;
     };
     uint32_t val;
 } ppa_int_ena_reg_t;
@@ -675,10 +721,14 @@ typedef union {
          */
         uint32_t blend_eof_int_clr:1;
         /** sr_param_cfg_err_int_clr : WT; bitpos: [2]; default: 0;
-         *  Set this bit to clear the PPA_SR_RX_YSCAL_ERR_INT interrupt.
+         *  Set this bit to clear the PPA_SR_PARAM_CFG_ERR_INT interrupt.
          */
         uint32_t sr_param_cfg_err_int_clr:1;
-        uint32_t reserved_3:29;
+        /** blend_param_cfg_err_int_clr : WT; bitpos: [3]; default: 0;
+         *  Set this bit to clear the PPA_BLEND_PARAM_CFG_ERR_INT interrupt.
+         */
+        uint32_t blend_param_cfg_err_int_clr:1;
+        uint32_t reserved_4:28;
     };
     uint32_t val;
 } ppa_int_clr_reg_t;
@@ -712,7 +762,15 @@ typedef union {
          *  1: indicate the size of two image is different.
          */
         uint32_t blend_size_diff_st:1;
-        uint32_t reserved_1:31;
+        /** blend_yuv_x_scale_err_st : RO; bitpos: [1]; default: 0;
+         *  Represents that x param is an odd num when enable yuv422 or yuv420
+         */
+        uint32_t blend_yuv_x_scale_err_st:1;
+        /** blend_yuv_y_scale_err_st : RO; bitpos: [2]; default: 0;
+         *  Represents that y param is an odd num when enable yuv420
+         */
+        uint32_t blend_yuv_y_scale_err_st:1;
+        uint32_t reserved_3:29;
     };
     uint32_t val;
 } ppa_blend_st_reg_t;
@@ -773,7 +831,7 @@ typedef union {
         uint32_t xdst_len_too_large_err_st:1;
         /** x_yuv420_rx_scale_err_st : RO; bitpos: [10]; default: 0;
          *  The error is that the ha/hb/x param in dma2d descriptor is an odd num when enable
-         *  yuv420 rx
+         *  yuv422 or yuv420 rx
          */
         uint32_t x_yuv420_rx_scale_err_st:1;
         /** y_yuv420_rx_scale_err_st : RO; bitpos: [11]; default: 0;
@@ -783,7 +841,7 @@ typedef union {
         uint32_t y_yuv420_rx_scale_err_st:1;
         /** x_yuv420_tx_scale_err_st : RO; bitpos: [12]; default: 0;
          *  The error is that the ha/hb/x param in dma2d descriptor is an odd num when enable
-         *  yuv420 tx
+         *  yuv422 or yuv420 tx
          */
         uint32_t x_yuv420_tx_scale_err_st:1;
         /** y_yuv420_tx_scale_err_st : RO; bitpos: [13]; default: 0;
@@ -841,13 +899,68 @@ typedef union {
 } ppa_eco_cell_ctrl_reg_t;
 
 
+/** Group: Debug Register */
+/** Type of debug_ctrl0 register
+ *  debug register
+ */
+typedef union {
+    struct {
+        /** dbg_replace_sel : R/W; bitpos: [2:0]; default: 0;
+         *  Configures the data replace location. 0: not replace, 1: srm rx input, 2: srm rx
+         *  bilin interpolation, 3: srm tx output, 4: blend fg input, 5: blend bg input, 6:
+         *  blend output
+         */
+        uint32_t dbg_replace_sel:3;
+        uint32_t reserved_3:29;
+    };
+    uint32_t val;
+} ppa_debug_ctrl0_reg_t;
+
+/** Type of debug_ctrl1 register
+ *  debug register
+ */
+typedef union {
+    struct {
+        /** dbg_replace_data : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the replace data
+         */
+        uint32_t dbg_replace_data:32;
+    };
+    uint32_t val;
+} ppa_debug_ctrl1_reg_t;
+
+
+/** Group: Configuration Register */
+/** Type of rgb2gray register
+ *  rgb2gray register
+ */
+typedef union {
+    struct {
+        /** rgb2gray_b : R/W; bitpos: [7:0]; default: 85;
+         *  Configures the b parameter for rgb2gray
+         */
+        uint32_t rgb2gray_b:8;
+        /** rgb2gray_g : R/W; bitpos: [15:8]; default: 86;
+         *  Configures the g parameter for rgb2gray
+         */
+        uint32_t rgb2gray_g:8;
+        /** rgb2gray_r : R/W; bitpos: [23:16]; default: 85;
+         *  Configures the r parameter for rgb2gray
+         */
+        uint32_t rgb2gray_r:8;
+        uint32_t reserved_24:8;
+    };
+    uint32_t val;
+} ppa_rgb2gray_reg_t;
+
+
 /** Group: Version Register */
 /** Type of date register
  *  PPA Version register
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [31:0]; default: 36716609;
+        /** date : R/W; bitpos: [31:0]; default: 539234848;
          *  register version.
          */
         uint32_t date:32;
@@ -893,7 +1006,10 @@ typedef struct ppa_dev_t {
     volatile ppa_eco_high_reg_t eco_high;
     volatile ppa_eco_cell_ctrl_reg_t eco_cell_ctrl;
     volatile ppa_sram_ctrl_reg_t sram_ctrl;
-    uint32_t reserved_090[28];
+    volatile ppa_debug_ctrl0_reg_t debug_ctrl0;
+    volatile ppa_debug_ctrl1_reg_t debug_ctrl1;
+    volatile ppa_rgb2gray_reg_t rgb2gray;
+    uint32_t reserved_09c[25];
     volatile ppa_date_reg_t date;
 } ppa_dev_t;
 
