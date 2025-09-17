@@ -113,6 +113,7 @@ esp_err_t sdmmc_decode_scr(uint32_t *raw_scr, sdmmc_scr_t* out_scr);
 esp_err_t sdmmc_decode_ssr(uint32_t *raw_ssr, sdmmc_ssr_t* out_ssr);
 uint32_t sdmmc_sd_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb);
 
+#if CONFIG_SD_ENABLE_SDIO_SUPPORT
 /* SDIO specific */
 esp_err_t sdmmc_io_reset(sdmmc_card_t* card);
 esp_err_t sdmmc_io_enable_hs_mode(sdmmc_card_t* card);
@@ -123,6 +124,7 @@ esp_err_t sdmmc_io_rw_direct(sdmmc_card_t* card, int function, uint32_t reg, uin
 // cache, unless `SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF` flag is set when calling `sdmmc_card_init`. This flag is mandory
 // when the buffer is behind the cache in byte mode.
 esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int function, uint32_t reg, int arg, void *data, size_t size);
+#endif
 
 /* MMC specific */
 esp_err_t sdmmc_mmc_send_ext_csd_data(sdmmc_card_t* card, void *out_data, size_t datalen, size_t buffer_len);
@@ -141,9 +143,6 @@ esp_err_t sdmmc_init_rca(sdmmc_card_t* card);
 esp_err_t sdmmc_init_mmc_decode_cid(sdmmc_card_t* card);
 esp_err_t sdmmc_init_ocr(sdmmc_card_t* card);
 esp_err_t sdmmc_init_spi_crc(sdmmc_card_t* card);
-esp_err_t sdmmc_init_io(sdmmc_card_t* card);
-esp_err_t sdmmc_io_init_read_card_cap(sdmmc_card_t* card, uint8_t* card_cap);
-esp_err_t sdmmc_io_init_check_card_cap(sdmmc_card_t* card, uint8_t* card_cap);
 esp_err_t sdmmc_init_sd_blocklen(sdmmc_card_t* card);
 esp_err_t sdmmc_init_sd_scr(sdmmc_card_t* card);
 esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card);
@@ -152,7 +151,12 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card);
 esp_err_t sdmmc_init_mmc_read_cid(sdmmc_card_t* card);
 esp_err_t sdmmc_init_host_bus_width(sdmmc_card_t* card);
 esp_err_t sdmmc_init_sd_bus_width(sdmmc_card_t* card);
+#if CONFIG_SD_ENABLE_SDIO_SUPPORT
+esp_err_t sdmmc_init_io(sdmmc_card_t* card);
 esp_err_t sdmmc_init_io_bus_width(sdmmc_card_t* card);
+esp_err_t sdmmc_io_init_read_card_cap(sdmmc_card_t* card, uint8_t* card_cap);
+esp_err_t sdmmc_io_init_check_card_cap(sdmmc_card_t* card, uint8_t* card_cap);
+#endif
 esp_err_t sdmmc_init_mmc_bus_width(sdmmc_card_t* card);
 esp_err_t sdmmc_init_card_hs_mode(sdmmc_card_t* card);
 esp_err_t sdmmc_init_host_frequency(sdmmc_card_t* card);

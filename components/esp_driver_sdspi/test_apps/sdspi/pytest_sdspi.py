@@ -7,6 +7,14 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='C5 C61 GPSPI same, so testing on C5 is enough')
 @pytest.mark.sdcard_spimode
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default',
+        'nosdio',
+    ],
+    indirect=True,
+)
 @idf_parametrize('target', ['esp32', 'esp32s3', 'esp32c3', 'esp32p4', 'esp32c5'], indirect=['target'])
 def test_sdspi(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(reset=True)
