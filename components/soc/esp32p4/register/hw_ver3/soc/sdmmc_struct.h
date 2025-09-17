@@ -484,63 +484,6 @@ typedef union {
     uint32_t val;
 } sdhost_cmd_reg_t;
 
-
-/** Group: Response data register */
-/** Type of resp0 register
- *  Response data register
- */
-typedef union {
-    struct {
-        /** response0_reg : RO; bitpos: [31:0]; default: 0;
-         *  Bit[31:0] of response.
-         */
-        uint32_t response0_reg:32;
-    };
-    uint32_t val;
-} sdhost_resp0_reg_t;
-
-
-/** Group: Long response data register */
-/** Type of resp1 register
- *  Long response data register
- */
-typedef union {
-    struct {
-        /** response1_reg : RO; bitpos: [31:0]; default: 0;
-         *  Bit[63:32] of long response.
-         */
-        uint32_t response1_reg:32;
-    };
-    uint32_t val;
-} sdhost_resp1_reg_t;
-
-/** Type of resp2 register
- *  Long response data register
- */
-typedef union {
-    struct {
-        /** response2_reg : RO; bitpos: [31:0]; default: 0;
-         *  Bit[95:64] of long response.
-         */
-        uint32_t response2_reg:32;
-    };
-    uint32_t val;
-} sdhost_resp2_reg_t;
-
-/** Type of resp3 register
- *  Long response data register
- */
-typedef union {
-    struct {
-        /** response3_reg : RO; bitpos: [31:0]; default: 0;
-         *  Bit[127:96] of long response.
-         */
-        uint32_t response3_reg:32;
-    };
-    uint32_t val;
-} sdhost_resp3_reg_t;
-
-
 /** Group: Masked interrupt status register */
 /** Type of mintsts register
  *  Masked interrupt status register
@@ -606,22 +549,7 @@ typedef union {
          *  Bit 1 (RE): Response error;
          *  Bit 0 (CD): Card detect.
          */
-        uint32_t cd:1;
-        uint32_t re:1;
-        uint32_t cmd_done:1;
-        uint32_t dto:1;
-        uint32_t txdr:1;
-        uint32_t rxdr:1;
-        uint32_t rcrc:1;
-        uint32_t dcrc:1;
-        uint32_t rto:1;
-        uint32_t drto:1;
-        uint32_t hto:1;
-        uint32_t frun:1;
-        uint32_t hle:1;
-        uint32_t sbi_bci:1;
-        uint32_t acd:1;
-        uint32_t ebe:1;
+        uint32_t int_status_raw:16;
         /** sdio_interrupt_raw : R/W; bitpos: [17:16]; default: 0;
          *  Interrupt from SDIO card, one bit for each card. Bit[17:16] correspond to card1 and
          *  card0, respectively. Setting a bit clears the corresponding interrupt bit and
@@ -920,10 +848,10 @@ typedef union {
          */
         uint32_t volt:2;
         uint32_t reserved_0:14;
-        /** ddr: R/W; bitpos: [17:16]; default: 0;
-         *  DDR mode selection, 1 bit for each card.
-         *  0: Non-DDR mode.
-         *  1: DDR mode.
+        /** ddr : R/W; bitpos: [17:16]; default: 0;
+         *  DDR mode selection,1 bit for each card.
+         *  0-Non-DDR mode.
+         *  1-DDR mode.
          */
         uint32_t ddr:2;
         uint32_t reserved_18:14;
@@ -1444,7 +1372,7 @@ typedef struct sdmmc_dev_t {
     volatile sdhost_intmask_reg_t intmask;
     volatile uint32_t cmdarg;
     volatile sdhost_cmd_reg_t cmd;
-    volatile uint32_t resp[4];           ///< Response from card
+    volatile uint32_t resp[4];
     volatile sdhost_mintsts_reg_t mintsts;
     volatile sdhost_rintsts_reg_t rintsts;
     volatile sdhost_status_reg_t status;

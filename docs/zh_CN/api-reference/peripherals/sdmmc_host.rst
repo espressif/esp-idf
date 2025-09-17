@@ -74,7 +74,7 @@ SDMMC 主机驱动
 .. only:: esp32p4
 
     - 卡槽 :c:macro:`SDMMC_HOST_SLOT_1` 通过 GPIO 交换矩阵路由，即任何 GPIO 都可以用于每个 SD 卡信号。这适用于非 UHS-I 用途。
-    - 卡槽 :c:macro:`SDMMC_HOST_SLOT_0` 专用于 UHS-I 模式，驱动程序中尚不支持该模式。
+    - 卡槽 :c:macro:`SDMMC_HOST_SLOT_0` 专用于 UHS-I 模式。
 
     在 {IDF_TARGET_NAME} 上，SDMMC 主机需要外部电源为 IO 电压供电。详情请参阅 :ref:`pwr-ctrl`。
 
@@ -87,6 +87,7 @@ SDMMC 主机驱动支持以下速率模式：
 
   - 默认速率 (20 MHz)：对于 SD 卡，支持 1 线或 4 线传输；对于 3.3 V eMMC，支持 1 线、4 线或 8 线传输。
   - 高速模式 (40 MHz)：对于 SD 卡，支持 1 线或 4 线传输；对于 3.3 V eMMC，支持 1 线、4 线或 8 线传输。
+  :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V, SDR104 模式 (200 MHz)：支持 4 线 SD 卡传输。
   :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V SDR50 模式 (100 MHz)：支持 4 线 SD 卡传输。
   :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V DDR50 模式 (50 MHz)：支持 4 线 SD 卡传输。
   - 高速 DDR 模式 (40 MHz)：对于 3.3 V eMMC，支持 4 线传输。
