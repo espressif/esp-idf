@@ -16,7 +16,7 @@
 #include "esp_debug_helpers.h"
 #include "esp_cpu_utils.h"
 #include "esp_private/panic_internal.h"
-#include "esp_private/freertos_debug.h"
+#include "freertos/freertos_debug.h"
 #include "esp_rom_sys.h"
 #include "xtensa_context.h"
 #include "freertos/FreeRTOS.h"

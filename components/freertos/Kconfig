@@ -639,21 +639,6 @@ menu "FreeRTOS"
         help
             Hidden option, gets selected by CONFIG_ESP_DEBUG_OCDAWARE
 
-    config FREERTOS_ENABLE_TASK_SNAPSHOT
-        # Invisible option that is always enabled. Task Snapshot APIs are now private thus are always enabled. This
-        # option is kept here in case any user code conditionally depends on this option.
-        # Todo: Remove in v6.0 (IDF-8143)
-        bool
-        default y
-
-    config FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH
-        # Invisible option that is always enabled. Task Snapshot APIs are now private API thus are always placed into
-        # flash by default. This option is kept here in case any user code conditionally depends on this option.
-        # Todo: Remove in v6.0 (IDF-8143)
-        bool
-        default y
-        depends on !ESP_PANIC_HANDLER_IRAM
-
     config FREERTOS_NUMBER_OF_CORES
         # Invisible option to configure the number of cores on which FreeRTOS runs
         # Todo: Unhide this option and deprecate CONFIG_FREERTOS_UNICORE (IDF-9156)

@@ -18,15 +18,19 @@ entries:
     # Placement Rules (Task Snapshot):
     #   - Default: Place all functions in flash.
     #   - CONFIG_FREERTOS_IN_IRAM: Place all functions in internal RAM for performance optimization.
-    #   - vTaskGetSnapshot is omitted on purpose as it is used to by the Task Watchdog (TWDT) interrupt handler, we want
-    #     to always keep it in IRAM unless CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH is enabled in which case
-    #     we can place it in flash.
+    #   - ESP_PANIC_HANDLER_IRAM: Place task snapshot functions in IRAM for panic handling.
+    #   - vTaskGetSnapshot is used by the Task Watchdog (TWDT) interrupt handler, so it's kept in IRAM
+    #     unless CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH is enabled.
     #
     # ------------------------------------------------------------------------------------------------------------------
     if FREERTOS_SMP = n && FREERTOS_UNICORE = n:
         tasks:xTaskIncrementTickOtherCores (noflash_text)
     if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
         tasks:vTaskGetSnapshot (noflash_text)
+    if ESP_PANIC_HANDLER_IRAM = y:
+        tasks:vTaskGetSnapshot (noflash_text)
+        tasks:uxTaskGetSnapshotAll (noflash_text)
+        tasks:xTaskGetNext (noflash_text)
 
     # ------------------------------------------------------------------------------------------------------------------
     # idf_additions.c

@@ -242,6 +242,10 @@
     match_to_output: True
 
 -
+    re: "fatal error: esp_private/freertos_debug.h: No such file or directory"
+    hint: "esp_private/freertos_debug.h has been moved to freertos/freertos_debug.h.\nThe task snapshot APIs are now public. Update your include to use the new public header."
+
+-
     re: "(fatal error: tcpip_adapter.h: No such file or directory|error: implicit declaration of function 'tcpip_adapter_init')"
     hint: "TCP/IP adapter compatibility layer has been removed. Please migrate to ESP-NETIF.\nRefer to the Networking migration guide, section TCP/IP adapter, for more details."
 

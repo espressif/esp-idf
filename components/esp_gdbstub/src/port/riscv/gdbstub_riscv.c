@@ -13,7 +13,7 @@
 #include "rv_decode.h"
 #include "sdkconfig.h"
 #include "esp_private/crosscore_int.h"
-#include "esp_private/freertos_debug.h"
+#include "freertos/freertos_debug.h"
 #include "freertos/portmacro.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/FreeRTOSConfig.h"

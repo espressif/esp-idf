@@ -7,7 +7,7 @@
 #define ESP_CORE_DUMP_COMMON_H_
 
 #include "freertos/FreeRTOS.h"
-#include "esp_private/freertos_debug.h"
+#include "freertos/freertos_debug.h"
 #include "esp_app_format.h"
 #include "esp_core_dump_types.h"
 
