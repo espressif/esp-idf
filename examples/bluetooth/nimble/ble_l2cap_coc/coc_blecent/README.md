@@ -48,7 +48,7 @@ idf.py menuconfig
 
 In the `Component Config` menu:
 
-* Change Component config → Bluetooth → NimBLE Options → Maximum number of connection oriented channels to a value greater than 0
+* Change Component config → Bluetooth → NimBLE Options → L2CAP → Maximum number of connection oriented channels to a value greater than 0
 * Change Component config → Bluetooth → NimBLE Options → Memory Settings → MSYS_1 Block Size to 536 (For maximum transmission of data)
 
 ### Build and Flash
