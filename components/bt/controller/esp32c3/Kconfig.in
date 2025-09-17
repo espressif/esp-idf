@@ -569,40 +569,50 @@ menu "Controller debug log Options (Experimental)"
         bool "Enable BLE debug log"
         default n
 
+    config BT_CTRL_LE_LOG_MODE_BLE_LOG_V2
+        bool "Utilize BLE Log v2 for controller log"
+        depends on BT_CTRL_LE_LOG_EN
+        depends on BLE_LOG_ENABLED
+        default y
+        help
+            Utilize BLE Log v2 for controller log
+
+    if !BT_CTRL_LE_LOG_MODE_BLE_LOG_V2
+        config BT_CTRL_LE_LOG_DUMP_ONLY
+            depends on BT_CTRL_LE_LOG_EN
+            bool "Enable BLE log dump only"
+            default n
+
+        config BT_CTRL_LE_LOG_STORAGE_EN
+            depends on BT_CTRL_LE_LOG_EN
+            bool "Enable BLE log storage to flash"
+            default n
+
+        config BT_CTRL_LE_LOG_PARTITION_SIZE
+            int "The size of ble controller log partition(Multiples of 4K)"
+            depends on BT_CTRL_LE_LOG_STORAGE_EN
+            default 65536
+            help
+                The size of ble controller log partition shall be a multiples of 4K.
+                The name of log partition shall be "bt_ctrl_log".
+                The partition type shall be ESP_PARTITION_TYPE_DATA.
+                The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
+
+        config BT_CTRL_LE_LOG_SPI_OUT_EN
+            bool "Output ble controller logs to SPI bus"
+            depends on BT_CTRL_LE_LOG_EN
+            depends on !BT_CTRL_LE_LOG_DUMP_ONLY
+            select BT_BLE_LOG_SPI_OUT_ENABLED
+            select BT_BLE_LOG_SPI_OUT_LL_ENABLED
+            default n
+            help
+                Output ble controller logs to SPI bus
+    endif
+
     config BT_CTRL_LE_HCI_LOG_EN
         depends on BT_CTRL_LE_LOG_EN
         bool "Enable BLE HCI log"
         default n
-
-    config BT_CTRL_LE_LOG_DUMP_ONLY
-        depends on BT_CTRL_LE_LOG_EN
-        bool "Enable BLE log dump only"
-        default n
-
-    config BT_CTRL_LE_LOG_STORAGE_EN
-        depends on BT_CTRL_LE_LOG_EN
-        bool "Enable BLE log storage to flash"
-        default n
-
-    config BT_CTRL_LE_LOG_PARTITION_SIZE
-        int "The size of ble controller log partition(Multiples of 4K)"
-        depends on BT_CTRL_LE_LOG_STORAGE_EN
-        default 65536
-        help
-            The size of ble controller log partition shall be a multiples of 4K.
-            The name of log partition shall be "bt_ctrl_log".
-            The partition type shall be ESP_PARTITION_TYPE_DATA.
-            The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
-
-    config BT_CTRL_LE_LOG_SPI_OUT_EN
-        bool "Output ble controller logs to SPI bus"
-        depends on BT_CTRL_LE_LOG_EN
-        depends on !BT_CTRL_LE_LOG_DUMP_ONLY
-        select BT_BLE_LOG_SPI_OUT_ENABLED
-        select BT_BLE_LOG_SPI_OUT_LL_ENABLED
-        default n
-        help
-            Output ble controller logs to SPI bus
 
     config BT_CTRL_LE_LOG_MODE_EN
         depends on BT_CTRL_LE_LOG_EN
