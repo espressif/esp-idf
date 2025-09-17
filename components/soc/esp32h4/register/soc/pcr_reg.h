@@ -571,7 +571,7 @@ extern "C" {
  *  Configures the clock source of LEDC.
  *  0 (default): XTAL_CLK
  *  1: RC_FAST_CLK
- *  2: PLL_F80M_CLK
+ *  2: PLL_F96M_CLK
  */
 #define PCR_LEDC_SCLK_SEL    0x00000003U
 #define PCR_LEDC_SCLK_SEL_M  (PCR_LEDC_SCLK_SEL_V << PCR_LEDC_SCLK_SEL_S)

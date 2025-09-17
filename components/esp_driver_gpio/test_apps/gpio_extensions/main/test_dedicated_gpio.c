@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,16 +11,17 @@
 #include "unity.h"
 #include "unity_test_utils.h"
 #include "esp_rom_sys.h"
-#include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
+#include "soc/dedic_gpio_periph.h"
 #include "hal/dedic_gpio_cpu_ll.h"
 #include "driver/gpio.h"
 #include "driver/dedic_gpio.h"
 
 TEST_CASE("Dedicated_GPIO_bundle_install/uninstall", "[dedic_gpio]")
 {
-    const int test_gpios[SOC_DEDIC_GPIO_OUT_CHANNELS_NUM / 2] = {0};
-    const int test2_gpios[SOC_DEDIC_GPIO_OUT_CHANNELS_NUM / 2 + 1] = {0};
-    const int test3_gpios[SOC_DEDIC_GPIO_OUT_CHANNELS_NUM + 1] = {0};
+    const int test_gpios[SOC_DEDIC_GPIO_ATTR(OUT_CHANS_PER_CPU) / 2] = {0};
+    const int test2_gpios[SOC_DEDIC_GPIO_ATTR(OUT_CHANS_PER_CPU) / 2 + 1] = {0};
+    const int test3_gpios[SOC_DEDIC_GPIO_ATTR(OUT_CHANS_PER_CPU) + 1] = {0};
     dedic_gpio_bundle_handle_t test_bundle, test_bundle2, test_bundle3 = NULL;
     dedic_gpio_bundle_config_t bundle_config = {
         .gpio_array = test_gpios,
@@ -47,7 +48,7 @@ TEST_CASE("Dedicated_GPIO_bundle_install/uninstall", "[dedic_gpio]")
     TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, dedic_gpio_new_bundle(&bundle_config, &test_bundle), "create bundle with half channels failed");
     uint32_t mask = 0;
     TEST_ESP_OK(dedic_gpio_get_out_mask(test_bundle, &mask));
-    TEST_ASSERT_EQUAL_MESSAGE((1 << (SOC_DEDIC_GPIO_OUT_CHANNELS_NUM / 2)) - 1, mask, "wrong out mask");
+    TEST_ASSERT_EQUAL_MESSAGE((1 << (SOC_DEDIC_GPIO_ATTR(OUT_CHANS_PER_CPU) / 2)) - 1, mask, "wrong out mask");
     TEST_ESP_OK(dedic_gpio_get_in_mask(test_bundle, &mask));
     TEST_ASSERT_EQUAL_MESSAGE(0, mask, "wrong in mask");
 

@@ -503,18 +503,6 @@ config SOC_RTCIO_EDGE_WAKE_SUPPORTED
     bool
     default y
 
-config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
-    int
-    default 8
-
-config SOC_DEDIC_GPIO_IN_CHANNELS_NUM
-    int
-    default 8
-
-config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
-    bool
-    default y
-
 config SOC_ANA_CMPR_NUM
     int
     default 1

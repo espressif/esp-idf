@@ -45,7 +45,7 @@
 // #define SOC_I2S_SUPPORTED               1    //TODO: [ESP32H21] IDF-11606, IDF-11608
 // #define SOC_SDM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11573
 #define SOC_GPSPI_SUPPORTED             1
-// #define SOC_LEDC_SUPPORTED              1    //TODO: [ESP32H21] IDF-11568
+#define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1
 // #define SOC_SUPPORT_COEXISTENCE         1    //TODO: [ESP32H21] IDF-11658, IDF-11659, IDF-11660
@@ -233,7 +233,10 @@
 // #define SOC_CLOCKOUT_HAS_SOURCE_GATE        (1)
 // #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
 
+/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_SUPPORT_SLEEP_RETENTION 1
+
+/*-------------------------- ETM CAPS -----------------------------------*/
 #define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
@@ -241,11 +244,6 @@
  * for hold, wake & 32kHz crystal functions - via LP_AON registers */
 #define SOC_RTCIO_PIN_COUNT         (7U)
 #define SOC_RTCIO_HOLD_SUPPORTED    (1)
-
-/*-------------------------- Dedicated GPIO CAPS -----------------------------*/
-#define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
-#define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
-#define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*------------------------- Analog Comparator CAPS ---------------------------*/
 #define SOC_ANA_CMPR_NUM                    (1U)
@@ -287,14 +285,16 @@
 // #define SOC_I2S_TDM_FULL_DATA_WIDTH (1)  /*!< No limitation to data bit width when using multiple slots */
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
-// #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
-// #define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
-#define SOC_LEDC_CHANNEL_NUM                (6) // Check, todo IDF-11568
-// #define SOC_LEDC_TIMER_BIT_WIDTH            (20)
-// #define SOC_LEDC_SUPPORT_FADE_STOP          (1)
-// #define SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED (1)
-// #define SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX (16)
-// #define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
+#define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
+#define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
+#define SOC_LEDC_TIMER_NUM                  (4)
+#define SOC_LEDC_CHANNEL_NUM                (6)
+#define SOC_LEDC_TIMER_BIT_WIDTH            (20)
+#define SOC_LEDC_SUPPORT_FADE_STOP          (1)
+#define SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED (1)
+#define SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX (16)
+#define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
+#define SOC_LEDC_SUPPORT_SLEEP_RETENTION    (1)
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 // #define SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED    0

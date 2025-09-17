@@ -15,7 +15,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_cpu.h"
-#include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 #include "soc/io_mux_reg.h"
 #include "hal/dedic_gpio_cpu_ll.h"
 #include "esp_private/gpio.h"
@@ -25,10 +25,10 @@
 #include "driver/dedic_gpio.h"
 #include "soc/dedic_gpio_periph.h"
 
-#if SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
+#if DEDIC_GPIO_LL_ALLOW_REG_ACCESS
 #include "soc/dedic_gpio_struct.h"
 #endif
-#if !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
+#if !DEDIC_GPIO_CPU_LL_PERIPH_ALWAYS_ENABLE
 #include "hal/dedic_gpio_ll.h"
 #endif
 
@@ -50,11 +50,11 @@ struct dedic_gpio_platform_t {
     uint32_t in_occupied_mask;  // mask of input channels that already occupied
 #if SOC_DEDIC_GPIO_HAS_INTERRUPT
     intr_handle_t intr_hdl;     // interrupt handle
-    dedic_gpio_isr_callback_t cbs[SOC_DEDIC_GPIO_IN_CHANNELS_NUM];   // array of callback function for input channel
-    void *cb_args[SOC_DEDIC_GPIO_IN_CHANNELS_NUM];                   // array of callback arguments for input channel
-    dedic_gpio_bundle_t *in_bundles[SOC_DEDIC_GPIO_IN_CHANNELS_NUM]; // which bundle belongs to for input channel
+    dedic_gpio_isr_callback_t cbs[SOC_DEDIC_GPIO_ATTR(IN_CHANS_PER_CPU)];   // array of callback function for input channel
+    void *cb_args[SOC_DEDIC_GPIO_ATTR(IN_CHANS_PER_CPU)];                   // array of callback arguments for input channel
+    dedic_gpio_bundle_t *in_bundles[SOC_DEDIC_GPIO_ATTR(IN_CHANS_PER_CPU)]; // which bundle belongs to for input channel
 #endif
-#if SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
+#if DEDIC_GPIO_LL_ALLOW_REG_ACCESS
     dedic_dev_t *dev;
 #endif
 };
@@ -81,18 +81,18 @@ static esp_err_t dedic_gpio_build_platform(int core_id)
                 // initialize platform members
                 s_platform[core_id]->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
                 // initial occupy_mask: 1111...100...0
-                s_platform[core_id]->out_occupied_mask = UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_OUT_CHANNELS_NUM) - 1);
-                s_platform[core_id]->in_occupied_mask = UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_IN_CHANNELS_NUM) - 1);
-#if SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
+                s_platform[core_id]->out_occupied_mask = UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_ATTR(OUT_CHANS_PER_CPU)) - 1);
+                s_platform[core_id]->in_occupied_mask = UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_ATTR(IN_CHANS_PER_CPU)) - 1);
+#if DEDIC_GPIO_LL_ALLOW_REG_ACCESS
                 s_platform[core_id]->dev = &DEDIC_GPIO;
-#endif // SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
-#if !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
+#endif // DEDIC_GPIO_LL_ALLOW_REG_ACCESS
+#if !DEDIC_GPIO_CPU_LL_PERIPH_ALWAYS_ENABLE
                 // enable dedicated GPIO register clock
                 PERIPH_RCC_ATOMIC() {
                     dedic_gpio_ll_enable_bus_clock(true);
                     dedic_gpio_ll_reset_register();
                 }
-#endif // !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
+#endif // !DEDIC_GPIO_CPU_LL_PERIPH_ALWAYS_ENABLE
             }
         }
         _lock_release(&s_platform_mutexlock[core_id]);
@@ -113,12 +113,12 @@ static void dedic_gpio_break_platform(int core_id)
         if (s_platform[core_id]) {
             free(s_platform[core_id]);
             s_platform[core_id] = NULL;
-#if !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
+#if !DEDIC_GPIO_CPU_LL_PERIPH_ALWAYS_ENABLE
             // disable the register clock if no GPIO channel is in use
             PERIPH_RCC_ATOMIC() {
                 dedic_gpio_ll_enable_bus_clock(false);
             }
-#endif // !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
+#endif // !DEDIC_GPIO_CPU_LL_PERIPH_ALWAYS_ENABLE
         }
         _lock_release(&s_platform_mutexlock[core_id]);
     }
@@ -222,11 +222,11 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
     // configure outwards channels
     uint32_t out_offset = 0;
     if (config->flags.out_en) {
-        ESP_GOTO_ON_FALSE(config->array_size <= SOC_DEDIC_GPIO_OUT_CHANNELS_NUM, ESP_ERR_INVALID_ARG, err, TAG,
-                          "array size(%d) exceeds maximum supported out channels(%d)", config->array_size, SOC_DEDIC_GPIO_OUT_CHANNELS_NUM);
+        ESP_GOTO_ON_FALSE(config->array_size <= SOC_DEDIC_GPIO_ATTR(OUT_CHANS_PER_CPU), ESP_ERR_INVALID_ARG, err, TAG,
+                          "array size(%d) exceeds maximum supported out channels(%d)", config->array_size, SOC_DEDIC_GPIO_ATTR(OUT_CHANS_PER_CPU));
         // prevent install bundle concurrently
         portENTER_CRITICAL(&s_platform[core_id]->spinlock);
-        for (size_t i = 0; i <= SOC_DEDIC_GPIO_OUT_CHANNELS_NUM - config->array_size; i++) {
+        for (size_t i = 0; i <= SOC_DEDIC_GPIO_ATTR(OUT_CHANS_PER_CPU) - config->array_size; i++) {
             if ((s_platform[core_id]->out_occupied_mask & (pattern << i)) == 0) {
                 out_mask = pattern << i;
                 out_offset = i;
@@ -235,7 +235,7 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
         }
         if (out_mask) {
             s_platform[core_id]->out_occupied_mask |= out_mask;
-#if SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
+#if DEDIC_GPIO_LL_ALLOW_REG_ACCESS
             // always enable instruction to access output GPIO, which has better performance than register access
             dedic_gpio_ll_enable_instruction_access_out(s_platform[core_id]->dev, out_mask, true);
 #endif
@@ -248,11 +248,11 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
     // configure inwards channels
     uint32_t in_offset = 0;
     if (config->flags.in_en) {
-        ESP_GOTO_ON_FALSE(config->array_size <= SOC_DEDIC_GPIO_IN_CHANNELS_NUM, ESP_ERR_INVALID_ARG, err, TAG,
-                          "array size(%d) exceeds maximum supported in channels(%d)", config->array_size, SOC_DEDIC_GPIO_IN_CHANNELS_NUM);
+        ESP_GOTO_ON_FALSE(config->array_size <= SOC_DEDIC_GPIO_ATTR(IN_CHANS_PER_CPU), ESP_ERR_INVALID_ARG, err, TAG,
+                          "array size(%d) exceeds maximum supported in channels(%d)", config->array_size, SOC_DEDIC_GPIO_ATTR(IN_CHANS_PER_CPU));
         // prevent install bundle concurrently
         portENTER_CRITICAL(&s_platform[core_id]->spinlock);
-        for (size_t i = 0; i <= SOC_DEDIC_GPIO_IN_CHANNELS_NUM - config->array_size; i++) {
+        for (size_t i = 0; i <= SOC_DEDIC_GPIO_ATTR(IN_CHANS_PER_CPU) - config->array_size; i++) {
             if ((s_platform[core_id]->in_occupied_mask & (pattern << i)) == 0) {
                 in_mask = pattern << i;
                 in_offset = i;
@@ -280,9 +280,7 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
             gpio_func_sel(config->gpio_array[i], PIN_FUNC_GPIO);
             esp_rom_gpio_connect_out_signal(config->gpio_array[i], dedic_gpio_periph_signals.cores[core_id].out_sig_per_channel[out_offset + i], config->flags.out_invert, false);
         }
-#if !SOC_DEDIC_GPIO_OUT_AUTO_ENABLE
         dedic_gpio_cpu_ll_enable_output(s_platform[core_id]->out_occupied_mask);
-#endif // !SOC_DEDIC_GPIO_OUT_AUTO_ENABLE
     }
 
     // it's safe to initialize bundle members without locks here
@@ -322,8 +320,8 @@ esp_err_t dedic_gpio_del_bundle(dedic_gpio_bundle_handle_t bundle)
     portENTER_CRITICAL(&s_platform[core_id]->spinlock);
     s_platform[core_id]->out_occupied_mask &= ~(bundle->out_mask);
     s_platform[core_id]->in_occupied_mask &= ~(bundle->in_mask);
-    if (s_platform[core_id]->in_occupied_mask == (UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_IN_CHANNELS_NUM) - 1)) &&
-            s_platform[core_id]->out_occupied_mask == (UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_OUT_CHANNELS_NUM) - 1))) {
+    if (s_platform[core_id]->in_occupied_mask == (UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_ATTR(IN_CHANS_PER_CPU)) - 1)) &&
+            s_platform[core_id]->out_occupied_mask == (UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_ATTR(OUT_CHANS_PER_CPU)) - 1))) {
         recycle_all = true;
     }
     portEXIT_CRITICAL(&s_platform[core_id]->spinlock);

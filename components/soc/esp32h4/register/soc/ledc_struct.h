@@ -16,52 +16,52 @@ extern "C" {
  */
 typedef union {
     struct {
-        /** timer_sel_chn : R/W; bitpos: [1:0]; default: 0;
+        /** timer_sel : R/W; bitpos: [1:0]; default: 0;
          *  Configures which timer is channel n selected.
          *  0: Select timer0
          *  1: Select timer1
          *  2: Select timer2
          *  3: Select timer3
          */
-        uint32_t timer_sel_chn:2;
-        /** sig_out_en_chn : R/W; bitpos: [2]; default: 0;
+        uint32_t timer_sel:2;
+        /** sig_out_en : R/W; bitpos: [2]; default: 0;
          *  Configures whether or not to enable signal output on channel n.
          *  0: Signal output disable
          *  1: Signal output enable
          */
-        uint32_t sig_out_en_chn:1;
-        /** idle_lv_chn : R/W; bitpos: [3]; default: 0;
+        uint32_t sig_out_en:1;
+        /** idle_lv : R/W; bitpos: [3]; default: 0;
          *  Configures the output value when channel n is inactive. Valid only when
          *  LEDC_SIG_OUT_EN_CHn is 0.
          *  0: Output level is low
          *  1: Output level is high
          */
-        uint32_t idle_lv_chn:1;
-        /** para_up_chn : WT; bitpos: [4]; default: 0;
+        uint32_t idle_lv:1;
+        /** para_up : WT; bitpos: [4]; default: 0;
          *  Configures whether or not to update LEDC_HPOINT_CHn, LEDC_DUTY_START_CHn,
          *  LEDC_SIG_OUT_EN_CHn, LEDC_TIMER_SEL_CHn, LEDC_OVF_CNT_EN_CHn fields and duty cycle
          *  range configuration for channel n, and will be automatically cleared by hardware.
          *  0: Invalid. No effect
          *  1: Update
          */
-        uint32_t para_up_chn:1;
-        /** ovf_num_chn : R/W; bitpos: [14:5]; default: 0;
+        uint32_t para_up:1;
+        /** ovf_num : R/W; bitpos: [14:5]; default: 0;
          *  Configures the maximum times of overflow minus 1.The LEDC_OVF_CNT_CHn_INT interrupt
          *  will be triggered when channel n overflows for (LEDC_OVF_NUM_CHn + 1) times.
          */
-        uint32_t ovf_num_chn:10;
-        /** ovf_cnt_en_chn : R/W; bitpos: [15]; default: 0;
+        uint32_t ovf_num:10;
+        /** ovf_cnt_en : R/W; bitpos: [15]; default: 0;
          *  Configures whether or not to enable the ovf_cnt of channel n.
          *  0: Disable
          *  1: Enable
          */
-        uint32_t ovf_cnt_en_chn:1;
-        /** ovf_cnt_reset_chn : WT; bitpos: [16]; default: 0;
+        uint32_t ovf_cnt_en:1;
+        /** ovf_cnt_reset : WT; bitpos: [16]; default: 0;
          *  Configures whether or not to reset the  ovf_cnt of channel n.
          *  0: Invalid. No effect
          *  1: Reset the ovf_cnt
          */
-        uint32_t ovf_cnt_reset_chn:1;
+        uint32_t ovf_cnt_reset:1;
         uint32_t reserved_17:15;
     };
     uint32_t val;
@@ -72,11 +72,11 @@ typedef union {
  */
 typedef union {
     struct {
-        /** hpoint_chn : R/W; bitpos: [19:0]; default: 0;
+        /** hpoint : R/W; bitpos: [19:0]; default: 0;
          *  Configures high point of signal output on channel n. The output value changes to
          *  high when the selected timers has reached the value specified by this register.
          */
-        uint32_t hpoint_chn:20;
+        uint32_t hpoint:20;
         uint32_t reserved_20:12;
     };
     uint32_t val;
@@ -87,10 +87,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** duty_chn : R/W; bitpos: [24:0]; default: 0;
+        /** duty : R/W; bitpos: [24:0]; default: 0;
          *  Configures the duty of signal output on channel n.
          */
-        uint32_t duty_chn:25;
+        uint32_t duty:25;
         uint32_t reserved_25:7;
     };
     uint32_t val;
@@ -102,53 +102,53 @@ typedef union {
 typedef union {
     struct {
         uint32_t reserved_0:31;
-        /** duty_start_chn : R/W/SC; bitpos: [31]; default: 0;
+        /** duty_start : R/W/SC; bitpos: [31]; default: 0;
          *  Configures whether the duty cycle fading configurations take effect.
          *  0: Not take effect
          *  1: Take effect
          */
-        uint32_t duty_start_chn:1;
+        uint32_t duty_start:1;
     };
     uint32_t val;
 } ledc_chn_conf1_reg_t;
 
-/** Type of timern_conf register
- *  Timer n configuration register
+/** Type of timerx_conf register
+ *  Timer x configuration register
  */
 typedef union {
     struct {
-        /** timern_duty_res : R/W; bitpos: [4:0]; default: 0;
-         *  Configures the bit width of the counter in timer n. Valid values are 1 to 20.
+        /** duty_res : R/W; bitpos: [4:0]; default: 0;
+         *  Configures the bit width of the counter in timer x. Valid values are 1 to 20.
          */
-        uint32_t timern_duty_res:5;
-        /** clk_div_timern : R/W; bitpos: [22:5]; default: 0;
-         *  Configures the divisor for the divider in timer n.The least significant eight bits
+        uint32_t duty_res:5;
+        /** clk_div : R/W; bitpos: [22:5]; default: 0;
+         *  Configures the divisor for the divider in timer x.The least significant eight bits
          *  represent the fractional part.
          */
-        uint32_t clk_div_timern:18;
-        /** timern_pause : R/W; bitpos: [23]; default: 0;
-         *  Configures whether or not to pause the counter in timer n.
+        uint32_t clk_div:18;
+        /** pause : R/W; bitpos: [23]; default: 0;
+         *  Configures whether or not to pause the counter in timer x.
          *  0: Normal
          *  1: Pause
          */
-        uint32_t timern_pause:1;
-        /** timern_rst : R/W; bitpos: [24]; default: 1;
-         *  Configures whether or not to reset timer n. The counter will show 0 after reset.
+        uint32_t pause:1;
+        /** rst : R/W; bitpos: [24]; default: 1;
+         *  Configures whether or not to reset timer x. The counter will show 0 after reset.
          *  0: Not reset
          *  1: Reset
          */
-        uint32_t timern_rst:1;
+        uint32_t rst:1;
         uint32_t reserved_25:1;
-        /** timern_para_up : WT; bitpos: [26]; default: 0;
+        /** para_up : WT; bitpos: [26]; default: 0;
          *  Configures whether or not to update LEDC_CLK_DIV_TIMERn and LEDC_TIMERn_DUTY_RES.
          *  0: Invalid. No effect
          *  1: Update
          */
-        uint32_t timern_para_up:1;
+        uint32_t para_up:1;
         uint32_t reserved_27:5;
     };
     uint32_t val;
-} ledc_timern_conf_reg_t;
+} ledc_timerx_conf_reg_t;
 
 /** Type of chn_fade_conf register
  *  Ledc chn fade config register.
@@ -156,18 +156,18 @@ typedef union {
 typedef union {
     struct {
         uint32_t reserved_0:5;
-        /** chn_fade_pause : WT; bitpos: [5]; default: 0;
+        /** fade_pause : WT; bitpos: [5]; default: 0;
          *  Configures whether or not to pause duty cycle fading of LEDC chn.
          *  0: Invalid. No effect
          *  1: Pause
          */
-        uint32_t chn_fade_pause:1;
-        /** chn_fade_resume : WT; bitpos: [6]; default: 0;
+        uint32_t fade_pause:1;
+        /** fade_resume : WT; bitpos: [6]; default: 0;
          *  Configures whether or nor to resume duty cycle fading of LEDC chn.
          *  0: Invalid. No effect
          *  1: Resume
          */
-        uint32_t chn_fade_resume:1;
+        uint32_t fade_resume:1;
         uint32_t reserved_7:25;
     };
     uint32_t val;
@@ -733,19 +733,19 @@ typedef union {
     uint32_t val;
 } ledc_evt_task_en2_reg_t;
 
-/** Type of timern_cmp register
- *  Ledc timern compare value register.
+/** Type of timerx_cmp register
+ *  Ledc timer x compare value register.
  */
 typedef union {
     struct {
-        /** timern_cmp : R/W; bitpos: [19:0]; default: 0;
-         *  Configures the comparison value for LEDC timern.
+        /** cmp : R/W; bitpos: [19:0]; default: 0;
+         *  Configures the comparison value for LEDC timer x.
          */
-        uint32_t timern_cmp:20;
+        uint32_t cmp:20;
         uint32_t reserved_20:12;
     };
     uint32_t val;
-} ledc_timern_cmp_reg_t;
+} ledc_timerx_cmp_reg_t;
 
 /** Type of conf register
  *  LEDC global configuration register
@@ -934,42 +934,42 @@ typedef union {
  */
 typedef union {
     struct {
-        /** duty_chn_r : RO; bitpos: [24:0]; default: 0;
+        /** duty_r : RO; bitpos: [24:0]; default: 0;
          *  Represents the current duty of output signal on channel n.
          */
-        uint32_t duty_chn_r:25;
+        uint32_t duty_r:25;
         uint32_t reserved_25:7;
     };
     uint32_t val;
 } ledc_chn_duty_r_reg_t;
 
-/** Type of timern_value register
- *  Timer n current counter value register
+/** Type of timerx_value register
+ *  Timer x current counter value register
  */
 typedef union {
     struct {
-        /** timern_cnt : RO; bitpos: [19:0]; default: 0;
-         *  Represents the current counter value of timer n.
+        /** cnt : RO; bitpos: [19:0]; default: 0;
+         *  Represents the current counter value of timer x.
          */
-        uint32_t timern_cnt:20;
+        uint32_t cnt:20;
         uint32_t reserved_20:12;
     };
     uint32_t val;
-} ledc_timern_value_reg_t;
+} ledc_timerx_value_reg_t;
 
-/** Type of timern_cnt_cap register
- *  Ledc timern captured count value register.
+/** Type of timerx_cnt_cap register
+ *  Ledc timer x captured count value register.
  */
 typedef union {
     struct {
-        /** timern_cnt_cap : RO; bitpos: [19:0]; default: 0;
-         *  Represents the captured LEDC timern count value.
+        /** cnt_cap : RO; bitpos: [19:0]; default: 0;
+         *  Represents the captured LEDC timer x count value.
          */
-        uint32_t timern_cnt_cap:20;
+        uint32_t cnt_cap:20;
         uint32_t reserved_20:12;
     };
     uint32_t val;
-} ledc_timern_cnt_cap_reg_t;
+} ledc_timerx_cnt_cap_reg_t;
 
 
 /** Group: Interrupt Register */
@@ -1391,77 +1391,89 @@ typedef union {
 
 
 typedef struct {
-    volatile ledc_chn_conf0_reg_t ch0_conf0;
-    volatile ledc_chn_hpoint_reg_t ch0_hpoint;
-    volatile ledc_chn_duty_reg_t ch0_duty;
-    volatile ledc_chn_conf1_reg_t ch0_conf1;
-    volatile ledc_chn_duty_r_reg_t ch0_duty_r;
-    volatile ledc_chn_conf0_reg_t ch1_conf0;
-    volatile ledc_chn_hpoint_reg_t ch1_hpoint;
-    volatile ledc_chn_duty_reg_t ch1_duty;
-    volatile ledc_chn_conf1_reg_t ch1_conf1;
-    volatile ledc_chn_duty_r_reg_t ch1_duty_r;
-    volatile ledc_chn_conf0_reg_t ch2_conf0;
-    volatile ledc_chn_hpoint_reg_t ch2_hpoint;
-    volatile ledc_chn_duty_reg_t ch2_duty;
-    volatile ledc_chn_conf1_reg_t ch2_conf1;
-    volatile ledc_chn_duty_r_reg_t ch2_duty_r;
-    volatile ledc_chn_conf0_reg_t ch3_conf0;
-    volatile ledc_chn_hpoint_reg_t ch3_hpoint;
-    volatile ledc_chn_duty_reg_t ch3_duty;
-    volatile ledc_chn_conf1_reg_t ch3_conf1;
-    volatile ledc_chn_duty_r_reg_t ch3_duty_r;
-    volatile ledc_chn_conf0_reg_t ch4_conf0;
-    volatile ledc_chn_hpoint_reg_t ch4_hpoint;
-    volatile ledc_chn_duty_reg_t ch4_duty;
-    volatile ledc_chn_conf1_reg_t ch4_conf1;
-    volatile ledc_chn_duty_r_reg_t ch4_duty_r;
-    volatile ledc_chn_conf0_reg_t ch5_conf0;
-    volatile ledc_chn_hpoint_reg_t ch5_hpoint;
-    volatile ledc_chn_duty_reg_t ch5_duty;
-    volatile ledc_chn_conf1_reg_t ch5_conf1;
-    volatile ledc_chn_duty_r_reg_t ch5_duty_r;
-    volatile ledc_chn_conf0_reg_t ch6_conf0;
-    volatile ledc_chn_hpoint_reg_t ch6_hpoint;
-    volatile ledc_chn_duty_reg_t ch6_duty;
-    volatile ledc_chn_conf1_reg_t ch6_conf1;
-    volatile ledc_chn_duty_r_reg_t ch6_duty_r;
-    volatile ledc_chn_conf0_reg_t ch7_conf0;
-    volatile ledc_chn_hpoint_reg_t ch7_hpoint;
-    volatile ledc_chn_duty_reg_t ch7_duty;
-    volatile ledc_chn_conf1_reg_t ch7_conf1;
-    volatile ledc_chn_duty_r_reg_t ch7_duty_r;
-    volatile ledc_timern_conf_reg_t timer0_conf;
-    volatile ledc_timern_value_reg_t timer0_value;
-    volatile ledc_timern_conf_reg_t timer1_conf;
-    volatile ledc_timern_value_reg_t timer1_value;
-    volatile ledc_timern_conf_reg_t timer2_conf;
-    volatile ledc_timern_value_reg_t timer2_value;
-    volatile ledc_timern_conf_reg_t timer3_conf;
-    volatile ledc_timern_value_reg_t timer3_value;
+    volatile ledc_chn_conf0_reg_t conf0;
+    volatile ledc_chn_hpoint_reg_t hpoint;
+    volatile ledc_chn_duty_reg_t duty_init;
+    volatile ledc_chn_conf1_reg_t conf1;
+    volatile ledc_chn_duty_r_reg_t duty_r;
+} ledc_chn_reg_t;
+
+typedef struct {
+    volatile ledc_chn_reg_t channel[8];
+} ledc_ch_group_reg_t;
+
+typedef struct {
+    volatile ledc_timerx_conf_reg_t conf;
+    volatile ledc_timerx_value_reg_t value;
+} ledc_timerx_reg_t;
+
+typedef struct {
+    volatile ledc_timerx_reg_t timer[4];
+} ledc_timer_group_reg_t;
+
+typedef struct {
+    volatile ledc_chn_fade_conf_reg_t fade_conf[8];
+} ledc_ch_fade_conf_group_reg_t;
+
+typedef struct {
+    volatile ledc_timerx_cmp_reg_t cmp[4];
+} ledc_timer_cmp_group_reg_t;
+
+typedef struct {
+    volatile ledc_timerx_cnt_cap_reg_t cnt_cap[4];
+} ledc_timer_cnt_cap_group_reg_t;
+
+/**
+ * Fade param register type
+ */
+typedef union {
+    struct {
+        uint32_t duty_inc       :1;
+        uint32_t duty_cycle     :10;
+        uint32_t scale          :10;
+        uint32_t duty_num       :10;
+        uint32_t reserved       :1;
+    };
+    uint32_t val;
+} ledc_chn_fade_param_reg_t;
+
+typedef struct {
+    volatile ledc_chn_fade_param_reg_t fade_param;
+    uint32_t reserved[15];
+} ledc_chn_fade_param_t;
+
+typedef struct {
+    volatile ledc_chn_fade_param_t channel[8];
+} ledc_ch_fade_param_group_t;
+
+typedef struct ledc_dev_t {
+    volatile ledc_ch_group_reg_t channel_group[1];
+    volatile ledc_timer_group_reg_t timer_group[1];
     volatile ledc_int_raw_reg_t int_raw;
     volatile ledc_int_st_reg_t int_st;
     volatile ledc_int_ena_reg_t int_ena;
     volatile ledc_int_clr_reg_t int_clr;
     uint32_t reserved_0d0[12];
-    volatile ledc_chn_fade_conf_reg_t chn_fade_conf[8];
+    volatile ledc_ch_fade_conf_group_reg_t channel_fade_conf_group[1];
     volatile ledc_evt_task_en0_reg_t evt_task_en0;
     volatile ledc_evt_task_en1_reg_t evt_task_en1;
     volatile ledc_evt_task_en2_reg_t evt_task_en2;
     uint32_t reserved_12c[5];
-    volatile ledc_timern_cmp_reg_t timern_cmp[4];
-    volatile ledc_timern_cnt_cap_reg_t timern_cnt_cap[4];
+    volatile ledc_timer_cmp_group_reg_t timer_cmp_group[1];
+    volatile ledc_timer_cnt_cap_group_reg_t timer_cnt_cap_group[1];
     uint32_t reserved_160[4];
     volatile ledc_conf_reg_t conf;
     volatile ledc_ch_power_up_conf_reg_t ch_power_up_conf;
     volatile ledc_timer_power_up_conf_reg_t timer_power_up_conf;
     volatile ledc_date_reg_t date;
+    uint32_t reserved_180[160];
+    volatile ledc_ch_fade_param_group_t channel_fade_param_group[1];
 } ledc_dev_t;
 
 extern ledc_dev_t LEDC;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(ledc_dev_t) == 0x180, "Invalid size of ledc_dev_t structure");
+_Static_assert(sizeof(ledc_dev_t) == 0x600, "Invalid size of ledc_dev_t structure");
 #endif
 
 #ifdef __cplusplus

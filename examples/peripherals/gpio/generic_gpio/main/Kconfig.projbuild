@@ -23,6 +23,7 @@ menu "Example Configuration"
     config GPIO_INPUT_0
         int "GPIO input pin 0"
         range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+        default 2 if IDF_TARGET_ESP32H4
         default 4
         help
             GPIO pin number to be used as GPIO_INPUT_IO_0.
@@ -30,6 +31,7 @@ menu "Example Configuration"
     config GPIO_INPUT_1
         int "GPIO input pin 1"
         range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+        default 3 if IDF_TARGET_ESP32H4
         default 5
         help
             GPIO pin number to be used as GPIO_INPUT_IO_1.

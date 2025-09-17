@@ -5,13 +5,13 @@
  */
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/system_struct.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 static inline void _dedic_gpio_ll_enable_bus_clock(bool enable)
 {

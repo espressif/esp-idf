@@ -74,6 +74,32 @@ static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en)
 }
 
 /**
+ * @brief Enable the power for LEDC channel
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param en True to enable, false to disable
+ */
+static inline void ledc_ll_enable_channel_power(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, bool en)
+{
+    // No per channel power control on C5
+}
+
+/**
+ * @brief Enable the power for LEDC timer
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param timer_sel LEDC timer index (0-3), select from ledc_timer_t
+ * @param en True to enable, false to disable
+ */
+static inline void ledc_ll_enable_timer_power(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, bool en)
+{
+    // No per timer power control on C5
+}
+
+/**
  * @brief Set LEDC low speed timer clock
  *
  * @param hw Beginning address of the peripheral registers

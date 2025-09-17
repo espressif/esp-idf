@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
 #include "soc/ledc_struct.h"
 #include "soc/ledc_reg.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/hp_sys_clkrst_struct.h"
+#include "soc/pcr_struct.h"
 #include "soc/soc_caps.h"
 
 #ifdef __cplusplus
@@ -23,9 +23,9 @@ extern "C" {
 
 #define LEDC_LL_GET_HW()           &LEDC
 
-#define LEDC_LL_DUTY_NUM_MAX       (LEDC_CH0_GAMMA_RANGE0_DUTY_NUM_V)
-#define LEDC_LL_DUTY_CYCLE_MAX     (LEDC_CH0_GAMMA_RANGE0_DUTY_CYCLE_V)
-#define LEDC_LL_DUTY_SCALE_MAX     (LEDC_CH0_GAMMA_RANGE0_SCALE_V)
+#define LEDC_LL_DUTY_NUM_MAX       (LEDC_CH0_FADE_PARAM_DUTY_NUM_V)
+#define LEDC_LL_DUTY_CYCLE_MAX     (LEDC_CH0_FADE_PARAM_DUTY_CYCLE_V)
+#define LEDC_LL_DUTY_SCALE_MAX     (LEDC_CH0_FADE_PARAM_SCALE_V)
 #define LEDC_LL_HPOINT_VAL_MAX     (LEDC_HPOINT_CH0_V)
 #define LEDC_LL_FRACTIONAL_BITS    (8)
 #define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
@@ -38,37 +38,23 @@ extern "C" {
  */
 static inline void ledc_ll_enable_bus_clock(bool enable)
 {
-    HP_SYS_CLKRST.soc_clk_ctrl3.reg_ledc_apb_clk_en = enable;
+    PCR.ledc_conf.ledc_clk_en = enable;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_enable_bus_clock(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        ledc_ll_enable_bus_clock(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Reset whole peripheral register to init value defined by HW design
  */
 static inline void ledc_ll_enable_reset_reg(bool enable)
 {
-    HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_ledc = enable;
+    PCR.ledc_conf.ledc_rst_en = enable;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_enable_reset_reg(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        ledc_ll_enable_reset_reg(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Enable the power for LEDC memory block
  */
 static inline void ledc_ll_enable_mem_power(bool enable)
 {
-    // No register to control the power for LEDC memory block on P4
+    // No LEDC memory block on H4
 }
 
 /**
@@ -82,27 +68,24 @@ static inline void ledc_ll_enable_mem_power(bool enable)
 static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en)
 {
     (void)hw;
-    HP_SYS_CLKRST.peri_clk_ctrl22.reg_ledc_clk_en = en;
+    PCR.ledc_sclk_conf.ledc_sclk_en = en;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_enable_clock(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        ledc_ll_enable_clock(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Enable the power for LEDC channel
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  * @param en True to enable, false to disable
  */
 static inline void ledc_ll_enable_channel_power(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, bool en)
 {
-    // No per channel power control on P4
+    if (en) {
+        hw->ch_power_up_conf.val |= BIT(speed_mode * SOC_LEDC_CHANNEL_NUM + channel_num);
+    } else {
+        hw->ch_power_up_conf.val &= ~BIT(speed_mode * SOC_LEDC_CHANNEL_NUM + channel_num);
+    }
 }
 
 /**
@@ -115,7 +98,11 @@ static inline void ledc_ll_enable_channel_power(ledc_dev_t *hw, ledc_mode_t spee
  */
 static inline void ledc_ll_enable_timer_power(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, bool en)
 {
-    // No per timer power control on P4
+    if (en) {
+        hw->timer_power_up_conf.val |= BIT(speed_mode * SOC_LEDC_TIMER_NUM + timer_sel);
+    } else {
+        hw->timer_power_up_conf.val &= ~BIT(speed_mode * SOC_LEDC_TIMER_NUM + timer_sel);
+    }
 }
 
 /**
@@ -145,15 +132,8 @@ static inline void ledc_ll_set_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t 
         abort();
     }
 
-    HP_SYS_CLKRST.peri_clk_ctrl22.reg_ledc_clk_src_sel = clk_sel_val;
+    PCR.ledc_sclk_conf.ledc_sclk_sel = clk_sel_val;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ledc_ll_set_slow_clk_sel(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        ledc_ll_set_slow_clk_sel(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Get LEDC low speed timer clock
@@ -166,7 +146,7 @@ static inline void ledc_ll_set_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t 
 static inline void ledc_ll_get_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t *slow_clk_sel)
 {
     (void) hw;
-    switch (HP_SYS_CLKRST.peri_clk_ctrl22.reg_ledc_clk_src_sel)
+    switch (PCR.ledc_sclk_conf.ledc_sclk_sel)
     {
     case 0:
         *slow_clk_sel = LEDC_SLOW_CLK_XTAL;
@@ -283,7 +263,6 @@ static inline void ledc_ll_get_clock_divider(ledc_dev_t *hw, ledc_mode_t speed_m
 static inline void ledc_ll_get_clock_source(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, ledc_clk_src_t *clk_src)
 {
     // The target has no timer-specific clock source option
-    HAL_ASSERT(hw->timer_group[speed_mode].timer[timer_sel].conf.tick_sel == 0);
     *clk_src = LEDC_SCLK;
 }
 
@@ -337,7 +316,7 @@ static inline void ledc_ll_get_max_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, 
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  *
  * @return None
  */
@@ -351,7 +330,7 @@ static inline void ledc_ll_ls_channel_update(ledc_dev_t *hw, ledc_mode_t speed_m
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  * @param hpoint_val LEDC hpoint value(max: 0xfffff)
  *
  * @return None
@@ -366,7 +345,7 @@ static inline void ledc_ll_set_hpoint(ledc_dev_t *hw, ledc_mode_t speed_mode, le
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  * @param hpoint_val Pointer to accept the LEDC hpoint value(max: 0xfffff)
  *
  * @return None
@@ -381,7 +360,7 @@ static inline void ledc_ll_get_hpoint(ledc_dev_t *hw, ledc_mode_t speed_mode, le
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  * @param duty_val LEDC duty value, the range of duty setting is [0, (2**duty_resolution)]
  *
  * @return None
@@ -396,14 +375,14 @@ static inline void ledc_ll_set_duty_int_part(ledc_dev_t *hw, ledc_mode_t speed_m
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  * @param duty_val Pointer to accept the LEDC duty value
  *
  * @return None
  */
 static inline void ledc_ll_get_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *duty_val)
 {
-    *duty_val = (hw->channel_group[speed_mode].channel[channel_num].duty_r.duty >> 4);
+    *duty_val = (hw->channel_group[speed_mode].channel[channel_num].duty_r.duty_r >> 4);
 }
 
 /**
@@ -411,8 +390,7 @@ static inline void ledc_ll_get_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param range Gamma fade range index, 0 ~ SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  * @param dir LEDC duty change direction, increase or decrease
  * @param cycle The duty cycles
  * @param scale The step scale
@@ -420,72 +398,15 @@ static inline void ledc_ll_get_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc
  *
  * @return None
  */
-static inline void ledc_ll_set_fade_param_range(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint8_t range, uint32_t dir, uint32_t cycle, uint32_t scale, uint32_t step)
+static inline void ledc_ll_set_fade_param(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t dir, uint32_t cycle, uint32_t scale, uint32_t step)
 {
-    HAL_ASSERT(range < SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX);
-    ledc_channel_gamma_fade_param_t range_param = {
+    ledc_chn_fade_param_reg_t fade_param = {
         .duty_inc = dir,
         .duty_cycle = cycle,
         .scale = scale,
         .duty_num = step,
     };
-    LEDC_GAMMA_RAM.channel[channel_num].entry[range].val = range_param.val;
-}
-
-/**
- * @brief Set the total number of ranges in one fading
- *
- * @param hw Beginning address of the peripheral registers
- * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param range_num Total number of ranges (1 - SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX) of the fading configured
- *
- * @return None
- */
-static inline void ledc_ll_set_range_number(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t range_num)
-{
-    hw->chn_gamma_conf[channel_num].ch0_gamma_entry_num = range_num;
-}
-
-/**
- * @brief Get the total number of ranges in one fading
- *
- * @param hw Beginning address of the peripheral registers
- * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param range_num Pointer to accept fade range number
- *
- * @return None
- */
-static inline void ledc_ll_get_range_number(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *range_num)
-{
-    *range_num = hw->chn_gamma_conf[channel_num].ch0_gamma_entry_num;
-}
-
-/**
- * @brief Get fade configurations in gamma_rd register
- *
- * @param hw Beginning address of the peripheral registers
- * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param range Gamma fade range index to get, 0 ~ SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX
- * @param dir Pointer to accept fade direction value
- * @param cycle Pointer to accept fade cycle value
- * @param scale Pointer to accept fade scale value
- * @param step Pointer to accept fade step value
- *
- * @return None
- */
-static inline void ledc_ll_get_fade_param_range(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint8_t range, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step)
-{
-    ledc_channel_gamma_fade_param_t range_param = {
-        .val = LEDC_GAMMA_RAM.channel[channel_num].entry[range].val,
-    };
-
-    *dir = range_param.duty_inc;
-    *cycle = range_param.duty_cycle;
-    *scale = range_param.scale;
-    *step = range_param.duty_num;
+    hw->channel_fade_param_group[speed_mode].channel[channel_num].fade_param.val = fade_param.val;
 }
 
 /**
@@ -493,7 +414,7 @@ static inline void ledc_ll_get_fade_param_range(ledc_dev_t *hw, ledc_mode_t spee
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  * @param sig_out_en The output enable status
  *
  * @return None
@@ -509,7 +430,7 @@ static inline void ledc_ll_set_sig_out_en(ledc_dev_t *hw, ledc_mode_t speed_mode
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  *
  * @return None
  */
@@ -523,7 +444,7 @@ static inline void ledc_ll_set_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  * @param idle_level The output idle level
  *
  * @return None
@@ -539,7 +460,7 @@ static inline void ledc_ll_set_idle_level(ledc_dev_t *hw, ledc_mode_t speed_mode
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  * @param fade_end_intr_en The fade end interrupt enable status
  *
  * @return None
@@ -556,7 +477,7 @@ static inline void ledc_ll_set_fade_end_intr(ledc_dev_t *hw, ledc_mode_t speed_m
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  * @param intr_status The fade end interrupt status
  *
  * @return None
@@ -573,7 +494,7 @@ static inline void ledc_ll_get_fade_end_intr_status(ledc_dev_t *hw, ledc_mode_t 
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  *
  * @return None
  */
@@ -588,7 +509,7 @@ static inline void ledc_ll_clear_fade_end_intr_status(ledc_dev_t *hw, ledc_mode_
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  * @param timer_sel LEDC timer index (0-3), select from ledc_timer_t
  *
  * @return None
@@ -603,7 +524,7 @@ static inline void ledc_ll_bind_channel_timer(ledc_dev_t *hw, ledc_mode_t speed_
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  * @param timer_sel Pointer to accept the LEDC timer index
  *
  * @return None

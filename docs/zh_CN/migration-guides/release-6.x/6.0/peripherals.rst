@@ -66,6 +66,8 @@ LEDC
 
 - ``LEDC_APB_CLK_HZ`` 和 ``LEDC_REF_CLK_HZ`` 已被移除。
 
+- ``LEDC_SLOW_CLK_RTC8M`` 宏已被移除。请使用 ``LEDC_SLOW_CLK_RC_FAST`` 代替。
+
 - esp_driver_gpio 不再作为 esp_driver_ledc 的公共依赖组件。
 
 - :func:`ledc_isr_register` 已被弃用。LEDC 中断处理由驱动内部实现，如果需要注册中断回调，仅需要注册事件回调即可。

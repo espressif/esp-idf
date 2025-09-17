@@ -18,18 +18,17 @@
  * This test code shows how to configure gpio and how to use gpio interrupt.
  *
  * GPIO status:
- * GPIO18: output (ESP32C2/ESP32H2 uses GPIO8 as the second output pin)
- * GPIO19: output (ESP32C2/ESP32H2 uses GPIO9 as the second output pin)
- * GPIO4:  input, pulled up, interrupt from rising edge and falling edge
- * GPIO5:  input, pulled up, interrupt from rising edge.
+ * GPIO_OUTPUT_IO_0: output
+ * GPIO_OUTPUT_IO_1: output
+ * GPIO_INPUT_IO_0:  input, pulled up, interrupt from rising edge and falling edge
+ * GPIO_INPUT_IO_1:  input, pulled up, interrupt from rising edge.
  *
- * Note. These are the default GPIO pins to be used in the example. You can
- * change IO pins in menuconfig.
+ * Note. You can check the default GPIO pins to be used in menuconfig, and the IOs can be changed.
  *
  * Test:
- * Connect GPIO18(8) with GPIO4
- * Connect GPIO19(9) with GPIO5
- * Generate pulses on GPIO18(8)/19(9), that triggers interrupt on GPIO4/5
+ * Connect GPIO_OUTPUT_IO_0 with GPIO_INPUT_IO_0
+ * Connect GPIO_OUTPUT_IO_1 with GPIO_INPUT_IO_1
+ * Generate pulses on GPIO_OUTPUT_IO_0/1, that triggers interrupt on GPIO_INPUT_IO_0/1
  *
  */
 

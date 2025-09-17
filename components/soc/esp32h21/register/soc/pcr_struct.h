@@ -358,8 +358,8 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** ledc_sclk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): do not select anyone clock, 1:
-         *  80MHz, 2: FOSC, 3: XTAL.
+         *  set this field to select clock-source. 0(default): XTAL, 1:
+         *  FOSC, 2: 96MHz.
          */
         uint32_t ledc_sclk_sel:2;
         /** ledc_sclk_en : R/W; bitpos: [22]; default: 1;

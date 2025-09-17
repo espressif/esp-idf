@@ -482,7 +482,7 @@ typedef union {
          *  Configures the clock source of LEDC.
          *  0 (default): XTAL_CLK
          *  1: RC_FAST_CLK
-         *  2: PLL_F48M_CLK
+         *  2: PLL_F96M_CLK
          */
         uint32_t ledc_sclk_sel:2;
         /** ledc_sclk_en : R/W; bitpos: [22]; default: 0;

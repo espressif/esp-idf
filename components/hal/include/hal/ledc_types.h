@@ -50,8 +50,6 @@ typedef enum {
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
     LEDC_SLOW_CLK_XTAL = LEDC_USE_XTAL_CLK,       /*!< LEDC low speed timer clock source XTAL clock*/
 #endif
-
-    LEDC_SLOW_CLK_RTC8M __attribute__((deprecated)) = LEDC_SLOW_CLK_RC_FAST,    /*!< Alias of 'LEDC_SLOW_CLK_RC_FAST'*/
 } ledc_slow_clk_sel_t;
 
 /**
