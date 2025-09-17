@@ -43,10 +43,9 @@ extern "C" {
 #define PPA_CLUT_CONF_REG (DR_REG_PPA_BASE + 0xc)
 /** PPA_APB_FIFO_MASK : R/W; bitpos: [0]; default: 0;
  *  1'b0: fifo mode to wr/rd clut0/clut1 RAM through register
- *  PPA_SR_CLUT_DATA_REG/PPA_BLEND0_CLUT_DATA_REG/PPA_BLEND1_CLUT_DATA_REG. 1'b1:
- *  memory mode to wr/rd sr/blend0/blend1 clut RAM. The bit 11 and 10 of the waddr
- *  should be 01 to access sr clut and should be 10 to access blend0 clut and should be
- *  11 to access blend 1 clut in memory mode.
+ *  PPA_BLEND0_CLUT_DATA_REG/PPA_BLEND1_CLUT_DATA_REG. 1'b1:
+ *  memory mode to wr/rd blend0/blend1 clut RAM. The bit 11 and 10 of the waddr
+ *  should be 01 to access blend0 clut and should be 10 to access blend1 clut in memory mode.
  */
 #define PPA_APB_FIFO_MASK    (BIT(0))
 #define PPA_APB_FIFO_MASK_M  (PPA_APB_FIFO_MASK_V << PPA_APB_FIFO_MASK_S)
@@ -225,7 +224,7 @@ extern "C" {
 #define PPA_BLEND_EOF_INT_CLR_V  0x00000001U
 #define PPA_BLEND_EOF_INT_CLR_S  1
 /** PPA_SR_PARAM_CFG_ERR_INT_CLR : WT; bitpos: [2]; default: 0;
- *  Set this bit to clear the PPA_SR_RX_YSCAL_ERR_INT interrupt.
+ *  Set this bit to clear the PPA_SR_PARAM_CFG_ERR_INT interrupt.
  */
 #define PPA_SR_PARAM_CFG_ERR_INT_CLR    (BIT(2))
 #define PPA_SR_PARAM_CFG_ERR_INT_CLR_M  (PPA_SR_PARAM_CFG_ERR_INT_CLR_V << PPA_SR_PARAM_CFG_ERR_INT_CLR_S)
@@ -273,20 +272,20 @@ extern "C" {
 #define PPA_YUV_TX_RANGE_M  (PPA_YUV_TX_RANGE_V << PPA_YUV_TX_RANGE_S)
 #define PPA_YUV_TX_RANGE_V  0x00000001U
 #define PPA_YUV_TX_RANGE_S  9
-/** PPA_YUV2RGB_PROTOCAL : R/W; bitpos: [10]; default: 0;
+/** PPA_YUV2RGB_PROTOCOL : R/W; bitpos: [10]; default: 0;
  *  YUV to RGB protocol when reg_sr_rx_cm is 4'd8. 0: BT601. 1: BT709
  */
-#define PPA_YUV2RGB_PROTOCAL    (BIT(10))
-#define PPA_YUV2RGB_PROTOCAL_M  (PPA_YUV2RGB_PROTOCAL_V << PPA_YUV2RGB_PROTOCAL_S)
-#define PPA_YUV2RGB_PROTOCAL_V  0x00000001U
-#define PPA_YUV2RGB_PROTOCAL_S  10
-/** PPA_RGB2YUV_PROTOCAL : R/W; bitpos: [11]; default: 0;
+#define PPA_YUV2RGB_PROTOCOL    (BIT(10))
+#define PPA_YUV2RGB_PROTOCOL_M  (PPA_YUV2RGB_PROTOCOL_V << PPA_YUV2RGB_PROTOCOL_S)
+#define PPA_YUV2RGB_PROTOCOL_V  0x00000001U
+#define PPA_YUV2RGB_PROTOCOL_S  10
+/** PPA_RGB2YUV_PROTOCOL : R/W; bitpos: [11]; default: 0;
  *  RGB to YUV protocol when reg_sr_tx_cm is 4'd8. 0: BT601. 1: BT709
  */
-#define PPA_RGB2YUV_PROTOCAL    (BIT(11))
-#define PPA_RGB2YUV_PROTOCAL_M  (PPA_RGB2YUV_PROTOCAL_V << PPA_RGB2YUV_PROTOCAL_S)
-#define PPA_RGB2YUV_PROTOCAL_V  0x00000001U
-#define PPA_RGB2YUV_PROTOCAL_S  11
+#define PPA_RGB2YUV_PROTOCOL    (BIT(11))
+#define PPA_RGB2YUV_PROTOCOL_M  (PPA_RGB2YUV_PROTOCOL_V << PPA_RGB2YUV_PROTOCOL_S)
+#define PPA_RGB2YUV_PROTOCOL_V  0x00000001U
+#define PPA_RGB2YUV_PROTOCOL_S  11
 /** PPA_YUV422_RX_BYTE_ORDER : R/W; bitpos: [13:12]; default: 0;
  *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY
  */
@@ -337,20 +336,20 @@ extern "C" {
 #define PPA_BLEND_TX_YUV_RANGE_M  (PPA_BLEND_TX_YUV_RANGE_V << PPA_BLEND_TX_YUV_RANGE_S)
 #define PPA_BLEND_TX_YUV_RANGE_V  0x00000001U
 #define PPA_BLEND_TX_YUV_RANGE_S  13
-/** PPA_BLEND0_RX_YUV2RGB_PROTOCAL : R/W; bitpos: [14]; default: 0;
+/** PPA_BLEND0_RX_YUV2RGB_PROTOCOL : R/W; bitpos: [14]; default: 0;
  *  YUV to RGB protocol when blend0 rx cm is yuv. 0: BT601. 1: BT709
  */
-#define PPA_BLEND0_RX_YUV2RGB_PROTOCAL    (BIT(14))
-#define PPA_BLEND0_RX_YUV2RGB_PROTOCAL_M  (PPA_BLEND0_RX_YUV2RGB_PROTOCAL_V << PPA_BLEND0_RX_YUV2RGB_PROTOCAL_S)
-#define PPA_BLEND0_RX_YUV2RGB_PROTOCAL_V  0x00000001U
-#define PPA_BLEND0_RX_YUV2RGB_PROTOCAL_S  14
-/** PPA_BLEND_TX_RGB2YUV_PROTOCAL : R/W; bitpos: [15]; default: 0;
+#define PPA_BLEND0_RX_YUV2RGB_PROTOCOL    (BIT(14))
+#define PPA_BLEND0_RX_YUV2RGB_PROTOCOL_M  (PPA_BLEND0_RX_YUV2RGB_PROTOCOL_V << PPA_BLEND0_RX_YUV2RGB_PROTOCOL_S)
+#define PPA_BLEND0_RX_YUV2RGB_PROTOCOL_V  0x00000001U
+#define PPA_BLEND0_RX_YUV2RGB_PROTOCOL_S  14
+/** PPA_BLEND_TX_RGB2YUV_PROTOCOL : R/W; bitpos: [15]; default: 0;
  *  RGB to YUV protocol when blend tx cm is yuv. 0: BT601. 1: BT709
  */
-#define PPA_BLEND_TX_RGB2YUV_PROTOCAL    (BIT(15))
-#define PPA_BLEND_TX_RGB2YUV_PROTOCAL_M  (PPA_BLEND_TX_RGB2YUV_PROTOCAL_V << PPA_BLEND_TX_RGB2YUV_PROTOCAL_S)
-#define PPA_BLEND_TX_RGB2YUV_PROTOCAL_V  0x00000001U
-#define PPA_BLEND_TX_RGB2YUV_PROTOCAL_S  15
+#define PPA_BLEND_TX_RGB2YUV_PROTOCOL    (BIT(15))
+#define PPA_BLEND_TX_RGB2YUV_PROTOCOL_M  (PPA_BLEND_TX_RGB2YUV_PROTOCOL_V << PPA_BLEND_TX_RGB2YUV_PROTOCOL_S)
+#define PPA_BLEND_TX_RGB2YUV_PROTOCOL_V  0x00000001U
+#define PPA_BLEND_TX_RGB2YUV_PROTOCOL_S  15
 /** PPA_BLEND0_RX_YUV422_BYTE_ORDER : R/W; bitpos: [17:16]; default: 0;
  *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY
  */
@@ -554,7 +553,7 @@ extern "C" {
 #define PPA_BLEND1_RX_FIX_ALPHA_S  8
 /** PPA_BLEND0_RX_ALPHA_MOD : R/W; bitpos: [17:16]; default: 0;
  *  Alpha mode. 0/3: not replace alpha. 1: replace alpha with PPA_BLEND0_FIX_ALPHA. 2:
- *  Original alpha multiply with PPA_SR_FIX_ALPHA/256.
+ *  Original alpha multiply with PPA_SR_BLEND0_ALPHA/256.
  */
 #define PPA_BLEND0_RX_ALPHA_MOD    0x00000003U
 #define PPA_BLEND0_RX_ALPHA_MOD_M  (PPA_BLEND0_RX_ALPHA_MOD_V << PPA_BLEND0_RX_ALPHA_MOD_S)
@@ -562,7 +561,7 @@ extern "C" {
 #define PPA_BLEND0_RX_ALPHA_MOD_S  16
 /** PPA_BLEND1_RX_ALPHA_MOD : R/W; bitpos: [19:18]; default: 0;
  *  Alpha mode. 0/3: not replace alpha. 1: replace alpha with PPA_BLEND1_FIX_ALPHA. 2:
- *  Original alpha multiply with PPA_SR_FIX_ALPHA/256.
+ *  Original alpha multiply with PPA_SR_BLEND1_ALPHA/256.
  */
 #define PPA_BLEND1_RX_ALPHA_MOD    0x00000003U
 #define PPA_BLEND1_RX_ALPHA_MOD_M  (PPA_BLEND1_RX_ALPHA_MOD_V << PPA_BLEND1_RX_ALPHA_MOD_S)

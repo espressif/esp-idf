@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -514,4 +514,16 @@ bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_event_data
     }
 
     return need_yield;
+}
+
+esp_err_t ppa_set_rgb2gray_formula(uint8_t r_weight, uint8_t g_weight, uint8_t b_weight)
+{
+    ESP_RETURN_ON_FALSE(ppa_ll_srm_is_color_mode_supported(PPA_SRM_COLOR_MODE_GRAY8) || ppa_ll_blend_is_color_mode_supported(PPA_BLEND_COLOR_MODE_GRAY8), ESP_ERR_NOT_SUPPORTED, TAG, "GRAY color mode not supported");
+    ESP_RETURN_ON_FALSE((r_weight + g_weight + b_weight) == 256, ESP_ERR_INVALID_ARG, TAG, "invalid rgb2gray formula");
+    ESP_RETURN_ON_FALSE(s_platform.hal.dev, ESP_ERR_INVALID_STATE, TAG, "no PPA client registered yet");
+
+    _lock_acquire(&s_platform.mutex);
+    ppa_ll_set_rgb2gray_coeff(s_platform.hal.dev, r_weight, g_weight, b_weight);
+    _lock_release(&s_platform.mutex);
+    return ESP_OK;
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,8 +44,8 @@ typedef enum {
     // YUV444 not supported by PPA hardware, but we can use 2D-DMA to do conversion before sending into and after coming out from the PPA module
     // If in_pic is YUV444, then TX DMA channel could do DMA2D_CSC_TX_YUV444_TO_RGB888_601/709, so PPA in_color_mode is RGB888
     // If out_pic is YUV444, then RX DMA channel could do DMA2D_CSC_RX_YUV420_TO_YUV444, so PPA out_color_mode is YUV420
-    // TODO: P4 ECO2 supports YUV422
-    // PPA_SRM_COLOR_MODE_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),           /*!< PPA SRM color mode: YUV422 (input only, limited range only) */
+    PPA_SRM_COLOR_MODE_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),           /*!< PPA SRM color mode: YUV422 (input data pack order all supported, but output data format is fixed to YVYU) */
+    PPA_SRM_COLOR_MODE_GRAY8 = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8),            /*!< PPA SRM color mode: GRAY8 */
 } ppa_srm_color_mode_t;
 
 /**
@@ -57,9 +57,12 @@ typedef enum {
     PPA_BLEND_COLOR_MODE_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565),        /*!< PPA blend color mode: RGB565 */
     PPA_BLEND_COLOR_MODE_A8 = COLOR_TYPE_ID(COLOR_SPACE_ALPHA, COLOR_PIXEL_A8),              /*!< PPA blend color mode: A8, only available on blend foreground input */
     PPA_BLEND_COLOR_MODE_A4 = COLOR_TYPE_ID(COLOR_SPACE_ALPHA, COLOR_PIXEL_A4),              /*!< PPA blend color mode: A4, only available on blend foreground input */
+    PPA_BLEND_COLOR_MODE_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420),        /*!< PPA blend color mode: YUV420, only available on blend background input or on output */
+    PPA_BLEND_COLOR_MODE_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),        /*!< PPA blend color mode: YUV422, only available on blend background input (all pack order supported) or on output (fixed to YVYU) */
+    PPA_BLEND_COLOR_MODE_GRAY8 = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8),         /*!< PPA blend color mode: GRAY8, only available on blend background input or on output */
     // TODO: Support CLUT to support L4/L8 color mode
-    // PPA_BLEND_COLOR_MODE_L8 = COLOR_TYPE_ID(COLOR_SPACE_CLUT, COLOR_PIXEL_L8),               /*!< PPA blend color mode: L8, only available on blend inputs */
-    // PPA_BLEND_COLOR_MODE_L4 = COLOR_TYPE_ID(COLOR_SPACE_CLUT, COLOR_PIXEL_L4),               /*!< PPA blend color mode: L4, only available on blend inputs */
+    // PPA_BLEND_COLOR_MODE_L8 = COLOR_TYPE_ID(COLOR_SPACE_CLUT, COLOR_PIXEL_L8),               /*!< PPA blend color mode: L8, only available on blend input */
+    // PPA_BLEND_COLOR_MODE_L4 = COLOR_TYPE_ID(COLOR_SPACE_CLUT, COLOR_PIXEL_L4),               /*!< PPA blend color mode: L4, only available on blend input */
 } ppa_blend_color_mode_t;
 
 /**
@@ -69,6 +72,9 @@ typedef enum {
     PPA_FILL_COLOR_MODE_ARGB8888 = COLOR_TYPE_ID(COLOR_SPACE_ARGB, COLOR_PIXEL_ARGB8888),    /*!< PPA fill color mode: ARGB8888 */
     PPA_FILL_COLOR_MODE_RGB888 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB888),         /*!< PPA fill color mode: RGB888 */
     PPA_FILL_COLOR_MODE_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565),         /*!< PPA fill color mode: RGB565 */
+    // PPA_FILL_COLOR_MODE_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420),         /*!< PPA fill color mode: YUV420 */ // Non-typical YUV420, U and V components have to be the same value
+    PPA_FILL_COLOR_MODE_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),         /*!< PPA fill color mode: YUV422 (w/ YVYU pack order) */
+    PPA_FILL_COLOR_MODE_GRAY8 = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8),          /*!< PPA fill color mode: GRAY8 */
 } ppa_fill_color_mode_t;
 
 /**

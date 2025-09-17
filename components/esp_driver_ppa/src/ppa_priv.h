@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -174,7 +174,12 @@ typedef struct {
 
     uint32_t fill_block_w;
     uint32_t fill_block_h;
-    color_pixel_argb8888_data_t fill_argb_color;
+    union {
+        color_pixel_argb8888_data_t fill_argb_color;
+        color_pixel_gray8_data_t fill_gray8_color;
+        color_macroblock_yuv_data_t fill_yuv_color;
+        uint32_t fill_color_val;
+    };
 
     ppa_trans_mode_t mode;
     void *user_data;
