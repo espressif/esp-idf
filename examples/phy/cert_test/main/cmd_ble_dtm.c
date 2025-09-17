@@ -121,6 +121,36 @@ static int dtm_test_enable_command(int argc, char **argv)
     return 0;
 }
 
+extern int8_t esp_ble_get_dtm_rx_rssi(void);
+static int dtm_get_ble_rx_rssi_command(int argc, char **argv)
+{
+    int8_t rx_rssi = 0x7F;
+    if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        esp_rom_printf("\nPlease enable BLE DTM mode first by using the command enable_ble_dtm -e 1 before sending this command.\n");
+        return 2;
+    }
+
+    rx_rssi = esp_ble_get_dtm_rx_rssi();
+    if (rx_rssi == 0x7f) {
+        esp_rom_printf("\nRx RSSI is not available!\n");
+    } else {
+        esp_rom_printf("\nRx RSSI is %d dBm\n", rx_rssi);
+    }
+
+    return 0;
+}
+
+esp_err_t esp_console_register_get_ble_rx_rssi_command(void)
+{
+    esp_console_cmd_t command = {
+        .command = "get_ble_rx_rssi",
+        .help = "Get ble rx rssi during DTM",
+        .func = &dtm_get_ble_rx_rssi_command,
+    };
+
+    return esp_console_cmd_register(&command);
+}
+
 esp_err_t esp_console_register_set_ble_tx_power_command(void)
 {
     dtm_set_tx_power_cmd_args.cmd_params = arg_int1("i", "index", "<index>","tx power level index");
@@ -185,5 +215,6 @@ esp_err_t dtm_configuration_command_register(void)
     esp_console_register_get_ble_tx_power_command();
     esp_console_register_reconfig_dtm_pins_command();
     esp_console_register_enable_ble_dtm_command();
+    esp_console_register_get_ble_rx_rssi_command();
     return ESP_OK;
 }
