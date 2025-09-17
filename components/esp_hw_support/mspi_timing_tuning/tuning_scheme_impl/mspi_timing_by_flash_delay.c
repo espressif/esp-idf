@@ -34,7 +34,7 @@ void mspi_timing_flash_init(uint32_t flash_freq_mhz)
     //Power on HCLK
     mspi_timinng_ll_enable_flash_timing_adjust_clk(MSPI_TIMING_LL_MSPI_ID_0);
 
-    ESP_EARLY_LOGD(TAG, "init rom dummy val: %d", g_rom_spiflash_dummy_len_plus[1]);
+    ESP_DRAM_LOGD(TAG, "init rom dummy val: %d", g_rom_spiflash_dummy_len_plus[1]);
 }
 
 //-------------------------------------FLASH timing tuning register config-------------------------------------//
@@ -84,7 +84,7 @@ void mspi_timing_config_flash_read_data(uint8_t *buf, uint32_t addr, uint32_t le
     int spi0_extra_dummy = 0;
     mspi_timing_ll_get_flash_dummy(MSPI_TIMING_LL_MSPI_ID_0, &spi0_usr_dummy, &spi0_extra_dummy);
     mspi_timing_ll_get_flash_dummy(MSPI_TIMING_LL_MSPI_ID_1, &spi1_usr_dummy, &spi1_extra_dummy);
-    ESP_EARLY_LOGD(TAG, "spi0_usr_dummy: %d, spi0_extra_dummy: %d, spi1_usr_dummy: %d, spi1_extra_dummy: %d", spi0_usr_dummy, spi0_extra_dummy, spi1_usr_dummy, spi1_extra_dummy);
+    ESP_DRAM_LOGD(TAG, "spi0_usr_dummy: %d, spi0_extra_dummy: %d, spi1_usr_dummy: %d, spi1_extra_dummy: %d", spi0_usr_dummy, spi0_extra_dummy, spi1_usr_dummy, spi1_extra_dummy);
 }
 
 /*-------------------------------------------------------------------------------------------------
@@ -98,10 +98,10 @@ static uint32_t s_select_best_tuning_config_str(const mspi_timing_config_t *conf
     if (consecutive_length < 3) {
         //tuning fails, select default point, and generate a warning
         best_point = configs->flash_default_config_id;
-        ESP_EARLY_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
+        ESP_DRAM_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
     } else {
         best_point = end - consecutive_length / 2;
-        ESP_EARLY_LOGI(TAG, "tuning success, best point is index %"PRIu32"", best_point);
+        ESP_DRAM_LOGD(TAG, "tuning success, best point is index %"PRIu32"", best_point);
     }
 
     return best_point;
@@ -120,7 +120,7 @@ uint32_t mspi_timing_flash_select_best_tuning_config(const void *configs, uint32
 {
     const mspi_timing_config_t *timing_configs = (const mspi_timing_config_t *)configs;
     uint32_t best_point = s_select_best_tuning_config(timing_configs, consecutive_length, end, reference_data, is_ddr, true);
-    ESP_EARLY_LOGI(TAG, "Flash timing tuning index: %"PRIu32"", best_point);
+    ESP_DRAM_LOGD(TAG, "Flash timing tuning index: %"PRIu32"", best_point);
 
     return best_point;
 }
@@ -174,7 +174,7 @@ void mspi_timing_flash_config_set_tuning_regs(bool control_both_mspi)
     int spi0_extra_dummy = 0;
     mspi_timing_ll_get_flash_dummy(MSPI_TIMING_LL_MSPI_ID_0, &spi0_usr_dummy, &spi0_extra_dummy);
     mspi_timing_ll_get_flash_dummy(MSPI_TIMING_LL_MSPI_ID_1, &spi1_usr_dummy, &spi1_extra_dummy);
-    ESP_EARLY_LOGD(TAG, "spi0_usr_dummy: %d, spi0_extra_dummy: %d, spi1_usr_dummy: %d, spi1_extra_dummy: %d", spi0_usr_dummy, spi0_extra_dummy, spi1_usr_dummy, spi1_extra_dummy);
+    ESP_DRAM_LOGD(TAG, "spi0_usr_dummy: %d, spi0_extra_dummy: %d, spi1_usr_dummy: %d, spi1_extra_dummy: %d", spi0_usr_dummy, spi0_extra_dummy, spi1_usr_dummy, spi1_extra_dummy);
 }
 
 /*-------------------------------------------------------------------------------------------------

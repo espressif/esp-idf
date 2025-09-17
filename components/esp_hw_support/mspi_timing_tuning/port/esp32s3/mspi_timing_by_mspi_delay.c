@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -434,15 +434,15 @@ static uint32_t s_select_best_tuning_config_dtr(const mspi_timing_config_t *conf
     if (consecutive_length <= 2 || consecutive_length >= 6) {
         //tuning is FAIL, select default point, and generate a warning
         best_point = configs->default_config_id;
-        ESP_EARLY_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
+        ESP_DRAM_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
     } else if (consecutive_length <= 4) {
         //consecutive length :  3 or 4
         best_point = end - 1;
-        ESP_EARLY_LOGD(TAG, "tuning success, best point is index %"PRIu32"", best_point);
+        ESP_DRAM_LOGD(TAG, "tuning success, best point is index %"PRIu32"", best_point);
     } else {
         //consecutive point list length equals 5
         best_point = end - 2;
-        ESP_EARLY_LOGD(TAG, "tuning success, best point is index %"PRIu32"", best_point);
+        ESP_DRAM_LOGD(TAG, "tuning success, best point is index %"PRIu32"", best_point);
     }
 
     return best_point;
@@ -471,13 +471,13 @@ static uint32_t s_select_best_tuning_config_dtr(const mspi_timing_config_t *conf
             max_freq = temp_max_freq;
             best_point = current_point;
         }
-        ESP_EARLY_LOGD(TAG, "sample point %" PRIu32 ", max pll is %" PRIu32 " mhz, min pll is %" PRIu32, current_point, temp_max_freq, temp_min_freq);
+        ESP_DRAM_LOGD(TAG, "sample point %" PRIu32 ", max pll is %" PRIu32 " mhz, min pll is %" PRIu32, current_point, temp_max_freq, temp_min_freq);
     }
     if (max_freq == 0) {
-        ESP_EARLY_LOGW(TAG, "freq scan tuning fail, best point is fallen back to index %" PRIu32, end + 1 - consecutive_length);
+        ESP_DRAM_LOGW(TAG, "freq scan tuning fail, best point is fallen back to index %" PRIu32, end + 1 - consecutive_length);
         best_point = end + 1 - consecutive_length;
     } else {
-        ESP_EARLY_LOGD(TAG, "freq scan success, max pll is %" PRIu32 "mhz, best point is index %" PRIu32, max_freq, best_point);
+        ESP_DRAM_LOGD(TAG, "freq scan success, max pll is %" PRIu32 "mhz, best point is index %" PRIu32, max_freq, best_point);
     }
 #else
     uint32_t freq_diff_min = 0xffffffff;
@@ -501,7 +501,7 @@ static uint32_t s_select_best_tuning_config_dtr(const mspi_timing_config_t *conf
                 psram_pass_freq_min[current_point] = temp_min_freq / 4;
                 psram_pass_freq_max[current_point] = temp_max_freq / 4;
             }
-            ESP_EARLY_LOGD(TAG, "sample point %" PRIu32 ", max pll is %" PRIu32 " mhz, min pll is %" PRIu32 " mhz, max spi is %" PRIu32 " mhz, min spi is %" PRIu32 " mhz", current_point, temp_max_freq, temp_min_freq, psram_pass_freq_max[current_point], psram_pass_freq_min[current_point]);
+            ESP_DRAM_LOGD(TAG, "sample point %" PRIu32 ", max pll is %" PRIu32 " mhz, min pll is %" PRIu32 " mhz, max spi is %" PRIu32 " mhz, min spi is %" PRIu32 " mhz", current_point, temp_max_freq, temp_min_freq, psram_pass_freq_max[current_point], psram_pass_freq_min[current_point]);
 
             // calculate the difference to psram_pass_freq and 120MHz
             int temp_min_freq_diff = abs(120 - psram_pass_freq_min[current_point]);
@@ -514,10 +514,10 @@ static uint32_t s_select_best_tuning_config_dtr(const mspi_timing_config_t *conf
         }
     }
     if (freq_diff_min == 0xffffffff) {
-        ESP_EARLY_LOGW(TAG, "freq scan tuning fail, best point is fallen back to index %" PRIu32, end + 1 - consecutive_length);
+        ESP_DRAM_LOGW(TAG, "freq scan tuning fail, best point is fallen back to index %" PRIu32, end + 1 - consecutive_length);
         best_point = end + 1 - consecutive_length;
     } else {
-        ESP_EARLY_LOGD(TAG, "freq scan success, best point is index %" PRIu32, best_point);
+        ESP_DRAM_LOGD(TAG, "freq scan success, best point is index %" PRIu32, best_point);
     }
 
 #endif
@@ -539,11 +539,11 @@ static uint32_t s_select_best_tuning_config_str(const mspi_timing_config_t *conf
     if (consecutive_length <= 2|| consecutive_length >= 5) {
         //tuning is FAIL, select default point, and generate a warning
         best_point = configs->default_config_id;
-        ESP_EARLY_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
+        ESP_DRAM_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
     } else {
         //consecutive length :  3 or 4
         best_point = end - consecutive_length / 2;
-        ESP_EARLY_LOGD(TAG, "tuning success, best point is index %"PRIu32"", best_point);
+        ESP_DRAM_LOGD(TAG, "tuning success, best point is index %"PRIu32"", best_point);
     }
 
     return best_point;
@@ -569,7 +569,7 @@ uint32_t mspi_timing_flash_select_best_tuning_config(const void *configs, uint32
 {
     const mspi_timing_config_t *timing_configs = (const mspi_timing_config_t *)configs;
     uint32_t best_point = s_select_best_tuning_config(timing_configs, consecutive_length, end, reference_data, is_ddr, true);
-    ESP_EARLY_LOGI(TAG, "Flash timing tuning index: %"PRIu32"", best_point);
+    ESP_DRAM_LOGD(TAG, "Flash timing tuning index: %"PRIu32"", best_point);
 
     return best_point;
 }
@@ -578,7 +578,7 @@ uint32_t mspi_timing_psram_select_best_tuning_config(const void *configs, uint32
 {
     const mspi_timing_config_t *timing_configs = (const mspi_timing_config_t *)configs;
     uint32_t best_point = s_select_best_tuning_config(timing_configs, consecutive_length, end, reference_data, is_ddr, false);
-    ESP_EARLY_LOGI(TAG, "PSRAM timing tuning index: %"PRIu32"", best_point);
+    ESP_DRAM_LOGD(TAG, "PSRAM timing tuning index: %"PRIu32"", best_point);
 
     return best_point;
 }
@@ -799,7 +799,7 @@ void adjust_psram_timing_point_task(void *arg)
         if (valid_point[point] && valid_point[point + 1]) {
             // check temperature intersection
             if (s_point_temp_range_max[point] <= s_point_temp_range_min[point + 1]) {
-                ESP_EARLY_LOGE(TAG, "no temperature intersection of neighboring phase points");
+                ESP_DRAM_LOGE(TAG, "no temperature intersection of neighboring phase points");
                 abort();
             }
         }
@@ -810,7 +810,7 @@ void adjust_psram_timing_point_task(void *arg)
 
         point_curr = s_psram_best_point_idx;
         temperature_sensor_get_celsius_filtered(&temp_curr);
-        ESP_EARLY_LOGD(TAG, "Getting current temperature value is: %d", temp_curr);
+        ESP_DRAM_LOGD(TAG, "Getting current temperature value is: %d", temp_curr);
 
         // Switch timing point if temperature is beyond the range
         if (s_point_temp_range_max[point_curr] == 0 && s_point_temp_range_min[point_curr] == 0) {
@@ -824,7 +824,7 @@ void adjust_psram_timing_point_task(void *arg)
                     if (temp_curr < (s_point_temp_range_max[point_curr - 1] - temperature_safe_range)) {
                         int point_next = point_curr - 1;
                         set_timing_point(point_next);
-                        ESP_EARLY_LOGD(TAG, "PSRAM set timing point from %d to %ld\n", point_curr, point_next);
+                        ESP_DRAM_LOGD(TAG, "PSRAM set timing point from %d to %ld\n", point_curr, point_next);
                         continue;
                     }
                 }
@@ -836,7 +836,7 @@ void adjust_psram_timing_point_task(void *arg)
                     if (temp_curr > s_point_temp_range_min[point_curr + 1] + temperature_safe_range) {
                         int point_next = point_curr + 1;
                         set_timing_point(point_next);
-                        ESP_EARLY_LOGD(TAG, "PSRAM set timing point from %d to %ld\n", point_curr, point_next);
+                        ESP_DRAM_LOGD(TAG, "PSRAM set timing point from %d to %ld\n", point_curr, point_next);
                         continue;
                     }
                 }
@@ -847,7 +847,7 @@ void adjust_psram_timing_point_task(void *arg)
                 if (temp_curr > s_point_temp_range_max[point_curr]) {
                     int point_next = point_curr + 1;
                     set_timing_point(point_next);
-                    ESP_EARLY_LOGD(TAG, "PSRAM set timing point from %d to %ld\n", point_curr, point_next);
+                    ESP_DRAM_LOGD(TAG, "PSRAM set timing point from %d to %ld\n", point_curr, point_next);
                     continue;
                 }
             }
@@ -857,7 +857,7 @@ void adjust_psram_timing_point_task(void *arg)
                 if (temp_curr < s_point_temp_range_min[point_curr]) {
                     int point_next = point_curr - 1;
                     set_timing_point(point_next);
-                    ESP_EARLY_LOGD(TAG, "PSRAM set timing point from %d to %ld\n", point_curr, point_next);
+                    ESP_DRAM_LOGD(TAG, "PSRAM set timing point from %d to %ld\n", point_curr, point_next);
                     continue;
                 }
             }
@@ -872,7 +872,7 @@ static esp_err_t psram_adjust_timing_point_via_tsens(void)
     if (vender_id == 0xC8 || vender_id == 0x20) {
         xTaskCreatePinnedToCore(adjust_psram_timing_point_task, "adjust_psram_timing_point_task", 1024 * 5, NULL, configMAX_PRIORITIES - 2, NULL, 0);
     } else {
-        ESP_EARLY_LOGE(TAG, "The flash model has not been verified support this feature, please contact espressif business support");
+        ESP_DRAM_LOGE(TAG, "The flash model has not been verified support this feature, please contact espressif business support");
         return ESP_ERR_NOT_SUPPORTED;
     }
     return ESP_OK;
