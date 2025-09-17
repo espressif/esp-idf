@@ -1,0 +1,16 @@
+menu "Board Configuration"
+
+    config BUTTON_IO_NUM
+        int "GPIO number for button"
+        default 0
+        help
+            GPIO number to use as a button input.
+
+    config BUTTON_ACTIVE_LEVEL
+        int "Active level for button (0 = LOW, 1 = HIGH)"
+        default 0
+        range 0 1
+        help
+            Logic level at which the button is considered pressed.
+
+endmenu
