@@ -362,14 +362,17 @@ static void auto_io_gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_
     case ESP_GATTS_WRITE_EVT:
         ESP_LOGI(GATTS_TAG, "Characteristic write, value len %u, value ", param->write.len);
         ESP_LOG_BUFFER_HEX(GATTS_TAG, param->write.value, param->write.len);
-        if (param->write.value[0]) {
-            ESP_LOGI(GATTS_TAG, "LED ON!");
-            led_on();
-        } else {
-            ESP_LOGI(GATTS_TAG, "LED OFF!");
-            led_off();
-        }
         example_write_event_env(gatts_if, param);
+
+	if (param->write.len == 2 && memcmp(param->write.value, "ON", 2) == 0) {
+        ESP_LOGI(GATTS_TAG, "LED ON!");
+        led_on();
+    	}
+    	else if (param->write.len == 3 && memcmp(param->write.value, "OFF", 3) == 0) {
+        ESP_LOGI(GATTS_TAG, "LED OFF!");
+        led_off();
+    	}
+
         break;
     case ESP_GATTS_DELETE_EVT:
         break;
