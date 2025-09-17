@@ -38,7 +38,7 @@
 #define DR_REG_ZERO_DET_BASE                      0x60029000
 #define DR_REG_USB_OTG_FS_CORE0_BASE              0x60040000
 #define DR_REG_USB_OTG_FS_CORE1_BASE              0x6007F000
-#define DR_REG_USB_OTG_FS_PHY_BASE                0x60080000
+#define DR_REG_USB_WRAP_BASE                      0x60080000
 #define DR_REG_TIMERG0_BASE                       0x60090000
 #define DR_REG_TIMERG1_BASE                       0x60091000
 #define DR_REG_IO_MUX_BASE                        0x60092000

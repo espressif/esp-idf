@@ -801,7 +801,7 @@ TEST_CASE("GPIO_input_and_output_of_USB_pins_test", "[gpio]")
 {
     const int test_pins[] = {USB_INT_PHY0_DP_GPIO_NUM,
                              USB_INT_PHY0_DM_GPIO_NUM,
-#if CONFIG_IDF_TARGET_ESP32P4 // TODO: Use proper soc_caps macro
+#ifdef USB_INT_PHY1_DP_GPIO_NUM
                              USB_INT_PHY1_DP_GPIO_NUM,
                              USB_INT_PHY1_DM_GPIO_NUM
 #endif
@@ -847,7 +847,7 @@ TEST_CASE("GPIO_USB_DP_pin_pullup_disable_test", "[gpio]")
     // Therefore, when D+ pin's pull-up value is set to 0, it will also clear USB D+ pull-up value to allow
     // its full functionality as a normal gpio pin
     const int test_pins[] = {USB_INT_PHY0_DP_GPIO_NUM,
-#if CONFIG_IDF_TARGET_ESP32P4 // TODO: Use proper soc_caps macro
+#ifdef USB_INT_PHY1_DP_GPIO_NUM
                              USB_INT_PHY1_DP_GPIO_NUM,
 #endif
                             };
