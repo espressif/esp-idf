@@ -6,7 +6,9 @@ import os
 import sys
 import tempfile
 import unittest
+import warnings
 from pathlib import Path
+from subprocess import TimeoutExpired
 from subprocess import run
 
 import yaml
@@ -27,6 +29,18 @@ except ImportError:
     from idf_py_actions.tools import generate_hints
 
 
+def safe_cleanup_tmpdir(tmpdir: tempfile.TemporaryDirectory) -> None:
+    """Safely cleanup temporary directory, handling specific errors on Windows."""
+    try:
+        tmpdir.cleanup()
+    except (PermissionError, NotADirectoryError):
+        warnings.warn(
+            f'Failed to cleanup temporary directory {tmpdir.name}. '
+            'This is common on Windows when files are still in use.',
+            UserWarning,
+        )
+
+
 class TestHintsMassages(unittest.TestCase):
     def setUp(self) -> None:
         self.tmpdir = tempfile.TemporaryDirectory()
@@ -43,14 +57,28 @@ class TestHintsMassages(unittest.TestCase):
                 self.assertEqual(generated_hint, hint)
 
     def tearDown(self) -> None:
-        self.tmpdir.cleanup()
+        safe_cleanup_tmpdir(self.tmpdir)
 
 
 def run_idf(args: list[str], cwd: Path) -> str:
     # Simple helper to run idf command and return it's stdout.
     cmd = [sys.executable, os.path.join(os.environ['IDF_PATH'], 'tools', 'idf.py')]
-    proc = run(cmd + args, capture_output=True, cwd=cwd, text=True)
-    return str(proc.stdout + proc.stderr)
+    try:
+        proc = run(cmd + args, capture_output=True, cwd=cwd, text=True, timeout=10 * 60)
+        return str(proc.stdout + proc.stderr)
+    except TimeoutExpired as e:
+        # Print captured output on timeout to help with debugging
+        print(f'\n{"=" * 80}')
+        print(f'TEST TIMEOUT: idf.py {" ".join(args)} timed out')
+        print(f'{"=" * 80}')
+        if e.stdout:
+            print('CAPTURED STDOUT:')
+            print(e.stdout)
+        if e.stderr:
+            print('CAPTURED STDERR:')
+            print(e.stderr)
+        print(f'{"=" * 80}')
+        raise
 
 
 class TestHintModuleComponentRequirements(unittest.TestCase):
@@ -114,7 +142,7 @@ class TestHintModuleComponentRequirements(unittest.TestCase):
         self.assertIn('To fix this, move esp_psram from PRIV_REQUIRES into REQUIRES', output)
 
     def tearDown(self) -> None:
-        self.tmpdir.cleanup()
+        safe_cleanup_tmpdir(self.tmpdir)
 
 
 class TestNestedModuleComponentRequirements(unittest.TestCase):
@@ -161,7 +189,7 @@ class TestNestedModuleComponentRequirements(unittest.TestCase):
         self.assertIn('To fix this, add esp_timer to PRIV_REQUIRES list of idf_component_register call', output)
 
     def tearDown(self) -> None:
-        self.tmpdir.cleanup()
+        safe_cleanup_tmpdir(self.tmpdir)
 
 
 class TestTrimmedModuleComponentRequirements(unittest.TestCase):
@@ -193,7 +221,7 @@ class TestTrimmedModuleComponentRequirements(unittest.TestCase):
         )
 
     def tearDown(self) -> None:
-        self.tmpdir.cleanup()
+        safe_cleanup_tmpdir(self.tmpdir)
 
 
 if __name__ == '__main__':
