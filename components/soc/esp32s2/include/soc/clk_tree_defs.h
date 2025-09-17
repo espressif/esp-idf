@@ -205,15 +205,6 @@ typedef enum {
     RMT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,       /*!< Select APB as the default choice */
 } soc_periph_rmt_clk_src_t;
 
-/**
- * @brief Type of RMT clock source, reserved for the legacy RMT driver
- */
-typedef enum {
-    RMT_BASECLK_APB = SOC_MOD_CLK_APB,      /*!< RMT source clock is APB CLK */
-    RMT_BASECLK_REF = SOC_MOD_CLK_REF_TICK, /*!< RMT source clock is REF_TICK */
-    RMT_BASECLK_DEFAULT = SOC_MOD_CLK_APB,  /*!< RMT source clock default choice is APB */
-} soc_periph_rmt_clk_src_legacy_t;
-
 //////////////////////////////////////////////////PCNT//////////////////////////////////////////////////////////////////
 
 /**
