@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,7 +77,7 @@ bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channe
     dma2d_start(dma2d_rx_chan);
 
     // Configure PPA Blending engine
-    ppa_ll_blend_configure_filling_block(platform->hal.dev, &fill_trans_desc->fill_argb_color, fill_trans_desc->fill_block_w, fill_trans_desc->fill_block_h);
+    ppa_ll_blend_configure_filling_block(platform->hal.dev, fill_trans_desc->out.fill_cm, (void *)&fill_trans_desc->fill_color_val, fill_trans_desc->fill_block_w, fill_trans_desc->fill_block_h);
     ppa_ll_blend_set_tx_color_mode(platform->hal.dev, fill_trans_desc->out.fill_cm);
 
     ppa_ll_blend_start(platform->hal.dev, PPA_LL_BLEND_TRANS_MODE_FILL);
@@ -96,13 +96,28 @@ esp_err_t ppa_do_fill(ppa_client_handle_t ppa_client, const ppa_fill_oper_config
     uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
     ESP_RETURN_ON_FALSE(((uint32_t)config->out.buffer & (buf_alignment_size - 1)) == 0 && (config->out.buffer_size & (buf_alignment_size - 1)) == 0,
                         ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
+    ESP_RETURN_ON_FALSE(ppa_ll_blend_is_color_mode_supported((ppa_blend_color_mode_t)config->out.fill_cm), ESP_ERR_INVALID_ARG, TAG, "unsupported color mode");
+    // For YUV420 output: in desc, ha/hb/va/vb/x/y must be even number
+    // For YUV422 output: in desc, ha/hb/x must be even number
+    // if (config->out.fill_cm == PPA_FILL_COLOR_MODE_YUV420) {
+    //     ESP_RETURN_ON_FALSE(config->out.pic_h % 2 == 0 && config->out.pic_w % 2 == 0 &&
+    //                         config->out.block_offset_x % 2 == 0 && config->out.block_offset_y % 2 == 0,
+    //                         ESP_ERR_INVALID_ARG, TAG, "YUV420 output does not support odd h/w/offset_x/offset_y");
+    // } else
+    if (config->out.fill_cm == PPA_FILL_COLOR_MODE_YUV422) {
+        ESP_RETURN_ON_FALSE(config->out.pic_w % 2 == 0 && config->out.block_offset_x % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV422 output does not support odd w/offset_x");
+    }
     color_space_pixel_format_t out_pixel_format = {
         .color_type_id = config->out.fill_cm,
     };
     uint32_t out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format);
     uint32_t out_pic_len = config->out.pic_w * config->out.pic_h * out_pixel_depth / 8;
     ESP_RETURN_ON_FALSE(out_pic_len <= config->out.buffer_size, ESP_ERR_INVALID_ARG, TAG, "out.pic_w/h mismatch with out.buffer_size");
-    // To reduce complexity, color_mode, fill_block_w/h correctness are checked in their corresponding LL functions
+    ESP_RETURN_ON_FALSE(config->fill_block_w <= (config->out.pic_w - config->out.block_offset_x) &&
+                        config->fill_block_h <= (config->out.pic_h - config->out.block_offset_y),
+                        ESP_ERR_INVALID_ARG, TAG, "block does not fit in the out pic");
+    // To reduce complexity, specific color_mode, fill_block_w/h correctness are checked in their corresponding LL functions
 
     // Write back and invalidate necessary data (note that the window content is not continuous in the buffer)
     // Write back and invalidate buffer extended window (alignment not necessary on C2M direction, but alignment strict on M2C direction)

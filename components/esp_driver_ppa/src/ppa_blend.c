@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -140,6 +140,13 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
 
     // Configure PPA Blending engine
     ppa_ll_blend_set_rx_bg_color_mode(platform->hal.dev, blend_trans_desc->in_bg.blend_cm);
+    if (COLOR_SPACE_TYPE((uint32_t)blend_trans_desc->in_bg.blend_cm) == COLOR_SPACE_YUV) {
+        ppa_ll_blend_set_rx_bg_yuv_range(platform->hal.dev, blend_trans_desc->in_bg.yuv_range);
+        ppa_ll_blend_set_rx_bg_yuv2rgb_std(platform->hal.dev, blend_trans_desc->in_bg.yuv_std);
+    }
+    if ((uint32_t)blend_trans_desc->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_YUV422) {
+        ppa_ll_blend_set_rx_bg_yuv422_pack_order(platform->hal.dev, blend_trans_desc->in_bg.yuv422_pack_order);
+    }
     ppa_ll_blend_enable_rx_bg_byte_swap(platform->hal.dev, blend_trans_desc->bg_byte_swap);
     ppa_ll_blend_enable_rx_bg_rgb_swap(platform->hal.dev, blend_trans_desc->bg_rgb_swap);
     ppa_ll_blend_configure_rx_bg_alpha(platform->hal.dev, blend_trans_desc->bg_alpha_update_mode, blend_trans_desc->bg_alpha_value);
@@ -153,6 +160,10 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
     ppa_ll_blend_configure_rx_fg_alpha(platform->hal.dev, blend_trans_desc->fg_alpha_update_mode, blend_trans_desc->fg_alpha_value);
 
     ppa_ll_blend_set_tx_color_mode(platform->hal.dev, blend_trans_desc->out.blend_cm);
+    if (COLOR_SPACE_TYPE((uint32_t)blend_trans_desc->out.blend_cm) == COLOR_SPACE_YUV) {
+        ppa_ll_blend_set_tx_yuv_range(platform->hal.dev, blend_trans_desc->out.yuv_range);
+        ppa_ll_blend_set_tx_rgb2yuv_std(platform->hal.dev, blend_trans_desc->out.yuv_std);
+    }
 
     // Color keying
     color_pixel_rgb888_data_t rgb888_min = {.b = 0x00, .g = 0x00, .r = 0x00};
@@ -182,6 +193,41 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
     ESP_RETURN_ON_FALSE(((uint32_t)config->out.buffer & (buf_alignment_size - 1)) == 0 && (config->out.buffer_size & (buf_alignment_size - 1)) == 0,
                         ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
+    ESP_RETURN_ON_FALSE(ppa_ll_blend_is_color_mode_supported(config->in_bg.blend_cm) && ppa_ll_blend_is_color_mode_supported(config->in_fg.blend_cm) && ppa_ll_blend_is_color_mode_supported(config->out.blend_cm), ESP_ERR_INVALID_ARG, TAG, "unsupported color mode");
+    // For YUV420 input/output: in desc, ha/hb/va/vb/x/y must be even number
+    // For YUV422 input/output: in desc, ha/hb/x must be even number
+    if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_YUV420) {
+        ESP_RETURN_ON_FALSE(config->in_bg.pic_h % 2 == 0 && config->in_bg.pic_w % 2 == 0 &&
+                            config->in_bg.block_h % 2 == 0 && config->in_bg.block_w % 2 == 0 &&
+                            config->in_bg.block_offset_x % 2 == 0 && config->in_bg.block_offset_y % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV420 input does not support odd h/w/offset_x/offset_y");
+    } else if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_YUV422) {
+        ESP_RETURN_ON_FALSE(config->in_bg.pic_w % 2 == 0 && config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV422 input does not support odd w/offset_x");
+    }
+    // TODO: Support CLUT to support L4/L8 color mode
+    // else if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_L4) {
+    //     ESP_RETURN_ON_FALSE(config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
+    //                         ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w and in_bg.block_offset_x must be even");
+    // }
+    if (config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_A4) { // || config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_L4
+        ESP_RETURN_ON_FALSE(config->in_fg.block_w % 2 == 0 && config->in_fg.block_offset_x % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "in_fg.block_w and in_fg.block_offset_x must be even");
+    }
+    if (config->out.blend_cm == PPA_BLEND_COLOR_MODE_YUV420) {
+        ESP_RETURN_ON_FALSE(config->out.pic_h % 2 == 0 && config->out.pic_w % 2 == 0 &&
+                            config->out.block_offset_x % 2 == 0 && config->out.block_offset_y % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV420 output does not support odd h/w/offset_x/offset_y");
+    } else if (config->out.blend_cm == PPA_BLEND_COLOR_MODE_YUV422) {
+        ESP_RETURN_ON_FALSE(config->out.pic_w % 2 == 0 && config->out.block_offset_x % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV422 output does not support odd w/offset_x");
+    }
+    ESP_RETURN_ON_FALSE(config->in_bg.block_w <= (config->in_bg.pic_w - config->in_bg.block_offset_x) &&
+                        config->in_bg.block_h <= (config->in_bg.pic_h - config->in_bg.block_offset_y),
+                        ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w/h + in_bg.block_offset_x/y does not fit in the in pic");
+    ESP_RETURN_ON_FALSE(config->in_fg.block_w <= (config->in_fg.pic_w - config->in_fg.block_offset_x) &&
+                        config->in_fg.block_h <= (config->in_fg.pic_h - config->in_fg.block_offset_y),
+                        ESP_ERR_INVALID_ARG, TAG, "in_fg.block_w/h + in_fg.block_offset_x/y does not fit in the in pic");
     color_space_pixel_format_t out_pixel_format = {
         .color_type_id = config->out.blend_cm,
     };
@@ -190,6 +236,9 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     ESP_RETURN_ON_FALSE(out_pic_len <= config->out.buffer_size, ESP_ERR_INVALID_ARG, TAG, "out.pic_w/h mismatch with out.buffer_size");
     ESP_RETURN_ON_FALSE(config->in_bg.block_w == config->in_fg.block_w && config->in_bg.block_h == config->in_fg.block_h,
                         ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w/h must be equal to in_fg.block_w/h");
+    ESP_RETURN_ON_FALSE(config->in_fg.block_w <= (config->out.pic_w - config->out.block_offset_x) &&
+                        config->in_fg.block_h <= (config->out.pic_h - config->out.block_offset_y),
+                        ESP_ERR_INVALID_ARG, TAG, "block does not fit in the out pic");
     if (config->bg_byte_swap) {
         PPA_CHECK_CM_SUPPORT_BYTE_SWAP("in_bg.blend", (uint32_t)config->in_bg.blend_cm);
     }
@@ -218,15 +267,7 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
         ESP_RETURN_ON_FALSE(config->fg_alpha_scale_ratio > 0 && config->fg_alpha_scale_ratio < 1, ESP_ERR_INVALID_ARG, TAG, "invalid fg_alpha_scale_ratio");
         new_fg_alpha_value = (uint32_t)(config->fg_alpha_scale_ratio * 256);
     }
-    // if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_L4) {
-    //     ESP_RETURN_ON_FALSE(config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
-    //                         ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w and in_bg.block_offset_x must be even");
-    // }
-    if (config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_A4) { // || config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_L4
-        ESP_RETURN_ON_FALSE(config->in_fg.block_w % 2 == 0 && config->in_fg.block_offset_x % 2 == 0,
-                            ESP_ERR_INVALID_ARG, TAG, "in_fg.block_w and in_fg.block_offset_x must be even");
-    }
-    // To reduce complexity, color_mode, alpha_update_mode correctness are checked in their corresponding LL functions
+    // To reduce complexity, specific color_mode, alpha_update_mode correctness are checked in their corresponding LL functions
 
     // Write back and invalidate necessary data (note that the window content is not continuous in the buffer)
     // Write back in_bg_buffer, in_fg_buffer extended windows (alignment not necessary on C2M direction)
