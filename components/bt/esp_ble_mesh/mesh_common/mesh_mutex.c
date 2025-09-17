@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,6 +71,57 @@ void bt_mesh_mutex_unlock(bt_mesh_mutex_t *mutex)
 
     if (mutex->mutex) {
         xSemaphoreGive(mutex->mutex);
+    }
+}
+
+void bt_mesh_r_mutex_create(bt_mesh_mutex_t *mutex)
+{
+    if (!mutex) {
+        BT_ERR("Create, invalid recursive mutex");
+        return;
+    }
+
+#if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC
+#if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL
+    mutex->buffer = heap_caps_calloc_prefer(1, sizeof(StaticQueue_t), 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_IRAM_8BIT
+    mutex->buffer = heap_caps_calloc_prefer(1, sizeof(StaticQueue_t), 2, MALLOC_CAP_INTERNAL|MALLOC_CAP_IRAM_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#endif
+    __ASSERT(mutex->buffer, "Failed to create recursive mutex buffer");
+    mutex->mutex = xSemaphoreCreateRecursiveMutexStatic(mutex->buffer);
+    __ASSERT(mutex->mutex, "Failed to create static recursive mutex");
+#else /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC */
+    mutex->mutex = xSemaphoreCreateRecursiveMutex();
+    __ASSERT(mutex->mutex, "Failed to create recursive mutex");
+#endif /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC */
+}
+
+void bt_mesh_r_mutex_free(bt_mesh_mutex_t *mutex)
+{
+    bt_mesh_mutex_free(mutex);
+}
+
+void bt_mesh_r_mutex_lock(bt_mesh_mutex_t *mutex)
+{
+    if (!mutex) {
+        BT_ERR("Lock, invalid recursive mutex");
+        return;
+    }
+
+    if (mutex->mutex) {
+        xSemaphoreTakeRecursive(mutex->mutex, portMAX_DELAY);
+    }
+}
+
+void bt_mesh_r_mutex_unlock(bt_mesh_mutex_t *mutex)
+{
+    if (!mutex) {
+        BT_ERR("Unlock, invalid recursive mutex");
+        return;
+    }
+
+    if (mutex->mutex) {
+        xSemaphoreGiveRecursive(mutex->mutex);
     }
 }
 
