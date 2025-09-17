@@ -119,8 +119,6 @@ function(__consolidate_component_kconfig_files)
     idf_build_set_property(__KCONFIGS "")
     idf_build_set_property(__KCONFIG_PROJBUILDS "")
     idf_build_set_property(__SDKCONFIG_RENAMES "")
-    idf_build_set_property(__KCONFIGS_EXCLUDED "")
-    idf_build_set_property(__KCONFIGS_PROJBUILD_EXCLUDED "")
 
     # Iterate through all discovered components and consolidate their Kconfig files
     foreach(component_name IN LISTS components_discovered)
@@ -129,25 +127,12 @@ function(__consolidate_component_kconfig_files)
         idf_component_get_property(component_projbuild "${component_name}" __KCONFIG_PROJBUILD)
         idf_component_get_property(component_rename "${component_name}" __SDKCONFIG_RENAME)
 
-        # Check if component is included in build
-        # TODO: Review this integration hook: Component system sets COMPONENT_INCLUDED property
-        idf_component_get_property(component_included "${component_name}" COMPONENT_INCLUDED)
+        if(component_kconfig)
+            idf_build_set_property(__KCONFIGS "${component_kconfig}" APPEND)
+        endif()
 
-        # Add to appropriate build properties based on component inclusion status
-        if(component_included)
-            if(component_kconfig)
-                idf_build_set_property(__KCONFIGS "${component_kconfig}" APPEND)
-            endif()
-            if(component_projbuild)
-                idf_build_set_property(__KCONFIG_PROJBUILDS "${component_projbuild}" APPEND)
-            endif()
-        else()
-            if(component_kconfig)
-                idf_build_set_property(__KCONFIGS_EXCLUDED "${component_kconfig}" APPEND)
-            endif()
-            if(component_projbuild)
-                idf_build_set_property(__KCONFIGS_PROJBUILD_EXCLUDED "${component_projbuild}" APPEND)
-            endif()
+        if(component_projbuild)
+            idf_build_set_property(__KCONFIG_PROJBUILDS "${component_projbuild}" APPEND)
         endif()
 
         if(component_rename)
