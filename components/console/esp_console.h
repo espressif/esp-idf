@@ -260,6 +260,21 @@ esp_err_t esp_console_cmd_deregister(const char *cmd_name);
 esp_err_t esp_console_run(const char *cmdline, int *cmd_ret);
 
 /**
+ * @brief Run command line with context
+ * @param cmdline command line (command name followed by a number of arguments)
+ * @param[out] cmd_ret return code from the command (set if command was run)
+ * @param invocation_ctx pointer to context, can be used to override context
+ * given during command registration.
+ * @return
+ *      - ESP_OK, if command was run
+ *      - ESP_ERR_INVALID_ARG, if the command line is empty, or only contained
+ *        whitespace
+ *      - ESP_ERR_NOT_FOUND, if command with given name wasn't registered
+ *      - ESP_ERR_INVALID_STATE, if esp_console_init wasn't called
+ */
+esp_err_t esp_console_run_with_context(const char* cmdline, int* cmd_ret, void* invocation_ctx);
+
+/**
  * @brief Split command line into arguments in place
  * @verbatim
  * - This function finds whitespace-separated arguments in the given input line.
