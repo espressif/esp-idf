@@ -635,6 +635,7 @@ menu "Wi-Fi"
         config ESP_WIFI_SUITE_B_192
             bool "Enable NSA suite B support with 192 bit key"
             default n
+            depends on ESP_WIFI_ENTERPRISE_SUPPORT
             depends on SOC_WIFI_GCMP_SUPPORT
             select ESP_WIFI_GCMP_SUPPORT
             select ESP_WIFI_GMAC_SUPPORT
