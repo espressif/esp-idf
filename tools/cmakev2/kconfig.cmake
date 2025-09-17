@@ -297,18 +297,56 @@ endfunction()
 
 
 #[[
-    __create_config_env_file(env_path)
+    __create_config_env_file(config_env_path
+                             [KCONFIGS <kconfig>...]
+                             [KCONFIGS_PROJBUILD <projbuild>...]
+                             [KCONFIGS_EXCLUDED <kconfig>...]
+                             [KCONFIGS_PROJBUILD_EXCLUDED <projbuild>...])
 
-    *env_path[in]*
+    *config_env_path[in]*
 
-        Path where to create the config.env file.
+        Path for the generated configuration environment file.
 
-    Create config environment file for kconfgen.  This function gathers all
-    necessary properties and creates the config.env file used by the kconfgen
-    Python script.
+    *KCONFIGS[in,opt]*
 
+        Kconfig file or list of Kconfig files to be sourced in the
+        ``kconfigs.in`` file.  Can be used multiple times. If not provided, the
+        Kconfig files stored in the ``__KCONFIGS`` build property are used.
+
+    *KCONFIGS_PROJBUILD[in,opt]*
+
+        Kconfig file or list of Kconfig files to be sourced in the
+        ``kconfigs_projbuild.in`` file. Can be used multiple times. If not
+        provided, the Kconfig files stored in the ``__KCONFIGS`` build property
+        are used.
+
+    *KCONFIGS_EXCLUDED[in,opt]*
+
+        Kconfig file or list of Kconfig files to be sourced in the
+        ``kconfigs_excluded.in`` file. Can be used multiple times.
+
+    *KCONFIGS_PROJBUILD_EXCLUDED[in,opt]*
+
+        Kconfig file or list of Kconfig files to be sourced in the
+        ``kconfigs_projbuild_excluded.in`` file. Can be used multiple times.
+
+    Generate a configuration file for the ``prepare_kconfig_files.py`` script
+    at ``config_env_path``. This file includes, among other details, the paths
+    where ``prepare_kconfig_files.py`` should generate the ``kconfigs*.in``
+    files. These are Kconfig files, sourced in the main Kconfig file through
+    environmental variables, and contain a list of component configurations
+    that should be sourced. The ``kconfigs*.in`` file paths in the generated
+    configuration file are located in the same directory as the configuration
+    file itself. This means that ``prepare_kconfig_files.py`` will produce the
+    ``kconfigs*.in`` files in the same directory where the configuration file
+    created by this function is generated.
 #]]
-function(__create_config_env_file env_path)
+function(__create_config_env_file config_env_path)
+    set(options)
+    set(one_value)
+    set(multi_value KCONFIGS KCONFIGS_PROJBUILD KCONFIGS_EXCLUDED KCONFIGS_PROJBUILD_EXCLUDED)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
     # Get all necessary build properties
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(build_dir BUILD_DIR)
@@ -318,14 +356,24 @@ function(__create_config_env_file env_path)
     idf_build_get_property(target IDF_TARGET)
     idf_build_get_property(toolchain IDF_TOOLCHAIN)
     idf_build_get_property(sdkconfig SDKCONFIG)
-    idf_build_get_property(kconfigs_excluded __KCONFIGS_EXCLUDED)
-    idf_build_get_property(kconfigs_projbuild_excluded __KCONFIGS_PROJBUILD_EXCLUDED)
 
-    # Define Kconfig source file paths
-    set(kconfigs_projbuild_path "${build_dir}/kconfigs_projbuild.in")
-    set(kconfigs_path "${build_dir}/kconfigs.in")
-    set(kconfigs_excluded_path "${build_dir}/kconfigs_excluded.in")
-    set(kconfigs_projbuild_excluded_path "${build_dir}/kconfigs_projbuild_excluded.in")
+    if(ARG_KCONFIGS)
+        set(kconfigs "${ARG_KCONFIGS}")
+    endif()
+
+    if(ARG_KCONFIGS_PROJBUILD)
+        set(projbuilds "${ARG_KCONFIGS_PROJBUILD}")
+    endif()
+
+    set(kconfigs_excluded "")
+    if(ARG_KCONFIGS_EXCLUDED)
+        set(kconfigs_excluded "${ARG_KCONFIGS_EXCLUDED}")
+    endif()
+
+    set(kconfigs_projbuild_excluded "")
+    if(ARG_KCONFIGS_PROJBUILD_EXCLUDED)
+        set(kconfigs_projbuild_excluded "${ARG_KCONFIGS_PROJBUILD_EXCLUDED}")
+    endif()
 
     # Get IDF version info
     __get_sdkconfig_option(OPTION CONFIG_IDF_INIT_VERSION
@@ -350,24 +398,26 @@ function(__create_config_env_file env_path)
         idf_die("Kconfig environment template file not found at ${template_path}")
     endif()
 
+    get_filename_component(config_env_dir "${config_env_path}" DIRECTORY)
+
     # Set up variables for the config.env.in template
     set(kconfigs "${kconfigs}")
     set(kconfig_projbuilds "${projbuilds}")
+    set(kconfigs_excluded "${kconfigs_excluded}")
+    set(kconfigs_projbuild_excluded "${kconfigs_projbuild_excluded}")
     set(sdkconfig_renames "${renames}")
     set(idf_target "${target}")
     set(idf_toolchain "${toolchain}")
     set(idf_path "${idf_path}")
-    set(kconfigs_path "${kconfigs_path}")
-    set(kconfigs_projbuild_path "${kconfigs_projbuild_path}")
-    set(kconfigs_excluded_path "${kconfigs_excluded_path}")
-    set(kconfigs_projbuild_excluded_path "${kconfigs_projbuild_excluded_path}")
-    set(kconfigs_excluded "${kconfigs_excluded}")
-    set(kconfigs_projbuild_excluded "${kconfigs_projbuild_excluded}")
+    set(kconfigs_path "${config_env_dir}/kconfigs.in")
+    set(kconfigs_projbuild_path "${config_env_dir}/kconfigs_projbuild.in")
+    set(kconfigs_excluded_path "${config_env_dir}/kconfigs_excluded.in")
+    set(kconfigs_projbuild_excluded_path "${config_env_dir}/kconfigs_projbuild_excluded.in")
 
     # Generate the config.env file from the config.env.in template
-    configure_file("${template_path}" "${env_path}")
+    configure_file("${template_path}" "${config_env_path}")
 
-    idf_dbg("Created config environment file: ${env_path}")
+    idf_dbg("Created config environment file: ${config_env_path}")
 endfunction()
 
 # =============================================================================
