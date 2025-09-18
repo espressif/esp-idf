@@ -422,11 +422,6 @@ void IRAM_ATTR __wrap_spi_flash_hal_erase_block(spi_flash_host_inst_t *host, uin
     esp_tee_service_call(3, SS_SPI_FLASH_HAL_ERASE_BLOCK, host, start_address);
 }
 
-void IRAM_ATTR __wrap_spi_flash_hal_erase_chip(spi_flash_host_inst_t *host)
-{
-    esp_tee_service_call(2, SS_SPI_FLASH_HAL_ERASE_CHIP, host);
-}
-
 void IRAM_ATTR __wrap_spi_flash_hal_erase_sector(spi_flash_host_inst_t *host, uint32_t start_address)
 {
     esp_tee_service_call(3, SS_SPI_FLASH_HAL_ERASE_SECTOR, host, start_address);

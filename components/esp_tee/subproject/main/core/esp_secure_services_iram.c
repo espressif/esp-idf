@@ -304,11 +304,6 @@ void _ss_spi_flash_hal_erase_block(spi_flash_host_inst_t *host, uint32_t start_a
     spi_flash_hal_erase_block(host, start_address);
 }
 
-void _ss_spi_flash_hal_erase_chip(spi_flash_host_inst_t *host)
-{
-    spi_flash_hal_erase_chip(host);
-}
-
 void _ss_spi_flash_hal_erase_sector(spi_flash_host_inst_t *host, uint32_t start_address)
 {
     bool paddr_chk = esp_tee_flash_check_prange_in_tee_region(start_address, FLASH_SECTOR_SIZE);

@@ -43,10 +43,7 @@ secure_services:
         type: IDF
         function: spi_flash_hal_erase_block
         args: 2
-      - id: 9
-        type: IDF
-        function: spi_flash_hal_erase_chip
-        args: 1
+      # ID: 9 empty
       - id: 10
         type: IDF
         function: spi_flash_hal_erase_sector
