@@ -38,6 +38,17 @@ Some common lwIP app APIs are supported indirectly by ESP-IDF:
 - mDNS uses a different implementation to the lwIP default mDNS, see :doc:`/api-reference/protocols/mdns`. But lwIP can look up mDNS hosts using standard APIs such as ``gethostbyname()`` and the convention ``hostname.local``, provided the :ref:`CONFIG_LWIP_DNS_SUPPORT_MDNS_QUERIES` setting is enabled.
 - The PPP implementation in lwIP can be used to create PPPoS (PPP over serial) interface in ESP-IDF. Please refer to the documentation of the :doc:`/api-reference/network/esp_netif` component to create and configure a PPP network interface, by means of the ``ESP_NETIF_DEFAULT_PPP()`` macro defined in :component_file:`esp_netif/include/esp_netif_defaults.h`. Additional runtime settings are provided via :component_file:`esp_netif/include/esp_netif_ppp.h`. PPPoS interfaces are typically used to interact with NBIoT/GSM/LTE modems. More application-level friendly API is supported by the `esp_modem <https://components.espressif.com/component/espressif/esp_modem>`_ library, which uses this PPP lwIP module behind the scenes.
 
+DHCP Address Conflict Detection
+-------------------------------
+
+Usually, DHCP servers verify that a selected IPv4 address is unique on the network before offering it. However, some, including the DHCP server in ESP-IDF, do not perform verification by default to simplify operation and speed up address assignment.
+
+If you want to avoid any possible IP address conflicts and connectivity issues, the ESP-IDF DHCP client provides several options to validate the offered IPv4 address before binding it (see :ref:`CONFIG_LWIP_DHCP_CHECKS_OFFERED_ADDRESS`):
+
+- **Simple ARP check, default option** (``CONFIG_LWIP_DHCP_DOES_ARP_CHECK``): Sends two ARP probes and only declines the offer if a reply for the offered IP comes from a different MAC address than the interface MAC. This is fast (about 1–2 seconds) and avoids false conflicts on networks where the AP echoes the client's MAC in ARP replies. **Use this option if you encounter DHCP DECLINE loops where the ARP reply for the offered IP advertises the interface's own MAC.**
+- **Address Conflict Detection (ACD)** (``CONFIG_LWIP_DHCP_DOES_ACD_CHECK``): Uses upstream lwIP ACD per RFC 5227 to probe/announce addresses. Some access points respond to ARP probes with the client's own MAC for the offered IP; upstream behavior treats any matching sender IP during PROBING as a conflict, which can cause repeated DHCP DECLINEs on such networks. **Use this option only if you need full RFC 5227 compliance and are aware of the potential issues with certain access points.**
+- **No conflict detection** (``CONFIG_LWIP_DHCP_DOES_NOT_CHECK_OFFERED_IP``): Binds the address without additional checks. **Use this option for maximum compatibility when conflict detection is not required.**
+
 BSD Sockets API
 ---------------
 
