@@ -46,7 +46,7 @@ To use a 32kHz external crystal as the Bluetooth LE internal clock source, confi
 
 .. only:: esp32 or esp32c3 or esp32s3
 
-    **Configuration Path:**
+    **Configuration Path 1:**
 
     ``Component config → Bluetooth → Controller Options → MODEM SLEEP Options → Bluetooth modem sleep → Bluetooth Modem sleep Mode 1 → Bluetooth low power clock``
 
@@ -64,13 +64,13 @@ To use a 32kHz external crystal as the Bluetooth LE internal clock source, confi
 
     - \ (X) Use system RTC slow clock source
 
-    **Configuration Path 2:**
+**Configuration Path 2:**
 
-    ``Component config → Hardware Settings → RTC Clock Config → RTC clock source``
+``Component config → Hardware Settings → RTC Clock Config → RTC clock source``
 
-    **Configuration Option:**
+**Configuration Option:**
 
-    - \ (X) External 32 kHz crystal
+ - \ (X) External 32 kHz crystal
 
 **Note:** Even if 32kHz is selected in menuconfig, the system will fall back to the main XTAL if the external crystal is not detected during Bluetooth LE initialization. This may lead to unexpected current consumption in light-sleep mode.
 
@@ -82,7 +82,7 @@ Selecting 136 kHz RC Oscillator
 
     To use a 136 kHz internal RC oscillator as the Bluetooth LE internal clock source, configure the following option:
 
-    **Configuration Path:** `
+    **Configuration Path 1:**
 
     `Component config → Bluetooth → Controller Options → MODEM SLEEP Options → Bluetooth modem sleep → Bluetooth Modem sleep Mode 1 → Bluetooth low power clock``
 
@@ -108,6 +108,8 @@ Selecting 136 kHz RC Oscillator
 
     - \ (X) Use system RTC slow clock source
 
+.. only:: not esp32
+
     **Configuration Path 2:**
 
     ``Component config → Hardware Settings → RTC Clock Config → RTC clock source``
@@ -115,6 +117,8 @@ Selecting 136 kHz RC Oscillator
     **Configuration Option:**
 
     - \ (X) Internal 136 kHz RC oscillator
+
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
     If low current consumption is required but have no access to the External 32kHz Crystal, then this clock source is recommended. However, selecting this clock source will have the sleep clock accuracy larger than 500 PPM, which is supported if the peer device is also an ESP chip. If the peer device is not an ESP chip, here's some Bluetooth LE event not supported:
 

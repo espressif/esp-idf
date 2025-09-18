@@ -8,7 +8,7 @@
 低功耗模式下的时钟源选择
 --------------------------------------------
 
-在低功耗蓝牙应用场景中，由于协议要求休眠时钟精度需在 500 PPM 以内，light-sleep 和 modem-sleep 模式下所用的时钟源必须满足该要求。如果时钟精度不足，可能会出现 ACL 连接失败或超时断开等问题。**因此在使用前请确保所选时钟源及其精度满 要求。**
+在低功耗蓝牙应用场景中，由于协议要求休眠时钟精度需在 500 PPM 以内，light-sleep 和 modem-sleep 模式下所用的时钟源必须满足该要求。如果时钟精度不足，可能会出现 ACL 连接失败或超时断开等问题。**因此在使用前请确保所选时钟源及其精度满足要求。**
 
 
 选择主晶振
@@ -46,7 +46,7 @@
 
 .. only:: esp32 or esp32c3 or esp32s3
 
-    **配置路径：**
+    **配置路径 1：**
 
     ``Component config → Bluetooth → Controller Options → MODEM SLEEP Options → Bluetooth modem sleep → Bluetooth Modem sleep Mode 1 → Bluetooth low power clock``
 
@@ -64,13 +64,13 @@
 
     - \ (X) Use system RTC slow clock source
 
-    **配置路径 2：**
+**配置路径 2：**
 
-    ``Component config → Hardware Settings → RTC Clock Config → RTC clock source``
+``Component config → Hardware Settings → RTC Clock Config → RTC clock source``
 
-    **配置选项：**
+**配置选项：**
 
-    - \ (X) External 32 kHz crystal
+- \ (X) External 32 kHz crystal
 
 **注意：** 即使在 menuconfig 中选择了 32kHz 外部晶振，如果低功耗蓝牙初始化时未检测到外部晶振，系统会自动切换为主晶振，可能导致 light-sleep 电流高于预期。
 
@@ -82,7 +82,7 @@
 
     要使用 136 kHz 内部 RC 振荡器作为低功耗蓝牙内部时钟源，请配置以下选项：
 
-    **配置路径：**
+    **配置路径 1：**
 
     ``Component config → Bluetooth → Controller Options → MODEM SLEEP Options → Bluetooth modem sleep → Bluetooth Modem sleep Mode 1 → Bluetooth low power clock``
 
@@ -108,6 +108,8 @@
 
     - \ (X) Use system RTC slow clock source
 
+.. only:: not esp32
+
     **配置路径 2：**
 
     ``Component config → Hardware Settings → RTC Clock Config → RTC clock source``
@@ -115,6 +117,8 @@
     **配置选项：**
 
     - \ (X) Internal 136 kHz RC oscillator
+
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
     对于需要低功耗且没有 32kHz 外部晶振的场景下，可以选择 136 kHz R C振荡器。然而这个时钟无法满足低功耗蓝牙的 500PPM 的休眠时钟精度需求。不过如果对端设备使用的是 ESP 芯片，仍能支持低功耗蓝牙行为。但是如果对端设备并非使用 ESP 芯片，则使用下面低功耗蓝牙行为将无法支持：
 
