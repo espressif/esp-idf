@@ -675,20 +675,45 @@ endfunction()
 #]]
 function(__create_kconfig_targets)
     # Create Kconfig targets
-    __create_menuconfig_target()
     __create_confserver_target()
     __create_save_defconfig_target()
 endfunction()
 
 #[[
-    __create_menuconfig_target()
+.. cmakev2:function:: idf_create_menuconfig
 
-    Create menuconfig target.
+    .. code-block:: cmake
+
+        idf_create_menuconfig(<executable>
+                              TARGET <target>)
+
+    *executable[in]*
+
+    Executable target for which to create the menuconfig target.
+
+    *TARGET[in]*
+
+        Name of the menuconfig target to be created.
+
+    Create a menuconfig target with the name specified by the ``TARGET``
+    option for an ``executable``.
 #]]
-function(__create_menuconfig_target)
+function(idf_create_menuconfig executable)
+    set(options)
+    set(one_value TARGET)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_TARGET)
+        idf_die("TARGET option is required")
+    endif()
+
+    if(TARGET "${ARG_TARGET}")
+        idf_die("TARGET '${ARG_TARGET}' for menuconfig already exists")
+    endif()
+
     idf_build_get_property(python PYTHON)
     idf_build_get_property(idf_path IDF_PATH)
-    idf_build_get_property(prepare_cmd __PREPARE_KCONFIG_CMD)
     idf_build_get_property(kconfgen_cmd __BASE_KCONFGEN_CMD)
     idf_build_get_property(sdkconfig SDKCONFIG)
     idf_build_get_property(root_kconfig __ROOT_KCONFIG)
@@ -698,12 +723,6 @@ function(__create_menuconfig_target)
     idf_build_get_property(idf_init_version __IDF_INIT_VERSION)
     idf_build_get_property(idf_env_fpga __IDF_ENV_FPGA)
     idf_build_get_property(kconfgen_outputs_cmd __KCONFGEN_OUTPUTS_CMD)
-
-    # Set up kconfig source file paths
-    set(kconfigs_path "${build_dir}/kconfigs.in")
-    set(kconfigs_projbuild_path "${build_dir}/kconfigs_projbuild.in")
-    set(kconfigs_excluded_path "${CMAKE_CURRENT_BINARY_DIR}/kconfigs_excluded.in")
-    set(kconfigs_projbuild_excluded_path "${CMAKE_CURRENT_BINARY_DIR}/kconfigs_projbuild_excluded.in")
 
     # Newer versions of esp-idf-kconfig renamed menuconfig to esp_menuconfig
     # Order matters here, we want to use esp_menuconfig if it is available
@@ -718,9 +737,14 @@ function(__create_menuconfig_target)
         set(MENUCONFIG_CMD "${python}" -m menuconfig)
     endif()
 
-    add_custom_target(menuconfig
+    __create_executable_config_env_file("${executable}")
+    get_target_property(config_env_dir "${executable}" CONFIG_ENV_DIR)
+
+    add_custom_target("${ARG_TARGET}"
         # Prepare Kconfig source files
-        COMMAND ${prepare_cmd}
+        COMMAND ${python} "${idf_path}/tools/kconfig_new/prepare_kconfig_files.py"
+        --list-separator=semicolon
+        --env-file "${config_env_dir}/config.env"
         # Generate config with current settings
         COMMAND ${kconfgen_cmd}
         --env "IDF_TARGET=${target}"
@@ -733,10 +757,10 @@ function(__create_menuconfig_target)
         COMMAND ${python} "${idf_path}/tools/check_term.py"
         # Run menuconfig
         COMMAND ${CMAKE_COMMAND} -E env
-        "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
-        "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
-        "COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE=${kconfigs_excluded_path}"
-        "COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE=${kconfigs_projbuild_excluded_path}"
+        "COMPONENT_KCONFIGS_SOURCE_FILE=${config_env_dir}/kconfigs.in"
+        "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild.in"
+        "COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_excluded.in"
+        "COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild_excluded.in"
         "KCONFIG_CONFIG=${sdkconfig}"
         "IDF_TARGET=${target}"
         "IDF_TOOLCHAIN=${toolchain}"

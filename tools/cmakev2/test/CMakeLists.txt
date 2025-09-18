@@ -204,13 +204,16 @@ function(test_include_component)
 endfunction()
 
 # Add two executables fatfs_example and hello_world_example, generate
-# binary images for them and add flash targets.
+# binary images for them and add flash and menuconfig targets.
 # After configuration these can be build with
 #    idf.py hello_world_example_bin
 #    idf.py fatfs_example_bin
 # or simply
 #   idf.py hello_world_example-flash monitor
 #   idf.py fatfs-flash monitor
+# The menuconfig can be invoked with
+#   idf.py --no-hints menuconfig-hello_world
+#   idf.py --no-hints menuconfig-fatfs
 function(test_executable)
     idf_build_executable(fatfs_example
                          COMPONENTS fatfs_example)
@@ -221,6 +224,8 @@ function(test_executable)
     idf_flash_binary(fatfs_example_bin
                      TARGET fatfs_example-flash
                      NAME fatfs_example)
+    idf_create_menuconfig(fatfs_example
+                          TARGET menuconfig-fatfs)
     idf_build_generate_metadata(fatfs_example
                                 OUTPUT_FILE project_description_fatfs.json)
 
@@ -234,6 +239,8 @@ function(test_executable)
     idf_flash_binary(hello_world_example_bin
                      TARGET hello_world_example-flash
                      NAME hello_world_example)
+    idf_create_menuconfig(hello_world_example
+                          TARGET menuconfig-hello_world)
     idf_build_generate_metadata(hello_world_example
                                 OUTPUT_FILE project_description_hello_world.json)
 endfunction()
