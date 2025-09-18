@@ -676,7 +676,6 @@ endfunction()
 function(__create_kconfig_targets)
     # Create Kconfig targets
     __create_confserver_target()
-    __create_save_defconfig_target()
 endfunction()
 
 #[[
@@ -809,11 +808,15 @@ function(__create_confserver_target)
 endfunction()
 
 #[[
-    __create_save_defconfig_target()
+.. cmakev2:function:: idf_create_save_defconfig
 
-    Create save-defconfig target.
+    .. code-block:: cmake
+
+        idf_create_save_defconfig()
+
+    Create the save-defconfig target.
 #]]
-function(__create_save_defconfig_target)
+function(idf_create_save_defconfig)
     idf_build_get_property(prepare_cmd __PREPARE_KCONFIG_CMD)
     idf_build_get_property(kconfgen_cmd __BASE_KCONFGEN_CMD)
 
@@ -826,5 +829,6 @@ function(__create_save_defconfig_target)
         --output savedefconfig "${CMAKE_SOURCE_DIR}/sdkconfig.defaults"
         USES_TERMINAL
         COMMENT "Saving defconfig..."
+        VERBATIM
     )
 endfunction()
