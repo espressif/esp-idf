@@ -575,3 +575,6 @@
 -
     re: "error: implicit declaration of function 'vPortCleanUpTCB'"
     hint: "The legacy FreeRTOS hook vPortCleanUpTCB() has been removed from ESP-IDF. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK with vTaskPreDeletionHook( void * pxTCB ) instead."
+
+    re: "cannot open linker script file bootloader.ld"
+    hint: "The file 'bootloader.ld' was renamed to 'bootloader.ld.in' in ESP-IDF v6.0. Please use update your build scripts."
