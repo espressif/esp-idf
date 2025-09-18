@@ -525,7 +525,6 @@ function(__generate_kconfig_outputs)
     set(sdkconfig_header "${config_dir}/sdkconfig.h")
     set(sdkconfig_cmake "${config_dir}/sdkconfig.cmake")
     set(sdkconfig_json "${config_dir}/sdkconfig.json")
-    set(sdkconfig_json_menus "${config_dir}/kconfig_menus.json")
 
     # Create and store base kconfgen command for this generation and target reuse
     __create_base_kconfgen_command("${sdkconfig}" "${sdkconfig_defaults}")
@@ -535,7 +534,6 @@ function(__generate_kconfig_outputs)
         --output header "${sdkconfig_header}"
         --output cmake "${sdkconfig_cmake}"
         --output json "${sdkconfig_json}"
-        --output json_menus "${sdkconfig_json_menus}"
         --output config "${sdkconfig}"
     )
 
