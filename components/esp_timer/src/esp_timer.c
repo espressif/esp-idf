@@ -341,7 +341,6 @@ static ESP_TIMER_IRAM_ATTR esp_err_t timer_insert(esp_timer_handle_t timer, bool
 static ESP_TIMER_IRAM_ATTR esp_err_t timer_remove(esp_timer_handle_t timer)
 {
     esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
-    timer_list_lock(dispatch_method);
     esp_timer_handle_t first_timer = LIST_FIRST(&s_timers[dispatch_method]);
     LIST_REMOVE(timer, list_entry);
     timer->alarm = 0;
@@ -357,7 +356,6 @@ static ESP_TIMER_IRAM_ATTR esp_err_t timer_remove(esp_timer_handle_t timer)
 #if WITH_PROFILING
     timer_insert_inactive(timer);
 #endif
-    timer_list_unlock(dispatch_method);
     return ESP_OK;
 }
 
