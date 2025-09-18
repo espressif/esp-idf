@@ -58,7 +58,7 @@ Xtensa 特殊寄存器头文件已更新，使用新的命名约定。旧的 ``s
 
 已弃用的头文件 ``intr_types.h`` 已被移除，请改用替代头文件 ``esp_intr_types.h``。
 
-已弃用的头文件 ``esp_private/interrupt_deprecated.h`` 已被移除，已弃用的函数不再可用，请改用非弃用版本。
+已弃用的头文件 ``esp_private/interrupt_deprecated.h`` （此前通过 ``riscv/interrupt.h`` 头文件提供）已被移除。相关已弃用的函数不再可用，请改用非弃用版本。
 
 ROM 头文件
 -----------
@@ -136,20 +136,21 @@ FreeRTOS
 
 **新增 API**
 
-由于 ESP Insights 等外部框架的使用需求，任务快照 API 已重新设为公开。这些 API 现在通过 ``freertos/freertos_debug.h`` 提供，而不是已弃用的 ``freertos/task_snapshot.h``。
-为了在调度器运行时安全使用，请在调用快照函数前使用 ``vTaskSuspendAll()``，调用后使用 ``xTaskResumeAll()``。
+任务快照 API 已对外公开，以支持 ESP Insights 等外部框架。这些 API 现通过 ``freertos/freertos_debug.h`` 头文件提供，不再使用已弃用的 ``freertos/task_snapshot.h``。
+
+在调度程序运行时安全使用的方案是：调用快照函数前先执行 ``vTaskSuspendAll()`` 暂停所有任务，完成后调用 ``xTaskResumeAll()`` 恢复运行。
 
 **内存布局**
 
-- 为了减少 IRAM 的使用，大多数 FreeRTOS 函数的默认位置已从 IRAM 更改为 flash。因此，``CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`` 选项已被移除。这项变更可显著节省 IRAM 空间，但可能会对性能造成轻微影响。如果应用对性能有严苛要求，可通过启用新增的 :ref:`CONFIG_FREERTOS_IN_IRAM` 选项来恢复原先配置。
-- 在决定是否启用 ``CONFIG_FREERTOS_IN_IRAM`` 时，建议进行性能测试以评估对具体应用场景的实际影响。flash 和 IRAM 配置的性能差异会受 flash 缓存效率、API 调用模式和系统负载等因素影响。
-- ``components/freertos/test_apps/freertos/performance/test_freertos_api_performance.c`` 中提供了基准性能测试，可测量常用 FreeRTOS API 的执行时间。该测试有助于根据目标硬件和应用需求评估内存布局调整带来的性能影响。
-- 当启用 ``CONFIG_ESP_PANIC_HANDLER_IRAM`` 时，任务快照函数会自动放置在 IRAM 中，确保在恐慌处理期间仍可访问
-- ``vTaskGetSnapshot`` 会保持在 IRAM 中，除非启用了 ``CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH``，因为它被任务看门狗中断处理程序使用。
+- 为了减少 IRAM 的使用，大多数 FreeRTOS 函数的默认存储位置已从 IRAM 更改为 flash。因此，``CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`` 选项已被移除。这项变更可显著节省 IRAM 空间，但可能会对性能造成轻微影响。如果应用对性能有严苛要求，可通过启用新选项 :ref:`CONFIG_FREERTOS_IN_IRAM` 恢复原先配置。
+- 启用 ``CONFIG_FREERTOS_IN_IRAM`` 前，建议进行性能测试以评估对具体应用场景的实际影响。flash 和 IRAM 配置的性能差异取决于 flash 缓存效率、API 调用模式和系统负载等因素。
+- ``components/freertos/test_apps/freertos/performance/test_freertos_api_performance.c`` 中提供了基准性能测试。该测试测量常用 FreeRTOS API 的执行时长，可帮助开发者根据目标硬件和应用需求评估内存布局方案带来的性能影响。
+- 当启用 ``CONFIG_ESP_PANIC_HANDLER_IRAM`` 时，任务快照函数会自动存入 IRAM，确保在系统崩溃处理期间仍可调用。
+- 除非启用 ``CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH``，否则 ``vTaskGetSnapshot`` 将始终保留在 IRAM 中，因为该函数被任务看门狗中断处理程序所调用。
 
-**已移除的配置选项：**
+**已移除的配置选项**
 
-以下隐藏（且始终为真）的配置选项已被移除：
+以下隐藏（且始终启用）的配置选项已被移除：
 
 - ``CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT``
 - ``CONFIG_FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH``
@@ -221,10 +222,25 @@ gcov 组件已移至独立仓库。`esp_gcov <https://components.espressif.com/c
 
 **配置更改**
 
-gcov 配置选项现在归类在 ``GNU Code Coverage`` 菜单下。
+gcov 配置选项已从应用程序级别追踪菜单移至专用的 ``GNU Code Coverage`` 菜单。
 
 ``CONFIG_APPTRACE_GCOV_ENABLE`` 选项已重命名为 ``CONFIG_ESP_GCOV_ENABLE``。
 
 **头文件更改**
 
 对于 gcov 功能，请改用 ``esp_gcov.h`` 头文件替代原有的 ``esp_app_trace.h``。
+
+系统控制台 (STDIO)
+----------------------
+
+``esp_vfs_cdcacm.h`` 头文件已移至新组件 ``esp_usb_cdc_romconsole`` 中。若需使用该头文件中的任何函数，现在需要显式添加对 ``esp_usb_cdc_rom_console`` 的 ``REQUIRES`` 依赖项。
+
+LibC
+------
+
+:ref:`CONFIG_COMPILER_ASSERT_NDEBUG_EVALUATE` 的默认值已改为 `n`。这意味着当设置了 ``NDEBUG`` 时，断言将不再对断言内的表达式进行求值。此更改将默认行为恢复为与 C 语言标准一致。
+
+ULP
+---
+
+LP-Core 在深度睡眠期间遇到异常时，将唤醒主 CPU。此功能默认启用，若不需要此行为，可以通过 :ref:`CONFIG_ULP_TRAP_WAKEUP` Kconfig 配置选项禁用。

@@ -58,7 +58,7 @@ The deprecated ``soc_memory_types.h`` header file has been removed. Please inclu
 
 The deprecated ``intr_types.h`` header file has been removed. Please include the replacement ``esp_intr_types.h`` instead.
 
-The deprecated ``esp_private/interrupt_deprecated.h`` header file, which was available to users through the ``riscv/interrupt.h`` header, has been removed. The deprecated functions are no longer available, please use the non-deprecated versions instead.
+The deprecated ``esp_private/interrupt_deprecated.h`` header file, previously accessible through ``riscv/interrupt.h`` header, has been removed. The deprecated functions are no longer available; please use the non-deprecated versions instead.
 
 ROM Headers
 -----------
@@ -136,18 +136,19 @@ The function :cpp:func:`pxTaskGetStackStart` has been deprecated. Use :cpp:func:
 
 **API Added**
 
-Task snapshot APIs have been made public due to their usage by external frameworks like ESP Insights. The APIs are now available through ``freertos/freertos_debug.h`` instead of the deprecated ``freertos/task_snapshot.h``.
-For safe usage with scheduler running, use ``vTaskSuspendAll()`` before calling snapshot functions and ``xTaskResumeAll()`` after.
+Task snapshot APIs have been made public to support external frameworks like ESP Insights. These APIs are now provided through ``freertos/freertos_debug.h`` instead of the deprecated ``freertos/task_snapshot.h``.
+
+For safe use while the scheduler is running, use ``vTaskSuspendAll()`` before calling snapshot functions, and ``xTaskResumeAll()`` afterward.
 
 **Memory Placement**
 
-- To reduce IRAM usage, the default placement for most FreeRTOS functions has been changed from IRAM to Flash. Consequently, the ``CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`` option has been removed. This change saves a significant amount of IRAM but may have a slight performance impact. For performance-critical applications, the previous behavior can be restored by enabling the new :ref:`CONFIG_FREERTOS_IN_IRAM` option.
-- When deciding whether to enable ``CONFIG_FREERTOS_IN_IRAM``, consider conducting performance testing to measure the actual impact on your specific use case. Performance differences between Flash and IRAM configurations can vary depending on flash cache efficiency, API usage patterns, and system load.
-- A baseline performance test is provided in ``components/freertos/test_apps/freertos/performance/test_freertos_api_performance.c`` that measures the execution time of commonly used FreeRTOS APIs. This test can help you evaluate the performance impact of memory placement for your target hardware and application requirements.
-- Task snapshot functions are automatically placed in IRAM when ``CONFIG_ESP_PANIC_HANDLER_IRAM`` is enabled, ensuring they remain accessible during panic handling
-- ``vTaskGetSnapshot`` is kept in IRAM unless ``CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH`` is enabled, as it's used by the Task Watchdog interrupt handler.
+- To reduce IRAM usage, the default placement for most FreeRTOS functions has been changed from IRAM to flash. Consequently, the ``CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`` option has been removed. This change saves a significant amount of IRAM but may have a slight performance impact. For performance-critical applications, you can restore the previous behavior by enabling the new :ref:`CONFIG_FREERTOS_IN_IRAM` option.
+- Before enabling ``CONFIG_FREERTOS_IN_IRAM``, it is recommended to run performance tests to measure the actual impact on your specific use case. The performance difference between flash and IRAM configurations depends on factors such as flash cache efficiency, API usage patterns, and system load.
+- A baseline performance test is provided in ``components/freertos/test_apps/freertos/performance/test_freertos_api_performance.c``. This test measures the execution time of commonly used FreeRTOS APIs and can help you evaluate the effect of memory placement for your target hardware and application requirements.
+- Task snapshot functions are automatically placed in IRAM when ``CONFIG_ESP_PANIC_HANDLER_IRAM`` is enabled, ensuring they remain accessible during panic handling.
+- ``vTaskGetSnapshot`` is kept in IRAM unless ``CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH`` is enabled, as it is used by the Task Watchdog interrupt handler.
 
-**Removed Configuration Options:**
+**Removed Configuration Options**
 
 The following hidden (and always true) configuration options have been removed:
 
@@ -179,7 +180,6 @@ ESP-Event
 ---------
 
 Unnecessary FreeRTOS headers have been removed from ``esp_event.h``. Code that previously depended on these implicit includes must now include the headers explicitly: ``#include "freertos/queue.h"`` and ``#include "freertos/semphr.h"`` to your files.
-
 
 Core Dump
 ---------
@@ -243,5 +243,4 @@ LibC
 ULP
 ---
 
-The LP-Core will now wake-up the main CPU when it encounters an exception during deep sleep. This feature is enabled by default but can be disabled via the :ref:`CONFIG_ULP_TRAP_WAKEUP` Kconfig option is this behavior is not desired.
-
+The LP-Core will now wake up the main CPU when it encounters an exception during deep sleep. This feature is enabled by default but can be disabled via the :ref:`CONFIG_ULP_TRAP_WAKEUP` Kconfig option is this behavior is not desired.
