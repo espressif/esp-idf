@@ -140,7 +140,7 @@ static char IRAM_ATTR *bt_data_type_to_str(uint8_t data_type)
 }
 #endif
 
-void bt_hci_log_record_hex(bt_hci_log_t *p_hci_log_ctl, uint8_t *hex, uint8_t hex_len)
+void bt_hci_log_record_hex(bt_hci_log_t *p_hci_log_ctl, uint8_t *hex, uint16_t hex_len)
 {
     uint8_t hci_log_char;
     uint8_t *g_hci_log_buffer;
@@ -205,7 +205,7 @@ void bt_hci_log_record_string(bt_hci_log_t *p_hci_log_ctl, char *string)
     }
 }
 
-esp_err_t IRAM_ATTR bt_hci_log_record_data(bt_hci_log_t *p_hci_log_ctl, char *str, uint8_t data_type, uint8_t *data, uint8_t data_len)
+esp_err_t IRAM_ATTR bt_hci_log_record_data(bt_hci_log_t *p_hci_log_ctl, char *str, uint8_t data_type, uint8_t *data, uint16_t data_len)
 {
     osi_mutex_t mutex_lock;
     uint8_t *g_hci_log_buffer;
@@ -331,7 +331,7 @@ void bt_hci_log_record_hci_enable(bool enable)
     enable_hci_log_flag = enable;
 }
 
-esp_err_t IRAM_ATTR bt_hci_log_record_hci_data(uint8_t data_type, uint8_t *data, uint8_t data_len)
+esp_err_t IRAM_ATTR bt_hci_log_record_hci_data(uint8_t data_type, uint8_t *data, uint16_t data_len)
 {
     if (!enable_hci_log_flag) return ESP_OK;
     return bt_hci_log_record_data(&g_bt_hci_log_data_ctl, NULL, data_type, data, data_len);
