@@ -2710,7 +2710,7 @@ static SLEEP_FN_ATTR uint32_t get_power_down_flags(void)
 #endif
 
 #if SOC_PM_SUPPORT_CNNT_PD
-    if (s_config.domain[ESP_PD_DOMAIN_CNNT].pd_option != ESP_PD_OPTION_ON) {
+    if (s_config.domain[ESP_PD_DOMAIN_CNNT].pd_option != ESP_PD_OPTION_ON && top_domain_pd_allowed()) {
         pd_flags |= PMU_SLEEP_PD_CNNT;
     }
 #endif
