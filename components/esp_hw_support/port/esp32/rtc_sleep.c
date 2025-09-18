@@ -266,7 +266,13 @@ static uint32_t rtc_sleep_finish(void);
 uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
 {
     REG_SET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_ENA, wakeup_opt);
-    WRITE_PERI_REG(RTC_CNTL_SLP_REJECT_CONF_REG, reject_opt);
+    /* In ESP32, only GPIO and SDIO can be as reject source during light sleep. */
+    if (reject_opt & RTC_GPIO_TRIG_EN) {
+        REG_SET_BIT(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_GPIO_REJECT_EN);
+    };
+    if (reject_opt & RTC_SDIO_TRIG_EN) {
+        REG_SET_BIT(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_SDIO_REJECT_EN);
+    };
 
     SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG,
             RTC_CNTL_SLP_REJECT_INT_CLR | RTC_CNTL_SLP_WAKEUP_INT_CLR);
@@ -288,7 +294,13 @@ uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
 uint32_t rtc_deep_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
 {
     REG_SET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_ENA, wakeup_opt);
-    WRITE_PERI_REG(RTC_CNTL_SLP_REJECT_CONF_REG, reject_opt);
+    /* In ESP32, only GPIO and SDIO can be as reject source during deep sleep. */
+    if (reject_opt & RTC_GPIO_TRIG_EN) {
+        REG_SET_BIT(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_GPIO_REJECT_EN);
+    };
+    if (reject_opt & RTC_SDIO_TRIG_EN) {
+        REG_SET_BIT(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_SDIO_REJECT_EN);
+    };
 
     SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG,
             RTC_CNTL_SLP_REJECT_INT_CLR | RTC_CNTL_SLP_WAKEUP_INT_CLR);
