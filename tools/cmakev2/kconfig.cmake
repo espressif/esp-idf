@@ -542,7 +542,7 @@ function(__generate_kconfig_outputs)
     idf_build_set_property(__KCONFGEN_OUTPUTS_CMD "${kconfgen_outputs_cmd}")
 
     # Generate Kconfig outputs using kconfgen
-    __run_kconfgen("${sdkconfig_header}" "${sdkconfig_cmake}" "${sdkconfig_json}" "${sdkconfig_json_menus}")
+    __run_kconfgen()
 
     # Add the generated config header to build specifications
     idf_build_set_property(INCLUDE_DIRECTORIES "${config_dir}" APPEND)
@@ -617,29 +617,13 @@ function(__create_base_kconfgen_command sdkconfig sdkconfig_defaults)
 endfunction()
 
 #[[
-    __run_kconfgen(header_path cmake_path json_path menus_path)
-
-    *header_path[in]*
-
-        Path for sdkconfig.h output.
-
-    *cmake_path[in]*
-
-        Path for sdkconfig.cmake output.
-
-    *json_path[in]*
-
-        Path for sdkconfig.json output.
-
-    *menus_path[in]*
-
-        Path for kconfig_menus.json output.
+    __run_kconfgen()
 
     Run kconfgen and generate all output files using the stored base command.
     Assumes that the base command is already created by
     __create_base_kconfgen_command().
 #]]
-function(__run_kconfgen header_path cmake_path json_path menus_path)
+function(__run_kconfgen)
     idf_build_get_property(base_kconfgen_cmd __BASE_KCONFGEN_CMD)
     idf_build_get_property(kconfgen_outputs_cmd __KCONFGEN_OUTPUTS_CMD)
     idf_build_get_property(sdkconfig SDKCONFIG)
