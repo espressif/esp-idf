@@ -764,9 +764,13 @@ macro(idf_project_default)
     idf_create_menuconfig("${executable}"
                           TARGET menuconfig)
 
+    idf_create_confserver("${executable}"
+                          TARGET confserver)
+
     idf_create_save_defconfig()
 
     idf_build_generate_metadata("${executable}")
+
     unset(build_dir)
     unset(executable)
 endmacro()

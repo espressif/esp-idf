@@ -645,22 +645,6 @@ endfunction()
 # =============================================================================
 
 #[[
-    __create_kconfig_targets()
-
-    Create Kconfig related targets.  This function must be called after all
-    kconfig processing is complete, including the component manager. It creates
-    the following targets:
-
-    - menuconfig
-    - confserver
-    - save-defconfig
-#]]
-function(__create_kconfig_targets)
-    # Create Kconfig targets
-    __create_confserver_target()
-endfunction()
-
-#[[
 .. cmakev2:function:: idf_create_menuconfig
 
     .. code-block:: cmake
@@ -764,24 +748,56 @@ function(idf_create_menuconfig executable)
 endfunction()
 
 #[[
-    __create_confserver_target()
+.. cmakev2:function:: idf_create_confserver
 
-    Create confserver target.
+    .. code-block:: cmake
+
+        idf_create_confserver(<executable>
+                              TARGET <target>)
+
+    *executable[in]*
+
+    Executable target for which to create the confserver target.
+
+    *TARGET[in]*
+
+        Name of the confserver target to be created.
+
+    Create a confserver target with the name specified by the ``TARGET``
+    option for an ``executable``.
 #]]
-function(__create_confserver_target)
+function(idf_create_confserver executable)
+    set(options)
+    set(one_value TARGET)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_TARGET)
+        idf_die("TARGET option is required")
+    endif()
+
     idf_build_get_property(python PYTHON)
-    idf_build_get_property(prepare_cmd __PREPARE_KCONFIG_CMD)
     idf_build_get_property(sdkconfig SDKCONFIG)
     idf_build_get_property(root_kconfig __ROOT_KCONFIG)
     idf_build_get_property(root_sdkconfig_rename __ROOT_SDKCONFIG_RENAME)
-    idf_build_get_property(config_env_path __CONFIG_ENV_PATH)
+    idf_build_get_property(base_kconfgen_cmd __BASE_KCONFGEN_CMD)
+    idf_build_get_property(config_dir CONFIG_DIR)
 
-    add_custom_target(confserver
+    __create_executable_config_env_file("${executable}")
+    get_target_property(config_env_dir "${executable}" CONFIG_ENV_DIR)
+
+    add_custom_target("${ARG_TARGET}"
         # Prepare Kconfig source files
-        COMMAND ${prepare_cmd}
+        COMMAND ${python} "${idf_path}/tools/kconfig_new/prepare_kconfig_files.py"
+        --list-separator=semicolon
+        --env-file "${config_env_dir}/config.env"
+        # Generate kconfig_menus.json
+        COMMAND ${base_kconfgen_cmd}
+        --env-file "${config_env_dir}/config.env"
+        --output json_menus "${config_dir}/kconfig_menus.json"
         # Run confserver
         COMMAND ${python} -m kconfserver
-        --env-file "${config_env_path}"
+        --env-file "${config_env_dir}/config.env"
         --kconfig "${root_kconfig}"
         --sdkconfig-rename "${root_sdkconfig_rename}"
         --config "${sdkconfig}"
