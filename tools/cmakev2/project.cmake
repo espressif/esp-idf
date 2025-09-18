@@ -761,6 +761,9 @@ macro(idf_project_default)
         idf_build_generate_flasher_args()
     endif()
 
+    idf_create_menuconfig("${executable}"
+                          TARGET menuconfig)
+
     idf_build_generate_metadata("${executable}")
     unset(build_dir)
     unset(executable)
