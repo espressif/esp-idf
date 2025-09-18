@@ -1,26 +1,25 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: LicenseRef-Included
  *
- * Zigbee Common
+ * ZCL utility functions for Zigbee examples
  *
  * This example code is in the Public Domain (or CC0 licensed, at your option.)
  *
  * Unless required by applicable law or agreed to in writing, this
  * software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
  * CONDITIONS OF ANY KIND, either express or implied.
- */
+*/
 
 #pragma once
+
+#include "esp_err.h"
+#include "esp_zigbee_core.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "esp_err.h"
-#include "esp_check.h"
-#include "esp_zigbee_core.h"
 
 /*! Maximum length of ManufacturerName string field */
 #define ESP_ZB_ZCL_CLUSTER_ID_BASIC_MANUFACTURER_NAME_MAX_LEN 32
@@ -37,9 +36,9 @@ typedef struct zcl_basic_manufacturer_info_s {
 /**
  * @brief Adds manufacturer information to the ZCL basic cluster of endpoint
  *
- * @param[in] ep_list The pointer to the endpoint list with @p endpoint_id
- * @param[in] endpoint_id The endpoint identifier indicating where the ZCL basic cluster resides
- * @param[in] info The pointer to the basic manufacturer information
+ * @param ep_list The pointer to the endpoint list with @p endpoint_id
+ * @param endpoint_id The endpoint identifier indicating where the ZCL basic cluster resides
+ * @param info The pointer to the basic manufacturer information, @see zcl_basic_manufacturer_info_t
  * @return
  *      - ESP_OK: On success
  *      - ESP_ERR_INVALID_ARG: Invalid argument
