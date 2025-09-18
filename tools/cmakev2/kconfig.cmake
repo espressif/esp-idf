@@ -588,7 +588,6 @@ function(__create_base_kconfgen_command sdkconfig sdkconfig_defaults)
     idf_build_get_property(python PYTHON)
     idf_build_get_property(root_kconfig __ROOT_KCONFIG)
     idf_build_get_property(root_sdkconfig_rename __ROOT_SDKCONFIG_RENAME)
-    idf_build_get_property(config_env_path __CONFIG_ENV_PATH)
     idf_build_get_property(target IDF_TARGET)
 
     # Set up defaults arguments
@@ -609,8 +608,7 @@ function(__create_base_kconfgen_command sdkconfig sdkconfig_defaults)
         --sdkconfig-rename "${root_sdkconfig_rename}"
         --config "${sdkconfig}"
         ${defaults_args}
-        --env "IDF_BUILD_V2=y"
-        --env-file "${config_env_path}")
+        --env "IDF_BUILD_V2=y")
 
     # Store base command as a build property
     idf_build_set_property(__BASE_KCONFGEN_CMD "${base_kconfgen_cmd}")
@@ -627,6 +625,7 @@ function(__run_kconfgen)
     idf_build_get_property(base_kconfgen_cmd __BASE_KCONFGEN_CMD)
     idf_build_get_property(kconfgen_outputs_cmd __KCONFGEN_OUTPUTS_CMD)
     idf_build_get_property(sdkconfig SDKCONFIG)
+    idf_build_get_property(config_env_path __CONFIG_ENV_PATH)
 
     # Create full command with output file paths
     set(kconfgen_cmd ${base_kconfgen_cmd} ${kconfgen_outputs_cmd})
@@ -634,6 +633,7 @@ function(__run_kconfgen)
     idf_dbg("Running kconfgen: ${kconfgen_cmd}")
     execute_process(
         COMMAND ${kconfgen_cmd}
+        --env-file "${config_env_path}"
         RESULT_VARIABLE kconfgen_result
     )
 
@@ -736,6 +736,7 @@ function(idf_create_menuconfig executable)
         --env "IDF_INIT_VERSION=${idf_init_version}"
         --dont-write-deprecated
         ${kconfgen_outputs_cmd}
+        --env-file "${config_env_dir}/config.env"
         # Check terminal capabilities
         COMMAND ${python} "${idf_path}/tools/check_term.py"
         # Run menuconfig
@@ -758,6 +759,7 @@ function(idf_create_menuconfig executable)
         --env "IDF_ENV_FPGA=${idf_env_fpga}"
         --env "IDF_INIT_VERSION=${idf_init_version}"
         ${kconfgen_outputs_cmd}
+        --env-file "${config_env_dir}/config.env"
         USES_TERMINAL
         COMMENT "Running menuconfig..."
     )
@@ -802,6 +804,7 @@ endfunction()
 #]]
 function(idf_create_save_defconfig)
     idf_build_get_property(prepare_cmd __PREPARE_KCONFIG_CMD)
+    idf_build_get_property(config_env_path __CONFIG_ENV_PATH)
     idf_build_get_property(kconfgen_cmd __BASE_KCONFGEN_CMD)
 
     add_custom_target(save-defconfig
@@ -811,6 +814,7 @@ function(idf_create_save_defconfig)
         COMMAND ${kconfgen_cmd}
         --dont-write-deprecated
         --output savedefconfig "${CMAKE_SOURCE_DIR}/sdkconfig.defaults"
+        --env-file "${config_env_path}"
         USES_TERMINAL
         COMMENT "Saving defconfig..."
         VERBATIM
