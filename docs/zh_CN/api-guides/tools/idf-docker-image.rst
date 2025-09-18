@@ -167,3 +167,9 @@ ESP-IDF 库中的 Docker 文件提供了以下构建参数，可用于构建自�
 .. _RFC2217: http://www.ietf.org/rfc/rfc2217.txt
 .. _ESP 工具版本: https://github.com/espressif/esptool/releases
 .. _设备选项: https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities
+
+
+相关文档
+======================
+
+- `使用 Docker 容器 <https://docs.espressif.com/projects/vscode-esp-idf-extension/zh_CN/latest/additionalfeatures/docker-container.html>`_
