@@ -364,6 +364,11 @@ static esp_err_t check_and_generate_encryption_keys(void)
         }
         ESP_LOGI(TAG, "Using pre-loaded flash encryption key in efuse");
     }
+
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY
+    // In the case of Key Manager supported targets, the default XTS-AES key source is set to Key Manager.
+    esp_flash_encryption_use_efuse_key();
+#endif
 #elif CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_KEY_MGR
     esp_err_t err = key_manager_check_and_generate_key();
     if (err != ESP_OK) {
