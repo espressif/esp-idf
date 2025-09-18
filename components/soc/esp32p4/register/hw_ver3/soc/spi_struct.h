@@ -627,7 +627,15 @@ typedef union {
          *  In the master mode it is pre-divider of spi_clk.  Can be configured in CONF state.
          */
         uint32_t clkdiv_pre:4;
-        uint32_t reserved_22:9;
+        uint32_t reserved_22:8;
+        /** clk_edge_sel : R/W; bitpos: [30]; default: 0;
+         *  Configures use standard clock sampling edge or delay the sampling edge by half a
+         *  cycle in master transfer.
+         *  0: clock sampling edge is delayed by half a cycle.
+         *  1: clock sampling edge is standard.
+         *  Can be configured in CONF state.
+         */
+        uint32_t clk_edge_sel:1;
         /** clk_equ_sysclk : R/W; bitpos: [31]; default: 1;
          *  In the master mode 1: spi_clk is equal to system 0: spi_clk is divided from system
          *  clock. Can be configured in CONF state.
@@ -975,7 +983,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 35680770;
+        /** date : R/W; bitpos: [27:0]; default: 37761424;
          *  SPI register version.
          */
         uint32_t date:28;

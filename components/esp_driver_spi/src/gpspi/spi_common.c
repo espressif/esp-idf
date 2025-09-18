@@ -614,7 +614,8 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     }
     //set flags for DUAL mode according to output-capability of MOSI and MISO pins.
     if ((bus_config->mosi_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->mosi_io_num)) &&
-            (bus_config->miso_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->miso_io_num))) {
+            (bus_config->miso_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->miso_io_num)) &&
+            (bus_config->miso_io_num != bus_config->mosi_io_num)) {
         temp_flag |= SPICOMMON_BUSFLAG_DUAL;
     }
 
