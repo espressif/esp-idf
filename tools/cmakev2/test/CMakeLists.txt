@@ -142,7 +142,7 @@ endfunction()
 function(test_kconfig)
     # Check that kconfig output files were generated
     idf_build_get_property(config_dir CONFIG_DIR)
-    set(output_files sdkconfig.h sdkconfig.cmake sdkconfig.json kconfig_menus.json)
+    set(output_files sdkconfig.h sdkconfig.cmake sdkconfig.json)
 
     foreach(file ${output_files})
         set(file_path "${config_dir}/${file}")
@@ -214,6 +214,9 @@ endfunction()
 # The menuconfig can be invoked with
 #   idf.py --no-hints menuconfig-hello_world
 #   idf.py --no-hints menuconfig-fatfs
+# The confserver can be invoked with
+#   idf.py confserver-hello_world
+#   idf.py confserver-fatfs
 function(test_executable)
     idf_build_executable(fatfs_example
                          COMPONENTS fatfs_example)
@@ -228,6 +231,8 @@ function(test_executable)
                           TARGET menuconfig-fatfs)
     idf_build_generate_metadata(fatfs_example
                                 OUTPUT_FILE project_description_fatfs.json)
+    idf_create_confserver(fatfs_example
+                          TARGET confserver-fatfs)
 
 
     idf_build_executable(hello_world_example
@@ -243,6 +248,8 @@ function(test_executable)
                           TARGET menuconfig-hello_world)
     idf_build_generate_metadata(hello_world_example
                                 OUTPUT_FILE project_description_hello_world.json)
+    idf_create_confserver(hello_world_example
+                          TARGET confserver-hello_world)
 endfunction()
 
 # Run tests
@@ -250,13 +257,18 @@ test_idf_version()
 test_python()
 test_toolchain()
 test_idf_build_library()
-test_kconfig()
 test_project_properties()
 test_include_component()
 test_executable()
 
 # Create default project
 idf_project_default()
+
+# The kconfig test also verifies whether kconfig-related targets, such as
+# menuconfig, are created. These targets are now generated within
+# idf_project_default rather than globally, so this test should be run only
+# after the default project is created.
+test_kconfig()
 
 # Call this test last because it replaces the ESP system component.
 test_component_priority()
