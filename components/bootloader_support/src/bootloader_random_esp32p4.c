@@ -12,6 +12,7 @@
 #include "soc/lp_adc_reg.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "esp_rom_regi2c.h"
+#include "soc/lpperi_reg.h"
 
 // TODO IDF-6497: once ADC API is supported, use the API instead of defining functions and constants here
 
@@ -50,6 +51,7 @@ void bootloader_random_enable(void)
     pattern_table sar1_table[4] = {};
     uint32_t pattern_len = 0;
 
+    SET_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_CK_EN_LP_ADC);
     SET_PERI_REG_MASK(HP_SYS_CLKRST_SOC_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_ADC_APB_CLK_EN);
     SET_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL23_REG, HP_SYS_CLKRST_REG_ADC_CLK_EN);
 
