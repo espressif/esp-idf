@@ -868,8 +868,9 @@ const wifi_regulatory_t regulatory_data[] = {
     },
     /* ESP_WIFI_REGULATORY_TYPE_PK */
     {
-        1,  /* Number of rules */
+        2,  /* Number of rules */
         {
+            { 1, 14, 2, 30, 0, 0 },  /* chan:1~14, max_bw:40M, max_power:30(dBm), dfs:0, reserved.*/
             { 149, 173, 3, 30, 0, 0 },  /* chan:149~173, max_bw:80M, max_power:30(dBm), dfs:0, reserved.*/
         }
     },
@@ -1389,8 +1390,9 @@ const wifi_regulatory_t regulatory_data[] = {
     },
     /* ESP_WIFI_REGULATORY_TYPE_PK */
     {
-        0,  /* Number of rules */
+        1,  /* Number of rules */
         {
+            { 1, 14, 2, 30, 0, 0 },  /* chan:1~14, max_bw:40M, max_power:30(dBm), dfs:0, reserved.*/
         }
     },
     /* ESP_WIFI_REGULATORY_TYPE_TG */

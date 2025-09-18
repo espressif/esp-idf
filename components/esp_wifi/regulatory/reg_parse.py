@@ -626,7 +626,7 @@ class DBParser(object):
         pname = self._powerdup[pname]
         b = self._bands[bname]
         p = self._power[pname]
-        if (b.start >= 2400 and b.end <= 2494) or (b.start >= 5150 and b.end <= 5895):
+        if (b.start >= 2400 and b.end <= 2500) or (b.start >= 5000 and b.end <= 5900):
             try:
                 channel_tuple = self.find_channel(b.start, b.end)
                 b.start = channel_tuple[0]
