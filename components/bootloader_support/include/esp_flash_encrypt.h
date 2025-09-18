@@ -189,7 +189,7 @@ esp_err_t esp_flash_encryption_enable_secure_features(void);
  * @return
  *  - ESP_OK - On success
  */
-esp_err_t esp_flash_encryption_enable_key_mgr(void);
+esp_err_t esp_flash_encryption_use_efuse_key(void);
 #endif // SOC_KEY_MANAGER_FE_KEY_DEPLOY
 
 #endif /* BOOTLOADER_BUILD && CONFIG_SECURE_FLASH_ENC_ENABLED */

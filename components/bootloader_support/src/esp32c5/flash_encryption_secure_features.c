@@ -17,7 +17,7 @@
 #include "hal/mspi_ll.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
-#include "esp_crypto_periph_clk.h"
+#include "hal/key_mgr_ll.h"
 
 ESP_LOG_ATTR_TAG(TAG, "flash_encrypt");
 
@@ -72,13 +72,14 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
     return ESP_OK;
 }
 
-esp_err_t esp_flash_encryption_enable_key_mgr(void)
+esp_err_t esp_flash_encryption_use_efuse_key(void)
 {
     esp_crypto_key_mgr_enable_periph_clk(true);
 
     // Force Key Manager to use eFuse key for XTS-AES operation
     key_mgr_hal_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
 
+    // TODO: Check if this is necessary else remove it
     // In case Flash Encryption is enabled by a key deployed using the Key Manager,
     // we just need to reset the SPI flash to ensure the key is used.
     // Enabling Key Manager and forcing it to use its OWN key is handled in the
