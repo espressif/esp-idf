@@ -4,7 +4,8 @@ menu "NVS Security Provider"
     choice NVS_SEC_KEY_PROTECTION_SCHEME
         prompt "NVS Encryption: Key Protection Scheme"
         depends on NVS_ENCRYPTION
-        default NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
+        default NVS_SEC_KEY_PROTECT_USING_HMAC if SOC_HMAC_SUPPORTED
+        default NVS_SEC_KEY_PROTECT_USING_FLASH_ENC if !SOC_HMAC_SUPPORTED
         help
             This choice defines the default NVS encryption keys protection scheme;
             which will be used for the default NVS partition.
