@@ -1160,19 +1160,3 @@ void uart_vfs_include_dev_init(void)
 {
     // Linker hook function, exists to make the linker examine this file
 }
-
-// -------------------------- esp_vfs_dev_uart_xxx ALIAS (deprecated) ----------------------------
-
-void esp_vfs_dev_uart_register(void) __attribute__((alias("uart_vfs_dev_register")));
-
-void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_set_rx_line_endings")));
-
-void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_set_tx_line_endings")));
-
-int esp_vfs_dev_uart_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_port_set_rx_line_endings")));
-
-int esp_vfs_dev_uart_port_set_tx_line_endings(int uart_num, esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_port_set_tx_line_endings")));
-
-void esp_vfs_dev_uart_use_nonblocking(int uart_num) __attribute__((alias("uart_vfs_dev_use_nonblocking")));
-
-void esp_vfs_dev_uart_use_driver(int uart_num) __attribute__((alias("uart_vfs_dev_use_driver")));
