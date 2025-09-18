@@ -65,6 +65,7 @@ esp_err_t esp_openthread_cli_input(const char *line)
 
 static int ot_cli_console_callback(int argc, char **argv)
 {
+    ESP_RETURN_ON_FALSE(argv[1] != NULL && strlen(argv[1]) > 0, ESP_FAIL, OT_PLAT_LOG_TAG, "Invalid OpenThread command");
     char cli_cmd[OT_CLI_MAX_LINE_LENGTH] = {0};
     strncpy(cli_cmd, argv[1], sizeof(cli_cmd) - strlen(cli_cmd) - 1);
     for (int i = 2; i < argc; i++) {
