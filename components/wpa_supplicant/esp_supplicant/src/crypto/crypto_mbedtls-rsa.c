@@ -6,6 +6,7 @@
 
 #ifdef ESP_PLATFORM
 #include "mbedtls/bignum.h"
+#include "mbedtls/esp_mbedtls_random.h"
 #endif
 
 #include "utils/includes.h"
@@ -14,9 +15,6 @@
 #include "common/defs.h"
 
 #ifdef CONFIG_CRYPTO_MBEDTLS
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
-
 #include <mbedtls/error.h>
 #include <mbedtls/x509_crt.h>
 #include <mbedtls/platform.h>
@@ -37,11 +35,6 @@ static void crypto_dump_verify_info(u32 flags)
 #else
 static void crypto_dump_verify_info(u32 flags) { }
 #endif
-
-static int crypto_rng_wrapper(void *ctx, unsigned char *buf, size_t len)
-{
-    return os_get_random(buf, len);
-}
 
 int crypto_verify_cert(const u8 *cert_start, int certlen, const u8 *ca_cert_start, int ca_certlen)
 {
@@ -125,7 +118,7 @@ struct crypto_private_key *  crypto_private_key_import(const u8 *key,
     mbedtls_pk_init(pkey);
 
     ret = mbedtls_pk_parse_key(pkey, key, len, (const unsigned char *)passwd,
-                               passwd ? os_strlen(passwd) : 0, crypto_rng_wrapper, NULL);
+                               passwd ? os_strlen(passwd) : 0, mbedtls_esp_random, NULL);
 
     if (ret < 0) {
         wpa_printf(MSG_ERROR, "failed to parse private key");
@@ -190,35 +183,13 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
 {
     int ret;
     mbedtls_pk_context *pkey  = (mbedtls_pk_context *)key;
-    const char *pers = "rsa_encrypt";
-    mbedtls_entropy_context *entropy = os_zalloc(sizeof(*entropy));
-    mbedtls_ctr_drbg_context *ctr_drbg = os_zalloc(sizeof(*ctr_drbg));
 
-    if (!pkey || !entropy || !ctr_drbg) {
-        if (entropy) {
-            os_free(entropy);
-        }
-        if (ctr_drbg) {
-            os_free(ctr_drbg);
-        }
-        wpa_printf(MSG_ERROR, "failed to allocate memory");
+    if (!pkey) {
         return -1;
     }
 
-    mbedtls_entropy_init(entropy);
-    mbedtls_ctr_drbg_init(ctr_drbg);
-
-    ret = mbedtls_ctr_drbg_seed(ctr_drbg, mbedtls_entropy_func,
-                                entropy, (const unsigned char *) pers,
-                                strlen(pers));
-    if (ret != 0) {
-        wpa_printf(MSG_ERROR, " failed  ! mbedtls_ctr_drbg_seed returned %d",
-                   ret);
-        goto cleanup;
-    }
-
-    ret = mbedtls_rsa_pkcs1_encrypt(mbedtls_pk_rsa(*pkey), mbedtls_ctr_drbg_random,
-                                    ctr_drbg, inlen, in, out);
+    ret = mbedtls_rsa_pkcs1_encrypt(mbedtls_pk_rsa(*pkey), mbedtls_esp_random,
+                                    NULL, inlen, in, out);
 
     if (ret != 0) {
         wpa_printf(MSG_ERROR, " failed  !  mbedtls_rsa_pkcs1_encrypt returned -0x%04x", -ret);
@@ -227,11 +198,6 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
     *outlen = mbedtls_rsa_get_len(mbedtls_pk_rsa(*pkey));
 
 cleanup:
-    mbedtls_ctr_drbg_free(ctr_drbg);
-    mbedtls_entropy_free(entropy);
-    os_free(entropy);
-    os_free(ctr_drbg);
-
     return ret;
 }
 
@@ -242,40 +208,18 @@ int  crypto_private_key_decrypt_pkcs1_v15(struct crypto_private_key *key,
     int ret;
     size_t i;
     mbedtls_pk_context *pkey  = (mbedtls_pk_context *)key;
-    const char *pers = "rsa_decrypt";
-    mbedtls_entropy_context *entropy = os_malloc(sizeof(*entropy));
-    mbedtls_ctr_drbg_context *ctr_drbg = os_malloc(sizeof(*ctr_drbg));
 
-    if (!pkey || !entropy || !ctr_drbg) {
-        if (entropy) {
-            os_free(entropy);
-        }
-        if (ctr_drbg) {
-            os_free(ctr_drbg);
-        }
+    if (!pkey) {
         return -1;
-    }
-    mbedtls_ctr_drbg_init(ctr_drbg);
-    mbedtls_entropy_init(entropy);
-    ret = mbedtls_ctr_drbg_seed(ctr_drbg, mbedtls_entropy_func,
-                                entropy, (const unsigned char *) pers,
-                                strlen(pers));
-
-    if (ret < 0) {
-        goto cleanup;
     }
 
     i = mbedtls_rsa_get_len(mbedtls_pk_rsa(*pkey));
-    ret = mbedtls_rsa_rsaes_pkcs1_v15_decrypt(mbedtls_pk_rsa(*pkey), mbedtls_ctr_drbg_random,
-                                              ctr_drbg, &i, in, out, *outlen);
+    ret = mbedtls_rsa_rsaes_pkcs1_v15_decrypt(mbedtls_pk_rsa(*pkey), mbedtls_esp_random,
+                                              NULL, &i, in, out, *outlen);
 
-    *outlen = i;
-
-cleanup:
-    mbedtls_ctr_drbg_free(ctr_drbg);
-    mbedtls_entropy_free(entropy);
-    os_free(entropy);
-    os_free(ctr_drbg);
+    if (ret == 0) {
+        *outlen = i;
+    }
 
     return ret;
 }
@@ -285,27 +229,13 @@ int crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
                                   u8 *out, size_t *outlen)
 {
     int ret;
-    const char *pers = "rsa_encrypt";
     mbedtls_pk_context *pkey  = (mbedtls_pk_context *)key;
-    mbedtls_entropy_context *entropy = os_malloc(sizeof(*entropy));
-    mbedtls_ctr_drbg_context *ctr_drbg = os_malloc(sizeof(*ctr_drbg));
 
-    if (!pkey || !entropy || !ctr_drbg) {
-        if (entropy) {
-            os_free(entropy);
-        }
-        if (ctr_drbg) {
-            os_free(ctr_drbg);
-        }
+    if (!pkey) {
         return -1;
     }
-    mbedtls_ctr_drbg_init(ctr_drbg);
-    mbedtls_entropy_init(entropy);
-    ret = mbedtls_ctr_drbg_seed(ctr_drbg, mbedtls_entropy_func,
-                                entropy, (const unsigned char *) pers,
-                                strlen(pers));
 
-    if ((ret = mbedtls_rsa_pkcs1_sign(mbedtls_pk_rsa(*pkey), mbedtls_ctr_drbg_random, ctr_drbg,
+    if ((ret = mbedtls_rsa_pkcs1_sign(mbedtls_pk_rsa(*pkey), mbedtls_esp_random, NULL,
                                       (mbedtls_pk_rsa(*pkey))->MBEDTLS_PRIVATE(hash_id),
                                       inlen, in, out)) != 0) {
         wpa_printf(MSG_ERROR, " failed  ! mbedtls_rsa_pkcs1_sign returned %d", ret);
@@ -314,10 +244,6 @@ int crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
     *outlen = mbedtls_rsa_get_len(mbedtls_pk_rsa(*pkey));
 
 cleanup:
-    mbedtls_ctr_drbg_free(ctr_drbg);
-    mbedtls_entropy_free(entropy);
-    os_free(entropy);
-    os_free(ctr_drbg);
     return ret;
 }
 

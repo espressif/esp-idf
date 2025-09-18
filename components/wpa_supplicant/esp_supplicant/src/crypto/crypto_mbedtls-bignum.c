@@ -7,6 +7,7 @@
 #ifdef ESP_PLATFORM
 #include "esp_system.h"
 #include "mbedtls/bignum.h"
+#include "mbedtls/esp_mbedtls_random.h"
 #endif
 
 #include "utils/includes.h"
@@ -15,11 +16,6 @@
 #include "random.h"
 #include "sha256.h"
 #include "mbedtls/pk.h"
-
-static int crypto_rng_wrapper(void *ctx, unsigned char *buf, size_t len)
-{
-    return random_get_bytes(buf, len);
-}
 
 struct crypto_bignum *crypto_bignum_init(void)
 {
@@ -220,7 +216,7 @@ int crypto_bignum_is_odd(const struct crypto_bignum *a)
 int crypto_bignum_rand(struct crypto_bignum *r, const struct crypto_bignum *m)
 {
     return ((mbedtls_mpi_random((mbedtls_mpi *) r, 0, (const mbedtls_mpi *) m,
-                                crypto_rng_wrapper, NULL) != 0) ? -1 : 0);
+                                mbedtls_esp_random, NULL) != 0) ? -1 : 0);
 }
 
 int crypto_bignum_legendre(const struct crypto_bignum *a,
