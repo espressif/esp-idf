@@ -134,15 +134,6 @@ exit:
     return ESP_FAIL;
 }
 
-struct httpd_ctrl_data {
-    enum httpd_ctrl_msg {
-        HTTPD_CTRL_SHUTDOWN,
-        HTTPD_CTRL_WORK,
-    } hc_msg;
-    httpd_work_fn_t hc_work;
-    void *hc_work_arg;
-};
-
 esp_err_t httpd_queue_work(httpd_handle_t handle, httpd_work_fn_t work, void *arg)
 {
     if (handle == NULL || work == NULL) {
