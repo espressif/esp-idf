@@ -184,7 +184,7 @@ SPI flash 实现
 主机驱动
 ^^^^^^^^^^^^^^^
 
-主机驱动依赖 ``hal/include/hal`` 文件夹下 ``spi_flash_types.h`` 定义的 ``spi_flash_host_driver_t`` 接口。该接口提供了一些常用的函数，用于与芯片通信。
+主机驱动依赖 ``esp_hal_mspi/include/hal`` 文件夹下 ``spi_flash_types.h`` 定义的 ``spi_flash_host_driver_t`` 接口。该接口提供了一些常用的函数，用于与芯片通信。
 
 在 SPI HAL 文件中，有些函数是基于现有的 {IDF_TARGET_NAME} memory-spi 来实现的。但是，由于 {IDF_TARGET_NAME} 的速度限制，HAL 层无法提供某些读命令的高速实现（所以这些命令根本没有在 HAL 的文件中被实现）。``memspi_host_driver.h`` 和 ``.c`` 文件使用 HAL 提供的 ``common_command`` 函数实现上述读命令的高速版本，并将所有它实现的以及 HAL 函数封装为 ``spi_flash_host_driver_t`` 供更上层调用。
 

@@ -618,7 +618,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_FLASH_OP_TIMEOUT
     ERR_TBL_IT(ESP_ERR_FLASH_OP_TIMEOUT),                       /* 24578 0x6002 */
 #   endif
-    // components/hal/include/hal/esp_flash_err.h
+    // components/esp_hal_mspi/include/hal/esp_flash_err.h
 #   ifdef      ESP_ERR_FLASH_NOT_INITIALISED
     ERR_TBL_IT(ESP_ERR_FLASH_NOT_INITIALISED),                  /* 24579 0x6003 */
 #   endif
