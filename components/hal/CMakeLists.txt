@@ -47,12 +47,27 @@ endif()
 
 if(esp_tee_build)
     list(APPEND srcs "apm_hal.c"
-                     "brownout_hal.c"
-                     "aes_hal.c"
-                     "sha_hal.c"
-                     "hmac_hal.c"
-                     "ds_hal.c"
-                     "ecc_hal.c")
+                     "brownout_hal.c")
+
+    if(CONFIG_SOC_AES_SUPPORTED)
+        list(APPEND srcs "aes_hal.c")
+    endif()
+
+    if(CONFIG_SOC_SHA_SUPPORTED)
+        list(APPEND srcs "sha_hal.c")
+    endif()
+
+    if(CONFIG_SOC_HMAC_SUPPORTED)
+        list(APPEND srcs "hmac_hal.c")
+    endif()
+
+    if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
+        list(APPEND srcs "ds_hal.c")
+    endif()
+
+    if(CONFIG_SOC_ECC_SUPPORTED)
+        list(APPEND srcs "ecc_hal.c")
+    endif()
 elseif(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "color_hal.c")
 

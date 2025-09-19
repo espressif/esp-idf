@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,11 @@
 #include "soc/soc.h"
 #include "heap_memory_layout.h"
 #include "esp_heap_caps.h"
+
+#if CONFIG_SECURE_ENABLE_TEE
+#define SRAM_DIRAM_TEE_ORG               (SOC_DIRAM_IRAM_LOW)
+#define SRAM_DIRAM_TEE_END               (SRAM_DIRAM_TEE_ORG + CONFIG_SECURE_TEE_IRAM_SIZE + CONFIG_SECURE_TEE_DRAM_SIZE)
+#endif
 
 /* Memory layout for ESP32C61 SoC
  * Note that the external memory is not represented in this file since
@@ -89,3 +94,11 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_d
 
 // Target has a shared D/IRAM virtual address, no need to calculate I_D_OFFSET like previous chips
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_end, iram_code);
+
+/* NOTE: When ESP-TEE is enabled, the start of the internal SRAM
+* is used by the TEE and is protected from any REE access using
+* memory protection mechanisms employed by ESP-TEE.
+*/
+#if CONFIG_SECURE_ENABLE_TEE
+SOC_RESERVE_MEMORY_REGION((intptr_t)SRAM_DIRAM_TEE_ORG, (intptr_t)(SRAM_DIRAM_TEE_END), tee_diram);
+#endif

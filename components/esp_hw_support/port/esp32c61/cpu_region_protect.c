@@ -123,6 +123,15 @@ void esp_cpu_configure_region_protection(void)
     // Configure all the invalid address regions using PMA
     //
     esp_cpu_configure_invalid_regions();
+
+    /* NOTE: When ESP-TEE is active, only configure invalid memory regions in bootloader
+     * to prevent errors before TEE initialization. TEE will handle all other
+     * memory protection.
+     */
+#if CONFIG_SECURE_ENABLE_TEE && BOOTLOADER_BUILD
+    return;
+#endif
+
     //
     // Configure all the valid address regions using PMP
     //
