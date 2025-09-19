@@ -166,6 +166,20 @@ QEMU 支持 eFuse 的仿真，可用来测试安全启动和 flash 加密等与�
 - flash 文件包括所有必需的二进制文件，如引导加载程序、分区表和应用程序固件，这些文件位于各自的内存偏移量处。
 
 
+传递额外参数给 QEMU
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+可以使用 ``--qemu-extra-args`` 选项直接向 QEMU 传递额外参数。这在需要启用 QEMU 的高级功能或调试选项时非常有用。例如：
+
+.. code-block:: console
+
+    idf.py qemu --qemu-extra-args="-d in_asm,cpu" monitor
+
+该命令会以指定的额外参数启动 QEMU。你可以通过此选项传递任何有效的 QEMU 命令行参数，例如启用调试输出、配置设备或其他高级功能。
+
+如需查看更多可用参数，请参考 `QEMU 官方文档 <https://www.qemu.org/docs/master/>`_，或运行 ``idf.py qemu --help``。
+
+
 模拟安全启动
 ~~~~~~~~~~~~~
 
