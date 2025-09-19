@@ -167,3 +167,9 @@ To use these arguments, pass them via the ``--build-arg`` command line option. F
 .. _RFC2217: http://www.ietf.org/rfc/rfc2217.txt
 .. _esptool releases: https://github.com/espressif/esptool/releases
 .. _device option: https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities
+
+
+Related Documents
+======================
+
+- `Using Docker Container <https://docs.espressif.com/projects/vscode-esp-idf-extension/en/latest/additionalfeatures/docker-container.html>`_
