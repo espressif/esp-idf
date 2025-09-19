@@ -71,7 +71,12 @@ typedef enum {
     ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0 = 9,          /**< SECURE_BOOT_DIGEST0 (Secure Boot key digest) */
     ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1 = 10,         /**< SECURE_BOOT_DIGEST1 (Secure Boot key digest) */
     ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 = 11,         /**< SECURE_BOOT_DIGEST2 (Secure Boot key digest) */
-    ESP_EFUSE_KEY_PURPOSE_MAX,                              /**< MAX PURPOSE */
+    ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY = 12,                 /**< KM_INIT_KEY (Key Manager initialization key) */
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_PSRAM_KEY = 15,       /**< XTS_AES_128_PSRAM_KEY (PSRAM encryption) */
+    ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P192 = 16,              /**< ECDSA private key (P192) */
+    ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L = 17,            /**< ECDSA private key (P384) */
+    ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H = 18,            /**< ECDSA private key (P384) */
+    ESP_EFUSE_KEY_PURPOSE_MAX = 32,                         /**< MAX PURPOSE */
 } esp_efuse_purpose_t;
 
 #ifdef __cplusplus
