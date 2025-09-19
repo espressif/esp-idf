@@ -549,6 +549,12 @@ endfunction()
 #]]
 add_library(idf_build_properties INTERFACE)
 
+# The __idf_component_interface_cache target is used to maintain internal
+# mappings between component identifiers, such as component name or alias, and
+# the component interface target, which is the primary target for the
+# component.
+add_library(__idf_component_interface_cache INTERFACE)
+
 # Set build system prefix for component targets.
 idf_build_set_property(PREFIX "idf")
 

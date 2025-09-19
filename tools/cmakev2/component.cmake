@@ -99,43 +99,149 @@ function(idf_component_get_property variable component property)
 endfunction()
 
 #[[
-   idf_component_get_cached_name(<variable> <component>)
+    __get_component_cached_interface(<variable> <component>)
 
-   :variable[out]: Variable to store the cached resolved name in, or empty if not found.
-   :component[in]: Component name to look up in the cache.
+    *variable[out]*
 
-   Get a cached resolved component name
+        Variable to store the cached component target name, or left empty if
+        not found.
+
+    *component[in]*
+
+        Component name to search for in the cache.
+
+    Get the component target interface for a given ``component`` name. The cache
+    maps multiple component names to the component interface target. The name
+    can be a component name with or without a namespace, target, interface, or
+    alias.
 #]]
-function(idf_component_get_cached_name variable component)
-    # Create a target to use to store the cached resolved name
-    if(NOT TARGET __idf_component_name_cache)
-        add_library(__idf_component_name_cache INTERFACE)
-    endif()
-
-    __get_property(TARGET __idf_component_name_cache
-                   PROPERTY "__IDF_COMPONENT_NAME_CACHE_${component}"
-                   OUTPUT cached_name)
-    set(${variable} "${cached_name}" PARENT_SCOPE)
+function(__get_component_cached_interface variable component)
+    __get_property(TARGET __idf_component_interface_cache
+                   PROPERTY "${component}"
+                   OUTPUT interface)
+    set(${variable} "${interface}" PARENT_SCOPE)
 endfunction()
 
 #[[
-   idf_component_set_cached_name(<component> <resolved_name>)
+    __set_component_cached_interface(<component> <interface>)
 
-   :component[in]: Original component name.
-   :resolved_name[in]: Resolved component name to cache.
+    *component[in]*
 
-   Store a resolved component name in the component name cache.
+        Component name with or without a namespace, target, interface, or
+        alias.
+
+    *interface[in]*
+
+        Component interface target.
+
+    Set the name mapping for the ``component`` to the ``interface`` target in
+    the cache.
 #]]
-function(idf_component_set_cached_name component resolved_name)
-    # Create a target to use to store the cached resolved name
-    if(NOT TARGET __idf_component_name_cache)
-        add_library(__idf_component_name_cache INTERFACE)
+function(__set_component_cached_interface component interface)
+    __set_property(TARGET __idf_component_interface_cache
+                   PROPERTY "${component}"
+                   PROPERTIES INTERFACE_CACHE_PROPERTIES
+                   VALUE "${interface}")
+endfunction()
+
+#[[
+    __dump_component_interface_cache()
+
+    Dump content of internal component interface cache.
+#]]
+function(__dump_component_interface_cache)
+    __get_property(TARGET __idf_component_interface_cache
+                   PROPERTY INTERFACE_CACHE_PROPERTIES
+                   OUTPUT properties)
+    idf_msg("component interface cache: ${properties}")
+    foreach(property IN LISTS properties)
+        __get_property(TARGET __idf_component_interface_cache
+                       PROPERTY "${property}"
+                       OUTPUT value)
+        idf_msg("   ${property}: ${value}")
+    endforeach()
+endfunction()
+
+#[[
+    __init_component_interface_cache(<name> <interface> <alias> <target> <priority>)
+
+    *name[in]*
+
+        Component name. The component name is the same as the component
+        directory name.
+
+    *interface[in]*
+
+        Component interface.
+
+    *alias[in]*
+
+        Component alias.
+
+    *target[in]*
+
+        Component target.
+
+    *priority[in]*
+
+        Component priority.
+
+    Initialize the component interface cache for given component by adding
+    mappings from the component name, interface, alias, and target to the
+    component interface.  The component interface cache is used by the
+    __get_component_interface function to quickly get a component interface
+    target based on the given component name, target, and alias. If the
+    component name contains a namespace prefix, the short name of the component
+    is also added to the cache. For example, for "espressif__led_strip," a
+    short name "led_strip" is added as a mapping to the "espressif__led_strip"
+    component target in the component interface cache. Since the short name may
+    cause ambiguity, component preference is used to determine which component
+    interface the short name should point to.
+#]]
+function(__init_component_interface_cache name interface alias target priority)
+    __set_component_cached_interface("${name}" "${interface}")
+    __set_component_cached_interface("${interface}" "${interface}")
+    __set_component_cached_interface("${alias}" "${interface}")
+    __set_component_cached_interface("${target}" "${interface}")
+
+    string(REGEX REPLACE ".*__" "" short_name "${name}")
+    if("${short_name}" STREQUAL "${name}")
+        # The component name does not include a namespace, so there is nothing
+        # further to set.
+        return()
     endif()
 
-    __set_property(TARGET __idf_component_name_cache
-                   PROPERTY "__IDF_COMPONENT_NAME_CACHE_${component}"
-                   PROPERTIES __IDF_COMPONENT_NAME_CACHE_PROPERTIES
-                   VALUE "${resolved_name}")
+    __get_component_cached_interface(short_name_interface "${short_name}")
+    if(NOT short_name_interface)
+        # The component interface cache does not yet contain an entry for a
+        # component name without a namespace, so add it as the name for the
+        # given component interface.
+        idf_component_set_property("${name}" COMPONENT_SHORT_NAME "${short_name}")
+        __set_component_cached_interface("${short_name}" "${interface}")
+        return()
+    endif()
+
+    # We have two components with the same short name but different namespaces.
+    # For example, there is "espressif__led_strip" and "my__led_strip", and the
+    # cache already contains a mapping of "led_strip" to
+    # "espressif__led_strip."
+
+    idf_component_get_property(short_name_priority "${short_name}" COMPONENT_PRIORITY)
+
+    if(${priority} GREATER ${short_name_priority})
+        # The short component name in the cache currently refers to a component
+        # with lower priority. Update the short name to point to the component
+        # with higher priority.
+        idf_component_set_property("${short_name}" COMPONENT_SHORT_NAME "")
+        idf_component_set_property("${name}" COMPONENT_SHORT_NAME "${short_name}")
+        __set_component_cached_interface("${short_name}" "${interface}")
+    elseif(${priority} EQUAL ${short_name_priority})
+        # The short component name refers to a component with the same
+        # priority. Resolve this ambiguity by completely removing the short
+        # component name from the cache.
+        idf_component_set_property("${short_name}" COMPONENT_SHORT_NAME "")
+        __set_component_cached_interface("${short_name}" "")
+    endif()
 endfunction()
 
 #[[
@@ -238,9 +344,9 @@ endfunction()
         Output variable to store the component interface.
 
     Identify the component interface target using the ``<component>`` value,
-    which could be a component name, target, target alias, or interface. Return
-    the component interface target, or NOTFOUND if the interface cannot be
-    located.
+    which could be a component name with or without a namespace, target, target
+    alias, or interface. Return the component interface target, or NOTFOUND if
+    the interface cannot be located.
 
     component interface: <component_prefix>_<component name>
     component target: _<component_prefix>_<component name>
@@ -260,52 +366,26 @@ function(__get_component_interface)
         idf_die("OUTPUT option is required")
     endif()
 
-    idf_build_get_property(component_names COMPONENTS_DISCOVERED)
-    idf_build_get_property(component_interfaces COMPONENT_INTERFACES)
-    idf_build_get_property(component_prefix PREFIX)
-
     set(component_interface NOTFOUND)
 
-    # Search by the exact component name first (most common case)
-    if("${ARG_COMPONENT}" IN_LIST component_names)
-        set(component_interface "${component_prefix}_${ARG_COMPONENT}")
+    __get_component_cached_interface(component_interface_cached "${ARG_COMPONENT}")
+
+    if(component_interface_cached)
+        set(component_interface "${component_interface_cached}")
     else()
-        # Search by component interface
-        set(interface "${component_prefix}_${ARG_COMPONENT}")
-        if("${interface}" IN_LIST component_interfaces)
-            set(component_interface "${interface}")
-        else()
-            # Search by real target/alias
-            __get_real_target(TARGET ${ARG_COMPONENT} OUTPUT real_target)
-            if("${real_target}" IN_LIST component_interfaces)
-                # The component name is already a component interface or its alias
-                set(component_interface "${real_target}")
-            else()
-                string(SUBSTRING "${ARG_COMPONENT}" 1 -1 interface)
-                if("${interface}" IN_LIST component_interfaces)
-                    # The component name is the actual target of the component
-                    set(component_interface "${interface}")
-                else()
-                    # Try to resolve component name from short name to namespaced name
-                    __resolve_component_name(COMPONENT "${ARG_COMPONENT}"
-                                            KNOWN_COMPONENTS "${component_names}"
-                                            OUTPUT resolved_component)
-                    if("${resolved_component}" IN_LIST component_names)
-                        # Found a resolved component name, use it
-                        set(component_interface "${component_prefix}_${resolved_component}")
-                    endif()
-                endif()
+        # Check if the COMPONENT argument is not an alias. If it is an alias,
+        # resolve it to the real target and search the interface cache again
+        # using the real target.
+        __get_real_target(TARGET "${ARG_COMPONENT}" OUTPUT real_target)
+        if(real_target)
+            __get_component_cached_interface(component_interface_cached "${real_target}")
+            if(component_interface_cached)
+                set(component_interface "${component_interface_cached}")
+                # The component is referred to by a new alias, so it should be
+                # added to the component interface cache.
+                __set_component_cached_interface("${ARG_COMPONENT}" "${component_interface_cached}")
             endif()
         endif()
-    endif()
-
-    # Sanity check
-    if(NOT "${component_interface}" STREQUAL "NOTFOUND"
-       AND NOT "${component_interface}" IN_LIST component_interfaces)
-        idf_warn("Interface target '${component_interface}' found for component "
-                 "'${ARG_COMPONENT}', but it's not present in the component "
-                 "interface list.")
-        set(component_interface NOTFOUND)
     endif()
 
     set(${ARG_OUTPUT} ${component_interface} PARENT_SCOPE)
@@ -342,7 +422,9 @@ function(__get_component_interface_or_die)
 
     __get_component_interface(COMPONENT "${ARG_COMPONENT}" OUTPUT component_interface)
     if("${component_interface}" STREQUAL "NOTFOUND")
-        idf_die("Component interface for component '${ARG_COMPONENT}' does not exist")
+        idf_build_get_property(components_discovered COMPONENTS_DISCOVERED)
+        idf_die("Failed to resolve component '${ARG_COMPONENT}'.\n"
+                "Available components: ${components_discovered}")
     endif()
     set(${ARG_OUTPUT} ${component_interface} PARENT_SCOPE)
 endfunction()
@@ -481,7 +563,7 @@ function(__init_component)
     endif()
 
     __get_component_interface(COMPONENT "${component_name}" OUTPUT existing_component_interface)
-    if(NOT "${existing_component_interface}" STREQUAL "NOTFOUND")
+    if(existing_component_interface)
         # A component with the same name is already initialized. Check if it
         # should be replaced with the component currently being initialized.
         idf_component_get_property(existing_component_priority
@@ -537,6 +619,18 @@ function(__init_component)
     # used when the component is linked to other targets.
     add_library("${component_interface}" INTERFACE)
 
+    # Initialize the component interface cache for the included component. This
+    # establishes mappings between the component name (with or without
+    # namespace), target, interface, and alias to the component interface.  The
+    # component interface cache is utilized in the __get_component_interface
+    # method to retrieve a component interface, for example, based on the
+    # component name.
+    __init_component_interface_cache("${component_name}"
+                                     "${component_interface}"
+                                     "${component_alias}"
+                                     "${component_target}"
+                                     "${component_priority}")
+
     idf_build_set_property(COMPONENTS_DISCOVERED "${component_name}" APPEND)
     idf_build_set_property(COMPONENT_INTERFACES "${component_interface}" APPEND)
 
@@ -580,181 +674,6 @@ function(__dump_component_properties components)
     endforeach()
 endfunction()
 
-#[[
-    __component_name_without_namespace(COMPONENT <component_name>
-                                       OUTPUT <variable>)
-
-    *COMPONENT[in]*
-
-        Component name that may include namespace.
-
-    *OUTPUT[out]*
-
-        Output variable to store the component name without namespace.
-
-    Extract the component name without namespace. For example:
-    - "espressif__led_strip" -> "led_strip"
-    - "led_strip" -> "led_strip" This follows the same logic as the component
-    manager's name_without_namespace function.
-#]]
-function(__component_name_without_namespace)
-    set(options)
-    set(one_value COMPONENT OUTPUT)
-    set(multi_value)
-    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
-
-    if(NOT DEFINED ARG_COMPONENT)
-        idf_die("COMPONENT option is required")
-    endif()
-
-    if(NOT DEFINED ARG_OUTPUT)
-        idf_die("OUTPUT option is required")
-    endif()
-
-    # Split by "__" and take the last part (same logic as component manager)
-    # Use rsplit with maxsplit=1 equivalent: split and take last part
-    string(FIND "${ARG_COMPONENT}" "__" last_pos REVERSE)
-    if(last_pos GREATER -1)
-        math(EXPR start_pos "${last_pos} + 2")
-        string(SUBSTRING "${ARG_COMPONENT}" ${start_pos} -1 name_without_ns)
-    else()
-        set(name_without_ns "${ARG_COMPONENT}")
-    endif()
-
-    set(${ARG_OUTPUT} "${name_without_ns}" PARENT_SCOPE)
-endfunction()
-
-#[[
-    __resolve_component_name(COMPONENT <component_name>
-                             KNOWN_COMPONENTS <known_components_list>
-                             OUTPUT <variable>)
-
-    *COMPONENT[in]*
-
-        Component name to resolve (may be short name or canonical).
-
-    *KNOWN_COMPONENTS[in]*
-
-        List of known/discovered component names.
-
-    *OUTPUT[out]*
-
-        Output variable to store the resolved component name.
-
-    Resolve a component name to its canonical form by checking against known components.
-    This implements the same logic as the component manager's _choose_component function:
-    1. If the exact name exists in known components, return it
-    2. If a namespaced version exists (e.g., "espressif__led_strip" for "led_strip"), return that
-    3. If a non-namespaced version exists (e.g., "led_strip" for "espressif__led_strip"), return that
-    4. If any known component has the same name without namespace , return that
-    5. Otherwise, return the original name (will likely cause CMake error)
-
-    This function takes component priority into account by preferring
-    components with higher priority when multiple matches exist. This behavior
-    differs from the component manager's _choose_component function.
-
-    This function also caches the resolved component name in the component name cache
-    to avoid re-resolving the same component name multiple times.
-#]]
-function(__resolve_component_name)
-    set(options)
-    set(one_value COMPONENT OUTPUT)
-    set(multi_value KNOWN_COMPONENTS)
-    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
-
-    if(NOT DEFINED ARG_COMPONENT)
-        idf_die("COMPONENT option is required")
-    endif()
-
-    if(NOT DEFINED ARG_OUTPUT)
-        idf_die("OUTPUT option is required")
-    endif()
-
-    set(component "${ARG_COMPONENT}")
-    set(known_components "${ARG_KNOWN_COMPONENTS}")
-
-    # Lookup for previously resolved components in the cache
-    idf_component_get_cached_name(cached_result "${component}")
-    if(cached_result)
-        set(${ARG_OUTPUT} "${cached_result}" PARENT_SCOPE)
-        return()
-    endif()
-
-    # 1. If exact name exists, return it (highest priority match)
-    if("${component}" IN_LIST known_components)
-        idf_component_set_cached_name("${component}" "${component}")
-        set(${ARG_OUTPUT} "${component}" PARENT_SCOPE)
-        return()
-    endif()
-
-    # 2. Check for namespaced version (e.g., "led_strip" -> "espressif__led_strip")
-    # Look for components ending with "__${component}"
-    set(namespaced_suffix "__${component}")
-    set(best_match "")
-    set(best_priority -1)
-
-    foreach(known_component IN LISTS known_components)
-        string(LENGTH "${namespaced_suffix}" suffix_len)
-        string(LENGTH "${known_component}" comp_len)
-        if(comp_len GREATER_EQUAL suffix_len)
-            math(EXPR start_pos "${comp_len} - ${suffix_len}")
-            string(SUBSTRING "${known_component}" ${start_pos} -1 comp_suffix)
-            if("${comp_suffix}" STREQUAL "${namespaced_suffix}")
-                # Get component priority to choose the best match
-                idf_component_get_property(comp_priority "${known_component}" COMPONENT_PRIORITY)
-                if(comp_priority GREATER best_priority)
-                    set(best_match "${known_component}")
-                    set(best_priority ${comp_priority})
-                endif()
-            endif()
-        endif()
-    endforeach()
-
-    if(NOT "${best_match}" STREQUAL "")
-        idf_dbg("Component '${component}' resolved to namespaced version '${best_match}'")
-        idf_component_set_cached_name("${component}" "${best_match}")
-        set(${ARG_OUTPUT} "${best_match}" PARENT_SCOPE)
-        return()
-    endif()
-
-    # 3. Check for non-namespaced version (e.g., "espressif__led_strip" -> "led_strip")
-    __component_name_without_namespace(COMPONENT "${component}" OUTPUT component_without_ns)
-    if("${component_without_ns}" IN_LIST known_components)
-        idf_dbg("Component '${component}' resolved to non-namespaced version '${component_without_ns}'")
-        idf_component_set_cached_name("${component}" "${component_without_ns}")
-        set(${ARG_OUTPUT} "${component_without_ns}" PARENT_SCOPE)
-        return()
-    endif()
-
-    # 4. Check if any known component has the same name without namespace (cross-namespace matching)
-    set(best_match "")
-    set(best_priority -1)
-
-    foreach(known_component IN LISTS known_components)
-        __component_name_without_namespace(COMPONENT "${known_component}" OUTPUT known_without_ns)
-        if("${component_without_ns}" STREQUAL "${known_without_ns}")
-            # Get component priority to choose the best match
-            idf_component_get_property(comp_priority "${known_component}" COMPONENT_PRIORITY)
-            if(comp_priority GREATER best_priority)
-                set(best_match "${known_component}")
-                set(best_priority ${comp_priority})
-            endif()
-        endif()
-    endforeach()
-
-    if(NOT "${best_match}" STREQUAL "")
-        idf_dbg("Component '${component}'
-         resolved via cross-namespace matching to '${best_match}' (priority ${best_priority})")
-        idf_component_set_cached_name("${component}" "${best_match}")
-        set(${ARG_OUTPUT} "${best_match}" PARENT_SCOPE)
-        return()
-    endif()
-
-    # 5. No match found, return original name (will likely cause CMake error)
-    idf_component_set_cached_name("${component}" "${component}")
-    set(${ARG_OUTPUT} "${component}" PARENT_SCOPE)
-endfunction()
-
 #[[api
 .. cmakev2:function:: idf_component_include
 
@@ -791,30 +710,19 @@ function(idf_component_include name)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
-    # Resolve the component name to its namespaced form if needed
-    idf_build_get_property(components_discovered COMPONENTS_DISCOVERED)
-    __resolve_component_name(COMPONENT "${name}"
-                            KNOWN_COMPONENTS "${components_discovered}"
-                            OUTPUT resolved_name)
-
-    # Check that the resolved component name is among the discovered components
-    if(NOT "${resolved_name}" IN_LIST components_discovered)
-        idf_die("Component '${name}' (resolved to '${resolved_name}') not found.
-        Available components: '${components_discovered}'")
-    endif()
-
-    # Use the resolved name for the rest of the function
-    set(name "${resolved_name}")
+    __get_component_interface_or_die(COMPONENT "${name}"
+                                     OUTPUT component_interface)
 
     # Check if the component is already included, meaning the add_subdirectory
-    # has already been called for it and the component has been processed.
-    idf_build_get_property(components_included COMPONENTS_INCLUDED)
-    if("${name}" IN_LIST components_included)
+    # has already been called for it and the component has been processed.  If
+    # the component is already included, it will have the COMPONENT_INCLUDED
+    # set to YES.
+    idf_component_get_property(component_included "${name}" COMPONENT_INCLUDED)
+    if(component_included)
         idf_dbg("Component '${name}' is already included.")
         # Set the parent variable ARG_INTERFACE to include the target name of
         # the component interface.
         if(DEFINED ARG_INTERFACE)
-            idf_component_get_property(component_interface "${name}" COMPONENT_INTERFACE)
             set(${ARG_INTERFACE} ${component_interface} PARENT_SCOPE)
         endif()
         return()
