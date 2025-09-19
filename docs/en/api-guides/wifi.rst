@@ -320,7 +320,7 @@ IP_EVENT_STA_LOST_IP
 
 This event arises when the IPV4 address becomes invalid.
 
-IP_EVENT_STA_LOST_IP does not arise immediately after the Wi-Fi disconnects. Instead, it starts an IPV4 address lost timer. If the IPV4 address is got before ip lost timer expires, IP_EVENT_STA_LOST_IP does not happen. Otherwise, the event arises when the IPV4 address lost timer expires.
+IP_EVENT_STA_LOST_IP does not arise immediately after the Wi-Fi disconnects. Instead, it starts an IPV4 address lost timer (configurable via :ref:`CONFIG_ESP_NETIF_LOST_IP_TIMER_ENABLE` and :ref:`CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL`). If the IPV4 address is got before the timer expires, IP_EVENT_STA_LOST_IP does not happen. Otherwise, the event arises when the IPV4 address lost timer expires.
 
 Generally, the application can ignore this event, because it is just a debug event to inform that the IPV4 address is lost.
 

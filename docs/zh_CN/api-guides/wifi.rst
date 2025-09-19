@@ -319,7 +319,7 @@ IP_EVENT_STA_LOST_IP
 
 当 IPV4 地址失效时，将引发此事件。
 
-此事件不会在 Wi-Fi 断连后立刻出现。Wi-Fi 连接断开后，首先将启动一个 IPV4 地址丢失计时器，如果 station 在该计时器超时之前成功获取了 IPV4 地址，则不会发生此事件。否则，此事件将在计时器超时时发生。
+此事件不会在 Wi-Fi 断连后立刻出现。Wi-Fi 连接断开后，首先将启动一个 IPV4 地址丢失计时器（可通过 :ref:`CONFIG_ESP_NETIF_LOST_IP_TIMER_ENABLE` 与 :ref:`CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL` 配置）。如果 station 在该计时器超时之前成功获取了 IPV4 地址，则不会发生此事件。否则，此事件将在计时器超时时发生。
 
 一般来说，应用程序可忽略此事件。这只是一个调试事件，主要使应用程序获知 IPV4 地址已丢失。
 

@@ -1554,14 +1554,16 @@ static esp_err_t esp_netif_start_ip_lost_timer(esp_netif_t *esp_netif)
         return ESP_OK;
     }
 
+#if CONFIG_ESP_NETIF_LOST_IP_TIMER_ENABLE
     if ( netif && (CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL > 0)) {
         esp_netif->timer_running = true;
         sys_timeout(CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL * 1000, esp_netif_ip_lost_timer, (void *)esp_netif);
         ESP_LOGD(TAG, "if%p start ip lost tmr: interval=%d", esp_netif, CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL);
         return ESP_OK;
     }
+#endif
 
-    ESP_LOGD(TAG, "if%p start ip lost tmr: no need start because netif=%p interval=%d ip=%" PRIx32,
+    ESP_LOGD(TAG, "if%p start ip lost tmr: disabled or not needed (netif=%p interval=%d ip=%" PRIx32 ")",
              esp_netif, netif, (CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL), ip_info_old->ip.addr);
 
     return ESP_OK;
