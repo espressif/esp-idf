@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -153,6 +153,29 @@ TEST(partition_api, test_partition_mmap)
 
     err = esp_partition_mmap(partition_data, offset, size, memory, (const void **) &out_ptr, &out_handle);
     TEST_ASSERT_EQUAL(err, ESP_ERR_INVALID_SIZE);
+}
+
+TEST(partition_api, test_partition_mmap_support_for_greater_than_4M)
+{
+    // Scenario: Not specified flash size but provided partition table > 4M (default size supported)
+    // esp_partition_mmap should calculate partition size from the binary, create mmap_flash_file and return ESP_OK
+
+    // unmap file to have correct initial conditions, regardless of result
+    esp_partition_file_munmap();
+
+    // get and initialize the control structure for file mmap
+    esp_partition_file_mmap_ctrl_t *p_file_mmap_ctrl = esp_partition_get_file_mmap_ctrl_input();
+    TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl);
+
+    memset(p_file_mmap_ctrl, 0, sizeof(*p_file_mmap_ctrl));
+    strlcpy(p_file_mmap_ctrl->partition_file_name, BUILD_DIR"/partition_table/partition-table_8M.bin", sizeof(p_file_mmap_ctrl->partition_file_name));
+
+    // esp_partition_find_first calls the esp_partition_file_mmap in the background
+    const esp_partition_t *partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    TEST_ASSERT_NOT_NULL(partition_data);
+
+    // cleanup after test
+    esp_partition_file_munmap();
 }
 
 TEST(partition_api, test_partition_mmap_diff_size)
@@ -336,14 +359,10 @@ TEST(partition_api, test_partition_mmap_name_size)
     memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
 }
 
-/* Negative TC to ensure mmap setup checks presence of partition file name (partition table binary file)
- * if flash size parameter was specified.
- * This test case specifies just flash file size but omits partition table binary file name.
- */
 TEST(partition_api, test_partition_mmap_size_no_partition)
 {
-    // Negative Scenario: conflicting settings - flash_file_name empty, flash_file_size set and partition_file_name not set
-    // esp_partition_file_mmap should return ESP_ERR_INVALID_ARG
+    // Scenario: flash_file_name empty, incorrect flash_file_size set and partition_file_name not set
+    // esp_partition_file_mmap should calculate correct flash_file_size based on default partition table and return ESP_OK
 
     // unmap file to have correct initial conditions, regardless of result
     esp_partition_file_munmap();
@@ -357,22 +376,17 @@ TEST(partition_api, test_partition_mmap_size_no_partition)
 
     const uint8_t *p_mem_block = NULL;
     esp_err_t err = esp_partition_file_mmap(&p_mem_block);
-
-    // expected result is invalid argument
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
+    TEST_ESP_OK(err);
 
     // cleanup after test
     esp_partition_file_munmap();
     memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
 }
 
-/* Negative TC to ensure mmap setup checks presence of flash size parameter if partition file name (partition table binary file) was specified.
- * This test case specifies just partition table binary file name but omits flash file size.
- */
 TEST(partition_api, test_partition_mmap_no_size_partition)
 {
-    // Negative Scenario: conflicting settings - flash_file_name empty, flash_file_size not set and partition_file_name set
-    // esp_partition_file_mmap should return ESP_ERR_INVALID_ARG
+    // Scenario: - flash_file_name empty, flash_file_size not set and partition_file_name set
+    // esp_partition_file_mmap() will calculate flash_file_size based on given partition_table and return ESP_OK
 
     // unmap file to have correct initial conditions, regardless of result
     esp_partition_file_munmap();
@@ -382,14 +396,12 @@ TEST(partition_api, test_partition_mmap_no_size_partition)
     TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_input);
 
     memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
-    const char *partition_file_name = "/tmp/xyz.bin";
+    const char *partition_file_name = BUILD_DIR"/partition_table/partition-table.bin";
     strlcpy(p_file_mmap_ctrl_input->partition_file_name, partition_file_name, sizeof(p_file_mmap_ctrl_input->partition_file_name));
 
     const uint8_t *p_mem_block = NULL;
     esp_err_t err = esp_partition_file_mmap(&p_mem_block);
-
-    // expected result is invalid argument
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
+    TEST_ESP_OK(err);
 
     // cleanup after test
     esp_partition_file_munmap();
@@ -457,38 +469,6 @@ TEST(partition_api, test_partition_mmap_pfile_nf)
 
     // expected result is file not found
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
-
-    // cleanup after test
-    esp_partition_file_munmap();
-    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
-}
-
-/* Negative TC to check that requested size of emulated flash is at least so big to be able to load binary partition table.
- * Too small emulated flash size is introduced and respective error code is evaluated after mmap call.
- */
-TEST(partition_api, test_partition_mmap_size_too_small)
-{
-    // Negative Scenario: specified flash file size too small to hold at least partition table at default offset
-    // esp_partition_file_mmap should return ESP_ERR_INVALID_SIZE
-
-    // unmap file to have correct initial conditions, regardless of result
-    esp_partition_file_munmap();
-
-    // get and initialize the control structure for file mmap
-    esp_partition_file_mmap_ctrl_t *p_file_mmap_ctrl_input = esp_partition_get_file_mmap_ctrl_input();
-    TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_input);
-
-    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
-
-    // set valid partition table name and very small flash size
-    strlcpy(p_file_mmap_ctrl_input->partition_file_name, BUILD_DIR "/partition_table/partition-table.bin", sizeof(p_file_mmap_ctrl_input->partition_file_name));
-    p_file_mmap_ctrl_input->flash_file_size = 1;
-
-    const uint8_t *p_mem_block = NULL;
-    esp_err_t err = esp_partition_file_mmap(&p_mem_block);
-
-    // expected result is invalid argument
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, err);
 
     // cleanup after test
     esp_partition_file_munmap();
@@ -772,6 +752,7 @@ TEST_GROUP_RUNNER(partition_api)
     RUN_TEST_CASE(partition_api, test_partition_find_first);
     RUN_TEST_CASE(partition_api, test_partition_ops);
     RUN_TEST_CASE(partition_api, test_partition_mmap);
+    RUN_TEST_CASE(partition_api, test_partition_mmap_support_for_greater_than_4M);
     RUN_TEST_CASE(partition_api, test_partition_mmap_diff_size);
     RUN_TEST_CASE(partition_api, test_partition_mmap_reopen);
     RUN_TEST_CASE(partition_api, test_partition_mmap_remove);
@@ -780,7 +761,6 @@ TEST_GROUP_RUNNER(partition_api)
     RUN_TEST_CASE(partition_api, test_partition_mmap_no_size_partition);
     RUN_TEST_CASE(partition_api, test_partition_mmap_ffile_nf);
     RUN_TEST_CASE(partition_api, test_partition_mmap_pfile_nf);
-    RUN_TEST_CASE(partition_api, test_partition_mmap_size_too_small);
     RUN_TEST_CASE(partition_api, test_partition_stats);
     RUN_TEST_CASE(partition_api, test_partition_power_off_emulation);
     RUN_TEST_CASE(partition_api, test_partition_copy);
