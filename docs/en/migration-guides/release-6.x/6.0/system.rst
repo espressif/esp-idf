@@ -235,3 +235,8 @@ System Console (STDIO)
 
 ``esp_vfs_cdcacm.h`` has been moved to the new component ``esp_usb_cdc_rom_console``, you will now have to add an explicit ``REQUIRES`` for ``esp_usb_cdc_rom_console`` if using any functions from this header.
 
+ULP
+---
+
+The LP-Core will now wake-up the main CPU when it encounters an exception during deep sleep. This feature is enabled by default but can be disabled via the :ref:`CONFIG_ULP_TRAP_WAKEUP` Kconfig option is this behavior is not desired.
+
