@@ -16,3 +16,29 @@
 .. code-block:: c
 
     esp_eth_phy_802_3_reset_hw(phy_802_3);
+
+
+移除 RMII 时钟 Kconfig 选项
+---------------------------
+
+已从 `components/esp_eth` 中移除了以下 RMII 时钟相关的 Kconfig 选项。时钟配置现在仅通过 EMAC 配置结构体进行管理。
+
+**移除的选项**：
+- `ETH_PHY_INTERFACE_RMII`、`ETH_RMII_CLK_INPUT`、`ETH_RMII_CLK_OUTPUT`
+- `ETH_RMII_CLK_IN_GPIO`、`ETH_RMII_CLK_OUTPUT_GPIO0`、`ETH_RMII_CLK_OUT_GPIO`
+
+**迁移方式**：
+
+.. code-block:: c
+
+    // 之前：通过 Kconfig 配置
+    // CONFIG_ETH_RMII_CLK_INPUT=y
+
+    // 之后：在代码中显式配置
+    eth_esp32_emac_config_t emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;  // 或 EMAC_CLK_EXT_IN
+    emac_config.clock_config.rmii.clock_gpio = 0;  // ESP32 使用 GPIO0
+
+
+**影响**：使用 ``ETH_ESP32_EMAC_DEFAULT_CONFIG()`` 的应用程序可继续正常工作。自定义时钟配置需在 EMAC 配置结构体中显式设置，或使用 `Ethernet Init 组件 <https://components.espressif.com/components/espressif/ethernet_init>`_。
+

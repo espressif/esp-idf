@@ -876,9 +876,9 @@ static esp_err_t emac_esp_config_data_interface(const eth_esp32_emac_config_t *e
                 emac_hal_clock_enable_rmii_input(&emac->hal);
             }
 #elif CONFIG_IDF_TARGET_ESP32
-            // we can also use the IOMUX to route the APLL clock to specific GPIO
-            if (esp32_emac_config->clock_config.rmii.clock_gpio == EMAC_APPL_CLK_OUT_GPIO) {
-                ESP_GOTO_ON_ERROR(esp_clock_output_start(CLKOUT_SIG_APLL, EMAC_APPL_CLK_OUT_GPIO, &emac->rmii_clk_hdl),
+            // we can also use the IOMUX to route the APLL clock to GPIO_0
+            if (esp32_emac_config->clock_config.rmii.clock_gpio == 0) {
+                ESP_GOTO_ON_ERROR(esp_clock_output_start(CLKOUT_SIG_APLL, 0, &emac->rmii_clk_hdl),
                                   err, TAG, "start APLL clock output failed");
             } else
 #endif

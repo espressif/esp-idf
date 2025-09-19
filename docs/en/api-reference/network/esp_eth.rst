@@ -130,15 +130,8 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
     One of the obvious differences between MII and RMII is signal consumption. MII usually costs up to 18 signals, while the RMII interface can reduce the consumption to 9.
 
-    .. only:: esp32
-
-        .. note::
-            ESP-IDF only supports the RMII interface. Therefore, always set :cpp:member:`eth_esp32_emac_config_t::interface` to :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII` or always select ``CONFIG_ETH_PHY_INTERFACE_RMII`` in the Kconfig option :ref:`CONFIG_ETH_PHY_INTERFACE`.
-
-    .. only:: not esp32
-
-        .. note::
-            ESP-IDF only supports the RMII interface. Therefore, always set :cpp:member:`eth_esp32_emac_config_t::interface` to :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII`.
+    .. note::
+        ESP-IDF only supports the RMII interface. Therefore, always set :cpp:member:`eth_esp32_emac_config_t::interface` to :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII`.
 
     In RMII mode, both the receiver and transmitter signals are referenced to the ``REF_CLK``. ``REF_CLK`` **must be stable during any access to PHY and MAC**. Generally, there are three ways to generate the ``REF_CLK`` depending on the PHY device in your design:
 
@@ -150,15 +143,12 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
     .. only:: esp32
 
-        .. note::
-            The ``REF_CLK`` can be also configured via Project Configuration when :cpp:class:`eth_esp32_emac_config_t` is initialized using :c:macro:`ETH_ESP32_EMAC_DEFAULT_CONFIG` macro. In the Project Configuration, choose appropriately ``CONFIG_ETH_RMII_CLK_INPUT`` or ``CONFIG_ETH_RMII_CLK_OUTPUT`` option under :ref:`CONFIG_ETH_RMII_CLK_MODE` configuration based on your design as discussed above.
-
         .. warning::
-            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT` (or ``CONFIG_ETH_RMII_CLK_OUTPUT`` is selected), then ``GPIO0`` can be used to output the ``REF_CLK`` signal. See :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_APPL_CLK_OUT_GPIO` or :ref:`CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0` for more information.
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`, internal Audio PLL clock is used as a source of 50 MHz clock. Hence be sure it is not in collision with I2S bus configuration.
 
-            What is more, if you are not using PSRAM in your design, GPIO16 and GPIO17 are also available to output the reference clock signal. See :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_CLK_OUT_GPIO` and :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_CLK_OUT_180_GPIO` or :ref:`CONFIG_ETH_RMII_CLK_OUT_GPIO` for more information.
+            When internal clock is selected, then ``GPIO0`` can be used to output the ``REF_CLK`` signal. However, the clock is outputted directly to the GPIO in this particular case and so it does not have direct relationship with EMAC peripheral. Sometimes this configuration may not work well with your PHY chip. If you are not using PSRAM in your design, GPIO16 and GPIO17 are also available to output the reference clock signal. The source of clock is the same (APLL) but these signals are routed from EMAC peripheral.
 
-            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN` (or ``CONFIG_ETH_RMII_CLK_INPUT`` is selected), then ``GPIO0`` is the only choice to input the ``REF_CLK`` signal. Please note that ``GPIO0`` is also an important strapping GPIO on ESP32. If GPIO0 samples a low level during power-up, ESP32 will go into download mode. The system will get halted until a manually reset. The workaround for this issue is disabling the ``REF_CLK`` in hardware by default so that the strapping pin is not interfered by other signals in the boot stage. Then, re-enable the ``REF_CLK`` in the Ethernet driver installation stage.
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`, then ``GPIO0`` is the only choice to input the ``REF_CLK`` signal. Please note that ``GPIO0`` is also an important strapping GPIO on ESP32. If GPIO0 samples a low level during power-up, ESP32 will go into download mode. The system will get halted until a manually reset. The workaround for this issue is disabling the ``REF_CLK`` in hardware by default so that the strapping pin is not interfered by other signals in the boot stage. Then, re-enable the ``REF_CLK`` in the Ethernet driver installation stage.
 
             The ways to disable the ``REF_CLK`` signal can be:
 
@@ -167,7 +157,7 @@ The Ethernet driver is composed of two parts: MAC and PHY.
             * Force the PHY device to reset status (as the case **a** in the picture). **This could fail for some PHY device** (i.e., it still outputs signals to GPIO0 even in reset state).
 
         .. warning::
-            If you want the **Ethernet to work with Wi-Fi**, don’t select ESP32 as source of ``REF_CLK`` as it would result in ``REF_CLK`` instability. Either disable Wi-Fi or use a PHY or an external oscillator as the ``REF_CLK`` source.
+            If you want the **Ethernet to work with Wi-Fi or Bluetooth**, don’t select ESP32 as source of ``REF_CLK`` as it would result in ``REF_CLK`` instability. Either disable Wi-Fi or use a PHY or an external oscillator as the ``REF_CLK`` source.
 
     .. only:: not esp32
 
