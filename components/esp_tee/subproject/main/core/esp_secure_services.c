@@ -8,13 +8,23 @@
 #include "esp_fault.h"
 #include "soc/soc_caps.h"
 
-#include "hal/sha_hal.h"
+#if SOC_AES_SUPPORTED
 #include "aes/esp_aes.h"
+#endif
+#if SOC_SHA_SUPPORTED
+#include "hal/sha_hal.h"
 #include "sha/sha_core.h"
+#endif
+#if SOC_HMAC_SUPPORTED
 #include "esp_hmac.h"
+#endif
+#if SOC_DIG_SIGN_SUPPORTED
 #include "esp_ds.h"
-#include "esp_crypto_periph_clk.h"
+#endif
+#if SOC_ECC_SUPPORTED
 #include "ecc_impl.h"
+#endif
+#include "esp_crypto_periph_clk.h"
 
 #include "esp_tee.h"
 #include "esp_tee_memory_utils.h"
@@ -32,6 +42,7 @@ void _ss_invalid_secure_service(void)
 
 /* ---------------------------------------------- AES ------------------------------------------------- */
 
+#if SOC_AES_SUPPORTED
 void _ss_esp_aes_intr_alloc(void)
 {
     esp_tee_aes_intr_alloc();
@@ -144,9 +155,11 @@ int _ss_esp_aes_crypt_ofb(esp_aes_context *ctx,
 
     return esp_aes_crypt_ofb(ctx, length, iv_off, iv, input, output);
 }
+#endif
 
 /* ---------------------------------------------- SHA ------------------------------------------------- */
 
+#if SOC_SHA_SUPPORTED
 void _ss_esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output)
 {
     bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &&
@@ -209,9 +222,11 @@ int _ss_esp_sha_512_t_init_hash(uint16_t t)
     return esp_sha_512_t_init_hash(t);
 }
 #endif
+#endif
 
 /* ---------------------------------------------- HMAC ------------------------------------------------- */
 
+#if SOC_HMAC_SUPPORTED
 esp_err_t _ss_esp_hmac_calculate(hmac_key_id_t key_id, const void *message, size_t message_len, uint8_t *hmac)
 {
     bool valid_addr = ((esp_tee_ptr_in_ree((void *)message) && esp_tee_ptr_in_ree((void *)hmac)) &&
@@ -251,7 +266,9 @@ esp_err_t _ss_esp_hmac_jtag_disable(void)
 {
     return esp_hmac_jtag_disable();
 }
+#endif
 
+#if SOC_DIG_SIGN_SUPPORTED
 esp_err_t _ss_esp_ds_sign(const void *message,
                           const esp_ds_data_t *data,
                           hmac_key_id_t key_id,
@@ -333,16 +350,20 @@ esp_err_t _ss_esp_ds_encrypt_params(esp_ds_data_t *data,
 
     return esp_ds_encrypt_params(data, iv, p_data, key);
 }
+#endif
 
 /* ---------------------------------------------- MPI ------------------------------------------------- */
 
+#if SOC_MPI_SUPPORTED
 void _ss_esp_crypto_mpi_enable_periph_clk(bool enable)
 {
     esp_crypto_mpi_enable_periph_clk(enable);
 }
+#endif
 
 /* ---------------------------------------------- ECC ------------------------------------------------- */
 
+#if SOC_ECC_SUPPORTED
 int _ss_esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_point_t *result, bool verify_first)
 {
     bool valid_addr = (esp_tee_ptr_in_ree((void *)result)) &&
@@ -360,11 +381,14 @@ int _ss_esp_ecc_point_verify(const ecc_point_t *point)
 {
     return esp_ecc_point_verify(point);
 }
+#endif
 
+#if SOC_ECC_SUPPORTED && SOC_ECDSA_SUPPORTED
 void _ss_esp_crypto_ecc_enable_periph_clk(bool enable)
 {
     esp_crypto_ecc_enable_periph_clk(enable);
 }
+#endif
 
 /* ---------------------------------------------- OTA ------------------------------------------------- */
 
