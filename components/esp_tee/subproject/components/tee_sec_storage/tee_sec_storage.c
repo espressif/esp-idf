@@ -6,22 +6,22 @@
 
 #include <string.h>
 
+#include "soc/soc_caps.h"
 #include "esp_log.h"
-#include "esp_cpu.h"
 #include "esp_fault.h"
-#include "esp_flash.h"
 #include "esp_efuse.h"
 #include "esp_efuse_chip.h"
-#include "esp_hmac.h"
 #include "esp_random.h"
 #include "spi_flash_mmap.h"
+#if SOC_HMAC_SUPPORTED
+#include "esp_hmac.h"
+#include "esp_hmac_pbkdf2.h"
+#endif
 
 #include "mbedtls/aes.h"
 #include "mbedtls/gcm.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/ecdsa.h"
-#include "mbedtls/error.h"
-#include "esp_hmac_pbkdf2.h"
 
 #include "esp_rom_sys.h"
 #include "nvs.h"
@@ -87,8 +87,10 @@ static const char *TAG = "secure_storage";
 #error "TEE Secure Storage: Configured eFuse block (CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID) out of range!"
 #endif
 
+#if SOC_HMAC_SUPPORTED
 #if CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID == CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID
 #error "TEE Secure Storage: Configured eFuse block for storage encryption keys (CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID) and PBKDF2 key derivation (CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID) cannot be the same!"
+#endif
 #endif
 
 static int buffer_hexdump(const char *label, const void *buffer, size_t length)
@@ -610,6 +612,7 @@ esp_err_t esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ctx_t 
     return tee_sec_storage_crypt_common(ctx->key_id, ctx->input, ctx->input_len, ctx->aad, ctx->aad_len, (uint8_t *)tag, tag_len, output, false);
 }
 
+#if SOC_HMAC_SUPPORTED
 esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2_ctx_t *ctx,
                                                 const uint8_t *hash, size_t hlen,
                                                 esp_tee_sec_storage_ecdsa_sign_t *out_sign,
@@ -743,3 +746,4 @@ exit:
     mbedtls_mpi_free(&s);
     return err;
 }
+#endif

@@ -101,9 +101,9 @@ SECTIONS
     /* HAL */
     *libhal.a:mmu_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:cache_hal.c*(.literal .text .literal.* .text.*)
-    *libhal.a:wdt_hal_iram.c*(.literal .text .literal.* .text.*)
     *libhal.a:apm_hal.c*(.literal .text .literal.* .text.*)
     *libesp_hal_mspi.a:*(.literal .text .literal.* .text.*)
+    *libesp_hal_wdt.a:*(.literal .text .literal.* .text.*)
     /* IDF components */
     *libbootloader_support.a:*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:*(.literal .text .literal.* .text.*)

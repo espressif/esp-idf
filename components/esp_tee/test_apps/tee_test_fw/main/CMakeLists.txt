@@ -22,20 +22,25 @@ endif()
 set(mbedtls_test_srcs_dir "${idf_path}/components/mbedtls/test_apps/main")
 
 # AES
-list(APPEND srcs "${mbedtls_test_srcs_dir}/test_aes.c"
-                 "${mbedtls_test_srcs_dir}/test_aes_gcm.c"
-                 "${mbedtls_test_srcs_dir}/test_aes_perf.c")
+if(CONFIG_SOC_AES_SUPPORTED)
+    list(APPEND srcs "${mbedtls_test_srcs_dir}/test_aes.c"
+                     "${mbedtls_test_srcs_dir}/test_aes_gcm.c"
+                     "${mbedtls_test_srcs_dir}/test_aes_perf.c")
+endif()
 # SHA
-list(APPEND srcs "${mbedtls_test_srcs_dir}/test_mbedtls_sha.c"
-                 "${mbedtls_test_srcs_dir}/test_sha.c"
-                 "${mbedtls_test_srcs_dir}/test_sha_perf.c")
-
+if(CONFIG_SOC_SHA_SUPPORTED)
+    list(APPEND srcs "${mbedtls_test_srcs_dir}/test_mbedtls_sha.c"
+                     "${mbedtls_test_srcs_dir}/test_sha.c"
+                     "${mbedtls_test_srcs_dir}/test_sha_perf.c")
+endif()
 # Mixed
-list(APPEND srcs "${mbedtls_test_srcs_dir}/test_aes_sha_parallel.c")
-
+if(CONFIG_SOC_AES_SUPPORTED AND CONFIG_SOC_SHA_SUPPORTED)
+    list(APPEND srcs "${mbedtls_test_srcs_dir}/test_aes_sha_parallel.c")
+endif()
 # ECC
-list(APPEND srcs "${mbedtls_test_srcs_dir}/test_ecp.c")
-
+if(CONFIG_SOC_ECC_SUPPORTED)
+    list(APPEND srcs "${mbedtls_test_srcs_dir}/test_ecp.c")
+endif()
 # Utility
 list(APPEND srcs "${mbedtls_test_srcs_dir}/test_apb_dport_access.c"
                  "${mbedtls_test_srcs_dir}/test_mbedtls_utils.c")
