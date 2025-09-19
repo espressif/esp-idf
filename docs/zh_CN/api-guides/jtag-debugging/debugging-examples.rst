@@ -648,7 +648,7 @@
 
 .. note::
 
-    ESP-IDF 在安装 Pyhton 包时会自动安装 freertos-gdb Python 模块，详情请参考 :ref:`get-started-set-up-tools`。
+    ESP-IDF 在安装 Python 包时会自动安装 freertos-gdb Python 模块，详情请参考 :ref:`get-started-set-up-tools`。
 
     如果使用 ``idf.py gdb`` 命令运行 GDB，FreeRTOS 扩展会自动加载。也可以使用 GDB 内部命令 ``python import freertos_gdb`` 使能该模块。
 
