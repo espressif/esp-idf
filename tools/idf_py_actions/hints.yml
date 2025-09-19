@@ -567,3 +567,11 @@
         -
             re_variables: ['xTaskNotifyWait']
             hint_variables: ['xTaskNotifyWait', 'the macro xTaskNotifyWait']
+
+-
+    re: "(no previous prototype for 'vTaskPreDeletionHook'|undefined reference to `vTaskPreDeletionHook')"
+    hint: "CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK is enabled but your project does not provide vTaskPreDeletionHook( void * pxTCB ). Either disable the Kconfig option or implement the hook."
+
+-
+    re: "error: implicit declaration of function 'vPortCleanUpTCB'"
+    hint: "The legacy FreeRTOS hook vPortCleanUpTCB() has been removed from ESP-IDF. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK with vTaskPreDeletionHook( void * pxTCB ) instead."

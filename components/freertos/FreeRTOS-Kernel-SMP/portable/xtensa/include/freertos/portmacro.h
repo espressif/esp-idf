@@ -143,9 +143,6 @@ static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void );
  * The portCLEAN_UP_TCB() macro is called in prvDeleteTCB() right before a
  * deleted task's memory is freed. We map that macro to this internal function
  * so that IDF FreeRTOS ports can inject some task pre-deletion operations.
- *
- * @note We can't use vPortCleanUpTCB() due to API compatibility issues. See
- * CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP. Todo: IDF-8097
  */
 void vPortTCBPreDeleteHook( void *pxTCB );
 

@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -648,16 +648,6 @@ void vPortTCBPreDeleteHook( void *pxTCB )
         extern void vTaskPreDeletionHook( void * pxTCB );
         vTaskPreDeletionHook( pxTCB );
     #endif /* CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK */
-
-    #if ( CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP )
-        /*
-         * If the user is using the legacy task pre-deletion hook, call it.
-         * Todo: Will be removed in IDF-8097
-         */
-        #warning "CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP is deprecated. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK instead."
-        extern void vPortCleanUpTCB( void * pxTCB );
-        vPortCleanUpTCB( pxTCB );
-    #endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
 
     #if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
         /* Call TLS pointers deletion callbacks */
