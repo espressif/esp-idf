@@ -215,6 +215,10 @@ bool esp_flash_encryption_cfg_verify_release_mode(void);
  * It burns:
  *  - "disable encrypt in dl mode"
  *  - set FLASH_CRYPT_CNT efuse to max
+ *
+ * In case of the targets that support the XTS-AES peripheral's pseudo rounds function,
+ * this API would configure the pseudo rounds level efuse bit to level low if the efuse bit
+ * is not set already.
  */
 void esp_flash_encryption_set_release_mode(void);
 
