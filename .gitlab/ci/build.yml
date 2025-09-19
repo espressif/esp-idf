@@ -274,6 +274,12 @@ pytest_buildv2_system:
       test_non_default_target.py
       test_component_manager.py
       test_build.py
+      test_bootloader.py
+      test_git.py
+      test_kconfig.py
+      test_partition.py
+      test_reproducible_build.py
+      test_sdkconfig.py
 
 pytest_build_system_macos:
   extends:
