@@ -40,7 +40,7 @@ typedef enum {
                                                            and will be deprecated in future versions esp-idf */
     HTTP_EVENT_ON_HEADER,       /*!< Occurs when receiving each header sent from the server */
     HTTP_EVENT_ON_DATA,         /*!< Occurs when receiving data from the server, possibly multiple portions of the packet */
-    HTTP_EVENT_ON_FINISH,       /*!< Occurs when finish a HTTP session */
+    HTTP_EVENT_ON_FINISH,       /*!< Occurs when complete data is received */
     HTTP_EVENT_DISCONNECTED,    /*!< The connection has been disconnected */
     HTTP_EVENT_REDIRECT,        /*!< Intercepting HTTP redirects to handle them manually */
 } esp_http_client_event_id_t;
@@ -245,6 +245,10 @@ typedef enum {
 #define ESP_ERR_HTTP_CONNECTING         (ESP_ERR_HTTP_BASE + 6)     /*!< HTTP connection hasn't been established yet */
 #define ESP_ERR_HTTP_EAGAIN             (ESP_ERR_HTTP_BASE + 7)     /*!< Mapping of errno EAGAIN to esp_err_t */
 #define ESP_ERR_HTTP_CONNECTION_CLOSED  (ESP_ERR_HTTP_BASE + 8)     /*!< Read FIN from peer and the connection closed */
+#define ESP_ERR_HTTP_NOT_MODIFIED       (ESP_ERR_HTTP_BASE + 9)     /*!< HTTP 304 Not Modified, no update available */
+#define ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE (ESP_ERR_HTTP_BASE + 10) /*!< HTTP 416 Range Not Satisfiable, requested range in header is incorrect */
+#define ESP_ERR_HTTP_READ_TIMEOUT       (ESP_ERR_HTTP_BASE + 11)    /*!< HTTP data read timeout */
+#define ESP_ERR_HTTP_INCOMPLETE_DATA    (ESP_ERR_HTTP_BASE + 12)    /*!< Incomplete data received, less than Content-Length or last chunk */
 
 /**
  * @brief      Start a HTTP session
@@ -282,6 +286,12 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
  * @return
  *  - ESP_OK on successful
  *  - ESP_FAIL on error
+ *  - ESP_ERR_HTTP_CONNECTING is timed-out before connection is made
+ *  - ESP_ERR_HTTP_WRITE_DATA is timed-out before request fully sent
+ *  - ESP_ERR_HTTP_EAGAIN is timed-out before any data was ready
+ *  - ESP_ERR_HTTP_READ_TIMEOUT if read operation times out
+ *  - ESP_ERR_HTTP_INCOMPLETE_DATA if read operation returns less data than expected
+ *  - ESP_ERR_HTTP_CONNECTION_CLOSED if server closes the connection
  */
 esp_err_t esp_http_client_perform(esp_http_client_handle_t client);
 
