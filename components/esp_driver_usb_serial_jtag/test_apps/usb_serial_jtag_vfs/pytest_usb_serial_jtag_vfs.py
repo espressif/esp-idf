@@ -13,7 +13,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61'], indirect=['target'])
+@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61', 'esp32p4'], indirect=['target'])
 def test_usj_vfs_select(dut: Dut) -> None:
     test_message = 'test123456789!@#%^&*'
 
@@ -33,7 +33,7 @@ def test_usj_vfs_select(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61'], indirect=['target'])
+@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61', 'esp32p4'], indirect=['target'])
 def test_usj_vfs_read_return(dut: Dut) -> None:
     test_message = '!(@*#&(!*@&#((SDasdkjhad\nce'
 
@@ -52,7 +52,7 @@ def test_usj_vfs_read_return(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61'], indirect=['target'])
+@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61', 'esp32p4'], indirect=['target'])
 def test_usj_vfs_read_blocking(dut: Dut) -> None:
     test_message = 'testdata'
 
