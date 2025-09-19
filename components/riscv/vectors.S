@@ -278,7 +278,8 @@ hwlp_not_used:
      * For example, bit 1 can be set and bit 0 won't, even if the reason is an FPU instruction. */
     andi  a1, a0, EXT_ILL_RSN_FPU
     bnez  a1, rtos_save_fpu_coproc
-#if SOC_CPU_HAS_FPU_EXT_ILL_BUG
+    /* The FPU_EXT_ILL bug was fixed on revision 3.0 and higher */
+#if SOC_CPU_HAS_FPU_EXT_ILL_BUG && CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     /* If the SOC present the hardware EXT_ILL CSR bug, it doesn't support FPU load/store detection
      * so we have to check the instruction's opcode (in `mtval` = `t0`) */
     andi  a0, t0, 0b1011111

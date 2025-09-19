@@ -1,14 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "esp_rom_caps.h"
 #include "soc/clic_reg.h"
 #include "riscv/interrupt.h"
 
-#if ESP_ROM_CLIC_INT_TYPE_PATCH
+#if ESP_ROM_CLIC_INT_TYPE_PATCH && CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 
 /* Rom api esprv_intc_int_set_type, if the configured interrupt type is INTR_TYPE_EDGE,
  * the actual configured type is still INTR_TYPE_LEVEL. So the patch is to solve this issue.
