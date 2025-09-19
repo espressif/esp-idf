@@ -22,7 +22,7 @@
 
 #include "sdkconfig.h"
 
-static const char* TAG = "clk";
+ESP_LOG_ATTR_TAG(TAG, "clk");
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive

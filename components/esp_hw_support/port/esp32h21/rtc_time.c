@@ -16,7 +16,7 @@
 #include "assert.h"
 #include "esp_private/periph_ctrl.h"
 
-__attribute__((unused)) static const char *TAG = "rtc_time";
+ESP_LOG_ATTR_TAG(TAG, "rtc_time");
 
 #define RTC_SLOW_CLK_600K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
 #define RTC_SLOW_CLK_32K_CAL_TIMEOUT_THRES(cycles)   (cycles << 12)

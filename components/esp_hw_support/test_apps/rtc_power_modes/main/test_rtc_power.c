@@ -19,7 +19,7 @@
 #include "esp_private/esp_sleep_internal.h"
 #include "sdkconfig.h"
 
-static const char TAG[] = "rtc_power";
+ESP_LOG_ATTR_TAG(TAG, "rtc_power");
 
 static void check_deepsleep_reset(void)
 {

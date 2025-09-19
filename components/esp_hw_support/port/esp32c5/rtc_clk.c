@@ -24,7 +24,7 @@
 #include "soc/chip_revision.h"
 #include "esp_private/regi2c_ctrl.h"
 
-static const char *TAG = "rtc_clk";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 
 // Current PLL frequency, in 480MHz. Zero if PLL is not enabled.
 static int s_cur_pll_freq;

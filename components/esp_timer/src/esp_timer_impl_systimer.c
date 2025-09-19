@@ -34,7 +34,7 @@
  * @note systimer counter0 and alarm2 are adopted to implemented esp_timer
  */
 
-static const char *TAG = "esp_timer_systimer";
+ESP_LOG_ATTR_TAG(TAG, "esp_timer_systimer");
 
 #define NOT_USED 0xBAD00FAD
 

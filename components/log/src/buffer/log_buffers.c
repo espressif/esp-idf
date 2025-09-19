@@ -38,9 +38,11 @@ static void log_buffer_char_line(uintptr_t orig_buff, const void *ptr_line, char
 static void log_buffer_hexdump_line(uintptr_t orig_buff, const void *ptr_line, char *output_str, int buff_len);
 static void print_buffer(const char *tag, const void *buffer, uint16_t buff_len, esp_log_level_t log_level, char *output_str, print_line_t print_line_func);
 
-__attribute__((unused)) const char __ESP_BUFFER_HEX_FORMAT__[] = "__ESP_BUFFER_HEX_FORMAT__ len %d, array %s, address %p";
-__attribute__((unused)) const char __ESP_BUFFER_CHAR_FORMAT__[] = "__ESP_BUFFER_CHAR_FORMAT__ len %d, array %s, address %p";
-__attribute__((unused)) const char __ESP_BUFFER_HEXDUMP_FORMAT__[] = "__ESP_BUFFER_HEXDUMP_FORMAT__ len %d, array %s, address %p";
+#if ESP_LOG_MODE_BINARY_EN
+NOLOAD_ATTR const char __ESP_BUFFER_HEX_FORMAT__[] = "__ESP_BUFFER_HEX_FORMAT__ len %d, array %s, address %p";
+NOLOAD_ATTR const char __ESP_BUFFER_CHAR_FORMAT__[] = "__ESP_BUFFER_CHAR_FORMAT__ len %d, array %s, address %p";
+NOLOAD_ATTR const char __ESP_BUFFER_HEXDUMP_FORMAT__[] = "__ESP_BUFFER_HEXDUMP_FORMAT__ len %d, array %s, address %p";
+#endif
 
 void esp_log_buffer_hex_internal(const char *tag, const void *buffer, uint16_t buff_len, esp_log_level_t log_level)
 {

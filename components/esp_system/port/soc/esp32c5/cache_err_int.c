@@ -20,7 +20,7 @@
 #include "hal/cache_ll.h"
 #include "esp_private/cache_err_int.h"
 
-static const char *TAG = "CACHE_ERR";
+ESP_LOG_ATTR_TAG(TAG, "CACHE_ERR");
 
 const char cache_error_msg[] = "Cache access error";
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "esp_rom_sys.h"
 #endif
 
+HAL_LOG_ATTR_TAG(TAG, "adc_hal");
 
 #if CONFIG_ADC_DISABLE_DAC_OUTPUT
 // To disable DAC, workarounds, see this function body to know more
@@ -105,14 +106,14 @@ static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz, uin
     uint32_t adc_ctrl_clk = clk_src_freq_hz / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1);
     //Convert frequency to time (us). Since decimals are removed by this division operation. Add 1 here in case of the fact that delay is not enough.
     uint32_t sample_delay_us = ((1000 * 1000) / adc_ctrl_clk + 1) * 3;
-    HAL_EARLY_LOGD("adc_hal", "clk_src_freq_hz: %"PRIu32", adc_ctrl_clk: %"PRIu32", sample_delay_us: %"PRIu32"", clk_src_freq_hz, adc_ctrl_clk, sample_delay_us);
+    HAL_EARLY_LOGD(TAG, "clk_src_freq_hz: %"PRIu32", adc_ctrl_clk: %"PRIu32", sample_delay_us: %"PRIu32"", clk_src_freq_hz, adc_ctrl_clk, sample_delay_us);
 
     //This coefficient (8) is got from test, and verified from DT. When digi_clk is not smaller than ``APB_CLK_FREQ/8``, no delay is needed.
     if (adc_ctrl_clk >= APB_CLK_FREQ/8) {
         sample_delay_us = 0;
     }
 
-    HAL_EARLY_LOGD("adc_hal", "delay for `onetime_start` signal captured: %"PRIu32"", sample_delay_us);
+    HAL_EARLY_LOGD(TAG, "delay for `onetime_start` signal captured: %"PRIu32"", sample_delay_us);
     adc_oneshot_ll_start(false);
     esp_rom_delay_us(sample_delay_us);
     adc_oneshot_ll_start(true);
@@ -125,7 +126,7 @@ static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz, uin
      */
     uint32_t sar_clk = adc_ctrl_clk / ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT;
     *read_delay_us = ((1000 * 1000) / sar_clk + 1) * ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL;
-    HAL_EARLY_LOGD("adc_hal", "clk_src_freq_hz: %"PRIu32", sar_clk: %"PRIu32", read_delay_us: %"PRIu32"", clk_src_freq_hz, sar_clk, read_delay_us);
+    HAL_EARLY_LOGD(TAG, "clk_src_freq_hz: %"PRIu32", sar_clk: %"PRIu32", read_delay_us: %"PRIu32"", clk_src_freq_hz, sar_clk, read_delay_us);
 #endif //ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL
 
 #else

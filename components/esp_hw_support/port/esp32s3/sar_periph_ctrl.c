@@ -24,7 +24,7 @@
 #include "hal/sar_ctrl_ll.h"
 #include "hal/adc_ll.h"
 
-static const char *TAG = "sar_periph_ctrl";
+ESP_LOG_ATTR_TAG(TAG, "sar_periph_ctrl");
 extern portMUX_TYPE rtc_spinlock;
 
 

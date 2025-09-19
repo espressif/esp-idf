@@ -45,7 +45,7 @@
 #endif
 #endif
 
-static const char *TAG = "esp_image";
+ESP_LOG_ATTR_TAG(TAG, "esp_image");
 
 #define HASH_LEN ESP_IMAGE_HASH_LEN
 
@@ -412,7 +412,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
         intptr_t sp = (intptr_t)esp_cpu_get_sp();
         if (bootloader_util_regions_overlap(sp - STACK_LOAD_HEADROOM, ROM_STACK_START,
                                            load_addr, load_end)) {
-            reason = "overlaps bootloader stack";
+            reason = ESP_LOG_ATTR_STR("overlaps bootloader stack");
             goto invalid;
         }
 
@@ -421,7 +421,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
            (_dram_start.._dram_end includes bss, data, rodata sections in DRAM)
          */
         if (bootloader_util_regions_overlap((intptr_t)&_dram_start, (intptr_t)&_dram_end, load_addr, load_end)) {
-            reason = "overlaps bootloader data";
+            reason = ESP_LOG_ATTR_STR("overlaps bootloader data");
             goto invalid;
         }
 
@@ -459,7 +459,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
         /* Check for overlap of 'loader' section of IRAM */
         if (bootloader_util_regions_overlap((intptr_t)&_loader_text_start, (intptr_t)&_loader_text_end,
                                             load_addr, load_end)) {
-            reason = "overlaps loader IRAM";
+            reason = ESP_LOG_ATTR_STR("overlaps loader IRAM");
             goto invalid;
         }
 
@@ -514,7 +514,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
 #endif
 
     else { /* Not a DRAM or an IRAM or RTC Fast IRAM, RTC Fast DRAM or RTC Slow address */
-        reason = "bad load address range";
+        reason = ESP_LOG_ATTR_STR("bad load address range");
         goto invalid;
     }
     return true;
@@ -617,7 +617,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
         ESP_LOGI(TAG, "segment %d: paddr=%08"PRIx32" vaddr=%08x size=%05"PRIx32"h (%6"PRIu32") %s",
                  index, data_addr, load_addr,
                  data_len, data_len,
-                 (do_load) ? "load" : (is_mapping) ? "map" : "");
+                 (do_load) ? ESP_LOG_ATTR_STR("load") : (is_mapping) ? ESP_LOG_ATTR_STR("map") : "");
     }
 
 

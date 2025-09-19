@@ -156,7 +156,7 @@ extern int _vector_table;
 extern int _mtvt_table;
 #endif
 
-static const char *TAG = "cpu_start";
+ESP_LOG_ATTR_TAG(TAG, "cpu_start");
 
 #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 extern int _iram_bss_start;

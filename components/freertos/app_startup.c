@@ -57,7 +57,7 @@ CONFIG_FREERTOS_UNICORE and CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE should be identic
 // -------------------- Declarations -----------------------
 
 static void main_task(void* args);
-static const char* APP_START_TAG = "app_start";
+ESP_LOG_ATTR_TAG(APP_START_TAG, "app_start");
 
 // ------------------ CPU0 App Startup ---------------------
 
@@ -144,7 +144,7 @@ void esp_startup_start_app_other_cores(void)
  * - main_task will self delete if app_main returns
  * ------------------------------------------------------------------------------------------------------------------ */
 
-static const char* MAIN_TAG = "main_task";
+ESP_LOG_ATTR_TAG(MAIN_TAG, "main_task");
 
 #if !CONFIG_FREERTOS_UNICORE
 static volatile bool s_other_cpu_startup_done = false;

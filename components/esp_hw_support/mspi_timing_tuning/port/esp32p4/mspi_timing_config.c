@@ -18,7 +18,7 @@
 #include "hal/mspi_ll.h"
 #include "soc/hp_sys_clkrst_struct.h"
 
-const static char *TAG = "MSPI Timing";
+ESP_LOG_ATTR_TAG(TAG, "MSPI Timing");
 
 //-------------------------------------MSPI Clock Setting-------------------------------------//
 void mspi_timing_config_set_psram_clock(uint32_t psram_freq_mhz, mspi_timing_speed_mode_t speed_mode, bool control_both_mspi)

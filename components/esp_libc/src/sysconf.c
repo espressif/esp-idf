@@ -11,7 +11,7 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 
-static const char *TAG = "sysconf";
+ESP_LOG_ATTR_TAG(TAG, "sysconf");
 
 #ifdef CONFIG_FREERTOS_UNICORE
 #define CPU_NUM 1

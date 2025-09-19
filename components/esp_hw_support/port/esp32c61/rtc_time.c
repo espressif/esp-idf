@@ -16,7 +16,7 @@
 #include "assert.h"
 #include "esp_private/periph_ctrl.h"
 
-__attribute__((unused)) static const char *TAG = "rtc_time";
+ESP_LOG_ATTR_TAG(TAG, "rtc_time");
 
 #define CLK_CAL_TIMEOUT_THRES(cal_clk_sel, cycles) ((cal_clk_sel == CLK_CAL_32K_XTAL || cal_clk_sel == CLK_CAL_32K_OSC_SLOW) ? (cycles << 12) : (cycles << 10))
 

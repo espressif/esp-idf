@@ -24,7 +24,7 @@
 #include "esp_private/esp_pmu.h"
 #include "hal/clk_tree_ll.h"
 
-static const char *TAG = "rtc_clk_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {

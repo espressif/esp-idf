@@ -38,7 +38,7 @@ typedef struct esp_clock_output_mapping {
     SLIST_ENTRY(esp_clock_output_mapping) next;
 } esp_clock_output_mapping_t;
 
-static const char *TAG = "esp_clock_output";
+ESP_LOG_ATTR_TAG(TAG, "esp_clock_output");
 
 static SLIST_HEAD(esp_clock_output_mapping_head, esp_clock_output_mapping) s_mapping_list = SLIST_HEAD_INITIALIZER(s_mapping_list_head);
 static portMUX_TYPE __attribute__((unused)) s_mapping_list_lock = portMUX_INITIALIZER_UNLOCKED;

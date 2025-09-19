@@ -56,7 +56,7 @@ static volatile bool s_system_full_inited = false;
 const sys_startup_fn_t g_startup_fn[1] = { start_cpu0 };
 #endif
 
-static const char* TAG = "cpu_start";
+ESP_LOG_ATTR_TAG(TAG, "cpu_start");
 
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 /**

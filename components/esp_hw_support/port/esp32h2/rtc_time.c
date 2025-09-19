@@ -18,7 +18,7 @@
 #include "soc/chip_revision.h"
 #include "esp_private/periph_ctrl.h"
 
-__attribute__((unused)) static const char *TAG = "rtc_time";
+ESP_LOG_ATTR_TAG(TAG, "rtc_time");
 
 /**
  * @brief Clock frequency calculation function used by rtc_clk_cal

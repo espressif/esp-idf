@@ -53,7 +53,7 @@ typedef enum {
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
 static __attribute__((unused)) void recalib_bbpll(void);
 
-static const char *TAG = "clk";
+ESP_LOG_ATTR_TAG(TAG, "clk");
 
 void esp_rtc_init(void)
 {

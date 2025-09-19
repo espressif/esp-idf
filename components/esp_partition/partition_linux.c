@@ -22,7 +22,7 @@
 #include "esp_log.h"
 #include "spi_flash_mmap.h"
 
-static const char *TAG = "linux_spiflash";
+ESP_LOG_ATTR_TAG(TAG, "linux_spiflash");
 
 static void *s_spiflash_mem_file_buf = NULL;
 static int s_spiflash_mem_file_fd = -1;

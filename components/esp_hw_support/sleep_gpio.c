@@ -32,7 +32,7 @@
 #include "esp_private/startup_internal.h"
 #include "bootloader_flash.h"
 
-static const char *TAG = "sleep_gpio";
+ESP_LOG_ATTR_TAG(TAG, "sleep_gpio");
 
 #if CONFIG_IDF_TARGET_ESP32
 /* On ESP32, for IOs with RTC functionality, setting SLP_PU, SLP_PD couldn't change IO status

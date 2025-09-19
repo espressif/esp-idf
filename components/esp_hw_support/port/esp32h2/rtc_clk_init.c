@@ -22,7 +22,7 @@
 #include "soc/pmu_reg.h"
 #include "pmu_param.h"
 
-static const char *TAG = "rtc_clk_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {

@@ -71,7 +71,7 @@ static void timer_insert_inactive(esp_timer_handle_t timer);
 static void timer_remove_inactive(esp_timer_handle_t timer);
 #endif // WITH_PROFILING
 
-__attribute__((unused)) static const char* TAG = "esp_timer";
+ESP_LOG_ATTR_TAG(TAG, "esp_timer");
 
 // lists of currently armed timers for two dispatch methods: ISR and TASK
 static LIST_HEAD(esp_timer_list, esp_timer) s_timers[ESP_TIMER_MAX] = {

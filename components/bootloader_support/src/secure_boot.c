@@ -17,7 +17,7 @@
 #endif
 
 #ifndef BOOTLOADER_BUILD
-static __attribute__((unused)) const char *TAG = "secure_boot";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot");
 
 #ifdef CONFIG_SECURE_BOOT
 static void efuse_batch_write_begin(bool *need_fix)

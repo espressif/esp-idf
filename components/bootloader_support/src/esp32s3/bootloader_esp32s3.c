@@ -44,7 +44,7 @@
 #include "xt_instr_macros.h"
 
 
-static const char *TAG = "boot.esp32s3";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32s3");
 
 static void wdt_reset_cpu0_info_enable(void)
 {
@@ -58,7 +58,7 @@ static void wdt_reset_info_dump(int cpu)
 {
     uint32_t inst = 0, pid = 0, stat = 0, data = 0, pc = 0,
              lsstat = 0, lsaddr = 0, lsdata = 0, dstat = 0;
-    const char *cpu_name = cpu ? "APP" : "PRO";
+    const char *cpu_name = cpu ? ESP_LOG_ATTR_STR("APP") : ESP_LOG_ATTR_STR("PRO");
 
     stat = 0xdeadbeef;
     pid = 0;

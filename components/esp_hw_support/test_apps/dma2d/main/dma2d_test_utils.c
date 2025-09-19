@@ -16,7 +16,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 
-__attribute__((unused)) static const char *TAG = "dma2d_m2m";
+ESP_LOG_ATTR_TAG(TAG, "dma2d_m2m");
 
 #if CONFIG_DMA2D_OPERATION_FUNC_IN_IRAM || CONFIG_DMA2D_ISR_IRAM_SAFE
 #define DMA2D_M2M_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)

@@ -18,7 +18,7 @@
 #include "esp_private/startup_internal.h"
 #include "esp_rtc_time.h"
 
-__attribute__((unused)) static const char* TAG = "system_time";
+ESP_LOG_ATTR_TAG(TAG, "system_time");
 
 // Correction for underlying timer to keep definition
 // of system time consistent.

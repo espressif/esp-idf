@@ -21,7 +21,7 @@
 #include "esp_bootloader_desc.h"
 #include "esp_rom_sys.h"
 
-static const char *TAG = "boot";
+ESP_LOG_ATTR_TAG(TAG, "boot");
 
 #if !CONFIG_APP_BUILD_TYPE_RAM
 esp_image_header_t WORD_ALIGNED_ATTR bootloader_image_hdr;

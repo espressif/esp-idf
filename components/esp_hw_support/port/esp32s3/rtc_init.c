@@ -31,7 +31,7 @@
 
 #define RTC_CNTL_MEM_FORCE_NOISO (RTC_CNTL_SLOWMEM_FORCE_NOISO | RTC_CNTL_FASTMEM_FORCE_NOISO)
 
-static const char *TAG = "rtcinit";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtcinit");
 
 static void set_ocode_by_efuse(int calib_version);
 static void calibrate_ocode(void);

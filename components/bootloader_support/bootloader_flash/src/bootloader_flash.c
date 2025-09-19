@@ -48,7 +48,7 @@
 #if !NON_OS_BUILD
 /* Normal app version maps to spi_flash_mmap.h operations...
  */
-static const char *TAG = "bootloader_mmap";
+ESP_LOG_ATTR_TAG(TAG, "bootloader_mmap");
 
 static spi_flash_mmap_handle_t map;
 
@@ -141,7 +141,7 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 extern bool esp_tee_flash_check_paddr_in_active_tee_part(size_t paddr);
 #endif
 
-static const char *TAG = "bootloader_flash";
+ESP_LOG_ATTR_TAG(TAG, "bootloader_flash");
 
 /*
  * NOTE: Memory mapping strategy

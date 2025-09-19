@@ -39,7 +39,7 @@
 #endif
 
 
-static const char *TAG = "adc_share_hw_ctrl";
+ESP_LOG_ATTR_TAG(TAG, "adc_share_hw_ctrl");
 extern portMUX_TYPE rtc_spinlock;
 
 

@@ -23,7 +23,7 @@
         ((uint32_t)src == (uint32_t)SOC_MOD_CLK_PLL_F160M)   ? 2 :  \
         ((uint32_t)src == (uint32_t)SOC_MOD_CLK_PLL_F240M)   ? 3 : 0)
 
-static __attribute__((unused)) const char *TAG = "pmu_param";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_param");
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))

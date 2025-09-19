@@ -45,7 +45,7 @@
 #include "hal/regi2c_ctrl_ll.h"
 #include "hal/brownout_ll.h"
 
-static const char *TAG = "boot.esp32h2";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32h2");
 
 static void wdt_reset_cpu0_info_enable(void)
 {

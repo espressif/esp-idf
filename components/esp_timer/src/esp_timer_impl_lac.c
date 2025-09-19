@@ -69,7 +69,7 @@ typedef struct {
     };
 } timer_64b_reg_t;
 
-static const char* TAG = "esp_timer_impl";
+ESP_LOG_ATTR_TAG(TAG, "esp_timer_impl");
 
 #define NOT_USED 0xBAD00FAD
 

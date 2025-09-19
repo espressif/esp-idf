@@ -6,6 +6,8 @@
 
 #include "gdma_priv.h"
 
+ESP_LOG_ATTR_TAG(TAG, "gdma");
+
 esp_err_t gdma_config_crc_calculator(gdma_channel_handle_t dma_chan, const gdma_crc_calculator_config_t *config)
 {
     ESP_RETURN_ON_FALSE(dma_chan && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");

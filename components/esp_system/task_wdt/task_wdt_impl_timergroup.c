@@ -53,7 +53,7 @@ typedef struct {
 static twdt_ctx_hard_t init_context;
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
-static const char* TAG = "task_wdt";
+ESP_LOG_ATTR_TAG(TAG, "task_wdt");
 static esp_err_t sleep_task_wdt_retention_init(void *arg)
 {
     uint32_t group_id = *(uint32_t *)arg;

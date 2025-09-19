@@ -21,7 +21,7 @@
 #include "hal/cache_ll.h"
 #include "esp_cache.h"
 
-static const char *TAG = "dma_utils";
+ESP_LOG_ATTR_TAG(TAG, "dma_utils");
 
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
