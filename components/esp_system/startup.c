@@ -405,7 +405,7 @@ static void do_core_init(void)
 #endif
     if (!esp_efuse_read_field_bit(ESP_EFUSE_ECC_FORCE_CONST_TIME) && force_constant_time) {
         ESP_EARLY_LOGD(TAG, "Forcefully enabling ECC constant time operations");
-        esp_err_t err = esp_efuse_write_field_bit(ESP_EFUSE_ECC_FORCE_CONST_TIME);
+        err = esp_efuse_write_field_bit(ESP_EFUSE_ECC_FORCE_CONST_TIME);
         assert(err == ESP_OK && "Failed to enable ECC constant time operations");
     }
 #endif
