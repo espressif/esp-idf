@@ -163,7 +163,9 @@ void esp_clk_slowclk_cal_set(uint32_t new_cal)
 #if SOC_RTC_MEM_SUPPORTED
     esp_rtc_get_time_us();
 #else
+#if !NON_OS_BUILD
     esp_os_enter_critical_safe(&s_esp_rtc_time_lock);
+#endif
     uint32_t old_cal = clk_ll_rtc_slow_load_cal();
     if (old_cal != 0) {
         /**
@@ -186,7 +188,9 @@ void esp_clk_slowclk_cal_set(uint32_t new_cal)
         new_fix_us = old_fix_us - new_fix_us;
         clk_ll_rtc_slow_store_rtc_fix_us(new_fix_us);
     }
+#if !NON_OS_BUILD
     esp_os_exit_critical_safe(&s_esp_rtc_time_lock);
+#endif
 #endif // SOC_RTC_MEM_SUPPORTED
 #endif // CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
     clk_ll_rtc_slow_store_cal(new_cal);
