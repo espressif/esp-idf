@@ -85,6 +85,7 @@ TEST_CASE("Test temperature sensor work with ADC oneshot", "[adc]")
     TEST_ESP_OK(temperature_sensor_uninstall(temp_sensor));
 }
 
+#if SOC_ADC_DMA_SUPPORTED
 #if (SOC_ADC_DIGI_RESULT_BYTES == 2)
 #define ADC_DRIVER_TEST_OUTPUT_TYPE             ADC_DIGI_OUTPUT_FORMAT_TYPE1
 #define ADC_DRIVER_TEST_GET_CHANNEL(p_data)     ((p_data)->type1.channel)
@@ -160,4 +161,5 @@ TEST_CASE("Test temperature sensor work with ADC continuous", "[adc]")
     free(result);
 }
 
-#endif
+#endif // SOC_ADC_DMA_SUPPORTED
+#endif // SOC_TEMP_SENSOR_SUPPORTED && SOC_ADC_SUPPORTED
