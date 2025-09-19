@@ -43,7 +43,6 @@ class QemuTarget:
     qemu_args: str          # chip-specific arguments to pass to QEMU
     default_efuse: bytes    # default efuse values for the target
     boot_mode_arg: str = ''  # additional arguments to pass to QEMU when booting in download mode
-    efuse_device: str = ''  # efuse device name, if different from the target nvram.{target}.efuse
 
 
 # To generate the default eFuse values, follow the instructions in
@@ -62,8 +61,7 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
             '00000000'),
         '-global driver=esp32.gpio,property=strap_mode,value=0x0f',
-        'nvram.esp32.efuse'),
-
+    ),
     'esp32c3': QemuTarget(
         'esp32c3',
         'qemu-system-riscv32',
@@ -98,13 +96,12 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
             '000000000000000000000000000000000000000000000000'),
         '-global driver=esp32c3.gpio,property=strap_mode,value=0x02',
-        'nvram.esp32c3.efuse'),
-
+    ),
     'esp32s3': QemuTarget(
         'esp32s3',
         'qemu-system-xtensa',
         'qemu-xtensa',
-        '-M esp32s3',
+        '-M esp32s3 -m 32M',
         # Chip revision 0.3
         binascii.unhexlify(
             '00000000000000000000000000000000000000000000000000000000000000000000000000000c00'
@@ -134,7 +131,7 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
             '000000000000000000000000000000000000000000000000'),
         '-global driver=esp32s3.gpio,property=strap_mode,value=0x07',
-        'nvram.esp32c3.efuse'),   # Not esp32s3, QEMU-201
+    ),
 }
 
 
@@ -268,10 +265,17 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             ]
 
         qemu_args += [
-            '-drive', f'file={efuse_bin_path},if=none,format=raw,id=efuse',
-            '-global', f'driver={qemu_target_info.efuse_device},property=drive,value=efuse',
-            '-global', f'driver=timer.{target}.timg,property=wdt_disable,value=true',
+            '-drive',
+            f'file={efuse_bin_path},if=none,format=raw,id=efuse',
+            '-global',
+            f'driver=nvram.{target}.efuse,property=drive,value=efuse',
+            '-global',
+            f'driver=timer.{target}.timg,property=wdt_disable,value=true',
         ]
+
+        # Quad PSRAM should work by default; octal requires a flag
+        if get_sdkconfig_value(project_desc['config_file'], 'CONFIG_SPIRAM_MODE_OCT'):
+            qemu_args += ['-global', 'driver=ssi_psram,property=is_octal,value=true']
 
         if '-nic' not in qemu_extra_args:
             qemu_args += ['-nic', 'user,model=open_eth']
