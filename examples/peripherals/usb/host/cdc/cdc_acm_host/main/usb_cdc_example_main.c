@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -109,7 +109,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Installing USB Host");
     const usb_host_config_t host_config = {
         .skip_phy_setup = false,
-        .intr_flags = ESP_INTR_FLAG_LEVEL1,
+        .intr_flags = ESP_INTR_FLAG_LOWMED,
     };
     ESP_ERROR_CHECK(usb_host_install(&host_config));
 
