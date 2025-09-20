@@ -278,6 +278,10 @@ secure_services:
         type: custom
         function: esp_tee_sec_storage_aead_decrypt
         args: 4
+      - id: 181
+        type: custom
+        function: esp_tee_sec_storage_ecdsa_sign_pbkdf2
+        args: 5
   # ID: 195-199 (5) - OTA
   - family: ota
     entries:
