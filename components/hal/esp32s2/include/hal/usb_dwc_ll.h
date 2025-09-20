@@ -274,11 +274,9 @@ static inline void usb_dwc_ll_grstctl_reset_frame_counter(usb_dwc_dev_t *hw)
 static inline void usb_dwc_ll_grstctl_core_soft_reset(usb_dwc_dev_t *hw)
 {
     hw->grstctl_reg.csftrst = 1;
-}
-
-static inline bool usb_dwc_ll_grstctl_is_core_soft_reset_in_progress(usb_dwc_dev_t *hw)
-{
-    return hw->grstctl_reg.csftrst;
+    while (hw->grstctl_reg.csftrst) {
+        ;
+    }
 }
 
 // --------------------------- GINTSTS Register --------------------------------
