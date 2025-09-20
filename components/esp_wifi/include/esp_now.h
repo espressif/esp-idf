@@ -103,6 +103,31 @@ typedef wifi_tx_info_t esp_now_send_info_t;
 typedef wifi_tx_rate_config_t esp_now_rate_config_t;
 
 /**
+ * @brief ESPNOW switch channel information
+ */
+typedef struct {
+    wifi_action_tx_t type;          /**< ACTION TX operation type */
+    uint8_t channel;                /**< Channel on which to perform ESPNOW TX Operation */
+    wifi_second_chan_t sec_channel; /**< Secondary channel */
+    uint32_t wait_time_ms;          /**< Duration to wait for on target channel */
+    uint8_t op_id;                  /**< Unique Identifier for operation provided by wifi driver */
+    uint8_t dest_mac[6];            /**< Destination MAC address */
+    uint16_t data_len;              /**< Length of the appended Data */
+    uint8_t data[0];                /**< Appended Data payload */
+} esp_now_switch_channel_t;
+
+/**
+ * @brief ESPNOW remain on channel information
+ */
+typedef struct {
+    wifi_roc_t type;                 /**< ROC operation type */
+    uint8_t channel;                 /**< Channel on which to perform ESPNOW ROC Operation */
+    wifi_second_chan_t sec_channel;  /**< Secondary channel */
+    uint32_t wait_time_ms;           /**< Duration to wait for on target channel */
+    uint8_t op_id;                   /**< ID of this specific ROC operation provided by wifi driver */
+} esp_now_remain_on_channel_t;
+
+/**
   * @brief     Callback function of receiving ESPNOW data
   * @param     esp_now_info received ESPNOW packet information
   * @param     data received data
@@ -393,6 +418,32 @@ esp_err_t esp_now_set_user_oui(uint8_t *oui);
   *          - ESP_ERR_ESPNOW_ARG : invalid argument
   */
 esp_err_t esp_now_get_user_oui(uint8_t *oui);
+
+/**
+  * @brief     ESPNOW switch to a specific channel for a required duration, and send one ESPNOW data.
+  *
+  * @param     config  ESPNOW switch channel relevant information
+  *
+  * @return
+  *          - ESP_OK : succeed
+  *          - ESP_ERR_NO_MEM: failed to allocate memory
+  *          - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid
+  *          - ESP_FAIL: failed to send frame
+  */
+esp_err_t esp_now_switch_channel_tx(esp_now_switch_channel_t *config);
+
+/**
+  * @brief     ESPNOW remain on the target channel for required duration.
+  *
+  * @param     config  ESPNOW remain on channel relevant information
+  *
+  * @return
+  *          - ESP_OK : succeed
+  *          - ESP_ERR_NO_MEM: failed to allocate memory
+  *          - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid
+  *          - ESP_FAIL: failed to perform roc operation
+  */
+esp_err_t esp_now_remain_on_channel(esp_now_remain_on_channel_t *config);
 
 /**
   * @}

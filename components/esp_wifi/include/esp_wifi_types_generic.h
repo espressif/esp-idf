@@ -794,6 +794,7 @@ typedef struct {
     uint8_t dest_mac[6];        /**< Destination MAC address */
     wifi_action_tx_t type;      /**< ACTION TX operation type */
     uint8_t channel;            /**< Channel on which to perform ACTION TX Operation */
+    wifi_second_chan_t sec_channel;    /**< Secondary channel */
     uint32_t wait_time_ms;      /**< Duration to wait for on target channel */
     bool no_ack;                /**< Indicates no ack required */
     wifi_action_rx_cb_t rx_cb;  /**< Rx Callback to receive action frames */
