@@ -25,6 +25,7 @@
 #include "esp_wifi.h"
 
 /* Modifying datatype for platform and compiler independence */
+
 typedef uint64_t os_time_t;
 
 /**

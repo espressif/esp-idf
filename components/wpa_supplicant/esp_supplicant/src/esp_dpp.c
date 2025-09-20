@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,7 +28,7 @@ static void *s_dpp_api_lock = NULL;
 static bool s_dpp_listen_in_progress;
 static struct esp_dpp_context_t s_dpp_ctx;
 static wifi_action_rx_cb_t s_action_rx_cb = esp_supp_rx_action;
-
+static uint8_t s_current_tx_op_id;
 #define DPP_API_LOCK() os_mutex_lock(s_dpp_api_lock)
 #define DPP_API_UNLOCK() os_mutex_unlock(s_dpp_api_lock)
 
@@ -101,7 +101,7 @@ static void esp_dpp_auth_conf_wait_timeout(void *eloop_ctx, void *timeout_ctx)
 esp_err_t esp_dpp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
                                     uint8_t channel, uint32_t wait_time_ms)
 {
-    wifi_action_tx_req_t *req = os_zalloc(sizeof(*req) + len);;
+    wifi_action_tx_req_t *req = os_zalloc(sizeof(*req) + len);
     if (!req) {
         return ESP_FAIL;
     }
@@ -111,19 +111,23 @@ esp_err_t esp_dpp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint3
     req->no_ack = false;
     req->data_len = len;
     req->rx_cb = s_action_rx_cb;
+    req->channel = channel;
+    req->wait_time_ms = wait_time_ms;
+    req->type = WIFI_OFFCHAN_TX_REQ;
     memcpy(req->data, buf, req->data_len);
 
     wpa_printf(MSG_DEBUG, "DPP: Mgmt Tx - MAC:" MACSTR ", Channel-%d, WaitT-%d",
                MAC2STR(dest_mac), channel, wait_time_ms);
 
-    if (ESP_OK != esp_wifi_action_tx_req(WIFI_OFFCHAN_TX_REQ, channel,
-                                         wait_time_ms, req)) {
+    if (ESP_OK != esp_wifi_action_tx_req(req)) {
         wpa_printf(MSG_ERROR, "DPP: Failed to perform offchannel operation");
         esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_TX_FAILURE);
         os_free(req);
         return ESP_FAIL;
     }
 
+    wpa_printf(MSG_DEBUG, "Sent DPP action frame %d", req->op_id);
+    s_current_tx_op_id = req->op_id;
     os_free(req);
     return ESP_OK;
 }
@@ -560,21 +564,27 @@ static void esp_dpp_task(void *pvParameters)
             case SIG_DPP_LISTEN_NEXT_CHANNEL: {
                 struct dpp_bootstrap_params_t *p = &s_dpp_ctx.bootstrap_params;
                 static int counter;
-                int channel;
                 esp_err_t ret = 0;
 
                 if (p->num_chan <= 0) {
                     wpa_printf(MSG_ERROR, "Listen channel not set");
                     break;
                 }
-                channel = p->chan_list[counter++ % p->num_chan];
-                wpa_printf(MSG_DEBUG, "Listening on channel=%d", channel);
-                ret = esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, channel,
-                                                 BOOTSTRAP_ROC_WAIT_TIME, s_action_rx_cb);
+
+                wifi_roc_req_t req = {0};
+                req.ifx = WIFI_IF_STA;
+                req.type = WIFI_ROC_REQ;
+                req.channel = p->chan_list[counter++ % p->num_chan];
+                req.wait_time_ms = BOOTSTRAP_ROC_WAIT_TIME;
+                req.rx_cb = s_action_rx_cb;
+                req.done_cb = NULL;
+                wpa_printf(MSG_DEBUG, "Listening on channel=%d", req.channel);
+                ret = esp_wifi_remain_on_channel(&req);
                 if (ret != ESP_OK) {
                     wpa_printf(MSG_ERROR, "Failed ROC. error : 0x%x", ret);
                     break;
                 }
+                wpa_printf(MSG_DEBUG, "Started DPP listen operation %d", req.op_id);
                 s_dpp_listen_in_progress = true;
             }
             break;
@@ -656,21 +666,22 @@ static void offchan_event_handler(void *arg, esp_event_base_t event_base,
     if (event_id == WIFI_EVENT_ACTION_TX_STATUS) {
         wifi_event_action_tx_status_t *evt =
             (wifi_event_action_tx_status_t *)event_data;
-        wpa_printf(MSG_DEBUG, "Mgmt Tx Status - %d, Cookie - 0x%x",
-                   evt->status, (uint32_t)evt->context);
+        if (evt->op_id == s_current_tx_op_id) {
+            wpa_printf(MSG_DEBUG,
+                       "Mgmt Tx Status - %d, Context - 0x%x Operation ID : %d", evt->status, (uint32_t)evt->context, evt->op_id);
 
-        if (evt->status) {
-            eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
-            if (s_dpp_listen_in_progress) {
-                esp_supp_dpp_stop_listen();
+            if (evt->status == WIFI_ACTION_TX_FAILED) {
+                eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
+                if (s_dpp_listen_in_progress) {
+                    esp_supp_dpp_stop_listen();
+                }
+                esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_TX_FAILURE);
             }
-            esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_TX_FAILURE);
         }
-
     } else if (event_id == WIFI_EVENT_ROC_DONE) {
         wifi_event_roc_done_t *evt = (wifi_event_roc_done_t *)event_data;
-
-        if (s_dpp_listen_in_progress && evt->context == (uint32_t)s_action_rx_cb) {
+        /*@TODO : Decide flow for when ROC fails*/
+        if (s_dpp_listen_in_progress && evt->context == (uint32_t)s_action_rx_cb && evt->status == WIFI_ROC_DONE) {
             esp_dpp_post_evt(SIG_DPP_LISTEN_NEXT_CHANNEL, 0);
         }
     }
@@ -856,7 +867,14 @@ esp_err_t esp_supp_dpp_start_listen(void)
 esp_err_t esp_supp_dpp_stop_listen(void)
 {
     s_dpp_listen_in_progress = false;
-    return esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_CANCEL, 0, 0, NULL);
+    wifi_roc_req_t req = {0};
+    req.ifx = WIFI_IF_STA;
+    req.type = WIFI_ROC_CANCEL;
+    esp_err_t ret = esp_wifi_remain_on_channel(&req);
+    if (ret != ESP_OK) {
+        wpa_printf(MSG_ERROR, "DPP: ROC cancel failed");
+    }
+    return ret;
 }
 
 bool is_dpp_enabled(void)
