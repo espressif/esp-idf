@@ -428,6 +428,10 @@ static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partit
         if (partition->type == PART_TYPE_APP && should_encrypt) {
             // Encrypt only the app image instead of encrypting the whole partition
             size = image_data.image_len;
+#if CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+            // If secure update without secure boot, also encrypt the signature block
+            size += esp_secure_boot_sig_block_size();
+#endif
         }
 #endif
     } else if (partition->type == PART_TYPE_PARTITION_TABLE) {

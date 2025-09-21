@@ -1051,7 +1051,7 @@ menu "Security features"
     endmenu  # Potentially Insecure
 
     config SECURE_FLASH_ENCRYPT_ONLY_IMAGE_LEN_IN_APP_PART
-        bool "Encrypt only the app image that is present in the partition of type app"
+        bool "Encrypt contents upto app image length in app partition"
         depends on SECURE_FLASH_ENC_ENABLED && !SECURE_FLASH_REQUIRE_ALREADY_ENABLED
         default y
         help
