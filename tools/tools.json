@@ -182,51 +182,51 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "45d60317d7a35414ce7fe4c900e636d90c4b0e16d85f2a5c03b523b4efadf3bb",
-            "size": 125612316,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/xtensa-esp-elf-15.1.0_20250607-x86_64-linux-gnu.tar.xz"
+            "sha256": "e3d77ad14544814527bbe7a2d0f79ec4592a4e23392c51c7388c0e686b6a6977",
+            "size": 121777696,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/xtensa-esp-elf-15.2.0_20250920-x86_64-linux-gnu.tar.xz"
           },
           "linux-arm64": {
-            "sha256": "22a2c9c4a4e6954ba024330266e10ab3eb980614b94859be5ae88c95d781a8bc",
-            "size": 119180760,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/xtensa-esp-elf-15.1.0_20250607-aarch64-linux-gnu.tar.xz"
+            "sha256": "66ae567726b9d7ab234b16dfebbe5a7ba8891463bfb3e28cc4a45c509c9b0b7b",
+            "size": 118382764,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/xtensa-esp-elf-15.2.0_20250920-aarch64-linux-gnu.tar.xz"
           },
           "linux-armel": {
-            "sha256": "31f7b786416893ee4a095ed23cb82183f4e0172c19736a104d9ef0223ee3047c",
-            "size": 121484960,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/xtensa-esp-elf-15.1.0_20250607-arm-linux-gnueabi.tar.xz"
+            "sha256": "82602993fe169dc3a14719d16fa29935daf6997b91a50decbe2d53e8b6b6ef69",
+            "size": 114566612,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/xtensa-esp-elf-15.2.0_20250920-arm-linux-gnueabi.tar.xz"
           },
           "linux-armhf": {
-            "sha256": "8bda79cb1287c0d7e12fee8a0d32b85ba9c6801ccb7128d95d324152bd0ce49f",
-            "size": 116521168,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/xtensa-esp-elf-15.1.0_20250607-arm-linux-gnueabihf.tar.xz"
+            "sha256": "891a4a994b3f692539902af975a0281dce5ad56cc8033618ffe7936f2c2dd050",
+            "size": 121707780,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/xtensa-esp-elf-15.2.0_20250920-arm-linux-gnueabihf.tar.xz"
           },
           "linux-i686": {
-            "sha256": "787e9779d507af185f7bb104286b1a6373e5b7d483bc67a7e22db225b4a54522",
-            "size": 127704840,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/xtensa-esp-elf-15.1.0_20250607-i586-linux-gnu.tar.xz"
+            "sha256": "cfcbbb858057f09315cca2444cd3669efded540b10257b775da01406bfe72705",
+            "size": 127186208,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/xtensa-esp-elf-15.2.0_20250920-i586-linux-gnu.tar.xz"
           },
           "macos": {
-            "sha256": "07200c2e6d4db648762f25c91806a3a38c994231f5b7f2752386825d09aa0c3c",
-            "size": 126819660,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/xtensa-esp-elf-15.1.0_20250607-x86_64-apple-darwin.tar.xz"
+            "sha256": "ca20292e6d5b1f88e958aec99ea04401b86aa73316677c619edaa7342dd7c552",
+            "size": 118838208,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/xtensa-esp-elf-15.2.0_20250920-x86_64-apple-darwin.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "0cd6922eb3414a2011099db5095547dfea9c829ed83a0950a73a585afa844fde",
-            "size": 112300796,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/xtensa-esp-elf-15.1.0_20250607-aarch64-apple-darwin.tar.xz"
+            "sha256": "6f48b791c5b849339a521a000ccbc6cd83e702ad36c7dd6983d057d0c868be33",
+            "size": 112995724,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/xtensa-esp-elf-15.2.0_20250920-aarch64-apple-darwin.tar.xz"
           },
-          "name": "esp-15.1.0_20250607",
+          "name": "esp-15.2.0_20250920",
           "status": "recommended",
           "win32": {
-            "sha256": "07b33dea9729f7b244f46b28206dd685de5a6fd4773067dd601e27bde37c7e72",
-            "size": 315612119,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/xtensa-esp-elf-15.1.0_20250607-i686-w64-mingw32.zip"
+            "sha256": "06cc34f3287a2b12641d683ca6b8d6c90ab3dfed1f7e447a32f2a1458757c102",
+            "size": 315688005,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/xtensa-esp-elf-15.2.0_20250920-i686-w64-mingw32.zip"
           },
           "win64": {
-            "sha256": "2c307163a2bb366acc9c5c637035dc1f6bbd03f8c4407cff40cd9a4e016b14d0",
-            "size": 317468441,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/xtensa-esp-elf-15.1.0_20250607-x86_64-w64-mingw32.zip"
+            "sha256": "48c05de9882a2f14233667d718eb8567a3ba9e83d05b5e76ab46b80ac95f8bfc",
+            "size": 317567246,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/xtensa-esp-elf-15.2.0_20250920-x86_64-w64-mingw32.zip"
           }
         }
       ]
@@ -397,51 +397,51 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "9bfe9b4fe08bd07614d085482301f5206a15a075ce4e9cf1c9c3d9d3e0d6b110",
-            "size": 267310332,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/riscv32-esp-elf-15.1.0_20250607-x86_64-linux-gnu.tar.xz"
+            "sha256": "c5a84940f2fe5016768faa4d644507259e61e35883e8bacdb803b3f1dae99cff",
+            "size": 270688364,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/riscv32-esp-elf-15.2.0_20250920-x86_64-linux-gnu.tar.xz"
           },
           "linux-arm64": {
-            "sha256": "5089bee512dc575ebb726661edb1ee99923630bfacc43d94ea080c488e6b009f",
-            "size": 264000536,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/riscv32-esp-elf-15.1.0_20250607-aarch64-linux-gnu.tar.xz"
+            "sha256": "e4a9664812b05f1ed149581004b4e4a5ec46a09654585761756bcfc0916d346e",
+            "size": 254823840,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/riscv32-esp-elf-15.2.0_20250920-aarch64-linux-gnu.tar.xz"
           },
           "linux-armel": {
-            "sha256": "83d4f1125e5f9b79e34afb411b582808a985f82a3ac64981583039d9dd080cad",
-            "size": 256938340,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/riscv32-esp-elf-15.1.0_20250607-arm-linux-gnueabi.tar.xz"
+            "sha256": "436fa18c5c8c77928dbd5f5e3af2fab913a69d98e433e75d8fb9ca879ef7e6e5",
+            "size": 260220068,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/riscv32-esp-elf-15.2.0_20250920-arm-linux-gnueabi.tar.xz"
           },
           "linux-armhf": {
-            "sha256": "467326b387dbd3defee6c573afd423063d5e7e77a94586beab4c541d2c260ba7",
-            "size": 262701388,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/riscv32-esp-elf-15.1.0_20250607-arm-linux-gnueabihf.tar.xz"
+            "sha256": "e130156adf5a6b4c7777d31a7c44cf95396007f0977ddbf0fe5746ee432dbe20",
+            "size": 263393492,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/riscv32-esp-elf-15.2.0_20250920-arm-linux-gnueabihf.tar.xz"
           },
           "linux-i686": {
-            "sha256": "c4151af6cfc62c9a1b6c5d97a4f73e472d0bffc21c50b4f429e1cd05a8dd60e9",
-            "size": 276360208,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/riscv32-esp-elf-15.1.0_20250607-i586-linux-gnu.tar.xz"
+            "sha256": "d6924db7d1f8e1bffe2db5b320208784629767d8040182779a687d5efa4f4b73",
+            "size": 277389028,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/riscv32-esp-elf-15.2.0_20250920-i586-linux-gnu.tar.xz"
           },
           "macos": {
-            "sha256": "4ee3deecb24e4fcf2215e764392516b362d93e460ea5bdcc5f859f1b507bffad",
-            "size": 282706680,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/riscv32-esp-elf-15.1.0_20250607-x86_64-apple-darwin.tar.xz"
+            "sha256": "1a469061b84900c0a78fc476d7dca69de402087993d5e58d9531b801d875d519",
+            "size": 274625596,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/riscv32-esp-elf-15.2.0_20250920-x86_64-apple-darwin.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "8a771237cf8784bd4a86bd2f5050d54480a60ae36be2ffc1bab8b944ab08ea50",
-            "size": 262326564,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/riscv32-esp-elf-15.1.0_20250607-aarch64-apple-darwin.tar.xz"
+            "sha256": "42f2f6f451f9f4d85f3acc58d1c925f1a19a60aaf42a41f2730293f8e015484b",
+            "size": 266804932,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/riscv32-esp-elf-15.2.0_20250920-aarch64-apple-darwin.tar.xz"
           },
-          "name": "esp-15.1.0_20250607",
+          "name": "esp-15.2.0_20250920",
           "status": "recommended",
           "win32": {
-            "sha256": "019c1ff3f4dbd4427917034e136df2019f1a0bceaae0c68e098ce6ad668e1d05",
-            "size": 689243750,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/riscv32-esp-elf-15.1.0_20250607-i686-w64-mingw32.zip"
+            "sha256": "771ca95a9eca8fe2a2aea2facf82077af9f26b6cdeb4a8bb031e169728077ee7",
+            "size": 694302939,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/riscv32-esp-elf-15.2.0_20250920-i686-w64-mingw32.zip"
           },
           "win64": {
-            "sha256": "cc6df1e6f828487321fabd3c612097115e14937cb30eaab245f5fe931b481864",
-            "size": 696505388,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.1.0_20250607/riscv32-esp-elf-15.1.0_20250607-x86_64-w64-mingw32.zip"
+            "sha256": "8ecd7a4503274f38cc6055793005d7d418aef9a6d99b237b3cd37612370d0876",
+            "size": 701518209,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-15.2.0_20250920/riscv32-esp-elf-15.2.0_20250920-x86_64-w64-mingw32.zip"
           }
         }
       ]
