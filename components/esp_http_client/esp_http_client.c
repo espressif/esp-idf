@@ -1376,7 +1376,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
 
 esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
 {
-    esp_err_t err;
+    esp_err_t err = ESP_FAIL;
     do {
         if (client->process_again) {
             esp_http_client_prepare(client);
@@ -1451,25 +1451,55 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                     return err;
                 }
                 while (client->response->is_chunked && !client->is_chunk_complete) {
-                    if (esp_http_client_get_data(client) <= 0) {
+                    int ret = esp_http_client_get_data(client);
+                    if (ret <= 0) {
                         if (client->is_async && errno == EAGAIN) {
                             return ESP_ERR_HTTP_EAGAIN;
+                        }
+                        if (client->connection_info.method != HTTP_METHOD_HEAD && !client->is_chunk_complete) {
+                            ESP_LOGE(TAG, "Incomplete chunked data received %d", ret);
+
+                            if (ret == ESP_ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT) {
+                                err = ESP_ERR_HTTP_READ_TIMEOUT;
+                            } else if (ret == ESP_ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN) {
+                                err = ESP_ERR_HTTP_CONNECTION_CLOSED;
+                            } else {
+                                err = ESP_ERR_HTTP_INCOMPLETE_DATA;
+                            }
                         }
                         ESP_LOGD(TAG, "Read finish or server requests close");
                         break;
                     }
                 }
                 while (client->response->data_process < client->response->content_length) {
-                    if (esp_http_client_get_data(client) <= 0) {
+                    int ret = esp_http_client_get_data(client);
+                    if (ret <= 0) {
                         if (client->is_async && errno == EAGAIN) {
                             return ESP_ERR_HTTP_EAGAIN;
+                        }
+                        if (client->connection_info.method != HTTP_METHOD_HEAD && client->response->data_process < client->response->content_length) {
+                            ESP_LOGE(TAG, "Incomlete data received, ret=%d, %"PRId64"/%"PRId64" bytes", ret, client->response->data_process, client->response->content_length);
+
+                            if (ret == ESP_ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT) {
+                                err = ESP_ERR_HTTP_READ_TIMEOUT;
+                            } else if (ret == ESP_ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN) {
+                                err = ESP_ERR_HTTP_CONNECTION_CLOSED;
+                            } else {
+                                err = ESP_ERR_HTTP_INCOMPLETE_DATA;
+                            }
                         }
                         ESP_LOGD(TAG, "Read finish or server requests close");
                         break;
                     }
                 }
-                http_dispatch_event(client, HTTP_EVENT_ON_FINISH, NULL, 0);
-                http_dispatch_event_to_event_loop(HTTP_EVENT_ON_FINISH, &client, sizeof(esp_http_client_handle_t));
+
+                if (err != ESP_OK) {
+                    http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
+                    http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
+                } else {
+                    http_dispatch_event(client, HTTP_EVENT_ON_FINISH, NULL, 0);
+                    http_dispatch_event_to_event_loop(HTTP_EVENT_ON_FINISH, &client, sizeof(esp_http_client_handle_t));
+                }
 
                 client->response->buffer->raw_len = 0;
                 if (!http_should_keep_alive(client->parser)) {
@@ -1482,11 +1512,12 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                     }
                 }
                 break;
-                default:
+            default:
                 break;
         }
-    } while (client->process_again);
-    return ESP_OK;
+    } while (client->process_again && err == ESP_OK);
+
+    return err;
 }
 
 int64_t esp_http_client_fetch_headers(esp_http_client_handle_t client)
