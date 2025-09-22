@@ -441,7 +441,7 @@ eFuse Usage
 
     - KEY_PURPOSE_X - Set the purpose of the key block on {IDF_TARGET_NAME} by programming SECURE_BOOT_DIGESTX (X = 0, 1, 2) into KEY_PURPOSE_X (X = 0, 1, 2, 3, 4, 5). Example: If KEY_PURPOSE_2 is set to SECURE_BOOT_DIGEST1, then BLOCK_KEY2 will have the Secure Boot v2 public key digest. The write-protection bit must be set, and this field does not have a read-protection bit.
 
-    - BLOCK_KEYX - The block contains the data corresponding to its purpose programmed in KEY_PURPOSE_X. Stores the SHA-256 digest of the public key is written to an eFuse key block. This digest is represented as 776 bytes, with offsets of 36 to 812, as per the :ref:`signature-block-format`. The write-protection bit must be set, but the read-protection bit must not.
+    - BLOCK_KEYX - The block contains the data corresponding to its function programmed in KEY_PURPOSE_X and stores the SHA-256 digest of the public key. The digest is 32 bytes in size. This digest is calculated from the 776-byte signature block (offset 36 to 812, including the public key modulus, exponent, and the precomputed R and M' values), as specified in the :ref:`signature-block-format`. The write-protection bit must be set, but the read-protection bit must not be set.
 
     - KEY_REVOKEX - The revocation bits corresponding to each of the 3 key blocks. E.g., setting KEY_REVOKE2 revokes the key block whose key purpose is SECURE_BOOT_DIGEST2.
 
