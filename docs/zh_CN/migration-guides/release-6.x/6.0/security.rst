@@ -30,3 +30,10 @@ Mbed TLS
 以下废弃函数已被移除：
 
 - :cpp:func:`esp_secure_boot_verify_signature_block` – 请使用 :cpp:func:`esp_secure_boot_verify_ecdsa_signature_block` 代替。
+
+.. only:: SOC_HMAC_SUPPORTED
+
+    NVS 安全方案
+    ----------------
+
+    - 当 SoC 具备 HMAC 外设并启用了 flash 加密时，如果同时还启用了 NVS 加密，则默认会选择基于 HMAC 的 NVS 加密方案，而不是基于 flash 加密的方案。如果你的应用程序之前基于 flash 加密，则需要通过 ``menuconfig`` 或项目的 ``sdkconfig`` 文件，手动将 NVS 加密方案从 HMAC 配置为 flash 加密（即设置 ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC=y``）。

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -277,6 +277,13 @@ esp_err_t nvs_flash_read_security_cfg(const esp_partition_t* partition, nvs_sec_
  *      - ESP_FAIL, if security scheme registration fails
  */
 esp_err_t nvs_flash_register_security_scheme(nvs_sec_scheme_t *scheme_cfg);
+
+/**
+ * @brief Deregister the security scheme previously registered using
+ *        nvs_flash_register_security_scheme
+ *
+ */
+void nvs_flash_deregister_security_scheme(void);
 
 /**
  * @brief   Fetch the configuration structure for the default active
