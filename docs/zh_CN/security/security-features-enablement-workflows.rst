@@ -320,7 +320,7 @@
 
     .. note::
 
-        如同时开启了 secure boot，请先 secure boot 签名固件后再做上述加密操作。
+        如果同时启用了安全启动功能，请先对固件进行安全启动签名，再执行上述加密操作。
 
     上述命令中的偏移量仅适用于示例固件，请通过检查分区表条目或运行 `idf.py partition-table` 来获取你固件的实际偏移量。请注意，不需要加密所有二进制文件，只需加密在分区表定义文件中带有 ``encrypted`` 标记的文件，其他二进制文件只作为构建过程的普通输出进行烧录。
 
@@ -749,4 +749,4 @@ Secure Boot v2 指南
 
     使用 ``esptool.py`` 命令，将 NVS 分区 (``nvs_encr_partition.bin``) 和 NVS 加密密钥 (``nvs_encr_key.bin``) 烧录到各自的偏移地址。通过 ``idf.py build`` 成功后打印的输出，可查看所有推荐的 ``esptool.py`` 命令行选项。
 
-    若芯片启用了 flash 加密，请在烧录之前先加密 NVS 加密秘钥分区。详情请参阅 `flash 加密工作流程 <enable-flash-encryption-externally_>`_ 中与烧录相关的步骤。
+    若芯片启用了 flash 加密，请在烧录前先对 NVS 加密密钥分区进行加密。详情请参阅 `flash 加密工作流程 <enable-flash-encryption-externally_>`_ 中与烧录相关的步骤。

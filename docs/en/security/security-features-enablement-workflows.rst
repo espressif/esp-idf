@@ -320,7 +320,7 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
     .. note::
 
-        If secure boot is also enabled, please perform the secure boot firmware signing first, and then carry out the above encryption operation.
+        If secure boot is enabled, perform secure boot signing of the firmware before carrying out the above encryption operation.
 
     In the above command, the offsets are used for a sample firmware, and the actual offset for your firmware can be obtained by checking the partition table entry or by running `idf.py partition-table`. Please note that not all the binaries need to be encrypted, the encryption applies only to those generated from the partitions which are marked as ``encrypted`` in the partition table definition file. Other binaries are flashed unencrypted, i.e., as a plain output of the build process.
 

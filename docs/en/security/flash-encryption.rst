@@ -512,7 +512,7 @@ If all partitions needs to be updated in encrypted format, run:
 
 .. note::
 
-    The above operations only apply if the `DIS_DOWNLOAD_MANUAL_ENCRYPT` eFuse bit has not been programmed. If this eFuse bit has been programmed, you need to flash the encrypted firmware image instead.
+    The above operations are only applicable when the ``DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse bit has not been programmed. If this eFuse bit has been programmed, you must flash the pre-encrypted ciphertext image instead.
 
 .. _flash-enc-release-mode:
 
