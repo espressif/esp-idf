@@ -539,6 +539,20 @@ static inline void usb_dwc_hal_disable_debounce_lock(usb_dwc_hal_context_t *hal)
     usb_dwc_ll_gintmsk_en_intrs(hal->dev, USB_DWC_LL_INTR_CORE_PRTINT | USB_DWC_LL_INTR_CORE_DISCONNINT);
 }
 
+/**
+ * @brief Check if the root port is suspended
+ *
+ * This function checks if the root port entered suspended state, after calling usb_dwc_hal_port_suspend()
+ *
+ * @param hal Context of the HAL layer
+ * @return true The root port is suspended
+ * @return false The root port is not suspended
+ */
+static inline bool usb_dwc_hal_port_check_if_suspended(usb_dwc_hal_context_t *hal)
+{
+    return usb_dwc_ll_hprt_get_port_suspend(hal->dev);
+}
+
 // ----------------------------------------------------- Channel -------------------------------------------------------
 
 // ----------------- Channel Allocation --------------------
