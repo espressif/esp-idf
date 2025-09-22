@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -170,6 +170,35 @@ typedef struct {
 esp_partition_iterator_t esp_partition_find(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label);
 
 /**
+ * @brief Find partition based on one or more parameters with error reporting
+ *
+ * This function provides the same functionality as esp_partition_find() but returns
+ * error information instead of just NULL on failure. This allows applications
+ * to distinguish between "no partitions found" and actual error conditions.
+ *
+ * @param type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer.
+ *             To find all partitions, no matter the type, use ESP_PARTITION_TYPE_ANY, and set
+ *             subtype argument to ESP_PARTITION_SUBTYPE_ANY.
+ * @param subtype Partition subtype, one of esp_partition_subtype_t values or an 8-bit unsigned integer.
+ *                To find all partitions of given type, use ESP_PARTITION_SUBTYPE_ANY.
+ * @param label (optional) Partition label. Set this value if looking
+ *             for partition with a specific name. Pass NULL otherwise.
+ * @param[out] it Output iterator which can be used to enumerate all the partitions found. Must not be NULL.
+ *               Set to NULL if no partitions were found or on error.
+ *               If not NULL after successful call, iterator must be released using
+ *               esp_partition_iterator_release when not used any more.
+ *
+ * @return
+ *         - ESP_OK: Operation completed successfully
+ *         - ESP_ERR_INVALID_ARG: if param[out] it is NULL, or if type is ESP_PARTITION_TYPE_ANY
+ *                                but subtype is not ESP_PARTITION_SUBTYPE_ANY
+ *         - ESP_ERR_NO_MEM: if memory allocation failed
+ *         - ESP_ERR_NOT_FOUND: if no partition were found
+ *         - Other error codes from partition loading functions
+ */
+esp_err_t esp_partition_find_err(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label, esp_partition_iterator_t* it);
+
+/**
  * @brief Find first partition based on one or more parameters
  *
  * @param type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer.
@@ -184,6 +213,34 @@ esp_partition_iterator_t esp_partition_find(esp_partition_type_t type, esp_parti
  *         This pointer is valid for the lifetime of the application.
  */
 const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label);
+
+/**
+ * @brief Find first partition based on one or more parameters with error reporting
+ *
+ * This function provides the same functionality as esp_partition_find_first() but returns
+ * error information instead of just NULL on failure. This allows applications
+ * to distinguish between "no partition found" and actual error conditions.
+ *
+ * @param type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer.
+ *             To find all partitions, no matter the type, use ESP_PARTITION_TYPE_ANY, and set
+ *             subtype argument to ESP_PARTITION_SUBTYPE_ANY.
+ * @param subtype Partition subtype, one of esp_partition_subtype_t values or an 8-bit unsigned integer
+ *                To find all partitions of given type, use ESP_PARTITION_SUBTYPE_ANY.
+ * @param label (optional) Partition label. Set this value if looking
+ *             for partition with a specific name. Pass NULL otherwise.
+ * @param[out] partition Output pointer to esp_partition_t structure. Must not be NULL.
+ *                       Set to NULL if no partition is found or on error.
+ *                       If not NULL after successful call, this pointer is valid for the lifetime of the application.
+ *
+ * @return
+ *         - ESP_OK: Operation completed successfully (regardless of whether partition was found)
+ *         - ESP_ERR_INVALID_ARG: if param[out] partition is NULL, or if type is ESP_PARTITION_TYPE_ANY
+ *                                but subtype is not ESP_PARTITION_SUBTYPE_ANY
+ *         - ESP_ERR_NO_MEM: if memory allocation failed
+ *         - ESP_ERR_NOT_FOUND: if no partition were found
+ *         - Other error codes from partition loading functions
+ */
+esp_err_t esp_partition_find_first_err(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label, const esp_partition_t** partition);
 
 /**
  * @brief Get esp_partition_t structure for given partition
@@ -235,6 +292,45 @@ void esp_partition_iterator_release(esp_partition_iterator_t iterator);
  * - If found, returns a pointer to the esp_partition_t structure in flash. This pointer is always valid for the lifetime of the application.
  */
 const esp_partition_t* esp_partition_verify(const esp_partition_t* partition);
+
+/**
+ * @brief Verify partition data with error reporting
+ *
+ * This function provides the same functionality as esp_partition_verify() but returns
+ * error information instead of just NULL on failure. This allows applications
+ * to distinguish between "partition not found" and actual error conditions
+ *
+ * Given a pointer to partition data, verify this partition exists in the partition table
+ * by comparing all key fields (flash_chip, address, size, encrypted status). The function
+ * searches through all registered partitions with matching type, subtype, and label.
+ *
+ * This function is useful to:
+ * - Take partition data from RAM buffer and convert to permanent flash-based pointer
+ * - Validate partition structures obtained from external sources
+ * - Ensure partition data integrity before performing operations
+ *
+ * @param partition Pointer to partition data to verify. Must be non-NULL.
+ *                  The following fields are used for verification:
+ *                  - type: Partition type
+ *                  - subtype: Partition subtype
+ *                  - label: Partition label (if non-empty)
+ *                  - flash_chip: Flash chip pointer
+ *                  - address: Starting address
+ *                  - size: Partition size
+ *                  - encrypted: Encryption status
+ * @param[out] out_partition Output pointer to verified esp_partition_t structure. Must not be NULL.
+ *                           Set to NULL if partition is not found or on error.
+ *                           If not NULL after successful call, this pointer is valid for the
+ *                           lifetime of the application and points to the permanent partition
+ *                           structure in flash.
+ *
+ * @return
+ *         - ESP_OK: Partition verified successfully and found in partition table
+ *         - ESP_ERR_INVALID_ARG: if partition or out_partition is NULL
+ *         - ESP_ERR_NO_MEM: if memory allocation failed during partition search
+ *         - ESP_ERR_NOT_FOUND: if no matching partition found in partition table
+ */
+esp_err_t esp_partition_verify_err(const esp_partition_t* partition, const esp_partition_t** out_partition);
 
 /**
  * @brief Read data from the partition
