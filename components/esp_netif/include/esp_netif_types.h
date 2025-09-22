@@ -255,6 +255,7 @@ typedef struct esp_netif_inherent_config {
                                           A higher value of route_prio indicates
                                           a higher priority */
     bridgeif_config_t *bridge_info;  /*!< LwIP bridge configuration */
+    uint16_t mtu;                    /*!< Optional initial MTU (bytes). 0 = use stack default */
 } esp_netif_inherent_config_t;
 
 typedef struct esp_netif_config esp_netif_config_t;

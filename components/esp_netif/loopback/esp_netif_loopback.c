@@ -488,13 +488,11 @@ esp_netif_t *esp_netif_get_handle_from_ifkey(const char *if_key)
 // MTU control is not supported in loopback build.
 esp_err_t esp_netif_set_mtu(esp_netif_t *esp_netif, uint16_t mtu)
 {
-    ESP_LOGD(TAG, "%s esp_netif:%p mtu:%u", __func__, esp_netif, (unsigned)mtu);
     return ESP_ERR_NOT_SUPPORTED;
 }
 
 esp_err_t esp_netif_get_mtu(esp_netif_t *esp_netif, uint16_t *mtu)
 {
-    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
     return ESP_ERR_NOT_SUPPORTED;
 }
 #endif /* CONFIG_ESP_NETIF_LOOPBACK */

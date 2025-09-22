@@ -47,8 +47,9 @@ static void on_ping_end(esp_ping_handle_t hdl, void *args)
     }
 }
 
-static bool try_payload_once(const ip_addr_t *target, uint32_t payload)
+static bool try_payload_once(const ip_addr_t *target, uint32_t payload_size)
 {
+    ESP_LOGI(TAG, "Trying payload once with size %u", payload_size);
     probe_ctx_t ctx = { .done = xSemaphoreCreateBinary(), .got_reply = false };
     if (!ctx.done) {
         return false;
@@ -58,7 +59,7 @@ static bool try_payload_once(const ip_addr_t *target, uint32_t payload)
     cfg.count = 1;
     cfg.timeout_ms = 1000;   // 1s timeout
     cfg.interval_ms = 100;   // not used for count=1
-    cfg.data_size = payload;
+    cfg.data_size = payload_size;
     esp_ping_callbacks_t cbs = {
         .cb_args = &ctx,
         .on_ping_success = on_ping_success,
@@ -106,7 +107,9 @@ static bool resolve_host(const char *host, ip_addr_t *out)
 void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
+    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+
     ESP_LOGI(TAG, "Connecting network...");
     ESP_ERROR_CHECK(example_connect());
 
@@ -123,7 +126,7 @@ void app_main(void)
         return;
     }
 
-    ESP_LOGI(TAG, "Probing PMTU to host %s (IPv4)");
+    ESP_LOGI(TAG, "Probing PMTU to host %s (IPv4)", host);
 
     uint16_t if_mtu = 0;
     uint32_t lo = 0;

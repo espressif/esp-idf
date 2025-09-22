@@ -23,18 +23,30 @@ Notes:
 
 3) Example output:
 ```
-I (xxx) pmtu_probe: Connecting network...
-I (xxx) pmtu_probe: Probing PMTU to host www.espressif.com (IPv4)
-I (xxx) pmtu_probe: Search range payload=[0, 1472]
-I (xxx) pmtu_probe: Best payload=1392 -> MTU=1420
-I (xxx) pmtu_probe: Applying MTU 1420 to default netif
+I (8236) example_common: Connected to example_netif_sta
+I (8246) example_common: - IPv4 address: 192.168.0.35,
+I (8276) pmtu_probe: Probing PMTU to host www.espressif.com (IPv4)
+I (8276) pmtu_probe: Search range payload=[0, 1472]
+I (8286) pmtu_probe: Trying payload once with size 736
+I (8436) pmtu_probe: Trying payload once with size 1104
+I (8586) pmtu_probe: Trying payload once with size 1288
+I (8736) pmtu_probe: Trying payload once with size 1380
+I (8886) pmtu_probe: Trying payload once with size 1426
+I (9036) pmtu_probe: Trying payload once with size 1449
+I (9186) pmtu_probe: Trying payload once with size 1461
+I (9336) pmtu_probe: Trying payload once with size 1467
+I (9486) pmtu_probe: Trying payload once with size 1470
+I (9636) pmtu_probe: Trying payload once with size 1471
+I (9786) pmtu_probe: Trying payload once with size 1472
+I (9936) pmtu_probe: Best payload=1472 -> MTU=1500
+I (9936) pmtu_probe: Applying MTU 1500 to default netif
+I (9936) main_task: Returned from app_main()
 ```
 
 ## Implementation details
 
 - Uses `esp_ping` (ping_sock) to attempt 1 echo per payload size and waits synchronously for success/timeout.
 - Bounds the search using the current interface MTU when available, otherwise falls back to `1472`.
-- Applies MTU via new API:
+- Applies MTU via these API:
   - `esp_netif_set_mtu(esp_netif_t *netif, uint16_t mtu)`
   - `esp_netif_get_mtu(esp_netif_t *netif, uint16_t *mtu)`
-
