@@ -564,7 +564,13 @@ esp_err_t esp_timer_init(void)
 */
 ESP_SYSTEM_INIT_FN(esp_timer_init_os, SECONDARY, ESP_TIMER_INIT_MASK, 100)
 {
-    return esp_timer_init();
+    esp_err_t err = ESP_OK;
+    if (is_initialized()) {
+        err = ESP_OK;
+    } else {
+        err = esp_timer_init();
+    }
+    return err;
 }
 
 esp_err_t esp_timer_deinit(void)
