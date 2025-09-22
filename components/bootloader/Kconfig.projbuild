@@ -972,6 +972,24 @@ menu "Security features"
                 so that the bootloader would not need to enable secure boot and thus you could avoid its revocation
                 strategy.
 
+        config SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA
+            bool "Skip write-protection of SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH"
+            default y if SECURE_FLASH_PSEUDO_ROUND_FUNC
+            default n
+            depends on SOC_ECDSA_SUPPORT_CURVE_P384 && SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+            help
+                If not set (default, recommended), on the first boot when Secure Boot is enabled for
+                targets that support Secure Boot using ECDSA-P384, the bootloader will burn the write-protection bit of
+                of SECURE_BOOT_SHA384_EN that could be shared by multiple other efuse bits like
+                SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH / XTS_DPA_PSEUDO_LEVEL.
+
+                Once this efuse bit is write-protected you cannot update the values of the shared efuses, for example,
+                the security strength value of XTS_DPA_PSEUDO_LEVEL or setting ECC_FORCE_CONST_TIME.
+
+                List of eFuses with the same write protection bit:
+
+                ESP32-C5: XTS_DPA_PSEUDO_LEVEL and ECC_FORCE_CONST_TIME
+
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
             bool "Leave UART bootloader encryption enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
@@ -1055,6 +1073,7 @@ menu "Security features"
                 ESP32-S3: DIS_ICACHE, DIS_DCACHE, DIS_DOWNLOAD_ICACHE, DIS_DOWNLOAD_DCACHE,
                 DIS_FORCE_DOWNLOAD, DIS_USB_OTG, DIS_TWAI, DIS_APP_CPU, DIS_PAD_JTAG,
                 DIS_DOWNLOAD_MANUAL_ENCRYPT, DIS_USB_JTAG, DIS_USB_SERIAL_JTAG, STRAP_JTAG_SEL, USB_PHY_SEL.
+
     endmenu  # Potentially Insecure
 
     config SECURE_FLASH_ENCRYPT_ONLY_IMAGE_LEN_IN_APP_PART
@@ -1101,6 +1120,12 @@ menu "Security features"
             The strength of the pseudo rounds functions can be configured to low, medium and high,
             each denoting the values that would be stored in the efuses field.
             By default the value to set to low.
+
+            It is recommended that the required strength of the pseudo rounds function should be set during the
+            first boot itself. If your workflow needs to update the function's strength after the first boot,
+            you should enable CONFIG_SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA to avoid write protecting this
+            bit during the boot up for targets that support Secure Boot using ECDSA-P384.
+
             You can configure the strength of the pseudo rounds functions according to your use cases,
             for example, increasing the strength would provide higher security but would slow down the
             flash encryption/decryption operations.

@@ -500,8 +500,8 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
         :SOC_EFUSE_DIS_USB_JTAG: - ``DIS_USB_JTAG``: Disable USB switch to JTAG.
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``: Disable JTAG permanently.
         :SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS: - ``SECURE_BOOT_AGGRESSIVE_REVOKE``: Aggressive revocation of key digests, see :ref:`secure-boot-v2-aggressive-key-revocation` for more details.
-        :SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED: - ``WR_DIS_ECDSA_CURVE_MODE``: Disable writing to the ECDSA curve mode eFuse bit.
-        :SOC_ECDSA_SUPPORT_CURVE_P384: - ``WR_DIS_SECURE_BOOT_SHA384_EN``: Disable writing to the SHA-384 secure boot eFuse bit.
+        :SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED: - ``WR_DIS_ECDSA_CURVE_MODE``: Disable writing to the ECDSA curve mode eFuse bit. As this write protection bit is shared with ``ECC_FORCE_CONST_TIME``, it is recommended to write protect this bit only after configuring the ``ECC_FORCE_CONST_TIME`` eFuse.
+        :SOC_ECDSA_SUPPORT_CURVE_P384: - ``WR_DIS_SECURE_BOOT_SHA384_EN``: Disable writing to the SHA-384 Secure Boot eFuse bit. As this write protection bit is shared with ``XTS_DPA_PSEUDO_LEVEL`` and ``ECC_FORCE_CONST_TIME``, it is recommended to write protect this bit only after configuring all the other shared eFuses.
 
     The respective eFuses can be burned by running:
 

@@ -876,6 +876,10 @@ It is recommended to use flash encryption in combination with Secure Boot. Howev
 
     - :ref:`Re-flashing via Pregenerated Flash Encryption Key <pregenerated-flash-encryption-key>` is still possible, provided the bootloader is not re-flashed. Re-flashing the bootloader requires the same :ref:`Re-flashable <CONFIG_SECURE_BOOTLOADER_MODE>` option to be enabled in the Secure Boot config.
 
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND and SOC_ECDSA_SUPPORT_CURVE_P384
+
+  - It is recommended that the required strength of the :ref:`xts-aes-pseudo-round-func` should be set during the first boot when flash encryption release mode is enabled. If your workflow needs to update the function's strength after the first boot, you should enable :ref:`CONFIG_SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA` to avoid write-protecting this bit during boot.
+
 .. _flash-encryption-advanced-features:
 
 Advanced Features
