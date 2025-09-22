@@ -2698,6 +2698,46 @@ esp_err_t esp_netif_get_netif_impl_name(esp_netif_t *esp_netif, char* name)
     return esp_netif_lwip_ipc_call(esp_netif_get_netif_impl_name_api, esp_netif, name);
 }
 
+static esp_err_t esp_netif_set_mtu_api(esp_netif_api_msg_t *msg)
+{
+    esp_netif_t *esp_netif = msg->esp_netif;
+    if (esp_netif == NULL || esp_netif->lwip_netif == NULL || msg->data == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    uint16_t mtu = *(uint16_t *)msg->data;
+    esp_netif->lwip_netif->mtu = mtu;
+    return ESP_OK;
+}
+
+esp_err_t esp_netif_set_mtu(esp_netif_t *esp_netif, uint16_t mtu)
+{
+    ESP_LOGD(TAG, "%s esp_netif:%p mtu:%u", __func__, esp_netif, (unsigned)mtu);
+    if (esp_netif == NULL || esp_netif->lwip_netif == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    return esp_netif_lwip_ipc_call(esp_netif_set_mtu_api, esp_netif, &mtu);
+}
+
+static esp_err_t esp_netif_get_mtu_api(esp_netif_api_msg_t *msg)
+{
+    esp_netif_t *esp_netif = msg->esp_netif;
+    if (esp_netif == NULL || esp_netif->lwip_netif == NULL || msg->data == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    uint16_t *mtu_out = (uint16_t *)msg->data;
+    *mtu_out = (uint16_t)esp_netif->lwip_netif->mtu;
+    return ESP_OK;
+}
+
+esp_err_t esp_netif_get_mtu(esp_netif_t *esp_netif, uint16_t *mtu)
+{
+    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
+    if (esp_netif == NULL || esp_netif->lwip_netif == NULL || mtu == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    return esp_netif_lwip_ipc_call(esp_netif_get_mtu_api, esp_netif, mtu);
+}
+
 #if IP_NAPT
 static esp_err_t esp_netif_napt_control_api(esp_netif_api_msg_t *msg)
 {
