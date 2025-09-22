@@ -476,6 +476,17 @@ static void hid_event_handler(esp_ble_hidd_dev_t *dev, int device_index, esp_gat
             dev->conn_id   = param->connect.conn_id;
             memcpy(dev->remote_bda, param->connect.remote_bda, ESP_BD_ADDR_LEN);
 
+            // ADD THIS BLOCK: Initialize CCC for all reports
+            for (int i = 0; i < dev->devices[device_index].reports_len; i++) {
+                hidd_le_report_item_t *map = &dev->devices[device_index].reports[i];
+                if (map->ccc_handle && !map->ccc.notify_enable && !map->ccc.indicate_enable) {
+                    ESP_LOGW(TAG, "Initializing CCC for report %d", map->report_id);
+                    map->ccc.notify_enable = true;
+                    map->ccc.indicate_enable = true;
+                    map->ccc.value = 0x03; // Enable notifications and indications
+                }
+            }
+
             esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_NO_MITM);
 
             esp_hidd_event_data_t cb_param = {
