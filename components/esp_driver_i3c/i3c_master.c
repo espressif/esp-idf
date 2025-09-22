@@ -744,6 +744,7 @@ static esp_err_t do_async_transaction(i3c_master_i2c_device_handle_t dev_handle,
         if (xQueueReceive(bus_handle->trans_queues[I3C_TRANS_QUEUE_PROGRESS], &t, 0)) {
             atomic_store(&bus_handle->fsm, I3C_FSM_RUN);
             ret = bus_handle->transaction_handler(bus_handle, t);
+            (void)ret;
             assert(ret == ESP_OK);
         } else {
             atomic_store(&bus_handle->fsm, I3C_FSM_ENABLE);

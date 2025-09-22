@@ -233,7 +233,12 @@ For the gcov functionality, include the ``esp_gcov.h`` header file instead of ``
 System Console (STDIO)
 ----------------------
 
-``esp_vfs_cdcacm.h`` has been moved to the new component ``esp_usb_cdc_rom_console``, you will now have to add an explicit ``REQUIRES`` for ``esp_usb_cdc_rom_console`` if using any functions from this header.
+``esp_vfs_cdcacm.h`` has been moved to the new component ``esp_usb_cdc_romconsole``, you will now have to add an explicit ``REQUIRES`` for ``esp_usb_cdc_rom_console`` if using any functions from this header.
+
+LibC
+------
+
+:ref:`CONFIG_COMPILER_ASSERT_NDEBUG_EVALUATE` default value is changed to `n`. This means asserts will no longer evaluate the expression inside the assert when ``NDEBUG`` is set. This reverts the default behavior to be in line with the C standard.
 
 ULP
 ---

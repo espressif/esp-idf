@@ -716,7 +716,10 @@ esp_err_t parlio_rx_unit_enable(parlio_rx_unit_handle_t rx_unit, bool reset_queu
         xSemaphoreGive(rx_unit->trans_sem);
     } else if (xQueueReceive(rx_unit->trans_que, &trans, 0) == pdTRUE) {
         // The semaphore always supposed to be taken successfully
-        assert(xSemaphoreTake(rx_unit->trans_sem, 0) == pdTRUE);
+        BaseType_t res = xSemaphoreTake(rx_unit->trans_sem, 0);
+        (void)res;
+        assert(res == pdTRUE);
+
         if (trans.flags.indirect_mount && trans.flags.infinite && rx_unit->dma_buf == NULL) {
             rx_unit->dma_buf = heap_caps_aligned_calloc(rx_unit->base.group->dma_align, 1, trans.size, PARLIO_DMA_MEM_ALLOC_CAPS);
             ESP_GOTO_ON_FALSE(rx_unit->dma_buf, ESP_ERR_NO_MEM, err, TAG, "No memory for the internal DMA buffer");

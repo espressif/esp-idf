@@ -379,6 +379,7 @@ static bool ppa_malloc_transaction(QueueHandle_t trans_elm_ptr_queue, uint32_t t
         // Fill the queue with allocated transaction element pointer
         BaseType_t sent = xQueueSend(trans_elm_ptr_queue, &new_trans_elm, 0);
         assert(sent);
+        (void)sent;
     }
     return res;
 }
@@ -400,6 +401,7 @@ bool ppa_recycle_transaction(ppa_client_handle_t ppa_client, ppa_trans_t *trans_
     BaseType_t HPTaskAwoken;
     BaseType_t sent = xQueueSendFromISR(ppa_client->trans_elm_ptr_queue, &trans_elm, &HPTaskAwoken);
     assert(sent);
+    (void)sent;
     return HPTaskAwoken;
 }
 

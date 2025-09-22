@@ -170,6 +170,7 @@ esp_err_t IRAM_ATTR esp_cam_ctlr_dvp_dma_start(esp_cam_ctlr_dvp_dma_t *dma, uint
     if (esp_ptr_external_ram(dma->desc)) {
         esp_err_t ret = esp_cache_msync(dma->desc, dma->desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
         assert(ret == ESP_OK);
+        (void)ret;
     }
 
     return gdma_start(dma->dma_chan, (intptr_t)dma->desc);

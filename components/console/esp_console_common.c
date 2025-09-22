@@ -166,8 +166,7 @@ void esp_console_repl_task(void *args)
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     if (repl_com->state_mux != NULL) {
-        BaseType_t ret_val = xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
-        assert(ret_val == pdTRUE);
+        xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
     }
 
     /* Change standard input and output of the task if the requested UART is

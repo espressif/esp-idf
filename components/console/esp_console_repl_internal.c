@@ -121,8 +121,7 @@ esp_err_t esp_console_common_deinit(esp_console_repl_com_t *repl_com)
     // wait for the task to notify that
     // esp_console_repl_task returned
     assert(repl_com->state_mux != NULL);
-    BaseType_t ret_val = xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
-    assert(ret_val == pdTRUE);
+    xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
 
     // delete the semaphore for the repl state
     vSemaphoreDelete(repl_com->state_mux);
