@@ -180,6 +180,9 @@ static inline void twaifd_ll_set_mode(twaifd_dev_t *hw, bool listen_only, bool s
     twaifd_mode_settings_reg_t opmode = {.val = hw->mode_settings.val};
     opmode.stm = self_test;
     opmode.bmm = listen_only;
+    // esp32h4 using `rom` together with `bmm` although errata 0v2 issue 5 is fixed
+    // see detail in https://github.com/espressif/esp-idf/issues/17461
+    opmode.rom = listen_only;
     opmode.ilbp = loopback;
 
     hw->mode_settings.val = opmode.val;

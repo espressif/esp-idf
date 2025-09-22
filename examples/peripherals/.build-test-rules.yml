@@ -523,9 +523,6 @@ examples/peripherals/twai/twai_error_recovery:
 examples/peripherals/twai/twai_network:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32"
-      reason: esp32c5,esp32 test has been disabled, because C5 twai don't support listen only in network test, see errata issue 5
   depends_components:
     - esp_driver_twai
 

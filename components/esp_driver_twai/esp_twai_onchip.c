@@ -79,8 +79,6 @@ typedef struct {
 #endif
 
     _Atomic twai_error_state_t state;
-    uint16_t tx_error_count;
-    uint16_t rx_error_count;
     twai_node_record_t history;
 
     atomic_bool hw_busy;
@@ -127,8 +125,8 @@ static esp_err_t _node_config_io(twai_onchip_ctx_t *node, const twai_onchip_node
 {
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.tx) || (node_config->flags.enable_listen_only && (node_config->io_cfg.tx == -1)), ESP_ERR_INVALID_ARG, TAG, "Invalid tx gpio num");
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(node_config->io_cfg.rx), ESP_ERR_INVALID_ARG, TAG, "Invalid rx gpio num");
-    ESP_RETURN_ON_FALSE(!(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.quanta_clk_out) && (twai_periph_signals[node->ctrlr_id].clk_out_sig < 0)), ESP_ERR_NOT_SUPPORTED, TAG, "quanta_clk_out is not supported");
-    ESP_RETURN_ON_FALSE(!(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.bus_off_indicator) && (twai_periph_signals[node->ctrlr_id].bus_off_sig < 0)), ESP_ERR_NOT_SUPPORTED, TAG, "bus_off_indicator is not supported");
+    ESP_RETURN_ON_FALSE(!(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.quanta_clk_out) && (twai_periph_signals[node->ctrlr_id].clk_out_sig < 0)), ESP_ERR_NOT_SUPPORTED, TAG, "quanta_clk_out gpio is not supported");
+    ESP_RETURN_ON_FALSE(!(GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.bus_off_indicator) && (twai_periph_signals[node->ctrlr_id].bus_off_sig < 0)), ESP_ERR_NOT_SUPPORTED, TAG, "bus_off_indicator gpio is not supported");
 
     uint64_t reserve_mask = 0;
     // Set RX pin
@@ -446,7 +444,7 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_s
         .sjw_max = TWAI_LL_SJW_MAX,
     };
     uint32_t real_baud = twai_node_timing_calc_param(source_freq, timing, &hw_const, &timing_adv);
-    ESP_LOGD(TAG, "norm src %ld, param %ld %d %d %d %d %d", source_freq, timing_adv.brp, timing_adv.prop_seg, timing_adv.tseg_1, timing_adv.tseg_2, timing_adv.sjw, timing_adv.ssp_offset);
+    ESP_LOGD(TAG, "timing: src %ld brp %ld prop %d seg1 %d seg2 %d sjw %d ssp %d", source_freq, timing_adv.brp, timing_adv.prop_seg, timing_adv.tseg_1, timing_adv.tseg_2, timing_adv.sjw, timing_adv.ssp_offset);
     ESP_RETURN_ON_FALSE(real_baud, ESP_ERR_INVALID_ARG, TAG, "bitrate can't achieve!");
     if (timing->bitrate != real_baud) {
         ESP_LOGW(TAG, "bitrate precision loss, adjust from %ld to %ld", timing->bitrate, real_baud);
@@ -455,7 +453,7 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_s
     twai_timing_advanced_config_t timing_adv_fd = { .clk_src = root_clock_src, };
     if (timing_fd->bitrate) {
         real_baud = twai_node_timing_calc_param(source_freq, timing_fd, &hw_const, &timing_adv_fd);
-        ESP_LOGD(TAG, "fd src %ld, param %ld %d %d %d %d %d", source_freq, timing_adv_fd.brp, timing_adv_fd.prop_seg, timing_adv_fd.tseg_1, timing_adv_fd.tseg_2, timing_adv_fd.sjw, timing_adv_fd.ssp_offset);
+        ESP_LOGD(TAG, "timing_fd: src %ld brp %ld prop %d seg1 %d seg2 %d sjw %d ssp %d", source_freq, timing_adv_fd.brp, timing_adv_fd.prop_seg, timing_adv_fd.tseg_1, timing_adv_fd.tseg_2, timing_adv_fd.sjw, timing_adv_fd.ssp_offset);
         ESP_RETURN_ON_FALSE(real_baud, ESP_ERR_INVALID_ARG, TAG, "bitrate can't achieve!");
         if (timing_fd->bitrate != real_baud) {
             ESP_LOGW(TAG, "bitrate precision loss, adjust from %ld to %ld", timing_fd->bitrate, real_baud);
@@ -569,8 +567,8 @@ static esp_err_t _node_get_status(twai_node_handle_t node, twai_node_status_t *s
 
     if (status_ret) {
         status_ret->state = atomic_load(&twai_ctx->state);
-        status_ret->tx_error_count = twai_ctx->tx_error_count;
-        status_ret->rx_error_count = twai_ctx->rx_error_count;
+        status_ret->tx_error_count = twai_hal_get_tec(twai_ctx->hal);
+        status_ret->rx_error_count = twai_hal_get_rec(twai_ctx->hal);
     }
     if (record_ret) {
         *record_ret = twai_ctx->history;
@@ -707,13 +705,6 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
         .enable_self_test = node_config->flags.enable_self_test,
         .enable_loopback = node_config->flags.enable_loopback,
     };
-#if CONFIG_IDF_TARGET_ESP32C5
-    // ESP32C5 has a bug that the listen only mode don't work when there are other nodes sending ACK each other
-    // See IDF-13059 for more details
-    if (node_config->flags.enable_listen_only) {
-        ESP_LOGW(TAG, "Listen only mode for ESP32C5 may not work properly when there are more than 2 nodes on the bus that are sending ACKs to each other");
-    }
-#endif
     ESP_GOTO_ON_FALSE(twai_hal_init(node->hal, &hal_config), ESP_ERR_INVALID_STATE, err, TAG, "hardware not in reset state");
     // Configure bus timing
     ESP_GOTO_ON_ERROR(_node_calc_set_bit_timing(&node->api_base, node_config->clk_src, &node_config->bit_timing, &node_config->data_timing), err, TAG, "bitrate error");

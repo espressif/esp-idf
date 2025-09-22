@@ -127,12 +127,12 @@ twai_error_state_t twai_hal_get_err_state(twai_hal_context_t *hal_ctx)
     return (hw_state & TWAI_LL_STATUS_BS) ? TWAI_ERROR_BUS_OFF : (hw_state & TWAI_LL_STATUS_ES) ? TWAI_ERROR_PASSIVE : TWAI_ERROR_ACTIVE;
 }
 
-uint32_t twai_hal_get_tec(twai_hal_context_t *hal_ctx)
+uint16_t twai_hal_get_tec(twai_hal_context_t *hal_ctx)
 {
     return twai_ll_get_tec((hal_ctx)->dev);
 }
 
-uint32_t twai_hal_get_rec(twai_hal_context_t *hal_ctx)
+uint16_t twai_hal_get_rec(twai_hal_context_t *hal_ctx)
 {
     return twai_ll_get_rec((hal_ctx)->dev);
 }
