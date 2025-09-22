@@ -13,7 +13,10 @@
 #include "soc/soc_caps.h"
 #include "soc/efuse_periph.h"
 #include "hal/ecdsa_types.h"
-
+#include "hal/efuse_hal.h"
+#include "hal/config.h"
+#include "soc/chip_revision.h"
+#include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -124,7 +127,11 @@ static inline void ecdsa_ll_enable_intr(ecdsa_ll_intr_type_t type)
 {
     switch (type) {
         case ECDSA_INT_CALC_DONE:
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_PREP_DONE_INT_ENA, 1);
+#else
             REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_CALC_DONE_INT_ENA, 1);
+#endif
             break;
         case ECDSA_INT_SHA_RELEASE:
             REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_SHA_RELEASE_INT_ENA, 1);
@@ -144,7 +151,11 @@ static inline void ecdsa_ll_disable_intr(ecdsa_ll_intr_type_t type)
 {
     switch (type) {
         case ECDSA_INT_CALC_DONE:
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_PREP_DONE_INT_ENA, 0);
+#else
             REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_CALC_DONE_INT_ENA, 0);
+#endif
             break;
         case ECDSA_INT_SHA_RELEASE:
             REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_SHA_RELEASE_INT_ENA, 0);
@@ -164,7 +175,11 @@ static inline void ecdsa_ll_clear_intr(ecdsa_ll_intr_type_t type)
 {
     switch (type) {
         case ECDSA_INT_CALC_DONE:
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_PREP_DONE_INT_CLR, 1);
+#else
             REG_SET_FIELD(ECDSA_INT_CLR_REG, ECDSA_CALC_DONE_INT_CLR, 1);
+#endif
             break;
         case ECDSA_INT_SHA_RELEASE:
             REG_SET_FIELD(ECDSA_INT_CLR_REG, ECDSA_SHA_RELEASE_INT_CLR, 1);
@@ -206,11 +221,11 @@ static inline void ecdsa_ll_set_mode(ecdsa_mode_t mode)
 static inline void ecdsa_ll_set_curve(ecdsa_curve_t curve)
 {
     switch (curve) {
-        case ECDSA_CURVE_SECP256R1:
-            REG_SET_BIT(ECDSA_CONF_REG, ECDSA_ECC_CURVE);
-            break;
         case ECDSA_CURVE_SECP192R1:
-            REG_CLR_BIT(ECDSA_CONF_REG, ECDSA_ECC_CURVE);
+        case ECDSA_CURVE_SECP256R1:
+        case ECDSA_CURVE_SECP384R1:
+        case ECDSA_CURVE_SM2:
+            REG_SET_FIELD(ECDSA_CONF_REG, ECDSA_ECC_CURVE, curve);
             break;
         default:
             HAL_ASSERT(false && "Unsupported curve");
@@ -265,7 +280,9 @@ static inline void ecdsa_ll_set_k_type(ecdsa_sign_type_t type)
  */
 static inline void ecdsa_ll_set_deterministic_loop(uint16_t loop_number)
 {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) < 300
     REG_SET_FIELD(ECDSA_CONF_REG, ECDSA_DETERMINISTIC_LOOP, loop_number);
+#endif
 }
 
 /**
@@ -433,7 +450,11 @@ static inline int ecdsa_ll_get_operation_result(void)
  */
 static inline int ecdsa_ll_check_k_value(void)
 {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) < 300
     return REG_GET_BIT(ECDSA_RESULT_REG, ECDSA_K_VALUE_WARNING);
+#else
+    return 0;
+#endif
 }
 
 /**
@@ -484,7 +505,16 @@ __attribute__((always_inline)) static inline void ecdsa_ll_set_ecdsa_key_blk(ecd
  */
 static inline bool ecdsa_ll_is_mpi_required(void)
 {
-    return true;    // TODO: IDF-13523
+    return true;
+}
+
+/**
+ * @brief Check if the ECDSA peripheral is supported on this chip revision
+ * For ESP32-P4, ECDSA is only supported on eco5+ (major 3, minor 0+)
+ */
+static inline bool ecdsa_ll_is_supported(void)
+{
+    return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300);
 }
 
 #ifdef __cplusplus

@@ -312,10 +312,10 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
 #if SOC_EFUSE_ECDSA_KEY
             purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
 #endif
-#if SOC_EFUSE_ECDSA_KEY_P192 || EFUSE_LL_HAS_ECDSA_KEY_P192
+#if (!defined(CONFIG_IDF_TARGET_ESP32P4) && SOC_EFUSE_ECDSA_KEY_P192) || EFUSE_LL_HAS_ECDSA_KEY_P192
             purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P192 ||
 #endif
-#if SOC_EFUSE_ECDSA_KEY_P384 || EFUSE_LL_HAS_ECDSA_KEY_P384
+#if (!defined(CONFIG_IDF_TARGET_ESP32P4) && SOC_EFUSE_ECDSA_KEY_P384) || EFUSE_LL_HAS_ECDSA_KEY_P384
             purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L ||
             purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H ||
 #endif

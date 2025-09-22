@@ -213,7 +213,7 @@ config SOC_ECC_EXTENDED_MODES_SUPPORTED
 
 config SOC_ECDSA_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_KEY_MANAGER_SUPPORTED
     bool
@@ -1331,7 +1331,19 @@ config SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
     bool
     default y
 
+config SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+    bool
+    default y
+
 config SOC_ECDSA_USES_MPI
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_CURVE_P384
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES
     bool
     default y
 
@@ -1575,13 +1587,21 @@ config SOC_EFUSE_XTS_AES_KEY_256
     bool
     default y
 
+config SOC_EFUSE_ECDSA_KEY_P192
+    bool
+    default y
+
+config SOC_EFUSE_ECDSA_KEY_P384
+    bool
+    default y
+
 config SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
     bool
     default y
 
 config SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
     bool
-    default n
+    default y
 
 config SOC_KEY_MANAGER_FE_KEY_DEPLOY
     bool
