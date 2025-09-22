@@ -71,7 +71,7 @@ typedef enum {
     ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0 = 9,          /**< SECURE_BOOT_DIGEST0 (Secure Boot key digest) */
     ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1 = 10,         /**< SECURE_BOOT_DIGEST1 (Secure Boot key digest) */
     ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 = 11,         /**< SECURE_BOOT_DIGEST2 (Secure Boot key digest) */
-    ESP_EFUSE_KEY_PURPOSE_MAX,                              /**< MAX PURPOSE */
+    ESP_EFUSE_KEY_PURPOSE_MAX = 16,                         /**< MAX PURPOSE */
 } esp_efuse_purpose_t;
 
 #ifdef __cplusplus
