@@ -3,12 +3,12 @@ workflow:
     # Disable those non-protected push triggered pipelines
     - if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && $CI_PIPELINE_SOURCE == "push"'
       when: never
-    # when running merged result pipelines, CI_COMMIT_SHA represents the temp commit it created.
-    # Please use PIPELINE_COMMIT_SHA at all places that require a commit sha of the original commit.
-    - if: $CI_OPEN_MERGE_REQUESTS != null
+    # merged result pipelines
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
       variables:
         PIPELINE_COMMIT_SHA: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
-    - if: $CI_OPEN_MERGE_REQUESTS == null
+    # else
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA == null || $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA == ""
       variables:
         PIPELINE_COMMIT_SHA: $CI_COMMIT_SHA
     - when: always
