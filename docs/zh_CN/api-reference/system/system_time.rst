@@ -105,7 +105,7 @@ SNTP 时间同步
     esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
     esp_netif_sntp_init(&config);
 
-一旦收到 SNTP 服务器的响应，此代码会自动执行时间同步。有时等待时间同步很有意义，调用 :cpp:func:`esp_netif_sntp_sync_wait()` 可实现此目的：
+一旦收到 SNTP 服务器的响应，此代码会自动执行时间同步。有时等待时间同步很有意义，调用 :cpp:func:`esp_netif_sntp_sync_wait()` 可实现此目的。应用也可以订阅时间同步事件（事件基座 ``NETIF_SNTP_EVENT``，事件 ID ``NETIF_SNTP_TIME_SYNC``）：
 
 .. code-block:: c
 
