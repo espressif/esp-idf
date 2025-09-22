@@ -23,6 +23,7 @@ def action_extensions(base_actions, project_path):
         return 0
 
     return {{
+        'version': '1',
         'global_options': [{global_options}],
         'actions': {{
             {actions}
@@ -210,6 +211,26 @@ def test_extension_from_component_invalid_syntax(idf_py: IdfPyFunc, test_app_cop
     )
     ret = idf_py('--help')
     assert "has no attribute 'action_extensions'" in ret.stderr
+
+    idf_ext_py.write_text(
+        textwrap.dedent(
+            TEST_EXT_TEMPLATE.format(
+                suffix='component extension',
+                global_options='',
+                actions="""'test-component-action': {
+                'callback': test_extension_action,
+                'help': 'Test action from component extension'
+            }""",
+            )
+        )
+    )
+    replace_in_file(
+        idf_ext_py,
+        "'version': '1',",
+        '\n',
+    )
+    ret = idf_py('--help')
+    assert 'Attribute "version" is required in custom extension.' in ret.stderr
 
 
 # ----------- Test cases for entry point extension -----------

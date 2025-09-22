@@ -333,6 +333,7 @@ An extension file defines an ``action_extensions`` function which returns additi
               print(f"About to execute {len(tasks)} task(s): {[t.name for t in tasks]}")
 
       return {
+          "version": "1",
           "global_options": [
               {
                   "names": ["--detail", "-d"],
@@ -362,8 +363,9 @@ An extension file defines an ``action_extensions`` function which returns additi
 Extension API Reference
 -----------------------
 
-The ``action_extensions`` function takes arguments ``base_actions`` (all currently registered commands) and ``project_path`` (absolute project directory) and returns a dictionary with up to three keys:
+The ``action_extensions`` function takes arguments ``base_actions`` (all currently registered commands) and ``project_path`` (absolute project directory) and returns a dictionary with up to four keys:
 
+- ``version``: A string representing the interface version of the extension. Currently, the API version is ``1``. **This key is mandatory** and must be provided.
 - ``global_options``: A list of options available globally for all commands. Each option is a dictionary with fields such as ``names``, ``help``, ``type``, ``is_flag``, ``scope``, etc.
 - ``global_action_callbacks``: A list of functions called once before any task execution. Each global action callback function accepts three arguments:
 

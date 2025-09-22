@@ -768,6 +768,12 @@ def merge_action_lists(*action_lists: dict, custom_actions: dict[str, Any] | Non
     if not custom_actions:
         return merged_actions
 
+    if not custom_actions.get('version'):
+        raise AttributeError(
+            'Attribute "version" is required in custom extension. '
+            'Please update your extension dictionary to contain the "version" attribute.'
+        )
+
     existing_identifiers = _get_all_action_identifiers(merged_actions['actions'])
     for name, action in custom_actions.get('actions', {}).items():
         try:
