@@ -594,6 +594,10 @@ function(__init_component)
             # The newly added component has a higher priority than the existing
             # one. Since the component name and targets are identical, update
             # the existing component with the new directory and priority.
+
+            # Store the overridden component directory (original component directory) for compatibility with cmakev1
+            idf_component_set_property("${component_name}" COMPONENT_OVERRIDEN_DIR "${existing_component_directory}")
+
             idf_component_set_property("${component_name}" COMPONENT_DIR "${component_directory}")
             idf_component_set_property("${component_name}" COMPONENT_SOURCE "${component_source}")
             idf_component_set_property("${component_name}" COMPONENT_PRIORITY ${component_priority})
