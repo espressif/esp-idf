@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include "sdkconfig.h"
 #include <stdbool.h>
+#include <stddef.h>
 #include "lwip/ip_addr.h"
 #include "lwip/err.h"
 
@@ -75,9 +76,15 @@ typedef enum
 #define DHCPS_LEASE_UNIT CONFIG_LWIP_DHCPS_LEASE_UNIT
 
 struct dhcps_pool{
-	ip4_addr_t ip;
-	u8_t mac[6];
-	u32_t lease_timer;
+    ip4_addr_t ip;
+    u8_t mac[6];
+    u32_t lease_timer;
+    /* Optional: client's hostname from DHCP option 12, if provided */
+#if CONFIG_LWIP_DHCPS
+#if CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
+    char hostname[CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN];
+#endif
+#endif
 };
 
 typedef u32_t dhcps_time_t;
@@ -166,6 +173,16 @@ err_t dhcps_set_option_info(dhcps_t *dhcps, u8_t op_id, void *opt_info, u32_t op
  * @return True if the IP address has been found
  */
 bool dhcp_search_ip_on_mac(dhcps_t *dhcps, u8_t *mac, ip4_addr_t *ip);
+
+/**
+ * @brief Tries to find client hostname corresponding to the supplied MAC
+ * @param dhcps Pointer to the DHCP handle
+ * @param mac Supplied MAC address
+ * @param out Output buffer to receive the hostname (null-terminated)
+ * @param out_len Size of the output buffer
+ * @return True if the hostname has been found and copied (may be empty string if not provided by client)
+ */
+bool dhcps_get_hostname_on_mac(dhcps_t *dhcps, const u8_t *mac, char *out, size_t out_len);
 
 /**
  * @brief Sets the DNS server address for the DHCP server

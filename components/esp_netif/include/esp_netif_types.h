@@ -152,11 +152,31 @@ typedef struct {
     bool preferred;                 /*!< The default preference of the address */
 } ip_event_add_ip6_t;
 
-/** Event structure for IP_EVENT_ASSIGNED_IP_TO_CLIENT event */
+/** Event structure for IP_EVENT_ASSIGNED_IP_TO_CLIENT event
+ *
+ * This event is posted when a local DHCP server (e.g., SoftAP) assigns an IPv4
+ * address to a client. The structure carries the assigned IPv4 address and the
+ * client's MAC address. If DHCP server support is disabled via Kconfig
+ * (CONFIG_LWIP_DHCPS=n), the \c ip field is not populated.
+ *
+ * If enabled by Kconfig (CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME=y), the
+ * optional DHCP client hostname (option 12) is also included in the \c hostname
+ * field. The hostname is a null-terminated UTF-8 string and may be empty if the
+ * client did not provide one. Its maximum length (including the terminator) is
+ * bounded by CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN; longer hostnames are truncated.
+ * The value is sanitized to contain only letters, digits, dot, dash, and
+ * underscore. Applications should treat this field as untrusted input.
+ */
 typedef struct {
     esp_netif_t *esp_netif; /*!< Pointer to the associated netif handle */
     esp_ip4_addr_t ip; /*!< IP address which was assigned to the station */
     uint8_t mac[6];    /*!< MAC address of the connected client */
+    /* Client hostname as provided via DHCP option 12 (if available). */
+#ifndef CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN
+#define CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN 64
+#endif
+#define ESP_NETIF_HOSTNAME_MAX_LEN CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN
+    char hostname[ESP_NETIF_HOSTNAME_MAX_LEN]; /*!< Optional DHCP client hostname (may be empty string) */
 } ip_event_assigned_ip_to_client_t;
 
 /** Compatibility event structure for ip_event_ap_staipassigned_t event
