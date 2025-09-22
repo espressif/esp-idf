@@ -549,6 +549,33 @@ A simple example for transmitting data:
         vTaskDelete(NULL);
     }
 
+.. only:: not esp32
+
+    I2C Slave Reset TX FIFO
+    ~~~~~~~~~~~~~~~~~~~~~~~~
+
+    In some scenarios, the slave may prepare more data than the master actually reads. For example, if the slave prepares 16 bytes of data but the master only reads 8 bytes, the remaining 8 bytes will stay in the TX FIFO. To prepare fresh data for the next transaction, you can use :cpp:func:`i2c_slave_reset_tx_fifo` to clear the TX FIFO.
+
+    .. note::
+
+        It is recommended to call this function after the master has completed the read transaction to ensure data integrity.
+
+    Simple example:
+
+    .. code:: c
+
+        // First write, data may not be completely read by master
+        ESP_ERROR_CHECK(i2c_slave_write(handle, data_buffer_1, buffer_size_1, &write_len_1, 1000));
+
+        // Wait for the next master read transaction, here we simply use a delay for demonstration
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        // Clear remaining data in TX FIFO
+        ESP_ERROR_CHECK(i2c_slave_reset_tx_fifo(handle));
+
+        // Second write, new data will be sent normally
+        ESP_ERROR_CHECK(i2c_slave_write(handle, data_buffer_2, buffer_size_2, &write_len_2, 1000));
+
 I2C Slave Read
 ~~~~~~~~~~~~~~
 

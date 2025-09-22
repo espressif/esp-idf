@@ -549,6 +549,33 @@ I2C 从机写入
         vTaskDelete(NULL);
     }
 
+.. only:: not esp32
+
+    I2C 从机重置 TX FIFO
+    ~~~~~~~~~~~~~~~~~~~~
+
+    在某些情况下，从机准备的数据可能未完全被主机读取。例如，从机准备了 16 字节数据，但主机只读取了 8 字节，剩余的 8 字节将保留在 TX FIFO 中。为了为下一次事务准备新的数据，可以使用 :cpp:func:`i2c_slave_reset_tx_fifo` 来清空 TX FIFO。
+
+    .. note::
+
+        建议在主机完成读取事务后再调用此函数，以确保数据完整性。
+
+    简单示例：
+
+    .. code:: c
+
+        // 第一次写入，数据可能未完全被主机读取
+        ESP_ERROR_CHECK(i2c_slave_write(handle, data_buffer_1, buffer_size_1, &write_len_1, 1000));
+
+        // 等待下一次主机读取事务，简单起见使用延时代替
+        vTaskDelay(pdMS_TO_TICKS(100));
+
+        // 清空 TX FIFO 中的剩余数据
+        ESP_ERROR_CHECK(i2c_slave_reset_tx_fifo(handle));
+
+        // 第二次写入，新数据会正常发送
+        ESP_ERROR_CHECK(i2c_slave_write(handle, data_buffer_2, buffer_size_2, &write_len_2, 1000));
+
 I2C 从机读取
 ~~~~~~~~~~~~
 

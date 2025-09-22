@@ -320,6 +320,13 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
     i2c_ll_set_rxfifo_full_thr(hal->dev, SOC_I2C_FIFO_LEN / 2);
     i2c_ll_set_sda_timing(hal->dev, 10, 10);
 
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+    // Workaround for hardware bug in ESP32S3 and ESP32C3.
+    // Please note that following code has no functionality.
+    // It's just use for workaround the potential issue.
+    i2c_ll_slave_enable_auto_start(hal->dev, true);
+#endif
+
     i2c_ll_disable_intr_mask(hal->dev, I2C_LL_INTR_MASK);
     i2c_ll_clear_intr_mask(hal->dev, I2C_LL_INTR_MASK);
 
@@ -443,3 +450,39 @@ esp_err_t i2c_slave_register_event_callbacks(i2c_slave_dev_handle_t i2c_slave, c
     i2c_slave->receive_callback = cbs->on_receive;
     return ESP_OK;
 }
+
+#if !CONFIG_IDF_TARGET_ESP32
+esp_err_t i2c_slave_reset_tx_fifo(i2c_slave_dev_handle_t i2c_slave)
+{
+    ESP_RETURN_ON_FALSE(i2c_slave != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c slave handle not initialized");
+    ESP_RETURN_ON_FALSE(i2c_slave->tx_ring_buf != NULL, ESP_ERR_INVALID_STATE, TAG, "invalid tx buffer state");
+
+    xSemaphoreTake(i2c_slave->operation_mux, portMAX_DELAY);
+
+    // Clear up TX RingBuffer
+    if (i2c_slave->tx_ring_buf) {
+        void *data = NULL;
+        size_t size = 0;
+        do {
+            data = xRingbufferReceiveUpTo(i2c_slave->tx_ring_buf, &size, 0, SIZE_MAX);
+            if (data) {
+                vRingbufferReturnItem(i2c_slave->tx_ring_buf, data);
+            }
+        } while (data != NULL);
+    } else {
+        xSemaphoreGive(i2c_slave->operation_mux);
+        return ESP_FAIL;
+    }
+
+    portENTER_CRITICAL(&i2c_slave->base->spinlock);
+    i2c_ll_txfifo_rst(i2c_slave->base->hal.dev);
+
+#if !CONFIG_IDF_TARGET_ESP32S2
+    i2c_ll_master_fsm_rst(i2c_slave->base->hal.dev);
+#endif
+
+    portEXIT_CRITICAL(&i2c_slave->base->spinlock);
+    xSemaphoreGive(i2c_slave->operation_mux);
+    return ESP_OK;
+}
+#endif
