@@ -560,6 +560,12 @@ menu "LWIP"
         help
             Enable callbacks when the network interface is up/down and addresses are changed.
 
+    config LWIP_NETIF_LINK_CALLBACK
+        bool "Enable link callback for network interfaces"
+        default n
+        help
+            Enable callbacks when the physical network link is up/down.
+
     menuconfig LWIP_NETIF_LOOPBACK
         bool "Support per-interface loopback"
         default y

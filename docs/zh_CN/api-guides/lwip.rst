@@ -507,6 +507,12 @@ ESP-IDF 提供了其他可覆盖的 lwIP 钩子，例如：
 
 另一种方法是在头文件中定义函数式宏，该头文件将预先包含在 lwIP 钩子文件中，请参考 :ref:`lwip-custom-hooks`。
 
+网络接口回调
+-----------------
+
+- 状态回调 (:ref:`CONFIG_LWIP_NETIF_STATUS_CALLBACK`)：启用 `netif_set_status_callback()`，在接口上下线以及 IPv4/IPv6 地址发生变化时通知。
+- 链路回调 (:ref:`CONFIG_LWIP_NETIF_LINK_CALLBACK`)：启用 `netif_set_link_callback()`，在物理链路上下线时通知。该回调由驱动或虚拟接口调用 `netif_set_link_up()` / `netif_set_link_down()` 触发。可与 `LWIP_NETIF_EXT_STATUS_CALLBACK` 配合使用，以获取更丰富的事件通知。
+
 .. _lwip-limitations:
 
 限制
