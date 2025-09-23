@@ -1371,8 +1371,7 @@ TEST_CASE("Test ring buffer reset unblocks sender ", "[esp_ringbuf][linux]")
     TEST_ASSERT_EQUAL(false, post_reset_send);
     // Reset the ring buffer
     vRingbufferReset(rb);
-    // Check task has unblocked and sent
-    vTaskDelay(1);
+
     TEST_ASSERT_EQUAL(true, post_reset_send);
     // Cleanup
     vRingbufferDelete(rb);

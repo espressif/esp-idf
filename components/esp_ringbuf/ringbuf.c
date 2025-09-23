@@ -1252,15 +1252,19 @@ void vRingbufferReturnItemFromISR(RingbufHandle_t xRingbuffer, void *pvItem, Bas
     portEXIT_CRITICAL_ISR(&pxRingbuffer->mux);
 }
 
-void vRingbufferReset(RingbufHandle_t xRingbuffer)
+esp_err_t vRingbufferReset(RingbufHandle_t xRingbuffer)
 {
     Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
     configASSERT(pxRingbuffer);
 
     portENTER_CRITICAL(&pxRingbuffer->mux);
     // Check for unreturned buffers
-    configASSERT(pxRingbuffer->pucAcquire == pxRingbuffer->pucWrite);
-    configASSERT(pxRingbuffer->pucRead == pxRingbuffer->pucFree);
+    if ((pxRingbuffer->pucAcquire != pxRingbuffer->pucWrite) ||
+            (pxRingbuffer->pucRead != pxRingbuffer->pucFree)) {
+        portEXIT_CRITICAL(&pxRingbuffer->mux);
+        return ESP_ERR_INVALID_STATE;
+    }
+
     // Reset state
     pxRingbuffer->pucAcquire = pxRingbuffer->pucHead;
     pxRingbuffer->pucWrite = pxRingbuffer->pucHead;
@@ -1276,6 +1280,8 @@ void vRingbufferReset(RingbufHandle_t xRingbuffer)
         }
     }
     portEXIT_CRITICAL(&pxRingbuffer->mux);
+
+    return ESP_OK;
 }
 
 void vRingbufferDelete(RingbufHandle_t xRingbuffer)

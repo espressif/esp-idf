@@ -391,9 +391,10 @@ void vRingbufferReturnItemFromISR(RingbufHandle_t xRingbuffer, void *pvItem, Bas
  *
  * @param[in]   xRingbuffer     Ring buffer to reset
  *
- * @note    Users must ensure that all buffers are returned before calling this function
+ * @return ESP_ERR_INVALID_STATE if one or more items are not sent, completed or returned
+ *         ESP_OK if the operation was successful
  */
-void vRingbufferReset(RingbufHandle_t xRingbuffer);
+esp_err_t vRingbufferReset(RingbufHandle_t xRingbuffer);
 
 /**
  * @brief   Delete a ring buffer
