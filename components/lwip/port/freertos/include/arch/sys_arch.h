@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  */
 #ifndef __SYS_ARCH_H__
 #define __SYS_ARCH_H__
@@ -18,12 +18,20 @@ extern "C" {
 #endif
 
 
-typedef SemaphoreHandle_t sys_sem_t;
+typedef StaticSemaphore_t sys_sem_t;
 typedef SemaphoreHandle_t sys_mutex_t;
 typedef TaskHandle_t sys_thread_t;
 
+/**
+ * @brief Mailbox structure using static allocation to prevent heap fragmentation
+ *
+ * This structure uses FreeRTOS static queue allocation instead of dynamic allocation.
+ * The buffer[] field is a flexible array member that points to the queue storage
+ * allocated immediately after this structure.
+ */
 typedef struct sys_mbox_s {
-  QueueHandle_t os_mbox;
+  StaticQueue_t os_mbox;  /**< FreeRTOS static queue structure */
+  uint8_t buffer[];       /**< Flexible array member for queue storage */
 }* sys_mbox_t;
 
 /** This is returned by _fromisr() sys functions to tell the outermost function
@@ -45,9 +53,20 @@ void sys_delay_ms(uint32_t ms);
 #define sys_mbox_valid(mbox)       (*(mbox) != NULL)
 #define sys_mbox_set_invalid(mbox) (*(mbox) = NULL)
 
-#define sys_sem_valid_val(sema)   ((sema) != NULL)
-#define sys_sem_valid(sema)       (((sema) != NULL) && sys_sem_valid_val(*(sema)))
-#define sys_sem_set_invalid(sema) ((*(sema)) = NULL)
+/**
+ * @brief Check if a static semaphore is valid (initialized)
+ *
+ * For static semaphores, we check if the structure is zero-initialized.
+ * A zero-initialized StaticSemaphore_t indicates an uninitialized semaphore.
+ */
+#define sys_sem_valid(sema)       ((memcmp((sema), &(StaticSemaphore_t){0}, sizeof(StaticSemaphore_t)) == 0) ? pdFALSE : pdTRUE)
+
+/**
+ * @brief Mark a static semaphore as invalid (uninitialized)
+ *
+ * Sets the entire StaticSemaphore_t structure to zero, indicating it's uninitialized.
+ */
+#define sys_sem_set_invalid(sema) (memset((sema), 0, sizeof(StaticSemaphore_t)))
 
 void sys_delay_ms(uint32_t ms);
 sys_sem_t* sys_thread_sem_init(void);
