@@ -60,7 +60,7 @@ if(esp_tee_build)
                      "ecc_hal.c")
 
     if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
-        list(APPEND srcs "spi_flash_hal.c")
+        list(APPEND srcs "spi_flash_hal.c" "spi_flash_hal_iram.c")
     endif()
 elseif(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "color_hal.c")
