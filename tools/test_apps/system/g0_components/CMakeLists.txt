@@ -26,6 +26,10 @@ idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH_ENABLED 1)
 
 project(g0_components)
 
+if(CONFIG_IDF_TARGET_ESP32P4)
+    idf_build_set_property(C_COMPILE_OPTIONS "-DCONFIG_ESP_REV_MIN_FULL=300" APPEND)
+endif()
+
 if(CONFIG_IDF_TARGET_ESP32C2)
     # clk_tree hal-driver needs CONFIG_XTAL_FREQ
     idf_build_set_property(C_COMPILE_OPTIONS "-DCONFIG_XTAL_FREQ=26" APPEND)
