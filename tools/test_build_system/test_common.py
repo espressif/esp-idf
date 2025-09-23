@@ -71,7 +71,8 @@ def test_idf_build_with_env_var_sdkconfig_defaults(test_app_copy: Path, default_
         fw.write('CONFIG_BT_ENABLED=y')
 
     default_idf_env['SDKCONFIG_DEFAULTS'] = 'sdkconfig.test'
-    run_idf_py('build', env=default_idf_env)
+    # idf.py reconfigure would generate the sdkconfig file
+    run_idf_py('reconfigure', env=default_idf_env)
 
     with open(test_app_copy / 'sdkconfig') as fr:
         assert 'CONFIG_BT_ENABLED=y' in fr.read()
