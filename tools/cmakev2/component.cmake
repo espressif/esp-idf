@@ -678,6 +678,82 @@ function(__dump_component_properties components)
     endforeach()
 endfunction()
 
+#[[
+    __set_component_cmakev1_properties(<component>)
+
+    *component[in]*
+
+        Component name.
+
+    To maintain backward compatibility with cmakev1 components, add the
+    component properties: INCLUDE_DIRS, PRIV_INCLUDE_DIRS, REQUIRES,
+    PRIV_REQUIRES, and SRCS. This is achieved by examining the real target
+    properties of the component and reconstructing the variables that are
+    otherwise explicitly provided with idf_component_register for cmakev1
+    components.
+#]]
+function(__set_component_cmakev1_properties component_name)
+    idf_component_get_property(component_real_target "${component_name}" COMPONENT_REAL_TARGET)
+    idf_component_get_property(component_dir "${component_name}" COMPONENT_DIR)
+
+    if(NOT component_real_target)
+        return()
+    endif()
+
+    # Set SRCS and COMPONENT_TYPE properties
+    get_target_property(component_sources "${component_real_target}" SRCS)
+    if(component_sources)
+        __get_absolute_paths(PATHS "${component_sources}" BASE_DIR "${component_dir}" OUTPUT sources)
+        idf_component_set_property("${component_name}" SOURCES "${sources}")
+        idf_component_set_property("${component_name}" COMPONENT_TYPE LIBRARY)
+    else()
+        idf_component_set_property("${component_name}" COMPONENT_TYPE CONFIG_ONLY)
+    endif()
+
+    # Set INCLUDE_DIRS and PRIV_INCLUDE_DIRS properties
+    get_target_property(include_dirs "${component_real_target}" INCLUDE_DIRECTORIES)
+    __remove_genex(include_dirs)
+
+    get_target_property(interface_include_dirs "${component_real_target}" INTERFACE_INCLUDE_DIRECTORIES)
+    __remove_genex(interface_include_dirs)
+
+    __list_intersection(interface_include_dirs include_dirs public_include_dirs_abs)
+    __list_difference(include_dirs public_include_dirs_abs priv_include_dirs_abs)
+
+    __get_relative_paths(PATHS "${public_include_dirs_abs}" BASE_DIR "${component_dir}" OUTPUT public_include_dirs)
+    __get_relative_paths(PATHS "${priv_include_dirs_abs}" BASE_DIR "${component_dir}" OUTPUT priv_include_dirs)
+
+    idf_component_set_property(${component_name} INCLUDE_DIRS "${public_include_dirs}")
+    idf_component_set_property(${component_name} PRIV_INCLUDE_DIRS "${priv_include_dirs}")
+
+    # Set REQUIRES and PRIV_REQUIRES properties
+    get_target_property(link_libraries ${component_real_target} LINK_LIBRARIES)
+    set(link_components "")
+    foreach(lib IN LISTS link_libraries)
+        __get_component_interface(COMPONENT "${lib}" OUTPUT req_interface)
+        if(req_interface)
+            idf_component_get_property(req_name "${req_interface}" COMPONENT_NAME)
+            list(APPEND link_components "${req_name}")
+        endif()
+    endforeach()
+
+    get_target_property(interface_link_libraries ${component_real_target} INTERFACE_LINK_LIBRARIES)
+    set(interface_link_components "")
+    foreach(lib IN LISTS interface_link_libraries)
+        __get_component_interface(COMPONENT "${lib}" OUTPUT req_interface)
+        if(req_interface)
+            idf_component_get_property(req_name "${req_interface}" COMPONENT_NAME)
+            list(APPEND interface_link_components "${req_name}")
+        endif()
+    endforeach()
+
+    __list_intersection(interface_link_components link_components requires)
+    __list_difference(link_components requires priv_requires)
+
+    idf_component_set_property(${component_name} REQUIRES "${requires}")
+    idf_component_set_property(${component_name} PRIV_REQUIRES "${priv_requires}")
+endfunction()
+
 #[[api
 .. cmakev2:function:: idf_component_include
 
@@ -910,6 +986,10 @@ function(idf_component_include name)
     # The component was not handled by the idf_component_register shim,
     # consider it as a component for cmakev2.
     idf_component_set_property("${component_name}" COMPONENT_FORMAT CMAKEV2)
+
+    # Add INCLUDE_DIRS, PRIV_INCLUDE_DIRS, REQUIRES, PRIV_REQUIRES and SRCS
+    # component properties.
+    __set_component_cmakev1_properties("${component_name}")
 
     # The component's target is an interface library; nothing more needs to be
     # set.
