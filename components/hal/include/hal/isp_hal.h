@@ -90,7 +90,7 @@ void isp_hal_init(isp_hal_context_t *hal, int isp_id);
 typedef struct {
     isp_color_contrast_t color_contrast;          ///< The color contrast value, range 0~1, decimal value should be 0~127
     isp_color_saturation_t color_saturation;      ///< The color saturation value, range 0~1, decimal value should be 0~127
-    uint32_t color_hue;                           ///< The color hue angle value, range 0-360
+    uint32_t color_hue;                           ///< The color hue angle value, range 0-359
     int color_brightness;                         ///< The color brightness value, range -128~127
 } isp_hal_color_cfg_t;
 

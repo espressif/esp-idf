@@ -10,6 +10,7 @@
 #include "esp_attr.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
+#include "hal/config.h"
 #include "hal/hal_utils.h"
 #include "hal/isp_types.h"
 #include "hal/color_types.h"
@@ -109,7 +110,7 @@ extern "C" {
 ---------------------------------------------------------------*/
 #define ISP_LL_COLOR_CONTRAST_MAX       0xff
 #define ISP_LL_COLOR_SATURATION_MAX     0xff
-#define ISP_LL_COLOR_HUE_MAX            360
+#define ISP_LL_COLOR_HUE_MAX            359
 #define ISP_LL_COLOR_BRIGNTNESS_MIN     -128
 #define ISP_LL_COLOR_BRIGNTNESS_MAX     127
 
@@ -958,7 +959,10 @@ static inline void isp_ll_color_set_saturation(isp_dev_t *hw, isp_color_saturati
  */
 static inline void isp_ll_color_set_hue(isp_dev_t *hw, uint32_t color_hue)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->color_ctrl, color_hue, color_hue);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->color_ctrl, color_hue, color_hue & 0xFF);
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    hw->color_hue_ctrl.color_hue_h = (color_hue >> 8) & 0x01;
+#endif
 }
 
 /**

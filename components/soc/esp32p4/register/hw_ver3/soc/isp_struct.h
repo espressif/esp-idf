@@ -1642,7 +1642,7 @@ typedef union {
          */
         uint32_t color_saturation:8;
         /** color_hue : R/W; bitpos: [15:8]; default: 0;
-         *  this field configures the color hue angle
+         *  this field configures the color hue angle lower 8 bits
          */
         uint32_t color_hue:8;
         /** color_contrast : R/W; bitpos: [23:16]; default: 128;

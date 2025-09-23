@@ -27,8 +27,8 @@ typedef struct {
                                                    *   Range 0 ~ 1, decimal value should be 0~127, default 1
                                                    */
     uint32_t color_hue;                           /*!< The color hue value, based on the color wheel.
-                                                   *   0 degrees represents red, 120 degrees represents green, and 240 degrees represents blue. 360 degrees overlaps with 0 degrees
-                                                   *   Range 0 ~ 360, default 0.
+                                                   *   0 degrees represents red, 120 degrees represents green, and 240 degrees represents blue.
+                                                   *   Range 0 ~ 359, default 0.
                                                    */
     int color_brightness;                         /*!< The color brightness value.
                                                    *   Range -128 ~ 127, default 0.
