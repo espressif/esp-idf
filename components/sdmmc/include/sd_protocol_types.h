@@ -242,7 +242,17 @@ typedef struct {
     esp_err_t (*get_real_freq)(int slot, int* real_freq); /*!< Host function to provide real working freq, based on SDMMC controller setup */
     sdmmc_delay_phase_t input_delay_phase; /*!< input delay phase, this will only take into effect when the host works in SDMMC_FREQ_HIGHSPEED or SDMMC_FREQ_52M. Driver will print out how long the delay is*/
     esp_err_t (*set_input_delay)(int slot, sdmmc_delay_phase_t delay_phase); /*!< set input delay phase */
-    void* dma_aligned_buffer; /*!< Leave it NULL. Reserved for cache aligned buffers for SDIO mode */
+    /**
+     * @brief Cache aligned buffer for multi-block RW and IO commands
+     *
+     * Use cases:
+     *  - Temporary buffer for multi-block read/write transactions to/from unaligned buffers.
+     *    Allocate with DMA capable memory, size should be an integer multiple of your card's sector size.
+     *    See also Kconfig option SD_UNALIGNED_MULTI_BLOCK_RW_MAX_CHUNK_SIZE.
+     *  - Cache aligned buffer for IO commands in SDIO mode.
+     *    If you allocate manually, make sure it is at least SDMMC_IO_BLOCK_SIZE bytes large.
+     */
+    void* dma_aligned_buffer;
     sd_pwr_ctrl_handle_t pwr_ctrl_handle;  /*!< Power control handle */
     esp_err_t (*get_dma_info)(int slot, esp_dma_mem_info_t *dma_mem_info); /*!< host function to dma memory information*/
     bool (*check_buffer_alignment)(int slot, const void *buf, size_t size); /*!< Check if buffer meets alignment requirements */
