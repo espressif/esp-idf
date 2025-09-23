@@ -193,6 +193,56 @@ function(__get_absolute_paths)
 endfunction()
 
 #[[
+    __get_relative_paths(PATHS <path>...
+                         BASE_DIR <base_dir>
+                         OUTPUT <variable>)
+
+    *PATHS[in]*
+
+        List of paths to convert to relative paths.
+
+    *BASE_DIR[in]*
+
+        Base directory for finding relative paths.
+
+    *OUTPUT[out]*
+
+        Output variable to store relative paths.
+
+    For a given ``PATHS``, return the relative paths to ``BASE_DIR`` in
+    ``OUTPUT``.
+#]]
+function(__get_relative_paths)
+    set(options)
+    set(one_value BASE_DIR OUTPUT)
+    set(multi_value PATHS)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_OUTPUT)
+        idf_die("OUTPUT option is required")
+    endif()
+
+    if(NOT DEFINED ARG_BASE_DIR)
+        idf_die("BASE_DIR option is required")
+    endif()
+
+    if(NOT DEFINED ARG_PATHS)
+        set(ARG_PATHS "")
+    endif()
+
+    set(relative_paths "")
+    foreach(path IN LISTS ARG_PATHS)
+        file(RELATIVE_PATH path_rel "${ARG_BASE_DIR}" "${path}")
+        if(NOT path_rel)
+            set(path_rel ".")
+        endif()
+        list(APPEND relative_paths "${path_rel}")
+    endforeach()
+
+    set(${ARG_OUTPUT} "${relative_paths}" PARENT_SCOPE)
+endfunction()
+
+#[[
     __get_default_value(VARIABLE <variable>
                         DEFAULT <value>)
                         OUTPUT <result>)
