@@ -280,6 +280,7 @@ pytest_buildv2_system:
       test_partition.py
       test_reproducible_build.py
       test_sdkconfig.py
+      test_versions.py
 
 pytest_build_system_macos:
   extends:
