@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,9 +17,20 @@ extern "C" {
 #endif
 
 /**
- * Cache init and cache hal context init
+ * @brief Cache hal config
  */
-void cache_hal_init(void);
+typedef struct {
+    uint8_t core_nums;              ///< CPU core numbers
+    uint32_t l2_cache_size;         ///< L2 cache size
+    uint32_t l2_cache_line_size;    ///< L2 cache line size
+} cache_hal_config_t;
+
+/**
+ * Cache init and cache hal context init
+ *
+ * @param config  Cache hal config
+ */
+void cache_hal_init(const cache_hal_config_t *config);
 
 /**
  * @brief Disable Cache

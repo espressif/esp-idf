@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,7 @@
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
 #include "hal/gpio_hal.h"
+#include "hal/mmu_hal.h"
 #include "xtensa/config/core.h"
 #include "xt_instr_macros.h"
 
@@ -59,6 +60,15 @@ static void bootloader_reset_mmu(void)
     mmu_init(1);
     DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
 #endif
+
+    mmu_hal_config_t mmu_config = {
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        .core_nums = 1,
+#else
+        .core_nums = SOC_CPU_CORES_NUM,
+#endif
+    };
+    mmu_hal_ctx_init(&mmu_config);
 
     /* normal ROM boot exits with DROM0 cache unmasked,
         but serial bootloader exits with it masked. */

@@ -96,6 +96,7 @@
 #include "soc/rtc.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/mmu_hal.h"
 #include "hal/efuse_ll.h"
 #include "hal/uart_ll.h"
 #include "soc/uart_pins.h"
@@ -463,15 +464,35 @@ FORCE_INLINE_ATTR IRAM_ATTR void ram_app_init(void)
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 //Keep this static, the compiler will check output parameters are initialized.
-FORCE_INLINE_ATTR IRAM_ATTR void cache_init(void)
+FORCE_INLINE_ATTR IRAM_ATTR void ext_mem_init(void)
 {
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && !CONFIG_IDF_TARGET_ESP32H4 // TODO IDF-12289
     // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
     do_multicore_settings();
 #endif
 
+    cache_hal_config_t config = {
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        .core_nums = 1,
+#else
+        .core_nums = SOC_CPU_CORES_NUM,
+#endif
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        .l2_cache_size = CONFIG_CACHE_L2_CACHE_SIZE,
+        .l2_cache_line_size = CONFIG_CACHE_L2_CACHE_LINE_SIZE,
+#endif
+    };
     //cache hal ctx needs to be initialised
-    cache_hal_init();
+    cache_hal_init(&config);
+    //mmu hal ctx needs to be initialised
+    mmu_hal_config_t mmu_config = {
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        .core_nums = 1,
+#else
+        .core_nums = SOC_CPU_CORES_NUM,
+#endif
+    };
+    mmu_hal_ctx_init(&mmu_config);
 
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Configure the mode of instruction cache : cache size, cache associated ways, cache line size. */
@@ -921,9 +942,9 @@ void IRAM_ATTR call_start_cpu0(void)
     ram_app_init();
 #endif  //CONFIG_APP_BUILD_TYPE_RAM
 
-    // Initialize the cache.
+    // Initialize the cache and mmu.
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-    cache_init();
+    ext_mem_init();
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
     sys_rtc_init(rst_reas);
