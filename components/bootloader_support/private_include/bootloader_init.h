@@ -14,7 +14,7 @@ extern "C" {
 
 /**@{*/
 /**
- * @brief labels from bootloader linker script: bootloader.ld
+ * @brief labels from bootloader linker script: bootloader.ld.in
  *
  */
 extern int _bss_start;

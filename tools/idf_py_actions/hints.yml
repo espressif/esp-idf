@@ -579,3 +579,7 @@
 -
     re: "error: implicit declaration of function 'esp_lcd_new_panel_nt35510'"
     hint: "The NT35510 LCD device driver has been moved out of ESP-IDF and is now hosted in the Component Registry. You can add it to your project by running idf.py add-dependency \"espressif/esp_lcd_nt35510\""
+
+-
+    re: "cannot open linker script file bootloader.ld"
+    hint: "The file 'bootloader.ld' was renamed to 'bootloader.ld.in' in ESP-IDF v6.0. Please use update your build scripts."

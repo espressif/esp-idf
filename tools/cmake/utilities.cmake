@@ -132,18 +132,112 @@ function(file_append_line file line)
     file(APPEND "${file}" "${line}${line_ending}")
 endfunction()
 
-# Add one or more linker scripts to the target, including a link-time dependency
+# Preprocess linker script using C preprocessor
 #
-# Automatically adds a -L search path for the containing directory (if found),
-# and then adds -T with the filename only. This allows INCLUDE directives to be
-# used to include other linker scripts in the same directory.
+# Processes .in linker script files through the C preprocessor to handle:
+# - #include directives for modular linker scripts
+# - #define macros and conditional compilation
+# - Config-dependent linker script generation
+#
+# This function creates a custom command to preprocess the input script,
+# determines the appropriate output path, and generates a CMake target for dependency tracking.
+#
+# Parameters:
+#   cmake_target    - CMake target to add dependencies to
+#   script_in       - Input .in file path (absolute)
+#   output_var      - Variable name to store the resulting output path
+#   preserve_suffix - Whether to keep .in suffix in output filename (optional)
+function(preprocess_linker_file cmake_target script_in output_var preserve_suffix)
+    set(output_dir "${CMAKE_CURRENT_BINARY_DIR}/ld")
+    # Ensure output directory exists
+    file(MAKE_DIRECTORY "${output_dir}")
+
+    # Determine output filename with conditional .in suffix removal
+    get_filename_component(script_name "${script_in}" NAME)
+    set(script_out "${output_dir}/${script_name}")
+
+    # Remove .in suffix if not preserving it
+    if(NOT preserve_suffix)
+        string(REGEX REPLACE "\\.in$" "" script_out "${script_out}")
+    endif()
+
+    # Return the output path to caller
+    set(${output_var} "${script_out}" PARENT_SCOPE)
+
+    # Get build properties
+    idf_build_get_property(sdkconfig_header SDKCONFIG_HEADER)
+    idf_build_get_property(config_dir CONFIG_DIR)
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(idf_target IDF_TARGET)
+
+    # Reference the linker script generator
+    set(linker_script_generator "${idf_path}/tools/cmake/linker_script_preprocessor.cmake")
+
+    # check if the script_in parent directory is the name of the idf_target
+    get_filename_component(script_parent_dir "${script_in}" DIRECTORY)
+    get_filename_component(script_parent_name "${script_parent_dir}" NAME)
+
+    # Initialize extra_cflags to avoid undefined variable
+    set(extra_cflags "")
+
+    if(script_parent_name STREQUAL idf_target)
+        # Add "../.." directory to include path (e.g. for esp_system component)
+        get_filename_component(dir_to_include "${script_parent_dir}" DIRECTORY)
+        set(extra_cflags "-I\"${dir_to_include}\"")
+    endif()
+
+    add_custom_command(
+        OUTPUT ${script_out}
+        COMMAND ${CMAKE_COMMAND}
+            "-DCC=${CMAKE_C_COMPILER}"
+            "-DSOURCE=${script_in}"
+            "-DTARGET=${script_out}"
+            "-DCFLAGS=-I\"${config_dir}\" ${extra_cflags}"
+            -P "${linker_script_generator}"
+        MAIN_DEPENDENCY ${script_in}
+        DEPENDS ${sdkconfig_header}
+        COMMENT "Preprocessing linker script ${script_in} -> ${script_out}"
+        VERBATIM)
+
+    # Create target name based on script filename
+    string(MAKE_C_IDENTIFIER "${script_name}_preprocess" target_name)
+    add_custom_target("${target_name}" DEPENDS "${script_out}")
+
+    add_dependencies(${cmake_target} "${target_name}")
+endfunction()
+
+# Add one or more linker scripts to the target, including a link-time dependency.
+#
+# Core Features:
+# - Adds -L search path for the containing directory (enables INCLUDE directives)
+# - Adds -T with the filename only for linker command
+# - Automatically preprocesses .in files using C preprocessor
+# - Supports explicit PROCESS parameter to enable ldgen processing
+#
+# Parameters:
+#   target      - Target to add linker scripts to
+#   deptype     - Dependency type (PUBLIC, PRIVATE, INTERFACE)
+#   scriptfiles - List of linker script files (.ld, .ld.in, etc.)
+#   PROCESS     - Optional: enable ldgen processing
 function(target_linker_script target deptype scriptfiles)
     cmake_parse_arguments(_ "" "PROCESS" "" ${ARGN})
     foreach(scriptfile ${scriptfiles})
         get_filename_component(abs_script "${scriptfile}" ABSOLUTE)
         message(STATUS "Adding linker script ${abs_script}")
 
+        # === SCRIPT PROCESSING PIPELINE ===
+        # Stage 1: Auto-preprocess .in files (C preprocessor)
+        # Stage 2: Apply explicit template processing (ldgen templates)
+
+        # Stage 1: Handle .in files with C preprocessor
+        if(abs_script MATCHES "\\.in$")
+            message(STATUS "  -> Preprocessing .in script: ${abs_script}")
+            preprocess_linker_file("${target}" "${abs_script}" abs_script "${__PROCESS}")
+        endif()
+
+        # Stage 2: Apply explicit ldgen template processing (if requested)
         if(__PROCESS)
+            message(STATUS "  -> Applying ldgen processing: ${abs_script}")
             get_filename_component(output "${__PROCESS}" ABSOLUTE)
             __ldgen_process_template(${abs_script} ${output})
             set(abs_script ${output})
@@ -165,7 +259,7 @@ function(target_linker_script target deptype scriptfiles)
         # For the time being, record all linker scripts in __LINK_DEPENDS and attach manually to
         # the executable target once it is known.
         if(NOT __PROCESS)
-            idf_build_set_property(__LINK_DEPENDS ${abs_script} APPEND)
+            idf_build_set_property(__LINK_DEPENDS "${abs_script}" APPEND)
         endif()
     endforeach()
 endfunction()

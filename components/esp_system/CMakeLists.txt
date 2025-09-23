@@ -99,7 +99,15 @@ else()
         PROPERTIES COMPILE_FLAGS
         -fno-stack-protector)
 
-    include(${CMAKE_CURRENT_LIST_DIR}/ld/ld.cmake)
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/${target}/memory.ld.in")
+
+    # Generate sections.ld.in and pass it through linker script generator
+    set(sections_name "ld/${target}/sections.ld.in")
+    if(CONFIG_ESP32P4_REV_MIN_300)
+        set(sections_name "ld/${target}/sections.rev3.ld.in")
+    endif()
+    target_linker_script(${COMPONENT_LIB} INTERFACE "${sections_name}"
+                        PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/sections.ld")
 endif()
 
 if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_CPU_CLK_SETTING)

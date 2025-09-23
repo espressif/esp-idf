@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include "sdkconfig.h"
+
 /* Simplified memory map for the bootloader.
  * Make sure the bootloader can load into main memory without overwriting itself.
  */
