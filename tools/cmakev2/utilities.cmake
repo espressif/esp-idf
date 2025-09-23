@@ -1129,3 +1129,27 @@ function(__preprocess_linker_script script_in script_out)
         COMMENT "Preprocessing linker script ${script_in} -> ${script_out}"
         VERBATIM)
 endfunction()
+
+#[[
+    __remove_genex(<list>)
+
+    *list[in,out]*
+
+        List from which entries containing generator expressions should be
+        removed.
+
+    Remove entries containing generator expressions from the ``list``. The
+    ``list`` is modified in place.
+#]]
+function(__remove_genex list)
+    set(result "")
+    foreach(item IN LISTS ${list})
+        # If the item contains a $<...> pattern, skip it
+        string(REGEX MATCH "\\$<[^>]+>" match "${item}")
+        if(NOT match)
+            # Only append if no generator expression found
+            list(APPEND result "${item}")
+        endif()
+    endforeach()
+    set(${list} "${result}" PARENT_SCOPE)
+endfunction()
