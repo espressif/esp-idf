@@ -132,7 +132,7 @@ void app_main(void)
     // Initialize Ethernet driver
     uint8_t eth_port_cnt = 0;
     esp_eth_handle_t *eth_handle;
-    ESP_ERROR_CHECK(example_eth_init(&eth_handle, &eth_port_cnt));
+    ESP_ERROR_CHECK(ethernet_init_all(&eth_handle, &eth_port_cnt));
 
     // Check or multiple ethernet interface
     if (1 < eth_port_cnt) {

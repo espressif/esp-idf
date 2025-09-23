@@ -47,7 +47,7 @@ void init_ethernet_and_netif(void)
 {
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    ESP_ERROR_CHECK(example_eth_init(&s_eth_handles, &s_eth_port_cnt));
+    ESP_ERROR_CHECK(ethernet_init_all(&s_eth_handles, &s_eth_port_cnt));
 
     ESP_ERROR_CHECK(esp_netif_init());
     esp_netif_inherent_config_t esp_netif_config = ESP_NETIF_INHERENT_DEFAULT_ETH();
