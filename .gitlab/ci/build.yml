@@ -281,6 +281,7 @@ pytest_buildv2_system:
       test_reproducible_build.py
       test_sdkconfig.py
       test_versions.py
+      test_common.py
 
 pytest_build_system_macos:
   extends:
