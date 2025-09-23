@@ -1181,3 +1181,32 @@ function(__list_intersection list1 list2 output_var)
     endforeach()
     set(${output_var} "${result}" PARENT_SCOPE)
 endfunction()
+
+#[[
+    __list_difference(<list1> <list2> <output_var>)
+
+    *list1[in]*
+
+        First list.
+
+    *list2[in]*
+
+        Second list.
+
+    *output_var[out]*
+
+        Variable name where the resulting list will be stored.
+
+    Return the difference between the elements of ``list1`` and ``list2``. In
+    other words, the elements that are present in ``list1`` but not in
+    ``list2``.  The resulting list is stored in the ``output_var`` list.
+#]]
+function(__list_difference list1 list2 output_var)
+    set(result "")
+    foreach(item IN LISTS ${list1})
+        if(NOT item IN_LIST ${list2})
+            list(APPEND result "${item}")
+        endif()
+    endforeach()
+    set(${output_var} "${result}" PARENT_SCOPE)
+endfunction()
