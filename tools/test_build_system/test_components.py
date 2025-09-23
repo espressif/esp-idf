@@ -94,6 +94,13 @@ def test_component_sibling_dirs_not_added_to_component_dirs(idf_py: IdfPyFunc, t
     (mycomponents_subdir / 'mycomponent').mkdir(parents=True)
     (mycomponents_subdir / 'mycomponent' / 'CMakeLists.txt').write_text('idf_component_register()')
 
+    # Add PRIV_REQUIRES to main component for cmakev2 compatibility
+    replace_in_file(
+        test_app_copy / 'main' / 'CMakeLists.txt',
+        '# placeholder_inside_idf_component_register',
+        'PRIV_REQUIRES mycomponent',
+    )
+
     # first test by adding single component directory to EXTRA_COMPONENT_DIRS
     (mycomponents_subdir / 'esp32').mkdir(parents=True)
     (mycomponents_subdir / 'esp32' / 'CMakeLists.txt').write_text('idf_component_register()')
@@ -181,6 +188,14 @@ def test_project_components_overrides_extra_components(idf_py: IdfPyFunc, test_a
     logging.info('Project components override components defined in EXTRA_COMPONENT_DIRS')
     (test_app_copy / 'extra_dir' / 'my_component').mkdir(parents=True)
     (test_app_copy / 'extra_dir' / 'my_component' / 'CMakeLists.txt').write_text('idf_component_register()')
+
+    # Add PRIV_REQUIRES to main component for cmakev2 compatibility
+    replace_in_file(
+        test_app_copy / 'main' / 'CMakeLists.txt',
+        '# placeholder_inside_idf_component_register',
+        'PRIV_REQUIRES my_component',
+    )
+
     replace_in_file(
         test_app_copy / 'CMakeLists.txt',
         '# placeholder_before_include_project_cmake',
@@ -200,6 +215,9 @@ def test_project_components_overrides_extra_components(idf_py: IdfPyFunc, test_a
     assert str((test_app_copy / 'extra_dir' / 'my_component').as_posix()) not in data.get('build_component_paths')
 
 
+@pytest.mark.buildv2_skip(
+    'cmakev2 overrides managed components with extra components but both components are included in the build'
+)
 def test_extra_components_overrides_managed_components(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('components defined in EXTRA_COMPONENT_DIRS override managed components')
     (test_app_copy / 'main' / 'idf_component.yml').write_text("""
@@ -232,6 +250,14 @@ def test_managed_components_overrides_idf_components(idf_py: IdfPyFunc, test_app
     logging.info('Managed components override components defined in IDF_PATH/components')
     # created idf component 'cmp' in marker
     idf_path = Path(os.environ['IDF_PATH'])
+
+    # Add PRIV_REQUIRES to main component for cmakev2 compatibility
+    replace_in_file(
+        test_app_copy / 'main' / 'CMakeLists.txt',
+        '# placeholder_inside_idf_component_register',
+        'PRIV_REQUIRES cmp',
+    )
+
     idf_py('reconfigure')
     with open(test_app_copy / 'build' / 'project_description.json') as f:
         data = json.load(f)
@@ -248,6 +274,7 @@ dependencies:
     assert str((idf_path / 'components' / 'cmp').as_posix()) not in data.get('build_component_paths')
 
 
+@pytest.mark.buildv2_skip('cmakev2 does not override with last added components in the same way as cmakev1')
 def test_manifest_local_source_overrides_extra_components(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     (test_app_copy / '..' / 'extra_dir' / 'cmp').mkdir(parents=True)
     (test_app_copy / '..' / 'extra_dir' / 'cmp' / 'CMakeLists.txt').write_text('idf_component_register()')
@@ -278,6 +305,7 @@ dependencies:
     )
 
 
+@pytest.mark.buildv2_skip('cmakev2 does not support EXCLUDE_COMPONENTS')
 def test_exclude_components_not_passed(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('Components in EXCLUDE_COMPONENTS not passed to idf_component_manager')
     idf_py('create-component', '-C', 'components', 'to_be_excluded')
@@ -305,7 +333,7 @@ def test_unknown_component_error(idf_py: IdfPyFunc, test_app_copy: Path) -> None
         replace='REQUIRES unknown',
     )
     ret = idf_py('reconfigure', check=False)
-    assert "Failed to resolve component 'unknown' required by component 'main'" in ret.stderr
+    assert "Failed to resolve component 'unknown'" in ret.stderr
 
 
 def test_component_with_improper_dependency(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
