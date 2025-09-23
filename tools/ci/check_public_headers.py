@@ -2,7 +2,7 @@
 #
 # Checks all public headers in IDF in the ci
 #
-# SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 import argparse
@@ -24,6 +24,7 @@ from typing import Union
 
 class HeaderFailed(Exception):
     """Base header failure exception"""
+
     pass
 
 
@@ -62,7 +63,7 @@ class HeaderFailedContainsStaticAssert(HeaderFailed):
 
 #   Creates a temp file and returns both output as a string and a file name
 #
-def exec_cmd_to_temp_file(what: List, suffix: str='') -> Tuple[int, str, str, str, str]:
+def exec_cmd_to_temp_file(what: List, suffix: str = '') -> Tuple[int, str, str, str, str]:
     out_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
     rc, out, err, cmd = exec_cmd(what, out_file)
     with open(out_file.name, 'r', encoding='utf-8') as f:
@@ -70,7 +71,9 @@ def exec_cmd_to_temp_file(what: List, suffix: str='') -> Tuple[int, str, str, st
     return rc, out, err, out_file.name, cmd
 
 
-def exec_cmd(what: List, out_file: Union['tempfile._TemporaryFileWrapper[bytes]', int]=subprocess.PIPE) -> Tuple[int, str, str, str]:
+def exec_cmd(
+    what: List, out_file: Union['tempfile._TemporaryFileWrapper[bytes]', int] = subprocess.PIPE
+) -> Tuple[int, str, str, str]:
     p = subprocess.Popen(what, stdin=subprocess.PIPE, stdout=out_file, stderr=subprocess.PIPE)
     output_b, err_b = p.communicate()
     rc = p.returncode
@@ -80,12 +83,11 @@ def exec_cmd(what: List, out_file: Union['tempfile._TemporaryFileWrapper[bytes]'
 
 
 class PublicHeaderChecker:
-
-    def log(self, message: str, debug: bool=False) -> None:
+    def log(self, message: str, debug: bool = False) -> None:
         if self.verbose or debug:
             print(message)
 
-    def __init__(self, verbose: bool=False, jobs: int=1, prefix: Optional[str]=None) -> None:
+    def __init__(self, verbose: bool = False, jobs: int = 1, prefix: Optional[str] = None) -> None:
         self.gcc = '{}gcc'.format(prefix)
         self.gpp = '{}g++'.format(prefix)
         self.verbose = verbose
@@ -97,7 +99,9 @@ class PublicHeaderChecker:
         self.kconfig_macro = re.compile(r'\bCONFIG_[A-Z0-9_]+')
         self.static_assert = re.compile(r'(_Static_assert|static_assert)')
         self.defines_assert = re.compile(r'#define[ \t]+ESP_STATIC_ASSERT')
-        self.auto_soc_header = re.compile(r'components/soc/esp[a-z0-9_]+(?:/\w+)?/(include|register)/(soc|modem)/[a-zA-Z0-9_]+.h')
+        self.auto_soc_header = re.compile(
+            r'components/soc/esp[a-z0-9_]+(?:/\w+)?/(include|register)/(soc|modem|hw_ver\d+/soc)/[a-zA-Z0-9_]+.h'
+        )
         self.assembly_nocode = r'^\s*(\.file|\.text|\.ident|\.option|\.attribute|(\.section)?).*$'
         self.check_threads: List[Thread] = []
         self.stdc = '--std=c99'
@@ -109,7 +113,7 @@ class PublicHeaderChecker:
 
     def __enter__(self) -> 'PublicHeaderChecker':
         for i in range(self.jobs):
-            t = Thread(target=self.check_headers, args=(i, ))
+            t = Thread(target=self.check_headers, args=(i,))
             self.check_threads.append(t)
             t.start()
         return self
@@ -155,7 +159,9 @@ class PublicHeaderChecker:
 
     # Checks if the header contains some assembly code and whether it is compilable
     def compile_one_header_with(self, compiler: str, std_flags: str, header: str) -> None:
-        rc, out, err, cmd = exec_cmd([compiler, std_flags, '-S', '-o-', '-include', header, self.main_c] + self.include_dir_flags)
+        rc, out, err, cmd = exec_cmd(
+            [compiler, std_flags, '-S', '-o-', '-include', header, self.main_c] + self.include_dir_flags
+        )
         if rc == 0:
             if not re.sub(self.assembly_nocode, '', out, flags=re.M).isspace():
                 raise HeaderFailedContainsCode()
@@ -185,16 +191,25 @@ class PublicHeaderChecker:
     #                               - We still have some code? -> FAIL the test (our header needs extern "C")
     #                               - Only whitespaces -> header is OK (it contains only macros and directives)
     def preprocess_one_header(self, header: str, num: int) -> None:
-        all_compilation_flags = ['-w', '-P', '-E', '-DESP_PLATFORM', '-include', header, self.main_c] + self.include_dir_flags
+        all_compilation_flags = [
+            '-w',
+            '-P',
+            '-E',
+            '-DESP_PLATFORM',
+            '-include',
+            header,
+            self.main_c,
+        ] + self.include_dir_flags
         # just strip comments to check for CONFIG_... macros or static asserts
-        rc, out, err, _ = exec_cmd([self.gcc, '-fpreprocessed', '-dD',  '-P',  '-E', header] + self.include_dir_flags)
-        # we ignore the rc here, as the `-fpreprocessed` flag expects the file to have macros already expanded, so we might get some errors
-        # here we use it only to remove comments (even if the command returns non-zero code it produces the correct output)
+        rc, out, err, _ = exec_cmd([self.gcc, '-fpreprocessed', '-dD', '-P', '-E', header] + self.include_dir_flags)
+        # we ignore the rc here, as the `-fpreprocessed` flag expects the file to have macros already expanded,
+        # so we might get some errors here we use it only to remove comments (even if the command returns non-zero
+        # code it produces the correct output)
         if re.search(self.kconfig_macro, out):
             # enable defined #error if sdkconfig.h not included
             all_compilation_flags.append('-DIDF_CHECK_SDKCONFIG_INCLUDED')
-        # If the file contain _Static_assert or static_assert, make sure it doesn't not define ESP_STATIC_ASSERT and that it
-        # is not an automatically generated soc header file
+        # If the file contain _Static_assert or static_assert, make sure it doesn't not define ESP_STATIC_ASSERT
+        # and that it is not an automatically generated soc header file
         grp = re.search(self.static_assert, out)
         # Normalize the potential A//B, A/./B, A/../A, from the name
         normalized_path = os.path.normpath(header)
@@ -234,19 +249,22 @@ class PublicHeaderChecker:
                 if re.search(self.extern_c, out):
                     self.log('{} extern C present in the actual header, too - OK'.format(header))
                     return
-                # at this point we know that the header itself is missing extern-C, so we need to check if it contains an actual *code*
-                # we remove all preprocessor's directive to check if there's any code besides macros
+                # at this point we know that the header itself is missing extern-C, so we need to check if it
+                # contains an actual *code* we remove all preprocessor's directive to check if there's any code
+                # besides macros
                 macros = re.compile(r'(?m)^\s*#(?:.*\\\r?\n)*.*$')  # Matches multiline preprocessor directives
                 without_macros = macros.sub('', out)
                 if without_macros.isspace():
                     self.log("{} Header doesn't need extern-C, it's all just macros - OK".format(header))
                     return
-                # at this point we know that the header is not only composed of macro definitions, but could just contain some "harmless" macro calls
-                # let's remove them and check again
-                macros_calls = r'(.*?)ESP_STATIC_ASSERT[^;]+;'   # static assert macro only, we could add more if needed
+                # at this point we know that the header is not only composed of macro definitions, but could
+                # just contain some "harmless" macro calls let's remove them and check again
+                macros_calls = r'(.*?)ESP_STATIC_ASSERT[^;]+;'  # static assert macro only, we could add more if needed
                 without_macros = re.sub(macros_calls, '', without_macros, flags=re.DOTALL)
                 if without_macros.isspace():
-                    self.log("{} Header doesn't need extern-C, it's all macros definitions and calls - OK".format(header))
+                    self.log(
+                        "{} Header doesn't need extern-C, it's all macros definitions and calls - OK".format(header)
+                    )
                     return
 
             self.log('{} Different but no extern C - FAILED'.format(header), True)
@@ -259,7 +277,9 @@ class PublicHeaderChecker:
                 pass
 
     # Get compilation data from an example to list all public header files
-    def list_public_headers(self, ignore_dirs: List, ignore_files: Union[List, Set], only_dir: Optional[str]=None) -> None:
+    def list_public_headers(
+        self, ignore_dirs: List, ignore_files: Union[List, Set], only_dir: Optional[str] = None
+    ) -> None:
         idf_path = os.getenv('IDF_PATH')
         if idf_path is None:
             raise RuntimeError("Environment variable 'IDF_PATH' wasn't set.")
@@ -270,13 +290,14 @@ class PublicHeaderChecker:
             os.unlink(os.path.join(project_dir, 'sdkconfig'))
         except FileNotFoundError:
             pass
-        subprocess.check_call(['idf.py', '-B', build_dir, f'-DSDKCONFIG={sdkconfig}', '-DCOMPONENTS=', 'reconfigure'],
-                              cwd=project_dir)
+        subprocess.check_call(
+            ['idf.py', '-B', build_dir, f'-DSDKCONFIG={sdkconfig}', '-DCOMPONENTS=', 'reconfigure'], cwd=project_dir
+        )
 
         def get_std(json: List, extension: str) -> str:
             # compile commands for the files with specified extension, containing C(XX) standard flag
             command = [c for c in j if c['file'].endswith('.' + extension) and '-std=' in c['command']][0]
-            return str([s for s in command['command'].split() if 'std=' in s][0])     # grab the std flag
+            return str([s for s in command['command'].split() if 'std=' in s][0])  # grab the std flag
 
         build_commands_json = os.path.join(build_dir, 'compile_commands.json')
         with open(build_commands_json, 'r', encoding='utf-8') as f:
@@ -293,7 +314,9 @@ class PublicHeaderChecker:
                 if 'components' in item:
                     include_dirs.append(item[2:])  # Removing the leading "-I"
             if item.startswith('-D'):
-                include_dir_flags.append(item.replace('\\',''))  # removes escaped quotes, eg: -DMBEDTLS_CONFIG_FILE=\\\"mbedtls/esp_config.h\\\"
+                include_dir_flags.append(
+                    item.replace('\\', '')
+                )  # removes escaped quotes, eg: -DMBEDTLS_CONFIG_FILE=\\\"mbedtls/esp_config.h\\\"
         include_dir_flags.append('-I' + os.path.join(build_dir, 'config'))
         include_dir_flags.append('-DCI_HEADER_CHECK')
         sdkconfig_h = os.path.join(build_dir, 'config', 'sdkconfig.h')
@@ -302,14 +325,18 @@ class PublicHeaderChecker:
             f.write('#define IDF_SDKCONFIG_INCLUDED')
         main_c = os.path.join(build_dir, 'compile.c')
         with open(main_c, 'w') as f:
-            f.write('#if defined(IDF_CHECK_SDKCONFIG_INCLUDED) && ! defined(IDF_SDKCONFIG_INCLUDED)\n'
-                    '#error CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED\n'
-                    '#endif')
+            f.write(
+                '#if defined(IDF_CHECK_SDKCONFIG_INCLUDED) && ! defined(IDF_SDKCONFIG_INCLUDED)\n'
+                '#error CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED\n'
+                '#endif'
+            )
         # processes public include dirs, removing ignored files
         all_include_files = []
         files_to_check = []
         for d in include_dirs:
-            if only_dir is not None and not os.path.relpath(d, idf_path).startswith(os.path.relpath(only_dir, idf_path)):
+            if only_dir is not None and not os.path.relpath(d, idf_path).startswith(
+                os.path.relpath(only_dir, idf_path)
+            ):
                 self.log('{} - directory ignored (not in "{}")'.format(d, only_dir))
                 continue
             if os.path.relpath(d, idf_path).startswith(tuple(ignore_dirs)):
@@ -338,7 +365,10 @@ class PublicHeaderChecker:
 
 
 def check_all_headers() -> None:
-    parser = argparse.ArgumentParser('Public header checker file', formatter_class=argparse.RawDescriptionHelpFormatter, epilog='''\
+    parser = argparse.ArgumentParser(
+        'Public header checker file',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""\
     Tips for fixing failures reported by this script
     ------------------------------------------------
     This checker validates all public headers to detect these types of issues:
@@ -367,11 +397,14 @@ def check_all_headers() -> None:
     * Use "-v" argument to produce more verbose output
     * Copy, paste and execute the compilation commands to reproduce build errors (script prints out
       the entire compilation command line with absolute paths)
-    ''')
+    """,
+    )
     parser.add_argument('--verbose', '-v', help='enables verbose mode', action='store_true')
     parser.add_argument('--jobs', '-j', help='number of jobs to run checker', default=1, type=int)
     parser.add_argument('--prefix', '-p', help='compiler prefix', default='xtensa-esp32-elf-', type=str)
-    parser.add_argument('--exclude-file', '-e', help='exception file', default='check_public_headers_exceptions.txt', type=str)
+    parser.add_argument(
+        '--exclude-file', '-e', help='exception file', default='check_public_headers_exceptions.txt', type=str
+    )
     parser.add_argument('--only-dir', '-d', help='reduce the analysis to this directory only', default=None, type=str)
     args = parser.parse_args()
 
