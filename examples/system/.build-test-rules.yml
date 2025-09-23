@@ -411,6 +411,12 @@ examples/system/ulp/ulp_riscv/gpio_interrupt:
   depends_components:
     - ulp
 
+examples/system/ulp/ulp_riscv/gpio_pulse_counter:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  depends_components:
+    - ulp
+
 examples/system/ulp/ulp_riscv/i2c:
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
