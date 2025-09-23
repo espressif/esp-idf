@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -980,25 +980,6 @@ int esp_netif_set_route_prio(esp_netif_t *esp_netif, int route_prio);
  */
 int32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t event_type);
 
-
-/**
- * @brief Iterates over list of interfaces. Returns first netif if NULL given as parameter
- *
- * @note This API doesn't lock the list, nor the TCPIP context, as this it's usually required
- * to get atomic access between iteration steps rather that within a single iteration.
- * Therefore it is recommended to iterate over the interfaces inside esp_netif_tcpip_exec()
- *
- * @note This API is deprecated. Please use esp_netif_next_unsafe() directly if all the system
- * interfaces are under your control and you can safely iterate over them.
- * Otherwise, iterate over interfaces using esp_netif_tcpip_exec(), or use esp_netif_find_if()
- * to search in the list of netifs with defined predicate.
- *
- * @param[in]  esp_netif Handle to esp-netif instance
- *
- * @return First netif from the list if supplied parameter is NULL, next one otherwise
- */
-esp_netif_t *esp_netif_next(esp_netif_t *esp_netif)
-__attribute__((deprecated("use esp_netif_next_unsafe() either directly or via esp_netif_tcpip_exec")));
 
 /**
  * @brief Iterates over list of interfaces without list locking. Returns first netif if NULL given as parameter

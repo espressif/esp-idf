@@ -42,3 +42,69 @@
 
 **影响**：使用 ``ETH_ESP32_EMAC_DEFAULT_CONFIG()`` 的应用程序可继续正常工作。自定义时钟配置需在 EMAC 配置结构体中显式设置，或使用 `Ethernet Init 组件 <https://components.espressif.com/components/espressif/ethernet_init>`_。
 
+
+ESP-NETIF
+*********
+
+移除弃用的 :cpp:func:`esp_netif_next`
+-------------------------------------
+
+已从 :doc:`/api-reference/network/esp_netif` 中移除弃用的迭代辅助函数 :cpp:func:`esp_netif_next`。该 API 在迭代过程中不会对接口列表或 TCP/IP 上下文进行加锁，因而并不安全。
+
+请使用以下替代方案：
+
+- 仅在完全可控的上下文中直接调用 :cpp:func:`esp_netif_next_unsafe`，或在 :cpp:func:`esp_netif_tcpip_exec` 中执行以保证在 TCP/IP 上下文内安全运行。
+- 使用 :cpp:func:`esp_netif_find_if` 并配合谓词查找特定接口，从而避免手动迭代。
+
+迁移方式
+~~~~~~~~~
+
+之前：
+
+.. code-block:: c
+
+    esp_netif_t *it = NULL;
+    while ((it = esp_netif_next(it)) != NULL) {
+        // 使用 "it"
+    }
+
+之后（在可控上下文中进行不加锁迭代）：
+
+.. code-block:: c
+
+    esp_netif_t *it = NULL;
+    while ((it = esp_netif_next_unsafe(it)) != NULL) {
+        // 使用 "it"
+    }
+
+推荐方式（在 TCP/IP 上下文中迭代）：
+
+.. code-block:: c
+
+    static esp_err_t iterate_netifs(void *ctx)
+    {
+        esp_netif_t *it = NULL;
+        while ((it = esp_netif_next_unsafe(it)) != NULL) {
+            // 使用 "it"
+        }
+        return ESP_OK;
+    }
+
+    // 在 TCP/IP 上下文中安全执行迭代
+    ESP_ERROR_CHECK(esp_netif_tcpip_exec(iterate_netifs, NULL));
+
+替代方式（使用谓词查找）：
+
+.. code-block:: c
+
+    static bool match_by_key(void *ctx, esp_netif_t *netif)
+    {
+        const char *wanted = (const char *)ctx;
+        const char *key = esp_netif_get_ifkey(netif);
+        return key && strcmp(key, wanted) == 0;
+    }
+
+    esp_netif_t *target = esp_netif_find_if(match_by_key, (void *)"WIFI_STA_DEF");
+    if (target) {
+        // 使用 "target"
+    }

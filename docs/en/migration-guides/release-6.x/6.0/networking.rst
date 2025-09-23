@@ -42,3 +42,69 @@ Removed the following RMII clock Kconfig options from `components/esp_eth`. Cloc
 
 **Impact**: Applications using ``ETH_ESP32_EMAC_DEFAULT_CONFIG()`` continue to work. Custom clock configurations must be set explicitly in the EMAC config structure or use the `Ethernet Init component <https://components.espressif.com/components/espressif/ethernet_init>`_.
 
+
+ESP-NETIF
+*********
+
+Removal of deprecated :cpp:func:`esp_netif_next`
+------------------------------------------------
+
+The deprecated iteration helper :cpp:func:`esp_netif_next` has been removed from :doc:`/api-reference/network/esp_netif`. This API was inherently unsafe because it did not lock the interface list or the TCP/IP context during iteration.
+
+Use one of the following alternatives:
+
+- Directly call :cpp:func:`esp_netif_next_unsafe` only in contexts you fully control, or inside :cpp:func:`esp_netif_tcpip_exec` for safe execution within the TCP/IP context.
+- Use :cpp:func:`esp_netif_find_if` with a predicate to search for specific interfaces without manual iteration.
+
+Migration
+~~~~~~~~~
+
+Before:
+
+.. code-block:: c
+
+    esp_netif_t *it = NULL;
+    while ((it = esp_netif_next(it)) != NULL) {
+        // use "it"
+    }
+
+After (iterate unsafely in a controlled context):
+
+.. code-block:: c
+
+    esp_netif_t *it = NULL;
+    while ((it = esp_netif_next_unsafe(it)) != NULL) {
+        // use "it"
+    }
+
+Recommended (iterate within TCP/IP context):
+
+.. code-block:: c
+
+    static esp_err_t iterate_netifs(void *ctx)
+    {
+        esp_netif_t *it = NULL;
+        while ((it = esp_netif_next_unsafe(it)) != NULL) {
+            // use "it"
+        }
+        return ESP_OK;
+    }
+
+    // Execute iteration safely in TCP/IP context
+    ESP_ERROR_CHECK(esp_netif_tcpip_exec(iterate_netifs, NULL));
+
+Alternative (find with predicate):
+
+.. code-block:: c
+
+    static bool match_by_key(void *ctx, esp_netif_t *netif)
+    {
+        const char *wanted = (const char *)ctx;
+        const char *key = esp_netif_get_ifkey(netif);
+        return key && strcmp(key, wanted) == 0;
+    }
+
+    esp_netif_t *target = esp_netif_find_if(match_by_key, (void *)"WIFI_STA_DEF");
+    if (target) {
+        // use "target"
+    }
