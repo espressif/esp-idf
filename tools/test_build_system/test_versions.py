@@ -70,6 +70,7 @@ def test_versions_get_version_from_git_describe(
 #   6. Verify that cmake correctly flags invalid inputs for the VERSION argument and accepts valid inputs for the same
 #
 #############################################################################################
+@pytest.mark.buildv2_skip('cmakev2 does not need to parse the VERSION argument in the build system')
 def test_versions_get_version_from_version_arg(idf_py: IdfPyFunc, test_git_template_app: Path) -> None:
     logging.info('Verify that the VERSION argument in project() is correctly parsed by cmake')
 
