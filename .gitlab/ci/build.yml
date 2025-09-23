@@ -214,19 +214,9 @@ build_clang_test_apps_esp32p4:
       --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
-pytest_build_system:
-  extends: .test_build_system_template
-  parallel: 3
-
-pytest_build_system_macos:
-  extends:
-    - .test_build_system_template
-    - .before_script:build:macos
-    - .after_script:build:macos:upload-failed-job-logs:ccache-show-stats
-    - .rules:build:macos
+.test_build_system_macos_template_extension:
   tags:
     - macos
-  parallel: 3
   variables:
     PYENV_VERSION: "3.10"
     # CCACHE_DIR: "/cache/idf_ccache". On macOS, you cannot write to this folder due to insufficient permissions.
@@ -235,6 +225,57 @@ pytest_build_system_macos:
     # but a relative path to the build directory (builds/espressif/esp-idf instead of ~/builds/espressif/esp-idf.
     # GitLab sets the project dir to this template `<builds_dir>/<namespace>/<project_name>`
     IDF_PATH: "/Users/espressif/builds/espressif/esp-idf"
+
+.test_build_system_minimal_cmake_template:
+  extends: .test_build_system_template
+  variables:
+    INSTALL_EXTRA_TOOLS: cmake@3.22.1
+  script:
+    - MINIMAL_SUPPORTED_CMAKE_VERSION=$(echo "${INSTALL_EXTRA_TOOLS}" | sed -n 's/.*cmake@\([0-9.]*\).*/\1/p')
+    - export PATH=$(echo "$PATH" | sed -E "s|/tools/cmake/[0-9.]+|/tools/cmake/${MINIMAL_SUPPORTED_CMAKE_VERSION}|")
+    - ACTUAL_CMAKE_VERSION=$(cmake --version | head -n1 | awk '{print $3}')
+    - |
+      if [ "${ACTUAL_CMAKE_VERSION}" != "${MINIMAL_SUPPORTED_CMAKE_VERSION}" ]; then
+        echo "ERROR: Wrong minimal CMake version! Detected: ${ACTUAL_CMAKE_VERSION}, but should be: ${MINIMAL_SUPPORTED_CMAKE_VERSION}"
+        exit 1
+      fi
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - cd ${IDF_PATH}/tools/test_build_system
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest
+      -k cmake
+      --cleanup-idf-copy
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      --work-dir ${CI_PROJECT_DIR}/test_build_system
+      --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+
+pytest_build_system:
+  extends: .test_build_system_template
+  parallel: 3
+
+pytest_build_system_macos:
+  extends:
+    - .test_build_system_template
+    - .test_build_system_macos_template_extension
+    - .before_script:build:macos
+    - .after_script:build:macos:upload-failed-job-logs:ccache-show-stats
+    - .rules:build:macos
+  parallel: 3
+
+pytest_build_system_minimal_cmake:
+  extends: .test_build_system_minimal_cmake_template
+
+pytest_build_system_macos_minimal_cmake:
+  extends:
+    - .test_build_system_minimal_cmake_template
+    - .test_build_system_macos_template_extension
+    - .before_script:build:macos
+    - .after_script:build:macos:upload-failed-job-logs:ccache-show-stats
+    - .rules:build:macos
+  variables:
+    INSTALL_EXTRA_TOOLS: ninja cmake@3.22.1
 
 build_docker:
   extends:
