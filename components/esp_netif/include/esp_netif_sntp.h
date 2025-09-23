@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,17 +16,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @defgroup ESP_NETIF_SNTP_API ESP-NETIF SNTP API
- * @brief SNTP API for underlying TCP/IP stack
- *
- */
-
-/** @addtogroup ESP_NETIF_SNTP_API
- * @{
- */
-
 
 /**
  * @brief Time sync notification function
@@ -118,10 +107,6 @@ esp_err_t esp_netif_sntp_sync_wait(TickType_t tout);
  *         ESP_ERR_INVALID_ARG if invalid arguments
  */
 esp_err_t esp_netif_sntp_reachability(unsigned int index, unsigned int *reachability);
-
-/**
- * @}
- */
 
 #ifdef __cplusplus
 }
