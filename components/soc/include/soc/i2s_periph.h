@@ -19,6 +19,8 @@
 #include "soc/i2s_reg.h"
 #endif
 
+#define SOC_I2S_ATTR(_attr)                       SOC_MODULE_ATTR(I2S, _attr)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -15,15 +15,10 @@
 extern "C" {
 #endif
 
-/**
- * @brief I2S controller port number, see the _SOC_CAPS_I2S_INST_NUM for the max port number.
- */
-typedef enum {
-    I2S_NUM_0 = 0,                 /*!< I2S controller port 0 */
-    I2S_NUM_1 = 1,                 /*!< I2S controller port 1 */
-    I2S_NUM_2 = 2,                 /*!< I2S controller port 2 */
-    I2S_NUM_AUTO,                  /*!< Select whichever port is available */
-} i2s_port_t;
+#define I2S_NUM_0           0       /*!< I2S controller port 0 */
+#define I2S_NUM_1           1       /*!< I2S controller port 1 */
+#define I2S_NUM_2           2       /*!< I2S controller port 2 */
+#define I2S_NUM_AUTO        -1      /*!< Select an available port automatically */
 
 /**
  * @brief I2S controller communication mode

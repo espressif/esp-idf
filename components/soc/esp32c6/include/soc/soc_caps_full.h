@@ -40,5 +40,4 @@
 
 /*------------------------------- I2S ---------------------------------------*/
 // helper macros to access module attributes
-#define SOC_I2S_ATTR(_attr)                       SOC_MODULE_ATTR(I2S, _attr)
 #define _SOC_CAPS_I2S_INST_NUM                    1  // Number of I2S instances

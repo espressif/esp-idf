@@ -13,6 +13,7 @@
 #include "freertos/queue.h"
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 #include "hal/i2s_hal.h"
 #include "hal/lp_i2s_hal.h"
 #if SOC_LP_I2S_SUPPORTED
@@ -61,7 +62,7 @@ extern "C" {
 #define I2S_RCC_ATOMIC()
 #endif
 
-#define I2S_USE_RETENTION_LINK  (SOC_MODULE_SUPPORT(I2S, SLEEP_RETENTION) && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+#define I2S_USE_RETENTION_LINK  (SOC_HAS(PAU) && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 #define I2S_NULL_POINTER_CHECK(tag, p)          ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, tag, "input parameter '"#p"' is NULL")
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -131,7 +132,7 @@ typedef struct {
  * @note  Both i2s rx and tx channel are under its control
  */
 typedef struct {
-    i2s_port_t              id;             /*!< i2s port id */
+    int                     id;             /*!< i2s port id */
     i2s_hal_context_t       hal;            /*!< hal context */
     uint32_t                chan_occupancy; /*!< channel occupancy (rx/tx) */
     bool                    full_duplex;    /*!< is full_duplex */
@@ -312,7 +313,7 @@ void i2s_gpio_check_and_set(i2s_chan_handle_t handle, int gpio, uint32_t signal_
  *      - ESP_OK                Set mclk output gpio success
  *      - ESP_ERR_INVALID_ARG   Invalid GPIO number
  */
-esp_err_t i2s_check_set_mclk(i2s_chan_handle_t handle, i2s_port_t id, int gpio_num, i2s_clock_src_t clk_src, bool is_invert);
+esp_err_t i2s_check_set_mclk(i2s_chan_handle_t handle, int id, int gpio_num, i2s_clock_src_t clk_src, bool is_invert);
 
 /**
  * @brief Attach data out signal and data in signal to a same gpio

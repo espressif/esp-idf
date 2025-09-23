@@ -32,7 +32,6 @@
 
 /*------------------------------- I2S ---------------------------------------*/
 // helper macros to access module attributes
-#define SOC_I2S_ATTR(_attr)                       SOC_MODULE_ATTR(I2S, _attr)
 #define _SOC_CAPS_I2S_INST_NUM                    2  // Number of I2S instances
 #define _SOC_CAPS_I2S_MAX_DATA_WIDTH              24 // Maximum data line width of I2S
 #define _SOC_CAPS_I2S_TRANS_SIZE_ALIGN_WORD       1  // I2S DMA transfer size must be aligned to word

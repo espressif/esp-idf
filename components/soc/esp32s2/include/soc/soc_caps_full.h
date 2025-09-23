@@ -36,7 +36,6 @@
 
 /*------------------------------- I2S ---------------------------------------*/
 // helper macros to access module attributes
-#define SOC_I2S_ATTR(_attr)                       SOC_MODULE_ATTR(I2S, _attr)
 #define _SOC_CAPS_I2S_INST_NUM                    1  // Number of I2S instances
 #define _SOC_CAPS_I2S_MAX_DATA_WIDTH              24
 #define _SOC_CAPS_I2S_SUPPORT_DMA_EQUAL           1
