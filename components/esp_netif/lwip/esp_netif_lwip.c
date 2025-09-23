@@ -207,8 +207,8 @@ static void netif_unset_garp_flag(struct netif *netif)
 #endif  // CONFIG_LWIP_GARP_TMR_INTERVAL
 
 #if !LWIP_TCPIP_CORE_LOCKING
-static sys_sem_t api_sync_sem = NULL;
-static sys_sem_t api_lock_sem = NULL;
+static sys_sem_t api_sync_sem = {0};
+static sys_sem_t api_lock_sem = {0};
 #endif
 
 /**
@@ -588,14 +588,14 @@ esp_err_t esp_netif_init(void)
     }
 
 #if !LWIP_TCPIP_CORE_LOCKING
-    if (!api_sync_sem) {
+    if (!sys_sem_valid(&api_sync_sem)) {
         if (ERR_OK != sys_sem_new(&api_sync_sem, 0)) {
             ESP_LOGE(TAG, "esp netif api sync sem init fail");
             return ESP_FAIL;
         }
     }
 
-    if (!api_lock_sem) {
+    if (!sys_sem_valid(&api_lock_sem)) {
         if (ERR_OK != sys_sem_new(&api_lock_sem, 1)) {
             ESP_LOGE(TAG, "esp netif api lock sem init fail");
             return ESP_FAIL;
