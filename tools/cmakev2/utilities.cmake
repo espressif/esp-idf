@@ -1153,3 +1153,31 @@ function(__remove_genex list)
     endforeach()
     set(${list} "${result}" PARENT_SCOPE)
 endfunction()
+
+#[[
+    __list_intersection(<list1> <list2> <output_var>)
+
+    *list1[in]*
+
+        First list.
+
+    *list2[in]*
+
+        Second list.
+
+    *output_var[out]*
+
+        Variable name where the resulting list will be stored.
+
+    Return the intersection of elements from ``list1`` and ``list2``. The
+    resulting list is stored in the ``output_var`` list.
+#]]
+function(__list_intersection list1 list2 output_var)
+    set(result "")
+    foreach(item IN LISTS ${list1})
+        if(item IN_LIST ${list2})
+            list(APPEND result "${item}")
+        endif()
+    endforeach()
+    set(${output_var} "${result}" PARENT_SCOPE)
+endfunction()
