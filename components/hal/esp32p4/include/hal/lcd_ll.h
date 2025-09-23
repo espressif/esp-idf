@@ -13,6 +13,7 @@
 #include "soc/lcd_cam_struct.h"
 #include "hal/assert.h"
 #include "hal/lcd_types.h"
+#include "hal/config.h"
 #include "soc/hp_sys_clkrst_struct.h"
 
 #ifdef __cplusplus
@@ -24,6 +25,16 @@ extern "C" {
 // Interrupt event, bit mask
 #define LCD_LL_EVENT_VSYNC_END  (1 << 0)
 #define LCD_LL_EVENT_TRANS_DONE (1 << 1)
+
+// Underrun interrupt is only supported on ESP32P4 Rev. 3.0 and later
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#define LCD_LL_EVENT_UNDERRUN   (1 << 4)
+#else
+#define LCD_LL_EVENT_UNDERRUN   0
+#endif
+
+#define LCD_LL_EVENT_I80        LCD_LL_EVENT_TRANS_DONE | LCD_LL_EVENT_UNDERRUN
+#define LCD_LL_EVENT_RGB        LCD_LL_EVENT_VSYNC_END | LCD_LL_EVENT_UNDERRUN
 
 #define LCD_LL_CLK_FRAC_DIV_N_MAX  256 // LCD_CLK = LCD_CLK_S / (N + b/a), the N register is 8 bit-width
 #define LCD_LL_CLK_FRAC_DIV_AB_MAX 64  // LCD_CLK = LCD_CLK_S / (N + b/a), the a/b register is 6 bit-width
@@ -721,9 +732,9 @@ static inline void lcd_ll_set_delay_ticks(lcd_cam_dev_t *dev, uint32_t hsync_del
 static inline void lcd_ll_enable_interrupt(lcd_cam_dev_t *dev, uint32_t mask, bool en)
 {
     if (en) {
-        dev->lc_dma_int_ena.val |= mask & 0x03;
+        dev->lc_dma_int_ena.val |= mask & 0x13;
     } else {
-        dev->lc_dma_int_ena.val &= ~(mask & 0x03);
+        dev->lc_dma_int_ena.val &= ~(mask & 0x13);
     }
 }
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -742,7 +753,7 @@ static inline void lcd_ll_enable_interrupt(lcd_cam_dev_t *dev, uint32_t mask, bo
 __attribute__((always_inline))
 static inline uint32_t lcd_ll_get_interrupt_status(lcd_cam_dev_t *dev)
 {
-    return dev->lc_dma_int_st.val & 0x03;
+    return dev->lc_dma_int_st.val & 0x13;
 }
 
 /**
@@ -754,7 +765,7 @@ static inline uint32_t lcd_ll_get_interrupt_status(lcd_cam_dev_t *dev)
 __attribute__((always_inline))
 static inline void lcd_ll_clear_interrupt_status(lcd_cam_dev_t *dev, uint32_t mask)
 {
-    dev->lc_dma_int_clr.val = mask & 0x03;
+    dev->lc_dma_int_clr.val = mask & 0x13;
 }
 
 /**
