@@ -5,7 +5,11 @@
  */
 
 #include <inttypes.h>
+#include <sys/param.h> // for MIN/MAX
 #include "esp_private/sdmmc_common.h"
+
+// the maximum size in blocks of the chunks a SDMMC write/read will be split into
+#define MAX_NUM_BLOCKS_PER_MULTI_BLOCK_RW (16u)
 
 static const char* TAG = "sdmmc_cmd";
 
@@ -462,13 +466,14 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         err = sdmmc_write_sectors_dma(card, src, start_block, block_count, block_size * block_count);
     } else {
         // SDMMC peripheral needs DMA-capable buffers. Split the write into
-        // separate single block writes, if needed, and allocate a temporary
+        // separate (multi) block writes, if needed, and allocate a temporary
         // DMA-capable buffer.
+        size_t blocks_per_write = MIN(MAX_NUM_BLOCKS_PER_MULTI_BLOCK_RW, block_count);
         void *tmp_buf = NULL;
         size_t actual_size = 0;
         // We don't want to force the allocation into SPIRAM, the allocator
         // will decide based on the buffer size and memory availability.
-        tmp_buf = heap_caps_malloc(block_size, MALLOC_CAP_DMA);
+        tmp_buf = heap_caps_malloc(block_size * blocks_per_write, MALLOC_CAP_DMA);
         if (!tmp_buf) {
             ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
             return ESP_ERR_NO_MEM;
@@ -476,13 +481,15 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         actual_size = heap_caps_get_allocated_size(tmp_buf);
 
         const uint8_t* cur_src = (const uint8_t*) src;
-        for (size_t i = 0; i < block_count; ++i) {
-            memcpy(tmp_buf, cur_src, block_size);
-            cur_src += block_size;
-            err = sdmmc_write_sectors_dma(card, tmp_buf, start_block + i, 1, actual_size);
+        for (size_t i = 0; i < block_count; i += blocks_per_write) {
+            // make sure not to write more than the remaining blocks, i.e. block_count - i
+            blocks_per_write = MIN(blocks_per_write, (block_count - i));
+            memcpy(tmp_buf, cur_src, block_size * blocks_per_write);
+            cur_src += block_size * blocks_per_write;
+            err = sdmmc_write_sectors_dma(card, tmp_buf, start_block + i, blocks_per_write, actual_size);
             if (err != ESP_OK) {
-                ESP_LOGD(TAG, "%s: error 0x%x writing block %d+%d",
-                        __func__, err, start_block, i);
+                ESP_LOGD(TAG, "%s: error 0x%x writing blocks %zu+[%zu..%zu]",
+                        __func__, err, start_block, i, i + blocks_per_write - 1);
                 break;
             }
         }
@@ -600,11 +607,14 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
         err = sdmmc_read_sectors_dma(card, dst, start_block, block_count, block_size * block_count);
     } else {
         // SDMMC peripheral needs DMA-capable buffers. Split the read into
-        // separate single block reads, if needed, and allocate a temporary
+        // separate (multi) block reads, if needed, and allocate a temporary
         // DMA-capable buffer.
+        size_t blocks_per_read = MIN(MAX_NUM_BLOCKS_PER_MULTI_BLOCK_RW, block_count);
         void *tmp_buf = NULL;
         size_t actual_size = 0;
-        tmp_buf = heap_caps_malloc(block_size, MALLOC_CAP_DMA);
+        // We don't want to force the allocation into SPIRAM, the allocator
+        // will decide based on the buffer size and memory availability.
+        tmp_buf = heap_caps_malloc(block_size * blocks_per_read, MALLOC_CAP_DMA);
         if (!tmp_buf) {
             ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
             return ESP_ERR_NO_MEM;
@@ -612,15 +622,17 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
         actual_size = heap_caps_get_allocated_size(tmp_buf);
 
         uint8_t* cur_dst = (uint8_t*) dst;
-        for (size_t i = 0; i < block_count; ++i) {
-            err = sdmmc_read_sectors_dma(card, tmp_buf, start_block + i, 1, actual_size);
+        for (size_t i = 0; i < block_count; i += blocks_per_read) {
+            // make sure not to read more than the remaining blocks, i.e. block_count - i
+            blocks_per_read = MIN(blocks_per_read, (block_count - i));
+            err = sdmmc_read_sectors_dma(card, tmp_buf, start_block + i, blocks_per_read, actual_size);
             if (err != ESP_OK) {
-                ESP_LOGD(TAG, "%s: error 0x%x writing block %d+%d",
-                        __func__, err, start_block, i);
+                ESP_LOGD(TAG, "%s: error 0x%x reading blocks %zu+[%zu..%zu]",
+                        __func__, err, start_block, i, i + blocks_per_read - 1);
                 break;
             }
-            memcpy(cur_dst, tmp_buf, block_size);
-            cur_dst += block_size;
+            memcpy(cur_dst, tmp_buf, block_size * blocks_per_read);
+            cur_dst += block_size * blocks_per_read;
         }
         free(tmp_buf);
     }
