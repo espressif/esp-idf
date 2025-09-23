@@ -48,9 +48,12 @@ def test_component_extra_dirs(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
         '# placeholder_before_include_project_cmake',
         'set(EXTRA_COMPONENT_DIRS {})'.format(Path('different_main', 'main').as_posix()),
     )
-    ret = idf_py('reconfigure')
-    assert str((test_app_copy / 'different_main' / 'main').as_posix()) in ret.stdout
-    assert str((test_app_copy / 'main').as_posix()) not in ret.stdout
+    idf_py('reconfigure')
+
+    # Check project_description.json for component paths
+    data = json.load(open(test_app_copy / 'build' / 'project_description.json'))
+    assert str((test_app_copy / 'different_main' / 'main').as_posix()) in data.get('build_component_paths')
+    assert str((test_app_copy / 'main').as_posix()) not in data.get('build_component_paths')
 
 
 @pytest.mark.usefixtures('test_app_copy')
