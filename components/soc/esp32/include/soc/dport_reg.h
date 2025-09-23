@@ -1046,18 +1046,18 @@
 #define DPORT_WIFI_CLK_EN_V  0xFFFFFFFF
 #define DPORT_WIFI_CLK_EN_S  0
 
-/* Mask for all Wifi clock bits - 1, 2, 10 */
-#define DPORT_WIFI_CLK_WIFI_EN  0x00000406
+/* Mask for all Wifi clock bits - */
+#define DPORT_WIFI_CLK_WIFI_EN  0x0
 #define DPORT_WIFI_CLK_WIFI_EN_M  ((DPORT_WIFI_CLK_WIFI_EN_V)<<(DPORT_WIFI_CLK_WIFI_EN_S))
-#define DPORT_WIFI_CLK_WIFI_EN_V  0x406
+#define DPORT_WIFI_CLK_WIFI_EN_V  0x0
 #define DPORT_WIFI_CLK_WIFI_EN_S  0
 /* Mask for all Bluetooth clock bits - 11, 16, 17 */
 #define DPORT_WIFI_CLK_BT_EN  0x61
 #define DPORT_WIFI_CLK_BT_EN_M  ((DPORT_WIFI_CLK_BT_EN_V)<<(DPORT_WIFI_CLK_BT_EN_S))
 #define DPORT_WIFI_CLK_BT_EN_V  0x61
 #define DPORT_WIFI_CLK_BT_EN_S  11
-/* Mask for clock bits used by both WIFI and Bluetooth, bit 0, 3, 6, 7, 8, 9 */
-#define DPORT_WIFI_CLK_WIFI_BT_COMMON_M 0x000003c9
+/* Mask for clock bits used by both WIFI and Bluetooth, bit 0, 1, 2, 3, 6, 7, 8, 9, 10 */
+#define DPORT_WIFI_CLK_WIFI_BT_COMMON_M 0x000007cf
 //bluetooth baseband bit11
 #define DPORT_BT_BASEBAND_EN  BIT(11)
 //bluetooth LC bit16 and bit17
