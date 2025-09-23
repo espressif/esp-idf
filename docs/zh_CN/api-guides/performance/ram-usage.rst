@@ -184,7 +184,6 @@ IRAM 优化
     - 启用 :ref:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`。如果从 IRAM 中的中断上下文中使用 ISR ringbuf 函数，例如启用了 :ref:`CONFIG_UART_ISR_IN_IRAM`，则无法安全使用此选项。在此情况下，安装 ESP-IDF 相关驱动程序时，将在运行时报错。
     :SOC_WIFI_SUPPORTED: - 禁用 Wi-Fi 选项 :ref:`CONFIG_ESP_WIFI_IRAM_OPT` 和/或 :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` 会释放可用 IRAM，但会牺牲部分 Wi-Fi 性能。
     :CONFIG_ESP_ROM_HAS_SPI_FLASH: - 启用 :ref:`CONFIG_SPI_FLASH_ROM_IMPL` 选项可以释放一些 IRAM，但此时 esp_flash 错误修复程序及新的 flash 芯片支持将失效，详情请参阅 :doc:`/api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom`。
-    :esp32: - 禁用 :ref:`CONFIG_SPI_FLASH_ROM_DRIVER_PATCH` 选项可以释放一些 IRAM，但仅适用于某些 flash 配置，详情请参阅配置项帮助文档。
     :esp32: - 如果应用程序基于 ESP32 rev. 3 (ECO3)，且使用 PSRAM，设置 :ref:`CONFIG_ESP32_REV_MIN` 为 ``3``，可以禁用 PSRAM 的错误处理程序，节省 10 KB 乃至更多的 IRAM。
     - 禁用 :ref:`CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR` 可以防止从 :ref:`iram-safe-interrupt-handlers` 中发布 ``esp_event`` 事件，节省 IRAM 空间。
     :SOC_GPSPI_SUPPORTED: - 禁用 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 可以防止在写入 flash 时发生 spi_master 中断，节省 IRAM 空间，但可能影响 spi_master 的性能。
