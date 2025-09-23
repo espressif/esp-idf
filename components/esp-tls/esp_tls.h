@@ -297,6 +297,10 @@ typedef struct esp_tls_cfg_server {
     unsigned int cacert_pem_bytes;          /*!< Size of client CA certificate legacy name */
     };
 
+#ifdef CONFIG_ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
+    bool client_cert_authmode_optional;              /*!< Set client certificate authentication mode to optional.
+                                                     By default, client certificate authentication mode is set to required */
+#endif // CONFIG_ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
     union {
     const unsigned char *servercert_buf;        /*!< Server certificate in a buffer
                                                      This buffer should be NULL terminated */

@@ -63,13 +63,14 @@ menu "ESP-TLS"
     config ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
         bool "ESP-TLS Server: Set minimum Certificate Verification mode to Optional"
         depends on ESP_TLS_USING_MBEDTLS
+        default n
         help
-            When this option is enabled, the peer (here, the client) certificate is checked by the server,
-            however the handshake continues even if verification failed. By default, the
-            peer certificate is not checked and ignored by the server.
+            When this option is enabled, the ESP-TLS server can be configured to
+            request client certificates optionally. This is done by setting the
+            client_cert_authmode_optional field in the esp_https_server_config_t structure.
 
             mbedtls_ssl_get_verify_result() can be called after the handshake is complete to
-            retrieve status of verification.
+            retrieve status of verification of the client certificate, if presented.
 
     config ESP_TLS_PSK_VERIFICATION
         bool "Enable PSK verification"

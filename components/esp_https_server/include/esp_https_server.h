@@ -91,6 +91,11 @@ struct httpd_ssl_config {
     /** CA certificate byte length */
     size_t cacert_len;
 
+#ifdef CONFIG_ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
+    /** Client certificate authentication mode */
+    bool client_cert_authmode_optional;
+#endif // CONFIG_ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
+
     /** Private key */
     const uint8_t *prvtkey_pem;
 
@@ -155,6 +160,16 @@ struct httpd_ssl_config {
 typedef struct httpd_ssl_config httpd_ssl_config_t;
 
 /**
+ * Helper macro for optional client certificate authentication field
+ */
+#ifdef CONFIG_ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
+#define HTTPD_SSL_CONFIG_CLIENT_AUTH_OPTIONAL_INIT \
+    .client_cert_authmode_optional = false,
+#else
+#define HTTPD_SSL_CONFIG_CLIENT_AUTH_OPTIONAL_INIT
+#endif
+
+/**
  * Default config struct init
  * Notes:
  * - port is set when starting the server, according to 'transport_mode'
@@ -197,6 +212,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .servercert_len = 0,                          \
     .cacert_pem = NULL,                           \
     .cacert_len = 0,                              \
+    HTTPD_SSL_CONFIG_CLIENT_AUTH_OPTIONAL_INIT    \
     .prvtkey_pem = NULL,                          \
     .prvtkey_len = 0,                             \
     .use_ecdsa_peripheral = false,                \
