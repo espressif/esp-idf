@@ -651,6 +651,7 @@ static void dpp_listen_next_channel(void *data, void *user_ctx)
         wpa_printf(MSG_ERROR, "Failed ROC. error : 0x%x", ret);
         return;
     }
+    atomic_store(&roc_in_progress, true);
     os_event_group_clear_bits(s_dpp_event_group, DPP_ROC_EVENT_HANDLED);
 }
 
@@ -823,7 +824,6 @@ static void tx_status_handler(void *arg, esp_event_base_t event_base,
             eloop_register_timeout(ESP_GAS_TIMEOUT_SECS, 0, gas_query_timeout, NULL, auth);
         }
     }
-    atomic_store(&roc_in_progress, true);
 }
 
 static void roc_status_handler(void *arg, esp_event_base_t event_base,
