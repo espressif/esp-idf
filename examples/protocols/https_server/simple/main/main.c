@@ -155,8 +155,18 @@ static httpd_handle_t start_webserver(void)
 
     extern const unsigned char servercert_start[] asm("_binary_servercert_pem_start");
     extern const unsigned char servercert_end[]   asm("_binary_servercert_pem_end");
+
+    extern const unsigned char cacert_start[] asm("_binary_cacert_pem_start");
+    extern const unsigned char cacert_end[]   asm("_binary_cacert_pem_end");
     conf.servercert = servercert_start;
     conf.servercert_len = servercert_end - servercert_start;
+
+#if CONFIG_EXAMPLE_ENABLE_SKIP_CLIENT_CERT
+    conf.client_cert_authmode_optional = true;
+#endif // EXAMPLE_ENABLE_SKIP_CLIENT_CERT
+
+    conf.cacert_pem = cacert_start;
+    conf.cacert_len = cacert_end - cacert_start;
 
     extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
     extern const unsigned char prvtkey_pem_end[]   asm("_binary_prvtkey_pem_end");
