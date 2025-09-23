@@ -1071,42 +1071,6 @@ menu "mbedTLS"
                 This reduces code size, but disables support for 192-bit and
                 256-bit AES keys.
 
-        config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC
-            bool "Enable AES hardware's pseudo round function"
-            default n
-            depends on SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
-            help
-                Enables the pseudo round function of the AES peripheral.
-                Enabling this would impact the performance of the AES operations.
-                For more info regarding the performance impact, please checkout
-                the pseudo round function section of the security guide.
-
-        choice MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH
-            prompt "Strength of the pseudo rounds function"
-            depends on MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC
-            default MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_LOW
-            help
-                The strength of the pseudo rounds functions can be configured to low, medium and high.
-                You can configure the strength of the pseudo rounds functions according to your use cases,
-                for example, increasing the strength would provide higher security but would slow down the
-                hardware AES encryption/decryption operations.
-
-            config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_LOW
-                bool "Low"
-
-            config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_MEDIUM
-                bool "Medium"
-
-            config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_HIGH
-                bool "High"
-        endchoice
-
-        config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH
-            int
-            default 1 if MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_LOW
-            default 2 if MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_MEDIUM
-            default 3 if MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_HIGH
-
         config MBEDTLS_CMAC_C
             bool "Enable CMAC mode for block ciphers"
             default y
@@ -1646,6 +1610,57 @@ menu "mbedTLS"
                 Value 0 (default) means that there is no preference regarding the interrupt
                 priority level and any level from 1 to 3 can be selected (based on the availability).
                 Note: Higher value indicates high interrupt priority.
+
+        config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC
+            bool "Enable AES hardware's pseudo round function"
+            default n
+            depends on SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION && MBEDTLS_HARDWARE_AES
+            help
+                Enables the pseudo round function of the AES peripheral.
+                Enabling this would impact the performance of the AES operations.
+                For more info regarding the performance impact, please checkout
+                the pseudo round function section of the security guide.
+
+        choice MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH
+            prompt "Strength of the pseudo rounds function"
+            depends on MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC
+            default MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_LOW
+            help
+                The strength of the pseudo rounds functions can be configured to low, medium and high.
+                You can configure the strength of the pseudo rounds functions according to your use cases,
+                for example, increasing the strength would provide higher security but would slow down the
+                hardware AES encryption/decryption operations.
+
+            config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_LOW
+                bool "Low"
+
+            config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_MEDIUM
+                bool "Medium"
+
+            config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_HIGH
+                bool "High"
+        endchoice
+
+        config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH
+            int
+            default 1 if MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_LOW
+            default 2 if MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_MEDIUM
+            default 3 if MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_HIGH
+
+        config MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM
+            bool "Enable performance optimisation for the small data length hardware AES operations"
+            depends on MBEDTLS_HARDWARE_AES && SOC_AES_SUPPORT_DMA
+            default y
+            help
+                This option enables dynamically switching between the hardware
+                AES peripheral's block and DMA modes based on the length of the input data,
+                thus, significantly speeding up the AES operations with shorter data lengths.
+                For example, NVS encryption/decryption operations, TLS communication, etc.
+                with smaller data lengths.
+
+                It is enabled by default due to the significant performance impact but note that
+                it also increases the binary size by ~1.2 KB as it pulls in the peripheral's block
+                mode code as well.
 
         config MBEDTLS_PK_RSA_ALT_SUPPORT
             bool "Enable RSA alt support"

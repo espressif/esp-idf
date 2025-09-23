@@ -93,13 +93,13 @@
 #define SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN   1
 
 /*-------------------------- AES CAPS -----------------------------------------*/
-#define SOC_AES_SUPPORT_DMA     (1)
+// #define SOC_AES_SUPPORT_DMA     (1)
 
 /* Has a centralized DMA, which is shared with all peripherals */
-#define SOC_AES_GDMA            (1)
+// #define SOC_AES_GDMA            (1)
 
-#define SOC_AES_SUPPORT_AES_128 (1)
-#define SOC_AES_SUPPORT_AES_256 (1)
+// #define SOC_AES_SUPPORT_AES_128 (1)
+// #define SOC_AES_SUPPORT_AES_256 (1)
 
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/

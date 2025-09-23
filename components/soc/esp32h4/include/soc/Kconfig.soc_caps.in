@@ -139,22 +139,6 @@ config SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN
     bool
     default y
 
-config SOC_AES_SUPPORT_DMA
-    bool
-    default y
-
-config SOC_AES_GDMA
-    bool
-    default y
-
-config SOC_AES_SUPPORT_AES_128
-    bool
-    default y
-
-config SOC_AES_SUPPORT_AES_256
-    bool
-    default y
-
 config SOC_ADC_PERIPH_NUM
     int
     default 1

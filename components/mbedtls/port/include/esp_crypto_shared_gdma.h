@@ -10,12 +10,13 @@
 #include "esp_private/gdma.h"
 #include "esp_err.h"
 #include "soc/lldesc.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
+#if (SOC_AES_GDMA) || (SOC_SHA_GDMA)
 /**
  * @brief Start a GDMA transfer on the shared crypto DMA channel
  *        Supports AXI-DMA and AHB-DMA.
@@ -52,6 +53,7 @@ bool esp_crypto_shared_gdma_done(void);
  *       and need the DMA channel for other peripherals. An example would be doing some processing after disconnecting WiFi
  */
 void esp_crypto_shared_gdma_free(void);
+#endif /* (SOC_AES_GDMA) || (SOC_SHA_GDMA) */
 
 #ifdef __cplusplus
 }
