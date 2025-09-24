@@ -25,5 +25,9 @@ construct
 rich
 psutil
 
+# ble's compressed log testing tool
+tree_sitter
+tree_sitter_c
+
 # gdb extensions dependencies
 freertos_gdb
