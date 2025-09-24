@@ -99,6 +99,7 @@ struct esp_netif_obj {
     // event translation
     ip_event_t get_ip_event;
     ip_event_t lost_ip_event;
+    bool last_status_up;   // last effective up/down state for unified status event
 #ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
     bool tx_rx_events_enabled;
 #endif
