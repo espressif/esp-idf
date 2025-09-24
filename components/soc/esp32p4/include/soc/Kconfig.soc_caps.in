@@ -915,7 +915,15 @@ config SOC_ISP_BF_SUPPORTED
     bool
     default y
 
+config SOC_ISP_BLC_SUPPORTED
+    bool
+    default y
+
 config SOC_ISP_CCM_SUPPORTED
+    bool
+    default y
+
+config SOC_ISP_COLOR_SUPPORTED
     bool
     default y
 
@@ -927,15 +935,11 @@ config SOC_ISP_DVP_SUPPORTED
     bool
     default y
 
-config SOC_ISP_SHARPEN_SUPPORTED
-    bool
-    default y
-
-config SOC_ISP_COLOR_SUPPORTED
-    bool
-    default y
-
 config SOC_ISP_LSC_SUPPORTED
+    bool
+    default y
+
+config SOC_ISP_SHARPEN_SUPPORTED
     bool
     default y
 

@@ -10,6 +10,7 @@ This example demonstrates how to use the ISP (image signal processor) to work wi
 
 - ISP AF (auto-focus) feature
 - ISP BF (bayer denoise) feature
+- ISP BLC (black level correction) feature
 - ISP Sharpen feature
 - ISP Demosaic feature
 - ISP GAMMA feature
