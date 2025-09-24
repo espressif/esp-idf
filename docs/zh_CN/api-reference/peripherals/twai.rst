@@ -16,7 +16,7 @@ TWAI 是一种适用于汽车和工业应用的高可靠性的多主机实时串
 
 .. only:: SOC_TWAI_SUPPORT_FD
 
-    {IDF_TARGET_NAME} TWAI 控制器兼容 ISO11898-1 FD 格式帧，可以发送和接收经典格式和 FD 格式帧。
+    {IDF_TARGET_NAME} TWAI 控制器兼容 ISO11898-1 FD (a.k.a. CAN FD) 格式帧，可以发送和接收经典格式和 FD 格式帧。
 
 .. only:: not SOC_TWAI_SUPPORT_FD
 
