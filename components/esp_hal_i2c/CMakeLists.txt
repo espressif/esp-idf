@@ -1,5 +1,6 @@
 idf_build_get_property(target IDF_TARGET)
 
+set(includes)
 list(APPEND includes "${target}/include")
 list(APPEND includes "include")
 
