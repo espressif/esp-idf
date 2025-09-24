@@ -1252,6 +1252,38 @@ void vRingbufferReturnItemFromISR(RingbufHandle_t xRingbuffer, void *pvItem, Bas
     portEXIT_CRITICAL_ISR(&pxRingbuffer->mux);
 }
 
+esp_err_t vRingbufferReset(RingbufHandle_t xRingbuffer)
+{
+    Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
+    configASSERT(pxRingbuffer);
+
+    portENTER_CRITICAL(&pxRingbuffer->mux);
+    // Check for unreturned buffers
+    if ((pxRingbuffer->pucAcquire != pxRingbuffer->pucWrite) ||
+            (pxRingbuffer->pucRead != pxRingbuffer->pucFree)) {
+        portEXIT_CRITICAL(&pxRingbuffer->mux);
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    // Reset state
+    pxRingbuffer->pucAcquire = pxRingbuffer->pucHead;
+    pxRingbuffer->pucWrite = pxRingbuffer->pucHead;
+    pxRingbuffer->pucRead = pxRingbuffer->pucHead;
+    pxRingbuffer->pucFree = pxRingbuffer->pucHead;
+    pxRingbuffer->xItemsWaiting = 0;
+    pxRingbuffer->uxRingbufferFlags &= ~rbBUFFER_FULL_FLAG;
+
+    // If there's a task waiting to transmit, unblock it
+    if (listLIST_IS_EMPTY(&pxRingbuffer->xTasksWaitingToSend) == pdFALSE) {
+        if (xTaskRemoveFromEventList(&pxRingbuffer->xTasksWaitingToSend) == pdTRUE) {
+            portYIELD_WITHIN_API();
+        }
+    }
+    portEXIT_CRITICAL(&pxRingbuffer->mux);
+
+    return ESP_OK;
+}
+
 void vRingbufferDelete(RingbufHandle_t xRingbuffer)
 {
     Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;

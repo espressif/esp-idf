@@ -20,6 +20,7 @@
 #include "freertos/ringbuf.h"
 #include "unity.h"
 #include "esp_rom_sys.h"
+#include "esp_task.h"
 
 #include "test_functions.h"
 
@@ -1317,4 +1318,62 @@ TEST_CASE("Test no-split full buffer becomes empty when oldest is returned last"
     TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(buffer_handle, &slot, MEDIUM_ITEM_SIZE, 0));
     TEST_ASSERT_NOT_NULL(slot);
     vRingbufferDelete(buffer_handle);
+}
+
+/* ----------------------------------- Test ring buffer reset --------------------------------------
+ * Reset Case: Test that vRingbufferReset() empties the ring buffer
+ * Reset unblocks sender: Test that vRingbufferReset() will unblock a previously blocked sender
+ */
+
+static uint8_t item[SMALL_ITEM_SIZE] = {0};
+
+TEST_CASE("Test ring buffer reset", "[esp_ringbuf][linux]")
+{
+    // Create buffer
+    RingbufHandle_t rb = xRingbufferCreate(SMALL_ITEM_SIZE, RINGBUF_TYPE_BYTEBUF);
+    TEST_ASSERT_MESSAGE(rb != NULL, "Failed to create ring buffer");
+    // Fill buffer
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, item, SMALL_ITEM_SIZE, 0));
+    // Confirm buffer is full
+    TEST_ASSERT_EQUAL(0, xRingbufferGetCurFreeSize(rb));
+    // Reset ring buffer
+    vRingbufferReset(rb);
+    // Confirm buffer is empty
+    TEST_ASSERT_EQUAL(SMALL_ITEM_SIZE, xRingbufferGetCurFreeSize(rb));
+    // Cleanup
+    vRingbufferDelete(rb);
+}
+
+static volatile bool post_reset_send = false;
+
+static void post_reset_send_task(void *arg)
+{
+    RingbufHandle_t rb = (RingbufHandle_t)arg;
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, item, SMALL_ITEM_SIZE, portMAX_DELAY));
+    post_reset_send = true;
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Test ring buffer reset unblocks sender ", "[esp_ringbuf][linux]")
+{
+    // Create buffer
+    RingbufHandle_t rb = xRingbufferCreate(SMALL_ITEM_SIZE, RINGBUF_TYPE_BYTEBUF);
+    TEST_ASSERT_MESSAGE(rb != NULL, "Failed to create ring buffer");
+    // Fill buffer
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, item, SMALL_ITEM_SIZE, 0));
+    // Confirm buffer is full
+    TEST_ASSERT_EQUAL(0, xRingbufferGetCurFreeSize(rb));
+    // Launch task to block on sending to full ring buffer
+    post_reset_send = false;
+    xTaskCreatePinnedToCore(post_reset_send_task, "send tsk", 2048, (void*)rb, ESP_TASK_MAIN_PRIO + 1, NULL, 0);
+    vTaskDelay(10);
+    // Confirm blocked task has not sent
+    TEST_ASSERT_EQUAL(false, post_reset_send);
+    // Reset the ring buffer
+    vRingbufferReset(rb);
+
+    TEST_ASSERT_EQUAL(true, post_reset_send);
+    // Cleanup
+    vRingbufferDelete(rb);
+    vTaskDelay(1);
 }
