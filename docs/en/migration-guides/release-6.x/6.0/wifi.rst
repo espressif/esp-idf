@@ -8,29 +8,6 @@ Removed Functions and Types
 
 The following functions and types have been removed.
 
-- **WPA2 Enterprise:** The header file :project_file:`components/wpa_supplicant/esp_supplicant/include/esp_wpa2.h` has been removed. Please use the APIs from :project_file:`components/wpa_supplicant/esp_supplicant/include/esp_eap_client.h` instead. The following functions have been removed:
-    - ``esp_wifi_sta_wpa2_ent_enable``, use ``esp_eap_client_enable`` instead.
-    - ``esp_wifi_sta_wpa2_ent_disable``, use ``esp_eap_client_disable`` instead.
-    - ``esp_wifi_sta_wpa2_ent_set_identity``, use ``esp_eap_client_set_identity`` instead.
-    - ``esp_wifi_sta_wpa2_ent_clear_identity``, use ``esp_eap_client_clear_identity`` instead.
-    - ``esp_wifi_sta_wpa2_ent_set_username``, use ``esp_eap_client_set_username`` instead.
-    - ``esp_wifi_sta_wpa2_ent_clear_username``, use ``esp_eap_client_clear_username`` instead.
-    - ``esp_wifi_sta_wpa2_ent_set_password``, use ``esp_eap_client_set_password`` instead.
-    - ``esp_wifi_sta_wpa2_ent_clear_password``, use ``esp_eap_client_clear_password`` instead.
-    - ``esp_wifi_sta_wpa2_ent_set_new_password``, use ``esp_eap_client_set_new_password`` instead.
-    - ``esp_wifi_sta_wpa2_ent_clear_new_password``, use ``esp_eap_client_clear_new_password`` instead.
-    - ``esp_wifi_sta_wpa2_ent_set_ca_cert``, use ``esp_eap_client_set_ca_cert`` instead.
-    - ``esp_wifi_sta_wpa2_ent_clear_ca_cert``, use ``esp_eap_client_clear_ca_cert`` instead.
-    - ``esp_wifi_sta_wpa2_ent_set_cert_key``, use ``esp_eap_client_set_certificate_and_key`` instead.
-    - ``esp_wifi_sta_wpa2_ent_clear_cert_key``, use ``esp_eap_client_clear_certificate_and_key`` instead.
-    - ``esp_wifi_sta_wpa2_ent_set_disable_time_check``, use ``esp_eap_client_set_disable_time_check`` instead.
-    - ``esp_wifi_sta_wpa2_ent_get_disable_time_check``, use ``esp_eap_client_get_disable_time_check`` instead.
-    - ``esp_wifi_sta_wpa2_ent_set_ttls_phase2_method``, use ``esp_eap_client_set_ttls_phase2_method`` instead.
-    - ``esp_wifi_sta_wpa2_set_suiteb_192bit_certification``, use ``esp_eap_client_set_suiteb_192bit_certification`` instead.
-    - ``esp_wifi_sta_wpa2_ent_set_pac_file``, use ``esp_eap_client_set_pac_file`` instead.
-    - ``esp_wifi_sta_wpa2_ent_set_fast_phase1_params``, use ``esp_eap_client_set_fast_params`` instead.
-    - ``esp_wifi_sta_wpa2_use_default_cert_bundle``, use ``esp_eap_client_use_default_cert_bundle`` instead.
-
 - **DPP:**
     - The DPP event callback ``esp_supp_dpp_event_cb_t`` and event enum ``esp_supp_dpp_event_t`` have been removed. Please use Wi-Fi events directly (e.g. ``WIFI_EVENT_DPP_URI_READY``, ``WIFI_EVENT_DPP_CFG_RECVD``, ``WIFI_EVENT_DPP_FAILED``).
 

@@ -583,7 +583,7 @@
 -
     re: "cannot open linker script file bootloader.ld"
     hint: "The file 'bootloader.ld' was renamed to 'bootloader.ld.in' in ESP-IDF v6.0. Please use update your build scripts."
-    
+
 -
     re: "fatal error: esp_wpa2.h: No such file or directory"
     hint: "The header file 'esp_wpa2.h' has been removed. Please use 'esp_eap_client.h' instead."
@@ -629,3 +629,23 @@
 -
     re: "fatal error: esp_interface.h: No such file or directory"
     hint: "The header file 'esp_interface.h' has been removed. The 'wifi_interface_t' enum is now defined in 'esp_wifi_types_generic.h'."
+
+-
+    re: "error: 'use_get_report_api' undeclared"
+    hint: "The field 'use_get_report_api' from structure 'wifi_ftm_initiator_cfg_t' has been removed. Please use 'esp_wifi_ftm_get_report' to fetch raw FTM report data instead."
+
+-
+    re: "error: 'ftm_report_data' undeclared"
+    hint: "The field 'ftm_report_data' from structure 'wifi_event_ftm_report_t' has been removed. Please use 'esp_wifi_ftm_get_report' to fetch raw FTM report data instead."
+
+-
+    re: "error: 'svc_info' undeclared"
+    hint: "The field 'svc_info' from structures 'wifi_nan_publish_cfg_t', 'wifi_nan_subscribe_cfg_t', 'wifi_nan_followup_params_t', 'wifi_event_ndp_indication_t', 'wifi_event_ndp_confirm_t' has been removed. Please use the equivalent fields 'ssi' and 'ssi_len' instead."
+
+-
+    re: "error: 'peer_svc_info' undeclared"
+    hint: "The field 'peer_svc_info' from structure 'wifi_event_nan_receive_t' has been removed. Please use the equivalent fields 'ssi' and 'ssi_len' instead."
+
+-
+    re: "error: too few arguments to function 'esp_wifi_nan_publish_service'"
+    hint: "The function argument 'ndp_resp_needed' of 'esp_wifi_nan_publish_service' has been moved to structure 'wifi_nan_publish_cfg_t'."

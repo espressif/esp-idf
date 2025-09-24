@@ -476,8 +476,8 @@ static void nan_app_action_receive(void *arg, esp_event_base_t event_base, int32
         ESP_LOGD(TAG, "Received payload from Peer "MACSTR" [Peer Service id - %d] - ", MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
         ESP_LOG_BUFFER_HEXDUMP(TAG, evt->ssi, evt->ssi_len, ESP_LOG_DEBUG);
     } else {
-        ESP_LOGD(TAG, "Received message '%s' from Peer "MACSTR" [Peer Service id - %d]",
-                 evt->peer_svc_info, MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
+        ESP_LOGD(TAG, "Received message from Peer "MACSTR" [Peer Service id - %d]",
+                 MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
     }
 
     NAN_DATA_LOCK();
