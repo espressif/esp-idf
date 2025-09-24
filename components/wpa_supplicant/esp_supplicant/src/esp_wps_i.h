@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,21 +14,6 @@ enum wps_msg_flag {
     WPS_MSG_FLAG_MORE = 0x01,
     WPS_MSG_FLAG_LEN = 0x02
 };
-
-#ifdef USE_WPS_TASK
-enum wps_sig_type {
-    SIG_WPS_ENABLE = 1,         //1
-    SIG_WPS_DISABLE,            //2
-    SIG_WPS_START,              //3
-    SIG_WPS_RX,                 //4
-    SIG_WPS_TIMER_TIMEOUT,      //5
-    SIG_WPS_TIMER_MSG_TIMEOUT,  //6
-    SIG_WPS_TIMER_SUCCESS_CB,   //7
-    SIG_WPS_TIMER_SCAN,         //8
-    SIG_WPS_TIMER_EAPOL_START,  //9
-    SIG_WPS_NUM,                //10
-};
-#endif
 
 enum wps_reg_sig_type {
     SIG_WPS_REG_ENABLE = 1,         //1
@@ -49,10 +34,6 @@ enum wps_sm_state {
     WPA_FAIL
 };
 #endif /* ESP_SUPPLICANT */
-
-#define WPS_IGNORE_SEL_REG_MAX_CNT  10
-
-#define WPS_MAX_DIS_AP_NUM  10
 
 /* Bssid of the discard AP which is discarded for not select reg or other reason */
 struct discard_ap_list_t {
@@ -76,16 +57,9 @@ struct wps_sm {
     u8 current_identifier;
     bool is_wps_scan;
     u8 channel;
-    u8 scan_cnt;
-#ifdef USE_WPS_TASK
-    u8 wps_sig_cnt[SIG_WPS_NUM];
-#endif
     u8 discover_ssid_cnt;
-    bool ignore_sel_reg;
     bool wps_pbc_overlap;
-    struct discard_ap_list_t dis_ap_list[WPS_MAX_DIS_AP_NUM];
-    u8 discard_ap_cnt;
-    bool intermediate_disconnect;
+    bool post_m8_recv;
 };
 
 #define API_MUTEX_TAKE() do {\
@@ -105,8 +79,6 @@ struct wps_sm {
 
 struct wps_sm *wps_sm_get(void);
 int wps_station_wps_unregister_cb(void);
-int wps_start_pending(void);
-int wps_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len);
 
 int wps_dev_deinit(struct wps_device_data *dev);
 int wps_dev_init(void);
