@@ -32,31 +32,31 @@ void periph_rcc_exit(void)
     esp_os_exit_critical_safe(&periph_spinlock);
 }
 
-uint8_t periph_rcc_acquire_enter(periph_module_t periph)
+uint8_t periph_rcc_acquire_enter(shared_periph_module_t periph)
 {
     periph_rcc_enter();
     return ref_counts[periph];
 }
 
-void periph_rcc_acquire_exit(periph_module_t periph, uint8_t ref_count)
+void periph_rcc_acquire_exit(shared_periph_module_t periph, uint8_t ref_count)
 {
     ref_counts[periph] = ++ref_count;
     periph_rcc_exit();
 }
 
-uint8_t periph_rcc_release_enter(periph_module_t periph)
+uint8_t periph_rcc_release_enter(shared_periph_module_t periph)
 {
     periph_rcc_enter();
     return ref_counts[periph] - 1;
 }
 
-void periph_rcc_release_exit(periph_module_t periph, uint8_t ref_count)
+void periph_rcc_release_exit(shared_periph_module_t periph, uint8_t ref_count)
 {
     ref_counts[periph] = ref_count;
     periph_rcc_exit();
 }
 
-void periph_module_enable(periph_module_t periph)
+void periph_module_enable(shared_periph_module_t periph)
 {
 #ifdef __PERIPH_CTRL_ALLOW_LEGACY_API
     assert(periph < PERIPH_MODULE_MAX);
@@ -69,7 +69,7 @@ void periph_module_enable(periph_module_t periph)
 #endif
 }
 
-void periph_module_disable(periph_module_t periph)
+void periph_module_disable(shared_periph_module_t periph)
 {
 #ifdef __PERIPH_CTRL_ALLOW_LEGACY_API
     assert(periph < PERIPH_MODULE_MAX);
@@ -82,7 +82,7 @@ void periph_module_disable(periph_module_t periph)
 #endif
 }
 
-void periph_module_reset(periph_module_t periph)
+void periph_module_reset(shared_periph_module_t periph)
 {
 #ifdef __PERIPH_CTRL_ALLOW_LEGACY_API
     assert(periph < PERIPH_MODULE_MAX);

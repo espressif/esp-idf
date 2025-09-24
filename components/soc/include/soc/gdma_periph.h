@@ -20,7 +20,7 @@ extern "C" {
 #if SOC_GDMA_SUPPORTED
 typedef struct {
     struct {
-        const periph_module_t module;
+        const shared_periph_module_t module;
         struct {
             const int rx_irq_id;
             const int tx_irq_id;

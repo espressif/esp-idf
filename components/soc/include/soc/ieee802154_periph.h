@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 typedef struct {
-    const periph_module_t module;  // peripheral module
+    const shared_periph_module_t module;  // peripheral module
     const int irq_id;              // interrupt source ID
 } ieee802154_conn_t;
 

@@ -11,7 +11,6 @@
 const gdma_signal_conn_t gdma_periph_signals = {
     .groups = {
         [0] = {
-            .module = PERIPH_AHB_PDMA_MODULE,
             .pairs = {
                 [0] = {
                     .rx_irq_id = ETS_AHB_PDMA_IN_CH0_INTR_SOURCE,
@@ -28,7 +27,6 @@ const gdma_signal_conn_t gdma_periph_signals = {
             }
         },
         [1] = {
-            .module = PERIPH_AXI_PDMA_MODULE,
             .pairs = {
                 [0] = {
                     .rx_irq_id = ETS_AXI_PDMA_IN_CH0_INTR_SOURCE,

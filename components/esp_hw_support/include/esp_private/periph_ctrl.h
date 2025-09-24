@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,10 +54,10 @@ extern "C" {
 
 /** @cond */
 // The following functions are not intended to be used directly by the developers
-uint8_t periph_rcc_acquire_enter(periph_module_t periph);
-void periph_rcc_acquire_exit(periph_module_t periph, uint8_t ref_count);
-uint8_t periph_rcc_release_enter(periph_module_t periph);
-void periph_rcc_release_exit(periph_module_t periph, uint8_t ref_count);
+uint8_t periph_rcc_acquire_enter(shared_periph_module_t periph);
+void periph_rcc_acquire_exit(shared_periph_module_t periph, uint8_t ref_count);
+uint8_t periph_rcc_release_enter(shared_periph_module_t periph);
+void periph_rcc_release_exit(shared_periph_module_t periph, uint8_t ref_count);
 void periph_rcc_enter(void);
 void periph_rcc_exit(void);
 /** @endcond */
@@ -97,7 +97,7 @@ void periph_rcc_exit(void);
  *       in order to put the peripheral into disabled state.
  */
 __PERIPH_CTRL_DEPRECATE_ATTR
-void periph_module_enable(periph_module_t periph);
+void periph_module_enable(shared_periph_module_t periph);
 
 /**
  * @brief Disable peripheral module by gating the clock and asserting the reset signal.
@@ -109,7 +109,7 @@ void periph_module_enable(periph_module_t periph);
  *       in order to put the peripheral into disabled state.
  */
 __PERIPH_CTRL_DEPRECATE_ATTR
-void periph_module_disable(periph_module_t periph);
+void periph_module_disable(shared_periph_module_t periph);
 
 /**
  * @brief Reset peripheral module by asserting and de-asserting the reset signal.
@@ -119,7 +119,7 @@ void periph_module_disable(periph_module_t periph);
  * @note Calling this function does not enable or disable the clock for the module.
  */
 __PERIPH_CTRL_DEPRECATE_ATTR
-void periph_module_reset(periph_module_t periph);
+void periph_module_reset(shared_periph_module_t periph);
 
 /**
  * @brief Enable Wi-Fi and BT common module

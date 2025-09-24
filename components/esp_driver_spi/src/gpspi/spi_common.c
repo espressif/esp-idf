@@ -150,7 +150,7 @@ int spicommon_irqdma_source_for_host(spi_host_device_t host)
 #if !SOC_GDMA_SUPPORTED
 
 #if SPI_LL_DMA_SHARED
-static inline periph_module_t get_dma_periph(int dma_chan)
+static inline shared_periph_module_t get_dma_periph(int dma_chan)
 {
     assert(dma_chan >= 1 && dma_chan <= SOC_SPI_DMA_CHAN_NUM);
     if (dma_chan == 1) {
