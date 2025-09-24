@@ -20,9 +20,9 @@ Every 32-bit value that the system reads from the RNG_DATA_REG register of the r
 
 .. only:: not esp32
 
-    - RC_FAST_CLK is an asynchronous clock source and it increases the RNG entropy by introducing circuit metastability. See the :ref:`secondary entropy` section for more details.
+    - RC_FAST_CLK is an asynchronous clock source, and it increases the RNG entropy by introducing circuit metastability. See the :ref:`secondary entropy` section for more details.
 
-The following digram shows the noise sources for the RNG on the {IDF_TARGET_NAME}:
+The following diagram shows the noise sources for the RNG on the {IDF_TARGET_NAME}:
 
 .. only:: SOC_WIFI_SUPPORTED or SOC_IEEE802154_SUPPORTED or SOC_BT_SUPPORTED
 
@@ -38,7 +38,7 @@ The hardware RNG produces true random numbers so long as one or more of the foll
 
 .. list::
 
-    :SOC_WIFI_SUPPORTED or SOC_IEEE802154_SUPPORTED or SOC_BT_SUPPORTED: - RF subsystem is enabled. i.e., {IDF_TARGET_RF_NAME} {IDF_TARGET_RF_IS} enabled. When enabled, the RF subsystem internally enables the High Speed ADC that can be used as the entropy source. The High Speed ADC may only be available when the respective RF subsystem is active (e.g., not in sleep mode). See the :ref:`enabling RF subsystem` section for more details.
+    :SOC_WIFI_SUPPORTED or SOC_IEEE802154_SUPPORTED or SOC_BT_SUPPORTED: - RF subsystem is enabled, i.e., {IDF_TARGET_RF_NAME} {IDF_TARGET_RF_IS} enabled. When enabled, the RF subsystem internally enables the High Speed ADC that can be used as the entropy source. The High Speed ADC may only be available when the respective RF subsystem is active (e.g., not in sleep mode). See the :ref:`enabling RF subsystem` section for more details.
     - The internal entropy source SAR ADC has been enabled by calling :cpp:func:`bootloader_random_enable` and not yet disabled by calling :cpp:func:`bootloader_random_disable`.
     - While the ESP-IDF :ref:`second-stage-bootloader` is running. This is because the default ESP-IDF bootloader implementation calls :cpp:func:`bootloader_random_enable` when the bootloader starts, and :cpp:func:`bootloader_random_disable` before executing the application.
 
@@ -69,12 +69,11 @@ During startup, the ESP-IDF bootloader temporarily enables the non-RF internal e
 
 .. only:: not SOC_WIFI_SUPPORTED and not SOC_IEEE802154_SUPPORTED and not SOC_BT_SUPPORTED
 
-    For {IDF_TARGET_NAME}, the High Speed ADC is not available. Hence the non-RF internal entropy source (SAR ADC) is kept enabled by default at the time of application startup.
+    For {IDF_TARGET_NAME}, the High Speed ADC is not available. Hence, the non-RF internal entropy source (SAR ADC) is kept enabled by default at the time of application startup.
 
 .. only:: SOC_WIFI_SUPPORTED or SOC_IEEE802154_SUPPORTED or SOC_BT_SUPPORTED
 
     However, after the application starts executing, then normally only pseudo-random numbers are available until {IDF_TARGET_RF_NAME} {IDF_TARGET_RF_IS} initialized or until the internal entropy source has been enabled again.
-
 
     To re-enable the entropy source temporarily during application startup, or for an application that does not use {IDF_TARGET_RF_NAME}, call the function :cpp:func:`bootloader_random_enable` to re-enable the internal entropy source. The function :cpp:func:`bootloader_random_disable` must be called to disable the entropy source again before using any of the following features:
 
