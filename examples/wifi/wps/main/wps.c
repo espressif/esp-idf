@@ -7,27 +7,28 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
-/*
-   This example demonstrates how to use WPS.
-   It supports two modes, which can be selected in menuconfig.
-
-   WPS_TYPE_PBC:
-        Start ESP32 and it will enter WPS PBC mode. Then push WPS button on the router.
-        ESP32 will receive SSID and password, and connect to the router.
-
-   WPS_TYPE_PIN:
-        Start ESP32, you'll see an eight-digit PIN number in log output.
-        Enter the PIN code on the router and then the ESP32 will get connected to router.
-*/
-
+/**
+ * @brief Demonstrates how to use WPS.
+ *
+ * This example supports two modes, which can be selected in menuconfig:
+ *
+ * - WPS_TYPE_PBC:
+ *   Start the ESP device and it will enter WPS PBC mode. Then push the WPS button on the router.
+ *   The ESP device will receive the SSID and password and connect to the router.
+ *
+ * - WPS_TYPE_PIN:
+ *   Start the ESP device, and you'll see an eight-digit PIN number in the log output.
+ *   Enter this PIN code on the router, and the ESP device will connect.
+ *
+ */
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
-#include "esp_wifi.h"
-#include "esp_log.h"
-#include "esp_wps.h"
 #include "esp_event.h"
+#include "esp_log.h"
+#include "esp_wifi.h"
+#include "esp_wps.h"
 #include "nvs_flash.h"
-#include <string.h>
 
 
 /*set wps mode via project configuration */
@@ -48,9 +49,50 @@
 
 static const char *TAG = "example_wps";
 static esp_wps_config_t config = WPS_CONFIG_INIT_DEFAULT(WPS_MODE);
-static wifi_config_t wps_ap_creds[MAX_WPS_AP_CRED];
+static wifi_config_t s_wps_ap_creds[MAX_WPS_AP_CRED];
 static int s_ap_creds_num = 0;
 static int s_retry_num = 0;
+static bool s_wps_done = false;
+
+static void wps_restart(void)
+{
+    ESP_ERROR_CHECK(esp_wifi_wps_disable());
+    ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
+    ESP_ERROR_CHECK(esp_wifi_wps_start(0));
+}
+
+static void handle_wps_success(void *event_data)
+{
+    wifi_event_sta_wps_er_success_t *evt = (wifi_event_sta_wps_er_success_t *)event_data;
+    if (evt) {
+        s_ap_creds_num = evt->ap_cred_cnt;
+        for (int idx = 0; idx < s_ap_creds_num; idx++) {
+            memcpy(s_wps_ap_creds[idx].sta.ssid, evt->ap_cred[idx].ssid,
+                   sizeof(evt->ap_cred[idx].ssid));
+            memcpy(s_wps_ap_creds[idx].sta.password, evt->ap_cred[idx].passphrase,
+                   sizeof(evt->ap_cred[idx].passphrase));
+        }
+        /* If multiple AP credentials are received from WPS, connect with first one */
+        ESP_LOGI(TAG, "Connecting to SSID: %s, Passphrase: %s",
+                 s_wps_ap_creds[0].sta.ssid, s_wps_ap_creds[0].sta.password);
+        ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &s_wps_ap_creds[0]));
+    }
+    /*
+     * If only one AP credential is received from WPS, there will be no event data and
+     * esp_wifi_set_config() is already called by WPS modules for backward compatibility
+     * with legacy apps. So directly attempt connection here.
+     */
+    ESP_ERROR_CHECK(esp_wifi_wps_disable());
+    s_wps_done = true;
+    esp_wifi_connect();
+}
+
+static void handle_wps_pin(void *event_data)
+{
+    /* display the PIN code */
+    wifi_event_sta_wps_er_pin_t* event = (wifi_event_sta_wps_er_pin_t*) event_data;
+    ESP_LOGI(TAG, "WPS_PIN = " PINSTR, PIN2STR(event->pin_code));
+}
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
@@ -58,78 +100,46 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
     static int ap_idx = 1;
 
     switch (event_id) {
-        case WIFI_EVENT_STA_START:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_START");
-            break;
-        case WIFI_EVENT_STA_DISCONNECTED:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
+    case WIFI_EVENT_STA_START:
+        ESP_LOGI(TAG, "WIFI_EVENT_STA_START");
+        break;
+    case WIFI_EVENT_STA_DISCONNECTED:
+        ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
+        if (s_wps_done) {
             if (s_retry_num < MAX_RETRY_ATTEMPTS) {
                 esp_wifi_connect();
                 s_retry_num++;
+                ESP_LOGI(TAG, "retrying to connect to the AP");
             } else if (ap_idx < s_ap_creds_num) {
                 /* Try the next AP credential if first one fails */
-
-                if (ap_idx < s_ap_creds_num) {
-                    ESP_LOGI(TAG, "Connecting to SSID: %s, Passphrase: %s",
-                             wps_ap_creds[ap_idx].sta.ssid, wps_ap_creds[ap_idx].sta.password);
-                    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wps_ap_creds[ap_idx++]) );
-                    esp_wifi_connect();
-                }
+                ESP_LOGI(TAG, "Connecting to SSID: %s, Passphrase: %s",
+                         s_wps_ap_creds[ap_idx].sta.ssid, s_wps_ap_creds[ap_idx].sta.password);
+                ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &s_wps_ap_creds[ap_idx++]));
+                esp_wifi_connect();
                 s_retry_num = 0;
             } else {
                 ESP_LOGI(TAG, "Failed to connect!");
             }
-
-            break;
-        case WIFI_EVENT_STA_WPS_ER_SUCCESS:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_WPS_ER_SUCCESS");
-            {
-                wifi_event_sta_wps_er_success_t *evt =
-                    (wifi_event_sta_wps_er_success_t *)event_data;
-                int i;
-
-                if (evt) {
-                    s_ap_creds_num = evt->ap_cred_cnt;
-                    for (i = 0; i < s_ap_creds_num; i++) {
-                        memcpy(wps_ap_creds[i].sta.ssid, evt->ap_cred[i].ssid,
-                               sizeof(evt->ap_cred[i].ssid));
-                        memcpy(wps_ap_creds[i].sta.password, evt->ap_cred[i].passphrase,
-                               sizeof(evt->ap_cred[i].passphrase));
-                    }
-                    /* If multiple AP credentials are received from WPS, connect with first one */
-                    ESP_LOGI(TAG, "Connecting to SSID: %s, Passphrase: %s",
-                             wps_ap_creds[0].sta.ssid, wps_ap_creds[0].sta.password);
-                    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wps_ap_creds[0]) );
-                }
-                /*
-                 * If only one AP credential is received from WPS, there will be no event data and
-                 * esp_wifi_set_config() is already called by WPS modules for backward compatibility
-                 * with legacy apps. So directly attempt connection here.
-                 */
-                ESP_ERROR_CHECK(esp_wifi_wps_disable());
-                esp_wifi_connect();
-            }
-            break;
-        case WIFI_EVENT_STA_WPS_ER_FAILED:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_WPS_ER_FAILED");
-            ESP_ERROR_CHECK(esp_wifi_wps_disable());
-            ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
-            ESP_ERROR_CHECK(esp_wifi_wps_start(0));
-            break;
-        case WIFI_EVENT_STA_WPS_ER_TIMEOUT:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_WPS_ER_TIMEOUT");
-            ESP_ERROR_CHECK(esp_wifi_wps_disable());
-            ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
-            ESP_ERROR_CHECK(esp_wifi_wps_start(0));
-            break;
-        case WIFI_EVENT_STA_WPS_ER_PIN:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_WPS_ER_PIN");
-            /* display the PIN code */
-            wifi_event_sta_wps_er_pin_t* event = (wifi_event_sta_wps_er_pin_t*) event_data;
-            ESP_LOGI(TAG, "WPS_PIN = " PINSTR, PIN2STR(event->pin_code));
-            break;
-        default:
-            break;
+        }
+        break;
+    case WIFI_EVENT_STA_WPS_ER_SUCCESS:
+        ESP_LOGI(TAG, "WIFI_EVENT_STA_WPS_ER_SUCCESS");
+        handle_wps_success(event_data);
+        break;
+    case WIFI_EVENT_STA_WPS_ER_FAILED:
+        ESP_LOGI(TAG, "WIFI_EVENT_STA_WPS_ER_FAILED");
+        wps_restart();
+        break;
+    case WIFI_EVENT_STA_WPS_ER_TIMEOUT:
+        ESP_LOGI(TAG, "WIFI_EVENT_STA_WPS_ER_TIMEOUT");
+        wps_restart();
+        break;
+    case WIFI_EVENT_STA_WPS_ER_PIN:
+        ESP_LOGI(TAG, "WIFI_EVENT_STA_WPS_ER_PIN");
+        handle_wps_pin(event_data);
+        break;
+    default:
+        break;
     }
 }
 
@@ -140,7 +150,9 @@ static void got_ip_event_handler(void* arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "got ip: " IPSTR, IP2STR(&event->ip_info.ip));
 }
 
-/*init wifi as sta and start wps*/
+/**
+ * @brief Start WPS registration
+ */
 static void start_wps(void)
 {
     ESP_ERROR_CHECK(esp_netif_init());

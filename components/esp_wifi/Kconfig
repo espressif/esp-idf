@@ -814,6 +814,14 @@ menu "Wi-Fi"
                     be shared to other devices, making it in readable format increases
                     that risk, also passphrase requires pbkdf2 to convert in psk.
 
+            config ESP_WIFI_WPS_RECONNECT_ON_FAIL
+                bool "Reconnect to previous SSID if WPS failed"
+                default n
+                help
+                    Select this option to enable reconnection to previous SSID if WPS fails.
+                    This option will only work if station was connected to a network
+                    when WPS was started.
+
         endmenu # "WPS Configuration Options"
 
 
