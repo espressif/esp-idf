@@ -11,13 +11,16 @@ function(__idf_build_setup_flash_targets)
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(project_bin PROJECT_BIN)
     partition_table_get_partition_info(app_partition_offset "--partition-boot-default" "offset")
+
+    # Create app-flash target for flashing just the application
     esptool_py_custom_target(app-flash app "app")
-
     esptool_py_flash_target_image(app-flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
-    esptool_py_flash_target_image(flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
 
-    # Setup the main flash target and dependencies
-    __esptool_py_setup_main_flash_target()
+    # Create main flash target for flashing the entire system (bootloader + partition table + app)
+    # Note: Bootloader and partition table components add their own dependencies to this flash target
+    #       in their respective CMakeLists.txt files
+    esptool_py_custom_target(flash project "app" FILENAME_PREFIX "flash")
+    esptool_py_flash_target_image(flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
 
     # Generate flasher_args.json configuration files
     __idf_build_generate_flasher_args()
