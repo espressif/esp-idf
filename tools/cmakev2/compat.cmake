@@ -260,7 +260,7 @@ function(__init_common_components)
     if("${idf_target}" STREQUAL "linux")
         set(requires_common freertos esp_hw_support heap log soc hal esp_rom esp_common esp_system linux)
     else()
-        set(requires_common cxx newlib freertos esp_hw_support heap log soc hal esp_rom esp_common
+        set(requires_common cxx esp_libc freertos esp_hw_support heap log soc hal esp_rom esp_common
                             esp_system ${idf_target_arch})
     endif()
     idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${requires_common}")
