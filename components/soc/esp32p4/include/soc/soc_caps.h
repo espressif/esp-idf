@@ -623,7 +623,6 @@
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION                    (3)     /*!< Hardware version of touch sensor */
-#define SOC_TOUCH_SENSOR_NUM                        (14)    /*!< Touch available channel number. Actually there are 15 Touch channels, but channel 14 is not pinned out, limit to 14 channels */
 #define SOC_TOUCH_MIN_CHAN_ID                       (1U)    /*!< Touch minimum channel number */
 #define SOC_TOUCH_MAX_CHAN_ID                       (14)    /*!< Touch maximum channel number */
 
@@ -633,8 +632,6 @@
 #define SOC_TOUCH_SUPPORT_WATERPROOF                (1)     /*!< Touch sensor supports waterproof */
 #define SOC_TOUCH_SUPPORT_PROX_SENSING              (1)     /*!< Touch sensor supports proximity sensing */
 #define SOC_TOUCH_PROXIMITY_CHANNEL_NUM             (3)     /*!< Support touch proximity channel number. */
-#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED     (1)     /*!< Support touch proximity channel measure done interrupt type. */
-#define SOC_TOUCH_SUPPORT_FREQ_HOP                  (1)     /*!< Touch sensor supports frequency hopping */
 #define SOC_TOUCH_SAMPLE_CFG_NUM                    (3)     /*!< The sample configurations number in total, each sampler can be used to sample on one frequency */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/

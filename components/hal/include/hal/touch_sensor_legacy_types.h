@@ -28,7 +28,7 @@ typedef enum {
     TOUCH_PAD_NUM7,     /*!< Touch pad channel 7 is GPIO27(ESP32) / GPIO7(ESP32-S2) */
     TOUCH_PAD_NUM8,     /*!< Touch pad channel 8 is GPIO33(ESP32) / GPIO8(ESP32-S2) */
     TOUCH_PAD_NUM9,     /*!< Touch pad channel 9 is GPIO32(ESP32) / GPIO9(ESP32-S2) */
-#if SOC_TOUCH_SENSOR_NUM > 10
+#if !SOC_IS(ESP32)
     TOUCH_PAD_NUM10,    /*!< Touch channel 10 is GPIO10(ESP32-S2) */
     TOUCH_PAD_NUM11,    /*!< Touch channel 11 is GPIO11(ESP32-S2) */
     TOUCH_PAD_NUM12,    /*!< Touch channel 12 is GPIO12(ESP32-S2) */
@@ -111,7 +111,16 @@ typedef enum {
 } touch_trigger_src_t;
 
 /********************************/
-#define TOUCH_PAD_BIT_MASK_ALL              ((1<<SOC_TOUCH_SENSOR_NUM)-1)
+#if SOC_TOUCH_SENSOR_VERSION == 1
+#define TOUCH_PAD_THRESHOLD_MAX             (0)         /*!< If set touch threshold max value, The touch sensor can't be in touched status */
+#define TOUCH_PAD_BIT_MASK_ALL              (0x03FF)
+#elif SOC_TOUCH_SENSOR_VERSION == 2
+#define TOUCH_PAD_THRESHOLD_MAX             (0x1FFFFF)  /*!< If set touch threshold max value, The touch sensor can't be in touched status */
+#define TOUCH_PAD_BIT_MASK_ALL              (0x7FFF)
+#elif SOC_TOUCH_SENSOR_VERSION == 3
+#define TOUCH_PAD_THRESHOLD_MAX             (0xFFFF)    /*!< If set touch threshold max value, The touch sensor can't be in touched status */
+#define TOUCH_PAD_BIT_MASK_ALL              (0x3FFF)
+#endif
 #define TOUCH_PAD_SLOPE_DEFAULT             (TOUCH_PAD_SLOPE_7)
 #define TOUCH_PAD_TIE_OPT_DEFAULT           (TOUCH_PAD_TIE_OPT_FLOAT)
 #define TOUCH_PAD_BIT_MASK_MAX              (TOUCH_PAD_BIT_MASK_ALL)
@@ -119,13 +128,6 @@ typedef enum {
 #define TOUCH_PAD_LOW_VOLTAGE_THRESHOLD     (TOUCH_LVOLT_0V5)
 #define TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD   (TOUCH_HVOLT_ATTEN_0V5)
 #define TOUCH_PAD_IDLE_CH_CONNECT_DEFAULT   (TOUCH_PAD_CONN_GND)
-#if SOC_TOUCH_SENSOR_VERSION == 1
-#define TOUCH_PAD_THRESHOLD_MAX             (0)         /*!< If set touch threshold max value, The touch sensor can't be in touched status */
-#elif SOC_TOUCH_SENSOR_VERSION == 2
-#define TOUCH_PAD_THRESHOLD_MAX             (0x1FFFFF)  /*!< If set touch threshold max value, The touch sensor can't be in touched status */
-#elif SOC_TOUCH_SENSOR_VERSION == 3
-#define TOUCH_PAD_THRESHOLD_MAX             (0xFFFF)    /*!< If set touch threshold max value, The touch sensor can't be in touched status */
-#endif
 
 #if SOC_IS(ESP32)
 
@@ -159,7 +161,7 @@ typedef enum {
     TOUCH_PAD_INTR_MASK_INACTIVE = BIT(2),  /*!<Inactive for one of the enabled channels. */
     TOUCH_PAD_INTR_MASK_SCAN_DONE = BIT(3), /*!<Measurement done for all the enabled channels. */
     TOUCH_PAD_INTR_MASK_TIMEOUT = BIT(4),   /*!<Timeout for one of the enabled channels. */
-#if SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED
+#if SOC_TOUCH_SENSOR_VERSION > 1 && !SOC_IS(ESP32S2)
     TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE = BIT(5),   /*!<For proximity sensor, when the number of measurements reaches the set count of measurements, an interrupt will be generated. */
     TOUCH_PAD_INTR_MASK_MAX
 #define TOUCH_PAD_INTR_MASK_ALL (TOUCH_PAD_INTR_MASK_TIMEOUT    \

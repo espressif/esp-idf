@@ -312,7 +312,6 @@
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION            (1U)     /*!<Hardware version of touch sensor */
-#define SOC_TOUCH_SENSOR_NUM                (10)
 #define SOC_TOUCH_MIN_CHAN_ID               (0U)    /*!< Touch minimum channel number */
 #define SOC_TOUCH_MAX_CHAN_ID               (9)     /*!< Touch maximum channel number */
 #define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP      (1)
