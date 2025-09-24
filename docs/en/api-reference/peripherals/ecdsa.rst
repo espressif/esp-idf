@@ -77,7 +77,7 @@ Following code snippet uses :cpp:func:`esp_efuse_write_key` to set physical key 
 
 .. only:: SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
 
-    Determinisitic Signature Generation
+    Deterministic Signature Generation
     -----------------------------------
 
     The ECDSA peripheral of {IDF_TARGET_NAME} also supports generation of deterministic signatures using deterministic derivation of the parameter K as specified in the `RFC 6979 <https://tools.ietf.org/html/rfc6979>`_ section 3.2.
