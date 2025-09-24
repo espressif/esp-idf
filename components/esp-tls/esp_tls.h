@@ -412,10 +412,12 @@ esp_tls_t *esp_tls_init(void);
  * @param[in]  hostname  Hostname of the host.
  * @param[in]  hostlen   Length of hostname.
  * @param[in]  port      Port number of the host.
- * @param[in]  cfg       TLS configuration as esp_tls_cfg_t. If you wish to open
- *                       non-TLS connection, keep this NULL. For TLS connection,
- *                       a pass pointer to esp_tls_cfg_t. At a minimum, this
- *                       structure should be zero-initialized.
+ * @param[in]  cfg       TLS configuration as esp_tls_cfg_t. For a TLS
+ *                       connection, pass a pointer to a esp_tls_cfg_t. For a
+ *                       plain TCP connection, pass a pointer to a
+ *                       esp_tls_cfg_t with is_plain_tcp set to true. At a
+ *                       minimum, this pointer should be not NULL and the
+ *                       structure should be zero-initialized
  * @param[in]  tls       Pointer to esp-tls as esp-tls handle.
  *
  * @return
