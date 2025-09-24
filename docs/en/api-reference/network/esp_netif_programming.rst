@@ -15,6 +15,26 @@ In order to configure static IP addresses and DNS servers, it's necessary to dis
 To set IPv4 address, you can use :cpp:func:`esp_netif_set_ip_info()`. For IPv6, these two functions can be used for adding or removing addresses: :cpp:func:`esp_netif_add_ip6_address()`,  :cpp:func:`esp_netif_remove_ip6_address()`.
 To configure DNS servers, please use :cpp:func:`esp_netif_set_dns_info()` API.
 
+Custom Got/Lost IP Events
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For user-defined interfaces, esp-netif lets you select which IP events are posted when an interface obtains or loses an IP address. Two generic event IDs are provided for this purpose:
+
+- ``IP_EVENT_CUSTOM_GOT_IP``
+- ``IP_EVENT_CUSTOM_LOST_IP``
+
+Configure these by setting :cpp:member:`esp_netif_inherent_config_t::get_ip_event` and :cpp:member:`esp_netif_inherent_config_t::lost_ip_event` when creating the interface:
+
+.. code-block:: c
+
+    esp_netif_inherent_config_t base = ESP_NETIF_INHERENT_DEFAULT_WIFI_STA();
+    base.get_ip_event = IP_EVENT_CUSTOM_GOT_IP;
+    base.lost_ip_event = IP_EVENT_CUSTOM_LOST_IP;
+    esp_netif_config_t cfg = { .base = &base, .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA };
+    esp_netif_t *netif = esp_netif_new(&cfg);
+
+Event data for these events is the same as the standard ones: :cpp:type:`ip_event_got_ip_t` is posted for “got IP”, and :cpp:type:`ip_event_got_ip_t` with :cpp:member:`ip_event_got_ip_t::ip_changed` set accordingly for updates. For lost IP, an empty :cpp:type:`ip_event_got_ip_t` with only :cpp:member:`ip_event_got_ip_t::esp_netif` set is posted.
+
 .. _esp_netif_set_dhcp:
 
 Configure DHCP options
