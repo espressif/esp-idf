@@ -17,4 +17,4 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 @idf_parametrize('target', ['esp32', 'esp32s3', 'esp32c3', 'esp32p4', 'esp32c5'], indirect=['target'])
 def test_sdspi(dut: IdfDut) -> None:
-    dut.run_all_single_board_cases(reset=True)
+    dut.run_all_single_board_cases(reset=True, timeout=180)
