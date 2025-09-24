@@ -32,7 +32,7 @@ class LoadableAppSerial(EspSerial):
     def _start(self) -> None:
         self.load_ram()
 
-    @EspSerial.use_esptool(hard_reset_after=False, no_stub=True)
+    @EspSerial.use_esptool()
     def load_ram(self) -> None:
         if not self.app.bin_file:
             logging.error('No image file detected. Skipping load ram...')
