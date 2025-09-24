@@ -184,20 +184,22 @@ LCD
 - The ``on_bounce_frame_finish`` member in :cpp:type:`esp_lcd_rgb_panel_event_callbacks_t` has been replaced by :cpp:member:`esp_lcd_rgb_panel_event_callbacks_t::on_frame_buf_complete`, which indicates that a complete frame buffer has been sent to the LCD controller.
 - The LCD IO layer driver for the I2C interface previously had two implementations, based on the new and legacy I2C master bus drivers. As the legacy I2C driver is being deprecated, support for it in the LCD IO layer has been removed. Only the APIs provided in ``driver/i2c_master.h`` are now used.
 - :cpp:member:`esp_lcd_dpi_panel_config_t::pixel_format` member is deprecated. It is recommended to only use :cpp:member:`esp_lcd_dpi_panel_config_t::in_color_format` to set the MIPI DSI driver's input pixel data format.
-- The NT35510 LCD device driver has been moved out of ESP-IDF and is now hosted in the `ESP Component Registry <https://components.espressif.com/components/espressif/esp_lcd_nt35510/versions/1.0.0/readme>`_. If your project uses the NT35510 driver, you can add it to your project by running ``idf.py add-dependency "espressif/esp_lcd_nt35510"``.
+- The NT35510 LCD device driver has been moved out of ESP-IDF and is now hosted in the `ESP Component Registry <https://components.espressif.com/components/espressif/esp_lcd_nt35510/versions/1.0.0/readme>`__. If your project uses the NT35510 driver, you can add it to your project by running ``idf.py add-dependency "espressif/esp_lcd_nt35510"``.
 
 SPI
 ---
 
 - The :ref:`CONFIG_SPI_MASTER_IN_IRAM` option is now invisible by default in menuconfig and depends on :ref:`CONFIG_FREERTOS_IN_IRAM`. This change was made to prevent potential crashes when SPI functions in IRAM call FreeRTOS functions that are placed in flash.
-  - To enable SPI master IRAM optimization:
+- To enable SPI master IRAM optimization:
 
-    1. Navigate to ``Component config`` → ``FreeRTOS`` → ``Port`` in menuconfig
-    2. Enable ``Place FreeRTOS functions in IRAM`` (:ref:`CONFIG_FREERTOS_IN_IRAM`)
-    3. Navigate to ``Component config`` → ``ESP-Driver:SPI Configurations``
-    4. Enable ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`)
+    1. Navigate to ``Component config`` → ``FreeRTOS`` → ``Port`` in menuconfig.
+    2. Enable ``Place FreeRTOS functions in IRAM`` (:ref:`CONFIG_FREERTOS_IN_IRAM`).
+    3. Navigate to ``Component config`` → ``ESP-Driver:SPI Configurations`` in menuconfig.
+    4. Enable ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`).
 
-  - Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
+    .. note::
+
+        Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
 
 - Deprecated HSPI and VSPI related IOMUX pin macros on ESP32 and ESP32S2 have been removed.
 
@@ -205,7 +207,6 @@ PSRAM
 -----
 
 Deprecated header file ``esp_spiram.h`` has been removed. Please use ``esp_psram.h`` instead.
-
 
 SPI Flash Driver
 ----------------
@@ -216,12 +217,14 @@ SPI Flash Driver
 - Deprecated API ``spi_flash_get_counters`` has been removed. Please use :cpp:func:`esp_flash_get_counters` instead.
 - Deprecated API ``spi_flash_reset_counters`` has been removed. Please use :cpp:func:`esp_flash_reset_counters` instead.
 
-Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
+.. note::
+
+    Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
 
 Touch Element
 -------------
 
-The ``touch_element`` component is moved to [ESP Component Registry](https://components.espressif.com/components/espressif/touch_element/versions/1.0.0/readme).
+The ``touch_element`` component is moved to `ESP Component Registry <https://components.espressif.com/components/espressif/touch_element/versions/1.0.0/readme>`__.
 
 You can add this dependency to your project by running ``idf.py add-dependency "espressif/touch_element"``.
 

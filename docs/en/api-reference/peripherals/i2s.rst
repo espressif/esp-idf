@@ -1048,6 +1048,7 @@ There are two methods to allocate a pair of full-duplex channels:
         ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_rx_cfg));
         ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
 
+
 .. only:: SOC_I2S_HW_VERSION_2
 
     Simplex Mode
