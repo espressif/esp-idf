@@ -248,6 +248,17 @@ static inline void adc_ll_digi_set_pattern_table_len(adc_unit_t adc_n, uint32_t 
 }
 
 /**
+ * Rest pattern table to default value
+ */
+static inline void adc_ll_digi_reset_pattern_table(void)
+{
+    for(int i = 0; i < 4; i++) {
+        APB_SARADC.sar1_patt_tab[i] = 0xffffff;
+        APB_SARADC.sar2_patt_tab[i] = 0xffffff;
+    }
+}
+
+/**
  * Set pattern table for digital controller.
  * The pattern table that defines the conversion rules for each SAR ADC. Each table has 16 items, in which channel selection,
  * resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
@@ -928,7 +939,7 @@ static inline void adc_oneshot_ll_disable_all_unit(void)
  * @brief Enable the ADC clock
  * @param enable true to enable, false to disable
  */
-static inline void adc_ll_enable_bus_clock(bool enable)
+static inline void _adc_ll_enable_bus_clock(bool enable)
 {
     uint32_t reg_val = READ_PERI_REG(DPORT_PERIP_CLK_EN0_REG);
     reg_val = reg_val & (~DPORT_APB_SARADC_CLK_EN);
@@ -938,13 +949,13 @@ static inline void adc_ll_enable_bus_clock(bool enable)
 // SYSTEM.perip_clk_en0 is a shared register, so this function must be used in an atomic way
 #define adc_ll_enable_bus_clock(...) do { \
         (void)__DECLARE_RCC_ATOMIC_ENV; \
-        adc_ll_enable_bus_clock(__VA_ARGS__); \
+        _adc_ll_enable_bus_clock(__VA_ARGS__); \
     } while(0)
 
 /**
  * @brief Reset ADC module
  */
-static inline void adc_ll_reset_register(void)
+static inline void _adc_ll_reset_register(void)
 {
     SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_APB_SARADC_RST);
     CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_APB_SARADC_RST);
@@ -952,7 +963,7 @@ static inline void adc_ll_reset_register(void)
 //  SYSTEM.perip_rst_en0 is a shared register, so this function must be used in an atomic way
 #define adc_ll_reset_register(...) do { \
         (void)__DECLARE_RCC_ATOMIC_ENV; \
-        adc_ll_reset_register(__VA_ARGS__); \
+        _adc_ll_reset_register(__VA_ARGS__); \
     } while(0)
 
 /**
@@ -1171,6 +1182,19 @@ static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, bool internal_gn
 }
 
 /**
+ * Clear calibration prepare settings
+ * This function reverses the operations done by adc_ll_calibration_prepare
+ */
+static inline void adc_ll_calibration_clear(void)
+{
+    /* Reverse the operations done in adc_ll_calibration_prepare */
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
+    SET_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
+}
+
+/**
  * Resume register status after calibration.
  *
  * @param adc_n ADC index number.
@@ -1209,6 +1233,68 @@ static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param
         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
     }
 }
+
+/**
+ * Set the SAR DTEST param
+ *
+ * @param param DTEST value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_dtest_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, param);
+}
+
+/**
+ * Set the SAR ENT param
+ *
+ * @param param ENT value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_ent_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, param);
+}
+
+/**
+ * Enable/disable the calibration voltage reference for ADC unit.
+ *
+ * @param adc_n ADC index number.
+ * @param en true to enable, false to disable
+ */
+__attribute__((always_inline))
+static inline void adc_ll_enable_calibration_ref(adc_unit_t adc_n, bool en)
+{
+    (void)adc_n;
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENCAL_REF_ADDR, en);
+}
+
+/**
+ * Init regi2c SARADC registers
+ */
+__attribute__((always_inline))
+static inline void adc_ll_regi2c_init(void)
+{
+    adc_ll_set_dtest_param(0);
+    adc_ll_set_ent_param(1);
+    // Config ADC circuit (Analog part) with I2C(HOST ID 0x69) and chose internal voltage as sampling source
+    adc_ll_enable_calibration_ref(ADC_UNIT_1, true);
+    adc_ll_enable_calibration_ref(ADC_UNIT_2, true);
+}
+
+/**
+ * Deinit regi2c SARADC registers
+ */
+__attribute__((always_inline))
+static inline void adc_ll_regi2c_adc_deinit(void)
+{
+    adc_ll_set_dtest_param(0);
+    adc_ll_set_ent_param(0);
+    adc_ll_enable_calibration_ref(ADC_UNIT_1, false);
+    adc_ll_enable_calibration_ref(ADC_UNIT_2, false);
+}
+
+
 /* Temp code end. */
 
 /**
