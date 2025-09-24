@@ -47,6 +47,7 @@ test_tools_win:
   extends:
     - .host_test_win_template
     - .rules:labels:windows_pytest_build_system
+  parallel: 4
   artifacts:
     paths:
       - ${IDF_PATH}/*.out
@@ -64,8 +65,7 @@ test_tools_win:
     - .\export.ps1
     - python "${SUBMODULE_FETCH_TOOL}" -s "all"
     - cd ${IDF_PATH}/tools/test_idf_py
-    - pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml
-    - pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml
+    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml=${IDF_PATH}/XUNIT_RESULT.xml
 
 # Build tests
 .test_build_system_template_win:
@@ -88,7 +88,7 @@ pytest_build_system_win:
   extends:
     - .test_build_system_template_win
     - .rules:labels:windows_pytest_build_system
-  parallel: 2
+  parallel: 6
   needs: []
   tags: [windows-build, brew]
   artifacts:
