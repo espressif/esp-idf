@@ -2212,9 +2212,9 @@ static void netif_unset_mldv6_flag(esp_netif_t *esp_netif)
 
 #endif
 
-esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(esp_ip6_addr_t* ip6_addr)
+esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(const esp_ip6_addr_t* ip6_addr)
 {
-    ip6_addr_t* lwip_ip6_info = (ip6_addr_t*)ip6_addr;
+    const ip6_addr_t* lwip_ip6_info = (const ip6_addr_t*)ip6_addr;
 
     if (ip6_addr_isglobal(lwip_ip6_info)) {
         return ESP_IP6_ADDR_IS_GLOBAL;
